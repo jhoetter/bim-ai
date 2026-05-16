@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { JSX, DragEvent } from 'react';
 import type { DisciplineTag, Element } from '@bim-ai/core';
 import { DEFAULT_DISCIPLINE_BY_KIND } from '@bim-ai/core';
@@ -269,6 +269,8 @@ export function ProjectBrowser(props: {
   const applyOrbitViewpointPreset = useBimStore((s) => s.applyOrbitViewpointPreset);
   const setOrbitCameraFromViewpointMm = useBimStore((s) => s.setOrbitCameraFromViewpointMm);
   const modelId = useBimStore((s) => s.modelId);
+  const groupRegistry = useBimStore((s) => s.groupRegistry);
+  const setGroupEditModeDefinitionId = useBimStore((s) => s.setGroupEditModeDefinitionId);
   const lastPropagation = useViewTemplateStore((s) => s.lastPropagation);
   const dismissPropagation = useViewTemplateStore((s) => s.dismissPropagation);
   const vtStore = useViewTemplateStore();
@@ -284,6 +286,24 @@ export function ProjectBrowser(props: {
   const [elevationInputOpen, setElevationInputOpen] = useState(false);
   const [elevationDraft, setElevationDraft] = useState('');
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
+  const [groupCtxMenu, setGroupCtxMenu] = useState<{
+    defId: string;
+    x: number;
+    y: number;
+  } | null>(null);
+  useEffect(() => {
+    if (!groupCtxMenu) return;
+    const close = () => setGroupCtxMenu(null);
+    const closeKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setGroupCtxMenu(null);
+    };
+    window.addEventListener('click', close);
+    window.addEventListener('keydown', closeKey);
+    return () => {
+      window.removeEventListener('click', close);
+      window.removeEventListener('keydown', closeKey);
+    };
+  }, [groupCtxMenu]);
 
   const { planViewsSorted, planViewBuckets, bucketKeys } = useMemo(() => {
     const sorted = Object.values(props.elementsById)
@@ -1884,8 +1904,61 @@ export function ProjectBrowser(props: {
         />
       ) : null}
 
-      {/* TODO(WP-B): Gruppen (Groups) subtree — list group definitions + instance counts once
-          WP-B group-management lands. Wire to `detail_group` elements keyed by `hostViewId`. */}
+      {Object.keys(groupRegistry.definitions).length > 0 ? (
+        <div className="space-y-1" data-testid="project-browser-groups-group">
+          <div className="text-[10px] uppercase tracking-wide text-muted">
+            Groups ({Object.keys(groupRegistry.definitions).length})
+          </div>
+          <ul className="space-y-0">
+            {Object.values(groupRegistry.definitions).map((def) => {
+              const instanceCount = Object.values(groupRegistry.instances).filter(
+                (inst) => inst.groupDefinitionId === def.id,
+              ).length;
+              return (
+                <li key={def.id} className="flex flex-col gap-0.5">
+                  <button
+                    type="button"
+                    className="w-full px-2 py-0.5 text-left text-[10px] hover:bg-surface-strong"
+                    title={`group · ${def.name} · ${def.elementIds.length} elements · ${instanceCount} instance(s)`}
+                    onContextMenu={(e) => {
+                      e.preventDefault();
+                      setGroupCtxMenu({ defId: def.id, x: e.clientX, y: e.clientY });
+                    }}
+                  >
+                    <span className="text-muted">group ·</span> {def.name}
+                    <span className="ml-1 text-muted">
+                      ({def.elementIds.length}e · {instanceCount}i)
+                    </span>
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
+          {groupCtxMenu ? (
+            <div
+              role="menu"
+              data-testid="group-context-menu"
+              className="fixed z-50 min-w-36 rounded border border-border bg-surface py-1 text-xs text-foreground shadow-lg"
+              style={{ left: groupCtxMenu.x, top: groupCtxMenu.y }}
+              onClick={(e) => e.stopPropagation()}
+              onKeyDown={(e) => e.key === 'Escape' && setGroupCtxMenu(null)}
+            >
+              <button
+                type="button"
+                role="menuitem"
+                data-testid="group-ctx-edit"
+                className="block w-full px-3 py-1.5 text-left hover:bg-surface-strong"
+                onClick={() => {
+                  setGroupEditModeDefinitionId(groupCtxMenu.defId);
+                  setGroupCtxMenu(null);
+                }}
+              >
+                Edit Group
+              </button>
+            </div>
+          ) : null}
+        </div>
+      ) : null}
     </div>
   );
 }

@@ -1514,6 +1514,8 @@ export type Element =
       airChangeRate?: number | null;
       zoneId?: string | null;
       conditionedVolumeIncluded?: boolean | null;
+      /** User-assigned room number (e.g. "101", "K1"). Displayed in plan tag alongside name. */
+      numberLabel?: string | null;
     }
   | {
       kind: 'grid_line';

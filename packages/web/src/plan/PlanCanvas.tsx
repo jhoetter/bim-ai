@@ -1039,7 +1039,10 @@ export function PlanCanvas({
     } else if (planTool === 'beam-system') {
       beamSystemStateRef.current = initialBeamSystemState();
     } else if (planTool === 'steel-connection') {
-      steelConnectionStateRef.current = initialSteelConnectionState();
+      const { state: scState } = reduceSteelConnection(steelConnectionStateRef.current, {
+        kind: 'activate',
+      });
+      steelConnectionStateRef.current = scState;
     } else if (planTool === 'column-at-grids') {
       const { state } = reduceColumnAtGrids(columnAtGridsStateRef.current, { kind: 'activate' });
       columnAtGridsStateRef.current = state;
@@ -4421,39 +4424,43 @@ export function PlanCanvas({
         return;
       }
       if (planTool === 'steel-connection') {
-        const beamEl = Object.values(elementsById).find(
-          (el): el is Extract<Element, { kind: 'beam' }> => {
-            if (el.kind !== 'beam') return false;
+        const px = sp.xMm / 1000;
+        const pz = sp.yMm / 1000;
+        const pickedEl = Object.values(elementsById).find((el) => {
+          if (el.kind === 'beam') {
             const sx = el.startMm.xMm / 1000;
             const sz = el.startMm.yMm / 1000;
             const ex = el.endMm.xMm / 1000;
             const ez = el.endMm.yMm / 1000;
-            const px = sp.xMm / 1000;
-            const pz = sp.yMm / 1000;
             const dx = ex - sx;
             const dz = ez - sz;
             const len2 = dx * dx + dz * dz;
             if (len2 < 1e-9) return false;
             const tParam = Math.max(0, Math.min(1, ((px - sx) * dx + (pz - sz) * dz) / len2));
-            const closestX = sx + tParam * dx;
-            const closestZ = sz + tParam * dz;
-            const dist = Math.hypot(px - closestX, pz - closestZ);
+            const dist = Math.hypot(px - (sx + tParam * dx), pz - (sz + tParam * dz));
             return dist < 0.5;
-          },
-        );
-        if (beamEl) {
-          const { effect } = reduceSteelConnection(steelConnectionStateRef.current, {
-            kind: 'pick-beam',
-            hostElementId: beamEl.id,
-          });
-          steelConnectionStateRef.current = initialSteelConnectionState();
+          }
+          if (el.kind === 'column') {
+            const cx2 = el.positionMm.xMm / 1000;
+            const cz2 = el.positionMm.yMm / 1000;
+            return Math.hypot(px - cx2, pz - cz2) < 0.5;
+          }
+          return false;
+        });
+        if (pickedEl) {
+          const { state: scState, effect } = reduceSteelConnection(
+            steelConnectionStateRef.current,
+            { kind: 'click', pickedElementId: pickedEl.id },
+          );
+          steelConnectionStateRef.current = scState;
           if (effect.createSteelConnection) {
             onSemanticCommand({
               type: 'create_steel_connection',
               id: crypto.randomUUID(),
               hostElementId: effect.createSteelConnection.hostElementId,
               connectionType: effect.createSteelConnection.connectionType,
-              positionT: 1.0,
+              targetElementId: effect.createSteelConnection.targetElementId,
+              positionT: effect.createSteelConnection.positionT,
             });
           }
         }
@@ -5184,6 +5191,12 @@ export function PlanCanvas({
           excavationStateRef.current = initialExcavationState();
         } else if (planTool === 'beam-system') {
           beamSystemStateRef.current = initialBeamSystemState();
+        } else if (planTool === 'steel-connection') {
+          const { state: scState } = reduceSteelConnection(steelConnectionStateRef.current, {
+            kind: 'cancel',
+          });
+          steelConnectionStateRef.current = scState;
+          bumpGeom((x) => x + 1);
         } else if (planTool === 'column-at-grids') {
           const { state } = reduceColumnAtGrids(columnAtGridsStateRef.current, { kind: 'cancel' });
           columnAtGridsStateRef.current = state;

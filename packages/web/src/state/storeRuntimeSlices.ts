@@ -68,12 +68,14 @@ export type WorkspaceUiRuntimeSlice = Pick<
   | 'roofJoinPreview'
   | 'thinLinesEnabled'
   | 'groupRegistry'
+  | 'groupEditModeDefinitionId'
   | 'setWorkspaceLayoutPreset'
   | 'setActiveWorkspaceId'
   | 'setPerspectiveId'
   | 'setRoofJoinPreview'
   | 'toggleThinLines'
   | 'setGroupRegistry'
+  | 'setGroupEditModeDefinitionId'
 >;
 
 function readSessionString(key: string, fallback: string): string {
@@ -264,5 +266,8 @@ export function createWorkspaceUiRuntimeSlice(set: StoreSet): WorkspaceUiRuntime
 
     groupRegistry: emptyGroupRegistry(),
     setGroupRegistry: (groupRegistry) => set({ groupRegistry }),
+
+    groupEditModeDefinitionId: null,
+    setGroupEditModeDefinitionId: (id) => set({ groupEditModeDefinitionId: id }),
   };
 }

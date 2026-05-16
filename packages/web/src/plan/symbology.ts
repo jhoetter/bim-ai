@@ -700,11 +700,19 @@ function rebuildPlanMeshesFromWire(
     });
     holder.add(mesh);
     if (ann?.roomLabelsVisible === true && typeof mesh.userData.roomLabel === 'object') {
-      const rl = mesh.userData.roomLabel as { cx?: number; cz?: number; areaMm2?: number };
-      const base = typeof r.planTagLabel === 'string' ? r.planTagLabel.trim() : '';
+      const rl = mesh.userData.roomLabel as {
+        cx?: number;
+        cz?: number;
+        areaMm2?: number;
+        name?: string;
+        numberLabel?: string | null;
+      };
+      const name = typeof rl?.name === 'string' ? rl.name : '';
+      const numberLabel =
+        typeof rl?.numberLabel === 'string' && rl.numberLabel ? rl.numberLabel : null;
       const areaMm2 = typeof rl?.areaMm2 === 'number' ? rl.areaMm2 : 0;
-      const areaText = areaMm2 > 0 ? `${(areaMm2 / 1_000_000).toFixed(1)} m²` : '';
-      const labelRaw = base && areaText ? `${base} · ${areaText}` : base || areaText;
+      const areaText = areaMm2 > 0 ? `${(areaMm2 / 1_000_000).toFixed(2)} m²` : '';
+      const labelRaw = [numberLabel, name, areaText].filter(Boolean).join('\n');
       if (labelRaw) {
         if (
           rl &&

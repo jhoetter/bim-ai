@@ -181,6 +181,7 @@ import { MilestoneDialog } from '../collab/MilestoneDialog';
 import { PasteToLevelsDialog } from '../clipboard/PasteToLevelsDialog';
 import { SelectionFilterDialog } from '../plan/selectionFilter';
 import { CreateGroupDialog } from '../groups/CreateGroupDialog';
+import { GroupEditModeBar } from '../groups/GroupEditModeBar';
 import { applyCreateGroup } from '../groups/groupCommands';
 import { WorkspaceLeftRail } from './WorkspaceLeftRail';
 import { WorkspaceRightRail } from './WorkspaceRightRail';
@@ -1741,6 +1742,16 @@ export function Workspace(): JSX.Element {
   /* ── Semantic command dispatch (from PlanCanvas / Viewport) ────────── */
   const onSemanticCommand = useCallback(
     async (cmd: Record<string, unknown>): Promise<void> => {
+      // §8.9.3: client-only group edit mode — no server round-trip
+      if (cmd.type === 'editGroup') {
+        useBimStore.getState().setGroupEditModeDefinitionId(cmd.groupDefinitionId as string);
+        return;
+      }
+      if (cmd.type === 'finishEditGroup') {
+        useBimStore.getState().setGroupEditModeDefinitionId(null);
+        return;
+      }
+
       const mid = useBimStore.getState().modelId;
       const uid = useBimStore.getState().userId;
       if (!mid) return;
@@ -4002,6 +4013,7 @@ export function Workspace(): JSX.Element {
   /* ── Compose AppShell slots ───────────────────────────────────────── */
   return (
     <>
+      <GroupEditModeBar />
       <CheatsheetModal open={cheatsheetOpen} onClose={() => setCheatsheetOpen(false)} />
       <Save3dViewAsDialog
         isOpen={save3dViewAsOpen}

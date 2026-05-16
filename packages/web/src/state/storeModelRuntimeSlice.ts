@@ -118,9 +118,23 @@ export function createModelRuntimeSlice(
       });
     },
 
-    select: (id) => set({ selectedId: id, selectedIds: [] }),
+    select: (id) => {
+      if (id !== undefined) {
+        const gid = get().groupEditModeDefinitionId;
+        if (gid) {
+          const def = get().groupRegistry?.definitions[gid];
+          if (def && !def.elementIds.includes(id)) return;
+        }
+      }
+      set({ selectedId: id, selectedIds: [] });
+    },
 
-    toggleSelectedId: (id) =>
+    toggleSelectedId: (id) => {
+      const gid = get().groupEditModeDefinitionId;
+      if (gid) {
+        const def = get().groupRegistry?.definitions[gid];
+        if (def && !def.elementIds.includes(id)) return;
+      }
       set((state) => {
         if (state.selectedId === id) {
           const [nextPrimary, ...rest] = state.selectedIds;
@@ -133,7 +147,8 @@ export function createModelRuntimeSlice(
           return { selectedId: id, selectedIds: [] };
         }
         return { selectedIds: [...state.selectedIds, id] };
-      }),
+      });
+    },
 
     clearSelectedIds: () => set({ selectedIds: [] }),
 

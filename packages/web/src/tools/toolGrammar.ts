@@ -2536,21 +2536,30 @@ export function reduceWalkthrough(
 
 /* ────────────────────────────────────────────────────────────────────── */
 /* Steel Connection Tool — §9.5.1                                         */
-/* One click on a beam creates a connection at positionT=1.0 (end).       */
+/* Two-click: pick host element, then optional target element.            */
 /* ────────────────────────────────────────────────────────────────────── */
 
-export type SteelConnectionState = { phase: 'idle' };
+export type SteelConnectionState =
+  | { phase: 'idle' }
+  | { phase: 'pick-host'; connectionType: 'end_plate' | 'bolted_flange' | 'shear_tab' }
+  | {
+      phase: 'pick-target';
+      hostElementId: string;
+      connectionType: 'end_plate' | 'bolted_flange' | 'shear_tab';
+    };
 
 export type SteelConnectionEvent =
-  | { kind: 'activate' }
+  | { kind: 'activate'; connectionType?: 'end_plate' | 'bolted_flange' | 'shear_tab' }
   | { kind: 'deactivate' }
-  | { kind: 'pick-beam'; hostElementId: string }
+  | { kind: 'click'; pickedElementId: string }
   | { kind: 'cancel' };
 
 export interface SteelConnectionEffect {
   createSteelConnection?: {
     hostElementId: string;
+    targetElementId?: string;
     connectionType: 'end_plate' | 'bolted_flange' | 'shear_tab';
+    positionT: number;
   };
   stillActive: boolean;
 }
@@ -2563,26 +2572,40 @@ export function reduceSteelConnection(
   state: SteelConnectionState,
   event: SteelConnectionEvent,
 ): { state: SteelConnectionState; effect: SteelConnectionEffect } {
-  if (event.kind === 'deactivate') {
-    return { state: initialSteelConnectionState(), effect: { stillActive: false } };
+  if (event.kind === 'deactivate' || event.kind === 'cancel') {
+    return { state: { phase: 'idle' }, effect: { stillActive: false } };
   }
-  if (event.kind === 'activate' || event.kind === 'cancel') {
+  if (event.kind === 'activate') {
     return {
-      state: initialSteelConnectionState(),
-      effect: { stillActive: event.kind === 'activate' },
+      state: { phase: 'pick-host', connectionType: event.connectionType ?? 'end_plate' },
+      effect: { stillActive: true },
     };
   }
-  if (event.kind === 'pick-beam') {
-    return {
-      state: initialSteelConnectionState(),
-      effect: {
-        createSteelConnection: {
-          hostElementId: event.hostElementId,
-          connectionType: 'end_plate',
+  if (event.kind === 'click') {
+    if (state.phase === 'pick-host') {
+      return {
+        state: {
+          phase: 'pick-target',
+          hostElementId: event.pickedElementId,
+          connectionType: state.connectionType,
         },
-        stillActive: true,
-      },
-    };
+        effect: { stillActive: true },
+      };
+    }
+    if (state.phase === 'pick-target') {
+      return {
+        state: { phase: 'idle' },
+        effect: {
+          createSteelConnection: {
+            hostElementId: state.hostElementId,
+            targetElementId: event.pickedElementId,
+            connectionType: state.connectionType,
+            positionT: 1.0,
+          },
+          stillActive: true,
+        },
+      };
+    }
   }
   return { state, effect: { stillActive: true } };
 }

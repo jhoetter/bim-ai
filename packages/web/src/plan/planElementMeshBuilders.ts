@@ -1369,6 +1369,7 @@ export function roomMesh(
     cx: ux(c.xMm),
     cz: uz(c.yMm),
     name: room.name,
+    numberLabel: room.numberLabel ?? null,
     areaMm2: polygonAreaMm2(room.outlineMm),
   };
 

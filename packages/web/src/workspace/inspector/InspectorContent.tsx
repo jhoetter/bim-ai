@@ -15,6 +15,7 @@ import {
   planViewGraphicsMatrixRows,
   viewTemplateGraphicsMatrixRows,
 } from '../../plan/planProjection';
+import { polygonAreaMm2 } from '../../plan/symbology';
 import {
   getBuiltInWallType,
   resolveWallAssemblyExposedLayers,
@@ -1216,6 +1217,42 @@ export function InspectorPropertiesFor(
               data-testid="inspector-stair-tread"
             />
           </div>
+          <div className="flex items-center gap-2 py-0.5">
+            <span className="text-xs text-muted w-28 shrink-0">Riser Count</span>
+            <input
+              type="number"
+              className="w-20 text-xs bg-surface border border-border rounded px-1 py-0.5"
+              defaultValue={el.riserCount ?? undefined}
+              key={`${el.id}-riser-count`}
+              step={1}
+              min={2}
+              max={50}
+              aria-label="Number of risers per run"
+              onBlur={(e) => {
+                const v = Number(e.currentTarget.value);
+                if (!isNaN(v) && v >= 2 && v <= 50) stairPropChange?.('riserCount', v);
+              }}
+              data-testid="inspector-stair-riser-count"
+            />
+          </div>
+          <div className="flex items-center gap-2 py-0.5">
+            <span className="text-xs text-muted w-28 shrink-0">Tread Depth (mm)</span>
+            <input
+              type="number"
+              className="w-20 text-xs bg-surface border border-border rounded px-1 py-0.5"
+              defaultValue={el.treadDepthMm ?? undefined}
+              key={`${el.id}-tread-depth`}
+              step={10}
+              min={200}
+              max={450}
+              aria-label="Tread depth in millimetres"
+              onBlur={(e) => {
+                const v = Number(e.currentTarget.value);
+                if (!isNaN(v) && v >= 200 && v <= 450) stairPropChange?.('treadDepthMm', v);
+              }}
+              data-testid="inspector-stair-tread-depth"
+            />
+          </div>
           <FieldRow label={f('baseLevel')} value={resolveElName(el.baseLevelId, elementsById)} />
           <FieldRow label={f('topLevel')} value={resolveElName(el.topLevelId, elementsById)} />
           <MaterialSlotsSection
@@ -1372,6 +1409,78 @@ export function InspectorPropertiesFor(
               data-testid="inspector-beam-width"
             />
           </div>
+          <div className="flex items-center gap-2 py-0.5">
+            <span className="text-xs text-muted w-28 shrink-0">Section Profile</span>
+            <select
+              className="w-32 text-xs bg-surface border border-border rounded px-1 py-0.5"
+              value={el.sectionProfile ?? 'rectangular'}
+              onChange={(e) => {
+                beamPropChange?.('sectionProfile', e.currentTarget.value || 'rectangular');
+              }}
+              data-testid="inspector-beam-section-profile"
+            >
+              <option value="rectangular">Rectangular</option>
+              <option value="I">I-Beam</option>
+              <option value="H">H-Beam</option>
+              <option value="C">C-Channel</option>
+              <option value="L">L-Angle</option>
+              <option value="T">T-Section</option>
+              <option value="HSS">HSS</option>
+            </select>
+          </div>
+          {(el.sectionProfile === 'I' ||
+            el.sectionProfile === 'H' ||
+            el.sectionProfile === 'C') && (
+            <div className="flex items-center gap-2 py-0.5">
+              <span className="text-xs text-muted w-28 shrink-0">Flange Width (mm)</span>
+              <input
+                type="number"
+                className="w-20 text-xs bg-surface border border-border rounded px-1 py-0.5"
+                defaultValue={el.flangeWidthMm ?? el.widthMm}
+                key={`${el.id}-flange-width`}
+                step={10}
+                onBlur={(e) => {
+                  const v = Number(e.currentTarget.value);
+                  if (!isNaN(v) && v > 0) beamPropChange?.('flangeWidthMm', v);
+                }}
+                data-testid="inspector-beam-flange-width"
+              />
+            </div>
+          )}
+          {(el.sectionProfile === 'I' || el.sectionProfile === 'H') && (
+            <>
+              <div className="flex items-center gap-2 py-0.5">
+                <span className="text-xs text-muted w-28 shrink-0">Web Thickness (mm)</span>
+                <input
+                  type="number"
+                  className="w-20 text-xs bg-surface border border-border rounded px-1 py-0.5"
+                  defaultValue={el.webThicknessMm ?? Math.max(20, el.widthMm * 0.1)}
+                  key={`${el.id}-web-thickness`}
+                  step={5}
+                  onBlur={(e) => {
+                    const v = Number(e.currentTarget.value);
+                    if (!isNaN(v) && v > 0) beamPropChange?.('webThicknessMm', v);
+                  }}
+                  data-testid="inspector-beam-web-thickness"
+                />
+              </div>
+              <div className="flex items-center gap-2 py-0.5">
+                <span className="text-xs text-muted w-28 shrink-0">Flange Thickness (mm)</span>
+                <input
+                  type="number"
+                  className="w-20 text-xs bg-surface border border-border rounded px-1 py-0.5"
+                  defaultValue={el.flangeThicknessMm ?? Math.max(15, el.heightMm * 0.1)}
+                  key={`${el.id}-flange-thickness`}
+                  step={5}
+                  onBlur={(e) => {
+                    const v = Number(e.currentTarget.value);
+                    if (!isNaN(v) && v > 0) beamPropChange?.('flangeThicknessMm', v);
+                  }}
+                  data-testid="inspector-beam-flange-thickness"
+                />
+              </div>
+            </>
+          )}
           <PhaseSection
             phaseCreated={el.phaseCreated}
             phaseDemolished={el.phaseDemolished}
@@ -1380,6 +1489,116 @@ export function InspectorPropertiesFor(
             )}
             onPropertyChange={beamPropChange}
           />
+        </div>
+      );
+    }
+    case 'steel_connection': {
+      const { onPropertyChange: scPropChange } = options ?? {};
+      return (
+        <div className="flex flex-col gap-2">
+          <div className="flex items-center gap-2 py-0.5">
+            <span className="text-xs text-muted w-28 shrink-0">Connection Type</span>
+            <select
+              className="flex-1 text-xs bg-surface border border-border rounded px-1 py-0.5"
+              value={el.connectionType}
+              onChange={(e) => scPropChange?.('connectionType', e.currentTarget.value)}
+              data-testid="inspector-steel-connection-type"
+            >
+              <option value="end_plate">End Plate</option>
+              <option value="bolted_flange">Bolted Flange</option>
+              <option value="shear_tab">Shear Tab</option>
+            </select>
+          </div>
+          <div className="flex items-center gap-2 py-0.5">
+            <span className="text-xs text-muted w-28 shrink-0">Plate Width (mm)</span>
+            <input
+              type="number"
+              className="w-20 text-xs bg-surface border border-border rounded px-1 py-0.5"
+              defaultValue={el.plateSizeMm?.width ?? 150}
+              key={`${el.id}-plate-w`}
+              step={10}
+              onBlur={(e) => {
+                const v = Number(e.currentTarget.value);
+                if (!isNaN(v) && v > 0) {
+                  scPropChange?.('plateSizeMm', {
+                    ...(el.plateSizeMm ?? { width: 150, height: 200, thickness: 10 }),
+                    width: v,
+                  });
+                }
+              }}
+              data-testid="inspector-steel-plate-width"
+            />
+          </div>
+          <div className="flex items-center gap-2 py-0.5">
+            <span className="text-xs text-muted w-28 shrink-0">Plate Height (mm)</span>
+            <input
+              type="number"
+              className="w-20 text-xs bg-surface border border-border rounded px-1 py-0.5"
+              defaultValue={el.plateSizeMm?.height ?? 200}
+              key={`${el.id}-plate-h`}
+              step={10}
+              onBlur={(e) => {
+                const v = Number(e.currentTarget.value);
+                if (!isNaN(v) && v > 0) {
+                  scPropChange?.('plateSizeMm', {
+                    ...(el.plateSizeMm ?? { width: 150, height: 200, thickness: 10 }),
+                    height: v,
+                  });
+                }
+              }}
+              data-testid="inspector-steel-plate-height"
+            />
+          </div>
+          <div className="flex items-center gap-2 py-0.5">
+            <span className="text-xs text-muted w-28 shrink-0">Bolt Rows</span>
+            <input
+              type="number"
+              className="w-20 text-xs bg-surface border border-border rounded px-1 py-0.5"
+              defaultValue={el.boltRows ?? 2}
+              key={`${el.id}-bolt-rows`}
+              min={1}
+              max={8}
+              step={1}
+              onBlur={(e) => {
+                const v = Math.round(Number(e.currentTarget.value));
+                if (!isNaN(v) && v >= 1 && v <= 8) scPropChange?.('boltRows', v);
+              }}
+              data-testid="inspector-steel-bolt-rows"
+            />
+          </div>
+          <div className="flex items-center gap-2 py-0.5">
+            <span className="text-xs text-muted w-28 shrink-0">Bolt Columns</span>
+            <input
+              type="number"
+              className="w-20 text-xs bg-surface border border-border rounded px-1 py-0.5"
+              defaultValue={el.boltCols ?? 2}
+              key={`${el.id}-bolt-cols`}
+              min={1}
+              max={8}
+              step={1}
+              onBlur={(e) => {
+                const v = Math.round(Number(e.currentTarget.value));
+                if (!isNaN(v) && v >= 1 && v <= 8) scPropChange?.('boltCols', v);
+              }}
+              data-testid="inspector-steel-bolt-cols"
+            />
+          </div>
+          <div className="flex items-center gap-2 py-0.5">
+            <span className="text-xs text-muted w-28 shrink-0">Bolt Diameter (mm)</span>
+            <input
+              type="number"
+              className="w-20 text-xs bg-surface border border-border rounded px-1 py-0.5"
+              defaultValue={el.boltDiameterMm ?? 20}
+              key={`${el.id}-bolt-diam`}
+              step={2}
+              onBlur={(e) => {
+                const v = Number(e.currentTarget.value);
+                if (!isNaN(v) && v > 0) scPropChange?.('boltDiameterMm', v);
+              }}
+              data-testid="inspector-steel-bolt-diameter"
+            />
+          </div>
+          <FieldRow label="Host Element" value={el.hostElementId} mono />
         </div>
       );
     }
@@ -1817,6 +2036,24 @@ export function InspectorPropertiesFor(
                 if (!isNaN(v) && v > 0) ceilPropChange?.('thicknessMm', v);
               }}
               data-testid="inspector-ceiling-thickness"
+            />
+          </div>
+          <div className="flex items-center gap-2 py-0.5">
+            <span className="text-xs text-muted w-28 shrink-0">Grid tile (mm)</span>
+            <input
+              type="number"
+              className="w-20 text-xs bg-surface border border-border rounded px-1 py-0.5"
+              defaultValue={el.gridPatternMm ?? 0}
+              key={`${el.id}-grid`}
+              step={100}
+              min={0}
+              max={3000}
+              aria-label="Ceiling grid tile size in millimetres"
+              onBlur={(e) => {
+                const v = Number(e.currentTarget.value);
+                if (!isNaN(v)) ceilPropChange?.('gridPatternMm', v === 0 ? null : v);
+              }}
+              data-testid="inspector-ceiling-grid-size"
             />
           </div>
           <FieldRow label="Boundary Vertices" value={String(el.boundaryMm?.length ?? 0)} mono />
@@ -2590,6 +2827,51 @@ export function InspectorPropertiesFor(
         </div>
       );
     }
+    case 'mass_box':
+    case 'mass_extrusion':
+    case 'mass_revolution': {
+      return (
+        <div className="flex flex-col gap-2">
+          {el.kind === 'mass_box' && (
+            <>
+              <FieldRow label="Width (mm)" value={String(el.widthMm)} />
+              <FieldRow label="Depth (mm)" value={String(el.depthMm)} />
+              <FieldRow label="Height (mm)" value={String(el.heightMm)} />
+            </>
+          )}
+          {el.kind === 'mass_extrusion' && (
+            <FieldRow label="Height (mm)" value={String(el.heightMm)} />
+          )}
+          <div className="border-t border-border pt-1">
+            <div className="px-0 pb-0.5 text-[10px] font-semibold uppercase tracking-wide text-muted">
+              Generate from Mass
+            </div>
+            <div className="flex flex-col gap-1 pt-0.5">
+              <button
+                type="button"
+                data-testid="mass-gen-floors-btn"
+                className="text-xs rounded border border-border px-2 py-0.5 text-muted hover:text-foreground text-left"
+                onClick={() =>
+                  onDispatchCommand?.({ type: 'generate_floors_from_mass', massId: el.id })
+                }
+              >
+                Generate Floors by Level
+              </button>
+              <button
+                type="button"
+                data-testid="mass-apply-curtain-btn"
+                className="text-xs rounded border border-border px-2 py-0.5 text-muted hover:text-foreground text-left"
+                onClick={() =>
+                  onDispatchCommand?.({ type: 'apply_curtain_to_mass', massId: el.id })
+                }
+              >
+                Apply Curtain System
+              </button>
+            </div>
+          </div>
+        </div>
+      );
+    }
     default:
       const materialAssignment = GenericMaterialAssignmentFor({
         el,
@@ -3264,6 +3546,26 @@ export function InspectorRoomEditor({
           placeholder={r('optional')}
           inputMode="decimal"
           onBlur={(e) => onPersistProperty('targetAreaM2', e.target.value.trim())}
+        />
+      </label>
+      <label className={LABEL_CLS}>
+        Room Number
+        <input
+          className={INPUT_CLS}
+          defaultValue={el.numberLabel ?? ''}
+          key={`rm-num-${el.id}-${el.numberLabel ?? ''}-${revision}`}
+          data-testid="inspector-room-number"
+          onBlur={(e) => onPersistProperty('numberLabel', e.target.value.trim())}
+        />
+      </label>
+      <label className={LABEL_CLS}>
+        Gross Area
+        <input
+          className={INPUT_CLS}
+          value={`${(polygonAreaMm2(el.outlineMm) / 1e6).toFixed(2)} m²`}
+          readOnly
+          data-testid="inspector-room-gross-area"
+          onChange={() => undefined}
         />
       </label>
       <label className={LABEL_CLS}>

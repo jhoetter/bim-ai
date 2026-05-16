@@ -413,6 +413,10 @@ export type StoreState = {
   groupRegistry: GroupRegistry;
   setGroupRegistry: (r: GroupRegistry) => void;
 
+  /** §8.9.3: when non-null, the user is editing this group definition's contents. */
+  groupEditModeDefinitionId: string | null;
+  setGroupEditModeDefinitionId: (id: string | null) => void;
+
   /** §14.6 — client-side camera paths from walkthrough captures; not persisted to server. */
   cameraPaths: CameraPathElem[];
   addCameraPath: (path: CameraPathElem) => void;

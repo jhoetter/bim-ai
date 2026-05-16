@@ -137,11 +137,15 @@ export const WORKSPACE_UI_STORE_KEYS = [
   'perspectiveId',
   'roofJoinPreview',
   'thinLinesEnabled',
+  'groupRegistry',
+  'groupEditModeDefinitionId',
   'setWorkspaceLayoutPreset',
   'setActiveWorkspaceId',
   'setPerspectiveId',
   'setRoofJoinPreview',
   'toggleThinLines',
+  'setGroupRegistry',
+  'setGroupEditModeDefinitionId',
 ] as const satisfies readonly StoreKey[];
 
 export const STORE_SLICE_KEYS = {
