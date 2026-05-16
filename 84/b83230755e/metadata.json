@@ -3,7 +3,7 @@
   "checkpoint_id": "84b83230755e",
   "strategy": "manual-commit",
   "branch": "main",
-  "checkpoints_count": 6,
+  "checkpoints_count": 7,
   "files_touched": [
     "packages/web/src/plan/grip-providers/annotationGripProvider.test.ts",
     "packages/web/src/plan/grip-providers/annotationGripProvider.ts",
@@ -93,13 +93,19 @@
       "transcript": "/84/b83230755e/13/full.jsonl",
       "content_hash": "/84/b83230755e/13/content_hash.txt",
       "prompt": "/84/b83230755e/13/prompt.txt"
+    },
+    {
+      "metadata": "/84/b83230755e/14/metadata.json",
+      "transcript": "/84/b83230755e/14/full.jsonl",
+      "content_hash": "/84/b83230755e/14/content_hash.txt",
+      "prompt": "/84/b83230755e/14/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 11756884,
-    "cache_creation_tokens": 3106912,
-    "cache_read_tokens": 463080768,
-    "output_tokens": 1754297,
-    "api_call_count": 5273
+    "input_tokens": 11757146,
+    "cache_creation_tokens": 3179859,
+    "cache_read_tokens": 464557658,
+    "output_tokens": 1778072,
+    "api_call_count": 5298
   }
 }
