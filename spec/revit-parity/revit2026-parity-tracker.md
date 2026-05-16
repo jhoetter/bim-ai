@@ -906,7 +906,7 @@ Full top-down massing → BIM workflow (mass → generate walls/roof/floors from
 
 #### 12.1.1 Verknüpfungen (link Revit files, IFC files, CAD files, point clouds)
 **Status: Partial — P1**
-- Link another Revit (*.rvt) file: Not Started (no linked model workflow in bim-ai; linked model ghosting exists in code as linkedGhosting.ts but there is no UI to attach an external bim-ai project)
+- Link another bim-ai model file: Partial — `link_model` element type exists in `@bim-ai/core`; `ManageLinksDialog.tsx` provides full UI to add/delete/align/pin linked models; `linkedGhosting.ts` ghosts linked meshes with blue tint at 0.6 opacity; wired into Workspace via `manageLinksOpen` state and ProjectMenu; ghosting tests in `src/viewport/linkedGhosting.test.ts` and `src/export/linkedModelGhosting.test.ts`
 - Link IFC: Not Started
 - Link CAD (DWG/DXF/DGN): DXF underlay exists (dxfUnderlay.ts — Partial)
 - Link PDF: Not Started

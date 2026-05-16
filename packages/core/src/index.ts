@@ -1194,6 +1194,10 @@ export type Element =
       wallTypeId?: string | null;
       baseConstraintLevelId?: string | null;
       topConstraintLevelId?: string | null;
+      /** WP-C C4: host element id (roof or floor) that constrains the wall top. When set, wall top follows host geometry. */
+      topConstraintHostId?: string | null;
+      /** WP-C C4: which face of the host element the wall attaches to ('bottom' for underside of roof/floor). */
+      topConstraintHostFace?: 'bottom' | 'top' | null;
       baseConstraintOffsetMm?: number;
       topConstraintOffsetMm?: number;
       roofAttachmentId?: string | null;
@@ -1693,6 +1697,8 @@ export type Element =
       optionId?: string | null;
       /** DSC-V3-01: discipline tag. */
       discipline?: DisciplineTag | null;
+      /** WP-C C2: when true, the stair spans from baseLevelId to topLevelId across all intermediate levels. */
+      multiStorey?: boolean;
     }
   | {
       kind: 'slab_opening';
