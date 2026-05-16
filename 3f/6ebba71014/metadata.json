@@ -5,7 +5,9 @@
   "checkpoints_count": 1,
   "files_touched": [
     "packages/web/src/Viewport.tsx",
-    "packages/web/src/state/storeCoercion.ts"
+    "packages/web/src/state/storeCoercion.ts",
+    "packages/web/src/state/storeTypes.ts",
+    "packages/web/src/workspace/WorkspaceRightRail.tsx"
   ],
   "sessions": [
     {
@@ -19,13 +21,19 @@
       "transcript": "/3f/6ebba71014/1/full.jsonl",
       "content_hash": "/3f/6ebba71014/1/content_hash.txt",
       "prompt": "/3f/6ebba71014/1/prompt.txt"
+    },
+    {
+      "metadata": "/3f/6ebba71014/2/metadata.json",
+      "transcript": "/3f/6ebba71014/2/full.jsonl",
+      "content_hash": "/3f/6ebba71014/2/content_hash.txt",
+      "prompt": "/3f/6ebba71014/2/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 3319937,
-    "cache_creation_tokens": 191890,
-    "cache_read_tokens": 71919242,
-    "output_tokens": 223429,
-    "api_call_count": 1447
+    "input_tokens": 3320233,
+    "cache_creation_tokens": 469141,
+    "cache_read_tokens": 96374738,
+    "output_tokens": 369373,
+    "api_call_count": 1731
   }
 }
