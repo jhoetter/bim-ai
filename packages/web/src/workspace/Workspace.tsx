@@ -131,6 +131,7 @@ import { ManageGlobalParamsDialog } from './ManageGlobalParamsDialog';
 import type { SimpleGlobalParam } from './ManageGlobalParamsDialog';
 import { DimensionStyleDialog } from './DimensionStyleDialog';
 import { ViewRangeDialog } from './ViewRangeDialog';
+import { VisibilityGraphicsDialog } from './VisibilityGraphicsDialog';
 import {
   coerceCheckpointRetentionLimit,
   DEFAULT_CHECKPOINT_RETENTION_LIMIT,
@@ -841,6 +842,8 @@ export function Workspace(): JSX.Element {
   const setViewerMode = useBimStore((s) => s.setViewerMode);
   const planTool = useBimStore((s) => s.planTool);
   const setPlanTool = useBimStore((s) => s.setPlanTool);
+  const activeToolPhase = useBimStore((s) => s.activeToolPhase);
+  const hoveredElementKind = useBimStore((s) => s.hoveredElementKind);
   // EDT-V3-05: loop mode state for status bar message.
   const loopMode = useToolPrefs((s) => s.loopMode);
   const draftGridVisible = useToolPrefs((s) => s.draftGridVisible);
@@ -1073,6 +1076,7 @@ export function Workspace(): JSX.Element {
   const [manageGlobalParamsOpen, setManageGlobalParamsOpen] = useState(false);
   const [dimStyleOpen, setDimStyleOpen] = useState(false);
   const [viewRangeOpen, setViewRangeOpen] = useState(false);
+  const [vgOpen, setVgOpen] = useState(false);
   const [projectInfoOpen, setProjectInfoOpen] = useState(false);
   const [trueNorthActive, setTrueNorthActive] = useState(false);
   const lensMode = useBimStore((s) => s.lensMode);
@@ -1746,6 +1750,24 @@ export function Workspace(): JSX.Element {
   /* ── Semantic command dispatch (from PlanCanvas / Viewport) ────────── */
   const onSemanticCommand = useCallback(
     async (cmd: Record<string, unknown>): Promise<void> => {
+      // §2.1.4: client-only category visual override patch
+      if (cmd.type === 'update_category_override') {
+        const { elementsById: cur } = useBimStore.getState();
+        const pv = cur[cmd.planViewId as string];
+        if (pv && pv.kind === 'plan_view') {
+          const prevOverrides = (pv.categoryOverrides ?? {}) as Record<string, unknown>;
+          const next =
+            cmd.patch === null
+              ? Object.fromEntries(
+                  Object.entries(prevOverrides).filter(([k]) => k !== (cmd.category as string)),
+                )
+              : { ...prevOverrides, [cmd.category as string]: cmd.patch };
+          useBimStore.setState({
+            elementsById: { ...cur, [pv.id]: { ...pv, categoryOverrides: next } },
+          });
+        }
+        return;
+      }
       // §8.9.3: client-only group edit mode — no server round-trip
       if (cmd.type === 'editGroup') {
         useBimStore.getState().setGroupEditModeDefinitionId(cmd.groupDefinitionId as string);
@@ -3870,6 +3892,7 @@ export function Workspace(): JSX.Element {
           onOpenManageGlobalParams={() => setManageGlobalParamsOpen(true)}
           onOpenDimensionStyle={() => setDimStyleOpen(true)}
           onOpenViewRange={() => setViewRangeOpen(true)}
+          onOpenVisibilityGraphics={() => setVgOpen(true)}
           sheetReviewMode={sheetReviewMode}
           onSheetReviewModeChange={setSheetReviewMode}
           sheetMarkupShape={sheetMarkupShape}
@@ -4282,6 +4305,7 @@ export function Workspace(): JSX.Element {
           openManagePhases: () => setManagePhasesOpen(true),
           openDimensionStyle: () => setDimStyleOpen(true),
           openViewRange: () => setViewRangeOpen(true),
+          openVisibilityGraphics: () => setVgOpen(true),
         }}
       />
       <FamilyLibraryPanel
@@ -4527,6 +4551,26 @@ export function Workspace(): JSX.Element {
         elementsById={elementsById}
         onSemanticCommand={onSemanticCommand}
       />
+      {vgOpen && activePlanViewId && elementsById[activePlanViewId]?.kind === 'plan_view' ? (
+        <VisibilityGraphicsDialog
+          open={vgOpen}
+          onClose={() => setVgOpen(false)}
+          planView={
+            elementsById[activePlanViewId] as Extract<
+              (typeof elementsById)[string],
+              { kind: 'plan_view' }
+            >
+          }
+          onOverrideChange={(category, patch) =>
+            void onSemanticCommand({
+              type: 'update_category_override',
+              planViewId: activePlanViewId,
+              category,
+              patch,
+            })
+          }
+        />
+      ) : null}
       <ManageGlobalParamsDialog
         isOpen={manageGlobalParamsOpen}
         params={
@@ -4786,6 +4830,9 @@ export function Workspace(): JSX.Element {
             onDriftClick={() => setManageLinksOpen(true)}
             activityUnreadCount={activityUnreadCount}
             onActivityClick={toggleActivityDrawer}
+            planTool={planTool}
+            toolPhase={activeToolPhase}
+            hoveredElementKind={hoveredElementKind}
           />
         }
       />

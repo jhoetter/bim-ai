@@ -14,6 +14,7 @@ import type { WorkspaceId } from '../chrome/workspaces';
 import type { CollaborationConflictQueueV1 } from '../../lib/collaborationConflictQueue';
 import type { TemporaryVisibility } from '../../state/storeTypes';
 import { DriftBadge } from './DriftBadge';
+import { getStatusHint } from './statusBarHints';
 
 const TOOL_VERB: Record<string, string> = {
   wall: 'Drawing wall',
@@ -136,6 +137,12 @@ export interface StatusBarProps {
   selectionCount?: number;
   temporaryVisibility?: TemporaryVisibility | null;
   onClearTemporaryVisibility?: () => void;
+  /** §1.6.9 — active plan tool name (null = select mode). */
+  planTool?: string | null;
+  /** §1.6.9 — current grammar phase for the active tool. */
+  toolPhase?: string | null;
+  /** §1.6.9 — element kind under the cursor (null when nothing hit). */
+  hoveredElementKind?: string | null;
 }
 
 export function StatusBar({
@@ -157,7 +164,17 @@ export function StatusBar({
   jobsCounts,
   onJobsClick,
   selectionCount = 0,
+  planTool,
+  toolPhase,
+  hoveredElementKind,
 }: StatusBarProps): JSX.Element {
+  const hintText = (() => {
+    if (!planTool && hoveredElementKind) {
+      return `${hoveredElementKind.replace(/_/g, ' ')} (click to select)`;
+    }
+    return getStatusHint(planTool ?? null, toolPhase ?? null);
+  })();
+
   return (
     <div
       data-testid="status-bar"
@@ -165,6 +182,14 @@ export function StatusBar({
       style={{ ...statusStyle, ...disciplineStripeStyle(activeWorkspaceId) }}
       className="relative flex w-full items-center gap-2 overflow-hidden whitespace-nowrap border-t border-border bg-surface px-2 text-[11px] text-muted sm:px-4"
     >
+      <span data-testid="status-bar-hint" className="min-w-0 shrink truncate text-muted">
+        {hintText}
+      </span>
+      {selectionCount > 0 ? (
+        <span data-testid="status-bar-selection" className="shrink-0 text-muted">
+          {selectionCount} {selectionCount === 1 ? 'element selected' : 'elements selected'}
+        </span>
+      ) : null}
       <div
         data-testid="status-bar-priority-cluster"
         className="ml-auto flex min-w-0 shrink-0 items-center gap-1 sm:gap-3"

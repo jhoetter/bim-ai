@@ -1759,10 +1759,28 @@ export function PlanCanvas({
           canvas.height = 64;
           const ctx2 = canvas.getContext('2d');
           if (ctx2) {
-            ctx2.fillStyle = textNoteReveal ? '#ff00ff' : p.colour;
-            ctx2.font = `${Math.max(12, Math.round(48))}px sans-serif`;
+            const fillColor = textNoteReveal ? '#ff00ff' : (p.colorHex ?? p.colour);
+            const fontStyle = p.italic ? 'italic ' : '';
+            const fontWeight = p.bold ? 'bold ' : '';
+            const fontFace = p.fontFamily ?? 'sans-serif';
+            const fontPx = Math.max(12, Math.round(48));
+            ctx2.font = `${fontStyle}${fontWeight}${fontPx}px ${fontFace}`;
+            ctx2.fillStyle = fillColor;
+            ctx2.textAlign = p.horizontalAlign ?? 'left';
             ctx2.textBaseline = 'top';
-            ctx2.fillText(p.text, 4, 4);
+            const textX =
+              p.horizontalAlign === 'center' ? 128 : p.horizontalAlign === 'right' ? 252 : 4;
+            ctx2.fillText(p.text, textX, 4);
+            if (p.underline) {
+              const metrics = ctx2.measureText(p.text);
+              const lineY = 4 + fontPx + 2;
+              ctx2.strokeStyle = fillColor;
+              ctx2.lineWidth = Math.max(1, fontPx / 24);
+              ctx2.beginPath();
+              ctx2.moveTo(textX, lineY);
+              ctx2.lineTo(textX + metrics.width, lineY);
+              ctx2.stroke();
+            }
           }
           const tex = new THREE.CanvasTexture(canvas);
           tex.minFilter = THREE.LinearFilter;

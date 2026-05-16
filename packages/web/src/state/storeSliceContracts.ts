@@ -83,6 +83,8 @@ export const VIEWPORT_STORE_KEYS = [
 
 export const PLAN_AUTHORING_STORE_KEYS = [
   'planTool',
+  'activeToolPhase',
+  'hoveredElementKind',
   'planPresentationPreset',
   'wallLocationLine',
   'applyAreaRules',
@@ -99,6 +101,8 @@ export const PLAN_AUTHORING_STORE_KEYS = [
   'lensMode',
   'setViewerMode',
   'setPlanTool',
+  'setActiveToolPhase',
+  'setHoveredElementKind',
   'setActiveLevelId',
   'setWallLocationLine',
   'setApplyAreaRules',

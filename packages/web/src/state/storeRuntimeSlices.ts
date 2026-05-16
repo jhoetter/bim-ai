@@ -26,6 +26,8 @@ export type CollaborationRuntimeSlice = Pick<
 export type PlanAuthoringRuntimeSlice = Pick<
   StoreState,
   | 'planTool'
+  | 'activeToolPhase'
+  | 'hoveredElementKind'
   | 'activePaintMaterialId'
   | 'wallLocationLine'
   | 'applyAreaRules'
@@ -56,6 +58,8 @@ export type PlanAuthoringRuntimeSlice = Pick<
   | 'lensMode'
   | 'setViewerMode'
   | 'setPlanTool'
+  | 'setActiveToolPhase'
+  | 'setHoveredElementKind'
   | 'setActivePaintMaterialId'
   | 'setActiveLevelId'
   | 'setWallLocationLine'
@@ -203,6 +207,8 @@ export function createCollaborationRuntimeSlice(
 export function createPlanAuthoringRuntimeSlice(set: StoreSet): PlanAuthoringRuntimeSlice {
   return {
     planTool: 'select',
+    activeToolPhase: null,
+    hoveredElementKind: null,
     activePaintMaterialId: null,
     wallLocationLine: 'wall-centerline',
     applyAreaRules: true,
@@ -238,6 +244,8 @@ export function createPlanAuthoringRuntimeSlice(set: StoreSet): PlanAuthoringRun
 
     setViewerMode: (m) => set({ viewerMode: m }),
     setPlanTool: (t) => set({ planTool: t }),
+    setActiveToolPhase: (activeToolPhase) => set({ activeToolPhase }),
+    setHoveredElementKind: (hoveredElementKind) => set({ hoveredElementKind }),
     setActivePaintMaterialId: (activePaintMaterialId) => set({ activePaintMaterialId }),
     setActiveLevelId: (id) => set({ activeLevelId: id }),
     setWallLocationLine: (wallLocationLine) => set({ wallLocationLine }),

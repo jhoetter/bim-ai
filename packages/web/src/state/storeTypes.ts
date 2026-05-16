@@ -223,6 +223,10 @@ export type StoreState = {
   selectedIds: string[];
   viewerMode: ViewerMode;
   planTool: PlanTool;
+  /** §1.6.9 — grammar phase string for the active tool (e.g. 'idle', 'drawing'). */
+  activeToolPhase: string | null;
+  /** §1.6.9 — element kind under the cursor while in select mode. */
+  hoveredElementKind: string | null;
   activePaintMaterialId: string | null;
   activeLevelId?: string;
   planPresentationPreset: PlanPresentationPreset;
@@ -349,6 +353,8 @@ export type StoreState = {
   userFamilies?: Record<string, FamilyDefinition>;
   setViewerMode: (m: ViewerMode) => void;
   setPlanTool: (t: PlanTool) => void;
+  setActiveToolPhase: (phase: string | null) => void;
+  setHoveredElementKind: (kind: string | null) => void;
   setActivePaintMaterialId: (id: string | null) => void;
   setActiveLevelId: (id: string | undefined) => void;
   setWallLocationLine: (loc: WallLocationLine) => void;
