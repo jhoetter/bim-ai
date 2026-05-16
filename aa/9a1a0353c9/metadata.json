@@ -128,6 +128,12 @@
       "transcript": "/aa/9a1a0353c9/19/full.jsonl",
       "content_hash": "/aa/9a1a0353c9/19/content_hash.txt",
       "prompt": "/aa/9a1a0353c9/19/prompt.txt"
+    },
+    {
+      "metadata": "/aa/9a1a0353c9/20/metadata.json",
+      "transcript": "/aa/9a1a0353c9/20/full.jsonl",
+      "content_hash": "/aa/9a1a0353c9/20/content_hash.txt",
+      "prompt": "/aa/9a1a0353c9/20/prompt.txt"
     }
   ],
   "token_usage": {
