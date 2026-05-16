@@ -618,7 +618,7 @@ Reflected ceiling plans (RCP) are implemented as `planViewSubtype: 'ceiling_plan
 - Standard 3D orthographic/perspective: Done
 - ViewCube navigation: Done (Partial parity — see Ch. 3)
 - Section box: Done (sectionBox.ts)
-- Named locked 3D view: Partial — "Save 3D View As…" dialog (`Save3dViewAsDialog.tsx`) prompts for a name before persisting a `saved_view` element with camera + clip state (D5). `saved_view` rows appear in ProjectBrowser. Lock toggle and sheet placement not yet implemented.
+- Named locked 3D view: Partial — "Save 3D View As…" dialog (`Save3dViewAsDialog.tsx`) prompts for a name before persisting a `saved_view` element with camera + clip state (D5). `saved_view` rows appear in ProjectBrowser. Lock toggle implemented: right-click → Lock/Unlock Camera in WorkspaceLeftRail + ProjectBrowserV3 context menus; `isLocked` field on `SavedViewElem` blocks pan/orbit in Viewport.tsx. Sheet placement not yet implemented.
 
 #### 6.1.4 Außenansichten (elevation views: North, South, East, West)
 **Status: Partial — P1**
@@ -1059,8 +1059,8 @@ Custom render backgrounds (sky texture, gradient, image) are not implemented.
 Camera rig (cameraRig.ts) and orbit viewpoint persistence exist. Named perspective camera views placeable in the project browser (like Revit's camera views) are Partial — orbit viewpoints are saved but not fully surfaced as named project views.
 
 ### 14.6 Walkthroughs (animated camera path / flythrough)
-**Status: Not Started — P1**
-Walk mode (walkMode.ts) allows interactive first-person navigation. Revit-style walkthrough path (define a camera path with keyframes, export as animation) is Not Started.
+**Status: Partial — P1**
+Walk mode (walkMode.ts) allows interactive first-person navigation. Revit-style walkthrough path: `CameraPathElem` + `WalkthroughKeyframe` types added to core; `reduceWalkthrough` grammar (keyframe capture → commit) wired into Viewport.tsx — left-click captures camera pose as keyframe, Enter commits path; paths stored as client-side `cameraPaths[]` in Zustand; listed under "Walkthroughs" in WorkspaceLeftRail with 2-second-step playback on click. Missing: smooth RAF interpolation, path export.
 
 ### 14.7 Übungsfragen
 **Status: N/A**
@@ -1143,8 +1143,8 @@ None confirmed as blocking.
 - **Global parameters** (Ch. 3.8) — not started; new concept requiring a project-level parameter table; extend `project_settings` with a `globalParams` map + dialog + formula binding
 - **DWG/DGN export** (Ch. 12.4.3) — DXF export done (E2); DWG/DGN format not started
 - **Sheet revision title block rendering** (Ch. 6.3) — `ManageRevisionsDialog.tsx` + `revision`/`sheet_revision` element types done (D6); **missing**: revision table rendering in `SheetCanvas.tsx` / `sheetTitleblockAuthoring.tsx` title block area
-- **Named locked 3D view lock + sheet placement** (Ch. 6.1.3) — `Save3dViewAsDialog.tsx` + ProjectBrowser `saved_view` rows done (D5); **missing**: lock toggle (prevent camera changes) and placing a locked view as a viewport on a sheet
-- **Walkthrough path animation** (Ch. 14.6) — not started; no camera-path element type or animation loop
+- **Named locked 3D view sheet placement** (Ch. 6.1.3) — lock toggle done (right-click Lock/Unlock Camera, `isLocked` on `SavedViewElem`, blocks pan/orbit); **still missing**: placing a locked view as a viewport on a sheet
+- **Walkthrough smooth RAF playback** (Ch. 14.6) — keyframe capture + commit + `CameraPathElem` storage + sequential step playback done; **still missing**: smooth RAF-interpolated animation loop + path export
 
 ### Top P2 Gaps (useful but workaroundable)
 

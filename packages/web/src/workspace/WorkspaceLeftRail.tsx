@@ -1,7 +1,7 @@
 import type { JSX, RefObject } from 'react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
-import type { Element } from '@bim-ai/core';
+import type { Element, SavedViewElem } from '@bim-ai/core';
 import { Icons } from '@bim-ai/ui';
 
 import { useBimStore } from '../state/store';
@@ -124,6 +124,7 @@ export function WorkspaceLeftRail({
   const select = useBimStore((s) => s.select);
   const setOrbitCameraFromViewpointMm = useBimStore((s) => s.setOrbitCameraFromViewpointMm);
   const setActiveViewpointId = useBimStore((s) => s.setActiveViewpointId);
+  const cameraPaths = useBimStore((s) => s.cameraPaths);
   const [contextMenu, setContextMenu] = useState<PrimaryNavContextMenuState | null>(null);
 
   const browserSections = useMemo(
@@ -194,11 +195,50 @@ export function WorkspaceLeftRail({
       onCreateSheet,
     ],
   );
+
+  const walkthroughSection = useMemo(
+    () =>
+      cameraPaths.length > 0
+        ? [
+            {
+              id: 'walkthroughs',
+              label: 'Walkthroughs',
+              rows: cameraPaths.map((cp) => ({
+                id: cp.id,
+                label: cp.name,
+                hint: `${cp.keyframes.length} keyframes`,
+                renamable: false,
+              })),
+            },
+          ]
+        : [],
+    [cameraPaths],
+  );
+
+  const allSections = useMemo(
+    () => [...primarySections, ...walkthroughSection],
+    [primarySections, walkthroughSection],
+  );
+
   const initials = (userDisplayName || userId || 'User').slice(0, 2).toUpperCase();
   const accountStatus = modelId ? `Model ${modelId} · Rev ${revision ?? 0}` : 'No model loaded';
 
   const activateRow = useCallback(
     (id: string) => {
+      // §14.6 — camera path playback: step through keyframes sequentially.
+      const cp = cameraPaths.find((p) => p.id === id);
+      if (cp) {
+        cp.keyframes.forEach((kf, i) => {
+          setTimeout(() => {
+            setOrbitCameraFromViewpointMm({
+              position: { xMm: kf.positionMm.x, yMm: kf.positionMm.y, zMm: kf.positionMm.z },
+              target: { xMm: kf.targetMm.x, yMm: kf.targetMm.y, zMm: kf.targetMm.z },
+              up: { xMm: 0, yMm: 0, zMm: 1 },
+            });
+          }, i * 2000);
+        });
+        return;
+      }
       const el = elementsById[id];
       if (!el) return;
       if (el.kind === 'plan_view') {
@@ -251,6 +291,7 @@ export function WorkspaceLeftRail({
     },
     [
       activatePlanView,
+      cameraPaths,
       elementsById,
       onSetModeOnly,
       onOpenProjectSettings,
@@ -325,7 +366,7 @@ export function WorkspaceLeftRail({
       ) : null}
       <div className="min-h-0 flex-1 overflow-y-auto">
         <LeftRail
-          sections={primarySections}
+          sections={allSections}
           activeRowId={activeViewTargetId ?? activePlanViewId ?? activeViewpointId ?? selectedId}
           onRowActivate={activateRow}
           onRowContextMenu={(rowId, position) => {
@@ -422,6 +463,28 @@ export function WorkspaceLeftRail({
               New Reflected Ceiling Plan
             </button>
           )}
+          {(contextElement as unknown as SavedViewElem | undefined)?.kind === 'saved_view' &&
+            onSemanticCommand && (
+              <button
+                type="button"
+                role="menuitem"
+                data-testid="primary-nav-context-lock"
+                className="block w-full px-3 py-1.5 text-left hover:bg-surface-strong"
+                onClick={() => {
+                  const sv = contextElement as unknown as SavedViewElem;
+                  void onSemanticCommand({
+                    type: 'update_saved_view',
+                    id: sv.id,
+                    isLocked: !sv.isLocked,
+                  });
+                  setContextMenu(null);
+                }}
+              >
+                {(contextElement as unknown as SavedViewElem).isLocked
+                  ? 'Unlock Camera'
+                  : 'Lock Camera'}
+              </button>
+            )}
           <button
             type="button"
             role="menuitem"

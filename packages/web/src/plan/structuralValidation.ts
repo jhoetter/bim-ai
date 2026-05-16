@@ -1,5 +1,11 @@
 import type { Element } from '@bim-ai/core';
 
+import {
+  collectWallConnectivity,
+  wallConnectivityToPlanJoinRecords,
+  type WallConnectivityWall,
+} from '../geometry/wallConnectivity';
+
 export type ValidationSeverity = 'error' | 'warning';
 
 export interface ValidationIssue {
@@ -200,6 +206,23 @@ export function validateHostedElementSpans(
   return issues;
 }
 
+/** Detect wall endpoint pairs that share a vertex but cannot be cleanly joined (parallel/skewed geometry). */
+export function findJoinCleanupFailures(walls: WallElem[]): ValidationIssue[] {
+  const wallsById: Record<string, WallConnectivityWall> = Object.fromEntries(
+    walls.map((w) => [w.id, w as WallConnectivityWall]),
+  );
+  const joins = collectWallConnectivity(walls as WallConnectivityWall[]);
+  const records = wallConnectivityToPlanJoinRecords(joins, wallsById);
+  return records
+    .filter((r) => r.joinKind === 'unsupported_skew')
+    .map((r) => ({
+      code: 'join_cleanup_failure',
+      severity: 'warning' as ValidationSeverity,
+      elementIds: [...r.wallIds],
+      message: `Walls "${r.wallIds[0]}" and "${r.wallIds[1]}" share an endpoint but cannot be joined — parallel or skewed geometry.`,
+    }));
+}
+
 /** Run all structural validation checks and return a flat list of issues. */
 export function runStructuralValidation(elementsById: Record<string, Element>): ValidationIssue[] {
   const issues: ValidationIssue[] = [];
@@ -207,6 +230,7 @@ export function runStructuralValidation(elementsById: Record<string, Element>): 
   const walls = Object.values(elementsById).filter((e): e is WallElem => e.kind === 'wall');
 
   issues.push(...findDuplicateWalls(walls));
+  issues.push(...findJoinCleanupFailures(walls));
   issues.push(...findOrphanedHostedElements(elementsById));
   issues.push(...validateHostedElementSpans(elementsById));
 

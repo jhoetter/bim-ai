@@ -2069,10 +2069,18 @@ export type ProjectBrowserProps = {
   onDuplicateView: (viewId: string) => void;
   /** D7: optional callback for the "Properties" context-menu action. */
   onPropertiesView?: (viewId: string) => void;
+  /** §6.1.3 — optional lock/unlock toggle for saved_view rows. */
+  onToggleLockView?: (viewId: string) => void;
   collapsed?: boolean;
 };
 
-type CtxMenu = { viewId: string; x: number; y: number } | null;
+type CtxMenu = {
+  viewId: string;
+  x: number;
+  y: number;
+  isSavedView?: boolean;
+  isLocked?: boolean;
+} | null;
 
 /** Derive a discipline label from element tags when present. */
 function disciplineLabel(el: Element): string | null {
@@ -2115,6 +2123,7 @@ export function ProjectBrowserV3({
   onDeleteView,
   onDuplicateView,
   onPropertiesView,
+  onToggleLockView,
   collapsed = false,
 }: ProjectBrowserProps): JSX.Element {
   const [search, setSearch] = useState('');
@@ -2172,7 +2181,10 @@ export function ProjectBrowserV3({
   const closeCtx = useCallback(() => setCtxMenu(null), []);
 
   const handleRowRightClick = (viewId: string, x: number, y: number) => {
-    setCtxMenu({ viewId, x, y });
+    const el = elements.find((e) => e.id === viewId);
+    const isSavedView = (el as { kind?: string } | undefined)?.kind === 'saved_view';
+    const isLocked = isSavedView ? !!(el as { isLocked?: boolean } | undefined)?.isLocked : false;
+    setCtxMenu({ viewId, x, y, isSavedView, isLocked });
   };
 
   const startRename = (viewId: string, currentName: string) => {
@@ -2541,6 +2553,15 @@ export function ProjectBrowserV3({
                 }
               : undefined
           }
+          onLockToggle={
+            onToggleLockView && ctxMenu.isSavedView
+              ? () => {
+                  onToggleLockView(ctxMenu.viewId);
+                  closeCtx();
+                }
+              : undefined
+          }
+          isLocked={ctxMenu.isLocked}
         />
       ) : null}
     </div>
@@ -2762,6 +2783,8 @@ function PbContextMenu({
   onDuplicate,
   onDelete,
   onProperties,
+  onLockToggle,
+  isLocked,
 }: {
   x: number;
   y: number;
@@ -2771,6 +2794,9 @@ function PbContextMenu({
   onDelete: () => void;
   /** D7: optional Properties action — shown when provided. */
   onProperties?: () => void;
+  /** §6.1.3 — optional lock/unlock action for saved_view rows. */
+  onLockToggle?: () => void;
+  isLocked?: boolean;
 }): JSX.Element {
   return (
     <div
@@ -2864,6 +2890,29 @@ function PbContextMenu({
           onClick={onProperties}
         >
           Properties
+        </button>
+      ) : null}
+      {onLockToggle ? (
+        <button
+          type="button"
+          data-testid="pb-ctx-lock"
+          style={{
+            display: 'block',
+            width: '100%',
+            textAlign: 'left',
+            padding: 'var(--space-1) var(--space-3)',
+            fontSize: 'var(--text-sm, 12.5px)',
+            color: 'var(--color-foreground)',
+            background: 'transparent',
+            border: 'none',
+            cursor: 'pointer',
+          }}
+          onClick={() => {
+            onLockToggle();
+            onClose();
+          }}
+        >
+          {isLocked ? 'Unlock Camera' : 'Lock Camera'}
         </button>
       ) : null}
     </div>

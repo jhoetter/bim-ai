@@ -360,6 +360,7 @@ export type ElemKind =
   | 'concept_seed'
   | 'frame'
   | 'saved_view'
+  | 'camera_path'
   | 'presentation_canvas'
   | 'brand_template'
   | 'thermal_bridge_marker'
@@ -3953,6 +3954,30 @@ export type SavedViewElem = {
   visibilityOverrides?: Record<string, unknown>;
   detailLevel?: string;
   thumbnailDataUri?: string;
+  /** When true the viewport disables all camera manipulation for this view. */
+  isLocked?: boolean;
+};
+
+export type WalkthroughKeyframe = {
+  positionMm: { x: number; y: number; z: number };
+  targetMm: { x: number; y: number; z: number };
+  fovDeg: number;
+  /** Playback time in seconds from the start of the path. */
+  timeSec: number;
+};
+
+export type CameraPathElem = {
+  kind: 'camera_path';
+  id: string;
+  name: string;
+  keyframes: WalkthroughKeyframe[];
+};
+
+export type CreateCameraPathCmd = {
+  type: 'create_camera_path';
+  id: string;
+  name: string;
+  keyframes: WalkthroughKeyframe[];
 };
 
 export type PresentationCanvasElem = {
@@ -4012,6 +4037,7 @@ export type UpdateSavedViewCmd = {
   visibilityOverrides?: Record<string, unknown>;
   detailLevel?: string;
   thumbnailDataUri?: string;
+  isLocked?: boolean;
 };
 
 export type DeleteSavedViewCmd = { type: 'delete_saved_view'; id: string };

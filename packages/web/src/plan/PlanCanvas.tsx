@@ -5030,6 +5030,7 @@ export function PlanCanvas({
           setAlignReferenceMm(null);
         } else if (planTool === 'mirror') {
           mirrorAxisStartRef.current = null;
+          setMirrorAxisSet(false);
         } else if (planTool === 'copy') {
           if (copyAnchorRef.current) {
             // First Escape: clear the anchor (cancel second click), stay in copy mode.
@@ -6834,6 +6835,65 @@ export function PlanCanvas({
                   className="flex items-center gap-2 rounded-full border border-border bg-surface px-3 py-1 text-xs shadow"
                 >
                   <span>Click near a wall to align it to the reference line</span>
+                </div>
+              </>
+            );
+          })()
+        : null}
+      {/* Mirror tool overlay: axis line from first click to cursor, plus status chip */}
+      {planTool === 'mirror' && mirrorAxisSet && mirrorAxisStartRef.current
+        ? (() => {
+            const axisStartPx = worldToScreen(mirrorAxisStartRef.current);
+            const cursorPx = hudMm ? worldToScreen(hudMm) : null;
+            return (
+              <>
+                <svg
+                  data-testid="mirror-axis-overlay"
+                  aria-hidden="true"
+                  style={{
+                    position: 'absolute',
+                    inset: 0,
+                    width: '100%',
+                    height: '100%',
+                    pointerEvents: 'none',
+                    zIndex: 15,
+                    overflow: 'visible',
+                  }}
+                >
+                  <circle
+                    cx={axisStartPx.pxX}
+                    cy={axisStartPx.pxY}
+                    r="5"
+                    fill="hsl(var(--color-accent, 220 90% 56%))"
+                    opacity="0.9"
+                  />
+                  {cursorPx ? (
+                    <line
+                      x1={axisStartPx.pxX}
+                      y1={axisStartPx.pxY}
+                      x2={cursorPx.pxX}
+                      y2={cursorPx.pxY}
+                      stroke="hsl(var(--color-accent, 220 90% 56%))"
+                      strokeWidth="1.5"
+                      strokeDasharray="8 4"
+                      opacity="0.75"
+                    />
+                  ) : null}
+                </svg>
+                <div
+                  data-testid="mirror-axis-chip"
+                  aria-live="polite"
+                  style={{
+                    position: 'absolute',
+                    bottom: 48,
+                    left: '50%',
+                    transform: 'translateX(-50%)',
+                    pointerEvents: 'none',
+                    zIndex: 20,
+                  }}
+                  className="flex items-center gap-2 rounded-full border border-border bg-surface px-3 py-1 text-xs shadow"
+                >
+                  <span>Click second point to define mirror axis</span>
                 </div>
               </>
             );

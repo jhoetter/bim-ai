@@ -43,6 +43,8 @@ import {
   WALL_LOCATION_LINE_ORDER,
   WINDOW_DEFAULTS,
   areaBoundaryRectangleFromDiagonal,
+  initialWalkthroughState,
+  reduceWalkthrough,
 } from './toolGrammar';
 
 /* ────────────────────────────────────────────────────────────────────── */
@@ -679,5 +681,55 @@ describe('Ceiling reducer', () => {
     state = reduceCeiling(state, { kind: 'click', pointMm: { xMm: 0, yMm: 0 } }).state;
     const { state: next } = reduceCeiling(state, { kind: 'cancel' });
     expect(next.phase).toBe('idle');
+  });
+});
+
+/* ────────────────────────────────────────────────────────────────────── */
+/* §14.6 Walkthrough camera path                                           */
+/* ────────────────────────────────────────────────────────────────────── */
+
+describe('reduceWalkthrough — §14.6', () => {
+  const kf = (t: number) => ({
+    positionMm: { x: 0, y: 0, z: t * 1000 },
+    targetMm: { x: 1000, y: 0, z: t * 1000 },
+    fovDeg: 60,
+    timeSec: t,
+  });
+
+  it('starts with empty keyframes', () => {
+    expect(initialWalkthroughState().keyframes).toHaveLength(0);
+  });
+
+  it('accumulates keyframes on capture-keyframe events', () => {
+    let state = initialWalkthroughState();
+    ({ state } = reduceWalkthrough(state, { kind: 'capture-keyframe', keyframe: kf(0) }));
+    ({ state } = reduceWalkthrough(state, { kind: 'capture-keyframe', keyframe: kf(3) }));
+    expect(state.keyframes).toHaveLength(2);
+  });
+
+  it('emits createCameraPath effect on commit with ≥2 keyframes', () => {
+    let state = initialWalkthroughState();
+    ({ state } = reduceWalkthrough(state, { kind: 'capture-keyframe', keyframe: kf(0) }));
+    ({ state } = reduceWalkthrough(state, { kind: 'capture-keyframe', keyframe: kf(3) }));
+    const { state: next, effect } = reduceWalkthrough(state, { kind: 'commit' });
+    expect(effect.createCameraPath).toBeDefined();
+    expect(effect.createCameraPath?.keyframes).toHaveLength(2);
+    expect(effect.stillActive).toBe(false);
+    expect(next.keyframes).toHaveLength(0);
+  });
+
+  it('does not emit createCameraPath on commit with <2 keyframes', () => {
+    let state = initialWalkthroughState();
+    ({ state } = reduceWalkthrough(state, { kind: 'capture-keyframe', keyframe: kf(0) }));
+    const { effect } = reduceWalkthrough(state, { kind: 'commit' });
+    expect(effect.createCameraPath).toBeUndefined();
+    expect(effect.stillActive).toBe(false);
+  });
+
+  it('resets state on cancel', () => {
+    let state = initialWalkthroughState();
+    ({ state } = reduceWalkthrough(state, { kind: 'capture-keyframe', keyframe: kf(0) }));
+    const { state: next } = reduceWalkthrough(state, { kind: 'cancel' });
+    expect(next.keyframes).toHaveLength(0);
   });
 });

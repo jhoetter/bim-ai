@@ -189,6 +189,11 @@ import {
 } from './viewport/directAuthoringGuards';
 import { flipWallLocationLineSide, snapWallPointToConnectivity } from './geometry/wallConnectivity';
 import { buildGroupInstance3d } from './viewport/groupInstance3d';
+import {
+  initialWalkthroughState,
+  reduceWalkthrough,
+  type WalkthroughState,
+} from './tools/toolGrammar';
 
 // KRN-14 — wire the CSG cut into meshBuilders. Side-effect at module load.
 registerDormerCutFn(applyDormerCutsToRoofGeom);
@@ -643,6 +648,7 @@ export function Viewport({
   const activeLevelIdRef = useRef(activeLevelId);
   planToolRef.current = planTool;
   activeLevelIdRef.current = activeLevelId;
+  const walkthroughStateRef = useRef<WalkthroughState>(initialWalkthroughState());
   const authoringOverlayRef = useRef<Authoring3dOverlayState | null>(null);
   authoringOverlayRef.current = authoringOverlay;
   // ANN-02: store actions for the wall context menu's command flow.
@@ -2790,6 +2796,24 @@ export function Viewport({
       } catch {
         /* noop */
       }
+      // §14.6 — walkthrough keyframe capture: left click with no drag captures current camera pose.
+      if (!dragMoved && ev.button === 0 && planToolRef.current === 'walkthrough') {
+        const pose = useBimStore.getState().orbitCameraPoseMm;
+        if (pose) {
+          const keyframe = {
+            positionMm: { x: pose.position.xMm, y: pose.position.yMm, z: pose.position.zMm },
+            targetMm: { x: pose.target.xMm, y: pose.target.yMm, z: pose.target.zMm },
+            fovDeg: 60,
+            timeSec: walkthroughStateRef.current.keyframes.length * 3,
+          };
+          const { state } = reduceWalkthrough(walkthroughStateRef.current, {
+            kind: 'capture-keyframe',
+            keyframe,
+          });
+          walkthroughStateRef.current = state;
+        }
+        return;
+      }
       if (wasDragging === 'grip' && activeGrip) {
         // EDT-03 — commit the grip drag through the engine bus.
         const spec = activeGrip.descriptor.onCommit(activeGrip.lastDeltaMm);
@@ -3282,6 +3306,28 @@ export function Viewport({
         const tag = target.tagName;
         if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
         if (target.isContentEditable) return;
+      }
+      // §14.6 — walkthrough commit (Enter) or cancel (Escape) while tool is active.
+      if (planToolRef.current === 'walkthrough') {
+        if (ev.key === 'Enter') {
+          ev.preventDefault();
+          const { state, effect } = reduceWalkthrough(walkthroughStateRef.current, {
+            kind: 'commit',
+          });
+          walkthroughStateRef.current = state;
+          if (effect.createCameraPath) {
+            const id = `cp-${Date.now().toString(36)}`;
+            useBimStore.getState().addCameraPath({
+              kind: 'camera_path',
+              id,
+              name: effect.createCameraPath.name,
+              keyframes: effect.createCameraPath.keyframes,
+            });
+          }
+        } else if (ev.key === 'Escape') {
+          walkthroughStateRef.current = initialWalkthroughState();
+        }
+        return;
       }
       const activeLineTool = activeDirect3dTool();
       if (

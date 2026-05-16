@@ -610,4 +610,49 @@ describe('ProjectBrowserV3 — D7 context menu items', () => {
     fireEvent.contextMenu(row, { clientX: 50, clientY: 50 });
     expect(queryByTestId('pb-ctx-properties')).toBeNull();
   });
+
+  it('§6.1.3 — shows Lock Camera button on saved_view right-click when onToggleLockView provided', () => {
+    const onToggleLockView = vi.fn();
+    const props = { ...makeDefaultProps(), onToggleLockView };
+    const { getByTestId, queryByTestId } = render(<ProjectBrowserV3 {...props} />);
+    const row = getByTestId('pb-view-row-sv-01').querySelector('button') as HTMLElement;
+    fireEvent.contextMenu(row, { clientX: 50, clientY: 50 });
+    expect(queryByTestId('pb-ctx-lock')).not.toBeNull();
+    expect(queryByTestId('pb-ctx-lock')?.textContent).toBe('Lock Camera');
+  });
+
+  it('§6.1.3 — Lock Camera calls onToggleLockView with saved_view id', () => {
+    const onToggleLockView = vi.fn();
+    const props = { ...makeDefaultProps(), onToggleLockView };
+    const { getByTestId } = render(<ProjectBrowserV3 {...props} />);
+    const row = getByTestId('pb-view-row-sv-01').querySelector('button') as HTMLElement;
+    fireEvent.contextMenu(row, { clientX: 50, clientY: 50 });
+    fireEvent.click(getByTestId('pb-ctx-lock'));
+    expect(onToggleLockView).toHaveBeenCalledWith('sv-01');
+  });
+
+  it('§6.1.3 — shows Unlock Camera for a locked saved_view', () => {
+    const lockedView: Element = {
+      kind: 'saved_view',
+      id: 'sv-locked',
+      baseViewId: 'vp-01',
+      name: 'Locked View',
+      isLocked: true,
+    } as unknown as Element;
+    const onToggleLockView = vi.fn();
+    const props = { ...makeDefaultProps([viewpointEl, lockedView]), onToggleLockView };
+    const { getByTestId } = render(<ProjectBrowserV3 {...props} />);
+    const row = getByTestId('pb-view-row-sv-locked').querySelector('button') as HTMLElement;
+    fireEvent.contextMenu(row, { clientX: 50, clientY: 50 });
+    expect(getByTestId('pb-ctx-lock').textContent).toBe('Unlock Camera');
+  });
+
+  it('§6.1.3 — hides lock button for viewpoint (non-saved_view) rows', () => {
+    const onToggleLockView = vi.fn();
+    const props = { ...makeDefaultProps(), onToggleLockView };
+    const { getByTestId, queryByTestId } = render(<ProjectBrowserV3 {...props} />);
+    const row = getByTestId('pb-view-row-vp-01').querySelector('button') as HTMLElement;
+    fireEvent.contextMenu(row, { clientX: 50, clientY: 50 });
+    expect(queryByTestId('pb-ctx-lock')).toBeNull();
+  });
 });

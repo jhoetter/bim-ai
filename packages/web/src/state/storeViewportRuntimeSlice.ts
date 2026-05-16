@@ -71,6 +71,8 @@ export type ViewportRuntimeSlice = Pick<
   | 'setOsmVisible'
   | 'toggleOsmLayer'
   | 'setOsmStatus'
+  | 'cameraPaths'
+  | 'addCameraPath'
 >;
 
 function writeLocalStorageString(key: string, value: string): void {
@@ -298,5 +300,8 @@ export function createViewportRuntimeSlice(set: StoreSet, get: StoreGet): Viewpo
     clearTemporaryVisibility: () => set({ temporaryVisibility: null }),
     setViewerPhaseFilter: (next) => set({ viewerPhaseFilter: next }),
     clearViewerPhaseFilter: () => set({ viewerPhaseFilter: null }),
+
+    cameraPaths: [],
+    addCameraPath: (path) => set((state) => ({ cameraPaths: [...state.cameraPaths, path] })),
   };
 }

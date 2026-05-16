@@ -1,4 +1,5 @@
 import type {
+  CameraPathElem,
   Element,
   LensMode,
   ModelDelta,
@@ -404,6 +405,10 @@ export type StoreState = {
   /** B2: model group definitions and instances (client-side, not persisted to server). */
   groupRegistry: GroupRegistry;
   setGroupRegistry: (r: GroupRegistry) => void;
+
+  /** §14.6 — client-side camera paths from walkthrough captures; not persisted to server. */
+  cameraPaths: CameraPathElem[];
+  addCameraPath: (path: CameraPathElem) => void;
 
   vvDialogOpen: boolean;
   openVVDialog: () => void;
