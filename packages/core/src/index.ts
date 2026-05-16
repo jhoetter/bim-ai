@@ -2300,6 +2300,12 @@ export type Element =
       anchor?: 'tl' | 'tc' | 'tr' | 'cl' | 'c' | 'cr' | 'bl' | 'bc' | 'br';
       rotationDeg?: number;
       colour?: string;
+      bold?: boolean | null;
+      italic?: boolean | null;
+      underline?: boolean | null;
+      fontFamily?: string | null;
+      colorHex?: string | null;
+      horizontalAlign?: 'left' | 'center' | 'right' | null;
     }
   | {
       /** ANN-05 — view-local graphical symbol (North Arrow, Stair Path, Centerline). */
@@ -2323,6 +2329,12 @@ export type Element =
       content: string;
       arrowStyle?: 'arrow' | 'dot' | 'none';
       colour?: string;
+      bold?: boolean | null;
+      italic?: boolean | null;
+      underline?: boolean | null;
+      fontFamily?: string | null;
+      colorHex?: string | null;
+      horizontalAlign?: 'left' | 'center' | 'right' | null;
     }
   | {
       kind: 'column';

@@ -23,13 +23,16 @@ const leaderText: Extract<Element, { kind: 'leader_text' }> = {
 };
 
 describe('textNoteGripProvider', () => {
-  it('emits one position grip at the text note position', () => {
+  it('emits position, rotate, and resize grips', () => {
     const grips = textNoteGripProvider.grips(textNote, {});
-    expect(grips).toHaveLength(1);
-    expect(grips[0]!.id).toBe('tn-1:position');
-    expect(grips[0]!.positionMm).toEqual({ xMm: 1000, yMm: 2000 });
-    expect(grips[0]!.shape).toBe('square');
-    expect(grips[0]!.axis).toBe('free');
+    expect(grips).toHaveLength(3);
+    const posGrip = grips.find((g) => g.id === 'tn-1:position');
+    expect(posGrip).toBeDefined();
+    expect(posGrip!.positionMm).toEqual({ xMm: 1000, yMm: 2000 });
+    expect(posGrip!.shape).toBe('square');
+    expect(posGrip!.axis).toBe('free');
+    expect(grips.find((g) => g.id === 'tn-1:text-rotate')).toBeDefined();
+    expect(grips.find((g) => g.id === 'tn-1:text-resize')).toBeDefined();
   });
 
   it('onCommit produces updateElementProperty for positionMm with delta applied', () => {

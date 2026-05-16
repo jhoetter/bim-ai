@@ -41,7 +41,60 @@ export const textNoteGripProvider: ElementGripProvider<TextNote> = {
         value: JSON.stringify({ xMm: absoluteMm, yMm: el.positionMm.yMm }),
       }),
     };
-    return [positionGrip];
+
+    // Rotation handle: 500 mm above the anchor. Dragging updates rotationDeg.
+    const rotateGrip: GripDescriptor = {
+      id: `${el.id}:text-rotate`,
+      positionMm: { xMm: el.positionMm.xMm, yMm: el.positionMm.yMm - 500 },
+      shape: 'circle',
+      axis: 'free',
+      hint: 'Drag to rotate text',
+      onDrag: () => ({ kind: 'unknown', id: el.id }),
+      onCommit: (delta): GripCommand => {
+        const angleDeg =
+          (Math.atan2(delta.xMm, -delta.yMm) * 180) / Math.PI + (el.rotationDeg ?? 0);
+        return {
+          type: 'updateElementProperty',
+          elementId: el.id,
+          key: 'rotationDeg',
+          value: String(angleDeg),
+        };
+      },
+      onNumericOverride: (absoluteDeg): GripCommand => ({
+        type: 'updateElementProperty',
+        elementId: el.id,
+        key: 'rotationDeg',
+        value: String(absoluteDeg),
+      }),
+    };
+
+    // Resize handle: bottom-right corner, sized relative to fontSizeMm.
+    const halfBoxMm = (el.fontSizeMm ?? 200) * 2;
+    const resizeGrip: GripDescriptor = {
+      id: `${el.id}:text-resize`,
+      positionMm: { xMm: el.positionMm.xMm + halfBoxMm, yMm: el.positionMm.yMm + halfBoxMm },
+      shape: 'square',
+      axis: 'free',
+      hint: 'Drag to resize text',
+      onDrag: () => ({ kind: 'unknown', id: el.id }),
+      onCommit: (delta): GripCommand => {
+        const scale = Math.max(0.1, 1 + delta.yMm / halfBoxMm);
+        return {
+          type: 'updateElementProperty',
+          elementId: el.id,
+          key: 'fontSizeMm',
+          value: String(Math.max(50, (el.fontSizeMm ?? 200) * scale)),
+        };
+      },
+      onNumericOverride: (absoluteMm): GripCommand => ({
+        type: 'updateElementProperty',
+        elementId: el.id,
+        key: 'fontSizeMm',
+        value: String(Math.max(50, absoluteMm)),
+      }),
+    };
+
+    return [positionGrip, rotateGrip, resizeGrip];
   },
 };
 

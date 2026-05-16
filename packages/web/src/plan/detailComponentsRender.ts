@@ -42,6 +42,12 @@ export type TextNotePrimitive = {
   anchor: 'tl' | 'tc' | 'tr' | 'cl' | 'c' | 'cr' | 'bl' | 'bc' | 'br';
   rotationDeg: number;
   colour: string;
+  bold: boolean;
+  italic: boolean;
+  underline: boolean;
+  fontFamily: string | null;
+  colorHex: string | null;
+  horizontalAlign: 'left' | 'center' | 'right';
 };
 
 export type AnnotationSymbolPrimitive = {
@@ -315,6 +321,12 @@ export function extractDetailComponentPrimitives(
         anchor: el.anchor ?? 'tl',
         rotationDeg: el.rotationDeg ?? 0,
         colour: el.colour ?? '#202020',
+        bold: el.bold ?? false,
+        italic: el.italic ?? false,
+        underline: el.underline ?? false,
+        fontFamily: el.fontFamily ?? null,
+        colorHex: el.colorHex ?? null,
+        horizontalAlign: el.horizontalAlign ?? 'left',
       });
     } else if (el.kind === 'annotation_symbol' && el.hostViewId === viewId) {
       out.push({
