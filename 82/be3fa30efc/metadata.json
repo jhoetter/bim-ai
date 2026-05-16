@@ -1,0 +1,26 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "82be3fa30efc",
+  "strategy": "manual-commit",
+  "branch": "main",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "packages/web/src/plan/wallParts.test.ts",
+    "packages/web/src/workspace/shell/RibbonBar.tsx"
+  ],
+  "sessions": [
+    {
+      "metadata": "/82/be3fa30efc/0/metadata.json",
+      "transcript": "/82/be3fa30efc/0/full.jsonl",
+      "content_hash": "/82/be3fa30efc/0/content_hash.txt",
+      "prompt": ""
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 25,
+    "cache_creation_tokens": 13364,
+    "cache_read_tokens": 2386869,
+    "output_tokens": 8042,
+    "api_call_count": 25
+  }
+}
