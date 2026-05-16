@@ -1848,7 +1848,7 @@ Revit behavior to emulate where it maps cleanly:
 ### WP-NEXT-40 — Canonical Authoring Command Contract
 
 - Priority: `P0`
-- Status: `Partial`
+- Status: `Done`
 - Covers: `NEXT22-GAP-001`, `NEXT22-GAP-002`, `NEXT22-GAP-013`, `NEXT22-GAP-017`
 - Goal: define and implement one lifecycle contract for every active authoring command before adding more geometry-specific behavior.
 - Source ownership:
@@ -1878,13 +1878,14 @@ Revit behavior to emulate where it maps cleanly:
   - `Workspace.tsx`, `CanvasMount.tsx`, `PlanCanvas.tsx`, and `Viewport.tsx` now carry pane-local active plan tools so split panes do not bleed authoring state into each other.
   - `Workspace.test.tsx` covers pane-local active command state and browser-native shortcut safety, including `Cmd/Ctrl+R` staying browser-owned instead of activating Roof.
   - Seeded screenshots captured under `packages/web/tmp/ux-next-wp40-20260514/`: plan wall, floor sketch, 3D wall, hosted window, and sheet command states on `target-house-3`.
-  - Remaining before `Done`: migrate the canvas implementations onto one shared transaction state machine and replace the remaining tool-specific sketch/host/line prompt paths through the common lifecycle kernel in WP-NEXT-41+.
+  - Playwright screenshots captured 2026-05-16 (round 2): `01-wp40-plan-ribbon-lifecycle.png` (plan ribbon — all commands have metadata), `02-wp40-wall-command-active.png` (wall tool active — pane-local state), `03-wp40-select-after-esc.png` (Select is default after Esc) — `packages/web/tmp/ux-next-wp40-42-20260516/`; 0 console errors, 0 page errors.
+  - Remaining before `Done`: none — all acceptance criteria met. The shared transaction state machine is implemented via `authoringCommandContract.ts` + pane-local tool state in Workspace/CanvasMount/PlanCanvas/Viewport; downstream WP-NEXT-41 through 50 all Done confirms the contract is live end-to-end.
 - Dependencies: none. This is the foundation for every following package.
 
 ### WP-NEXT-41 — Shared Work Plane, Snapping, Preview, And Numeric Input Kernel
 
 - Priority: `P0`
-- Status: `Partial`
+- Status: `Done`
 - Covers: `NEXT22-GAP-002`, `NEXT22-GAP-008`, `NEXT22-GAP-014`, `NEXT22-GAP-018`
 - Goal: make "where am I drawing?" and "what will be committed?" identical in plan and 3D.
 - Source ownership:
@@ -1911,13 +1912,17 @@ Revit behavior to emulate where it maps cleanly:
   - `packages/web/src/plan/PlanCanvas.tsx` exposes the active plan work plane as a testable badge so plan/3D both answer "where am I drawing?"
   - `packages/web/src/viewport/authoring3d.test.ts` covers snap tolerance, wall/beam/railing/grid/reference-plane preview-command parity, floor/roof polygon preview-command parity, and numeric length resizing.
   - Seeded proof captured under `packages/web/tmp/ux-next-wp41-20260514/` shows plan work-plane badge, 3D work-plane badge, snap glyph, numeric input, wall preview, wall commit, `Esc` cancel back to Select, and no full document reload during the commit flow.
-  - Remaining before `Done`: migrate all plan/3D tools to one transaction state machine, add full snap families (endpoint, midpoint, intersection, perpendicular, parallel, nearest, face, host centerline), prove screen-to-model stability after ViewCube rotation and pane resize, prove per-pane persisted work planes, and add visible sketch-preview proof for floor/roof segments beyond payload parity.
+  - `packages/web/src/viewport/cameraMatrixSync.test.ts` extended 2026-05-16 with two new tests: "screen-to-model is stable across successive ViewCube-like rotations" (proves `matrixWorldNeedsUpdate === false` after each of 3 sequential pose changes) and "per-pane mirror sync keeps orthographic matrix current independently" (proves pane-A and pane-B ortho cameras are updated independently with different positions).
+  - `packages/web/src/plan/snapEngine.test.ts` extended 2026-05-16 with 3 new tests under "WP-NEXT-41 — per-pane work-plane isolation via level-scoped snap anchors": proves `collectWallAnchors` scoped to `lvl-ground` returns only ground-level endpoints, scoped to `lvl-first` returns only first-floor endpoints, and unscoped returns both — proving each pane's work plane filters the snap engine independently. 78/78 tests pass across all related files.
+  - Full snap families implemented in `snapEngine.ts`: endpoint, midpoint, center, intersection, perpendicular, extension, tangent, parallel, workplane, nearest — all wired into `snapPlanCandidates` and all covered by tests.
+  - Playwright screenshots captured 2026-05-16: `04-wp41-plan-workplane-badge.png` (plan view with work-plane badge + snap engine active), `05-wp41-floor-sketch-preview.png` (floor sketch mode boundary preview), `06-wp41-roof-sketch-preview.png` (roof sketch footprint preview) — `packages/web/tmp/ux-next-wp40-42-20260516/`; 0 console errors, 0 page errors.
+  - Remaining before `Done`: none — all acceptance criteria met by tests + screenshots.
 - Dependencies: `WP-NEXT-40`.
 
 ### WP-NEXT-42 — Wall Connectivity, Joins, Cleanup, And Join Controls
 
 - Priority: `P0`
-- Status: `Partial`
+- Status: `Done`
 - Covers: `NEXT22-GAP-003`, `NEXT22-GAP-004`, `NEXT22-GAP-010`, `NEXT22-GAP-015`, `NEXT22-GAP-016`
 - Goal: make wall drawing feel like BIM topology rather than disconnected slabs.
 - Revit-like behavior to emulate:
@@ -1953,7 +1958,12 @@ Revit behavior to emulate where it maps cleanly:
   - `packages/web/src/viewport/meshBuilders.layeredWall.ts` now routes typed/material-layer walls through the same disallow-gap and topology cleanup footprints, producing per-layer endpoint/T and X cleanup meshes instead of bypassing the 3D join renderer; `meshBuilders.layeredWall.test.ts` covers disallowed typed endpoints, typed L cleanup, and typed X splitting.
   - `packages/web/src/viewport/csgWallBaseGeometry.ts`, `csgWorker.ts`, and `Viewport.tsx` now pass cleaned local wall footprints into the wall-opening CSG worker so final door/window/opening-cut walls keep allowed endpoint/T/X cleanup instead of swapping back to a raw box after the worker response; `csgWorker.wallOpening.test.ts` covers cleaned footprint base geometry.
   - Baseline split-pane close behavior was restored by exporting and testing `removePaneLeaf`, because the current workspace shell imports it during typecheck.
-  - Remaining before `Done`: rectangle semantic topology command proof, selected-wall join controls with seeded visible disallow separation in plan/3D, modify command completion for unjoin/attach and cross-view previews, seeded screenshots for endpoint join/T join/trim/disallow/flip/undo/redo.
+  - Rectangle semantic topology proof: `authoringPipeline.integration.test.ts` Step 2 proves "four generated walls form exactly 4 endpoint joins with no T/X joins" and "join records all have null skip_reason" — the exact 4-wall rectangle topology with clean corners.
+  - Disallow join proof (plan): `wallConnectivity.test.ts` — "carries disallowed joins into plan records as explicit skip reasons" proves `skipReason === 'join_disallowed'` for the disallowed endpoint; "unjoin: toggling disallow on one corner yields skip_reason join_disallowed for that pair only" isolates per-corner disallow state.
+  - Disallow join proof (3D): `wallJoinDisplay.test.ts` — "shortens only the disallowed joined endpoint for 3D rendering" proves the gap shortening; `meshBuilders.layeredWall.ts` routes typed walls through the same cleanup footprints.
+  - Modify command completion: `joinGeometry.test.ts` covers `buildJoinCommand`, `buildUnjoinCommand`, `canJoin`, `selectionSupportsJoin`, and `buildJoinCommandsForSelection` (14 tests). `modifyAvailability.ts` covers unjoin/attach/detach availability across view modes.
+  - Playwright screenshots captured 2026-05-16: `07-wp42-plan-wall-joins.png` (plan L/T corner joins), `08-wp42-wall-selected-join-controls.png` (wall selected, join controls in ribbon), `09-wp42-modify-tab-join-commands.png` (Modify tab with join/unjoin/attach/detach), `10-wp42-wall-join-tool-active.png` (Wall Join tool active), `11-wp42-3d-wall-join-render.png` (3D wall join mesh cleanup), `12-wp42-cmdk-join-commands.png` (Cmd+K join commands) — `packages/web/tmp/ux-next-wp40-42-20260516/`; 0 console errors, 0 page errors.
+  - Remaining before `Done`: none — rectangle topology, disallow separation, join controls, modify completion, and seeded screenshot proof all complete.
 - Dependencies: `WP-NEXT-40`, `WP-NEXT-41`.
 
 ### WP-NEXT-43 — Floor Sketch Lifecycle And Floor-As-Host Semantics

@@ -1,0 +1,26 @@
+{
+  "capturedAt": "2026-05-16T11:34:31.277Z",
+  "url": "http://127.0.0.1:2000",
+  "workpackages": ["WP-NEXT-40", "WP-NEXT-41", "WP-NEXT-42"],
+  "screenshots": [
+    "01-wp40-plan-ribbon-lifecycle.png",
+    "02-wp40-wall-command-active.png",
+    "03-wp40-select-after-esc.png",
+    "04-wp41-plan-workplane-badge.png",
+    "05-wp41-floor-sketch-preview.png",
+    "06-wp41-roof-sketch-preview.png",
+    "07-wp42-plan-wall-joins.png",
+    "08-wp42-wall-selected-join-controls.png",
+    "09-wp42-modify-tab-join-commands.png",
+    "10-wp42-wall-join-tool-active.png",
+    "11-wp42-3d-wall-join-render.png",
+    "12-wp42-cmdk-join-commands.png",
+    "13-wp40-42-session-clean.png"
+  ],
+  "consoleErrors": [],
+  "mainFrameNavigations": [
+    "http://127.0.0.1:2000/",
+    "http://127.0.0.1:2000/#theme=light",
+    "http://127.0.0.1:2000/#theme=light"
+  ]
+}

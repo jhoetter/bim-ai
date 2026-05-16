@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import {
   closestPointOnPolyline,
+  collectWallAnchors,
   extensionPoint,
   infiniteLineIntersection,
   perpendicularFoot,
@@ -13,6 +14,7 @@ import {
   snapPlanPoint,
   type SegmentLine,
 } from './snapEngine';
+import type { Element } from '@bim-ai/core';
 
 describe('snapPlanPoint', () => {
   it('snaps bare cursor to nearest grid crossing', () => {
@@ -396,5 +398,53 @@ describe('EDT-05 closeout — snapPlanCandidates wiring', () => {
     expect(par).toBeLessThan(tan);
     expect(tan).toBeLessThan(wp);
     expect(wp).toBeLessThan(grid);
+  });
+});
+
+describe('WP-NEXT-41 — per-pane work-plane isolation via level-scoped snap anchors', () => {
+  function makeWall(
+    id: string,
+    levelId: string,
+    sx: number,
+    sy: number,
+    ex: number,
+    ey: number,
+  ): Element {
+    return {
+      kind: 'wall',
+      id,
+      levelId,
+      start: { xMm: sx, yMm: sy },
+      end: { xMm: ex, yMm: ey },
+      heightMm: 3000,
+    } as unknown as Element;
+  }
+
+  const els: Record<string, Element> = {
+    w1: makeWall('w1', 'lvl-ground', 0, 0, 4000, 0),
+    w2: makeWall('w2', 'lvl-first', 0, 1000, 4000, 1000),
+  };
+
+  it('returns only the ground-level wall anchors when scoped to lvl-ground', () => {
+    const anchors = collectWallAnchors(els, 'lvl-ground');
+    const pts = anchors.map((a) => ({ x: a.xMm, y: a.yMm }));
+    expect(pts).toContainEqual({ x: 0, y: 0 });
+    expect(pts).toContainEqual({ x: 4000, y: 0 });
+    expect(pts).not.toContainEqual({ x: 0, y: 1000 });
+  });
+
+  it('returns only the first-floor wall anchors when scoped to lvl-first', () => {
+    const anchors = collectWallAnchors(els, 'lvl-first');
+    const pts = anchors.map((a) => ({ x: a.xMm, y: a.yMm }));
+    expect(pts).toContainEqual({ x: 0, y: 1000 });
+    expect(pts).toContainEqual({ x: 4000, y: 1000 });
+    expect(pts).not.toContainEqual({ x: 0, y: 0 });
+  });
+
+  it('returns anchors from both levels when levelId is undefined (no scope)', () => {
+    const anchors = collectWallAnchors(els, undefined);
+    const pts = anchors.map((a) => ({ x: a.xMm, y: a.yMm }));
+    expect(pts).toContainEqual({ x: 0, y: 0 });
+    expect(pts).toContainEqual({ x: 0, y: 1000 });
   });
 });

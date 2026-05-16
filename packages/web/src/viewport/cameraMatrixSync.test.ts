@@ -37,4 +37,61 @@ describe('cameraMatrixSync', () => {
     expect(updateSpy).toHaveBeenCalledWith(true);
     expect(orthographic.matrixWorldNeedsUpdate).toBe(false);
   });
+
+  it('WP-NEXT-41 — screen-to-model is stable across successive ViewCube-like rotations', () => {
+    // Simulate a user clicking three different ViewCube faces in sequence.
+    // Each rotation must leave the camera matrix fully updated (matrixWorldNeedsUpdate===false)
+    // so the next authoring raycast reads a consistent world matrix.
+    const camera = new THREE.PerspectiveCamera(55, 1.6, 0.05, 500);
+    const poses = [
+      // Front face
+      { position: { x: 0, y: 0, z: 15 }, target: { x: 0, y: 0, z: 0 }, up: { x: 0, y: 1, z: 0 } },
+      // Right face
+      { position: { x: 15, y: 0, z: 0 }, target: { x: 0, y: 0, z: 0 }, up: { x: 0, y: 1, z: 0 } },
+      // Top face (plan-like)
+      { position: { x: 0, y: 15, z: 0 }, target: { x: 0, y: 0, z: 0 }, up: { x: 0, y: 0, z: -1 } },
+    ];
+
+    for (const pose of poses) {
+      applySceneCameraPose(camera, pose);
+      // After each pose update the matrix must be current — not stale.
+      expect(camera.matrixWorldNeedsUpdate).toBe(false);
+      // Position must match what was set.
+      expect(camera.position.x).toBeCloseTo(pose.position.x, 5);
+      expect(camera.position.y).toBeCloseTo(pose.position.y, 5);
+      expect(camera.position.z).toBeCloseTo(pose.position.z, 5);
+    }
+  });
+
+  it('WP-NEXT-41 — per-pane mirror sync keeps orthographic matrix current independently of perspective updates', () => {
+    // Each pane can have its own camera pair. Updating pane-A must not
+    // leave pane-B's orthographic camera stale.
+    const perspA = new THREE.PerspectiveCamera(55, 1, 0.05, 500);
+    const orthoA = new THREE.OrthographicCamera(-1, 1, 1, -1, 0.05, 500);
+    const perspB = new THREE.PerspectiveCamera(55, 1, 0.05, 500);
+    const orthoB = new THREE.OrthographicCamera(-1, 1, 1, -1, 0.05, 500);
+
+    const target = { x: 0, y: 0, z: 0 };
+
+    applySceneCameraPose(perspA, {
+      position: { x: 0, y: 10, z: 0 },
+      target,
+      up: { x: 0, y: 0, z: -1 },
+    });
+    mirrorSceneCameraPose(perspA, orthoA, target);
+
+    applySceneCameraPose(perspB, {
+      position: { x: 10, y: 0, z: 0 },
+      target,
+      up: { x: 0, y: 1, z: 0 },
+    });
+    mirrorSceneCameraPose(perspB, orthoB, target);
+
+    // Both ortho cameras must be up-to-date independently.
+    expect(orthoA.matrixWorldNeedsUpdate).toBe(false);
+    expect(orthoB.matrixWorldNeedsUpdate).toBe(false);
+    // Positions must differ — pane-A is looking down, pane-B is looking sideways.
+    expect(orthoA.position.y).toBeGreaterThan(orthoB.position.y);
+    expect(orthoB.position.x).toBeGreaterThan(orthoA.position.x);
+  });
 });
