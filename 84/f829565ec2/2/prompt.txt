@@ -1,8 +1,0 @@
-my CI/CD for python is failing: Run PYTHONPATH=. python -c "from bim_ai.main import app"
-Traceback (most recent call last):
-  File "<string>", line 1, in <module>
-  File "/home/runner/work/bim-ai/bim-ai/app/bim_ai/main.py", line 6, in <module>
-    from fastapi import FastAPI, Query, WebSocket
-ModuleNotFoundError: No module named 'fastapi'
-Error: Process completed with exit code 1.
-can you please fix and commit and push and merge to main?
