@@ -1,34 +1,15 @@
 {
   "cli_version": "0.6.0",
   "checkpoint_id": "e021195b45dc",
-  "session_id": "019e1f88-adaf-7791-baf4-f7e0bc958757",
+  "session_id": "019e2c15-3903-7080-93f0-26ac15f4d057",
   "strategy": "manual-commit",
-  "created_at": "2026-05-16T08:51:36.81874Z",
+  "created_at": "2026-05-16T09:33:33.523353Z",
   "branch": "main",
   "checkpoints_count": 0,
-  "files_touched": [
-    "packages/web/src/plan/SketchCanvas.tsx",
-    "packages/web/src/plan/interiorElevationMarker.test.ts",
-    "packages/web/src/tools/interiorElevationTool.test.ts"
-  ],
+  "files_touched": [],
   "agent": "Codex",
   "model": "gpt-5.5",
-  "turn_id": "13d47193b597",
-  "checkpoint_transcript_start": 33553,
-  "transcript_lines_at_start": 33553,
-  "session_metrics": {
-    "turn_count": 3
-  },
-  "initial_attribution": {
-    "calculated_at": "2026-05-16T08:51:28.023844Z",
-    "agent_lines": 0,
-    "agent_removed": 0,
-    "human_added": 130,
-    "human_modified": 0,
-    "human_removed": 0,
-    "total_committed": 130,
-    "total_lines_changed": 130,
-    "agent_percentage": 0,
-    "metric_version": 2
-  }
+  "turn_id": "21f89abf4760",
+  "checkpoint_transcript_start": 3630,
+  "transcript_lines_at_start": 3630
 }
