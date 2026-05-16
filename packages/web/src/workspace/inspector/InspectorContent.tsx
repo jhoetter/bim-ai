@@ -578,6 +578,7 @@ export function InspectorPropertiesFor(
     onEditBoundary?: (element: Extract<Element, { kind: 'floor' }>) => void;
     onOpenMaterialBrowser?: OpenMaterialBrowser;
     onOpenAppearanceAssetBrowser?: OpenMaterialBrowser;
+    onEditCurtainGrid?: (wallId: string) => void;
   },
 ): JSX.Element {
   const elementsById = options?.elementsById ?? {};
@@ -586,6 +587,7 @@ export function InspectorPropertiesFor(
   const onEditType = options?.onEditType;
   const onOpenMaterialBrowser = options?.onOpenMaterialBrowser;
   const onOpenAppearanceAssetBrowser = options?.onOpenAppearanceAssetBrowser;
+  const onEditCurtainGrid = options?.onEditCurtainGrid;
   const f = (key: string) => t(`inspector.fields.${key}`);
   switch (el.kind) {
     case 'wall': {
@@ -689,6 +691,46 @@ export function InspectorPropertiesFor(
                     )
                   }
                 />
+              </div>
+              <div className="flex items-center gap-2 py-0.5">
+                <span className="text-xs text-muted w-28 shrink-0">{f('cwPanelType')}</span>
+                <select
+                  className="flex-1 text-xs bg-surface border border-border rounded px-1 py-0.5"
+                  value={el.curtainWallPanelType ?? ''}
+                  onChange={(e2) =>
+                    onPropertyChange?.('curtainWallPanelType', e2.target.value || null)
+                  }
+                >
+                  <option value="">— Default —</option>
+                  <option value="Glass">Glass</option>
+                  <option value="Spandrel">Spandrel</option>
+                  <option value="Solid">Solid</option>
+                </select>
+              </div>
+              <div className="flex items-center gap-2 py-0.5">
+                <span className="text-xs text-muted w-28 shrink-0">{f('cwMullionType')}</span>
+                <select
+                  className="flex-1 text-xs bg-surface border border-border rounded px-1 py-0.5"
+                  value={el.curtainWallMullionType ?? ''}
+                  onChange={(e2) =>
+                    onPropertyChange?.('curtainWallMullionType', e2.target.value || null)
+                  }
+                >
+                  <option value="">— Default —</option>
+                  <option value="Rectangular">Rectangular</option>
+                  <option value="Circular">Circular</option>
+                  <option value="None">None</option>
+                </select>
+              </div>
+              <div className="flex items-center gap-2 py-0.5">
+                <button
+                  type="button"
+                  data-testid="inspector-edit-curtain-grid"
+                  className="text-xs rounded border border-border px-2 py-0.5 text-muted hover:text-foreground"
+                  onClick={() => onEditCurtainGrid?.(el.id)}
+                >
+                  Edit Grid…
+                </button>
               </div>
             </>
           )}
