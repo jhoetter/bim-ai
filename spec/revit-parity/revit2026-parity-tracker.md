@@ -411,7 +411,7 @@ Both drag-to-move (grips) and explicit Move tool work.
 
 #### 3.5.5 Wände fixieren, Profil anpassen und Verbinden-Werkzeug (pin, edit profile, join tool)
 **Status: Partial — P1**
-- Pin: Done (inspector)
+- Pin: Partial — pinUnpin.ts command helpers (buildPinCommand, buildUnpinCommand, buildPinToggleCommands, filterPinnable) + PN shortcut in cheatsheet; toolbar wiring pending (WP-B8)
 - Edit Profile (non-rectangular wall cross-section profile): Partial — wall profile shape editing via sketch is partially implemented
 - Join / Unjoin tool (explicitly controlling how two walls join): Partial (wall-join tool in registry)
 
