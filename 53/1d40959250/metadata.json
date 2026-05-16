@@ -8,6 +8,7 @@
     "packages/web/src/cmdPalette/defaultCommands.ts",
     "packages/web/src/state/storeTypes.ts",
     "packages/web/src/tools/authoringCommandContract.ts",
+    "packages/web/src/tools/toolRegistry.ts",
     "packages/web/src/workspace/commandCapabilities.test.ts"
   ],
   "sessions": [
@@ -70,13 +71,19 @@
       "transcript": "/53/1d40959250/9/full.jsonl",
       "content_hash": "/53/1d40959250/9/content_hash.txt",
       "prompt": "/53/1d40959250/9/prompt.txt"
+    },
+    {
+      "metadata": "/53/1d40959250/10/metadata.json",
+      "transcript": "/53/1d40959250/10/full.jsonl",
+      "content_hash": "/53/1d40959250/10/content_hash.txt",
+      "prompt": "/53/1d40959250/10/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 7701190,
-    "cache_creation_tokens": 210833,
-    "cache_read_tokens": 159641457,
-    "output_tokens": 440442,
-    "api_call_count": 2220
+    "input_tokens": 7701954,
+    "cache_creation_tokens": 410898,
+    "cache_read_tokens": 185092886,
+    "output_tokens": 509478,
+    "api_call_count": 2501
   }
 }
