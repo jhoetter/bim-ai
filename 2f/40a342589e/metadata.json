@@ -3,7 +3,7 @@
   "checkpoint_id": "2f40a342589e",
   "strategy": "manual-commit",
   "branch": "main",
-  "checkpoints_count": 10,
+  "checkpoints_count": 11,
   "files_touched": [
     "packages/web/src/clipboard/PasteToLevelsDialog.test.tsx",
     "packages/web/src/clipboard/PasteToLevelsDialog.tsx",
@@ -78,13 +78,19 @@
       "transcript": "/2f/40a342589e/10/full.jsonl",
       "content_hash": "/2f/40a342589e/10/content_hash.txt",
       "prompt": "/2f/40a342589e/10/prompt.txt"
+    },
+    {
+      "metadata": "/2f/40a342589e/11/metadata.json",
+      "transcript": "/2f/40a342589e/11/full.jsonl",
+      "content_hash": "/2f/40a342589e/11/content_hash.txt",
+      "prompt": "/2f/40a342589e/11/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 10991742,
-    "cache_creation_tokens": 2797089,
-    "cache_read_tokens": 430502987,
-    "output_tokens": 1572728,
-    "api_call_count": 4716
+    "input_tokens": 10992004,
+    "cache_creation_tokens": 2870036,
+    "cache_read_tokens": 431979877,
+    "output_tokens": 1596503,
+    "api_call_count": 4741
   }
 }
