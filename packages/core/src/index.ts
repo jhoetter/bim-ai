@@ -2774,7 +2774,7 @@ export type Element =
       phaseCreated?: string | null;
       phaseDemolished?: string | null;
       discipline?: DisciplineTag | null;
-    };;
+    };
 
 export type Violation = {
   ruleId: string;
