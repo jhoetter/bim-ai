@@ -151,13 +151,19 @@
       "transcript": "/2f/07b89bd27e/23/full.jsonl",
       "content_hash": "/2f/07b89bd27e/23/content_hash.txt",
       "prompt": "/2f/07b89bd27e/23/prompt.txt"
+    },
+    {
+      "metadata": "/2f/07b89bd27e/24/metadata.json",
+      "transcript": "/2f/07b89bd27e/24/full.jsonl",
+      "content_hash": "/2f/07b89bd27e/24/content_hash.txt",
+      "prompt": "/2f/07b89bd27e/24/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 3895,
-    "cache_creation_tokens": 2527123,
-    "cache_read_tokens": 179809460,
-    "output_tokens": 679470,
-    "api_call_count": 1842
+    "input_tokens": 3996,
+    "cache_creation_tokens": 2667559,
+    "cache_read_tokens": 190021533,
+    "output_tokens": 724321,
+    "api_call_count": 1939
   }
 }
