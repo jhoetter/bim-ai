@@ -1542,6 +1542,48 @@ export function InspectorPropertiesFor(
               </div>
             </div>
           </div>
+          {(() => {
+            const availableRoofs = Object.values(floorElementsById).filter(
+              (e): e is Extract<Element, { kind: 'roof' }> => e.kind === 'roof',
+            );
+            if (el.attachedToRoofId) {
+              return (
+                <button
+                  type="button"
+                  data-testid="inspector-floor-detach"
+                  className="text-xs rounded border border-border px-2 py-0.5 text-muted hover:text-foreground"
+                  onClick={() =>
+                    onDispatchCommand?.({
+                      type: 'attach_floor_to_roof',
+                      floorId: el.id,
+                      roofId: '',
+                    })
+                  }
+                >
+                  Detach from Roof
+                </button>
+              );
+            }
+            if (availableRoofs.length > 0) {
+              return (
+                <button
+                  type="button"
+                  data-testid="inspector-floor-attach"
+                  className="text-xs rounded border border-border px-2 py-0.5 text-muted hover:text-foreground"
+                  onClick={() =>
+                    onDispatchCommand?.({
+                      type: 'attach_floor_to_roof',
+                      floorId: el.id,
+                      roofId: availableRoofs[0].id,
+                    })
+                  }
+                >
+                  Attach to Roof
+                </button>
+              );
+            }
+            return null;
+          })()}
           <FaceMaterialOverridesSection
             elementId={el.id}
             overrides={el.faceMaterialOverrides}
