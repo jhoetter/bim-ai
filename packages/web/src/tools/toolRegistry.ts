@@ -94,7 +94,10 @@ export type ToolId =
   | 'ramp'
   | 'mass-box'
   | 'mass-extrusion'
-  | 'mass-revolution';
+  | 'mass-revolution'
+  | 'walkthrough'
+  | 'roof-by-extrusion'
+  | 'revision-cloud';
 
 /** Modify-group tool IDs — used by ToolPalette to insert a separator. */
 export const MODIFY_TOOL_IDS = new Set<ToolId>([
@@ -779,6 +782,35 @@ export function getToolRegistry(t: TFunction): Record<ToolId, ToolDefinition> {
       modes: ['plan', '3d'],
       tooltip: 'Create a revolved mass surface around an axis',
     },
+    walkthrough: {
+      id: 'walkthrough',
+      label: 'Walkthrough',
+      icon: 'measure',
+      hotkey: 'WT',
+      shortcut: 'WT',
+      modes: ['3d'],
+      tooltip:
+        'Define a walkthrough camera path. Click to capture keyframes, double-click or Enter to finish.',
+    },
+    'roof-by-extrusion': {
+      id: 'roof-by-extrusion',
+      label: 'Roof by Extrusion',
+      icon: 'roof',
+      hotkey: 'RE',
+      shortcut: 'RE',
+      modes: ['plan'],
+      tooltip: 'Create a roof by drawing a profile and specifying an extrusion depth',
+    },
+    'revision-cloud': {
+      id: 'revision-cloud',
+      label: 'Revision Cloud',
+      icon: 'detailLine',
+      hotkey: 'RC',
+      shortcut: 'RC',
+      modes: ['plan'],
+      tooltip:
+        'Draw a revision cloud polygon. Click to add vertices, Enter or double-click to finish.',
+    },
   };
 }
 
@@ -848,6 +880,7 @@ const PALETTE_ORDER: ToolId[] = [
   'mass-box',
   'mass-extrusion',
   'mass-revolution',
+  'roof-by-extrusion',
   'brace',
   'ceiling',
 ];

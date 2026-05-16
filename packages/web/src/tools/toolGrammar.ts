@@ -251,7 +251,8 @@ export type ToolGrammarKind =
   | 'split'
   | 'trim'
   | 'offset'
-  | 'wall-join';
+  | 'wall-join'
+  | 'decal';
 
 export const WALL_LOCATION_LINE_ORDER: WallLocationLine[] = [
   'wall-centerline',
