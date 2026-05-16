@@ -1,25 +1,17 @@
-[Image #1] if i insert assets, e.g. doors into walls, they sometimes have super weird "air gaps" -> please look where that is coming from and fix
+go ahead and specify this into a tracker in deep detail; once that is, for each workpackage, implement and always commit and push after each workpackage
 
 ---
 
-[Image #1] i am also not certain if all windows are see through etc; can you please check if all assets are correctly used and treated same way, e.g. all windows see-through and such?
+[Image #1]this is really weird. how does that generally work in revit; are we currently doing this correct? please reserach online, potentially watch a video via claude-skills/watch-yt/SKILL.md if needed; but look into this more closely
 
 ---
 
-[Image #1] not good; this is e.g. if i swtich a generic door to a double door... please take screenshots to confirm things are correct
+then please update the trackr (i think we have one, right?) and build accordingly.. after each workpackage, commit and push
 
 ---
 
-[Image #1] still not perfect when switching e.g. also windows etc ...
+continue
 
 ---
 
-please commit and push YOUR changes
-
----
-
-so what did you work on, remind me again please
-
----
-
-can you please commit and push your changes?
+did you commit and push?

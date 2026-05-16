@@ -1,8 +1,0 @@
-Work in /Users/jhoetter/repos/bim-ai. Read spec/rendering-v2-spec.md
-  section R1-04. The EffectComposer is already set up (landed in commit
-  314035aa). Add the SSAOPass to the existing composer chain in
-  packages/web/src/Viewport.tsx and add the SSAO parameter tokens to
-  packages/web/src/viewport/materials.ts.
-  Run pnpm --filter web typecheck before committing.
-  Commit: "feat(3d): R1-04 — SSAO pass"
-  Push to origin/main when done.

@@ -1,9 +1,0 @@
-we currently have the redesign and the legacy view; is everything we had in the legacy view functionality-wise covered in the redesigned version? please thoroughyl analyze all gaps. is it w.r.t. legacy view feature complete?
-
----
-
-ok, please in the order you mention build out all missing gaps after another. after each, commit and push your changes.
-
----
-
-are you 100% sure? like absolutely 100%? is there NO MORE GAP whatsoever? so we can safely remove the legacy view?

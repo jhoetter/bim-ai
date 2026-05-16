@@ -1,1 +1,0 @@
-my macbook is becoming quite slow and i think it could be because of stale vitest processes; can you check that please?
