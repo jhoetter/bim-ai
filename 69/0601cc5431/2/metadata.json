@@ -1,0 +1,37 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "690601cc5431",
+  "session_id": "019e26e7-7be1-7fb1-9247-365853491ba6",
+  "strategy": "manual-commit",
+  "created_at": "2026-05-16T06:09:03.075083Z",
+  "branch": "main",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "packages/web/src/viewport/meshBuilders.ts"
+  ],
+  "agent": "Codex",
+  "model": "gpt-5.5",
+  "turn_id": "8e4358b23823",
+  "token_usage": {
+    "input_tokens": 5865989,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 128602112,
+    "output_tokens": 464385,
+    "api_call_count": 1142
+  },
+  "session_metrics": {
+    "turn_count": 4
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-05-16T06:09:02.56023Z",
+    "agent_lines": 2,
+    "agent_removed": 0,
+    "human_added": 1582,
+    "human_modified": 0,
+    "human_removed": 0,
+    "total_committed": 1584,
+    "total_lines_changed": 1584,
+    "agent_percentage": 0.12626262626262627,
+    "metric_version": 2
+  }
+}
