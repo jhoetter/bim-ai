@@ -1,0 +1,144 @@
+You are resuming a crashed agent session on the bim-ai repo
+  (/Users/jhoetter/repos/bim-ai). bim-ai is a browser-based BIM authoring
+  tool (React + TypeScript + Three.js, Vite, Vitest).
+
+  REPO ORIENTATION (WP-F relevant paths):
+  - packages/web/src/viewport/phaseFilter.ts — existing phase filter logic
+  - packages/web/src/plan/PhaseDropdown.tsx — phase selector in plan header
+  - packages/web/src/plan/PlanViewHeader.tsx — plan header (add F2 phase filter dropdown here)
+  - packages/web/src/plan/planProjection.ts — plan rendering (wire phase graphic overrides here)
+  - packages/web/src/viewport/renderStyles.ts — 3D render styles (wire phase colours here)
+  - packages/web/src/workspace/project/VVDialog.tsx — V/G overrides dialog (~1400 lines, FULLY DONE)
+  - packages/web/src/workspace/project/VVDialog.test.tsx — V/G tests (done)
+  - packages/web/src/workspace/project/ProjectSetupDialog.tsx — project setup (has some projectInfo fields)
+  - packages/web/src/workspace/sheets/sheetTitleblockAuthoring.tsx — title block rendering
+  - packages/web/src/workspace/sheets/sheetTitleblockAuthoring.test.ts — title block tests
+  - packages/web/src/osm/project.ts — project settings store
+  - packages/web/src/onboarding/projectTemplates.ts — project templates (DONE)
+  - packages/web/src/sunStore.ts — sun position (needs true north offset wired)
+  - packages/core/src/index.ts — shared types
+
+  Architecture:
+  - Project-level settings stored as a settings object in useBimStore. Study osm/project.ts for the pattern — use the same approach for new settings.
+  - Phase filter: phaseFilter.ts defines PhaseFilter type. Elements have phaseId?: string.
+  - Semantic commands: { type: 'createPhase', name }, { type: 'setElementPhase', elementId, phaseId }, etc.
+  - Tests: co-located *.test.ts, run with pnpm test --filter @bim-ai/web.
+  - Prettier runs automatically.
+
+  WHAT WAS DONE BEFORE THE CRASH:
+  - F5 Project Templates: DONE — onboarding/projectTemplates.ts + picker in project creation flow
+  - F7 V/G Overrides Dialog: DONE — workspace/project/VVDialog.tsx (~1400 lines), full category visibility/line colour/halftone implementation, shortcut VV is wired. Do not re-implement this.
+  - F3 Project Info: PARTIAL — ProjectSetupDialog.tsx has some projectInfo fields; sheetTitleblockAuthoring.tsx renders title block data. Verify how much is done before adding anything.
+
+  No committed work found for F1, F2, F4, F6.
+
+  STEP 0 — audit F3 before writing any code:
+    git pull --rebase origin main
+    pnpm test --filter @bim-ai/web -- sheetTitleblock
+    pnpm test --filter @bim-ai/web -- ProjectSetupDialog
+
+  Read workspace/project/ProjectSetupDialog.tsx (search for projectInfo, clientName, issueDate, authorName) and workspace/sheets/sheetTitleblockAuthoring.tsx. Determine: does a standalone ProjectInfoDialog
+  exist? Does the title block pull all required fields? Then decide what gap remains for F3.
+
+  WHAT STILL NEEDS TO BE DONE:
+
+  F1 — Full Phase Management Dialog (highest priority)
+  Currently phases filter rendering but users can't create/delete/rename them.
+  1. Data model: phase element type in core/index.ts: { kind: 'phase', id, name, sequenceNumber, description }
+     Default phases: Bestand (seq 1), Abriss (seq 2), Neubau (seq 3). Elements without phaseId treated as 'new'.
+  2. Semantic commands: createPhase, deletePhase (re-assign elements to adjacent phase), renamePhase, reorderPhase, setElementPhase
+  3. UI — packages/web/src/phases/PhaseManagerDialog.tsx:
+     - Table with Sequence, Name, Description columns
+     - Add row, delete row (warning if phase has elements), rename inline, drag-and-drop reorder
+     - Accessible from workspace settings menu
+  4. Inspector integration: every selected element shows a "Phase" dropdown. Changing dispatches setElementPhase.
+  5. PhaseDropdown.tsx: active phase controls which phase new elements are assigned to.
+  Tests: create/rename/delete phase; verify element phase changes via inspector.
+
+  F2 — Phase Graphic Overrides
+  Add per-view graphic styles for each phase:
+  1. Add to plan_view element in core/index.ts:
+     phaseFilterMode: 'new_construction' | 'demolition' | 'existing' | 'all'
+     phaseGraphicOverrides: {
+       existing: { lineStyle: 'solid'|'dashed', opacity: number, fillColor: string|null },
+       demo: { lineStyle: 'solid'|'dashed', opacity: number, fillColor: string|null, showCrossHatch: boolean },
+       new: { lineStyle: 'solid', opacity: 1, fillColor: null }
+     }
+  2. Plan projection: thread phaseGraphicOverrides through planProjection.ts. Look up each element's phase and apply override (line style, opacity).
+  3. 3D: existing-phase elements get grey material override; demolished get semi-transparent.
+  4. Preset modes: "New Construction" (Bestand=grey, Abriss=hidden, Neubau=normal), "Demolition Plan" (Bestand=grey, Abriss=dashed+crosshatch, Neubau=hidden), "As Built" (all normal), "Existing" (only
+  Bestand).
+  5. "Phase Filter" dropdown in PlanViewHeader.tsx next to the phase selector. Each view has its own mode.
+  Tests: Demolition Plan → demo wall gets dashed; existing wall gets reduced opacity.
+
+  F3 — Project Information Dialog (fill gaps found in Step 0)
+  Based on your audit, implement what's missing.
+  If no standalone ProjectInfoDialog exists, create packages/web/src/workspace/project/ProjectInfoDialog.tsx with fields: projectNumber, projectName, projectAddress, projectStatus, clientName, authorName,
+  issueDate, checkDate, description.
+  Semantic command: { type: 'updateProjectInfo', patch: Partial<ProjectInfo> }
+  Sheet title block: sheetTitleblockAuthoring.tsx must render project name, number, client, author, issue date, sheet number/name. Empty fields show greyed placeholder text.
+
+  F4 — Project Units Dialog (not started)
+  1. Add projectUnits to project settings: { lengthUnit: 'mm'|'m'|'cm'|'ft'|'ft-in', areaUnit: 'm2'|'ft2', volumeUnit: 'm3'|'ft3', angleUnit: 'degrees'|'radians', decimalSymbol: '.'|',' }
+  2. packages/web/src/lib/formatUnit.ts — pure function formatLength(valueInMm, units): string.
+     Tests: 3500mm → "3500 mm" / "3.500 m" / "11'-5 13/16\""
+  3. packages/web/src/workspace/project/ProjectUnitsDialog.tsx — dropdowns per category + live preview of sample value. Dispatches { type: 'updateProjectUnits', units }.
+  4. Apply formatLength everywhere: all dimension text values, inspector numeric fields, temp dimension tooltips.
+
+  F6 — Project Position / True North (not started)
+  1. Add projectNorthAngleDeg: number to project settings
+  2. "True North" toggle in PlanViewHeader.tsx rotates the canvas by projectNorthAngleDeg when active
+  3. Update sunStore.ts to apply project north offset when computing sun position
+  4. UI in project settings: numeric input "True North angle (°)"
+
+  RULES:
+  - git pull --rebase origin main before every sub-task
+  - Commit + push after each completed sub-task
+  - Do NOT touch stair/ramp, annotation tools, export pipeline, structural, massing, groups, or view/sheet rendering
+  - toolRegistry.ts is NOT modified by this WP
+  - pnpm test --filter @bim-ai/web before each push
+  - Update spec/revit-parity/revit2026-parity-tracker.md as you complete items
+
+---
+
+❯ did you update the tracker accordingly? or are you not done yet?
+
+---
+
+<task-notification>
+<task-id>bkawhj22a</task-id>
+<tool-use-id>REDACTED</tool-use-id>
+<output-file>/private/tmp/claude-501/-Users-jhoetter-repos-bim-ai/782949ac-af94-4887-932b-c707470ca3de/tasks/bkawhj22a.output</output-file>
+<status>completed</status>
+<summary>Background command "Commit F6 changes" completed (exit code 0)</summary>
+</task-notification>
+
+---
+
+<task-notification>
+<task-id>b7kafhk4o</task-id>
+<tool-use-id>REDACTED</tool-use-id>
+<output-file>/private/tmp/claude-501/-Users-jhoetter-repos-bim-ai/782949ac-af94-4887-932b-c707470ca3de/tasks/b7kafhk4o.output</output-file>
+<status>completed</status>
+<summary>Background command "Commit F2 phase graphic overrides" completed (exit code 0)</summary>
+</task-notification>
+
+---
+
+<task-notification>
+<task-id>b2sbv4wyb</task-id>
+<tool-use-id>toolu_01H5HWWEX1Fy7a5K3KMkFMfB</tool-use-id>
+<output-file>/private/tmp/claude-501/-Users-jhoetter-repos-bim-ai/782949ac-af94-4887-932b-c707470ca3de/tasks/b2sbv4wyb.output</output-file>
+<status>completed</status>
+<summary>Background command "Wait for commit to complete" completed (exit code 0)</summary>
+</task-notification>
+
+---
+
+<task-notification>
+<task-id>b2byovcdd</task-id>
+<tool-use-id>toolu_01FQR1CEv8FXgvj6UEgvx2SM</tool-use-id>
+<output-file>/private/tmp/claude-501/-Users-jhoetter-repos-bim-ai/782949ac-af94-4887-932b-c707470ca3de/tasks/b2byovcdd.output</output-file>
+<status>completed</status>
+<summary>Background command "Wait for commit hook to complete and verify" completed (exit code 0)</summary>
+</task-notification>
