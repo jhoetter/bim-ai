@@ -1,0 +1,4 @@
+WP-B — §6.1.3 Locked 3D view → sheet placement
+
+  ▎ Your task is to add a "Place on Sheet…" context-menu action to saved_view rows in WorkspaceLeftRail.tsx, define a typed SheetViewportRef in core/index.ts, render placed saved-view viewport frames (dashed
+  ▎  border + lock indicator) in SheetCanvas.tsx, and update spec/revit-parity/revit2026-parity-tracker.md §6.1.3 to Done. Full spec: spec/revit-parity/agent-prompts/WAVE3-WP-B.md.
