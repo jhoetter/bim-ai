@@ -3,7 +3,7 @@
   "checkpoint_id": "01630db98a3a",
   "strategy": "manual-commit",
   "branch": "main",
-  "checkpoints_count": 3,
+  "checkpoints_count": 4,
   "files_touched": [
     "packages/web/src/workspace/tabsModel.ts"
   ],
@@ -37,13 +37,19 @@
       "transcript": "/01/630db98a3a/4/full.jsonl",
       "content_hash": "/01/630db98a3a/4/content_hash.txt",
       "prompt": "/01/630db98a3a/4/prompt.txt"
+    },
+    {
+      "metadata": "/01/630db98a3a/5/metadata.json",
+      "transcript": "/01/630db98a3a/5/full.jsonl",
+      "content_hash": "/01/630db98a3a/5/content_hash.txt",
+      "prompt": "/01/630db98a3a/5/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 10247366,
+    "input_tokens": 13566857,
     "cache_creation_tokens": 0,
-    "cache_read_tokens": 205779200,
-    "output_tokens": 672392,
-    "api_call_count": 1759
+    "cache_read_tokens": 267854464,
+    "output_tokens": 833753,
+    "api_call_count": 3108
   }
 }
