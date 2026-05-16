@@ -1850,3 +1850,35 @@ registerCommand({
     ctx.dispatchCommand?.({ type: 'unpinElements', elementIds: [...new Set(ids)] });
   },
 });
+
+// B6 — Selection Filter dialog
+registerCommand({
+  id: 'selection.filter',
+  label: 'Filter Selection by Category',
+  keywords: ['filter', 'selection', 'category', 'deselect', 'keep'],
+  category: 'command',
+  isAvailable: hasSelection,
+  invoke: (ctx) => ctx.openSelectionFilter?.(),
+});
+
+// B6 — Select All Instances in Project
+registerCommand({
+  id: 'selection.select-all-instances',
+  label: 'Select All Instances in Project',
+  keywords: ['select all', 'instances', 'type', 'all of type'],
+  category: 'command',
+  isAvailable: (ctx) => ctx.selectedElementIds.length === 1,
+  invoke: (ctx) => {
+    const id = ctx.selectedElementIds[0];
+    if (!id) return;
+    const elems = useBimStore.getState().elementsById;
+    const target = elems[id];
+    if (!target) return;
+    const sameKind = Object.values(elems)
+      .filter((el): el is NonNullable<typeof el> => el != null && el.kind === target.kind)
+      .map((el) => el.id);
+    if (sameKind.length === 0) return;
+    const [primary, ...rest] = sameKind;
+    useBimStore.setState({ selectedId: primary, selectedIds: rest });
+  },
+});

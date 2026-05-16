@@ -147,6 +147,7 @@ describe('command capability graph', () => {
       ['sheet.export-share', ['cmd-k', 'ribbon', 'header']],
       ['visibility.plan.graphics', ['cmd-k', 'ribbon', 'secondary-sidebar']],
       ['clipboard.paste-to-levels', ['cmd-k']],
+      ['selection.filter', ['cmd-k']],
     ] as const);
     const modalCapabilities = getAllCommandCapabilities()
       .filter((capability) => capability.executionSurface === 'modal')

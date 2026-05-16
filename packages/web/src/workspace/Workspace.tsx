@@ -172,6 +172,7 @@ import {
 import { EmptyStateHint } from './shell';
 import { MilestoneDialog } from '../collab/MilestoneDialog';
 import { PasteToLevelsDialog } from '../clipboard/PasteToLevelsDialog';
+import { SelectionFilterDialog } from '../plan/selectionFilter';
 import { WorkspaceLeftRail } from './WorkspaceLeftRail';
 import { WorkspaceRightRail } from './WorkspaceRightRail';
 import { rememberLocalClientOp, useWorkspaceSnapshot } from './useWorkspaceSnapshot';
@@ -1053,6 +1054,7 @@ export function Workspace(): JSX.Element {
   const [commentsOpen, setCommentsOpen] = useState(false);
   const [milestoneDialogOpen, setMilestoneDialogOpen] = useState(false);
   const [pasteToLevelsOpen, setPasteToLevelsOpen] = useState(false);
+  const [selectionFilterOpen, setSelectionFilterOpen] = useState(false);
   const [undoDepth, setUndoDepth] = useState(0);
   const [redoDepth, setRedoDepth] = useState(0);
   const [recentProjects, setRecentProjects] = useState<ProjectMenuItemRecent[]>(() =>
@@ -3927,6 +3929,7 @@ export function Workspace(): JSX.Element {
           openJobs: () => setJobsOpen(true),
           openMilestone: openMilestoneDialog,
           openPasteToLevels: () => setPasteToLevelsOpen(true),
+          openSelectionFilter: () => setSelectionFilterOpen(true),
           hasAdvisorQuickFix: Boolean(firstAdvisorQuickFix),
           applyFirstAdvisorFix: firstAdvisorQuickFix
             ? () => void onSemanticCommand(firstAdvisorQuickFix)
@@ -4208,6 +4211,16 @@ export function Workspace(): JSX.Element {
         activeLevelId={activeLevelId}
         selectedElementIds={selectedId ? [selectedId, ...selectedIds] : [...selectedIds]}
         onSemanticCommand={(cmd) => void onSemanticCommand(cmd)}
+      />
+      <SelectionFilterDialog
+        open={selectionFilterOpen}
+        onClose={() => setSelectionFilterOpen(false)}
+        selectedId={selectedId ?? undefined}
+        selectedIds={selectedIds}
+        elementsById={elementsById}
+        onApply={(newPrimary, newRest) => {
+          useBimStore.setState({ selectedId: newPrimary, selectedIds: newRest });
+        }}
       />
       {modelId ? (
         <SharePresentationModal

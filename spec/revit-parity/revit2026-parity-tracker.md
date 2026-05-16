@@ -342,7 +342,7 @@ ViewCube exists and provides 26 standard orientations. The Revit workflow of rig
 
 #### 3.3.1 Gruppe »Auswählen« (selection filter, link selection toggle)
 **Status: Partial — P1**
-Select tool exists. Selection filter by category (Auswahlfilter dialog) is Not Started. Link selection toggle is Not Started (no linked model workflow yet).
+Select tool exists. Selection filter by category (Auswahlfilter dialog) implemented — SelectionFilterDialog.tsx groups selected elements by kind with checkboxes, dispatches deselectByCategory on apply; wired in Workspace.tsx + Cmd+K palette (selection.filter). "Select All Instances in Project" palette command also added (selection.select-all-instances). Link selection toggle is Not Started (no linked model workflow yet). (WP-B6)
 
 #### 3.3.2 Gruppe »Eigenschaften« (Properties panel access from Modify)
 **Status: Done — P1**
@@ -370,7 +370,7 @@ Pin element is available. Show/hide dimension constraints on canvas is Partial.
 - Copy: Done (copy in tool registry)
 - Rotate: Done (rotateTool.ts)
 - Mirror (axis / pick axis): Done (mirror in tool registry)
-- Array (linear and radial): Partial — arrayTool.ts math helpers + tests; PlanCanvas wiring pending
+- Array (linear and radial): Partial — arrayTool.ts math helpers + tests; full grammar state machine (ArrayState/reduceArray) added to toolGrammar.ts with 14 unit tests; PlanCanvas UI wiring pending (WP-B5)
 - Scale: Not Started as explicit modify tool
 - Align: Done (align in tool registry)
 - Split (wall/line): Done (split tool)

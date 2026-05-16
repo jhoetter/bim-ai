@@ -1786,3 +1786,195 @@ export function reduceSlopeAnnotation(
   }
   return { state, effect: { stillActive: true } };
 }
+
+/* ────────────────────────────────────────────────────────────────────── */
+/* Array Tool — B5 (linear and radial array)                              */
+/* ────────────────────────────────────────────────────────────────────── */
+
+export type ArrayToolMode = 'linear' | 'radial';
+
+export type ArrayState =
+  | { phase: 'idle'; mode: ArrayToolMode; moveToLast: boolean }
+  | { phase: 'pick-start'; mode: 'linear'; moveToLast: boolean }
+  | {
+      phase: 'pick-end';
+      mode: 'linear';
+      moveToLast: boolean;
+      startMm: { xMm: number; yMm: number };
+    }
+  | {
+      phase: 'confirm-linear';
+      moveToLast: boolean;
+      startMm: { xMm: number; yMm: number };
+      endMm: { xMm: number; yMm: number };
+      count: number;
+    }
+  | { phase: 'pick-center'; mode: 'radial' }
+  | {
+      phase: 'confirm-radial';
+      centerMm: { xMm: number; yMm: number };
+      angleDeg: number;
+      count: number;
+    };
+
+export type ArrayEvent =
+  | { kind: 'activate' }
+  | { kind: 'deactivate' }
+  | { kind: 'cancel' }
+  | { kind: 'set-mode'; mode: ArrayToolMode }
+  | { kind: 'toggle-move-to-last' }
+  | { kind: 'click'; xMm: number; yMm: number }
+  | { kind: 'set-count'; count: number }
+  | { kind: 'set-angle'; angleDeg: number }
+  | { kind: 'confirm' };
+
+export interface ArrayEffect {
+  commitLinear?: {
+    startMm: { xMm: number; yMm: number };
+    endMm: { xMm: number; yMm: number };
+    count: number;
+    moveToLast: boolean;
+  };
+  commitRadial?: {
+    centerMm: { xMm: number; yMm: number };
+    angleDeg: number;
+    count: number;
+  };
+  stillActive: boolean;
+}
+
+export function initialArrayState(): ArrayState {
+  return { phase: 'idle', mode: 'linear', moveToLast: true };
+}
+
+export function reduceArray(
+  state: ArrayState,
+  event: ArrayEvent,
+): { state: ArrayState; effect: ArrayEffect } {
+  const idleState = (mode: ArrayToolMode = 'linear', moveToLast = true): ArrayState => ({
+    phase: 'idle',
+    mode,
+    moveToLast,
+  });
+
+  if (event.kind === 'activate') {
+    return { state: initialArrayState(), effect: { stillActive: true } };
+  }
+  if (event.kind === 'deactivate') {
+    return { state: initialArrayState(), effect: { stillActive: false } };
+  }
+  if (event.kind === 'cancel') {
+    const mode: ArrayToolMode = state.phase === 'idle' ? state.mode : 'linear';
+    const mtl = state.phase === 'idle' ? state.moveToLast : true;
+    return { state: idleState(mode, mtl), effect: { stillActive: true } };
+  }
+  if (event.kind === 'set-mode') {
+    const mtl = state.phase === 'idle' ? state.moveToLast : true;
+    return { state: idleState(event.mode, mtl), effect: { stillActive: true } };
+  }
+  if (event.kind === 'toggle-move-to-last') {
+    const mtl =
+      state.phase === 'idle'
+        ? state.moveToLast
+        : state.phase === 'pick-start' || state.phase === 'pick-end'
+          ? state.moveToLast
+          : state.phase === 'confirm-linear'
+            ? state.moveToLast
+            : true;
+    return { state: { ...state, moveToLast: !mtl } as ArrayState, effect: { stillActive: true } };
+  }
+
+  if (event.kind === 'click') {
+    if (state.phase === 'idle' && state.mode === 'linear') {
+      return {
+        state: { phase: 'pick-start', mode: 'linear', moveToLast: state.moveToLast },
+        effect: { stillActive: true },
+      };
+    }
+    if (state.phase === 'pick-start') {
+      return {
+        state: {
+          phase: 'pick-end',
+          mode: 'linear',
+          moveToLast: state.moveToLast,
+          startMm: { xMm: event.xMm, yMm: event.yMm },
+        },
+        effect: { stillActive: true },
+      };
+    }
+    if (state.phase === 'pick-end') {
+      return {
+        state: {
+          phase: 'confirm-linear',
+          moveToLast: state.moveToLast,
+          startMm: state.startMm,
+          endMm: { xMm: event.xMm, yMm: event.yMm },
+          count: 3,
+        },
+        effect: { stillActive: true },
+      };
+    }
+    if (state.phase === 'idle' && state.mode === 'radial') {
+      return {
+        state: { phase: 'pick-center', mode: 'radial' },
+        effect: { stillActive: true },
+      };
+    }
+    if (state.phase === 'pick-center') {
+      return {
+        state: {
+          phase: 'confirm-radial',
+          centerMm: { xMm: event.xMm, yMm: event.yMm },
+          angleDeg: 360,
+          count: 3,
+        },
+        effect: { stillActive: true },
+      };
+    }
+  }
+
+  if (event.kind === 'set-count') {
+    if (state.phase === 'confirm-linear') {
+      return { state: { ...state, count: event.count }, effect: { stillActive: true } };
+    }
+    if (state.phase === 'confirm-radial') {
+      return { state: { ...state, count: event.count }, effect: { stillActive: true } };
+    }
+  }
+
+  if (event.kind === 'set-angle' && state.phase === 'confirm-radial') {
+    return { state: { ...state, angleDeg: event.angleDeg }, effect: { stillActive: true } };
+  }
+
+  if (event.kind === 'confirm') {
+    if (state.phase === 'confirm-linear') {
+      return {
+        state: idleState('linear', state.moveToLast),
+        effect: {
+          commitLinear: {
+            startMm: state.startMm,
+            endMm: state.endMm,
+            count: state.count,
+            moveToLast: state.moveToLast,
+          },
+          stillActive: true,
+        },
+      };
+    }
+    if (state.phase === 'confirm-radial') {
+      return {
+        state: idleState('radial'),
+        effect: {
+          commitRadial: {
+            centerMm: state.centerMm,
+            angleDeg: state.angleDeg,
+            count: state.count,
+          },
+          stillActive: true,
+        },
+      };
+    }
+  }
+
+  return { state, effect: { stillActive: true } };
+}

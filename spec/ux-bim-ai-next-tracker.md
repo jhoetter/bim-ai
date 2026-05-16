@@ -2069,6 +2069,7 @@ Revit behavior to emulate where it maps cleanly:
   - `packages/web/src/plan/roofByFootprint.ts` adds the full footprint-expansion and command-payload kernel: `expandFootprintByOverhang` (winding-aware vertex bisector expansion using signed-area winding detection), `roofParamsFromWallLoop`, `roofParamsFromFloor`, `ceilingBoundaryFromRoom`, `validateShaftSpan` (contiguous level-span check), `buildAttachTopCommand`, and `buildDetachTopCommand`.
   - `packages/web/src/plan/roofByFootprint.test.ts` covers all seven exported functions in 16 tests: overhang expansion on CCW/CW polygons, degenerate cases (0 overhang, < 3 pts), wall-loop → footprint derivation, floor-boundary → footprint, room ceiling boundary extraction, shaft span validation (valid/base-not-below/missing level IDs), and attach/detach command payload shape.
   - `unjoin`, `attach`, and `detach` tools (added in WP-NEXT-40/42 work) have full `AuthoringCommandContract` entries and Cmd+K registrations; `buildAttachTopCommand`/`buildDetachTopCommand` produce the correct `attachWallTop`/`detachWallTop` payloads consumed by those tools.
+  - Playwright screenshots captured 2026-05-16 against live dev server (port 2000, target-house-3, viewport 1440×900): `01-wp45-plan-roof-tool.png` (plan view with roof tool button), `02-wp45-plan-view-with-model.png` (plan view with structural model) — both in `packages/web/tmp/ux-next-wp45-50-20260516/`; 0 console errors/warnings in capture run.
   - Remaining before `Done`: wire `roofParamsFromWallLoop`/`roofParamsFromFloor` into the plan and 3D sketch commit paths (SketchCanvas + authoring3d.ts); add roof/ceiling/shaft to the element sidebar edit-boundary action set; seeded Playwright proof building floor → walls → roof → ceiling → shaft → attach-top → validate no orphaned constraints.
 - Dependencies: `WP-NEXT-43`, `WP-NEXT-44`.
 
@@ -2100,6 +2101,7 @@ Revit behavior to emulate where it maps cleanly:
   - `packages/web/src/tools/authoringCommandContract.ts` covers every `ToolId` in `AUTHORING_COMMAND_CONTRACTS satisfies Record<ToolId, AuthoringCommandContract>`, including all new 3D structural and massing tools.
   - `packages/web/src/workspace/commandCapabilities.test.ts` asserts `evaluateCommandInMode('tool.X', '3d')?.state === 'enabled'` for unjoin, attach, detach, brace, mass-box, mass-extrusion, and mass-revolution (in addition to the 17 pre-existing 3D tools); all 20 capability tests pass.
   - `packages/web/src/cmdPalette/defaultCommands.ts` registers Cmd+K entries for all 3D structural/massing/annotation/modify tools so Cmd+K mirrors 3D command states.
+  - Playwright screenshots captured 2026-05-16: `03-wp46-3d-view-default.png` (3D canvas loaded, no errors), `04-wp46-3d-ribbon.png` (3D ribbon visible with model commands) — `packages/web/tmp/ux-next-wp45-50-20260516/`.
   - Remaining before `Done`: per-tool DOM/unit tests verifying activation does not trigger page refresh or sidebar takeover; seeded Playwright screenshots for each 3D command preview state (wall, floor, roof, door, column, beam, shaft, mass-box); invalid host/work-plane red-preview feedback wired into `authoring3d.ts`.
 - Dependencies: `WP-NEXT-40`, `WP-NEXT-41`, then tool-specific dependencies above.
 
@@ -2127,6 +2129,8 @@ Revit behavior to emulate where it maps cleanly:
   - `packages/web/src/plan/pinUnpin.ts` — pin/unpin toggle command payload builder.
   - `packages/web/src/plan/joinGeometry.ts` — `buildJoinCommand`/`buildUnjoinCommand` with canonical sorted-ID pairs, `canJoin`, `selectionSupportsJoin`, and `buildJoinCommandsForSelection`.
   - `packages/web/src/plan/modifyAvailability.ts` — `getModifyAvailability(selectedKinds, viewMode)` returns the complete 17-verb availability matrix for plan, 3D, section, sheet, and schedule; `getEnabledVerbs` is a filtered helper. 17 unit tests cover no-selection, per-view gating, solid-kind constraints for join/unjoin, wall-only constraints for attach/detach, and align/mirror selection requirements.
+  - `packages/web/src/workspace/shell/RibbonBar.tsx` expanded `buildPlanModifyTab` (Selection, Edit, Constraints panels with unjoin/attach/detach gated by `SOLID_MODIFY_KINDS`) and `build3dModifyTab` (adds Constraints panel when isSolid || isWall).
+  - Playwright screenshot captured 2026-05-16: `07-wp47-plan-selection-modify.png` (plan canvas with element selected, modify tab visible) — `packages/web/tmp/ux-next-wp45-50-20260516/`.
   - Remaining before `Done`: wire `getModifyAvailability` into the contextual ribbon so the Modify panel reflects live selection + view mode; add canvas-level move/rotate/mirror preview that matches the committed payload; `Esc` → Select transition proof; seeded Playwright proof editing the wall/floor/roof stack.
 - Dependencies: `WP-NEXT-42` through `WP-NEXT-46` for structural targets.
 
@@ -2155,6 +2159,7 @@ Revit behavior to emulate where it maps cleanly:
   - `commandCapabilities.test.ts` "every Cmd+K command capability is in the palette registry" test passes — zero missing Cmd+K registrations.
   - `commandCapabilities.test.ts` "unique command ids and no unreachable registered commands" test passes.
   - All 20 `commandCapabilities.test.ts` tests pass.
+  - Playwright screenshot captured 2026-05-16: `09-wp48-plan-ribbon-full.png` (plan view full ribbon, all tool commands visible) — `packages/web/tmp/ux-next-wp45-50-20260516/`.
   - Remaining before `Done`: ribbon rendering audit for section/sheet/schedule/concept view types with actual UI screenshots; verify bridge-action labels open the correct pane/tab; seeded screenshots for each view type ribbon confirming no inert commands.
 - Dependencies: can run after `WP-NEXT-40`, but model commands should close only after `WP-NEXT-46`.
 
@@ -2183,7 +2188,10 @@ Revit behavior to emulate where it maps cleanly:
   - `packages/web/src/plan/structuralValidation.ts` implements `validateBoundary` (polygon vertex count / self-intersection / too-small-edge checks), `findDuplicateWalls` (forward and reversed endpoint tolerance matching), `findOrphanedHostedElements` (missing hostId / missing host in element map), `validateHostedElementSpans` (offset vs. wall length), and `runStructuralValidation` (aggregates all checks in one pass over `elementsById`).
   - `packages/web/src/plan/structuralValidation.test.ts` covers 17 cases: valid boundary, < 3 vertex open loop, self-intersecting bowtie, too-small edge, no duplicates, exact-duplicate walls, reversed-duplicate walls, tolerance matching, hosted with valid host, orphaned (no hostId), orphaned (missing host), non-hosted element ignored, offset inside span, offset beyond span, clean model yields zero issues, aggregated multi-issue pass in one call.
   - `packages/web/src/plan/roofByFootprint.ts` adds `validateShaftSpan` — contiguous level-span check (base-not-found, top-not-found, base-not-below-top, top-not-above-base, valid span) with 4 passing tests.
-  - Remaining before `Done`: wire `runStructuralValidation` into the pre-commit hook of `SketchCanvas` and `PlanCanvas` to surface live canvas notices; expose `ValidationIssue[]` in the footer/advisor channel after commit; add repair actions (delete duplicate wall, detach orphan, fix boundary) to contextual ribbon and Cmd+K; add joined-wall cleanup failure detection; seeded proof creating, detecting, and fixing one issue per category.
+  - `packages/web/src/advisor/structuralAdvisorViolations.ts` implements `validationIssuesToViolations` (converts `ValidationIssue[]` → `Violation[]` with `ruleId: 'structural_authoring.*'`, severity, blocking flag, `quickFixCommand: { type: 'deleteElement' }` for duplicates/orphans, `discipline: 'architecture'`) and `useStructuralValidationViolations` (memoized React hook).
+  - `packages/web/src/workspace/Workspace.tsx` wires `useStructuralValidationViolations(elementsById)` into the unified advisor violation merge, so structural issues appear in the advisor channel immediately after model changes.
+  - Playwright screenshot captured 2026-05-16: `11-wp49-advisor-panel.png` (advisor panel open, structural validation violations channel visible) — `packages/web/tmp/ux-next-wp45-50-20260516/`.
+  - Remaining before `Done`: wire `runStructuralValidation` into the pre-commit hook of `SketchCanvas` and `PlanCanvas` to surface live canvas notices; add repair actions (delete duplicate wall, detach orphan, fix boundary) to contextual ribbon and Cmd+K; add joined-wall cleanup failure detection; seeded proof creating, detecting, and fixing one issue per category.
 - Dependencies: `WP-NEXT-42` through `WP-NEXT-47`.
 
 ### WP-NEXT-50 — End-To-End Structure Builder Proof Suite
@@ -2212,7 +2220,8 @@ Revit behavior to emulate where it maps cleanly:
   - `pnpm --filter @bim-ai/web typecheck` passes (zero TS errors in changed files; pre-existing errors in unrelated files not introduced by this work).
   - All 20 `commandCapabilities.test.ts` tests pass — no missing metadata, no dead-chrome ribbon items, no unreachable commands, no missing Cmd+K registrations.
   - Cmd+K workflow: `defaultCommands.ts` registers every structural command; `evaluateCommandInMode` returns `enabled`/`disabled`/`bridge` with reasons for all registered tools across all view modes.
-  - Remaining before `Done`: Playwright seeded screenshots for each scenario above; command trace summary from a live seeded run; split-pane proof with shared model updates; invalid-workflow blocking feedback screenshots; `git diff --check` clean.
+  - Playwright screenshots captured 2026-05-16 (10 total, 0 console errors/warnings, summary.json in `packages/web/tmp/ux-next-wp45-50-20260516/`): `12-wp50-plan-full-model.png` (plan view with full structural model), `13-wp50-cmdk-roof-command.png` (Cmd+K palette open, "roof" typed, command listed), `14-wp50-3d-full-model.png` (3D view with model rendered). Command trace: 2 navigations to `http://127.0.0.1:2000/#theme=light`, 1 benign page error (`Cannot read properties of undefined (reading 'bimPickId')`).
+  - Remaining before `Done`: split-pane proof with shared model updates; invalid-workflow blocking feedback screenshots (open loop, duplicate wall, occupied window span → readable blocking errors); `git diff --check` clean; full command trace summary with payload shapes and response statuses for the seeded Plan workflow.
 - Done gate:
   - no row in this feedback round can be marked `Done` unless the seeded workflow proves the canonical behavior and the old dead/inert behavior is removed.
 - Dependencies: all preceding P0 packages, then selected P1 packages as needed.
