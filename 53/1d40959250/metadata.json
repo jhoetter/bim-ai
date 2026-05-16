@@ -3,13 +3,21 @@
   "checkpoint_id": "531d40959250",
   "strategy": "manual-commit",
   "branch": "main",
-  "checkpoints_count": 4,
+  "checkpoints_count": 7,
   "files_touched": [
     "packages/web/src/cmdPalette/defaultCommands.ts",
+    "packages/web/src/geometry/wallConnectivity.test.ts",
     "packages/web/src/state/storeTypes.ts",
     "packages/web/src/tools/authoringCommandContract.ts",
     "packages/web/src/tools/toolRegistry.ts",
-    "packages/web/src/workspace/commandCapabilities.test.ts"
+    "packages/web/src/workspace/commandCapabilities.test.ts",
+    "spec/revit-parity/agent-prompts/RESUME-WP-A.md",
+    "spec/revit-parity/agent-prompts/RESUME-WP-B.md",
+    "spec/revit-parity/agent-prompts/RESUME-WP-C.md",
+    "spec/revit-parity/agent-prompts/RESUME-WP-D.md",
+    "spec/revit-parity/agent-prompts/RESUME-WP-E.md",
+    "spec/revit-parity/agent-prompts/RESUME-WP-F.md",
+    "spec/revit-parity/agent-prompts/RESUME-WP-G.md"
   ],
   "sessions": [
     {
@@ -101,13 +109,19 @@
       "transcript": "/53/1d40959250/14/full.jsonl",
       "content_hash": "/53/1d40959250/14/content_hash.txt",
       "prompt": "/53/1d40959250/14/prompt.txt"
+    },
+    {
+      "metadata": "/53/1d40959250/15/metadata.json",
+      "transcript": "/53/1d40959250/15/full.jsonl",
+      "content_hash": "/53/1d40959250/15/content_hash.txt",
+      "prompt": "/53/1d40959250/15/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 7704319,
-    "cache_creation_tokens": 926875,
-    "cache_read_tokens": 227216843,
-    "output_tokens": 669238,
-    "api_call_count": 2985
+    "input_tokens": 7704379,
+    "cache_creation_tokens": 1037463,
+    "cache_read_tokens": 230845218,
+    "output_tokens": 730432,
+    "api_call_count": 3037
   }
 }

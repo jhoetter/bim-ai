@@ -1,0 +1,13 @@
+i early started from @spec/revit-parity/ WP-A until WP-G, but my macbook crashed; are the agents done with their WPs?
+
+---
+
+can you write the prompts for each agent to continue? i.e. so i can copy paste into 7 terminals where each currently is and how to pick up again?
+
+---
+
+the claude sessions have stopped, give each prompt a bit more context just to better pick up work again
+
+---
+
+no i meant the prompts i can copy paste
