@@ -295,10 +295,11 @@ F3 (Project Information): ProjectInfoDialog.tsx implemented — standalone dialo
 
 F6 (True North): projectNorthAngleDeg added to project_settings type. True North toggle button in PlanViewHeader.tsx (props: projectNorthAngleDeg, trueNorthActive, onTrueNorthToggle). Toggle button wired in Workspace.tsx pane trailing controls when north angle ≠ 0; applies CSS `rotate(-Ndeg)` to plan canvas wrapper. sunStore.ts extended with projectNorthOffsetDeg + displayAzimuthDeg() for adjusted sun azimuth. Note: mouse interaction is not coordinate-corrected in true-north mode (view-only rotation).
 
+F2 (Phase Graphic Overrides): `phaseFilterMode` added to plan_view element type in core/index.ts. `resolvePhaseGraphicStyle()` pure function added to planProjection.ts — given a view's phaseId, phaseFilterMode, and an element's phaseCreated/phaseDemolished, returns `{hidden, opacity, dashed, grey}`. rebuildPlanMeshes() in symbology.ts extended with `viewPhaseId` + `phaseFilterMode` opts; `applyPhaseStyle()` helper traverses Three.js object children and applies grey colouring + opacity + LineDashedMaterial for demolished elements. Phase overlay applied to walls, curtain walls, doors, windows, floors. PlanCanvas.tsx derives viewPhaseId/phaseFilterMode from active plan_view element and passes to rebuildPlanMeshes. Phase filter mode selector (dropdown) added to Workspace.tsx paneTrailingControls (visible when active plan view has a phaseId set); dispatches updateElementProperty to persist the mode. Modes: `new_construction` (existing=grey, demolished=hidden, new=normal), `demolition` (existing=grey, demolished=dashed, new=hidden), `existing` (only existing shown), `as_built` (all normal). 11 tests added to planProjection.test.ts (all pass).
+
 Still missing:
-- Per-phase graphic overrides (demolished elements shown dashed, existing shown grey) [F2]
-- Phase filter presets (As Built, Construction, Demolition Plan, etc.) [F2]
 - Elements automatically acquiring correct phase based on creation context
+- Phase graphic overrides do not yet apply to roof, ceiling, railing, beam, stair elements
 
 ### 2.9 Weitere Grundrisse und Ansichten (additional floor plans and views)
 
@@ -493,36 +494,36 @@ Reference planes exist (reference-plane tool). Snapping dimensions to reference 
 ### 4.3 Die lineare Bemaßung (linear / horizontal-vertical dimension)
 
 #### 4.3.1 Maßtexte ergänzen (adding suffix/prefix text to dimension value)
-**Status: Not Started — P2**
-Dimension text prefix/suffix/override is Not Started.
+**Status: Done — P2**
+`textPrefix?`, `textSuffix?`, `textOverride?` added to dimension element type. planElementMeshBuilders.ts uses textOverride when set, else composes prefix+measured+suffix. Inspector shows editable inputs when onPropertyChange is wired. 4 tests in InspectorContent.test.tsx.
 
 ### 4.4 Winkelbemaßung (angular dimension)
 **Status: Partial — P1**
-`angular-dimension` ToolId (hotkey `AD`), grammar (idle→first-ray→second-ray→commitAngular), and plan renderer (two radial lines + angle label) implemented. Core element type `angular_dimension` exists.
+`angular-dimension` ToolId (hotkey `AD`), grammar (idle→first-ray→second-ray→commitAngular), and plan renderer (two radial lines + angle label) implemented. Core element type `angular_dimension` exists. Grip provider (vertex drag) and inspector panel added.
 
 ### 4.5 Radius- und Durchmesserbemaßungen (radial and diameter dimensions)
 **Status: Partial — P1**
-`radial-dimension` (hotkey `RD`) and `diameter-dimension` (hotkey `DD`) ToolIds added. Grammar: 2-click idle→arc-point→commitRadial. Plan renderer: line + R/ø label sprite.
+`radial-dimension` (hotkey `RD`) and `diameter-dimension` (hotkey `DD`) ToolIds added. Grammar: 2-click idle→arc-point→commitRadial. Plan renderer: line + R/ø label sprite. Grip provider (arcPointMm drag) and inspector panel (computed radius/diameter) added.
 
 ### 4.6 Bogenlängenbemaßung (arc length dimension)
 **Status: Partial — P2**
-`arc-length-dimension` ToolId (hotkey `ALD`) added. Single-click grammar. Plan renderer draws arc-length label at midpoint.
+`arc-length-dimension` ToolId (hotkey `ALD`) added. Single-click grammar. Plan renderer draws arc-length label at midpoint. Grip provider (center drag) and inspector panel (arc length, angle, radius) added.
 
 ### 4.7 Höhenkoten (spot elevation annotation)
 **Status: Partial — P1**
-`spot-elevation` ToolId (hotkey `SE`) added. Single-click grammar. Plan renderer draws elevation label (prefix+mm/1000+suffix). 3D viewport text label Not Started.
+`spot-elevation` ToolId (hotkey `SE`) added. Single-click grammar. Plan renderer draws elevation label (prefix+mm/1000+suffix). Grip provider (position drag) and inspector panel (elevationMm editable) added. 3D viewport text label Not Started.
 
 ### 4.8 Punktkoordinate (spot coordinate annotation)
 **Status: Partial — P2**
-`spot-coordinate` ToolId (hotkey `SP`) added. Single-click grammar. Plan renderer draws N/E coordinate label.
+`spot-coordinate` ToolId (hotkey `SP`) added. Single-click grammar. Plan renderer draws N/E coordinate label. Grip provider (position drag) and inspector panel (N/E read-only) added.
 
 ### 4.9 Neigungskote (slope annotation / grade arrow)
 **Status: Partial — P2**
-`slope-annotation` ToolId (hotkey `SL`) added. Two-click grammar (idle→end-point→commitSlope). Plan renderer draws slope percentage label.
+`slope-annotation` ToolId (hotkey `SL`) added. Two-click grammar (idle→end-point→commitSlope). Plan renderer draws slope percentage label. Grip provider (position drag) and inspector panel (slopePct editable) added.
 
 ### 4.10 Text und Hinweistext (text and leader text annotations)
 **Status: Partial — P1**
-`text` ToolId (hotkey `TX`) and `leader-text` ToolId (hotkey `LT`) added. Grammar machines: reduceTextAnnotation (idle→typing→commitText) and reduceLeaderText (idle→anchor→elbow→typing→commitLeader). Rich-text formatting and inspector editing Not Started.
+`text` ToolId (hotkey `TX`) and `leader-text` ToolId (hotkey `LT`) added. Grammar machines: reduceTextAnnotation and reduceLeaderText implemented. Inspector panels: text_note (content textarea, fontSizeMm, rotationDeg); leader_text (content textarea, arrowStyle dropdown). Grip providers: textNoteGripProvider (position), leaderTextGripProvider (anchor + text-block). Rich-text formatting Not Started.
 
 ### 4.11 Bauteile beschriften (element tags / labels)
 
@@ -536,7 +537,7 @@ Room tags, window/door tags exist. Tag content (mark number, type, dimensions) i
 
 #### 4.11.3 Material-Bauelement (material tag)
 **Status: Partial — P2**
-`material-tag` ToolId (hotkey `MT`) added. Single-click grammar. Plan renderer draws material name label. Live layer lookup Not Started.
+`material-tag` ToolId (hotkey `MT`) added. Single-click grammar. Plan renderer draws material name label. Live layer lookup implemented: resolves wallTypeId → layer[layerIndex].materialKey when textOverride is absent.
 
 ### 4.12 Übungsfragen
 **Status: N/A**
@@ -583,7 +584,7 @@ Project base point exists. Moving the entire project to a real-world elevation o
 
 #### 5.4.1 Nordpfeil (north arrow annotation on sheets)
 **Status: Partial — P2**
-`north-arrow` ToolId (hotkey `NA`) added. Single-click grammar. Core annotation_symbol element type with symbolType north_arrow exists. Sheet canvas symbol rendering and truNorthAngleDeg from georef Not Started.
+`north-arrow` ToolId (hotkey `NA`) added. Single-click grammar. Core annotation_symbol element type with symbolType north_arrow exists. Sheet canvas now renders north_arrow symbols as SVG circle+arrow+N glyph; rotation = element.rotationDeg + project_settings.projectNorthAngleDeg. 3 tests in SheetCanvas.test.tsx.
 
 #### 5.4.2 Ansicht auf Nordrichtung drehen (rotate plan view to true north)
 **Status: Partial — P2**
