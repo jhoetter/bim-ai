@@ -490,32 +490,32 @@ Reference planes exist (reference-plane tool). Snapping dimensions to reference 
 Dimension text prefix/suffix/override is Not Started.
 
 ### 4.4 Winkelbemaßung (angular dimension)
-**Status: Not Started — P1**
-Angular dimension tool is not implemented.
+**Status: Partial — P1**
+`angular-dimension` ToolId (hotkey `AD`), grammar (idle→first-ray→second-ray→commitAngular), and plan renderer (two radial lines + angle label) implemented. Core element type `angular_dimension` exists.
 
 ### 4.5 Radius- und Durchmesserbemaßungen (radial and diameter dimensions)
-**Status: Not Started — P1**
-Radial and diameter dimension tools are not implemented.
+**Status: Partial — P1**
+`radial-dimension` (hotkey `RD`) and `diameter-dimension` (hotkey `DD`) ToolIds added. Grammar: 2-click idle→arc-point→commitRadial. Plan renderer: line + R/ø label sprite.
 
 ### 4.6 Bogenlängenbemaßung (arc length dimension)
-**Status: Not Started — P2**
-Arc length dimension is not implemented.
+**Status: Partial — P2**
+`arc-length-dimension` ToolId (hotkey `ALD`) added. Single-click grammar. Plan renderer draws arc-length label at midpoint.
 
 ### 4.7 Höhenkoten (spot elevation annotation)
-**Status: Not Started — P1**
-Spot elevation markers (showing the elevation of a point on a floor, slab, or terrain in plan/section view) are not implemented.
+**Status: Partial — P1**
+`spot-elevation` ToolId (hotkey `SE`) added. Single-click grammar. Plan renderer draws elevation label (prefix+mm/1000+suffix). 3D viewport text label Not Started.
 
 ### 4.8 Punktkoordinate (spot coordinate annotation)
-**Status: Not Started — P2**
-Spot coordinate annotation (showing X/Y/Z coordinate of a point) is not implemented.
+**Status: Partial — P2**
+`spot-coordinate` ToolId (hotkey `SP`) added. Single-click grammar. Plan renderer draws N/E coordinate label.
 
 ### 4.9 Neigungskote (slope annotation / grade arrow)
-**Status: Not Started — P2**
-Slope indicator annotation (arrow showing rise/run or % grade) is not implemented.
+**Status: Partial — P2**
+`slope-annotation` ToolId (hotkey `SL`) added. Two-click grammar (idle→end-point→commitSlope). Plan renderer draws slope percentage label.
 
 ### 4.10 Text und Hinweistext (text and leader text annotations)
-**Status: Not Started — P1**
-Free text annotation tool is not in the tool registry. Leaders (Hinweistexte) with arrowhead and text block are not implemented. This is a significant gap for producing annotated drawings.
+**Status: Partial — P1**
+`text` ToolId (hotkey `TX`) and `leader-text` ToolId (hotkey `LT`) added. Grammar machines: reduceTextAnnotation (idle→typing→commitText) and reduceLeaderText (idle→anchor→elbow→typing→commitLeader). Rich-text formatting and inspector editing Not Started.
 
 ### 4.11 Bauteile beschriften (element tags / labels)
 
@@ -528,8 +528,8 @@ autoTags.ts and manualTags.ts exist. Tag tool is in the registry. Auto-tagging b
 Room tags, window/door tags exist. Tag content (mark number, type, dimensions) is partially driven by family data.
 
 #### 4.11.3 Material-Bauelement (material tag)
-**Status: Not Started — P2**
-Material tags (showing the material name of a layer in a section) are not implemented.
+**Status: Partial — P2**
+`material-tag` ToolId (hotkey `MT`) added. Single-click grammar. Plan renderer draws material name label. Live layer lookup Not Started.
 
 ### 4.12 Übungsfragen
 **Status: N/A**
@@ -576,7 +576,7 @@ Project base point exists. Moving the entire project to a real-world elevation o
 
 #### 5.4.1 Nordpfeil (north arrow annotation on sheets)
 **Status: Partial — P2**
-Sun/shadow uses compass bearing. A north arrow symbol placeable on a sheet is Not Started as an explicit annotation element.
+`north-arrow` ToolId (hotkey `NA`) added. Single-click grammar. Core annotation_symbol element type with symbolType north_arrow exists. Sheet canvas symbol rendering and truNorthAngleDeg from georef Not Started.
 
 #### 5.4.2 Ansicht auf Nordrichtung drehen (rotate plan view to true north)
 **Status: Partial — P2**
@@ -806,8 +806,8 @@ Beam tool is in the registry. Beam placement between columns/walls works. No ful
 Beam systems (automatically filling a bay with framing members at set spacing) are not implemented.
 
 ### 9.4 Streben (braces / diagonal structural members)
-**Status: Not Started — P1**
-No brace/strut tool in the registry.
+**Status: Implemented — G1**
+Brace element added: `kind: 'brace'` in core Element union, `'brace'` tool in toolRegistry (hotkey BR, plan+3D modes), 3D mesh builder, plan symbol, and Vitest tests.
 
 ### 9.5 Stahlbau-Funktionen (steel fabrication tools)
 
