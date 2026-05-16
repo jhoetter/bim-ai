@@ -1,0 +1,7 @@
+Your task is to wire WalkthroughPlaybackPanel.tsx into Viewport.tsx as a bottom-centre overlay that drives the camera via setOrbitCameraFromViewpointMm, add selectedCameraPathId / renameCameraPath / 
+  ▎ removeCameraPath to the Zustand store, add a camera path inspector panel in InspectorContent.tsx, and update spec/revit-parity/revit2026-parity-tracker.md §14.6 to Done. Full spec: 
+  ▎ spec/revit-parity/agent-prompts/WAVE3-WP-A.md.
+
+---
+
+so you are done and tracker is updated?
