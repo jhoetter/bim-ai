@@ -2,6 +2,8 @@
 
 Last updated: 2026-05-16
 
+**Tracker complete as of 2026-05-16.** All 49 workpackages are `Done`. WP-NEXT-33 is permanently tombstoned (`Blocked`): its screen-axis canonicalization approach was rejected during seeded validation and superseded by WP-NEXT-34 (visible work-plane + block-if-occluded), which is `Done`. No further workpackages are open or in progress.
+
 Related baseline:
 
 - [`spec/ux-bim-ai-rework-master.md`](./ux-bim-ai-rework-master.md)
