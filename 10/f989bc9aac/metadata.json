@@ -5,6 +5,7 @@
   "branch": "main",
   "checkpoints_count": 2,
   "files_touched": [
+    "packages/web/src/workspace/Workspace.tsx",
     "packages/web/src/workspace/shell/RibbonBar.tsx"
   ],
   "sessions": [
@@ -49,6 +50,12 @@
       "transcript": "/10/f989bc9aac/6/full.jsonl",
       "content_hash": "/10/f989bc9aac/6/content_hash.txt",
       "prompt": "/10/f989bc9aac/6/prompt.txt"
+    },
+    {
+      "metadata": "/10/f989bc9aac/7/metadata.json",
+      "transcript": "/10/f989bc9aac/7/full.jsonl",
+      "content_hash": "/10/f989bc9aac/7/content_hash.txt",
+      "prompt": "/10/f989bc9aac/7/prompt.txt"
     }
   ],
   "token_usage": {
