@@ -100,6 +100,12 @@
       "transcript": "/71/130a14e085/13/full.jsonl",
       "content_hash": "/71/130a14e085/13/content_hash.txt",
       "prompt": "/71/130a14e085/13/prompt.txt"
+    },
+    {
+      "metadata": "/71/130a14e085/14/metadata.json",
+      "transcript": "/71/130a14e085/14/full.jsonl",
+      "content_hash": "/71/130a14e085/14/content_hash.txt",
+      "prompt": "/71/130a14e085/14/prompt.txt"
     }
   ],
   "token_usage": {
