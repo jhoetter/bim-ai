@@ -5,7 +5,8 @@
   "branch": "main",
   "checkpoints_count": 1,
   "files_touched": [
-    "packages/web/src/state/storeTypes.ts"
+    "packages/web/src/state/storeTypes.ts",
+    "packages/web/src/workspace/commandCapabilities.test.ts"
   ],
   "sessions": [
     {
@@ -25,6 +26,12 @@
       "transcript": "/53/1d40959250/2/full.jsonl",
       "content_hash": "/53/1d40959250/2/content_hash.txt",
       "prompt": "/53/1d40959250/2/prompt.txt"
+    },
+    {
+      "metadata": "/53/1d40959250/3/metadata.json",
+      "transcript": "/53/1d40959250/3/full.jsonl",
+      "content_hash": "/53/1d40959250/3/content_hash.txt",
+      "prompt": "/53/1d40959250/3/prompt.txt"
     }
   ],
   "token_usage": {
