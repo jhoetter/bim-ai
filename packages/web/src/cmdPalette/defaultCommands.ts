@@ -905,6 +905,185 @@ registerCommand({
 });
 
 registerCommand({
+  id: 'tool.unjoin',
+  label: 'Unjoin Walls',
+  keywords: ['unjoin', 'disallow join', 'separate walls', 'disconnect wall'],
+  category: 'command',
+  isAvailable: modelHasWall,
+  invoke: (ctx) => startPlanTool(ctx, 'unjoin'),
+});
+
+registerCommand({
+  id: 'tool.attach',
+  label: 'Attach Top/Base',
+  keywords: ['attach', 'attach wall', 'attach top', 'attach base', 'pin wall', 'wall constraint'],
+  category: 'command',
+  isAvailable: modelHasWall,
+  invoke: (ctx) => startPlanTool(ctx, 'attach'),
+});
+
+registerCommand({
+  id: 'tool.detach',
+  label: 'Detach Top/Base',
+  keywords: ['detach', 'detach wall', 'remove attach', 'unpin wall', 'free wall'],
+  category: 'command',
+  isAvailable: modelHasWall,
+  invoke: (ctx) => startPlanTool(ctx, 'detach'),
+});
+
+registerCommand({
+  id: 'tool.text',
+  label: 'Text',
+  keywords: ['text', 'text annotation', 'label', 'note'],
+  category: 'command',
+  invoke: (ctx) => startPlanTool(ctx, 'text'),
+});
+
+registerCommand({
+  id: 'tool.leader-text',
+  label: 'Leader Text',
+  keywords: ['leader text', 'leader', 'callout text', 'note with leader'],
+  category: 'command',
+  invoke: (ctx) => startPlanTool(ctx, 'leader-text'),
+});
+
+registerCommand({
+  id: 'tool.angular-dimension',
+  label: 'Angular Dimension',
+  keywords: ['angular dimension', 'angle dimension', 'angle annotation'],
+  category: 'command',
+  invoke: (ctx) => startPlanTool(ctx, 'angular-dimension'),
+});
+
+registerCommand({
+  id: 'tool.radial-dimension',
+  label: 'Radial Dimension',
+  keywords: ['radial dimension', 'radius annotation', 'arc radius'],
+  category: 'command',
+  invoke: (ctx) => startPlanTool(ctx, 'radial-dimension'),
+});
+
+registerCommand({
+  id: 'tool.diameter-dimension',
+  label: 'Diameter Dimension',
+  keywords: ['diameter dimension', 'diameter annotation', 'circle diameter'],
+  category: 'command',
+  invoke: (ctx) => startPlanTool(ctx, 'diameter-dimension'),
+});
+
+registerCommand({
+  id: 'tool.arc-length-dimension',
+  label: 'Arc Length Dimension',
+  keywords: ['arc length', 'arc length dimension', 'arc annotation'],
+  category: 'command',
+  invoke: (ctx) => startPlanTool(ctx, 'arc-length-dimension'),
+});
+
+registerCommand({
+  id: 'tool.spot-elevation',
+  label: 'Spot Elevation',
+  keywords: ['spot elevation', 'elevation annotation', 'height annotation'],
+  category: 'command',
+  invoke: (ctx) => startPlanTool(ctx, 'spot-elevation'),
+});
+
+registerCommand({
+  id: 'tool.spot-coordinate',
+  label: 'Spot Coordinate',
+  keywords: ['spot coordinate', 'coordinate annotation', 'northing easting'],
+  category: 'command',
+  invoke: (ctx) => startPlanTool(ctx, 'spot-coordinate'),
+});
+
+registerCommand({
+  id: 'tool.slope-annotation',
+  label: 'Slope Annotation',
+  keywords: ['slope annotation', 'slope', 'gradient annotation', 'rise over run'],
+  category: 'command',
+  invoke: (ctx) => startPlanTool(ctx, 'slope-annotation'),
+});
+
+registerCommand({
+  id: 'tool.material-tag',
+  label: 'Material Tag',
+  keywords: ['material tag', 'tag material', 'layer tag'],
+  category: 'command',
+  invoke: (ctx) => startPlanTool(ctx, 'material-tag'),
+});
+
+registerCommand({
+  id: 'tool.north-arrow',
+  label: 'North Arrow',
+  keywords: ['north arrow', 'north symbol', 'orientation symbol'],
+  category: 'command',
+  invoke: (ctx) => startPlanTool(ctx, 'north-arrow'),
+});
+
+registerCommand({
+  id: 'tool.brace',
+  label: 'Brace',
+  keywords: ['brace', 'structural brace', 'diagonal brace', 'cross brace'],
+  category: 'command',
+  invoke: (ctx) => startPlanTool(ctx, 'brace'),
+});
+
+registerCommand({
+  id: 'tool.ramp',
+  label: 'Ramp',
+  keywords: ['ramp', 'sloped ramp', 'accessibility ramp'],
+  category: 'command',
+  invoke: (ctx) => startPlanTool(ctx, 'ramp'),
+});
+
+registerCommand({
+  id: 'tool.array',
+  label: 'Array',
+  keywords: ['array', 'linear array', 'radial array', 'copy pattern'],
+  category: 'command',
+  invoke: (ctx) => startPlanTool(ctx, 'array'),
+});
+
+registerCommand({
+  id: 'tool.place-group',
+  label: 'Place Group',
+  keywords: ['place group', 'group instance', 'model group'],
+  category: 'command',
+  invoke: (ctx) => startPlanTool(ctx, 'place-group'),
+});
+
+registerCommand({
+  id: 'tool.scale',
+  label: 'Scale',
+  keywords: ['scale', 'scale element', 'resize', 'scale factor'],
+  category: 'command',
+  invoke: (ctx) => startPlanTool(ctx, 'scale'),
+});
+
+registerCommand({
+  id: 'tool.mass-box',
+  label: 'Box Mass',
+  keywords: ['box mass', 'conceptual mass', 'mass box', 'massing'],
+  category: 'command',
+  invoke: (ctx) => startPlanTool(ctx, 'mass-box'),
+});
+
+registerCommand({
+  id: 'tool.mass-extrusion',
+  label: 'Extruded Mass',
+  keywords: ['extruded mass', 'massing extrusion', 'conceptual mass'],
+  category: 'command',
+  invoke: (ctx) => startPlanTool(ctx, 'mass-extrusion'),
+});
+
+registerCommand({
+  id: 'tool.mass-revolution',
+  label: 'Revolved Mass',
+  keywords: ['revolved mass', 'revolution mass', 'massing'],
+  category: 'command',
+  invoke: (ctx) => startPlanTool(ctx, 'mass-revolution'),
+});
+
+registerCommand({
   id: 'tool.wall-opening',
   label: 'Place Wall Opening',
   keywords: ['wall opening', 'opening', 'hosted void'],

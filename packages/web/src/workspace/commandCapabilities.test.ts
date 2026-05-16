@@ -190,8 +190,15 @@ describe('command capability graph', () => {
         'mep-opening-request',
         'column',
         'beam',
+        'brace',
         'ceiling',
         'component',
+        'unjoin',
+        'attach',
+        'detach',
+        'mass-box',
+        'mass-extrusion',
+        'mass-revolution',
       ]),
     );
     expect(evaluateCommandInMode('tool.floor', '3d')?.state).toBe('enabled');

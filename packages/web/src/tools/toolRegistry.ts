@@ -52,6 +52,9 @@ export type ToolId =
   | 'offset'
   | 'mirror'
   | 'wall-join'
+  | 'unjoin'
+  | 'attach'
+  | 'detach'
   | 'wall-opening'
   | 'shaft'
   | 'duct'
@@ -85,7 +88,10 @@ export type ToolId =
   | 'slope-annotation'
   | 'material-tag'
   | 'north-arrow'
-  | 'ramp';
+  | 'ramp'
+  | 'mass-box'
+  | 'mass-extrusion'
+  | 'mass-revolution';
 
 /** Modify-group tool IDs — used by ToolPalette to insert a separator. */
 export const MODIFY_TOOL_IDS = new Set<ToolId>([
@@ -102,6 +108,9 @@ export const MODIFY_TOOL_IDS = new Set<ToolId>([
   'array',
   'place-group',
   'wall-join',
+  'unjoin',
+  'attach',
+  'detach',
 ]);
 
 export type WorkspaceMode = 'plan' | '3d' | 'section' | 'sheet' | 'schedule';
@@ -392,6 +401,30 @@ export function getToolRegistry(t: TFunction): Record<ToolId, ToolDefinition> {
       hotkey: 'WJ',
       modes: ['plan'],
       tooltip: t('tools.wallJoin.tooltip'),
+    },
+    unjoin: {
+      id: 'unjoin',
+      label: 'Unjoin',
+      icon: 'wall-join',
+      hotkey: 'UJ',
+      modes: ['plan', '3d'],
+      tooltip: 'Remove a wall join at the selected endpoint so walls end independently.',
+    },
+    attach: {
+      id: 'attach',
+      label: 'Attach Top/Base',
+      icon: 'attach',
+      hotkey: 'AT',
+      modes: ['plan', '3d'],
+      tooltip: 'Attach selected wall top or base to a target roof, floor, or level.',
+    },
+    detach: {
+      id: 'detach',
+      label: 'Detach Top/Base',
+      icon: 'attach',
+      hotkey: 'DT',
+      modes: ['plan', '3d'],
+      tooltip: 'Detach selected wall top or base from its current host constraint.',
     },
     'wall-opening': {
       id: 'wall-opening',
@@ -689,33 +722,33 @@ export function getToolRegistry(t: TFunction): Record<ToolId, ToolDefinition> {
       shortcut: 'RA',
       modes: ['plan'] as WorkspaceMode[],
       tooltip: 'Place a sloped ramp (RA)',
-      'mass-box': {
-        id: 'mass-box',
-        label: 'Box Mass',
-        icon: 'floor',
-        hotkey: 'MBX',
-        shortcut: 'MBX',
-        modes: ['plan', '3d'],
-        tooltip: 'Place a conceptual box mass volume',
-      },
-      'mass-extrusion': {
-        id: 'mass-extrusion',
-        label: 'Extruded Mass',
-        icon: 'floor',
-        hotkey: 'MEX',
-        shortcut: 'MEX',
-        modes: ['plan', '3d'],
-        tooltip: 'Create an extruded mass from a polygon footprint',
-      },
-      'mass-revolution': {
-        id: 'mass-revolution',
-        label: 'Revolved Mass',
-        icon: 'floor',
-        hotkey: 'MRV',
-        shortcut: 'MRV',
-        modes: ['plan', '3d'],
-        tooltip: 'Create a revolved mass surface around an axis',
-      },
+    },
+    'mass-box': {
+      id: 'mass-box',
+      label: 'Box Mass',
+      icon: 'floor',
+      hotkey: 'MBX',
+      shortcut: 'MBX',
+      modes: ['plan', '3d'],
+      tooltip: 'Place a conceptual box mass volume',
+    },
+    'mass-extrusion': {
+      id: 'mass-extrusion',
+      label: 'Extruded Mass',
+      icon: 'floor',
+      hotkey: 'MEX',
+      shortcut: 'MEX',
+      modes: ['plan', '3d'],
+      tooltip: 'Create an extruded mass from a polygon footprint',
+    },
+    'mass-revolution': {
+      id: 'mass-revolution',
+      label: 'Revolved Mass',
+      icon: 'floor',
+      hotkey: 'MRV',
+      shortcut: 'MRV',
+      modes: ['plan', '3d'],
+      tooltip: 'Create a revolved mass surface around an axis',
     },
   };
 }

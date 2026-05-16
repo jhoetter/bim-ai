@@ -169,4 +169,35 @@ describe('WP-NEXT-42 wall connectivity kernel', () => {
     expect(flipWallLocationLineSide('core-face-exterior')).toBe('core-face-interior');
     expect(flipWallLocationLineSide('wall-centerline')).toBe('wall-centerline');
   });
+
+  it('rectangle of four walls produces exactly 4 endpoint joins and no T or X joins', () => {
+    const walls = [
+      wall('s', { xMm: 0, yMm: 0 }, { xMm: 6000, yMm: 0 }),
+      wall('e', { xMm: 6000, yMm: 0 }, { xMm: 6000, yMm: 4000 }),
+      wall('n', { xMm: 6000, yMm: 4000 }, { xMm: 0, yMm: 4000 }),
+      wall('w', { xMm: 0, yMm: 4000 }, { xMm: 0, yMm: 0 }),
+    ];
+    const joins = collectWallConnectivity(walls, { toleranceMm: 5 });
+    expect(joins).toHaveLength(4);
+    expect(joins.every((j) => j.kind === 'endpoint')).toBe(true);
+    expect(joins.every((j) => j.wallIds.length === 2)).toBe(true);
+  });
+
+  it('unjoin: toggling disallow on one corner yields skip_reason join_disallowed for that pair only', () => {
+    const walls = [
+      wall('s', { xMm: 0, yMm: 0 }, { xMm: 4000, yMm: 0 }, { joinDisallowEnd: true }),
+      wall('e', { xMm: 4000, yMm: 0 }, { xMm: 4000, yMm: 3000 }),
+      wall('n', { xMm: 4000, yMm: 3000 }, { xMm: 0, yMm: 3000 }),
+      wall('w', { xMm: 0, yMm: 3000 }, { xMm: 0, yMm: 0 }),
+    ];
+    const records = wallConnectivityToPlanJoinRecords(
+      collectWallConnectivity(walls, { toleranceMm: 5 }),
+      Object.fromEntries(walls.map((w) => [w.id, w])),
+    );
+    const disallowed = records.filter((r) => r.skipReason === 'join_disallowed');
+    const allowed = records.filter((r) => r.skipReason === null);
+    expect(disallowed).toHaveLength(1);
+    expect(disallowed[0]?.wallIds.sort()).toEqual(['e', 's']);
+    expect(allowed).toHaveLength(3);
+  });
 });

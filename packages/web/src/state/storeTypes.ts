@@ -65,6 +65,9 @@ export type PlanTool =
   | 'trim-extend'
   | 'offset'
   | 'wall-join'
+  | 'unjoin'
+  | 'attach'
+  | 'detach'
   | 'wall-opening'
   | 'shaft'
   | 'duct'
@@ -88,7 +91,23 @@ export type PlanTool =
   | 'scale'
   | 'array'
   | 'place-group'
-  | 'section';
+  | 'section'
+  | 'mass-box'
+  | 'mass-extrusion'
+  | 'mass-revolution'
+  | 'text'
+  | 'leader-text'
+  | 'angular-dimension'
+  | 'radial-dimension'
+  | 'diameter-dimension'
+  | 'arc-length-dimension'
+  | 'spot-elevation'
+  | 'spot-coordinate'
+  | 'slope-annotation'
+  | 'material-tag'
+  | 'north-arrow'
+  | 'brace'
+  | 'ramp';
 
 export type PresencePeers = Record<
   string,
