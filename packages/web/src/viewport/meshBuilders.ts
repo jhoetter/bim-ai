@@ -315,9 +315,13 @@ export function wallVerticalSpanM(
   const yBase = wallBaseElevationM(wall, elevM);
   if (wall.topConstraintLevelId && elementsById) {
     const topLvl = elementsById[wall.topConstraintLevelId];
-    const topElevM = topLvl?.kind === 'level' ? topLvl.elevationMm / 1000 : elevM;
-    const topOff = (wall.topConstraintOffsetMm ?? 0) / 1000;
-    return { yBase, height: THREE.MathUtils.clamp(topElevM + topOff - yBase, 0.25, 40) };
+    if (topLvl?.kind === 'level') {
+      const topOff = (wall.topConstraintOffsetMm ?? 0) / 1000;
+      const rawHeight = topLvl.elevationMm / 1000 + topOff - yBase;
+      if (rawHeight > 0) {
+        return { yBase, height: THREE.MathUtils.clamp(rawHeight, 0.25, 40) };
+      }
+    }
   }
   // WP-C C4: if a host element (roof or floor) constrains the wall top, sample
   // its height at the wall midpoint and derive the effective wall height.
@@ -553,7 +557,13 @@ export function makeFloorSlabMesh(
   paint: ViewportPaintBundle | null,
 ): THREE.Mesh {
   const elev = elevationMForLevel(floor.levelId, elementsById);
-  const th = THREE.MathUtils.clamp(floor.thicknessMm / 1000, 0.05, 1.8);
+  const floorTypeEl = floor.floorTypeId ? elementsById[floor.floorTypeId] : undefined;
+  const floorTypeThicknessMm =
+    floorTypeEl?.kind === 'floor_type'
+      ? floorTypeEl.layers.reduce((s, l) => s + l.thicknessMm, 0)
+      : 0;
+  const effectiveThicknessMm = floorTypeThicknessMm > 0 ? floorTypeThicknessMm : floor.thicknessMm;
+  const th = THREE.MathUtils.clamp(effectiveThicknessMm / 1000, 0.05, 1.8);
   const boundary = floor.boundaryMm ?? [];
   const floorMaterialKey = effectiveFloorTopMaterialKey(floor, elementsById);
 

@@ -28,6 +28,8 @@ import {
 import { resolveMaterial } from '../../viewport/materials';
 import { PlanViewGraphicsMatrix } from './PlanViewGraphicsMatrix';
 import { SavedViewTagGraphicsAuthoring, SavedViewTemplateGraphicsAuthoring } from '../authoring';
+import { computeFloorTypeThicknessMm } from '../../tools/floorTypeThickness';
+import { WallTypeLayerEditor } from '../families/WallTypeLayerEditor';
 
 /**
  * Inspector parameter renderers — spec §13.
@@ -607,6 +609,67 @@ function PhaseSection({
   );
 }
 
+function FloorNewTypeRow({
+  onPropertyChange,
+  onDispatchCommand,
+}: {
+  floorId: string;
+  onPropertyChange?: (property: string, value: unknown) => void;
+  onDispatchCommand?: (cmd: Record<string, unknown>) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const [name, setName] = useState('New Floor Type');
+  if (!open) {
+    return (
+      <button
+        type="button"
+        data-testid="inspector-floor-new-type"
+        className="self-start text-xs text-muted hover:text-foreground border border-border rounded px-2 py-0.5"
+        onClick={() => setOpen(true)}
+      >
+        New Floor Type…
+      </button>
+    );
+  }
+  return (
+    <div className="flex items-center gap-1">
+      <input
+        type="text"
+        data-testid="inspector-floor-new-type-name"
+        className="flex-1 text-xs bg-surface border border-border rounded px-1 py-0.5"
+        value={name}
+        onChange={(e) => setName(e.target.value)}
+      />
+      <button
+        type="button"
+        data-testid="inspector-floor-new-type-confirm"
+        className="shrink-0 text-xs border border-border rounded px-2 py-0.5 hover:bg-surface-strong"
+        onClick={() => {
+          const newId = crypto.randomUUID();
+          onDispatchCommand?.({
+            type: 'create_floor_type',
+            id: newId,
+            name: name.trim() || 'New Floor Type',
+            layers: [{ thicknessMm: 200, function: 'structure', materialKey: null }],
+          });
+          onPropertyChange?.('floorTypeId', newId);
+          setOpen(false);
+          setName('New Floor Type');
+        }}
+      >
+        Create
+      </button>
+      <button
+        type="button"
+        className="shrink-0 text-xs text-muted hover:text-foreground"
+        onClick={() => setOpen(false)}
+      >
+        Cancel
+      </button>
+    </div>
+  );
+}
+
 /** Look up a human-readable name for an element ID, falling back to the raw ID. */
 function resolveElName(id: string | null | undefined, eb: Record<string, Element>): string {
   if (!id) return '—';
@@ -671,19 +734,42 @@ export function InspectorPropertiesFor(
             />
           </div>
           <div className="flex items-center gap-2 py-0.5">
-            <span className="text-xs text-muted w-28 shrink-0">Top Offset (mm)</span>
-            <input
-              type="number"
-              className="w-20 text-xs bg-surface border border-border rounded px-1 py-0.5"
-              defaultValue={el.topConstraintOffsetMm ?? 0}
-              key={`${el.id}-top`}
-              step={50}
-              onBlur={(e) =>
-                onPropertyChange?.('topConstraintOffsetMm', Number(e.currentTarget.value))
-              }
-              data-testid="inspector-wall-top-offset"
-            />
+            <span className="text-xs text-muted w-28 shrink-0">Top Constraint</span>
+            <select
+              className="flex-1 text-xs bg-surface border border-border rounded px-1 py-0.5"
+              value={el.topConstraintLevelId ?? ''}
+              onChange={(e) => onPropertyChange?.('topConstraintLevelId', e.target.value || null)}
+              data-testid="inspector-wall-top-level"
+            >
+              <option value="">Unconnected</option>
+              {Object.values(elementsById)
+                .filter((e): e is Extract<Element, { kind: 'level' }> => e.kind === 'level')
+                .sort((a, b) => a.elevationMm - b.elevationMm)
+                .map((lvl) => (
+                  <option key={lvl.id} value={lvl.id}>
+                    {lvl.name}
+                  </option>
+                ))}
+            </select>
           </div>
+          {el.topConstraintLevelId && (
+            <div className="flex items-center gap-2 py-0.5">
+              <span className="text-xs text-muted w-28 shrink-0">Top Offset (mm)</span>
+              <input
+                type="number"
+                className="w-20 text-xs bg-surface border border-border rounded px-1 py-0.5"
+                defaultValue={el.topConstraintOffsetMm ?? 0}
+                key={`${el.id}-top`}
+                step={1}
+                min={-10000}
+                max={10000}
+                onBlur={(e) =>
+                  onPropertyChange?.('topConstraintOffsetMm', Number(e.currentTarget.value))
+                }
+                data-testid="inspector-wall-top-offset"
+              />
+            </div>
+          )}
           <FieldRow label={f('level')} value={resolveElName(el.levelId, elementsById)} />
 
           <div className="flex items-center gap-2 py-0.5">
@@ -1013,6 +1099,7 @@ export function InspectorPropertiesFor(
           <div className="flex items-center gap-2 py-0.5">
             <span className="text-xs text-muted w-28 shrink-0">{f('floorType')}</span>
             <select
+              data-testid="inspector-floor-type-select"
               className="flex-1 text-xs bg-surface border border-border rounded px-1 py-0.5"
               value={el.floorTypeId ?? ''}
               onChange={(e2) => floorOnPropertyChange?.('floorTypeId', e2.target.value || null)}
@@ -1022,6 +1109,7 @@ export function InspectorPropertiesFor(
                 .filter(
                   (e): e is Extract<Element, { kind: 'floor_type' }> => e.kind === 'floor_type',
                 )
+                .sort((a, b) => a.name.localeCompare(b.name))
                 .map((t) => (
                   <option key={t.id} value={t.id}>
                     {t.name}
@@ -1039,6 +1127,19 @@ export function InspectorPropertiesFor(
               </button>
             ) : null}
           </div>
+          <div className="flex items-center gap-2 py-0.5">
+            <span className="text-xs text-muted w-28 shrink-0">Type Thickness</span>
+            <span data-testid="inspector-floor-type-thickness" className="text-xs text-foreground">
+              {floorType?.kind === 'floor_type'
+                ? `${computeFloorTypeThicknessMm(floorType)} mm`
+                : '—'}
+            </span>
+          </div>
+          <FloorNewTypeRow
+            floorId={el.id}
+            onPropertyChange={floorOnPropertyChange}
+            onDispatchCommand={onDispatchCommand}
+          />
           {floorType?.kind === 'floor_type' ? (
             <MaterialAssignmentRow
               label="Type Top Material"
@@ -1348,6 +1449,43 @@ export function InspectorPropertiesFor(
               data-testid="inspector-column-top-offset-y"
             />
           </div>
+          <div className="flex items-center gap-2 py-0.5">
+            <span className="text-xs text-muted w-28 shrink-0">Top Constraint</span>
+            <select
+              className="flex-1 text-xs bg-surface border border-border rounded px-1 py-0.5"
+              value={el.topConstraintLevelId ?? ''}
+              onChange={(e) => colPropChange?.('topConstraintLevelId', e.target.value || null)}
+              data-testid="inspector-column-top-level"
+            >
+              <option value="">Unconnected</option>
+              {Object.values(elementsById)
+                .filter((e): e is Extract<Element, { kind: 'level' }> => e.kind === 'level')
+                .sort((a, b) => a.elevationMm - b.elevationMm)
+                .map((lvl) => (
+                  <option key={lvl.id} value={lvl.id}>
+                    {lvl.name}
+                  </option>
+                ))}
+            </select>
+          </div>
+          {el.topConstraintLevelId && (
+            <div className="flex items-center gap-2 py-0.5">
+              <span className="text-xs text-muted w-28 shrink-0">Top Offset (mm)</span>
+              <input
+                type="number"
+                className="w-20 text-xs bg-surface border border-border rounded px-1 py-0.5"
+                defaultValue={el.topConstraintOffsetMm ?? 0}
+                key={`${el.id}-col-top`}
+                step={1}
+                min={-10000}
+                max={10000}
+                onBlur={(e) =>
+                  colPropChange?.('topConstraintOffsetMm', Number(e.currentTarget.value))
+                }
+                data-testid="inspector-column-top-offset"
+              />
+            </div>
+          )}
           <PhaseSection
             phaseCreated={el.phaseCreated}
             phaseDemolished={el.phaseDemolished}
@@ -2272,72 +2410,15 @@ export function InspectorPropertiesFor(
         </div>
       );
     case 'wall_type':
-      return (
-        <div className="flex flex-col gap-2">
-          <TypeTextInput
-            label={f('name')}
-            value={el.name}
-            testId="inspector-wall-type-name"
-            onCommit={(value) => options?.onPropertyChange?.('name', value)}
-          />
-          <label className="flex items-center gap-2 py-0.5">
-            <span className="w-28 shrink-0 text-xs text-muted">Basis Line</span>
-            <select
-              className="flex-1 rounded border border-border bg-surface px-1 py-0.5 text-xs"
-              value={el.basisLine ?? 'center'}
-              data-testid="inspector-wall-type-basis-line"
-              onChange={(e) => options?.onPropertyChange?.('basisLine', e.currentTarget.value)}
-            >
-              <option value="center">Centerline</option>
-              <option value="face_interior">Finish Face: Interior</option>
-              <option value="face_exterior">Finish Face: Exterior</option>
-            </select>
-          </label>
-          <TypeLayerSummary layers={el.layers} />
-          <MaterialAssignmentRow
-            label="Exterior Layer Material"
-            materialKey={el.layers[materialTargetLayerIndex(el)]?.materialKey ?? null}
-            fallback="By category"
-            onOpenMaterialBrowser={onOpenMaterialBrowser}
-            onOpenAppearanceAssetBrowser={onOpenAppearanceAssetBrowser}
-          />
-        </div>
-      );
     case 'floor_type':
-      return (
-        <div className="flex flex-col gap-2">
-          <TypeTextInput
-            label={f('name')}
-            value={el.name}
-            testId="inspector-floor-type-name"
-            onCommit={(value) => options?.onPropertyChange?.('name', value)}
-          />
-          <TypeLayerSummary layers={el.layers} />
-          <MaterialAssignmentRow
-            label="Top Layer Material"
-            materialKey={el.layers[materialTargetLayerIndex(el)]?.materialKey ?? null}
-            fallback="By category"
-            onOpenMaterialBrowser={onOpenMaterialBrowser}
-            onOpenAppearanceAssetBrowser={onOpenAppearanceAssetBrowser}
-          />
-        </div>
-      );
     case 'roof_type':
       return (
         <div className="flex flex-col gap-2">
-          <TypeTextInput
-            label={f('name')}
-            value={el.name}
-            testId="inspector-roof-type-name"
-            onCommit={(value) => options?.onPropertyChange?.('name', value)}
-          />
-          <TypeLayerSummary layers={el.layers} />
-          <MaterialAssignmentRow
-            label="Top Layer Material"
-            materialKey={el.layers[materialTargetLayerIndex(el)]?.materialKey ?? null}
-            fallback="By category"
-            onOpenMaterialBrowser={onOpenMaterialBrowser}
-            onOpenAppearanceAssetBrowser={onOpenAppearanceAssetBrowser}
+          <WallTypeLayerEditor
+            typeElement={el}
+            onUpdate={(patch) =>
+              onDispatchCommand?.({ type: 'update_wall_type', id: el.id, patch })
+            }
           />
         </div>
       );
@@ -2790,6 +2871,80 @@ export function InspectorPropertiesFor(
           ) : (
             <FieldRow label="Slope" value={`${el.slopePct}%`} />
           )}
+        </div>
+      );
+    }
+    case 'toposolid': {
+      const { onPropertyChange } = options ?? {};
+      const samples = el.heightSamples ?? [];
+      return (
+        <div className="flex flex-col gap-2">
+          <div className="flex items-center gap-2 py-0.5">
+            <span className="text-xs text-muted w-28 shrink-0">Contour interval (mm)</span>
+            <input
+              type="number"
+              className="w-20 text-xs bg-surface border border-border rounded px-1 py-0.5"
+              defaultValue={el.contourIntervalMm ?? 0}
+              key={`${el.id}-contour`}
+              step={250}
+              min={0}
+              max={10000}
+              data-testid="inspector-topo-contour-interval"
+              onBlur={(e) => {
+                const v = Number(e.currentTarget.value);
+                onPropertyChange?.('contourIntervalMm', v > 0 ? v : null);
+              }}
+            />
+          </div>
+          <div className="border-t border-border pt-1">
+            <div className="px-0 pb-0.5 text-[10px] font-semibold uppercase tracking-wide text-muted">
+              Control Points
+            </div>
+            <div className="flex items-center justify-between py-0.5">
+              <span className="text-xs text-muted" data-testid="inspector-topo-point-count">
+                {samples.length} control points
+              </span>
+              <button
+                type="button"
+                data-testid="inspector-topo-clear-points"
+                className="text-xs rounded border border-border px-2 py-0.5 text-muted hover:text-foreground"
+                onClick={() =>
+                  onDispatchCommand?.({
+                    type: 'update_toposolid',
+                    id: el.id,
+                    patch: { heightSamples: [] },
+                  })
+                }
+              >
+                Clear
+              </button>
+            </div>
+            {samples.map((s, i) => (
+              <div key={i} className="flex items-center gap-2 py-0.5">
+                <span className="text-xs text-muted w-28 shrink-0">
+                  ({Math.round(s.xMm)}, {Math.round(s.yMm)})
+                </span>
+                <input
+                  type="number"
+                  className="w-20 text-xs bg-surface border border-border rounded px-1 py-0.5"
+                  defaultValue={s.zMm}
+                  key={`${el.id}-pt-${i}`}
+                  step={100}
+                  data-testid={`inspector-topo-point-${i}-z`}
+                  onBlur={(e) => {
+                    const updated = samples.map((pt, j) =>
+                      j === i ? { ...pt, zMm: Number(e.currentTarget.value) } : pt,
+                    );
+                    onDispatchCommand?.({
+                      type: 'update_toposolid',
+                      id: el.id,
+                      patch: { heightSamples: updated },
+                    });
+                  }}
+                />
+              </div>
+            ))}
+          </div>
         </div>
       );
     }

@@ -1787,14 +1787,26 @@ export function dimensionsThree(d: Extract<Element, { kind: 'dimension' }>): THR
  * text label at the segment midpoint.
  * When eqEnabled is true renders "EQ" as a single label at the span midpoint.
  */
+export type DimStyle = {
+  textHeightMm?: number;
+  witnessLineExtensionMm?: number;
+  witnessLineGapMm?: number;
+  arrowStyle?: 'arrow' | 'dot' | 'tick' | 'none';
+  showUnit?: boolean;
+};
+
 export function permanentDimensionThree(
   d: Extract<Element, { kind: 'permanent_dimension' }>,
+  dimStyle?: DimStyle | null,
 ): THREE.Group {
   const grp = new THREE.Group();
   grp.userData.bimPickId = d.id;
 
   const pts = d.witnessPointsMm;
   if (pts.length < 2) return grp;
+
+  const textHeightMm = dimStyle?.textHeightMm ?? 2.5;
+  const showUnit = dimStyle?.showUnit ?? false;
 
   const dimColor = getPlanPalette().dimLine;
 
@@ -1824,14 +1836,13 @@ export function permanentDimensionThree(
       ? 'EQ'
       : (() => {
           const segLenMm = Math.hypot(b.xMm - a.xMm, b.yMm - a.yMm);
-          return segLenMm >= 1000
-            ? `${(segLenMm / 1000).toFixed(2)} m`
-            : `${Math.round(segLenMm)} mm`;
+          return showUnit ? `${Math.round(segLenMm)} mm` : `${Math.round(segLenMm)}`;
         })();
     const midXMm = (a.xMm + b.xMm) / 2 + d.offsetMm.xMm;
     const midYMm = (a.yMm + b.yMm) / 2 + d.offsetMm.yMm;
     const sprite = planAnnotationLabelSprite(ux(midXMm), uz(midYMm), labelText, d.id);
     sprite.userData.labelText = labelText;
+    sprite.userData.textHeightMm = textHeightMm;
     grp.add(sprite);
   }
 

@@ -40,7 +40,7 @@ describe('EQ dimension symbol — §4.2.2', () => {
     expect(labelSprites.length).toBe(2);
     for (const s of labelSprites) {
       const text = (s.userData as { labelText?: string }).labelText ?? '';
-      expect(text).toMatch(/mm$|m$/);
+      expect(text).toMatch(/^\d/);
       expect(text).not.toBe('EQ');
     }
   });

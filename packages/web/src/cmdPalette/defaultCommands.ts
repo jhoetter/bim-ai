@@ -1416,6 +1416,14 @@ registerCommand({
 });
 
 registerCommand({
+  id: 'annotate.dimension-style',
+  label: 'Dimension Style…',
+  keywords: ['dimension', 'style', 'text', 'arrow', 'witness'],
+  category: 'command',
+  invoke: (ctx) => ctx.openDimensionStyle?.(),
+});
+
+registerCommand({
   id: 'project.import.ifc',
   label: 'Import IFC Link',
   keywords: ['import', 'ifc', 'link model', 'project resource'],

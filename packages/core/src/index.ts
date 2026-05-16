@@ -677,7 +677,7 @@ export type RoomColorSchemeRow = {
   schemeColorHex: string;
 };
 
-export type WallLayerFunction = 'structure' | 'insulation' | 'finish';
+export type WallLayerFunction = 'structure' | 'insulation' | 'finish' | 'membrane' | 'air';
 export type StructuralRole =
   | 'unknown'
   | 'load_bearing'
@@ -1203,6 +1203,14 @@ export type Element =
         /** Evaluated result cached on save (mm). */
         valueMm: number;
       }>;
+      /** §4.2.4: project-wide dimension style settings. */
+      dimensionStyle?: {
+        textHeightMm?: number;
+        witnessLineExtensionMm?: number;
+        witnessLineGapMm?: number;
+        arrowStyle?: 'arrow' | 'dot' | 'tick' | 'none';
+        showUnit?: boolean;
+      } | null;
     }
   | {
       kind: 'room_color_scheme';
@@ -3161,6 +3169,13 @@ export type UpdateCurtainGridCmd = {
 export type MaterializeMassToWallsCmd = {
   type: 'materializeMassToWalls';
   massId: string;
+};
+
+/** §1.6.7: patch name, layers, or basisLine on a wall_type / floor_type / roof_type element. */
+export type UpdateWallTypeCmd = {
+  type: 'update_wall_type';
+  id: string;
+  patch: Partial<Omit<Extract<Element, { kind: 'wall_type' }>, 'kind' | 'id'>>;
 };
 
 /** Evidence-package subtree: deterministic PNG inventory + digest hygiene (WP-F02/F03). */

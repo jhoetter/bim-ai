@@ -367,21 +367,24 @@ describe('InspectorPropertiesFor — spec §13', () => {
       basisLine: 'center',
       layers: [{ function: 'structure', materialKey: 'Concrete', thicknessMm: 200 }],
     };
-    const onPropertyChange = vi.fn();
+    const onDispatchCommand = vi.fn();
 
-    const { getByTestId, getByText } = render(
-      InspectorPropertiesFor(wallType, t, { onPropertyChange }),
+    const { getByTestId } = render(InspectorPropertiesFor(wallType, t, { onDispatchCommand }));
+
+    expect(getByTestId('wall-type-layer-editor')).toBeDefined();
+
+    const name = getByTestId('wall-type-name-input') as HTMLInputElement;
+    fireEvent.blur(name, { target: { value: 'Generic 250' } });
+    expect(onDispatchCommand).toHaveBeenCalledWith(
+      expect.objectContaining({ type: 'update_wall_type', patch: { name: 'Generic 250' } }),
     );
 
-    const name = getByTestId('inspector-wall-type-name') as HTMLInputElement;
-    fireEvent.blur(name, { target: { value: 'Generic 250' } });
-    expect(onPropertyChange).toHaveBeenCalledWith('name', 'Generic 250');
-
-    fireEvent.change(getByTestId('inspector-wall-type-basis-line'), {
+    fireEvent.change(getByTestId('wall-type-basis-line'), {
       target: { value: 'face_exterior' },
     });
-    expect(onPropertyChange).toHaveBeenCalledWith('basisLine', 'face_exterior');
-    expect(getByText('1 layer · 200 mm')).toBeTruthy();
+    expect(onDispatchCommand).toHaveBeenCalledWith(
+      expect.objectContaining({ type: 'update_wall_type', patch: { basisLine: 'face_exterior' } }),
+    );
   });
 
   it('renders editable family type parameters', () => {

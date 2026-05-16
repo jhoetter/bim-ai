@@ -240,7 +240,11 @@ function SheetCanvasWithSheet(props: {
   const revision = tp.revision ?? '';
   const project = tp.projectName ?? tp.project ?? '';
   const drawn = tp.drawnBy ?? '';
-  const chk = tp.checkedBy ?? '';
+  const projectSettings = Object.values(elementsById).find(
+    (e): e is Extract<Element, { kind: 'project_settings' }> => e.kind === 'project_settings',
+  );
+  const chk = String(tp.checkedBy ?? projectSettings?.authorName ?? '');
+  const issuedByVal = String(tp.issuedBy ?? projectSettings?.clientName ?? '');
   const issued = tp.issueDate ?? tp.date ?? '';
 
   const hdrParts: string[] = [];
@@ -251,9 +255,9 @@ function SheetCanvasWithSheet(props: {
   const footerLines: string[] = [];
   if (hdr) footerLines.push(hdr);
   if (String(project).trim()) footerLines.push(String(project).trim());
-  if (String(drawn).trim() || String(chk).trim()) {
+  if (String(drawn).trim() || chk.trim()) {
     footerLines.push(
-      `Drn ${String(drawn).trim()} · Chk ${String(chk).trim()}`.replace(/\s*·\s*$/, '').trim(),
+      `Drn ${String(drawn).trim()} · Chk ${chk.trim()}`.replace(/\s*·\s*$/, '').trim(),
     );
   }
   if (String(issued).trim()) footerLines.push(String(issued).trim());
@@ -636,6 +640,25 @@ function SheetCanvasWithSheet(props: {
             </text>
           ) : null}
 
+          <text
+            data-testid="sheet-tb-checked-by"
+            x={marginMm + 900}
+            y={footerY0}
+            fill="#334155"
+            style={{ fontSize: '500px' }}
+          >
+            Checked by: {chk}
+          </text>
+          <text
+            data-testid="sheet-tb-issued-by"
+            x={marginMm + 900}
+            y={footerY0 + 600}
+            fill="#334155"
+            style={{ fontSize: '500px' }}
+          >
+            Issued by: {issuedByVal}
+          </text>
+
           {paintRows.length === 0 ? (
             <g data-testid="sheet-empty-viewports">
               <rect
@@ -678,10 +701,6 @@ function SheetCanvasWithSheet(props: {
                 el.hostViewId === sh.id,
             )
             .map((sym) => {
-              const projectSettings = Object.values(elementsById).find(
-                (e): e is Extract<Element, { kind: 'project_settings' }> =>
-                  e.kind === 'project_settings',
-              );
               const northDeg =
                 (sym.rotationDeg ?? 0) + (projectSettings?.projectNorthAngleDeg ?? 0);
               const cx = sym.positionMm.xMm;
@@ -793,7 +812,6 @@ function SheetCanvasWithSheet(props: {
             const footerY0Vp = yMm + heightMm - footerBandMm;
             const labelY = planThumbnailContent ? footerY0Vp + 480 : yMm + 900;
             const subY = planThumbnailContent ? footerY0Vp + 820 : yMm + 1400;
-            const scaleY = planThumbnailContent ? footerY0Vp + 1060 : yMm + 1800;
             const detailY = planThumbnailContent ? footerY0Vp + 480 : yMm + 820;
             const scheduleY = planThumbnailContent ? footerY0Vp + 1300 : yMm + 2200;
             const legendY = planThumbnailContent ? footerY0Vp + 1600 : yMm + 2600;
@@ -881,17 +899,28 @@ function SheetCanvasWithSheet(props: {
                     {sub}
                   </text>
                 ) : null}
-                {scaleTrim ? (
+                {label.trim() ? (
                   <text
-                    data-testid={`sheet-viewport-scale-${index}`}
-                    x={xMm + 200}
-                    y={scaleY}
-                    fill="#64748b"
+                    data-testid={`sheet-viewport-label-${row.key}`}
+                    x={xMm + widthMm / 2}
+                    y={yMm + heightMm + 60}
+                    fill="#475569"
                     style={{ fontSize: '340px' }}
+                    textAnchor="middle"
                   >
-                    scale {scaleTrim}
+                    {label.trim()}
                   </text>
                 ) : null}
+                <text
+                  data-testid={`sheet-viewport-scale-${row.key}`}
+                  x={xMm + widthMm / 2}
+                  y={yMm + heightMm + (label.trim() ? 480 : 60)}
+                  fill="#64748b"
+                  style={{ fontSize: '340px' }}
+                  textAnchor="middle"
+                >
+                  {scaleTrim || '—'}
+                </text>
                 {authoring && viewportLocked ? (
                   <text
                     x={xMm + widthMm - 200}

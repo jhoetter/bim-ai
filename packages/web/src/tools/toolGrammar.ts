@@ -7,7 +7,7 @@
  */
 
 export type { WallLocationLine } from '@bim-ai/core';
-import type { WallLocationLine } from '@bim-ai/core';
+import type { WallLocationLine, HeightSample } from '@bim-ai/core';
 
 /* ────────────────────────────────────────────────────────────────────── */
 /* EDT-06 — Tool grammar polish (Chain / Multiple / Tag-on-Place /        */
@@ -2659,6 +2659,67 @@ export function reduceExcavation(
     return {
       state: { phase: 'sketch', verticesMm: [...state.verticesMm, event.pointMm] },
       effect: { stillActive: true },
+    };
+  }
+  return { state, effect: { stillActive: true } };
+}
+
+/* ────────────────────────────────────────────────────────────────────── */
+/* Terrain Height Point — §5.1.1 + §5.1.2                                */
+/* ────────────────────────────────────────────────────────────────────── */
+
+export type TerrainPointState =
+  | { phase: 'idle' }
+  | { phase: 'active'; toposolidId: string; pendingSamples: HeightSample[] };
+
+export type TerrainPointEvent =
+  | { kind: 'activate'; toposolidId: string }
+  | { kind: 'click'; xMm: number; yMm: number }
+  | { kind: 'commit' }
+  | { kind: 'cancel' }
+  | { kind: 'deactivate' };
+
+export interface TerrainPointEffect {
+  previewTerrainPoints?: HeightSample[];
+  addTerrainPoints?: { toposolidId: string; samples: HeightSample[] };
+  stillActive: boolean;
+}
+
+export function initialTerrainPointState(): TerrainPointState {
+  return { phase: 'idle' };
+}
+
+export function reduceTerrainPoint(
+  state: TerrainPointState,
+  event: TerrainPointEvent,
+): { state: TerrainPointState; effect: TerrainPointEffect } {
+  if (event.kind === 'deactivate' || event.kind === 'cancel') {
+    return { state: { phase: 'idle' }, effect: { stillActive: false } };
+  }
+  if (event.kind === 'activate') {
+    return {
+      state: { phase: 'active', toposolidId: event.toposolidId, pendingSamples: [] },
+      effect: { stillActive: true },
+    };
+  }
+  if (state.phase !== 'active') {
+    return { state, effect: { stillActive: false } };
+  }
+  if (event.kind === 'click') {
+    const newSample: HeightSample = { xMm: event.xMm, yMm: event.yMm, zMm: 0 };
+    const pendingSamples = [...state.pendingSamples, newSample];
+    return {
+      state: { ...state, pendingSamples },
+      effect: { previewTerrainPoints: pendingSamples, stillActive: true },
+    };
+  }
+  if (event.kind === 'commit') {
+    return {
+      state: { phase: 'idle' },
+      effect: {
+        addTerrainPoints: { toposolidId: state.toposolidId, samples: state.pendingSamples },
+        stillActive: false,
+      },
     };
   }
   return { state, effect: { stillActive: true } };

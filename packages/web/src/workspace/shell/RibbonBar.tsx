@@ -85,7 +85,8 @@ type RibbonActionId =
   | 'structural-detach-orphan'
   | 'wall-create-parts'
   | 'manage-phases'
-  | 'manage-global-params';
+  | 'manage-global-params'
+  | 'dimension-style';
 
 interface RibbonPanel {
   id: string;
@@ -169,6 +170,7 @@ export interface RibbonBarProps {
   onCreateWallParts?: () => void;
   onOpenManagePhases?: () => void;
   onOpenManageGlobalParams?: () => void;
+  onOpenDimensionStyle?: () => void;
   sheetReviewMode?: SheetReviewMode;
   onSheetReviewModeChange?: (mode: SheetReviewMode) => void;
   sheetMarkupShape?: SheetMarkupShape;
@@ -221,6 +223,7 @@ export function RibbonBar({
   onCreateWallParts,
   onOpenManagePhases,
   onOpenManageGlobalParams,
+  onOpenDimensionStyle,
   sheetReviewMode = 'cm',
   onSheetReviewModeChange,
   sheetMarkupShape = 'freehand',
@@ -350,6 +353,7 @@ export function RibbonBar({
       'wall-create-parts': onCreateWallParts,
       'manage-phases': onOpenManagePhases,
       'manage-global-params': onOpenManageGlobalParams,
+      'dimension-style': onOpenDimensionStyle,
     };
     (actions[command.id] ?? onOpenCommandPalette)?.();
   }
@@ -1259,6 +1263,7 @@ function buildPlanRibbonTabs(
           commands: [
             action('manage-phases', 'Phases', 'phase', 'ribbon-manage-phases'),
             action('manage-global-params', 'Parameters', 'tag', 'ribbon-manage-global-params'),
+            action('dimension-style', 'Dim Style', 'dimension', 'ribbon-dimension-style'),
           ],
         },
       ],
@@ -1937,6 +1942,8 @@ function ribbonCapabilityId(command: RibbonCommand): string | null {
       return 'project.manage-phases';
     case 'manage-global-params':
       return 'project.manage-global-params';
+    case 'dimension-style':
+      return 'annotate.dimension-style';
   }
   return null;
 }

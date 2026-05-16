@@ -118,7 +118,8 @@ export type PlanTool =
   | 'roof-by-extrusion'
   | 'revision-cloud'
   | 'steel-connection'
-  | 'excavation';
+  | 'excavation'
+  | 'terrain-point';
 
 export type PresencePeers = Record<
   string,

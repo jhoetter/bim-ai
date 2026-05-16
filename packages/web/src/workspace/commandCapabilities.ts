@@ -1937,4 +1937,17 @@ const VISIBILITY_CAPABILITIES: CommandCapability[] = [
     status: 'implemented',
     usabilityScore: 8,
   },
+  {
+    id: 'annotate.dimension-style',
+    label: 'Dimension Style…',
+    owner: 'workspace/DimensionStyleDialog',
+    group: 'document',
+    scope: 'model',
+    intendedModes: [...CAPABILITY_VIEW_MODES],
+    surfaces: ['cmd-k', 'ribbon'],
+    executionSurface: 'ribbon',
+    preconditions: [],
+    status: 'implemented',
+    usabilityScore: 8,
+  },
 ];

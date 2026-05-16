@@ -129,6 +129,7 @@ import { ManagePhasesDialog } from './phases/ManagePhasesDialog';
 import { GlobalParamsDialog } from './project/GlobalParamsDialog';
 import { ManageGlobalParamsDialog } from './ManageGlobalParamsDialog';
 import type { SimpleGlobalParam } from './ManageGlobalParamsDialog';
+import { DimensionStyleDialog } from './DimensionStyleDialog';
 import {
   coerceCheckpointRetentionLimit,
   DEFAULT_CHECKPOINT_RETENTION_LIMIT,
@@ -1069,6 +1070,7 @@ export function Workspace(): JSX.Element {
   const [managePhasesOpen, setManagePhasesOpen] = useState(false);
   const [globalParamsOpen, setGlobalParamsOpen] = useState(false);
   const [manageGlobalParamsOpen, setManageGlobalParamsOpen] = useState(false);
+  const [dimStyleOpen, setDimStyleOpen] = useState(false);
   const [projectInfoOpen, setProjectInfoOpen] = useState(false);
   const [trueNorthActive, setTrueNorthActive] = useState(false);
   const lensMode = useBimStore((s) => s.lensMode);
@@ -1751,6 +1753,17 @@ export function Workspace(): JSX.Element {
         useBimStore.getState().setGroupEditModeDefinitionId(null);
         return;
       }
+      // §1.6.7: client-only wall/floor/roof type layer edit
+      if (cmd.type === 'update_wall_type') {
+        const current = useBimStore.getState().elementsById;
+        useBimStore.setState({
+          elementsById: {
+            ...current,
+            [cmd.id as string]: { ...current[cmd.id as string], ...(cmd.patch as object) },
+          },
+        });
+        return;
+      }
 
       const mid = useBimStore.getState().modelId;
       const uid = useBimStore.getState().userId;
@@ -1795,6 +1808,13 @@ export function Workspace(): JSX.Element {
           elementId: wallId,
           key: 'curtainWallData',
           value: updated,
+        };
+      } else if (cmd.type === 'create_floor_type') {
+        effectiveCmd = {
+          type: 'upsertFloorType',
+          id: cmd.id,
+          name: cmd.name,
+          layers: cmd.layers,
         };
       }
 
@@ -3699,6 +3719,7 @@ export function Workspace(): JSX.Element {
           }
           onOpenManagePhases={() => setManagePhasesOpen(true)}
           onOpenManageGlobalParams={() => setManageGlobalParamsOpen(true)}
+          onOpenDimensionStyle={() => setDimStyleOpen(true)}
           sheetReviewMode={sheetReviewMode}
           onSheetReviewModeChange={setSheetReviewMode}
           sheetMarkupShape={sheetMarkupShape}
@@ -4107,6 +4128,9 @@ export function Workspace(): JSX.Element {
           splitActiveTabRight: () => splitActiveTab('right'),
           splitActiveTabTop: () => splitActiveTab('top'),
           splitActiveTabBottom: () => splitActiveTab('bottom'),
+          openManageGlobalParams: () => setManageGlobalParamsOpen(true),
+          openManagePhases: () => setManagePhasesOpen(true),
+          openDimensionStyle: () => setDimStyleOpen(true),
         }}
       />
       <FamilyLibraryPanel
@@ -4363,6 +4387,24 @@ export function Workspace(): JSX.Element {
           void onSemanticCommand({ type: 'delete_global_param', paramId })
         }
         onClose={() => setManageGlobalParamsOpen(false)}
+      />
+      <DimensionStyleDialog
+        open={dimStyleOpen}
+        onClose={() => setDimStyleOpen(false)}
+        currentStyle={
+          Object.values(elementsById).find((e) => e.kind === 'project_settings')?.dimensionStyle ??
+          {}
+        }
+        onSave={(style) => {
+          const ps = Object.values(elementsById).find((e) => e.kind === 'project_settings');
+          if (!ps) return;
+          void onSemanticCommand({
+            type: 'updateElementProperty',
+            elementId: ps.id,
+            key: 'dimensionStyle',
+            value: style,
+          });
+        }}
       />
       <ProjectInfoDialog
         open={projectInfoOpen}

@@ -4537,6 +4537,47 @@ export function PlanCanvas({
         bumpGeom((x) => x + 1);
         return;
       }
+      if (planTool === 'terrain-point') {
+        if (terrainPointStateRef.current.phase === 'idle') {
+          const rectBox = rnd.domElement.getBoundingClientRect();
+          const ray = new THREE.Raycaster();
+          ray.setFromCamera(
+            new THREE.Vector2(
+              ((ev.clientX - rectBox.left) / rectBox.width) * 2 - 1,
+              -(((ev.clientY - rectBox.top) / rectBox.height) * 2 - 1),
+            ),
+            camNow,
+          );
+          const hits = ray.intersectObjects(grp.children, true);
+          const h = hits.find(
+            (x) => typeof (x.object.userData as { bimPickId?: unknown }).bimPickId === 'string',
+          );
+          const pickId =
+            typeof (h?.object.userData as { bimPickId?: unknown }).bimPickId === 'string'
+              ? (h!.object.userData as { bimPickId: string }).bimPickId
+              : undefined;
+          const topoId =
+            pickId && useBimStore.getState().elementsById[pickId]?.kind === 'toposolid'
+              ? pickId
+              : undefined;
+          if (topoId) {
+            const { state } = reduceTerrainPoint(terrainPointStateRef.current, {
+              kind: 'activate',
+              toposolidId: topoId,
+            });
+            terrainPointStateRef.current = state;
+          }
+        } else {
+          const { state } = reduceTerrainPoint(terrainPointStateRef.current, {
+            kind: 'click',
+            xMm: sp.xMm,
+            yMm: sp.yMm,
+          });
+          terrainPointStateRef.current = state;
+        }
+        bumpGeom((x) => x + 1);
+        return;
+      }
       if (planTool === 'beam-system') {
         const rect = rnd.domElement.getBoundingClientRect();
         const worldPerPxMm = (2 * camRef.current.half * 1000) / Math.max(1, rect.width);
@@ -5189,6 +5230,9 @@ export function PlanCanvas({
           ceilingStateRef.current = initialCeilingState();
         } else if (planTool === 'excavation') {
           excavationStateRef.current = initialExcavationState();
+        } else if (planTool === 'terrain-point') {
+          const { state } = reduceTerrainPoint(terrainPointStateRef.current, { kind: 'cancel' });
+          terrainPointStateRef.current = state;
         } else if (planTool === 'beam-system') {
           beamSystemStateRef.current = initialBeamSystemState();
         } else if (planTool === 'steel-connection') {
@@ -5350,6 +5394,32 @@ export function PlanCanvas({
               id: crypto.randomUUID(),
               boundaryMm: effect.createExcavationEffect.boundaryMm,
               depthMm: effect.createExcavationEffect.depthMm,
+            });
+          }
+          bumpGeom((x) => x + 1);
+        }
+        return;
+      }
+      if (planTool === 'terrain-point' && ev.key === 'Enter') {
+        ev.preventDefault();
+        if (
+          terrainPointStateRef.current.phase === 'active' &&
+          terrainPointStateRef.current.pendingSamples.length > 0
+        ) {
+          const { effect } = reduceTerrainPoint(terrainPointStateRef.current, { kind: 'commit' });
+          terrainPointStateRef.current = initialTerrainPointState();
+          if (effect.addTerrainPoints) {
+            const { toposolidId, samples } = effect.addTerrainPoints;
+            const existing =
+              (
+                useBimStore.getState().elementsById[toposolidId] as
+                  | Extract<Element, { kind: 'toposolid' }>
+                  | undefined
+              )?.heightSamples ?? [];
+            onSemanticCommand({
+              type: 'update_toposolid',
+              id: toposolidId,
+              patch: { heightSamples: [...existing, ...samples] },
             });
           }
           bumpGeom((x) => x + 1);

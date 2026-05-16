@@ -27,6 +27,8 @@ function emptyDraft(): SheetTitleblockDraft {
 
     checkedBy: '',
 
+    issuedBy: '',
+
     issueDate: '',
   };
 }

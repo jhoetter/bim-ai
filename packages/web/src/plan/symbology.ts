@@ -35,6 +35,7 @@ import {
   planAnnotationLabelSprite,
   gridLineThree,
   dimensionsThree,
+  permanentDimensionThree,
   referencePlanePlanThree,
   propertyLinePlanThree,
   revisionCloudPlanThree,
@@ -50,6 +51,7 @@ import {
   massRevolutionPlanThree,
 } from './massVolumePlanSymbol';
 import { curtainWallPlanThree } from './curtainWallPlanSymbol';
+import { terrainControlPointsPlanThree } from './terrainPointSymbol';
 
 /** Plan slice elevation in world units (walls still render with real height elsewhere). */
 
@@ -1776,6 +1778,19 @@ export function rebuildPlanMeshes(
     tintNewChildren(before, 'toposolid_excavation');
   }
 
+  // §5.1.1: terrain height control point dots
+  {
+    const before = holder.children.length;
+    for (const topo of Object.values(elementsById)) {
+      if (topo.kind !== 'toposolid') continue;
+      if (kindHidden('toposolid')) continue;
+      const samples = (topo as Extract<Element, { kind: 'toposolid' }>).heightSamples;
+      if (!samples || samples.length === 0) continue;
+      holder.add(terrainControlPointsPlanThree(topo as Extract<Element, { kind: 'toposolid' }>));
+    }
+    tintNewChildren(before, 'toposolid');
+  }
+
   {
     const before = holder.children.length;
     for (const r of Object.values(elementsById)) {
@@ -2046,6 +2061,21 @@ export function rebuildPlanMeshes(
       if (level && dm.levelId !== level) continue;
 
       holder.add(dimensionsThree(dm));
+    }
+    tintNewChildren(before, 'dimension');
+  }
+
+  {
+    const before = holder.children.length;
+    const projSettings = Object.values(elementsById).find((e) => e.kind === 'project_settings') as
+      | Extract<(typeof elementsById)[string], { kind: 'project_settings' }>
+      | undefined;
+    const dimStyle = projSettings?.dimensionStyle ?? null;
+    for (const dm of Object.values(elementsById)) {
+      if (dm.kind !== 'permanent_dimension') continue;
+      if (kindHidden('dimension')) continue;
+      if (level && dm.levelId !== level) continue;
+      holder.add(permanentDimensionThree(dm, dimStyle));
     }
     tintNewChildren(before, 'dimension');
   }

@@ -445,6 +445,7 @@ export function SheetViewportEditor(props: {
 
             <input
               className="w-full rounded border border-border bg-background px-1 py-0.5 font-mono text-[10px]"
+              data-testid={`sheet-viewport-scale-input-${row.viewportId}`}
               aria-label="Scale"
               placeholder="1:100"
               value={row.scale}

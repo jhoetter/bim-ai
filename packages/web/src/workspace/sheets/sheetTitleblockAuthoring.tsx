@@ -22,6 +22,8 @@ export type SheetTitleblockDraft = {
 
   checkedBy: string;
 
+  issuedBy: string;
+
   issueDate: string;
 };
 
@@ -51,6 +53,8 @@ export function normalizeTitleblockDraftFromSheet(sh: SheetEl): SheetTitleblockD
 
     checkedBy: String(tp.checkedBy ?? ''),
 
+    issuedBy: String(tp.issuedBy ?? ''),
+
     issueDate: String(tp.issueDate ?? tp.date ?? ''),
   };
 }
@@ -73,6 +77,8 @@ const MANAGED_TB_KEYS: (keyof Omit<SheetTitleblockDraft, 'titleBlock'>)[] = [
   'drawnBy',
 
   'checkedBy',
+
+  'issuedBy',
 
   'issueDate',
 ];
@@ -328,6 +334,8 @@ export function SheetTitleblockEditor(props: {
         {row('drawnBy', 'drawnBy')}
 
         {row('checkedBy', 'checkedBy')}
+
+        {row('issuedBy', 'issuedBy')}
 
         {row('issueDate', 'issueDate')}
       </div>

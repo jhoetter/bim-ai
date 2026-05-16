@@ -123,6 +123,8 @@ export type PaletteContext = {
   openManagePhases?: () => void;
   /** Open the Manage Global Parameters dialog (§3.8). */
   openManageGlobalParams?: () => void;
+  /** Open the Dimension Style editor dialog (§4.2.4). */
+  openDimensionStyle?: () => void;
   /** Dynamic navigable views/sheets/schedules to surface in the palette. */
   views?: Array<{ id: string; label: string; keywords: string }>;
   /** Dynamic plan view templates that can be applied to the active plan view. */
