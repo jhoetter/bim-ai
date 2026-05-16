@@ -1,23 +1,36 @@
 {
   "cli_version": "0.6.0",
   "checkpoint_id": "44f63763bfca",
-  "session_id": "019e26e6-7b9b-7e02-aaaf-b1081395c83d",
+  "session_id": "1c862bb9-bd5d-444a-9054-7279fe06f012",
   "strategy": "manual-commit",
-  "created_at": "2026-05-16T06:23:06.283933Z",
+  "created_at": "2026-05-16T07:29:38.121015Z",
   "branch": "main",
   "checkpoints_count": 1,
-  "files_touched": [],
-  "agent": "Codex",
-  "model": "gpt-5.5",
-  "turn_id": "2ad5d712718d",
+  "files_touched": [
+    "packages/web/src/plan/PlanCanvas.tsx",
+    "packages/web/src/tools/toolGrammar.ts",
+    "packages/web/src/tools/toolRegistry.ts"
+  ],
+  "agent": "Claude Code",
+  "model": "claude-sonnet-4-6",
+  "turn_id": "e8e4690aede5",
   "token_usage": {
-    "input_tokens": 7665014,
-    "cache_creation_tokens": 0,
-    "cache_read_tokens": 178718080,
-    "output_tokens": 432068,
-    "api_call_count": 1326
+    "input_tokens": 608,
+    "cache_creation_tokens": 299515,
+    "cache_read_tokens": 23233750,
+    "output_tokens": 136519,
+    "api_call_count": 224
   },
-  "session_metrics": {
-    "turn_count": 9
+  "initial_attribution": {
+    "calculated_at": "2026-05-16T07:29:38.08906Z",
+    "agent_lines": 0,
+    "agent_removed": 0,
+    "human_added": 0,
+    "human_modified": 0,
+    "human_removed": 0,
+    "total_committed": 0,
+    "total_lines_changed": 0,
+    "agent_percentage": 0,
+    "metric_version": 2
   }
 }
