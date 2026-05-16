@@ -52,6 +52,21 @@ function mm2m(mm: number): number {
 }
 
 // ---------------------------------------------------------------------------
+// Area helpers
+// ---------------------------------------------------------------------------
+
+function polygonAreaM2(pointsMm: XY[]): number {
+  let area = 0;
+  const n = pointsMm.length;
+  for (let i = 0; i < n; i++) {
+    const j = (i + 1) % n;
+    area += pointsMm[i]!.xMm * pointsMm[j]!.yMm;
+    area -= pointsMm[j]!.xMm * pointsMm[i]!.yMm;
+  }
+  return Math.abs(area / 2) / 1_000_000;
+}
+
+// ---------------------------------------------------------------------------
 // Geometry helpers
 // ---------------------------------------------------------------------------
 
@@ -309,6 +324,78 @@ function emitPolyBody(
     solidId,
   ]);
   return { shapeRepId, placementId };
+}
+
+// ---------------------------------------------------------------------------
+// Property set helpers
+// ---------------------------------------------------------------------------
+
+type IfcValue =
+  | { type: 'BOOLEAN'; value: boolean }
+  | { type: 'REAL'; value: number }
+  | { type: 'TEXT'; value: string }
+  | { type: 'AREA'; value: number };
+
+function emitPropertyValue(lines: Lines, ids: IdCounter, name: string, val: IfcValue): number {
+  const id = ids.next();
+  let valueStr: string;
+  if (val.type === 'BOOLEAN') {
+    valueStr = `IFCBOOLEAN(.${val.value ? 'TRUE' : 'FALSE'}.)`;
+  } else if (val.type === 'REAL') {
+    valueStr = `IFCREAL(${val.value.toFixed(6)})`;
+  } else if (val.type === 'AREA') {
+    valueStr = `IFCAREAMEASURE(${val.value.toFixed(6)})`;
+  } else {
+    valueStr = `IFCLABEL(${ifcStr(val.value)})`;
+  }
+  lines.push(`#${id}=IFCPROPERTYSINGLEVALUE(${ifcStr(name)},$,${valueStr},$);`);
+  return id;
+}
+
+function emitPset(
+  lines: Lines,
+  ids: IdCounter,
+  psetName: string,
+  properties: Array<[string, IfcValue]>,
+  elementIds: number[],
+): void {
+  if (elementIds.length === 0) return;
+  const propIds = properties.map(([name, val]) => emitPropertyValue(lines, ids, name, val));
+  const psetId = ids.next();
+  lines.push(
+    `#${psetId}=IFCPROPERTYSET('${guid()}',$,${ifcStr(psetName)},$,${ifcRefList(propIds)});`,
+  );
+  const relId = ids.next();
+  lines.push(
+    `#${relId}=IFCRELDEFINESBYPROPERTIES('${guid()}',$,$,$,${ifcRefList(elementIds)},${ifcRef(psetId)});`,
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Material layer set helpers
+// ---------------------------------------------------------------------------
+
+function emitMaterialLayerSetUsage(
+  lines: Lines,
+  ids: IdCounter,
+  materialName: string,
+  thicknessMm: number,
+  elementId: number,
+): void {
+  const matId = ids.next();
+  lines.push(`#${matId}=IFCMATERIAL(${ifcStr(materialName)});`);
+  const layerId = ids.next();
+  lines.push(`#${layerId}=IFCMATERIALLAYER(${ifcRef(matId)},${mm2m(thicknessMm).toFixed(6)},$);`);
+  const layerSetId = ids.next();
+  lines.push(
+    `#${layerSetId}=IFCMATERIALLAYERSET(${ifcRefList([layerId])},${ifcStr(materialName)});`,
+  );
+  const usageId = ids.next();
+  lines.push(`#${usageId}=IFCMATERIALLAYERSETUSAGE(${ifcRef(layerSetId)},.AXIS2.,.POSITIVE.,0.0);`);
+  const relMatId = ids.next();
+  lines.push(
+    `#${relMatId}=IFCRELASSOCIATESMATERIAL('${guid()}',$,$,$,${ifcRefList([elementId])},${ifcRef(usageId)});`,
+  );
 }
 
 // ---------------------------------------------------------------------------
@@ -795,6 +882,7 @@ export function exportToIfc(
   // IFCSPACE (room)
   // -------------------------------------------------------------------------
   const spaceIds: number[] = [];
+  const spaceFloorAreaM2: Map<number, number> = new Map();
   for (const room of rooms) {
     const elevMm = levelElevation[room.levelId] ?? 0;
     const outline = room.outlineMm ?? [];
@@ -812,6 +900,7 @@ export function exportToIfc(
       const productShapeId = emitProductDefinitionShape(dataLines, ids, [shapeRepId]);
       const spaceId = ids.next();
       spaceIds.push(spaceId);
+      spaceFloorAreaM2.set(spaceId, polygonAreaM2(outline));
       dataLines.push(
         `#${spaceId}=IFCSPACE('${guid()}',$,${ifcStr(room.name)},$,$,${ifcRef(placementId)},${ifcRef(productShapeId)},$,.ELEMENT.,$);`,
       );
@@ -872,6 +961,76 @@ export function exportToIfc(
     const relContainedId = ids.next();
     dataLines.push(
       `#${relContainedId}=IFCRELCONTAINEDINSPATIALSTRUCTURE('${guid()}',$,$,$,${ifcRefList(allProductIds)},${ifcRef(buildingId)});`,
+    );
+  }
+
+  // -------------------------------------------------------------------------
+  // Material layer set usage (one per wall)
+  // -------------------------------------------------------------------------
+  for (const wall of walls) {
+    const ifcId = wallIfcId[wall.id];
+    if (ifcId != null) {
+      emitMaterialLayerSetUsage(dataLines, ids, 'Concrete', wall.thicknessMm, ifcId);
+    }
+  }
+
+  // -------------------------------------------------------------------------
+  // Standard Psets
+  // -------------------------------------------------------------------------
+  if (wallProductIds.length > 0) {
+    emitPset(
+      dataLines,
+      ids,
+      'Pset_WallCommon',
+      [
+        ['IsExternal', { type: 'BOOLEAN', value: false }],
+        ['LoadBearing', { type: 'BOOLEAN', value: true }],
+      ],
+      wallProductIds,
+    );
+  }
+
+  if (doorProductIds.length > 0) {
+    emitPset(
+      dataLines,
+      ids,
+      'Pset_DoorCommon',
+      [['IsExternal', { type: 'BOOLEAN', value: false }]],
+      doorProductIds,
+    );
+  }
+
+  if (windowProductIds.length > 0) {
+    emitPset(
+      dataLines,
+      ids,
+      'Pset_WindowCommon',
+      [['IsExternal', { type: 'BOOLEAN', value: true }]],
+      windowProductIds,
+    );
+  }
+
+  const allSlabIds = [...floorSlabIds, ...roofSlabIds];
+  if (allSlabIds.length > 0) {
+    emitPset(
+      dataLines,
+      ids,
+      'Pset_SlabCommon',
+      [['IsExternal', { type: 'BOOLEAN', value: false }]],
+      allSlabIds,
+    );
+  }
+
+  for (const [spaceId, areaM2] of spaceFloorAreaM2) {
+    emitPset(
+      dataLines,
+      ids,
+      'Pset_SpaceCommon',
+      [
+        ['NetFloorArea', { type: 'AREA', value: areaM2 }],
+        ['GrossFloorArea', { type: 'AREA', value: areaM2 }],
+      ],
+      [spaceId],
     );
   }
 

@@ -95,4 +95,75 @@ describe('exportToDxf', () => {
     expect(dxfContent).toContain('HEADER');
     expect(dxfContent).toContain('ENTITIES');
   });
+
+  it('outputs LINE + CIRCLE on layer S-GRID for grid_line elements', () => {
+    const elements: Record<string, Element> = {
+      lv1: LEVEL,
+      g1: {
+        kind: 'grid_line',
+        id: 'g1',
+        name: 'Grid 1',
+        label: 'A',
+        start: { xMm: 0, yMm: 0 },
+        end: { xMm: 6000, yMm: 0 },
+      } as Element,
+    };
+    const { dxfContent } = exportToDxf(elements)[0]!;
+    expect(dxfContent).toContain('S-GRID');
+    expect(dxfContent).toContain('LINE');
+    expect(dxfContent).toContain('CIRCLE');
+  });
+
+  it('outputs LINE on layer A-REFP for project-scope reference_plane elements', () => {
+    const elements: Record<string, Element> = {
+      lv1: LEVEL,
+      rp1: {
+        kind: 'reference_plane',
+        id: 'rp1',
+        name: 'RP 1',
+        levelId: 'lv1',
+        startMm: { xMm: 0, yMm: 1000 },
+        endMm: { xMm: 5000, yMm: 1000 },
+      } as Element,
+    };
+    const { dxfContent } = exportToDxf(elements)[0]!;
+    expect(dxfContent).toContain('A-REFP');
+    expect(dxfContent).toContain('LINE');
+  });
+
+  it('outputs dimension lines + label on layer A-ANNO-DIMS for dimension elements', () => {
+    const elements: Record<string, Element> = {
+      lv1: LEVEL,
+      dim1: {
+        kind: 'dimension',
+        id: 'dim1',
+        name: 'Dim 1',
+        levelId: 'lv1',
+        aMm: { xMm: 0, yMm: 0 },
+        bMm: { xMm: 3000, yMm: 0 },
+        offsetMm: { xMm: 0, yMm: 500 },
+      } as Element,
+    };
+    const { dxfContent } = exportToDxf(elements)[0]!;
+    expect(dxfContent).toContain('A-ANNO-DIMS');
+    expect(dxfContent).toContain('TEXT');
+    expect(dxfContent).toContain('3000');
+  });
+
+  it('outputs TEXT on layer A-ANNO for text_note elements', () => {
+    const elements: Record<string, Element> = {
+      lv1: LEVEL,
+      tn1: {
+        kind: 'text_note',
+        id: 'tn1',
+        hostViewId: 'lv1',
+        positionMm: { xMm: 1000, yMm: 2000 },
+        text: 'Hello World',
+        fontSizeMm: 250,
+      } as Element,
+    };
+    const { dxfContent } = exportToDxf(elements)[0]!;
+    expect(dxfContent).toContain('A-ANNO');
+    expect(dxfContent).toContain('Hello World');
+  });
 });

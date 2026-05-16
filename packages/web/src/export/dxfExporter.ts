@@ -164,6 +164,12 @@ function dxfText(layer: string, x: number, y: number, height: number, text: stri
   ].join('\n');
 }
 
+function dxfCircle(layer: string, cx: number, cy: number, r: number): string {
+  return ['0', 'CIRCLE', '8', layer, '10', fmt(cx), '20', fmt(cy), '30', '0.0', '40', fmt(r)].join(
+    '\n',
+  );
+}
+
 function fmt(n: number): string {
   return n.toFixed(4);
 }
@@ -285,6 +291,59 @@ function buildPlanView(
     if (el.kind === 'level') {
       const elevation = el.elevationMm * scale;
       emit('A-FLOR-LEVL', dxfText('A-FLOR-LEVL', 0, elevation, 250 * scale, el.name));
+    }
+
+    if (el.kind === 'grid_line') {
+      const x1 = el.start.xMm * scale;
+      const y1 = el.start.yMm * scale;
+      const x2 = el.end.xMm * scale;
+      const y2 = el.end.yMm * scale;
+      const bubbleR = 300 * scale;
+      emit('S-GRID', dxfLine('S-GRID', x1, y1, x2, y2));
+      emit('S-GRID', dxfCircle('S-GRID', x2, y2, bubbleR));
+      if (el.label) {
+        emit('S-GRID', dxfText('S-GRID', x2, y2, 200 * scale, el.label));
+      }
+    }
+
+    if (el.kind === 'reference_plane' && 'levelId' in el && el.levelId === level.id) {
+      const x1 = el.startMm.xMm * scale;
+      const y1 = el.startMm.yMm * scale;
+      const x2 = el.endMm.xMm * scale;
+      const y2 = el.endMm.yMm * scale;
+      emit('A-REFP', dxfLine('A-REFP', x1, y1, x2, y2));
+      if (el.name) {
+        const mx = (x1 + x2) / 2;
+        const my = (y1 + y2) / 2;
+        emit('A-REFP', dxfText('A-REFP', mx, my, 150 * scale, el.name));
+      }
+    }
+
+    if (el.kind === 'dimension' && el.levelId === level.id) {
+      const ax = el.aMm.xMm * scale;
+      const ay = el.aMm.yMm * scale;
+      const bx = el.bMm.xMm * scale;
+      const by = el.bMm.yMm * scale;
+      const ox = el.offsetMm.xMm * scale;
+      const oy = el.offsetMm.yMm * scale;
+      const distMm = Math.round(
+        Math.sqrt((el.bMm.xMm - el.aMm.xMm) ** 2 + (el.bMm.yMm - el.aMm.yMm) ** 2),
+      );
+      // Extension lines from measurement points to offset (dim line)
+      emit('A-ANNO-DIMS', dxfLine('A-ANNO-DIMS', ax, ay, ax + ox, ay + oy));
+      emit('A-ANNO-DIMS', dxfLine('A-ANNO-DIMS', bx, by, bx + ox, by + oy));
+      // Dimension line along the offset
+      emit('A-ANNO-DIMS', dxfLine('A-ANNO-DIMS', ax + ox, ay + oy, bx + ox, by + oy));
+      // Label at midpoint
+      const mx = (ax + bx) / 2 + ox;
+      const my = (ay + by) / 2 + oy;
+      emit('A-ANNO-DIMS', dxfText('A-ANNO-DIMS', mx, my, 150 * scale, String(distMm)));
+    }
+
+    if (el.kind === 'text_note' && el.hostViewId === level.id) {
+      const x = el.positionMm.xMm * scale;
+      const y = el.positionMm.yMm * scale;
+      emit('A-ANNO', dxfText('A-ANNO', x, y, el.fontSizeMm * scale, el.text));
     }
   }
 

@@ -908,7 +908,7 @@ Full top-down massing → BIM workflow (mass → generate walls/roof/floors from
 
 #### 12.1.1 Verknüpfungen (link Revit files, IFC files, CAD files, point clouds)
 **Status: Partial — P1**
-- Link another bim-ai model file: Partial — `link_model` element type exists in `@bim-ai/core`; `ManageLinksDialog.tsx` provides full UI to add/delete/align/pin linked models; `linkedGhosting.ts` ghosts linked meshes with blue tint at 0.6 opacity; wired into Workspace via `manageLinksOpen` state and ProjectMenu; ghosting tests in `src/viewport/linkedGhosting.test.ts` and `src/export/linkedModelGhosting.test.ts`
+- Link another bim-ai model file: Done — `link_model` element type in `@bim-ai/core`; `ManageLinksDialog.tsx` provides full UI to add/delete/align/pin linked models; `linkedGhosting.ts` ghosts linked meshes with blue tint at 0.6 opacity; linked elements are non-selectable/non-editable (`isLinkedElementId` guards in Viewport.tsx); `hidden?` toggle wired via ProjectBrowser; ghosting tests in `src/viewport/linkedGhosting.test.ts` and `src/export/linkedModelGhosting.test.ts` (E5)
 - Link IFC: Not Started
 - Link CAD (DWG/DXF/DGN): DXF underlay exists (dxfUnderlay.ts — Partial); circle, text, and hatch entities now rendered (E6)
 - Link PDF: Not Started
@@ -956,9 +956,11 @@ DWG export is not implemented.
 
 #### 12.4.3 Exportieren nach CAD (DWG/DXF/DGN export) + IFC Export
 **Status: Partial — P1**
-No DWG, DXF, or DGN export. This is a significant gap for handing off to consultants who require CAD format.
+No DWG or DGN export. DXF export is implemented (see below).
 
-IFC 2x3 export (E1): Implemented as a pure-TypeScript ISO 10303-21 STEP writer at `packages/web/src/export/ifcExporter.ts`. Exports `IFCPROJECT`, `IFCSITE`, `IFCBUILDING`, `IFCBUILDINGSTOREY` hierarchy plus `IFCWALLSTANDARDCASE`, `IFCDOOR`, `IFCWINDOW`, `IFCOPENINGELEMENT`, `IFCRELVOIDSELEMENT`, `IFCSLAB` (FLOOR/ROOF), and `IFCSPACE`. No WASM dependency. Tested via `ifcExporter.test.ts` (3 passing tests).
+IFC 2x3 export (E1): Implemented as a pure-TypeScript ISO 10303-21 STEP writer at `packages/web/src/export/ifcExporter.ts`. Exports `IFCPROJECT`, `IFCSITE`, `IFCBUILDING`, `IFCBUILDINGSTOREY` hierarchy plus `IFCWALLSTANDARDCASE`, `IFCDOOR`, `IFCWINDOW`, `IFCOPENINGELEMENT`, `IFCRELVOIDSELEMENT`, `IFCSLAB` (FLOOR/ROOF), and `IFCSPACE`. Includes `IFCMATERIALLAYERSETUSAGE` per wall, and standard Psets: `Pset_WallCommon`, `Pset_DoorCommon`, `Pset_WindowCommon`, `Pset_SlabCommon`, `Pset_SpaceCommon` (with `NetFloorArea` / `GrossFloorArea` from polygon area). No WASM dependency. 7 passing tests in `ifcExporter.test.ts` including round-trip header validation.
+
+DXF export (E2): Implemented at `packages/web/src/export/dxfExporter.ts`. Exports per-level plan views with walls (A-WALL), doors (A-DOOR + arc swing), windows (A-GLAZ), rooms (A-AREA), grid lines (S-GRID with bubble circle), reference planes (A-REFP), linear dimensions (A-ANNO-DIMS with extension lines + label), and text notes (A-ANNO). Multi-level export supported (one DxfPlanView per level). 8 passing tests in `dxfExporter.test.ts`.
 
 #### 12.4.4 Revit-Modell in Inventor verwenden (Revit → Inventor workflow)
 **Status: N/A**
