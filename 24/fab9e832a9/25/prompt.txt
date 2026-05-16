@@ -1,0 +1,9 @@
+WP-G — §15.1.2–15.1.5 Family editor form types
+
+  ▎ Your task is to add Extrusion and Revolve form types (FamilyExtrusion / FamilyRevolve data models + mesh builders + Create ribbon buttons) to the family editor, add frameWidthMm / sillDepthMm / 
+  ▎ glazingMaterialId to the window element with inspector controls, and update spec/revit-parity/revit2026-parity-tracker.md §15.1.2–§15.1.5 to Done. Full spec: 
+  ▎ spec/revit-parity/agent-prompts/WAVE3-WP-G.md.
+
+---
+
+are yu done?
