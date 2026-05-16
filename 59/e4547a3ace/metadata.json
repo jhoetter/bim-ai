@@ -5,7 +5,9 @@
   "branch": "main",
   "checkpoints_count": 2,
   "files_touched": [
-    "packages/core/src/index.ts"
+    "packages/core/src/index.ts",
+    "packages/web/src/workspace/Workspace.tsx",
+    "spec/revit-parity/revit2026-parity-tracker.md"
   ],
   "sessions": [
     {
@@ -19,13 +21,19 @@
       "transcript": "/59/e4547a3ace/1/full.jsonl",
       "content_hash": "/59/e4547a3ace/1/content_hash.txt",
       "prompt": "/59/e4547a3ace/1/prompt.txt"
+    },
+    {
+      "metadata": "/59/e4547a3ace/2/metadata.json",
+      "transcript": "/59/e4547a3ace/2/full.jsonl",
+      "content_hash": "/59/e4547a3ace/2/content_hash.txt",
+      "prompt": "/59/e4547a3ace/2/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 3320099,
-    "cache_creation_tokens": 299515,
-    "cache_read_tokens": 85309014,
-    "output_tokens": 297880,
-    "api_call_count": 1573
+    "input_tokens": 3320604,
+    "cache_creation_tokens": 603374,
+    "cache_read_tokens": 126872176,
+    "output_tokens": 416510,
+    "api_call_count": 2004
   }
 }
