@@ -257,7 +257,7 @@ Basic floor placement is done. Revit's alternative slab boundary methods (e.g. p
 
 #### 2.4.3 Unterschied: Fixieren – Verbinden (Pin vs Join geometry)
 **Status: Partial — P1**
-bim-ai supports element pinning via inspector. "Join Geometry" between floors and walls (which trims overlapping geometry) is partial — some auto-join happens but explicit user-controlled Join/Unjoin geometry is not a standalone tool.
+bim-ai supports element pinning via inspector + PN chord + `modify.pin-selected`/`modify.unpin-all` palette commands (WP-B8). "Join Geometry" palette commands (`modify.join-geometry` / `modify.unjoin-geometry`) available when exactly 2 solid elements are selected (WP-B7). Full solid-geometry CSG trimming at intersections is still partial.
 
 #### 2.4.4 Prioritäten (material layer priority for wall/floor/ceiling joins)
 **Status: Partial — P1**
