@@ -11,3 +11,23 @@ the claude sessions have stopped, give each prompt a bit more context just to be
 ---
 
 no i meant the prompts i can copy paste
+
+---
+
+quick update, where are they? agent 2 and 4 are still wokring, i now, but the rest?
+
+---
+
+where are we in overall % progress with the whole tracker?
+
+---
+
+can you please deeply analyze again if all of those things really are outstanding or if the existing codebase already offers functionality? i am just wondering: i want to avoid that we create code duplication or feature duplication. i do think that there must be a lot of development going on, but just please check again to ensure we are not building a doubled feature. it should always either create new if not existing yet, or extend the existing code base for a feature if it already partially exists. can you check that for all todos in the tracker but also the ones already implemented? just so we are keeping a clean code base and can be assured that features will actually land in teh software correctly
+
+---
+
+ok, please update accordingly; i think WP-B and WP-D are now also fully done; update the tracker so that anything you see as a risk or as important information is accordingly updated; if e.g. WP-B needs to wire something, udpate it for the next wave.
+
+i want that the tracker is our single source of truth, that we update it correctly, and then can start the next wave of agents afterwards; in other words, i want that just following the tracker further, we get to the clean state of the software that we want; where the trackers are aware of the existing features, where they should rather extend than build new, and so on. e.g. if in the next wave WP-B needs to wrie PlanCanvas, that should be naturally clear from the tracker and so on. But for ALL features / workpackages.
+
+to put it again in final words: update the tracker now so that after you did this, i can just ask you to schedule the next X agents and i will do this process until 100% of the tracker is completed, and we then have a feature-complete software; not from scratch, but building on top of what we have today. extending it in the best way possible (aware of our current UX, ...)
