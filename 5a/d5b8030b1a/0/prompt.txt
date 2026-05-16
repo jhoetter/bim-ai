@@ -1,1 +1,0 @@
-[Image #1] it still has issues, e.g. the roof isnt correctly modelled, and so on. i think you didnt really build from scratch but used the existing house seed for reference, but just clear completely the seeding of the house and build via @spec/target-house-seed.md specifications

@@ -1,9 +1,0 @@
-[Image #3] the viewcube doesnt work yet.[Image #4] generally not yet ideal. i also don't like the roundings of the options etc.
-
----
-
-[Image #5] still strange, i think the cube should be relatively standalone and the other buttons should disapper or move somewhere else or move into some kind of intutive UX or something? give the cube a bit more room btw, i.e. in terms of padding to top/right.
-
----
-
-[Image #6] still scenarios where it is cut off, and it still seems elements are hidden underneath it?...
