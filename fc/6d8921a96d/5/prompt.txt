@@ -1,0 +1,138 @@
+You are resuming a crashed agent session on the bim-ai repo
+  (/Users/jhoetter/repos/bim-ai). bim-ai is a browser-based BIM authoring
+  tool (React + TypeScript + Three.js, Vite, Vitest).
+
+  REPO ORIENTATION (WP-G relevant paths):
+  - packages/web/src/tools/toolRegistry.ts — ToolId union + TOOL_REGISTRY
+  - packages/web/src/viewport/meshBuilders.ts — 3D mesh dispatcher
+  - packages/web/src/viewport/meshBuilders.brace.ts — brace 3D mesh (DONE)
+  - packages/web/src/viewport/meshBuilders.brace.test.ts — brace tests (DONE)
+  - packages/web/src/viewport/meshBuilders.beamSystem.ts — beam system 3D mesh (exists, needs wiring)
+  - packages/web/src/viewport/meshBuilders.beamSystem.test.ts — beam system tests (exists)
+  - packages/web/src/viewport/meshBuilders.massBox.ts — box mass (DONE)
+  - packages/web/src/viewport/meshBuilders.massExtrusion.ts — extrusion mass (DONE)
+  - packages/web/src/viewport/meshBuilders.massRevolution.ts — revolution mass (DONE)
+  - packages/web/src/viewport/meshBuilders.massVolumes.test.ts — mass volume tests (DONE)
+  - packages/web/src/plan/bracePlanSymbol.ts — brace plan symbol (DONE)
+  - packages/web/src/plan/beamSystemPlanSymbol.ts — beam system plan symbol (exists)
+  - packages/web/src/plan/massVolumePlanSymbol.ts — mass volume plan symbol (DONE)
+  - packages/web/src/plan/curtainWallPlanSymbol.ts — curtain wall plan symbol (done)
+  - packages/web/src/plan/columnAtGrids.ts — column-at-grid helper (UNTRACKED — not committed yet)
+  - packages/web/src/plan/columnAtGrids.test.ts — column-at-grid tests (UNTRACKED — not committed yet)
+  - packages/web/src/tools/massByFace.ts — roof/wall by face utilities (DONE)
+  - packages/web/src/tools/massFloorsByLevel.ts — floor-by-level utility (DONE)
+  - packages/core/src/index.ts — Element union + ElemKind
+
+  Architecture:
+  - All element types: define kind in core → 3D mesh builder in viewport/meshBuilders.<type>.ts → dispatch from meshBuilders.ts → plan symbol in plan/<type>PlanSymbol.ts → call from planProjection.ts.
+  - Semantic commands: study { type: 'createWall', ... } for shape conventions.
+  - Tests: co-located *.test.ts, run with pnpm test --filter @bim-ai/web.
+  - Prettier runs automatically.
+
+  CURRENT STATUS OF EACH SUB-TASK:
+  - G1 Brace: DONE — 'brace' ToolId in registry, meshBuilders.brace.ts, bracePlanSymbol.ts, tests. Tracker: "Implemented".
+  - G2 Beam System: PARTIAL — meshBuilders.beamSystem.ts + beamSystemPlanSymbol.ts + tests exist; beam_system kind IS in core/index.ts; BUT 'beam-system' ToolId is NOT in toolRegistry.ts and grammar does not
+   exist. Needs wiring only.
+  - G3 Column at Grids: PARTIAL — plan/columnAtGrids.ts + plan/columnAtGrids.test.ts exist as UNTRACKED files (not committed). The options-bar "At Grids" button is not wired.
+  - G4 Sloped Columns: NOT STARTED — tracker: "Not Started — P2"
+  - G5 Mass Volumes: DONE — mass_box, mass_extrusion, mass_revolution in core + mesh builders + plan symbol. ToolIds mass-box, mass-extrusion, mass-revolution in toolRegistry (staged, not committed yet).
+  Tracker: "Implemented".
+  - G6 Roof by Face: DONE — massByFace.ts utilities + MassFaceRef type. Tracker: "Implemented (G6)".
+  - G7 Wall by Face: DONE — massByFace.ts side-face utilities. Tracker: "Implemented (G7)".
+  - G8 Floor by Level: DONE — massFloorsByLevel.ts + tests. Tracker: "Implemented (G8)".
+  - G9 Curtain Wall: PARTIAL — curtainWallData compound type in core, curtainWallPlanSymbol.ts done. No interactive grid editing UI.
+
+  STEP 0 — COMMIT STAGED + UNTRACKED WORK FIRST:
+  There are staged changes not yet committed:
+  - packages/core/src/index.ts — mass_box, mass_extrusion, mass_revolution ElemKind types
+  - packages/web/src/tools/toolRegistry.ts — 'brace' tool entry
+  - spec/revit-parity/revit2026-parity-tracker.md — tracker updates
+
+  And untracked new files to stage:
+  - packages/web/src/plan/columnAtGrids.ts
+  - packages/web/src/plan/columnAtGrids.test.ts
+
+  Verify tests pass, then commit:
+    git pull --rebase origin main
+    pnpm test --filter @bim-ai/web -- columnAtGrids
+    git add packages/core/src/index.ts \
+            packages/web/src/tools/toolRegistry.ts \
+            spec/revit-parity/revit2026-parity-tracker.md \
+            packages/web/src/plan/columnAtGrids.ts \
+            packages/web/src/plan/columnAtGrids.test.ts
+    git commit -m "feat(structural): brace tool + mass ElemKind types + columnAtGrids helper (WP-G)"
+    git push origin main
+
+  WHAT STILL NEEDS TO BE DONE:
+
+  G2 — Wire the Beam System tool
+  The 3D mesh, plan symbol, tests, and core type all exist. Only the tool wiring is missing:
+  1. Add 'beam-system' ToolId to toolRegistry.ts (hotkey BS, modes: plan + 3D) — rebase first
+  2. Grammar in tools/beam-system.ts (or toolGrammar.ts):
+     - Draw closed boundary polygon (click points, double-click/Enter to close)
+     - Options bar: spacing (default 1200mm), direction angle (default: longest boundary edge), profile picker
+     - On complete: dispatch { type: 'createBeamSystem', boundaryPoints, spacingMm, beamDirection, profileId, levelId }
+  3. Inspector for beam_system elements: spacing, direction, profile, boundary vertex grips
+  4. Verify meshBuilders.beamSystem.test.ts still passes after wiring
+  5. Update tracker §9.3 from "Not Started" to at least "Partial"
+
+  G3 — Wire "At Grids" button for column placement
+  columnAtGrids.ts logic is now committed. Still needed:
+  1. Add an "At Grids" button to the column tool options bar (tools/OptionsBar.tsx)
+  2. Clicking "At Grids" switches the column tool to grid-selection mode:
+     - User clicks/box-selects grid lines
+     - Enter: compute all pairwise intersections using columnAtGrids.ts helpers
+     - Dispatch N createColumn commands for each intersection point
+  3. Options bar: column type, base level, top level (same for all batch placements)
+  4. Tests: 3 horizontal × 3 vertical grids → 9 columns at correct XY positions
+  5. Update tracker §9.1.2 from "Not Started" to at least "Partial"
+
+  G4 — Sloped / Inclined Columns (not started)
+  1. Add to column element in core/index.ts: topOffsetXMm?: number, topOffsetYMm?: number
+  2. Update the column case in meshBuilders.ts: when topOffsetXMm/Y non-zero, extrude along inclined axis
+  3. Plan symbol: base footprint (solid) + top footprint (dashed, offset) connected by diagonal line
+  4. Inspector: top offset X/Y fields; read-only computed inclination angle
+  Tests: column with topOffsetXMm: 500, verify 3D mesh top vertices are offset correctly
+
+  G9 — Curtain Wall interactive grid editing
+  Data model and plan symbol exist. Add the authoring UI:
+  1. Wall type picker: add "Curtain Wall" category with preset types ("Storefront", "Curtain Wall", "Exterior Glazing")
+  2. Inspector when curtain wall selected: H grid (count/spacing), V grid (count/spacing), panel type dropdown, mullion type dropdown
+  3. "Edit Grid" mode in plan view: click curtain wall → grid-edit mode → click to add/remove grid lines at exact positions → click outside to exit
+  4. 3D rendering: route curtain walls to the curtain panel builder in meshBuilders.ts instead of the solid wall builder. Check meshBuilders.curtainPanels.test.ts for guidance.
+  5. Plan rendering: curtain walls show as thin line with short perpendicular tick marks for each grid division
+  Tests:
+  - meshBuilders.curtainWall.test.ts: 4m × 3m curtain wall, 3 vertical + 2 horizontal → 6 glass panels
+  - curtainWallPlanSymbol.test.ts: verify plan projection shows grid tick marks
+
+  RULES:
+  - git pull --rebase origin main before every major sub-task
+  - Commit + push after each completed sub-task
+  - Do NOT touch annotation/dimension, stair/ramp (WP-C), export (WP-E), phase dialogs (WP-F), groups (WP-B), view/sheet rendering (WP-D)
+  - toolRegistry.ts is shared — always rebase before editing
+  - pnpm test --filter @bim-ai/web before each push
+  - Update spec/revit-parity/revit2026-parity-tracker.md as you complete items
+
+---
+
+did you update the tracker accordingly?
+
+---
+
+<task-notification>
+<task-id>buvtwsyw3</task-id>
+<tool-use-id>REDACTED</tool-use-id>
+<output-file>/private/tmp/claude-501/-Users-jhoetter-repos-bim-ai/2d4a09bc-bf7d-4a39-9e31-e5b6af03afc2/tasks/buvtwsyw3.output</output-file>
+<status>completed</status>
+<summary>Background command "Commit G2 beam-system grammar" completed (exit code 0)</summary>
+</task-notification>
+
+---
+
+<task-notification>
+<task-id>b3s4i8kap</task-id>
+<tool-use-id>toolu_01BL1u3DJ9hz4m48CXhKwdm8</tool-use-id>
+<output-file>/private/tmp/claude-501/-Users-jhoetter-repos-bim-ai/2d4a09bc-bf7d-4a39-9e31-e5b6af03afc2/tasks/b3s4i8kap.output</output-file>
+<status>completed</status>
+<summary>Background command "Commit G3 column-at-grids" completed (exit code 0)</summary>
+</task-notification>
