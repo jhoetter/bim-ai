@@ -1,0 +1,17 @@
+Terminal 2 — WP-B (Array + Groups)
+  cat spec/revit-parity/agent-prompts/WAVE2-WP-B.md | pbcopy
+  Tasks: array tool PlanCanvas wiring, group plan/3D renderer, place-group grammar, groups ProjectBrowser subtree
+
+---
+
+did you update the tracker and commit + push?
+
+---
+
+<task-notification>
+<task-id>bxe01n14w</task-id>
+<tool-use-id>toolu_014E46EqurMVuRywKRDqwjFQ</tool-use-id>
+<output-file>/private/tmp/claude-501/-Users-jhoetter-repos-bim-ai/561cb2cf-e57a-4871-83ce-fae005a30590/tasks/bxe01n14w.output</output-file>
+<status>killed</status>
+<summary>Background command "Commit WP-B work" was stopped</summary>
+</task-notification>
