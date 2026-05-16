@@ -60,6 +60,8 @@ export interface ProjectMenuProps {
   onReplayTour?: () => void;
   /** F4: open the Project Units dialog. */
   onOpenProjectUnits?: () => void;
+  /** F1: open the Phase Manager dialog. */
+  onManagePhases?: () => void;
   /** FED-01: open the Manage Links dialog (Insert → Link Model). */
   onManageLinks?: () => void;
   /** FED-04: import an IFC file as a shadow-model link. */
@@ -90,6 +92,7 @@ export function ProjectMenu({
   onNewClear,
   onReplayTour,
   onOpenProjectUnits,
+  onManagePhases,
   onManageLinks,
   onLinkIfc,
   onLinkDxf,
@@ -350,6 +353,17 @@ export function ProjectMenu({
             onClick={() => {
               onOpenChange(false);
               onOpenProjectUnits();
+            }}
+          />
+        ) : null}
+        {onManagePhases ? (
+          <MenuItem
+            label="Manage Phases..."
+            icon="settings"
+            testId="project-menu-manage-phases"
+            onClick={() => {
+              onOpenChange(false);
+              onManagePhases();
             }}
           />
         ) : null}

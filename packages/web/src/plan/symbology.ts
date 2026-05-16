@@ -38,6 +38,13 @@ import {
 import type { WallJoinRecord } from './planElementMeshBuilders';
 import { dormerPlanGroup } from './dormerPlanSymbol';
 import { addFamilyInstancePlanSymbols } from './familyInstancePlanRendering';
+import { bracePlanThree } from './bracePlanSymbol';
+import { beamSystemPlanThree } from './beamSystemPlanSymbol';
+import {
+  massBoxPlanThree,
+  massExtrusionPlanThree,
+  massRevolutionPlanThree,
+} from './massVolumePlanSymbol';
 
 /** Plan slice elevation in world units (walls still render with real height elsewhere). */
 
@@ -1445,6 +1452,51 @@ export function rebuildPlanMeshes(
       );
     }
     tintNewChildren(before, 'ceiling');
+  }
+
+  {
+    const before = holder.children.length;
+    for (const el of Object.values(elementsById)) {
+      if (el.kind !== 'brace') continue;
+      if (kindHidden('brace')) continue;
+      holder.add(bracePlanThree(el));
+    }
+    tintNewChildren(before, 'brace');
+  }
+
+  {
+    const before = holder.children.length;
+    for (const el of Object.values(elementsById)) {
+      if (el.kind !== 'beam_system') continue;
+      if (kindHidden('beam_system')) continue;
+      if (level && el.levelId !== level) continue;
+      holder.add(beamSystemPlanThree(el));
+    }
+    tintNewChildren(before, 'beam_system');
+  }
+
+  if (!kindHidden('mass_box')) {
+    const before = holder.children.length;
+    for (const el of Object.values(elementsById)) {
+      if (el.kind === 'mass_box') holder.add(massBoxPlanThree(el));
+    }
+    tintNewChildren(before, 'mass_box');
+  }
+
+  if (!kindHidden('mass_extrusion')) {
+    const before = holder.children.length;
+    for (const el of Object.values(elementsById)) {
+      if (el.kind === 'mass_extrusion') holder.add(massExtrusionPlanThree(el));
+    }
+    tintNewChildren(before, 'mass_extrusion');
+  }
+
+  if (!kindHidden('mass_revolution')) {
+    const before = holder.children.length;
+    for (const el of Object.values(elementsById)) {
+      if (el.kind === 'mass_revolution') holder.add(massRevolutionPlanThree(el));
+    }
+    tintNewChildren(before, 'mass_revolution');
   }
 
   {

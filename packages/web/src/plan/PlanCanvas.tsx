@@ -32,6 +32,12 @@ import {
   areaBoundaryCanClose,
   areaBoundaryRectangleFromDiagonal,
   reduceAreaBoundary,
+  initialTextAnnotationState,
+  reduceTextAnnotation,
+  type TextAnnotationState,
+  initialLeaderTextState,
+  reduceLeaderText,
+  type LeaderTextState,
 } from '../tools/toolGrammar';
 import * as THREE from 'three';
 import { parseDimensionInput } from '@bim-ai/core';
@@ -290,7 +296,8 @@ type Draft =
       kind: 'toposolid-subdivision';
       verts: Array<{ xMm: number; yMm: number }>;
       finishCategory: SubdivisionCategory;
-    };
+    }
+  | { kind: 'slope-annotation'; sx: number; sy: number };
 
 function nearestWallAt(
   elementsById: Record<string, Element>,
@@ -428,6 +435,22 @@ export function PlanCanvas({
   const trimExtendFirstWallRef = useRef<string | null>(null);
   const [trimExtendFirstWallSet, setTrimExtendFirstWallSet] = useState(false);
   const wallJoinStateRef = useRef<WallJoinState>(initialWallJoinState());
+  const textAnnotStateRef = useRef<TextAnnotationState>(initialTextAnnotationState());
+  const leaderTextStateRef = useRef<LeaderTextState>(initialLeaderTextState());
+  const [textAnnotOverlay, setTextAnnotOverlay] = useState<{
+    positionMm: { xMm: number; yMm: number };
+    screenX: number;
+    screenY: number;
+    draft: string;
+  } | null>(null);
+  const [leaderTextOverlay, setLeaderTextOverlay] = useState<{
+    anchorMm: { xMm: number; yMm: number };
+    elbowMm: { xMm: number; yMm: number };
+    textMm: { xMm: number; yMm: number };
+    screenX: number;
+    screenY: number;
+    draft: string;
+  } | null>(null);
   const wallOpeningStateRef = useRef<WallOpeningState>(initialWallOpeningState());
   const wallOpeningAnchorRef = useRef<{ xMm: number; yMm: number } | null>(null);
   const shaftStateRef = useRef<ShaftState>(initialShaftState());
@@ -1753,6 +1776,42 @@ export function PlanCanvas({
           angS.userData.detailComponent = true;
           angS.userData.bimPickId = p.id;
           grp.add(angS);
+        } else if (p.kind === 'leader_text') {
+          const ltMat = new THREE.LineBasicMaterial({ color: p.colour });
+          const ltPts: THREE.Vector3[] = [];
+          ltPts.push(
+            new THREE.Vector3(p.anchorMm.xMm / 1000, SLICE_Y + 0.01, p.anchorMm.yMm / 1000),
+          );
+          if (p.elbowMm) {
+            ltPts.push(
+              new THREE.Vector3(p.elbowMm.xMm / 1000, SLICE_Y + 0.01, p.elbowMm.yMm / 1000),
+            );
+          }
+          ltPts.push(new THREE.Vector3(p.textMm.xMm / 1000, SLICE_Y + 0.01, p.textMm.yMm / 1000));
+          const ltLine = new THREE.Line(new THREE.BufferGeometry().setFromPoints(ltPts), ltMat);
+          ltLine.userData.detailComponent = true;
+          ltLine.userData.bimPickId = p.id;
+          grp.add(ltLine);
+          const ltC = document.createElement('canvas');
+          ltC.width = 256;
+          ltC.height = 64;
+          const ltCtx = ltC.getContext('2d');
+          if (ltCtx) {
+            ltCtx.fillStyle = p.colour;
+            ltCtx.font = '28px sans-serif';
+            ltCtx.textBaseline = 'middle';
+            ltCtx.fillText(p.content, 4, 32);
+          }
+          const ltTex = new THREE.CanvasTexture(ltC);
+          ltTex.minFilter = THREE.LinearFilter;
+          const ltSprite = new THREE.Sprite(
+            new THREE.SpriteMaterial({ map: ltTex, transparent: true }),
+          );
+          ltSprite.scale.set(0.3 * (256 / 64), 0.3, 1);
+          ltSprite.position.set(p.textMm.xMm / 1000, SLICE_Y + 0.01, p.textMm.yMm / 1000);
+          ltSprite.userData.detailComponent = true;
+          ltSprite.userData.bimPickId = p.id;
+          grp.add(ltSprite);
         } else if (p.kind === 'revision_cloud' && p.boundaryMm.length >= 2) {
           const rcL = new THREE.Line(
             new THREE.BufferGeometry().setFromPoints(
@@ -4153,6 +4212,121 @@ export function PlanCanvas({
         d.verts.push({ xMm: sp.xMm, yMm: sp.yMm });
         bumpGeom((x) => x + 1);
       }
+      // ANN-01 — text annotation: single click sets position, opens typing overlay
+      if (planTool === 'text') {
+        if (!activePlanViewId) return;
+        const { state: nextState } = reduceTextAnnotation(textAnnotStateRef.current, {
+          kind: 'click',
+          pointMm: sp,
+        });
+        textAnnotStateRef.current = nextState;
+        if (nextState.phase === 'typing') {
+          setTextAnnotOverlay({
+            positionMm: sp,
+            screenX: ev.clientX,
+            screenY: ev.clientY,
+            draft: '',
+          });
+        }
+        return;
+      }
+      // ANN-16 — leader text: 3-click anchor → elbow → text-pos, then typing overlay
+      if (planTool === 'leader-text') {
+        if (!activePlanViewId) return;
+        const { state: nextState } = reduceLeaderText(leaderTextStateRef.current, {
+          kind: 'click',
+          pointMm: sp,
+        });
+        leaderTextStateRef.current = nextState;
+        if (nextState.phase === 'typing') {
+          setLeaderTextOverlay({
+            anchorMm: nextState.anchorMm,
+            elbowMm: nextState.elbowMm,
+            textMm: nextState.textMm,
+            screenX: ev.clientX,
+            screenY: ev.clientY,
+            draft: '',
+          });
+        }
+        bumpGeom((x) => x + 1);
+        return;
+      }
+      // ANN-05 — north arrow: single click places the symbol
+      if (planTool === 'north-arrow') {
+        if (!activePlanViewId) return;
+        onSemanticCommand({
+          type: 'createAnnotationSymbol',
+          hostViewId: activePlanViewId,
+          positionMm: sp,
+          symbolType: 'north_arrow',
+          rotationDeg: 0,
+          scale: 1,
+        });
+        return;
+      }
+      // ANN-07 — spot elevation: single click creates elevation label at level datum
+      if (planTool === 'spot-elevation') {
+        if (!activePlanViewId) return;
+        const levelEl = lvlId ? elementsById[lvlId] : undefined;
+        const elevMm = levelEl?.kind === 'level' ? levelEl.elevationMm : 0;
+        onSemanticCommand({
+          type: 'createSpotElevation',
+          hostViewId: activePlanViewId,
+          positionMm: sp,
+          elevationMm: elevMm,
+        });
+        return;
+      }
+      // ANN-08 — spot coordinate: single click places N/E annotation
+      if (planTool === 'spot-coordinate') {
+        if (!activePlanViewId) return;
+        onSemanticCommand({
+          type: 'createSpotCoordinate',
+          hostViewId: activePlanViewId,
+          positionMm: sp,
+          northMm: sp.yMm,
+          eastMm: sp.xMm,
+        });
+        return;
+      }
+      // ANN-09 — slope annotation: two-click, first stores anchor then commits
+      if (planTool === 'slope-annotation') {
+        if (!activePlanViewId) return;
+        const d = draftRef.current;
+        if (!d || d.kind !== 'slope-annotation') {
+          draftRef.current = { kind: 'slope-annotation', sx: sp.xMm, sy: sp.yMm };
+          bumpGeom((x) => x + 1);
+          return;
+        }
+        const rise = sp.yMm - d.sy;
+        const run = sp.xMm - d.sx;
+        const slopePct = run !== 0 ? Math.abs(rise / run) * 100 : 0;
+        onSemanticCommand({
+          type: 'createSpotSlope',
+          hostViewId: activePlanViewId,
+          positionMm: sp,
+          slopePct,
+          slopeFormat: 'percent',
+        });
+        draftRef.current = undefined;
+        bumpGeom((x) => x + 1);
+        return;
+      }
+      // ANN-10 — material tag: click nearest wall, tag its first material layer
+      if (planTool === 'material-tag') {
+        if (!activePlanViewId) return;
+        const nearest = nearestWallAt(elementsById, displayLevelId || undefined, sp.xMm, sp.yMm);
+        if (nearest && nearest.distMm < 2000) {
+          onSemanticCommand({
+            type: 'createMaterialTag',
+            hostViewId: activePlanViewId,
+            hostElementId: nearest.wall.id,
+            layerIndex: 0,
+            positionMm: sp,
+          });
+        }
+        return;
+      }
     };
 
     const onWheel = (ev: WheelEvent) => {
@@ -5366,6 +5540,93 @@ export function PlanCanvas({
           data-testid="reveal-hidden-chip"
         >
           Reveal Hidden Elements — hidden categories visible
+        </div>
+      )}
+      {/* ANN-01 text annotation typing overlay */}
+      {textAnnotOverlay && (
+        <div
+          style={{
+            position: 'absolute',
+            left: textAnnotOverlay.screenX,
+            top: textAnnotOverlay.screenY,
+            pointerEvents: 'auto',
+            zIndex: 30,
+          }}
+        >
+          <input
+            autoFocus
+            type="text"
+            value={textAnnotOverlay.draft}
+            className="rounded border border-accent bg-surface px-1 py-0.5 text-xs shadow outline-none"
+            placeholder="Type text…"
+            onChange={(e) =>
+              setTextAnnotOverlay((prev) => prev && { ...prev, draft: e.target.value })
+            }
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                const draft = textAnnotOverlay.draft.trim();
+                if (draft && activePlanViewId) {
+                  void onSemanticCommand({
+                    type: 'createTextNote',
+                    hostViewId: activePlanViewId,
+                    positionMm: textAnnotOverlay.positionMm,
+                    text: draft,
+                    fontSizeMm: 200,
+                    anchor: 'tl',
+                  });
+                }
+                textAnnotStateRef.current = initialTextAnnotationState();
+                setTextAnnotOverlay(null);
+              } else if (e.key === 'Escape') {
+                textAnnotStateRef.current = initialTextAnnotationState();
+                setTextAnnotOverlay(null);
+              }
+            }}
+          />
+        </div>
+      )}
+      {/* ANN-16 leader-text typing overlay */}
+      {leaderTextOverlay && (
+        <div
+          style={{
+            position: 'absolute',
+            left: leaderTextOverlay.screenX,
+            top: leaderTextOverlay.screenY,
+            pointerEvents: 'auto',
+            zIndex: 30,
+          }}
+        >
+          <input
+            autoFocus
+            type="text"
+            value={leaderTextOverlay.draft}
+            className="rounded border border-accent bg-surface px-1 py-0.5 text-xs shadow outline-none"
+            placeholder="Leader text…"
+            onChange={(e) =>
+              setLeaderTextOverlay((prev) => prev && { ...prev, draft: e.target.value })
+            }
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                const draft = leaderTextOverlay.draft.trim();
+                if (draft && activePlanViewId) {
+                  void onSemanticCommand({
+                    type: 'createLeaderText',
+                    hostViewId: activePlanViewId,
+                    anchorMm: leaderTextOverlay.anchorMm,
+                    elbowMm: leaderTextOverlay.elbowMm,
+                    textMm: leaderTextOverlay.textMm,
+                    content: draft,
+                    arrowStyle: 'arrow',
+                  });
+                }
+                leaderTextStateRef.current = initialLeaderTextState();
+                setLeaderTextOverlay(null);
+              } else if (e.key === 'Escape') {
+                leaderTextStateRef.current = initialLeaderTextState();
+                setLeaderTextOverlay(null);
+              }
+            }}
+          />
         </div>
       )}
       {/* Measure readout chip — shown after a two-click distance measurement */}

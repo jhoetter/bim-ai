@@ -122,6 +122,7 @@ import {
   readSnapshotFile,
   VVDialog,
 } from './project';
+import { PhaseManagerDialog } from '../phases/PhaseManagerDialog';
 import {
   coerceCheckpointRetentionLimit,
   DEFAULT_CHECKPOINT_RETENTION_LIMIT,
@@ -1010,6 +1011,7 @@ export function Workspace(): JSX.Element {
   const [manageLinksOpen, setManageLinksOpen] = useState(false);
   const [projectSetupOpen, setProjectSetupOpen] = useState(false);
   const [projectUnitsOpen, setProjectUnitsOpen] = useState(false);
+  const [phaseManagerOpen, setPhaseManagerOpen] = useState(false);
   const lensMode = useBimStore((s) => s.lensMode);
   const setLensMode = useBimStore((s) => s.setLensMode);
   const activeWorkspaceId = useBimStore((s) => s.activeWorkspaceId);
@@ -4034,6 +4036,7 @@ export function Workspace(): JSX.Element {
         onOpenAppearanceAssetBrowser={() => openAppearanceAssetBrowser()}
         onOpenProjectSetup={() => setProjectSetupOpen(true)}
         onOpenProjectUnits={() => setProjectUnitsOpen(true)}
+        onManagePhases={() => setPhaseManagerOpen(true)}
         onNewClear={handleNewClear}
         onReplayTour={replayOnboardingTour}
         onManageLinks={() => setManageLinksOpen(true)}
@@ -4076,6 +4079,12 @@ export function Workspace(): JSX.Element {
       />
       <ManageLinksDialog open={manageLinksOpen} onClose={() => setManageLinksOpen(false)} />
       <ProjectUnitsDialog open={projectUnitsOpen} onClose={() => setProjectUnitsOpen(false)} />
+      <PhaseManagerDialog
+        open={phaseManagerOpen}
+        onClose={() => setPhaseManagerOpen(false)}
+        elementsById={elementsById}
+        onSemanticCommand={onSemanticCommand}
+      />
       {modelId && (
         <MilestoneDialog
           open={milestoneDialogOpen}

@@ -365,7 +365,8 @@ export type ElemKind =
   | 'building_services_handoff'
   | 'radial_dimension'
   | 'diameter_dimension'
-  | 'arc_length_dimension';
+  | 'arc_length_dimension'
+  | 'leader_text';
 
 export type PhaseFilter = 'all' | 'existing' | 'demolition' | 'new';
 
@@ -2136,6 +2137,18 @@ export type Element =
       colour?: string;
     }
   | {
+      /** ANN-16 — view-local leader annotation: arrow line + optional elbow + text block. */
+      kind: 'leader_text';
+      id: string;
+      hostViewId: string;
+      anchorMm: XY;
+      elbowMm?: XY;
+      textMm: XY;
+      content: string;
+      arrowStyle?: 'arrow' | 'dot' | 'none';
+      colour?: string;
+    }
+  | {
       kind: 'column';
       id: string;
       name: string;
@@ -2724,6 +2737,7 @@ export type Element =
       id: string;
       name: string;
       ord: number;
+      description?: string | null;
     }
   | {
       /**

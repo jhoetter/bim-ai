@@ -103,6 +103,11 @@ import {
 import { makeSweepMesh } from './viewport/sweepMesh';
 import { makeDormerMesh } from './viewport/dormerMesh';
 import { buildMassMesh } from './viewport/meshBuilders.mass';
+import { makeBeamSystemMesh } from './viewport/meshBuilders.beamSystem';
+import { makeBraceMesh } from './viewport/meshBuilders.brace';
+import { makeMassBoxMesh } from './viewport/meshBuilders.massBox';
+import { makeMassExtrusionMesh } from './viewport/meshBuilders.massExtrusion';
+import { makeMassRevolutionMesh } from './viewport/meshBuilders.massRevolution';
 import { isElementVisibleUnderPhaseFilter } from './viewport/phaseFilter';
 import { applyDormerCutsToRoofGeom } from './viewport/dormerRoofCut';
 import { registerDormerCutFn } from './viewport/meshBuilders';
@@ -4161,6 +4166,23 @@ export function Viewport({
           obj = makeBeamMesh(e, elev, paint);
           break;
         }
+        case 'beam_system': {
+          const elev = elevationMForLevel(e.levelId, curr);
+          obj = makeBeamSystemMesh(e, elev, paint);
+          break;
+        }
+        case 'brace':
+          obj = makeBraceMesh(e, paint);
+          break;
+        case 'mass_box':
+          obj = makeMassBoxMesh(e);
+          break;
+        case 'mass_extrusion':
+          obj = makeMassExtrusionMesh(e);
+          break;
+        case 'mass_revolution':
+          obj = makeMassRevolutionMesh(e);
+          break;
         case 'ceiling':
           obj = makeCeilingMesh(e, curr, paint);
           break;

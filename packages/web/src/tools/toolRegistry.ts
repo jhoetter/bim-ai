@@ -67,6 +67,7 @@ export type ToolId =
   | 'column'
   | 'beam'
   | 'brace'
+  | 'beam-system'
   | 'ceiling'
   | 'toposolid_subdivision'
   | 'measure'
@@ -532,6 +533,15 @@ export function getToolRegistry(t: TFunction): Record<ToolId, ToolDefinition> {
       modes: ['plan', '3d'],
       tooltip: 'Place a diagonal structural brace between two anchor points',
     },
+    'beam-system': {
+      id: 'beam-system',
+      label: 'Beam System',
+      icon: 'beam',
+      hotkey: 'BS',
+      shortcut: 'BS',
+      modes: ['plan', '3d'],
+      tooltip: 'Draw a closed boundary and fill it with parallel beams',
+    },
     ceiling: {
       id: 'ceiling',
       label: t('tools.ceiling.label'),
@@ -813,6 +823,7 @@ const PALETTE_ORDER: ToolId[] = [
   'mep-opening-request',
   'column',
   'beam',
+  'beam-system',
   'mass-box',
   'mass-extrusion',
   'mass-revolution',

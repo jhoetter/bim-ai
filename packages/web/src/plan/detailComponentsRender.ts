@@ -235,6 +235,17 @@ export type AngularDimensionPrimitive = {
   colour: string;
 };
 
+export type LeaderTextPrimitive = {
+  kind: 'leader_text';
+  id: string;
+  anchorMm: XY;
+  elbowMm: XY | null;
+  textMm: XY;
+  content: string;
+  arrowStyle: 'arrow' | 'dot' | 'none';
+  colour: string;
+};
+
 export type DetailComponentPrimitive =
   | DetailLinePrimitive
   | DetailRegionPrimitive
@@ -259,7 +270,8 @@ export type DetailComponentPrimitive =
   | SpotSlopePrimitive
   | InsulationAnnotationPrimitive
   | RevisionCloudPrimitive
-  | AngularDimensionPrimitive;
+  | AngularDimensionPrimitive
+  | LeaderTextPrimitive;
 
 /**
  * Walks `elementsById` and returns rendering primitives for every
@@ -493,6 +505,17 @@ export function extractDetailComponentPrimitives(
         rayAMm: el.rayAMm,
         rayBMm: el.rayBMm,
         arcRadiusMm: el.arcRadiusMm ?? 500,
+        colour: el.colour ?? '#202020',
+      });
+    } else if (el.kind === 'leader_text' && el.hostViewId === viewId) {
+      out.push({
+        kind: 'leader_text',
+        id: el.id,
+        anchorMm: el.anchorMm,
+        elbowMm: el.elbowMm ?? null,
+        textMm: el.textMm,
+        content: el.content,
+        arrowStyle: el.arrowStyle ?? 'arrow',
         colour: el.colour ?? '#202020',
       });
     }

@@ -446,6 +446,15 @@ export const AUTHORING_COMMAND_CONTRACTS = {
     [],
     ['type', 'level', 'offset', 'chain'],
   ),
+  'beam-system': contract(
+    'beam-system',
+    'sketch',
+    ['plan', '3d'],
+    'Closed boundary sketch filled with parallel beams at a specified spacing.',
+    'explicit-finish',
+    [],
+    ['spacing', 'direction', 'finish', 'cancel'],
+  ),
   ceiling: contract(
     'ceiling',
     'sketch',

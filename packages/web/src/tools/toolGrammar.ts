@@ -184,6 +184,7 @@ export const TOOL_CAPABILITIES: Record<string, ToolCapabilities> = {
   },
   'material-tag': { chainable: false, multipleable: true, tagOnPlace: false, numericInput: false },
   'north-arrow': { chainable: false, multipleable: false, tagOnPlace: false, numericInput: false },
+  ramp: { chainable: false, multipleable: false, tagOnPlace: false, numericInput: true },
 };
 
 /**
