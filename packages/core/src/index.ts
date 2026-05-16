@@ -2758,150 +2758,23 @@ export type Element =
       latitudeDeg: number;
       longitudeDeg: number;
       dateIso: string;
-      timeOfDay: { hours: number; minutes: number };
-      animationRange?: { startIso: string; endIso: string; intervalMinutes: number } | null;
-      daylightSavingStrategy: 'auto' | 'on' | 'off';
-    }
-  | View
-  | ToposolidElem
-  | ToposolidSubdivisionElem
-  | GradedRegionElem
-  | ToposolidExcavationElem
-  | AssetLibraryEntryElem
-  | PlacedAssetElem
-  | FamilyKitInstanceElem
-  | HatchPatternDef
-  | PropertyDefinitionElem
-  | MaterialElem
-  | ImageAssetElem
-  | DecalElem
-  | ImageUnderlayElem
-  | NeighborhoodMassElem
-  | NeighborhoodImportSessionElem
-  | ConceptSeedElem
-  | FrameElem
-  | SavedViewElem
-  | PresentationCanvasElem
-  | BrandTemplateElem
-  | ThermalBridgeMarkerElem
-  | RenovationScenarioElem
-  | BuildingServicesHandoffElem
-  | ({
-      kind: 'pipe';
-      id: string;
-      name?: string;
-      levelId: string;
-      startMm: XY;
-      endMm: XY;
-      elevationMm?: number;
-      diameterMm?: number;
-      materialKey?: string | null;
-      colour?: string | null;
-    } & MepCommonFields)
-  | ({
-      kind: 'duct';
-      id: string;
-      name?: string;
-      levelId: string;
-      startMm: XY;
-      endMm: XY;
-      elevationMm?: number;
-      widthMm?: number;
-      heightMm?: number;
-      shape?: 'rectangular' | 'round' | 'oval';
-      colour?: string | null;
-    } & MepCommonFields)
-  | ({
-      kind: 'cable_tray';
-      id: string;
-      name?: string;
-      levelId: string;
-      startMm: XY;
-      endMm: XY;
-      elevationMm?: number;
-      widthMm?: number;
-      heightMm?: number;
-      colour?: string | null;
-    } & MepCommonFields)
-  | ({
-      kind: 'mep_equipment';
-      id: string;
-      name?: string;
-      levelId: string;
-      positionMm: XY;
-      elevationMm?: number;
-      equipmentType?: string | null;
-      familyTypeId?: string | null;
-      electricalLoadW?: number | null;
-    } & MepCommonFields)
-  | ({
-      kind: 'fixture';
-      id: string;
-      name?: string;
-      levelId: string;
-      positionMm: XY;
-      roomId?: string | null;
-      fixtureType?: string | null;
-      electricalLoadW?: number | null;
-    } & MepCommonFields)
-  | ({
-      kind: 'mep_terminal';
-      id: string;
-      name?: string;
-      terminalKind?: 'diffuser' | 'terminal' | 'sprinkler' | 'device';
-      levelId: string;
-      positionMm: XY;
-      roomId?: string | null;
-    } & MepCommonFields)
-  | ({
-      kind: 'mep_opening_request';
-      id: string;
-      name?: string;
-      hostElementId: string;
-      levelId?: string | null;
-      requesterElementIds?: string[];
-      openingKind?: 'wall' | 'slab' | 'roof' | 'shaft';
-      status?: 'requested' | 'approved' | 'rejected' | 'installed';
-      positionMm?: XY | null;
-      widthMm?: number | null;
-      heightMm?: number | null;
-      diameterMm?: number | null;
-      clearanceMm?: number;
-      approvalNote?: string | null;
-    } & MepCommonFields)
+      timeOfDay: { hours: number; minutes: number }
   | {
-      kind: 'pipe_legend';
-      id: string;
-      hostViewId: string;
-      positionMm: XY;
-      title?: string;
-      entries: { systemType: string; label: string; colour: string }[];
-    }
-  | {
-      kind: 'duct_legend';
-      id: string;
-      hostViewId: string;
-      positionMm: XY;
-      title?: string;
-      entries: { systemType: string; label: string; colour: string }[];
-    }
-  | {
-      kind: 'brace';
+      kind: 'beam_system';
       id: string;
       name?: string;
-      startXMm: number;
-      startYMm: number;
-      startElevationMm: number;
-      endXMm: number;
-      endYMm: number;
-      endElevationMm: number;
+      levelId: string;
+      boundaryPoints: { xMm: number; yMm: number }[];
+      beamDirection: number;
+      spacingMm: number;
       profileId?: string;
       materialKey?: string | null;
-      structuralRole: 'structural';
+      justification?: 'centre' | 'bearing_line_1' | 'bearing_line_2';
+      structuralRole?: 'structural' | 'non-structural';
       phaseCreated?: string | null;
       phaseDemolished?: string | null;
       discipline?: DisciplineTag | null;
-    };
+    };;
 
 export type Violation = {
   ruleId: string;

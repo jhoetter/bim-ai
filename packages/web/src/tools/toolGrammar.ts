@@ -78,6 +78,17 @@ export const TOOL_CAPABILITIES: Record<string, ToolCapabilities> = {
     tagOnPlace: false,
     numericInput: false,
   },
+  text: { chainable: false, multipleable: true, tagOnPlace: false, numericInput: false },
+  'leader-text': { chainable: false, multipleable: true, tagOnPlace: false, numericInput: false },
+  'angular-dimension': { chainable: false, multipleable: true, tagOnPlace: false, numericInput: false },
+  'radial-dimension': { chainable: false, multipleable: true, tagOnPlace: false, numericInput: false },
+  'diameter-dimension': { chainable: false, multipleable: true, tagOnPlace: false, numericInput: false },
+  'arc-length-dimension': { chainable: false, multipleable: true, tagOnPlace: false, numericInput: false },
+  'spot-elevation': { chainable: false, multipleable: true, tagOnPlace: false, numericInput: false },
+  'spot-coordinate': { chainable: false, multipleable: true, tagOnPlace: false, numericInput: false },
+  'slope-annotation': { chainable: false, multipleable: true, tagOnPlace: false, numericInput: false },
+  'material-tag': { chainable: false, multipleable: true, tagOnPlace: false, numericInput: false },
+  'north-arrow': { chainable: false, multipleable: false, tagOnPlace: false, numericInput: false },
 };
 
 /**
@@ -1137,6 +1148,420 @@ export function reduceCeiling(
       return {
         state: { phase: 'idle' },
         effect: { commitCeiling: { verticesMm: verts }, stillActive: true },
+      };
+    }
+  }
+  return { state, effect: { stillActive: true } };
+}
+
+export type TextAnnotationState =
+  | {{ phase: 'idle' }}
+  | {{ phase: 'typing'; positionMm: {{ xMm: number; yMm: number }}; draft: string }};
+
+export function initialTextAnnotationState(): TextAnnotationState {{
+  return {{ phase: 'idle' }};
+}}
+
+export function reduceTextAnnotation(
+  state: TextAnnotationState,
+  event: {{ kind: string }},
+): {{ state: TextAnnotationState; effect: {{ stillActive: boolean }} }} {{
+  return {{ state, effect: {{ stillActive: true }} }};
+}}
+
+/* ─────────────────────────────────────────────────────────────────────── */
+/* A1 Text Annotation                                                         */
+/* ─────────────────────────────────────────────────────────────────────── */
+
+export type TextAnnotationState =
+  | { phase: 'idle' }
+  | { phase: 'typing'; xMm: number; yMm: number; content: string };
+
+export type TextAnnotationEvent =
+  | { kind: 'activate' }
+  | { kind: 'deactivate' }
+  | { kind: 'click'; xMm: number; yMm: number }
+  | { kind: 'type'; char: string }
+  | { kind: 'backspace' }
+  | { kind: 'confirm' }
+  | { kind: 'cancel' };
+
+export interface TextAnnotationEffect {
+  commitText?: { xMm: number; yMm: number; content: string };
+  stillActive: boolean;
+}
+
+export function initialTextAnnotationState(): TextAnnotationState {
+  return { phase: 'idle' };
+}
+
+export function reduceTextAnnotation(
+  state: TextAnnotationState,
+  event: TextAnnotationEvent,
+): { state: TextAnnotationState; effect: TextAnnotationEffect } {
+  if (event.kind === 'activate' || event.kind === 'deactivate' || event.kind === 'cancel') {
+    return { state: { phase: 'idle' }, effect: { stillActive: event.kind !== 'deactivate' } };
+  }
+  if (event.kind === 'click') {
+    return {
+      state: { phase: 'typing', xMm: event.xMm, yMm: event.yMm, content: '' },
+      effect: { stillActive: true },
+    };
+  }
+  if (state.phase === 'typing') {
+    if (event.kind === 'type') {
+      return { state: { ...state, content: state.content + event.char }, effect: { stillActive: true } };
+    }
+    if (event.kind === 'backspace') {
+      return { state: { ...state, content: state.content.slice(0, -1) }, effect: { stillActive: true } };
+    }
+    if (event.kind === 'confirm' && state.content.trim().length > 0) {
+      return {
+        state: { phase: 'idle' },
+        effect: { commitText: { xMm: state.xMm, yMm: state.yMm, content: state.content }, stillActive: true },
+      };
+    }
+    if (event.kind === 'confirm') {
+      return { state: { phase: 'idle' }, effect: { stillActive: true } };
+    }
+  }
+  return { state, effect: { stillActive: true } };
+}
+
+/* ─────────────────────────────────────────────────────────────────────── */
+/* A2 Leader Text                                                             */
+/* ─────────────────────────────────────────────────────────────────────── */
+
+export type LeaderTextState =
+  | { phase: 'idle' }
+  | { phase: 'anchor'; anchorXMm: number; anchorYMm: number }
+  | { phase: 'text-pos'; anchorXMm: number; anchorYMm: number; elbowXMm: number; elbowYMm: number }
+  | {
+      phase: 'typing';
+      anchorXMm: number;
+      anchorYMm: number;
+      elbowXMm: number;
+      elbowYMm: number;
+      textXMm: number;
+      textYMm: number;
+      content: string;
+    };
+
+export type LeaderTextEvent =
+  | { kind: 'activate' }
+  | { kind: 'deactivate' }
+  | { kind: 'click'; xMm: number; yMm: number }
+  | { kind: 'type'; char: string }
+  | { kind: 'backspace' }
+  | { kind: 'confirm' }
+  | { kind: 'cancel' };
+
+export interface LeaderTextEffect {
+  commitLeader?: {
+    anchorXMm: number;
+    anchorYMm: number;
+    elbowXMm: number;
+    elbowYMm: number;
+    textXMm: number;
+    textYMm: number;
+    content: string;
+  };
+  stillActive: boolean;
+}
+
+export function initialLeaderTextState(): LeaderTextState {
+  return { phase: 'idle' };
+}
+
+export function reduceLeaderText(
+  state: LeaderTextState,
+  event: LeaderTextEvent,
+): { state: LeaderTextState; effect: LeaderTextEffect } {
+  if (event.kind === 'activate' || event.kind === 'deactivate' || event.kind === 'cancel') {
+    return { state: { phase: 'idle' }, effect: { stillActive: event.kind !== 'deactivate' } };
+  }
+  if (event.kind === 'click') {
+    if (state.phase === 'idle') {
+      return {
+        state: { phase: 'anchor', anchorXMm: event.xMm, anchorYMm: event.yMm },
+        effect: { stillActive: true },
+      };
+    }
+    if (state.phase === 'anchor') {
+      return {
+        state: {
+          phase: 'text-pos',
+          anchorXMm: state.anchorXMm,
+          anchorYMm: state.anchorYMm,
+          elbowXMm: event.xMm,
+          elbowYMm: event.yMm,
+        },
+        effect: { stillActive: true },
+      };
+    }
+    if (state.phase === 'text-pos') {
+      return {
+        state: {
+          phase: 'typing',
+          anchorXMm: state.anchorXMm,
+          anchorYMm: state.anchorYMm,
+          elbowXMm: state.elbowXMm,
+          elbowYMm: state.elbowYMm,
+          textXMm: event.xMm,
+          textYMm: event.yMm,
+          content: '',
+        },
+        effect: { stillActive: true },
+      };
+    }
+  }
+  if (state.phase === 'typing') {
+    if (event.kind === 'type') {
+      return { state: { ...state, content: state.content + event.char }, effect: { stillActive: true } };
+    }
+    if (event.kind === 'backspace') {
+      return { state: { ...state, content: state.content.slice(0, -1) }, effect: { stillActive: true } };
+    }
+    if (event.kind === 'confirm' && state.content.trim().length > 0) {
+      return {
+        state: { phase: 'idle' },
+        effect: {
+          commitLeader: {
+            anchorXMm: state.anchorXMm,
+            anchorYMm: state.anchorYMm,
+            elbowXMm: state.elbowXMm,
+            elbowYMm: state.elbowYMm,
+            textXMm: state.textXMm,
+            textYMm: state.textYMm,
+            content: state.content,
+          },
+          stillActive: true,
+        },
+      };
+    }
+    if (event.kind === 'confirm') {
+      return { state: { phase: 'idle' }, effect: { stillActive: true } };
+    }
+  }
+  return { state, effect: { stillActive: true } };
+}
+
+/* ─────────────────────────────────────────────────────────────────────── */
+/* A4 Angular Dimension                                                       */
+/* ─────────────────────────────────────────────────────────────────────── */
+
+export type AngularDimensionState =
+  | { phase: 'idle' }
+  | { phase: 'first-ray'; p1xMm: number; p1yMm: number }
+  | { phase: 'second-ray'; p1xMm: number; p1yMm: number; p2xMm: number; p2yMm: number };
+
+export type AngularDimensionEvent =
+  | { kind: 'activate' }
+  | { kind: 'deactivate' }
+  | { kind: 'click'; xMm: number; yMm: number }
+  | { kind: 'cancel' };
+
+export interface AngularDimensionEffect {
+  commitAngular?: {
+    p1xMm: number;
+    p1yMm: number;
+    p2xMm: number;
+    p2yMm: number;
+    labelXMm: number;
+    labelYMm: number;
+  };
+  stillActive: boolean;
+}
+
+export function initialAngularDimensionState(): AngularDimensionState {
+  return { phase: 'idle' };
+}
+
+export function reduceAngularDimension(
+  state: AngularDimensionState,
+  event: AngularDimensionEvent,
+): { state: AngularDimensionState; effect: AngularDimensionEffect } {
+  if (event.kind === 'activate' || event.kind === 'deactivate' || event.kind === 'cancel') {
+    return { state: { phase: 'idle' }, effect: { stillActive: event.kind !== 'deactivate' } };
+  }
+  if (event.kind === 'click') {
+    if (state.phase === 'idle') {
+      return {
+        state: { phase: 'first-ray', p1xMm: event.xMm, p1yMm: event.yMm },
+        effect: { stillActive: true },
+      };
+    }
+    if (state.phase === 'first-ray') {
+      return {
+        state: {
+          phase: 'second-ray',
+          p1xMm: state.p1xMm,
+          p1yMm: state.p1yMm,
+          p2xMm: event.xMm,
+          p2yMm: event.yMm,
+        },
+        effect: { stillActive: true },
+      };
+    }
+    if (state.phase === 'second-ray') {
+      return {
+        state: { phase: 'idle' },
+        effect: {
+          commitAngular: {
+            p1xMm: state.p1xMm,
+            p1yMm: state.p1yMm,
+            p2xMm: state.p2xMm,
+            p2yMm: state.p2yMm,
+            labelXMm: event.xMm,
+            labelYMm: event.yMm,
+          },
+          stillActive: true,
+        },
+      };
+    }
+  }
+  return { state, effect: { stillActive: true } };
+}
+
+/* ─────────────────────────────────────────────────────────────────────── */
+/* A5 Radial / Diameter Dimension                                             */
+/* ─────────────────────────────────────────────────────────────────────── */
+
+export type RadialDimensionState = { phase: 'idle' } | { phase: 'arc-point'; arcXMm: number; arcYMm: number };
+
+export type RadialDimensionEvent =
+  | { kind: 'activate' }
+  | { kind: 'deactivate' }
+  | { kind: 'click'; xMm: number; yMm: number }
+  | { kind: 'cancel' };
+
+export interface RadialDimensionEffect {
+  commitRadial?: { arcXMm: number; arcYMm: number; labelXMm: number; labelYMm: number };
+  stillActive: boolean;
+}
+
+export function initialRadialDimensionState(): RadialDimensionState {
+  return { phase: 'idle' };
+}
+
+export function reduceRadialDimension(
+  state: RadialDimensionState,
+  event: RadialDimensionEvent,
+): { state: RadialDimensionState; effect: RadialDimensionEffect } {
+  if (event.kind === 'activate' || event.kind === 'deactivate' || event.kind === 'cancel') {
+    return { state: { phase: 'idle' }, effect: { stillActive: event.kind !== 'deactivate' } };
+  }
+  if (event.kind === 'click') {
+    if (state.phase === 'idle') {
+      return {
+        state: { phase: 'arc-point', arcXMm: event.xMm, arcYMm: event.yMm },
+        effect: { stillActive: true },
+      };
+    }
+    if (state.phase === 'arc-point') {
+      return {
+        state: { phase: 'idle' },
+        effect: {
+          commitRadial: {
+            arcXMm: state.arcXMm,
+            arcYMm: state.arcYMm,
+            labelXMm: event.xMm,
+            labelYMm: event.yMm,
+          },
+          stillActive: true,
+        },
+      };
+    }
+  }
+  return { state, effect: { stillActive: true } };
+}
+
+/* ─────────────────────────────────────────────────────────────────────── */
+/* A6/A7/A8/A10/A12 Single-click annotations                                 */
+/* ─────────────────────────────────────────────────────────────────────── */
+
+export type SingleClickAnnotationState = { phase: 'idle' };
+
+export type SingleClickAnnotationEvent =
+  | { kind: 'activate' }
+  | { kind: 'deactivate' }
+  | { kind: 'click'; xMm: number; yMm: number }
+  | { kind: 'cancel' };
+
+export interface SingleClickAnnotationEffect {
+  commitPoint?: { xMm: number; yMm: number };
+  stillActive: boolean;
+}
+
+export function initialSingleClickAnnotationState(): SingleClickAnnotationState {
+  return { phase: 'idle' };
+}
+
+export function reduceSingleClickAnnotation(
+  state: SingleClickAnnotationState,
+  event: SingleClickAnnotationEvent,
+): { state: SingleClickAnnotationState; effect: SingleClickAnnotationEffect } {
+  if (event.kind === 'deactivate') {
+    return { state: { phase: 'idle' }, effect: { stillActive: false } };
+  }
+  if (event.kind === 'click') {
+    return {
+      state: { phase: 'idle' },
+      effect: { commitPoint: { xMm: event.xMm, yMm: event.yMm }, stillActive: true },
+    };
+  }
+  return { state: { phase: 'idle' }, effect: { stillActive: true } };
+}
+
+/* ─────────────────────────────────────────────────────────────────────── */
+/* A9 Slope Annotation                                                        */
+/* ─────────────────────────────────────────────────────────────────────── */
+
+export type SlopeAnnotationState =
+  | { phase: 'idle' }
+  | { phase: 'end-point'; startXMm: number; startYMm: number };
+
+export type SlopeAnnotationEvent =
+  | { kind: 'activate' }
+  | { kind: 'deactivate' }
+  | { kind: 'click'; xMm: number; yMm: number }
+  | { kind: 'cancel' };
+
+export interface SlopeAnnotationEffect {
+  commitSlope?: { startXMm: number; startYMm: number; endXMm: number; endYMm: number };
+  stillActive: boolean;
+}
+
+export function initialSlopeAnnotationState(): SlopeAnnotationState {
+  return { phase: 'idle' };
+}
+
+export function reduceSlopeAnnotation(
+  state: SlopeAnnotationState,
+  event: SlopeAnnotationEvent,
+): { state: SlopeAnnotationState; effect: SlopeAnnotationEffect } {
+  if (event.kind === 'activate' || event.kind === 'deactivate' || event.kind === 'cancel') {
+    return { state: { phase: 'idle' }, effect: { stillActive: event.kind !== 'deactivate' } };
+  }
+  if (event.kind === 'click') {
+    if (state.phase === 'idle') {
+      return {
+        state: { phase: 'end-point', startXMm: event.xMm, startYMm: event.yMm },
+        effect: { stillActive: true },
+      };
+    }
+    if (state.phase === 'end-point') {
+      return {
+        state: { phase: 'idle' },
+        effect: {
+          commitSlope: {
+            startXMm: state.startXMm,
+            startYMm: state.startYMm,
+            endXMm: event.xMm,
+            endYMm: event.yMm,
+          },
+          stillActive: true,
+        },
       };
     }
   }

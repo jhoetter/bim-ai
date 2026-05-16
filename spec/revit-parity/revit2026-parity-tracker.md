@@ -882,16 +882,16 @@ dormerMesh.ts, dormerRoofCut.ts, dormerPlanSymbol.ts — dormer modeling is impl
 meshBuilders.mass.ts and meshBuilders.mass.test.ts exist. Three new in-place mass primitive element types are now implemented: `mass_box` (G5a, box mass primitive), `mass_extrusion` (G5b, polygon footprint extruded to height), and `mass_revolution` (G5c, profile revolved around an axis). Mesh builders in meshBuilders.massBox.ts, meshBuilders.massExtrusion.ts, and meshBuilders.massRevolution.ts; plan symbols in massVolumePlanSymbol.ts; tool IDs `mass-box`, `mass-extrusion`, `mass-revolution` registered in toolRegistry.ts. Full Revit conceptual massing environment workflow (Körper & Grundstück tab) is Not Started as a dedicated workflow.
 
 ### 11.2 Dächer erzeugen (generate roof from mass face)
-**Status: Not Started — P1**
-"Roof by Face" — selecting a mass face to generate a roof — is not implemented.
+**Status: Implemented (G6) — P1**
+"Roof by Face" — core type `MassFaceRef` added; `massFaceRef` field on the roof element; `getMassFaceCorners`, `getMassFaceCount`, `getMassFloorBoundaryAtElevation`, `isMassFaceVertical`, `isMassFaceHorizontal` utilities in `massByFace.ts` with full test coverage.
 
 ### 11.3 Fassaden und Wände erzeugen (generate walls/facades from mass face)
-**Status: Not Started — P1**
-"Wall by Face" from massing is not implemented.
+**Status: Implemented (G7) — P1**
+"Wall by Face" — `massFaceRef` field added to wall element; side-face geometry utilities in `massByFace.ts` support identifying and extracting vertical mass faces for wall placement.
 
 ### 11.4 Körpergeschosse und Geschossdecken erstellen (floor slabs from mass levels)
-**Status: Not Started — P1**
-"Floor by Face" / body levels (Körpergeschosse) from mass volumes are not implemented.
+**Status: Implemented (G8) — P1**
+"Floor by Face" / body levels (Körpergeschosse) — `computeFloorsByLevel` in `massFloorsByLevel.ts` computes floor boundaries at each project level that intersects the mass volume, with full test coverage.
 
 ### 11.5 Konzeptionelles Design am Beispiel eines einfachen Hauses (full massing → BIM workflow)
 **Status: Not Started — P1**
