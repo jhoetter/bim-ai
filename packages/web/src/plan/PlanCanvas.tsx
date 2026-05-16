@@ -54,6 +54,12 @@ import {
   initialRevisionCloudState,
   reduceRevisionCloud,
   type RevisionCloudState,
+  initialArrayState,
+  reduceArray,
+  type ArrayState,
+  initialPlaceGroupState,
+  reducePlaceGroup,
+  type PlaceGroupState,
 } from '../tools/toolGrammar';
 import { buildScaleCommand, distanceMm } from './scaleTool';
 import { columnPositionsAtGridIntersections } from './columnAtGrids';
@@ -452,6 +458,9 @@ export function PlanCanvas({
   const [rotateReferenceSet, setRotateReferenceSet] = useState(false);
   const scaleStateRef = useRef<ScaleState>(initialScaleState());
   const [scalePhase, setScalePhase] = useState<ScaleState['phase']>('idle');
+  const arrayStateRef = useRef<ArrayState>(initialArrayState());
+  const [arrayPhase, setArrayPhase] = useState<ArrayState['phase']>('idle');
+  const placeGroupStateRef = useRef<PlaceGroupState>(initialPlaceGroupState());
   const roofByExtrusionStateRef = useRef<RoofByExtrusionState>(initialRoofByExtrusionState());
   const [roofByExtrusionPhase, setRoofByExtrusionPhase] =
     useState<RoofByExtrusionState['phase']>('idle');
@@ -675,6 +684,7 @@ export function PlanCanvas({
   const wallDrawHeightMm = useBimStore((s) => s.wallDrawHeightMm);
   const activeWallTypeId = useBimStore((s) => s.activeWallTypeId);
   const orthoSnapHold = useBimStore((s) => s.orthoSnapHold);
+  const groupRegistry = useBimStore((s) => s.groupRegistry);
   const selectEl = useBimStore((s) => s.select);
   const setActiveLevelId = useBimStore((s) => s.setActiveLevelId);
   const activateElevationView = useBimStore((s) => s.activateElevationView);
@@ -1022,6 +1032,13 @@ export function PlanCanvas({
       const { state } = reduceScale(scaleStateRef.current, { kind: 'activate' });
       scaleStateRef.current = state;
       setScalePhase(state.phase);
+    } else if (planTool === 'array') {
+      const { state } = reduceArray(arrayStateRef.current, { kind: 'activate' });
+      arrayStateRef.current = state;
+      setArrayPhase(state.phase);
+    } else if (planTool === 'place-group') {
+      const { state } = reducePlaceGroup(placeGroupStateRef.current, { kind: 'activate' });
+      placeGroupStateRef.current = state;
     } else if (planTool === 'roof-by-extrusion') {
       const { state } = reduceRoofByExtrusion(
         roofByExtrusionStateRef.current,
@@ -1196,6 +1213,7 @@ export function PlanCanvas({
         : draftingRef.current.lineWeights,
       viewPhaseId,
       phaseFilterMode,
+      groupRegistry,
     });
 
     // F-102: in reveal mode, tint individually-hidden elements magenta so users can
@@ -2075,6 +2093,7 @@ export function PlanCanvas({
     thinLinesEnabled,
     draftGridVisible,
     lensMode,
+    groupRegistry,
   ]);
 
   // Auto-fit camera when a level's elements first become available, and on
@@ -3951,6 +3970,28 @@ export function PlanCanvas({
         bumpGeom((x) => x + 1);
         return;
       }
+      if (planTool === 'roof-by-extrusion') {
+        const { state, effect } = reduceRoofByExtrusion(
+          roofByExtrusionStateRef.current,
+          { kind: 'click', xMm: sp.xMm, yMm: sp.yMm },
+          lvlId ?? '',
+        );
+        roofByExtrusionStateRef.current = state;
+        setRoofByExtrusionPhase(state.phase);
+        if (effect.createRoofByExtrusion) {
+          const { profilePoints, depthMm, levelId, slopeAngleDeg } = effect.createRoofByExtrusion;
+          void onSemanticCommand({
+            type: 'createRoof',
+            referenceLevelId: levelId,
+            footprintMm: profilePoints,
+            extrusionDepthMm: depthMm,
+            slopeDeg: slopeAngleDeg,
+          });
+        }
+        if (!effect.stillActive) setPlanTool('select');
+        bumpGeom((x) => x + 1);
+        return;
+      }
       if (planTool === 'component') {
         const assetId = activeComponentAssetId;
         const familyTypeId = activeComponentFamilyTypeId;
@@ -4723,6 +4764,68 @@ export function PlanCanvas({
           return;
         }
       }
+      if (planTool === 'roof-by-extrusion') {
+        if (ev.key === 'Enter') {
+          ev.preventDefault();
+          const phase = roofByExtrusionStateRef.current.phase;
+          if (phase === 'recording') {
+            const { state } = reduceRoofByExtrusion(
+              roofByExtrusionStateRef.current,
+              { kind: 'enter' },
+              lvlId ?? '',
+            );
+            roofByExtrusionStateRef.current = state;
+            setRoofByExtrusionPhase(state.phase);
+            bumpGeom((x) => x + 1);
+          } else if (phase === 'confirm-depth') {
+            const { state, effect } = reduceRoofByExtrusion(
+              roofByExtrusionStateRef.current,
+              { kind: 'enter' },
+              lvlId ?? '',
+            );
+            roofByExtrusionStateRef.current = state;
+            setRoofByExtrusionPhase(state.phase);
+            if (effect.createRoofByExtrusion) {
+              const { profilePoints, depthMm, levelId, slopeAngleDeg } =
+                effect.createRoofByExtrusion;
+              void onSemanticCommand({
+                type: 'createRoof',
+                referenceLevelId: levelId,
+                footprintMm: profilePoints,
+                extrusionDepthMm: depthMm,
+                slopeDeg: slopeAngleDeg,
+              });
+            }
+            if (!effect.stillActive) setPlanTool('select');
+            setNumericInput(null);
+            bumpGeom((x) => x + 1);
+          }
+          return;
+        }
+        if (/^[0-9]$/.test(ev.key) || ev.key === '.' || ev.key === ',') {
+          if (roofByExtrusionStateRef.current.phase === 'confirm-depth') {
+            ev.preventDefault();
+            const char = ev.key === ',' ? '.' : ev.key;
+            const next =
+              roofByExtrusionStateRef.current.phase === 'confirm-depth'
+                ? roofByExtrusionStateRef.current.depthInput + char
+                : char;
+            const { state } = reduceRoofByExtrusion(
+              roofByExtrusionStateRef.current,
+              { kind: 'set-depth', value: next },
+              lvlId ?? '',
+            );
+            roofByExtrusionStateRef.current = state;
+            setRoofByExtrusionPhase(state.phase);
+            setNumericInput((prev) => {
+              const hoverMm = hudMmRef.current;
+              const seedPx = hoverMm ? worldToScreen(hoverMm) : { pxX: 100, pxY: 100 };
+              return { value: next, pxX: prev?.pxX ?? seedPx.pxX, pxY: prev?.pxY ?? seedPx.pxY };
+            });
+          }
+          return;
+        }
+      }
       // F-104 — Tab cycles to the next endpoint-connected wall when a wall is
       // selected in select mode. Walks the wall graph: find all walls on the
       // same level whose start or end endpoint is within 10 mm of the current
@@ -4887,6 +4990,17 @@ export function PlanCanvas({
           scaleStateRef.current = state;
           setScalePhase(state.phase);
           setNumericInput(null);
+          bumpGeom((x) => x + 1);
+        } else if (planTool === 'roof-by-extrusion') {
+          const { state } = reduceRoofByExtrusion(
+            roofByExtrusionStateRef.current,
+            { kind: 'escape' },
+            lvlId ?? '',
+          );
+          roofByExtrusionStateRef.current = state;
+          setRoofByExtrusionPhase(state.phase);
+          setNumericInput(null);
+          setPlanTool('select');
           bumpGeom((x) => x + 1);
         }
         if (
