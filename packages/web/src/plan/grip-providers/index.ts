@@ -22,6 +22,7 @@ import { referencePlaneGripProvider } from './referencePlaneGripProvider';
 import { sectionCutGripProvider } from './sectionCutGripProvider';
 import { sketchElementGripProvider } from './sketchElementGripProvider';
 import { windowGripProvider } from './windowGripProvider';
+import { textNoteGripProvider, leaderTextGripProvider } from './annotationGripProvider';
 
 export {
   beamGripProvider,
@@ -35,6 +36,8 @@ export {
   sectionCutGripProvider,
   sketchElementGripProvider,
   windowGripProvider,
+  textNoteGripProvider,
+  leaderTextGripProvider,
 };
 
 export function gripsFor(element: Element, context: PlanContext = {}): GripDescriptor[] {
@@ -64,6 +67,10 @@ export function gripsFor(element: Element, context: PlanContext = {}): GripDescr
     case 'plan_region':
     case 'stair':
       return sketchElementGripProvider.grips(element, context);
+    case 'text_note':
+      return textNoteGripProvider.grips(element, context);
+    case 'leader_text':
+      return leaderTextGripProvider.grips(element, context);
     default:
       return [];
   }
