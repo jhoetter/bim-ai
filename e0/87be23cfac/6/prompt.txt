@@ -1,1 +1,0 @@
-Read spec/v3-prompts/wp-030.md end-to-end, then implement COL-V3-02 permission tiers on branch feat/v3-col-v3-02-permission-tiers

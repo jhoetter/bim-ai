@@ -1,5 +1,0 @@
-we need to apply i18n to our frontend. can you check how other repos in ~/repos/ are doing this, precisely e.g. ~/repos/pages-ai or ~/repos/mail-ai and such? then plan out how we can get there.
-
----
-
-go ahead, and please ensure to always have a tracker which is being updated

@@ -1,1 +1,0 @@
-Read spec/v3-prompts/wp-029.md end-to-end, then implement VIE-V3-01 detail-level rendering completion on branch feat/v3-vie-v3-01-detail-level

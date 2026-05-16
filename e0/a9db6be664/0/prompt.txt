@@ -1,5 +1,0 @@
-i want that you plan out creating a library of SVG icons that is PERFECT for our use case. it should be similar in usage e.g. to lucide or such, but perfectly optimized for our BIM use cases. how would that work, so we could also import it in that way basically? and which icons would be needed?
-
----
-
-yeah please do all 3 phases in full detail

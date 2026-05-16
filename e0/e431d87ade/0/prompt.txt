@@ -1,1 +1,0 @@
-dont wait for CI/CD after each refactor; do the whole refactoring until all points are addressed and then check if CI/CD is working, and if not, make fixes.

@@ -1,5 +1,0 @@
-Read /Users/jhoetter/repos/bim-ai/spec/v3-prompts/wp-034.md end-to-end, then implement everything it describes
-
----
-
-did you commit and push? also to main?

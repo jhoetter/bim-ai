@@ -1,1 +1,0 @@
-Read spec/v3-prompts/wp-024.md end-to-end, then implement KRN-V3-04 Design Options exactly as specified on branch feat/v3-krn-v3-04-design-options

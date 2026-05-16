@@ -1,1 +1,0 @@
-Read spec/v3-prompts/wp-031.md end-to-end, then implement EDT-V3-11 phase-filter as view-as-lens on branch feat/v3-edt-v3-11-phase-filter-lens
