@@ -1,0 +1,76 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "320fa9b0c2fd",
+  "session_id": "c0651263-c319-407b-9b4c-b647d3643cff",
+  "strategy": "manual-commit",
+  "created_at": "2026-05-16T00:29:57.098209Z",
+  "branch": "main",
+  "checkpoints_count": 0,
+  "files_touched": [
+    "packages/web/src/state/storeTypes.ts",
+    "packages/web/src/tools/authoringCommandContract.ts",
+    "packages/web/src/tools/toolRegistry.ts"
+  ],
+  "agent": "Claude Code",
+  "model": "claude-sonnet-4-6",
+  "turn_id": "563c4a8b1834",
+  "token_usage": {
+    "input_tokens": 166,
+    "cache_creation_tokens": 53943,
+    "cache_read_tokens": 1085532,
+    "output_tokens": 19312,
+    "api_call_count": 25
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-05-16T00:29:56.570327Z",
+    "agent_lines": 0,
+    "agent_removed": 0,
+    "human_added": 0,
+    "human_modified": 0,
+    "human_removed": 2,
+    "total_committed": 0,
+    "total_lines_changed": 2,
+    "agent_percentage": 0,
+    "metric_version": 2
+  },
+  "prompt_attributions": [
+    {
+      "checkpoint_number": 1,
+      "user_lines_added": 1206,
+      "user_lines_removed": 50,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0,
+      "user_added_per_file": {
+        "packages/web/src/plan/PlanCanvas.toolDestubs.test.ts": 7,
+        "packages/web/src/plan/PlanCanvas.tsx": 129,
+        "packages/web/src/plan/wallPickLines.test.ts": 129,
+        "packages/web/src/plan/wallPickLines.ts": 219,
+        "packages/web/src/tools/authoringCommandContract.ts": 2,
+        "packages/web/src/viewport/dormerMesh.ts": 82,
+        "packages/web/src/viewport/dormerRoofCut.ts": 7,
+        "packages/web/src/viewport/meshBuilders.ts": 19,
+        "packages/web/src/workspace/ModeShells.tsx": 3,
+        "packages/web/src/workspace/Workspace.tsx": 3,
+        "packages/web/src/workspace/sheets/SectionPlaceholderPane.tsx": 6,
+        "packages/web/src/workspace/sheets/sectionViewportSvg.tsx": 97,
+        "packages/web/src/workspace/viewport/CanvasMount.tsx": 5,
+        "packages/web/tmp/ux-next-wp44-picklines-20260515/capture.mjs": 311,
+        "packages/web/tmp/ux-next-wp44-picklines-20260515/summary.json": 21,
+        "seed-artifacts/target-house-4/bundle.json": 153,
+        "spec/ux-bim-ai-next-tracker.md": 13
+      },
+      "user_removed_per_file": {
+        "packages/web/src/plan/PlanCanvas.tsx": 1,
+        "packages/web/src/tools/authoringCommandContract.ts": 2,
+        "packages/web/src/viewport/dormerMesh.ts": 12,
+        "packages/web/src/viewport/dormerRoofCut.ts": 4,
+        "packages/web/src/viewport/meshBuilders.ts": 4,
+        "packages/web/src/workspace/sheets/SectionPlaceholderPane.tsx": 1,
+        "packages/web/src/workspace/sheets/sectionViewportSvg.tsx": 12,
+        "packages/web/src/workspace/viewport/CanvasMount.tsx": 1,
+        "seed-artifacts/target-house-4/bundle.json": 11,
+        "spec/ux-bim-ai-next-tracker.md": 2
+      }
+    }
+  ]
+}
