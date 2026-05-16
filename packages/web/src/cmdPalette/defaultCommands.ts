@@ -721,6 +721,14 @@ registerCommand({
 });
 
 registerCommand({
+  id: 'tool.column-at-grids',
+  label: 'Place Columns at Grid Intersections',
+  keywords: ['column', 'grid', 'structural', 'at grids', 'batch column'],
+  category: 'command',
+  invoke: (ctx) => startPlanTool(ctx, 'column-at-grids'),
+});
+
+registerCommand({
   id: 'tool.beam',
   label: 'Place Beam',
   keywords: ['beam', 'joist', 'structural'],
@@ -1738,6 +1746,15 @@ registerCommand({
   keywords: ['reveal', 'hidden', 'invisible', 'show all'],
   category: 'command',
   invoke: () => useBimStore.getState().setRevealHiddenMode(true),
+});
+
+registerCommand({
+  id: 'clipboard.paste-to-levels',
+  label: 'Paste Aligned to Selected Levels',
+  keywords: ['paste', 'clipboard', 'copy to levels', 'align', 'multi-storey', 'repeat'],
+  category: 'command',
+  isAvailable: hasSelection,
+  invoke: (ctx) => ctx.openPasteToLevels?.(),
 });
 
 registerCommand({

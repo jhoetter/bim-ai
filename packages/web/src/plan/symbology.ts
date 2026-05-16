@@ -45,6 +45,7 @@ import {
   massExtrusionPlanThree,
   massRevolutionPlanThree,
 } from './massVolumePlanSymbol';
+import { curtainWallPlanThree } from './curtainWallPlanSymbol';
 
 /** Plan slice elevation in world units (walls still render with real height elsewhere). */
 
@@ -1501,8 +1502,13 @@ export function rebuildPlanMeshes(
 
   {
     const before = holder.children.length;
-    for (const wall of walls)
-      holder.add(planWallMesh(wall, opts.selectedId, lineWeightScale, elementsById, detailLevel));
+    for (const wall of walls) {
+      if (wall.isCurtainWall) {
+        holder.add(curtainWallPlanThree(wall));
+      } else {
+        holder.add(planWallMesh(wall, opts.selectedId, lineWeightScale, elementsById, detailLevel));
+      }
+    }
     tintNewChildren(before, 'wall');
   }
 
