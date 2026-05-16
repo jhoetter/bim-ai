@@ -118,13 +118,19 @@ bim-ai has:
 Missing: per-view crop region editing, view-level visibility/graphics overrides dialog, thin-lines toggle ("Feine Linien"), hide/isolate element commands.
 
 #### 1.6.11 Projektbrowser (project browser tree: views, sheets, families, groups, Revit links)
-**Status: Partial — P1**
-bim-ai has a workspace/project browser concept. Plan views, 3D views, section views, sheet views are accessible via tabs/navigation. Missing:
-- Full hierarchical tree mirroring Revit's browser organisation (views by discipline, sheets by number, families tree, groups)
-- Drag-and-drop re-organisation of views in browser
-- View duplicate / dependent view commands from browser context menu
-- Revit Links subtree
-- Browser organisation presets (by type, by level, by discipline)
+**Status: Partial — P1 (D7)**
+`ProjectBrowser.tsx` + `ProjectBrowserV3.tsx` implement the project browser. Done:
+- Plan views grouped by discipline, sub-discipline, view type, and phase (F-032/F-099)
+- Area Plans section with scheme buckets (F-098)
+- Reflected Ceiling Plans (Deckenansichten) section (D7/D1)
+- Right-click context menu on every view row: Rename (inline), Duplicate, Delete, Properties (D7)
+- Active view highlighting (D7)
+- Drag-to-reorder views in browser (D7)
+- Inline double-click rename for plan views, section cuts, elevation views (D7)
+- Families subtree: wall_type / floor_type / roof_type with context menu (F-003)
+- Links subtree (`link_model` elements)
+- Schedules, Sheets, View Templates, Sections, Elevations, 3D saved views groups
+Still missing: full hierarchical Revit-style browser organisation presets, Groups subtree (deferred to WP-B), Browser organisation presets (by level, by discipline)
 
 #### 1.6.12 Zeichenfläche (drawing canvas: multiple view windows, tile/cascade)
 **Status: Partial — P2**
