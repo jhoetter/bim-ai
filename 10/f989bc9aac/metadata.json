@@ -147,6 +147,12 @@
       "transcript": "/10/f989bc9aac/22/full.jsonl",
       "content_hash": "/10/f989bc9aac/22/content_hash.txt",
       "prompt": "/10/f989bc9aac/22/prompt.txt"
+    },
+    {
+      "metadata": "/10/f989bc9aac/23/metadata.json",
+      "transcript": "/10/f989bc9aac/23/full.jsonl",
+      "content_hash": "/10/f989bc9aac/23/content_hash.txt",
+      "prompt": "/10/f989bc9aac/23/prompt.txt"
     }
   ],
   "token_usage": {
