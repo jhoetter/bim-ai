@@ -2011,6 +2011,94 @@ export function InspectorPropertiesFor(
         </div>
       );
     }
+    case 'beam_system': {
+      const { onPropertyChange: bsPropChange } = options ?? {};
+      return (
+        <div className="flex flex-col gap-2">
+          <div data-testid="inspector-beam-level">
+            <FieldRow label="Level" value={resolveElName(el.levelId, elementsById)} />
+          </div>
+          <div className="flex items-center gap-2 py-0.5">
+            <span className="text-xs text-muted w-28 shrink-0">Spacing (mm)</span>
+            <input
+              type="number"
+              className="w-20 text-xs bg-surface border border-border rounded px-1 py-0.5"
+              defaultValue={el.spacingMm}
+              key={`${el.id}-spacing`}
+              step={100}
+              min={100}
+              aria-label="Beam system spacing in millimetres"
+              onBlur={(e) => {
+                const v = Number(e.currentTarget.value);
+                if (!isNaN(v) && v > 0) bsPropChange?.('spacingMm', v);
+              }}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  const v = Number(e.currentTarget.value);
+                  if (!isNaN(v) && v > 0) bsPropChange?.('spacingMm', v);
+                }
+              }}
+              data-testid="inspector-beam-spacing"
+            />
+          </div>
+          <div className="flex items-center gap-2 py-0.5">
+            <span className="text-xs text-muted w-28 shrink-0">Direction (°)</span>
+            <input
+              type="number"
+              className="w-20 text-xs bg-surface border border-border rounded px-1 py-0.5"
+              defaultValue={el.directionDeg}
+              key={`${el.id}-direction`}
+              step={1}
+              min={0}
+              max={359}
+              aria-label="Beam system direction in degrees"
+              onBlur={(e) => {
+                const v = Number(e.currentTarget.value);
+                if (!isNaN(v)) bsPropChange?.('directionDeg', v);
+              }}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  const v = Number(e.currentTarget.value);
+                  if (!isNaN(v)) bsPropChange?.('directionDeg', v);
+                }
+              }}
+              data-testid="inspector-beam-direction"
+            />
+          </div>
+          <div className="flex items-center gap-2 py-0.5">
+            <span className="text-xs text-muted w-28 shrink-0">Beam Count</span>
+            <input
+              type="number"
+              className="w-20 text-xs bg-surface border border-border rounded px-1 py-0.5"
+              defaultValue={el.beamCount ?? ''}
+              key={`${el.id}-count`}
+              step={1}
+              min={1}
+              placeholder="—"
+              aria-label="Beam count override"
+              onBlur={(e) => {
+                const raw = e.currentTarget.value;
+                bsPropChange?.('beamCount', raw === '' ? null : Number(raw));
+              }}
+              data-testid="inspector-beam-count"
+            />
+          </div>
+          <div className="flex items-center gap-2 py-0.5">
+            <span className="text-xs text-muted w-28 shrink-0">Justification</span>
+            <select
+              className="w-32 text-xs bg-surface border border-border rounded px-1 py-0.5"
+              value={el.justification ?? 'center'}
+              onChange={(e) => bsPropChange?.('justification', e.currentTarget.value || null)}
+              data-testid="inspector-beam-justification"
+            >
+              <option value="beginning">Beginning</option>
+              <option value="center">Center</option>
+              <option value="end">End</option>
+            </select>
+          </div>
+        </div>
+      );
+    }
     case 'room':
       return (
         <div>

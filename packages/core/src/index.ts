@@ -1788,6 +1788,8 @@ export type Element =
       slopeArrowHeadMm?: { xMm: number; yMm: number } | null;
       /** §3.4.1 slope as percentage (e.g. 10 = 10% = 10mm rise per 100mm run). Positive = head is higher than tail. */
       slopePercent?: number | null;
+      /** §3.3.4 Paint tool face material overrides. Key = faceId string, value = materialId. */
+      faceMaterialOverrides?: Record<string, string> | null;
     }
   | {
       kind: 'roof';
@@ -1845,6 +1847,8 @@ export type Element =
         lineColorHex?: string | null;
         surfaceColorHex?: string | null;
       } | null;
+      /** §3.3.4 Paint tool face material overrides. Key = faceId string, value = materialId. */
+      faceMaterialOverrides?: Record<string, string> | null;
     }
   | {
       kind: 'stair';
@@ -2424,6 +2428,8 @@ export type Element =
         lineColorHex?: string | null;
         surfaceColorHex?: string | null;
       } | null;
+      /** §3.3.4 Paint tool face material overrides. Key = faceId string, value = materialId. */
+      faceMaterialOverrides?: Record<string, string> | null;
     }
   | {
       kind: 'color_fill_legend';
@@ -4514,4 +4520,17 @@ export type OfflineSyncBadge = {
   commandCount: number;
   offlineQueuedAt: string;
   syncedAt: string;
+};
+
+// ---------------------------------------------------------------------------
+// §3.3.4 — Paint tool: face material override command
+// ---------------------------------------------------------------------------
+
+export type PaintFaceCmd = {
+  type: 'paint_face';
+  elementId: string;
+  /** Face identifier string, e.g. 'front' | 'back' | 'top' | 'bottom'. */
+  faceId: string;
+  /** materialId to apply, or null to remove the override (restore to type default). */
+  materialId: string | null;
 };

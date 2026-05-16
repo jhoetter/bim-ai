@@ -80,6 +80,23 @@ export function setDispatchColumnAtGridsSelectAll(fn: ((gridIds: string[]) => vo
   dispatchColumnAtGridsSelectAll = fn;
 }
 
+function BeamSystemJustificationSelect(): JSX.Element {
+  const [justification, setJustification] = useState<'beginning' | 'center' | 'end'>('center');
+  return (
+    <select
+      value={justification}
+      onChange={(e) => setJustification(e.target.value as 'beginning' | 'center' | 'end')}
+      className="rounded border border-border bg-surface px-1.5 py-0.5 text-xs text-foreground"
+      aria-label="Beam justification"
+      data-testid="options-bar-beam-justification"
+    >
+      <option value="beginning">Beginning</option>
+      <option value="center">Center</option>
+      <option value="end">End</option>
+    </select>
+  );
+}
+
 export function OptionsBar({
   activeTool,
 }: {
@@ -98,10 +115,37 @@ export function OptionsBar({
   const setWallDrawRadiusMm = useBimStore((s) => s.setWallDrawRadiusMm);
   const wallDrawHeightMm = useBimStore((s) => s.wallDrawHeightMm);
   const setWallDrawHeightMm = useBimStore((s) => s.setWallDrawHeightMm);
+  const beamSystemSpacingMm = useBimStore((s) => s.beamSystemSpacingMm);
+  const setBeamSystemSpacingMm = useBimStore((s) => s.setBeamSystemSpacingMm);
+  const beamSystemDirectionDeg = useBimStore((s) => s.beamSystemDirectionDeg);
+  const setBeamSystemDirectionDeg = useBimStore((s) => s.setBeamSystemDirectionDeg);
   const activeWallTypeId = useBimStore((s) => s.activeWallTypeId);
   const setActiveWallTypeId = useBimStore((s) => s.setActiveWallTypeId);
   const activeFloorTypeId = useBimStore((s) => s.activeFloorTypeId);
   const setActiveFloorTypeId = useBimStore((s) => s.setActiveFloorTypeId);
+  const floorDrawOffsetMm = useBimStore((s) => s.floorDrawOffsetMm);
+  const setFloorDrawOffsetMm = useBimStore((s) => s.setFloorDrawOffsetMm);
+  const columnDrawHeightMm = useBimStore((s) => s.columnDrawHeightMm);
+  const setColumnDrawHeightMm = useBimStore((s) => s.setColumnDrawHeightMm);
+  const columnDrawWidthMm = useBimStore((s) => s.columnDrawWidthMm);
+  const setColumnDrawWidthMm = useBimStore((s) => s.setColumnDrawWidthMm);
+  const columnDrawDepthMm = useBimStore((s) => s.columnDrawDepthMm);
+  const setColumnDrawDepthMm = useBimStore((s) => s.setColumnDrawDepthMm);
+  const stairDrawBaseLevelId = useBimStore((s) => s.stairDrawBaseLevelId);
+  const setStairDrawBaseLevelId = useBimStore((s) => s.setStairDrawBaseLevelId);
+  const stairDrawTopLevelId = useBimStore((s) => s.stairDrawTopLevelId);
+  const setStairDrawTopLevelId = useBimStore((s) => s.setStairDrawTopLevelId);
+  const stairDrawWidthMm = useBimStore((s) => s.stairDrawWidthMm);
+  const setStairDrawWidthMm = useBimStore((s) => s.setStairDrawWidthMm);
+  const stairDrawRunWidthMm = useBimStore((s) => s.stairDrawRunWidthMm);
+  const setStairDrawRunWidthMm = useBimStore((s) => s.setStairDrawRunWidthMm);
+  const roomDrawName = useBimStore((s) => s.roomDrawName);
+  const setRoomDrawName = useBimStore((s) => s.setRoomDrawName);
+  const roomDrawNumber = useBimStore((s) => s.roomDrawNumber);
+  const setRoomDrawNumber = useBimStore((s) => s.setRoomDrawNumber);
+  const roomDrawUpperLevelId = useBimStore((s) => s.roomDrawUpperLevelId);
+  const setRoomDrawUpperLevelId = useBimStore((s) => s.setRoomDrawUpperLevelId);
+  const setActiveLevelId = useBimStore((s) => s.setActiveLevelId);
   const columnAtGridsSelectedIds = useBimStore((s) => s.columnAtGridsSelectedIds);
   const activeLevelId = useBimStore((s) => s.activeLevelId);
   const applyAreaRules = useBimStore((s) => s.applyAreaRules);
@@ -461,6 +505,46 @@ export function OptionsBar({
           </select>
         </label>
         <span className="text-muted opacity-60">Click to place · Spacebar to rotate 90°</span>
+      </div>
+    );
+  }
+
+  if (planTool === 'beam-system') {
+    return (
+      <div data-testid="options-bar" className={BAR_CLASS}>
+        <label className="flex items-center gap-2">
+          <span className="text-muted">Spacing:</span>
+          <input
+            type="number"
+            value={beamSystemSpacingMm}
+            min={100}
+            step={100}
+            onChange={(e) => setBeamSystemSpacingMm(Number(e.target.value))}
+            className="w-20 rounded border border-border bg-surface px-1.5 py-0.5 text-xs text-foreground"
+            aria-label="Beam spacing in mm"
+            data-testid="options-bar-beam-spacing"
+          />
+          <span className="text-muted opacity-60">mm</span>
+        </label>
+        <label className="flex items-center gap-2">
+          <span className="text-muted">Direction:</span>
+          <input
+            type="number"
+            value={beamSystemDirectionDeg}
+            min={0}
+            max={359}
+            step={1}
+            onChange={(e) => setBeamSystemDirectionDeg(Number(e.target.value))}
+            className="w-16 rounded border border-border bg-surface px-1.5 py-0.5 text-xs text-foreground"
+            aria-label="Beam direction in degrees"
+            data-testid="options-bar-beam-direction"
+          />
+          <span className="text-muted opacity-60">°</span>
+        </label>
+        <label className="flex items-center gap-2">
+          <span className="text-muted">Justification:</span>
+          <BeamSystemJustificationSelect />
+        </label>
       </div>
     );
   }

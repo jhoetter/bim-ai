@@ -29,12 +29,25 @@ export type PlanAuthoringRuntimeSlice = Pick<
   | 'wallLocationLine'
   | 'applyAreaRules'
   | 'floorBoundaryOffsetMm'
+  | 'floorDrawOffsetMm'
   | 'wallDrawOffsetMm'
   | 'wallDrawRadiusMm'
   | 'wallDrawHeightMm'
+  | 'beamSystemSpacingMm'
+  | 'beamSystemDirectionDeg'
   | 'activeWallTypeId'
   | 'activeFloorTypeId'
   | 'columnAtGridsSelectedIds'
+  | 'columnDrawHeightMm'
+  | 'columnDrawWidthMm'
+  | 'columnDrawDepthMm'
+  | 'stairDrawBaseLevelId'
+  | 'stairDrawTopLevelId'
+  | 'stairDrawWidthMm'
+  | 'stairDrawRunWidthMm'
+  | 'roomDrawName'
+  | 'roomDrawNumber'
+  | 'roomDrawUpperLevelId'
   | 'orthoSnapHold'
   | 'buildingPreset'
   | 'planHudMm'
@@ -46,12 +59,25 @@ export type PlanAuthoringRuntimeSlice = Pick<
   | 'setWallLocationLine'
   | 'setApplyAreaRules'
   | 'setFloorBoundaryOffsetMm'
+  | 'setFloorDrawOffsetMm'
   | 'setWallDrawOffsetMm'
   | 'setWallDrawRadiusMm'
   | 'setWallDrawHeightMm'
+  | 'setBeamSystemSpacingMm'
+  | 'setBeamSystemDirectionDeg'
   | 'setActiveWallTypeId'
   | 'setActiveFloorTypeId'
   | 'setColumnAtGridsSelectedIds'
+  | 'setColumnDrawHeightMm'
+  | 'setColumnDrawWidthMm'
+  | 'setColumnDrawDepthMm'
+  | 'setStairDrawBaseLevelId'
+  | 'setStairDrawTopLevelId'
+  | 'setStairDrawWidthMm'
+  | 'setStairDrawRunWidthMm'
+  | 'setRoomDrawName'
+  | 'setRoomDrawNumber'
+  | 'setRoomDrawUpperLevelId'
   | 'setOrthoSnapHold'
   | 'setBuildingPreset'
   | 'setPlanHud'
@@ -178,12 +204,25 @@ export function createPlanAuthoringRuntimeSlice(set: StoreSet): PlanAuthoringRun
     wallLocationLine: 'wall-centerline',
     applyAreaRules: true,
     floorBoundaryOffsetMm: 0,
+    floorDrawOffsetMm: 0,
     wallDrawOffsetMm: 0,
     wallDrawRadiusMm: null,
     wallDrawHeightMm: 2800,
+    beamSystemSpacingMm: 1500,
+    beamSystemDirectionDeg: 0,
     activeWallTypeId: null,
     activeFloorTypeId: null,
     columnAtGridsSelectedIds: [],
+    columnDrawHeightMm: 3000,
+    columnDrawWidthMm: 300,
+    columnDrawDepthMm: 300,
+    stairDrawBaseLevelId: null,
+    stairDrawTopLevelId: null,
+    stairDrawWidthMm: 1200,
+    stairDrawRunWidthMm: 250,
+    roomDrawName: 'Room',
+    roomDrawNumber: '',
+    roomDrawUpperLevelId: null,
     orthoSnapHold: false,
     buildingPreset: readLocalStorageString('bim.buildingPreset', 'residential'),
     planHudMm: undefined,
@@ -200,12 +239,25 @@ export function createPlanAuthoringRuntimeSlice(set: StoreSet): PlanAuthoringRun
     setWallLocationLine: (wallLocationLine) => set({ wallLocationLine }),
     setApplyAreaRules: (v) => set({ applyAreaRules: v }),
     setFloorBoundaryOffsetMm: (floorBoundaryOffsetMm) => set({ floorBoundaryOffsetMm }),
+    setFloorDrawOffsetMm: (floorDrawOffsetMm) => set({ floorDrawOffsetMm }),
     setWallDrawOffsetMm: (wallDrawOffsetMm) => set({ wallDrawOffsetMm }),
     setWallDrawRadiusMm: (wallDrawRadiusMm) => set({ wallDrawRadiusMm }),
     setWallDrawHeightMm: (wallDrawHeightMm) => set({ wallDrawHeightMm }),
+    setBeamSystemSpacingMm: (beamSystemSpacingMm) => set({ beamSystemSpacingMm }),
+    setBeamSystemDirectionDeg: (beamSystemDirectionDeg) => set({ beamSystemDirectionDeg }),
     setActiveWallTypeId: (activeWallTypeId) => set({ activeWallTypeId }),
     setActiveFloorTypeId: (activeFloorTypeId) => set({ activeFloorTypeId }),
     setColumnAtGridsSelectedIds: (columnAtGridsSelectedIds) => set({ columnAtGridsSelectedIds }),
+    setColumnDrawHeightMm: (columnDrawHeightMm) => set({ columnDrawHeightMm }),
+    setColumnDrawWidthMm: (columnDrawWidthMm) => set({ columnDrawWidthMm }),
+    setColumnDrawDepthMm: (columnDrawDepthMm) => set({ columnDrawDepthMm }),
+    setStairDrawBaseLevelId: (stairDrawBaseLevelId) => set({ stairDrawBaseLevelId }),
+    setStairDrawTopLevelId: (stairDrawTopLevelId) => set({ stairDrawTopLevelId }),
+    setStairDrawWidthMm: (stairDrawWidthMm) => set({ stairDrawWidthMm }),
+    setStairDrawRunWidthMm: (stairDrawRunWidthMm) => set({ stairDrawRunWidthMm }),
+    setRoomDrawName: (roomDrawName) => set({ roomDrawName }),
+    setRoomDrawNumber: (roomDrawNumber) => set({ roomDrawNumber }),
+    setRoomDrawUpperLevelId: (roomDrawUpperLevelId) => set({ roomDrawUpperLevelId }),
     setOrthoSnapHold: (v) => set({ orthoSnapHold: v }),
     setBuildingPreset: (preset) => {
       writeLocalStorageString('bim.buildingPreset', preset);

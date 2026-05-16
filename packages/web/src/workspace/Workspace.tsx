@@ -130,6 +130,7 @@ import { GlobalParamsDialog } from './project/GlobalParamsDialog';
 import { ManageGlobalParamsDialog } from './ManageGlobalParamsDialog';
 import type { SimpleGlobalParam } from './ManageGlobalParamsDialog';
 import { DimensionStyleDialog } from './DimensionStyleDialog';
+import { ViewRangeDialog } from './ViewRangeDialog';
 import {
   coerceCheckpointRetentionLimit,
   DEFAULT_CHECKPOINT_RETENTION_LIMIT,
@@ -1071,6 +1072,7 @@ export function Workspace(): JSX.Element {
   const [globalParamsOpen, setGlobalParamsOpen] = useState(false);
   const [manageGlobalParamsOpen, setManageGlobalParamsOpen] = useState(false);
   const [dimStyleOpen, setDimStyleOpen] = useState(false);
+  const [viewRangeOpen, setViewRangeOpen] = useState(false);
   const [projectInfoOpen, setProjectInfoOpen] = useState(false);
   const [trueNorthActive, setTrueNorthActive] = useState(false);
   const lensMode = useBimStore((s) => s.lensMode);
@@ -1807,6 +1809,17 @@ export function Workspace(): JSX.Element {
       }
       // §5.1.1: patch heightSamples / thicknessMm / baseElevationMm on a toposolid
       if (cmd.type === 'update_toposolid') {
+        const current = useBimStore.getState().elementsById;
+        useBimStore.setState({
+          elementsById: {
+            ...current,
+            [cmd.id as string]: { ...current[cmd.id as string], ...(cmd.patch as object) },
+          },
+        });
+        return;
+      }
+      // §9.3: patch spacing / direction / count / typeId / justification on a beam_system
+      if (cmd.type === 'update_beam_system') {
         const current = useBimStore.getState().elementsById;
         useBimStore.setState({
           elementsById: {
@@ -3826,6 +3839,7 @@ export function Workspace(): JSX.Element {
           onOpenManagePhases={() => setManagePhasesOpen(true)}
           onOpenManageGlobalParams={() => setManageGlobalParamsOpen(true)}
           onOpenDimensionStyle={() => setDimStyleOpen(true)}
+          onOpenViewRange={() => setViewRangeOpen(true)}
           sheetReviewMode={sheetReviewMode}
           onSheetReviewModeChange={setSheetReviewMode}
           sheetMarkupShape={sheetMarkupShape}
@@ -4237,6 +4251,7 @@ export function Workspace(): JSX.Element {
           openManageGlobalParams: () => setManageGlobalParamsOpen(true),
           openManagePhases: () => setManagePhasesOpen(true),
           openDimensionStyle: () => setDimStyleOpen(true),
+          openViewRange: () => setViewRangeOpen(true),
         }}
       />
       <FamilyLibraryPanel
