@@ -1,0 +1,1 @@
+Your task is to implement the terrain height point placement tool and grip editing for toposolid elements in bim-ai — read spec/revit-parity/agent-prompts/WAVE7-WP-C.md for the full brief.

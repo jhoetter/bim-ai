@@ -1,0 +1,52 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "e63592c7287a",
+  "session_id": "e7d6d0c8-87d7-4146-9fc1-ffb604f2515c",
+  "strategy": "manual-commit",
+  "created_at": "2026-05-16T17:02:40.746733Z",
+  "branch": "main",
+  "checkpoints_count": 0,
+  "files_touched": [
+    "packages/core/src/index.ts",
+    "packages/web/src/state/storeTypes.ts",
+    "packages/web/src/tools/toolGrammar.ts",
+    "packages/web/src/workspace/Workspace.tsx",
+    "packages/web/src/plan/PlanCanvas.tsx",
+    "packages/web/src/plan/terrainPointSymbol.ts",
+    "packages/web/src/plan/symbology.ts",
+    "packages/web/src/workspace/inspector/InspectorContent.tsx",
+    "packages/web/src/tools/terrainPointTool.test.ts",
+    "packages/web/src/plan/terrainPointSymbol.test.ts"
+  ],
+  "agent": "Claude Code",
+  "model": "claude-sonnet-4-6",
+  "turn_id": "399906e04947",
+  "token_usage": {
+    "input_tokens": 207,
+    "cache_creation_tokens": 135611,
+    "cache_read_tokens": 15042089,
+    "output_tokens": 44454,
+    "api_call_count": 163
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-05-16T17:02:40.728781Z",
+    "agent_lines": 643,
+    "agent_removed": 77,
+    "human_added": 1520,
+    "human_modified": 0,
+    "human_removed": 0,
+    "total_committed": 2163,
+    "total_lines_changed": 2264,
+    "agent_percentage": 31.802120141342755,
+    "metric_version": 2
+  },
+  "prompt_attributions": [
+    {
+      "checkpoint_number": 1,
+      "user_lines_added": 0,
+      "user_lines_removed": 0,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0
+    }
+  ]
+}
