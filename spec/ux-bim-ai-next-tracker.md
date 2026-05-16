@@ -1,6 +1,6 @@
 # BIM AI UX Next-Phase Tracker
 
-Last updated: 2026-05-15
+Last updated: 2026-05-16
 
 Related baseline:
 
@@ -2050,7 +2050,7 @@ Revit behavior to emulate where it maps cleanly:
 ### WP-NEXT-45 — Roof, Ceiling, Shaft, And Structural Stack Completion
 
 - Priority: `P0`
-- Status: `Open`
+- Status: `Partial`
 - Covers: `NEXT22-GAP-007`, `NEXT22-GAP-009`, `NEXT22-GAP-013`, `NEXT22-GAP-016`
 - Goal: complete the vertical building stack: floor -> walls -> ceiling/roof/shaft with explicit constraints and previews.
 - Required workflows:
@@ -2065,12 +2065,17 @@ Revit behavior to emulate where it maps cleanly:
   - roof preview shows slope/overhang before commit;
   - shaft preview shows affected floors/roof and blocks invalid partial spans;
   - seeded proof builds floor, generated walls, roof, ceiling, shaft, and validates no orphaned top/base constraints.
+- Evidence 2026-05-16:
+  - `packages/web/src/plan/roofByFootprint.ts` adds the full footprint-expansion and command-payload kernel: `expandFootprintByOverhang` (winding-aware vertex bisector expansion using signed-area winding detection), `roofParamsFromWallLoop`, `roofParamsFromFloor`, `ceilingBoundaryFromRoom`, `validateShaftSpan` (contiguous level-span check), `buildAttachTopCommand`, and `buildDetachTopCommand`.
+  - `packages/web/src/plan/roofByFootprint.test.ts` covers all seven exported functions in 16 tests: overhang expansion on CCW/CW polygons, degenerate cases (0 overhang, < 3 pts), wall-loop → footprint derivation, floor-boundary → footprint, room ceiling boundary extraction, shaft span validation (valid/base-not-below/missing level IDs), and attach/detach command payload shape.
+  - `unjoin`, `attach`, and `detach` tools (added in WP-NEXT-40/42 work) have full `AuthoringCommandContract` entries and Cmd+K registrations; `buildAttachTopCommand`/`buildDetachTopCommand` produce the correct `attachWallTop`/`detachWallTop` payloads consumed by those tools.
+  - Remaining before `Done`: wire `roofParamsFromWallLoop`/`roofParamsFromFloor` into the plan and 3D sketch commit paths (SketchCanvas + authoring3d.ts); add roof/ceiling/shaft to the element sidebar edit-boundary action set; seeded Playwright proof building floor → walls → roof → ceiling → shaft → attach-top → validate no orphaned constraints.
 - Dependencies: `WP-NEXT-43`, `WP-NEXT-44`.
 
 ### WP-NEXT-46 — Full 3D Direct Authoring Parity For Model Ribbon Tools
 
 - Priority: `P0`
-- Status: `Open`
+- Status: `Partial`
 - Covers: `NEXT22-GAP-008`, `NEXT22-GAP-009`, `NEXT22-GAP-011`, `NEXT22-GAP-012`, `NEXT22-GAP-017`
 - Goal: every model-building command visible in the 3D ribbon must have a specific 3D interaction model or be hidden/disabled with a reason.
 - Tool contracts:
@@ -2090,12 +2095,18 @@ Revit behavior to emulate where it maps cleanly:
   - active 3D model commands do not trigger page refresh, full canvas width jump, or selection-sidebar takeover;
   - invalid hosts/work planes show red preview and explanation before click;
   - Cmd+K mirrors all 3D command states.
+- Evidence 2026-05-16:
+  - `packages/web/src/tools/toolRegistry.ts` registers `unjoin`, `attach`, `detach`, `brace`, `mass-box`, `mass-extrusion`, and `mass-revolution` with `modes: ['plan','3d']` and adds them to `MODIFY_TOOL_IDS`; all have hotkeys and display names.
+  - `packages/web/src/tools/authoringCommandContract.ts` covers every `ToolId` in `AUTHORING_COMMAND_CONTRACTS satisfies Record<ToolId, AuthoringCommandContract>`, including all new 3D structural and massing tools.
+  - `packages/web/src/workspace/commandCapabilities.test.ts` asserts `evaluateCommandInMode('tool.X', '3d')?.state === 'enabled'` for unjoin, attach, detach, brace, mass-box, mass-extrusion, and mass-revolution (in addition to the 17 pre-existing 3D tools); all 20 capability tests pass.
+  - `packages/web/src/cmdPalette/defaultCommands.ts` registers Cmd+K entries for all 3D structural/massing/annotation/modify tools so Cmd+K mirrors 3D command states.
+  - Remaining before `Done`: per-tool DOM/unit tests verifying activation does not trigger page refresh or sidebar takeover; seeded Playwright screenshots for each 3D command preview state (wall, floor, roof, door, column, beam, shaft, mass-box); invalid host/work-plane red-preview feedback wired into `authoring3d.ts`.
 - Dependencies: `WP-NEXT-40`, `WP-NEXT-41`, then tool-specific dependencies above.
 
 ### WP-NEXT-47 — Universal Modify Toolkit Across View Types
 
 - Priority: `P1`
-- Status: `Open`
+- Status: `Partial`
 - Covers: `NEXT22-GAP-010`, `NEXT22-GAP-015`, `NEXT22-GAP-017`
 - Goal: provide the basic editing verbs users expect after creating structure.
 - Commands:
@@ -2108,12 +2119,21 @@ Revit behavior to emulate where it maps cleanly:
   - `Esc` cancels modify preview and returns to `Select`;
   - multi-select batch operations work where semantically valid;
   - seeded proof edits the generated floor/wall/roof stack without orphaning hosted elements.
+- Evidence 2026-05-16:
+  - `packages/web/src/plan/moveTool.ts` — orthogonal-constrained `moveDeltaMm` with typed numeric delta.
+  - `packages/web/src/plan/rotateTool.ts` — snap-to-45° `rotateAngleFromPoints`, `rotateDeltaAngleFromReference`, and `parseTypedRotateAngle`.
+  - `packages/web/src/plan/wallOffsetTool.ts` — signed perpendicular wall-offset emitting `moveElementsDelta` without reversing authored start/end.
+  - `packages/web/src/plan/arrayTool.ts` — linear/radial array builder producing batch placement payloads.
+  - `packages/web/src/plan/pinUnpin.ts` — pin/unpin toggle command payload builder.
+  - `packages/web/src/plan/joinGeometry.ts` — `buildJoinCommand`/`buildUnjoinCommand` with canonical sorted-ID pairs, `canJoin`, `selectionSupportsJoin`, and `buildJoinCommandsForSelection`.
+  - `packages/web/src/plan/modifyAvailability.ts` — `getModifyAvailability(selectedKinds, viewMode)` returns the complete 17-verb availability matrix for plan, 3D, section, sheet, and schedule; `getEnabledVerbs` is a filtered helper. 17 unit tests cover no-selection, per-view gating, solid-kind constraints for join/unjoin, wall-only constraints for attach/detach, and align/mirror selection requirements.
+  - Remaining before `Done`: wire `getModifyAvailability` into the contextual ribbon so the Modify panel reflects live selection + view mode; add canvas-level move/rotate/mirror preview that matches the committed payload; `Esc` → Select transition proof; seeded Playwright proof editing the wall/floor/roof stack.
 - Dependencies: `WP-NEXT-42` through `WP-NEXT-46` for structural targets.
 
 ### WP-NEXT-48 — Ribbon Command Matrix Completion Across All View Types
 
 - Priority: `P1`
-- Status: `Open`
+- Status: `Partial`
 - Covers: `NEXT22-GAP-017`, `NEXT22-GAP-020`, `NEXT22-GAP-012`
 - Goal: make the whole ribbon feel intentionally complete, not sparse or fake, for every active view type.
 - Required matrix:
@@ -2128,12 +2148,20 @@ Revit behavior to emulate where it maps cleanly:
   - commands that bridge to another view clearly say so and open/focus the right tab/pane;
   - commands invalid in a view are not persistent dead chrome;
   - seeded screenshots capture each view type ribbon with no fake/inert commands.
+- Evidence 2026-05-16:
+  - `AUTHORING_COMMAND_CONTRACTS satisfies Record<ToolId, AuthoringCommandContract>` in `authoringCommandContract.ts` covers every entry in the tool registry, including all annotation tools (text, leader-text, angular/radial/diameter/arc-length dimension, spot-elevation, spot-coordinate, slope-annotation, material-tag, north-arrow), structural tools (brace, ramp, column, beam, unjoin, attach, detach), and massing tools (mass-box, mass-extrusion, mass-revolution) — zero missing contracts enforced at compile time.
+  - `packages/web/src/cmdPalette/defaultCommands.ts` registers Cmd+K `registerCommand` entries for all tools including the newly added ~22 commands, so Cmd+K parity is complete for all registered ToolIds.
+  - `commandCapabilities.test.ts` "every visible ribbon command has executable/disabled/bridge metadata" test passes across all CAPABILITY_VIEW_MODES, confirming no dead-chrome ribbon items.
+  - `commandCapabilities.test.ts` "every Cmd+K command capability is in the palette registry" test passes — zero missing Cmd+K registrations.
+  - `commandCapabilities.test.ts` "unique command ids and no unreachable registered commands" test passes.
+  - All 20 `commandCapabilities.test.ts` tests pass.
+  - Remaining before `Done`: ribbon rendering audit for section/sheet/schedule/concept view types with actual UI screenshots; verify bridge-action labels open the correct pane/tab; seeded screenshots for each view type ribbon confirming no inert commands.
 - Dependencies: can run after `WP-NEXT-40`, but model commands should close only after `WP-NEXT-46`.
 
 ### WP-NEXT-49 — Live Structural Validation And Repair UX
 
 - Priority: `P1`
-- Status: `Open`
+- Status: `Partial`
 - Covers: `NEXT22-GAP-016`, `NEXT22-GAP-015`
 - Goal: make bad structural states understandable and repairable while authoring, not after a mysterious backend rejection.
 - Required checks:
@@ -2151,12 +2179,17 @@ Revit behavior to emulate where it maps cleanly:
   - footer/advisor records persisted model problems after commit;
   - repair actions are available through contextual ribbon, element sidebar, and Cmd+K;
   - seeded proof creates, detects, and fixes at least one problem per category group.
+- Evidence 2026-05-16:
+  - `packages/web/src/plan/structuralValidation.ts` implements `validateBoundary` (polygon vertex count / self-intersection / too-small-edge checks), `findDuplicateWalls` (forward and reversed endpoint tolerance matching), `findOrphanedHostedElements` (missing hostId / missing host in element map), `validateHostedElementSpans` (offset vs. wall length), and `runStructuralValidation` (aggregates all checks in one pass over `elementsById`).
+  - `packages/web/src/plan/structuralValidation.test.ts` covers 17 cases: valid boundary, < 3 vertex open loop, self-intersecting bowtie, too-small edge, no duplicates, exact-duplicate walls, reversed-duplicate walls, tolerance matching, hosted with valid host, orphaned (no hostId), orphaned (missing host), non-hosted element ignored, offset inside span, offset beyond span, clean model yields zero issues, aggregated multi-issue pass in one call.
+  - `packages/web/src/plan/roofByFootprint.ts` adds `validateShaftSpan` — contiguous level-span check (base-not-found, top-not-found, base-not-below-top, top-not-above-base, valid span) with 4 passing tests.
+  - Remaining before `Done`: wire `runStructuralValidation` into the pre-commit hook of `SketchCanvas` and `PlanCanvas` to surface live canvas notices; expose `ValidationIssue[]` in the footer/advisor channel after commit; add repair actions (delete duplicate wall, detach orphan, fix boundary) to contextual ribbon and Cmd+K; add joined-wall cleanup failure detection; seeded proof creating, detecting, and fixing one issue per category.
 - Dependencies: `WP-NEXT-42` through `WP-NEXT-47`.
 
 ### WP-NEXT-50 — End-To-End Structure Builder Proof Suite
 
 - Priority: `P0`
-- Status: `Open`
+- Status: `Partial`
 - Covers: `NEXT22-GAP-019`
 - Goal: prove the authoring system works as a workflow, not only as independent commands.
 - Required seeded scenarios:
@@ -2173,6 +2206,12 @@ Revit behavior to emulate where it maps cleanly:
   - relevant web tests;
   - prettier check for changed files;
   - `git diff --check`.
+- Evidence 2026-05-16:
+  - Core geometry/lifecycle helper tests: `roofByFootprint.test.ts` (16), `structuralValidation.test.ts` (17), `modifyAvailability.test.ts` (17), `commandCapabilities.test.ts` (20), `wallConnectivity.test.ts` (11), `joinGeometry.test.ts`, `moveTool.test.ts`, `rotateTool.test.ts`, `wallOffsetTool.test.ts`, `arrayTool.test.ts`, `pinUnpin.test.ts`, `createSimilar.test.ts` — all pass.
+  - `pnpm --filter @bim-ai/web typecheck` passes (zero TS errors after `satisfies Record<ToolId, AuthoringCommandContract>` enforcement).
+  - All 20 `commandCapabilities.test.ts` tests pass — no missing metadata, no dead-chrome ribbon items, no unreachable commands, no missing Cmd+K registrations.
+  - Cmd+K workflow: `defaultCommands.ts` registers every structural command; `evaluateCommandInMode` returns `enabled`/`disabled`/`bridge` with reasons for all registered tools across all view modes.
+  - Remaining before `Done`: Playwright seeded screenshots for each scenario above; command trace summary from a live seeded run; split-pane proof with shared model updates; invalid-workflow blocking feedback screenshots; `git diff --check` clean.
 - Done gate:
   - no row in this feedback round can be marked `Done` unless the seeded workflow proves the canonical behavior and the old dead/inert behavior is removed.
 - Dependencies: all preceding P0 packages, then selected P1 packages as needed.
