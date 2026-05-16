@@ -5,6 +5,7 @@
   "branch": "main",
   "checkpoints_count": 4,
   "files_touched": [
+    "packages/web/src/workspace/sheets/SheetCanvas.tsx",
     "spec/revit-parity/revit2026-parity-tracker.md"
   ],
   "sessions": [
@@ -73,6 +74,12 @@
       "transcript": "/a7/a2d94d6f5f/10/full.jsonl",
       "content_hash": "/a7/a2d94d6f5f/10/content_hash.txt",
       "prompt": "/a7/a2d94d6f5f/10/prompt.txt"
+    },
+    {
+      "metadata": "/a7/a2d94d6f5f/11/metadata.json",
+      "transcript": "/a7/a2d94d6f5f/11/full.jsonl",
+      "content_hash": "/a7/a2d94d6f5f/11/content_hash.txt",
+      "prompt": "/a7/a2d94d6f5f/11/prompt.txt"
     }
   ],
   "token_usage": {
