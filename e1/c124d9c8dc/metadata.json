@@ -3,7 +3,7 @@
   "checkpoint_id": "e1c124d9c8dc",
   "strategy": "manual-commit",
   "branch": "main",
-  "checkpoints_count": 6,
+  "checkpoints_count": 7,
   "files_touched": [
     "packages/web/src/export/dxfExporter.test.ts",
     "packages/web/src/export/dxfExporter.ts",
@@ -101,13 +101,19 @@
       "transcript": "/e1/c124d9c8dc/14/full.jsonl",
       "content_hash": "/e1/c124d9c8dc/14/content_hash.txt",
       "prompt": "/e1/c124d9c8dc/14/prompt.txt"
+    },
+    {
+      "metadata": "/e1/c124d9c8dc/15/metadata.json",
+      "transcript": "/e1/c124d9c8dc/15/full.jsonl",
+      "content_hash": "/e1/c124d9c8dc/15/content_hash.txt",
+      "prompt": "/e1/c124d9c8dc/15/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 5888883,
-    "cache_creation_tokens": 1754740,
-    "cache_read_tokens": 238667492,
-    "output_tokens": 778066,
-    "api_call_count": 3198
+    "input_tokens": 5889145,
+    "cache_creation_tokens": 1827687,
+    "cache_read_tokens": 240144382,
+    "output_tokens": 801841,
+    "api_call_count": 3223
   }
 }
