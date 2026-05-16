@@ -3,7 +3,7 @@
   "checkpoint_id": "fc6d8921a96d",
   "strategy": "manual-commit",
   "branch": "main",
-  "checkpoints_count": 8,
+  "checkpoints_count": 9,
   "files_touched": [
     "packages/web/src/plan/PlanCanvas.tsx",
     "packages/web/src/plan/symbology.ts",
@@ -63,13 +63,19 @@
       "transcript": "/fc/6d8921a96d/8/full.jsonl",
       "content_hash": "/fc/6d8921a96d/8/content_hash.txt",
       "prompt": "/fc/6d8921a96d/8/prompt.txt"
+    },
+    {
+      "metadata": "/fc/6d8921a96d/9/metadata.json",
+      "transcript": "/fc/6d8921a96d/9/full.jsonl",
+      "content_hash": "/fc/6d8921a96d/9/content_hash.txt",
+      "prompt": "/fc/6d8921a96d/9/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 3324752,
-    "cache_creation_tokens": 2428774,
-    "cache_read_tokens": 263945436,
-    "output_tokens": 955258,
-    "api_call_count": 3503
+    "input_tokens": 3326954,
+    "cache_creation_tokens": 2502500,
+    "cache_read_tokens": 267195811,
+    "output_tokens": 989210,
+    "api_call_count": 3555
   }
 }
