@@ -8,7 +8,7 @@
  */
 
 import { createRequire } from 'node:module';
-const { chromium } = createRequire(import.meta.url)('playwright');
+const { chromium } = createRequire(import.meta.url)('@playwright/test');
 import { mkdir, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -250,6 +250,116 @@ async function goModel(page, hash = '') {
     screenshots.push(await shot(page, '14-wp50-3d-full-model', 'WP-NEXT-50: 3D view — full structural model rendered'));
   } else {
     screenshots.push(await shot(page, '14-wp50-plan-final', 'WP-NEXT-50: final plan state — full structural model'));
+  }
+
+  // ─── WP-NEXT-48: Section / Sheet / Schedule ribbons ─────────────────────
+
+  console.log('\nWP-NEXT-48 — Section/Sheet/Schedule ribbons');
+
+  // Dismiss any lingering advisor backdrop before navigating
+  const backdropFor48 = page.locator('[data-testid="advisor-dialog-backdrop"]');
+  if (await backdropFor48.isVisible({ timeout: 1000 }).catch(() => false)) {
+    await backdropFor48.click({ force: true });
+    await page.waitForTimeout(400);
+  }
+  await page.keyboard.press('Escape');
+  await page.waitForTimeout(400);
+
+  // Return to plan view first
+  const planBtnFor48 = page
+    .locator('[data-mode="plan"], button[aria-label*="Plan"], [data-testid="mode-plan"]')
+    .first();
+  if (await planBtnFor48.isVisible({ timeout: 3000 }).catch(() => false)) {
+    await planBtnFor48.click({ force: true });
+    await page.waitForTimeout(800);
+  }
+  await page.keyboard.press('Escape');
+  await page.waitForTimeout(400);
+
+  // Section view
+  const sectionBtn = page
+    .locator(
+      '[data-command-id="tool.section"], button[aria-label*="Section"], [data-testid="create-section-view"], [data-tab-kind="section"]',
+    )
+    .first();
+  if (await sectionBtn.isVisible({ timeout: 3000 }).catch(() => false)) {
+    await sectionBtn.click();
+    await page.waitForTimeout(1200);
+    screenshots.push(await shot(page, '15-wp48-section-ribbon', 'WP-NEXT-48: section view ribbon — command matrix complete'));
+  } else {
+    screenshots.push(await shot(page, '15-wp48-section-ribbon-fallback', 'WP-NEXT-48: section view not found — plan ribbon fallback'));
+  }
+
+  // Sheet view
+  const sheetTabBtn48 = page
+    .locator(
+      '[data-tab-kind="sheet"], [data-testid*="sheet-tab"], button:has-text("Sheet 1"), [data-kind="sheet"]',
+    )
+    .first();
+  if (await sheetTabBtn48.isVisible({ timeout: 3000 }).catch(() => false)) {
+    await sheetTabBtn48.click();
+    await page.waitForTimeout(1200);
+    screenshots.push(await shot(page, '16-wp48-sheet-ribbon', 'WP-NEXT-48: sheet view ribbon — command matrix complete'));
+  } else {
+    screenshots.push(await shot(page, '16-wp48-sheet-ribbon-fallback', 'WP-NEXT-48: sheet tab not found — current ribbon fallback'));
+  }
+
+  // Schedule view
+  const scheduleTabBtn = page
+    .locator(
+      '[data-tab-kind="schedule"], [data-testid*="schedule-tab"], button:has-text("Schedule"), [data-kind="schedule"]',
+    )
+    .first();
+  if (await scheduleTabBtn.isVisible({ timeout: 3000 }).catch(() => false)) {
+    await scheduleTabBtn.click();
+    await page.waitForTimeout(1200);
+    screenshots.push(await shot(page, '17-wp48-schedule-ribbon', 'WP-NEXT-48: schedule view ribbon — command matrix complete'));
+  } else {
+    screenshots.push(await shot(page, '17-wp48-schedule-ribbon-fallback', 'WP-NEXT-48: schedule tab not found — current ribbon fallback'));
+  }
+
+  // ─── WP-NEXT-50: Invalid workflow / Advisor violations ───────────────────
+
+  console.log('\nWP-NEXT-50 — Invalid workflow / Advisor violation state');
+
+  // Dismiss any backdrop before navigating
+  const backdropFor50 = page.locator('[data-testid="advisor-dialog-backdrop"]');
+  if (await backdropFor50.isVisible({ timeout: 1000 }).catch(() => false)) {
+    await backdropFor50.click({ force: true });
+    await page.waitForTimeout(400);
+  }
+  await page.keyboard.press('Escape');
+  await page.waitForTimeout(400);
+
+  // Return to plan view
+  const planBtnFor50 = page
+    .locator('[data-mode="plan"], button[aria-label*="Plan"], [data-testid="mode-plan"]')
+    .first();
+  if (await planBtnFor50.isVisible({ timeout: 3000 }).catch(() => false)) {
+    await planBtnFor50.click({ force: true });
+    await page.waitForTimeout(800);
+  }
+  await page.keyboard.press('Escape');
+  await page.waitForTimeout(400);
+
+  // Open Advisor to show structural violations
+  const advisorBtn50 = page
+    .locator('[data-command-id="advisor.open"], [aria-label*="Advisor"], [data-testid="advisor-btn"]')
+    .first();
+  if (await advisorBtn50.isVisible({ timeout: 3000 }).catch(() => false)) {
+    await advisorBtn50.click();
+    await page.waitForTimeout(800);
+    screenshots.push(await shot(page, '18-wp50-advisor-violations', 'WP-NEXT-50: advisor open — structural violation state'));
+    await page.keyboard.press('Escape');
+    await page.waitForTimeout(400);
+    // Dismiss any remaining backdrop
+    const backdrop50 = page.locator('[data-testid="advisor-dialog-backdrop"]');
+    if (await backdrop50.isVisible({ timeout: 1000 }).catch(() => false)) {
+      await backdrop50.click({ force: true });
+      await page.waitForTimeout(400);
+    }
+  } else {
+    screenshots.push(await shot(page, '18-wp50-plan-state-final', 'WP-NEXT-50: plan state — advisor not found, fallback plan capture'));
   }
 
   await browser.close();
