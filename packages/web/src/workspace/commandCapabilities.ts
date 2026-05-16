@@ -1103,6 +1103,19 @@ const SYSTEM_CAPABILITIES: CommandCapability[] = [
     status: 'implemented',
     usabilityScore: 8,
   },
+  {
+    id: 'wall.create-parts',
+    label: 'Create Parts',
+    owner: 'workspace/shell/RibbonBar',
+    group: 'edit',
+    scope: 'selection',
+    intendedModes: ['plan', '3d'],
+    surfaces: ['ribbon', 'cmd-k'],
+    executionSurface: 'canvas',
+    preconditions: ['wall-selected'],
+    status: 'implemented',
+    usabilityScore: 8,
+  },
 ];
 
 const SCHEDULE_CAPABILITIES: CommandCapability[] = [

@@ -2417,3 +2417,63 @@ export function reduceDetach(
   }
   return { state, effect: { stillActive: true } };
 }
+
+/* ────────────────────────────────────────────────────────────────────── */
+/* Place Group Tool — WP-B                                                 */
+/* Single-click places a group instance at the cursor position.           */
+/* ────────────────────────────────────────────────────────────────────── */
+
+export interface PlaceGroupState {
+  phase: 'idle';
+  selectedDefinitionId: string | null;
+}
+
+export type PlaceGroupEvent =
+  | { kind: 'activate' }
+  | { kind: 'deactivate' }
+  | { kind: 'select-definition'; definitionId: string }
+  | { kind: 'click'; positionMm: { xMm: number; yMm: number } }
+  | { kind: 'cancel' };
+
+export interface PlaceGroupEffect {
+  commitPlaceGroup?: { definitionId: string; positionMm: { xMm: number; yMm: number } };
+  stillActive: boolean;
+}
+
+export function initialPlaceGroupState(): PlaceGroupState {
+  return { phase: 'idle', selectedDefinitionId: null };
+}
+
+export function reducePlaceGroup(
+  state: PlaceGroupState,
+  event: PlaceGroupEvent,
+): { state: PlaceGroupState; effect: PlaceGroupEffect } {
+  if (event.kind === 'activate') {
+    return { state: initialPlaceGroupState(), effect: { stillActive: true } };
+  }
+  if (event.kind === 'deactivate' || event.kind === 'cancel') {
+    return { state: initialPlaceGroupState(), effect: { stillActive: false } };
+  }
+  if (event.kind === 'select-definition') {
+    return {
+      state: { ...state, selectedDefinitionId: event.definitionId },
+      effect: { stillActive: true },
+    };
+  }
+  if (event.kind === 'click') {
+    if (!state.selectedDefinitionId) {
+      return { state, effect: { stillActive: true } };
+    }
+    return {
+      state,
+      effect: {
+        commitPlaceGroup: {
+          definitionId: state.selectedDefinitionId,
+          positionMm: event.positionMm,
+        },
+        stillActive: true,
+      },
+    };
+  }
+  return { state, effect: { stillActive: true } };
+}

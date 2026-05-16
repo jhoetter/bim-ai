@@ -203,6 +203,7 @@ describe('command capability graph', () => {
         'mass-box',
         'mass-extrusion',
         'mass-revolution',
+        'walkthrough',
       ]),
     );
     expect(evaluateCommandInMode('tool.floor', '3d')?.state).toBe('enabled');
