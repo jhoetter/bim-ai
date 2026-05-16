@@ -44,6 +44,7 @@ import {
   initialColumnAtGridsState,
   reduceColumnAtGrids,
   type ColumnAtGridsState,
+  initialRoofState,
 } from '../tools/toolGrammar';
 import { columnPositionsAtGridIntersections } from './columnAtGrids';
 import * as THREE from 'three';
@@ -6581,7 +6582,12 @@ export function PlanCanvas({
           extraOptions={
             planTool === 'masking-region' && activePlanViewId
               ? { hostViewId: activePlanViewId }
-              : undefined
+              : planTool === 'roof-sketch'
+                ? {
+                    slopeDeg: initialRoofState().slopeDeg,
+                    overhangMm: initialRoofState().eaveOverhangMm,
+                  }
+                : undefined
           }
           onFinished={(createdId) => {
             setPlanTool('select');

@@ -1567,7 +1567,11 @@ function buildScheduleRibbonTabs(selectedElementKind?: string | null): RibbonTab
   return tabs;
 }
 
+const SOLID_MODIFY_KINDS = new Set(['wall', 'floor', 'roof', 'ceiling', 'column', 'beam']);
+
 function buildPlanModifyTab(selectedElementKind: string): RibbonTab {
+  const isSolid = SOLID_MODIFY_KINDS.has(selectedElementKind);
+  const isWall = selectedElementKind === 'wall';
   return {
     id: 'modify',
     label: `Modify | ${formatKind(selectedElementKind)}`,
@@ -1580,20 +1584,30 @@ function buildPlanModifyTab(selectedElementKind: string): RibbonTab {
           tool('select', 'Select', 'select'),
           tool('move', 'Move', 'move'),
           tool('copy', 'Copy', 'copy'),
+          tool('rotate', 'Rotate', 'rotate'),
+          tool('array', 'Array', 'array'),
         ],
       },
       {
         id: 'edit',
         label: 'Edit',
         commands: [
-          tool('rotate', 'Rotate', 'rotate'),
           tool('mirror', 'Mirror', 'mirror'),
           tool('align', 'Align', 'align'),
-          ...(selectedElementKind === 'wall' ? [tool('offset', 'Offset', 'move')] : []),
-          ...(selectedElementKind === 'wall' ? [tool('split', 'Split', 'split')] : []),
-          ...(selectedElementKind === 'wall' ? [tool('trim', 'Trim', 'trim')] : []),
-          ...(selectedElementKind === 'wall' ? [tool('wall-join', 'Wall Join', 'wall-join')] : []),
+          ...(isWall ? [tool('offset', 'Offset', 'move')] : []),
+          ...(isWall ? [tool('split', 'Split', 'split')] : []),
+          ...(isWall ? [tool('trim', 'Trim', 'trim')] : []),
+          ...(isWall ? [tool('wall-join', 'Wall Join', 'wall-join')] : []),
           tool('trim-extend', 'Trim/Extend', 'trim'),
+        ],
+      },
+      {
+        id: 'constraints',
+        label: 'Constraints',
+        commands: [
+          ...(isSolid ? [tool('unjoin', 'Unjoin', 'unjoin')] : []),
+          ...(isWall ? [tool('attach', 'Attach Top', 'attach')] : []),
+          ...(isWall ? [tool('detach', 'Detach Top', 'detach')] : []),
         ],
       },
     ],
@@ -1601,6 +1615,8 @@ function buildPlanModifyTab(selectedElementKind: string): RibbonTab {
 }
 
 function build3dModifyTab(selectedElementKind: string): RibbonTab {
+  const isSolid = SOLID_MODIFY_KINDS.has(selectedElementKind);
+  const isWall = selectedElementKind === 'wall';
   return {
     id: 'modify',
     label: `Modify | ${formatKind(selectedElementKind)}`,
@@ -1609,26 +1625,43 @@ function build3dModifyTab(selectedElementKind: string): RibbonTab {
       {
         id: 'selection',
         label: 'Selection',
-        commands: [tool('select', 'Select', 'select')],
+        commands: [
+          tool('select', 'Select', 'select'),
+          tool('move', 'Move', 'move'),
+          tool('copy', 'Copy', 'copy'),
+          tool('rotate', 'Rotate', 'rotate'),
+        ],
       },
       {
         id: 'actions',
         label: 'Actions',
-        commands:
-          selectedElementKind === 'wall'
-            ? [
-                action('3d-insert-door', 'Insert Door', 'door', '3d-insert-door'),
-                action('3d-insert-window', 'Insert Window', 'window', '3d-insert-window'),
-                action('3d-insert-opening', 'Opening', 'wall-opening', '3d-insert-opening'),
-                action(
-                  'element-sidebar-toggle',
-                  'Join Controls',
-                  'wall-join',
-                  '3d-wall-join-controls',
-                ),
-              ]
-            : [action('element-sidebar-toggle', 'Element Actions', 'select', '3d-element-actions')],
+        commands: isWall
+          ? [
+              action('3d-insert-door', 'Insert Door', 'door', '3d-insert-door'),
+              action('3d-insert-window', 'Insert Window', 'window', '3d-insert-window'),
+              action('3d-insert-opening', 'Opening', 'wall-opening', '3d-insert-opening'),
+              action(
+                'element-sidebar-toggle',
+                'Join Controls',
+                'wall-join',
+                '3d-wall-join-controls',
+              ),
+            ]
+          : [action('element-sidebar-toggle', 'Element Actions', 'select', '3d-element-actions')],
       },
+      ...(isSolid || isWall
+        ? [
+            {
+              id: 'constraints',
+              label: 'Constraints',
+              commands: [
+                ...(isSolid ? [tool('unjoin', 'Unjoin', 'unjoin')] : []),
+                ...(isWall ? [tool('attach', 'Attach Top', 'attach')] : []),
+                ...(isWall ? [tool('detach', 'Detach Top', 'detach')] : []),
+              ],
+            },
+          ]
+        : []),
     ],
   };
 }
