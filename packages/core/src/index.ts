@@ -813,6 +813,8 @@ export type WallTypeLayer = {
   materialKey?: string | null;
   wrapsAtEnds?: boolean | null;
   wrapsAtInserts?: boolean | null;
+  /** Revit-style layer priority (1 = highest, 5 = lowest). Controls which layer dominates at wall joins. Default: 3. */
+  priority?: number | null;
 };
 
 export type MaterialFaceKind =

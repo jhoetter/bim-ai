@@ -68,7 +68,7 @@ export function WallTypeLayerEditor({
           <div
             key={i}
             data-testid={`wall-type-layer-row-${i}`}
-            className="grid grid-cols-[56px_90px_80px_24px_24px_24px] items-center gap-1 rounded border border-border bg-surface-strong px-1 py-0.5"
+            className="grid grid-cols-[56px_90px_80px_44px_24px_24px_24px] items-center gap-1 rounded border border-border bg-surface-strong px-1 py-0.5"
           >
             <input
               type="number"
@@ -97,6 +97,18 @@ export function WallTypeLayerEditor({
               value={layer.materialKey ?? ''}
               onChange={(e) => updateLayer(i, { materialKey: e.currentTarget.value || null })}
             />
+            <select
+              className="w-full rounded border border-border bg-surface px-0.5 py-0.5 text-xs"
+              data-testid={`layer-priority-${i}`}
+              value={layer.priority ?? 3}
+              onChange={(e) => updateLayer(i, { priority: Number(e.currentTarget.value) })}
+            >
+              <option value={1}>1</option>
+              <option value={2}>2</option>
+              <option value={3}>3</option>
+              <option value={4}>4</option>
+              <option value={5}>5</option>
+            </select>
             <button
               data-testid={`wall-type-layer-up-${i}`}
               className="flex items-center justify-center rounded border border-border bg-surface px-0.5 py-0.5 text-xs hover:bg-surface-strong"

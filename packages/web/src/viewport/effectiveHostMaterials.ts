@@ -1,4 +1,4 @@
-import type { Element, MaterialFaceKind } from '@bim-ai/core';
+import type { Element, MaterialFaceKind, WallTypeLayer } from '@bim-ai/core';
 
 import { getBuiltInWallType, resolveWallAssemblyExposedLayers } from '../families/wallTypeCatalog';
 import {
@@ -85,4 +85,13 @@ export function effectiveRoofTopMaterialKey(
 
 export function isWhiteRenderLikeMaterial(materialKey: string | null | undefined): boolean {
   return materialKey === 'white_cladding' || materialKey === 'white_render';
+}
+
+/** Merge two wall layer stacks and sort by priority ascending (1 = highest precedence). Equal priorities preserve existing order (stable). */
+export function mergeLayersByPriority(
+  layersA: WallTypeLayer[],
+  layersB: WallTypeLayer[],
+): WallTypeLayer[] {
+  const merged = [...layersA, ...layersB];
+  return merged.sort((a, b) => (a.priority ?? 3) - (b.priority ?? 3));
 }
