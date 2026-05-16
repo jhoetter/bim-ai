@@ -1,0 +1,100 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "6c1cfc85e0d0",
+  "session_id": "e23d0f06-5ff3-4f69-9b08-5b65f4e2b215",
+  "strategy": "manual-commit",
+  "created_at": "2026-05-16T09:57:37.999376Z",
+  "branch": "main",
+  "checkpoints_count": 3,
+  "files_touched": [
+    "packages/web/src/Viewport.tsx"
+  ],
+  "agent": "Claude Code",
+  "model": "claude-sonnet-4-6",
+  "turn_id": "bc12c10b39a3",
+  "token_usage": {
+    "input_tokens": 28,
+    "cache_creation_tokens": 100709,
+    "cache_read_tokens": 665878,
+    "output_tokens": 7475,
+    "api_call_count": 12
+  },
+  "session_metrics": {
+    "turn_count": 3
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-05-16T09:57:37.867098Z",
+    "agent_lines": 27,
+    "agent_removed": 2,
+    "human_added": 7,
+    "human_modified": 27,
+    "human_removed": 0,
+    "total_committed": 36,
+    "total_lines_changed": 63,
+    "agent_percentage": 46.03174603174603,
+    "metric_version": 2
+  },
+  "prompt_attributions": [
+    {
+      "checkpoint_number": 1,
+      "user_lines_added": 520,
+      "user_lines_removed": 1,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0,
+      "user_added_per_file": {
+        "packages/core/src/index.ts": 28,
+        "packages/web/src/plan/PlanCanvas.tsx": 102,
+        "packages/web/src/plan/groupInstanceRender.test.ts": 78,
+        "packages/web/src/plan/groupInstanceRender.ts": 110,
+        "packages/web/src/viewport/groupInstance3d.ts": 76,
+        "packages/web/src/workspace/sheets/sheetViewportD2.test.ts": 87,
+        "packages/web/tmp/ux-next-wp45-50-20260516/summary.json": 39
+      },
+      "user_removed_per_file": {
+        "packages/core/src/index.ts": 1
+      }
+    },
+    {
+      "checkpoint_number": 2,
+      "user_lines_added": 26,
+      "user_lines_removed": 1,
+      "agent_lines_added": 602,
+      "agent_lines_removed": 1,
+      "user_added_per_file": {
+        "packages/web/src/Viewport.tsx": 26
+      },
+      "user_removed_per_file": {
+        "packages/web/src/Viewport.tsx": 1
+      }
+    },
+    {
+      "checkpoint_number": 3,
+      "user_lines_added": 75,
+      "user_lines_removed": 1,
+      "agent_lines_added": 651,
+      "agent_lines_removed": 5,
+      "user_added_per_file": {
+        "packages/web/src/workspace/project/ProjectBrowser.tsx": 75
+      },
+      "user_removed_per_file": {
+        "packages/web/src/workspace/project/ProjectBrowser.tsx": 1
+      }
+    },
+    {
+      "checkpoint_number": 4,
+      "user_lines_added": 504,
+      "user_lines_removed": 2,
+      "agent_lines_added": 730,
+      "agent_lines_removed": 375,
+      "user_added_per_file": {
+        "packages/web/src/Viewport.tsx": 8,
+        "packages/web/src/tools/toolGrammar.ts": 428,
+        "packages/web/src/workspace/sheets/SheetCanvas.tsx": 68
+      },
+      "user_removed_per_file": {
+        "packages/web/src/Viewport.tsx": 1,
+        "packages/web/src/tools/toolGrammar.ts": 1
+      }
+    }
+  ]
+}
