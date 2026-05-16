@@ -11,3 +11,11 @@ the claude sessions have stopped, give each prompt a bit more context just to be
 ---
 
 no i meant the prompts i can copy paste
+
+---
+
+quick update, where are they? agent 2 and 4 are still wokring, i now, but the rest?
+
+---
+
+where are we in overall % progress with the whole tracker?
