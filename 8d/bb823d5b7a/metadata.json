@@ -3,8 +3,13 @@
   "checkpoint_id": "8dbb823d5b7a",
   "strategy": "manual-commit",
   "branch": "main",
-  "checkpoints_count": 2,
-  "files_touched": null,
+  "checkpoints_count": 3,
+  "files_touched": [
+    "packages/web/tmp/ux-next-wp45-50-20260516/15-wp48-section-ribbon-fallback.png",
+    "packages/web/tmp/ux-next-wp45-50-20260516/16-wp48-sheet-ribbon-fallback.png",
+    "packages/web/tmp/ux-next-wp45-50-20260516/17-wp48-schedule-ribbon.png",
+    "packages/web/tmp/ux-next-wp45-50-20260516/18-wp50-advisor-violations.png"
+  ],
   "sessions": [
     {
       "metadata": "/8d/bb823d5b7a/0/metadata.json",
@@ -59,13 +64,19 @@
       "transcript": "/8d/bb823d5b7a/8/full.jsonl",
       "content_hash": "/8d/bb823d5b7a/8/content_hash.txt",
       "prompt": "/8d/bb823d5b7a/8/prompt.txt"
+    },
+    {
+      "metadata": "/8d/bb823d5b7a/9/metadata.json",
+      "transcript": "/8d/bb823d5b7a/9/full.jsonl",
+      "content_hash": "/8d/bb823d5b7a/9/content_hash.txt",
+      "prompt": "/8d/bb823d5b7a/9/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 886,
-    "cache_creation_tokens": 738098,
-    "cache_read_tokens": 59558107,
-    "output_tokens": 274184,
-    "api_call_count": 627
+    "input_tokens": 2089,
+    "cache_creation_tokens": 2337786,
+    "cache_read_tokens": 171858604,
+    "output_tokens": 666231,
+    "api_call_count": 1754
   }
 }
