@@ -1815,15 +1815,20 @@ export function permanentDimensionThree(
 
   const dimColor = getPlanPalette().dimLine;
 
+  const effectiveOffset = {
+    xMm: d.offsetMm.xMm,
+    yMm: d.flipped ? -d.offsetMm.yMm : d.offsetMm.yMm,
+  };
+
   // Build line segments for each adjacent witness pair
   const linePositions: number[] = [];
   for (let i = 0; i < pts.length - 1; i++) {
     const a = pts[i]!;
     const b = pts[i + 1]!;
-    const ax = ux(a.xMm + d.offsetMm.xMm);
-    const az = uz(a.yMm + d.offsetMm.yMm);
-    const bx = ux(b.xMm + d.offsetMm.xMm);
-    const bz = uz(b.yMm + d.offsetMm.yMm);
+    const ax = ux(a.xMm + effectiveOffset.xMm);
+    const az = uz(a.yMm + effectiveOffset.yMm);
+    const bx = ux(b.xMm + effectiveOffset.xMm);
+    const bz = uz(b.yMm + effectiveOffset.yMm);
     linePositions.push(ax, PLAN_Y + 0.002, az, bx, PLAN_Y + 0.002, bz);
   }
 
@@ -1844,11 +1849,12 @@ export function permanentDimensionThree(
           const segLenMm = Math.hypot(b.xMm - a.xMm, b.yMm - a.yMm);
           return showUnit ? `${Math.round(segLenMm)} mm` : `${Math.round(segLenMm)}`;
         })();
-    const midXMm = (a.xMm + b.xMm) / 2 + d.offsetMm.xMm;
-    const midYMm = (a.yMm + b.yMm) / 2 + d.offsetMm.yMm;
+    const midXMm = (a.xMm + b.xMm) / 2 + effectiveOffset.xMm;
+    const midYMm = (a.yMm + b.yMm) / 2 + effectiveOffset.yMm;
     const sprite = planAnnotationLabelSprite(ux(midXMm), uz(midYMm), labelText, d.id);
     sprite.userData.labelText = labelText;
     sprite.userData.textHeightMm = textHeightMm;
+    sprite.userData.segmentIndex = i;
     grp.add(sprite);
   }
 
@@ -1856,8 +1862,8 @@ export function permanentDimensionThree(
   {
     const first = pts[0]!;
     const last = pts[pts.length - 1]!;
-    const midXMm = (first.xMm + last.xMm) / 2 + d.offsetMm.xMm;
-    const midYMm = (first.yMm + last.yMm) / 2 + d.offsetMm.yMm;
+    const midXMm = (first.xMm + last.xMm) / 2 + effectiveOffset.xMm;
+    const midYMm = (first.yMm + last.yMm) / 2 + effectiveOffset.yMm;
     const btnColor = d.eqEnabled ? 0x2563eb : 0x9ca3af;
     const circleGeo = new THREE.CircleGeometry(0.05, 16);
     const circleMat = new THREE.MeshBasicMaterial({ color: btnColor, side: THREE.DoubleSide });

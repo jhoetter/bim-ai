@@ -3049,9 +3049,19 @@ export type Element =
       boundaryPoints: { xMm: number; yMm: number }[];
       beamDirection: number;
       spacingMm: number;
+      directionDeg: number;
+      beamCount?: number | null;
+      beamTypeId?: string | null;
       profileId?: string;
       materialKey?: string | null;
-      justification?: 'centre' | 'bearing_line_1' | 'bearing_line_2';
+      justification?:
+        | 'beginning'
+        | 'center'
+        | 'end'
+        | 'centre'
+        | 'bearing_line_1'
+        | 'bearing_line_2'
+        | null;
       structuralRole?: 'structural' | 'non-structural';
       phaseCreated?: string | null;
       phaseDemolished?: string | null;
@@ -3151,6 +3161,8 @@ export type Element =
       offsetMm: XY;
       /** When true, display "EQ" instead of individual segment values. */
       eqEnabled?: boolean;
+      /** When true, dimension line is on the opposite side of the witness chain. */
+      flipped?: boolean | null;
     }
   | {
       kind: 'sheet_viewport';
@@ -3281,6 +3293,18 @@ export type UpdateToposolidCmd = {
     Pick<
       Extract<Element, { kind: 'toposolid' }>,
       'heightSamples' | 'thicknessMm' | 'baseElevationMm'
+    >
+  >;
+};
+
+/** §9.3: patch spacing, direction, count, type, or justification on a beam_system element. */
+export type UpdateBeamSystemCmd = {
+  type: 'update_beam_system';
+  id: string;
+  patch: Partial<
+    Pick<
+      Extract<Element, { kind: 'beam_system' }>,
+      'spacingMm' | 'directionDeg' | 'beamCount' | 'beamTypeId' | 'justification'
     >
   >;
 };

@@ -2975,10 +2975,18 @@ export function InspectorPropertiesFor(
     }
     case 'permanent_dimension': {
       const { onPropertyChange: pdPropChange } = options ?? {};
+      const offsetMag = Math.round(Math.hypot(el.offsetMm.xMm, el.offsetMm.yMm));
       return (
         <div className="flex flex-col gap-2">
           <FieldRow label="Segments" value={String(el.witnessPointsMm.length - 1)} />
           <FieldRow label="Level" value={el.levelId} mono />
+          <div className="flex items-center justify-between gap-4 border-b border-border py-1.5">
+            <span className="text-xs text-muted">Offset</span>
+            <span
+              className="text-sm text-foreground"
+              data-testid="inspector-dim-offset"
+            >{`${offsetMag} mm from chain`}</span>
+          </div>
           {pdPropChange ? (
             <div className="flex items-center gap-2 py-0.5">
               <button
@@ -2988,6 +2996,14 @@ export function InspectorPropertiesFor(
                 onClick={() => pdPropChange('eqEnabled', !el.eqEnabled)}
               >
                 {el.eqEnabled ? 'EQ On' : 'EQ Off'}
+              </button>
+              <button
+                type="button"
+                className="rounded border border-border bg-surface px-2 py-0.5 text-xs font-medium hover:bg-surface/80"
+                data-testid="inspector-dim-flip"
+                onClick={() => pdPropChange('flipped', !el.flipped)}
+              >
+                Flip
               </button>
             </div>
           ) : (
