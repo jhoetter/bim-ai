@@ -92,6 +92,12 @@
       "transcript": "/10/e77cf75b43/12/full.jsonl",
       "content_hash": "/10/e77cf75b43/12/content_hash.txt",
       "prompt": "/10/e77cf75b43/12/prompt.txt"
+    },
+    {
+      "metadata": "/10/e77cf75b43/13/metadata.json",
+      "transcript": "/10/e77cf75b43/13/full.jsonl",
+      "content_hash": "/10/e77cf75b43/13/content_hash.txt",
+      "prompt": "/10/e77cf75b43/13/prompt.txt"
     }
   ],
   "token_usage": {
