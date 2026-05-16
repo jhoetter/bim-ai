@@ -120,6 +120,12 @@
       "transcript": "/28/ed2c639f2e/17/full.jsonl",
       "content_hash": "/28/ed2c639f2e/17/content_hash.txt",
       "prompt": ""
+    },
+    {
+      "metadata": "/28/ed2c639f2e/18/metadata.json",
+      "transcript": "/28/ed2c639f2e/18/full.jsonl",
+      "content_hash": "/28/ed2c639f2e/18/content_hash.txt",
+      "prompt": "/28/ed2c639f2e/18/prompt.txt"
     }
   ],
   "token_usage": {
