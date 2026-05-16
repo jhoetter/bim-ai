@@ -71,6 +71,7 @@ import {
   wallFaceKindForMaterialIndex,
   resolveFaceMaterialOverride,
   resolveWallTypeAssembly,
+  spotElevationThree,
 } from './viewport/meshBuilders';
 import { makeOsmContextGroup } from './viewport/meshBuilders.osmContext';
 import { fetchOsmContext } from './osm/fetchOverpass';
@@ -4410,6 +4411,16 @@ export function Viewport({
         case 'reference_plane':
           obj = makeReferencePlaneMarker(e, curr);
           break;
+        case 'spot_elevation': {
+          if (e.showIn3D === false) break;
+          const planView = curr[e.hostViewId];
+          const levelId =
+            planView && 'levelId' in planView ? (planView as { levelId: string }).levelId : null;
+          const level = levelId ? curr[levelId] : null;
+          const levelElevMm = level && level.kind === 'level' ? level.elevationMm : 0;
+          obj = spotElevationThree(e, levelElevMm);
+          break;
+        }
         default:
           break;
       }

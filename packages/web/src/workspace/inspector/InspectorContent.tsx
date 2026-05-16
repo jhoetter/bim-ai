@@ -31,6 +31,7 @@ import { SavedViewTagGraphicsAuthoring, SavedViewTemplateGraphicsAuthoring } fro
 import { computeFloorTypeThicknessMm } from '../../tools/floorTypeThickness';
 import { WallTypeLayerEditor } from '../families/WallTypeLayerEditor';
 import { stairBoundaryMm } from '../../plan/stairBoundingBox';
+import { angleBetweenVectors } from '../../plan/measureGeometry';
 
 /**
  * Inspector parameter renderers — spec §13.
@@ -722,6 +723,123 @@ function FloorNewTypeRow({
   );
 }
 
+function WallPartsPanel({
+  wall,
+  elementsById,
+  onPropertyChange,
+}: {
+  wall: Extract<Element, { kind: 'wall' }>;
+  elementsById: Record<string, Element>;
+  onPropertyChange?: (property: string, value: unknown) => void;
+}): JSX.Element | null {
+  const [createCount, setCreateCount] = useState(3);
+
+  if (!wall.parts || wall.parts.length === 0) return null;
+
+  const wallLengthMm = Math.hypot(wall.end.xMm - wall.start.xMm, wall.end.yMm - wall.start.yMm);
+
+  const materials = Object.values(elementsById)
+    .filter((e): e is Extract<Element, { kind: 'material' }> => e.kind === 'material')
+    .sort((a, b) => a.name.localeCompare(b.name));
+
+  return (
+    <div className="border-t border-border pt-1.5">
+      <div className="mb-1 text-xs text-muted">Parts</div>
+      <div className="flex flex-col gap-1">
+        {wall.parts.map((part, i) => {
+          const lengthMm = ((part.endT - part.startT) * wallLengthMm).toFixed(0);
+          return (
+            <div key={part.id} className="flex flex-col gap-1 pb-1 mb-0.5">
+              <div className="flex items-center gap-2 py-0.5">
+                <span className="text-xs text-muted w-20 shrink-0">Label</span>
+                <input
+                  type="text"
+                  data-testid={`inspector-part-label-${i}`}
+                  className="flex-1 text-xs bg-surface border border-border rounded px-1 py-0.5"
+                  defaultValue={part.label ?? `Part ${i + 1}`}
+                  key={`${part.id}-label`}
+                  onBlur={(e) => {
+                    const updated = wall.parts!.map((p, j) =>
+                      j === i ? { ...p, label: e.currentTarget.value || null } : p,
+                    );
+                    onPropertyChange?.('parts', updated);
+                  }}
+                />
+              </div>
+              <div className="flex items-center gap-2 py-0.5">
+                <span className="text-xs text-muted w-20 shrink-0">Material</span>
+                <select
+                  data-testid={`inspector-part-material-${i}`}
+                  className="flex-1 text-xs bg-surface border border-border rounded px-1 py-0.5"
+                  value={part.materialId ?? ''}
+                  onChange={(e) => {
+                    const updated = wall.parts!.map((p, j) =>
+                      j === i ? { ...p, materialId: e.target.value || null } : p,
+                    );
+                    onPropertyChange?.('parts', updated);
+                  }}
+                >
+                  <option value="">— (none) —</option>
+                  {materials.map((m) => (
+                    <option key={m.id} value={m.id}>
+                      {m.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="flex items-center gap-2 py-0.5">
+                <span
+                  data-testid={`inspector-part-length-${i}`}
+                  className="text-xs text-foreground"
+                >
+                  {lengthMm} mm
+                </span>
+                <button
+                  type="button"
+                  data-testid={`inspector-part-remove-${i}`}
+                  className="ml-auto text-xs text-muted hover:text-foreground border border-border rounded px-1.5 py-0.5"
+                  onClick={() => {
+                    const updated = wall.parts!.filter((p) => p.id !== part.id);
+                    onPropertyChange?.('parts', updated.length > 0 ? updated : null);
+                  }}
+                >
+                  ×
+                </button>
+              </div>
+            </div>
+          );
+        })}
+        <div className="flex items-center gap-2 py-0.5">
+          <input
+            type="number"
+            min={2}
+            max={20}
+            className="w-12 text-xs bg-surface border border-border rounded px-1 py-0.5"
+            value={createCount}
+            onChange={(e) => setCreateCount(Number(e.target.value))}
+          />
+          <button
+            type="button"
+            data-testid="inspector-parts-create"
+            className="text-xs rounded border border-border px-2 py-0.5 text-muted hover:text-foreground"
+            onClick={() => {
+              const n = Math.max(1, Math.floor(createCount));
+              const newParts = Array.from({ length: n }, (_, idx) => ({
+                id: crypto.randomUUID(),
+                startT: parseFloat((idx / n).toFixed(10)),
+                endT: parseFloat(((idx + 1) / n).toFixed(10)),
+              }));
+              onPropertyChange?.('parts', newParts);
+            }}
+          >
+            Create {createCount} Equal Parts
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 /** Look up a human-readable name for an element ID, falling back to the raw ID. */
 function resolveElName(id: string | null | undefined, eb: Record<string, Element>): string {
   if (!id) return '—';
@@ -1088,6 +1206,11 @@ export function InspectorPropertiesFor(
               </div>
             </div>
           ) : null}
+          <WallPartsPanel
+            wall={el}
+            elementsById={elementsById}
+            onPropertyChange={onPropertyChange}
+          />
           <FieldRow label={f('workset')} value={el.worksetId ?? '—'} mono />
           {onDisciplineChange ? (
             <InspectorDisciplineDropdown value={el.discipline} onChange={onDisciplineChange} />
@@ -2634,6 +2757,24 @@ export function InspectorPropertiesFor(
               data-testid="inspector-ceiling-grid-size"
             />
           </div>
+          <div className="flex items-center gap-2 py-0.5">
+            <span className="text-xs text-muted w-28 shrink-0">Grid angle (°)</span>
+            <input
+              type="number"
+              className="w-20 text-xs bg-surface border border-border rounded px-1 py-0.5"
+              defaultValue={el.gridAngleDeg ?? 0}
+              key={`${el.id}-gridangle`}
+              step={5}
+              min={0}
+              max={90}
+              aria-label="Ceiling grid angle in degrees"
+              onBlur={(e) => {
+                const v = Number(e.currentTarget.value);
+                if (!isNaN(v)) ceilPropChange?.('gridAngleDeg', v === 0 ? null : v);
+              }}
+              data-testid="inspector-ceiling-grid-angle"
+            />
+          </div>
           <FieldRow label="Boundary Vertices" value={String(el.boundaryMm?.length ?? 0)} mono />
           {options?.onEditBoundary ? (
             <div
@@ -3216,48 +3357,164 @@ export function InspectorPropertiesFor(
         </div>
       );
     }
-    case 'angular_dimension':
+    case 'angular_dimension': {
+      const { onPropertyChange: angPropChange } = options ?? {};
+      const rayA = {
+        xMm: el.rayAMm.xMm - el.vertexMm.xMm,
+        yMm: el.rayAMm.yMm - el.vertexMm.yMm,
+      };
+      const rayB = {
+        xMm: el.rayBMm.xMm - el.vertexMm.xMm,
+        yMm: el.rayBMm.yMm - el.vertexMm.yMm,
+      };
+      const angleDeg = angleBetweenVectors(rayA, rayB);
+      const offsetMag = el.offsetMm ? Math.hypot(el.offsetMm.xMm, el.offsetMm.yMm).toFixed(0) : '0';
       return (
         <div className="flex flex-col gap-2">
-          <FieldRow label="Host View" value={el.hostViewId} mono />
-          <FieldRow
-            label="Vertex"
-            value={`(${Math.round(el.vertexMm.xMm)}, ${Math.round(el.vertexMm.yMm)}) mm`}
-            mono
-          />
-          <FieldRow
-            label="Ray A"
-            value={`(${Math.round(el.rayAMm.xMm)}, ${Math.round(el.rayAMm.yMm)}) mm`}
-            mono
-          />
-          <FieldRow
-            label="Ray B"
-            value={`(${Math.round(el.rayBMm.xMm)}, ${Math.round(el.rayBMm.yMm)}) mm`}
-            mono
-          />
+          <div className="flex items-center justify-between gap-4 border-b border-border py-1.5">
+            <span className="text-xs text-muted">Angle</span>
+            <span
+              className="text-sm text-foreground"
+              data-testid="inspector-angular-dim-angle"
+            >{`${angleDeg.toFixed(1)}°`}</span>
+          </div>
+          <div className="flex items-center justify-between gap-4 border-b border-border py-1.5">
+            <span className="text-xs text-muted">Offset</span>
+            <span
+              className="text-sm text-foreground"
+              data-testid="inspector-angular-dim-offset"
+            >{`${offsetMag} mm`}</span>
+          </div>
+          {angPropChange ? (
+            <>
+              <div className="flex flex-col gap-1 border-t border-border pt-2">
+                <span className="text-xs font-medium text-muted">Text decoration</span>
+                <div className="flex items-center gap-2">
+                  <span className="w-20 shrink-0 text-xs text-muted">Prefix</span>
+                  <input
+                    type="text"
+                    className="flex-1 rounded border border-border bg-surface px-1 py-0.5 text-xs"
+                    defaultValue={el.textPrefix ?? ''}
+                    key={`${el.id}-prefix`}
+                    placeholder="e.g. ≈"
+                    aria-label="Angular dimension text prefix"
+                    data-testid="inspector-angular-dim-prefix"
+                    onBlur={(e) => angPropChange('textPrefix', e.currentTarget.value || null)}
+                  />
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="w-20 shrink-0 text-xs text-muted">Suffix</span>
+                  <input
+                    type="text"
+                    className="flex-1 rounded border border-border bg-surface px-1 py-0.5 text-xs"
+                    defaultValue={el.textSuffix ?? ''}
+                    key={`${el.id}-suffix`}
+                    placeholder="e.g. °"
+                    aria-label="Angular dimension text suffix"
+                    data-testid="inspector-angular-dim-suffix"
+                    onBlur={(e) => angPropChange('textSuffix', e.currentTarget.value || null)}
+                  />
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="w-20 shrink-0 text-xs text-muted">Override</span>
+                  <input
+                    type="text"
+                    className="flex-1 rounded border border-border bg-surface px-1 py-0.5 text-xs"
+                    defaultValue={el.textOverride ?? ''}
+                    key={`${el.id}-override`}
+                    placeholder="replaces computed angle"
+                    aria-label="Angular dimension text override"
+                    data-testid="inspector-angular-dim-override"
+                    onBlur={(e) => angPropChange('textOverride', e.currentTarget.value || null)}
+                  />
+                </div>
+              </div>
+              <div className="flex items-center gap-2 py-0.5">
+                <button
+                  type="button"
+                  className="rounded border border-border bg-surface px-2 py-0.5 text-xs font-medium hover:bg-surface/80"
+                  data-testid="inspector-angular-dim-flip"
+                  onClick={() =>
+                    angPropChange('offsetMm', {
+                      xMm: el.offsetMm?.xMm ?? 0,
+                      yMm: -(el.offsetMm?.yMm ?? 0),
+                    })
+                  }
+                >
+                  Flip
+                </button>
+              </div>
+            </>
+          ) : null}
           {el.autoGenerated ? <FieldRow label="Auto-generated" value="Yes" /> : null}
         </div>
       );
+    }
     case 'radial_dimension':
     case 'diameter_dimension': {
-      const label = el.kind === 'radial_dimension' ? 'Radius' : 'Diameter';
-      const radiusMm = Math.hypot(
+      const { onPropertyChange: radPropChange } = options ?? {};
+      const computedRadiusMm = Math.hypot(
         el.arcPointMm.xMm - el.centerMm.xMm,
         el.arcPointMm.yMm - el.centerMm.yMm,
       );
+      const displayRadiusMm = el.radiusMm ?? computedRadiusMm;
+      const isDiameter = el.kind === 'diameter_dimension';
+      const valueTestId = isDiameter
+        ? 'inspector-diameter-dim-value'
+        : 'inspector-radial-dim-value';
+      const displayValue = isDiameter ? displayRadiusMm * 2 : displayRadiusMm;
       return (
         <div className="flex flex-col gap-2">
           <FieldRow label="Host View" value={el.hostViewId} mono />
-          <FieldRow
-            label={label}
-            value={`${Math.round(el.kind === 'diameter_dimension' ? radiusMm * 2 : radiusMm)} mm`}
-            mono
-          />
-          <FieldRow
-            label="Center"
-            value={`(${Math.round(el.centerMm.xMm)}, ${Math.round(el.centerMm.yMm)}) mm`}
-            mono
-          />
+          <div className="flex items-center justify-between gap-4 border-b border-border py-1.5">
+            <span className="text-xs text-muted">{isDiameter ? 'Diameter' : 'Radius'}</span>
+            <span
+              className="text-sm text-foreground"
+              data-testid={valueTestId}
+            >{`${Math.round(displayValue)} mm`}</span>
+          </div>
+          {radPropChange ? (
+            <>
+              <div className="flex flex-col gap-1 border-t border-border pt-2">
+                <div className="flex items-center gap-2">
+                  <span className="w-20 shrink-0 text-xs text-muted">Prefix</span>
+                  <input
+                    type="text"
+                    className="flex-1 rounded border border-border bg-surface px-1 py-0.5 text-xs"
+                    defaultValue={el.textPrefix ?? ''}
+                    key={`${el.id}-prefix`}
+                    placeholder={isDiameter ? 'Ø' : 'R'}
+                    aria-label="Dimension text prefix"
+                    data-testid="inspector-radial-dim-prefix"
+                    onBlur={(e) => radPropChange('textPrefix', e.currentTarget.value || null)}
+                  />
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="w-20 shrink-0 text-xs text-muted">Override</span>
+                  <input
+                    type="text"
+                    className="flex-1 rounded border border-border bg-surface px-1 py-0.5 text-xs"
+                    defaultValue={el.textOverride ?? ''}
+                    key={`${el.id}-override`}
+                    placeholder="replaces computed value"
+                    aria-label="Dimension text override"
+                    data-testid="inspector-radial-dim-override"
+                    onBlur={(e) => radPropChange('textOverride', e.currentTarget.value || null)}
+                  />
+                </div>
+              </div>
+              <div className="flex items-center gap-2 py-0.5">
+                <button
+                  type="button"
+                  className="rounded border border-border bg-surface px-2 py-0.5 text-xs font-medium hover:bg-surface/80"
+                  data-testid="inspector-radial-dim-flip"
+                  onClick={() => radPropChange('flipped', !el.flipped)}
+                >
+                  Flip
+                </button>
+              </div>
+            </>
+          ) : null}
           {el.autoGenerated ? <FieldRow label="Auto-generated" value="Yes" /> : null}
         </div>
       );
@@ -3403,19 +3660,67 @@ export function InspectorPropertiesFor(
           />
           <FieldRow label="Elevation" value={`${(el.elevationMm / 1000).toFixed(3)} m`} mono />
           {sePropChange ? (
-            <div className="flex items-center gap-2 py-0.5">
-              <span className="text-xs text-muted w-28 shrink-0">Elevation (mm)</span>
-              <input
-                type="number"
-                className="w-24 rounded border border-border bg-surface px-1 py-0.5 text-xs"
-                defaultValue={el.elevationMm}
-                key={`${el.id}-elev`}
-                step={100}
-                aria-label="Spot elevation in millimetres"
-                data-testid="inspector-spot-elevation-mm"
-                onBlur={(e) => sePropChange('elevationMm', Number(e.currentTarget.value))}
-              />
-            </div>
+            <>
+              <div className="flex items-center gap-2 py-0.5">
+                <span className="text-xs text-muted w-28 shrink-0">Elevation (mm)</span>
+                <input
+                  type="number"
+                  className="w-24 rounded border border-border bg-surface px-1 py-0.5 text-xs"
+                  defaultValue={el.elevationMm}
+                  key={`${el.id}-elev`}
+                  step={100}
+                  aria-label="Spot elevation in millimetres"
+                  data-testid="inspector-spot-elevation-mm"
+                  onBlur={(e) => sePropChange('elevationMm', Number(e.currentTarget.value))}
+                />
+              </div>
+              <div className="flex items-center gap-2 py-0.5">
+                <span className="text-xs text-muted w-28 shrink-0">Elevation mode</span>
+                <select
+                  className="flex-1 rounded border border-border bg-surface px-1 py-0.5 text-xs"
+                  value={el.elevationMode ?? 'absolute'}
+                  data-testid="inspector-spot-elevation-mode"
+                  onChange={(e) => sePropChange('elevationMode', e.currentTarget.value)}
+                >
+                  <option value="absolute">Absolute</option>
+                  <option value="relative-to-level">Relative to level</option>
+                </select>
+              </div>
+              <label className="flex items-center gap-2 py-0.5">
+                <input
+                  type="checkbox"
+                  defaultChecked={el.showIn3D !== false}
+                  key={`${el.id}-show3d`}
+                  data-testid="inspector-spot-elevation-show3d"
+                  onChange={(e) => sePropChange('showIn3D', e.currentTarget.checked)}
+                />
+                <span className="text-xs text-muted">Show in 3D</span>
+              </label>
+              <div className="flex items-center gap-2 py-0.5">
+                <span className="text-xs text-muted w-28 shrink-0">Prefix</span>
+                <input
+                  type="text"
+                  className="flex-1 rounded border border-border bg-surface px-1 py-0.5 text-xs"
+                  defaultValue={el.prefix ?? ''}
+                  key={`${el.id}-prefix`}
+                  aria-label="Elevation text prefix"
+                  data-testid="inspector-spot-elevation-prefix"
+                  onBlur={(e) => sePropChange('prefix', e.currentTarget.value)}
+                />
+              </div>
+              <div className="flex items-center gap-2 py-0.5">
+                <span className="text-xs text-muted w-28 shrink-0">Suffix</span>
+                <input
+                  type="text"
+                  className="flex-1 rounded border border-border bg-surface px-1 py-0.5 text-xs"
+                  defaultValue={el.suffix ?? ''}
+                  key={`${el.id}-suffix`}
+                  aria-label="Elevation text suffix"
+                  data-testid="inspector-spot-elevation-suffix"
+                  onBlur={(e) => sePropChange('suffix', e.currentTarget.value)}
+                />
+              </div>
+            </>
           ) : null}
         </div>
       );
@@ -3681,6 +3986,21 @@ export function InspectorPropertiesFor(
           <div data-testid="inspector-tag-target" style={{ display: 'none' }}>
             {targetName}
           </div>
+        </div>
+      );
+    }
+    case 'detail_group': {
+      return (
+        <div className="flex flex-col gap-2">
+          <FieldRow label="Members" value={String(el.memberIds?.length ?? 0)} />
+          <button
+            type="button"
+            data-testid="inspector-group-edit"
+            className="rounded border border-border bg-surface-strong px-2 py-1 text-xs hover:bg-accent-soft self-start"
+            onClick={() => onDispatchCommand?.({ type: 'editGroup', groupDefinitionId: el.id })}
+          >
+            Edit Group
+          </button>
         </div>
       );
     }

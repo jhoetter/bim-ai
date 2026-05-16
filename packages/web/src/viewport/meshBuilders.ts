@@ -639,7 +639,9 @@ export function makeFloorSlabMesh(
   if (floor.graphicsOverride?.surfaceColorHex) {
     (mesh.material as THREE.MeshStandardMaterial).color.set(floor.graphicsOverride.surfaceColorHex);
   }
-  mesh.position.set(0, elev, 0);
+  // §3.4.1: if attached to a roof, position top face at topFaceElevationMm; slab extends downward.
+  const posY = floor.topFaceElevationMm != null ? floor.topFaceElevationMm / 1000 - th : elev;
+  mesh.position.set(0, posY, 0);
   mesh.castShadow = true;
   mesh.receiveShadow = true;
   mesh.userData.bimPickId = floor.id;
@@ -2770,7 +2772,16 @@ export function makeWallMesh(
       const partLen = (part.endT - part.startT) * len;
       if (partLen <= 0) continue;
       const partOffsetAlong = (part.startT + part.endT) / 2 - 0.5;
-      const partMesh = new THREE.Mesh(new THREE.BoxGeometry(partLen, height, thick), wallMaterial);
+      const partMaterial = part.materialId
+        ? makeThreeMaterialForKey(part.materialId, {
+            elementsById,
+            usage: 'wallExterior',
+            fallbackColor: categoryColorOr(paint, 'wall'),
+            fallbackRoughness: paint?.categories.wall.roughness ?? 0.85,
+            fallbackMetalness: paint?.categories.wall.metalness ?? 0.0,
+          })
+        : wallMaterial;
+      const partMesh = new THREE.Mesh(new THREE.BoxGeometry(partLen, height, thick), partMaterial);
       partMesh.position.set(
         cx + partOffsetAlong * len * Math.cos(yaw),
         yBase + height / 2,
@@ -3976,4 +3987,73 @@ export function buildFamilyVoidMesh(form: import('@bim-ai/core').FamilyVoid): TH
     bevelEnabled: false,
   });
   return new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ wireframe: true, color: '#ff4444' }));
+}
+
+/** §4.7 — spot elevation 3D viewport label (diamond marker + elevation sprite). */
+export function spotElevationThree(
+  el: Extract<import('@bim-ai/core').Element, { kind: 'spot_elevation' }>,
+  levelElevationMm: number,
+): THREE.Group {
+  const group = new THREE.Group();
+  group.name = `spot-elevation:${el.id}`;
+  group.position.set(el.positionMm.xMm / 1000, el.elevationMm / 1000, -el.positionMm.yMm / 1000);
+
+  const diamond = new THREE.Mesh(
+    new THREE.PlaneGeometry(0.15, 0.15),
+    new THREE.MeshBasicMaterial({
+      color: el.colour ?? '#1a56db',
+      side: THREE.DoubleSide,
+      depthTest: false,
+      depthWrite: false,
+      toneMapped: false,
+    }),
+  );
+  diamond.rotation.z = Math.PI / 4;
+  diamond.renderOrder = 1100;
+  group.add(diamond);
+
+  const displayElevM =
+    el.elevationMode === 'relative-to-level'
+      ? (el.elevationMm - levelElevationMm) / 1000
+      : el.elevationMm / 1000;
+  const labelText = el.textOverride
+    ? el.textOverride
+    : `${el.prefix ?? ''}${displayElevM.toFixed(3)} m${el.suffix ?? ''}`;
+
+  const sprite = new THREE.Sprite(
+    new THREE.SpriteMaterial({
+      transparent: true,
+      depthTest: false,
+      depthWrite: false,
+      toneMapped: false,
+    }),
+  );
+  sprite.position.set(0, 0.28, 0);
+  sprite.scale.set(1.6, 0.32, 1);
+  sprite.renderOrder = 1100;
+  sprite.userData.spotElevationLabel = true;
+  sprite.userData.spotElevationText = labelText;
+
+  if (typeof document !== 'undefined' && labelText.trim()) {
+    const canvas = document.createElement('canvas');
+    canvas.width = 320;
+    canvas.height = 64;
+    const ctx = canvas.getContext('2d');
+    if (ctx) {
+      ctx.font = '500 22px system-ui, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillStyle = 'rgba(255,255,255,0.88)';
+      ctx.fillRect(0, 8, canvas.width, 48);
+      ctx.fillStyle = 'rgba(20,24,31,0.92)';
+      ctx.fillText(labelText.slice(0, 36), canvas.width / 2, canvas.height / 2);
+      const tex = new THREE.CanvasTexture(canvas);
+      tex.needsUpdate = true;
+      (sprite.material as THREE.SpriteMaterial).map = tex;
+      (sprite.material as THREE.SpriteMaterial).needsUpdate = true;
+    }
+  }
+
+  group.add(sprite);
+  return group;
 }
