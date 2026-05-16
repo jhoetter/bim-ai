@@ -91,6 +91,12 @@
       "transcript": "/4d/c5b42c6e2a/13/full.jsonl",
       "content_hash": "/4d/c5b42c6e2a/13/content_hash.txt",
       "prompt": "/4d/c5b42c6e2a/13/prompt.txt"
+    },
+    {
+      "metadata": "/4d/c5b42c6e2a/14/metadata.json",
+      "transcript": "/4d/c5b42c6e2a/14/full.jsonl",
+      "content_hash": "/4d/c5b42c6e2a/14/content_hash.txt",
+      "prompt": "/4d/c5b42c6e2a/14/prompt.txt"
     }
   ],
   "token_usage": {
