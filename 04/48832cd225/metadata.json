@@ -3,7 +3,7 @@
   "checkpoint_id": "0448832cd225",
   "strategy": "manual-commit",
   "branch": "main",
-  "checkpoints_count": 2,
+  "checkpoints_count": 3,
   "files_touched": [
     "packages/core/src/index.ts",
     "packages/web/src/workspace/WorkspaceLeftRail.tsx"
@@ -20,13 +20,19 @@
       "transcript": "/04/48832cd225/1/full.jsonl",
       "content_hash": "/04/48832cd225/1/content_hash.txt",
       "prompt": "/04/48832cd225/1/prompt.txt"
+    },
+    {
+      "metadata": "/04/48832cd225/2/metadata.json",
+      "transcript": "/04/48832cd225/2/full.jsonl",
+      "content_hash": "/04/48832cd225/2/content_hash.txt",
+      "prompt": "/04/48832cd225/2/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 1816676,
+    "input_tokens": 3002723,
     "cache_creation_tokens": 342279,
-    "cache_read_tokens": 70096090,
-    "output_tokens": 193732,
-    "api_call_count": 666
+    "cache_read_tokens": 97854170,
+    "output_tokens": 270289,
+    "api_call_count": 881
   }
 }
