@@ -88,6 +88,12 @@
       "transcript": "/7c/aade5f01c6/12/full.jsonl",
       "content_hash": "/7c/aade5f01c6/12/content_hash.txt",
       "prompt": "/7c/aade5f01c6/12/prompt.txt"
+    },
+    {
+      "metadata": "/7c/aade5f01c6/13/metadata.json",
+      "transcript": "/7c/aade5f01c6/13/full.jsonl",
+      "content_hash": "/7c/aade5f01c6/13/content_hash.txt",
+      "prompt": "/7c/aade5f01c6/13/prompt.txt"
     }
   ],
   "token_usage": {
