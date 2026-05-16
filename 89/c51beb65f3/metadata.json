@@ -4,7 +4,11 @@
   "strategy": "manual-commit",
   "branch": "main",
   "checkpoints_count": 2,
-  "files_touched": null,
+  "files_touched": [
+    "packages/web/src/tools/decalGrammar.test.ts",
+    "packages/web/src/tools/toolGrammar.ts",
+    "packages/web/src/tools/toolRegistry.ts"
+  ],
   "sessions": [
     {
       "metadata": "/89/c51beb65f3/0/metadata.json",
@@ -17,13 +21,19 @@
       "transcript": "/89/c51beb65f3/1/full.jsonl",
       "content_hash": "/89/c51beb65f3/1/content_hash.txt",
       "prompt": "/89/c51beb65f3/1/prompt.txt"
+    },
+    {
+      "metadata": "/89/c51beb65f3/2/metadata.json",
+      "transcript": "/89/c51beb65f3/2/full.jsonl",
+      "content_hash": "/89/c51beb65f3/2/content_hash.txt",
+      "prompt": "/89/c51beb65f3/2/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 4803287,
-    "cache_creation_tokens": 445688,
-    "cache_read_tokens": 163895599,
-    "output_tokens": 501365,
-    "api_call_count": 1607
+    "input_tokens": 4803506,
+    "cache_creation_tokens": 636674,
+    "cache_read_tokens": 181284864,
+    "output_tokens": 575487,
+    "api_call_count": 1814
   }
 }
