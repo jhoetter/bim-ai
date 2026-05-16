@@ -10,7 +10,7 @@ import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
 import { SSAOPass } from 'three/addons/postprocessing/SSAOPass.js';
 
-import { parseDimensionInput, type Element, type LensMode } from '@bim-ai/core';
+import { parseDimensionInput, type Element, type LensMode, type SavedViewElem } from '@bim-ai/core';
 import type { OrbitViewpointPersistFieldPayload } from './OrbitViewpointPersistedHud';
 
 import { useBimStore, type PlanTool } from './state/store';
@@ -170,6 +170,7 @@ import {
   projectSceneRayToLevelPlaneMm,
   resolve3dDraftLevel,
   snapDraftPointToGrid,
+  validateWorkPlane3d,
   type Authoring3dLinePreviewPayload,
   type Authoring3dSnapKind,
   type WallDraftProjectionClassification,
@@ -187,6 +188,7 @@ import {
   type HostedPlacementDedupeState,
 } from './viewport/directAuthoringGuards';
 import { flipWallLocationLineSide, snapWallPointToConnectivity } from './geometry/wallConnectivity';
+import { buildGroupInstance3d } from './viewport/groupInstance3d';
 
 // KRN-14 — wire the CSG cut into meshBuilders. Side-effect at module load.
 registerDormerCutFn(applyDormerCutsToRoofGeom);
@@ -577,6 +579,7 @@ export function Viewport({
   const gripHandleRef = useRef<GripMeshHandle | null>(null);
   const text3dPendingRef = useRef<Set<string>>(new Set());
   const walkControllerRef = useRef<WalkController | null>(null);
+  const savedViewLockedRef = useRef(false);
   const sectionBoxRef = useRef<SectionBox | null>(null);
   const sectionBoxCageRef = useRef<THREE.LineSegments | null>(null);
   const clipCapsRef = useRef<THREE.Mesh[]>([]);
@@ -586,6 +589,7 @@ export function Viewport({
   // mount effect) sees up-to-date elements without rerunning that effect.
   const elementsByIdRef = useRef(elementsById);
   elementsByIdRef.current = elementsById;
+  const groupRegistry = useBimStore((s) => s.groupRegistry);
   const theme = useTheme();
 
   // Serialised key — only changes when georeference VALUES change, not on every elementsById ref update.
@@ -618,6 +622,14 @@ export function Viewport({
   const selectedIds = useBimStore((s) => s.selectedIds);
   selectedIdRef.current = selectedId;
   selectedIdsRef.current = selectedIds;
+
+  const activeSavedView = useMemo(() => {
+    if (!selectedId) return null;
+    const el = elementsById[selectedId];
+    return el?.kind === 'saved_view' ? (el as SavedViewElem) : null;
+  }, [selectedId, elementsById]);
+  const savedViewLocked = activeSavedView?.isLocked === true;
+  savedViewLockedRef.current = savedViewLocked;
   const setActiveLevelId = useBimStore((s) => s.setActiveLevelId);
   const storePlanTool = useBimStore((s) => s.planTool);
   const planTool = activePlanTool ?? storePlanTool;
@@ -1656,8 +1668,8 @@ export function Viewport({
       return 200;
     }
 
-    function tintWallDraftPreviewObject(object: THREE.Object3D): void {
-      const accent = readToken('--color-accent', '#2563eb');
+    function tintWallDraftPreviewObject(object: THREE.Object3D, overrideColor?: string): void {
+      const accent = overrideColor ?? readToken('--color-accent', '#2563eb');
       object.userData.isAuthoringPreview = true;
       delete object.userData.bimPickId;
       object.traverse((node) => {
@@ -1703,6 +1715,7 @@ export function Viewport({
       end: { xMm: number; yMm: number },
       levelInfo: { id: string; elevationMm: number },
       flip: boolean,
+      tintColor?: string,
     ): THREE.Object3D | null {
       const runtime = useBimStore.getState();
       const lengthMm = Math.hypot(end.xMm - start.xMm, end.yMm - start.yMm);
@@ -1729,7 +1742,7 @@ export function Viewport({
         paintBundleRef.current,
         elementsByIdRef.current,
       );
-      tintWallDraftPreviewObject(preview);
+      tintWallDraftPreviewObject(preview, tintColor);
       applyClippingPlanesToMeshes(preview, clippingPlanesRef.current);
       applyModelEdgeDisplay(preview, viewerEdgesRef.current, viewerSilhouetteEdgeWidthRef.current);
       scene.add(preview);
@@ -2739,6 +2752,10 @@ export function Viewport({
           return;
         }
       }
+      if (savedViewLockedRef.current) {
+        dragging = null;
+        return;
+      }
       const intent = classifyPointer({
         button: ev.button,
         altKey: ev.altKey,
@@ -3017,11 +3034,17 @@ export function Viewport({
           prev?.phase === 'pick-end'
             ? prev.tool === 'wall' && lineDraftStart && projected && !projected.blocker && levelInfo
               ? (() => {
+                  const workPlaneCheck = validateWorkPlane3d(
+                    'wall',
+                    projected.snapKind ?? null,
+                    Boolean(levelInfo),
+                  );
                   const previewMesh = updateWallDraftPreviewGroup(
                     lineDraftStart.point,
                     projected.point,
                     levelInfo,
                     wallFlipNextSegment,
+                    workPlaneCheck.previewTint === 'red' ? '#ef4444' : undefined,
                   );
                   emitWallDebug('wall-preview', {
                     start: lineDraftStart.point,
@@ -3205,6 +3228,7 @@ export function Viewport({
 
     function onWheel(ev: WheelEvent): void {
       ev.preventDefault();
+      if (savedViewLockedRef.current) return;
 
       // Normalize cursor position to NDC for cursor-anchored zoom
       const rect = renderer.domElement.getBoundingClientRect();
@@ -5650,6 +5674,16 @@ export function Viewport({
             'linear-gradient(to bottom, #cce8f4 0%, #e8f4fd 40%, #f5f9fc 75%, #e8e4d8 100%)',
         }}
       />
+      {savedViewLocked && activeSavedView ? (
+        <div
+          data-testid="viewport-saved-view-lock-badge"
+          className="pointer-events-none absolute left-3 top-3 z-20 flex items-center gap-1.5 rounded-md border border-border bg-surface/90 px-2.5 py-1 text-xs font-medium text-muted backdrop-blur-sm"
+        >
+          <span>🔒</span>
+          <span>{activeSavedView.name} — camera locked</span>
+        </div>
+      ) : null}
+
       <div
         ref={mountRef}
         className={`relative z-[1] size-full ${
