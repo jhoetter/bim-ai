@@ -1,78 +1,17 @@
-You are resuming a crashed agent session on the bim-ai repo
-  (/Users/jhoetter/repos/bim-ai). bim-ai is a browser-based BIM authoring
-  tool (React + TypeScript + Three.js, Vite, Vitest).
-
-  REPO ORIENTATION (WP-E relevant paths):
-  - packages/web/src/export/ifcExporter.ts — IFC 2x3 exporter (real implementation, done)
-  - packages/web/src/export/ifcExporter.test.ts — IFC tests (3 passing)
-  - packages/web/src/export/dxfExporter.ts — DXF exporter (~297 lines, real implementation)
-  - packages/web/src/export/dxfExporter.test.ts — DXF tests
-  - packages/web/src/export/csvExporter.ts — CSV exporter (DONE)
-  - packages/web/src/export/pdfExporter.ts — PDF exporter (DONE)
-  - packages/web/src/export/linkedModelGhosting.test.ts — linked model ghosting tests (DONE)
-  - packages/web/src/viewport/linkedGhosting.ts — 3D ghosting logic (DONE)
-  - packages/web/src/workspace/project/ManageLinksDialog.tsx — linked model UI (DONE)
-  - packages/web/src/schedules/SchedulePanel.tsx — schedule view (CSV button done)
-  - packages/core/src/index.ts — shared Element types
-
-  Architecture:
-  - Exports triggered from UI, processed (optionally in Web Worker), result in URL.createObjectURL → <a download> click.
-  - Project model accessed via useBimStore (Zustand).
-  - Tests: co-located *.test.ts, run with pnpm test --filter @bim-ai/web.
-  - Prettier runs automatically.
-
-  WHAT WAS DONE BEFORE THE CRASH:
-  - E1 IFC 2x3: PARTIAL — Pure-TypeScript ISO 10303-21 STEP writer. Exports project hierarchy + walls/doors/windows/slabs/spaces. Missing: material layer sets, some Psets. 3 tests pass.
-  - E2 DXF Export: PARTIAL — dxfExporter.ts (~297 lines) handles walls (A-WALL), doors, windows per level. Rooms, grids, annotations, dimensions may be missing. Check tests.
-  - E3 CSV: DONE — csvExporter.ts + Copy button in SchedulePanel
-  - E4 PDF: DONE — pdfExporter.ts, tracker marks §12.4.5 Done
-  - E5 Linked Model: DONE — ManageLinksDialog.tsx has full UI (add/delete/align/pin); linkedGhosting.ts ghosts with blue tint at 0.6 opacity; wired into Workspace; tests pass
-  - E6 DXF Underlay: DONE — circle, text, hatch entities added to dxfUnderlay.ts
-
-  No uncommitted WP-E changes exist.
-
-  STEP 0 — audit what E1 and E2 actually cover before writing new code:
-    git pull --rebase origin main
-    pnpm test --filter @bim-ai/web -- ifcExporter
-    pnpm test --filter @bim-ai/web -- dxfExporter
-
-  Read export/ifcExporter.ts and export/dxfExporter.ts end-to-end. Then fill in gaps.
-
-  WHAT STILL NEEDS TO BE DONE:
-
-  E1 — complete IFC 2x3 gaps
-  Read ifcExporter.ts and find what's missing. Common gaps:
-  1. IfcMaterialLayerSetUsage for layered walls — each wall type layer should be an IfcMaterialLayer in the STEP file
-  2. Standard Psets per element type: Pset_WallCommon, Pset_DoorCommon, Pset_WindowCommon, Pset_SlabCommon
-  3. Rooms as IfcSpace with FloorArea property (check if room elements are exported or skipped)
-  4. Round-trip validation: parse the resulting STEP string back to verify valid ISO 10303-21
-  Update tests to cover these cases.
-
-  E2 — complete DXF export gaps
-  Read dxfExporter.ts to see which kinds are handled. Add missing:
-  1. Rooms — closed polyline on layer A-AREA
-  2. Grid lines — CIRCLE + LINE entities on layer S-GRID
-  3. Reference planes — LINE entities on layer A-REFP
-  4. Text annotations (if text_annotation elements exist) — TEXT entities on layer A-ANNO
-  5. Dimensions — DXF DIMENSION entities on layer A-ANNO-DIMS
-  6. Multi-level export: verify there is a way to export all levels at once (one DXF per level) from the UI
-  7. UI trigger: verify "Export → DXF/DWG…" exists in the file menu with a dialog for view selection, units (mm/m), layer naming preset. If not, add it.
-  Run pnpm test --filter @bim-ai/web -- dxfExporter and add tests for any new entity types.
-
-  E5 — verify linked model is actually complete
-  The tracker says Partial but the implementation looks done. Verify:
-  - ManageLinksDialog.tsx has Insert, Unload, Remove, align controls
-  - Linked model elements are truly non-selectable/non-editable in plan + 3D
-  - link_model element type has isVisible + isGhosted toggles
-  If all wired, update tracker entry from Partial to Done.
-
-  RULES:
-  - git pull --rebase origin main before every sub-task
-  - Commit + push after each completed sub-task
-  - Do NOT touch stair/ramp, annotation tools, phase dialogs, structural, massing, or view/sheet rendering
-  - pnpm test --filter @bim-ai/web before each push
-  - Update spec/revit-parity/revit2026-parity-tracker.md as you complete items
+<task-notification>
+<task-id>bq2daempy</task-id>
+<tool-use-id>toolu_01EaDLfojtLuy1tB8hkGjubq</tool-use-id>
+<output-file>/private/tmp/claude-501/-Users-jhoetter-repos-bim-ai/1c6cb43f-cbd6-46cd-83a5-c7640d07d9dd/tasks/bq2daempy.output</output-file>
+<status>completed</status>
+<summary>Background command "Commit WP-E export work" completed (exit code 0)</summary>
+</task-notification>
 
 ---
 
-did you update the tracker accordingly? or are you not done yet?
+<task-notification>
+<task-id>bodvt9cmy</task-id>
+<tool-use-id>toolu_01HV3ycyzcY3vNn4WT5vQrQ5</tool-use-id>
+<output-file>/private/tmp/claude-501/-Users-jhoetter-repos-bim-ai/1c6cb43f-cbd6-46cd-83a5-c7640d07d9dd/tasks/bodvt9cmy.output</output-file>
+<status>completed</status>
+<summary>Background command "Commit and push tracker fix" completed (exit code 0)</summary>
+</task-notification>
