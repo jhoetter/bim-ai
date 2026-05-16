@@ -1442,6 +1442,12 @@ export type Element =
         endT: number;
         materialId?: string;
       }>;
+      /** §2.1.4 per-element graphics override — fill/line color in plan, surface color in 3D. */
+      graphicsOverride?: {
+        fillColorHex?: string | null;
+        lineColorHex?: string | null;
+        surfaceColorHex?: string | null;
+      } | null;
     }
   | {
       kind: 'door';
@@ -1770,6 +1776,18 @@ export type Element =
       thermalClassification?: ThermalEnvelopeClassification | null;
       thermalClassificationSource?: ThermalClassificationSource | null;
       energyScenarioId?: string | null;
+      /** §2.1.4 per-element graphics override — fill/line color in plan, surface color in 3D. */
+      graphicsOverride?: {
+        fillColorHex?: string | null;
+        lineColorHex?: string | null;
+        surfaceColorHex?: string | null;
+      } | null;
+      /** §3.4.1 slope arrow tail point in plan (mm). The low end of the slope. */
+      slopeArrowTailMm?: { xMm: number; yMm: number } | null;
+      /** §3.4.1 slope arrow head point in plan (mm). The high end of the slope. */
+      slopeArrowHeadMm?: { xMm: number; yMm: number } | null;
+      /** §3.4.1 slope as percentage (e.g. 10 = 10% = 10mm rise per 100mm run). Positive = head is higher than tail. */
+      slopePercent?: number | null;
     }
   | {
       kind: 'roof';
@@ -1821,6 +1839,12 @@ export type Element =
       massFaceRef?: MassFaceRef | null;
       /** G2: extrusion depth for roof-by-extrusion tool (mm). */
       extrusionDepthMm?: number;
+      /** §2.1.4 per-element graphics override — fill/line color in plan, surface color in 3D. */
+      graphicsOverride?: {
+        fillColorHex?: string | null;
+        lineColorHex?: string | null;
+        surfaceColorHex?: string | null;
+      } | null;
     }
   | {
       kind: 'stair';
@@ -2327,6 +2351,12 @@ export type Element =
       topOffsetXMm?: number;
       /** F3 (WP-F): horizontal Y shift of column top from base in mm (default 0 = vertical). */
       topOffsetYMm?: number;
+      /** §2.1.4 per-element graphics override — fill/line color in plan, surface color in 3D. */
+      graphicsOverride?: {
+        fillColorHex?: string | null;
+        lineColorHex?: string | null;
+        surfaceColorHex?: string | null;
+      } | null;
     }
   | {
       kind: 'beam';
@@ -2353,6 +2383,12 @@ export type Element =
       discipline?: DisciplineTag | null;
       /** SCH-V3-01: custom property values. */
       props?: Record<string, unknown>;
+      /** §2.1.4 per-element graphics override — fill/line color in plan, surface color in 3D. */
+      graphicsOverride?: {
+        fillColorHex?: string | null;
+        lineColorHex?: string | null;
+        surfaceColorHex?: string | null;
+      } | null;
     }
   | {
       kind: 'steel_connection';
@@ -2382,6 +2418,12 @@ export type Element =
       discipline?: DisciplineTag | null;
       /** SCH-V3-01: custom property values. */
       props?: Record<string, unknown>;
+      /** §2.1.4 per-element graphics override — fill/line color in plan, surface color in 3D. */
+      graphicsOverride?: {
+        fillColorHex?: string | null;
+        lineColorHex?: string | null;
+        surfaceColorHex?: string | null;
+      } | null;
     }
   | {
       kind: 'color_fill_legend';

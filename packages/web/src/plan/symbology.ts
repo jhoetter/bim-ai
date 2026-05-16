@@ -54,6 +54,7 @@ import { curtainWallPlanThree } from './curtainWallPlanSymbol';
 import { terrainControlPointsPlanThree } from './terrainPointSymbol';
 import { terrainPadPlanThree } from './terrainPadPlanThree';
 import { shaftPlanThree } from './shaftPlanThree';
+import { floorSlopeArrowPlanThree } from './floorSlopePlanThree';
 
 /** Plan slice elevation in world units (walls still render with real height elsewhere). */
 
@@ -390,11 +391,15 @@ function planFloorRoofOutlineWireGroup(
     roofGeometrySupportToken?: string | null;
     showFill?: boolean;
     showHatch?: boolean;
+    fillColorHex?: string | null;
+    lineColorHex?: string | null;
   },
 ): THREE.Group {
   const grp = new THREE.Group();
   const palette = getPlanPalette();
-  const color = opts.kind === 'floor' ? palette.floorOutline : palette.roofOutline;
+  const defaultColor = opts.kind === 'floor' ? palette.floorOutline : palette.roofOutline;
+  const color = opts.fillColorHex ?? defaultColor;
+  const lineColor = opts.lineColorHex ?? color;
   const fillY = opts.kind === 'floor' ? PLAN_Y + 0.001 : PLAN_Y + 0.004;
   const strokeY = fillY + 0.0004;
   const baseOp = opts.kind === 'floor' ? PLAN_FLOOR_FILL_OPACITY_BASE : PLAN_ROOF_FILL_OPACITY_BASE;
@@ -434,14 +439,14 @@ function planFloorRoofOutlineWireGroup(
   if (dashSpec == null) {
     const loop = new THREE.LineLoop(
       new THREE.BufferGeometry().setFromPoints(pts),
-      new THREE.LineBasicMaterial({ color, depthTest: true }),
+      new THREE.LineBasicMaterial({ color: lineColor, depthTest: true }),
     );
     loop.userData.bimPickId = opts.pickId;
     grp.add(loop);
   } else {
     const closed = [...pts, pts[0]!];
     const mat = new THREE.LineDashedMaterial({
-      color,
+      color: lineColor,
       dashSize: dashSpec.dashSize,
       gapSize: dashSpec.gapSize,
       depthTest: true,
@@ -1328,7 +1333,7 @@ function columnPlanThree(col: Extract<Element, { kind: 'column' }>): THREE.Group
   const cx = ux(col.positionMm.xMm);
   const cz = uz(col.positionMm.yMm);
   const Y = PLAN_Y + 0.006;
-  const color = readToken('--plan-wall', '#1c1917');
+  const color = col.graphicsOverride?.lineColorHex ?? readToken('--plan-wall', '#1c1917');
   const solidMat = new THREE.LineBasicMaterial({ color });
   const dashedMat = new THREE.LineDashedMaterial({ color, dashSize: 0.06, gapSize: 0.04 });
 
@@ -1867,9 +1872,13 @@ export function rebuildPlanMeshes(
           lineWeightHint: 1,
           showFill: showFloorSurface,
           showHatch: false,
+          fillColorHex: f.graphicsOverride?.fillColorHex ?? null,
+          lineColorHex: f.graphicsOverride?.lineColorHex ?? null,
         });
         applyPhaseStyle(obj, ps);
         holder.add(obj);
+        const slopeArrow = floorSlopeArrowPlanThree(f);
+        if (slopeArrow) holder.add(slopeArrow);
       }
       tintNewChildren(before, 'floor');
     }
@@ -1886,7 +1895,7 @@ export function rebuildPlanMeshes(
           horizontalOutlineMesh(
             rf.footprintMm,
             PLAN_Y + 0.004,
-            getPlanPalette().roofOutline,
+            rf.graphicsOverride?.fillColorHex ?? getPlanPalette().roofOutline,
             PLAN_ROOF_FILL_OPACITY_BASE,
             rf.id,
           ),
@@ -1906,7 +1915,7 @@ export function rebuildPlanMeshes(
         horizontalOutlineMesh(
           cl.boundaryMm,
           PLAN_Y + 0.003,
-          getPlanPalette().floorOutline,
+          cl.graphicsOverride?.fillColorHex ?? getPlanPalette().floorOutline,
           PLAN_FLOOR_FILL_OPACITY_BASE * 0.7,
           cl.id,
         ),

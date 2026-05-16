@@ -593,6 +593,35 @@ export function makeFloorSlabMesh(
   const geom = new THREE.ExtrudeGeometry(shape, { depth: th, bevelEnabled: false });
   geom.rotateX(-Math.PI / 2);
 
+  // §3.4.1 — slope: offset top-face vertices (y ≈ th after rotateX) along slope direction.
+  if (
+    floor.slopeArrowTailMm &&
+    floor.slopeArrowHeadMm &&
+    floor.slopePercent != null &&
+    floor.slopePercent !== 0
+  ) {
+    const tail = floor.slopeArrowTailMm;
+    const head = floor.slopeArrowHeadMm;
+    const sdx = head.xMm - tail.xMm;
+    const sdz = head.yMm - tail.yMm;
+    const slen = Math.sqrt(sdx * sdx + sdz * sdz);
+    if (slen > 1e-6) {
+      const dirX = sdx / slen;
+      const dirZ = sdz / slen;
+      const risePerMm = floor.slopePercent / 100;
+      const pos = geom.attributes.position as THREE.BufferAttribute;
+      for (let i = 0; i < pos.count; i++) {
+        if (Math.abs(pos.getY(i) - th) > 1e-5) continue;
+        const planX = pos.getX(i) * 1000;
+        const planY = pos.getZ(i) * 1000;
+        const dot = (planX - tail.xMm) * dirX + (planY - tail.yMm) * dirZ;
+        pos.setY(i, pos.getY(i) + (dot * risePerMm) / 1000);
+      }
+      pos.needsUpdate = true;
+      geom.computeVertexNormals();
+    }
+  }
+
   const mesh = new THREE.Mesh(
     geom,
     makeThreeMaterialForKey(floorMaterialKey, {
@@ -607,6 +636,9 @@ export function makeFloorSlabMesh(
       fallbackMetalness: 0,
     }),
   );
+  if (floor.graphicsOverride?.surfaceColorHex) {
+    (mesh.material as THREE.MeshStandardMaterial).color.set(floor.graphicsOverride.surfaceColorHex);
+  }
   mesh.position.set(0, elev, 0);
   mesh.castShadow = true;
   mesh.receiveShadow = true;
@@ -1756,6 +1788,9 @@ export function makeRoofMassMesh(
       side: THREE.DoubleSide,
     }),
   );
+  if (roof.graphicsOverride?.surfaceColorHex) {
+    (mesh.material as THREE.MeshStandardMaterial).color.set(roof.graphicsOverride.surfaceColorHex);
+  }
   mesh.userData.bimPickId = roof.id;
   // Roof meshes are built from many triangles per pitch (asymmetric_gable
   // alone produces 8+ tris). The default 15° edge threshold drew a line
@@ -2594,6 +2629,9 @@ export function makeWallMesh(
       : (paint?.categories.wall.roughness ?? 0.85),
     fallbackMetalness: paint?.categories.wall.metalness ?? 0.0,
   });
+  if (wall.graphicsOverride?.surfaceColorHex) {
+    (baseMaterial as THREE.MeshStandardMaterial).color.set(wall.graphicsOverride.surfaceColorHex);
+  }
   const wallMaterial: THREE.Material | THREE.Material[] =
     displayWall.faceMaterialOverrides && displayWall.faceMaterialOverrides.length > 0
       ? (() => {
@@ -3485,6 +3523,9 @@ export function makeColumnMesh(
     fallbackRoughness: paint?.categories.wall.roughness ?? 0.8,
     fallbackMetalness: paint?.categories.wall.metalness ?? 0,
   });
+  if (col.graphicsOverride?.surfaceColorHex) {
+    (mat as THREE.MeshStandardMaterial).color.set(col.graphicsOverride.surfaceColorHex);
+  }
   const mesh = new THREE.Mesh(geo, mat);
   mesh.position.set(
     col.positionMm.xMm / 1000,
@@ -3517,6 +3558,9 @@ export function makeBeamMesh(
     fallbackRoughness: paint?.categories.wall.roughness ?? 0.8,
     fallbackMetalness: paint?.categories.wall.metalness ?? 0,
   });
+  if (beam.graphicsOverride?.surfaceColorHex) {
+    (mat as THREE.MeshStandardMaterial).color.set(beam.graphicsOverride.surfaceColorHex);
+  }
   const mesh = new THREE.Mesh(geo, mat);
   mesh.position.set(sx + dx / 2, elevM - hM / 2, sz + dz / 2);
   mesh.rotation.y = yawForPlanSegment(dx, dz);
@@ -3618,7 +3662,7 @@ export function makeCeilingMesh(
   const mesh = new THREE.Mesh(
     geom,
     new THREE.MeshStandardMaterial({
-      color: categoryColorOr(paint, 'floor'),
+      color: ceiling.graphicsOverride?.surfaceColorHex ?? categoryColorOr(paint, 'floor'),
       roughness: paint?.categories.floor.roughness ?? 0.9,
     }),
   );
