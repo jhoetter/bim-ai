@@ -58,6 +58,8 @@ export interface ProjectMenuProps {
   onNewClear?: () => void;
   /** Replay the onboarding tour from the beginning (spec §24). */
   onReplayTour?: () => void;
+  /** F4: open the Project Units dialog. */
+  onOpenProjectUnits?: () => void;
   /** FED-01: open the Manage Links dialog (Insert → Link Model). */
   onManageLinks?: () => void;
   /** FED-04: import an IFC file as a shadow-model link. */
@@ -87,6 +89,7 @@ export function ProjectMenu({
   onRestoreSnapshot,
   onNewClear,
   onReplayTour,
+  onOpenProjectUnits,
   onManageLinks,
   onLinkIfc,
   onLinkDxf,
@@ -336,6 +339,17 @@ export function ProjectMenu({
             onClick={() => {
               onOpenChange(false);
               onOpenProjectSetup();
+            }}
+          />
+        ) : null}
+        {onOpenProjectUnits ? (
+          <MenuItem
+            label="Project Units..."
+            icon="settings"
+            testId="project-menu-open-project-units"
+            onClick={() => {
+              onOpenChange(false);
+              onOpenProjectUnits();
             }}
           />
         ) : null}

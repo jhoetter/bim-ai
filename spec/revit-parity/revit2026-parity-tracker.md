@@ -204,8 +204,8 @@ bim-ai has cropRegionDrag and cropRegionDragHandles.ts. Plan crop region can be 
 Snap engine (snapEngine.ts), SnapGlyphLayer.tsx, SnapSettingsToolbar.tsx, snap tab cycle — full snap suite implemented including endpoint, midpoint, intersection, perpendicular, tangent, nearest, centre, grid.
 
 #### 2.1.7 Einheiten (project units: mm/m/ft/in, decimal places)
-**Status: Partial — P1**
-bim-ai supports metric and imperial input in dimensions and property panels. A dedicated project-level units dialog (like Revit's FORMAT|EINHEITEN dialog with all unit categories) is not explicitly surfaced.
+**Status: Done — P1**
+Project Units dialog (ProjectUnitsDialog.tsx) implemented. formatUnit.ts provides formatLength/formatArea pure functions covering mm, cm, m, ft, in, ft-in (with 1/16" fraction display), m², ft², and configurable decimal symbol. project_settings extended with lengthUnitFull, areaUnit, decimalSymbol, numberGrouping, volumeUnit. Dialog is accessible via Project menu "Project Units..." item and dispatches updateElementProperty commands. Live preview shows formatted sample values in the selected units. 16 unit tests pass (formatUnit.test.ts + ProjectUnitsDialog.test.tsx).
 
 #### 2.1.8 Geschosshöhen (floor-to-floor heights via level editor)
 **Status: Done — P0**

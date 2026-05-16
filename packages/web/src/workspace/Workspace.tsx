@@ -114,6 +114,7 @@ import {
   ManageLinksDialog,
   ProjectMenu,
   ProjectSetupDialog,
+  ProjectUnitsDialog,
   type ProjectMenuItemRecent,
   pushRollingSnapshotBackup,
   pushRecentProject,
@@ -1008,6 +1009,7 @@ export function Workspace(): JSX.Element {
   const [projectMenuOpen, setProjectMenuOpen] = useState(false);
   const [manageLinksOpen, setManageLinksOpen] = useState(false);
   const [projectSetupOpen, setProjectSetupOpen] = useState(false);
+  const [projectUnitsOpen, setProjectUnitsOpen] = useState(false);
   const lensMode = useBimStore((s) => s.lensMode);
   const setLensMode = useBimStore((s) => s.setLensMode);
   const activeWorkspaceId = useBimStore((s) => s.activeWorkspaceId);
@@ -4031,6 +4033,7 @@ export function Workspace(): JSX.Element {
         onOpenMaterialBrowser={() => openMaterialBrowser()}
         onOpenAppearanceAssetBrowser={() => openAppearanceAssetBrowser()}
         onOpenProjectSetup={() => setProjectSetupOpen(true)}
+        onOpenProjectUnits={() => setProjectUnitsOpen(true)}
         onNewClear={handleNewClear}
         onReplayTour={replayOnboardingTour}
         onManageLinks={() => setManageLinksOpen(true)}
@@ -4072,6 +4075,7 @@ export function Workspace(): JSX.Element {
         }}
       />
       <ManageLinksDialog open={manageLinksOpen} onClose={() => setManageLinksOpen(false)} />
+      <ProjectUnitsDialog open={projectUnitsOpen} onClose={() => setProjectUnitsOpen(false)} />
       {modelId && (
         <MilestoneDialog
           open={milestoneDialogOpen}
