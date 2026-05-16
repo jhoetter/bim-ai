@@ -1,0 +1,32 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "e35427937195",
+  "session_id": "019e2c15-3903-7080-93f0-26ac15f4d057",
+  "strategy": "manual-commit",
+  "created_at": "2026-05-16T09:43:41.217376Z",
+  "branch": "main",
+  "checkpoints_count": 0,
+  "files_touched": [
+    "packages/web/src/state/storeCoercion.ts",
+    "app/bim_ai/elements.py",
+    "app/bim_ai/commands.py",
+    "app/bim_ai/engine.py"
+  ],
+  "agent": "Codex",
+  "model": "gpt-5.5",
+  "turn_id": "21f89abf4760",
+  "checkpoint_transcript_start": 3630,
+  "transcript_lines_at_start": 3630,
+  "initial_attribution": {
+    "calculated_at": "2026-05-16T09:43:40.182134Z",
+    "agent_lines": 0,
+    "agent_removed": 0,
+    "human_added": 0,
+    "human_modified": 0,
+    "human_removed": 0,
+    "total_committed": 0,
+    "total_lines_changed": 1574,
+    "agent_percentage": 0,
+    "metric_version": 2
+  }
+}
