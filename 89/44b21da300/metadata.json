@@ -137,6 +137,12 @@
       "transcript": "/89/44b21da300/20/full.jsonl",
       "content_hash": "/89/44b21da300/20/content_hash.txt",
       "prompt": "/89/44b21da300/20/prompt.txt"
+    },
+    {
+      "metadata": "/89/44b21da300/21/metadata.json",
+      "transcript": "/89/44b21da300/21/full.jsonl",
+      "content_hash": "/89/44b21da300/21/content_hash.txt",
+      "prompt": "/89/44b21da300/21/prompt.txt"
     }
   ],
   "token_usage": {
