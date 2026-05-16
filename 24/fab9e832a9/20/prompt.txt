@@ -1,0 +1,9 @@
+WP-E — §9.1.2 + §14.5 Column-at-grids options bar + named camera views
+
+  ▎ Your task is to add an options bar (selected grid count + Place/Clear buttons) and orange grid-line highlight to the column-at-grids tool in PlanCanvas.tsx, add viewType: 'perspective' | 'orthographic' 
+  ▎ to SavedViewElem, split saved views into "Saved Views" and "Camera Views" sections in WorkspaceLeftRail.tsx, and update spec/revit-parity/revit2026-parity-tracker.md §9.1.2 + §14.5 to Done. Full spec: 
+  ▎ spec/revit-parity/agent-prompts/WAVE3-WP-E.md.
+
+---
+
+❯ so you are done and tracker is updated?
