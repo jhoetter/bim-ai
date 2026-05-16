@@ -169,6 +169,12 @@
       "transcript": "/04/48832cd225/25/full.jsonl",
       "content_hash": "/04/48832cd225/25/content_hash.txt",
       "prompt": "/04/48832cd225/25/prompt.txt"
+    },
+    {
+      "metadata": "/04/48832cd225/26/metadata.json",
+      "transcript": "/04/48832cd225/26/full.jsonl",
+      "content_hash": "/04/48832cd225/26/content_hash.txt",
+      "prompt": "/04/48832cd225/26/prompt.txt"
     }
   ],
   "token_usage": {
