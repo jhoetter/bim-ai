@@ -19,6 +19,12 @@
       "transcript": "/aa/8030e3cb64/1/full.jsonl",
       "content_hash": "/aa/8030e3cb64/1/content_hash.txt",
       "prompt": "/aa/8030e3cb64/1/prompt.txt"
+    },
+    {
+      "metadata": "/aa/8030e3cb64/2/metadata.json",
+      "transcript": "/aa/8030e3cb64/2/full.jsonl",
+      "content_hash": "/aa/8030e3cb64/2/content_hash.txt",
+      "prompt": ""
     }
   ],
   "token_usage": {
