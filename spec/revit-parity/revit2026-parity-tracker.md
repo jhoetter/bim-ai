@@ -394,7 +394,7 @@ Measure tool is in the tool registry. Distance measurement is implemented. Angle
 
 #### 3.3.9 Gruppe »Erstellen« (create group in Modify: create similar, create group)
 **Status: Partial — P2**
-createSimilar.ts helper + CS shortcut in cheatsheet; PlanCanvas keyboard handler pending. Create Group (grouping multiple selected elements) is Not Started as an explicit workflow.
+createSimilar.ts helper + CS shortcut in cheatsheet; PlanCanvas keyboard handler pending. Create Group: implemented as `model.create-group` Cmd+K command — opens `CreateGroupDialog.tsx` (name prompt + centroid origin) when ≥2 elements selected (WP-B2).
 
 ### 3.4 Geschossdecken bearbeiten (edit floor/slab shapes)
 
@@ -776,15 +776,15 @@ Ramp tool in toolRegistry (hotkey RA, plan mode). 'ramp' ElemKind in core with w
 
 #### 8.9.1 Gruppen erstellen (group selected elements)
 **Status: Partial — P1**
-`groups/groupTypes.ts` defines `GroupDefinition` + `GroupInstance` + `GroupRegistry`. `groups/groupCommands.ts` implements all pure command logic: `applyCreateGroup`, `applyUngroupElements`, `applyRenameGroup` with tests. **Missing UI**: no "Create Group" action in the selection toolbar; no store slice wiring; no plan renderer (`plan/groupInstanceRender.ts`). Next wave: add `createGroup` dispatch to the selection toolbar (when ≥2 elements selected), wire `GroupRegistry` into the Zustand store, implement `plan/groupInstanceRender.ts` (dashed boundary + transformed child geometry), and add a "Groups" subtree to `ProjectBrowser.tsx`.
+`GroupRegistry` (definitions + instances) now in Zustand store (`StoreState.groupRegistry` + `setGroupRegistry`). `CreateGroupDialog.tsx` — modal dialog prompted by `model.create-group` Cmd+K palette command when ≥2 elements selected; computes centroid origin, validates name, calls `applyCreateGroup`, persists via `setGroupRegistry`. `model.ungroup` palette command removes a group instance from the registry. `groupCommands.test.ts` has 21 passing unit tests. **Still missing**: plan renderer for group bounding-box overlay (`plan/groupInstanceRender.ts`), Groups subtree in ProjectBrowser, 3D instance rendering.
 
 #### 8.9.2 Gruppen einfügen (place a group instance)
 **Status: Partial — P1**
-`placeGroup` command shape + `applyPlaceGroup` logic exist in `groupCommands.ts`. `'place-group'` ToolId is registered in `toolRegistry.ts`. **Missing**: grammar state machine for the placement click; options bar dropdown listing available group definitions; 3D viewport rendering of group instances (`viewport/groupInstance3d.ts`). Next wave: implement `reduceGroupPlacement` grammar and `groupInstance3d.ts` — reuse existing element mesh builders with transform offsets rather than building new geometry.
+`placeGroup` command shape + `applyPlaceGroup` logic exist in `groupCommands.ts`. `'place-group'` ToolId is registered in `toolRegistry.ts` and `tool.place-group` palette command activates the tool. **Still missing**: grammar state machine for the placement click sequence; options bar dropdown listing available group definitions; 3D viewport rendering of group instances.
 
 #### 8.9.3 Gruppen bearbeiten (edit group contents)
 **Status: Partial — P1**
-`editGroup`/`finishEditGroup` command shapes exist in `groupCommands.ts`. **Missing**: edit-mode UI — ghosting non-group elements, restricting selection to group members, and "Finish Editing" button. Next wave: add a `groupEditModeId` flag to the store; in `PlanCanvas.tsx` filter renderable elements to only group members when flag is set; add a floating "Finish Editing" banner that dispatches `finishEditGroup`.
+`editGroup`/`finishEditGroup` command shapes exist in `groupCommands.ts`. **Missing**: edit-mode UI — ghosting non-group elements, restricting selection to group members, and "Finish Editing" button.
 
 ### 8.10 Übungsfragen
 **Status: N/A**
