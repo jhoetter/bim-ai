@@ -41,7 +41,11 @@ import {
   initialLeaderTextState,
   reduceLeaderText,
   type LeaderTextState,
+  initialColumnAtGridsState,
+  reduceColumnAtGrids,
+  type ColumnAtGridsState,
 } from '../tools/toolGrammar';
+import { columnPositionsAtGridIntersections } from './columnAtGrids';
 import * as THREE from 'three';
 import { parseDimensionInput } from '@bim-ai/core';
 import type { Element, LensMode } from '@bim-ai/core';
@@ -461,6 +465,7 @@ export function PlanCanvas({
   const beamStateRef = useRef<BeamState>(initialBeamState());
   const ceilingStateRef = useRef<CeilingState>(initialCeilingState());
   const beamSystemStateRef = useRef<BeamSystemState>(initialBeamSystemState());
+  const columnAtGridsStateRef = useRef<ColumnAtGridsState>(initialColumnAtGridsState());
   const marqueeRef = useRef<{
     active: boolean;
     sx: number;
@@ -986,6 +991,9 @@ export function PlanCanvas({
       ceilingStateRef.current = initialCeilingState();
     } else if (planTool === 'beam-system') {
       beamSystemStateRef.current = initialBeamSystemState();
+    } else if (planTool === 'column-at-grids') {
+      const { state } = reduceColumnAtGrids(columnAtGridsStateRef.current, { kind: 'activate' });
+      columnAtGridsStateRef.current = state;
     }
   }, [planTool]);
 
@@ -4188,6 +4196,35 @@ export function PlanCanvas({
         bumpGeom((x) => x + 1);
         return;
       }
+      if (planTool === 'column-at-grids') {
+        // Pick the hovered grid line element from the raycaster
+        const ray = new THREE.Raycaster();
+        const rectBox = rnd.domElement.getBoundingClientRect();
+        ray.setFromCamera(
+          new THREE.Vector2(
+            ((ev.clientX - rectBox.left) / rectBox.width) * 2 - 1,
+            -(((ev.clientY - rectBox.top) / rectBox.height) * 2 - 1),
+          ),
+          cameraRef.current!,
+        );
+        const hits = ray.intersectObjects(grp.children, true);
+        const h = hits.find(
+          (x) => typeof (x.object.userData as { bimPickId?: unknown }).bimPickId === 'string',
+        );
+        if (h) {
+          const id = (h.object.userData as { bimPickId: string }).bimPickId;
+          const el = elementsById[id];
+          if (el?.kind === 'grid_line') {
+            const { state } = reduceColumnAtGrids(columnAtGridsStateRef.current, {
+              kind: 'toggleGrid',
+              gridId: id,
+            });
+            columnAtGridsStateRef.current = state;
+            bumpGeom((x) => x + 1);
+          }
+        }
+        return;
+      }
       if (planTool === 'room') {
         if (!lvlId || !sp) return;
         onSemanticCommand({
@@ -4674,6 +4711,10 @@ export function PlanCanvas({
           ceilingStateRef.current = initialCeilingState();
         } else if (planTool === 'beam-system') {
           beamSystemStateRef.current = initialBeamSystemState();
+        } else if (planTool === 'column-at-grids') {
+          const { state } = reduceColumnAtGrids(columnAtGridsStateRef.current, { kind: 'cancel' });
+          columnAtGridsStateRef.current = state;
+          bumpGeom((x) => x + 1);
         }
         if (
           hadDraft ||
@@ -4758,6 +4799,28 @@ export function PlanCanvas({
             return;
           }
         }
+      }
+      if (planTool === 'column-at-grids' && ev.key === 'Enter') {
+        ev.preventDefault();
+        const { state: nextState, effect } = reduceColumnAtGrids(columnAtGridsStateRef.current, {
+          kind: 'confirm',
+        });
+        columnAtGridsStateRef.current = nextState;
+        if (effect.commitAtGrids && lvlId) {
+          const selectedGrids = effect.commitAtGrids.selectedGridIds
+            .map((id) => elementsById[id])
+            .filter((e): e is Extract<Element, { kind: 'grid_line' }> => e?.kind === 'grid_line');
+          const positions = columnPositionsAtGridIntersections(selectedGrids);
+          for (const pos of positions) {
+            onSemanticCommand({
+              type: 'createColumn',
+              levelId: lvlId,
+              positionMm: pos,
+            });
+          }
+        }
+        bumpGeom((x) => x + 1);
+        return;
       }
       // B03 — PageUp/PageDown level cycling via PlanCamera.cycleLevel (spec §14.6)
       if (ev.key === 'PageUp' || ev.key === 'PageDown') {

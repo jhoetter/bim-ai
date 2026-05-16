@@ -1304,6 +1304,62 @@ export function reduceCeiling(
 }
 
 /* ────────────────────────────────────────────────────────────────────── */
+/* Column-at-Grids — click grid lines to select, Enter to place columns   */
+/* ────────────────────────────────────────────────────────────────────── */
+
+export type ColumnAtGridsState =
+  | { phase: 'idle' }
+  | { phase: 'selecting'; selectedGridIds: string[] };
+
+export type ColumnAtGridsEvent =
+  | { kind: 'activate' }
+  | { kind: 'deactivate' }
+  | { kind: 'toggleGrid'; gridId: string }
+  | { kind: 'confirm' }
+  | { kind: 'cancel' };
+
+export interface ColumnAtGridsEffect {
+  commitAtGrids?: { selectedGridIds: string[] };
+  stillActive: boolean;
+}
+
+export function initialColumnAtGridsState(): ColumnAtGridsState {
+  return { phase: 'idle' };
+}
+
+export function reduceColumnAtGrids(
+  state: ColumnAtGridsState,
+  event: ColumnAtGridsEvent,
+): { state: ColumnAtGridsState; effect: ColumnAtGridsEffect } {
+  if (event.kind === 'activate') {
+    return { state: { phase: 'selecting', selectedGridIds: [] }, effect: { stillActive: true } };
+  }
+  if (event.kind === 'deactivate' || event.kind === 'cancel') {
+    return { state: { phase: 'idle' }, effect: { stillActive: event.kind !== 'deactivate' } };
+  }
+  if (event.kind === 'toggleGrid') {
+    const ids = state.phase === 'selecting' ? state.selectedGridIds : [];
+    const next = ids.includes(event.gridId)
+      ? ids.filter((id) => id !== event.gridId)
+      : [...ids, event.gridId];
+    return {
+      state: { phase: 'selecting', selectedGridIds: next },
+      effect: { stillActive: true },
+    };
+  }
+  if (event.kind === 'confirm') {
+    const ids = state.phase === 'selecting' ? state.selectedGridIds : [];
+    if (ids.length >= 2) {
+      return {
+        state: { phase: 'idle' },
+        effect: { commitAtGrids: { selectedGridIds: ids }, stillActive: true },
+      };
+    }
+  }
+  return { state, effect: { stillActive: true } };
+}
+
+/* ────────────────────────────────────────────────────────────────────── */
 /* Beam System — sketch closed boundary, then fill with parallel beams    */
 /* ────────────────────────────────────────────────────────────────────── */
 

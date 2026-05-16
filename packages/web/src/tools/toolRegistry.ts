@@ -65,6 +65,7 @@ export type ToolId =
   | 'mep-terminal'
   | 'mep-opening-request'
   | 'column'
+  | 'column-at-grids'
   | 'beam'
   | 'brace'
   | 'beam-system'
@@ -515,6 +516,15 @@ export function getToolRegistry(t: TFunction): Record<ToolId, ToolDefinition> {
       modes: ['plan', '3d'],
       tooltip: t('tools.column.tooltip'),
     },
+    'column-at-grids': {
+      id: 'column-at-grids',
+      label: 'Column at Grids',
+      icon: 'column',
+      hotkey: 'CAG',
+      shortcut: 'CAG',
+      modes: ['plan'],
+      tooltip: 'Click grid lines then press Enter to place columns at all intersections',
+    },
     beam: {
       id: 'beam',
       label: t('tools.beam.label'),
@@ -822,6 +832,7 @@ const PALETTE_ORDER: ToolId[] = [
   'mep-terminal',
   'mep-opening-request',
   'column',
+  'column-at-grids',
   'beam',
   'beam-system',
   'mass-box',

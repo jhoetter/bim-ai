@@ -786,8 +786,8 @@ editGroup/finishEditGroup command shapes; edit mode UI pending.
 Column tool is in the registry. Architectural (non-load-bearing) columns and structural columns are both supported by Revit. In bim-ai, a generic column element exists. Separate architectural vs structural column types with different parameter sets are Not Explicitly Distinguished.
 
 #### 9.1.2 Raster für Stützen (column at grid intersections)
-**Status: Partial — P1**
-Grid exists. Placing columns at grid intersections (Revit: "At Grids" batch placement) is Not Started — columns must be placed individually.
+**Status: Partial — G3**
+`column-at-grids` tool added to toolRegistry (hotkey CAG, plan-only). Grammar: `ColumnAtGridsState` state machine in toolGrammar.ts; PlanCanvas.tsx wires click→toggleGrid (via raycaster pick) and Enter→confirm→`columnPositionsAtGridIntersections`→N `createColumn` commands. `columnAtGrids.ts` helper (gridLineIntersection + columnPositionsAtGridIntersections) with 5 tests. Missing: options bar UI button, visual highlight of selected grids.
 
 #### 9.1.3 Nichttragende Stützen (non-structural columns: pilasters, casing)
 **Status: Partial — P2**
