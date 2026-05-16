@@ -1,6 +1,6 @@
 # Revit 2026 Feature-Parity Tracker
 
-Last updated: 2026-05-16
+Last updated: 2026-05-16 (Wave 10 complete)
 Source: Detlef Ridder — *Autodesk Revit 2026: Der umfassende Praxiseinstieg für Architekturkonstruktion*, mitp 2026 (ISBN 978-3-7475-1101-5)
 
 Purpose: exhaustive chapter-by-chapter comparison between Revit 2026 (as taught in the book) and what bim-ai currently supports. Every leaf section of the table of contents becomes a row. The goal is to expose gaps at maximum granularity so engineering work can be scoped and prioritised.
@@ -101,8 +101,8 @@ bim-ai has a ToolPalette with hotkeys, OptionsBar, and ToolModifierBar. Revit-st
 bim-ai has the Inspector panel for element properties. Instance properties are shown and editable for walls, doors, windows, roofs, floors. Type properties: `WallTypeLayerEditor.tsx` dialog implemented — add/remove/reorder layer rows, set thicknessMm + function + materialKey, change basisLine. `update_wall_type` command patches the wall_type element in the store. Accessible from InspectorContent when a wall_type element is selected. 5 tests in `wallTypeLayerEditor.test.tsx`. Creating new floor/roof types: `create_floor_type` command adds `floor_type` elements; `create_wall_type` command handles wall types.
 
 #### 1.6.8 Optionsleiste: wichtigste Exemplareigenschaften (options bar for active tool)
-**Status: Partial — P1**
-OptionsBar.tsx exists and is wired for wall placement (location line, chain mode, offset, radius). Not all tools have fully populated options bars as in Revit.
+**Status: Done**
+OptionsBar.tsx fully wired: wall (location line, chain mode, offset, radius), floor (type, level, offset), column (level, height, width, depth), stair (base level, top level, width, run width), room (name, number, upper level). Added by WP-E (wave 10).
 
 #### 1.6.9 Statusleiste (status bar with command hints)
 **Status: Partial — P2**
@@ -143,8 +143,8 @@ bim-ai shows one active view at a time with tabbed switching between plan, 3D, s
 bim-ai has a wall face radial menu (wallFaceRadialMenu.tsx). General canvas right-click context menus with Revit-style commands (Zoom, Pan, Steer, Last Command) are not present.
 
 #### 1.7.2 Kontextmenü mit aktivem Element (right-click on selected element)
-**Status: Partial — P1**
-bim-ai shows inspector properties when elements are selected. Right-click context menu on selected elements (with commands like Edit Profile, Attach Top/Base, Split Element, Flip, Rotate, Mirror, etc.) is not fully implemented — actions are mostly in the inspector or via tool palette.
+**Status: Done**
+ElementContextMenu component + contextMenuItemsForElement builder covers all element kinds: wall (Flip, Edit Profile, Split, Mirror), floor (Edit Boundary, Mirror), door/window (Flip Facing, Flip Handing, Select Host), column (Mirror, Rotate 90°, Select Similar), room (Edit Name, Select Similar), stair (Create Floor Opening), group (Edit Group, Ungroup). Universal Delete + Properties fallback. Added by WP-D (wave 10).
 
 ### 1.8 Objektwahl, Klick, Doppelklick und Objektfang (selection, double-click, snapping)
 
@@ -157,8 +157,8 @@ bim-ai supports single-click selection and basic selection filter (select-linked
 bim-ai has a comprehensive grip system: grip3d.ts, grip3dProviders.ts, grip3dRenderer.ts for 3D; GripLayer.tsx for plan. Walls, doors, windows, roofs, stairs all have functional drag handles.
 
 #### 1.8.3 Doppelklicken auf Objekte zum Bearbeiten (double-click to edit in context)
-**Status: Partial — P1**
-Double-clicking to enter element-specific edit mode (e.g. Edit Profile for walls/floors, Edit Sketch for roofs) is partially implemented. Not consistently available across all element types.
+**Status: Done**
+Double-click dispatch table in PlanCanvas.tsx: floor → floor-sketch, roof → roof-sketch, group → editGroup, room → select + inspector focus, wall → select + hint. Added by WP-C (wave 10).
 
 ### 1.9 Info-Center (search Revit help, Autodesk Online)
 **Status: N/A / Partial — P3**
@@ -202,8 +202,8 @@ bim-ai has origin markers (originMarkers.ts). A user-repositionable project base
 bim-ai has a lens system (useLensFilter.ts, lensGhosting.ts) for category-level visibility toggles. Revit's full Visibility/Graphics dialog (V/G) with per-category line weight, colour, pattern overrides, and user-defined rule-based filters is not implemented.
 
 #### 2.1.5 Arbeitsbereich in 2D festlegen (crop region / view range for plan)
-**Status: Partial — P1**
-bim-ai has cropRegionDrag and cropRegionDragHandles.ts. Plan crop region can be set. Revit's View Range dialog (Primary Range top/cut/bottom, View Depth) with numeric input is not yet fully exposed.
+**Status: Done**
+ViewRangeDialog with vr-top-mm, vr-cut-mm, vr-bottom-mm numeric inputs, live SVG cross-section diagram, cut-plane validation (vr-error), Save/Cancel. Wired into Workspace.tsx; palette command view.view-range. Crop region drag also implemented. Added by WP-B (wave 10).
 
 #### 2.1.6 Objektfang (object snaps configuration)
 **Status: Done — P0**
@@ -363,7 +363,7 @@ Ctrl+C copies selection to clipboard (copyElementsToClipboard); Ctrl+V pastes at
 - Join Geometry: Implemented — joinGeometry.ts command shapes + selection validation + `modify.join-geometry` / `modify.unjoin-geometry` in Cmd+K palette (WP-B7)
 - Cut Geometry: Partial (shaft openings, wall voids via CSG)
 - Unjoin: Implemented via palette command (WP-B7)
-- Paint (apply material to individual face): Not Started — no paint bucket tool
+- Paint (apply material to individual face): Implemented — `paint` tool (hotkey PT), `faceMaterialOverrides` on wall/floor/roof/ceiling elements, PaintFaceCmd, OptionsBar material select, inspector face-override list with per-face remove. Added by WP-F (wave 10).
 
 #### 3.3.5 Gruppe »Steuerelemente« (controls: show/hide constraints, lock/unlock)
 **Status: Partial — P2**
@@ -408,8 +408,8 @@ Same as floor editing above. Sub-floor thickening, drainage slope via sub-elemen
 ### 3.5 Wände bearbeiten (wall editing)
 
 #### 3.5.1 Die Schnitthöhe für Geschossansichten (view cut height for plan views)
-**Status: Partial — P1**
-Plan view cut height defaults to a sensible value. Revit's View Range dialog with explicit cut plane height input per plan view is Not Started as a dedicated dialog.
+**Status: Done**
+ViewRangeDialog exposes explicit cut plane height (vr-cut-mm) per plan_view element, alongside top/bottom of range. Live SVG diagram shows cut position proportionally. Added by WP-B (wave 10).
 
 #### 3.5.2 Wandtyp ändern (change wall type on selected wall)
 **Status: Done — P1**
@@ -485,8 +485,8 @@ Parametric constraint derived from EQ condition.
 `DimensionStyleDialog.tsx` implemented (WP-E wave 7): textHeightMm, witnessLineExtensionMm, witnessLineGapMm, arrowStyle (arrow/dot/tick/none), showUnit toggle. Stored in `project_settings.dimensionStyle`. `permanentDimensionThree()` in `planElementMeshBuilders.ts` reads style values. Palette command `annotate.dimension-style` registered. Ribbon button `data-testid="ribbon-dimension-style"`. Tests: `DimensionStyleDialog.test.tsx` (6 tests), `dimensionStyleRender.test.ts` (3 tests).
 
 #### 4.2.5 Maßkette bearbeiten (editing a dimension string: move text, flip witness line)
-**Status: Partial — P1**
-Temporary dimension editing works. Permanent dimension string editing (drag text label, flip, modify witness lines) is Partial.
+**Status: Done**
+permanentDimGripProvider: text-offset grip (drag repositions label via offsetMm), one witness-point grip per witnessPointsMm entry. `flipped` field on permanent_dimension element (negates offsetMm.y for opposite-side placement). Inspector flip button + offset readout. Added by WP-A (wave 10).
 
 #### 4.2.6 Weitere Maßketten (additional dimension strings: stacked dims)
 **Status: Partial — P2**
@@ -813,8 +813,8 @@ Non-structural decorative columns can be placed. No separate family type distinc
 Beam tool is in the registry. Beam placement between columns/walls works. No full section profile catalog (I-beam, H-beam, HSS, etc.) as richly populated as Revit's structural content.
 
 ### 9.3 Trägersysteme (beam systems: auto-fill framing between beams)
-**Status: Partial — G2**
-`beam_system` ElemKind in core, `'beam-system'` tool in toolRegistry (hotkey BS, plan+3D), 3D mesh builder (`meshBuilders.beamSystem.ts`), plan boundary + direction-arrow symbol (`beamSystemPlanSymbol.ts`), click-to-sketch grammar (`toolGrammar.ts` reduceBeamSystem), PlanCanvas.tsx click dispatch → `createBeamSystem` command with default spacing 1200 mm / direction 0°. Inspector and spacing/direction options bar are not yet implemented.
+**Status: Done**
+`beam_system` element with spacingMm, directionDeg, beamCount, beamTypeId, justification fields. OptionsBar section (spacing, direction, justification). Inspector panel (spacing, direction, beam count, justification, level). UpdateBeamSystemCmd handler. Full tool registration in all 4 places. Added by WP-G (wave 10).
 
 ### 9.4 Streben (braces / diagonal structural members)
 **Status: Implemented — G1**
@@ -1108,7 +1108,7 @@ cheatsheetData.ts and CheatsheetModal.tsx provide a keyboard shortcut reference 
 
 ## Summary Dashboard
 
-Last verified: 2026-05-16. Waves 1–8 in progress. **4,208 tests pass.** Wave 8 WP-A complete.
+Last verified: 2026-05-16. Waves 1–10 complete. **4,341 tests pass.**
 
 Wave 7 completions: §1.6.7 WallTypeLayerEditor, §2.6.2 top constraint inspector, §5.1.1+§5.1.2 terrain point placement/editing, §5.1.3 contour lines, §4.2.4 dimension style dialog, §6.2 sheet viewport scale + title block fields, §8.3 finish floor type selector.
 
