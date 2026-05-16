@@ -103,3 +103,7 @@ You are resuming a crashed agent session on the bim-ai repo
   - Commit + push after each completed sub-task
   - Do NOT touch: stair/ramp, roof, export, phases, structural, or groups files
   - toolRegistry.ts is shared — always rebase before editing
+
+---
+
+did you update the tracker?
