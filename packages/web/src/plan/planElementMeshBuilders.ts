@@ -4,6 +4,7 @@ import { curtainGridCellId, type Element, type WallLocationLine } from '@bim-ai/
 import type { PlanDetailLevel } from './planDetailLevelLines';
 
 import { deterministicSchemeColorHex } from './roomSchemeColor';
+import { roomAreaM2 } from './roomArea';
 import {
   ux,
   uz,
@@ -1365,6 +1366,8 @@ export function roomMesh(
 
   const c = centroidMm(room.outlineMm);
 
+  const _roomAreaM2 = roomAreaM2(room.outlineMm);
+  mesh.userData.roomAreaM2 = _roomAreaM2;
   mesh.userData.roomLabel = {
     cx: ux(c.xMm),
     cz: uz(c.yMm),
@@ -1826,6 +1829,7 @@ export function permanentDimensionThree(
   geo.setAttribute('position', new THREE.Float32BufferAttribute(linePositions, 3));
   const ls = new THREE.LineSegments(geo, new THREE.LineBasicMaterial({ color: dimColor }));
   ls.userData.bimPickId = d.id;
+  ls.userData.dimOffsetDrag = true;
   grp.add(ls);
 
   // Per-segment labels: "EQ" when eqEnabled, numeric otherwise

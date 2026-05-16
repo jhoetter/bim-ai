@@ -469,8 +469,8 @@ Dimension tool is in the tool registry. autoDimension.ts, tempDimensions.ts, hel
 ### 4.2 Die ausgerichtete Bemaßung (aligned dimension)
 
 #### 4.2.1 Beispiel für ausgerichtete Bemaßung (basic aligned dim chain)
-**Status: Partial — P1**
-Aligned dimension placement is partially implemented. Creating a full Revit-style permanent dimension chain clicking multiple reference lines is partial.
+**Status: Done — P1**
+Multi-click permanent dimension chain placement implemented (wave 8 WP-A). `PermanentDimState` / `reducePermanentDim` grammar in `toolGrammar.ts`: activate → picking → click appends witness points → Enter/double-click commits → Escape cancels. `CreatePermanentDimensionCmd` type added to `core/index.ts`. Client-side handler in `Workspace.tsx` adds `permanent_dimension` element to `elementsById`. Dashed preview polyline + snap circles at picked points rendered in PlanCanvas. `userData.dimOffsetDrag = true` tagged on dimension line mesh for future drag grip. Tests in `permanentDimGrammar.test.ts` (6 tests).
 
 #### 4.2.2 EQ-Bedingung (equal constraint on dimension chain)
 **Status: Partial — P2 (EQ toggle, visual display, and command handler implemented; parametric enforcement pending)**
@@ -1108,9 +1108,11 @@ cheatsheetData.ts and CheatsheetModal.tsx provide a keyboard shortcut reference 
 
 ## Summary Dashboard
 
-Last verified: 2026-05-16. Waves 1–7 complete (WP-A through WP-G × 7). **4,163 tests pass, 0 failures.** Wave 8 prompts written.
+Last verified: 2026-05-16. Waves 1–8 in progress. **4,208 tests pass.** Wave 8 WP-A complete.
 
 Wave 7 completions: §1.6.7 WallTypeLayerEditor, §2.6.2 top constraint inspector, §5.1.1+§5.1.2 terrain point placement/editing, §5.1.3 contour lines, §4.2.4 dimension style dialog, §6.2 sheet viewport scale + title block fields, §8.3 finish floor type selector.
+
+Wave 8 completions: §4.2.1 permanent dimension chain placement grammar (WP-A).
 
 ### By Chapter — Implementation State
 

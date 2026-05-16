@@ -1753,6 +1753,41 @@ export function Workspace(): JSX.Element {
         useBimStore.getState().setGroupEditModeDefinitionId(null);
         return;
       }
+      // §5.1.4: create a terrain pad element client-side
+      if (cmd.type === 'create_toposolid_pad') {
+        const current = useBimStore.getState().elementsById;
+        useBimStore.setState({
+          elementsById: {
+            ...current,
+            [cmd.id as string]: {
+              kind: 'toposolid_pad',
+              id: cmd.id as string,
+              toposolidId: cmd.toposolidId as string,
+              boundaryMm: cmd.boundaryMm as { xMm: number; yMm: number }[],
+              elevationMm: cmd.elevationMm as number,
+            },
+          },
+        });
+        return;
+      }
+      // §4.2.1: client-only permanent dimension chain creation
+      if (cmd.type === 'create_permanent_dimension') {
+        const current = useBimStore.getState().elementsById;
+        useBimStore.setState({
+          elementsById: {
+            ...current,
+            [cmd.id as string]: {
+              kind: 'permanent_dimension',
+              id: cmd.id as string,
+              levelId: cmd.levelId as string,
+              witnessPointsMm: cmd.witnessPointsMm as { xMm: number; yMm: number }[],
+              offsetMm: cmd.offsetMm as { xMm: number; yMm: number },
+              eqEnabled: false,
+            },
+          },
+        });
+        return;
+      }
       // §5.1.1: patch heightSamples / thicknessMm / baseElevationMm on a toposolid
       if (cmd.type === 'update_toposolid') {
         const current = useBimStore.getState().elementsById;
@@ -1772,6 +1807,49 @@ export function Workspace(): JSX.Element {
             ...current,
             [cmd.id as string]: { ...current[cmd.id as string], ...(cmd.patch as object) },
           },
+        });
+        return;
+      }
+      // §3.3.6: split a wall at a point on its centreline into two walls
+      if (cmd.type === 'split_wall') {
+        const wallId = cmd.wallId as string;
+        const splitPt = cmd.splitPointMm as { xMm: number; yMm: number };
+        const current = useBimStore.getState().elementsById;
+        const wall = current[wallId];
+        if (!wall || wall.kind !== 'wall') return;
+        const ax = wall.start.xMm;
+        const ay = wall.start.yMm;
+        const bx = wall.end.xMm;
+        const by = wall.end.yMm;
+        const dx = bx - ax;
+        const dy = by - ay;
+        const len2 = dx * dx + dy * dy;
+        const t =
+          len2 < 1e-9
+            ? 0
+            : Math.max(
+                0.001,
+                Math.min(0.999, ((splitPt.xMm - ax) * dx + (splitPt.yMm - ay) * dy) / len2),
+              );
+        const px = ax + dx * t;
+        const py = ay + dy * t;
+        const splitPoint = { xMm: px, yMm: py };
+        const { id: _id, start: _start, end: _end, ...sharedFields } = wall;
+        const wallA = {
+          ...sharedFields,
+          id: crypto.randomUUID(),
+          start: wall.start,
+          end: splitPoint,
+        };
+        const wallB = {
+          ...sharedFields,
+          id: crypto.randomUUID(),
+          start: splitPoint,
+          end: wall.end,
+        };
+        const { [wallId]: _removed, ...rest } = current;
+        useBimStore.setState({
+          elementsById: { ...rest, [wallA.id]: wallA, [wallB.id]: wallB },
         });
         return;
       }

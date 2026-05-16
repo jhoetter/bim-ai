@@ -66,6 +66,18 @@ import {
   initialSteelConnectionState,
   reduceSteelConnection,
   type SteelConnectionState,
+  initialSplitWallState,
+  reduceSplitWall,
+  type SplitWallState,
+  initialTerrainPadState,
+  reduceTerrainPad,
+  type TerrainPadState,
+  initialTerrainPointState,
+  reduceTerrainPoint,
+  type TerrainPointState,
+  initialPermanentDimState,
+  reducePermanentDim,
+  type PermanentDimState,
 } from '../tools/toolGrammar';
 import { buildScaleCommand, distanceMm } from './scaleTool';
 import { linearArrayOffsets, radialArrayAngles, radialOffsetForElement } from './arrayTool';
@@ -474,6 +486,7 @@ export function PlanCanvas({
     useState<RoofByExtrusionState['phase']>('idle');
   const revisionCloudStateRef = useRef<RevisionCloudState>(initialRevisionCloudState());
   const splitStateRef = useRef<SplitState>(initialSplitState());
+  const splitWallStateRef = useRef<SplitWallState>(initialSplitWallState());
   const trimStateRef = useRef<TrimState>(initialTrimState());
   const trimExtendFirstWallRef = useRef<string | null>(null);
   const [trimExtendFirstWallSet, setTrimExtendFirstWallSet] = useState(false);
@@ -504,6 +517,10 @@ export function PlanCanvas({
   const beamSystemStateRef = useRef<BeamSystemState>(initialBeamSystemState());
   const columnAtGridsStateRef = useRef<ColumnAtGridsState>(initialColumnAtGridsState());
   const steelConnectionStateRef = useRef<SteelConnectionState>(initialSteelConnectionState());
+  const terrainPointStateRef = useRef<TerrainPointState>(initialTerrainPointState());
+  const terrainPadStateRef = useRef<TerrainPadState>(initialTerrainPadState());
+  const permanentDimStateRef = useRef<PermanentDimState>(initialPermanentDimState());
+  const dimSnapCirclesRef = useRef<THREE.Mesh[]>([]);
   const marqueeRef = useRef<{
     active: boolean;
     sx: number;
@@ -1008,6 +1025,7 @@ export function PlanCanvas({
     setScalePhase('idle');
     setNumericInput(null);
     splitStateRef.current = initialSplitState();
+    splitWallStateRef.current = initialSplitWallState();
     trimStateRef.current = initialTrimState();
     trimExtendFirstWallRef.current = null;
     setTrimExtendFirstWallSet(false);
@@ -1018,6 +1036,9 @@ export function PlanCanvas({
     } else if (planTool === 'split') {
       const { state } = reduceSplit(splitStateRef.current, { kind: 'activate' });
       splitStateRef.current = state;
+    } else if (planTool === 'split-wall') {
+      const { state } = reduceSplitWall(splitWallStateRef.current, { kind: 'activate' });
+      splitWallStateRef.current = state;
     } else if (planTool === 'trim') {
       const { state } = reduceTrim(trimStateRef.current, { kind: 'activate' });
       trimStateRef.current = state;
@@ -2737,7 +2758,6 @@ export function PlanCanvas({
       if (
         (planTool === 'wall' && d?.kind === 'wall') ||
         (planTool === 'grid' && d?.kind === 'grid') ||
-        (planTool === 'dimension' && d?.kind === 'dim') ||
         (planTool === 'measure' && d?.kind === 'measure')
       ) {
         const pv =
@@ -2745,12 +2765,60 @@ export function PlanCanvas({
             ? new THREE.Vector3(d.sx / 1000, SLICE_Y, d.sy / 1000)
             : planTool === 'grid' && d?.kind === 'grid'
               ? new THREE.Vector3(d.sx / 1000, SLICE_Y, d.sy / 1000)
-              : planTool === 'dimension' && d?.kind === 'dim'
+              : planTool === 'measure' && d?.kind === 'measure'
                 ? new THREE.Vector3(d.ax / 1000, SLICE_Y, d.ay / 1000)
-                : planTool === 'measure' && d?.kind === 'measure'
-                  ? new THREE.Vector3(d.ax / 1000, SLICE_Y, d.ay / 1000)
-                  : p;
+                : p;
         redrawSeg(pv, p);
+      }
+      if (planTool === 'dimension') {
+        const { state } = reducePermanentDim(permanentDimStateRef.current, {
+          kind: 'moveMouse',
+          xMm: v.xMm,
+          yMm: v.yMm,
+        });
+        permanentDimStateRef.current = state;
+        // Clean up existing snap circles
+        for (const c of dimSnapCirclesRef.current) {
+          grp.remove(c);
+          c.geometry.dispose();
+        }
+        dimSnapCirclesRef.current = [];
+        if (state.phase === 'picking' && state.points.length >= 1) {
+          const allPts = [...state.points, { xMm: v.xMm, yMm: v.yMm }];
+          const threePts = allPts.map(
+            (pt) => new THREE.Vector3(pt.xMm / 1000, SLICE_Y, pt.yMm / 1000),
+          );
+          if (previewRef.current) {
+            grp.remove(previewRef.current);
+            previewRef.current.geometry.dispose();
+          }
+          const geo = new THREE.BufferGeometry().setFromPoints(threePts);
+          const mat = new THREE.LineDashedMaterial({
+            color: readPlanToken('--draft-construction-blue', '#fcd34d'),
+            dashSize: 0.25,
+            gapSize: 0.12,
+          });
+          const line = new THREE.Line(geo, mat);
+          line.computeLineDistances();
+          line.userData.preview = 'dim-chain';
+          previewRef.current = line;
+          grp.add(previewRef.current);
+          // Snap circles at each already-picked point
+          const snapMat = new THREE.MeshBasicMaterial({
+            color: readPlanToken('--draft-construction-blue', '#fcd34d'),
+            side: THREE.DoubleSide,
+          });
+          for (const pt of state.points) {
+            const circleGeo = new THREE.CircleGeometry(0.1, 16);
+            const circle = new THREE.Mesh(circleGeo, snapMat);
+            circle.position.set(pt.xMm / 1000, SLICE_Y + 0.003, pt.yMm / 1000);
+            circle.rotation.x = -Math.PI / 2;
+            circle.userData.preview = 'dim-chain';
+            grp.add(circle);
+            dimSnapCirclesRef.current.push(circle);
+          }
+          bumpGeom((x) => x + 1);
+        }
       }
       // TOP-V3-03: dashed polygon preview while sketching a subdivision region.
       if (
@@ -2776,6 +2844,53 @@ export function PlanCanvas({
         line.computeLineDistances();
         previewRef.current = line;
         grp.add(previewRef.current);
+      }
+      // §5.1.4 — terrain-pad polygon preview while sketching
+      if (planTool === 'terrain-pad' && terrainPadStateRef.current.phase === 'sketching') {
+        const pts = [
+          ...terrainPadStateRef.current.points.map(
+            (pt) => new THREE.Vector3(pt.xMm / 1000, SLICE_Y, pt.yMm / 1000),
+          ),
+          p,
+        ];
+        if (previewRef.current) {
+          grp.remove(previewRef.current);
+          previewRef.current.geometry.dispose();
+        }
+        const geo = new THREE.BufferGeometry().setFromPoints(pts);
+        const mat = new THREE.LineDashedMaterial({
+          color: '#c8a882',
+          dashSize: 0.25,
+          gapSize: 0.12,
+        });
+        const line = new THREE.Line(geo, mat);
+        line.computeLineDistances();
+        previewRef.current = line;
+        grp.add(previewRef.current);
+      }
+      // §3.3.6 — split-wall hover: track nearest wall under cursor
+      if (planTool === 'split-wall') {
+        const nearest = nearestWallAt(elementsById, displayLevelId || undefined, v.xMm, v.yMm);
+        if (nearest && nearest.distMm < 900 && nearest.alongT > 0.001 && nearest.alongT < 0.999) {
+          const hoverPt = {
+            xMm:
+              nearest.wall.start.xMm +
+              (nearest.wall.end.xMm - nearest.wall.start.xMm) * nearest.alongT,
+            yMm:
+              nearest.wall.start.yMm +
+              (nearest.wall.end.yMm - nearest.wall.start.yMm) * nearest.alongT,
+          };
+          const { state } = reduceSplitWall(splitWallStateRef.current, {
+            kind: 'hoverWall',
+            wallId: nearest.wall.id,
+            pointMm: hoverPt,
+          });
+          splitWallStateRef.current = state;
+        } else {
+          const { state } = reduceSplitWall(splitWallStateRef.current, { kind: 'hoverClear' });
+          splitWallStateRef.current = state;
+        }
+        bumpGeom((x) => x + 1);
       }
       // F-115 — live ghost preview for the component placement tool.
       if (planTool === 'component') {
@@ -3553,23 +3668,30 @@ export function PlanCanvas({
         return;
       }
       if (planTool === 'dimension') {
-        const d = draftRef.current;
-        if (!d || d.kind !== 'dim') {
-          draftRef.current = { kind: 'dim', ax: sp.xMm, ay: sp.yMm };
-          bumpGeom((x) => x + 1);
-          return;
+        if (permanentDimStateRef.current.phase === 'idle') {
+          const { state } = reducePermanentDim(permanentDimStateRef.current, {
+            kind: 'activate',
+            levelId: lvlId ?? displayLevelId ?? 'lvl-0',
+          });
+          permanentDimStateRef.current = state;
         }
-        const dx = sp.xMm - d.ax;
-        const dy = sp.yMm - d.ay;
-        const m = Math.hypot(dx, dy) || 1;
-        onSemanticCommand({
-          type: 'createDimension',
-          levelId: lvlId,
-          aMm: { xMm: d.ax, yMm: d.ay },
-          bMm: { xMm: sp.xMm, yMm: sp.yMm },
-          offsetMm: { xMm: (-dy / m) * 450, yMm: (dx / m) * 450 },
+        const { state, effect } = reducePermanentDim(permanentDimStateRef.current, {
+          kind: 'click',
+          xMm: sp.xMm,
+          yMm: sp.yMm,
         });
-        draftRef.current = undefined;
+        permanentDimStateRef.current = state;
+        if (effect.createPermanentDim) {
+          const { levelId: dimLevel, witnessPointsMm, offsetMm } = effect.createPermanentDim;
+          onSemanticCommand({
+            type: 'create_permanent_dimension',
+            id: crypto.randomUUID(),
+            levelId: dimLevel,
+            witnessPointsMm,
+            offsetMm,
+          });
+          permanentDimStateRef.current = initialPermanentDimState();
+        }
         bumpGeom((x) => x + 1);
         return;
       }
@@ -4190,6 +4312,37 @@ export function PlanCanvas({
         }
         return;
       }
+      if (planTool === 'split-wall') {
+        const nearest = nearestWallAt(elementsById, displayLevelId || undefined, sp.xMm, sp.yMm);
+        if (nearest && nearest.distMm < 900 && nearest.alongT > 0.001 && nearest.alongT < 0.999) {
+          const pointMm = {
+            xMm:
+              nearest.wall.start.xMm +
+              (nearest.wall.end.xMm - nearest.wall.start.xMm) * nearest.alongT,
+            yMm:
+              nearest.wall.start.yMm +
+              (nearest.wall.end.yMm - nearest.wall.start.yMm) * nearest.alongT,
+          };
+          const { effect } = reduceSplitWall(splitWallStateRef.current, {
+            kind: 'click',
+            wallId: nearest.wall.id,
+            pointMm,
+          });
+          splitWallStateRef.current = {
+            phase: 'active',
+            hoverWallId: nearest.wall.id,
+            hoverPointMm: pointMm,
+          };
+          if (effect.splitWall) {
+            void onSemanticCommand({
+              type: 'split_wall',
+              wallId: effect.splitWall.wallId,
+              splitPointMm: effect.splitWall.splitPointMm,
+            });
+          }
+        }
+        return;
+      }
       if (planTool === 'trim') {
         const rectBox = rnd.domElement.getBoundingClientRect();
         const ray = new THREE.Raycaster();
@@ -4574,6 +4727,53 @@ export function PlanCanvas({
             yMm: sp.yMm,
           });
           terrainPointStateRef.current = state;
+        }
+        bumpGeom((x) => x + 1);
+        return;
+      }
+      if (planTool === 'terrain-pad') {
+        if (terrainPadStateRef.current.phase === 'idle') {
+          const rectBox = rnd.domElement.getBoundingClientRect();
+          const ray = new THREE.Raycaster();
+          ray.setFromCamera(
+            new THREE.Vector2(
+              ((ev.clientX - rectBox.left) / rectBox.width) * 2 - 1,
+              -(((ev.clientY - rectBox.top) / rectBox.height) * 2 - 1),
+            ),
+            camNow,
+          );
+          const hits = ray.intersectObjects(grp.children, true);
+          const h = hits.find(
+            (x) => typeof (x.object.userData as { bimPickId?: unknown }).bimPickId === 'string',
+          );
+          const pickId =
+            typeof (h?.object.userData as { bimPickId?: unknown }).bimPickId === 'string'
+              ? (h!.object.userData as { bimPickId: string }).bimPickId
+              : undefined;
+          const topoId =
+            pickId && useBimStore.getState().elementsById[pickId]?.kind === 'toposolid'
+              ? pickId
+              : undefined;
+          if (topoId) {
+            const topo = useBimStore.getState().elementsById[topoId] as Extract<
+              Element,
+              { kind: 'toposolid' }
+            >;
+            const elevationMm = topo.baseElevationMm ?? 0;
+            const { state } = reduceTerrainPad(terrainPadStateRef.current, {
+              kind: 'activate',
+              toposolidId: topoId,
+              elevationMm,
+            });
+            terrainPadStateRef.current = state;
+          }
+        } else {
+          const { state } = reduceTerrainPad(terrainPadStateRef.current, {
+            kind: 'click',
+            xMm: sp.xMm,
+            yMm: sp.yMm,
+          });
+          terrainPadStateRef.current = state;
         }
         bumpGeom((x) => x + 1);
         return;
@@ -5208,6 +5408,9 @@ export function PlanCanvas({
         } else if (planTool === 'split') {
           const { state } = reduceSplit(splitStateRef.current, { kind: 'cancel' });
           splitStateRef.current = state;
+        } else if (planTool === 'split-wall') {
+          const { state } = reduceSplitWall(splitWallStateRef.current, { kind: 'cancel' });
+          splitWallStateRef.current = state;
         } else if (planTool === 'trim') {
           const { state } = reduceTrim(trimStateRef.current, { kind: 'cancel' });
           trimStateRef.current = state;
@@ -5230,9 +5433,22 @@ export function PlanCanvas({
           ceilingStateRef.current = initialCeilingState();
         } else if (planTool === 'excavation') {
           excavationStateRef.current = initialExcavationState();
+        } else if (planTool === 'dimension') {
+          const { state } = reducePermanentDim(permanentDimStateRef.current, { kind: 'cancel' });
+          permanentDimStateRef.current = state;
+          for (const c of dimSnapCirclesRef.current) {
+            grp.remove(c);
+            c.geometry.dispose();
+          }
+          dimSnapCirclesRef.current = [];
+          bumpGeom((x) => x + 1);
         } else if (planTool === 'terrain-point') {
           const { state } = reduceTerrainPoint(terrainPointStateRef.current, { kind: 'cancel' });
           terrainPointStateRef.current = state;
+        } else if (planTool === 'terrain-pad') {
+          const { state } = reduceTerrainPad(terrainPadStateRef.current, { kind: 'cancel' });
+          terrainPadStateRef.current = state;
+          bumpGeom((x) => x + 1);
         } else if (planTool === 'beam-system') {
           beamSystemStateRef.current = initialBeamSystemState();
         } else if (planTool === 'steel-connection') {
@@ -5422,6 +5638,49 @@ export function PlanCanvas({
               patch: { heightSamples: [...existing, ...samples] },
             });
           }
+          bumpGeom((x) => x + 1);
+        }
+        return;
+      }
+      if (planTool === 'terrain-pad' && ev.key === 'Enter') {
+        ev.preventDefault();
+        if (terrainPadStateRef.current.phase === 'sketching') {
+          const { effect } = reduceTerrainPad(terrainPadStateRef.current, { kind: 'commit' });
+          if (effect.createTerrainPad) {
+            terrainPadStateRef.current = initialTerrainPadState();
+            onSemanticCommand({
+              type: 'create_toposolid_pad',
+              id: crypto.randomUUID(),
+              toposolidId: effect.createTerrainPad.toposolidId,
+              boundaryMm: effect.createTerrainPad.boundaryMm,
+              elevationMm: effect.createTerrainPad.elevationMm,
+            });
+          }
+          bumpGeom((x) => x + 1);
+        }
+        return;
+      }
+      if (planTool === 'dimension' && ev.key === 'Enter') {
+        ev.preventDefault();
+        const { state, effect } = reducePermanentDim(permanentDimStateRef.current, {
+          kind: 'commit',
+        });
+        permanentDimStateRef.current = state;
+        if (effect.createPermanentDim) {
+          const { levelId: dimLevel, witnessPointsMm, offsetMm } = effect.createPermanentDim;
+          onSemanticCommand({
+            type: 'create_permanent_dimension',
+            id: crypto.randomUUID(),
+            levelId: dimLevel,
+            witnessPointsMm,
+            offsetMm,
+          });
+          clearPreview();
+          for (const c of dimSnapCirclesRef.current) {
+            grp.remove(c);
+            c.geometry.dispose();
+          }
+          dimSnapCirclesRef.current = [];
           bumpGeom((x) => x + 1);
         }
         return;
@@ -5759,6 +6018,31 @@ export function PlanCanvas({
     // the corresponding view. Looks up bimPickId via raycast, then routes to
     // the right activation action based on element kind.
     const onDblClick = (ev: MouseEvent) => {
+      if (planTool === 'dimension') {
+        ev.preventDefault();
+        const { state, effect } = reducePermanentDim(permanentDimStateRef.current, {
+          kind: 'commit',
+        });
+        permanentDimStateRef.current = state;
+        if (effect.createPermanentDim) {
+          const { levelId: dimLevel, witnessPointsMm, offsetMm } = effect.createPermanentDim;
+          onSemanticCommand({
+            type: 'create_permanent_dimension',
+            id: crypto.randomUUID(),
+            levelId: dimLevel,
+            witnessPointsMm,
+            offsetMm,
+          });
+          clearPreview();
+          for (const c of dimSnapCirclesRef.current) {
+            grp.remove(c);
+            c.geometry.dispose();
+          }
+          dimSnapCirclesRef.current = [];
+          bumpGeom((x) => x + 1);
+        }
+        return;
+      }
       if (planTool === 'area-boundary') {
         const d = draftRef.current;
         if (d && d.kind === 'area-boundary' && d.verts.length >= 3) {
@@ -5797,6 +6081,27 @@ export function PlanCanvas({
             id: crypto.randomUUID(),
             boundaryMm: effect.createExcavationEffect.boundaryMm,
             depthMm: effect.createExcavationEffect.depthMm,
+          });
+        }
+        bumpGeom((x) => x + 1);
+        return;
+      }
+      // §5.1.4: double-click with ≥3 points commits terrain-pad
+      if (
+        planTool === 'terrain-pad' &&
+        terrainPadStateRef.current.phase === 'sketching' &&
+        terrainPadStateRef.current.points.length >= 3
+      ) {
+        ev.preventDefault();
+        const { effect } = reduceTerrainPad(terrainPadStateRef.current, { kind: 'commit' });
+        if (effect.createTerrainPad) {
+          terrainPadStateRef.current = initialTerrainPadState();
+          onSemanticCommand({
+            type: 'create_toposolid_pad',
+            id: crypto.randomUUID(),
+            toposolidId: effect.createTerrainPad.toposolidId,
+            boundaryMm: effect.createTerrainPad.boundaryMm,
+            elevationMm: effect.createTerrainPad.elevationMm,
           });
         }
         bumpGeom((x) => x + 1);

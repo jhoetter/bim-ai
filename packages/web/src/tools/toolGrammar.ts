@@ -7,7 +7,7 @@
  */
 
 export type { WallLocationLine } from '@bim-ai/core';
-import type { WallLocationLine, HeightSample } from '@bim-ai/core';
+import type { WallLocationLine, HeightSample, XY } from '@bim-ai/core';
 
 /* ────────────────────────────────────────────────────────────────────── */
 /* EDT-06 — Tool grammar polish (Chain / Multiple / Tag-on-Place /        */
@@ -2723,4 +2723,231 @@ export function reduceTerrainPoint(
     };
   }
   return { state, effect: { stillActive: true } };
+}
+
+/* ────────────────────────────────────────────────────────────────────── */
+/* Terrain Pad — §5.1.4                                                   */
+/* ────────────────────────────────────────────────────────────────────── */
+
+export type TerrainPadState =
+  | { phase: 'idle' }
+  | {
+      phase: 'sketching';
+      toposolidId: string;
+      points: { xMm: number; yMm: number }[];
+      elevationMm: number;
+    };
+
+export type TerrainPadEvent =
+  | { kind: 'activate'; toposolidId: string; elevationMm: number }
+  | { kind: 'click'; xMm: number; yMm: number }
+  | { kind: 'commit' }
+  | { kind: 'cancel' };
+
+export interface TerrainPadEffect {
+  createTerrainPad?: {
+    toposolidId: string;
+    boundaryMm: { xMm: number; yMm: number }[];
+    elevationMm: number;
+  };
+  stillActive: boolean;
+}
+
+export function initialTerrainPadState(): TerrainPadState {
+  return { phase: 'idle' };
+}
+
+export function reduceTerrainPad(
+  state: TerrainPadState,
+  event: TerrainPadEvent,
+): { state: TerrainPadState; effect: TerrainPadEffect } {
+  if (event.kind === 'cancel') {
+    return { state: { phase: 'idle' }, effect: { stillActive: false } };
+  }
+  if (event.kind === 'activate') {
+    return {
+      state: {
+        phase: 'sketching',
+        toposolidId: event.toposolidId,
+        points: [],
+        elevationMm: event.elevationMm,
+      },
+      effect: { stillActive: true },
+    };
+  }
+  if (state.phase !== 'sketching') {
+    return { state, effect: { stillActive: false } };
+  }
+  if (event.kind === 'click') {
+    return {
+      state: { ...state, points: [...state.points, { xMm: event.xMm, yMm: event.yMm }] },
+      effect: { stillActive: true },
+    };
+  }
+  if (event.kind === 'commit') {
+    if (state.points.length < 3) {
+      return { state, effect: { stillActive: true } };
+    }
+    return {
+      state: { phase: 'idle' },
+      effect: {
+        createTerrainPad: {
+          toposolidId: state.toposolidId,
+          boundaryMm: state.points,
+          elevationMm: state.elevationMm,
+        },
+        stillActive: false,
+      },
+    };
+  }
+  return { state, effect: { stillActive: true } };
+}
+
+/* ────────────────────────────────────────────────────────────────────── */
+/* Permanent Dimension Chain — §4.2.1                                      */
+/* ────────────────────────────────────────────────────────────────────── */
+
+export type PermanentDimState =
+  | { phase: 'idle' }
+  | { phase: 'picking'; levelId: string; points: XY[]; cursorMm: XY | null };
+
+export type PermanentDimEvent =
+  | { kind: 'activate'; levelId: string }
+  | { kind: 'moveMouse'; xMm: number; yMm: number }
+  | { kind: 'click'; xMm: number; yMm: number }
+  | { kind: 'commit' }
+  | { kind: 'cancel' };
+
+export interface PermanentDimEffect {
+  previewDim?: { points: XY[]; cursorMm: XY | null };
+  createPermanentDim?: { levelId: string; witnessPointsMm: XY[]; offsetMm: XY };
+  stillActive: boolean;
+}
+
+export function initialPermanentDimState(): PermanentDimState {
+  return { phase: 'idle' };
+}
+
+export function reducePermanentDim(
+  state: PermanentDimState,
+  event: PermanentDimEvent,
+): { state: PermanentDimState; effect: PermanentDimEffect } {
+  if (event.kind === 'cancel') {
+    return { state: { phase: 'idle' }, effect: { stillActive: false } };
+  }
+  if (event.kind === 'activate') {
+    return {
+      state: { phase: 'picking', levelId: event.levelId, points: [], cursorMm: null },
+      effect: { stillActive: true },
+    };
+  }
+  if (state.phase !== 'picking') {
+    return { state, effect: { stillActive: false } };
+  }
+  if (event.kind === 'moveMouse') {
+    const cursorMm: XY = { xMm: event.xMm, yMm: event.yMm };
+    const next: PermanentDimState = { ...state, cursorMm };
+    return {
+      state: next,
+      effect: { previewDim: { points: state.points, cursorMm }, stillActive: true },
+    };
+  }
+  if (event.kind === 'click') {
+    const points = [...state.points, { xMm: event.xMm, yMm: event.yMm }];
+    return {
+      state: { ...state, points },
+      effect: { previewDim: { points, cursorMm: state.cursorMm }, stillActive: true },
+    };
+  }
+  if (event.kind === 'commit') {
+    if (state.points.length < 2) {
+      return { state, effect: { stillActive: true } };
+    }
+    return {
+      state: { phase: 'idle' },
+      effect: {
+        createPermanentDim: {
+          levelId: state.levelId,
+          witnessPointsMm: state.points,
+          offsetMm: { xMm: 0, yMm: -1000 },
+        },
+        stillActive: false,
+      },
+    };
+  }
+  return { state, effect: { stillActive: true } };
+}
+
+/* ────────────────────────────────────────────────────────────────────── */
+/* Split Wall — §3.3.6                                                     */
+/* ────────────────────────────────────────────────────────────────────── */
+
+export type SplitWallState =
+  | { phase: 'idle' }
+  | {
+      phase: 'active';
+      hoverWallId: string | null;
+      hoverPointMm: { xMm: number; yMm: number } | null;
+    };
+
+export type SplitWallEvent =
+  | { kind: 'activate' }
+  | { kind: 'deactivate' }
+  | { kind: 'cancel' }
+  | { kind: 'hoverWall'; wallId: string; pointMm: { xMm: number; yMm: number } }
+  | { kind: 'hoverClear' }
+  | { kind: 'click'; wallId: string; pointMm: { xMm: number; yMm: number } };
+
+export interface SplitWallEffect {
+  splitWall?: { wallId: string; splitPointMm: { xMm: number; yMm: number } };
+  previewSplitPoint?: { wallId: string; pointMm: { xMm: number; yMm: number } } | null;
+  stillActive: boolean;
+}
+
+export function initialSplitWallState(): SplitWallState {
+  return { phase: 'idle' };
+}
+
+export function reduceSplitWall(
+  state: SplitWallState,
+  event: SplitWallEvent,
+): { state: SplitWallState; effect: SplitWallEffect } {
+  if (event.kind === 'activate') {
+    return {
+      state: { phase: 'active', hoverWallId: null, hoverPointMm: null },
+      effect: { stillActive: true },
+    };
+  }
+  if (event.kind === 'deactivate') {
+    return { state: { phase: 'idle' }, effect: { stillActive: false } };
+  }
+  if (event.kind === 'cancel') {
+    return { state: { phase: 'idle' }, effect: { stillActive: false } };
+  }
+  if (state.phase !== 'active') {
+    return { state, effect: { stillActive: false } };
+  }
+  if (event.kind === 'hoverWall') {
+    return {
+      state: { phase: 'active', hoverWallId: event.wallId, hoverPointMm: event.pointMm },
+      effect: {
+        previewSplitPoint: { wallId: event.wallId, pointMm: event.pointMm },
+        stillActive: true,
+      },
+    };
+  }
+  if (event.kind === 'hoverClear') {
+    return {
+      state: { phase: 'active', hoverWallId: null, hoverPointMm: null },
+      effect: { previewSplitPoint: null, stillActive: true },
+    };
+  }
+  // click in active phase → emit split, stay active for repeated splits
+  return {
+    state: { phase: 'active', hoverWallId: event.wallId, hoverPointMm: event.pointMm },
+    effect: {
+      splitWall: { wallId: event.wallId, splitPointMm: event.pointMm },
+      stillActive: true,
+    },
+  };
 }
