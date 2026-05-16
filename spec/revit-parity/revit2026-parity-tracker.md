@@ -638,7 +638,7 @@ NewSheetDialog.tsx, SheetCanvas.tsx, SheetReviewSurface.tsx exist. Sheets can be
 
 ### 6.3 Plan mit Änderungsliste (sheet with revision table / delta list)
 **Status: Done — revision table rendered in title block**
-`revision` and `sheet_revision` element types added to `@bim-ai/core`. `ManageRevisionsDialog.tsx` implements CRUD for project revisions and per-sheet assignment via checkboxes (`sheet_revision` join records). Commands: `create_revision`, `update_revision`, `delete_revision`, `add_sheet_revision`, `remove_sheet_revision`. Revision clouds (`revision_cloud` annotation — ANN-03) already existed. `SheetRevisionTableSvg` renders in the bottom-right corner of the title block (via `sheetTitleblockAuthoring.tsx`); `resolveSheetRevisions` joins `sheet_revision` → `revision` records, sorts by number ascending, shows a placeholder "—" row when none are assigned. Tests: `sheetRevisionTable.test.ts` (5 tests). Missing: `revision-cloud` draw tool in toolbar.
+`revision` and `sheet_revision` element types added to `@bim-ai/core`. `ManageRevisionsDialog.tsx` implements CRUD for project revisions and per-sheet assignment via checkboxes (`sheet_revision` join records). Commands: `create_revision`, `update_revision`, `delete_revision`, `add_sheet_revision`, `remove_sheet_revision`. Revision clouds (`revision_cloud` annotation — ANN-03) already existed. `SheetRevisionTableSvg` renders in the bottom-right corner of the title block (via `sheetTitleblockAuthoring.tsx`); `resolveSheetRevisions` joins `sheet_revision` → `revision` records, sorts by number ascending, shows a placeholder "—" row when none are assigned. Tests: `sheetRevisionTable.test.ts` (5 tests). Revision-cloud draw tool (E3): `'revision-cloud'` ToolId (hotkey RC, plan mode), `RevisionCloudState`/`reduceRevisionCloud` grammar, PlanCanvas click/dblclick/Enter/Escape wiring, and `revisionCloudPlanThree` plan renderer (dashed closed polygon, orange default, view-scoped). Tests in `toolGrammar.revisionCloud.test.ts` (5) and `revisionCloudRendering.test.ts` (7).
 
 ### 6.4 Detailansichten und Detaillierung (detail views and 2D detailing)
 
@@ -707,8 +707,8 @@ Implemented — attach/detach grammar + command handlers done. `reduceAttach`/`r
 Wall type catalog with layered materials (meshBuilders.layeredWall.ts, wallTypeCatalog.ts, csgWallMaterial.ts). Multi-layer wall types with independent material per layer are supported.
 
 #### 8.1.3 Teileelemente erstellen (wall parts: segment a wall into independently controllable parts)
-**Status: Not Started — P1**
-Revit's "Create Parts" command (segmenting a wall into independently swappable horizontal or vertical parts — common for cladding documentation) is not implemented.
+**Status: Partial — P1**
+`parts?: Array<{ id, startT, endT, materialId? }>` data model added to `wall` element in `packages/core/src/index.ts`. "Create Parts" ribbon action (`'wall-create-parts'` RibbonActionId) added to the Modify | Wall contextual tab (Parts panel). `buildEqualParts(n)` helper splits the wall into n equal segments (4 tests in `wallParts.test.ts`). Full rendering of individual parts in plan and 3D inspector is not yet implemented.
 
 #### 8.1.4 Fassadenwände (curtain walls: grid, panels, mullions)
 **Status: Implemented — P1**
@@ -861,8 +861,8 @@ Gable roof via roof by footprint with two edges set to "no slope" — works.
 Slope arrow for roof (instead of per-edge slope) is Partial — the concept exists in floor sketches but for roofs it is Not Fully Exposed.
 
 ### 10.2 Dächer über Extrusion (roof by extrusion / profile sweep)
-**Status: Partial — P1**
-Roof by extrusion (sweepMesh.ts, sweepGeometry.ts exist) is partially implemented. A user-facing "Roof by Extrusion" tool where the architect draws a 2D profile and picks a path is Not Started as a dedicated roof workflow.
+**Status: Implemented — P1**
+`'roof-by-extrusion'` ToolId (hotkey `RE`, plan mode) added to `toolRegistry.ts` and `PALETTE_ORDER`. `RoofByExtrusionState` / `reduceRoofByExtrusion` grammar state machine added to `toolGrammar.ts`: idle → recording (click to collect profile points) → confirm-depth (Enter/double-click with ≥2 pts) → createRoofByExtrusion effect → dispatches `createRoof` command with `extrusionDepthMm`. PlanCanvas wired: activation, click handler, Enter (recording→confirm-depth; confirm-depth→createRoof), Escape, numeric depth input. `extrusionDepthMm?` field added to roof element in `packages/core/src/index.ts`. 5 grammar tests in `toolGrammar.roofByExtrusion.test.ts`.
 
 ### 10.3 Sonderformen (special roof shapes)
 
@@ -1043,8 +1043,8 @@ Georeferencing + sun position (sunPositionNoaa.ts) provide accurate geographic s
 SunOverlay.tsx, sunStore.ts, sunPositionNoaa.ts — static shadow display in 3D view with date/time/location is implemented.
 
 #### 14.2.2 Animierte Sonnenstudien (animated sun study: single day / multi-day)
-**Status: Not Started — P1**
-Animated sun study (time-lapse shadow animation across a day or year) is not implemented.
+**Status: Implemented — P1**
+`SunAnimationPanel` component (`packages/web/src/viewport/SunAnimationPanel.tsx`) added to `SunOverlay`. Controls: start time (HH:MM), end time (HH:MM), step dropdown (15/30/60 min), speed multiplier (0.5×/1×/2×/4×), Play/Pause button, Reset button, current time readout. Uses a `requestAnimationFrame` loop updating `useSunStore` (`setValues` + `setComputedPosition`) at 60 fps via `computeSunPositionNoaa`. Loops back to start time when the end time is exceeded. 3 unit tests in `SunAnimationPanel.test.ts`.
 
 ### 14.3 Rendern, fotorealistische Bilder (photorealistic rendering: cloud / local render)
 **Status: Not Started — P1**
@@ -1139,7 +1139,6 @@ None confirmed as blocking.
 
 - **Attach Top/Base grammar** (Ch. 8.1.1) — `'attach'`/`'detach'` ToolIds in toolRegistry; `meshBuilders.attachWallTop.test.ts` exists; **missing**: `reduceAttach` state machine in `toolGrammar.ts` + `attachWallTop` / `detachWallTop` command handlers in command queue
 - **Curtain wall interactive grid editing** (Ch. 8.1.4) — data model (`curtainWallData`) + plan symbol (tick marks) done; **missing**: "Edit Grid" mode, inspector H/V grid controls, panel/mullion dropdowns
-- **IFC export file-menu trigger** (Ch. 12.4.3) — `ifcExporter.ts` STEP writer complete; `ProjectMenu.tsx` has "Link IFC" (import) but no "Export → IFC 2x3…" item; wire download trigger calling `ifcExporter.ts`
 - **Interior elevation inspector + grip** (Ch. 6.1.5) — `interior-elevation` tool + `interior_elevation_marker` element type + 4-quadrant plan symbol all done (D2); **missing**: inspector panel (radius, level) and drag-grip for placed markers
 - **Global parameters** (Ch. 3.8) — not started; new concept requiring a project-level parameter table; extend `project_settings` with a `globalParams` map + dialog + formula binding
 - **DWG/DGN export** (Ch. 12.4.3) — DXF export done (E2); DWG/DGN format not started
@@ -1150,11 +1149,10 @@ None confirmed as blocking.
 ### Top P2 Gaps (useful but workaroundable)
 
 - EQ condition on aligned dimensions (Ch. 4.2.2) — not started; extend existing `permanent_dimension` element type with `eqEnabled: boolean` + render the "EQ" button at segment midpoints
-- Wall parts / Create Parts (Ch. 8.1.3) — not started
+- Wall parts / Create Parts (Ch. 8.1.3) — partial: data model + ribbon action done; per-part rendering not yet implemented
 - Decal placement tool (Ch. 8.1.5) — `DecalElem` type + `buildDecalMesh()` exist; need `'decal'` ToolId in toolRegistry + click-to-place grammar + inspector (image picker, scale, rotation)
 - Sloped/inclined columns (Ch. 9.1.4) — not started; extend column element with `topOffsetXMm`/`topOffsetYMm` fields + update mesh builder extrusion axis + plan symbol (dashed top footprint)
-- Roof by extrusion user workflow (Ch. 10.2) — sweep infrastructure exists; no dedicated roof-by-extrusion tool in toolRegistry/grammar
-- Animated sun study (Ch. 14.2.2) — not started
-- Revision-cloud draw tool in toolbar (Ch. 6.3) — `revision_cloud` element type exists; add `'revision-cloud'` ToolId + freehand polygon grammar
+- Roof by extrusion user workflow (Ch. 10.2) — implemented (ToolId + grammar + PlanCanvas wiring + extrusionDepthMm field)
+- Animated sun study (Ch. 14.2.2) — implemented (SunAnimationPanel with RAF loop + playback controls)
 - User-customisable QAT (Ch. 1.6.3) — not started
 - Multiple simultaneous view windows (Ch. 1.6.12) — not started

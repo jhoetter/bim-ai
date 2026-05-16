@@ -1,5 +1,7 @@
 import { useCallback, useState } from 'react';
 
+import { SunAnimationPanel } from './SunAnimationPanel';
+
 export interface SunOverlayValues {
   latitudeDeg: number;
   longitudeDeg: number;
@@ -262,6 +264,8 @@ export function SunOverlay({
               {statusText}
             </div>
           )}
+
+          <SunAnimationPanel />
         </div>
       )}
     </div>
