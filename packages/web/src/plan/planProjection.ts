@@ -213,13 +213,14 @@ export function resolvePlanViewDisplay(
     }
   }
 
-  // Merge per-category visibility overrides set via the VV dialog (categoryOverrides.visible=false).
+  // Merge per-category visibility overrides set via the VV dialog (categoryOverrides.visible=false)
+  // or the simplified VG dialog (categoryOverrides.hidden=true).
   const overrides = (el.categoryOverrides ?? {}) as Record<
     string,
-    { visible?: boolean } | undefined
+    { visible?: boolean; hidden?: boolean } | undefined
   >;
   for (const [catKey, ovr] of Object.entries(overrides)) {
-    if (ovr?.visible === false) {
+    if (ovr?.visible === false || ovr?.hidden === true) {
       const k = canonHiddenCategory(catKey);
       if (k) hidden.add(k);
     }

@@ -219,6 +219,33 @@ function planCurvedWallMesh(
   return group;
 }
 
+function makePlanSlopeIndicator(
+  wall: Extract<Element, { kind: 'wall' }>,
+  sx: number,
+  sz: number,
+  nx: number,
+  nz: number,
+  len: number,
+): THREE.ArrowHelper | null {
+  const angleDeg = wall.slopeAngleDeg;
+  if (angleDeg == null || angleDeg === 0) return null;
+  const sign = angleDeg > 0 ? 1 : -1;
+  const dir = new THREE.Vector3(nx * sign, 0, nz * sign).normalize();
+  const origin = new THREE.Vector3(sx + (nx * len) / 2, PLAN_Y, sz + (nz * len) / 2);
+  const arrowLen = Math.min(0.35, len * 0.12);
+  const arrow = new THREE.ArrowHelper(
+    dir,
+    origin,
+    arrowLen,
+    0x0055cc,
+    arrowLen * 0.4,
+    arrowLen * 0.25,
+  );
+  arrow.userData.slopeIndicator = true;
+  arrow.userData.bimPickId = wall.id;
+  return arrow;
+}
+
 export function planWallMesh(
   wall: Extract<Element, { kind: 'wall' }>,
   selectedId?: string,
@@ -271,6 +298,8 @@ export function planWallMesh(
       ? null
       : buildWallCutHatch(len, thick, sx, sz, nx, nz, angle, perpX, perpZ);
 
+  const slopeIndicator = makePlanSlopeIndicator(wall, sx, sz, nx, nz, len);
+
   // FL-08 + VIE-01: when the wall has a wall_type, overlay layer boundary
   // lines — but gate by detail level (coarse drops them entirely so the wall
   // reads as a single solid bar; medium shows just the core boundaries; fine
@@ -283,6 +312,7 @@ export function planWallMesh(
       group.add(mesh);
       group.add(lines);
       if (hatch) group.add(hatch);
+      if (slopeIndicator) group.add(slopeIndicator);
       return group;
     }
   }
@@ -296,6 +326,7 @@ export function planWallMesh(
       group.add(mesh);
       group.add(fills);
       if (hatch) group.add(hatch);
+      if (slopeIndicator) group.add(slopeIndicator);
       return group;
     }
   }
@@ -324,14 +355,16 @@ export function planWallMesh(
       fill.userData.bimPickId = wall.id;
       group.add(fill);
     }
+    if (slopeIndicator) group.add(slopeIndicator);
     return group;
   }
 
-  if (hatch) {
+  if (hatch || slopeIndicator) {
     const group = new THREE.Group();
     group.userData.bimPickId = wall.id;
     group.add(mesh);
-    group.add(hatch);
+    if (hatch) group.add(hatch);
+    if (slopeIndicator) group.add(slopeIndicator);
     return group;
   }
   return mesh;
@@ -1693,6 +1726,26 @@ export function planAnnotationLabelLines(
   const tail = clipped[maxLines - 1]!;
   clipped[maxLines - 1] = `${tail.slice(0, tailLimit).trimEnd()}...`;
   return clipped;
+}
+
+/**
+ * §4.11.2 — thin leader line from the tag's anchor element back to the tag
+ * position. Returns a THREE.Line using the same dimWitness palette colour as
+ * dimension witness lines.
+ */
+export function tagLeaderLineThree(
+  leaderEndMm: { xMm: number; yMm: number },
+  positionMm: { xMm: number; yMm: number },
+  planY: number = PLAN_Y + 0.001,
+): THREE.Line {
+  const pts = [
+    new THREE.Vector3(ux(leaderEndMm.xMm), planY, uz(leaderEndMm.yMm)),
+    new THREE.Vector3(ux(positionMm.xMm), planY, uz(positionMm.yMm)),
+  ];
+  return new THREE.Line(
+    new THREE.BufferGeometry().setFromPoints(pts),
+    new THREE.LineBasicMaterial({ color: getPlanPalette().dimWitness, linewidth: 0.5 }),
+  );
 }
 
 export function gridLineThree(g: Extract<Element, { kind: 'grid_line' }>): THREE.Group {

@@ -125,6 +125,8 @@ export type PaletteContext = {
   openManageGlobalParams?: () => void;
   /** Open the Dimension Style editor dialog (§4.2.4). */
   openDimensionStyle?: () => void;
+  /** Open the Visibility/Graphics Override dialog (§2.1.4). */
+  openVisibilityGraphics?: () => void;
   /** Dynamic navigable views/sheets/schedules to surface in the palette. */
   views?: Array<{ id: string; label: string; keywords: string }>;
   /** Dynamic plan view templates that can be applied to the active plan view. */

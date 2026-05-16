@@ -86,7 +86,8 @@ type RibbonActionId =
   | 'wall-create-parts'
   | 'manage-phases'
   | 'manage-global-params'
-  | 'dimension-style';
+  | 'dimension-style'
+  | 'visibility-graphics';
 
 interface RibbonPanel {
   id: string;
@@ -171,6 +172,7 @@ export interface RibbonBarProps {
   onOpenManagePhases?: () => void;
   onOpenManageGlobalParams?: () => void;
   onOpenDimensionStyle?: () => void;
+  onOpenVisibilityGraphics?: () => void;
   sheetReviewMode?: SheetReviewMode;
   onSheetReviewModeChange?: (mode: SheetReviewMode) => void;
   sheetMarkupShape?: SheetMarkupShape;
@@ -224,6 +226,7 @@ export function RibbonBar({
   onOpenManagePhases,
   onOpenManageGlobalParams,
   onOpenDimensionStyle,
+  onOpenVisibilityGraphics,
   sheetReviewMode = 'cm',
   onSheetReviewModeChange,
   sheetMarkupShape = 'freehand',
@@ -354,6 +357,7 @@ export function RibbonBar({
       'manage-phases': onOpenManagePhases,
       'manage-global-params': onOpenManageGlobalParams,
       'dimension-style': onOpenDimensionStyle,
+      'visibility-graphics': onOpenVisibilityGraphics,
     };
     (actions[command.id] ?? onOpenCommandPalette)?.();
   }
@@ -1266,6 +1270,11 @@ function buildPlanRibbonTabs(
             action('dimension-style', 'Dim Style', 'dimension', 'ribbon-dimension-style'),
           ],
         },
+        {
+          id: 'graphics',
+          label: 'Graphics',
+          commands: [action('visibility-graphics', 'VG Overrides', 'layerOff', 'ribbon-vg')],
+        },
       ],
     },
   ];
@@ -1944,6 +1953,8 @@ function ribbonCapabilityId(command: RibbonCommand): string | null {
       return 'project.manage-global-params';
     case 'dimension-style':
       return 'annotate.dimension-style';
+    case 'visibility-graphics':
+      return 'view.visibility-graphics';
   }
   return null;
 }

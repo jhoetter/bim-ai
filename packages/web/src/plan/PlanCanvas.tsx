@@ -163,7 +163,7 @@ import { extractAreaPrimitives } from './areaRender';
 import { areaPlanPlacementContext, findAreaPlacementBoundary } from './areaPlacement';
 import { manualPlacedTagLabel, placeTagByCategoryCommand } from './manualTags';
 import { extractNeighborhoodMassPrimitives } from './neighborhoodMassRender';
-import { planAnnotationLabelSprite } from './planElementMeshBuilders';
+import { planAnnotationLabelSprite, tagLeaderLineThree } from './planElementMeshBuilders';
 import {
   dxfViewOverrideKey,
   hiddenDxfLayerNamesForView,
@@ -2034,6 +2034,11 @@ export function PlanCanvas({
           sprite.material.color.set('#ff00ff');
         }
         grp.add(sprite);
+        if (tag.leaderEndMm) {
+          const leader = tagLeaderLineThree(tag.leaderEndMm, tag.positionMm, SLICE_Y + 0.002);
+          leader.userData.placedTag = true;
+          grp.add(leader);
+        }
       }
     }
 
