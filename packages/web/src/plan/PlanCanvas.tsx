@@ -236,6 +236,7 @@ import {
   activeComponentAssetId,
   activeComponentAssetPreviewEntry,
   activeComponentFamilyTypeId,
+  columnDrawUsage,
   copyMultipleEnabled,
   mirrorCopyEnabled,
   pendingComponentRotationDeg,
@@ -4699,6 +4700,7 @@ export function PlanCanvas({
             heightMm: columnDrawHeightMm,
             bMm: columnDrawWidthMm,
             hMm: columnDrawDepthMm,
+            columnUsage: columnDrawUsage,
           });
         }
         bumpGeom((x) => x + 1);

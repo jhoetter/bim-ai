@@ -93,3 +93,20 @@ describe('makeColumnMesh — sloped columns (F3)', () => {
     expect(mesh).toBeInstanceOf(THREE.Mesh);
   });
 });
+
+describe('makeColumnMesh — columnUsage — §9.1.1', () => {
+  it('structural column mesh has userData.columnUsage = structural', () => {
+    const mesh = makeColumnMesh(makeCol({ columnUsage: 'structural' }), 0, null);
+    expect(mesh.userData.columnUsage).toBe('structural');
+  });
+
+  it('architectural column mesh has userData.columnUsage = architectural', () => {
+    const mesh = makeColumnMesh(makeCol({ columnUsage: 'architectural' }), 0, null);
+    expect(mesh.userData.columnUsage).toBe('architectural');
+  });
+
+  it('column with no columnUsage defaults to architectural in userData', () => {
+    const mesh = makeColumnMesh(makeCol(), 0, null);
+    expect(mesh.userData.columnUsage).toBe('architectural');
+  });
+});
