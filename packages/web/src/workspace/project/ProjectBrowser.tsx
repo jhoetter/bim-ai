@@ -1883,6 +1883,9 @@ export function ProjectBrowser(props: {
           onDuplicate={duplicateFamilyType}
         />
       ) : null}
+
+      {/* TODO(WP-B): Gruppen (Groups) subtree — list group definitions + instance counts once
+          WP-B group-management lands. Wire to `detail_group` elements keyed by `hostViewId`. */}
     </div>
   );
 }

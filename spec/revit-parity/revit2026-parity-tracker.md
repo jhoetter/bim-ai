@@ -604,8 +604,8 @@ Project base rotation for true north is partially supported via the georeference
 Plan views per level, crop region, plan detail level — all implemented.
 
 #### 6.1.2 Die Deckenpläne (reflected ceiling plan views)
-**Status: Partial — P1**
-Reflected ceiling plans (RCP) — a view looking upward showing ceiling structure — are not explicitly implemented as a separate view type. The ceiling tool exists but a dedicated RCP view mode is Not Started.
+**Status: Done — D1**
+Reflected ceiling plans (RCP) are implemented as `planViewSubtype: 'ceiling_plan'`. `resolvePlanViewDisplay` in `planProjection.ts` sets `isRcp: true`, mirrors the X-axis, and adjusts `hiddenSemanticKinds` (floors/roofs hidden, ceilings/beams visible). `PlanViewHeader.tsx` shows the RCP badge. ProjectBrowser groups RCP views under "Deckenansichten". Tests: `ceilingPlanViewHeader.test.tsx` (3 tests) + `planProjection.ceilingPlan.test.ts` (7 tests) all pass.
 
 #### 6.1.3 3D-Ansichten (3D views: orthographic, perspective, section box, locked views)
 **Status: Partial — P1**
@@ -637,8 +637,8 @@ Revision tracking per sheet (Revit's Revision cloud + Revision schedule in title
 ### 6.4 Detailansichten und Detaillierung (detail views and 2D detailing)
 
 #### 6.4.1 Detailausschnitt (detail callout / enlarged plan area)
-**Status: Partial — P2**
-CalloutMarker.tsx and DetailRegionTool.tsx / DetailRegionRenderer.tsx exist. Placed detail callout regions appear in plan. The corresponding enlarged detail view viewport is Partial.
+**Status: Partial — D4**
+CalloutMarker.tsx and DetailRegionTool.tsx / DetailRegionRenderer.tsx exist. Placed detail callout regions appear in plan. `buildCalloutViewCommand` creates `plan_view` with `planViewSubtype: 'callout'`. `tabFromElement` maps callout views to workspace tabs with the label `"Detail callout · <name>"`. Tests in `detailCallout.test.ts` pass (4 tests). The full enlarged detail view rendering (showing zoomed geometry) is Partial.
 
 #### 6.4.2 Detailansicht (detail view: 2D drawing in isolation)
 **Status: Partial — P2**
@@ -1001,7 +1001,7 @@ Room tool is in registry. planRoomLabelLayout.ts exists. Room tags with name/num
 
 #### 13.1.3 Farbenlegenden (color fill legend: rooms colored by department, area, etc.)
 **Status: Partial — P1**
-roomSchemeColor.ts, roomColorSchemeLegendReadout.ts, roomFinishScheduleEvidenceReadout.ts exist. Color schemes are partially implemented. A user-facing color fill dialog (pick scheme category, set colors per value) is Partial.
+roomSchemeColor.ts, roomColorSchemeLegendReadout.ts, roomFinishScheduleEvidenceReadout.ts exist. Color schemes are partially implemented. `ColorSchemeDialog.tsx` — the user-facing dialog (pick scheme category: name/department/area/occupancy, set colors per value) — is implemented and wired into `PlanViewHeader.tsx` via `onColorSchemeApply`. Tests in `colorScheme.test.ts` pass (D8).
 
 #### 13.1.4 Nettoflächen (net areas: floor finish area, wall area, etc.)
 **Status: Partial — P1**
