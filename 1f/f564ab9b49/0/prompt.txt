@@ -1,1 +1,0 @@
-ok, almost perfect. can you also analyze the @spec/target-house-seed.md and think about if there currently are gaps in what the target house requires in feature capabilities for modeling that we currently dont have and that also isnt in the tracker and accordingly update the tracker?
