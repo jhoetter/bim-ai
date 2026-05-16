@@ -1,6 +1,6 @@
 # Revit 2026 Feature-Parity Tracker
 
-Last updated: 2026-05-16 (Wave 10 complete)
+Last updated: 2026-05-16 (Wave 11 complete)
 Source: Detlef Ridder — *Autodesk Revit 2026: Der umfassende Praxiseinstieg für Architekturkonstruktion*, mitp 2026 (ISBN 978-3-7475-1101-5)
 
 Purpose: exhaustive chapter-by-chapter comparison between Revit 2026 (as taught in the book) and what bim-ai currently supports. Every leaf section of the table of contents becomes a row. The goal is to expose gaps at maximum granularity so engineering work can be scoped and prioritised.
@@ -105,8 +105,8 @@ bim-ai has the Inspector panel for element properties. Instance properties are s
 OptionsBar.tsx fully wired: wall (location line, chain mode, offset, radius), floor (type, level, offset), column (level, height, width, depth), stair (base level, top level, width, run width), room (name, number, upper level). Added by WP-E (wave 10).
 
 #### 1.6.9 Statusleiste (status bar with command hints)
-**Status: Partial — P2**
-bim-ai shows contextual hints during active tool operations. Full Revit-style status bar with structured "Select element" / "Click to place" strings per tool state is not fully implemented.
+**Status: Done**
+StatusBar component (24 px bottom bar) with status-bar-hint (per-tool-phase instruction strings for all major tools) and status-bar-selection (element count). getStatusHint() covers wall/floor/column/stair/room/door/window/measure/measure-angle/paint/dimension/split-wall. hoveredElementKind from store shown when no tool active. Added by WP-G (wave 11).
 
 #### 1.6.10 Ansichtssteuerung (view controls: scale, detail level, visual style, shadows, crop)
 **Status: Partial — P1**
@@ -198,8 +198,8 @@ LevelStack.tsx, level datums in 3D view, level-based authoring all implemented. 
 bim-ai has origin markers (originMarkers.ts). A user-repositionable project base point / survey point with coordinates display (like Revit's pinned or movable base point) is not explicitly implemented.
 
 #### 2.1.4 Sichtbarkeit mittels Filter steuern (visibility/graphics by filter)
-**Status: Partial — P1**
-bim-ai has a lens system (useLensFilter.ts, lensGhosting.ts) for category-level visibility toggles. Revit's full Visibility/Graphics dialog (V/G) with per-category line weight, colour, pattern overrides, and user-defined rule-based filters is not implemented.
+**Status: Done**
+VisibilityGraphicsDialog: per-category table (wall/floor/roof/ceiling/door/window/column/stair/railing/room/permanent_dimension/text_note) with visible checkbox, color input, line-weight input, per-row reset. Live preview via update_category_override command. CategoryVisualOverride type in core/index.ts; applied in symbology.ts rendering. Wired in Workspace.tsx with ribbon-vg button and view.visibility-graphics palette command. Added by WP-A (wave 11, bundled in WP-B commit).
 
 #### 2.1.5 Arbeitsbereich in 2D festlegen (crop region / view range for plan)
 **Status: Done**
@@ -260,8 +260,8 @@ Basic floor placement is done. Revit's alternative slab boundary methods (e.g. p
 bim-ai supports element pinning via inspector + PN chord + `modify.pin-selected`/`modify.unpin-all` palette commands (WP-B8). "Join Geometry" palette commands (`modify.join-geometry` / `modify.unjoin-geometry`) available when exactly 2 solid elements are selected (WP-B7). Full solid-geometry CSG trimming at intersections is still partial.
 
 #### 2.4.4 Prioritäten (material layer priority for wall/floor/ceiling joins)
-**Status: Partial — P1**
-Material layer priority (1–5 Revit style) controls which layer dominates at junctions. bim-ai has layer material system (hostMaterialLayerTargets.ts) and effectiveHostMaterials.ts. Explicit numeric priority field per layer is partial — the join resolution logic exists in code but is not user-editable via property dialog.
+**Status: Done**
+Priority column (1–Structure … 5–Finish 2) added to WallTypeLayerEditor.tsx. FloorTypeLayer priority field added in core/index.ts. effectiveHostMaterials.ts join resolution uses priority (lower number wins). Inspector wall_type priority summary readout. Added by WP-E (wave 11).
 
 ### 2.5 Treppen (stairs)
 
@@ -388,8 +388,8 @@ Pin element is available. Show/hide dimension constraints on canvas is Partial.
 Linework (override line style of individual edges in a view) and paint (assign material to face) are not implemented.
 
 #### 3.3.8 Gruppe »Messen« (measure group: measure distance, measure arc, measure angle)
-**Status: Partial — P1**
-Measure tool is in the tool registry. Distance measurement is implemented. Angle and arc measurements are Not Started.
+**Status: Done**
+Measure distance (existing). Measure Angle (MA): 3-click vertex+ray+ray, MeasureAngleState grammar, measure-angle-readout chip showing ∠ degrees. Measure Arc (MR): 3-click start+end+through, MeasureArcState grammar, measure-arc-readout chip showing arc length + radius. measureGeometry.ts pure functions (angleBetweenVectors, fitCircleThrough3, arcLengthThrough3). 19 tests. Added by WP-C (wave 11).
 
 #### 3.3.9 Gruppe »Erstellen« (create group in Modify: create similar, create group)
 **Status: Partial — P2**
@@ -434,8 +434,8 @@ Both drag-to-move (grips) and explicit Move tool work.
 Wall chain placement and wall join auto-resolution handle this.
 
 #### 3.5.7 Geneigte und verjüngte Wände (sloped and tapered walls)
-**Status: Partial — P1**
-Sloped walls (angle property) and tapered walls (different thickness top vs bottom) exist as Revit parameters. bim-ai's wall mesh builder has partial support for tapered/sloped walls (meshBuilders.layeredWall.ts, csgWallBaseGeometry.ts). Inspector exposure of slope/taper parameters is incomplete.
+**Status: Done**
+slopeAngleDeg + topThicknessMm on wall element. Inspector "Profile & Slope" collapsible section (inspector-wall-slope-angle, inspector-wall-top-thickness, inspector-wall-reset-slope). 3D mesh builder applies slope shear and trapezoidal taper. Plan symbol slope-direction arrow. Tests in slopedWallInspector.test.tsx and slopedWall.test.ts. Implemented in wave 8/wave 11 WP-D.
 
 ### 3.6 Fenster bearbeiten (editing windows)
 
@@ -527,18 +527,18 @@ Reference planes exist (reference-plane tool). Snapping dimensions to reference 
 `slope-annotation` ToolId (hotkey `SL`) added. Two-click grammar (idle→end-point→commitSlope). Plan renderer draws slope percentage label. Grip provider (position drag) and inspector panel (slopePct editable) added.
 
 ### 4.10 Text und Hinweistext (text and leader text annotations)
-**Status: Partial — P1**
-`text` ToolId (hotkey `TX`) and `leader-text` ToolId (hotkey `LT`) added. Grammar machines: reduceTextAnnotation and reduceLeaderText implemented. Inspector panels: text_note (content textarea, fontSizeMm, rotationDeg); leader_text (content textarea, arrowStyle dropdown). Grip providers: textNoteGripProvider (position), leaderTextGripProvider (anchor + text-block). Rich-text formatting Not Started.
+**Status: Done**
+text_note and leader_text elements with bold/italic/underline/fontFamily/colorHex/horizontalAlign fields. Inspector formatting toolbar (B/I/U buttons, align left/center/right, color picker). Renderer applies CSS2DObject styles. Rotation + resize grips in textNoteGripProvider. Tests in textNoteInspector.test.tsx and textNoteFormatting.test.ts. Added by WP-F (wave 11).
 
 ### 4.11 Bauteile beschriften (element tags / labels)
 
 #### 4.11.1 Automatische Element-Beschriftungen (auto-tag by category)
-**Status: Partial — P1**
-autoTags.ts and manualTags.ts exist. Tag tool is in the registry. Auto-tagging by category (tag all walls, all rooms, etc.) is Partial.
+**Status: Done**
+autoTagElements() generates stable 'auto-tag-{id}' tags for door/window/room/wall with mark, typeName, widthMm, heightMm, roomName, roomNumber fields. annotation.tag-all-by-category palette command. 8 tests in autoTagElements.test.ts. Added by WP-B (wave 11).
 
 #### 4.11.2 Element-Bauelement (element tag: door/window/room tag)
-**Status: Partial — P1**
-Room tags, window/door tags exist. Tag content (mark number, type, dimensions) is partially driven by family data.
+**Status: Done**
+placed_tag element with categoryKind, leaderEndMm, fields (mark/typeName/widthMm/heightMm/roomName/roomNumber). Leader line rendered via tagLeaderLineThree(). Tag inspector (inspector-tag-mark editable, inspector-tag-type read-only, inspector-tag-target). 6 tests in tagInspector.test.tsx. Added by WP-B (wave 11).
 
 #### 4.11.3 Material-Bauelement (material tag)
 **Status: Partial — P2**
@@ -1108,7 +1108,7 @@ cheatsheetData.ts and CheatsheetModal.tsx provide a keyboard shortcut reference 
 
 ## Summary Dashboard
 
-Last verified: 2026-05-16. Waves 1–10 complete. **4,341 tests pass.**
+Last verified: 2026-05-16. Waves 1–11 complete. **4,422 tests pass.**
 
 Wave 7 completions: §1.6.7 WallTypeLayerEditor, §2.6.2 top constraint inspector, §5.1.1+§5.1.2 terrain point placement/editing, §5.1.3 contour lines, §4.2.4 dimension style dialog, §6.2 sheet viewport scale + title block fields, §8.3 finish floor type selector.
 
