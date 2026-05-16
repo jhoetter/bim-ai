@@ -1,5 +1,0 @@
-looking into @spec/workpackage-tracker-v3.md and @spec/v3-build-state.md , what would you say how we can best add the tracker knowledge? in v3 an update that points also to the revit parity?
-
----
-
-yep soudns great!

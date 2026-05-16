@@ -3,7 +3,7 @@
   "checkpoint_id": "fc6d8921a96d",
   "strategy": "manual-commit",
   "branch": "main",
-  "checkpoints_count": 1,
+  "checkpoints_count": 0,
   "files_touched": null,
   "sessions": [
     {
@@ -12,12 +12,5 @@
       "content_hash": "/fc/6d8921a96d/0/content_hash.txt",
       "prompt": "/fc/6d8921a96d/0/prompt.txt"
     }
-  ],
-  "token_usage": {
-    "input_tokens": 7665014,
-    "cache_creation_tokens": 0,
-    "cache_read_tokens": 178718080,
-    "output_tokens": 432068,
-    "api_call_count": 1326
-  }
+  ]
 }
