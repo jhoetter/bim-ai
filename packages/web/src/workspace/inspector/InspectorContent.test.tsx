@@ -546,6 +546,103 @@ describe('InspectorViewTemplateEditor', () => {
   });
 });
 
+describe('InspectorPropertiesFor — text_note (ANN-01)', () => {
+  const textNote: Extract<Element, { kind: 'text_note' }> = {
+    kind: 'text_note',
+    id: 'tn-1',
+    hostViewId: 'pv-1',
+    positionMm: { xMm: 1000, yMm: 2000 },
+    text: 'Sample note',
+    fontSizeMm: 200,
+  };
+
+  it('shows content textarea and font size input when onPropertyChange is provided', () => {
+    const onChange = vi.fn();
+    const { getByTestId } = render(
+      InspectorPropertiesFor(textNote, t, { onPropertyChange: onChange }),
+    );
+    expect(getByTestId('inspector-text-note-content')).toBeTruthy();
+    expect(getByTestId('inspector-text-note-font-size')).toBeTruthy();
+    expect(getByTestId('inspector-text-note-rotation')).toBeTruthy();
+  });
+
+  it('calls onPropertyChange with text on content blur', () => {
+    const onChange = vi.fn();
+    const { getByTestId } = render(
+      InspectorPropertiesFor(textNote, t, { onPropertyChange: onChange }),
+    );
+    const textarea = getByTestId('inspector-text-note-content') as HTMLTextAreaElement;
+    fireEvent.change(textarea, { target: { value: 'Updated text' } });
+    fireEvent.blur(textarea);
+    expect(onChange).toHaveBeenCalledWith('text', 'Updated text');
+  });
+
+  it('calls onPropertyChange with fontSizeMm on blur', () => {
+    const onChange = vi.fn();
+    const { getByTestId } = render(
+      InspectorPropertiesFor(textNote, t, { onPropertyChange: onChange }),
+    );
+    const input = getByTestId('inspector-text-note-font-size') as HTMLInputElement;
+    fireEvent.change(input, { target: { value: '300' } });
+    fireEvent.blur(input);
+    expect(onChange).toHaveBeenCalledWith('fontSizeMm', 300);
+  });
+
+  it('shows read-only content when no onPropertyChange', () => {
+    const { getByText, queryByTestId } = render(InspectorPropertiesFor(textNote, t));
+    expect(getByText('Sample note')).toBeTruthy();
+    expect(queryByTestId('inspector-text-note-content')).toBeNull();
+  });
+});
+
+describe('InspectorPropertiesFor — leader_text (ANN-02)', () => {
+  const leaderText: Extract<Element, { kind: 'leader_text' }> = {
+    kind: 'leader_text',
+    id: 'lt-1',
+    hostViewId: 'pv-1',
+    anchorMm: { xMm: 0, yMm: 0 },
+    elbowMm: { xMm: 300, yMm: 0 },
+    textMm: { xMm: 600, yMm: 0 },
+    content: 'Wall A',
+  };
+
+  it('shows content textarea and arrow-style selector when onPropertyChange is provided', () => {
+    const onChange = vi.fn();
+    const { getByTestId } = render(
+      InspectorPropertiesFor(leaderText, t, { onPropertyChange: onChange }),
+    );
+    expect(getByTestId('inspector-leader-text-content')).toBeTruthy();
+    expect(getByTestId('inspector-leader-text-arrow-style')).toBeTruthy();
+  });
+
+  it('calls onPropertyChange with content on blur', () => {
+    const onChange = vi.fn();
+    const { getByTestId } = render(
+      InspectorPropertiesFor(leaderText, t, { onPropertyChange: onChange }),
+    );
+    const textarea = getByTestId('inspector-leader-text-content') as HTMLTextAreaElement;
+    fireEvent.change(textarea, { target: { value: 'New label' } });
+    fireEvent.blur(textarea);
+    expect(onChange).toHaveBeenCalledWith('content', 'New label');
+  });
+
+  it('calls onPropertyChange with arrowStyle on select change', () => {
+    const onChange = vi.fn();
+    const { getByTestId } = render(
+      InspectorPropertiesFor(leaderText, t, { onPropertyChange: onChange }),
+    );
+    const select = getByTestId('inspector-leader-text-arrow-style') as HTMLSelectElement;
+    fireEvent.change(select, { target: { value: 'dot' } });
+    expect(onChange).toHaveBeenCalledWith('arrowStyle', 'dot');
+  });
+
+  it('shows read-only content when no onPropertyChange', () => {
+    const { getByText, queryByTestId } = render(InspectorPropertiesFor(leaderText, t));
+    expect(getByText('Wall A')).toBeTruthy();
+    expect(queryByTestId('inspector-leader-text-content')).toBeNull();
+  });
+});
+
 describe('InspectorProjectSettingsEditor', () => {
   it('persists checkpoint retention as a clamped project setting', () => {
     const onPersistProperty = vi.fn();

@@ -1931,6 +1931,115 @@ export function InspectorPropertiesFor(
           ) : null}
         </div>
       );
+    case 'text_note': {
+      const { onPropertyChange: tnPropChange } = options ?? {};
+      return (
+        <div className="flex flex-col gap-2">
+          <FieldRow label="Host View" value={el.hostViewId} mono />
+          <FieldRow
+            label="Position"
+            value={`(${Math.round(el.positionMm.xMm)}, ${Math.round(el.positionMm.yMm)}) mm`}
+            mono
+          />
+          {tnPropChange ? (
+            <>
+              <div className="flex flex-col gap-1 border-t border-border pt-2">
+                <span className="text-xs text-muted">Content</span>
+                <textarea
+                  className="w-full rounded border border-border bg-surface px-2 py-1 text-xs"
+                  rows={3}
+                  defaultValue={el.text}
+                  key={`${el.id}-content`}
+                  aria-label="Text note content"
+                  data-testid="inspector-text-note-content"
+                  onBlur={(e) => tnPropChange('text', e.currentTarget.value)}
+                />
+              </div>
+              <div className="flex items-center gap-2 py-0.5">
+                <span className="text-xs text-muted w-28 shrink-0">Font size (mm)</span>
+                <input
+                  type="number"
+                  className="w-20 rounded border border-border bg-surface px-1 py-0.5 text-xs"
+                  defaultValue={el.fontSizeMm ?? 200}
+                  key={`${el.id}-fontsize`}
+                  step={50}
+                  aria-label="Text note font size in millimetres"
+                  data-testid="inspector-text-note-font-size"
+                  onBlur={(e) => {
+                    const v = Number(e.currentTarget.value);
+                    if (!isNaN(v) && v > 0) tnPropChange('fontSizeMm', v);
+                  }}
+                />
+              </div>
+              <div className="flex items-center gap-2 py-0.5">
+                <span className="text-xs text-muted w-28 shrink-0">Rotation (°)</span>
+                <input
+                  type="number"
+                  className="w-20 rounded border border-border bg-surface px-1 py-0.5 text-xs"
+                  defaultValue={el.rotationDeg ?? 0}
+                  key={`${el.id}-rotation`}
+                  step={15}
+                  aria-label="Text note rotation in degrees"
+                  data-testid="inspector-text-note-rotation"
+                  onBlur={(e) => tnPropChange('rotationDeg', Number(e.currentTarget.value))}
+                />
+              </div>
+            </>
+          ) : (
+            <FieldRow label="Content" value={el.text} />
+          )}
+        </div>
+      );
+    }
+    case 'leader_text': {
+      const { onPropertyChange: ltPropChange } = options ?? {};
+      return (
+        <div className="flex flex-col gap-2">
+          <FieldRow label="Host View" value={el.hostViewId} mono />
+          <FieldRow
+            label="Anchor"
+            value={`(${Math.round(el.anchorMm.xMm)}, ${Math.round(el.anchorMm.yMm)}) mm`}
+            mono
+          />
+          <FieldRow
+            label="Text"
+            value={`(${Math.round(el.textMm.xMm)}, ${Math.round(el.textMm.yMm)}) mm`}
+            mono
+          />
+          {ltPropChange ? (
+            <>
+              <div className="flex flex-col gap-1 border-t border-border pt-2">
+                <span className="text-xs text-muted">Content</span>
+                <textarea
+                  className="w-full rounded border border-border bg-surface px-2 py-1 text-xs"
+                  rows={3}
+                  defaultValue={el.content}
+                  key={`${el.id}-content`}
+                  aria-label="Leader text content"
+                  data-testid="inspector-leader-text-content"
+                  onBlur={(e) => ltPropChange('content', e.currentTarget.value)}
+                />
+              </div>
+              <label className="flex items-center gap-2 py-0.5">
+                <span className="text-xs text-muted w-28 shrink-0">Arrow style</span>
+                <select
+                  className="flex-1 rounded border border-border bg-surface px-1 py-0.5 text-xs"
+                  value={el.arrowStyle ?? 'arrow'}
+                  data-testid="inspector-leader-text-arrow-style"
+                  onChange={(e) => ltPropChange('arrowStyle', e.currentTarget.value)}
+                >
+                  <option value="arrow">Arrow</option>
+                  <option value="dot">Dot</option>
+                  <option value="none">None</option>
+                </select>
+              </label>
+            </>
+          ) : (
+            <FieldRow label="Content" value={el.content} />
+          )}
+        </div>
+      );
+    }
     default:
       const materialAssignment = GenericMaterialAssignmentFor({
         el,
