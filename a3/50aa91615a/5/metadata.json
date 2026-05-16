@@ -1,0 +1,37 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "a350aa91615a",
+  "session_id": "1c862bb9-bd5d-444a-9054-7279fe06f012",
+  "strategy": "manual-commit",
+  "created_at": "2026-05-16T02:03:57.459808Z",
+  "branch": "main",
+  "checkpoints_count": 0,
+  "files_touched": [
+    "packages/web/src/plan/PlanCanvas.tsx",
+    "packages/web/src/tools/toolRegistry.ts"
+  ],
+  "agent": "Claude Code",
+  "model": "claude-sonnet-4-6",
+  "turn_id": "e8e4690aede5",
+  "checkpoint_transcript_start": 582,
+  "transcript_lines_at_start": 582,
+  "token_usage": {
+    "input_tokens": 129,
+    "cache_creation_tokens": 78781,
+    "cache_read_tokens": 11422183,
+    "output_tokens": 54386,
+    "api_call_count": 95
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-05-16T02:03:57.430637Z",
+    "agent_lines": 64,
+    "agent_removed": 1,
+    "human_added": 617,
+    "human_modified": 0,
+    "human_removed": 0,
+    "total_committed": 681,
+    "total_lines_changed": 682,
+    "agent_percentage": 9.530791788856305,
+    "metric_version": 2
+  }
+}

@@ -5,7 +5,9 @@
   "branch": "main",
   "checkpoints_count": 2,
   "files_touched": [
-    "packages/core/src/index.ts"
+    "packages/core/src/index.ts",
+    "packages/web/src/plan/PlanCanvas.tsx",
+    "packages/web/src/tools/toolRegistry.ts"
   ],
   "sessions": [
     {
@@ -37,13 +39,19 @@
       "transcript": "/a3/50aa91615a/4/full.jsonl",
       "content_hash": "/a3/50aa91615a/4/content_hash.txt",
       "prompt": "/a3/50aa91615a/4/prompt.txt"
+    },
+    {
+      "metadata": "/a3/50aa91615a/5/metadata.json",
+      "transcript": "/a3/50aa91615a/5/full.jsonl",
+      "content_hash": "/a3/50aa91615a/5/content_hash.txt",
+      "prompt": "/a3/50aa91615a/5/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 7367888,
-    "cache_creation_tokens": 0,
-    "cache_read_tokens": 157289856,
-    "output_tokens": 395344,
-    "api_call_count": 1439
+    "input_tokens": 7368017,
+    "cache_creation_tokens": 78781,
+    "cache_read_tokens": 168712039,
+    "output_tokens": 449730,
+    "api_call_count": 1534
   }
 }
