@@ -1,0 +1,4 @@
+WP-C — §8.1.3 Wall parts rendering
+
+  ▎ Your task is to implement per-part plan shading (filled rect per segment with materialId colour at 40% opacity) and per-part 3D mesh splitting (Group of BoxGeometry per part) for walls that have parts 
+  ▎ defined, add a Parts section to the wall inspector, and update spec/revit-parity/revit2026-parity-tracker.md §8.1.3 to Done. Full spec: spec/revit-parity/agent-prompts/WAVE3-WP-C.md.
