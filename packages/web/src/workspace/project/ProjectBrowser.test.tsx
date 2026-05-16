@@ -521,3 +521,93 @@ describe('ProjectBrowserV3 — CHR-V3-07', () => {
     expect(ids.indexOf('vp-b')).toBeLessThan(ids.indexOf('vp-a'));
   });
 });
+
+// ---------------------------------------------------------------------------
+// D7 — Project Browser Tree Enhancements
+// ---------------------------------------------------------------------------
+
+describe('ProjectBrowser — D7 ceiling plan views', () => {
+  function renderBrowser(overrides: Partial<ComponentProps<typeof ProjectBrowser>> = {}) {
+    return render(<ProjectBrowser elementsById={{}} {...overrides} />);
+  }
+
+  it('ceiling plan views appear under the "Deckenansichten" section', () => {
+    const level: Element = { kind: 'level', id: 'lvl-1', name: 'Level 1', elevationMm: 0 };
+    const floorPlan: Element = {
+      kind: 'plan_view',
+      id: 'pv-floor',
+      name: 'Level 1 Floor Plan',
+      levelId: 'lvl-1',
+      planViewSubtype: 'floor_plan',
+    };
+    const ceilingPlan = {
+      kind: 'plan_view',
+      id: 'pv-ceiling',
+      name: 'Level 1 Reflected Ceiling',
+      levelId: 'lvl-1',
+      planViewSubtype: 'ceiling_plan',
+    } as unknown as Element;
+    const { getByTestId } = renderBrowser({
+      elementsById: {
+        [level.id]: level,
+        [floorPlan.id]: floorPlan,
+        [ceilingPlan.id]: ceilingPlan,
+      },
+    });
+    const ceilingGroup = getByTestId('project-browser-ceiling-plans-group');
+    expect(ceilingGroup).toBeTruthy();
+    expect(within(ceilingGroup).getByText(/Level 1 Reflected Ceiling/)).toBeTruthy();
+    expect(within(ceilingGroup).queryByText(/Level 1 Floor Plan/)).toBeNull();
+  });
+
+  it('ceiling plan views are excluded from the regular floor plans section', () => {
+    const level: Element = { kind: 'level', id: 'lvl-1', name: 'Level 1', elevationMm: 0 };
+    const ceilingPlan = {
+      kind: 'plan_view',
+      id: 'pv-ceiling',
+      name: 'Ceiling View A',
+      levelId: 'lvl-1',
+      planViewSubtype: 'ceiling_plan',
+    } as unknown as Element;
+    const { container, getByTestId } = renderBrowser({
+      elementsById: {
+        [level.id]: level,
+        [ceilingPlan.id]: ceilingPlan,
+      },
+    });
+    expect(getByTestId('project-browser-ceiling-plans-group')).toBeTruthy();
+    const allDivs = Array.from(container.querySelectorAll('div'));
+    const floorHeading = allDivs.find((el) => el.textContent?.trim() === 'Floor plans');
+    expect(floorHeading).toBeUndefined();
+  });
+});
+
+describe('ProjectBrowserV3 — D7 context menu items', () => {
+  it('context menu shows Duplicate and Delete actions', () => {
+    const props = makeDefaultProps();
+    const { getByTestId, queryByTestId } = render(<ProjectBrowserV3 {...props} />);
+    const row = getByTestId('pb-view-row-vp-01').querySelector('button') as HTMLElement;
+    fireEvent.contextMenu(row, { clientX: 50, clientY: 50 });
+    expect(queryByTestId('pb-ctx-duplicate')).not.toBeNull();
+    expect(queryByTestId('pb-ctx-delete')).not.toBeNull();
+  });
+
+  it('context menu shows Properties button and calls onPropertiesView', () => {
+    const onPropertiesView = vi.fn();
+    const props = { ...makeDefaultProps(), onPropertiesView };
+    const { getByTestId, queryByTestId } = render(<ProjectBrowserV3 {...props} />);
+    const row = getByTestId('pb-view-row-vp-01').querySelector('button') as HTMLElement;
+    fireEvent.contextMenu(row, { clientX: 50, clientY: 50 });
+    expect(queryByTestId('pb-ctx-properties')).not.toBeNull();
+    fireEvent.click(getByTestId('pb-ctx-properties'));
+    expect(onPropertiesView).toHaveBeenCalledWith('vp-01');
+  });
+
+  it('context menu omits Properties button when onPropertiesView is not provided', () => {
+    const props = makeDefaultProps();
+    const { getByTestId, queryByTestId } = render(<ProjectBrowserV3 {...props} />);
+    const row = getByTestId('pb-view-row-vp-01').querySelector('button') as HTMLElement;
+    fireEvent.contextMenu(row, { clientX: 50, clientY: 50 });
+    expect(queryByTestId('pb-ctx-properties')).toBeNull();
+  });
+});

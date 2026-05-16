@@ -159,7 +159,14 @@ export function tabFromElement(el: Element): Omit<ViewTab, 'id'> | null {
     return { kind: 'plan', targetId: el.id, label: `Level plan · ${el.name}` };
   }
   if (el.kind === 'plan_view') {
-    return { kind: 'plan', targetId: el.id, label: `Plan view · ${el.name}` };
+    const subtype = (el as { planViewSubtype?: string }).planViewSubtype;
+    const prefix =
+      subtype === 'callout'
+        ? 'Detail callout'
+        : subtype === 'ceiling_plan'
+          ? 'Ceiling plan'
+          : 'Plan view';
+    return { kind: 'plan', targetId: el.id, label: `${prefix} · ${el.name}` };
   }
   if (el.kind === 'viewpoint') {
     return { kind: '3d', targetId: el.id, label: `3D · ${el.name}` };

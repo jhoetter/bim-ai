@@ -304,13 +304,17 @@ export function ProjectBrowser(props: {
     return { planViewsSorted: sorted, planViewBuckets: buckets, bucketKeys: keys };
   }, [props.elementsById]);
 
-  /** F-098: split plan views into regular floor plans and area plans. */
-  const { floorPlanViews, areaPlans } = useMemo(() => {
+  /** F-098: split plan views into regular floor plans, area plans, and ceiling plans. */
+  const { floorPlanViews, areaPlans, ceilingPlans } = useMemo(() => {
+    // D7: ceiling_plan is kept separate so it can appear under "Deckenansichten".
+    const isCeiling = (pv: Extract<Element, { kind: 'plan_view' }>) =>
+      (pv.planViewSubtype as string | undefined) === 'ceiling_plan';
     const floor = planViewsSorted.filter(
-      (pv) => !pv.planViewSubtype || pv.planViewSubtype !== 'area_plan',
+      (pv) => !pv.planViewSubtype || (pv.planViewSubtype !== 'area_plan' && !isCeiling(pv)),
     );
     const area = planViewsSorted.filter((pv) => pv.planViewSubtype === 'area_plan');
-    return { floorPlanViews: floor, areaPlans: area };
+    const ceiling = planViewsSorted.filter(isCeiling);
+    return { floorPlanViews: floor, areaPlans: area, ceilingPlans: ceiling };
   }, [planViewsSorted]);
 
   const levelsSorted = useMemo(
@@ -477,6 +481,7 @@ export function ProjectBrowser(props: {
 
   const hasAnyDoc =
     planViewsSorted.length > 0 ||
+    ceilingPlans.length > 0 ||
     viewpoints3d.length > 0 ||
     viewpointsPlan.length > 0 ||
     sectionCuts.length > 0 ||
@@ -1184,6 +1189,20 @@ export function ProjectBrowser(props: {
           </div>
         )}
       </div>
+
+      {/* D7: Deckenansichten — Reflected Ceiling Plan views */}
+      {ceilingPlans.length > 0 ? (
+        <div className="space-y-1" data-testid="project-browser-ceiling-plans-group">
+          <div className="text-[10px] uppercase tracking-wide text-muted">
+            Deckenansichten ({ceilingPlans.length})
+          </div>
+          <ul className="space-y-0.5">
+            {ceilingPlans.map((pv) =>
+              renderPlanViewRow(pv, { duplicateTitle: 'Duplicate this ceiling plan view' }),
+            )}
+          </ul>
+        </div>
+      ) : null}
 
       <div className="space-y-1">
         <div className="flex items-center gap-1">
@@ -2045,6 +2064,8 @@ export type ProjectBrowserProps = {
   onRenameView: (viewId: string, newName: string) => void;
   onDeleteView: (viewId: string) => void;
   onDuplicateView: (viewId: string) => void;
+  /** D7: optional callback for the "Properties" context-menu action. */
+  onPropertiesView?: (viewId: string) => void;
   collapsed?: boolean;
 };
 
@@ -2090,6 +2111,7 @@ export function ProjectBrowserV3({
   onRenameView,
   onDeleteView,
   onDuplicateView,
+  onPropertiesView,
   collapsed = false,
 }: ProjectBrowserProps): JSX.Element {
   const [search, setSearch] = useState('');
@@ -2508,6 +2530,14 @@ export function ProjectBrowserV3({
             onDeleteView(ctxMenu.viewId);
             closeCtx();
           }}
+          onProperties={
+            onPropertiesView
+              ? () => {
+                  onPropertiesView(ctxMenu.viewId);
+                  closeCtx();
+                }
+              : undefined
+          }
         />
       ) : null}
     </div>
@@ -2728,6 +2758,7 @@ function PbContextMenu({
   onRename,
   onDuplicate,
   onDelete,
+  onProperties,
 }: {
   x: number;
   y: number;
@@ -2735,6 +2766,8 @@ function PbContextMenu({
   onRename: () => void;
   onDuplicate: () => void;
   onDelete: () => void;
+  /** D7: optional Properties action — shown when provided. */
+  onProperties?: () => void;
 }): JSX.Element {
   return (
     <div
@@ -2810,6 +2843,26 @@ function PbContextMenu({
       >
         Delete
       </button>
+      {onProperties ? (
+        <button
+          type="button"
+          data-testid="pb-ctx-properties"
+          style={{
+            display: 'block',
+            width: '100%',
+            textAlign: 'left',
+            padding: 'var(--space-1) var(--space-3)',
+            fontSize: 'var(--text-sm, 12.5px)',
+            color: 'var(--color-foreground)',
+            background: 'transparent',
+            border: 'none',
+            cursor: 'pointer',
+          }}
+          onClick={onProperties}
+        >
+          Properties
+        </button>
+      ) : null}
     </div>
   );
 }
