@@ -4,7 +4,9 @@
   "strategy": "manual-commit",
   "branch": "main",
   "checkpoints_count": 0,
-  "files_touched": null,
+  "files_touched": [
+    "packages/web/src/tools/toolGrammar.ts"
+  ],
   "sessions": [
     {
       "metadata": "/71/130a14e085/0/metadata.json",
@@ -17,6 +19,19 @@
       "transcript": "/71/130a14e085/1/full.jsonl",
       "content_hash": "/71/130a14e085/1/content_hash.txt",
       "prompt": "/71/130a14e085/1/prompt.txt"
+    },
+    {
+      "metadata": "/71/130a14e085/2/metadata.json",
+      "transcript": "/71/130a14e085/2/full.jsonl",
+      "content_hash": "/71/130a14e085/2/content_hash.txt",
+      "prompt": "/71/130a14e085/2/prompt.txt"
     }
-  ]
+  ],
+  "token_usage": {
+    "input_tokens": 0,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 0,
+    "output_tokens": 0,
+    "api_call_count": 0
+  }
 }
