@@ -1,4 +1,0 @@
-Read the file `spec/prompts/wave-01/WP-V2-01a-options-bar.md` and implement everything described in it.
-
-  Start by reading the existing files mentioned (AppShell.tsx, store.ts, toolGrammar.ts, ToolPalette.tsx) to understand the current state before writing
-  anything. Then implement, test, and commit on branch `feat/wp-v2-01a-options-bar`. Push the branch when done.
