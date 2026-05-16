@@ -115,6 +115,109 @@ export async function pasteFromOSClipboard(
   return pasteElementsFromClipboard({ ...args, payload });
 }
 
+// ---------------------------------------------------------------------------
+// B3 / C6 — Copy-to-levels / Paste Aligned to Selected Levels
+// ---------------------------------------------------------------------------
+
+export interface CopyToLevelsArgs {
+  payload: ClipboardPayload;
+  /** Target level ids to clone elements onto. */
+  targetLevelIds: string[];
+  /** Full element map so we can look up level elevations. */
+  elementsById: Record<string, Element>;
+  targetProjectId: string;
+}
+
+export interface LevelElementGroup {
+  levelId: string;
+  elements: Element[];
+}
+
+export interface CopyToLevelsResult {
+  elementsByLevel: LevelElementGroup[];
+}
+
+/**
+ * Clone the clipboard payload's elements onto each target level.
+ *
+ * For each target level the function:
+ * 1. Assigns fresh element ids so no clash with originals.
+ * 2. Sets `levelId` on each element to the target level.
+ * 3. Offsets `zMm` by (targetElevation − sourceElevation).
+ *
+ * Source level elevation is inferred from the first element that carries
+ * a `levelId` field; falls back to 0 when absent.
+ */
+export function copyToLevels(args: CopyToLevelsArgs): CopyToLevelsResult {
+  const { payload, targetLevelIds, elementsById } = args;
+
+  // Infer source level elevation.
+  let sourceLevelElevationMm = 0;
+  for (const el of payload.elements) {
+    const obj = el as unknown as Record<string, unknown>;
+    const lid = typeof obj['levelId'] === 'string' ? (obj['levelId'] as string) : undefined;
+    if (lid && elementsById[lid]) {
+      const lvl = elementsById[lid] as unknown as Record<string, unknown>;
+      if (typeof lvl['elevationMm'] === 'number') {
+        sourceLevelElevationMm = lvl['elevationMm'] as number;
+      }
+      break;
+    }
+  }
+
+  let salt = 0;
+  const elementsByLevel: LevelElementGroup[] = [];
+
+  for (const targetLevelId of targetLevelIds) {
+    const targetLevel = elementsById[targetLevelId] as unknown as
+      | Record<string, unknown>
+      | undefined;
+    const targetElevationMm =
+      targetLevel && typeof targetLevel['elevationMm'] === 'number'
+        ? (targetLevel['elevationMm'] as number)
+        : 0;
+    const deltaZ = targetElevationMm - sourceLevelElevationMm;
+
+    const elements: Element[] = payload.elements.map((el) => {
+      const obj = el as unknown as Record<string, unknown>;
+      const next: Record<string, unknown> = { ...obj };
+
+      // Fresh id.
+      next['id'] =
+        typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function'
+          ? crypto.randomUUID()
+          : `paste-${Date.now()}-${salt++}`;
+
+      // Rebind level.
+      if ('levelId' in next) next['levelId'] = targetLevelId;
+
+      // Offset z.
+      if (typeof next['zMm'] === 'number') {
+        next['zMm'] = (next['zMm'] as number) + deltaZ;
+      }
+
+      return next as Element;
+    });
+
+    elementsByLevel.push({ levelId: targetLevelId, elements });
+  }
+
+  return { elementsByLevel };
+}
+
+/**
+ * Convenience wrapper: paste clipboard elements aligned to each target
+ * level and return a single flat array ready to merge into elementsById.
+ */
+export function pasteAlignedToLevels(args: CopyToLevelsArgs): Element[] {
+  const { elementsByLevel } = copyToLevels(args);
+  return elementsByLevel.flatMap((g) => g.elements);
+}
+
+// ---------------------------------------------------------------------------
+// Private helpers
+// ---------------------------------------------------------------------------
+
 function reassignElementId(el: Element, salt: number): Element {
   const obj = el as unknown as Record<string, unknown>;
   const oldId = typeof obj['id'] === 'string' ? (obj['id'] as string) : 'el';

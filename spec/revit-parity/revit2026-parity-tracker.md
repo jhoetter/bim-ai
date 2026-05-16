@@ -343,12 +343,13 @@ Inspector panel always shows properties of selected element.
 #### 3.3.3 Gruppe »Zwischenablage« (clipboard: cut, copy, paste, paste aligned)
 **Status: Partial — P1**
 Copy tool exists. Cut/Paste/Paste Aligned to Selected Levels as a clipboard workflow is Not Started. Revit's clipboard allows multi-element copy + paste aligned to levels.
+- **B3 (copyToLevels):** copyToLevels.ts command shape + helpers implemented; copyToLevels / pasteAlignedToLevels functions added to copyPaste.ts; 6 unit tests passing. UI dialog pending.
 
 #### 3.3.4 Gruppe »Geometrie« (geometry group: Join, Unjoin, Cut, Uncut geometry, Paint)
 **Status: Partial — P1**
-- Join Geometry: Partial (auto-join for walls/floors, no explicit tool)
+- Join Geometry: Partial — joinGeometry.ts command shapes + selection validation; toolbar UI pending
 - Cut Geometry: Partial (shaft openings, wall voids via CSG)
-- Unjoin: Not Started as explicit tool
+- Unjoin: Partial — joinGeometry.ts command shapes + selection validation; toolbar UI pending
 - Paint (apply material to individual face): Not Started — no paint bucket tool
 
 #### 3.3.5 Gruppe »Steuerelemente« (controls: show/hide constraints, lock/unlock)

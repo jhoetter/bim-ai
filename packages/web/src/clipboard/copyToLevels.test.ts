@@ -163,7 +163,7 @@ describe('C6 copyToLevels', () => {
     expect(result.elementsByLevel[0]!.levelId).toBe('lvl-floor1');
     expect(result.elementsByLevel[1]!.levelId).toBe('lvl-floor2');
 
-    // All four generated ids must be unique (2 levels × 1 element each).
+    // All generated ids must be unique (2 levels x 1 element each).
     const allIds = result.elementsByLevel.flatMap((g) =>
       g.elements.map((el) => (el as unknown as { id: string }).id),
     );
@@ -193,7 +193,7 @@ describe('C6 pasteAlignedToLevels', () => {
       targetProjectId: 'proj-A',
     });
 
-    // 2 walls × 2 levels = 4 elements.
+    // 2 walls x 2 levels = 4 elements.
     expect(flat).toHaveLength(4);
     // All ids unique.
     const ids = flat.map((el) => (el as unknown as { id: string }).id);
