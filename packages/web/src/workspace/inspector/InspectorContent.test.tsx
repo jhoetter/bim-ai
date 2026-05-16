@@ -643,6 +643,62 @@ describe('InspectorPropertiesFor — leader_text (ANN-02)', () => {
   });
 });
 
+describe('InspectorPropertiesFor — dimension text decoration (ANN-11)', () => {
+  const baseDim: Extract<Element, { kind: 'dimension' }> = {
+    kind: 'dimension',
+    id: 'dim-1',
+    name: 'D1',
+    levelId: 'lvl-1',
+    aMm: { xMm: 0, yMm: 0 },
+    bMm: { xMm: 3000, yMm: 0 },
+    offsetMm: { xMm: 0, yMm: -500 },
+  };
+
+  it('shows prefix/suffix/override inputs when onPropertyChange provided', () => {
+    const onChange = vi.fn();
+    const { getByTestId } = render(
+      InspectorPropertiesFor(baseDim, t, { onPropertyChange: onChange }),
+    );
+    expect(getByTestId('dimension-text-prefix')).toBeTruthy();
+    expect(getByTestId('dimension-text-suffix')).toBeTruthy();
+    expect(getByTestId('dimension-text-override')).toBeTruthy();
+  });
+
+  it('calls onPropertyChange with textPrefix on blur', () => {
+    const onChange = vi.fn();
+    const { getByTestId } = render(
+      InspectorPropertiesFor(baseDim, t, { onPropertyChange: onChange }),
+    );
+    const input = getByTestId('dimension-text-prefix') as HTMLInputElement;
+    fireEvent.change(input, { target: { value: '≈' } });
+    fireEvent.blur(input);
+    expect(onChange).toHaveBeenCalledWith('textPrefix', '≈');
+  });
+
+  it('calls onPropertyChange with textOverride on blur', () => {
+    const onChange = vi.fn();
+    const { getByTestId } = render(
+      InspectorPropertiesFor(baseDim, t, { onPropertyChange: onChange }),
+    );
+    const input = getByTestId('dimension-text-override') as HTMLInputElement;
+    fireEvent.change(input, { target: { value: 'VARIES' } });
+    fireEvent.blur(input);
+    expect(onChange).toHaveBeenCalledWith('textOverride', 'VARIES');
+  });
+
+  it('passes null when override is cleared', () => {
+    const onChange = vi.fn();
+    const dimWithOverride: typeof baseDim = { ...baseDim, textOverride: 'OLD' };
+    const { getByTestId } = render(
+      InspectorPropertiesFor(dimWithOverride, t, { onPropertyChange: onChange }),
+    );
+    const input = getByTestId('dimension-text-override') as HTMLInputElement;
+    fireEvent.change(input, { target: { value: '' } });
+    fireEvent.blur(input);
+    expect(onChange).toHaveBeenCalledWith('textOverride', null);
+  });
+});
+
 describe('InspectorPropertiesFor — A4-A9 annotation elements', () => {
   it('angular_dimension shows vertex and ray positions', () => {
     const el: Extract<Element, { kind: 'angular_dimension' }> = {

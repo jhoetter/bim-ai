@@ -1735,8 +1735,11 @@ export function dimensionsThree(d: Extract<Element, { kind: 'dimension' }>): THR
   const textXMm = midXMm + (d.textOffsetMm?.xMm ?? 0);
   const textYMm = midYMm + (d.textOffsetMm?.yMm ?? 0);
 
-  const labelText =
+  const measuredText =
     dimSpanMm >= 1000 ? `${(dimSpanMm / 1000).toFixed(2)} m` : `${Math.round(dimSpanMm)} mm`;
+  const labelText = d.textOverride
+    ? d.textOverride
+    : `${d.textPrefix ?? ''}${measuredText}${d.textSuffix ?? ''}`;
 
   const sprite = planAnnotationLabelSprite(ux(textXMm), uz(textYMm), labelText, d.id);
   sprite.userData.dimensionTextLabel = true;

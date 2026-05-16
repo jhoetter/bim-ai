@@ -1418,56 +1418,100 @@ export function InspectorPropertiesFor(
               })}
             </div>
           </div>
-          {/* F-088 — text label offset inputs */}
+          {/* F-088 + ANN-11 — text label offset + text decoration inputs */}
           {dimPropChange ? (
-            <div className="flex flex-col gap-1 border-t border-border pt-2">
-              <span className="text-xs font-medium text-muted">Text label offset</span>
-              <div className="flex items-center gap-2">
-                <span className="w-20 shrink-0 text-xs text-muted">X offset (mm)</span>
-                <input
-                  type="number"
-                  className="w-20 rounded border border-border bg-surface px-1 py-0.5 text-xs"
-                  defaultValue={el.textOffsetMm?.xMm ?? 0}
-                  key={`${el.id}-text-x`}
-                  step={10}
-                  aria-label="Dimension text label X offset in millimetres"
-                  data-testid="dimension-text-offset-x"
-                  onBlur={(e) => {
-                    const xMm = Number(e.currentTarget.value);
-                    if (!isNaN(xMm)) {
-                      dimPropChange('textOffsetMm', { xMm, yMm: el.textOffsetMm?.yMm ?? 0 });
-                    }
-                  }}
-                />
+            <>
+              <div className="flex flex-col gap-1 border-t border-border pt-2">
+                <span className="text-xs font-medium text-muted">Text label offset</span>
+                <div className="flex items-center gap-2">
+                  <span className="w-20 shrink-0 text-xs text-muted">X offset (mm)</span>
+                  <input
+                    type="number"
+                    className="w-20 rounded border border-border bg-surface px-1 py-0.5 text-xs"
+                    defaultValue={el.textOffsetMm?.xMm ?? 0}
+                    key={`${el.id}-text-x`}
+                    step={10}
+                    aria-label="Dimension text label X offset in millimetres"
+                    data-testid="dimension-text-offset-x"
+                    onBlur={(e) => {
+                      const xMm = Number(e.currentTarget.value);
+                      if (!isNaN(xMm)) {
+                        dimPropChange('textOffsetMm', { xMm, yMm: el.textOffsetMm?.yMm ?? 0 });
+                      }
+                    }}
+                  />
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="w-20 shrink-0 text-xs text-muted">Y offset (mm)</span>
+                  <input
+                    type="number"
+                    className="w-20 rounded border border-border bg-surface px-1 py-0.5 text-xs"
+                    defaultValue={el.textOffsetMm?.yMm ?? 0}
+                    key={`${el.id}-text-y`}
+                    step={10}
+                    aria-label="Dimension text label Y offset in millimetres"
+                    data-testid="dimension-text-offset-y"
+                    onBlur={(e) => {
+                      const yMm = Number(e.currentTarget.value);
+                      if (!isNaN(yMm)) {
+                        dimPropChange('textOffsetMm', { xMm: el.textOffsetMm?.xMm ?? 0, yMm });
+                      }
+                    }}
+                  />
+                </div>
+                <div className="flex gap-2 pt-0.5">
+                  <button
+                    className="rounded border border-border bg-surface px-2 py-0.5 text-xs hover:bg-surface-strong"
+                    data-testid="dimension-text-offset-reset"
+                    onClick={() => dimPropChange('textOffsetMm', null)}
+                  >
+                    Reset
+                  </button>
+                </div>
               </div>
-              <div className="flex items-center gap-2">
-                <span className="w-20 shrink-0 text-xs text-muted">Y offset (mm)</span>
-                <input
-                  type="number"
-                  className="w-20 rounded border border-border bg-surface px-1 py-0.5 text-xs"
-                  defaultValue={el.textOffsetMm?.yMm ?? 0}
-                  key={`${el.id}-text-y`}
-                  step={10}
-                  aria-label="Dimension text label Y offset in millimetres"
-                  data-testid="dimension-text-offset-y"
-                  onBlur={(e) => {
-                    const yMm = Number(e.currentTarget.value);
-                    if (!isNaN(yMm)) {
-                      dimPropChange('textOffsetMm', { xMm: el.textOffsetMm?.xMm ?? 0, yMm });
-                    }
-                  }}
-                />
+              <div className="flex flex-col gap-1 border-t border-border pt-2">
+                <span className="text-xs font-medium text-muted">Text decoration</span>
+                <div className="flex items-center gap-2">
+                  <span className="w-20 shrink-0 text-xs text-muted">Prefix</span>
+                  <input
+                    type="text"
+                    className="flex-1 rounded border border-border bg-surface px-1 py-0.5 text-xs"
+                    defaultValue={el.textPrefix ?? ''}
+                    key={`${el.id}-prefix`}
+                    placeholder="e.g. ≈"
+                    aria-label="Dimension text prefix"
+                    data-testid="dimension-text-prefix"
+                    onBlur={(e) => dimPropChange('textPrefix', e.currentTarget.value || null)}
+                  />
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="w-20 shrink-0 text-xs text-muted">Suffix</span>
+                  <input
+                    type="text"
+                    className="flex-1 rounded border border-border bg-surface px-1 py-0.5 text-xs"
+                    defaultValue={el.textSuffix ?? ''}
+                    key={`${el.id}-suffix`}
+                    placeholder="e.g. (EQ)"
+                    aria-label="Dimension text suffix"
+                    data-testid="dimension-text-suffix"
+                    onBlur={(e) => dimPropChange('textSuffix', e.currentTarget.value || null)}
+                  />
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="w-20 shrink-0 text-xs text-muted">Override</span>
+                  <input
+                    type="text"
+                    className="flex-1 rounded border border-border bg-surface px-1 py-0.5 text-xs"
+                    defaultValue={el.textOverride ?? ''}
+                    key={`${el.id}-override`}
+                    placeholder="replaces measured value"
+                    aria-label="Dimension text override"
+                    data-testid="dimension-text-override"
+                    onBlur={(e) => dimPropChange('textOverride', e.currentTarget.value || null)}
+                  />
+                </div>
               </div>
-              <div className="flex gap-2 pt-0.5">
-                <button
-                  className="rounded border border-border bg-surface px-2 py-0.5 text-xs hover:bg-surface-strong"
-                  data-testid="dimension-text-offset-reset"
-                  onClick={() => dimPropChange('textOffsetMm', null)}
-                >
-                  Reset
-                </button>
-              </div>
-            </div>
+            </>
           ) : null}
         </div>
       );
