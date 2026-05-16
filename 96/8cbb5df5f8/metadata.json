@@ -3,7 +3,7 @@
   "checkpoint_id": "968cbb5df5f8",
   "strategy": "manual-commit",
   "branch": "main",
-  "checkpoints_count": 4,
+  "checkpoints_count": 5,
   "files_touched": [
     "packages/web/src/workspace/Workspace.tsx",
     "packages/web/src/workspace/project/GlobalParamsDialog.test.tsx",
@@ -65,13 +65,19 @@
       "transcript": "/96/8cbb5df5f8/8/full.jsonl",
       "content_hash": "/96/8cbb5df5f8/8/content_hash.txt",
       "prompt": "/96/8cbb5df5f8/8/prompt.txt"
+    },
+    {
+      "metadata": "/96/8cbb5df5f8/9/metadata.json",
+      "transcript": "/96/8cbb5df5f8/9/full.jsonl",
+      "content_hash": "/96/8cbb5df5f8/9/content_hash.txt",
+      "prompt": "/96/8cbb5df5f8/9/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 4807367,
-    "cache_creation_tokens": 2048192,
-    "cache_read_tokens": 314153114,
-    "output_tokens": 1021205,
-    "api_call_count": 3167
+    "input_tokens": 4808177,
+    "cache_creation_tokens": 3054549,
+    "cache_read_tokens": 389147398,
+    "output_tokens": 1299963,
+    "api_call_count": 3927
   }
 }
