@@ -24,6 +24,7 @@ import {
 import {
   SheetTitleblockEditor,
   normalizeTitleblockDraftFromSheet,
+  SheetRevisionTableSvg,
 } from './sheetTitleblockAuthoring';
 import { SheetDocumentationManifest } from './SheetDocumentationManifest';
 import { parseSheetViewRef, resolveViewportTitleFromRef } from './sheetViewRef';
@@ -614,6 +615,13 @@ function SheetCanvasWithSheet(props: {
                 {txt}
               </text>
             ))}
+
+          <SheetRevisionTableSvg
+            sheetId={sh.id}
+            elementsById={elementsById}
+            x={wMm - marginMm - 5600}
+            y={hMm - marginMm}
+          />
 
           {revIssSeg ? (
             <text

@@ -99,6 +99,192 @@ export function mergedTitleblockParametersForUpsert(
   return out;
 }
 
+export type SheetRevisionRow = {
+  revisionId: string;
+  number: string;
+  description: string;
+  date: string;
+};
+
+export function resolveSheetRevisions(
+  elementsById: Record<string, Element>,
+  sheetId: string,
+): SheetRevisionRow[] {
+  const rows: SheetRevisionRow[] = [];
+  for (const el of Object.values(elementsById)) {
+    if (el.kind !== 'sheet_revision' || el.sheetId !== sheetId) continue;
+    const rev = elementsById[el.revisionId];
+    if (!rev || rev.kind !== 'revision') continue;
+    rows.push({
+      revisionId: el.revisionId,
+      number: rev.number,
+      description: rev.description,
+      date: rev.date,
+    });
+  }
+  rows.sort((a, b) => a.number.localeCompare(b.number, undefined, { numeric: true }));
+  return rows;
+}
+
+export function SheetRevisionTableSvg(props: {
+  sheetId: string;
+  elementsById: Record<string, Element>;
+  x: number;
+  y: number;
+  colWidths?: [number, number, number];
+  rowHeight?: number;
+}) {
+  const { x, y, colWidths = [800, 3200, 1600], rowHeight = 700 } = props;
+  const rows = resolveSheetRevisions(props.elementsById, props.sheetId);
+  const totalWidth = colWidths[0] + colWidths[1] + colWidths[2];
+  const headerHeight = rowHeight;
+  const displayRows = rows.length > 0 ? rows : null;
+  const dataRowCount = displayRows ? displayRows.length : 1;
+  const totalHeight = headerHeight + dataRowCount * rowHeight;
+  const tableY = y - totalHeight;
+
+  const col0x = x;
+  const col1x = x + colWidths[0];
+  const col2x = x + colWidths[0] + colWidths[1];
+
+  const cellTextY = (rowY: number) => rowY + rowHeight * 0.65;
+
+  return (
+    <g data-testid="sheet-revision-table">
+      <rect
+        x={x}
+        y={tableY}
+        width={totalWidth}
+        height={totalHeight}
+        fill="#f8fafc"
+        stroke="#334155"
+        strokeWidth={60}
+      />
+      <line
+        x1={x}
+        y1={tableY + headerHeight}
+        x2={x + totalWidth}
+        y2={tableY + headerHeight}
+        stroke="#334155"
+        strokeWidth={60}
+      />
+      <line
+        x1={col1x}
+        y1={tableY}
+        x2={col1x}
+        y2={tableY + totalHeight}
+        stroke="#334155"
+        strokeWidth={40}
+      />
+      <line
+        x1={col2x}
+        y1={tableY}
+        x2={col2x}
+        y2={tableY + totalHeight}
+        stroke="#334155"
+        strokeWidth={40}
+      />
+      <text
+        x={col0x + 120}
+        y={cellTextY(tableY)}
+        fill="#334155"
+        style={{ fontSize: '380px', fontWeight: 700 }}
+      >
+        Rev
+      </text>
+      <text
+        x={col1x + 120}
+        y={cellTextY(tableY)}
+        fill="#334155"
+        style={{ fontSize: '380px', fontWeight: 700 }}
+      >
+        Description
+      </text>
+      <text
+        x={col2x + 120}
+        y={cellTextY(tableY)}
+        fill="#334155"
+        style={{ fontSize: '380px', fontWeight: 700 }}
+      >
+        Date
+      </text>
+      {displayRows
+        ? displayRows.map((row, i) => {
+            const ry = tableY + headerHeight + i * rowHeight;
+            return (
+              <g key={row.revisionId} data-testid={`sheet-revision-row-${row.number}`}>
+                {i > 0 ? (
+                  <line
+                    x1={x}
+                    y1={ry}
+                    x2={x + totalWidth}
+                    y2={ry}
+                    stroke="#94a3b8"
+                    strokeWidth={30}
+                  />
+                ) : null}
+                <text
+                  x={col0x + 120}
+                  y={cellTextY(ry)}
+                  fill="#334155"
+                  style={{ fontSize: '360px' }}
+                >
+                  {row.number}
+                </text>
+                <text
+                  x={col1x + 120}
+                  y={cellTextY(ry)}
+                  fill="#334155"
+                  style={{ fontSize: '360px' }}
+                >
+                  {row.description}
+                </text>
+                <text
+                  x={col2x + 120}
+                  y={cellTextY(ry)}
+                  fill="#334155"
+                  style={{ fontSize: '360px' }}
+                >
+                  {row.date}
+                </text>
+              </g>
+            );
+          })
+        : (() => {
+            const ry = tableY + headerHeight;
+            return (
+              <g data-testid="sheet-revision-placeholder">
+                <text
+                  x={col0x + 120}
+                  y={cellTextY(ry)}
+                  fill="#94a3b8"
+                  style={{ fontSize: '360px' }}
+                >
+                  —
+                </text>
+                <text
+                  x={col1x + 120}
+                  y={cellTextY(ry)}
+                  fill="#94a3b8"
+                  style={{ fontSize: '360px' }}
+                >
+                  —
+                </text>
+                <text
+                  x={col2x + 120}
+                  y={cellTextY(ry)}
+                  fill="#94a3b8"
+                  style={{ fontSize: '360px' }}
+                >
+                  —
+                </text>
+              </g>
+            );
+          })()}
+    </g>
+  );
+}
+
 export function SheetTitleblockEditor(props: {
   sheetId: string;
 

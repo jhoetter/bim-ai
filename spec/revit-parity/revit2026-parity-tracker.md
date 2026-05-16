@@ -637,8 +637,8 @@ Section tool exists, section views are generated (sectionViewportSvg.tsx). A ful
 NewSheetDialog.tsx, SheetCanvas.tsx, SheetReviewSurface.tsx exist. Sheets can be created and views placed on them. Missing: user-customisable title blocks (Schriftkopf) with project information fields, dynamic title block families, viewport scale labels on sheets.
 
 ### 6.3 Plan mit Änderungsliste (sheet with revision table / delta list)
-**Status: Partial — D6**
-`revision` and `sheet_revision` element types added to `@bim-ai/core`. `ManageRevisionsDialog.tsx` implements CRUD for project revisions and per-sheet assignment via checkboxes (`sheet_revision` join records). Commands: `create_revision`, `update_revision`, `delete_revision`, `add_sheet_revision`, `remove_sheet_revision`. Revision clouds (`revision_cloud` annotation — ANN-03) already existed. Missing: revision table in sheet title block rendering, `revision-cloud` draw tool in toolbar.
+**Status: Done — revision table rendered in title block**
+`revision` and `sheet_revision` element types added to `@bim-ai/core`. `ManageRevisionsDialog.tsx` implements CRUD for project revisions and per-sheet assignment via checkboxes (`sheet_revision` join records). Commands: `create_revision`, `update_revision`, `delete_revision`, `add_sheet_revision`, `remove_sheet_revision`. Revision clouds (`revision_cloud` annotation — ANN-03) already existed. `SheetRevisionTableSvg` renders in the bottom-right corner of the title block (via `sheetTitleblockAuthoring.tsx`); `resolveSheetRevisions` joins `sheet_revision` → `revision` records, sorts by number ascending, shows a placeholder "—" row when none are assigned. Tests: `sheetRevisionTable.test.ts` (5 tests). Missing: `revision-cloud` draw tool in toolbar.
 
 ### 6.4 Detailansichten und Detaillierung (detail views and 2D detailing)
 
