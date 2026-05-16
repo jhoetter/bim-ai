@@ -1,0 +1,63 @@
+Terminal 1 — WP-A (Annotations)
+  cat spec/revit-parity/agent-prompts/WAVE2-WP-A.md | pbcopy
+  Tasks: interior elevation inspector + drag grip, EQ condition on aligned dimensions
+
+---
+
+<task-notification>
+<task-id>a36227c97e8f17640</task-id>
+<tool-use-id>REDACTED</tool-use-id>
+<output-file>/private/tmp/claude-501/-Users-jhoetter-repos-bim-ai/8becc971-2d5e-4d80-83e8-36da38524257/tasks/a36227c97e8f17640.output</output-file>
+<status>completed</status>
+<summary>Agent "WP-A: Interior elevation inspector+grip + EQ dims" completed</summary>
+<result>The branch is already up to date with origin/main — the commit was pushed successfully (it was likely pushed along with the earlier commits that were ahead of origin).
+
+All done. Here is a summary of what was implemented:
+
+---
+
+## WP-A Implementation Summary
+
+### Task A — Interior elevation marker inspector + drag grip
+
+**A1. Inspector panel** (`packages/web/src/workspace/inspector/InspectorContent.tsx`):
+- Added `case 'interior_elevation_marker':` before `case 'spot_elevation':`
+- Shows `levelId` as a read-only `FieldRow`
+- Shows position as read-only display
+- When `onPropertyChange` available: renders a `radiusMm` number input with `data-testid="inspector-interior-elevation-radius"` that dispatches on blur; falls back to read-only `FieldRow` otherwise
+
+**A2. Drag grip** (`packages/web/src/plan/grip-providers/interiorElevationMarkerGripProvider.ts`):
+- Exports `interiorElevationMarkerGripProvider` with a single circle grip at `el.positionMm`
+- `onCommit(delta)` returns `updateElementProperty` with correct summed position
+- `onDrag()` returns `{ kind: 'unknown', id: el.id }`
+- `onNumericOverride(absoluteMm)` sets xMm leaving yMm unchanged
+- Registered in `packages/web/src/plan/grip-providers/index.ts` with `case 'interior_elevation_marker':`
+
+### Task B — EQ condition on aligned dimensions
+
+**B1. Data model** (`packages/core/src/index.ts`):
+- Added `'permanent_dimension'` to the `ElemKind` union
+- Added `permanent_dimension` variant to the `Element` union with fields: `id`, `levelId`, `witnessPointsMm: XY[]`, `offsetMm: XY`, `eqEnabled?: boolean`
+
+**B2. Plan rendering** (`packages/web/src/plan/planElementMeshBuilders.ts`):
+- Added `permanentDimensionThree()` function that draws `LineSegments` between each adjacent witness point pair (offset by `offsetMm`); renders per-segment mm/m labels when `eqEnabled` is falsy, or a single "EQ" label at the span midpoint when `eqEnabled` is true
+
+**B3. Inspector** (`packages/web/src/workspace/inspector/InspectorContent.tsx`):
+- Added `case 'permanent_dimension':` showing segment count (`witnessPointsMm.length - 1`), levelId, and an EQ toggle button with `data-testid="inspector-permanent-dimension-eq"` that calls `onPropertyChange('eqEnabled', !el.eqEnabled)`
+
+### Tests (all passing)
+
+- `packages/web/src/plan/grip-providers/interiorElevationMarkerGripProvider.test.ts` — 3 tests
+- `packages/web/src/plan/permanentDimension.test.ts` — 7 tests  
+- `packages/web/src/workspace/inspector/InspectorContent.test.tsx` — 7 new tests added
+
+### Tracker updates
+
+- `spec/revit-parity/revit2026-parity-tracker.md` §6.1.5: status updated to "Partial — D2 (inspector+grip done; full elevation-view rendering is separate)"
+- `spec/revit-parity/revit2026-parity-tracker.md` §4.2.2: status updated to "Partial — P2 (EQ toggle and visual display implemented)"</result>
+<usage><total_tokens>65372</total_tokens><tool_uses>70</tool_uses><duration_ms>565961</duration_ms></usage>
+</task-notification>
+
+---
+
+did you update the tracker and commit + push?
