@@ -44,24 +44,44 @@ function makeStairSubcomponentMaterial(
 }
 
 /**
- * KRN-07 — render a multi-run stair as inclined flights with flat polygon
- * landings between them. Spiral stairs ride a helical sweep around `centerMm`;
- * sketch stairs walk treads along the input polyline. Straight, l_shape, and
- * u_shape go through the run-by-run path that consumes `runs[]` + `landings[]`.
+ * WP-C C2: Collect all floor boundary elevations (in metres) between
+ * baseLevelId and topLevelId, sorted ascending. The returned array includes
+ * the base elevation as first element and the top elevation as last.
  */
-export function makeMultiRunStairMesh(
-  stair: StairElem,
+export function collectFloorElevations(
+  baseLevelId: string,
+  topLevelId: string,
   elementsById: Record<string, Element>,
-  paint: ViewportPaintBundle | null,
-): THREE.Group {
-  const group = new THREE.Group();
+): number[] {
+  const baseElev = elevationMForLevel(baseLevelId, elementsById);
+  const topElev = elevationMForLevel(topLevelId, elementsById);
 
-  const baseLevelElev = elevationMForLevel(stair.baseLevelId, elementsById);
-  const topLevelElev = elevationMForLevel(stair.topLevelId, elementsById);
-  const totalRise = Math.max(Math.abs(topLevelElev - baseLevelElev), 0.1);
+  const intermediate: number[] = [];
+  for (const el of Object.values(elementsById)) {
+    if (el.kind !== 'level') continue;
+    if (el.id === baseLevelId || el.id === topLevelId) continue;
+    const elev = el.elevationMm / 1000;
+    if (elev > baseElev && elev < topElev) {
+      intermediate.push(elev);
+    }
+  }
+  intermediate.sort((a, b) => a - b);
+  return [baseElev, ...intermediate, topElev];
+}
 
-  const treadMat = makeStairSubcomponentMaterial(stair, 'tread', elementsById, paint);
-  const landingMat = makeStairSubcomponentMaterial(stair, 'landing', elementsById, paint);
+/**
+ * Build one floor-segment worth of stair geometry and append the resulting
+ * meshes to `group`. `baseElev` and `topElev` are in metres.
+ */
+function appendSingleStoreyStairMeshes(
+  stair: StairElem,
+  baseElev: number,
+  topElev: number,
+  treadMat: THREE.Material,
+  landingMat: THREE.Material,
+  group: THREE.Group,
+): void {
+  const totalRise = Math.max(Math.abs(topElev - baseElev), 0.1);
 
   if (
     stair.shape === 'spiral' &&
@@ -78,7 +98,7 @@ export function makeMultiRunStairMesh(
       stair.outerRadiusMm,
       stair.totalRotationDeg,
       riserCount,
-      baseLevelElev,
+      baseElev,
       riserH,
       treadMat,
     );
@@ -88,8 +108,7 @@ export function makeMultiRunStairMesh(
       addEdges(tread);
       group.add(tread);
     }
-    group.userData.bimPickId = stair.id;
-    return group;
+    return;
   }
 
   if (stair.shape === 'sketch' && stair.sketchPathMm && stair.sketchPathMm.length >= 2) {
@@ -100,7 +119,7 @@ export function makeMultiRunStairMesh(
       stair.sketchPathMm,
       riserCount,
       widthM,
-      baseLevelElev,
+      baseElev,
       riserH,
       treadMat,
     );
@@ -110,8 +129,7 @@ export function makeMultiRunStairMesh(
       addEdges(tread);
       group.add(tread);
     }
-    group.userData.bimPickId = stair.id;
-    return group;
+    return;
   }
 
   const runs = stair.runs ?? [];
@@ -136,7 +154,7 @@ export function makeMultiRunStairMesh(
     const angle = Math.atan2(dz, dx);
     const riserCount = Math.max(1, run.riserCount);
     const treadDepth = runLen / riserCount;
-    const runStartElev = baseLevelElev + risersConsumed * riserH;
+    const runStartElev = baseElev + risersConsumed * riserH;
 
     const treadGeom = new THREE.BoxGeometry(treadDepth, TREAD_THICK, runWidth);
     for (let i = 0; i < riserCount; i++) {
@@ -162,7 +180,7 @@ export function makeMultiRunStairMesh(
     landingRisersConsumed += runs[li].riserCount;
     const landing = landings[li];
     if (landing.boundaryMm.length < 3) continue;
-    const landingY = baseLevelElev + landingRisersConsumed * riserH;
+    const landingY = baseElev + landingRisersConsumed * riserH;
     const shape = new THREE.Shape(
       landing.boundaryMm.map((p) => new THREE.Vector2(p.xMm / 1000, p.yMm / 1000)),
     );
@@ -177,11 +195,44 @@ export function makeMultiRunStairMesh(
     addEdges(mesh);
     group.add(mesh);
   }
+}
+
+/**
+ * KRN-07 / WP-C C2 — render a multi-run stair as inclined flights with flat
+ * polygon landings between them. When `stair.multiStorey === true` the
+ * geometry is stacked once per floor-to-floor segment.
+ */
+export function makeMultiRunStairMesh(
+  stair: StairElem,
+  elementsById: Record<string, Element>,
+  paint: ViewportPaintBundle | null,
+): THREE.Group {
+  const group = new THREE.Group();
+
+  const treadMat = makeStairSubcomponentMaterial(stair, 'tread', elementsById, paint);
+  const landingMat = makeStairSubcomponentMaterial(stair, 'landing', elementsById, paint);
+
+  if (stair.multiStorey) {
+    const elevations = collectFloorElevations(stair.baseLevelId, stair.topLevelId, elementsById);
+    for (let i = 0; i < elevations.length - 1; i++) {
+      appendSingleStoreyStairMeshes(
+        stair,
+        elevations[i],
+        elevations[i + 1],
+        treadMat,
+        landingMat,
+        group,
+      );
+    }
+  } else {
+    const baseLevelElev = elevationMForLevel(stair.baseLevelId, elementsById);
+    const topLevelElev = elevationMForLevel(stair.topLevelId, elementsById);
+    appendSingleStoreyStairMeshes(stair, baseLevelElev, topLevelElev, treadMat, landingMat, group);
+  }
 
   group.userData.bimPickId = stair.id;
   return group;
 }
-
 /**
  * Build N annular-sector tread meshes around a centre. Each tread sweeps
  * `totalRotDeg / riserCount` of arc and rises one riser. Returned in order

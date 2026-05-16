@@ -446,7 +446,17 @@ export type DxfLineworkPrim =
       endDeg: number;
       layerName?: string;
       layerColor?: string;
-    };
+    }
+  | { kind: 'circle'; center: XY; radiusMm: number; layerName?: string; layerColor?: string }
+  | {
+      kind: 'text';
+      text: string;
+      positionMm: XY;
+      heightMm?: number;
+      layerName?: string;
+      layerColor?: string;
+    }
+  | { kind: 'hatch'; boundaryPoints: XY[][]; layerName?: string; layerColor?: string };
 
 /** F-019: queryable layer summary preserved from DXF import/link. */
 export type DxfLayerMeta = {
@@ -1094,6 +1104,12 @@ export type MepCommonFields = {
   pinned?: boolean;
 };
 
+/** Reference to a specific face on a mass element. */
+export type MassFaceRef = {
+  elementId: string;
+  faceIndex: number;
+};
+
 export type Element =
   | {
       kind: 'project_settings';
@@ -1270,6 +1286,8 @@ export type Element =
       joinDisallowStart?: boolean;
       /** F-040: per-endpoint Allow/Disallow Join flag (mirrors Revit right-click → Allow/Disallow Join). */
       joinDisallowEnd?: boolean;
+      /** G7: reference to the mass face this wall was generated from. */
+      massFaceRef?: MassFaceRef | null;
     }
   | {
       kind: 'door';
@@ -1638,6 +1656,8 @@ export type Element =
       thermalClassification?: ThermalEnvelopeClassification | null;
       thermalClassificationSource?: ThermalClassificationSource | null;
       energyScenarioId?: string | null;
+      /** G6: reference to the mass face this roof was generated from. */
+      massFaceRef?: MassFaceRef | null;
     }
   | {
       kind: 'stair';
@@ -1684,6 +1704,8 @@ export type Element =
       floatingTreadDepthMm?: number;
       /** KRN-V3-10: wall element id that hosts cantilever treads for floating stairs. */
       floatingHostWallId?: string;
+      /** WP-C C3: when true, corner transition uses wedge (winder) treads instead of a flat landing. */
+      winderAtCorner?: boolean;
       /** RMP-05: subcomponent materials, e.g. tread, riser, stringer, landing, support. */
       materialSlots?: Record<string, string | null>;
       overrideParams?: Record<string, unknown>;
@@ -1729,6 +1751,12 @@ export type Element =
       balusterPattern?: BalusterPattern;
       /** KRN-V3-11: wall-mounted handrail support brackets. */
       handrailSupports?: HandrailSupport[];
+      /** WP-C C7: railing height in mm. */
+      railingHeightMm?: number;
+      /** WP-C C7: top rail profile type identifier. */
+      topRailProfile?: string;
+      /** WP-C C7: baluster/balustrade spacing in mm. */
+      balustradeSpacingMm?: number;
       /** RMP-05: subcomponent materials, e.g. topRail, post, baluster, panel, cable, bracket. */
       materialSlots?: Record<string, string | null>;
       structuralRole?: StructuralRole;
@@ -1870,6 +1898,8 @@ export type Element =
       viewRangeBottomMm?: number | null;
       viewRangeTopMm?: number | null;
       cutPlaneOffsetMm?: number | null;
+      /** D3: depth below viewRangeBottomMm for hidden-line elements (renders dashed). */
+      viewDepth?: number | null;
       categoriesHidden?: string[];
       /** F-102: per-element IDs hidden in this plan view (Revit "Hide in View → Element"). */
       hiddenElementIds?: string[];
@@ -2849,6 +2879,23 @@ export type Element =
       positionMm: XY;
       title?: string;
       entries: { systemType: string; label: string; colour: string }[];
+    }
+  | {
+      kind: 'brace';
+      id: string;
+      name?: string;
+      startXMm: number;
+      startYMm: number;
+      startElevationMm: number;
+      endXMm: number;
+      endYMm: number;
+      endElevationMm: number;
+      profileId?: string;
+      materialKey?: string | null;
+      structuralRole: 'structural';
+      phaseCreated?: string | null;
+      phaseDemolished?: string | null;
+      discipline?: DisciplineTag | null;
     };
 
 export type Violation = {
