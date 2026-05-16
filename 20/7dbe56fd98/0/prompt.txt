@@ -1,3 +1,0 @@
-can you please investigate: (a) if there are unused components / exports, i.e. dead code? (b) if there are linting errors? (c) overall naming, do we still have things like "legacy" or "redesigned" or such? which are active, which are old? (d) is CI/CD working correctly? 
-
-i want to fully be sure 100% that i have a great code base on which i can continue building very well
