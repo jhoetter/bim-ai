@@ -625,8 +625,8 @@ Reflected ceiling plans (RCP) are implemented as `planViewSubtype: 'ceiling_plan
 Elevation tool and elevation marker exist. Four cardinal elevation views are auto-created with a new project in Revit. In bim-ai, elevation views must be placed manually. Elevation view rendering from the model (showing actual geometry in 2D elevation projection) is in sectionViewportSvg.tsx/sectionViewportDoc.ts — Partial.
 
 #### 6.1.5 Innenansichten (interior elevation views)
-**Status: Partial — P2**
-Interior elevation placement workflow (Revit: place 4-sided elevation marker inside a room, get 4 elevation views automatically) is Not Started. Elevation tool places single elevation views.
+**Status: Partial — D2**
+Interior elevation placement: `interior-elevation` tool (hotkey `IE`) added to plan palette. Single-click dispatches `create_interior_elevation_marker` command; server auto-creates four `elevation_view` children (N/S/E/W). `interior_elevation_marker` element type in `@bim-ai/core` with `positionMm`, `levelId`, `radiusMm`, and `elevationViewIds` (N/S/E/W). Plan symbol: 4-quadrant circle with inward arrows rendered in `symbology.ts`. Inspector panel and drag-grip for placed markers are Not Started.
 
 #### 6.1.6 Schnittansicht (section view: cross section, building section)
 **Status: Partial — P1**
