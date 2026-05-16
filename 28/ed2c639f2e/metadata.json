@@ -138,6 +138,12 @@
       "transcript": "/28/ed2c639f2e/20/full.jsonl",
       "content_hash": "/28/ed2c639f2e/20/content_hash.txt",
       "prompt": "/28/ed2c639f2e/20/prompt.txt"
+    },
+    {
+      "metadata": "/28/ed2c639f2e/21/metadata.json",
+      "transcript": "/28/ed2c639f2e/21/full.jsonl",
+      "content_hash": "/28/ed2c639f2e/21/content_hash.txt",
+      "prompt": "/28/ed2c639f2e/21/prompt.txt"
     }
   ],
   "token_usage": {
