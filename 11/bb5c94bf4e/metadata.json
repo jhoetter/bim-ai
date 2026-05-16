@@ -5,6 +5,8 @@
   "branch": "main",
   "checkpoints_count": 0,
   "files_touched": [
+    "packages/web/src/export/pdfExporter.test.ts",
+    "packages/web/src/export/pdfExporter.ts",
     "packages/web/src/schedules/SchedulePanel.tsx"
   ],
   "sessions": [
@@ -73,13 +75,19 @@
       "transcript": "/11/bb5c94bf4e/10/full.jsonl",
       "content_hash": "/11/bb5c94bf4e/10/content_hash.txt",
       "prompt": ""
+    },
+    {
+      "metadata": "/11/bb5c94bf4e/11/metadata.json",
+      "transcript": "/11/bb5c94bf4e/11/full.jsonl",
+      "content_hash": "/11/bb5c94bf4e/11/content_hash.txt",
+      "prompt": "/11/bb5c94bf4e/11/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 449,
-    "cache_creation_tokens": 184425,
-    "cache_read_tokens": 16485476,
-    "output_tokens": 91868,
-    "api_call_count": 182
+    "input_tokens": 511,
+    "cache_creation_tokens": 276315,
+    "cache_read_tokens": 21249726,
+    "output_tokens": 109377,
+    "api_call_count": 238
   }
 }
