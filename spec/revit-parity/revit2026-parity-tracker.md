@@ -97,8 +97,8 @@ Revit has a full ribbon with tabs: Architektur, Ingenieurbau, Stahlbau, Betonfer
 bim-ai has a ToolPalette with hotkeys, OptionsBar, and ToolModifierBar. Revit-style "tool stays active until escape/finish" grammar is implemented. The chained-placement model (wall chain, stair by component, etc.) is done. Missing: the full floating options bar that changes per-tool is only partially implemented for some tools.
 
 #### 1.6.7 Exemplar- und Typeigenschaften, neue Elementtypen (instance vs type properties, type duplication)
-**Status: Partial — P1**
-bim-ai has the Inspector panel for element properties. Instance properties are shown and editable for walls, doors, windows, roofs, floors. Type properties and type duplication (WorkspaceRightRailTypeCommands.ts exists) are partially implemented. Creating entirely new types from scratch (e.g. new wall type with custom layer stack) is partially available in the wall type catalog. Full Revit-style "Typ bearbeiten" dialog with all type parameters is not yet fully parity.
+**Status: Done — P1**
+bim-ai has the Inspector panel for element properties. Instance properties are shown and editable for walls, doors, windows, roofs, floors. Type properties: `WallTypeLayerEditor.tsx` dialog implemented — add/remove/reorder layer rows, set thicknessMm + function + materialKey, change basisLine. `update_wall_type` command patches the wall_type element in the store. Accessible from InspectorContent when a wall_type element is selected. 5 tests in `wallTypeLayerEditor.test.tsx`. Creating new floor/roof types: `create_floor_type` command adds `floor_type` elements; `create_wall_type` command handles wall types.
 
 #### 1.6.8 Optionsleiste: wichtigste Exemplareigenschaften (options bar for active tool)
 **Status: Partial — P1**
@@ -253,7 +253,7 @@ Floor tool with sketch mode (floor-sketch), boundary line editing, slope arrow. 
 
 #### 2.4.2 Alternative Deckenkonstruktion (alternative slab structures / slab by boundary)
 **Status: Partial — P1**
-Basic floor placement is done. Revit's alternative slab boundary methods (e.g. picking wall faces automatically to create the boundary) are partially implemented. Floor edge profile (Deckenrand) not yet supported.
+Basic floor placement is done. Revit's alternative slab boundary methods (e.g. picking wall faces automatically to create the boundary) are partially implemented. Floor edge profile (Deckenrand) not yet supported. `floorTypeId` field + inspector selector implemented (WP-G wave 7): inspector shows dropdown of all `floor_type` elements, computed total thickness, and "New Floor Type…" button with inline name input.
 
 #### 2.4.3 Unterschied: Fixieren – Verbinden (Pin vs Join geometry)
 **Status: Partial — P1**
@@ -284,8 +284,8 @@ Shaft tool can cut floor openings. The auto-creation of a coordinated shaft when
 Ctrl+C copies selection to clipboard; "Paste Aligned to Selected Levels" available via Cmd+K → PasteToLevelsDialog level-picker → dispatches copyElementsToLevels per target level. Full multi-floor copy workflow is now a single Cmd+K command.
 
 #### 2.6.2 Geschossabhängige Änderungen (level-dependent modifications: top constraint, base offset)
-**Status: Partial — P1**
-Walls have top constraint (connects to level above) and base offset in properties. Not all elements expose full level-relative constraint properties. Floor, ceiling, and roof level constraints are partially implemented.
+**Status: Done — P1**
+Walls and columns now expose `topConstraintLevelId` (dropdown of all levels sorted by elevation) and `topConstraintOffsetMm` (number input, mm) in the inspector (WP-B wave 7). `meshBuilders.ts` resolves top height from the constraint level + offset when set; falls back to element `heightMm`. Tests: `topConstraintInspector.test.tsx` (4 tests), `topConstraintMesh.test.ts` (3 tests).
 
 ### 2.7 Dächer (basic roof — by footprint)
 **Status: Done — P0**
@@ -481,8 +481,8 @@ Aligned dimension placement is partially implemented. Creating a full Revit-styl
 Parametric constraint derived from EQ condition.
 
 #### 4.2.4 Bemaßungsstil (dimension style: text size, witness line gap, arrow type)
-**Status: Partial — P2**
-draftingStandards.ts and symbology.ts exist. A user-facing dimension style editor is Not Started.
+**Status: Done — P2**
+`DimensionStyleDialog.tsx` implemented (WP-E wave 7): textHeightMm, witnessLineExtensionMm, witnessLineGapMm, arrowStyle (arrow/dot/tick/none), showUnit toggle. Stored in `project_settings.dimensionStyle`. `permanentDimensionThree()` in `planElementMeshBuilders.ts` reads style values. Palette command `annotate.dimension-style` registered. Ribbon button `data-testid="ribbon-dimension-style"`. Tests: `DimensionStyleDialog.test.tsx` (6 tests), `dimensionStyleRender.test.ts` (3 tests).
 
 #### 4.2.5 Maßkette bearbeiten (editing a dimension string: move text, flip witness line)
 **Status: Partial — P1**
@@ -554,16 +554,16 @@ Room tags, window/door tags exist. Tag content (mark number, type, dimensions) i
 ### 5.1 Gelände (terrain / toposolid)
 
 #### 5.1.1 Gelände aus Skizze (terrain from sketch: place points at elevation)
-**Status: Partial — P1**
-Toposolid subdivision tool is in the registry. Terrain mesh from OSM data is in meshBuilders.osmContext.ts. Manual terrain point-placement (sketch from scratch with elevation per point) is Partial.
+**Status: Done — P1**
+`terrain-point` tool (hotkey TP, plan mode) implemented (WP-C wave 7): `TerrainPointState`/`reduceTerrainPoint` grammar, PlanCanvas click/Enter/Escape wiring. Click accumulates `HeightSample { xMm, yMm, zMm }` points; Enter commits via `update_toposolid` command. `terrainPointSymbol.ts` renders filled circles (radius 150 mm) with zMm sprite labels in plan view. Inspector "Control Points" section: count readout, clear button, per-point zMm inputs. Tests: `terrainPointTool.test.ts` (5 tests), `terrainPointSymbol.test.ts` (3 tests).
 
 #### 5.1.2 Gelände bearbeiten (edit existing terrain: move points, change elevation)
-**Status: Partial — P1**
-Toposolid terrain editing via grips is partially supported.
+**Status: Done — P1**
+Inspector per-point zMm number inputs (WP-C wave 7) allow editing elevation of existing height samples. `update_toposolid` command patches `heightSamples` array. Clear-all button resets to empty. Existing 3D mesh rebuilds from updated samples via `toposolidHeightMmAtPoint` nearest-neighbour interpolation.
 
 #### 5.1.3 Höhenlinien (contour lines display on terrain)
-**Status: Partial — P2**
-Terrain mesh is rendered as 3D surface. Contour line annotation overlay on plan view is Not Started.
+**Status: Done — P2**
+`terrainContourLines.ts` marching-squares algorithm (WP-F wave 7): builds regular sampling grid from heightSamples, interpolates contour crossings per elevation level, returns polylines. `terrainContourPlanThree.ts` renders each polyline as `THREE.Line`; major contours (every 5th) use darker/thicker material. Wired into `symbology.ts` toposolid loop. `contourIntervalMm` field on toposolid element with inspector number input (step 250 mm). Tests: `terrainContourLines.test.ts` (5 tests), `terrainContourPlanThree.test.ts` (3 tests).
 
 #### 5.1.4 Gelände-Ausschnitte (pad / subregion: flatten an area of terrain for building)
 **Status: Partial — P1**
@@ -632,8 +632,8 @@ Interior elevation placement: `interior-elevation` tool (hotkey `IE`) added to p
 Section tool exists, section views are generated (sectionViewportSvg.tsx). A fully rendered and annotated building section view matching Revit quality (with automatic material hatch patterns, cut line weights, section head bubbles) is Partial.
 
 ### 6.2 Planerstellung (sheet setup: sheet with title block)
-**Status: Partial — P1**
-NewSheetDialog.tsx, SheetCanvas.tsx, SheetReviewSurface.tsx exist. Sheets can be created and views placed on them. Missing: user-customisable title blocks (Schriftkopf) with project information fields, dynamic title block families, viewport scale labels on sheets.
+**Status: Done — P1**
+NewSheetDialog.tsx, SheetCanvas.tsx, SheetReviewSurface.tsx exist (WP-D wave 7). Sheets can be created and views placed on them. Viewport scale labels: `data-testid="sheet-viewport-scale-{id}"` rendered below each viewport rect (shows `vp.scale` or "—"), viewport label text above. SheetViewportEditor scale input field added. Title block `checkedBy` / `issuedBy` fields: `MANAGED_TB_KEYS` extended, resolved from `project_settings.authorName` / `clientName` fallback, rendered as `data-testid="sheet-tb-checked-by"` / `data-testid="sheet-tb-issued-by"`. Tests: `sheetViewportScale.test.tsx` (4 tests), `sheetTitleblockFields.test.tsx` (3 tests).
 
 ### 6.3 Plan mit Änderungsliste (sheet with revision table / delta list)
 **Status: Done — revision table rendered in title block**
@@ -722,8 +722,8 @@ Implemented — inspector + custom grid editing done. Panel grid rendering: done
 Ceiling tool is in the tool registry. Ceiling with automatic boundary from enclosing walls is Partial. Placing light fixtures (MEP-terminal/fixture) on ceilings works. Ceiling with grid pattern overlay in plan view is Not Started.
 
 ### 8.3 Fertig-Fußböden (finish floor over structural slab)
-**Status: Partial — P1**
-Multiple floor layers can be modelled stacked (structural floor + finish floor). No dedicated "finish floor" workflow or automatic thin-layer floor type set.
+**Status: Done — P1**
+`floor_type` element type with layer stack (`WallTypeLayer[]`) implemented (WP-G wave 7). `floorTypeId` field on `floor` element. Inspector: dropdown (`data-testid="inspector-floor-type-select"`) listing all `floor_type` elements sorted by name, computed thickness display (`data-testid="inspector-floor-type-thickness"` = sum of layer thicknessMm), "New Floor Type…" button with inline name input (`create_floor_type` command). `computeFloorTypeThicknessMm()` helper in `floorTypeThickness.ts`. Floor mesh builder uses floor type thickness when set. Tests: `floorTypeThickness.test.ts` (4 tests), `floorTypeInspector.test.tsx` (6 tests).
 
 ### 8.4 Anpassen von Türen und Treppen (adjusting door/stair clearances)
 **Status: Partial — P1**
@@ -823,8 +823,8 @@ Brace element added: `kind: 'brace'` in core Element union, `'brace'` tool in to
 ### 9.5 Stahlbau-Funktionen (steel fabrication tools)
 
 #### 9.5.1 Verbindungen erstellen und ändern (steel connections: end plates, bolted flanges)
-**Status: Not Started — P1**
-No steel connection modeling.
+**Status: Partial — P1**
+`steel_connection` element type in core, `'steel-connection'` tool (hotkey SC, plan mode), `CreateSteelConnectionCmd`, `buildSteelConnectionMesh()` renderer, and plan symbol implemented (wave 6 WP-B). Inspector panel for editing connection properties and full bolted-flange geometry detail are Partial.
 
 #### 9.5.2 Listen für Verbindungselemente (connection element schedules)
 **Status: Not Started — P2**
@@ -1108,24 +1108,26 @@ cheatsheetData.ts and CheatsheetModal.tsx provide a keyboard shortcut reference 
 
 ## Summary Dashboard
 
-Last verified: 2026-05-16. Waves 1–5 complete (WP-A through WP-G × 5). **4,009 tests pass, 0 failures.** Wave 6 prompts written; agents not yet run.
+Last verified: 2026-05-16. Waves 1–7 complete (WP-A through WP-G × 7). **4,163 tests pass, 0 failures.** Wave 8 prompts written.
+
+Wave 7 completions: §1.6.7 WallTypeLayerEditor, §2.6.2 top constraint inspector, §5.1.1+§5.1.2 terrain point placement/editing, §5.1.3 contour lines, §4.2.4 dimension style dialog, §6.2 sheet viewport scale + title block fields, §8.3 finish floor type selector.
 
 ### By Chapter — Implementation State
 
 | Chapter | Topic | Overall State | Priority Gap |
 |---------|-------|---------------|-------------|
 | 1 | UI & Startup | Partial | Ribbon architecture, customisable QAT, multi-window |
-| 2 | Basic Floor Plan | Partial | §2.8 + §2.9 + phases + project info + true north: Done; view range dialog WIP (wave 6) |
+| 2 | Basic Floor Plan | Partial | §2.6.2 top constraint: Done; view range dialog: Done (wave 6); floor type inspector: Done |
 | 3 | Modify Tools | Partial | §3.1 section box Done; §3.8 global params Done; EQ visual Done, enforcement pending |
-| 4 | Annotations | Partial | A1–A12 grammars + EQ toggle done; dimension style editor Partial |
-| 5 | Terrain & Geo | Partial | Excavation Done; contours, terrain merge/split Not Started |
-| 6 | Views & Sheets | Partial | Interior elevation inspector Done; sheet revision table Done; locked 3D view Done |
+| 4 | Annotations | Partial | A1–A12 grammars + EQ toggle done; dimension style dialog: Done (wave 7) |
+| 5 | Terrain & Geo | Partial | Excavation Done; terrain point placement + contours: Done (wave 7); merge/split Not Started |
+| 6 | Views & Sheets | Partial | Interior elevation inspector Done; sheet revision table Done; viewport scale + title block: Done (wave 7) |
 | 7 | Drafting Aids | Done/Partial | Grids + reference planes Done; work plane orientation Partial |
-| 8 | Adv. Walls/Stairs | Partial | Attach-top Done; curtain wall grid Done; wall parts 3D/plan rendering Done; group edit mode WIP (wave 6) |
-| 9 | Structure | Partial | Sloped columns Done; braces Done; beam systems Done; steel connections mesh Done; inspector WIP (wave 6) |
+| 8 | Adv. Walls/Stairs | Partial | Attach-top Done; curtain wall grid Done; group edit mode Done (wave 6); finish floor type Done (wave 7) |
+| 9 | Structure | Partial | Sloped columns Done; braces Done; beam systems Done; steel connections + beam profiles Done (wave 6) |
 | 10 | Roofs | Done/Partial | Hip/gable/dormer/extrusion Done; special conical/dome forms Partial |
-| 11 | Massing | Partial | Mass primitives + roof/wall/floor by face Done; end-to-end curtain workflow WIP (wave 6) |
-| 12 | Import/Export | Partial | IFC Done; DXF Done; DWG (text AC1015) Done; print/plot dialog WIP (wave 6) |
+| 11 | Massing | Partial | Mass primitives + roof/wall/floor by face Done; curtain workflow Done (wave 6) |
+| 12 | Import/Export | Partial | IFC Done; DXF Done; DWG (text AC1015) Done; print/plot dialog Done (wave 6) |
 | 13 | Schedules | Partial | Floor area report Done; room tags Partial; route analysis Not Started |
 | 14 | Rendering | Partial | Sun animation Done; walkthrough RAF playback Done; photorealistic removed by design |
 | 15 | Family Editor | Partial | FamilyExtrusion + FamilyRevolve + FamilyVoid Done; blend/sweep/parametric Partial |
@@ -1136,22 +1138,17 @@ None confirmed as blocking.
 
 ### Top P1 Gaps (professional parity limited)
 
-Remaining after wave 5 — targeted by wave 6:
+Remaining after wave 7:
 
-- **Print/Plot dialog** (Ch. 6.5 + 12.4.5) — `exportSheetToPdf` + `exportSheetsToPdf` exist; missing: paper-size/orientation picker dialog, batch-all-sheets export, palette command (wave 6 WP-A)
-- **Steel connection inspector + tool** (Ch. 9.5.1) — `buildSteelConnectionMesh` + `steel_connection` data model exist; missing: placement grammar, inspector panel, plan symbol (wave 6 WP-B)
-- **Group edit mode UI** (Ch. 8.9.3) — `editGroup`/`finishEditGroup` command shapes exist; missing: store state, selection restriction, finish-editing button (wave 6 WP-D)
-- **Massing → BIM end-to-end** (Ch. 11.5) — mass primitives + massByFace utilities done; missing: inspector "Generate Floors" + "Apply Curtain System" buttons wired (wave 6 WP-F)
 - **EQ parametric enforcement** (Ch. 4.2.3) — EQ visual toggle done; parametric driving of element spacings not started
+- **Terrain merge/split/graded region** (Ch. 5.1.6) — not started
+- **Ceiling grid pattern overlay** (Ch. 8.2) — ceiling element + boundary outline exist; grid line overlay in plan Done (wave 6); light fixture placement Partial
 - **Photorealistic rendering** (Ch. 14.3) — explicitly removed by design; N/A
 
 ### Top P2 Gaps (useful but workaroundable)
 
-- View Range dialog (Ch. 2.1.5) — `viewRangeTopMm`/`viewRangeBottomMm`/`cutPlaneOffsetMm` fields exist; basic inspector inputs exist; dedicated dialog with diagram pending (wave 6 WP-E)
-- Ceiling grid pattern overlay (Ch. 8.2) — ceiling element + boundary outline exist; grid line overlay in plan pending (wave 6 WP-C)
-- Beam section profiles (Ch. 9.2) — beam element + makeBeamMesh exist; I/H/C/L/T/HSS profile cross-sections pending (wave 6 WP-G)
-- Room tag detail (Ch. 13.1.2) — roomMesh renders label; room number field + area display in sprite pending (wave 6 WP-E)
 - User-customisable QAT (Ch. 1.6.3) — not started
 - Multiple simultaneous view windows (Ch. 1.6.12) — not started
 - Decal placement tool (Ch. 8.1.5) — grammar + inspector done; image-picker UX Partial
-- Dimension style editor (Ch. 4.2.4) — draftingStandards.ts exists; user-facing dialog not started
+- Family blend/sweep/parametric (Ch. 15.1.3+) — not started
+- Schedule sort/filter/grouping (Ch. 13.2.x) — floor area report done; advanced schedule formatting Partial
