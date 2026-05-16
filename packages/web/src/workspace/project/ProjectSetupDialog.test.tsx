@@ -5,6 +5,55 @@ import type { Element } from '@bim-ai/core';
 
 import { ProjectSetupDialog } from './ProjectSetupDialog';
 
+// GeoMapPicker uses Leaflet which can't initialise in jsdom; mock it with
+// simple labelled inputs so tests can drive lat/lon values directly.
+vi.mock('./GeoMapPicker', () => ({
+  GeoMapPicker: ({
+    value,
+    onChange,
+  }: {
+    value: { lat: number; lon: number };
+    onChange: (next: {
+      lat: number;
+      lon: number;
+      bboxNorth: number;
+      bboxSouth: number;
+      bboxEast: number;
+      bboxWest: number;
+    }) => void;
+  }) => {
+    const fire = (lat: number, lon: number) =>
+      onChange({
+        lat,
+        lon,
+        bboxNorth: lat + 0.003,
+        bboxSouth: lat - 0.003,
+        bboxEast: lon + 0.003,
+        bboxWest: lon - 0.003,
+      });
+    return (
+      <div data-testid="geo-map-picker-mock">
+        <label>
+          Latitude deg
+          <input
+            aria-label="Latitude deg"
+            value={value.lat}
+            onChange={(e) => fire(parseFloat(e.target.value) || 0, value.lon)}
+          />
+        </label>
+        <label>
+          Longitude deg
+          <input
+            aria-label="Longitude deg"
+            value={value.lon}
+            onChange={(e) => fire(value.lat, parseFloat(e.target.value) || 0)}
+          />
+        </label>
+      </div>
+    );
+  },
+}));
+
 afterEach(() => cleanup());
 
 function baseElements(): Record<string, Element> {
