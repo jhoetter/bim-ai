@@ -848,6 +848,22 @@ registerCommand({
 });
 
 registerCommand({
+  id: 'tool.measure-angle',
+  label: 'Measure Angle',
+  keywords: ['measure', 'angle', 'degrees', 'angular'],
+  category: 'command',
+  invoke: (ctx) => startPlanTool(ctx, 'measure-angle'),
+});
+
+registerCommand({
+  id: 'tool.measure-arc',
+  label: 'Measure Arc',
+  keywords: ['measure', 'arc', 'radius', 'arc length', 'curve'],
+  category: 'command',
+  invoke: (ctx) => startPlanTool(ctx, 'measure-arc'),
+});
+
+registerCommand({
   id: 'tool.component',
   label: 'Place Component',
   keywords: ['component', 'family', 'furniture', 'load family'],

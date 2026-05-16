@@ -78,6 +78,12 @@ import {
   initialPermanentDimState,
   reducePermanentDim,
   type PermanentDimState,
+  initialMeasureAngleState,
+  reduceMeasureAngle,
+  type MeasureAngleState,
+  initialMeasureArcState,
+  reduceMeasureArc,
+  type MeasureArcState,
 } from '../tools/toolGrammar';
 import { buildScaleCommand, distanceMm } from './scaleTool';
 import { linearArrayOffsets, radialArrayAngles, radialOffsetForElement } from './arrayTool';
@@ -528,6 +534,8 @@ export function PlanCanvas({
   const terrainPointStateRef = useRef<TerrainPointState>(initialTerrainPointState());
   const terrainPadStateRef = useRef<TerrainPadState>(initialTerrainPadState());
   const permanentDimStateRef = useRef<PermanentDimState>(initialPermanentDimState());
+  const measureAngleStateRef = useRef<MeasureAngleState>(initialMeasureAngleState());
+  const measureArcStateRef = useRef<MeasureArcState>(initialMeasureArcState());
   const dimSnapCirclesRef = useRef<THREE.Mesh[]>([]);
   const marqueeRef = useRef<{
     active: boolean;
@@ -638,6 +646,11 @@ export function PlanCanvas({
   } | null>(null);
   const [geomEpoch, bumpGeom] = useState(0);
   const [measureReadout, setMeasureReadout] = useState<{ distMm: number } | null>(null);
+  const [measureAngleReadout, setMeasureAngleReadout] = useState<{ angleDeg: number } | null>(null);
+  const [measureArcReadout, setMeasureArcReadout] = useState<{
+    arcLengthMm: number;
+    radiusMm: number;
+  } | null>(null);
   const [wallDraftNotice, setWallDraftNotice] = useState<string | null>(null);
   const [wallPickLineHint, setWallPickLineHint] = useState<PickedWallLine | null>(null);
   const [filterOpen, setFilterOpen] = useState(false);
@@ -3759,6 +3772,36 @@ export function PlanCanvas({
         bumpGeom((x) => x + 1);
         return;
       }
+      if (planTool === 'measure-angle') {
+        measureAngleStateRef.current = reduceMeasureAngle(measureAngleStateRef.current, {
+          type: 'click',
+          positionMm: { xMm: sp.xMm, yMm: sp.yMm },
+        });
+        if (
+          measureAngleStateRef.current.status === 'complete' &&
+          measureAngleStateRef.current.angleDeg != null
+        ) {
+          setMeasureAngleReadout({ angleDeg: measureAngleStateRef.current.angleDeg });
+        }
+        bumpGeom((x) => x + 1);
+        return;
+      }
+      if (planTool === 'measure-arc') {
+        measureArcStateRef.current = reduceMeasureArc(measureArcStateRef.current, {
+          type: 'click',
+          positionMm: { xMm: sp.xMm, yMm: sp.yMm },
+        });
+        const arcState = measureArcStateRef.current;
+        if (
+          arcState.status === 'complete' &&
+          arcState.arcLengthMm != null &&
+          arcState.radiusMm != null
+        ) {
+          setMeasureArcReadout({ arcLengthMm: arcState.arcLengthMm, radiusMm: arcState.radiusMm });
+        }
+        bumpGeom((x) => x + 1);
+        return;
+      }
       if (planTool === 'dimension') {
         if (permanentDimStateRef.current.phase === 'idle') {
           const { state } = reducePermanentDim(permanentDimStateRef.current, {
@@ -5622,6 +5665,18 @@ export function PlanCanvas({
           setNumericInput(null);
           setPlanTool('select');
           bumpGeom((x) => x + 1);
+        } else if (planTool === 'measure-angle') {
+          measureAngleStateRef.current = reduceMeasureAngle(measureAngleStateRef.current, {
+            type: 'cancel',
+          });
+          setMeasureAngleReadout(null);
+          bumpGeom((x) => x + 1);
+        } else if (planTool === 'measure-arc') {
+          measureArcStateRef.current = reduceMeasureArc(measureArcStateRef.current, {
+            type: 'cancel',
+          });
+          setMeasureArcReadout(null);
+          bumpGeom((x) => x + 1);
         }
         if (
           hadDraft ||
@@ -6424,6 +6479,20 @@ export function PlanCanvas({
   }, [planTool]);
 
   useEffect(() => {
+    if (planTool !== 'measure-angle') {
+      measureAngleStateRef.current = initialMeasureAngleState();
+      setMeasureAngleReadout(null);
+    }
+  }, [planTool]);
+
+  useEffect(() => {
+    if (planTool !== 'measure-arc') {
+      measureArcStateRef.current = initialMeasureArcState();
+      setMeasureArcReadout(null);
+    }
+  }, [planTool]);
+
+  useEffect(() => {
     if (planTool !== 'wall') setWallPickLineHint(null);
   }, [planTool]);
 
@@ -7010,6 +7079,57 @@ export function PlanCanvas({
             type="button"
             className="text-muted hover:text-foreground"
             onClick={() => setMeasureReadout(null)}
+          >
+            ×
+          </button>
+        </div>
+      ) : null}
+      {/* Measure angle readout chip */}
+      {measureAngleReadout && planTool === 'measure-angle' ? (
+        <div
+          style={{
+            position: 'absolute',
+            bottom: 48,
+            left: '50%',
+            transform: 'translateX(-50%)',
+            pointerEvents: 'auto',
+            zIndex: 20,
+          }}
+          className="flex items-center gap-2 rounded-full border border-border bg-surface px-3 py-1 text-xs shadow"
+          data-testid="measure-angle-readout"
+        >
+          <span className="font-mono">∠ {measureAngleReadout.angleDeg.toFixed(1)}°</span>
+          <button
+            type="button"
+            className="text-muted hover:text-foreground"
+            onClick={() => setMeasureAngleReadout(null)}
+          >
+            ×
+          </button>
+        </div>
+      ) : null}
+      {/* Measure arc readout chip */}
+      {measureArcReadout && planTool === 'measure-arc' ? (
+        <div
+          style={{
+            position: 'absolute',
+            bottom: 48,
+            left: '50%',
+            transform: 'translateX(-50%)',
+            pointerEvents: 'auto',
+            zIndex: 20,
+          }}
+          className="flex items-center gap-2 rounded-full border border-border bg-surface px-3 py-1 text-xs shadow"
+          data-testid="measure-arc-readout"
+        >
+          <span className="font-mono">
+            Arc: {(measureArcReadout.arcLengthMm / 1000).toFixed(3)} m &nbsp; R:{' '}
+            {(measureArcReadout.radiusMm / 1000).toFixed(3)} m
+          </span>
+          <button
+            type="button"
+            className="text-muted hover:text-foreground"
+            onClick={() => setMeasureArcReadout(null)}
           >
             ×
           </button>

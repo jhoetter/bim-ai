@@ -103,7 +103,9 @@ export type ToolId =
   | 'steel-connection'
   | 'excavation'
   | 'split-wall'
-  | 'paint';
+  | 'paint'
+  | 'measure-angle'
+  | 'measure-arc';
 
 /** Modify-group tool IDs — used by ToolPalette to insert a separator. */
 export const MODIFY_TOOL_IDS = new Set<ToolId>([
@@ -283,6 +285,22 @@ export function getToolRegistry(t: TFunction): Record<ToolId, ToolDefinition> {
       hotkey: 'ME',
       modes: ['plan'],
       tooltip: 'Measure distance between two points',
+    },
+    'measure-angle': {
+      id: 'measure-angle',
+      label: 'Measure Angle',
+      icon: 'measure',
+      hotkey: 'MA',
+      modes: ['plan'],
+      tooltip: 'Measure angle between two lines (3-click: vertex + two ray endpoints)',
+    },
+    'measure-arc': {
+      id: 'measure-arc',
+      label: 'Measure Arc',
+      icon: 'measure',
+      hotkey: 'MR',
+      modes: ['plan'],
+      tooltip: 'Measure arc length and radius (3-click: start + end + pass-through)',
     },
     component: {
       id: 'component',

@@ -3017,3 +3017,188 @@ export function reduceSplitWall(
     },
   };
 }
+
+// ---------------------------------------------------------------------------
+// Measure Angle — 3-click: vertex → first ray → second ray → angleDeg
+// ---------------------------------------------------------------------------
+
+export type MeasureAngleStatus = 'idle' | 'picked-vertex' | 'picked-first-ray' | 'complete';
+
+export interface MeasureAngleState {
+  status: MeasureAngleStatus;
+  vertexMm: { xMm: number; yMm: number } | null;
+  firstRayMm: { xMm: number; yMm: number } | null;
+  secondRayMm: { xMm: number; yMm: number } | null;
+  angleDeg: number | null;
+}
+
+export type MeasureAngleEvent =
+  | { type: 'activate' }
+  | { type: 'click'; positionMm: { xMm: number; yMm: number } }
+  | { type: 'cancel' };
+
+export function initialMeasureAngleState(): MeasureAngleState {
+  return { status: 'idle', vertexMm: null, firstRayMm: null, secondRayMm: null, angleDeg: null };
+}
+
+function _angleBetween(
+  vertex: { xMm: number; yMm: number },
+  a: { xMm: number; yMm: number },
+  b: { xMm: number; yMm: number },
+): number {
+  const va = { xMm: a.xMm - vertex.xMm, yMm: a.yMm - vertex.yMm };
+  const vb = { xMm: b.xMm - vertex.xMm, yMm: b.yMm - vertex.yMm };
+  const dot = va.xMm * vb.xMm + va.yMm * vb.yMm;
+  const magA = Math.hypot(va.xMm, va.yMm);
+  const magB = Math.hypot(vb.xMm, vb.yMm);
+  if (magA === 0 || magB === 0) return 0;
+  const cos = Math.max(-1, Math.min(1, dot / (magA * magB)));
+  return (Math.acos(cos) * 180) / Math.PI;
+}
+
+export function reduceMeasureAngle(
+  state: MeasureAngleState,
+  event: MeasureAngleEvent,
+): MeasureAngleState {
+  if (event.type === 'activate') return initialMeasureAngleState();
+  if (event.type === 'cancel') return initialMeasureAngleState();
+  if (event.type === 'click') {
+    if (state.status === 'idle') {
+      return { ...state, status: 'picked-vertex', vertexMm: event.positionMm };
+    }
+    if (state.status === 'picked-vertex') {
+      return { ...state, status: 'picked-first-ray', firstRayMm: event.positionMm };
+    }
+    if (state.status === 'picked-first-ray') {
+      const angleDeg = _angleBetween(state.vertexMm!, state.firstRayMm!, event.positionMm);
+      return {
+        ...state,
+        status: 'complete',
+        secondRayMm: event.positionMm,
+        angleDeg,
+      };
+    }
+    // complete → reset and start new measurement
+    return {
+      status: 'picked-vertex',
+      vertexMm: event.positionMm,
+      firstRayMm: null,
+      secondRayMm: null,
+      angleDeg: null,
+    };
+  }
+  return state;
+}
+
+// ---------------------------------------------------------------------------
+// Measure Arc — 3-click: start → end → pass-through → arcLength + radius
+// ---------------------------------------------------------------------------
+
+export type MeasureArcStatus = 'idle' | 'picked-start' | 'picked-end' | 'complete';
+
+export interface MeasureArcState {
+  status: MeasureArcStatus;
+  startMm: { xMm: number; yMm: number } | null;
+  endMm: { xMm: number; yMm: number } | null;
+  throughMm: { xMm: number; yMm: number } | null;
+  arcLengthMm: number | null;
+  radiusMm: number | null;
+}
+
+export type MeasureArcEvent =
+  | { type: 'activate' }
+  | { type: 'click'; positionMm: { xMm: number; yMm: number } }
+  | { type: 'cancel' };
+
+export function initialMeasureArcState(): MeasureArcState {
+  return {
+    status: 'idle',
+    startMm: null,
+    endMm: null,
+    throughMm: null,
+    arcLengthMm: null,
+    radiusMm: null,
+  };
+}
+
+function _fitCircle3(
+  p1: { xMm: number; yMm: number },
+  p2: { xMm: number; yMm: number },
+  p3: { xMm: number; yMm: number },
+): { cx: number; cy: number; r: number } | null {
+  const ax = p1.xMm,
+    ay = p1.yMm;
+  const bx = p2.xMm,
+    by = p2.yMm;
+  const cx = p3.xMm,
+    cy = p3.yMm;
+  const d = 2 * (ax * (by - cy) + bx * (cy - ay) + cx * (ay - by));
+  if (Math.abs(d) < 1e-10) return null;
+  const ux =
+    ((ax * ax + ay * ay) * (by - cy) +
+      (bx * bx + by * by) * (cy - ay) +
+      (cx * cx + cy * cy) * (ay - by)) /
+    d;
+  const uy =
+    ((ax * ax + ay * ay) * (cx - bx) +
+      (bx * bx + by * by) * (ax - cx) +
+      (cx * cx + cy * cy) * (bx - ax)) /
+    d;
+  return { cx: ux, cy: uy, r: Math.hypot(ax - ux, ay - uy) };
+}
+
+function _arcLength3(
+  p1: { xMm: number; yMm: number },
+  p2: { xMm: number; yMm: number },
+  p3: { xMm: number; yMm: number },
+): { arcLengthMm: number; radiusMm: number } | null {
+  const c = _fitCircle3(p1, p2, p3);
+  if (!c) return null;
+  const a1 = Math.atan2(p1.yMm - c.cy, p1.xMm - c.cx);
+  const a2 = Math.atan2(p2.yMm - c.cy, p2.xMm - c.cx);
+  const a3 = Math.atan2(p3.yMm - c.cy, p3.xMm - c.cx);
+  let sweep = a2 - a1;
+  while (sweep > Math.PI * 2) sweep -= Math.PI * 2;
+  while (sweep < -Math.PI * 2) sweep += Math.PI * 2;
+  let a3Rel = a3 - a1;
+  while (a3Rel < 0) a3Rel += Math.PI * 2;
+  while (a3Rel > Math.PI * 2) a3Rel -= Math.PI * 2;
+  let sweepPos = sweep < 0 ? sweep + Math.PI * 2 : sweep;
+  if (a3Rel > sweepPos) {
+    sweep = sweep > 0 ? sweep - Math.PI * 2 : sweep + Math.PI * 2;
+  }
+  return { arcLengthMm: Math.abs(sweep) * c.r, radiusMm: c.r };
+}
+
+export function reduceMeasureArc(state: MeasureArcState, event: MeasureArcEvent): MeasureArcState {
+  if (event.type === 'activate') return initialMeasureArcState();
+  if (event.type === 'cancel') return initialMeasureArcState();
+  if (event.type === 'click') {
+    if (state.status === 'idle') {
+      return { ...state, status: 'picked-start', startMm: event.positionMm };
+    }
+    if (state.status === 'picked-start') {
+      return { ...state, status: 'picked-end', endMm: event.positionMm };
+    }
+    if (state.status === 'picked-end') {
+      const result = _arcLength3(state.startMm!, state.endMm!, event.positionMm);
+      return {
+        ...state,
+        status: 'complete',
+        throughMm: event.positionMm,
+        arcLengthMm: result?.arcLengthMm ?? null,
+        radiusMm: result?.radiusMm ?? null,
+      };
+    }
+    // complete → restart
+    return {
+      status: 'picked-start',
+      startMm: event.positionMm,
+      endMm: null,
+      throughMm: null,
+      arcLengthMm: null,
+      radiusMm: null,
+    };
+  }
+  return state;
+}
