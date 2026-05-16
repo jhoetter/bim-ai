@@ -3,7 +3,7 @@
   "checkpoint_id": "e63592c7287a",
   "strategy": "manual-commit",
   "branch": "main",
-  "checkpoints_count": 3,
+  "checkpoints_count": 9,
   "files_touched": [
     "packages/core/src/index.ts",
     "packages/web/src/cmdPalette/defaultCommands.ts",
@@ -18,6 +18,7 @@
     "packages/web/src/workspace/commandCapabilities.ts",
     "packages/web/src/workspace/inspector/InspectorContent.test.tsx",
     "packages/web/src/workspace/inspector/InspectorContent.tsx",
+    "packages/web/src/workspace/sheets/SheetCanvas.tsx",
     "packages/web/src/workspace/sheets/sheetTitleblockAuthoring.tsx",
     "packages/web/src/workspace/shell/RibbonBar.tsx"
   ],
@@ -129,13 +130,19 @@
       "transcript": "/e6/3592c7287a/17/full.jsonl",
       "content_hash": "/e6/3592c7287a/17/content_hash.txt",
       "prompt": "/e6/3592c7287a/17/prompt.txt"
+    },
+    {
+      "metadata": "/e6/3592c7287a/18/metadata.json",
+      "transcript": "/e6/3592c7287a/18/full.jsonl",
+      "content_hash": "/e6/3592c7287a/18/content_hash.txt",
+      "prompt": "/e6/3592c7287a/18/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 1489972,
-    "cache_creation_tokens": 73981,
-    "cache_read_tokens": 42037651,
-    "output_tokens": 99408,
-    "api_call_count": 348
+    "input_tokens": 1490369,
+    "cache_creation_tokens": 673444,
+    "cache_read_tokens": 76715890,
+    "output_tokens": 296360,
+    "api_call_count": 711
   }
 }
