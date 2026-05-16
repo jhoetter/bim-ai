@@ -21,6 +21,7 @@ const REPAIR_COMMAND_BY_CODE: Record<string, Record<string, unknown> | null> = {
   orphaned_no_host_ref: { type: 'deleteElement' },
   orphaned_host_missing: { type: 'deleteElement' },
   hosted_outside_wall_span: null,
+  join_cleanup_failure: null,
   open_loop: null,
   self_intersecting: null,
   too_small_edge: null,

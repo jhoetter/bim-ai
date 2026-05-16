@@ -449,6 +449,7 @@ export function PlanCanvas({
     yMm: number;
   } | null>(null);
   const mirrorAxisStartRef = useRef<{ xMm: number; yMm: number } | null>(null);
+  const [mirrorAxisSet, setMirrorAxisSet] = useState(false);
   const copyAnchorRef = useRef<{ xMm: number; yMm: number } | null>(null);
   const [copyAnchorSet, setCopyAnchorSet] = useState(false);
   const moveAnchorRef = useRef<{ xMm: number; yMm: number } | null>(null);
@@ -986,6 +987,7 @@ export function PlanCanvas({
     alignStateRef.current = initialAlignState();
     setAlignReferenceMm(null);
     mirrorAxisStartRef.current = null;
+    setMirrorAxisSet(false);
     copyAnchorRef.current = null;
     setCopyAnchorSet(false);
     moveAnchorRef.current = null;
@@ -3802,12 +3804,14 @@ export function PlanCanvas({
         if (!mirrorAxisStartRef.current) {
           // First click: store axis start point
           mirrorAxisStartRef.current = sp;
+          setMirrorAxisSet(true);
           bumpGeom((x) => x + 1);
           return;
         }
         // Second click: fire mirrorElements with the selected element
         const axisStart = mirrorAxisStartRef.current;
         mirrorAxisStartRef.current = null;
+        setMirrorAxisSet(false);
         if (selectedId) {
           onSemanticCommand({
             type: 'mirrorElements',

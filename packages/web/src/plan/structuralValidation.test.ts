@@ -4,6 +4,7 @@ import type { Element } from '@bim-ai/core';
 
 import {
   findDuplicateWalls,
+  findJoinCleanupFailures,
   findOrphanedHostedElements,
   runStructuralValidation,
   validateBoundary,
@@ -145,6 +146,34 @@ describe('WP-NEXT-49 structuralValidation', () => {
       const wall = makeWall('w1', 0, 0, 4000, 0);
       const issues = findOrphanedHostedElements({ w1: wall as unknown as Element });
       expect(issues).toHaveLength(0);
+    });
+  });
+
+  describe('findJoinCleanupFailures', () => {
+    it('returns no issues for a clean L-corner (two perpendicular walls sharing an endpoint)', () => {
+      const walls = [makeWall('w1', 0, 0, 4000, 0), makeWall('w2', 4000, 0, 4000, 3000)];
+      expect(findJoinCleanupFailures(walls)).toHaveLength(0);
+    });
+
+    it('returns no issues for a T-join (wall endpoint meets wall interior)', () => {
+      const walls = [makeWall('w1', 0, 0, 8000, 0), makeWall('w2', 4000, 0, 4000, 3000)];
+      expect(findJoinCleanupFailures(walls)).toHaveLength(0);
+    });
+
+    it('flags parallel walls that share an endpoint', () => {
+      const walls = [makeWall('w1', 0, 0, 4000, 0), makeWall('w2', 4000, 0, 8000, 0)];
+      const issues = findJoinCleanupFailures(walls);
+      expect(issues.some((i) => i.code === 'join_cleanup_failure')).toBe(true);
+    });
+
+    it('runStructuralValidation includes join_cleanup_failure codes', () => {
+      const wall1 = makeWall('w1', 0, 0, 4000, 0);
+      const wall2 = makeWall('w2', 4000, 0, 8000, 0);
+      const issues = runStructuralValidation({
+        w1: wall1 as unknown as Element,
+        w2: wall2 as unknown as Element,
+      });
+      expect(issues.some((i) => i.code === 'join_cleanup_failure')).toBe(true);
     });
   });
 

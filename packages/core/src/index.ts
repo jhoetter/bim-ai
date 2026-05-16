@@ -371,7 +371,8 @@ export type ElemKind =
   | 'arc_length_dimension'
   | 'leader_text'
   | 'interior_elevation_marker'
-  | 'permanent_dimension';
+  | 'permanent_dimension'
+  | 'sheet_viewport';
 
 export type PhaseFilter = 'all' | 'existing' | 'demolition' | 'new';
 
@@ -2989,7 +2990,19 @@ export type Element =
       offsetMm: XY;
       /** When true, display "EQ" instead of individual segment values. */
       eqEnabled?: boolean;
-    };
+    }
+  | {
+      kind: 'sheet_viewport';
+      id: string;
+      sheetId: string;
+      viewId: string;
+      xMm: number;
+      yMm: number;
+      widthMm: number;
+      heightMm: number;
+      scaleDenom: number;
+    }
+  | CameraPathElem;
 
 export type Violation = {
   ruleId: string;
@@ -3950,12 +3963,11 @@ export type SavedViewElem = {
   id: string;
   baseViewId: string;
   name: string;
+  isLocked?: boolean;
   cameraState?: Record<string, unknown>;
   visibilityOverrides?: Record<string, unknown>;
   detailLevel?: string;
   thumbnailDataUri?: string;
-  /** When true the viewport disables all camera manipulation for this view. */
-  isLocked?: boolean;
 };
 
 export type WalkthroughKeyframe = {

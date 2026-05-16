@@ -575,7 +575,7 @@ export function InspectorPropertiesFor(
     onMonitorReconcile?: (elementId: string, mode: 'accept_source' | 'keep_host') => void;
     onDisciplineChange?: (discipline: DisciplineTag | null) => void;
     onEditType?: (typeId: string) => void;
-    onEditBoundary?: (element: Extract<Element, { kind: 'floor' }>) => void;
+    onEditBoundary?: (element: Extract<Element, { kind: 'floor' | 'roof' | 'ceiling' }>) => void;
     onOpenMaterialBrowser?: OpenMaterialBrowser;
     onOpenAppearanceAssetBrowser?: OpenMaterialBrowser;
     onEditCurtainGrid?: (wallId: string) => void;
@@ -969,6 +969,25 @@ export function InspectorPropertiesFor(
             value={resolveElName(el.referenceLevelId, elementsById)}
           />
           <FieldRow label={f('footprintPoints')} value={String(el.footprintMm.length)} />
+          {options?.onEditBoundary ? (
+            <div
+              className="flex items-center justify-between gap-2 rounded border border-border bg-surface px-2 py-1.5"
+              data-testid="inspector-roof-boundary-actions"
+            >
+              <div className="min-w-0">
+                <div className="text-xs font-semibold text-foreground">Footprint</div>
+                <div className="text-[10px] text-muted">Plan vertex grips</div>
+              </div>
+              <button
+                type="button"
+                data-testid="inspector-roof-edit-boundary"
+                className="shrink-0 rounded border border-border bg-background px-2 py-0.5 text-xs text-foreground hover:bg-surface-strong"
+                onClick={() => options.onEditBoundary?.(el)}
+              >
+                Edit Boundary
+              </button>
+            </div>
+          ) : null}
 
           <div className="flex items-center gap-2 py-0.5">
             <span className="text-xs text-muted w-28 shrink-0">{f('roofType')}</span>
@@ -1640,6 +1659,25 @@ export function InspectorPropertiesFor(
             />
           </div>
           <FieldRow label="Boundary Vertices" value={String(el.boundaryMm?.length ?? 0)} mono />
+          {options?.onEditBoundary ? (
+            <div
+              className="flex items-center justify-between gap-2 rounded border border-border bg-surface px-2 py-1.5"
+              data-testid="inspector-ceiling-boundary-actions"
+            >
+              <div className="min-w-0">
+                <div className="text-xs font-semibold text-foreground">Boundary</div>
+                <div className="text-[10px] text-muted">Plan vertex grips</div>
+              </div>
+              <button
+                type="button"
+                data-testid="inspector-ceiling-edit-boundary"
+                className="shrink-0 rounded border border-border bg-background px-2 py-0.5 text-xs text-foreground hover:bg-surface-strong"
+                onClick={() => options.onEditBoundary?.(el)}
+              >
+                Edit Boundary
+              </button>
+            </div>
+          ) : null}
         </div>
       );
     }

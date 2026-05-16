@@ -566,9 +566,13 @@ export function WorkspaceRightRail({
   }
 
   const beginPlanBoundaryEdit = useCallback(
-    (floor: Extract<Element, { kind: 'floor' }>): void => {
-      select(floor.id);
-      if (floor.levelId) setActiveLevelId(floor.levelId);
+    (element: Extract<Element, { kind: 'floor' | 'roof' | 'ceiling' }>): void => {
+      select(element.id);
+      const levelId =
+        element.kind === 'roof'
+          ? element.referenceLevelId
+          : (element as Extract<Element, { kind: 'floor' | 'ceiling' }>).levelId;
+      if (levelId) setActiveLevelId(levelId);
       setPlanTool('select');
       onModeChange('plan');
     },

@@ -2,6 +2,7 @@ import { useBimStore, type PlanTool } from '../state/store';
 import { VIEWER_CATEGORY_KEYS } from '../viewport/sceneUtils';
 import { elevationFromWall, sectionCutFromWall } from '../lib/sectionElevationFromWall';
 import { buildBoundaryWallPlan, type BoundaryWallSource } from '../geometry/boundaryWallGeneration';
+import { roofParamsFromWallLoop } from '../plan/roofByFootprint';
 import i18n from '../i18n';
 import { registerCommand, type PaletteContext } from './registry';
 
@@ -180,6 +181,43 @@ registerCommand({
   keywords: ['roof', 'roofing', 'sketch', 'footprint'],
   category: 'command',
   invoke: (ctx) => startPlanTool(ctx, 'roof-sketch'),
+});
+
+registerCommand({
+  id: 'tool.roof-from-walls',
+  label: 'Roof by Footprint from Selected Walls',
+  keywords: ['roof', 'footprint', 'walls', 'wall loop', 'from walls', 'roof by footprint'],
+  category: 'command',
+  isAvailable: (ctx) => {
+    if (ctx.selectedElementIds.length < 3) return false;
+    const elems = useBimStore.getState().elementsById;
+    return ctx.selectedElementIds.every((id) => elems[id]?.kind === 'wall');
+  },
+  invoke: (ctx) => {
+    const state = useBimStore.getState();
+    const walls = ctx.selectedElementIds
+      .map((id) => state.elementsById[id])
+      .filter((e): e is Extract<(typeof state.elementsById)[string] & object, { kind: 'wall' }> =>
+        Boolean(e && (e as { kind?: string }).kind === 'wall'),
+      );
+    const levelId =
+      (walls[0] as { levelId?: string } | undefined)?.levelId ?? state.activeLevelId ?? '';
+    if (!levelId || walls.length < 3) return;
+    const params = roofParamsFromWallLoop(
+      walls as Parameters<typeof roofParamsFromWallLoop>[0],
+      levelId,
+      500,
+      30,
+    );
+    if (!params) return;
+    ctx.dispatchCommand?.({
+      type: 'createRoof',
+      referenceLevelId: params.referenceLevelId,
+      footprintMm: params.footprintMm,
+      overhangMm: params.overhangMm,
+      slopeDeg: params.slopeDeg,
+    });
+  },
 });
 
 registerCommand({
