@@ -1,0 +1,13 @@
+Terminal 3 — WP-C (Attach + Curtain Wall)
+  cat spec/revit-parity/agent-prompts/WAVE2-WP-C.md | pbcopy
+  Tasks: reduceAttach grammar + command handlers, curtain wall inspector + Edit Grid mode
+
+---
+
+<task-notification>
+<task-id>bc15jy4ob</task-id>
+<tool-use-id>REDACTED</tool-use-id>
+<output-file>/private/tmp/claude-501/-Users-jhoetter-repos-bim-ai/59eabbab-a368-44e7-ad87-76b19580bf67/tasks/bc15jy4ob.output</output-file>
+<status>completed</status>
+<summary>Background command "Commit C1 implementation" completed (exit code 0)</summary>
+</task-notification>
