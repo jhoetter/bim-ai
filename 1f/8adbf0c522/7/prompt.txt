@@ -1,0 +1,25 @@
+i early started from @spec/revit-parity/ WP-A until WP-G, but my macbook crashed; are the agents done with their WPs?
+
+---
+
+can you write the prompts for each agent to continue? i.e. so i can copy paste into 7 terminals where each currently is and how to pick up again?
+
+---
+
+the claude sessions have stopped, give each prompt a bit more context just to better pick up work again
+
+---
+
+no i meant the prompts i can copy paste
+
+---
+
+quick update, where are they? agent 2 and 4 are still wokring, i now, but the rest?
+
+---
+
+where are we in overall % progress with the whole tracker?
+
+---
+
+can you please deeply analyze again if all of those things really are outstanding or if the existing codebase already offers functionality? i am just wondering: i want to avoid that we create code duplication or feature duplication. i do think that there must be a lot of development going on, but just please check again to ensure we are not building a doubled feature. it should always either create new if not existing yet, or extend the existing code base for a feature if it already partially exists. can you check that for all todos in the tracker but also the ones already implemented? just so we are keeping a clean code base and can be assured that features will actually land in teh software correctly
