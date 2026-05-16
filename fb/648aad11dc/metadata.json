@@ -79,6 +79,12 @@
       "transcript": "/fb/648aad11dc/11/full.jsonl",
       "content_hash": "/fb/648aad11dc/11/content_hash.txt",
       "prompt": "/fb/648aad11dc/11/prompt.txt"
+    },
+    {
+      "metadata": "/fb/648aad11dc/12/metadata.json",
+      "transcript": "/fb/648aad11dc/12/full.jsonl",
+      "content_hash": "/fb/648aad11dc/12/content_hash.txt",
+      "prompt": "/fb/648aad11dc/12/prompt.txt"
     }
   ],
   "token_usage": {
