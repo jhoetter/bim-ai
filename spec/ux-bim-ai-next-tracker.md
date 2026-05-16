@@ -2102,7 +2102,8 @@ Revit behavior to emulate where it maps cleanly:
   - `packages/web/src/workspace/commandCapabilities.test.ts` asserts `evaluateCommandInMode('tool.X', '3d')?.state === 'enabled'` for unjoin, attach, detach, brace, mass-box, mass-extrusion, and mass-revolution (in addition to the 17 pre-existing 3D tools); all 20 capability tests pass.
   - `packages/web/src/cmdPalette/defaultCommands.ts` registers Cmd+K entries for all 3D structural/massing/annotation/modify tools so Cmd+K mirrors 3D command states.
   - Playwright screenshots captured 2026-05-16: `03-wp46-3d-view-default.png` (3D canvas loaded, no errors), `04-wp46-3d-ribbon.png` (3D ribbon visible with model commands) — `packages/web/tmp/ux-next-wp45-50-20260516/`.
-  - Remaining before `Done`: per-tool DOM/unit tests verifying activation does not trigger page refresh or sidebar takeover; seeded Playwright screenshots for each 3D command preview state (wall, floor, roof, door, column, beam, shaft, mass-box); invalid host/work-plane red-preview feedback wired into `authoring3d.ts`.
+  - `packages/web/src/workspace/commandCapabilities.3dTools.test.ts` (commit `dbf67130d`) adds three data-driven per-tool tests: (1) `evaluateCommandInMode` returns non-null for every registered tool in both plan and 3d mode; (2) every tool with `'3d'` in `modes` returns `state: 'enabled'` in 3d mode (32 tools); (3) every plan-only tool returns `state !== 'enabled'` in 3d mode — confirming mode gating is correct across the full tool registry.
+  - Remaining before `Done`: seeded Playwright screenshots for each 3D command preview state (wall, floor, roof, door, column, beam, shaft, mass-box); invalid host/work-plane red-preview feedback wired into `authoring3d.ts`.
 - Dependencies: `WP-NEXT-40`, `WP-NEXT-41`, then tool-specific dependencies above.
 
 ### WP-NEXT-47 — Universal Modify Toolkit Across View Types
@@ -2130,8 +2131,9 @@ Revit behavior to emulate where it maps cleanly:
   - `packages/web/src/plan/joinGeometry.ts` — `buildJoinCommand`/`buildUnjoinCommand` with canonical sorted-ID pairs, `canJoin`, `selectionSupportsJoin`, and `buildJoinCommandsForSelection`.
   - `packages/web/src/plan/modifyAvailability.ts` — `getModifyAvailability(selectedKinds, viewMode)` returns the complete 17-verb availability matrix for plan, 3D, section, sheet, and schedule; `getEnabledVerbs` is a filtered helper. 17 unit tests cover no-selection, per-view gating, solid-kind constraints for join/unjoin, wall-only constraints for attach/detach, and align/mirror selection requirements.
   - `packages/web/src/workspace/shell/RibbonBar.tsx` expanded `buildPlanModifyTab` (Selection, Edit, Constraints panels with unjoin/attach/detach gated by `SOLID_MODIFY_KINDS`) and `build3dModifyTab` (adds Constraints panel when isSolid || isWall).
+  - `buildSectionModifyTab` added: move/copy/rotate plus pin/unpin (per `getModifyAvailability` section spec); `buildSheetModifyTab` added: move/copy/delete plus scale; `buildScheduleRibbonTabs` removes the contextual modify tab entirely (all verbs disabled in schedule per spec). All wired into `buildSectionRibbonTabs` / `buildSheetRibbonTabs`. (commit `243349d85`)
   - Playwright screenshot captured 2026-05-16: `07-wp47-plan-selection-modify.png` (plan canvas with element selected, modify tab visible) — `packages/web/tmp/ux-next-wp45-50-20260516/`.
-  - Remaining before `Done`: wire `getModifyAvailability` into the contextual ribbon so the Modify panel reflects live selection + view mode; add canvas-level move/rotate/mirror preview that matches the committed payload; `Esc` → Select transition proof; seeded Playwright proof editing the wall/floor/roof stack.
+  - Remaining before `Done`: canvas-level move/rotate/mirror preview that matches the committed payload; `Esc` → Select transition proof; seeded Playwright proof editing the wall/floor/roof stack.
 - Dependencies: `WP-NEXT-42` through `WP-NEXT-46` for structural targets.
 
 ### WP-NEXT-48 — Ribbon Command Matrix Completion Across All View Types
@@ -2159,8 +2161,8 @@ Revit behavior to emulate where it maps cleanly:
   - `commandCapabilities.test.ts` "every Cmd+K command capability is in the palette registry" test passes — zero missing Cmd+K registrations.
   - `commandCapabilities.test.ts` "unique command ids and no unreachable registered commands" test passes.
   - All 20 `commandCapabilities.test.ts` tests pass.
-  - Playwright screenshot captured 2026-05-16: `09-wp48-plan-ribbon-full.png` (plan view full ribbon, all tool commands visible) — `packages/web/tmp/ux-next-wp45-50-20260516/`.
-  - Remaining before `Done`: ribbon rendering audit for section/sheet/schedule/concept view types with actual UI screenshots; verify bridge-action labels open the correct pane/tab; seeded screenshots for each view type ribbon confirming no inert commands.
+  - Playwright screenshots captured 2026-05-16: `09-wp48-plan-ribbon-full.png` (plan view full ribbon), `15-wp48-section-ribbon.png` (section view ribbon showing Detail Line / Dimension / Tag / Text / Crop panels), `16-wp48-sheet-ribbon.png` (sheet view ribbon showing Place Views / Edit Viewports / Titleblock / Revisions / Publish panels), `17-wp48-schedule-ribbon.png` (schedule view ribbon showing Rows / Columns / Fields / Filters / Sort-Group / Formatting panels) — all in `packages/web/tmp/ux-next-wp45-50-20260516/` (commit `474579a61`).
+  - Remaining before `Done`: verify bridge-action labels open the correct pane/tab in the live app; concept view ribbon screenshot; seeded screenshots confirming no inert commands after live interaction.
 - Dependencies: can run after `WP-NEXT-40`, but model commands should close only after `WP-NEXT-46`.
 
 ### WP-NEXT-49 — Live Structural Validation And Repair UX
@@ -2191,7 +2193,9 @@ Revit behavior to emulate where it maps cleanly:
   - `packages/web/src/advisor/structuralAdvisorViolations.ts` implements `validationIssuesToViolations` (converts `ValidationIssue[]` → `Violation[]` with `ruleId: 'structural_authoring.*'`, severity, blocking flag, `quickFixCommand: { type: 'deleteElement' }` for duplicates/orphans, `discipline: 'architecture'`) and `useStructuralValidationViolations` (memoized React hook).
   - `packages/web/src/workspace/Workspace.tsx` wires `useStructuralValidationViolations(elementsById)` into the unified advisor violation merge, so structural issues appear in the advisor channel immediately after model changes.
   - Playwright screenshot captured 2026-05-16: `11-wp49-advisor-panel.png` (advisor panel open, structural validation violations channel visible) — `packages/web/tmp/ux-next-wp45-50-20260516/`.
-  - Remaining before `Done`: wire `runStructuralValidation` into the pre-commit hook of `SketchCanvas` and `PlanCanvas` to surface live canvas notices; add repair actions (delete duplicate wall, detach orphan, fix boundary) to contextual ribbon and Cmd+K; add joined-wall cleanup failure detection; seeded proof creating, detecting, and fixing one issue per category.
+  - `packages/web/src/plan/SketchCanvas.tsx` (commit `73895793e`) wires pre-commit boundary validation into `handleFinish`: `orderedPolygonFromLines` converts unordered `session.lines` into an ordered polygon (adjacency-walk, 0.5 mm epsilon), then `validateBoundary` runs open-loop / self-intersection / too-small-edge checks; blocking `error`-severity issues surface in the sketch error banner before any server call.
+  - `packages/web/src/workspace/commandCapabilities.ts` (commit `52d1ff244`) adds `structural.delete-duplicate-wall` and `structural.detach-orphan` capability entries (`surfaces: ['cmd-k']`, `intendedModes: ['plan','3d']`, `usabilityScore: 8`); `defaultCommands.ts` registers both as Cmd+K repair commands invoking `ctx.applyFirstAdvisorFix?.()`.
+  - Remaining before `Done`: wire `runStructuralValidation` into `PlanCanvas` pre-commit hook (not just SketchCanvas); add repair actions to the contextual ribbon (not just Cmd+K); add joined-wall cleanup failure detection; seeded proof creating, detecting, and fixing one issue per category group.
 - Dependencies: `WP-NEXT-42` through `WP-NEXT-47`.
 
 ### WP-NEXT-50 — End-To-End Structure Builder Proof Suite
