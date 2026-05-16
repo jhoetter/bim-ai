@@ -3,7 +3,7 @@
   "checkpoint_id": "89c51beb65f3",
   "strategy": "manual-commit",
   "branch": "main",
-  "checkpoints_count": 2,
+  "checkpoints_count": 3,
   "files_touched": [
     "packages/web/src/tools/decalGrammar.test.ts",
     "packages/web/src/tools/toolGrammar.ts",
@@ -39,13 +39,19 @@
       "transcript": "/89/c51beb65f3/4/full.jsonl",
       "content_hash": "/89/c51beb65f3/4/content_hash.txt",
       "prompt": "/89/c51beb65f3/4/prompt.txt"
+    },
+    {
+      "metadata": "/89/c51beb65f3/5/metadata.json",
+      "transcript": "/89/c51beb65f3/5/full.jsonl",
+      "content_hash": "/89/c51beb65f3/5/content_hash.txt",
+      "prompt": "/89/c51beb65f3/5/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 4805994,
-    "cache_creation_tokens": 1195755,
-    "cache_read_tokens": 224584112,
-    "output_tokens": 711132,
-    "api_call_count": 2264
+    "input_tokens": 4806810,
+    "cache_creation_tokens": 2206912,
+    "cache_read_tokens": 300400521,
+    "output_tokens": 990761,
+    "api_call_count": 3030
   }
 }
