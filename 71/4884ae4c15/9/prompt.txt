@@ -1,9 +1,0 @@
-please look into spec/workpackage-tracker-v3.md, is it completed yet?
-
----
-
-please build everything except for TRC-V3-01, that is already done by another agent. when building, also please double check this isnt already in the code and we just forgot to track it accordingly
-
----
-
-dont stop until everything is done (except for the sketch-to-bim-thing)

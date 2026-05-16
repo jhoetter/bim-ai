@@ -1,9 +1,0 @@
-<image name=[Image #1]>
-
----
-
-</image>
-
----
-
-we use claude-skills/sketch-to-bim to generate bim models from sketches, but it usually generates with issues that the software already identifies: [Image #1]; please use that in the methodology as well. commit and push and merge to main
