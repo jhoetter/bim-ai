@@ -1,0 +1,42 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "259c2a49de25",
+  "session_id": "cc964411-2f20-460f-935d-77b7b9c7ed62",
+  "strategy": "manual-commit",
+  "created_at": "2026-05-16T07:53:40.80806Z",
+  "branch": "main",
+  "checkpoints_count": 1,
+  "files_touched": [],
+  "agent": "Claude Code",
+  "model": "",
+  "turn_id": "d5adafa60f9a",
+  "token_usage": {
+    "input_tokens": 1566,
+    "cache_creation_tokens": 499731,
+    "cache_read_tokens": 34399681,
+    "output_tokens": 107303,
+    "api_call_count": 362
+  },
+  "session_metrics": {
+    "turn_count": 1
+  },
+  "prompt_attributions": [
+    {
+      "checkpoint_number": 1,
+      "user_lines_added": 0,
+      "user_lines_removed": 0,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0
+    },
+    {
+      "checkpoint_number": 2,
+      "user_lines_added": 33,
+      "user_lines_removed": 0,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0,
+      "user_added_per_file": {
+        "packages/web/tmp/ux-next-wp45-50-20260516/summary.json": 33
+      }
+    }
+  ]
+}
