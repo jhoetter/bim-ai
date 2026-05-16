@@ -502,6 +502,7 @@ export function Viewport({
   const wallDraftPreviewGroupRef = useRef<THREE.Object3D | null>(null);
   const levelDatumGroupRef = useRef<THREE.Group | null>(null);
   const osmContextGroupRef = useRef<THREE.Group | null>(null);
+  const groupInstanceGroupRef = useRef<THREE.Group | null>(null);
   const osmVisible = useBimStore((s) => s.osmVisible);
   const setOsmVisible = useBimStore((s) => s.setOsmVisible);
   const osmLayerHidden = useBimStore((s) => s.osmLayerHidden);
@@ -4941,6 +4942,30 @@ export function Viewport({
       tex.dispose();
     };
   }, [elementsById]);
+
+  // WP-B B3 — rebuild 3D group instance meshes when groupRegistry changes.
+  useEffect(() => {
+    const root = rootGroupRef.current;
+    if (!root) return;
+    const prev = groupInstanceGroupRef.current;
+    if (prev) {
+      root.remove(prev);
+      groupInstanceGroupRef.current = null;
+    }
+    if (!groupRegistry) return;
+    const { definitions, instances } = groupRegistry;
+    const container = new THREE.Group();
+    container.name = 'group-instances';
+    for (const instance of Object.values(instances)) {
+      const definition = definitions[instance.groupDefinitionId];
+      if (!definition) continue;
+      container.add(
+        buildGroupInstance3d(instance, definition, elementsById, paintBundleRef.current),
+      );
+    }
+    groupInstanceGroupRef.current = container;
+    root.add(container);
+  }, [groupRegistry, elementsById]);
 
   // Sync the section-box controller's `active` flag with React state.
   useEffect(() => {

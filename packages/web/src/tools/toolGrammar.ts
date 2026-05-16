@@ -2477,3 +2477,59 @@ export function reducePlaceGroup(
   }
   return { state, effect: { stillActive: true } };
 }
+
+/* ────────────────────────────────────────────────────────────────────── */
+/* Walkthrough Tool — WP-D3                                               */
+/* Clicks capture keyframes; Enter/double-click commits path.             */
+/* ────────────────────────────────────────────────────────────────────── */
+
+export interface WalkthroughKeyframeCapture {
+  positionMm: { x: number; y: number; z: number };
+  targetMm: { x: number; y: number; z: number };
+  fovDeg: number;
+  timeSec: number;
+}
+
+export interface WalkthroughState {
+  keyframes: WalkthroughKeyframeCapture[];
+}
+
+export type WalkthroughEvent =
+  | { kind: 'capture-keyframe'; keyframe: WalkthroughKeyframeCapture }
+  | { kind: 'commit' }
+  | { kind: 'cancel' };
+
+export interface WalkthroughEffect {
+  createCameraPath?: { name: string; keyframes: WalkthroughKeyframeCapture[] };
+  stillActive: boolean;
+}
+
+export function initialWalkthroughState(): WalkthroughState {
+  return { keyframes: [] };
+}
+
+export function reduceWalkthrough(
+  state: WalkthroughState,
+  event: WalkthroughEvent,
+): { state: WalkthroughState; effect: WalkthroughEffect } {
+  if (event.kind === 'capture-keyframe') {
+    const next = { keyframes: [...state.keyframes, event.keyframe] };
+    return { state: next, effect: { stillActive: true } };
+  }
+  if (event.kind === 'commit') {
+    if (state.keyframes.length < 2) {
+      return { state: initialWalkthroughState(), effect: { stillActive: false } };
+    }
+    return {
+      state: initialWalkthroughState(),
+      effect: {
+        createCameraPath: {
+          name: `Walkthrough ${new Date().toLocaleTimeString()}`,
+          keyframes: state.keyframes,
+        },
+        stillActive: false,
+      },
+    };
+  }
+  return { state: initialWalkthroughState(), effect: { stillActive: false } };
+}

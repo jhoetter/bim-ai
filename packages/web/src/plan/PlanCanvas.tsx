@@ -62,6 +62,7 @@ import {
   type PlaceGroupState,
 } from '../tools/toolGrammar';
 import { buildScaleCommand, distanceMm } from './scaleTool';
+import { linearArrayOffsets, radialArrayAngles, radialOffsetForElement } from './arrayTool';
 import { columnPositionsAtGridIntersections } from './columnAtGrids';
 import * as THREE from 'three';
 import { parseDimensionInput } from '@bim-ai/core';
@@ -3970,6 +3971,105 @@ export function PlanCanvas({
         bumpGeom((x) => x + 1);
         return;
       }
+      if (planTool === 'array') {
+        const { state, effect } = reduceArray(arrayStateRef.current, {
+          kind: 'click',
+          xMm: sp.xMm,
+          yMm: sp.yMm,
+        });
+        arrayStateRef.current = state;
+        setArrayPhase(state.phase);
+        if (effect.commitLinear) {
+          const { startMm, endMm, count, moveToLast } = effect.commitLinear;
+          const offsets = linearArrayOffsets({ mode: 'linear', startMm, endMm, count, moveToLast });
+          const st = useBimStore.getState();
+          const srcIds = [selectedId, ...selectedIds].filter(Boolean) as string[];
+          for (let i = 1; i < offsets.length; i++) {
+            const { dxMm, dyMm } = offsets[i]!;
+            for (const srcId of srcIds) {
+              const srcEl = st.elementsById[srcId];
+              if (!srcEl) continue;
+              const localUserFamilies = st.userFamilies ?? {};
+              const resolveFamilyById = (id: string): FamilyDefinition | undefined =>
+                localUserFamilies[id] ?? getBuiltInFamilyById(id);
+              const payload = copyElementsToClipboard({
+                sourceProjectId: st.modelId ?? 'unknown',
+                sourceModelId: st.modelId ?? 'unknown',
+                elements: [srcEl],
+                resolveFamilyById,
+              });
+              const result = pasteElementsFromClipboard({
+                payload,
+                targetProjectId: st.modelId ?? 'unknown',
+                localFamilies: [],
+                cursorMm: { xMm: dxMm, yMm: dyMm },
+                sameProjectOffsetMm: 0,
+              });
+              if (result.elements.length > 0) st.mergeElements(result.elements);
+            }
+          }
+        }
+        if (effect.commitRadial) {
+          const { centerMm, angleDeg, count } = effect.commitRadial;
+          const angles = radialArrayAngles({ mode: 'radial', centerMm, angleDeg, count });
+          const st = useBimStore.getState();
+          const srcIds = [selectedId, ...selectedIds].filter(Boolean) as string[];
+          for (let i = 1; i < angles.length; i++) {
+            const angle = angles[i]!;
+            for (const srcId of srcIds) {
+              const srcEl = st.elementsById[srcId];
+              if (!srcEl) continue;
+              const elCenterX =
+                'start' in srcEl ? (srcEl as { start: { xMm: number } }).start.xMm : 0;
+              const elCenterY =
+                'start' in srcEl ? (srcEl as { start: { yMm: number } }).start.yMm : 0;
+              const { dxMm, dyMm } = radialOffsetForElement(
+                centerMm,
+                { xMm: elCenterX, yMm: elCenterY },
+                angle,
+              );
+              const localUserFamilies = st.userFamilies ?? {};
+              const resolveFamilyById = (id: string): FamilyDefinition | undefined =>
+                localUserFamilies[id] ?? getBuiltInFamilyById(id);
+              const payload = copyElementsToClipboard({
+                sourceProjectId: st.modelId ?? 'unknown',
+                sourceModelId: st.modelId ?? 'unknown',
+                elements: [srcEl],
+                resolveFamilyById,
+              });
+              const result = pasteElementsFromClipboard({
+                payload,
+                targetProjectId: st.modelId ?? 'unknown',
+                localFamilies: [],
+                cursorMm: { xMm: dxMm, yMm: dyMm },
+                sameProjectOffsetMm: 0,
+              });
+              if (result.elements.length > 0) st.mergeElements(result.elements);
+            }
+          }
+        }
+        bumpGeom((x) => x + 1);
+        return;
+      }
+      if (planTool === 'place-group') {
+        const { state, effect } = reducePlaceGroup(placeGroupStateRef.current, {
+          kind: 'click',
+          positionMm: sp,
+        });
+        placeGroupStateRef.current = state;
+        if (effect.commitPlaceGroup) {
+          const { definitionId, positionMm } = effect.commitPlaceGroup;
+          void onSemanticCommand({
+            type: 'placeGroup',
+            groupDefinitionId: definitionId,
+            insertionXMm: positionMm.xMm,
+            insertionYMm: positionMm.yMm,
+            rotationDeg: 0,
+          });
+        }
+        bumpGeom((x) => x + 1);
+        return;
+      }
       if (planTool === 'roof-by-extrusion') {
         const { state, effect } = reduceRoofByExtrusion(
           roofByExtrusionStateRef.current,
@@ -4991,6 +5091,15 @@ export function PlanCanvas({
           setScalePhase(state.phase);
           setNumericInput(null);
           bumpGeom((x) => x + 1);
+        } else if (planTool === 'array') {
+          const { state } = reduceArray(arrayStateRef.current, { kind: 'cancel' });
+          arrayStateRef.current = state;
+          setArrayPhase(state.phase);
+          bumpGeom((x) => x + 1);
+        } else if (planTool === 'place-group') {
+          const { state } = reducePlaceGroup(placeGroupStateRef.current, { kind: 'cancel' });
+          placeGroupStateRef.current = state;
+          bumpGeom((x) => x + 1);
         } else if (planTool === 'roof-by-extrusion') {
           const { state } = reduceRoofByExtrusion(
             roofByExtrusionStateRef.current,
@@ -5131,6 +5240,87 @@ export function PlanCanvas({
               levelId: lvlId,
               positionMm: pos,
             });
+          }
+        }
+        bumpGeom((x) => x + 1);
+        return;
+      }
+      if (
+        planTool === 'array' &&
+        (arrayPhase === 'confirm-linear' || arrayPhase === 'confirm-radial') &&
+        ev.key === 'Enter'
+      ) {
+        ev.preventDefault();
+        const { state, effect } = reduceArray(arrayStateRef.current, { kind: 'confirm' });
+        arrayStateRef.current = state;
+        setArrayPhase(state.phase);
+        if (effect.commitLinear) {
+          const { startMm, endMm, count, moveToLast } = effect.commitLinear;
+          const offsets = linearArrayOffsets({ mode: 'linear', startMm, endMm, count, moveToLast });
+          const st = useBimStore.getState();
+          const srcIds = [selectedId, ...selectedIds].filter(Boolean) as string[];
+          for (let i = 1; i < offsets.length; i++) {
+            const { dxMm, dyMm } = offsets[i]!;
+            for (const srcId of srcIds) {
+              const srcEl = st.elementsById[srcId];
+              if (!srcEl) continue;
+              const localUserFamilies = st.userFamilies ?? {};
+              const resolveFamilyById = (id: string): FamilyDefinition | undefined =>
+                localUserFamilies[id] ?? getBuiltInFamilyById(id);
+              const payload = copyElementsToClipboard({
+                sourceProjectId: st.modelId ?? 'unknown',
+                sourceModelId: st.modelId ?? 'unknown',
+                elements: [srcEl],
+                resolveFamilyById,
+              });
+              const result = pasteElementsFromClipboard({
+                payload,
+                targetProjectId: st.modelId ?? 'unknown',
+                localFamilies: [],
+                cursorMm: { xMm: dxMm, yMm: dyMm },
+                sameProjectOffsetMm: 0,
+              });
+              if (result.elements.length > 0) st.mergeElements(result.elements);
+            }
+          }
+        }
+        if (effect.commitRadial) {
+          const { centerMm, angleDeg, count } = effect.commitRadial;
+          const angles = radialArrayAngles({ mode: 'radial', centerMm, angleDeg, count });
+          const st = useBimStore.getState();
+          const srcIds = [selectedId, ...selectedIds].filter(Boolean) as string[];
+          for (let i = 1; i < angles.length; i++) {
+            const angle = angles[i]!;
+            for (const srcId of srcIds) {
+              const srcEl = st.elementsById[srcId];
+              if (!srcEl) continue;
+              const elCenterX =
+                'start' in srcEl ? (srcEl as { start: { xMm: number } }).start.xMm : 0;
+              const elCenterY =
+                'start' in srcEl ? (srcEl as { start: { yMm: number } }).start.yMm : 0;
+              const { dxMm, dyMm } = radialOffsetForElement(
+                centerMm,
+                { xMm: elCenterX, yMm: elCenterY },
+                angle,
+              );
+              const localUserFamilies = st.userFamilies ?? {};
+              const resolveFamilyById = (id: string): FamilyDefinition | undefined =>
+                localUserFamilies[id] ?? getBuiltInFamilyById(id);
+              const payload = copyElementsToClipboard({
+                sourceProjectId: st.modelId ?? 'unknown',
+                sourceModelId: st.modelId ?? 'unknown',
+                elements: [srcEl],
+                resolveFamilyById,
+              });
+              const result = pasteElementsFromClipboard({
+                payload,
+                targetProjectId: st.modelId ?? 'unknown',
+                localFamilies: [],
+                cursorMm: { xMm: dxMm, yMm: dyMm },
+                sameProjectOffsetMm: 0,
+              });
+              if (result.elements.length > 0) st.mergeElements(result.elements);
+            }
           }
         }
         bumpGeom((x) => x + 1);
