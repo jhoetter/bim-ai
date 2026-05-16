@@ -3,7 +3,7 @@
   "checkpoint_id": "8f2b22e64a25",
   "strategy": "manual-commit",
   "branch": "main",
-  "checkpoints_count": 2,
+  "checkpoints_count": 3,
   "files_touched": [
     "spec/revit-parity/agent-prompts/WAVE6-WP-A.md",
     "spec/revit-parity/agent-prompts/WAVE6-WP-B.md",
@@ -152,13 +152,19 @@
       "transcript": "/8f/2b22e64a25/22/full.jsonl",
       "content_hash": "/8f/2b22e64a25/22/content_hash.txt",
       "prompt": "/8f/2b22e64a25/22/prompt.txt"
+    },
+    {
+      "metadata": "/8f/2b22e64a25/23/metadata.json",
+      "transcript": "/8f/2b22e64a25/23/full.jsonl",
+      "content_hash": "/8f/2b22e64a25/23/content_hash.txt",
+      "prompt": "/8f/2b22e64a25/23/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 256,
-    "cache_creation_tokens": 340256,
-    "cache_read_tokens": 14352544,
-    "output_tokens": 104705,
-    "api_call_count": 236
+    "input_tokens": 355,
+    "cache_creation_tokens": 473454,
+    "cache_read_tokens": 22019614,
+    "output_tokens": 157541,
+    "api_call_count": 325
   }
 }
