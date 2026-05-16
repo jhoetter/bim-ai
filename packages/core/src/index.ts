@@ -1131,6 +1131,10 @@ export type Element =
       clientName?: string | null;
       projectAddress?: string | null;
       projectStatus?: string | null;
+      authorName?: string | null;
+      issueDate?: string | null;
+      checkDate?: string | null;
+      projectDescription?: string | null;
       worksetId?: string | null;
       startingViewId?: string | null;
       checkpointRetentionLimit?: number;

@@ -1,4 +1,5 @@
 export { ManageLinksDialog } from './ManageLinksDialog';
+export { ProjectInfoDialog } from './ProjectInfoDialog';
 export { ProjectBrowserV3 } from './ProjectBrowser';
 export { ProjectMenu } from './ProjectMenu';
 export { ProjectSetupDialog } from './ProjectSetupDialog';

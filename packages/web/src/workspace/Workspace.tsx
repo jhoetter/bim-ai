@@ -112,6 +112,7 @@ import {
   downloadSnapshot,
   findRecentProject,
   ManageLinksDialog,
+  ProjectInfoDialog,
   ProjectMenu,
   ProjectSetupDialog,
   ProjectUnitsDialog,
@@ -1012,6 +1013,7 @@ export function Workspace(): JSX.Element {
   const [projectSetupOpen, setProjectSetupOpen] = useState(false);
   const [projectUnitsOpen, setProjectUnitsOpen] = useState(false);
   const [phaseManagerOpen, setPhaseManagerOpen] = useState(false);
+  const [projectInfoOpen, setProjectInfoOpen] = useState(false);
   const lensMode = useBimStore((s) => s.lensMode);
   const setLensMode = useBimStore((s) => s.setLensMode);
   const activeWorkspaceId = useBimStore((s) => s.activeWorkspaceId);
@@ -4037,6 +4039,7 @@ export function Workspace(): JSX.Element {
         onOpenProjectSetup={() => setProjectSetupOpen(true)}
         onOpenProjectUnits={() => setProjectUnitsOpen(true)}
         onManagePhases={() => setPhaseManagerOpen(true)}
+        onOpenProjectInfo={() => setProjectInfoOpen(true)}
         onNewClear={handleNewClear}
         onReplayTour={replayOnboardingTour}
         onManageLinks={() => setManageLinksOpen(true)}
@@ -4082,6 +4085,12 @@ export function Workspace(): JSX.Element {
       <PhaseManagerDialog
         open={phaseManagerOpen}
         onClose={() => setPhaseManagerOpen(false)}
+        elementsById={elementsById}
+        onSemanticCommand={onSemanticCommand}
+      />
+      <ProjectInfoDialog
+        open={projectInfoOpen}
+        onClose={() => setProjectInfoOpen(false)}
         elementsById={elementsById}
         onSemanticCommand={onSemanticCommand}
       />
