@@ -7,6 +7,7 @@
   "files_touched": [
     "packages/core/src/index.ts",
     "packages/web/src/Viewport.tsx",
+    "packages/web/src/phases/PhaseManagerDialog.test.tsx",
     "packages/web/src/plan/PlanCanvas.tsx",
     "packages/web/src/plan/symbology.ts",
     "packages/web/src/tools/authoringCommandContract.ts",
@@ -39,13 +40,19 @@
       "transcript": "/69/0601cc5431/3/full.jsonl",
       "content_hash": "/69/0601cc5431/3/content_hash.txt",
       "prompt": "/69/0601cc5431/3/prompt.txt"
+    },
+    {
+      "metadata": "/69/0601cc5431/4/metadata.json",
+      "transcript": "/69/0601cc5431/4/full.jsonl",
+      "content_hash": "/69/0601cc5431/4/content_hash.txt",
+      "prompt": "/69/0601cc5431/4/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 3321248,
-    "cache_creation_tokens": 782366,
-    "cache_read_tokens": 138259753,
-    "output_tokens": 445862,
-    "api_call_count": 2175
+    "input_tokens": 3323428,
+    "cache_creation_tokens": 1135456,
+    "cache_read_tokens": 166005037,
+    "output_tokens": 524799,
+    "api_call_count": 2492
   }
 }
