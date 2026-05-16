@@ -11,6 +11,8 @@
  */
 import type { Element, XY } from '@bim-ai/core';
 
+import { roomAreaM2 } from './roomArea';
+
 export type AutoTagKind = 'room' | 'door' | 'window';
 
 export type AutoTagViewContext = {
@@ -128,6 +130,7 @@ export type AutoTagResult = {
     heightMm?: number | null;
     roomName?: string | null;
     roomNumber?: string | null;
+    roomArea?: number | null; // area in mm²
   };
 };
 
@@ -212,6 +215,7 @@ export function autoTagElements(elements: Element[], activeLevelId: string): Aut
         fields: {
           roomName: el.name || null,
           roomNumber: el.numberLabel ?? null,
+          roomArea: roomAreaM2(el.outlineMm) * 1_000_000,
         },
       });
     } else if (el.kind === 'wall') {

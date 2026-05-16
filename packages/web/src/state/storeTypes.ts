@@ -122,7 +122,8 @@ export type PlanTool =
   | 'terrain-point'
   | 'terrain-pad'
   | 'split-wall'
-  | 'paint';
+  | 'paint'
+  | 'model-line';
 
 export type PresencePeers = Record<
   string,

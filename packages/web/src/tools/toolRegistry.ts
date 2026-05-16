@@ -105,7 +105,8 @@ export type ToolId =
   | 'split-wall'
   | 'paint'
   | 'measure-angle'
-  | 'measure-arc';
+  | 'measure-arc'
+  | 'model-line';
 
 /** Modify-group tool IDs — used by ToolPalette to insert a separator. */
 export const MODIFY_TOOL_IDS = new Set<ToolId>([
@@ -894,6 +895,15 @@ export function getToolRegistry(t: TFunction): Record<ToolId, ToolDefinition> {
       modes: ['plan'],
       tooltip:
         'Draw an excavation (Baugrube) polygon. Click to add vertices, Enter or double-click to close.',
+    },
+    'model-line': {
+      id: 'model-line',
+      label: 'Model Line',
+      icon: 'detailLine',
+      hotkey: 'ML',
+      shortcut: 'ML',
+      modes: ['plan'],
+      tooltip: 'Draw a model line visible in all plan views (project environment polyline).',
     },
   };
 }

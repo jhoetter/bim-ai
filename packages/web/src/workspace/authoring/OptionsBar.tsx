@@ -80,6 +80,10 @@ export function setDispatchColumnAtGridsSelectAll(fn: ((gridIds: string[]) => vo
   dispatchColumnAtGridsSelectAll = fn;
 }
 
+/** §9.1.1 — column usage for the next placed column. Read at click-time by PlanCanvas. */
+// eslint-disable-next-line prefer-const
+export let columnDrawUsage: 'architectural' | 'structural' = 'architectural';
+
 function BeamSystemJustificationSelect(): JSX.Element {
   const [justification, setJustification] = useState<'beginning' | 'center' | 'end'>('center');
   return (
@@ -154,6 +158,9 @@ export function OptionsBar({
   const setActivePaintMaterialId = useBimStore((s) => s.setActivePaintMaterialId);
   const [showComputations, setShowComputations] = useState(false);
   const [, setComponentSelectionRevision] = useState(0);
+  const [localColumnUsage, setLocalColumnUsage] = useState<'architectural' | 'structural'>(
+    columnDrawUsage,
+  );
 
   useEffect(() => {
     if (!showComputations) return;
@@ -395,6 +402,22 @@ export function OptionsBar({
           />
           <span className="text-muted opacity-60">mm</span>
         </label>
+        <div className="flex items-center gap-1">
+          <span className="text-xs text-muted">Usage</span>
+          <select
+            data-testid="options-column-usage"
+            className="text-xs bg-surface border border-border rounded px-1 py-0.5"
+            value={localColumnUsage}
+            onChange={(e) => {
+              const v = e.target.value as 'architectural' | 'structural';
+              columnDrawUsage = v;
+              setLocalColumnUsage(v);
+            }}
+          >
+            <option value="architectural">Architectural</option>
+            <option value="structural">Structural</option>
+          </select>
+        </div>
       </div>
     );
   }
@@ -782,6 +805,13 @@ export function OptionsBar({
       .filter((e): e is Extract<Element, { kind: 'level' }> => e.kind === 'level')
       .sort((a, b) => a.elevationMm - b.elevationMm);
 
+    const columnTypes = Object.values(elementsById)
+      .filter(
+        (e): e is Extract<Element, { kind: 'column_type' }> =>
+          (e as { kind: string }).kind === 'column_type',
+      )
+      .sort((a, b) => (a as { name: string }).name.localeCompare((b as { name: string }).name));
+
     const selectedGridElems = columnAtGridsSelectedIds
       .map((id) => elementsById[id])
       .filter((e): e is Extract<Element, { kind: 'grid_line' }> => e?.kind === 'grid_line');
@@ -795,20 +825,27 @@ export function OptionsBar({
       <div data-testid="options-bar" className={BAR_CLASS}>
         <label className="flex items-center gap-2">
           <span className="text-muted">Column Type:</span>
-          <input
-            type="text"
-            data-testid="options-bar-cat-column-type"
+          <select
+            data-testid="options-column-at-grids-type"
             defaultValue=""
-            placeholder="(Default)"
-            className="w-28 rounded border border-border bg-surface px-1.5 py-0.5 text-xs text-foreground"
+            className="rounded border border-border bg-surface px-1.5 py-0.5 text-xs text-foreground"
             aria-label="Column type"
-          />
+            onChange={() => undefined}
+          >
+            <option value="">(Default)</option>
+            {columnTypes.map((ct) => (
+              <option key={(ct as { id: string }).id} value={(ct as { id: string }).id}>
+                {(ct as { name: string }).name}
+              </option>
+            ))}
+          </select>
         </label>
         <label className="flex items-center gap-2">
           <span className="text-muted">Level:</span>
           <select
-            data-testid="options-bar-cat-level"
-            defaultValue={activeLevelId ?? ''}
+            data-testid="options-column-at-grids-level"
+            value={activeLevelId ?? ''}
+            onChange={(e) => setActiveLevelId(e.target.value || undefined)}
             className="rounded border border-border bg-surface px-1.5 py-0.5 text-xs text-foreground"
             aria-label="Column level"
           >
@@ -821,11 +858,11 @@ export function OptionsBar({
           </select>
         </label>
         <span
-          data-testid="options-bar-cat-count"
+          data-testid="options-column-at-grids-count"
           className="text-muted opacity-70"
           aria-label="Column placement count"
         >
-          {columnAtGridsSelectedIds.length} grids selected → {intersectionCount} columns
+          {intersectionCount} intersections selected
         </span>
         <button
           type="button"

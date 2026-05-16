@@ -238,14 +238,14 @@ function SheetCanvasWithSheet(props: {
   const tp = sh.titleblockParameters ?? {};
   const sheetNo = tp.sheetNumber ?? tp.sheetNo ?? '';
   const revision = tp.revision ?? '';
-  const project = tp.projectName ?? tp.project ?? '';
-  const drawn = tp.drawnBy ?? '';
   const projectSettings = Object.values(elementsById).find(
     (e): e is Extract<Element, { kind: 'project_settings' }> => e.kind === 'project_settings',
   );
+  const project = tp.projectName ?? tp.project ?? projectSettings?.name ?? '';
+  const drawn = tp.drawnBy ?? '';
   const chk = String(tp.checkedBy ?? projectSettings?.authorName ?? '');
   const issuedByVal = String(tp.issuedBy ?? projectSettings?.clientName ?? '');
-  const issued = tp.issueDate ?? tp.date ?? '';
+  const issued = tp.issueDate ?? tp.date ?? projectSettings?.issueDate ?? '';
 
   const hdrParts: string[] = [];
   if (String(sheetNo).trim()) hdrParts.push(String(sheetNo).trim());

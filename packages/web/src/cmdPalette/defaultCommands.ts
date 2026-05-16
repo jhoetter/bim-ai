@@ -1483,6 +1483,14 @@ registerCommand({
 });
 
 registerCommand({
+  id: 'manage.project-information',
+  label: 'Project Information',
+  keywords: ['project info', 'name', 'number', 'client', 'address', 'author'],
+  category: 'command',
+  invoke: (ctx) => ctx.openProjectInfo?.(),
+});
+
+registerCommand({
   id: 'project.import.ifc',
   label: 'Import IFC Link',
   keywords: ['import', 'ifc', 'link model', 'project resource'],
@@ -2163,5 +2171,61 @@ registerCommand({
   category: 'command',
   invoke: (ctx) => {
     ctx.sectionBoxFromPlan?.();
+  },
+});
+
+// §7.1.1: Model Line tool
+registerCommand({
+  id: 'tool.model-line',
+  label: 'Model Line',
+  keywords: ['model line', 'construction line', 'sketch', 'ML'],
+  category: 'tool',
+  invoke: (ctx) => startPlanTool(ctx, 'model-line'),
+});
+
+// §1.6.10: hide / isolate / reset hidden elements in the active plan view
+registerCommand({
+  id: 'view.hide-selected',
+  label: 'Hide Selected Elements in View',
+  keywords: ['hide', 'element', 'view'],
+  category: 'command',
+  invoke: (ctx) => {
+    const sel = ctx.selectedElementIds ?? [];
+    if (sel.length > 0 && ctx.activePlanViewId) {
+      ctx.dispatchCommand?.({
+        type: 'hide_in_view',
+        viewId: ctx.activePlanViewId,
+        elementIds: sel,
+      });
+    }
+  },
+});
+
+registerCommand({
+  id: 'view.isolate-selected',
+  label: 'Isolate Selected Elements in View',
+  keywords: ['isolate', 'element', 'view'],
+  category: 'command',
+  invoke: (ctx) => {
+    const sel = ctx.selectedElementIds ?? [];
+    if (sel.length > 0 && ctx.activePlanViewId) {
+      ctx.dispatchCommand?.({
+        type: 'isolate_in_view',
+        viewId: ctx.activePlanViewId,
+        elementIds: sel,
+      });
+    }
+  },
+});
+
+registerCommand({
+  id: 'view.reset-hidden',
+  label: 'Reset Hidden Elements in View',
+  keywords: ['reset', 'hidden', 'show all', 'unhide'],
+  category: 'command',
+  invoke: (ctx) => {
+    if (ctx.activePlanViewId) {
+      ctx.dispatchCommand?.({ type: 'reset_hidden_in_view', viewId: ctx.activePlanViewId });
+    }
   },
 });

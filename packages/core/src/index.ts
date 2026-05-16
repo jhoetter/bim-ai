@@ -436,7 +436,8 @@ export type ElemKind =
   | 'steel_connection'
   | 'toposolid_pad'
   | 'shaft'
-  | 'saved_3d_view';
+  | 'saved_3d_view'
+  | 'model_line';
 
 export type PhaseFilter = 'all' | 'existing' | 'demolition' | 'new';
 
@@ -1925,6 +1926,8 @@ export type Element =
       discipline?: DisciplineTag | null;
       /** WP-C C2: when true, the stair spans from baseLevelId to topLevelId across all intermediate levels. */
       multiStorey?: boolean;
+      /** §2.5.3: id of the shaft void that was auto-created when this stair was placed. */
+      linkedShaftId?: string | null;
     }
   | {
       kind: 'slab_opening';
@@ -2275,6 +2278,10 @@ export type Element =
       categoryKind?: string | null;
       /** §4.11 — leader line tip pointing at the tagged element in plan view. */
       leaderEndMm?: XY | null;
+      /** §13.1.2 — which fields are shown in the room tag label. */
+      showRoomName?: boolean | null;
+      showRoomNumber?: boolean | null;
+      showRoomArea?: boolean | null;
       /** §4.11 — display fields derived from the tagged element. */
       fields?: {
         mark?: string | null;
@@ -2283,6 +2290,7 @@ export type Element =
         heightMm?: number | null;
         roomName?: string | null;
         roomNumber?: string | null;
+        roomArea?: number | null; // area in mm²
       } | null;
     }
   | {
@@ -2393,6 +2401,8 @@ export type Element =
       topOffsetXMm?: number;
       /** F3 (WP-F): horizontal Y shift of column top from base in mm (default 0 = vertical). */
       topOffsetYMm?: number;
+      /** §9.1.1 — structural vs architectural usage classification. */
+      columnUsage?: 'architectural' | 'structural' | null;
       /** §2.1.4 per-element graphics override — fill/line color in plan, surface color in 3D. */
       graphicsOverride?: {
         fillColorHex?: string | null;
@@ -3239,7 +3249,8 @@ export type Element =
       scaleDenom: number;
     }
   | CameraPathElem
-  | ShaftElement;
+  | ShaftElement
+  | ModelLineElement;
 
 export type Violation = {
   ruleId: string;
@@ -4643,3 +4654,28 @@ export type Restore3dViewCmd = { type: 'restore_3d_view'; viewId: string };
 export type Delete3dViewCmd = { type: 'delete_3d_view'; viewId: string };
 export type ToggleLock3dViewCmd = { type: 'toggle_3d_view_lock'; viewId: string };
 export type Rename3dViewCmd = { type: 'rename_3d_view'; viewId: string; name: string };
+
+// ---------------------------------------------------------------------------
+// §7.1.1 — Model Lines (project-environment polyline, visible in all plan views)
+// ---------------------------------------------------------------------------
+
+export type ModelLineElement = {
+  kind: 'model_line';
+  id: string;
+  name?: string;
+  /** Polyline vertices in plan millimetres (world coords — not view-local). */
+  pointsMm: { xMm: number; yMm: number }[];
+  levelId: string;
+  lineStyle?: 'solid' | 'dashed' | 'dotted' | null;
+  colourHex?: string | null;
+  strokeMm?: number | null;
+};
+
+export type CreateModelLineCmd = {
+  type: 'create_model_line';
+  id: string;
+  levelId: string;
+  pointsMm: { xMm: number; yMm: number }[];
+  lineStyle?: 'solid' | 'dashed' | 'dotted' | null;
+  colourHex?: string | null;
+};

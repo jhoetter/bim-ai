@@ -39,6 +39,7 @@ import {
   referencePlanePlanThree,
   propertyLinePlanThree,
   revisionCloudPlanThree,
+  modelLinePlanThree,
 } from './planElementMeshBuilders';
 import type { WallJoinRecord } from './planElementMeshBuilders';
 import { dormerPlanGroup } from './dormerPlanSymbol';
@@ -1774,6 +1775,17 @@ export function rebuildPlanMeshes(
       holder.add(revisionCloudPlanThree(rc));
     }
     tintNewChildren(before, 'revision_cloud');
+  }
+
+  // §7.1.1: model lines — project-environment polylines visible in all plan views.
+  {
+    const before = holder.children.length;
+    for (const el of Object.values(elementsById)) {
+      if (el.kind !== 'model_line') continue;
+      if (el.pointsMm.length < 2) continue;
+      holder.add(modelLinePlanThree(el as Extract<Element, { kind: 'model_line' }>));
+    }
+    tintNewChildren(before, 'model_line');
   }
 
   // WP-D §5.1.5: excavation plan symbols (dashed boundary + cross-hatch).

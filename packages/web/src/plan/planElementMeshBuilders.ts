@@ -2361,6 +2361,34 @@ export function planWallSectionMesh(
   return group;
 }
 
+/** §7.1.1: model_line stored element — project-environment polyline, visible in all plan views. */
+export function modelLinePlanThree(el: Extract<Element, { kind: 'model_line' }>): THREE.Object3D {
+  const grp = new THREE.Group();
+  if (el.pointsMm.length < 2) return grp;
+
+  const colour = el.colourHex ?? '#333333';
+  const pts = el.pointsMm.map((v) => new THREE.Vector3(ux(v.xMm), PLAN_Y + 0.004, uz(v.yMm)));
+
+  let mat: THREE.LineBasicMaterial | THREE.LineDashedMaterial;
+  if (el.lineStyle === 'dashed' || el.lineStyle === 'dotted') {
+    const dashSize = el.lineStyle === 'dotted' ? 0.04 : 0.12;
+    const gapSize = el.lineStyle === 'dotted' ? 0.08 : 0.06;
+    mat = new THREE.LineDashedMaterial({ color: colour, dashSize, gapSize, depthTest: true });
+  } else {
+    mat = new THREE.LineBasicMaterial({ color: colour, depthTest: true });
+  }
+
+  const line = new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), mat);
+  if (mat instanceof THREE.LineDashedMaterial) line.computeLineDistances();
+  line.userData.elementId = el.id;
+  line.userData.kind = 'model_line';
+  line.userData.bimPickId = el.id;
+  line.renderOrder = 6;
+  grp.add(line);
+  grp.userData.bimPickId = el.id;
+  return grp;
+}
+
 /** E3d: revision_cloud stored element — render as dashed closed polygon. */
 export function revisionCloudPlanThree(
   el: Extract<Element, { kind: 'revision_cloud' }>,

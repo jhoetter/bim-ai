@@ -3170,6 +3170,53 @@ function _arcLength3(
   return { arcLengthMm: Math.abs(sweep) * c.r, radiusMm: c.r };
 }
 
+/* ────────────────────────────────────────────────────────────────────── */
+/* Model Line — §7.1.1 project-environment polyline grammar               */
+/* idle → click(start) → click*(extend) → enter/double-click(commit)      */
+/* ────────────────────────────────────────────────────────────────────── */
+
+export interface ModelLineState {
+  pointsMm: { xMm: number; yMm: number }[];
+}
+
+export function initialModelLineState(): ModelLineState {
+  return { pointsMm: [] };
+}
+
+export type ModelLineEvent =
+  | { kind: 'activate' }
+  | { kind: 'deactivate' }
+  | { kind: 'click'; pointMm: { xMm: number; yMm: number } }
+  | { kind: 'commit' }
+  | { kind: 'cancel' };
+
+export interface ModelLineEffect {
+  commitModelLine?: { pointsMm: { xMm: number; yMm: number }[] };
+}
+
+export function reduceModelLine(
+  state: ModelLineState,
+  event: ModelLineEvent,
+): { state: ModelLineState; effect: ModelLineEffect } {
+  if (event.kind === 'activate' || event.kind === 'deactivate' || event.kind === 'cancel') {
+    return { state: initialModelLineState(), effect: {} };
+  }
+  if (event.kind === 'commit') {
+    if (state.pointsMm.length >= 2) {
+      return {
+        state: initialModelLineState(),
+        effect: { commitModelLine: { pointsMm: [...state.pointsMm] } },
+      };
+    }
+    return { state: initialModelLineState(), effect: {} };
+  }
+  const last = state.pointsMm[state.pointsMm.length - 1];
+  if (last && Math.hypot(event.pointMm.xMm - last.xMm, event.pointMm.yMm - last.yMm) < 1) {
+    return { state, effect: {} };
+  }
+  return { state: { pointsMm: [...state.pointsMm, event.pointMm] }, effect: {} };
+}
+
 export function reduceMeasureArc(state: MeasureArcState, event: MeasureArcEvent): MeasureArcState {
   if (event.type === 'activate') return initialMeasureArcState();
   if (event.type === 'cancel') return initialMeasureArcState();

@@ -188,6 +188,7 @@ export function ProjectInfoDialog({
         >
           <span style={{ fontWeight: 600, fontSize: 14 }}>Project Information</span>
           <button
+            data-testid="project-info-close"
             onClick={onClose}
             aria-label="Close"
             style={{

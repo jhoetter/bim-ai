@@ -1827,6 +1827,28 @@ export function InspectorPropertiesFor(
               Creates a shaft opening through the floor(s) above this stair.
             </p>
           </div>
+          <div className="border-t border-border pt-1.5">
+            <div className="mb-1 text-xs text-muted">Shaft Opening</div>
+            {el.linkedShaftId ? (
+              <div className="flex items-center gap-2 py-0.5">
+                <span className="text-xs text-foreground">Auto-created shaft</span>
+                <span className="font-mono text-[10px] text-muted">
+                  {el.linkedShaftId.slice(0, 8)}
+                </span>
+              </div>
+            ) : (
+              <button
+                type="button"
+                data-testid="inspector-stair-create-shaft"
+                className="text-xs rounded border border-border px-2 py-0.5 text-muted hover:text-foreground"
+                onClick={() =>
+                  onDispatchCommand?.({ type: 'inspector_create_shaft_for_stair', stairId: el.id })
+                }
+              >
+                Create Shaft Opening
+              </button>
+            )}
+          </div>
           {onDisciplineChange ? (
             <InspectorDisciplineDropdown value={el.discipline} onChange={onDisciplineChange} />
           ) : null}
@@ -1858,6 +1880,20 @@ export function InspectorPropertiesFor(
               onBlur={(e) => colPropChange?.('heightMm', Number(e.currentTarget.value))}
               data-testid="inspector-column-height"
             />
+          </div>
+          <div className="flex items-center gap-2 py-0.5">
+            <span className="text-xs text-muted w-28 shrink-0">Usage</span>
+            <select
+              className="flex-1 text-xs bg-surface border border-border rounded px-1 py-0.5"
+              value={el.columnUsage ?? 'architectural'}
+              onChange={(e) =>
+                colPropChange?.('columnUsage', e.target.value as 'architectural' | 'structural')
+              }
+              data-testid="inspector-column-usage"
+            >
+              <option value="architectural">Architectural</option>
+              <option value="structural">Structural</option>
+            </select>
           </div>
           <div className="flex items-center gap-2 py-0.5">
             <span className="text-xs text-muted w-28 shrink-0">Rotation (°)</span>
@@ -4028,6 +4064,46 @@ export function InspectorPropertiesFor(
           <div data-testid="inspector-tag-target" style={{ display: 'none' }}>
             {targetName}
           </div>
+          {tagEl.categoryKind === 'room' ? (
+            <div className="flex flex-col gap-2">
+              <div className="text-xs font-semibold text-muted">Room Tag Fields</div>
+              <label className="flex items-center gap-2 text-xs">
+                <input
+                  type="checkbox"
+                  data-testid="inspector-tag-show-number"
+                  checked={tagEl.showRoomNumber !== false}
+                  onChange={(e) => onPropertyChange?.('showRoomNumber', e.target.checked)}
+                />
+                Show Room Number
+              </label>
+              <label className="flex items-center gap-2 text-xs">
+                <input
+                  type="checkbox"
+                  data-testid="inspector-tag-show-name"
+                  checked={tagEl.showRoomName !== false}
+                  onChange={(e) => onPropertyChange?.('showRoomName', e.target.checked)}
+                />
+                Show Room Name
+              </label>
+              <label className="flex items-center gap-2 text-xs">
+                <input
+                  type="checkbox"
+                  data-testid="inspector-tag-show-area"
+                  checked={tagEl.showRoomArea === true}
+                  onChange={(e) => onPropertyChange?.('showRoomArea', e.target.checked)}
+                />
+                Show Area (m²)
+              </label>
+              <FieldRow
+                label="Area"
+                value={
+                  tagEl.fields?.roomArea != null
+                    ? `${(tagEl.fields.roomArea / 1e6).toFixed(2)} m²`
+                    : '—'
+                }
+              />
+            </div>
+          ) : null}
         </div>
       );
     }

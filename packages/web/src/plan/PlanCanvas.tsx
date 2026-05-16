@@ -2260,10 +2260,11 @@ export function PlanCanvas({
         .filter((e): e is Extract<Element, { kind: 'grid_line' }> => e?.kind === 'grid_line');
       const positions = columnPositionsAtGridIntersections(selectedGridElems);
       for (const pt of positions) {
-        const dotGeo = new THREE.CircleGeometry(0.2, 16);
+        const dotGeo = new THREE.CircleGeometry(0.15, 16);
         const dot = new THREE.Mesh(dotGeo, new THREE.MeshBasicMaterial({ color: '#0055cc' }));
         dot.position.set(pt.xMm / 1000, SLICE_Y + 0.011, pt.yMm / 1000);
         dot.rotation.x = -Math.PI / 2;
+        dot.userData.columnAtGridsPreview = true;
         highlightGrp.add(dot);
       }
     }

@@ -4057,3 +4057,32 @@ export function spotElevationThree(
   group.add(sprite);
   return group;
 }
+
+/** §7.1.1: model_line 3D renderer — flat polyline at the level elevation. */
+export function modelLineThree(
+  el: Extract<import('@bim-ai/core').Element, { kind: 'model_line' }>,
+  levelElevationMm: number,
+): THREE.Object3D {
+  const grp = new THREE.Group();
+  if (el.pointsMm.length < 2) return grp;
+
+  const colour = el.colourHex ?? '#333333';
+  const y = levelElevationMm / 1000;
+  const pts = el.pointsMm.map((v) => new THREE.Vector3(v.xMm / 1000, y, -v.yMm / 1000));
+
+  let mat: THREE.LineBasicMaterial | THREE.LineDashedMaterial;
+  if (el.lineStyle === 'dashed' || el.lineStyle === 'dotted') {
+    const dashSize = el.lineStyle === 'dotted' ? 0.04 : 0.12;
+    const gapSize = el.lineStyle === 'dotted' ? 0.08 : 0.06;
+    mat = new THREE.LineDashedMaterial({ color: colour, dashSize, gapSize });
+  } else {
+    mat = new THREE.LineBasicMaterial({ color: colour });
+  }
+
+  const line = new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), mat);
+  if (mat instanceof THREE.LineDashedMaterial) line.computeLineDistances();
+  line.userData.elementId = el.id;
+  line.userData.kind = 'model_line';
+  grp.add(line);
+  return grp;
+}

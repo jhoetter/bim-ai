@@ -22,6 +22,7 @@ import { Icons, type IconName } from '@bim-ai/ui';
 
 import { log } from '../logger';
 import { type PlanCameraHandle } from '../plan/PlanCanvas';
+import { shaftBoundaryFromStair } from '../plan/stairShaft';
 import {
   applyCommand,
   ApiHttpError,
@@ -186,6 +187,7 @@ import { SelectionFilterDialog } from '../plan/selectionFilter';
 import { CreateGroupDialog } from '../groups/CreateGroupDialog';
 import { GroupEditModeBar } from '../groups/GroupEditModeBar';
 import { applyCreateGroup } from '../groups/groupCommands';
+import { applyHideInView, applyIsolateInView, applyResetHiddenInView } from './hideInView';
 import { WorkspaceLeftRail } from './WorkspaceLeftRail';
 import { WorkspaceRightRail } from './WorkspaceRightRail';
 import { rememberLocalClientOp, useWorkspaceSnapshot } from './useWorkspaceSnapshot';
@@ -1768,6 +1770,28 @@ export function Workspace(): JSX.Element {
         }
         return;
       }
+      // §1.6.10: client-only hide/isolate/reset elements in plan view
+      if (cmd.type === 'hide_in_view') {
+        const { elementsById: cur } = useBimStore.getState();
+        useBimStore.setState({
+          elementsById: applyHideInView(cur, cmd.viewId as string, cmd.elementIds as string[]),
+        });
+        return;
+      }
+      if (cmd.type === 'isolate_in_view') {
+        const { elementsById: cur } = useBimStore.getState();
+        useBimStore.setState({
+          elementsById: applyIsolateInView(cur, cmd.viewId as string, cmd.elementIds as string[]),
+        });
+        return;
+      }
+      if (cmd.type === 'reset_hidden_in_view') {
+        const { elementsById: cur } = useBimStore.getState();
+        useBimStore.setState({
+          elementsById: applyResetHiddenInView(cur, cmd.viewId as string),
+        });
+        return;
+      }
       // §8.9.3: client-only group edit mode — no server round-trip
       if (cmd.type === 'editGroup') {
         const defId = cmd.groupDefinitionId as string;
@@ -1812,6 +1836,32 @@ export function Workspace(): JSX.Element {
             },
           },
         });
+        return;
+      }
+      // §2.5.3: inspector manual shaft creation for a stair
+      if (cmd.type === 'inspector_create_shaft_for_stair') {
+        const stairId = cmd.stairId as string;
+        const current = useBimStore.getState().elementsById;
+        const stair = current[stairId];
+        if (stair && stair.kind === 'stair') {
+          const boundary = shaftBoundaryFromStair(stair);
+          if (boundary) {
+            const shaftId = crypto.randomUUID();
+            useBimStore.setState({
+              elementsById: {
+                ...current,
+                [shaftId]: {
+                  kind: 'shaft',
+                  id: shaftId,
+                  boundaryMm: boundary,
+                  baseLevelId: stair.baseLevelId,
+                  topLevelId: stair.topLevelId,
+                },
+                [stairId]: { ...stair, linkedShaftId: shaftId },
+              },
+            });
+          }
+        }
         return;
       }
       // §4.2.1: client-only permanent dimension chain creation
@@ -2072,6 +2122,39 @@ export function Workspace(): JSX.Element {
         if (r.revision !== undefined) {
           if (r.delta) {
             useBimStore.getState().applyDelta(r.delta as ModelDelta);
+            // §2.5.3: auto-create shaft void when stair is placed (unless suppressed)
+            if (cmd.type === 'createStair' && cmd.autoShaft) {
+              const delta = r.delta as ModelDelta;
+              const newStairId = Object.keys(delta.elements).find((id) => {
+                const el = delta.elements[id];
+                return (
+                  typeof el === 'object' &&
+                  el !== null &&
+                  (el as Record<string, unknown>).kind === 'stair'
+                );
+              });
+              if (newStairId) {
+                const newStair = delta.elements[newStairId] as Extract<Element, { kind: 'stair' }>;
+                const boundary = shaftBoundaryFromStair(newStair);
+                if (boundary) {
+                  const shaftId = crypto.randomUUID();
+                  const curr = useBimStore.getState().elementsById;
+                  useBimStore.setState({
+                    elementsById: {
+                      ...curr,
+                      [shaftId]: {
+                        kind: 'shaft',
+                        id: shaftId,
+                        boundaryMm: boundary,
+                        baseLevelId: newStair.baseLevelId,
+                        topLevelId: newStair.topLevelId,
+                      },
+                      [newStairId]: { ...curr[newStairId], linkedShaftId: shaftId },
+                    },
+                  });
+                }
+              }
+            }
           } else {
             hydrateFromSnapshot({
               modelId: mid,
@@ -4406,6 +4489,7 @@ export function Workspace(): JSX.Element {
           openDimensionStyle: () => setDimStyleOpen(true),
           openViewRange: () => setViewRangeOpen(true),
           openVisibilityGraphics: () => setVgOpen(true),
+          openProjectInfo: () => setProjectInfoOpen(true),
           sectionBoxFromPlan,
         }}
       />

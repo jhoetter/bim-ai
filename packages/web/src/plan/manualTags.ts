@@ -4,6 +4,7 @@ import {
   familyInstanceProjectCategoryKey,
   familyTypeProjectCategoryLabel,
 } from '../families/familyPlacementRuntime';
+import { composeRoomTagText } from './roomTagRenderer';
 
 export type PlaceManualTagCmd = {
   type: 'placeTag';
@@ -54,7 +55,16 @@ export function manualPlacedTagLabel(
 
   const host = elementsById[tag.hostElementId];
   if (!host) return 'Tag';
-  if (host.kind === 'room') return host.name?.trim() || 'Room';
+  if (host.kind === 'room') {
+    if (
+      tag.fields?.roomName != null ||
+      tag.fields?.roomNumber != null ||
+      tag.fields?.roomArea != null
+    ) {
+      return composeRoomTagText(tag);
+    }
+    return host.name?.trim() || 'Room';
+  }
   if (host.kind === 'door') return host.name?.trim() || 'Door';
   if (host.kind === 'window') return host.name?.trim() || 'Window';
   if (host.kind === 'family_instance') {

@@ -496,7 +496,7 @@ export function ProjectMenu({
           <MenuItem
             label="Project Information..."
             icon="settings"
-            testId="project-menu-open-project-info"
+            testId="ribbon-project-info"
             onClick={() => {
               onOpenChange(false);
               onOpenProjectInfo();

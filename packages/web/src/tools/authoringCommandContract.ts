@@ -804,6 +804,15 @@ export const AUTHORING_COMMAND_CONTRACTS = {
     [],
     ['finish', 'cancel'],
   ),
+  'model-line': contract(
+    'model-line',
+    'sketch',
+    ['plan'],
+    'Open polyline preview in project world space — visible in all plan views.',
+    'remain-active-while-looping',
+    [],
+    ['line-style', 'colour', 'chain'],
+  ),
 } satisfies Record<ToolId, AuthoringCommandContract>;
 
 export function getAuthoringCommandContract(toolId: ToolId): AuthoringCommandContract {

@@ -127,6 +127,8 @@ export type PaletteContext = {
   openDimensionStyle?: () => void;
   /** Open the Visibility/Graphics Override dialog (§2.1.4). */
   openVisibilityGraphics?: () => void;
+  /** Open the Project Information dialog (§2.1.1). */
+  openProjectInfo?: () => void;
   /** §6.1.3: derive a 3D section box from the active plan view crop region. */
   sectionBoxFromPlan?: () => void;
   /** Dynamic navigable views/sheets/schedules to surface in the palette. */
