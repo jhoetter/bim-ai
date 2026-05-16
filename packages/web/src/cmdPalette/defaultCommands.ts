@@ -1230,6 +1230,14 @@ registerCommand({
 });
 
 registerCommand({
+  id: 'tool.terrain-point',
+  label: 'Terrain Point',
+  keywords: ['terrain', 'height', 'point', 'toposolid', 'site', 'contour'],
+  category: 'command',
+  invoke: (ctx) => startPlanTool(ctx, 'terrain-point'),
+});
+
+registerCommand({
   id: 'tool.copy',
   label: 'Copy Elements',
   keywords: ['copy', 'duplicate', 'modify'],

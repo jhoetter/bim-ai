@@ -72,6 +72,7 @@ export type ToolId =
   | 'beam-system'
   | 'ceiling'
   | 'toposolid_subdivision'
+  | 'terrain-point'
   | 'measure'
   | 'component'
   | 'copy'
@@ -655,6 +656,16 @@ export function getToolRegistry(t: TFunction): Record<ToolId, ToolDefinition> {
       shortcut: 'TS',
       modes: ['plan'],
       tooltip: 'Paint a finish-category subdivision region on a toposolid (T → S).',
+    },
+    'terrain-point': {
+      id: 'terrain-point',
+      label: 'Terrain Point',
+      icon: 'detailLine',
+      hotkey: 'TP',
+      shortcut: 'TP',
+      modes: ['plan'],
+      category: 'site',
+      tooltip: 'Place height control points on a toposolid (T → P).',
     },
     text: {
       id: 'text',

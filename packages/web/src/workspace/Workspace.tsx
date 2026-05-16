@@ -1753,6 +1753,17 @@ export function Workspace(): JSX.Element {
         useBimStore.getState().setGroupEditModeDefinitionId(null);
         return;
       }
+      // §5.1.1: patch heightSamples / thicknessMm / baseElevationMm on a toposolid
+      if (cmd.type === 'update_toposolid') {
+        const current = useBimStore.getState().elementsById;
+        useBimStore.setState({
+          elementsById: {
+            ...current,
+            [cmd.id as string]: { ...current[cmd.id as string], ...(cmd.patch as object) },
+          },
+        });
+        return;
+      }
       // §1.6.7: client-only wall/floor/roof type layer edit
       if (cmd.type === 'update_wall_type') {
         const current = useBimStore.getState().elementsById;

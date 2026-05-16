@@ -3171,6 +3171,18 @@ export type MaterializeMassToWallsCmd = {
   massId: string;
 };
 
+/** §5.1.1: patch heightSamples, thicknessMm, or baseElevationMm on a toposolid element. */
+export type UpdateToposolidCmd = {
+  type: 'update_toposolid';
+  id: string;
+  patch: Partial<
+    Pick<
+      Extract<Element, { kind: 'toposolid' }>,
+      'heightSamples' | 'thicknessMm' | 'baseElevationMm'
+    >
+  >;
+};
+
 /** §1.6.7: patch name, layers, or basisLine on a wall_type / floor_type / roof_type element. */
 export type UpdateWallTypeCmd = {
   type: 'update_wall_type';

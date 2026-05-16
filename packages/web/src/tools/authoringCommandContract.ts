@@ -491,6 +491,15 @@ export const AUTHORING_COMMAND_CONTRACTS = {
     ['toposolid-host'],
     ['category', 'finish', 'cancel'],
   ),
+  'terrain-point': contract(
+    'terrain-point',
+    'sketch',
+    ['plan'],
+    'Height control points accumulate as clicks; Enter commits, Escape cancels.',
+    'explicit-finish',
+    [],
+    ['snap', 'cancel'],
+  ),
   measure: contract(
     'measure',
     'review',
