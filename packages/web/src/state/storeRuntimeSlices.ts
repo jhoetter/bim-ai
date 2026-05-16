@@ -34,6 +34,7 @@ export type PlanAuthoringRuntimeSlice = Pick<
   | 'wallDrawHeightMm'
   | 'activeWallTypeId'
   | 'activeFloorTypeId'
+  | 'columnAtGridsSelectedIds'
   | 'orthoSnapHold'
   | 'buildingPreset'
   | 'planHudMm'
@@ -50,6 +51,7 @@ export type PlanAuthoringRuntimeSlice = Pick<
   | 'setWallDrawHeightMm'
   | 'setActiveWallTypeId'
   | 'setActiveFloorTypeId'
+  | 'setColumnAtGridsSelectedIds'
   | 'setOrthoSnapHold'
   | 'setBuildingPreset'
   | 'setPlanHud'
@@ -181,6 +183,7 @@ export function createPlanAuthoringRuntimeSlice(set: StoreSet): PlanAuthoringRun
     wallDrawHeightMm: 2800,
     activeWallTypeId: null,
     activeFloorTypeId: null,
+    columnAtGridsSelectedIds: [],
     orthoSnapHold: false,
     buildingPreset: readLocalStorageString('bim.buildingPreset', 'residential'),
     planHudMm: undefined,
@@ -202,6 +205,7 @@ export function createPlanAuthoringRuntimeSlice(set: StoreSet): PlanAuthoringRun
     setWallDrawHeightMm: (wallDrawHeightMm) => set({ wallDrawHeightMm }),
     setActiveWallTypeId: (activeWallTypeId) => set({ activeWallTypeId }),
     setActiveFloorTypeId: (activeFloorTypeId) => set({ activeFloorTypeId }),
+    setColumnAtGridsSelectedIds: (columnAtGridsSelectedIds) => set({ columnAtGridsSelectedIds }),
     setOrthoSnapHold: (v) => set({ orthoSnapHold: v }),
     setBuildingPreset: (preset) => {
       writeLocalStorageString('bim.buildingPreset', preset);

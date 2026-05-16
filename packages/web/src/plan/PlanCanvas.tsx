@@ -230,6 +230,7 @@ import {
   mirrorCopyEnabled,
   pendingComponentRotationDeg,
   setPendingComponentRotationDeg,
+  setDispatchColumnAtGridsSelectAll,
   SubdivisionPalette,
   type SubdivisionCategory,
 } from '../workspace/authoring';
@@ -518,6 +519,7 @@ export function PlanCanvas({
   const excavationStateRef = useRef<ExcavationState>(initialExcavationState());
   const beamSystemStateRef = useRef<BeamSystemState>(initialBeamSystemState());
   const columnAtGridsStateRef = useRef<ColumnAtGridsState>(initialColumnAtGridsState());
+  const columnAtGridsHoverRef = useRef<string | null>(null);
   const steelConnectionStateRef = useRef<SteelConnectionState>(initialSteelConnectionState());
   const terrainPointStateRef = useRef<TerrainPointState>(initialTerrainPointState());
   const terrainPadStateRef = useRef<TerrainPadState>(initialTerrainPadState());
@@ -1069,6 +1071,18 @@ export function PlanCanvas({
     } else if (planTool === 'column-at-grids') {
       const { state } = reduceColumnAtGrids(columnAtGridsStateRef.current, { kind: 'activate' });
       columnAtGridsStateRef.current = state;
+      useBimStore.getState().setColumnAtGridsSelectedIds([]);
+      setDispatchColumnAtGridsSelectAll((gridIds) => {
+        const { state: s } = reduceColumnAtGrids(columnAtGridsStateRef.current, {
+          kind: 'selectAllGrids',
+          gridIds,
+        });
+        columnAtGridsStateRef.current = s;
+        useBimStore
+          .getState()
+          .setColumnAtGridsSelectedIds(s.phase === 'selecting' ? s.selectedGridIds : []);
+        bumpGeom((x) => x + 1);
+      });
     } else if (planTool === 'scale') {
       const { state } = reduceScale(scaleStateRef.current, { kind: 'activate' });
       scaleStateRef.current = state;
@@ -2137,6 +2151,76 @@ export function PlanCanvas({
     groupRegistry,
   ]);
 
+  // Column-at-grids: highlight selected grids + show intersection preview dots
+  useEffect(() => {
+    const grp = rootRef.current;
+    if (!grp) return;
+
+    const toRemove: THREE.Object3D[] = [];
+    grp.traverse((ch) => {
+      if ((ch.userData as { columnAtGridsHighlight?: unknown }).columnAtGridsHighlight)
+        toRemove.push(ch);
+    });
+    for (const ch of toRemove) grp.remove(ch);
+
+    if (planTool !== 'column-at-grids') return;
+
+    const state = columnAtGridsStateRef.current;
+    if (state.phase !== 'selecting') return;
+
+    const { selectedGridIds } = state;
+    const highlightGrp = new THREE.Group();
+    highlightGrp.userData.columnAtGridsHighlight = true;
+
+    const hovId = columnAtGridsHoverRef.current;
+    if (hovId && !selectedGridIds.includes(hovId)) {
+      const hel = elementsById[hovId];
+      if (hel?.kind === 'grid_line') {
+        const hpts = [
+          new THREE.Vector3(hel.start.xMm / 1000, SLICE_Y + 0.01, hel.start.yMm / 1000),
+          new THREE.Vector3(hel.end.xMm / 1000, SLICE_Y + 0.01, hel.end.yMm / 1000),
+        ];
+        highlightGrp.add(
+          new THREE.Line(
+            new THREE.BufferGeometry().setFromPoints(hpts),
+            new THREE.LineBasicMaterial({ color: '#88aaff', linewidth: 2 }),
+          ),
+        );
+      }
+    }
+
+    for (const id of selectedGridIds) {
+      const el = elementsById[id];
+      if (el?.kind !== 'grid_line') continue;
+      const pts = [
+        new THREE.Vector3(el.start.xMm / 1000, SLICE_Y + 0.01, el.start.yMm / 1000),
+        new THREE.Vector3(el.end.xMm / 1000, SLICE_Y + 0.01, el.end.yMm / 1000),
+      ];
+      highlightGrp.add(
+        new THREE.Line(
+          new THREE.BufferGeometry().setFromPoints(pts),
+          new THREE.LineBasicMaterial({ color: '#0055cc', linewidth: 3 }),
+        ),
+      );
+    }
+
+    if (selectedGridIds.length >= 2) {
+      const selectedGridElems = selectedGridIds
+        .map((id) => elementsById[id])
+        .filter((e): e is Extract<Element, { kind: 'grid_line' }> => e?.kind === 'grid_line');
+      const positions = columnPositionsAtGridIntersections(selectedGridElems);
+      for (const pt of positions) {
+        const dotGeo = new THREE.CircleGeometry(0.2, 16);
+        const dot = new THREE.Mesh(dotGeo, new THREE.MeshBasicMaterial({ color: '#0055cc' }));
+        dot.position.set(pt.xMm / 1000, SLICE_Y + 0.011, pt.yMm / 1000);
+        dot.rotation.x = -Math.PI / 2;
+        highlightGrp.add(dot);
+      }
+    }
+
+    grp.add(highlightGrp);
+  }, [planTool, geomEpoch, elementsById]);
+
   // Auto-fit camera when a level's elements first become available, and on
   // every level switch — so the model always fills the canvas on open.
   useEffect(() => {
@@ -2955,6 +3039,38 @@ export function PlanCanvas({
       } else if (componentGhostRef.current) {
         grp.remove(componentGhostRef.current);
         componentGhostRef.current = null;
+      }
+
+      if (planTool === 'column-at-grids') {
+        const ray = new THREE.Raycaster();
+        ray.setFromCamera(
+          new THREE.Vector2(
+            ((ev.clientX - rnd.domElement.getBoundingClientRect().left) /
+              rnd.domElement.getBoundingClientRect().width) *
+              2 -
+              1,
+            -(
+              ((ev.clientY - rnd.domElement.getBoundingClientRect().top) /
+                rnd.domElement.getBoundingClientRect().height) *
+                2 -
+              1
+            ),
+          ),
+          cameraRef.current!,
+        );
+        const hits = ray.intersectObjects(grp.children, true);
+        const h = hits.find(
+          (x) => typeof (x.object.userData as { bimPickId?: unknown }).bimPickId === 'string',
+        );
+        const hovId = h ? ((h.object.userData as { bimPickId: string }).bimPickId ?? null) : null;
+        const el = hovId ? elementsById[hovId] : null;
+        const nextHovId = el?.kind === 'grid_line' ? hovId : null;
+        if (nextHovId !== columnAtGridsHoverRef.current) {
+          columnAtGridsHoverRef.current = nextHovId;
+          bumpGeom((x) => x + 1);
+        }
+      } else if (columnAtGridsHoverRef.current !== null) {
+        columnAtGridsHoverRef.current = null;
       }
     };
 
@@ -4778,6 +4894,11 @@ export function PlanCanvas({
               gridId: id,
             });
             columnAtGridsStateRef.current = state;
+            useBimStore
+              .getState()
+              .setColumnAtGridsSelectedIds(
+                state.phase === 'selecting' ? state.selectedGridIds : [],
+              );
             bumpGeom((x) => x + 1);
           }
         }
@@ -5402,6 +5523,8 @@ export function PlanCanvas({
         } else if (planTool === 'column-at-grids') {
           const { state } = reduceColumnAtGrids(columnAtGridsStateRef.current, { kind: 'cancel' });
           columnAtGridsStateRef.current = state;
+          useBimStore.getState().setColumnAtGridsSelectedIds([]);
+          setDispatchColumnAtGridsSelectAll(null);
           bumpGeom((x) => x + 1);
         } else if (planTool === 'scale') {
           const { state } = reduceScale(scaleStateRef.current, { kind: 'cancel' });
@@ -5645,6 +5768,8 @@ export function PlanCanvas({
               positionMm: pos,
             });
           }
+          useBimStore.getState().setColumnAtGridsSelectedIds([]);
+          setDispatchColumnAtGridsSelectAll(null);
         }
         bumpGeom((x) => x + 1);
         return;

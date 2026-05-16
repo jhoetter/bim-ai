@@ -3,6 +3,7 @@ import type { Element } from '@bim-ai/core';
 import { useBimStore, type PlanTool } from '../../state/store';
 import { applyCommand } from '../../lib/api';
 import { WALL_LOCATION_LINE_ORDER, type WallLocationLine } from '../../tools/toolGrammar';
+import { columnPositionsAtGridIntersections } from '../../plan/columnAtGrids';
 
 const LOCATION_LINE_LABELS: Record<WallLocationLine, string> = {
   'wall-centerline': 'Wall Centerline',
@@ -74,6 +75,11 @@ export function setPendingComponentRotationDeg(v: number): void {
   pendingComponentRotationDeg = v;
 }
 
+export let dispatchColumnAtGridsSelectAll: ((gridIds: string[]) => void) | null = null;
+export function setDispatchColumnAtGridsSelectAll(fn: ((gridIds: string[]) => void) | null): void {
+  dispatchColumnAtGridsSelectAll = fn;
+}
+
 export function OptionsBar({
   activeTool,
 }: {
@@ -96,6 +102,8 @@ export function OptionsBar({
   const setActiveWallTypeId = useBimStore((s) => s.setActiveWallTypeId);
   const activeFloorTypeId = useBimStore((s) => s.activeFloorTypeId);
   const setActiveFloorTypeId = useBimStore((s) => s.setActiveFloorTypeId);
+  const columnAtGridsSelectedIds = useBimStore((s) => s.columnAtGridsSelectedIds);
+  const activeLevelId = useBimStore((s) => s.activeLevelId);
   const applyAreaRules = useBimStore((s) => s.applyAreaRules);
   const setApplyAreaRules = useBimStore((s) => s.setApplyAreaRules);
   const [showComputations, setShowComputations] = useState(false);
@@ -453,6 +461,69 @@ export function OptionsBar({
           </select>
         </label>
         <span className="text-muted opacity-60">Click to place · Spacebar to rotate 90°</span>
+      </div>
+    );
+  }
+
+  if (planTool === 'column-at-grids') {
+    const levels = Object.values(elementsById)
+      .filter((e): e is Extract<Element, { kind: 'level' }> => e.kind === 'level')
+      .sort((a, b) => a.elevationMm - b.elevationMm);
+
+    const selectedGridElems = columnAtGridsSelectedIds
+      .map((id) => elementsById[id])
+      .filter((e): e is Extract<Element, { kind: 'grid_line' }> => e?.kind === 'grid_line');
+    const intersectionCount = columnPositionsAtGridIntersections(selectedGridElems).length;
+
+    const allGridIds = Object.values(elementsById)
+      .filter((e) => e.kind === 'grid_line')
+      .map((e) => e.id);
+
+    return (
+      <div data-testid="options-bar" className={BAR_CLASS}>
+        <label className="flex items-center gap-2">
+          <span className="text-muted">Column Type:</span>
+          <input
+            type="text"
+            data-testid="options-bar-cat-column-type"
+            defaultValue=""
+            placeholder="(Default)"
+            className="w-28 rounded border border-border bg-surface px-1.5 py-0.5 text-xs text-foreground"
+            aria-label="Column type"
+          />
+        </label>
+        <label className="flex items-center gap-2">
+          <span className="text-muted">Level:</span>
+          <select
+            data-testid="options-bar-cat-level"
+            defaultValue={activeLevelId ?? ''}
+            className="rounded border border-border bg-surface px-1.5 py-0.5 text-xs text-foreground"
+            aria-label="Column level"
+          >
+            <option value="">(Active Level)</option>
+            {levels.map((lv) => (
+              <option key={lv.id} value={lv.id}>
+                {lv.name}
+              </option>
+            ))}
+          </select>
+        </label>
+        <span
+          data-testid="options-bar-cat-count"
+          className="text-muted opacity-70"
+          aria-label="Column placement count"
+        >
+          {columnAtGridsSelectedIds.length} grids selected → {intersectionCount} columns
+        </span>
+        <button
+          type="button"
+          data-testid="options-bar-cat-select-all"
+          onClick={() => dispatchColumnAtGridsSelectAll?.(allGridIds)}
+          className="rounded border border-border bg-surface px-2 py-0.5 text-xs hover:bg-surface-strong"
+          aria-label="Select all grids"
+        >
+          Select All
+        </button>
       </div>
     );
   }

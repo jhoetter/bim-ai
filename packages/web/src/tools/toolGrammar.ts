@@ -1316,6 +1316,7 @@ export type ColumnAtGridsEvent =
   | { kind: 'activate' }
   | { kind: 'deactivate' }
   | { kind: 'toggleGrid'; gridId: string }
+  | { kind: 'selectAllGrids'; gridIds: string[] }
   | { kind: 'confirm' }
   | { kind: 'cancel' };
 
@@ -1345,6 +1346,12 @@ export function reduceColumnAtGrids(
       : [...ids, event.gridId];
     return {
       state: { phase: 'selecting', selectedGridIds: next },
+      effect: { stillActive: true },
+    };
+  }
+  if (event.kind === 'selectAllGrids') {
+    return {
+      state: { phase: 'selecting', selectedGridIds: event.gridIds },
       effect: { stillActive: true },
     };
   }

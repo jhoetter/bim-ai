@@ -295,6 +295,7 @@ export type StoreState = {
   wallDrawHeightMm: number;
   activeWallTypeId: string | null;
   activeFloorTypeId: string | null;
+  columnAtGridsSelectedIds: string[];
   orthoSnapHold: boolean;
   userId: string;
   userDisplayName: string;
@@ -342,6 +343,7 @@ export type StoreState = {
   setWallDrawHeightMm: (h: number) => void;
   setActiveWallTypeId: (id: string | null) => void;
   setActiveFloorTypeId: (id: string | null) => void;
+  setColumnAtGridsSelectedIds: (ids: string[]) => void;
   setOrthoSnapHold: (v: boolean) => void;
   setPresencePeers: (peers: PresencePeers) => void;
   setComments: (c: UxComment[]) => void;
