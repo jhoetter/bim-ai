@@ -4,7 +4,9 @@
   "strategy": "manual-commit",
   "branch": "main",
   "checkpoints_count": 0,
-  "files_touched": null,
+  "files_touched": [
+    "packages/web/src/schedules/SchedulePanel.tsx"
+  ],
   "sessions": [
     {
       "metadata": "/11/bb5c94bf4e/0/metadata.json",
@@ -17,6 +19,12 @@
       "transcript": "/11/bb5c94bf4e/1/full.jsonl",
       "content_hash": "/11/bb5c94bf4e/1/content_hash.txt",
       "prompt": "/11/bb5c94bf4e/1/prompt.txt"
+    },
+    {
+      "metadata": "/11/bb5c94bf4e/2/metadata.json",
+      "transcript": "/11/bb5c94bf4e/2/full.jsonl",
+      "content_hash": "/11/bb5c94bf4e/2/content_hash.txt",
+      "prompt": "/11/bb5c94bf4e/2/prompt.txt"
     }
   ]
 }
