@@ -945,8 +945,8 @@ BIMobject catalog integration is not implemented. bim-ai has external catalogs b
 ### 12.4 Export-Funktionen
 
 #### 12.4.1 CSV-Export von Bauteillisten (schedule/quantity CSV export)
-**Status: Partial — P1**
-Schedule views exist. CSV export of schedule data is Not Started (no export button on schedule views).
+**Status: Done — P1**
+Client-side CSV export implemented in `export/csvExporter.ts`. Copy to Clipboard also supported. Server-side CSV was already in place; client-side `generateCsv`, `downloadCsv`, and `copyCsvToClipboard` functions added. A "Copy" button added to `SchedulePanel.tsx` next to the existing CSV button.
 
 #### 12.4.2 Export mit deutschsprachigen Layern (DWG export with custom layer mapping)
 **Status: Not Started — P2**
@@ -1138,7 +1138,6 @@ cheatsheetData.ts and CheatsheetModal.tsx provide a keyboard shortcut reference 
 - View Range dialog (Ch. 2.1.5)
 - Phase creation/deletion/graphic overrides (Ch. 2.8)
 - Room color fill scheme dialog (Ch. 13.1.3)
-- Schedule CSV export (Ch. 12.4.1)
 - Animated sun study (Ch. 14.2.2)
 
 ### Top P2 Gaps (useful but workaroundable)

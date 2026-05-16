@@ -2,6 +2,7 @@
 import type { Element, LensMode, XY } from '@bim-ai/core';
 
 import {
+  useCallback,
   useEffect,
   useMemo,
   useRef,
@@ -10,6 +11,7 @@ import {
   type PointerEvent as ReactPointerEvent,
 } from 'react';
 
+import { exportSheetToPdf } from '../../export/pdfExporter';
 import type { SheetViewportMmDraft } from './sheetViewportAuthoring';
 import {
   readViewportMmBox,
@@ -215,6 +217,20 @@ function SheetCanvasWithSheet(props: {
   const svgRef = useRef<SVGSVGElement | null>(null);
   const dragRef = useRef<{ index: number; grabDX: number; grabDY: number } | null>(null);
   const resizeRef = useRef<{ index: number } | null>(null);
+
+  const [isExportingPdf, setIsExportingPdf] = useState(false);
+
+  const handleExportPdf = useCallback(async () => {
+    const el = svgRef.current;
+    if (!el || isExportingPdf) return;
+    setIsExportingPdf(true);
+    try {
+      const safeFilename = (sh.name || 'sheet').replace(/[^a-zA-Z0-9_-]/g, '_');
+      await exportSheetToPdf(el, { paperSize: 'A4', filename: `${safeFilename}.pdf` });
+    } finally {
+      setIsExportingPdf(false);
+    }
+  }, [sh.name, isExportingPdf]);
 
   const authoring = Boolean(props.onUpsertSemantic);
 
@@ -500,12 +516,35 @@ function SheetCanvasWithSheet(props: {
               <option value="hybrid">Hybrid</option>
             </select>
           </label>
-          <div className="text-[11px] text-muted">
-            Current tag:{' '}
-            <span className="font-medium text-foreground">{sheetIntentLabel(sheetIntent)}</span>
+          <div className="flex items-center gap-2">
+            <div className="text-[11px] text-muted">
+              Current tag:{' '}
+              <span className="font-medium text-foreground">{sheetIntentLabel(sheetIntent)}</span>
+            </div>
+            <button
+              type="button"
+              data-testid="sheet-export-pdf-btn"
+              disabled={isExportingPdf}
+              onClick={() => void handleExportPdf()}
+              className="shrink-0 rounded border border-border bg-background px-2 py-0.5 text-xs text-foreground hover:bg-surface-strong disabled:cursor-not-allowed disabled:opacity-45"
+            >
+              {isExportingPdf ? 'Exporting…' : 'Export PDF'}
+            </button>
           </div>
         </div>
-      ) : null}
+      ) : (
+        <div className="mb-2 flex justify-end">
+          <button
+            type="button"
+            data-testid="sheet-export-pdf-btn"
+            disabled={isExportingPdf}
+            onClick={() => void handleExportPdf()}
+            className="shrink-0 rounded border border-border bg-background px-2 py-0.5 text-xs text-foreground hover:bg-surface-strong disabled:cursor-not-allowed disabled:opacity-45"
+          >
+            {isExportingPdf ? 'Exporting…' : 'Export PDF'}
+          </button>
+        </div>
+      )}
       {paintRows.length === 0 && authoring ? (
         <div className="mb-2 flex items-center justify-between gap-2 rounded border border-border bg-surface-strong px-3 py-2">
           <div className="min-w-0">

@@ -731,6 +731,16 @@ export function SchedulePanel(props: {
     URL.revokeObjectURL(objectUrl);
   }
 
+  async function copyScheduleToClipboard() {
+    const csv = csvForTab();
+    if (!navigator.clipboard?.writeText) return;
+    try {
+      await navigator.clipboard.writeText(csv);
+    } catch {
+      // clipboard unavailable — silently ignore
+    }
+  }
+
   function renderTotals(footerPartsOverride?: string[]) {
     const parts =
       footerPartsOverride !== undefined
@@ -960,6 +970,15 @@ export function SchedulePanel(props: {
           onClick={() => void downloadCsv()}
         >
           CSV
+        </button>
+        <button
+          type="button"
+          className="text-[11px] text-accent"
+          title="Copy schedule to clipboard as CSV"
+          aria-label="Copy schedule CSV to clipboard"
+          onClick={() => void copyScheduleToClipboard()}
+        >
+          Copy
         </button>
       </div>
 
