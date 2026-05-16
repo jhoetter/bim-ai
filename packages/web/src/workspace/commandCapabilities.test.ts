@@ -217,6 +217,13 @@ describe('command capability graph', () => {
     expect(evaluateCommandInMode('tool.window', '3d')?.state).toBe('enabled');
     expect(evaluateCommandInMode('tool.wall-opening', '3d')?.state).toBe('enabled');
     expect(evaluateCommandInMode('tool.component', '3d')?.state).toBe('enabled');
+    expect(evaluateCommandInMode('tool.unjoin', '3d')?.state).toBe('enabled');
+    expect(evaluateCommandInMode('tool.attach', '3d')?.state).toBe('enabled');
+    expect(evaluateCommandInMode('tool.detach', '3d')?.state).toBe('enabled');
+    expect(evaluateCommandInMode('tool.brace', '3d')?.state).toBe('enabled');
+    expect(evaluateCommandInMode('tool.mass-box', '3d')?.state).toBe('enabled');
+    expect(evaluateCommandInMode('tool.mass-extrusion', '3d')?.state).toBe('enabled');
+    expect(evaluateCommandInMode('tool.mass-revolution', '3d')?.state).toBe('enabled');
   });
 
   it('marks non-3D plan tools as bridge commands outside their execution surface', () => {
