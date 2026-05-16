@@ -111,6 +111,12 @@
       "transcript": "/e6/3592c7287a/14/full.jsonl",
       "content_hash": "/e6/3592c7287a/14/content_hash.txt",
       "prompt": "/e6/3592c7287a/14/prompt.txt"
+    },
+    {
+      "metadata": "/e6/3592c7287a/15/metadata.json",
+      "transcript": "/e6/3592c7287a/15/full.jsonl",
+      "content_hash": "/e6/3592c7287a/15/content_hash.txt",
+      "prompt": "/e6/3592c7287a/15/prompt.txt"
     }
   ],
   "token_usage": {
