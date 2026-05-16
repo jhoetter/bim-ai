@@ -82,7 +82,8 @@ type RibbonActionId =
   | 'schedule-duplicate'
   | 'schedule-controls'
   | 'structural-delete-duplicate-wall'
-  | 'structural-detach-orphan';
+  | 'structural-detach-orphan'
+  | 'wall-create-parts';
 
 interface RibbonPanel {
   id: string;
@@ -163,6 +164,7 @@ export interface RibbonBarProps {
   onOpenScheduleControls?: () => void;
   onRepairDuplicateWall?: () => void;
   onRepairOrphan?: () => void;
+  onCreateWallParts?: () => void;
   sheetReviewMode?: SheetReviewMode;
   onSheetReviewModeChange?: (mode: SheetReviewMode) => void;
   sheetMarkupShape?: SheetMarkupShape;
@@ -212,6 +214,7 @@ export function RibbonBar({
   onOpenScheduleControls,
   onRepairDuplicateWall,
   onRepairOrphan,
+  onCreateWallParts,
   sheetReviewMode = 'cm',
   onSheetReviewModeChange,
   sheetMarkupShape = 'freehand',
@@ -338,6 +341,7 @@ export function RibbonBar({
       '3d-measure': () => onToolSelect?.('measure'),
       'structural-delete-duplicate-wall': onRepairDuplicateWall,
       'structural-detach-orphan': onRepairOrphan,
+      'wall-create-parts': onCreateWallParts,
     };
     (actions[command.id] ?? onOpenCommandPalette)?.();
   }
@@ -1614,6 +1618,15 @@ function buildPlanModifyTab(selectedElementKind: string): RibbonTab {
           ...(isWall ? [tool('detach', 'Detach Top', 'detach')] : []),
         ],
       },
+      ...(isWall
+        ? [
+            {
+              id: 'parts',
+              label: 'Parts',
+              commands: [action('wall-create-parts', 'Create Parts', 'split', 'wall-create-parts')],
+            },
+          ]
+        : []),
       {
         id: 'repair',
         label: 'Repair',
@@ -1902,6 +1915,8 @@ function ribbonCapabilityId(command: RibbonCommand): string | null {
       return 'structural.delete-duplicate-wall';
     case 'structural-detach-orphan':
       return 'structural.detach-orphan';
+    case 'wall-create-parts':
+      return 'wall.create-parts';
   }
   return null;
 }
