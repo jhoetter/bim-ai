@@ -78,6 +78,8 @@ export interface ProjectMenuProps {
   onExportDxf?: (opts: { levelId?: string; units: 'mm' | 'm' }) => void;
   /** E2: levels available for DXF export selection. */
   exportLevels?: { id: string; name: string }[];
+  /** §12.4.3: trigger DWG export (DXF with AC1015 header, .dwg extension). */
+  onExportDwg?: () => void;
   /** Optional project name used as default download filename. */
   projectName?: string;
 }
@@ -112,6 +114,7 @@ export function ProjectMenu({
   onLinkDxf,
   onExportIfc,
   onExportDxf,
+  onExportDwg,
   exportLevels,
   projectName: _projectName,
 }: ProjectMenuProps): JSX.Element | null {
@@ -406,6 +409,17 @@ export function ProjectMenu({
               </li>
             ) : null}
           </>
+        ) : null}
+        {onExportDwg ? (
+          <MenuItem
+            label="Export → DWG (R2000)…"
+            icon="externalLink"
+            testId="export-dwg-button"
+            onClick={() => {
+              onOpenChange(false);
+              onExportDwg();
+            }}
+          />
         ) : null}
         {onOpenMaterialBrowser || onOpenAppearanceAssetBrowser ? (
           <>

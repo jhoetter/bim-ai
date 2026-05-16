@@ -297,6 +297,33 @@ export function planWallMesh(
     }
   }
 
+  // G3 — wall parts: add per-part filled rects when parts are defined
+  if (wall.parts && wall.parts.length > 0) {
+    const group = new THREE.Group();
+    group.userData.bimPickId = wall.id;
+    group.add(mesh);
+    if (hatch) group.add(hatch);
+    for (const part of wall.parts) {
+      const partLen = (part.endT - part.startT) * len;
+      if (partLen <= 0) continue;
+      const partCenterT = (part.startT + part.endT) / 2;
+      const color = materialPlanShadedColor(part.materialId, elementsById, '#cccccc');
+      const fillMat = new THREE.MeshBasicMaterial({ color, transparent: true, opacity: 0.4 });
+      const fillGeom = new THREE.BoxGeometry(partLen, PLAN_WALL_CENTER_SLICE_HEIGHT_M, thick);
+      const fill = new THREE.Mesh(fillGeom, fillMat);
+      fill.position.set(
+        sx + partCenterT * len * nx + perpX,
+        PLAN_Y,
+        sz + partCenterT * len * nz + perpZ,
+      );
+      fill.rotation.y = -angle;
+      fill.userData.partId = part.id;
+      fill.userData.bimPickId = wall.id;
+      group.add(fill);
+    }
+    return group;
+  }
+
   if (hatch) {
     const group = new THREE.Group();
     group.userData.bimPickId = wall.id;
@@ -1788,30 +1815,50 @@ export function permanentDimensionThree(
   ls.userData.bimPickId = d.id;
   grp.add(ls);
 
-  if (d.eqEnabled) {
-    // Single "EQ" label at the midpoint of the full span
+  // Per-segment labels: "EQ" when eqEnabled, numeric otherwise
+  for (let i = 0; i < pts.length - 1; i++) {
+    const a = pts[i]!;
+    const b = pts[i + 1]!;
+    const labelText = d.eqEnabled
+      ? 'EQ'
+      : (() => {
+          const segLenMm = Math.hypot(b.xMm - a.xMm, b.yMm - a.yMm);
+          return segLenMm >= 1000
+            ? `${(segLenMm / 1000).toFixed(2)} m`
+            : `${Math.round(segLenMm)} mm`;
+        })();
+    const midXMm = (a.xMm + b.xMm) / 2 + d.offsetMm.xMm;
+    const midYMm = (a.yMm + b.yMm) / 2 + d.offsetMm.yMm;
+    const sprite = planAnnotationLabelSprite(ux(midXMm), uz(midYMm), labelText, d.id);
+    sprite.userData.labelText = labelText;
+    grp.add(sprite);
+  }
+
+  // EQ toggle button: a small circle at the midpoint of the full span
+  {
     const first = pts[0]!;
     const last = pts[pts.length - 1]!;
     const midXMm = (first.xMm + last.xMm) / 2 + d.offsetMm.xMm;
     const midYMm = (first.yMm + last.yMm) / 2 + d.offsetMm.yMm;
-    const sprite = planAnnotationLabelSprite(ux(midXMm), uz(midYMm), 'EQ', d.id);
-    grp.add(sprite);
-  } else {
-    // Per-segment labels
-    for (let i = 0; i < pts.length - 1; i++) {
-      const a = pts[i]!;
-      const b = pts[i + 1]!;
-      const segLenMm = Math.hypot(b.xMm - a.xMm, b.yMm - a.yMm);
-      const labelText =
-        segLenMm >= 1000 ? `${(segLenMm / 1000).toFixed(2)} m` : `${Math.round(segLenMm)} mm`;
-      const midXMm = (a.xMm + b.xMm) / 2 + d.offsetMm.xMm;
-      const midYMm = (a.yMm + b.yMm) / 2 + d.offsetMm.yMm;
-      const sprite = planAnnotationLabelSprite(ux(midXMm), uz(midYMm), labelText, d.id);
-      grp.add(sprite);
-    }
+    const btnColor = d.eqEnabled ? 0x2563eb : 0x9ca3af;
+    const circleGeo = new THREE.CircleGeometry(0.05, 16);
+    const circleMat = new THREE.MeshBasicMaterial({ color: btnColor, side: THREE.DoubleSide });
+    const circle = new THREE.Mesh(circleGeo, circleMat);
+    circle.position.set(ux(midXMm), PLAN_Y + 0.004, uz(midYMm));
+    circle.rotation.x = -Math.PI / 2;
+    circle.userData.bimPickId = d.id;
+    circle.userData.eqToggle = true;
+    grp.add(circle);
   }
 
   return grp;
+}
+
+/** Pure reducer — flips eqEnabled on a permanent_dimension element. */
+export function applyToggleDimEq(
+  dim: Extract<Element, { kind: 'permanent_dimension' }>,
+): Extract<Element, { kind: 'permanent_dimension' }> {
+  return { ...dim, eqEnabled: !dim.eqEnabled };
 }
 
 const REFERENCE_PLANE_PLAN_COLOR = 0x9ca3af;

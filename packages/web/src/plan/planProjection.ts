@@ -4,6 +4,7 @@ import type {
   PlanCategoryGraphicRow,
   PlanLinePatternToken,
   PlanTagTarget,
+  VGFilter,
 } from '@bim-ai/core';
 import type { ViewFilter } from '../state/storeTypes';
 
@@ -221,6 +222,17 @@ export function resolvePlanViewDisplay(
     if (ovr?.visible === false) {
       const k = canonHiddenCategory(catKey);
       if (k) hidden.add(k);
+    }
+  }
+
+  // VG filters: elements matching a filter with visible=false are hidden (filters override categoryOverrides).
+  const vgFilters = (el.vgFilters ?? []) as VGFilter[];
+  if (vgFilters.length > 0) {
+    for (const candidate of Object.values(elementsById)) {
+      if (candidate.id === el.id) continue;
+      if (evaluateVGFilters(candidate, vgFilters).visible === false) {
+        hiddenElementIds.add(candidate.id);
+      }
     }
   }
 
@@ -1182,6 +1194,51 @@ export function planViewInheritanceSummaryLines(
     `Opening tag style: effective=${formatPlanTagStyleMatrixCell(effOpen)}; plan_view.stored=${pvOpenRef === 'inherit' ? 'inherit' : String(pvOpenRef)}; template.default=${tmpl?.defaultPlanOpeningTagStyleId ?? '—'}`,
     `Room tag style: effective=${formatPlanTagStyleMatrixCell(effRoom)}; plan_view.stored=${pvRoomRef === 'inherit' ? 'inherit' : String(pvRoomRef)}; template.default=${tmpl?.defaultPlanRoomTagStyleId ?? '—'}`,
   ];
+}
+
+/* ────────────────────────────────────────────────────────────────────── */
+/* VG filter evaluation (§2.1.4)                                           */
+/* ────────────────────────────────────────────────────────────────────── */
+
+export function elementMatchesFilter(el: Element, filter: VGFilter): boolean {
+  if (filter.categories.length > 0 && !filter.categories.includes(el.kind)) return false;
+  return filter.rules.every((rule) => {
+    const raw = (el as Record<string, unknown>)[rule.field];
+    const strVal = raw != null ? String(raw) : '';
+    switch (rule.operator) {
+      case 'equals':
+        return strVal === rule.value;
+      case 'not_equals':
+        return strVal !== rule.value;
+      case 'greater_than':
+        return Number(raw) > Number(rule.value);
+      case 'less_than':
+        return Number(raw) < Number(rule.value);
+      case 'contains':
+        return strVal.toLowerCase().includes(rule.value.toLowerCase());
+      default:
+        return false;
+    }
+  });
+}
+
+export function evaluateVGFilters(
+  el: Element,
+  vgFilters: VGFilter[],
+): { visible: boolean; color?: string; lineWeightFactor?: number; transparencyPct?: number } {
+  let visible = true;
+  let color: string | undefined;
+  let lineWeightFactor: number | undefined;
+  let transparencyPct: number | undefined;
+  for (const filter of vgFilters) {
+    if (!elementMatchesFilter(el, filter)) continue;
+    if (filter.override.visible === false) visible = false;
+    if (filter.override.color !== undefined) color = filter.override.color;
+    if (filter.override.lineWeightFactor != null)
+      lineWeightFactor = filter.override.lineWeightFactor;
+    if (filter.override.transparencyPct != null) transparencyPct = filter.override.transparencyPct;
+  }
+  return { visible, color, lineWeightFactor, transparencyPct };
 }
 
 /* ────────────────────────────────────────────────────────────────────── */

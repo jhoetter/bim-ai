@@ -2533,3 +2533,110 @@ export function reduceWalkthrough(
   }
   return { state: initialWalkthroughState(), effect: { stillActive: false } };
 }
+
+/* ────────────────────────────────────────────────────────────────────── */
+/* Steel Connection Tool — §9.5.1                                         */
+/* One click on a beam creates a connection at positionT=1.0 (end).       */
+/* ────────────────────────────────────────────────────────────────────── */
+
+export type SteelConnectionState = { phase: 'idle' };
+
+export type SteelConnectionEvent =
+  | { kind: 'activate' }
+  | { kind: 'deactivate' }
+  | { kind: 'pick-beam'; hostElementId: string }
+  | { kind: 'cancel' };
+
+export interface SteelConnectionEffect {
+  createSteelConnection?: {
+    hostElementId: string;
+    connectionType: 'end_plate' | 'bolted_flange' | 'shear_tab';
+  };
+  stillActive: boolean;
+}
+
+export function initialSteelConnectionState(): SteelConnectionState {
+  return { phase: 'idle' };
+}
+
+export function reduceSteelConnection(
+  state: SteelConnectionState,
+  event: SteelConnectionEvent,
+): { state: SteelConnectionState; effect: SteelConnectionEffect } {
+  if (event.kind === 'deactivate') {
+    return { state: initialSteelConnectionState(), effect: { stillActive: false } };
+  }
+  if (event.kind === 'activate' || event.kind === 'cancel') {
+    return {
+      state: initialSteelConnectionState(),
+      effect: { stillActive: event.kind === 'activate' },
+    };
+  }
+  if (event.kind === 'pick-beam') {
+    return {
+      state: initialSteelConnectionState(),
+      effect: {
+        createSteelConnection: {
+          hostElementId: event.hostElementId,
+          connectionType: 'end_plate',
+        },
+        stillActive: true,
+      },
+    };
+  }
+  return { state, effect: { stillActive: true } };
+}
+
+/* ────────────────────────────────────────────────────────────────────── */
+/* Excavation — §5.1.5 polygon-sketch grammar                              */
+/* idle → click (add vertex) → close-loop / cancel                        */
+/* ────────────────────────────────────────────────────────────────────── */
+
+export type ExcavationPhase = 'idle' | 'sketch';
+
+export interface ExcavationState {
+  phase: ExcavationPhase;
+  verticesMm: { xMm: number; yMm: number }[];
+}
+
+export type ExcavationEvent =
+  | { kind: 'click'; pointMm: { xMm: number; yMm: number } }
+  | { kind: 'close-loop' }
+  | { kind: 'cancel' };
+
+export interface ExcavationEffect {
+  createExcavationEffect?: { boundaryMm: { xMm: number; yMm: number }[]; depthMm: number };
+  stillActive: boolean;
+}
+
+export function initialExcavationState(): ExcavationState {
+  return { phase: 'idle', verticesMm: [] };
+}
+
+export function reduceExcavation(
+  state: ExcavationState,
+  event: ExcavationEvent,
+): { state: ExcavationState; effect: ExcavationEffect } {
+  if (event.kind === 'cancel') {
+    return { state: initialExcavationState(), effect: { stillActive: true } };
+  }
+  if (event.kind === 'close-loop') {
+    if (state.verticesMm.length >= 3) {
+      return {
+        state: initialExcavationState(),
+        effect: {
+          createExcavationEffect: { boundaryMm: [...state.verticesMm], depthMm: 1500 },
+          stillActive: true,
+        },
+      };
+    }
+    return { state: initialExcavationState(), effect: { stillActive: true } };
+  }
+  if (event.kind === 'click') {
+    return {
+      state: { phase: 'sketch', verticesMm: [...state.verticesMm, event.pointMm] },
+      effect: { stillActive: true },
+    };
+  }
+  return { state, effect: { stillActive: true } };
+}

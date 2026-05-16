@@ -1235,6 +1235,7 @@ export function WorkspaceRightRail({
                             key: property,
                             value,
                           }),
+                        onDispatchCommand: (cmd) => void onSemanticCommand(cmd),
                         onDisciplineChange: handleDisciplineChange,
                         onEditType: (typeId) => select(typeId),
                         onOpenMaterialBrowser,

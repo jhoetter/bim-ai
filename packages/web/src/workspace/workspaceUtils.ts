@@ -125,6 +125,9 @@ export function buildPrimaryNavigationSections(
   const savedViews = all.filter(
     (e): e is Extract<Element, { kind: 'saved_view' }> => e.kind === 'saved_view',
   );
+  const perspectiveSavedViews = savedViews.filter(
+    (v) => (v as unknown as Record<string, unknown>)['viewType'] === 'perspective',
+  );
   const sections = all.filter(
     (e): e is Extract<Element, { kind: 'section_cut' }> => e.kind === 'section_cut',
   );
@@ -171,7 +174,7 @@ export function buildPrimaryNavigationSections(
       id: '3d-views',
       label: '3D Views',
       icon: OrbitViewIcon,
-      rows: [...viewpoints, ...savedViews]
+      rows: [...viewpoints, ...savedViews.filter((v) => !perspectiveSavedViews.includes(v))]
         .sort((a, b) => a.name.localeCompare(b.name))
         .map((v) => ({
           id: v.id,
@@ -181,6 +184,28 @@ export function buildPrimaryNavigationSections(
           renamable: true,
         })),
     },
+    ...(perspectiveSavedViews.length > 0
+      ? [
+          {
+            id: 'camera-views',
+            label: 'Camera Views',
+            icon: OrbitViewIcon,
+            headerAction: {
+              label: 'Camera Views',
+              testId: 'left-rail-camera-views-header',
+            },
+            rows: perspectiveSavedViews
+              .sort((a, b) => a.name.localeCompare(b.name))
+              .map((v) => ({
+                id: v.id,
+                label: v.name,
+                icon: OrbitViewIcon,
+                hint: 'perspective camera',
+                renamable: true,
+              })),
+          },
+        ]
+      : []),
     {
       id: 'sections',
       label: 'Sections',

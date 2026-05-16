@@ -125,7 +125,10 @@ import {
   VVDialog,
 } from './project';
 import { PhaseManagerDialog } from '../phases/PhaseManagerDialog';
+import { ManagePhasesDialog } from './phases/ManagePhasesDialog';
 import { GlobalParamsDialog } from './project/GlobalParamsDialog';
+import { ManageGlobalParamsDialog } from './ManageGlobalParamsDialog';
+import type { SimpleGlobalParam } from './ManageGlobalParamsDialog';
 import {
   coerceCheckpointRetentionLimit,
   DEFAULT_CHECKPOINT_RETENTION_LIMIT,
@@ -164,6 +167,7 @@ import { getFamilyPlacementAdapter } from '../families/familyPlacementAdapters';
 import { applyCommandBundle } from '../lib/api';
 import { exportToIfc } from '../export/ifcExporter';
 import { exportToDxf } from '../export/dxfExporter';
+import { exportSceneToDwg } from '../viewport/dwgExport';
 import { OnboardingTour } from '../onboarding/OnboardingTour';
 import { readOnboardingProgress, resetOnboarding } from '../onboarding/tour';
 import { canvasContainerStyle, CanvasMount } from './viewport';
@@ -1061,7 +1065,9 @@ export function Workspace(): JSX.Element {
   const [projectSetupOpen, setProjectSetupOpen] = useState(false);
   const [projectUnitsOpen, setProjectUnitsOpen] = useState(false);
   const [phaseManagerOpen, setPhaseManagerOpen] = useState(false);
+  const [managePhasesOpen, setManagePhasesOpen] = useState(false);
   const [globalParamsOpen, setGlobalParamsOpen] = useState(false);
+  const [manageGlobalParamsOpen, setManageGlobalParamsOpen] = useState(false);
   const [projectInfoOpen, setProjectInfoOpen] = useState(false);
   const [trueNorthActive, setTrueNorthActive] = useState(false);
   const lensMode = useBimStore((s) => s.lensMode);
@@ -1673,6 +1679,11 @@ export function Workspace(): JSX.Element {
     [activeSeedLabel],
   );
 
+  const handleExportDwg = useCallback(() => {
+    const els = useBimStore.getState().elementsById;
+    exportSceneToDwg(els as Parameters<typeof exportSceneToDwg>[0]);
+  }, []);
+
   const handleRestoreSnapshot = useCallback(
     async (file: File): Promise<void> => {
       try {
@@ -1733,10 +1744,53 @@ export function Workspace(): JSX.Element {
       const mid = useBimStore.getState().modelId;
       const uid = useBimStore.getState().userId;
       if (!mid) return;
+
+      // WP-A §8.1.1: translate attach/detach wall top → updateElementProperty on roofAttachmentId
+      let effectiveCmd = cmd;
+      if (cmd.type === 'attach_wall_top') {
+        effectiveCmd = {
+          type: 'updateElementProperty',
+          elementId: cmd.wallId,
+          key: 'roofAttachmentId',
+          value: cmd.hostId,
+        };
+      } else if (cmd.type === 'detach_wall_top') {
+        effectiveCmd = {
+          type: 'updateElementProperty',
+          elementId: cmd.wallId,
+          key: 'roofAttachmentId',
+          value: null,
+        };
+      } else if (cmd.type === 'update_curtain_grid') {
+        const wallId = cmd.wallId as string;
+        const wall = useBimStore.getState().elementsById[wallId];
+        if (!wall || wall.kind !== 'wall') return;
+        const cur = wall.curtainWallData ?? {};
+        const updated = {
+          ...cur,
+          gridH: {
+            ...(cur.gridH ?? {}),
+            ...(cmd.hGridCount !== undefined ? { count: cmd.hGridCount as number } : {}),
+          },
+          gridV: {
+            ...(cur.gridV ?? {}),
+            ...(cmd.vGridCount !== undefined ? { count: cmd.vGridCount as number } : {}),
+          },
+          ...(cmd.panelType !== undefined ? { panelType: cmd.panelType } : {}),
+          ...(cmd.mullionType !== undefined ? { mullionType: cmd.mullionType } : {}),
+        };
+        effectiveCmd = {
+          type: 'updateElementProperty',
+          elementId: wallId,
+          key: 'curtainWallData',
+          value: updated,
+        };
+      }
+
       const clientOpId = `web-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
       rememberLocalClientOp(clientOpId);
       try {
-        const r = await applyCommand(mid, cmd, { userId: uid, clientOpId });
+        const r = await applyCommand(mid, effectiveCmd, { userId: uid, clientOpId });
         if (r.revision !== undefined) {
           if (r.delta) {
             useBimStore.getState().applyDelta(r.delta as ModelDelta);
@@ -3632,6 +3686,8 @@ export function Workspace(): JSX.Element {
               ? runInPaneContext(() => void onSemanticCommand(firstOrphanFix))
               : undefined
           }
+          onOpenManagePhases={() => setManagePhasesOpen(true)}
+          onOpenManageGlobalParams={() => setManageGlobalParamsOpen(true)}
           sheetReviewMode={sheetReviewMode}
           onSheetReviewModeChange={setSheetReviewMode}
           sheetMarkupShape={sheetMarkupShape}
@@ -4242,6 +4298,7 @@ export function Workspace(): JSX.Element {
         }}
         onExportIfc={handleExportIfc}
         onExportDxf={handleExportDxf}
+        onExportDwg={handleExportDwg}
         exportLevels={Object.values(elementsById)
           .filter((e) => e.kind === 'level')
           .map((e) => ({ id: e.id, name: (e as { name?: string }).name ?? e.id }))}
@@ -4267,11 +4324,33 @@ export function Workspace(): JSX.Element {
         elementsById={elementsById}
         onSemanticCommand={onSemanticCommand}
       />
+      <ManagePhasesDialog
+        isOpen={managePhasesOpen}
+        phases={Object.values(elementsById).filter(
+          (e): e is Extract<(typeof elementsById)[string], { kind: 'phase' }> => e.kind === 'phase',
+        )}
+        onCreatePhase={(cmd) => void onSemanticCommand({ type: 'create_phase', ...cmd })}
+        onUpdatePhase={(cmd) => void onSemanticCommand({ type: 'update_phase', ...cmd })}
+        onDeletePhase={(id) => void onSemanticCommand({ type: 'delete_phase', id })}
+        onClose={() => setManagePhasesOpen(false)}
+      />
       <GlobalParamsDialog
         open={globalParamsOpen}
         onClose={() => setGlobalParamsOpen(false)}
         elementsById={elementsById}
         onSemanticCommand={onSemanticCommand}
+      />
+      <ManageGlobalParamsDialog
+        isOpen={manageGlobalParamsOpen}
+        params={
+          (Object.values(elementsById).find((e) => e.kind === 'project_settings')?.globalParams ??
+            []) as SimpleGlobalParam[]
+        }
+        onUpsertParam={(param) => void onSemanticCommand({ type: 'upsert_global_param', param })}
+        onDeleteParam={(paramId) =>
+          void onSemanticCommand({ type: 'delete_global_param', paramId })
+        }
+        onClose={() => setManageGlobalParamsOpen(false)}
       />
       <ProjectInfoDialog
         open={projectInfoOpen}

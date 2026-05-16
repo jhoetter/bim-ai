@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 
-import type { Element, PlanLinePatternToken } from '@bim-ai/core';
+import type { Element, PlanLinePatternToken, ToposolidExcavationElem } from '@bim-ai/core';
 import type { GroupRegistry } from '../groups/groupTypes';
 import { buildGroupInstancePlanMesh } from './groupInstanceRender';
 
@@ -1364,6 +1364,7 @@ function columnPlanThree(col: Extract<Element, { kind: 'column' }>): THREE.Group
       ]),
       dashedMat,
     );
+    topRect.userData.columnTopFootprint = true;
     topRect.computeLineDistances();
     grp.add(topRect);
     const axisLine = new THREE.Line(
@@ -1378,6 +1379,181 @@ function columnPlanThree(col: Extract<Element, { kind: 'column' }>): THREE.Group
   }
 
   return grp;
+}
+
+const EXCAVATION_COLOR = '#8B6914';
+const EXCAVATION_DASH = 0.08;
+const EXCAVATION_GAP = 0.05;
+const EXCAVATION_HATCH_SPACING_MM = 600;
+
+/** WP-D §5.1.5 — Plan symbol for toposolid_excavation: dashed brown boundary + cross-hatch fill. */
+export function excavationPlanThree(excav: ToposolidExcavationElem): THREE.Group {
+  const grp = new THREE.Group();
+  grp.userData.bimPickId = excav.id;
+  grp.name = `plan-excavation-${excav.id}`;
+
+  const pts = excav.boundaryMm ?? [];
+  if (pts.length < 3) return grp;
+
+  const Y = PLAN_Y + 0.003;
+
+  // Dashed closed boundary polyline
+  const outlinePts: THREE.Vector3[] = pts.map((p) => new THREE.Vector3(ux(p.xMm), Y, uz(p.yMm)));
+  outlinePts.push(outlinePts[0]!.clone());
+  const outlineGeo = new THREE.BufferGeometry().setFromPoints(outlinePts);
+  const outlineMat = new THREE.LineDashedMaterial({
+    color: EXCAVATION_COLOR,
+    dashSize: EXCAVATION_DASH,
+    gapSize: EXCAVATION_GAP,
+    depthTest: false,
+  });
+  const outlineLine = new THREE.Line(outlineGeo, outlineMat);
+  outlineLine.computeLineDistances();
+  outlineLine.userData.bimPickId = excav.id;
+  outlineLine.renderOrder = 5;
+  grp.add(outlineLine);
+
+  // 45° cross-hatch fill
+  const hatch = hatchPolygon2D(pts, EXCAVATION_HATCH_SPACING_MM, Y, EXCAVATION_COLOR, 0.5);
+  if (hatch) {
+    hatch.userData.bimPickId = excav.id;
+    grp.add(hatch);
+  }
+
+  return grp;
+}
+
+export function steelConnectionPlanThree(
+  conn: Extract<Element, { kind: 'steel_connection' }>,
+  elementsById: Record<string, Element>,
+): THREE.Group {
+  const grp = new THREE.Group();
+  grp.userData.elementId = conn.id;
+  grp.userData.bimPickId = conn.id;
+
+  const plate = conn.plateSizeMm ?? { width: 150, height: 200, thickness: 10 };
+  const bRows = Math.max(0, conn.boltRows ?? 2);
+  const bCols = Math.max(0, conn.boltCols ?? 2);
+  const Y = PLAN_Y + 0.007;
+  const fillMat = new THREE.MeshBasicMaterial({
+    color: readToken('--plan-wall', '#5a5a5a'),
+    transparent: true,
+    opacity: 0.7,
+    side: THREE.DoubleSide,
+  });
+  const lineMat = new THREE.LineBasicMaterial({ color: readToken('--plan-wall', '#5a5a5a') });
+
+  const host = elementsById[conn.hostElementId];
+  const t = conn.positionT ?? 1.0;
+  let cx = 0;
+  let cz = 0;
+  let yaw = 0;
+  if (host && host.kind === 'beam') {
+    const sx = ux(host.startMm.xMm);
+    const sz = uz(host.startMm.yMm);
+    const ex = ux(host.endMm.xMm);
+    const ez = uz(host.endMm.yMm);
+    cx = sx + (ex - sx) * t;
+    cz = sz + (ez - sz) * t;
+    yaw = Math.atan2(ex - sx, ez - sz);
+  }
+
+  const wM = plate.width / 1000;
+  const hM = plate.height / 1000;
+
+  if (conn.connectionType === 'end_plate') {
+    const shape = new THREE.Shape();
+    shape.moveTo(-wM / 2, -hM / 2);
+    shape.lineTo(wM / 2, -hM / 2);
+    shape.lineTo(wM / 2, hM / 2);
+    shape.lineTo(-wM / 2, hM / 2);
+    shape.closePath();
+    const geo = new THREE.ShapeGeometry(shape);
+    geo.rotateX(-Math.PI / 2);
+    const fill = new THREE.Mesh(geo, fillMat);
+    fill.position.set(cx, Y, cz);
+    fill.rotation.y = yaw;
+    grp.add(fill);
+    _addPlanBoltCrossMarks(grp, lineMat, bRows, bCols, wM, hM, cx, Y, cz, yaw);
+  } else if (conn.connectionType === 'bolted_flange') {
+    for (const angle of [0, Math.PI / 2]) {
+      const shape = new THREE.Shape();
+      shape.moveTo(-wM / 2, -hM / 4);
+      shape.lineTo(wM / 2, -hM / 4);
+      shape.lineTo(wM / 2, hM / 4);
+      shape.lineTo(-wM / 2, hM / 4);
+      shape.closePath();
+      const geo = new THREE.ShapeGeometry(shape);
+      geo.rotateX(-Math.PI / 2);
+      const fill = new THREE.Mesh(geo, fillMat);
+      fill.position.set(cx, Y, cz);
+      fill.rotation.y = yaw + angle;
+      grp.add(fill);
+    }
+  } else {
+    const shape = new THREE.Shape();
+    shape.moveTo(-wM / 8, -hM / 2);
+    shape.lineTo(wM / 8, -hM / 2);
+    shape.lineTo(wM / 8, hM / 2);
+    shape.lineTo(-wM / 8, hM / 2);
+    shape.closePath();
+    const geo = new THREE.ShapeGeometry(shape);
+    geo.rotateX(-Math.PI / 2);
+    const fill = new THREE.Mesh(geo, fillMat);
+    fill.position.set(cx, Y, cz);
+    fill.rotation.y = yaw;
+    grp.add(fill);
+  }
+
+  return grp;
+}
+
+function _addPlanBoltCrossMarks(
+  grp: THREE.Group,
+  mat: THREE.LineBasicMaterial,
+  rows: number,
+  cols: number,
+  plateW: number,
+  plateH: number,
+  cx: number,
+  Y: number,
+  cz: number,
+  yaw: number,
+): void {
+  if (rows === 0 || cols === 0) return;
+  const xStep = cols > 1 ? (plateW * 0.6) / (cols - 1) : 0;
+  const yStep = rows > 1 ? (plateH * 0.6) / (rows - 1) : 0;
+  const xStart = cols > 1 ? -(plateW * 0.3) : 0;
+  const yStart = rows > 1 ? -(plateH * 0.3) : 0;
+  const s = Math.min(plateW, plateH) * 0.05;
+  for (let r = 0; r < rows; r++) {
+    for (let c = 0; c < cols; c++) {
+      const bx = xStart + c * xStep;
+      const by = yStart + r * yStep;
+      const cosY = Math.cos(yaw);
+      const sinY = Math.sin(yaw);
+      const wx = cx + bx * cosY + by * sinY;
+      const wz = cz - bx * sinY + by * cosY;
+      grp.add(
+        new THREE.Line(
+          new THREE.BufferGeometry().setFromPoints([
+            new THREE.Vector3(wx - s, Y, wz - s),
+            new THREE.Vector3(wx + s, Y, wz + s),
+          ]),
+          mat,
+        ),
+      );
+      grp.add(
+        new THREE.Line(
+          new THREE.BufferGeometry().setFromPoints([
+            new THREE.Vector3(wx + s, Y, wz - s),
+            new THREE.Vector3(wx - s, Y, wz + s),
+          ]),
+          mat,
+        ),
+      );
+    }
+  }
 }
 
 export function rebuildPlanMeshes(
@@ -1580,6 +1756,18 @@ export function rebuildPlanMeshes(
     tintNewChildren(before, 'revision_cloud');
   }
 
+  // WP-D §5.1.5: excavation plan symbols (dashed boundary + cross-hatch).
+  {
+    const before = holder.children.length;
+    for (const excav of Object.values(elementsById)) {
+      if (excav.kind !== 'toposolid_excavation') continue;
+      if (kindHidden('toposolid_excavation')) continue;
+      if (!(excav.boundaryMm && excav.boundaryMm.length >= 3)) continue;
+      holder.add(excavationPlanThree(excav as ToposolidExcavationElem));
+    }
+    tintNewChildren(before, 'toposolid_excavation');
+  }
+
   {
     const before = holder.children.length;
     for (const r of Object.values(elementsById)) {
@@ -1707,6 +1895,16 @@ export function rebuildPlanMeshes(
       holder.add(columnPlanThree(el));
     }
     tintNewChildren(before, 'column');
+  }
+
+  {
+    const before = holder.children.length;
+    for (const el of Object.values(elementsById)) {
+      if (el.kind !== 'steel_connection') continue;
+      if (kindHidden('steel_connection')) continue;
+      holder.add(steelConnectionPlanThree(el, elementsById));
+    }
+    tintNewChildren(before, 'steel_connection');
   }
 
   if (!kindHidden('mass_box')) {

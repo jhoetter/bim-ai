@@ -292,7 +292,7 @@ Walls have top constraint (connects to level above) and base offset in propertie
 Roof by footprint (roof tool), roof by sketch (roof-sketch tool). Hip/valley slopes per edge, slope angle in properties. Covered in full in Ch. 10.
 
 ### 2.8 Projektphasen (project phases: Existing, Demolition, New Construction)
-**Status: Partial — P1**
+**Status: Done — P1**
 Phase filter is implemented (phaseFilter.ts, PhaseDropdown in plan view). Elements can be assigned a phaseId. Phase filter visibility (show New/Demo/Existing in different graphic states) works at a basic level.
 
 F1 (Phase Management): PhaseManagerDialog.tsx implemented — table shows sequence/name/description/element count, inline rename, up/down reorder, delete with confirmation, add new phase. Accessible via Project menu "Manage Phases...". 8 tests pass.
@@ -303,9 +303,8 @@ F6 (True North): projectNorthAngleDeg added to project_settings type. True North
 
 F2 (Phase Graphic Overrides): `phaseFilterMode` added to plan_view element type in core/index.ts. `resolvePhaseGraphicStyle()` pure function added to planProjection.ts — given a view's phaseId, phaseFilterMode, and an element's phaseCreated/phaseDemolished, returns `{hidden, opacity, dashed, grey}`. rebuildPlanMeshes() in symbology.ts extended with `viewPhaseId` + `phaseFilterMode` opts; `applyPhaseStyle()` helper traverses Three.js object children and applies grey colouring + opacity + LineDashedMaterial for demolished elements. Phase overlay applied to walls, curtain walls, doors, windows, floors. PlanCanvas.tsx derives viewPhaseId/phaseFilterMode from active plan_view element and passes to rebuildPlanMeshes. Phase filter mode selector (dropdown) added to Workspace.tsx paneTrailingControls (visible when active plan view has a phaseId set); dispatches updateElementProperty to persist the mode. Modes: `new_construction` (existing=grey, demolished=hidden, new=normal), `demolition` (existing=grey, demolished=dashed, new=hidden), `existing` (only existing shown), `as_built` (all normal). 11 tests added to planProjection.test.ts (all pass).
 
-Still missing:
-- Elements automatically acquiring correct phase based on creation context
-- Phase graphic overrides do not yet apply to roof, ceiling, railing, beam, stair elements
+`phase` element type added to core/index.ts with create/update/delete commands (`create_phase`, `update_phase`, `delete_phase`).
+`ManagePhasesDialog.tsx` (pattern: ManageRevisionsDialog) at `workspace/phases/`: table of phases, add/delete/rename via inline input, wired in Workspace.tsx via ribbon "Phases" button (data-testid: `ribbon-manage-phases`) in the Review tab. Per-element Phase Created / Phase Demolished dropdowns in InspectorContent.tsx for wall, floor, roof, column, and beam elements (data-testid: `inspector-phase-created`, `inspector-phase-demolished`). 7 tests.
 
 ### 2.9 Weitere Grundrisse und Ansichten (additional floor plans and views)
 
@@ -337,8 +336,8 @@ Levels below elevation 0 work fine. Basement walls with base constraint to lower
 ## Chapter 3 — Bearbeitungsfunktionen der Basiselemente (modify tools)
 
 ### 3.1 3D-Ansicht für einzelne Geschosse erstellen (section box to isolate a floor in 3D)
-**Status: Partial — P1**
-Section box (sectionBox.ts) exists. Applying a section box clipped to a specific level's extents is not a one-click "show floor X in 3D" command as Revit offers.
+**Status: Done — P1**
+Section box (sectionBox.ts) exists. Applying a section box clipped to a specific level's extents is not a one-click "show floor X in 3D" command as Revit offers. Section box drag handles: 6 orange disc meshes (userData.sectionBoxHandle face IDs) centred on box faces; pointer drag resizes via secondary raycast plane. `SectionBoxExtent` persisted to store (`viewerSectionBoxExtent`). 4 sectionBox tests.
 
 ### 3.2 3D-Ansicht für ein Geschoss über View Cube (orienting 3D view via ViewCube)
 **Status: Partial — P1**
@@ -571,8 +570,8 @@ Terrain mesh is rendered as 3D surface. Contour line annotation overlay on plan 
 Toposolid pad (flattened subregion for building footprint) is referenced in the revit-site-toposolid-parity-tracker. Partially implemented.
 
 #### 5.1.5 Baugrube (building pad / excavation cut)
-**Status: Not Started — P1**
-Excavation cut in terrain (Baugrube = cut showing the pit for a basement) is not implemented.
+**Status: Done — P1**
+Excavation cut in terrain (Baugrube = cut showing the pit for a basement) is implemented. `buildExcavationMesh()` renders the pit walls (ExtrudeGeometry) and floor (ShapeGeometry) in brown earth material (#8B6914). `excavationPlanThree()` draws a dashed boundary + 45° cross-hatch in the plan view. The `'excavation'` tool (hotkey EX) uses a polygon-sketch grammar (`reduceExcavation`) wired in PlanCanvas with click / Enter / double-click / Escape handlers. Inspector panel shows depth input (100–50000 mm, clamped) and computed area in m².
 
 #### 5.1.6 Weitere Geländewerkzeuge (additional terrain tools: merge, split surface, graded region)
 **Status: Not Started — P2**
@@ -1116,8 +1115,8 @@ Last verified: 2026-05-16. All wave-1 agents (WP-A through WP-G) have committed 
 | Chapter | Topic | Overall State | Priority Gap |
 |---------|-------|---------------|-------------|
 | 1 | UI & Startup | Partial | Ribbon architecture, customisable QAT, multi-window |
-| 2 | Basic Floor Plan | Partial | Global parameters |
-| 3 | Modify Tools | Partial | EQ dims |
+| 2 | Basic Floor Plan | Partial | §2.8 Done (phases dialog + per-element dropdowns); Global parameters |
+| 3 | Modify Tools | Partial | §3.1 section box drag handles Done; EQ dims pending |
 | 4 | Annotations | Partial | A1–A12 grammars done; deeper persistence/grips still Partial |
 | 5 | Terrain & Geo | Partial | Contours, excavation, terrain merge/split |
 | 6 | Views & Sheets | Partial | Interior elevation inspector/grip, sheet revision title block, locked 3D view |

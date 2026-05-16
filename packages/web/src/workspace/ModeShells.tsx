@@ -25,6 +25,7 @@ import {
 } from '../schedules/schedulePanelRegistryChrome';
 import { firstSheetId, placeViewOnSheetCommand } from './sheets/sheetRecommendedViewports';
 import { lensUx } from './lensUx';
+import { FloorAreaReportPanel } from '../schedules/FloorAreaReportPanel';
 
 /**
  * Mode-specific shells — spec §20.4 / §20.5 / §20.6 / §20.7.
@@ -209,6 +210,7 @@ export function ScheduleModeShell({
   onNavigateToElement?: (elementId: string) => void;
   lensMode?: LensMode;
 }): JSX.Element {
+  const [activeTab, setActiveTab] = useState<'schedules' | 'floor-area'>('schedules');
   const schedules = useMemo(
     () => sortSchedulesForLens(asArr(elementsById, 'schedule'), lensMode),
     [elementsById, lensMode],
@@ -239,11 +241,32 @@ export function ScheduleModeShell({
       style={{ gridTemplateColumns: '220px 1fr' }}
     >
       <aside className="flex flex-col gap-1 overflow-y-auto border-r border-border bg-surface px-2 py-3">
-        <div
-          className="px-1 text-xs uppercase text-muted"
-          style={{ letterSpacing: 'var(--text-eyebrow-tracking)' }}
-        >
-          Schedules
+        <div className="mb-1 flex gap-1">
+          <button
+            type="button"
+            onClick={() => setActiveTab('schedules')}
+            className={[
+              'flex-1 rounded px-2 py-1 text-xs',
+              activeTab === 'schedules'
+                ? 'bg-accent-soft text-foreground font-medium'
+                : 'text-muted hover:bg-surface-strong',
+            ].join(' ')}
+          >
+            Schedules
+          </button>
+          <button
+            type="button"
+            data-testid="floor-area-tab-button"
+            onClick={() => setActiveTab('floor-area')}
+            className={[
+              'flex-1 rounded px-2 py-1 text-xs',
+              activeTab === 'floor-area'
+                ? 'bg-accent-soft text-foreground font-medium'
+                : 'text-muted hover:bg-surface-strong',
+            ].join(' ')}
+          >
+            Floor Areas
+          </button>
         </div>
         {lensMode !== 'all' ? (
           <div
@@ -293,7 +316,9 @@ export function ScheduleModeShell({
         )}
       </aside>
       <div className="overflow-auto bg-background p-3">
-        {active && active.kind === 'schedule' ? (
+        {activeTab === 'floor-area' ? (
+          <FloorAreaReportPanel elementsById={elementsById} />
+        ) : active && active.kind === 'schedule' ? (
           <ScheduleGrid
             schedule={active}
             modelId={modelId}

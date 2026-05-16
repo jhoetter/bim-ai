@@ -1090,6 +1090,28 @@ registerCommand({
 });
 
 registerCommand({
+  id: 'tool.steel-connection',
+  label: 'Steel Connection',
+  keywords: [
+    'steel connection',
+    'end plate',
+    'bolted flange',
+    'shear tab',
+    'structural connection',
+  ],
+  category: 'command',
+  invoke: (ctx) => startPlanTool(ctx, 'steel-connection'),
+});
+
+registerCommand({
+  id: 'tool.excavation',
+  label: 'Excavation',
+  keywords: ['excavation', 'earthwork', 'cut', 'dig', 'site excavation'],
+  category: 'command',
+  invoke: (ctx) => startPlanTool(ctx, 'excavation'),
+});
+
+registerCommand({
   id: 'tool.ramp',
   label: 'Ramp',
   keywords: ['ramp', 'sloped ramp', 'accessibility ramp'],
@@ -1375,6 +1397,22 @@ registerCommand({
   keywords: ['project', 'links', 'ifc', 'dxf', 'external', 'resources'],
   category: 'command',
   invoke: (ctx) => ctx.openManageLinks?.(),
+});
+
+registerCommand({
+  id: 'project.manage-phases',
+  label: 'Manage Phases',
+  keywords: ['phases', 'construction phase', 'phasing', 'existing', 'demolish'],
+  category: 'command',
+  invoke: (ctx) => ctx.openManagePhases?.(),
+});
+
+registerCommand({
+  id: 'project.manage-global-params',
+  label: 'Global Parameters',
+  keywords: ['global parameters', 'named parameters', 'parameters', 'variables', 'formula'],
+  category: 'command',
+  invoke: (ctx) => ctx.openManageGlobalParams?.(),
 });
 
 registerCommand({

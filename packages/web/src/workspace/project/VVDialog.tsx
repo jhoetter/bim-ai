@@ -3,7 +3,7 @@ import { useState, useCallback, useEffect, useRef } from 'react';
 import { useFocusTrap } from '../../useFocusTrap';
 import type { JSX } from 'react';
 import { Icons, ICON_SIZE } from '@bim-ai/ui';
-import type { Element } from '@bim-ai/core';
+import type { Element, VGFilter, VGFilterRule } from '@bim-ai/core';
 import { useBimStore } from '../../state/store';
 import type { CategoryOverride, CategoryOverrides } from '../../state/store';
 import type { ViewFilter } from '../../state/storeTypes';
@@ -661,122 +661,392 @@ function CategoryRow({
   );
 }
 
+const VG_FILTER_CATEGORIES = [
+  'wall',
+  'floor',
+  'roof',
+  'ceiling',
+  'door',
+  'window',
+  'column',
+  'beam',
+  'stair',
+  'railing',
+  'room',
+  'placed_asset',
+  'family_instance',
+  'toposolid',
+];
+const VG_FILTER_OPERATORS: VGFilterRule['operator'][] = [
+  'equals',
+  'not_equals',
+  'greater_than',
+  'less_than',
+  'contains',
+];
+
 function FiltersTabBody({
   planViewId,
   elementsById,
-  addViewFilter,
-  removeViewFilter,
+  modelId,
+  applyCommandImpl: applyCmd,
 }: {
   planViewId: string | undefined;
-  elementsById: Record<string, import('@bim-ai/core').Element>;
-  addViewFilter: (planViewId: string, filter: ViewFilter) => void;
-  removeViewFilter: (planViewId: string, filterId: string) => void;
+  elementsById: Record<string, Element>;
+  modelId?: string;
+  applyCommandImpl?: typeof applyCommand;
 }): JSX.Element {
   const pv = planViewId ? elementsById[planViewId] : undefined;
-  const filters: ViewFilter[] =
-    pv?.kind === 'plan_view' ? ((pv.viewFilters as ViewFilter[] | undefined) ?? []) : [];
+  const filters: VGFilter[] =
+    pv?.kind === 'plan_view' ? ((pv.vgFilters as VGFilter[] | undefined) ?? []) : [];
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const selected = filters.find((f) => f.id === selectedId) ?? null;
+
+  const dispatch = (updated: VGFilter[]) => {
+    if (!planViewId || !modelId) return;
+    void (applyCmd ?? applyCommand)(modelId, {
+      type: 'updateElement',
+      id: planViewId,
+      patch: { vgFilters: updated },
+    });
+  };
 
   const handleAdd = () => {
     if (!planViewId) return;
-    const newFilter: ViewFilter = {
+    const newFilter: VGFilter = {
       id: crypto.randomUUID(),
       name: 'New Filter',
+      categories: [],
       rules: [{ field: '', operator: 'equals', value: '' }],
       override: {},
     };
-    addViewFilter(planViewId, newFilter);
+    dispatch([...filters, newFilter]);
+    setSelectedId(newFilter.id);
+  };
+
+  const handleDelete = (id: string) => {
+    dispatch(filters.filter((f) => f.id !== id));
+    if (selectedId === id) setSelectedId(null);
+  };
+
+  const updateSelected = (patch: Partial<VGFilter>) => {
+    if (!selectedId) return;
+    dispatch(filters.map((f) => (f.id === selectedId ? { ...f, ...patch } : f)));
+  };
+
+  const fldStyle = {
+    fontSize: 12,
+    border: '1px solid var(--color-border)',
+    borderRadius: 3,
+    padding: '3px 6px',
+    background: 'var(--color-surface)',
+    color: 'var(--color-foreground)',
   };
 
   return (
-    <div style={{ padding: '12px 14px' }}>
-      <div style={{ marginBottom: 10 }}>
+    <div style={{ display: 'flex', height: '100%', minHeight: 320 }}>
+      <div
+        style={{
+          width: '40%',
+          borderRight: '1px solid var(--color-border)',
+          display: 'flex',
+          flexDirection: 'column',
+          padding: '10px 8px',
+          gap: 6,
+          overflowY: 'auto',
+        }}
+      >
         <button
           type="button"
+          data-testid="vv-new-filter"
           onClick={handleAdd}
           disabled={!planViewId}
           style={{
-            padding: '5px 12px',
+            padding: '5px 10px',
             fontSize: 12,
             border: '1px solid var(--color-border)',
             borderRadius: 4,
             background: 'transparent',
             cursor: planViewId ? 'pointer' : 'not-allowed',
             color: 'var(--color-foreground)',
+            alignSelf: 'flex-start',
           }}
         >
-          Add Filter
+          New filter
         </button>
-      </div>
-      {filters.length === 0 ? (
-        <div style={{ fontSize: 12, color: 'var(--color-muted)', padding: '8px 0' }}>
-          No filters defined.
-        </div>
-      ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-          {filters.map((f) => {
-            const ruleSummary = f.rules
-              .map((r) => `${r.field} ${r.operator} "${r.value}"`)
-              .join(' AND ');
-            return (
-              <div
-                key={f.id}
+        {filters.length === 0 ? (
+          <div style={{ fontSize: 11, color: 'var(--color-muted)', padding: '4px 2px' }}>
+            No filters defined.
+          </div>
+        ) : (
+          filters.map((f) => (
+            <div
+              key={f.id}
+              data-testid={`vv-filter-row-${f.id}`}
+              onClick={() => setSelectedId(f.id)}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 6,
+                padding: '5px 6px',
+                borderRadius: 4,
+                border:
+                  f.id === selectedId
+                    ? '1px solid var(--color-accent)'
+                    : '1px solid var(--color-border)',
+                background:
+                  f.id === selectedId ? 'var(--color-surface)' : 'var(--color-background)',
+                cursor: 'pointer',
+              }}
+            >
+              <span
                 style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 8,
-                  padding: '6px 8px',
-                  border: '1px solid var(--color-border)',
-                  borderRadius: 4,
-                  background: 'var(--color-background)',
+                  flex: 1,
+                  fontSize: 12,
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  whiteSpace: 'nowrap',
                 }}
               >
-                <input
-                  type="text"
-                  value={f.name}
-                  readOnly
-                  style={{
-                    fontSize: 12,
-                    border: '1px solid var(--color-border)',
-                    borderRadius: 2,
-                    padding: '2px 6px',
-                    width: 140,
-                    background: 'var(--color-surface)',
-                    color: 'var(--color-foreground)',
-                  }}
-                />
-                <span
-                  style={{
-                    fontSize: 11,
-                    color: 'var(--color-muted)',
-                    flex: 1,
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis',
-                    whiteSpace: 'nowrap',
-                  }}
-                >
-                  {ruleSummary || '(no rules)'}
-                </span>
-                <button
-                  type="button"
-                  onClick={() => planViewId && removeViewFilter(planViewId, f.id)}
-                  style={{
-                    background: 'transparent',
-                    border: 'none',
-                    cursor: 'pointer',
-                    color: 'var(--color-muted)',
-                    lineHeight: 1,
-                    padding: '0 2px',
-                  }}
-                  aria-label={`Remove filter ${f.name}`}
-                  title={`Remove filter ${f.name}`}
-                >
-                  <Icons.close size={ICON_SIZE.chrome} aria-hidden="true" />
-                </button>
+                {f.name || '(unnamed)'}
+              </span>
+              <button
+                type="button"
+                data-testid={`vv-delete-filter-${f.id}`}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleDelete(f.id);
+                }}
+                style={{
+                  background: 'transparent',
+                  border: 'none',
+                  cursor: 'pointer',
+                  color: 'var(--color-muted)',
+                  padding: '0 2px',
+                  lineHeight: 1,
+                }}
+                aria-label={`Delete filter ${f.name}`}
+              >
+                <Icons.close size={ICON_SIZE.chrome} aria-hidden="true" />
+              </button>
+            </div>
+          ))
+        )}
+      </div>
+      <div
+        style={{
+          flex: 1,
+          padding: '10px 12px',
+          overflowY: 'auto',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 14,
+        }}
+      >
+        {!selected ? (
+          <div style={{ fontSize: 11, color: 'var(--color-muted)', paddingTop: 8 }}>
+            Select a filter to edit.
+          </div>
+        ) : (
+          <>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+              <label style={{ fontSize: 11, fontWeight: 600, color: 'var(--color-muted)' }}>
+                Name
+              </label>
+              <input
+                type="text"
+                data-testid="vv-filter-name"
+                value={selected.name}
+                onChange={(e) => updateSelected({ name: e.target.value })}
+                style={{ ...fldStyle, width: '100%' }}
+              />
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+              <label style={{ fontSize: 11, fontWeight: 600, color: 'var(--color-muted)' }}>
+                Categories (empty = all)
+              </label>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px 10px' }}>
+                {VG_FILTER_CATEGORIES.map((cat) => (
+                  <label
+                    key={cat}
+                    style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 11 }}
+                  >
+                    <input
+                      type="checkbox"
+                      data-testid={`vv-filter-cat-${cat}`}
+                      checked={selected.categories.includes(cat)}
+                      onChange={() => {
+                        const cats = selected.categories.includes(cat)
+                          ? selected.categories.filter((c) => c !== cat)
+                          : [...selected.categories, cat];
+                        updateSelected({ categories: cats });
+                      }}
+                    />
+                    {cat}
+                  </label>
+                ))}
               </div>
-            );
-          })}
-        </div>
-      )}
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+              <label style={{ fontSize: 11, fontWeight: 600, color: 'var(--color-muted)' }}>
+                Rules (AND)
+              </label>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                {selected.rules.map((rule, i) => (
+                  <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                    <input
+                      type="text"
+                      placeholder="field"
+                      data-testid={`vv-rule-field-${i}`}
+                      value={rule.field}
+                      onChange={(e) => {
+                        const rules = selected.rules.map((r, j) =>
+                          j === i ? { ...r, field: e.target.value } : r,
+                        );
+                        updateSelected({ rules });
+                      }}
+                      style={{ ...fldStyle, width: 90 }}
+                    />
+                    <select
+                      data-testid={`vv-rule-op-${i}`}
+                      value={rule.operator}
+                      onChange={(e) => {
+                        const rules = selected.rules.map((r, j) =>
+                          j === i
+                            ? { ...r, operator: e.target.value as VGFilterRule['operator'] }
+                            : r,
+                        );
+                        updateSelected({ rules });
+                      }}
+                      style={fldStyle}
+                    >
+                      {VG_FILTER_OPERATORS.map((op) => (
+                        <option key={op} value={op}>
+                          {op}
+                        </option>
+                      ))}
+                    </select>
+                    <input
+                      type="text"
+                      placeholder="value"
+                      data-testid={`vv-rule-value-${i}`}
+                      value={rule.value}
+                      onChange={(e) => {
+                        const rules = selected.rules.map((r, j) =>
+                          j === i ? { ...r, value: e.target.value } : r,
+                        );
+                        updateSelected({ rules });
+                      }}
+                      style={{ ...fldStyle, flex: 1 }}
+                    />
+                    {selected.rules.length > 1 && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          updateSelected({ rules: selected.rules.filter((_, j) => j !== i) });
+                        }}
+                        style={{
+                          background: 'transparent',
+                          border: 'none',
+                          cursor: 'pointer',
+                          color: 'var(--color-muted)',
+                          padding: '0 2px',
+                        }}
+                        aria-label="Remove rule"
+                      >
+                        <Icons.close size={ICON_SIZE.chrome} aria-hidden="true" />
+                      </button>
+                    )}
+                  </div>
+                ))}
+                {selected.rules.length < 4 && (
+                  <button
+                    type="button"
+                    onClick={() =>
+                      updateSelected({
+                        rules: [...selected.rules, { field: '', operator: 'equals', value: '' }],
+                      })
+                    }
+                    style={{ ...fldStyle, alignSelf: 'flex-start', cursor: 'pointer' }}
+                  >
+                    + Add rule
+                  </button>
+                )}
+              </div>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+              <label style={{ fontSize: 11, fontWeight: 600, color: 'var(--color-muted)' }}>
+                Override
+              </label>
+              <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12 }}>
+                <input
+                  type="checkbox"
+                  data-testid="vv-filter-override-visible"
+                  checked={selected.override.visible !== false}
+                  onChange={(e) =>
+                    updateSelected({
+                      override: { ...selected.override, visible: e.target.checked },
+                    })
+                  }
+                />
+                Visible
+              </label>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <span style={{ fontSize: 12, minWidth: 60 }}>Color</span>
+                <input
+                  type="color"
+                  data-testid="vv-filter-override-color"
+                  value={selected.override.color ?? '#000000'}
+                  onChange={(e) =>
+                    updateSelected({ override: { ...selected.override, color: e.target.value } })
+                  }
+                />
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <span style={{ fontSize: 12, minWidth: 60 }}>Line weight</span>
+                <select
+                  data-testid="vv-filter-override-lw"
+                  value={selected.override.lineWeightFactor ?? 1}
+                  onChange={(e) =>
+                    updateSelected({
+                      override: { ...selected.override, lineWeightFactor: Number(e.target.value) },
+                    })
+                  }
+                  style={fldStyle}
+                >
+                  {[0.25, 0.5, 0.75, 1, 1.5, 2, 3].map((v) => (
+                    <option key={v} value={v}>
+                      {v}×
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <span style={{ fontSize: 12, minWidth: 60 }}>Transparency</span>
+                <input
+                  type="range"
+                  data-testid="vv-filter-override-transparency"
+                  min={0}
+                  max={90}
+                  step={10}
+                  value={selected.override.transparencyPct ?? 0}
+                  onChange={(e) =>
+                    updateSelected({
+                      override: {
+                        ...selected.override,
+                        transparencyPct: Number(e.target.value),
+                      },
+                    })
+                  }
+                />
+                <span style={{ fontSize: 11, color: 'var(--color-muted)' }}>
+                  {selected.override.transparencyPct ?? 0}%
+                </span>
+              </div>
+            </div>
+          </>
+        )}
+      </div>
     </div>
   );
 }
@@ -794,8 +1064,6 @@ export function VVDialog({
   const activePlanViewId = useBimStore((s) => s.activePlanViewId);
   const elementsById = useBimStore((s) => s.elementsById);
   const setCategoryOverride = useBimStore((s) => s.setCategoryOverride);
-  const addViewFilter = useBimStore((s) => s.addViewFilter);
-  const removeViewFilter = useBimStore((s) => s.removeViewFilter);
   const modelId = useBimStore((s) => s.modelId);
 
   const [tab, setTab] = useState<Tab>('model');
@@ -985,8 +1253,8 @@ export function VVDialog({
             <FiltersTabBody
               planViewId={activePlanViewId}
               elementsById={elementsById}
-              addViewFilter={addViewFilter}
-              removeViewFilter={removeViewFilter}
+              modelId={modelId}
+              applyCommandImpl={applyCommandImpl}
             />
           ) : (
             <>

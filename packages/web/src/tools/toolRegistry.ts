@@ -97,7 +97,9 @@ export type ToolId =
   | 'mass-revolution'
   | 'walkthrough'
   | 'roof-by-extrusion'
-  | 'revision-cloud';
+  | 'revision-cloud'
+  | 'steel-connection'
+  | 'excavation';
 
 /** Modify-group tool IDs — used by ToolPalette to insert a separator. */
 export const MODIFY_TOOL_IDS = new Set<ToolId>([
@@ -564,6 +566,15 @@ export function getToolRegistry(t: TFunction): Record<ToolId, ToolDefinition> {
       modes: ['plan', '3d'],
       tooltip: 'Draw a closed boundary and fill it with parallel beams',
     },
+    'steel-connection': {
+      id: 'steel-connection',
+      label: 'Steel Connection',
+      icon: 'beam',
+      hotkey: 'SC',
+      shortcut: 'SC',
+      modes: ['plan', '3d'],
+      tooltip: 'Click a beam to place a steel connection at its end',
+    },
     ceiling: {
       id: 'ceiling',
       label: t('tools.ceiling.label'),
@@ -811,6 +822,16 @@ export function getToolRegistry(t: TFunction): Record<ToolId, ToolDefinition> {
       tooltip:
         'Draw a revision cloud polygon. Click to add vertices, Enter or double-click to finish.',
     },
+    excavation: {
+      id: 'excavation',
+      label: 'Excavation',
+      icon: 'detailLine',
+      hotkey: 'EX',
+      shortcut: 'EX',
+      modes: ['plan'],
+      tooltip:
+        'Draw an excavation (Baugrube) polygon. Click to add vertices, Enter or double-click to close.',
+    },
   };
 }
 
@@ -883,6 +904,7 @@ const PALETTE_ORDER: ToolId[] = [
   'roof-by-extrusion',
   'brace',
   'ceiling',
+  'excavation',
 ];
 
 export function paletteForMode(mode: WorkspaceMode, t: TFunction): ToolDefinition[] {

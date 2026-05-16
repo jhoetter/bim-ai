@@ -8,6 +8,7 @@ import {
   type MaterialFaceKind,
   type MaterialFaceOverride,
   type MaterialElem,
+  type ToposolidExcavationElem,
   type WallLocationLine,
 } from '@bim-ai/core';
 import { buildDoorGeometry } from '../families/geometryFns/doorGeometry';
@@ -2694,6 +2695,31 @@ export function makeWallMesh(
     mesh.add(edgeMesh);
   }
 
+  // G3 — wall parts: when parts are defined, return a Group of BoxGeometry children
+  if (wall.parts && wall.parts.length > 0) {
+    const partsGroup = new THREE.Group();
+    partsGroup.userData.bimPickId = wall.id;
+    const yaw = yawForPlanSegment(dx, dz);
+    const cx = sx + dx / 2 + wallOffset.xM;
+    const cz = sz + dz / 2 + wallOffset.zM;
+    for (const part of wall.parts) {
+      const partLen = (part.endT - part.startT) * len;
+      if (partLen <= 0) continue;
+      const partOffsetAlong = (part.startT + part.endT) / 2 - 0.5;
+      const partMesh = new THREE.Mesh(new THREE.BoxGeometry(partLen, height, thick), wallMaterial);
+      partMesh.position.set(
+        cx + partOffsetAlong * len * Math.cos(yaw),
+        yBase + height / 2,
+        cz - partOffsetAlong * len * Math.sin(yaw),
+      );
+      partMesh.rotation.y = yaw;
+      partMesh.userData.bimPickId = wall.id;
+      partMesh.name = `wall-part-${part.id}`;
+      partsGroup.add(partMesh);
+    }
+    if (partsGroup.children.length > 0) return partsGroup;
+  }
+
   return mesh;
 }
 
@@ -3435,6 +3461,76 @@ export function makeBeamMesh(
   return mesh;
 }
 
+/* eslint-disable bim-ai/no-hex-in-chrome */
+export function buildSteelConnectionMesh(
+  conn: Extract<Element, { kind: 'steel_connection' }>,
+): THREE.Group {
+  const grp = new THREE.Group();
+  grp.userData.bimPickId = conn.id;
+
+  const plate = conn.plateSizeMm ?? { width: 150, height: 200, thickness: 10 };
+  const wM = plate.width / 1000;
+  const hM = plate.height / 1000;
+  const tM = plate.thickness / 1000;
+  const bRows = Math.max(0, conn.boltRows ?? 2);
+  const bCols = Math.max(0, conn.boltCols ?? 2);
+  const bDiam = (conn.boltDiameterMm ?? 20) / 1000;
+  const mat = new THREE.MeshStandardMaterial({
+    color: '#5a5a5a',
+    roughness: 0.6,
+    metalness: 0.5,
+  });
+
+  if (conn.connectionType === 'end_plate') {
+    grp.add(new THREE.Mesh(new THREE.BoxGeometry(wM, hM, tM), mat));
+    _addSteelBoltGrid(grp, mat, bRows, bCols, bDiam, wM, hM, tM);
+  } else if (conn.connectionType === 'bolted_flange') {
+    const top = new THREE.Mesh(new THREE.BoxGeometry(wM, tM, hM / 2), mat.clone());
+    top.position.set(0, hM / 4, 0);
+    grp.add(top);
+    const bot = new THREE.Mesh(new THREE.BoxGeometry(wM, tM, hM / 2), mat.clone());
+    bot.position.set(0, -hM / 4, 0);
+    grp.add(bot);
+    _addSteelBoltGrid(grp, mat, bRows, bCols, bDiam, wM, tM, tM * 1.5, hM / 4);
+    _addSteelBoltGrid(grp, mat, bRows, bCols, bDiam, wM, tM, tM * 1.5, -hM / 4);
+  } else {
+    grp.add(new THREE.Mesh(new THREE.BoxGeometry(tM, hM, wM / 4), mat));
+    if (bRows > 0) {
+      _addSteelBoltGrid(grp, mat, bRows, 1, bDiam, tM, hM, tM * 1.5);
+    }
+  }
+
+  return grp;
+}
+/* eslint-enable bim-ai/no-hex-in-chrome */
+
+function _addSteelBoltGrid(
+  grp: THREE.Group,
+  mat: THREE.Material,
+  rows: number,
+  cols: number,
+  diam: number,
+  plateW: number,
+  plateH: number,
+  boltH: number,
+  yOffset = 0,
+): void {
+  if (rows === 0 || cols === 0) return;
+  const xStep = cols > 1 ? (plateW * 0.6) / (cols - 1) : 0;
+  const yStep = rows > 1 ? (plateH * 0.6) / (rows - 1) : 0;
+  const xStart = cols > 1 ? -(plateW * 0.3) : 0;
+  const yStart = rows > 1 ? -(plateH * 0.3) : 0;
+  const boltGeo = new THREE.CylinderGeometry(diam / 2, diam / 2, boltH, 8);
+  boltGeo.rotateX(Math.PI / 2);
+  for (let r = 0; r < rows; r++) {
+    for (let c = 0; c < cols; c++) {
+      const bolt = new THREE.Mesh(boltGeo, mat);
+      bolt.position.set(xStart + c * xStep, yStart + r * yStep + yOffset, 0);
+      grp.add(bolt);
+    }
+  }
+}
+
 export function makeCeilingMesh(
   ceiling: Extract<Element, { kind: 'ceiling' }>,
   elementsById: Record<string, Element>,
@@ -3558,4 +3654,219 @@ export function buildDecalMesh(
   mesh.renderOrder = 1;
   void sizeZ;
   return mesh;
+}
+
+/**
+ * WP-D §5.1.5 — Build a 3D pit mesh for a toposolid_excavation element.
+ *
+ * Coordinate system: plan xMm → world X, plan yMm → world -Z, elevation → world Y.
+ * The pit sits at Y=0 (terrain surface) and carves down to Y = −depthMm/1000.
+ *
+ * Returns a Group with two children:
+ *  0 — walls (ExtrudeGeometry along the boundary, extruded downward)
+ *  1 — floor (ShapeGeometry at Y = −depthMm/1000)
+ */
+export function buildExcavationMesh(excav: ToposolidExcavationElem): THREE.Group {
+  const group = new THREE.Group();
+  const boundary = excav.boundaryMm ?? [];
+  if (boundary.length < 3) return group;
+
+  const depthMm = excav.depthMm ?? (excav.customDepthMm != null ? excav.customDepthMm : 1500);
+  if (typeof depthMm !== 'number' || depthMm <= 0) return group;
+  const depthM = depthMm / 1000;
+
+  const material = new THREE.MeshStandardMaterial({
+    color: '#8B6914',
+    side: THREE.DoubleSide,
+    roughness: 0.9,
+    metalness: 0.0,
+  });
+
+  // Build 2D shape in XY using plan coords:
+  //   shape X = xMm/1000, shape Y = -yMm/1000
+  // After rotation.x = -Math.PI/2:
+  //   shape X → world X, shape Y → world -Z (so -yMm/1000 → world Z = yMm/1000... wait)
+  //   Actually: shape Y → world -Z (rotation by -PI/2 around X: Y → +Z under this transform)
+  // Extrusion along shape Z → world -Y (downward) since shape Z → world -Y under rotation.x=-PI/2
+  const shape = new THREE.Shape();
+  const first = boundary[0]!;
+  shape.moveTo(first.xMm / 1000, -first.yMm / 1000);
+  for (let i = 1; i < boundary.length; i++) {
+    const p = boundary[i]!;
+    shape.lineTo(p.xMm / 1000, -p.yMm / 1000);
+  }
+  shape.closePath();
+
+  // Walls — ExtrudeGeometry extruded along shape Z (→ world -Y after rotation)
+  const wallGeom = new THREE.ExtrudeGeometry(shape, { depth: depthM, bevelEnabled: false });
+  const wallMesh = new THREE.Mesh(wallGeom, material);
+  wallMesh.rotation.x = -Math.PI / 2;
+  group.add(wallMesh);
+
+  // Floor — flat ShapeGeometry positioned at world Y = -depthM
+  const floorGeom = new THREE.ShapeGeometry(shape);
+  const floorMesh = new THREE.Mesh(floorGeom, material);
+  floorMesh.rotation.x = -Math.PI / 2;
+  floorMesh.position.y = -depthM;
+  group.add(floorMesh);
+
+  group.userData.bimPickId = excav.id;
+  return group;
+}
+
+/**
+ * §3.5.7 — sloped + tapered wall geometry.
+ * Returns a BufferGeometry for a wall prism with:
+ *   - X along wall axis (–len/2 .. +len/2)
+ *   - Y vertical (0 .. heightM)
+ *   - Z across thickness (–thick/2 .. +thick/2 at base, scaled by taperRatio at top)
+ * slopeRad shears the top face along X: topX = baseX + heightM * tan(slopeRad).
+ */
+export function buildWallShapeGeometry(
+  lengthM: number,
+  heightM: number,
+  thicknessM: number,
+  slopeRad: number,
+  taperRatio: number,
+): THREE.BufferGeometry {
+  const hw = lengthM / 2;
+  const ht = thicknessM / 2;
+  const topHt = ht * taperRatio;
+  const shearX = heightM * Math.tan(slopeRad);
+
+  // 8 vertices of the trapezoidal prism
+  // Bottom face (y=0): corners at (±hw, 0, ±ht)
+  // Top face (y=heightM): sheared X by shearX, Z scaled by taperRatio
+  const verts = new Float32Array([
+    // bottom
+    -hw,
+    0,
+    -ht, //0
+    hw,
+    0,
+    -ht, //1
+    hw,
+    0,
+    ht, //2
+    -hw,
+    0,
+    ht, //3
+    // top (sheared)
+    -hw + shearX,
+    heightM,
+    -topHt, //4
+    hw + shearX,
+    heightM,
+    -topHt, //5
+    hw + shearX,
+    heightM,
+    topHt, //6
+    -hw + shearX,
+    heightM,
+    topHt, //7
+  ]);
+
+  // 6 faces as two triangles each
+  const idx = new Uint16Array([
+    0,
+    2,
+    1,
+    0,
+    3,
+    2, // bottom
+    4,
+    5,
+    6,
+    4,
+    6,
+    7, // top
+    0,
+    1,
+    5,
+    0,
+    5,
+    4, // front (-Z)
+    2,
+    3,
+    7,
+    2,
+    7,
+    6, // back (+Z)
+    0,
+    4,
+    7,
+    0,
+    7,
+    3, // left (-X)
+    1,
+    2,
+    6,
+    1,
+    6,
+    5, // right (+X)
+  ]);
+
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute('position', new THREE.BufferAttribute(verts, 3));
+  geo.setIndex(new THREE.BufferAttribute(idx, 1));
+  geo.computeVertexNormals();
+  return geo;
+}
+
+/**
+ * §15.1.2 — family editor extrusion mesh.
+ * Extrudes profilePoints (mm, XY plane) by depthMm along Y.
+ */
+export function buildFamilyExtrusionMesh(form: import('@bim-ai/core').FamilyExtrusion): THREE.Mesh {
+  if (form.depthMm <= 0 || form.profilePoints.length < 3) {
+    return new THREE.Mesh(new THREE.BufferGeometry(), new THREE.MeshStandardMaterial());
+  }
+  const shape = new THREE.Shape();
+  const first = form.profilePoints[0]!;
+  shape.moveTo(first.x / 1000, first.y / 1000);
+  for (let i = 1; i < form.profilePoints.length; i++) {
+    const p = form.profilePoints[i]!;
+    shape.lineTo(p.x / 1000, p.y / 1000);
+  }
+  shape.closePath();
+  const geo = new THREE.ExtrudeGeometry(shape, {
+    depth: form.depthMm / 1000,
+    bevelEnabled: false,
+  });
+  return new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ color: '#d0c8bc', roughness: 0.7 }));
+}
+
+/**
+ * §15.1.3 — family editor revolve mesh.
+ * Revolves profilePoints (mm) around the Y axis by angleDeg.
+ */
+export function buildFamilyRevolveMesh(form: import('@bim-ai/core').FamilyRevolve): THREE.Mesh {
+  const points = form.profilePoints.map((p) => new THREE.Vector2(Math.abs(p.x) / 1000, p.y / 1000));
+  const segments = Math.max(8, Math.round(Math.abs(form.angleDeg) / 5));
+  const phiLength = (form.angleDeg * Math.PI) / 180;
+  const geo = new THREE.LatheGeometry(points, segments, 0, phiLength);
+  return new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ color: '#d0c8bc', roughness: 0.7 }));
+}
+
+/** §15.1.x — family editor void cut mesh. Wireframe red to indicate a subtracted volume. */
+export function buildFamilyVoidMesh(form: import('@bim-ai/core').FamilyVoid): THREE.Mesh {
+  if (form.depthMm <= 0 || form.profilePoints.length < 3) {
+    return new THREE.Mesh(
+      new THREE.BufferGeometry(),
+      new THREE.MeshStandardMaterial({ wireframe: true, color: '#ff4444' }),
+    );
+  }
+  const shape = new THREE.Shape();
+  const first = form.profilePoints[0]!;
+  shape.moveTo(first.x / 1000, first.y / 1000);
+  for (let i = 1; i < form.profilePoints.length; i++) {
+    const p = form.profilePoints[i]!;
+    shape.lineTo(p.x / 1000, p.y / 1000);
+  }
+  shape.closePath();
+  const geo = new THREE.ExtrudeGeometry(shape, {
+    depth: form.depthMm / 1000,
+    bevelEnabled: false,
+  });
+  return new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ wireframe: true, color: '#ff4444' }));
 }

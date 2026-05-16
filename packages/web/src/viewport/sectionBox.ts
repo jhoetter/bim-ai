@@ -15,6 +15,15 @@ export type SectionBoxAxis = 'x' | 'y' | 'z';
 export type SectionBoxSide = 'min' | 'max';
 export type SectionBoxHandle = `${SectionBoxAxis}-${SectionBoxSide}`;
 
+export type SectionBoxExtent = {
+  minX: number;
+  maxX: number;
+  minY: number;
+  maxY: number;
+  minZ: number;
+  maxZ: number;
+};
+
 export interface SectionBoxState {
   active: boolean;
   min: Vec3;
@@ -76,6 +85,29 @@ export class SectionBox {
   setBox(min: Vec3, max: Vec3): void {
     const fixed = ensureValidBox(min, max);
     this.state = { ...this.state, min: fixed.min, max: fixed.max };
+  }
+
+  /** Return current extent as a flat object for store persistence. */
+  getExtent(): SectionBoxExtent {
+    const { min, max } = this.state;
+    return {
+      minX: min.x,
+      maxX: max.x,
+      minY: min.y,
+      maxY: max.y,
+      minZ: min.z,
+      maxZ: max.z,
+    };
+  }
+
+  /** Merge partial extent into current state, clamping box invariants. */
+  setExtent(ext: Partial<SectionBoxExtent>): void {
+    const cur = this.getExtent();
+    const merged = { ...cur, ...ext };
+    this.setBox(
+      { x: merged.minX, y: merged.minY, z: merged.minZ },
+      { x: merged.maxX, y: merged.maxY, z: merged.maxZ },
+    );
   }
 
   /** Render summary for the chip in the bottom-left of the canvas. */

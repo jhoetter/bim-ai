@@ -41,12 +41,14 @@ export type ViewportRuntimeSlice = Pick<
   | 'viewerPhotographicExposureEv'
   | 'viewerProjection'
   | 'viewerSectionBoxActive'
+  | 'viewerSectionBoxExtent'
   | 'viewerWalkModeActive'
   | 'viewerCameraAction'
   | 'setViewerBackground'
   | 'setViewerEdges'
   | 'setViewerProjection'
   | 'setViewerSectionBoxActive'
+  | 'setViewerSectionBoxExtent'
   | 'setViewerWalkModeActive'
   | 'requestViewerCameraAction'
   | 'revealHiddenMode'
@@ -73,6 +75,10 @@ export type ViewportRuntimeSlice = Pick<
   | 'setOsmStatus'
   | 'cameraPaths'
   | 'addCameraPath'
+  | 'selectedCameraPathId'
+  | 'setSelectedCameraPathId'
+  | 'renameCameraPath'
+  | 'removeCameraPath'
 >;
 
 function writeLocalStorageString(key: string, value: string): void {
@@ -225,12 +231,14 @@ export function createViewportRuntimeSlice(set: StoreSet, get: StoreGet): Viewpo
     viewerEdges: 'normal',
     viewerProjection: 'perspective',
     viewerSectionBoxActive: false,
+    viewerSectionBoxExtent: null,
     viewerWalkModeActive: false,
     viewerCameraAction: null,
     setViewerBackground: (bg) => set({ viewerBackground: bg }),
     setViewerEdges: (edges) => set({ viewerEdges: edges }),
     setViewerProjection: (projection) => set({ viewerProjection: projection }),
     setViewerSectionBoxActive: (active) => set({ viewerSectionBoxActive: active }),
+    setViewerSectionBoxExtent: (ext) => set({ viewerSectionBoxExtent: ext }),
     setViewerWalkModeActive: (active) => set({ viewerWalkModeActive: active }),
     requestViewerCameraAction: (kind) =>
       set((state) => ({
@@ -303,5 +311,16 @@ export function createViewportRuntimeSlice(set: StoreSet, get: StoreGet): Viewpo
 
     cameraPaths: [],
     addCameraPath: (path) => set((state) => ({ cameraPaths: [...state.cameraPaths, path] })),
+    selectedCameraPathId: null,
+    setSelectedCameraPathId: (id) => set({ selectedCameraPathId: id }),
+    renameCameraPath: (id, name) =>
+      set((state) => ({
+        cameraPaths: state.cameraPaths.map((p) => (p.id === id ? { ...p, name } : p)),
+      })),
+    removeCameraPath: (id) =>
+      set((state) => ({
+        cameraPaths: state.cameraPaths.filter((p) => p.id !== id),
+        selectedCameraPathId: state.selectedCameraPathId === id ? null : state.selectedCameraPathId,
+      })),
   };
 }

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 
-import type { WalkthroughKeyframe } from '@bim-ai/core';
+import type { CameraPathElem, WalkthroughKeyframe } from '@bim-ai/core';
 
 type SpeedMultiplier = 0.5 | 1 | 2;
 
@@ -29,7 +29,7 @@ function lerpKeyframe(
   };
 }
 
-export function interpolateWalkthrough(
+export function interpolateKeyframes(
   keyframes: WalkthroughKeyframe[],
   timeSec: number,
 ): WalkthroughKeyframe | null {
@@ -51,51 +51,79 @@ export function interpolateWalkthrough(
   return last;
 }
 
+// Backward-compat alias used by existing tests
+export const interpolateWalkthrough = interpolateKeyframes;
+
 export type WalkthroughPlaybackPanelProps = {
   keyframes: WalkthroughKeyframe[];
   onFrame?: (frame: WalkthroughKeyframe) => void;
+  selectedPath?: CameraPathElem;
 };
 
-export function WalkthroughPlaybackPanel({ keyframes, onFrame }: WalkthroughPlaybackPanelProps) {
-  const [playing, setPlaying] = useState(false);
-  const [speed, setSpeed] = useState<SpeedMultiplier>(1);
-  const [loop, setLoop] = useState(false);
-
-  const rafRef = useRef<number | null>(null);
-  const currentSecRef = useRef<number>(0);
-
-  const totalDuration =
-    keyframes.length >= 2 ? keyframes[keyframes.length - 1]!.timeSec - keyframes[0]!.timeSec : 0;
+export function WalkthroughPlaybackPanel({
+  keyframes,
+  onFrame,
+  selectedPath,
+}: WalkthroughPlaybackPanelProps) {
   const startSec = keyframes[0]?.timeSec ?? 0;
   const endSec = keyframes[keyframes.length - 1]?.timeSec ?? 0;
+  const totalDuration = keyframes.length >= 2 ? endSec - startSec : 0;
 
-  const advance = useCallback(() => {
-    const FRAMES_PER_SEC = 30;
-    currentSecRef.current += speed / FRAMES_PER_SEC;
-    if (currentSecRef.current >= endSec) {
-      if (loop) {
-        currentSecRef.current = startSec;
-      } else {
-        currentSecRef.current = endSec;
-        setPlaying(false);
-      }
-    }
-    const frame = interpolateWalkthrough(keyframes, currentSecRef.current);
-    if (frame) onFrame?.(frame);
-  }, [speed, endSec, startSec, loop, keyframes, onFrame]);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [speed, setSpeed] = useState<SpeedMultiplier>(1);
+  const [loop, setLoop] = useState(false);
+  const [currentSec, setCurrentSec] = useState(startSec);
+
+  const rafRef = useRef<number | null>(null);
+  const lastTickMsRef = useRef<number | null>(null);
+  // Mutable ref tracks position without triggering effect restarts
+  const currentSecRef = useRef<number>(startSec);
+  const speedRef = useRef<SpeedMultiplier>(1);
+
+  // Reset position when the path changes
+  useEffect(() => {
+    setIsPlaying(false);
+    currentSecRef.current = startSec;
+    setCurrentSec(startSec);
+    lastTickMsRef.current = null;
+  }, [keyframes, startSec]);
 
   useEffect(() => {
-    if (!playing) {
-      if (rafRef.current !== null) {
-        cancelAnimationFrame(rafRef.current);
-        rafRef.current = null;
+    if (!isPlaying || keyframes.length < 2) return;
+
+    lastTickMsRef.current = null;
+
+    const tick = (nowMs: number) => {
+      // Delta-time advance using performance.now() timestamps supplied by RAF
+      const delta = lastTickMsRef.current !== null ? (nowMs - lastTickMsRef.current) / 1000 : 0;
+      lastTickMsRef.current = nowMs;
+
+      let t = currentSecRef.current + delta * speedRef.current;
+
+      if (t >= endSec) {
+        if (loop) {
+          t = startSec;
+          lastTickMsRef.current = null;
+        } else {
+          t = endSec;
+          currentSecRef.current = t;
+          setCurrentSec(t);
+          const frame = interpolateKeyframes(keyframes, t);
+          if (frame) onFrame?.(frame);
+          setIsPlaying(false);
+          rafRef.current = null;
+          return;
+        }
       }
-      return;
-    }
-    const tick = () => {
-      advance();
+
+      currentSecRef.current = t;
+      setCurrentSec(t);
+      const frame = interpolateKeyframes(keyframes, t);
+      if (frame) onFrame?.(frame);
+
       rafRef.current = requestAnimationFrame(tick);
     };
+
     rafRef.current = requestAnimationFrame(tick);
     return () => {
       if (rafRef.current !== null) {
@@ -103,21 +131,54 @@ export function WalkthroughPlaybackPanel({ keyframes, onFrame }: WalkthroughPlay
         rafRef.current = null;
       }
     };
-  }, [playing, advance]);
+  }, [isPlaying, loop, keyframes, onFrame, startSec, endSec]);
 
   const handlePlayPause = useCallback(() => {
-    if (!playing && currentSecRef.current >= endSec) {
+    if (!isPlaying && currentSecRef.current >= endSec) {
       currentSecRef.current = startSec;
+      setCurrentSec(startSec);
+      lastTickMsRef.current = null;
     }
-    setPlaying((p) => !p);
-  }, [playing, startSec, endSec]);
+    setIsPlaying((p) => !p);
+  }, [isPlaying, startSec, endSec]);
 
   const handleReset = useCallback(() => {
-    setPlaying(false);
+    setIsPlaying(false);
     currentSecRef.current = startSec;
-    const frame = interpolateWalkthrough(keyframes, startSec);
+    setCurrentSec(startSec);
+    lastTickMsRef.current = null;
+    const frame = interpolateKeyframes(keyframes, startSec);
     if (frame) onFrame?.(frame);
   }, [startSec, keyframes, onFrame]);
+
+  const handleScrub = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      const t = parseFloat(e.target.value);
+      currentSecRef.current = t;
+      setCurrentSec(t);
+      lastTickMsRef.current = null; // avoid delta overshoot on next tick
+      const frame = interpolateKeyframes(keyframes, t);
+      if (frame) onFrame?.(frame);
+    },
+    [keyframes, onFrame],
+  );
+
+  const handleExport = useCallback(() => {
+    const data = selectedPath ?? {
+      kind: 'camera_path' as const,
+      id: 'exported',
+      name: 'Walkthrough',
+      keyframes,
+    };
+    const json = JSON.stringify(data, null, 2);
+    const blob = new Blob([json], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${data.name}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }, [selectedPath, keyframes]);
 
   const inputStyle: React.CSSProperties = {
     background: 'var(--color-background)',
@@ -167,7 +228,11 @@ export function WalkthroughPlaybackPanel({ keyframes, onFrame }: WalkthroughPlay
         <select
           aria-label="Walkthrough playback speed"
           value={speed}
-          onChange={(e) => setSpeed(parseFloat(e.target.value) as SpeedMultiplier)}
+          onChange={(e) => {
+            const s = parseFloat(e.target.value) as SpeedMultiplier;
+            setSpeed(s);
+            speedRef.current = s;
+          }}
           style={inputStyle}
         >
           <option value={0.5}>0.5×</option>
@@ -182,22 +247,38 @@ export function WalkthroughPlaybackPanel({ keyframes, onFrame }: WalkthroughPlay
         </label>
         <input
           type="checkbox"
+          data-testid="walkthrough-loop"
           aria-label="Loop walkthrough"
           checked={loop}
           onChange={(e) => setLoop(e.target.checked)}
         />
       </div>
 
+      {keyframes.length >= 2 && totalDuration > 0 && (
+        <input
+          type="range"
+          data-testid="walkthrough-scrubber"
+          aria-label="Walkthrough scrubber"
+          min={startSec}
+          max={endSec}
+          step={0.1}
+          value={currentSec}
+          onChange={handleScrub}
+          style={{ width: '100%' }}
+        />
+      )}
+
       <div style={{ display: 'flex', gap: 'var(--space-2)' }}>
         <button
           type="button"
-          aria-label={playing ? 'Pause walkthrough' : 'Play walkthrough'}
+          data-testid="walkthrough-play-pause"
+          aria-label={isPlaying ? 'Pause walkthrough' : 'Play walkthrough'}
           disabled={keyframes.length < 2 || totalDuration === 0}
           onClick={handlePlayPause}
           style={{
             flex: 1,
-            background: playing ? 'var(--color-accent)' : 'var(--color-surface-strong)',
-            color: playing ? 'var(--color-accent-foreground)' : 'var(--color-foreground)',
+            background: isPlaying ? 'var(--color-accent)' : 'var(--color-surface-strong)',
+            color: isPlaying ? 'var(--color-accent-foreground)' : 'var(--color-foreground)',
             border: '1px solid var(--color-border)',
             borderRadius: 'var(--radius-xs)',
             padding: 'var(--space-1) var(--space-2)',
@@ -207,7 +288,7 @@ export function WalkthroughPlaybackPanel({ keyframes, onFrame }: WalkthroughPlay
             pointerEvents: 'auto',
           }}
         >
-          {playing ? '⏸ Pause' : '▶ Play'}
+          {isPlaying ? '⏸ Pause' : '▶ Play'}
         </button>
         <button
           type="button"
@@ -226,6 +307,26 @@ export function WalkthroughPlaybackPanel({ keyframes, onFrame }: WalkthroughPlay
           }}
         >
           ↺ Reset
+        </button>
+        <button
+          type="button"
+          data-testid="walkthrough-export-path"
+          aria-label="Export walkthrough path"
+          disabled={keyframes.length === 0}
+          onClick={handleExport}
+          style={{
+            background: 'var(--color-surface-strong)',
+            color: 'var(--color-foreground)',
+            border: '1px solid var(--color-border)',
+            borderRadius: 'var(--radius-xs)',
+            padding: 'var(--space-1) var(--space-2)',
+            fontSize: 'var(--text-xs)',
+            cursor: 'pointer',
+            fontFamily: 'inherit',
+            pointerEvents: 'auto',
+          }}
+        >
+          ↓ Export
         </button>
       </div>
 

@@ -119,6 +119,10 @@ export type PaletteContext = {
   openSelectionFilter?: () => void;
   /** Open the Create Model Group dialog (B2). */
   openCreateGroup?: () => void;
+  /** Open the Manage Phases dialog (§2.8). */
+  openManagePhases?: () => void;
+  /** Open the Manage Global Parameters dialog (§3.8). */
+  openManageGlobalParams?: () => void;
   /** Dynamic navigable views/sheets/schedules to surface in the palette. */
   views?: Array<{ id: string; label: string; keywords: string }>;
   /** Dynamic plan view templates that can be applied to the active plan view. */

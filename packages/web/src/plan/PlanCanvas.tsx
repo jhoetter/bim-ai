@@ -54,12 +54,18 @@ import {
   initialRevisionCloudState,
   reduceRevisionCloud,
   type RevisionCloudState,
+  initialExcavationState,
+  reduceExcavation,
+  type ExcavationState,
   initialArrayState,
   reduceArray,
   type ArrayState,
   initialPlaceGroupState,
   reducePlaceGroup,
   type PlaceGroupState,
+  initialSteelConnectionState,
+  reduceSteelConnection,
+  type SteelConnectionState,
 } from '../tools/toolGrammar';
 import { buildScaleCommand, distanceMm } from './scaleTool';
 import { linearArrayOffsets, radialArrayAngles, radialOffsetForElement } from './arrayTool';
@@ -494,8 +500,10 @@ export function PlanCanvas({
   const columnStateRef = useRef<ColumnState>(initialColumnState());
   const beamStateRef = useRef<BeamState>(initialBeamState());
   const ceilingStateRef = useRef<CeilingState>(initialCeilingState());
+  const excavationStateRef = useRef<ExcavationState>(initialExcavationState());
   const beamSystemStateRef = useRef<BeamSystemState>(initialBeamSystemState());
   const columnAtGridsStateRef = useRef<ColumnAtGridsState>(initialColumnAtGridsState());
+  const steelConnectionStateRef = useRef<SteelConnectionState>(initialSteelConnectionState());
   const marqueeRef = useRef<{
     active: boolean;
     sx: number;
@@ -1026,8 +1034,12 @@ export function PlanCanvas({
       beamStateRef.current = initialBeamState();
     } else if (planTool === 'ceiling') {
       ceilingStateRef.current = initialCeilingState();
+    } else if (planTool === 'excavation') {
+      excavationStateRef.current = initialExcavationState();
     } else if (planTool === 'beam-system') {
       beamSystemStateRef.current = initialBeamSystemState();
+    } else if (planTool === 'steel-connection') {
+      steelConnectionStateRef.current = initialSteelConnectionState();
     } else if (planTool === 'column-at-grids') {
       const { state } = reduceColumnAtGrids(columnAtGridsStateRef.current, { kind: 'activate' });
       columnAtGridsStateRef.current = state;
@@ -3180,6 +3192,17 @@ export function PlanCanvas({
           camNow,
         );
         const hits = ray.intersectObjects(grp.children, true);
+        // Handle EQ toggle button click
+        const eqHit = hits.find(
+          (x) => (x.object.userData as { eqToggle?: boolean }).eqToggle === true,
+        );
+        if (eqHit) {
+          const dimId = (eqHit.object.userData as { bimPickId?: string }).bimPickId;
+          if (dimId) {
+            void onSemanticCommand({ type: 'toggle_dim_eq', dimensionId: dimId });
+            return;
+          }
+        }
         const h = hits.find(
           (x) => typeof (x.object.userData as { bimPickId?: unknown }).bimPickId === 'string',
         );
@@ -4397,6 +4420,46 @@ export function PlanCanvas({
         bumpGeom((x) => x + 1);
         return;
       }
+      if (planTool === 'steel-connection') {
+        const beamEl = Object.values(elementsById).find(
+          (el): el is Extract<Element, { kind: 'beam' }> => {
+            if (el.kind !== 'beam') return false;
+            const sx = el.startMm.xMm / 1000;
+            const sz = el.startMm.yMm / 1000;
+            const ex = el.endMm.xMm / 1000;
+            const ez = el.endMm.yMm / 1000;
+            const px = sp.xMm / 1000;
+            const pz = sp.yMm / 1000;
+            const dx = ex - sx;
+            const dz = ez - sz;
+            const len2 = dx * dx + dz * dz;
+            if (len2 < 1e-9) return false;
+            const tParam = Math.max(0, Math.min(1, ((px - sx) * dx + (pz - sz) * dz) / len2));
+            const closestX = sx + tParam * dx;
+            const closestZ = sz + tParam * dz;
+            const dist = Math.hypot(px - closestX, pz - closestZ);
+            return dist < 0.5;
+          },
+        );
+        if (beamEl) {
+          const { effect } = reduceSteelConnection(steelConnectionStateRef.current, {
+            kind: 'pick-beam',
+            hostElementId: beamEl.id,
+          });
+          steelConnectionStateRef.current = initialSteelConnectionState();
+          if (effect.createSteelConnection) {
+            onSemanticCommand({
+              type: 'create_steel_connection',
+              id: crypto.randomUUID(),
+              hostElementId: effect.createSteelConnection.hostElementId,
+              connectionType: effect.createSteelConnection.connectionType,
+              positionT: 1.0,
+            });
+          }
+        }
+        bumpGeom((x) => x + 1);
+        return;
+      }
       if (planTool === 'ceiling') {
         const rect = rnd.domElement.getBoundingClientRect();
         const worldPerPxMm = (2 * camRef.current.half * 1000) / Math.max(1, rect.width);
@@ -4430,6 +4493,39 @@ export function PlanCanvas({
         } else {
           const { state } = reduceCeiling(ceilingStateRef.current, { kind: 'click', pointMm: sp });
           ceilingStateRef.current = state;
+        }
+        bumpGeom((x) => x + 1);
+        return;
+      }
+      if (planTool === 'excavation') {
+        const rect = rnd.domElement.getBoundingClientRect();
+        const worldPerPxMm = (2 * camRef.current.half * 1000) / Math.max(1, rect.width);
+        const threshMm = 12 * worldPerPxMm;
+        const fst =
+          excavationStateRef.current.phase === 'sketch'
+            ? excavationStateRef.current.verticesMm[0]
+            : undefined;
+        if (
+          fst &&
+          excavationStateRef.current.verticesMm.length >= 3 &&
+          Math.hypot(sp.xMm - fst.xMm, sp.yMm - fst.yMm) <= threshMm
+        ) {
+          const { effect } = reduceExcavation(excavationStateRef.current, { kind: 'close-loop' });
+          excavationStateRef.current = initialExcavationState();
+          if (effect.createExcavationEffect) {
+            onSemanticCommand({
+              type: 'create_toposolid_excavation',
+              id: crypto.randomUUID(),
+              boundaryMm: effect.createExcavationEffect.boundaryMm,
+              depthMm: effect.createExcavationEffect.depthMm,
+            });
+          }
+        } else {
+          const { state } = reduceExcavation(excavationStateRef.current, {
+            kind: 'click',
+            pointMm: sp,
+          });
+          excavationStateRef.current = state;
         }
         bumpGeom((x) => x + 1);
         return;
@@ -5084,6 +5180,8 @@ export function PlanCanvas({
           beamStateRef.current = initialBeamState();
         } else if (planTool === 'ceiling') {
           ceilingStateRef.current = initialCeilingState();
+        } else if (planTool === 'excavation') {
+          excavationStateRef.current = initialExcavationState();
         } else if (planTool === 'beam-system') {
           beamSystemStateRef.current = initialBeamSystemState();
         } else if (planTool === 'column-at-grids') {
@@ -5227,6 +5325,23 @@ export function PlanCanvas({
             return;
           }
         }
+      }
+      if (planTool === 'excavation' && ev.key === 'Enter') {
+        ev.preventDefault();
+        if (excavationStateRef.current.verticesMm.length >= 3) {
+          const { effect } = reduceExcavation(excavationStateRef.current, { kind: 'close-loop' });
+          excavationStateRef.current = initialExcavationState();
+          if (effect.createExcavationEffect) {
+            onSemanticCommand({
+              type: 'create_toposolid_excavation',
+              id: crypto.randomUUID(),
+              boundaryMm: effect.createExcavationEffect.boundaryMm,
+              depthMm: effect.createExcavationEffect.depthMm,
+            });
+          }
+          bumpGeom((x) => x + 1);
+        }
+        return;
       }
       if (planTool === 'column-at-grids' && ev.key === 'Enter') {
         ev.preventDefault();
@@ -5588,6 +5703,21 @@ export function PlanCanvas({
           bumpGeom((x) => x + 1);
           return;
         }
+      }
+      if (planTool === 'excavation' && excavationStateRef.current.verticesMm.length >= 3) {
+        ev.preventDefault();
+        const { effect } = reduceExcavation(excavationStateRef.current, { kind: 'close-loop' });
+        excavationStateRef.current = initialExcavationState();
+        if (effect.createExcavationEffect) {
+          onSemanticCommand({
+            type: 'create_toposolid_excavation',
+            id: crypto.randomUUID(),
+            boundaryMm: effect.createExcavationEffect.boundaryMm,
+            depthMm: effect.createExcavationEffect.depthMm,
+          });
+        }
+        bumpGeom((x) => x + 1);
+        return;
       }
       const rectBox = rnd.domElement.getBoundingClientRect();
       const ray = new THREE.Raycaster();

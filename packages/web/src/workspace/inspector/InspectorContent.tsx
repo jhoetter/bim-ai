@@ -556,6 +556,56 @@ export function InspectorDisciplineDropdown({
   );
 }
 
+function PhaseSection({
+  phaseCreated,
+  phaseDemolished,
+  phases,
+  onPropertyChange,
+}: {
+  phaseCreated: string | null | undefined;
+  phaseDemolished: string | null | undefined;
+  phases: Extract<Element, { kind: 'phase' }>[];
+  onPropertyChange?: (property: string, value: unknown) => void;
+}): JSX.Element {
+  const sorted = [...phases].sort((a, b) => a.ord - b.ord);
+  return (
+    <>
+      <div className="flex items-center gap-2 py-0.5">
+        <span className="text-xs text-muted w-28 shrink-0">Phase Created</span>
+        <select
+          data-testid="inspector-phase-created"
+          className="flex-1 text-xs bg-surface border border-border rounded px-1 py-0.5"
+          value={phaseCreated ?? ''}
+          onChange={(e) => onPropertyChange?.('phaseCreated', e.target.value || null)}
+        >
+          <option value="">—</option>
+          {sorted.map((p) => (
+            <option key={p.id} value={p.id}>
+              {p.name}
+            </option>
+          ))}
+        </select>
+      </div>
+      <div className="flex items-center gap-2 py-0.5">
+        <span className="text-xs text-muted w-28 shrink-0">Phase Demolished</span>
+        <select
+          data-testid="inspector-phase-demolished"
+          className="flex-1 text-xs bg-surface border border-border rounded px-1 py-0.5"
+          value={phaseDemolished ?? ''}
+          onChange={(e) => onPropertyChange?.('phaseDemolished', e.target.value || null)}
+        >
+          <option value="">—</option>
+          {sorted.map((p) => (
+            <option key={p.id} value={p.id}>
+              {p.name}
+            </option>
+          ))}
+        </select>
+      </div>
+    </>
+  );
+}
+
 /** Look up a human-readable name for an element ID, falling back to the raw ID. */
 function resolveElName(id: string | null | undefined, eb: Record<string, Element>): string {
   if (!id) return '—';
@@ -579,6 +629,7 @@ export function InspectorPropertiesFor(
     onOpenMaterialBrowser?: OpenMaterialBrowser;
     onOpenAppearanceAssetBrowser?: OpenMaterialBrowser;
     onEditCurtainGrid?: (wallId: string) => void;
+    onDispatchCommand?: (cmd: Record<string, unknown>) => void;
   },
 ): JSX.Element {
   const elementsById = options?.elementsById ?? {};
@@ -588,12 +639,16 @@ export function InspectorPropertiesFor(
   const onOpenMaterialBrowser = options?.onOpenMaterialBrowser;
   const onOpenAppearanceAssetBrowser = options?.onOpenAppearanceAssetBrowser;
   const onEditCurtainGrid = options?.onEditCurtainGrid;
+  const onDispatchCommand = options?.onDispatchCommand;
   const f = (key: string) => t(`inspector.fields.${key}`);
   switch (el.kind) {
     case 'wall': {
       const { elementsById = {}, onPropertyChange } = options ?? {};
       const roofs = Object.values(elementsById).filter(
         (e): e is Extract<Element, { kind: 'roof' }> => e.kind === 'roof',
+      );
+      const wallPhases = Object.values(elementsById).filter(
+        (e): e is Extract<Element, { kind: 'phase' }> => e.kind === 'phase',
       );
       const typedExteriorMaterialKey = wallTypeExteriorMaterialKey(el, elementsById);
       return (
@@ -664,15 +719,25 @@ export function InspectorPropertiesFor(
                   type="number"
                   min={1}
                   max={50}
+                  data-testid="inspector-curtain-v-grid-count"
                   className="w-16 text-xs bg-surface border border-border rounded px-1 py-0.5"
-                  value={el.curtainWallVCount ?? ''}
+                  value={el.curtainWallData?.gridV?.count ?? el.curtainWallVCount ?? ''}
                   placeholder="auto"
-                  onChange={(e2) =>
-                    onPropertyChange?.(
-                      'curtainWallVCount',
-                      e2.target.value === '' ? null : Number(e2.target.value),
-                    )
-                  }
+                  onChange={(e2) => {
+                    const v = e2.target.value === '' ? undefined : Number(e2.target.value);
+                    if (onDispatchCommand) {
+                      onDispatchCommand({
+                        type: 'update_curtain_grid',
+                        wallId: el.id,
+                        vGridCount: v,
+                      });
+                    } else {
+                      onPropertyChange?.(
+                        'curtainWallVCount',
+                        e2.target.value === '' ? null : Number(e2.target.value),
+                      );
+                    }
+                  }}
                 />
               </div>
               <div className="flex items-center gap-2 py-0.5">
@@ -681,45 +746,73 @@ export function InspectorPropertiesFor(
                   type="number"
                   min={1}
                   max={50}
+                  data-testid="inspector-curtain-h-grid-count"
                   className="w-16 text-xs bg-surface border border-border rounded px-1 py-0.5"
-                  value={el.curtainWallHCount ?? ''}
+                  value={el.curtainWallData?.gridH?.count ?? el.curtainWallHCount ?? ''}
                   placeholder="auto"
-                  onChange={(e2) =>
-                    onPropertyChange?.(
-                      'curtainWallHCount',
-                      e2.target.value === '' ? null : Number(e2.target.value),
-                    )
-                  }
+                  onChange={(e2) => {
+                    const v = e2.target.value === '' ? undefined : Number(e2.target.value);
+                    if (onDispatchCommand) {
+                      onDispatchCommand({
+                        type: 'update_curtain_grid',
+                        wallId: el.id,
+                        hGridCount: v,
+                      });
+                    } else {
+                      onPropertyChange?.(
+                        'curtainWallHCount',
+                        e2.target.value === '' ? null : Number(e2.target.value),
+                      );
+                    }
+                  }}
                 />
               </div>
               <div className="flex items-center gap-2 py-0.5">
                 <span className="text-xs text-muted w-28 shrink-0">{f('cwPanelType')}</span>
                 <select
+                  data-testid="inspector-curtain-panel-type"
                   className="flex-1 text-xs bg-surface border border-border rounded px-1 py-0.5"
-                  value={el.curtainWallPanelType ?? ''}
-                  onChange={(e2) =>
-                    onPropertyChange?.('curtainWallPanelType', e2.target.value || null)
-                  }
+                  value={el.curtainWallData?.panelType ?? el.curtainWallPanelType ?? ''}
+                  onChange={(e2) => {
+                    if (onDispatchCommand) {
+                      onDispatchCommand({
+                        type: 'update_curtain_grid',
+                        wallId: el.id,
+                        panelType: e2.target.value || undefined,
+                      });
+                    } else {
+                      onPropertyChange?.('curtainWallPanelType', e2.target.value || null);
+                    }
+                  }}
                 >
                   <option value="">— Default —</option>
-                  <option value="Glass">Glass</option>
-                  <option value="Spandrel">Spandrel</option>
-                  <option value="Solid">Solid</option>
+                  <option value="glass">Glass</option>
+                  <option value="solid">Solid</option>
+                  <option value="empty">Empty</option>
                 </select>
               </div>
               <div className="flex items-center gap-2 py-0.5">
                 <span className="text-xs text-muted w-28 shrink-0">{f('cwMullionType')}</span>
                 <select
+                  data-testid="inspector-curtain-mullion-type"
                   className="flex-1 text-xs bg-surface border border-border rounded px-1 py-0.5"
-                  value={el.curtainWallMullionType ?? ''}
-                  onChange={(e2) =>
-                    onPropertyChange?.('curtainWallMullionType', e2.target.value || null)
-                  }
+                  value={el.curtainWallData?.mullionType ?? el.curtainWallMullionType ?? ''}
+                  onChange={(e2) => {
+                    if (onDispatchCommand) {
+                      onDispatchCommand({
+                        type: 'update_curtain_grid',
+                        wallId: el.id,
+                        mullionType: e2.target.value || undefined,
+                      });
+                    } else {
+                      onPropertyChange?.('curtainWallMullionType', e2.target.value || null);
+                    }
+                  }}
                 >
                   <option value="">— Default —</option>
-                  <option value="Rectangular">Rectangular</option>
-                  <option value="Circular">Circular</option>
-                  <option value="None">None</option>
+                  <option value="rectangular">Rectangular</option>
+                  <option value="circular">Circular</option>
+                  <option value="none">None</option>
                 </select>
               </div>
               <div className="flex items-center gap-2 py-0.5">
@@ -809,6 +902,12 @@ export function InspectorPropertiesFor(
           {onDisciplineChange ? (
             <InspectorDisciplineDropdown value={el.discipline} onChange={onDisciplineChange} />
           ) : null}
+          <PhaseSection
+            phaseCreated={el.phaseCreated}
+            phaseDemolished={el.phaseDemolished}
+            phases={wallPhases}
+            onPropertyChange={onPropertyChange}
+          />
         </div>
       );
     }
@@ -953,6 +1052,14 @@ export function InspectorPropertiesFor(
           {onDisciplineChange ? (
             <InspectorDisciplineDropdown value={el.discipline} onChange={onDisciplineChange} />
           ) : null}
+          <PhaseSection
+            phaseCreated={el.phaseCreated}
+            phaseDemolished={el.phaseDemolished}
+            phases={Object.values(floorElementsById).filter(
+              (e): e is Extract<Element, { kind: 'phase' }> => e.kind === 'phase',
+            )}
+            onPropertyChange={floorOnPropertyChange}
+          />
         </div>
       );
     }
@@ -1046,6 +1153,14 @@ export function InspectorPropertiesFor(
           {onDisciplineChange ? (
             <InspectorDisciplineDropdown value={el.discipline} onChange={onDisciplineChange} />
           ) : null}
+          <PhaseSection
+            phaseCreated={el.phaseCreated}
+            phaseDemolished={el.phaseDemolished}
+            phases={Object.values(roofElementsById).filter(
+              (e): e is Extract<Element, { kind: 'phase' }> => e.kind === 'phase',
+            )}
+            onPropertyChange={roofOnPropertyChange}
+          />
         </div>
       );
     }
@@ -1166,6 +1281,44 @@ export function InspectorPropertiesFor(
               aria-label="Column rotation in degrees"
             />
           </div>
+          <div className="flex items-center gap-2 py-0.5">
+            <span className="text-xs text-muted w-28 shrink-0">Top Offset X (mm)</span>
+            <input
+              type="number"
+              className="w-20 text-xs bg-surface border border-border rounded px-1 py-0.5"
+              defaultValue={el.topOffsetXMm ?? 0}
+              key={`${el.id}-top-offset-x`}
+              step={100}
+              onBlur={(e) => {
+                const v = Number(e.currentTarget.value);
+                if (!isNaN(v)) colPropChange?.('topOffsetXMm', v);
+              }}
+              data-testid="inspector-column-top-offset-x"
+            />
+          </div>
+          <div className="flex items-center gap-2 py-0.5">
+            <span className="text-xs text-muted w-28 shrink-0">Top Offset Y (mm)</span>
+            <input
+              type="number"
+              className="w-20 text-xs bg-surface border border-border rounded px-1 py-0.5"
+              defaultValue={el.topOffsetYMm ?? 0}
+              key={`${el.id}-top-offset-y`}
+              step={100}
+              onBlur={(e) => {
+                const v = Number(e.currentTarget.value);
+                if (!isNaN(v)) colPropChange?.('topOffsetYMm', v);
+              }}
+              data-testid="inspector-column-top-offset-y"
+            />
+          </div>
+          <PhaseSection
+            phaseCreated={el.phaseCreated}
+            phaseDemolished={el.phaseDemolished}
+            phases={Object.values(elementsById).filter(
+              (e): e is Extract<Element, { kind: 'phase' }> => e.kind === 'phase',
+            )}
+            onPropertyChange={colPropChange}
+          />
         </div>
       );
     }
@@ -1219,6 +1372,14 @@ export function InspectorPropertiesFor(
               data-testid="inspector-beam-width"
             />
           </div>
+          <PhaseSection
+            phaseCreated={el.phaseCreated}
+            phaseDemolished={el.phaseDemolished}
+            phases={Object.values(elementsById).filter(
+              (e): e is Extract<Element, { kind: 'phase' }> => e.kind === 'phase',
+            )}
+            onPropertyChange={beamPropChange}
+          />
         </div>
       );
     }
@@ -2248,14 +2409,37 @@ export function InspectorPropertiesFor(
     }
     case 'interior_elevation_marker': {
       const { onPropertyChange: iemPropChange } = options ?? {};
+      const levels = Object.values(elementsById).filter(
+        (e): e is Extract<Element, { kind: 'level' }> => e.kind === 'level',
+      );
+      const allQuadrants = ['N', 'S', 'E', 'W'] as const;
+      const activeQs: ('N' | 'S' | 'E' | 'W')[] = el.activeQuadrants ?? ['N', 'S', 'E', 'W'];
       return (
         <div className="flex flex-col gap-2">
-          <FieldRow label="Level" value={el.levelId} mono />
           <FieldRow
             label="Position"
             value={`(${Math.round(el.positionMm.xMm)}, ${Math.round(el.positionMm.yMm)}) mm`}
             mono
           />
+          {iemPropChange ? (
+            <div className="flex items-center gap-2 py-0.5">
+              <span className="text-xs text-muted w-28 shrink-0">Level</span>
+              <select
+                className="rounded border border-border bg-surface px-1 py-0.5 text-xs"
+                value={el.levelId}
+                data-testid="inspector-iel-level"
+                onChange={(e) => iemPropChange('levelId', e.currentTarget.value)}
+              >
+                {levels.map((lvl) => (
+                  <option key={lvl.id} value={lvl.id}>
+                    {lvl.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          ) : (
+            <FieldRow label="Level" value={el.levelId} mono />
+          )}
           {iemPropChange ? (
             <div className="flex items-center gap-2 py-0.5">
               <span className="text-xs text-muted w-28 shrink-0">Radius (mm)</span>
@@ -2266,7 +2450,7 @@ export function InspectorPropertiesFor(
                 key={`${el.id}-radius`}
                 step={100}
                 aria-label="Elevation marker radius in millimetres"
-                data-testid="inspector-interior-elevation-radius"
+                data-testid="inspector-iel-radius"
                 onBlur={(e) => {
                   const v = Number(e.currentTarget.value);
                   if (!isNaN(v) && v > 0) iemPropChange('radiusMm', v);
@@ -2276,6 +2460,27 @@ export function InspectorPropertiesFor(
           ) : (
             <FieldRow label="Radius (mm)" value={String(el.radiusMm ?? 3000)} mono />
           )}
+          <div className="flex items-center gap-2 py-0.5">
+            <span className="text-xs text-muted w-28 shrink-0">Quadrants</span>
+            <div className="flex gap-2" data-testid="inspector-iel-quadrants">
+              {allQuadrants.map((q) => (
+                <label key={q} className="flex items-center gap-1 text-xs">
+                  <input
+                    type="checkbox"
+                    checked={activeQs.includes(q)}
+                    onChange={(e) => {
+                      if (!iemPropChange) return;
+                      const next = e.currentTarget.checked
+                        ? [...activeQs, q]
+                        : activeQs.filter((x) => x !== q);
+                      iemPropChange('activeQuadrants', next);
+                    }}
+                  />
+                  {q}
+                </label>
+              ))}
+            </div>
+          </div>
         </div>
       );
     }
@@ -2348,6 +2553,40 @@ export function InspectorPropertiesFor(
           ) : (
             <FieldRow label="Slope" value={`${el.slopePct}%`} />
           )}
+        </div>
+      );
+    }
+    case 'toposolid_excavation': {
+      const { onPropertyChange } = options ?? {};
+      const pts = el.boundaryMm ?? [];
+      const shoelace = pts.reduce((acc, p, i) => {
+        const q = pts[(i + 1) % pts.length]!;
+        return acc + p.xMm * q.yMm - q.xMm * p.yMm;
+      }, 0);
+      const areaMm2 = Math.abs(shoelace) / 2;
+      const areaM2 = areaMm2 / 1_000_000;
+      const depth = el.depthMm ?? el.customDepthMm ?? 1500;
+      return (
+        <div className="flex flex-col gap-2">
+          <div className="flex items-center gap-2 py-0.5">
+            <span className="text-xs text-muted w-28 shrink-0">Depth (mm)</span>
+            <input
+              type="number"
+              className="w-20 text-xs bg-surface border border-border rounded px-1 py-0.5"
+              defaultValue={depth}
+              key={`${el.id}-depth`}
+              step={100}
+              min={100}
+              max={50000}
+              data-testid="inspector-excavation-depth"
+              onBlur={(e) => {
+                const raw = Number(e.currentTarget.value);
+                const clamped = Math.max(100, Math.min(50000, raw));
+                onPropertyChange?.('depthMm', clamped);
+              }}
+            />
+          </div>
+          <FieldRow label="Area" value={`${areaM2.toFixed(2)} m²`} />
         </div>
       );
     }

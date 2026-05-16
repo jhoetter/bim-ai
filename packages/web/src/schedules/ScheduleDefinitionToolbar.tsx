@@ -92,6 +92,10 @@ export function ScheduleDefinitionToolbar({
   if (!el || el.kind !== 'schedule') return null;
   if (!srvActive || srvActive.scheduleId !== scheduleId || !modelId) return null;
 
+  const levelElements = Object.values(elementsById)
+    .filter((e): e is Extract<Element, { kind: 'level' }> => e.kind === 'level')
+    .sort((a, b) => a.elevationMm - b.elevationMm);
+
   const f = { ...(el.filters ?? {}) } as Record<string, unknown>;
 
   const ghRaw = f.groupingHint ?? f.grouping_hint;
@@ -156,9 +160,59 @@ export function ScheduleDefinitionToolbar({
       data-testid="schedule-definition-toolbar"
       className="mt-2 rounded border border-border/60 bg-background/40 p-2 text-[10px] text-muted"
     >
-      <div className="font-semibold text-foreground">
-        Schedule definition · upsertScheduleFilters
+      <div className="flex items-center justify-between">
+        <div className="font-semibold text-foreground">
+          Schedule definition · upsertScheduleFilters
+        </div>
+        <button
+          type="button"
+          data-testid="schedule-export-csv"
+          className="rounded border border-border bg-background px-2 py-0.5 text-[10px] hover:bg-surface-strong"
+          onClick={() => {
+            const data = srvActive.data as { columns?: string[]; rows?: unknown[][] };
+            const cols = data.columns ?? [];
+            const rows = data.rows ?? [];
+            const csv = [cols.join(','), ...rows.map((r) => (r as string[]).join(','))].join('\n');
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `${scheduleId}.csv`;
+            a.click();
+            URL.revokeObjectURL(url);
+          }}
+        >
+          Export CSV
+        </button>
       </div>
+
+      {levelElements.length > 0 && (
+        <div className="mt-2 flex items-center gap-2">
+          <span>Level filter</span>
+          <select
+            data-testid="schedule-level-filter"
+            className="rounded border border-border bg-background px-2 py-0.5 font-mono"
+            value={String((feObj as Record<string, unknown>)['levelId'] ?? '')}
+            onChange={(e) => {
+              const val = e.target.value;
+              const nextFe = { ...feObj };
+              if (val) {
+                nextFe['levelId'] = val;
+              } else {
+                delete nextFe['levelId'];
+              }
+              commit({ ...f, filterEquals: nextFe }, groupingPayload(orderedHints()));
+            }}
+          >
+            <option value="">All Levels</option>
+            {levelElements.map((lv) => (
+              <option key={lv.id} value={lv.id}>
+                {lv.name}
+              </option>
+            ))}
+          </select>
+        </div>
+      )}
 
       <div className="mt-2 flex flex-wrap items-center gap-3">
         <label className="flex flex-wrap items-center gap-2">

@@ -416,6 +416,40 @@ function applyModelEdgeDisplay(
   });
 }
 
+function sectionBoxFaceAxisNormal(face: string): THREE.Vector3 {
+  if (face === 'maxX' || face === 'minX') return new THREE.Vector3(1, 0, 0);
+  if (face === 'maxY' || face === 'minY') return new THREE.Vector3(0, 1, 0);
+  return new THREE.Vector3(0, 0, 1);
+}
+
+function sectionBoxFaceAxisKey(face: string): 'x' | 'y' | 'z' {
+  if (face === 'maxX' || face === 'minX') return 'x';
+  if (face === 'maxY' || face === 'minY') return 'y';
+  return 'z';
+}
+
+function updateSectionBoxHandles(group: THREE.Group, sb: SectionBox): void {
+  const ext = sb.getExtent();
+  const midX = (ext.minX + ext.maxX) / 2;
+  const midY = (ext.minY + ext.maxY) / 2;
+  const midZ = (ext.minZ + ext.maxZ) / 2;
+  const positions: Record<string, [number, number, number]> = {
+    maxX: [ext.maxX, midY, midZ],
+    minX: [ext.minX, midY, midZ],
+    maxY: [midX, ext.maxY, midZ],
+    minY: [midX, ext.minY, midZ],
+    maxZ: [midX, midY, ext.maxZ],
+    minZ: [midX, midY, ext.minZ],
+  };
+  for (const child of group.children) {
+    const face = child.userData.sectionBoxHandle as string | undefined;
+    if (face && face in positions) {
+      const [x, y, z] = positions[face];
+      child.position.set(x, y, z);
+    }
+  }
+}
+
 function disposeObject3D(root: THREE.Object3D): void {
   root.traverse((node) => {
     if (
@@ -588,6 +622,8 @@ export function Viewport({
   const savedViewLockedRef = useRef(false);
   const sectionBoxRef = useRef<SectionBox | null>(null);
   const sectionBoxCageRef = useRef<THREE.LineSegments | null>(null);
+  const sectionBoxHandleGroupRef = useRef<THREE.Group | null>(null);
+  const sectionBoxPrevActiveRef = useRef(false);
   const clipCapsRef = useRef<THREE.Mesh[]>([]);
 
   const elementsById = useBimStore((s) => s.elementsById);
@@ -1090,7 +1126,7 @@ export function Viewport({
       maxRadius: 80,
     });
     cameraRigRef.current = rig;
-    let dragging: 'orbit' | 'pan' | 'grip' | 'tool-draft' | null = null;
+    let dragging: 'orbit' | 'pan' | 'grip' | 'tool-draft' | 'section-box' | null = null;
     let dragMoved = false;
     let cumulativeDragPx = 0;
     let inertiaVx = 0;
@@ -1111,6 +1147,7 @@ export function Viewport({
       indicator: AxisIndicatorHandle | null;
       lastDeltaMm: number;
     } | null = null;
+    let sectionBoxDrag: { face: string; dragPlane: THREE.Plane } | null = null;
     type WallDraftScreenBasis = {
       mode: 'elevation-axis';
       originScreen: ScreenPoint;
@@ -2759,6 +2796,36 @@ export function Viewport({
           return;
         }
       }
+      // §3.1 — section-box face-handle drag.
+      if (ev.button === 0 && sectionBoxRef.current?.snapshot().active) {
+        const rect = renderer.domElement.getBoundingClientRect();
+        ndc.set(
+          ((ev.clientX - rect.left) / rect.width) * 2 - 1,
+          -((ev.clientY - rect.top) / rect.height) * 2 + 1,
+        );
+        raycaster.setFromCamera(ndc, camera);
+        const handles = sectionBoxHandleGroupRef.current
+          ? [...sectionBoxHandleGroupRef.current.children]
+          : [];
+        const hits = raycaster.intersectObjects(handles, false);
+        if (hits.length > 0) {
+          const hit = hits[0];
+          const face = hit.object.userData.sectionBoxHandle as string;
+          const normal = sectionBoxFaceAxisNormal(face);
+          const dragPlane = new THREE.Plane().setFromNormalAndCoplanarPoint(
+            normal,
+            hit.point.clone(),
+          );
+          sectionBoxDrag = { face, dragPlane };
+          dragging = 'section-box';
+          dragMoved = false;
+          cumulativeDragPx = 0;
+          lastX = ev.clientX;
+          lastY = ev.clientY;
+          (ev.target as HTMLElement).setPointerCapture(ev.pointerId);
+          return;
+        }
+      }
       if (savedViewLockedRef.current) {
         dragging = null;
         return;
@@ -2825,6 +2892,14 @@ export function Viewport({
         activeGrip = null;
         return;
       }
+      if (wasDragging === 'section-box') {
+        sectionBoxDrag = null;
+        const sb = sectionBoxRef.current;
+        if (sb) {
+          useBimStore.getState().setViewerSectionBoxExtent(sb.getExtent());
+        }
+        return;
+      }
       if (shouldCommitHostedPlacementOnPointerUp({ wasDragging, draftTool })) {
         handle3dDirectToolClick(ev.clientX, ev.clientY);
         return;
@@ -2857,6 +2932,9 @@ export function Viewport({
       if (dragging === 'grip' && activeGrip) {
         activeGrip.indicator?.dispose();
         activeGrip = null;
+      }
+      if (dragging === 'section-box') {
+        sectionBoxDrag = null;
       }
       dragging = null;
       toolDraftTool = null;
@@ -3227,6 +3305,23 @@ export function Viewport({
       if (cumulativeDragPx > DRAG_THRESHOLD_PX) dragMoved = true;
       if (!dragMoved) return;
       if (dragging === 'tool-draft') return;
+      if (dragging === 'section-box' && sectionBoxDrag && sectionBoxRef.current) {
+        const rect = renderer.domElement.getBoundingClientRect();
+        ndc.set(
+          ((ev.clientX - rect.left) / rect.width) * 2 - 1,
+          -((ev.clientY - rect.top) / rect.height) * 2 + 1,
+        );
+        raycaster.setFromCamera(ndc, camera);
+        const hitPt = new THREE.Vector3();
+        if (raycaster.ray.intersectPlane(sectionBoxDrag.dragPlane, hitPt)) {
+          const axisKey = sectionBoxFaceAxisKey(sectionBoxDrag.face);
+          sectionBoxRef.current.setExtent({ [sectionBoxDrag.face]: hitPt[axisKey] });
+          if (sectionBoxHandleGroupRef.current) {
+            updateSectionBoxHandles(sectionBoxHandleGroupRef.current, sectionBoxRef.current);
+          }
+        }
+        return;
+      }
       if (dragging === 'grip' && activeGrip) {
         const deltaMm = projectGripDelta(
           activeGrip.descriptor,
@@ -3719,6 +3814,7 @@ export function Viewport({
       walkControllerRef.current = null;
       sectionBoxRef.current = null;
       sectionBoxCageRef.current = null;
+      sectionBoxHandleGroupRef.current = null;
 
       composerRef.current?.dispose();
       composerRef.current = null;
@@ -4775,6 +4871,19 @@ export function Viewport({
     clipCapsRef.current = [];
 
     const sectionBox = sectionBoxRef.current;
+    // §3.1 — on first activation, restore persisted extent or seed from scene bounding box.
+    if (sectionBoxActive && sectionBox && !sectionBoxPrevActiveRef.current) {
+      const savedExtent = useBimStore.getState().viewerSectionBoxExtent;
+      if (savedExtent) {
+        sectionBox.setExtent(savedExtent);
+      } else {
+        const bbox = computeRootBoundingBox(root);
+        if (bbox) {
+          sectionBox.setBox(bbox.min, bbox.max);
+        }
+      }
+    }
+    sectionBoxPrevActiveRef.current = sectionBoxActive;
     const sectionPlanes = sectionBox && sectionBoxActive ? sectionBox.clippingPlanes() : [];
     const clipElevM =
       viewerClipElevMm != null && Number.isFinite(viewerClipElevMm) && viewerClipElevMm >= 0
@@ -4848,6 +4957,41 @@ export function Viewport({
       cage.userData.bimPickId = '__section_box_cage';
       sectionBoxCageRef.current = cage;
       root.add(cage);
+    }
+
+    // §3.1 — section-box face drag handles (6 orange disc meshes, one per face).
+    if (sectionBoxHandleGroupRef.current) {
+      root.remove(sectionBoxHandleGroupRef.current);
+      sectionBoxHandleGroupRef.current = null;
+    }
+    if (sectionBoxActive && sectionBox) {
+      const handleGroup = new THREE.Group();
+      handleGroup.name = 'section-box-handles';
+      const handleMat = new THREE.MeshBasicMaterial({
+        color: 0xf97316,
+        depthTest: false,
+        transparent: true,
+        opacity: 0.8,
+        side: THREE.DoubleSide,
+      });
+      const faceRotations: [string, number, number, number][] = [
+        ['maxX', 0, -Math.PI / 2, 0],
+        ['minX', 0, Math.PI / 2, 0],
+        ['maxY', -Math.PI / 2, 0, 0],
+        ['minY', Math.PI / 2, 0, 0],
+        ['maxZ', 0, 0, 0],
+        ['minZ', 0, Math.PI, 0],
+      ];
+      for (const [faceId, rx, ry, rz] of faceRotations) {
+        const geom = new THREE.PlaneGeometry(0.15, 0.15);
+        const mesh = new THREE.Mesh(geom, handleMat);
+        mesh.userData.sectionBoxHandle = faceId;
+        mesh.rotation.set(rx, ry, rz);
+        handleGroup.add(mesh);
+      }
+      updateSectionBoxHandles(handleGroup, sectionBox);
+      sectionBoxHandleGroupRef.current = handleGroup;
+      root.add(handleGroup);
     }
 
     // Build stencil cap meshes for each active clipping plane.

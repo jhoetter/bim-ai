@@ -125,6 +125,9 @@ export type ToposolidExcavationElem = {
   offsetMm: number;
   customDepthMm?: number | null;
   estimatedVolumeM3?: number | null;
+  /** WP-D §5.1.5: polygon-sketch excavation boundary and depth. */
+  boundaryMm?: { xMm: number; yMm: number }[];
+  depthMm?: number;
 };
 
 export type CreateToposolidExcavationCmd = {
@@ -136,6 +139,15 @@ export type CreateToposolidExcavationCmd = {
   offsetMm?: number;
   customDepthMm?: number | null;
   estimatedVolumeM3?: number | null;
+};
+
+/** WP-D §5.1.5: polygon-sketch excavation creation command. */
+export type CreateToposolidExcavationBoundaryCmd = {
+  type: 'create_toposolid_excavation';
+  id: string;
+  hostToposolidId?: string;
+  boundaryMm: { xMm: number; yMm: number }[];
+  depthMm: number;
 };
 
 export type UpdateToposolidExcavationCmd = {
@@ -372,9 +384,29 @@ export type ElemKind =
   | 'leader_text'
   | 'interior_elevation_marker'
   | 'permanent_dimension'
-  | 'sheet_viewport';
+  | 'sheet_viewport'
+  | 'steel_connection';
 
 export type PhaseFilter = 'all' | 'existing' | 'demolition' | 'new';
+
+export type VGFilterRule = {
+  field: string;
+  operator: 'equals' | 'not_equals' | 'greater_than' | 'less_than' | 'contains';
+  value: string;
+};
+
+export type VGFilter = {
+  id: string;
+  name: string;
+  categories: string[];
+  rules: VGFilterRule[];
+  override: {
+    visible?: boolean;
+    color?: string;
+    lineWeightFactor?: number;
+    transparencyPct?: number;
+  };
+};
 
 /** DSC-V3-01: per-element discipline tag. */
 export type DisciplineTag = 'arch' | 'struct' | 'mep';
@@ -398,6 +430,7 @@ export const DEFAULT_DISCIPLINE_BY_KIND: Readonly<Partial<Record<ElemKind, Disci
   soffit: 'arch',
   toposolid: 'arch',
   brace: 'struct',
+  steel_connection: 'struct',
   foundation: 'struct',
   duct: 'mep',
   pipe: 'mep',
@@ -1270,6 +1303,8 @@ export type Element =
         gridH: { count?: number; spacingMm?: number; offsets?: number[] };
         gridV: { count?: number; spacingMm?: number; offsets?: number[] };
         defaultPanelType?: 'glass' | 'opaque' | 'door' | 'empty';
+        /** WP-B: panel type for the curtain wall grid cells. */
+        panelType?: 'glass' | 'solid' | 'empty';
         mullionType?: string;
         panelOverrides?: { [cellKey: string]: string };
         pinnedGridLines?: string[];
@@ -1991,6 +2026,7 @@ export type Element =
       planCategoryGraphics?: PlanCategoryGraphicRow[];
       categoryOverrides?: Record<string, unknown>;
       viewFilters?: unknown[];
+      vgFilters?: VGFilter[];
       elementOverrides?: Array<{ categoryOrId: string; alternateRender: string }>;
       /** KRN-V3-04: per-set option lock; key = optionSetId, value = optionId. */
       optionLocks?: Record<string, string>;
@@ -2249,6 +2285,18 @@ export type Element =
       discipline?: DisciplineTag | null;
       /** SCH-V3-01: custom property values. */
       props?: Record<string, unknown>;
+    }
+  | {
+      kind: 'steel_connection';
+      id: string;
+      connectionType: 'end_plate' | 'bolted_flange' | 'shear_tab';
+      hostElementId: string;
+      targetElementId?: string;
+      positionT?: number;
+      plateSizeMm?: { width: number; height: number; thickness: number };
+      boltRows?: number;
+      boltCols?: number;
+      boltDiameterMm?: number;
     }
   | {
       kind: 'ceiling';
@@ -2973,6 +3021,8 @@ export type Element =
       levelId: string;
       /** Half-extent of the crop box for each elevation view, in mm (default 3000). */
       radiusMm?: number;
+      /** Which of the four elevation views are active. Defaults to all four when omitted. */
+      activeQuadrants?: ('N' | 'S' | 'E' | 'W')[];
       /** IDs of the four auto-created elevation_view elements. */
       elevationViewIds: { north: string; south: string; east: string; west: string };
     }
@@ -3084,6 +3134,20 @@ export type ModelDelta = {
 
 export type Command = Record<string, unknown> & {
   type: string;
+};
+
+/** WP-A §8.1.1: attach/detach wall top to a host roof/floor/ceiling. */
+export type AttachWallTopCmd = { type: 'attach_wall_top'; wallId: string; hostId: string };
+export type DetachWallTopCmd = { type: 'detach_wall_top'; wallId: string };
+
+/** WP-B: update the curtain wall grid configuration on a wall element. */
+export type UpdateCurtainGridCmd = {
+  type: 'update_curtain_grid';
+  wallId: string;
+  hGridCount?: number;
+  vGridCount?: number;
+  panelType?: string;
+  mullionType?: string;
 };
 
 /**
@@ -3970,6 +4034,31 @@ export type SavedViewElem = {
   thumbnailDataUri?: string;
 };
 
+/** §15.1.2 — family editor extrusion form. profilePoints are in mm (local XY plane). */
+export type FamilyExtrusion = {
+  kind: 'family_extrusion';
+  id: string;
+  profilePoints: { x: number; y: number }[];
+  depthMm: number;
+};
+
+/** §15.1.3 — family editor revolve form. profilePoints are in mm; axis is the revolution axis. */
+export type FamilyRevolve = {
+  kind: 'family_revolve';
+  id: string;
+  profilePoints: { x: number; y: number }[];
+  axisMm: { x: number; z: number };
+  angleDeg: number;
+};
+
+/** §15.1.x — family editor void cut form. Renders as a wireframe to indicate a subtracted volume. */
+export type FamilyVoid = {
+  kind: 'family_void';
+  id: string;
+  profilePoints: { x: number; y: number }[];
+  depthMm: number;
+};
+
 export type WalkthroughKeyframe = {
   positionMm: { x: number; y: number; z: number };
   targetMm: { x: number; y: number; z: number };
@@ -4197,6 +4286,25 @@ export type CreateInteriorElevationMarkerCmd = {
   levelId: string;
   /** Half-extent of crop box in mm. Defaults to 3000 on the server. */
   radiusMm?: number;
+};
+
+// ---------------------------------------------------------------------------
+// §9.5.1 — Steel connection commands
+// ---------------------------------------------------------------------------
+
+export type CreateSteelConnectionCmd = {
+  type: 'create_steel_connection';
+  id: string;
+  hostElementId: string;
+  connectionType: 'end_plate' | 'bolted_flange' | 'shear_tab';
+  targetElementId?: string;
+  positionT?: number;
+};
+
+export type UpdateSteelConnectionCmd = {
+  type: 'update_steel_connection';
+  id: string;
+  patch: Partial<Omit<Extract<Element, { kind: 'steel_connection' }>, 'kind' | 'id'>>;
 };
 
 // ---------------------------------------------------------------------------

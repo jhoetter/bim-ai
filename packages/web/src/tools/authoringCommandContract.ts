@@ -733,6 +733,24 @@ export const AUTHORING_COMMAND_CONTRACTS = {
     [],
     ['finish', 'cancel'],
   ),
+  'steel-connection': contract(
+    'steel-connection',
+    'point',
+    ['plan', '3d'],
+    'Click on a beam to place a steel connection at its end.',
+    'remain-active-while-looping',
+    [],
+    ['type', 'cancel'],
+  ),
+  excavation: contract(
+    'excavation',
+    'sketch',
+    ['plan'],
+    'Draw an excavation polygon. Click to add vertices, Enter or double-click to close.',
+    'explicit-finish',
+    [],
+    ['finish', 'cancel'],
+  ),
 } satisfies Record<ToolId, AuthoringCommandContract>;
 
 export function getAuthoringCommandContract(toolId: ToolId): AuthoringCommandContract {

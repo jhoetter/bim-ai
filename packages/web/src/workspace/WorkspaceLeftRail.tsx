@@ -126,6 +126,7 @@ export function WorkspaceLeftRail({
   const setActiveViewpointId = useBimStore((s) => s.setActiveViewpointId);
   const cameraPaths = useBimStore((s) => s.cameraPaths);
   const [contextMenu, setContextMenu] = useState<PrimaryNavContextMenuState | null>(null);
+  const [sheetPickerSavedViewId, setSheetPickerSavedViewId] = useState<string | null>(null);
 
   const browserSections = useMemo(
     () => buildPrimaryNavigationSections(elementsById),
@@ -465,25 +466,39 @@ export function WorkspaceLeftRail({
           )}
           {(contextElement as unknown as SavedViewElem | undefined)?.kind === 'saved_view' &&
             onSemanticCommand && (
-              <button
-                type="button"
-                role="menuitem"
-                data-testid="primary-nav-context-lock"
-                className="block w-full px-3 py-1.5 text-left hover:bg-surface-strong"
-                onClick={() => {
-                  const sv = contextElement as unknown as SavedViewElem;
-                  void onSemanticCommand({
-                    type: 'update_saved_view',
-                    id: sv.id,
-                    isLocked: !sv.isLocked,
-                  });
-                  setContextMenu(null);
-                }}
-              >
-                {(contextElement as unknown as SavedViewElem).isLocked
-                  ? 'Unlock Camera'
-                  : 'Lock Camera'}
-              </button>
+              <>
+                <button
+                  type="button"
+                  role="menuitem"
+                  data-testid="primary-nav-context-lock"
+                  className="block w-full px-3 py-1.5 text-left hover:bg-surface-strong"
+                  onClick={() => {
+                    const sv = contextElement as unknown as SavedViewElem;
+                    void onSemanticCommand({
+                      type: 'update_saved_view',
+                      id: sv.id,
+                      isLocked: !sv.isLocked,
+                    });
+                    setContextMenu(null);
+                  }}
+                >
+                  {(contextElement as unknown as SavedViewElem).isLocked
+                    ? 'Unlock Camera'
+                    : 'Lock Camera'}
+                </button>
+                <button
+                  type="button"
+                  role="menuitem"
+                  data-testid="primary-nav-ctx-place-on-sheet"
+                  className="block w-full px-3 py-1.5 text-left hover:bg-surface-strong"
+                  onClick={() => {
+                    setSheetPickerSavedViewId(contextElement.id);
+                    setContextMenu(null);
+                  }}
+                >
+                  Place on Sheet…
+                </button>
+              </>
             )}
           <button
             type="button"
@@ -501,6 +516,39 @@ export function WorkspaceLeftRail({
           >
             Delete
           </button>
+        </div>
+      ) : null}
+      {sheetPickerSavedViewId && onSemanticCommand ? (
+        <div
+          data-testid="sheet-picker-modal"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/30"
+          onClick={() => setSheetPickerSavedViewId(null)}
+        >
+          <div
+            className="min-w-64 rounded border border-border bg-surface p-4 shadow-xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="mb-2 font-semibold text-foreground">Place on Sheet</div>
+            {Object.values(elementsById)
+              .filter((e): e is Extract<Element, { kind: 'sheet' }> => e.kind === 'sheet')
+              .map((sheet) => (
+                <button
+                  key={sheet.id}
+                  type="button"
+                  className="block w-full px-2 py-1.5 text-left text-sm hover:bg-surface-strong"
+                  onClick={() => {
+                    void onSemanticCommand({
+                      type: 'update_sheet',
+                      id: sheet.id,
+                      viewportsMm: [{ viewRef: `saved_view:${sheetPickerSavedViewId}` }],
+                    });
+                    setSheetPickerSavedViewId(null);
+                  }}
+                >
+                  {sheet.name}
+                </button>
+              ))}
+          </div>
         </div>
       ) : null}
       <div className="shrink-0 border-t border-border p-2">

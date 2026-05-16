@@ -21,6 +21,7 @@ import type {
   RoomProgrammeLegendEvidenceV0,
 } from '../plan/planProjectionWire';
 import type { LevelElevationPropagationEvidenceV0 } from '../workspace/readouts';
+import type { SectionBoxExtent } from '../viewport/sectionBox';
 
 export type PlanRoomSchemeWireReadout = {
   roomColorLegendRows: PlanRoomColorLegendRow[];
@@ -115,7 +116,9 @@ export type PlanTool =
   | 'interior-elevation'
   | 'walkthrough'
   | 'roof-by-extrusion'
-  | 'revision-cloud';
+  | 'revision-cloud'
+  | 'steel-connection'
+  | 'excavation';
 
 export type PresencePeers = Record<
   string,
@@ -257,6 +260,8 @@ export type StoreState = {
   viewerProjection: 'perspective' | 'orthographic';
   /** UX-11: section-box clipping is a view-control state, not only a canvas button. */
   viewerSectionBoxActive: boolean;
+  /** §3.1: persisted section box extent from drag-handle interaction. */
+  viewerSectionBoxExtent: SectionBoxExtent | null;
   /** UX-11: walk mode is launched from View controls instead of canvas chrome. */
   viewerWalkModeActive: boolean;
   /** UX-11: one-shot camera commands issued by right-rail View controls. */
@@ -370,6 +375,8 @@ export type StoreState = {
   setViewerProjection: (projection: 'perspective' | 'orthographic') => void;
   /** UX-11: set section-box clipping visibility. */
   setViewerSectionBoxActive: (active: boolean) => void;
+  /** §3.1: persist section box extent after a drag-handle resize. */
+  setViewerSectionBoxExtent: (ext: SectionBoxExtent) => void;
   /** UX-11: enter or exit 3D walk mode. */
   setViewerWalkModeActive: (active: boolean) => void;
   /** UX-11: request a viewport camera action from chrome outside the canvas. */
@@ -409,6 +416,10 @@ export type StoreState = {
   /** §14.6 — client-side camera paths from walkthrough captures; not persisted to server. */
   cameraPaths: CameraPathElem[];
   addCameraPath: (path: CameraPathElem) => void;
+  selectedCameraPathId: string | null;
+  setSelectedCameraPathId: (id: string | null) => void;
+  renameCameraPath: (id: string, name: string) => void;
+  removeCameraPath: (id: string) => void;
 
   vvDialogOpen: boolean;
   openVVDialog: () => void;

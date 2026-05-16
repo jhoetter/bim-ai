@@ -83,7 +83,9 @@ type RibbonActionId =
   | 'schedule-controls'
   | 'structural-delete-duplicate-wall'
   | 'structural-detach-orphan'
-  | 'wall-create-parts';
+  | 'wall-create-parts'
+  | 'manage-phases'
+  | 'manage-global-params';
 
 interface RibbonPanel {
   id: string;
@@ -165,6 +167,8 @@ export interface RibbonBarProps {
   onRepairDuplicateWall?: () => void;
   onRepairOrphan?: () => void;
   onCreateWallParts?: () => void;
+  onOpenManagePhases?: () => void;
+  onOpenManageGlobalParams?: () => void;
   sheetReviewMode?: SheetReviewMode;
   onSheetReviewModeChange?: (mode: SheetReviewMode) => void;
   sheetMarkupShape?: SheetMarkupShape;
@@ -215,6 +219,8 @@ export function RibbonBar({
   onRepairDuplicateWall,
   onRepairOrphan,
   onCreateWallParts,
+  onOpenManagePhases,
+  onOpenManageGlobalParams,
   sheetReviewMode = 'cm',
   onSheetReviewModeChange,
   sheetMarkupShape = 'freehand',
@@ -342,6 +348,8 @@ export function RibbonBar({
       'structural-delete-duplicate-wall': onRepairDuplicateWall,
       'structural-detach-orphan': onRepairOrphan,
       'wall-create-parts': onCreateWallParts,
+      'manage-phases': onOpenManagePhases,
+      'manage-global-params': onOpenManageGlobalParams,
     };
     (actions[command.id] ?? onOpenCommandPalette)?.();
   }
@@ -1245,6 +1253,14 @@ function buildPlanRibbonTabs(
           label: 'Review',
           commands: [action('advisor-open', 'Checks', 'clash', 'plan-checks')],
         },
+        {
+          id: 'manage',
+          label: 'Manage',
+          commands: [
+            action('manage-phases', 'Phases', 'phase', 'ribbon-manage-phases'),
+            action('manage-global-params', 'Parameters', 'tag', 'ribbon-manage-global-params'),
+          ],
+        },
       ],
     },
   ];
@@ -1917,6 +1933,10 @@ function ribbonCapabilityId(command: RibbonCommand): string | null {
       return 'structural.detach-orphan';
     case 'wall-create-parts':
       return 'wall.create-parts';
+    case 'manage-phases':
+      return 'project.manage-phases';
+    case 'manage-global-params':
+      return 'project.manage-global-params';
   }
   return null;
 }

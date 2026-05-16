@@ -115,7 +115,7 @@ describe('<ToolPalette /> — spec §16', () => {
     fireEvent.keyDown(getByRole('toolbar'), { key: 'ArrowRight' });
     expect(onSelect).toHaveBeenLastCalledWith('query');
     fireEvent.keyDown(getByRole('toolbar'), { key: 'ArrowLeft' });
-    expect(onSelect).toHaveBeenLastCalledWith('ceiling'); // wraps backwards from select
+    expect(onSelect).toHaveBeenLastCalledWith('excavation'); // wraps backwards from select
   });
 
   it('keeps Floor enabled without walls because sketch mode owns boundary creation', () => {

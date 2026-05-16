@@ -823,7 +823,7 @@ describe('InspectorPropertiesFor — interior_elevation_marker (WP-A)', () => {
     const { getByTestId } = render(
       InspectorPropertiesFor(marker, t, { onPropertyChange: onChange }),
     );
-    const input = getByTestId('inspector-interior-elevation-radius') as HTMLInputElement;
+    const input = getByTestId('inspector-iel-radius') as HTMLInputElement;
     expect(input).toBeTruthy();
     expect(Number(input.value)).toBe(2500);
   });
@@ -833,7 +833,7 @@ describe('InspectorPropertiesFor — interior_elevation_marker (WP-A)', () => {
     const { getByTestId } = render(
       InspectorPropertiesFor(marker, t, { onPropertyChange: onChange }),
     );
-    const input = getByTestId('inspector-interior-elevation-radius') as HTMLInputElement;
+    const input = getByTestId('inspector-iel-radius') as HTMLInputElement;
     fireEvent.change(input, { target: { value: '4000' } });
     fireEvent.blur(input);
     expect(onChange).toHaveBeenCalledWith('radiusMm', 4000);
@@ -866,18 +866,14 @@ describe('InspectorPropertiesFor — permanent_dimension (WP-A)', () => {
 
   it('shows EQ toggle button when onPropertyChange is provided', () => {
     const onChange = vi.fn();
-    const { getByTestId } = render(
-      InspectorPropertiesFor(dim, t, { onPropertyChange: onChange }),
-    );
+    const { getByTestId } = render(InspectorPropertiesFor(dim, t, { onPropertyChange: onChange }));
     const btn = getByTestId('inspector-permanent-dimension-eq');
     expect(btn).toBeTruthy();
   });
 
   it('EQ button click calls onPropertyChange with eqEnabled toggled', () => {
     const onChange = vi.fn();
-    const { getByTestId } = render(
-      InspectorPropertiesFor(dim, t, { onPropertyChange: onChange }),
-    );
+    const { getByTestId } = render(InspectorPropertiesFor(dim, t, { onPropertyChange: onChange }));
     const btn = getByTestId('inspector-permanent-dimension-eq');
     fireEvent.click(btn);
     expect(onChange).toHaveBeenCalledWith('eqEnabled', true);

@@ -1057,6 +1057,16 @@ export function coerceElement(id: string, raw: Record<string, unknown>): Element
       ...(raw.estimatedVolumeM3 !== undefined || raw.estimated_volume_m3 !== undefined
         ? { estimatedVolumeM3: Number(raw.estimatedVolumeM3 ?? raw.estimated_volume_m3) }
         : {}),
+      ...(Array.isArray(raw.boundaryMm) || Array.isArray(raw.boundary_mm)
+        ? {
+            boundaryMm: ((raw.boundaryMm ?? raw.boundary_mm) as unknown[]).map((p) =>
+              coerceXY((p ?? {}) as Record<string, unknown>),
+            ),
+          }
+        : {}),
+      ...(raw.depthMm !== undefined || raw.depth_mm !== undefined
+        ? { depthMm: Number(raw.depthMm ?? raw.depth_mm) }
+        : {}),
     };
   }
 
@@ -1554,6 +1564,9 @@ export function coerceElement(id: string, raw: Record<string, unknown>): Element
         : {};
     const vfRaw = raw.viewFilters ?? raw.view_filters;
     const viewFilters = Array.isArray(vfRaw) ? (vfRaw as ViewFilter[]) : [];
+    const vgFilters = Array.isArray(raw.vgFilters ?? raw.vg_filters)
+      ? (raw.vgFilters ?? raw.vg_filters)
+      : [];
     return {
       kind: 'plan_view',
       id,
@@ -1598,6 +1611,7 @@ export function coerceElement(id: string, raw: Record<string, unknown>): Element
       ...(prt ? { planRoomTagStyleId: prt } : {}),
       categoryOverrides,
       viewFilters,
+      vgFilters,
     };
   }
 
