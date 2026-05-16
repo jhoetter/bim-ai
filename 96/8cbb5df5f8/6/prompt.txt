@@ -1,0 +1,3 @@
+Terminal 6 — WP-F (Config)
+  cat spec/revit-parity/agent-prompts/WAVE2-WP-F.md | pbcopy
+  Tasks: global parameters dialog, decal placement tool, sloped/inclined columns
