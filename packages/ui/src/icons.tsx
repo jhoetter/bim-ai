@@ -76,6 +76,7 @@ import {
   MoreVerticalIcon,
   MoveIcon,
   OnlineIcon,
+  ScaleIcon,
   OpeningIcon,
   PipeIcon,
   MechanicalEquipmentIcon,
@@ -143,6 +144,7 @@ export const Icons: Record<string, BimIconComponent> = {
   mirror: MirrorIcon,
   move: MoveIcon,
   rotate: RotateIcon,
+  scale: ScaleIcon,
 
   // Drawing tools — all now BIM-native from @bim-ai/icons
   wall: WallIcon,

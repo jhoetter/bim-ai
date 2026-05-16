@@ -802,8 +802,8 @@ Tilted/inclined columns (non-vertical) are not supported.
 Beam tool is in the registry. Beam placement between columns/walls works. No full section profile catalog (I-beam, H-beam, HSS, etc.) as richly populated as Revit's structural content.
 
 ### 9.3 Trägersysteme (beam systems: auto-fill framing between beams)
-**Status: Not Started — P1**
-Beam systems (automatically filling a bay with framing members at set spacing) are not implemented.
+**Status: Partial — G2**
+`beam_system` ElemKind in core, `'beam-system'` tool in toolRegistry (hotkey BS, plan+3D), 3D mesh builder (`meshBuilders.beamSystem.ts`), plan boundary + direction-arrow symbol (`beamSystemPlanSymbol.ts`), click-to-sketch grammar (`toolGrammar.ts` reduceBeamSystem), PlanCanvas.tsx click dispatch → `createBeamSystem` command with default spacing 1200 mm / direction 0°. Inspector and spacing/direction options bar are not yet implemented.
 
 ### 9.4 Streben (braces / diagonal structural members)
 **Status: Implemented — G1**

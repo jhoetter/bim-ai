@@ -28,6 +28,9 @@ import {
   initialCeilingState,
   reduceCeiling,
   type CeilingState,
+  initialBeamSystemState,
+  reduceBeamSystem,
+  type BeamSystemState,
   cycleWallLocationLine,
   areaBoundaryCanClose,
   areaBoundaryRectangleFromDiagonal,
@@ -457,6 +460,7 @@ export function PlanCanvas({
   const columnStateRef = useRef<ColumnState>(initialColumnState());
   const beamStateRef = useRef<BeamState>(initialBeamState());
   const ceilingStateRef = useRef<CeilingState>(initialCeilingState());
+  const beamSystemStateRef = useRef<BeamSystemState>(initialBeamSystemState());
   const marqueeRef = useRef<{
     active: boolean;
     sx: number;
@@ -980,6 +984,8 @@ export function PlanCanvas({
       beamStateRef.current = initialBeamState();
     } else if (planTool === 'ceiling') {
       ceilingStateRef.current = initialCeilingState();
+    } else if (planTool === 'beam-system') {
+      beamSystemStateRef.current = initialBeamSystemState();
     }
   }, [planTool]);
 
@@ -4148,6 +4154,40 @@ export function PlanCanvas({
         bumpGeom((x) => x + 1);
         return;
       }
+      if (planTool === 'beam-system') {
+        const rect = rnd.domElement.getBoundingClientRect();
+        const worldPerPxMm = (2 * camRef.current.half * 1000) / Math.max(1, rect.width);
+        const threshMm = 12 * worldPerPxMm;
+        const fst =
+          beamSystemStateRef.current.phase === 'sketch'
+            ? beamSystemStateRef.current.verticesMm[0]
+            : undefined;
+        if (
+          fst &&
+          (beamSystemStateRef.current as { verticesMm: unknown[] }).verticesMm.length >= 3 &&
+          Math.hypot(sp.xMm - fst.xMm, sp.yMm - fst.yMm) <= threshMm
+        ) {
+          const { effect } = reduceBeamSystem(beamSystemStateRef.current, { kind: 'close-loop' });
+          beamSystemStateRef.current = initialBeamSystemState();
+          if (effect.commitBeamSystem && lvlId) {
+            onSemanticCommand({
+              type: 'createBeamSystem',
+              levelId: lvlId,
+              boundaryPoints: effect.commitBeamSystem.verticesMm,
+              spacingMm: 1200,
+              beamDirection: 0,
+            });
+          }
+        } else {
+          const { state } = reduceBeamSystem(beamSystemStateRef.current, {
+            kind: 'click',
+            pointMm: sp,
+          });
+          beamSystemStateRef.current = state;
+        }
+        bumpGeom((x) => x + 1);
+        return;
+      }
       if (planTool === 'room') {
         if (!lvlId || !sp) return;
         onSemanticCommand({
@@ -4632,6 +4672,8 @@ export function PlanCanvas({
           beamStateRef.current = initialBeamState();
         } else if (planTool === 'ceiling') {
           ceilingStateRef.current = initialCeilingState();
+        } else if (planTool === 'beam-system') {
+          beamSystemStateRef.current = initialBeamSystemState();
         }
         if (
           hadDraft ||
