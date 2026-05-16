@@ -3,6 +3,8 @@
 from bim_ai.engine import (
     Any,
     AttachWallTopToRoofCmd,
+    AttachWallTopCmd,
+    DetachWallTopCmd,
     CreateEdgeProfileRunCmd,
     CreateFloorCmd,
     CreateRoofCmd,
@@ -147,6 +149,34 @@ def try_apply_building_envelope_command(doc, cmd, *, source_provider=None) -> bo
             if not isinstance(r, RoofElem):
                 raise ValueError("attachWallTopToRoof.roofId must reference a Roof")
             els[cmd.wall_id] = w.model_copy(update={"roof_attachment_id": cmd.roof_id})
+
+        case AttachWallTopCmd():
+            w = els.get(cmd.wall_id)
+            if not isinstance(w, WallElem):
+                raise ValueError("attachWallTop.wallId must reference a Wall")
+            target = els.get(cmd.target_id)
+            if target is None:
+                raise ValueError("attachWallTop.targetId must reference an existing element")
+            valid_kinds = {"roof", "floor", "ceiling"}
+            if target.kind not in valid_kinds:
+                raise ValueError(
+                    f"attachWallTop.targetId must reference a roof, floor, or ceiling element"
+                )
+            face = cmd.host_face if cmd.host_face in ("bottom", "top") else "bottom"
+            els[cmd.wall_id] = w.model_copy(
+                update={
+                    "top_constraint_host_id": cmd.target_id,
+                    "top_constraint_host_face": face,
+                }
+            )
+
+        case DetachWallTopCmd():
+            w = els.get(cmd.wall_id)
+            if not isinstance(w, WallElem):
+                raise ValueError("detachWallTop.wallId must reference a Wall")
+            els[cmd.wall_id] = w.model_copy(
+                update={"top_constraint_host_id": None, "top_constraint_host_face": None}
+            )
 
         case CreateStairCmd():
             sid = cmd.id or new_id()

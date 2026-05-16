@@ -2111,3 +2111,308 @@ export function reduceScale(
 
   return { state, effect: { stillActive: true } };
 }
+
+/* ────────────────────────────────────────────────────────────────────── */
+/* Roof-by-Extrusion Tool — G2 (Ch. 10.2)                                  */
+/* idle → activate → recording → double-click/Enter → confirm-depth        */
+/* confirm-depth → set-depth + enter → createRoofByExtrusion effect         */
+/* ────────────────────────────────────────────────────────────────────── */
+
+export type RoofByExtrusionState =
+  | { phase: 'idle' }
+  | { phase: 'recording'; points: { xMm: number; yMm: number }[] }
+  | {
+      phase: 'confirm-depth';
+      points: { xMm: number; yMm: number }[];
+      depthInput: string;
+    };
+
+export type RoofByExtrusionEvent =
+  | { kind: 'activate' }
+  | { kind: 'deactivate' }
+  | { kind: 'click'; xMm: number; yMm: number }
+  | { kind: 'double-click'; xMm: number; yMm: number }
+  | { kind: 'enter' }
+  | { kind: 'escape' }
+  | { kind: 'set-depth'; value: string };
+
+export interface RoofByExtrusionEffect {
+  createRoofByExtrusion?: {
+    profilePoints: { xMm: number; yMm: number }[];
+    depthMm: number;
+    levelId: string;
+    slopeAngleDeg: number;
+  };
+  stillActive: boolean;
+}
+
+export function initialRoofByExtrusionState(): RoofByExtrusionState {
+  return { phase: 'idle' };
+}
+
+export function reduceRoofByExtrusion(
+  state: RoofByExtrusionState,
+  event: RoofByExtrusionEvent,
+  levelId: string,
+): { state: RoofByExtrusionState; effect: RoofByExtrusionEffect } {
+  if (event.kind === 'activate') {
+    return { state: { phase: 'recording', points: [] }, effect: { stillActive: true } };
+  }
+  if (event.kind === 'deactivate') {
+    return { state: { phase: 'idle' }, effect: { stillActive: false } };
+  }
+
+  if (state.phase === 'recording') {
+    if (event.kind === 'click') {
+      return {
+        state: {
+          phase: 'recording',
+          points: [...state.points, { xMm: event.xMm, yMm: event.yMm }],
+        },
+        effect: { stillActive: true },
+      };
+    }
+    if (event.kind === 'double-click' || event.kind === 'enter') {
+      if (state.points.length < 2) {
+        return { state, effect: { stillActive: true } };
+      }
+      return {
+        state: { phase: 'confirm-depth', points: state.points, depthInput: '' },
+        effect: { stillActive: true },
+      };
+    }
+    if (event.kind === 'escape') {
+      return { state: { phase: 'idle' }, effect: { stillActive: false } };
+    }
+  }
+
+  if (state.phase === 'confirm-depth') {
+    if (event.kind === 'set-depth') {
+      return { state: { ...state, depthInput: event.value }, effect: { stillActive: true } };
+    }
+    if (event.kind === 'enter') {
+      const depthMm = parseFloat(state.depthInput.trim());
+      if (!Number.isFinite(depthMm) || depthMm <= 0) {
+        return { state, effect: { stillActive: true } };
+      }
+      return {
+        state: { phase: 'idle' },
+        effect: {
+          createRoofByExtrusion: {
+            profilePoints: state.points,
+            depthMm,
+            levelId,
+            slopeAngleDeg: 0,
+          },
+          stillActive: false,
+        },
+      };
+    }
+    if (event.kind === 'escape') {
+      return { state: { phase: 'idle' }, effect: { stillActive: false } };
+    }
+  }
+
+  return { state, effect: { stillActive: true } };
+}
+
+/* ────────────────────────────────────────────────────────────────────── */
+/* Revision Cloud — E3b                                                    */
+/* Click to add polygon vertices; Enter or double-click to commit.        */
+/* ────────────────────────────────────────────────────────────────────── */
+
+export interface RevisionCloudState {
+  pointsMm: { xMm: number; yMm: number }[];
+}
+
+export function initialRevisionCloudState(): RevisionCloudState {
+  return { pointsMm: [] };
+}
+
+export type RevisionCloudEvent =
+  | { kind: 'click'; pointMm: { xMm: number; yMm: number } }
+  | { kind: 'commit' }
+  | { kind: 'cancel' };
+
+export interface RevisionCloudEffect {
+  commitPointsMm?: { xMm: number; yMm: number }[];
+}
+
+export function reduceRevisionCloud(
+  state: RevisionCloudState,
+  event: RevisionCloudEvent,
+): { state: RevisionCloudState; effect: RevisionCloudEffect } {
+  if (event.kind === 'cancel') {
+    return { state: initialRevisionCloudState(), effect: {} };
+  }
+  if (event.kind === 'commit') {
+    if (state.pointsMm.length >= 2) {
+      return {
+        state: initialRevisionCloudState(),
+        effect: { commitPointsMm: [...state.pointsMm] },
+      };
+    }
+    return { state: initialRevisionCloudState(), effect: {} };
+  }
+  const last = state.pointsMm[state.pointsMm.length - 1];
+  if (last && Math.hypot(event.pointMm.xMm - last.xMm, event.pointMm.yMm - last.yMm) < 1) {
+    return { state, effect: {} };
+  }
+  return { state: { pointsMm: [...state.pointsMm, event.pointMm] }, effect: {} };
+}
+
+/* ────────────────────────────────────────────────────────────────────── */
+/* Decal — 3D surface image placement                                      */
+/* Click a 3D face → prompt for image → commit createDecal effect.        */
+/* ────────────────────────────────────────────────────────────────────── */
+
+export type DecalState =
+  | { phase: 'idle'; positionMm: null; normalVec: null }
+  | {
+      phase: 'picking-image';
+      positionMm: { xMm: number; yMm: number; zMm: number };
+      normalVec: { x: number; y: number; z: number };
+    };
+
+export type DecalEvent =
+  | {
+      kind: 'face-click';
+      positionMm: { xMm: number; yMm: number; zMm: number };
+      normalVec: { x: number; y: number; z: number };
+    }
+  | { kind: 'image-chosen'; imageSrc: string }
+  | { kind: 'cancel' }
+  | { kind: 'deactivate' };
+
+export interface DecalEffect {
+  stillActive: boolean;
+  createDecal?: {
+    positionMm: { xMm: number; yMm: number; zMm: number };
+    normalVec: { x: number; y: number; z: number };
+    imageSrc: string;
+    widthMm: number;
+    heightMm: number;
+  };
+}
+
+export function initialDecalState(): DecalState {
+  return { phase: 'idle', positionMm: null, normalVec: null };
+}
+
+export function reduceDecal(
+  state: DecalState,
+  event: DecalEvent,
+): { state: DecalState; effect: DecalEffect } {
+  if (event.kind === 'deactivate' || event.kind === 'cancel') {
+    return { state: initialDecalState(), effect: { stillActive: false } };
+  }
+  if (state.phase === 'idle') {
+    if (event.kind === 'face-click') {
+      return {
+        state: { phase: 'picking-image', positionMm: event.positionMm, normalVec: event.normalVec },
+        effect: { stillActive: true },
+      };
+    }
+  }
+  if (state.phase === 'picking-image') {
+    if (event.kind === 'image-chosen') {
+      return {
+        state: initialDecalState(),
+        effect: {
+          stillActive: true,
+          createDecal: {
+            positionMm: state.positionMm,
+            normalVec: state.normalVec,
+            imageSrc: event.imageSrc,
+            widthMm: 1000,
+            heightMm: 1000,
+          },
+        },
+      };
+    }
+  }
+  return { state, effect: { stillActive: true } };
+}
+
+/* ────────────────────────────────────────────────────────────────────── */
+/* Attach / Detach — WP-C C1a                                              */
+/* Attach: click wall → pick roof/floor/ceiling target → emit effect.     */
+/* Detach: click a wall to detach its top host.                            */
+/* ────────────────────────────────────────────────────────────────────── */
+
+type AttachState = { phase: 'idle' } | { phase: 'picking-target'; wallId: string };
+
+type AttachEvent =
+  | { kind: 'click'; elementId: string; elementKind: string }
+  | { kind: 'cancel' }
+  | { kind: 'deactivate' };
+
+interface AttachEffect {
+  stillActive: boolean;
+  attachWallTop?: { wallId: string; targetId: string };
+}
+
+export function initialAttachState(): AttachState {
+  return { phase: 'idle' };
+}
+
+export function reduceAttach(
+  state: AttachState,
+  event: AttachEvent,
+): { state: AttachState; effect: AttachEffect } {
+  if (event.kind === 'deactivate') {
+    return { state: { phase: 'idle' }, effect: { stillActive: false } };
+  }
+  if (event.kind === 'cancel') {
+    return { state: { phase: 'idle' }, effect: { stillActive: true } };
+  }
+  if (state.phase === 'idle' && event.kind === 'click') {
+    if (event.elementKind === 'wall') {
+      return {
+        state: { phase: 'picking-target', wallId: event.elementId },
+        effect: { stillActive: true },
+      };
+    }
+    return { state, effect: { stillActive: true } };
+  }
+  if (state.phase === 'picking-target' && event.kind === 'click') {
+    const attachableKinds = ['roof', 'floor', 'ceiling'];
+    if (attachableKinds.includes(event.elementKind)) {
+      return {
+        state: { phase: 'idle' },
+        effect: {
+          stillActive: true,
+          attachWallTop: { wallId: state.wallId, targetId: event.elementId },
+        },
+      };
+    }
+    return { state, effect: { stillActive: true } };
+  }
+  return { state, effect: { stillActive: true } };
+}
+
+type DetachState = { phase: 'idle' };
+
+type DetachEvent = { kind: 'click'; elementId: string; elementKind: string } | { kind: 'cancel' };
+
+interface DetachEffect {
+  stillActive: boolean;
+  detachWallTop?: { wallId: string };
+}
+
+export function initialDetachState(): DetachState {
+  return { phase: 'idle' };
+}
+
+export function reduceDetach(
+  state: DetachState,
+  event: DetachEvent,
+): { state: DetachState; effect: DetachEffect } {
+  if (event.kind === 'cancel') {
+    return { state, effect: { stillActive: false } };
+  }
+  if (event.kind === 'click' && event.elementKind === 'wall') {
+    return { state, effect: { stillActive: true, detachWallTop: { wallId: event.elementId } } };
+  }
+  return { state, effect: { stillActive: true } };
+}

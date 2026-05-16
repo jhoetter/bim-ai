@@ -1249,6 +1249,10 @@ export type Element =
       isCurtainWall?: boolean;
       curtainWallVCount?: number | null;
       curtainWallHCount?: number | null;
+      /** WP-C C2: default panel type for curtain wall cells. */
+      curtainWallPanelType?: string | null;
+      /** WP-C C2: mullion profile type for curtain wall. */
+      curtainWallMullionType?: string | null;
       /**
        * KRN-09 — per-cell panel overrides for curtain walls.
        *
@@ -1267,6 +1271,8 @@ export type Element =
         mullionType?: string;
         panelOverrides?: { [cellKey: string]: string };
         pinnedGridLines?: string[];
+        /** WP-C C2: custom V-division positions as t∈[0,1] along wall length. */
+        customVDivisions?: number[];
       } | null;
       locationLine?: WallLocationLine;
       worksetId?: string | null;

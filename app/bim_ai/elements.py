@@ -512,6 +512,8 @@ class WallElem(BaseModel):
     base_constraint_offset_mm: float = Field(default=0, alias="baseConstraintOffsetMm")
     top_constraint_offset_mm: float = Field(default=0, alias="topConstraintOffsetMm")
     roof_attachment_id: str | None = Field(default=None, alias="roofAttachmentId")
+    top_constraint_host_id: str | None = Field(default=None, alias="topConstraintHostId")
+    top_constraint_host_face: str | None = Field(default=None, alias="topConstraintHostFace")
     insulation_extension_mm: float = Field(default=0, alias="insulationExtensionMm")
     material_key: str | None = Field(default=None, alias="materialKey")
     face_material_overrides: list[MaterialFaceOverride] | None = Field(
@@ -546,6 +548,8 @@ class WallElem(BaseModel):
     circularity: CircularityProperties | None = None
     curtain_wall_v_count: int | None = Field(default=None, alias="curtainWallVCount")
     curtain_wall_h_count: int | None = Field(default=None, alias="curtainWallHCount")
+    curtain_wall_panel_type: str | None = Field(default=None, alias="curtainWallPanelType")
+    curtain_wall_mullion_type: str | None = Field(default=None, alias="curtainWallMullionType")
     curtain_panel_overrides: dict[str, CurtainPanelOverride] | None = Field(
         default=None, alias="curtainPanelOverrides"
     )

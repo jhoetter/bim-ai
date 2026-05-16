@@ -325,9 +325,7 @@ export function coerceElement(id: string, raw: Record<string, unknown>): Element
         : {}),
       ...(raw.topConstraintHostId || raw.top_constraint_host_id
         ? {
-            topConstraintHostId: String(
-              raw.topConstraintHostId ?? raw.top_constraint_host_id,
-            ),
+            topConstraintHostId: String(raw.topConstraintHostId ?? raw.top_constraint_host_id),
           }
         : {}),
       ...(raw.topConstraintHostFace || raw.top_constraint_host_face
@@ -347,6 +345,16 @@ export function coerceElement(id: string, raw: Record<string, unknown>): Element
       insulationExtensionMm: Number(raw.insulationExtensionMm ?? raw.insulation_extension_mm ?? 0),
       ...(raw.isCurtainWall != null || raw.is_curtain_wall != null
         ? { isCurtainWall: Boolean(raw.isCurtainWall ?? raw.is_curtain_wall) }
+        : {}),
+      ...(raw.curtainWallPanelType || raw.curtain_wall_panel_type
+        ? { curtainWallPanelType: String(raw.curtainWallPanelType ?? raw.curtain_wall_panel_type) }
+        : {}),
+      ...(raw.curtainWallMullionType || raw.curtain_wall_mullion_type
+        ? {
+            curtainWallMullionType: String(
+              raw.curtainWallMullionType ?? raw.curtain_wall_mullion_type,
+            ),
+          }
         : {}),
       ...(raw.locationLine || raw.location_line
         ? {

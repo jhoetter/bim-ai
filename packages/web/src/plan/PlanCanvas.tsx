@@ -48,6 +48,12 @@ import {
   initialScaleState,
   reduceScale,
   type ScaleState,
+  initialRoofByExtrusionState,
+  reduceRoofByExtrusion,
+  type RoofByExtrusionState,
+  initialRevisionCloudState,
+  reduceRevisionCloud,
+  type RevisionCloudState,
 } from '../tools/toolGrammar';
 import { buildScaleCommand, distanceMm } from './scaleTool';
 import { columnPositionsAtGridIntersections } from './columnAtGrids';
@@ -310,7 +316,8 @@ type Draft =
       verts: Array<{ xMm: number; yMm: number }>;
       finishCategory: SubdivisionCategory;
     }
-  | { kind: 'slope-annotation'; sx: number; sy: number };
+  | { kind: 'slope-annotation'; sx: number; sy: number }
+  | { kind: 'revision-cloud'; points: Array<{ xMm: number; yMm: number }> };
 
 function nearestWallAt(
   elementsById: Record<string, Element>,
@@ -445,6 +452,10 @@ export function PlanCanvas({
   const [rotateReferenceSet, setRotateReferenceSet] = useState(false);
   const scaleStateRef = useRef<ScaleState>(initialScaleState());
   const [scalePhase, setScalePhase] = useState<ScaleState['phase']>('idle');
+  const roofByExtrusionStateRef = useRef<RoofByExtrusionState>(initialRoofByExtrusionState());
+  const [roofByExtrusionPhase, setRoofByExtrusionPhase] =
+    useState<RoofByExtrusionState['phase']>('idle');
+  const revisionCloudStateRef = useRef<RevisionCloudState>(initialRevisionCloudState());
   const splitStateRef = useRef<SplitState>(initialSplitState());
   const trimStateRef = useRef<TrimState>(initialTrimState());
   const trimExtendFirstWallRef = useRef<string | null>(null);
@@ -1011,6 +1022,14 @@ export function PlanCanvas({
       const { state } = reduceScale(scaleStateRef.current, { kind: 'activate' });
       scaleStateRef.current = state;
       setScalePhase(state.phase);
+    } else if (planTool === 'roof-by-extrusion') {
+      const { state } = reduceRoofByExtrusion(
+        roofByExtrusionStateRef.current,
+        { kind: 'activate' },
+        '',
+      );
+      roofByExtrusionStateRef.current = state;
+      setRoofByExtrusionPhase(state.phase);
     }
   }, [planTool]);
 
@@ -3697,6 +3716,28 @@ export function PlanCanvas({
         bumpGeom((x) => x + 1);
         return;
       }
+      if (planTool === 'revision-cloud') {
+        const { state: rcState, effect: rcEffect } = reduceRevisionCloud(
+          revisionCloudStateRef.current,
+          { kind: 'click', pointMm: { xMm: sp.xMm, yMm: sp.yMm } },
+        );
+        revisionCloudStateRef.current = rcState;
+        if (rcEffect.commitPointsMm && activePlanViewId) {
+          void onSemanticCommand({
+            type: 'createRevisionCloud',
+            hostViewId: activePlanViewId,
+            boundaryMm: rcEffect.commitPointsMm,
+            colour: '#e05000',
+          });
+          revisionCloudStateRef.current = initialRevisionCloudState();
+          draftRef.current = undefined;
+          clearPreview();
+        } else {
+          draftRef.current = { kind: 'revision-cloud', points: rcState.pointsMm };
+        }
+        bumpGeom((x) => x + 1);
+        return;
+      }
       if (planTool === 'align') {
         const { state: nextState, effect } = reduceAlign(alignStateRef.current, {
           kind: 'click',
@@ -4906,6 +4947,33 @@ export function PlanCanvas({
           return;
         }
       }
+      if (planTool === 'revision-cloud') {
+        const d = draftRef.current;
+        if (d && d.kind === 'revision-cloud') {
+          if (ev.key === 'Enter' && d.points.length >= 2 && activePlanViewId) {
+            ev.preventDefault();
+            void onSemanticCommand({
+              type: 'createRevisionCloud',
+              hostViewId: activePlanViewId,
+              boundaryMm: d.points,
+              colour: '#e05000',
+            });
+            revisionCloudStateRef.current = initialRevisionCloudState();
+            draftRef.current = undefined;
+            clearPreview();
+            bumpGeom((x) => x + 1);
+            return;
+          }
+          if (ev.key === 'Escape') {
+            ev.preventDefault();
+            revisionCloudStateRef.current = initialRevisionCloudState();
+            draftRef.current = undefined;
+            clearPreview();
+            bumpGeom((x) => x + 1);
+            return;
+          }
+        }
+      }
       if (planTool === 'detail-region') {
         const dr = draftRef.current;
         if (dr && dr.kind === 'detail-region') {
@@ -5192,6 +5260,23 @@ export function PlanCanvas({
           if (reduced.effect.commitBoundaryMm) {
             commitAreaBoundary(reduced.effect.commitBoundaryMm);
           }
+          return;
+        }
+      }
+      if (planTool === 'revision-cloud') {
+        const d = draftRef.current;
+        if (d && d.kind === 'revision-cloud' && d.points.length >= 2 && activePlanViewId) {
+          ev.preventDefault();
+          void onSemanticCommand({
+            type: 'createRevisionCloud',
+            hostViewId: activePlanViewId,
+            boundaryMm: d.points,
+            colour: '#e05000',
+          });
+          revisionCloudStateRef.current = initialRevisionCloudState();
+          draftRef.current = undefined;
+          clearPreview();
+          bumpGeom((x) => x + 1);
           return;
         }
       }

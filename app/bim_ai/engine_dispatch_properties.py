@@ -616,6 +616,20 @@ def try_apply_properties_command(doc, cmd, *, source_provider=None) -> bool:
                     else:
                         cw = _str_val(cmd.value).lower() in ("true", "1", "yes")
                     els[cmd.element_id] = el.model_copy(update={"is_curtain_wall": cw})
+                elif cmd.key == "curtainWallVCount":
+                    v = cmd.value
+                    count = None if v is None or v == "" else int(float(str(v)))
+                    els[cmd.element_id] = el.model_copy(update={"curtain_wall_v_count": count})
+                elif cmd.key == "curtainWallHCount":
+                    v = cmd.value
+                    count = None if v is None or v == "" else int(float(str(v)))
+                    els[cmd.element_id] = el.model_copy(update={"curtain_wall_h_count": count})
+                elif cmd.key == "curtainWallPanelType":
+                    pt = _str_val(cmd.value) or None
+                    els[cmd.element_id] = el.model_copy(update={"curtain_wall_panel_type": pt})
+                elif cmd.key == "curtainWallMullionType":
+                    mt = _str_val(cmd.value) or None
+                    els[cmd.element_id] = el.model_copy(update={"curtain_wall_mullion_type": mt})
                 elif cmd.key == "roofAttachmentId":
                     rid = _str_val(cmd.value) or None
                     if rid is not None and rid not in els:
@@ -638,7 +652,7 @@ def try_apply_properties_command(doc, cmd, *, source_provider=None) -> bool:
                     els[cmd.element_id] = el.model_copy(update={"name": _str_val(cmd.value)})
                 else:
                     raise ValueError(
-                        "wall updates: key=materialKey | faceMaterialOverrides | isCurtainWall | roofAttachmentId | wallTypeId | heightMm | thicknessMm | name"
+                        "wall updates: key=materialKey | faceMaterialOverrides | isCurtainWall | curtainWallVCount | curtainWallHCount | curtainWallPanelType | curtainWallMullionType | roofAttachmentId | wallTypeId | heightMm | thicknessMm | name"
                     )
             elif isinstance(el, (DoorElem, WindowElem)):
                 raw_v = str(cmd.value).strip() if cmd.value is not None else ""

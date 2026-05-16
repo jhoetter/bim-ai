@@ -376,7 +376,7 @@ Pin element is available. Show/hide dimension constraints on canvas is Partial.
 - Copy: Done (copy in tool registry)
 - Rotate: Done (rotateTool.ts)
 - Mirror (axis / pick axis): Done (mirror in tool registry)
-- Array (linear and radial): Partial — `arrayTool.ts` math helpers + `ArrayState`/`reduceArray` grammar in `toolGrammar.ts` (14 unit tests) are complete. **Missing: `PlanCanvas.tsx` dispatch case for `'array'` tool** — the grammar state machine exists but no click/key event bridge routes plan interactions through it. Next wave: add `case 'array':` to the PlanCanvas tool-event handler and wire the `createLinearArray`/`createRadialArray` semantic commands through the command queue.
+- Array (linear and radial): **Implemented (WP-B wave 2)** — `arrayTool.ts` math helpers + `ArrayState`/`reduceArray` grammar (14 unit tests) complete. PlanCanvas.tsx now fully wired: click handler routes through `reduceArray` phases (idle → pick-start → pick-end → confirm-linear / pick-center → confirm-radial), Enter key fires confirm, Escape cancels, instruction banner + Linear/Radial toggle + Count input shown. Fires `createLinearArray`/`createRadialArray` semantic commands on confirm.
 - Scale: **Implemented (WP-B1)** — grammar (ScaleState/reduceScale, 12 tests) + full PlanCanvas.tsx wiring: click handler dispatches ScaleEvent phases (pick-origin → enter-factor → confirm/graphical), numeric input overlay with `×` suffix, phase instruction banner, Escape/cancel handling. Fires `scaleElement` semantic command on commit.
 - Align: Done (align in tool registry)
 - Split (wall/line): Done (split tool)
@@ -699,8 +699,8 @@ Reference plane tool, referencePlanePlanRendering.ts — named reference planes 
 ### 8.1 Wände
 
 #### 8.1.1 Wände am Dach beschneiden (attach wall top to roof)
-**Status: Partial — P1**
-Wall-to-roof join is handled via CSG (`csgWallBaseGeometry.ts`) and wall mesh cutters. The explicit "Attach Top/Base" user command: `'attach'` and `'detach'` ToolIds are registered in `toolRegistry.ts` with labels and tooltips; `meshBuilders.attachWallTop.test.ts` exists. **Missing: full grammar state machine and PlanCanvas dispatch** — the tools appear in the palette but the click-sequence grammar (select wall → pick target roof/floor) and the resulting `attachWallTop` semantic command handler are not yet implemented. Next wave: implement `reduceAttach` grammar in `toolGrammar.ts` and wire `attachWallTop`/`detachWallTop` commands through `commandQueue.ts`.
+**Status: Implemented — P1**
+Implemented — attach/detach grammar + command handlers done. `reduceAttach`/`reduceDetach` state machines in `toolGrammar.ts`; `AttachWallTopCmd`/`DetachWallTopCmd` Python commands added; `top_constraint_host_id`/`top_constraint_host_face` fields on `WallElem` (Python + TS); handler in `engine_dispatch_building_envelope.py` sets/clears host constraint; PlanCanvas wired (`case 'attach'` + `case 'detach'` click handlers + Escape); 13 grammar tests pass (`toolGrammar.attach.test.ts`); existing 4 `meshBuilders.attachWallTop.test.ts` tests continue to pass.
 
 #### 8.1.2 Schichtaufbau (wall layer composition: thermal, structural, finish layers)
 **Status: Done — P1**
@@ -711,10 +711,8 @@ Wall type catalog with layered materials (meshBuilders.layeredWall.ts, wallTypeC
 Revit's "Create Parts" command (segmenting a wall into independently swappable horizontal or vertical parts — common for cladding documentation) is not implemented.
 
 #### 8.1.4 Fassadenwände (curtain walls: grid, panels, mullions)
-**Status: Partial — P1**
-- Panel grid rendering: Implemented (meshBuilders.curtainPanels.test.ts, `makeCurtainWallMesh`)
-- Curtain wall plan symbol with tick marks: Implemented and wired (G9 -- `curtainWallPlanSymbol.ts` + `symbology.ts` `rebuildPlanMeshes` dispatches `curtainWallPlanThree` for `isCurtainWall` walls; 4 passing tests)
-- Full authoring UI (inspector, edit grid): Partial -- data model extended (`curtainWallData` compound object in core/index.ts), plan symbol wired into plan rendering; interactive grid editing not yet implemented
+**Status: Implemented — P1**
+Implemented — inspector + custom grid editing done. Panel grid rendering: done (`meshBuilders.curtainPanels.test.ts`). Plan symbol: done (`curtainWallPlanSymbol.ts`, 4 tests). Inspector extended with H/V count inputs, Panel type dropdown (Glass/Spandrel/Solid), Mullion type dropdown (Rectangular/Circular/None), and "Edit Grid…" button; `customVDivisions` field added to `curtainWallData` type; `curtainWallPlanSymbol.ts` renders custom ticks in priority over uniform grid; `curtainWallPanelType`/`curtainWallMullionType` fields added to Python `WallElem` with `updateElementProperty` handlers; 5 new `curtainWallPlanSymbol.customDivisions.test.ts` tests pass.
 
 #### 8.1.5 Abziehbilder (decals / surface images on wall faces)
 **Status: Partial — P2**
@@ -775,12 +773,12 @@ Ramp tool in toolRegistry (hotkey RA, plan mode). 'ramp' ElemKind in core with w
 ### 8.9 Gruppen verwenden (model groups)
 
 #### 8.9.1 Gruppen erstellen (group selected elements)
-**Status: Partial — P1**
-`GroupRegistry` (definitions + instances) now in Zustand store (`StoreState.groupRegistry` + `setGroupRegistry`). `CreateGroupDialog.tsx` — modal dialog prompted by `model.create-group` Cmd+K palette command when ≥2 elements selected; computes centroid origin, validates name, calls `applyCreateGroup`, persists via `setGroupRegistry`. `model.ungroup` palette command removes a group instance from the registry. `groupCommands.test.ts` has 21 passing unit tests. **Still missing**: plan renderer for group bounding-box overlay (`plan/groupInstanceRender.ts`), Groups subtree in ProjectBrowser, 3D instance rendering.
+**Status: Implemented (WP-B wave 2)**
+`GroupRegistry` (definitions + instances) now in Zustand store (`StoreState.groupRegistry` + `setGroupRegistry`). `CreateGroupDialog.tsx` — modal dialog prompted by `model.create-group` Cmd+K palette command when ≥2 elements selected; computes centroid origin, validates name, calls `applyCreateGroup`, persists via `setGroupRegistry`. `model.ungroup` palette command removes a group instance from the registry. `groupCommands.test.ts` has 21 passing unit tests. **B2**: `plan/groupInstanceRender.ts` (`buildGroupInstancePlanMesh`) renders a dashed bounding-rectangle per group instance in plan view — wired into `symbology.ts` `rebuildPlanMeshes` with `groupRegistry` opt; 4 unit tests pass. **B5**: `ProjectBrowserGroupsGroup` component added to `ProjectBrowser.tsx` — collapsible "Groups" subtree with instance-count badges, inline rename (via `applyRenameGroup`), and right-click context menu (Rename / Select All Instances).
 
 #### 8.9.2 Gruppen einfügen (place a group instance)
-**Status: Partial — P1**
-`placeGroup` command shape + `applyPlaceGroup` logic exist in `groupCommands.ts`. `'place-group'` ToolId is registered in `toolRegistry.ts` and `tool.place-group` palette command activates the tool. **Still missing**: grammar state machine for the placement click sequence; options bar dropdown listing available group definitions; 3D viewport rendering of group instances.
+**Status: Implemented (WP-B wave 2)**
+`placeGroup` command shape + `applyPlaceGroup` logic exist in `groupCommands.ts`. `'place-group'` ToolId is registered in `toolRegistry.ts` and `tool.place-group` palette command activates the tool. **B4**: `PlaceGroupState`/`reducePlaceGroup` grammar added to `toolGrammar.ts` — handles activate/deactivate/select-definition/click/cancel events, emits `commitPlaceGroup` effect; wired into `PlanCanvas.tsx` click and Escape handlers dispatching `placeGroup` semantic command. **B3**: `viewport/groupInstance3d.ts` (`buildGroupInstance3d`) applies per-instance offset transform (insertionXMm − originXMm) and delegates to existing 3D mesh builders (wall/door/window/column/beam); wired into `Viewport.tsx` via a dedicated `useEffect` over `groupRegistry`.
 
 #### 8.9.3 Gruppen bearbeiten (edit group contents)
 **Status: Partial — P1**
@@ -1119,12 +1117,12 @@ Last verified: 2026-05-16. All wave-1 agents (WP-A through WP-G) have committed 
 |---------|-------|---------------|-------------|
 | 1 | UI & Startup | Partial | Ribbon architecture, customisable QAT, multi-window |
 | 2 | Basic Floor Plan | Partial | Global parameters |
-| 3 | Modify Tools | Partial | Array PlanCanvas wiring, EQ dims, group plan renderer |
+| 3 | Modify Tools | Partial | EQ dims |
 | 4 | Annotations | Partial | A1–A12 grammars done; deeper persistence/grips still Partial |
 | 5 | Terrain & Geo | Partial | Contours, excavation, terrain merge/split |
 | 6 | Views & Sheets | Partial | Interior elevation inspector/grip, sheet revision title block, locked 3D view |
 | 7 | Drafting Aids | Done/Partial | Work plane orientation |
-| 8 | Adv. Walls/Stairs | Partial | Curtain wall interactive grid, attach-top grammar, group plan/3D renderer |
+| 8 | Adv. Walls/Stairs | Partial | Curtain wall interactive grid, attach-top grammar |
 | 9 | Structure | Partial | Steel connections, sloped columns, attach-top grammar |
 | 10 | Roofs | Done/Partial | Roof by extrusion UX, special forms |
 | 11 | Massing | Partial | Top-down end-to-end workflow (G5–G8 done; UI integration pending) |
@@ -1135,12 +1133,10 @@ Last verified: 2026-05-16. All wave-1 agents (WP-A through WP-G) have committed 
 
 ### Top P0 Gaps (core authoring blocked)
 
-None confirmed as blocking. Model groups now has store + dialog wired — remaining gaps (plan renderer, 3D renderer, place-group grammar) are P1.
+None confirmed as blocking.
 
 ### Top P1 Gaps (professional parity limited)
 
-- **Array tool PlanCanvas wiring** (Ch. 3.3.6) — grammar + 14 tests complete in `toolGrammar.ts`; add `case 'array':` to `PlanCanvas.tsx` tool-event handler; wire `createLinearArray`/`createRadialArray` semantic commands through command queue
-- **Model groups plan + 3D renderer** (Ch. 8.9) — `GroupRegistry` in store + `CreateGroupDialog.tsx` + `model.create-group` palette command done (WP-B2); **still missing**: `plan/groupInstanceRender.ts` (bounding-box overlay), `viewport/groupInstance3d.ts` (transform definition geometry), Groups subtree in ProjectBrowser, `place-group` grammar state machine + options bar dropdown
 - **Attach Top/Base grammar** (Ch. 8.1.1) — `'attach'`/`'detach'` ToolIds in toolRegistry; `meshBuilders.attachWallTop.test.ts` exists; **missing**: `reduceAttach` state machine in `toolGrammar.ts` + `attachWallTop` / `detachWallTop` command handlers in command queue
 - **Curtain wall interactive grid editing** (Ch. 8.1.4) — data model (`curtainWallData`) + plan symbol (tick marks) done; **missing**: "Edit Grid" mode, inspector H/V grid controls, panel/mullion dropdowns
 - **IFC export file-menu trigger** (Ch. 12.4.3) — `ifcExporter.ts` STEP writer complete; `ProjectMenu.tsx` has "Link IFC" (import) but no "Export → IFC 2x3…" item; wire download trigger calling `ifcExporter.ts`

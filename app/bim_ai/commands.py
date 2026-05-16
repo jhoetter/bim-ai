@@ -882,6 +882,21 @@ class AttachWallTopToRoofCmd(BaseModel):
     roof_id: str = Field(alias="roofId")
 
 
+class AttachWallTopCmd(BaseModel):
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+    type: Literal["attachWallTop"] = "attachWallTop"
+    wall_id: str = Field(alias="wallId")
+    target_id: str = Field(alias="targetId")
+    target_kind: str = Field(alias="targetKind", default="roof")
+    host_face: str = Field(alias="hostFace", default="bottom")
+
+
+class DetachWallTopCmd(BaseModel):
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+    type: Literal["detachWallTop"] = "detachWallTop"
+    wall_id: str = Field(alias="wallId")
+
+
 class CreateStairCmd(BaseModel):
     model_config = ConfigDict(populate_by_name=True, extra="ignore")
     type: Literal["createStair"] = "createStair"
@@ -3717,6 +3732,8 @@ Command = Annotated[
     | CreateRoofCmd
     | ExtendFloorInsulationCmd
     | AttachWallTopToRoofCmd
+    | AttachWallTopCmd
+    | DetachWallTopCmd
     | CreateStairCmd
     | SetStairSubKindCmd
     | UpdateStairTreadsCmd
