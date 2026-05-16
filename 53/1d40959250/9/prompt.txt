@@ -92,3 +92,11 @@ You are resuming a crashed agent session on the bim-ai repo
   - toolRegistry.ts is shared — always rebase before editing
   - pnpm test --filter @bim-ai/web before each push
   - Update spec/revit-parity/revit2026-parity-tracker.md as you complete items
+
+---
+
+did you update the tracker accordingly? or are you not done yet?
+
+---
+
+is the tracker updated again?
