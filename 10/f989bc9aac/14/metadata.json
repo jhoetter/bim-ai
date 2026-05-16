@@ -1,0 +1,57 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "10f989bc9aac",
+  "session_id": "69960444-5899-49ad-a629-6e77658f9ddf",
+  "strategy": "manual-commit",
+  "created_at": "2026-05-16T09:22:03.987507Z",
+  "branch": "main",
+  "checkpoints_count": 2,
+  "files_touched": [
+    "packages/web/src/plan/PlanCanvas.tsx",
+    "packages/web/src/workspace/shell/RibbonBar.tsx"
+  ],
+  "agent": "Claude Code",
+  "model": "claude-sonnet-4-6",
+  "turn_id": "41804fefb714",
+  "token_usage": {
+    "input_tokens": 724,
+    "cache_creation_tokens": 948621,
+    "cache_read_tokens": 65794804,
+    "output_tokens": 257895,
+    "api_call_count": 674
+  },
+  "session_metrics": {
+    "turn_count": 2
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-05-16T09:22:03.793351Z",
+    "agent_lines": 219,
+    "agent_removed": 19,
+    "human_added": 85,
+    "human_modified": 0,
+    "human_removed": 0,
+    "total_committed": 304,
+    "total_lines_changed": 324,
+    "agent_percentage": 73.4567901234568,
+    "metric_version": 2
+  },
+  "prompt_attributions": [
+    {
+      "checkpoint_number": 2,
+      "user_lines_added": 0,
+      "user_lines_removed": 0,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0
+    },
+    {
+      "checkpoint_number": 3,
+      "user_lines_added": 37,
+      "user_lines_removed": 0,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0,
+      "user_added_per_file": {
+        "packages/web/tmp/ux-next-wp45-50-20260516/summary.json": 37
+      }
+    }
+  ]
+}
