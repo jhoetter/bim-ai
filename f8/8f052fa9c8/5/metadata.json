@@ -1,0 +1,118 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "f88f052fa9c8",
+  "session_id": "862fe2b4-358e-497f-8622-d5ee6a14aef1",
+  "strategy": "manual-commit",
+  "created_at": "2026-05-16T00:12:37.78358Z",
+  "branch": "main",
+  "checkpoints_count": 5,
+  "files_touched": [
+    "packages/web/src/plan/PlanCanvas.toolDestubs.test.ts",
+    "packages/web/src/plan/PlanCanvas.tsx",
+    "packages/web/src/plan/wallPickLines.test.ts",
+    "packages/web/src/plan/wallPickLines.ts",
+    "packages/web/src/tools/authoringCommandContract.ts",
+    "packages/web/tmp/ux-next-wp44-picklines-20260515/01-wall-tool-pick-floor-edge-preview.png",
+    "packages/web/tmp/ux-next-wp44-picklines-20260515/02-wall-tool-pick-floor-edge-created.png",
+    "packages/web/tmp/ux-next-wp44-picklines-20260515/03-wall-tool-pick-floor-edge-duplicate-blocked.png",
+    "packages/web/tmp/ux-next-wp44-picklines-20260515/04-wall-tool-pick-dxf-line-preview.png",
+    "packages/web/tmp/ux-next-wp44-picklines-20260515/05-wall-tool-pick-dxf-line-created.png",
+    "packages/web/tmp/ux-next-wp44-picklines-20260515/capture.mjs",
+    "packages/web/tmp/ux-next-wp44-picklines-20260515/summary.json"
+  ],
+  "agent": "Claude Code",
+  "model": "claude-sonnet-4-6",
+  "turn_id": "4c76973ab00d",
+  "checkpoint_transcript_start": 914,
+  "transcript_lines_at_start": 914,
+  "token_usage": {
+    "input_tokens": 194,
+    "cache_creation_tokens": 508391,
+    "cache_read_tokens": 15284146,
+    "output_tokens": 83376,
+    "api_call_count": 170
+  },
+  "session_metrics": {
+    "turn_count": 12
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-05-16T00:12:36.098182Z",
+    "agent_lines": 0,
+    "agent_removed": 6533,
+    "human_added": 35,
+    "human_modified": 12,
+    "human_removed": 0,
+    "total_committed": 35,
+    "total_lines_changed": 6580,
+    "agent_percentage": 99.28571428571429,
+    "metric_version": 2
+  },
+  "prompt_attributions": [
+    {
+      "checkpoint_number": 1,
+      "user_lines_added": 0,
+      "user_lines_removed": 0,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0
+    },
+    {
+      "checkpoint_number": 2,
+      "user_lines_added": 0,
+      "user_lines_removed": 0,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0
+    },
+    {
+      "checkpoint_number": 3,
+      "user_lines_added": 203,
+      "user_lines_removed": 0,
+      "agent_lines_added": 816,
+      "agent_lines_removed": 34,
+      "user_added_per_file": {
+        "spec/revit-parity/agent-prompts/WP-D-views-sheets-rcp.prompt.md": 203
+      }
+    },
+    {
+      "checkpoint_number": 4,
+      "user_lines_added": 457,
+      "user_lines_removed": 2,
+      "agent_lines_added": 1056,
+      "agent_lines_removed": 60,
+      "user_added_per_file": {
+        "packages/web/src/workspace/sheets/sectionViewportSvg.tsx": 18,
+        "spec/revit-parity/agent-prompts/WP-D-views-sheets-rcp.prompt.md": 203,
+        "spec/revit-parity/agent-prompts/WP-F-phases-and-project-config.prompt.md": 236
+      },
+      "user_removed_per_file": {
+        "packages/web/src/workspace/sheets/sectionViewportSvg.tsx": 2
+      }
+    },
+    {
+      "checkpoint_number": 5,
+      "user_lines_added": 252,
+      "user_lines_removed": 4,
+      "agent_lines_added": 1310,
+      "agent_lines_removed": 62,
+      "user_added_per_file": {
+        "packages/web/src/workspace/sheets/sectionViewportSvg.tsx": 49,
+        "spec/revit-parity/agent-prompts/WP-D-views-sheets-rcp.prompt.md": 203
+      },
+      "user_removed_per_file": {
+        "packages/web/src/workspace/sheets/sectionViewportSvg.tsx": 4
+      }
+    },
+    {
+      "checkpoint_number": 6,
+      "user_lines_added": 47,
+      "user_lines_removed": 12,
+      "agent_lines_added": 1314,
+      "agent_lines_removed": 104,
+      "user_added_per_file": {
+        "packages/web/tmp/ux-next-wp44-picklines-20260515/capture.mjs": 47
+      },
+      "user_removed_per_file": {
+        "packages/web/tmp/ux-next-wp44-picklines-20260515/capture.mjs": 12
+      }
+    }
+  ]
+}
