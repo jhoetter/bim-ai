@@ -3,7 +3,7 @@
   "checkpoint_id": "962a6ef12fea",
   "strategy": "manual-commit",
   "branch": "main",
-  "checkpoints_count": 6,
+  "checkpoints_count": 7,
   "files_touched": [
     "packages/web/src/viewport/SunAnimationPanel.test.ts",
     "packages/web/src/viewport/SunAnimationPanel.tsx",
@@ -82,13 +82,19 @@
       "transcript": "/96/2a6ef12fea/11/full.jsonl",
       "content_hash": "/96/2a6ef12fea/11/content_hash.txt",
       "prompt": "/96/2a6ef12fea/11/prompt.txt"
+    },
+    {
+      "metadata": "/96/2a6ef12fea/12/metadata.json",
+      "transcript": "/96/2a6ef12fea/12/full.jsonl",
+      "content_hash": "/96/2a6ef12fea/12/content_hash.txt",
+      "prompt": "/96/2a6ef12fea/12/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 3327550,
-    "cache_creation_tokens": 3405129,
-    "cache_read_tokens": 358949181,
-    "output_tokens": 1238442,
-    "api_call_count": 4467
+    "input_tokens": 3328007,
+    "cache_creation_tokens": 3894447,
+    "cache_read_tokens": 393441064,
+    "output_tokens": 1348639,
+    "api_call_count": 4829
   }
 }
