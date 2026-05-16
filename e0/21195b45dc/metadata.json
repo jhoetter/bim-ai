@@ -3,7 +3,7 @@
   "checkpoint_id": "e021195b45dc",
   "strategy": "manual-commit",
   "branch": "main",
-  "checkpoints_count": 1,
+  "checkpoints_count": 2,
   "files_touched": [
     "packages/web/src/plan/SketchCanvas.tsx",
     "packages/web/src/plan/interiorElevationMarker.test.ts",
@@ -33,13 +33,19 @@
       "transcript": "/e0/21195b45dc/3/full.jsonl",
       "content_hash": "/e0/21195b45dc/3/content_hash.txt",
       "prompt": "/e0/21195b45dc/3/prompt.txt"
+    },
+    {
+      "metadata": "/e0/21195b45dc/4/metadata.json",
+      "transcript": "/e0/21195b45dc/4/full.jsonl",
+      "content_hash": "/e0/21195b45dc/4/content_hash.txt",
+      "prompt": "/e0/21195b45dc/4/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 7665014,
+    "input_tokens": 12467589,
     "cache_creation_tokens": 0,
-    "cache_read_tokens": 178718080,
-    "output_tokens": 432068,
-    "api_call_count": 1326
+    "cache_read_tokens": 298519552,
+    "output_tokens": 717161,
+    "api_call_count": 2466
   }
 }
