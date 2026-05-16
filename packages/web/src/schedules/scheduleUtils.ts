@@ -7,6 +7,7 @@ export type TabKey =
   | 'rooms'
   | 'doors'
   | 'windows'
+  | 'columns'
   | 'finishes'
   | 'floors'
   | 'roofs'
@@ -37,6 +38,8 @@ export function tabToPresetCategory(tab: TabKey): SchedulePresetCategory | null 
       return 'door';
     case 'windows':
       return 'window';
+    case 'columns':
+      return 'column';
     case 'finishes':
       return 'finish';
     case 'assemblies':
@@ -76,6 +79,10 @@ export function scheduleGroupingKeyChoices(tab: TabKey): readonly string[] {
 
     case 'windows': {
       return ['levelId', 'familyTypeId', 'wallId', 'hostWallTypeId', 'hostWallTypeDisplay'];
+    }
+
+    case 'columns': {
+      return ['levelId', 'structuralMaterial'];
     }
 
     case 'rooms': {
@@ -148,6 +155,10 @@ export function scheduleSortKeyChoices(tab: TabKey): readonly string[] {
         'materialKey',
         'materialDisplay',
       ];
+    }
+
+    case 'columns': {
+      return ['name', 'elementId', 'level', 'bMm', 'hMm', 'heightMm', 'structuralMaterial'];
     }
 
     case 'windows': {
@@ -275,6 +286,7 @@ export function levelFilterFieldForTab(
     case 'rooms':
     case 'doors':
     case 'windows':
+    case 'columns':
     case 'floors':
     case 'finishes':
     case 'plans':

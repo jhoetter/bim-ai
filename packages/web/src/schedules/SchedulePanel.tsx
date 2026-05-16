@@ -18,6 +18,10 @@ import { scheduleTotalsReadoutParts } from './schedulePayloadTotals';
 import { buildScheduleTableModelV1, type ScheduleTableModelV1 } from './scheduleTableRenderer';
 import { roomFinishScheduleEvidenceReadoutParts } from './roomFinishScheduleEvidenceReadout';
 import { stairScheduleEvidenceReadoutLines } from './stairScheduleEvidenceReadout';
+import { buildDoorSchedule } from './doorSchedule';
+import { buildWindowSchedule } from './windowSchedule';
+import { buildColumnSchedule } from './columnSchedule';
+import { ScheduleTable } from './ScheduleTable';
 import { compactScheduleOpeningAdvisoryLines } from './scheduleOpeningAdvisoriesReadout';
 import { compactScheduleSheetExportParityAdvisoryLines } from './scheduleSheetExportParityReadout';
 import type { SchedulePresetCategory } from './scheduleDefinitionPresets';
@@ -164,6 +168,8 @@ export function SchedulePanel(props: {
         return sidDoors;
       case 'windows':
         return sidWins;
+      case 'columns':
+        return undefined;
       case 'finishes':
         return sidFinishes;
       case 'floors':
@@ -375,6 +381,18 @@ export function SchedulePanel(props: {
           a.widthMm - b.widthMm,
       );
   }, [props.activeLevelId, props.elementsById, levelLabels, wallLevel]);
+
+  const doorScheduleRows = useMemo(
+    () => buildDoorSchedule(props.elementsById),
+    [props.elementsById],
+  );
+
+  const windowScheduleRows = useMemo(
+    () => buildWindowSchedule(props.elementsById),
+    [props.elementsById],
+  );
+
+  const columnRows = useMemo(() => buildColumnSchedule(props.elementsById), [props.elementsById]);
 
   const sheets = useMemo(
     () =>
@@ -926,22 +944,24 @@ export function SchedulePanel(props: {
         <div className="ms-auto flex flex-wrap gap-1">
           {(
             [
-              ['rooms', 'Rooms'],
-              ['doors', 'Doors'],
-              ['windows', 'Windows'],
-              ['finishes', 'Finishes'],
-              ['floors', 'Floors'],
-              ['roofs', 'Roofs'],
-              ['stairs', 'Stairs'],
-              ['plans', 'Plans'],
-              ['views', 'Views'],
-              ['sheets', 'Sheets'],
-              ['assemblies', 'Assemblies'],
+              ['rooms', 'Rooms', undefined],
+              ['doors', 'Doors', 'schedule-tab-doors'],
+              ['windows', 'Windows', 'schedule-tab-windows'],
+              ['columns', 'Columns', 'schedule-tab-columns'],
+              ['finishes', 'Finishes', undefined],
+              ['floors', 'Floors', undefined],
+              ['roofs', 'Roofs', undefined],
+              ['stairs', 'Stairs', undefined],
+              ['plans', 'Plans', undefined],
+              ['views', 'Views', undefined],
+              ['sheets', 'Sheets', undefined],
+              ['assemblies', 'Assemblies', undefined],
             ] as const
-          ).map(([k, label]) => (
+          ).map(([k, label, testId]) => (
             <button
               key={k}
               type="button"
+              data-testid={testId}
               className={[
                 'rounded px-2 py-0.5 text-[10px]',
 
@@ -1099,31 +1119,19 @@ export function SchedulePanel(props: {
             {renderGroupedDoorsOrWindows(groupedDoors, 'door')}
             {renderTotals()}
           </div>
-        ) : !doorRows.length ? (
-          <div className="mt-3 text-[11px] text-muted">No doors in this projection.</div>
         ) : (
           <div className="mt-2">
-            <VirtualScrollRows
-              maxHeightPx={SCHED_TABLE_VIEWPORT_PX}
-              rowHeightPx={SCHED_TABLE_ROW_PX}
-              colSpan={4}
-              rows={doorRows}
-              header={
-                <tr>
-                  <th>Name</th>
-                  <th>Level</th>
-                  <th className="text-right">W mm</th>
-                  <th>Type</th>
-                </tr>
-              }
-              renderRow={(r) => (
-                <tr className="border-t border-border/60">
-                  <td>{r.name}</td>
-                  <td className="text-muted">{r.level}</td>
-                  <td className="text-right">{r.widthMm}</td>
-                  <td className="text-[10px] text-muted">{r.familyKey}</td>
-                </tr>
-              )}
+            <ScheduleTable
+              rows={doorScheduleRows}
+              columns={[
+                { key: 'mark', label: 'Mark' },
+                { key: 'typeId', label: 'Type' },
+                { key: 'widthMm', label: 'Width (mm)' },
+                { key: 'heightMm', label: 'Height (mm)' },
+                { key: 'levelName', label: 'Level' },
+                { key: 'count', label: 'Count' },
+              ]}
+              emptyMessage="No doors in this projection."
             />
             {srvActive ? renderTotals() : null}
           </div>
@@ -1169,6 +1177,24 @@ export function SchedulePanel(props: {
             {srvActive ? renderTotals() : null}
           </div>
         )
+      ) : null}
+
+      {tab === 'columns' ? (
+        <div className="mt-2" data-testid="schedule-columns-table">
+          <ScheduleTable
+            rows={columnRows}
+            columns={[
+              { key: 'mark', label: 'Mark' },
+              { key: 'typeId', label: 'Type' },
+              { key: 'widthMm', label: 'Width (mm)' },
+              { key: 'depthMm', label: 'Depth (mm)' },
+              { key: 'heightMm', label: 'Height (mm)' },
+              { key: 'levelName', label: 'Level' },
+              { key: 'count', label: 'Count' },
+            ]}
+            emptyMessage="No columns in this model."
+          />
+        </div>
       ) : null}
 
       {tab === 'floors' ||

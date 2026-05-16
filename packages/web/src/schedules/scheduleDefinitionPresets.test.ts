@@ -15,10 +15,10 @@ describe('scheduleDefinitionPresets', () => {
     expect(room).toEqual(['room-core-area', 'room-programme']);
 
     const door = presetsForCategory('door').map((p) => p.id);
-    expect(door).toEqual(['door-host-identity', 'door-opening-qto']);
+    expect(door).toEqual(['door-host-identity', 'door-opening-qto', 'doors']);
 
     const win = presetsForCategory('window').map((p) => p.id);
-    expect(win).toEqual(['window-glazing-host', 'window-opening-qto']);
+    expect(win).toEqual(['window-glazing-host', 'window-opening-qto', 'windows']);
 
     const asm = presetsForCategory('material_assembly').map((p) => p.id);
     expect(asm).toEqual(['assembly-layer-takeoff']);
@@ -29,7 +29,7 @@ describe('scheduleDefinitionPresets', () => {
     expect(presetsForCategory('structural_wall').map((p) => p.id)).toEqual([
       'structure-bearing-walls',
     ]);
-    expect(presetsForCategory('column').map((p) => p.id)).toEqual(['structure-columns']);
+    expect(presetsForCategory('column').map((p) => p.id)).toEqual(['columns', 'structure-columns']);
     expect(presetsForCategory('beam').map((p) => p.id)).toEqual(['structure-beams']);
     expect(presetsForCategory('foundation').map((p) => p.id)).toEqual(['structure-foundations']);
     expect(presetsForCategory('opening_load_bearing_wall').map((p) => p.id)).toEqual([
