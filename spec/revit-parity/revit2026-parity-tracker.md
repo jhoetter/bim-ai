@@ -473,8 +473,8 @@ Dimension tool is in the tool registry. autoDimension.ts, tempDimensions.ts, hel
 Aligned dimension placement is partially implemented. Creating a full Revit-style permanent dimension chain clicking multiple reference lines is partial.
 
 #### 4.2.2 EQ-Bedingung (equal constraint on dimension chain)
-**Status: Partial — P2 (EQ toggle and visual display implemented)**
-`permanent_dimension` element type added to `@bim-ai/core` with `witnessPointsMm[]`, `offsetMm`, and `eqEnabled` flag. Plan rendering in `permanentDimensionThree()` draws witness lines between each adjacent pair of witness points and: when `eqEnabled` is false renders per-segment length labels; when `eqEnabled` is true renders a single "EQ" label at the span midpoint. Inspector shows segment count and an EQ toggle button (`data-testid="inspector-permanent-dimension-eq"`). Parametric enforcement (driving actual spacings equal) is Not Started.
+**Status: Partial — P2 (EQ toggle, visual display, and command handler implemented; parametric enforcement pending)**
+`permanent_dimension` element type in `@bim-ai/core` with `witnessPointsMm[]`, `offsetMm`, and `eqEnabled` flag (wave 5 WP-E). Plan rendering in `permanentDimensionThree()`: when `eqEnabled` false renders per-segment length labels; when true renders "EQ" labels at each segment midpoint and a blue EQ toggle circle button (`userData.eqToggle = true`, color `#2563eb`). `toggle_dim_eq` command (`{ type: 'toggle_dim_eq'; dimensionId: string }`) handled in `Workspace.tsx` to flip `eqEnabled`. Inspector EQ toggle button (`data-testid="inspector-permanent-dimension-eq"`). Tests in `eqDimension.test.ts`. Still missing: parametric enforcement (actually driving element spacings equal when EQ is active).
 
 #### 4.2.3 Fensterbreiten und Wandlängen gleichsetzen (equalise window widths/wall lengths via EQ)
 **Status: Not Started — P1**
@@ -624,8 +624,8 @@ Reflected ceiling plans (RCP) are implemented as `planViewSubtype: 'ceiling_plan
 Elevation tool and elevation marker exist. Four cardinal elevation views are auto-created with a new project in Revit. In bim-ai, elevation views must be placed manually. Elevation view rendering from the model (showing actual geometry in 2D elevation projection) is in sectionViewportSvg.tsx/sectionViewportDoc.ts — Partial.
 
 #### 6.1.5 Innenansichten (interior elevation views)
-**Status: Partial — D2 (inspector+grip done; full elevation-view rendering is separate)**
-Interior elevation placement: `interior-elevation` tool (hotkey `IE`) added to plan palette. Single-click dispatches `create_interior_elevation_marker` command; server auto-creates four `elevation_view` children (N/S/E/W). `interior_elevation_marker` element type in `@bim-ai/core` with `positionMm`, `levelId`, `radiusMm`, and `elevationViewIds` (N/S/E/W). Plan symbol: 4-quadrant circle with inward arrows rendered in `symbology.ts`. Inspector panel (radius, levelId) and drag-grip implemented in wave 2 WP-A.
+**Status: Partial — D2 (inspector+quadrant selector done; full elevation-view rendering is separate)**
+Interior elevation placement: `interior-elevation` tool (hotkey `IE`) added to plan palette. Single-click dispatches `create_interior_elevation_marker` command; server auto-creates four `elevation_view` children (N/S/E/W). `interior_elevation_marker` element type in `@bim-ai/core` with `positionMm`, `levelId`, `radiusMm`, `activeQuadrants?: ('N'|'S'|'E'|'W')[]`, and `elevationViewIds` (N/S/E/W). Plan symbol: 4-quadrant circle with inward arrows rendered in `symbology.ts`. Inspector panel (wave 5 WP-C): radius input (`data-testid="inspector-iel-radius"`), level select (`data-testid="inspector-iel-level"`), quadrant checkboxes (`data-testid="inspector-iel-quadrants"`), drag-grip. Tests in `interiorElevationInspector.test.tsx`. Full elevation geometry rendering from the 3D model is still Partial.
 
 #### 6.1.6 Schnittansicht (section view: cross section, building section)
 **Status: Partial — P1**
@@ -707,7 +707,7 @@ Wall type catalog with layered materials (meshBuilders.layeredWall.ts, wallTypeC
 
 #### 8.1.3 Teileelemente erstellen (wall parts: segment a wall into independently controllable parts)
 **Status: Partial — P1**
-`parts?: Array<{ id, startT, endT, materialId? }>` data model added to `wall` element in `packages/core/src/index.ts`. "Create Parts" ribbon action (`'wall-create-parts'` RibbonActionId) added to the Modify | Wall contextual tab (Parts panel). `buildEqualParts(n)` helper splits the wall into n equal segments (4 tests in `wallParts.test.ts`). Full rendering of individual parts in plan and 3D inspector is not yet implemented.
+`parts?: Array<{ id, startT, endT, materialId? }>` data model added to `wall` element in `packages/core/src/index.ts`. "Create Parts" ribbon action (`'wall-create-parts'` RibbonActionId) added to the Modify | Wall contextual tab (Parts panel). `buildEqualParts(n)` helper splits the wall into n equal segments (4 tests in `wallParts.test.ts`). 3D rendering: `makeWallMesh` returns a `THREE.Group` with named `wall-part-{id}` children when `wall.parts?.length > 0` — each part rendered as a BoxGeometry at the correct offset. Plan rendering: `planWallMesh` adds per-part filled rect overlays with material-resolved color at 40% opacity, `userData.partId`. Still missing: part-level inspector panel (editing individual part properties), part-specific material picker UI.
 
 #### 8.1.4 Fassadenwände (curtain walls: grid, panels, mullions)
 **Status: Implemented — P1**
@@ -967,7 +967,7 @@ DWG export is not implemented.
 
 #### 12.4.3 Exportieren nach CAD (DWG/DXF/DGN export) + IFC Export
 **Status: Partial — P1**
-No DWG or DGN export. DXF export is implemented (see below).
+DGN export not implemented. DWG export (wave 5 WP-F): `exportSceneToDwg()` in `dwgExport.ts` produces a DXF string with `AC1015` (R2000) HEADER section and `.dwg` extension + `application/acad` MIME type — functionally a text DXF, not true binary DWG, but sufficient for most CAD import flows. "Export DWG" button added (`data-testid="export-dwg-button"`). 2 tests in `dwgExport.test.ts`. True binary DWG (OpenDesign/ODA format) is still not implemented.
 
 IFC 2x3 export (E1): Implemented as a pure-TypeScript ISO 10303-21 STEP writer at `packages/web/src/export/ifcExporter.ts`. Exports `IFCPROJECT`, `IFCSITE`, `IFCBUILDING`, `IFCBUILDINGSTOREY` hierarchy plus `IFCWALLSTANDARDCASE`, `IFCDOOR`, `IFCWINDOW`, `IFCOPENINGELEMENT`, `IFCRELVOIDSELEMENT`, `IFCSLAB` (FLOOR/ROOF), and `IFCSPACE`. Includes `IFCMATERIALLAYERSETUSAGE` per wall, and standard Psets: `Pset_WallCommon`, `Pset_DoorCommon`, `Pset_WindowCommon`, `Pset_SlabCommon`, `Pset_SpaceCommon` (with `NetFloorArea` / `GrossFloorArea` from polygon area). No WASM dependency. 7 passing tests in `ifcExporter.test.ts` including round-trip header validation. Menu trigger wired in `ProjectMenu.tsx` ("Export → IFC 2x3…" item, testId `project-menu-export-ifc`) with blob download from `Workspace.tsx` `handleExportIfc` callback.
 
@@ -1011,8 +1011,8 @@ roomSchemeColor.ts, roomColorSchemeLegendReadout.ts, roomFinishScheduleEvidenceR
 Room area is calculated. Net floor area minus columns/walls (Revit's detailed area computation) is Partial. Room finish schedule (roomFinishScheduleEvidenceReadout.ts) exists — Partial.
 
 ### 13.2 Geschossflächen (floor area: gross building area by level)
-**Status: Partial — P1**
-Level-based area totals. scheduleLevelDatumEvidenceReadout.ts exists. Formal Geschossfläche (GF/NF breakdown per level) as a report is Partial.
+**Status: Implemented — P1**
+`buildLevelAreaReport(elementsById)` in `scheduleLevelDatumEvidenceReadout.ts` computes `LevelAreaRow[]` with `levelId`, `levelName`, `grossAreaM2` (shoelace formula on floor boundary), `netAreaM2` (gross minus column footprints via point-in-polygon). `FloorAreaReportPanel.tsx` (wave 5 WP-F) renders a table with Level / Gross Area (m²) / Net Area (m²) columns, `data-testid="floor-area-report-panel"`, per-row `data-testid="floor-area-row-{levelId}"`, "No levels with floor areas" empty state, "Export CSV" button (`data-testid="floor-area-export-csv"`). Wired into schedule mode shell as "Floor Areas" tab. 5 tests in `FloorAreaReportPanel.test.tsx`.
 
 ### 13.3 Elementlisten (element schedules / quantity takeoffs)
 
@@ -1058,8 +1058,8 @@ Custom render backgrounds (sky texture, gradient, image) are not implemented.
 Camera rig (cameraRig.ts) and orbit viewpoint persistence exist. Named perspective camera views placeable in the project browser (like Revit's camera views) are Partial — orbit viewpoints are saved but not fully surfaced as named project views.
 
 ### 14.6 Walkthroughs (animated camera path / flythrough)
-**Status: Partial — P1**
-Walk mode (walkMode.ts) allows interactive first-person navigation. Revit-style walkthrough path: `CameraPathElem` + `WalkthroughKeyframe` types added to core; `reduceWalkthrough` grammar (keyframe capture → commit) wired into Viewport.tsx — left-click captures camera pose as keyframe, Enter commits path; paths stored as client-side `cameraPaths[]` in Zustand; listed under "Walkthroughs" in WorkspaceLeftRail with 2-second-step playback on click. Missing: smooth RAF interpolation, path export.
+**Status: Implemented — P1**
+Walk mode (walkMode.ts) allows interactive first-person navigation. Revit-style walkthrough path fully implemented (wave 5 WP-D): `CameraPathElem` + `WalkthroughKeyframe` types in core; `reduceWalkthrough` grammar wired into Viewport.tsx; paths stored in Zustand. `WalkthroughPlaybackPanel.tsx` now has: RAF-interpolated smooth playback loop with `interpolateKeyframes(keyframes, timeSec)` pure function (lerps position/target/up via THREE.Vector3.lerpVectors), Play/Pause button (`data-testid="walkthrough-play-pause"`), loop checkbox (`data-testid="walkthrough-loop"`), `<input type="range">` scrubber (`data-testid="walkthrough-scrubber"`), and "Export Path" button (`data-testid="walkthrough-export-path"`) that downloads the path as JSON. `selectedCameraPathId`, `setSelectedCameraPathId`, `renameCameraPath`, `removeCameraPath` wired in store. 5 tests in `walkthroughPlayback.test.ts`.
 
 ### 14.7 Übungsfragen
 **Status: N/A**
@@ -1076,7 +1076,7 @@ FamilyEditorWorkbench.tsx exists. The family editor can be opened for existing f
 
 #### 15.1.2 Die Multifunktionsleiste »Erstellen« (create ribbon in family editor)
 **Status: Partial — P1**
-The family editor has a create workflow. Not all Revit family editor tools (extrusion, blend, revolve, sweep, swept blend, void forms) are fully available. ArrayTool.test.tsx exists.
+The family editor has a create workflow. Wave 5 WP-G added void form support: `FamilyVoid` type in `@bim-ai/core` (`kind: 'family_void'`, `profilePoints`, `depthMm`). `buildFamilyVoidMesh(form)` in `meshBuilders.ts` renders the void as a wireframe mesh (`wireframe: true`, color `#ff4444`) to indicate a cut/void operation. Also added: `FamilyExtrusion` and `FamilyRevolve` types + `buildFamilyExtrusionMesh` (THREE.Shape + ExtrudeGeometry) and `buildFamilyRevolveMesh` (THREE.LatheGeometry). Tests in `familyVoidMesh.test.ts`. Still missing: blend, sweep, swept blend; parametric constraints; nested component placement; full category-assignment workflow.
 
 #### 15.1.3 Fensterbearbeitung (window family geometry authoring)
 **Status: Partial — P1**
@@ -1108,27 +1108,27 @@ cheatsheetData.ts and CheatsheetModal.tsx provide a keyboard shortcut reference 
 
 ## Summary Dashboard
 
-Last verified: 2026-05-16. All wave-1 agents (WP-A through WP-G) have committed to main. 3739/3740 tests pass (1 pre-existing `ProjectSetupDialog` failure unrelated to wave-1 work).
+Last verified: 2026-05-16. Waves 1–5 complete (WP-A through WP-G × 5). **4,009 tests pass, 0 failures.** Wave 6 prompts written; agents not yet run.
 
 ### By Chapter — Implementation State
 
 | Chapter | Topic | Overall State | Priority Gap |
 |---------|-------|---------------|-------------|
 | 1 | UI & Startup | Partial | Ribbon architecture, customisable QAT, multi-window |
-| 2 | Basic Floor Plan | Partial | §2.8 Done (phases dialog + per-element dropdowns); Global parameters |
-| 3 | Modify Tools | Partial | §3.1 section box drag handles Done; EQ dims pending |
-| 4 | Annotations | Partial | A1–A12 grammars done; deeper persistence/grips still Partial |
-| 5 | Terrain & Geo | Partial | Contours, excavation, terrain merge/split |
-| 6 | Views & Sheets | Partial | Interior elevation inspector/grip, sheet revision title block, locked 3D view |
-| 7 | Drafting Aids | Done/Partial | Work plane orientation |
-| 8 | Adv. Walls/Stairs | Partial | Curtain wall interactive grid, attach-top grammar |
-| 9 | Structure | Partial | Steel connections, sloped columns, attach-top grammar |
-| 10 | Roofs | Done/Partial | Roof by extrusion UX, special forms |
-| 11 | Massing | Partial | Top-down end-to-end workflow (G5–G8 done; UI integration pending) |
-| 12 | Import/Export | Partial | IFC file-menu export trigger, DWG/DGN export |
-| 13 | Schedules | Partial | Route analysis, full quantity takeoffs |
-| 14 | Rendering | Partial | Walkthroughs, sun animation (ray-tracing removed by design) |
-| 15 | Family Editor | Partial | Full parametric family forms, void cuts |
+| 2 | Basic Floor Plan | Partial | §2.8 + §2.9 + phases + project info + true north: Done; view range dialog WIP (wave 6) |
+| 3 | Modify Tools | Partial | §3.1 section box Done; §3.8 global params Done; EQ visual Done, enforcement pending |
+| 4 | Annotations | Partial | A1–A12 grammars + EQ toggle done; dimension style editor Partial |
+| 5 | Terrain & Geo | Partial | Excavation Done; contours, terrain merge/split Not Started |
+| 6 | Views & Sheets | Partial | Interior elevation inspector Done; sheet revision table Done; locked 3D view Done |
+| 7 | Drafting Aids | Done/Partial | Grids + reference planes Done; work plane orientation Partial |
+| 8 | Adv. Walls/Stairs | Partial | Attach-top Done; curtain wall grid Done; wall parts 3D/plan rendering Done; group edit mode WIP (wave 6) |
+| 9 | Structure | Partial | Sloped columns Done; braces Done; beam systems Done; steel connections mesh Done; inspector WIP (wave 6) |
+| 10 | Roofs | Done/Partial | Hip/gable/dormer/extrusion Done; special conical/dome forms Partial |
+| 11 | Massing | Partial | Mass primitives + roof/wall/floor by face Done; end-to-end curtain workflow WIP (wave 6) |
+| 12 | Import/Export | Partial | IFC Done; DXF Done; DWG (text AC1015) Done; print/plot dialog WIP (wave 6) |
+| 13 | Schedules | Partial | Floor area report Done; room tags Partial; route analysis Not Started |
+| 14 | Rendering | Partial | Sun animation Done; walkthrough RAF playback Done; photorealistic removed by design |
+| 15 | Family Editor | Partial | FamilyExtrusion + FamilyRevolve + FamilyVoid Done; blend/sweep/parametric Partial |
 
 ### Top P0 Gaps (core authoring blocked)
 
@@ -1136,22 +1136,22 @@ None confirmed as blocking.
 
 ### Top P1 Gaps (professional parity limited)
 
-- **Attach Top/Base grammar** (Ch. 8.1.1) — `'attach'`/`'detach'` ToolIds in toolRegistry; `meshBuilders.attachWallTop.test.ts` exists; **missing**: `reduceAttach` state machine in `toolGrammar.ts` + `attachWallTop` / `detachWallTop` command handlers in command queue
-- **Curtain wall interactive grid editing** (Ch. 8.1.4) — data model (`curtainWallData`) + plan symbol (tick marks) done; **missing**: "Edit Grid" mode, inspector H/V grid controls, panel/mullion dropdowns
-- **Interior elevation inspector + grip** (Ch. 6.1.5) — `interior-elevation` tool + `interior_elevation_marker` element type + 4-quadrant plan symbol all done (D2); **missing**: inspector panel (radius, level) and drag-grip for placed markers
-- **Global parameters** (Ch. 3.8) — not started; new concept requiring a project-level parameter table; extend `project_settings` with a `globalParams` map + dialog + formula binding
-- **DWG/DGN export** (Ch. 12.4.3) — DXF export done (E2); DWG/DGN format not started
-- **Sheet revision title block rendering** (Ch. 6.3) — `ManageRevisionsDialog.tsx` + `revision`/`sheet_revision` element types done (D6); **missing**: revision table rendering in `SheetCanvas.tsx` / `sheetTitleblockAuthoring.tsx` title block area
-- **Named locked 3D view sheet placement** (Ch. 6.1.3) — lock toggle done (right-click Lock/Unlock Camera, `isLocked` on `SavedViewElem`, blocks pan/orbit); **still missing**: placing a locked view as a viewport on a sheet
-- **Walkthrough smooth RAF playback** (Ch. 14.6) — keyframe capture + commit + `CameraPathElem` storage + sequential step playback done; **still missing**: smooth RAF-interpolated animation loop + path export
+Remaining after wave 5 — targeted by wave 6:
+
+- **Print/Plot dialog** (Ch. 6.5 + 12.4.5) — `exportSheetToPdf` + `exportSheetsToPdf` exist; missing: paper-size/orientation picker dialog, batch-all-sheets export, palette command (wave 6 WP-A)
+- **Steel connection inspector + tool** (Ch. 9.5.1) — `buildSteelConnectionMesh` + `steel_connection` data model exist; missing: placement grammar, inspector panel, plan symbol (wave 6 WP-B)
+- **Group edit mode UI** (Ch. 8.9.3) — `editGroup`/`finishEditGroup` command shapes exist; missing: store state, selection restriction, finish-editing button (wave 6 WP-D)
+- **Massing → BIM end-to-end** (Ch. 11.5) — mass primitives + massByFace utilities done; missing: inspector "Generate Floors" + "Apply Curtain System" buttons wired (wave 6 WP-F)
+- **EQ parametric enforcement** (Ch. 4.2.3) — EQ visual toggle done; parametric driving of element spacings not started
+- **Photorealistic rendering** (Ch. 14.3) — explicitly removed by design; N/A
 
 ### Top P2 Gaps (useful but workaroundable)
 
-- EQ condition on aligned dimensions (Ch. 4.2.2) — not started; extend existing `permanent_dimension` element type with `eqEnabled: boolean` + render the "EQ" button at segment midpoints
-- Wall parts / Create Parts (Ch. 8.1.3) — partial: data model + ribbon action done; per-part rendering not yet implemented
-- Decal placement tool (Ch. 8.1.5) — `DecalElem` type + `buildDecalMesh()` exist; need `'decal'` ToolId in toolRegistry + click-to-place grammar + inspector (image picker, scale, rotation)
-- Sloped/inclined columns (Ch. 9.1.4) — not started; extend column element with `topOffsetXMm`/`topOffsetYMm` fields + update mesh builder extrusion axis + plan symbol (dashed top footprint)
-- Roof by extrusion user workflow (Ch. 10.2) — implemented (ToolId + grammar + PlanCanvas wiring + extrusionDepthMm field)
-- Animated sun study (Ch. 14.2.2) — implemented (SunAnimationPanel with RAF loop + playback controls)
+- View Range dialog (Ch. 2.1.5) — `viewRangeTopMm`/`viewRangeBottomMm`/`cutPlaneOffsetMm` fields exist; basic inspector inputs exist; dedicated dialog with diagram pending (wave 6 WP-E)
+- Ceiling grid pattern overlay (Ch. 8.2) — ceiling element + boundary outline exist; grid line overlay in plan pending (wave 6 WP-C)
+- Beam section profiles (Ch. 9.2) — beam element + makeBeamMesh exist; I/H/C/L/T/HSS profile cross-sections pending (wave 6 WP-G)
+- Room tag detail (Ch. 13.1.2) — roomMesh renders label; room number field + area display in sprite pending (wave 6 WP-E)
 - User-customisable QAT (Ch. 1.6.3) — not started
 - Multiple simultaneous view windows (Ch. 1.6.12) — not started
+- Decal placement tool (Ch. 8.1.5) — grammar + inspector done; image-picker UX Partial
+- Dimension style editor (Ch. 4.2.4) — draftingStandards.ts exists; user-facing dialog not started
