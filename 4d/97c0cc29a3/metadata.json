@@ -5,7 +5,8 @@
   "branch": "main",
   "checkpoints_count": 3,
   "files_touched": [
-    "packages/core/src/index.ts"
+    "packages/core/src/index.ts",
+    "packages/web/src/tools/massFloorsByLevel.test.ts"
   ],
   "sessions": [
     {
@@ -37,13 +38,19 @@
       "transcript": "/4d/97c0cc29a3/4/full.jsonl",
       "content_hash": "/4d/97c0cc29a3/4/content_hash.txt",
       "prompt": "/4d/97c0cc29a3/4/prompt.txt"
+    },
+    {
+      "metadata": "/4d/97c0cc29a3/5/metadata.json",
+      "transcript": "/4d/97c0cc29a3/5/full.jsonl",
+      "content_hash": "/4d/97c0cc29a3/5/content_hash.txt",
+      "prompt": "/4d/97c0cc29a3/5/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 15032902,
-    "cache_creation_tokens": 0,
-    "cache_read_tokens": 336007936,
-    "output_tokens": 827412,
-    "api_call_count": 2765
+    "input_tokens": 15033031,
+    "cache_creation_tokens": 78781,
+    "cache_read_tokens": 347430119,
+    "output_tokens": 881798,
+    "api_call_count": 2860
   }
 }
