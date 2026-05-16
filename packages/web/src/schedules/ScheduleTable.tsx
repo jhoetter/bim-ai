@@ -11,6 +11,9 @@ interface ScheduleTableProps<T extends object> {
   columns: ColumnDef<T>[];
   'data-testid'?: string;
   emptyMessage?: string;
+  sortKey?: string;
+  sortDir?: 'asc' | 'desc';
+  onSort?: (key: string) => void;
 }
 
 export function ScheduleTable<T extends object>({
@@ -18,6 +21,9 @@ export function ScheduleTable<T extends object>({
   columns,
   'data-testid': testId,
   emptyMessage = 'No rows.',
+  sortKey,
+  sortDir,
+  onSort,
 }: ScheduleTableProps<T>): JSX.Element {
   return (
     <div data-testid={testId} className="overflow-auto border border-border">
@@ -27,9 +33,12 @@ export function ScheduleTable<T extends object>({
             {columns.map((col) => (
               <th
                 key={String(col.key)}
-                className="sticky top-0 border-b border-border bg-surface px-3 py-1.5 text-left"
+                data-testid={`schedule-col-header-${String(col.key)}`}
+                className={`sticky top-0 border-b border-border bg-surface px-3 py-1.5 text-left${onSort ? ' cursor-pointer select-none' : ''}`}
+                onClick={() => onSort?.(String(col.key))}
               >
                 {col.label}
+                {sortKey === String(col.key) ? (sortDir === 'asc' ? ' ↑' : ' ↓') : ''}
               </th>
             ))}
           </tr>

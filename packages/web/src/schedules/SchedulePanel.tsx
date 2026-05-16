@@ -19,9 +19,14 @@ import { buildScheduleTableModelV1, type ScheduleTableModelV1 } from './schedule
 import { roomFinishScheduleEvidenceReadoutParts } from './roomFinishScheduleEvidenceReadout';
 import { stairScheduleEvidenceReadoutLines } from './stairScheduleEvidenceReadout';
 import { buildDoorSchedule } from './doorSchedule';
+import type { DoorScheduleRow } from './doorSchedule';
 import { buildWindowSchedule } from './windowSchedule';
+import type { WindowScheduleRow } from './windowSchedule';
 import { buildColumnSchedule } from './columnSchedule';
+import type { ColumnScheduleRow } from './columnSchedule';
 import { ScheduleTable } from './ScheduleTable';
+import { sortRows, filterRows } from './scheduleSortFilter';
+import { rowsToCsv } from './scheduleCsvExport';
 import { compactScheduleOpeningAdvisoryLines } from './scheduleOpeningAdvisoriesReadout';
 import { compactScheduleSheetExportParityAdvisoryLines } from './scheduleSheetExportParityReadout';
 import type { SchedulePresetCategory } from './scheduleDefinitionPresets';
@@ -208,6 +213,13 @@ export function SchedulePanel(props: {
     Partial<Record<SchedulePresetCategory, string>>
   >({});
 
+  const [doorSort, setDoorSort] = useState<{ key: string; dir: 'asc' | 'desc' } | null>(null);
+  const [doorFilter, setDoorFilter] = useState('');
+  const [winSort, setWinSort] = useState<{ key: string; dir: 'asc' | 'desc' } | null>(null);
+  const [winFilter, setWinFilter] = useState('');
+  const [colSort, setColSort] = useState<{ key: string; dir: 'asc' | 'desc' } | null>(null);
+  const [colFilter, setColFilter] = useState('');
+
   useEffect(() => {
     if (!props.modelId || !sidForTab) {
       queueMicrotask(() => {
@@ -393,6 +405,27 @@ export function SchedulePanel(props: {
   );
 
   const columnRows = useMemo(() => buildColumnSchedule(props.elementsById), [props.elementsById]);
+
+  const doorDisplayRows = useMemo(() => {
+    let rows: DoorScheduleRow[] = doorScheduleRows;
+    if (doorFilter) rows = filterRows(rows, doorFilter);
+    if (doorSort) rows = sortRows(rows, doorSort.key as keyof DoorScheduleRow, doorSort.dir);
+    return rows;
+  }, [doorScheduleRows, doorFilter, doorSort]);
+
+  const winDisplayRows = useMemo(() => {
+    let rows: WindowScheduleRow[] = windowScheduleRows;
+    if (winFilter) rows = filterRows(rows, winFilter);
+    if (winSort) rows = sortRows(rows, winSort.key as keyof WindowScheduleRow, winSort.dir);
+    return rows;
+  }, [windowScheduleRows, winFilter, winSort]);
+
+  const colDisplayRows = useMemo(() => {
+    let rows: ColumnScheduleRow[] = columnRows;
+    if (colFilter) rows = filterRows(rows, colFilter);
+    if (colSort) rows = sortRows(rows, colSort.key as keyof ColumnScheduleRow, colSort.dir);
+    return rows;
+  }, [columnRows, colFilter, colSort]);
 
   const sheets = useMemo(
     () =>
@@ -1120,9 +1153,46 @@ export function SchedulePanel(props: {
             {renderTotals()}
           </div>
         ) : (
-          <div className="mt-2">
+          <div className="mt-2 flex flex-col gap-2">
+            <div className="flex items-center gap-2">
+              <input
+                data-testid="schedule-filter-doors"
+                type="text"
+                value={doorFilter}
+                onChange={(e) => setDoorFilter(e.target.value)}
+                placeholder="Filter..."
+                className="flex-1 rounded border border-border bg-surface px-2 py-1 text-xs"
+              />
+              <button
+                type="button"
+                data-testid="schedule-export-csv-doors"
+                className="rounded border border-border bg-surface px-2 py-1 text-xs text-foreground hover:bg-surface-strong"
+                onClick={() => {
+                  const csv = rowsToCsv(doorDisplayRows, [
+                    { key: 'mark', label: 'Mark' },
+                    { key: 'typeId', label: 'Type' },
+                    { key: 'widthMm', label: 'Width (mm)' },
+                    { key: 'heightMm', label: 'Height (mm)' },
+                    { key: 'levelName', label: 'Level' },
+                    { key: 'count', label: 'Count' },
+                  ]);
+                  const blob = new Blob([csv], { type: 'text/csv' });
+                  const url = URL.createObjectURL(blob);
+                  const a = document.createElement('a');
+                  a.href = url;
+                  a.download = 'doors-schedule.csv';
+                  a.click();
+                  URL.revokeObjectURL(url);
+                }}
+              >
+                Export CSV
+              </button>
+            </div>
+            <div data-testid="schedule-row-count-doors" className="text-[10px] text-muted">
+              {`Showing ${doorDisplayRows.length} of ${doorScheduleRows.length} rows`}
+            </div>
             <ScheduleTable
-              rows={doorScheduleRows}
+              rows={doorDisplayRows}
               columns={[
                 { key: 'mark', label: 'Mark' },
                 { key: 'typeId', label: 'Type' },
@@ -1131,6 +1201,15 @@ export function SchedulePanel(props: {
                 { key: 'levelName', label: 'Level' },
                 { key: 'count', label: 'Count' },
               ]}
+              sortKey={doorSort?.key}
+              sortDir={doorSort?.dir}
+              onSort={(key) =>
+                setDoorSort((prev) =>
+                  prev?.key === key
+                    ? { key, dir: prev.dir === 'asc' ? 'desc' : 'asc' }
+                    : { key, dir: 'asc' },
+                )
+              }
               emptyMessage="No doors in this projection."
             />
             {srvActive ? renderTotals() : null}
@@ -1144,35 +1223,67 @@ export function SchedulePanel(props: {
             {renderGroupedDoorsOrWindows(groupedWins, 'window')}
             {renderTotals()}
           </div>
-        ) : !windowRows.length ? (
-          <div className="mt-3 text-[11px] text-muted">No windows in this projection.</div>
         ) : (
-          <div className="mt-2">
-            <VirtualScrollRows
-              maxHeightPx={SCHED_TABLE_VIEWPORT_PX}
-              rowHeightPx={SCHED_TABLE_ROW_PX}
-              colSpan={6}
-              rows={windowRows}
-              header={
-                <tr>
-                  <th>Name</th>
-                  <th>Level</th>
-                  <th className="text-right">W mm</th>
-                  <th className="text-right">H mm</th>
-                  <th className="text-right">Sill</th>
-                  <th>Type</th>
-                </tr>
+          <div className="mt-2 flex flex-col gap-2">
+            <div className="flex items-center gap-2">
+              <input
+                data-testid="schedule-filter-windows"
+                type="text"
+                value={winFilter}
+                onChange={(e) => setWinFilter(e.target.value)}
+                placeholder="Filter..."
+                className="flex-1 rounded border border-border bg-surface px-2 py-1 text-xs"
+              />
+              <button
+                type="button"
+                data-testid="schedule-export-csv-windows"
+                className="rounded border border-border bg-surface px-2 py-1 text-xs text-foreground hover:bg-surface-strong"
+                onClick={() => {
+                  const csv = rowsToCsv(winDisplayRows, [
+                    { key: 'mark', label: 'Mark' },
+                    { key: 'typeId', label: 'Type' },
+                    { key: 'widthMm', label: 'Width (mm)' },
+                    { key: 'heightMm', label: 'Height (mm)' },
+                    { key: 'sillHeightMm', label: 'Sill (mm)' },
+                    { key: 'levelName', label: 'Level' },
+                    { key: 'count', label: 'Count' },
+                  ]);
+                  const blob = new Blob([csv], { type: 'text/csv' });
+                  const url = URL.createObjectURL(blob);
+                  const a = document.createElement('a');
+                  a.href = url;
+                  a.download = 'windows-schedule.csv';
+                  a.click();
+                  URL.revokeObjectURL(url);
+                }}
+              >
+                Export CSV
+              </button>
+            </div>
+            <div data-testid="schedule-row-count-windows" className="text-[10px] text-muted">
+              {`Showing ${winDisplayRows.length} of ${windowScheduleRows.length} rows`}
+            </div>
+            <ScheduleTable
+              rows={winDisplayRows}
+              columns={[
+                { key: 'mark', label: 'Mark' },
+                { key: 'typeId', label: 'Type' },
+                { key: 'widthMm', label: 'Width (mm)' },
+                { key: 'heightMm', label: 'Height (mm)' },
+                { key: 'sillHeightMm', label: 'Sill (mm)' },
+                { key: 'levelName', label: 'Level' },
+                { key: 'count', label: 'Count' },
+              ]}
+              sortKey={winSort?.key}
+              sortDir={winSort?.dir}
+              onSort={(key) =>
+                setWinSort((prev) =>
+                  prev?.key === key
+                    ? { key, dir: prev.dir === 'asc' ? 'desc' : 'asc' }
+                    : { key, dir: 'asc' },
+                )
               }
-              renderRow={(r) => (
-                <tr className="border-t border-border/60">
-                  <td>{r.name}</td>
-                  <td className="text-muted">{r.level}</td>
-                  <td className="text-right">{r.widthMm}</td>
-                  <td className="text-right">{r.heightMm}</td>
-                  <td className="text-right">{r.sillMm}</td>
-                  <td className="text-[10px] text-muted">{r.familyKey}</td>
-                </tr>
-              )}
+              emptyMessage="No windows in this projection."
             />
             {srvActive ? renderTotals() : null}
           </div>
@@ -1180,9 +1291,47 @@ export function SchedulePanel(props: {
       ) : null}
 
       {tab === 'columns' ? (
-        <div className="mt-2" data-testid="schedule-columns-table">
+        <div className="mt-2 flex flex-col gap-2" data-testid="schedule-columns-table">
+          <div className="flex items-center gap-2">
+            <input
+              data-testid="schedule-filter-columns"
+              type="text"
+              value={colFilter}
+              onChange={(e) => setColFilter(e.target.value)}
+              placeholder="Filter..."
+              className="flex-1 rounded border border-border bg-surface px-2 py-1 text-xs"
+            />
+            <button
+              type="button"
+              data-testid="schedule-export-csv-columns"
+              className="rounded border border-border bg-surface px-2 py-1 text-xs text-foreground hover:bg-surface-strong"
+              onClick={() => {
+                const csv = rowsToCsv(colDisplayRows, [
+                  { key: 'mark', label: 'Mark' },
+                  { key: 'typeId', label: 'Type' },
+                  { key: 'widthMm', label: 'Width (mm)' },
+                  { key: 'depthMm', label: 'Depth (mm)' },
+                  { key: 'heightMm', label: 'Height (mm)' },
+                  { key: 'levelName', label: 'Level' },
+                  { key: 'count', label: 'Count' },
+                ]);
+                const blob = new Blob([csv], { type: 'text/csv' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'columns-schedule.csv';
+                a.click();
+                URL.revokeObjectURL(url);
+              }}
+            >
+              Export CSV
+            </button>
+          </div>
+          <div data-testid="schedule-row-count-columns" className="text-[10px] text-muted">
+            {`Showing ${colDisplayRows.length} of ${columnRows.length} rows`}
+          </div>
           <ScheduleTable
-            rows={columnRows}
+            rows={colDisplayRows}
             columns={[
               { key: 'mark', label: 'Mark' },
               { key: 'typeId', label: 'Type' },
@@ -1192,6 +1341,15 @@ export function SchedulePanel(props: {
               { key: 'levelName', label: 'Level' },
               { key: 'count', label: 'Count' },
             ]}
+            sortKey={colSort?.key}
+            sortDir={colSort?.dir}
+            onSort={(key) =>
+              setColSort((prev) =>
+                prev?.key === key
+                  ? { key, dir: prev.dir === 'asc' ? 'desc' : 'asc' }
+                  : { key, dir: 'asc' },
+              )
+            }
             emptyMessage="No columns in this model."
           />
         </div>
