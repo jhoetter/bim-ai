@@ -43,6 +43,12 @@
       "transcript": "/e6/be42dac563/5/full.jsonl",
       "content_hash": "/e6/be42dac563/5/content_hash.txt",
       "prompt": "/e6/be42dac563/5/prompt.txt"
+    },
+    {
+      "metadata": "/e6/be42dac563/6/metadata.json",
+      "transcript": "/e6/be42dac563/6/full.jsonl",
+      "content_hash": "/e6/be42dac563/6/content_hash.txt",
+      "prompt": "/e6/be42dac563/6/prompt.txt"
     }
   ],
   "token_usage": {
