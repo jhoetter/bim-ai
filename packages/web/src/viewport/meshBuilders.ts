@@ -3528,11 +3528,12 @@ export function makeColumnMesh(
     pos.needsUpdate = true;
     geo.computeVertexNormals();
   }
+  const isStructural = col.columnUsage === 'structural';
   const mat = makeThreeMaterialForKey(col.materialKey, {
     usage: 'structural',
-    fallbackColor: categoryColorOr(paint, 'wall'),
-    fallbackRoughness: paint?.categories.wall.roughness ?? 0.8,
-    fallbackMetalness: paint?.categories.wall.metalness ?? 0,
+    fallbackColor: isStructural ? '#708090' : categoryColorOr(paint, 'wall'),
+    fallbackRoughness: isStructural ? 0.6 : (paint?.categories.wall.roughness ?? 0.8),
+    fallbackMetalness: isStructural ? 0.4 : (paint?.categories.wall.metalness ?? 0),
   });
   if (col.graphicsOverride?.surfaceColorHex) {
     (mat as THREE.MeshStandardMaterial).color.set(col.graphicsOverride.surfaceColorHex);
@@ -3544,6 +3545,7 @@ export function makeColumnMesh(
     col.positionMm.yMm / 1000,
   );
   mesh.rotation.y = THREE.MathUtils.degToRad(col.rotationDeg ?? 0);
+  mesh.userData.columnUsage = col.columnUsage ?? 'architectural';
   addEdges(mesh);
   return mesh;
 }

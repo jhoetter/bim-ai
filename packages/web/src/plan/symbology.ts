@@ -1330,6 +1330,7 @@ function sectionCutPlanThree(sc: Extract<Element, { kind: 'section_cut' }>): THR
 function columnPlanThree(col: Extract<Element, { kind: 'column' }>): THREE.Group {
   const grp = new THREE.Group();
   grp.userData.bimPickId = col.id;
+  grp.userData.columnUsage = col.columnUsage ?? 'architectural';
   const bM = (col.bMm ?? 300) / 1000;
   const hM = (col.hMm ?? 300) / 1000;
   const cx = ux(col.positionMm.xMm);
@@ -1367,6 +1368,28 @@ function columnPlanThree(col: Extract<Element, { kind: 'column' }>): THREE.Group
       solidMat,
     ),
   );
+
+  if (col.columnUsage === 'structural') {
+    const structuralMat = new THREE.LineBasicMaterial({ color: '#666666' });
+    grp.add(
+      new THREE.Line(
+        new THREE.BufferGeometry().setFromPoints([
+          new THREE.Vector3(cx - hw, Y + 0.001, cz - hh),
+          new THREE.Vector3(cx + hw, Y + 0.001, cz + hh),
+        ]),
+        structuralMat,
+      ),
+    );
+    grp.add(
+      new THREE.Line(
+        new THREE.BufferGeometry().setFromPoints([
+          new THREE.Vector3(cx + hw, Y + 0.001, cz - hh),
+          new THREE.Vector3(cx - hw, Y + 0.001, cz + hh),
+        ]),
+        structuralMat,
+      ),
+    );
+  }
 
   const txM = (col.topOffsetXMm ?? 0) / 1000;
   const tzM = (col.topOffsetYMm ?? 0) / 1000;
