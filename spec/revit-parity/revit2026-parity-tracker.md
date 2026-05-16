@@ -910,7 +910,7 @@ Full top-down massing → BIM workflow (mass → generate walls/roof/floors from
 **Status: Partial — P1**
 - Link another bim-ai model file: Partial — `link_model` element type exists in `@bim-ai/core`; `ManageLinksDialog.tsx` provides full UI to add/delete/align/pin linked models; `linkedGhosting.ts` ghosts linked meshes with blue tint at 0.6 opacity; wired into Workspace via `manageLinksOpen` state and ProjectMenu; ghosting tests in `src/viewport/linkedGhosting.test.ts` and `src/export/linkedModelGhosting.test.ts`
 - Link IFC: Not Started
-- Link CAD (DWG/DXF/DGN): DXF underlay exists (dxfUnderlay.ts — Partial)
+- Link CAD (DWG/DXF/DGN): DXF underlay exists (dxfUnderlay.ts — Partial); circle, text, and hatch entities now rendered (E6)
 - Link PDF: Not Started
 - Point cloud: Not Started
 
@@ -930,7 +930,7 @@ Family library panel with internal and external catalogs. Loading Revit *.rfa fo
 
 #### 12.2.1 Grundrisse aus CAD (using a CAD floor plan as underlay for tracing)
 **Status: Done — P1**
-DXF underlay (dxfUnderlay.ts) + ImageTraceDropZone.tsx — importing a CAD/image underlay to trace over is implemented.
+DXF underlay (dxfUnderlay.ts) + ImageTraceDropZone.tsx — importing a CAD/image underlay to trace over is implemented. Entity support: line, polyline, arc (tessellated), circle, text, and hatch boundary loops (E6).
 
 #### 12.2.2 Geländevolumenkörper aus CAD (terrain mesh from CAD contours)
 **Status: Not Started — P2**

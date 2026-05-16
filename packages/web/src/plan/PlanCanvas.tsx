@@ -1603,6 +1603,179 @@ export function PlanCanvas({
           sprite.userData.detailComponent = true;
           sprite.userData.bimPickId = p.id;
           grp.add(sprite);
+        } else if (
+          p.kind === 'annotation_symbol' ||
+          p.kind === 'spot_elevation' ||
+          p.kind === 'spot_coordinate' ||
+          p.kind === 'spot_slope' ||
+          p.kind === 'material_tag'
+        ) {
+          const lt =
+            p.kind === 'spot_elevation'
+              ? `${p.prefix}${(p.elevationMm / 1000).toFixed(3)}${p.suffix}`
+              : p.kind === 'spot_coordinate'
+                ? `N${(p.northMm / 1000).toFixed(2)} E${(p.eastMm / 1000).toFixed(2)}`
+                : p.kind === 'spot_slope'
+                  ? `${p.slopePct.toFixed(1)}%`
+                  : p.kind === 'material_tag'
+                    ? (p.textOverride ?? 'Material')
+                    : p.symbolType;
+          const ac = document.createElement('canvas');
+          ac.width = 256;
+          ac.height = 64;
+          const ac2 = ac.getContext('2d');
+          if (ac2) {
+            ac2.fillStyle = p.colour;
+            ac2.font = '28px sans-serif';
+            ac2.textBaseline = 'middle';
+            ac2.fillText(lt, 4, 32);
+          }
+          const aTex = new THREE.CanvasTexture(ac);
+          aTex.minFilter = THREE.LinearFilter;
+          const aS = new THREE.Sprite(new THREE.SpriteMaterial({ map: aTex, transparent: true }));
+          aS.scale.set(0.3 * (256 / 64), 0.3, 1);
+          const aPos = 'positionMm' in p ? p.positionMm : { xMm: 0, yMm: 0 };
+          aS.position.set(aPos.xMm / 1000, SLICE_Y + 0.01, aPos.yMm / 1000);
+          aS.userData.detailComponent = true;
+          aS.userData.bimPickId = p.id;
+          grp.add(aS);
+        } else if (p.kind === 'radial_dimension' || p.kind === 'diameter_dimension') {
+          const rMat = new THREE.LineBasicMaterial({ color: p.colour });
+          const rLine = new THREE.Line(
+            new THREE.BufferGeometry().setFromPoints([
+              new THREE.Vector3(p.arcPointMm.xMm / 1000, SLICE_Y + 0.01, p.arcPointMm.yMm / 1000),
+              new THREE.Vector3(p.centerMm.xMm / 1000, SLICE_Y + 0.01, p.centerMm.yMm / 1000),
+            ]),
+            rMat,
+          );
+          rLine.userData.detailComponent = true;
+          rLine.userData.bimPickId = p.id;
+          grp.add(rLine);
+          const dx = p.arcPointMm.xMm - p.centerMm.xMm,
+            dy = p.arcPointMm.yMm - p.centerMm.yMm;
+          const rMm = Math.sqrt(dx * dx + dy * dy);
+          const rLbl =
+            p.kind === 'diameter_dimension' ? `ø${(rMm * 2).toFixed(0)}` : `R${rMm.toFixed(0)}`;
+          const rC = document.createElement('canvas');
+          rC.width = 192;
+          rC.height = 64;
+          const rCtx = rC.getContext('2d');
+          if (rCtx) {
+            rCtx.fillStyle = p.colour;
+            rCtx.font = '28px sans-serif';
+            rCtx.textBaseline = 'middle';
+            rCtx.fillText(rLbl, 4, 32);
+          }
+          const rTex = new THREE.CanvasTexture(rC);
+          rTex.minFilter = THREE.LinearFilter;
+          const rS = new THREE.Sprite(new THREE.SpriteMaterial({ map: rTex, transparent: true }));
+          rS.scale.set(0.25 * (192 / 64), 0.25, 1);
+          rS.position.set(
+            (p.arcPointMm.xMm + p.centerMm.xMm) / 2 / 1000,
+            SLICE_Y + 0.01,
+            (p.arcPointMm.yMm + p.centerMm.yMm) / 2 / 1000,
+          );
+          rS.userData.detailComponent = true;
+          rS.userData.bimPickId = p.id;
+          grp.add(rS);
+        } else if (p.kind === 'arc_length_dimension') {
+          const midRad = (((p.startAngleDeg + p.endAngleDeg) / 2) * Math.PI) / 180;
+          const arcLen = ((Math.abs(p.endAngleDeg - p.startAngleDeg) * Math.PI) / 180) * p.radiusMm;
+          const aLC = document.createElement('canvas');
+          aLC.width = 192;
+          aLC.height = 64;
+          const aLCtx = aLC.getContext('2d');
+          if (aLCtx) {
+            aLCtx.fillStyle = '#404040';
+            aLCtx.font = '28px sans-serif';
+            aLCtx.textBaseline = 'middle';
+            aLCtx.fillText(`arc ${arcLen.toFixed(0)}`, 4, 32);
+          }
+          const aLTex = new THREE.CanvasTexture(aLC);
+          aLTex.minFilter = THREE.LinearFilter;
+          const aLS = new THREE.Sprite(new THREE.SpriteMaterial({ map: aLTex, transparent: true }));
+          aLS.scale.set(0.25 * (192 / 64), 0.25, 1);
+          aLS.position.set(
+            p.centerMm.xMm / 1000 + (p.radiusMm / 1000) * Math.cos(midRad),
+            SLICE_Y + 0.01,
+            p.centerMm.yMm / 1000 + (p.radiusMm / 1000) * Math.sin(midRad),
+          );
+          aLS.userData.detailComponent = true;
+          aLS.userData.bimPickId = p.id;
+          grp.add(aLS);
+        } else if (p.kind === 'angular_dimension') {
+          const angM = new THREE.LineBasicMaterial({ color: p.colour });
+          [
+            [
+              [p.vertexMm, p.rayAMm],
+              [p.vertexMm, p.rayBMm],
+            ],
+          ]
+            .flat()
+            .forEach(([a, b], i) => {
+              const l = new THREE.Line(
+                new THREE.BufferGeometry().setFromPoints([
+                  new THREE.Vector3(a.xMm / 1000, SLICE_Y + 0.01, a.yMm / 1000),
+                  new THREE.Vector3(b.xMm / 1000, SLICE_Y + 0.01, b.yMm / 1000),
+                ]),
+                angM,
+              );
+              l.userData.detailComponent = true;
+              l.userData.bimPickId = p.id;
+              grp.add(l);
+            });
+          const aA = Math.atan2(p.rayAMm.yMm - p.vertexMm.yMm, p.rayAMm.xMm - p.vertexMm.xMm);
+          const aB = Math.atan2(p.rayBMm.yMm - p.vertexMm.yMm, p.rayBMm.xMm - p.vertexMm.xMm);
+          const angDeg = Math.abs(((aB - aA) * 180) / Math.PI);
+          const angC = document.createElement('canvas');
+          angC.width = 192;
+          angC.height = 64;
+          const angCtx = angC.getContext('2d');
+          if (angCtx) {
+            angCtx.fillStyle = p.colour;
+            angCtx.font = '28px sans-serif';
+            angCtx.textBaseline = 'middle';
+            angCtx.fillText(`${angDeg.toFixed(1)}°`, 4, 32);
+          }
+          const angTex = new THREE.CanvasTexture(angC);
+          angTex.minFilter = THREE.LinearFilter;
+          const angS = new THREE.Sprite(
+            new THREE.SpriteMaterial({ map: angTex, transparent: true }),
+          );
+          const mA = (aA + aB) / 2,
+            aR = p.arcRadiusMm / 1000;
+          angS.scale.set(0.25 * (192 / 64), 0.25, 1);
+          angS.position.set(
+            p.vertexMm.xMm / 1000 + aR * Math.cos(mA),
+            SLICE_Y + 0.01,
+            p.vertexMm.yMm / 1000 + aR * Math.sin(mA),
+          );
+          angS.userData.detailComponent = true;
+          angS.userData.bimPickId = p.id;
+          grp.add(angS);
+        } else if (p.kind === 'revision_cloud' && p.boundaryMm.length >= 2) {
+          const rcL = new THREE.Line(
+            new THREE.BufferGeometry().setFromPoints(
+              [...p.boundaryMm, p.boundaryMm[0]!].map(
+                (v) => new THREE.Vector3(v.xMm / 1000, SLICE_Y + 0.01, v.yMm / 1000),
+              ),
+            ),
+            new THREE.LineBasicMaterial({ color: p.colour }),
+          );
+          rcL.userData.detailComponent = true;
+          rcL.userData.bimPickId = p.id;
+          grp.add(rcL);
+        } else if (p.kind === 'insulation_annotation') {
+          const insL = new THREE.Line(
+            new THREE.BufferGeometry().setFromPoints([
+              new THREE.Vector3(p.startMm.xMm / 1000, SLICE_Y + 0.01, p.startMm.yMm / 1000),
+              new THREE.Vector3(p.endMm.xMm / 1000, SLICE_Y + 0.01, p.endMm.yMm / 1000),
+            ]),
+            new THREE.LineBasicMaterial({ color: p.colour }),
+          );
+          insL.userData.detailComponent = true;
+          insL.userData.bimPickId = p.id;
+          grp.add(insL);
         }
       }
     }

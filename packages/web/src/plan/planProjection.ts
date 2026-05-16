@@ -152,6 +152,8 @@ export type PlanViewResolvedDisplay = {
   planViewElementId?: string;
   /** F-102: element IDs individually hidden in this plan view. */
   hiddenElementIds: ReadonlySet<string>;
+  /** D1: true when the active plan view is a Reflected Ceiling Plan. */
+  isRcp?: boolean;
 };
 
 function mergeHiddenFromLabels(labels: Iterable<string>, into: Set<PlanSemanticKind>) {
@@ -226,12 +228,25 @@ export function resolvePlanViewDisplay(
   const presentation: PlanPresentationPreset =
     presRaw === 'opening_focus' || presRaw === 'room_scheme' ? presRaw : 'default';
 
+  const isRcp = el.planViewSubtype === 'ceiling_plan';
+
+  // D1: Reflected Ceiling Plans hide floors and roofs by default.
+  if (isRcp) {
+    const rcpDefaultHidden: PlanSemanticKind[] = ['floor', 'roof'];
+    for (const kind of rcpDefaultHidden) {
+      if (!hidden.has(kind)) {
+        hidden.add(kind);
+      }
+    }
+  }
+
   return {
     activeLevelId: el.levelId,
     presentation,
     hiddenSemanticKinds: hidden,
     planViewElementId: el.id,
     hiddenElementIds,
+    isRcp,
   };
 }
 

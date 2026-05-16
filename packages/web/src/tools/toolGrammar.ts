@@ -6,8 +6,8 @@
  * tools so the canvas can switch on `kind` and dispatch input.
  */
 
-export type { WallLocationLine } from "@bim-ai/core";
-import type { WallLocationLine } from "@bim-ai/core";
+export type { WallLocationLine } from '@bim-ai/core';
+import type { WallLocationLine } from '@bim-ai/core';
 
 /* ────────────────────────────────────────────────────────────────────── */
 /* EDT-06 — Tool grammar polish (Chain / Multiple / Tag-on-Place /        */
@@ -126,18 +126,64 @@ export const TOOL_CAPABILITIES: Record<string, ToolCapabilities> = {
     tagOnPlace: false,
     numericInput: false,
   },
-  "wall-join": {
+  'wall-join': {
     chainable: false,
     multipleable: false,
     tagOnPlace: false,
     numericInput: false,
   },
-  "wall-opening": {
+  'wall-opening': {
     chainable: false,
     multipleable: false,
     tagOnPlace: false,
     numericInput: false,
   },
+  text: { chainable: false, multipleable: true, tagOnPlace: false, numericInput: false },
+  'leader-text': { chainable: false, multipleable: true, tagOnPlace: false, numericInput: false },
+  'angular-dimension': {
+    chainable: false,
+    multipleable: true,
+    tagOnPlace: false,
+    numericInput: false,
+  },
+  'radial-dimension': {
+    chainable: false,
+    multipleable: true,
+    tagOnPlace: false,
+    numericInput: false,
+  },
+  'diameter-dimension': {
+    chainable: false,
+    multipleable: true,
+    tagOnPlace: false,
+    numericInput: false,
+  },
+  'arc-length-dimension': {
+    chainable: false,
+    multipleable: true,
+    tagOnPlace: false,
+    numericInput: false,
+  },
+  'spot-elevation': {
+    chainable: false,
+    multipleable: true,
+    tagOnPlace: false,
+    numericInput: false,
+  },
+  'spot-coordinate': {
+    chainable: false,
+    multipleable: true,
+    tagOnPlace: false,
+    numericInput: false,
+  },
+  'slope-annotation': {
+    chainable: false,
+    multipleable: true,
+    tagOnPlace: false,
+    numericInput: false,
+  },
+  'material-tag': { chainable: false, multipleable: true, tagOnPlace: false, numericInput: false },
+  'north-arrow': { chainable: false, multipleable: false, tagOnPlace: false, numericInput: false },
 };
 
 /**
@@ -148,77 +194,75 @@ export const TOOL_CAPABILITIES: Record<string, ToolCapabilities> = {
 export interface NumericInputState {
   active: boolean;
   value: string;
-  axis: "primary" | "perpendicular";
+  axis: 'primary' | 'perpendicular';
 }
 
 export function initialNumericInputState(): NumericInputState {
-  return { active: false, value: "", axis: "primary" };
+  return { active: false, value: '', axis: 'primary' };
 }
 
 export type NumericInputEvent =
-  | { kind: "start"; firstDigit: string }
-  | { kind: "append"; digit: string }
-  | { kind: "backspace" }
-  | { kind: "tab-axis" }
-  | { kind: "commit" }
-  | { kind: "cancel" };
+  | { kind: 'start'; firstDigit: string }
+  | { kind: 'append'; digit: string }
+  | { kind: 'backspace' }
+  | { kind: 'tab-axis' }
+  | { kind: 'commit' }
+  | { kind: 'cancel' };
 
 export function reduceNumericInput(
   state: NumericInputState,
   event: NumericInputEvent,
 ): NumericInputState {
   switch (event.kind) {
-    case "start":
-      return { active: true, value: event.firstDigit, axis: "primary" };
-    case "append":
+    case 'start':
+      return { active: true, value: event.firstDigit, axis: 'primary' };
+    case 'append':
       if (!state.active) return state;
       return { ...state, value: state.value + event.digit };
-    case "backspace":
+    case 'backspace':
       if (!state.active) return state;
       return { ...state, value: state.value.slice(0, -1) };
-    case "tab-axis":
+    case 'tab-axis':
       if (!state.active) return state;
       return {
         ...state,
-        axis: state.axis === "primary" ? "perpendicular" : "primary",
+        axis: state.axis === 'primary' ? 'perpendicular' : 'primary',
       };
-    case "commit":
-    case "cancel":
+    case 'commit':
+    case 'cancel':
       return initialNumericInputState();
   }
 }
 
 export type ToolGrammarKind =
-  | "wall"
-  | "door"
-  | "window"
-  | "floor"
-  | "roof"
-  | "stair"
-  | "railing"
-  | "room"
-  | "dimension"
-  | "section"
-  | "tag"
-  | "align"
-  | "split"
-  | "trim"
-  | "offset"
-  | "wall-join";
+  | 'wall'
+  | 'door'
+  | 'window'
+  | 'floor'
+  | 'roof'
+  | 'stair'
+  | 'railing'
+  | 'room'
+  | 'dimension'
+  | 'section'
+  | 'tag'
+  | 'align'
+  | 'split'
+  | 'trim'
+  | 'offset'
+  | 'wall-join';
 
 export const WALL_LOCATION_LINE_ORDER: WallLocationLine[] = [
-  "wall-centerline",
-  "finish-face-exterior",
-  "finish-face-interior",
-  "core-centerline",
-  "core-face-exterior",
-  "core-face-interior",
+  'wall-centerline',
+  'finish-face-exterior',
+  'finish-face-interior',
+  'core-centerline',
+  'core-face-exterior',
+  'core-face-interior',
 ];
 
 /** Cycle through the §16.4.1 location-line set on `Tab`. */
-export function cycleWallLocationLine(
-  current: WallLocationLine,
-): WallLocationLine {
+export function cycleWallLocationLine(current: WallLocationLine): WallLocationLine {
   const idx = WALL_LOCATION_LINE_ORDER.indexOf(current);
   if (idx < 0) return WALL_LOCATION_LINE_ORDER[0]!;
   return WALL_LOCATION_LINE_ORDER[(idx + 1) % WALL_LOCATION_LINE_ORDER.length]!;
@@ -239,17 +283,17 @@ export function initialWallChainState(): WallChainState {
     active: false,
     startMm: null,
     chainAnchorMm: null,
-    locationLine: "wall-centerline",
+    locationLine: 'wall-centerline',
   };
 }
 
 export type WallChainEvent =
-  | { kind: "tool-activated" }
-  | { kind: "tool-deactivated" }
-  | { kind: "click"; pointMm: { xMm: number; yMm: number } }
-  | { kind: "cancel" }
-  | { kind: "tab-cycle-location" }
-  | { kind: "enter-finish" };
+  | { kind: 'tool-activated' }
+  | { kind: 'tool-deactivated' }
+  | { kind: 'click'; pointMm: { xMm: number; yMm: number } }
+  | { kind: 'cancel' }
+  | { kind: 'tab-cycle-location' }
+  | { kind: 'enter-finish' };
 
 export interface WallChainEffect {
   /** Wall span to commit, when a 2nd click closes a segment. */
@@ -268,13 +312,13 @@ export function reduceWallChain(
   state: WallChainState,
   event: WallChainEvent,
 ): { state: WallChainState; effect: WallChainEffect } {
-  if (event.kind === "tool-activated") {
+  if (event.kind === 'tool-activated') {
     return {
       state: { ...state, active: true, startMm: null, chainAnchorMm: null },
       effect: { stillActive: true },
     };
   }
-  if (event.kind === "tool-deactivated") {
+  if (event.kind === 'tool-deactivated') {
     return {
       state: { ...initialWallChainState() },
       effect: { stillActive: false },
@@ -283,7 +327,7 @@ export function reduceWallChain(
   if (!state.active) {
     return { state, effect: { stillActive: false } };
   }
-  if (event.kind === "tab-cycle-location") {
+  if (event.kind === 'tab-cycle-location') {
     return {
       state: {
         ...state,
@@ -292,13 +336,13 @@ export function reduceWallChain(
       effect: { stillActive: true },
     };
   }
-  if (event.kind === "cancel") {
+  if (event.kind === 'cancel') {
     return {
       state: { ...state, startMm: null, chainAnchorMm: null },
       effect: { stillActive: true, chainBroken: true },
     };
   }
-  if (event.kind === "enter-finish") {
+  if (event.kind === 'enter-finish') {
     return {
       state: { ...initialWallChainState() },
       effect: { stillActive: false },
@@ -333,8 +377,8 @@ export interface HostedOpeningDefaults {
   sillHeightMm?: number;
 }
 
-export type DoorSwing = "left" | "right";
-export type DoorHand = "in" | "out";
+export type DoorSwing = 'left' | 'right';
+export type DoorHand = 'in' | 'out';
 
 export interface DoorPlacement {
   wallId: string;
@@ -351,17 +395,17 @@ export const DOOR_DEFAULTS: HostedOpeningDefaults & {
 } = {
   widthMm: 900,
   heightMm: 2100,
-  swing: "left",
-  hand: "in",
+  swing: 'left',
+  hand: 'in',
 };
 
 /** Spacebar flips swing side; Tab flips hand. */
 export function flipDoorSwing(swing: DoorSwing): DoorSwing {
-  return swing === "left" ? "right" : "left";
+  return swing === 'left' ? 'right' : 'left';
 }
 
 export function flipDoorHand(hand: DoorHand): DoorHand {
-  return hand === "in" ? "out" : "in";
+  return hand === 'in' ? 'out' : 'in';
 }
 
 export const WINDOW_DEFAULTS: HostedOpeningDefaults = {
@@ -374,7 +418,7 @@ export const WINDOW_DEFAULTS: HostedOpeningDefaults = {
 /* Floor — §16.4.4                                                          */
 /* ────────────────────────────────────────────────────────────────────── */
 
-export type FloorMode = "pick-walls" | "sketch";
+export type FloorMode = 'pick-walls' | 'sketch';
 
 export interface FloorState {
   mode: FloorMode;
@@ -385,7 +429,7 @@ export interface FloorState {
 
 export function initialFloorState(): FloorState {
   return {
-    mode: "pick-walls",
+    mode: 'pick-walls',
     sketchPolygonMm: [],
     pickedWallIds: [],
     thicknessMm: 220,
@@ -393,14 +437,14 @@ export function initialFloorState(): FloorState {
 }
 
 export function toggleFloorMode(mode: FloorMode): FloorMode {
-  return mode === "pick-walls" ? "sketch" : "pick-walls";
+  return mode === 'pick-walls' ? 'sketch' : 'pick-walls';
 }
 
 /* ────────────────────────────────────────────────────────────────────── */
 /* Roof — §16.4.5                                                           */
 /* ────────────────────────────────────────────────────────────────────── */
 
-export type RoofType = "gable" | "hip" | "flat" | "shed";
+export type RoofType = 'gable' | 'hip' | 'flat' | 'shed';
 
 export interface RoofState {
   type: RoofType;
@@ -412,7 +456,7 @@ export interface RoofState {
 
 export function initialRoofState(): RoofState {
   return {
-    type: "gable",
+    type: 'gable',
     slopeDeg: 35,
     edgeSlopes: {},
     eaveOverhangMm: 600,
@@ -429,7 +473,7 @@ export function toggleEdgeSlope(state: RoofState, edgeIdx: number): RoofState {
 /* Stair — §16.4.6                                                          */
 /* ────────────────────────────────────────────────────────────────────── */
 
-export type StairType = "straight" | "l-shape" | "u-shape" | "spiral";
+export type StairType = 'straight' | 'l-shape' | 'u-shape' | 'spiral';
 
 export interface StairCalcInput {
   baseLevelElevMm: number;
@@ -478,10 +522,10 @@ export function computeStairRun(input: StairCalcInput): StairCalcOutput {
 /* Railing — §16.4.7                                                        */
 /* ────────────────────────────────────────────────────────────────────── */
 
-export type RailingHostKind = "stair" | "slab-edge" | "sketch-path";
+export type RailingHostKind = 'stair' | 'slab-edge' | 'sketch-path';
 
 export interface RailingDefaults {
-  style: "horizontal-bars-5x30";
+  style: 'horizontal-bars-5x30';
   totalHeightMm: number;
   baluster: {
     spacingMm: number;
@@ -490,7 +534,7 @@ export interface RailingDefaults {
 }
 
 export const RAILING_DEFAULTS: RailingDefaults = {
-  style: "horizontal-bars-5x30",
+  style: 'horizontal-bars-5x30',
   totalHeightMm: 1100,
   baluster: { spacingMm: 100, diameterMm: 30 },
 };
@@ -522,13 +566,10 @@ export function centroidMm(outline: { xMm: number; yMm: number }[]): {
     cy += (a.yMm + b.yMm) * cross;
   }
   if (area === 0) {
-    const sum = outline.reduce(
-      (acc, p) => ({ xMm: acc.xMm + p.xMm, yMm: acc.yMm + p.yMm }),
-      {
-        xMm: 0,
-        yMm: 0,
-      },
-    );
+    const sum = outline.reduce((acc, p) => ({ xMm: acc.xMm + p.xMm, yMm: acc.yMm + p.yMm }), {
+      xMm: 0,
+      yMm: 0,
+    });
     return { xMm: sum.xMm / outline.length, yMm: sum.yMm / outline.length };
   }
   area /= 2;
@@ -551,12 +592,12 @@ export function initialAreaBoundaryState(): AreaBoundaryState {
 
 export type AreaBoundaryEvent =
   | {
-      kind: "click";
+      kind: 'click';
       pointMm: { xMm: number; yMm: number };
       closeToleranceMm?: number;
     }
-  | { kind: "commit" }
-  | { kind: "cancel" };
+  | { kind: 'commit' }
+  | { kind: 'cancel' };
 
 export interface AreaBoundaryEffect {
   commitBoundaryMm?: { xMm: number; yMm: number }[];
@@ -578,8 +619,7 @@ export function areaBoundaryCanClose(
   return (
     verticesMm.length >= 3 &&
     first !== undefined &&
-    Math.hypot(pointMm.xMm - first.xMm, pointMm.yMm - first.yMm) <=
-      closeToleranceMm
+    Math.hypot(pointMm.xMm - first.xMm, pointMm.yMm - first.yMm) <= closeToleranceMm
   );
 }
 
@@ -607,10 +647,10 @@ export function reduceAreaBoundary(
   state: AreaBoundaryState,
   event: AreaBoundaryEvent,
 ): { state: AreaBoundaryState; effect: AreaBoundaryEffect } {
-  if (event.kind === "cancel") {
+  if (event.kind === 'cancel') {
     return { state: initialAreaBoundaryState(), effect: {} };
   }
-  if (event.kind === "commit") {
+  if (event.kind === 'commit') {
     if (state.verticesMm.length >= 3) {
       return {
         state: initialAreaBoundaryState(),
@@ -641,19 +681,14 @@ export function reduceAreaBoundary(
 /* Dimension — §16.4.9                                                      */
 /* ────────────────────────────────────────────────────────────────────── */
 
-export type DimensionKind =
-  | "linear"
-  | "aligned"
-  | "angular"
-  | "radial"
-  | "diameter";
+export type DimensionKind = 'linear' | 'aligned' | 'angular' | 'radial' | 'diameter';
 
 export const DIMENSION_HOTKEYS: Record<DimensionKind, string> = {
-  linear: "L",
-  aligned: "A",
-  angular: "G",
-  radial: "Q",
-  diameter: "Shift+Q",
+  linear: 'L',
+  aligned: 'A',
+  angular: 'G',
+  radial: 'Q',
+  diameter: 'Shift+Q',
 };
 
 export interface DimensionState {
@@ -663,13 +698,10 @@ export interface DimensionState {
 }
 
 export function initialDimensionState(): DimensionState {
-  return { kind: "linear", firstWitnessMm: null, secondWitnessMm: null };
+  return { kind: 'linear', firstWitnessMm: null, secondWitnessMm: null };
 }
 
-export function setDimensionKind(
-  state: DimensionState,
-  kind: DimensionKind,
-): DimensionState {
+export function setDimensionKind(state: DimensionState, kind: DimensionKind): DimensionState {
   return { ...state, kind };
 }
 
@@ -696,19 +728,14 @@ export function flipSectionDepth(state: SectionDraftState): SectionDraftState {
 /* Tag subdropdown — §16.5                                                  */
 /* ────────────────────────────────────────────────────────────────────── */
 
-export type TagFamily =
-  | "tag-door"
-  | "tag-window"
-  | "tag-wall"
-  | "tag-room"
-  | "tag-by-category";
+export type TagFamily = 'tag-door' | 'tag-window' | 'tag-wall' | 'tag-room' | 'tag-by-category';
 
 export const TAG_FAMILIES: { id: TagFamily; label: string }[] = [
-  { id: "tag-door", label: "Tag Door" },
-  { id: "tag-window", label: "Tag Window" },
-  { id: "tag-wall", label: "Tag Wall" },
-  { id: "tag-room", label: "Tag Room" },
-  { id: "tag-by-category", label: "Tag by Category" },
+  { id: 'tag-door', label: 'Tag Door' },
+  { id: 'tag-window', label: 'Tag Window' },
+  { id: 'tag-wall', label: 'Tag Wall' },
+  { id: 'tag-room', label: 'Tag Room' },
+  { id: 'tag-by-category', label: 'Tag by Category' },
 ];
 
 /* ────────────────────────────────────────────────────────────────────── */
@@ -716,15 +743,15 @@ export const TAG_FAMILIES: { id: TagFamily; label: string }[] = [
 /* ────────────────────────────────────────────────────────────────────── */
 
 export interface AlignState {
-  phase: "pick-reference" | "pick-element";
+  phase: 'pick-reference' | 'pick-element';
   referenceMm: { xMm: number; yMm: number } | null;
 }
 
 export type AlignEvent =
-  | { kind: "activate" }
-  | { kind: "deactivate" }
-  | { kind: "click"; pointMm: { xMm: number; yMm: number } }
-  | { kind: "cancel" };
+  | { kind: 'activate' }
+  | { kind: 'deactivate' }
+  | { kind: 'click'; pointMm: { xMm: number; yMm: number } }
+  | { kind: 'cancel' };
 
 export interface AlignEffect {
   commitAlign?: {
@@ -735,41 +762,41 @@ export interface AlignEffect {
 }
 
 export function initialAlignState(): AlignState {
-  return { phase: "pick-reference", referenceMm: null };
+  return { phase: 'pick-reference', referenceMm: null };
 }
 
 export function reduceAlign(
   state: AlignState,
   event: AlignEvent,
 ): { state: AlignState; effect: AlignEffect } {
-  if (event.kind === "activate") {
+  if (event.kind === 'activate') {
     return {
-      state: { phase: "pick-reference", referenceMm: null },
+      state: { phase: 'pick-reference', referenceMm: null },
       effect: { stillActive: true },
     };
   }
-  if (event.kind === "deactivate") {
+  if (event.kind === 'deactivate') {
     return {
-      state: { phase: "pick-reference", referenceMm: null },
+      state: { phase: 'pick-reference', referenceMm: null },
       effect: { stillActive: false },
     };
   }
-  if (event.kind === "cancel") {
+  if (event.kind === 'cancel') {
     return {
-      state: { phase: "pick-reference", referenceMm: null },
+      state: { phase: 'pick-reference', referenceMm: null },
       effect: { stillActive: true },
     };
   }
   // click
-  if (state.phase === "pick-reference") {
+  if (state.phase === 'pick-reference') {
     return {
-      state: { phase: "pick-element", referenceMm: event.pointMm },
+      state: { phase: 'pick-element', referenceMm: event.pointMm },
       effect: { stillActive: true },
     };
   }
   // pick-element + click → commit and return to pick-reference for next pair
   return {
-    state: { phase: "pick-reference", referenceMm: null },
+    state: { phase: 'pick-reference', referenceMm: null },
     effect: {
       commitAlign: { referenceMm: state.referenceMm!, targetMm: event.pointMm },
       stillActive: true,
@@ -786,10 +813,10 @@ export interface SplitState {
 }
 
 export type SplitEvent =
-  | { kind: "activate" }
-  | { kind: "deactivate" }
-  | { kind: "click"; pointMm: { xMm: number; yMm: number } }
-  | { kind: "cancel" };
+  | { kind: 'activate' }
+  | { kind: 'deactivate' }
+  | { kind: 'click'; pointMm: { xMm: number; yMm: number } }
+  | { kind: 'cancel' };
 
 export interface SplitEffect {
   commitSplit?: { pointMm: { xMm: number; yMm: number } };
@@ -804,13 +831,13 @@ export function reduceSplit(
   state: SplitState,
   event: SplitEvent,
 ): { state: SplitState; effect: SplitEffect } {
-  if (event.kind === "activate") {
+  if (event.kind === 'activate') {
     return { state: { active: true }, effect: { stillActive: true } };
   }
-  if (event.kind === "deactivate") {
+  if (event.kind === 'deactivate') {
     return { state: { active: false }, effect: { stillActive: false } };
   }
-  if (event.kind === "cancel") {
+  if (event.kind === 'cancel') {
     return { state, effect: { stillActive: true } };
   }
   if (!state.active) {
@@ -828,64 +855,64 @@ export function reduceSplit(
 /* ────────────────────────────────────────────────────────────────────── */
 
 export interface TrimState {
-  phase: "pick-reference" | "pick-target";
+  phase: 'pick-reference' | 'pick-target';
   referenceId: string | null;
 }
 
 export type TrimEvent =
-  | { kind: "activate" }
-  | { kind: "deactivate" }
-  | { kind: "click-reference"; elementId: string }
-  | { kind: "click-target"; elementId: string; endHint: "start" | "end" }
-  | { kind: "cancel" };
+  | { kind: 'activate' }
+  | { kind: 'deactivate' }
+  | { kind: 'click-reference'; elementId: string }
+  | { kind: 'click-target'; elementId: string; endHint: 'start' | 'end' }
+  | { kind: 'cancel' };
 
 export interface TrimEffect {
   commitTrim?: {
     referenceId: string;
     targetId: string;
-    endHint: "start" | "end";
+    endHint: 'start' | 'end';
   };
   stillActive: boolean;
 }
 
 export function initialTrimState(): TrimState {
-  return { phase: "pick-reference", referenceId: null };
+  return { phase: 'pick-reference', referenceId: null };
 }
 
 export function reduceTrim(
   state: TrimState,
   event: TrimEvent,
 ): { state: TrimState; effect: TrimEffect } {
-  if (event.kind === "activate") {
+  if (event.kind === 'activate') {
     return {
-      state: { phase: "pick-reference", referenceId: null },
+      state: { phase: 'pick-reference', referenceId: null },
       effect: { stillActive: true },
     };
   }
-  if (event.kind === "deactivate") {
+  if (event.kind === 'deactivate') {
     return {
-      state: { phase: "pick-reference", referenceId: null },
+      state: { phase: 'pick-reference', referenceId: null },
       effect: { stillActive: false },
     };
   }
-  if (event.kind === "cancel") {
+  if (event.kind === 'cancel') {
     return {
-      state: { phase: "pick-reference", referenceId: null },
+      state: { phase: 'pick-reference', referenceId: null },
       effect: { stillActive: true },
     };
   }
-  if (event.kind === "click-reference") {
+  if (event.kind === 'click-reference') {
     return {
-      state: { phase: "pick-target", referenceId: event.elementId },
+      state: { phase: 'pick-target', referenceId: event.elementId },
       effect: { stillActive: true },
     };
   }
   // click-target
-  if (state.phase !== "pick-target" || !state.referenceId) {
+  if (state.phase !== 'pick-target' || !state.referenceId) {
     return { state, effect: { stillActive: true } };
   }
   return {
-    state: { phase: "pick-reference", referenceId: null },
+    state: { phase: 'pick-reference', referenceId: null },
     effect: {
       commitTrim: {
         referenceId: state.referenceId,
@@ -901,28 +928,28 @@ export function reduceTrim(
 /* Wall Join — §16 Modify                                                   */
 /* ────────────────────────────────────────────────────────────────────── */
 
-export type WallJoinVariant = "miter" | "butt" | "square";
+export type WallJoinVariant = 'miter' | 'butt' | 'square';
 
-const WALL_JOIN_VARIANTS: WallJoinVariant[] = ["miter", "butt", "square"];
+const WALL_JOIN_VARIANTS: WallJoinVariant[] = ['miter', 'butt', 'square'];
 
 export interface WallJoinState {
-  phase: "idle" | "selected";
+  phase: 'idle' | 'selected';
   cornerMm: { xMm: number; yMm: number } | null;
   wallIds: string[];
   joinVariant: WallJoinVariant;
 }
 
 export type WallJoinEvent =
-  | { kind: "activate" }
-  | { kind: "deactivate" }
+  | { kind: 'activate' }
+  | { kind: 'deactivate' }
   | {
-      kind: "click-corner";
+      kind: 'click-corner';
       cornerMm: { xMm: number; yMm: number };
       wallIds: string[];
     }
-  | { kind: "cycle" }
-  | { kind: "accept" }
-  | { kind: "cancel" };
+  | { kind: 'cycle' }
+  | { kind: 'accept' }
+  | { kind: 'cancel' };
 
 export interface WallJoinEffect {
   commitJoin?: { wallIds: string[]; variant: WallJoinVariant };
@@ -930,34 +957,34 @@ export interface WallJoinEffect {
 }
 
 export function initialWallJoinState(): WallJoinState {
-  return { phase: "idle", cornerMm: null, wallIds: [], joinVariant: "miter" };
+  return { phase: 'idle', cornerMm: null, wallIds: [], joinVariant: 'miter' };
 }
 
 export function reduceWallJoin(
   state: WallJoinState,
   event: WallJoinEvent,
 ): { state: WallJoinState; effect: WallJoinEffect } {
-  if (event.kind === "activate") {
+  if (event.kind === 'activate') {
     return { state: initialWallJoinState(), effect: { stillActive: true } };
   }
-  if (event.kind === "deactivate") {
+  if (event.kind === 'deactivate') {
     return { state: initialWallJoinState(), effect: { stillActive: false } };
   }
-  if (event.kind === "cancel") {
+  if (event.kind === 'cancel') {
     return { state: initialWallJoinState(), effect: { stillActive: true } };
   }
-  if (event.kind === "click-corner") {
+  if (event.kind === 'click-corner') {
     return {
       state: {
-        phase: "selected",
+        phase: 'selected',
         cornerMm: event.cornerMm,
         wallIds: event.wallIds,
-        joinVariant: "miter",
+        joinVariant: 'miter',
       },
       effect: { stillActive: true },
     };
   }
-  if (event.kind === "cycle" && state.phase === "selected") {
+  if (event.kind === 'cycle' && state.phase === 'selected') {
     const idx = WALL_JOIN_VARIANTS.indexOf(state.joinVariant);
     const next = WALL_JOIN_VARIANTS[(idx + 1) % WALL_JOIN_VARIANTS.length]!;
     return {
@@ -965,7 +992,7 @@ export function reduceWallJoin(
       effect: { stillActive: true },
     };
   }
-  if (event.kind === "accept" && state.phase === "selected") {
+  if (event.kind === 'accept' && state.phase === 'selected') {
     return {
       state: initialWallJoinState(),
       effect: {
@@ -982,21 +1009,21 @@ export function reduceWallJoin(
 /* ────────────────────────────────────────────────────────────────────── */
 
 export interface WallOpeningState {
-  phase: "pick-wall" | "define-rect";
+  phase: 'pick-wall' | 'define-rect';
   hostWallId: string | null;
   anchorMm: { xMm: number; yMm: number } | null;
 }
 
 export type WallOpeningEvent =
-  | { kind: "activate" }
-  | { kind: "deactivate" }
+  | { kind: 'activate' }
+  | { kind: 'deactivate' }
   | {
-      kind: "click-wall";
+      kind: 'click-wall';
       wallId: string;
       pointMm: { xMm: number; yMm: number };
     }
-  | { kind: "drag-end"; cornerMm: { xMm: number; yMm: number } }
-  | { kind: "cancel" };
+  | { kind: 'drag-end'; cornerMm: { xMm: number; yMm: number } }
+  | { kind: 'cancel' };
 
 export interface WallOpeningEffect {
   commitWallOpening?: {
@@ -1008,26 +1035,26 @@ export interface WallOpeningEffect {
 }
 
 export function initialWallOpeningState(): WallOpeningState {
-  return { phase: "pick-wall", hostWallId: null, anchorMm: null };
+  return { phase: 'pick-wall', hostWallId: null, anchorMm: null };
 }
 
 export function reduceWallOpening(
   state: WallOpeningState,
   event: WallOpeningEvent,
 ): { state: WallOpeningState; effect: WallOpeningEffect } {
-  if (event.kind === "activate") {
+  if (event.kind === 'activate') {
     return { state: initialWallOpeningState(), effect: { stillActive: true } };
   }
-  if (event.kind === "deactivate") {
+  if (event.kind === 'deactivate') {
     return { state: initialWallOpeningState(), effect: { stillActive: false } };
   }
-  if (event.kind === "cancel") {
+  if (event.kind === 'cancel') {
     return { state: initialWallOpeningState(), effect: { stillActive: true } };
   }
-  if (event.kind === "click-wall" && state.phase === "pick-wall") {
+  if (event.kind === 'click-wall' && state.phase === 'pick-wall') {
     return {
       state: {
-        phase: "define-rect",
+        phase: 'define-rect',
         hostWallId: event.wallId,
         anchorMm: event.pointMm,
       },
@@ -1035,8 +1062,8 @@ export function reduceWallOpening(
     };
   }
   if (
-    event.kind === "drag-end" &&
-    state.phase === "define-rect" &&
+    event.kind === 'drag-end' &&
+    state.phase === 'define-rect' &&
     state.hostWallId &&
     state.anchorMm
   ) {
@@ -1060,16 +1087,16 @@ export function reduceWallOpening(
 /* ────────────────────────────────────────────────────────────────────── */
 
 export interface ShaftState {
-  phase: "idle" | "sketch";
+  phase: 'idle' | 'sketch';
   verticesMm: Array<{ xMm: number; yMm: number }>;
 }
 
 export type ShaftEvent =
-  | { kind: "activate" }
-  | { kind: "deactivate" }
-  | { kind: "click"; pointMm: { xMm: number; yMm: number } }
-  | { kind: "close-loop" }
-  | { kind: "cancel" };
+  | { kind: 'activate' }
+  | { kind: 'deactivate' }
+  | { kind: 'click'; pointMm: { xMm: number; yMm: number } }
+  | { kind: 'close-loop' }
+  | { kind: 'cancel' };
 
 export interface ShaftEffect {
   commitShaft?: { verticesMm: Array<{ xMm: number; yMm: number }> };
@@ -1077,32 +1104,32 @@ export interface ShaftEffect {
 }
 
 export function initialShaftState(): ShaftState {
-  return { phase: "idle", verticesMm: [] };
+  return { phase: 'idle', verticesMm: [] };
 }
 
 export function reduceShaft(
   state: ShaftState,
   event: ShaftEvent,
 ): { state: ShaftState; effect: ShaftEffect } {
-  if (event.kind === "activate") {
+  if (event.kind === 'activate') {
     return { state: initialShaftState(), effect: { stillActive: true } };
   }
-  if (event.kind === "deactivate") {
+  if (event.kind === 'deactivate') {
     return { state: initialShaftState(), effect: { stillActive: false } };
   }
-  if (event.kind === "cancel") {
+  if (event.kind === 'cancel') {
     return { state: initialShaftState(), effect: { stillActive: true } };
   }
-  if (event.kind === "click") {
+  if (event.kind === 'click') {
     return {
       state: {
-        phase: "sketch",
+        phase: 'sketch',
         verticesMm: [...state.verticesMm, event.pointMm],
       },
       effect: { stillActive: true },
     };
   }
-  if (event.kind === "close-loop" && state.verticesMm.length >= 3) {
+  if (event.kind === 'close-loop' && state.verticesMm.length >= 3) {
     return {
       state: initialShaftState(),
       effect: {
@@ -1118,13 +1145,13 @@ export function reduceShaft(
 /* C16 Column — single-click placement                                      */
 /* ────────────────────────────────────────────────────────────────────── */
 
-export type ColumnState = { phase: "idle" };
+export type ColumnState = { phase: 'idle' };
 
 export type ColumnEvent =
-  | { kind: "activate" }
-  | { kind: "deactivate" }
-  | { kind: "click"; pointMm: { xMm: number; yMm: number } }
-  | { kind: "cancel" };
+  | { kind: 'activate' }
+  | { kind: 'deactivate' }
+  | { kind: 'click'; pointMm: { xMm: number; yMm: number } }
+  | { kind: 'cancel' };
 
 export interface ColumnEffect {
   commitColumn?: { positionMm: { xMm: number; yMm: number } };
@@ -1132,23 +1159,23 @@ export interface ColumnEffect {
 }
 
 export function initialColumnState(): ColumnState {
-  return { phase: "idle" };
+  return { phase: 'idle' };
 }
 
 export function reduceColumn(
   state: ColumnState,
   event: ColumnEvent,
 ): { state: ColumnState; effect: ColumnEffect } {
-  if (event.kind === "deactivate") {
+  if (event.kind === 'deactivate') {
     return { state: initialColumnState(), effect: { stillActive: false } };
   }
-  if (event.kind === "activate" || event.kind === "cancel") {
+  if (event.kind === 'activate' || event.kind === 'cancel') {
     return {
       state: initialColumnState(),
-      effect: { stillActive: event.kind === "activate" },
+      effect: { stillActive: event.kind === 'activate' },
     };
   }
-  if (event.kind === "click") {
+  if (event.kind === 'click') {
     return {
       state: initialColumnState(),
       effect: {
@@ -1165,14 +1192,14 @@ export function reduceColumn(
 /* ────────────────────────────────────────────────────────────────────── */
 
 export type BeamState =
-  | { phase: "idle" }
-  | { phase: "first-point"; startMm: { xMm: number; yMm: number } };
+  | { phase: 'idle' }
+  | { phase: 'first-point'; startMm: { xMm: number; yMm: number } };
 
 export type BeamEvent =
-  | { kind: "activate" }
-  | { kind: "deactivate" }
-  | { kind: "click"; pointMm: { xMm: number; yMm: number } }
-  | { kind: "cancel" };
+  | { kind: 'activate' }
+  | { kind: 'deactivate' }
+  | { kind: 'click'; pointMm: { xMm: number; yMm: number } }
+  | { kind: 'cancel' };
 
 export interface BeamEffect {
   commitBeam?: {
@@ -1183,30 +1210,30 @@ export interface BeamEffect {
 }
 
 export function initialBeamState(): BeamState {
-  return { phase: "idle" };
+  return { phase: 'idle' };
 }
 
 export function reduceBeam(
   state: BeamState,
   event: BeamEvent,
 ): { state: BeamState; effect: BeamEffect } {
-  if (event.kind === "deactivate") {
+  if (event.kind === 'deactivate') {
     return { state: initialBeamState(), effect: { stillActive: false } };
   }
-  if (event.kind === "activate" || event.kind === "cancel") {
+  if (event.kind === 'activate' || event.kind === 'cancel') {
     return {
       state: initialBeamState(),
-      effect: { stillActive: event.kind === "activate" },
+      effect: { stillActive: event.kind === 'activate' },
     };
   }
-  if (event.kind === "click") {
-    if (state.phase === "idle") {
+  if (event.kind === 'click') {
+    if (state.phase === 'idle') {
       return {
-        state: { phase: "first-point", startMm: event.pointMm },
+        state: { phase: 'first-point', startMm: event.pointMm },
         effect: { stillActive: true },
       };
     }
-    if (state.phase === "first-point") {
+    if (state.phase === 'first-point') {
       return {
         state: initialBeamState(),
         effect: {
@@ -1224,15 +1251,15 @@ export function reduceBeam(
 /* ────────────────────────────────────────────────────────────────────── */
 
 export type CeilingState =
-  | { phase: "idle" }
-  | { phase: "sketch"; verticesMm: Array<{ xMm: number; yMm: number }> };
+  | { phase: 'idle' }
+  | { phase: 'sketch'; verticesMm: Array<{ xMm: number; yMm: number }> };
 
 export type CeilingEvent =
-  | { kind: "activate" }
-  | { kind: "deactivate" }
-  | { kind: "click"; pointMm: { xMm: number; yMm: number } }
-  | { kind: "close-loop" }
-  | { kind: "cancel" };
+  | { kind: 'activate' }
+  | { kind: 'deactivate' }
+  | { kind: 'click'; pointMm: { xMm: number; yMm: number } }
+  | { kind: 'close-loop' }
+  | { kind: 'cancel' };
 
 export interface CeilingEffect {
   commitCeiling?: { verticesMm: Array<{ xMm: number; yMm: number }> };
@@ -1240,34 +1267,34 @@ export interface CeilingEffect {
 }
 
 export function initialCeilingState(): CeilingState {
-  return { phase: "idle" } as CeilingState;
+  return { phase: 'idle' } as CeilingState;
 }
 
 export function reduceCeiling(
   state: CeilingState,
   event: CeilingEvent,
 ): { state: CeilingState; effect: CeilingEffect } {
-  if (event.kind === "activate") {
-    return { state: { phase: "idle" }, effect: { stillActive: true } };
+  if (event.kind === 'activate') {
+    return { state: { phase: 'idle' }, effect: { stillActive: true } };
   }
-  if (event.kind === "deactivate") {
-    return { state: { phase: "idle" }, effect: { stillActive: false } };
+  if (event.kind === 'deactivate') {
+    return { state: { phase: 'idle' }, effect: { stillActive: false } };
   }
-  if (event.kind === "cancel") {
-    return { state: { phase: "idle" }, effect: { stillActive: true } };
+  if (event.kind === 'cancel') {
+    return { state: { phase: 'idle' }, effect: { stillActive: true } };
   }
-  if (event.kind === "click") {
-    const prev = state.phase === "sketch" ? state.verticesMm : [];
+  if (event.kind === 'click') {
+    const prev = state.phase === 'sketch' ? state.verticesMm : [];
     return {
-      state: { phase: "sketch", verticesMm: [...prev, event.pointMm] },
+      state: { phase: 'sketch', verticesMm: [...prev, event.pointMm] },
       effect: { stillActive: true },
     };
   }
-  if (event.kind === "close-loop") {
-    const verts = state.phase === "sketch" ? state.verticesMm : [];
+  if (event.kind === 'close-loop') {
+    const verts = state.phase === 'sketch' ? state.verticesMm : [];
     if (verts.length >= 3) {
       return {
-        state: { phase: "idle" },
+        state: { phase: 'idle' },
         effect: { commitCeiling: { verticesMm: verts }, stillActive: true },
       };
     }
@@ -1280,21 +1307,21 @@ export function reduceCeiling(
 /* ────────────────────────────────────────────────────────────────────── */
 
 export type TextAnnotationState =
-  | { phase: "idle" }
+  | { phase: 'idle' }
   | {
-      phase: "typing";
+      phase: 'typing';
       positionMm: { xMm: number; yMm: number };
       draft: string;
     };
 
 export type TextAnnotationEvent =
-  | { kind: "activate" }
-  | { kind: "deactivate" }
-  | { kind: "click"; pointMm: { xMm: number; yMm: number } }
-  | { kind: "type"; char: string }
-  | { kind: "backspace" }
-  | { kind: "confirm" }
-  | { kind: "cancel" };
+  | { kind: 'activate' }
+  | { kind: 'deactivate' }
+  | { kind: 'click'; pointMm: { xMm: number; yMm: number } }
+  | { kind: 'type'; char: string }
+  | { kind: 'backspace' }
+  | { kind: 'confirm' }
+  | { kind: 'cancel' };
 
 export interface TextAnnotationEffect {
   commitText?: { positionMm: { xMm: number; yMm: number }; content: string };
@@ -1302,44 +1329,44 @@ export interface TextAnnotationEffect {
 }
 
 export function initialTextAnnotationState(): TextAnnotationState {
-  return { phase: "idle" };
+  return { phase: 'idle' };
 }
 
 export function reduceTextAnnotation(
   state: TextAnnotationState,
   event: TextAnnotationEvent,
 ): { state: TextAnnotationState; effect: TextAnnotationEffect } {
-  if (event.kind === "deactivate") {
-    return { state: { phase: "idle" }, effect: { stillActive: false } };
+  if (event.kind === 'deactivate') {
+    return { state: { phase: 'idle' }, effect: { stillActive: false } };
   }
-  if (event.kind === "activate") {
-    return { state: { phase: "idle" }, effect: { stillActive: true } };
+  if (event.kind === 'activate') {
+    return { state: { phase: 'idle' }, effect: { stillActive: true } };
   }
-  if (event.kind === "cancel") {
-    return { state: { phase: "idle" }, effect: { stillActive: true } };
+  if (event.kind === 'cancel') {
+    return { state: { phase: 'idle' }, effect: { stillActive: true } };
   }
-  if (event.kind === "click" && state.phase === "idle") {
+  if (event.kind === 'click' && state.phase === 'idle') {
     return {
-      state: { phase: "typing", positionMm: event.pointMm, draft: "" },
+      state: { phase: 'typing', positionMm: event.pointMm, draft: '' },
       effect: { stillActive: true },
     };
   }
-  if (state.phase === "typing") {
-    if (event.kind === "type") {
+  if (state.phase === 'typing') {
+    if (event.kind === 'type') {
       return {
         state: { ...state, draft: state.draft + event.char },
         effect: { stillActive: true },
       };
     }
-    if (event.kind === "backspace") {
+    if (event.kind === 'backspace') {
       return {
         state: { ...state, draft: state.draft.slice(0, -1) },
         effect: { stillActive: true },
       };
     }
-    if (event.kind === "confirm") {
+    if (event.kind === 'confirm') {
       return {
-        state: { phase: "idle" },
+        state: { phase: 'idle' },
         effect: {
           commitText: { positionMm: state.positionMm, content: state.draft },
           stillActive: true,
@@ -1347,7 +1374,7 @@ export function reduceTextAnnotation(
       };
     }
   }
-  return { state, effect: { stillActive: state.phase !== "idle" } };
+  return { state, effect: { stillActive: state.phase !== 'idle' } };
 }
 
 /* ────────────────────────────────────────────────────────────────────── */
@@ -1355,15 +1382,15 @@ export function reduceTextAnnotation(
 /* ────────────────────────────────────────────────────────────────────── */
 
 export type LeaderTextState =
-  | { phase: "idle" }
-  | { phase: "anchor"; anchorMm: { xMm: number; yMm: number } }
+  | { phase: 'idle' }
+  | { phase: 'anchor'; anchorMm: { xMm: number; yMm: number } }
   | {
-      phase: "text-pos";
+      phase: 'text-pos';
       anchorMm: { xMm: number; yMm: number };
       elbowMm: { xMm: number; yMm: number };
     }
   | {
-      phase: "typing";
+      phase: 'typing';
       anchorMm: { xMm: number; yMm: number };
       elbowMm: { xMm: number; yMm: number };
       textMm: { xMm: number; yMm: number };
@@ -1371,13 +1398,13 @@ export type LeaderTextState =
     };
 
 export type LeaderTextEvent =
-  | { kind: "activate" }
-  | { kind: "deactivate" }
-  | { kind: "click"; pointMm: { xMm: number; yMm: number } }
-  | { kind: "type"; char: string }
-  | { kind: "backspace" }
-  | { kind: "confirm" }
-  | { kind: "cancel" };
+  | { kind: 'activate' }
+  | { kind: 'deactivate' }
+  | { kind: 'click'; pointMm: { xMm: number; yMm: number } }
+  | { kind: 'type'; char: string }
+  | { kind: 'backspace' }
+  | { kind: 'confirm' }
+  | { kind: 'cancel' };
 
 export interface LeaderTextEffect {
   commitLeader?: {
@@ -1390,68 +1417,68 @@ export interface LeaderTextEffect {
 }
 
 export function initialLeaderTextState(): LeaderTextState {
-  return { phase: "idle" };
+  return { phase: 'idle' };
 }
 
 export function reduceLeaderText(
   state: LeaderTextState,
   event: LeaderTextEvent,
 ): { state: LeaderTextState; effect: LeaderTextEffect } {
-  if (event.kind === "deactivate") {
-    return { state: { phase: "idle" }, effect: { stillActive: false } };
+  if (event.kind === 'deactivate') {
+    return { state: { phase: 'idle' }, effect: { stillActive: false } };
   }
-  if (event.kind === "activate") {
-    return { state: { phase: "idle" }, effect: { stillActive: true } };
+  if (event.kind === 'activate') {
+    return { state: { phase: 'idle' }, effect: { stillActive: true } };
   }
-  if (event.kind === "cancel") {
-    return { state: { phase: "idle" }, effect: { stillActive: true } };
+  if (event.kind === 'cancel') {
+    return { state: { phase: 'idle' }, effect: { stillActive: true } };
   }
-  if (event.kind === "click") {
-    if (state.phase === "idle") {
+  if (event.kind === 'click') {
+    if (state.phase === 'idle') {
       return {
-        state: { phase: "anchor", anchorMm: event.pointMm },
+        state: { phase: 'anchor', anchorMm: event.pointMm },
         effect: { stillActive: true },
       };
     }
-    if (state.phase === "anchor") {
+    if (state.phase === 'anchor') {
       return {
         state: {
-          phase: "text-pos",
+          phase: 'text-pos',
           anchorMm: state.anchorMm,
           elbowMm: event.pointMm,
         },
         effect: { stillActive: true },
       };
     }
-    if (state.phase === "text-pos") {
+    if (state.phase === 'text-pos') {
       return {
         state: {
-          phase: "typing",
+          phase: 'typing',
           anchorMm: state.anchorMm,
           elbowMm: state.elbowMm,
           textMm: event.pointMm,
-          draft: "",
+          draft: '',
         },
         effect: { stillActive: true },
       };
     }
   }
-  if (state.phase === "typing") {
-    if (event.kind === "type") {
+  if (state.phase === 'typing') {
+    if (event.kind === 'type') {
       return {
         state: { ...state, draft: state.draft + event.char },
         effect: { stillActive: true },
       };
     }
-    if (event.kind === "backspace") {
+    if (event.kind === 'backspace') {
       return {
         state: { ...state, draft: state.draft.slice(0, -1) },
         effect: { stillActive: true },
       };
     }
-    if (event.kind === "confirm") {
+    if (event.kind === 'confirm') {
       return {
-        state: { phase: "idle" },
+        state: { phase: 'idle' },
         effect: {
           commitLeader: {
             anchorMm: state.anchorMm,
@@ -1464,5 +1491,185 @@ export function reduceLeaderText(
       };
     }
   }
-  return { state, effect: { stillActive: state.phase !== "idle" } };
+  return { state, effect: { stillActive: state.phase !== 'idle' } };
+}
+
+export type AngularDimensionState =
+  | { phase: 'idle' }
+  | { phase: 'first-ray'; p1xMm: number; p1yMm: number }
+  | { phase: 'second-ray'; p1xMm: number; p1yMm: number; p2xMm: number; p2yMm: number };
+export type AngularDimensionEvent =
+  | { kind: 'activate' }
+  | { kind: 'deactivate' }
+  | { kind: 'click'; xMm: number; yMm: number }
+  | { kind: 'cancel' };
+export interface AngularDimensionEffect {
+  commitAngular?: {
+    p1xMm: number;
+    p1yMm: number;
+    p2xMm: number;
+    p2yMm: number;
+    labelXMm: number;
+    labelYMm: number;
+  };
+  stillActive: boolean;
+}
+export function initialAngularDimensionState(): AngularDimensionState {
+  return { phase: 'idle' };
+}
+export function reduceAngularDimension(
+  state: AngularDimensionState,
+  event: AngularDimensionEvent,
+): { state: AngularDimensionState; effect: AngularDimensionEffect } {
+  if (event.kind === 'activate' || event.kind === 'deactivate' || event.kind === 'cancel')
+    return { state: { phase: 'idle' }, effect: { stillActive: event.kind !== 'deactivate' } };
+  if (event.kind === 'click') {
+    if (state.phase === 'idle')
+      return {
+        state: { phase: 'first-ray', p1xMm: event.xMm, p1yMm: event.yMm },
+        effect: { stillActive: true },
+      };
+    if (state.phase === 'first-ray')
+      return {
+        state: {
+          phase: 'second-ray',
+          p1xMm: state.p1xMm,
+          p1yMm: state.p1yMm,
+          p2xMm: event.xMm,
+          p2yMm: event.yMm,
+        },
+        effect: { stillActive: true },
+      };
+    if (state.phase === 'second-ray')
+      return {
+        state: { phase: 'idle' },
+        effect: {
+          commitAngular: {
+            p1xMm: state.p1xMm,
+            p1yMm: state.p1yMm,
+            p2xMm: state.p2xMm,
+            p2yMm: state.p2yMm,
+            labelXMm: event.xMm,
+            labelYMm: event.yMm,
+          },
+          stillActive: true,
+        },
+      };
+  }
+  return { state, effect: { stillActive: true } };
+}
+
+export type RadialDimensionState =
+  | { phase: 'idle' }
+  | { phase: 'arc-point'; arcXMm: number; arcYMm: number };
+export type RadialDimensionEvent =
+  | { kind: 'activate' }
+  | { kind: 'deactivate' }
+  | { kind: 'click'; xMm: number; yMm: number }
+  | { kind: 'cancel' };
+export interface RadialDimensionEffect {
+  commitRadial?: { arcXMm: number; arcYMm: number; labelXMm: number; labelYMm: number };
+  stillActive: boolean;
+}
+export function initialRadialDimensionState(): RadialDimensionState {
+  return { phase: 'idle' };
+}
+export function reduceRadialDimension(
+  state: RadialDimensionState,
+  event: RadialDimensionEvent,
+): { state: RadialDimensionState; effect: RadialDimensionEffect } {
+  if (event.kind === 'activate' || event.kind === 'deactivate' || event.kind === 'cancel')
+    return { state: { phase: 'idle' }, effect: { stillActive: event.kind !== 'deactivate' } };
+  if (event.kind === 'click') {
+    if (state.phase === 'idle')
+      return {
+        state: { phase: 'arc-point', arcXMm: event.xMm, arcYMm: event.yMm },
+        effect: { stillActive: true },
+      };
+    if (state.phase === 'arc-point')
+      return {
+        state: { phase: 'idle' },
+        effect: {
+          commitRadial: {
+            arcXMm: state.arcXMm,
+            arcYMm: state.arcYMm,
+            labelXMm: event.xMm,
+            labelYMm: event.yMm,
+          },
+          stillActive: true,
+        },
+      };
+  }
+  return { state, effect: { stillActive: true } };
+}
+
+export type SingleClickAnnotationState = { phase: 'idle' };
+export type SingleClickAnnotationEvent =
+  | { kind: 'activate' }
+  | { kind: 'deactivate' }
+  | { kind: 'click'; xMm: number; yMm: number }
+  | { kind: 'cancel' };
+export interface SingleClickAnnotationEffect {
+  commitPoint?: { xMm: number; yMm: number };
+  stillActive: boolean;
+}
+export function initialSingleClickAnnotationState(): SingleClickAnnotationState {
+  return { phase: 'idle' };
+}
+export function reduceSingleClickAnnotation(
+  state: SingleClickAnnotationState,
+  event: SingleClickAnnotationEvent,
+): { state: SingleClickAnnotationState; effect: SingleClickAnnotationEffect } {
+  if (event.kind === 'deactivate')
+    return { state: { phase: 'idle' }, effect: { stillActive: false } };
+  if (event.kind === 'click')
+    return {
+      state: { phase: 'idle' },
+      effect: { commitPoint: { xMm: event.xMm, yMm: event.yMm }, stillActive: true },
+    };
+  return { state: { phase: 'idle' }, effect: { stillActive: true } };
+}
+
+export type SlopeAnnotationState =
+  | { phase: 'idle' }
+  | { phase: 'end-point'; startXMm: number; startYMm: number };
+export type SlopeAnnotationEvent =
+  | { kind: 'activate' }
+  | { kind: 'deactivate' }
+  | { kind: 'click'; xMm: number; yMm: number }
+  | { kind: 'cancel' };
+export interface SlopeAnnotationEffect {
+  commitSlope?: { startXMm: number; startYMm: number; endXMm: number; endYMm: number };
+  stillActive: boolean;
+}
+export function initialSlopeAnnotationState(): SlopeAnnotationState {
+  return { phase: 'idle' };
+}
+export function reduceSlopeAnnotation(
+  state: SlopeAnnotationState,
+  event: SlopeAnnotationEvent,
+): { state: SlopeAnnotationState; effect: SlopeAnnotationEffect } {
+  if (event.kind === 'activate' || event.kind === 'deactivate' || event.kind === 'cancel')
+    return { state: { phase: 'idle' }, effect: { stillActive: event.kind !== 'deactivate' } };
+  if (event.kind === 'click') {
+    if (state.phase === 'idle')
+      return {
+        state: { phase: 'end-point', startXMm: event.xMm, startYMm: event.yMm },
+        effect: { stillActive: true },
+      };
+    if (state.phase === 'end-point')
+      return {
+        state: { phase: 'idle' },
+        effect: {
+          commitSlope: {
+            startXMm: state.startXMm,
+            startYMm: state.startYMm,
+            endXMm: event.xMm,
+            endYMm: event.yMm,
+          },
+          stillActive: true,
+        },
+      };
+  }
+  return { state, effect: { stillActive: true } };
 }

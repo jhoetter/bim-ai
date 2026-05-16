@@ -74,10 +74,12 @@ function planViewSubtypeLabel(subtype: PlanViewSubtypeValue | undefined): string
   if (subtype === 'power_plan') return 'Power Plans';
   if (subtype === 'coordination_plan') return 'Coordination Plans';
   if (subtype === 'area_plan') return 'Area Plans';
+  if (subtype === 'ceiling_plan') return 'Reflected Ceiling Plans';
   return 'Floor Plans';
 }
 
 function planViewSubtypeTestToken(subtype: PlanViewSubtypeValue | undefined): string {
+  if (subtype === 'ceiling_plan') return 'ceiling-plans';
   return subtype ?? 'floor_plan';
 }
 

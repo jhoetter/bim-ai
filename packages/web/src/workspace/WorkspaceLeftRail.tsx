@@ -75,6 +75,7 @@ export function WorkspaceLeftRail({
   onSetModeOnly,
   onSemanticCommand,
   onCreateFloorPlan,
+  onCreateCeilingPlan,
   onCreate3dView,
   onCreateSectionView,
   onCreateSheet,
@@ -99,6 +100,8 @@ export function WorkspaceLeftRail({
   onSetModeOnly?: (mode: WorkspaceMode) => void;
   onSemanticCommand?: (cmd: Record<string, unknown>) => void | Promise<void>;
   onCreateFloorPlan?: () => void;
+  /** D1: Create a new Reflected Ceiling Plan view. */
+  onCreateCeilingPlan?: () => void;
   onCreate3dView?: () => void;
   onCreateSectionView?: () => void;
   onCreateSheet?: () => void;
@@ -405,6 +408,20 @@ export function WorkspaceLeftRail({
           >
             Duplicate
           </button>
+          {onCreateCeilingPlan && (
+            <button
+              type="button"
+              role="menuitem"
+              data-testid="primary-nav-context-new-ceiling-plan"
+              className="block w-full px-3 py-1.5 text-left hover:bg-surface-strong"
+              onClick={() => {
+                onCreateCeilingPlan();
+                setContextMenu(null);
+              }}
+            >
+              New Reflected Ceiling Plan
+            </button>
+          )}
           <button
             type="button"
             role="menuitem"

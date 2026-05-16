@@ -1952,7 +1952,8 @@ export type Element =
         | 'lighting_plan'
         | 'power_plan'
         | 'coordination_plan'
-        | 'callout';
+        | 'callout'
+        | 'ceiling_plan';
       /** D4: id of the parent plan_view this callout enlarges. */
       parentViewId?: string | null;
       /** D4: numeric scale multiplier relative to the parent view (default 5). */
