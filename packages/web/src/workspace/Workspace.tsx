@@ -934,6 +934,18 @@ export function Workspace(): JSX.Element {
     [elementsById],
   );
 
+  const projectNorthAngleDeg = useMemo(() => {
+    const bp = elementsById['project_base_point'] as
+      | Extract<Element, { kind: 'project_base_point' }>
+      | undefined;
+    if (bp?.kind === 'project_base_point') return bp.angleToTrueNorthDeg ?? 0;
+    const ps = elementsById['project_settings'] as
+      | Extract<Element, { kind: 'project_settings' }>
+      | undefined;
+    if (ps?.kind === 'project_settings') return ps.projectNorthAngleDeg ?? 0;
+    return 0;
+  }, [elementsById]);
+
   // CHR-V3-05 activity drawer state
   const activityIsOpen = useActivityDrawerStore((s) => s.isOpen);
   const activityLastSeenAt = useActivityDrawerStore((s) => s.lastSeenAt);
@@ -1014,6 +1026,7 @@ export function Workspace(): JSX.Element {
   const [projectUnitsOpen, setProjectUnitsOpen] = useState(false);
   const [phaseManagerOpen, setPhaseManagerOpen] = useState(false);
   const [projectInfoOpen, setProjectInfoOpen] = useState(false);
+  const [trueNorthActive, setTrueNorthActive] = useState(false);
   const lensMode = useBimStore((s) => s.lensMode);
   const setLensMode = useBimStore((s) => s.setLensMode);
   const activeWorkspaceId = useBimStore((s) => s.activeWorkspaceId);
@@ -3322,12 +3335,33 @@ export function Workspace(): JSX.Element {
       if (!paneTab) return;
       setTabsState((state) => updateTabLens(state, paneTab.id, nextLensMode));
     };
+    const isPlanPane = paneTab?.kind === 'plan' || paneTab?.kind === 'level';
     const paneTrailingControls = paneTab ? (
       <>
         {paneCanAcceptDrop ? (
           <span className="rounded-md border border-accent/60 bg-accent-soft px-1.5 py-0.5 text-[10px] font-medium text-accent">
             Drop view
           </span>
+        ) : null}
+        {isPlanPane && projectNorthAngleDeg !== 0 ? (
+          <button
+            type="button"
+            data-testid="true-north-toggle"
+            aria-pressed={trueNorthActive}
+            title={
+              trueNorthActive
+                ? `True North active (${projectNorthAngleDeg}°) — click to disable`
+                : `Rotate to True North (${projectNorthAngleDeg}°)`
+            }
+            onClick={() => setTrueNorthActive((v) => !v)}
+            className={`inline-flex h-6 items-center gap-1 rounded-md border px-1.5 text-[10px] font-medium ${
+              trueNorthActive
+                ? 'border-accent bg-accent text-white'
+                : 'border-border text-muted hover:bg-surface-strong hover:text-foreground'
+            }`}
+          >
+            N↑
+          </button>
         ) : null}
         <button
           type="button"
@@ -3527,6 +3561,7 @@ export function Workspace(): JSX.Element {
         </div>
       </aside>
     ) : null;
+    const canvasRotationDeg = trueNorthActive && isPlanPane ? -projectNorthAngleDeg : 0;
     const paneCanvas = (
       <div
         className="min-h-0 min-w-0 flex-1"
@@ -3534,6 +3569,8 @@ export function Workspace(): JSX.Element {
           background: ['plan', 'section'].includes(paneTab?.kind ?? '')
             ? 'var(--color-canvas-paper)'
             : 'var(--color-background)',
+          transform: canvasRotationDeg !== 0 ? `rotate(${canvasRotationDeg}deg)` : undefined,
+          transition: 'transform 0.2s ease',
         }}
       >
         {paneTab ? (

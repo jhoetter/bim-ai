@@ -1135,6 +1135,8 @@ export type Element =
       issueDate?: string | null;
       checkDate?: string | null;
       projectDescription?: string | null;
+      /** F6: angle (degrees) from project north to true geographic north. */
+      projectNorthAngleDeg?: number | null;
       worksetId?: string | null;
       startingViewId?: string | null;
       checkpointRetentionLimit?: number;

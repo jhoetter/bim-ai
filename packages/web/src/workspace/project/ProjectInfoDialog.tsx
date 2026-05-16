@@ -24,6 +24,7 @@ interface Draft {
   issueDate: string;
   checkDate: string;
   projectDescription: string;
+  projectNorthAngleDeg: string;
 }
 
 function emptyDraft(): Draft {
@@ -37,6 +38,7 @@ function emptyDraft(): Draft {
     issueDate: '',
     checkDate: '',
     projectDescription: '',
+    projectNorthAngleDeg: '0',
   };
 }
 
@@ -52,6 +54,7 @@ function draftFromSettings(ps: ProjectSettings | undefined): Draft {
     issueDate: ps.issueDate ?? '',
     checkDate: ps.checkDate ?? '',
     projectDescription: ps.projectDescription ?? '',
+    projectNorthAngleDeg: String(ps.projectNorthAngleDeg ?? 0),
   };
 }
 
@@ -113,6 +116,15 @@ export function ProjectInfoDialog({
     ];
     for (const [key, value] of fields) {
       cmds.push({ type: 'updateElementProperty', elementId: sid, key, value });
+    }
+    const northAngle = parseFloat(draft.projectNorthAngleDeg);
+    if (Number.isFinite(northAngle)) {
+      cmds.push({
+        type: 'updateElementProperty',
+        elementId: sid,
+        key: 'projectNorthAngleDeg',
+        value: String(northAngle),
+      });
     }
     setBusy(true);
     setMessage(null);
@@ -241,6 +253,12 @@ export function ProjectInfoDialog({
               testId="project-info-issuedate"
               value={draft.issueDate}
               onChange={(v) => setDraft((d) => ({ ...d, issueDate: v }))}
+            />
+            <Field
+              label="True North angle (°)"
+              testId="project-info-north-angle"
+              value={draft.projectNorthAngleDeg}
+              onChange={(v) => setDraft((d) => ({ ...d, projectNorthAngleDeg: v }))}
             />
           </div>
           <div style={{ marginTop: 12 }}>

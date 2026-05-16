@@ -36,6 +36,12 @@ export type PlanViewHeaderProps = {
     schemeCategory: string;
     colorMap: Record<string, string>;
   }) => void;
+  /** F6: angle from project north to true north. When provided, shows the True North toggle. */
+  projectNorthAngleDeg?: number;
+  /** F6: whether the canvas is currently rotated to true north. */
+  trueNorthActive?: boolean;
+  /** F6: called when the user toggles the True North mode. */
+  onTrueNorthToggle?: (active: boolean) => void;
 };
 
 export function PlanViewHeader({
@@ -51,6 +57,9 @@ export function PlanViewHeader({
   currentColorScheme,
   rooms = [],
   onColorSchemeApply,
+  projectNorthAngleDeg,
+  trueNorthActive = false,
+  onTrueNorthToggle,
 }: PlanViewHeaderProps): JSX.Element {
   const [viewRangeOpen, setViewRangeOpen] = useState(false);
   const [colorSchemeOpen, setColorSchemeOpen] = useState(false);
@@ -141,6 +150,31 @@ export function PlanViewHeader({
             setColorSchemeOpen(false);
           }}
         />
+      ) : null}
+      {projectNorthAngleDeg !== undefined && onTrueNorthToggle ? (
+        <button
+          type="button"
+          data-testid="true-north-toggle"
+          aria-pressed={trueNorthActive}
+          onClick={() => onTrueNorthToggle(!trueNorthActive)}
+          title={
+            trueNorthActive
+              ? `True North active (${projectNorthAngleDeg}°) — click to disable`
+              : `True North off — click to rotate ${projectNorthAngleDeg}°`
+          }
+          style={{
+            padding: '2px 8px',
+            fontSize: 11,
+            border: '1px solid var(--color-border)',
+            borderRadius: 4,
+            cursor: 'pointer',
+            background: trueNorthActive ? 'var(--color-accent, #2563eb)' : 'transparent',
+            color: trueNorthActive ? '#fff' : 'var(--color-foreground)',
+            whiteSpace: 'nowrap',
+          }}
+        >
+          N ↑ {projectNorthAngleDeg}°
+        </button>
       ) : null}
     </div>
   );

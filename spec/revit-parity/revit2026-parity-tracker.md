@@ -287,10 +287,17 @@ Roof by footprint (roof tool), roof by sketch (roof-sketch tool). Hip/valley slo
 
 ### 2.8 Projektphasen (project phases: Existing, Demolition, New Construction)
 **Status: Partial — P1**
-Phase filter is implemented (phaseFilter.ts, PhaseDropdown in plan view). Elements can be assigned a phaseId. Phase filter visibility (show New/Demo/Existing in different graphic states) works at a basic level. Missing:
-- Phase creation/deletion/rename dialog
-- Per-phase graphic overrides (demolished elements shown dashed, existing shown grey)
-- Phase filter presets (As Built, Construction, Demolition Plan, etc.)
+Phase filter is implemented (phaseFilter.ts, PhaseDropdown in plan view). Elements can be assigned a phaseId. Phase filter visibility (show New/Demo/Existing in different graphic states) works at a basic level.
+
+F1 (Phase Management): PhaseManagerDialog.tsx implemented — table shows sequence/name/description/element count, inline rename, up/down reorder, delete with confirmation, add new phase. Accessible via Project menu "Manage Phases...". 8 tests pass.
+
+F3 (Project Information): ProjectInfoDialog.tsx implemented — standalone dialog with projectNumber, projectName, projectAddress, projectStatus, clientName, authorName, issueDate, checkDate, description, trueNorthAngleDeg. Accessible via Project menu "Project Information...". SheetCanvas.tsx updated to resolve token values from project_settings when sheet.metadata is empty, with greyed placeholder text for empty slots. 5 tests pass.
+
+F6 (True North): projectNorthAngleDeg added to project_settings type. True North toggle button in PlanViewHeader.tsx (props: projectNorthAngleDeg, trueNorthActive, onTrueNorthToggle). Toggle button wired in Workspace.tsx pane trailing controls when north angle ≠ 0; applies CSS `rotate(-Ndeg)` to plan canvas wrapper. sunStore.ts extended with projectNorthOffsetDeg + displayAzimuthDeg() for adjusted sun azimuth. Note: mouse interaction is not coordinate-corrected in true-north mode (view-only rotation).
+
+Still missing:
+- Per-phase graphic overrides (demolished elements shown dashed, existing shown grey) [F2]
+- Phase filter presets (As Built, Construction, Demolition Plan, etc.) [F2]
 - Elements automatically acquiring correct phase based on creation context
 
 ### 2.9 Weitere Grundrisse und Ansichten (additional floor plans and views)
