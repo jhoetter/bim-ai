@@ -53,6 +53,7 @@ import {
 import { curtainWallPlanThree } from './curtainWallPlanSymbol';
 import { terrainControlPointsPlanThree } from './terrainPointSymbol';
 import { terrainPadPlanThree } from './terrainPadPlanThree';
+import { shaftPlanThree } from './shaftPlanThree';
 
 /** Plan slice elevation in world units (walls still render with real height elsewhere). */
 
@@ -1803,6 +1804,19 @@ export function rebuildPlanMeshes(
       holder.add(terrainPadPlanThree(pad));
     }
     tintNewChildren(before, 'toposolid_pad');
+  }
+
+  // §2.5.1: shaft plan symbols (dashed boundary + grey fill + X cross)
+  {
+    const before = holder.children.length;
+    for (const el of Object.values(elementsById)) {
+      if (el.kind !== 'shaft') continue;
+      if (kindHidden('shaft' as never)) continue;
+      const shaft = el as Extract<Element, { kind: 'shaft' }>;
+      if (shaft.boundaryMm.length < 3) continue;
+      holder.add(shaftPlanThree(shaft));
+    }
+    tintNewChildren(before, 'shaft');
   }
 
   {

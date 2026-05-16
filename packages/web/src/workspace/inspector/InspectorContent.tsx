@@ -30,6 +30,7 @@ import { PlanViewGraphicsMatrix } from './PlanViewGraphicsMatrix';
 import { SavedViewTagGraphicsAuthoring, SavedViewTemplateGraphicsAuthoring } from '../authoring';
 import { computeFloorTypeThicknessMm } from '../../tools/floorTypeThickness';
 import { WallTypeLayerEditor } from '../families/WallTypeLayerEditor';
+import { stairBoundaryMm } from '../../plan/stairBoundingBox';
 
 /**
  * Inspector parameter renderers — spec §13.
@@ -1404,6 +1405,28 @@ export function InspectorPropertiesFor(
             onOpenMaterialBrowser={onOpenMaterialBrowser}
             onOpenAppearanceAssetBrowser={onOpenAppearanceAssetBrowser}
           />
+          <div className="flex flex-col gap-1 pt-1">
+            <button
+              type="button"
+              data-testid="inspector-stair-create-opening"
+              className="self-start text-xs border border-border rounded px-2 py-0.5 hover:bg-surface-strong"
+              onClick={() => {
+                const boundaryMm = stairBoundaryMm(el);
+                onDispatchCommand?.({
+                  type: 'create_shaft',
+                  id: crypto.randomUUID(),
+                  boundaryMm,
+                  baseLevelId: el.baseLevelId,
+                  topLevelId: el.topLevelId,
+                });
+              }}
+            >
+              Create Floor Opening
+            </button>
+            <p className="text-xs text-muted">
+              Creates a shaft opening through the floor(s) above this stair.
+            </p>
+          </div>
           {onDisciplineChange ? (
             <InspectorDisciplineDropdown value={el.discipline} onChange={onDisciplineChange} />
           ) : null}

@@ -186,6 +186,30 @@ export type CreateToposolidPadCmd = {
 };
 
 // ---------------------------------------------------------------------------
+// WP-E §2.5.1 + §2.5.3 — Shaft floor opening
+// ---------------------------------------------------------------------------
+
+/** §2.5.1: a vertical shaft void cutting floor openings from baseLevelId up to topLevelId. */
+export type ShaftElement = {
+  kind: 'shaft';
+  id: string;
+  /** Boundary polygon in plan (mm). */
+  boundaryMm: BoundaryPoint[];
+  /** Level where the shaft starts (cuts floors from this level up). */
+  baseLevelId: string;
+  /** Level where the shaft ends. */
+  topLevelId: string;
+};
+
+export type CreateShaftCmd = {
+  type: 'create_shaft';
+  id: string;
+  boundaryMm: BoundaryPoint[];
+  baseLevelId: string;
+  topLevelId: string;
+};
+
+// ---------------------------------------------------------------------------
 // CAN-V3-02 — Hatch pattern definition
 // ---------------------------------------------------------------------------
 
@@ -410,7 +434,8 @@ export type ElemKind =
   | 'permanent_dimension'
   | 'sheet_viewport'
   | 'steel_connection'
-  | 'toposolid_pad';
+  | 'toposolid_pad'
+  | 'shaft';
 
 export type PhaseFilter = 'all' | 'existing' | 'demolition' | 'new';
 
@@ -455,6 +480,7 @@ export const DEFAULT_DISCIPLINE_BY_KIND: Readonly<Partial<Record<ElemKind, Disci
   soffit: 'arch',
   toposolid: 'arch',
   toposolid_pad: 'arch',
+  shaft: 'arch',
   brace: 'struct',
   steel_connection: 'struct',
   foundation: 'struct',
@@ -3095,7 +3121,8 @@ export type Element =
       heightMm: number;
       scaleDenom: number;
     }
-  | CameraPathElem;
+  | CameraPathElem
+  | ShaftElement;
 
 export type Violation = {
   ruleId: string;

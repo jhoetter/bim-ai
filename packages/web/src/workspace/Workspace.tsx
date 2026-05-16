@@ -1770,6 +1770,23 @@ export function Workspace(): JSX.Element {
         });
         return;
       }
+      // §2.5.3: client-only shaft floor opening creation
+      if (cmd.type === 'create_shaft') {
+        const current = useBimStore.getState().elementsById;
+        useBimStore.setState({
+          elementsById: {
+            ...current,
+            [cmd.id as string]: {
+              kind: 'shaft',
+              id: cmd.id as string,
+              boundaryMm: cmd.boundaryMm as { xMm: number; yMm: number }[],
+              baseLevelId: cmd.baseLevelId as string,
+              topLevelId: cmd.topLevelId as string,
+            },
+          },
+        });
+        return;
+      }
       // §4.2.1: client-only permanent dimension chain creation
       if (cmd.type === 'create_permanent_dimension') {
         const current = useBimStore.getState().elementsById;
