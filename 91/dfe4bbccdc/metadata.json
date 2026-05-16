@@ -3,7 +3,7 @@
   "checkpoint_id": "91dfe4bbccdc",
   "strategy": "manual-commit",
   "branch": "main",
-  "checkpoints_count": 9,
+  "checkpoints_count": 10,
   "files_touched": [
     "spec/revit-parity/revit2026-parity-tracker.md"
   ],
@@ -67,13 +67,19 @@
       "transcript": "/91/dfe4bbccdc/9/full.jsonl",
       "content_hash": "/91/dfe4bbccdc/9/content_hash.txt",
       "prompt": "/91/dfe4bbccdc/9/prompt.txt"
+    },
+    {
+      "metadata": "/91/dfe4bbccdc/10/metadata.json",
+      "transcript": "/91/dfe4bbccdc/10/full.jsonl",
+      "content_hash": "/91/dfe4bbccdc/10/content_hash.txt",
+      "prompt": "/91/dfe4bbccdc/10/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 10991190,
-    "cache_creation_tokens": 2376835,
-    "cache_read_tokens": 419606929,
-    "output_tokens": 1352197,
-    "api_call_count": 4592
+    "input_tokens": 10991738,
+    "cache_creation_tokens": 2796080,
+    "cache_read_tokens": 429857687,
+    "output_tokens": 1572003,
+    "api_call_count": 4712
   }
 }
