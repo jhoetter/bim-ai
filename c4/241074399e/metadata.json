@@ -4,7 +4,9 @@
   "strategy": "manual-commit",
   "branch": "main",
   "checkpoints_count": 2,
-  "files_touched": null,
+  "files_touched": [
+    "packages/core/src/index.ts"
+  ],
   "sessions": [
     {
       "metadata": "/c4/241074399e/0/metadata.json",
@@ -23,6 +25,12 @@
       "transcript": "/c4/241074399e/2/full.jsonl",
       "content_hash": "/c4/241074399e/2/content_hash.txt",
       "prompt": "/c4/241074399e/2/prompt.txt"
+    },
+    {
+      "metadata": "/c4/241074399e/3/metadata.json",
+      "transcript": "/c4/241074399e/3/full.jsonl",
+      "content_hash": "/c4/241074399e/3/content_hash.txt",
+      "prompt": "/c4/241074399e/3/prompt.txt"
     }
   ],
   "token_usage": {
