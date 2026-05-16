@@ -2820,6 +2820,52 @@ export type Element =
       phaseCreated?: string | null;
       phaseDemolished?: string | null;
       discipline?: DisciplineTag | null;
+    }
+  | {
+      /** G5a: Box mass primitive for conceptual massing. */
+      kind: 'mass_box';
+      id: string;
+      name?: string;
+      widthMm: number;
+      depthMm: number;
+      heightMm: number;
+      insertionXMm: number;
+      insertionYMm: number;
+      baseElevationMm: number;
+      rotationDeg?: number;
+      materialKey?: string | null;
+      phaseCreated?: string | null;
+      phaseDemolished?: string | null;
+      discipline?: DisciplineTag | null;
+    }
+  | {
+      /** G5b: Extruded mass — a polygon footprint extruded to a height. */
+      kind: 'mass_extrusion';
+      id: string;
+      name?: string;
+      profilePoints: { xMm: number; yMm: number }[];
+      heightMm: number;
+      baseElevationMm: number;
+      materialKey?: string | null;
+      phaseCreated?: string | null;
+      phaseDemolished?: string | null;
+      discipline?: DisciplineTag | null;
+    }
+  | {
+      /** G5c: Revolved mass — a profile rotated around an axis. */
+      kind: 'mass_revolution';
+      id: string;
+      name?: string;
+      profilePoints: { xMm: number; yMm: number }[];
+      axisPt1: { xMm: number; yMm: number };
+      axisPt2: { xMm: number; yMm: number };
+      startAngleDeg?: number;
+      endAngleDeg?: number;
+      baseElevationMm: number;
+      materialKey?: string | null;
+      phaseCreated?: string | null;
+      phaseDemolished?: string | null;
+      discipline?: DisciplineTag | null;
     };
 
 export type Violation = {

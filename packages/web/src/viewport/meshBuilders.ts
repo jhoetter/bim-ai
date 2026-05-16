@@ -316,6 +316,25 @@ export function wallVerticalSpanM(
     const topOff = (wall.topConstraintOffsetMm ?? 0) / 1000;
     return { yBase, height: THREE.MathUtils.clamp(topElevM + topOff - yBase, 0.25, 40) };
   }
+  // WP-C C4: if a host element (roof or floor) constrains the wall top, sample
+  // its height at the wall midpoint and derive the effective wall height.
+  if (wall.topConstraintHostId && elementsById) {
+    const host = elementsById[wall.topConstraintHostId];
+    if (host?.kind === 'roof') {
+      const midXMm = (wall.start.xMm + wall.end.xMm) / 2;
+      const midYMm = (wall.start.yMm + wall.end.yMm) / 2;
+      const sampledTopM = roofHeightAtPoint(host, elementsById, midXMm, midYMm);
+      const minWallHeight = 0.1;
+      return {
+        yBase,
+        height: THREE.MathUtils.clamp(
+          Math.max(sampledTopM - yBase, minWallHeight),
+          minWallHeight,
+          40,
+        ),
+      };
+    }
+  }
   return { yBase, height: THREE.MathUtils.clamp(wall.heightMm / 1000, 0.25, 40) };
 }
 

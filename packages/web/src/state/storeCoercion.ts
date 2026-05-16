@@ -323,6 +323,20 @@ export function coerceElement(id: string, raw: Record<string, unknown>): Element
       ...(raw.topConstraintLevelId || raw.top_constraint_level_id
         ? { topConstraintLevelId: String(raw.topConstraintLevelId ?? raw.top_constraint_level_id) }
         : {}),
+      ...(raw.topConstraintHostId || raw.top_constraint_host_id
+        ? {
+            topConstraintHostId: String(
+              raw.topConstraintHostId ?? raw.top_constraint_host_id,
+            ),
+          }
+        : {}),
+      ...(raw.topConstraintHostFace || raw.top_constraint_host_face
+        ? {
+            topConstraintHostFace: String(
+              raw.topConstraintHostFace ?? raw.top_constraint_host_face,
+            ) as 'bottom' | 'top',
+          }
+        : {}),
       baseConstraintOffsetMm: Number(
         raw.baseConstraintOffsetMm ?? raw.base_constraint_offset_mm ?? 0,
       ),

@@ -86,6 +86,41 @@ export function renderDxfUnderlay(
         else ctx.lineTo(px, py);
       }
       ctx.stroke();
+    } else if (prim.kind === 'circle') {
+      const [cx, cy] = worldToScreen(transform(prim.center));
+      const [rx] = worldToScreen(
+        transform({ xMm: prim.center.xMm + prim.radiusMm, yMm: prim.center.yMm }),
+      );
+      const screenRadius = Math.abs(rx - cx);
+      ctx.beginPath();
+      ctx.arc(cx, cy, screenRadius, 0, Math.PI * 2);
+      ctx.stroke();
+    } else if (prim.kind === 'text') {
+      const color = resolveDxfPrimitiveColor(link, prim, style);
+      ctx.fillStyle = color;
+      const fontSizePx =
+        typeof prim.heightMm === 'number' && prim.heightMm > 0
+          ? (() => {
+              const [x0] = worldToScreen(transform({ xMm: 0, yMm: 0 }));
+              const [x1] = worldToScreen(transform({ xMm: prim.heightMm, yMm: 0 }));
+              return Math.max(6, Math.abs(x1 - x0));
+            })()
+          : 12;
+      ctx.font = `${fontSizePx}px sans-serif`;
+      const [sx, sy] = worldToScreen(transform(prim.positionMm));
+      ctx.fillText(prim.text, sx, sy);
+    } else if (prim.kind === 'hatch') {
+      for (const loop of prim.boundaryPoints) {
+        if (loop.length < 2) continue;
+        ctx.beginPath();
+        for (let i = 0; i < loop.length; i++) {
+          const [px, py] = worldToScreen(transform(loop[i]!));
+          if (i === 0) ctx.moveTo(px, py);
+          else ctx.lineTo(px, py);
+        }
+        ctx.closePath();
+        ctx.stroke();
+      }
     }
   }
 
@@ -253,7 +288,7 @@ export function makeDxfLinkTransform(
   };
 }
 
-function arcToPolylineSegments(arc: Extract<DxfLineworkPrim, { kind: 'arc' }>): XY[] {
+export function arcToPolylineSegments(arc: Extract<DxfLineworkPrim, { kind: 'arc' }>): XY[] {
   const cx = arc.center.xMm;
   const cy = arc.center.yMm;
   const r = arc.radiusMm;
@@ -295,12 +330,41 @@ function primitiveSegmentsMm(prim: DxfLineworkPrim): Array<[XY, XY]> {
     }
     return segments;
   }
-  const arcPts = arcToPolylineSegments(prim);
-  const segments: Array<[XY, XY]> = [];
-  for (let i = 0; i < arcPts.length - 1; i++) {
-    segments.push([arcPts[i]!, arcPts[i + 1]!]);
+  if (prim.kind === 'arc') {
+    const arcPts = arcToPolylineSegments(prim);
+    const segs: Array<[XY, XY]> = [];
+    for (let i = 0; i < arcPts.length - 1; i++) {
+      segs.push([arcPts[i]!, arcPts[i + 1]!]);
+    }
+    return segs;
   }
-  return segments;
+  if (prim.kind === 'circle') {
+    const arcPts = arcToPolylineSegments({
+      kind: 'arc',
+      center: prim.center,
+      radiusMm: prim.radiusMm,
+      startDeg: 0,
+      endDeg: 360,
+    });
+    const segs: Array<[XY, XY]> = [];
+    for (let i = 0; i < arcPts.length - 1; i++) {
+      segs.push([arcPts[i]!, arcPts[i + 1]!]);
+    }
+    return segs;
+  }
+  if (prim.kind === 'hatch') {
+    const segs: Array<[XY, XY]> = [];
+    for (const loop of prim.boundaryPoints) {
+      for (let i = 0; i < loop.length - 1; i++) {
+        segs.push([loop[i]!, loop[i + 1]!]);
+      }
+      if (loop.length > 2) {
+        segs.push([loop[loop.length - 1]!, loop[0]!]);
+      }
+    }
+    return segs;
+  }
+  return [];
 }
 
 export function queryDxfPrimitiveAtPoint(

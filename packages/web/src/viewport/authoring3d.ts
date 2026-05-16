@@ -235,6 +235,25 @@ export function resizeLinePreviewToLength(
   });
 }
 
+/**
+ * WP-C C4 — typed semantic command shapes for wall-top host attachment.
+ * These are emitted as Record<string, unknown> via onSemanticCommand; the
+ * union type here provides author-time safety for callers that construct them.
+ */
+export type AttachWallTopCommand = {
+  type: 'attachWallTop';
+  wallId: string;
+  hostId: string;
+  hostFace: 'bottom' | 'top';
+};
+
+export type DetachWallTopCommand = {
+  type: 'detachWallTop';
+  wallId: string;
+};
+
+export type WallTopConstraintCommand = AttachWallTopCommand | DetachWallTopCommand;
+
 export function linePreviewToSemanticCommand(
   payload: Authoring3dLinePreviewPayload,
 ): Record<string, unknown> {

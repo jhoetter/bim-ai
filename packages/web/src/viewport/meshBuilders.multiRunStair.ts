@@ -6,6 +6,7 @@ import { categoryColorOr, addEdges } from './sceneHelpers';
 import type { ViewportPaintBundle } from './materials';
 import { elevationMForLevel } from './meshBuilders';
 import { makeThreeMaterialForKey } from './threeMaterialFactory';
+import { winderWedgePoints } from '../plan/stairPlanSymbol';
 
 type StairElem = Extract<Element, { kind: 'stair' }>;
 type Vec2Mm = { xMm: number; yMm: number };
@@ -181,6 +182,28 @@ function appendSingleStoreyStairMeshes(
     const landing = landings[li];
     if (landing.boundaryMm.length < 3) continue;
     const landingY = baseElev + landingRisersConsumed * riserH;
+
+    // WP-C C3: for the first corner of an l_shape stair with winderAtCorner=true,
+    // replace the flat landing with wedge (winder) treads sweeping through the turn.
+    if (stair.winderAtCorner && stair.shape === 'l_shape' && li === 0) {
+      const winderMeshes = buildWinderCornerTreads(
+        runs[li],
+        runs[li + 1],
+        landing.boundaryMm,
+        3,
+        landingY,
+        riserH,
+        treadMat,
+      );
+      for (const wm of winderMeshes) {
+        wm.userData.bimPickId = stair.id;
+        wm.userData.materialSlot = 'tread';
+        addEdges(wm);
+        group.add(wm);
+      }
+      continue;
+    }
+
     const shape = new THREE.Shape(
       landing.boundaryMm.map((p) => new THREE.Vector2(p.xMm / 1000, p.yMm / 1000)),
     );
@@ -238,6 +261,62 @@ export function makeMultiRunStairMesh(
  * `totalRotDeg / riserCount` of arc and rises one riser. Returned in order
  * from base to top.
  */
+/**
+ * WP-C C3: Build `winderCount` wedge-shaped winder tread meshes that sweep
+ * through the corner between two stair runs.
+ *
+ * Locates the inner-corner pivot as the landing boundary vertex nearest the
+ * end of run0, computes the signed angular sweep from run0's direction to
+ * run1's direction, fans `winderCount` equal wedge slices. Each slice is
+ * extruded by TREAD_THICK and steps up by one riserH.
+ */
+export function buildWinderCornerTreads(
+  run0: { startMm: Vec2Mm; endMm: Vec2Mm; widthMm: number },
+  run1: { startMm: Vec2Mm; endMm: Vec2Mm; widthMm: number },
+  boundaryMm: Vec2Mm[],
+  winderCount: number,
+  baseY: number,
+  riserH: number,
+  material: THREE.Material,
+): THREE.Mesh[] {
+  if (winderCount < 1) return [];
+
+  const pivotRef = run0.endMm;
+  let pivot = boundaryMm[0];
+  let minDist = Infinity;
+  for (const pt of boundaryMm) {
+    const d = Math.hypot(pt.xMm - pivotRef.xMm, pt.yMm - pivotRef.yMm);
+    if (d < minDist) { minDist = d; pivot = pt; }
+  }
+
+  const dir0 = Math.atan2(run0.endMm.yMm - run0.startMm.yMm, run0.endMm.xMm - run0.startMm.xMm);
+  const dir1 = Math.atan2(run1.endMm.yMm - run1.startMm.yMm, run1.endMm.xMm - run1.startMm.xMm);
+
+  let sweep = dir1 - dir0;
+  while (sweep > Math.PI) sweep -= 2 * Math.PI;
+  while (sweep <= -Math.PI) sweep += 2 * Math.PI;
+
+  const outerR = Math.max(300, (run0.widthMm + run1.widthMm) * 0.5);
+  const innerR = outerR * 0.1;
+  const stepRad = sweep / winderCount;
+  const meshes: THREE.Mesh[] = [];
+
+  for (let i = 0; i < winderCount; i++) {
+    const theta0 = dir0 + stepRad * i;
+    const theta1 = dir0 + stepRad * (i + 1);
+    const wedgePts = winderWedgePoints(pivot, innerR, outerR, theta0, theta1, 4);
+    const shape = new THREE.Shape(wedgePts.map((p) => new THREE.Vector2(p.xMm / 1000, p.yMm / 1000)));
+    const geom = new THREE.ExtrudeGeometry(shape, { depth: TREAD_THICK, bevelEnabled: false });
+    geom.rotateX(-Math.PI / 2);
+    geom.translate(0, baseY + (i + 1) * riserH - TREAD_THICK, 0);
+    const mesh = new THREE.Mesh(geom, material);
+    mesh.castShadow = true;
+    mesh.receiveShadow = true;
+    meshes.push(mesh);
+  }
+  return meshes;
+}
+
 export function buildSpiralStairFlight(
   center: Vec2Mm,
   innerR: number,

@@ -145,9 +145,9 @@ describe('makeStairVolumeMesh — multi-run (KRN-07)', () => {
     const tread = group.children.find((child) => child.userData.materialSlot === 'tread') as
       | THREE.Mesh
       | undefined;
-    const stringer = group.children.find(
-      (child) => child.userData.materialSlot === 'stringer',
-    ) as THREE.Mesh | undefined;
+    const stringer = group.children.find((child) => child.userData.materialSlot === 'stringer') as
+      | THREE.Mesh
+      | undefined;
 
     expect((tread?.material as THREE.Material).userData.materialKey).toBe('timber_cladding');
     expect((stringer?.material as THREE.Material).userData.materialKey).toBe('aluminium_black');
@@ -236,5 +236,98 @@ describe('makeStairVolumeMesh — sketch (KRN-07 closeout)', () => {
     group.updateMatrixWorld(true);
     const box = new THREE.Box3().setFromObject(group);
     expect(box.max.y).toBeCloseTo(2.8, 2);
+  });
+});
+
+// ── WP-C C3: complex stair shapes ─────────────────────────────────────────────
+
+describe('makeStairVolumeMesh — L-shape (WP-C C3)', () => {
+  it('mesh group has children', () => {
+    const group = makeStairVolumeMesh(lShapeStair, elementsById, null);
+    expect(group.children.length).toBeGreaterThan(0);
+  });
+  it('bounding box is non-degenerate in all three axes', () => {
+    const group = makeStairVolumeMesh(lShapeStair, elementsById, null);
+    group.updateMatrixWorld(true);
+    const box = new THREE.Box3().setFromObject(group);
+    expect(box.max.x - box.min.x).toBeGreaterThan(0);
+    expect(box.max.y - box.min.y).toBeGreaterThan(0);
+    expect(box.max.z - box.min.z).toBeGreaterThan(0);
+  });
+  it('all child meshes have non-zero vertex count', () => {
+    const group = makeStairVolumeMesh(lShapeStair, elementsById, null);
+    for (const child of group.children) {
+      const mesh = child as THREE.Mesh;
+      expect(mesh.geometry.attributes.position.count).toBeGreaterThan(0);
+    }
+  });
+});
+
+describe('makeStairVolumeMesh — U-shape (WP-C C3)', () => {
+  const uShapeStair: StairElem = {
+    kind: 'stair', id: 'stair-u-1', name: 'U Stair',
+    baseLevelId: 'lvl-0', topLevelId: 'lvl-1',
+    runStartMm: { xMm: 0, yMm: 0 }, runEndMm: { xMm: 0, yMm: 0 },
+    widthMm: 1000, riserMm: 175, treadMm: 275, shape: 'u_shape',
+    runs: [
+      { id: 'run-1', startMm: { xMm: 0, yMm: 0 }, endMm: { xMm: 2750, yMm: 0 }, widthMm: 1000, riserCount: 8 },
+      { id: 'run-2', startMm: { xMm: 3750, yMm: 1000 }, endMm: { xMm: 1000, yMm: 1000 }, widthMm: 1000, riserCount: 8 },
+    ],
+    landings: [{ id: 'landing-1', boundaryMm: [
+      { xMm: 2750, yMm: 0 }, { xMm: 4750, yMm: 0 },
+      { xMm: 4750, yMm: 1000 }, { xMm: 2750, yMm: 1000 },
+    ]}],
+  };
+  it('mesh group has children', () => {
+    const group = makeStairVolumeMesh(uShapeStair, elementsById, null);
+    expect(group.children.length).toBeGreaterThan(0);
+  });
+  it('bounding box is non-degenerate', () => {
+    const group = makeStairVolumeMesh(uShapeStair, elementsById, null);
+    group.updateMatrixWorld(true);
+    const box = new THREE.Box3().setFromObject(group);
+    expect(box.max.x - box.min.x).toBeGreaterThan(0);
+    expect(box.max.y - box.min.y).toBeGreaterThan(0);
+  });
+});
+
+describe('makeStairVolumeMesh — winder at corner (WP-C C3)', () => {
+  const winderStair: StairElem = {
+    kind: 'stair', id: 'stair-winder-1', name: 'Winder Stair',
+    baseLevelId: 'lvl-0', topLevelId: 'lvl-1',
+    runStartMm: { xMm: 0, yMm: 0 }, runEndMm: { xMm: 0, yMm: 0 },
+    widthMm: 1000, riserMm: 175, treadMm: 275,
+    shape: 'l_shape', winderAtCorner: true,
+    runs: [
+      { id: 'run-1', startMm: { xMm: 0, yMm: 0 }, endMm: { xMm: 2200, yMm: 0 }, widthMm: 1000, riserCount: 8 },
+      { id: 'run-2', startMm: { xMm: 2700, yMm: 500 }, endMm: { xMm: 2700, yMm: 2700 }, widthMm: 1000, riserCount: 8 },
+    ],
+    landings: [{ id: 'landing-1', boundaryMm: [
+      { xMm: 2200, yMm: 0 }, { xMm: 3200, yMm: 0 },
+      { xMm: 3200, yMm: 1000 }, { xMm: 2200, yMm: 1000 },
+    ]}],
+  };
+  it('mesh group has children when winderAtCorner=true', () => {
+    const group = makeStairVolumeMesh(winderStair, elementsById, null);
+    expect(group.children.length).toBeGreaterThan(0);
+  });
+  it('produces 3 winder treads instead of 1 flat landing (net +2 children)', () => {
+    const group = makeStairVolumeMesh(winderStair, elementsById, null);
+    expect(group.children.length).toBe(19);
+  });
+  it('all winder geometry has non-zero vertex count', () => {
+    const group = makeStairVolumeMesh(winderStair, elementsById, null);
+    for (const child of group.children) {
+      const mesh = child as THREE.Mesh;
+      expect(mesh.geometry.attributes.position.count).toBeGreaterThan(0);
+    }
+  });
+  it('bounding box is non-degenerate with winder treads', () => {
+    const group = makeStairVolumeMesh(winderStair, elementsById, null);
+    group.updateMatrixWorld(true);
+    const box = new THREE.Box3().setFromObject(group);
+    expect(box.max.x - box.min.x).toBeGreaterThan(0);
+    expect(box.max.y - box.min.y).toBeGreaterThan(0);
+    expect(box.max.z - box.min.z).toBeGreaterThan(0);
   });
 });
