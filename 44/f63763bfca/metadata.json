@@ -3,7 +3,7 @@
   "checkpoint_id": "44f63763bfca",
   "strategy": "manual-commit",
   "branch": "main",
-  "checkpoints_count": 2,
+  "checkpoints_count": 3,
   "files_touched": [
     "packages/web/src/plan/PlanCanvas.tsx",
     "packages/web/src/tools/toolGrammar.ts",
@@ -46,13 +46,19 @@
       "transcript": "/44/f63763bfca/5/full.jsonl",
       "content_hash": "/44/f63763bfca/5/content_hash.txt",
       "prompt": "/44/f63763bfca/5/prompt.txt"
+    },
+    {
+      "metadata": "/44/f63763bfca/6/metadata.json",
+      "transcript": "/44/f63763bfca/6/full.jsonl",
+      "content_hash": "/44/f63763bfca/6/content_hash.txt",
+      "prompt": "/44/f63763bfca/6/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 4801,
-    "cache_creation_tokens": 1661450,
-    "cache_read_tokens": 164592475,
-    "output_tokens": 623633,
-    "api_call_count": 1744
+    "input_tokens": 5349,
+    "cache_creation_tokens": 2080695,
+    "cache_read_tokens": 174843233,
+    "output_tokens": 843439,
+    "api_call_count": 1864
   }
 }
