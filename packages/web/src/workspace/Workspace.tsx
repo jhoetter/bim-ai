@@ -903,6 +903,25 @@ export function Workspace(): JSX.Element {
     [unifiedAdvisorViolations],
   );
 
+  const firstDuplicateWallFix = useMemo(
+    () =>
+      structuralViolations.find(
+        (v) => v.ruleId === 'structural_authoring.duplicate_wall' && v.quickFixCommand,
+      )?.quickFixCommand as Record<string, unknown> | undefined,
+    [structuralViolations],
+  );
+
+  const firstOrphanFix = useMemo(
+    () =>
+      structuralViolations.find(
+        (v) =>
+          (v.ruleId === 'structural_authoring.orphaned_no_host_ref' ||
+            v.ruleId === 'structural_authoring.orphaned_host_missing') &&
+          v.quickFixCommand,
+      )?.quickFixCommand as Record<string, unknown> | undefined,
+    [structuralViolations],
+  );
+
   useEffect(() => {
     if (import.meta.env.DEV && presenceParticipants.length === 0) {
       const devUserId = userId ?? 'dev-local';
@@ -3567,6 +3586,16 @@ export function Workspace(): JSX.Element {
           onPlaceActiveScheduleOnSheet={runInPaneContext(placeActiveScheduleOnSheet)}
           onDuplicateActiveSchedule={runInPaneContext(duplicateActiveSchedule)}
           onOpenScheduleControls={runInPaneContext(openScheduleControls)}
+          onRepairDuplicateWall={
+            firstDuplicateWallFix
+              ? runInPaneContext(() => void onSemanticCommand(firstDuplicateWallFix))
+              : undefined
+          }
+          onRepairOrphan={
+            firstOrphanFix
+              ? runInPaneContext(() => void onSemanticCommand(firstOrphanFix))
+              : undefined
+          }
           sheetReviewMode={sheetReviewMode}
           onSheetReviewModeChange={setSheetReviewMode}
           sheetMarkupShape={sheetMarkupShape}

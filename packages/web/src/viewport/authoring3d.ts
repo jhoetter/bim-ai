@@ -345,6 +345,79 @@ export function polygonPreviewToSemanticCommand(
   };
 }
 
+export type WorkPlaneValidationResult =
+  | { valid: true; reason: null; previewTint: null }
+  | { valid: false; reason: string; previewTint: 'red' };
+
+export type WorkPlaneHostRequirement = 'level-plane' | 'wall-face' | 'floor-face' | 'any';
+
+const TOOL_HOST_REQUIREMENTS: Record<string, WorkPlaneHostRequirement> = {
+  wall: 'level-plane',
+  beam: 'level-plane',
+  grid: 'level-plane',
+  floor: 'level-plane',
+  roof: 'level-plane',
+  ceiling: 'level-plane',
+  door: 'wall-face',
+  window: 'wall-face',
+  'wall-opening': 'wall-face',
+  stair: 'level-plane',
+  railing: 'level-plane',
+  column: 'level-plane',
+  component: 'any',
+};
+
+/**
+ * WP-NEXT-46: Returns a validation result for a proposed 3D placement given
+ * the current snap kind. When the snap does not satisfy the tool's host
+ * requirement, returns `valid: false` with `previewTint: 'red'` so the caller
+ * can render a red preview ghost and show the reason before the user clicks.
+ */
+export function validateWorkPlane3d(
+  toolId: string,
+  snapKind: Authoring3dSnapKind | null,
+  hasActiveLevelPlane: boolean,
+): WorkPlaneValidationResult {
+  const requirement = TOOL_HOST_REQUIREMENTS[toolId] ?? 'any';
+  if (requirement === 'any') return { valid: true, reason: null, previewTint: null };
+
+  if (requirement === 'wall-face') {
+    const onWall =
+      snapKind === 'wall-segment' ||
+      snapKind === 'wall-endpoint' ||
+      snapKind === 'wall-intersection';
+    if (!onWall) {
+      return {
+        valid: false,
+        reason: 'Click on a wall face to place this element',
+        previewTint: 'red',
+      };
+    }
+    return { valid: true, reason: null, previewTint: null };
+  }
+
+  // level-plane requirement
+  if (!hasActiveLevelPlane) {
+    return {
+      valid: false,
+      reason: 'No active level — set a work plane before placing',
+      previewTint: 'red',
+    };
+  }
+  if (
+    snapKind === 'wall-segment' ||
+    snapKind === 'wall-endpoint' ||
+    snapKind === 'wall-intersection'
+  ) {
+    return {
+      valid: false,
+      reason: 'This tool requires the level plane, not a wall face',
+      previewTint: 'red',
+    };
+  }
+  return { valid: true, reason: null, previewTint: null };
+}
+
 export function previewPayloadMatchesCommand(
   payload: Authoring3dLinePreviewPayload | Authoring3dPolygonPreviewPayload,
   command: Record<string, unknown>,

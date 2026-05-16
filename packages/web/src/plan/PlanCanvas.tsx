@@ -177,6 +177,7 @@ import {
   snapWallPointToConnectivity,
 } from '../geometry/wallConnectivity';
 import { getFamilyById as getBuiltInFamilyById } from '../families/familyCatalog';
+import { validateBoundary } from './structuralValidation';
 import {
   familyTypePlacesAsDetailComponent,
   familyTypeRequiresWallHost,
@@ -494,6 +495,8 @@ export function PlanCanvas({
   const sketchPointerToMmRef = useRef<PointerToMm | null>(null);
   const sketchMmToScreenRef = useRef<MmToScreen | null>(null);
   const [snapLabel, setSnapLabel] = useState<string | null>(null);
+  // WP-NEXT-49: pre-commit boundary validation error shown above the canvas.
+  const [boundaryValidationError, setBoundaryValidationError] = useState<string | null>(null);
   // EDT-05 — snap glyph layer state
   const [localSnapSettings] = useState<SnapSettings>(
     () => controlledSnapSettings ?? loadSnapSettings(),
@@ -4141,13 +4144,22 @@ export function PlanCanvas({
           const { effect } = reduceShaft(shaftStateRef.current, { kind: 'close-loop' });
           shaftStateRef.current = initialShaftState();
           if (effect.commitShaft) {
+            const shaftBoundary = effect.commitShaft.verticesMm;
+            const shaftIssues = validateBoundary('shaft-sketch', shaftBoundary);
+            const shaftBlocking = shaftIssues.filter((i) => i.severity === 'error');
+            if (shaftBlocking.length > 0) {
+              setBoundaryValidationError(shaftBlocking.map((i) => i.message).join(' '));
+              bumpGeom((x) => x + 1);
+              return;
+            }
+            setBoundaryValidationError(null);
             // Pick the floor under the centroid of the sketch loop.
-            const centroid = effect.commitShaft.verticesMm.reduce(
+            const centroid = shaftBoundary.reduce(
               (acc, p) => ({ xMm: acc.xMm + p.xMm, yMm: acc.yMm + p.yMm }),
               { xMm: 0, yMm: 0 },
             );
-            centroid.xMm /= effect.commitShaft.verticesMm.length;
-            centroid.yMm /= effect.commitShaft.verticesMm.length;
+            centroid.xMm /= shaftBoundary.length;
+            centroid.yMm /= shaftBoundary.length;
             const hostFloor = Object.values(elementsById).find(
               (e): e is Extract<Element, { kind: 'floor' }> =>
                 e.kind === 'floor' && (!displayLevelId || e.levelId === displayLevelId),
@@ -4156,7 +4168,7 @@ export function PlanCanvas({
               onSemanticCommand({
                 type: 'createSlabOpening',
                 hostFloorId: hostFloor.id,
-                boundaryMm: effect.commitShaft.verticesMm.map((p) => ({ xMm: p.xMm, yMm: p.yMm })),
+                boundaryMm: shaftBoundary.map((p) => ({ xMm: p.xMm, yMm: p.yMm })),
                 isShaft: true,
               });
             }
@@ -4215,14 +4227,19 @@ export function PlanCanvas({
           const { effect } = reduceCeiling(ceilingStateRef.current, { kind: 'close-loop' });
           ceilingStateRef.current = initialCeilingState();
           if (effect.commitCeiling && lvlId) {
-            onSemanticCommand({
-              type: 'createCeiling',
-              levelId: lvlId,
-              boundaryMm: effect.commitCeiling.verticesMm.map((p) => ({
-                xMm: p.xMm,
-                yMm: p.yMm,
-              })),
-            });
+            const ceilingBoundary = effect.commitCeiling.verticesMm;
+            const ceilingIssues = validateBoundary('ceiling-sketch', ceilingBoundary);
+            const ceilingBlocking = ceilingIssues.filter((i) => i.severity === 'error');
+            if (ceilingBlocking.length > 0) {
+              setBoundaryValidationError(ceilingBlocking.map((i) => i.message).join(' '));
+            } else {
+              setBoundaryValidationError(null);
+              onSemanticCommand({
+                type: 'createCeiling',
+                levelId: lvlId,
+                boundaryMm: ceilingBoundary.map((p) => ({ xMm: p.xMm, yMm: p.yMm })),
+              });
+            }
           }
         } else {
           const { state } = reduceCeiling(ceilingStateRef.current, { kind: 'click', pointMm: sp });
@@ -6742,6 +6759,32 @@ export function PlanCanvas({
             );
           })()
         : null}
+      {/* WP-NEXT-49: pre-commit boundary validation error banner */}
+      {boundaryValidationError ? (
+        <div
+          data-testid="boundary-validation-error"
+          role="alert"
+          style={{
+            position: 'absolute',
+            bottom: 40,
+            left: '50%',
+            transform: 'translateX(-50%)',
+            zIndex: 30,
+            background: '#ef4444',
+            color: '#fff',
+            borderRadius: 6,
+            padding: '6px 14px',
+            fontSize: 13,
+            fontWeight: 500,
+            pointerEvents: 'auto',
+            cursor: 'pointer',
+            maxWidth: '80%',
+          }}
+          onClick={() => setBoundaryValidationError(null)}
+        >
+          {boundaryValidationError} (click to dismiss)
+        </div>
+      ) : null}
       <div ref={mountRef} className="size-full cursor-crosshair" />
       {componentPreviewScreen && activeComponentAsset ? (
         <div

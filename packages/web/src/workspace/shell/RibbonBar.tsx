@@ -80,7 +80,9 @@ type RibbonActionId =
   | 'schedule-column-ops'
   | 'schedule-place-on-sheet'
   | 'schedule-duplicate'
-  | 'schedule-controls';
+  | 'schedule-controls'
+  | 'structural-delete-duplicate-wall'
+  | 'structural-detach-orphan';
 
 interface RibbonPanel {
   id: string;
@@ -159,6 +161,8 @@ export interface RibbonBarProps {
   onPlaceActiveScheduleOnSheet?: () => void;
   onDuplicateActiveSchedule?: () => void;
   onOpenScheduleControls?: () => void;
+  onRepairDuplicateWall?: () => void;
+  onRepairOrphan?: () => void;
   sheetReviewMode?: SheetReviewMode;
   onSheetReviewModeChange?: (mode: SheetReviewMode) => void;
   sheetMarkupShape?: SheetMarkupShape;
@@ -206,6 +210,8 @@ export function RibbonBar({
   onPlaceActiveScheduleOnSheet,
   onDuplicateActiveSchedule,
   onOpenScheduleControls,
+  onRepairDuplicateWall,
+  onRepairOrphan,
   sheetReviewMode = 'cm',
   onSheetReviewModeChange,
   sheetMarkupShape = 'freehand',
@@ -330,6 +336,8 @@ export function RibbonBar({
       'schedule-duplicate': onDuplicateActiveSchedule,
       'schedule-controls': onOpenScheduleControls,
       '3d-measure': () => onToolSelect?.('measure'),
+      'structural-delete-duplicate-wall': onRepairDuplicateWall,
+      'structural-detach-orphan': onRepairOrphan,
     };
     (actions[command.id] ?? onOpenCommandPalette)?.();
   }
@@ -1606,6 +1614,19 @@ function buildPlanModifyTab(selectedElementKind: string): RibbonTab {
           ...(isWall ? [tool('detach', 'Detach Top', 'detach')] : []),
         ],
       },
+      {
+        id: 'repair',
+        label: 'Repair',
+        commands: [
+          action(
+            'structural-delete-duplicate-wall',
+            'Delete Duplicate',
+            'delete',
+            'structural-delete-duplicate-wall',
+          ),
+          action('structural-detach-orphan', 'Detach Orphan', 'detach', 'structural-detach-orphan'),
+        ],
+      },
     ],
   };
 }
@@ -1700,9 +1721,7 @@ function buildSheetModifyTab(selectedElementKind: string): RibbonTab {
       {
         id: 'transform',
         label: 'Transform',
-        commands: [
-          tool('scale', 'Scale', 'scale'),
-        ],
+        commands: [tool('scale', 'Scale', 'scale')],
       },
     ],
   };
@@ -1879,6 +1898,10 @@ function ribbonCapabilityId(command: RibbonCommand): string | null {
       return 'schedule.open-controls';
     case '3d-measure':
       return 'view.3d.measure.ribbon-bridge';
+    case 'structural-delete-duplicate-wall':
+      return 'structural.delete-duplicate-wall';
+    case 'structural-detach-orphan':
+      return 'structural.detach-orphan';
   }
   return null;
 }

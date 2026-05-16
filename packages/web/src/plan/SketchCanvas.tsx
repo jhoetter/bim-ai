@@ -51,6 +51,7 @@ import {
   type SketchValidationIssue,
   type SketchValidationState,
 } from './sketchApi';
+import { expandFootprintByOverhang } from './roofByFootprint';
 import { validateBoundary } from './structuralValidation';
 
 const TURQUOISE = '#3fc5d3';
@@ -416,11 +417,21 @@ export function SketchCanvas(props: SketchCanvasProps): JSX.Element {
         return;
       }
     }
+    // WP-NEXT-45: for roof sketches, expand the sketched polygon by the
+    // configured overhang before sending so the server sees the final footprint.
+    let roofFootprintOptions: Record<string, unknown> | undefined;
+    if (elementKind === 'roof' && polygon) {
+      const overhangMm = typeof extraOptions?.overhangMm === 'number' ? extraOptions.overhangMm : 0;
+      roofFootprintOptions = {
+        footprintMm: expandFootprintByOverhang(polygon, overhangMm),
+      };
+    }
     try {
       setBusy(true);
       const resp = await finishSketchSession(session.sessionId, {
         options: {
           ...(floorTypeId ? { floorTypeId } : {}),
+          ...(roofFootprintOptions ?? {}),
           ...(extraOptions ?? {}),
         },
       });
@@ -434,7 +445,7 @@ export function SketchCanvas(props: SketchCanvasProps): JSX.Element {
     } finally {
       setBusy(false);
     }
-  }, [session, busy, floorTypeId, extraOptions]);
+  }, [session, busy, floorTypeId, extraOptions, elementKind]);
 
   const handleAutoClose = useCallback(async () => {
     if (!session || busy) return;

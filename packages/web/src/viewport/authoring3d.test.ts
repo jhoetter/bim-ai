@@ -14,6 +14,7 @@ import {
   resizeLinePreviewToLength,
   snapDraftPointToGrid,
   snapDraftPointToPlanSnaps,
+  validateWorkPlane3d,
 } from './authoring3d';
 
 describe('resolve3dDraftLevel', () => {
@@ -223,5 +224,55 @@ describe('WP-NEXT-41 authoring3d shared kernel', () => {
     expect(resized.start).toEqual(payload.start);
     expect(resized.end).toEqual({ xMm: 3600, yMm: 200 });
     expect(authoring3dLineLengthMm(resized)).toBeCloseTo(3500);
+  });
+});
+
+describe('validateWorkPlane3d — WP-NEXT-46 red-preview gate', () => {
+  it('wall tool on level plane with active level is valid', () => {
+    const result = validateWorkPlane3d('wall', 'level-plane', true);
+    expect(result.valid).toBe(true);
+    expect(result.previewTint).toBeNull();
+  });
+
+  it('wall tool on wall-segment snap is invalid — requires level plane', () => {
+    const result = validateWorkPlane3d('wall', 'wall-segment', true);
+    expect(result.valid).toBe(false);
+    expect(result.previewTint).toBe('red');
+    expect(result.reason).toContain('level plane');
+  });
+
+  it('wall tool with no active level plane is invalid', () => {
+    const result = validateWorkPlane3d('wall', 'level-plane', false);
+    expect(result.valid).toBe(false);
+    expect(result.previewTint).toBe('red');
+    expect(result.reason).toContain('work plane');
+  });
+
+  it('door tool on wall-segment snap is valid', () => {
+    const result = validateWorkPlane3d('door', 'wall-segment', true);
+    expect(result.valid).toBe(true);
+    expect(result.previewTint).toBeNull();
+  });
+
+  it('door tool on level-plane snap is invalid — requires wall face', () => {
+    const result = validateWorkPlane3d('door', 'level-plane', true);
+    expect(result.valid).toBe(false);
+    expect(result.previewTint).toBe('red');
+    expect(result.reason).toContain('wall face');
+  });
+
+  it('window tool on wall-endpoint snap is valid', () => {
+    const result = validateWorkPlane3d('window', 'wall-endpoint', true);
+    expect(result.valid).toBe(true);
+  });
+
+  it('component tool on any snap is valid (any host)', () => {
+    expect(validateWorkPlane3d('component', 'level-plane', false).valid).toBe(true);
+    expect(validateWorkPlane3d('component', 'wall-segment', true).valid).toBe(true);
+    expect(validateWorkPlane3d('component', null, false).valid).toBe(true);
+  });
+
+  it('unknown tool treated as any-host — always valid', () => {
+    expect(validateWorkPlane3d('mass-box', null, false).valid).toBe(true);
   });
 });
