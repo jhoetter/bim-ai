@@ -1,0 +1,39 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "2f07b89bd27e",
+  "session_id": "c20b1e43-66da-43ad-bc5e-028f4d2f1b8b",
+  "strategy": "manual-commit",
+  "created_at": "2026-05-16T11:38:53.46099Z",
+  "branch": "main",
+  "checkpoints_count": 0,
+  "files_touched": [],
+  "agent": "Claude Code",
+  "model": "claude-sonnet-4-6",
+  "turn_id": "542a109b26d3",
+  "token_usage": {
+    "input_tokens": 108,
+    "cache_creation_tokens": 181013,
+    "cache_read_tokens": 7470488,
+    "output_tokens": 36458,
+    "api_call_count": 97
+  },
+  "prompt_attributions": [
+    {
+      "checkpoint_number": 1,
+      "user_lines_added": 1100,
+      "user_lines_removed": 0,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0,
+      "user_added_per_file": {
+        "packages/web/src/workspace/commandCapabilities.ts": 13,
+        "spec/revit-parity/agent-prompts/WAVE3-WP-A.md": 162,
+        "spec/revit-parity/agent-prompts/WAVE3-WP-B.md": 157,
+        "spec/revit-parity/agent-prompts/WAVE3-WP-C.md": 134,
+        "spec/revit-parity/agent-prompts/WAVE3-WP-D.md": 154,
+        "spec/revit-parity/agent-prompts/WAVE3-WP-E.md": 145,
+        "spec/revit-parity/agent-prompts/WAVE3-WP-F.md": 158,
+        "spec/revit-parity/agent-prompts/WAVE3-WP-G.md": 177
+      }
+    }
+  ]
+}
