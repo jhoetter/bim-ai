@@ -113,6 +113,12 @@
       "transcript": "/e1/c124d9c8dc/16/full.jsonl",
       "content_hash": "/e1/c124d9c8dc/16/content_hash.txt",
       "prompt": ""
+    },
+    {
+      "metadata": "/e1/c124d9c8dc/17/metadata.json",
+      "transcript": "/e1/c124d9c8dc/17/full.jsonl",
+      "content_hash": "/e1/c124d9c8dc/17/content_hash.txt",
+      "prompt": "/e1/c124d9c8dc/17/prompt.txt"
     }
   ],
   "token_usage": {
