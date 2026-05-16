@@ -9,6 +9,7 @@
     "packages/web/src/Viewport.tsx",
     "packages/web/src/phases/PhaseManagerDialog.test.tsx",
     "packages/web/src/plan/PlanCanvas.tsx",
+    "packages/web/src/plan/detailComponentsRender.ts",
     "packages/web/src/plan/symbology.ts",
     "packages/web/src/tools/authoringCommandContract.ts",
     "packages/web/src/tools/toolGrammar.ts",
@@ -70,13 +71,19 @@
       "transcript": "/69/0601cc5431/8/full.jsonl",
       "content_hash": "/69/0601cc5431/8/content_hash.txt",
       "prompt": "/69/0601cc5431/8/prompt.txt"
+    },
+    {
+      "metadata": "/69/0601cc5431/9/metadata.json",
+      "transcript": "/69/0601cc5431/9/full.jsonl",
+      "content_hash": "/69/0601cc5431/9/content_hash.txt",
+      "prompt": "/69/0601cc5431/9/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 3324692,
-    "cache_creation_tokens": 2126427,
-    "cache_read_tokens": 220498698,
-    "output_tokens": 961415,
-    "api_call_count": 3081
+    "input_tokens": 3325128,
+    "cache_creation_tokens": 2613775,
+    "cache_read_tokens": 253955328,
+    "output_tokens": 1071391,
+    "api_call_count": 3436
   }
 }
