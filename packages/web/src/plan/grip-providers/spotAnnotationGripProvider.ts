@@ -57,9 +57,58 @@ function positionGrip(
 
 export const angularDimensionGripProvider: ElementGripProvider<AngularDimension> = {
   grips(el: AngularDimension, _ctx: PlanContext): GripDescriptor[] {
-    return [
+    const grips: GripDescriptor[] = [
       positionGrip(`${el.id}:vertex`, el.id, el.vertexMm, 'vertexMm', 'Drag angular dim vertex'),
     ];
+
+    // Arc-offset grip along the bisector of the two rays.
+    const rayA = { xMm: el.rayAMm.xMm - el.vertexMm.xMm, yMm: el.rayAMm.yMm - el.vertexMm.yMm };
+    const rayB = { xMm: el.rayBMm.xMm - el.vertexMm.xMm, yMm: el.rayBMm.yMm - el.vertexMm.yMm };
+    const magA = Math.hypot(rayA.xMm, rayA.yMm);
+    const magB = Math.hypot(rayB.xMm, rayB.yMm);
+    if (magA > 0 && magB > 0) {
+      const normA = { xMm: rayA.xMm / magA, yMm: rayA.yMm / magA };
+      const normB = { xMm: rayB.xMm / magB, yMm: rayB.yMm / magB };
+      const bisector = { xMm: normA.xMm + normB.xMm, yMm: normA.yMm + normB.yMm };
+      const bisectorMag = Math.hypot(bisector.xMm, bisector.yMm);
+      if (bisectorMag > 0) {
+        const nb = { xMm: bisector.xMm / bisectorMag, yMm: bisector.yMm / bisectorMag };
+        const offsetDist = el.offsetMm
+          ? Math.hypot(el.offsetMm.xMm, el.offsetMm.yMm)
+          : (el.arcRadiusMm ?? 200);
+        const arcGripPos = {
+          xMm: el.vertexMm.xMm + nb.xMm * offsetDist,
+          yMm: el.vertexMm.yMm + nb.yMm * offsetDist,
+        };
+        const baseOffsetX = el.offsetMm?.xMm ?? nb.xMm * offsetDist;
+        const baseOffsetY = el.offsetMm?.yMm ?? nb.yMm * offsetDist;
+        grips.push({
+          id: `${el.id}:arc-offset`,
+          positionMm: arcGripPos,
+          shape: 'circle',
+          axis: 'free',
+          hint: 'Drag to adjust arc offset',
+          onDrag: () => ({ kind: 'unknown', id: el.id }),
+          onCommit: (delta): GripCommand => ({
+            type: 'updateElementProperty',
+            elementId: el.id,
+            key: 'offsetMm',
+            value: JSON.stringify({
+              xMm: baseOffsetX + delta.xMm,
+              yMm: baseOffsetY + delta.yMm,
+            }),
+          }),
+          onNumericOverride: (absoluteMm): GripCommand => ({
+            type: 'updateElementProperty',
+            elementId: el.id,
+            key: 'offsetMm',
+            value: JSON.stringify({ xMm: absoluteMm, yMm: el.offsetMm?.yMm ?? 0 }),
+          }),
+        });
+      }
+    }
+
+    return grips;
   },
 };
 

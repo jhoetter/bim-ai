@@ -72,21 +72,33 @@ const spotSlope: Extract<Element, { kind: 'spot_slope' }> = {
 };
 
 describe('angularDimensionGripProvider', () => {
-  it('emits one vertex grip (square, free)', () => {
+  it('emits vertex grip and arc-offset grip', () => {
     const grips = angularDimensionGripProvider.grips(angularDim, {});
-    expect(grips).toHaveLength(1);
-    expect(grips[0]!.id).toBe('ad-1:vertex');
-    expect(grips[0]!.positionMm).toEqual({ xMm: 500, yMm: 500 });
-    expect(grips[0]!.shape).toBe('square');
-    expect(grips[0]!.axis).toBe('free');
+    expect(grips).toHaveLength(2);
+    const vertex = grips.find((g) => g.id === 'ad-1:vertex')!;
+    expect(vertex).toBeTruthy();
+    expect(vertex.positionMm).toEqual({ xMm: 500, yMm: 500 });
+    expect(vertex.shape).toBe('square');
+    expect(vertex.axis).toBe('free');
+    const arcOffset = grips.find((g) => g.id === 'ad-1:arc-offset')!;
+    expect(arcOffset).toBeTruthy();
+    expect(arcOffset.shape).toBe('circle');
   });
 
-  it('onCommit moves vertexMm by delta', () => {
-    const [grip] = angularDimensionGripProvider.grips(angularDim, {});
-    const cmd = grip!.onCommit({ xMm: 100, yMm: -50 });
+  it('vertex onCommit moves vertexMm by delta', () => {
+    const grips = angularDimensionGripProvider.grips(angularDim, {});
+    const grip = grips.find((g) => g.id === 'ad-1:vertex')!;
+    const cmd = grip.onCommit({ xMm: 100, yMm: -50 });
     expect(cmd.key).toBe('vertexMm');
     const parsed = JSON.parse(cmd.value as string) as { xMm: number; yMm: number };
     expect(parsed).toEqual({ xMm: 600, yMm: 450 });
+  });
+
+  it('arc-offset onCommit updates offsetMm', () => {
+    const grips = angularDimensionGripProvider.grips(angularDim, {});
+    const grip = grips.find((g) => g.id === 'ad-1:arc-offset')!;
+    const cmd = grip.onCommit({ xMm: 50, yMm: 50 });
+    expect(cmd.key).toBe('offsetMm');
   });
 });
 

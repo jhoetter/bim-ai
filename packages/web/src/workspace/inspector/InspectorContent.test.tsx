@@ -703,7 +703,7 @@ describe('InspectorPropertiesFor — dimension text decoration (ANN-11)', () => 
 });
 
 describe('InspectorPropertiesFor — A4-A9 annotation elements', () => {
-  it('angular_dimension shows vertex and ray positions', () => {
+  it('angular_dimension shows computed angle', () => {
     const el: Extract<Element, { kind: 'angular_dimension' }> = {
       kind: 'angular_dimension',
       id: 'ad-1',
@@ -712,9 +712,8 @@ describe('InspectorPropertiesFor — A4-A9 annotation elements', () => {
       rayAMm: { xMm: 1000, yMm: 500 },
       rayBMm: { xMm: 500, yMm: 1000 },
     };
-    const { getByText } = render(InspectorPropertiesFor(el, t));
-    expect(getByText('Vertex')).toBeTruthy();
-    expect(getByText('(500, 500) mm')).toBeTruthy();
+    const { getByTestId } = render(InspectorPropertiesFor(el, t));
+    expect(getByTestId('inspector-angular-dim-angle').textContent).toBe('90.0°');
   });
 
   it('radial_dimension shows radius measurement', () => {
