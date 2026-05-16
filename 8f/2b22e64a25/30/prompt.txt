@@ -1,0 +1,1 @@
+Your task is to implement the Group Edit Mode UI (edit group contents, finish editing button) in bim-ai — read spec/revit-parity/agent-prompts/WAVE6-WP-D.md for the full brief.
