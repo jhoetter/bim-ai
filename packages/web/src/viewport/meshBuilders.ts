@@ -3376,6 +3376,20 @@ export function makeColumnMesh(
   const heightM = col.heightMm != null ? THREE.MathUtils.clamp(col.heightMm / 1000, 0.25, 40) : 3.0;
   const yBase = elevM + baseOff;
   const geo = new THREE.BoxGeometry(bM, heightM, hM);
+  // F3 (WP-F): apply inclined extrusion when top offsets are set.
+  const topOffsetXM = (col.topOffsetXMm ?? 0) / 1000;
+  const topOffsetYM = (col.topOffsetYMm ?? 0) / 1000;
+  if (topOffsetXM !== 0 || topOffsetYM !== 0) {
+    const pos = geo.attributes.position as THREE.BufferAttribute;
+    for (let i = 0; i < pos.count; i++) {
+      if (pos.getY(i) > 0) {
+        pos.setX(i, pos.getX(i) + topOffsetXM);
+        pos.setZ(i, pos.getZ(i) + topOffsetYM);
+      }
+    }
+    pos.needsUpdate = true;
+    geo.computeVertexNormals();
+  }
   const mat = makeThreeMaterialForKey(col.materialKey, {
     usage: 'structural',
     fallbackColor: categoryColorOr(paint, 'wall'),

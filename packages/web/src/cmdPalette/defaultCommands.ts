@@ -1108,6 +1108,43 @@ registerCommand({
 });
 
 registerCommand({
+  id: 'tool.walkthrough',
+  label: 'Walkthrough Camera Path',
+  keywords: ['walkthrough', 'camera', 'animation', 'path', 'keyframe'],
+  category: 'command',
+  invoke: (ctx) => startPlanTool(ctx, 'walkthrough'),
+});
+
+registerCommand({
+  id: 'tool.revision-cloud',
+  label: 'Revision Cloud',
+  keywords: ['revision cloud', 'revision', 'cloud', 'markup', 'RC'],
+  category: 'command',
+  invoke: (ctx) => startPlanTool(ctx, 'revision-cloud'),
+});
+
+registerCommand({
+  id: 'tool.roof-by-extrusion',
+  label: 'Roof by Extrusion',
+  keywords: ['roof by extrusion', 'roof extrusion', 'extrusion roof'],
+  category: 'command',
+  invoke: (ctx) => startPlanTool(ctx, 'roof-by-extrusion'),
+});
+
+registerCommand({
+  id: 'wall.create-parts',
+  label: 'Create Parts',
+  keywords: ['create parts', 'wall parts', 'split wall', 'parts'],
+  category: 'command',
+  isAvailable: hasSelection,
+  invoke: (ctx) => {
+    const id = ctx.selectedElementIds[0];
+    if (!id) return;
+    ctx.dispatchCommand?.({ type: 'createWallParts', elementId: id });
+  },
+});
+
+registerCommand({
   id: 'tool.wall-opening',
   label: 'Place Wall Opening',
   keywords: ['wall opening', 'opening', 'hosted void'],

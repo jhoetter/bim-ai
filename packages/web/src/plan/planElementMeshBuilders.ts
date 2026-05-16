@@ -2233,3 +2233,29 @@ export function planWallSectionMesh(
 
   return group;
 }
+
+/** E3d: revision_cloud stored element — render as dashed closed polygon. */
+export function revisionCloudPlanThree(
+  el: Extract<Element, { kind: 'revision_cloud' }>,
+): THREE.Group {
+  const grp = new THREE.Group();
+  if (el.boundaryMm.length < 2) return grp;
+
+  const colour = el.colour ?? '#e05000';
+  const pts = [...el.boundaryMm, el.boundaryMm[0]!].map(
+    (v) => new THREE.Vector3(ux(v.xMm), PLAN_Y + 0.004, uz(v.yMm)),
+  );
+  const mat = new THREE.LineDashedMaterial({
+    color: colour,
+    dashSize: 0.08,
+    gapSize: 0.04,
+    depthTest: true,
+  });
+  const line = new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), mat);
+  line.computeLineDistances();
+  line.userData.bimPickId = el.id;
+  line.renderOrder = 7;
+  grp.add(line);
+  grp.userData.bimPickId = el.id;
+  return grp;
+}

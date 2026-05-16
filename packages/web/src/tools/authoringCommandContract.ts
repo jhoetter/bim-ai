@@ -706,6 +706,33 @@ export const AUTHORING_COMMAND_CONTRACTS = {
     [],
     ['axis', 'angle', 'finish', 'cancel'],
   ),
+  walkthrough: contract(
+    'walkthrough',
+    'sketch',
+    ['3d'],
+    'Click to capture camera keyframes along a path; double-click or Enter to finish.',
+    'explicit-finish',
+    [],
+    ['finish', 'cancel'],
+  ),
+  'roof-by-extrusion': contract(
+    'roof-by-extrusion',
+    'sketch',
+    ['plan'],
+    'Draw a roof profile by sketching an extrusion boundary.',
+    'explicit-finish',
+    [],
+    ['finish', 'cancel'],
+  ),
+  'revision-cloud': contract(
+    'revision-cloud',
+    'sketch',
+    ['plan'],
+    'Draw a revision cloud polygon by clicking vertices; Enter or double-click to close.',
+    'explicit-finish',
+    [],
+    ['finish', 'cancel'],
+  ),
 } satisfies Record<ToolId, AuthoringCommandContract>;
 
 export function getAuthoringCommandContract(toolId: ToolId): AuthoringCommandContract {

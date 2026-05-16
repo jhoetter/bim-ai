@@ -111,7 +111,10 @@ export type PlanTool =
   | 'ramp'
   | 'column-at-grids'
   | 'beam-system'
-  | 'interior-elevation';
+  | 'interior-elevation'
+  | 'walkthrough'
+  | 'roof-by-extrusion'
+  | 'revision-cloud';
 
 export type PresencePeers = Record<
   string,

@@ -1,6 +1,8 @@
 import * as THREE from 'three';
 
 import type { Element, PlanLinePatternToken } from '@bim-ai/core';
+import type { GroupRegistry } from '../groups/groupTypes';
+import { buildGroupInstancePlanMesh } from './groupInstanceRender';
 
 import {
   collectWallConnectivity,
@@ -35,6 +37,7 @@ import {
   dimensionsThree,
   referencePlanePlanThree,
   propertyLinePlanThree,
+  revisionCloudPlanThree,
 } from './planElementMeshBuilders';
 import type { WallJoinRecord } from './planElementMeshBuilders';
 import { dormerPlanGroup } from './dormerPlanSymbol';
@@ -1304,6 +1307,79 @@ function sectionCutPlanThree(sc: Extract<Element, { kind: 'section_cut' }>): THR
   return group;
 }
 
+// F3 (WP-F): plan symbol for structural columns — solid rect + cross; dashed top footprint when sloped.
+function columnPlanThree(col: Extract<Element, { kind: 'column' }>): THREE.Group {
+  const grp = new THREE.Group();
+  grp.userData.bimPickId = col.id;
+  const bM = (col.bMm ?? 300) / 1000;
+  const hM = (col.hMm ?? 300) / 1000;
+  const cx = ux(col.positionMm.xMm);
+  const cz = uz(col.positionMm.yMm);
+  const Y = PLAN_Y + 0.006;
+  const color = readToken('--plan-wall', '#1c1917');
+  const solidMat = new THREE.LineBasicMaterial({ color });
+  const dashedMat = new THREE.LineDashedMaterial({ color, dashSize: 0.06, gapSize: 0.04 });
+
+  const hw = bM / 2;
+  const hh = hM / 2;
+  const rectPts = [
+    new THREE.Vector3(cx - hw, Y, cz - hh),
+    new THREE.Vector3(cx + hw, Y, cz - hh),
+    new THREE.Vector3(cx + hw, Y, cz + hh),
+    new THREE.Vector3(cx - hw, Y, cz + hh),
+    new THREE.Vector3(cx - hw, Y, cz - hh),
+  ];
+  grp.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(rectPts), solidMat));
+  grp.add(
+    new THREE.Line(
+      new THREE.BufferGeometry().setFromPoints([
+        new THREE.Vector3(cx - hw, Y, cz - hh),
+        new THREE.Vector3(cx + hw, Y, cz + hh),
+      ]),
+      solidMat,
+    ),
+  );
+  grp.add(
+    new THREE.Line(
+      new THREE.BufferGeometry().setFromPoints([
+        new THREE.Vector3(cx + hw, Y, cz - hh),
+        new THREE.Vector3(cx - hw, Y, cz + hh),
+      ]),
+      solidMat,
+    ),
+  );
+
+  const txM = (col.topOffsetXMm ?? 0) / 1000;
+  const tzM = (col.topOffsetYMm ?? 0) / 1000;
+  if (txM !== 0 || tzM !== 0) {
+    const tcx = cx + txM;
+    const tcz = cz + tzM;
+    const topRect = new THREE.Line(
+      new THREE.BufferGeometry().setFromPoints([
+        new THREE.Vector3(tcx - hw, Y, tcz - hh),
+        new THREE.Vector3(tcx + hw, Y, tcz - hh),
+        new THREE.Vector3(tcx + hw, Y, tcz + hh),
+        new THREE.Vector3(tcx - hw, Y, tcz + hh),
+        new THREE.Vector3(tcx - hw, Y, tcz - hh),
+      ]),
+      dashedMat,
+    );
+    topRect.computeLineDistances();
+    grp.add(topRect);
+    const axisLine = new THREE.Line(
+      new THREE.BufferGeometry().setFromPoints([
+        new THREE.Vector3(cx, Y, cz),
+        new THREE.Vector3(tcx, Y, tcz),
+      ]),
+      dashedMat,
+    );
+    axisLine.computeLineDistances();
+    grp.add(axisLine);
+  }
+
+  return grp;
+}
+
 export function rebuildPlanMeshes(
   holder: THREE.Object3D,
 
@@ -1333,6 +1409,8 @@ export function rebuildPlanMeshes(
     viewPhaseId?: string | null;
     /** F2: phase filter display mode for per-phase graphic overrides. */
     phaseFilterMode?: 'new_construction' | 'demolition' | 'existing' | 'as_built' | null;
+    /** WP-B: group instance plan glyphs. */
+    groupRegistry?: GroupRegistry | null;
   },
 ): void {
   while (holder.children.length) holder.remove(holder.children[0]!);
@@ -1491,6 +1569,17 @@ export function rebuildPlanMeshes(
     tintNewChildren(before, 'property_line');
   }
 
+  // E3d: revision clouds scoped to the active plan view.
+  {
+    const before = holder.children.length;
+    for (const rc of Object.values(elementsById)) {
+      if (rc.kind !== 'revision_cloud') continue;
+      if (opts.activeViewId && rc.hostViewId !== opts.activeViewId) continue;
+      holder.add(revisionCloudPlanThree(rc));
+    }
+    tintNewChildren(before, 'revision_cloud');
+  }
+
   {
     const before = holder.children.length;
     for (const r of Object.values(elementsById)) {
@@ -1606,6 +1695,18 @@ export function rebuildPlanMeshes(
       holder.add(beamSystemPlanThree(el));
     }
     tintNewChildren(before, 'beam_system');
+  }
+
+  // F3 (WP-F): column plan symbols.
+  {
+    const before = holder.children.length;
+    for (const el of Object.values(elementsById)) {
+      if (el.kind !== 'column') continue;
+      if (kindHidden('column')) continue;
+      if (level && el.levelId !== level) continue;
+      holder.add(columnPlanThree(el));
+    }
+    tintNewChildren(before, 'column');
   }
 
   if (!kindHidden('mass_box')) {
@@ -1846,6 +1947,15 @@ export function rebuildPlanMeshes(
         triLine.userData.bimPickId = el.id;
         holder.add(triLine);
       }
+    }
+  }
+
+  if (opts.groupRegistry) {
+    const { definitions, instances } = opts.groupRegistry;
+    for (const instance of Object.values(instances)) {
+      const definition = definitions[instance.groupDefinitionId];
+      if (!definition) continue;
+      holder.add(buildGroupInstancePlanMesh(instance, definition, elementsById, opts.selectedId));
     }
   }
 }
