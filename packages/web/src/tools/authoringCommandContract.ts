@@ -298,6 +298,15 @@ export const AUTHORING_COMMAND_CONTRACTS = {
     'stay-active',
     ['wall'],
   ),
+  paint: contract(
+    'paint',
+    'sketch',
+    ['plan'],
+    'Click a face to apply the active material override; stays active until Escape.',
+    'explicit-finish',
+    [],
+    ['material', 'remove-override'],
+  ),
   trim: contract(
     'trim',
     'modify',

@@ -97,6 +97,57 @@ function faceMaterialOverrideLabel(
   return parts.join(' · ');
 }
 
+function FaceMaterialOverridesSection({
+  elementId,
+  overrides,
+  elementsById,
+  onDispatchCommand,
+}: {
+  elementId: string;
+  overrides: Record<string, string> | null | undefined;
+  elementsById: Record<string, Element>;
+  onDispatchCommand?: (cmd: Record<string, unknown>) => void;
+}): JSX.Element | null {
+  if (!overrides || Object.keys(overrides).length === 0) return null;
+  return (
+    <div data-testid="inspector-face-overrides" className="border-t border-border pt-1.5">
+      <div className="mb-1 text-xs text-muted">Face Material Overrides</div>
+      <div className="flex flex-col gap-1">
+        {Object.entries(overrides).map(([faceId, materialId]) => {
+          const mat = elementsById[materialId];
+          const matName =
+            mat && 'name' in mat && typeof mat.name === 'string' ? mat.name : materialId;
+          return (
+            <div
+              key={faceId}
+              data-testid={`face-override-${faceId}`}
+              className="flex items-center justify-between gap-2 py-0.5"
+            >
+              <span className="text-xs text-muted">{faceId}</span>
+              <span className="text-xs text-foreground">{matName}</span>
+              <button
+                type="button"
+                data-testid={`face-override-remove-${faceId}`}
+                className="text-xs text-muted hover:text-foreground"
+                onClick={() =>
+                  onDispatchCommand?.({
+                    type: 'paint_face',
+                    elementId,
+                    faceId,
+                    materialId: null,
+                  })
+                }
+              >
+                ×
+              </button>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 function MaterialAssignmentRow({
   label,
   materialKey,
@@ -1350,6 +1401,12 @@ export function InspectorPropertiesFor(
               </div>
             </div>
           </div>
+          <FaceMaterialOverridesSection
+            elementId={el.id}
+            overrides={el.faceMaterialOverrides}
+            elementsById={elementsById}
+            onDispatchCommand={onDispatchCommand}
+          />
         </div>
       );
     }
@@ -1450,6 +1507,12 @@ export function InspectorPropertiesFor(
               (e): e is Extract<Element, { kind: 'phase' }> => e.kind === 'phase',
             )}
             onPropertyChange={roofOnPropertyChange}
+          />
+          <FaceMaterialOverridesSection
+            elementId={el.id}
+            overrides={el.faceMaterialOverrides}
+            elementsById={elementsById}
+            onDispatchCommand={onDispatchCommand}
           />
         </div>
       );
@@ -2573,6 +2636,12 @@ export function InspectorPropertiesFor(
               </button>
             </div>
           ) : null}
+          <FaceMaterialOverridesSection
+            elementId={el.id}
+            overrides={el.faceMaterialOverrides}
+            elementsById={elementsById}
+            onDispatchCommand={onDispatchCommand}
+          />
         </div>
       );
     }

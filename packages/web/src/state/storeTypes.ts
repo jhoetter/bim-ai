@@ -121,7 +121,8 @@ export type PlanTool =
   | 'excavation'
   | 'terrain-point'
   | 'terrain-pad'
-  | 'split-wall';
+  | 'split-wall'
+  | 'paint';
 
 export type PresencePeers = Record<
   string,
@@ -222,6 +223,7 @@ export type StoreState = {
   selectedIds: string[];
   viewerMode: ViewerMode;
   planTool: PlanTool;
+  activePaintMaterialId: string | null;
   activeLevelId?: string;
   planPresentationPreset: PlanPresentationPreset;
   activePlanViewId?: string;
@@ -347,6 +349,7 @@ export type StoreState = {
   userFamilies?: Record<string, FamilyDefinition>;
   setViewerMode: (m: ViewerMode) => void;
   setPlanTool: (t: PlanTool) => void;
+  setActivePaintMaterialId: (id: string | null) => void;
   setActiveLevelId: (id: string | undefined) => void;
   setWallLocationLine: (loc: WallLocationLine) => void;
   setApplyAreaRules: (v: boolean) => void;

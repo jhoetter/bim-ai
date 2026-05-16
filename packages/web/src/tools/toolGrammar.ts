@@ -2886,6 +2886,65 @@ export function reducePermanentDim(
 }
 
 /* ────────────────────────────────────────────────────────────────────── */
+/* Paint — §3.3.4                                                           */
+/* ────────────────────────────────────────────────────────────────────── */
+
+export type PaintState =
+  | { status: 'idle' }
+  | {
+      status: 'active';
+      hoveredFaceId: string | null;
+      hoveredElementId: string | null;
+    };
+
+export type PaintEvent =
+  | { kind: 'activate' }
+  | { kind: 'hover'; faceId: string; elementId: string }
+  | { kind: 'click'; faceId: string; elementId: string; materialId: string | null }
+  | { kind: 'cancel' };
+
+export interface PaintEffect {
+  paintFace?: { elementId: string; faceId: string; materialId: string | null };
+  stillActive: boolean;
+}
+
+export function initialPaintState(): PaintState {
+  return { status: 'idle' };
+}
+
+export function reducePaint(
+  state: PaintState,
+  event: PaintEvent,
+): { state: PaintState; effect: PaintEffect } {
+  if (event.kind === 'activate') {
+    return {
+      state: { status: 'active', hoveredFaceId: null, hoveredElementId: null },
+      effect: { stillActive: true },
+    };
+  }
+  if (event.kind === 'cancel') {
+    return { state: { status: 'idle' }, effect: { stillActive: false } };
+  }
+  if (state.status !== 'active') {
+    return { state, effect: { stillActive: false } };
+  }
+  if (event.kind === 'hover') {
+    return {
+      state: { status: 'active', hoveredFaceId: event.faceId, hoveredElementId: event.elementId },
+      effect: { stillActive: true },
+    };
+  }
+  // click — emit paint_face, stay active for repeated painting
+  return {
+    state: { ...state },
+    effect: {
+      paintFace: { elementId: event.elementId, faceId: event.faceId, materialId: event.materialId },
+      stillActive: true,
+    },
+  };
+}
+
+/* ────────────────────────────────────────────────────────────────────── */
 /* Split Wall — §3.3.6                                                     */
 /* ────────────────────────────────────────────────────────────────────── */
 

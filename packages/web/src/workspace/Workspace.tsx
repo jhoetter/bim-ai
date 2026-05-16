@@ -1840,6 +1840,36 @@ export function Workspace(): JSX.Element {
         });
         return;
       }
+      // §3.3.4: paint tool — apply or remove a face material override
+      if (cmd.type === 'paint_face') {
+        const { elementId, faceId, materialId } = cmd as {
+          elementId: string;
+          faceId: string;
+          materialId: string | null;
+        };
+        const current = useBimStore.getState().elementsById;
+        const el = current[elementId];
+        if (!el) return;
+        const overrides: Record<string, string> = {
+          ...((el as { faceMaterialOverrides?: Record<string, string> | null })
+            .faceMaterialOverrides ?? {}),
+        };
+        if (materialId === null) {
+          delete overrides[faceId];
+        } else {
+          overrides[faceId] = materialId;
+        }
+        useBimStore.setState({
+          elementsById: {
+            ...current,
+            [elementId]: {
+              ...el,
+              faceMaterialOverrides: Object.keys(overrides).length > 0 ? overrides : null,
+            },
+          },
+        });
+        return;
+      }
       // §3.3.6: split a wall at a point on its centreline into two walls
       if (cmd.type === 'split_wall') {
         const wallId = cmd.wallId as string;

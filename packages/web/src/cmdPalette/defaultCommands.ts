@@ -1129,6 +1129,14 @@ registerCommand({
 });
 
 registerCommand({
+  id: 'tool.paint',
+  label: 'Paint',
+  keywords: ['paint', 'face', 'material override', 'color face'],
+  category: 'command',
+  invoke: (ctx) => startPlanTool(ctx, 'paint'),
+});
+
+registerCommand({
   id: 'tool.array',
   label: 'Array',
   keywords: ['array', 'linear array', 'radial array', 'copy pattern'],

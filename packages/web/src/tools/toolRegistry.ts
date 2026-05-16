@@ -102,13 +102,15 @@ export type ToolId =
   | 'revision-cloud'
   | 'steel-connection'
   | 'excavation'
-  | 'split-wall';
+  | 'split-wall'
+  | 'paint';
 
 /** Modify-group tool IDs — used by ToolPalette to insert a separator. */
 export const MODIFY_TOOL_IDS = new Set<ToolId>([
   'align',
   'split',
   'split-wall',
+  'paint',
   'trim',
   'trim-extend',
   'offset',
@@ -397,6 +399,16 @@ export function getToolRegistry(t: TFunction): Record<ToolId, ToolDefinition> {
       shortcut: 'SL',
       modes: ['plan'],
       tooltip: 'Click on a wall to split it at that point (S → L).',
+    },
+    paint: {
+      id: 'paint',
+      label: 'Paint',
+      icon: 'material',
+      hotkey: 'PT',
+      shortcut: 'PT',
+      modes: ['plan'],
+      tooltip:
+        'Apply a material override to individual faces of walls, floors, roofs, or ceilings.',
     },
     trim: {
       id: 'trim',
@@ -908,6 +920,7 @@ const PALETTE_ORDER: ToolId[] = [
   'align',
   'split',
   'split-wall',
+  'paint',
   'trim',
   'trim-extend',
   'offset',

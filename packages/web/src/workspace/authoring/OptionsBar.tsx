@@ -150,6 +150,8 @@ export function OptionsBar({
   const activeLevelId = useBimStore((s) => s.activeLevelId);
   const applyAreaRules = useBimStore((s) => s.applyAreaRules);
   const setApplyAreaRules = useBimStore((s) => s.setApplyAreaRules);
+  const activePaintMaterialId = useBimStore((s) => s.activePaintMaterialId);
+  const setActivePaintMaterialId = useBimStore((s) => s.setActivePaintMaterialId);
   const [showComputations, setShowComputations] = useState(false);
   const [, setComponentSelectionRevision] = useState(0);
 
@@ -833,6 +835,38 @@ export function OptionsBar({
           aria-label="Select all grids"
         >
           Select All
+        </button>
+      </div>
+    );
+  }
+
+  if (planTool === 'paint') {
+    const materials = Object.values(elementsById)
+      .filter((e): e is Extract<Element, { kind: 'material' }> => e?.kind === 'material')
+      .sort((a, b) => a.name.localeCompare(b.name));
+    return (
+      <div data-testid="options-bar" className={BAR_CLASS}>
+        <label className="flex items-center gap-2">
+          <span className="text-muted">Material:</span>
+          <select
+            value={activePaintMaterialId ?? ''}
+            onChange={(e) => setActivePaintMaterialId(e.target.value || null)}
+            data-testid="options-bar-paint-material"
+          >
+            <option value="">— None —</option>
+            {materials.map((m) => (
+              <option key={m.id} value={m.id}>
+                {m.name}
+              </option>
+            ))}
+          </select>
+        </label>
+        <button
+          type="button"
+          data-testid="options-bar-paint-remove"
+          onClick={() => setActivePaintMaterialId(null)}
+        >
+          Remove Override
         </button>
       </div>
     );

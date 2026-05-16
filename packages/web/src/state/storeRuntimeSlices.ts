@@ -26,6 +26,7 @@ export type CollaborationRuntimeSlice = Pick<
 export type PlanAuthoringRuntimeSlice = Pick<
   StoreState,
   | 'planTool'
+  | 'activePaintMaterialId'
   | 'wallLocationLine'
   | 'applyAreaRules'
   | 'floorBoundaryOffsetMm'
@@ -55,6 +56,7 @@ export type PlanAuthoringRuntimeSlice = Pick<
   | 'lensMode'
   | 'setViewerMode'
   | 'setPlanTool'
+  | 'setActivePaintMaterialId'
   | 'setActiveLevelId'
   | 'setWallLocationLine'
   | 'setApplyAreaRules'
@@ -201,6 +203,7 @@ export function createCollaborationRuntimeSlice(
 export function createPlanAuthoringRuntimeSlice(set: StoreSet): PlanAuthoringRuntimeSlice {
   return {
     planTool: 'select',
+    activePaintMaterialId: null,
     wallLocationLine: 'wall-centerline',
     applyAreaRules: true,
     floorBoundaryOffsetMm: 0,
@@ -235,6 +238,7 @@ export function createPlanAuthoringRuntimeSlice(set: StoreSet): PlanAuthoringRun
 
     setViewerMode: (m) => set({ viewerMode: m }),
     setPlanTool: (t) => set({ planTool: t }),
+    setActivePaintMaterialId: (activePaintMaterialId) => set({ activePaintMaterialId }),
     setActiveLevelId: (id) => set({ activeLevelId: id }),
     setWallLocationLine: (wallLocationLine) => set({ wallLocationLine }),
     setApplyAreaRules: (v) => set({ applyAreaRules: v }),
