@@ -8,6 +8,7 @@
     "packages/core/src/index.ts",
     "packages/web/src/state/storeViewportRuntimeSlice.ts",
     "packages/web/src/workspace/WorkspaceLeftRail.tsx",
+    "packages/web/src/workspace/project/ProjectBrowser.tsx",
     "spec/revit-parity/revit2026-parity-tracker.md"
   ],
   "sessions": [
@@ -94,6 +95,12 @@
       "transcript": "/04/48832cd225/13/full.jsonl",
       "content_hash": "/04/48832cd225/13/content_hash.txt",
       "prompt": "/04/48832cd225/13/prompt.txt"
+    },
+    {
+      "metadata": "/04/48832cd225/14/metadata.json",
+      "transcript": "/04/48832cd225/14/full.jsonl",
+      "content_hash": "/04/48832cd225/14/content_hash.txt",
+      "prompt": "/04/48832cd225/14/prompt.txt"
     }
   ],
   "token_usage": {
