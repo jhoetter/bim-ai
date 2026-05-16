@@ -371,7 +371,7 @@ Pin element is available. Show/hide dimension constraints on canvas is Partial.
 - Rotate: Done (rotateTool.ts)
 - Mirror (axis / pick axis): Done (mirror in tool registry)
 - Array (linear and radial): Partial — arrayTool.ts math helpers + tests; full grammar state machine (ArrayState/reduceArray) added to toolGrammar.ts with 14 unit tests; PlanCanvas UI wiring pending (WP-B5)
-- Scale: Not Started as explicit modify tool
+- Scale: Partial — scaleTool.ts math helpers + ScaleState/reduceScale grammar (pick-origin → enter-factor → confirm OR graphical pick-reference → pick-destination) + 27 unit tests; PlanCanvas UI wiring pending (WP-B1)
 - Align: Done (align in tool registry)
 - Split (wall/line): Done (split tool)
 - Trim / Extend: Done (trim, trim-extend tools)

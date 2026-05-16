@@ -1978,3 +1978,136 @@ export function reduceArray(
 
   return { state, effect: { stillActive: true } };
 }
+
+/* ────────────────────────────────────────────────────────────────────── */
+/* Scale Tool — B1                                                         */
+/* Phase 1: pick origin point                                              */
+/* Phase 2a: type numeric factor + Enter  (keyboard mode)                 */
+/* Phase 2b: pick reference point → pick destination point (graphical)    */
+/* ────────────────────────────────────────────────────────────────────── */
+
+export type ScaleInputMode = 'numeric' | 'graphical';
+
+export type ScaleState =
+  | { phase: 'idle' }
+  | { phase: 'pick-origin' }
+  | {
+      phase: 'enter-factor';
+      originMm: { xMm: number; yMm: number };
+      inputValue: string;
+    }
+  | {
+      phase: 'pick-reference';
+      originMm: { xMm: number; yMm: number };
+    }
+  | {
+      phase: 'pick-destination';
+      originMm: { xMm: number; yMm: number };
+      referenceMm: { xMm: number; yMm: number };
+    };
+
+export type ScaleEvent =
+  | { kind: 'activate' }
+  | { kind: 'deactivate' }
+  | { kind: 'cancel' }
+  | { kind: 'click'; xMm: number; yMm: number }
+  | { kind: 'set-input'; value: string }
+  | { kind: 'confirm' };
+
+export interface ScaleEffect {
+  commitScale?: {
+    originMm: { xMm: number; yMm: number };
+    factor: number;
+  };
+  commitGraphicalScale?: {
+    originMm: { xMm: number; yMm: number };
+    referenceMm: { xMm: number; yMm: number };
+    destinationMm: { xMm: number; yMm: number };
+  };
+  stillActive: boolean;
+}
+
+export function initialScaleState(): ScaleState {
+  return { phase: 'idle' };
+}
+
+export function reduceScale(
+  state: ScaleState,
+  event: ScaleEvent,
+): { state: ScaleState; effect: ScaleEffect } {
+  if (event.kind === 'activate') {
+    return { state: { phase: 'pick-origin' }, effect: { stillActive: true } };
+  }
+  if (event.kind === 'deactivate') {
+    return { state: initialScaleState(), effect: { stillActive: false } };
+  }
+  if (event.kind === 'cancel') {
+    return { state: { phase: 'pick-origin' }, effect: { stillActive: true } };
+  }
+
+  if (event.kind === 'click') {
+    if (state.phase === 'pick-origin') {
+      return {
+        state: {
+          phase: 'enter-factor',
+          originMm: { xMm: event.xMm, yMm: event.yMm },
+          inputValue: '',
+        },
+        effect: { stillActive: true },
+      };
+    }
+    if (state.phase === 'enter-factor') {
+      // Clicking while in enter-factor switches to graphical mode: this click is the reference point
+      return {
+        state: {
+          phase: 'pick-reference',
+          originMm: state.originMm,
+        },
+        effect: { stillActive: true },
+      };
+    }
+    if (state.phase === 'pick-reference') {
+      return {
+        state: {
+          phase: 'pick-destination',
+          originMm: state.originMm,
+          referenceMm: { xMm: event.xMm, yMm: event.yMm },
+        },
+        effect: { stillActive: true },
+      };
+    }
+    if (state.phase === 'pick-destination') {
+      return {
+        state: { phase: 'pick-origin' },
+        effect: {
+          commitGraphicalScale: {
+            originMm: state.originMm,
+            referenceMm: state.referenceMm,
+            destinationMm: { xMm: event.xMm, yMm: event.yMm },
+          },
+          stillActive: true,
+        },
+      };
+    }
+  }
+
+  if (event.kind === 'set-input' && state.phase === 'enter-factor') {
+    return { state: { ...state, inputValue: event.value }, effect: { stillActive: true } };
+  }
+
+  if (event.kind === 'confirm' && state.phase === 'enter-factor') {
+    const factor = parseFloat(state.inputValue.trim());
+    if (!Number.isFinite(factor) || factor <= 0) {
+      return { state, effect: { stillActive: true } };
+    }
+    return {
+      state: { phase: 'pick-origin' },
+      effect: {
+        commitScale: { originMm: state.originMm, factor },
+        stillActive: true,
+      },
+    };
+  }
+
+  return { state, effect: { stillActive: true } };
+}
