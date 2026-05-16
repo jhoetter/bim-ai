@@ -1,0 +1,60 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "28ed2c639f2e",
+  "session_id": "00c12fa4-e09f-4334-93bc-2ea2d1eb510c",
+  "strategy": "manual-commit",
+  "created_at": "2026-05-16T09:58:07.08437Z",
+  "branch": "main",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "packages/web/src/Viewport.tsx",
+    "packages/web/src/tools/toolGrammar.ts"
+  ],
+  "agent": "Claude Code",
+  "model": "",
+  "turn_id": "cabbf0f26dd8",
+  "token_usage": {
+    "input_tokens": 612,
+    "cache_creation_tokens": 342279,
+    "cache_read_tokens": 30407386,
+    "output_tokens": 95976,
+    "api_call_count": 348
+  },
+  "session_metrics": {
+    "turn_count": 1
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-05-16T09:58:07.058982Z",
+    "agent_lines": 25,
+    "agent_removed": 0,
+    "human_added": 0,
+    "human_modified": 0,
+    "human_removed": 0,
+    "total_committed": 25,
+    "total_lines_changed": 25,
+    "agent_percentage": 100,
+    "metric_version": 2
+  },
+  "prompt_attributions": [
+    {
+      "checkpoint_number": 1,
+      "user_lines_added": 765,
+      "user_lines_removed": 1,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0,
+      "user_added_per_file": {
+        "packages/core/src/index.ts": 28,
+        "packages/web/src/plan/groupInstanceRender.test.ts": 78,
+        "packages/web/src/plan/groupInstanceRender.ts": 110,
+        "packages/web/src/tools/toolGrammar.ts": 56,
+        "packages/web/src/tools/walkthroughD3.test.ts": 130,
+        "packages/web/src/viewport/WalkthroughPlaybackPanel.tsx": 248,
+        "packages/web/src/viewport/groupInstance3d.ts": 76,
+        "packages/web/tmp/ux-next-wp45-50-20260516/summary.json": 39
+      },
+      "user_removed_per_file": {
+        "packages/core/src/index.ts": 1
+      }
+    }
+  ]
+}
