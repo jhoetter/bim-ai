@@ -1,0 +1,59 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "8f2b22e64a25",
+  "session_id": "019d18ff-5b77-4947-a147-82285e31b519",
+  "strategy": "manual-commit",
+  "created_at": "2026-05-16T15:53:42.554334Z",
+  "branch": "main",
+  "checkpoints_count": 0,
+  "files_touched": [
+    "spec/revit-parity/agent-prompts/WAVE6-WP-A.md",
+    "spec/revit-parity/agent-prompts/WAVE6-WP-B.md",
+    "spec/revit-parity/agent-prompts/WAVE6-WP-C.md",
+    "spec/revit-parity/agent-prompts/WAVE6-WP-D.md",
+    "spec/revit-parity/agent-prompts/WAVE6-WP-E.md",
+    "spec/revit-parity/agent-prompts/WAVE6-WP-F.md",
+    "spec/revit-parity/agent-prompts/WAVE6-WP-G.md",
+    "spec/revit-parity/revit2026-parity-tracker.md"
+  ],
+  "agent": "Claude Code",
+  "model": "claude-sonnet-4-6",
+  "turn_id": "ae6a6565f736",
+  "token_usage": {
+    "input_tokens": 45,
+    "cache_creation_tokens": 98131,
+    "cache_read_tokens": 3251002,
+    "output_tokens": 25221,
+    "api_call_count": 41
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-05-16T15:53:42.535097Z",
+    "agent_lines": 0,
+    "agent_removed": 0,
+    "human_added": 0,
+    "human_modified": 40,
+    "human_removed": 0,
+    "total_committed": 0,
+    "total_lines_changed": 40,
+    "agent_percentage": 0,
+    "metric_version": 2
+  },
+  "prompt_attributions": [
+    {
+      "checkpoint_number": 1,
+      "user_lines_added": 905,
+      "user_lines_removed": 0,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0,
+      "user_added_per_file": {
+        "spec/revit-parity/agent-prompts/WAVE6-WP-A.md": 119,
+        "spec/revit-parity/agent-prompts/WAVE6-WP-B.md": 129,
+        "spec/revit-parity/agent-prompts/WAVE6-WP-C.md": 103,
+        "spec/revit-parity/agent-prompts/WAVE6-WP-D.md": 126,
+        "spec/revit-parity/agent-prompts/WAVE6-WP-E.md": 124,
+        "spec/revit-parity/agent-prompts/WAVE6-WP-F.md": 160,
+        "spec/revit-parity/agent-prompts/WAVE6-WP-G.md": 144
+      }
+    }
+  ]
+}

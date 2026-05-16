@@ -1,0 +1,32 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "8f2b22e64a25",
+  "strategy": "manual-commit",
+  "branch": "main",
+  "checkpoints_count": 0,
+  "files_touched": [
+    "spec/revit-parity/agent-prompts/WAVE6-WP-A.md",
+    "spec/revit-parity/agent-prompts/WAVE6-WP-B.md",
+    "spec/revit-parity/agent-prompts/WAVE6-WP-C.md",
+    "spec/revit-parity/agent-prompts/WAVE6-WP-D.md",
+    "spec/revit-parity/agent-prompts/WAVE6-WP-E.md",
+    "spec/revit-parity/agent-prompts/WAVE6-WP-F.md",
+    "spec/revit-parity/agent-prompts/WAVE6-WP-G.md",
+    "spec/revit-parity/revit2026-parity-tracker.md"
+  ],
+  "sessions": [
+    {
+      "metadata": "/8f/2b22e64a25/0/metadata.json",
+      "transcript": "/8f/2b22e64a25/0/full.jsonl",
+      "content_hash": "/8f/2b22e64a25/0/content_hash.txt",
+      "prompt": "/8f/2b22e64a25/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 45,
+    "cache_creation_tokens": 98131,
+    "cache_read_tokens": 3251002,
+    "output_tokens": 25221,
+    "api_call_count": 41
+  }
+}
