@@ -1,0 +1,62 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "31344a739153",
+  "session_id": "1d635ce3-c4a5-4afe-862f-312cfdc807de",
+  "strategy": "manual-commit",
+  "created_at": "2026-05-16T07:09:52.556791Z",
+  "branch": "main",
+  "checkpoints_count": 0,
+  "files_touched": [
+    "packages/web/src/workspace/Workspace.tsx"
+  ],
+  "agent": "Claude Code",
+  "model": "claude-sonnet-4-6",
+  "turn_id": "306c17a2224d",
+  "token_usage": {
+    "input_tokens": 420,
+    "cache_creation_tokens": 255881,
+    "cache_read_tokens": 30765046,
+    "output_tokens": 89437,
+    "api_call_count": 352
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-05-16T07:09:52.406377Z",
+    "agent_lines": 0,
+    "agent_removed": 0,
+    "human_added": 0,
+    "human_modified": 0,
+    "human_removed": 0,
+    "total_committed": 0,
+    "total_lines_changed": 8,
+    "agent_percentage": 0,
+    "metric_version": 2
+  },
+  "prompt_attributions": [
+    {
+      "checkpoint_number": 1,
+      "user_lines_added": 1628,
+      "user_lines_removed": 29,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0,
+      "user_added_per_file": {
+        "packages/web/src/cmdPalette/defaultCommands.ts": 179,
+        "packages/web/src/geometry/wallConnectivity.test.ts": 31,
+        "packages/web/src/state/storeTypes.ts": 20,
+        "packages/web/src/tools/authoringCommandContract.ts": 169,
+        "packages/web/src/tools/toolRegistry.ts": 61,
+        "packages/web/src/workspace/commandCapabilities.test.ts": 7,
+        "spec/revit-parity/agent-prompts/RESUME-WP-A.md": 165,
+        "spec/revit-parity/agent-prompts/RESUME-WP-B.md": 158,
+        "spec/revit-parity/agent-prompts/RESUME-WP-C.md": 167,
+        "spec/revit-parity/agent-prompts/RESUME-WP-D.md": 181,
+        "spec/revit-parity/agent-prompts/RESUME-WP-E.md": 115,
+        "spec/revit-parity/agent-prompts/RESUME-WP-F.md": 186,
+        "spec/revit-parity/agent-prompts/RESUME-WP-G.md": 189
+      },
+      "user_removed_per_file": {
+        "packages/web/src/state/storeTypes.ts": 1,
+        "packages/web/src/tools/toolRegistry.ts": 28
+      }
+    }
+  ]
+}

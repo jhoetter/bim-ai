@@ -5,7 +5,8 @@
   "branch": "main",
   "checkpoints_count": 2,
   "files_touched": [
-    "packages/core/src/index.ts"
+    "packages/core/src/index.ts",
+    "packages/web/src/workspace/Workspace.tsx"
   ],
   "sessions": [
     {
@@ -19,13 +20,19 @@
       "transcript": "/31/344a739153/1/full.jsonl",
       "content_hash": "/31/344a739153/1/content_hash.txt",
       "prompt": "/31/344a739153/1/prompt.txt"
+    },
+    {
+      "metadata": "/31/344a739153/2/metadata.json",
+      "transcript": "/31/344a739153/2/full.jsonl",
+      "content_hash": "/31/344a739153/2/content_hash.txt",
+      "prompt": "/31/344a739153/2/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 3320099,
-    "cache_creation_tokens": 299515,
-    "cache_read_tokens": 85309014,
-    "output_tokens": 297880,
-    "api_call_count": 1573
+    "input_tokens": 3320519,
+    "cache_creation_tokens": 555396,
+    "cache_read_tokens": 116074060,
+    "output_tokens": 387317,
+    "api_call_count": 1925
   }
 }
