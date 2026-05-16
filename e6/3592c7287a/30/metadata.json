@@ -1,0 +1,37 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "e63592c7287a",
+  "session_id": "c20b1e43-66da-43ad-bc5e-028f4d2f1b8b",
+  "strategy": "manual-commit",
+  "created_at": "2026-05-16T17:02:39.414795Z",
+  "branch": "main",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "packages/core/src/index.ts",
+    "packages/web/src/viewport/meshBuilders.ts",
+    "packages/web/src/workspace/inspector/InspectorContent.tsx",
+    "packages/web/src/workspace/inspector/InspectorContent.test.tsx"
+  ],
+  "agent": "Claude Code",
+  "model": "claude-sonnet-4-6",
+  "turn_id": "542a109b26d3",
+  "token_usage": {
+    "input_tokens": 108,
+    "cache_creation_tokens": 181013,
+    "cache_read_tokens": 7470488,
+    "output_tokens": 36458,
+    "api_call_count": 97
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-05-16T17:02:39.400406Z",
+    "agent_lines": 1268,
+    "agent_removed": 127,
+    "human_added": 1812,
+    "human_modified": 0,
+    "human_removed": 0,
+    "total_committed": 3080,
+    "total_lines_changed": 3222,
+    "agent_percentage": 43.296089385474865,
+    "metric_version": 2
+  }
+}
