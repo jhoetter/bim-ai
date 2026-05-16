@@ -1,6 +1,6 @@
 # Revit 2026 Feature-Parity Tracker
 
-Last updated: 2026-05-16 (Wave 11 complete)
+Last updated: 2026-05-17 (Wave 13 complete)
 Source: Detlef Ridder — *Autodesk Revit 2026: Der umfassende Praxiseinstieg für Architekturkonstruktion*, mitp 2026 (ISBN 978-3-7475-1101-5)
 
 Purpose: exhaustive chapter-by-chapter comparison between Revit 2026 (as taught in the book) and what bim-ai currently supports. Every leaf section of the table of contents becomes a row. The goal is to expose gaps at maximum granularity so engineering work can be scoped and prioritised.
@@ -115,7 +115,8 @@ bim-ai has:
 - Visual style selection (renderStyles.ts — Done)
 - Sun/shadow toggle (SunOverlay.tsx — Done)
 - Scale display: Partial (shown in plan header)
-Missing: per-view crop region editing, view-level visibility/graphics overrides dialog, thin-lines toggle ("Feine Linien"), hide/isolate element commands.
+- Hide/isolate elements in view: Done — `hide_in_view`, `isolate_in_view`, `reset_hidden_in_view` commands + badge overlay (WP-A wave 13)
+Missing: per-view crop region editing, view-level visibility/graphics overrides dialog, thin-lines toggle ("Feine Linien").
 
 #### 1.6.11 Projektbrowser (project browser tree: views, sheets, families, groups, Revit links)
 **Status: Partial — P1 (D7)**
@@ -186,8 +187,8 @@ Missing: browsing full Revit family library structure (Doors, Windows, Furniture
 ### 2.1 Neues Projekt (new project setup)
 
 #### 2.1.1 Projektinformationen (project info: name, number, address, author)
-**Status: Partial — P1**
-bim-ai allows setting a project name. Full Revit-style project information dialog (Projektnummer, Projektname, Projektadresse, Projektstatus, Auftraggeber, Erstellt von, Prüfdatum) is not implemented. This data feeds title blocks on sheets.
+**Status: Done — P1**
+Full Revit-style project information dialog implemented (WP-B wave 13): Projektnummer, Projektname, Projektadresse, Projektstatus, Auftraggeber, Erstellt von fields stored in `project_settings`. `ProjectInfoDialog.tsx` wired into ribbon. Data feeds title blocks on sheets.
 
 #### 2.1.2 Geschoss-Ebenen (floor levels: add, rename, edit elevation)
 **Status: Done — P0**
@@ -274,8 +275,8 @@ Shaft openings exist as a tool (shaft in tool registry). Stair side wall prepara
 Stair tool, StairBySketchCanvas, stair plan symbol, meshBuilders.multiRunStair.ts — stair creation works.
 
 #### 2.5.3 Das Treppenloch (stair opening / floor void)
-**Status: Partial — P1**
-Shaft tool can cut floor openings. The auto-creation of a coordinated shaft when placing a stair is not done — the opening must be drawn separately.
+**Status: Done — P1**
+Shaft tool cuts floor openings. Auto-creation of a coordinated shaft void when placing a stair is now implemented (WP-F wave 13): `stairShaft.ts` computes shaft boundary from stair footprint; shaft is auto-created on stair placement. Inspector "Create Shaft" button added. Tests in `stairShaft.test.ts`.
 
 ### 2.6 Mehrere Stockwerke (multi-storey)
 
@@ -663,8 +664,8 @@ Print to physical printer or export as raster image directly from bim-ai is Not 
 ### 7.1 Modelllinien (model lines as 3D construction geometry)
 
 #### 7.1.1 Beispiel für Hilfskonstruktion (construction line example)
-**Status: Partial — P1**
-Model lines as persistent 3D sketch geometry (not just reference planes) are used in the family editor. In the project environment, model line as a general-purpose authoring aid is Partial.
+**Status: Done — P1**
+Model lines implemented in the project environment (WP-G wave 13): `model_line` element kind in `@bim-ai/core`, `'model-line'` tool in toolRegistry (hotkey ML, plan+3D), polyline grammar in toolGrammar.ts, plan renderer in `planElementMeshBuilders.ts`, 3D mesh in `meshBuilders.ts`. Tests in `modelLine.test.ts` and `modelLinePlan.test.ts`.
 
 ### 7.2 Raster (structural grid lines)
 **Status: Done — P0**
@@ -793,12 +794,12 @@ Ramp tool in toolRegistry (hotkey RA, plan mode). 'ramp' ElemKind in core with w
 ### 9.1 Stützen (columns)
 
 #### 9.1.1 Stützenarten (architectural vs structural columns)
-**Status: Partial — P1**
-Column tool is in the registry. Architectural (non-load-bearing) columns and structural columns are both supported by Revit. In bim-ai, a generic column element exists. Separate architectural vs structural column types with different parameter sets are Not Explicitly Distinguished.
+**Status: Done — P1**
+Architectural vs structural column distinction implemented (WP-D wave 13): `columnUsage` field (`'architectural' | 'structural'`) on column element in `@bim-ai/core`. Options bar toggle, inspector panel, and different 3D material per usage type. Tests in `columnUsageInspector.test.tsx`.
 
 #### 9.1.2 Raster für Stützen (column at grid intersections)
-**Status: Partial — G3**
-`column-at-grids` tool added to toolRegistry (hotkey CAG, plan-only). Grammar: `ColumnAtGridsState` state machine in toolGrammar.ts; PlanCanvas.tsx wires click→toggleGrid (via raycaster pick) and Enter→confirm→`columnPositionsAtGridIntersections`→N `createColumn` commands. `columnAtGrids.ts` helper (gridLineIntersection + columnPositionsAtGridIntersections) with 5 tests. Missing: options bar UI button, visual highlight of selected grids.
+**Status: Done — G3**
+`column-at-grids` tool (hotkey CAG, plan-only) fully implemented. Grammar: `ColumnAtGridsState` state machine in toolGrammar.ts; PlanCanvas.tsx wires click→toggleGrid and Enter→confirm→`columnPositionsAtGridIntersections`→N `createColumn` commands. `columnAtGrids.ts` helper with intersection math. Options bar section (column type select, level select, intersection count badge) added (WP-C wave 13). Visual highlight of selected grids (thicker blue overlay + filled bubble) and intersection preview dots implemented. Tests in `columnAtGrids.test.ts`, `columnAtGridsHighlight.test.ts`, `optionsBarColumnAtGrids.test.tsx`.
 
 #### 9.1.3 Nichttragende Stützen (non-structural columns: pilasters, casing)
 **Status: Partial — P2**
@@ -999,8 +1000,8 @@ Autodesk cloud product integration. bim-ai is its own cloud platform.
 Room separation sketch (room-separation-sketch tool) is in the registry.
 
 #### 13.1.2 Raumstempel (room tags with area, name, number)
-**Status: Partial — P1**
-Room tool is in registry. planRoomLabelLayout.ts exists. Room tags with name/number/area display are partially implemented. Fully configurable room tag families (like Revit's customisable tag) are Partial.
+**Status: Done — P1**
+Room tags fully implemented (WP-E wave 13): `roomTagRenderer.ts` displays name, number, and area in plan view. Inspector show/hide toggles for each field. `autoTags.ts` auto-places tags on room creation. Tests in `roomTagRenderer.test.ts` and `roomTagInspector.test.tsx`.
 
 #### 13.1.3 Farbenlegenden (color fill legend: rooms colored by department, area, etc.)
 **Status: Partial — P1**
