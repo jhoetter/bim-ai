@@ -351,13 +351,13 @@ Inspector panel always shows properties of selected element.
 #### 3.3.3 Gruppe »Zwischenablage« (clipboard: cut, copy, paste, paste aligned)
 **Status: Done — G1**
 Ctrl+C copies selection to clipboard (copyElementsToClipboard); Ctrl+V pastes at cursor (pasteFromOSClipboard) — both wired in PlanCanvas.tsx. copyToLevels / pasteAlignedToLevels helpers implemented with 6 unit tests. "Paste Aligned to Selected Levels" available via Cmd+K (clipboard.paste-to-levels) and implemented as PasteToLevelsDialog with 8 tests.
-- **C6:** Ctrl+C/V wired. copyToLevels.ts + pasteAlignedToLevels fully implemented. PasteToLevelsDialog (Cmd+K → level-picker modal → dispatches copyElementsToLevels per target) complete with 8 passing tests.
+- **C6:** Ctrl+C/V wired. copyToLevels.ts + pasteAlignedToLevels fully implemented. PasteToLevelsDialog (Cmd+K → level-picker modal → dispatches copyElementsToLevels per target) complete with 8 passing tests. Dialog now wired in Workspace.tsx (openPasteToLevels palette context) — WP-B3 done.
 
 #### 3.3.4 Gruppe »Geometrie« (geometry group: Join, Unjoin, Cut, Uncut geometry, Paint)
 **Status: Partial — P1**
-- Join Geometry: Partial — joinGeometry.ts command shapes + selection validation; toolbar UI pending
+- Join Geometry: Implemented — joinGeometry.ts command shapes + selection validation + `modify.join-geometry` / `modify.unjoin-geometry` in Cmd+K palette (WP-B7)
 - Cut Geometry: Partial (shaft openings, wall voids via CSG)
-- Unjoin: Partial — joinGeometry.ts command shapes + selection validation; toolbar UI pending
+- Unjoin: Implemented via palette command (WP-B7)
 - Paint (apply material to individual face): Not Started — no paint bucket tool
 
 #### 3.3.5 Gruppe »Steuerelemente« (controls: show/hide constraints, lock/unlock)
@@ -420,7 +420,7 @@ Both drag-to-move (grips) and explicit Move tool work.
 
 #### 3.5.5 Wände fixieren, Profil anpassen und Verbinden-Werkzeug (pin, edit profile, join tool)
 **Status: Partial — P1**
-- Pin: Partial — pinUnpin.ts command helpers (buildPinCommand, buildUnpinCommand, buildPinToggleCommands, filterPinnable) + PN shortcut in cheatsheet; toolbar wiring pending (WP-B8)
+- Pin: Implemented — pinUnpin.ts helpers + PN chord shortcut in PlanCanvas + `modify.pin-selected` / `modify.unpin-selected` / `modify.unpin-all` in Cmd+K palette + padlock 📌 glyph overlay in plan view (WP-B8)
 - Edit Profile (non-rectangular wall cross-section profile): Partial — wall profile shape editing via sketch is partially implemented
 - Join / Unjoin tool (explicitly controlling how two walls join): Partial (wall-join tool in registry)
 

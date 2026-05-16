@@ -1764,3 +1764,89 @@ registerCommand({
   category: 'command',
   invoke: () => useBimStore.getState().toggleNeighborhoodMasses(),
 });
+
+// B7 — Join / Unjoin solid geometry (helpers in plan/joinGeometry.ts)
+const SOLID_JOIN_KINDS = new Set(['wall', 'floor', 'roof', 'ceiling', 'column', 'beam']);
+
+function hasTwoSolidSelection(ctx: PaletteContext): boolean {
+  if (ctx.selectedElementIds.length !== 2) return false;
+  const elems = useBimStore.getState().elementsById;
+  return ctx.selectedElementIds.every((id) => {
+    const el = elems[id];
+    return el != null && SOLID_JOIN_KINDS.has(el.kind);
+  });
+}
+
+registerCommand({
+  id: 'modify.join-geometry',
+  label: 'Join Geometry',
+  keywords: ['join', 'merge', 'solid', 'geometry', 'intersection'],
+  category: 'command',
+  isAvailable: hasTwoSolidSelection,
+  invoke: (ctx) => {
+    const [id1, id2] = ctx.selectedElementIds;
+    if (!id1 || !id2) return;
+    const [a, b] = [id1, id2].sort();
+    ctx.dispatchCommand?.({ type: 'joinGeometry', elementId1: a, elementId2: b });
+  },
+});
+
+registerCommand({
+  id: 'modify.unjoin-geometry',
+  label: 'Unjoin Geometry',
+  keywords: ['unjoin', 'separate', 'disconnect', 'solid', 'geometry'],
+  category: 'command',
+  isAvailable: hasTwoSolidSelection,
+  invoke: (ctx) => {
+    const [id1, id2] = ctx.selectedElementIds;
+    if (!id1 || !id2) return;
+    const [a, b] = [id1, id2].sort();
+    ctx.dispatchCommand?.({ type: 'unjoinGeometry', elementId1: a, elementId2: b });
+  },
+});
+
+// B8 — Pin / Unpin selection (helpers in plan/pinUnpin.ts)
+registerCommand({
+  id: 'modify.pin-selected',
+  label: 'Pin Selected Elements',
+  shortcut: 'P N',
+  keywords: ['pin', 'lock', 'fix', 'immovable'],
+  category: 'command',
+  isAvailable: hasSelection,
+  invoke: (ctx) => {
+    const ids = ctx.selectedElementIds;
+    if (ids.length === 0) return;
+    ctx.dispatchCommand?.({ type: 'pinElements', elementIds: [...new Set(ids)] });
+  },
+});
+
+registerCommand({
+  id: 'modify.unpin-all',
+  label: 'Unpin All Elements',
+  keywords: ['unpin', 'unlock', 'unfix', 'all'],
+  category: 'command',
+  invoke: (ctx) => {
+    const elems = useBimStore.getState().elementsById;
+    const pinnedIds = Object.values(elems)
+      .filter(
+        (el): el is NonNullable<typeof el> =>
+          el != null && (el as { pinned?: boolean }).pinned === true,
+      )
+      .map((el) => el.id);
+    if (pinnedIds.length === 0) return;
+    ctx.dispatchCommand?.({ type: 'unpinElements', elementIds: pinnedIds });
+  },
+});
+
+registerCommand({
+  id: 'modify.unpin-selected',
+  label: 'Unpin Selected Elements',
+  keywords: ['unpin', 'unlock', 'unfix', 'selected'],
+  category: 'command',
+  isAvailable: hasSelection,
+  invoke: (ctx) => {
+    const ids = ctx.selectedElementIds;
+    if (ids.length === 0) return;
+    ctx.dispatchCommand?.({ type: 'unpinElements', elementIds: [...new Set(ids)] });
+  },
+});

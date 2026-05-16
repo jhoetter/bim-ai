@@ -141,6 +141,7 @@ import { LibraryOverlay } from './library';
 import { useActivityStore } from '../collab/activityStore';
 import { JobsPanel } from '../jobs/JobsPanel';
 import { CheatsheetModal } from '../cmd/CheatsheetModal';
+import { Save3dViewAsDialog } from '../Save3dViewAsDialog';
 import { CommandPalette } from '../cmdPalette/CommandPalette';
 import '../cmdPalette/defaultCommands';
 import {
@@ -170,6 +171,7 @@ import {
 } from './WorkspaceHelpers';
 import { EmptyStateHint } from './shell';
 import { MilestoneDialog } from '../collab/MilestoneDialog';
+import { PasteToLevelsDialog } from '../clipboard/PasteToLevelsDialog';
 import { WorkspaceLeftRail } from './WorkspaceLeftRail';
 import { WorkspaceRightRail } from './WorkspaceRightRail';
 import { rememberLocalClientOp, useWorkspaceSnapshot } from './useWorkspaceSnapshot';
@@ -1012,6 +1014,7 @@ export function Workspace(): JSX.Element {
     typeId: string;
   } | null>(null);
   const [cheatsheetOpen, setCheatsheetOpen] = useState(false);
+  const [save3dViewAsOpen, setSave3dViewAsOpen] = useState(false);
   const [tourOpen, setTourOpen] = useState<boolean>(() => !readOnboardingProgress().completed);
   const {
     insertSeedHouse,
@@ -1049,6 +1052,7 @@ export function Workspace(): JSX.Element {
   const applyOrbitViewpointPreset = useBimStore((s) => s.applyOrbitViewpointPreset);
   const [commentsOpen, setCommentsOpen] = useState(false);
   const [milestoneDialogOpen, setMilestoneDialogOpen] = useState(false);
+  const [pasteToLevelsOpen, setPasteToLevelsOpen] = useState(false);
   const [undoDepth, setUndoDepth] = useState(0);
   const [redoDepth, setRedoDepth] = useState(0);
   const [recentProjects, setRecentProjects] = useState<ProjectMenuItemRecent[]>(() =>
@@ -2809,38 +2813,46 @@ export function Workspace(): JSX.Element {
     },
     [elementsById, onSemanticCommand, paletteActiveSectionId],
   );
+  const commitSave3dViewWithName = useCallback(
+    (name: string) => {
+      if (!orbitCameraPoseMm) return;
+      const hiddenSemanticKinds3d = Object.entries(viewerCategoryHidden)
+        .filter(([, hidden]) => hidden)
+        .map(([kind]) => kind);
+      setSave3dViewAsOpen(false);
+      void onSemanticCommand({
+        type: 'create_saved_view',
+        id: `sv-3d-${Date.now().toString(36)}`,
+        baseViewId: activeViewpointId ?? 'orbit_3d',
+        name,
+        cameraState: {
+          positionMm: orbitCameraPoseMm.position,
+          targetMm: orbitCameraPoseMm.target,
+          upMm: orbitCameraPoseMm.up,
+          fovDeg: 60,
+        },
+        visibilityOverrides: {
+          viewerClipCapElevMm: viewerClipElevMm,
+          viewerClipFloorElevMm,
+          hiddenSemanticKinds3d,
+        },
+        detailLevel: viewerProjection,
+      });
+    },
+    [
+      activeViewpointId,
+      onSemanticCommand,
+      orbitCameraPoseMm,
+      viewerCategoryHidden,
+      viewerClipElevMm,
+      viewerClipFloorElevMm,
+      viewerProjection,
+    ],
+  );
   const saveCurrentViewpoint = useCallback(() => {
     if (!orbitCameraPoseMm) return;
-    const hiddenSemanticKinds3d = Object.entries(viewerCategoryHidden)
-      .filter(([, hidden]) => hidden)
-      .map(([kind]) => kind);
-    void onSemanticCommand({
-      type: 'create_saved_view',
-      id: `sv-3d-${Date.now().toString(36)}`,
-      baseViewId: activeViewpointId ?? 'orbit_3d',
-      name: `Saved 3D View ${new Date().toLocaleString()}`,
-      cameraState: {
-        positionMm: orbitCameraPoseMm.position,
-        targetMm: orbitCameraPoseMm.target,
-        upMm: orbitCameraPoseMm.up,
-        fovDeg: 60,
-      },
-      visibilityOverrides: {
-        viewerClipCapElevMm: viewerClipElevMm,
-        viewerClipFloorElevMm,
-        hiddenSemanticKinds3d,
-      },
-      detailLevel: viewerProjection,
-    });
-  }, [
-    activeViewpointId,
-    onSemanticCommand,
-    orbitCameraPoseMm,
-    viewerCategoryHidden,
-    viewerClipElevMm,
-    viewerClipFloorElevMm,
-    viewerProjection,
-  ]);
+    setSave3dViewAsOpen(true);
+  }, [orbitCameraPoseMm]);
   const resetActiveSavedViewpoint = useCallback(() => {
     if (!activeViewpointId) return;
     const viewpoint = elementsById[activeViewpointId];
@@ -3863,6 +3875,12 @@ export function Workspace(): JSX.Element {
   return (
     <>
       <CheatsheetModal open={cheatsheetOpen} onClose={() => setCheatsheetOpen(false)} />
+      <Save3dViewAsDialog
+        isOpen={save3dViewAsOpen}
+        suggestedName={`Saved 3D View ${Object.values(elementsById).filter((e) => e.kind === 'saved_view').length + 1}`}
+        onSave={commitSave3dViewWithName}
+        onCancel={() => setSave3dViewAsOpen(false)}
+      />
       <CommandPalette
         isOpen={paletteOpen}
         onClose={() => setPaletteOpen(false)}
@@ -3908,6 +3926,7 @@ export function Workspace(): JSX.Element {
           openAdvisor: () => setAdvisorOpen(true),
           openJobs: () => setJobsOpen(true),
           openMilestone: openMilestoneDialog,
+          openPasteToLevels: () => setPasteToLevelsOpen(true),
           hasAdvisorQuickFix: Boolean(firstAdvisorQuickFix),
           applyFirstAdvisorFix: firstAdvisorQuickFix
             ? () => void onSemanticCommand(firstAdvisorQuickFix)
@@ -4182,6 +4201,14 @@ export function Workspace(): JSX.Element {
           onClose={() => setMilestoneDialogOpen(false)}
         />
       )}
+      <PasteToLevelsDialog
+        open={pasteToLevelsOpen}
+        onClose={() => setPasteToLevelsOpen(false)}
+        elementsById={elementsById}
+        activeLevelId={activeLevelId}
+        selectedElementIds={selectedId ? [selectedId, ...selectedIds] : [...selectedIds]}
+        onSemanticCommand={(cmd) => void onSemanticCommand(cmd)}
+      />
       {modelId ? (
         <SharePresentationModal
           modelId={modelId}

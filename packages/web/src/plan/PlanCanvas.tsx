@@ -538,6 +538,7 @@ export function PlanCanvas({
     pxY: number;
   } | null>(null);
   numericInputRef.current = numericInput;
+  const pendingPinChordRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [hudMm, setHudMm] = useState<{ xMm: number; yMm: number }>();
   const hudMmRef = useRef<{ xMm: number; yMm: number } | undefined>(undefined);
   hudMmRef.current = hudMm;
@@ -4939,6 +4940,26 @@ export function PlanCanvas({
         selectEl(undefined);
         useBimStore.getState().clearSelectedIds();
       }
+      // B8 — PN chord: pin all selected elements (Revit parity).
+      if (ev.key === 'p' || ev.key === 'P') {
+        if (pendingPinChordRef.current) clearTimeout(pendingPinChordRef.current);
+        pendingPinChordRef.current = setTimeout(() => {
+          pendingPinChordRef.current = null;
+        }, 500);
+        return;
+      }
+      if ((ev.key === 'n' || ev.key === 'N') && pendingPinChordRef.current) {
+        clearTimeout(pendingPinChordRef.current);
+        pendingPinChordRef.current = null;
+        const st = useBimStore.getState();
+        const ids = [
+          ...new Set(
+            [st.selectedId, ...st.selectedIds].filter((id): id is string => typeof id === 'string'),
+          ),
+        ];
+        if (ids.length > 0) void onSemanticCommand({ type: 'pinElements', elementIds: ids });
+        return;
+      }
     };
     const onKeyUp = (ev: KeyboardEvent) => {
       if (ev.code === 'Space') {
@@ -6489,6 +6510,64 @@ export function PlanCanvas({
           </span>
         </div>
       ) : null}
+      {/* B8 — padlock glyphs for pinned elements. */}
+      {(() => {
+        const currentLvl = lvlId;
+        const pinned: Array<{ id: string; xMm: number; yMm: number }> = [];
+        for (const el of Object.values(elementsById)) {
+          if (!el) continue;
+          if (!(el as { pinned?: boolean }).pinned) continue;
+          if (currentLvl && (el as { levelId?: string }).levelId !== currentLvl) continue;
+          const w = el as {
+            start?: { xMm: number; yMm: number };
+            end?: { xMm: number; yMm: number };
+            insertionPoint?: { xMm: number; yMm: number };
+            xMm?: number;
+            yMm?: number;
+          };
+          let xMm: number | undefined;
+          let yMm: number | undefined;
+          if (w.insertionPoint) {
+            xMm = w.insertionPoint.xMm;
+            yMm = w.insertionPoint.yMm;
+          } else if (w.start && w.end) {
+            xMm = (w.start.xMm + w.end.xMm) / 2;
+            yMm = (w.start.yMm + w.end.yMm) / 2;
+          } else if (typeof w.xMm === 'number' && typeof w.yMm === 'number') {
+            xMm = w.xMm;
+            yMm = w.yMm;
+          }
+          if (xMm !== undefined && yMm !== undefined) pinned.push({ id: el.id, xMm, yMm });
+        }
+        if (pinned.length === 0) return null;
+        return (
+          <div
+            aria-hidden="true"
+            style={{ position: 'absolute', inset: 0, pointerEvents: 'none', zIndex: 18 }}
+            data-testid="pin-glyph-layer"
+          >
+            {pinned.map(({ id, xMm, yMm }) => {
+              const { pxX, pxY } = worldToScreen({ xMm, yMm });
+              return (
+                <span
+                  key={id}
+                  title="Pinned"
+                  style={{
+                    position: 'absolute',
+                    left: pxX + 4,
+                    top: pxY - 16,
+                    fontSize: 10,
+                    lineHeight: 1,
+                    userSelect: 'none',
+                  }}
+                >
+                  📌
+                </span>
+              );
+            })}
+          </div>
+        );
+      })()}
       {/* EDT-05 — snap glyph layer (×, ⊥, dot+dash) above the canvas. */}
       <SnapGlyphLayer
         candidates={snapGlyphState.candidates}
