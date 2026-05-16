@@ -1,1 +1,0 @@
-for dark mode it seems the conservative.css font is used, and generally it seems we use the design system there. is that the case? weird
