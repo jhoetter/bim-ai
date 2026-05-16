@@ -5,6 +5,8 @@
   "branch": "main",
   "checkpoints_count": 1,
   "files_touched": [
+    "packages/web/src/state/storeTypes.ts",
+    "packages/web/src/tools/authoringCommandContract.ts",
     "packages/web/src/tools/toolRegistry.ts"
   ],
   "sessions": [
@@ -19,13 +21,19 @@
       "transcript": "/32/0fa9b0c2fd/1/full.jsonl",
       "content_hash": "/32/0fa9b0c2fd/1/content_hash.txt",
       "prompt": "/32/0fa9b0c2fd/1/prompt.txt"
+    },
+    {
+      "metadata": "/32/0fa9b0c2fd/2/metadata.json",
+      "transcript": "/32/0fa9b0c2fd/2/full.jsonl",
+      "content_hash": "/32/0fa9b0c2fd/2/content_hash.txt",
+      "prompt": "/32/0fa9b0c2fd/2/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 3319950,
-    "cache_creation_tokens": 205205,
-    "cache_read_tokens": 72617366,
-    "output_tokens": 234771,
-    "api_call_count": 1460
+    "input_tokens": 3320266,
+    "cache_creation_tokens": 491506,
+    "cache_read_tokens": 99318588,
+    "output_tokens": 383768,
+    "api_call_count": 1760
   }
 }
