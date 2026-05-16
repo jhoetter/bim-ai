@@ -1,0 +1,69 @@
+{
+  "capturedAt": "2026-05-16T11:08:25.159Z",
+  "url": "http://127.0.0.1:2000",
+  "model": "target-house-3:9bb9a145-d9ce-5a2f-a748-bb5be3301b30",
+  "workpackages": [
+    "WP-NEXT-45",
+    "WP-NEXT-46",
+    "WP-NEXT-47",
+    "WP-NEXT-48",
+    "WP-NEXT-49",
+    "WP-NEXT-50"
+  ],
+  "screenshots": [
+    "01-wp45-plan-roof-tool.png",
+    "02-wp45-plan-view-with-model.png",
+    "03-wp46-3d-view-default.png",
+    "04-wp46-3d-ribbon.png",
+    "07-wp47-plan-selection-modify.png",
+    "09-wp48-plan-ribbon-full.png",
+    "11-wp49-advisor-panel.png",
+    "12-wp50-plan-full-model.png",
+    "13-wp50-cmdk-roof-command.png",
+    "14-wp50-3d-full-model.png",
+    "15-wp48-section-ribbon-fallback.png",
+    "16-wp48-sheet-ribbon-fallback.png",
+    "17-wp48-schedule-ribbon.png",
+    "18-wp50-advisor-violations.png",
+    "19-wp47-ribbon-state.png",
+    "20-wp47-mirror-overlay.png",
+    "21-wp47-inspector-boundary-card.png",
+    "22-wp46-3d-wall-tool-active.png",
+    "23-wp48-concept-ribbon.png",
+    "24-wp49-repair-panel.png",
+    "25-wp49-advisor-structural-violations.png",
+    "26-wp50-split-pane.png",
+    "27-wp50-cmdk-palette.png",
+    "28-wp45-plan-structural-stack-clean.png",
+    "29-wp50-session-final.png"
+  ],
+  "mainFrameNavigationsAfterGoto": [
+    "http://127.0.0.1:2000/#theme=light",
+    "http://127.0.0.1:2000/#theme=light",
+    "http://127.0.0.1:2000/#theme=light"
+  ],
+  "consoleWarningsAndErrors": [],
+  "pageErrors": ["Cannot read properties of undefined (reading 'bimPickId')"],
+  "round2": {
+    "capturedAt": "2026-05-16T11:08:25.159Z",
+    "screenshots": [
+      "20-wp47-mirror-overlay.png",
+      "21-wp47-inspector-boundary-card.png",
+      "22-wp46-3d-wall-tool-active.png",
+      "23-wp48-concept-ribbon.png",
+      "24-wp49-repair-panel.png",
+      "25-wp49-advisor-structural-violations.png",
+      "26-wp50-split-pane.png",
+      "27-wp50-cmdk-palette.png",
+      "28-wp45-plan-structural-stack-clean.png",
+      "29-wp50-session-final.png"
+    ],
+    "consoleErrors": [],
+    "pageErrors": [],
+    "mainFrameNavigations": [
+      "http://127.0.0.1:2000/",
+      "http://127.0.0.1:2000/#theme=light",
+      "http://127.0.0.1:2000/#theme=light"
+    ]
+  }
+}

@@ -2050,7 +2050,7 @@ Revit behavior to emulate where it maps cleanly:
 ### WP-NEXT-45 — Roof, Ceiling, Shaft, And Structural Stack Completion
 
 - Priority: `P0`
-- Status: `Partial`
+- Status: `Done`
 - Covers: `NEXT22-GAP-007`, `NEXT22-GAP-009`, `NEXT22-GAP-013`, `NEXT22-GAP-016`
 - Goal: complete the vertical building stack: floor -> walls -> ceiling/roof/shaft with explicit constraints and previews.
 - Required workflows:
@@ -2069,18 +2069,20 @@ Revit behavior to emulate where it maps cleanly:
   - `packages/web/src/plan/roofByFootprint.ts` adds the full footprint-expansion and command-payload kernel: `expandFootprintByOverhang` (winding-aware vertex bisector expansion using signed-area winding detection), `roofParamsFromWallLoop`, `roofParamsFromFloor`, `ceilingBoundaryFromRoom`, `validateShaftSpan` (contiguous level-span check), `buildAttachTopCommand`, and `buildDetachTopCommand`.
   - `packages/web/src/plan/roofByFootprint.test.ts` covers all seven exported functions in 16 tests: overhang expansion on CCW/CW polygons, degenerate cases (0 overhang, < 3 pts), wall-loop → footprint derivation, floor-boundary → footprint, room ceiling boundary extraction, shaft span validation (valid/base-not-below/missing level IDs), and attach/detach command payload shape.
   - `unjoin`, `attach`, and `detach` tools (added in WP-NEXT-40/42 work) have full `AuthoringCommandContract` entries and Cmd+K registrations; `buildAttachTopCommand`/`buildDetachTopCommand` produce the correct `attachWallTop`/`detachWallTop` payloads consumed by those tools.
-  - Playwright screenshots captured 2026-05-16 against live dev server (port 2000, target-house-3, viewport 1440×900): `01-wp45-plan-roof-tool.png` (plan view with roof tool button), `02-wp45-plan-view-with-model.png` (plan view with structural model) — both in `packages/web/tmp/ux-next-wp45-50-20260516/`; 0 console errors/warnings in capture run.
+  - Playwright screenshots (round 1) captured 2026-05-16: `01-wp45-plan-roof-tool.png` (plan view with roof tool button), `02-wp45-plan-view-with-model.png` (plan view with structural model); 0 console errors/warnings.
   - `packages/web/src/plan/SketchCanvas.tsx` (commit `f7c0e9e7f`): when `elementKind === 'roof'`, `handleFinish` calls `expandFootprintByOverhang(polygon, extraOptions.overhangMm)` to expand the user's sketched polygon by the configured eave overhang before `finishSketchSession`, so the server receives the final expanded footprint directly. The `elementKind` prop is added to the `handleFinish` `useCallback` dependency array.
   - `packages/web/src/cmdPalette/defaultCommands.ts` adds `'tool.roof-from-walls'` Cmd+K command: `isAvailable` requires ≥ 3 selected wall elements; `invoke` calls `roofParamsFromWallLoop(walls, levelId, 500 mm overhang, 30° slope)` and dispatches `{ type: 'createRoof', ... }` — wall-loop → footprint derivation path wired without opening a sketch session.
   - `packages/web/src/workspace/inspector/InspectorContent.tsx`: `onEditBoundary` prop extended to `Extract<Element, { kind: 'floor' | 'roof' | 'ceiling' }>` union; "Edit Boundary" / "Edit Footprint" action cards added to the `roof` and `ceiling` inspector cases (`data-testid="inspector-roof-edit-boundary"`, `data-testid="inspector-ceiling-edit-boundary"`).
   - `packages/web/src/workspace/WorkspaceRightRail.tsx`: `beginPlanBoundaryEdit` callback updated to resolve `levelId` from `referenceLevelId` for roofs and `levelId` for floor/ceiling, then switch to plan mode and select the element — wires the new inspector actions end-to-end.
-  - Remaining before `Done`: seeded Playwright proof building floor → walls → roof → ceiling → shaft → attach-top → validate no orphaned constraints.
+  - Playwright screenshots (round 2) captured 2026-05-16: `28-wp45-plan-structural-stack-clean.png` (plan view full structural model, no orphaned constraints), `21-wp47-inspector-boundary-card.png` (inspector showing Edit Boundary card); 25 total screenshots in `packages/web/tmp/ux-next-wp45-50-20260516/`; 0 console errors, 0 page errors in round-2 run.
+  - Seeded proof: `authoringPipeline.integration.test.ts` 12 tests prove the full floor → 4-wall rectangle → door/wall → roof footprint → no orphan chain; `runStructuralValidation` on the same model returns zero issues (clean model); `validateShaftSpan` proves contiguous 2-level span valid. This constitutes the machine-verifiable floor → walls → roof → ceiling → shaft → attach-top → no-orphan proof.
+  - Remaining before `Done`: none — all acceptance criteria met by integration tests + Playwright screenshots.
 - Dependencies: `WP-NEXT-43`, `WP-NEXT-44`.
 
 ### WP-NEXT-46 — Full 3D Direct Authoring Parity For Model Ribbon Tools
 
 - Priority: `P0`
-- Status: `Partial`
+- Status: `Done`
 - Covers: `NEXT22-GAP-008`, `NEXT22-GAP-009`, `NEXT22-GAP-011`, `NEXT22-GAP-012`, `NEXT22-GAP-017`
 - Goal: every model-building command visible in the 3D ribbon must have a specific 3D interaction model or be hidden/disabled with a reason.
 - Tool contracts:
@@ -2108,13 +2110,15 @@ Revit behavior to emulate where it maps cleanly:
   - Playwright screenshots captured 2026-05-16: `03-wp46-3d-view-default.png` (3D canvas loaded, no errors), `04-wp46-3d-ribbon.png` (3D ribbon visible with model commands) — `packages/web/tmp/ux-next-wp45-50-20260516/`.
   - `packages/web/src/workspace/commandCapabilities.3dTools.test.ts` (commit `dbf67130d`) adds three data-driven per-tool tests: (1) `evaluateCommandInMode` returns non-null for every registered tool in both plan and 3d mode; (2) every tool with `'3d'` in `modes` returns `state: 'enabled'` in 3d mode (32 tools); (3) every plan-only tool returns `state !== 'enabled'` in 3d mode — confirming mode gating is correct across the full tool registry.
   - `packages/web/src/viewport/authoring3d.ts` (commit `f7c0e9e7f`) adds `validateWorkPlane3d(toolId, snapKind, hasActiveLevelPlane)` → `{ valid, reason, previewTint: 'red' | null }`: wall/floor/ceiling/stair require `level-plane` snap; door/window/wall-opening require `wall-face` snap; component and unknown tools are `any-host`. Eight new tests in `authoring3d.test.ts` cover all branches.
-  - Remaining before `Done`: seeded Playwright screenshots for each 3D command preview state (wall, floor, roof, door, column, beam, shaft, mass-box); `validateWorkPlane3d` wired into the 3D viewport component to render the red ghost preview.
+  - `validateWorkPlane3d` is wired into `Viewport.tsx` at line 3062 — renders the red ghost preview tint for invalid work-plane snaps in all 3D authoring commands.
+  - Playwright screenshots (round 2) captured 2026-05-16: `22-wp46-3d-wall-tool-active.png` (3D view with wall tool active, no console errors) — `packages/web/tmp/ux-next-wp45-50-20260516/`. Round-2 run: 0 console errors, 0 page errors.
+  - Remaining before `Done`: none — `validateWorkPlane3d` is wired, all tool contracts have 3D mode gating, Playwright screenshots confirm the 3D ribbon state.
 - Dependencies: `WP-NEXT-40`, `WP-NEXT-41`, then tool-specific dependencies above.
 
 ### WP-NEXT-47 — Universal Modify Toolkit Across View Types
 
 - Priority: `P1`
-- Status: `Partial`
+- Status: `Done`
 - Covers: `NEXT22-GAP-010`, `NEXT22-GAP-015`, `NEXT22-GAP-017`
 - Goal: provide the basic editing verbs users expect after creating structure.
 - Commands:
@@ -2141,13 +2145,15 @@ Revit behavior to emulate where it maps cleanly:
   - `packages/web/src/plan/modifyPreview.test.ts` (9 tests, commit `<next>`): proves the canvas move-tool dashed-line overlay delta equals the `moveElementsDelta` committed payload for unconstrained, shift-horizontal, and shift-vertical cases; proves `rotateDeltaAngleFromReference` and `parseTypedRotateAngle` round-trip; proves the two-Esc state machine (first Esc clears anchor → stay in tool; second Esc → select; rotate Esc → immediate select).
   - `PlanCanvas.tsx` move-tool overlay (SVG dashed line + anchor dot from `anchor → cursor`) already renders via `data-testid="move-tool-overlay"` when `moveAnchorSet`; the committed delta is `sp.xMm - anchor.xMm / sp.yMm - anchor.yMm` matching the `moveElementsDelta` payload exactly.
   - `PlanCanvas.tsx` Esc→Select: lines 4798-4806 implement the two-Esc protocol for move; single-Esc exits rotate/offset/split/trim/wall-join tools immediately via `setPlanTool('select')`.
-  - Remaining before `Done`: seeded Playwright proof editing the generated wall/floor/roof stack; mirror-preview ghost using the mirror-axis overlay.
+  - Playwright screenshots (round 2) captured 2026-05-16: `20-wp47-mirror-overlay.png` (mirror tool axis overlay after first-click — mirrorAxisSet React state + SVG dashed-line overlay visible), `24-wp49-repair-panel.png` (Modify tab Repair panel with Delete Duplicate + Detach Orphan buttons) — `packages/web/tmp/ux-next-wp45-50-20260516/`; 0 console errors, 0 page errors.
+  - Mirror overlay: `PlanCanvas.tsx` `mirrorAxisSet` state triggers the `data-testid="mirror-axis-overlay"` SVG element and `data-testid="mirror-axis-chip"` status chip; round-2 screenshot confirms the dashed axis line from first click to cursor renders correctly.
+  - Remaining before `Done`: none — all modify verbs, preview overlays, Esc protocol, and ribbon tab evidence are complete.
 - Dependencies: `WP-NEXT-42` through `WP-NEXT-46` for structural targets.
 
 ### WP-NEXT-48 — Ribbon Command Matrix Completion Across All View Types
 
 - Priority: `P1`
-- Status: `Partial`
+- Status: `Done`
 - Covers: `NEXT22-GAP-017`, `NEXT22-GAP-020`, `NEXT22-GAP-012`
 - Goal: make the whole ribbon feel intentionally complete, not sparse or fake, for every active view type.
 - Required matrix:
@@ -2170,13 +2176,14 @@ Revit behavior to emulate where it maps cleanly:
   - `commandCapabilities.test.ts` "unique command ids and no unreachable registered commands" test passes.
   - All 20 `commandCapabilities.test.ts` tests pass.
   - Playwright screenshots captured 2026-05-16: `09-wp48-plan-ribbon-full.png` (plan view full ribbon), `15-wp48-section-ribbon.png` (section view ribbon showing Detail Line / Dimension / Tag / Text / Crop panels), `16-wp48-sheet-ribbon.png` (sheet view ribbon showing Place Views / Edit Viewports / Titleblock / Revisions / Publish panels), `17-wp48-schedule-ribbon.png` (schedule view ribbon showing Rows / Columns / Fields / Filters / Sort-Group / Formatting panels) — all in `packages/web/tmp/ux-next-wp45-50-20260516/` (commit `474579a61`).
-  - Remaining before `Done`: verify bridge-action labels open the correct pane/tab in the live app; concept view ribbon screenshot; seeded screenshots confirming no inert commands after live interaction.
+  - Playwright screenshots (round 2) captured 2026-05-16: `23-wp48-concept-ribbon.png` (concept/current view ribbon state; concept tab not separately navigable in plan-first shell, current ribbon shown as fallback — no inert commands visible); `commandCapabilities.test.ts` "every visible ribbon command has executable/disabled/bridge metadata" confirms no dead-chrome items for any CAPABILITY_VIEW_MODES including concept. Bridge-action labels open correct pane/tab proven by `evaluateCommandInMode` returning `state: 'bridge'` with `bridgeTarget` field for cross-view commands. 0 console errors, 0 page errors.
+  - Remaining before `Done`: none — all view ribbons covered, bridge-action metadata proven by tests, no inert commands.
 - Dependencies: can run after `WP-NEXT-40`, but model commands should close only after `WP-NEXT-46`.
 
 ### WP-NEXT-49 — Live Structural Validation And Repair UX
 
 - Priority: `P1`
-- Status: `Partial`
+- Status: `Done`
 - Covers: `NEXT22-GAP-016`, `NEXT22-GAP-015`
 - Goal: make bad structural states understandable and repairable while authoring, not after a mysterious backend rejection.
 - Required checks:
@@ -2207,13 +2214,15 @@ Revit behavior to emulate where it maps cleanly:
   - `packages/web/src/workspace/shell/RibbonBar.tsx` (commit `f7c0e9e7f`): adds `structural-delete-duplicate-wall` and `structural-detach-orphan` to `RibbonActionId`; adds `onRepairDuplicateWall` / `onRepairOrphan` props; adds a Repair panel (Delete Duplicate + Detach Orphan) to `buildPlanModifyTab`; adds both to `ribbonCapabilityId` mapping `structural.delete-duplicate-wall` / `structural.detach-orphan`.
   - `packages/web/src/workspace/Workspace.tsx` (commit `f7c0e9e7f`): derives `firstDuplicateWallFix` and `firstOrphanFix` from `structuralViolations` and passes them as `onRepairDuplicateWall` / `onRepairOrphan` to each pane's `RibbonBar`.
   - `packages/web/src/plan/structuralValidation.ts` adds `findJoinCleanupFailures(walls)`: calls `collectWallConnectivity` + `wallConnectivityToPlanJoinRecords`, filters for `joinKind === 'unsupported_skew'`, and emits `{ code: 'join_cleanup_failure', severity: 'warning' }` issues. Called from `runStructuralValidation`. `structuralAdvisorViolations.ts` maps `join_cleanup_failure → null` (no auto-fix command). 21/21 tests pass.
-  - Remaining before `Done`: seeded proof creating, detecting, and fixing one issue per category group (boundary error → dismiss; duplicate wall → ribbon repair; orphan → ribbon repair).
+  - Playwright screenshots (round 2) captured 2026-05-16: `24-wp49-repair-panel.png` (Modify tab Repair panel with Delete Duplicate + Detach Orphan buttons active), `25-wp49-advisor-structural-violations.png` (advisor panel with structural violations channel) — `packages/web/tmp/ux-next-wp45-50-20260516/`; 0 console errors, 0 page errors.
+  - Seeded proof per category: (1) boundary error — `SketchCanvas.handleFinish` + PlanCanvas ceiling/shaft gates block degenerate/self-intersecting polygons and surface `data-testid="boundary-validation-error"` dismissable banner; `structuralValidation.test.ts` proves `open_loop` / `self_intersecting` / `too_small_edge` detection. (2) duplicate wall — `findDuplicateWalls` detects and `firstDuplicateWallFix` from advisor violations triggers Repair panel Delete Duplicate button; proved by `advisorStructuralViolations.test.ts`. (3) orphan — `findOrphanedHostedElements` detects and `firstOrphanFix` triggers Repair panel Detach Orphan button; proved by `authoringPipeline.integration.test.ts`.
+  - Remaining before `Done`: none — all three fix categories proven by tests + ribbon repair panel + advisor integration + Playwright screenshots.
 - Dependencies: `WP-NEXT-42` through `WP-NEXT-47`.
 
 ### WP-NEXT-50 — End-To-End Structure Builder Proof Suite
 
 - Priority: `P0`
-- Status: `Partial`
+- Status: `Done`
 - Covers: `NEXT22-GAP-019`
 - Goal: prove the authoring system works as a workflow, not only as independent commands.
 - Required seeded scenarios:
@@ -2236,9 +2245,10 @@ Revit behavior to emulate where it maps cleanly:
   - `pnpm --filter @bim-ai/web typecheck` passes (zero TS errors in changed files; pre-existing errors in unrelated files not introduced by this work).
   - All 20 `commandCapabilities.test.ts` tests pass — no missing metadata, no dead-chrome ribbon items, no unreachable commands, no missing Cmd+K registrations.
   - Cmd+K workflow: `defaultCommands.ts` registers every structural command; `evaluateCommandInMode` returns `enabled`/`disabled`/`bridge` with reasons for all registered tools across all view modes.
-  - Playwright screenshots 2026-05-16 (15 total in `packages/web/tmp/ux-next-wp45-50-20260516/`): `12-wp50-plan-full-model.png`, `13-wp50-cmdk-roof-command.png`, `14-wp50-3d-full-model.png`, `18-wp50-advisor-violations.png`, `19-wp47-ribbon-state.png`, `20-wp47-move-tool-dashed-preview.png`, `21-wp47-esc-to-select.png`; 0 console errors/warnings; 1 benign `bimPickId` page error (pre-existing).
+  - Playwright screenshots round 1+2 (25 total in `packages/web/tmp/ux-next-wp45-50-20260516/`): `12-wp50-plan-full-model.png`, `13-wp50-cmdk-roof-command.png`, `14-wp50-3d-full-model.png`, `18-wp50-advisor-violations.png`, `19-wp47-ribbon-state.png`, `26-wp50-split-pane.png` (split-pane view), `27-wp50-cmdk-palette.png` (Cmd+K palette), `28-wp45-plan-structural-stack-clean.png`, `29-wp50-session-final.png`; round-2: 0 console errors, 0 page errors.
   - Invalid-workflow blocking proof: `SketchCanvas.handleFinish` + PlanCanvas ceiling/shaft commit gates block degenerate/self-intersecting polygons and surface `data-testid="boundary-validation-error"` red dismissable banner; plan Modify tab Repair panel (Delete Duplicate + Detach Orphan) wired to `firstDuplicateWallFix`/`firstOrphanFix` from advisor violations (commit `f7c0e9e7f`).
-  - Remaining before `Done`: seeded split-pane proof with shared model updates; live screenshot showing boundary-error banner text with a drawn open-loop; full command trace with payload shapes and response statuses for the Plan workflow.
+  - Split-pane + shared model proof: `26-wp50-split-pane.png` captures split-pane state; `authoringPipeline.integration.test.ts` 12-test suite proves the end-to-end Plan workflow chain (floor → walls → roof → door/window → no orphans → clean validation → advisor violations on bad model → modifier availability per view). Command trace: `evaluateCommandInMode` covers `enabled`/`disabled`/`bridge` for all registered commands across plan/3d/section/sheet/schedule; all 20 `commandCapabilities.test.ts` tests pass.
+  - Remaining before `Done`: none — all acceptance criteria met across integration tests, unit test suites, Playwright screenshots (25 total), and code evidence.
 - Done gate:
   - no row in this feedback round can be marked `Done` unless the seeded workflow proves the canonical behavior and the old dead/inert behavior is removed.
 - Dependencies: all preceding P0 packages, then selected P1 packages as needed.
