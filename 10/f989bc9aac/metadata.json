@@ -135,6 +135,12 @@
       "transcript": "/10/f989bc9aac/20/full.jsonl",
       "content_hash": "/10/f989bc9aac/20/content_hash.txt",
       "prompt": "/10/f989bc9aac/20/prompt.txt"
+    },
+    {
+      "metadata": "/10/f989bc9aac/21/metadata.json",
+      "transcript": "/10/f989bc9aac/21/full.jsonl",
+      "content_hash": "/10/f989bc9aac/21/content_hash.txt",
+      "prompt": ""
     }
   ],
   "token_usage": {
