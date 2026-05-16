@@ -1451,7 +1451,7 @@ function buildSectionRibbonTabs(selectedElementKind?: string | null): RibbonTab[
   ];
 
   if (selectedElementKind) {
-    tabs.push(buildSelectionOnlyModifyTab(selectedElementKind));
+    tabs.push(buildSectionModifyTab(selectedElementKind));
   }
 
   return tabs;
@@ -1515,7 +1515,7 @@ function buildSheetRibbonTabs(selectedElementKind?: string | null): RibbonTab[] 
   ];
 
   if (selectedElementKind) {
-    tabs.push(buildSelectionOnlyModifyTab(selectedElementKind));
+    tabs.push(buildSheetModifyTab(selectedElementKind));
   }
 
   return tabs;
@@ -1559,10 +1559,6 @@ function buildScheduleRibbonTabs(selectedElementKind?: string | null): RibbonTab
       ],
     },
   ];
-
-  if (selectedElementKind) {
-    tabs.push(buildSelectionOnlyModifyTab(selectedElementKind));
-  }
 
   return tabs;
 }
@@ -1662,6 +1658,52 @@ function build3dModifyTab(selectedElementKind: string): RibbonTab {
             },
           ]
         : []),
+    ],
+  };
+}
+
+function buildSectionModifyTab(selectedElementKind: string): RibbonTab {
+  return {
+    id: 'modify',
+    label: `Modify | ${formatKind(selectedElementKind)}`,
+    contextual: true,
+    panels: [
+      {
+        id: 'selection',
+        label: 'Selection',
+        commands: [
+          tool('select', 'Select', 'select'),
+          tool('move', 'Move', 'move'),
+          tool('copy', 'Copy', 'copy'),
+          tool('rotate', 'Rotate', 'rotate'),
+        ],
+      },
+    ],
+  };
+}
+
+function buildSheetModifyTab(selectedElementKind: string): RibbonTab {
+  return {
+    id: 'modify',
+    label: `Modify | ${formatKind(selectedElementKind)}`,
+    contextual: true,
+    panels: [
+      {
+        id: 'selection',
+        label: 'Selection',
+        commands: [
+          tool('select', 'Select', 'select'),
+          tool('move', 'Move', 'move'),
+          tool('copy', 'Copy', 'copy'),
+        ],
+      },
+      {
+        id: 'transform',
+        label: 'Transform',
+        commands: [
+          tool('scale', 'Scale', 'scale'),
+        ],
+      },
     ],
   };
 }
