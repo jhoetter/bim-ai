@@ -1,0 +1,47 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "968cbb5df5f8",
+  "session_id": "59eabbab-a368-44e7-ad87-76b19580bf67",
+  "strategy": "manual-commit",
+  "created_at": "2026-05-16T09:44:31.722213Z",
+  "branch": "main",
+  "checkpoints_count": 0,
+  "files_touched": [
+    "spec/revit-parity/revit2026-parity-tracker.md"
+  ],
+  "agent": "Claude Code",
+  "model": "claude-sonnet-4-6",
+  "turn_id": "39f68317bc6e",
+  "token_usage": {
+    "input_tokens": 165,
+    "cache_creation_tokens": 145627,
+    "cache_read_tokens": 15134895,
+    "output_tokens": 57716,
+    "api_call_count": 157
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-05-16T09:44:31.700883Z",
+    "agent_lines": 0,
+    "agent_removed": 0,
+    "human_added": 501,
+    "human_modified": 0,
+    "human_removed": 0,
+    "total_committed": 501,
+    "total_lines_changed": 501,
+    "agent_percentage": 0,
+    "metric_version": 2
+  },
+  "prompt_attributions": [
+    {
+      "checkpoint_number": 1,
+      "user_lines_added": 158,
+      "user_lines_removed": 0,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0,
+      "user_added_per_file": {
+        "packages/web/src/plan/modifyPreview.test.ts": 121,
+        "packages/web/tmp/ux-next-wp45-50-20260516/summary.json": 37
+      }
+    }
+  ]
+}
