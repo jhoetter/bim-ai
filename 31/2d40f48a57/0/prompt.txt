@@ -1,5 +1,0 @@
-focus on fixing risks 5 and 7, and on architectural debt fr the junk drawer thing you mentioned, the bim flat 72 file package with the god files, and the zustand store. the rest is irrelevant for now. ensure you create a proper branch and work on that isolated. once done, commit and push and create a PR with code quality improvements
-
----
-
-i changed my mind - dont do this yet, but write down the things mentioned into a code-quality tracker. i dont care yet about the production-readiness things and auth and such, that is solved a different way. just focus on tracking the architecture debts and such, what i mentioned above. write it into a md in spec folder so i can pick it up later
