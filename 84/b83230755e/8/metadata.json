@@ -1,0 +1,38 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "84b83230755e",
+  "session_id": "3932c2dd-0956-4e72-a784-e8310805c54c",
+  "strategy": "manual-commit",
+  "created_at": "2026-05-16T08:19:48.406064Z",
+  "branch": "main",
+  "checkpoints_count": 0,
+  "files_touched": [],
+  "agent": "Claude Code",
+  "model": "claude-sonnet-4-6",
+  "turn_id": "ef6466fd8513",
+  "token_usage": {
+    "input_tokens": 2218,
+    "cache_creation_tokens": 367435,
+    "cache_read_tokens": 31427956,
+    "output_tokens": 83700,
+    "api_call_count": 347
+  },
+  "prompt_attributions": [
+    {
+      "checkpoint_number": 1,
+      "user_lines_added": 1161,
+      "user_lines_removed": 0,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0,
+      "user_added_per_file": {
+        "spec/revit-parity/agent-prompts/RESUME-WP-A.md": 165,
+        "spec/revit-parity/agent-prompts/RESUME-WP-B.md": 158,
+        "spec/revit-parity/agent-prompts/RESUME-WP-C.md": 167,
+        "spec/revit-parity/agent-prompts/RESUME-WP-D.md": 181,
+        "spec/revit-parity/agent-prompts/RESUME-WP-E.md": 115,
+        "spec/revit-parity/agent-prompts/RESUME-WP-F.md": 186,
+        "spec/revit-parity/agent-prompts/RESUME-WP-G.md": 189
+      }
+    }
+  ]
+}
