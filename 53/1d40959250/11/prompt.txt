@@ -108,3 +108,47 @@ You are resuming a crashed agent session on the bim-ai repo
   - toolRegistry.ts is shared — always rebase before adding entries
   - pnpm test --filter @bim-ai/web before each push
   - Update spec/revit-parity/revit2026-parity-tracker.md as you complete items
+
+---
+
+❯ ❯ did you update the tracker accordingly? or are you not done yet?
+
+---
+
+<task-notification>
+<task-id>bc14irmqz</task-id>
+<tool-use-id>toolu_01GngXXjEtxYDoEzboC5M5Hb</tool-use-id>
+<output-file>/private/tmp/claude-501/-Users-jhoetter-repos-bim-ai/3932c2dd-0956-4e72-a784-e8310805c54c/tasks/bc14irmqz.output</output-file>
+<status>completed</status>
+<summary>Background command "Commit all staged changes" completed (exit code 0)</summary>
+</task-notification>
+
+---
+
+<task-notification>
+<task-id>bg2rkqh70</task-id>
+<tool-use-id>REDACTED</tool-use-id>
+<output-file>/private/tmp/claude-501/-Users-jhoetter-repos-bim-ai/3932c2dd-0956-4e72-a784-e8310805c54c/tasks/bg2rkqh70.output</output-file>
+<status>completed</status>
+<summary>Background command "Stage and commit remaining annotation and command changes" completed (exit code 0)</summary>
+</task-notification>
+
+---
+
+<task-notification>
+<task-id>bdocruuah</task-id>
+<tool-use-id>toolu_0119pCdFCRnTiQNCr1VcGudi</tool-use-id>
+<output-file>/private/tmp/claude-501/-Users-jhoetter-repos-bim-ai/3932c2dd-0956-4e72-a784-e8310805c54c/tasks/bdocruuah.output</output-file>
+<status>completed</status>
+<summary>Background command "Commit parity tracker updates for WP-C" completed (exit code 0)</summary>
+</task-notification>
+
+---
+
+<task-notification>
+<task-id>bt6f6plzm</task-id>
+<tool-use-id>toolu_01K4nWXR1C8JjXqMio7LoAL3</tool-use-id>
+<output-file>/private/tmp/claude-501/-Users-jhoetter-repos-bim-ai/3932c2dd-0956-4e72-a784-e8310805c54c/tasks/bt6f6plzm.output</output-file>
+<status>completed</status>
+<summary>Background command "Commit C6 Paste to Levels implementation" completed (exit code 0)</summary>
+</task-notification>
