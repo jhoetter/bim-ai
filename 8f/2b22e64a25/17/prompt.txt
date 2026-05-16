@@ -1,0 +1,1 @@
+Your task is to implement the View Range dialog and room tag number/area display in bim-ai — read spec/revit-parity/agent-prompts/WAVE6-WP-E.md for the full brief.
