@@ -4357,7 +4357,7 @@ export function Viewport({
           obj = makeSiteMesh(e, curr, paint);
           break;
         case 'toposolid':
-          obj = makeToposolidMesh(e, paint);
+          obj = makeToposolidMesh(e, paint, curr);
           break;
         case 'text_3d': {
           const t = e as Extract<Element, { kind: 'text_3d' }>;

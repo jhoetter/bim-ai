@@ -935,6 +935,15 @@ registerCommand({
 });
 
 registerCommand({
+  id: 'tool.split-wall',
+  label: 'Split Wall',
+  keywords: ['split wall', 'cut wall', 'divide wall'],
+  category: 'command',
+  isAvailable: modelHasWall,
+  invoke: (ctx) => startPlanTool(ctx, 'split-wall'),
+});
+
+registerCommand({
   id: 'tool.trim',
   label: 'Trim Elements',
   keywords: ['trim', 'extend', 'corner'],
@@ -1235,6 +1244,14 @@ registerCommand({
   keywords: ['terrain', 'height', 'point', 'toposolid', 'site', 'contour'],
   category: 'command',
   invoke: (ctx) => startPlanTool(ctx, 'terrain-point'),
+});
+
+registerCommand({
+  id: 'tool.terrain-pad',
+  label: 'Terrain Pad',
+  keywords: ['terrain', 'pad', 'flat', 'subregion', 'toposolid', 'site', 'gravel'],
+  category: 'command',
+  invoke: (ctx) => startPlanTool(ctx, 'terrain-pad'),
 });
 
 registerCommand({

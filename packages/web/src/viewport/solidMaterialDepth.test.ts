@@ -140,8 +140,11 @@ describe('solid viewport materials', () => {
       null,
     );
 
-    for (const mesh of [floor, roof, site, toposolid, ceiling]) {
+    for (const mesh of [floor, roof, site, ceiling]) {
       expectOpaqueDepthMaterial(mesh.material as THREE.Material);
     }
+    // makeToposolidMesh now returns a Group; the first child is the surface mesh.
+    const toposolidMesh = toposolid.children[0] as THREE.Mesh;
+    expectOpaqueDepthMaterial(toposolidMesh.material as THREE.Material);
   });
 });

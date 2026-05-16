@@ -52,6 +52,7 @@ import {
 } from './massVolumePlanSymbol';
 import { curtainWallPlanThree } from './curtainWallPlanSymbol';
 import { terrainControlPointsPlanThree } from './terrainPointSymbol';
+import { terrainPadPlanThree } from './terrainPadPlanThree';
 
 /** Plan slice elevation in world units (walls still render with real height elsewhere). */
 
@@ -713,7 +714,7 @@ function rebuildPlanMeshesFromWire(
       const numberLabel =
         typeof rl?.numberLabel === 'string' && rl.numberLabel ? rl.numberLabel : null;
       const areaMm2 = typeof rl?.areaMm2 === 'number' ? rl.areaMm2 : 0;
-      const areaText = areaMm2 > 0 ? `${(areaMm2 / 1_000_000).toFixed(2)} m²` : '';
+      const areaText = areaMm2 > 0 ? `${(areaMm2 / 1_000_000).toFixed(1)} m²` : '';
       const labelRaw = [numberLabel, name, areaText].filter(Boolean).join('\n');
       if (labelRaw) {
         if (
@@ -1789,6 +1790,19 @@ export function rebuildPlanMeshes(
       holder.add(terrainControlPointsPlanThree(topo as Extract<Element, { kind: 'toposolid' }>));
     }
     tintNewChildren(before, 'toposolid');
+  }
+
+  // §5.1.4: terrain pad plan symbols (dashed boundary + fill + elevation label)
+  {
+    const before = holder.children.length;
+    for (const el of Object.values(elementsById)) {
+      if (el.kind !== 'toposolid_pad') continue;
+      if (kindHidden('toposolid_pad')) continue;
+      const pad = el as Extract<Element, { kind: 'toposolid_pad' }>;
+      if (pad.boundaryMm.length < 3) continue;
+      holder.add(terrainPadPlanThree(pad));
+    }
+    tintNewChildren(before, 'toposolid_pad');
   }
 
   {

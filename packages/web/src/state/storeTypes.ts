@@ -119,7 +119,9 @@ export type PlanTool =
   | 'revision-cloud'
   | 'steel-connection'
   | 'excavation'
-  | 'terrain-point';
+  | 'terrain-point'
+  | 'terrain-pad'
+  | 'split-wall';
 
 export type PresencePeers = Record<
   string,

@@ -73,6 +73,7 @@ export type ToolId =
   | 'ceiling'
   | 'toposolid_subdivision'
   | 'terrain-point'
+  | 'terrain-pad'
   | 'measure'
   | 'component'
   | 'copy'
@@ -100,12 +101,14 @@ export type ToolId =
   | 'roof-by-extrusion'
   | 'revision-cloud'
   | 'steel-connection'
-  | 'excavation';
+  | 'excavation'
+  | 'split-wall';
 
 /** Modify-group tool IDs — used by ToolPalette to insert a separator. */
 export const MODIFY_TOOL_IDS = new Set<ToolId>([
   'align',
   'split',
+  'split-wall',
   'trim',
   'trim-extend',
   'offset',
@@ -385,6 +388,15 @@ export function getToolRegistry(t: TFunction): Record<ToolId, ToolDefinition> {
       hotkey: 'SD',
       modes: ['plan'],
       tooltip: t('tools.split.tooltip'),
+    },
+    'split-wall': {
+      id: 'split-wall',
+      label: 'Split Wall',
+      icon: 'split',
+      hotkey: 'SL',
+      shortcut: 'SL',
+      modes: ['plan'],
+      tooltip: 'Click on a wall to split it at that point (S → L).',
     },
     trim: {
       id: 'trim',
@@ -667,6 +679,16 @@ export function getToolRegistry(t: TFunction): Record<ToolId, ToolDefinition> {
       category: 'site',
       tooltip: 'Place height control points on a toposolid (T → P).',
     },
+    'terrain-pad': {
+      id: 'terrain-pad',
+      label: 'Terrain Pad',
+      icon: 'detailLine',
+      hotkey: 'TPD',
+      shortcut: 'TPD',
+      modes: ['plan'],
+      category: 'site',
+      tooltip: 'Sketch a flattened pad area on a toposolid (T → P → D).',
+    },
     text: {
       id: 'text',
       label: 'Text',
@@ -885,6 +907,7 @@ const PALETTE_ORDER: ToolId[] = [
   'tag',
   'align',
   'split',
+  'split-wall',
   'trim',
   'trim-extend',
   'offset',

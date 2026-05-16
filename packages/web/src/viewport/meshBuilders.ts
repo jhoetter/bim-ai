@@ -3277,7 +3277,8 @@ function toposolidHeightMmAtPoint(
 export function makeToposolidMesh(
   topo: Extract<Element, { kind: 'toposolid' }>,
   paint: ViewportPaintBundle | null,
-): THREE.Mesh {
+  elementsById?: Record<string, Element>,
+): THREE.Group {
   const boundary = topo.boundaryMm ?? [];
   const points =
     boundary.length >= 3
@@ -3335,7 +3336,43 @@ export function makeToposolidMesh(
   mesh.userData.bimPickId = topo.id;
   mesh.userData.toposolidTopElevationMm = topMax;
   addEdges(mesh);
-  return mesh;
+
+  const group = new THREE.Group();
+  group.userData.bimPickId = topo.id;
+  group.add(mesh);
+
+  // §5.1.4: add flat cap meshes for any toposolid_pad children
+  if (elementsById) {
+    for (const el of Object.values(elementsById)) {
+      if (el.kind !== 'toposolid_pad') continue;
+      const pad = el as Extract<Element, { kind: 'toposolid_pad' }>;
+      if (pad.toposolidId !== topo.id) continue;
+      if (pad.boundaryMm.length < 3) continue;
+      const shape = new THREE.Shape();
+      shape.moveTo(pad.boundaryMm[0]!.xMm / 1000, -pad.boundaryMm[0]!.yMm / 1000);
+      for (let i = 1; i < pad.boundaryMm.length; i++) {
+        shape.lineTo(pad.boundaryMm[i]!.xMm / 1000, -pad.boundaryMm[i]!.yMm / 1000);
+      }
+      shape.closePath();
+      const padGeom = new THREE.ShapeGeometry(shape);
+      padGeom.rotateX(-Math.PI / 2);
+      padGeom.translate(0, pad.elevationMm / 1000, 0);
+      const padMesh = new THREE.Mesh(
+        padGeom,
+        new THREE.MeshStandardMaterial({
+          color: '#c8a882',
+          roughness: 0.9,
+          metalness: 0.0,
+          side: THREE.DoubleSide,
+        }),
+      );
+      padMesh.receiveShadow = true;
+      padMesh.userData.bimPickId = pad.id;
+      group.add(padMesh);
+    }
+  }
+
+  return group;
 }
 
 export function makeBalconyMesh(

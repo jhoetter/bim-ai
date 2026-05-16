@@ -290,6 +290,14 @@ export const AUTHORING_COMMAND_CONTRACTS = {
     'select-after-commit',
     ['linear-element'],
   ),
+  'split-wall': contract(
+    'split-wall',
+    'modify',
+    ['plan'],
+    'Click on a wall to split it at the cursor point — both halves preserve all wall properties.',
+    'stay-active',
+    ['wall'],
+  ),
   trim: contract(
     'trim',
     'modify',
@@ -499,6 +507,15 @@ export const AUTHORING_COMMAND_CONTRACTS = {
     'explicit-finish',
     [],
     ['snap', 'cancel'],
+  ),
+  'terrain-pad': contract(
+    'terrain-pad',
+    'sketch',
+    ['plan'],
+    'Flat pad polygon preview on a toposolid; Enter or double-click (≥3 pts) commits.',
+    'explicit-finish',
+    [],
+    ['finish', 'cancel'],
   ),
   measure: contract(
     'measure',

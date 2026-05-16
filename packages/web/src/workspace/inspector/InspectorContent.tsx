@@ -3015,6 +3015,38 @@ export function InspectorPropertiesFor(
         </div>
       );
     }
+    case 'toposolid_pad': {
+      const { onPropertyChange } = options ?? {};
+      const pts = el.boundaryMm ?? [];
+      const shoelace = pts.reduce((acc, p, i) => {
+        const q = pts[(i + 1) % pts.length]!;
+        return acc + p.xMm * q.yMm - q.xMm * p.yMm;
+      }, 0);
+      const areaM2 = Math.abs(shoelace) / 2 / 1_000_000;
+      return (
+        <div className="flex flex-col gap-2">
+          <div className="flex items-center gap-2 py-0.5">
+            <span className="text-xs text-muted w-28 shrink-0">Elevation (mm)</span>
+            <input
+              type="number"
+              className="w-20 text-xs bg-surface border border-border rounded px-1 py-0.5"
+              defaultValue={el.elevationMm}
+              key={`${el.id}-elevation`}
+              step={100}
+              data-testid="inspector-pad-elevation"
+              onBlur={(e) => {
+                const raw = Number(e.currentTarget.value);
+                onPropertyChange?.('elevationMm', raw);
+              }}
+            />
+          </div>
+          <div className="flex items-center gap-2 py-0.5" data-testid="inspector-pad-area">
+            <span className="text-xs text-muted w-28 shrink-0">Area</span>
+            <span className="text-xs">{areaM2.toFixed(1)} m²</span>
+          </div>
+        </div>
+      );
+    }
     case 'mass_box':
     case 'mass_extrusion':
     case 'mass_revolution': {
