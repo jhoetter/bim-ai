@@ -759,16 +759,16 @@ No ramp tool in the tool registry. Ramps (sloped floor surfaces with automatic r
 ### 8.9 Gruppen verwenden (model groups)
 
 #### 8.9.1 Gruppen erstellen (group selected elements)
-**Status: Not Started — P1**
-Creating a named group from selected elements is not implemented. Revit groups act like local reusable blocks.
+**Status: Partial — P1**
+groupTypes.ts + groupCommands.ts: createGroup command + pure logic. UI tool and store integration pending.
 
 #### 8.9.2 Gruppen einfügen (place a group instance)
-**Status: Not Started — P1**
-Placing additional instances of a group is not implemented.
+**Status: Partial — P1**
+placeGroup command + applyPlaceGroup logic. place-group ToolId registered. Viewport preview and store integration pending.
 
 #### 8.9.3 Gruppen bearbeiten (edit group contents)
-**Status: Not Started — P1**
-Entering group edit mode to modify all instances simultaneously is not implemented.
+**Status: Partial — P1**
+editGroup/finishEditGroup command shapes; edit mode UI pending.
 
 ### 8.10 Übungsfragen
 **Status: N/A**
