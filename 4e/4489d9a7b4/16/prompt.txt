@@ -1,0 +1,13 @@
+Terminal 7 — WP-G (3D/Rendering)
+  cat spec/revit-parity/agent-prompts/WAVE2-WP-G.md | pbcopy
+  Tasks: animated sun study with playback controls, roof-by-extrusion tool, wall parts
+
+---
+
+<task-notification>
+<task-id>bgb8bjz1u</task-id>
+<tool-use-id>REDACTED</tool-use-id>
+<output-file>/private/tmp/claude-501/-Users-jhoetter-repos-bim-ai/972bcc1d-a1d5-4f37-bcd1-1416c8bab03b/tasks/bgb8bjz1u.output</output-file>
+<status>completed</status>
+<summary>Background command "Commit G1 animated sun study" completed (exit code 0)</summary>
+</task-notification>
