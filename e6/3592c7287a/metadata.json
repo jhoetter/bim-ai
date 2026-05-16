@@ -99,6 +99,12 @@
       "transcript": "/e6/3592c7287a/12/full.jsonl",
       "content_hash": "/e6/3592c7287a/12/content_hash.txt",
       "prompt": "/e6/3592c7287a/12/prompt.txt"
+    },
+    {
+      "metadata": "/e6/3592c7287a/13/metadata.json",
+      "transcript": "/e6/3592c7287a/13/full.jsonl",
+      "content_hash": "/e6/3592c7287a/13/content_hash.txt",
+      "prompt": "/e6/3592c7287a/13/prompt.txt"
     }
   ],
   "token_usage": {
