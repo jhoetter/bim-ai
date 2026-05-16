@@ -8,7 +8,7 @@ import {
   useState,
 } from 'react';
 import { useTranslation } from 'react-i18next';
-import type { AssetLibraryEntry, Element } from '@bim-ai/core';
+import type { AssetLibraryEntry, Element, Saved3dViewElement } from '@bim-ai/core';
 import {
   type BimIconHifiProps,
   OrbitViewHifi,
@@ -1895,6 +1895,79 @@ export function Workspace(): JSX.Element {
         });
         return;
       }
+      // §6.1.3: save/restore/delete named 3D views
+      if (cmd.type === 'save_3d_view') {
+        const st = useBimStore.getState();
+        const pose = st.orbitCameraPoseMm;
+        if (!pose) return;
+        const id = `s3v-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
+        const sectionBox = st.viewerSectionBoxExtent ?? undefined;
+        useBimStore.setState({
+          elementsById: {
+            ...st.elementsById,
+            [id]: {
+              kind: 'saved_3d_view',
+              id,
+              name: (cmd.name as string) || '3D View',
+              cameraMm: { x: pose.position.xMm, y: pose.position.yMm, z: pose.position.zMm },
+              targetMm: { x: pose.target.xMm, y: pose.target.yMm, z: pose.target.zMm },
+              upVector: pose.up ? { x: pose.up.xMm, y: pose.up.yMm, z: pose.up.zMm } : null,
+              locked: false,
+              sectionBox: sectionBox ?? null,
+            } as Saved3dViewElement,
+          },
+        });
+        return;
+      }
+      if (cmd.type === 'restore_3d_view') {
+        const st = useBimStore.getState();
+        const el = st.elementsById[cmd.viewId as string];
+        if (!el || el.kind !== 'saved_3d_view') return;
+        const view = el as Saved3dViewElement;
+        st.setOrbitCameraFromViewpointMm({
+          position: { xMm: view.cameraMm.x, yMm: view.cameraMm.y, zMm: view.cameraMm.z },
+          target: { xMm: view.targetMm.x, yMm: view.targetMm.y, zMm: view.targetMm.z },
+          up: view.upVector
+            ? { xMm: view.upVector.x, yMm: view.upVector.y, zMm: view.upVector.z }
+            : { xMm: 0, yMm: 1, zMm: 0 },
+        });
+        if (view.sectionBox) {
+          st.setViewerSectionBoxExtent(view.sectionBox);
+          st.setViewerSectionBoxActive(true);
+        }
+        st.setViewLocked(view.locked === true);
+        return;
+      }
+      if (cmd.type === 'delete_3d_view') {
+        const st = useBimStore.getState();
+        const { [cmd.viewId as string]: _removed, ...remaining } = st.elementsById;
+        useBimStore.setState({ elementsById: remaining });
+        return;
+      }
+      if (cmd.type === 'toggle_3d_view_lock') {
+        const st = useBimStore.getState();
+        const el = st.elementsById[cmd.viewId as string];
+        if (!el || el.kind !== 'saved_3d_view') return;
+        useBimStore.setState({
+          elementsById: {
+            ...st.elementsById,
+            [el.id]: { ...el, locked: !(el as Saved3dViewElement).locked },
+          },
+        });
+        return;
+      }
+      if (cmd.type === 'rename_3d_view') {
+        const st = useBimStore.getState();
+        const el = st.elementsById[cmd.viewId as string];
+        if (!el || el.kind !== 'saved_3d_view') return;
+        useBimStore.setState({
+          elementsById: {
+            ...st.elementsById,
+            [el.id]: { ...el, name: cmd.name as string },
+          },
+        });
+        return;
+      }
       // §3.3.6: split a wall at a point on its centreline into two walls
       if (cmd.type === 'split_wall') {
         const wallId = cmd.wallId as string;
@@ -3232,6 +3305,30 @@ export function Workspace(): JSX.Element {
     viewerClipElevMm,
     viewerClipFloorElevMm,
   ]);
+  const sectionBoxFromPlan = useCallback(() => {
+    const st = useBimStore.getState();
+    const pvId = st.activePlanViewId;
+    if (!pvId) return;
+    const pv = st.elementsById[pvId];
+    if (!pv || pv.kind !== 'plan_view') return;
+    const minMm = (pv as Record<string, unknown>).cropMinMm as
+      | { xMm: number; yMm: number }
+      | undefined;
+    const maxMm = (pv as Record<string, unknown>).cropMaxMm as
+      | { xMm: number; yMm: number }
+      | undefined;
+    if (!minMm || !maxMm) return;
+    st.setViewerSectionBoxExtent({
+      minX: minMm.xMm / 1000,
+      maxX: maxMm.xMm / 1000,
+      minY: -5,
+      maxY: 50,
+      minZ: minMm.yMm / 1000,
+      maxZ: maxMm.yMm / 1000,
+    });
+    st.setViewerSectionBoxActive(true);
+    setViewerMode('orbit_3d');
+  }, [setViewerMode]);
   const openScheduleControls = useCallback(() => {
     navigateTo({
       kind: 'schedule',
@@ -4309,6 +4406,7 @@ export function Workspace(): JSX.Element {
           openDimensionStyle: () => setDimStyleOpen(true),
           openViewRange: () => setViewRangeOpen(true),
           openVisibilityGraphics: () => setVgOpen(true),
+          sectionBoxFromPlan,
         }}
       />
       <FamilyLibraryPanel
