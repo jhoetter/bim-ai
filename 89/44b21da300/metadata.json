@@ -125,6 +125,12 @@
       "transcript": "/89/44b21da300/18/full.jsonl",
       "content_hash": "/89/44b21da300/18/content_hash.txt",
       "prompt": "/89/44b21da300/18/prompt.txt"
+    },
+    {
+      "metadata": "/89/44b21da300/19/metadata.json",
+      "transcript": "/89/44b21da300/19/full.jsonl",
+      "content_hash": "/89/44b21da300/19/content_hash.txt",
+      "prompt": "/89/44b21da300/19/prompt.txt"
     }
   ],
   "token_usage": {
