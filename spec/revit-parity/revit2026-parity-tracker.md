@@ -706,8 +706,8 @@ Revit's "Create Parts" command (segmenting a wall into independently swappable h
 #### 8.1.4 Fassadenwände (curtain walls: grid, panels, mullions)
 **Status: Partial — P1**
 - Panel grid rendering: Implemented (meshBuilders.curtainPanels.test.ts, `makeCurtainWallMesh`)
-- Curtain wall plan symbol with tick marks: Implemented (G9 -- `curtainWallPlanSymbol.ts`)
-- Full authoring UI (inspector, edit grid): Partial -- data model extended (`curtainWallData` compound object in core/index.ts), plan symbol implemented; interactive grid editing not yet implemented
+- Curtain wall plan symbol with tick marks: Implemented and wired (G9 -- `curtainWallPlanSymbol.ts` + `symbology.ts` `rebuildPlanMeshes` dispatches `curtainWallPlanThree` for `isCurtainWall` walls; 4 passing tests)
+- Full authoring UI (inspector, edit grid): Partial -- data model extended (`curtainWallData` compound object in core/index.ts), plan symbol wired into plan rendering; interactive grid editing not yet implemented
 
 #### 8.1.5 Abziehbilder (decals / surface images on wall faces)
 **Status: Not Started — P2**
