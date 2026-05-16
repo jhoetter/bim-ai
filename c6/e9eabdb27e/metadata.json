@@ -2,8 +2,15 @@
   "cli_version": "0.6.0",
   "checkpoint_id": "c6e9eabdb27e",
   "strategy": "manual-commit",
-  "checkpoints_count": 0,
-  "files_touched": null,
+  "checkpoints_count": 3,
+  "files_touched": [
+    "packages/web/src/workspace/ModeShells.tsx",
+    "packages/web/src/workspace/Workspace.tsx",
+    "packages/web/src/workspace/sheets/SectionPlaceholderPane.tsx",
+    "packages/web/src/workspace/sheets/sectionViewportSvg.tsx",
+    "packages/web/src/workspace/viewport/CanvasMount.tsx",
+    "seed-artifacts/target-house-4/bundle.json"
+  ],
   "sessions": [
     {
       "metadata": "/c6/e9eabdb27e/0/metadata.json",
@@ -22,13 +29,19 @@
       "transcript": "/c6/e9eabdb27e/2/full.jsonl",
       "content_hash": "/c6/e9eabdb27e/2/content_hash.txt",
       "prompt": "/c6/e9eabdb27e/2/prompt.txt"
+    },
+    {
+      "metadata": "/c6/e9eabdb27e/3/metadata.json",
+      "transcript": "/c6/e9eabdb27e/3/full.jsonl",
+      "content_hash": "/c6/e9eabdb27e/3/content_hash.txt",
+      "prompt": "/c6/e9eabdb27e/3/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 2944,
-    "cache_creation_tokens": 542867,
-    "cache_read_tokens": 37549849,
-    "output_tokens": 241964,
-    "api_call_count": 434
+    "input_tokens": 3492,
+    "cache_creation_tokens": 962112,
+    "cache_read_tokens": 47800607,
+    "output_tokens": 461770,
+    "api_call_count": 554
   }
 }

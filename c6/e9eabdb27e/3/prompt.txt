@@ -1,0 +1,29 @@
+look into target-house-4: [Image #1]; i am a bit surprised with the roofs, it isnt completely connected; do you see that?
+
+---
+
+[Image #2] still a weird gap
+
+---
+
+[Image #3] still not ideal
+
+---
+
+[Image #4] still like this... please really analyze, take screenshots if needed
+
+---
+
+[Image #5] do you really not see that?
+
+---
+
+[Image #6] no... not as wanted
+
+---
+
+[Image #7] no there are still air gaps, and the plate on the roof window is so weird
+
+---
+
+it is still not working... dont you take screenshots or try with playwright or such? ...
