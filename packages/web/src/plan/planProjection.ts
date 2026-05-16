@@ -1263,3 +1263,49 @@ export function pointInPolygonMm(
   }
   return inside;
 }
+
+// ─── D3: View Range helpers ────────────────────────────────────────────────
+
+/** Resolved view-range values for a plan_view element. All mm values are relative to the level elevation. */
+export type ResolvedViewRange = {
+  viewRangeTopMm: number;
+  cutPlaneOffsetMm: number;
+  viewRangeBottomMm: number;
+  viewDepth: number;
+};
+
+/** Default view-range constants (Revit-like defaults). */
+export const VIEW_RANGE_DEFAULTS: ResolvedViewRange = {
+  viewRangeTopMm: 3000,
+  cutPlaneOffsetMm: 1200,
+  viewRangeBottomMm: 0,
+  viewDepth: 0,
+};
+
+/**
+ * Read view-range fields from a plan_view element, falling back to defaults.
+ * Returns the defaults if the element is not found or not a plan_view.
+ */
+export function resolveViewRange(
+  elementsById: Record<string, Element>,
+  planViewId: string | undefined,
+): ResolvedViewRange {
+  if (!planViewId) return { ...VIEW_RANGE_DEFAULTS };
+  const el = elementsById[planViewId];
+  if (!el || el.kind !== 'plan_view') return { ...VIEW_RANGE_DEFAULTS };
+  return {
+    viewRangeTopMm: el.viewRangeTopMm ?? VIEW_RANGE_DEFAULTS.viewRangeTopMm,
+    cutPlaneOffsetMm: el.cutPlaneOffsetMm ?? VIEW_RANGE_DEFAULTS.cutPlaneOffsetMm,
+    viewRangeBottomMm: el.viewRangeBottomMm ?? VIEW_RANGE_DEFAULTS.viewRangeBottomMm,
+    viewDepth: el.viewDepth ?? VIEW_RANGE_DEFAULTS.viewDepth,
+  };
+}
+
+/**
+ * Returns true if an element's sill height (mm above level) is at or above the cut plane.
+ * Elements at or above the cut plane are not sliced through and therefore do not produce
+ * cut-pattern symbols in plan view.
+ */
+export function isAboveCutPlane(sillHeightMm: number, cutPlaneOffsetMm: number): boolean {
+  return sillHeightMm >= cutPlaneOffsetMm;
+}

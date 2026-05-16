@@ -1923,7 +1923,12 @@ export type Element =
         | 'area_plan'
         | 'lighting_plan'
         | 'power_plan'
-        | 'coordination_plan';
+        | 'coordination_plan'
+        | 'callout';
+      /** D4: id of the parent plan_view this callout enlarges. */
+      parentViewId?: string | null;
+      /** D4: numeric scale multiplier relative to the parent view (default 5). */
+      calloutScaleFactor?: number | null;
       /** F-098: Area Plan scheme for Gross Building / Net / Rentable grouping. */
       areaScheme?: 'gross_building' | 'net' | 'rentable';
     }
