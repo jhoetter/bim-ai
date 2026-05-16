@@ -4,22 +4,20 @@
   "strategy": "manual-commit",
   "branch": "main",
   "checkpoints_count": 1,
-  "files_touched": [
-    "packages/web/src/workspace/project/ProjectMenu.tsx"
-  ],
+  "files_touched": null,
   "sessions": [
     {
       "metadata": "/96/8cbb5df5f8/0/metadata.json",
       "transcript": "/96/8cbb5df5f8/0/full.jsonl",
       "content_hash": "/96/8cbb5df5f8/0/content_hash.txt",
-      "prompt": ""
+      "prompt": "/96/8cbb5df5f8/0/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 221,
-    "cache_creation_tokens": 165717,
-    "cache_read_tokens": 21900560,
-    "output_tokens": 57527,
-    "api_call_count": 214
+    "input_tokens": 4802575,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 119801472,
+    "output_tokens": 285093,
+    "api_call_count": 1140
   }
 }
