@@ -4,7 +4,10 @@
   "strategy": "manual-commit",
   "branch": "main",
   "checkpoints_count": 4,
-  "files_touched": null,
+  "files_touched": [
+    "packages/web/src/workspace/inspector/InspectorContent.test.tsx",
+    "packages/web/src/workspace/inspector/InspectorContent.tsx"
+  ],
   "sessions": [
     {
       "metadata": "/72/467ed9514f/0/metadata.json",
@@ -53,13 +56,19 @@
       "transcript": "/72/467ed9514f/7/full.jsonl",
       "content_hash": "/72/467ed9514f/7/content_hash.txt",
       "prompt": "/72/467ed9514f/7/prompt.txt"
+    },
+    {
+      "metadata": "/72/467ed9514f/8/metadata.json",
+      "transcript": "/72/467ed9514f/8/full.jsonl",
+      "content_hash": "/72/467ed9514f/8/content_hash.txt",
+      "prompt": "/72/467ed9514f/8/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 3322647,
-    "cache_creation_tokens": 1845204,
-    "cache_read_tokens": 207346571,
-    "output_tokens": 924076,
-    "api_call_count": 2881
+    "input_tokens": 3323086,
+    "cache_creation_tokens": 2333179,
+    "cache_read_tokens": 240950015,
+    "output_tokens": 1034175,
+    "api_call_count": 3237
   }
 }
