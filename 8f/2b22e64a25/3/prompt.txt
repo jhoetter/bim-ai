@@ -1,0 +1,27 @@
+WP-G: "Your task is to implement sloped/inclined columns and the family editor void cut form in bim-ai — read spec/revit-parity/agent-prompts/WAVE5-WP-G.md for the full brief."
+
+---
+
+is everything committed and pushed?
+
+---
+
+commit all those things and then push everything
+
+---
+
+are all agents done?
+
+---
+
+where are we now %-wise and can you schedule the next wave of agents, with their respective prompt files and oneliners i can copy paste?
+
+---
+
+<task-notification>
+<task-id>bmrd2khpd</task-id>
+<tool-use-id>toolu_01H7QuAeBWVgS35i8grmLHgL</tool-use-id>
+<output-file>/private/tmp/claude-501/-Users-jhoetter-repos-bim-ai/066f141e-a323-482b-8b11-621b9e6a764a/tasks/bmrd2khpd.output</output-file>
+<status>killed</status>
+<summary>Background command "Stage all changes and commit" was stopped</summary>
+</task-notification>
