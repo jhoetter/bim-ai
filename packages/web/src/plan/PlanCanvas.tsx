@@ -182,6 +182,7 @@ import {
   SubdivisionPalette,
   type SubdivisionCategory,
 } from '../workspace/authoring';
+import type { ColorSchemeRoomEntry } from './ColorSchemeDialog';
 
 function readPlanToken(name: string, fallback: string): string {
   const v = liveTokenReader().read(name);
@@ -537,6 +538,11 @@ export function PlanCanvas({
   const [wallDraftNotice, setWallDraftNotice] = useState<string | null>(null);
   const [wallPickLineHint, setWallPickLineHint] = useState<PickedWallLine | null>(null);
   const [filterOpen, setFilterOpen] = useState(false);
+  // D8 - Color fill scheme: user-selected category and color overrides.
+  const [colorFillScheme, setColorFillScheme] = useState<{
+    category: string;
+    colorMap: Record<string, string>;
+  } | null>(null);
   const [pendingPlanRegion, setPendingPlanRegion] = useState<{
     x0: number;
     x1: number;
@@ -772,6 +778,23 @@ export function PlanCanvas({
       (e) => 'levelId' in e && (e as { levelId: string }).levelId === chkId,
     );
   }, [elementsById, displayLevelId, activeLevelResolvedId]);
+
+  // D8 - Rooms on the active level (for Color Scheme dialog)
+  const roomsOnLevel = useMemo((): ColorSchemeRoomEntry[] => {
+    const out: ColorSchemeRoomEntry[] = [];
+    for (const el of Object.values(elementsById)) {
+      if (el.kind !== 'room') continue;
+      if (lvlId && (el as { levelId?: string }).levelId !== lvlId) continue;
+      out.push({
+        id: el.id,
+        name: (el as { name?: string }).name ?? '',
+        department: (el as { department?: string | null }).department ?? undefined,
+        area: undefined,
+        occupancy: undefined,
+      });
+    }
+    return out;
+  }, [elementsById, lvlId]);
 
   useEffect(() => {
     let cancel = false;

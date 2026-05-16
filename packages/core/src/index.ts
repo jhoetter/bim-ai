@@ -1231,6 +1231,15 @@ export type Element =
       curtainPanelOverrides?: {
         [gridCellId: string]: CurtainPanelOverride;
       } | null;
+      /** G9: Structured curtain wall authoring data. Supersedes curtainWallVCount/HCount when set. */
+      curtainWallData?: {
+        gridH: { count?: number; spacingMm?: number; offsets?: number[] };
+        gridV: { count?: number; spacingMm?: number; offsets?: number[] };
+        defaultPanelType?: 'glass' | 'opaque' | 'door' | 'empty';
+        mullionType?: string;
+        panelOverrides?: { [cellKey: string]: string };
+        pinnedGridLines?: string[];
+      } | null;
       locationLine?: WallLocationLine;
       worksetId?: string | null;
       /** GAP-R5: opt out of the per-wall slab-edge expression strip on
@@ -1769,6 +1778,25 @@ export type Element =
       agentTrace?: AgentTrace;
       /** DSC-V3-01: discipline tag. */
       discipline?: DisciplineTag | null;
+    }
+  | {
+      kind: 'ramp';
+      id: string;
+      name: string;
+      levelId: string;
+      topLevelId: string;
+      widthMm: number;
+      runMm: number;
+      runAngleDeg: number;
+      insertionXMm: number;
+      insertionYMm: number;
+      hasRailingLeft: boolean;
+      hasRailingRight: boolean;
+      slopePercent: number;
+      material?: string;
+      pinned?: boolean;
+      phaseCreated?: string | null;
+      phaseDemolished?: string | null;
     }
   | {
       kind: 'family_type';
@@ -2758,7 +2786,8 @@ export type Element =
       latitudeDeg: number;
       longitudeDeg: number;
       dateIso: string;
-      timeOfDay: { hours: number; minutes: number }
+      timeOfDay: { hours: number; minutes: number };
+    }
   | {
       kind: 'beam_system';
       id: string;
@@ -2771,6 +2800,23 @@ export type Element =
       materialKey?: string | null;
       justification?: 'centre' | 'bearing_line_1' | 'bearing_line_2';
       structuralRole?: 'structural' | 'non-structural';
+      phaseCreated?: string | null;
+      phaseDemolished?: string | null;
+      discipline?: DisciplineTag | null;
+    }
+  | {
+      kind: 'brace';
+      id: string;
+      name?: string;
+      startXMm: number;
+      startYMm: number;
+      startElevationMm: number;
+      endXMm: number;
+      endYMm: number;
+      endElevationMm: number;
+      profileId?: string;
+      materialKey?: string | null;
+      structuralRole: 'structural';
       phaseCreated?: string | null;
       phaseDemolished?: string | null;
       discipline?: DisciplineTag | null;

@@ -83,7 +83,8 @@ export type ToolId =
   | 'spot-coordinate'
   | 'slope-annotation'
   | 'material-tag'
-  | 'north-arrow';
+  | 'north-arrow'
+  | 'ramp';
 
 /** Modify-group tool IDs — used by ToolPalette to insert a separator. */
 export const MODIFY_TOOL_IDS = new Set<ToolId>([
@@ -669,6 +670,42 @@ export function getToolRegistry(t: TFunction): Record<ToolId, ToolDefinition> {
       modes: ['plan', 'sheet'],
       tooltip: 'Place a north arrow annotation symbol on a plan view or sheet.',
     },
+    ramp: {
+      id: 'ramp',
+      label: 'Ramp',
+      icon: 'floor' as IconName,
+      hotkey: 'RA',
+      shortcut: 'RA',
+      modes: ['plan'] as WorkspaceMode[],
+      tooltip: 'Place a sloped ramp (RA)',
+      'mass-box': {
+        id: 'mass-box',
+        label: 'Box Mass',
+        icon: 'floor',
+        hotkey: 'MBX',
+        shortcut: 'MBX',
+        modes: ['plan', '3d'],
+        tooltip: 'Place a conceptual box mass volume',
+      },
+      'mass-extrusion': {
+        id: 'mass-extrusion',
+        label: 'Extruded Mass',
+        icon: 'floor',
+        hotkey: 'MEX',
+        shortcut: 'MEX',
+        modes: ['plan', '3d'],
+        tooltip: 'Create an extruded mass from a polygon footprint',
+      },
+      'mass-revolution': {
+        id: 'mass-revolution',
+        label: 'Revolved Mass',
+        icon: 'floor',
+        hotkey: 'MRV',
+        shortcut: 'MRV',
+        modes: ['plan', '3d'],
+        tooltip: 'Create a revolved mass surface around an axis',
+      },
+    },
   };
 }
 
@@ -732,6 +769,9 @@ const PALETTE_ORDER: ToolId[] = [
   'mep-opening-request',
   'column',
   'beam',
+  'mass-box',
+  'mass-extrusion',
+  'mass-revolution',
   'ceiling',
 ];
 
