@@ -190,6 +190,7 @@ import { moveDeltaMm } from './moveTool';
 import { wallOffsetMoveCommandFromPoint } from './wallOffsetTool';
 import { parseTypedRotateAngle, rotateDeltaAngleFromReference } from './rotateTool';
 import { selectNextConnectedWallByTab } from './wallChainSelection';
+import { elementInSelectionBoxMm } from './boxSelection';
 import { buildWallRadiusFillet, type MmPoint } from './wallRadiusFillet';
 import {
   nextWallDraftAfterCommit,
@@ -438,6 +439,7 @@ export function PlanCanvas({
   const rootRef = useRef<THREE.Group | null>(null);
   const previewRef = useRef<THREE.Line | null>(null);
   const marqueeLineRef = useRef<THREE.Line | null>(null);
+  const marqueeFillRef = useRef<THREE.Mesh | null>(null);
   const componentGhostRef = useRef<THREE.Group | null>(null);
   const dragRef = useRef({ dragging: false, lastXmm: 0, lastZmm: 0, camX: 0, camZ: 0 });
   const skipClickRef = useRef(false);
@@ -2355,6 +2357,11 @@ export function PlanCanvas({
         marqueeLineRef.current.geometry.dispose();
         marqueeLineRef.current = null;
       }
+      if (marqueeFillRef.current) {
+        grp.remove(marqueeFillRef.current);
+        marqueeFillRef.current.geometry.dispose();
+        marqueeFillRef.current = null;
+      }
     };
 
     const redrawMarqueeRect = (
@@ -2377,19 +2384,29 @@ export function PlanCanvas({
         new THREE.Vector3(xMn, SLICE_Y, zMn),
       ];
       const geo = new THREE.BufferGeometry().setFromPoints(pts);
+      const borderColor = readPlanToken('--draft-construction-blue', '#2563eb');
       const mat = crossing
-        ? new THREE.LineDashedMaterial({
-            color: readPlanToken('--draft-construction-blue', '#fcd34d'),
-            dashSize: 0.3,
-            gapSize: 0.15,
-          })
-        : new THREE.LineBasicMaterial({
-            color: readPlanToken('--draft-construction-blue', '#fcd34d'),
-          });
+        ? new THREE.LineDashedMaterial({ color: borderColor, dashSize: 0.3, gapSize: 0.15 })
+        : new THREE.LineBasicMaterial({ color: borderColor });
       const line = new THREE.Line(geo, mat);
       if (crossing) line.computeLineDistances();
       marqueeLineRef.current = line;
       grp.add(line);
+
+      // Semi-transparent fill plane (blue for window, green for crossing).
+      const fillGeo = new THREE.PlaneGeometry(xMx - xMn, zMx - zMn);
+      const fillMat = new THREE.MeshBasicMaterial({
+        color: crossing ? 0x22c55e : 0x2563eb,
+        transparent: true,
+        opacity: 0.1,
+        depthWrite: false,
+        side: THREE.DoubleSide,
+      });
+      const fill = new THREE.Mesh(fillGeo, fillMat);
+      fill.rotation.x = -Math.PI / 2;
+      fill.position.set((xMn + xMx) / 2, SLICE_Y - 0.001, (zMn + zMx) / 2);
+      marqueeFillRef.current = fill;
+      grp.add(fill);
     };
 
     const tintComponentGhost = (ghost: THREE.Group): THREE.Group => {
@@ -3136,90 +3153,15 @@ export function PlanCanvas({
         const xMax = Math.max(sx, ex);
         const yMin = Math.min(sy, ey);
         const yMax = Math.max(sy, ey);
-
-        // Build an asset_library_entry lookup for placed_asset thumbnail sizes.
-        const assetEntries: Record<
-          string,
-          { thumbnailWidthMm?: number; thumbnailHeightMm?: number }
-        > = {};
-        for (const el of Object.values(elementsById)) {
-          if (el.kind === 'asset_library_entry') {
-            assetEntries[el.id] = el as { thumbnailWidthMm?: number; thumbnailHeightMm?: number };
-          }
-        }
-
-        // Helper: derive axis-aligned bbox for each selectable element kind.
-        const getElBbox = (
-          el: Element,
-        ): { xMin: number; xMax: number; yMin: number; yMax: number } | null => {
-          if (el.kind === 'wall') {
-            return {
-              xMin: Math.min(el.start.xMm, el.end.xMm),
-              xMax: Math.max(el.start.xMm, el.end.xMm),
-              yMin: Math.min(el.start.yMm, el.end.yMm),
-              yMax: Math.max(el.start.yMm, el.end.yMm),
-            };
-          }
-          if (el.kind === 'column') {
-            const r = 200;
-            return {
-              xMin: el.positionMm.xMm - r,
-              xMax: el.positionMm.xMm + r,
-              yMin: el.positionMm.yMm - r,
-              yMax: el.positionMm.yMm + r,
-            };
-          }
-          if (el.kind === 'placed_asset') {
-            const entry = assetEntries[el.assetId];
-            const hw = (entry?.thumbnailWidthMm ?? 1000) / 2;
-            const hd = (entry?.thumbnailHeightMm ?? 600) / 2;
-            return {
-              xMin: el.positionMm.xMm - hw,
-              xMax: el.positionMm.xMm + hw,
-              yMin: el.positionMm.yMm - hd,
-              yMax: el.positionMm.yMm + hd,
-            };
-          }
-          if (el.kind === 'room') {
-            const pts = el.outlineMm;
-            if (!pts || pts.length === 0) return null;
-            return {
-              xMin: Math.min(...pts.map((p) => p.xMm)),
-              xMax: Math.max(...pts.map((p) => p.xMm)),
-              yMin: Math.min(...pts.map((p) => p.yMm)),
-              yMax: Math.max(...pts.map((p) => p.yMm)),
-            };
-          }
-          if (el.kind === 'floor' || el.kind === 'area') {
-            const pts = el.boundaryMm;
-            if (!pts || pts.length === 0) return null;
-            return {
-              xMin: Math.min(...pts.map((p) => p.xMm)),
-              xMax: Math.max(...pts.map((p) => p.xMm)),
-              yMin: Math.min(...pts.map((p) => p.yMm)),
-              yMax: Math.max(...pts.map((p) => p.yMm)),
-            };
-          }
-          return null;
-        };
+        const boxMin = { xMm: xMin, yMm: yMin };
+        const boxMax = { xMm: xMax, yMm: yMax };
+        const selMode = direction === 'left-to-right' ? 'window' : 'crossing';
 
         const ids: string[] = [];
         for (const el of Object.values(elementsById)) {
           // Level filter — use optional chaining since not all kinds have levelId.
           if (displayLevelId && (el as { levelId?: string }).levelId !== displayLevelId) continue;
-          const bbox = getElBbox(el);
-          if (!bbox) continue;
-          if (direction === 'left-to-right') {
-            // Window select: element bbox must be fully enclosed in marquee.
-            if (bbox.xMin >= xMin && bbox.xMax <= xMax && bbox.yMin >= yMin && bbox.yMax <= yMax) {
-              ids.push(el.id);
-            }
-          } else {
-            // Crossing select: element bbox intersects marquee.
-            if (bbox.xMax >= xMin && bbox.xMin <= xMax && bbox.yMax >= yMin && bbox.yMin <= yMax) {
-              ids.push(el.id);
-            }
-          }
+          if (elementInSelectionBoxMm(el, boxMin, boxMax, selMode)) ids.push(el.id);
         }
         if (ids.length >= 1) {
           selectEl(ids[0]);
@@ -5868,6 +5810,26 @@ export function PlanCanvas({
             window.dispatchEvent(new CustomEvent('bim-ai:clipboard-paste', { detail: result }));
           }
         });
+      }
+      // §1.8.1 — Ctrl+A selects all elements on the active level when in select mode.
+      if (
+        (ev.metaKey || ev.ctrlKey) &&
+        (ev.key === 'a' || ev.key === 'A') &&
+        planTool === 'select'
+      ) {
+        ev.preventDefault();
+        const levelId = displayLevelId || activeLevelResolvedId;
+        const allIds = Object.values(elementsById)
+          .filter((el) => (el as { levelId?: string }).levelId === levelId)
+          .map((el) => el.id);
+        if (allIds.length > 0) {
+          selectEl(allIds[0]);
+          useBimStore.getState().clearSelectedIds();
+          for (const id of allIds.slice(1)) {
+            useBimStore.getState().toggleSelectedId(id);
+          }
+        }
+        return;
       }
       // F-100 — Delete / Backspace deletes the full multi-select set.
       if (ev.key === 'Delete' || ev.key === 'Backspace') {
