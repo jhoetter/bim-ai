@@ -1304,6 +1304,62 @@ export function reduceCeiling(
 }
 
 /* ────────────────────────────────────────────────────────────────────── */
+/* Beam System — sketch closed boundary, then fill with parallel beams    */
+/* ────────────────────────────────────────────────────────────────────── */
+
+export type BeamSystemState =
+  | { phase: 'idle' }
+  | { phase: 'sketch'; verticesMm: Array<{ xMm: number; yMm: number }> };
+
+export type BeamSystemEvent =
+  | { kind: 'activate' }
+  | { kind: 'deactivate' }
+  | { kind: 'click'; pointMm: { xMm: number; yMm: number } }
+  | { kind: 'close-loop' }
+  | { kind: 'cancel' };
+
+export interface BeamSystemEffect {
+  commitBeamSystem?: { verticesMm: Array<{ xMm: number; yMm: number }> };
+  stillActive: boolean;
+}
+
+export function initialBeamSystemState(): BeamSystemState {
+  return { phase: 'idle' };
+}
+
+export function reduceBeamSystem(
+  state: BeamSystemState,
+  event: BeamSystemEvent,
+): { state: BeamSystemState; effect: BeamSystemEffect } {
+  if (event.kind === 'activate') {
+    return { state: { phase: 'idle' }, effect: { stillActive: true } };
+  }
+  if (event.kind === 'deactivate') {
+    return { state: { phase: 'idle' }, effect: { stillActive: false } };
+  }
+  if (event.kind === 'cancel') {
+    return { state: { phase: 'idle' }, effect: { stillActive: true } };
+  }
+  if (event.kind === 'click') {
+    const prev = state.phase === 'sketch' ? state.verticesMm : [];
+    return {
+      state: { phase: 'sketch', verticesMm: [...prev, event.pointMm] },
+      effect: { stillActive: true },
+    };
+  }
+  if (event.kind === 'close-loop') {
+    const verts = state.phase === 'sketch' ? state.verticesMm : [];
+    if (verts.length >= 3) {
+      return {
+        state: { phase: 'idle' },
+        effect: { commitBeamSystem: { verticesMm: verts }, stillActive: true },
+      };
+    }
+  }
+  return { state, effect: { stillActive: true } };
+}
+
+/* ────────────────────────────────────────────────────────────────────── */
 /* Text Annotation — single-click to place, then type text and confirm    */
 /* ────────────────────────────────────────────────────────────────────── */
 

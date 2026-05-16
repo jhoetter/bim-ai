@@ -20,23 +20,46 @@ export type SheetCanvasProps = {
   evidenceFullBleed?: boolean;
 };
 
-function resolveTokenValue(slotName: string, sheet: Sheet): string {
+type ProjectSettings = Extract<Element, { kind: 'project_settings' }>;
+
+function getProjectSettings(elementsById: Record<string, Element>): ProjectSettings | undefined {
+  const direct = elementsById['project_settings'];
+  if (direct?.kind === 'project_settings') return direct as ProjectSettings;
+  return (Object.values(elementsById) as Element[]).find(
+    (e): e is ProjectSettings => e.kind === 'project_settings',
+  );
+}
+
+function resolveTokenValue(
+  slotName: string,
+  sheet: Sheet,
+  ps: ProjectSettings | undefined,
+): string {
   const meta = sheet.metadata ?? {};
+  const tp = (sheet.titleblockParameters ?? {}) as Record<string, string>;
   switch (slotName) {
     case 'projectName':
-      return meta.projectName ?? '';
+      return meta.projectName ?? tp.projectName ?? ps?.name ?? '';
     case 'drawnBy':
-      return meta.drawnBy ?? '';
+      return meta.drawnBy ?? tp.drawnBy ?? ps?.authorName ?? '';
     case 'checkedBy':
-      return meta.checkedBy ?? '';
+      return meta.checkedBy ?? tp.checkedBy ?? ps?.checkDate ?? '';
     case 'date':
-      return meta.date ?? '';
+    case 'issueDate':
+      return meta.date ?? tp.issueDate ?? ps?.issueDate ?? '';
     case 'revision':
-      return meta.revision ?? '';
+      return meta.revision ?? tp.revision ?? '';
     case 'number':
-      return sheet.number ?? '';
+    case 'sheetNumber':
+      return sheet.number ?? tp.sheetNumber ?? '';
+    case 'projectNumber':
+      return tp.projectNumber ?? ps?.projectNumber ?? '';
+    case 'clientName':
+      return tp.clientName ?? ps?.clientName ?? '';
+    case 'authorName':
+      return tp.drawnBy ?? ps?.authorName ?? '';
     default:
-      return '';
+      return tp[slotName] ?? '';
   }
 }
 
@@ -67,6 +90,7 @@ function findTitleblockType(
 export function SheetCanvas({ elementsById, preferredSheetId }: SheetCanvasProps): ReactElement {
   const sheet = findSheet(elementsById, preferredSheetId);
   const titleblockType = sheet ? findTitleblockType(elementsById, sheet) : undefined;
+  const ps = getProjectSettings(elementsById);
 
   // Fallback dimensions when no sheet found
   const landscape = (sheet?.orientation ?? 'landscape') === 'landscape';
@@ -239,7 +263,8 @@ export function SheetCanvas({ elementsById, preferredSheetId }: SheetCanvasProps
 
       {/* Token slots */}
       {titleblockType?.tokenSlots.map((slot) => {
-        const value = resolveTokenValue(slot.name, sheet);
+        const value = resolveTokenValue(slot.name, sheet, ps);
+        const isEmpty = !value;
         const isProjectName = slot.name === 'projectName';
         return (
           <text
@@ -249,11 +274,16 @@ export function SheetCanvas({ elementsById, preferredSheetId }: SheetCanvasProps
             style={{
               fontSize:
                 (isProjectName ? (slot.fontSizeMm ?? 3.5) * 1.3 : (slot.fontSizeMm ?? 3.5)) * scale,
-              fill: isProjectName ? 'var(--color-foreground)' : 'var(--color-muted)',
-              fontWeight: isProjectName ? 600 : undefined,
+              fill: isEmpty
+                ? 'var(--color-muted)'
+                : isProjectName
+                  ? 'var(--color-foreground)'
+                  : 'var(--color-muted)',
+              fontWeight: isProjectName && !isEmpty ? 600 : undefined,
+              fontStyle: isEmpty ? 'italic' : undefined,
             }}
           >
-            {value || slot.name}
+            {isEmpty ? slot.name : value}
           </text>
         );
       })}
