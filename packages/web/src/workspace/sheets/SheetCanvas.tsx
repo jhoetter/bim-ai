@@ -661,6 +661,55 @@ function SheetCanvasWithSheet(props: {
             </g>
           ) : null}
 
+          {/* ANN-12 — north arrow symbols hosted on this sheet */}
+          {Object.values(elementsById)
+            .filter(
+              (el): el is Extract<Element, { kind: 'annotation_symbol' }> =>
+                el.kind === 'annotation_symbol' &&
+                el.symbolType === 'north_arrow' &&
+                el.hostViewId === sh.id,
+            )
+            .map((sym) => {
+              const projectSettings = Object.values(elementsById).find(
+                (e): e is Extract<Element, { kind: 'project_settings' }> =>
+                  e.kind === 'project_settings',
+              );
+              const northDeg =
+                (sym.rotationDeg ?? 0) + (projectSettings?.projectNorthAngleDeg ?? 0);
+              const cx = sym.positionMm.xMm;
+              const cy = sym.positionMm.yMm;
+              const r = 1200 * (sym.scale ?? 1);
+              return (
+                <g
+                  key={sym.id}
+                  data-testid={`sheet-north-arrow-${sym.id}`}
+                  transform={`rotate(${northDeg}, ${cx}, ${cy})`}
+                >
+                  <circle
+                    cx={cx}
+                    cy={cy}
+                    r={r}
+                    fill="none"
+                    stroke={sym.colour ?? '#202020'}
+                    strokeWidth={80}
+                  />
+                  <polygon
+                    points={`${cx},${cy - r * 0.85} ${cx - r * 0.35},${cy + r * 0.5} ${cx},${cy + r * 0.25} ${cx + r * 0.35},${cy + r * 0.5}`}
+                    fill={sym.colour ?? '#202020'}
+                  />
+                  <text
+                    x={cx}
+                    y={cy - r - 200}
+                    textAnchor="middle"
+                    fill={sym.colour ?? '#202020'}
+                    style={{ fontSize: `${r * 0.7}px`, fontWeight: 700 }}
+                  >
+                    N
+                  </text>
+                </g>
+              );
+            })}
+
           {paintRows.map((row) => {
             const {
               xMm,
