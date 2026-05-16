@@ -23,6 +23,15 @@ import { sectionCutGripProvider } from './sectionCutGripProvider';
 import { sketchElementGripProvider } from './sketchElementGripProvider';
 import { windowGripProvider } from './windowGripProvider';
 import { textNoteGripProvider, leaderTextGripProvider } from './annotationGripProvider';
+import {
+  angularDimensionGripProvider,
+  radialDimensionGripProvider,
+  diameterDimensionGripProvider,
+  arcLengthDimensionGripProvider,
+  spotElevationGripProvider,
+  spotCoordinateGripProvider,
+  spotSlopeGripProvider,
+} from './spotAnnotationGripProvider';
 
 export {
   beamGripProvider,
@@ -38,6 +47,13 @@ export {
   windowGripProvider,
   textNoteGripProvider,
   leaderTextGripProvider,
+  angularDimensionGripProvider,
+  radialDimensionGripProvider,
+  diameterDimensionGripProvider,
+  arcLengthDimensionGripProvider,
+  spotElevationGripProvider,
+  spotCoordinateGripProvider,
+  spotSlopeGripProvider,
 };
 
 export function gripsFor(element: Element, context: PlanContext = {}): GripDescriptor[] {
@@ -71,6 +87,20 @@ export function gripsFor(element: Element, context: PlanContext = {}): GripDescr
       return textNoteGripProvider.grips(element, context);
     case 'leader_text':
       return leaderTextGripProvider.grips(element, context);
+    case 'angular_dimension':
+      return angularDimensionGripProvider.grips(element, context);
+    case 'radial_dimension':
+      return radialDimensionGripProvider.grips(element, context);
+    case 'diameter_dimension':
+      return diameterDimensionGripProvider.grips(element, context);
+    case 'arc_length_dimension':
+      return arcLengthDimensionGripProvider.grips(element, context);
+    case 'spot_elevation':
+      return spotElevationGripProvider.grips(element, context);
+    case 'spot_coordinate':
+      return spotCoordinateGripProvider.grips(element, context);
+    case 'spot_slope':
+      return spotSlopeGripProvider.grips(element, context);
     default:
       return [];
   }

@@ -643,6 +643,110 @@ describe('InspectorPropertiesFor — leader_text (ANN-02)', () => {
   });
 });
 
+describe('InspectorPropertiesFor — A4-A9 annotation elements', () => {
+  it('angular_dimension shows vertex and ray positions', () => {
+    const el: Extract<Element, { kind: 'angular_dimension' }> = {
+      kind: 'angular_dimension',
+      id: 'ad-1',
+      hostViewId: 'pv-1',
+      vertexMm: { xMm: 500, yMm: 500 },
+      rayAMm: { xMm: 1000, yMm: 500 },
+      rayBMm: { xMm: 500, yMm: 1000 },
+    };
+    const { getByText } = render(InspectorPropertiesFor(el, t));
+    expect(getByText('Vertex')).toBeTruthy();
+    expect(getByText('(500, 500) mm')).toBeTruthy();
+  });
+
+  it('radial_dimension shows radius measurement', () => {
+    const el: Extract<Element, { kind: 'radial_dimension' }> = {
+      kind: 'radial_dimension',
+      id: 'rd-1',
+      hostViewId: 'pv-1',
+      centerMm: { xMm: 0, yMm: 0 },
+      arcPointMm: { xMm: 1000, yMm: 0 },
+    };
+    const { getByText } = render(InspectorPropertiesFor(el, t));
+    expect(getByText('1000 mm')).toBeTruthy();
+  });
+
+  it('diameter_dimension shows diameter (2× radius)', () => {
+    const el: Extract<Element, { kind: 'diameter_dimension' }> = {
+      kind: 'diameter_dimension',
+      id: 'dd-1',
+      hostViewId: 'pv-1',
+      centerMm: { xMm: 0, yMm: 0 },
+      arcPointMm: { xMm: 500, yMm: 0 },
+    };
+    const { getByText } = render(InspectorPropertiesFor(el, t));
+    expect(getByText('1000 mm')).toBeTruthy();
+  });
+
+  it('arc_length_dimension shows arc length', () => {
+    const el: Extract<Element, { kind: 'arc_length_dimension' }> = {
+      kind: 'arc_length_dimension',
+      id: 'ald-1',
+      hostViewId: 'pv-1',
+      centerMm: { xMm: 0, yMm: 0 },
+      radiusMm: 1000,
+      startAngleDeg: 0,
+      endAngleDeg: 90,
+    };
+    const { getByText } = render(InspectorPropertiesFor(el, t));
+    expect(getByText('90.0°')).toBeTruthy();
+    expect(getByText('1571 mm')).toBeTruthy();
+  });
+
+  it('spot_elevation shows elevation and editable mm input when onChange provided', () => {
+    const onChange = vi.fn();
+    const el: Extract<Element, { kind: 'spot_elevation' }> = {
+      kind: 'spot_elevation',
+      id: 'se-1',
+      hostViewId: 'pv-1',
+      positionMm: { xMm: 0, yMm: 0 },
+      elevationMm: 3000,
+    };
+    const { getByText, getByTestId } = render(
+      InspectorPropertiesFor(el, t, { onPropertyChange: onChange }),
+    );
+    expect(getByText('3.000 m')).toBeTruthy();
+    const input = getByTestId('inspector-spot-elevation-mm') as HTMLInputElement;
+    fireEvent.change(input, { target: { value: '4500' } });
+    fireEvent.blur(input);
+    expect(onChange).toHaveBeenCalledWith('elevationMm', 4500);
+  });
+
+  it('spot_coordinate shows N/E values', () => {
+    const el: Extract<Element, { kind: 'spot_coordinate' }> = {
+      kind: 'spot_coordinate',
+      id: 'sc-1',
+      hostViewId: 'pv-1',
+      positionMm: { xMm: 100, yMm: 200 },
+      northMm: 1500,
+      eastMm: 2000,
+    };
+    const { getByText } = render(InspectorPropertiesFor(el, t));
+    expect(getByText('1500')).toBeTruthy();
+    expect(getByText('2000')).toBeTruthy();
+  });
+
+  it('spot_slope shows editable slope when onChange provided', () => {
+    const onChange = vi.fn();
+    const el: Extract<Element, { kind: 'spot_slope' }> = {
+      kind: 'spot_slope',
+      id: 'ss-1',
+      hostViewId: 'pv-1',
+      positionMm: { xMm: 0, yMm: 0 },
+      slopePct: 5,
+    };
+    const { getByTestId } = render(InspectorPropertiesFor(el, t, { onPropertyChange: onChange }));
+    const input = getByTestId('inspector-spot-slope-pct') as HTMLInputElement;
+    fireEvent.change(input, { target: { value: '8' } });
+    fireEvent.blur(input);
+    expect(onChange).toHaveBeenCalledWith('slopePct', 8);
+  });
+});
+
 describe('InspectorProjectSettingsEditor', () => {
   it('persists checkpoint retention as a clamped project setting', () => {
     const onPersistProperty = vi.fn();
