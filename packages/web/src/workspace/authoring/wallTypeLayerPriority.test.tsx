@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render } from '@testing-library/react';
 import type { Element, WallTypeLayer } from '@bim-ai/core';
 
-import { WallTypeLayerEditor } from './WallTypeLayerEditor';
+import { WallTypeLayerEditor } from '../families/WallTypeLayerEditor';
 
 afterEach(cleanup);
 
@@ -29,7 +29,7 @@ describe('WallTypeLayerEditor priority column — §2.4.4', () => {
     expect(getByTestId('layer-priority-0')).toBeDefined();
   });
 
-  it('priority select has options 1 through 5', () => {
+  it('priority select has options 1–5', () => {
     const { getByTestId } = render(
       <WallTypeLayerEditor typeElement={makeWallType()} onUpdate={() => undefined} />,
     );
@@ -38,7 +38,7 @@ describe('WallTypeLayerEditor priority column — §2.4.4', () => {
     expect(values).toEqual(['1', '2', '3', '4', '5']);
   });
 
-  it('changing priority updates draft layer', () => {
+  it('changing priority select updates layer priority', () => {
     const onUpdate = vi.fn();
     const { getByTestId } = render(
       <WallTypeLayerEditor typeElement={makeWallType()} onUpdate={onUpdate} />,
@@ -50,14 +50,14 @@ describe('WallTypeLayerEditor priority column — §2.4.4', () => {
     expect(patch.layers[0].priority).toBe(4);
   });
 
-  it('defaults to priority 5 when layer priority is null', () => {
-    const layers: WallTypeLayer[] = [
-      { thicknessMm: 100, function: 'structure', materialKey: null, priority: null },
-    ];
+  it('default priority for new layer is 5', () => {
+    const onUpdate = vi.fn();
     const { getByTestId } = render(
-      <WallTypeLayerEditor typeElement={makeWallType(layers)} onUpdate={() => undefined} />,
+      <WallTypeLayerEditor typeElement={makeWallType()} onUpdate={onUpdate} />,
     );
-    const select = getByTestId('layer-priority-0') as HTMLSelectElement;
-    expect(select.value).toBe('5');
+    fireEvent.click(getByTestId('wall-type-add-layer'));
+    expect(onUpdate).toHaveBeenCalledOnce();
+    const patch = onUpdate.mock.calls[0][0] as { layers: WallTypeLayer[] };
+    expect(patch.layers[patch.layers.length - 1].priority).toBe(5);
   });
 });

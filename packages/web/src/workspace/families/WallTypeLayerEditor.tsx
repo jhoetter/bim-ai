@@ -64,6 +64,15 @@ export function WallTypeLayerEditor({
       ) : null}
 
       <div data-testid="wall-type-layers-table" className="flex flex-col gap-1">
+        <div className="grid grid-cols-[56px_90px_80px_44px_24px_24px_24px] items-center gap-1 px-1 py-0.5 text-xs text-muted">
+          <span>Thickness</span>
+          <span>Function</span>
+          <span>Material</span>
+          <span>Priority</span>
+          <span />
+          <span />
+          <span />
+        </div>
         {layers.map((layer, i) => (
           <div
             key={i}
@@ -100,14 +109,14 @@ export function WallTypeLayerEditor({
             <select
               className="w-full rounded border border-border bg-surface px-0.5 py-0.5 text-xs"
               data-testid={`layer-priority-${i}`}
-              value={layer.priority ?? 3}
+              value={layer.priority ?? 5}
               onChange={(e) => updateLayer(i, { priority: Number(e.currentTarget.value) })}
             >
-              <option value={1}>1</option>
-              <option value={2}>2</option>
-              <option value={3}>3</option>
-              <option value={4}>4</option>
-              <option value={5}>5</option>
+              <option value={1}>1 — Structure</option>
+              <option value={2}>2 — Substrate</option>
+              <option value={3}>3 — Thermal/Air layer</option>
+              <option value={4}>4 — Finish 1</option>
+              <option value={5}>5 — Finish 2</option>
             </select>
             <button
               data-testid={`wall-type-layer-up-${i}`}
@@ -141,7 +150,10 @@ export function WallTypeLayerEditor({
         className="rounded border border-border bg-surface px-2 py-0.5 text-xs hover:bg-surface-strong"
         onClick={() =>
           onUpdate({
-            layers: [...layers, { thicknessMm: 100, function: 'structure', materialKey: null }],
+            layers: [
+              ...layers,
+              { thicknessMm: 100, function: 'structure', materialKey: null, priority: 5 },
+            ],
           })
         }
       >

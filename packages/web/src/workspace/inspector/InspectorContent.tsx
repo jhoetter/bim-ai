@@ -824,38 +824,56 @@ export function InspectorPropertiesFor(
           )}
           <FieldRow label={f('level')} value={resolveElName(el.levelId, elementsById)} />
 
-          <div className="flex items-center gap-2 py-0.5">
-            <span className="text-xs text-muted w-28 shrink-0">Slope (°)</span>
-            <input
-              type="number"
-              className="w-20 text-xs bg-surface border border-border rounded px-1 py-0.5"
-              defaultValue={el.slopeAngleDeg ?? 0}
-              key={`${el.id}-slope`}
-              step={0.5}
-              min={-45}
-              max={45}
-              onBlur={(e) => onPropertyChange?.('slopeAngleDeg', Number(e.currentTarget.value))}
-              data-testid="inspector-wall-slope-angle"
-            />
-          </div>
-
-          <div className="flex items-center gap-2 py-0.5">
-            <span className="text-xs text-muted w-28 shrink-0">Top thickness (mm)</span>
-            <input
-              type="number"
-              className="w-20 text-xs bg-surface border border-border rounded px-1 py-0.5"
-              defaultValue={el.topThicknessMm ?? ''}
-              key={`${el.id}-topthick`}
-              step={10}
-              min={0}
-              placeholder="Same as base"
-              onBlur={(e) => {
-                const v = e.currentTarget.value;
-                onPropertyChange?.('topThicknessMm', v === '' ? null : Number(v));
-              }}
-              data-testid="inspector-wall-top-thickness"
-            />
-          </div>
+          <details open={el.slopeAngleDeg != null && el.slopeAngleDeg !== 0} className="py-0.5">
+            <summary className="text-xs text-muted cursor-pointer select-none">
+              Profile &amp; Slope
+            </summary>
+            <div className="flex flex-col gap-2 mt-1 pl-1">
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-muted w-28 shrink-0">Slope (°)</span>
+                <input
+                  type="number"
+                  className="w-20 text-xs bg-surface border border-border rounded px-1 py-0.5"
+                  defaultValue={el.slopeAngleDeg ?? 0}
+                  key={`${el.id}-slope`}
+                  step={0.5}
+                  min={-45}
+                  max={45}
+                  placeholder="0° (plumb)"
+                  onBlur={(e) => onPropertyChange?.('slopeAngleDeg', Number(e.currentTarget.value))}
+                  data-testid="inspector-wall-slope-angle"
+                />
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-muted w-28 shrink-0">Top thickness (mm)</span>
+                <input
+                  type="number"
+                  className="w-20 text-xs bg-surface border border-border rounded px-1 py-0.5"
+                  defaultValue={el.topThicknessMm ?? ''}
+                  key={`${el.id}-topthick`}
+                  step={10}
+                  min={1}
+                  placeholder="(same as base)"
+                  onBlur={(e) => {
+                    const v = e.currentTarget.value;
+                    onPropertyChange?.('topThicknessMm', v === '' ? null : Number(v));
+                  }}
+                  data-testid="inspector-wall-top-thickness"
+                />
+              </div>
+              <button
+                type="button"
+                className="text-xs text-muted underline text-left w-fit"
+                data-testid="inspector-wall-reset-slope"
+                onClick={() => {
+                  onPropertyChange?.('slopeAngleDeg', 0);
+                  onPropertyChange?.('topThicknessMm', null);
+                }}
+              >
+                Reset to plumb/rectangular
+              </button>
+            </div>
+          </details>
 
           <div className="flex items-center gap-2 py-0.5">
             <span className="text-xs text-muted w-28 shrink-0">{f('roofAttachment')}</span>
@@ -2839,7 +2857,24 @@ export function InspectorPropertiesFor(
       );
     case 'wall_type':
     case 'floor_type':
-    case 'roof_type':
+    case 'roof_type': {
+      const PRIORITY_LABELS: Record<number, string> = {
+        1: 'Structure',
+        2: 'Substrate',
+        3: 'Thermal/Air',
+        4: 'Finish 1',
+        5: 'Finish 2',
+      };
+      const uniquePriorities =
+        el.kind === 'wall_type'
+          ? [...new Set(el.layers.flatMap((l) => (l.priority != null ? [l.priority] : [])))].sort(
+              (a, b) => a - b,
+            )
+          : [];
+      const prioritySummary =
+        uniquePriorities.length > 0
+          ? uniquePriorities.map((p) => `${PRIORITY_LABELS[p] ?? String(p)} (${p})`).join(' · ')
+          : null;
       return (
         <div className="flex flex-col gap-2">
           <WallTypeLayerEditor
@@ -2848,8 +2883,14 @@ export function InspectorPropertiesFor(
               onDispatchCommand?.({ type: 'update_wall_type', id: el.id, patch })
             }
           />
+          {prioritySummary != null ? (
+            <p data-testid="inspector-wall-type-priority-summary" className="text-xs text-muted">
+              Layer Priorities: {prioritySummary}
+            </p>
+          ) : null}
         </div>
       );
+    }
     case 'view_template':
       return (
         <div>
@@ -2974,7 +3015,59 @@ export function InspectorPropertiesFor(
           />
           {tnPropChange ? (
             <>
-              <div className="flex flex-col gap-1 border-t border-border pt-2">
+              <div className="flex flex-wrap items-center gap-1 border-t border-border pt-2">
+                <button
+                  type="button"
+                  className={`rounded border px-2 py-0.5 text-xs font-bold ${el.bold ? 'border-primary bg-primary/10' : 'border-border bg-surface'}`}
+                  data-testid="inspector-text-bold"
+                  aria-pressed={!!el.bold}
+                  onClick={() => tnPropChange('bold', !el.bold)}
+                >
+                  B
+                </button>
+                <button
+                  type="button"
+                  className={`rounded border px-2 py-0.5 text-xs italic ${el.italic ? 'border-primary bg-primary/10' : 'border-border bg-surface'}`}
+                  data-testid="inspector-text-italic"
+                  aria-pressed={!!el.italic}
+                  onClick={() => tnPropChange('italic', !el.italic)}
+                >
+                  I
+                </button>
+                <button
+                  type="button"
+                  className={`rounded border px-2 py-0.5 text-xs underline ${el.underline ? 'border-primary bg-primary/10' : 'border-border bg-surface'}`}
+                  data-testid="inspector-text-underline"
+                  aria-pressed={!!el.underline}
+                  onClick={() => tnPropChange('underline', !el.underline)}
+                >
+                  U
+                </button>
+                <span className="mx-1 text-muted">|</span>
+                {(['left', 'center', 'right'] as const).map((align) => (
+                  <button
+                    key={align}
+                    type="button"
+                    className={`rounded border px-2 py-0.5 text-xs ${(el.horizontalAlign ?? 'left') === align ? 'border-primary bg-primary/10' : 'border-border bg-surface'}`}
+                    data-testid={`inspector-text-align-${align}`}
+                    aria-pressed={(el.horizontalAlign ?? 'left') === align}
+                    onClick={() => tnPropChange('horizontalAlign', align)}
+                  >
+                    {align[0]!.toUpperCase()}
+                  </button>
+                ))}
+                <span className="mx-1 text-muted">|</span>
+                <input
+                  type="color"
+                  className="h-6 w-8 cursor-pointer rounded border border-border bg-surface p-0.5"
+                  value={el.colorHex ?? '#202020'}
+                  key={`${el.id}-color`}
+                  aria-label="Text note color"
+                  data-testid="inspector-text-color"
+                  onChange={(e) => tnPropChange('colorHex', e.currentTarget.value)}
+                />
+              </div>
+              <div className="flex flex-col gap-1">
                 <span className="text-xs text-muted">Content</span>
                 <textarea
                   className="w-full rounded border border-border bg-surface px-2 py-1 text-xs"
@@ -3039,7 +3132,59 @@ export function InspectorPropertiesFor(
           />
           {ltPropChange ? (
             <>
-              <div className="flex flex-col gap-1 border-t border-border pt-2">
+              <div className="flex flex-wrap items-center gap-1 border-t border-border pt-2">
+                <button
+                  type="button"
+                  className={`rounded border px-2 py-0.5 text-xs font-bold ${el.bold ? 'border-primary bg-primary/10' : 'border-border bg-surface'}`}
+                  data-testid="inspector-text-bold"
+                  aria-pressed={!!el.bold}
+                  onClick={() => ltPropChange('bold', !el.bold)}
+                >
+                  B
+                </button>
+                <button
+                  type="button"
+                  className={`rounded border px-2 py-0.5 text-xs italic ${el.italic ? 'border-primary bg-primary/10' : 'border-border bg-surface'}`}
+                  data-testid="inspector-text-italic"
+                  aria-pressed={!!el.italic}
+                  onClick={() => ltPropChange('italic', !el.italic)}
+                >
+                  I
+                </button>
+                <button
+                  type="button"
+                  className={`rounded border px-2 py-0.5 text-xs underline ${el.underline ? 'border-primary bg-primary/10' : 'border-border bg-surface'}`}
+                  data-testid="inspector-text-underline"
+                  aria-pressed={!!el.underline}
+                  onClick={() => ltPropChange('underline', !el.underline)}
+                >
+                  U
+                </button>
+                <span className="mx-1 text-muted">|</span>
+                {(['left', 'center', 'right'] as const).map((align) => (
+                  <button
+                    key={align}
+                    type="button"
+                    className={`rounded border px-2 py-0.5 text-xs ${(el.horizontalAlign ?? 'left') === align ? 'border-primary bg-primary/10' : 'border-border bg-surface'}`}
+                    data-testid={`inspector-text-align-${align}`}
+                    aria-pressed={(el.horizontalAlign ?? 'left') === align}
+                    onClick={() => ltPropChange('horizontalAlign', align)}
+                  >
+                    {align[0]!.toUpperCase()}
+                  </button>
+                ))}
+                <span className="mx-1 text-muted">|</span>
+                <input
+                  type="color"
+                  className="h-6 w-8 cursor-pointer rounded border border-border bg-surface p-0.5"
+                  value={el.colorHex ?? '#202020'}
+                  key={`${el.id}-color`}
+                  aria-label="Leader text color"
+                  data-testid="inspector-text-color"
+                  onChange={(e) => ltPropChange('colorHex', e.currentTarget.value)}
+                />
+              </div>
+              <div className="flex flex-col gap-1">
                 <span className="text-xs text-muted">Content</span>
                 <textarea
                   className="w-full rounded border border-border bg-surface px-2 py-1 text-xs"
@@ -3499,6 +3644,42 @@ export function InspectorPropertiesFor(
                 Apply Curtain System
               </button>
             </div>
+          </div>
+        </div>
+      );
+    }
+    case 'placed_tag': {
+      const { onPropertyChange } = options ?? {};
+      const tagEl = el as Extract<Element, { kind: 'placed_tag' }>;
+      const targetEl = elementsById[tagEl.hostElementId];
+      const targetName = targetEl
+        ? ((targetEl as { name?: string }).name ?? tagEl.hostElementId)
+        : tagEl.hostElementId;
+      return (
+        <div className="flex flex-col gap-2">
+          <div className="flex items-center gap-2 py-0.5">
+            <span className="text-xs text-muted w-28 shrink-0">Mark</span>
+            <input
+              type="text"
+              className="flex-1 text-xs bg-surface border border-border rounded px-1 py-0.5"
+              defaultValue={tagEl.fields?.mark ?? ''}
+              key={`${tagEl.id}-mark`}
+              data-testid="inspector-tag-mark"
+              onBlur={(e) =>
+                onPropertyChange?.('fields', {
+                  ...tagEl.fields,
+                  mark: e.currentTarget.value || null,
+                })
+              }
+            />
+          </div>
+          {tagEl.fields?.typeName ? <FieldRow label="Type" value={tagEl.fields.typeName} /> : null}
+          <div data-testid="inspector-tag-type" style={{ display: 'none' }}>
+            {tagEl.fields?.typeName ?? ''}
+          </div>
+          <FieldRow label="Target" value={targetName} />
+          <div data-testid="inspector-tag-target" style={{ display: 'none' }}>
+            {targetName}
           </div>
         </div>
       );

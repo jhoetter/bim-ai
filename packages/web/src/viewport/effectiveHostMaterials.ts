@@ -87,11 +87,12 @@ export function isWhiteRenderLikeMaterial(materialKey: string | null | undefined
   return materialKey === 'white_cladding' || materialKey === 'white_render';
 }
 
-/** Merge two wall layer stacks and sort by priority ascending (1 = highest precedence). Equal priorities preserve existing order (stable). */
+/** Merge two wall layer stacks and sort by priority ascending (1 = highest precedence). Null priority is treated as 5 (lowest). Equal priorities preserve existing order (stable). */
 export function mergeLayersByPriority(
   layersA: WallTypeLayer[],
   layersB: WallTypeLayer[],
 ): WallTypeLayer[] {
   const merged = [...layersA, ...layersB];
-  return merged.sort((a, b) => (a.priority ?? 3) - (b.priority ?? 3));
+  // Lower number wins (Structure=1 beats Finish=5); null treated as 5 per Revit semantics
+  return merged.sort((a, b) => (a.priority ?? 5) - (b.priority ?? 5));
 }
