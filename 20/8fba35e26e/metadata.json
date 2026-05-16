@@ -85,6 +85,12 @@
       "transcript": "/20/8fba35e26e/12/full.jsonl",
       "content_hash": "/20/8fba35e26e/12/content_hash.txt",
       "prompt": "/20/8fba35e26e/12/prompt.txt"
+    },
+    {
+      "metadata": "/20/8fba35e26e/13/metadata.json",
+      "transcript": "/20/8fba35e26e/13/full.jsonl",
+      "content_hash": "/20/8fba35e26e/13/content_hash.txt",
+      "prompt": "/20/8fba35e26e/13/prompt.txt"
     }
   ],
   "token_usage": {
