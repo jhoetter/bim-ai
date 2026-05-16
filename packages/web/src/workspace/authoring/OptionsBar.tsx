@@ -260,6 +260,9 @@ export function OptionsBar({
   }
 
   if (planTool === 'floor' || planTool === 'floor-sketch') {
+    const floorLevels = Object.values(elementsById)
+      .filter((e): e is Extract<Element, { kind: 'level' }> => e.kind === 'level')
+      .sort((a, b) => a.elevationMm - b.elevationMm);
     return (
       <div data-testid="options-bar" className={BAR_CLASS}>
         <label className="flex items-center gap-2">
@@ -274,12 +277,42 @@ export function OptionsBar({
             <option value="">(Default)</option>
             {Object.values(elementsById)
               .filter((e): e is Extract<Element, { kind: 'floor_type' }> => e.kind === 'floor_type')
+              .sort((a, b) => a.name.localeCompare(b.name))
               .map((t) => (
                 <option key={t.id} value={t.id}>
                   {t.name}
                 </option>
               ))}
           </select>
+        </label>
+        <label className="flex items-center gap-2">
+          <span className="text-muted">Level:</span>
+          <select
+            value={activeLevelId ?? ''}
+            onChange={(e) => setActiveLevelId(e.target.value || undefined)}
+            className="rounded border border-border bg-surface px-1.5 py-0.5 text-xs text-foreground"
+            aria-label="Floor level"
+            data-testid="options-bar-floor-level"
+          >
+            {floorLevels.map((lv) => (
+              <option key={lv.id} value={lv.id}>
+                {lv.name}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label className="flex items-center gap-2">
+          <span className="text-muted">Offset:</span>
+          <input
+            type="number"
+            value={floorDrawOffsetMm}
+            step={50}
+            onChange={(e) => setFloorDrawOffsetMm(Number(e.target.value))}
+            className="w-20 rounded border border-border bg-surface px-1.5 py-0.5 text-xs text-foreground"
+            aria-label="Floor vertical offset in mm"
+            data-testid="options-bar-floor-offset"
+          />
+          <span className="text-muted opacity-60">mm</span>
         </label>
         <label className="flex items-center gap-2">
           <span className="text-muted">Boundary Offset:</span>
@@ -291,6 +324,199 @@ export function OptionsBar({
             aria-label="Floor boundary offset in mm"
           />
           <span className="text-muted opacity-60">mm</span>
+        </label>
+      </div>
+    );
+  }
+
+  if (planTool === 'column') {
+    const columnLevels = Object.values(elementsById)
+      .filter((e): e is Extract<Element, { kind: 'level' }> => e.kind === 'level')
+      .sort((a, b) => a.elevationMm - b.elevationMm);
+    return (
+      <div data-testid="options-bar" className={BAR_CLASS}>
+        <label className="flex items-center gap-2">
+          <span className="text-muted">Level:</span>
+          <select
+            value={activeLevelId ?? ''}
+            onChange={(e) => setActiveLevelId(e.target.value || undefined)}
+            className="rounded border border-border bg-surface px-1.5 py-0.5 text-xs text-foreground"
+            aria-label="Column level"
+            data-testid="options-bar-column-level"
+          >
+            {columnLevels.map((lv) => (
+              <option key={lv.id} value={lv.id}>
+                {lv.name}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label className="flex items-center gap-2">
+          <span className="text-muted">Height:</span>
+          <input
+            type="number"
+            value={columnDrawHeightMm}
+            step={100}
+            min={100}
+            onChange={(e) => setColumnDrawHeightMm(Number(e.target.value))}
+            className="w-20 rounded border border-border bg-surface px-1.5 py-0.5 text-xs text-foreground"
+            aria-label="Column height in mm"
+            data-testid="options-bar-column-height"
+          />
+          <span className="text-muted opacity-60">mm</span>
+        </label>
+        <label className="flex items-center gap-2">
+          <span className="text-muted">Width:</span>
+          <input
+            type="number"
+            value={columnDrawWidthMm}
+            step={50}
+            min={50}
+            onChange={(e) => setColumnDrawWidthMm(Number(e.target.value))}
+            className="w-20 rounded border border-border bg-surface px-1.5 py-0.5 text-xs text-foreground"
+            aria-label="Column width in mm"
+            data-testid="options-bar-column-width"
+          />
+          <span className="text-muted opacity-60">mm</span>
+        </label>
+        <label className="flex items-center gap-2">
+          <span className="text-muted">Depth:</span>
+          <input
+            type="number"
+            value={columnDrawDepthMm}
+            step={50}
+            min={50}
+            onChange={(e) => setColumnDrawDepthMm(Number(e.target.value))}
+            className="w-20 rounded border border-border bg-surface px-1.5 py-0.5 text-xs text-foreground"
+            aria-label="Column depth in mm"
+            data-testid="options-bar-column-depth"
+          />
+          <span className="text-muted opacity-60">mm</span>
+        </label>
+      </div>
+    );
+  }
+
+  if (planTool === 'stair') {
+    const stairLevels = Object.values(elementsById)
+      .filter((e): e is Extract<Element, { kind: 'level' }> => e.kind === 'level')
+      .sort((a, b) => a.elevationMm - b.elevationMm);
+    const baseLvlId = stairDrawBaseLevelId ?? activeLevelId;
+    const baseLvlIndex = stairLevels.findIndex((lv) => lv.id === baseLvlId);
+    const defaultTopLvl = stairLevels[baseLvlIndex + 1];
+    const topLvlId = stairDrawTopLevelId ?? defaultTopLvl?.id ?? '';
+    return (
+      <div data-testid="options-bar" className={BAR_CLASS}>
+        <label className="flex items-center gap-2">
+          <span className="text-muted">Base Level:</span>
+          <select
+            value={baseLvlId ?? ''}
+            onChange={(e) => setStairDrawBaseLevelId(e.target.value || null)}
+            className="rounded border border-border bg-surface px-1.5 py-0.5 text-xs text-foreground"
+            aria-label="Stair base level"
+            data-testid="options-bar-stair-base-level"
+          >
+            {stairLevels.map((lv) => (
+              <option key={lv.id} value={lv.id}>
+                {lv.name}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label className="flex items-center gap-2">
+          <span className="text-muted">Top Level:</span>
+          <select
+            value={topLvlId}
+            onChange={(e) => setStairDrawTopLevelId(e.target.value || null)}
+            className="rounded border border-border bg-surface px-1.5 py-0.5 text-xs text-foreground"
+            aria-label="Stair top level"
+            data-testid="options-bar-stair-top-level"
+          >
+            {stairLevels.map((lv) => (
+              <option key={lv.id} value={lv.id}>
+                {lv.name}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label className="flex items-center gap-2">
+          <span className="text-muted">Width:</span>
+          <input
+            type="number"
+            value={stairDrawWidthMm}
+            step={100}
+            min={600}
+            onChange={(e) => setStairDrawWidthMm(Number(e.target.value))}
+            className="w-20 rounded border border-border bg-surface px-1.5 py-0.5 text-xs text-foreground"
+            aria-label="Stair width in mm"
+            data-testid="options-bar-stair-width"
+          />
+          <span className="text-muted opacity-60">mm</span>
+        </label>
+        <label className="flex items-center gap-2">
+          <span className="text-muted">Run Width:</span>
+          <input
+            type="number"
+            value={stairDrawRunWidthMm}
+            step={10}
+            min={100}
+            onChange={(e) => setStairDrawRunWidthMm(Number(e.target.value))}
+            className="w-20 rounded border border-border bg-surface px-1.5 py-0.5 text-xs text-foreground"
+            aria-label="Stair run width in mm"
+            data-testid="options-bar-stair-run-width"
+          />
+          <span className="text-muted opacity-60">mm</span>
+        </label>
+      </div>
+    );
+  }
+
+  if (planTool === 'room') {
+    const roomLevels = Object.values(elementsById)
+      .filter((e): e is Extract<Element, { kind: 'level' }> => e.kind === 'level')
+      .sort((a, b) => a.elevationMm - b.elevationMm);
+    const activeLvlIndex = roomLevels.findIndex((lv) => lv.id === activeLevelId);
+    const defaultUpperLvl = roomLevels[activeLvlIndex + 1];
+    const upperLvlId = roomDrawUpperLevelId ?? defaultUpperLvl?.id ?? '';
+    return (
+      <div data-testid="options-bar" className={BAR_CLASS}>
+        <label className="flex items-center gap-2">
+          <span className="text-muted">Name:</span>
+          <input
+            type="text"
+            value={roomDrawName}
+            onChange={(e) => setRoomDrawName(e.target.value)}
+            className="w-28 rounded border border-border bg-surface px-1.5 py-0.5 text-xs text-foreground"
+            aria-label="Room name"
+            data-testid="options-bar-room-name"
+          />
+        </label>
+        <label className="flex items-center gap-2">
+          <span className="text-muted">Number:</span>
+          <input
+            type="text"
+            value={roomDrawNumber}
+            onChange={(e) => setRoomDrawNumber(e.target.value)}
+            className="w-20 rounded border border-border bg-surface px-1.5 py-0.5 text-xs text-foreground"
+            aria-label="Room number"
+            data-testid="options-bar-room-number"
+          />
+        </label>
+        <label className="flex items-center gap-2">
+          <span className="text-muted">Upper Limit:</span>
+          <select
+            value={upperLvlId}
+            onChange={(e) => setRoomDrawUpperLevelId(e.target.value || null)}
+            className="rounded border border-border bg-surface px-1.5 py-0.5 text-xs text-foreground"
+            aria-label="Room upper limit level"
+            data-testid="options-bar-room-upper-level"
+          >
+            {roomLevels.map((lv) => (
+              <option key={lv.id} value={lv.id}>
+                {lv.name}
+              </option>
+            ))}
+          </select>
         </label>
       </div>
     );
