@@ -1,1 +1,0 @@
-Inspect the codebase and spec/revit-parity for the Levels/View Management gaps F-025, F-028, F-029, and F-032. Output a concise implementation plan with exact files/functions/tests to change, focusing on low-risk changes that can upgrade partial statuses toward full parity. Do not edit files.

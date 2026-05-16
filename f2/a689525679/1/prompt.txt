@@ -1,5 +1,0 @@
-please look into the revit parity ( spec/revit-parity ) and see how much is still to be developed; then start developing it. always branch out, build the workpackage, commit and push and then once done merge into main. don't stop until done
-
----
-
-dont stop until there are no more partial features / no more not available features.. you can dispatch many subagents in parallel and coordinate to be way faster

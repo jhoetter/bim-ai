@@ -1,1 +1,0 @@
-Inspect the codebase and spec/revit-parity for CAD/linking gaps F-017, F-019, F-020, F-021, F-023, F-024. Identify low-risk implementation slices with exact files/functions/tests, especially level dropdowns, DXF layer metadata/query, and per-view opacity. Do not edit files.

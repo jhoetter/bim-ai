@@ -1,1 +1,0 @@
-Inspect the codebase and spec/revit-parity for furniture/component gaps F-114, F-117, F-118, F-119, F-120, F-121, and F-122. Find the quickest real implementation path to reduce partial/not-available gaps, with exact files/functions/tests. Do not edit files.

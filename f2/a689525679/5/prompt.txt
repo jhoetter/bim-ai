@@ -1,1 +1,0 @@
-Inspect the codebase and spec/revit-parity for family-editor/nested-family gaps F-048 through F-074. Identify whether there is existing family editor code we can extend quickly, exact files/functions/tests, and a minimal realistic path to turn several ❌ into at least partial implemented functionality. Do not edit files.
