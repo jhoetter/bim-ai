@@ -60,3 +60,36 @@ describe('ceiling inspector grid size — §8.2', () => {
     expect(onChange).toHaveBeenCalledWith('gridPatternMm', 1200);
   });
 });
+
+describe('ceiling inspector grid angle — §8.2', () => {
+  it('renders inspector-ceiling-grid-angle input', () => {
+    const onChange = vi.fn();
+    const { getByTestId } = render(
+      InspectorPropertiesFor(ceiling, t, { onPropertyChange: onChange, elementsById }),
+    );
+    const input = getByTestId('inspector-ceiling-grid-angle') as HTMLInputElement;
+    expect(input).toBeTruthy();
+  });
+
+  it('grid angle change dispatches update_element_property for gridAngleDeg', () => {
+    const onChange = vi.fn();
+    const { getByTestId } = render(
+      InspectorPropertiesFor(ceiling, t, { onPropertyChange: onChange, elementsById }),
+    );
+    const input = getByTestId('inspector-ceiling-grid-angle') as HTMLInputElement;
+    fireEvent.change(input, { target: { value: '45' } });
+    fireEvent.blur(input);
+    expect(onChange).toHaveBeenCalledWith('gridAngleDeg', 45);
+  });
+
+  it('grid angle 0 dispatches null for gridAngleDeg', () => {
+    const onChange = vi.fn();
+    const { getByTestId } = render(
+      InspectorPropertiesFor(ceiling, t, { onPropertyChange: onChange, elementsById }),
+    );
+    const input = getByTestId('inspector-ceiling-grid-angle') as HTMLInputElement;
+    fireEvent.change(input, { target: { value: '0' } });
+    fireEvent.blur(input);
+    expect(onChange).toHaveBeenCalledWith('gridAngleDeg', null);
+  });
+});
