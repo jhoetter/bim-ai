@@ -84,6 +84,9 @@ import {
   initialMeasureArcState,
   reduceMeasureArc,
   type MeasureArcState,
+  initialModelLineState,
+  reduceModelLine,
+  type ModelLineState,
 } from '../tools/toolGrammar';
 import { buildScaleCommand, distanceMm } from './scaleTool';
 import { linearArrayOffsets, radialArrayAngles, radialOffsetForElement } from './arrayTool';
@@ -355,7 +358,8 @@ type Draft =
       finishCategory: SubdivisionCategory;
     }
   | { kind: 'slope-annotation'; sx: number; sy: number }
-  | { kind: 'revision-cloud'; points: Array<{ xMm: number; yMm: number }> };
+  | { kind: 'revision-cloud'; points: Array<{ xMm: number; yMm: number }> }
+  | { kind: 'model-line'; points: Array<{ xMm: number; yMm: number }> };
 
 function nearestWallAt(
   elementsById: Record<string, Element>,
@@ -538,6 +542,7 @@ export function PlanCanvas({
   const permanentDimStateRef = useRef<PermanentDimState>(initialPermanentDimState());
   const measureAngleStateRef = useRef<MeasureAngleState>(initialMeasureAngleState());
   const measureArcStateRef = useRef<MeasureArcState>(initialMeasureArcState());
+  const modelLineStateRef = useRef<ModelLineState>(initialModelLineState());
   const dimSnapCirclesRef = useRef<THREE.Mesh[]>([]);
   const marqueeRef = useRef<{
     active: boolean;
@@ -4050,6 +4055,16 @@ export function PlanCanvas({
         bumpGeom((x) => x + 1);
         return;
       }
+      if (planTool === 'model-line') {
+        const { state: mlState } = reduceModelLine(modelLineStateRef.current, {
+          kind: 'click',
+          pointMm: { xMm: sp.xMm, yMm: sp.yMm },
+        });
+        modelLineStateRef.current = mlState;
+        draftRef.current = { kind: 'model-line', points: mlState.pointsMm };
+        bumpGeom((x) => x + 1);
+        return;
+      }
       if (planTool === 'align') {
         const { state: nextState, effect } = reduceAlign(alignStateRef.current, {
           kind: 'click',
@@ -4745,6 +4760,8 @@ export function PlanCanvas({
             runEndMm: effect.commitBeam.endMm,
             widthMm: stairDrawWidthMm,
             runWidthMm: stairDrawRunWidthMm,
+            // §2.5.3: auto-create shaft void unless Shift is held
+            autoShaft: !ev.shiftKey,
           });
         }
         bumpGeom((x) => x + 1);
@@ -5804,6 +5821,34 @@ export function PlanCanvas({
           }
         }
       }
+      if (planTool === 'model-line') {
+        const d = draftRef.current;
+        if (d && d.kind === 'model-line') {
+          if (ev.key === 'Enter' && d.points.length >= 2 && activePlanViewId) {
+            ev.preventDefault();
+            const levelId = activeLevelId ?? '';
+            void onSemanticCommand({
+              type: 'create_model_line',
+              id: crypto.randomUUID(),
+              levelId,
+              pointsMm: d.points,
+            });
+            modelLineStateRef.current = initialModelLineState();
+            draftRef.current = undefined;
+            clearPreview();
+            bumpGeom((x) => x + 1);
+            return;
+          }
+          if (ev.key === 'Escape') {
+            ev.preventDefault();
+            modelLineStateRef.current = initialModelLineState();
+            draftRef.current = undefined;
+            clearPreview();
+            bumpGeom((x) => x + 1);
+            return;
+          }
+        }
+      }
       if (planTool === 'detail-region') {
         const dr = draftRef.current;
         if (dr && dr.kind === 'detail-region') {
@@ -6321,6 +6366,24 @@ export function PlanCanvas({
             colour: '#e05000',
           });
           revisionCloudStateRef.current = initialRevisionCloudState();
+          draftRef.current = undefined;
+          clearPreview();
+          bumpGeom((x) => x + 1);
+          return;
+        }
+      }
+      if (planTool === 'model-line') {
+        const d = draftRef.current;
+        if (d && d.kind === 'model-line' && d.points.length >= 2 && activePlanViewId) {
+          ev.preventDefault();
+          const levelId = activeLevelId ?? '';
+          void onSemanticCommand({
+            type: 'create_model_line',
+            id: crypto.randomUUID(),
+            levelId,
+            pointsMm: d.points,
+          });
+          modelLineStateRef.current = initialModelLineState();
           draftRef.current = undefined;
           clearPreview();
           bumpGeom((x) => x + 1);
