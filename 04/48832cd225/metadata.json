@@ -3,11 +3,13 @@
   "checkpoint_id": "0448832cd225",
   "strategy": "manual-commit",
   "branch": "main",
-  "checkpoints_count": 7,
+  "checkpoints_count": 8,
   "files_touched": [
     "packages/core/src/index.ts",
+    "packages/web/src/plan/structuralValidation.ts",
     "packages/web/src/state/storeViewportRuntimeSlice.ts",
     "packages/web/src/workspace/WorkspaceLeftRail.tsx",
+    "packages/web/src/workspace/project/ProjectBrowser.test.tsx",
     "packages/web/src/workspace/project/ProjectBrowser.tsx",
     "spec/revit-parity/revit2026-parity-tracker.md"
   ],
@@ -107,13 +109,19 @@
       "transcript": "/04/48832cd225/15/full.jsonl",
       "content_hash": "/04/48832cd225/15/content_hash.txt",
       "prompt": "/04/48832cd225/15/prompt.txt"
+    },
+    {
+      "metadata": "/04/48832cd225/16/metadata.json",
+      "transcript": "/04/48832cd225/16/full.jsonl",
+      "content_hash": "/04/48832cd225/16/content_hash.txt",
+      "prompt": "/04/48832cd225/16/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 7806414,
-    "cache_creation_tokens": 1310125,
-    "cache_read_tokens": 294811169,
-    "output_tokens": 904461,
-    "api_call_count": 2860
+    "input_tokens": 7807479,
+    "cache_creation_tokens": 2795363,
+    "cache_read_tokens": 395287637,
+    "output_tokens": 1252300,
+    "api_call_count": 3855
   }
 }

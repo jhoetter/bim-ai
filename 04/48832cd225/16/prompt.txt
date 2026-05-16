@@ -1,0 +1,33 @@
+i have an agent working on @spec/ux-bim-ai-next-tracker.md, but my macbook crashed; where are we currently?
+
+---
+
+ok then please continue with that, and keep working until the tracker is fully solved
+
+---
+
+are you fully done? ux-tracker completed?
+
+---
+
+on port 2000 should be a UI available
+
+---
+
+yes please; is the tracker then fully done?
+
+---
+
+then go ahead and complete these things..
+
+---
+
+ok, then please continue until done
+
+---
+
+fully done with everything? tracker also updtaed?
+
+---
+
+continue until 100% done
