@@ -3,7 +3,7 @@
   "checkpoint_id": "4e4489d9a7b4",
   "strategy": "manual-commit",
   "branch": "main",
-  "checkpoints_count": 7,
+  "checkpoints_count": 8,
   "files_touched": [
     "packages/web/src/plan/PlanCanvas.tsx",
     "packages/web/src/tools/toolGrammar.roofByExtrusion.test.ts"
@@ -80,13 +80,19 @@
       "transcript": "/4e/4489d9a7b4/11/full.jsonl",
       "content_hash": "/4e/4489d9a7b4/11/content_hash.txt",
       "prompt": "/4e/4489d9a7b4/11/prompt.txt"
+    },
+    {
+      "metadata": "/4e/4489d9a7b4/12/metadata.json",
+      "transcript": "/4e/4489d9a7b4/12/full.jsonl",
+      "content_hash": "/4e/4489d9a7b4/12/content_hash.txt",
+      "prompt": "/4e/4489d9a7b4/12/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 8129776,
-    "cache_creation_tokens": 3345338,
-    "cache_read_tokens": 474222819,
-    "output_tokens": 1499952,
-    "api_call_count": 5513
+    "input_tokens": 8130233,
+    "cache_creation_tokens": 3834656,
+    "cache_read_tokens": 508714702,
+    "output_tokens": 1610149,
+    "api_call_count": 5875
   }
 }
