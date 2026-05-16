@@ -1,0 +1,1 @@
+Your task is to implement the massing-to-BIM workflow (generate floors + curtain walls from mass elements) in bim-ai — read spec/revit-parity/agent-prompts/WAVE6-WP-F.md for the full brief.
