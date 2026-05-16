@@ -1111,54 +1111,54 @@ cheatsheetData.ts and CheatsheetModal.tsx provide a keyboard shortcut reference 
 
 ## Summary Dashboard
 
+Last verified: 2026-05-16. All wave-1 agents (WP-A through WP-G) have committed to main. 3739/3740 tests pass (1 pre-existing `ProjectSetupDialog` failure unrelated to wave-1 work).
+
 ### By Chapter — Implementation State
 
 | Chapter | Topic | Overall State | Priority Gap |
 |---------|-------|---------------|-------------|
 | 1 | UI & Startup | Partial | Ribbon architecture, customisable QAT, multi-window |
-| 2 | Basic Floor Plan | Partial | Global params, phase manager UI |
-| 3 | Modify Tools | Partial | Array/Scale PlanCanvas wiring, EQ dims, group UI, paint |
-| 4 | Annotations | Partial | Annotation renderers/persistence/grips still Partial; EQ dims |
+| 2 | Basic Floor Plan | Partial | Global parameters |
+| 3 | Modify Tools | Partial | Array PlanCanvas wiring, EQ dims, group plan renderer |
+| 4 | Annotations | Partial | A1–A12 grammars done; deeper persistence/grips still Partial |
 | 5 | Terrain & Geo | Partial | Contours, excavation, terrain merge/split |
-| 6 | Views & Sheets | Partial | Interior elevations, plot, sheet revision title block, locked 3D view |
+| 6 | Views & Sheets | Partial | Interior elevation inspector/grip, sheet revision title block, locked 3D view |
 | 7 | Drafting Aids | Done/Partial | Work plane orientation |
-| 8 | Adv. Walls/Stairs | Partial | Curtain wall interactive grid, attach-top grammar, group UI |
+| 8 | Adv. Walls/Stairs | Partial | Curtain wall interactive grid, attach-top grammar, group plan/3D renderer |
 | 9 | Structure | Partial | Steel connections, sloped columns, attach-top grammar |
 | 10 | Roofs | Done/Partial | Roof by extrusion UX, special forms |
 | 11 | Massing | Partial | Top-down end-to-end workflow (G5–G8 done; UI integration pending) |
-| 12 | Import/Export | Partial | IFC file-menu trigger, DWG/DGN export |
+| 12 | Import/Export | Partial | IFC file-menu export trigger, DWG/DGN export |
 | 13 | Schedules | Partial | Route analysis, full quantity takeoffs |
-| 14 | Rendering | Partial | Walkthroughs, sun animation (ray-tracing was removed by design) |
+| 14 | Rendering | Partial | Walkthroughs, sun animation (ray-tracing removed by design) |
 | 15 | Family Editor | Partial | Full parametric family forms, void cuts |
 
 ### Top P0 Gaps (core authoring blocked)
 
-- Model groups UI (Ch. 8.9) — commands/types done; no plan renderer, no store wiring, no toolbar action
+None confirmed as blocking. Model groups now has store + dialog wired — remaining gaps (plan renderer, 3D renderer, place-group grammar) are P1.
 
 ### Top P1 Gaps (professional parity limited)
 
-- **Array tool PlanCanvas wiring** (Ch. 3.3.6) — grammar complete (14 tests); add `case 'array':` to PlanCanvas tool-event handler
-- **Scale tool PlanCanvas wiring** (Ch. 3.3.6) — grammar complete (27 tests); add `case 'scale':` to PlanCanvas tool-event handler
-- **Attach Top/Base grammar** (Ch. 8.1.1) — ToolIds registered; implement `reduceAttach` grammar + `attachWallTop` command handler
-- **Curtain wall interactive grid editing** (Ch. 8.1.4) — data model + plan symbol done; add "Edit Grid" mode, inspector controls
-- **IFC export file-menu trigger** (Ch. 12.4.3) — `ifcExporter.ts` STEP writer complete; wire "Export → IFC 2x3…" menu item to invoke it
-- **Interior elevation placement** (Ch. 6.1.5) — 4-direction marker workflow not started; extend `'elevation'` tool with "Interior" mode
-- **Phase manager UI** (Ch. 2.8) — `phaseFilter.ts` + graphic overrides done; `PhaseManagerDialog.tsx` (create/delete/rename phases) not yet built
-- **Global parameters** (Ch. 3.8) — not started
-- **Annotation renderer/persistence completeness** (Ch. 4) — all annotation ToolIds + grammars done (A1–A12); persistent element types in core + grip providers + inspector fields are still Partial for most types
-- **DWG/DGN export** (Ch. 12.4.3) — DXF export done (E2); DWG/DGN not started
-- **Sheet revision title block rendering** (Ch. 6.3) — `ManageRevisionsDialog.tsx` + element types done (D6); revision table not yet rendered in `SheetCanvas.tsx` title block area
-- **Named locked 3D view sheet placement** (Ch. 6.1.3) — `Save3dViewAsDialog.tsx` + ProjectBrowser rows done (D5); lock toggle and sheet viewport placement not yet implemented
-- **Walkthrough path animation** (Ch. 14.6)
+- **Array tool PlanCanvas wiring** (Ch. 3.3.6) — grammar + 14 tests complete in `toolGrammar.ts`; add `case 'array':` to `PlanCanvas.tsx` tool-event handler; wire `createLinearArray`/`createRadialArray` semantic commands through command queue
+- **Model groups plan + 3D renderer** (Ch. 8.9) — `GroupRegistry` in store + `CreateGroupDialog.tsx` + `model.create-group` palette command done (WP-B2); **still missing**: `plan/groupInstanceRender.ts` (bounding-box overlay), `viewport/groupInstance3d.ts` (transform definition geometry), Groups subtree in ProjectBrowser, `place-group` grammar state machine + options bar dropdown
+- **Attach Top/Base grammar** (Ch. 8.1.1) — `'attach'`/`'detach'` ToolIds in toolRegistry; `meshBuilders.attachWallTop.test.ts` exists; **missing**: `reduceAttach` state machine in `toolGrammar.ts` + `attachWallTop` / `detachWallTop` command handlers in command queue
+- **Curtain wall interactive grid editing** (Ch. 8.1.4) — data model (`curtainWallData`) + plan symbol (tick marks) done; **missing**: "Edit Grid" mode, inspector H/V grid controls, panel/mullion dropdowns
+- **IFC export file-menu trigger** (Ch. 12.4.3) — `ifcExporter.ts` STEP writer complete; `ProjectMenu.tsx` has "Link IFC" (import) but no "Export → IFC 2x3…" item; wire download trigger calling `ifcExporter.ts`
+- **Interior elevation inspector + grip** (Ch. 6.1.5) — `interior-elevation` tool + `interior_elevation_marker` element type + 4-quadrant plan symbol all done (D2); **missing**: inspector panel (radius, level) and drag-grip for placed markers
+- **Global parameters** (Ch. 3.8) — not started; new concept requiring a project-level parameter table; extend `project_settings` with a `globalParams` map + dialog + formula binding
+- **DWG/DGN export** (Ch. 12.4.3) — DXF export done (E2); DWG/DGN format not started
+- **Sheet revision title block rendering** (Ch. 6.3) — `ManageRevisionsDialog.tsx` + `revision`/`sheet_revision` element types done (D6); **missing**: revision table rendering in `SheetCanvas.tsx` / `sheetTitleblockAuthoring.tsx` title block area
+- **Named locked 3D view lock + sheet placement** (Ch. 6.1.3) — `Save3dViewAsDialog.tsx` + ProjectBrowser `saved_view` rows done (D5); **missing**: lock toggle (prevent camera changes) and placing a locked view as a viewport on a sheet
+- **Walkthrough path animation** (Ch. 14.6) — not started; no camera-path element type or animation loop
 
 ### Top P2 Gaps (useful but workaroundable)
 
-- EQ condition on aligned dimensions (Ch. 4.2.2) — not started; next wave should extend existing `permanent_dimension` element type
+- EQ condition on aligned dimensions (Ch. 4.2.2) — not started; extend existing `permanent_dimension` element type with `eqEnabled: boolean` + render the "EQ" button at segment midpoints
 - Wall parts / Create Parts (Ch. 8.1.3) — not started
-- Decal placement tool (Ch. 8.1.5) — `DecalElem` type + `buildDecalMesh()` exist; need `'decal'` ToolId + grammar + inspector
-- Sloped/inclined columns (Ch. 9.1.4) — not started; extend column element with `topOffsetXMm`/`topOffsetYMm` fields
-- Roof by extrusion user workflow (Ch. 10.2) — sweep infrastructure exists; no dedicated roof-by-extrusion tool
+- Decal placement tool (Ch. 8.1.5) — `DecalElem` type + `buildDecalMesh()` exist; need `'decal'` ToolId in toolRegistry + click-to-place grammar + inspector (image picker, scale, rotation)
+- Sloped/inclined columns (Ch. 9.1.4) — not started; extend column element with `topOffsetXMm`/`topOffsetYMm` fields + update mesh builder extrusion axis + plan symbol (dashed top footprint)
+- Roof by extrusion user workflow (Ch. 10.2) — sweep infrastructure exists; no dedicated roof-by-extrusion tool in toolRegistry/grammar
 - Animated sun study (Ch. 14.2.2) — not started
+- Revision-cloud draw tool in toolbar (Ch. 6.3) — `revision_cloud` element type exists; add `'revision-cloud'` ToolId + freehand polygon grammar
 - User-customisable QAT (Ch. 1.6.3) — not started
 - Multiple simultaneous view windows (Ch. 1.6.12) — not started
-- Revision-cloud draw tool in toolbar (Ch. 6.3) — `revision_cloud` element type exists; no `'revision-cloud'` ToolId
