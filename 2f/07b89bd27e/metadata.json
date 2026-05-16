@@ -127,6 +127,12 @@
       "transcript": "/2f/07b89bd27e/19/full.jsonl",
       "content_hash": "/2f/07b89bd27e/19/content_hash.txt",
       "prompt": ""
+    },
+    {
+      "metadata": "/2f/07b89bd27e/20/metadata.json",
+      "transcript": "/2f/07b89bd27e/20/full.jsonl",
+      "content_hash": "/2f/07b89bd27e/20/content_hash.txt",
+      "prompt": "/2f/07b89bd27e/20/prompt.txt"
     }
   ],
   "token_usage": {
