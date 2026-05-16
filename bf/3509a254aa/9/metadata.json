@@ -1,0 +1,54 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "bf3509a254aa",
+  "session_id": "7c5f3f9a-5101-4db0-ad9b-f2cca98457f2",
+  "strategy": "manual-commit",
+  "created_at": "2026-05-16T01:48:21.18717Z",
+  "branch": "main",
+  "checkpoints_count": 0,
+  "files_touched": [
+    "packages/core/src/index.ts",
+    "packages/web/src/families/geometryFns/stairRailingAutoCreate.test.ts",
+    "packages/web/src/families/geometryFns/stairRailingAutoCreate.ts"
+  ],
+  "agent": "Claude Code",
+  "model": "claude-sonnet-4-6",
+  "turn_id": "94d4d8a3c149",
+  "checkpoint_transcript_start": 171,
+  "transcript_lines_at_start": 171,
+  "token_usage": {
+    "input_tokens": 9,
+    "cache_creation_tokens": 2571,
+    "cache_read_tokens": 583783,
+    "output_tokens": 1150,
+    "api_call_count": 7
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-05-16T01:48:21.177229Z",
+    "agent_lines": 138,
+    "agent_removed": 0,
+    "human_added": 1,
+    "human_modified": 0,
+    "human_removed": 0,
+    "total_committed": 139,
+    "total_lines_changed": 140,
+    "agent_percentage": 98.57142857142858,
+    "metric_version": 2
+  },
+  "prompt_attributions": [
+    {
+      "checkpoint_number": 1,
+      "user_lines_added": 492,
+      "user_lines_removed": 0,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0,
+      "user_added_per_file": {
+        "packages/web/src/phases/PhaseManagerDialog.test.tsx": 96,
+        "packages/web/src/phases/PhaseManagerDialog.tsx": 302,
+        "packages/web/src/workspace/Workspace.tsx": 4,
+        "packages/web/src/workspace/WorkspaceRightRail.tsx": 76,
+        "packages/web/src/workspace/project/ProjectMenu.tsx": 14
+      }
+    }
+  ]
+}
