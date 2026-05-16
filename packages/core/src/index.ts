@@ -1101,6 +1101,11 @@ export type Element =
       lengthUnit?: string;
       angularUnitDeg?: string;
       displayLocale?: string;
+      areaUnit?: string | null;
+      volumeUnit?: string | null;
+      decimalSymbol?: string | null;
+      numberGrouping?: string | null;
+      lengthUnitFull?: string | null;
       name?: string;
       projectNumber?: string | null;
       clientName?: string | null;
