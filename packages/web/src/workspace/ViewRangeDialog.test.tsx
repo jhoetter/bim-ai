@@ -22,14 +22,22 @@ function makePlanView(overrides: Partial<PlanViewEl> = {}): PlanViewEl {
   } as PlanViewEl;
 }
 
+const noop = () => undefined;
+const noopSave = (_patch: {
+  viewRangeTopMm: number;
+  viewRangeBottomMm: number;
+  cutPlaneOffsetMm: number;
+}) => undefined;
+
 describe('ViewRangeDialog — §2.1.5', () => {
   it('renders view-range-dialog when open=true', () => {
     const { getByTestId } = render(
       <ViewRangeDialog
         open={true}
-        onClose={() => undefined}
-        view={makePlanView()}
-        onPropertyChange={() => undefined}
+        onClose={noop}
+        planView={makePlanView()}
+        levelElevationsMm={{ lv1: 0 }}
+        onSave={noopSave}
       />,
     );
     expect(getByTestId('view-range-dialog')).toBeDefined();
@@ -39,51 +47,93 @@ describe('ViewRangeDialog — §2.1.5', () => {
     const { queryByTestId } = render(
       <ViewRangeDialog
         open={false}
-        onClose={() => undefined}
-        view={makePlanView()}
-        onPropertyChange={() => undefined}
+        onClose={noop}
+        planView={makePlanView()}
+        levelElevationsMm={{ lv1: 0 }}
+        onSave={noopSave}
       />,
     );
     expect(queryByTestId('view-range-dialog')).toBeNull();
   });
 
-  it('vr-top input shows viewRangeTopMm value', () => {
+  it('shows vr-top-mm, vr-cut-mm, vr-bottom-mm inputs', () => {
     const { getByTestId } = render(
       <ViewRangeDialog
         open={true}
-        onClose={() => undefined}
-        view={makePlanView({ viewRangeTopMm: 4500 })}
-        onPropertyChange={() => undefined}
+        onClose={noop}
+        planView={makePlanView({ viewRangeTopMm: 4500 })}
+        levelElevationsMm={{ lv1: 0 }}
+        onSave={noopSave}
       />,
     );
-    const input = getByTestId('vr-top') as HTMLInputElement;
-    expect(Number(input.value)).toBe(4500);
+    expect((getByTestId('vr-top-mm') as HTMLInputElement).value).toBe('4500');
+    expect(getByTestId('vr-cut-mm')).toBeDefined();
+    expect(getByTestId('vr-bottom-mm')).toBeDefined();
   });
 
-  it('changing vr-cut calls onPropertyChange with cutPlaneOffsetMm', () => {
-    const onPropertyChange = vi.fn();
+  it('shows vr-error when cut plane is above top', () => {
     const { getByTestId } = render(
       <ViewRangeDialog
         open={true}
-        onClose={() => undefined}
-        view={makePlanView()}
-        onPropertyChange={onPropertyChange}
+        onClose={noop}
+        planView={makePlanView({ viewRangeTopMm: 1200, cutPlaneOffsetMm: 1200 })}
+        levelElevationsMm={{ lv1: 0 }}
+        onSave={noopSave}
       />,
     );
-    const input = getByTestId('vr-cut') as HTMLInputElement;
-    fireEvent.change(input, { target: { value: '900' } });
-    expect(onPropertyChange).toHaveBeenCalledWith('cutPlaneOffsetMm', 900);
+    expect(getByTestId('vr-error')).toBeDefined();
   });
 
-  it('shows vr-warning when top <= cut', () => {
+  it('save button calls onSave with correct values', () => {
+    const onSave = vi.fn();
     const { getByTestId } = render(
       <ViewRangeDialog
         open={true}
-        onClose={() => undefined}
-        view={makePlanView({ viewRangeTopMm: 1200, cutPlaneOffsetMm: 1200 })}
-        onPropertyChange={() => undefined}
+        onClose={noop}
+        planView={makePlanView({
+          viewRangeTopMm: 4000,
+          cutPlaneOffsetMm: 1200,
+          viewRangeBottomMm: 0,
+        })}
+        levelElevationsMm={{ lv1: 0 }}
+        onSave={onSave}
       />,
     );
-    expect(getByTestId('vr-warning')).toBeDefined();
+    fireEvent.click(getByTestId('vr-save'));
+    expect(onSave).toHaveBeenCalledWith({
+      viewRangeTopMm: 4000,
+      viewRangeBottomMm: 0,
+      cutPlaneOffsetMm: 1200,
+    });
+  });
+
+  it('cancel calls onClose without saving', () => {
+    const onClose = vi.fn();
+    const onSave = vi.fn();
+    const { getByTestId } = render(
+      <ViewRangeDialog
+        open={true}
+        onClose={onClose}
+        planView={makePlanView()}
+        levelElevationsMm={{ lv1: 0 }}
+        onSave={onSave}
+      />,
+    );
+    fireEvent.click(getByTestId('vr-cancel'));
+    expect(onClose).toHaveBeenCalled();
+    expect(onSave).not.toHaveBeenCalled();
+  });
+
+  it('renders vr-diagram SVG element', () => {
+    const { getByTestId } = render(
+      <ViewRangeDialog
+        open={true}
+        onClose={noop}
+        planView={makePlanView()}
+        levelElevationsMm={{ lv1: 0 }}
+        onSave={noopSave}
+      />,
+    );
+    expect(getByTestId('vr-diagram')).toBeDefined();
   });
 });

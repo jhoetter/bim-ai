@@ -1,51 +1,45 @@
 import { useState, type JSX } from 'react';
 import type { Element } from '@bim-ai/core';
 
-import { VIEW_RANGE_DEFAULTS } from '../plan/planProjection';
-
-interface ViewRangeDialogProps {
+export interface ViewRangeDialogProps {
   open: boolean;
   onClose: () => void;
-  view: Extract<Element, { kind: 'plan_view' }>;
-  onPropertyChange: (key: string, value: number) => void;
+  planView: Extract<Element, { kind: 'plan_view' }>;
+  levelElevationsMm: Record<string, number>;
+  onSave: (patch: {
+    viewRangeTopMm: number;
+    viewRangeBottomMm: number;
+    cutPlaneOffsetMm: number;
+  }) => void;
 }
 
 export function ViewRangeDialog({
   open,
   onClose,
-  view,
-  onPropertyChange,
+  planView,
+  onSave,
 }: ViewRangeDialogProps): JSX.Element | null {
-  const [top, setTop] = useState(() => view.viewRangeTopMm ?? VIEW_RANGE_DEFAULTS.viewRangeTopMm);
-  const [cut, setCut] = useState(
-    () => view.cutPlaneOffsetMm ?? VIEW_RANGE_DEFAULTS.cutPlaneOffsetMm,
-  );
-  const [bottom, setBottom] = useState(
-    () => view.viewRangeBottomMm ?? VIEW_RANGE_DEFAULTS.viewRangeBottomMm,
-  );
-  const [depth, setDepth] = useState(() => view.viewDepth ?? VIEW_RANGE_DEFAULTS.viewDepth);
+  const [topMm, setTopMm] = useState(() => planView.viewRangeTopMm ?? 4000);
+  const [cutMm, setCutMm] = useState(() => planView.cutPlaneOffsetMm ?? 1200);
+  const [bottomMm, setBottomMm] = useState(() => planView.viewRangeBottomMm ?? 0);
 
   if (!open) return null;
 
-  const invalid = top <= cut || cut <= bottom;
+  const invalid = cutMm <= bottomMm || cutMm >= topMm;
 
-  const inputStyle: React.CSSProperties = {
-    padding: '4px 8px',
-    border: '1px solid var(--color-border)',
-    borderRadius: 4,
-    background: 'var(--color-background, var(--color-surface))',
-    color: 'var(--color-foreground)',
-    fontFamily: 'var(--font-mono, monospace)',
-    fontSize: 12,
-    width: '100%',
+  const handleSave = () => {
+    if (invalid) return;
+    onSave({ viewRangeTopMm: topMm, viewRangeBottomMm: bottomMm, cutPlaneOffsetMm: cutMm });
+    onClose();
   };
 
-  const labelStyle: React.CSSProperties = {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: 4,
-    fontSize: 12,
-  };
+  // SVG diagram: y=0 is top, y increases downward
+  const svgH = 200;
+  const yTop = 24;
+  const yBot = 176;
+  const usable = yBot - yTop;
+  const range = topMm - bottomMm;
+  const yCut = range > 0 ? yTop + ((topMm - cutMm) / range) * usable : (yTop + yBot) / 2;
 
   return (
     <div
@@ -56,11 +50,11 @@ export function ViewRangeDialog({
       style={{
         position: 'fixed',
         inset: 0,
+        zIndex: 10000,
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        background: 'rgba(0,0,0,0.4)',
-        zIndex: 1000,
+        background: 'rgba(0,0,0,0.45)',
       }}
       onClick={(e) => {
         if (e.target === e.currentTarget) onClose();
@@ -68,112 +62,178 @@ export function ViewRangeDialog({
     >
       <div
         style={{
-          background: 'var(--color-surface-strong)',
+          background: 'var(--color-surface)',
           border: '1px solid var(--color-border)',
-          borderRadius: 8,
-          padding: 24,
-          minWidth: 320,
-          display: 'flex',
-          flexDirection: 'column',
-          gap: 16,
+          borderRadius: 'var(--radius-lg, 8px)',
+          padding: 'var(--space-5, 20px)',
+          width: 440,
+          maxWidth: 'calc(100vw - 48px)',
+          maxHeight: 'calc(100vh - 96px)',
+          overflowY: 'auto',
+          boxShadow: '0 8px 32px rgba(0,0,0,0.32)',
         }}
+        onClick={(e) => e.stopPropagation()}
       >
-        <div style={{ fontWeight: 600, fontSize: 14 }}>View Range</div>
-
-        <div style={{ fontSize: 11, color: 'var(--color-muted)' }}>
-          All values in mm above level elevation.
-        </div>
-
-        <label style={labelStyle}>
-          Top of Range (mm)
-          <input
-            data-testid="vr-top"
-            type="number"
-            value={top}
-            onChange={(e) => {
-              const v = parseFloat(e.target.value);
-              if (Number.isFinite(v)) {
-                setTop(v);
-                onPropertyChange('viewRangeTopMm', v);
-              }
+        {/* Header */}
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            marginBottom: 16,
+          }}
+        >
+          <h2
+            style={{
+              margin: 0,
+              fontSize: 'var(--text-base, 14px)',
+              fontWeight: 600,
+              color: 'var(--color-foreground)',
             }}
-            style={inputStyle}
-          />
-        </label>
-
-        <label style={labelStyle}>
-          Cut Plane Height (mm)
-          <input
-            data-testid="vr-cut"
-            type="number"
-            value={cut}
-            onChange={(e) => {
-              const v = parseFloat(e.target.value);
-              if (Number.isFinite(v)) {
-                setCut(v);
-                onPropertyChange('cutPlaneOffsetMm', v);
-              }
-            }}
-            style={inputStyle}
-          />
-        </label>
-
-        <label style={labelStyle}>
-          Bottom of Range (mm)
-          <input
-            data-testid="vr-bottom"
-            type="number"
-            value={bottom}
-            onChange={(e) => {
-              const v = parseFloat(e.target.value);
-              if (Number.isFinite(v)) {
-                setBottom(v);
-                onPropertyChange('viewRangeBottomMm', v);
-              }
-            }}
-            style={inputStyle}
-          />
-        </label>
-
-        <label style={labelStyle}>
-          View Depth (mm)
-          <input
-            data-testid="vr-depth"
-            type="number"
-            value={depth}
-            onChange={(e) => {
-              const v = parseFloat(e.target.value);
-              if (Number.isFinite(v)) {
-                setDepth(v);
-                onPropertyChange('viewDepth', v);
-              }
-            }}
-            style={inputStyle}
-          />
-        </label>
-
-        {invalid ? (
-          <div
-            data-testid="vr-warning"
-            style={{ fontSize: 11, color: 'var(--color-warning, #f59e0b)' }}
           >
-            Warning: Top must be greater than Cut Plane, and Cut Plane must be greater than Bottom.
-          </div>
-        ) : null}
-
-        <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+            View Range
+          </h2>
           <button
             type="button"
-            data-testid="vr-ok"
             onClick={onClose}
             style={{
-              padding: '6px 16px',
+              background: 'none',
               border: 'none',
-              borderRadius: 4,
               cursor: 'pointer',
-              fontSize: 12,
-              background: 'var(--color-accent)',
-              color: 'var(--color-accent-foreground, var(--color-foreground))',
+              fontSize: 16,
+              color: 'var(--color-muted-foreground)',
+            }}
+          >
+            ✕
+          </button>
+        </div>
+
+        {/* Inputs */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 16 }}>
+          <label style={rowStyle}>
+            <span style={labelTextStyle}>Top of Range (mm)</span>
+            <input
+              data-testid="vr-top-mm"
+              type="number"
+              value={topMm}
+              onChange={(e) => setTopMm(parseFloat(e.target.value) || 0)}
+              style={inputStyle}
+            />
+          </label>
+          <label style={rowStyle}>
+            <span style={labelTextStyle}>Cut Plane (mm)</span>
+            <input
+              data-testid="vr-cut-mm"
+              type="number"
+              value={cutMm}
+              onChange={(e) => setCutMm(parseFloat(e.target.value) || 0)}
+              style={inputStyle}
+            />
+          </label>
+          <label style={rowStyle}>
+            <span style={labelTextStyle}>Bottom of Range (mm)</span>
+            <input
+              data-testid="vr-bottom-mm"
+              type="number"
+              value={bottomMm}
+              onChange={(e) => setBottomMm(parseFloat(e.target.value) || 0)}
+              style={inputStyle}
+            />
+          </label>
+          {invalid && (
+            <div
+              data-testid="vr-error"
+              style={{
+                color: 'var(--color-destructive, #dc2626)',
+                fontSize: 'var(--text-sm, 12.5px)',
+              }}
+            >
+              Cut plane must be strictly between bottom and top of range.
+            </div>
+          )}
+        </div>
+
+        {/* SVG cross-section diagram */}
+        <svg
+          data-testid="vr-diagram"
+          width="100%"
+          height={svgH}
+          viewBox={`0 0 300 ${svgH}`}
+          style={{
+            display: 'block',
+            border: '1px solid var(--color-border)',
+            borderRadius: 'var(--radius-sm, 4px)',
+            background: 'var(--color-background)',
+            marginBottom: 16,
+          }}
+        >
+          {/* Building outline */}
+          <rect
+            x={55}
+            y={yTop}
+            width={185}
+            height={yBot - yTop}
+            fill="var(--color-surface, #f8f8f8)"
+            stroke="var(--color-border, #ccc)"
+            strokeWidth={1}
+          />
+
+          {/* Top dashed line */}
+          <line
+            x1={40}
+            y1={yTop}
+            x2={240}
+            y2={yTop}
+            stroke="var(--color-muted-foreground, #888)"
+            strokeWidth={1.5}
+            strokeDasharray="6 3"
+          />
+          <text x={246} y={yTop + 4} fontSize={10} fill="var(--color-muted-foreground, #888)">
+            Top
+          </text>
+
+          {/* Bottom dashed line */}
+          <line
+            x1={40}
+            y1={yBot}
+            x2={240}
+            y2={yBot}
+            stroke="var(--color-muted-foreground, #888)"
+            strokeWidth={1.5}
+            strokeDasharray="6 3"
+          />
+          <text x={246} y={yBot + 4} fontSize={10} fill="var(--color-muted-foreground, #888)">
+            Bottom
+          </text>
+
+          {/* Cut plane solid line */}
+          <line
+            x1={40}
+            y1={yCut}
+            x2={240}
+            y2={yCut}
+            stroke="var(--color-accent, #2563eb)"
+            strokeWidth={2}
+          />
+          <text x={246} y={yCut + 4} fontSize={10} fill="var(--color-accent, #2563eb)">
+            Cut ✂
+          </text>
+        </svg>
+
+        {/* Footer buttons */}
+        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
+          <button type="button" data-testid="vr-cancel" onClick={onClose} style={cancelBtnStyle}>
+            Cancel
+          </button>
+          <button
+            type="button"
+            data-testid="vr-save"
+            onClick={handleSave}
+            disabled={invalid}
+            style={{
+              ...saveBtnStyle,
+              opacity: invalid ? 0.5 : 1,
+              cursor: invalid ? 'not-allowed' : 'pointer',
             }}
           >
             OK
@@ -183,3 +243,46 @@ export function ViewRangeDialog({
     </div>
   );
 }
+
+const rowStyle: React.CSSProperties = {
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'space-between',
+  gap: 8,
+};
+
+const labelTextStyle: React.CSSProperties = {
+  fontSize: 'var(--text-sm, 12.5px)',
+  color: 'var(--color-foreground)',
+  flexShrink: 0,
+};
+
+const inputStyle: React.CSSProperties = {
+  width: 100,
+  padding: 'var(--space-0-5, 2px) var(--space-1, 4px)',
+  background: 'var(--color-background)',
+  border: '1px solid var(--color-border)',
+  borderRadius: 'var(--radius-sm, 4px)',
+  color: 'var(--color-foreground)',
+  fontSize: 'var(--text-sm, 12.5px)',
+  textAlign: 'right',
+};
+
+const cancelBtnStyle: React.CSSProperties = {
+  padding: 'var(--space-1-5, 6px) var(--space-3, 12px)',
+  background: 'var(--color-surface)',
+  border: '1px solid var(--color-border)',
+  borderRadius: 'var(--radius-sm, 4px)',
+  color: 'var(--color-foreground)',
+  fontSize: 'var(--text-sm, 12.5px)',
+  cursor: 'pointer',
+};
+
+const saveBtnStyle: React.CSSProperties = {
+  padding: 'var(--space-1-5, 6px) var(--space-3, 12px)',
+  background: 'var(--color-accent)',
+  border: 'none',
+  borderRadius: 'var(--radius-sm, 4px)',
+  color: 'var(--color-accent-foreground, white)',
+  fontSize: 'var(--text-sm, 12.5px)',
+};
