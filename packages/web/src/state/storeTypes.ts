@@ -273,6 +273,9 @@ export type StoreState = {
   viewerSectionBoxExtent: SectionBoxExtent | null;
   /** UX-11: walk mode is launched from View controls instead of canvas chrome. */
   viewerWalkModeActive: boolean;
+  /** §6.1.3: when true, orbit/pan/zoom are disabled for the active restored 3D view. */
+  viewLocked: boolean;
+  setViewLocked: (v: boolean) => void;
   /** UX-11: one-shot camera commands issued by right-rail View controls. */
   viewerCameraAction: { kind: ViewerCameraActionKind; nonce: number } | null;
   /** OSM context layer visibility (master toggle). */
@@ -456,6 +459,9 @@ export type StoreState = {
   /** §8.9.3: when non-null, the user is editing this group definition's contents. */
   groupEditModeDefinitionId: string | null;
   setGroupEditModeDefinitionId: (id: string | null) => void;
+  /** §8.9.3: instance/element ID of the group currently being edited. */
+  activeGroupEditId: string | null;
+  setActiveGroupEditId: (id: string | null) => void;
 
   /** §14.6 — client-side camera paths from walkthrough captures; not persisted to server. */
   cameraPaths: CameraPathElem[];

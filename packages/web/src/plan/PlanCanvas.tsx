@@ -89,6 +89,7 @@ import { buildScaleCommand, distanceMm } from './scaleTool';
 import { linearArrayOffsets, radialArrayAngles, radialOffsetForElement } from './arrayTool';
 import { columnPositionsAtGridIntersections } from './columnAtGrids';
 import { handleDblClickDispatch } from './doubleClickDispatch';
+import { detectCeilingBoundary } from './ceilingAutoDetect';
 import * as THREE from 'three';
 import { parseDimensionInput } from '@bim-ai/core';
 import type { Element, LensMode } from '@bim-ai/core';
@@ -738,6 +739,7 @@ export function PlanCanvas({
   const activeWallTypeId = useBimStore((s) => s.activeWallTypeId);
   const orthoSnapHold = useBimStore((s) => s.orthoSnapHold);
   const groupRegistry = useBimStore((s) => s.groupRegistry);
+  const groupEditModeDefinitionId = useBimStore((s) => s.groupEditModeDefinitionId);
   const selectEl = useBimStore((s) => s.select);
   const setActiveLevelId = useBimStore((s) => s.setActiveLevelId);
   const activateElevationView = useBimStore((s) => s.activateElevationView);
@@ -1293,6 +1295,7 @@ export function PlanCanvas({
       viewPhaseId,
       phaseFilterMode,
       groupRegistry,
+      groupEditModeDefinitionId,
     });
 
     // F-102: in reveal mode, tint individually-hidden elements magenta so users can
@@ -4816,6 +4819,34 @@ export function PlanCanvas({
               });
             }
           }
+        } else if (ceilingStateRef.current.phase === 'idle' && !ev.shiftKey) {
+          // Single-click auto-detect: find enclosing wall boundary.
+          const levelWalls = Object.values(elementsById).filter(
+            (el): el is Extract<(typeof elementsById)[string], { kind: 'wall' }> =>
+              el.kind === 'wall',
+          );
+          const autoBoundary = lvlId ? detectCeilingBoundary(sp, levelWalls, lvlId) : null;
+          if (autoBoundary && autoBoundary.length >= 3 && lvlId) {
+            const autoIssues = validateBoundary('ceiling-sketch', autoBoundary);
+            const autoBlocking = autoIssues.filter((i) => i.severity === 'error');
+            if (autoBlocking.length > 0) {
+              setBoundaryValidationError(autoBlocking.map((i) => i.message).join(' '));
+            } else {
+              setBoundaryValidationError(null);
+              onSemanticCommand({
+                type: 'createCeiling',
+                levelId: lvlId,
+                boundaryMm: autoBoundary.map((p) => ({ xMm: p.xMm, yMm: p.yMm })),
+              });
+            }
+          } else {
+            // No enclosing boundary found — fall back to sketch mode.
+            const { state } = reduceCeiling(ceilingStateRef.current, {
+              kind: 'click',
+              pointMm: sp,
+            });
+            ceilingStateRef.current = state;
+          }
         } else {
           const { state } = reduceCeiling(ceilingStateRef.current, { kind: 'click', pointMm: sp });
           ceilingStateRef.current = state;
@@ -5527,6 +5558,11 @@ export function PlanCanvas({
         }
       }
       if (ev.key === 'Escape') {
+        // §8.9.3: Esc exits group edit mode if active.
+        if (useBimStore.getState().groupEditModeDefinitionId) {
+          void onSemanticCommand({ type: 'finishEditGroup' });
+          return;
+        }
         // Cancel any active snap override.
         snapOverrideRef.current = null;
         setSnapOverrideDisplay(null);

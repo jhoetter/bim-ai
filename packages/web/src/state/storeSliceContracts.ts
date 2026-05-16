@@ -41,6 +41,7 @@ export const VIEWPORT_STORE_KEYS = [
   'viewerSectionBoxActive',
   'viewerSectionBoxExtent',
   'viewerWalkModeActive',
+  'viewLocked',
   'viewerCameraAction',
   'revealHiddenMode',
   'viewerPhaseFilter',
@@ -61,6 +62,7 @@ export const VIEWPORT_STORE_KEYS = [
   'setViewerSectionBoxActive',
   'setViewerSectionBoxExtent',
   'setViewerWalkModeActive',
+  'setViewLocked',
   'requestViewerCameraAction',
   'setRevealHiddenMode',
   'applyOrbitViewpointPreset',
@@ -145,6 +147,7 @@ export const WORKSPACE_UI_STORE_KEYS = [
   'thinLinesEnabled',
   'groupRegistry',
   'groupEditModeDefinitionId',
+  'activeGroupEditId',
   'setWorkspaceLayoutPreset',
   'setActiveWorkspaceId',
   'setPerspectiveId',
@@ -152,6 +155,7 @@ export const WORKSPACE_UI_STORE_KEYS = [
   'toggleThinLines',
   'setGroupRegistry',
   'setGroupEditModeDefinitionId',
+  'setActiveGroupEditId',
 ] as const satisfies readonly StoreKey[];
 
 export const STORE_SLICE_KEYS = {

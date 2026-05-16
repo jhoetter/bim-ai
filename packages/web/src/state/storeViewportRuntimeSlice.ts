@@ -43,6 +43,8 @@ export type ViewportRuntimeSlice = Pick<
   | 'viewerSectionBoxActive'
   | 'viewerSectionBoxExtent'
   | 'viewerWalkModeActive'
+  | 'viewLocked'
+  | 'setViewLocked'
   | 'viewerCameraAction'
   | 'setViewerBackground'
   | 'setViewerEdges'
@@ -233,6 +235,8 @@ export function createViewportRuntimeSlice(set: StoreSet, get: StoreGet): Viewpo
     viewerSectionBoxActive: false,
     viewerSectionBoxExtent: null,
     viewerWalkModeActive: false,
+    viewLocked: false,
+    setViewLocked: (v) => set({ viewLocked: v }),
     viewerCameraAction: null,
     setViewerBackground: (bg) => set({ viewerBackground: bg }),
     setViewerEdges: (edges) => set({ viewerEdges: edges }),

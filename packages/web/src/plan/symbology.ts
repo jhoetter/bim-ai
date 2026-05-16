@@ -55,6 +55,7 @@ import { terrainControlPointsPlanThree } from './terrainPointSymbol';
 import { terrainPadPlanThree } from './terrainPadPlanThree';
 import { shaftPlanThree } from './shaftPlanThree';
 import { floorSlopeArrowPlanThree } from './floorSlopePlanThree';
+import { ceilingGridPlanThree } from './ceilingGridPlanThree';
 
 /** Plan slice elevation in world units (walls still render with real height elsewhere). */
 
@@ -1604,6 +1605,8 @@ export function rebuildPlanMeshes(
     phaseFilterMode?: 'new_construction' | 'demolition' | 'existing' | 'as_built' | null;
     /** WP-B: group instance plan glyphs. */
     groupRegistry?: GroupRegistry | null;
+    /** §8.9.3: ghost non-members when group edit mode is active. */
+    groupEditModeDefinitionId?: string | null;
   },
 ): void {
   while (holder.children.length) holder.remove(holder.children[0]!);
@@ -1920,6 +1923,9 @@ export function rebuildPlanMeshes(
           cl.id,
         ),
       );
+      if (cl.gridPatternMm) {
+        holder.add(ceilingGridPlanThree(cl));
+      }
     }
     tintNewChildren(before, 'ceiling');
   }
@@ -2229,6 +2235,30 @@ export function rebuildPlanMeshes(
       const definition = definitions[instance.groupDefinitionId];
       if (!definition) continue;
       holder.add(buildGroupInstancePlanMesh(instance, definition, elementsById, opts.selectedId));
+    }
+  }
+
+  // §8.9.3: ghost non-group-members when group edit mode is active
+  if (opts.groupEditModeDefinitionId && opts.groupRegistry) {
+    const def = opts.groupRegistry.definitions[opts.groupEditModeDefinitionId];
+    const memberIds = new Set(def?.elementIds ?? []);
+    for (const child of holder.children) {
+      const pickId = (child.userData as { bimPickId?: string }).bimPickId;
+      if (!pickId) continue;
+      if (pickId === opts.groupEditModeDefinitionId) continue;
+      if (memberIds.has(pickId)) continue;
+      child.traverse((node) => {
+        const mesh = node as THREE.Mesh;
+        if (!(mesh instanceof THREE.Mesh)) return;
+        if (!mesh.material) return;
+        const mats = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
+        mesh.material = mats.map((m: THREE.Material) => {
+          const c = m.clone();
+          (c as unknown as { transparent: boolean; opacity: number }).transparent = true;
+          (c as unknown as { transparent: boolean; opacity: number }).opacity = 0.2;
+          return c;
+        });
+      });
     }
   }
 }

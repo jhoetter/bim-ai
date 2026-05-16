@@ -33,7 +33,7 @@ describe('GroupEditModeBar — §8.9.3', () => {
 
     expect(getByTestId('group-edit-mode-bar')).toBeTruthy();
     expect(getByText(/Editing group: Kitchen/)).toBeTruthy();
-    expect(getByTestId('finish-edit-group-btn')).toBeTruthy();
+    expect(getByTestId('finish-group-edit')).toBeTruthy();
   });
 
   it('does not render when groupEditModeDefinitionId is null', () => {
@@ -41,12 +41,12 @@ describe('GroupEditModeBar — §8.9.3', () => {
     expect(queryByTestId('group-edit-mode-bar')).toBeNull();
   });
 
-  it('finish-edit-group-btn clears edit mode', () => {
+  it('finish-group-edit clears edit mode', () => {
     const defId = seedGroupInStore();
     useBimStore.getState().setGroupEditModeDefinitionId(defId);
 
     const { getByTestId } = render(<GroupEditModeBar />);
-    const btn = getByTestId('finish-edit-group-btn');
+    const btn = getByTestId('finish-group-edit');
 
     fireEvent.click(btn);
 

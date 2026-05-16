@@ -2154,3 +2154,14 @@ registerCommand({
     }
   },
 });
+
+// §6.1.3: derive 3D section box from active plan view crop region
+registerCommand({
+  id: 'view.section-box-from-plan',
+  label: 'Section Box from Active Plan View',
+  keywords: ['section box', 'crop', 'plan', '3D', 'clip'],
+  category: 'command',
+  invoke: (ctx) => {
+    ctx.sectionBoxFromPlan?.();
+  },
+});

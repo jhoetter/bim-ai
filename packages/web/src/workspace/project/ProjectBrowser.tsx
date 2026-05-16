@@ -2145,6 +2145,12 @@ export type ProjectBrowserProps = {
   /** §6.1.3 — optional lock/unlock toggle for saved_view rows. */
   onToggleLockView?: (viewId: string) => void;
   collapsed?: boolean;
+  /** §6.1.3 — saved_3d_view callbacks */
+  onSave3dView?: (name: string) => void;
+  onRestore3dView?: (viewId: string) => void;
+  onDelete3dView?: (viewId: string) => void;
+  onRename3dView?: (viewId: string, name: string) => void;
+  onToggleLock3dView?: (viewId: string) => void;
 };
 
 type CtxMenu = {
@@ -2198,17 +2204,26 @@ export function ProjectBrowserV3({
   onPropertiesView,
   onToggleLockView,
   collapsed = false,
+  onSave3dView,
+  onRestore3dView,
+  onDelete3dView,
+  onRename3dView,
+  onToggleLock3dView,
 }: ProjectBrowserProps): JSX.Element {
   const [search, setSearch] = useState('');
   const [ctxMenu, setCtxMenu] = useState<CtxMenu>(null);
   const [renameId, setRenameId] = useState<string | null>(null);
   const [renameValue, setRenameValue] = useState('');
+  const [saving3dViewInput, setSaving3dViewInput] = useState<string | null>(null);
+  const [ctx3dMenu, setCtx3dMenu] = useState<{ viewId: string; x: number; y: number } | null>(null);
+  const [rename3dId, setRename3dId] = useState<string | null>(null);
+  const [rename3dValue, setRename3dValue] = useState('');
   // Local order state for drag-reorder (maps viewId → order index override).
   const [localOrder, setLocalOrder] = useState<Record<string, number>>({});
   const dragSrc = useRef<string | null>(null);
 
   // Derive groups from elements.
-  const { viewRows, scheduleRows, linkRows, phaseRows } = useMemo(() => {
+  const { viewRows, scheduleRows, linkRows, phaseRows, saved3dRows } = useMemo(() => {
     const lower = search.toLowerCase();
     const matches = (name: string) => !lower || name.toLowerCase().includes(lower);
 
@@ -2233,6 +2248,11 @@ export function ProjectBrowserV3({
         e.kind === 'phase' && matches((e as { name?: string }).name ?? e.id),
     );
 
+    const saved3d = elements.filter(
+      (e): e is Extract<Element, { kind: 'saved_3d_view' }> =>
+        e.kind === 'saved_3d_view' && matches((e as { name?: string }).name ?? e.id),
+    );
+
     // Apply local drag order overrides then sort.
     const sortedViews = [...views].sort((a, b) => {
       const oa = localOrder[a.id] ?? 0;
@@ -2248,6 +2268,7 @@ export function ProjectBrowserV3({
       scheduleRows: schedules,
       linkRows: links,
       phaseRows: phases,
+      saved3dRows: saved3d,
     };
   }, [elements, search, localOrder]);
 
@@ -2499,6 +2520,228 @@ export function ProjectBrowserV3({
               </div>
             ))}
           </PbGroup>
+        ) : null}
+
+        {/* 3D Views group */}
+        <PbGroup label="3D Views">
+          {saving3dViewInput !== null ? (
+            <input
+              autoFocus
+              type="text"
+              placeholder="View name…"
+              value={saving3dViewInput}
+              onChange={(e) => setSaving3dViewInput(e.target.value)}
+              onBlur={() => setSaving3dViewInput(null)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  if (saving3dViewInput.trim()) onSave3dView?.(saving3dViewInput.trim());
+                  setSaving3dViewInput(null);
+                }
+                if (e.key === 'Escape') setSaving3dViewInput(null);
+              }}
+              style={{
+                width: '100%',
+                padding: 'var(--space-1) var(--space-2)',
+                fontSize: 'var(--text-sm, 12.5px)',
+                background: 'var(--color-background)',
+                color: 'var(--color-foreground)',
+                border: '1px solid var(--color-accent)',
+              }}
+            />
+          ) : (
+            <button
+              type="button"
+              data-testid="browser-save-3d-view"
+              onClick={() => setSaving3dViewInput('')}
+              style={{
+                display: 'block',
+                width: '100%',
+                textAlign: 'left',
+                padding: 'var(--space-0-5) var(--space-3)',
+                fontSize: 'var(--text-sm, 12.5px)',
+                color: 'var(--color-accent)',
+                background: 'transparent',
+                border: 'none',
+                cursor: 'pointer',
+              }}
+            >
+              + Save Current View
+            </button>
+          )}
+          <ul style={{ listStyle: 'none', margin: 0, padding: 0 }}>
+            {saved3dRows.map((v) => {
+              const vAny = v as {
+                id: string;
+                name?: string;
+                locked?: boolean | null;
+              };
+              const name = vAny.name ?? vAny.id;
+              const locked = vAny.locked === true;
+              return (
+                <li key={vAny.id} data-testid={`pb-3d-view-row-${vAny.id}`}>
+                  {rename3dId === vAny.id ? (
+                    <input
+                      autoFocus
+                      type="text"
+                      value={rename3dValue}
+                      onChange={(e) => setRename3dValue(e.target.value)}
+                      onBlur={() => {
+                        if (rename3dValue.trim()) onRename3dView?.(vAny.id, rename3dValue.trim());
+                        setRename3dId(null);
+                      }}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          if (rename3dValue.trim()) onRename3dView?.(vAny.id, rename3dValue.trim());
+                          setRename3dId(null);
+                        }
+                        if (e.key === 'Escape') setRename3dId(null);
+                      }}
+                      style={{
+                        width: '100%',
+                        padding: 'var(--space-0-5) var(--space-2)',
+                        fontSize: 'var(--text-sm, 12.5px)',
+                        background: 'var(--color-background)',
+                        color: 'var(--color-foreground)',
+                        border: '1px solid var(--color-accent)',
+                      }}
+                    />
+                  ) : (
+                    <button
+                      type="button"
+                      style={{
+                        width: '100%',
+                        textAlign: 'left',
+                        padding: 'var(--space-0-5) var(--space-3)',
+                        fontSize: 'var(--text-sm, 12.5px)',
+                        color: 'var(--color-foreground)',
+                        background: 'transparent',
+                        border: 'none',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 'var(--space-1)',
+                      }}
+                      onDoubleClick={() => onRestore3dView?.(vAny.id)}
+                      onContextMenu={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        setCtx3dMenu({ viewId: vAny.id, x: e.clientX, y: e.clientY });
+                      }}
+                    >
+                      {locked ? (
+                        <span data-testid={`pb-3d-lock-icon-${vAny.id}`} aria-label="locked">
+                          🔒
+                        </span>
+                      ) : null}
+                      {name}
+                    </button>
+                  )}
+                </li>
+              );
+            })}
+          </ul>
+        </PbGroup>
+
+        {/* 3D views context menu */}
+        {ctx3dMenu ? (
+          <div
+            data-testid="pb-3d-context-menu"
+            style={{
+              position: 'fixed',
+              left: ctx3dMenu.x,
+              top: ctx3dMenu.y,
+              background: 'var(--color-background)',
+              border: '1px solid var(--color-border)',
+              borderRadius: 'var(--radius-sm, 4px)',
+              zIndex: 9999,
+              minWidth: 120,
+              padding: 'var(--space-1) 0',
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              type="button"
+              data-testid="pb-3d-ctx-restore"
+              style={{
+                display: 'block',
+                width: '100%',
+                textAlign: 'left',
+                padding: 'var(--space-1) var(--space-3)',
+                background: 'transparent',
+                border: 'none',
+                cursor: 'pointer',
+                fontSize: 'var(--text-sm, 12.5px)',
+              }}
+              onClick={() => {
+                onRestore3dView?.(ctx3dMenu.viewId);
+                setCtx3dMenu(null);
+              }}
+            >
+              Restore
+            </button>
+            <button
+              type="button"
+              data-testid="pb-3d-ctx-rename"
+              style={{
+                display: 'block',
+                width: '100%',
+                textAlign: 'left',
+                padding: 'var(--space-1) var(--space-3)',
+                background: 'transparent',
+                border: 'none',
+                cursor: 'pointer',
+                fontSize: 'var(--text-sm, 12.5px)',
+              }}
+              onClick={() => {
+                const el = saved3dRows.find((e) => e.id === ctx3dMenu.viewId);
+                setRename3dValue((el as { name?: string } | undefined)?.name ?? '');
+                setRename3dId(ctx3dMenu.viewId);
+                setCtx3dMenu(null);
+              }}
+            >
+              Rename
+            </button>
+            <button
+              type="button"
+              data-testid="pb-3d-ctx-delete"
+              style={{
+                display: 'block',
+                width: '100%',
+                textAlign: 'left',
+                padding: 'var(--space-1) var(--space-3)',
+                background: 'transparent',
+                border: 'none',
+                cursor: 'pointer',
+                fontSize: 'var(--text-sm, 12.5px)',
+              }}
+              onClick={() => {
+                onDelete3dView?.(ctx3dMenu.viewId);
+                setCtx3dMenu(null);
+              }}
+            >
+              Delete
+            </button>
+            <button
+              type="button"
+              data-testid="pb-3d-ctx-lock"
+              style={{
+                display: 'block',
+                width: '100%',
+                textAlign: 'left',
+                padding: 'var(--space-1) var(--space-3)',
+                background: 'transparent',
+                border: 'none',
+                cursor: 'pointer',
+                fontSize: 'var(--text-sm, 12.5px)',
+              }}
+              onClick={() => {
+                onToggleLock3dView?.(ctx3dMenu.viewId);
+                setCtx3dMenu(null);
+              }}
+            >
+              Lock / Unlock
+            </button>
+          </div>
         ) : null}
 
         {/* Schedules group */}

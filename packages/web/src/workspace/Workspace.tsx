@@ -1770,11 +1770,14 @@ export function Workspace(): JSX.Element {
       }
       // §8.9.3: client-only group edit mode — no server round-trip
       if (cmd.type === 'editGroup') {
-        useBimStore.getState().setGroupEditModeDefinitionId(cmd.groupDefinitionId as string);
+        const defId = cmd.groupDefinitionId as string;
+        useBimStore.getState().setGroupEditModeDefinitionId(defId);
+        useBimStore.getState().setActiveGroupEditId(defId);
         return;
       }
       if (cmd.type === 'finishEditGroup') {
         useBimStore.getState().setGroupEditModeDefinitionId(null);
+        useBimStore.getState().setActiveGroupEditId(null);
         return;
       }
       // §5.1.4: create a terrain pad element client-side

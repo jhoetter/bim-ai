@@ -671,7 +671,9 @@ export function Viewport({
     const el = elementsById[selectedId];
     return el?.kind === 'saved_view' ? (el as SavedViewElem) : null;
   }, [selectedId, elementsById]);
-  const savedViewLocked = activeSavedView?.isLocked === true;
+  const viewLocked = useBimStore((s) => s.viewLocked);
+  const setViewLocked = useBimStore((s) => s.setViewLocked);
+  const savedViewLocked = activeSavedView?.isLocked === true || viewLocked;
   savedViewLockedRef.current = savedViewLocked;
   const setActiveLevelId = useBimStore((s) => s.setActiveLevelId);
   const storePlanTool = useBimStore((s) => s.planTool);
@@ -5907,6 +5909,18 @@ export function Viewport({
         >
           <span>🔒</span>
           <span>{activeSavedView.name} — camera locked</span>
+        </div>
+      ) : null}
+      {viewLocked && !activeSavedView ? (
+        <div
+          data-testid="view-locked-badge"
+          className="absolute left-3 top-3 z-20 flex items-center gap-1.5 rounded-md border border-border bg-surface/90 px-2.5 py-1 text-xs font-medium text-muted backdrop-blur-sm"
+        >
+          <span>🔒</span>
+          <span>View Locked</span>
+          <button type="button" className="ml-1 underline" onClick={() => setViewLocked(false)}>
+            Unlock
+          </button>
         </div>
       ) : null}
 
