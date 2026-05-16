@@ -274,8 +274,8 @@ Shaft tool can cut floor openings. The auto-creation of a coordinated shaft when
 ### 2.6 Mehrere Stockwerke (multi-storey)
 
 #### 2.6.1 Stockwerke kopieren (copy a floor to upper levels)
-**Status: Partial — P1**
-Elements can be copied (copy tool) and moved between levels. Revit's "Copy to Clipboard" + "Paste Aligned to Selected Levels" batch workflow for duplicating a full floor to multiple levels is not implemented as a single command.
+**Status: Done — G1**
+Ctrl+C copies selection to clipboard; "Paste Aligned to Selected Levels" available via Cmd+K → PasteToLevelsDialog level-picker → dispatches copyElementsToLevels per target level. Full multi-floor copy workflow is now a single Cmd+K command.
 
 #### 2.6.2 Geschossabhängige Änderungen (level-dependent modifications: top constraint, base offset)
 **Status: Partial — P1**
