@@ -376,8 +376,8 @@ Pin element is available. Show/hide dimension constraints on canvas is Partial.
 - Copy: Done (copy in tool registry)
 - Rotate: Done (rotateTool.ts)
 - Mirror (axis / pick axis): Done (mirror in tool registry)
-- Array (linear and radial): Partial — arrayTool.ts math helpers + tests; full grammar state machine (ArrayState/reduceArray) added to toolGrammar.ts with 14 unit tests; PlanCanvas UI wiring pending (WP-B5)
-- Scale: Partial — scaleTool.ts math helpers + ScaleState/reduceScale grammar (pick-origin → enter-factor → confirm OR graphical pick-reference → pick-destination) + 27 unit tests; PlanCanvas UI wiring pending (WP-B1)
+- Array (linear and radial): Partial — `arrayTool.ts` math helpers + `ArrayState`/`reduceArray` grammar in `toolGrammar.ts` (14 unit tests) are complete. **Missing: `PlanCanvas.tsx` dispatch case for `'array'` tool** — the grammar state machine exists but no click/key event bridge routes plan interactions through it. Next wave: add `case 'array':` to the PlanCanvas tool-event handler and wire the `createLinearArray`/`createRadialArray` semantic commands through the command queue.
+- Scale: Partial — `scaleTool.ts` math helpers + `ScaleState`/`reduceScale` grammar (pick-origin → enter-factor → confirm OR graphical pick-reference → pick-destination, 27 unit tests) are complete. **Missing: `PlanCanvas.tsx` dispatch case for `'scale'` tool** — same pattern as Array above. Next wave: add `case 'scale':` to the PlanCanvas tool-event handler and wire the `scaleElement` batch command.
 - Align: Done (align in tool registry)
 - Split (wall/line): Done (split tool)
 - Trim / Extend: Done (trim, trim-extend tools)
@@ -700,7 +700,7 @@ Reference plane tool, referencePlanePlanRendering.ts — named reference planes 
 
 #### 8.1.1 Wände am Dach beschneiden (attach wall top to roof)
 **Status: Partial — P1**
-Wall-to-roof join is handled via CSG (csgWallBaseGeometry.ts) and wall mesh cutters. The explicit "Attach Top/Base" command (select wall, then pick roof to trim to) is Not Started as a user-facing command. The geometric result (wall trimmed to roof) is partially achieved automatically.
+Wall-to-roof join is handled via CSG (`csgWallBaseGeometry.ts`) and wall mesh cutters. The explicit "Attach Top/Base" user command: `'attach'` and `'detach'` ToolIds are registered in `toolRegistry.ts` with labels and tooltips; `meshBuilders.attachWallTop.test.ts` exists. **Missing: full grammar state machine and PlanCanvas dispatch** — the tools appear in the palette but the click-sequence grammar (select wall → pick target roof/floor) and the resulting `attachWallTop` semantic command handler are not yet implemented. Next wave: implement `reduceAttach` grammar in `toolGrammar.ts` and wire `attachWallTop`/`detachWallTop` commands through `commandQueue.ts`.
 
 #### 8.1.2 Schichtaufbau (wall layer composition: thermal, structural, finish layers)
 **Status: Done — P1**
@@ -717,8 +717,8 @@ Revit's "Create Parts" command (segmenting a wall into independently swappable h
 - Full authoring UI (inspector, edit grid): Partial -- data model extended (`curtainWallData` compound object in core/index.ts), plan symbol wired into plan rendering; interactive grid editing not yet implemented
 
 #### 8.1.5 Abziehbilder (decals / surface images on wall faces)
-**Status: Not Started — P2**
-Decal placement (placing a bitmap image on a model surface) is not implemented.
+**Status: Partial — P2**
+Data model and 3D rendering exist: `DecalElem` type is fully defined in `packages/core/src/index.ts`; `buildDecalMesh()` is implemented in `viewport/meshBuilders.ts`. **Missing: user-facing placement tool** — no `'decal'` ToolId in `toolRegistry.ts`, no grammar, no inspector panel. Next wave: add `'decal'` ToolId (hotkey `DC`), implement single-click-on-face placement grammar, add inspector fields for image URL, scale, rotation, and opacity. Extend existing `DecalElem` in core — do not create a new type.
 
 ### 8.2 Decken und Lampen (ceilings and light fixtures)
 **Status: Partial — P1**
@@ -776,15 +776,15 @@ Ramp tool in toolRegistry (hotkey RA, plan mode). 'ramp' ElemKind in core with w
 
 #### 8.9.1 Gruppen erstellen (group selected elements)
 **Status: Partial — P1**
-groupTypes.ts + groupCommands.ts: createGroup command + pure logic. UI tool and store integration pending.
+`groups/groupTypes.ts` defines `GroupDefinition` + `GroupInstance` + `GroupRegistry`. `groups/groupCommands.ts` implements all pure command logic: `applyCreateGroup`, `applyUngroupElements`, `applyRenameGroup` with tests. **Missing UI**: no "Create Group" action in the selection toolbar; no store slice wiring; no plan renderer (`plan/groupInstanceRender.ts`). Next wave: add `createGroup` dispatch to the selection toolbar (when ≥2 elements selected), wire `GroupRegistry` into the Zustand store, implement `plan/groupInstanceRender.ts` (dashed boundary + transformed child geometry), and add a "Groups" subtree to `ProjectBrowser.tsx`.
 
 #### 8.9.2 Gruppen einfügen (place a group instance)
 **Status: Partial — P1**
-placeGroup command + applyPlaceGroup logic. place-group ToolId registered. Viewport preview and store integration pending.
+`placeGroup` command shape + `applyPlaceGroup` logic exist in `groupCommands.ts`. `'place-group'` ToolId is registered in `toolRegistry.ts`. **Missing**: grammar state machine for the placement click; options bar dropdown listing available group definitions; 3D viewport rendering of group instances (`viewport/groupInstance3d.ts`). Next wave: implement `reduceGroupPlacement` grammar and `groupInstance3d.ts` — reuse existing element mesh builders with transform offsets rather than building new geometry.
 
 #### 8.9.3 Gruppen bearbeiten (edit group contents)
 **Status: Partial — P1**
-editGroup/finishEditGroup command shapes; edit mode UI pending.
+`editGroup`/`finishEditGroup` command shapes exist in `groupCommands.ts`. **Missing**: edit-mode UI — ghosting non-group elements, restricting selection to group members, and "Finish Editing" button. Next wave: add a `groupEditModeId` flag to the store; in `PlanCanvas.tsx` filter renderable elements to only group members when flag is set; add a floating "Finish Editing" banner that dispatches `finishEditGroup`.
 
 ### 8.10 Übungsfragen
 **Status: N/A**
@@ -1115,57 +1115,50 @@ cheatsheetData.ts and CheatsheetModal.tsx provide a keyboard shortcut reference 
 
 | Chapter | Topic | Overall State | Priority Gap |
 |---------|-------|---------------|-------------|
-| 1 | UI & Startup | Partial | Ribbon architecture, project browser tree, view controls |
-| 2 | Basic Floor Plan | Partial | Global params, phases, level array, copy to levels |
-| 3 | Modify Tools | Partial | EQ dims, text, tags, scale, group, paint |
-| 4 | Annotations | Partial | Free text, spot elev, angular/radial dims, material tags |
-| 5 | Terrain & Geo | Partial | Contours, excavation, north arrow |
-| 6 | Views & Sheets | Partial | RCP, interior elevs, plot, detail views, revisions |
+| 1 | UI & Startup | Partial | Ribbon architecture, customisable QAT, multi-window |
+| 2 | Basic Floor Plan | Partial | Global params, phase manager UI |
+| 3 | Modify Tools | Partial | Array/Scale PlanCanvas wiring, EQ dims, group UI, paint |
+| 4 | Annotations | Partial | Annotation renderers/persistence/grips still Partial; EQ dims |
+| 5 | Terrain & Geo | Partial | Contours, excavation, terrain merge/split |
+| 6 | Views & Sheets | Partial | Interior elevations, plot, sheet revision title block, locked 3D view |
 | 7 | Drafting Aids | Done/Partial | Work plane orientation |
-| 8 | Adv. Walls/Stairs | Partial | Curtain wall authoring, rampes, groups, multi-storey stair |
-| 9 | Structure | Partial | Beam systems, braces, steel, column at grid |
+| 8 | Adv. Walls/Stairs | Partial | Curtain wall interactive grid, attach-top grammar, group UI |
+| 9 | Structure | Partial | Steel connections, sloped columns, attach-top grammar |
 | 10 | Roofs | Done/Partial | Roof by extrusion UX, special forms |
-| 11 | Massing | Not Started | Full top-down massing workflow |
-| 12 | Import/Export | Partial | IFC, DWG export, linked models, CSV export |
+| 11 | Massing | Partial | Top-down end-to-end workflow (G5–G8 done; UI integration pending) |
+| 12 | Import/Export | Partial | IFC file-menu trigger, DWG/DGN export |
 | 13 | Schedules | Partial | Route analysis, full quantity takeoffs |
-| 14 | Rendering | Partial | Photorealistic render, walkthroughs, sun animation |
+| 14 | Rendering | Partial | Walkthroughs, sun animation (ray-tracing was removed by design) |
 | 15 | Family Editor | Partial | Full parametric family forms, void cuts |
 
 ### Top P0 Gaps (core authoring blocked)
 
-- Ramp tool (Ch. 8.8)
-- Model groups (Ch. 8.9)
-- Multi-storey stair as single element (Ch. 8.6.5)
-- Copy to multiple levels at once (Ch. 2.6.1)
+- Model groups UI (Ch. 8.9) — commands/types done; no plan renderer, no store wiring, no toolbar action
 
 ### Top P1 Gaps (professional parity limited)
 
-- Free text annotation tool (Ch. 4.10)
-- Angular / radial dimensions (Ch. 4.4–4.5)
-- Spot elevation annotation (Ch. 4.7)
-- IFC export UI trigger (Ch. 12.4.3) — E1 STEP writer complete (Psets + material layers); file-menu "Export → IFC…" not yet wired to the exporter
-- DWG/DGN export (Ch. 12.4.3) — DXF export (E2) is done; DWG/DGN not started
-- Curtain wall authoring UI (Ch. 8.1.4)
-- Global parameters (Ch. 3.8)
-- Beam systems and braces (Ch. 9.3–9.4)
-- Full massing → BIM workflow (Ch. 11)
-- Walkthrough path animation (Ch. 14.6)
-- Reflected ceiling plan view type (Ch. 6.1.2)
-- Interior elevation placement (Ch. 6.1.5)
-- Visibility/Graphics per-view dialog (Ch. 1.6.10)
-- View Range dialog (Ch. 2.1.5)
-- Phase creation/deletion/graphic overrides (Ch. 2.8)
-- Room color fill scheme dialog (Ch. 13.1.3)
-- Animated sun study (Ch. 14.2.2)
+- **Array tool PlanCanvas wiring** (Ch. 3.3.6) — grammar complete (14 tests); add `case 'array':` to PlanCanvas tool-event handler
+- **Scale tool PlanCanvas wiring** (Ch. 3.3.6) — grammar complete (27 tests); add `case 'scale':` to PlanCanvas tool-event handler
+- **Attach Top/Base grammar** (Ch. 8.1.1) — ToolIds registered; implement `reduceAttach` grammar + `attachWallTop` command handler
+- **Curtain wall interactive grid editing** (Ch. 8.1.4) — data model + plan symbol done; add "Edit Grid" mode, inspector controls
+- **IFC export file-menu trigger** (Ch. 12.4.3) — `ifcExporter.ts` STEP writer complete; wire "Export → IFC 2x3…" menu item to invoke it
+- **Interior elevation placement** (Ch. 6.1.5) — 4-direction marker workflow not started; extend `'elevation'` tool with "Interior" mode
+- **Phase manager UI** (Ch. 2.8) — `phaseFilter.ts` + graphic overrides done; `PhaseManagerDialog.tsx` (create/delete/rename phases) not yet built
+- **Global parameters** (Ch. 3.8) — not started
+- **Annotation renderer/persistence completeness** (Ch. 4) — all annotation ToolIds + grammars done (A1–A12); persistent element types in core + grip providers + inspector fields are still Partial for most types
+- **DWG/DGN export** (Ch. 12.4.3) — DXF export done (E2); DWG/DGN not started
+- **Sheet revision title block rendering** (Ch. 6.3) — `ManageRevisionsDialog.tsx` + element types done (D6); revision table not yet rendered in `SheetCanvas.tsx` title block area
+- **Named locked 3D view sheet placement** (Ch. 6.1.3) — `Save3dViewAsDialog.tsx` + ProjectBrowser rows done (D5); lock toggle and sheet viewport placement not yet implemented
+- **Walkthrough path animation** (Ch. 14.6)
 
 ### Top P2 Gaps (useful but workaroundable)
 
-- EQ condition on aligned dimensions (Ch. 4.2.2)
-- Wall parts (Ch. 8.1.3)
-- North arrow annotation (Ch. 5.4.1)
-- Sheet revision management (Ch. 6.3)
-- Array of levels (Ch. 8.5.2)
-- Roof by extrusion user workflow (Ch. 10.2)
-- Decals on surfaces (Ch. 8.1.5)
-- User-customisable QAT (Ch. 1.6.3)
-- Multiple simultaneous view windows (Ch. 1.6.12)
+- EQ condition on aligned dimensions (Ch. 4.2.2) — not started; next wave should extend existing `permanent_dimension` element type
+- Wall parts / Create Parts (Ch. 8.1.3) — not started
+- Decal placement tool (Ch. 8.1.5) — `DecalElem` type + `buildDecalMesh()` exist; need `'decal'` ToolId + grammar + inspector
+- Sloped/inclined columns (Ch. 9.1.4) — not started; extend column element with `topOffsetXMm`/`topOffsetYMm` fields
+- Roof by extrusion user workflow (Ch. 10.2) — sweep infrastructure exists; no dedicated roof-by-extrusion tool
+- Animated sun study (Ch. 14.2.2) — not started
+- User-customisable QAT (Ch. 1.6.3) — not started
+- Multiple simultaneous view windows (Ch. 1.6.12) — not started
+- Revision-cloud draw tool in toolbar (Ch. 6.3) — `revision_cloud` element type exists; no `'revision-cloud'` ToolId
