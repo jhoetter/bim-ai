@@ -1,0 +1,8 @@
+add mobbin mcp to claude and codex:
+claude mcp add mobbin --transport http https://api.mobbin.com/mcp
+and 
+codex mcp add mobbin --url https://api.mobbin.com/mcp
+
+
+
+then [Image #1] [Image #2] look into the flows and do what is needed (i think i need to auth)

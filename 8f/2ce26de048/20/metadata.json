@@ -1,0 +1,63 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "8f2ce26de048",
+  "session_id": "b417d930-86f5-4f03-8210-8cbedeb49472",
+  "strategy": "manual-commit",
+  "created_at": "2026-05-16T09:52:48.049823Z",
+  "branch": "main",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "packages/web/src/tools/toolGrammar.ts",
+    "packages/web/src/workspace/commandCapabilities.test.ts",
+    "packages/web/src/workspace/commandCapabilities.ts"
+  ],
+  "agent": "Claude Code",
+  "model": "claude-sonnet-4-6",
+  "turn_id": "751bc31cac5b",
+  "token_usage": {
+    "input_tokens": 5,
+    "cache_creation_tokens": 11506,
+    "cache_read_tokens": 57681,
+    "output_tokens": 834,
+    "api_call_count": 3
+  },
+  "session_metrics": {
+    "turn_count": 1
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-05-16T09:52:48.037982Z",
+    "agent_lines": 0,
+    "agent_removed": 0,
+    "human_added": 0,
+    "human_modified": 0,
+    "human_removed": 56,
+    "total_committed": 56,
+    "total_lines_changed": 56,
+    "agent_percentage": 0,
+    "metric_version": 2
+  },
+  "prompt_attributions": [
+    {
+      "checkpoint_number": 1,
+      "user_lines_added": 527,
+      "user_lines_removed": 1,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0,
+      "user_added_per_file": {
+        "packages/web/src/plan/groupInstanceRender.test.ts": 78,
+        "packages/web/src/plan/groupInstanceRender.ts": 110,
+        "packages/web/src/plan/wallParts.test.ts": 47,
+        "packages/web/src/tools/toolGrammar.ts": 60,
+        "packages/web/src/viewport/groupInstance3d.ts": 76,
+        "packages/web/src/workspace/commandCapabilities.test.ts": 1,
+        "packages/web/src/workspace/commandCapabilities.ts": 13,
+        "packages/web/src/workspace/sheets/sheetViewportD2.test.ts": 87,
+        "packages/web/src/workspace/shell/RibbonBar.tsx": 16,
+        "packages/web/tmp/ux-next-wp45-50-20260516/summary.json": 39
+      },
+      "user_removed_per_file": {
+        "packages/web/src/workspace/shell/RibbonBar.tsx": 1
+      }
+    }
+  ]
+}
