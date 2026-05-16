@@ -304,8 +304,8 @@ Floors, railings exist. Modeling a terrace with cantilevered floor, stepped edge
 Single-run stair with landing works via the stair tool.
 
 #### 2.9.3 Komplexe Treppe (complex stair: L-shape, U-shape, multi-landing)
-**Status: Partial — P1**
-Multi-run stair mesh builder exists. Complex L- and U-shape stairs with intermediate landings via component-by-component authoring is partially supported. Full sketch-defined boundary/run method for arbitrary shapes is in StairBySketchCanvas but not all configurations work.
+**Status: Done — G1**
+L-shape (2 runs + 90° landing), U-shape (3 runs + 2 landings), winder stairs (winderAtCorner: wedge treads), and spiral stairs (centerMm, innerRadiusMm, outerRadiusMm, totalRotationDeg) all implemented in meshBuilders.multiRunStair.ts with 19 tests. stairPlanSymbol.ts handles all shapes with 7 tests.
 
 #### 2.9.4 Obergeschoss (upper floor plan derived from lower floor)
 **Status: Partial — P2**
@@ -342,8 +342,8 @@ Inspector panel always shows properties of selected element.
 
 #### 3.3.3 Gruppe »Zwischenablage« (clipboard: cut, copy, paste, paste aligned)
 **Status: Partial — P1**
-Copy tool exists. Cut/Paste/Paste Aligned to Selected Levels as a clipboard workflow is Not Started. Revit's clipboard allows multi-element copy + paste aligned to levels.
-- **B3 (copyToLevels):** copyToLevels.ts command shape + helpers implemented; copyToLevels / pasteAlignedToLevels functions added to copyPaste.ts; 6 unit tests passing. UI dialog pending.
+Ctrl+C copies selection to clipboard (copyElementsToClipboard); Ctrl+V pastes at cursor (pasteFromOSClipboard) — both wired in PlanCanvas.tsx. copyToLevels / pasteAlignedToLevels helpers implemented with 6 unit tests. "Paste Aligned to Selected Levels" UI modal pending.
+- **C6:** Ctrl+C/V wired. copyToLevels.ts + pasteAlignedToLevels fully implemented. Selection toolbar "Paste to Levels" button not yet surfaced in UI.
 
 #### 3.3.4 Gruppe »Geometrie« (geometry group: Join, Unjoin, Cut, Uncut geometry, Paint)
 **Status: Partial — P1**
@@ -725,8 +725,8 @@ Door clearance (hostedOpeningDimensions.ts, openingClearance.ts) is implemented 
 Levels can be added via LevelStack.
 
 #### 8.5.2 Mehrere Geschossebenen mit Reihe-Funktion (add multiple levels with array)
-**Status: Not Started — P1**
-Creating N levels at equal spacing with one command (Array of levels) is Not Started.
+**Status: Done — G1**
+"Add Multiple…" button in LevelStack sidebar opens dialog with Count (default 3), Spacing mm (default 3000), Name prefix (default "Ebene"). Dispatches N createLevel commands sequentially. 6 tests.
 
 ### 8.6 Treppen (detailed stair authoring)
 
@@ -747,16 +747,16 @@ StairBySketchCanvas.tsx exists. Sketch-based stair (define boundary + run + land
 Grips on existing stairs for editing rise/run count, width, and direction exist partially. Full "Edit Stair" mode with component editing is Partial.
 
 #### 8.6.5 Treppen für mehrere Geschosse vervielfachen (multi-storey stair)
-**Status: Partial — P1**
-Creating a stair that spans multiple levels as a connected multi-storey assembly (Revit: define height = top level, get all runs automatically stacked) is Not Started. Stairs are currently placed per-floor.
+**Status: Done — G1**
+multiStorey: true field on stair element; collectFloorElevations() finds all intermediate levels; makeMultiRunStairMesh stacks geometry segment-per-floor; multiStoreyStairTotalHeightMm in schedule readout. 2 tests verify mesh height reaches top elevation.
 
 ### 8.7 Geländer (railings)
 **Status: Done — P0**
 Railing tool is in the tool registry. Railing along stair, railing on edge, railing materials — implemented.
 
 ### 8.8 Rampen (ramps)
-**Status: Not Started — P1**
-No ramp tool in the tool registry. Ramps (sloped floor surfaces with automatic railing) are not implemented.
+**Status: Done — G1**
+Ramp tool in toolRegistry (hotkey RA, plan mode). 'ramp' ElemKind in core with widthMm, runMm, slopePercent, runAngleDeg, hasRailingLeft/Right, topLevelId, material. meshBuilders.ramp.ts builds sloped 3D surface + railing lines. rampPlanSymbol.ts draws plan outline + uphill arrows. ADA slope warning at >8.33%. 6 mesh tests, all passing.
 
 ### 8.9 Gruppen verwenden (model groups)
 
