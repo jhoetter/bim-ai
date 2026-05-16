@@ -51,6 +51,7 @@ import {
   type SketchValidationIssue,
   type SketchValidationState,
 } from './sketchApi';
+import { validateBoundary } from './structuralValidation';
 
 const TURQUOISE = '#3fc5d3';
 const TURQUOISE_FAINT = 'rgba(63, 197, 211, 0.45)';
@@ -96,6 +97,47 @@ function snapMm(p: Point2D, snapMmGrid: number): Point2D {
 
 function _vertexKey(p: Point2D, eps = 0.5): string {
   return `${Math.round(p.xMm / eps)}|${Math.round(p.yMm / eps)}`;
+}
+
+/**
+ * Walk line segments into an ordered polygon vertex list.
+ * Returns null if segments don't form a single closed loop.
+ */
+function orderedPolygonFromLines(
+  lines: { fromMm: Point2D; toMm: Point2D }[],
+  eps = 0.5,
+): Point2D[] | null {
+  if (lines.length < 3) return null;
+  const key = (p: Point2D) => `${Math.round(p.xMm / eps)}|${Math.round(p.yMm / eps)}`;
+  const adj = new Map<string, { pt: Point2D; neighbors: Point2D[] }>();
+  for (const ln of lines) {
+    for (const [a, b] of [
+      [ln.fromMm, ln.toMm],
+      [ln.toMm, ln.fromMm],
+    ] as [Point2D, Point2D][]) {
+      const ka = key(a);
+      let entry = adj.get(ka);
+      if (!entry) {
+        entry = { pt: a, neighbors: [] };
+        adj.set(ka, entry);
+      }
+      entry.neighbors.push(b);
+    }
+  }
+  const start = [...adj.values()][0]!;
+  const visited = new Set<string>();
+  const polygon: Point2D[] = [start.pt];
+  visited.add(key(start.pt));
+  let current = start;
+  for (let i = 1; i < lines.length; i++) {
+    const next = current.neighbors.find((n) => !visited.has(key(n)));
+    if (!next) return null;
+    polygon.push(next);
+    visited.add(key(next));
+    current = adj.get(key(next))!;
+    if (!current) return null;
+  }
+  return polygon;
 }
 
 /** Vertices that have ≠ 2 incident edges → highlighted red in the canvas. */
@@ -363,6 +405,17 @@ export function SketchCanvas(props: SketchCanvasProps): JSX.Element {
 
   const handleFinish = useCallback(async () => {
     if (!session || busy) return;
+    // Pre-commit client-side boundary validation — catches self-intersecting or
+    // degenerate polygons before the round-trip to the server.
+    const polygon = orderedPolygonFromLines(session.lines);
+    if (polygon) {
+      const issues = validateBoundary(session.sessionId, polygon);
+      const blocking = issues.filter((i) => i.severity === 'error');
+      if (blocking.length > 0) {
+        setError(blocking.map((i) => i.message).join(' '));
+        return;
+      }
+    }
     try {
       setBusy(true);
       const resp = await finishSketchSession(session.sessionId, {
