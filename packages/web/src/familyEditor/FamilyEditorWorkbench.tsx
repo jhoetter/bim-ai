@@ -1,6 +1,6 @@
 import { useMemo, useState, type DragEvent, type JSX, type MouseEvent } from 'react';
 import { useTranslation } from 'react-i18next';
-import type { Element } from '@bim-ai/core';
+import type { Element, FamilyBlend, FamilySweep } from '@bim-ai/core';
 import type {
   ArrayGeometryNode,
   FamilyDefinition,
@@ -681,6 +681,8 @@ export function FamilyEditorWorkbench({
   const [sweeps, setSweeps] = useState<SweepGeometryNode[]>([]);
   const [sweepDraft, setSweepDraft] = useState<SweepDraft | null>(null);
   const [selectedSweepIndex, setSelectedSweepIndex] = useState<number | null>(null);
+  const [familySweepForms, setFamilySweepForms] = useState<FamilySweep[]>([]);
+  const [familyBlendForms, setFamilyBlendForms] = useState<FamilyBlend[]>([]);
   const [arrays, setArrays] = useState<ArrayGeometryNode[]>([]);
   const [arrayDraft, setArrayDraft] = useState<ArrayDraft | null>(null);
   const [symbolicLines, setSymbolicLines] = useState<SymbolicLine[]>([]);
@@ -807,6 +809,8 @@ export function FamilyEditorWorkbench({
     setFlexValues({});
     setSweeps([]);
     setSelectedSweepIndex(null);
+    setFamilySweepForms([]);
+    setFamilyBlendForms([]);
     setArrays([]);
     setArrayDraft(null);
     setSymbolicLines([]);
@@ -1488,6 +1492,49 @@ export function FamilyEditorWorkbench({
 
   function cancelSweep() {
     setSweepDraft(null);
+  }
+
+  function addFamilySweepForm() {
+    setFamilySweepForms((prev) => [
+      ...prev,
+      {
+        kind: 'family_sweep',
+        id: crypto.randomUUID(),
+        profilePoints: [
+          { x: -100, y: -100 },
+          { x: 100, y: -100 },
+          { x: 0, y: 100 },
+        ],
+        pathPoints: [
+          { x: 0, y: 0, z: 0 },
+          { x: 500, y: 0, z: 500 },
+          { x: 1000, y: 0, z: 0 },
+        ],
+      },
+    ]);
+  }
+
+  function addFamilyBlendForm() {
+    setFamilyBlendForms((prev) => [
+      ...prev,
+      {
+        kind: 'family_blend',
+        id: crypto.randomUUID(),
+        bottomProfilePoints: [
+          { x: -500, y: -500 },
+          { x: 500, y: -500 },
+          { x: 500, y: 500 },
+          { x: -500, y: 500 },
+        ],
+        topProfilePoints: [
+          { x: -250, y: -250 },
+          { x: 250, y: -250 },
+          { x: 250, y: 250 },
+          { x: -250, y: 250 },
+        ],
+        heightMm: 1000,
+      },
+    ]);
   }
 
   function updateSweepVisibility(index: number, binding: VisibilityBinding | undefined) {
@@ -2217,6 +2264,24 @@ export function FamilyEditorWorkbench({
         <button
           type="button"
           className="px-3 py-1 rounded border"
+          onClick={addFamilySweepForm}
+          data-testid="family-sweep-form-add"
+          aria-label="Add family sweep form"
+        >
+          Sweep Form
+        </button>
+        <button
+          type="button"
+          className="px-3 py-1 rounded border"
+          onClick={addFamilyBlendForm}
+          data-testid="family-blend-form-add"
+          aria-label="Add family blend form"
+        >
+          Blend
+        </button>
+        <button
+          type="button"
+          className="px-3 py-1 rounded border"
           onClick={() => setFamilyTypesDialogOpen(true)}
           data-testid="family-types-open"
         >
@@ -2904,6 +2969,26 @@ export function FamilyEditorWorkbench({
               }
             />
           )}
+        </section>
+      )}
+
+      {(familySweepForms.length > 0 || familyBlendForms.length > 0) && (
+        <section aria-label="Geometry forms">
+          <h2 className="font-semibold mb-2">Geometry Forms</h2>
+          <ul className="text-sm space-y-1">
+            {familySweepForms.map((form, i) => (
+              <li key={form.id} data-testid={`family-sweep-form-${i}`}>
+                Sweep Form {i + 1} — {form.profilePoints.length} profile pts,{' '}
+                {form.pathPoints.length} path pts
+              </li>
+            ))}
+            {familyBlendForms.map((form, i) => (
+              <li key={form.id} data-testid={`family-blend-form-${i}`}>
+                Blend Form {i + 1} — {form.bottomProfilePoints.length} bottom pts →{' '}
+                {form.topProfilePoints.length} top pts, h={form.heightMm}mm
+              </li>
+            ))}
+          </ul>
         </section>
       )}
 
