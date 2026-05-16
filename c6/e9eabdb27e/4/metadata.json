@@ -1,0 +1,66 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "c6e9eabdb27e",
+  "session_id": "9496e68a-9767-402b-8568-65cccb4f92e9",
+  "strategy": "manual-commit",
+  "created_at": "2026-05-16T00:14:38.827064Z",
+  "checkpoints_count": 0,
+  "files_touched": [
+    "packages/web/src/workspace/viewport/CanvasMount.tsx",
+    "packages/web/src/workspace/ModeShells.tsx",
+    "packages/web/src/workspace/sheets/SectionPlaceholderPane.tsx",
+    "packages/web/src/workspace/Workspace.tsx",
+    "packages/web/src/workspace/sheets/sectionViewportSvg.tsx"
+  ],
+  "agent": "Claude Code",
+  "model": "",
+  "turn_id": "532576af69e5",
+  "token_usage": {
+    "input_tokens": 447,
+    "cache_creation_tokens": 412247,
+    "cache_read_tokens": 22100363,
+    "output_tokens": 132497,
+    "api_call_count": 192
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-05-16T00:14:36.921775Z",
+    "agent_lines": 0,
+    "agent_removed": 0,
+    "human_added": 0,
+    "human_modified": 0,
+    "human_removed": 25,
+    "total_committed": 0,
+    "total_lines_changed": 36,
+    "agent_percentage": 0,
+    "metric_version": 2
+  },
+  "prompt_attributions": [
+    {
+      "checkpoint_number": 1,
+      "user_lines_added": 503,
+      "user_lines_removed": 45,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0,
+      "user_added_per_file": {
+        "packages/web/src/viewport/dormerMesh.ts": 210,
+        "packages/web/src/viewport/dormerRoofCut.ts": 7,
+        "packages/web/src/viewport/meshBuilders.ts": 19,
+        "packages/web/src/workspace/ModeShells.tsx": 3,
+        "packages/web/src/workspace/Workspace.tsx": 3,
+        "packages/web/src/workspace/sheets/SectionPlaceholderPane.tsx": 6,
+        "packages/web/src/workspace/sheets/sectionViewportSvg.tsx": 97,
+        "packages/web/src/workspace/viewport/CanvasMount.tsx": 5,
+        "seed-artifacts/target-house-4/bundle.json": 153
+      },
+      "user_removed_per_file": {
+        "packages/web/src/viewport/dormerMesh.ts": 12,
+        "packages/web/src/viewport/dormerRoofCut.ts": 4,
+        "packages/web/src/viewport/meshBuilders.ts": 4,
+        "packages/web/src/workspace/sheets/SectionPlaceholderPane.tsx": 1,
+        "packages/web/src/workspace/sheets/sectionViewportSvg.tsx": 12,
+        "packages/web/src/workspace/viewport/CanvasMount.tsx": 1,
+        "seed-artifacts/target-house-4/bundle.json": 11
+      }
+    }
+  ]
+}
