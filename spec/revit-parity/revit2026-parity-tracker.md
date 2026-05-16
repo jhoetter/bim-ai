@@ -377,7 +377,7 @@ Pin element is available. Show/hide dimension constraints on canvas is Partial.
 - Rotate: Done (rotateTool.ts)
 - Mirror (axis / pick axis): Done (mirror in tool registry)
 - Array (linear and radial): Partial — `arrayTool.ts` math helpers + `ArrayState`/`reduceArray` grammar in `toolGrammar.ts` (14 unit tests) are complete. **Missing: `PlanCanvas.tsx` dispatch case for `'array'` tool** — the grammar state machine exists but no click/key event bridge routes plan interactions through it. Next wave: add `case 'array':` to the PlanCanvas tool-event handler and wire the `createLinearArray`/`createRadialArray` semantic commands through the command queue.
-- Scale: Partial — `scaleTool.ts` math helpers + `ScaleState`/`reduceScale` grammar (pick-origin → enter-factor → confirm OR graphical pick-reference → pick-destination, 27 unit tests) are complete. **Missing: `PlanCanvas.tsx` dispatch case for `'scale'` tool** — same pattern as Array above. Next wave: add `case 'scale':` to the PlanCanvas tool-event handler and wire the `scaleElement` batch command.
+- Scale: **Implemented (WP-B1)** — grammar (ScaleState/reduceScale, 12 tests) + full PlanCanvas.tsx wiring: click handler dispatches ScaleEvent phases (pick-origin → enter-factor → confirm/graphical), numeric input overlay with `×` suffix, phase instruction banner, Escape/cancel handling. Fires `scaleElement` semantic command on commit.
 - Align: Done (align in tool registry)
 - Split (wall/line): Done (split tool)
 - Trim / Extend: Done (trim, trim-extend tools)
