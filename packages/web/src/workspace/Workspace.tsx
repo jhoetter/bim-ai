@@ -46,6 +46,7 @@ import {
 import type { LensMode, ModelDelta, Snapshot, Violation } from '@bim-ai/core';
 import { AdvisorPanel } from '../advisor/AdvisorPanel';
 import { useUnifiedAdvisorViolations } from '../advisor/unifiedAdvisorViolations';
+import { useStructuralValidationViolations } from '../advisor/structuralAdvisorViolations';
 import {
   useBimStore,
   applyTheme,
@@ -866,10 +867,15 @@ export function Workspace(): JSX.Element {
   const presenceLocalUserId = usePresenceStore((s) => s.localUserId);
   const presenceSetParticipants = usePresenceStore((s) => s.setParticipants);
   const presenceSetLocalUserId = usePresenceStore((s) => s.setLocalUserId);
-  const { violations: unifiedAdvisorViolations } = useUnifiedAdvisorViolations(
+  const structuralViolations = useStructuralValidationViolations(elementsById);
+  const { violations: unifiedAdvisorViolationsBase } = useUnifiedAdvisorViolations(
     violations,
     modelId,
     revision,
+  );
+  const unifiedAdvisorViolations = useMemo(
+    () => [...unifiedAdvisorViolationsBase, ...structuralViolations],
+    [unifiedAdvisorViolationsBase, structuralViolations],
   );
   const advisorCounts = useMemo(
     () =>

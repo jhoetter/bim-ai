@@ -276,6 +276,11 @@ export function formatCapabilityMode(mode: CapabilityViewMode): string {
 function buildToolCapabilities(): CommandCapability[] {
   return Object.values(getToolRegistry(IDENTITY_T)).map((tool) => {
     const contract = getAuthoringCommandContract(tool.id);
+    if (!contract) {
+      throw new Error(
+        `[commandCapabilities] No authoring contract found for tool "${tool.id}". Add it to AUTHORING_COMMAND_CONTRACTS in authoringCommandContract.ts.`,
+      );
+    }
     return {
       id: `tool.${tool.id}`,
       label: labelForTool(tool),
@@ -1721,6 +1726,19 @@ const VISIBILITY_CAPABILITIES: CommandCapability[] = [
     surfaces: ['cmd-k'],
     executionSurface: 'canvas',
     preconditions: [],
+    status: 'implemented',
+    usabilityScore: 8,
+  },
+  {
+    id: 'clipboard.paste-to-levels',
+    label: 'Paste Aligned to Selected Levels',
+    owner: 'clipboard/PasteToLevelsDialog',
+    group: 'modify',
+    scope: 'view',
+    intendedModes: ['plan'],
+    surfaces: ['cmd-k'],
+    executionSurface: 'modal',
+    preconditions: ['has-selection'],
     status: 'implemented',
     usabilityScore: 8,
   },

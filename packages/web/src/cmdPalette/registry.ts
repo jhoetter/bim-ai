@@ -113,6 +113,8 @@ export type PaletteContext = {
   splitActiveTabRight?: () => void;
   splitActiveTabTop?: () => void;
   splitActiveTabBottom?: () => void;
+  /** Open the Paste Aligned to Selected Levels level-picker dialog. */
+  openPasteToLevels?: () => void;
   /** Dynamic navigable views/sheets/schedules to surface in the palette. */
   views?: Array<{ id: string; label: string; keywords: string }>;
   /** Dynamic plan view templates that can be applied to the active plan view. */

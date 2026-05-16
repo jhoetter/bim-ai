@@ -107,7 +107,9 @@ export type PlanTool =
   | 'material-tag'
   | 'north-arrow'
   | 'brace'
-  | 'ramp';
+  | 'ramp'
+  | 'column-at-grids'
+  | 'beam-system';
 
 export type PresencePeers = Record<
   string,

@@ -446,6 +446,15 @@ export const AUTHORING_COMMAND_CONTRACTS = {
     [],
     ['type', 'level', 'offset', 'chain'],
   ),
+  'column-at-grids': contract(
+    'column-at-grids',
+    'point',
+    ['plan'],
+    'Click grid lines then press Enter to place columns at all intersections.',
+    'explicit-finish',
+    [],
+    ['finish', 'cancel'],
+  ),
   'beam-system': contract(
     'beam-system',
     'sketch',
