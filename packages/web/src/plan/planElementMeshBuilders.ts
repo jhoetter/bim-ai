@@ -24,6 +24,7 @@ import { getBuiltInWallType, materialHexFor } from '../families/wallTypeCatalog'
 import { darkenHex } from '../viewport/meshBuilders.layeredWall';
 import { spiralStairPlanGroup, sketchStairPlanGroup } from './stairPlanSymbol';
 import { materialPlanShadedColor, resolveMaterialPlanGraphics } from './materialGraphics';
+import { resolveElementFillColor } from './graphicsOverride';
 
 export type WallJoinRecord = {
   joinId: string;
@@ -252,7 +253,8 @@ export function planWallMesh(
 
     color: (() => {
       const p = getPlanPalette();
-      return wall.id === selectedId ? p.wallSelected : p.wallFill;
+      if (wall.id === selectedId) return p.wallSelected;
+      return resolveElementFillColor(p.wallFill, wall.graphicsOverride);
     })(),
   });
 
@@ -2208,7 +2210,10 @@ export function planWallSectionMesh(
   selectedId?: string,
 ): THREE.Group {
   const p = getPlanPalette();
-  const fillColor = wall.id === selectedId ? p.wallSelected : p.wallFill;
+  const fillColor =
+    wall.id === selectedId
+      ? p.wallSelected
+      : resolveElementFillColor(p.wallFill, wall.graphicsOverride);
   const group = new THREE.Group();
   group.userData.bimPickId = wall.id;
 
@@ -2236,7 +2241,7 @@ export function planWallSectionMesh(
   pts.push(pts[0]!.clone());
   const outlineGeo = new THREE.BufferGeometry().setFromPoints(pts);
   const outlineMat = new THREE.LineBasicMaterial({
-    color: readToken('--draft-cut', '#1d2330'),
+    color: wall.graphicsOverride?.lineColorHex ?? readToken('--draft-cut', '#1d2330'),
     linewidth: 1,
     depthTest: false,
   });

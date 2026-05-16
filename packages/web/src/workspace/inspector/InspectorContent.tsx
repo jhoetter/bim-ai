@@ -1289,6 +1289,67 @@ export function InspectorPropertiesFor(
             </div>
           ) : null}
           <p className="text-[10px] text-muted">Drag slope arrow in plan to set direction.</p>
+          <div className="border-t border-border pt-1.5">
+            <div className="mb-1 text-xs text-muted">Graphics Override</div>
+            <div className="flex flex-col gap-1">
+              <div className="flex items-center gap-2 py-0.5">
+                <span className="text-xs text-muted w-28 shrink-0">Fill color</span>
+                <input
+                  type="color"
+                  className="h-6 w-10 cursor-pointer rounded border border-border"
+                  value={el.graphicsOverride?.fillColorHex ?? '#000000'}
+                  key={`${el.id}-fill-color-${el.graphicsOverride?.fillColorHex ?? 'none'}`}
+                  onChange={(e) =>
+                    floorOnPropertyChange?.('graphicsOverride', {
+                      ...el.graphicsOverride,
+                      fillColorHex: e.target.value,
+                    })
+                  }
+                  data-testid="inspector-override-fill-color"
+                />
+                <button
+                  type="button"
+                  className="text-xs rounded border border-border px-1.5 py-0.5 text-muted hover:text-foreground"
+                  onClick={() =>
+                    floorOnPropertyChange?.('graphicsOverride', {
+                      ...el.graphicsOverride,
+                      fillColorHex: null,
+                    })
+                  }
+                >
+                  Clear
+                </button>
+              </div>
+              <div className="flex items-center gap-2 py-0.5">
+                <span className="text-xs text-muted w-28 shrink-0">Surface color</span>
+                <input
+                  type="color"
+                  className="h-6 w-10 cursor-pointer rounded border border-border"
+                  value={el.graphicsOverride?.surfaceColorHex ?? '#000000'}
+                  key={`${el.id}-surface-color-${el.graphicsOverride?.surfaceColorHex ?? 'none'}`}
+                  onChange={(e) =>
+                    floorOnPropertyChange?.('graphicsOverride', {
+                      ...el.graphicsOverride,
+                      surfaceColorHex: e.target.value,
+                    })
+                  }
+                  data-testid="inspector-override-surface-color"
+                />
+                <button
+                  type="button"
+                  className="text-xs rounded border border-border px-1.5 py-0.5 text-muted hover:text-foreground"
+                  onClick={() =>
+                    floorOnPropertyChange?.('graphicsOverride', {
+                      ...el.graphicsOverride,
+                      surfaceColorHex: null,
+                    })
+                  }
+                >
+                  Clear
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
       );
     }
@@ -1643,6 +1704,67 @@ export function InspectorPropertiesFor(
             )}
             onPropertyChange={colPropChange}
           />
+          <div className="border-t border-border pt-1.5">
+            <div className="mb-1 text-xs text-muted">Graphics Override</div>
+            <div className="flex flex-col gap-1">
+              <div className="flex items-center gap-2 py-0.5">
+                <span className="text-xs text-muted w-28 shrink-0">Fill color</span>
+                <input
+                  type="color"
+                  className="h-6 w-10 cursor-pointer rounded border border-border"
+                  value={el.graphicsOverride?.fillColorHex ?? '#000000'}
+                  key={`${el.id}-fill-color-${el.graphicsOverride?.fillColorHex ?? 'none'}`}
+                  onChange={(e) =>
+                    colPropChange?.('graphicsOverride', {
+                      ...el.graphicsOverride,
+                      fillColorHex: e.target.value,
+                    })
+                  }
+                  data-testid="inspector-override-fill-color"
+                />
+                <button
+                  type="button"
+                  className="text-xs rounded border border-border px-1.5 py-0.5 text-muted hover:text-foreground"
+                  onClick={() =>
+                    colPropChange?.('graphicsOverride', {
+                      ...el.graphicsOverride,
+                      fillColorHex: null,
+                    })
+                  }
+                >
+                  Clear
+                </button>
+              </div>
+              <div className="flex items-center gap-2 py-0.5">
+                <span className="text-xs text-muted w-28 shrink-0">Surface color</span>
+                <input
+                  type="color"
+                  className="h-6 w-10 cursor-pointer rounded border border-border"
+                  value={el.graphicsOverride?.surfaceColorHex ?? '#000000'}
+                  key={`${el.id}-surface-color-${el.graphicsOverride?.surfaceColorHex ?? 'none'}`}
+                  onChange={(e) =>
+                    colPropChange?.('graphicsOverride', {
+                      ...el.graphicsOverride,
+                      surfaceColorHex: e.target.value,
+                    })
+                  }
+                  data-testid="inspector-override-surface-color"
+                />
+                <button
+                  type="button"
+                  className="text-xs rounded border border-border px-1.5 py-0.5 text-muted hover:text-foreground"
+                  onClick={() =>
+                    colPropChange?.('graphicsOverride', {
+                      ...el.graphicsOverride,
+                      surfaceColorHex: null,
+                    })
+                  }
+                >
+                  Clear
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
       );
     }
