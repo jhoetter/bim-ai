@@ -97,6 +97,12 @@
       "transcript": "/e6/be42dac563/14/full.jsonl",
       "content_hash": "/e6/be42dac563/14/content_hash.txt",
       "prompt": "/e6/be42dac563/14/prompt.txt"
+    },
+    {
+      "metadata": "/e6/be42dac563/15/metadata.json",
+      "transcript": "/e6/be42dac563/15/full.jsonl",
+      "content_hash": "/e6/be42dac563/15/content_hash.txt",
+      "prompt": "/e6/be42dac563/15/prompt.txt"
     }
   ],
   "token_usage": {
