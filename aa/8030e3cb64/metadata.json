@@ -97,6 +97,12 @@
       "transcript": "/aa/8030e3cb64/14/full.jsonl",
       "content_hash": "/aa/8030e3cb64/14/content_hash.txt",
       "prompt": "/aa/8030e3cb64/14/prompt.txt"
+    },
+    {
+      "metadata": "/aa/8030e3cb64/15/metadata.json",
+      "transcript": "/aa/8030e3cb64/15/full.jsonl",
+      "content_hash": "/aa/8030e3cb64/15/content_hash.txt",
+      "prompt": ""
     }
   ],
   "token_usage": {
