@@ -1,0 +1,42 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "bf3509a254aa",
+  "session_id": "744511a9-3c3f-4895-b2fa-0f9676e150e9",
+  "strategy": "manual-commit",
+  "created_at": "2026-05-16T01:48:20.939899Z",
+  "branch": "main",
+  "checkpoints_count": 1,
+  "files_touched": [],
+  "agent": "Claude Code",
+  "model": "claude-sonnet-4-6",
+  "turn_id": "51591edf7c9a",
+  "token_usage": {
+    "input_tokens": 548,
+    "cache_creation_tokens": 419245,
+    "cache_read_tokens": 10250758,
+    "output_tokens": 219806,
+    "api_call_count": 120
+  },
+  "session_metrics": {
+    "turn_count": 2
+  },
+  "prompt_attributions": [
+    {
+      "checkpoint_number": 2,
+      "user_lines_added": 228,
+      "user_lines_removed": 25,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0,
+      "user_added_per_file": {
+        "packages/web/src/viewport/dormerMesh.ts": 68,
+        "packages/web/src/viewport/dormerRoofCut.ts": 7,
+        "seed-artifacts/target-house-4/bundle.json": 153
+      },
+      "user_removed_per_file": {
+        "packages/web/src/viewport/dormerMesh.ts": 10,
+        "packages/web/src/viewport/dormerRoofCut.ts": 4,
+        "seed-artifacts/target-house-4/bundle.json": 11
+      }
+    }
+  ]
+}
