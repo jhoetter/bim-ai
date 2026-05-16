@@ -2046,6 +2046,8 @@ export function PlanCanvas({
         );
         sprite.position.y = SLICE_Y + 0.012;
         sprite.userData.placedTag = true;
+        sprite.userData.elementId = tag.id;
+        if (tag.categoryKind === 'room') sprite.userData.placedTagKind = 'room';
         if (placedTagReveal || (revealHiddenMode && display.hiddenElementIds.has(tag.id))) {
           sprite.material.color.set('#ff00ff');
         }
