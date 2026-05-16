@@ -1,0 +1,79 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "ed5637c64506",
+  "session_id": "862fe2b4-358e-497f-8622-d5ee6a14aef1",
+  "strategy": "manual-commit",
+  "created_at": "2026-05-16T01:05:29.001663Z",
+  "checkpoints_count": 4,
+  "files_touched": [],
+  "agent": "Claude Code",
+  "model": "claude-sonnet-4-6",
+  "turn_id": "d3eaf96a51ba",
+  "checkpoint_transcript_start": 914,
+  "transcript_lines_at_start": 914,
+  "token_usage": {
+    "input_tokens": 201,
+    "cache_creation_tokens": 748958,
+    "cache_read_tokens": 15439154,
+    "output_tokens": 83735,
+    "api_call_count": 173
+  },
+  "session_metrics": {
+    "turn_count": 11
+  },
+  "prompt_attributions": [
+    {
+      "checkpoint_number": 1,
+      "user_lines_added": 0,
+      "user_lines_removed": 0,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0
+    },
+    {
+      "checkpoint_number": 2,
+      "user_lines_added": 0,
+      "user_lines_removed": 0,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0
+    },
+    {
+      "checkpoint_number": 3,
+      "user_lines_added": 203,
+      "user_lines_removed": 0,
+      "agent_lines_added": 816,
+      "agent_lines_removed": 34,
+      "user_added_per_file": {
+        "spec/revit-parity/agent-prompts/WP-D-views-sheets-rcp.prompt.md": 203
+      }
+    },
+    {
+      "checkpoint_number": 4,
+      "user_lines_added": 457,
+      "user_lines_removed": 2,
+      "agent_lines_added": 1056,
+      "agent_lines_removed": 60,
+      "user_added_per_file": {
+        "packages/web/src/workspace/sheets/sectionViewportSvg.tsx": 18,
+        "spec/revit-parity/agent-prompts/WP-D-views-sheets-rcp.prompt.md": 203,
+        "spec/revit-parity/agent-prompts/WP-F-phases-and-project-config.prompt.md": 236
+      },
+      "user_removed_per_file": {
+        "packages/web/src/workspace/sheets/sectionViewportSvg.tsx": 2
+      }
+    },
+    {
+      "checkpoint_number": 5,
+      "user_lines_added": 252,
+      "user_lines_removed": 4,
+      "agent_lines_added": 1310,
+      "agent_lines_removed": 62,
+      "user_added_per_file": {
+        "packages/web/src/workspace/sheets/sectionViewportSvg.tsx": 49,
+        "spec/revit-parity/agent-prompts/WP-D-views-sheets-rcp.prompt.md": 203
+      },
+      "user_removed_per_file": {
+        "packages/web/src/workspace/sheets/sectionViewportSvg.tsx": 4
+      }
+    }
+  ]
+}
