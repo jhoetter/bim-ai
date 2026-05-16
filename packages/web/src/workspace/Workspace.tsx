@@ -125,6 +125,7 @@ import {
   VVDialog,
 } from './project';
 import { PhaseManagerDialog } from '../phases/PhaseManagerDialog';
+import { GlobalParamsDialog } from './project/GlobalParamsDialog';
 import {
   coerceCheckpointRetentionLimit,
   DEFAULT_CHECKPOINT_RETENTION_LIMIT,
@@ -161,6 +162,8 @@ import {
 } from '../families/catalogFamilyReload';
 import { getFamilyPlacementAdapter } from '../families/familyPlacementAdapters';
 import { applyCommandBundle } from '../lib/api';
+import { exportToIfc } from '../export/ifcExporter';
+import { exportToDxf } from '../export/dxfExporter';
 import { OnboardingTour } from '../onboarding/OnboardingTour';
 import { readOnboardingProgress, resetOnboarding } from '../onboarding/tour';
 import { canvasContainerStyle, CanvasMount } from './viewport';
@@ -1058,6 +1061,7 @@ export function Workspace(): JSX.Element {
   const [projectSetupOpen, setProjectSetupOpen] = useState(false);
   const [projectUnitsOpen, setProjectUnitsOpen] = useState(false);
   const [phaseManagerOpen, setPhaseManagerOpen] = useState(false);
+  const [globalParamsOpen, setGlobalParamsOpen] = useState(false);
   const [projectInfoOpen, setProjectInfoOpen] = useState(false);
   const [trueNorthActive, setTrueNorthActive] = useState(false);
   const lensMode = useBimStore((s) => s.lensMode);
@@ -1636,6 +1640,38 @@ export function Workspace(): JSX.Element {
     const next = pushRecentProject(rollingPayload);
     setRecentProjects(next.map((r) => ({ id: r.id, label: r.label })));
   }, [saveAsMaximumBackups, setSeedError]);
+
+  const handleExportIfc = useCallback(() => {
+    const els = useBimStore.getState().elementsById;
+    const step = exportToIfc(els as Parameters<typeof exportToIfc>[0]);
+    const blob = new Blob([step], { type: 'application/step' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${activeSeedLabel ?? 'project'}.ifc`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }, [activeSeedLabel]);
+
+  const handleExportDxf = useCallback(
+    (opts: { levelId?: string; units: 'mm' | 'm' }) => {
+      const els = useBimStore.getState().elementsById;
+      const views = exportToDxf(els as Parameters<typeof exportToDxf>[0], {
+        levelId: opts.levelId,
+        units: opts.units,
+      });
+      for (const view of views) {
+        const blob = new Blob([view.dxfContent], { type: 'application/dxf' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `${activeSeedLabel ?? 'project'}-${view.levelName}.dxf`;
+        a.click();
+        URL.revokeObjectURL(url);
+      }
+    },
+    [activeSeedLabel],
+  );
 
   const handleRestoreSnapshot = useCallback(
     async (file: File): Promise<void> => {
@@ -4175,6 +4211,7 @@ export function Workspace(): JSX.Element {
         onOpenProjectSetup={() => setProjectSetupOpen(true)}
         onOpenProjectUnits={() => setProjectUnitsOpen(true)}
         onManagePhases={() => setPhaseManagerOpen(true)}
+        onOpenGlobalParams={() => setGlobalParamsOpen(true)}
         onOpenProjectInfo={() => setProjectInfoOpen(true)}
         onNewClear={handleNewClear}
         onReplayTour={replayOnboardingTour}
@@ -4203,6 +4240,12 @@ export function Workspace(): JSX.Element {
             }
           })();
         }}
+        onExportIfc={handleExportIfc}
+        onExportDxf={handleExportDxf}
+        exportLevels={Object.values(elementsById)
+          .filter((e) => e.kind === 'level')
+          .map((e) => ({ id: e.id, name: (e as { name?: string }).name ?? e.id }))}
+        projectName={activeSeedLabel ?? 'project'}
       />
       <ProjectSetupDialog
         open={projectSetupOpen}
@@ -4221,6 +4264,12 @@ export function Workspace(): JSX.Element {
       <PhaseManagerDialog
         open={phaseManagerOpen}
         onClose={() => setPhaseManagerOpen(false)}
+        elementsById={elementsById}
+        onSemanticCommand={onSemanticCommand}
+      />
+      <GlobalParamsDialog
+        open={globalParamsOpen}
+        onClose={() => setGlobalParamsOpen(false)}
         elementsById={elementsById}
         onSemanticCommand={onSemanticCommand}
       />

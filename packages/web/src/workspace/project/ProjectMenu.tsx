@@ -62,6 +62,8 @@ export interface ProjectMenuProps {
   onOpenProjectUnits?: () => void;
   /** F1: open the Phase Manager dialog. */
   onManagePhases?: () => void;
+  /** F1 (WP-F): open the Global Parameters dialog. */
+  onOpenGlobalParams?: () => void;
   /** F3: open the Project Information dialog. */
   onOpenProjectInfo?: () => void;
   /** FED-01: open the Manage Links dialog (Insert → Link Model). */
@@ -70,6 +72,14 @@ export interface ProjectMenuProps {
   onLinkIfc?: (file: File) => void;
   /** FED-04: import a DXF site plan as a `link_dxf` underlay element. */
   onLinkDxf?: (file: File, options: DxfImportOptions) => void;
+  /** E1: trigger IFC 2x3 export and download. */
+  onExportIfc?: () => void;
+  /** E2: trigger DXF export for a given level and units. */
+  onExportDxf?: (opts: { levelId?: string; units: 'mm' | 'm' }) => void;
+  /** E2: levels available for DXF export selection. */
+  exportLevels?: { id: string; name: string }[];
+  /** Optional project name used as default download filename. */
+  projectName?: string;
 }
 
 export function ProjectMenu({
@@ -95,10 +105,15 @@ export function ProjectMenu({
   onReplayTour,
   onOpenProjectUnits,
   onManagePhases,
+  onOpenGlobalParams,
   onOpenProjectInfo,
   onManageLinks,
   onLinkIfc,
   onLinkDxf,
+  onExportIfc,
+  onExportDxf,
+  exportLevels,
+  projectName: _projectName,
 }: ProjectMenuProps): JSX.Element | null {
   const popoverRef = useRef<HTMLDivElement | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
@@ -107,6 +122,9 @@ export function ProjectMenu({
   const [pos, setPos] = useState<{ left: number; top: number } | null>(null);
   const [saveAsOptionsOpen, setSaveAsOptionsOpen] = useState(false);
   const [dxfOptionsOpen, setDxfOptionsOpen] = useState(false);
+  const [dxfExportOpen, setDxfExportOpen] = useState(false);
+  const [dxfExportLevelId, setDxfExportLevelId] = useState<string | undefined>(undefined);
+  const [dxfExportUnits, setDxfExportUnits] = useState<'mm' | 'm'>('mm');
   const [dxfImportOptions, setDxfImportOptions] = useState<DxfImportOptions>({
     originAlignmentMode: 'origin_to_origin',
     unitOverride: 'source',
@@ -310,6 +328,85 @@ export function ProjectMenu({
             />
           </>
         ) : null}
+        {onExportIfc ? (
+          <MenuItem
+            label="Export → IFC 2x3…"
+            icon="externalLink"
+            testId="project-menu-export-ifc"
+            onClick={() => {
+              onOpenChange(false);
+              onExportIfc();
+            }}
+          />
+        ) : null}
+        {onExportDxf ? (
+          <>
+            <MenuItem
+              label="Export → DXF/DWG…"
+              icon="externalLink"
+              testId="project-menu-export-dxf"
+              onClick={() => setDxfExportOpen((v) => !v)}
+            />
+            {dxfExportOpen ? (
+              <li
+                className="border-y border-border bg-surface-strong px-3 py-2"
+                data-testid="project-menu-dxf-export-options"
+              >
+                <div className="grid grid-cols-1 gap-2 text-xs">
+                  {exportLevels && exportLevels.length > 0 ? (
+                    <label className="flex flex-col gap-1">
+                      Level
+                      <select
+                        value={dxfExportLevelId ?? ''}
+                        data-testid="project-menu-dxf-export-level"
+                        onChange={(e) => setDxfExportLevelId(e.currentTarget.value || undefined)}
+                        onKeyDown={(e) => e.stopPropagation()}
+                        className="h-7 rounded border border-border bg-surface px-2 text-xs text-foreground"
+                      >
+                        <option value="">All levels</option>
+                        {exportLevels.map((l) => (
+                          <option key={l.id} value={l.id}>
+                            {l.name}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                  ) : null}
+                  <label className="flex flex-col gap-1">
+                    Units
+                    <select
+                      value={dxfExportUnits}
+                      data-testid="project-menu-dxf-export-units"
+                      onChange={(e) => setDxfExportUnits(e.currentTarget.value as 'mm' | 'm')}
+                      onKeyDown={(e) => e.stopPropagation()}
+                      className="h-7 rounded border border-border bg-surface px-2 text-xs text-foreground"
+                    >
+                      <option value="mm">mm</option>
+                      <option value="m">m</option>
+                    </select>
+                  </label>
+                  <p className="text-[10px] text-muted">
+                    DWG: open the DXF in any CAD tool (BricsCAD, Teigha) and save as DWG — the
+                    geometry is identical.
+                  </p>
+                  <button
+                    type="button"
+                    role="menuitem"
+                    data-testid="project-menu-dxf-export-submit"
+                    onClick={() => {
+                      onExportDxf({ levelId: dxfExportLevelId, units: dxfExportUnits });
+                      setDxfExportOpen(false);
+                      onOpenChange(false);
+                    }}
+                    className="mt-1 rounded border border-border px-2 py-1 text-xs text-foreground hover:bg-surface"
+                  >
+                    Export
+                  </button>
+                </div>
+              </li>
+            ) : null}
+          </>
+        ) : null}
         {onOpenMaterialBrowser || onOpenAppearanceAssetBrowser ? (
           <>
             <div className="my-1 border-t border-border" />
@@ -367,6 +464,17 @@ export function ProjectMenu({
             onClick={() => {
               onOpenChange(false);
               onManagePhases();
+            }}
+          />
+        ) : null}
+        {onOpenGlobalParams ? (
+          <MenuItem
+            label="Global Parameters..."
+            icon="settings"
+            testId="project-menu-global-params"
+            onClick={() => {
+              onOpenChange(false);
+              onOpenGlobalParams();
             }}
           />
         ) : null}

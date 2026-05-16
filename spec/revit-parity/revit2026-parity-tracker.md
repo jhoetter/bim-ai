@@ -453,8 +453,8 @@ Window family types are available through the family catalog. Loading arbitrary 
 Door type change, flip swing direction, width/height properties all work via inspector.
 
 ### 3.8 Verwendung globaler Parameter (global parameters: named model-wide numeric values)
-**Status: Not Started — P1**
-Revit global parameters (e.g. "Raumhöhe = 2700mm" used throughout the model to constrain walls, windows, etc.) are not implemented. This is a significant parametric modelling capability. No evidence of globalParameter infrastructure in the codebase.
+**Status: Implemented — global params table + dialog + commands**
+`globalParams` array added to `project_settings` in `@bim-ai/core`. Commands `addGlobalParam`, `updateGlobalParam`, `deleteGlobalParam` dispatched via `onSemanticCommand`. `GlobalParamsDialog.tsx` renders an inline-editable table (Name / Formula / Value mm) with formula evaluator, Add Parameter button, and per-row delete. Wired into `Workspace.tsx` via `globalParamsOpen` state and `ProjectMenu.tsx` → "Global Parameters..." menu item. 9 tests passing (formula evaluator, command reducer, dialog rendering).
 
 ### 3.9 Übungsfragen
 **Status: N/A**
@@ -715,8 +715,8 @@ Revit's "Create Parts" command (segmenting a wall into independently swappable h
 Implemented — inspector + custom grid editing done. Panel grid rendering: done (`meshBuilders.curtainPanels.test.ts`). Plan symbol: done (`curtainWallPlanSymbol.ts`, 4 tests). Inspector extended with H/V count inputs, Panel type dropdown (Glass/Spandrel/Solid), Mullion type dropdown (Rectangular/Circular/None), and "Edit Grid…" button; `customVDivisions` field added to `curtainWallData` type; `curtainWallPlanSymbol.ts` renders custom ticks in priority over uniform grid; `curtainWallPanelType`/`curtainWallMullionType` fields added to Python `WallElem` with `updateElementProperty` handlers; 5 new `curtainWallPlanSymbol.customDivisions.test.ts` tests pass.
 
 #### 8.1.5 Abziehbilder (decals / surface images on wall faces)
-**Status: Partial — P2**
-Data model and 3D rendering exist: `DecalElem` type is fully defined in `packages/core/src/index.ts`; `buildDecalMesh()` is implemented in `viewport/meshBuilders.ts`. **Missing: user-facing placement tool** — no `'decal'` ToolId in `toolRegistry.ts`, no grammar, no inspector panel. Next wave: add `'decal'` ToolId (hotkey `DC`), implement single-click-on-face placement grammar, add inspector fields for image URL, scale, rotation, and opacity. Extend existing `DecalElem` in core — do not create a new type.
+**Status: Implemented — 'decal' ToolId + grammar + inspector**
+`'decal'` added to `ToolId` union (hotkey `DC`, 3D mode only) in `toolRegistry.ts`. `DecalState` / `reduceDecal` added to `toolGrammar.ts`: idle → face-click → picking-image → image-chosen → createDecal effect (positionMm, normalVec, imageSrc, widthMm 1000, heightMm 1000). `DecalElem` extended with optional placement fields (`positionMm`, `normalVec`, `imageSrc`, `widthMm`, `heightMm`). `buildDecalMesh()` already exists in `meshBuilders.ts`. 6 grammar tests passing.
 
 ### 8.2 Decken und Lampen (ceilings and light fixtures)
 **Status: Partial — P1**
@@ -806,8 +806,8 @@ Column tool is in the registry. Architectural (non-load-bearing) columns and str
 Non-structural decorative columns can be placed. No separate family type distinction.
 
 #### 9.1.4 Geneigte Stützen (sloped columns)
-**Status: Not Started — P2**
-Tilted/inclined columns (non-vertical) are not supported.
+**Status: Implemented — sloped column data model + mesh + plan symbol + inspector**
+`topOffsetXMm` and `topOffsetYMm` optional fields added to column element in `@bim-ai/core`. `makeColumnMesh()` in `meshBuilders.ts` now shears top vertices of the BoxGeometry by the offset when non-zero. Plan symbol added in `symbology.ts` (`columnPlanThree`): solid base footprint with cross diagonal, plus dashed top footprint and centre-to-centre diagonal line for sloped columns. 5 tests passing (straight regression, top vertex shift, bottom vertex unaffected, zero-offset no-op, Mesh instance check).
 
 ### 9.2 Träger (beams)
 **Status: Partial — P1**
