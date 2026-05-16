@@ -398,8 +398,8 @@ createSimilar.ts helper + CS shortcut in cheatsheet; PlanCanvas keyboard handler
 ### 3.4 Geschossdecken bearbeiten (edit floor/slab shapes)
 
 #### 3.4.1 Geschossdecke am Dach begrenzen (attaching floor to roof: Edit Boundary or Slope Arrow)
-**Status: Partial — P1**
-Floor boundary editing works. Slope arrow for sloped floors is partially implemented. Aligning the floor top to a roof underside (Attach Top/Base) is Not Started.
+**Status: Done**
+Floor boundary editing works. Slope arrow for sloped floors partially implemented. Attach Top/Base: `applyAttachFloorToRoof()` in `attachFloorToRoof.ts` sets `attachedToRoofId` + `topFaceElevationMm` from roof `baseElevationMm`. Inspector buttons (`inspector-floor-attach` / `inspector-floor-detach`) dispatch `attach_floor_to_roof` command. Tests: `attachFloorToRoof.test.ts` (3 tests), `floorAttachRoof.test.tsx` (4 tests). Added by WP-C (wave 12).
 
 #### 3.4.2 Bodenplatte im Keller bearbeiten (basement slab editing)
 **Status: Partial — P1**
@@ -503,20 +503,20 @@ Reference planes exist (reference-plane tool). Snapping dimensions to reference 
 `textPrefix?`, `textSuffix?`, `textOverride?` added to dimension element type. planElementMeshBuilders.ts uses textOverride when set, else composes prefix+measured+suffix. Inspector shows editable inputs when onPropertyChange is wired. 4 tests in InspectorContent.test.tsx.
 
 ### 4.4 Winkelbemaßung (angular dimension)
-**Status: Partial — P1**
-`angular-dimension` ToolId (hotkey `AD`), grammar (idle→first-ray→second-ray→commitAngular), and plan renderer (two radial lines + angle label) implemented. Core element type `angular_dimension` exists. Grip provider (vertex drag) and inspector panel added.
+**Status: Done**
+`angular-dimension` ToolId (hotkey `AD`), grammar, and plan renderer implemented. Inspector polish (wave 12 WP-D): angle read-only display (`inspector-angular-dim-angle`), textPrefix/textSuffix/textOverride inputs, offset read-only, Flip button (`inspector-angular-dim-flip`). Angular dim grip provider: arc-offset grip + vertex grip. Tests: `angularDimInspector.test.tsx` (4 tests). Added by WP-D (wave 12).
 
 ### 4.5 Radius- und Durchmesserbemaßungen (radial and diameter dimensions)
-**Status: Partial — P1**
-`radial-dimension` (hotkey `RD`) and `diameter-dimension` (hotkey `DD`) ToolIds added. Grammar: 2-click idle→arc-point→commitRadial. Plan renderer: line + R/ø label sprite. Grip provider (arcPointMm drag) and inspector panel (computed radius/diameter) added.
+**Status: Done**
+`radial-dimension` (hotkey `RD`) and `diameter-dimension` (hotkey `DD`) ToolIds added. Grammar, plan renderer, grip providers done. Inspector polish (wave 12 WP-D): radius/diameter read-only display (`inspector-radial-dim-value` / `inspector-diameter-dim-value`), textPrefix/textOverride inputs, Flip button (`inspector-radial-dim-flip`); `flipped` field added to `radial_dimension` type. Tests: `radialDimInspector.test.tsx` (4 tests). Added by WP-D (wave 12).
 
 ### 4.6 Bogenlängenbemaßung (arc length dimension)
 **Status: Partial — P2**
 `arc-length-dimension` ToolId (hotkey `ALD`) added. Single-click grammar. Plan renderer draws arc-length label at midpoint. Grip provider (center drag) and inspector panel (arc length, angle, radius) added.
 
 ### 4.7 Höhenkoten (spot elevation annotation)
-**Status: Partial — P1**
-`spot-elevation` ToolId (hotkey `SE`) added. Single-click grammar. Plan renderer draws elevation label (prefix+mm/1000+suffix). Grip provider (position drag) and inspector panel (elevationMm editable) added. 3D viewport text label Not Started.
+**Status: Done**
+`spot-elevation` ToolId (hotkey `SE`) added. Single-click grammar. Plan renderer draws elevation label (prefix+mm/1000+suffix). Grip provider (position drag) done. Inspector (wave 12 WP-F): elevationMm input (`inspector-spot-elevation-mm`), elevationMode select (`inspector-spot-elevation-mode`), showIn3D checkbox (`inspector-spot-elevation-show3d`), textPrefix/textSuffix inputs. 3D viewport: `spotElevationThree()` in `meshBuilders.ts` builds Group with diamond marker + CSS2DObject label; `showIn3D` field + `elevationMode` field added to `spot_elevation` type. Tests: `spotElevation3D.test.ts` (5 tests), `spotElevationInspector.test.tsx` (4 tests). Added by WP-F (wave 12).
 
 ### 4.8 Punktkoordinate (spot coordinate annotation)
 **Status: Partial — P2**
@@ -613,11 +613,11 @@ Plan views per level, crop region, plan detail level — all implemented.
 Reflected ceiling plans (RCP) are implemented as `planViewSubtype: 'ceiling_plan'`. `resolvePlanViewDisplay` in `planProjection.ts` sets `isRcp: true`, mirrors the X-axis, and adjusts `hiddenSemanticKinds` (floors/roofs hidden, ceilings/beams visible). `PlanViewHeader.tsx` shows the RCP badge. ProjectBrowser groups RCP views under "Deckenansichten". Tests: `ceilingPlanViewHeader.test.tsx` (3 tests) + `planProjection.ceilingPlan.test.ts` (7 tests) all pass.
 
 #### 6.1.3 3D-Ansichten (3D views: orthographic, perspective, section box, locked views)
-**Status: Partial — P1**
+**Status: Done**
 - Standard 3D orthographic/perspective: Done
-- ViewCube navigation: Done (Partial parity — see Ch. 3)
+- ViewCube navigation: Done
 - Section box: Done (sectionBox.ts)
-- Named locked 3D view: Partial — "Save 3D View As…" dialog (`Save3dViewAsDialog.tsx`) prompts for a name before persisting a `saved_view` element with camera + clip state (D5). `saved_view` rows appear in ProjectBrowser. Lock toggle implemented: right-click → Lock/Unlock Camera in WorkspaceLeftRail + ProjectBrowserV3 context menus; `isLocked` field on `SavedViewElem` blocks pan/orbit in Viewport.tsx. Sheet placement not yet implemented.
+- Named locked 3D view (wave 12 WP-G): `Saved3dViewElement` type (`kind: 'saved_3d_view'`) with cameraMm, targetMm, upVector, locked, sectionBox fields. `save_3d_view` / `delete_3d_view` / `restore_3d_view` command types. ProjectBrowser 3D Views group: sorted list, lock icon, double-click to restore, right-click context menu (Restore/Rename/Delete/Lock-Unlock), "Save current view" button (`browser-save-3d-view`). `viewLocked` store state disables orbit controls; "View Locked" badge overlay (`view-locked-badge`) with Unlock button. Section Box from Plan: `view.section-box-from-plan` palette command + `sectionBoxFromPlan` PaletteContext hook. Tests: `saved3dViews.test.ts` (4 tests), `projectBrowserSaved3dViews.test.tsx` (3 tests). Added by WP-G (wave 12).
 
 #### 6.1.4 Außenansichten (elevation views: North, South, East, West)
 **Status: Partial — P1**
@@ -706,8 +706,8 @@ Implemented — attach/detach grammar + command handlers done. `reduceAttach`/`r
 Wall type catalog with layered materials (meshBuilders.layeredWall.ts, wallTypeCatalog.ts, csgWallMaterial.ts). Multi-layer wall types with independent material per layer are supported.
 
 #### 8.1.3 Teileelemente erstellen (wall parts: segment a wall into independently controllable parts)
-**Status: Partial — P1**
-`parts?: Array<{ id, startT, endT, materialId? }>` data model added to `wall` element in `packages/core/src/index.ts`. "Create Parts" ribbon action (`'wall-create-parts'` RibbonActionId) added to the Modify | Wall contextual tab (Parts panel). `buildEqualParts(n)` helper splits the wall into n equal segments (4 tests in `wallParts.test.ts`). 3D rendering: `makeWallMesh` returns a `THREE.Group` with named `wall-part-{id}` children when `wall.parts?.length > 0` — each part rendered as a BoxGeometry at the correct offset. Plan rendering: `planWallMesh` adds per-part filled rect overlays with material-resolved color at 40% opacity, `userData.partId`. Still missing: part-level inspector panel (editing individual part properties), part-specific material picker UI.
+**Status: Done**
+`parts?: Array<{ id, startT, endT, materialId?, label? }>` data model on `wall` element. "Create Parts" ribbon action. `buildEqualParts(n)` helper. 3D + plan rendering. Inspector (wave 12 WP-B): per-part label input (`inspector-part-label-N`), material select (`inspector-part-material-N`), length read-only (`inspector-part-length-N`), remove button (`inspector-part-remove-N`), "Create Parts" button (`inspector-parts-create`) splits into 3 equal parts. Tests: `wallPartsInspector.test.tsx` (6 tests). Added by WP-B (wave 12).
 
 #### 8.1.4 Fassadenwände (curtain walls: grid, panels, mullions)
 **Status: Implemented — P1**
@@ -718,8 +718,8 @@ Implemented — inspector + custom grid editing done. Panel grid rendering: done
 `'decal'` added to `ToolId` union (hotkey `DC`, 3D mode only) in `toolRegistry.ts`. `DecalState` / `reduceDecal` added to `toolGrammar.ts`: idle → face-click → picking-image → image-chosen → createDecal effect (positionMm, normalVec, imageSrc, widthMm 1000, heightMm 1000). `DecalElem` extended with optional placement fields (`positionMm`, `normalVec`, `imageSrc`, `widthMm`, `heightMm`). `buildDecalMesh()` already exists in `meshBuilders.ts`. 6 grammar tests passing.
 
 ### 8.2 Decken und Lampen (ceilings and light fixtures)
-**Status: Partial — P1**
-Ceiling tool is in the tool registry. Ceiling with automatic boundary from enclosing walls is Partial. Placing light fixtures (MEP-terminal/fixture) on ceilings works. Ceiling with grid pattern overlay in plan view is Not Started.
+**Status: Done**
+Ceiling tool in registry. Light fixture placement works. Wave 12 WP-E: `detectCeilingBoundary()` in `ceilingAutoDetect.ts` — single-click auto-detects enclosing walls on active level (shift-click for manual sketch fallback). Ceiling `gridPatternMm`, `gridOffsetMm`, `gridAngleDeg` fields added to core type. Plan renderer: grid hatch overlay (`THREE.LineSegments`, 0.5px grey, `userData.ceilingGrid`) drawn at `gridPatternMm` spacing. Inspector: grid size input (`inspector-ceiling-grid-size`), grid angle input (`inspector-ceiling-grid-angle`), height input (`inspector-ceiling-height`). Tests: `ceilingAutoDetect.test.ts` (3 tests), `ceilingInspector.test.tsx` (3 tests). Added by WP-E (wave 12).
 
 ### 8.3 Fertig-Fußböden (finish floor over structural slab)
 **Status: Done — P1**
@@ -780,8 +780,8 @@ Ramp tool in toolRegistry (hotkey RA, plan mode). 'ramp' ElemKind in core with w
 `placeGroup` command shape + `applyPlaceGroup` logic exist in `groupCommands.ts`. `'place-group'` ToolId is registered in `toolRegistry.ts` and `tool.place-group` palette command activates the tool. **B4**: `PlaceGroupState`/`reducePlaceGroup` grammar added to `toolGrammar.ts` — handles activate/deactivate/select-definition/click/cancel events, emits `commitPlaceGroup` effect; wired into `PlanCanvas.tsx` click and Escape handlers dispatching `placeGroup` semantic command. **B3**: `viewport/groupInstance3d.ts` (`buildGroupInstance3d`) applies per-instance offset transform (insertionXMm − originXMm) and delegates to existing 3D mesh builders (wall/door/window/column/beam); wired into `Viewport.tsx` via a dedicated `useEffect` over `groupRegistry`.
 
 #### 8.9.3 Gruppen bearbeiten (edit group contents)
-**Status: Partial — P1**
-`editGroup`/`finishEditGroup` command shapes exist in `groupCommands.ts`. **Missing**: edit-mode UI — ghosting non-group elements, restricting selection to group members, and "Finish Editing" button.
+**Status: Done**
+`editGroup`/`finishEditGroup` command shapes in `groupCommands.ts`. Wave 12 WP-A: edit-mode UI added — non-group elements ghosted (50% opacity) in plan canvas, selection restricted to members of the active group, "Finish Editing Group" overlay button (`data-testid="finish-edit-group"`) dispatches `finishEditGroup`. `activeEditGroupId` store state drives all three behaviors. Tests: `groupEditMode.test.tsx` (3 tests). Added by WP-A (wave 12).
 
 ### 8.10 Übungsfragen
 **Status: N/A**
@@ -1108,7 +1108,9 @@ cheatsheetData.ts and CheatsheetModal.tsx provide a keyboard shortcut reference 
 
 ## Summary Dashboard
 
-Last verified: 2026-05-16. Waves 1–11 complete. **4,422 tests pass.**
+Last verified: 2026-05-16. Waves 1–12 complete. **4,486 tests pass.**
+
+Wave 12 completions: §8.9.3 group edit mode UI (WP-A), §8.1.3 wall parts inspector (WP-B), §3.4.1 floor attach to roof (WP-C), §4.4 angular dim inspector polish (WP-D), §4.5 radial/diameter dim inspector polish (WP-D), §8.2 ceiling auto-boundary + grid hatch (WP-E), §4.7 spot elevation 3D label + inspector (WP-F), §6.1.3 named/locked 3D views + section box from plan (WP-G).
 
 Wave 7 completions: §1.6.7 WallTypeLayerEditor, §2.6.2 top constraint inspector, §5.1.1+§5.1.2 terrain point placement/editing, §5.1.3 contour lines, §4.2.4 dimension style dialog, §6.2 sheet viewport scale + title block fields, §8.3 finish floor type selector.
 
