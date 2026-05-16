@@ -1,9 +1,0 @@
-how expensive do you estimate to be a call like that for the 18min video? how expensive would be a 7h video? also what is the folder path i can use to see where the current tmp images are?
-
----
-
-ok nice, those costs are clear and good. if a 7h video doesnt work api-wise, do you see we could create chunks or such that make more sense? further parallelization or whatever?
-
----
-
-yup please
