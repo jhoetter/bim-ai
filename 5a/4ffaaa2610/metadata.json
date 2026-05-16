@@ -5,7 +5,9 @@
   "branch": "main",
   "checkpoints_count": 2,
   "files_touched": [
-    "packages/web/src/plan/PlanCanvas.tsx"
+    "packages/ui/src/icons.tsx",
+    "packages/web/src/plan/PlanCanvas.tsx",
+    "spec/revit-parity/revit2026-parity-tracker.md"
   ],
   "sessions": [
     {
@@ -19,13 +21,19 @@
       "transcript": "/5a/4ffaaa2610/1/full.jsonl",
       "content_hash": "/5a/4ffaaa2610/1/content_hash.txt",
       "prompt": "/5a/4ffaaa2610/1/prompt.txt"
+    },
+    {
+      "metadata": "/5a/4ffaaa2610/2/metadata.json",
+      "transcript": "/5a/4ffaaa2610/2/full.jsonl",
+      "content_hash": "/5a/4ffaaa2610/2/content_hash.txt",
+      "prompt": "/5a/4ffaaa2610/2/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 3320099,
-    "cache_creation_tokens": 299515,
-    "cache_read_tokens": 85309014,
-    "output_tokens": 297880,
-    "api_call_count": 1573
+    "input_tokens": 3320566,
+    "cache_creation_tokens": 584212,
+    "cache_read_tokens": 121158888,
+    "output_tokens": 406162,
+    "api_call_count": 1966
   }
 }
