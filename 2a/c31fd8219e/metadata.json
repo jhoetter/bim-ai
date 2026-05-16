@@ -5,7 +5,8 @@
   "branch": "main",
   "checkpoints_count": 2,
   "files_touched": [
-    "packages/web/src/tools/toolGrammar.ts"
+    "packages/web/src/tools/toolGrammar.ts",
+    "packages/web/src/workspace/project/ProjectInfoDialog.test.tsx"
   ],
   "sessions": [
     {
@@ -31,13 +32,19 @@
       "transcript": "/2a/c31fd8219e/3/full.jsonl",
       "content_hash": "/2a/c31fd8219e/3/content_hash.txt",
       "prompt": "/2a/c31fd8219e/3/prompt.txt"
+    },
+    {
+      "metadata": "/2a/c31fd8219e/4/metadata.json",
+      "transcript": "/2a/c31fd8219e/4/full.jsonl",
+      "content_hash": "/2a/c31fd8219e/4/content_hash.txt",
+      "prompt": "/2a/c31fd8219e/4/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 3321304,
-    "cache_creation_tokens": 810860,
-    "cache_read_tokens": 143638550,
-    "output_tokens": 460296,
-    "api_call_count": 2225
+    "input_tokens": 3323509,
+    "cache_creation_tokens": 1175251,
+    "cache_read_tokens": 173926312,
+    "output_tokens": 542678,
+    "api_call_count": 2563
   }
 }
