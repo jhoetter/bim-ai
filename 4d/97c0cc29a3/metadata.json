@@ -6,6 +6,7 @@
   "checkpoints_count": 3,
   "files_touched": [
     "packages/core/src/index.ts",
+    "packages/web/src/plan/planProjection.ts",
     "packages/web/src/tools/massFloorsByLevel.test.ts"
   ],
   "sessions": [
@@ -80,13 +81,19 @@
       "transcript": "/4d/97c0cc29a3/11/full.jsonl",
       "content_hash": "/4d/97c0cc29a3/11/content_hash.txt",
       "prompt": "/4d/97c0cc29a3/11/prompt.txt"
+    },
+    {
+      "metadata": "/4d/97c0cc29a3/12/metadata.json",
+      "transcript": "/4d/97c0cc29a3/12/full.jsonl",
+      "content_hash": "/4d/97c0cc29a3/12/content_hash.txt",
+      "prompt": "/4d/97c0cc29a3/12/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 15033401,
-    "cache_creation_tokens": 218844,
-    "cache_read_tokens": 361095341,
-    "output_tokens": 937828,
-    "api_call_count": 3003
+    "input_tokens": 15033446,
+    "cache_creation_tokens": 352513,
+    "cache_read_tokens": 366442162,
+    "output_tokens": 956704,
+    "api_call_count": 3046
   }
 }
