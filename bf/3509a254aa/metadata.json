@@ -2,7 +2,6 @@
   "cli_version": "0.6.0",
   "checkpoint_id": "bf3509a254aa",
   "strategy": "manual-commit",
-  "branch": "main",
   "checkpoints_count": 0,
   "files_touched": null,
   "sessions": [
@@ -11,6 +10,12 @@
       "transcript": "/bf/3509a254aa/0/full.jsonl",
       "content_hash": "/bf/3509a254aa/0/content_hash.txt",
       "prompt": "/bf/3509a254aa/0/prompt.txt"
+    },
+    {
+      "metadata": "/bf/3509a254aa/1/metadata.json",
+      "transcript": "/bf/3509a254aa/1/full.jsonl",
+      "content_hash": "/bf/3509a254aa/1/content_hash.txt",
+      "prompt": "/bf/3509a254aa/1/prompt.txt"
     }
   ]
 }
