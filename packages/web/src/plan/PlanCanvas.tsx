@@ -82,6 +82,7 @@ import {
 import { buildScaleCommand, distanceMm } from './scaleTool';
 import { linearArrayOffsets, radialArrayAngles, radialOffsetForElement } from './arrayTool';
 import { columnPositionsAtGridIntersections } from './columnAtGrids';
+import { handleDblClickDispatch } from './doubleClickDispatch';
 import * as THREE from 'three';
 import { parseDimensionInput } from '@bim-ai/core';
 import type { Element, LensMode } from '@bim-ai/core';
@@ -184,6 +185,8 @@ import {
 } from './monitorDriftBadge';
 import { elevationFromWall } from '../lib/sectionElevationFromWall';
 import { WallContextMenu, type WallContextMenuCommand } from '../workspace/viewport';
+import { ElementContextMenu } from '../workspace/ElementContextMenu';
+import { contextMenuItemsForElement } from '../workspace/contextMenuItems';
 import { SketchCanvas, type MmToScreen, type PointerToMm } from './SketchCanvas';
 import { snapPointToNearestWallFaceMm } from './SketchCanvasPickWalls';
 import { moveDeltaMm } from './moveTool';
@@ -515,6 +518,7 @@ export function PlanCanvas({
   const shaftStateRef = useRef<ShaftState>(initialShaftState());
   const columnStateRef = useRef<ColumnState>(initialColumnState());
   const beamStateRef = useRef<BeamState>(initialBeamState());
+  const stairStateRef = useRef<BeamState>(initialBeamState());
   const ceilingStateRef = useRef<CeilingState>(initialCeilingState());
   const excavationStateRef = useRef<ExcavationState>(initialExcavationState());
   const beamSystemStateRef = useRef<BeamSystemState>(initialBeamSystemState());
@@ -621,6 +625,11 @@ export function PlanCanvas({
     endpoint: 'start' | 'end';
     position: { x: number; y: number };
     currentlyDisallowed: boolean;
+  } | null>(null);
+  // §1.7.2: state for the generic element right-click context menu.
+  const [elementCtxMenu, setElementCtxMenu] = useState<{
+    el: Element;
+    position: { x: number; y: number };
   } | null>(null);
   const [dxfQueryHover, setDxfQueryHover] = useState<DxfPrimitiveQueryHit | null>(null);
   const [dxfQueryDialog, setDxfQueryDialog] = useState<{
@@ -1057,6 +1066,8 @@ export function PlanCanvas({
       columnStateRef.current = initialColumnState();
     } else if (planTool === 'beam') {
       beamStateRef.current = initialBeamState();
+    } else if (planTool === 'stair') {
+      stairStateRef.current = initialBeamState();
     } else if (planTool === 'ceiling') {
       ceilingStateRef.current = initialCeilingState();
     } else if (planTool === 'excavation') {
@@ -4607,10 +4618,15 @@ export function PlanCanvas({
         const { effect } = reduceColumn(columnStateRef.current, { kind: 'click', pointMm: sp });
         columnStateRef.current = initialColumnState();
         if (effect.commitColumn && lvlId) {
+          const { columnDrawHeightMm, columnDrawWidthMm, columnDrawDepthMm } =
+            useBimStore.getState();
           onSemanticCommand({
             type: 'createColumn',
             levelId: lvlId,
             positionMm: effect.commitColumn.positionMm,
+            heightMm: columnDrawHeightMm,
+            bMm: columnDrawWidthMm,
+            hMm: columnDrawDepthMm,
           });
         }
         bumpGeom((x) => x + 1);
@@ -4630,6 +4646,32 @@ export function PlanCanvas({
           if (useToolPrefs.getState().loopMode) {
             beamStateRef.current = { phase: 'first-point', startMm: effect.commitBeam.endMm };
           }
+        }
+        bumpGeom((x) => x + 1);
+        return;
+      }
+      if (planTool === 'stair') {
+        const { state, effect } = reduceBeam(stairStateRef.current, {
+          kind: 'click',
+          pointMm: sp,
+        });
+        stairStateRef.current = state;
+        if (effect.commitBeam && lvlId) {
+          const {
+            stairDrawBaseLevelId,
+            stairDrawTopLevelId,
+            stairDrawWidthMm,
+            stairDrawRunWidthMm,
+          } = useBimStore.getState();
+          onSemanticCommand({
+            type: 'createStair',
+            baseLevelId: stairDrawBaseLevelId ?? lvlId,
+            topLevelId: stairDrawTopLevelId ?? undefined,
+            runStartMm: effect.commitBeam.startMm,
+            runEndMm: effect.commitBeam.endMm,
+            widthMm: stairDrawWidthMm,
+            runWidthMm: stairDrawRunWidthMm,
+          });
         }
         bumpGeom((x) => x + 1);
         return;
@@ -4906,13 +4948,16 @@ export function PlanCanvas({
       }
       if (planTool === 'room') {
         if (!lvlId || !sp) return;
+        const { roomDrawName, roomDrawNumber, roomDrawUpperLevelId } = useBimStore.getState();
         onSemanticCommand({
           type: 'placeRoomAtPoint',
           id: crypto.randomUUID(),
           levelId: lvlId,
           clickXMm: sp.xMm,
           clickYMm: sp.yMm,
-          name: 'Room',
+          name: roomDrawName || 'Room',
+          numberLabel: roomDrawNumber || undefined,
+          upperLimitLevelId: roomDrawUpperLevelId || undefined,
         });
         return;
       }
@@ -5492,6 +5537,8 @@ export function PlanCanvas({
           columnStateRef.current = initialColumnState();
         } else if (planTool === 'beam') {
           beamStateRef.current = initialBeamState();
+        } else if (planTool === 'stair') {
+          stairStateRef.current = initialBeamState();
         } else if (planTool === 'ceiling') {
           ceilingStateRef.current = initialCeilingState();
         } else if (planTool === 'excavation') {
@@ -6057,6 +6104,9 @@ export function PlanCanvas({
       }
 
       if (el.kind !== 'wall') {
+        // §1.7.2: show generic element context menu for non-wall elements.
+        ev.preventDefault();
+        setElementCtxMenu({ el, position: { x: ev.clientX, y: ev.clientY } });
         setWallContextMenu(null);
         setUnhideContextMenu(null);
         setWallJoinCtxMenu(null);
@@ -6235,6 +6285,20 @@ export function PlanCanvas({
         return;
       }
       const id = (h.object.userData as { bimPickId: string }).bimPickId;
+
+      // §1.8.3: double-click dispatch table — group instances live in groupRegistry,
+      // not in elementsById, so pass them separately.
+      const groupInst = useBimStore.getState().groupRegistry.instances[id];
+      if (
+        handleDblClickDispatch(id, elementsById[id], groupInst, planTool, {
+          selectEl,
+          setActiveLevelId,
+          onSemanticCommand,
+        })
+      ) {
+        return;
+      }
+
       const el = elementsById[id];
       if (!el) return;
       // TOP-V3-03: double-click on a toposolid element while the subdivision
@@ -6261,6 +6325,7 @@ export function PlanCanvas({
         }
         return;
       }
+
       if (el.kind === 'elevation_view') {
         activateElevationView(id);
       } else if (el.kind === 'plan_view') {
@@ -7901,7 +7966,9 @@ export function PlanCanvas({
                     slopeDeg: initialRoofState().slopeDeg,
                     overhangMm: initialRoofState().eaveOverhangMm,
                   }
-                : undefined
+                : planTool === 'floor-sketch'
+                  ? { offsetMm: useBimStore.getState().floorDrawOffsetMm || undefined }
+                  : undefined
           }
           onFinished={(createdId) => {
             setPlanTool('select');
