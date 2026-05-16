@@ -1882,3 +1882,32 @@ registerCommand({
     useBimStore.setState({ selectedId: primary, selectedIds: rest });
   },
 });
+
+// B2 — Model Groups
+registerCommand({
+  id: 'model.create-group',
+  label: 'Create Group',
+  keywords: ['create group', 'model group', 'group elements', 'GP'],
+  category: 'command',
+  isAvailable: (ctx) => ctx.selectedElementIds.length >= 2,
+  invoke: (ctx) => {
+    ctx.openCreateGroup?.();
+  },
+});
+
+registerCommand({
+  id: 'model.ungroup',
+  label: 'Ungroup',
+  keywords: ['ungroup', 'dissolve group', 'UN'],
+  category: 'command',
+  isAvailable: (ctx) => ctx.selectedElementIds.length === 1,
+  invoke: (_ctx) => {
+    const st = useBimStore.getState();
+    const id = st.selectedId ?? st.selectedIds[0];
+    if (!id) return;
+    const { groupRegistry } = st;
+    if (!groupRegistry.instances[id]) return;
+    const { [id]: _removed, ...remainingInstances } = groupRegistry.instances;
+    st.setGroupRegistry({ ...groupRegistry, instances: remainingInstances });
+  },
+});

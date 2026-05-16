@@ -117,6 +117,8 @@ export type PaletteContext = {
   openPasteToLevels?: () => void;
   /** Open the Selection Filter dialog (B6). */
   openSelectionFilter?: () => void;
+  /** Open the Create Model Group dialog (B2). */
+  openCreateGroup?: () => void;
   /** Dynamic navigable views/sheets/schedules to surface in the palette. */
   views?: Array<{ id: string; label: string; keywords: string }>;
   /** Dynamic plan view templates that can be applied to the active plan view. */

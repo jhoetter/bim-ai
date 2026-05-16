@@ -12,6 +12,7 @@ import type { FamilyDefinition } from '../families/types';
 
 import type { WallLocationLine } from '../tools/toolGrammar';
 import type { PlanPresentationPreset } from '../plan/symbology';
+import type { GroupRegistry } from '../groups/groupTypes';
 import type {
   PlanProjectionPrimitivesV1Wire,
   PlanCategoryGraphicHintsV0Wire,
@@ -395,6 +396,10 @@ export type StoreState = {
   thinLinesEnabled: boolean;
   /** F-006: toggle the thin-lines override. */
   toggleThinLines: () => void;
+
+  /** B2: model group definitions and instances (client-side, not persisted to server). */
+  groupRegistry: GroupRegistry;
+  setGroupRegistry: (r: GroupRegistry) => void;
 
   vvDialogOpen: boolean;
   openVVDialog: () => void;

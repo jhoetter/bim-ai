@@ -173,6 +173,8 @@ import { EmptyStateHint } from './shell';
 import { MilestoneDialog } from '../collab/MilestoneDialog';
 import { PasteToLevelsDialog } from '../clipboard/PasteToLevelsDialog';
 import { SelectionFilterDialog } from '../plan/selectionFilter';
+import { CreateGroupDialog } from '../groups/CreateGroupDialog';
+import { applyCreateGroup } from '../groups/groupCommands';
 import { WorkspaceLeftRail } from './WorkspaceLeftRail';
 import { WorkspaceRightRail } from './WorkspaceRightRail';
 import { rememberLocalClientOp, useWorkspaceSnapshot } from './useWorkspaceSnapshot';
@@ -837,6 +839,8 @@ export function Workspace(): JSX.Element {
   const selectedIds = useBimStore((s) => s.selectedIds);
   const temporaryVisibility = useBimStore((s) => s.temporaryVisibility);
   const clearTemporaryVisibility = useBimStore((s) => s.clearTemporaryVisibility);
+  const groupRegistry = useBimStore((s) => s.groupRegistry);
+  const setGroupRegistry = useBimStore((s) => s.setGroupRegistry);
   const activeLevelId = useBimStore((s) => s.activeLevelId);
   const setActiveLevelId = useBimStore((s) => s.setActiveLevelId);
   const activePlanViewId = useBimStore((s) => s.activePlanViewId);
@@ -1055,6 +1059,7 @@ export function Workspace(): JSX.Element {
   const [milestoneDialogOpen, setMilestoneDialogOpen] = useState(false);
   const [pasteToLevelsOpen, setPasteToLevelsOpen] = useState(false);
   const [selectionFilterOpen, setSelectionFilterOpen] = useState(false);
+  const [createGroupOpen, setCreateGroupOpen] = useState(false);
   const [undoDepth, setUndoDepth] = useState(0);
   const [redoDepth, setRedoDepth] = useState(0);
   const [recentProjects, setRecentProjects] = useState<ProjectMenuItemRecent[]>(() =>
@@ -3930,6 +3935,7 @@ export function Workspace(): JSX.Element {
           openMilestone: openMilestoneDialog,
           openPasteToLevels: () => setPasteToLevelsOpen(true),
           openSelectionFilter: () => setSelectionFilterOpen(true),
+          openCreateGroup: () => setCreateGroupOpen(true),
           hasAdvisorQuickFix: Boolean(firstAdvisorQuickFix),
           applyFirstAdvisorFix: firstAdvisorQuickFix
             ? () => void onSemanticCommand(firstAdvisorQuickFix)
@@ -4220,6 +4226,44 @@ export function Workspace(): JSX.Element {
         elementsById={elementsById}
         onApply={(newPrimary, newRest) => {
           useBimStore.setState({ selectedId: newPrimary, selectedIds: newRest });
+        }}
+      />
+      <CreateGroupDialog
+        open={createGroupOpen}
+        elementCount={selectedIds.length + (selectedId ? 1 : 0)}
+        onClose={() => setCreateGroupOpen(false)}
+        onConfirm={(name) => {
+          const allIds = [...(selectedId ? [selectedId] : []), ...selectedIds];
+          const centroidX =
+            allIds.reduce((sum, id) => {
+              const el = elementsById[id];
+              const x =
+                (el as { insertionPoint?: { xMm: number } } | undefined)?.insertionPoint?.xMm ??
+                (el as { xMm?: number } | undefined)?.xMm ??
+                0;
+              return sum + x;
+            }, 0) / Math.max(allIds.length, 1);
+          const centroidY =
+            allIds.reduce((sum, id) => {
+              const el = elementsById[id];
+              const y =
+                (el as { insertionPoint?: { yMm: number } } | undefined)?.insertionPoint?.yMm ??
+                (el as { yMm?: number } | undefined)?.yMm ??
+                0;
+              return sum + y;
+            }, 0) / Math.max(allIds.length, 1);
+          const { registry } = applyCreateGroup(
+            groupRegistry,
+            {
+              type: 'createGroup',
+              name,
+              elementIds: allIds,
+              originXMm: centroidX,
+              originYMm: centroidY,
+            },
+            () => crypto.randomUUID(),
+          );
+          setGroupRegistry(registry);
         }}
       />
       {modelId ? (

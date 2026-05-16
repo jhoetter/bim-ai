@@ -148,6 +148,7 @@ describe('command capability graph', () => {
       ['visibility.plan.graphics', ['cmd-k', 'ribbon', 'secondary-sidebar']],
       ['clipboard.paste-to-levels', ['cmd-k']],
       ['selection.filter', ['cmd-k']],
+      ['model.create-group', ['cmd-k']],
     ] as const);
     const modalCapabilities = getAllCommandCapabilities()
       .filter((capability) => capability.executionSurface === 'modal')

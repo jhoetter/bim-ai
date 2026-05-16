@@ -4,6 +4,7 @@ import type { LensMode, PerspectiveId, WorkspaceLayoutPreset } from '@bim-ai/cor
 
 import type { PlanPresentationPreset } from '../plan/symbology';
 import type { DisciplineWorkspaceId, StoreState } from './storeTypes';
+import { emptyGroupRegistry } from '../groups/groupTypes';
 
 type StoreSet = Parameters<StateCreator<StoreState>>[0];
 
@@ -66,11 +67,13 @@ export type WorkspaceUiRuntimeSlice = Pick<
   | 'perspectiveId'
   | 'roofJoinPreview'
   | 'thinLinesEnabled'
+  | 'groupRegistry'
   | 'setWorkspaceLayoutPreset'
   | 'setActiveWorkspaceId'
   | 'setPerspectiveId'
   | 'setRoofJoinPreview'
   | 'toggleThinLines'
+  | 'setGroupRegistry'
 >;
 
 function readSessionString(key: string, fallback: string): string {
@@ -258,5 +261,8 @@ export function createWorkspaceUiRuntimeSlice(set: StoreSet): WorkspaceUiRuntime
     },
     setRoofJoinPreview: (roofJoinPreview) => set({ roofJoinPreview }),
     toggleThinLines: () => set((s) => ({ thinLinesEnabled: !s.thinLinesEnabled })),
+
+    groupRegistry: emptyGroupRegistry(),
+    setGroupRegistry: (groupRegistry) => set({ groupRegistry }),
   };
 }
