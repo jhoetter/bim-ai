@@ -2915,6 +2915,22 @@ export function PlanCanvas({
         redrawPreviewRectMm(d.sx, d.sy, v.xMm, v.yMm);
         return;
       }
+      if (planTool === 'model-line' && d?.kind === 'model-line' && d.points.length >= 1) {
+        const all = [...d.points, { xMm: v.xMm, yMm: v.yMm }];
+        const pts = all.map((pt) => new THREE.Vector3(pt.xMm / 1000, SLICE_Y, pt.yMm / 1000));
+        if (previewRef.current) {
+          grp.remove(previewRef.current);
+          previewRef.current.geometry.dispose();
+        }
+        previewRef.current = new THREE.Line(
+          new THREE.BufferGeometry().setFromPoints(pts),
+          new THREE.LineBasicMaterial({
+            color: readPlanToken('--draft-construction-blue', '#fcd34d'),
+          }),
+        );
+        grp.add(previewRef.current);
+        return;
+      }
       if (
         (planTool === 'wall' && d?.kind === 'wall') ||
         (planTool === 'grid' && d?.kind === 'grid') ||
@@ -5734,6 +5750,10 @@ export function PlanCanvas({
             type: 'cancel',
           });
           setMeasureArcReadout(null);
+          bumpGeom((x) => x + 1);
+        } else if (planTool === 'model-line') {
+          modelLineStateRef.current = initialModelLineState();
+          clearPreview();
           bumpGeom((x) => x + 1);
         }
         if (

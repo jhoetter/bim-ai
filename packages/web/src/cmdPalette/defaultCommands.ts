@@ -2179,7 +2179,7 @@ registerCommand({
   id: 'tool.model-line',
   label: 'Model Line',
   keywords: ['model line', 'construction line', 'sketch', 'ML'],
-  category: 'tool',
+  category: 'command',
   invoke: (ctx) => startPlanTool(ctx, 'model-line'),
 });
 
