@@ -1,0 +1,59 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "47c8a3269016",
+  "strategy": "manual-commit",
+  "branch": "main",
+  "checkpoints_count": 2,
+  "files_touched": [
+    "packages/core/src/index.ts",
+    "packages/web/src/export/pdfExporterOptions.test.ts",
+    "packages/web/src/groups/GroupEditModeBar.tsx",
+    "packages/web/src/groups/groupEditMode.test.ts",
+    "packages/web/src/groups/groupEditModeBar.test.tsx",
+    "packages/web/src/plan/PlanCanvas.tsx",
+    "packages/web/src/plan/ceilingGridPattern.test.ts",
+    "packages/web/src/plan/ceilingGridPlanThree.ts",
+    "packages/web/src/plan/planElementMeshBuilders.ts",
+    "packages/web/src/plan/roomTagDetail.test.ts",
+    "packages/web/src/plan/symbology.ts",
+    "packages/web/src/state/storeModelRuntimeSlice.ts",
+    "packages/web/src/state/storeRuntimeSlices.ts",
+    "packages/web/src/state/storeSliceContracts.ts",
+    "packages/web/src/state/storeTypes.ts",
+    "packages/web/src/tools/massToCurtainWall.test.ts",
+    "packages/web/src/tools/massToCurtainWall.ts",
+    "packages/web/src/tools/massToFloors.test.ts",
+    "packages/web/src/tools/massToFloors.ts",
+    "packages/web/src/tools/toolGrammar.steelConnection.test.ts",
+    "packages/web/src/tools/toolGrammar.ts",
+    "packages/web/src/viewport/beamSectionProfile.test.ts",
+    "packages/web/src/viewport/beamSectionProfile.ts",
+    "packages/web/src/viewport/steelConnectionTool.test.ts",
+    "packages/web/src/workspace/ViewRangeDialog.test.tsx",
+    "packages/web/src/workspace/ViewRangeDialog.tsx",
+    "packages/web/src/workspace/Workspace.tsx",
+    "packages/web/src/workspace/inspector/InspectorContent.tsx",
+    "packages/web/src/workspace/inspector/beamInspector.test.tsx",
+    "packages/web/src/workspace/inspector/ceilingInspector.test.tsx",
+    "packages/web/src/workspace/inspector/stairInspector.test.tsx",
+    "packages/web/src/workspace/inspector/steelConnectionInspector.test.tsx",
+    "packages/web/src/workspace/project/ProjectBrowser.tsx",
+    "packages/web/src/workspace/sheets/PrintPlotDialog.test.tsx",
+    "packages/web/src/workspace/sheets/PrintPlotDialog.tsx"
+  ],
+  "sessions": [
+    {
+      "metadata": "/47/c8a3269016/0/metadata.json",
+      "transcript": "/47/c8a3269016/0/full.jsonl",
+      "content_hash": "/47/c8a3269016/0/content_hash.txt",
+      "prompt": "/47/c8a3269016/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 80,
+    "cache_creation_tokens": 128283,
+    "cache_read_tokens": 7634411,
+    "output_tokens": 43439,
+    "api_call_count": 76
+  }
+}

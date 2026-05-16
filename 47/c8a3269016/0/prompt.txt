@@ -1,0 +1,1 @@
+Your task is to implement the steel connection placement tool and inspector panel in bim-ai — read spec/revit-parity/agent-prompts/WAVE6-WP-B.md for the full brief.

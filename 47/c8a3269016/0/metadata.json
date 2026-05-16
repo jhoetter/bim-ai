@@ -1,0 +1,80 @@
+{
+  "cli_version": "0.6.0",
+  "checkpoint_id": "47c8a3269016",
+  "session_id": "019d18ff-5b77-4947-a147-82285e31b519",
+  "strategy": "manual-commit",
+  "created_at": "2026-05-16T16:09:25.518074Z",
+  "branch": "main",
+  "checkpoints_count": 2,
+  "files_touched": [
+    "packages/core/src/index.ts",
+    "packages/web/src/export/pdfExporterOptions.test.ts",
+    "packages/web/src/groups/GroupEditModeBar.tsx",
+    "packages/web/src/groups/groupEditMode.test.ts",
+    "packages/web/src/groups/groupEditModeBar.test.tsx",
+    "packages/web/src/plan/PlanCanvas.tsx",
+    "packages/web/src/plan/ceilingGridPattern.test.ts",
+    "packages/web/src/plan/ceilingGridPlanThree.ts",
+    "packages/web/src/plan/planElementMeshBuilders.ts",
+    "packages/web/src/plan/roomTagDetail.test.ts",
+    "packages/web/src/plan/symbology.ts",
+    "packages/web/src/state/storeModelRuntimeSlice.ts",
+    "packages/web/src/state/storeRuntimeSlices.ts",
+    "packages/web/src/state/storeSliceContracts.ts",
+    "packages/web/src/state/storeTypes.ts",
+    "packages/web/src/tools/massToCurtainWall.test.ts",
+    "packages/web/src/tools/massToCurtainWall.ts",
+    "packages/web/src/tools/massToFloors.test.ts",
+    "packages/web/src/tools/massToFloors.ts",
+    "packages/web/src/tools/toolGrammar.steelConnection.test.ts",
+    "packages/web/src/tools/toolGrammar.ts",
+    "packages/web/src/viewport/beamSectionProfile.test.ts",
+    "packages/web/src/viewport/beamSectionProfile.ts",
+    "packages/web/src/viewport/steelConnectionTool.test.ts",
+    "packages/web/src/workspace/ViewRangeDialog.test.tsx",
+    "packages/web/src/workspace/ViewRangeDialog.tsx",
+    "packages/web/src/workspace/Workspace.tsx",
+    "packages/web/src/workspace/inspector/InspectorContent.tsx",
+    "packages/web/src/workspace/inspector/beamInspector.test.tsx",
+    "packages/web/src/workspace/inspector/ceilingInspector.test.tsx",
+    "packages/web/src/workspace/inspector/stairInspector.test.tsx",
+    "packages/web/src/workspace/inspector/steelConnectionInspector.test.tsx",
+    "packages/web/src/workspace/project/ProjectBrowser.tsx",
+    "packages/web/src/workspace/sheets/PrintPlotDialog.test.tsx",
+    "packages/web/src/workspace/sheets/PrintPlotDialog.tsx"
+  ],
+  "agent": "Claude Code",
+  "model": "claude-sonnet-4-6",
+  "turn_id": "ae6a6565f736",
+  "token_usage": {
+    "input_tokens": 80,
+    "cache_creation_tokens": 128283,
+    "cache_read_tokens": 7634411,
+    "output_tokens": 43439,
+    "api_call_count": 76
+  },
+  "session_metrics": {
+    "turn_count": 1
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-05-16T16:09:25.503191Z",
+    "agent_lines": 2511,
+    "agent_removed": 56,
+    "human_added": 0,
+    "human_modified": 0,
+    "human_removed": 0,
+    "total_committed": 2511,
+    "total_lines_changed": 2567,
+    "agent_percentage": 100,
+    "metric_version": 2
+  },
+  "prompt_attributions": [
+    {
+      "checkpoint_number": 2,
+      "user_lines_added": 0,
+      "user_lines_removed": 0,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0
+    }
+  ]
+}
