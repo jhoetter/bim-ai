@@ -72,3 +72,7 @@ You are resuming a crashed agent session on the bim-ai repo
   - Do NOT touch stair/ramp, annotation tools, phase dialogs, structural, massing, or view/sheet rendering
   - pnpm test --filter @bim-ai/web before each push
   - Update spec/revit-parity/revit2026-parity-tracker.md as you complete items
+
+---
+
+did you update the tracker accordingly? or are you not done yet?
