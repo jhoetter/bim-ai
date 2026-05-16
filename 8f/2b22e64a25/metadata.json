@@ -104,6 +104,12 @@
       "transcript": "/8f/2b22e64a25/14/full.jsonl",
       "content_hash": "/8f/2b22e64a25/14/content_hash.txt",
       "prompt": "/8f/2b22e64a25/14/prompt.txt"
+    },
+    {
+      "metadata": "/8f/2b22e64a25/15/metadata.json",
+      "transcript": "/8f/2b22e64a25/15/full.jsonl",
+      "content_hash": "/8f/2b22e64a25/15/content_hash.txt",
+      "prompt": "/8f/2b22e64a25/15/prompt.txt"
     }
   ],
   "token_usage": {
