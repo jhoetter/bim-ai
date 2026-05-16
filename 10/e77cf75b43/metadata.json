@@ -3,7 +3,7 @@
   "checkpoint_id": "10e77cf75b43",
   "strategy": "manual-commit",
   "branch": "main",
-  "checkpoints_count": 1,
+  "checkpoints_count": 2,
   "files_touched": [
     "packages/web/src/workspace/commandCapabilities.test.ts",
     "packages/web/src/workspace/commandCapabilities.ts"
@@ -44,13 +44,19 @@
       "transcript": "/10/e77cf75b43/5/full.jsonl",
       "content_hash": "/10/e77cf75b43/5/content_hash.txt",
       "prompt": "/10/e77cf75b43/5/prompt.txt"
+    },
+    {
+      "metadata": "/10/e77cf75b43/6/metadata.json",
+      "transcript": "/10/e77cf75b43/6/full.jsonl",
+      "content_hash": "/10/e77cf75b43/6/content_hash.txt",
+      "prompt": "/10/e77cf75b43/6/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 3319494,
-    "cache_creation_tokens": 2991,
-    "cache_read_tokens": 62167830,
-    "output_tokens": 161416,
-    "api_call_count": 1350
+    "input_tokens": 3320102,
+    "cache_creation_tokens": 302506,
+    "cache_read_tokens": 85401580,
+    "output_tokens": 297935,
+    "api_call_count": 1574
   }
 }
