@@ -1,0 +1,5 @@
+i have an agent working on @spec/ux-bim-ai-next-tracker.md, but my macbook crashed; where are we currently?
+
+---
+
+ok then please continue with that, and keep working until the tracker is fully solved
