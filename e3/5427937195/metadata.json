@@ -8,9 +8,11 @@
     "app/bim_ai/commands.py",
     "app/bim_ai/elements.py",
     "app/bim_ai/engine.py",
+    "packages/core/src/index.ts",
     "packages/web/src/plan/PlanCanvas.tsx",
     "packages/web/src/state/storeCoercion.ts",
-    "packages/web/src/tools/toolGrammar.ts"
+    "packages/web/src/tools/toolGrammar.ts",
+    "spec/revit-parity/revit2026-parity-tracker.md"
   ],
   "sessions": [
     {
@@ -48,13 +50,19 @@
       "transcript": "/e3/5427937195/5/full.jsonl",
       "content_hash": "/e3/5427937195/5/content_hash.txt",
       "prompt": "/e3/5427937195/5/prompt.txt"
+    },
+    {
+      "metadata": "/e3/5427937195/6/metadata.json",
+      "transcript": "/e3/5427937195/6/full.jsonl",
+      "content_hash": "/e3/5427937195/6/content_hash.txt",
+      "prompt": "/e3/5427937195/6/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 4804663,
-    "cache_creation_tokens": 1444649,
-    "cache_read_tokens": 253476538,
-    "output_tokens": 811501,
-    "api_call_count": 2511
+    "input_tokens": 4804882,
+    "cache_creation_tokens": 1635635,
+    "cache_read_tokens": 270865803,
+    "output_tokens": 885623,
+    "api_call_count": 2718
   }
 }
