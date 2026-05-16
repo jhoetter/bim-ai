@@ -3,7 +3,7 @@
   "checkpoint_id": "a7a2d94d6f5f",
   "strategy": "manual-commit",
   "branch": "main",
-  "checkpoints_count": 4,
+  "checkpoints_count": 5,
   "files_touched": [
     "packages/web/src/workspace/sheets/SheetCanvas.tsx",
     "spec/revit-parity/revit2026-parity-tracker.md"
@@ -116,13 +116,19 @@
       "transcript": "/a7/a2d94d6f5f/17/full.jsonl",
       "content_hash": "/a7/a2d94d6f5f/17/content_hash.txt",
       "prompt": "/a7/a2d94d6f5f/17/prompt.txt"
+    },
+    {
+      "metadata": "/a7/a2d94d6f5f/18/metadata.json",
+      "transcript": "/a7/a2d94d6f5f/18/full.jsonl",
+      "content_hash": "/a7/a2d94d6f5f/18/content_hash.txt",
+      "prompt": "/a7/a2d94d6f5f/18/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 5829,
-    "cache_creation_tokens": 3260354,
-    "cache_read_tokens": 287079736,
-    "output_tokens": 1092965,
-    "api_call_count": 2998
+    "input_tokens": 7546,
+    "cache_creation_tokens": 3843333,
+    "cache_read_tokens": 336006883,
+    "output_tokens": 1235318,
+    "api_call_count": 3511
   }
 }
