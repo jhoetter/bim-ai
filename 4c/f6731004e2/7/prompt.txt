@@ -1,0 +1,2 @@
+Read the file /Users/jhoetter/repos/bim-ai/spec/revit-parity/agent-prompts/WP-B-modify-toolset-and-groups.prompt.md in full, then execute everything described in it. Dispatch sub-agents for independent
+  sub-tasks (B1–B8 can largely run in parallel). Work on the main branch, pull --rebase before every push. Do not stop until all sub-tasks are done and the parity tracker is updated.
