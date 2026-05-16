@@ -4,7 +4,11 @@
   "strategy": "manual-commit",
   "branch": "main",
   "checkpoints_count": 4,
-  "files_touched": null,
+  "files_touched": [
+    "packages/web/src/plan/curtainWallPlanSymbol.customDivisions.test.ts",
+    "packages/web/src/plan/curtainWallPlanSymbol.ts",
+    "packages/web/src/workspace/inspector/InspectorContent.tsx"
+  ],
   "sessions": [
     {
       "metadata": "/ca/6fb0df8c34/0/metadata.json",
@@ -53,13 +57,19 @@
       "transcript": "/ca/6fb0df8c34/7/full.jsonl",
       "content_hash": "/ca/6fb0df8c34/7/content_hash.txt",
       "prompt": "/ca/6fb0df8c34/7/prompt.txt"
+    },
+    {
+      "metadata": "/ca/6fb0df8c34/8/metadata.json",
+      "transcript": "/ca/6fb0df8c34/8/full.jsonl",
+      "content_hash": "/ca/6fb0df8c34/8/content_hash.txt",
+      "prompt": "/ca/6fb0df8c34/8/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 4807202,
-    "cache_creation_tokens": 1902565,
-    "cache_read_tokens": 299018219,
-    "output_tokens": 963489,
-    "api_call_count": 3010
+    "input_tokens": 4807367,
+    "cache_creation_tokens": 2048192,
+    "cache_read_tokens": 314153114,
+    "output_tokens": 1021205,
+    "api_call_count": 3167
   }
 }
