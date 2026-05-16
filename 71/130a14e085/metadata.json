@@ -13,7 +13,8 @@
     "packages/web/src/tools/toolGrammar.ts",
     "packages/web/src/workspace/Workspace.tsx",
     "packages/web/src/workspace/commandCapabilities.test.ts",
-    "packages/web/src/workspace/commandCapabilities.ts"
+    "packages/web/src/workspace/commandCapabilities.ts",
+    "spec/ux-bim-ai-next-tracker.md"
   ],
   "sessions": [
     {
@@ -45,6 +46,12 @@
       "transcript": "/71/130a14e085/4/full.jsonl",
       "content_hash": "/71/130a14e085/4/content_hash.txt",
       "prompt": "/71/130a14e085/4/prompt.txt"
+    },
+    {
+      "metadata": "/71/130a14e085/5/metadata.json",
+      "transcript": "/71/130a14e085/5/full.jsonl",
+      "content_hash": "/71/130a14e085/5/content_hash.txt",
+      "prompt": "/71/130a14e085/5/prompt.txt"
     }
   ],
   "token_usage": {
