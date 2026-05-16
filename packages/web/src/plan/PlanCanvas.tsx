@@ -6543,6 +6543,21 @@ export function PlanCanvas({
           onClose={() => setWallContextMenu(null)}
         />
       )}
+      {/* §1.7.2: generic element right-click context menu for non-wall elements */}
+      {elementCtxMenu && (
+        <ElementContextMenu
+          open
+          anchorX={elementCtxMenu.position.x}
+          anchorY={elementCtxMenu.position.y}
+          items={contextMenuItemsForElement(
+            elementCtxMenu.el,
+            (cmd) => void onSemanticCommand(cmd),
+            { activeLevelId: displayLevelId ?? '', planTool: planTool ?? '' },
+          )}
+          onClose={() => setElementCtxMenu(null)}
+          data-testid="element-context-menu"
+        />
+      )}
       {/* F-014/F-102: Unhide in View context menu — shown when right-clicking a hidden element in reveal hidden mode */}
       {unhideContextMenu && (
         <div
