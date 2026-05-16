@@ -349,9 +349,9 @@ Select tool exists. Selection filter by category (Auswahlfilter dialog) is Not S
 Inspector panel always shows properties of selected element.
 
 #### 3.3.3 Gruppe »Zwischenablage« (clipboard: cut, copy, paste, paste aligned)
-**Status: Partial — P1**
-Ctrl+C copies selection to clipboard (copyElementsToClipboard); Ctrl+V pastes at cursor (pasteFromOSClipboard) — both wired in PlanCanvas.tsx. copyToLevels / pasteAlignedToLevels helpers implemented with 6 unit tests. "Paste Aligned to Selected Levels" UI modal pending.
-- **C6:** Ctrl+C/V wired. copyToLevels.ts + pasteAlignedToLevels fully implemented. Selection toolbar "Paste to Levels" button not yet surfaced in UI.
+**Status: Done — G1**
+Ctrl+C copies selection to clipboard (copyElementsToClipboard); Ctrl+V pastes at cursor (pasteFromOSClipboard) — both wired in PlanCanvas.tsx. copyToLevels / pasteAlignedToLevels helpers implemented with 6 unit tests. "Paste Aligned to Selected Levels" available via Cmd+K (clipboard.paste-to-levels) and implemented as PasteToLevelsDialog with 8 tests.
+- **C6:** Ctrl+C/V wired. copyToLevels.ts + pasteAlignedToLevels fully implemented. PasteToLevelsDialog (Cmd+K → level-picker modal → dispatches copyElementsToLevels per target) complete with 8 passing tests.
 
 #### 3.3.4 Gruppe »Geometrie« (geometry group: Join, Unjoin, Cut, Uncut geometry, Paint)
 **Status: Partial — P1**
@@ -1137,8 +1137,8 @@ cheatsheetData.ts and CheatsheetModal.tsx provide a keyboard shortcut reference 
 - Free text annotation tool (Ch. 4.10)
 - Angular / radial dimensions (Ch. 4.4–4.5)
 - Spot elevation annotation (Ch. 4.7)
-- IFC export (Ch. 12.4.3) — IFC 2x3 STEP writer implemented (E1, `export/ifcExporter.ts`); UI trigger not yet wired
-- DWG/DXF export (Ch. 12.4.3)
+- IFC export UI trigger (Ch. 12.4.3) — E1 STEP writer complete (Psets + material layers); file-menu "Export → IFC…" not yet wired to the exporter
+- DWG/DGN export (Ch. 12.4.3) — DXF export (E2) is done; DWG/DGN not started
 - Curtain wall authoring UI (Ch. 8.1.4)
 - Global parameters (Ch. 3.8)
 - Beam systems and braces (Ch. 9.3–9.4)
