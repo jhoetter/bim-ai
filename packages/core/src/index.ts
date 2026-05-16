@@ -321,6 +321,8 @@ export type ElemKind =
   | 'repeating_detail'
   | 'detail_group'
   | 'revision_cloud'
+  | 'revision'
+  | 'sheet_revision'
   | 'constraint'
   | 'mass'
   | 'phase'
@@ -2706,6 +2708,29 @@ export type Element =
     }
   | {
       /**
+       * D6 — project-level revision entry. Tracks a single issued revision with
+       * its number (e.g. "01"), date (ISO 8601), description, and issue metadata.
+       */
+      kind: 'revision';
+      id: string;
+      number: string;
+      date: string;
+      description: string;
+      issuedBy?: string;
+      issuedTo?: string;
+    }
+  | {
+      /**
+       * D6 — join table linking a revision to a specific sheet. Multiple
+       * revisions may apply to a single sheet; each gets one sheet_revision row.
+       */
+      kind: 'sheet_revision';
+      id: string;
+      sheetId: string;
+      revisionId: string;
+    }
+  | {
+      /**
        * EDT-02 — geometric constraint between element groups. The engine
        * evaluates constraints after each command apply and rejects the
        * bundle when any `error`-severity constraint is violated. The most
@@ -4016,6 +4041,44 @@ export type RenderExportBundle = {
     }>;
   };
   exportTimestamp: string;
+};
+
+// ---------------------------------------------------------------------------
+// D6 — Sheet Revision Management commands
+// ---------------------------------------------------------------------------
+
+export type CreateRevisionCmd = {
+  type: 'create_revision';
+  id: string;
+  number: string;
+  date: string;
+  description: string;
+  issuedBy?: string;
+  issuedTo?: string;
+};
+
+export type UpdateRevisionCmd = {
+  type: 'update_revision';
+  id: string;
+  number?: string;
+  date?: string;
+  description?: string;
+  issuedBy?: string;
+  issuedTo?: string;
+};
+
+export type DeleteRevisionCmd = { type: 'delete_revision'; id: string };
+
+export type AddSheetRevisionCmd = {
+  type: 'add_sheet_revision';
+  id: string;
+  sheetId: string;
+  revisionId: string;
+};
+
+export type RemoveSheetRevisionCmd = {
+  type: 'remove_sheet_revision';
+  id: string;
 };
 
 // ---------------------------------------------------------------------------

@@ -612,7 +612,7 @@ Reflected ceiling plans (RCP) are implemented as `planViewSubtype: 'ceiling_plan
 - Standard 3D orthographic/perspective: Done
 - ViewCube navigation: Done (Partial parity — see Ch. 3)
 - Section box: Done (sectionBox.ts)
-- Locked 3D view (saved camera position that can be placed on a sheet): Partial — orbit viewpoint persistence exists (OrbitViewpointPersistedHud.tsx) but named locked 3D views in the project browser are Partial
+- Named locked 3D view: Partial — "Save 3D View As…" dialog (`Save3dViewAsDialog.tsx`) prompts for a name before persisting a `saved_view` element with camera + clip state (D5). `saved_view` rows appear in ProjectBrowser. Lock toggle and sheet placement not yet implemented.
 
 #### 6.1.4 Außenansichten (elevation views: North, South, East, West)
 **Status: Partial — P1**
@@ -631,8 +631,8 @@ Section tool exists, section views are generated (sectionViewportSvg.tsx). A ful
 NewSheetDialog.tsx, SheetCanvas.tsx, SheetReviewSurface.tsx exist. Sheets can be created and views placed on them. Missing: user-customisable title blocks (Schriftkopf) with project information fields, dynamic title block families, viewport scale labels on sheets.
 
 ### 6.3 Plan mit Änderungsliste (sheet with revision table / delta list)
-**Status: Not Started — P2**
-Revision tracking per sheet (Revit's Revision cloud + Revision schedule in title block) is not implemented.
+**Status: Partial — D6**
+`revision` and `sheet_revision` element types added to `@bim-ai/core`. `ManageRevisionsDialog.tsx` implements CRUD for project revisions and per-sheet assignment via checkboxes (`sheet_revision` join records). Commands: `create_revision`, `update_revision`, `delete_revision`, `add_sheet_revision`, `remove_sheet_revision`. Revision clouds (`revision_cloud` annotation — ANN-03) already existed. Missing: revision table in sheet title block rendering, `revision-cloud` draw tool in toolbar.
 
 ### 6.4 Detailansichten und Detaillierung (detail views and 2D detailing)
 
