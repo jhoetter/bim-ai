@@ -1,20 +1,15 @@
 {
   "cli_version": "0.6.0",
   "checkpoint_id": "a7a2d94d6f5f",
-  "session_id": "00c12fa4-e09f-4334-93bc-2ea2d1eb510c",
+  "session_id": "019e2c15-3903-7080-93f0-26ac15f4d057",
   "strategy": "manual-commit",
-  "created_at": "2026-05-16T08:57:51.381024Z",
+  "created_at": "2026-05-16T09:35:38.251923Z",
   "branch": "main",
-  "checkpoints_count": 1,
+  "checkpoints_count": 0,
   "files_touched": [],
-  "agent": "Claude Code",
-  "model": "claude-sonnet-4-6",
-  "turn_id": "4bbab7451fb9",
-  "token_usage": {
-    "input_tokens": 101,
-    "cache_creation_tokens": 83042,
-    "cache_read_tokens": 6198356,
-    "output_tokens": 23197,
-    "api_call_count": 96
-  }
+  "agent": "Codex",
+  "model": "gpt-5.5",
+  "turn_id": "21f89abf4760",
+  "checkpoint_transcript_start": 3630,
+  "transcript_lines_at_start": 3630
 }
