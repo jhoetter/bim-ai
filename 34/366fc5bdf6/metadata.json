@@ -3,7 +3,7 @@
   "checkpoint_id": "34366fc5bdf6",
   "strategy": "manual-commit",
   "branch": "main",
-  "checkpoints_count": 2,
+  "checkpoints_count": 3,
   "files_touched": [
     "packages/web/src/workspace/sheets/SheetCanvas.test.tsx",
     "packages/web/src/workspace/sheets/SheetCanvas.tsx"
@@ -26,13 +26,19 @@
       "transcript": "/34/366fc5bdf6/2/full.jsonl",
       "content_hash": "/34/366fc5bdf6/2/content_hash.txt",
       "prompt": ""
+    },
+    {
+      "metadata": "/34/366fc5bdf6/3/metadata.json",
+      "transcript": "/34/366fc5bdf6/3/full.jsonl",
+      "content_hash": "/34/366fc5bdf6/3/content_hash.txt",
+      "prompt": "/34/366fc5bdf6/3/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 13531003,
+    "input_tokens": 16096316,
     "cache_creation_tokens": 0,
-    "cache_read_tokens": 307320192,
-    "output_tokens": 896453,
-    "api_call_count": 2468
+    "cache_read_tokens": 344808576,
+    "output_tokens": 1006704,
+    "api_call_count": 2767
   }
 }
