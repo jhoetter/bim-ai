@@ -3,8 +3,9 @@
   "checkpoint_id": "8944b21da300",
   "strategy": "manual-commit",
   "branch": "main",
-  "checkpoints_count": 2,
+  "checkpoints_count": 3,
   "files_touched": [
+    "packages/core/src/index.ts",
     "packages/web/src/cmdPalette/defaultCommands.ts",
     "packages/web/src/workspace/WorkspaceRightRail.tsx",
     "spec/ux-bim-ai-next-tracker.md"
@@ -63,13 +64,19 @@
       "transcript": "/89/44b21da300/8/full.jsonl",
       "content_hash": "/89/44b21da300/8/content_hash.txt",
       "prompt": "/89/44b21da300/8/prompt.txt"
+    },
+    {
+      "metadata": "/89/44b21da300/9/metadata.json",
+      "transcript": "/89/44b21da300/9/full.jsonl",
+      "content_hash": "/89/44b21da300/9/content_hash.txt",
+      "prompt": "/89/44b21da300/9/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 4803287,
-    "cache_creation_tokens": 445688,
-    "cache_read_tokens": 163895599,
-    "output_tokens": 501365,
-    "api_call_count": 1607
+    "input_tokens": 4803517,
+    "cache_creation_tokens": 675436,
+    "cache_read_tokens": 181493019,
+    "output_tokens": 576260,
+    "api_call_count": 1819
   }
 }
