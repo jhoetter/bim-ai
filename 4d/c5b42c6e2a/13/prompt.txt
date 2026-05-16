@@ -1,0 +1,11 @@
+Terminal 4 — WP-D (Views/Sheets)
+  cat spec/revit-parity/agent-prompts/WAVE2-WP-D.md | pbcopy
+  Tasks: revision table in title block, locked 3D view toggle + sheet placement, walkthrough camera path + playback
+
+---
+
+spawn the agent to work on this until fully done
+
+---
+
+are you still working?
