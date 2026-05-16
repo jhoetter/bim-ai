@@ -7,3 +7,15 @@ ok then please continue with that, and keep working until the tracker is fully s
 ---
 
 are you fully done? ux-tracker completed?
+
+---
+
+on port 2000 should be a UI available
+
+---
+
+yes please; is the tracker then fully done?
+
+---
+
+then go ahead and complete these things..
