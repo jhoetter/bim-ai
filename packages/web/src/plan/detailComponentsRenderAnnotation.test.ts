@@ -431,3 +431,64 @@ describe('mixed annotation kinds', () => {
     expect(extractDetailComponentPrimitives(elementsById, undefined)).toEqual([]);
   });
 });
+
+/* ────────────────────────────────────────────────────────────────────── */
+/* ANN-16 — leader_text                                                    */
+/* ────────────────────────────────────────────────────────────────────── */
+
+describe('ANN-16 — leader_text', () => {
+  const leaderText: Extract<Element, { kind: 'leader_text' }> = {
+    kind: 'leader_text',
+    id: 'lt-1',
+    hostViewId: VIEW,
+    anchorMm: { xMm: 100, yMm: 200 },
+    elbowMm: { xMm: 500, yMm: 200 },
+    textMm: { xMm: 700, yMm: 200 },
+    content: 'Concrete wall',
+    arrowStyle: 'arrow',
+    colour: '#1a2b3c',
+  };
+
+  it('extracts a leader_text primitive with all fields', () => {
+    const prims = extractDetailComponentPrimitives({ [leaderText.id]: leaderText }, VIEW);
+    expect(prims).toHaveLength(1);
+    const [p] = prims;
+    expect(p?.kind).toBe('leader_text');
+    if (p?.kind === 'leader_text') {
+      expect(p.anchorMm).toEqual({ xMm: 100, yMm: 200 });
+      expect(p.elbowMm).toEqual({ xMm: 500, yMm: 200 });
+      expect(p.textMm).toEqual({ xMm: 700, yMm: 200 });
+      expect(p.content).toBe('Concrete wall');
+      expect(p.arrowStyle).toBe('arrow');
+      expect(p.colour).toBe('#1a2b3c');
+    }
+  });
+
+  it('defaults elbowMm to null and arrowStyle to arrow when omitted', () => {
+    const minimal: Extract<Element, { kind: 'leader_text' }> = {
+      kind: 'leader_text',
+      id: 'lt-min',
+      hostViewId: VIEW,
+      anchorMm: { xMm: 0, yMm: 0 },
+      textMm: { xMm: 400, yMm: 0 },
+      content: 'Simple',
+    };
+    const prims = extractDetailComponentPrimitives({ [minimal.id]: minimal }, VIEW);
+    const [p] = prims;
+    if (p?.kind === 'leader_text') {
+      expect(p.elbowMm).toBeNull();
+      expect(p.arrowStyle).toBe('arrow');
+      expect(p.colour).toBe('#202020');
+    }
+  });
+
+  it('excludes leader_text hosted on a different view', () => {
+    const foreign: Extract<Element, { kind: 'leader_text' }> = {
+      ...leaderText,
+      id: 'lt-other',
+      hostViewId: OTHER_VIEW,
+    };
+    const prims = extractDetailComponentPrimitives({ [foreign.id]: foreign }, VIEW);
+    expect(prims).toEqual([]);
+  });
+});

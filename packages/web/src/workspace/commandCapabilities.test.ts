@@ -190,6 +190,7 @@ describe('command capability graph', () => {
         'mep-opening-request',
         'column',
         'beam',
+        'beam-system',
         'brace',
         'ceiling',
         'component',

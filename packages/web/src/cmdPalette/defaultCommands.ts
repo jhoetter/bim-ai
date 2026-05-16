@@ -729,6 +729,14 @@ registerCommand({
 });
 
 registerCommand({
+  id: 'tool.beam-system',
+  label: 'Place Beam System',
+  keywords: ['beam system', 'framing', 'joist system', 'structural'],
+  category: 'command',
+  invoke: (ctx) => startPlanTool(ctx, 'beam-system'),
+});
+
+registerCommand({
   id: 'tool.ceiling',
   label: 'Place Ceiling',
   keywords: ['ceiling', 'soffit'],
