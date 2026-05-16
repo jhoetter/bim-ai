@@ -2666,8 +2666,24 @@ export function makeWallMesh(
     return makeCleanupMesh(cleanupFootprint, 'endpoint-t');
   }
 
-  const mesh = new THREE.Mesh(new THREE.BoxGeometry(len, height, thick), wallMaterial);
-  mesh.position.set(sx + dx / 2 + wallOffset.xM, yBase + height / 2, sz + dz / 2 + wallOffset.zM);
+  const slopeAngleDeg = displayWall.slopeAngleDeg;
+  const topThickMm = displayWall.topThicknessMm;
+  const hasSlopeTaper =
+    (slopeAngleDeg != null && slopeAngleDeg !== 0) || (topThickMm != null && topThickMm > 0);
+  let wallGeometry: THREE.BufferGeometry;
+  let meshY: number;
+  if (hasSlopeTaper) {
+    const slopeRad = ((slopeAngleDeg ?? 0) * Math.PI) / 180;
+    const taperRatio =
+      topThickMm != null && topThickMm > 0 ? topThickMm / displayWall.thicknessMm : 1;
+    wallGeometry = buildWallShapeGeometry(len, height, thick, slopeRad, taperRatio);
+    meshY = yBase;
+  } else {
+    wallGeometry = new THREE.BoxGeometry(len, height, thick);
+    meshY = yBase + height / 2;
+  }
+  const mesh = new THREE.Mesh(wallGeometry, wallMaterial);
+  mesh.position.set(sx + dx / 2 + wallOffset.xM, meshY, sz + dz / 2 + wallOffset.zM);
   mesh.rotation.y = yawForPlanSegment(dx, dz);
   mesh.userData.bimPickId = displayWall.id;
   mesh.userData.faceMaterialOverrides = displayWall.faceMaterialOverrides ?? null;

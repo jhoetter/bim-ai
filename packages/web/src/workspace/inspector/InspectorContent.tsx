@@ -15,7 +15,7 @@ import {
   planViewGraphicsMatrixRows,
   viewTemplateGraphicsMatrixRows,
 } from '../../plan/planProjection';
-import { polygonAreaMm2 } from '../../plan/symbology';
+import { roomAreaM2 } from '../../plan/roomArea';
 import {
   getBuiltInWallType,
   resolveWallAssemblyExposedLayers,
@@ -771,6 +771,39 @@ export function InspectorPropertiesFor(
             </div>
           )}
           <FieldRow label={f('level')} value={resolveElName(el.levelId, elementsById)} />
+
+          <div className="flex items-center gap-2 py-0.5">
+            <span className="text-xs text-muted w-28 shrink-0">Slope (°)</span>
+            <input
+              type="number"
+              className="w-20 text-xs bg-surface border border-border rounded px-1 py-0.5"
+              defaultValue={el.slopeAngleDeg ?? 0}
+              key={`${el.id}-slope`}
+              step={0.5}
+              min={-45}
+              max={45}
+              onBlur={(e) => onPropertyChange?.('slopeAngleDeg', Number(e.currentTarget.value))}
+              data-testid="inspector-wall-slope-angle"
+            />
+          </div>
+
+          <div className="flex items-center gap-2 py-0.5">
+            <span className="text-xs text-muted w-28 shrink-0">Top thickness (mm)</span>
+            <input
+              type="number"
+              className="w-20 text-xs bg-surface border border-border rounded px-1 py-0.5"
+              defaultValue={el.topThicknessMm ?? ''}
+              key={`${el.id}-topthick`}
+              step={10}
+              min={0}
+              placeholder="Same as base"
+              onBlur={(e) => {
+                const v = e.currentTarget.value;
+                onPropertyChange?.('topThicknessMm', v === '' ? null : Number(v));
+              }}
+              data-testid="inspector-wall-top-thickness"
+            />
+          </div>
 
           <div className="flex items-center gap-2 py-0.5">
             <span className="text-xs text-muted w-28 shrink-0">{f('roofAttachment')}</span>
@@ -3700,6 +3733,7 @@ export function InspectorRoomEditor({
           key={`rm-tgt-${el.id}-${el.targetAreaM2 ?? 'x'}-${revision}`}
           placeholder={r('optional')}
           inputMode="decimal"
+          data-testid="inspector-room-target-area"
           onBlur={(e) => onPersistProperty('targetAreaM2', e.target.value.trim())}
         />
       </label>
@@ -3717,9 +3751,9 @@ export function InspectorRoomEditor({
         Gross Area
         <input
           className={INPUT_CLS}
-          value={`${(polygonAreaMm2(el.outlineMm) / 1e6).toFixed(2)} m²`}
+          value={el.outlineMm.length >= 3 ? `${roomAreaM2(el.outlineMm).toFixed(1)} m²` : '—'}
           readOnly
-          data-testid="inspector-room-gross-area"
+          data-testid="inspector-room-area-gross"
           onChange={() => undefined}
         />
       </label>

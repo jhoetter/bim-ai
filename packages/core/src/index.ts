@@ -162,6 +162,30 @@ export type UpdateToposolidExcavationCmd = {
 export type DeleteToposolidExcavationCmd = { type: 'DeleteToposolidExcavation'; id: string };
 
 // ---------------------------------------------------------------------------
+// TOP-V3-06 — Toposolid pad (§5.1.4)
+// ---------------------------------------------------------------------------
+
+/** §5.1.4: a flattened sub-area of a toposolid surface, placed at a fixed elevation. */
+export type ToposolidPadElement = {
+  kind: 'toposolid_pad';
+  id: string;
+  /** Parent toposolid this pad is cut into. */
+  toposolidId: string;
+  /** Boundary polygon of the pad in plan (mm). */
+  boundaryMm: BoundaryPoint[];
+  /** Fixed elevation of the pad surface (mm above project datum). */
+  elevationMm: number;
+};
+
+export type CreateToposolidPadCmd = {
+  type: 'create_toposolid_pad';
+  id: string;
+  toposolidId: string;
+  boundaryMm: BoundaryPoint[];
+  elevationMm: number;
+};
+
+// ---------------------------------------------------------------------------
 // CAN-V3-02 — Hatch pattern definition
 // ---------------------------------------------------------------------------
 
@@ -385,7 +409,8 @@ export type ElemKind =
   | 'interior_elevation_marker'
   | 'permanent_dimension'
   | 'sheet_viewport'
-  | 'steel_connection';
+  | 'steel_connection'
+  | 'toposolid_pad';
 
 export type PhaseFilter = 'all' | 'existing' | 'demolition' | 'new';
 
@@ -429,6 +454,7 @@ export const DEFAULT_DISCIPLINE_BY_KIND: Readonly<Partial<Record<ElemKind, Disci
   beam: 'struct',
   soffit: 'arch',
   toposolid: 'arch',
+  toposolid_pad: 'arch',
   brace: 'struct',
   steel_connection: 'struct',
   foundation: 'struct',
@@ -1356,6 +1382,10 @@ export type Element =
       leanMm?: { xMm: number; yMm: number } | null;
       /** KRN-V3-07: top thickness / base thickness ratio; 1 = prismatic, must be in (0.1, 10). */
       taperRatio?: number | null;
+      /** §3.5.7 Wall lean angle in degrees. Positive = top shifts in +X direction of wall local frame. Default 0 (plumb). */
+      slopeAngleDeg?: number | null;
+      /** §3.5.7 If set, wall top is narrower than base. Top thickness = this value (mm). 0 or null = no taper. */
+      topThicknessMm?: number | null;
       /** CMD-V3-02: provenance trace linking this element to its originating bundle. */
       agentTrace?: AgentTrace;
       /** KRN-V3-04: design option membership. */
@@ -2308,6 +2338,7 @@ export type Element =
       boltCols?: number;
       boltDiameterMm?: number;
     }
+  | ToposolidPadElement
   | {
       kind: 'ceiling';
       id: string;
@@ -3188,6 +3219,14 @@ export type UpdateWallTypeCmd = {
   type: 'update_wall_type';
   id: string;
   patch: Partial<Omit<Extract<Element, { kind: 'wall_type' }>, 'kind' | 'id'>>;
+};
+
+/** §3.3.6: split a wall at a point on its centreline, yielding two walls. */
+export type SplitWallCmd = {
+  type: 'split_wall';
+  wallId: string;
+  /** The point on the wall centreline where the split occurs, in mm. */
+  splitPointMm: XY;
 };
 
 /** Evidence-package subtree: deterministic PNG inventory + digest hygiene (WP-F02/F03). */
@@ -4088,6 +4127,28 @@ export type FamilyVoid = {
   depthMm: number;
 };
 
+/** §15.1.3: family sweep — profile extruded along a path curve. */
+export type FamilySweep = {
+  kind: 'family_sweep';
+  id: string;
+  /** 2D profile polygon (mm) — cross-section shape. */
+  profilePoints: { x: number; y: number }[];
+  /** Path control points (mm) in 3D — the sweep spine. */
+  pathPoints: { x: number; y: number; z: number }[];
+};
+
+/** §15.1.4: family blend — transition between two 2D profiles at different elevations. */
+export type FamilyBlend = {
+  kind: 'family_blend';
+  id: string;
+  /** Bottom profile polygon (mm). */
+  bottomProfilePoints: { x: number; y: number }[];
+  /** Top profile polygon (mm). */
+  topProfilePoints: { x: number; y: number }[];
+  /** Blend height in mm. */
+  heightMm: number;
+};
+
 export type WalkthroughKeyframe = {
   positionMm: { x: number; y: number; z: number };
   targetMm: { x: number; y: number; z: number };
@@ -4334,6 +4395,14 @@ export type UpdateSteelConnectionCmd = {
   type: 'update_steel_connection';
   id: string;
   patch: Partial<Omit<Extract<Element, { kind: 'steel_connection' }>, 'kind' | 'id'>>;
+};
+
+export type CreatePermanentDimensionCmd = {
+  type: 'create_permanent_dimension';
+  id: string;
+  levelId: string;
+  witnessPointsMm: XY[];
+  offsetMm: XY;
 };
 
 // ---------------------------------------------------------------------------
