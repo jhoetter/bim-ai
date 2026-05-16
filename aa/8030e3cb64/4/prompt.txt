@@ -1,143 +1,65 @@
-[Image #1] discipline lens is cut off..
+Continue BIM AI UX implementation in /Users/jhoetter/repos/bim-ai, but use the prepared WP worktree /tmp/bim-ai-wp44-picked for the current unfinished slice.
 
----
+  Current workpackage:
+  WP-NEXT-44 — Generate Walls From Floors, Rooms, And Picked Boundaries.
 
-which lenses do we have, which lenses shuld we have? please tell me what the lenses are about, and also what their name is in german. e.g. i am thinking about things like energieberatung as well?
-i want that we identify the different lenses, and then in the spec folder please have a lenses folder and for each lense have a prompt like this:
-# Energy Lens for Cloud-Native BIM Platform
-## Requirements and Implementation Prompt
+  Important current state:
+  - Previous WP-NEXT-44 floor/room boundary wall generation was already committed and pushed as 9205ed6cb “Add boundary wall generation preview”.
+  - The current uncommitted slice in /tmp/bim-ai-wp44-picked adds active Wall-tool picked-line authoring for plan:
+    - packages/web/src/plan/wallPickLines.ts
+    - packages/web/src/plan/wallPickLines.test.ts
+    - packages/web/src/plan/PlanCanvas.tsx
+    - packages/web/src/plan/PlanCanvas.toolDestubs.test.ts
+    - packages/web/src/tools/authoringCommandContract.ts
+    - packages/web/tmp/ux-next-wp44-picklines-20260515/capture.mjs
+  - Do not carry over /tmp/bim-ai-wp42 Viewport.tsx changes; that was obsolete conflict work. /tmp/bim-ai-wp44-picked is based on current origin/main.
+  1. Ensure ports 2000/8500 serve /tmp/bim-ai-wp44-picked, not /Users/jhoetter/repos/bim-ai:
+     lsof -tiTCP:2000 -sTCP:LISTEN | xargs -r ps -o pid=,ppid=,command= -p
+     lsof -tiTCP:8500 -sTCP:LISTEN | xargs -r ps -o pid=,ppid=,command= -p
+  2. Then:
+     make seed name=target-house-3
+     make dev name=target-house-3
 
-## Context
+  Validation target:
+  - http://127.0.0.1:2000/
+  - http://127.0.0.1:8500/
 
-You are working on a cloud-native, AI-native BIM platform with an existing Discipline Lens architecture. The platform already has:
+  Known issue:
+  - The package test command `pnpm --filter @bim-ai/web test -- ...` currently runs the whole `src` suite and fails an unrelated current-main test:
+    `src/workspace/project/ProjectSetupDialog.test.tsx > creates location sun settings when missing`
+    because recent GeoMapPicker changes removed/changed the visible `Latitude deg`/`Longitude deg` labels and Leaflet throws in jsdom.
+  - Focused direct vitest passed:
+    `pnpm --filter @bim-ai/web exec vitest run src/plan/wallPickLines.test.ts src/plan/PlanCanvas.toolDestubs.test.ts src/tools/authoringCommandContract.test.ts src/workspace/commandCapabilities.test.ts`
+  - Typecheck passed:
+    `pnpm --filter @bim-ai/web typecheck`
 
-- **Wall types with layered composition** (thickness, function, material-key already in place; used for visualization, readout, and material/assembly resolution)
-- **Building elements** (walls, slabs, roofs, floors, windows, doors) with geometry and type assignment
-- **Rooms/zones** as logical units, used in Room Schedule
-- **3D model** with multiple saved views, sun studies, section boxes, multi-disciplinary lens
-- **Floor Plans, 3D Views, Sections, Sheets, Schedules** as primary user-facing concepts
-- **Discipline Lens** as filter/visibility layer (today: primarily visual scope, elements carry discipline tags, lens controls foreground/background rendering; not yet bound to lens-specific property sets)
-- **Real-time collaboration** with versioning (cloud-native, browser-based, multi-platform)
-- **Cloud API** allowing third-party integration
-
-The goal is to add an **Energy Lens** that turns this BIM model into a workable tool for German energy consultants (Energieberater) working on GEG compliance, BAFA-funded iSFP (individueller Sanierungsfahrplan), and BEG funding applications.
-
-**Critical scope constraint:** We do **NOT** build our own GEG calculation engine. We do **NOT** compute final energy balances per DIN V 18599. We do **NOT** generate BAFA-conformant iSFP PDFs ourselves. Instead, we are a **modeling, enrichment, and handover front-end** that lets consultants build a thermally-classified building model faster than anywhere else, then hands off via XML/IFC export to established calculation tools (Hottgenroth Energieberater, BKI Energieplaner, ETU-Planer, ZUB Helena) which carry the compliance liability.
-
-Our competitive position: We are the **modern modeling layer** in front of legacy desktop calculation tools. Energy consultants keep their familiar calculation software; they only swap out the slow, manual modeling step.
-
----
-
-## Design Principle: Native Integration with Existing Concepts
-
-The Energy Lens is **not a bolt-on**. It must extend existing platform concepts naturally so that an Architecture-Lens user and an Energy-Lens user are working on the **same model, same elements, same wall types, same rooms** — but seeing different overlays, properties, schedules, and tools.
-
-### How the Energy Lens extends existing concepts
-
-| Existing Concept | Energy Lens Extension |
-|---|---|
-| **Wall types with layers** | Layers gain thermal properties (λ, ρ, c, μ). U-value computed automatically per wall type. No duplicate wall modeling — the architect's wall is the energy consultant's wall. |
-| **Building elements** | Each element gains optional `thermalClassification` (e.g., "exterior wall against outside air", "floor against ground") and `thermalBridgeMarkers`. Architecture Lens hides these properties; Energy Lens surfaces them. |
-| **Rooms/zones** | Rooms gain `heatingStatus` (heated / low-heated / unheated) and `usageProfile` (residential / office / school / etc. per DIN V 18599). Architecture Lens shows room name and area; Energy Lens additionally shows heating status, setpoint, and air change rate. |
-| **Schedules** | New schedule types: "Envelope Surfaces", "Thermal Materials", "Building Services". They behave like existing Door/Room/Window schedules — same UI, same filtering, same export — but show energy-specific columns. |
-| **Sheets** | Energy-relevant viewports (envelope visualization, U-value heatmap, shading analysis) can be placed on sheets exactly like architectural plan viewports. A consultant can produce a "Bestandsaufnahme" sheet with envelope summary the same way an architect produces a "General Arrangement" sheet. |
-| **Sections** | Sections work unchanged but Energy Lens overlays layer thicknesses, λ-values, and U-values on the cut wall — turning a section into a thermal section. |
-| **3D Views** | Existing saved views (axonometric, elevation) remain valid in Energy Lens. Additional view modes: "Color by U-value", "Color by thermal classification", "Highlight thermal envelope", "Shading heatmap over year". These compose with existing Wire/Shaded/Realistic graphics modes. |
-| **Sun Studies** | Already present — extend with annual shading factor per window, used for solar gain assessment. |
-| **Discipline Lens (today: visual filter)** | Becomes property-set-aware. Selecting "Energy" lens changes which properties appear in inspectors, which schedules open by default, which toolbar tools are prominent, and which view modes are exposed. Architecture and Energy lens never fight over the same screen real estate. |
-| **Cloud collaboration** | Architect and energy consultant can work on the same model simultaneously, each in their own lens. Architect moves a wall — envelope area updates in the consultant's session in real time. Versioning allows "as-is" vs "renovation scenario A/B/C" as branches. |
-| **API / third-party apps** | All energy data is queryable via API. Third-party developers can build apps (e.g., quick iSFP summary landing page, customer-facing 3D walkthrough with energy info, BAFA application helper) on top of the same model. |
-
-### What this rules out by design
-
-- No parallel "energy model" that the consultant has to keep in sync with the architectural model
-- No separate material database for energy and non-energy materials — one material, optional thermal properties
-- No proprietary file format for energy data — everything stays in the project, lens-filtered
-- No special "energy mode" that disables architectural editing — both lenses are live simultaneously
-
----
-
-## Functional Scope of the Energy Lens
-
-### 1. Thermal Material Properties
-
-Extend the existing material concept (already used by wall-type layers) with optional thermal properties:
-
-- **λ (lambda)**: thermal conductivity, W/(m·K)
-- **ρ (rho)**: bulk density, kg/m³
-- **c**: specific heat capacity, J/(kg·K)
-- **μ (mu)**: water vapor diffusion resistance factor (dimensionless)
-- **Source reference**: DIN 4108-4 / DIN EN ISO 10456 / manufacturer datasheet
-
-Seed the platform with a standard library based on DIN 4108-4 (~300 common construction materials: mineral wool WLG 035, EPS WLG 032, sand-lime brick, reinforced concrete, gypsum board, OSB, etc.). Users can extend with custom materials.
-
-A material without thermal properties remains valid for non-energy use — Architecture Lens never sees these fields, Energy Lens surfaces them when needed.
-
-### 2. Automatic U-Value on Wall/Slab/Roof Types
-
-Since wall types already carry layered composition, U-value is a pure computed property:
-
-```
-please write all of these files in the folder (incl. the one for the energie consulting)
-
----
-
-is architecture lens already implemented? is sustainability something else then energy-lens? is facility-operations really a lense? it might be, i just didnt expect it
-
----
-
-i implemented all except for the facility mgmt, can you confirm?
-what is weird though: [Image #1] only those are currently selectable
-please confirm all work is correctly done (see also commit history if helpful)
-
----
-
-please implement accordingly that we can select all of them (except for facility opereations, that isnt implemented yet). also tell me: are all except for facility mgmt correctly in the main branch? they should be merged
-
----
-
-what are the differences i can see? where are they? should i be able to see differences e.g. in 3d or 2d etc?
-
----
-
-please reason about where the switches make sense; e.g. do they make sense for the schedules or sheets? shoudl the ribbons change? ...
-
-i want that it is super intuitive and clear e.g. when i am on fire safety - where can i even select this, where is that not needed? does the ribbon change, in which lenses is that the case? a difference in secondary left sidebar or element sidebar? those kind of things.
-
-reason about this and the best possible UX for EACH lense and each view type, and write that down here in detail.
-
----
-
-write this into a tracker in the specs folder for the lenses (where we also wrote the other ones); then, start implementing exactly accordingly
-
----
-
-go and implement everything until the tracker is fully solved.
-
----
-
-[Image #1] there are now new elements in the primary left sidebar, that is super confusing. why? they should at most be in the secondary sidebar! lenses are not global, but tab-specific within compositions
-
----
-
-[Image #1] so like this is good?
-
----
-
-ok then please commit and push YOUR changes
-
----
-
-what about sections? shouldnt there also be a difference in the renderings based on the lens? i am not sure, please advise me.
-
----
-
-ok go ahead and do that
-
----
-
-is the lens tracker now fully complete? looking at the lense mechanism, is there anything that SHOULD be added? ...
-
----
-
-please write this tracker and then commit and push and merge with main
+  Next concrete steps:
+  1. Fix `packages/web/tmp/ux-next-wp44-picklines-20260515/capture.mjs`.
+     It currently fails waiting for `[data-testid="wall-pick-line-preview"]` in the floor-edge proof after command hydration. Debug PlanCanvas hit-testing / level selection / sampled screen point.
+  2. Capture valid screenshots:
+     - 01-wall-tool-pick-floor-edge-preview.png
+     - 02-wall-tool-pick-floor-edge-created.png
+     - 03-wall-tool-pick-floor-edge-duplicate-blocked.png
+     - 04-wall-tool-pick-dxf-line-preview.png
+     - 05-wall-tool-pick-dxf-line-created.png
+     - summary.json
+  3. Confirm summary:
+     - floorEdgeWallCreated: true
+     - dxfLineWallCreated: true
+     - duplicateNotice contains “Existing wall already overlaps”
+     - activeTool: "wall"
+     - noMainFrameNavigationsAfterBoot: true
+     - no console/page errors except harmless favicon if any
+  4. Run:
+     pnpm --filter @bim-ai/web typecheck
+     pnpm --filter @bim-ai/web exec vitest run src/plan/wallPickLines.test.ts src/plan/PlanCanvas.toolDestubs.test.ts src/workspace/commandCapabilities.test.ts
+     pnpm exec prettier --check packages/web/src/plan/PlanCanvas.tsx packages/web/src/plan/PlanCanvas.toolDestubs.test.ts packages/web/src/plan/wallPickLines.ts packages/web/src/plan/wallPickLines.test.ts
+  packages/web/src/tools/authoringCommandContract.ts packages/web/tmp/ux-next-wp44-picklines-20260515/capture.mjs spec/ux-bim-ai-next-tracker.md
+     git diff --check
+  5. Update `spec/ux-bim-ai-next-tracker.md`.
+     Be conservative: keep WP-NEXT-44 Partial unless explicit top-constraint/exterior-side controls are fully covered; otherwise mark Done only if acceptance is proven by tests + seeded screenshots.
+  6. Commit:
+     git add <intended files only>
+     git commit -m "Add wall picked-boundary placement"
+     git push origin HEAD:main
+  7. After WP-NEXT-44 is closed or explicitly left Partial with evidence, continue with the next tracker workpackage.
