@@ -5247,6 +5247,29 @@ export function PlanCanvas({
         });
         return;
       }
+      // §2.1.3 — project base point: single click places or moves the PBP
+      if (planTool === 'project-base-point') {
+        const existingPbp = Object.values(elementsById).find(
+          (e) => e.kind === 'project_base_point',
+        );
+        if (existingPbp) {
+          onSemanticCommand({
+            type: 'updateElementProperty',
+            elementId: existingPbp.id,
+            key: 'positionMm',
+            value: { xMm: sp.xMm, yMm: sp.yMm, zMm: 0 },
+          });
+        } else {
+          onSemanticCommand({
+            type: 'createProjectBasePoint',
+            id: crypto.randomUUID(),
+            positionMm: { xMm: sp.xMm, yMm: sp.yMm },
+            elevationMm: 0,
+            isShared: false,
+          });
+        }
+        return;
+      }
       // ANN-07 — spot elevation: single click creates elevation label at level datum
       if (planTool === 'spot-elevation') {
         if (!activePlanViewId) return;

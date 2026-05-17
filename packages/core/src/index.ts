@@ -2167,6 +2167,8 @@ export type Element =
       thinLines?: boolean | null;
       /** §13.1.3: color fill scheme applied to this plan view (category + per-value colorMap). */
       colorScheme?: { category: string; colorMap: Record<string, string> } | null;
+      /** §1.6.10: per-view category visibility/graphics overrides; these shadow global project overrides. */
+      viewCategoryOverrides?: CategoryVisualOverride[] | null;
     }
   | {
       kind: 'view_template';
@@ -4700,4 +4702,18 @@ export type CreateModelLineCmd = {
   pointsMm: { xMm: number; yMm: number }[];
   lineStyle?: 'solid' | 'dashed' | 'dotted' | null;
   colourHex?: string | null;
+};
+
+/** §2.1.3 — Place or move the project base point on the plan. */
+export type CreateProjectBasePointCmd = {
+  type: 'createProjectBasePoint';
+  id: string;
+  /** Position in plan (mm from project origin). */
+  positionMm: { xMm: number; yMm: number };
+  /** Elevation above datum (mm). */
+  elevationMm: number;
+  /** True if base point represents shared (survey) coordinates. */
+  isShared?: boolean;
+  /** Optional user label. */
+  name?: string | null;
 };

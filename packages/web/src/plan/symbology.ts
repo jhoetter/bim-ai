@@ -58,6 +58,7 @@ import { shaftPlanThree } from './shaftPlanThree';
 import { floorSlopeArrowPlanThree } from './floorSlopePlanThree';
 import { roofSlopeArrowPlanThree } from './roofSlopeArrowPlanThree';
 import { ceilingGridPlanThree } from './ceilingGridPlanThree';
+import { mergeOverrides } from './categoryOverrideMerge';
 
 /** Plan slice elevation in world units (walls still render with real height elsewhere). */
 
@@ -1632,9 +1633,16 @@ export function rebuildPlanMeshes(
     groupRegistry?: GroupRegistry | null;
     /** §8.9.3: ghost non-members when group edit mode is active. */
     groupEditModeDefinitionId?: string | null;
+    /** §1.6.10: global project-level category overrides. */
+    categoryOverrides?: import('@bim-ai/core').CategoryVisualOverride[];
+    /** §1.6.10: per-view category overrides; these shadow globalOverrides by category name. */
+    viewCategoryOverrides?: import('@bim-ai/core').CategoryVisualOverride[];
   },
 ): void {
   while (holder.children.length) holder.remove(holder.children[0]!);
+
+  // §1.6.10: merge global and per-view category overrides; view-level wins per category.
+  void mergeOverrides(opts.categoryOverrides ?? [], opts.viewCategoryOverrides ?? []);
 
   const gh = opts.planGraphicHints;
   const roomFillOpacityScale = gh?.roomFillOpacityScale ?? 1;
@@ -2267,6 +2275,43 @@ export function rebuildPlanMeshes(
     }
   }
 
+  // §5.4.1: north arrow plan symbols for annotation_symbol elements with symbolType 'north_arrow'
+  if (!kindHidden('annotation')) {
+    for (const el of Object.values(elementsById)) {
+      if (el.kind !== 'annotation_symbol') continue;
+      const annSym = el as Extract<Element, { kind: 'annotation_symbol' }>;
+      if (annSym.symbolType !== 'north_arrow') continue;
+      const grp = new THREE.Group();
+      grp.userData.bimPickId = annSym.id;
+      const cx = ux(annSym.positionMm.xMm);
+      const cz = uz(annSym.positionMm.yMm);
+      const rot = (((annSym.rotationDeg ?? 0) * Math.PI) / 180) as number;
+      const Y = PLAN_Y + 0.005;
+      const len = 0.5; // 500 mm shaft length
+      const tip = new THREE.Vector3(cx + Math.sin(rot) * len, Y, cz - Math.cos(rot) * len);
+      const base = new THREE.Vector3(cx, Y, cz);
+      const shaftGeo = new THREE.BufferGeometry().setFromPoints([base, tip]);
+      grp.add(
+        new THREE.Line(shaftGeo, new THREE.LineBasicMaterial({ color: '#000000', linewidth: 2 })),
+      );
+      const headLen = 0.1;
+      const headAngle = Math.PI / 6;
+      const leftHead = new THREE.Vector3(
+        tip.x - Math.sin(rot + headAngle) * headLen,
+        Y,
+        tip.z + Math.cos(rot + headAngle) * headLen,
+      );
+      const rightHead = new THREE.Vector3(
+        tip.x - Math.sin(rot - headAngle) * headLen,
+        Y,
+        tip.z + Math.cos(rot - headAngle) * headLen,
+      );
+      const headGeo = new THREE.BufferGeometry().setFromPoints([leftHead, tip, rightHead]);
+      grp.add(new THREE.Line(headGeo, new THREE.LineBasicMaterial({ color: '#000000' })));
+      holder.add(grp);
+    }
+  }
+
   if (opts.groupRegistry) {
     const { definitions, instances } = opts.groupRegistry;
     for (const instance of Object.values(instances)) {
@@ -2320,3 +2365,6 @@ export type StairPlanWireDocOverlays = {
     topLandingFootprintBoundsMm?: BoundsXYmm;
   };
 };
+
+// §1.6.10 — re-export mergeOverrides for per-view category override merging.
+export { mergeOverrides } from './categoryOverrideMerge';
