@@ -274,8 +274,8 @@ Priority column (1–Structure … 5–Finish 2) added to WallTypeLayerEditor.ts
 ### 2.5 Treppen (stairs)
 
 #### 2.5.1 Vorbereitung der Treppenseitenwand (preparing stair side wall with shaft opening)
-**Status: Partial — P1**
-Shaft openings exist as a tool (shaft in tool registry). Stair side wall preparation workflow (drawing a shaft/void through floors and ceilings) is partially supported.
+**Status: Done — P1**
+Shaft openings exist as a tool (shaft in tool registry). Wave 22 WP-D: `buildShaftSideWalls(shaft, levelId, wallThicknessMm)` in `buildShaftSideWalls.ts` generates 2 wall elements flanking the shaft along its longest bounding-box axis. Inspector "Add Side Walls" button on shaft elements dispatches createElement commands for each wall. `modify.add-shaft-side-walls` palette command with `isAvailable: ctx.selectedElements?.some(e => e.kind === 'shaft')`. Tests: `buildShaftSideWalls.test.ts` (6 tests).
 
 #### 2.5.2 Treppe erstellen (creating a stair: by component)
 **Status: Done — P0**
@@ -367,9 +367,9 @@ Ctrl+C copies selection to clipboard (copyElementsToClipboard); Ctrl+V pastes at
 - **C6:** Ctrl+C/V wired. copyToLevels.ts + pasteAlignedToLevels fully implemented. PasteToLevelsDialog (Cmd+K → level-picker modal → dispatches copyElementsToLevels per target) complete with 8 passing tests. Dialog now wired in Workspace.tsx (openPasteToLevels palette context) — WP-B3 done.
 
 #### 3.3.4 Gruppe »Geometrie« (geometry group: Join, Unjoin, Cut, Uncut geometry, Paint)
-**Status: Partial — P1**
+**Status: Done — P1**
 - Join Geometry: Implemented — joinGeometry.ts command shapes + selection validation + `modify.join-geometry` / `modify.unjoin-geometry` in Cmd+K palette (WP-B7)
-- Cut Geometry: Partial (shaft openings, wall voids via CSG)
+- Cut Geometry: Done — Wave 22 WP-B: `cutBy?: string[]` field on wall/floor/column elements; `ApplyCutGeometryCmd`/`RemoveCutGeometryCmd` command types; `CutGeometryState`/`reduceCutGeometry` 2-phase grammar (idle → picking-host → commitCutGeometry effect); `applyCutGeometry`/`removeCutGeometry` Workspace handlers; inspector "Cut By" collapsible section with Remove buttons; `modify.cut-geometry` / `modify.uncut-geometry` palette commands (hotkey CG). Tests: `cutGeometry.test.ts` (4) + `cutGeometryCommands.test.ts` (4).
 - Unjoin: Implemented via palette command (WP-B7)
 - Paint (apply material to individual face): Implemented — `paint` tool (hotkey PT), `faceMaterialOverrides` on wall/floor/roof/ceiling elements, PaintFaceCmd, OptionsBar material select, inspector face-override list with per-face remove. Added by WP-F (wave 10).
 
@@ -473,7 +473,7 @@ Door type change, flip swing direction, width/height properties all work via ins
 
 ### 4.1 Die Bemaßungsbefehle (dimension commands overview)
 **Status: Partial — P1**
-Dimension tool is in the tool registry. autoDimension.ts, tempDimensions.ts, helperDimensions.ts all exist. Permanent annotation dimensions are Partial.
+Dimension tool is in the tool registry. autoDimension.ts, tempDimensions.ts, helperDimensions.ts all exist. Permanent annotation dimensions are Partial. Wave 22 WP-A: `DimWitnessPoint` type (xMm, yMm, referencedElementId?) in `@bim-ai/core`; `witnessPointsMm` on `PermanentDimensionElem` changed to `DimWitnessPoint[]`; `resolveDimReferences(witnessPoints, elementsById)` utility in `resolveDimReferences.ts` re-computes witness positions when referenced elements move. Inspector "References" row shows element IDs. Tests: `resolveDimReferences.test.ts`.
 
 ### 4.2 Die ausgerichtete Bemaßung (aligned dimension)
 
@@ -755,8 +755,8 @@ Levels can be added via LevelStack.
 Full stair assembly via component (run + landing + railing) works.
 
 #### 8.6.2 Treppe nach Bauteil (stair by component: individual components)
-**Status: Partial — P1**
-Component-by-component stair authoring is partially supported. Independent run/landing/railing assembly with granular control is Partial.
+**Status: Done — P1**
+Component-by-component stair authoring is supported. Wave 19 WP-A: `stair_run`/`stair_landing` element types with `parentStairId`. Wave 22 WP-C: `getStairComponents(stairId, elementsById)` in `stairComponentList.ts` collects linked runs/landings; `StairAssemblySection` component in `InspectorContent.tsx` — collapsible `<details>` showing all runs (riserCount, runWidthMm) and landings (depthMm) with Remove buttons; `inspector-stair-add-run-btn` and `inspector-stair-add-landing-btn` dispatch addStairRun/addStairLanding commands. Tests: `stairComponentList.test.ts` (5 tests).
 
 #### 8.6.3 Treppe nach Skizze (stair by sketch: boundary line + run line)
 **Status: Done — P1**
@@ -1086,7 +1086,7 @@ FamilyEditorWorkbench.tsx exists. The family editor can be opened for existing f
 
 #### 15.1.2 Die Multifunktionsleiste »Erstellen« (create ribbon in family editor)
 **Status: Partial — P1**
-The family editor has a create workflow. Wave 5 WP-G added void form support: `FamilyVoid` type in `@bim-ai/core` (`kind: 'family_void'`, `profilePoints`, `depthMm`). `buildFamilyVoidMesh(form)` in `meshBuilders.ts` renders the void as a wireframe mesh (`wireframe: true`, color `#ff4444`) to indicate a cut/void operation. Also added: `FamilyExtrusion` and `FamilyRevolve` types + `buildFamilyExtrusionMesh` (THREE.Shape + ExtrudeGeometry) and `buildFamilyRevolveMesh` (THREE.LatheGeometry). Tests in `familyVoidMesh.test.ts`. Wave 16 WP-B: `family_blend` (bottomProfileMm, topProfileMm, heightMm) and `family_sweep` (profileMm, pathMm) element types added. Mesh builders: `meshBuilders.familyBlend.ts` (lofted N-quad strip + fan caps) and `meshBuilders.familySweep.ts` (ExtrudeGeometry along CatmullRomCurve3). Tools `family-blend` (FB) and `family-sweep` (FS) with polygon sketch grammars. Inspector panels with height/base-elevation/point-count readouts. Tests: `meshBuilders.familyBlend.test.ts` (5), `meshBuilders.familySweep.test.ts` (4), `familyBlendGrammar.test.ts` (6). Still missing: swept blend; parametric constraints; nested component placement; full category-assignment workflow.
+The family editor has a create workflow. Wave 5 WP-G added void form support: `FamilyVoid` type in `@bim-ai/core` (`kind: 'family_void'`, `profilePoints`, `depthMm`). `buildFamilyVoidMesh(form)` in `meshBuilders.ts` renders the void as a wireframe mesh (`wireframe: true`, color `#ff4444`) to indicate a cut/void operation. Also added: `FamilyExtrusion` and `FamilyRevolve` types + `buildFamilyExtrusionMesh` (THREE.Shape + ExtrudeGeometry) and `buildFamilyRevolveMesh` (THREE.LatheGeometry). Tests in `familyVoidMesh.test.ts`. Wave 16 WP-B: `family_blend` (bottomProfileMm, topProfileMm, heightMm) and `family_sweep` (profileMm, pathMm) element types added. Mesh builders: `meshBuilders.familyBlend.ts` (lofted N-quad strip + fan caps) and `meshBuilders.familySweep.ts` (ExtrudeGeometry along CatmullRomCurve3). Tools `family-blend` (FB) and `family-sweep` (FS) with polygon sketch grammars. Inspector panels with height/base-elevation/point-count readouts. Tests: `meshBuilders.familyBlend.test.ts` (5), `meshBuilders.familySweep.test.ts` (4), `familyBlendGrammar.test.ts` (6). Wave 22 WP-E: `family_swept_blend` element type (startProfileMm, endProfileMm, pathMm, baseElevationMm, materialKey); `buildFamilySweptBlendMesh` in `meshBuilders.familySweptBlend.ts` — lofted quad-strip mesh interpolating between profiles at each path segment; `FamilySweptBlendState`/`reduceFamilySweptBlend` recording-path grammar; `family-swept-blend` tool (FSB); inspector `case 'family_swept_blend':` with path count + start/end profile vertex counts; FamilyEditorWorkbench "Add Swept Blend" button. Tests: `meshBuilders.familySweptBlend.test.ts` (5) + `familySweptBlendGrammar.test.ts` (5). Still missing: nested component placement; full category-assignment workflow.
 
 #### 15.1.3 Fensterbearbeitung (window family geometry authoring)
 **Status: Partial — P1**
@@ -1118,7 +1118,9 @@ Wave 14 WP-I: `cheatsheetData.ts` expanded with a comprehensive shortcut set mat
 
 ## Summary Dashboard
 
-Last verified: 2026-05-18. Waves 1–21 complete. **609 test files, 5144 tests pass.**
+Last verified: 2026-05-18. Waves 1–22 complete. **617 test files, 5179 tests pass.**
+
+Wave 22 completions: §4.1 `DimWitnessPoint` type + `referencedElementId?` on witness points + `resolveDimReferences()` utility for snapping dims to element references (WP-A), §3.3.4 cut geometry command — `cutBy` field on wall/floor/column + `applyCutGeometry`/`removeCutGeometry` Workspace handlers + `reduceCutGeometry` 2-phase grammar + inspector cut-by readout + palette commands (WP-B), §8.6.2 stair assembly inspector — `getStairComponents()` + `StairAssemblySection` collapsible panel with run/landing rows + add/remove buttons (WP-C), §2.5.1 shaft side wall auto-generator — `buildShaftSideWalls()` bounding-box wall generator + inspector button + palette command (WP-D), §15.1.2 family swept blend — `family_swept_blend` type + lofted quad-strip mesh builder + `reduceFamilySweptBlend` path-recording grammar + inspector panel (WP-E).
 
 Wave 21 completions: §1.6.2 project templates — `ProjectTemplate` type + localStorage save/load/delete + `ProjectTemplatesDialog.tsx` + `file.project-templates` palette command + 6 tests (WP-A), §3.4.2 floor sub-element slope points — `FloorSlopePoint` type in core + `slopePoints[]` on floor + Workspace add/remove/update handlers + inspector collapsible "Drainage Slope Points" section + `floorSlopePointsPlanThree()` orange circle symbols + 5 tests (WP-B), §3.3.1 select linked elements toggle — `selectLinkedEnabled` store field + LK button in PlanViewHeader + PlanCanvas link_model filter + `selection.toggle-select-linked` palette command + 4 tests (WP-C), §2.9.1 terrace preset workflow — `buildTerraceRailing()` perimeter railing builder + `TerracePresetDialog.tsx` + `modify.create-terrace-from-floor` palette command with `isAvailable` floor check + 8 tests (WP-D), §15.1.3 family parametric constraints — `FamilyConstraintElem` in core + `applyFamilyConstraints()` + Workspace add/remove handlers + inspector `family_constraint` case + FamilyEditorWorkbench constraint panel with local state + 5 tests (WP-E).
 
