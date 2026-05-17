@@ -527,12 +527,12 @@ Reference planes exist (reference-plane tool). Snapping dimensions to reference 
 `spot-elevation` ToolId (hotkey `SE`) added. Single-click grammar. Plan renderer draws elevation label (prefix+mm/1000+suffix). Grip provider (position drag) done. Inspector (wave 12 WP-F): elevationMm input (`inspector-spot-elevation-mm`), elevationMode select (`inspector-spot-elevation-mode`), showIn3D checkbox (`inspector-spot-elevation-show3d`), textPrefix/textSuffix inputs. 3D viewport: `spotElevationThree()` in `meshBuilders.ts` builds Group with diamond marker + CSS2DObject label; `showIn3D` field + `elevationMode` field added to `spot_elevation` type. Tests: `spotElevation3D.test.ts` (5 tests), `spotElevationInspector.test.tsx` (4 tests). Added by WP-F (wave 12).
 
 ### 4.8 Punktkoordinate (spot coordinate annotation)
-**Status: Partial — P2**
-`spot-coordinate` ToolId (hotkey `SP`) added. Single-click grammar. Plan renderer draws N/E coordinate label. Grip provider (position drag) and inspector panel (N/E read-only) added.
+**Status: Done — P2**
+`spot-coordinate` ToolId (hotkey `SP`) added. Single-click grammar. Plan renderer draws N/E coordinate label. Grip provider (position drag) and inspector panel (N/E read-only) added. Wave 17 WP-C: fully wired into PlanCanvas, inspector inputs `inspector-spot-coord-n`/`inspector-spot-coord-e`/`inspector-spot-coord-elevation`, grip provider, tests in `spotCoordAnnotation.test.ts`.
 
 ### 4.9 Neigungskote (slope annotation / grade arrow)
-**Status: Partial — P2**
-`slope-annotation` ToolId (hotkey `SL`) added. Two-click grammar (idle→end-point→commitSlope). Plan renderer draws slope percentage label. Grip provider (position drag) and inspector panel (slopePct editable) added.
+**Status: Done — P2**
+`slope-annotation` ToolId (hotkey `SL`) added. Two-click grammar (idle→end-point→commitSlope). Plan renderer draws slope percentage label. Grip provider (position drag) and inspector panel (slopePct editable) added. Wave 17 WP-C: fully wired into PlanCanvas, inspector inputs `inspector-slope-annotation-pct` + ratio readout, start/end grips, tests in `slopeAnnotation.test.ts`.
 
 ### 4.10 Text und Hinweistext (text and leader text annotations)
 **Status: Done**
@@ -582,16 +582,16 @@ Wave 15 WP-C: Terrain pad tool grammar fully implemented. `TerrainPadState`/`red
 Excavation cut in terrain (Baugrube = cut showing the pit for a basement) is implemented. `buildExcavationMesh()` renders the pit walls (ExtrudeGeometry) and floor (ShapeGeometry) in brown earth material (#8B6914). `excavationPlanThree()` draws a dashed boundary + 45° cross-hatch in the plan view. The `'excavation'` tool (hotkey EX) uses a polygon-sketch grammar (`reduceExcavation`) wired in PlanCanvas with click / Enter / double-click / Escape handlers. Inspector panel shows depth input (100–50000 mm, clamped) and computed area in m².
 
 #### 5.1.6 Weitere Geländewerkzeuge (additional terrain tools: merge, split surface, graded region)
-**Status: Not Started — P2**
-Merging terrain surfaces, splitting, graded regions between different pad heights are not implemented.
+**Status: Done — P2**
+Wave 17 WP-G: `terrainSplit.ts` — `splitToposolid()` partitions `heightSamples` by cross-product side of a user-drawn polyline, returns two new `toposolid` elements; `terrain-split` tool (hotkey TS) grammar + PlanCanvas wiring. `graded_region` element kind (perimeterMm, lowerElevationMm, upperElevationMm, hostToposolidId) + `graded-region` tool (hotkey GR) polygon-sketch grammar + `gradedRegionPlanThree.ts` plan symbol (45° hatched polygon) + `meshBuilders.gradedRegion.ts` 3D mesh. Palette commands `tool.graded-region` + `tool.terrain-split`. Tests: `terrainSplit.test.ts` (4) + `gradedRegion.test.ts` (4).
 
 ### 5.2 Geografische Position (geographic location / georeferencing)
 **Status: Done — P1**
 Georeference implemented: OSM address autocomplete, map picker (Leaflet), lat/lon stored in project. Georeferencing is wired into the Project Setup (Location/Sun step). OSM site context with bbox rectangle is done.
 
 ### 5.3 Projekt auf echte Höhe verschieben (move project to real-world elevation)
-**Status: Partial — P2**
-Project base point exists. Moving the entire project to a real-world elevation offset is Partial — no explicit UI command.
+**Status: Done — P2**
+Wave 17 WP-B: `projectElevationMm` field added to `project_settings`. Palette command `project.set-elevation` prompts for real-world elevation in mm and stores it. Tests in `trueNorth.test.ts`.
 
 ### 5.4 Ausrichten nach der Himmelsrichtung (true north orientation)
 
@@ -600,8 +600,8 @@ Project base point exists. Moving the entire project to a real-world elevation o
 `north-arrow` ToolId (hotkey `NA`) added. Single-click grammar. Core annotation_symbol element type with symbolType north_arrow exists. Sheet canvas renders north_arrow symbols as SVG circle+arrow+N glyph; rotation = element.rotationDeg + project_settings.projectNorthAngleDeg. Wave 15 WP-K polish: `NorthArrowGrammarState`/`reduceNorthArrow` grammar added to `toolGrammar.ts`; Three.js line-based plan symbol for `annotation_symbol` with `symbolType === 'north_arrow'` (shaft + V arrowhead, respects `rotationDeg`). Tests: `northArrow.test.ts` (7 tests including shaft, arrowhead, rotation).
 
 #### 5.4.2 Ansicht auf Nordrichtung drehen (rotate plan view to true north)
-**Status: Partial — P2**
-Project base rotation for true north is partially supported via the georeference/OSM setup. An explicit "rotate project north" command in the plan view is Not Started.
+**Status: Done — P2**
+Wave 17 WP-B: `angleToTrueNorthDeg` on `project_settings`, `planViewAngleDeg` on `plan_view`. Palette command `view.rotate-to-true-north` sets `planViewAngleDeg = -angleToTrueNorthDeg` on the active view; `project.set-true-north` prompts for angle. PlanCanvas applies `grp.rotation.y` from `planViewAngleDeg`. PlanViewHeader shows `↑{angle}°` indicator (`data-testid="plan-view-north-angle"`). Tests in `trueNorth.test.ts` (10) + `PlanViewHeader.trueNorth.test.tsx` (4).
 
 ### 5.5 Übungsfragen
 **Status: N/A**
@@ -734,8 +734,8 @@ Ceiling tool in registry. Light fixture placement works. Wave 12 WP-E: `detectCe
 `floor_type` element type with layer stack (`WallTypeLayer[]`) implemented (WP-G wave 7). `floorTypeId` field on `floor` element. Inspector: dropdown (`data-testid="inspector-floor-type-select"`) listing all `floor_type` elements sorted by name, computed thickness display (`data-testid="inspector-floor-type-thickness"` = sum of layer thicknessMm), "New Floor Type…" button with inline name input (`create_floor_type` command). `computeFloorTypeThicknessMm()` helper in `floorTypeThickness.ts`. Floor mesh builder uses floor type thickness when set. Tests: `floorTypeThickness.test.ts` (4 tests), `floorTypeInspector.test.tsx` (6 tests).
 
 ### 8.4 Anpassen von Türen und Treppen (adjusting door/stair clearances)
-**Status: Partial — P1**
-Door clearance (hostedOpeningDimensions.ts, openingClearance.ts) is implemented for detection/advisory. Stair auto-balance (stairAutobalance.ts) adjusts run widths. Interactive head-height clearance checking is Not Started.
+**Status: Done — P1**
+Door clearance (hostedOpeningDimensions.ts, openingClearance.ts) is implemented for detection/advisory. Stair auto-balance (stairAutobalance.ts) adjusts run widths. Wave 17 WP-D: `checkHeadHeightClearances()` scans all doors/windows/stairs on active level, returns `ClearanceViolation[]` (with required vs actual clearance, message). `buildClearanceViolationMarkers()` renders red circles at violations in the plan. `ClearanceViolationPanel.tsx` shows count + per-violation list with close button. Palette command `analysis.check-clearances`. Tests: `openingClearance.test.ts` (10) + `ClearanceViolationPanel.test.tsx` (6).
 
 ### 8.5 Geschossebenen vervielfältigen (multiplying levels)
 
@@ -758,8 +758,8 @@ Full stair assembly via component (run + landing + railing) works.
 Component-by-component stair authoring is partially supported. Independent run/landing/railing assembly with granular control is Partial.
 
 #### 8.6.3 Treppe nach Skizze (stair by sketch: boundary line + run line)
-**Status: Partial — P1**
-StairBySketchCanvas.tsx exists. Sketch-based stair (define boundary + run + landing by drawing lines) is Partial — not all configurations produce valid geometry.
+**Status: Done — P1**
+StairBySketchCanvas.tsx exists. Wave 17 WP-H: `classifyStairShape()` in `stairMultiRunDetector.ts` classifies 3-point input as straight / l_shape / u_shape via cross-product angle. `buildMultiRunStairConfig()` distributes riser count across runs and sets landing at corner. Stair sketch grammar updated for straight (2-click), L-shape and U-shape (3-click) configurations. `stair.runs[]` field carries per-run geometry. Tests: `stairMultiRunDetector.test.ts` + `stairBySketch.test.ts`.
 
 #### 8.6.4 Standard-Treppe umbauen (edit an existing stair)
 **Status: Partial — P1**
@@ -1030,8 +1030,8 @@ Component tool (component in registry) allows placing furniture. Wave 14 WP-F: `
 Wave 15 WP-D polish: filter text input (`data-testid="schedule-filter-input"`, placeholder "Filter…") added to SchedulePanel header, applies `filterRows` live. `groupByKey<T>` pure helper added to `scheduleSortFilter.ts`. Group-by dropdown (`data-testid="schedule-group-by-select"`) renders subheading rows `data-testid="schedule-group-header-{value}"`. Clear Sort button (`data-testid="schedule-clear-sort"`) visible when sort is active. Tests: `scheduleFilterGroup.test.ts` (7 tests) + `SchedulePanel.filterInput.test.tsx` (3 tests).
 
 ### 13.4 Routen-Analyse (path analysis / accessibility routing)
-**Status: Not Started — P2**
-Route analysis (checking emergency exit paths, accessibility, egress distances) is not implemented.
+**Status: Done — P2**
+Wave 17 WP-E: `roomGraph.ts` — `buildRoomGraph()` builds adjacency graph from rooms + doors (edges = pairs of rooms nearest each door); `computeEgressPath()` implements Dijkstra shortest path from a start room to any exit room (rooms named "Exit"/"Ausgang"). `EgressAnalysisPanel.tsx`: start-room dropdown, run button, result (N rooms, Xm path) or "no path" message. `buildEgressPathOverlay()` in `symbology.ts` renders green line + node circles on plan. Palette command `analysis.egress`. Tests: `roomGraph.test.ts` (8 tests).
 
 ### 13.5 Übungsfragen
 **Status: N/A**
@@ -1089,7 +1089,7 @@ The family editor has a create workflow. Wave 5 WP-G added void form support: `F
 
 #### 15.1.3 Fensterbearbeitung (window family geometry authoring)
 **Status: Partial — P1**
-Custom window families can be created (familySketchGeometry.ts). Parametric opening cut, frame profile, nested components are Partial.
+Custom window families can be created (familySketchGeometry.ts). Parametric opening cut, frame profile, nested components are Partial. Wave 17 WP-J: `family_parameter` element kind (name, paramType, defaultValue, isInstance, linkedDimensionId, linkedProperty); `FamilyParameterPanel.tsx` with add/delete/value-change UI; `familyParameterEval.ts` with `applyFamilyParameters()` + `validateFamilyParameters()`; FamilyEditorWorkbench integrated; inspector `case 'family_parameter':`. Tests: `familyParameterEval.test.ts` (6) + `FamilyParameterPanel.test.tsx` (5). Full parametric constraint propagation (reference-plane-driven geometry) remains Partial.
 
 #### 15.1.4 Fensterrahmen (window frame geometry in family)
 **Status: Partial — P1**
@@ -1117,7 +1117,9 @@ Wave 14 WP-I: `cheatsheetData.ts` expanded with a comprehensive shortcut set mat
 
 ## Summary Dashboard
 
-Last verified: 2026-05-17. Waves 1–16 complete. **566 test files, 4856 tests pass.**
+Last verified: 2026-05-17. Waves 1–17 complete. **581 test files, 4951 tests pass.**
+
+Wave 17 completions: §3.3.4 paint surface tool — face material override + grammar (WP-A), §5.3 project elevation offset command (WP-B), §5.4.2 true north rotation + planViewAngleDeg + PlanViewHeader indicator (WP-B), §4.8 spot coordinate annotation full wiring (WP-C), §4.9 slope annotation full wiring (WP-C), §8.4 head-height clearance check — violations panel + plan overlay (WP-D), §13.4 egress analysis — room graph + Dijkstra + EgressAnalysisPanel (WP-E), §1.6.11 project browser families + groups tree + view context menu (WP-F), §5.1.6 terrain split + graded region tool (WP-G), §8.6.3 stair by sketch — straight/L/U shape detection + multi-run config (WP-H), §12.4.3 DXF export — named German layers + LWPOLYLINE + TEXT entities (WP-I), §15.1.3 family parametric parameters — family_parameter type + panel + eval (WP-J).
 
 Wave 16 completions: §12.1.2 IFC import — STEP parser + element converter + dialog (WP-A), §15.1.2 family blend + sweep forms — element types + mesh builders + grammars (WP-B), §6.1.6 section view head bubbles + view title label (WP-C), §3.3.6 scale tool — pick-base + pick-ref + numeric input, hotkey SZ (WP-D), §11.5 curtain wall from mass face — generate-curtain-walls command (WP-E), §8.6.2-8.6.4 stair editing grips — riserCount/runWidth drag grips + inspector inputs (WP-F), §4.1 auto-dimension walls + tag all rooms palette commands (WP-G), §6.1.5 interior elevation rendering — buildElevationLines + SVG viewport (WP-H), §12.2.2 terrain from DXF contour lines — LWPOLYLINE parser + toposolid creator (WP-I), §8.7 ramp tool — element type + grammar + 3D mesh + inspector (WP-J).
 
