@@ -345,6 +345,61 @@ function buildPlanView(
       const y = el.positionMm.yMm * scale;
       emit('A-ANNO', dxfText('A-ANNO', x, y, el.fontSizeMm * scale, el.text));
     }
+
+    if (el.kind === 'column' && (el as any).levelId === level.id) {
+      const cx = (el as any).positionMm?.xMm ?? 0;
+      const cy = (el as any).positionMm?.yMm ?? 0;
+      const hw = ((el as any).widthMm ?? 300) / 2;
+      const hd = ((el as any).depthMm ?? 300) / 2;
+      const pts: [number, number][] = [
+        [(cx - hw) * scale, (cy - hd) * scale],
+        [(cx + hw) * scale, (cy - hd) * scale],
+        [(cx + hw) * scale, (cy + hd) * scale],
+        [(cx - hw) * scale, (cy + hd) * scale],
+      ];
+      emit('S-COLS', dxfPolyline('S-COLS', pts, true));
+    }
+
+    if (el.kind === 'beam' && (el as any).levelId === level.id) {
+      const sx = (el as any).startMm?.xMm ?? 0;
+      const sy = (el as any).startMm?.yMm ?? 0;
+      const ex = (el as any).endMm?.xMm ?? 0;
+      const ey = (el as any).endMm?.yMm ?? 0;
+      emit('S-BEAM', dxfLine('S-BEAM', sx * scale, sy * scale, ex * scale, ey * scale));
+    }
+
+    if (el.kind === 'floor' && (el as any).levelId === level.id) {
+      const pts = ((el as any).perimeterMm ?? (el as any).boundaryMm ?? []).map(
+        (p: { xMm: number; yMm: number }): [number, number] => [p.xMm * scale, p.yMm * scale],
+      );
+      if (pts.length >= 3) emit('A-FLOR', dxfPolyline('A-FLOR', pts, true));
+    }
+
+    if (el.kind === 'stair' && (el as any).levelId === level.id) {
+      const sx = (el as any).startMm?.xMm ?? 0;
+      const sy = (el as any).startMm?.yMm ?? 0;
+      const ex = (el as any).endMm?.xMm ?? sx + 2000;
+      const ey = (el as any).endMm?.yMm ?? sy;
+      const w = (el as any).runWidthMm ?? (el as any).widthMm ?? 1200;
+      const dx = ex - sx;
+      const dy = ey - sy;
+      const len = Math.sqrt(dx * dx + dy * dy) || 1;
+      const ux = dx / len;
+      const uy = dy / len;
+      const nx = (-uy * w * scale) / 2;
+      const ny = (ux * w * scale) / 2;
+      const sxS = sx * scale;
+      const syS = sy * scale;
+      const exS = ex * scale;
+      const eyS = ey * scale;
+      const pts: [number, number][] = [
+        [sxS + nx, syS + ny],
+        [exS + nx, eyS + ny],
+        [exS - nx, eyS - ny],
+        [sxS - nx, syS - ny],
+      ];
+      emit('A-FLOR-STRS', dxfPolyline('A-FLOR-STRS', pts, true));
+    }
   }
 
   const tables = dxfTablesSection(usedLayers);
