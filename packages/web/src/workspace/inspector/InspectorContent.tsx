@@ -4199,7 +4199,8 @@ export function InspectorPropertiesFor(
         </div>
       );
     }
-    case 'section_cut':
+    case 'section_cut': {
+      const { onPropertyChange: scPropChange } = options ?? {};
       return (
         <div>
           <FieldRow
@@ -4213,8 +4214,19 @@ export function InspectorPropertiesFor(
             mono
           />
           <FieldRow label={f('cropDepth')} value={fmtMm(el.cropDepthMm)} />
+          <div className="flex items-center gap-2 py-0.5">
+            <span className="text-xs text-muted w-28 shrink-0">Level Lines</span>
+            <input
+              data-testid="inspector-section-cut-show-level-lines"
+              type="checkbox"
+              checked={el.showLevelLines ?? false}
+              onChange={(e) => scPropChange?.('showLevelLines', e.target.checked)}
+              className="accent-primary"
+            />
+          </div>
         </div>
       );
+    }
     case 'plan_view': {
       const { onPropertyChange: pvPropChange } = options ?? {};
       const lineworkOverrides =

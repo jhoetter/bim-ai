@@ -1534,6 +1534,8 @@ export type Element =
       } | null;
       /** §3.3.4: IDs of elements that cut voids into this wall element. */
       cutBy?: string[];
+      /** §3.5.5: per-endpoint join variant overrides. Key = adjacent wall ID, value = join variant. */
+      joinOverrides?: Record<string, 'miter' | 'butt' | 'square'> | null;
     }
   | {
       kind: 'door';
@@ -1894,6 +1896,8 @@ export type Element =
       slopePoints?: FloorSlopePoint[];
       /** §3.3.4: IDs of elements that cut voids into this floor element. */
       cutBy?: string[];
+      /** §3.4.2: optional structural base pad thickness beneath the floor slab (mm). */
+      subFloorThicknessMm?: number | null;
     }
   | {
       kind: 'roof';
@@ -2176,6 +2180,8 @@ export type Element =
       cropDepthMm?: number;
       segmentedPathMm?: XY[];
       pinned?: boolean;
+      /** §6.1.6: when true, draws horizontal level datum lines in the section SVG. */
+      showLevelLines?: boolean;
     }
   | {
       /** VIE-03: first-class N/S/E/W elevation view (sibling to section_cut). */
@@ -3981,6 +3987,14 @@ export type SplitWallCmd = {
   splitPointMm: XY;
 };
 
+/** §3.5.5: override the join variant for a pair of walls at a shared corner. */
+export type SetWallJoinCmd = {
+  type: 'setWallJoin';
+  /** IDs of the two walls whose join is being overridden */
+  wallIds: [string, string];
+  variant: 'miter' | 'butt' | 'square';
+};
+
 /** §6.4.2: add a detail_line element (view-local 2D polyline). */
 export type AddDetailLineCmd = {
   type: 'addDetailLine';
@@ -5527,6 +5541,17 @@ export type UpdateFloorSlopePointCmd = {
   floorId: string;
   pointId: string;
   elevationOffsetMm: number;
+};
+
+// ---------------------------------------------------------------------------
+// §3.4.2 — Sub-floor thickness command
+// ---------------------------------------------------------------------------
+
+/** §3.4.2: set the structural base pad thickness beneath the floor slab. */
+export type SetSubFloorThicknessCmd = {
+  type: 'setSubFloorThickness';
+  floorId: string;
+  subFloorThicknessMm: number | null;
 };
 
 // ---------------------------------------------------------------------------

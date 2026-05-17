@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import type { Element, LensMode } from '@bim-ai/core';
 
 import { hatchPatternForMaterial, type HatchPattern } from '../../plan/materialHatchPatterns';
+import { extractLevelData, buildLevelLineSvg } from './sectionLevelLines';
 import { fetchSectionProjectionWire } from '../../plan/sectionProjectionWire';
 import {
   SECTION_VIEWPORT_ADVISORY_MAX_CHARS,
@@ -1380,6 +1381,29 @@ export function SectionViewportSvg(props: {
                   {lbl}
                 </text>
               </g>
+            );
+          })()}
+
+          {/* §6.1.6: showLevelLines — horizontal datum lines from client-side elementsById */}
+          {(() => {
+            const sectionEl = elementsById[props.sectionCutId];
+            if (!sectionEl || (sectionEl as any).showLevelLines !== true) return null;
+            const levelData = extractLevelData(elementsById);
+            if (levelData.length === 0) return null;
+            const svgStr = buildLevelLineSvg(
+              levelData,
+              props.widthPx,
+              layers.z0,
+              props.heightPx,
+              layers.sy,
+            );
+            return (
+              <g
+                key="section-level-lines"
+                data-testid="section-level-lines"
+                // eslint-disable-next-line react/no-danger
+                dangerouslySetInnerHTML={{ __html: svgStr }}
+              />
             );
           })()}
         </>
