@@ -2427,6 +2427,60 @@ export function rebuildPlanMeshes(
     }
   }
 
+  // §6.4.2: detail_line — view-local 2D polyline drafting element
+  if (!kindHidden('detail_line')) {
+    const beforeDL = holder.children.length;
+    for (const el of Object.values(elementsById)) {
+      if (el.kind !== 'detail_line') continue;
+      const pts = (el as Extract<Element, { kind: 'detail_line' }>).pointsMm;
+      if (!pts || pts.length < 2) continue;
+      const color = (el as { colorHex?: string }).colorHex ?? '#000000';
+      const style = (el as { lineStyle?: string }).lineStyle ?? 'solid';
+      const verts = pts.map((p) => new THREE.Vector3(ux(p.xMm), PLAN_Y + 0.002, uz(p.yMm)));
+      const geom = new THREE.BufferGeometry().setFromPoints(verts);
+      const grp = new THREE.Group();
+      grp.userData.bimPickId = el.id;
+      if (style === 'dashed') {
+        const mat = new THREE.LineDashedMaterial({ color, dashSize: 0.3, gapSize: 0.15 });
+        const line = new THREE.Line(geom, mat);
+        line.computeLineDistances();
+        grp.add(line);
+      } else {
+        grp.add(new THREE.Line(geom, new THREE.LineBasicMaterial({ color })));
+      }
+      holder.add(grp);
+    }
+    tintNewChildren(beforeDL, 'detail_line');
+  }
+
+  // §6.4.2: detail_filled_region — view-local 2D filled polygon drafting element
+  if (!kindHidden('detail_filled_region')) {
+    const beforeFR = holder.children.length;
+    for (const el of Object.values(elementsById)) {
+      if (el.kind !== 'detail_filled_region') continue;
+      const frEl = el as Extract<Element, { kind: 'detail_filled_region' }>;
+      const boundary = frEl.boundaryMm ?? frEl.perimeterMm ?? [];
+      if (boundary.length < 3) continue;
+      const color = frEl.colorHex ?? '#cccccc';
+      const shape = new THREE.Shape(boundary.map((p) => new THREE.Vector2(ux(p.xMm), uz(p.yMm))));
+      const geom = new THREE.ShapeGeometry(shape);
+      const mat = new THREE.MeshBasicMaterial({
+        color,
+        opacity: 0.4,
+        transparent: true,
+        side: THREE.DoubleSide,
+      });
+      const mesh = new THREE.Mesh(geom, mat);
+      mesh.position.set(0, PLAN_Y + 0.001, 0);
+      mesh.rotation.x = -Math.PI / 2;
+      const grp = new THREE.Group();
+      grp.userData.bimPickId = el.id;
+      grp.add(mesh);
+      holder.add(grp);
+    }
+    tintNewChildren(beforeFR, 'detail_filled_region');
+  }
+
   if (opts.groupRegistry) {
     const { definitions, instances } = opts.groupRegistry;
     for (const instance of Object.values(instances)) {

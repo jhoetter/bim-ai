@@ -108,6 +108,12 @@ import {
   initialTerrainSplitState,
   reduceTerrainSplit,
   type TerrainSplitState,
+  initialStairRunState,
+  reduceStairRun,
+  type StairRunState,
+  initialStairLandingState,
+  reduceStairLanding,
+  type StairLandingState,
 } from '../tools/toolGrammar';
 import { buildScaleCommand, distanceMm } from './scaleTool';
 import { linearArrayOffsets, radialArrayAngles, radialOffsetForElement } from './arrayTool';
@@ -5593,6 +5599,29 @@ export function PlanCanvas({
         }
         return;
       }
+      // §2.4.2 — floor auto-detect: shift-click triggers boundary detection from walls
+      if (planTool === 'floor' && ev.shiftKey) {
+        const boundary = detectFloorBoundaryFromWalls(
+          { xMm: sp.xMm, yMm: sp.yMm },
+          elementsById,
+          lvlId ?? null,
+        );
+        if (boundary && boundary.length >= 3) {
+          void onSemanticCommand({
+            type: 'createElement',
+            element: {
+              kind: 'floor',
+              id: crypto.randomUUID(),
+              perimeterMm: boundary,
+              thicknessMm: 200,
+              levelId: lvlId ?? null,
+              autoDetectedBoundary: true,
+            },
+          });
+          setPlanTool(null);
+        }
+        return; // Don't add as a normal sketch point
+      }
     };
 
     const onWheel = (ev: WheelEvent) => {
@@ -8060,6 +8089,23 @@ export function PlanCanvas({
           data-testid="room-tool-chip"
         >
           <span>Click inside an enclosed area to place a room</span>
+        </div>
+      ) : null}
+      {/* §2.4.2 — Floor tool status chip: shift-click auto-detect hint */}
+      {planTool === 'floor' ? (
+        <div
+          style={{
+            position: 'absolute',
+            bottom: 48,
+            left: '50%',
+            transform: 'translateX(-50%)',
+            pointerEvents: 'none',
+            zIndex: 20,
+          }}
+          className="flex items-center gap-2 rounded-full border border-border bg-surface px-3 py-1 text-xs shadow"
+          data-testid="floor-tool-chip"
+        >
+          <span>Shift+click to auto-detect boundary from walls</span>
         </div>
       ) : null}
       {/* F-103 — Move tool overlay: dot at anchor + dashed line to cursor */}

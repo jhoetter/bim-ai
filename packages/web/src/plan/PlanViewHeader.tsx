@@ -66,6 +66,12 @@ export type PlanViewHeaderProps = {
   onPerViewVGOpen?: () => void;
   /** §5.4.2: per-view rotation in degrees (from true north rotation). When non-zero, shows indicator. */
   planViewAngleDeg?: number;
+  /** §1.6.10: crop region rect — when set, shows the crop region toggle button. */
+  cropRegionMm?: { xMm: number; yMm: number; widthMm: number; heightMm: number } | null;
+  /** §1.6.10: whether the crop region is currently enabled. */
+  cropRegionEnabled?: boolean;
+  /** §1.6.10: called when the user clicks the crop region toggle button. */
+  onCropRegionToggle?: () => void;
 };
 
 const PHASE_FILTER_MODE_LABELS: Record<string, string> = {
@@ -102,6 +108,9 @@ export function PlanViewHeader({
   onClearWorkPlane,
   onPerViewVGOpen,
   planViewAngleDeg,
+  cropRegionMm,
+  cropRegionEnabled = false,
+  onCropRegionToggle,
 }: PlanViewHeaderProps): JSX.Element {
   const [viewRangeOpen, setViewRangeOpen] = useState(false);
   const [colorSchemeOpen, setColorSchemeOpen] = useState(false);
@@ -399,6 +408,31 @@ export function PlanViewHeader({
         >
           ↑{(planViewAngleDeg ?? 0).toFixed(1)}°
         </span>
+      ) : null}
+      {cropRegionMm && onCropRegionToggle ? (
+        <button
+          type="button"
+          data-testid="plan-header-crop-region-toggle"
+          title={
+            cropRegionEnabled
+              ? 'Crop region ON — click to disable'
+              : 'Crop region OFF — click to enable'
+          }
+          onClick={onCropRegionToggle}
+          style={{
+            fontSize: 11,
+            padding: '1px 6px',
+            border: '1px solid var(--color-border)',
+            borderRadius: 4,
+            cursor: 'pointer',
+            background: 'transparent',
+            color: 'var(--color-foreground)',
+            opacity: cropRegionEnabled ? 1 : 0.5,
+            whiteSpace: 'nowrap',
+          }}
+        >
+          {cropRegionEnabled ? '⬜ Crop ON' : '⬜ Crop OFF'}
+        </button>
       ) : null}
     </div>
   );
