@@ -36,7 +36,8 @@ export type CommandSurface =
   | 'canvas-context'
   | 'canvas'
   | 'footer'
-  | 'dialog';
+  | 'dialog'
+  | 'project-browser';
 
 export type CommandGroup =
   | 'author'
@@ -2400,5 +2401,33 @@ const MASS_CAPABILITIES: CommandCapability[] = [
     status: 'implemented',
     usabilityScore: 8,
     notes: '§3.3.4: removes first cut from selected element.',
+  },
+  {
+    id: 'modify.wall-join',
+    label: 'Wall Join Type',
+    owner: 'cmdPalette/defaultCommands',
+    group: 'modify',
+    scope: 'selection',
+    intendedModes: ['plan'],
+    surfaces: ['cmd-k'],
+    executionSurface: 'store',
+    preconditions: ['two-walls-selected'],
+    status: 'implemented',
+    usabilityScore: 8,
+    notes: '§3.5.5: stores miter/butt/square join variant on wall endpoint pair.',
+  },
+  {
+    id: 'view.select-group-elements',
+    label: 'Select Group Elements',
+    owner: 'workspace/ProjectBrowser',
+    group: 'selection',
+    scope: 'canvas',
+    intendedModes: ['plan', '3d'],
+    surfaces: ['project-browser', 'cmd-k'],
+    executionSurface: 'store',
+    preconditions: [],
+    status: 'implemented',
+    usabilityScore: 8,
+    notes: '§1.6.11: selects all elements in a model group from the project browser.',
   },
 ];

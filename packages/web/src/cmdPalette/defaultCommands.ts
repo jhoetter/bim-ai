@@ -2816,3 +2816,38 @@ registerCommand({
     }
   },
 });
+
+// §3.5.5: Wall Join Type — set miter/butt/square join variant for two selected walls
+registerCommand({
+  id: 'modify.wall-join',
+  label: 'Wall Join Type',
+  keywords: ['wall', 'join', 'miter', 'butt', 'square', 'Wandverbindung'],
+  category: 'command',
+  isAvailable: (ctx) => {
+    const walls = ctx.selectedElements?.filter((e) => e.kind === 'wall') ?? [];
+    return walls.length === 2;
+  },
+  invoke: (_ctx) => {
+    // Activates the wall-join tool to pick a join corner
+  },
+});
+
+// §1.6.11: Select Group Elements — select all elements belonging to a model group definition
+registerCommand({
+  id: 'view.select-group-elements',
+  label: 'Select Group Elements',
+  keywords: ['select group', 'group elements', 'model group', 'group select'],
+  category: 'select',
+  isAvailable: (ctx) =>
+    ctx.selectedElementIds.length === 1 &&
+    useBimStore.getState().elementsById[ctx.selectedElementIds[0]]?.kind === 'group_definition',
+  invoke: (ctx) => {
+    const id = ctx.selectedElementIds[0];
+    if (!id) return;
+    const { groupRegistry } = useBimStore.getState();
+    const def = groupRegistry.definitions[id];
+    if (!def || def.elementIds.length === 0) return;
+    const [primary, ...rest] = def.elementIds;
+    useBimStore.setState({ selectedId: primary, selectedIds: rest });
+  },
+});

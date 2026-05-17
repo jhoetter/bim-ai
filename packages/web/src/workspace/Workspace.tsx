@@ -2129,6 +2129,19 @@ export function Workspace(): JSX.Element {
         }
         return;
       }
+      // §1.6.11: selectGroupElements — select all elements in a model group definition (client-only).
+      if (cmd.type === 'selectGroupElements') {
+        const defId = cmd.groupDefinitionId as string | undefined;
+        if (defId) {
+          const { groupRegistry } = useBimStore.getState();
+          const def = groupRegistry.definitions[defId];
+          if (def && def.elementIds.length > 0) {
+            const [primary, ...rest] = def.elementIds;
+            useBimStore.setState({ selectedId: primary, selectedIds: rest });
+          }
+        }
+        return;
+      }
       // §3.3.9: Create Similar — activate the placement tool for the element's kind.
       if (cmd.type === 'create_similar') {
         const elementId = cmd.elementId as string | undefined;
@@ -2626,6 +2639,35 @@ export function Workspace(): JSX.Element {
             },
           });
         }
+        return;
+      }
+
+      // §3.5.5: setWallJoin — store join variant override on both wall endpoints (client-side)
+      if (cmd.type === 'setWallJoin') {
+        const [wallIdA, wallIdB] = cmd.wallIds as [string, string];
+        const { elementsById: cur } = useBimStore.getState();
+        const wallA = cur[wallIdA];
+        const wallB = cur[wallIdB];
+        const next = { ...cur };
+        if (wallA && wallA.kind === 'wall') {
+          next[wallIdA] = {
+            ...wallA,
+            joinOverrides: {
+              ...((wallA as any).joinOverrides ?? {}),
+              [wallIdB]: cmd.variant as 'miter' | 'butt' | 'square',
+            },
+          } as typeof wallA;
+        }
+        if (wallB && wallB.kind === 'wall') {
+          next[wallIdB] = {
+            ...wallB,
+            joinOverrides: {
+              ...((wallB as any).joinOverrides ?? {}),
+              [wallIdA]: cmd.variant as 'miter' | 'butt' | 'square',
+            },
+          } as typeof wallB;
+        }
+        useBimStore.setState({ elementsById: next });
         return;
       }
 

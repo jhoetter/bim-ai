@@ -5571,3 +5571,13 @@ export type RemoveCutGeometryCmd = {
   cutterId: string;
   hostId: string;
 };
+
+// ---------------------------------------------------------------------------
+// §1.6.11 — Project Browser Groups commands
+// ---------------------------------------------------------------------------
+
+/** §1.6.11: select all elements belonging to a model group definition. */
+export type SelectGroupElementsCmd = {
+  type: 'selectGroupElements';
+  groupDefinitionId: string;
+};
