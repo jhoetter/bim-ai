@@ -952,6 +952,22 @@ registerCommand({
 });
 
 registerCommand({
+  id: 'tool.stair-run',
+  label: 'Add Stair Run',
+  keywords: ['stair', 'run', 'component', 'step'],
+  category: 'command',
+  invoke: (ctx) => startPlanTool(ctx, 'stair-run'),
+});
+
+registerCommand({
+  id: 'tool.stair-landing',
+  label: 'Add Stair Landing',
+  keywords: ['stair', 'landing', 'component', 'platform'],
+  category: 'command',
+  invoke: (ctx) => startPlanTool(ctx, 'stair-landing'),
+});
+
+registerCommand({
   id: 'tool.railing',
   label: 'Place Railing',
   keywords: ['railing', 'guardrail', 'handrail', 'circulation'],
@@ -2225,6 +2241,19 @@ registerCommand({
     const ids = ctx.selectedElementIds;
     if (ids.length === 0) return;
     ctx.dispatchCommand?.({ type: 'unpinElements', elementIds: [...new Set(ids)] });
+  },
+});
+
+// §8.6.4 — Enter stair component edit mode
+registerCommand({
+  id: 'modify.edit-stair',
+  label: 'Edit Stair',
+  keywords: ['stair', 'edit', 'component', 'run', 'landing', 'modify'],
+  category: 'command',
+  isAvailable: (ctx) => ctx.selectedElements?.some((e) => e.kind === 'stair') ?? false,
+  invoke: (ctx) => {
+    const stair = ctx.selectedElements?.find((e) => e.kind === 'stair');
+    if (stair) ctx.dispatchCommand?.({ type: 'enterStairEditMode', stairId: stair.id });
   },
 });
 

@@ -1636,6 +1636,63 @@ export function InspectorPropertiesFor(
             elementsById={elementsById}
             onDispatchCommand={onDispatchCommand}
           />
+          <details>
+            <summary data-testid="inspector-floor-edge-profile-toggle">Edge Profile</summary>
+            <div>
+              {(el.edgeProfileMm ?? []).length === 0 ? (
+                <span data-testid="inspector-floor-edge-no-profile">No custom profile</span>
+              ) : (
+                (el.edgeProfileMm ?? []).map((pt, i) => (
+                  <div key={i} style={{ display: 'flex', gap: 4 }}>
+                    <input
+                      type="number"
+                      data-testid={`inspector-floor-edge-pt-x-${i}`}
+                      value={pt.xMm}
+                      onChange={(e) => {
+                        const updated = [...(el.edgeProfileMm ?? [])];
+                        updated[i] = { ...updated[i]!, xMm: +e.target.value };
+                        floorOnPropertyChange?.('edgeProfileMm', updated);
+                      }}
+                    />
+                    <input
+                      type="number"
+                      data-testid={`inspector-floor-edge-pt-y-${i}`}
+                      value={pt.yMm}
+                      onChange={(e) => {
+                        const updated = [...(el.edgeProfileMm ?? [])];
+                        updated[i] = { ...updated[i]!, yMm: +e.target.value };
+                        floorOnPropertyChange?.('edgeProfileMm', updated);
+                      }}
+                    />
+                  </div>
+                ))
+              )}
+              <button
+                type="button"
+                data-testid="inspector-floor-edge-add-pt"
+                onClick={() =>
+                  floorOnPropertyChange?.('edgeProfileMm', [
+                    ...(el.edgeProfileMm ?? []),
+                    { xMm: 0, yMm: 0 },
+                  ])
+                }
+              >
+                + Point
+              </button>
+              {(el.edgeProfileMm ?? []).length > 0 && (
+                <button
+                  type="button"
+                  data-testid="inspector-floor-edge-clear"
+                  onClick={() => floorOnPropertyChange?.('edgeProfileMm', [])}
+                >
+                  Clear
+                </button>
+              )}
+            </div>
+          </details>
+          {el.autoDetectedBoundary && (
+            <span data-testid="inspector-floor-auto-boundary">Auto-detected boundary</span>
+          )}
         </div>
       );
     }
@@ -2294,6 +2351,83 @@ export function InspectorPropertiesFor(
           {onDisciplineChange ? (
             <InspectorDisciplineDropdown value={el.discipline} onChange={onDisciplineChange} />
           ) : null}
+          {/* §8.6.4 stair edit mode panel */}
+          <div style={{ marginTop: 8, borderTop: '1px solid #ddd', paddingTop: 8 }}>
+            {(el as any).editStairActive ? (
+              <>
+                <strong data-testid="inspector-stair-edit-mode-active">Edit Mode</strong>
+                {(
+                  (el as any).runs ?? [
+                    {
+                      runIndex: 0,
+                      riserCount: (el as any).riserCount ?? 10,
+                      runWidthMm: (el as any).runWidthMm ?? 1200,
+                    },
+                  ]
+                ).map((run: any) => (
+                  <div
+                    key={run.runIndex}
+                    data-testid={`inspector-stair-run-${run.runIndex}`}
+                    style={{ display: 'flex', gap: 8, alignItems: 'center', marginTop: 4 }}
+                  >
+                    <span>Run {run.runIndex + 1}</span>
+                    <label>
+                      Risers
+                      <input
+                        type="number"
+                        data-testid={`inspector-stair-run-risers-${run.runIndex}`}
+                        value={run.riserCount}
+                        min={1}
+                        onChange={(e) =>
+                          void onDispatchCommand?.({
+                            type: 'updateStairRun',
+                            stairId: el.id,
+                            runIndex: run.runIndex,
+                            riserCount: +e.target.value,
+                          })
+                        }
+                      />
+                    </label>
+                    <label>
+                      Width (mm)
+                      <input
+                        type="number"
+                        data-testid={`inspector-stair-run-width-${run.runIndex}`}
+                        value={run.runWidthMm}
+                        min={600}
+                        onChange={(e) =>
+                          void onDispatchCommand?.({
+                            type: 'updateStairRun',
+                            stairId: el.id,
+                            runIndex: run.runIndex,
+                            runWidthMm: +e.target.value,
+                          })
+                        }
+                      />
+                    </label>
+                  </div>
+                ))}
+                <button
+                  data-testid="inspector-stair-finish-edit-btn"
+                  style={{ marginTop: 8 }}
+                  onClick={() =>
+                    void onDispatchCommand?.({ type: 'exitStairEditMode', stairId: el.id })
+                  }
+                >
+                  Finish Editing
+                </button>
+              </>
+            ) : (
+              <button
+                data-testid="inspector-stair-edit-btn"
+                onClick={() =>
+                  void onDispatchCommand?.({ type: 'enterStairEditMode', stairId: el.id })
+                }
+              >
+                Edit Stair
+              </button>
+            )}
+          </div>
         </div>
       );
     }

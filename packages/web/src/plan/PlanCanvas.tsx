@@ -114,6 +114,12 @@ import {
   initialStairLandingState,
   reduceStairLanding,
   type StairLandingState,
+  initialDetailLineState,
+  reduceDetailLine,
+  type DetailLineState,
+  initialDetailFilledRegionState,
+  reduceDetailFilledRegion,
+  type DetailFilledRegionState,
 } from '../tools/toolGrammar';
 import { buildScaleCommand, distanceMm } from './scaleTool';
 import { linearArrayOffsets, radialArrayAngles, radialOffsetForElement } from './arrayTool';
@@ -121,6 +127,7 @@ import { columnPositionsAtGridIntersections } from './columnAtGrids';
 import { splitToposolid } from './terrainSplit';
 import { handleDblClickDispatch } from './doubleClickDispatch';
 import { detectCeilingBoundary } from './ceilingAutoDetect';
+import { detectFloorBoundaryFromWalls } from './detectFloorBoundaryFromWalls';
 import * as THREE from 'three';
 import { parseDimensionInput } from '@bim-ai/core';
 import type { Element, LensMode, ViewLensMode } from '@bim-ai/core';
@@ -585,6 +592,10 @@ export function PlanCanvas({
   const spireRoofStateRef = useRef<SpireRoofState>(initialSpireRoofState());
   const gradedRegionStateRef = useRef<GradedRegionState>(initialGradedRegionState());
   const terrainSplitStateRef = useRef<TerrainSplitState>(initialTerrainSplitState());
+  const detailLineStateRef = useRef<DetailLineState>(initialDetailLineState());
+  const detailFilledRegionStateRef = useRef<DetailFilledRegionState>(
+    initialDetailFilledRegionState(),
+  );
   const dimSnapCirclesRef = useRef<THREE.Mesh[]>([]);
   const marqueeRef = useRef<{
     active: boolean;
@@ -1233,6 +1244,14 @@ export function PlanCanvas({
     } else if (planTool === 'spire-roof') {
       const { state } = reduceSpireRoof(spireRoofStateRef.current, { kind: 'activate' });
       spireRoofStateRef.current = state;
+    } else if (planTool === 'detail-line') {
+      const { state } = reduceDetailLine(detailLineStateRef.current, { kind: 'activate' });
+      detailLineStateRef.current = state;
+    } else if (planTool === 'detail-filled-region') {
+      const { state } = reduceDetailFilledRegion(detailFilledRegionStateRef.current, {
+        kind: 'activate',
+      });
+      detailFilledRegionStateRef.current = state;
     }
   }, [planTool]);
 
@@ -5322,6 +5341,53 @@ export function PlanCanvas({
         bumpGeom((x) => x + 1);
         return;
       }
+      // §6.4.2 — detail-line polyline
+      if (planTool === 'detail-line') {
+        const { state: next, effect } = reduceDetailLine(detailLineStateRef.current, {
+          kind: 'click',
+          pointMm: { xMm: sp.xMm, yMm: sp.yMm },
+        });
+        detailLineStateRef.current = next;
+        if (effect?.kind === 'createDetailLine') {
+          void onSemanticCommand({
+            type: 'addDetailLine',
+            element: {
+              kind: 'detail_line',
+              id: crypto.randomUUID(),
+              hostViewId: activePlanViewId ?? '',
+              pointsMm: effect.pointsMm,
+              lineStyle: effect.lineStyle,
+              levelId: lvlId ?? null,
+              viewId: activePlanViewId ?? null,
+            },
+          });
+        }
+        bumpGeom((x) => x + 1);
+        return;
+      }
+      // §6.4.2 — detail-filled-region polygon
+      if (planTool === 'detail-filled-region') {
+        const { state: next, effect } = reduceDetailFilledRegion(
+          detailFilledRegionStateRef.current,
+          { kind: 'click', pointMm: { xMm: sp.xMm, yMm: sp.yMm } },
+        );
+        detailFilledRegionStateRef.current = next;
+        if (effect?.kind === 'createDetailFilledRegion') {
+          void onSemanticCommand({
+            type: 'addDetailFilledRegion',
+            element: {
+              kind: 'detail_filled_region',
+              id: crypto.randomUUID(),
+              perimeterMm: effect.perimeterMm,
+              fillPattern: effect.fillPattern,
+              levelId: lvlId ?? null,
+              viewId: activePlanViewId ?? null,
+            },
+          });
+        }
+        bumpGeom((x) => x + 1);
+        return;
+      }
       if (planTool === 'beam-system') {
         const rect = rnd.domElement.getBoundingClientRect();
         const worldPerPxMm = (2 * camRef.current.half * 1000) / Math.max(1, rect.width);
@@ -5606,17 +5672,12 @@ export function PlanCanvas({
           elementsById,
           lvlId ?? null,
         );
-        if (boundary && boundary.length >= 3) {
+        if (boundary && boundary.length >= 3 && lvlId) {
           void onSemanticCommand({
-            type: 'createElement',
-            element: {
-              kind: 'floor',
-              id: crypto.randomUUID(),
-              perimeterMm: boundary,
-              thicknessMm: 200,
-              levelId: lvlId ?? null,
-              autoDetectedBoundary: true,
-            },
+            type: 'createFloor',
+            levelId: lvlId,
+            boundaryMm: boundary.map((p) => ({ xMm: p.xMm, yMm: p.yMm })),
+            autoDetectedBoundary: true,
           });
           setPlanTool(null);
         }
@@ -6174,6 +6235,16 @@ export function PlanCanvas({
           const { state } = reduceTerrainSplit(terrainSplitStateRef.current, { kind: 'cancel' });
           terrainSplitStateRef.current = state;
           bumpGeom((x) => x + 1);
+        } else if (planTool === 'detail-line') {
+          const { state } = reduceDetailLine(detailLineStateRef.current, { kind: 'cancel' });
+          detailLineStateRef.current = state;
+          bumpGeom((x) => x + 1);
+        } else if (planTool === 'detail-filled-region') {
+          const { state } = reduceDetailFilledRegion(detailFilledRegionStateRef.current, {
+            kind: 'cancel',
+          });
+          detailFilledRegionStateRef.current = state;
+          bumpGeom((x) => x + 1);
         }
         if (
           hadDraft ||
@@ -6396,6 +6467,54 @@ export function PlanCanvas({
               lowerElevationMm: grEffect.createGradedRegion.lowerElevationMm,
               upperElevationMm: grEffect.createGradedRegion.upperElevationMm,
               levelId: lvlId,
+            },
+          });
+        }
+        bumpGeom((x) => x + 1);
+        return;
+      }
+      // §6.4.2 — detail-line commit on Enter
+      if (planTool === 'detail-line' && ev.key === 'Enter') {
+        ev.preventDefault();
+        const { state: dlState, effect: dlEffect } = reduceDetailLine(detailLineStateRef.current, {
+          kind: 'commit',
+        });
+        detailLineStateRef.current = dlState;
+        if (dlEffect?.kind === 'createDetailLine') {
+          void onSemanticCommand({
+            type: 'addDetailLine',
+            element: {
+              kind: 'detail_line',
+              id: crypto.randomUUID(),
+              hostViewId: activePlanViewId ?? '',
+              pointsMm: dlEffect.pointsMm,
+              lineStyle: dlEffect.lineStyle,
+              levelId: lvlId ?? null,
+              viewId: activePlanViewId ?? null,
+            },
+          });
+        }
+        bumpGeom((x) => x + 1);
+        return;
+      }
+      // §6.4.2 — detail-filled-region commit on Enter
+      if (planTool === 'detail-filled-region' && ev.key === 'Enter') {
+        ev.preventDefault();
+        const { state: dfrState, effect: dfrEffect } = reduceDetailFilledRegion(
+          detailFilledRegionStateRef.current,
+          { kind: 'commit' },
+        );
+        detailFilledRegionStateRef.current = dfrState;
+        if (dfrEffect?.kind === 'createDetailFilledRegion') {
+          void onSemanticCommand({
+            type: 'addDetailFilledRegion',
+            element: {
+              kind: 'detail_filled_region',
+              id: crypto.randomUUID(),
+              perimeterMm: dfrEffect.perimeterMm,
+              fillPattern: dfrEffect.fillPattern,
+              levelId: lvlId ?? null,
+              viewId: activePlanViewId ?? null,
             },
           });
         }
