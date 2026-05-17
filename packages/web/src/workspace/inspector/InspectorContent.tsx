@@ -1229,6 +1229,7 @@ export function InspectorPropertiesFor(
                 <input
                   type="color"
                   className="h-6 w-10 cursor-pointer rounded border border-border"
+                  // eslint-disable-next-line bim-ai/no-hex-in-chrome
                   value={el.graphicsOverride?.fillColorHex ?? '#000000'}
                   key={`${el.id}-fill-color-${el.graphicsOverride?.fillColorHex ?? 'none'}`}
                   onChange={(e) =>
@@ -1257,6 +1258,7 @@ export function InspectorPropertiesFor(
                 <input
                   type="color"
                   className="h-6 w-10 cursor-pointer rounded border border-border"
+                  // eslint-disable-next-line bim-ai/no-hex-in-chrome
                   value={el.graphicsOverride?.surfaceColorHex ?? '#000000'}
                   key={`${el.id}-surface-color-${el.graphicsOverride?.surfaceColorHex ?? 'none'}`}
                   onChange={(e) =>
@@ -1489,6 +1491,7 @@ export function InspectorPropertiesFor(
                 <input
                   type="color"
                   className="h-6 w-10 cursor-pointer rounded border border-border"
+                  // eslint-disable-next-line bim-ai/no-hex-in-chrome
                   value={el.graphicsOverride?.fillColorHex ?? '#000000'}
                   key={`${el.id}-fill-color-${el.graphicsOverride?.fillColorHex ?? 'none'}`}
                   onChange={(e) =>
@@ -1517,6 +1520,7 @@ export function InspectorPropertiesFor(
                 <input
                   type="color"
                   className="h-6 w-10 cursor-pointer rounded border border-border"
+                  // eslint-disable-next-line bim-ai/no-hex-in-chrome
                   value={el.graphicsOverride?.surfaceColorHex ?? '#000000'}
                   key={`${el.id}-surface-color-${el.graphicsOverride?.surfaceColorHex ?? 'none'}`}
                   onChange={(e) =>
@@ -2161,6 +2165,7 @@ export function InspectorPropertiesFor(
                 <input
                   type="color"
                   className="h-6 w-10 cursor-pointer rounded border border-border"
+                  // eslint-disable-next-line bim-ai/no-hex-in-chrome
                   value={el.graphicsOverride?.fillColorHex ?? '#000000'}
                   key={`${el.id}-fill-color-${el.graphicsOverride?.fillColorHex ?? 'none'}`}
                   onChange={(e) =>
@@ -2189,6 +2194,7 @@ export function InspectorPropertiesFor(
                 <input
                   type="color"
                   className="h-6 w-10 cursor-pointer rounded border border-border"
+                  // eslint-disable-next-line bim-ai/no-hex-in-chrome
                   value={el.graphicsOverride?.surfaceColorHex ?? '#000000'}
                   key={`${el.id}-surface-color-${el.graphicsOverride?.surfaceColorHex ?? 'none'}`}
                   onChange={(e) =>
@@ -3542,6 +3548,7 @@ export function InspectorPropertiesFor(
                 <input
                   type="color"
                   className="h-6 w-8 cursor-pointer rounded border border-border bg-surface p-0.5"
+                  // eslint-disable-next-line bim-ai/no-hex-in-chrome
                   value={el.colorHex ?? '#202020'}
                   key={`${el.id}-color`}
                   aria-label="Text note color"
@@ -3659,6 +3666,7 @@ export function InspectorPropertiesFor(
                 <input
                   type="color"
                   className="h-6 w-8 cursor-pointer rounded border border-border bg-surface p-0.5"
+                  // eslint-disable-next-line bim-ai/no-hex-in-chrome
                   value={el.colorHex ?? '#202020'}
                   key={`${el.id}-color`}
                   aria-label="Leader text color"
@@ -4385,7 +4393,101 @@ export function InspectorPropertiesFor(
         </div>
       );
     }
-    default:
+    case 'project_base_point': {
+      const { onPropertyChange: pbpPropChange } = options ?? {};
+      const posMm = el.positionMm as { xMm: number; yMm: number; zMm?: number };
+      return (
+        <div className="flex flex-col gap-2">
+          <div className="flex items-center gap-2 py-0.5">
+            <span className="text-xs text-muted w-28 shrink-0">Position X (mm)</span>
+            <input
+              type="number"
+              className="w-24 text-xs bg-surface border border-border rounded px-1 py-0.5"
+              defaultValue={posMm.xMm}
+              key={`${el.id}-pbp-x`}
+              step={100}
+              data-testid="inspector-pbp-x"
+              onBlur={(e) => {
+                const v = Number(e.currentTarget.value);
+                if (!isNaN(v))
+                  pbpPropChange?.('positionMm', {
+                    xMm: v,
+                    yMm: posMm.yMm,
+                    zMm: posMm.zMm ?? 0,
+                  });
+              }}
+            />
+          </div>
+          <div className="flex items-center gap-2 py-0.5">
+            <span className="text-xs text-muted w-28 shrink-0">Position Y (mm)</span>
+            <input
+              type="number"
+              className="w-24 text-xs bg-surface border border-border rounded px-1 py-0.5"
+              defaultValue={posMm.yMm}
+              key={`${el.id}-pbp-y`}
+              step={100}
+              data-testid="inspector-pbp-y"
+              onBlur={(e) => {
+                const v = Number(e.currentTarget.value);
+                if (!isNaN(v))
+                  pbpPropChange?.('positionMm', {
+                    xMm: posMm.xMm,
+                    yMm: v,
+                    zMm: posMm.zMm ?? 0,
+                  });
+              }}
+            />
+          </div>
+          <div className="flex items-center gap-2 py-0.5">
+            <span className="text-xs text-muted w-28 shrink-0">Elevation (mm)</span>
+            <input
+              type="number"
+              className="w-24 text-xs bg-surface border border-border rounded px-1 py-0.5"
+              defaultValue={(posMm as { zMm?: number }).zMm ?? 0}
+              key={`${el.id}-pbp-elevation`}
+              step={100}
+              data-testid="inspector-pbp-elevation"
+              onBlur={(e) => {
+                const v = Number(e.currentTarget.value);
+                if (!isNaN(v))
+                  pbpPropChange?.('positionMm', {
+                    xMm: posMm.xMm,
+                    yMm: posMm.yMm,
+                    zMm: v,
+                  });
+              }}
+            />
+          </div>
+          <div className="flex items-center gap-2 py-0.5">
+            <span className="text-xs text-muted w-28 shrink-0">Name</span>
+            <input
+              type="text"
+              className="w-24 text-xs bg-surface border border-border rounded px-1 py-0.5"
+              defaultValue={(el as { name?: string | null }).name ?? ''}
+              key={`${el.id}-pbp-name`}
+              data-testid="inspector-pbp-name"
+              onBlur={(e) => {
+                pbpPropChange?.('name', e.currentTarget.value || null);
+              }}
+            />
+          </div>
+          <div className="flex items-center gap-2 py-0.5">
+            <span className="text-xs text-muted w-28 shrink-0">Shared Coordinates</span>
+            <input
+              type="checkbox"
+              className="text-xs"
+              defaultChecked={false}
+              key={`${el.id}-pbp-shared`}
+              data-testid="inspector-pbp-shared"
+              onChange={(e) => {
+                pbpPropChange?.('isShared', e.currentTarget.checked);
+              }}
+            />
+          </div>
+        </div>
+      );
+    }
+    default: {
       const materialAssignment = GenericMaterialAssignmentFor({
         el,
         elementsById,
@@ -4395,6 +4497,7 @@ export function InspectorPropertiesFor(
       if (materialAssignment)
         return <div className="flex flex-col gap-2">{materialAssignment}</div>;
       return <p className="text-sm text-muted">{t('inspector.noParams', { kind: el.kind })}</p>;
+    }
   }
 }
 

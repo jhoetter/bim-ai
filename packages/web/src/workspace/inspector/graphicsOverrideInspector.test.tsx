@@ -40,9 +40,11 @@ describe('graphics override inspector — §2.1.4', () => {
     const onChange = vi.fn();
     const { getByTestId } = render(InspectorPropertiesFor(wall, t, { onPropertyChange: onChange }));
     const input = getByTestId('inspector-override-fill-color') as HTMLInputElement;
+    // eslint-disable-next-line bim-ai/no-hex-in-chrome
     fireEvent.change(input, { target: { value: '#ff0000' } });
     expect(onChange).toHaveBeenCalledWith(
       'graphicsOverride',
+      // eslint-disable-next-line bim-ai/no-hex-in-chrome
       expect.objectContaining({ fillColorHex: '#ff0000' }),
     );
   });

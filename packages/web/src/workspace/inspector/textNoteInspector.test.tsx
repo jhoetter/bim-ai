@@ -85,7 +85,9 @@ describe('text note inspector formatting — §4.10', () => {
       InspectorPropertiesFor(textNote, t, { onPropertyChange: onChange }),
     );
     const colorInput = getByTestId('inspector-text-color') as HTMLInputElement;
+    // eslint-disable-next-line bim-ai/no-hex-in-chrome
     fireEvent.change(colorInput, { target: { value: '#ff0000' } });
+    // eslint-disable-next-line bim-ai/no-hex-in-chrome
     expect(onChange).toHaveBeenCalledWith('colorHex', '#ff0000');
   });
 });

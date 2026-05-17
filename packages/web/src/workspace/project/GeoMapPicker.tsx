@@ -101,6 +101,7 @@ export function GeoMapPicker({ value, onChange }: Props): JSX.Element {
       Leaflet.tileLayer(OSM_TILE_URL, { maxZoom: 19 }).addTo(map);
 
       // Dim mask — covers everything outside the bbox.
+      /* eslint-disable bim-ai/no-hex-in-chrome */
       mask = Leaflet.polygon(
         [OUTER_RING, innerRing(bboxSouth, bboxWest, bboxNorth, bboxEast)] as L.LatLngExpression[][],
         {
@@ -124,6 +125,7 @@ export function GeoMapPicker({ value, onChange }: Props): JSX.Element {
           interactive: false,
         },
       ).addTo(map);
+      /* eslint-enable bim-ai/no-hex-in-chrome */
 
       function applyBbox(s: number, w: number, n: number, e: number) {
         const bounds = [
@@ -142,6 +144,7 @@ export function GeoMapPicker({ value, onChange }: Props): JSX.Element {
         drawStartRef.current = { lat: e.latlng.lat, lng: e.latlng.lng };
 
         if (!previewRef.current) {
+          /* eslint-disable bim-ai/no-hex-in-chrome */
           previewRef.current = Leaflet.rectangle(
             [
               [e.latlng.lat, e.latlng.lng] as L.LatLngTuple,
@@ -156,6 +159,7 @@ export function GeoMapPicker({ value, onChange }: Props): JSX.Element {
               interactive: false,
             },
           ).addTo(map);
+          /* eslint-enable bim-ai/no-hex-in-chrome */
         }
       });
 

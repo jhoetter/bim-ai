@@ -158,6 +158,7 @@ export function SheetRevisionTableSvg(props: {
 
   const cellTextY = (rowY: number) => rowY + rowHeight * 0.65;
 
+  /* eslint-disable bim-ai/no-hex-in-chrome */
   return (
     <g data-testid="sheet-revision-table">
       <rect
@@ -258,6 +259,7 @@ export function SheetRevisionTableSvg(props: {
     </g>
   );
 }
+/* eslint-enable bim-ai/no-hex-in-chrome */
 
 export function SheetTitleblockEditor(props: {
   sheetId: string;

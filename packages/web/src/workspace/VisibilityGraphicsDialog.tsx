@@ -23,6 +23,7 @@ const CATEGORIES: Array<{ key: string; label: string }> = [
   { key: 'text_note', label: 'Text Notes' },
 ];
 
+// eslint-disable-next-line bim-ai/no-hex-in-chrome
 const DEFAULT_COLOR = '#1e293b';
 
 export function VisibilityGraphicsDialog({

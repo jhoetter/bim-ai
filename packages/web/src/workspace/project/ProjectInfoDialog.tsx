@@ -370,7 +370,7 @@ export function ProjectInfoDialog({
                 borderRadius: 4,
                 border: 'none',
                 background: 'var(--color-accent, #2563eb)',
-                color: '#fff',
+                color: 'var(--color-foreground-on-accent)',
                 cursor: 'pointer',
                 opacity: busy ? 0.6 : 1,
               }}
