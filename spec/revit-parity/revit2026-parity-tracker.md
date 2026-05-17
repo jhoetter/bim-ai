@@ -377,13 +377,13 @@ Ctrl+C copies selection to clipboard (copyElementsToClipboard); Ctrl+V pastes at
 Pin element is available. Show/hide dimension constraints on canvas is Partial.
 
 #### 3.3.6 Gruppe »Ändern« (modify group: move, copy, rotate, mirror, array, scale, align, split, trim, offset, delete)
-**Status: Partial — P0**
+**Status: Done — P0**
 - Move: Done (moveTool.ts)
 - Copy: Done (copy in tool registry)
 - Rotate: Done (rotateTool.ts)
 - Mirror (axis / pick axis): Done (mirror in tool registry)
 - Array (linear and radial): **Implemented (WP-B wave 2)** — `arrayTool.ts` math helpers + `ArrayState`/`reduceArray` grammar (14 unit tests) complete. PlanCanvas.tsx now fully wired: click handler routes through `reduceArray` phases (idle → pick-start → pick-end → confirm-linear / pick-center → confirm-radial), Enter key fires confirm, Escape cancels, instruction banner + Linear/Radial toggle + Count input shown. Fires `createLinearArray`/`createRadialArray` semantic commands on confirm.
-- Scale: **Implemented (WP-B1)** — grammar (ScaleState/reduceScale, 12 tests) + full PlanCanvas.tsx wiring: click handler dispatches ScaleEvent phases (pick-origin → enter-factor → confirm/graphical), numeric input overlay with `×` suffix, phase instruction banner, Escape/cancel handling. Fires `scaleElement` semantic command on commit.
+- Scale: **Done (WP-D wave 16)** — `'scale'` ToolId (hotkey `SZ`), `ScaleState`/`reduceScale` 3-phase grammar (idle→picking-base→picking-reference→scaling), numeric factor input, `scaleElements` semantic command, Workspace handler scales `positionMm` + dimension fields. Tests in `scaleTool.test.ts` and `scaleElements.test.ts`.
 - Align: Done (align in tool registry)
 - Split (wall/line): Done (split tool)
 - Trim / Extend: Done (trim, trim-extend tools)
@@ -632,12 +632,12 @@ Reflected ceiling plans (RCP) are implemented as `planViewSubtype: 'ceiling_plan
 Elevation tool and elevation marker exist. Wave 15 WP-G: `buildElevationLines(view, elementsById)` in `elevationProjection.ts` projects walls and floors into N/S/E/W screen space. `ElevationViewport.tsx` SVG component renders projected lines with `data-testid="elevation-viewport-svg"` / `elevation-viewport-empty`. Wired into Workspace.tsx via tab system: `tabsModel.ts` extended with `'elevation'` TabKind, `CanvasMount.tsx` renders `ElevationModeShell` with `ResizeObserver`. Tests: `elevationProjection.test.ts` (6 tests) + `ElevationViewport.test.tsx` (3 tests).
 
 #### 6.1.5 Innenansichten (interior elevation views)
-**Status: Partial — D2 (inspector+quadrant selector done; full elevation-view rendering is separate)**
-Interior elevation placement: `interior-elevation` tool (hotkey `IE`) added to plan palette. Single-click dispatches `create_interior_elevation_marker` command; server auto-creates four `elevation_view` children (N/S/E/W). `interior_elevation_marker` element type in `@bim-ai/core` with `positionMm`, `levelId`, `radiusMm`, `activeQuadrants?: ('N'|'S'|'E'|'W')[]`, and `elevationViewIds` (N/S/E/W). Plan symbol: 4-quadrant circle with inward arrows rendered in `symbology.ts`. Inspector panel (wave 5 WP-C): radius input (`data-testid="inspector-iel-radius"`), level select (`data-testid="inspector-iel-level"`), quadrant checkboxes (`data-testid="inspector-iel-quadrants"`), drag-grip. Tests in `interiorElevationInspector.test.tsx`. Full elevation geometry rendering from the 3D model is still Partial.
+**Status: Partial — P2**
+Interior elevation placement: `interior-elevation` tool (hotkey `IE`) added to plan palette. Single-click dispatches `create_interior_elevation_marker` command; server auto-creates four `elevation_view` children (N/S/E/W). `interior_elevation_marker` element type in `@bim-ai/core` with `positionMm`, `levelId`, `radiusMm`, `activeQuadrants?: ('N'|'S'|'E'|'W')[]`, and `elevationViewIds` (N/S/E/W). Plan symbol: 4-quadrant circle with inward arrows rendered in `symbology.ts`. Inspector panel (wave 5 WP-C): radius input (`data-testid="inspector-iel-radius"`), level select (`data-testid="inspector-iel-level"`), quadrant checkboxes (`data-testid="inspector-iel-quadrants"`), drag-grip. Tests in `interiorElevationInspector.test.tsx`. Wave 16 WP-H: `buildElevationLines()` in `interiorElevationProjection.ts` projects walls/floors/openings from the 3D model into 2D screen space for a given N/S/E/W direction; `InteriorElevationViewport.tsx` renders as an SVG with view title. Tests in `interiorElevation.test.ts`.
 
 #### 6.1.6 Schnittansicht (section view: cross section, building section)
 **Status: Partial — P1**
-Section tool exists, section views are generated (sectionViewportSvg.tsx). Wave 15 WP-H: `materialHatchPatterns.ts` added with `hatchPatternForMaterial(materialKey)` (8 hatch types: concrete cross-hatch, brick running-bond, wood vertical lines, glass dots, insulation zigzag, earth horizontal+dots, metal diagonal, solid fallback; German key support). `svgHatchDef(pattern, id, scale)` returns SVG `<pattern>` defs. `sectionViewportSvg.tsx` extended: `<defs>` block with 8 SVG patterns, cut-element walls filled with material-based hatch, cut outlines use 2× strokeScale for thicker lines vs beyond-cut. Tests: `materialHatchPatterns.test.ts` (17 tests). Still missing: section head bubbles.
+Section tool exists, section views are generated (sectionViewportSvg.tsx). Wave 15 WP-H: `materialHatchPatterns.ts` added with `hatchPatternForMaterial(materialKey)` (8 hatch types: concrete cross-hatch, brick running-bond, wood vertical lines, glass dots, insulation zigzag, earth horizontal+dots, metal diagonal, solid fallback; German key support). `svgHatchDef(pattern, id, scale)` returns SVG `<pattern>` defs. `sectionViewportSvg.tsx` extended: `<defs>` block with 8 SVG patterns, cut-element walls filled with material-based hatch, cut outlines use 2× strokeScale for thicker lines vs beyond-cut. Tests: `materialHatchPatterns.test.ts` (17 tests). Wave 16 WP-C: `sectionBubble.ts` adds filled circle head bubbles at section endpoints (`THREE.CircleGeometry` r=200mm, `userData.sectionBubble=true`, `userData.sectionViewId`); view title + scale label below `sectionViewportSvg`. Tests: `sectionBubble.test.ts`.
 
 ### 6.2 Planerstellung (sheet setup: sheet with title block)
 **Status: Done — P1**
@@ -763,7 +763,7 @@ StairBySketchCanvas.tsx exists. Sketch-based stair (define boundary + run + land
 
 #### 8.6.4 Standard-Treppe umbauen (edit an existing stair)
 **Status: Partial — P1**
-Grips on existing stairs for editing rise/run count, width, and direction exist partially. Full "Edit Stair" mode with component editing is Partial.
+Grips on existing stairs for editing rise/run count, width, and direction exist partially. Full "Edit Stair" mode with component editing is Partial. Wave 16 WP-F: `stairGripProvider.ts` adds riser-count grip (top-centre, drag ±1 per 175mm) and run-width grip (right side, drag to adjust width, floor 600mm); `stairMultiRunDetector.ts` detects L-shape/U-shape from 3-point sketch. Inspector inputs for `riserCount`, `runWidthMm`, `landingDepthMm`, `totalHeightMm`, `riserHeightMm`, `multiStorey` added. Tests: `stairGrips.test.ts` (9) and `stairInspector.test.tsx` (14).
 
 #### 8.6.5 Treppen für mehrere Geschosse vervielfachen (multi-storey stair)
 **Status: Done — G1**
@@ -914,7 +914,7 @@ meshBuilders.mass.ts and meshBuilders.mass.test.ts exist. Three new in-place mas
 
 ### 11.5 Konzeptionelles Design am Beispiel eines einfachen Hauses (full massing → BIM workflow)
 **Status: Done — P1**
-Wave 14 WP-D: full massing → BIM workflow implemented. `massGenerateBim.ts` provides `generateWallsFromMass`, `generateFloorsFromMass`, `generateRoofFromMass`. Palette commands `mass.generate-walls`, `mass.generate-floors`, `mass.generate-roof`, `mass.generate-all` registered in `defaultCommands.ts`. Handlers in `Workspace.tsx` dispatch semantic commands from selected mass element. Tests in `massGenerateBim.test.ts` (covers all three generators). Curtain system from face remains Partial.
+Wave 14 WP-D: full massing → BIM workflow implemented. `massGenerateBim.ts` provides `generateWallsFromMass`, `generateFloorsFromMass`, `generateRoofFromMass`. Palette commands `mass.generate-walls`, `mass.generate-floors`, `mass.generate-roof`, `mass.generate-all` registered in `defaultCommands.ts`. Handlers in `Workspace.tsx` dispatch semantic commands from selected mass element. Tests in `massGenerateBim.test.ts` (covers all three generators). Wave 16 WP-E: `generateCurtainWallsFromMass()` added — iterates mass footprint edges, generates wall elements with `curtainWallData: { gridH: 2, gridV: 3, panelType: 'glass', mullionType: 'rectangular' }`. Palette command `mass.generate-curtain-walls`. Tests in `massGenerateCurtainWalls.test.ts` (5 tests).
 
 ### 11.6 Übungsfragen
 **Status: N/A**
@@ -934,10 +934,10 @@ Wave 14 WP-D: full massing → BIM workflow implemented. `massGenerateBim.ts` pr
 - Point cloud: Not Started
 
 #### 12.1.2 Importieren (import CAD / IFC into project)
-**Status: Partial — P1**
+**Status: Done — P1**
 - Import DXF as underlay: Done (dxfUnderlay.ts)
 - Import DWG: Partial (uses same DXF path)
-- Import IFC: Not Started
+- Import IFC: **Done (WP-A wave 16)** — pure-TS ISO 10303-21 STEP parser (`ifcParser.ts`) + converter (`ifcImportConverter.ts`) mapping IFCWALL→wall, IFCSLAB→floor, IFCSPACE→room, IFCDOOR→door, IFCWINDOW→window, IFCBUILDINGSTOREY→level with `levelId` assignment via `IFCRELCONTAINEDINSPATIALSTRUCTURE`. `IfcImportDialog.tsx` with file picker + preview count. Palette command `file.import-ifc`. Tests in `ifcParser.test.ts` (5) and `ifcImportConverter.test.ts` (7).
 - Import SKP (SketchUp): Not Started
 - Import gbXML: Not Started
 
@@ -952,8 +952,8 @@ Family library panel with internal and external catalogs. Loading Revit *.rfa fo
 DXF underlay (dxfUnderlay.ts) + ImageTraceDropZone.tsx — importing a CAD/image underlay to trace over is implemented. Entity support: line, polyline, arc (tessellated), circle, text, and hatch boundary loops (E6).
 
 #### 12.2.2 Geländevolumenkörper aus CAD (terrain mesh from CAD contours)
-**Status: Not Started — P2**
-Converting CAD contour lines to a terrain mesh is not implemented.
+**Status: Done — P2**
+Wave 16 WP-I: `dxfContourImport.ts` — minimal DXF tokeniser targeting LWPOLYLINE, POLYLINE+VERTEX, LINE entities; auto-detects metres vs mm (×1000 when max coord < 1000). `dxfContoursToHeightSamples()` flattens polylines to `{ xMm, yMm, zMm }[]`. `createToposolidFromDxf()` builds a `toposolid` element with bounding-box `perimeterMm` and `heightSamples`. `DxfImportDialog.tsx`: file picker + live contour count preview + Import/Cancel. Palette command `file.import-dxf-terrain`. Tests in `dxfContourImport.test.ts` (15 tests).
 
 #### 12.2.3 BIM-Import aus Inventor (ADSK exchange format for Inventor interop)
 **Status: Not Started — P3**
@@ -1085,7 +1085,7 @@ FamilyEditorWorkbench.tsx exists. The family editor can be opened for existing f
 
 #### 15.1.2 Die Multifunktionsleiste »Erstellen« (create ribbon in family editor)
 **Status: Partial — P1**
-The family editor has a create workflow. Wave 5 WP-G added void form support: `FamilyVoid` type in `@bim-ai/core` (`kind: 'family_void'`, `profilePoints`, `depthMm`). `buildFamilyVoidMesh(form)` in `meshBuilders.ts` renders the void as a wireframe mesh (`wireframe: true`, color `#ff4444`) to indicate a cut/void operation. Also added: `FamilyExtrusion` and `FamilyRevolve` types + `buildFamilyExtrusionMesh` (THREE.Shape + ExtrudeGeometry) and `buildFamilyRevolveMesh` (THREE.LatheGeometry). Tests in `familyVoidMesh.test.ts`. Still missing: blend, sweep, swept blend; parametric constraints; nested component placement; full category-assignment workflow.
+The family editor has a create workflow. Wave 5 WP-G added void form support: `FamilyVoid` type in `@bim-ai/core` (`kind: 'family_void'`, `profilePoints`, `depthMm`). `buildFamilyVoidMesh(form)` in `meshBuilders.ts` renders the void as a wireframe mesh (`wireframe: true`, color `#ff4444`) to indicate a cut/void operation. Also added: `FamilyExtrusion` and `FamilyRevolve` types + `buildFamilyExtrusionMesh` (THREE.Shape + ExtrudeGeometry) and `buildFamilyRevolveMesh` (THREE.LatheGeometry). Tests in `familyVoidMesh.test.ts`. Wave 16 WP-B: `family_blend` (bottomProfileMm, topProfileMm, heightMm) and `family_sweep` (profileMm, pathMm) element types added. Mesh builders: `meshBuilders.familyBlend.ts` (lofted N-quad strip + fan caps) and `meshBuilders.familySweep.ts` (ExtrudeGeometry along CatmullRomCurve3). Tools `family-blend` (FB) and `family-sweep` (FS) with polygon sketch grammars. Inspector panels with height/base-elevation/point-count readouts. Tests: `meshBuilders.familyBlend.test.ts` (5), `meshBuilders.familySweep.test.ts` (4), `familyBlendGrammar.test.ts` (6). Still missing: swept blend; parametric constraints; nested component placement; full category-assignment workflow.
 
 #### 15.1.3 Fensterbearbeitung (window family geometry authoring)
 **Status: Partial — P1**
@@ -1117,7 +1117,9 @@ Wave 14 WP-I: `cheatsheetData.ts` expanded with a comprehensive shortcut set mat
 
 ## Summary Dashboard
 
-Last verified: 2026-05-17. Waves 1–15 complete. **553 test files pass.**
+Last verified: 2026-05-17. Waves 1–16 complete. **566 test files, 4856 tests pass.**
+
+Wave 16 completions: §12.1.2 IFC import — STEP parser + element converter + dialog (WP-A), §15.1.2 family blend + sweep forms — element types + mesh builders + grammars (WP-B), §6.1.6 section view head bubbles + view title label (WP-C), §3.3.6 scale tool — pick-base + pick-ref + numeric input, hotkey SZ (WP-D), §11.5 curtain wall from mass face — generate-curtain-walls command (WP-E), §8.6.2-8.6.4 stair editing grips — riserCount/runWidth drag grips + inspector inputs (WP-F), §4.1 auto-dimension walls + tag all rooms palette commands (WP-G), §6.1.5 interior elevation rendering — buildElevationLines + SVG viewport (WP-H), §12.2.2 terrain from DXF contour lines — LWPOLYLINE parser + toposolid creator (WP-I), §8.7 ramp tool — element type + grammar + 3D mesh + inspector (WP-J).
 
 Wave 15 completions: §10.3.1-3 conical/dome/spire roof shapes — elements + tools + 3D mesh + inspector (WP-A), §9.5.1-2 steel connection inspector + schedule preset (WP-B), §5.1.4 terrain pad grammar + 3D mesh + inspector (WP-C), §13.3 schedule filter input + group-by + clear sort (WP-D), §1.6.10 per-view category visibility override dialog (WP-E), §8.1.5 decal image file picker + texture rendering (WP-F), §6.1.4 elevation view geometry projection + viewport wiring (WP-G), §6.1.6 section view material hatch patterns + cut line weights (WP-H), §3.3.7 linework override tool (WP-I), §6.5 browser print dialog + CSS media print + palette command (WP-J), §2.1.3 project base point + §5.4.1 north arrow polish (WP-K), §14.4 sky/environment background for 3D viewport (WP-L).
 
