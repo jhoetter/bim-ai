@@ -2194,6 +2194,46 @@ export function InspectorPropertiesFor(
         </div>
       );
     }
+    case 'family_constraint': {
+      const fc = el as Extract<Element, { kind: 'family_constraint' }>;
+      return (
+        <div data-testid="inspector-family-constraint" className="flex flex-col gap-2">
+          <div className="flex items-center gap-2 py-0.5">
+            <span className="text-xs text-muted w-28 shrink-0">Parameter</span>
+            <span data-testid="inspector-fc-param-name" className="text-sm">
+              {fc.paramName}
+            </span>
+          </div>
+          <div className="flex items-center gap-2 py-0.5">
+            <span className="text-xs text-muted w-28 shrink-0">Axis</span>
+            <span data-testid="inspector-fc-axis" className="text-sm">
+              {fc.axis.toUpperCase()}
+            </span>
+          </div>
+          <div className="flex items-center gap-2 py-0.5">
+            <span className="text-xs text-muted w-28 shrink-0">Ref Plane 1</span>
+            <span data-testid="inspector-fc-ref1" className="text-xs text-muted">
+              {fc.refPlaneId1.slice(-8)}
+            </span>
+          </div>
+          <div className="flex items-center gap-2 py-0.5">
+            <span className="text-xs text-muted w-28 shrink-0">Ref Plane 2</span>
+            <span data-testid="inspector-fc-ref2" className="text-xs text-muted">
+              {fc.refPlaneId2.slice(-8)}
+            </span>
+          </div>
+          <button
+            data-testid="inspector-fc-remove"
+            className="text-xs text-red-400 text-left mt-1"
+            onClick={() =>
+              onSemanticCommand?.({ type: 'removeFamilyConstraint', constraintId: fc.id })
+            }
+          >
+            Remove Constraint
+          </button>
+        </div>
+      );
+    }
     case 'stair': {
       const { onPropertyChange: stairPropChange } = options ?? {};
       return (

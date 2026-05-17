@@ -720,6 +720,9 @@ export function FamilyEditorWorkbench({
   const [familyParameters, setFamilyParameters] = useState<
     Extract<Element, { kind: 'family_parameter' }>[]
   >([]);
+  const [localConstraints, setLocalConstraints] = useState<
+    Extract<Element, { kind: 'family_constraint' }>[]
+  >([]);
   const projectFamilyElements = useMemo(
     () => ({ ...projectElementsById, ...localProjectFamilyTypes }),
     [localProjectFamilyTypes, projectElementsById],
@@ -2482,6 +2485,48 @@ export function FamilyEditorWorkbench({
           )
         }
       />
+
+      {/* §15.1.3 parametric constraints panel — local state, mirrors family_constraint elements */}
+      <div className="border rounded p-3 flex flex-col gap-2">
+        <strong className="text-xs font-semibold">Parametric Constraints</strong>
+        {localConstraints.map((fc) => (
+          <div
+            key={fc.id}
+            data-testid={`family-editor-constraint-${fc.id}`}
+            className="text-xs text-muted flex items-center gap-2"
+          >
+            <span>
+              {fc.paramName || '(no param)'} → {fc.axis.toUpperCase()}
+            </span>
+            <button
+              className="ml-auto text-red-400"
+              onClick={() => setLocalConstraints((prev) => prev.filter((c) => c.id !== fc.id))}
+            >
+              ✕
+            </button>
+          </div>
+        ))}
+        <button
+          data-testid="family-editor-add-constraint-btn"
+          className="text-xs text-left"
+          onClick={() =>
+            setLocalConstraints((prev) => [
+              ...prev,
+              {
+                id: crypto.randomUUID(),
+                kind: 'family_constraint' as const,
+                familyId,
+                paramName: familyParameters[0]?.name ?? '',
+                refPlaneId1: '',
+                refPlaneId2: '',
+                axis: 'x' as const,
+              },
+            ])
+          }
+        >
+          + Add Constraint
+        </button>
+      </div>
 
       <div className="grid gap-4 md:grid-cols-[260px_1fr]">
         <LoadedFamiliesSidebar

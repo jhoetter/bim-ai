@@ -2099,6 +2099,20 @@ export function Workspace(): JSX.Element {
         }
         return;
       }
+      // §15.1.3: addFamilyConstraint — create a family_constraint element client-side.
+      if (cmd.type === 'addFamilyConstraint') {
+        const { elementsById: cur } = useBimStore.getState();
+        useBimStore.setState({ elementsById: { ...cur, [cmd.constraint.id]: cmd.constraint } });
+        return;
+      }
+      // §15.1.3: removeFamilyConstraint — delete a family_constraint element client-side.
+      if (cmd.type === 'removeFamilyConstraint') {
+        const { elementsById: cur } = useBimStore.getState();
+        const next = { ...cur };
+        delete next[cmd.constraintId];
+        useBimStore.setState({ elementsById: next });
+        return;
+      }
       // §1.8.1: selectSimilar — select all elements of the same kind (client-only).
       // Matches the `selection.select-all-instances` palette command behaviour.
       if (cmd.type === 'selectSimilar') {

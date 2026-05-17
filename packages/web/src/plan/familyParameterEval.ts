@@ -1,4 +1,4 @@
-import type { Element } from '@bim-ai/core';
+import type { Element, FamilyConstraintElem } from '@bim-ai/core';
 
 type FamilyParam = Extract<Element, { kind: 'family_parameter' }>;
 
@@ -23,6 +23,45 @@ export function applyFamilyParameters(
   }
 
   return updates;
+}
+
+/**
+ * For each constraint that matches a parameter, moves refPlane2 so the distance
+ * between refPlane1 and refPlane2 equals the parameter's value in mm.
+ * Returns updated elements map.
+ */
+export function applyFamilyConstraints(
+  elementsById: Record<string, Element>,
+  constraints: FamilyConstraintElem[],
+  paramValues: Record<string, number>, // paramName -> valueMm
+): Record<string, Element> {
+  let updated = { ...elementsById };
+
+  for (const constraint of constraints) {
+    const valueMm = paramValues[constraint.paramName];
+    if (valueMm === undefined) continue;
+
+    const plane1 = updated[constraint.refPlaneId1] as any;
+    const plane2 = updated[constraint.refPlaneId2] as any;
+    if (!plane1 || !plane2) continue;
+
+    // Move plane2's position so distance from plane1 equals valueMm
+    if (constraint.axis === 'x') {
+      const newX = (plane1.xMm ?? 0) + valueMm;
+      updated = {
+        ...updated,
+        [plane2.id]: { ...plane2, xMm: newX },
+      };
+    } else {
+      const newY = (plane1.yMm ?? 0) + valueMm;
+      updated = {
+        ...updated,
+        [plane2.id]: { ...plane2, yMm: newY },
+      };
+    }
+  }
+
+  return updated;
 }
 
 /**
