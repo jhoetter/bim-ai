@@ -444,7 +444,8 @@ export type ElemKind =
   | 'dome_roof'
   | 'spire_roof'
   | 'family_blend'
-  | 'family_sweep';
+  | 'family_sweep'
+  | 'text_tag';
 
 export type PhaseFilter = 'all' | 'existing' | 'demolition' | 'new' | 'show_all';
 
@@ -1465,6 +1466,7 @@ export type Element =
       id: string;
       name: string;
       wallId: string;
+      levelId?: string | null;
       alongT: number;
       widthMm: number;
       familyTypeId?: string | null;
@@ -1506,6 +1508,7 @@ export type Element =
       id: string;
       name: string;
       wallId: string;
+      levelId?: string | null;
       alongT: number;
       widthMm: number;
       sillHeightMm: number;
@@ -3510,6 +3513,18 @@ export type Element =
       hostElementId: string;
       requestedBy?: string | null;
       discipline?: DisciplineTag | string | null;
+      agentTrace?: AgentTrace;
+      optionSetId?: string | null;
+      optionId?: string | null;
+    }
+  | {
+      kind: 'text_tag';
+      id: string;
+      positionMm: XY;
+      label: string;
+      levelId: string;
+      hostViewId?: string | null;
+      discipline?: DisciplineTag | null;
       agentTrace?: AgentTrace;
       optionSetId?: string | null;
       optionId?: string | null;
