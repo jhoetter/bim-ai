@@ -12,10 +12,7 @@ export function normalizeViewerRenderStyle(style: LegacyViewerRenderStyle): View
 
 export function isTextureRichRenderStyle(style: LegacyViewerRenderStyle): boolean {
   const normalized = normalizeViewerRenderStyle(style);
-  return (
-    normalized === 'realistic' ||
-    normalized === RASTER_HIGH_FIDELITY_STYLE
-  );
+  return normalized === 'realistic' || normalized === RASTER_HIGH_FIDELITY_STYLE;
 }
 
 export function isRasterHighFidelityRenderStyle(style: LegacyViewerRenderStyle): boolean {

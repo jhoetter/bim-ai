@@ -160,7 +160,7 @@ def try_apply_building_envelope_command(doc, cmd, *, source_provider=None) -> bo
             valid_kinds = {"roof", "floor", "ceiling"}
             if target.kind not in valid_kinds:
                 raise ValueError(
-                    f"attachWallTop.targetId must reference a roof, floor, or ceiling element"
+                    "attachWallTop.targetId must reference a roof, floor, or ceiling element"
                 )
             face = cmd.host_face if cmd.host_face in ("bottom", "top") else "bottom"
             els[cmd.wall_id] = w.model_copy(

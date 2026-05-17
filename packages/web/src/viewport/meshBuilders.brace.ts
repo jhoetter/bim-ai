@@ -7,10 +7,7 @@ import { categoryColorOr } from './sceneHelpers';
 
 export type BraceElem = Extract<Element, { kind: 'brace' }>;
 
-export function makeBraceMesh(
-  brace: BraceElem,
-  paint: ViewportPaintBundle | null,
-): THREE.Mesh {
+export function makeBraceMesh(brace: BraceElem, paint: ViewportPaintBundle | null): THREE.Mesh {
   const sx = brace.startXMm / 1000;
   const sy = brace.startElevationMm / 1000;
   const sz = brace.startYMm / 1000;

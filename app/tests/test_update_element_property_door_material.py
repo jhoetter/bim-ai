@@ -2,7 +2,15 @@
 
 from bim_ai.commands import UpdateElementPropertyCmd
 from bim_ai.document import Document
-from bim_ai.elements import DoorElem, LevelElem, RailingElem, StairElem, Vec2Mm, WallElem, WindowElem
+from bim_ai.elements import (
+    DoorElem,
+    LevelElem,
+    RailingElem,
+    StairElem,
+    Vec2Mm,
+    WallElem,
+    WindowElem,
+)
 from bim_ai.engine import apply_inplace
 
 

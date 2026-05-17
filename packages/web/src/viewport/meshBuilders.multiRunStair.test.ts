@@ -265,18 +265,44 @@ describe('makeStairVolumeMesh — L-shape (WP-C C3)', () => {
 
 describe('makeStairVolumeMesh — U-shape (WP-C C3)', () => {
   const uShapeStair: StairElem = {
-    kind: 'stair', id: 'stair-u-1', name: 'U Stair',
-    baseLevelId: 'lvl-0', topLevelId: 'lvl-1',
-    runStartMm: { xMm: 0, yMm: 0 }, runEndMm: { xMm: 0, yMm: 0 },
-    widthMm: 1000, riserMm: 175, treadMm: 275, shape: 'u_shape',
+    kind: 'stair',
+    id: 'stair-u-1',
+    name: 'U Stair',
+    baseLevelId: 'lvl-0',
+    topLevelId: 'lvl-1',
+    runStartMm: { xMm: 0, yMm: 0 },
+    runEndMm: { xMm: 0, yMm: 0 },
+    widthMm: 1000,
+    riserMm: 175,
+    treadMm: 275,
+    shape: 'u_shape',
     runs: [
-      { id: 'run-1', startMm: { xMm: 0, yMm: 0 }, endMm: { xMm: 2750, yMm: 0 }, widthMm: 1000, riserCount: 8 },
-      { id: 'run-2', startMm: { xMm: 3750, yMm: 1000 }, endMm: { xMm: 1000, yMm: 1000 }, widthMm: 1000, riserCount: 8 },
+      {
+        id: 'run-1',
+        startMm: { xMm: 0, yMm: 0 },
+        endMm: { xMm: 2750, yMm: 0 },
+        widthMm: 1000,
+        riserCount: 8,
+      },
+      {
+        id: 'run-2',
+        startMm: { xMm: 3750, yMm: 1000 },
+        endMm: { xMm: 1000, yMm: 1000 },
+        widthMm: 1000,
+        riserCount: 8,
+      },
     ],
-    landings: [{ id: 'landing-1', boundaryMm: [
-      { xMm: 2750, yMm: 0 }, { xMm: 4750, yMm: 0 },
-      { xMm: 4750, yMm: 1000 }, { xMm: 2750, yMm: 1000 },
-    ]}],
+    landings: [
+      {
+        id: 'landing-1',
+        boundaryMm: [
+          { xMm: 2750, yMm: 0 },
+          { xMm: 4750, yMm: 0 },
+          { xMm: 4750, yMm: 1000 },
+          { xMm: 2750, yMm: 1000 },
+        ],
+      },
+    ],
   };
   it('mesh group has children', () => {
     const group = makeStairVolumeMesh(uShapeStair, elementsById, null);
@@ -293,19 +319,45 @@ describe('makeStairVolumeMesh — U-shape (WP-C C3)', () => {
 
 describe('makeStairVolumeMesh — winder at corner (WP-C C3)', () => {
   const winderStair: StairElem = {
-    kind: 'stair', id: 'stair-winder-1', name: 'Winder Stair',
-    baseLevelId: 'lvl-0', topLevelId: 'lvl-1',
-    runStartMm: { xMm: 0, yMm: 0 }, runEndMm: { xMm: 0, yMm: 0 },
-    widthMm: 1000, riserMm: 175, treadMm: 275,
-    shape: 'l_shape', winderAtCorner: true,
+    kind: 'stair',
+    id: 'stair-winder-1',
+    name: 'Winder Stair',
+    baseLevelId: 'lvl-0',
+    topLevelId: 'lvl-1',
+    runStartMm: { xMm: 0, yMm: 0 },
+    runEndMm: { xMm: 0, yMm: 0 },
+    widthMm: 1000,
+    riserMm: 175,
+    treadMm: 275,
+    shape: 'l_shape',
+    winderAtCorner: true,
     runs: [
-      { id: 'run-1', startMm: { xMm: 0, yMm: 0 }, endMm: { xMm: 2200, yMm: 0 }, widthMm: 1000, riserCount: 8 },
-      { id: 'run-2', startMm: { xMm: 2700, yMm: 500 }, endMm: { xMm: 2700, yMm: 2700 }, widthMm: 1000, riserCount: 8 },
+      {
+        id: 'run-1',
+        startMm: { xMm: 0, yMm: 0 },
+        endMm: { xMm: 2200, yMm: 0 },
+        widthMm: 1000,
+        riserCount: 8,
+      },
+      {
+        id: 'run-2',
+        startMm: { xMm: 2700, yMm: 500 },
+        endMm: { xMm: 2700, yMm: 2700 },
+        widthMm: 1000,
+        riserCount: 8,
+      },
     ],
-    landings: [{ id: 'landing-1', boundaryMm: [
-      { xMm: 2200, yMm: 0 }, { xMm: 3200, yMm: 0 },
-      { xMm: 3200, yMm: 1000 }, { xMm: 2200, yMm: 1000 },
-    ]}],
+    landings: [
+      {
+        id: 'landing-1',
+        boundaryMm: [
+          { xMm: 2200, yMm: 0 },
+          { xMm: 3200, yMm: 0 },
+          { xMm: 3200, yMm: 1000 },
+          { xMm: 2200, yMm: 1000 },
+        ],
+      },
+    ],
   };
   it('mesh group has children when winderAtCorner=true', () => {
     const group = makeStairVolumeMesh(winderStair, elementsById, null);

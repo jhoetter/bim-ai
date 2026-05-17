@@ -16,8 +16,8 @@ from bim_ai.constructability_geometry import (
 from bim_ai.elements import (
     AssetLibraryEntryElem,
     CeilingElem,
-    DuctElem,
     DormerElem,
+    DuctElem,
     FamilyInstanceElem,
     FamilyKitInstanceElem,
     FamilyTypeElem,

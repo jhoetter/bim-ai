@@ -17,7 +17,6 @@ from bim_ai.elements import (
     SlabOpeningElem,
 )
 
-
 MEP_REQUIRED_SCHEDULE_DEFAULTS: tuple[dict[str, Any], ...] = (
     {"id": "mep-equipment-schedule", "name": "MEP Equipment Schedule", "category": "equipment"},
     {"id": "mep-duct-schedule", "name": "Duct Schedule", "category": "duct"},

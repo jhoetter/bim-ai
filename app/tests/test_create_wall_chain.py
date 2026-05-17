@@ -1,5 +1,5 @@
 from bim_ai.document import Document
-from bim_ai.elements import LevelElem, Vec2Mm, WallElem, WallTypeElem, WallTypeLayer
+from bim_ai.elements import LevelElem, WallElem, WallTypeElem, WallTypeLayer
 from bim_ai.engine import try_commit
 
 

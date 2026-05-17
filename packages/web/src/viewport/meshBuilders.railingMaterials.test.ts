@@ -31,13 +31,15 @@ describe('makeRailingMesh — material slots', () => {
     const rail = group.children.find((child) => child.userData.materialSlot === 'topRail') as
       | THREE.Mesh
       | undefined;
-    const baluster = group.children.find(
-      (child) => child.userData.materialSlot === 'baluster',
-    ) as THREE.Mesh | undefined;
+    const baluster = group.children.find((child) => child.userData.materialSlot === 'baluster') as
+      | THREE.Mesh
+      | undefined;
 
     expect((post?.material as THREE.Material).userData.materialKey).toBe('aluminium_dark_grey');
     expect((rail?.material as THREE.Material).userData.materialKey).toBe('aluminium_black');
-    expect((baluster?.material as THREE.Material).userData.materialKey).toBe('asset_stainless_brushed');
+    expect((baluster?.material as THREE.Material).userData.materialKey).toBe(
+      'asset_stainless_brushed',
+    );
   });
 
   it('uses the panel material slot for glass-panel railings', () => {
@@ -86,6 +88,8 @@ describe('makeRailingMesh — material slots', () => {
       | THREE.Mesh
       | undefined;
 
-    expect((cable?.material as THREE.Material).userData.materialKey).toBe('asset_stainless_brushed');
+    expect((cable?.material as THREE.Material).userData.materialKey).toBe(
+      'asset_stainless_brushed',
+    );
   });
 });

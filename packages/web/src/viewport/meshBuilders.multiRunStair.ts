@@ -286,7 +286,10 @@ export function buildWinderCornerTreads(
   let minDist = Infinity;
   for (const pt of boundaryMm) {
     const d = Math.hypot(pt.xMm - pivotRef.xMm, pt.yMm - pivotRef.yMm);
-    if (d < minDist) { minDist = d; pivot = pt; }
+    if (d < minDist) {
+      minDist = d;
+      pivot = pt;
+    }
   }
 
   const dir0 = Math.atan2(run0.endMm.yMm - run0.startMm.yMm, run0.endMm.xMm - run0.startMm.xMm);
@@ -305,7 +308,9 @@ export function buildWinderCornerTreads(
     const theta0 = dir0 + stepRad * i;
     const theta1 = dir0 + stepRad * (i + 1);
     const wedgePts = winderWedgePoints(pivot, innerR, outerR, theta0, theta1, 4);
-    const shape = new THREE.Shape(wedgePts.map((p) => new THREE.Vector2(p.xMm / 1000, p.yMm / 1000)));
+    const shape = new THREE.Shape(
+      wedgePts.map((p) => new THREE.Vector2(p.xMm / 1000, p.yMm / 1000)),
+    );
     const geom = new THREE.ExtrudeGeometry(shape, { depth: TREAD_THICK, bevelEnabled: false });
     geom.rotateX(-Math.PI / 2);
     geom.translate(0, baseY + (i + 1) * riserH - TREAD_THICK, 0);

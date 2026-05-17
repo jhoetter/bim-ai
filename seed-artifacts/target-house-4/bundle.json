@@ -1424,12 +1424,8 @@
       "name": "Bed marker",
       "assetKind": "block_2d",
       "category": "furniture",
-      "tags": [
-        "bedroom"
-      ],
-      "disciplineTags": [
-        "arch"
-      ],
+      "tags": ["bedroom"],
+      "disciplineTags": ["arch"],
       "thumbnailKind": "schematic_plan",
       "thumbnailWidthMm": 1800,
       "thumbnailHeightMm": 2100,
@@ -1444,12 +1440,8 @@
       "name": "Sofa marker",
       "assetKind": "block_2d",
       "category": "furniture",
-      "tags": [
-        "living"
-      ],
-      "disciplineTags": [
-        "arch"
-      ],
+      "tags": ["living"],
+      "disciplineTags": ["arch"],
       "thumbnailKind": "schematic_plan",
       "thumbnailWidthMm": 2200,
       "thumbnailHeightMm": 900,
@@ -1464,12 +1456,8 @@
       "name": "Kitchen run marker",
       "assetKind": "block_2d",
       "category": "kitchen",
-      "tags": [
-        "kitchen"
-      ],
-      "disciplineTags": [
-        "arch"
-      ],
+      "tags": ["kitchen"],
+      "disciplineTags": ["arch"],
       "thumbnailKind": "schematic_plan",
       "thumbnailWidthMm": 1200,
       "thumbnailHeightMm": 450,
@@ -1484,12 +1472,8 @@
       "name": "Bath fixture marker",
       "assetKind": "block_2d",
       "category": "bathroom",
-      "tags": [
-        "bathroom"
-      ],
-      "disciplineTags": [
-        "arch"
-      ],
+      "tags": ["bathroom"],
+      "disciplineTags": ["arch"],
       "thumbnailKind": "schematic_plan",
       "thumbnailWidthMm": 800,
       "thumbnailHeightMm": 600,
@@ -3182,13 +3166,8 @@
       }
     ],
     "documentationIntent": {
-      "sheets": [
-        "target-house-4-initiation"
-      ],
-      "schedules": [
-        "rooms",
-        "openings"
-      ],
+      "sheets": ["target-house-4-initiation"],
+      "schedules": ["rooms", "openings"],
       "evidenceViews": [
         "vp-main-iso",
         "vp-front-elev",

@@ -1,9 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import {
-  isTextureRichRenderStyle,
-  normalizeViewerRenderStyle,
-} from './renderStyles';
+import { isTextureRichRenderStyle, normalizeViewerRenderStyle } from './renderStyles';
 
 describe('viewer render style helpers', () => {
   it('normalizes legacy ray-trace values to high-fidelity', () => {

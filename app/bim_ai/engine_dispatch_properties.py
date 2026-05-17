@@ -52,7 +52,6 @@ from bim_ai.engine import (
     _wall_thickness_from_type,
     assert_valid_gable_pitched_rectangle_footprint_mm,
     cast,
-    json,
     new_id,
     parse_plan_category_graphics_property_json,
 )

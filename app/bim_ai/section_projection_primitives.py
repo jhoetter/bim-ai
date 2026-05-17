@@ -29,7 +29,6 @@ from bim_ai.elements import (
     WallElem,
     WindowElem,
 )
-from bim_ai.material_catalog import resolve_material
 from bim_ai.material_assembly_resolve import (
     layered_assembly_witness_row_for_floor,
     layered_assembly_witness_row_for_roof,
@@ -41,6 +40,7 @@ from bim_ai.material_assembly_resolve import (
     section_assembly_alignment_fields_floor,
     section_assembly_alignment_fields_wall,
 )
+from bim_ai.material_catalog import resolve_material
 from bim_ai.opening_cut_primitives import (
     SLAB_OPENING_PANEL_GAP_MM,
     floor_panels_axis_aligned_rect_with_single_hole_mm,
