@@ -117,6 +117,8 @@ export type PaletteContext = {
   splitActiveTabBottom?: () => void;
   /** Open the Paste Aligned to Selected Levels level-picker dialog. */
   openPasteToLevels?: () => void;
+  /** §8.4: run head-height clearance check on the active level. */
+  checkClearances?: () => void;
   /** Open the Selection Filter dialog (B6). */
   openSelectionFilter?: () => void;
   /** Open the Create Model Group dialog (B2). */
@@ -145,6 +147,8 @@ export type PaletteContext = {
   tagAllByCategory?: () => void;
   /** Open the view range settings dialog. */
   openViewRange?: () => void;
+  /** §15.1.3: open the family editor to the parameters panel. */
+  openFamilyEditor?: () => void;
   /** Dynamic navigable views/sheets/schedules to surface in the palette. */
   views?: Array<{ id: string; label: string; keywords: string }>;
   /** Dynamic plan view templates that can be applied to the active plan view. */

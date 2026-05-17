@@ -1368,6 +1368,22 @@ registerCommand({
 });
 
 registerCommand({
+  id: 'tool.graded-region',
+  label: 'Graded Region',
+  keywords: ['graded', 'terrain', 'slope', 'region', 'toposolid', 'site'],
+  category: 'tool',
+  invoke: (ctx) => startPlanTool(ctx, 'graded-region'),
+});
+
+registerCommand({
+  id: 'tool.terrain-split',
+  label: 'Split Terrain Surface',
+  keywords: ['terrain', 'split', 'surface', 'toposolid', 'divide'],
+  category: 'tool',
+  invoke: (ctx) => startPlanTool(ctx, 'terrain-split'),
+});
+
+registerCommand({
   id: 'tool.copy',
   label: 'Copy Elements',
   keywords: ['copy', 'duplicate', 'modify'],
@@ -2511,4 +2527,73 @@ registerCommand({
   invoke: (ctx) => {
     ctx.openManageLinks?.();
   },
+});
+
+// §5.4.2 — True North + Project Elevation
+registerCommand({
+  id: 'view.rotate-to-true-north',
+  label: 'Rotate View to True North',
+  keywords: ['north', 'rotate', 'true north', 'orientation'],
+  category: 'command',
+  invoke: (ctx) => ctx.rotateToTrueNorth?.(),
+});
+
+registerCommand({
+  id: 'project.set-true-north',
+  label: 'Set True North Angle…',
+  keywords: ['north', 'angle', 'project', 'orientation', 'georef'],
+  category: 'command',
+  invoke: (ctx) => ctx.setTrueNorthAngle?.(),
+});
+
+registerCommand({
+  id: 'project.set-elevation',
+  label: 'Set Project Elevation…',
+  keywords: ['elevation', 'height', 'real world', 'offset'],
+  category: 'command',
+  invoke: (ctx) => ctx.setProjectElevation?.(),
+});
+
+// §13.4 — egress / route analysis
+registerCommand({
+  id: 'analysis.egress',
+  label: 'Egress Analysis…',
+  keywords: ['egress', 'escape', 'route', 'analysis', 'accessibility', 'path'],
+  category: 'command',
+  invoke: (ctx) => ctx.openEgressAnalysis?.(),
+});
+
+// §8.4 — head-height clearance check
+registerCommand({
+  id: 'analysis.check-clearances',
+  label: 'Check Head-Height Clearances',
+  keywords: ['clearance', 'head height', 'door', 'stair', 'check', 'analysis'],
+  category: 'command',
+  invoke: (ctx) => ctx.checkClearances?.(),
+});
+
+// §15.1.3 — family editor parametric parameters
+registerCommand({
+  id: 'family.add-parameter',
+  label: 'Add Family Parameter…',
+  keywords: ['family', 'parameter', 'dimension', 'constraint'],
+  category: 'command',
+  invoke: (ctx) => ctx.openFamilyEditor?.(),
+});
+
+// Toposolid sub-tools — exposed in Cmd+K
+registerCommand({
+  id: 'tool.graded-region',
+  label: 'Graded Region',
+  keywords: ['graded', 'region', 'terrain', 'toposolid', 'slope'],
+  category: 'tool',
+  invoke: (ctx) => ctx.activateTool?.('graded-region'),
+});
+
+registerCommand({
+  id: 'tool.terrain-split',
+  label: 'Terrain Split',
+  keywords: ['terrain', 'split', 'toposolid', 'divide'],
+  category: 'tool',
+  invoke: (ctx) => ctx.activateTool?.('terrain-split'),
 });

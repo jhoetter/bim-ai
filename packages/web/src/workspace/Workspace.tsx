@@ -26,7 +26,10 @@ import { type PlanCameraHandle } from '../plan/PlanCanvas';
 import { shaftBoundaryFromStair } from '../plan/stairShaft';
 import { createSimilarPayload } from '../plan/createSimilar';
 import { equalizeWitnessSpacing } from '../plan/equalizeWitnessSpacing';
+import { applyFamilyParameters } from '../plan/familyParameterEval';
 import { autoDimensionWalls, tagAllRooms as tagAllRoomsFn } from '../plan/autoDimension';
+import { checkHeadHeightClearances, type ClearanceViolation } from '../plan/openingClearance';
+import { ClearanceViolationPanel } from './ClearanceViolationPanel';
 import {
   applyCommand,
   ApiHttpError,
@@ -1103,6 +1106,7 @@ export function Workspace(): JSX.Element {
   const [dxfImportOpen, setDxfImportOpen] = useState(false);
   const [printPlotOpen, setPrintPlotOpen] = useState(false);
   const [trueNorthActive, setTrueNorthActive] = useState(false);
+  const [clearanceViolations, setClearanceViolations] = useState<ClearanceViolation[]>([]);
   const lensMode = useBimStore((s) => s.lensMode);
   const setLensMode = useBimStore((s) => s.setLensMode);
   const activeWorkspaceId = useBimStore((s) => s.activeWorkspaceId);
@@ -1922,6 +1926,46 @@ export function Workspace(): JSX.Element {
         }
         return;
       }
+      // §15.1.3: addFamilyParameter — add a family_parameter element client-side.
+      if (cmd.type === 'addFamilyParameter') {
+        const param = cmd.parameter as Extract<Element, { kind: 'family_parameter' }>;
+        const current = useBimStore.getState().elementsById;
+        useBimStore.setState({
+          elementsById: { ...current, [param.id]: param },
+        });
+        return;
+      }
+      // §15.1.3: deleteFamilyParameter — remove a family_parameter element client-side.
+      if (cmd.type === 'deleteFamilyParameter') {
+        const parameterId = cmd.parameterId as string;
+        const current = { ...useBimStore.getState().elementsById };
+        delete current[parameterId];
+        useBimStore.setState({ elementsById: current });
+        return;
+      }
+      // §15.1.3: setFamilyParameterValue — update defaultValue and propagate to linked element.
+      if (cmd.type === 'setFamilyParameterValue') {
+        const parameterId = cmd.parameterId as string;
+        const value = cmd.value as number | boolean | string;
+        const current = useBimStore.getState().elementsById;
+        const p = current[parameterId];
+        if (p?.kind === 'family_parameter') {
+          const updatedParam = { ...p, defaultValue: value };
+          const updates = applyFamilyParameters([updatedParam], current);
+          const nextElements: Record<string, Element> = {
+            ...current,
+            [parameterId]: updatedParam,
+          };
+          for (const [elId, props] of Object.entries(updates)) {
+            const target = nextElements[elId];
+            if (target) {
+              nextElements[elId] = { ...target, ...props } as Element;
+            }
+          }
+          useBimStore.setState({ elementsById: nextElements });
+        }
+        return;
+      }
       // §1.8.1: selectSimilar — select all elements of the same kind (client-only).
       // Matches the `selection.select-all-instances` palette command behaviour.
       if (cmd.type === 'selectSimilar') {
@@ -2010,7 +2054,7 @@ export function Workspace(): JSX.Element {
             [elementId]: {
               ...el,
               faceMaterialOverrides: Object.keys(overrides).length > 0 ? overrides : null,
-            },
+            } as Element,
           },
         });
         return;
@@ -2403,7 +2447,7 @@ export function Workspace(): JSX.Element {
         const wallId = cmd.wallId as string;
         const wall = useBimStore.getState().elementsById[wallId];
         if (!wall || wall.kind !== 'wall') return;
-        const cur = wall.curtainWallData ?? {};
+        const cur = (wall.curtainWallData ?? {}) as NonNullable<typeof wall.curtainWallData>;
         const updated = {
           ...cur,
           gridH: {
@@ -2466,7 +2510,7 @@ export function Workspace(): JSX.Element {
                         baseLevelId: newStair.baseLevelId,
                         topLevelId: newStair.topLevelId,
                       },
-                      [newStairId]: { ...curr[newStairId], linkedShaftId: shaftId },
+                      [newStairId]: { ...curr[newStairId], linkedShaftId: shaftId } as Element,
                     },
                   });
                 }
@@ -4179,7 +4223,7 @@ export function Workspace(): JSX.Element {
       if (!paneTab) return;
       setTabsState((state) => updateTabLens(state, paneTab.id, nextLensMode));
     };
-    const isPlanPane = paneTab?.kind === 'plan' || paneTab?.kind === 'level';
+    const isPlanPane = paneTab?.kind === 'plan';
     const paneTrailingControls = paneTab ? (
       <>
         {paneCanAcceptDrop ? (
@@ -4834,6 +4878,62 @@ export function Workspace(): JSX.Element {
             const tags = tagAllRoomsFn(lvlId, elementsById);
             for (const t of tags) void onSemanticCommand({ type: 'createElement', element: t });
           },
+          rotateToTrueNorth: () => {
+            const ps = Object.values(elementsById).find((e) => e?.kind === 'project_settings');
+            const angleDeg = (ps as any)?.angleToTrueNorthDeg ?? 0;
+            const activeView = activePlanViewId ? elementsById[activePlanViewId] : undefined;
+            if (!activeView) return;
+            void onSemanticCommand({
+              type: 'updateElementProperty',
+              elementId: activeView.id,
+              key: 'planViewAngleDeg',
+              value: -angleDeg,
+            });
+          },
+          setTrueNorthAngle: () => {
+            // eslint-disable-next-line no-alert
+            const angleDeg = parseFloat(
+              prompt('Angle from project north to true north (degrees clockwise):') ?? '0',
+            );
+            if (isNaN(angleDeg)) return;
+            const ps = Object.values(elementsById).find((e) => e?.kind === 'project_settings');
+            if (!ps) return;
+            void onSemanticCommand({
+              type: 'updateElementProperty',
+              elementId: ps.id,
+              key: 'angleToTrueNorthDeg',
+              value: angleDeg,
+            });
+          },
+          setProjectElevation: () => {
+            // eslint-disable-next-line no-alert
+            const elevMm = parseFloat(prompt('Project real-world elevation (mm):') ?? '0');
+            if (isNaN(elevMm)) return;
+            const ps = Object.values(elementsById).find((e) => e?.kind === 'project_settings');
+            if (!ps) return;
+            void onSemanticCommand({
+              type: 'updateElementProperty',
+              elementId: ps.id,
+              key: 'projectElevationMm',
+              value: elevMm,
+            });
+          },
+          checkClearances: () => {
+            const lvlId = activeLevelId ?? '';
+            if (!lvlId) return;
+            const violations = checkHeadHeightClearances(
+              lvlId,
+              elementsById as Record<string, import('@bim-ai/core').Element | undefined>,
+            );
+            setClearanceViolations(violations);
+            if (violations.length === 0) {
+              // eslint-disable-next-line no-alert
+              alert('No clearance violations found.');
+            } else {
+              // eslint-disable-next-line no-alert
+              alert(`${violations.length} clearance violation(s) found. See highlighted elements.`);
+            }
+          },
         }}
       />
       <FamilyLibraryPanel
@@ -5155,7 +5255,7 @@ export function Workspace(): JSX.Element {
         isOpen={manageGlobalParamsOpen}
         params={
           (Object.values(elementsById).find((e) => e.kind === 'project_settings')?.globalParams ??
-            []) as SimpleGlobalParam[]
+            []) as unknown as SimpleGlobalParam[]
         }
         onUpsertParam={(param) => void onSemanticCommand({ type: 'upsert_global_param', param })}
         onDeleteParam={(paramId) =>
@@ -5462,6 +5562,10 @@ export function Workspace(): JSX.Element {
             };
           })}
         onPlace={(entry, paramValues) => void handleLibraryPlace(entry, paramValues)}
+      />
+      <ClearanceViolationPanel
+        violations={clearanceViolations}
+        onClose={() => setClearanceViolations([])}
       />
     </>
   );

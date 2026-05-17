@@ -2,6 +2,7 @@ import * as THREE from 'three';
 
 import type { Element, PlanLinePatternToken, ToposolidExcavationElem } from '@bim-ai/core';
 import type { GroupRegistry } from '../groups/groupTypes';
+import type { ClearanceViolation } from './openingClearance';
 import { buildGroupInstancePlanMesh } from './groupInstanceRender';
 
 import {
@@ -40,6 +41,7 @@ import {
   propertyLinePlanThree,
   revisionCloudPlanThree,
   modelLinePlanThree,
+  slopeAnnotationPlanThree,
 } from './planElementMeshBuilders';
 import type { WallJoinRecord } from './planElementMeshBuilders';
 import { dormerPlanGroup } from './dormerPlanSymbol';
@@ -54,6 +56,7 @@ import {
 import { curtainWallPlanThree } from './curtainWallPlanSymbol';
 import { terrainControlPointsPlanThree } from './terrainPointSymbol';
 import { terrainPadPlanThree } from './terrainPadPlanThree';
+import { gradedRegionPlanThree } from './gradedRegionPlanThree';
 import { shaftPlanThree } from './shaftPlanThree';
 import { floorSlopeArrowPlanThree } from './floorSlopePlanThree';
 import { roofSlopeArrowPlanThree } from './roofSlopeArrowPlanThree';
@@ -1827,6 +1830,17 @@ export function rebuildPlanMeshes(
     tintNewChildren(before, 'model_line');
   }
 
+  // §4.9: slope annotations — two-point arrow with slopePct label.
+  {
+    const before = holder.children.length;
+    for (const el of Object.values(elementsById)) {
+      if (el.kind !== 'slope_annotation') continue;
+      if (level && el.levelId && el.levelId !== level) continue;
+      holder.add(slopeAnnotationPlanThree(el as Extract<Element, { kind: 'slope_annotation' }>));
+    }
+    tintNewChildren(before, 'slope_annotation');
+  }
+
   // WP-D §5.1.5: excavation plan symbols (dashed boundary + cross-hatch).
   {
     const before = holder.children.length;
@@ -1863,6 +1877,20 @@ export function rebuildPlanMeshes(
       holder.add(terrainPadPlanThree(pad));
     }
     tintNewChildren(before, 'toposolid_pad');
+  }
+
+  // §5.1.6: graded region plan symbols (hatched polygon at 45°, colour #8fbc8f)
+  {
+    const before = holder.children.length;
+    for (const el of Object.values(elementsById)) {
+      if (el.kind !== 'graded_region') continue;
+      if (kindHidden('graded_region' as never)) continue;
+      const gr = el as Extract<Element, { kind: 'graded_region' }>;
+      const pts = gr.perimeterMm ?? gr.boundaryMm ?? [];
+      if (pts.length < 3) continue;
+      holder.add(gradedRegionPlanThree(gr));
+    }
+    tintNewChildren(before, 'graded_region');
   }
 
   // §2.5.1: shaft plan symbols (dashed boundary + grey fill + X cross)
@@ -2467,6 +2495,34 @@ export type StairPlanWireDocOverlays = {
     topLandingFootprintBoundsMm?: BoundsXYmm;
   };
 };
+
+// §8.4 Head-Height Clearance Violation Markers
+
+/**
+ * Renders a red circle marker in the plan for each clearance violation.
+ * Each mesh carries userData so the host canvas can show a tooltip.
+ */
+export function buildClearanceViolationMarkers(
+  violations: ClearanceViolation[],
+  scene: THREE.Scene | THREE.Group,
+): void {
+  for (const v of violations) {
+    const geo = new THREE.CircleGeometry(0.15, 12);
+    const mat = new THREE.MeshBasicMaterial({
+      color: '#ef4444',
+      transparent: true,
+      opacity: 0.7,
+      side: THREE.DoubleSide,
+    });
+    const mesh = new THREE.Mesh(geo, mat);
+    mesh.position.set(v.positionMm.xMm / 1000, PLAN_Y + 0.004, v.positionMm.yMm / 1000);
+    mesh.rotation.x = -Math.PI / 2;
+    mesh.userData.clearanceViolation = true;
+    mesh.userData.clearanceElementId = v.elementId;
+    mesh.userData.clearanceMessage = v.message;
+    scene.add(mesh);
+  }
+}
 
 // §1.6.10 — re-export mergeOverrides for per-view category override merging.
 export { mergeOverrides } from './categoryOverrideMerge';
