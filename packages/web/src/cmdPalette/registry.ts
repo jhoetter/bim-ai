@@ -8,7 +8,7 @@ import {
   type CommandAvailability,
 } from '../workspace/commandCapabilities';
 
-export type PaletteCategory = 'command' | 'navigate' | 'select';
+export type PaletteCategory = 'command' | 'navigate' | 'select' | 'tool';
 export type PaletteSourceKind = 'command' | 'tool' | 'view' | 'element' | 'setting' | 'agent';
 
 export type PaletteEntry = {
@@ -137,6 +137,14 @@ export type PaletteContext = {
   setWorkPlaneOpen?: (open: boolean) => void;
   /** §6.5: open the Print / Plot dialog for browser printing. */
   openPrintDialog?: () => void;
+  /** Auto-dimension walls on the active plan view. */
+  autoDimWalls?: () => void;
+  /** Tag all rooms on the active plan view. */
+  tagAllRooms?: () => void;
+  /** Tag all elements by category on the active plan view. */
+  tagAllByCategory?: () => void;
+  /** Open the view range settings dialog. */
+  openViewRange?: () => void;
   /** Dynamic navigable views/sheets/schedules to surface in the palette. */
   views?: Array<{ id: string; label: string; keywords: string }>;
   /** Dynamic plan view templates that can be applied to the active plan view. */

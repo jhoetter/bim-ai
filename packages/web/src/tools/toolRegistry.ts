@@ -138,7 +138,7 @@ export const MODIFY_TOOL_IDS = new Set<ToolId>([
   'detach',
 ]);
 
-export type WorkspaceMode = 'plan' | '3d' | 'section' | 'sheet' | 'schedule';
+export type WorkspaceMode = 'plan' | '3d' | 'elevation' | 'section' | 'sheet' | 'schedule';
 
 export interface ToolDefinition {
   id: ToolId;
@@ -152,6 +152,8 @@ export interface ToolDefinition {
   modes: WorkspaceMode[];
   /** Optional helper text shown in the tooltip. */
   tooltip?: string;
+  /** Optional grouping category for ribbon/tool organization. */
+  category?: string;
 }
 
 export function getToolRegistry(t: TFunction): Record<ToolId, ToolDefinition> {

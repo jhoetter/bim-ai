@@ -29,6 +29,7 @@ export type ToposolidElem = {
   phaseCreated?: string;
   phaseDemolished?: string;
   discipline?: string;
+  contourIntervalMm?: number;
 };
 
 // ---------------------------------------------------------------------------
@@ -441,7 +442,9 @@ export type ElemKind =
   | 'model_line'
   | 'conical_roof'
   | 'dome_roof'
-  | 'spire_roof';
+  | 'spire_roof'
+  | 'family_blend'
+  | 'family_sweep';
 
 export type PhaseFilter = 'all' | 'existing' | 'demolition' | 'new' | 'show_all';
 
@@ -1867,6 +1870,8 @@ export type Element =
       faceMaterialOverrides?: Record<string, string> | null;
       /** §3.4.1: base (eave) elevation of this roof above datum (mm). Used as floor attach reference. */
       baseElevationMm?: number;
+      useSlopeArrow?: boolean;
+      slopeArrow?: { tailMm: XY; headMm: XY; slopeRatio: number } | null;
     }
   | {
       kind: 'stair';
@@ -3301,6 +3306,7 @@ export type Element =
       heightMm: number;
       baseElevationMm: number;
       materialId?: string | null;
+      levelId?: string | null;
     }
   | {
       kind: 'dome_roof';
@@ -3310,6 +3316,7 @@ export type Element =
       riseRatio: number;
       baseElevationMm: number;
       materialId?: string | null;
+      levelId?: string | null;
     }
   | {
       kind: 'spire_roof';
@@ -3319,6 +3326,41 @@ export type Element =
       heightMm: number;
       baseElevationMm: number;
       materialId?: string | null;
+      levelId?: string | null;
+    }
+  | {
+      kind: 'family_blend';
+      id: string;
+      name?: string | null;
+      /** Bottom profile polygon (closed, in mm from family origin). */
+      bottomProfileMm: XY[];
+      /** Top profile polygon (closed, in mm from family origin). */
+      topProfileMm: XY[];
+      /** Height of the blend (mm). */
+      heightMm: number;
+      /** Bottom elevation (mm). */
+      baseElevationMm?: number;
+      materialId?: string | null;
+      levelId?: string | null;
+      agentTrace?: AgentTrace;
+      optionSetId?: string | null;
+      optionId?: string | null;
+      discipline?: DisciplineTag | null;
+    }
+  | {
+      kind: 'family_sweep';
+      id: string;
+      name?: string | null;
+      /** 2D profile polygon (in mm, local to path start). */
+      profileMm: XY[];
+      /** Sweep path — list of 3D points (mm). */
+      pathMm: { xMm: number; yMm: number; zMm: number }[];
+      materialId?: string | null;
+      levelId?: string | null;
+      agentTrace?: AgentTrace;
+      optionSetId?: string | null;
+      optionId?: string | null;
+      discipline?: DisciplineTag | null;
     }
   | ToposolidElem
   | ToposolidSubdivisionElem
@@ -3344,6 +3386,134 @@ export type Element =
   | SavedViewElem
   | PresentationCanvasElem
   | BrandTemplateElem
+  | {
+      kind: 'pipe';
+      id: string;
+      name?: string | null;
+      levelId: string;
+      startMm: XY;
+      endMm: XY;
+      diameterMm?: number;
+      systemType?: string | null;
+      systemName?: string | null;
+      flowDirection?: string | null;
+      serviceLevel?: string | null;
+      insulation?: Record<string, unknown> | null;
+      connectors?: Record<string, unknown>[];
+      clearanceZone?: Record<string, unknown> | null;
+      maintainAccessZone?: Record<string, unknown> | null;
+      agentTrace?: AgentTrace;
+      optionSetId?: string | null;
+      optionId?: string | null;
+      discipline?: DisciplineTag | string | null;
+    }
+  | {
+      kind: 'duct';
+      id: string;
+      name?: string | null;
+      levelId: string;
+      startMm: XY;
+      endMm: XY;
+      widthMm?: number;
+      heightMm?: number;
+      systemType?: string | null;
+      systemName?: string | null;
+      flowDirection?: string | null;
+      serviceLevel?: string | null;
+      insulation?: Record<string, unknown> | null;
+      connectors?: Record<string, unknown>[];
+      clearanceZone?: Record<string, unknown> | null;
+      maintainAccessZone?: Record<string, unknown> | null;
+      agentTrace?: AgentTrace;
+      optionSetId?: string | null;
+      optionId?: string | null;
+      discipline?: DisciplineTag | string | null;
+    }
+  | {
+      kind: 'pipe_legend';
+      id: string;
+      title?: string;
+      hostViewId?: string | null;
+      positionMm?: XY;
+      entries?: Record<string, unknown>[];
+      discipline?: DisciplineTag | string | null;
+    }
+  | {
+      kind: 'duct_legend';
+      id: string;
+      title?: string;
+      hostViewId?: string | null;
+      positionMm?: XY;
+      entries?: Record<string, unknown>[];
+      discipline?: DisciplineTag | string | null;
+    }
+  | {
+      kind: 'cable_tray';
+      id: string;
+      name?: string | null;
+      levelId: string;
+      startMm: XY;
+      endMm: XY;
+      widthMm?: number;
+      systemType?: string | null;
+      systemName?: string | null;
+      discipline?: DisciplineTag | string | null;
+      agentTrace?: AgentTrace;
+      optionSetId?: string | null;
+      optionId?: string | null;
+    }
+  | {
+      kind: 'mep_equipment';
+      id: string;
+      name?: string | null;
+      levelId: string;
+      positionMm: XY;
+      systemType?: string | null;
+      systemName?: string | null;
+      discipline?: DisciplineTag | string | null;
+      agentTrace?: AgentTrace;
+      optionSetId?: string | null;
+      optionId?: string | null;
+      [key: string]: unknown;
+    }
+  | {
+      kind: 'mep_terminal';
+      id: string;
+      name?: string | null;
+      levelId: string;
+      positionMm: XY;
+      systemType?: string | null;
+      systemName?: string | null;
+      flowDirection?: string | null;
+      discipline?: DisciplineTag | string | null;
+      agentTrace?: AgentTrace;
+      optionSetId?: string | null;
+      optionId?: string | null;
+    }
+  | {
+      kind: 'fixture';
+      id: string;
+      name?: string | null;
+      levelId: string;
+      positionMm: XY;
+      systemType?: string | null;
+      systemName?: string | null;
+      discipline?: DisciplineTag | string | null;
+      agentTrace?: AgentTrace;
+      optionSetId?: string | null;
+      optionId?: string | null;
+    }
+  | {
+      kind: 'mep_opening_request';
+      id: string;
+      name?: string | null;
+      hostElementId: string;
+      requestedBy?: string | null;
+      discipline?: DisciplineTag | string | null;
+      agentTrace?: AgentTrace;
+      optionSetId?: string | null;
+      optionId?: string | null;
+    }
   | Saved3dViewElement;
 
 export type Violation = {
@@ -4099,6 +4269,7 @@ export type MaterialElem = {
   kind: 'material';
   id: string;
   name: string;
+  displayName?: string;
   source?: MaterialAssetSource;
   category?: string;
   graphics?: MaterialGraphicsAsset;
@@ -4823,6 +4994,28 @@ export type CreateSpireRoofCmd = {
   baseRadiusMm: number;
   heightMm: number;
   baseElevationMm: number;
+  materialId?: string | null;
+};
+
+// ---------------------------------------------------------------------------
+// §15.1.2 — Family Editor Blend + Sweep Forms
+// ---------------------------------------------------------------------------
+
+export type CreateFamilyBlendCmd = {
+  type: 'create_family_blend';
+  id: string;
+  bottomProfileMm: { xMm: number; yMm: number }[];
+  topProfileMm: { xMm: number; yMm: number }[];
+  heightMm: number;
+  baseElevationMm: number;
+  materialId?: string | null;
+};
+
+export type CreateFamilySweepCmd = {
+  type: 'create_family_sweep';
+  id: string;
+  profileMm: { xMm: number; yMm: number }[];
+  pathMm: { xMm: number; yMm: number; zMm: number }[];
   materialId?: string | null;
 };
 

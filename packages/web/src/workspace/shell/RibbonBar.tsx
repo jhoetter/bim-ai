@@ -184,6 +184,7 @@ export interface RibbonBarProps {
   showViewControls?: boolean;
   viewControlsVariant?: 'compact' | 'prominent';
   trailingControls?: JSX.Element | null;
+  onOpenViewRange?: () => void;
 }
 
 export function RibbonBar({

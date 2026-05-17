@@ -17,6 +17,7 @@ import {
 export const CAPABILITY_VIEW_MODES = [
   'plan',
   '3d',
+  'elevation',
   'section',
   'sheet',
   'schedule',
@@ -45,7 +46,11 @@ export type CommandGroup =
   | 'visibility'
   | 'document'
   | 'review'
-  | 'system';
+  | 'system'
+  | 'create'
+  | 'edit'
+  | 'selection'
+  | 'model';
 
 export type ExecutionSurface =
   | 'header'
@@ -65,7 +70,7 @@ export interface CommandCapability {
   label: string;
   owner: string;
   group: CommandGroup;
-  scope: 'universal' | 'view' | 'selection' | 'model';
+  scope: 'universal' | 'view' | 'selection' | 'model' | 'element';
   intendedModes: CapabilityViewMode[];
   surfaces: CommandSurface[];
   executionSurface: ExecutionSurface;
@@ -266,6 +271,8 @@ export function formatCapabilityMode(mode: CapabilityViewMode): string {
       return 'Plan';
     case '3d':
       return '3D';
+    case 'elevation':
+      return 'Elevation';
     case 'section':
       return 'Section';
     case 'sheet':
