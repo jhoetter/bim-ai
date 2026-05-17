@@ -84,6 +84,39 @@ export function setDispatchColumnAtGridsSelectAll(fn: ((gridIds: string[]) => vo
 // eslint-disable-next-line prefer-const
 export let columnDrawUsage: 'architectural' | 'structural' = 'architectural';
 
+/** Roof options */
+export let roofBaseOffsetMm = 0;
+export function setRoofBaseOffsetMm(v: number): void {
+  roofBaseOffsetMm = v;
+}
+
+export let roofSlopeAngleDeg = 30;
+export function setRoofSlopeAngleDeg(v: number): void {
+  roofSlopeAngleDeg = v;
+}
+
+/** Ramp options */
+export let rampWidthMm = 1200;
+export function setRampWidthMm(v: number): void {
+  rampWidthMm = v;
+}
+
+export let rampSlopePercent = 8.33;
+export function setRampSlopePercent(v: number): void {
+  rampSlopePercent = v;
+}
+
+/** Railing options */
+export let railingHeightMm = 900;
+export function setRailingHeightMm(v: number): void {
+  railingHeightMm = v;
+}
+
+export let railingFollowSlope = true;
+export function setRailingFollowSlope(v: boolean): void {
+  railingFollowSlope = v;
+}
+
 /** §3.3.7 — Linework override options. Read at click-time by PlanCanvas. */
 // eslint-disable-next-line prefer-const, bim-ai/no-hex-in-chrome
 export let lineworkColorHex = '#ff0000';
@@ -964,6 +997,112 @@ export function OptionsBar({
             <option value="dashed">Dashed</option>
             <option value="hidden">Hidden</option>
           </select>
+        </label>
+      </div>
+    );
+  }
+
+  if (
+    planTool === 'roof' ||
+    planTool === 'roof-sketch' ||
+    planTool === 'roof-by-extrusion' ||
+    planTool === 'conical-roof' ||
+    planTool === 'dome-roof' ||
+    planTool === 'spire-roof'
+  ) {
+    return (
+      <div data-testid="options-bar" className={BAR_CLASS}>
+        <label className="flex items-center gap-2">
+          <span className="text-muted">Base Offset (mm)</span>
+          <input
+            type="number"
+            data-testid="options-roof-base-offset"
+            defaultValue={roofBaseOffsetMm}
+            onChange={(e) => setRoofBaseOffsetMm(+e.target.value)}
+            style={{ width: 70 }}
+            className="rounded border border-border bg-surface px-1.5 py-0.5 text-xs text-foreground"
+            aria-label="Roof base offset in mm"
+          />
+        </label>
+        <label className="flex items-center gap-2">
+          <span className="text-muted">Slope (°)</span>
+          <input
+            type="number"
+            data-testid="options-roof-slope"
+            defaultValue={roofSlopeAngleDeg}
+            min={0}
+            max={89}
+            onChange={(e) => setRoofSlopeAngleDeg(+e.target.value)}
+            style={{ width: 60 }}
+            className="rounded border border-border bg-surface px-1.5 py-0.5 text-xs text-foreground"
+            aria-label="Roof slope angle in degrees"
+          />
+        </label>
+      </div>
+    );
+  }
+
+  if (planTool === 'ramp') {
+    return (
+      <div data-testid="options-bar" className={BAR_CLASS}>
+        <label className="flex items-center gap-2">
+          <span className="text-muted">Width (mm)</span>
+          <input
+            type="number"
+            data-testid="options-ramp-width"
+            defaultValue={rampWidthMm}
+            min={600}
+            onChange={(e) => setRampWidthMm(+e.target.value)}
+            style={{ width: 70 }}
+            className="rounded border border-border bg-surface px-1.5 py-0.5 text-xs text-foreground"
+            aria-label="Ramp width in mm"
+          />
+        </label>
+        <label className="flex items-center gap-2">
+          <span className="text-muted">Slope (%)</span>
+          <input
+            type="number"
+            data-testid="options-ramp-slope"
+            defaultValue={rampSlopePercent}
+            min={0}
+            max={50}
+            step={0.01}
+            onChange={(e) => setRampSlopePercent(+e.target.value)}
+            style={{ width: 60 }}
+            className="rounded border border-border bg-surface px-1.5 py-0.5 text-xs text-foreground"
+            aria-label="Ramp slope percentage"
+          />
+        </label>
+      </div>
+    );
+  }
+
+  if (planTool === 'railing') {
+    return (
+      <div data-testid="options-bar" className={BAR_CLASS}>
+        <label className="flex items-center gap-2">
+          <span className="text-muted">Height (mm)</span>
+          <input
+            type="number"
+            data-testid="options-railing-height"
+            defaultValue={railingHeightMm}
+            min={600}
+            max={1200}
+            onChange={(e) => setRailingHeightMm(+e.target.value)}
+            style={{ width: 70 }}
+            className="rounded border border-border bg-surface px-1.5 py-0.5 text-xs text-foreground"
+            aria-label="Railing height in mm"
+          />
+        </label>
+        <label className="flex items-center gap-1 text-[11px]">
+          <input
+            type="checkbox"
+            data-testid="options-railing-follow-slope"
+            defaultChecked={railingFollowSlope}
+            onChange={(e) => setRailingFollowSlope(e.target.checked)}
+            aria-label="Railing follow slope"
+          />
+          <span>Follow Slope</span>
         </label>
       </div>
     );
