@@ -85,7 +85,7 @@ export function setDispatchColumnAtGridsSelectAll(fn: ((gridIds: string[]) => vo
 export let columnDrawUsage: 'architectural' | 'structural' = 'architectural';
 
 /** §3.3.7 — Linework override options. Read at click-time by PlanCanvas. */
-// eslint-disable-next-line prefer-const
+// eslint-disable-next-line prefer-const, bim-ai/no-hex-in-chrome
 export let lineworkColorHex = '#ff0000';
 // eslint-disable-next-line prefer-const
 export let lineworkLineWeightPx: number = 1;
