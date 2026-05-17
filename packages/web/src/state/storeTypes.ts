@@ -127,7 +127,10 @@ export type PlanTool =
   | 'model-line'
   | 'conical-roof'
   | 'dome-roof'
-  | 'spire-roof';
+  | 'spire-roof'
+  | 'measure-angle'
+  | 'measure-arc'
+  | 'project-base-point';
 
 export type PresencePeers = Record<
   string,

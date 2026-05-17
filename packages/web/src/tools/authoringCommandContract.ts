@@ -831,6 +831,33 @@ export const AUTHORING_COMMAND_CONTRACTS = {
     [],
     [],
   ),
+  'conical-roof': contract(
+    'conical-roof',
+    'point',
+    ['plan'],
+    'Two-click: first click sets center, second click sets base radius. §10.3.1',
+    'select-after-commit',
+    [],
+    [],
+  ),
+  'dome-roof': contract(
+    'dome-roof',
+    'point',
+    ['plan'],
+    'Two-click: first click sets center, second click sets base radius. §10.3.2',
+    'select-after-commit',
+    [],
+    [],
+  ),
+  'spire-roof': contract(
+    'spire-roof',
+    'point',
+    ['plan'],
+    'Two-click: first click sets center, second click sets base radius. §10.3.3',
+    'select-after-commit',
+    [],
+    [],
+  ),
 } satisfies Record<ToolId, AuthoringCommandContract>;
 
 export function getAuthoringCommandContract(toolId: ToolId): AuthoringCommandContract {

@@ -113,6 +113,11 @@ import { makeDormerMesh } from './viewport/dormerMesh';
 import { buildMassMesh } from './viewport/meshBuilders.mass';
 import { makeBeamSystemMesh } from './viewport/meshBuilders.beamSystem';
 import { makeBraceMesh } from './viewport/meshBuilders.brace';
+import {
+  buildConicalRoofMesh,
+  buildDomeRoofMesh,
+  buildSpireRoofMesh,
+} from './viewport/meshBuilders.coneRoof';
 import { makeMassBoxMesh } from './viewport/meshBuilders.massBox';
 import { makeMassExtrusionMesh } from './viewport/meshBuilders.massExtrusion';
 import { makeMassRevolutionMesh } from './viewport/meshBuilders.massRevolution';
@@ -4353,6 +4358,15 @@ export function Viewport({
         }
         case 'brace':
           obj = makeBraceMesh(e, paint);
+          break;
+        case 'conical_roof':
+          obj = buildConicalRoofMesh(e);
+          break;
+        case 'dome_roof':
+          obj = buildDomeRoofMesh(e);
+          break;
+        case 'spire_roof':
+          obj = buildSpireRoofMesh(e);
           break;
         case 'mass_box':
           obj = makeMassBoxMesh(e);

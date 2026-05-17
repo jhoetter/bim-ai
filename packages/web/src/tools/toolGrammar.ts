@@ -3400,3 +3400,165 @@ export function reduceNorthArrow(
   }
   return { state, effect: {} };
 }
+
+// ---------------------------------------------------------------------------
+// §10.3.1 — Conical Roof grammar (2-click: center → radius point)
+// ---------------------------------------------------------------------------
+
+export type ConicalRoofState =
+  | { phase: 'idle' }
+  | { phase: 'first-point'; centerMm: { xMm: number; yMm: number } };
+
+export type ConicalRoofEvent =
+  | { kind: 'activate' }
+  | { kind: 'deactivate' }
+  | { kind: 'click'; pointMm: { xMm: number; yMm: number } }
+  | { kind: 'cancel' };
+
+export interface ConicalRoofEffect {
+  createConicalRoof?: { centerMm: { xMm: number; yMm: number }; baseRadiusMm: number };
+  stillActive: boolean;
+}
+
+export function initialConicalRoofState(): ConicalRoofState {
+  return { phase: 'idle' };
+}
+
+export function reduceConicalRoof(
+  state: ConicalRoofState,
+  event: ConicalRoofEvent,
+): { state: ConicalRoofState; effect: ConicalRoofEffect } {
+  if (event.kind === 'deactivate') {
+    return { state: initialConicalRoofState(), effect: { stillActive: false } };
+  }
+  if (event.kind === 'activate' || event.kind === 'cancel') {
+    return { state: initialConicalRoofState(), effect: { stillActive: event.kind === 'activate' } };
+  }
+  if (event.kind === 'click') {
+    if (state.phase === 'idle') {
+      return {
+        state: { phase: 'first-point', centerMm: event.pointMm },
+        effect: { stillActive: true },
+      };
+    }
+    if (state.phase === 'first-point') {
+      const dx = event.pointMm.xMm - state.centerMm.xMm;
+      const dy = event.pointMm.yMm - state.centerMm.yMm;
+      const baseRadiusMm = Math.max(100, Math.sqrt(dx * dx + dy * dy));
+      return {
+        state: initialConicalRoofState(),
+        effect: {
+          createConicalRoof: { centerMm: state.centerMm, baseRadiusMm },
+          stillActive: true,
+        },
+      };
+    }
+  }
+  return { state, effect: { stillActive: true } };
+}
+
+// ---------------------------------------------------------------------------
+// §10.3.2 — Dome Roof grammar (2-click: center → radius point)
+// ---------------------------------------------------------------------------
+
+export type DomeRoofState =
+  | { phase: 'idle' }
+  | { phase: 'first-point'; centerMm: { xMm: number; yMm: number } };
+
+export type DomeRoofEvent =
+  | { kind: 'activate' }
+  | { kind: 'deactivate' }
+  | { kind: 'click'; pointMm: { xMm: number; yMm: number } }
+  | { kind: 'cancel' };
+
+export interface DomeRoofEffect {
+  createDomeRoof?: { centerMm: { xMm: number; yMm: number }; baseRadiusMm: number };
+  stillActive: boolean;
+}
+
+export function initialDomeRoofState(): DomeRoofState {
+  return { phase: 'idle' };
+}
+
+export function reduceDomeRoof(
+  state: DomeRoofState,
+  event: DomeRoofEvent,
+): { state: DomeRoofState; effect: DomeRoofEffect } {
+  if (event.kind === 'deactivate') {
+    return { state: initialDomeRoofState(), effect: { stillActive: false } };
+  }
+  if (event.kind === 'activate' || event.kind === 'cancel') {
+    return { state: initialDomeRoofState(), effect: { stillActive: event.kind === 'activate' } };
+  }
+  if (event.kind === 'click') {
+    if (state.phase === 'idle') {
+      return {
+        state: { phase: 'first-point', centerMm: event.pointMm },
+        effect: { stillActive: true },
+      };
+    }
+    if (state.phase === 'first-point') {
+      const dx = event.pointMm.xMm - state.centerMm.xMm;
+      const dy = event.pointMm.yMm - state.centerMm.yMm;
+      const baseRadiusMm = Math.max(100, Math.sqrt(dx * dx + dy * dy));
+      return {
+        state: initialDomeRoofState(),
+        effect: { createDomeRoof: { centerMm: state.centerMm, baseRadiusMm }, stillActive: true },
+      };
+    }
+  }
+  return { state, effect: { stillActive: true } };
+}
+
+// ---------------------------------------------------------------------------
+// §10.3.3 — Spire Roof grammar (2-click: center → radius point)
+// ---------------------------------------------------------------------------
+
+export type SpireRoofState =
+  | { phase: 'idle' }
+  | { phase: 'first-point'; centerMm: { xMm: number; yMm: number } };
+
+export type SpireRoofEvent =
+  | { kind: 'activate' }
+  | { kind: 'deactivate' }
+  | { kind: 'click'; pointMm: { xMm: number; yMm: number } }
+  | { kind: 'cancel' };
+
+export interface SpireRoofEffect {
+  createSpireRoof?: { centerMm: { xMm: number; yMm: number }; baseRadiusMm: number };
+  stillActive: boolean;
+}
+
+export function initialSpireRoofState(): SpireRoofState {
+  return { phase: 'idle' };
+}
+
+export function reduceSpireRoof(
+  state: SpireRoofState,
+  event: SpireRoofEvent,
+): { state: SpireRoofState; effect: SpireRoofEffect } {
+  if (event.kind === 'deactivate') {
+    return { state: initialSpireRoofState(), effect: { stillActive: false } };
+  }
+  if (event.kind === 'activate' || event.kind === 'cancel') {
+    return { state: initialSpireRoofState(), effect: { stillActive: event.kind === 'activate' } };
+  }
+  if (event.kind === 'click') {
+    if (state.phase === 'idle') {
+      return {
+        state: { phase: 'first-point', centerMm: event.pointMm },
+        effect: { stillActive: true },
+      };
+    }
+    if (state.phase === 'first-point') {
+      const dx = event.pointMm.xMm - state.centerMm.xMm;
+      const dy = event.pointMm.yMm - state.centerMm.yMm;
+      const baseRadiusMm = Math.max(100, Math.sqrt(dx * dx + dy * dy));
+      return {
+        state: initialSpireRoofState(),
+        effect: { createSpireRoof: { centerMm: state.centerMm, baseRadiusMm }, stillActive: true },
+      };
+    }
+  }
+  return { state, effect: { stillActive: true } };
+}

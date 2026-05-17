@@ -2410,6 +2410,31 @@ registerCommand({
   },
 });
 
+// §10.3.1-3 — Conical / Dome / Spire roof tools
+registerCommand({
+  id: 'tool.conical-roof',
+  label: 'Conical Roof',
+  keywords: ['conical roof', 'cone roof', 'circular roof', 'CR'],
+  category: 'command',
+  invoke: (ctx) => startPlanTool(ctx, 'conical-roof'),
+});
+
+registerCommand({
+  id: 'tool.dome-roof',
+  label: 'Dome Roof',
+  keywords: ['dome roof', 'dome', 'round roof', 'DM'],
+  category: 'command',
+  invoke: (ctx) => startPlanTool(ctx, 'dome-roof'),
+});
+
+registerCommand({
+  id: 'tool.spire-roof',
+  label: 'Spire Roof',
+  keywords: ['spire roof', 'spire', 'tower roof', 'SI'],
+  category: 'command',
+  invoke: (ctx) => startPlanTool(ctx, 'spire-roof'),
+});
+
 // §6.5 — Print Current View via browser
 registerCommand({
   id: 'file.print-current-view',

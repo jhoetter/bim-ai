@@ -90,6 +90,15 @@ import {
   initialLineworkState,
   reduceLinework,
   type LineworkState,
+  initialConicalRoofState,
+  reduceConicalRoof,
+  type ConicalRoofState,
+  initialDomeRoofState,
+  reduceDomeRoof,
+  type DomeRoofState,
+  initialSpireRoofState,
+  reduceSpireRoof,
+  type SpireRoofState,
 } from '../tools/toolGrammar';
 import { buildScaleCommand, distanceMm } from './scaleTool';
 import { linearArrayOffsets, radialArrayAngles, radialOffsetForElement } from './arrayTool';
@@ -554,6 +563,9 @@ export function PlanCanvas({
   const measureArcStateRef = useRef<MeasureArcState>(initialMeasureArcState());
   const modelLineStateRef = useRef<ModelLineState>(initialModelLineState());
   const lineworkStateRef = useRef<LineworkState>(initialLineworkState());
+  const conicalRoofStateRef = useRef<ConicalRoofState>(initialConicalRoofState());
+  const domeRoofStateRef = useRef<DomeRoofState>(initialDomeRoofState());
+  const spireRoofStateRef = useRef<SpireRoofState>(initialSpireRoofState());
   const dimSnapCirclesRef = useRef<THREE.Mesh[]>([]);
   const marqueeRef = useRef<{
     active: boolean;
@@ -1191,6 +1203,15 @@ export function PlanCanvas({
     } else if (planTool === 'linework') {
       const { state } = reduceLinework(lineworkStateRef.current, { kind: 'activate' });
       lineworkStateRef.current = state;
+    } else if (planTool === 'conical-roof') {
+      const { state } = reduceConicalRoof(conicalRoofStateRef.current, { kind: 'activate' });
+      conicalRoofStateRef.current = state;
+    } else if (planTool === 'dome-roof') {
+      const { state } = reduceDomeRoof(domeRoofStateRef.current, { kind: 'activate' });
+      domeRoofStateRef.current = state;
+    } else if (planTool === 'spire-roof') {
+      const { state } = reduceSpireRoof(spireRoofStateRef.current, { kind: 'activate' });
+      spireRoofStateRef.current = state;
     }
   }, [planTool]);
 
@@ -4834,6 +4855,72 @@ export function PlanCanvas({
         bumpGeom((x) => x + 1);
         return;
       }
+      if (planTool === 'conical-roof') {
+        const { state, effect } = reduceConicalRoof(conicalRoofStateRef.current, {
+          kind: 'click',
+          pointMm: sp,
+        });
+        conicalRoofStateRef.current = state;
+        if (effect.createConicalRoof) {
+          onSemanticCommand({
+            type: 'create_conical_roof',
+            id: crypto.randomUUID(),
+            centerMm: effect.createConicalRoof.centerMm,
+            baseRadiusMm: effect.createConicalRoof.baseRadiusMm,
+            heightMm: effect.createConicalRoof.baseRadiusMm,
+            baseElevationMm: lvlId
+              ? ((useBimStore.getState().elementsById[lvlId] as { elevationMm?: number })
+                  ?.elevationMm ?? 0) + 3000
+              : 3000,
+          });
+        }
+        bumpGeom((x) => x + 1);
+        return;
+      }
+      if (planTool === 'dome-roof') {
+        const { state, effect } = reduceDomeRoof(domeRoofStateRef.current, {
+          kind: 'click',
+          pointMm: sp,
+        });
+        domeRoofStateRef.current = state;
+        if (effect.createDomeRoof) {
+          onSemanticCommand({
+            type: 'create_dome_roof',
+            id: crypto.randomUUID(),
+            centerMm: effect.createDomeRoof.centerMm,
+            baseRadiusMm: effect.createDomeRoof.baseRadiusMm,
+            riseRatio: 0.5,
+            baseElevationMm: lvlId
+              ? ((useBimStore.getState().elementsById[lvlId] as { elevationMm?: number })
+                  ?.elevationMm ?? 0) + 3000
+              : 3000,
+          });
+        }
+        bumpGeom((x) => x + 1);
+        return;
+      }
+      if (planTool === 'spire-roof') {
+        const { state, effect } = reduceSpireRoof(spireRoofStateRef.current, {
+          kind: 'click',
+          pointMm: sp,
+        });
+        spireRoofStateRef.current = state;
+        if (effect.createSpireRoof) {
+          onSemanticCommand({
+            type: 'create_spire_roof',
+            id: crypto.randomUUID(),
+            centerMm: effect.createSpireRoof.centerMm,
+            baseRadiusMm: effect.createSpireRoof.baseRadiusMm,
+            heightMm: effect.createSpireRoof.baseRadiusMm * 4,
+            baseElevationMm: lvlId
+              ? ((useBimStore.getState().elementsById[lvlId] as { elevationMm?: number })
+                  ?.elevationMm ?? 0) + 3000
+              : 3000,
+          });
+        }
+        bumpGeom((x) => x + 1);
+        return;
+      }
       if (planTool === 'beam') {
         const { state, effect } = reduceBeam(beamStateRef.current, { kind: 'click', pointMm: sp });
         beamStateRef.current = state;
@@ -5909,6 +5996,18 @@ export function PlanCanvas({
           const { state } = reduceLinework(lineworkStateRef.current, { kind: 'cancel' });
           lineworkStateRef.current = state;
           setPlanTool('select');
+        } else if (planTool === 'conical-roof') {
+          const { state } = reduceConicalRoof(conicalRoofStateRef.current, { kind: 'cancel' });
+          conicalRoofStateRef.current = state;
+          bumpGeom((x) => x + 1);
+        } else if (planTool === 'dome-roof') {
+          const { state } = reduceDomeRoof(domeRoofStateRef.current, { kind: 'cancel' });
+          domeRoofStateRef.current = state;
+          bumpGeom((x) => x + 1);
+        } else if (planTool === 'spire-roof') {
+          const { state } = reduceSpireRoof(spireRoofStateRef.current, { kind: 'cancel' });
+          spireRoofStateRef.current = state;
+          bumpGeom((x) => x + 1);
         }
         if (
           hadDraft ||

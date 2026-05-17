@@ -108,7 +108,10 @@ export type ToolId =
   | 'measure-angle'
   | 'measure-arc'
   | 'model-line'
-  | 'project-base-point';
+  | 'project-base-point'
+  | 'conical-roof'
+  | 'dome-roof'
+  | 'spire-roof';
 
 /** Modify-group tool IDs — used by ToolPalette to insert a separator. */
 export const MODIFY_TOOL_IDS = new Set<ToolId>([
@@ -926,6 +929,33 @@ export function getToolRegistry(t: TFunction): Record<ToolId, ToolDefinition> {
       modes: ['plan'],
       tooltip: 'Draw a model line visible in all plan views (project environment polyline).',
     },
+    'conical-roof': {
+      id: 'conical-roof',
+      label: 'Conical Roof',
+      icon: 'roof' as IconName,
+      hotkey: 'CR',
+      shortcut: 'CR',
+      modes: ['plan'] as WorkspaceMode[],
+      tooltip: 'Place a conical roof shape (two-click: center then radius). §10.3.1',
+    },
+    'dome-roof': {
+      id: 'dome-roof',
+      label: 'Dome Roof',
+      icon: 'roof' as IconName,
+      hotkey: 'DM',
+      shortcut: 'DM',
+      modes: ['plan'] as WorkspaceMode[],
+      tooltip: 'Place a dome roof shape (two-click: center then radius). §10.3.2',
+    },
+    'spire-roof': {
+      id: 'spire-roof',
+      label: 'Spire Roof',
+      icon: 'roof' as IconName,
+      hotkey: 'SI',
+      shortcut: 'SI',
+      modes: ['plan'] as WorkspaceMode[],
+      tooltip: 'Place a spire roof shape (two-click: center then radius). §10.3.3',
+    },
   };
 }
 
@@ -1002,6 +1032,9 @@ const PALETTE_ORDER: ToolId[] = [
   'brace',
   'ceiling',
   'excavation',
+  'conical-roof',
+  'dome-roof',
+  'spire-roof',
 ];
 
 export function paletteForMode(mode: WorkspaceMode, t: TFunction): ToolDefinition[] {

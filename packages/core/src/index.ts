@@ -114,7 +114,8 @@ export type DeleteGradedRegionCmd = { type: 'DeleteGradedRegion'; id: string };
 export type ToposolidExcavationCutMode =
   | 'to_top_of_cutter'
   | 'to_bottom_of_cutter'
-  | 'custom_depth';
+  | 'custom_depth'
+  | 'by_face';
 
 export type ToposolidExcavationElem = {
   kind: 'toposolid_excavation';
@@ -442,7 +443,7 @@ export type ElemKind =
   | 'dome_roof'
   | 'spire_roof';
 
-export type PhaseFilter = 'all' | 'existing' | 'demolition' | 'new';
+export type PhaseFilter = 'all' | 'existing' | 'demolition' | 'new' | 'show_all';
 
 export type VGFilterRule = {
   field: string;
@@ -3143,6 +3144,7 @@ export type Element =
       longitudeDeg: number;
       dateIso: string;
       timeOfDay: { hours: number; minutes: number };
+      daylightSavingStrategy?: 'auto' | 'none' | null;
     }
   | {
       kind: 'beam_system';
@@ -3307,7 +3309,32 @@ export type Element =
       heightMm: number;
       baseElevationMm: number;
       materialId?: string | null;
-    };
+    }
+  | ToposolidElem
+  | ToposolidSubdivisionElem
+  | ToposolidExcavationElem
+  | GradedRegionElem
+  | HatchPatternDef
+  | NeighborhoodMassElem
+  | NeighborhoodImportSessionElem
+  | ConceptSeedElem
+  | View
+  | ThermalBridgeMarkerElem
+  | RenovationScenarioElem
+  | BuildingServicesHandoffElem
+  | AssetLibraryEntryElem
+  | PlacedAssetElem
+  | FamilyKitInstanceElem
+  | ImageAssetElem
+  | MaterialElem
+  | DecalElem
+  | PropertyDefinitionElem
+  | ImageUnderlayElem
+  | FrameElem
+  | SavedViewElem
+  | PresentationCanvasElem
+  | BrandTemplateElem
+  | Saved3dViewElement;
 
 export type Violation = {
   ruleId: string;
