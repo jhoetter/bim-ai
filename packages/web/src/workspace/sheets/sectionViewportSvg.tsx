@@ -3,6 +3,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 
 import type { Element, LensMode } from '@bim-ai/core';
 
+import { hatchPatternForMaterial, type HatchPattern } from '../../plan/materialHatchPatterns';
 import { fetchSectionProjectionWire } from '../../plan/sectionProjectionWire';
 import {
   SECTION_VIEWPORT_ADVISORY_MAX_CHARS,
@@ -335,6 +336,8 @@ export function SectionViewportSvg(props: {
     stairDocCaption: string | null;
     /** Unit tangent of the cut line in plan (from coordinateFrame). */
     cutTangent: [number, number];
+    /** Maps elementId → HatchPattern derived from material hints (§6.1.6). */
+    materialHatchByElementId: Map<string, HatchPattern>;
   };
 
   const [layers, setLayers] = useState<LayerSnap | null>(null);
@@ -650,6 +653,20 @@ export function SectionViewportSvg(props: {
         const roomPaths = roomRects.map(rectPath);
         const stairPaths = stairRects.map(rectPath);
 
+        // Build materialHatchByElementId from materialHints (§6.1.6)
+        const materialHatchByElementId = new Map<string, HatchPattern>();
+        for (const hint of materialHints) {
+          if (hint.wallElementId) {
+            const pattern = hatchPatternForMaterial(
+              hint.materialCutPatternId ?? hint.materialLabel,
+            );
+            // Only set if not already set (first hint wins per element)
+            if (!materialHatchByElementId.has(hint.wallElementId)) {
+              materialHatchByElementId.set(hint.wallElementId, pattern);
+            }
+          }
+        }
+
         if (!cancel) {
           setErr(null);
           onWallPrimitivesKnownRef.current?.(true);
@@ -678,6 +695,7 @@ export function SectionViewportSvg(props: {
             levelMarkersTotalFromServer,
             stairDocCaption,
             cutTangent,
+            materialHatchByElementId,
           });
         }
       } catch (e) {
@@ -898,6 +916,46 @@ export function SectionViewportSvg(props: {
             strokeWidth={patternSlabStroke}
           />
         </pattern>
+
+        {/* Material hatch patterns (§6.1.6) */}
+        <pattern id={`${defsId}-mat-concrete`} patternUnits="userSpaceOnUse" width={8} height={8}>
+          <line x1={0} y1={8} x2={8} y2={0} stroke="#888" strokeWidth={0.5} />
+          <line x1={0} y1={0} x2={8} y2={8} stroke="#888" strokeWidth={0.5} />
+        </pattern>
+        <pattern id={`${defsId}-mat-brick`} patternUnits="userSpaceOnUse" width={16} height={8}>
+          <rect width={16} height={8} fill="none" stroke="#888" strokeWidth={0.5} />
+          <line x1={8} y1={0} x2={8} y2={4} stroke="#888" strokeWidth={0.5} />
+          <line x1={0} y1={4} x2={8} y2={4} stroke="#888" strokeWidth={0.5} />
+        </pattern>
+        <pattern id={`${defsId}-mat-wood`} patternUnits="userSpaceOnUse" width={4} height={8}>
+          <line x1={0} y1={0} x2={0} y2={8} stroke="#a0785a" strokeWidth={0.5} />
+        </pattern>
+        <pattern id={`${defsId}-mat-glass`} patternUnits="userSpaceOnUse" width={4} height={4}>
+          <circle cx={2} cy={2} r={0.5} fill="#88aacc" />
+        </pattern>
+        <pattern
+          id={`${defsId}-mat-insulation`}
+          patternUnits="userSpaceOnUse"
+          width={12}
+          height={6}
+        >
+          <polyline
+            points={`0,3 3,0 6,6 9,0 12,3`}
+            fill="none"
+            stroke="#e8a020"
+            strokeWidth={0.5}
+          />
+        </pattern>
+        <pattern id={`${defsId}-mat-earth`} patternUnits="userSpaceOnUse" width={8} height={4}>
+          <line x1={0} y1={2} x2={8} y2={2} stroke="#8b6914" strokeWidth={0.5} />
+          <circle cx={4} cy={1} r={0.5} fill="#8b6914" />
+        </pattern>
+        <pattern id={`${defsId}-mat-metal`} patternUnits="userSpaceOnUse" width={4} height={4}>
+          <line x1={0} y1={0} x2={4} y2={4} stroke="#666" strokeWidth={0.5} />
+        </pattern>
+        <pattern id={`${defsId}-mat-solid`} patternUnits="userSpaceOnUse" width={1} height={1}>
+          <rect width={1} height={1} fill="#ddd" />
+        </pattern>
       </defs>
 
       <rect
@@ -1010,14 +1068,23 @@ export function SectionViewportSvg(props: {
           {layers.wallPathsEdgeOn.map((p, i) => {
             const style = sectionLensPrimitiveStyle(lensMode, elementForPrimitive(p), 'wall');
             const c = primitiveCenterPx(layers, p);
+            // §6.1.6: material-based hatch fill for cut elements; fall back to generic edgeOn pattern
+            const matPattern = p.elementId
+              ? layers.materialHatchByElementId.get(p.elementId)
+              : undefined;
+            const fillUrl = matPattern
+              ? `url(#${defsId}-mat-${matPattern})`
+              : `url(#${defsId}-wall-edgeOn)`;
+            // §6.1.6: thicker stroke for cut outlines
+            const cutStroke = 2 * strokeScale * (style.strokeMultiplier ?? 1);
             return (
               <g key={`wall-e-${i}`} opacity={style.opacity} data-section-lens-pass={style.pass}>
                 <path
                   d={p.d}
-                  fill={style.fill ?? `url(#${defsId}-wall-edgeOn)`}
+                  fill={style.fill ?? fillUrl}
                   fillOpacity={style.fillOpacity ?? 0.92}
                   stroke={style.stroke ?? '#020617'}
-                  strokeWidth={wallStroke * (style.strokeMultiplier ?? 1)}
+                  strokeWidth={cutStroke}
                 />
                 {lensBadge(`wall-e-${i}`, style, c.x, c.y)}
               </g>
@@ -1026,14 +1093,23 @@ export function SectionViewportSvg(props: {
           {layers.wallPathsAlongCut.map((p, i) => {
             const style = sectionLensPrimitiveStyle(lensMode, elementForPrimitive(p), 'wall');
             const c = primitiveCenterPx(layers, p);
+            // §6.1.6: material-based hatch fill for cut elements; fall back to generic alongCut pattern
+            const matPattern = p.elementId
+              ? layers.materialHatchByElementId.get(p.elementId)
+              : undefined;
+            const fillUrl = matPattern
+              ? `url(#${defsId}-mat-${matPattern})`
+              : `url(#${defsId}-wall-alongCut)`;
+            // §6.1.6: thicker stroke for cut outlines
+            const cutStroke = 2 * strokeScale * (style.strokeMultiplier ?? 1);
             return (
               <g key={`wall-a-${i}`} opacity={style.opacity} data-section-lens-pass={style.pass}>
                 <path
                   d={p.d}
-                  fill={style.fill ?? `url(#${defsId}-wall-alongCut)`}
+                  fill={style.fill ?? fillUrl}
                   fillOpacity={style.fillOpacity ?? 0.9}
                   stroke={style.stroke ?? '#020617'}
-                  strokeWidth={wallStroke * (style.strokeMultiplier ?? 1)}
+                  strokeWidth={cutStroke}
                 />
                 {lensBadge(`wall-a-${i}`, style, c.x, c.y)}
               </g>
