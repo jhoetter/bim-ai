@@ -67,6 +67,82 @@ const L_SHAPE_TOLERANCE_DEG = 20; // ±20° around 90°
 const U_SHAPE_TOLERANCE_DEG = 20; // ±20° around 180°
 const DEFAULT_LANDING_DEPTH_MM = 1200;
 
+// ---------------------------------------------------------------------------
+// Public API used by stairBySketch and tests (§8.6.3)
+// ---------------------------------------------------------------------------
+
+/**
+ * Classify the stair shape from 3 user-placed points.
+ * Uses the angle at the middle point (corner).
+ * v1 = start-corner, v2 = end-corner (vectors pointing away from corner).
+ */
+export function classifyStairShape(
+  start: XY,
+  corner: XY,
+  end: XY,
+): 'straight' | 'l_shape' | 'u_shape' {
+  const v1 = sub(start, corner); // vector from corner toward start
+  const v2 = sub(end, corner); // vector from corner toward end
+  const angleDeg = angleBetweenDeg(v1, v2);
+  // When v1 and v2 point in nearly the same direction (small angle) → straight
+  // When ~90° → l_shape
+  // When ~180° → u_shape (parallel return)
+  if (angleDeg > 160) return 'u_shape';
+  if (angleDeg < 45) return 'straight';
+  return 'l_shape';
+}
+
+export interface MultiRunStairConfig {
+  shape: 'straight' | 'l_shape' | 'u_shape';
+  runs: StairRunDescriptor[];
+  /** Corner landing points (one per turn). Undefined for straight stairs. */
+  landingMm?: XY[];
+}
+
+/**
+ * Build a complete stair configuration from start, corner, and end points.
+ */
+export function buildMultiRunStairConfig(
+  start: XY,
+  corner: XY,
+  end: XY,
+  totalRiserCount: number,
+): MultiRunStairConfig {
+  const shape = classifyStairShape(start, corner, end);
+  const half = Math.max(1, Math.floor(totalRiserCount / 2));
+  const runWidthMm = 1200;
+
+  if (shape === 'straight') {
+    return {
+      shape,
+      runs: [
+        {
+          id: 'run-0',
+          startMm: start,
+          endMm: end,
+          widthMm: runWidthMm,
+          riserCount: totalRiserCount,
+        },
+      ],
+    };
+  }
+
+  return {
+    shape,
+    runs: [
+      { id: 'run-0', startMm: start, endMm: corner, widthMm: runWidthMm, riserCount: half },
+      {
+        id: 'run-1',
+        startMm: corner,
+        endMm: end,
+        widthMm: runWidthMm,
+        riserCount: totalRiserCount - half,
+      },
+    ],
+    landingMm: [corner],
+  };
+}
+
 /**
  * Detect the stair shape from a list of 2 or 3 user-placed points.
  *

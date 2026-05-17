@@ -150,6 +150,7 @@ describe('command capability graph', () => {
       ['clipboard.paste-to-levels', ['cmd-k']],
       ['selection.filter', ['cmd-k']],
       ['model.create-group', ['cmd-k']],
+      ['family.add-parameter', ['cmd-k']],
     ] as const);
     const modalCapabilities = getAllCommandCapabilities()
       .filter((capability) => capability.executionSurface === 'modal')

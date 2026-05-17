@@ -223,7 +223,7 @@ describe('InspectorPropertiesFor — spec §13', () => {
       systemType: 'cooling',
       systemName: 'CHW-S',
       flowDirection: 'supply',
-      insulation: '25 mm phenolic',
+      insulation: {},
       serviceLevel: 'L02',
       connectors: [
         { id: 'c1', flowDirection: 'supply', diameterMm: 80 },
@@ -234,7 +234,7 @@ describe('InspectorPropertiesFor — spec §13', () => {
     const { getByText } = render(InspectorPropertiesFor(pipe, t));
     expect(getByText('CHW-S')).toBeTruthy();
     expect(getByText('80 mm')).toBeTruthy();
-    expect(getByText('25 mm phenolic')).toBeTruthy();
+    expect(getByText('Yes')).toBeTruthy();
     expect(getByText('2')).toBeTruthy();
   });
 
@@ -783,9 +783,9 @@ describe('InspectorPropertiesFor — A4-A9 annotation elements', () => {
       northMm: 1500,
       eastMm: 2000,
     };
-    const { getByText } = render(InspectorPropertiesFor(el, t));
-    expect(getByText('1500')).toBeTruthy();
-    expect(getByText('2000')).toBeTruthy();
+    const { getByDisplayValue } = render(InspectorPropertiesFor(el, t));
+    expect(getByDisplayValue('1500')).toBeTruthy();
+    expect(getByDisplayValue('2000')).toBeTruthy();
   });
 
   it('spot_slope shows editable slope when onChange provided', () => {

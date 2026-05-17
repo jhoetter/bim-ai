@@ -1730,6 +1730,41 @@ export function reduceRadialDimension(
   return { state, effect: { stillActive: true } };
 }
 
+/* ────────────────────────────────────────────────────────────────────── */
+/* Spot Coordinate Grammar — §4.8                                          */
+/* idle → placing (each click emits createSpotCoordinate, Escape → idle)  */
+/* ────────────────────────────────────────────────────────────────────── */
+
+export type SpotCoordinateState = { phase: 'idle' } | { phase: 'placing' };
+export type SpotCoordinateEvent =
+  | { kind: 'activate' }
+  | { kind: 'deactivate' }
+  | { kind: 'click'; xMm: number; yMm: number }
+  | { kind: 'cancel' };
+export interface SpotCoordinateEffect {
+  /** Set when a click commits a new spot coordinate annotation. */
+  commitPoint?: { xMm: number; yMm: number };
+  stillActive: boolean;
+}
+export function initialSpotCoordinateState(): SpotCoordinateState {
+  return { phase: 'idle' };
+}
+export function reduceSpotCoordinate(
+  state: SpotCoordinateState,
+  event: SpotCoordinateEvent,
+): { state: SpotCoordinateState; effect: SpotCoordinateEffect } {
+  if (event.kind === 'deactivate')
+    return { state: { phase: 'idle' }, effect: { stillActive: false } };
+  if (event.kind === 'cancel' || event.kind === 'activate')
+    return { state: { phase: 'idle' }, effect: { stillActive: event.kind !== 'cancel' } };
+  if (event.kind === 'click')
+    return {
+      state: { phase: 'placing' },
+      effect: { commitPoint: { xMm: event.xMm, yMm: event.yMm }, stillActive: true },
+    };
+  return { state, effect: { stillActive: true } };
+}
+
 export type SingleClickAnnotationState = { phase: 'idle' };
 export type SingleClickAnnotationEvent =
   | { kind: 'activate' }
@@ -3815,4 +3850,207 @@ export function reduceRamp(
     }
   }
   return { state, effect: { stillActive: true } };
+}
+
+/* ────────────────────────────────────────────────────────────────────── */
+/* Graded Region — §5.1.6                                                  */
+/* ────────────────────────────────────────────────────────────────────── */
+
+export type GradedRegionState =
+  | { phase: 'idle' }
+  | { phase: 'sketching'; points: { xMm: number; yMm: number }[] };
+
+export type GradedRegionEvent =
+  | { kind: 'click'; xMm: number; yMm: number }
+  | { kind: 'commit' }
+  | { kind: 'cancel' };
+
+export interface GradedRegionEffect {
+  createGradedRegion?: {
+    perimeterMm: { xMm: number; yMm: number }[];
+    lowerElevationMm: number;
+    upperElevationMm: number;
+  };
+  stillActive: boolean;
+}
+
+const GRADED_REGION_DEFAULT_LOWER_MM = 0;
+const GRADED_REGION_DEFAULT_UPPER_MM = 500;
+
+export function initialGradedRegionState(): GradedRegionState {
+  return { phase: 'idle' };
+}
+
+export function reduceGradedRegion(
+  state: GradedRegionState,
+  event: GradedRegionEvent,
+): { state: GradedRegionState; effect: GradedRegionEffect } {
+  if (event.kind === 'cancel') {
+    return { state: { phase: 'idle' }, effect: { stillActive: false } };
+  }
+  if (event.kind === 'click') {
+    const points =
+      state.phase === 'sketching'
+        ? [...state.points, { xMm: event.xMm, yMm: event.yMm }]
+        : [{ xMm: event.xMm, yMm: event.yMm }];
+    return {
+      state: { phase: 'sketching', points },
+      effect: { stillActive: true },
+    };
+  }
+  if (event.kind === 'commit') {
+    if (state.phase !== 'sketching' || state.points.length < 3) {
+      return { state, effect: { stillActive: true } };
+    }
+    return {
+      state: { phase: 'idle' },
+      effect: {
+        createGradedRegion: {
+          perimeterMm: state.points,
+          lowerElevationMm: GRADED_REGION_DEFAULT_LOWER_MM,
+          upperElevationMm: GRADED_REGION_DEFAULT_UPPER_MM,
+        },
+        stillActive: false,
+      },
+    };
+  }
+  return { state, effect: { stillActive: true } };
+}
+
+/* ────────────────────────────────────────────────────────────────────── */
+/* Terrain Split — §5.1.6                                                  */
+/* ────────────────────────────────────────────────────────────────────── */
+
+export type TerrainSplitState =
+  | { phase: 'idle' }
+  | { phase: 'splitting'; toposolidId: string; points: { xMm: number; yMm: number }[] };
+
+export type TerrainSplitEvent =
+  | { kind: 'activate'; toposolidId: string }
+  | { kind: 'click'; xMm: number; yMm: number }
+  | { kind: 'commit' }
+  | { kind: 'cancel' };
+
+export interface TerrainSplitEffect {
+  splitTerrain?: {
+    toposolidId: string;
+    splitLineMm: { xMm: number; yMm: number }[];
+  };
+  stillActive: boolean;
+}
+
+export function initialTerrainSplitState(): TerrainSplitState {
+  return { phase: 'idle' };
+}
+
+export function reduceTerrainSplit(
+  state: TerrainSplitState,
+  event: TerrainSplitEvent,
+): { state: TerrainSplitState; effect: TerrainSplitEffect } {
+  if (event.kind === 'cancel') {
+    return { state: { phase: 'idle' }, effect: { stillActive: false } };
+  }
+  if (event.kind === 'activate') {
+    return {
+      state: { phase: 'splitting', toposolidId: event.toposolidId, points: [] },
+      effect: { stillActive: true },
+    };
+  }
+  if (event.kind === 'click') {
+    if (state.phase !== 'splitting') {
+      return { state, effect: { stillActive: false } };
+    }
+    return {
+      state: { ...state, points: [...state.points, { xMm: event.xMm, yMm: event.yMm }] },
+      effect: { stillActive: true },
+    };
+  }
+  if (event.kind === 'commit') {
+    if (state.phase !== 'splitting' || state.points.length < 2) {
+      return { state, effect: { stillActive: true } };
+    }
+    return {
+      state: { phase: 'idle' },
+      effect: {
+        splitTerrain: {
+          toposolidId: state.toposolidId,
+          splitLineMm: state.points,
+        },
+        stillActive: false,
+      },
+    };
+  }
+  return { state, effect: { stillActive: true } };
+}
+
+// ---------------------------------------------------------------------------
+// §8.6.3 — Stair by sketch grammar
+// ---------------------------------------------------------------------------
+
+export type StairSketchPhase = 'idle' | 'placing-start' | 'placing-corner' | 'placing-end';
+
+export interface StairSketchState {
+  phase: StairSketchPhase;
+  startMm?: { xMm: number; yMm: number };
+  cornerMm?: { xMm: number; yMm: number };
+}
+
+export type StairSketchEvent =
+  | { kind: 'activate' }
+  | { kind: 'click'; pointMm: { xMm: number; yMm: number } }
+  | { kind: 'escape' };
+
+export type StairSketchEffect =
+  | {
+      kind: 'createStair';
+      startMm: { xMm: number; yMm: number };
+      cornerMm: { xMm: number; yMm: number };
+      endMm: { xMm: number; yMm: number };
+    }
+  | { kind: 'reset' };
+
+export interface StairSketchResult {
+  next: StairSketchState;
+  effect?: StairSketchEffect;
+}
+
+export function initialStairSketchPhase(): StairSketchState {
+  return { phase: 'idle' };
+}
+
+export function stairSketchReducer(
+  state: StairSketchState,
+  event: StairSketchEvent,
+): StairSketchResult {
+  if (event.kind === 'escape') {
+    return { next: { phase: 'idle' }, effect: { kind: 'reset' } };
+  }
+
+  if (event.kind === 'activate') {
+    return { next: { phase: 'placing-start' } };
+  }
+
+  if (event.kind === 'click') {
+    if (state.phase === 'placing-start') {
+      return { next: { phase: 'placing-corner', startMm: event.pointMm } };
+    }
+    if (state.phase === 'placing-corner') {
+      return {
+        next: { phase: 'placing-end', startMm: state.startMm, cornerMm: event.pointMm },
+      };
+    }
+    if (state.phase === 'placing-end' && state.startMm && state.cornerMm) {
+      return {
+        next: { phase: 'idle' },
+        effect: {
+          kind: 'createStair',
+          startMm: state.startMm,
+          cornerMm: state.cornerMm,
+          endMm: event.pointMm,
+        },
+      };
+    }
+  }
+
+  return { next: state };
 }
