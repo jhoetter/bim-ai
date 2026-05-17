@@ -151,6 +151,7 @@ describe('command capability graph', () => {
       ['selection.filter', ['cmd-k']],
       ['model.create-group', ['cmd-k']],
       ['family.add-parameter', ['cmd-k']],
+      ['file.link-ifc', ['cmd-k']],
     ] as const);
     const modalCapabilities = getAllCommandCapabilities()
       .filter((capability) => capability.executionSurface === 'modal')

@@ -262,6 +262,8 @@ export function ProjectBrowser(props: {
   elementsById: Record<string, Element>;
   /** Emit `upsertPlanView` duplicates (WP-C01/C03). */
   onUpsertSemantic?: (cmd: Record<string, unknown>) => void;
+  /** §12.1.1: IFC link client-side commands (addIfcLink, removeIfcLink, toggleIfcLinkVisibility). */
+  onSemanticCommand?: (cmd: Record<string, unknown>) => void | Promise<void>;
 }) {
   const activatePlanView = useBimStore((s) => s.activatePlanView);
   const setActiveViewpointId = useBimStore((s) => s.setActiveViewpointId);
@@ -484,6 +486,11 @@ export function ProjectBrowser(props: {
   // FED-01 polish: collapsible "Links" group lists every link_model row.
   const linkModels = Object.values(props.elementsById)
     .filter((e): e is Extract<Element, { kind: 'link_model' }> => e.kind === 'link_model')
+    .sort((a, b) => a.name.localeCompare(b.name));
+
+  // §12.1.1 — Linked IFC subtree
+  const ifcLinks = Object.values(props.elementsById)
+    .filter((e): e is Extract<Element, { kind: 'link_ifc' }> => e.kind === 'link_ifc')
     .sort((a, b) => a.name.localeCompare(b.name));
 
   // F-003: Families section — wall_type, floor_type, roof_type
@@ -1865,6 +1872,14 @@ export function ProjectBrowser(props: {
 
       {linkModels.length ? <ProjectBrowserLinksGroup links={linkModels} /> : null}
 
+      {/* §12.1.1 — Linked IFC subtree */}
+      {ifcLinks.length > 0 ? (
+        <ProjectBrowserLinkedIfcGroup
+          links={ifcLinks}
+          onSemanticCommand={props.onSemanticCommand}
+        />
+      ) : null}
+
       {hasDisciplineElements ? (
         <div className="space-y-1" data-testid="project-browser-disciplines-group">
           <div className="text-[10px] uppercase tracking-wide text-muted">Categories</div>
@@ -2128,6 +2143,69 @@ function ProjectBrowserLinksGroup({
               </li>
             );
           })}
+        </ul>
+      )}
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// §12.1.1 — ProjectBrowserLinkedIfcGroup: Linked IFC subtree
+// ---------------------------------------------------------------------------
+
+type IfcLinkElem = Extract<Element, { kind: 'link_ifc' }>;
+
+function ProjectBrowserLinkedIfcGroup({
+  links,
+  onSemanticCommand,
+}: {
+  links: IfcLinkElem[];
+  onSemanticCommand?: (cmd: Record<string, unknown>) => void | Promise<void>;
+}): JSX.Element {
+  const [collapsed, setCollapsed] = useState(false);
+
+  return (
+    <div className="space-y-1" data-testid="browser-linked-ifc-tree">
+      <button
+        type="button"
+        onClick={() => setCollapsed((v) => !v)}
+        data-testid="browser-linked-ifc-toggle"
+        className="flex w-full items-center gap-1 text-[10px] uppercase tracking-wide text-muted hover:text-foreground"
+      >
+        <span>{collapsed ? '▸' : '▾'}</span>
+        Linked IFC ({links.length})
+      </button>
+      {collapsed ? null : (
+        <ul className="space-y-0.5">
+          {links.map((link) => (
+            <li
+              key={link.id}
+              data-testid={`browser-linked-ifc-row-${link.id}`}
+              className="flex items-center gap-2 px-2 py-0.5 text-[10px]"
+            >
+              <button
+                type="button"
+                data-testid={`browser-linked-ifc-eye-${link.id}`}
+                onClick={() =>
+                  void onSemanticCommand?.({ type: 'toggleIfcLinkVisibility', linkId: link.id })
+                }
+                title={link.visible ? 'Hide linked IFC' : 'Show linked IFC'}
+                className="rounded border border-border px-1 text-[10px] hover:bg-surface-strong"
+              >
+                {link.visible ? '●' : '◌'}
+              </button>
+              <span className="flex-1 truncate text-left">{link.name}</span>
+              <button
+                type="button"
+                data-testid={`browser-linked-ifc-remove-${link.id}`}
+                onClick={() => void onSemanticCommand?.({ type: 'removeIfcLink', linkId: link.id })}
+                title="Remove linked IFC"
+                className="rounded border border-border px-1 text-[10px] hover:bg-surface-strong"
+              >
+                ✕
+              </button>
+            </li>
+          ))}
         </ul>
       )}
     </div>

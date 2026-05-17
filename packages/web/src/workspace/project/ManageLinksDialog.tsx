@@ -7,6 +7,7 @@ import type { Element } from '@bim-ai/core';
 import { applyCommand, ApiHttpError } from '../../lib/api';
 import { resolveDxfLayerRows } from '../../plan/dxfUnderlay';
 import { useBimStore } from '../../state/store';
+import { createIfcLink } from '../../import/ifcLinkImporter';
 
 /**
  * FED-01 — Manage Links dialog (full polish).
@@ -26,6 +27,11 @@ export interface ManageLinksDialogProps {
    * apply path. Production wiring uses the real `/api/.../commands` route.
    */
   applyCommandImpl?: typeof applyCommand;
+  /**
+   * §12.1.1: client-side semantic command handler for IFC link commands
+   * (addIfcLink, removeIfcLink, toggleIfcLinkVisibility).
+   */
+  onSemanticCommand?: (cmd: Record<string, unknown>) => void | Promise<void>;
 }
 
 type LinkRow = Extract<Element, { kind: 'link_model' }>;
@@ -56,9 +62,11 @@ export function ManageLinksDialog({
   open,
   onClose,
   applyCommandImpl,
+  onSemanticCommand,
 }: ManageLinksDialogProps): JSX.Element | null {
   const dialogRef = useRef<HTMLDivElement>(null);
   useFocusTrap(dialogRef, open);
+  const ifcFileInputRef = useRef<HTMLInputElement>(null);
   const elementsById = useBimStore((s) => s.elementsById);
   const modelId = useBimStore((s) => s.modelId);
   const linkSourceRevisions = useBimStore((s) => s.linkSourceRevisions);
@@ -83,6 +91,15 @@ export function ManageLinksDialog({
     () =>
       Object.values(elementsById)
         .filter((e): e is ExternalLinkRow => e.kind === 'link_external')
+        .sort((a, b) => a.name.localeCompare(b.name)),
+    [elementsById],
+  );
+
+  type IfcLinkRow = Extract<Element, { kind: 'link_ifc' }>;
+  const ifcLinks: IfcLinkRow[] = useMemo(
+    () =>
+      Object.values(elementsById)
+        .filter((e): e is IfcLinkRow => e.kind === 'link_ifc')
         .sort((a, b) => a.name.localeCompare(b.name)),
     [elementsById],
   );
@@ -970,6 +987,70 @@ export function ManageLinksDialog({
               })}
             </ul>
           )}
+        </section>
+
+        {/* §12.1.1 — IFC Links section */}
+        <section className="mb-4">
+          <h3 className="mb-1 text-[10px] uppercase text-muted" style={{ letterSpacing: '0.06em' }}>
+            IFC Links
+          </h3>
+          <input
+            type="file"
+            accept=".ifc"
+            data-testid="link-ifc-file-input"
+            style={{ display: 'none' }}
+            ref={ifcFileInputRef}
+            onChange={async (e) => {
+              const file = e.target.files?.[0];
+              if (!file) return;
+              const content = await file.text();
+              const link = createIfcLink(file.name, content);
+              void onSemanticCommand?.({ type: 'addIfcLink', element: link });
+            }}
+          />
+          <button
+            type="button"
+            data-testid="link-ifc-btn"
+            onClick={() => ifcFileInputRef.current?.click()}
+            className="rounded border border-border px-2 py-0.5 text-xs hover:bg-surface-strong"
+          >
+            Link IFC&hellip;
+          </button>
+          {ifcLinks.length > 0 ? (
+            <ul className="mt-1 flex flex-col gap-1">
+              {ifcLinks.map((link) => (
+                <li
+                  key={link.id}
+                  data-testid={`link-ifc-row-${link.id}`}
+                  className="flex items-center gap-2 rounded border border-border px-2 py-1 text-xs"
+                >
+                  <span className="flex-1 truncate">{link.name}</span>
+                  <input
+                    type="checkbox"
+                    data-testid={`link-ifc-visible-${link.id}`}
+                    checked={link.visible}
+                    onChange={() =>
+                      void onSemanticCommand?.({
+                        type: 'toggleIfcLinkVisibility',
+                        linkId: link.id,
+                      })
+                    }
+                    title="Toggle visibility"
+                  />
+                  <button
+                    type="button"
+                    data-testid={`link-ifc-remove-${link.id}`}
+                    onClick={() =>
+                      void onSemanticCommand?.({ type: 'removeIfcLink', linkId: link.id })
+                    }
+                    className="rounded border border-border px-2 py-0.5 text-[11px] hover:bg-surface-strong"
+                  >
+                    Remove
+                  </button>
+                </li>
+              ))}
+            </ul>
+          ) : null}
         </section>
 
         <section>

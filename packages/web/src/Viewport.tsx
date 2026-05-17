@@ -4497,6 +4497,67 @@ export function Viewport({
       root.add(obj);
     }
 
+    // §12.1.1 — link_ifc ghost rendering.
+    // For each visible link_ifc element, build ghost meshes for its linkedElements.
+    for (const [id, e] of Object.entries(curr)) {
+      if (e.kind !== 'link_ifc') continue;
+      const ifcLink = e as Extract<Element, { kind: 'link_ifc' }>;
+
+      // Remove any previously-built ghost meshes for this link's children.
+      const ghostPrefix = `${id}::`;
+      for (const cachedId of [...cache.keys()]) {
+        if (cachedId.startsWith(ghostPrefix)) {
+          const old = cache.get(cachedId);
+          if (old) {
+            root.remove(old);
+            old.traverse((node) => {
+              const m = node as THREE.Mesh;
+              if (!m.isMesh) return;
+              m.geometry?.dispose();
+              if (Array.isArray(m.material)) {
+                m.material.forEach((mat: THREE.Material) => mat.dispose());
+              } else {
+                (m.material as THREE.Material)?.dispose();
+              }
+            });
+          }
+          cache.delete(cachedId);
+        }
+      }
+
+      if (!ifcLink.visible) continue;
+
+      for (const linkedElem of ifcLink.linkedElements) {
+        const ghostId = `${id}::${linkedElem.id}`;
+        let ghostObj: THREE.Object3D | null = null;
+        switch (linkedElem.kind) {
+          case 'wall':
+            ghostObj = makeWallMesh(linkedElem, 0, paint, curr);
+            break;
+          case 'floor':
+            ghostObj = makeFloorSlabMesh(linkedElem, curr, paint);
+            break;
+          case 'roof':
+            ghostObj = makeRoofMassMesh(linkedElem, curr, paint);
+            break;
+          case 'column':
+            ghostObj = makeColumnMesh(linkedElem, 0, paint);
+            break;
+          case 'beam':
+            ghostObj = makeBeamMesh(linkedElem, 0, paint);
+            break;
+          default:
+            break;
+        }
+        if (!ghostObj) continue;
+        ghostObj.userData.bimPickId = ghostId;
+        applyLinkedGhosting(ghostObj);
+        applyRenderRole(ghostObj, 'model');
+        cache.set(ghostId, ghostObj);
+        root.add(ghostObj);
+      }
+    }
+
     if (roofJoinPreview) {
       const previewObj = makeRoofJoinPreviewMesh(
         {
