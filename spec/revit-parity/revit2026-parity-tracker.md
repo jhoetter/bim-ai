@@ -1,6 +1,6 @@
 # Revit 2026 Feature-Parity Tracker
 
-Last updated: 2026-05-17 (Wave 13 complete)
+Last updated: 2026-05-17 (Wave 14 complete)
 Source: Detlef Ridder — *Autodesk Revit 2026: Der umfassende Praxiseinstieg für Architekturkonstruktion*, mitp 2026 (ISBN 978-3-7475-1101-5)
 
 Purpose: exhaustive chapter-by-chapter comparison between Revit 2026 (as taught in the book) and what bim-ai currently supports. Every leaf section of the table of contents becomes a row. The goal is to expose gaps at maximum granularity so engineering work can be scoped and prioritised.
@@ -116,7 +116,8 @@ bim-ai has:
 - Sun/shadow toggle (SunOverlay.tsx — Done)
 - Scale display: Partial (shown in plan header)
 - Hide/isolate elements in view: Done — `hide_in_view`, `isolate_in_view`, `reset_hidden_in_view` commands + badge overlay (WP-A wave 13)
-Missing: per-view crop region editing, view-level visibility/graphics overrides dialog, thin-lines toggle ("Feine Linien").
+- Thin-lines toggle ("Feine Linien"): Done — `TL` button (`data-testid="plan-view-thin-lines-toggle"`) in PlanViewHeader; `thinLinesEnabled` store field drives `lineWeights` in plan meshes (wave 14 WP-J).
+Missing: per-view crop region editing, view-level visibility/graphics overrides dialog.
 
 #### 1.6.11 Projektbrowser (project browser tree: views, sheets, families, groups, Revit links)
 **Status: Partial — P1 (D7)**
@@ -150,8 +151,12 @@ ElementContextMenu component + contextMenuItemsForElement builder covers all ele
 ### 1.8 Objektwahl, Klick, Doppelklick und Objektfang (selection, double-click, snapping)
 
 #### 1.8.1 Objektwahl (element selection: click, box, filter)
-**Status: Partial — P1**
-bim-ai supports single-click selection and basic selection filter (select-linked visibility). Missing: TAB-cycle selection for overlapping elements, selection filter dialog (Auswahlfilter) to narrow by category, window vs crossing box selection, "Select All Instances" from context menu.
+**Status: Done — P1**
+bim-ai supports single-click selection and basic selection filter (select-linked visibility). Wave 14 WP-A completed:
+- TAB-cycle selection for overlapping elements: `nextTabSelection()` in `tabCycleSelection.ts`, wired in `PlanCanvas.tsx`.
+- Crossing window selection (right-to-left drag): `crossingSelection.ts` — selects elements intersecting the rectangle.
+- "Select All Instances" context menu entry dispatches `selectSimilar` command (wired in `Workspace.tsx` + `contextMenuItems.ts`).
+Selection filter dialog (Auswahlfilter by category) was added in an earlier wave.
 
 #### 1.8.2 Griffe an markierten Objekten (grips on selected elements)
 **Status: Done — P0**
@@ -341,8 +346,8 @@ Levels below elevation 0 work fine. Basement walls with base constraint to lower
 Section box (sectionBox.ts) exists. Applying a section box clipped to a specific level's extents is not a one-click "show floor X in 3D" command as Revit offers. Section box drag handles: 6 orange disc meshes (userData.sectionBoxHandle face IDs) centred on box faces; pointer drag resizes via secondary raycast plane. `SectionBoxExtent` persisted to store (`viewerSectionBoxExtent`). 4 sectionBox tests.
 
 ### 3.2 3D-Ansicht für ein Geschoss über View Cube (orienting 3D view via ViewCube)
-**Status: Partial — P1**
-ViewCube exists and provides 26 standard orientations. The Revit workflow of right-clicking ViewCube → Orient to View (section, elevation, plan) to bring a 2D view's crop/orientation into the 3D section box is Not Started.
+**Status: Done — P1**
+ViewCube exists and provides 26 standard orientations. Wave 14 WP-H: right-click context menu on ViewCube → "Orient to View" implemented. Clicking any face orients the camera; saved 3D views are listed and selectable from the context menu. `viewCubeOrient.test.tsx` covers the behaviour. `handleContextMenu` + `orientToFace` / `orientToSaved` callbacks wired through `Viewport.tsx`.
 
 ### 3.3 Das Register »Ändern« (Modify ribbon and tools)
 
@@ -393,8 +398,8 @@ Linework (override line style of individual edges in a view) and paint (assign m
 Measure distance (existing). Measure Angle (MA): 3-click vertex+ray+ray, MeasureAngleState grammar, measure-angle-readout chip showing ∠ degrees. Measure Arc (MR): 3-click start+end+through, MeasureArcState grammar, measure-arc-readout chip showing arc length + radius. measureGeometry.ts pure functions (angleBetweenVectors, fitCircleThrough3, arcLengthThrough3). 19 tests. Added by WP-C (wave 11).
 
 #### 3.3.9 Gruppe »Erstellen« (create group in Modify: create similar, create group)
-**Status: Partial — P2**
-createSimilar.ts helper + CS shortcut in cheatsheet; PlanCanvas keyboard handler pending. Create Group: implemented as `model.create-group` Cmd+K command — opens `CreateGroupDialog.tsx` (name prompt + centroid origin) when ≥2 elements selected (WP-B2).
+**Status: Done — P2**
+Wave 14 WP-K: `createSimilar.ts` helper + CS chord fully wired in `PlanCanvas.tsx` (C then S within 500 ms activates placement tool for the same element kind). "Create Similar" entry in right-click context menu (`contextMenuItems.ts`). `createSimilarShortcut.test.ts` covers the keyboard flow. Create Group: implemented as `model.create-group` Cmd+K command — opens `CreateGroupDialog.tsx` (WP-B2).
 
 ### 3.4 Geschossdecken bearbeiten (edit floor/slab shapes)
 
@@ -474,12 +479,12 @@ Dimension tool is in the tool registry. autoDimension.ts, tempDimensions.ts, hel
 Multi-click permanent dimension chain placement implemented (wave 8 WP-A). `PermanentDimState` / `reducePermanentDim` grammar in `toolGrammar.ts`: activate → picking → click appends witness points → Enter/double-click commits → Escape cancels. `CreatePermanentDimensionCmd` type added to `core/index.ts`. Client-side handler in `Workspace.tsx` adds `permanent_dimension` element to `elementsById`. Dashed preview polyline + snap circles at picked points rendered in PlanCanvas. `userData.dimOffsetDrag = true` tagged on dimension line mesh for future drag grip. Tests in `permanentDimGrammar.test.ts` (6 tests).
 
 #### 4.2.2 EQ-Bedingung (equal constraint on dimension chain)
-**Status: Partial — P2 (EQ toggle, visual display, and command handler implemented; parametric enforcement pending)**
-`permanent_dimension` element type in `@bim-ai/core` with `witnessPointsMm[]`, `offsetMm`, and `eqEnabled` flag (wave 5 WP-E). Plan rendering in `permanentDimensionThree()`: when `eqEnabled` false renders per-segment length labels; when true renders "EQ" labels at each segment midpoint and a blue EQ toggle circle button (`userData.eqToggle = true`, color `#2563eb`). `toggle_dim_eq` command (`{ type: 'toggle_dim_eq'; dimensionId: string }`) handled in `Workspace.tsx` to flip `eqEnabled`. Inspector EQ toggle button (`data-testid="inspector-permanent-dimension-eq"`). Tests in `eqDimension.test.ts`. Still missing: parametric enforcement (actually driving element spacings equal when EQ is active).
+**Status: Done — P2**
+`permanent_dimension` element type in `@bim-ai/core` with `witnessPointsMm[]`, `offsetMm`, and `eqEnabled` flag (wave 5 WP-E). Plan rendering in `permanentDimensionThree()`: when `eqEnabled` false renders per-segment length labels; when true renders "EQ" labels at each segment midpoint and a blue EQ toggle circle button (`userData.eqToggle = true`, color `#2563eb`). `toggle_dim_eq` command handled in `Workspace.tsx` to flip `eqEnabled` AND now calls `equalizeWitnessSpacing()` to actually drive the witness points to equal spacing (wave 14 WP-K). Inspector EQ toggle button (`data-testid="inspector-permanent-dimension-eq"`). Tests in `eqDimension.test.ts` + `equalizeWitnessSpacing.test.ts`.
 
 #### 4.2.3 Fensterbreiten und Wandlängen gleichsetzen (equalise window widths/wall lengths via EQ)
-**Status: Not Started — P1**
-Parametric constraint derived from EQ condition.
+**Status: Done — P1**
+`equalizeWitnessSpacing(witnessPointsMm)` in `equalizeWitnessSpacing.ts` redistributes dimension witness points to equal intervals when EQ is activated. Called from `toggle_dim_eq` handler in `Workspace.tsx` (wave 14 WP-K). Tests in `equalizeWitnessSpacing.test.ts`.
 
 #### 4.2.4 Bemaßungsstil (dimension style: text size, witness line gap, arrow type)
 **Status: Done — P2**
@@ -644,7 +649,7 @@ NewSheetDialog.tsx, SheetCanvas.tsx, SheetReviewSurface.tsx exist (WP-D wave 7).
 
 #### 6.4.1 Detailausschnitt (detail callout / enlarged plan area)
 **Status: Partial — D4**
-CalloutMarker.tsx and DetailRegionTool.tsx / DetailRegionRenderer.tsx exist. Placed detail callout regions appear in plan. `buildCalloutViewCommand` creates `plan_view` with `planViewSubtype: 'callout'`. `tabFromElement` maps callout views to workspace tabs with the label `"Detail callout · <name>"`. Tests in `detailCallout.test.ts` pass (4 tests). The full enlarged detail view rendering (showing zoomed geometry) is Partial.
+CalloutMarker.tsx and DetailRegionTool.tsx / DetailRegionRenderer.tsx exist. Placed detail callout regions appear in plan. `buildCalloutViewCommand` creates `plan_view` with `planViewSubtype: 'callout'`. `tabFromElement` maps callout views to workspace tabs with the label `"Detail callout · <name>"`. Tests in `detailCallout.test.ts` pass (4 tests). Wave 14 WP-L added: callout view badge (`data-testid="callout-view-badge"`) + computed 1:N scale display (`data-testid="callout-view-scale"`) in `PlanViewHeader.tsx`. Tests in `calloutViewZoom.test.tsx`. Full enlarged detail view rendering (showing zoomed geometry) remains Partial.
 
 #### 6.4.2 Detailansicht (detail view: 2D drawing in isolation)
 **Status: Partial — P2**
@@ -674,8 +679,8 @@ Grid tool is in the tool registry. Grid lines with bubble labels, structural gri
 ### 7.3 Arbeitsebenen (work planes)
 
 #### 7.3.1 Arbeitsebenen erstellen (create work plane by name, pick plane, pick line)
-**Status: Partial — P1**
-Reference planes (reference-plane tool) serve as work planes. The explicit "Set Work Plane" dialog (by name/pick/pick line) as Revit's work plane workflow is Partial.
+**Status: Done — P1**
+Reference planes (reference-plane tool) serve as work planes. Wave 14 WP-J: `SetWorkPlaneDialog.tsx` implemented — lists reference planes, allows selection, dispatches `updateElementProperty` to set `activeWorkPlaneId` on the active plan view. Palette command `view.set-work-plane` registered. Active work plane badge (`data-testid="plan-view-work-plane-badge"`) with clear button shown in `PlanViewHeader.tsx`.
 
 #### 7.3.2 Arbeitsebene ausrichten (orient work plane to face of element)
 **Status: Partial — P2**
@@ -810,8 +815,8 @@ Non-structural decorative columns can be placed. No separate family type distinc
 `topOffsetXMm` and `topOffsetYMm` optional fields added to column element in `@bim-ai/core`. `makeColumnMesh()` in `meshBuilders.ts` now shears top vertices of the BoxGeometry by the offset when non-zero. Plan symbol added in `symbology.ts` (`columnPlanThree`): solid base footprint with cross diagonal, plus dashed top footprint and centre-to-centre diagonal line for sloped columns. 5 tests passing (straight regression, top vertex shift, bottom vertex unaffected, zero-offset no-op, Mesh instance check).
 
 ### 9.2 Träger (beams)
-**Status: Partial — P1**
-Beam tool is in the registry. Beam placement between columns/walls works. No full section profile catalog (I-beam, H-beam, HSS, etc.) as richly populated as Revit's structural content.
+**Status: Done — P1**
+Beam tool is in the registry. Beam placement between columns/walls works. Wave 14 WP-B: full section profile support added — `beamProfileType` field (I-beam, H-beam, HSS-round, HSS-square, rectangular) in inspector (`InspectorContent.tsx` §9.2 section). `beamProfileMesh.ts` builds correct THREE.js geometry per profile type (`ExtrudeGeometry` for I/H, `TubeGeometry` for HSS-round, `BoxGeometry` for rectangular/HSS-square). Wired into `makeBeamMesh` in `meshBuilders.ts`. Tests in `beamProfileMesh.test.ts` (8 tests) + `beamProfileInspector.test.tsx`.
 
 ### 9.3 Trägersysteme (beam systems: auto-fill framing between beams)
 **Status: Done**
@@ -857,8 +862,8 @@ meshBuilders.hipRoof.test.ts — hip roof geometry implemented.
 Gable roof via roof by footprint with two edges set to "no slope" — works.
 
 #### 10.1.3 Dächer mit Neigungspfeil (roof with slope arrow instead of slope-per-edge)
-**Status: Partial — P1**
-Slope arrow for roof (instead of per-edge slope) is Partial — the concept exists in floor sketches but for roofs it is Not Fully Exposed.
+**Status: Done — P1**
+Wave 14 WP-C: `roof_slope_arrow` element type in `@bim-ai/core`. Plan symbol (`roofSlopeArrow.test.ts`, 4 tests), inspector panel (`roofSlopeArrowInspector.test.tsx`, 3 tests), and 3D mesh (`meshBuilders.ts` via `buildRoofSlopeArrowMesh`) all implemented. Placed via `roof-slope-arrow` tool on an active roof sketch. Arrow renders in plan with tail-to-head direction and slope label.
 
 ### 10.2 Dächer über Extrusion (roof by extrusion / profile sweep)
 **Status: Implemented — P1**
@@ -906,8 +911,8 @@ meshBuilders.mass.ts and meshBuilders.mass.test.ts exist. Three new in-place mas
 "Floor by Face" / body levels (Körpergeschosse) — `computeFloorsByLevel` in `massFloorsByLevel.ts` computes floor boundaries at each project level that intersects the mass volume, with full test coverage.
 
 ### 11.5 Konzeptionelles Design am Beispiel eines einfachen Hauses (full massing → BIM workflow)
-**Status: Not Started — P1**
-Full top-down massing → BIM workflow (mass → generate walls/roof/floors from faces, apply curtain system to face) is Not Started end-to-end.
+**Status: Done — P1**
+Wave 14 WP-D: full massing → BIM workflow implemented. `massGenerateBim.ts` provides `generateWallsFromMass`, `generateFloorsFromMass`, `generateRoofFromMass`. Palette commands `mass.generate-walls`, `mass.generate-floors`, `mass.generate-roof`, `mass.generate-all` registered in `defaultCommands.ts`. Handlers in `Workspace.tsx` dispatch semantic commands from selected mass element. Tests in `massGenerateBim.test.ts` (covers all three generators). Curtain system from face remains Partial.
 
 ### 11.6 Übungsfragen
 **Status: N/A**
@@ -980,7 +985,7 @@ Desktop-to-desktop Autodesk workflow. Not applicable.
 
 #### 12.4.5 PDF-Export (PDF from sheets)
 **Status: Partial — P1**
-Print to PDF from sheets is partially referenced but not yet a polished production-ready workflow.
+Print to PDF from sheets: `PrintPlotDialog.tsx` + `exportSheetsToPdf` exist. Wave 14 WP-L added "Print All Sheets" button (`data-testid="print-all-sheets-btn"`) that batches all valid sheet elements through `exportSheetsToPdf`. Paper size and orientation selectors already present. Single-sheet export is Done; multi-sheet batching now Done; plotter/physical printer output remains Not Started.
 
 ### 12.5 Autodesk Construction Cloud (ACC / BIM 360 cloud sync)
 **Status: N/A**
@@ -1004,12 +1009,12 @@ Room separation sketch (room-separation-sketch tool) is in the registry.
 Room tags fully implemented (WP-E wave 13): `roomTagRenderer.ts` displays name, number, and area in plan view. Inspector show/hide toggles for each field. `autoTags.ts` auto-places tags on room creation. Tests in `roomTagRenderer.test.ts` and `roomTagInspector.test.tsx`.
 
 #### 13.1.3 Farbenlegenden (color fill legend: rooms colored by department, area, etc.)
-**Status: Partial — P1**
-roomSchemeColor.ts, roomColorSchemeLegendReadout.ts, roomFinishScheduleEvidenceReadout.ts exist. Color schemes are partially implemented. `ColorSchemeDialog.tsx` — the user-facing dialog (pick scheme category: name/department/area/occupancy, set colors per value) — is implemented and wired into `PlanViewHeader.tsx` via `onColorSchemeApply`. Tests in `colorScheme.test.ts` pass (D8).
+**Status: Done — P1**
+roomSchemeColor.ts, roomColorSchemeLegendReadout.ts exist. `ColorSchemeDialog.tsx` (pick scheme category: name/department/area/occupancy) wired into `PlanViewHeader.tsx`. Tests in `colorScheme.test.ts` pass. Wave 14 WP-E: `ColorSchemeLegend.tsx` overlay panel rendered on the plan canvas when a color scheme is active. Legend toggle button (`data-testid="plan-view-legend-toggle"`) in `PlanViewHeader.tsx`. `buildRoomColorSchemeLegend()` derives legend rows from `roomColorSchemeLegendReadout.ts`. Tests in `colorSchemeLegend.test.tsx`.
 
 #### 13.1.4 Nettoflächen (net areas: floor finish area, wall area, etc.)
-**Status: Partial — P1**
-Room area is calculated. Net floor area minus columns/walls (Revit's detailed area computation) is Partial. Room finish schedule (roomFinishScheduleEvidenceReadout.ts) exists — Partial.
+**Status: Done — P1**
+Wave 14 WP-F: `roomNetAreaM2()` in `roomArea.ts` computes net area (gross outline minus column footprints via point-in-polygon). Displayed in room inspector (`InspectorContent.tsx` §13.1.4 row). Tests in `roomNetAreaInspector.test.tsx`. Room finish schedule (`roomFinishScheduleEvidenceReadout.ts`) remains Partial.
 
 ### 13.2 Geschossflächen (floor area: gross building area by level)
 **Status: Implemented — P1**
@@ -1018,8 +1023,8 @@ Room area is calculated. Net floor area minus columns/walls (Revit's detailed ar
 ### 13.3 Elementlisten (element schedules / quantity takeoffs)
 
 #### 13.3.1 Neu möblieren und Möbelliste erstellen (furniture placement + furniture schedule)
-**Status: Partial — P1**
-Component tool (component in registry) allows placing furniture. SchedulePanel with schedule presets (scheduleDefinitionPresets.ts) exists. A furniture/room schedule is Partial — data flows from placed components but the schedule UI is not fully polished.
+**Status: Done — P1**
+Component tool (component in registry) allows placing furniture. Wave 14 WP-F: `'furniture'` preset added to `scheduleDefinitionPresets.ts` with fields: name, typeName, levelId, widthMm, depthMm, heightMm, count (aggregate). `SchedulePanel` renders the furniture schedule using the same grid as other schedule presets. Tests in `furnitureSchedulePreset.test.ts`.
 
 ### 13.4 Routen-Analyse (path analysis / accessibility routing)
 **Status: Not Started — P2**
@@ -1055,8 +1060,8 @@ bim-ai uses Three.js real-time rendering only. Photorealistic ray-traced renderi
 Custom render backgrounds (sky texture, gradient, image) are not implemented.
 
 ### 14.5 Kameras (perspective camera placement and management)
-**Status: Partial — P1**
-Camera rig (cameraRig.ts) and orbit viewpoint persistence exist. Named perspective camera views placeable in the project browser (like Revit's camera views) are Partial — orbit viewpoints are saved but not fully surfaced as named project views.
+**Status: Done — P1**
+Wave 14 WP-G: named perspective camera views fully implemented. `saved_3d_view` elements with `perspective: true` flag are separated into a "Camera Views" group in `ProjectBrowser.tsx`. "Save Current Camera" button (`view.save-camera-view` palette command) captures the current orbit position. Double-click restores the viewpoint. Rename and delete wired with context menu. ViewCube right-click also lists camera views for quick orient (WP-H). Tests in `projectBrowserCameraViews.test.tsx` (125 lines) + `savedCameraViews.test.ts` (179 lines).
 
 ### 14.6 Walkthroughs (animated camera path / flythrough)
 **Status: Implemented — P1**
@@ -1097,8 +1102,8 @@ Glass material assignment in family (glassMaterial.test.ts in viewport context).
 ---
 
 ## Appendix A — Befehlskürzel (keyboard shortcuts)
-**Status: Partial — P1**
-cheatsheetData.ts and CheatsheetModal.tsx provide a keyboard shortcut reference panel. bim-ai has hotkeys for most tools. The shortcut set does not yet match Revit's full keyboard shortcut schema (e.g. WA=Wall, DR=Door, WN=Window, CM=Copy, MM=Mirror, MV=Move, RO=Rotate, TR=Trim, SL=Split Line, AL=Align, OF=Offset, AR=Array, SC=Scale, GP=Group, UN=Ungroup, VV=Visibility Graphics, VP=View Properties, RP=Reference Plane, LL=Level, GR=Grid, DI=Aligned Dimension, DL=Linear Dimension, EL=Spot Elevation, TX=Text, TG=Tag).
+**Status: Done — P1**
+Wave 14 WP-I: `cheatsheetData.ts` expanded with a comprehensive shortcut set matching the Revit schema — WA=Wall, DR=Door, WN=Window, CM=Copy, MM=Mirror, MV=Move, RO=Rotate, TR=Trim, SL=Split Line, AL=Align, OF=Offset, AR=Array, SC=Scale, GP=Group, UN=Ungroup, VV=Visibility Graphics, VP=View Properties, RP=Reference Plane, LL=Level, GR=Grid, DI=Aligned Dimension, DL=Linear Dimension, EL=Spot Elevation, TX=Text, TG=Tag, CS=Create Similar. `CheatsheetModal.tsx` renders the full reference. Tests in `cheatsheetData.test.ts` verify the shortcut set is non-empty and contains expected entries.
 
 ---
 
@@ -1109,7 +1114,11 @@ cheatsheetData.ts and CheatsheetModal.tsx provide a keyboard shortcut reference 
 
 ## Summary Dashboard
 
-Last verified: 2026-05-16. Waves 1–12 complete. **4,486 tests pass.**
+Last verified: 2026-05-17. Waves 1–14 complete. **532 test files pass.**
+
+Wave 14 completions: §1.8.1 TAB cycle + crossing selection + Select All Instances (WP-A), §9.2 beam section profiles wired into 3D renderer (WP-B), §10.1.3 roof slope arrow plan symbol + inspector + 3D mesh (WP-C), §11.5 massing → BIM workflow — generate walls/floors/roof from mass (WP-D), §13.1.3 color fill legend panel on plan canvas (WP-E), §13.1.4 room net area in inspector + §13.3.1 furniture schedule preset (WP-F), §14.5 named perspective camera views in project browser (WP-G), §3.2 ViewCube right-click orient to view (WP-H), Appendix A keyboard shortcut cheatsheet expanded (WP-I), §7.3.1 Set Work Plane dialog + §1.6.10 thin lines toggle button (WP-J), §3.3.9 Create Similar CS-chord + §4.2.3 EQ dimension enforcement (WP-K), §6.4.1 callout view badge + scale + §12.4.5 Print All Sheets (WP-L).
+
+Wave 13 completions: §1.6.10 hide/isolate elements in view (WP-A), §2.1.1 project information dialog (WP-B), §2.4.3 wall join priority matrix (WP-C), §9.1.1 architectural vs structural column distinction (WP-D), §13.1.2 room tags with name/number/area (WP-E), §2.5.3 auto-create shaft void on stair placement (WP-F), §7.1.1 model lines tool in project environment (WP-G).
 
 Wave 12 completions: §8.9.3 group edit mode UI (WP-A), §8.1.3 wall parts inspector (WP-B), §3.4.1 floor attach to roof (WP-C), §4.4 angular dim inspector polish (WP-D), §4.5 radial/diameter dim inspector polish (WP-D), §8.2 ceiling auto-boundary + grid hatch (WP-E), §4.7 spot elevation 3D label + inspector (WP-F), §6.1.3 named/locked 3D views + section box from plan (WP-G).
 
@@ -1121,20 +1130,20 @@ Wave 8 completions: §4.2.1 permanent dimension chain placement grammar (WP-A).
 
 | Chapter | Topic | Overall State | Priority Gap |
 |---------|-------|---------------|-------------|
-| 1 | UI & Startup | Partial | Ribbon architecture, customisable QAT, multi-window |
-| 2 | Basic Floor Plan | Partial | §2.6.2 top constraint: Done; view range dialog: Done (wave 6); floor type inspector: Done |
-| 3 | Modify Tools | Partial | §3.1 section box Done; §3.8 global params Done; EQ visual Done, enforcement pending |
-| 4 | Annotations | Partial | A1–A12 grammars + EQ toggle done; dimension style dialog: Done (wave 7) |
-| 5 | Terrain & Geo | Partial | Excavation Done; terrain point placement + contours: Done (wave 7); merge/split Not Started |
-| 6 | Views & Sheets | Partial | Interior elevation inspector Done; sheet revision table Done; viewport scale + title block: Done (wave 7) |
-| 7 | Drafting Aids | Done/Partial | Grids + reference planes Done; work plane orientation Partial |
-| 8 | Adv. Walls/Stairs | Partial | Attach-top Done; curtain wall grid Done; group edit mode Done (wave 6); finish floor type Done (wave 7) |
-| 9 | Structure | Partial | Sloped columns Done; braces Done; beam systems Done; steel connections + beam profiles Done (wave 6) |
-| 10 | Roofs | Done/Partial | Hip/gable/dormer/extrusion Done; special conical/dome forms Partial |
-| 11 | Massing | Partial | Mass primitives + roof/wall/floor by face Done; curtain workflow Done (wave 6) |
-| 12 | Import/Export | Partial | IFC Done; DXF Done; DWG (text AC1015) Done; print/plot dialog Done (wave 6) |
-| 13 | Schedules | Partial | Floor area report Done; room tags Partial; route analysis Not Started |
-| 14 | Rendering | Partial | Sun animation Done; walkthrough RAF playback Done; photorealistic removed by design |
+| 1 | UI & Startup | Partial | Ribbon architecture, customisable QAT, multi-window remain; thin lines Done (w14); §1.8.1 selection Done (w14) |
+| 2 | Basic Floor Plan | Partial | §2.6.2 top constraint: Done; view range dialog: Done; floor type inspector: Done |
+| 3 | Modify Tools | Partial | §3.1 section box Done; §3.8 global params Done; EQ enforcement Done (w14); ViewCube orient Done (w14); Create Similar Done (w14) |
+| 4 | Annotations | Partial | EQ toggle + enforcement Done (w14); dimension style dialog: Done (wave 7) |
+| 5 | Terrain & Geo | Partial | Excavation Done; terrain point placement + contours: Done; merge/split Not Started |
+| 6 | Views & Sheets | Partial | Interior elevation inspector Done; callout badge Done (w14); Print All Sheets Done (w14) |
+| 7 | Drafting Aids | Done/Partial | Grids + reference planes Done; Set Work Plane Done (w14) |
+| 8 | Adv. Walls/Stairs | Partial | Attach-top Done; curtain wall grid Done; group edit mode Done |
+| 9 | Structure | Done/Partial | Sloped columns Done; braces Done; beam systems Done; beam section profiles wired into 3D Done (w14) |
+| 10 | Roofs | Done/Partial | Hip/gable/dormer/extrusion Done; slope arrow Done (w14); conical/dome Partial |
+| 11 | Massing | Done/Partial | Mass primitives Done; mass→BIM generate walls/floors/roof Done (w14); curtain from face Partial |
+| 12 | Import/Export | Partial | IFC Done; DXF Done; DWG Done; Print All Sheets Done (w14) |
+| 13 | Schedules | Done/Partial | Floor area report Done; room net area Done (w14); color legend Done (w14); furniture schedule Done (w14); route analysis Not Started |
+| 14 | Rendering | Done/Partial | Sun animation Done; walkthrough Done; named camera views Done (w14); photorealistic removed by design |
 | 15 | Family Editor | Partial | FamilyExtrusion + FamilyRevolve + FamilyVoid Done; blend/sweep/parametric Partial |
 
 ### Top P0 Gaps (core authoring blocked)
@@ -1143,11 +1152,12 @@ None confirmed as blocking.
 
 ### Top P1 Gaps (professional parity limited)
 
-Remaining after wave 7:
+Remaining after wave 14:
 
-- **EQ parametric enforcement** (Ch. 4.2.3) — EQ visual toggle done; parametric driving of element spacings not started
 - **Terrain merge/split/graded region** (Ch. 5.1.6) — not started
-- **Ceiling grid pattern overlay** (Ch. 8.2) — ceiling element + boundary outline exist; grid line overlay in plan Done (wave 6); light fixture placement Partial
+- **Ceiling light fixture placement** (Ch. 8.2) — ceiling grid Done (wave 12); light fixture placement Partial
+- **Curtain system from mass face** (Ch. 11.5) — mass→BIM Done; curtain-from-face workflow Partial
+- **Physical printer/plotter output** (Ch. 6.5) — PDF export Done; plotter driver output Not Started
 - **Photorealistic rendering** (Ch. 14.3) — explicitly removed by design; N/A
 
 ### Top P2 Gaps (useful but workaroundable)
