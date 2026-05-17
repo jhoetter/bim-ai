@@ -102,15 +102,22 @@ import {
   initialRampState,
   reduceRamp,
   type RampState,
+  initialGradedRegionState,
+  reduceGradedRegion,
+  type GradedRegionState,
+  initialTerrainSplitState,
+  reduceTerrainSplit,
+  type TerrainSplitState,
 } from '../tools/toolGrammar';
 import { buildScaleCommand, distanceMm } from './scaleTool';
 import { linearArrayOffsets, radialArrayAngles, radialOffsetForElement } from './arrayTool';
 import { columnPositionsAtGridIntersections } from './columnAtGrids';
+import { splitToposolid } from './terrainSplit';
 import { handleDblClickDispatch } from './doubleClickDispatch';
 import { detectCeilingBoundary } from './ceilingAutoDetect';
 import * as THREE from 'three';
 import { parseDimensionInput } from '@bim-ai/core';
-import type { Element, LensMode } from '@bim-ai/core';
+import type { Element, LensMode, ViewLensMode } from '@bim-ai/core';
 
 import { useBimStore, type PlanTool } from '../state/store';
 import type { CategoryOverride } from '../state/storeTypes';
@@ -570,6 +577,8 @@ export function PlanCanvas({
   const conicalRoofStateRef = useRef<ConicalRoofState>(initialConicalRoofState());
   const domeRoofStateRef = useRef<DomeRoofState>(initialDomeRoofState());
   const spireRoofStateRef = useRef<SpireRoofState>(initialSpireRoofState());
+  const gradedRegionStateRef = useRef<GradedRegionState>(initialGradedRegionState());
+  const terrainSplitStateRef = useRef<TerrainSplitState>(initialTerrainSplitState());
   const dimSnapCirclesRef = useRef<THREE.Mesh[]>([]);
   const marqueeRef = useRef<{
     active: boolean;
@@ -1270,6 +1279,16 @@ export function PlanCanvas({
     // tokens are re-read. Spec §32 V11.
   }, [resizeCam, theme]);
 
+  // §5.4.2 — apply planViewAngleDeg rotation to the root group when the active
+  // plan view has a stored true-north rotation.
+  useEffect(() => {
+    const grp = rootRef.current;
+    if (!grp) return;
+    const pv = activePlanViewId ? elementsById[activePlanViewId] : undefined;
+    const angleDeg = pv?.kind === 'plan_view' ? (pv.planViewAngleDeg ?? 0) : 0;
+    grp.rotation.y = (angleDeg * Math.PI) / 180;
+  }, [activePlanViewId, elementsById]);
+
   useEffect(() => {
     const grp = rootRef.current;
     if (!grp) return;
@@ -1430,7 +1449,11 @@ export function PlanCanvas({
       const filter =
         lensMode && lensMode !== 'all'
           ? lensFilterFromMode(lensMode as LensMode)
-          : resolveLensFilter(planView && 'defaultLens' in planView ? planView : null);
+          : resolveLensFilter(
+              planView && 'defaultLens' in planView
+                ? (planView as { defaultLens?: ViewLensMode })
+                : null,
+            );
       if (lensMode !== 'all' || (planView && 'defaultLens' in planView)) {
         const witnessColor = readPlanToken('--draft-witness', '#64748b');
         const witnessThree = new THREE.Color(witnessColor);
@@ -4368,7 +4391,9 @@ export function PlanCanvas({
         if (effect.commitScale) {
           const { originMm, factor } = effect.commitScale;
           if (selectedId) {
-            void onSemanticCommand(buildScaleCommand(selectedId, originMm, factor));
+            void onSemanticCommand(
+              buildScaleCommand(selectedId, originMm, factor) as unknown as Record<string, unknown>,
+            );
           }
         }
         if (effect.commitGraphicalScale) {
@@ -4377,7 +4402,9 @@ export function PlanCanvas({
           const destDist = distanceMm(originMm, destinationMm);
           const factor = refDist > 0 ? destDist / refDist : 1;
           if (selectedId) {
-            void onSemanticCommand(buildScaleCommand(selectedId, originMm, factor));
+            void onSemanticCommand(
+              buildScaleCommand(selectedId, originMm, factor) as unknown as Record<string, unknown>,
+            );
           }
         }
         if (!effect.stillActive) setPlanTool('select');
@@ -5236,6 +5263,59 @@ export function PlanCanvas({
         bumpGeom((x) => x + 1);
         return;
       }
+      // §5.1.6 — graded-region polygon sketch
+      if (planTool === 'graded-region') {
+        const { state } = reduceGradedRegion(gradedRegionStateRef.current, {
+          kind: 'click',
+          xMm: sp.xMm,
+          yMm: sp.yMm,
+        });
+        gradedRegionStateRef.current = state;
+        bumpGeom((x) => x + 1);
+        return;
+      }
+      // §5.1.6 — terrain-split polyline
+      if (planTool === 'terrain-split') {
+        if (terrainSplitStateRef.current.phase === 'idle') {
+          const rectBox = rnd.domElement.getBoundingClientRect();
+          const ray = new THREE.Raycaster();
+          ray.setFromCamera(
+            new THREE.Vector2(
+              ((ev.clientX - rectBox.left) / rectBox.width) * 2 - 1,
+              -(((ev.clientY - rectBox.top) / rectBox.height) * 2 - 1),
+            ),
+            camNow,
+          );
+          const hits = ray.intersectObjects(grp.children, true);
+          const h = hits.find(
+            (x) => typeof (x.object.userData as { bimPickId?: unknown }).bimPickId === 'string',
+          );
+          const pickId =
+            typeof (h?.object.userData as { bimPickId?: unknown }).bimPickId === 'string'
+              ? (h!.object.userData as { bimPickId: string }).bimPickId
+              : undefined;
+          const topoId =
+            pickId && useBimStore.getState().elementsById[pickId]?.kind === 'toposolid'
+              ? pickId
+              : undefined;
+          if (topoId) {
+            const { state } = reduceTerrainSplit(terrainSplitStateRef.current, {
+              kind: 'activate',
+              toposolidId: topoId,
+            });
+            terrainSplitStateRef.current = state;
+          }
+        } else {
+          const { state } = reduceTerrainSplit(terrainSplitStateRef.current, {
+            kind: 'click',
+            xMm: sp.xMm,
+            yMm: sp.yMm,
+          });
+          terrainSplitStateRef.current = state;
+        }
+        bumpGeom((x) => x + 1);
+        return;
+      }
       if (planTool === 'beam-system') {
         const rect = rnd.domElement.getBoundingClientRect();
         const worldPerPxMm = (2 * camRef.current.half * 1000) / Math.max(1, rect.width);
@@ -5471,24 +5551,28 @@ export function PlanCanvas({
         });
         return;
       }
-      // ANN-09 — slope annotation: two-click, first stores anchor then commits
+      // ANN-09 — slope annotation: two-click start→end, emits slope_annotation element
       if (planTool === 'slope-annotation') {
-        if (!activePlanViewId) return;
         const d = draftRef.current;
         if (!d || d.kind !== 'slope-annotation') {
           draftRef.current = { kind: 'slope-annotation', sx: sp.xMm, sy: sp.yMm };
           bumpGeom((x) => x + 1);
           return;
         }
-        const rise = sp.yMm - d.sy;
-        const run = sp.xMm - d.sx;
-        const slopePct = run !== 0 ? Math.abs(rise / run) * 100 : 0;
+        const dxMm = sp.xMm - d.sx;
+        const dyMm = sp.yMm - d.sy;
+        const dist = Math.sqrt(dxMm * dxMm + dyMm * dyMm);
+        const slopePct = dist !== 0 ? Math.abs(dyMm / dist) * 100 : 0;
         onSemanticCommand({
-          type: 'createSpotSlope',
-          hostViewId: activePlanViewId,
-          positionMm: sp,
-          slopePct,
-          slopeFormat: 'percent',
+          type: 'createElement',
+          element: {
+            kind: 'slope_annotation',
+            id: crypto.randomUUID(),
+            startMm: { xMm: d.sx, yMm: d.sy },
+            endMm: { xMm: sp.xMm, yMm: sp.yMm },
+            slopePct,
+            levelId: displayLevelId ?? null,
+          },
         });
         draftRef.current = undefined;
         bumpGeom((x) => x + 1);
@@ -5694,7 +5778,11 @@ export function PlanCanvas({
           setNumericInput(null);
           if (effect.commitScale && selectedId) {
             void onSemanticCommand(
-              buildScaleCommand(selectedId, effect.commitScale.originMm, effect.commitScale.factor),
+              buildScaleCommand(
+                selectedId,
+                effect.commitScale.originMm,
+                effect.commitScale.factor,
+              ) as unknown as Record<string, unknown>,
             );
           }
           bumpGeom((x) => x + 1);
@@ -6049,6 +6137,14 @@ export function PlanCanvas({
           const { state } = reduceSpireRoof(spireRoofStateRef.current, { kind: 'cancel' });
           spireRoofStateRef.current = state;
           bumpGeom((x) => x + 1);
+        } else if (planTool === 'graded-region') {
+          const { state } = reduceGradedRegion(gradedRegionStateRef.current, { kind: 'cancel' });
+          gradedRegionStateRef.current = state;
+          bumpGeom((x) => x + 1);
+        } else if (planTool === 'terrain-split') {
+          const { state } = reduceTerrainSplit(terrainSplitStateRef.current, { kind: 'cancel' });
+          terrainSplitStateRef.current = state;
+          bumpGeom((x) => x + 1);
         }
         if (
           hadDraft ||
@@ -6140,7 +6236,7 @@ export function PlanCanvas({
         if (d && d.kind === 'model-line') {
           if (ev.key === 'Enter' && d.points.length >= 2 && activePlanViewId) {
             ev.preventDefault();
-            const levelId = activeLevelId ?? '';
+            const levelId = displayLevelId ?? '';
             void onSemanticCommand({
               type: 'create_model_line',
               id: crypto.randomUUID(),
@@ -6248,6 +6344,57 @@ export function PlanCanvas({
           }
           bumpGeom((x) => x + 1);
         }
+        return;
+      }
+      // §5.1.6 — graded-region commit on Enter
+      if (planTool === 'graded-region' && ev.key === 'Enter') {
+        ev.preventDefault();
+        const { state: grState, effect: grEffect } = reduceGradedRegion(
+          gradedRegionStateRef.current,
+          { kind: 'commit' },
+        );
+        gradedRegionStateRef.current = grState;
+        if (grEffect.createGradedRegion && lvlId) {
+          onSemanticCommand({
+            type: 'createElement',
+            element: {
+              kind: 'graded_region',
+              id: crypto.randomUUID(),
+              hostToposolidId: null,
+              boundaryMm: grEffect.createGradedRegion.perimeterMm,
+              targetMode: 'slope' as const,
+              perimeterMm: grEffect.createGradedRegion.perimeterMm,
+              lowerElevationMm: grEffect.createGradedRegion.lowerElevationMm,
+              upperElevationMm: grEffect.createGradedRegion.upperElevationMm,
+              levelId: lvlId,
+            },
+          });
+        }
+        bumpGeom((x) => x + 1);
+        return;
+      }
+      // §5.1.6 — terrain-split commit on Enter
+      if (planTool === 'terrain-split' && ev.key === 'Enter') {
+        ev.preventDefault();
+        const { state: tsState, effect: tsEffect } = reduceTerrainSplit(
+          terrainSplitStateRef.current,
+          { kind: 'commit' },
+        );
+        terrainSplitStateRef.current = tsState;
+        if (tsEffect.splitTerrain) {
+          const { toposolidId, splitLineMm } = tsEffect.splitTerrain;
+          const topo = useBimStore.getState().elementsById[toposolidId];
+          if (topo && topo.kind === 'toposolid') {
+            const [left, right] = splitToposolid(
+              topo as Extract<typeof topo, { kind: 'toposolid' }>,
+              splitLineMm,
+            );
+            onSemanticCommand({ type: 'createElement', element: left });
+            onSemanticCommand({ type: 'createElement', element: right });
+            onSemanticCommand({ type: 'deleteElement', elementId: toposolidId });
+          }
+        }
+        bumpGeom((x) => x + 1);
         return;
       }
       if (planTool === 'dimension' && ev.key === 'Enter') {
@@ -6714,7 +6861,7 @@ export function PlanCanvas({
         const d = draftRef.current;
         if (d && d.kind === 'model-line' && d.points.length >= 2 && activePlanViewId) {
           ev.preventDefault();
-          const levelId = activeLevelId ?? '';
+          const levelId = displayLevelId ?? '';
           void onSemanticCommand({
             type: 'create_model_line',
             id: crypto.randomUUID(),

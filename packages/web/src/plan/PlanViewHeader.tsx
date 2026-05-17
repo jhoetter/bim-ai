@@ -64,6 +64,8 @@ export type PlanViewHeaderProps = {
   onClearWorkPlane?: () => void;
   /** §1.6.10: called when the user clicks the per-view VG button. */
   onPerViewVGOpen?: () => void;
+  /** §5.4.2: per-view rotation in degrees (from true north rotation). When non-zero, shows indicator. */
+  planViewAngleDeg?: number;
 };
 
 const PHASE_FILTER_MODE_LABELS: Record<string, string> = {
@@ -99,6 +101,7 @@ export function PlanViewHeader({
   activeWorkPlaneName,
   onClearWorkPlane,
   onPerViewVGOpen,
+  planViewAngleDeg,
 }: PlanViewHeaderProps): JSX.Element {
   const [viewRangeOpen, setViewRangeOpen] = useState(false);
   const [colorSchemeOpen, setColorSchemeOpen] = useState(false);
@@ -387,6 +390,15 @@ export function PlanViewHeader({
         >
           N ↑ {projectNorthAngleDeg}°
         </button>
+      ) : null}
+      {(planViewAngleDeg ?? 0) !== 0 ? (
+        <span
+          data-testid="plan-view-north-angle"
+          title="View rotated to true north"
+          style={{ fontSize: 11, color: '#666' }}
+        >
+          ↑{(planViewAngleDeg ?? 0).toFixed(1)}°
+        </span>
       ) : null}
     </div>
   );

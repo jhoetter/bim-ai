@@ -47,7 +47,7 @@ export type PaletteContext = {
   /** True when the host has a current 3D camera pose that can be saved. */
   canSaveCurrentViewpoint?: boolean;
   /** Navigate through the same tab/mode path as the main workspace chrome. */
-  navigateMode?: (mode: 'plan' | '3d' | 'section' | 'sheet' | 'schedule') => void;
+  navigateMode?: (mode: 'plan' | '3d' | 'elevation' | 'section' | 'sheet' | 'schedule') => void;
   /** Start a plan-canvas tool, switching to a valid tool surface if needed. */
   startPlanTool?: (toolId: string) => void;
   /** Set the app theme while keeping host UI state in sync. */
@@ -155,6 +155,16 @@ export type PaletteContext = {
   planTemplates?: Array<{ id: string; label: string; keywords?: string }>;
   /** Dynamic views/schedules/viewpoints that can be placed on the active sheet. */
   sheetPlaceableViews?: Array<{ id: string; label: string; keywords?: string }>;
+  /** §5.4.2: rotate the active plan view to align with true north. */
+  rotateToTrueNorth?: () => void;
+  /** §5.4.2: open a prompt to set the project north angle. */
+  setTrueNorthAngle?: () => void;
+  /** §5.3: open a prompt to set the project real-world elevation. */
+  setProjectElevation?: () => void;
+  /** Open the egress-analysis panel. */
+  openEgressAnalysis?: () => void;
+  /** Activate a tool by its tool ID (used by the tool palette). */
+  activateTool?: (toolId: string) => void;
 };
 
 const _registry: PaletteEntry[] = [];
