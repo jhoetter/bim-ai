@@ -133,6 +133,8 @@ export type PaletteContext = {
   sectionBoxFromPlan?: () => void;
   /** §7.3.1: open the Set Work Plane dialog. */
   setWorkPlaneOpen?: (open: boolean) => void;
+  /** §6.5: open the Print / Plot dialog for browser printing. */
+  openPrintDialog?: () => void;
   /** Dynamic navigable views/sheets/schedules to surface in the palette. */
   views?: Array<{ id: string; label: string; keywords: string }>;
   /** Dynamic plan view templates that can be applied to the active plan view. */

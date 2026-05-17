@@ -28,6 +28,81 @@ export function PrintPlotDialog({
 
   const currentSheet = sheets[0] ?? null;
 
+  function handleBrowserPrint(): void {
+    const sheetEl = sheets.find((s) => s.element !== null)?.element;
+    if (!sheetEl) return;
+
+    const win = window.open('', '_blank', 'width=800,height=600');
+    if (!win) {
+      alert('Allow popups to use browser print.');
+      return;
+    }
+
+    const clone = sheetEl.cloneNode(true) as HTMLElement;
+    const styles = Array.from(document.styleSheets)
+      .map((ss) => {
+        try {
+          return Array.from(ss.cssRules)
+            .map((r) => r.cssText)
+            .join('\n');
+        } catch {
+          return '';
+        }
+      })
+      .join('\n');
+
+    win.document.write(`<!DOCTYPE html><html><head>
+    <style>${styles}
+    @media print { body { margin: 0; } }
+    </style>
+  </head><body>${clone.outerHTML}</body></html>`);
+    win.document.close();
+    win.focus();
+    win.print();
+    win.close();
+  }
+
+  function handleBrowserPrintAll(): void {
+    const validSheets = sheets.filter((s) => s.element !== null);
+    if (validSheets.length === 0) return;
+
+    const win = window.open('', '_blank', 'width=800,height=600');
+    if (!win) {
+      alert('Allow popups to use browser print.');
+      return;
+    }
+
+    const styles = Array.from(document.styleSheets)
+      .map((ss) => {
+        try {
+          return Array.from(ss.cssRules)
+            .map((r) => r.cssText)
+            .join('\n');
+        } catch {
+          return '';
+        }
+      })
+      .join('\n');
+
+    const sheetsHtml = validSheets
+      .map((s) => {
+        const clone = s.element!.cloneNode(true) as HTMLElement;
+        return `<div style="break-after: page;">${clone.outerHTML}</div>`;
+      })
+      .join('\n');
+
+    win.document.write(`<!DOCTYPE html><html><head>
+    <style>${styles}
+    @page { size: A4 landscape; }
+    @media print { body { margin: 0; } }
+    </style>
+  </head><body>${sheetsHtml}</body></html>`);
+    win.document.close();
+    win.focus();
+    win.print();
+    win.close();
+  }
+
   const handleExport = async (): Promise<void> => {
     if (exporting) return;
     setExporting(true);
@@ -142,6 +217,27 @@ export function PrintPlotDialog({
             className="rounded border border-border px-3 py-1.5 text-xs text-foreground hover:bg-surface-strong"
           >
             Cancel
+          </button>
+          <button
+            type="button"
+            data-testid="print-browser-btn"
+            disabled={exporting}
+            onClick={() => {
+              handleBrowserPrint();
+            }}
+            className="rounded border border-border px-3 py-1.5 text-xs text-foreground hover:bg-surface-strong disabled:opacity-60"
+          >
+            Print (Browser)…
+          </button>
+          <button
+            type="button"
+            data-testid="print-all-views-browser-btn"
+            onClick={() => {
+              handleBrowserPrintAll();
+            }}
+            className="rounded border border-border px-3 py-1.5 text-xs text-foreground hover:bg-surface-strong"
+          >
+            Print All Views (Browser)
           </button>
           <button
             type="button"

@@ -3,3 +3,32 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@media print {
+  /* Hide all UI chrome */
+  .workspace-sidebar,
+  .workspace-toolbar,
+  .plan-view-header,
+  .tool-palette,
+  .inspector-panel,
+  .status-bar,
+  .project-browser,
+  [data-testid="options-bar"],
+  [data-testid="print-plot-dialog"],
+  nav,
+  header {
+    display: none !important;
+  }
+
+  /* Show only the sheet canvas */
+  .sheet-canvas-wrapper,
+  [data-testid="sheet-canvas"] {
+    display: block !important;
+    page-break-inside: avoid;
+  }
+
+  body {
+    background: white;
+    margin: 0;
+  }
+}

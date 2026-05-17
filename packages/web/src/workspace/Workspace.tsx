@@ -135,6 +135,7 @@ import type { SimpleGlobalParam } from './ManageGlobalParamsDialog';
 import { DimensionStyleDialog } from './DimensionStyleDialog';
 import { ViewRangeDialog } from './ViewRangeDialog';
 import { VisibilityGraphicsDialog } from './VisibilityGraphicsDialog';
+import { PerViewVGDialog } from './PerViewVGDialog';
 import { SetWorkPlaneDialog } from './SetWorkPlaneDialog';
 import {
   coerceCheckpointRetentionLimit,
@@ -205,6 +206,7 @@ import {
 } from './sheets/sheetRecommendedViewports';
 import type { WorkspaceId } from './chrome/workspaces';
 import type { SheetMarkupShape, SheetReviewMode } from './sheets/sheetReviewUi';
+import { PrintPlotDialog } from './sheets/PrintPlotDialog';
 import {
   generateWallsFromMass,
   generateFloorsFromMass,
@@ -1088,8 +1090,10 @@ export function Workspace(): JSX.Element {
   const [dimStyleOpen, setDimStyleOpen] = useState(false);
   const [viewRangeOpen, setViewRangeOpen] = useState(false);
   const [vgOpen, setVgOpen] = useState(false);
+  const [perViewVGOpen, setPerViewVGOpen] = useState(false);
   const [projectInfoOpen, setProjectInfoOpen] = useState(false);
   const [setWorkPlaneOpen, setSetWorkPlaneOpen] = useState(false);
+  const [printPlotOpen, setPrintPlotOpen] = useState(false);
   const [trueNorthActive, setTrueNorthActive] = useState(false);
   const lensMode = useBimStore((s) => s.lensMode);
   const setLensMode = useBimStore((s) => s.setLensMode);
@@ -1998,6 +2002,33 @@ export function Workspace(): JSX.Element {
             [elementId]: {
               ...el,
               faceMaterialOverrides: Object.keys(overrides).length > 0 ? overrides : null,
+            },
+          },
+        });
+        return;
+      }
+      // §3.3.7: linework override tool — apply per-element linework override to a plan view
+      if (cmd.type === 'apply_linework_override') {
+        const { elementId, colorHex, lineWeightPx, lineDash, viewId } = cmd as {
+          elementId: string;
+          colorHex: string;
+          lineWeightPx: number;
+          lineDash?: number[];
+          viewId: string;
+        };
+        const st = useBimStore.getState();
+        const view = st.elementsById[viewId ?? activePlanViewId ?? ''];
+        if (!view || view.kind !== 'plan_view') return;
+        const existing =
+          (view as Extract<typeof view, { kind: 'plan_view' }>).lineworkOverrides ?? [];
+        const filtered = existing.filter((o) => o.elementId !== elementId);
+        const updated = [...filtered, { elementId, colorHex, lineWeightPx, lineDash }];
+        useBimStore.setState({
+          elementsById: {
+            ...st.elementsById,
+            [view.id]: {
+              ...view,
+              lineworkOverrides: updated,
             },
           },
         });
@@ -4598,6 +4629,7 @@ export function Workspace(): JSX.Element {
     <>
       <GroupEditModeBar />
       <CheatsheetModal open={cheatsheetOpen} onClose={() => setCheatsheetOpen(false)} />
+      <PrintPlotDialog open={printPlotOpen} onClose={() => setPrintPlotOpen(false)} sheets={[]} />
       <Save3dViewAsDialog
         isOpen={save3dViewAsOpen}
         suggestedName={`Saved 3D View ${Object.values(elementsById).filter((e) => e.kind === 'saved_view').length + 1}`}
@@ -4698,6 +4730,7 @@ export function Workspace(): JSX.Element {
           openProjectInfo: () => setProjectInfoOpen(true),
           setWorkPlaneOpen: (open: boolean) => setSetWorkPlaneOpen(open),
           sectionBoxFromPlan,
+          openPrintDialog: () => setPrintPlotOpen(true),
         }}
       />
       <FamilyLibraryPanel
@@ -4963,6 +4996,21 @@ export function Workspace(): JSX.Element {
           }
         />
       ) : null}
+      {/* §1.6.10 — per-view category visibility/graphics override dialog */}
+      <PerViewVGDialog
+        open={perViewVGOpen}
+        onClose={() => setPerViewVGOpen(false)}
+        activePlanViewId={activePlanViewId ?? null}
+        elementsById={elementsById}
+        onApply={(viewId, overrides) =>
+          void onSemanticCommand({
+            type: 'updateElementProperty',
+            elementId: viewId,
+            key: 'viewCategoryOverrides',
+            value: overrides,
+          })
+        }
+      />
       <SetWorkPlaneDialog
         open={setWorkPlaneOpen}
         onClose={() => setSetWorkPlaneOpen(false)}

@@ -1202,11 +1202,43 @@ registerCommand({
 });
 
 registerCommand({
+  id: 'tool.conical-roof',
+  label: 'Conical Roof',
+  keywords: ['conical roof', 'cone roof', 'round roof', 'turret roof'],
+  category: 'command',
+  invoke: (ctx) => startPlanTool(ctx, 'conical-roof'),
+});
+
+registerCommand({
+  id: 'tool.dome-roof',
+  label: 'Dome Roof',
+  keywords: ['dome roof', 'dome', 'spherical roof', 'onion dome'],
+  category: 'command',
+  invoke: (ctx) => startPlanTool(ctx, 'dome-roof'),
+});
+
+registerCommand({
+  id: 'tool.spire-roof',
+  label: 'Spire Roof',
+  keywords: ['spire roof', 'spire', 'steeple', 'church spire', 'needle roof'],
+  category: 'command',
+  invoke: (ctx) => startPlanTool(ctx, 'spire-roof'),
+});
+
+registerCommand({
   id: 'tool.paint',
   label: 'Paint',
   keywords: ['paint', 'face', 'material override', 'color face'],
   category: 'command',
   invoke: (ctx) => startPlanTool(ctx, 'paint'),
+});
+
+registerCommand({
+  id: 'tool.linework',
+  label: 'Linework Override',
+  keywords: ['linework', 'linework override', 'line color', 'line weight', 'line style'],
+  category: 'tool',
+  invoke: (ctx) => startPlanTool(ctx, 'linework'),
 });
 
 registerCommand({
@@ -2366,5 +2398,16 @@ registerCommand({
       type: 'mass_generate_roof',
       massId: ctx.selectedElementIds?.[0] ?? '',
     });
+  },
+});
+
+// §6.5 — Print Current View via browser
+registerCommand({
+  id: 'file.print-current-view',
+  label: 'Print Current View…',
+  keywords: ['print', 'plot', 'browser print'],
+  category: 'command',
+  invoke: (ctx) => {
+    ctx.openPrintDialog?.();
   },
 });
