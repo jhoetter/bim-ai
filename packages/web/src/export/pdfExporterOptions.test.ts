@@ -21,3 +21,16 @@ describe('paperSizeMm — §12.4.5', () => {
     expect(pageMmW).toBeGreaterThan(pageMmH);
   });
 });
+
+describe('PDF exporter options — §12.4.5', () => {
+  it('paperSizeMm includes A3', () => {
+    const a3 = paperSizeMm('A3');
+    expect(a3).toBeDefined();
+    expect(a3.widthMm).toBe(297);
+    expect(a3.heightMm).toBe(420);
+  });
+
+  it('paperSizeMm A4 width is 210', () => {
+    expect(paperSizeMm('A4').widthMm).toBe(210);
+  });
+});

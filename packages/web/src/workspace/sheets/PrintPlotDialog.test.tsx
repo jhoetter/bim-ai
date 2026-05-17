@@ -23,7 +23,7 @@ describe('PrintPlotDialog — §6.5 + §12.4.5', () => {
 
   it('paper size select has A4, A3, A2, A1, A0 options', () => {
     render(<PrintPlotDialog open={true} onClose={noopClose} sheets={mockSheets} />);
-    const select = screen.getByTestId('print-paper-size') as HTMLSelectElement;
+    const select = screen.getByTestId('print-paper-size-select') as HTMLSelectElement;
     const values = Array.from(select.options).map((o) => o.value);
     expect(values).toContain('A4');
     expect(values).toContain('A3');
@@ -43,5 +43,24 @@ describe('PrintPlotDialog — §6.5 + §12.4.5', () => {
   it('export pdf button exists', () => {
     render(<PrintPlotDialog open={true} onClose={noopClose} sheets={mockSheets} />);
     expect(screen.getByTestId('print-export-pdf')).toBeDefined();
+  });
+});
+
+describe('print/plot dialog — §12.4.5', () => {
+  it('renders print-paper-size-select', () => {
+    render(<PrintPlotDialog open={true} onClose={noopClose} sheets={mockSheets} />);
+    expect(screen.getByTestId('print-paper-size-select')).toBeDefined();
+  });
+
+  it('renders print-all-sheets-btn', () => {
+    render(<PrintPlotDialog open={true} onClose={noopClose} sheets={mockSheets} />);
+    expect(screen.getByTestId('print-all-sheets-btn')).toBeDefined();
+  });
+
+  it('paper size select includes A3 option', () => {
+    render(<PrintPlotDialog open={true} onClose={noopClose} sheets={mockSheets} />);
+    const select = screen.getByTestId('print-paper-size-select') as HTMLSelectElement;
+    const values = Array.from(select.options).map((o) => o.value);
+    expect(values).toContain('A3');
   });
 });

@@ -131,6 +131,8 @@ export type PaletteContext = {
   openProjectInfo?: () => void;
   /** §6.1.3: derive a 3D section box from the active plan view crop region. */
   sectionBoxFromPlan?: () => void;
+  /** §7.3.1: open the Set Work Plane dialog. */
+  setWorkPlaneOpen?: (open: boolean) => void;
   /** Dynamic navigable views/sheets/schedules to surface in the palette. */
   views?: Array<{ id: string; label: string; keywords: string }>;
   /** Dynamic plan view templates that can be applied to the active plan view. */

@@ -10,7 +10,13 @@ import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
 import { SSAOPass } from 'three/addons/postprocessing/SSAOPass.js';
 
-import { parseDimensionInput, type Element, type LensMode, type SavedViewElem } from '@bim-ai/core';
+import {
+  parseDimensionInput,
+  type Element,
+  type LensMode,
+  type SavedViewElem,
+  type Saved3dViewElement,
+} from '@bim-ai/core';
 import type { OrbitViewpointPersistFieldPayload } from './OrbitViewpointPersistedHud';
 
 import { useBimStore, type PlanTool } from './state/store';
@@ -5264,6 +5270,24 @@ export function Viewport({
     setCurrentElevation(snap.elevation);
   }, []);
 
+  const saved3dViewsList = useMemo(
+    () =>
+      Object.values(elementsById).filter(
+        (el): el is Saved3dViewElement => el.kind === 'saved_3d_view',
+      ),
+    [elementsById],
+  );
+
+  const handleOrientSaved = useCallback((view: Saved3dViewElement): void => {
+    useBimStore.getState().setOrbitCameraFromViewpointMm({
+      position: { xMm: view.cameraMm.x, yMm: view.cameraMm.y, zMm: view.cameraMm.z },
+      target: { xMm: view.targetMm.x, yMm: view.targetMm.y, zMm: view.targetMm.z },
+      up: view.upVector
+        ? { xMm: view.upVector.x, yMm: view.upVector.y, zMm: view.upVector.z }
+        : { xMm: 0, yMm: 1, zMm: 0 },
+    });
+  }, []);
+
   const overlayTitleInstruction = useMemo((): { title: string; instruction: string } | null => {
     if (!direct3dAuthoringActive || !authoringOverlay) return null;
     if (
@@ -5517,6 +5541,8 @@ export function Viewport({
           currentElevation={currentElevation}
           onPick={handleViewCubePick}
           onDrag={handleViewCubeDrag}
+          savedViews={saved3dViewsList}
+          onOrientSaved={handleOrientSaved}
         />
       </div>
 

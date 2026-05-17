@@ -2,6 +2,7 @@ import type { Element } from '@bim-ai/core';
 
 import { flipWallLocationLineSide } from '../geometry/wallConnectivity';
 import { stairBoundaryMm } from '../plan/stairBoundingBox';
+import { getToolForElementKind } from '../plan/createSimilar';
 import type { ContextMenuItem } from './ElementContextMenu';
 
 export function contextMenuItemsForElement(
@@ -165,6 +166,21 @@ export function contextMenuItemsForElement(
   if (items.length > 0) {
     items.push({ label: '', separator: true, onClick: () => {} });
   }
+  // §3.3.9 — "Create Similar" — activate the placement tool for the same element kind.
+  if (getToolForElementKind(el.kind) !== null) {
+    items.push({
+      label: 'Create Similar',
+      shortcut: 'CS',
+      onClick: () => dispatch({ type: 'create_similar', elementId: el.id }),
+    });
+  }
+  // §1.8.1 — "Select All Instances" — selects all elements of the same kind
+  // in the model. Mirrors the palette command `selection.select-all-instances`.
+  items.push({
+    label: 'Select All Instances',
+    onClick: () => dispatch({ type: 'selectSimilar', kind: el.kind, levelId: '' }),
+  });
+  items.push({ label: '', separator: true, onClick: () => {} });
   items.push({
     label: 'Delete',
     onClick: () => dispatch({ type: 'deleteElement', elementId: el.id }),

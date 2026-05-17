@@ -48,6 +48,12 @@ export type PlanViewHeaderProps = {
   onPhaseFilterModeChange?: (
     mode: 'new_construction' | 'demolition' | 'existing' | 'as_built' | null,
   ) => void;
+  /** §6.4.1: canvas width in px — used to compute callout scale indicator. */
+  canvasWidthPx?: number;
+  /** §13.1.3: whether the color fill legend panel is visible. */
+  legendVisible?: boolean;
+  /** §13.1.3: called when the user clicks the Legend toggle button. */
+  onLegendToggle?: () => void;
 };
 
 const PHASE_FILTER_MODE_LABELS: Record<string, string> = {
@@ -75,11 +81,36 @@ export function PlanViewHeader({
   onTrueNorthToggle,
   phaseFilterMode,
   onPhaseFilterModeChange,
+  canvasWidthPx,
+  legendVisible = false,
+  onLegendToggle,
 }: PlanViewHeaderProps): JSX.Element {
   const [viewRangeOpen, setViewRangeOpen] = useState(false);
   const [colorSchemeOpen, setColorSchemeOpen] = useState(false);
 
   const viewRange = resolveViewRange(elementsById ?? {}, activePlanViewId ?? undefined);
+
+  // §6.4.1 — callout view badge + scale
+  const activePlanEl =
+    activePlanViewId && elementsById ? elementsById[activePlanViewId] : undefined;
+  const isCalloutView =
+    activePlanEl?.kind === 'plan_view' && activePlanEl.planViewSubtype === 'callout';
+  const calloutName = isCalloutView ? activePlanEl.name : undefined;
+
+  let calloutScaleDisplay: number | undefined;
+  if (
+    isCalloutView &&
+    activePlanEl.kind === 'plan_view' &&
+    activePlanEl.cropMinMm &&
+    activePlanEl.cropMaxMm &&
+    canvasWidthPx &&
+    canvasWidthPx > 0
+  ) {
+    const calloutWidthMm = Math.abs(activePlanEl.cropMaxMm.xMm - activePlanEl.cropMinMm.xMm) || 1;
+    // calloutScale = calloutWidthMm / canvasWidthPx * (96 / 25.4)
+    // (approximate plan-mm per screen-px conversion)
+    calloutScaleDisplay = (calloutWidthMm / canvasWidthPx) * (96 / 25.4);
+  }
 
   return (
     <div className="plan-view-header flex items-center gap-2 px-2 py-1">
@@ -101,6 +132,32 @@ export function PlanViewHeader({
           RCP
         </span>
       ) : null}
+      {isCalloutView && calloutName ? (
+        <span
+          data-testid="callout-view-badge"
+          className="badge badge-info text-xs px-1"
+          style={{
+            padding: '1px 6px',
+            fontSize: 10,
+            fontWeight: 600,
+            border: '1px solid var(--color-border)',
+            borderRadius: 3,
+            color: 'var(--color-muted)',
+            whiteSpace: 'nowrap',
+          }}
+        >
+          Detail Callout: {calloutName}
+        </span>
+      ) : null}
+      {isCalloutView && calloutScaleDisplay !== undefined ? (
+        <span
+          data-testid="callout-view-scale"
+          className="text-xs text-muted"
+          style={{ fontSize: 10, color: 'var(--color-muted)', whiteSpace: 'nowrap' }}
+        >
+          1:{Math.round(calloutScaleDisplay)}
+        </span>
+      ) : null}
       {hasRooms && onColorSchemeApply ? (
         <button
           type="button"
@@ -118,6 +175,25 @@ export function PlanViewHeader({
           }}
         >
           Color Scheme…
+        </button>
+      ) : null}
+      {currentColorScheme && onLegendToggle ? (
+        <button
+          type="button"
+          data-testid="plan-view-legend-toggle"
+          onClick={onLegendToggle}
+          style={{
+            padding: '2px 8px',
+            fontSize: 11,
+            border: '1px solid var(--color-border)',
+            borderRadius: 4,
+            cursor: 'pointer',
+            background: legendVisible ? 'var(--color-accent, #2563eb)' : 'transparent',
+            color: legendVisible ? '#fff' : 'var(--color-foreground)',
+            whiteSpace: 'nowrap',
+          }}
+        >
+          Legend
         </button>
       ) : null}
       {activePlanViewId && onViewRangeApply ? (

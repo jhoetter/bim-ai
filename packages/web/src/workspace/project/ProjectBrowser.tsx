@@ -2151,6 +2151,8 @@ export type ProjectBrowserProps = {
   onDelete3dView?: (viewId: string) => void;
   onRename3dView?: (viewId: string, name: string) => void;
   onToggleLock3dView?: (viewId: string) => void;
+  /** §14.5 — save current camera as a named perspective view */
+  onSaveCameraView?: () => void;
 };
 
 type CtxMenu = {
@@ -2209,6 +2211,7 @@ export function ProjectBrowserV3({
   onDelete3dView,
   onRename3dView,
   onToggleLock3dView,
+  onSaveCameraView,
 }: ProjectBrowserProps): JSX.Element {
   const [search, setSearch] = useState('');
   const [ctxMenu, setCtxMenu] = useState<CtxMenu>(null);
@@ -2218,59 +2221,78 @@ export function ProjectBrowserV3({
   const [ctx3dMenu, setCtx3dMenu] = useState<{ viewId: string; x: number; y: number } | null>(null);
   const [rename3dId, setRename3dId] = useState<string | null>(null);
   const [rename3dValue, setRename3dValue] = useState('');
+  // §14.5: camera views context menu
+  const [ctxCameraMenu, setCtxCameraMenu] = useState<{
+    viewId: string;
+    x: number;
+    y: number;
+  } | null>(null);
+  const [renameCameraId, setRenameCameraId] = useState<string | null>(null);
+  const [renameCameraValue, setRenameCameraValue] = useState('');
   // Local order state for drag-reorder (maps viewId → order index override).
   const [localOrder, setLocalOrder] = useState<Record<string, number>>({});
   const dragSrc = useRef<string | null>(null);
 
   // Derive groups from elements.
-  const { viewRows, scheduleRows, linkRows, phaseRows, saved3dRows } = useMemo(() => {
-    const lower = search.toLowerCase();
-    const matches = (name: string) => !lower || name.toLowerCase().includes(lower);
+  const { viewRows, scheduleRows, linkRows, phaseRows, saved3dRows, cameraViewRows } =
+    useMemo(() => {
+      const lower = search.toLowerCase();
+      const matches = (name: string) => !lower || name.toLowerCase().includes(lower);
 
-    const views = elements.filter(
-      (e): e is Extract<Element, { kind: 'viewpoint' | 'saved_view' }> =>
-        (e.kind === 'viewpoint' || e.kind === 'saved_view') &&
-        matches((e as { name?: string }).name ?? e.id),
-    );
-
-    const schedules = elements.filter(
-      (e): e is Extract<Element, { kind: 'schedule' }> => e.kind === 'schedule' && matches(e.name),
-    );
-
-    const links = elements.filter(
-      (e) =>
-        (e.kind === 'image_underlay' || e.kind === 'link_model') &&
-        matches((e as { name?: string }).name ?? e.id),
-    );
-
-    const phases = elements.filter(
-      (e): e is Extract<Element, { kind: 'phase' }> =>
-        e.kind === 'phase' && matches((e as { name?: string }).name ?? e.id),
-    );
-
-    const saved3d = elements.filter(
-      (e): e is Extract<Element, { kind: 'saved_3d_view' }> =>
-        e.kind === 'saved_3d_view' && matches((e as { name?: string }).name ?? e.id),
-    );
-
-    // Apply local drag order overrides then sort.
-    const sortedViews = [...views].sort((a, b) => {
-      const oa = localOrder[a.id] ?? 0;
-      const ob = localOrder[b.id] ?? 0;
-      if (oa !== ob) return oa - ob;
-      return ((a as { name?: string }).name ?? a.id).localeCompare(
-        (b as { name?: string }).name ?? b.id,
+      const views = elements.filter(
+        (e): e is Extract<Element, { kind: 'viewpoint' | 'saved_view' }> =>
+          (e.kind === 'viewpoint' || e.kind === 'saved_view') &&
+          matches((e as { name?: string }).name ?? e.id),
       );
-    });
 
-    return {
-      viewRows: sortedViews,
-      scheduleRows: schedules,
-      linkRows: links,
-      phaseRows: phases,
-      saved3dRows: saved3d,
-    };
-  }, [elements, search, localOrder]);
+      const schedules = elements.filter(
+        (e): e is Extract<Element, { kind: 'schedule' }> =>
+          e.kind === 'schedule' && matches(e.name),
+      );
+
+      const links = elements.filter(
+        (e) =>
+          (e.kind === 'image_underlay' || e.kind === 'link_model') &&
+          matches((e as { name?: string }).name ?? e.id),
+      );
+
+      const phases = elements.filter(
+        (e): e is Extract<Element, { kind: 'phase' }> =>
+          e.kind === 'phase' && matches((e as { name?: string }).name ?? e.id),
+      );
+
+      const saved3dAll = elements.filter(
+        (e): e is Extract<Element, { kind: 'saved_3d_view' }> =>
+          e.kind === 'saved_3d_view' && matches((e as { name?: string }).name ?? e.id),
+      );
+
+      // §14.5: split saved_3d_view elements by perspective flag
+      const saved3d = saved3dAll.filter(
+        (e) => (e as { perspective?: boolean | null }).perspective !== true,
+      );
+      const cameraViews = saved3dAll.filter(
+        (e) => (e as { perspective?: boolean | null }).perspective === true,
+      );
+
+      // Apply local drag order overrides then sort.
+      const sortedViews = [...views].sort((a, b) => {
+        const oa = localOrder[a.id] ?? 0;
+        const ob = localOrder[b.id] ?? 0;
+        if (oa !== ob) return oa - ob;
+        return ((a as { name?: string }).name ?? a.id).localeCompare(
+          (b as { name?: string }).name ?? b.id,
+        );
+      });
+
+      return {
+        viewRows: sortedViews,
+        scheduleRows: schedules,
+        linkRows: links,
+        phaseRows: phases,
+        saved3dRows: saved3d,
+        cameraViewRows: cameraViews,
+      };
+    }, [elements, search, localOrder]);
 
   const closeCtx = useCallback(() => setCtxMenu(null), []);
 
@@ -2740,6 +2762,176 @@ export function ProjectBrowserV3({
               }}
             >
               Lock / Unlock
+            </button>
+          </div>
+        ) : null}
+
+        {/* §14.5 — Camera Views group */}
+        <div data-testid="browser-camera-views-group">
+          <PbGroup label={`Camera Views (${cameraViewRows.length})`}>
+            <ul style={{ listStyle: 'none', margin: 0, padding: 0 }}>
+              {cameraViewRows.map((v) => {
+                const vAny = v as { id: string; name?: string };
+                const camName = vAny.name ?? vAny.id;
+                return (
+                  <li key={vAny.id} data-testid={`browser-camera-view-${vAny.id}`}>
+                    {renameCameraId === vAny.id ? (
+                      <input
+                        autoFocus
+                        type="text"
+                        value={renameCameraValue}
+                        onChange={(e) => setRenameCameraValue(e.target.value)}
+                        onBlur={() => {
+                          if (renameCameraValue.trim())
+                            onRename3dView?.(vAny.id, renameCameraValue.trim());
+                          setRenameCameraId(null);
+                        }}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            if (renameCameraValue.trim())
+                              onRename3dView?.(vAny.id, renameCameraValue.trim());
+                            setRenameCameraId(null);
+                          }
+                          if (e.key === 'Escape') setRenameCameraId(null);
+                        }}
+                        style={{
+                          width: '100%',
+                          padding: 'var(--space-0-5) var(--space-2)',
+                          fontSize: 'var(--text-sm, 12.5px)',
+                          background: 'var(--color-background)',
+                          color: 'var(--color-foreground)',
+                          border: '1px solid var(--color-accent)',
+                        }}
+                      />
+                    ) : (
+                      <button
+                        type="button"
+                        style={{
+                          width: '100%',
+                          textAlign: 'left',
+                          padding: 'var(--space-0-5) var(--space-3)',
+                          fontSize: 'var(--text-sm, 12.5px)',
+                          color: 'var(--color-foreground)',
+                          background: 'transparent',
+                          border: 'none',
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 'var(--space-1)',
+                        }}
+                        onDoubleClick={() => onRestore3dView?.(vAny.id)}
+                        onContextMenu={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          setCtxCameraMenu({ viewId: vAny.id, x: e.clientX, y: e.clientY });
+                        }}
+                      >
+                        📷 {camName}
+                      </button>
+                    )}
+                  </li>
+                );
+              })}
+            </ul>
+            <button
+              type="button"
+              data-testid="browser-save-camera-view"
+              onClick={() => onSaveCameraView?.()}
+              style={{
+                display: 'block',
+                width: '100%',
+                textAlign: 'left',
+                padding: 'var(--space-0-5) var(--space-3)',
+                fontSize: 'var(--text-sm, 12.5px)',
+                color: 'var(--color-accent)',
+                background: 'transparent',
+                border: 'none',
+                cursor: 'pointer',
+              }}
+            >
+              + Save current camera
+            </button>
+          </PbGroup>
+        </div>
+
+        {/* Camera views context menu */}
+        {ctxCameraMenu ? (
+          <div
+            data-testid="pb-camera-context-menu"
+            style={{
+              position: 'fixed',
+              left: ctxCameraMenu.x,
+              top: ctxCameraMenu.y,
+              background: 'var(--color-background)',
+              border: '1px solid var(--color-border)',
+              borderRadius: 'var(--radius-sm, 4px)',
+              zIndex: 9999,
+              minWidth: 120,
+              padding: 'var(--space-1) 0',
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              type="button"
+              data-testid="pb-camera-ctx-restore"
+              style={{
+                display: 'block',
+                width: '100%',
+                textAlign: 'left',
+                padding: 'var(--space-1) var(--space-3)',
+                background: 'transparent',
+                border: 'none',
+                cursor: 'pointer',
+                fontSize: 'var(--text-sm, 12.5px)',
+              }}
+              onClick={() => {
+                onRestore3dView?.(ctxCameraMenu.viewId);
+                setCtxCameraMenu(null);
+              }}
+            >
+              Restore
+            </button>
+            <button
+              type="button"
+              data-testid="pb-camera-ctx-rename"
+              style={{
+                display: 'block',
+                width: '100%',
+                textAlign: 'left',
+                padding: 'var(--space-1) var(--space-3)',
+                background: 'transparent',
+                border: 'none',
+                cursor: 'pointer',
+                fontSize: 'var(--text-sm, 12.5px)',
+              }}
+              onClick={() => {
+                const el = cameraViewRows.find((e) => e.id === ctxCameraMenu.viewId);
+                setRenameCameraValue((el as { name?: string } | undefined)?.name ?? '');
+                setRenameCameraId(ctxCameraMenu.viewId);
+                setCtxCameraMenu(null);
+              }}
+            >
+              Rename
+            </button>
+            <button
+              type="button"
+              data-testid="pb-camera-ctx-delete"
+              style={{
+                display: 'block',
+                width: '100%',
+                textAlign: 'left',
+                padding: 'var(--space-1) var(--space-3)',
+                background: 'transparent',
+                border: 'none',
+                cursor: 'pointer',
+                fontSize: 'var(--text-sm, 12.5px)',
+              }}
+              onClick={() => {
+                onDelete3dView?.(ctxCameraMenu.viewId);
+                setCtxCameraMenu(null);
+              }}
+            >
+              Delete
             </button>
           </div>
         ) : null}

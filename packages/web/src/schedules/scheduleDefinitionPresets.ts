@@ -19,6 +19,7 @@ export type SchedulePresetCategory =
   | 'cost_estimate'
   | 'element_cost_group'
   | 'scenario_delta'
+  | 'family_instance'
   | EnergyScheduleCategory;
 
 export type SchedulePresetFieldToken = 'required' | 'optional';
@@ -520,6 +521,20 @@ const PRESETS: ScheduleDefinitionPreset[] = [
       { fieldKey: 'deltaCost', token: 'required', aggregation: 'sum' },
       { fieldKey: 'rowCount', token: 'required', aggregation: 'sum' },
       { fieldKey: 'sourceElementIds', token: 'required', csvExportHint: 'Traceable source ids' },
+    ],
+  },
+  {
+    id: 'furniture',
+    name: 'Furniture & Components',
+    category: 'family_instance',
+    fields: [
+      { fieldKey: 'name', token: 'required', csvExportHint: 'Instance name' },
+      { fieldKey: 'typeName', token: 'optional', csvExportHint: 'Family type name' },
+      { fieldKey: 'levelId', token: 'optional', csvExportHint: 'Host level id' },
+      { fieldKey: 'widthMm', token: 'optional', unitHint: 'mm' },
+      { fieldKey: 'depthMm', token: 'optional', unitHint: 'mm' },
+      { fieldKey: 'heightMm', token: 'optional', unitHint: 'mm' },
+      { fieldKey: 'count', token: 'optional', aggregation: 'count' },
     ],
   },
 ];

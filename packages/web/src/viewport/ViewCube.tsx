@@ -12,6 +12,7 @@ import {
   forwardRef,
 } from 'react';
 import * as THREE from 'three';
+import type { Saved3dViewElement } from '@bim-ai/core';
 import {
   alignmentForPick,
   compassLabelFromAzimuth,
@@ -38,6 +39,10 @@ export interface ViewCubeProps {
   onDrag?: (dxPx: number, dyPx: number) => void;
   onSetHome?: () => void;
   className?: string;
+  /** Saved 3D views to show in the right-click orient menu. */
+  savedViews?: Saved3dViewElement[];
+  /** Called when the user selects a saved view from the right-click menu. */
+  onOrientSaved?: (view: Saved3dViewElement) => void;
 }
 
 const WIDGET_SIZE = 184;
@@ -210,6 +215,8 @@ export function ViewCube({
   onPick,
   onDrag,
   className,
+  savedViews,
+  onOrientSaved,
 }: ViewCubeProps): JSX.Element {
   const dragRef = useRef({
     dragging: false,
@@ -226,6 +233,8 @@ export function ViewCube({
     null,
   );
   const [hoverTarget, setHoverTarget] = useState<HoverTarget>(null);
+  const [contextMenuOpen, setContextMenuOpen] = useState(false);
+  const contextMenuRef = useRef<HTMLDivElement | null>(null);
   const threeRef = useRef<ViewCubeThreeHandle | null>(null);
 
   const displayAzimuth = dragPreview?.azimuth ?? currentAzimuth;
@@ -242,6 +251,39 @@ export function ViewCube({
       onPick(pick, alignmentForPick(pick));
     },
     [onPick],
+  );
+
+  // Dismiss context menu on click outside.
+  useEffect(() => {
+    if (!contextMenuOpen) return;
+    function handleOutside(e: Event) {
+      if (contextMenuRef.current && !contextMenuRef.current.contains(e.target as Node)) {
+        setContextMenuOpen(false);
+      }
+    }
+    document.addEventListener('mousedown', handleOutside);
+    return () => document.removeEventListener('mousedown', handleOutside);
+  }, [contextMenuOpen]);
+
+  const handleContextMenu = useCallback((e: MouseEvent) => {
+    e.preventDefault();
+    setContextMenuOpen((prev) => !prev);
+  }, []);
+
+  const orientToFace = useCallback(
+    (face: ViewCubeFace) => {
+      setContextMenuOpen(false);
+      emit({ kind: 'face', face });
+    },
+    [emit],
+  );
+
+  const orientToSaved = useCallback(
+    (view: Saved3dViewElement) => {
+      setContextMenuOpen(false);
+      onOrientSaved?.(view);
+    },
+    [onOrientSaved],
   );
 
   function handleKey(event: KeyboardEvent<HTMLDivElement>): void {
@@ -332,6 +374,8 @@ export function ViewCube({
     }
   }, []);
 
+  const sortedSavedViews = (savedViews ?? []).slice().sort((a, b) => a.name.localeCompare(b.name));
+
   return (
     <div
       data-testid="view-cube"
@@ -343,12 +387,76 @@ export function ViewCube({
     >
       <ViewCubeCompass currentAzimuth={currentAzimuth} onPick={emit} onDrag={onDrag} />
 
+      {contextMenuOpen && (
+        <div
+          ref={contextMenuRef}
+          data-testid="viewcube-context-menu"
+          className="absolute right-0 top-full mt-1 z-50 bg-surface border border-border rounded shadow-md py-1 min-w-[160px]"
+          onMouseDown={(e) => e.stopPropagation()}
+        >
+          <div className="px-2 py-1 text-xs text-muted font-medium">Orient to View</div>
+          <button
+            type="button"
+            data-testid="viewcube-orient-top"
+            className="w-full text-left px-3 py-1 text-xs hover:bg-accent/10 text-foreground"
+            onClick={() => orientToFace('TOP')}
+          >
+            Top (Plan)
+          </button>
+          <button
+            type="button"
+            data-testid="viewcube-orient-front"
+            className="w-full text-left px-3 py-1 text-xs hover:bg-accent/10 text-foreground"
+            onClick={() => orientToFace('FRONT')}
+          >
+            Front
+          </button>
+          <button
+            type="button"
+            data-testid="viewcube-orient-back"
+            className="w-full text-left px-3 py-1 text-xs hover:bg-accent/10 text-foreground"
+            onClick={() => orientToFace('BACK')}
+          >
+            Back
+          </button>
+          <button
+            type="button"
+            data-testid="viewcube-orient-left"
+            className="w-full text-left px-3 py-1 text-xs hover:bg-accent/10 text-foreground"
+            onClick={() => orientToFace('LEFT')}
+          >
+            Left
+          </button>
+          <button
+            type="button"
+            data-testid="viewcube-orient-right"
+            className="w-full text-left px-3 py-1 text-xs hover:bg-accent/10 text-foreground"
+            onClick={() => orientToFace('RIGHT')}
+          >
+            Right
+          </button>
+          {sortedSavedViews.length > 0 && <hr className="my-1 border-border" />}
+          {sortedSavedViews.map((v) => (
+            <button
+              key={v.id}
+              type="button"
+              data-testid={`viewcube-orient-saved-${v.id}`}
+              className="w-full text-left px-3 py-1 text-xs hover:bg-accent/10 text-foreground"
+              onClick={() => orientToSaved(v)}
+            >
+              {v.name}
+            </button>
+          ))}
+        </div>
+      )}
+
       <div
         data-testid="view-cube-stage"
         onPointerDown={handlePointerDown}
         onPointerMove={handlePointerMove}
         onClickCapture={handleClickCapture}
         onPointerLeave={() => setHoverTarget(null)}
+        onContextMenu={handleContextMenu}
         style={{
           position: 'absolute',
           left: STAGE_LEFT,

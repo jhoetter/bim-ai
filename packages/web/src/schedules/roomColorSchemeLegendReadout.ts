@@ -1,5 +1,69 @@
 /** Readout helpers for room color scheme override evidence and legend digest (prompt-2 v1 closeout). */
 
+import type { Element } from '@bim-ai/core';
+
+/** A single row in the color fill legend panel (§13.1.3). */
+export type LegendRow = {
+  colorHex: string;
+  label: string;
+  count?: number;
+  areaSqm?: number;
+};
+
+/**
+ * Build legend rows from a plan_view colorScheme and the full element map.
+ * Counts how many rooms fall into each category value so the legend panel can
+ * show a count badge.
+ */
+export function buildRoomColorSchemeLegend(
+  elementsById: Record<string, Element>,
+  colorScheme: { category: string; colorMap: Record<string, string> } | null | undefined,
+): LegendRow[] {
+  if (!colorScheme || Object.keys(colorScheme.colorMap).length === 0) return [];
+
+  const { category, colorMap } = colorScheme;
+
+  // Count rooms per category value
+  const counts: Record<string, number> = {};
+  for (const el of Object.values(elementsById)) {
+    if (el.kind !== 'room') continue;
+    let value: string;
+    switch (category) {
+      case 'name':
+        value = (el as { name?: string }).name?.trim() || '(unnamed)';
+        break;
+      case 'department':
+        value = (el as { department?: string | null }).department?.trim() || '(no department)';
+        break;
+      case 'area': {
+        const areaMm2 = (el as { area?: number | null }).area;
+        if (areaMm2 == null) {
+          value = '(no area)';
+        } else {
+          const sqM = areaMm2 / 1_000_000;
+          const bucket = Math.floor(sqM / 10) * 10;
+          value = `${bucket}–${bucket + 10} m²`;
+        }
+        break;
+      }
+      case 'occupancy':
+        value = (el as { occupancy?: string | null }).occupancy?.trim() || '(no occupancy)';
+        break;
+      default:
+        value = '—';
+    }
+    counts[value] = (counts[value] ?? 0) + 1;
+  }
+
+  return Object.entries(colorMap)
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([label, colorHex]) => ({
+      colorHex,
+      label,
+      count: counts[label],
+    }));
+}
+
 export type RoomColorSchemeOverrideRow = {
   programmeCode?: string | null;
   department?: string | null;

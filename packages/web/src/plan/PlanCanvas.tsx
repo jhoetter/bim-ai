@@ -197,6 +197,7 @@ import { elevationFromWall } from '../lib/sectionElevationFromWall';
 import { WallContextMenu, type WallContextMenuCommand } from '../workspace/viewport';
 import { ElementContextMenu } from '../workspace/ElementContextMenu';
 import { contextMenuItemsForElement } from '../workspace/contextMenuItems';
+import { createSimilarPayload } from './createSimilar';
 import { SketchCanvas, type MmToScreen, type PointerToMm } from './SketchCanvas';
 import { snapPointToNearestWallFaceMm } from './SketchCanvasPickWalls';
 import { moveDeltaMm } from './moveTool';
@@ -204,6 +205,7 @@ import { wallOffsetMoveCommandFromPoint } from './wallOffsetTool';
 import { parseTypedRotateAngle, rotateDeltaAngleFromReference } from './rotateTool';
 import { selectNextConnectedWallByTab } from './wallChainSelection';
 import { elementInSelectionBoxMm } from './boxSelection';
+import { nextTabSelection } from './tabCycleSelection';
 import { buildWallRadiusFillet, type MmPoint } from './wallRadiusFillet';
 import {
   nextWallDraftAfterCommit,
@@ -249,6 +251,8 @@ import {
   type SubdivisionCategory,
 } from '../workspace/authoring';
 import type { ColorSchemeRoomEntry } from './ColorSchemeDialog';
+import { ColorSchemeLegend } from './ColorSchemeLegend';
+import { buildRoomColorSchemeLegend } from '../schedules/roomColorSchemeLegendReadout';
 
 function readPlanToken(name: string, fallback: string): string {
   const v = liveTokenReader().read(name);
@@ -618,6 +622,8 @@ export function PlanCanvas({
   } | null>(null);
   numericInputRef.current = numericInput;
   const pendingPinChordRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // §3.3.9: CS chord — Create Similar
+  const pendingCsChordRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [hudMm, setHudMm] = useState<{ xMm: number; yMm: number }>();
   const hudMmRef = useRef<{ xMm: number; yMm: number } | undefined>(undefined);
   hudMmRef.current = hudMm;
@@ -666,6 +672,8 @@ export function PlanCanvas({
     category: string;
     colorMap: Record<string, string>;
   } | null>(null);
+  // §13.1.3 — color fill legend panel visibility toggle.
+  const [legendVisible, setLegendVisible] = useState(false);
   const [pendingPlanRegion, setPendingPlanRegion] = useState<{
     x0: number;
     x1: number;
@@ -920,6 +928,34 @@ export function PlanCanvas({
     }
     return out;
   }, [elementsById, lvlId]);
+
+  // §13.1.3 — color fill legend rows derived from the active plan view's colorScheme field.
+  const activePlanViewColorScheme = useMemo(() => {
+    if (!activePlanViewId) return null;
+    const el = elementsById[activePlanViewId];
+    if (!el || el.kind !== 'plan_view') return null;
+    return el.colorScheme ?? null;
+  }, [activePlanViewId, elementsById]);
+
+  const colorSchemeLegendRows = useMemo(
+    () => buildRoomColorSchemeLegend(elementsById, activePlanViewColorScheme),
+    [elementsById, activePlanViewColorScheme],
+  );
+
+  const colorSchemeLegendTitle = useMemo(() => {
+    switch (activePlanViewColorScheme?.category) {
+      case 'name':
+        return 'By Name';
+      case 'department':
+        return 'By Department';
+      case 'area':
+        return 'By Area';
+      case 'occupancy':
+        return 'By Occupancy';
+      default:
+        return 'Color Scheme';
+    }
+  }, [activePlanViewColorScheme]);
 
   useEffect(() => {
     let cancel = false;
@@ -5539,6 +5575,36 @@ export function PlanCanvas({
           return;
         }
       }
+      // §1.8.1 — Generic Tab cycle: when no wall-chain candidate was found
+      // (or nothing is selected), cycle through all elements whose bounding
+      // box contains the current cursor position in plan space. Sorted by id
+      // for determinism. Works in select mode only.
+      if (ev.key === 'Tab' && planTool === 'select') {
+        const hoverMm = hudMmRef.current;
+        if (hoverMm) {
+          const pointRect = { xMm: hoverMm.xMm, yMm: hoverMm.yMm };
+          const hoveredIds = Object.values(elementsById)
+            .filter((el) => {
+              if (!el) return false;
+              if (displayLevelId && (el as { levelId?: string }).levelId !== displayLevelId)
+                return false;
+              // Point-containment: treat the cursor as a zero-area box.
+              return elementInSelectionBoxMm(el, pointRect, pointRect, 'crossing');
+            })
+            .map((el) => el!.id)
+            .sort();
+          if (hoveredIds.length > 0) {
+            const currentSel = useBimStore.getState().selectedId ?? null;
+            const nextId = nextTabSelection(hoveredIds, currentSel);
+            if (nextId) {
+              ev.preventDefault();
+              selectEl(nextId);
+              useBimStore.setState({ selectedIds: [] });
+              return;
+            }
+          }
+        }
+      }
       if (ev.key === 'Tab' && planTool === 'wall') {
         ev.preventDefault();
         const st = useBimStore.getState();
@@ -6225,6 +6291,30 @@ export function PlanCanvas({
           ),
         ];
         if (ids.length > 0) void onSemanticCommand({ type: 'pinElements', elementIds: ids });
+        return;
+      }
+      // §3.3.9 — CS chord: Create Similar — press C then S within 500ms.
+      if (ev.key === 'c' || ev.key === 'C') {
+        if (pendingCsChordRef.current) clearTimeout(pendingCsChordRef.current);
+        pendingCsChordRef.current = setTimeout(() => {
+          pendingCsChordRef.current = null;
+        }, 500);
+        return;
+      }
+      if ((ev.key === 's' || ev.key === 'S') && pendingCsChordRef.current) {
+        clearTimeout(pendingCsChordRef.current);
+        pendingCsChordRef.current = null;
+        const st = useBimStore.getState();
+        const selectedId = st.selectedId ?? st.selectedIds[0];
+        if (selectedId) {
+          const el = st.elementsById[selectedId];
+          if (el) {
+            const payload = createSimilarPayload(el);
+            if (payload) {
+              setPlanTool(payload.toolId);
+            }
+          }
+        }
         return;
       }
     };
@@ -7062,6 +7152,13 @@ export function PlanCanvas({
           </div>
         ) : null}
       </div>
+      {/* §13.1.3 — color fill legend panel overlay */}
+      <ColorSchemeLegend
+        rows={colorSchemeLegendRows}
+        title={colorSchemeLegendTitle}
+        visible={legendVisible}
+        onClose={() => setLegendVisible(false)}
+      />
       {/* B03 — empty-state overlay (spec §14.7): shown when the active level has no elements */}
       {levelIsEmpty && (
         <div className="pointer-events-none absolute inset-0 z-10 flex flex-col items-center justify-center gap-2 text-center">

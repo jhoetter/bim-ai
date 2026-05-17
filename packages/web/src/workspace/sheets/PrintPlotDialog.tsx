@@ -83,7 +83,7 @@ export function PrintPlotDialog({
         <label className="flex flex-col gap-1 text-xs text-foreground">
           Paper size
           <select
-            data-testid="print-paper-size"
+            data-testid="print-paper-size-select"
             value={paperSize}
             onChange={(e) => setPaperSize(e.currentTarget.value as PaperSize)}
             className="h-7 rounded border border-border bg-surface px-2 text-xs text-foreground"
@@ -142,6 +142,33 @@ export function PrintPlotDialog({
             className="rounded border border-border px-3 py-1.5 text-xs text-foreground hover:bg-surface-strong"
           >
             Cancel
+          </button>
+          <button
+            type="button"
+            data-testid="print-all-sheets-btn"
+            disabled={exporting}
+            onClick={async () => {
+              if (exporting) return;
+              setExporting(true);
+              try {
+                const validSheets = sheets
+                  .filter((s) => s.element !== null)
+                  .map((s) => ({ element: s.element as HTMLElement | HTMLCanvasElement }));
+                if (validSheets.length > 0) {
+                  await exportSheetsToPdf(validSheets, {
+                    paperSize,
+                    orientation,
+                    filename: 'all-sheets.pdf',
+                  });
+                }
+              } finally {
+                setExporting(false);
+                onClose();
+              }
+            }}
+            className="rounded border border-border px-3 py-1.5 text-xs text-foreground hover:bg-surface-strong disabled:opacity-60"
+          >
+            Print All Sheets
           </button>
           <button
             type="button"

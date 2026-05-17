@@ -380,6 +380,62 @@ registerCommand({
   invoke: (ctx) => updateActivePlanViewProperty(ctx, 'planDetailLevel', 'fine'),
 });
 
+// Orient 3D view commands (§3.2)
+registerCommand({
+  id: 'view.orient-top',
+  label: 'Orient 3D View to Top (Plan)',
+  keywords: ['orient', 'top', 'plan', '3d', 'view'],
+  category: 'command',
+  isAvailable: is3dContext,
+  invoke: (ctx) => {
+    ctx.dispatchCommand?.({ type: 'orient_3d_view', orientation: 'top' });
+  },
+});
+
+registerCommand({
+  id: 'view.orient-front',
+  label: 'Orient 3D View to Front',
+  keywords: ['orient', 'front', '3d', 'view'],
+  category: 'command',
+  isAvailable: is3dContext,
+  invoke: (ctx) => {
+    ctx.dispatchCommand?.({ type: 'orient_3d_view', orientation: 'front' });
+  },
+});
+
+registerCommand({
+  id: 'view.orient-back',
+  label: 'Orient 3D View to Back',
+  keywords: ['orient', 'back', '3d', 'view'],
+  category: 'command',
+  isAvailable: is3dContext,
+  invoke: (ctx) => {
+    ctx.dispatchCommand?.({ type: 'orient_3d_view', orientation: 'back' });
+  },
+});
+
+registerCommand({
+  id: 'view.orient-left',
+  label: 'Orient 3D View to Left',
+  keywords: ['orient', 'left', '3d', 'view'],
+  category: 'command',
+  isAvailable: is3dContext,
+  invoke: (ctx) => {
+    ctx.dispatchCommand?.({ type: 'orient_3d_view', orientation: 'left' });
+  },
+});
+
+registerCommand({
+  id: 'view.orient-right',
+  label: 'Orient 3D View to Right',
+  keywords: ['orient', 'right', '3d', 'view'],
+  category: 'command',
+  isAvailable: is3dContext,
+  invoke: (ctx) => {
+    ctx.dispatchCommand?.({ type: 'orient_3d_view', orientation: 'right' });
+  },
+});
+
 // Navigate commands
 registerCommand({
   id: 'navigate.plan',
@@ -1835,6 +1891,17 @@ registerCommand({
 });
 
 registerCommand({
+  id: 'view.save-camera-view',
+  label: 'Save Current Camera as Named View',
+  keywords: ['camera', 'view', 'save', 'named', 'perspective'],
+  category: 'command',
+  isAvailable: is3dContext,
+  invoke: (ctx) => {
+    ctx.dispatchCommand?.({ type: 'save_camera_view', name: `Camera ${Date.now()}` });
+  },
+});
+
+registerCommand({
   id: 'view.3d.sun-settings',
   label: '3D: Sun Settings',
   keywords: ['3d', 'sun', 'shadows', 'solar', 'time of day'],
@@ -2183,6 +2250,17 @@ registerCommand({
   invoke: (ctx) => startPlanTool(ctx, 'model-line'),
 });
 
+// §7.3.1: Set Work Plane
+registerCommand({
+  id: 'view.set-work-plane',
+  label: 'Set Work Plane',
+  keywords: ['work plane', 'reference plane', 'set plane'],
+  category: 'command',
+  invoke: (ctx) => {
+    ctx.setWorkPlaneOpen?.(true);
+  },
+});
+
 // §1.6.10: hide / isolate / reset hidden elements in the active plan view
 registerCommand({
   id: 'view.hide-selected',
@@ -2227,5 +2305,66 @@ registerCommand({
     if (ctx.activePlanViewId) {
       ctx.dispatchCommand?.({ type: 'reset_hidden_in_view', viewId: ctx.activePlanViewId });
     }
+  },
+});
+
+// §11.5 — Massing → BIM workflow commands
+registerCommand({
+  id: 'mass.generate-walls',
+  label: 'Generate Walls from Mass',
+  keywords: ['mass', 'wall', 'generate', 'face'],
+  category: 'command',
+  invoke: (ctx) => {
+    ctx.dispatchCommand?.({
+      type: 'mass_generate_walls',
+      massId: ctx.selectedElementIds?.[0] ?? '',
+    });
+  },
+});
+
+registerCommand({
+  id: 'mass.generate-floors',
+  label: 'Generate Floors from Mass',
+  keywords: ['mass', 'floor', 'slab', 'level', 'generate'],
+  category: 'command',
+  invoke: (ctx) => {
+    ctx.dispatchCommand?.({
+      type: 'mass_generate_floors',
+      massId: ctx.selectedElementIds?.[0] ?? '',
+    });
+  },
+});
+
+registerCommand({
+  id: 'mass.generate-roof',
+  label: 'Generate Roof from Mass',
+  keywords: ['mass', 'roof', 'generate', 'top'],
+  category: 'command',
+  invoke: (ctx) => {
+    ctx.dispatchCommand?.({
+      type: 'mass_generate_roof',
+      massId: ctx.selectedElementIds?.[0] ?? '',
+    });
+  },
+});
+
+registerCommand({
+  id: 'mass.generate-all',
+  label: 'Generate All (Walls + Floors + Roof) from Mass',
+  keywords: ['mass', 'generate', 'all', 'bim'],
+  category: 'command',
+  invoke: (ctx) => {
+    ctx.dispatchCommand?.({
+      type: 'mass_generate_walls',
+      massId: ctx.selectedElementIds?.[0] ?? '',
+    });
+    ctx.dispatchCommand?.({
+      type: 'mass_generate_floors',
+      massId: ctx.selectedElementIds?.[0] ?? '',
+    });
+    ctx.dispatchCommand?.({
+      type: 'mass_generate_roof',
+      massId: ctx.selectedElementIds?.[0] ?? '',
+    });
   },
 });

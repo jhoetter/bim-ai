@@ -23,6 +23,8 @@ import { Icons, type IconName } from '@bim-ai/ui';
 import { log } from '../logger';
 import { type PlanCameraHandle } from '../plan/PlanCanvas';
 import { shaftBoundaryFromStair } from '../plan/stairShaft';
+import { createSimilarPayload } from '../plan/createSimilar';
+import { equalizeWitnessSpacing } from '../plan/equalizeWitnessSpacing';
 import {
   applyCommand,
   ApiHttpError,
@@ -133,6 +135,7 @@ import type { SimpleGlobalParam } from './ManageGlobalParamsDialog';
 import { DimensionStyleDialog } from './DimensionStyleDialog';
 import { ViewRangeDialog } from './ViewRangeDialog';
 import { VisibilityGraphicsDialog } from './VisibilityGraphicsDialog';
+import { SetWorkPlaneDialog } from './SetWorkPlaneDialog';
 import {
   coerceCheckpointRetentionLimit,
   DEFAULT_CHECKPOINT_RETENTION_LIMIT,
@@ -202,6 +205,12 @@ import {
 } from './sheets/sheetRecommendedViewports';
 import type { WorkspaceId } from './chrome/workspaces';
 import type { SheetMarkupShape, SheetReviewMode } from './sheets/sheetReviewUi';
+import {
+  generateWallsFromMass,
+  generateFloorsFromMass,
+  generateRoofFromMass,
+} from '../tools/massGenerateBim';
+import type { MassNewElem } from '../tools/massToFloors';
 
 function libraryDisciplineFromLens(lens: LensMode): 'arch' | 'struct' | 'mep' | 'all' {
   if (lens === 'architecture') return 'arch';
@@ -1080,6 +1089,7 @@ export function Workspace(): JSX.Element {
   const [viewRangeOpen, setViewRangeOpen] = useState(false);
   const [vgOpen, setVgOpen] = useState(false);
   const [projectInfoOpen, setProjectInfoOpen] = useState(false);
+  const [setWorkPlaneOpen, setSetWorkPlaneOpen] = useState(false);
   const [trueNorthActive, setTrueNorthActive] = useState(false);
   const lensMode = useBimStore((s) => s.lensMode);
   const setLensMode = useBimStore((s) => s.setLensMode);
@@ -1882,6 +1892,54 @@ export function Workspace(): JSX.Element {
         });
         return;
       }
+      // §4.2.3: toggle EQ on a permanent_dimension — also equalizes witness point spacing.
+      if (cmd.type === 'toggle_dim_eq') {
+        const current = useBimStore.getState().elementsById;
+        const dim = current[cmd.dimensionId as string];
+        if (dim && dim.kind === 'permanent_dimension') {
+          const nextEq = !dim.eqEnabled;
+          const nextWitnessPoints = nextEq
+            ? equalizeWitnessSpacing(dim.witnessPointsMm)
+            : dim.witnessPointsMm;
+          useBimStore.setState({
+            elementsById: {
+              ...current,
+              [dim.id]: { ...dim, eqEnabled: nextEq, witnessPointsMm: nextWitnessPoints },
+            },
+          });
+        }
+        return;
+      }
+      // §1.8.1: selectSimilar — select all elements of the same kind (client-only).
+      // Matches the `selection.select-all-instances` palette command behaviour.
+      if (cmd.type === 'selectSimilar') {
+        const kind = cmd.kind as string | undefined;
+        if (kind) {
+          const elems = useBimStore.getState().elementsById;
+          const sameKind = Object.values(elems)
+            .filter((e): e is NonNullable<typeof e> => e != null && e.kind === kind)
+            .map((e) => e.id);
+          if (sameKind.length > 0) {
+            const [primary, ...rest] = sameKind;
+            useBimStore.setState({ selectedId: primary, selectedIds: rest });
+          }
+        }
+        return;
+      }
+      // §3.3.9: Create Similar — activate the placement tool for the element's kind.
+      if (cmd.type === 'create_similar') {
+        const elementId = cmd.elementId as string | undefined;
+        if (elementId) {
+          const el = useBimStore.getState().elementsById[elementId];
+          if (el) {
+            const payload = createSimilarPayload(el);
+            if (payload) {
+              setPlanTool(payload.toolId);
+            }
+          }
+        }
+        return;
+      }
       // §5.1.1: patch heightSamples / thicknessMm / baseElevationMm on a toposolid
       if (cmd.type === 'update_toposolid') {
         const current = useBimStore.getState().elementsById;
@@ -1969,6 +2027,71 @@ export function Workspace(): JSX.Element {
         });
         return;
       }
+      // §14.5: save_camera_view — named perspective camera view
+      if (cmd.type === 'save_camera_view') {
+        const st = useBimStore.getState();
+        const pose = st.orbitCameraPoseMm;
+        if (!pose) return;
+        const id = `scv-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
+        const isPerspective = st.viewerProjection === 'perspective';
+        useBimStore.setState({
+          elementsById: {
+            ...st.elementsById,
+            [id]: {
+              kind: 'saved_3d_view',
+              id,
+              name: (cmd.name as string) || `Camera ${Date.now()}`,
+              cameraMm: { x: pose.position.xMm, y: pose.position.yMm, z: pose.position.zMm },
+              targetMm: { x: pose.target.xMm, y: pose.target.yMm, z: pose.target.zMm },
+              upVector: pose.up ? { x: pose.up.xMm, y: pose.up.yMm, z: pose.up.zMm } : null,
+              locked: false,
+              sectionBox: null,
+              perspective: isPerspective,
+              fovDeg: 60,
+            } as Saved3dViewElement,
+          },
+        });
+        return;
+      }
+      if (cmd.type === 'orient_3d_view') {
+        const orientation = cmd.orientation as string;
+        const st = useBimStore.getState();
+        // Standard orientation camera positions (5 m above origin looking down for top,
+        // or at a distance for cardinal views).
+        const D = 5000; // 5 m in mm
+        if (orientation === 'top') {
+          st.setOrbitCameraFromViewpointMm({
+            position: { xMm: 0, yMm: 0, zMm: D },
+            target: { xMm: 0, yMm: 0, zMm: 0 },
+            up: { xMm: 0, yMm: 1, zMm: 0 },
+          });
+        } else if (orientation === 'front') {
+          st.setOrbitCameraFromViewpointMm({
+            position: { xMm: 0, yMm: -D, zMm: 0 },
+            target: { xMm: 0, yMm: 0, zMm: 0 },
+            up: { xMm: 0, yMm: 0, zMm: 1 },
+          });
+        } else if (orientation === 'back') {
+          st.setOrbitCameraFromViewpointMm({
+            position: { xMm: 0, yMm: D, zMm: 0 },
+            target: { xMm: 0, yMm: 0, zMm: 0 },
+            up: { xMm: 0, yMm: 0, zMm: 1 },
+          });
+        } else if (orientation === 'left') {
+          st.setOrbitCameraFromViewpointMm({
+            position: { xMm: -D, yMm: 0, zMm: 0 },
+            target: { xMm: 0, yMm: 0, zMm: 0 },
+            up: { xMm: 0, yMm: 0, zMm: 1 },
+          });
+        } else if (orientation === 'right') {
+          st.setOrbitCameraFromViewpointMm({
+            position: { xMm: D, yMm: 0, zMm: 0 },
+            target: { xMm: 0, yMm: 0, zMm: 0 },
+            up: { xMm: 0, yMm: 0, zMm: 1 },
+          });
+        }
+        return;
+      }
       if (cmd.type === 'restore_3d_view') {
         const st = useBimStore.getState();
         const el = st.elementsById[cmd.viewId as string];
@@ -1981,6 +2104,12 @@ export function Workspace(): JSX.Element {
             ? { xMm: view.upVector.x, yMm: view.upVector.y, zMm: view.upVector.z }
             : { xMm: 0, yMm: 1, zMm: 0 },
         });
+        // §14.5: restore perspective/orthographic projection mode for camera views
+        if (view.perspective === true) {
+          st.setViewerProjection('perspective');
+        } else if (view.perspective === false) {
+          st.setViewerProjection('orthographic');
+        }
         if (view.sectionBox) {
           st.setViewerSectionBoxExtent(view.sectionBox);
           st.setViewerSectionBoxActive(true);
@@ -2059,6 +2188,83 @@ export function Workspace(): JSX.Element {
         useBimStore.setState({
           elementsById: { ...rest, [wallA.id]: wallA, [wallB.id]: wallB },
         });
+        return;
+      }
+
+      // §11.5-A: generate walls from a selected mass element
+      if (cmd.type === 'mass_generate_walls') {
+        const massId = cmd.massId as string;
+        if (!massId) return;
+        const { elementsById: cur } = useBimStore.getState();
+        const el = cur[massId];
+        if (
+          !el ||
+          (el.kind !== 'mass_box' && el.kind !== 'mass_extrusion' && el.kind !== 'mass_revolution')
+        )
+          return;
+        const mass = el as MassNewElem;
+        const levels = (Object.values(cur) as Element[])
+          .filter((e): e is Extract<Element, { kind: 'level' }> => e?.kind === 'level')
+          .sort((a, b) => a.elevationMm - b.elevationMm);
+        const lowestLevelId = levels[0]?.id ?? '';
+        if (!lowestLevelId) return;
+        const wallCmds = generateWallsFromMass(mass, lowestLevelId);
+        for (const wallCmd of wallCmds) {
+          void onSemanticCommand(wallCmd as unknown as Record<string, unknown>);
+        }
+        return;
+      }
+
+      // §11.5-B: generate floors from a selected mass element
+      if (cmd.type === 'mass_generate_floors') {
+        const massId = cmd.massId as string;
+        if (!massId) return;
+        const { elementsById: cur } = useBimStore.getState();
+        const el = cur[massId];
+        if (
+          !el ||
+          (el.kind !== 'mass_box' && el.kind !== 'mass_extrusion' && el.kind !== 'mass_revolution')
+        )
+          return;
+        const mass = el as MassNewElem;
+        const levels = (Object.values(cur) as Element[])
+          .filter((e): e is Extract<Element, { kind: 'level' }> => e?.kind === 'level')
+          .sort((a, b) => a.elevationMm - b.elevationMm);
+        const floorCmds = generateFloorsFromMass(mass, levels);
+        for (const floorCmd of floorCmds) {
+          void onSemanticCommand(floorCmd as unknown as Record<string, unknown>);
+        }
+        return;
+      }
+
+      // §11.5-C: generate roof from a selected mass element
+      if (cmd.type === 'mass_generate_roof') {
+        const massId = cmd.massId as string;
+        if (!massId) return;
+        const { elementsById: cur } = useBimStore.getState();
+        const el = cur[massId];
+        if (
+          !el ||
+          (el.kind !== 'mass_box' && el.kind !== 'mass_extrusion' && el.kind !== 'mass_revolution')
+        )
+          return;
+        const mass = el as MassNewElem;
+        const levels = (Object.values(cur) as Element[])
+          .filter((e): e is Extract<Element, { kind: 'level' }> => e?.kind === 'level')
+          .sort((a, b) => a.elevationMm - b.elevationMm);
+        const baseMm = mass.baseElevationMm;
+        const topMm =
+          mass.kind === 'mass_revolution'
+            ? baseMm + Math.max(...mass.profilePoints.map((p: { yMm: number }) => p.yMm), 0)
+            : baseMm + mass.heightMm;
+        const intersecting = levels.filter(
+          (l) => l.elevationMm >= baseMm - 1 && l.elevationMm <= topMm + 1,
+        );
+        const referenceLevelId =
+          (intersecting.length > 0 ? intersecting[intersecting.length - 1] : levels[0])?.id ?? '';
+        if (!referenceLevelId) return;
+        const roofCmd = generateRoofFromMass(mass, referenceLevelId);
+        void onSemanticCommand(roofCmd as unknown as Record<string, unknown>);
         return;
       }
 
@@ -4490,6 +4696,7 @@ export function Workspace(): JSX.Element {
           openViewRange: () => setViewRangeOpen(true),
           openVisibilityGraphics: () => setVgOpen(true),
           openProjectInfo: () => setProjectInfoOpen(true),
+          setWorkPlaneOpen: (open: boolean) => setSetWorkPlaneOpen(open),
           sectionBoxFromPlan,
         }}
       />
@@ -4756,6 +4963,33 @@ export function Workspace(): JSX.Element {
           }
         />
       ) : null}
+      <SetWorkPlaneDialog
+        open={setWorkPlaneOpen}
+        onClose={() => setSetWorkPlaneOpen(false)}
+        referencePlanes={Object.values(elementsById)
+          .filter(
+            (
+              e,
+            ): e is Extract<(typeof elementsById)[string] & object, { kind: 'reference_plane' }> =>
+              e != null && e.kind === 'reference_plane' && 'levelId' in e,
+          )
+          .map((rp) => ({ id: rp.id, name: (rp as { name?: string }).name ?? '' }))}
+        currentWorkPlaneId={
+          activePlanViewId && elementsById[activePlanViewId]?.kind === 'plan_view'
+            ? ((elementsById[activePlanViewId] as { activeWorkPlaneId?: string | null })
+                .activeWorkPlaneId ?? null)
+            : null
+        }
+        onApply={(refPlaneId) => {
+          if (!activePlanViewId) return;
+          void onSemanticCommand({
+            type: 'updateElementProperty',
+            elementId: activePlanViewId,
+            key: 'activeWorkPlaneId',
+            value: refPlaneId,
+          });
+        }}
+      />
       <ManageGlobalParamsDialog
         isOpen={manageGlobalParamsOpen}
         params={
