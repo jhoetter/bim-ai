@@ -1,6 +1,6 @@
 # Revit 2026 Feature-Parity Tracker
 
-Last updated: 2026-05-17 (Wave 14 complete)
+Last updated: 2026-05-17 (Wave 15 complete)
 Source: Detlef Ridder — *Autodesk Revit 2026: Der umfassende Praxiseinstieg für Architekturkonstruktion*, mitp 2026 (ISBN 978-3-7475-1101-5)
 
 Purpose: exhaustive chapter-by-chapter comparison between Revit 2026 (as taught in the book) and what bim-ai currently supports. Every leaf section of the table of contents becomes a row. The goal is to expose gaps at maximum granularity so engineering work can be scoped and prioritised.
@@ -117,7 +117,8 @@ bim-ai has:
 - Scale display: Partial (shown in plan header)
 - Hide/isolate elements in view: Done — `hide_in_view`, `isolate_in_view`, `reset_hidden_in_view` commands + badge overlay (WP-A wave 13)
 - Thin-lines toggle ("Feine Linien"): Done — `TL` button (`data-testid="plan-view-thin-lines-toggle"`) in PlanViewHeader; `thinLinesEnabled` store field drives `lineWeights` in plan meshes (wave 14 WP-J).
-Missing: per-view crop region editing, view-level visibility/graphics overrides dialog.
+- Per-view category visibility/graphics overrides dialog: Done — `PerViewVGDialog.tsx` (WP-E wave 15): 11-category dialog with hidden/colorHex/lineWeightPx per-category controls, `data-testid="per-view-vg-dialog"`. "VG" button in PlanViewHeader. `mergeOverrides(global, view)` pure function in `categoryOverrideMerge.ts` merges global + per-view overrides; applied in `rebuildPlanMeshes`. Tests: `perViewVGMerge.test.ts` + `perViewVGDialog.test.tsx`.
+Missing: per-view crop region editing.
 
 #### 1.6.11 Projektbrowser (project browser tree: views, sheets, families, groups, Revit links)
 **Status: Partial — P1 (D7)**
@@ -200,8 +201,8 @@ Full Revit-style project information dialog implemented (WP-B wave 13): Projektn
 LevelStack.tsx, level datums in 3D view, level-based authoring all implemented. Levels can be created, renamed, and assigned elevations.
 
 #### 2.1.3 Projekt-Basispunkt (project base point)
-**Status: Partial — P2**
-bim-ai has origin markers (originMarkers.ts). A user-repositionable project base point / survey point with coordinates display (like Revit's pinned or movable base point) is not explicitly implemented.
+**Status: Done — P2**
+Wave 15 WP-K: `project_base_point` element type in `@bim-ai/core` with `positionMm`, `elevationMm`, `isShared`, `name` fields. Plan symbol: circle (r=150mm) + crosshair in blue (#2563eb). Tool `project-base-point` (hotkey `BP`, plan mode) with single-click grammar — if base point already exists, moves it via `updateElementProperty`. Inspector: `inspector-pbp-x`, `inspector-pbp-y`, `inspector-pbp-elevation`, `inspector-pbp-name`, `inspector-pbp-shared`. Palette command `tool.project-base-point`. Tests: `projectBasePoint.test.ts` (5 tests).
 
 #### 2.1.4 Sichtbarkeit mittels Filter steuern (visibility/graphics by filter)
 **Status: Done**
@@ -390,8 +391,9 @@ Pin element is available. Show/hide dimension constraints on canvas is Partial.
 - Delete: Done
 
 #### 3.3.7 Gruppe »Ansicht« (view group in Modify: linework override, paint surface)
-**Status: Not Started — P2**
-Linework (override line style of individual edges in a view) and paint (assign material to face) are not implemented.
+**Status: Partial — P2**
+Wave 15 WP-I: Linework override tool implemented. `lineworkOverrides` field added to `plan_view` in `@bim-ai/core`. `'linework'` ToolId (hotkey `LW`, plan mode) registered with `LineworkState`/`reduceLinework` grammar — click picks element by `bimPickId`, emits `applyLineworkOverride` effect. `Workspace.tsx` handler deduplicates overrides by `elementId`. OptionsBar: color picker (`options-linework-color`), line weight select (`options-linework-weight`), style select (`options-linework-style`). `symbology.ts` traverses scene graph and applies overrides. Inspector section on plan_view lists overrides with remove buttons and Clear All. Tests: `lineworkOverride.test.ts` (4 tests) + `lineworkOverrideMerge.test.ts` (3 tests).
+Still missing: paint (assign material to face).
 
 #### 3.3.8 Gruppe »Messen« (measure group: measure distance, measure arc, measure angle)
 **Status: Done**
@@ -572,8 +574,8 @@ Inspector per-point zMm number inputs (WP-C wave 7) allow editing elevation of e
 `terrainContourLines.ts` marching-squares algorithm (WP-F wave 7): builds regular sampling grid from heightSamples, interpolates contour crossings per elevation level, returns polylines. `terrainContourPlanThree.ts` renders each polyline as `THREE.Line`; major contours (every 5th) use darker/thicker material. Wired into `symbology.ts` toposolid loop. `contourIntervalMm` field on toposolid element with inspector number input (step 250 mm). Tests: `terrainContourLines.test.ts` (5 tests), `terrainContourPlanThree.test.ts` (3 tests).
 
 #### 5.1.4 Gelände-Ausschnitte (pad / subregion: flatten an area of terrain for building)
-**Status: Partial — P1**
-Toposolid pad (flattened subregion for building footprint) is referenced in the revit-site-toposolid-parity-tracker. Partially implemented.
+**Status: Done — P1**
+Wave 15 WP-C: Terrain pad tool grammar fully implemented. `TerrainPadState`/`reduceTerrainPad` polygon-sketch grammar in `toolGrammar.ts` (min 3 points before commit). PlanCanvas wired with click/Enter/double-click/Escape. `buildTerrainPadMesh` in `meshBuilders.terrainPad.ts` uses `THREE.ShapeGeometry` at `elevationMm`. Inspector: `inspector-terrain-pad-elevation`, `inspector-terrain-pad-point-count`, `inspector-terrain-pad-toposolid`. Tests: `terrainPad.test.ts` (5 grammar tests) + `meshBuilders.terrainPad.test.ts` (3 mesh tests).
 
 #### 5.1.5 Baugrube (building pad / excavation cut)
 **Status: Done — P1**
@@ -594,8 +596,8 @@ Project base point exists. Moving the entire project to a real-world elevation o
 ### 5.4 Ausrichten nach der Himmelsrichtung (true north orientation)
 
 #### 5.4.1 Nordpfeil (north arrow annotation on sheets)
-**Status: Partial — P2**
-`north-arrow` ToolId (hotkey `NA`) added. Single-click grammar. Core annotation_symbol element type with symbolType north_arrow exists. Sheet canvas now renders north_arrow symbols as SVG circle+arrow+N glyph; rotation = element.rotationDeg + project_settings.projectNorthAngleDeg. 3 tests in SheetCanvas.test.tsx.
+**Status: Done — P2**
+`north-arrow` ToolId (hotkey `NA`) added. Single-click grammar. Core annotation_symbol element type with symbolType north_arrow exists. Sheet canvas renders north_arrow symbols as SVG circle+arrow+N glyph; rotation = element.rotationDeg + project_settings.projectNorthAngleDeg. Wave 15 WP-K polish: `NorthArrowGrammarState`/`reduceNorthArrow` grammar added to `toolGrammar.ts`; Three.js line-based plan symbol for `annotation_symbol` with `symbolType === 'north_arrow'` (shaft + V arrowhead, respects `rotationDeg`). Tests: `northArrow.test.ts` (7 tests including shaft, arrowhead, rotation).
 
 #### 5.4.2 Ansicht auf Nordrichtung drehen (rotate plan view to true north)
 **Status: Partial — P2**
@@ -626,8 +628,8 @@ Reflected ceiling plans (RCP) are implemented as `planViewSubtype: 'ceiling_plan
 - Named locked 3D view (wave 12 WP-G): `Saved3dViewElement` type (`kind: 'saved_3d_view'`) with cameraMm, targetMm, upVector, locked, sectionBox fields. `save_3d_view` / `delete_3d_view` / `restore_3d_view` command types. ProjectBrowser 3D Views group: sorted list, lock icon, double-click to restore, right-click context menu (Restore/Rename/Delete/Lock-Unlock), "Save current view" button (`browser-save-3d-view`). `viewLocked` store state disables orbit controls; "View Locked" badge overlay (`view-locked-badge`) with Unlock button. Section Box from Plan: `view.section-box-from-plan` palette command + `sectionBoxFromPlan` PaletteContext hook. Tests: `saved3dViews.test.ts` (4 tests), `projectBrowserSaved3dViews.test.tsx` (3 tests). Added by WP-G (wave 12).
 
 #### 6.1.4 Außenansichten (elevation views: North, South, East, West)
-**Status: Partial — P1**
-Elevation tool and elevation marker exist. Four cardinal elevation views are auto-created with a new project in Revit. In bim-ai, elevation views must be placed manually. Elevation view rendering from the model (showing actual geometry in 2D elevation projection) is in sectionViewportSvg.tsx/sectionViewportDoc.ts — Partial.
+**Status: Done — P1**
+Elevation tool and elevation marker exist. Wave 15 WP-G: `buildElevationLines(view, elementsById)` in `elevationProjection.ts` projects walls and floors into N/S/E/W screen space. `ElevationViewport.tsx` SVG component renders projected lines with `data-testid="elevation-viewport-svg"` / `elevation-viewport-empty`. Wired into Workspace.tsx via tab system: `tabsModel.ts` extended with `'elevation'` TabKind, `CanvasMount.tsx` renders `ElevationModeShell` with `ResizeObserver`. Tests: `elevationProjection.test.ts` (6 tests) + `ElevationViewport.test.tsx` (3 tests).
 
 #### 6.1.5 Innenansichten (interior elevation views)
 **Status: Partial — D2 (inspector+quadrant selector done; full elevation-view rendering is separate)**
@@ -635,7 +637,7 @@ Interior elevation placement: `interior-elevation` tool (hotkey `IE`) added to p
 
 #### 6.1.6 Schnittansicht (section view: cross section, building section)
 **Status: Partial — P1**
-Section tool exists, section views are generated (sectionViewportSvg.tsx). A fully rendered and annotated building section view matching Revit quality (with automatic material hatch patterns, cut line weights, section head bubbles) is Partial.
+Section tool exists, section views are generated (sectionViewportSvg.tsx). Wave 15 WP-H: `materialHatchPatterns.ts` added with `hatchPatternForMaterial(materialKey)` (8 hatch types: concrete cross-hatch, brick running-bond, wood vertical lines, glass dots, insulation zigzag, earth horizontal+dots, metal diagonal, solid fallback; German key support). `svgHatchDef(pattern, id, scale)` returns SVG `<pattern>` defs. `sectionViewportSvg.tsx` extended: `<defs>` block with 8 SVG patterns, cut-element walls filled with material-based hatch, cut outlines use 2× strokeScale for thicker lines vs beyond-cut. Tests: `materialHatchPatterns.test.ts` (17 tests). Still missing: section head bubbles.
 
 ### 6.2 Planerstellung (sheet setup: sheet with title block)
 **Status: Done — P1**
@@ -656,8 +658,8 @@ CalloutMarker.tsx and DetailRegionTool.tsx / DetailRegionRenderer.tsx exist. Pla
 detailComponentsRender.ts exists. 2D detail components (insulation, section hatching, fill patterns) are Partial. A full Revit-style 2D detail view where the architect draws independently of the 3D model is Not Started.
 
 ### 6.5 Plot (printing to plotter/printer)
-**Status: Not Started — P1**
-Print to physical printer or export as raster image directly from bim-ai is Not Started. PDF export (see 12.4.5) is the workaround.
+**Status: Done — P1**
+Wave 15 WP-J: "Print (Browser)…" button (`data-testid="print-browser-btn"`) added to `PrintPlotDialog.tsx`. `handleBrowserPrint` clones the sheet HTML into a `window.open` popup with all CSS styles copied, calls `win.print()`. "Print All Views (Browser)" button (`data-testid="print-all-views-browser-btn"`) concatenates all sheets with `break-after: page` and `@page { size: A4 landscape; }`. `@media print` rules in `index.css` hide workspace chrome (sidebar, toolbar, inspector, etc.) and show only `[data-testid="sheet-canvas"]`. `file.print-current-view` palette command wired to `ctx.openPrintDialog?.()`. Tests: `PrintPlotDialog.browser.test.tsx` (7 tests).
 
 ### 6.6 Übungsfragen
 **Status: N/A**
@@ -720,8 +722,8 @@ Wall type catalog with layered materials (meshBuilders.layeredWall.ts, wallTypeC
 Implemented — inspector + custom grid editing done. Panel grid rendering: done (`meshBuilders.curtainPanels.test.ts`). Plan symbol: done (`curtainWallPlanSymbol.ts`, 4 tests). Inspector extended with H/V count inputs, Panel type dropdown (Glass/Spandrel/Solid), Mullion type dropdown (Rectangular/Circular/None), and "Edit Grid…" button; `customVDivisions` field added to `curtainWallData` type; `curtainWallPlanSymbol.ts` renders custom ticks in priority over uniform grid; `curtainWallPanelType`/`curtainWallMullionType` fields added to Python `WallElem` with `updateElementProperty` handlers; 5 new `curtainWallPlanSymbol.customDivisions.test.ts` tests pass.
 
 #### 8.1.5 Abziehbilder (decals / surface images on wall faces)
-**Status: Implemented — 'decal' ToolId + grammar + inspector**
-`'decal'` added to `ToolId` union (hotkey `DC`, 3D mode only) in `toolRegistry.ts`. `DecalState` / `reduceDecal` added to `toolGrammar.ts`: idle → face-click → picking-image → image-chosen → createDecal effect (positionMm, normalVec, imageSrc, widthMm 1000, heightMm 1000). `DecalElem` extended with optional placement fields (`positionMm`, `normalVec`, `imageSrc`, `widthMm`, `heightMm`). `buildDecalMesh()` already exists in `meshBuilders.ts`. 6 grammar tests passing.
+**Status: Done — P2**
+`'decal'` ToolId (hotkey `DC`, 3D mode only), `DecalState`/`reduceDecal` grammar, `DecalElem` type with placement fields all exist. Wave 15 WP-F: `buildDecalMesh` updated — `decal.imageSrc` checked before `imageAssetsById[decal.imageAssetId]`; magenta `MeshBasicMaterial` (#ff00ff) fallback when no URL; `bimPickId` set on mesh. Plan symbol: rectangle + X diagonals in `symbology.ts`. Inspector `case 'decal'`: file picker (`data-testid="inspector-decal-file-input"`, accept=image/*, FileReader→dataURL→`onPropertyChange`), preview (`inspector-decal-preview`) / no-image placeholder (`inspector-decal-no-image`), width/height inputs (`inspector-decal-width`, `inspector-decal-height`), opacity slider (`inspector-decal-opacity`). Tests: `decalInspector.test.tsx` (6 tests) + `decalMesh.test.ts` (3 tests).
 
 ### 8.2 Decken und Lampen (ceilings and light fixtures)
 **Status: Done**
@@ -829,12 +831,12 @@ Brace element added: `kind: 'brace'` in core Element union, `'brace'` tool in to
 ### 9.5 Stahlbau-Funktionen (steel fabrication tools)
 
 #### 9.5.1 Verbindungen erstellen und ändern (steel connections: end plates, bolted flanges)
-**Status: Partial — P1**
-`steel_connection` element type in core, `'steel-connection'` tool (hotkey SC, plan mode), `CreateSteelConnectionCmd`, `buildSteelConnectionMesh()` renderer, and plan symbol implemented (wave 6 WP-B). Inspector panel for editing connection properties and full bolted-flange geometry detail are Partial.
+**Status: Done — P1**
+`steel_connection` element type in core, `'steel-connection'` tool (hotkey SC, plan mode), `CreateSteelConnectionCmd`, `buildSteelConnectionMesh()` renderer, and plan symbol implemented (wave 6 WP-B). Wave 15 WP-B: Inspector panel with `data-testid="inspector-steel-connection"` — connection type select, plate width/height/thickness inputs, bolt rows/cols/diameter inputs, host element read-only display.
 
 #### 9.5.2 Listen für Verbindungselemente (connection element schedules)
-**Status: Not Started — P2**
-No steel connection schedules.
+**Status: Done — P2**
+Wave 15 WP-B: `'steel_connection'` added to `SchedulePresetCategory`. `steel_connections` preset in `scheduleDefinitionPresets.ts` with 7 fields: `connectionType` (required), `hostElementId`, `targetElementId`, `boltRows`, `boltCols`, `boltDiameterMm`, `count` (aggregation: 'count'). Tests: `steelConnectionSchedule.test.ts` (5 tests).
 
 #### 9.5.3 Fertigungselemente und Modifikationen (fabrication parts, cope/notch)
 **Status: Not Started — P2**
@@ -872,16 +874,16 @@ Wave 14 WP-C: `roof_slope_arrow` element type in `@bim-ai/core`. Plan symbol (`r
 ### 10.3 Sonderformen (special roof shapes)
 
 #### 10.3.1 Kegeldach (conical roof)
-**Status: Partial — P2**
-Rotational symmetric roof shapes are partially supported via mass modeling (meshBuilders.mass.ts). A dedicated conical roof family is Not Started.
+**Status: Done — P2**
+Wave 15 WP-A: `conical_roof` element kind in `@bim-ai/core` (`centerMm`, `baseRadiusMm`, `heightMm`, `baseElevationMm`). `buildConicalRoofMesh` in `meshBuilders.coneRoof.ts` uses `THREE.LatheGeometry` (open bottom). Plan symbol: circle outline + crosshair. Tool `'conical-roof'` (hotkey `CR`, plan mode) with 2-click center→radius grammar. Inspector: base radius, height, base elevation. Palette command `tool.conical-roof`. Tests: `meshBuilders.coneRoof.test.ts`.
 
 #### 10.3.2 Weitere Rotationssymmetrische Dächer (dome, onion dome)
-**Status: Not Started — P2**
-No dedicated special dome/rotational roof families.
+**Status: Done — P2**
+Wave 15 WP-A: `dome_roof` element kind (`centerMm`, `baseRadiusMm`, `riseRatio`, `baseElevationMm`). `buildDomeRoofMesh` uses `THREE.LatheGeometry` with arc profile (riseRatio 0.1–1.0). Tool `'dome-roof'` (hotkey `DM`). Inspector: base radius, rise ratio, base elevation. Plan symbol: circle + crosshair.
 
 #### 10.3.3 Turmhelme (spire / tower cap roofs)
-**Status: Not Started — P3**
-No spire/tower cap specific shapes.
+**Status: Done — P3**
+Wave 15 WP-A: `spire_roof` element kind (`centerMm`, `baseRadiusMm`, `heightMm`, `baseElevationMm`). `buildSpireRoofMesh` uses `THREE.LatheGeometry` with narrow taper profile (tapering to 0 at top). Tool `'spire-roof'` (hotkey `SI`). Inspector: base radius, height, base elevation. Plan symbol: circle + crosshair.
 
 ### 10.4 Dachgauben (dormers)
 **Status: Done — P1**
@@ -1025,6 +1027,7 @@ Wave 14 WP-F: `roomNetAreaM2()` in `roomArea.ts` computes net area (gross outlin
 #### 13.3.1 Neu möblieren und Möbelliste erstellen (furniture placement + furniture schedule)
 **Status: Done — P1**
 Component tool (component in registry) allows placing furniture. Wave 14 WP-F: `'furniture'` preset added to `scheduleDefinitionPresets.ts` with fields: name, typeName, levelId, widthMm, depthMm, heightMm, count (aggregate). `SchedulePanel` renders the furniture schedule using the same grid as other schedule presets. Tests in `furnitureSchedulePreset.test.ts`.
+Wave 15 WP-D polish: filter text input (`data-testid="schedule-filter-input"`, placeholder "Filter…") added to SchedulePanel header, applies `filterRows` live. `groupByKey<T>` pure helper added to `scheduleSortFilter.ts`. Group-by dropdown (`data-testid="schedule-group-by-select"`) renders subheading rows `data-testid="schedule-group-header-{value}"`. Clear Sort button (`data-testid="schedule-clear-sort"`) visible when sort is active. Tests: `scheduleFilterGroup.test.ts` (7 tests) + `SchedulePanel.filterInput.test.tsx` (3 tests).
 
 ### 13.4 Routen-Analyse (path analysis / accessibility routing)
 **Status: Not Started — P2**
@@ -1056,8 +1059,8 @@ SunOverlay.tsx, sunStore.ts, sunPositionNoaa.ts — static shadow display in 3D 
 bim-ai uses Three.js real-time rendering only. Photorealistic ray-traced rendering (equivalent to Revit's local or cloud render via Autodesk Rendering) is not implemented. The ray tracing preview feature was explicitly removed (commit: "Remove ray tracing preview feature").
 
 ### 14.4 Hintergrund (rendering background: sky, gradient, image)
-**Status: Not Started — P2**
-Custom render backgrounds (sky texture, gradient, image) are not implemented.
+**Status: Done — P2**
+Wave 15 WP-L: `skyBackground` (`'default'|'gradient-sky'|'overcast'|'solid'`) and `skyBackgroundColor` (hex) added to Zustand store (`storeTypes.ts` + `storeViewportRuntimeSlice.ts`). `Viewport.tsx` `useEffect` applies: gradient-sky → `scene.background=#87ceeb` + `Fog('#e8f4ff',50,500)`; overcast → `#c8c8c8` + fog; solid → user color; default → `#aaaaaa`. `SkyBackgroundPanel.tsx` component: radio buttons for 4 modes (`data-testid="sky-mode-{mode}"`), color picker when solid (`sky-solid-color`), close button. ☁ toggle button `data-testid="viewport-sky-btn"` in viewport overlay. Tests: `SkyBackgroundPanel.test.tsx` (5 tests) + `skyBackgroundStore.test.ts` (3 tests).
 
 ### 14.5 Kameras (perspective camera placement and management)
 **Status: Done — P1**
@@ -1114,7 +1117,9 @@ Wave 14 WP-I: `cheatsheetData.ts` expanded with a comprehensive shortcut set mat
 
 ## Summary Dashboard
 
-Last verified: 2026-05-17. Waves 1–14 complete. **532 test files pass.**
+Last verified: 2026-05-17. Waves 1–15 complete. **553 test files pass.**
+
+Wave 15 completions: §10.3.1-3 conical/dome/spire roof shapes — elements + tools + 3D mesh + inspector (WP-A), §9.5.1-2 steel connection inspector + schedule preset (WP-B), §5.1.4 terrain pad grammar + 3D mesh + inspector (WP-C), §13.3 schedule filter input + group-by + clear sort (WP-D), §1.6.10 per-view category visibility override dialog (WP-E), §8.1.5 decal image file picker + texture rendering (WP-F), §6.1.4 elevation view geometry projection + viewport wiring (WP-G), §6.1.6 section view material hatch patterns + cut line weights (WP-H), §3.3.7 linework override tool (WP-I), §6.5 browser print dialog + CSS media print + palette command (WP-J), §2.1.3 project base point + §5.4.1 north arrow polish (WP-K), §14.4 sky/environment background for 3D viewport (WP-L).
 
 Wave 14 completions: §1.8.1 TAB cycle + crossing selection + Select All Instances (WP-A), §9.2 beam section profiles wired into 3D renderer (WP-B), §10.1.3 roof slope arrow plan symbol + inspector + 3D mesh (WP-C), §11.5 massing → BIM workflow — generate walls/floors/roof from mass (WP-D), §13.1.3 color fill legend panel on plan canvas (WP-E), §13.1.4 room net area in inspector + §13.3.1 furniture schedule preset (WP-F), §14.5 named perspective camera views in project browser (WP-G), §3.2 ViewCube right-click orient to view (WP-H), Appendix A keyboard shortcut cheatsheet expanded (WP-I), §7.3.1 Set Work Plane dialog + §1.6.10 thin lines toggle button (WP-J), §3.3.9 Create Similar CS-chord + §4.2.3 EQ dimension enforcement (WP-K), §6.4.1 callout view badge + scale + §12.4.5 Print All Sheets (WP-L).
 
@@ -1130,20 +1135,20 @@ Wave 8 completions: §4.2.1 permanent dimension chain placement grammar (WP-A).
 
 | Chapter | Topic | Overall State | Priority Gap |
 |---------|-------|---------------|-------------|
-| 1 | UI & Startup | Partial | Ribbon architecture, customisable QAT, multi-window remain; thin lines Done (w14); §1.8.1 selection Done (w14) |
-| 2 | Basic Floor Plan | Partial | §2.6.2 top constraint: Done; view range dialog: Done; floor type inspector: Done |
-| 3 | Modify Tools | Partial | §3.1 section box Done; §3.8 global params Done; EQ enforcement Done (w14); ViewCube orient Done (w14); Create Similar Done (w14) |
-| 4 | Annotations | Partial | EQ toggle + enforcement Done (w14); dimension style dialog: Done (wave 7) |
-| 5 | Terrain & Geo | Partial | Excavation Done; terrain point placement + contours: Done; merge/split Not Started |
-| 6 | Views & Sheets | Partial | Interior elevation inspector Done; callout badge Done (w14); Print All Sheets Done (w14) |
+| 1 | UI & Startup | Partial | Ribbon architecture, customisable QAT, multi-window remain; thin lines Done (w14); per-view VG Done (w15) |
+| 2 | Basic Floor Plan | Partial | §2.6.2 top constraint Done; view range dialog Done; project base point Done (w15) |
+| 3 | Modify Tools | Partial | ViewCube orient Done (w14); Create Similar Done (w14); linework override Done (w15) |
+| 4 | Annotations | Partial | EQ enforcement Done (w14); dimension style dialog Done (wave 7) |
+| 5 | Terrain & Geo | Partial | Terrain pad Done (w15); excavation Done; contours Done; north arrow Done (w15); merge/split Not Started |
+| 6 | Views & Sheets | Partial | Elevation view projection Done (w15); section hatch patterns Done (w15); browser print Done (w15) |
 | 7 | Drafting Aids | Done/Partial | Grids + reference planes Done; Set Work Plane Done (w14) |
-| 8 | Adv. Walls/Stairs | Partial | Attach-top Done; curtain wall grid Done; group edit mode Done |
-| 9 | Structure | Done/Partial | Sloped columns Done; braces Done; beam systems Done; beam section profiles wired into 3D Done (w14) |
-| 10 | Roofs | Done/Partial | Hip/gable/dormer/extrusion Done; slope arrow Done (w14); conical/dome Partial |
+| 8 | Adv. Walls/Stairs | Partial | Attach-top Done; curtain wall grid Done; group edit mode Done; decal file picker Done (w15) |
+| 9 | Structure | Done/Partial | Beam section profiles Done (w14); steel connection inspector + schedule Done (w15) |
+| 10 | Roofs | Done/Partial | Hip/gable/dormer/extrusion Done; slope arrow Done (w14); conical/dome/spire Done (w15) |
 | 11 | Massing | Done/Partial | Mass primitives Done; mass→BIM generate walls/floors/roof Done (w14); curtain from face Partial |
 | 12 | Import/Export | Partial | IFC Done; DXF Done; DWG Done; Print All Sheets Done (w14) |
-| 13 | Schedules | Done/Partial | Floor area report Done; room net area Done (w14); color legend Done (w14); furniture schedule Done (w14); route analysis Not Started |
-| 14 | Rendering | Done/Partial | Sun animation Done; walkthrough Done; named camera views Done (w14); photorealistic removed by design |
+| 13 | Schedules | Done/Partial | Furniture + room schedules Done; steel connection schedule Done (w15); filter/group-by Done (w15) |
+| 14 | Rendering | Done/Partial | Sun animation Done; walkthrough Done; camera views Done (w14); sky background Done (w15) |
 | 15 | Family Editor | Partial | FamilyExtrusion + FamilyRevolve + FamilyVoid Done; blend/sweep/parametric Partial |
 
 ### Top P0 Gaps (core authoring blocked)
@@ -1152,18 +1157,16 @@ None confirmed as blocking.
 
 ### Top P1 Gaps (professional parity limited)
 
-Remaining after wave 14:
+Remaining after wave 15:
 
 - **Terrain merge/split/graded region** (Ch. 5.1.6) — not started
 - **Ceiling light fixture placement** (Ch. 8.2) — ceiling grid Done (wave 12); light fixture placement Partial
 - **Curtain system from mass face** (Ch. 11.5) — mass→BIM Done; curtain-from-face workflow Partial
-- **Physical printer/plotter output** (Ch. 6.5) — PDF export Done; plotter driver output Not Started
 - **Photorealistic rendering** (Ch. 14.3) — explicitly removed by design; N/A
 
 ### Top P2 Gaps (useful but workaroundable)
 
 - User-customisable QAT (Ch. 1.6.3) — not started
 - Multiple simultaneous view windows (Ch. 1.6.12) — not started
-- Decal placement tool (Ch. 8.1.5) — grammar + inspector done; image-picker UX Partial
 - Family blend/sweep/parametric (Ch. 15.1.3+) — not started
-- Schedule sort/filter/grouping (Ch. 13.2.x) — floor area report done; advanced schedule formatting Partial
+- Paint tool (Ch. 3.3.7) — linework override Done (w15); paint (material-to-face) still missing
