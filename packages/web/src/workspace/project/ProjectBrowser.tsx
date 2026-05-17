@@ -1400,12 +1400,17 @@ export function ProjectBrowser(props: {
                   : legend.kind === 'color_fill_legend'
                     ? legend.title
                     : (legend.title ?? legend.id);
+              const parentSheetId =
+                'parentSheetId' in legend
+                  ? (legend.parentSheetId as string | undefined)
+                  : undefined;
+              const scope = 'scope' in legend ? (legend.scope as string | undefined) : undefined;
               const host =
                 'hostViewId' in legend
                   ? `host=${legend.hostViewId}`
-                  : legend.parentSheetId
-                    ? `sheet=${legend.parentSheetId}`
-                    : `scope=${legend.scope}`;
+                  : parentSheetId
+                    ? `sheet=${parentSheetId}`
+                    : `scope=${scope ?? '—'}`;
               return (
                 <li key={legend.id} className="flex flex-col gap-0.5">
                   <Btn
@@ -2232,67 +2237,92 @@ export function ProjectBrowserV3({
   // Local order state for drag-reorder (maps viewId → order index override).
   const [localOrder, setLocalOrder] = useState<Record<string, number>>({});
   const dragSrc = useRef<string | null>(null);
+  // §1.6.11 — Families / Groups sections collapsed by default
+  const [familiesCollapsed, setFamiliesCollapsed] = useState(true);
+  const [groupsCollapsed, setGroupsCollapsed] = useState(true);
 
   // Derive groups from elements.
-  const { viewRows, scheduleRows, linkRows, phaseRows, saved3dRows, cameraViewRows } =
-    useMemo(() => {
-      const lower = search.toLowerCase();
-      const matches = (name: string) => !lower || name.toLowerCase().includes(lower);
+  const {
+    viewRows,
+    scheduleRows,
+    linkRows,
+    phaseRows,
+    saved3dRows,
+    cameraViewRows,
+    familyRows,
+    groupDefRows,
+  } = useMemo(() => {
+    const lower = search.toLowerCase();
+    const matches = (name: string) => !lower || name.toLowerCase().includes(lower);
 
-      const views = elements.filter(
-        (e): e is Extract<Element, { kind: 'viewpoint' | 'saved_view' }> =>
-          (e.kind === 'viewpoint' || e.kind === 'saved_view') &&
-          matches((e as { name?: string }).name ?? e.id),
+    const views = elements.filter(
+      (e): e is Extract<Element, { kind: 'viewpoint' | 'saved_view' }> =>
+        (e.kind === 'viewpoint' || e.kind === 'saved_view') &&
+        matches((e as { name?: string }).name ?? e.id),
+    );
+
+    const schedules = elements.filter(
+      (e): e is Extract<Element, { kind: 'schedule' }> => e.kind === 'schedule' && matches(e.name),
+    );
+
+    const links = elements.filter(
+      (e) =>
+        (e.kind === 'image_underlay' || e.kind === 'link_model') &&
+        matches((e as { name?: string }).name ?? e.id),
+    );
+
+    const phases = elements.filter(
+      (e): e is Extract<Element, { kind: 'phase' }> =>
+        e.kind === 'phase' && matches((e as { name?: string }).name ?? e.id),
+    );
+
+    const saved3dAll = elements.filter(
+      (e): e is Extract<Element, { kind: 'saved_3d_view' }> =>
+        e.kind === 'saved_3d_view' && matches((e as { name?: string }).name ?? e.id),
+    );
+
+    // §14.5: split saved_3d_view elements by perspective flag
+    const saved3d = saved3dAll.filter(
+      (e) => (e as { perspective?: boolean | null }).perspective !== true,
+    );
+    const cameraViews = saved3dAll.filter(
+      (e) => (e as { perspective?: boolean | null }).perspective === true,
+    );
+
+    // Apply local drag order overrides then sort.
+    const sortedViews = [...views].sort((a, b) => {
+      const oa = localOrder[a.id] ?? 0;
+      const ob = localOrder[b.id] ?? 0;
+      if (oa !== ob) return oa - ob;
+      return ((a as { name?: string }).name ?? a.id).localeCompare(
+        (b as { name?: string }).name ?? b.id,
       );
+    });
 
-      const schedules = elements.filter(
-        (e): e is Extract<Element, { kind: 'schedule' }> =>
-          e.kind === 'schedule' && matches(e.name),
-      );
+    // §1.6.11 — family elements (extrusion / revolve / void / blend / sweep)
+    const FAMILY_KINDS = new Set([
+      'family_extrusion',
+      'family_revolve',
+      'family_void',
+      'family_blend',
+      'family_sweep',
+    ]);
+    const familyRows = elements.filter((e) => FAMILY_KINDS.has(e.kind));
 
-      const links = elements.filter(
-        (e) =>
-          (e.kind === 'image_underlay' || e.kind === 'link_model') &&
-          matches((e as { name?: string }).name ?? e.id),
-      );
+    // §1.6.11 — group definitions (instances counted via group_instance kind)
+    const groupDefRows = elements.filter((e) => e.kind === 'group_definition');
 
-      const phases = elements.filter(
-        (e): e is Extract<Element, { kind: 'phase' }> =>
-          e.kind === 'phase' && matches((e as { name?: string }).name ?? e.id),
-      );
-
-      const saved3dAll = elements.filter(
-        (e): e is Extract<Element, { kind: 'saved_3d_view' }> =>
-          e.kind === 'saved_3d_view' && matches((e as { name?: string }).name ?? e.id),
-      );
-
-      // §14.5: split saved_3d_view elements by perspective flag
-      const saved3d = saved3dAll.filter(
-        (e) => (e as { perspective?: boolean | null }).perspective !== true,
-      );
-      const cameraViews = saved3dAll.filter(
-        (e) => (e as { perspective?: boolean | null }).perspective === true,
-      );
-
-      // Apply local drag order overrides then sort.
-      const sortedViews = [...views].sort((a, b) => {
-        const oa = localOrder[a.id] ?? 0;
-        const ob = localOrder[b.id] ?? 0;
-        if (oa !== ob) return oa - ob;
-        return ((a as { name?: string }).name ?? a.id).localeCompare(
-          (b as { name?: string }).name ?? b.id,
-        );
-      });
-
-      return {
-        viewRows: sortedViews,
-        scheduleRows: schedules,
-        linkRows: links,
-        phaseRows: phases,
-        saved3dRows: saved3d,
-        cameraViewRows: cameraViews,
-      };
-    }, [elements, search, localOrder]);
+    return {
+      viewRows: sortedViews,
+      scheduleRows: schedules,
+      linkRows: links,
+      phaseRows: phases,
+      saved3dRows: saved3d,
+      cameraViewRows: cameraViews,
+      familyRows,
+      groupDefRows,
+    };
+  }, [elements, search, localOrder]);
 
   const closeCtx = useCallback(() => setCtxMenu(null), []);
 
@@ -3019,6 +3049,114 @@ export function ProjectBrowserV3({
           </PbGroup>
         ) : null}
 
+        {/* §1.6.11 — Families */}
+        <PbCollapsibleSection
+          label={`Families (${familyRows.length})`}
+          collapsed={familiesCollapsed}
+          onToggle={() => setFamiliesCollapsed((v) => !v)}
+          testId="pb-section-families"
+        >
+          {(['Structural', 'Voids', 'Revolves'] as const).map((grpLabel) => {
+            const grpRows = familyRows.filter((e) =>
+              grpLabel === 'Structural'
+                ? ['family_extrusion', 'family_blend', 'family_sweep'].includes(e.kind)
+                : grpLabel === 'Voids'
+                  ? e.kind === 'family_void'
+                  : e.kind === 'family_revolve',
+            );
+            if (grpRows.length === 0) return null;
+            return (
+              <div key={grpLabel}>
+                <div
+                  style={{
+                    padding: 'var(--space-0-5) var(--space-3)',
+                    fontSize: 'var(--text-xs, 10px)',
+                    color: 'var(--color-muted-foreground)',
+                    fontWeight: 600,
+                    textTransform: 'uppercase',
+                  }}
+                >
+                  {grpLabel}
+                </div>
+                <ul style={{ listStyle: 'none', margin: 0, padding: 0 }}>
+                  {grpRows.map((ft) => (
+                    <li key={ft.id} data-testid={`pb-family-${ft.id}`}>
+                      <button
+                        type="button"
+                        style={{
+                          width: '100%',
+                          textAlign: 'left',
+                          padding: 'var(--space-0-5) var(--space-4)',
+                          fontSize: 'var(--text-sm, 12.5px)',
+                          color: 'var(--color-foreground)',
+                          background: 'transparent',
+                          border: 'none',
+                          cursor: 'pointer',
+                        }}
+                        onDoubleClick={() => {
+                          /* open family editor */
+                        }}
+                      >
+                        🧩 {(ft as { name?: string }).name ?? ft.kind}
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            );
+          })}
+        </PbCollapsibleSection>
+
+        {/* §1.6.11 — Groups */}
+        <PbCollapsibleSection
+          label={`Groups (${groupDefRows.length})`}
+          collapsed={groupsCollapsed}
+          onToggle={() => setGroupsCollapsed((v) => !v)}
+          testId="pb-section-groups"
+        >
+          <ul style={{ listStyle: 'none', margin: 0, padding: 0 }}>
+            {groupDefRows.map((gd) => {
+              const instCount = elements.filter(
+                (e) =>
+                  e.kind === 'group_instance' &&
+                  (e as { groupDefinitionId?: string }).groupDefinitionId === gd.id,
+              ).length;
+              return (
+                <li key={gd.id} data-testid={`pb-group-${gd.id}`}>
+                  <button
+                    type="button"
+                    style={{
+                      width: '100%',
+                      textAlign: 'left',
+                      padding: 'var(--space-0-5) var(--space-3)',
+                      fontSize: 'var(--text-sm, 12.5px)',
+                      color: 'var(--color-foreground)',
+                      background: 'transparent',
+                      border: 'none',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 'var(--space-2)',
+                    }}
+                  >
+                    <span>⬡</span>
+                    <span style={{ flex: 1 }}>{(gd as { name?: string }).name ?? 'Group'}</span>
+                    <span
+                      style={{
+                        color: 'var(--color-muted-foreground)',
+                        fontSize: 'var(--text-xs, 10px)',
+                      }}
+                      data-testid={`pb-group-instance-count-${gd.id}`}
+                    >
+                      ×{instCount}
+                    </span>
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
+        </PbCollapsibleSection>
+
         {viewRows.length === 0 &&
         scheduleRows.length === 0 &&
         linkRows.length === 0 &&
@@ -3072,6 +3210,48 @@ export function ProjectBrowserV3({
           isLocked={ctxMenu.isLocked}
         />
       ) : null}
+    </div>
+  );
+}
+
+/** §1.6.11 — collapsible section wrapper used for Families and Groups. */
+function PbCollapsibleSection({
+  label,
+  collapsed,
+  onToggle,
+  testId,
+  children,
+}: {
+  label: string;
+  collapsed: boolean;
+  onToggle: () => void;
+  testId: string;
+  children: React.ReactNode;
+}): JSX.Element {
+  return (
+    <div data-testid={testId} style={{ marginBottom: 'var(--space-2)' }}>
+      <button
+        type="button"
+        onClick={onToggle}
+        style={{
+          display: 'flex',
+          width: '100%',
+          alignItems: 'center',
+          gap: 'var(--space-1)',
+          padding: 'var(--space-1) var(--space-3)',
+          fontSize: 'var(--text-sm, 12.5px)',
+          color: 'var(--color-muted-foreground)',
+          letterSpacing: 'var(--text-eyebrow-tracking, 0.04em)',
+          textTransform: 'uppercase',
+          background: 'transparent',
+          border: 'none',
+          cursor: 'pointer',
+        }}
+      >
+        <span>{collapsed ? '▸' : '▾'}</span>
+        {label}
+      </button>
+      {!collapsed ? children : null}
     </div>
   );
 }
