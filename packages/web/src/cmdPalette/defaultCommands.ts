@@ -2743,3 +2743,14 @@ registerCommand({
     setSelectLinkedEnabled(!selectLinkedEnabled);
   },
 });
+
+// §1.6.2: project template save/load via localStorage
+registerCommand({
+  id: 'file.project-templates',
+  label: 'Project Templates',
+  keywords: ['template', 'save', 'new from template', 'project template'],
+  category: 'command',
+  invoke: (ctx) => {
+    ctx.openProjectTemplates?.();
+  },
+});

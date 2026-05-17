@@ -82,6 +82,8 @@ export interface ProjectMenuProps {
   onExportDwg?: () => void;
   /** Optional project name used as default download filename. */
   projectName?: string;
+  /** §1.6.2: open the Project Templates dialog. */
+  onOpenProjectTemplates?: () => void;
 }
 
 export function ProjectMenu({
@@ -117,6 +119,7 @@ export function ProjectMenu({
   onExportDwg,
   exportLevels,
   projectName: _projectName,
+  onOpenProjectTemplates,
 }: ProjectMenuProps): JSX.Element | null {
   const popoverRef = useRef<HTMLDivElement | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
@@ -500,6 +503,17 @@ export function ProjectMenu({
             onClick={() => {
               onOpenChange(false);
               onOpenProjectInfo();
+            }}
+          />
+        ) : null}
+        {onOpenProjectTemplates ? (
+          <MenuItem
+            label="Project Templates…"
+            icon="settings"
+            testId="project-menu-templates"
+            onClick={() => {
+              onOpenChange(false);
+              onOpenProjectTemplates();
             }}
           />
         ) : null}

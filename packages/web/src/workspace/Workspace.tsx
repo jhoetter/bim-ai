@@ -5143,6 +5143,7 @@ export function Workspace(): JSX.Element {
           },
           sectionBoxFromPlan,
           openPrintDialog: () => setPrintPlotOpen(true),
+          openProjectTemplates: () => setTemplatesOpen(true),
           autoDimWalls: () => {
             const lvlId = activeLevelId ?? '';
             if (!lvlId) return;
@@ -5257,6 +5258,7 @@ export function Workspace(): JSX.Element {
         />
       ) : null}
       <OnboardingTour open={tourOpen} onClose={() => setTourOpen(false)} />
+      {templatesOpen && <ProjectTemplatesDialog onClose={() => setTemplatesOpen(false)} />}
       <VVDialog open={vvDialogOpen} onClose={closeVVDialog} />
       {advisorOpen ? (
         <div
@@ -5387,6 +5389,7 @@ export function Workspace(): JSX.Element {
         onManagePhases={() => setPhaseManagerOpen(true)}
         onOpenGlobalParams={() => setGlobalParamsOpen(true)}
         onOpenProjectInfo={() => setProjectInfoOpen(true)}
+        onOpenProjectTemplates={() => setTemplatesOpen(true)}
         onNewClear={handleNewClear}
         onReplayTour={replayOnboardingTour}
         onManageLinks={() => setManageLinksOpen(true)}
