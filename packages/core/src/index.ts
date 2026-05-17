@@ -3144,7 +3144,7 @@ export type Element =
       longitudeDeg: number;
       dateIso: string;
       timeOfDay: { hours: number; minutes: number };
-      daylightSavingStrategy?: 'auto' | 'none' | null;
+      daylightSavingStrategy?: 'auto' | 'on' | 'off' | null;
     }
   | {
       kind: 'beam_system';
