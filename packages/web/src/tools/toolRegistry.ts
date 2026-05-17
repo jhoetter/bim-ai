@@ -32,6 +32,8 @@ export type ToolId =
   | 'roof-sketch'
   | 'room-separation-sketch'
   | 'stair'
+  | 'stair-run'
+  | 'stair-landing'
   | 'railing'
   | 'room'
   | 'area'
@@ -115,7 +117,9 @@ export type ToolId =
   | 'family-blend'
   | 'family-sweep'
   | 'graded-region'
-  | 'terrain-split';
+  | 'terrain-split'
+  | 'detail-line'
+  | 'detail-filled-region';
 
 /** Modify-group tool IDs — used by ToolPalette to insert a separator. */
 export const MODIFY_TOOL_IDS = new Set<ToolId>([
@@ -255,6 +259,24 @@ export function getToolRegistry(t: TFunction): Record<ToolId, ToolDefinition> {
       shortcut: 'S',
       modes: ['plan', '3d'],
       tooltip: t('tools.stair.tooltip'),
+    },
+    'stair-run': {
+      id: 'stair-run',
+      label: 'Add Stair Run',
+      icon: 'stair' as IconName,
+      hotkey: 'SR',
+      shortcut: 'SR',
+      modes: ['plan'] as WorkspaceMode[],
+      tooltip: 'Add an individual stair run segment to an existing stair (SR)',
+    },
+    'stair-landing': {
+      id: 'stair-landing',
+      label: 'Add Stair Landing',
+      icon: 'stair' as IconName,
+      hotkey: 'SL2',
+      shortcut: 'SL2',
+      modes: ['plan'] as WorkspaceMode[],
+      tooltip: 'Sketch a stair landing polygon for an existing stair (SL2)',
     },
     railing: {
       id: 'railing',
@@ -999,6 +1021,24 @@ export function getToolRegistry(t: TFunction): Record<ToolId, ToolDefinition> {
       modes: ['plan'] as WorkspaceMode[],
       tooltip: 'Draw a split line to divide a toposolid into two surfaces. §5.1.6',
     },
+    'detail-line': {
+      id: 'detail-line',
+      label: 'Detail Line',
+      icon: 'detailLine' as IconName,
+      hotkey: 'DL2',
+      shortcut: 'DL2',
+      modes: ['plan'] as WorkspaceMode[],
+      tooltip: 'Draw a 2D detail line polyline in the active plan view. §6.4.2',
+    },
+    'detail-filled-region': {
+      id: 'detail-filled-region',
+      label: 'Detail Filled Region',
+      icon: 'floor' as IconName,
+      hotkey: 'FR',
+      shortcut: 'FR',
+      modes: ['plan'] as WorkspaceMode[],
+      tooltip: 'Sketch a 2D filled region polygon in the active plan view. §6.4.2',
+    },
   };
 }
 
@@ -1023,6 +1063,8 @@ const PALETTE_ORDER: ToolId[] = [
   'roof',
   'roof-sketch',
   'stair',
+  'stair-run',
+  'stair-landing',
   'railing',
   'room',
   'area',
@@ -1082,6 +1124,8 @@ const PALETTE_ORDER: ToolId[] = [
   'family-sweep',
   'graded-region',
   'terrain-split',
+  'detail-line',
+  'detail-filled-region',
 ];
 
 export function paletteForMode(mode: WorkspaceMode, t: TFunction): ToolDefinition[] {
