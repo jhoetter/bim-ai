@@ -2272,4 +2272,18 @@ const MASS_CAPABILITIES: CommandCapability[] = [
     notes:
       '§8.6.4: enters component-level stair edit mode; shows per-run riser/width editors in inspector.',
   },
+  {
+    id: 'modify.shaft-apply-cut',
+    label: 'Apply Shaft Cut',
+    owner: 'cmdPalette/defaultCommands',
+    group: 'modify',
+    scope: 'selection',
+    intendedModes: ['plan', '3d'],
+    surfaces: ['cmd-k'],
+    executionSurface: 'canvas',
+    preconditions: ['selected-shaft'],
+    status: 'implemented',
+    usabilityScore: 8,
+    notes: '§2.5.1: recomputes and stores cutFloorIds on the selected shaft element.',
+  },
 ];

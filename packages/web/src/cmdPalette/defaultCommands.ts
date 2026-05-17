@@ -2663,3 +2663,22 @@ registerCommand({
   category: 'tool',
   invoke: (ctx) => startPlanTool(ctx, 'detail-filled-region'),
 });
+
+// §2.5.1: apply shaft cut — recomputes and stores cut floor IDs on the selected shaft
+registerCommand({
+  id: 'modify.shaft-apply-cut',
+  label: 'Apply Shaft Cut',
+  keywords: ['shaft', 'opening', 'void', 'floor', 'cut', 'stair'],
+  category: 'command',
+  isAvailable: (ctx) => {
+    const id = ctx.selectedElementIds[0];
+    if (!id) return false;
+    return useBimStore.getState().elementsById[id]?.kind === 'shaft';
+  },
+  invoke: (ctx) => {
+    const id = ctx.selectedElementIds.find((sid) => {
+      return useBimStore.getState().elementsById[sid]?.kind === 'shaft';
+    });
+    if (id) ctx.dispatchCommand?.({ type: 'applyShaftCut', shaftId: id, cutFloorIds: [] });
+  },
+});

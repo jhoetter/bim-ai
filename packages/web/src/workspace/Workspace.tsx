@@ -24,6 +24,7 @@ import { Icons, type IconName } from '@bim-ai/ui';
 import { log } from '../logger';
 import { type PlanCameraHandle } from '../plan/PlanCanvas';
 import { shaftBoundaryFromStair } from '../plan/stairShaft';
+import { computeShaftCutFloors } from '../plan/shaftCutFloors';
 import { createSimilarPayload } from '../plan/createSimilar';
 import { equalizeWitnessSpacing } from '../plan/equalizeWitnessSpacing';
 import { applyFamilyParameters } from '../plan/familyParameterEval';
@@ -1985,6 +1986,23 @@ export function Workspace(): JSX.Element {
         });
         return;
       }
+      // §2.5.1: applyShaftCut — store the cut floor IDs on the shaft element
+      if (cmd.type === 'applyShaftCut') {
+        const current = useBimStore.getState().elementsById;
+        const shaft = current[cmd.shaftId as string];
+        if (!shaft || shaft.kind !== 'shaft') return;
+        const cutFloorIds = computeShaftCutFloors(
+          shaft,
+          current as Record<string, Element | undefined>,
+        );
+        useBimStore.setState({
+          elementsById: {
+            ...current,
+            [shaft.id]: { ...shaft, cutFloorIds },
+          },
+        });
+        return;
+      }
       // §4.2.1: client-only permanent dimension chain creation
       if (cmd.type === 'create_permanent_dimension') {
         const current = useBimStore.getState().elementsById;
@@ -2551,6 +2569,26 @@ export function Workspace(): JSX.Element {
         const current = { ...useBimStore.getState().elementsById };
         delete current[elementId];
         useBimStore.setState({ elementsById: current });
+        return;
+      }
+
+      // §8.6.2: client-only stair component creation / removal
+      if (cmd.type === 'addStairRun') {
+        const { elementsById: cur } = useBimStore.getState();
+        const run = cmd.run as Element;
+        useBimStore.setState({ elementsById: { ...cur, [run.id]: run } });
+        return;
+      }
+      if (cmd.type === 'addStairLanding') {
+        const { elementsById: cur } = useBimStore.getState();
+        const landing = cmd.landing as Element;
+        useBimStore.setState({ elementsById: { ...cur, [landing.id]: landing } });
+        return;
+      }
+      if (cmd.type === 'removeStairComponent') {
+        const { elementsById: cur } = useBimStore.getState();
+        const { [cmd.componentId as string]: _removed, ...remaining } = cur;
+        useBimStore.setState({ elementsById: remaining });
         return;
       }
 

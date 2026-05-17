@@ -2431,6 +2431,58 @@ export function InspectorPropertiesFor(
         </div>
       );
     }
+    case 'stair_run': {
+      const stairRunEl = el as Extract<Element, { kind: 'stair_run' }>;
+      const { onPropertyChange: srPropChange } = options ?? {};
+      return (
+        <div className="flex flex-col gap-2">
+          <div className="flex items-center gap-2 py-0.5">
+            <span className="text-xs text-muted w-28 shrink-0">Run Width (mm)</span>
+            <input
+              type="number"
+              data-testid="inspector-stair-run-width"
+              className="inspector-input"
+              value={stairRunEl.runWidthMm}
+              onChange={(e) => srPropChange?.('runWidthMm', +e.target.value)}
+            />
+          </div>
+          <div className="flex items-center gap-2 py-0.5">
+            <span className="text-xs text-muted w-28 shrink-0">Riser Count</span>
+            <input
+              type="number"
+              data-testid="inspector-stair-run-risers"
+              className="inspector-input"
+              value={stairRunEl.riserCount}
+              onChange={(e) => srPropChange?.('riserCount', +e.target.value)}
+            />
+          </div>
+          <span data-testid="inspector-stair-run-index" className="text-xs text-muted">
+            Run {stairRunEl.runIndex + 1}
+          </span>
+        </div>
+      );
+    }
+    case 'stair_landing': {
+      const stairLandingEl = el as Extract<Element, { kind: 'stair_landing' }>;
+      const { onPropertyChange: slPropChange } = options ?? {};
+      return (
+        <div className="flex flex-col gap-2">
+          <div className="flex items-center gap-2 py-0.5">
+            <span className="text-xs text-muted w-28 shrink-0">Elevation (mm)</span>
+            <input
+              type="number"
+              data-testid="inspector-stair-landing-elevation"
+              className="inspector-input"
+              value={stairLandingEl.elevationMm}
+              onChange={(e) => slPropChange?.('elevationMm', +e.target.value)}
+            />
+          </div>
+          <span data-testid="inspector-stair-landing-points" className="text-xs text-muted">
+            {stairLandingEl.perimeterMm.length} boundary points
+          </span>
+        </div>
+      );
+    }
     case 'ramp': {
       const { onPropertyChange: rampPropChange } = options ?? {};
       return (
@@ -5334,11 +5386,19 @@ export function InspectorPropertiesFor(
           >
             Recompute Cuts
           </button>
-          {el.cutFloorIds && (
-            <span data-testid="inspector-shaft-cut-floor-count" className="text-xs text-muted">
-              Cuts {el.cutFloorIds.length} floor(s)
-            </span>
-          )}
+          <button
+            type="button"
+            className="rounded border border-border bg-background px-2 py-0.5 text-xs text-foreground hover:bg-surface-strong"
+            data-testid="inspector-shaft-apply-cut"
+            onClick={() =>
+              onDispatchCommand?.({ type: 'applyShaftCut', shaftId: el.id, cutFloorIds: [] })
+            }
+          >
+            Apply Shaft Cut
+          </button>
+          <span data-testid="inspector-shaft-cut-floor-count" className="text-xs text-muted">
+            Cuts {((el as any).cutFloorIds ?? []).length} floor(s)
+          </span>
         </div>
       );
     }

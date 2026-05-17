@@ -232,6 +232,12 @@ export type RecomputeShaftCutsCmd = {
   shaftId: string;
 };
 
+export type ApplyShaftCutCmd = {
+  type: 'applyShaftCut';
+  shaftId: string;
+  cutFloorIds: string[];
+};
+
 // ---------------------------------------------------------------------------
 // CAN-V3-02 — Hatch pattern definition
 // ---------------------------------------------------------------------------
