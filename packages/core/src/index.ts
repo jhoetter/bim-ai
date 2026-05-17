@@ -1851,6 +1851,10 @@ export type Element =
       attachedToRoofId?: string | null;
       /** §3.4.1: computed top-face elevation (mm above datum). Set by attach command; used by mesh builder. */
       topFaceElevationMm?: number | null;
+      /** §2.4.2: optional edge cross-section profile points (mm). */
+      edgeProfileMm?: { xMm: number; yMm: number }[];
+      /** §2.4.2: true when the boundary was auto-detected from surrounding walls. */
+      autoDetectedBoundary?: boolean;
     }
   | {
       kind: 'roof';
@@ -1989,6 +1993,8 @@ export type Element =
       totalHeightMm?: number;
       /** §8.6.4: riser height per step in mm (overrides riserMm when set). */
       riserHeightMm?: number;
+      /** §8.6.4: when true, the stair component edit panel is shown in the inspector. */
+      editStairActive?: boolean;
     }
   | {
       kind: 'slab_opening';
@@ -2416,8 +2422,11 @@ export type Element =
       id: string;
       /** Closed polygon boundary. */
       perimeterMm: { xMm: number; yMm: number }[];
+      /** Alias for perimeterMm — §6.4.2 drafting fields. */
+      boundaryMm?: { xMm: number; yMm: number }[];
       /** Fill pattern: solid | hatch-45 | hatch-90 | cross | diagonal. */
       fillPattern?: 'solid' | 'hatch-45' | 'hatch-90' | 'cross' | 'diagonal';
+      fillPatternId?: string | null;
       /** Fill color hex. */
       colorHex?: string;
       viewId?: string | null;
@@ -3911,6 +3920,24 @@ export type SplitWallCmd = {
   splitPointMm: XY;
 };
 
+/** §6.4.2: add a detail_line element (view-local 2D polyline). */
+export type AddDetailLineCmd = {
+  type: 'addDetailLine';
+  element: Extract<Element, { kind: 'detail_line' }>;
+};
+
+/** §6.4.2: add a detail_filled_region element (view-local 2D filled region). */
+export type AddDetailFilledRegionCmd = {
+  type: 'addDetailFilledRegion';
+  element: Extract<Element, { kind: 'detail_filled_region' }>;
+};
+
+/** §6.4.2: remove a detail drafting element. */
+export type RemoveDetailElementCmd = {
+  type: 'removeDetailElement';
+  elementId: string;
+};
+
 /** Evidence-package subtree: deterministic PNG inventory + digest hygiene (WP-F02/F03). */
 export type CorrelationDigestConsistencyV1 = {
   format: 'correlationDigestConsistency_v1';
@@ -5096,6 +5123,13 @@ export type CreatePermanentDimensionCmd = {
   offsetMm: XY;
 };
 
+/** §4.1 — Auto-dimension all walls on a level with permanent_dimension elements. */
+export type AutoDimensionWallsCmd = {
+  type: 'autoDimensionWalls';
+  levelId: string | null;
+  offsetMm?: number;
+};
+
 // ---------------------------------------------------------------------------
 // COL-V3-06 — Offline-tolerant authoring: display-only sync badge type
 // ---------------------------------------------------------------------------
@@ -5353,4 +5387,29 @@ export type AddStairLandingCmd = {
 export type RemoveStairComponentCmd = {
   type: 'removeStairComponent';
   componentId: string;
+};
+
+// ---------------------------------------------------------------------------
+// §8.6.4 — Stair edit mode commands
+// ---------------------------------------------------------------------------
+
+/** §8.6.4: enter component-level stair edit mode for a given stair. */
+export type EnterStairEditModeCmd = {
+  type: 'enterStairEditMode';
+  stairId: string;
+};
+
+/** §8.6.4: exit component-level stair edit mode for a given stair. */
+export type ExitStairEditModeCmd = {
+  type: 'exitStairEditMode';
+  stairId: string;
+};
+
+/** §8.6.4: update riser count or run width on an individual run within the stair edit panel. */
+export type UpdateStairRunCmd = {
+  type: 'updateStairRun';
+  stairId: string;
+  runIndex: number;
+  riserCount?: number;
+  runWidthMm?: number;
 };

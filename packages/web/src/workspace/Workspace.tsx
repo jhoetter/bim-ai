@@ -28,6 +28,7 @@ import { createSimilarPayload } from '../plan/createSimilar';
 import { equalizeWitnessSpacing } from '../plan/equalizeWitnessSpacing';
 import { applyFamilyParameters } from '../plan/familyParameterEval';
 import { autoDimensionWalls, tagAllRooms as tagAllRoomsFn } from '../plan/autoDimension';
+import { autoDimensionWalls as autoDimensionWallsCmd } from '../plan/autoDimensionWalls';
 import { checkHeadHeightClearances, type ClearanceViolation } from '../plan/openingClearance';
 import { ClearanceViolationPanel } from './ClearanceViolationPanel';
 import {
@@ -1890,6 +1891,61 @@ export function Workspace(): JSX.Element {
         }
         return;
       }
+      // §8.6.4: stair edit mode — client-only flag toggling, no server round-trip
+      if (cmd.type === 'enterStairEditMode') {
+        const current = useBimStore.getState().elementsById;
+        const stair = current[cmd.stairId as string];
+        if (stair?.kind === 'stair') {
+          useBimStore.setState({
+            elementsById: { ...current, [stair.id]: { ...stair, editStairActive: true } },
+          });
+        }
+        return;
+      }
+      if (cmd.type === 'exitStairEditMode') {
+        const current = useBimStore.getState().elementsById;
+        const stair = current[cmd.stairId as string];
+        if (stair?.kind === 'stair') {
+          useBimStore.setState({
+            elementsById: { ...current, [stair.id]: { ...stair, editStairActive: false } },
+          });
+        }
+        return;
+      }
+      if (cmd.type === 'updateStairRun') {
+        const current = useBimStore.getState().elementsById;
+        const stair = current[cmd.stairId as string];
+        if (stair?.kind === 'stair') {
+          const existingRuns: any[] = (stair as any).runs ?? [
+            {
+              runIndex: 0,
+              riserCount: (stair as any).riserCount ?? 10,
+              runWidthMm: (stair as any).runWidthMm ?? 1200,
+            },
+          ];
+          const runIndex = cmd.runIndex as number;
+          const existing = existingRuns.find((r: any) => r.runIndex === runIndex) ?? {
+            runIndex,
+            riserCount: 10,
+            runWidthMm: 1200,
+          };
+          const updated = { ...existing };
+          if (cmd.riserCount !== undefined) updated.riserCount = cmd.riserCount as number;
+          if (cmd.runWidthMm !== undefined) updated.runWidthMm = cmd.runWidthMm as number;
+          const idx = existingRuns.findIndex((r: any) => r.runIndex === runIndex);
+          const nextRuns =
+            idx >= 0
+              ? existingRuns.map((r: any, i: number) => (i === idx ? updated : r))
+              : [...existingRuns, updated];
+          useBimStore.setState({
+            elementsById: {
+              ...current,
+              [stair.id]: { ...stair, runs: nextRuns } as Element,
+            },
+          });
+        }
+        return;
+      }
       // §2.5.1: recompute shaft floor cuts
       if (cmd.type === 'recomputeShaftCuts') {
         const current = useBimStore.getState().elementsById;
@@ -1963,6 +2019,21 @@ export function Workspace(): JSX.Element {
             },
           });
         }
+        return;
+      }
+      // §4.1: autoDimensionWalls — generate permanent_dimension elements from wall set.
+      if (cmd.type === 'autoDimensionWalls') {
+        const { elementsById: cur } = useBimStore.getState();
+        const walls = Object.values(cur).filter(
+          (e): e is Extract<Element, { kind: 'wall' }> =>
+            e?.kind === 'wall' && (cmd.levelId === null || (e as any).levelId === cmd.levelId),
+        );
+        const dims = autoDimensionWallsCmd(walls, (cmd.offsetMm as number | undefined) ?? 1000);
+        const next = { ...cur };
+        for (const dim of dims) {
+          next[dim.id] = dim;
+        }
+        useBimStore.setState({ elementsById: next });
         return;
       }
       // §15.1.3: addFamilyParameter — add a family_parameter element client-side.
@@ -2459,6 +2530,58 @@ export function Workspace(): JSX.Element {
           basePtMm: { xMm: originXMm, yMm: originYMm },
           scaleFactor: factor,
         });
+        return;
+      }
+
+      // §6.4.2: client-only detail drafting element creation / removal
+      if (cmd.type === 'addDetailLine') {
+        const element = cmd.element as Element;
+        const current = useBimStore.getState().elementsById;
+        useBimStore.setState({ elementsById: { ...current, [element.id]: element } });
+        return;
+      }
+      if (cmd.type === 'addDetailFilledRegion') {
+        const element = cmd.element as Element;
+        const current = useBimStore.getState().elementsById;
+        useBimStore.setState({ elementsById: { ...current, [element.id]: element } });
+        return;
+      }
+      if (cmd.type === 'removeDetailElement') {
+        const elementId = cmd.elementId as string;
+        const current = { ...useBimStore.getState().elementsById };
+        delete current[elementId];
+        useBimStore.setState({ elementsById: current });
+        return;
+      }
+
+      // §12.1.1: addIfcLink — store link_ifc element client-side (no server round-trip)
+      if (cmd.type === 'addIfcLink') {
+        const element = cmd.element as Extract<Element, { kind: 'link_ifc' }>;
+        const current = useBimStore.getState().elementsById;
+        useBimStore.setState({
+          elementsById: { ...current, [element.id]: element },
+        });
+        return;
+      }
+      // §12.1.1: removeIfcLink — delete link_ifc element client-side
+      if (cmd.type === 'removeIfcLink') {
+        const current = { ...useBimStore.getState().elementsById };
+        delete current[cmd.linkId as string];
+        useBimStore.setState({ elementsById: current });
+        return;
+      }
+      // §12.1.1: toggleIfcLinkVisibility — flip visible flag client-side
+      if (cmd.type === 'toggleIfcLinkVisibility') {
+        const current = useBimStore.getState().elementsById;
+        const link = current[cmd.linkId as string];
+        if (link?.kind === 'link_ifc') {
+          useBimStore.setState({
+            elementsById: {
+              ...current,
+              [link.id]: { ...link, visible: !link.visible },
+            },
+          });
+        }
         return;
       }
 
@@ -5196,7 +5319,11 @@ export function Workspace(): JSX.Element {
           setManageLinksOpen(true);
         }}
       />
-      <ManageLinksDialog open={manageLinksOpen} onClose={() => setManageLinksOpen(false)} />
+      <ManageLinksDialog
+        open={manageLinksOpen}
+        onClose={() => setManageLinksOpen(false)}
+        onSemanticCommand={onSemanticCommand}
+      />
       {dxfImportOpen && (
         <DxfImportDialog
           onImport={(text) => {

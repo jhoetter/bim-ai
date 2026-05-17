@@ -168,6 +168,14 @@ registerCommand({
 });
 
 registerCommand({
+  id: 'tool.floor-auto-detect',
+  label: 'Auto-Detect Floor Boundary',
+  keywords: ['floor', 'auto', 'detect', 'boundary', 'wall', 'slab'],
+  category: 'tool',
+  invoke: (ctx) => startPlanTool(ctx, 'floor'),
+});
+
+registerCommand({
   id: 'generate.walls-from-boundary',
   label: 'Create Walls from Boundary',
   keywords: ['walls from floor', 'walls from room', 'boundary walls', 'wall chain'],
@@ -1546,6 +1554,14 @@ registerCommand({
 });
 
 registerCommand({
+  id: 'file.link-ifc',
+  label: 'Link IFC File…',
+  keywords: ['link', 'ifc', 'federated', 'import'],
+  category: 'command',
+  invoke: (ctx) => ctx.openManageLinks?.(),
+});
+
+registerCommand({
   id: 'project.manage-links',
   label: 'Manage Project Links',
   keywords: ['project', 'links', 'ifc', 'dxf', 'external', 'resources'],
@@ -1579,11 +1595,15 @@ registerCommand({
 
 // §4.1 — Auto-Dimension Walls
 registerCommand({
-  id: 'annotate.auto-dim-walls',
+  id: 'annotate.auto-dimension-walls',
   label: 'Auto-Dimension Walls',
-  keywords: ['auto', 'dimension', 'walls', 'annotate'],
+  keywords: ['auto', 'dimension', 'walls', 'annotate', 'automatic'],
   category: 'command',
-  invoke: (ctx) => ctx.autoDimWalls?.(),
+  invoke: (ctx) => {
+    const state = useBimStore.getState();
+    const levelId = state.activeLevelId ?? null;
+    ctx.dispatchCommand?.({ type: 'autoDimensionWalls', levelId });
+  },
 });
 
 // §4.1 — Tag All Rooms
@@ -2596,4 +2616,21 @@ registerCommand({
   keywords: ['terrain', 'split', 'toposolid', 'divide'],
   category: 'tool',
   invoke: (ctx) => ctx.activateTool?.('terrain-split'),
+});
+
+// §6.4.2 — 2D detail drafting tools
+registerCommand({
+  id: 'tool.detail-line',
+  label: 'Detail Line',
+  keywords: ['detail', 'line', '2d', 'draft', 'annotate'],
+  category: 'tool',
+  invoke: (ctx) => startPlanTool(ctx, 'detail-line'),
+});
+
+registerCommand({
+  id: 'tool.detail-filled-region',
+  label: 'Detail Filled Region',
+  keywords: ['detail', 'filled', 'region', 'hatch', 'pattern', '2d'],
+  category: 'tool',
+  invoke: (ctx) => startPlanTool(ctx, 'detail-filled-region'),
 });
