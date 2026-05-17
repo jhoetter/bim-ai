@@ -32,6 +32,7 @@ import { computeFloorTypeThicknessMm } from '../../tools/floorTypeThickness';
 import { WallTypeLayerEditor } from '../families/WallTypeLayerEditor';
 import { stairBoundaryMm } from '../../plan/stairBoundingBox';
 import { angleBetweenVectors } from '../../plan/measureGeometry';
+import { getStairComponents } from '../../plan/stairComponentList';
 
 /**
  * Inspector parameter renderers — spec §13.
@@ -852,6 +853,122 @@ function WallPartsPanel({
 }
 
 /** Look up a human-readable name for an element ID, falling back to the raw ID. */
+function StairAssemblySection({
+  stairId,
+  elementsById,
+  onSemanticCommand,
+}: {
+  stairId: string;
+  elementsById: Record<string, Element>;
+  onSemanticCommand?: (cmd: any) => void;
+}) {
+  const { runs, landings } = getStairComponents(stairId, elementsById);
+
+  return (
+    <details style={{ marginTop: 8 }}>
+      <summary
+        data-testid="inspector-stair-assembly-summary"
+        style={{ cursor: 'pointer', fontWeight: 600, fontSize: 12 }}
+      >
+        Assembly ({runs.length} runs, {landings.length} landings)
+      </summary>
+      <div style={{ marginTop: 6 }}>
+        {runs.map((run, i) => (
+          <div
+            key={run.id}
+            data-testid={`inspector-stair-run-row-${i}`}
+            style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 11, marginBottom: 2 }}
+          >
+            <span>
+              Run {i + 1}: {(run as any).riserCount ?? '?'} risers, {(run as any).runWidthMm ?? '?'}
+              mm wide
+            </span>
+            <button
+              data-testid={`inspector-stair-run-remove-${i}`}
+              onClick={() =>
+                onSemanticCommand?.({ type: 'removeStairComponent', componentId: run.id })
+              }
+              style={{ color: '#f87171', fontSize: 10 }}
+            >
+              ✕
+            </button>
+          </div>
+        ))}
+        {landings.map((landing, i) => (
+          <div
+            key={landing.id}
+            data-testid={`inspector-stair-landing-row-${i}`}
+            style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 11, marginBottom: 2 }}
+          >
+            <span>
+              Landing {i + 1}: {(landing as any).depthMm ?? (landing as any).elevationMm ?? '?'}mm
+            </span>
+            <button
+              data-testid={`inspector-stair-landing-remove-${i}`}
+              onClick={() =>
+                onSemanticCommand?.({ type: 'removeStairComponent', componentId: landing.id })
+              }
+              style={{ color: '#f87171', fontSize: 10 }}
+            >
+              ✕
+            </button>
+          </div>
+        ))}
+        {runs.length === 0 && landings.length === 0 && (
+          <p data-testid="inspector-stair-assembly-empty" style={{ fontSize: 11, color: '#888' }}>
+            No components. Use the Stair by Component tool to add runs and landings.
+          </p>
+        )}
+        <button
+          data-testid="inspector-stair-add-run-btn"
+          onClick={() =>
+            onSemanticCommand?.({
+              type: 'addStairRun',
+              run: {
+                id: crypto.randomUUID(),
+                kind: 'stair_run',
+                stairId,
+                riserCount: 10,
+                runWidthMm: 1200,
+                runIndex: 0,
+                startMm: { xMm: 0, yMm: 0 },
+                endMm: { xMm: 0, yMm: 3000 },
+              },
+            })
+          }
+          style={{ fontSize: 11, marginTop: 4, marginRight: 8 }}
+        >
+          + Add Run
+        </button>
+        <button
+          data-testid="inspector-stair-add-landing-btn"
+          onClick={() =>
+            onSemanticCommand?.({
+              type: 'addStairLanding',
+              landing: {
+                id: crypto.randomUUID(),
+                kind: 'stair_landing',
+                stairId,
+                landingIndex: 0,
+                elevationMm: 0,
+                perimeterMm: [
+                  { xMm: 0, yMm: 0 },
+                  { xMm: 1200, yMm: 0 },
+                  { xMm: 1200, yMm: 1200 },
+                  { xMm: 0, yMm: 1200 },
+                ],
+              },
+            })
+          }
+          style={{ fontSize: 11, marginTop: 4 }}
+        >
+          + Add Landing
+        </button>
+      </div>
+    </details>
+  );
+}
+
 function resolveElName(id: string | null | undefined, eb: Record<string, Element>): string {
   if (!id) return '—';
   const e = eb[id];
@@ -2535,6 +2652,12 @@ export function InspectorPropertiesFor(
               </button>
             )}
           </div>
+          {/* §8.6.2: Stair Assembly — list linked run/landing components */}
+          <StairAssemblySection
+            stairId={el.id}
+            elementsById={elementsById}
+            onSemanticCommand={onDispatchCommand as any}
+          />
         </div>
       );
     }
@@ -4594,6 +4717,31 @@ export function InspectorPropertiesFor(
             </div>
           ) : (
             <FieldRow label="EQ" value={el.eqEnabled ? 'On' : 'Off'} />
+          )}
+          {/* Dimension element references */}
+          {(el as any).witnessPointsMm?.some((pt: any) => pt.referencedElementId) && (
+            <details style={{ marginTop: 8 }}>
+              <summary
+                data-testid="inspector-dim-references-summary"
+                style={{ cursor: 'pointer', fontSize: 12 }}
+              >
+                Element References (
+                {(el as any).witnessPointsMm.filter((pt: any) => pt.referencedElementId).length})
+              </summary>
+              <div style={{ marginTop: 4 }}>
+                {(el as any).witnessPointsMm
+                  .filter((pt: any) => pt.referencedElementId)
+                  .map((pt: any, i: number) => (
+                    <div
+                      key={i}
+                      data-testid={`inspector-dim-ref-${i}`}
+                      style={{ fontSize: 11, color: '#aaa', padding: '2px 0' }}
+                    >
+                      Pt {i + 1}: {pt.referencedElementId?.slice(-8)} ({pt.referenceEdge ?? 'auto'})
+                    </div>
+                  ))}
+              </div>
+            </details>
           )}
         </div>
       );
