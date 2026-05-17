@@ -1004,6 +1004,37 @@ export function InspectorPropertiesFor(
             </div>
           </details>
 
+          <details className="py-0.5">
+            <summary className="text-xs text-muted cursor-pointer select-none">
+              Edit Profile
+            </summary>
+            <div className="flex flex-col gap-2 mt-1 pl-1">
+              <button
+                type="button"
+                className="text-xs text-muted underline text-left w-fit"
+                data-testid="inspector-wall-edit-profile"
+                onClick={() => onPropertyChange?.('editProfileActive', true)}
+              >
+                Edit Profile
+              </button>
+              {el.profilePoints && el.profilePoints.length > 0 && (
+                <button
+                  type="button"
+                  className="text-xs text-muted underline text-left w-fit"
+                  data-testid="inspector-wall-reset-profile"
+                  onClick={() => onPropertyChange?.('profilePoints', [])}
+                >
+                  Reset to Rectangular
+                </button>
+              )}
+              {el.profilePoints && (
+                <span data-testid="inspector-wall-profile-point-count">
+                  {el.profilePoints.length} profile points
+                </span>
+              )}
+            </div>
+          </details>
+
           <div className="flex items-center gap-2 py-0.5">
             <span className="text-xs text-muted w-28 shrink-0">{f('roofAttachment')}</span>
             <select
@@ -1879,6 +1910,40 @@ export function InspectorPropertiesFor(
             onOpenMaterialBrowser={onOpenMaterialBrowser}
             onOpenAppearanceAssetBrowser={onOpenAppearanceAssetBrowser}
           />
+        </div>
+      );
+    }
+    case 'family_extrusion': {
+      const { onPropertyChange } = options ?? {};
+      return (
+        <div className="flex flex-col gap-2">
+          <label>
+            Frame Inner Width (mm)
+            <input
+              type="number"
+              data-testid="inspector-family-frame-inner-width"
+              value={(el as any).frameInnerWidthMm ?? 50}
+              onChange={(e) => onPropertyChange?.('frameInnerWidthMm', +e.target.value)}
+            />
+          </label>
+          <label>
+            Sill Depth (mm)
+            <input
+              type="number"
+              data-testid="inspector-family-frame-sill-depth"
+              value={(el as any).frameSillDepthMm ?? 100}
+              onChange={(e) => onPropertyChange?.('frameSillDepthMm', +e.target.value)}
+            />
+          </label>
+          <label>
+            Is Glazing Panel
+            <input
+              type="checkbox"
+              data-testid="inspector-family-is-glazing"
+              checked={(el as any).isGlazing ?? false}
+              onChange={(e) => onPropertyChange?.('isGlazing', e.target.checked)}
+            />
+          </label>
         </div>
       );
     }
@@ -4989,6 +5054,157 @@ export function InspectorPropertiesFor(
               onChange={(e) => onPropertyChange?.('opacity', +e.currentTarget.value)}
             />
           </div>
+        </div>
+      );
+    }
+    case 'detail_line': {
+      const { onPropertyChange: dlPropChange } = options ?? {};
+      const dlEl = el as Extract<Element, { kind: 'detail_line' }>;
+      return (
+        <div className="flex flex-col gap-2">
+          <label className="flex items-center gap-2 text-xs">
+            Line Weight (px)
+            <input
+              type="number"
+              data-testid="inspector-detail-line-weight"
+              className="w-20 bg-surface border border-border rounded px-1 py-0.5"
+              value={dlEl.lineWeightPx ?? 1}
+              onChange={(e) => dlPropChange?.('lineWeightPx', +e.target.value)}
+            />
+          </label>
+          <label className="flex items-center gap-2 text-xs">
+            Color
+            <input
+              type="color"
+              data-testid="inspector-detail-line-color"
+              value={dlEl.colorHex ?? '#000000'}
+              onChange={(e) => dlPropChange?.('colorHex', e.target.value)}
+            />
+          </label>
+          <label className="flex items-center gap-2 text-xs">
+            Style
+            <select
+              data-testid="inspector-detail-line-style"
+              className="bg-surface border border-border rounded px-1 py-0.5"
+              value={dlEl.lineStyle ?? 'solid'}
+              onChange={(e) => dlPropChange?.('lineStyle', e.target.value)}
+            >
+              <option value="solid">Solid</option>
+              <option value="dashed">Dashed</option>
+              <option value="dotted">Dotted</option>
+            </select>
+          </label>
+          <span data-testid="inspector-detail-line-points" className="text-xs text-muted">
+            {(dlEl.pointsMm ?? []).length} points
+          </span>
+        </div>
+      );
+    }
+    case 'detail_filled_region': {
+      const { onPropertyChange: dfrPropChange } = options ?? {};
+      const dfrEl = el as Extract<Element, { kind: 'detail_filled_region' }>;
+      return (
+        <div className="flex flex-col gap-2">
+          <label className="flex items-center gap-2 text-xs">
+            Fill Pattern
+            <select
+              data-testid="inspector-detail-filled-region-pattern"
+              className="bg-surface border border-border rounded px-1 py-0.5"
+              value={dfrEl.fillPattern ?? 'solid'}
+              onChange={(e) => dfrPropChange?.('fillPattern', e.target.value)}
+            >
+              <option value="solid">Solid</option>
+              <option value="hatch-45">Hatch 45°</option>
+              <option value="hatch-90">Hatch 90°</option>
+              <option value="cross">Cross</option>
+            </select>
+          </label>
+          <label className="flex items-center gap-2 text-xs">
+            Color
+            <input
+              type="color"
+              data-testid="inspector-detail-filled-region-color"
+              value={dfrEl.colorHex ?? '#cccccc'}
+              onChange={(e) => dfrPropChange?.('colorHex', e.target.value)}
+            />
+          </label>
+          <span data-testid="inspector-detail-filled-region-points" className="text-xs text-muted">
+            {(dfrEl.perimeterMm ?? []).length} points
+          </span>
+        </div>
+      );
+    }
+    case 'detail_arc': {
+      const darcEl = el as Extract<Element, { kind: 'detail_arc' }>;
+      return (
+        <div className="flex flex-col gap-2">
+          <FieldRow
+            label="Center"
+            value={`(${Math.round(darcEl.centerMm.xMm)}, ${Math.round(darcEl.centerMm.yMm)}) mm`}
+            mono
+          />
+          <FieldRow label="Radius" value={`${Math.round(darcEl.radiusMm)} mm`} mono />
+          <FieldRow
+            label="Angles"
+            value={`${darcEl.startAngleDeg}° → ${darcEl.endAngleDeg}°`}
+            mono
+          />
+        </div>
+      );
+    }
+    case 'shaft': {
+      const { onPropertyChange } = options ?? {};
+      const levels = Object.values(elementsById)
+        .filter((e): e is Extract<Element, { kind: 'level' }> => e?.kind === 'level')
+        .sort((a, b) => a.elevationMm - b.elevationMm);
+      return (
+        <div className="flex flex-col gap-2">
+          <FieldRow label="Boundary Vertices" value={String(el.boundaryMm.length)} mono />
+          <div className="flex items-center gap-2 py-0.5">
+            <span className="text-xs text-muted w-28 shrink-0">Base Level</span>
+            <select
+              className="flex-1 text-xs bg-surface border border-border rounded px-1 py-0.5"
+              data-testid="inspector-shaft-base-level"
+              value={el.baseLevelId ?? ''}
+              onChange={(e) => onPropertyChange?.('baseLevelId', e.target.value || null)}
+            >
+              <option value="">— none —</option>
+              {levels.map((l) => (
+                <option key={l.id} value={l.id}>
+                  {l.name}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="flex items-center gap-2 py-0.5">
+            <span className="text-xs text-muted w-28 shrink-0">Top Level</span>
+            <select
+              className="flex-1 text-xs bg-surface border border-border rounded px-1 py-0.5"
+              data-testid="inspector-shaft-top-level"
+              value={el.topLevelId ?? ''}
+              onChange={(e) => onPropertyChange?.('topLevelId', e.target.value || null)}
+            >
+              <option value="">— none —</option>
+              {levels.map((l) => (
+                <option key={l.id} value={l.id}>
+                  {l.name}
+                </option>
+              ))}
+            </select>
+          </div>
+          <button
+            type="button"
+            className="rounded border border-border bg-background px-2 py-0.5 text-xs text-foreground hover:bg-surface-strong"
+            data-testid="inspector-shaft-recompute"
+            onClick={() => onDispatchCommand?.({ type: 'recomputeShaftCuts', shaftId: el.id })}
+          >
+            Recompute Cuts
+          </button>
+          {el.cutFloorIds && (
+            <span data-testid="inspector-shaft-cut-floor-count" className="text-xs text-muted">
+              Cuts {el.cutFloorIds.length} floor(s)
+            </span>
+          )}
         </div>
       );
     }

@@ -35,6 +35,8 @@ import { makeLayeredWallMesh } from './meshBuilders.layeredWall';
 import { makeMultiRunStairMesh } from './meshBuilders.multiRunStair';
 import { makeRampMesh, buildRampMesh } from './meshBuilders.ramp';
 import { buildBeamProfileGeometry } from './beamProfileMesh';
+import { buildWindowFrameMesh, buildGlazingMesh } from './meshBuilders.windowFrame';
+import { buildProfiledWallMesh } from './meshBuilders.wallProfile';
 export { makeRampMesh, buildRampMesh };
 import { localPlanOffsetToWorld, yawForPlanSegment } from './planSegmentOrientation';
 import { resolveWindowCutDimensions } from './hostedOpeningDimensions';
@@ -2625,6 +2627,15 @@ export function makeWallMesh(
   if (wall.recessZones && wall.recessZones.length > 0) {
     return makeRecessedWallMesh(wall, elevM, paint);
   }
+  // §3.5.5 — custom profile: if profilePoints are defined, use the profiled mesh builder.
+  if (wall.profilePoints && wall.profilePoints.length >= 3) {
+    return buildProfiledWallMesh(
+      Math.hypot(wall.end.xMm - wall.start.xMm, wall.end.yMm - wall.start.yMm),
+      wall.heightMm,
+      wall.thicknessMm,
+      wall.profilePoints,
+    );
+  }
   const displayWall = wallWith3dJoinDisallowGaps(wall, elementsById);
   const sx = displayWall.start.xMm / 1000;
   const sz = displayWall.start.yMm / 1000;
@@ -3972,8 +3983,16 @@ export function buildWallShapeGeometry(
 /**
  * §15.1.2 — family editor extrusion mesh.
  * Extrudes profilePoints (mm, XY plane) by depthMm along Y.
+ * If isGlazing is true, delegates to buildGlazingMesh.
+ * If frameInnerWidthMm > 0, delegates to buildWindowFrameMesh.
  */
 export function buildFamilyExtrusionMesh(form: import('@bim-ai/core').FamilyExtrusion): THREE.Mesh {
+  if (form.isGlazing) {
+    return buildGlazingMesh(form);
+  }
+  if (form.frameInnerWidthMm !== undefined && form.frameInnerWidthMm > 0) {
+    return buildWindowFrameMesh(form);
+  }
   if (form.depthMm <= 0 || form.profilePoints.length < 3) {
     return new THREE.Mesh(new THREE.BufferGeometry(), new THREE.MeshStandardMaterial());
   }

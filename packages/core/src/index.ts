@@ -206,6 +206,10 @@ export type ShaftElement = {
   baseLevelId: string;
   /** Level where the shaft ends. */
   topLevelId: string;
+  /** Whether the shaft visually highlights the cut floors in the plan view. */
+  showCutLevels?: boolean;
+  /** The element IDs of floors that this shaft cuts through (auto-computed). */
+  cutFloorIds?: string[];
 };
 
 export type CreateShaftCmd = {
@@ -214,6 +218,18 @@ export type CreateShaftCmd = {
   boundaryMm: BoundaryPoint[];
   baseLevelId: string;
   topLevelId: string;
+};
+
+export type UpdateShaftLevelsCmd = {
+  type: 'updateShaftLevels';
+  shaftId: string;
+  baseLevelId: string | null;
+  topLevelId: string | null;
+};
+
+export type RecomputeShaftCutsCmd = {
+  type: 'recomputeShaftCuts';
+  shaftId: string;
 };
 
 // ---------------------------------------------------------------------------
@@ -366,6 +382,8 @@ export type ElemKind =
   | 'link_external'
   | 'placed_tag'
   | 'detail_line'
+  | 'detail_arc'
+  | 'detail_filled_region'
   | 'detail_region'
   | 'draft_detail_region'
   | 'text_note'
@@ -451,7 +469,8 @@ export type ElemKind =
   | 'spire_roof'
   | 'family_blend'
   | 'family_sweep'
-  | 'text_tag';
+  | 'text_tag'
+  | 'link_ifc';
 
 export type PhaseFilter = 'all' | 'existing' | 'demolition' | 'new' | 'show_all';
 
@@ -1464,6 +1483,16 @@ export type Element =
         /** User-set part label (e.g. "Left panel"). */
         label?: string | null;
       }>;
+      /**
+       * §3.5.5 — Custom cross-section profile points for the wall elevation face.
+       * Points are in local wall space: xPct = horizontal (0 to 1 = wall length ratio),
+       * yPct = vertical (0 to 1 = height ratio).
+       * When set, the wall mesh uses this profile instead of a rectangular box.
+       * Points form a closed polygon.
+       */
+      profilePoints?: { xPct: number; yPct: number }[];
+      /** §3.5.5 — Whether the wall is in edit-profile mode (UI flag only, not persisted). */
+      editProfileActive?: boolean;
       /** §2.1.4 per-element graphics override — fill/line color in plan, surface color in 3D. */
       graphicsOverride?: {
         fillColorHex?: string | null;
@@ -2189,6 +2218,12 @@ export type Element =
       parentViewId?: string | null;
       /** D4: numeric scale multiplier relative to the parent view (default 5). */
       calloutScaleFactor?: number | null;
+      /** §6.4.1: For callout views: the rectangle in parent-view space that this callout zooms into. */
+      calloutBoundaryMm?: { xMm: number; yMm: number; widthMm: number; heightMm: number } | null;
+      /** §6.4.1: Explicit display scale denominator for callout (e.g. 20 means 1:20). Overrides auto-fit. */
+      calloutScaleOverride?: number | null;
+      /** §6.4.1: The plan_view id this callout is scoped to (same level + filter settings). */
+      calloutHostViewId?: string | null;
       /** F-098: Area Plan scheme for Gross Building / Net / Rentable grouping. */
       areaScheme?: 'gross_building' | 'net' | 'rentable';
       /** F2: phase filter display mode — controls per-phase graphic overrides in plan views. */
@@ -2210,6 +2245,10 @@ export type Element =
       }> | null;
       /** §5.4.2: per-view rotation applied when "Rotate to True North" is active (degrees). */
       planViewAngleDeg?: number;
+      /** §1.6.10: crop region bounding box in plan-view space (mm). When set, only geometry inside is shown. */
+      cropRegionMm?: { xMm: number; yMm: number; widthMm: number; heightMm: number } | null;
+      /** §1.6.10: whether the crop region is active (visible + clipping enabled). */
+      cropRegionEnabled?: boolean;
     }
   | {
       kind: 'view_template';
@@ -2351,6 +2390,38 @@ export type Element =
       strokeMm?: number;
       colour?: string;
       style?: 'solid' | 'dashed' | 'dotted';
+      /** §6.4.2 drafting fields */
+      lineWeightPx?: number;
+      colorHex?: string;
+      lineStyle?: 'solid' | 'dashed' | 'dotted' | 'center';
+      viewId?: string | null;
+      levelId?: string | null;
+    }
+  | {
+      /** §6.4.2 — view-local 2D arc (drafting element, not visible in 3D). */
+      kind: 'detail_arc';
+      id: string;
+      centerMm: { xMm: number; yMm: number };
+      radiusMm: number;
+      startAngleDeg: number;
+      endAngleDeg: number;
+      lineWeightPx?: number;
+      colorHex?: string;
+      viewId?: string | null;
+      levelId?: string | null;
+    }
+  | {
+      /** §6.4.2 — view-local 2D filled region (drafting element, not visible in 3D). */
+      kind: 'detail_filled_region';
+      id: string;
+      /** Closed polygon boundary. */
+      perimeterMm: { xMm: number; yMm: number }[];
+      /** Fill pattern: solid | hatch-45 | hatch-90 | cross | diagonal. */
+      fillPattern?: 'solid' | 'hatch-45' | 'hatch-90' | 'cross' | 'diagonal';
+      /** Fill color hex. */
+      colorHex?: string;
+      viewId?: string | null;
+      levelId?: string | null;
     }
   | {
       /** ANN-01 / ANN-V3-01 — view-local 2D filled region (annotation only). */
@@ -2767,6 +2838,29 @@ export type Element =
       rotationDeg?: number;
       scaleFactor?: number;
       overlayOpacity?: number;
+    }
+  | {
+      /**
+       * §12.1.1 — Link IFC File.
+       *
+       * Parses an IFC STEP file client-side and stores both the raw content
+       * (for re-parsing on reload) and the converted bim-ai elements. Linked
+       * elements are rendered as blue ghost meshes in the viewport.
+       */
+      kind: 'link_ifc';
+      id: string;
+      /** Display name of the linked IFC file. */
+      name: string;
+      /** The raw IFC STEP string content (stored for re-parsing). */
+      ifcContent: string;
+      /** Converted bim-ai elements derived from the IFC. */
+      linkedElements: Element[];
+      /** Whether the linked IFC is visible. */
+      visible: boolean;
+      /** Translation offset applied to all linked elements. */
+      offsetMm?: { xMm: number; yMm: number; zMm: number };
+      /** Whether the link is pinned (cannot be accidentally moved). */
+      pinned?: boolean;
     }
   | {
       /**
@@ -3636,6 +3730,32 @@ export type Element =
       linkedDimensionId?: string | null;
       /** Optional: which property of the geometry element is driven (e.g. 'widthMm', 'heightMm'). */
       linkedProperty?: string | null;
+    }
+  | {
+      /** §8.6.2: individual stair run segment belonging to a parent stair. */
+      kind: 'stair_run';
+      id: string;
+      /** Parent stair this run belongs to. */
+      stairId: string;
+      startMm: { xMm: number; yMm: number };
+      endMm: { xMm: number; yMm: number };
+      runWidthMm: number;
+      riserCount: number;
+      /** Run index in stair (0-based). */
+      runIndex: number;
+    }
+  | {
+      /** §8.6.2: flat landing connecting two stair runs. */
+      kind: 'stair_landing';
+      id: string;
+      /** Parent stair this landing belongs to. */
+      stairId: string;
+      /** Polygon corners of the landing slab. */
+      perimeterMm: { xMm: number; yMm: number }[];
+      /** Absolute elevation of the landing top surface. */
+      elevationMm: number;
+      /** Landing index (0-based). */
+      landingIndex: number;
     };
 
 export type Violation = {
@@ -4671,6 +4791,14 @@ export type FamilyExtrusion = {
   id: string;
   profilePoints: { x: number; y: number }[];
   depthMm: number;
+  /** When this extrusion represents a frame, inner cavity width subtracted from outer to form the frame. */
+  frameInnerWidthMm?: number;
+  /** Sill depth for window frame (Z offset). */
+  frameSillDepthMm?: number;
+  /** Whether this extrusion represents a glazing panel. */
+  isGlazing?: boolean;
+  /** Material key for glazing. */
+  glazingMaterialKey?: string;
 };
 
 /** §15.1.3 — family editor revolve form. profilePoints are in mm; axis is the revolution axis. */
@@ -5178,4 +5306,51 @@ export type SetAngleToTrueNorthCmd = {
 export type SetProjectElevationCmd = {
   type: 'setProjectElevation';
   elevationMm: number;
+};
+
+/** §12.1.1: add a parsed IFC link element client-side. */
+export type AddIfcLinkCmd = {
+  type: 'addIfcLink';
+  element: Extract<Element, { kind: 'link_ifc' }>;
+};
+
+/** §12.1.1: remove an IFC link element by id. */
+export type RemoveIfcLinkCmd = {
+  type: 'removeIfcLink';
+  linkId: string;
+};
+
+/** §12.1.1: toggle visibility of an IFC link element. */
+export type ToggleIfcLinkVisibilityCmd = {
+  type: 'toggleIfcLinkVisibility';
+  linkId: string;
+};
+
+/** §3.5.5 — commit a custom wall profile polygon for a specific wall. */
+export type CommitWallProfileCmd = {
+  type: 'commitWallProfile';
+  wallId: string;
+  points: { xPct: number; yPct: number }[];
+};
+
+// ---------------------------------------------------------------------------
+// §8.6.2 — Stair by component commands
+// ---------------------------------------------------------------------------
+
+/** §8.6.2: add an individual stair run segment to an existing stair. */
+export type AddStairRunCmd = {
+  type: 'addStairRun';
+  run: Extract<Element, { kind: 'stair_run' }>;
+};
+
+/** §8.6.2: add a stair landing to an existing stair. */
+export type AddStairLandingCmd = {
+  type: 'addStairLanding';
+  landing: Extract<Element, { kind: 'stair_landing' }>;
+};
+
+/** §8.6.2: remove a stair_run or stair_landing component by id. */
+export type RemoveStairComponentCmd = {
+  type: 'removeStairComponent';
+  componentId: string;
 };

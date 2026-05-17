@@ -1,6 +1,6 @@
 import { useMemo, useState, type DragEvent, type JSX, type MouseEvent } from 'react';
 import { useTranslation } from 'react-i18next';
-import type { Element, FamilyBlend, FamilySweep } from '@bim-ai/core';
+import type { Element, FamilyBlend, FamilyExtrusion, FamilySweep } from '@bim-ai/core';
 import { FamilyParameterPanel } from '../workspace/FamilyParameterPanel';
 import type {
   ArrayGeometryNode,
@@ -684,6 +684,8 @@ export function FamilyEditorWorkbench({
   const [selectedSweepIndex, setSelectedSweepIndex] = useState<number | null>(null);
   const [familySweepForms, setFamilySweepForms] = useState<FamilySweep[]>([]);
   const [familyBlendForms, setFamilyBlendForms] = useState<FamilyBlend[]>([]);
+  const [familyWindowFrameForms, setFamilyWindowFrameForms] = useState<FamilyExtrusion[]>([]);
+  const [familyGlazingForms, setFamilyGlazingForms] = useState<FamilyExtrusion[]>([]);
   const [arrays, setArrays] = useState<ArrayGeometryNode[]>([]);
   const [arrayDraft, setArrayDraft] = useState<ArrayDraft | null>(null);
   const [symbolicLines, setSymbolicLines] = useState<SymbolicLine[]>([]);
@@ -815,6 +817,8 @@ export function FamilyEditorWorkbench({
     setSelectedSweepIndex(null);
     setFamilySweepForms([]);
     setFamilyBlendForms([]);
+    setFamilyWindowFrameForms([]);
+    setFamilyGlazingForms([]);
     setArrays([]);
     setArrayDraft(null);
     setSymbolicLines([]);
@@ -1538,6 +1542,36 @@ export function FamilyEditorWorkbench({
         ],
         heightMm: 1000,
       },
+    ]);
+  }
+
+  function addWindowFrameForm() {
+    setFamilyWindowFrameForms((prev) => [
+      ...prev,
+      {
+        kind: 'family_extrusion',
+        id: crypto.randomUUID(),
+        profilePoints: [],
+        depthMm: 100,
+        frameInnerWidthMm: 50,
+        widthMm: 900,
+        heightMm: 1200,
+      } as unknown as FamilyExtrusion,
+    ]);
+  }
+
+  function addGlazingPanelForm() {
+    setFamilyGlazingForms((prev) => [
+      ...prev,
+      {
+        kind: 'family_extrusion',
+        id: crypto.randomUUID(),
+        profilePoints: [],
+        depthMm: 6,
+        isGlazing: true,
+        widthMm: 800,
+        heightMm: 1100,
+      } as unknown as FamilyExtrusion,
     ]);
   }
 
@@ -2286,6 +2320,24 @@ export function FamilyEditorWorkbench({
         <button
           type="button"
           className="px-3 py-1 rounded border"
+          onClick={addWindowFrameForm}
+          data-testid="family-editor-add-frame-btn"
+          aria-label="Add Window Frame"
+        >
+          Add Window Frame
+        </button>
+        <button
+          type="button"
+          className="px-3 py-1 rounded border"
+          onClick={addGlazingPanelForm}
+          data-testid="family-editor-add-glazing-btn"
+          aria-label="Add Glazing Panel"
+        >
+          Add Glazing Panel
+        </button>
+        <button
+          type="button"
+          className="px-3 py-1 rounded border"
           onClick={() => setFamilyTypesDialogOpen(true)}
           data-testid="family-types-open"
         >
@@ -2989,7 +3041,10 @@ export function FamilyEditorWorkbench({
         </section>
       )}
 
-      {(familySweepForms.length > 0 || familyBlendForms.length > 0) && (
+      {(familySweepForms.length > 0 ||
+        familyBlendForms.length > 0 ||
+        familyWindowFrameForms.length > 0 ||
+        familyGlazingForms.length > 0) && (
         <section aria-label="Geometry forms">
           <h2 className="font-semibold mb-2">Geometry Forms</h2>
           <ul className="text-sm space-y-1">
@@ -3003,6 +3058,18 @@ export function FamilyEditorWorkbench({
               <li key={form.id} data-testid={`family-blend-form-${i}`}>
                 Blend Form {i + 1} — {form.bottomProfilePoints.length} bottom pts →{' '}
                 {form.topProfilePoints.length} top pts, h={form.heightMm}mm
+              </li>
+            ))}
+            {familyWindowFrameForms.map((form, i) => (
+              <li key={form.id} data-testid={`family-window-frame-form-${i}`}>
+                Window Frame {i + 1} — {(form as any).widthMm ?? 900}×
+                {(form as any).heightMm ?? 1200}mm, frame={form.frameInnerWidthMm ?? 50}mm
+              </li>
+            ))}
+            {familyGlazingForms.map((form, i) => (
+              <li key={form.id} data-testid={`family-glazing-form-${i}`}>
+                Glazing Panel {i + 1} — {(form as any).widthMm ?? 800}×
+                {(form as any).heightMm ?? 1100}mm
               </li>
             ))}
           </ul>
