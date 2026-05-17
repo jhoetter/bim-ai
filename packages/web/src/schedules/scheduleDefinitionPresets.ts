@@ -20,6 +20,7 @@ export type SchedulePresetCategory =
   | 'element_cost_group'
   | 'scenario_delta'
   | 'family_instance'
+  | 'steel_connection'
   | EnergyScheduleCategory;
 
 export type SchedulePresetFieldToken = 'required' | 'optional';
@@ -534,6 +535,20 @@ const PRESETS: ScheduleDefinitionPreset[] = [
       { fieldKey: 'widthMm', token: 'optional', unitHint: 'mm' },
       { fieldKey: 'depthMm', token: 'optional', unitHint: 'mm' },
       { fieldKey: 'heightMm', token: 'optional', unitHint: 'mm' },
+      { fieldKey: 'count', token: 'optional', aggregation: 'count' },
+    ],
+  },
+  {
+    id: 'steel_connections',
+    name: 'Steel Connections',
+    category: 'steel_connection',
+    fields: [
+      { fieldKey: 'connectionType', token: 'required', csvExportHint: 'Connection type' },
+      { fieldKey: 'hostElementId', token: 'optional', csvExportHint: 'Host element id' },
+      { fieldKey: 'targetElementId', token: 'optional', csvExportHint: 'Target element id' },
+      { fieldKey: 'boltRows', token: 'optional', csvExportHint: 'Bolt rows' },
+      { fieldKey: 'boltCols', token: 'optional', csvExportHint: 'Bolt cols' },
+      { fieldKey: 'boltDiameterMm', token: 'optional', unitHint: 'mm' },
       { fieldKey: 'count', token: 'optional', aggregation: 'count' },
     ],
   },
