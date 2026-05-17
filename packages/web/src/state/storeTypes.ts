@@ -474,6 +474,11 @@ export type StoreState = {
   /** F-006: toggle the thin-lines override. */
   toggleThinLines: () => void;
 
+  /** §3.3.1: when true, link_model elements are selectable in plan view. */
+  selectLinkedEnabled: boolean;
+  /** §3.3.1: set whether link_model elements are selectable. */
+  setSelectLinkedEnabled: (enabled: boolean) => void;
+
   /** B2: model group definitions and instances (client-side, not persisted to server). */
   groupRegistry: GroupRegistry;
   setGroupRegistry: (r: GroupRegistry) => void;
@@ -533,7 +538,22 @@ export type StoreState = {
 
   setActivity: (e: ActivityEvent[]) => void;
   setIdentity: (userId: string, display: string, peerId: string) => void;
+
+  /** §1.6.2: project templates persisted to localStorage. */
+  projectTemplates: ProjectTemplate[];
+  saveProjectAsTemplate: (name: string, description: string) => void;
+  loadProjectTemplate: (templateId: string) => void;
+  deleteProjectTemplate: (templateId: string) => void;
 };
+
+export interface ProjectTemplate {
+  id: string;
+  name: string;
+  description: string;
+  createdAt: string; // ISO date
+  /** Serialised subset of StoreState: elementsById snapshot */
+  elementsSnapshot: string; // JSON
+}
 
 export type TemporaryVisibilityMode = 'isolate' | 'hide';
 

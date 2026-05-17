@@ -3,7 +3,7 @@ import type { StateCreator } from 'zustand';
 import type { LensMode, PerspectiveId, WorkspaceLayoutPreset } from '@bim-ai/core';
 
 import type { PlanPresentationPreset } from '../plan/symbology';
-import type { DisciplineWorkspaceId, StoreState } from './storeTypes';
+import type { DisciplineWorkspaceId, ProjectTemplate, StoreState } from './storeTypes';
 import { emptyGroupRegistry } from '../groups/groupTypes';
 
 type StoreSet = Parameters<StateCreator<StoreState>>[0];
@@ -101,6 +101,7 @@ export type WorkspaceUiRuntimeSlice = Pick<
   | 'perspectiveId'
   | 'roofJoinPreview'
   | 'thinLinesEnabled'
+  | 'selectLinkedEnabled'
   | 'groupRegistry'
   | 'groupEditModeDefinitionId'
   | 'activeGroupEditId'
@@ -109,9 +110,14 @@ export type WorkspaceUiRuntimeSlice = Pick<
   | 'setPerspectiveId'
   | 'setRoofJoinPreview'
   | 'toggleThinLines'
+  | 'setSelectLinkedEnabled'
   | 'setGroupRegistry'
   | 'setGroupEditModeDefinitionId'
   | 'setActiveGroupEditId'
+  | 'projectTemplates'
+  | 'saveProjectAsTemplate'
+  | 'loadProjectTemplate'
+  | 'deleteProjectTemplate'
 >;
 
 function readSessionString(key: string, fallback: string): string {
@@ -318,6 +324,7 @@ export function createWorkspaceUiRuntimeSlice(set: StoreSet): WorkspaceUiRuntime
     ),
     roofJoinPreview: null,
     thinLinesEnabled: false,
+    selectLinkedEnabled: false,
 
     setWorkspaceLayoutPreset: (workspaceLayoutPreset) => {
       writeLocalStorageString('bim.workspaceLayout', workspaceLayoutPreset);
@@ -333,6 +340,7 @@ export function createWorkspaceUiRuntimeSlice(set: StoreSet): WorkspaceUiRuntime
     },
     setRoofJoinPreview: (roofJoinPreview) => set({ roofJoinPreview }),
     toggleThinLines: () => set((s) => ({ thinLinesEnabled: !s.thinLinesEnabled })),
+    setSelectLinkedEnabled: (enabled) => set({ selectLinkedEnabled: enabled }),
 
     groupRegistry: emptyGroupRegistry(),
     setGroupRegistry: (groupRegistry) => set({ groupRegistry }),
@@ -341,5 +349,41 @@ export function createWorkspaceUiRuntimeSlice(set: StoreSet): WorkspaceUiRuntime
     setGroupEditModeDefinitionId: (id) => set({ groupEditModeDefinitionId: id }),
     activeGroupEditId: null,
     setActiveGroupEditId: (id) => set({ activeGroupEditId: id }),
+
+    projectTemplates: JSON.parse(
+      localStorage.getItem('bim-ai-templates') ?? '[]',
+    ) as ProjectTemplate[],
+
+    saveProjectAsTemplate: (name, description) =>
+      set((state) => {
+        const tpl: ProjectTemplate = {
+          id: crypto.randomUUID(),
+          name,
+          description,
+          createdAt: new Date().toISOString(),
+          elementsSnapshot: JSON.stringify(state.elementsById),
+        };
+        const updated = [...state.projectTemplates, tpl];
+        localStorage.setItem('bim-ai-templates', JSON.stringify(updated));
+        return { projectTemplates: updated };
+      }),
+
+    loadProjectTemplate: (templateId) =>
+      set((state) => {
+        const tpl = state.projectTemplates.find((t) => t.id === templateId);
+        if (!tpl) return {};
+        try {
+          return { elementsById: JSON.parse(tpl.elementsSnapshot) };
+        } catch {
+          return {};
+        }
+      }),
+
+    deleteProjectTemplate: (templateId) =>
+      set((state) => {
+        const updated = state.projectTemplates.filter((t) => t.id !== templateId);
+        localStorage.setItem('bim-ai-templates', JSON.stringify(updated));
+        return { projectTemplates: updated };
+      }),
   };
 }

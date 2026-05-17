@@ -2,6 +2,7 @@ import { useState, type JSX } from 'react';
 
 import type { Element, PhaseFilter } from '@bim-ai/core';
 
+import { useBimStore } from '../state/store';
 import { PhaseDropdown } from './PhaseDropdown';
 import type { PlanDetailLevel } from './planDetailLevelLines';
 import { PlanDetailLevelToolbar } from './PlanDetailLevelToolbar';
@@ -114,6 +115,8 @@ export function PlanViewHeader({
 }: PlanViewHeaderProps): JSX.Element {
   const [viewRangeOpen, setViewRangeOpen] = useState(false);
   const [colorSchemeOpen, setColorSchemeOpen] = useState(false);
+  const selectLinkedEnabled = useBimStore((s) => s.selectLinkedEnabled);
+  const setSelectLinkedEnabled = useBimStore((s) => s.setSelectLinkedEnabled);
 
   const viewRange = resolveViewRange(elementsById ?? {}, activePlanViewId ?? undefined);
 
@@ -245,6 +248,23 @@ export function PlanViewHeader({
           TL
         </button>
       ) : null}
+      <button
+        type="button"
+        data-testid="plan-view-select-linked-toggle"
+        title={selectLinkedEnabled ? 'Disable Linked Selection' : 'Enable Linked Selection'}
+        onClick={() => setSelectLinkedEnabled(!selectLinkedEnabled)}
+        style={{
+          padding: '2px 6px',
+          borderRadius: 4,
+          background: selectLinkedEnabled ? '#2563eb' : 'transparent',
+          color: selectLinkedEnabled ? '#fff' : '#aaa',
+          border: '1px solid #555',
+          fontSize: 11,
+          cursor: 'pointer',
+        }}
+      >
+        LK
+      </button>
       {onPerViewVGOpen ? (
         <button
           type="button"

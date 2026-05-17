@@ -816,6 +816,7 @@ export function PlanCanvas({
   const showNeighborhoodMasses = useBimStore((s) => s.showNeighborhoodMasses);
   // F-006 — QAT Thin Lines toggle: overrides all line weights to 1 px when true.
   const thinLinesEnabled = useBimStore((s) => s.thinLinesEnabled);
+  const selectLinkedEnabled = useBimStore((s) => s.selectLinkedEnabled);
   // §7.3.1 — active work plane name for the plan view header badge.
   const activeWorkPlaneName = useMemo(() => {
     if (!activePlanViewId) return null;
@@ -3494,6 +3495,8 @@ export function PlanCanvas({
         for (const el of Object.values(elementsById)) {
           // Level filter — use optional chaining since not all kinds have levelId.
           if (displayLevelId && (el as { levelId?: string }).levelId !== displayLevelId) continue;
+          // Skip link_model elements when selectLinkedEnabled is false
+          if (!selectLinkedEnabled && el.kind === 'link_model') continue;
           if (elementInSelectionBoxMm(el, boxMin, boxMax, selMode)) ids.push(el.id);
         }
         if (ids.length >= 1) {
@@ -3599,10 +3602,15 @@ export function PlanCanvas({
         const h = hits.find(
           (x) => typeof (x.object.userData as { bimPickId?: unknown }).bimPickId === 'string',
         );
-        const id =
+        const rawPickId =
           typeof (h?.object.userData as { bimPickId?: unknown }).bimPickId === 'string'
             ? (h!.object.userData as { bimPickId: string }).bimPickId
             : undefined;
+        // Skip link_model elements when selectLinkedEnabled is false
+        const id =
+          rawPickId && !selectLinkedEnabled && elementsById[rawPickId]?.kind === 'link_model'
+            ? undefined
+            : rawPickId;
         const clickIntent = classifyPointerStart({
           button: ev.button,
           shiftKey: ev.shiftKey,

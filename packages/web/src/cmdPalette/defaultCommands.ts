@@ -2719,3 +2719,27 @@ registerCommand({
     if (id) ctx.dispatchCommand?.({ type: 'applyShaftCut', shaftId: id, cutFloorIds: [] });
   },
 });
+
+// §2.9.1: create terrace from selected floor — auto-generates a perimeter railing
+registerCommand({
+  id: 'modify.create-terrace-from-floor',
+  label: 'Create Terrace from Floor',
+  keywords: ['terrace', 'balcony', 'railing', 'perimeter', 'floor', 'create terrace'],
+  category: 'command',
+  isAvailable: (ctx) => ctx.selectedElements?.some((e) => e.kind === 'floor') ?? false,
+  invoke: (ctx) => {
+    ctx.openTerracePreset?.();
+  },
+});
+
+// §3.3.1: toggle whether link_model elements are selectable in plan view
+registerCommand({
+  id: 'selection.toggle-select-linked',
+  label: 'Toggle Select Linked Elements',
+  keywords: ['link', 'select linked', 'linked model', 'selection', 'toggle'],
+  category: 'command',
+  invoke: () => {
+    const { selectLinkedEnabled, setSelectLinkedEnabled } = useBimStore.getState();
+    setSelectLinkedEnabled(!selectLinkedEnabled);
+  },
+});

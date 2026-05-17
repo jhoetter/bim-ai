@@ -2314,4 +2314,18 @@ const MASS_CAPABILITIES: CommandCapability[] = [
     usabilityScore: 8,
     notes: '§1.6.10: toggles cropRegionEnabled on the active plan view.',
   },
+  {
+    id: 'selection.toggle-select-linked',
+    label: 'Toggle Select Linked Elements',
+    owner: 'cmdPalette/defaultCommands',
+    group: 'selection',
+    scope: 'global',
+    intendedModes: ['plan'],
+    surfaces: ['cmd-k'],
+    executionSurface: 'store',
+    preconditions: [],
+    status: 'implemented',
+    usabilityScore: 8,
+    notes: '§3.3.1: toggles whether link_model elements are selectable in plan view.',
+  },
 ];
