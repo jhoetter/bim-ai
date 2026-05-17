@@ -2594,6 +2594,14 @@ registerCommand({
   invoke: (ctx) => startPlanTool(ctx, 'family-sweep'),
 });
 
+registerCommand({
+  id: 'tool.family-swept-blend',
+  label: 'Swept Blend',
+  keywords: ['swept blend', 'sweep blend', 'family swept blend', 'FSB'],
+  category: 'tool',
+  invoke: (ctx) => startPlanTool(ctx, 'family-swept-blend'),
+});
+
 // §6.5 — Print Current View via browser
 registerCommand({
   id: 'file.print-current-view',
@@ -2700,6 +2708,15 @@ registerCommand({
   keywords: ['detail', 'filled', 'region', 'hatch', 'pattern', '2d'],
   category: 'tool',
   invoke: (ctx) => startPlanTool(ctx, 'detail-filled-region'),
+});
+
+// §3.3.4: Cut Geometry tool activation via palette
+registerCommand({
+  id: 'tool.cut-geometry',
+  label: 'Cut Geometry Tool',
+  keywords: ['cut', 'geometry', 'void', 'subtract', 'csg', 'cutter', 'host'],
+  category: 'tool',
+  invoke: (ctx) => startPlanTool(ctx, 'cut-geometry'),
 });
 
 // §2.5.1: apply shaft cut — recomputes and stores cut floor IDs on the selected shaft

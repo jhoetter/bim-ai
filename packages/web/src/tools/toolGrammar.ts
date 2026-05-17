@@ -4330,3 +4330,85 @@ export function reduceDetailFilledRegion(
       return { state };
   }
 }
+
+/* ────────────────────────────────────────────────────────────────────── */
+/* Family Swept Blend — §15.1.2                                           */
+/* ────────────────────────────────────────────────────────────────────── */
+
+export type FamilySweptBlendState =
+  | { phase: 'idle' }
+  | { phase: 'recording-path'; points: Array<{ xMm: number; yMm: number }> };
+
+export type FamilySweptBlendEvent =
+  | { kind: 'activate' }
+  | { kind: 'click'; xMm: number; yMm: number }
+  | { kind: 'confirm' }
+  | { kind: 'cancel' };
+
+export type FamilySweptBlendEffect = {
+  kind: 'createFamilySweptBlend';
+  pathMm: Array<{ xMm: number; yMm: number }>;
+};
+
+export function reduceFamilySweptBlend(
+  state: FamilySweptBlendState,
+  event: FamilySweptBlendEvent,
+): { next: FamilySweptBlendState; effect?: FamilySweptBlendEffect } {
+  switch (state.phase) {
+    case 'idle':
+      if (event.kind === 'activate') return { next: { phase: 'idle' } };
+      if (event.kind === 'click')
+        return {
+          next: { phase: 'recording-path', points: [{ xMm: event.xMm, yMm: event.yMm }] },
+        };
+      return { next: state };
+    case 'recording-path':
+      if (event.kind === 'cancel') return { next: { phase: 'idle' } };
+      if (event.kind === 'click')
+        return {
+          next: { ...state, points: [...state.points, { xMm: event.xMm, yMm: event.yMm }] },
+        };
+      if (event.kind === 'confirm' && state.points.length >= 2)
+        return {
+          next: { phase: 'idle' },
+          effect: { kind: 'createFamilySweptBlend', pathMm: state.points },
+        };
+      return { next: state };
+  }
+}
+
+// ---------------------------------------------------------------------------
+// §3.3.4 — Cut Geometry 2-step grammar (pick cutter → pick host)
+// ---------------------------------------------------------------------------
+
+export type CutGeometryState = { phase: 'idle' } | { phase: 'picking-host'; cutterId: string };
+
+export type CutGeometryEvent =
+  | { kind: 'activate' }
+  | { kind: 'deactivate' }
+  | { kind: 'pick'; elementId: string }
+  | { kind: 'cancel' };
+
+export type CutGeometryEffect = { kind: 'commitCutGeometry'; cutterId: string; hostId: string };
+
+export function reduceCutGeometry(
+  state: CutGeometryState,
+  event: CutGeometryEvent,
+): { next: CutGeometryState; effect?: CutGeometryEffect } {
+  switch (state.phase) {
+    case 'idle':
+      if (event.kind === 'activate') return { next: { phase: 'idle' } };
+      if (event.kind === 'pick')
+        return { next: { phase: 'picking-host', cutterId: event.elementId } };
+      return { next: state };
+    case 'picking-host':
+      if (event.kind === 'cancel' || event.kind === 'deactivate')
+        return { next: { phase: 'idle' } };
+      if (event.kind === 'pick')
+        return {
+          next: { phase: 'idle' },
+          effect: { kind: 'commitCutGeometry', cutterId: state.cutterId, hostId: event.elementId },
+        };
+      return { next: state };
+  }
+}

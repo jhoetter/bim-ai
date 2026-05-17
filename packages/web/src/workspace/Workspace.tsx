@@ -2709,6 +2709,40 @@ export function Workspace(): JSX.Element {
         }
         return;
       }
+      // §3.3.4: applyCutGeometry — add cutterId to host element's cutBy list
+      if (cmd.type === 'applyCutGeometry') {
+        const { elementsById: cur } = useBimStore.getState();
+        const host = cur[cmd.hostId as string] as any;
+        if (host) {
+          useBimStore.setState({
+            elementsById: {
+              ...cur,
+              [host.id]: {
+                ...host,
+                cutBy: [...new Set([...(host.cutBy ?? []), cmd.cutterId as string])],
+              },
+            },
+          });
+        }
+        return;
+      }
+      // §3.3.4: removeCutGeometry — remove cutterId from host element's cutBy list
+      if (cmd.type === 'removeCutGeometry') {
+        const { elementsById: cur } = useBimStore.getState();
+        const host = cur[cmd.hostId as string] as any;
+        if (host) {
+          useBimStore.setState({
+            elementsById: {
+              ...cur,
+              [host.id]: {
+                ...host,
+                cutBy: (host.cutBy ?? []).filter((id: string) => id !== (cmd.cutterId as string)),
+              },
+            },
+          });
+        }
+        return;
+      }
 
       const mid = useBimStore.getState().modelId;
       const uid = useBimStore.getState().userId;

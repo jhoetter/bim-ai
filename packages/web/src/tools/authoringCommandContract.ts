@@ -894,6 +894,15 @@ export const AUTHORING_COMMAND_CONTRACTS = {
     [],
     [],
   ),
+  'family-swept-blend': contract(
+    'family-swept-blend',
+    'sketch',
+    ['plan'],
+    'Click path points (≥2 pts + Enter) to define a swept blend between start and end profiles. §15.1.2',
+    'select-after-commit',
+    [],
+    [],
+  ),
   'graded-region': contract(
     'graded-region',
     'sketch',
@@ -929,6 +938,15 @@ export const AUTHORING_COMMAND_CONTRACTS = {
     'select-after-commit',
     [],
     ['finish', 'cancel'],
+  ),
+  'cut-geometry': contract(
+    'cut-geometry',
+    'modify',
+    ['plan'],
+    '2-step pick: first click selects cutter element, second click selects host element to receive void cut. §3.3.4',
+    'select-after-commit',
+    [],
+    ['pick-cutter', 'pick-host'],
   ),
 } satisfies Record<ToolId, AuthoringCommandContract>;
 

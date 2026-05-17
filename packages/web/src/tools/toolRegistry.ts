@@ -116,10 +116,12 @@ export type ToolId =
   | 'spire-roof'
   | 'family-blend'
   | 'family-sweep'
+  | 'family-swept-blend'
   | 'graded-region'
   | 'terrain-split'
   | 'detail-line'
-  | 'detail-filled-region';
+  | 'detail-filled-region'
+  | 'cut-geometry';
 
 /** Modify-group tool IDs — used by ToolPalette to insert a separator. */
 export const MODIFY_TOOL_IDS = new Set<ToolId>([
@@ -142,6 +144,7 @@ export const MODIFY_TOOL_IDS = new Set<ToolId>([
   'unjoin',
   'attach',
   'detach',
+  'cut-geometry',
 ]);
 
 export type WorkspaceMode = 'plan' | '3d' | 'elevation' | 'section' | 'sheet' | 'schedule';
@@ -1003,6 +1006,16 @@ export function getToolRegistry(t: TFunction): Record<ToolId, ToolDefinition> {
       modes: ['plan'] as WorkspaceMode[],
       tooltip: 'Create a family sweep form — extrudes a 2D profile along a 3D path. §15.1.2',
     },
+    'family-swept-blend': {
+      id: 'family-swept-blend',
+      label: 'Swept Blend',
+      icon: 'floor' as IconName,
+      hotkey: 'FSB',
+      shortcut: 'FSB',
+      modes: ['plan'] as WorkspaceMode[],
+      tooltip:
+        'Create a family swept blend — sweeps a profile along a path while interpolating to an end profile. §15.1.2',
+    },
     'graded-region': {
       id: 'graded-region',
       label: 'Graded Region',
@@ -1038,6 +1051,15 @@ export function getToolRegistry(t: TFunction): Record<ToolId, ToolDefinition> {
       shortcut: 'FR',
       modes: ['plan'] as WorkspaceMode[],
       tooltip: 'Sketch a 2D filled region polygon in the active plan view. §6.4.2',
+    },
+    'cut-geometry': {
+      id: 'cut-geometry',
+      label: 'Cut Geometry',
+      icon: 'shaft' as IconName,
+      hotkey: 'CG',
+      shortcut: 'CG',
+      modes: ['plan'] as WorkspaceMode[],
+      tooltip: '§3.3.4: Pick a cutter element then a host element to subtract the cutter volume.',
     },
   };
 }
@@ -1122,10 +1144,12 @@ const PALETTE_ORDER: ToolId[] = [
   'spire-roof',
   'family-blend',
   'family-sweep',
+  'family-swept-blend',
   'graded-region',
   'terrain-split',
   'detail-line',
   'detail-filled-region',
+  'cut-geometry',
 ];
 
 export function paletteForMode(mode: WorkspaceMode, t: TFunction): ToolDefinition[] {
