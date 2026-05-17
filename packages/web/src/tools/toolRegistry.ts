@@ -111,7 +111,9 @@ export type ToolId =
   | 'project-base-point'
   | 'conical-roof'
   | 'dome-roof'
-  | 'spire-roof';
+  | 'spire-roof'
+  | 'family-blend'
+  | 'family-sweep';
 
 /** Modify-group tool IDs — used by ToolPalette to insert a separator. */
 export const MODIFY_TOOL_IDS = new Set<ToolId>([
@@ -682,8 +684,8 @@ export function getToolRegistry(t: TFunction): Record<ToolId, ToolDefinition> {
       id: 'scale',
       label: 'Scale',
       icon: 'scale',
-      hotkey: 'RE',
-      shortcut: 'RE',
+      hotkey: 'SZ',
+      shortcut: 'SZ',
       modes: ['plan'],
       tooltip:
         'Scale selected element(s) about an origin point — numeric factor or two-click reference',
@@ -956,6 +958,25 @@ export function getToolRegistry(t: TFunction): Record<ToolId, ToolDefinition> {
       modes: ['plan'] as WorkspaceMode[],
       tooltip: 'Place a spire roof shape (two-click: center then radius). §10.3.3',
     },
+    'family-blend': {
+      id: 'family-blend',
+      label: 'Family Blend',
+      icon: 'floor' as IconName,
+      hotkey: 'FB',
+      shortcut: 'FB',
+      modes: ['plan'] as WorkspaceMode[],
+      tooltip:
+        'Create a family blend form — lofts between two 2D profiles at different elevations. §15.1.2',
+    },
+    'family-sweep': {
+      id: 'family-sweep',
+      label: 'Family Sweep',
+      icon: 'floor' as IconName,
+      hotkey: 'FS',
+      shortcut: 'FS',
+      modes: ['plan'] as WorkspaceMode[],
+      tooltip: 'Create a family sweep form — extrudes a 2D profile along a 3D path. §15.1.2',
+    },
   };
 }
 
@@ -1035,6 +1056,8 @@ const PALETTE_ORDER: ToolId[] = [
   'conical-roof',
   'dome-roof',
   'spire-roof',
+  'family-blend',
+  'family-sweep',
 ];
 
 export function paletteForMode(mode: WorkspaceMode, t: TFunction): ToolDefinition[] {

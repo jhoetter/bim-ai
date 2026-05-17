@@ -195,6 +195,7 @@ const LENS_DISABLED_COMMANDS: Record<'structure' | 'mep', { ids: Set<string>; re
       'tool.room',
       'tool.area',
       'tool.stair',
+      'tool.ramp',
       'tool.railing',
       'tool.component',
       'tool.wall-opening',

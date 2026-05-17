@@ -3,7 +3,7 @@ import { describe, it, expect } from 'vitest';
 
 import type { Element } from '@bim-ai/core';
 
-import { makeRampMesh } from './meshBuilders';
+import { makeRampMesh, buildRampMesh } from './meshBuilders';
 
 type RampElem = Extract<Element, { kind: 'ramp' }>;
 type LevelElem = Extract<Element, { kind: 'level' }>;
@@ -76,5 +76,23 @@ describe('makeRampMesh', () => {
 
   it('handles missing level gracefully', () => {
     expect(() => makeRampMesh(makeRamp(), {}, null)).not.toThrow();
+  });
+});
+
+describe('buildRampMesh — §8.7', () => {
+  it('returns a THREE.Mesh', () => {
+    const mesh = buildRampMesh(makeRamp());
+    expect(mesh).toBeInstanceOf(THREE.Mesh);
+  });
+
+  it('mesh.userData.bimPickId equals el.id', () => {
+    const mesh = buildRampMesh(makeRamp({ id: 'ramp-build-1' }));
+    expect(mesh.userData.bimPickId).toBe('ramp-build-1');
+  });
+
+  it('mesh geometry has vertices', () => {
+    const mesh = buildRampMesh(makeRamp());
+    const pos = mesh.geometry.getAttribute('position') as THREE.BufferAttribute;
+    expect(pos.count).toBeGreaterThan(0);
   });
 });

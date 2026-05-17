@@ -3562,3 +3562,257 @@ export function reduceSpireRoof(
   }
   return { state, effect: { stillActive: true } };
 }
+
+// ---------------------------------------------------------------------------
+// §15.1.2 — Family Blend grammar (polygon sketch × 2)
+// idle → sketching-bottom (click to add points) → Enter → sketching-top → Enter → emit
+// ---------------------------------------------------------------------------
+
+export type FamilyBlendPhase = 'idle' | 'sketching-bottom' | 'sketching-top';
+
+export interface FamilyBlendState {
+  phase: FamilyBlendPhase;
+  bottomPointsMm: { xMm: number; yMm: number }[];
+  topPointsMm: { xMm: number; yMm: number }[];
+}
+
+export type FamilyBlendEvent =
+  | { kind: 'activate' }
+  | { kind: 'deactivate' }
+  | { kind: 'click'; pointMm: { xMm: number; yMm: number } }
+  | { kind: 'confirm' }
+  | { kind: 'cancel' };
+
+export interface FamilyBlendEffect {
+  stillActive: boolean;
+  createFamilyBlend?: {
+    bottomProfileMm: { xMm: number; yMm: number }[];
+    topProfileMm: { xMm: number; yMm: number }[];
+  };
+}
+
+export function initialFamilyBlendState(): FamilyBlendState {
+  return { phase: 'idle', bottomPointsMm: [], topPointsMm: [] };
+}
+
+export function reduceFamilyBlend(
+  state: FamilyBlendState,
+  event: FamilyBlendEvent,
+): { state: FamilyBlendState; effect: FamilyBlendEffect } {
+  if (event.kind === 'deactivate') {
+    return { state: initialFamilyBlendState(), effect: { stillActive: false } };
+  }
+  if (event.kind === 'cancel') {
+    return { state: initialFamilyBlendState(), effect: { stillActive: true } };
+  }
+  if (event.kind === 'activate') {
+    return {
+      state: { phase: 'sketching-bottom', bottomPointsMm: [], topPointsMm: [] },
+      effect: { stillActive: true },
+    };
+  }
+  if (event.kind === 'click') {
+    if (state.phase === 'idle') {
+      return {
+        state: { phase: 'sketching-bottom', bottomPointsMm: [event.pointMm], topPointsMm: [] },
+        effect: { stillActive: true },
+      };
+    }
+    if (state.phase === 'sketching-bottom') {
+      return {
+        state: { ...state, bottomPointsMm: [...state.bottomPointsMm, event.pointMm] },
+        effect: { stillActive: true },
+      };
+    }
+    if (state.phase === 'sketching-top') {
+      return {
+        state: { ...state, topPointsMm: [...state.topPointsMm, event.pointMm] },
+        effect: { stillActive: true },
+      };
+    }
+  }
+  if (event.kind === 'confirm') {
+    if (state.phase === 'sketching-bottom' && state.bottomPointsMm.length >= 3) {
+      return {
+        state: { ...state, phase: 'sketching-top', topPointsMm: [] },
+        effect: { stillActive: true },
+      };
+    }
+    if (state.phase === 'sketching-top' && state.topPointsMm.length >= 3) {
+      const result: FamilyBlendEffect = {
+        stillActive: true,
+        createFamilyBlend: {
+          bottomProfileMm: state.bottomPointsMm,
+          topProfileMm: state.topPointsMm,
+        },
+      };
+      return { state: initialFamilyBlendState(), effect: result };
+    }
+  }
+  return { state, effect: { stillActive: true } };
+}
+
+// ---------------------------------------------------------------------------
+// §15.1.2 — Family Sweep grammar (profile points then path points)
+// idle → sketching-profile → Enter → sketching-path → Enter → emit
+// ---------------------------------------------------------------------------
+
+export type FamilySweepPhase = 'idle' | 'sketching-profile' | 'sketching-path';
+
+export interface FamilySweepState {
+  phase: FamilySweepPhase;
+  profilePointsMm: { xMm: number; yMm: number }[];
+  pathPointsMm: { xMm: number; yMm: number; zMm: number }[];
+}
+
+export type FamilySweepEvent =
+  | { kind: 'activate' }
+  | { kind: 'deactivate' }
+  | { kind: 'click'; pointMm: { xMm: number; yMm: number } }
+  | { kind: 'confirm' }
+  | { kind: 'cancel' };
+
+export interface FamilySweepEffect {
+  stillActive: boolean;
+  createFamilySweep?: {
+    profileMm: { xMm: number; yMm: number }[];
+    pathMm: { xMm: number; yMm: number; zMm: number }[];
+  };
+}
+
+export function initialFamilySweepState(): FamilySweepState {
+  return { phase: 'idle', profilePointsMm: [], pathPointsMm: [] };
+}
+
+export function reduceFamilySweep(
+  state: FamilySweepState,
+  event: FamilySweepEvent,
+): { state: FamilySweepState; effect: FamilySweepEffect } {
+  if (event.kind === 'deactivate') {
+    return { state: initialFamilySweepState(), effect: { stillActive: false } };
+  }
+  if (event.kind === 'cancel') {
+    return { state: initialFamilySweepState(), effect: { stillActive: true } };
+  }
+  if (event.kind === 'activate') {
+    return {
+      state: { phase: 'sketching-profile', profilePointsMm: [], pathPointsMm: [] },
+      effect: { stillActive: true },
+    };
+  }
+  if (event.kind === 'click') {
+    if (state.phase === 'idle') {
+      return {
+        state: {
+          phase: 'sketching-profile',
+          profilePointsMm: [event.pointMm],
+          pathPointsMm: [],
+        },
+        effect: { stillActive: true },
+      };
+    }
+    if (state.phase === 'sketching-profile') {
+      return {
+        state: { ...state, profilePointsMm: [...state.profilePointsMm, event.pointMm] },
+        effect: { stillActive: true },
+      };
+    }
+    if (state.phase === 'sketching-path') {
+      // Path points are 3D; use z=0 for plan-view clicks
+      const pathPt = { xMm: event.pointMm.xMm, yMm: event.pointMm.yMm, zMm: 0 };
+      return {
+        state: { ...state, pathPointsMm: [...state.pathPointsMm, pathPt] },
+        effect: { stillActive: true },
+      };
+    }
+  }
+  if (event.kind === 'confirm') {
+    if (state.phase === 'sketching-profile' && state.profilePointsMm.length >= 3) {
+      return {
+        state: { ...state, phase: 'sketching-path', pathPointsMm: [] },
+        effect: { stillActive: true },
+      };
+    }
+    if (state.phase === 'sketching-path' && state.pathPointsMm.length >= 2) {
+      const result: FamilySweepEffect = {
+        stillActive: true,
+        createFamilySweep: {
+          profileMm: state.profilePointsMm,
+          pathMm: state.pathPointsMm,
+        },
+      };
+      return { state: initialFamilySweepState(), effect: result };
+    }
+  }
+  return { state, effect: { stillActive: true } };
+}
+
+/* ────────────────────────────────────────────────────────────────────── */
+/* Ramp — §8.7                                                               */
+/* ────────────────────────────────────────────────────────────────────── */
+
+export type RampState =
+  | { phase: 'idle' }
+  | { phase: 'placing-start' }
+  | { phase: 'placing-end'; startMm: { xMm: number; yMm: number } };
+
+export type RampEvent =
+  | { kind: 'activate' }
+  | { kind: 'deactivate' }
+  | { kind: 'click'; pointMm: { xMm: number; yMm: number } }
+  | { kind: 'cancel' };
+
+export interface RampEffect {
+  createRamp?: {
+    startMm: { xMm: number; yMm: number };
+    endMm: { xMm: number; yMm: number };
+    widthMm: number;
+    slopeRatio: number;
+  };
+  stillActive: boolean;
+}
+
+export const RAMP_DEFAULT_WIDTH_MM = 1200;
+export const RAMP_DEFAULT_SLOPE_RATIO = 1 / 12;
+
+export function initialRampState(): RampState {
+  return { phase: 'idle' };
+}
+
+export function reduceRamp(
+  state: RampState,
+  event: RampEvent,
+): { state: RampState; effect: RampEffect } {
+  if (event.kind === 'deactivate') {
+    return { state: initialRampState(), effect: { stillActive: false } };
+  }
+  if (event.kind === 'activate') {
+    return { state: { phase: 'placing-start' }, effect: { stillActive: true } };
+  }
+  if (event.kind === 'cancel') {
+    return { state: initialRampState(), effect: { stillActive: true } };
+  }
+  if (event.kind === 'click') {
+    if (state.phase === 'placing-start' || state.phase === 'idle') {
+      return {
+        state: { phase: 'placing-end', startMm: event.pointMm },
+        effect: { stillActive: true },
+      };
+    }
+    if (state.phase === 'placing-end') {
+      return {
+        state: initialRampState(),
+        effect: {
+          createRamp: {
+            startMm: state.startMm,
+            endMm: event.pointMm,
+            widthMm: RAMP_DEFAULT_WIDTH_MM,
+            slopeRatio: RAMP_DEFAULT_SLOPE_RATIO,
+          },
+          stillActive: true,
+        },
+      };
+    }
+  }
+  return { state, effect: { stillActive: true } };
+}

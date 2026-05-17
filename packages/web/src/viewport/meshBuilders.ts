@@ -33,9 +33,9 @@ import { categoryColorOr, addEdges, readToken } from './sceneHelpers';
 import { roofHeightAtPoint } from './roofHeightSampler';
 import { makeLayeredWallMesh } from './meshBuilders.layeredWall';
 import { makeMultiRunStairMesh } from './meshBuilders.multiRunStair';
-import { makeRampMesh } from './meshBuilders.ramp';
+import { makeRampMesh, buildRampMesh } from './meshBuilders.ramp';
 import { buildBeamProfileGeometry } from './beamProfileMesh';
-export { makeRampMesh };
+export { makeRampMesh, buildRampMesh };
 import { localPlanOffsetToWorld, yawForPlanSegment } from './planSegmentOrientation';
 import { resolveWindowCutDimensions } from './hostedOpeningDimensions';
 import {

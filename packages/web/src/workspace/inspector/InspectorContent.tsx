@@ -1871,6 +1871,87 @@ export function InspectorPropertiesFor(
         </div>
       );
     }
+    case 'family_blend': {
+      const { onPropertyChange: blendPropChange } = options ?? {};
+      return (
+        <div className="flex flex-col gap-2">
+          <div className="flex items-center gap-2 py-0.5">
+            <span className="text-xs text-muted w-28 shrink-0">Height (mm)</span>
+            <input
+              type="number"
+              className="w-20 text-xs bg-surface border border-border rounded px-1 py-0.5"
+              defaultValue={el.heightMm}
+              key={`${el.id}-height`}
+              step={100}
+              min={1}
+              onBlur={(e) => blendPropChange?.('heightMm', Number(e.currentTarget.value))}
+              data-testid="inspector-family-blend-height"
+            />
+          </div>
+          <div className="flex items-center gap-2 py-0.5">
+            <span className="text-xs text-muted w-28 shrink-0">Base Elevation (mm)</span>
+            <input
+              type="number"
+              className="w-20 text-xs bg-surface border border-border rounded px-1 py-0.5"
+              defaultValue={el.baseElevationMm}
+              key={`${el.id}-base-elevation`}
+              step={100}
+              onBlur={(e) => blendPropChange?.('baseElevationMm', Number(e.currentTarget.value))}
+              data-testid="inspector-family-blend-base-elevation"
+            />
+          </div>
+          <div
+            className="flex items-center justify-between gap-4 border-b border-border py-1.5"
+            data-testid="inspector-family-blend-bottom-pts"
+          >
+            <span className="text-xs text-muted">Bottom pts</span>
+            <span className="text-sm text-foreground">{el.bottomProfileMm.length}</span>
+          </div>
+          <div
+            className="flex items-center justify-between gap-4 border-b border-border py-1.5"
+            data-testid="inspector-family-blend-top-pts"
+          >
+            <span className="text-xs text-muted">Top pts</span>
+            <span className="text-sm text-foreground">{el.topProfileMm.length}</span>
+          </div>
+        </div>
+      );
+    }
+    case 'family_sweep': {
+      const pathLengthMm = el.pathMm.reduce((acc, pt, i) => {
+        if (i === 0) return 0;
+        const prev = el.pathMm[i - 1]!;
+        const dx = pt.xMm - prev.xMm;
+        const dy = pt.yMm - prev.yMm;
+        const dz = pt.zMm - prev.zMm;
+        return acc + Math.sqrt(dx * dx + dy * dy + dz * dz);
+      }, 0);
+      return (
+        <div className="flex flex-col gap-2">
+          <div
+            className="flex items-center justify-between gap-4 border-b border-border py-1.5"
+            data-testid="inspector-family-sweep-profile-pts"
+          >
+            <span className="text-xs text-muted">Profile pts</span>
+            <span className="text-sm text-foreground">{el.profileMm.length}</span>
+          </div>
+          <div
+            className="flex items-center justify-between gap-4 border-b border-border py-1.5"
+            data-testid="inspector-family-sweep-path-pts"
+          >
+            <span className="text-xs text-muted">Path pts</span>
+            <span className="text-sm text-foreground">{el.pathMm.length}</span>
+          </div>
+          <div
+            className="flex items-center justify-between gap-4 border-b border-border py-1.5"
+            data-testid="inspector-family-sweep-path-length"
+          >
+            <span className="text-xs text-muted">Path length (mm)</span>
+            <span className="text-sm text-foreground">{pathLengthMm.toFixed(0)}</span>
+          </div>
+        </div>
+      );
+    }
     case 'stair': {
       const { onPropertyChange: stairPropChange } = options ?? {};
       return (
@@ -1959,6 +2040,78 @@ export function InspectorPropertiesFor(
               data-testid="inspector-stair-tread-depth"
             />
           </div>
+          <div className="flex items-center gap-2 py-0.5">
+            <span className="text-xs text-muted w-28 shrink-0">Run Width (mm)</span>
+            <input
+              type="number"
+              className="w-20 text-xs bg-surface border border-border rounded px-1 py-0.5"
+              defaultValue={el.runWidthMm ?? el.widthMm}
+              key={`${el.id}-run-width`}
+              step={100}
+              min={600}
+              aria-label="Run width in millimetres"
+              onBlur={(e) => {
+                const v = Number(e.currentTarget.value);
+                if (!isNaN(v) && v >= 600) stairPropChange?.('runWidthMm', v);
+              }}
+              data-testid="inspector-stair-run-width"
+            />
+          </div>
+          {(el.runs?.length ?? 0) >= 2 && (
+            <div className="flex items-center gap-2 py-0.5">
+              <span className="text-xs text-muted w-28 shrink-0">Landing Depth (mm)</span>
+              <input
+                type="number"
+                className="w-20 text-xs bg-surface border border-border rounded px-1 py-0.5"
+                defaultValue={el.landingDepthMm ?? 1200}
+                key={`${el.id}-landing-depth`}
+                step={100}
+                min={600}
+                aria-label="Landing depth in millimetres"
+                onBlur={(e) => {
+                  const v = Number(e.currentTarget.value);
+                  if (!isNaN(v) && v >= 600) stairPropChange?.('landingDepthMm', v);
+                }}
+                data-testid="inspector-stair-landing-depth"
+              />
+            </div>
+          )}
+          <div className="flex items-center gap-2 py-0.5">
+            <span className="text-xs text-muted w-28 shrink-0">Total Height (mm)</span>
+            <span className="text-xs text-foreground" data-testid="inspector-stair-total-height">
+              {el.totalHeightMm ?? (el.riserCount ?? 0) * (el.riserHeightMm ?? el.riserMm ?? 175)}
+            </span>
+          </div>
+          <div className="flex items-center gap-2 py-0.5">
+            <span className="text-xs text-muted w-28 shrink-0">Riser Height (mm)</span>
+            <input
+              type="number"
+              className="w-20 text-xs bg-surface border border-border rounded px-1 py-0.5"
+              defaultValue={el.riserHeightMm ?? el.riserMm}
+              key={`${el.id}-riser-height`}
+              step={5}
+              min={100}
+              max={220}
+              aria-label="Riser height in millimetres"
+              onBlur={(e) => {
+                const v = Number(e.currentTarget.value);
+                if (!isNaN(v) && v >= 100 && v <= 220) stairPropChange?.('riserHeightMm', v);
+              }}
+              data-testid="inspector-stair-riser-height"
+            />
+          </div>
+          <div className="flex items-center gap-2 py-0.5">
+            <span className="text-xs text-muted w-28 shrink-0">Multi-storey</span>
+            <input
+              type="checkbox"
+              className="w-4 h-4 rounded border border-border"
+              defaultChecked={el.multiStorey ?? false}
+              key={`${el.id}-multi-storey`}
+              aria-label="Multi-storey stair"
+              onChange={(e) => stairPropChange?.('multiStorey', e.currentTarget.checked)}
+              data-testid="inspector-stair-multi-storey"
+            />
+          </div>
           <FieldRow label={f('baseLevel')} value={resolveElName(el.baseLevelId, elementsById)} />
           <FieldRow label={f('topLevel')} value={resolveElName(el.topLevelId, elementsById)} />
           <MaterialSlotsSection
@@ -2023,6 +2176,71 @@ export function InspectorPropertiesFor(
           {onDisciplineChange ? (
             <InspectorDisciplineDropdown value={el.discipline} onChange={onDisciplineChange} />
           ) : null}
+        </div>
+      );
+    }
+    case 'ramp': {
+      const { onPropertyChange: rampPropChange } = options ?? {};
+      return (
+        <div className="flex flex-col gap-2">
+          <div className="flex items-center gap-2 py-0.5">
+            <span className="text-xs text-muted w-28 shrink-0">Width (mm)</span>
+            <input
+              type="number"
+              className="w-20 text-xs bg-surface border border-border rounded px-1 py-0.5"
+              defaultValue={el.widthMm}
+              key={`${el.id}-width`}
+              step={100}
+              aria-label="Ramp width in millimetres"
+              onBlur={(e) => {
+                const v = Number(e.currentTarget.value);
+                if (!isNaN(v) && v > 0) rampPropChange?.('widthMm', v);
+              }}
+              data-testid="inspector-ramp-width"
+            />
+          </div>
+          <div className="flex items-center gap-2 py-0.5">
+            <span className="text-xs text-muted w-28 shrink-0">Slope (%)</span>
+            <input
+              type="number"
+              className="w-20 text-xs bg-surface border border-border rounded px-1 py-0.5"
+              defaultValue={el.slopePercent}
+              key={`${el.id}-slope`}
+              step={0.5}
+              min={0.5}
+              max={20}
+              aria-label="Ramp slope percentage"
+              onBlur={(e) => {
+                const v = Number(e.currentTarget.value);
+                if (!isNaN(v) && v > 0) rampPropChange?.('slopePercent', v);
+              }}
+              data-testid="inspector-ramp-slope"
+            />
+          </div>
+          <div className="flex items-center gap-2 py-0.5">
+            <span className="text-xs text-muted w-28 shrink-0">Railing Left</span>
+            <input
+              type="checkbox"
+              className="w-4 h-4 rounded border border-border"
+              defaultChecked={el.hasRailingLeft}
+              key={`${el.id}-railing-left`}
+              aria-label="Ramp railing on left side"
+              onChange={(e) => rampPropChange?.('hasRailingLeft', e.currentTarget.checked)}
+              data-testid="inspector-ramp-handrails"
+            />
+          </div>
+          <div className="flex items-center gap-2 py-0.5">
+            <span className="text-xs text-muted w-28 shrink-0">Railing Right</span>
+            <input
+              type="checkbox"
+              className="w-4 h-4 rounded border border-border"
+              defaultChecked={el.hasRailingRight}
+              key={`${el.id}-railing-right`}
+              aria-label="Ramp railing on right side"
+              onChange={(e) => rampPropChange?.('hasRailingRight', e.currentTarget.checked)}
+            />
+          </div>
+          <FieldRow label={f('level')} value={resolveElName(el.levelId, elementsById)} />
         </div>
       );
     }

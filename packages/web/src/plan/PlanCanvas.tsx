@@ -99,6 +99,9 @@ import {
   initialSpireRoofState,
   reduceSpireRoof,
   type SpireRoofState,
+  initialRampState,
+  reduceRamp,
+  type RampState,
 } from '../tools/toolGrammar';
 import { buildScaleCommand, distanceMm } from './scaleTool';
 import { linearArrayOffsets, radialArrayAngles, radialOffsetForElement } from './arrayTool';
@@ -550,6 +553,7 @@ export function PlanCanvas({
   const columnStateRef = useRef<ColumnState>(initialColumnState());
   const beamStateRef = useRef<BeamState>(initialBeamState());
   const stairStateRef = useRef<BeamState>(initialBeamState());
+  const rampStateRef = useRef<RampState>(initialRampState());
   const ceilingStateRef = useRef<CeilingState>(initialCeilingState());
   const excavationStateRef = useRef<ExcavationState>(initialExcavationState());
   const beamSystemStateRef = useRef<BeamSystemState>(initialBeamSystemState());
@@ -1155,6 +1159,8 @@ export function PlanCanvas({
       beamStateRef.current = initialBeamState();
     } else if (planTool === 'stair') {
       stairStateRef.current = initialBeamState();
+    } else if (planTool === 'ramp') {
+      rampStateRef.current = initialRampState();
     } else if (planTool === 'ceiling') {
       ceilingStateRef.current = initialCeilingState();
     } else if (planTool === 'excavation') {
@@ -4967,6 +4973,39 @@ export function PlanCanvas({
         bumpGeom((x) => x + 1);
         return;
       }
+      if (planTool === 'ramp') {
+        const { state: rs, effect: re } = reduceRamp(rampStateRef.current, {
+          kind: 'click',
+          pointMm: sp,
+        });
+        rampStateRef.current = rs;
+        if (re.createRamp && lvlId) {
+          const rdx = re.createRamp.endMm.xMm - re.createRamp.startMm.xMm;
+          const rdy = re.createRamp.endMm.yMm - re.createRamp.startMm.yMm;
+          const runMm = Math.hypot(rdx, rdy);
+          const runAngleDeg = (Math.atan2(rdy, rdx) * 180) / Math.PI;
+          onSemanticCommand({
+            type: 'createElement',
+            element: {
+              kind: 'ramp',
+              id: crypto.randomUUID(),
+              name: 'Ramp',
+              levelId: lvlId,
+              topLevelId: lvlId,
+              widthMm: re.createRamp.widthMm,
+              runMm,
+              runAngleDeg,
+              insertionXMm: re.createRamp.startMm.xMm,
+              insertionYMm: re.createRamp.startMm.yMm,
+              hasRailingLeft: true,
+              hasRailingRight: true,
+              slopePercent: re.createRamp.slopeRatio * 100,
+            },
+          });
+        }
+        bumpGeom((x) => x + 1);
+        return;
+      }
       if (planTool === 'steel-connection') {
         const px = sp.xMm / 1000;
         const pz = sp.yMm / 1000;
@@ -5916,6 +5955,8 @@ export function PlanCanvas({
           beamStateRef.current = initialBeamState();
         } else if (planTool === 'stair') {
           stairStateRef.current = initialBeamState();
+        } else if (planTool === 'ramp') {
+          rampStateRef.current = initialRampState();
         } else if (planTool === 'ceiling') {
           ceilingStateRef.current = initialCeilingState();
         } else if (planTool === 'excavation') {

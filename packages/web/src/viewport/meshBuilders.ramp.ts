@@ -134,3 +134,63 @@ export function makeRampMesh(
   group.userData.bimPickId = ramp.id;
   return group;
 }
+
+/**
+ * Build a simple THREE.Mesh for a ramp element (§8.7 grammar-based placement).
+ * Returns a single mesh (not a Group) for wiring via the meshBuilders switch.
+ */
+export function buildRampMesh(el: RampElem): THREE.Mesh {
+  const runM = Math.max(el.runMm / 1000, 0.1);
+  const widthM = Math.max(el.widthMm / 1000, 0.3);
+  const rise = runM * (el.slopePercent / 100);
+  const slabThicknessM = 0.15;
+  const hw = widthM / 2;
+
+  const positions = new Float32Array([
+    0,
+    0,
+    -hw,
+    runM,
+    rise,
+    -hw,
+    runM,
+    rise,
+    hw,
+    0,
+    0,
+    hw,
+    0,
+    -slabThicknessM,
+    -hw,
+    runM,
+    rise - slabThicknessM,
+    -hw,
+    runM,
+    rise - slabThicknessM,
+    hw,
+    0,
+    -slabThicknessM,
+    hw,
+  ]);
+
+  const indices = new Uint16Array([
+    0, 1, 2, 0, 2, 3, 4, 6, 5, 4, 7, 6, 0, 3, 7, 0, 7, 4, 1, 5, 6, 1, 6, 2, 0, 4, 5, 0, 5, 1, 3, 2,
+    6, 3, 6, 7,
+  ]);
+
+  const geom = new THREE.BufferGeometry();
+  geom.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+  geom.setIndex(new THREE.BufferAttribute(indices, 1));
+  geom.computeVertexNormals();
+
+  const mat = new THREE.MeshStandardMaterial({ color: '#c4a882', roughness: 0.7 });
+  const mesh = new THREE.Mesh(geom, mat);
+
+  const anglRad = THREE.MathUtils.degToRad(el.runAngleDeg);
+  mesh.position.set(el.insertionXMm / 1000, 0, el.insertionYMm / 1000);
+  mesh.rotation.y = -anglRad;
+  mesh.castShadow = true;
+  mesh.receiveShadow = true;
+  mesh.userData.bimPickId = el.id;
+  return mesh;
+}
