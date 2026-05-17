@@ -164,6 +164,80 @@ describe('exportToIfc', () => {
     expect(result).toContain('IFCAREAMEASURE(12.000000)');
   });
 
+  it('exports beam as IFCBEAM (§12.4.3)', () => {
+    const elements: Record<string, Element> = {
+      'lvl-1': { kind: 'level', id: 'lvl-1', name: 'EG', elevationMm: 0 },
+      b1: {
+        kind: 'beam',
+        id: 'b1',
+        name: 'Beam 1',
+        levelId: 'lvl-1',
+        startMm: { xMm: 0, yMm: 0 },
+        endMm: { xMm: 5000, yMm: 0 },
+        widthMm: 300,
+        heightMm: 600,
+      } as unknown as Element,
+    };
+    const result = exportToIfc(elements);
+    expect(result).toContain('IFCBEAM');
+  });
+
+  it('exports column as IFCCOLUMN (§12.4.3)', () => {
+    const elements: Record<string, Element> = {
+      'lvl-1': { kind: 'level', id: 'lvl-1', name: 'EG', elevationMm: 0 },
+      c1: {
+        kind: 'column',
+        id: 'c1',
+        name: 'Col 1',
+        levelId: 'lvl-1',
+        positionMm: { xMm: 1000, yMm: 1000 },
+        bMm: 400,
+        hMm: 400,
+        heightMm: 3000,
+      } as unknown as Element,
+    };
+    const result = exportToIfc(elements);
+    expect(result).toContain('IFCCOLUMN');
+  });
+
+  it('exports stair as IFCSTAIR (§12.4.3)', () => {
+    const elements: Record<string, Element> = {
+      'lvl-1': { kind: 'level', id: 'lvl-1', name: 'EG', elevationMm: 0 },
+      'lvl-2': { kind: 'level', id: 'lvl-2', name: 'OG', elevationMm: 3000 },
+      s1: {
+        kind: 'stair',
+        id: 's1',
+        name: 'Stair 1',
+        baseLevelId: 'lvl-1',
+        topLevelId: 'lvl-2',
+        runStartMm: { xMm: 0, yMm: 0 },
+        runEndMm: { xMm: 0, yMm: 4000 },
+        widthMm: 1200,
+        riserMm: 175,
+        treadMm: 280,
+      } as unknown as Element,
+    };
+    const result = exportToIfc(elements);
+    expect(result).toContain('IFCSTAIR');
+  });
+
+  it('exports railing as IFCRAILING (§12.4.3)', () => {
+    const elements: Record<string, Element> = {
+      r1: {
+        kind: 'railing',
+        id: 'r1',
+        name: 'Railing 1',
+        pathMm: [
+          { xMm: 0, yMm: 0 },
+          { xMm: 3000, yMm: 0 },
+        ],
+        railingHeightMm: 1100,
+      } as unknown as Element,
+    };
+    const result = exportToIfc(elements);
+    expect(result).toContain('IFCRAILING');
+  });
+
   it('produces a valid ISO 10303-21 file (round-trip header check)', () => {
     const elements: Record<string, Element> = {
       'lvl-1': { kind: 'level', id: 'lvl-1', name: 'Ground Floor', elevationMm: 0 },

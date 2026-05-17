@@ -514,6 +514,19 @@ export function exportToIfc(
   >[];
   const roofs = elements.filter((e) => e.kind === 'roof') as Extract<Element, { kind: 'roof' }>[];
   const rooms = elements.filter((e) => e.kind === 'room') as Extract<Element, { kind: 'room' }>[];
+  const beams = elements.filter((e) => e.kind === 'beam') as Extract<Element, { kind: 'beam' }>[];
+  const columns = elements.filter((e) => e.kind === 'column') as Extract<
+    Element,
+    { kind: 'column' }
+  >[];
+  const stairs = elements.filter((e) => e.kind === 'stair') as Extract<
+    Element,
+    { kind: 'stair' }
+  >[];
+  const railings = elements.filter((e) => e.kind === 'railing') as Extract<
+    Element,
+    { kind: 'railing' }
+  >[];
 
   // Map level element id → IFC storey id
   const levelIfcId: Record<string, number> = {};
@@ -925,6 +938,200 @@ export function exportToIfc(
   }
 
   // -------------------------------------------------------------------------
+  // IFCBEAM for each beam element
+  // -------------------------------------------------------------------------
+  const beamProductIds: number[] = [];
+  for (const beam of beams) {
+    const elevMm = levelElevation[beam.levelId] ?? 0;
+    const dx = beam.endMm.xMm - beam.startMm.xMm;
+    const dy = beam.endMm.yMm - beam.startMm.yMm;
+    const lengthMm = Math.sqrt(dx * dx + dy * dy);
+    if (lengthMm < 1) continue;
+
+    const angle = Math.atan2(dy, dx);
+
+    // Beam local placement: origin at start point, axis along beam direction
+    const beamOriginId = emitCartesianPoint(
+      dataLines,
+      ids,
+      mm2m(beam.startMm.xMm),
+      mm2m(beam.startMm.yMm),
+      mm2m(elevMm),
+    );
+    const beamZAxisId = emitDirection(dataLines, ids, 0, 0, 1);
+    const beamRefDirId = emitDirection(dataLines, ids, Math.cos(angle), Math.sin(angle), 0);
+    const beamAxis2PlaceId = emitAxis2Placement3D(
+      dataLines,
+      ids,
+      beamOriginId,
+      beamZAxisId,
+      beamRefDirId,
+    );
+    const beamLocalPlaceId = emitLocalPlacement(dataLines, ids, null, beamAxis2PlaceId);
+
+    // Profile: rectangle widthMm × heightMm in 2D
+    const profileOriginId = emitCartesianPoint(dataLines, ids, 0, 0);
+    const profileXDirId = emitDirection(dataLines, ids, 1, 0);
+    const profileAxisId = ids.next();
+    dataLines.push(
+      `#${profileAxisId}=IFCAXIS2PLACEMENT2D(${ifcRef(profileOriginId)},${ifcRef(profileXDirId)});`,
+    );
+    const profileId = ids.next();
+    dataLines.push(
+      `#${profileId}=IFCRECTANGLEPROFILEDEF(.AREA.,$,${ifcRef(profileAxisId)},${mm2m(beam.widthMm).toFixed(6)},${mm2m(beam.heightMm).toFixed(6)});`,
+    );
+
+    // Extrude along local X axis (beam length direction)
+    const extOriginId = emitCartesianPoint(dataLines, ids, 0, 0, 0);
+    const extAxisId = emitDirection(dataLines, ids, 0, 0, 1);
+    const extRefId = emitDirection(dataLines, ids, 1, 0, 0);
+    const extPlaceId = emitAxis2Placement3D(dataLines, ids, extOriginId, extAxisId, extRefId);
+    const extDirId = emitDirection(dataLines, ids, 1, 0, 0);
+    const solidId = ids.next();
+    dataLines.push(
+      `#${solidId}=IFCEXTRUDEDAREASOLID(${ifcRef(profileId)},${ifcRef(extPlaceId)},${ifcRef(extDirId)},${mm2m(lengthMm).toFixed(6)});`,
+    );
+
+    const shapeRepId = emitShapeRepresentation(dataLines, ids, geoContextId, 'Body', 'SweptSolid', [
+      solidId,
+    ]);
+    const productShapeId = emitProductDefinitionShape(dataLines, ids, [shapeRepId]);
+
+    const beamId = ids.next();
+    beamProductIds.push(beamId);
+    dataLines.push(
+      `#${beamId}=IFCBEAM('${guid()}',$,${ifcStr(beam.name)},$,$,${ifcRef(beamLocalPlaceId)},${ifcRef(productShapeId)},$);`,
+    );
+  }
+
+  // -------------------------------------------------------------------------
+  // IFCCOLUMN for each column element
+  // -------------------------------------------------------------------------
+  const columnProductIds: number[] = [];
+  for (const col of columns) {
+    const elevMm = levelElevation[col.levelId] ?? 0;
+    const rotRad = ((col.rotationDeg ?? 0) * Math.PI) / 180;
+
+    const colOriginId = emitCartesianPoint(
+      dataLines,
+      ids,
+      mm2m(col.positionMm.xMm),
+      mm2m(col.positionMm.yMm),
+      mm2m(elevMm),
+    );
+    const colZAxisId = emitDirection(dataLines, ids, 0, 0, 1);
+    const colRefDirId = emitDirection(dataLines, ids, Math.cos(rotRad), Math.sin(rotRad), 0);
+    const colAxis2PlaceId = emitAxis2Placement3D(
+      dataLines,
+      ids,
+      colOriginId,
+      colZAxisId,
+      colRefDirId,
+    );
+    const colLocalPlaceId = emitLocalPlacement(dataLines, ids, null, colAxis2PlaceId);
+
+    // Profile: rectangle centered at column position
+    const profileOriginId = emitCartesianPoint(
+      dataLines,
+      ids,
+      -mm2m(col.bMm) / 2,
+      -mm2m(col.hMm) / 2,
+    );
+    const profileXDirId = emitDirection(dataLines, ids, 1, 0);
+    const profileAxisId = ids.next();
+    dataLines.push(
+      `#${profileAxisId}=IFCAXIS2PLACEMENT2D(${ifcRef(profileOriginId)},${ifcRef(profileXDirId)});`,
+    );
+    const profileId = ids.next();
+    dataLines.push(
+      `#${profileId}=IFCRECTANGLEPROFILEDEF(.AREA.,$,${ifcRef(profileAxisId)},${mm2m(col.bMm).toFixed(6)},${mm2m(col.hMm).toFixed(6)});`,
+    );
+
+    // Extrude vertically
+    const extOriginId = emitCartesianPoint(dataLines, ids, 0, 0, 0);
+    const extAxisId = emitDirection(dataLines, ids, 0, 0, 1);
+    const extRefId = emitDirection(dataLines, ids, 1, 0, 0);
+    const extPlaceId = emitAxis2Placement3D(dataLines, ids, extOriginId, extAxisId, extRefId);
+    const extDirId = emitDirection(dataLines, ids, 0, 0, 1);
+    const solidId = ids.next();
+    dataLines.push(
+      `#${solidId}=IFCEXTRUDEDAREASOLID(${ifcRef(profileId)},${ifcRef(extPlaceId)},${ifcRef(extDirId)},${mm2m(col.heightMm).toFixed(6)});`,
+    );
+
+    const shapeRepId = emitShapeRepresentation(dataLines, ids, geoContextId, 'Body', 'SweptSolid', [
+      solidId,
+    ]);
+    const productShapeId = emitProductDefinitionShape(dataLines, ids, [shapeRepId]);
+
+    const colId = ids.next();
+    columnProductIds.push(colId);
+    dataLines.push(
+      `#${colId}=IFCCOLUMN('${guid()}',$,${ifcStr(col.name)},$,$,${ifcRef(colLocalPlaceId)},${ifcRef(productShapeId)},$);`,
+    );
+  }
+
+  // -------------------------------------------------------------------------
+  // IFCSTAIR for each stair element (simplified bounding box — no geometry)
+  // -------------------------------------------------------------------------
+  const stairProductIds: number[] = [];
+  for (const stair of stairs) {
+    const elevMm = levelElevation[stair.baseLevelId] ?? 0;
+
+    const stairOriginId = emitCartesianPoint(
+      dataLines,
+      ids,
+      mm2m(stair.runStartMm.xMm),
+      mm2m(stair.runStartMm.yMm),
+      mm2m(elevMm),
+    );
+    const stairZAxisId = emitDirection(dataLines, ids, 0, 0, 1);
+    const stairRefDirId = emitDirection(dataLines, ids, 1, 0, 0);
+    const stairAxis2PlaceId = emitAxis2Placement3D(
+      dataLines,
+      ids,
+      stairOriginId,
+      stairZAxisId,
+      stairRefDirId,
+    );
+    const stairLocalPlaceId = emitLocalPlacement(dataLines, ids, null, stairAxis2PlaceId);
+
+    const stairId = ids.next();
+    stairProductIds.push(stairId);
+    dataLines.push(
+      `#${stairId}=IFCSTAIR('${guid()}',$,${ifcStr(stair.name)},$,$,${ifcRef(stairLocalPlaceId)},$,$,.STRAIGHT_RUN_STAIR.);`,
+    );
+  }
+
+  // -------------------------------------------------------------------------
+  // IFCRAILING for each railing element (no geometry — placement only)
+  // -------------------------------------------------------------------------
+  const railingProductIds: number[] = [];
+  for (const rail of railings) {
+    // Railings have no levelId — use first path point if available, else origin
+    const firstPt = rail.pathMm[0];
+    const ox = firstPt ? mm2m(firstPt.xMm) : 0;
+    const oy = firstPt ? mm2m(firstPt.yMm) : 0;
+
+    const railOriginId = emitCartesianPoint(dataLines, ids, ox, oy, 0);
+    const railZAxisId = emitDirection(dataLines, ids, 0, 0, 1);
+    const railRefDirId = emitDirection(dataLines, ids, 1, 0, 0);
+    const railAxis2PlaceId = emitAxis2Placement3D(
+      dataLines,
+      ids,
+      railOriginId,
+      railZAxisId,
+      railRefDirId,
+    );
+    const railLocalPlaceId = emitLocalPlacement(dataLines, ids, null, railAxis2PlaceId);
+
+    const railingId = ids.next();
+    railingProductIds.push(railingId);
+    dataLines.push(
+      `#${railingId}=IFCRAILING('${guid()}',$,${ifcStr(rail.name)},$,$,${ifcRef(railLocalPlaceId)},$,$,.BALUSTRADE.);`,
+    );
+  }
+
+  // -------------------------------------------------------------------------
   // Spatial structure relationships
   // -------------------------------------------------------------------------
 
@@ -948,7 +1155,7 @@ export function exportToIfc(
     );
   }
 
-  // Contained elements in building (walls, doors, windows, slabs, spaces)
+  // Contained elements in building (walls, doors, windows, slabs, spaces, beams, columns, stairs, railings)
   const allProductIds = [
     ...wallProductIds,
     ...doorProductIds,
@@ -956,6 +1163,10 @@ export function exportToIfc(
     ...floorSlabIds,
     ...roofSlabIds,
     ...spaceIds,
+    ...beamProductIds,
+    ...columnProductIds,
+    ...stairProductIds,
+    ...railingProductIds,
   ];
   if (allProductIds.length > 0) {
     const relContainedId = ids.next();
