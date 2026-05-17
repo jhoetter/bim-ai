@@ -21,6 +21,7 @@ import { placedAssetGripProvider } from './placedAssetGripProvider';
 import { referencePlaneGripProvider } from './referencePlaneGripProvider';
 import { sectionCutGripProvider } from './sectionCutGripProvider';
 import { sketchElementGripProvider } from './sketchElementGripProvider';
+import { stairGripProvider } from './stairGripProvider';
 import { windowGripProvider } from './windowGripProvider';
 import { textNoteGripProvider, leaderTextGripProvider } from './annotationGripProvider';
 import { interiorElevationMarkerGripProvider } from './interiorElevationMarkerGripProvider';
@@ -46,6 +47,7 @@ export {
   referencePlaneGripProvider,
   sectionCutGripProvider,
   sketchElementGripProvider,
+  stairGripProvider,
   windowGripProvider,
   textNoteGripProvider,
   leaderTextGripProvider,
@@ -85,8 +87,9 @@ export function gripsFor(element: Element, context: PlanContext = {}): GripDescr
     case 'placed_asset':
       return placedAssetGripProvider.grips(element, context);
     case 'plan_region':
-    case 'stair':
       return sketchElementGripProvider.grips(element, context);
+    case 'stair':
+      return stairGripProvider.grips(element, context);
     case 'text_note':
       return textNoteGripProvider.grips(element, context);
     case 'leader_text':

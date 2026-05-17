@@ -1932,6 +1932,16 @@ export type Element =
       multiStorey?: boolean;
       /** §2.5.3: id of the shaft void that was auto-created when this stair was placed. */
       linkedShaftId?: string | null;
+      riserCount?: number;
+      treadDepthMm?: number;
+      /** §8.6.4: run width in mm (alias for widthMm for multi-run grip editing). */
+      runWidthMm?: number;
+      /** §8.6.4: landing depth in mm between runs (only applicable for ≥2-run stairs). */
+      landingDepthMm?: number;
+      /** §8.6.4: total stair height in mm (read-only computed or authored override). */
+      totalHeightMm?: number;
+      /** §8.6.4: riser height per step in mm (overrides riserMm when set). */
+      riserHeightMm?: number;
     }
   | {
       kind: 'slab_opening';
@@ -4814,4 +4824,12 @@ export type CreateSpireRoofCmd = {
   heightMm: number;
   baseElevationMm: number;
   materialId?: string | null;
+};
+
+/** §3.3.6 Scale tool — uniform scale of selected elements about a base point. */
+export type ScaleElementsCmd = {
+  type: 'scaleElements';
+  elementIds: string[];
+  basePtMm: { xMm: number; yMm: number };
+  scaleFactor: number;
 };

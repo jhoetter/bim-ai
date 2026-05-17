@@ -135,6 +135,7 @@ describe('command capability graph', () => {
       ['project.manage-links', ['cmd-k', 'primary-sidebar']],
       ['project.import.ifc', ['cmd-k', 'primary-sidebar']],
       ['project.import.dxf', ['cmd-k', 'primary-sidebar']],
+      ['file.import-dxf-terrain', ['cmd-k']],
       ['library.open-family', ['cmd-k', 'ribbon', 'secondary-sidebar']],
       ['library.open-material-browser', ['cmd-k', 'primary-sidebar', 'element-sidebar']],
       ['library.open-appearance-asset-browser', ['cmd-k', 'primary-sidebar', 'element-sidebar']],
