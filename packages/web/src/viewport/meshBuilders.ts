@@ -34,6 +34,7 @@ import { roofHeightAtPoint } from './roofHeightSampler';
 import { makeLayeredWallMesh } from './meshBuilders.layeredWall';
 import { makeMultiRunStairMesh } from './meshBuilders.multiRunStair';
 import { makeRampMesh } from './meshBuilders.ramp';
+import { buildBeamProfileGeometry } from './beamProfileMesh';
 export { makeRampMesh };
 import { localPlanOffsetToWorld, yawForPlanSegment } from './planSegmentOrientation';
 import { resolveWindowCutDimensions } from './hostedOpeningDimensions';
@@ -3589,10 +3590,8 @@ export function makeBeamMesh(
   const ez = beam.endMm.yMm / 1000;
   const dx = ex - sx;
   const dz = ez - sz;
-  const len = Math.max(0.001, Math.hypot(dx, dz));
-  const wM = THREE.MathUtils.clamp((beam.widthMm ?? 200) / 1000, 0.05, 1);
   const hM = THREE.MathUtils.clamp((beam.heightMm ?? 400) / 1000, 0.05, 1);
-  const geo = new THREE.BoxGeometry(len, hM, wM);
+  const geo = buildBeamProfileGeometry(beam);
   const mat = makeThreeMaterialForKey(beam.materialKey, {
     usage: 'structural',
     fallbackColor: categoryColorOr(paint, 'wall'),
