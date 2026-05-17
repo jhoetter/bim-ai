@@ -114,7 +114,7 @@ export function getCheatsheetData(t: TFunction): CheatsheetSection[] {
         { action: t('cheatsheet.actions.toolRotate'), keys: 'RO' },
         { action: t('cheatsheet.actions.toolMirror'), keys: 'MM' },
         { action: t('cheatsheet.actions.toolArray'), keys: 'AR' },
-        { action: t('cheatsheet.actions.toolScale'), keys: 'RE' },
+        { action: t('cheatsheet.actions.toolScale'), keys: 'SZ' },
         { action: t('cheatsheet.actions.toolAlign'), keys: 'AL' },
         { action: t('cheatsheet.actions.toolTrim'), keys: 'TR' },
         { action: t('cheatsheet.actions.toolOffset'), keys: 'OF' },
