@@ -4054,3 +4054,279 @@ export function stairSketchReducer(
 
   return { next: state };
 }
+
+// ---------------------------------------------------------------------------
+// §3.5.5 — Edit Wall Profile grammar
+// ---------------------------------------------------------------------------
+
+export type WallProfileState =
+  | { phase: 'idle' }
+  | { phase: 'editing'; wallId: string; points: { xPct: number; yPct: number }[] };
+
+export type WallProfileEffect = {
+  kind: 'commitWallProfile';
+  wallId: string;
+  points: { xPct: number; yPct: number }[];
+};
+
+export function initialWallProfileState(): WallProfileState {
+  return { phase: 'idle' };
+}
+
+export function reduceWallProfile(
+  state: WallProfileState,
+  event: { type: string; [key: string]: unknown },
+): { state: WallProfileState; effect?: WallProfileEffect } {
+  switch (event.type) {
+    case 'activate': {
+      // Needs wallId from context
+      const wallId = event.wallId as string | undefined;
+      if (!wallId) return { state };
+      return { state: { phase: 'editing', wallId, points: [] } };
+    }
+    case 'click': {
+      if (state.phase !== 'editing') return { state };
+      // Clamp to [0,1] range
+      const xPct = Math.max(0, Math.min(1, (event.xPct as number | undefined) ?? 0.5));
+      const yPct = Math.max(0, Math.min(1, (event.yPct as number | undefined) ?? 0.5));
+      return { state: { ...state, points: [...state.points, { xPct, yPct }] } };
+    }
+    case 'confirm':
+    case 'Enter': {
+      if (state.phase !== 'editing' || state.points.length < 3) return { state };
+      return {
+        state: { phase: 'idle' },
+        effect: { kind: 'commitWallProfile', wallId: state.wallId, points: state.points },
+      };
+    }
+    case 'Escape':
+    case 'deactivate':
+      return { state: { phase: 'idle' } };
+    default:
+      return { state };
+  }
+}
+
+// ---------------------------------------------------------------------------
+// §8.6.2 — Stair by Component grammars
+// ---------------------------------------------------------------------------
+
+export type StairRunState =
+  | { phase: 'idle' }
+  | { phase: 'pick-stair' }
+  | { phase: 'place-start'; stairId: string }
+  | { phase: 'place-end'; stairId: string; startMm: { xMm: number; yMm: number } };
+
+export type StairRunEffect = {
+  kind: 'addStairRun';
+  run: {
+    stairId: string;
+    startMm: { xMm: number; yMm: number };
+    endMm: { xMm: number; yMm: number };
+    runWidthMm: number;
+    riserCount: number;
+    runIndex: number;
+  };
+};
+
+export function initialStairRunState(): StairRunState {
+  return { phase: 'idle' };
+}
+
+export function reduceStairRun(
+  state: StairRunState,
+  event: { kind: string; [key: string]: unknown },
+): { state: StairRunState; effect?: StairRunEffect } {
+  switch (event.kind) {
+    case 'activate':
+      return { state: { phase: 'pick-stair' } };
+    case 'click': {
+      const pointMm = event.pointMm as { xMm: number; yMm: number };
+      const elementId = event.elementId as string | undefined;
+      if (state.phase === 'pick-stair') {
+        if (!elementId) return { state };
+        return { state: { phase: 'place-start', stairId: elementId } };
+      }
+      if (state.phase === 'place-start') {
+        return { state: { phase: 'place-end', stairId: state.stairId, startMm: pointMm } };
+      }
+      if (state.phase === 'place-end') {
+        return {
+          state: { phase: 'idle' },
+          effect: {
+            kind: 'addStairRun',
+            run: {
+              stairId: state.stairId,
+              startMm: state.startMm,
+              endMm: pointMm,
+              runWidthMm: 1200,
+              riserCount: 10,
+              runIndex: 0,
+            },
+          },
+        };
+      }
+      return { state };
+    }
+    case 'escape':
+    case 'deactivate':
+      return { state: { phase: 'idle' } };
+    default:
+      return { state };
+  }
+}
+
+export type StairLandingState =
+  | { phase: 'idle' }
+  | { phase: 'pick-stair' }
+  | { phase: 'sketching'; stairId: string; points: { xMm: number; yMm: number }[] };
+
+export type StairLandingEffect = {
+  kind: 'addStairLanding';
+  landing: {
+    stairId: string;
+    perimeterMm: { xMm: number; yMm: number }[];
+    elevationMm: number;
+    landingIndex: number;
+  };
+};
+
+export function initialStairLandingState(): StairLandingState {
+  return { phase: 'idle' };
+}
+
+export function reduceStairLanding(
+  state: StairLandingState,
+  event: { kind: string; [key: string]: unknown },
+): { state: StairLandingState; effect?: StairLandingEffect } {
+  switch (event.kind) {
+    case 'activate':
+      return { state: { phase: 'pick-stair' } };
+    case 'click': {
+      const pointMm = event.pointMm as { xMm: number; yMm: number };
+      const elementId = event.elementId as string | undefined;
+      if (state.phase === 'pick-stair') {
+        if (!elementId) return { state };
+        return { state: { phase: 'sketching', stairId: elementId, points: [] } };
+      }
+      if (state.phase === 'sketching') {
+        return { state: { ...state, points: [...state.points, pointMm] } };
+      }
+      return { state };
+    }
+    case 'enter': {
+      if (state.phase !== 'sketching' || state.points.length < 3) return { state };
+      return {
+        state: { phase: 'idle' },
+        effect: {
+          kind: 'addStairLanding',
+          landing: {
+            stairId: state.stairId,
+            perimeterMm: state.points,
+            elevationMm: 0,
+            landingIndex: 0,
+          },
+        },
+      };
+    }
+    case 'escape':
+    case 'deactivate':
+      return { state: { phase: 'idle' } };
+    default:
+      return { state };
+  }
+}
+
+// ---------------------------------------------------------------------------
+// §6.4.2 — Detail drafting grammars
+// ---------------------------------------------------------------------------
+
+export type DetailLineState =
+  | { phase: 'idle' }
+  | { phase: 'drawing'; points: { xMm: number; yMm: number }[] };
+
+export type DetailLineEffect = {
+  kind: 'createDetailLine';
+  pointsMm: { xMm: number; yMm: number }[];
+  lineStyle: 'solid';
+};
+
+export function initialDetailLineState(): DetailLineState {
+  return { phase: 'idle' };
+}
+
+export function reduceDetailLine(
+  state: DetailLineState,
+  event: { kind: string; [key: string]: unknown },
+): { state: DetailLineState; effect?: DetailLineEffect } {
+  switch (event.kind) {
+    case 'activate':
+      return { state: { phase: 'drawing', points: [] } };
+    case 'click': {
+      if (state.phase !== 'drawing') return { state };
+      const pointMm = event.pointMm as { xMm: number; yMm: number };
+      return { state: { ...state, points: [...state.points, pointMm] } };
+    }
+    case 'commit': {
+      if (state.phase !== 'drawing') return { state: { phase: 'idle' } };
+      if (state.points.length < 2) return { state: { phase: 'idle' } };
+      return {
+        state: { phase: 'idle' },
+        effect: { kind: 'createDetailLine', pointsMm: state.points, lineStyle: 'solid' },
+      };
+    }
+    case 'cancel':
+    case 'escape':
+    case 'deactivate':
+      return { state: { phase: 'idle' } };
+    default:
+      return { state };
+  }
+}
+
+export type DetailFilledRegionState =
+  | { phase: 'idle' }
+  | { phase: 'sketching'; points: { xMm: number; yMm: number }[] };
+
+export type DetailFilledRegionEffect = {
+  kind: 'createDetailFilledRegion';
+  perimeterMm: { xMm: number; yMm: number }[];
+  fillPattern: 'solid';
+};
+
+export function initialDetailFilledRegionState(): DetailFilledRegionState {
+  return { phase: 'idle' };
+}
+
+export function reduceDetailFilledRegion(
+  state: DetailFilledRegionState,
+  event: { kind: string; [key: string]: unknown },
+): { state: DetailFilledRegionState; effect?: DetailFilledRegionEffect } {
+  switch (event.kind) {
+    case 'activate':
+      return { state: { phase: 'sketching', points: [] } };
+    case 'click': {
+      if (state.phase !== 'sketching') return { state };
+      const pointMm = event.pointMm as { xMm: number; yMm: number };
+      return { state: { ...state, points: [...state.points, pointMm] } };
+    }
+    case 'commit': {
+      if (state.phase !== 'sketching') return { state: { phase: 'idle' } };
+      if (state.points.length < 3) return { state: { phase: 'idle' } };
+      return {
+        state: { phase: 'idle' },
+        effect: {
+          kind: 'createDetailFilledRegion',
+          perimeterMm: state.points,
+          fillPattern: 'solid',
+        },
+      };
+    }
+    case 'cancel':
+    case 'escape':
+    case 'deactivate':
+      return { state: { phase: 'idle' } };
+    default:
+      return { state };
+  }
+}

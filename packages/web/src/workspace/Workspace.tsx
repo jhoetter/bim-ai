@@ -1890,6 +1890,45 @@ export function Workspace(): JSX.Element {
         }
         return;
       }
+      // §2.5.1: recompute shaft floor cuts
+      if (cmd.type === 'recomputeShaftCuts') {
+        const current = useBimStore.getState().elementsById;
+        const shaft = current[cmd.shaftId as string];
+        if (!shaft || shaft.kind !== 'shaft') return;
+        const cutFloorIds = computeShaftCutFloors(
+          shaft,
+          current as Record<string, Element | undefined>,
+        );
+        useBimStore.setState({
+          elementsById: {
+            ...current,
+            [shaft.id]: { ...shaft, cutFloorIds },
+          },
+        });
+        return;
+      }
+      // §2.5.1: update shaft base/top level and recompute cuts
+      if (cmd.type === 'updateShaftLevels') {
+        const current = useBimStore.getState().elementsById;
+        const shaft = current[cmd.shaftId as string];
+        if (!shaft || shaft.kind !== 'shaft') return;
+        const updated = {
+          ...shaft,
+          baseLevelId: (cmd.baseLevelId as string | null) ?? shaft.baseLevelId,
+          topLevelId: (cmd.topLevelId as string | null) ?? shaft.topLevelId,
+        };
+        const cutFloorIds = computeShaftCutFloors(
+          updated,
+          current as Record<string, Element | undefined>,
+        );
+        useBimStore.setState({
+          elementsById: {
+            ...current,
+            [shaft.id]: { ...updated, cutFloorIds },
+          },
+        });
+        return;
+      }
       // §4.2.1: client-only permanent dimension chain creation
       if (cmd.type === 'create_permanent_dimension') {
         const current = useBimStore.getState().elementsById;
