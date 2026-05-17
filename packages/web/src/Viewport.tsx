@@ -118,6 +118,8 @@ import {
   buildDomeRoofMesh,
   buildSpireRoofMesh,
 } from './viewport/meshBuilders.coneRoof';
+import { buildFamilyBlendMesh } from './viewport/meshBuilders.familyBlend';
+import { buildFamilySweepMesh } from './viewport/meshBuilders.familySweep';
 import { makeMassBoxMesh } from './viewport/meshBuilders.massBox';
 import { makeMassExtrusionMesh } from './viewport/meshBuilders.massExtrusion';
 import { makeMassRevolutionMesh } from './viewport/meshBuilders.massRevolution';
@@ -4367,6 +4369,12 @@ export function Viewport({
           break;
         case 'spire_roof':
           obj = buildSpireRoofMesh(e);
+          break;
+        case 'family_blend':
+          obj = buildFamilyBlendMesh(e);
+          break;
+        case 'family_sweep':
+          obj = buildFamilySweepMesh(e);
           break;
         case 'mass_box':
           obj = makeMassBoxMesh(e);

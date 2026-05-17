@@ -130,7 +130,9 @@ export type PlanTool =
   | 'spire-roof'
   | 'measure-angle'
   | 'measure-arc'
-  | 'project-base-point';
+  | 'project-base-point'
+  | 'family-blend'
+  | 'family-sweep';
 
 export type PresencePeers = Record<
   string,
