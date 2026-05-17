@@ -1117,7 +1117,9 @@ Wave 14 WP-I: `cheatsheetData.ts` expanded with a comprehensive shortcut set mat
 
 ## Summary Dashboard
 
-Last verified: 2026-05-17. Waves 1–19 complete. **599 test files, 5077 tests pass.**
+Last verified: 2026-05-17. Waves 1–20 complete. **602 test files, 5116 tests pass.**
+
+Wave 20 completions: §12.4.3 DXF export additions — column (S-COLS rectangle), beam (S-BEAM line), floor (A-FLOR polyline), stair footprint (A-FLOR-STRS rectangle) in `buildPlanView()` + 4 tests (WP-A), §12.4.5 PDF export — PaperSize extended to A0/A1/A2/A3/A4/Letter/Tabloid + PAPER_CSS mapping + `marginMm` option threaded through pdfExporter + PrintPlotDialog margin input + 12 new tests (WP-B), §1.6.6 options bar — roof base-offset/slope + ramp width/slope + railing height/follow-slope module-level vars + OptionsBar.tsx sections + 8 tests (WP-C), §1.11 family library panel — search input + category count badges + recently used section (5-item cap) + 8 tests (WP-D), §14.3 render quality panel — `RenderQualitySettings` Zustand slice + `RenderQualityPanel.tsx` (shadows/exposure/pixel-ratio) + Viewport.tsx useEffect wiring THREE.js renderer + ⚙ toggle button + 6 tests (WP-E).
 
 Wave 19 completions: §8.6.2 stair_run/stair_landing element types + PlanCanvas wiring + inspector panels + addStairRun/addStairLanding/removeStairComponent commands (WP-A), §6.4.1 callout camera zoom useEffect fitting OrthographicCamera to calloutBoundaryMm + elementOverlapsBoundary geometry filter in rebuildPlanMeshes + 1:N scale label in PlanViewHeader (WP-B), §12.1.1 link_ifc element type + addIfcLink/removeIfcLink/toggleIfcLinkVisibility commands + ManageLinksDialog IFC section (file picker, list, visibility checkbox) + ghost rendering via applyLinkedGhosting + ProjectBrowser Linked IFC subtree (WP-C), §2.4.2 shift-click in floor tool triggers detectFloorBoundaryFromWalls + auto-creates floor + edgeProfileMm + autoDetectedBoundary fields + inspector collapsible edge profile section (WP-D), §3.5.5 commitWallProfile command + Workspace handler storing profilePoints on wall + modify.edit-wall-profile palette command + wallProfileInspector.test.tsx 8 tests (WP-E+fix-up), §1.6.10 THREE.js crop region PlanViewHeader toggle button + view.toggle-crop-region palette command + cropRegionMm/cropRegionEnabled fields on plan_view (WP-F+fix-up), §6.4.2 detail_line/detail_filled_region element types + addDetailLine/addDetailFilledRegion/removeDetailElement commands + THREE.js plan rendering (Line + ShapeGeometry) + inspector style/color panels + PlanCanvas tool wiring (WP-G), §2.5.1 shaft inspector base/top level selectors + cut floor count readout + Apply Shaft Cut button + applyShaftCut command handler calling computeShaftCutFloors (WP-H), §4.1 autoDimensionWalls command type + Workspace handler filtering walls by levelId + annotate.auto-dimension-walls palette command updated to dispatch command (WP-I), §8.6.4 enterStairEditMode/exitStairEditMode/updateStairRun command types + Workspace handlers + inspector Edit Stair toggle + per-run riser/width editors + Finish Editing button + modify.edit-stair palette command (WP-J).
 
@@ -1165,14 +1167,14 @@ None confirmed as blocking.
 
 ### Top P1 Gaps (professional parity limited)
 
-Remaining after wave 19:
+Remaining after wave 20:
 
 - **§3.5.5 Edit wall profile** — commitWallProfile + inspector buttons done (w19); full sketch-mode UI for drawing the profile shape Partial
 - **§6.4.2 2D detail view** — element types + rendering done (w19); standalone detail view tab (independent of model) Not Started
 - **§3.4.2 Basement slab sub-element** — drainage slope + split surface sub-element editing Not Started
-- **§12.1.3 Family library** — internal catalog exists; loading from external/online library Not Started
-- **§3.6.2 Window family library** — internal types available; loading arbitrary *.rfa Not Started
+- **§12.1.3 Family library** — search + count badges done (w20); loading from external/online library Not Started
 - **§1.6.10 Crop region clipping** — toggle button + fields done (w19); THREE.js clipping plane visual enforcement Partial
+- **§14.3 Photorealistic rendering** — quality panel + Three.js knobs done (w20); true ray-traced render Not Started
 - **§1.6.10 Crop region drag** — grip utilities done (w18); Three.js clip planes wiring Partial
 
 ### Top P2 Gaps (useful but workaroundable)
