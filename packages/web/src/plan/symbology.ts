@@ -56,6 +56,7 @@ import { terrainControlPointsPlanThree } from './terrainPointSymbol';
 import { terrainPadPlanThree } from './terrainPadPlanThree';
 import { shaftPlanThree } from './shaftPlanThree';
 import { floorSlopeArrowPlanThree } from './floorSlopePlanThree';
+import { roofSlopeArrowPlanThree } from './roofSlopeArrowPlanThree';
 import { ceilingGridPlanThree } from './ceilingGridPlanThree';
 
 /** Plan slice elevation in world units (walls still render with real height elsewhere). */
@@ -1938,6 +1939,8 @@ export function rebuildPlanMeshes(
             rf.id,
           ),
         );
+        const roofSlopeArrow = roofSlopeArrowPlanThree(rf);
+        if (roofSlopeArrow) holder.add(roofSlopeArrow);
       }
       tintNewChildren(before, 'roof');
     }

@@ -15,7 +15,7 @@ import {
   planViewGraphicsMatrixRows,
   viewTemplateGraphicsMatrixRows,
 } from '../../plan/planProjection';
-import { roomAreaM2 } from '../../plan/roomArea';
+import { roomAreaM2, roomNetAreaM2 } from '../../plan/roomArea';
 import {
   getBuiltInWallType,
   resolveWallAssemblyExposedLayers,
@@ -1697,6 +1697,43 @@ export function InspectorPropertiesFor(
             elementsById={elementsById}
             onDispatchCommand={onDispatchCommand}
           />
+          <div className="border-t border-border pt-1.5">
+            <div className="mb-1 text-xs font-semibold text-foreground">Slope Arrow</div>
+            <div className="flex flex-col gap-1">
+              <label
+                data-testid="inspector-roof-use-slope-arrow"
+                className="flex items-center gap-2 py-0.5 text-xs text-foreground cursor-pointer"
+              >
+                <input
+                  type="checkbox"
+                  checked={el.useSlopeArrow ?? false}
+                  onChange={(e) => roofOnPropertyChange?.('useSlopeArrow', e.currentTarget.checked)}
+                />
+                Use Slope Arrow
+              </label>
+              {el.useSlopeArrow && el.slopeArrow ? (
+                <div className="flex items-center gap-2 py-0.5">
+                  <span className="text-xs text-muted w-28 shrink-0">Slope %</span>
+                  <input
+                    type="number"
+                    className="w-20 text-xs bg-surface border border-border rounded px-1 py-0.5"
+                    data-testid="inspector-roof-slope-pct"
+                    defaultValue={(el.slopeArrow.slopeRatio * 100).toFixed(0)}
+                    key={`${el.id}-slope-pct`}
+                    step={1}
+                    min={0}
+                    onBlur={(e) =>
+                      roofOnPropertyChange?.('slopeArrow', {
+                        ...el.slopeArrow,
+                        slopeRatio: Number(e.currentTarget.value) / 100,
+                      })
+                    }
+                  />
+                  <span className="text-xs text-muted">%</span>
+                </div>
+              ) : null}
+            </div>
+          </div>
         </div>
       );
     }
@@ -2172,6 +2209,88 @@ export function InspectorPropertiesFor(
               </div>
             </>
           )}
+          {/* §9.2 (WP-B): beamProfileType — 3D geometry profile */}
+          <div className="flex items-center gap-2 py-0.5">
+            <span className="text-xs text-muted w-28 shrink-0">Profile</span>
+            <select
+              className="w-32 text-xs bg-surface border border-border rounded px-1 py-0.5"
+              value={el.beamProfileType ?? 'rectangular'}
+              onChange={(e) => beamPropChange?.('beamProfileType', e.currentTarget.value)}
+              data-testid="inspector-beam-profile-type"
+            >
+              <option value="rectangular">Rectangular</option>
+              <option value="I-beam">I-Beam</option>
+              <option value="H-beam">H-Beam (Wide Flange)</option>
+              <option value="HSS-round">HSS Round</option>
+              <option value="HSS-square">HSS Square</option>
+            </select>
+          </div>
+          {(el.beamProfileType === 'I-beam' || el.beamProfileType === 'H-beam') && (
+            <>
+              <div className="flex items-center gap-2 py-0.5">
+                <span className="text-xs text-muted w-28 shrink-0">Flange Width (mm)</span>
+                <input
+                  type="number"
+                  className="w-20 text-xs bg-surface border border-border rounded px-1 py-0.5"
+                  defaultValue={el.flangeWidthMm ?? el.widthMm}
+                  key={`${el.id}-bp-flange-width`}
+                  step={10}
+                  onBlur={(e) => {
+                    const v = Number(e.currentTarget.value);
+                    if (!isNaN(v) && v > 0) beamPropChange?.('flangeWidthMm', v);
+                  }}
+                  data-testid="inspector-beam-flange-width-bp"
+                />
+              </div>
+              <div className="flex items-center gap-2 py-0.5">
+                <span className="text-xs text-muted w-28 shrink-0">Flange Thickness (mm)</span>
+                <input
+                  type="number"
+                  className="w-20 text-xs bg-surface border border-border rounded px-1 py-0.5"
+                  defaultValue={el.flangeThicknessMm ?? 15}
+                  key={`${el.id}-bp-flange-thickness`}
+                  step={5}
+                  onBlur={(e) => {
+                    const v = Number(e.currentTarget.value);
+                    if (!isNaN(v) && v > 0) beamPropChange?.('flangeThicknessMm', v);
+                  }}
+                  data-testid="inspector-beam-flange-thickness-bp"
+                />
+              </div>
+              <div className="flex items-center gap-2 py-0.5">
+                <span className="text-xs text-muted w-28 shrink-0">Web Thickness (mm)</span>
+                <input
+                  type="number"
+                  className="w-20 text-xs bg-surface border border-border rounded px-1 py-0.5"
+                  defaultValue={el.webThicknessMm ?? 10}
+                  key={`${el.id}-bp-web-thickness`}
+                  step={5}
+                  onBlur={(e) => {
+                    const v = Number(e.currentTarget.value);
+                    if (!isNaN(v) && v > 0) beamPropChange?.('webThicknessMm', v);
+                  }}
+                  data-testid="inspector-beam-web-thickness-bp"
+                />
+              </div>
+            </>
+          )}
+          {(el.beamProfileType === 'HSS-round' || el.beamProfileType === 'HSS-square') && (
+            <div className="flex items-center gap-2 py-0.5">
+              <span className="text-xs text-muted w-28 shrink-0">Wall Thickness (mm)</span>
+              <input
+                type="number"
+                className="w-20 text-xs bg-surface border border-border rounded px-1 py-0.5"
+                defaultValue={el.wallThicknessMm ?? 8}
+                key={`${el.id}-bp-wall-thickness`}
+                step={1}
+                onBlur={(e) => {
+                  const v = Number(e.currentTarget.value);
+                  if (!isNaN(v) && v > 0) beamPropChange?.('wallThicknessMm', v);
+                }}
+                data-testid="inspector-beam-wall-thickness"
+              />
+            </div>
+          )}
           <PhaseSection
             phaseCreated={el.phaseCreated}
             phaseDemolished={el.phaseDemolished}
@@ -2381,7 +2500,12 @@ export function InspectorPropertiesFor(
         </div>
       );
     }
-    case 'room':
+    case 'room': {
+      const roomColumns = Object.values(elementsById).filter(
+        (e): e is Extract<Element, { kind: 'column' }> => e.kind === 'column',
+      );
+      const grossAreaM2 = roomAreaM2(el.outlineMm);
+      const netAreaM2 = roomNetAreaM2(el.outlineMm, roomColumns);
       return (
         <div>
           <FieldRow label={f('programme')} value={el.programmeCode ?? '—'} />
@@ -2390,6 +2514,14 @@ export function InspectorPropertiesFor(
           <FieldRow label={f('finishSet')} value={el.finishSet ?? '—'} />
           <FieldRow label={f('level')} value={resolveElName(el.levelId, elementsById)} />
           <FieldRow label={f('outlinePoints')} value={String(el.outlineMm.length)} />
+          <div className="flex items-center gap-2 py-0.5" data-testid="inspector-room-gross-area">
+            <span className="text-xs text-muted w-28 shrink-0">Gross Area</span>
+            <span className="text-xs">{grossAreaM2.toFixed(2)} m²</span>
+          </div>
+          <div className="flex items-center gap-2 py-0.5" data-testid="inspector-room-net-area">
+            <span className="text-xs text-muted w-28 shrink-0">Net Area</span>
+            <span className="text-xs">{netAreaM2.toFixed(2)} m²</span>
+          </div>
           {el.upperLimitLevelId ? (
             <FieldRow
               label={f('upperLimit')}
@@ -2418,6 +2550,7 @@ export function InspectorPropertiesFor(
           />
         </div>
       );
+    }
     case 'duct':
       return (
         <div className="flex flex-col gap-2">

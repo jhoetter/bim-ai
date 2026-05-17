@@ -1688,7 +1688,35 @@ export function makeRoofMassMesh(
   const slopeRad = (THREE.MathUtils.clamp(Number(roof.slopeDeg ?? 25), 5, 70) * Math.PI) / 180;
   let geom: THREE.BufferGeometry;
   let ridgeAlongXForCut = true;
-  if (roof.roofGeometryMode === 'flat') {
+
+  // §10.1.3 — slope arrow mode: build a flat slab tilted along the arrow direction/ratio.
+  if (roof.useSlopeArrow && roof.slopeArrow) {
+    const { tailMm, headMm, slopeRatio } = roof.slopeArrow;
+    const sdxMm = headMm.xMm - tailMm.xMm;
+    const sdzMm = headMm.yMm - tailMm.yMm;
+    const slenMm = Math.sqrt(sdxMm * sdxMm + sdzMm * sdzMm);
+    const slabThick = 0.15;
+    // Build a flat slab at eaveY and then lift top-face vertices proportionally.
+    geom = new THREE.BoxGeometry(ox1 - ox0, slabThick, oz1 - oz0);
+    geom.translate((ox0 + ox1) / 2, eaveY + slabThick / 2, (oz0 + oz1) / 2);
+    if (slenMm > 1e-6) {
+      const dirXMm = sdxMm / slenMm;
+      const dirZMm = sdzMm / slenMm;
+      const risePerMm = slopeRatio; // rise per mm of run
+      const pos = geom.attributes.position as THREE.BufferAttribute;
+      const topY = eaveY + slabThick;
+      for (let i = 0; i < pos.count; i++) {
+        if (Math.abs(pos.getY(i) - topY) > 0.01) continue;
+        // world x/z → plan mm (x stays x, z stays z since no rotation yet)
+        const planXMm = pos.getX(i) * 1000;
+        const planZMm = pos.getZ(i) * 1000;
+        const dot = (planXMm - tailMm.xMm) * dirXMm + (planZMm - tailMm.yMm) * dirZMm;
+        pos.setY(i, pos.getY(i) + (dot * risePerMm) / 1000);
+      }
+      pos.needsUpdate = true;
+      geom.computeVertexNormals();
+    }
+  } else if (roof.roofGeometryMode === 'flat') {
     const slabThick = 0.15;
     geom = new THREE.BoxGeometry(ox1 - ox0, slabThick, oz1 - oz0);
     geom.translate((ox0 + ox1) / 2, eaveY + slabThick / 2, (oz0 + oz1) / 2);

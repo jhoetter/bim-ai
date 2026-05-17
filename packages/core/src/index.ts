@@ -2161,6 +2161,12 @@ export type Element =
       areaScheme?: 'gross_building' | 'net' | 'rentable';
       /** F2: phase filter display mode — controls per-phase graphic overrides in plan views. */
       phaseFilterMode?: 'new_construction' | 'demolition' | 'existing' | 'as_built' | null;
+      /** §7.3.1: active work plane — id of a reference_plane element bound to this view. */
+      activeWorkPlaneId?: string | null;
+      /** §1.6.10: when true, all plan line weights are overridden to 1 px (thin lines mode). */
+      thinLines?: boolean | null;
+      /** §13.1.3: color fill scheme applied to this plan view (category + per-value colorMap). */
+      colorScheme?: { category: string; colorMap: Record<string, string> } | null;
     }
   | {
       kind: 'view_template';
@@ -2435,6 +2441,18 @@ export type Element =
       discipline?: DisciplineTag | null;
       /** SCH-V3-01: custom property values. */
       props?: Record<string, unknown>;
+      /** §9.2: section profile type (I/H/C/L/T/HSS) for cross-section shape. */
+      sectionProfile?: 'rectangular' | 'I' | 'H' | 'C' | 'L' | 'T' | 'HSS' | null;
+      /** §9.2: flange width in mm — used for I, H, C profiles. */
+      flangeWidthMm?: number | null;
+      /** §9.2: flange thickness in mm — used for I, H profiles. */
+      flangeThicknessMm?: number | null;
+      /** §9.2: web thickness in mm — used for I, H profiles. */
+      webThicknessMm?: number | null;
+      /** §9.2 (WP-B): beam profile type for 3D mesh geometry. */
+      beamProfileType?: 'rectangular' | 'I-beam' | 'H-beam' | 'HSS-round' | 'HSS-square' | null;
+      /** §9.2 (WP-B): wall thickness in mm — used for HSS profiles. */
+      wallThicknessMm?: number | null;
       /** §2.1.4 per-element graphics override — fill/line color in plan, surface color in 3D. */
       graphicsOverride?: {
         fillColorHex?: string | null;
@@ -4647,6 +4665,10 @@ export interface Saved3dViewElement {
     minZ: number;
     maxZ: number;
   } | null;
+  /** §14.5 — true = perspective camera view, false/null = orthographic */
+  perspective?: boolean | null;
+  /** §14.5 — perspective field of view in degrees (default 60) */
+  fovDeg?: number | null;
 }
 
 export type Save3dViewCmd = { type: 'save_3d_view'; name: string };
