@@ -87,6 +87,9 @@ import {
   initialModelLineState,
   reduceModelLine,
   type ModelLineState,
+  initialLineworkState,
+  reduceLinework,
+  type LineworkState,
 } from '../tools/toolGrammar';
 import { buildScaleCommand, distanceMm } from './scaleTool';
 import { linearArrayOffsets, radialArrayAngles, radialOffsetForElement } from './arrayTool';
@@ -249,6 +252,9 @@ import {
   setDispatchColumnAtGridsSelectAll,
   SubdivisionPalette,
   type SubdivisionCategory,
+  lineworkColorHex,
+  lineworkLineWeightPx,
+  getLineworkLineDash,
 } from '../workspace/authoring';
 import type { ColorSchemeRoomEntry } from './ColorSchemeDialog';
 import { ColorSchemeLegend } from './ColorSchemeLegend';
@@ -547,6 +553,7 @@ export function PlanCanvas({
   const measureAngleStateRef = useRef<MeasureAngleState>(initialMeasureAngleState());
   const measureArcStateRef = useRef<MeasureArcState>(initialMeasureArcState());
   const modelLineStateRef = useRef<ModelLineState>(initialModelLineState());
+  const lineworkStateRef = useRef<LineworkState>(initialLineworkState());
   const dimSnapCirclesRef = useRef<THREE.Mesh[]>([]);
   const marqueeRef = useRef<{
     active: boolean;
@@ -1181,6 +1188,9 @@ export function PlanCanvas({
       );
       roofByExtrusionStateRef.current = state;
       setRoofByExtrusionPhase(state.phase);
+    } else if (planTool === 'linework') {
+      const { state } = reduceLinework(lineworkStateRef.current, { kind: 'activate' });
+      lineworkStateRef.current = state;
     }
   }, [planTool]);
 
@@ -1349,6 +1359,10 @@ export function PlanCanvas({
       phaseFilterMode,
       groupRegistry,
       groupEditModeDefinitionId,
+      lineworkOverrides:
+        activePvForPhase?.kind === 'plan_view'
+          ? (activePvForPhase.lineworkOverrides ?? null)
+          : null,
     });
 
     // F-102: in reveal mode, tint individually-hidden elements magenta so users can
@@ -4464,6 +4478,42 @@ export function PlanCanvas({
         bumpGeom((x) => x + 1);
         return;
       }
+      if (planTool === 'linework') {
+        const rectBox = rnd.domElement.getBoundingClientRect();
+        const ray = new THREE.Raycaster();
+        ray.setFromCamera(
+          new THREE.Vector2(
+            ((ev.clientX - rectBox.left) / rectBox.width) * 2 - 1,
+            -(((ev.clientY - rectBox.top) / rectBox.height) * 2 - 1),
+          ),
+          camNow,
+        );
+        const hits = ray.intersectObjects(grp.children, true);
+        const h = hits.find(
+          (x) => typeof (x.object.userData as { bimPickId?: unknown }).bimPickId === 'string',
+        );
+        const pickedElementId =
+          typeof (h?.object.userData as { bimPickId?: unknown }).bimPickId === 'string'
+            ? (h!.object.userData as { bimPickId: string }).bimPickId
+            : undefined;
+        if (pickedElementId && activePlanViewId) {
+          const { effect } = reduceLinework(lineworkStateRef.current, {
+            kind: 'click',
+            elementId: pickedElementId,
+            colorHex: lineworkColorHex,
+            lineWeightPx: lineworkLineWeightPx,
+            lineDash: getLineworkLineDash(),
+          });
+          if (effect.applyLineworkOverride) {
+            void onSemanticCommand({
+              type: 'apply_linework_override',
+              viewId: activePlanViewId,
+              ...effect.applyLineworkOverride,
+            });
+          }
+        }
+        return;
+      }
       if (planTool === 'component') {
         const assetId = activeComponentAssetId;
         const familyTypeId = activeComponentFamilyTypeId;
@@ -5855,6 +5905,10 @@ export function PlanCanvas({
           modelLineStateRef.current = initialModelLineState();
           clearPreview();
           bumpGeom((x) => x + 1);
+        } else if (planTool === 'linework') {
+          const { state } = reduceLinework(lineworkStateRef.current, { kind: 'cancel' });
+          lineworkStateRef.current = state;
+          setPlanTool('select');
         }
         if (
           hadDraft ||

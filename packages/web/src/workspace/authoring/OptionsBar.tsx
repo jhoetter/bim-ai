@@ -84,6 +84,19 @@ export function setDispatchColumnAtGridsSelectAll(fn: ((gridIds: string[]) => vo
 // eslint-disable-next-line prefer-const
 export let columnDrawUsage: 'architectural' | 'structural' = 'architectural';
 
+/** §3.3.7 — Linework override options. Read at click-time by PlanCanvas. */
+// eslint-disable-next-line prefer-const
+export let lineworkColorHex = '#ff0000';
+// eslint-disable-next-line prefer-const
+export let lineworkLineWeightPx: number = 1;
+// eslint-disable-next-line prefer-const
+export let lineworkStyle: 'solid' | 'dashed' | 'hidden' = 'solid';
+export function getLineworkLineDash(): number[] | undefined {
+  if (lineworkStyle === 'dashed') return [4, 4];
+  if (lineworkStyle === 'hidden') return [2, 6];
+  return undefined;
+}
+
 function BeamSystemJustificationSelect(): JSX.Element {
   const [justification, setJustification] = useState<'beginning' | 'center' | 'end'>('center');
   return (
@@ -905,6 +918,53 @@ export function OptionsBar({
         >
           Remove Override
         </button>
+      </div>
+    );
+  }
+
+  if (planTool === 'linework') {
+    return (
+      <div data-testid="options-bar" className={BAR_CLASS}>
+        <label className="flex items-center gap-2">
+          <span className="text-muted">Color:</span>
+          <input
+            type="color"
+            defaultValue={lineworkColorHex}
+            data-testid="options-linework-color"
+            onChange={(e) => {
+              lineworkColorHex = e.target.value;
+            }}
+          />
+        </label>
+        <label className="flex items-center gap-2">
+          <span className="text-muted">Weight:</span>
+          <select
+            defaultValue={String(lineworkLineWeightPx)}
+            data-testid="options-linework-weight"
+            onChange={(e) => {
+              lineworkLineWeightPx = Number(e.target.value);
+            }}
+          >
+            <option value="0.5">0.5</option>
+            <option value="1">1</option>
+            <option value="2">2</option>
+            <option value="3">3</option>
+          </select>
+        </label>
+        <label className="flex items-center gap-2">
+          <span className="text-muted">Style:</span>
+          <select
+            defaultValue={lineworkStyle}
+            data-testid="options-linework-style"
+            onChange={(e) => {
+              lineworkStyle = e.target.value as 'solid' | 'dashed' | 'hidden';
+            }}
+          >
+            <option value="solid">Solid</option>
+            <option value="dashed">Dashed</option>
+            <option value="hidden">Hidden</option>
+          </select>
+        </label>
       </div>
     );
   }

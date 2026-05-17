@@ -3281,7 +3281,10 @@ export function InspectorPropertiesFor(
           <FieldRow label={f('cropDepth')} value={fmtMm(el.cropDepthMm)} />
         </div>
       );
-    case 'plan_view':
+    case 'plan_view': {
+      const { onPropertyChange: pvPropChange } = options ?? {};
+      const lineworkOverrides =
+        (el as Extract<Element, { kind: 'plan_view' }>).lineworkOverrides ?? [];
       return (
         <div>
           <FieldRow label={f('level')} value={resolveElName(el.levelId, elementsById)} />
@@ -3298,8 +3301,54 @@ export function InspectorPropertiesFor(
               value={resolveElName(el.underlayLevelId, elementsById)}
             />
           ) : null}
+          {lineworkOverrides.length > 0 ? (
+            <div data-testid="inspector-linework-overrides" className="flex flex-col gap-1 mt-2">
+              <span className="text-xs font-medium text-muted">Linework Overrides</span>
+              {lineworkOverrides.map((ov) => (
+                <div
+                  key={ov.elementId}
+                  data-testid={`inspector-linework-override-${ov.elementId}`}
+                  className="flex items-center gap-1"
+                >
+                  <span
+                    style={{
+                      width: 12,
+                      height: 12,
+                      background: ov.colorHex,
+                      border: '1px solid #888',
+                      display: 'inline-block',
+                      flexShrink: 0,
+                    }}
+                  />
+                  <span className="text-xs flex-1">
+                    {ov.elementId.slice(0, 8)}… {ov.lineWeightPx}px
+                  </span>
+                  <button
+                    type="button"
+                    data-testid={`inspector-linework-remove-${ov.elementId}`}
+                    className="text-xs"
+                    onClick={() => {
+                      const next = lineworkOverrides.filter((o) => o.elementId !== ov.elementId);
+                      pvPropChange?.('lineworkOverrides', next);
+                    }}
+                  >
+                    ×
+                  </button>
+                </div>
+              ))}
+              <button
+                type="button"
+                data-testid="inspector-linework-clear-all"
+                className="text-xs mt-1"
+                onClick={() => pvPropChange?.('lineworkOverrides', [])}
+              >
+                Clear All
+              </button>
+            </div>
+          ) : null}
         </div>
       );
+    }
     case 'viewpoint':
       return (
         <div>

@@ -1637,6 +1637,13 @@ export function rebuildPlanMeshes(
     categoryOverrides?: import('@bim-ai/core').CategoryVisualOverride[];
     /** §1.6.10: per-view category overrides; these shadow globalOverrides by category name. */
     viewCategoryOverrides?: import('@bim-ai/core').CategoryVisualOverride[];
+    /** §3.3.7: per-element linework overrides for this plan view. */
+    lineworkOverrides?: Array<{
+      elementId: string;
+      colorHex: string;
+      lineWeightPx: number;
+      lineDash?: number[];
+    }> | null;
   },
 ): void {
   while (holder.children.length) holder.remove(holder.children[0]!);
@@ -2343,6 +2350,21 @@ export function rebuildPlanMeshes(
         });
       });
     }
+  }
+
+  // §3.3.7: apply per-element linework overrides
+  const lineworkOverrides = opts.lineworkOverrides ?? [];
+  for (const override of lineworkOverrides) {
+    holder.traverse((obj) => {
+      if ((obj.userData as { bimPickId?: string }).bimPickId !== override.elementId) return;
+      if (obj instanceof THREE.Line && obj.material instanceof THREE.LineBasicMaterial) {
+        obj.material.color.setStyle(override.colorHex);
+        if (override.lineDash && obj.material instanceof THREE.LineDashedMaterial) {
+          obj.material.dashSize = override.lineDash[0] ?? 4;
+          obj.material.gapSize = override.lineDash[1] ?? 4;
+        }
+      }
+    });
   }
 }
 

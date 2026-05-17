@@ -2169,6 +2169,13 @@ export type Element =
       colorScheme?: { category: string; colorMap: Record<string, string> } | null;
       /** §1.6.10: per-view category visibility/graphics overrides; these shadow global project overrides. */
       viewCategoryOverrides?: CategoryVisualOverride[] | null;
+      /** §3.3.7: per-element linework overrides applied in this plan view. */
+      lineworkOverrides?: Array<{
+        elementId: string;
+        colorHex: string;
+        lineWeightPx: number;
+        lineDash?: number[];
+      }> | null;
     }
   | {
       kind: 'view_template';
