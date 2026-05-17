@@ -11,7 +11,7 @@
 
 import type { Element, LensMode } from '@bim-ai/core';
 
-export type TabKind = 'plan' | '3d' | 'section' | 'sheet' | 'schedule';
+export type TabKind = 'plan' | '3d' | 'section' | 'sheet' | 'schedule' | 'elevation';
 
 /** Per-tab viewport state — restored when the tab is reactivated.
  * (T-07.) Plan tabs cache the 2D camera; 3D tabs cache the orbit pose.
@@ -183,6 +183,9 @@ export function tabFromElement(el: Element): Omit<ViewTab, 'id'> | null {
   if (el.kind === 'schedule') {
     return { kind: 'schedule', targetId: el.id, label: `Schedule · ${el.name}` };
   }
+  if (el.kind === 'elevation_view') {
+    return { kind: 'elevation', targetId: el.id, label: `Elevation · ${el.name}` };
+  }
   return null;
 }
 
@@ -192,4 +195,5 @@ export const TAB_KIND_LABEL: Record<TabKind, string> = {
   section: 'Section',
   sheet: 'Sheet',
   schedule: 'Schedule',
+  elevation: 'Elevation',
 };

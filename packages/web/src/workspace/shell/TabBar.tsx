@@ -18,6 +18,7 @@ const TAB_KIND_ICON: Record<TabKind, BimIconComponent> = {
   section: Icons.section!,
   sheet: Icons.sheet!,
   schedule: Icons.schedule!,
+  elevation: Icons.elevationView!,
 };
 
 export interface TabBarProps {

@@ -22,7 +22,7 @@ export function FloatingPalette({
   /** When provided, only these tool ids are shown in the palette. */
   allowedToolIds?: ReadonlySet<ToolId>;
 }): JSX.Element | null {
-  if (mode === 'sheet' || mode === 'schedule') return null;
+  if (mode === 'sheet' || mode === 'schedule' || mode === 'elevation') return null;
   return (
     <div
       style={{
@@ -149,6 +149,13 @@ export function defaultTabFallbackForKind(
     const s = all.find((e): e is Extract<Element, { kind: 'schedule' }> => e.kind === 'schedule');
     if (s) return { targetId: s.id, label: `Schedule · ${s.name}` };
     return { label: 'Schedule' };
+  }
+  if (kind === 'elevation') {
+    const ev = all.find(
+      (e): e is Extract<Element, { kind: 'elevation_view' }> => e.kind === 'elevation_view',
+    );
+    if (ev) return { targetId: ev.id, label: `Elevation · ${ev.name}` };
+    return { label: 'Elevation' };
   }
   return null;
 }

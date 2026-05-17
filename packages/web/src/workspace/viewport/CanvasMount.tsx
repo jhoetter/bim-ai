@@ -1,10 +1,11 @@
-import type { CSSProperties, JSX, RefObject } from 'react';
+import { useEffect, useRef, useState, type CSSProperties, type JSX, type RefObject } from 'react';
 
 import type { Element, LensMode } from '@bim-ai/core';
 
 import { Viewport } from '../../Viewport';
 import { ErrorBoundary } from '../../ErrorBoundary';
 import { PlanCanvas, type PlanCameraHandle } from '../../plan/PlanCanvas';
+import { ElevationViewport } from '../../plan/ElevationViewport';
 import type { PlanTool } from '../../state/store';
 import type { SnapSettings } from '../../plan/snapSettings';
 import type { SheetMarkupShape, SheetReviewMode } from '../sheets/sheetReviewUi';
@@ -17,6 +18,72 @@ export const canvasContainerStyle: CSSProperties = {
   height: '100%',
 };
 
+/**
+ * Responsive wrapper that fills its container and renders an ElevationViewport
+ * at the measured pixel size. §6.1.4.
+ */
+function ElevationModeShell({
+  elevationViewId,
+  elementsById,
+}: {
+  elevationViewId: string | undefined;
+  elementsById: Record<string, Element>;
+}): JSX.Element {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [size, setSize] = useState({ w: 800, h: 600 });
+
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    const obs = new ResizeObserver((entries) => {
+      const entry = entries[0];
+      if (!entry) return;
+      const { width, height } = entry.contentRect;
+      setSize({ w: Math.max(1, Math.round(width)), h: Math.max(1, Math.round(height)) });
+    });
+    obs.observe(el);
+    return () => obs.disconnect();
+  }, []);
+
+  const view = elevationViewId ? (elementsById[elevationViewId] as Element | undefined) : undefined;
+
+  return (
+    <div
+      ref={containerRef}
+      data-testid="elevation-mode-shell"
+      style={{
+        width: '100%',
+        height: '100%',
+        overflow: 'hidden',
+        background: 'var(--color-canvas-paper)',
+      }}
+    >
+      {view?.kind === 'elevation_view' ? (
+        <ElevationViewport
+          view={view}
+          elementsById={elementsById}
+          widthPx={size.w}
+          heightPx={size.h}
+        />
+      ) : (
+        <div
+          style={{
+            width: '100%',
+            height: '100%',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            color: 'var(--color-muted)',
+            fontSize: 12,
+          }}
+        >
+          No elevation view selected
+        </div>
+      )}
+    </div>
+  );
+}
+
 export function CanvasMount({
   mode,
   viewerMode,
@@ -24,6 +91,7 @@ export function CanvasMount({
   activePlanViewId,
   activeTabId,
   activeSectionId,
+  preferredElevationId,
   elementsById,
   onSemanticCommand,
   cameraHandleRef,
@@ -51,6 +119,8 @@ export function CanvasMount({
   /** Used to key same-kind canvases so switching tabs forces a fresh mount. */
   activeTabId?: string;
   activeSectionId?: string;
+  /** elevation_view element id to display in elevation mode. §6.1.4 */
+  preferredElevationId?: string;
   elementsById: Record<string, Element>;
   onSemanticCommand: (cmd: Record<string, unknown>) => void;
   cameraHandleRef?: RefObject<PlanCameraHandle | null>;
@@ -144,6 +214,14 @@ export function CanvasMount({
           lensMode={lensMode}
         />
       </ErrorBoundary>
+    );
+  if (mode === 'elevation')
+    return (
+      <ElevationModeShell
+        key={activeTabId}
+        elevationViewId={preferredElevationId}
+        elementsById={elementsById}
+      />
     );
   return viewerMode === 'orbit_3d' ? (
     <Viewport

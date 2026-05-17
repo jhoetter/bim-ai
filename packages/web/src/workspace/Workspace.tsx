@@ -11,6 +11,7 @@ import { useTranslation } from 'react-i18next';
 import type { AssetLibraryEntry, Element, Saved3dViewElement } from '@bim-ai/core';
 import {
   type BimIconHifiProps,
+  ElevationViewHifi,
   OrbitViewHifi,
   PlanViewHifi,
   ScheduleViewHifi,
@@ -253,6 +254,8 @@ function hifiIconForTabKind(kind: TabKind | undefined): ComponentType<BimIconHif
       return SheetHifi;
     case 'schedule':
       return ScheduleViewHifi;
+    case 'elevation':
+      return ElevationViewHifi;
     case 'plan':
     default:
       return PlanViewHifi;
@@ -3188,6 +3191,11 @@ export function Workspace(): JSX.Element {
         setMode('schedule');
         return;
       }
+      if (el.kind === 'elevation_view') {
+        useBimStore.getState().select(el.id);
+        setMode('elevation');
+        return;
+      }
       if (el.kind === 'project_settings') {
         useBimStore.getState().select(el.id);
         setRightRailOverride('open');
@@ -3994,7 +4002,9 @@ export function Workspace(): JSX.Element {
             ? 'sheet'
             : paneTab?.kind === 'schedule'
               ? 'schedule'
-              : 'planView';
+              : paneTab?.kind === 'elevation'
+                ? 'elevationView'
+                : 'planView';
     const PaneIcon = Icons[paneIconName] ?? Icons.planView;
     const PaneHifiIcon = hifiIconForTabKind(paneTab?.kind);
     const paneSidebarKey = `${compositionState.activeId}:${node.id}`;
@@ -4025,6 +4035,7 @@ export function Workspace(): JSX.Element {
       }
       if (paneMode === 'sheet') return [selectedDetail ?? 'Paper space'];
       if (paneMode === 'schedule') return [selectedDetail ?? 'Rows'];
+      if (paneMode === 'elevation') return [selectedDetail ?? 'Elevation'];
       return selectedDetail ? [selectedDetail] : [];
     })();
     const paneTemporaryVisibility =
@@ -4373,7 +4384,7 @@ export function Workspace(): JSX.Element {
       <div
         className="min-h-0 min-w-0 flex-1"
         style={{
-          background: ['plan', 'section'].includes(paneTab?.kind ?? '')
+          background: ['plan', 'section', 'elevation'].includes(paneTab?.kind ?? '')
             ? 'var(--color-canvas-paper)'
             : 'var(--color-background)',
           transform: canvasRotationDeg !== 0 ? `rotate(${canvasRotationDeg}deg)` : undefined,
@@ -4399,6 +4410,9 @@ export function Workspace(): JSX.Element {
             }
             preferredScheduleId={
               paneTab.kind === 'schedule' ? (paneTab.targetId ?? undefined) : undefined
+            }
+            preferredElevationId={
+              paneTab.kind === 'elevation' ? (paneTab.targetId ?? undefined) : undefined
             }
             modelId={modelId ?? undefined}
             wsOn={wsOn}
@@ -5255,7 +5269,7 @@ export function Workspace(): JSX.Element {
             style={{
               ...canvasContainerStyle,
               // VIS-V3-08: paper background for 2D views; 3D viewport keeps dark background.
-              background: ['plan', 'section'].includes(activeTab?.kind ?? '')
+              background: ['plan', 'section', 'elevation'].includes(activeTab?.kind ?? '')
                 ? 'var(--color-canvas-paper)'
                 : 'var(--color-background)',
               transition: 'background 120ms var(--ease-paper)',
