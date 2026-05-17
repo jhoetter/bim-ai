@@ -7,10 +7,12 @@ afterEach(() => {
   cleanup();
 });
 
+/* eslint-disable bim-ai/no-hex-in-chrome */
 const ROWS = [
   { colorHex: '#ff0000', label: 'Living Room', count: 3 },
   { colorHex: '#00ff00', label: 'Bedroom', count: 2 },
 ];
+/* eslint-enable bim-ai/no-hex-in-chrome */
 
 describe('color fill legend — §13.1.3', () => {
   it('renders legend rows with swatches and labels', () => {

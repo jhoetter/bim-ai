@@ -36,7 +36,7 @@ describe('attach/detach wall top grammar', () => {
   });
 
   it('reduceAttach: clicking wall then roof emits attach_wall_top command', () => {
-    let { state } = reduceAttach(initialAttachState(), {
+    const { state } = reduceAttach(initialAttachState(), {
       kind: 'click',
       elementId: 'wall-1',
       elementKind: 'wall',

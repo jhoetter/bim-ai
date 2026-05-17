@@ -184,6 +184,12 @@ export const TOOL_CAPABILITIES: Record<string, ToolCapabilities> = {
   },
   'material-tag': { chainable: false, multipleable: true, tagOnPlace: false, numericInput: false },
   'north-arrow': { chainable: false, multipleable: false, tagOnPlace: false, numericInput: false },
+  'project-base-point': {
+    chainable: false,
+    multipleable: false,
+    tagOnPlace: false,
+    numericInput: false,
+  },
   ramp: { chainable: false, multipleable: false, tagOnPlace: false, numericInput: true },
 };
 
@@ -2945,6 +2951,64 @@ export function reducePaint(
 }
 
 /* ────────────────────────────────────────────────────────────────────── */
+/* Linework Override — §3.3.7                                               */
+/* ────────────────────────────────────────────────────────────────────── */
+
+export type LineworkState = { status: 'idle' } | { status: 'active' };
+
+export type LineworkEvent =
+  | { kind: 'activate' }
+  | {
+      kind: 'click';
+      elementId: string;
+      colorHex: string;
+      lineWeightPx: number;
+      lineDash?: number[];
+    }
+  | { kind: 'cancel' };
+
+export interface LineworkEffect {
+  applyLineworkOverride?: {
+    elementId: string;
+    colorHex: string;
+    lineWeightPx: number;
+    lineDash?: number[];
+  };
+  stillActive: boolean;
+}
+
+export function initialLineworkState(): LineworkState {
+  return { status: 'idle' };
+}
+
+export function reduceLinework(
+  state: LineworkState,
+  event: LineworkEvent,
+): { state: LineworkState; effect: LineworkEffect } {
+  if (event.kind === 'activate') {
+    return { state: { status: 'active' }, effect: { stillActive: true } };
+  }
+  if (event.kind === 'cancel') {
+    return { state: { status: 'idle' }, effect: { stillActive: false } };
+  }
+  if (state.status !== 'active') {
+    return { state, effect: { stillActive: false } };
+  }
+  return {
+    state: { ...state },
+    effect: {
+      applyLineworkOverride: {
+        elementId: event.elementId,
+        colorHex: event.colorHex,
+        lineWeightPx: event.lineWeightPx,
+        lineDash: event.lineDash,
+      },
+      stillActive: true,
+    },
+  };
+}
+
+/* ────────────────────────────────────────────────────────────────────── */
 /* Split Wall — §3.3.6                                                     */
 /* ────────────────────────────────────────────────────────────────────── */
 
@@ -3163,7 +3227,7 @@ function _arcLength3(
   let a3Rel = a3 - a1;
   while (a3Rel < 0) a3Rel += Math.PI * 2;
   while (a3Rel > Math.PI * 2) a3Rel -= Math.PI * 2;
-  let sweepPos = sweep < 0 ? sweep + Math.PI * 2 : sweep;
+  const sweepPos = sweep < 0 ? sweep + Math.PI * 2 : sweep;
   if (a3Rel > sweepPos) {
     sweep = sweep > 0 ? sweep - Math.PI * 2 : sweep + Math.PI * 2;
   }
@@ -3248,4 +3312,91 @@ export function reduceMeasureArc(state: MeasureArcState, event: MeasureArcEvent)
     };
   }
   return state;
+}
+
+// ---------------------------------------------------------------------------
+// §2.1.3 — Project Base Point grammar (single-click placement)
+// ---------------------------------------------------------------------------
+
+export interface ProjectBasePointGrammarState {
+  phase: 'listening' | 'idle';
+}
+
+export type ProjectBasePointGrammarEvent =
+  | { kind: 'activate' }
+  | { kind: 'click'; positionMm: { xMm: number; yMm: number } }
+  | { kind: 'escape' };
+
+export interface ProjectBasePointGrammarEffect {
+  /** Emit this command when a click is registered. */
+  createProjectBasePoint?: { positionMm: { xMm: number; yMm: number } };
+}
+
+export function initialProjectBasePointState(): ProjectBasePointGrammarState {
+  return { phase: 'idle' };
+}
+
+export function reduceProjectBasePoint(
+  state: ProjectBasePointGrammarState,
+  event: ProjectBasePointGrammarEvent,
+): { state: ProjectBasePointGrammarState; effect: ProjectBasePointGrammarEffect } {
+  if (event.kind === 'activate') {
+    return { state: { phase: 'listening' }, effect: {} };
+  }
+  if (event.kind === 'escape') {
+    return { state: { phase: 'idle' }, effect: {} };
+  }
+  if (event.kind === 'click' && state.phase === 'listening') {
+    return {
+      state: { phase: 'listening' },
+      effect: { createProjectBasePoint: { positionMm: event.positionMm } },
+    };
+  }
+  return { state, effect: {} };
+}
+
+// ---------------------------------------------------------------------------
+// §5.4.1 — North Arrow grammar (single-click placement)
+// ---------------------------------------------------------------------------
+
+export interface NorthArrowGrammarState {
+  phase: 'listening' | 'idle';
+}
+
+export type NorthArrowGrammarEvent =
+  | { kind: 'activate' }
+  | { kind: 'click'; positionMm: { xMm: number; yMm: number }; rotationDeg?: number }
+  | { kind: 'escape' };
+
+export interface NorthArrowGrammarEffect {
+  /** Emit this command when a click is registered. */
+  createNorthArrow?: { positionMm: { xMm: number; yMm: number }; rotationDeg: number };
+}
+
+export function initialNorthArrowState(): NorthArrowGrammarState {
+  return { phase: 'idle' };
+}
+
+export function reduceNorthArrow(
+  state: NorthArrowGrammarState,
+  event: NorthArrowGrammarEvent,
+): { state: NorthArrowGrammarState; effect: NorthArrowGrammarEffect } {
+  if (event.kind === 'activate') {
+    return { state: { phase: 'listening' }, effect: {} };
+  }
+  if (event.kind === 'escape') {
+    return { state: { phase: 'idle' }, effect: {} };
+  }
+  if (event.kind === 'click' && state.phase === 'listening') {
+    return {
+      state: { phase: 'listening' },
+      effect: {
+        createNorthArrow: {
+          positionMm: event.positionMm,
+          rotationDeg: event.rotationDeg ?? 0,
+        },
+      },
+    };
+  }
+  return { state, effect: {} };
 }

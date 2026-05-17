@@ -3608,7 +3608,6 @@ export function makeBeamMesh(
   return mesh;
 }
 
-/* eslint-disable bim-ai/no-hex-in-chrome */
 export function buildSteelConnectionMesh(
   conn: Extract<Element, { kind: 'steel_connection' }>,
 ): THREE.Group {
@@ -3649,7 +3648,6 @@ export function buildSteelConnectionMesh(
 
   return grp;
 }
-/* eslint-enable bim-ai/no-hex-in-chrome */
 
 function _addSteelBoltGrid(
   grp: THREE.Group,

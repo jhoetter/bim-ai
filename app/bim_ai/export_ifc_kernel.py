@@ -924,12 +924,18 @@ def try_build_kernel_ifc(doc: Document) -> tuple[str | None, int]:
         if bim_ai_props:
             attach_kernel_identity_pset(roof_ent, "Pset_BimAiKernel", rid, **bim_ai_props)
         rf_layers = resolved_layers_for_roof(doc, rf)
-        if rf_layers:
+        # Only use the layer-set path for genuine roof-type layers (non-zero
+        # thickness). A roof with only material_key returns a synthetic 0-mm
+        # layer that the layer-set builder skips; route that via single-material.
+        rf_typed_layers = [
+            lyr for lyr in rf_layers if float(lyr.get("thicknessMm", 0) or 0) > 1e-9
+        ]
+        if rf_typed_layers:
             try_attach_kernel_ifc_material_layer_set(
                 f,
                 doc,
                 roof_ent,
-                layers=rf_layers,
+                layers=rf_typed_layers,
                 layer_set_display_name=f"kernel_roof:{rid}",
                 material_by_key_cache=material_by_key_cache,
             )

@@ -62,6 +62,8 @@ export type PlanViewHeaderProps = {
   activeWorkPlaneName?: string | null;
   /** §7.3.1: called when the user clicks the × to clear the active work plane. */
   onClearWorkPlane?: () => void;
+  /** §1.6.10: called when the user clicks the per-view VG button. */
+  onPerViewVGOpen?: () => void;
 };
 
 const PHASE_FILTER_MODE_LABELS: Record<string, string> = {
@@ -96,6 +98,7 @@ export function PlanViewHeader({
   onThinLinesToggle,
   activeWorkPlaneName,
   onClearWorkPlane,
+  onPerViewVGOpen,
 }: PlanViewHeaderProps): JSX.Element {
   const [viewRangeOpen, setViewRangeOpen] = useState(false);
   const [colorSchemeOpen, setColorSchemeOpen] = useState(false);
@@ -201,7 +204,7 @@ export function PlanViewHeader({
             borderRadius: 4,
             cursor: 'pointer',
             background: legendVisible ? 'var(--color-accent, #2563eb)' : 'transparent',
-            color: legendVisible ? '#fff' : 'var(--color-foreground)',
+            color: legendVisible ? 'var(--color-foreground-on-accent)' : 'var(--color-foreground)',
             whiteSpace: 'nowrap',
           }}
         >
@@ -221,11 +224,32 @@ export function PlanViewHeader({
             borderRadius: 4,
             cursor: 'pointer',
             background: thinLinesEnabled ? 'var(--color-accent, #2563eb)' : 'transparent',
-            color: thinLinesEnabled ? '#fff' : 'var(--color-foreground)',
+            color: thinLinesEnabled
+              ? 'var(--color-foreground-on-accent)'
+              : 'var(--color-foreground)',
             whiteSpace: 'nowrap',
           }}
         >
           TL
+        </button>
+      ) : null}
+      {onPerViewVGOpen ? (
+        <button
+          type="button"
+          data-testid="plan-view-per-view-vg-btn"
+          onClick={onPerViewVGOpen}
+          title="Per-View Visibility/Graphics Override"
+          style={{
+            padding: '2px 8px',
+            fontSize: 11,
+            border: '1px solid var(--color-border)',
+            borderRadius: 4,
+            cursor: 'pointer',
+            background: 'transparent',
+            color: 'var(--color-foreground)',
+          }}
+        >
+          VG
         </button>
       ) : null}
       {activeWorkPlaneName ? (
@@ -323,7 +347,9 @@ export function PlanViewHeader({
             border: '1px solid var(--color-border)',
             borderRadius: 4,
             background: phaseFilterMode ? 'var(--color-accent, #2563eb)' : 'var(--color-surface)',
-            color: phaseFilterMode ? '#fff' : 'var(--color-foreground)',
+            color: phaseFilterMode
+              ? 'var(--color-foreground-on-accent)'
+              : 'var(--color-foreground)',
             cursor: 'pointer',
           }}
         >
@@ -353,7 +379,9 @@ export function PlanViewHeader({
             borderRadius: 4,
             cursor: 'pointer',
             background: trueNorthActive ? 'var(--color-accent, #2563eb)' : 'transparent',
-            color: trueNorthActive ? '#fff' : 'var(--color-foreground)',
+            color: trueNorthActive
+              ? 'var(--color-foreground-on-accent)'
+              : 'var(--color-foreground)',
             whiteSpace: 'nowrap',
           }}
         >

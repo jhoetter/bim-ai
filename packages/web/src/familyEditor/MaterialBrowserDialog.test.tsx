@@ -47,6 +47,7 @@ describe('<MaterialBrowserDialog />', () => {
       id: 'mat-project-limewash',
       name: 'Project Limewash',
       category: 'plaster',
+      // eslint-disable-next-line bim-ai/no-hex-in-chrome
       appearance: { baseColor: '#e8dfc8', roughness: 0.94 },
     };
     const onAssign = vi.fn();
@@ -91,11 +92,13 @@ describe('<MaterialBrowserDialog />', () => {
     expect(resolveMaterial(created.key)?.displayName).toBe('Dialog Renamed Finish 905');
 
     fireEvent.click(getByText('Graphics'));
+    // eslint-disable-next-line bim-ai/no-hex-in-chrome
     fireEvent.change(getByLabelText('Shaded color'), { target: { value: '#445566' } });
     fireEvent.change(getByLabelText('Graphics transparency'), { target: { value: '0.22' } });
     fireEvent.change(getByLabelText('Surface pattern'), { target: { value: 'running-bond' } });
     fireEvent.change(getByLabelText('Cut pattern'), { target: { value: 'masonry-cut' } });
     expect(resolveMaterial(created.key)?.graphics).toMatchObject({
+      // eslint-disable-next-line bim-ai/no-hex-in-chrome
       shadedColor: '#445566',
       transparency: 0.22,
       surfacePattern: 'running-bond',

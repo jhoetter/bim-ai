@@ -702,6 +702,7 @@ function MaterialMetadataPanel({
               <input
                 aria-label="Surface pattern color"
                 type="color"
+                // eslint-disable-next-line bim-ai/no-hex-in-chrome
                 value={material.graphics?.surfacePatternColor ?? '#222222'}
                 onChange={(e) =>
                   onPatch({
@@ -725,6 +726,7 @@ function MaterialMetadataPanel({
               <input
                 aria-label="Cut pattern color"
                 type="color"
+                // eslint-disable-next-line bim-ai/no-hex-in-chrome
                 value={material.graphics?.cutPatternColor ?? '#111111'}
                 onChange={(e) =>
                   onPatch({ graphics: { ...material.graphics, cutPatternColor: e.target.value } })

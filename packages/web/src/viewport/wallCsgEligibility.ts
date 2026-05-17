@@ -21,6 +21,6 @@ export function shouldRunWallOpeningCsg(input: WallCsgEligibilityInput): boolean
   const hasHostedCuts =
     input.hostedDoorCount > 0 || input.hostedWindowCount > 0 || input.hostedWallOpeningCount > 0;
   if (!hasHostedCuts) return false;
-  if (Boolean(input.isCurtainWall)) return false;
+  if (input.isCurtainWall) return false;
   return true;
 }

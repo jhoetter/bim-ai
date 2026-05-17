@@ -468,7 +468,7 @@ export function PhaseManagerDialog({
               borderRadius: 4,
               border: '1px solid var(--color-border)',
               background: 'var(--color-accent, #2563eb)',
-              color: '#fff',
+              color: 'var(--color-foreground-on-accent)',
               cursor: 'pointer',
               opacity: newName.trim() ? 1 : 0.5,
             }}
@@ -538,7 +538,7 @@ export function PhaseManagerDialog({
                 style={{
                   ...smallBtn,
                   background: 'var(--color-error, #e55)',
-                  color: '#fff',
+                  color: 'var(--color-foreground-on-accent)',
                   border: 'none',
                 }}
               >

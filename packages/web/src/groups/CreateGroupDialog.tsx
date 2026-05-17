@@ -97,7 +97,7 @@ export function CreateGroupDialog({ open, elementCount, onConfirm, onClose }: Pr
         </label>
 
         {error && (
-          <p role="alert" style={{ margin: '6px 0 0', fontSize: 12, color: '#c00' }}>
+          <p role="alert" style={{ margin: '6px 0 0', fontSize: 12, color: 'var(--color-error)' }}>
             {error}
           </p>
         )}
@@ -124,7 +124,7 @@ export function CreateGroupDialog({ open, elementCount, onConfirm, onClose }: Pr
               borderRadius: 4,
               border: 'none',
               background: 'var(--color-accent, #0057d9)',
-              color: '#fff',
+              color: 'var(--color-foreground-on-accent)',
               cursor: 'pointer',
             }}
           >

@@ -46,9 +46,9 @@ def test_load_residential_eu_snapshot():
     assert by_name["First Floor"].elevation_mm == 3000
     assert by_name["Roof"].elevation_mm == 6000
 
-    # Plan view per level.
+    # Plan views: one per level + one coordination plan.
     plan_views = [e for e in els.values() if isinstance(e, PlanViewElem)]
-    assert len(plan_views) == 3
+    assert len(plan_views) == 4
 
     # 6 grid lines (3 vertical 1/2/3 + 3 horizontal A/B/C).
     grid_lines = [e for e in els.values() if isinstance(e, GridLineElem)]
