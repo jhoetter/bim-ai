@@ -765,6 +765,17 @@ export function PlanCanvas({
   const showNeighborhoodMasses = useBimStore((s) => s.showNeighborhoodMasses);
   // F-006 — QAT Thin Lines toggle: overrides all line weights to 1 px when true.
   const thinLinesEnabled = useBimStore((s) => s.thinLinesEnabled);
+  // §7.3.1 — active work plane name for the plan view header badge.
+  const activeWorkPlaneName = useMemo(() => {
+    if (!activePlanViewId) return null;
+    const pv = elementsById[activePlanViewId];
+    if (!pv || pv.kind !== 'plan_view') return null;
+    const wpId = (pv as { activeWorkPlaneId?: string | null }).activeWorkPlaneId;
+    if (!wpId) return null;
+    const wp = elementsById[wpId];
+    if (!wp || wp.kind !== 'reference_plane') return null;
+    return (wp as { name?: string }).name ?? null;
+  }, [activePlanViewId, elementsById]);
   // F-014 — reveal hidden elements mode (lightbulb toggle).
   const revealHiddenMode = useBimStore((s) => s.revealHiddenMode);
   const setCategoryOverride = useBimStore((s) => s.setCategoryOverride);
@@ -6841,6 +6852,66 @@ export function PlanCanvas({
       data-testid="plan-canvas"
       className="relative h-full w-full overflow-hidden bg-canvas-paper"
     >
+      {/* §1.6.10 — Thin Lines toggle button */}
+      <div className="pointer-events-auto absolute left-2 top-1 z-20 flex items-center gap-2">
+        <button
+          type="button"
+          data-testid="plan-view-thin-lines-toggle"
+          title="Thin Lines"
+          onClick={() => useBimStore.getState().toggleThinLines()}
+          style={{
+            padding: '2px 8px',
+            fontSize: 11,
+            border: '1px solid var(--color-border)',
+            borderRadius: 4,
+            cursor: 'pointer',
+            background: thinLinesEnabled ? 'var(--color-accent, #2563eb)' : 'transparent',
+            color: thinLinesEnabled ? '#fff' : 'var(--color-foreground)',
+            whiteSpace: 'nowrap',
+          }}
+        >
+          TL
+        </button>
+        {/* §7.3.1 — Active work plane badge */}
+        {activeWorkPlaneName ? (
+          <span
+            data-testid="plan-view-work-plane-badge"
+            style={{
+              fontSize: 10,
+              color: 'var(--color-muted)',
+              whiteSpace: 'nowrap',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 4,
+            }}
+          >
+            Work Plane: {activeWorkPlaneName}
+            {activePlanViewId ? (
+              <button
+                type="button"
+                data-testid="plan-view-work-plane-clear"
+                onClick={() => {
+                  void onSemanticCommand({
+                    type: 'updateElementProperty',
+                    elementId: activePlanViewId,
+                    key: 'activeWorkPlaneId',
+                    value: null,
+                  });
+                }}
+                style={{
+                  fontSize: 10,
+                  cursor: 'pointer',
+                  background: 'none',
+                  border: 'none',
+                  color: 'inherit',
+                }}
+              >
+                ×
+              </button>
+            ) : null}
+          </span>
+        ) : null}
+      </div>
       {wallContextMenu && (
         <WallContextMenu
           wall={wallContextMenu.wall}

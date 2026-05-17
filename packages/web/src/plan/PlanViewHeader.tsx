@@ -54,6 +54,14 @@ export type PlanViewHeaderProps = {
   legendVisible?: boolean;
   /** §13.1.3: called when the user clicks the Legend toggle button. */
   onLegendToggle?: () => void;
+  /** §1.6.10: whether thin lines mode is currently active. */
+  thinLinesEnabled?: boolean;
+  /** §1.6.10: called when the user clicks the Thin Lines toggle button. */
+  onThinLinesToggle?: () => void;
+  /** §7.3.1: name of the active work plane for the current plan view. */
+  activeWorkPlaneName?: string | null;
+  /** §7.3.1: called when the user clicks the × to clear the active work plane. */
+  onClearWorkPlane?: () => void;
 };
 
 const PHASE_FILTER_MODE_LABELS: Record<string, string> = {
@@ -84,6 +92,10 @@ export function PlanViewHeader({
   canvasWidthPx,
   legendVisible = false,
   onLegendToggle,
+  thinLinesEnabled = false,
+  onThinLinesToggle,
+  activeWorkPlaneName,
+  onClearWorkPlane,
 }: PlanViewHeaderProps): JSX.Element {
   const [viewRangeOpen, setViewRangeOpen] = useState(false);
   const [colorSchemeOpen, setColorSchemeOpen] = useState(false);
@@ -195,6 +207,55 @@ export function PlanViewHeader({
         >
           Legend
         </button>
+      ) : null}
+      {onThinLinesToggle ? (
+        <button
+          type="button"
+          data-testid="plan-view-thin-lines-toggle"
+          title="Thin Lines"
+          onClick={onThinLinesToggle}
+          style={{
+            padding: '2px 8px',
+            fontSize: 11,
+            border: '1px solid var(--color-border)',
+            borderRadius: 4,
+            cursor: 'pointer',
+            background: thinLinesEnabled ? 'var(--color-accent, #2563eb)' : 'transparent',
+            color: thinLinesEnabled ? '#fff' : 'var(--color-foreground)',
+            whiteSpace: 'nowrap',
+          }}
+        >
+          TL
+        </button>
+      ) : null}
+      {activeWorkPlaneName ? (
+        <span
+          data-testid="plan-view-work-plane-badge"
+          style={{
+            fontSize: 10,
+            color: 'var(--color-muted)',
+            whiteSpace: 'nowrap',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 4,
+          }}
+        >
+          Work Plane: {activeWorkPlaneName}
+          <button
+            type="button"
+            data-testid="plan-view-work-plane-clear"
+            onClick={onClearWorkPlane}
+            style={{
+              fontSize: 10,
+              cursor: 'pointer',
+              background: 'none',
+              border: 'none',
+              color: 'inherit',
+            }}
+          >
+            ×
+          </button>
+        </span>
       ) : null}
       {activePlanViewId && onViewRangeApply ? (
         <button
