@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { type JSX, useState } from 'react';
 import type { Element } from '@bim-ai/core';
 
 type DimStyleShape = NonNullable<Extract<Element, { kind: 'project_settings' }>['dimensionStyle']>;

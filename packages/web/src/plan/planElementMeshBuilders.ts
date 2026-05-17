@@ -2414,3 +2414,93 @@ export function revisionCloudPlanThree(
   grp.userData.bimPickId = el.id;
   return grp;
 }
+
+/**
+ * §4.9 — slope_annotation plan symbol.
+ * Arrow line from startMm to endMm with arrowhead and slopePct label.
+ */
+export function slopeAnnotationPlanThree(
+  el: Extract<Element, { kind: 'slope_annotation' }>,
+): THREE.Group {
+  const grp = new THREE.Group();
+  const colour = '#1a56db';
+  const mat = new THREE.LineBasicMaterial({ color: colour, depthTest: true });
+
+  const sx = ux(el.startMm.xMm);
+  const sz = uz(el.startMm.yMm);
+  const ex = ux(el.endMm.xMm);
+  const ez = uz(el.endMm.yMm);
+  const y = PLAN_Y + 0.005;
+
+  // Main line from start to end
+  const mainLine = new THREE.Line(
+    new THREE.BufferGeometry().setFromPoints([
+      new THREE.Vector3(sx, y, sz),
+      new THREE.Vector3(ex, y, ez),
+    ]),
+    mat,
+  );
+  mainLine.userData.slopeAnnotation = true;
+  mainLine.userData.bimPickId = el.id;
+  mainLine.renderOrder = 7;
+  grp.add(mainLine);
+
+  // Arrowhead at end
+  const dxM = ex - sx;
+  const dzM = ez - sz;
+  const lenM = Math.sqrt(dxM * dxM + dzM * dzM);
+  if (lenM > 0.001) {
+    const ux2 = dxM / lenM;
+    const uz2 = dzM / lenM;
+    const arrowLen = 0.08;
+    const arrowWidth = 0.04;
+    const perpX = -uz2;
+    const perpZ = ux2;
+    const arrowPts = [
+      new THREE.Vector3(
+        ex - ux2 * arrowLen + perpX * arrowWidth,
+        y,
+        ez - uz2 * arrowLen + perpZ * arrowWidth,
+      ),
+      new THREE.Vector3(ex, y, ez),
+      new THREE.Vector3(
+        ex - ux2 * arrowLen - perpX * arrowWidth,
+        y,
+        ez - uz2 * arrowLen - perpZ * arrowWidth,
+      ),
+    ];
+    const arrowLine = new THREE.Line(new THREE.BufferGeometry().setFromPoints(arrowPts), mat);
+    arrowLine.userData.slopeAnnotation = true;
+    arrowLine.renderOrder = 7;
+    grp.add(arrowLine);
+  }
+
+  // Label at midpoint
+  const midX = (el.startMm.xMm + el.endMm.xMm) / 2;
+  const midY = (el.startMm.yMm + el.endMm.yMm) / 2;
+  const labelText = `${el.slopePct.toFixed(1)}%`;
+  const labelCanvas = document.createElement('canvas');
+  labelCanvas.width = 192;
+  labelCanvas.height = 64;
+  const ctx = labelCanvas.getContext('2d');
+  if (ctx) {
+    ctx.fillStyle = colour;
+    ctx.font = '28px sans-serif';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(labelText, 4, 32);
+  }
+  const labelTex = new THREE.CanvasTexture(labelCanvas);
+  labelTex.minFilter = THREE.LinearFilter;
+  const labelSprite = new THREE.Sprite(
+    new THREE.SpriteMaterial({ map: labelTex, transparent: true }),
+  );
+  labelSprite.scale.set(0.25 * (192 / 64), 0.25, 1);
+  labelSprite.position.set(ux(midX), y + 0.01, uz(midY));
+  labelSprite.userData.slopeAnnotation = true;
+  labelSprite.renderOrder = 7;
+  grp.add(labelSprite);
+
+  grp.userData.slopeAnnotation = true;
+  grp.userData.bimPickId = el.id;
+  return grp;
+}

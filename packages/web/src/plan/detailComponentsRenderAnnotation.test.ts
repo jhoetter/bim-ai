@@ -405,6 +405,7 @@ describe('ANN-12 — material_tag', () => {
     const wall: Extract<Element, { kind: 'wall' }> = {
       kind: 'wall',
       id: 'wall-live',
+      name: 'Wall',
       levelId: 'lvl-1',
       start: { xMm: 0, yMm: 0 },
       end: { xMm: 5000, yMm: 0 },

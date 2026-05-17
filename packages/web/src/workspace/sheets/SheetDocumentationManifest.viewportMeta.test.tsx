@@ -14,6 +14,7 @@ const tbDraft: SheetTitleblockDraft = {
   revisionDate: '',
   revisionDescription: '',
   issueStatus: '',
+  issuedBy: '',
   projectName: '',
   drawnBy: '',
   checkedBy: '',

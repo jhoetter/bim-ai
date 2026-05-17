@@ -379,8 +379,9 @@ export function extractDetailComponentPrimitives(
         if (el.textOverride) return el.textOverride;
         const hostEl = elementsById[el.hostElementId];
         if (!hostEl) return null;
-        const typeId = 'wallTypeId' in hostEl ? hostEl.wallTypeId : undefined;
-        const typeEl = typeId ? elementsById[typeId] : undefined;
+        const typeId =
+          'wallTypeId' in hostEl ? (hostEl.wallTypeId as string | undefined) : undefined;
+        const typeEl = typeId && typeof typeId === 'string' ? elementsById[typeId] : undefined;
         if (typeEl && typeEl.kind === 'wall_type') {
           const layerIdx = el.layerIndex ?? 0;
           return typeEl.layers[layerIdx]?.materialKey ?? null;
@@ -438,17 +439,17 @@ export function extractDetailComponentPrimitives(
       out.push({
         kind: 'pipe_legend',
         id: el.id,
-        positionMm: el.positionMm,
+        positionMm: el.positionMm ?? { xMm: 0, yMm: 0 },
         title: el.title ?? 'Pipe Legend',
-        entries: el.entries ?? [],
+        entries: (el.entries ?? []) as { systemType: string; label: string; colour: string }[],
       });
     } else if (el.kind === 'duct_legend' && el.hostViewId === viewId) {
       out.push({
         kind: 'duct_legend',
         id: el.id,
-        positionMm: el.positionMm,
+        positionMm: el.positionMm ?? { xMm: 0, yMm: 0 },
         title: el.title ?? 'Duct Legend',
-        entries: el.entries ?? [],
+        entries: (el.entries ?? []) as { systemType: string; label: string; colour: string }[],
       });
     } else if (el.kind === 'detail_component' && el.hostViewId === viewId) {
       out.push({

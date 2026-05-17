@@ -18,6 +18,7 @@ const CATEGORY_LABELS: Record<PaletteCategory, string> = {
   command: 'Commands',
   navigate: 'Navigate',
   select: 'Select',
+  tool: 'Tools',
 };
 
 type PaletteSection = {

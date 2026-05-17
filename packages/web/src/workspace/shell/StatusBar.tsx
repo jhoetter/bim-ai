@@ -98,7 +98,7 @@ export type JobsStatusCounts = {
 };
 
 export interface StatusBarProps {
-  mode?: 'plan' | '3d' | 'section' | 'sheet' | 'schedule';
+  mode?: 'plan' | '3d' | 'elevation' | 'section' | 'sheet' | 'schedule';
   viewLabel?: string | null;
   viewDetails?: string[];
   level: { id: string; label: string; elevationMm?: number };
@@ -396,6 +396,8 @@ function formatStatusMode(mode: NonNullable<StatusBarProps['mode']>): string {
       return 'Plan';
     case '3d':
       return '3D';
+    case 'elevation':
+      return 'Elevation';
     case 'section':
       return 'Section';
     case 'sheet':

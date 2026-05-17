@@ -452,6 +452,7 @@ i18n.init({
           modes: {
             plan: 'Plan',
             '3d': '3D',
+            elevation: 'Elevation',
             section: 'Section',
             sheet: 'Sheet',
             schedule: 'Schedule',
@@ -1353,6 +1354,7 @@ i18n.init({
           modes: {
             plan: 'Grundriss',
             '3d': '3D',
+            elevation: 'Ansicht',
             section: 'Schnitt',
             sheet: 'Plan',
             schedule: 'Tabelle',

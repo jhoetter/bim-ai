@@ -71,6 +71,7 @@ function primitiveSegmentsMm(prim: DxfLineworkPrim): Array<[XY, XY]> {
     }
     return segments;
   }
+  if (prim.kind !== 'arc') return [];
   const points = arcToPolylineSegments(prim);
   const segments: Array<[XY, XY]> = [];
   for (let i = 0; i < points.length - 1; i += 1) {

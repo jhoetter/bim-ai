@@ -44,8 +44,7 @@ const room: Extract<Element, { kind: 'room' }> = {
   id: 'r-1',
   name: 'Room',
   levelId: 'lvl-1',
-  locationMm: { xMm: 3000, yMm: 2000 },
-  boundaryMm: [
+  outlineMm: [
     { xMm: 0, yMm: 0 },
     { xMm: 6000, yMm: 0 },
     { xMm: 6000, yMm: 4000 },

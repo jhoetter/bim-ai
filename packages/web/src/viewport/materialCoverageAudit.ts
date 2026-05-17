@@ -382,12 +382,14 @@ export function auditElementMaterialCoverage(
         ];
       }
 
+      case 'pipe':
+        return [categoryFallback(element)];
+
       case 'column':
       case 'beam':
       case 'text_3d':
       case 'sweep':
-      case 'mass':
-      case 'pipe': {
+      case 'mass': {
         if (element.materialKey) {
           return [
             entryForMaterial(

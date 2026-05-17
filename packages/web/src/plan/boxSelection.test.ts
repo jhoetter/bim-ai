@@ -50,7 +50,6 @@ const room = (pts: { xMm: number; yMm: number }[]): Extract<Element, { kind: 'ro
   name: 'r1',
   levelId: 'L1',
   outlineMm: pts,
-  areaSqM: 0,
 });
 
 describe('elementInSelectionBoxMm — §1.8.1', () => {

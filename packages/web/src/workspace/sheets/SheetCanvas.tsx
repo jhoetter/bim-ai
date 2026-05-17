@@ -227,7 +227,10 @@ function SheetCanvasWithSheet(props: {
     setIsExportingPdf(true);
     try {
       const safeFilename = (sh.name || 'sheet').replace(/[^a-zA-Z0-9_-]/g, '_');
-      await exportSheetToPdf(el, { paperSize: 'A4', filename: `${safeFilename}.pdf` });
+      await exportSheetToPdf(el as unknown as HTMLElement, {
+        paperSize: 'A4',
+        filename: `${safeFilename}.pdf`,
+      });
     } finally {
       setIsExportingPdf(false);
     }

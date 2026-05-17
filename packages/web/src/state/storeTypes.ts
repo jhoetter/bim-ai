@@ -132,7 +132,9 @@ export type PlanTool =
   | 'measure-arc'
   | 'project-base-point'
   | 'family-blend'
-  | 'family-sweep';
+  | 'family-sweep'
+  | 'graded-region'
+  | 'terrain-split';
 
 export type PresencePeers = Record<
   string,

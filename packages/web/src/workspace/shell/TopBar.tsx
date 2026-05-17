@@ -42,6 +42,7 @@ import {
 export const WORKSPACE_MODES = [
   { id: 'plan', label: 'Plan', hotkey: '1' },
   { id: '3d', label: '3D', hotkey: '2' },
+  { id: 'elevation', label: 'Elevation', hotkey: '3' },
   { id: 'section', label: 'Section', hotkey: '4' },
   { id: 'sheet', label: 'Sheet', hotkey: '5' },
   { id: 'schedule', label: 'Schedule', hotkey: '6' },

@@ -26,7 +26,7 @@ function elementBoundsXY(
     return { minX: x - 200, maxX: x + 200, minY: y - 200, maxY: y + 200 };
   }
   if ('insertionPoint' in el) {
-    const ip = (el as { insertionPoint: { xMm: number; yMm: number } }).insertionPoint;
+    const ip = (el as unknown as { insertionPoint: { xMm: number; yMm: number } }).insertionPoint;
     return { minX: ip.xMm - 200, maxX: ip.xMm + 200, minY: ip.yMm - 200, maxY: ip.yMm + 200 };
   }
   return null;

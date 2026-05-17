@@ -17,7 +17,7 @@ const wall = (id: string): Element =>
     endMm: { xMm: 1000, yMm: 0 },
     thicknessMm: 200,
     levelId: 'lvl-1',
-  }) as Extract<Element, { kind: 'wall' }>;
+  }) as unknown as Extract<Element, { kind: 'wall' }>;
 
 const level = (id: string): Element =>
   ({ kind: 'level', id, name: 'Ground', elevationMm: 0 }) as Extract<Element, { kind: 'level' }>;

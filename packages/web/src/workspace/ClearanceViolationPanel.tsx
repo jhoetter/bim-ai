@@ -14,8 +14,8 @@ export function ClearanceViolationPanel({ violations, onClose }: Props) {
         position: 'absolute',
         bottom: 8,
         left: 8,
-        background: '#fff',
-        border: '2px solid #ef4444',
+        background: 'var(--color-surface)',
+        border: '2px solid var(--color-danger)',
         borderRadius: 6,
         padding: 12,
         maxWidth: 300,
@@ -33,7 +33,7 @@ export function ClearanceViolationPanel({ violations, onClose }: Props) {
         <div
           key={v.elementId}
           data-testid={`clearance-violation-${v.elementId}`}
-          style={{ fontSize: 11, color: '#ef4444', marginTop: 4 }}
+          style={{ fontSize: 11, color: 'var(--color-danger)', marginTop: 4 }}
         >
           {v.message}
         </div>

@@ -1,4 +1,4 @@
-import type { Element, EvidenceRef, EvidenceRefKind, Violation, XY } from '@bim-ai/core';
+import type { Element, EvidenceRef, EvidenceRefKind, VGFilter, Violation, XY } from '@bim-ai/core';
 import { coerceCheckpointRetentionLimit } from './backupRetention';
 import type { ViewFilter } from './storeTypes';
 
@@ -1565,7 +1565,7 @@ export function coerceElement(id: string, raw: Record<string, unknown>): Element
     const vfRaw = raw.viewFilters ?? raw.view_filters;
     const viewFilters = Array.isArray(vfRaw) ? (vfRaw as ViewFilter[]) : [];
     const vgFilters = Array.isArray(raw.vgFilters ?? raw.vg_filters)
-      ? (raw.vgFilters ?? raw.vg_filters)
+      ? ((raw.vgFilters ?? raw.vg_filters) as VGFilter[])
       : [];
     return {
       kind: 'plan_view',

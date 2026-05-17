@@ -46,6 +46,7 @@ const doorWithType: Extract<Element, { kind: 'door' }> = {
 const familyType: Extract<Element, { kind: 'family_type' }> = {
   kind: 'family_type',
   id: 'ft-1',
+  familyId: 'fam-door',
   name: 'Single Door 900',
   discipline: 'door',
   parameters: {},

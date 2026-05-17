@@ -14,6 +14,7 @@ function makeRectSys(widthMm: number, depthMm: number, spacingMm: number): BeamS
       { xMm: 0, yMm: depthMm },
     ],
     beamDirection: 0,
+    directionDeg: 0,
     spacingMm,
     materialKey: null,
   };
@@ -35,6 +36,7 @@ describe('makeBeamSystemMesh', () => {
       levelId: 'lvl-1',
       boundaryPoints: [{ xMm: 0, yMm: 0 }],
       beamDirection: 0,
+      directionDeg: 0,
       spacingMm: 1200,
       materialKey: null,
     };
@@ -59,6 +61,7 @@ describe('makeBeamSystemMesh', () => {
       ...makeRectSys(4000, 4000, 1000),
       id: 'bs-rotated',
       beamDirection: 90,
+      directionDeg: 90,
     };
     const group = makeBeamSystemMesh(sys, 0, null);
     expect(group.children.length).toBeGreaterThanOrEqual(3);

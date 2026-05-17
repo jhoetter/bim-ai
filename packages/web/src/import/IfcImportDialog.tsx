@@ -1,6 +1,6 @@
 /** §12.1.2 — IFC import dialog: file picker → STEP parse → element preview → import. */
 
-import { useRef, useState } from 'react';
+import { type JSX, useRef, useState } from 'react';
 import type { Element } from '@bim-ai/core';
 import { parseIfcStep } from './ifcParser';
 import { convertIfcToElements } from './ifcImportConverter';

@@ -395,7 +395,7 @@ export function PlanViewHeader({
         <span
           data-testid="plan-view-north-angle"
           title="View rotated to true north"
-          style={{ fontSize: 11, color: '#666' }}
+          style={{ fontSize: 11, color: 'var(--color-muted-foreground)' }}
         >
           ↑{(planViewAngleDeg ?? 0).toFixed(1)}°
         </span>

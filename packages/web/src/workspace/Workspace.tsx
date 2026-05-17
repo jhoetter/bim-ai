@@ -4879,8 +4879,10 @@ export function Workspace(): JSX.Element {
             for (const t of tags) void onSemanticCommand({ type: 'createElement', element: t });
           },
           rotateToTrueNorth: () => {
-            const ps = Object.values(elementsById).find((e) => e?.kind === 'project_settings');
-            const angleDeg = (ps as any)?.angleToTrueNorthDeg ?? 0;
+            const ps = Object.values(elementsById).find((e) => e?.kind === 'project_settings') as
+              | Extract<Element, { kind: 'project_settings' }>
+              | undefined;
+            const angleDeg = ps?.angleToTrueNorthDeg ?? 0;
             const activeView = activePlanViewId ? elementsById[activePlanViewId] : undefined;
             if (!activeView) return;
             void onSemanticCommand({

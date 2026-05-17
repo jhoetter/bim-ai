@@ -53,7 +53,9 @@ describe('sky background panel — §14.4', () => {
 
   it('clicking a mode radio calls setSkyBackground', () => {
     const setSkyBackground = vi.fn();
-    useBimStore.setState({ setSkyBackground } as ReturnType<typeof useBimStore.getState>);
+    useBimStore.setState({ setSkyBackground } as unknown as ReturnType<
+      typeof useBimStore.getState
+    >);
 
     render(<SkyBackgroundPanel open={true} onClose={() => {}} />);
     fireEvent.click(screen.getByTestId('sky-mode-gradient-sky'));
