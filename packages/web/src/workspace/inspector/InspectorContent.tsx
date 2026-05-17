@@ -1737,6 +1737,136 @@ export function InspectorPropertiesFor(
         </div>
       );
     }
+    case 'conical_roof': {
+      const { onPropertyChange: conicalPropChange } = options ?? {};
+      return (
+        <div className="flex flex-col gap-2">
+          <FieldRow label="Level" value={resolveElName(el.levelId, elementsById)} />
+          <div className="flex items-center gap-2 py-0.5">
+            <span className="text-xs text-muted w-28 shrink-0">Base Radius (mm)</span>
+            <input
+              type="number"
+              className="w-20 text-xs bg-surface border border-border rounded px-1 py-0.5"
+              defaultValue={el.baseRadiusMm}
+              key={`${el.id}-radius`}
+              step={100}
+              min={100}
+              onBlur={(e) => conicalPropChange?.('baseRadiusMm', Number(e.currentTarget.value))}
+              data-testid="inspector-conical-roof-radius"
+            />
+          </div>
+          <div className="flex items-center gap-2 py-0.5">
+            <span className="text-xs text-muted w-28 shrink-0">Height (mm)</span>
+            <input
+              type="number"
+              className="w-20 text-xs bg-surface border border-border rounded px-1 py-0.5"
+              defaultValue={el.heightMm}
+              key={`${el.id}-height`}
+              step={100}
+              min={100}
+              onBlur={(e) => conicalPropChange?.('heightMm', Number(e.currentTarget.value))}
+              data-testid="inspector-conical-roof-height"
+            />
+          </div>
+          <MaterialAssignmentRow
+            label="Material"
+            materialKey={el.materialId ?? null}
+            fallback="By category"
+            elementsById={elementsById}
+            onOpenMaterialBrowser={onOpenMaterialBrowser}
+            onOpenAppearanceAssetBrowser={onOpenAppearanceAssetBrowser}
+          />
+        </div>
+      );
+    }
+    case 'dome_roof': {
+      const { onPropertyChange: domePropChange } = options ?? {};
+      return (
+        <div className="flex flex-col gap-2">
+          <FieldRow label="Level" value={resolveElName(el.levelId, elementsById)} />
+          <div className="flex items-center gap-2 py-0.5">
+            <span className="text-xs text-muted w-28 shrink-0">Base Radius (mm)</span>
+            <input
+              type="number"
+              className="w-20 text-xs bg-surface border border-border rounded px-1 py-0.5"
+              defaultValue={el.baseRadiusMm}
+              key={`${el.id}-radius`}
+              step={100}
+              min={100}
+              onBlur={(e) => domePropChange?.('baseRadiusMm', Number(e.currentTarget.value))}
+              data-testid="inspector-dome-roof-radius"
+            />
+          </div>
+          <div className="flex items-center gap-2 py-0.5">
+            <span className="text-xs text-muted w-28 shrink-0">Rise Ratio</span>
+            <input
+              type="range"
+              className="flex-1"
+              min={0.1}
+              max={1.0}
+              step={0.01}
+              defaultValue={el.riseRatio}
+              key={`${el.id}-rise`}
+              onBlur={(e) => domePropChange?.('riseRatio', Number(e.currentTarget.value))}
+              data-testid="inspector-dome-roof-rise-ratio"
+            />
+            <span className="text-xs text-muted w-10 text-right">
+              {(el.riseRatio ?? 0.5).toFixed(2)}
+            </span>
+          </div>
+          <MaterialAssignmentRow
+            label="Material"
+            materialKey={el.materialId ?? null}
+            fallback="By category"
+            elementsById={elementsById}
+            onOpenMaterialBrowser={onOpenMaterialBrowser}
+            onOpenAppearanceAssetBrowser={onOpenAppearanceAssetBrowser}
+          />
+        </div>
+      );
+    }
+    case 'spire_roof': {
+      const { onPropertyChange: spirePropChange } = options ?? {};
+      return (
+        <div className="flex flex-col gap-2">
+          <FieldRow label="Level" value={resolveElName(el.levelId, elementsById)} />
+          <div className="flex items-center gap-2 py-0.5">
+            <span className="text-xs text-muted w-28 shrink-0">Base Radius (mm)</span>
+            <input
+              type="number"
+              className="w-20 text-xs bg-surface border border-border rounded px-1 py-0.5"
+              defaultValue={el.baseRadiusMm}
+              key={`${el.id}-radius`}
+              step={100}
+              min={100}
+              onBlur={(e) => spirePropChange?.('baseRadiusMm', Number(e.currentTarget.value))}
+              data-testid="inspector-spire-roof-radius"
+            />
+          </div>
+          <div className="flex items-center gap-2 py-0.5">
+            <span className="text-xs text-muted w-28 shrink-0">Height (mm)</span>
+            <input
+              type="number"
+              className="w-20 text-xs bg-surface border border-border rounded px-1 py-0.5"
+              defaultValue={el.heightMm}
+              key={`${el.id}-height`}
+              step={500}
+              min={100}
+              onBlur={(e) => spirePropChange?.('heightMm', Number(e.currentTarget.value))}
+              data-testid="inspector-spire-roof-height"
+            />
+          </div>
+          <MaterialAssignmentRow
+            label="Material"
+            materialKey={el.materialId ?? null}
+            fallback="By category"
+            elementsById={elementsById}
+            onOpenMaterialBrowser={onOpenMaterialBrowser}
+            onOpenAppearanceAssetBrowser={onOpenAppearanceAssetBrowser}
+          />
+        </div>
+      );
+    }
     case 'stair': {
       const { onPropertyChange: stairPropChange } = options ?? {};
       return (
