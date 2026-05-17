@@ -1,6 +1,10 @@
 import { useState } from 'react';
 import type { Element } from '@bim-ai/core';
 
+function genSrId(): string {
+  return `sr-${Date.now().toString(36)}`;
+}
+
 export type ManageRevisionsDialogProps = {
   isOpen: boolean;
   revisions: Extract<Element, { kind: 'revision' }>[];
@@ -117,7 +121,7 @@ export function ManageRevisionsDialog({
       onRemoveSheetRevision(existingId);
     } else {
       onAddSheetRevision({
-        id: `sr-${Date.now().toString(36)}`,
+        id: genSrId(),
         sheetId: activeSheetId,
         revisionId,
       });
