@@ -2236,6 +2236,8 @@ export type ProjectBrowserProps = {
   onToggleLock3dView?: (viewId: string) => void;
   /** §14.5 — save current camera as a named perspective view */
   onSaveCameraView?: () => void;
+  /** §1.6.11 — semantic command dispatcher (e.g. selectGroupElements). */
+  onSemanticCommand?: (cmd: Record<string, unknown>) => void | Promise<void>;
 };
 
 type CtxMenu = {
@@ -2295,6 +2297,7 @@ export function ProjectBrowserV3({
   onRename3dView,
   onToggleLock3dView,
   onSaveCameraView,
+  onSemanticCommand,
 }: ProjectBrowserProps): JSX.Element {
   const [search, setSearch] = useState('');
   const [ctxMenu, setCtxMenu] = useState<CtxMenu>(null);
@@ -3192,47 +3195,67 @@ export function ProjectBrowserV3({
           onToggle={() => setGroupsCollapsed((v) => !v)}
           testId="pb-section-groups"
         >
-          <ul style={{ listStyle: 'none', margin: 0, padding: 0 }}>
-            {groupDefRows.map((gd) => {
-              const instCount = elements.filter(
-                (e) =>
-                  e.kind === 'group_instance' &&
-                  (e as { groupDefinitionId?: string }).groupDefinitionId === gd.id,
-              ).length;
-              return (
-                <li key={gd.id} data-testid={`pb-group-${gd.id}`}>
-                  <button
-                    type="button"
-                    style={{
-                      width: '100%',
-                      textAlign: 'left',
-                      padding: 'var(--space-0-5) var(--space-3)',
-                      fontSize: 'var(--text-sm, 12.5px)',
-                      color: 'var(--color-foreground)',
-                      background: 'transparent',
-                      border: 'none',
-                      cursor: 'pointer',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 'var(--space-2)',
-                    }}
-                  >
-                    <span>⬡</span>
-                    <span style={{ flex: 1 }}>{(gd as { name?: string }).name ?? 'Group'}</span>
-                    <span
+          {groupDefRows.length === 0 ? (
+            <div
+              data-testid="browser-groups-empty"
+              style={{
+                padding: 'var(--space-1) var(--space-3)',
+                fontSize: 'var(--text-sm, 12.5px)',
+                color: 'var(--color-muted-foreground)',
+                fontStyle: 'italic',
+              }}
+            >
+              No groups defined
+            </div>
+          ) : (
+            <ul style={{ listStyle: 'none', margin: 0, padding: 0 }}>
+              {groupDefRows.map((gd) => {
+                const instCount = elements.filter(
+                  (e) =>
+                    e.kind === 'group_instance' &&
+                    (e as { groupDefinitionId?: string }).groupDefinitionId === gd.id,
+                ).length;
+                return (
+                  <li key={gd.id} data-testid={`browser-group-row-${gd.id}`}>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        void onSemanticCommand?.({
+                          type: 'selectGroupElements',
+                          groupDefinitionId: gd.id,
+                        })
+                      }
                       style={{
-                        color: 'var(--color-muted-foreground)',
-                        fontSize: 'var(--text-xs, 10px)',
+                        width: '100%',
+                        textAlign: 'left',
+                        padding: 'var(--space-0-5) var(--space-3)',
+                        fontSize: 'var(--text-sm, 12.5px)',
+                        color: 'var(--color-foreground)',
+                        background: 'transparent',
+                        border: 'none',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 'var(--space-2)',
                       }}
-                      data-testid={`pb-group-instance-count-${gd.id}`}
                     >
-                      ×{instCount}
-                    </span>
-                  </button>
-                </li>
-              );
-            })}
-          </ul>
+                      <span>⬡</span>
+                      <span style={{ flex: 1 }}>{(gd as { name?: string }).name ?? 'Group'}</span>
+                      <span
+                        style={{
+                          color: 'var(--color-muted-foreground)',
+                          fontSize: 'var(--text-xs, 10px)',
+                        }}
+                        data-testid={`pb-group-instance-count-${gd.id}`}
+                      >
+                        ×{instCount}
+                      </span>
+                    </button>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
         </PbCollapsibleSection>
 
         {viewRows.length === 0 &&

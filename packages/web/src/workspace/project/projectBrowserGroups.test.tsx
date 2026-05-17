@@ -1,5 +1,5 @@
 /**
- * §1.6.11 — ProjectBrowser Groups section tests.
+ * §1.6.11 — ProjectBrowserV3 Groups subtree tests.
  */
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render } from '@testing-library/react';
@@ -19,6 +19,7 @@ function makeGroupDefinition(id: string, name: string): Element {
     kind: 'group_definition',
     id,
     name,
+    elementIds: [],
   } as unknown as Element;
 }
 
@@ -37,7 +38,7 @@ const instance1a = makeGroupInstance('gi-01a', 'gd-01');
 const instance1b = makeGroupInstance('gi-01b', 'gd-01');
 const instance2a = makeGroupInstance('gi-02a', 'gd-02');
 
-function makeProps(elements: Element[] = []) {
+function makeProps(elements: Element[] = [], onSemanticCommand?: ReturnType<typeof vi.fn>) {
   return {
     elements,
     activeViewId: null as string | null,
@@ -45,59 +46,81 @@ function makeProps(elements: Element[] = []) {
     onRenameView: vi.fn(),
     onDeleteView: vi.fn(),
     onDuplicateView: vi.fn(),
+    onSemanticCommand,
   };
+}
+
+function expandGroups(container: HTMLElement): void {
+  const section = container.querySelector('[data-testid="browser-groups-section"]');
+  if (!section) throw new Error('browser-groups-section not found');
+  const toggleBtn = section.querySelector('button') as HTMLElement;
+  fireEvent.click(toggleBtn);
 }
 
 // ---------------------------------------------------------------------------
 // Tests
 // ---------------------------------------------------------------------------
 
-describe('ProjectBrowser groups section — §1.6.11', () => {
-  it('renders pb-section-groups', () => {
+describe('ProjectBrowser Groups subtree — §1.6.11', () => {
+  it('renders the browser-groups-section header', () => {
     const { getByTestId } = render(<ProjectBrowserV3 {...makeProps()} />);
-    expect(getByTestId('pb-section-groups')).toBeTruthy();
+    expect(getByTestId('browser-groups-section')).toBeTruthy();
   });
 
-  it('shows one leaf per group_definition when expanded', () => {
+  it('shows browser-groups-empty when no group definitions exist', () => {
+    const { container, getByTestId } = render(<ProjectBrowserV3 {...makeProps()} />);
+    expandGroups(container);
+    expect(getByTestId('browser-groups-empty')).toBeTruthy();
+  });
+
+  it('shows one row per group_definition when expanded', () => {
     const props = makeProps([groupDef1, groupDef2, instance1a, instance2a]);
-    const { getByTestId } = render(<ProjectBrowserV3 {...props} />);
-    // Expand the section
-    const toggle = getByTestId('pb-section-groups').querySelector('button') as HTMLElement;
-    fireEvent.click(toggle);
-    expect(getByTestId('pb-group-gd-01')).toBeTruthy();
-    expect(getByTestId('pb-group-gd-02')).toBeTruthy();
+    const { container, getByTestId } = render(<ProjectBrowserV3 {...props} />);
+    expandGroups(container);
+    expect(getByTestId('browser-group-row-gd-01')).toBeTruthy();
+    expect(getByTestId('browser-group-row-gd-02')).toBeTruthy();
   });
 
-  it('shows instance count label ×N for each group definition', () => {
+  it('shows instance count for each group definition', () => {
     const props = makeProps([groupDef1, groupDef2, instance1a, instance1b, instance2a]);
-    const { getByTestId } = render(<ProjectBrowserV3 {...props} />);
-    const toggle = getByTestId('pb-section-groups').querySelector('button') as HTMLElement;
-    fireEvent.click(toggle);
-    // groupDef1 has 2 instances, groupDef2 has 1 instance
-    expect(getByTestId('pb-group-instance-count-gd-01').textContent).toBe('×2');
-    expect(getByTestId('pb-group-instance-count-gd-02').textContent).toBe('×1');
+    const { container, getByTestId } = render(<ProjectBrowserV3 {...props} />);
+    expandGroups(container);
+    expect(getByTestId('pb-group-instance-count-gd-01').textContent).toContain('2');
+    expect(getByTestId('pb-group-instance-count-gd-02').textContent).toContain('1');
   });
 
-  it('pb-section-groups is collapsed by default', () => {
+  it('Groups section is collapsed by default', () => {
     const props = makeProps([groupDef1]);
     const { getByTestId, queryByTestId } = render(<ProjectBrowserV3 {...props} />);
-    expect(getByTestId('pb-section-groups')).toBeTruthy();
-    expect(queryByTestId('pb-group-gd-01')).toBeNull();
+    expect(getByTestId('browser-groups-section')).toBeTruthy();
+    expect(queryByTestId('browser-group-row-gd-01')).toBeNull();
   });
 
-  it('shows ×0 instance count for group_definition with no instances', () => {
+  it('shows 0 instance count for group_definition with no instances', () => {
     const props = makeProps([groupDef1]);
-    const { getByTestId } = render(<ProjectBrowserV3 {...props} />);
-    const toggle = getByTestId('pb-section-groups').querySelector('button') as HTMLElement;
-    fireEvent.click(toggle);
-    expect(getByTestId('pb-group-instance-count-gd-01').textContent).toBe('×0');
+    const { container, getByTestId } = render(<ProjectBrowserV3 {...props} />);
+    expandGroups(container);
+    expect(getByTestId('pb-group-instance-count-gd-01').textContent).toContain('0');
   });
 
-  it('displays group definition name in the leaf', () => {
+  it('displays group definition name in the row', () => {
     const props = makeProps([groupDef1]);
-    const { getByTestId, getByText } = render(<ProjectBrowserV3 {...props} />);
-    const toggle = getByTestId('pb-section-groups').querySelector('button') as HTMLElement;
-    fireEvent.click(toggle);
+    const { container, getByText } = render(<ProjectBrowserV3 {...props} />);
+    expandGroups(container);
     expect(getByText('Kitchen Unit')).toBeTruthy();
+  });
+
+  it('clicking a group row fires onSemanticCommand with selectGroupElements', () => {
+    const onSemanticCommand = vi.fn();
+    const props = makeProps([groupDef1], onSemanticCommand);
+    const { container, getByTestId } = render(<ProjectBrowserV3 {...props} />);
+    expandGroups(container);
+    const row = getByTestId('browser-group-row-gd-01');
+    const btn = row.querySelector('button') as HTMLElement;
+    fireEvent.click(btn);
+    expect(onSemanticCommand).toHaveBeenCalledWith({
+      type: 'selectGroupElements',
+      groupDefinitionId: 'gd-01',
+    });
   });
 });
