@@ -31,6 +31,7 @@ import {
 } from './viewport/cameraRig';
 import { resolveViewportPaintBundle, type ViewportPaintBundle } from './viewport/materials';
 import { ViewCube } from './viewport/ViewCube';
+import { SkyBackgroundPanel } from './viewport/SkyBackgroundPanel';
 import { applyLinkedGhosting } from './viewport/linkedGhosting';
 import { applyLensGhosting } from './viewport/applyLensGhosting';
 import { lensFilterFromMode } from './viewport/useLensFilter';
@@ -687,6 +688,7 @@ export function Viewport({
   const activeLevelId = useBimStore((s) => s.activeLevelId);
   const [authoringOverlay, setAuthoringOverlay] = useState<Authoring3dOverlayState | null>(null);
   const [draftPlaneAngleWarning, setDraftPlaneAngleWarning] = useState(false);
+  const [skyPanelOpen, setSkyPanelOpen] = useState(false);
   const draftPlaneAngleWarningRef = useRef(draftPlaneAngleWarning);
   draftPlaneAngleWarningRef.current = draftPlaneAngleWarning;
   const planToolRef = useRef(planTool);
@@ -846,6 +848,8 @@ export function Viewport({
   const viewerRenderStyle = normalizeViewerRenderStyle(viewerRenderStyleRaw);
   const viewerBackground = useBimStore((s) => s.viewerBackground);
   const viewerEdges = useBimStore((s) => s.viewerEdges);
+  const skyBackground = useBimStore((s) => s.skyBackground);
+  const skyBackgroundColor = useBimStore((s) => s.skyBackgroundColor);
   const viewerGdoRuntime = useBimStore((s) => s as typeof s & ViewerGdoRuntimeState);
   const viewerProjection = useBimStore((s) => s.viewerProjection);
   const sectionBoxActive = useBimStore((s) => s.viewerSectionBoxActive);
@@ -4795,6 +4799,28 @@ export function Viewport({
     }
   }, [viewerBackground]);
 
+  // ── §14.4: sky / environment background ──────────────────────────────────
+  useEffect(() => {
+    const scene = sceneRef.current;
+    const renderer = rendererRef.current;
+    if (!scene) return;
+    if (skyBackground === 'gradient-sky') {
+      scene.background = new THREE.Color('#87ceeb');
+      scene.fog = new THREE.Fog('#e8f4ff', 50, 500);
+      if (renderer) renderer.setClearColor('#87ceeb');
+    } else if (skyBackground === 'overcast') {
+      scene.background = new THREE.Color('#c8c8c8');
+      scene.fog = new THREE.Fog('#c8c8c8', 30, 300);
+    } else if (skyBackground === 'solid') {
+      scene.background = new THREE.Color(skyBackgroundColor);
+      scene.fog = null;
+    } else {
+      // 'default'
+      scene.background = new THREE.Color('#aaaaaa');
+      scene.fog = null;
+    }
+  }, [skyBackground, skyBackgroundColor]);
+
   // ── F-113: shadows, ambient occlusion, depth cue, and silhouette edges ──
   useEffect(() => {
     const renderer = rendererRef.current;
@@ -5949,6 +5975,19 @@ export function Viewport({
           </button>
         </div>
       ) : null}
+
+      {/* §14.4 — sky/environment background toggle button + panel */}
+      <button
+        type="button"
+        data-testid="viewport-sky-btn"
+        aria-label="Sky background"
+        title="Sky background"
+        onClick={() => setSkyPanelOpen((v) => !v)}
+        className="pointer-events-auto absolute bottom-3 right-3 z-20 grid size-7 place-items-center rounded border border-border bg-surface/90 text-sm text-foreground shadow-sm backdrop-blur-sm hover:bg-surface"
+      >
+        &#9729;
+      </button>
+      <SkyBackgroundPanel open={skyPanelOpen} onClose={() => setSkyPanelOpen(false)} />
 
       <div
         ref={mountRef}

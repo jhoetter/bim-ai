@@ -124,7 +124,10 @@ export type PlanTool =
   | 'split-wall'
   | 'paint'
   | 'linework'
-  | 'model-line';
+  | 'model-line'
+  | 'conical-roof'
+  | 'dome-roof'
+  | 'spire-roof';
 
 export type PresencePeers = Record<
   string,
@@ -464,6 +467,15 @@ export type StoreState = {
   /** §8.9.3: instance/element ID of the group currently being edited. */
   activeGroupEditId: string | null;
   setActiveGroupEditId: (id: string | null) => void;
+
+  /** §14.4 — 3D viewport sky / environment background mode. */
+  skyBackground: 'default' | 'gradient-sky' | 'overcast' | 'solid';
+  /** §14.4 — solid color used when skyBackground === 'solid'. */
+  skyBackgroundColor: string;
+  /** §14.4 — set the sky background mode. */
+  setSkyBackground: (bg: 'default' | 'gradient-sky' | 'overcast' | 'solid') => void;
+  /** §14.4 — set the solid sky background color. */
+  setSkyBackgroundColor: (color: string) => void;
 
   /** §14.6 — client-side camera paths from walkthrough captures; not persisted to server. */
   cameraPaths: CameraPathElem[];

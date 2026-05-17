@@ -81,6 +81,10 @@ export type ViewportRuntimeSlice = Pick<
   | 'setSelectedCameraPathId'
   | 'renameCameraPath'
   | 'removeCameraPath'
+  | 'skyBackground'
+  | 'skyBackgroundColor'
+  | 'setSkyBackground'
+  | 'setSkyBackgroundColor'
 >;
 
 function writeLocalStorageString(key: string, value: string): void {
@@ -326,5 +330,10 @@ export function createViewportRuntimeSlice(set: StoreSet, get: StoreGet): Viewpo
         cameraPaths: state.cameraPaths.filter((p) => p.id !== id),
         selectedCameraPathId: state.selectedCameraPathId === id ? null : state.selectedCameraPathId,
       })),
+
+    skyBackground: 'default',
+    skyBackgroundColor: '#87ceeb',
+    setSkyBackground: (bg) => set({ skyBackground: bg }),
+    setSkyBackgroundColor: (color) => set({ skyBackgroundColor: color }),
   };
 }
