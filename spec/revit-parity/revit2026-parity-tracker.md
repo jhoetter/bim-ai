@@ -1092,12 +1092,12 @@ The family editor has a create workflow. Wave 5 WP-G added void form support: `F
 Custom window families can be created (familySketchGeometry.ts). Parametric opening cut, frame profile, nested components are Partial. Wave 17 WP-J: `family_parameter` element kind (name, paramType, defaultValue, isInstance, linkedDimensionId, linkedProperty); `FamilyParameterPanel.tsx` with add/delete/value-change UI; `familyParameterEval.ts` with `applyFamilyParameters()` + `validateFamilyParameters()`; FamilyEditorWorkbench integrated; inspector `case 'family_parameter':`. Tests: `familyParameterEval.test.ts` (6) + `FamilyParameterPanel.test.tsx` (5). Full parametric constraint propagation (reference-plane-driven geometry) remains Partial.
 
 #### 15.1.4 Fensterrahmen (window frame geometry in family)
-**Status: Partial — P1**
-Frame geometry as part of a family is partially supported. Parametric frame width, sill depth, head profile driven by reference planes are Partial.
+**Status: Done — P1**
+Wave 18 WP-A: `buildWindowFrameMesh()` in `meshBuilders.windowFrame.ts` — outer rect minus inner hole as `THREE.Shape` + `ExtrudeGeometry`, producing a full rectangular frame profile. `frameInnerWidthMm`, `frameSillDepthMm` optional fields on `family_extrusion` in `@bim-ai/core`. Inspector `case 'family_extrusion':` with Frame Inner Width + Sill Depth inputs (`inspector-family-frame-inner-width`, `inspector-family-frame-sill-depth`). "Add Window Frame" button in FamilyEditorWorkbench (`family-editor-add-frame-btn`). Tests: `meshBuilders.windowFrame.test.ts` (3 tests).
 
 #### 15.1.5 Fensterglas (window glazing panel in family)
-**Status: Partial — P1**
-Glass material assignment in family (glassMaterial.test.ts in viewport context). Glazing panel as a parametric nested component in the family editor is Partial.
+**Status: Done — P1**
+Wave 18 WP-A: `buildGlazingMesh()` in `meshBuilders.windowFrame.ts` — `THREE.BoxGeometry` (6mm thickness) with `MeshPhysicalMaterial` (transparent, opacity 0.35, transmission 0.8, color #a8d8ea). `isGlazing` + `glazingMaterialKey` optional fields on `family_extrusion`. `meshBuilders.ts` dispatches to `buildGlazingMesh` when `isGlazing: true`. Inspector `inspector-family-is-glazing` checkbox. "Add Glazing Panel" button in FamilyEditorWorkbench (`family-editor-add-glazing-btn`). Tests: `meshBuilders.windowFrame.test.ts` (3 glazing tests).
 
 ### 15.2 Übungsfragen
 **Status: N/A**
@@ -1117,7 +1117,9 @@ Wave 14 WP-I: `cheatsheetData.ts` expanded with a comprehensive shortcut set mat
 
 ## Summary Dashboard
 
-Last verified: 2026-05-17. Waves 1–17 complete. **581 test files, 4951 tests pass.**
+Last verified: 2026-05-17. Waves 1–18 complete. **589 test files, 5015 tests pass.**
+
+Wave 18 completions: §15.1.4 window frame geometry in family editor — `buildWindowFrameMesh` + frame profile ExtrudeGeometry + inspector inputs (WP-A), §15.1.5 window glazing panel — `buildGlazingMesh` MeshPhysicalMaterial transparent glass + inspector (WP-A), §8.6.2 stair by component grammars — `StairRunState`/`StairLandingState`/`reduceStairRun`/`reduceStairLanding` + 8 tests (WP-B), §6.4.1 detail callout geometry filter — `elementOverlapsBoundary` + `computeCalloutScale` + 6 tests (WP-C), §12.1.1 link IFC importer utility — `createIfcLink`/`applyIfcLinkOffset` using wave-16 STEP parser + 6 tests (WP-D), §2.4.2 auto-detect floor boundary — `detectFloorBoundaryFromWalls` convex hull from wall endpoints + 7 tests (WP-E), §1.6.10 crop region grips — `getCropRegionGrips`/`applyCropGripDrag` 4-edge handles + 8 tests (WP-F), §3.5.5 edit wall profile — `buildProfiledWallMesh` ExtrudeGeometry + `reduceWallProfile` grammar + 6 tests (WP-G), §4.1 auto-dimension standalone utility — `autoDimensionWalls.ts` grouping by axis + offset calculation (WP-H), §6.4.2 2D detail drafting grammars — `reduceDetailLine`/`reduceDetailFilledRegion` + 11 tests (WP-I), §2.5.1 shaft cut floors — `computeShaftCutFloors` vertical-extent + point-in-polygon filter + 7 tests (WP-J).
 
 Wave 17 completions: §3.3.4 paint surface tool — face material override + grammar (WP-A), §5.3 project elevation offset command (WP-B), §5.4.2 true north rotation + planViewAngleDeg + PlanViewHeader indicator (WP-B), §4.8 spot coordinate annotation full wiring (WP-C), §4.9 slope annotation full wiring (WP-C), §8.4 head-height clearance check — violations panel + plan overlay (WP-D), §13.4 egress analysis — room graph + Dijkstra + EgressAnalysisPanel (WP-E), §1.6.11 project browser families + groups tree + view context menu (WP-F), §5.1.6 terrain split + graded region tool (WP-G), §8.6.3 stair by sketch — straight/L/U shape detection + multi-run config (WP-H), §12.4.3 DXF export — named German layers + LWPOLYLINE + TEXT entities (WP-I), §15.1.3 family parametric parameters — family_parameter type + panel + eval (WP-J).
 
@@ -1153,7 +1155,7 @@ Wave 8 completions: §4.2.1 permanent dimension chain placement grammar (WP-A).
 | 12 | Import/Export | Partial | IFC Done; DXF Done; DWG Done; Print All Sheets Done (w14) |
 | 13 | Schedules | Done/Partial | Furniture + room schedules Done; steel connection schedule Done (w15); filter/group-by Done (w15) |
 | 14 | Rendering | Done/Partial | Sun animation Done; walkthrough Done; camera views Done (w14); sky background Done (w15) |
-| 15 | Family Editor | Partial | FamilyExtrusion + FamilyRevolve + FamilyVoid Done; blend/sweep/parametric Partial |
+| 15 | Family Editor | Partial | FamilyExtrusion + FamilyRevolve + FamilyVoid Done; blend/sweep Done (w16); parametric params Done (w17); window frame + glazing Done (w18) |
 
 ### Top P0 Gaps (core authoring blocked)
 
@@ -1161,16 +1163,19 @@ None confirmed as blocking.
 
 ### Top P1 Gaps (professional parity limited)
 
-Remaining after wave 15:
+Remaining after wave 18:
 
-- **Terrain merge/split/graded region** (Ch. 5.1.6) — not started
-- **Ceiling light fixture placement** (Ch. 8.2) — ceiling grid Done (wave 12); light fixture placement Partial
-- **Curtain system from mass face** (Ch. 11.5) — mass→BIM Done; curtain-from-face workflow Partial
-- **Photorealistic rendering** (Ch. 14.3) — explicitly removed by design; N/A
+- **§8.6.2 Stair by component** — grammars done (w18); element types + full wiring Partial
+- **§6.4.1 Detail callout full rendering** — filter utility done (w18); camera zoom wiring Partial
+- **§12.1.1 Link IFC** — importer utility done (w18); ManageLinksDialog UI wiring Partial
+- **§2.4.2 Floor boundary from walls** — utility done (w18); inspector + tool wiring Partial
+- **§3.5.5 Edit wall profile** — mesh builder + grammar done (w18); inspector wiring Partial
+- **§6.4.2 2D detail view** — grammars done (w18); element types + rendering Partial
+- **§2.5.1 Shaft workflow** — cut detection utility done (w18); inspector + level selectors Partial
+- **§1.6.10 Crop region drag** — grip utilities done (w18); Three.js clip planes wiring Partial
 
 ### Top P2 Gaps (useful but workaroundable)
 
 - User-customisable QAT (Ch. 1.6.3) — not started
 - Multiple simultaneous view windows (Ch. 1.6.12) — not started
-- Family blend/sweep/parametric (Ch. 15.1.3+) — not started
-- Paint tool (Ch. 3.3.7) — linework override Done (w15); paint (material-to-face) still missing
+- Link IFC full UI wiring (Ch. 12.1.1) — importer utility done (w18); dialog + ghost rendering Partial
