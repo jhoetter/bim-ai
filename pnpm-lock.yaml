@@ -90,6 +90,10 @@ importers:
         version: 5.9.3
 
   packages/icons:
+    dependencies:
+      bim-icons:
+        specifier: github:jhoetter/bim-icons
+        version: https://codeload.github.com/jhoetter/bim-icons/tar.gz/3f453212b4d1ecafe84be781ab8cbd7b85c26c2d(react-dom@19.2.5(react@19.2.5))(react@19.2.5)
     devDependencies:
       '@types/react':
         specifier: ^19.2.14
@@ -1433,6 +1437,13 @@ packages:
     resolution: {integrity: sha512-zEs/ufmZoUd7WftKpKyXaT6RFxpQ5Qm9xytKRHvJfxFV9DFJkZph9RvJ1LcOUi0Z1ZVijMte65JbILeV+8QQEA==}
     engines: {node: '>=6.0.0'}
     hasBin: true
+
+  bim-icons@https://codeload.github.com/jhoetter/bim-icons/tar.gz/3f453212b4d1ecafe84be781ab8cbd7b85c26c2d:
+    resolution: {tarball: https://codeload.github.com/jhoetter/bim-icons/tar.gz/3f453212b4d1ecafe84be781ab8cbd7b85c26c2d}
+    version: 0.1.0
+    peerDependencies:
+      react: ^19.0.0
+      react-dom: ^19.0.0
 
   binary-extensions@2.3.0:
     resolution: {integrity: sha512-Ceh+7ox5qe7LJuLHoY0feh3pHuUDHAcRUeyL2VYghZwfpkNIy/+8Ocg0a3UuSoYzavmylwuLWQOf3hl0jjMMIw==}
@@ -4302,6 +4313,11 @@ snapshots:
     optional: true
 
   baseline-browser-mapping@2.10.27: {}
+
+  bim-icons@https://codeload.github.com/jhoetter/bim-icons/tar.gz/3f453212b4d1ecafe84be781ab8cbd7b85c26c2d(react-dom@19.2.5(react@19.2.5))(react@19.2.5):
+    dependencies:
+      react: 19.2.5
+      react-dom: 19.2.5(react@19.2.5)
 
   binary-extensions@2.3.0: {}
 

@@ -21,6 +21,8 @@ Ports follow the sibling “suite” spacing; see `Makefile` comments.
 - **Backend**: FastAPI + SQLAlchemy 2 async + Postgres (`app/`).
 - **Infra**: Docker Compose Postgres (5545 host), Redis (6392), MinIO (9120/9121) — placeholders for uploads v2.
 
+Icon library: [`docs/icon-library.md`](./docs/icon-library.md) — source lives in [github.com/jhoetter/bim-icons](https://github.com/jhoetter/bim-icons).
+
 See `spec/prd.md` for product scope.
 Active UI to-do list: [`OPEN_TASKS.md`](./OPEN_TASKS.md).
 Onboarding for the next agent (or human): [`HANDOVER.md`](./HANDOVER.md).
