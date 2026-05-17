@@ -11,6 +11,7 @@ afterEach(() => {
 beforeEach(() => {
   useBimStore.setState({
     skyBackground: 'default',
+    // eslint-disable-next-line bim-ai/no-hex-in-chrome
     skyBackgroundColor: '#87ceeb',
   });
 });
