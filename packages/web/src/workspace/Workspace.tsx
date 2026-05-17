@@ -26,6 +26,7 @@ import { type PlanCameraHandle } from '../plan/PlanCanvas';
 import { shaftBoundaryFromStair } from '../plan/stairShaft';
 import { createSimilarPayload } from '../plan/createSimilar';
 import { equalizeWitnessSpacing } from '../plan/equalizeWitnessSpacing';
+import { autoDimensionWalls, tagAllRooms as tagAllRoomsFn } from '../plan/autoDimension';
 import {
   applyCommand,
   ApiHttpError,
@@ -138,6 +139,7 @@ import { ViewRangeDialog } from './ViewRangeDialog';
 import { VisibilityGraphicsDialog } from './VisibilityGraphicsDialog';
 import { PerViewVGDialog } from './PerViewVGDialog';
 import { SetWorkPlaneDialog } from './SetWorkPlaneDialog';
+import { DxfImportDialog } from './DxfImportDialog';
 import {
   coerceCheckpointRetentionLimit,
   DEFAULT_CHECKPOINT_RETENTION_LIMIT,
@@ -176,6 +178,7 @@ import { getFamilyPlacementAdapter } from '../families/familyPlacementAdapters';
 import { applyCommandBundle } from '../lib/api';
 import { exportToIfc } from '../export/ifcExporter';
 import { exportToDxf } from '../export/dxfExporter';
+import { createToposolidFromDxf } from '../tools/dxfContourImport';
 import { exportSceneToDwg } from '../viewport/dwgExport';
 import { OnboardingTour } from '../onboarding/OnboardingTour';
 import { readOnboardingProgress, resetOnboarding } from '../onboarding/tour';
@@ -1096,6 +1099,7 @@ export function Workspace(): JSX.Element {
   const [perViewVGOpen, setPerViewVGOpen] = useState(false);
   const [projectInfoOpen, setProjectInfoOpen] = useState(false);
   const [setWorkPlaneOpen, setSetWorkPlaneOpen] = useState(false);
+  const [dxfImportOpen, setDxfImportOpen] = useState(false);
   const [printPlotOpen, setPrintPlotOpen] = useState(false);
   const [trueNorthActive, setTrueNorthActive] = useState(false);
   const lensMode = useBimStore((s) => s.lensMode);
@@ -2299,6 +2303,53 @@ export function Workspace(): JSX.Element {
         if (!referenceLevelId) return;
         const roofCmd = generateRoofFromMass(mass, referenceLevelId);
         void onSemanticCommand(roofCmd as unknown as Record<string, unknown>);
+        return;
+      }
+      // §3.3.6: scaleElements — uniform scale of selected elements about a base point
+      if (cmd.type === 'scaleElements') {
+        const { elementIds, basePtMm, scaleFactor } = cmd as {
+          elementIds: string[];
+          basePtMm: { xMm: number; yMm: number };
+          scaleFactor: number;
+        };
+        const { elementsById: cur } = useBimStore.getState();
+        for (const id of elementIds) {
+          const el = cur[id];
+          if (!el || !('positionMm' in el)) continue;
+          const pos = (el as { positionMm: { xMm: number; yMm: number } }).positionMm;
+          const dx = (pos.xMm - basePtMm.xMm) * scaleFactor;
+          const dy = (pos.yMm - basePtMm.yMm) * scaleFactor;
+          void onSemanticCommand({
+            type: 'updateElementProperty',
+            elementId: id,
+            key: 'positionMm',
+            value: { xMm: basePtMm.xMm + dx, yMm: basePtMm.yMm + dy },
+          });
+          for (const field of ['lengthMm', 'widthMm', 'radiusMm'] as const) {
+            if (field in el) {
+              void onSemanticCommand({
+                type: 'updateElementProperty',
+                elementId: id,
+                key: field,
+                value: ((el as Record<string, unknown>)[field] as number) * scaleFactor,
+              });
+            }
+          }
+        }
+        return;
+      }
+      // §3.3.6: scaleElement (singular) — emitted by PlanCanvas buildScaleCommand
+      if (cmd.type === 'scaleElement') {
+        const elementId = cmd.elementId as string;
+        const originXMm = cmd.originXMm as number;
+        const originYMm = cmd.originYMm as number;
+        const factor = cmd.factor as number;
+        void onSemanticCommand({
+          type: 'scaleElements',
+          elementIds: [elementId],
+          basePtMm: { xMm: originXMm, yMm: originYMm },
+          scaleFactor: factor,
+        });
         return;
       }
 
@@ -4745,6 +4796,18 @@ export function Workspace(): JSX.Element {
           setWorkPlaneOpen: (open: boolean) => setSetWorkPlaneOpen(open),
           sectionBoxFromPlan,
           openPrintDialog: () => setPrintPlotOpen(true),
+          autoDimWalls: () => {
+            const lvlId = activeLevelId ?? '';
+            if (!lvlId) return;
+            const dims = autoDimensionWalls(lvlId, elementsById);
+            for (const d of dims) void onSemanticCommand({ type: 'createElement', element: d });
+          },
+          tagAllRooms: () => {
+            const lvlId = activeLevelId ?? '';
+            if (!lvlId) return;
+            const tags = tagAllRoomsFn(lvlId, elementsById);
+            for (const t of tags) void onSemanticCommand({ type: 'createElement', element: t });
+          },
         }}
       />
       <FamilyLibraryPanel
@@ -4967,6 +5030,16 @@ export function Workspace(): JSX.Element {
         }}
       />
       <ManageLinksDialog open={manageLinksOpen} onClose={() => setManageLinksOpen(false)} />
+      {dxfImportOpen && (
+        <DxfImportDialog
+          onImport={(text) => {
+            const topo = createToposolidFromDxf(text, activeLevelId ?? null);
+            void onSemanticCommand({ type: 'create_toposolid', element: topo });
+            setDxfImportOpen(false);
+          }}
+          onClose={() => setDxfImportOpen(false)}
+        />
+      )}
       <ProjectUnitsDialog open={projectUnitsOpen} onClose={() => setProjectUnitsOpen(false)} />
       <PhaseManagerDialog
         open={phaseManagerOpen}

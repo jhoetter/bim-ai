@@ -67,6 +67,8 @@ export type PaletteContext = {
   saveSnapshot?: () => void;
   openRestoreSnapshot?: () => void;
   openManageLinks?: () => void;
+  /** §12.2.2: open the DXF terrain import dialog. */
+  openDxfImport?: () => void;
   sharePresentation?: () => void;
   hasPresentationPages?: boolean;
   openFamilyLibrary?: () => void;

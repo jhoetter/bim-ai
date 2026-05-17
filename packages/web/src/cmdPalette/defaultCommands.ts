@@ -1561,6 +1561,24 @@ registerCommand({
   invoke: (ctx) => ctx.openDimensionStyle?.(),
 });
 
+// §4.1 — Auto-Dimension Walls
+registerCommand({
+  id: 'annotate.auto-dim-walls',
+  label: 'Auto-Dimension Walls',
+  keywords: ['auto', 'dimension', 'walls', 'annotate'],
+  category: 'command',
+  invoke: (ctx) => ctx.autoDimWalls?.(),
+});
+
+// §4.1 — Tag All Rooms
+registerCommand({
+  id: 'annotate.tag-all-rooms',
+  label: 'Tag All Rooms',
+  keywords: ['tag', 'room', 'annotate', 'label'],
+  category: 'command',
+  invoke: (ctx) => ctx.tagAllRooms?.(),
+});
+
 registerCommand({
   id: 'view.visibility-graphics',
   label: 'Visibility/Graphics…',
@@ -2410,6 +2428,19 @@ registerCommand({
   },
 });
 
+registerCommand({
+  id: 'mass.generate-curtain-walls',
+  label: 'Generate Curtain Walls from Mass',
+  keywords: ['curtain', 'mass', 'generate', 'facade'],
+  category: 'command',
+  invoke: (ctx) => {
+    ctx.dispatchCommand?.({
+      type: 'mass_generate_curtain_walls',
+      massId: ctx.selectedElementIds?.[0] ?? '',
+    });
+  },
+});
+
 // §10.3.1-3 — Conical / Dome / Spire roof tools
 registerCommand({
   id: 'tool.conical-roof',
@@ -2435,6 +2466,23 @@ registerCommand({
   invoke: (ctx) => startPlanTool(ctx, 'spire-roof'),
 });
 
+// §15.1.2 — Family Editor Blend + Sweep Forms
+registerCommand({
+  id: 'tool.family-blend',
+  label: 'Family Blend',
+  keywords: ['family blend', 'blend', 'loft', 'FB'],
+  category: 'tool',
+  invoke: (ctx) => startPlanTool(ctx, 'family-blend'),
+});
+
+registerCommand({
+  id: 'tool.family-sweep',
+  label: 'Family Sweep',
+  keywords: ['family sweep', 'sweep', 'extrude path', 'FS'],
+  category: 'tool',
+  invoke: (ctx) => startPlanTool(ctx, 'family-sweep'),
+});
+
 // §6.5 — Print Current View via browser
 registerCommand({
   id: 'file.print-current-view',
@@ -2443,5 +2491,16 @@ registerCommand({
   category: 'command',
   invoke: (ctx) => {
     ctx.openPrintDialog?.();
+  },
+});
+
+// §12.1.2 — IFC STEP import
+registerCommand({
+  id: 'file.import-ifc',
+  label: 'Import IFC…',
+  keywords: ['import', 'ifc', 'step', 'open bim'],
+  category: 'command',
+  invoke: (ctx) => {
+    ctx.openManageLinks?.();
   },
 });
