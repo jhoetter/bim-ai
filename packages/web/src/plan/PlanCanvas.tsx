@@ -592,6 +592,8 @@ export function PlanCanvas({
   const spireRoofStateRef = useRef<SpireRoofState>(initialSpireRoofState());
   const gradedRegionStateRef = useRef<GradedRegionState>(initialGradedRegionState());
   const terrainSplitStateRef = useRef<TerrainSplitState>(initialTerrainSplitState());
+  const stairRunStateRef = useRef<StairRunState>(initialStairRunState());
+  const stairLandingStateRef = useRef<StairLandingState>(initialStairLandingState());
   const detailLineStateRef = useRef<DetailLineState>(initialDetailLineState());
   const detailFilledRegionStateRef = useRef<DetailFilledRegionState>(
     initialDetailFilledRegionState(),
@@ -1244,6 +1246,10 @@ export function PlanCanvas({
     } else if (planTool === 'spire-roof') {
       const { state } = reduceSpireRoof(spireRoofStateRef.current, { kind: 'activate' });
       spireRoofStateRef.current = state;
+    } else if (planTool === 'stair-run') {
+      stairRunStateRef.current = initialStairRunState();
+    } else if (planTool === 'stair-landing') {
+      stairLandingStateRef.current = initialStairLandingState();
     } else if (planTool === 'detail-line') {
       const { state } = reduceDetailLine(detailLineStateRef.current, { kind: 'activate' });
       detailLineStateRef.current = state;
@@ -5058,6 +5064,69 @@ export function PlanCanvas({
         bumpGeom((x) => x + 1);
         return;
       }
+      if (planTool === 'stair-run') {
+        const srRect = rnd.domElement.getBoundingClientRect();
+        const srRay = new THREE.Raycaster();
+        srRay.setFromCamera(
+          new THREE.Vector2(
+            ((ev.clientX - srRect.left) / srRect.width) * 2 - 1,
+            -(((ev.clientY - srRect.top) / srRect.height) * 2 - 1),
+          ),
+          camNow,
+        );
+        const srHits = srRay.intersectObjects(grp.children, true);
+        const srHit = srHits.find(
+          (x) => typeof (x.object.userData as { bimPickId?: unknown }).bimPickId === 'string',
+        );
+        const srElementId = srHit
+          ? (srHit.object.userData as { bimPickId: string }).bimPickId
+          : undefined;
+        const { state: srNext, effect: srEffect } = reduceStairRun(stairRunStateRef.current, {
+          kind: 'click',
+          pointMm: sp,
+          elementId: srElementId,
+        });
+        stairRunStateRef.current = srNext;
+        if (srEffect?.kind === 'addStairRun') {
+          void onSemanticCommand({
+            type: 'addStairRun',
+            run: { ...srEffect.run, id: crypto.randomUUID(), kind: 'stair_run' },
+          });
+        }
+        bumpGeom((x) => x + 1);
+        return;
+      }
+      if (planTool === 'stair-landing') {
+        const slRect = rnd.domElement.getBoundingClientRect();
+        const slRay = new THREE.Raycaster();
+        slRay.setFromCamera(
+          new THREE.Vector2(
+            ((ev.clientX - slRect.left) / slRect.width) * 2 - 1,
+            -(((ev.clientY - slRect.top) / slRect.height) * 2 - 1),
+          ),
+          camNow,
+        );
+        const slHits = slRay.intersectObjects(grp.children, true);
+        const slHit = slHits.find(
+          (x) => typeof (x.object.userData as { bimPickId?: unknown }).bimPickId === 'string',
+        );
+        const slElementId = slHit
+          ? (slHit.object.userData as { bimPickId: string }).bimPickId
+          : undefined;
+        const { state: slNext, effect: slEffect } = reduceStairLanding(
+          stairLandingStateRef.current,
+          { kind: 'click', pointMm: sp, elementId: slElementId },
+        );
+        stairLandingStateRef.current = slNext;
+        if (slEffect?.kind === 'addStairLanding') {
+          void onSemanticCommand({
+            type: 'addStairLanding',
+            landing: { ...slEffect.landing, id: crypto.randomUUID(), kind: 'stair_landing' },
+          });
+        }
+        bumpGeom((x) => x + 1);
+        return;
+      }
       if (planTool === 'steel-connection') {
         const px = sp.xMm / 1000;
         const pz = sp.yMm / 1000;
@@ -6235,6 +6304,12 @@ export function PlanCanvas({
           const { state } = reduceTerrainSplit(terrainSplitStateRef.current, { kind: 'cancel' });
           terrainSplitStateRef.current = state;
           bumpGeom((x) => x + 1);
+        } else if (planTool === 'stair-run') {
+          stairRunStateRef.current = initialStairRunState();
+          bumpGeom((x) => x + 1);
+        } else if (planTool === 'stair-landing') {
+          stairLandingStateRef.current = initialStairLandingState();
+          bumpGeom((x) => x + 1);
         } else if (planTool === 'detail-line') {
           const { state } = reduceDetailLine(detailLineStateRef.current, { kind: 'cancel' });
           detailLineStateRef.current = state;
@@ -6444,6 +6519,23 @@ export function PlanCanvas({
           }
           bumpGeom((x) => x + 1);
         }
+        return;
+      }
+      // §8.6.2 — stair-landing commit on Enter
+      if (planTool === 'stair-landing' && ev.key === 'Enter') {
+        ev.preventDefault();
+        const { state: slState, effect: slEffect } = reduceStairLanding(
+          stairLandingStateRef.current,
+          { kind: 'enter' },
+        );
+        stairLandingStateRef.current = slState;
+        if (slEffect?.kind === 'addStairLanding') {
+          void onSemanticCommand({
+            type: 'addStairLanding',
+            landing: { ...slEffect.landing, id: crypto.randomUUID(), kind: 'stair_landing' },
+          });
+        }
+        bumpGeom((x) => x + 1);
         return;
       }
       // §5.1.6 — graded-region commit on Enter
