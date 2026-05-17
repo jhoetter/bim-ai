@@ -1,6 +1,6 @@
 import { jsPDF } from 'jspdf';
 
-export type PaperSize = 'A4' | 'A3' | 'A2' | 'A1' | 'A0';
+export type PaperSize = 'A0' | 'A1' | 'A2' | 'A3' | 'A4' | 'Letter' | 'Tabloid';
 export type DpiSetting = 72 | 150 | 300;
 
 export interface PdfExportOptions {
@@ -8,7 +8,19 @@ export interface PdfExportOptions {
   dpi?: DpiSetting;
   orientation?: 'portrait' | 'landscape';
   filename?: string;
+  marginMm?: number;
 }
+
+/** CSS page dimensions (portrait) for each paper size. */
+export const PAPER_CSS: Record<PaperSize, string> = {
+  A0: '841mm 1189mm',
+  A1: '594mm 841mm',
+  A2: '420mm 594mm',
+  A3: '297mm 420mm',
+  A4: '210mm 297mm',
+  Letter: '216mm 279mm',
+  Tabloid: '279mm 432mm',
+};
 
 /** Return paper dimensions in mm for a given size (always portrait dimensions; landscape swaps). */
 export function paperSizeMm(size: PaperSize): { widthMm: number; heightMm: number } {
@@ -23,6 +35,10 @@ export function paperSizeMm(size: PaperSize): { widthMm: number; heightMm: numbe
       return { widthMm: 594, heightMm: 841 };
     case 'A0':
       return { widthMm: 841, heightMm: 1189 };
+    case 'Letter':
+      return { widthMm: 216, heightMm: 279 };
+    case 'Tabloid':
+      return { widthMm: 279, heightMm: 432 };
   }
 }
 
@@ -63,6 +79,7 @@ async function addPageToPdf(
   paperSize: PaperSize,
   orientation: 'portrait' | 'landscape',
   isFirstPage: boolean,
+  marginMm = 10,
 ): Promise<void> {
   const pngDataUrl = await captureElementToPng(element);
 
@@ -82,26 +99,28 @@ async function addPageToPdf(
     img.src = pngDataUrl;
   });
 
-  const imgW = img.naturalWidth || pageMmW;
-  const imgH = img.naturalHeight || pageMmH;
+  const printW = pageMmW - marginMm * 2;
+  const printH = pageMmH - marginMm * 2;
+  const imgW = img.naturalWidth || printW;
+  const imgH = img.naturalHeight || printH;
   const imgAspect = imgW / imgH;
-  const pageAspect = pageMmW / pageMmH;
+  const pageAspect = printW / printH;
 
   let drawW: number;
   let drawH: number;
 
   if (imgAspect > pageAspect) {
     // Image is wider relative to page — fit to full width
-    drawW = pageMmW;
-    drawH = pageMmW / imgAspect;
+    drawW = printW;
+    drawH = printW / imgAspect;
   } else {
     // Image is taller relative to page — fit to full height
-    drawH = pageMmH;
-    drawW = pageMmH * imgAspect;
+    drawH = printH;
+    drawW = printH * imgAspect;
   }
 
-  const offsetX = (pageMmW - drawW) / 2;
-  const offsetY = (pageMmH - drawH) / 2;
+  const offsetX = marginMm + (printW - drawW) / 2;
+  const offsetY = marginMm + (printH - drawH) / 2;
 
   doc.addImage(pngDataUrl, 'PNG', offsetX, offsetY, drawW, drawH);
 }
@@ -117,6 +136,7 @@ export async function exportSheetToPdf(
   const paperSize = opts?.paperSize ?? 'A4';
   const orientation = opts?.orientation ?? 'landscape';
   const filename = opts?.filename ?? 'sheet-export.pdf';
+  const marginMm = opts?.marginMm ?? 10;
 
   const { widthMm, heightMm } = paperSizeMm(paperSize);
   const pageMmW = orientation === 'landscape' ? heightMm : widthMm;
@@ -128,7 +148,7 @@ export async function exportSheetToPdf(
     format: [pageMmW, pageMmH],
   });
 
-  await addPageToPdf(doc, canvasElement, paperSize, orientation, true);
+  await addPageToPdf(doc, canvasElement, paperSize, orientation, true, marginMm);
 
   doc.save(filename);
 }
@@ -145,6 +165,7 @@ export async function exportSheetsToPdf(
   const defaultPaperSize = opts?.paperSize ?? 'A4';
   const orientation = opts?.orientation ?? 'landscape';
   const filename = opts?.filename ?? 'sheets-export.pdf';
+  const marginMm = opts?.marginMm ?? 10;
 
   const firstSheet = sheetCanvases[0];
   const firstPaperSize = firstSheet.paperSize ?? defaultPaperSize;
@@ -161,7 +182,7 @@ export async function exportSheetsToPdf(
   for (let i = 0; i < sheetCanvases.length; i++) {
     const sheet = sheetCanvases[i];
     const size = sheet.paperSize ?? defaultPaperSize;
-    await addPageToPdf(doc, sheet.element, size, orientation, i === 0);
+    await addPageToPdf(doc, sheet.element, size, orientation, i === 0, marginMm);
   }
 
   doc.save(filename);

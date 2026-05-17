@@ -64,3 +64,50 @@ describe('print/plot dialog — §12.4.5', () => {
     expect(values).toContain('A3');
   });
 });
+
+describe('PrintPlotDialog paper sizes — §12.4.5', () => {
+  it('renders margin input', () => {
+    render(<PrintPlotDialog open={true} onClose={noopClose} sheets={mockSheets} />);
+    expect(screen.getByTestId('print-margin-mm')).toBeDefined();
+  });
+
+  it('margin input has default value of 10', () => {
+    render(<PrintPlotDialog open={true} onClose={noopClose} sheets={mockSheets} />);
+    const input = screen.getByTestId('print-margin-mm') as HTMLInputElement;
+    expect(input.value).toBe('10');
+  });
+
+  it('renders A0 option', () => {
+    render(<PrintPlotDialog open={true} onClose={noopClose} sheets={mockSheets} />);
+    const select = screen.getByTestId('print-paper-size-select') as HTMLSelectElement;
+    const values = Array.from(select.options).map((o) => o.value);
+    expect(values).toContain('A0');
+  });
+
+  it('renders Letter option', () => {
+    render(<PrintPlotDialog open={true} onClose={noopClose} sheets={mockSheets} />);
+    const select = screen.getByTestId('print-paper-size-select') as HTMLSelectElement;
+    const values = Array.from(select.options).map((o) => o.value);
+    expect(values).toContain('Letter');
+  });
+
+  it('renders Tabloid option', () => {
+    render(<PrintPlotDialog open={true} onClose={noopClose} sheets={mockSheets} />);
+    const select = screen.getByTestId('print-paper-size-select') as HTMLSelectElement;
+    const values = Array.from(select.options).map((o) => o.value);
+    expect(values).toContain('Tabloid');
+  });
+
+  it('renders all seven paper size options', () => {
+    render(<PrintPlotDialog open={true} onClose={noopClose} sheets={mockSheets} />);
+    const select = screen.getByTestId('print-paper-size-select') as HTMLSelectElement;
+    const values = Array.from(select.options).map((o) => o.value);
+    expect(values).toContain('A0');
+    expect(values).toContain('A1');
+    expect(values).toContain('A2');
+    expect(values).toContain('A3');
+    expect(values).toContain('A4');
+    expect(values).toContain('Letter');
+    expect(values).toContain('Tabloid');
+  });
+});

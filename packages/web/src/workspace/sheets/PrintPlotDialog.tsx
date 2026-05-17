@@ -23,6 +23,7 @@ export function PrintPlotDialog({
   const [orientation, setOrientation] = useState<'portrait' | 'landscape'>('landscape');
   const [scope, setScope] = useState<'current' | 'all'>('current');
   const [exporting, setExporting] = useState(false);
+  const [marginMm, setMarginMm] = useState(10);
 
   if (!open) return null;
 
@@ -116,6 +117,7 @@ export function PrintPlotDialog({
             paperSize,
             orientation,
             filename: 'sheets-export.pdf',
+            marginMm,
           });
         }
       } else {
@@ -125,6 +127,7 @@ export function PrintPlotDialog({
           paperSize,
           orientation,
           filename: `${safeFilename}.pdf`,
+          marginMm,
         });
       }
     } finally {
@@ -163,11 +166,13 @@ export function PrintPlotDialog({
             onChange={(e) => setPaperSize(e.currentTarget.value as PaperSize)}
             className="h-7 rounded border border-border bg-surface px-2 text-xs text-foreground"
           >
-            <option value="A4">A4</option>
-            <option value="A3">A3</option>
-            <option value="A2">A2</option>
-            <option value="A1">A1</option>
-            <option value="A0">A0</option>
+            <option value="A0">A0 (841×1189mm)</option>
+            <option value="A1">A1 (594×841mm)</option>
+            <option value="A2">A2 (420×594mm)</option>
+            <option value="A3">A3 (297×420mm)</option>
+            <option value="A4">A4 (210×297mm)</option>
+            <option value="Letter">Letter (216×279mm)</option>
+            <option value="Tabloid">Tabloid (279×432mm)</option>
           </select>
         </label>
 
@@ -182,6 +187,19 @@ export function PrintPlotDialog({
             <option value="landscape">Landscape</option>
             <option value="portrait">Portrait</option>
           </select>
+        </label>
+
+        <label className="flex flex-col gap-1 text-xs text-foreground">
+          Margin (mm)
+          <input
+            type="number"
+            data-testid="print-margin-mm"
+            value={marginMm}
+            min={0}
+            max={50}
+            onChange={(e) => setMarginMm(+e.target.value)}
+            className="h-7 rounded border border-border bg-surface px-2 text-xs text-foreground"
+          />
         </label>
 
         <div className="flex flex-col gap-1 text-xs text-foreground">
@@ -255,6 +273,7 @@ export function PrintPlotDialog({
                     paperSize,
                     orientation,
                     filename: 'all-sheets.pdf',
+                    marginMm,
                   });
                 }
               } finally {
