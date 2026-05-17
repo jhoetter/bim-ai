@@ -1693,6 +1693,73 @@ export function InspectorPropertiesFor(
           {el.autoDetectedBoundary && (
             <span data-testid="inspector-floor-auto-boundary">Auto-detected boundary</span>
           )}
+          {/* Drainage Slope Points */}
+          <details style={{ marginTop: 8 }}>
+            <summary
+              data-testid="inspector-floor-slope-points-summary"
+              style={{ cursor: 'pointer', fontWeight: 600 }}
+            >
+              Drainage Slope Points ({(el as any).slopePoints?.length ?? 0})
+            </summary>
+            <div style={{ marginTop: 6 }}>
+              {((el as any).slopePoints ?? []).map((pt: any, idx: number) => (
+                <div
+                  key={pt.id}
+                  style={{ display: 'flex', gap: 4, alignItems: 'center', marginBottom: 4 }}
+                >
+                  <span style={{ fontSize: 11, color: '#aaa', minWidth: 60 }}>
+                    Pt {idx + 1}: ({pt.xMm.toFixed(0)}, {pt.yMm.toFixed(0)})
+                  </span>
+                  <input
+                    type="number"
+                    data-testid={`inspector-floor-slope-pt-elevation-${idx}`}
+                    value={pt.elevationOffsetMm}
+                    style={{ width: 70 }}
+                    onChange={(e) =>
+                      onDispatchCommand?.({
+                        type: 'updateFloorSlopePoint',
+                        floorId: el.id,
+                        pointId: pt.id,
+                        elevationOffsetMm: +e.target.value,
+                      })
+                    }
+                  />
+                  <span style={{ fontSize: 11 }}>mm offset</span>
+                  <button
+                    data-testid={`inspector-floor-slope-pt-remove-${idx}`}
+                    onClick={() =>
+                      onDispatchCommand?.({
+                        type: 'removeFloorSlopePoint',
+                        floorId: el.id,
+                        pointId: pt.id,
+                      })
+                    }
+                    style={{ color: '#f87171', fontSize: 11 }}
+                  >
+                    ✕
+                  </button>
+                </div>
+              ))}
+              <button
+                data-testid="inspector-floor-add-slope-point"
+                onClick={() =>
+                  onDispatchCommand?.({
+                    type: 'addFloorSlopePoint',
+                    floorId: el.id,
+                    point: {
+                      id: crypto.randomUUID(),
+                      xMm: 0,
+                      yMm: 0,
+                      elevationOffsetMm: -50,
+                    },
+                  })
+                }
+                style={{ fontSize: 12, marginTop: 4 }}
+              >
+                + Add Slope Point
+              </button>
+            </div>
+          </details>
         </div>
       );
     }

@@ -58,7 +58,7 @@ import { terrainControlPointsPlanThree } from './terrainPointSymbol';
 import { terrainPadPlanThree } from './terrainPadPlanThree';
 import { gradedRegionPlanThree } from './gradedRegionPlanThree';
 import { shaftPlanThree } from './shaftPlanThree';
-import { floorSlopeArrowPlanThree } from './floorSlopePlanThree';
+import { floorSlopeArrowPlanThree, floorSlopePointsPlanThree } from './floorSlopePlanThree';
 import { roofSlopeArrowPlanThree } from './roofSlopeArrowPlanThree';
 import { ceilingGridPlanThree } from './ceilingGridPlanThree';
 import { mergeOverrides } from './categoryOverrideMerge';
@@ -1961,6 +1961,8 @@ export function rebuildPlanMeshes(
         holder.add(obj);
         const slopeArrow = floorSlopeArrowPlanThree(f);
         if (slopeArrow) holder.add(slopeArrow);
+        const slopePts = floorSlopePointsPlanThree(f);
+        if (slopePts) holder.add(slopePts);
       }
       tintNewChildren(before, 'floor');
     }

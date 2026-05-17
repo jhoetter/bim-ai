@@ -1248,6 +1248,25 @@ export type MassFaceRef = {
   faceIndex: number;
 };
 
+/** §3.4.2 — Individual drainage slope control point on a floor slab. */
+export interface FloorSlopePoint {
+  id: string;
+  xMm: number;
+  yMm: number;
+  elevationOffsetMm: number; // offset from floor base elevation (positive = raised, negative = lower)
+}
+
+/** §15.1.3: links two reference planes with a named parameter so changing the parameter value drives geometry dimensions. */
+export interface FamilyConstraintElem {
+  id: string;
+  kind: 'family_constraint';
+  familyId: string; // the family element this constraint belongs to
+  paramName: string; // name of the family_parameter that drives this constraint
+  refPlaneId1: string; // first reference plane element id
+  refPlaneId2: string; // second reference plane element id (driven by distance)
+  axis: 'x' | 'y'; // which coordinate axis the constraint measures
+}
+
 export type Element =
   | {
       kind: 'project_settings';
@@ -1861,6 +1880,8 @@ export type Element =
       edgeProfileMm?: { xMm: number; yMm: number }[];
       /** §2.4.2: true when the boundary was auto-detected from surrounding walls. */
       autoDetectedBoundary?: boolean;
+      /** §3.4.2: drainage slope control points for sub-element slope editing. */
+      slopePoints?: FloorSlopePoint[];
     }
   | {
       kind: 'roof';
@@ -3746,6 +3767,7 @@ export type Element =
       /** Optional: which property of the geometry element is driven (e.g. 'widthMm', 'heightMm'). */
       linkedProperty?: string | null;
     }
+  | FamilyConstraintElem
   | {
       /** §8.6.2: individual stair run segment belonging to a parent stair. */
       kind: 'stair_run';
@@ -5336,6 +5358,18 @@ export type SetFamilyParameterValueCmd = {
   value: number | boolean | string;
 };
 
+/** §15.1.3: add a new family constraint (reference-plane-driven geometry). */
+export type AddFamilyConstraintCmd = {
+  type: 'addFamilyConstraint';
+  constraint: FamilyConstraintElem;
+};
+
+/** §15.1.3: remove a family constraint by id. */
+export type RemoveFamilyConstraintCmd = {
+  type: 'removeFamilyConstraint';
+  constraintId: string;
+};
+
 /** §5.4.2: set the angle from project north to true geographic north on project_settings. */
 export type SetAngleToTrueNorthCmd = {
   type: 'setAngleToTrueNorth';
@@ -5418,4 +5452,30 @@ export type UpdateStairRunCmd = {
   runIndex: number;
   riserCount?: number;
   runWidthMm?: number;
+};
+
+// ---------------------------------------------------------------------------
+// §3.4.2 — Floor drainage slope point commands
+// ---------------------------------------------------------------------------
+
+/** §3.4.2: add a drainage slope control point to a floor. */
+export type AddFloorSlopePointCmd = {
+  type: 'addFloorSlopePoint';
+  floorId: string;
+  point: FloorSlopePoint;
+};
+
+/** §3.4.2: remove a drainage slope control point from a floor by id. */
+export type RemoveFloorSlopePointCmd = {
+  type: 'removeFloorSlopePoint';
+  floorId: string;
+  pointId: string;
+};
+
+/** §3.4.2: update the elevation offset of a drainage slope control point. */
+export type UpdateFloorSlopePointCmd = {
+  type: 'updateFloorSlopePoint';
+  floorId: string;
+  pointId: string;
+  elevationOffsetMm: number;
 };

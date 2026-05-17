@@ -87,3 +87,24 @@ export function floorSlopeArrowPlanThree(floor: FloorElem): THREE.Group | null {
 
   return group;
 }
+
+/** §3.4.2 — Plan symbols for drainage slope control points on a floor. */
+export function floorSlopePointsPlanThree(floor: FloorElem): THREE.Group | null {
+  const pts = floor.slopePoints;
+  if (!pts || pts.length === 0) return null;
+
+  const grp = new THREE.Group();
+  grp.userData.floorSlopePoints = true;
+
+  for (const pt of pts) {
+    // Small orange circle at pt position
+    const geo = new THREE.CircleGeometry(100, 12);
+    const mat = new THREE.MeshBasicMaterial({ color: '#f97316' });
+    const mesh = new THREE.Mesh(geo, mat);
+    mesh.position.set(pt.xMm, pt.yMm, 1);
+    mesh.userData.slopePointId = pt.id;
+    grp.add(mesh);
+  }
+
+  return grp;
+}

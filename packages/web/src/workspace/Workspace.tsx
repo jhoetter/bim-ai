@@ -144,6 +144,8 @@ import { ViewRangeDialog } from './ViewRangeDialog';
 import { VisibilityGraphicsDialog } from './VisibilityGraphicsDialog';
 import { PerViewVGDialog } from './PerViewVGDialog';
 import { SetWorkPlaneDialog } from './SetWorkPlaneDialog';
+import { TerracePresetDialog } from './TerracePresetDialog';
+import { buildTerraceRailing } from '../plan/terraceFromFloor';
 import { DxfImportDialog } from './DxfImportDialog';
 import {
   coerceCheckpointRetentionLimit,
@@ -216,6 +218,7 @@ import {
 import type { WorkspaceId } from './chrome/workspaces';
 import type { SheetMarkupShape, SheetReviewMode } from './sheets/sheetReviewUi';
 import { PrintPlotDialog } from './sheets/PrintPlotDialog';
+import { ProjectTemplatesDialog } from './ProjectTemplatesDialog';
 import {
   generateWallsFromMass,
   generateFloorsFromMass,
@@ -1105,8 +1108,10 @@ export function Workspace(): JSX.Element {
   const [perViewVGOpen, setPerViewVGOpen] = useState(false);
   const [projectInfoOpen, setProjectInfoOpen] = useState(false);
   const [setWorkPlaneOpen, setSetWorkPlaneOpen] = useState(false);
+  const [terraceFloorId, setTerraceFloorId] = useState<string | null>(null);
   const [dxfImportOpen, setDxfImportOpen] = useState(false);
   const [printPlotOpen, setPrintPlotOpen] = useState(false);
+  const [templatesOpen, setTemplatesOpen] = useState(false);
   const [trueNorthActive, setTrueNorthActive] = useState(false);
   const [clearanceViolations, setClearanceViolations] = useState<ClearanceViolation[]>([]);
   const lensMode = useBimStore((s) => s.lensMode);
@@ -2635,6 +2640,56 @@ export function Workspace(): JSX.Element {
             elementsById: {
               ...current,
               [link.id]: { ...link, visible: !link.visible },
+            },
+          });
+        }
+        return;
+      }
+      // §3.4.2: addFloorSlopePoint — add a drainage slope point to a floor client-side
+      if (cmd.type === 'addFloorSlopePoint') {
+        const { elementsById: cur } = useBimStore.getState();
+        const floor = cur[cmd.floorId as string];
+        if (floor?.kind === 'floor') {
+          useBimStore.setState({
+            elementsById: {
+              ...cur,
+              [floor.id]: { ...floor, slopePoints: [...(floor.slopePoints ?? []), cmd.point] },
+            },
+          });
+        }
+        return;
+      }
+      if (cmd.type === 'removeFloorSlopePoint') {
+        const { elementsById: cur } = useBimStore.getState();
+        const floor = cur[cmd.floorId as string];
+        if (floor?.kind === 'floor') {
+          useBimStore.setState({
+            elementsById: {
+              ...cur,
+              [floor.id]: {
+                ...floor,
+                slopePoints: (floor.slopePoints ?? []).filter((p) => p.id !== cmd.pointId),
+              },
+            },
+          });
+        }
+        return;
+      }
+      if (cmd.type === 'updateFloorSlopePoint') {
+        const { elementsById: cur } = useBimStore.getState();
+        const floor = cur[cmd.floorId as string];
+        if (floor?.kind === 'floor') {
+          useBimStore.setState({
+            elementsById: {
+              ...cur,
+              [floor.id]: {
+                ...floor,
+                slopePoints: (floor.slopePoints ?? []).map((p) =>
+                  p.id === cmd.pointId
+                    ? { ...p, elevationOffsetMm: cmd.elevationOffsetMm as number }
+                    : p,
+                ),
+              },
             },
           });
         }
@@ -5082,6 +5137,10 @@ export function Workspace(): JSX.Element {
           openVisibilityGraphics: () => setVgOpen(true),
           openProjectInfo: () => setProjectInfoOpen(true),
           setWorkPlaneOpen: (open: boolean) => setSetWorkPlaneOpen(open),
+          openTerracePreset: () => {
+            const sel = useBimStore.getState().elementsById[selectedId ?? ''];
+            if (sel?.kind === 'floor') setTerraceFloorId(sel.id);
+          },
           sectionBoxFromPlan,
           openPrintDialog: () => setPrintPlotOpen(true),
           autoDimWalls: () => {
@@ -5791,6 +5850,24 @@ export function Workspace(): JSX.Element {
         violations={clearanceViolations}
         onClose={() => setClearanceViolations([])}
       />
+      {terraceFloorId && (
+        <TerracePresetDialog
+          floorId={terraceFloorId}
+          onApply={(railingHeightMm) => {
+            const floor = elementsById[terraceFloorId];
+            if (floor?.kind === 'floor') {
+              const railing = buildTerraceRailing(floor, railingHeightMm);
+              if (railing) {
+                useBimStore.setState({
+                  elementsById: { ...elementsById, [railing.id]: railing },
+                });
+              }
+            }
+            setTerraceFloorId(null);
+          }}
+          onClose={() => setTerraceFloorId(null)}
+        />
+      )}
     </>
   );
 }
