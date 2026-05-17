@@ -2591,6 +2591,24 @@ export function Workspace(): JSX.Element {
         useBimStore.setState({ elementsById: remaining });
         return;
       }
+      // §3.5.5: commitWallProfile — store custom profile points on a wall element
+      if (cmd.type === 'commitWallProfile') {
+        const { elementsById: cur } = useBimStore.getState();
+        const wall = cur[cmd.wallId as string];
+        if (wall?.kind === 'wall') {
+          useBimStore.setState({
+            elementsById: {
+              ...cur,
+              [wall.id]: {
+                ...wall,
+                profilePoints: cmd.points,
+                editProfileActive: false,
+              } as typeof wall,
+            },
+          });
+        }
+        return;
+      }
 
       // §12.1.1: addIfcLink — store link_ifc element client-side (no server round-trip)
       if (cmd.type === 'addIfcLink') {

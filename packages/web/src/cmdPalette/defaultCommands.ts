@@ -2257,6 +2257,43 @@ registerCommand({
   },
 });
 
+// §3.5.5 — Edit Wall Profile
+registerCommand({
+  id: 'modify.edit-wall-profile',
+  label: 'Edit Wall Profile',
+  keywords: ['wall', 'profile', 'edit', 'shape', 'non-rectangular', 'custom'],
+  category: 'command',
+  isAvailable: (ctx) => ctx.selectedElements?.some((e) => e.kind === 'wall') ?? false,
+  invoke: (ctx) => {
+    const wall = ctx.selectedElements?.find((e) => e.kind === 'wall');
+    if (wall)
+      ctx.dispatchCommand?.({
+        type: 'updateElementProperty',
+        elementId: wall.id,
+        key: 'editProfileActive',
+        value: true,
+      });
+  },
+});
+
+// §1.6.10 — Toggle Crop Region
+registerCommand({
+  id: 'view.toggle-crop-region',
+  label: 'Toggle Crop Region',
+  keywords: ['crop', 'region', 'boundary', 'clip', 'view', 'frame'],
+  category: 'command',
+  invoke: (ctx) => {
+    const pvId = ctx.activePlanView?.id;
+    if (pvId)
+      ctx.dispatchCommand?.({
+        type: 'updateElementProperty',
+        elementId: pvId,
+        key: 'cropRegionEnabled',
+        value: !(ctx.activePlanView as any)?.cropRegionEnabled,
+      });
+  },
+});
+
 // B6 — Selection Filter dialog
 registerCommand({
   id: 'selection.filter',
