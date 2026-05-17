@@ -64,7 +64,8 @@ bim-ai has:
 - Save / auto-save (Done)
 - Export (Partial — see Ch. 12)
 - Print / PDF export (Partial — see Ch. 12)
-Missing: Save As template, Save to library as Family, cloud model sync from file menu, Revit Options dialog.
+- Save As Template / New From Template: Done — `ProjectTemplate` type, localStorage persistence, `ProjectTemplatesDialog.tsx` with save/load/delete UI, `file.project-templates` palette command. 6 tests. (WP-A wave 21)
+Missing: Save to library as Family, cloud model sync from file menu, Revit Options dialog.
 
 #### 1.6.3 Schnellzugriff-Werkzeugkasten (quick access toolbar)
 **Status: Partial — P2**
@@ -316,8 +317,8 @@ F2 (Phase Graphic Overrides): `phaseFilterMode` added to plan_view element type 
 ### 2.9 Weitere Grundrisse und Ansichten (additional floor plans and views)
 
 #### 2.9.1 Terrasse (terrace: modeling balcony/terrace with floor + railing)
-**Status: Partial — P1**
-Floors, railings exist. Modeling a terrace with cantilevered floor, stepped edges, and railing is possible but lacks "terrace-specific" templates or workflow shortcuts.
+**Status: Done — P1**
+Floors, railings exist. Modeling a terrace with cantilevered floor, stepped edges, and railing is possible. Terrace preset workflow: Done — `buildTerraceRailing()` closes the floor boundary as a railing path + `TerracePresetDialog.tsx` (railing height input 800–2000mm) + `modify.create-terrace-from-floor` palette command (available when floor selected) + Workspace handler + 8 tests. (WP-D wave 21)
 
 #### 2.9.2 Eingangstreppe (entrance stair: straight stair with landing)
 **Status: Done — P0**
@@ -353,8 +354,8 @@ ViewCube exists and provides 26 standard orientations. Wave 14 WP-H: right-click
 ### 3.3 Das Register »Ändern« (Modify ribbon and tools)
 
 #### 3.3.1 Gruppe »Auswählen« (selection filter, link selection toggle)
-**Status: Partial — P1**
-Select tool exists. Selection filter by category (Auswahlfilter dialog) implemented — SelectionFilterDialog.tsx groups selected elements by kind with checkboxes, dispatches deselectByCategory on apply; wired in Workspace.tsx + Cmd+K palette (selection.filter). "Select All Instances in Project" palette command also added (selection.select-all-instances). Link selection toggle is Not Started (no linked model workflow yet). (WP-B6)
+**Status: Done — P1**
+Select tool exists. Selection filter by category (Auswahlfilter dialog) implemented — SelectionFilterDialog.tsx groups selected elements by kind with checkboxes, dispatches deselectByCategory on apply; wired in Workspace.tsx + Cmd+K palette (selection.filter). "Select All Instances in Project" palette command also added (selection.select-all-instances). Link selection toggle: Done — `selectLinkedEnabled` store field (default false) + LK toggle button in PlanViewHeader + PlanCanvas click/box-select filter skipping `link_model` when disabled + `selection.toggle-select-linked` palette command + 4 tests. (WP-C wave 21)
 
 #### 3.3.2 Gruppe »Eigenschaften« (Properties panel access from Modify)
 **Status: Done — P1**
@@ -411,7 +412,7 @@ Floor boundary editing works. Slope arrow for sloped floors partially implemente
 
 #### 3.4.2 Bodenplatte im Keller bearbeiten (basement slab editing)
 **Status: Partial — P1**
-Same as floor editing above. Sub-floor thickening, drainage slope via sub-element editing (split surface) are Not Started.
+Same as floor editing above. Sub-floor thickening is Not Started. Drainage slope via sub-element editing: Done — `FloorSlopePoint` type in core (`id`, `xMm`, `yMm`, `elevationOffsetMm`) + `slopePoints?` on `FloorElem` + `addFloorSlopePoint`/`removeFloorSlopePoint`/`updateFloorSlopePoint` commands + Workspace handlers + inspector "Drainage Slope Points" collapsible section + `floorSlopePointsPlanThree()` orange circle plan symbols + 5 tests. (WP-B wave 21)
 
 ### 3.5 Wände bearbeiten (wall editing)
 
@@ -1089,7 +1090,7 @@ The family editor has a create workflow. Wave 5 WP-G added void form support: `F
 
 #### 15.1.3 Fensterbearbeitung (window family geometry authoring)
 **Status: Partial — P1**
-Custom window families can be created (familySketchGeometry.ts). Parametric opening cut, frame profile, nested components are Partial. Wave 17 WP-J: `family_parameter` element kind (name, paramType, defaultValue, isInstance, linkedDimensionId, linkedProperty); `FamilyParameterPanel.tsx` with add/delete/value-change UI; `familyParameterEval.ts` with `applyFamilyParameters()` + `validateFamilyParameters()`; FamilyEditorWorkbench integrated; inspector `case 'family_parameter':`. Tests: `familyParameterEval.test.ts` (6) + `FamilyParameterPanel.test.tsx` (5). Full parametric constraint propagation (reference-plane-driven geometry) remains Partial.
+Custom window families can be created (familySketchGeometry.ts). Parametric opening cut, frame profile, nested components are Partial. Wave 17 WP-J: `family_parameter` element kind (name, paramType, defaultValue, isInstance, linkedDimensionId, linkedProperty); `FamilyParameterPanel.tsx` with add/delete/value-change UI; `familyParameterEval.ts` with `applyFamilyParameters()` + `validateFamilyParameters()`; FamilyEditorWorkbench integrated; inspector `case 'family_parameter':`. Tests: `familyParameterEval.test.ts` (6) + `FamilyParameterPanel.test.tsx` (5). Parametric constraint propagation: Done — `FamilyConstraintElem` (id, familyId, paramName, refPlaneId1, refPlaneId2, axis) in core + `applyFamilyConstraints()` moves refPlane2 position to match param value + Workspace add/remove handlers + inspector `case 'family_constraint':` + FamilyEditorWorkbench local-state constraint panel with "Add Constraint" button + 5 tests. (WP-E wave 21)
 
 #### 15.1.4 Fensterrahmen (window frame geometry in family)
 **Status: Done — P1**
@@ -1117,7 +1118,9 @@ Wave 14 WP-I: `cheatsheetData.ts` expanded with a comprehensive shortcut set mat
 
 ## Summary Dashboard
 
-Last verified: 2026-05-17. Waves 1–20 complete. **602 test files, 5116 tests pass.**
+Last verified: 2026-05-18. Waves 1–21 complete. **609 test files, 5144 tests pass.**
+
+Wave 21 completions: §1.6.2 project templates — `ProjectTemplate` type + localStorage save/load/delete + `ProjectTemplatesDialog.tsx` + `file.project-templates` palette command + 6 tests (WP-A), §3.4.2 floor sub-element slope points — `FloorSlopePoint` type in core + `slopePoints[]` on floor + Workspace add/remove/update handlers + inspector collapsible "Drainage Slope Points" section + `floorSlopePointsPlanThree()` orange circle symbols + 5 tests (WP-B), §3.3.1 select linked elements toggle — `selectLinkedEnabled` store field + LK button in PlanViewHeader + PlanCanvas link_model filter + `selection.toggle-select-linked` palette command + 4 tests (WP-C), §2.9.1 terrace preset workflow — `buildTerraceRailing()` perimeter railing builder + `TerracePresetDialog.tsx` + `modify.create-terrace-from-floor` palette command with `isAvailable` floor check + 8 tests (WP-D), §15.1.3 family parametric constraints — `FamilyConstraintElem` in core + `applyFamilyConstraints()` + Workspace add/remove handlers + inspector `family_constraint` case + FamilyEditorWorkbench constraint panel with local state + 5 tests (WP-E).
 
 Wave 20 completions: §12.4.3 DXF export additions — column (S-COLS rectangle), beam (S-BEAM line), floor (A-FLOR polyline), stair footprint (A-FLOR-STRS rectangle) in `buildPlanView()` + 4 tests (WP-A), §12.4.5 PDF export — PaperSize extended to A0/A1/A2/A3/A4/Letter/Tabloid + PAPER_CSS mapping + `marginMm` option threaded through pdfExporter + PrintPlotDialog margin input + 12 new tests (WP-B), §1.6.6 options bar — roof base-offset/slope + ramp width/slope + railing height/follow-slope module-level vars + OptionsBar.tsx sections + 8 tests (WP-C), §1.11 family library panel — search input + category count badges + recently used section (5-item cap) + 8 tests (WP-D), §14.3 render quality panel — `RenderQualitySettings` Zustand slice + `RenderQualityPanel.tsx` (shadows/exposure/pixel-ratio) + Viewport.tsx useEffect wiring THREE.js renderer + ⚙ toggle button + 6 tests (WP-E).
 
