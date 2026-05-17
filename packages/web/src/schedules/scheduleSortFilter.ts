@@ -19,3 +19,14 @@ export function filterRows<T extends object>(rows: T[], filter: string): T[] {
     Object.values(row).some((v) => typeof v === 'string' && v.toLowerCase().includes(lc)),
   );
 }
+
+export function groupByKey<T>(rows: T[], key: keyof T): Record<string, T[]> {
+  const result: Record<string, T[]> = {};
+  for (const row of rows) {
+    const raw = row[key];
+    const k = raw == null ? '' : String(raw);
+    if (!result[k]) result[k] = [];
+    result[k]!.push(row);
+  }
+  return result;
+}

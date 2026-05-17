@@ -25,7 +25,7 @@ import type { WindowScheduleRow } from './windowSchedule';
 import { buildColumnSchedule } from './columnSchedule';
 import type { ColumnScheduleRow } from './columnSchedule';
 import { ScheduleTable } from './ScheduleTable';
-import { sortRows, filterRows } from './scheduleSortFilter';
+import { sortRows, filterRows, groupByKey } from './scheduleSortFilter';
 import { rowsToCsv } from './scheduleCsvExport';
 import { compactScheduleOpeningAdvisoryLines } from './scheduleOpeningAdvisoriesReadout';
 import { compactScheduleSheetExportParityAdvisoryLines } from './scheduleSheetExportParityReadout';
@@ -215,6 +215,7 @@ export function SchedulePanel(props: {
 
   const [doorSort, setDoorSort] = useState<{ key: string; dir: 'asc' | 'desc' } | null>(null);
   const [doorFilter, setDoorFilter] = useState('');
+  const [doorGroupBy, setDoorGroupBy] = useState<string>('none');
   const [winSort, setWinSort] = useState<{ key: string; dir: 'asc' | 'desc' } | null>(null);
   const [winFilter, setWinFilter] = useState('');
   const [colSort, setColSort] = useState<{ key: string; dir: 'asc' | 'desc' } | null>(null);
@@ -412,6 +413,11 @@ export function SchedulePanel(props: {
     if (doorSort) rows = sortRows(rows, doorSort.key as keyof DoorScheduleRow, doorSort.dir);
     return rows;
   }, [doorScheduleRows, doorFilter, doorSort]);
+
+  const doorGroupedRows = useMemo(() => {
+    if (doorGroupBy === 'none') return null;
+    return groupByKey(doorDisplayRows, doorGroupBy as keyof DoorScheduleRow);
+  }, [doorDisplayRows, doorGroupBy]);
 
   const winDisplayRows = useMemo(() => {
     let rows: WindowScheduleRow[] = windowScheduleRows;
@@ -1156,13 +1162,37 @@ export function SchedulePanel(props: {
           <div className="mt-2 flex flex-col gap-2">
             <div className="flex items-center gap-2">
               <input
-                data-testid="schedule-filter-doors"
+                data-testid="schedule-filter-input"
                 type="text"
                 value={doorFilter}
                 onChange={(e) => setDoorFilter(e.target.value)}
-                placeholder="Filter..."
+                placeholder="Filter…"
                 className="flex-1 rounded border border-border bg-surface px-2 py-1 text-xs"
               />
+              {doorSort ? (
+                <button
+                  type="button"
+                  data-testid="schedule-clear-sort"
+                  className="rounded border border-border bg-surface px-2 py-1 text-xs text-foreground hover:bg-surface-strong"
+                  onClick={() => setDoorSort(null)}
+                >
+                  Clear Sort
+                </button>
+              ) : null}
+              <select
+                data-testid="schedule-group-by-select"
+                value={doorGroupBy}
+                onChange={(e) => setDoorGroupBy(e.target.value)}
+                className="rounded border border-border bg-surface px-2 py-1 text-xs"
+              >
+                <option value="none">None</option>
+                <option value="mark">mark</option>
+                <option value="typeId">typeId</option>
+                <option value="widthMm">widthMm</option>
+                <option value="heightMm">heightMm</option>
+                <option value="levelName">levelName</option>
+                <option value="count">count</option>
+              </select>
               <button
                 type="button"
                 data-testid="schedule-export-csv-doors"
@@ -1191,27 +1221,65 @@ export function SchedulePanel(props: {
             <div data-testid="schedule-row-count-doors" className="text-[10px] text-muted">
               {`Showing ${doorDisplayRows.length} of ${doorScheduleRows.length} rows`}
             </div>
-            <ScheduleTable
-              rows={doorDisplayRows}
-              columns={[
-                { key: 'mark', label: 'Mark' },
-                { key: 'typeId', label: 'Type' },
-                { key: 'widthMm', label: 'Width (mm)' },
-                { key: 'heightMm', label: 'Height (mm)' },
-                { key: 'levelName', label: 'Level' },
-                { key: 'count', label: 'Count' },
-              ]}
-              sortKey={doorSort?.key}
-              sortDir={doorSort?.dir}
-              onSort={(key) =>
-                setDoorSort((prev) =>
-                  prev?.key === key
-                    ? { key, dir: prev.dir === 'asc' ? 'desc' : 'asc' }
-                    : { key, dir: 'asc' },
-                )
-              }
-              emptyMessage="No doors in this projection."
-            />
+            {doorGroupedRows ? (
+              <div className="space-y-2">
+                {Object.entries(doorGroupedRows)
+                  .sort(([a], [b]) => a.localeCompare(b))
+                  .map(([groupVal, groupRows]) => (
+                    <div key={groupVal}>
+                      <div
+                        data-testid={`schedule-group-header-${groupVal}`}
+                        className="rounded bg-accent/15 px-2 py-0.5 text-[10px] font-semibold text-muted"
+                      >
+                        {groupVal || '—'}
+                      </div>
+                      <ScheduleTable
+                        rows={groupRows}
+                        columns={[
+                          { key: 'mark', label: 'Mark' },
+                          { key: 'typeId', label: 'Type' },
+                          { key: 'widthMm', label: 'Width (mm)' },
+                          { key: 'heightMm', label: 'Height (mm)' },
+                          { key: 'levelName', label: 'Level' },
+                          { key: 'count', label: 'Count' },
+                        ]}
+                        sortKey={doorSort?.key}
+                        sortDir={doorSort?.dir}
+                        onSort={(key) =>
+                          setDoorSort((prev) =>
+                            prev?.key === key
+                              ? { key, dir: prev.dir === 'asc' ? 'desc' : 'asc' }
+                              : { key, dir: 'asc' },
+                          )
+                        }
+                        emptyMessage="No doors in this projection."
+                      />
+                    </div>
+                  ))}
+              </div>
+            ) : (
+              <ScheduleTable
+                rows={doorDisplayRows}
+                columns={[
+                  { key: 'mark', label: 'Mark' },
+                  { key: 'typeId', label: 'Type' },
+                  { key: 'widthMm', label: 'Width (mm)' },
+                  { key: 'heightMm', label: 'Height (mm)' },
+                  { key: 'levelName', label: 'Level' },
+                  { key: 'count', label: 'Count' },
+                ]}
+                sortKey={doorSort?.key}
+                sortDir={doorSort?.dir}
+                onSort={(key) =>
+                  setDoorSort((prev) =>
+                    prev?.key === key
+                      ? { key, dir: prev.dir === 'asc' ? 'desc' : 'asc' }
+                      : { key, dir: 'asc' },
+                  )
+                }
+                emptyMessage="No doors in this projection."
+              />
+            )}
             {srvActive ? renderTotals() : null}
           </div>
         )
