@@ -215,6 +215,7 @@ import {
   generateWallsFromMass,
   generateFloorsFromMass,
   generateRoofFromMass,
+  generateCurtainWallsFromMass,
 } from '../tools/massGenerateBim';
 import type { MassNewElem } from '../tools/massToFloors';
 
@@ -2305,6 +2306,31 @@ export function Workspace(): JSX.Element {
         void onSemanticCommand(roofCmd as unknown as Record<string, unknown>);
         return;
       }
+
+      // §11.5 (WP-E): generate curtain walls from a selected mass element
+      if (cmd.type === 'mass_generate_curtain_walls') {
+        const massId = cmd.massId as string;
+        if (!massId) return;
+        const { elementsById: cur } = useBimStore.getState();
+        const el = cur[massId];
+        if (
+          !el ||
+          (el.kind !== 'mass_box' && el.kind !== 'mass_extrusion' && el.kind !== 'mass_revolution')
+        )
+          return;
+        const mass = el as MassNewElem;
+        const levels = (Object.values(cur) as Element[])
+          .filter((e): e is Extract<Element, { kind: 'level' }> => e?.kind === 'level')
+          .sort((a, b) => a.elevationMm - b.elevationMm);
+        const lowestLevelId = levels[0]?.id ?? '';
+        if (!lowestLevelId) return;
+        const curtainCmds = generateCurtainWallsFromMass(mass, lowestLevelId);
+        for (const curtainCmd of curtainCmds) {
+          void onSemanticCommand(curtainCmd as unknown as Record<string, unknown>);
+        }
+        return;
+      }
+
       // §3.3.6: scaleElements — uniform scale of selected elements about a base point
       if (cmd.type === 'scaleElements') {
         const { elementIds, basePtMm, scaleFactor } = cmd as {

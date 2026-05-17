@@ -858,6 +858,24 @@ export const AUTHORING_COMMAND_CONTRACTS = {
     [],
     [],
   ),
+  'family-blend': contract(
+    'family-blend',
+    'sketch',
+    ['plan'],
+    'Sketch bottom profile (≥3 pts + Enter), then top profile (≥3 pts + Enter). §15.1.2',
+    'select-after-commit',
+    [],
+    [],
+  ),
+  'family-sweep': contract(
+    'family-sweep',
+    'sketch',
+    ['plan'],
+    'Sketch cross-section profile (≥3 pts + Enter), then sweep path (≥2 pts + Enter). §15.1.2',
+    'select-after-commit',
+    [],
+    [],
+  ),
 } satisfies Record<ToolId, AuthoringCommandContract>;
 
 export function getAuthoringCommandContract(toolId: ToolId): AuthoringCommandContract {

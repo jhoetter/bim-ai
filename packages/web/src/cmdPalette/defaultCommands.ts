@@ -1625,6 +1625,14 @@ registerCommand({
 });
 
 registerCommand({
+  id: 'file.import-dxf-terrain',
+  label: 'Import Terrain from DXF…',
+  keywords: ['import', 'dxf', 'terrain', 'topo', 'contour'],
+  category: 'command',
+  invoke: (ctx) => ctx.openDxfImport?.(),
+});
+
+registerCommand({
   id: 'project.share-presentation',
   label: 'Share Project',
   keywords: ['share', 'presentation', 'project', 'pages', 'live'],

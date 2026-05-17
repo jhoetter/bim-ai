@@ -38,6 +38,27 @@ export interface CreateRoofCmd {
 }
 
 // ---------------------------------------------------------------------------
+// §11.5 (WP-E) curtain wall command shape
+// ---------------------------------------------------------------------------
+
+export interface CreateCurtainWallCmd {
+  type: 'createWall';
+  id: string;
+  levelId: string;
+  start: { xMm: number; yMm: number };
+  end: { xMm: number; yMm: number };
+  heightMm: number;
+  widthMm: number;
+  isCurtainWall: true;
+  curtainWallData: {
+    gridH: { count: number };
+    gridV: { count: number };
+    panelType: 'glass';
+    mullionType: 'rectangular';
+  };
+}
+
+// ---------------------------------------------------------------------------
 // Internal geometry helpers (shared with massToFloors / massToCurtainWall)
 // ---------------------------------------------------------------------------
 
@@ -156,4 +177,44 @@ export function generateRoofFromMass(mass: MassNewElem, referenceLevelId: string
     referenceLevelId,
     footprintMm: footprint,
   };
+}
+
+// ---------------------------------------------------------------------------
+// §11.5 (WP-E): Generate curtain walls from mass — one per vertical face
+// ---------------------------------------------------------------------------
+
+/**
+ * For each edge of the mass footprint, produce a CreateCurtainWallCmd with
+ * curtainWallData set (gridH: 2 rows, gridV: 3 columns, glass panels,
+ * rectangular mullions). The wall spans the full mass height.
+ */
+export function generateCurtainWallsFromMass(
+  mass: MassNewElem,
+  lowestLevelId: string,
+): CreateCurtainWallCmd[] {
+  const footprint = massFootprint(mass);
+  const n = footprint.length;
+  if (n < 2) return [];
+
+  const heightMm = massEffectiveHeight(mass);
+
+  return footprint.map((pt, i) => {
+    const next = footprint[(i + 1) % n]!;
+    return {
+      type: 'createWall',
+      id: crypto.randomUUID(),
+      levelId: lowestLevelId,
+      start: { xMm: pt.xMm, yMm: pt.yMm },
+      end: { xMm: next.xMm, yMm: next.yMm },
+      heightMm,
+      widthMm: 50,
+      isCurtainWall: true,
+      curtainWallData: {
+        gridH: { count: 2 },
+        gridV: { count: 3 },
+        panelType: 'glass',
+        mullionType: 'rectangular',
+      },
+    };
+  });
 }
