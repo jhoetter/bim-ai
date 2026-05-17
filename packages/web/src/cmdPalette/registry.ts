@@ -133,6 +133,8 @@ export type PaletteContext = {
   openVisibilityGraphics?: () => void;
   /** Open the Project Information dialog (§2.1.1). */
   openProjectInfo?: () => void;
+  /** §1.6.2: open the Project Templates dialog. */
+  openProjectTemplates?: () => void;
   /** §6.1.3: derive a 3D section box from the active plan view crop region. */
   sectionBoxFromPlan?: () => void;
   /** §7.3.1: open the Set Work Plane dialog. */
@@ -165,6 +167,8 @@ export type PaletteContext = {
   openEgressAnalysis?: () => void;
   /** Activate a tool by its tool ID (used by the tool palette). */
   activateTool?: (toolId: string) => void;
+  /** §2.9.1: open the Terrace Preset dialog to create a perimeter railing from the selected floor. */
+  openTerracePreset?: () => void;
 };
 
 const _registry: PaletteEntry[] = [];

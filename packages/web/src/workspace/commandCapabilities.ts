@@ -50,7 +50,8 @@ export type CommandGroup =
   | 'create'
   | 'edit'
   | 'selection'
-  | 'model';
+  | 'model'
+  | 'file';
 
 export type ExecutionSurface =
   | 'header'
@@ -61,7 +62,9 @@ export type ExecutionSurface =
   | 'canvas'
   | 'footer'
   | 'modal'
-  | 'global';
+  | 'global'
+  | 'dialog'
+  | 'store';
 
 export type CapabilityStatus = 'implemented' | 'partial' | 'planned';
 
@@ -70,7 +73,7 @@ export interface CommandCapability {
   label: string;
   owner: string;
   group: CommandGroup;
-  scope: 'universal' | 'view' | 'selection' | 'model' | 'element';
+  scope: 'universal' | 'view' | 'selection' | 'model' | 'element' | 'global';
   intendedModes: CapabilityViewMode[];
   surfaces: CommandSurface[];
   executionSurface: ExecutionSurface;
@@ -2327,5 +2330,33 @@ const MASS_CAPABILITIES: CommandCapability[] = [
     status: 'implemented',
     usabilityScore: 8,
     notes: '§3.3.1: toggles whether link_model elements are selectable in plan view.',
+  },
+  {
+    id: 'modify.create-terrace-from-floor',
+    label: 'Create Terrace from Floor',
+    owner: 'cmdPalette/defaultCommands',
+    group: 'modify',
+    scope: 'selection',
+    intendedModes: ['plan'],
+    surfaces: ['cmd-k'],
+    executionSurface: 'dialog',
+    preconditions: ['selected-floor'],
+    status: 'implemented',
+    usabilityScore: 8,
+    notes: '§2.9.1: auto-creates a perimeter railing along the selected floor boundary.',
+  },
+  {
+    id: 'file.project-templates',
+    label: 'Project Templates',
+    owner: 'cmdPalette/defaultCommands',
+    group: 'file',
+    scope: 'global',
+    intendedModes: ['plan', '3d', 'sheet'],
+    surfaces: ['cmd-k'],
+    executionSurface: 'dialog',
+    preconditions: [],
+    status: 'implemented',
+    usabilityScore: 8,
+    notes: '§1.6.2: project template save/load via localStorage.',
   },
 ];
