@@ -2026,6 +2026,51 @@ export function rebuildPlanMeshes(
     tintNewChildren(before, 'steel_connection');
   }
 
+  // §10.3.1-3: conical / dome / spire roof plan symbols — circle outline + crosshair.
+  {
+    const before = holder.children.length;
+    for (const el of Object.values(elementsById)) {
+      if (el.kind !== 'conical_roof' && el.kind !== 'dome_roof' && el.kind !== 'spire_roof')
+        continue;
+      const coneEl = el as Extract<Element, { kind: 'conical_roof' | 'dome_roof' | 'spire_roof' }>;
+      const grp = new THREE.Group();
+      grp.userData.bimPickId = coneEl.id;
+      const cx = coneEl.centerMm.xMm / 1000;
+      const cz = -coneEl.centerMm.yMm / 1000;
+      const rM = coneEl.baseRadiusMm / 1000;
+      const Y = 0;
+      const color =
+        el.kind === 'spire_roof' ? '#555555' : el.kind === 'dome_roof' ? '#7a8ea0' : '#8b6363';
+      const mat = new THREE.LineBasicMaterial({ color });
+      // Circle outline
+      const circlePts: THREE.Vector3[] = [];
+      const SEG = 32;
+      for (let i = 0; i <= SEG; i++) {
+        const a = (i / SEG) * Math.PI * 2;
+        circlePts.push(new THREE.Vector3(cx + Math.cos(a) * rM, Y, cz + Math.sin(a) * rM));
+      }
+      const circleGeo = new THREE.BufferGeometry().setFromPoints(circlePts);
+      const circleLine = new THREE.Line(circleGeo, mat);
+      circleLine.renderOrder = 990;
+      grp.add(circleLine);
+      // Crosshair (+)
+      const CH = rM * 0.25;
+      const chGeoH = new THREE.BufferGeometry().setFromPoints([
+        new THREE.Vector3(cx - CH, Y, cz),
+        new THREE.Vector3(cx + CH, Y, cz),
+      ]);
+      const chGeoV = new THREE.BufferGeometry().setFromPoints([
+        new THREE.Vector3(cx, Y, cz - CH),
+        new THREE.Vector3(cx, Y, cz + CH),
+      ]);
+      const chMat = new THREE.LineBasicMaterial({ color });
+      grp.add(new THREE.Line(chGeoH, chMat));
+      grp.add(new THREE.Line(chGeoV, chMat));
+      holder.add(grp);
+    }
+    tintNewChildren(before, 'conical_roof');
+  }
+
   if (!kindHidden('mass_box')) {
     const before = holder.children.length;
     for (const el of Object.values(elementsById)) {
@@ -2315,6 +2360,41 @@ export function rebuildPlanMeshes(
       );
       const headGeo = new THREE.BufferGeometry().setFromPoints([leftHead, tip, rightHead]);
       grp.add(new THREE.Line(headGeo, new THREE.LineBasicMaterial({ color: '#000000' })));
+      holder.add(grp);
+    }
+  }
+
+  // §8.1.5: decal plan symbols — rectangle + X diagonals (picture-frame placeholder)
+  if (!kindHidden('decal')) {
+    for (const el of Object.values(elementsById)) {
+      if (el.kind !== 'decal') continue;
+      const decal = el as Extract<Element, { kind: 'decal' }>;
+      const grp = new THREE.Group();
+      grp.userData.bimPickId = decal.id;
+      const wM = ((decal as { widthMm?: number }).widthMm ?? 500) / 1000;
+      const hM = ((decal as { heightMm?: number }).heightMm ?? 500) / 1000;
+      const pos = (decal as { positionMm?: { xMm: number; yMm: number } }).positionMm;
+      const cx = (pos?.xMm ?? 0) / 1000;
+      const cz = (pos?.yMm ?? 0) / 1000;
+      const Y = PLAN_Y + 0.003;
+      const mat = new THREE.LineBasicMaterial({ color: '#888888' });
+      // Rectangle outline
+      const corners: THREE.Vector3[] = [
+        new THREE.Vector3(cx - wM / 2, Y, -cz - hM / 2),
+        new THREE.Vector3(cx + wM / 2, Y, -cz - hM / 2),
+        new THREE.Vector3(cx + wM / 2, Y, -cz + hM / 2),
+        new THREE.Vector3(cx - wM / 2, Y, -cz + hM / 2),
+        new THREE.Vector3(cx - wM / 2, Y, -cz - hM / 2),
+      ];
+      grp.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(corners), mat));
+      // Diagonal 1: top-left to bottom-right
+      grp.add(
+        new THREE.Line(new THREE.BufferGeometry().setFromPoints([corners[0]!, corners[2]!]), mat),
+      );
+      // Diagonal 2: top-right to bottom-left
+      grp.add(
+        new THREE.Line(new THREE.BufferGeometry().setFromPoints([corners[1]!, corners[3]!]), mat),
+      );
       holder.add(grp);
     }
   }

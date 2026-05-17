@@ -3759,9 +3759,8 @@ export function buildDecalMesh(
   decal: DecalElem,
   parentMesh: THREE.Mesh,
   imageAssetsById: Record<string, string>,
-): THREE.Mesh | null {
-  const url = imageAssetsById[decal.imageAssetId];
-  if (!url) return null;
+): THREE.Mesh {
+  const url = decal.imageSrc ?? imageAssetsById[decal.imageAssetId];
 
   const { u0, v0, u1, v1 } = decal.uvRect as {
     u0: number;
@@ -3780,15 +3779,27 @@ export function buildDecalMesh(
 
   const geo = new THREE.PlaneGeometry(uSize * sizeX, vSize * sizeY);
 
-  const tex = new THREE.TextureLoader().load(url);
-  const mat = new THREE.MeshBasicMaterial({
-    map: tex,
-    transparent: true,
-    opacity: decal.opacity ?? 1,
-    depthWrite: false,
-  });
+  let mat: THREE.MeshBasicMaterial;
+  if (url) {
+    const tex = new THREE.TextureLoader().load(url);
+    mat = new THREE.MeshBasicMaterial({
+      map: tex,
+      transparent: true,
+      opacity: decal.opacity ?? 1,
+      depthWrite: false,
+    });
+  } else {
+    // §8.1.5: magenta placeholder when no image URL is available
+    mat = new THREE.MeshBasicMaterial({
+      color: '#ff00ff',
+      transparent: true,
+      opacity: decal.opacity ?? 1,
+      depthWrite: false,
+    });
+  }
 
   const mesh = new THREE.Mesh(geo, mat);
+  mesh.userData.bimPickId = decal.id;
 
   const cx = bb.min.x + (u0 + uSize / 2) * sizeX;
   const cy = bb.min.y + (v0 + vSize / 2) * sizeY;

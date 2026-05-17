@@ -437,7 +437,10 @@ export type ElemKind =
   | 'toposolid_pad'
   | 'shaft'
   | 'saved_3d_view'
-  | 'model_line';
+  | 'model_line'
+  | 'conical_roof'
+  | 'dome_roof'
+  | 'spire_roof';
 
 export type PhaseFilter = 'all' | 'existing' | 'demolition' | 'new';
 
@@ -3277,7 +3280,34 @@ export type Element =
     }
   | CameraPathElem
   | ShaftElement
-  | ModelLineElement;
+  | ModelLineElement
+  | {
+      kind: 'conical_roof';
+      id: string;
+      centerMm: { xMm: number; yMm: number };
+      baseRadiusMm: number;
+      heightMm: number;
+      baseElevationMm: number;
+      materialId?: string | null;
+    }
+  | {
+      kind: 'dome_roof';
+      id: string;
+      centerMm: { xMm: number; yMm: number };
+      baseRadiusMm: number;
+      riseRatio: number;
+      baseElevationMm: number;
+      materialId?: string | null;
+    }
+  | {
+      kind: 'spire_roof';
+      id: string;
+      centerMm: { xMm: number; yMm: number };
+      baseRadiusMm: number;
+      heightMm: number;
+      baseElevationMm: number;
+      materialId?: string | null;
+    };
 
 export type Violation = {
   ruleId: string;
@@ -4062,7 +4092,7 @@ export type DecalElem = {
   /** F2 (WP-F): placement-based decal fields (alternative to UV-based placement). */
   positionMm?: { xMm: number; yMm: number; zMm: number };
   normalVec?: { x: number; y: number; z: number };
-  imageSrc?: string;
+  imageSrc?: string | null;
   widthMm?: number;
   heightMm?: number;
 };
@@ -4723,4 +4753,38 @@ export type CreateProjectBasePointCmd = {
   isShared?: boolean;
   /** Optional user label. */
   name?: string | null;
+};
+
+// ---------------------------------------------------------------------------
+// §10.3.1-3 — Conical / Dome / Spire roof shapes
+// ---------------------------------------------------------------------------
+
+export type CreateConicalRoofCmd = {
+  type: 'create_conical_roof';
+  id: string;
+  centerMm: { xMm: number; yMm: number };
+  baseRadiusMm: number;
+  heightMm: number;
+  baseElevationMm: number;
+  materialId?: string | null;
+};
+
+export type CreateDomeRoofCmd = {
+  type: 'create_dome_roof';
+  id: string;
+  centerMm: { xMm: number; yMm: number };
+  baseRadiusMm: number;
+  riseRatio: number;
+  baseElevationMm: number;
+  materialId?: string | null;
+};
+
+export type CreateSpireRoofCmd = {
+  type: 'create_spire_roof';
+  id: string;
+  centerMm: { xMm: number; yMm: number };
+  baseRadiusMm: number;
+  heightMm: number;
+  baseElevationMm: number;
+  materialId?: string | null;
 };
