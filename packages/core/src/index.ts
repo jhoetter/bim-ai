@@ -475,6 +475,7 @@ export type ElemKind =
   | 'spire_roof'
   | 'family_blend'
   | 'family_sweep'
+  | 'family_swept_blend'
   | 'text_tag'
   | 'link_ifc';
 
@@ -537,6 +538,13 @@ export const DEFAULT_DISCIPLINE_BY_KIND: Readonly<Partial<Record<ElemKind, Disci
 export type Text3dFontFamily = 'helvetiker' | 'optimer' | 'gentilis';
 
 export type XY = { xMm: number; yMm: number };
+
+export interface DimWitnessPoint {
+  xMm: number;
+  yMm: number;
+  referencedElementId?: string; // element whose face/edge this snaps to
+  referenceEdge?: 'start' | 'end' | 'face1' | 'face2'; // which edge of the element
+}
 
 // ---------------------------------------------------------------------------
 // VIE-V3-02 — Drafting view + callout + cut-profile + view-break types
@@ -1524,6 +1532,8 @@ export type Element =
         lineColorHex?: string | null;
         surfaceColorHex?: string | null;
       } | null;
+      /** §3.3.4: IDs of elements that cut voids into this wall element. */
+      cutBy?: string[];
     }
   | {
       kind: 'door';
@@ -1882,6 +1892,8 @@ export type Element =
       autoDetectedBoundary?: boolean;
       /** §3.4.2: drainage slope control points for sub-element slope editing. */
       slopePoints?: FloorSlopePoint[];
+      /** §3.3.4: IDs of elements that cut voids into this floor element. */
+      cutBy?: string[];
     }
   | {
       kind: 'roof';
@@ -2565,6 +2577,8 @@ export type Element =
         lineColorHex?: string | null;
         surfaceColorHex?: string | null;
       } | null;
+      /** §3.3.4: IDs of elements that cut voids into this column element. */
+      cutBy?: string[];
     }
   | {
       kind: 'beam';
@@ -3442,7 +3456,7 @@ export type Element =
       id: string;
       levelId: string;
       /** Ordered witness points (plan mm). Must have ≥2 points. */
-      witnessPointsMm: XY[];
+      witnessPointsMm: DimWitnessPoint[];
       /** Offset of dimension line from the witness point chain, in mm. */
       offsetMm: XY;
       /** When true, display "EQ" instead of individual segment values. */
@@ -3521,6 +3535,25 @@ export type Element =
       profileMm: XY[];
       /** Sweep path — list of 3D points (mm). */
       pathMm: { xMm: number; yMm: number; zMm: number }[];
+      materialId?: string | null;
+      levelId?: string | null;
+      agentTrace?: AgentTrace;
+      optionSetId?: string | null;
+      optionId?: string | null;
+      discipline?: DisciplineTag | null;
+    }
+  | {
+      kind: 'family_swept_blend';
+      id: string;
+      name?: string | null;
+      /** Start profile polygon in local XY plane (mm). */
+      startProfileMm: Array<{ xMm: number; yMm: number }>;
+      /** End profile polygon in local XY plane (mm, may differ in shape/size). */
+      endProfileMm: Array<{ xMm: number; yMm: number }>;
+      /** Path points that the cross-section is swept along (mm). */
+      pathMm: Array<{ xMm: number; yMm: number; zMm?: number }>;
+      baseElevationMm?: number;
+      materialKey?: string;
       materialId?: string | null;
       levelId?: string | null;
       agentTrace?: AgentTrace;
@@ -4895,6 +4928,22 @@ export type FamilyBlend = {
   heightMm: number;
 };
 
+/** §15.1.2: family swept blend — solid swept along a path while interpolating between two profiles. */
+export interface FamilySweptBlend {
+  id: string;
+  kind: 'family_swept_blend';
+  /** Start profile polygon in local XY plane */
+  startProfileMm: Array<{ xMm: number; yMm: number }>;
+  /** End profile polygon in local XY plane (may have different shape/size) */
+  endProfileMm: Array<{ xMm: number; yMm: number }>;
+  /** Path points that the cross-section is swept along */
+  pathMm: Array<{ xMm: number; yMm: number; zMm?: number }>;
+  baseElevationMm?: number;
+  materialKey?: string;
+}
+
+export type { FamilySweptBlend };
+
 export type WalkthroughKeyframe = {
   positionMm: { x: number; y: number; z: number };
   targetMm: { x: number; y: number; z: number };
@@ -5147,7 +5196,7 @@ export type CreatePermanentDimensionCmd = {
   type: 'create_permanent_dimension';
   id: string;
   levelId: string;
-  witnessPointsMm: XY[];
+  witnessPointsMm: DimWitnessPoint[];
   offsetMm: XY;
 };
 
@@ -5478,4 +5527,22 @@ export type UpdateFloorSlopePointCmd = {
   floorId: string;
   pointId: string;
   elevationOffsetMm: number;
+};
+
+// ---------------------------------------------------------------------------
+// §3.3.4 — Cut Geometry commands
+// ---------------------------------------------------------------------------
+
+/** §3.3.4: apply a void cut from a cutter element into a host element. */
+export type ApplyCutGeometryCmd = {
+  type: 'applyCutGeometry';
+  cutterId: string;
+  hostId: string;
+};
+
+/** §3.3.4: remove a void cut from a host element. */
+export type RemoveCutGeometryCmd = {
+  type: 'removeCutGeometry';
+  cutterId: string;
+  hostId: string;
 };
