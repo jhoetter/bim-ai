@@ -4562,7 +4562,7 @@ export function InspectorPropertiesFor(
                   style={{
                     width: 64,
                     height: 64,
-                    background: '#f0f0f0',
+                    background: 'var(--color-muted, #f0f0f0)',
                     border: '1px solid var(--color-border)',
                     display: 'flex',
                     alignItems: 'center',
@@ -4623,6 +4623,139 @@ export function InspectorPropertiesFor(
               onChange={(e) => onPropertyChange?.('opacity', +e.currentTarget.value)}
             />
           </div>
+        </div>
+      );
+    }
+    case 'conical_roof': {
+      const { onPropertyChange: crPropChange } = options ?? {};
+      return (
+        <div className="flex flex-col gap-2" data-testid="inspector-conical-roof">
+          <div className="flex items-center gap-2 py-0.5">
+            <span className="text-xs text-muted w-28 shrink-0">Base Radius (mm)</span>
+            <input
+              type="number"
+              className="w-24 text-xs bg-surface border border-border rounded px-1 py-0.5"
+              defaultValue={el.baseRadiusMm}
+              key={`${el.id}-cr-radius`}
+              step={100}
+              onBlur={(e) => crPropChange?.('baseRadiusMm', Number(e.currentTarget.value))}
+            />
+          </div>
+          <div className="flex items-center gap-2 py-0.5">
+            <span className="text-xs text-muted w-28 shrink-0">Height (mm)</span>
+            <input
+              type="number"
+              className="w-24 text-xs bg-surface border border-border rounded px-1 py-0.5"
+              defaultValue={el.heightMm}
+              key={`${el.id}-cr-height`}
+              step={100}
+              onBlur={(e) => crPropChange?.('heightMm', Number(e.currentTarget.value))}
+            />
+          </div>
+          <div className="flex items-center gap-2 py-0.5">
+            <span className="text-xs text-muted w-28 shrink-0">Base Elevation (mm)</span>
+            <input
+              type="number"
+              className="w-24 text-xs bg-surface border border-border rounded px-1 py-0.5"
+              defaultValue={el.baseElevationMm}
+              key={`${el.id}-cr-base-elev`}
+              step={100}
+              onBlur={(e) => crPropChange?.('baseElevationMm', Number(e.currentTarget.value))}
+            />
+          </div>
+          <FieldRow label="Center X (mm)" value={String(Math.round(el.centerMm.xMm))} />
+          <FieldRow label="Center Y (mm)" value={String(Math.round(el.centerMm.yMm))} />
+        </div>
+      );
+    }
+    case 'dome_roof': {
+      const { onPropertyChange: drPropChange } = options ?? {};
+      return (
+        <div className="flex flex-col gap-2" data-testid="inspector-dome-roof">
+          <div className="flex items-center gap-2 py-0.5">
+            <span className="text-xs text-muted w-28 shrink-0">Base Radius (mm)</span>
+            <input
+              type="number"
+              className="w-24 text-xs bg-surface border border-border rounded px-1 py-0.5"
+              defaultValue={el.baseRadiusMm}
+              key={`${el.id}-dr-radius`}
+              step={100}
+              onBlur={(e) => drPropChange?.('baseRadiusMm', Number(e.currentTarget.value))}
+            />
+          </div>
+          <div className="flex items-center gap-2 py-0.5">
+            <span className="text-xs text-muted w-28 shrink-0">Rise Ratio (0–1)</span>
+            <input
+              type="number"
+              className="w-24 text-xs bg-surface border border-border rounded px-1 py-0.5"
+              defaultValue={el.riseRatio}
+              key={`${el.id}-dr-rise`}
+              step={0.05}
+              min={0.1}
+              max={1}
+              onBlur={(e) =>
+                drPropChange?.(
+                  'riseRatio',
+                  Math.max(0.1, Math.min(1, Number(e.currentTarget.value))),
+                )
+              }
+            />
+          </div>
+          <div className="flex items-center gap-2 py-0.5">
+            <span className="text-xs text-muted w-28 shrink-0">Base Elevation (mm)</span>
+            <input
+              type="number"
+              className="w-24 text-xs bg-surface border border-border rounded px-1 py-0.5"
+              defaultValue={el.baseElevationMm}
+              key={`${el.id}-dr-base-elev`}
+              step={100}
+              onBlur={(e) => drPropChange?.('baseElevationMm', Number(e.currentTarget.value))}
+            />
+          </div>
+          <FieldRow label="Center X (mm)" value={String(Math.round(el.centerMm.xMm))} />
+          <FieldRow label="Center Y (mm)" value={String(Math.round(el.centerMm.yMm))} />
+        </div>
+      );
+    }
+    case 'spire_roof': {
+      const { onPropertyChange: srPropChange } = options ?? {};
+      return (
+        <div className="flex flex-col gap-2" data-testid="inspector-spire-roof">
+          <div className="flex items-center gap-2 py-0.5">
+            <span className="text-xs text-muted w-28 shrink-0">Base Radius (mm)</span>
+            <input
+              type="number"
+              className="w-24 text-xs bg-surface border border-border rounded px-1 py-0.5"
+              defaultValue={el.baseRadiusMm}
+              key={`${el.id}-sr-radius`}
+              step={100}
+              onBlur={(e) => srPropChange?.('baseRadiusMm', Number(e.currentTarget.value))}
+            />
+          </div>
+          <div className="flex items-center gap-2 py-0.5">
+            <span className="text-xs text-muted w-28 shrink-0">Height (mm)</span>
+            <input
+              type="number"
+              className="w-24 text-xs bg-surface border border-border rounded px-1 py-0.5"
+              defaultValue={el.heightMm}
+              key={`${el.id}-sr-height`}
+              step={100}
+              onBlur={(e) => srPropChange?.('heightMm', Number(e.currentTarget.value))}
+            />
+          </div>
+          <div className="flex items-center gap-2 py-0.5">
+            <span className="text-xs text-muted w-28 shrink-0">Base Elevation (mm)</span>
+            <input
+              type="number"
+              className="w-24 text-xs bg-surface border border-border rounded px-1 py-0.5"
+              defaultValue={el.baseElevationMm}
+              key={`${el.id}-sr-base-elev`}
+              step={100}
+              onBlur={(e) => srPropChange?.('baseElevationMm', Number(e.currentTarget.value))}
+            />
+          </div>
+          <FieldRow label="Center X (mm)" value={String(Math.round(el.centerMm.xMm))} />
+          <FieldRow label="Center Y (mm)" value={String(Math.round(el.centerMm.yMm))} />
         </div>
       );
     }
