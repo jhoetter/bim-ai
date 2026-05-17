@@ -104,9 +104,11 @@ export type ToolId =
   | 'excavation'
   | 'split-wall'
   | 'paint'
+  | 'linework'
   | 'measure-angle'
   | 'measure-arc'
-  | 'model-line';
+  | 'model-line'
+  | 'project-base-point';
 
 /** Modify-group tool IDs — used by ToolPalette to insert a separator. */
 export const MODIFY_TOOL_IDS = new Set<ToolId>([
@@ -114,6 +116,7 @@ export const MODIFY_TOOL_IDS = new Set<ToolId>([
   'split',
   'split-wall',
   'paint',
+  'linework',
   'trim',
   'trim-extend',
   'offset',
@@ -428,6 +431,15 @@ export function getToolRegistry(t: TFunction): Record<ToolId, ToolDefinition> {
       modes: ['plan'],
       tooltip:
         'Apply a material override to individual faces of walls, floors, roofs, or ceilings.',
+    },
+    linework: {
+      id: 'linework',
+      label: 'Linework Override',
+      icon: 'pen',
+      hotkey: 'LW',
+      shortcut: 'LW',
+      modes: ['plan'],
+      tooltip: 'Override the color, weight, and style of individual element edges in this view.',
     },
     trim: {
       id: 'trim',
@@ -821,6 +833,15 @@ export function getToolRegistry(t: TFunction): Record<ToolId, ToolDefinition> {
       modes: ['plan', 'sheet'],
       tooltip: 'Place a north arrow annotation symbol on a plan view or sheet.',
     },
+    'project-base-point': {
+      id: 'project-base-point',
+      label: 'Project Base Point',
+      icon: 'detailLine' as IconName,
+      hotkey: 'BP',
+      shortcut: 'BP',
+      modes: ['plan'] as WorkspaceMode[],
+      tooltip: 'Place or move the project base point on the plan (BP).',
+    },
     ramp: {
       id: 'ramp',
       label: 'Ramp',
@@ -949,6 +970,7 @@ const PALETTE_ORDER: ToolId[] = [
   'split',
   'split-wall',
   'paint',
+  'linework',
   'trim',
   'trim-extend',
   'offset',

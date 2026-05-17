@@ -307,6 +307,15 @@ export const AUTHORING_COMMAND_CONTRACTS = {
     [],
     ['material', 'remove-override'],
   ),
+  linework: contract(
+    'linework',
+    'sketch',
+    ['plan'],
+    'Click an element edge to apply a color/weight/style linework override in this view.',
+    'explicit-finish',
+    [],
+    ['color-picker', 'line-weight', 'line-style'],
+  ),
   trim: contract(
     'trim',
     'modify',
@@ -812,6 +821,15 @@ export const AUTHORING_COMMAND_CONTRACTS = {
     'remain-active-while-looping',
     [],
     ['line-style', 'colour', 'chain'],
+  ),
+  'project-base-point': contract(
+    'project-base-point',
+    'point',
+    ['plan'],
+    'Click to place or move the project base point.',
+    'select-after-commit',
+    [],
+    [],
   ),
 } satisfies Record<ToolId, AuthoringCommandContract>;
 

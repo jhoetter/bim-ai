@@ -1237,7 +1237,7 @@ registerCommand({
   id: 'tool.linework',
   label: 'Linework Override',
   keywords: ['linework', 'linework override', 'line color', 'line weight', 'line style'],
-  category: 'tool',
+  category: 'command',
   invoke: (ctx) => startPlanTool(ctx, 'linework'),
 });
 
@@ -2280,6 +2280,15 @@ registerCommand({
   keywords: ['model line', 'construction line', 'sketch', 'ML'],
   category: 'command',
   invoke: (ctx) => startPlanTool(ctx, 'model-line'),
+});
+
+// §2.1.3: Project Base Point
+registerCommand({
+  id: 'tool.project-base-point',
+  label: 'Project Base Point',
+  keywords: ['project base point', 'base point', 'origin', 'pbp', 'BP'],
+  category: 'command',
+  invoke: (ctx) => startPlanTool(ctx, 'project-base-point'),
 });
 
 // §7.3.1: Set Work Plane

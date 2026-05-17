@@ -23,6 +23,7 @@ const CATEGORIES: Array<{ key: string; label: string }> = [
   { key: 'text_note', label: 'Text Notes' },
 ];
 
+// eslint-disable-next-line bim-ai/no-hex-in-chrome
 const DEFAULT_COLOR = '#1e293b';
 
 function overridesToMap(overrides: CategoryVisualOverride[]): Map<string, CategoryVisualOverride> {
@@ -291,7 +292,7 @@ export function PerViewVGDialog({
             style={{
               ...resetBtnStyle,
               background: 'var(--color-accent, #2563eb)',
-              color: '#fff',
+              color: 'var(--color-foreground-on-accent)',
               border: '1px solid var(--color-accent, #2563eb)',
             }}
           >
