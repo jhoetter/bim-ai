@@ -32,6 +32,7 @@ import {
 import { resolveViewportPaintBundle, type ViewportPaintBundle } from './viewport/materials';
 import { ViewCube } from './viewport/ViewCube';
 import { SkyBackgroundPanel } from './viewport/SkyBackgroundPanel';
+import { RenderQualityPanel } from './viewport/RenderQualityPanel';
 import { applyLinkedGhosting } from './viewport/linkedGhosting';
 import { applyLensGhosting } from './viewport/applyLensGhosting';
 import { lensFilterFromMode } from './viewport/useLensFilter';
@@ -697,6 +698,7 @@ export function Viewport({
   const [authoringOverlay, setAuthoringOverlay] = useState<Authoring3dOverlayState | null>(null);
   const [draftPlaneAngleWarning, setDraftPlaneAngleWarning] = useState(false);
   const [skyPanelOpen, setSkyPanelOpen] = useState(false);
+  const [renderQualityOpen, setRenderQualityOpen] = useState(false);
   const draftPlaneAngleWarningRef = useRef(draftPlaneAngleWarning);
   draftPlaneAngleWarningRef.current = draftPlaneAngleWarning;
   const planToolRef = useRef(planTool);
@@ -858,6 +860,8 @@ export function Viewport({
   const viewerEdges = useBimStore((s) => s.viewerEdges);
   const skyBackground = useBimStore((s) => s.skyBackground);
   const skyBackgroundColor = useBimStore((s) => s.skyBackgroundColor);
+  const renderQuality = useBimStore((s) => s.renderQuality);
+  const setRenderQuality = useBimStore((s) => s.setRenderQuality);
   const viewerGdoRuntime = useBimStore((s) => s as typeof s & ViewerGdoRuntimeState);
   const viewerProjection = useBimStore((s) => s.viewerProjection);
   const sectionBoxActive = useBimStore((s) => s.viewerSectionBoxActive);
@@ -4926,6 +4930,24 @@ export function Viewport({
     });
   }, [viewerShadowsEnabled]);
 
+  // ── §14.3: render quality (shadows, tone mapping, pixel ratio) ──
+  useEffect(() => {
+    const renderer = rendererRef.current;
+    if (!renderer) return;
+    const { shadowsEnabled, toneMappingExposure, pixelRatioScale } = renderQuality;
+    renderer.shadowMap.enabled = shadowsEnabled;
+    renderer.shadowMap.type = shadowsEnabled ? THREE.PCFSoftShadowMap : THREE.BasicShadowMap;
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = toneMappingExposure;
+    const pr =
+      pixelRatioScale === '1x'
+        ? 1
+        : pixelRatioScale === '2x'
+          ? 2
+          : Math.min(window.devicePixelRatio ?? 1, 2);
+    renderer.setPixelRatio(pr);
+  }, [renderQuality]);
+
   useEffect(() => {
     const scene = sceneRef.current;
     const previous = planOverlayGroupRef.current;
@@ -6075,6 +6097,19 @@ export function Viewport({
         &#9729;
       </button>
       <SkyBackgroundPanel open={skyPanelOpen} onClose={() => setSkyPanelOpen(false)} />
+
+      {/* §14.3 — render quality toggle button + panel */}
+      <button
+        type="button"
+        data-testid="viewport-render-quality-btn"
+        aria-label="Render Quality"
+        title="Render Quality"
+        onClick={() => setRenderQualityOpen((v) => !v)}
+        className="pointer-events-auto absolute bottom-12 right-3 z-20 grid size-7 place-items-center rounded border border-border bg-surface/90 text-sm text-foreground shadow-sm backdrop-blur-sm hover:bg-surface"
+      >
+        &#9881;
+      </button>
+      {renderQualityOpen && <RenderQualityPanel onClose={() => setRenderQualityOpen(false)} />}
 
       <div
         ref={mountRef}

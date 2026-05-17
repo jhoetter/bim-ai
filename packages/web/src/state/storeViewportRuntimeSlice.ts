@@ -2,7 +2,12 @@ import type { StateCreator } from 'zustand';
 
 import type { PlanPresentationPreset } from '../plan/symbology';
 import { normalizeViewerRenderStyle } from '../viewport/renderStyles';
-import type { CategoryOverrides, StoreState, ViewFilter } from './storeTypes';
+import type {
+  CategoryOverrides,
+  RenderQualitySettings,
+  StoreState,
+  ViewFilter,
+} from './storeTypes';
 
 type StoreSet = Parameters<StateCreator<StoreState>>[0];
 type StoreGet = Parameters<StateCreator<StoreState>>[1];
@@ -85,6 +90,8 @@ export type ViewportRuntimeSlice = Pick<
   | 'skyBackgroundColor'
   | 'setSkyBackground'
   | 'setSkyBackgroundColor'
+  | 'renderQuality'
+  | 'setRenderQuality'
 >;
 
 function writeLocalStorageString(key: string, value: string): void {
@@ -335,5 +342,11 @@ export function createViewportRuntimeSlice(set: StoreSet, get: StoreGet): Viewpo
     skyBackgroundColor: '#87ceeb',
     setSkyBackground: (bg) => set({ skyBackground: bg }),
     setSkyBackgroundColor: (color) => set({ skyBackgroundColor: color }),
+
+    renderQuality: { shadowsEnabled: false, toneMappingExposure: 1.0, pixelRatioScale: 'auto' },
+    setRenderQuality: (settings: Partial<RenderQualitySettings>) =>
+      set((state) => ({
+        renderQuality: { ...state.renderQuality, ...settings },
+      })),
   };
 }

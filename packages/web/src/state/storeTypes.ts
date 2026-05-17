@@ -229,6 +229,12 @@ export type ViewerRenderStyle =
   | 'ray-trace'
   | 'high-fidelity';
 
+export interface RenderQualitySettings {
+  shadowsEnabled: boolean;
+  toneMappingExposure: number; // 0.5–3.0, default 1.0
+  pixelRatioScale: 'auto' | '1x' | '2x'; // 'auto' = devicePixelRatio
+}
+
 export type StoreState = {
   modelId?: string;
   revision: number;
@@ -478,6 +484,10 @@ export type StoreState = {
   /** §8.9.3: instance/element ID of the group currently being edited. */
   activeGroupEditId: string | null;
   setActiveGroupEditId: (id: string | null) => void;
+
+  /** §14.3 — render quality settings (shadow, exposure, pixel ratio). */
+  renderQuality: RenderQualitySettings;
+  setRenderQuality: (settings: Partial<RenderQualitySettings>) => void;
 
   /** §14.4 — 3D viewport sky / environment background mode. */
   skyBackground: 'default' | 'gradient-sky' | 'overcast' | 'solid';
