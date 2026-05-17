@@ -936,6 +936,11 @@ export function FamilyLibraryPanel({
   catalogClient = DEFAULT_CATALOG_CLIENT,
 }: FamilyLibraryPanelProps): JSX.Element | null {
   const [needle, setNeedle] = useState('');
+  const [recentFamilyIds, setRecentFamilyIds] = useState<string[]>([]);
+
+  const trackRecent = (id: string) => {
+    setRecentFamilyIds((prev) => [id, ...prev.filter((x) => x !== id)].slice(0, 5));
+  };
 
   const grouped = useMemo(() => buildCatalogByDiscipline(elementsById), [elementsById]);
   const assetGroups = useMemo(() => buildAssetCatalogGroups(elementsById), [elementsById]);
@@ -954,6 +959,12 @@ export function FamilyLibraryPanel({
     combinedAssetGroups.some(({ entries }) =>
       entries.some((entry) => matchesNeedle(entry, needle)),
     );
+
+  const allEntries = useMemo((): CatalogEntry[] => {
+    const disciplineEntries = DISCIPLINE_ORDER.flatMap(({ id }) => grouped[id] ?? []);
+    const assetEntries = combinedAssetGroups.flatMap(({ entries }) => entries);
+    return [...disciplineEntries, ...assetEntries];
+  }, [grouped, combinedAssetGroups]);
 
   useEffect(() => {
     if (!open) return;
@@ -999,6 +1010,8 @@ export function FamilyLibraryPanel({
         <div className="border-b border-border px-3 py-2">
           <input
             autoFocus
+            type="search"
+            data-testid="family-library-search"
             value={needle}
             onChange={(e) => setNeedle(e.target.value)}
             placeholder="Search families…"
@@ -1011,6 +1024,39 @@ export function FamilyLibraryPanel({
           aria-label="Family library results"
           className="flex-1 overflow-y-auto px-2 py-2"
         >
+          {recentFamilyIds.length > 0 && (
+            <details open>
+              <summary
+                data-testid="family-library-recent-header"
+                className="cursor-pointer px-2 py-1 text-xs uppercase text-muted"
+                style={{ letterSpacing: 'var(--text-eyebrow-tracking, 0.06em)' }}
+              >
+                Recently Used
+              </summary>
+              <ul className="flex flex-col">
+                {recentFamilyIds.map((id) => {
+                  const entry = allEntries.find((e) => e.id === id);
+                  if (!entry) return null;
+                  return (
+                    <li
+                      key={id}
+                      data-testid={`family-library-recent-${id}`}
+                      onClick={() => {
+                        trackRecent(entry.id);
+                        onPlaceType(entry.kind, entry.id);
+                        onClose();
+                      }}
+                      style={{ cursor: 'pointer' }}
+                      className="flex items-center gap-2 rounded-md px-2 py-1.5 hover:bg-accent-soft"
+                    >
+                      <span className="text-sm text-foreground">{entry.name}</span>
+                      <span className="text-xs text-muted">{entry.familyName}</span>
+                    </li>
+                  );
+                })}
+              </ul>
+            </details>
+          )}
           {DISCIPLINE_ORDER.map(({ id, label }) => {
             const entries = (grouped[id] ?? []).filter((e) => matchesNeedle(e, needle));
             if (entries.length === 0) return null;
@@ -1022,10 +1068,23 @@ export function FamilyLibraryPanel({
                 className="mb-3"
               >
                 <div
-                  className="px-2 py-1 text-xs uppercase text-muted"
+                  className="flex items-center gap-2 px-2 py-1 text-xs uppercase text-muted"
                   style={{ letterSpacing: 'var(--text-eyebrow-tracking, 0.06em)' }}
                 >
                   {label}
+                  <span
+                    data-testid={`family-category-count-${id}`}
+                    style={{
+                      fontSize: 10,
+                      background: '#888',
+                      color: '#fff',
+                      borderRadius: 8,
+                      padding: '1px 5px',
+                      marginLeft: 4,
+                    }}
+                  >
+                    {entries.length}
+                  </span>
                 </div>
                 <ul className="flex flex-col">
                   {entries.map((entry) => (
@@ -1060,6 +1119,7 @@ export function FamilyLibraryPanel({
                       <button
                         type="button"
                         onClick={() => {
+                          trackRecent(entry.id);
                           onPlaceType(entry.kind, entry.id);
                           onClose();
                         }}
@@ -1083,14 +1143,27 @@ export function FamilyLibraryPanel({
                 data-testid={`family-group-${id}`}
                 className="mb-3"
               >
-                <div className="flex items-center justify-between gap-2 px-2 py-1">
+                <div className="flex items-center gap-2 px-2 py-1">
                   <span
                     className="text-xs uppercase text-muted"
                     style={{ letterSpacing: 'var(--text-eyebrow-tracking, 0.06em)' }}
                   >
                     {label}
                   </span>
-                  <span className="text-[10px] text-muted">Warehouse shelf</span>
+                  <span
+                    data-testid={`family-category-count-${id}`}
+                    style={{
+                      fontSize: 10,
+                      background: '#888',
+                      color: '#fff',
+                      borderRadius: 8,
+                      padding: '1px 5px',
+                      marginLeft: 4,
+                    }}
+                  >
+                    {visibleEntries.length}
+                  </span>
+                  <span className="ml-auto text-[10px] text-muted">Warehouse shelf</span>
                 </div>
                 <ul className="flex flex-col">
                   {visibleEntries.map((entry) => {
@@ -1133,6 +1206,7 @@ export function FamilyLibraryPanel({
                               : `family-row-${entry.id}-place`
                           }
                           onClick={() => {
+                            trackRecent(entry.id);
                             if (entry.catalogPlacement) {
                               onPlaceCatalogFamily?.(
                                 entry.catalogPlacement,
