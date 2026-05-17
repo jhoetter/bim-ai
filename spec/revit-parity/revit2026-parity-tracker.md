@@ -1117,7 +1117,9 @@ Wave 14 WP-I: `cheatsheetData.ts` expanded with a comprehensive shortcut set mat
 
 ## Summary Dashboard
 
-Last verified: 2026-05-17. Waves 1–18 complete. **589 test files, 5015 tests pass.**
+Last verified: 2026-05-17. Waves 1–19 complete. **599 test files, 5077 tests pass.**
+
+Wave 19 completions: §8.6.2 stair_run/stair_landing element types + PlanCanvas wiring + inspector panels + addStairRun/addStairLanding/removeStairComponent commands (WP-A), §6.4.1 callout camera zoom useEffect fitting OrthographicCamera to calloutBoundaryMm + elementOverlapsBoundary geometry filter in rebuildPlanMeshes + 1:N scale label in PlanViewHeader (WP-B), §12.1.1 link_ifc element type + addIfcLink/removeIfcLink/toggleIfcLinkVisibility commands + ManageLinksDialog IFC section (file picker, list, visibility checkbox) + ghost rendering via applyLinkedGhosting + ProjectBrowser Linked IFC subtree (WP-C), §2.4.2 shift-click in floor tool triggers detectFloorBoundaryFromWalls + auto-creates floor + edgeProfileMm + autoDetectedBoundary fields + inspector collapsible edge profile section (WP-D), §3.5.5 commitWallProfile command + Workspace handler storing profilePoints on wall + modify.edit-wall-profile palette command + wallProfileInspector.test.tsx 8 tests (WP-E+fix-up), §1.6.10 THREE.js crop region PlanViewHeader toggle button + view.toggle-crop-region palette command + cropRegionMm/cropRegionEnabled fields on plan_view (WP-F+fix-up), §6.4.2 detail_line/detail_filled_region element types + addDetailLine/addDetailFilledRegion/removeDetailElement commands + THREE.js plan rendering (Line + ShapeGeometry) + inspector style/color panels + PlanCanvas tool wiring (WP-G), §2.5.1 shaft inspector base/top level selectors + cut floor count readout + Apply Shaft Cut button + applyShaftCut command handler calling computeShaftCutFloors (WP-H), §4.1 autoDimensionWalls command type + Workspace handler filtering walls by levelId + annotate.auto-dimension-walls palette command updated to dispatch command (WP-I), §8.6.4 enterStairEditMode/exitStairEditMode/updateStairRun command types + Workspace handlers + inspector Edit Stair toggle + per-run riser/width editors + Finish Editing button + modify.edit-stair palette command (WP-J).
 
 Wave 18 completions: §15.1.4 window frame geometry in family editor — `buildWindowFrameMesh` + frame profile ExtrudeGeometry + inspector inputs (WP-A), §15.1.5 window glazing panel — `buildGlazingMesh` MeshPhysicalMaterial transparent glass + inspector (WP-A), §8.6.2 stair by component grammars — `StairRunState`/`StairLandingState`/`reduceStairRun`/`reduceStairLanding` + 8 tests (WP-B), §6.4.1 detail callout geometry filter — `elementOverlapsBoundary` + `computeCalloutScale` + 6 tests (WP-C), §12.1.1 link IFC importer utility — `createIfcLink`/`applyIfcLinkOffset` using wave-16 STEP parser + 6 tests (WP-D), §2.4.2 auto-detect floor boundary — `detectFloorBoundaryFromWalls` convex hull from wall endpoints + 7 tests (WP-E), §1.6.10 crop region grips — `getCropRegionGrips`/`applyCropGripDrag` 4-edge handles + 8 tests (WP-F), §3.5.5 edit wall profile — `buildProfiledWallMesh` ExtrudeGeometry + `reduceWallProfile` grammar + 6 tests (WP-G), §4.1 auto-dimension standalone utility — `autoDimensionWalls.ts` grouping by axis + offset calculation (WP-H), §6.4.2 2D detail drafting grammars — `reduceDetailLine`/`reduceDetailFilledRegion` + 11 tests (WP-I), §2.5.1 shaft cut floors — `computeShaftCutFloors` vertical-extent + point-in-polygon filter + 7 tests (WP-J).
 
@@ -1163,15 +1165,14 @@ None confirmed as blocking.
 
 ### Top P1 Gaps (professional parity limited)
 
-Remaining after wave 18:
+Remaining after wave 19:
 
-- **§8.6.2 Stair by component** — grammars done (w18); element types + full wiring Partial
-- **§6.4.1 Detail callout full rendering** — filter utility done (w18); camera zoom wiring Partial
-- **§12.1.1 Link IFC** — importer utility done (w18); ManageLinksDialog UI wiring Partial
-- **§2.4.2 Floor boundary from walls** — utility done (w18); inspector + tool wiring Partial
-- **§3.5.5 Edit wall profile** — mesh builder + grammar done (w18); inspector wiring Partial
-- **§6.4.2 2D detail view** — grammars done (w18); element types + rendering Partial
-- **§2.5.1 Shaft workflow** — cut detection utility done (w18); inspector + level selectors Partial
+- **§3.5.5 Edit wall profile** — commitWallProfile + inspector buttons done (w19); full sketch-mode UI for drawing the profile shape Partial
+- **§6.4.2 2D detail view** — element types + rendering done (w19); standalone detail view tab (independent of model) Not Started
+- **§3.4.2 Basement slab sub-element** — drainage slope + split surface sub-element editing Not Started
+- **§12.1.3 Family library** — internal catalog exists; loading from external/online library Not Started
+- **§3.6.2 Window family library** — internal types available; loading arbitrary *.rfa Not Started
+- **§1.6.10 Crop region clipping** — toggle button + fields done (w19); THREE.js clipping plane visual enforcement Partial
 - **§1.6.10 Crop region drag** — grip utilities done (w18); Three.js clip planes wiring Partial
 
 ### Top P2 Gaps (useful but workaroundable)
