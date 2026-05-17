@@ -1,7 +1,12 @@
 import { useState, type JSX } from 'react';
 import type { TFunction } from 'i18next';
 import { useTranslation } from 'react-i18next';
-import type { DisciplineTag, Element, ViewTemplateControlledField } from '@bim-ai/core';
+import type {
+  DisciplineTag,
+  Element,
+  FamilySweptBlend,
+  ViewTemplateControlledField,
+} from '@bim-ai/core';
 
 import { BUILT_IN_FAMILIES, getFamilyById, getTypeById } from '../../families/familyCatalog';
 import {
@@ -33,6 +38,7 @@ import { WallTypeLayerEditor } from '../families/WallTypeLayerEditor';
 import { stairBoundaryMm } from '../../plan/stairBoundingBox';
 import { angleBetweenVectors } from '../../plan/measureGeometry';
 import { getStairComponents } from '../../plan/stairComponentList';
+import { buildShaftSideWalls } from '../../plan/buildShaftSideWalls';
 
 /**
  * Inspector parameter renderers — spec §13.
@@ -969,6 +975,43 @@ function StairAssemblySection({
   );
 }
 
+function ShaftSideWallsButton({
+  shaft,
+  onDispatchCommand,
+}: {
+  shaft: Extract<Element, { kind: 'shaft' }>;
+  onDispatchCommand?: (cmd: Record<string, unknown>) => void;
+}) {
+  const [sideWallsAdded, setSideWallsAdded] = useState<number | null>(null);
+  return (
+    <>
+      <button
+        type="button"
+        className="rounded border border-border bg-background px-2 py-0.5 text-xs text-foreground hover:bg-surface-strong"
+        data-testid="inspector-shaft-add-side-walls"
+        style={{ marginTop: 8 }}
+        onClick={() => {
+          const walls = buildShaftSideWalls(shaft as any, (shaft as any).baseLevelId ?? 'L1');
+          for (const wall of walls) {
+            onDispatchCommand?.({ type: 'createElement', element: wall });
+          }
+          setSideWallsAdded(walls.length);
+        }}
+      >
+        Add Side Walls
+      </button>
+      {sideWallsAdded !== null && (
+        <p
+          data-testid="inspector-shaft-side-walls-added"
+          style={{ fontSize: 11, color: '#22c55e', marginTop: 4 }}
+        >
+          {sideWallsAdded} side walls added
+        </p>
+      )}
+    </>
+  );
+}
+
 function resolveElName(id: string | null | undefined, eb: Record<string, Element>): string {
   if (!id) return '—';
   const e = eb[id];
@@ -1443,6 +1486,44 @@ export function InspectorPropertiesFor(
               </div>
             </div>
           </div>
+          {/* Cut geometry readout */}
+          {(el as any).cutBy?.length > 0 && (
+            <details style={{ marginTop: 8 }}>
+              <summary
+                data-testid="inspector-cut-by-summary"
+                style={{ cursor: 'pointer', fontSize: 12 }}
+              >
+                Cut By ({(el as any).cutBy.length})
+              </summary>
+              <div style={{ marginTop: 4 }}>
+                {(el as any).cutBy.map((cutterId: string, i: number) => (
+                  <div
+                    key={cutterId}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 8,
+                      fontSize: 11,
+                      marginBottom: 2,
+                    }}
+                  >
+                    <span data-testid={`inspector-cut-by-id-${i}`} style={{ color: '#aaa' }}>
+                      {cutterId.slice(-8)}
+                    </span>
+                    <button
+                      data-testid={`inspector-cut-by-remove-${i}`}
+                      onClick={() =>
+                        onSemanticCommand?.({ type: 'removeCutGeometry', cutterId, hostId: el.id })
+                      }
+                      style={{ color: '#f87171', fontSize: 11 }}
+                    >
+                      Remove Cut
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </details>
+          )}
         </div>
       );
     }
@@ -1877,6 +1958,44 @@ export function InspectorPropertiesFor(
               </button>
             </div>
           </details>
+          {/* Cut geometry readout */}
+          {(el as any).cutBy?.length > 0 && (
+            <details style={{ marginTop: 8 }}>
+              <summary
+                data-testid="inspector-cut-by-summary"
+                style={{ cursor: 'pointer', fontSize: 12 }}
+              >
+                Cut By ({(el as any).cutBy.length})
+              </summary>
+              <div style={{ marginTop: 4 }}>
+                {(el as any).cutBy.map((cutterId: string, i: number) => (
+                  <div
+                    key={cutterId}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 8,
+                      fontSize: 11,
+                      marginBottom: 2,
+                    }}
+                  >
+                    <span data-testid={`inspector-cut-by-id-${i}`} style={{ color: '#aaa' }}>
+                      {cutterId.slice(-8)}
+                    </span>
+                    <button
+                      data-testid={`inspector-cut-by-remove-${i}`}
+                      onClick={() =>
+                        onSemanticCommand?.({ type: 'removeCutGeometry', cutterId, hostId: el.id })
+                      }
+                      style={{ color: '#f87171', fontSize: 11 }}
+                    >
+                      Remove Cut
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </details>
+          )}
         </div>
       );
     }
@@ -2265,6 +2384,31 @@ export function InspectorPropertiesFor(
           >
             <span className="text-xs text-muted">Path length (mm)</span>
             <span className="text-sm text-foreground">{pathLengthMm.toFixed(0)}</span>
+          </div>
+        </div>
+      );
+    }
+    case 'family_swept_blend': {
+      const fsb = el as FamilySweptBlend;
+      return (
+        <div data-testid="inspector-family-swept-blend" className="flex flex-col gap-2">
+          <div className="flex items-center gap-2 py-0.5">
+            <span className="text-xs text-muted w-28 shrink-0">Path Points</span>
+            <span data-testid="inspector-fsb-path-count" className="text-sm">
+              {fsb.pathMm?.length ?? 0}
+            </span>
+          </div>
+          <div className="flex items-center gap-2 py-0.5">
+            <span className="text-xs text-muted w-28 shrink-0">Start Profile</span>
+            <span data-testid="inspector-fsb-start-count" className="text-sm">
+              {fsb.startProfileMm?.length ?? 0} pts
+            </span>
+          </div>
+          <div className="flex items-center gap-2 py-0.5">
+            <span className="text-xs text-muted w-28 shrink-0">End Profile</span>
+            <span data-testid="inspector-fsb-end-count" className="text-sm">
+              {fsb.endProfileMm?.length ?? 0} pts
+            </span>
           </div>
         </div>
       );
@@ -2972,6 +3116,44 @@ export function InspectorPropertiesFor(
               </div>
             </div>
           </div>
+          {/* Cut geometry readout */}
+          {(el as any).cutBy?.length > 0 && (
+            <details style={{ marginTop: 8 }}>
+              <summary
+                data-testid="inspector-cut-by-summary"
+                style={{ cursor: 'pointer', fontSize: 12 }}
+              >
+                Cut By ({(el as any).cutBy.length})
+              </summary>
+              <div style={{ marginTop: 4 }}>
+                {(el as any).cutBy.map((cutterId: string, i: number) => (
+                  <div
+                    key={cutterId}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 8,
+                      fontSize: 11,
+                      marginBottom: 2,
+                    }}
+                  >
+                    <span data-testid={`inspector-cut-by-id-${i}`} style={{ color: '#aaa' }}>
+                      {cutterId.slice(-8)}
+                    </span>
+                    <button
+                      data-testid={`inspector-cut-by-remove-${i}`}
+                      onClick={() =>
+                        onSemanticCommand?.({ type: 'removeCutGeometry', cutterId, hostId: el.id })
+                      }
+                      style={{ color: '#f87171', fontSize: 11 }}
+                    >
+                      Remove Cut
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </details>
+          )}
         </div>
       );
     }
@@ -5654,6 +5836,7 @@ export function InspectorPropertiesFor(
           <span data-testid="inspector-shaft-cut-floor-count" className="text-xs text-muted">
             Cuts {((el as any).cutFloorIds ?? []).length} floor(s)
           </span>
+          <ShaftSideWallsButton shaft={el} onDispatchCommand={onDispatchCommand} />
         </div>
       );
     }

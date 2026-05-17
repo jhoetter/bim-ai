@@ -6,6 +6,7 @@ import { roofParamsFromWallLoop } from '../plan/roofByFootprint';
 import i18n from '../i18n';
 import { registerCommand, type PaletteContext } from './registry';
 import { autoTagElements } from '../plan/autoTags';
+import { buildShaftSideWalls } from '../plan/buildShaftSideWalls';
 
 function is3dContext(ctx: PaletteContext): boolean {
   return ctx.activeMode === '3d';
@@ -2752,5 +2753,49 @@ registerCommand({
   category: 'command',
   invoke: (ctx) => {
     ctx.openProjectTemplates?.();
+  },
+});
+
+// §2.5.1: auto-generate enclosing side walls for the selected shaft void
+registerCommand({
+  id: 'modify.add-shaft-side-walls',
+  label: 'Add Shaft Side Walls',
+  keywords: ['shaft', 'side wall', 'stair', 'enclosure', 'Treppenseitenwand'],
+  category: 'command',
+  isAvailable: (ctx) => ctx.selectedElements?.some((e) => e.kind === 'shaft') ?? false,
+  invoke: (ctx) => {
+    const shaft = ctx.selectedElements?.find((e) => e.kind === 'shaft') as any;
+    if (!shaft) return;
+    const walls = buildShaftSideWalls(shaft, shaft.baseLevelId ?? 'L1');
+    for (const wall of walls) {
+      ctx.dispatchCommand?.({ type: 'createElement', element: wall });
+    }
+  },
+});
+
+// §3.3.4: Cut Geometry — activate 2-step cutter→host pick tool
+registerCommand({
+  id: 'modify.cut-geometry',
+  label: 'Cut Geometry',
+  keywords: ['cut', 'void', 'subtract', 'geometry', 'csg'],
+  category: 'command',
+  isAvailable: (ctx) => (ctx.selectedElements?.length ?? 0) >= 1,
+  invoke: (ctx) => {
+    ctx.activateTool?.('cut-geometry');
+  },
+});
+
+// §3.3.4: Uncut Geometry — remove first void cut from selected element
+registerCommand({
+  id: 'modify.uncut-geometry',
+  label: 'Uncut Geometry',
+  keywords: ['uncut', 'remove cut', 'void', 'geometry'],
+  category: 'command',
+  isAvailable: (ctx) => ctx.selectedElements?.some((e) => (e as any).cutBy?.length > 0) ?? false,
+  invoke: (ctx) => {
+    const el = ctx.selectedElements?.find((e) => (e as any).cutBy?.length > 0) as any;
+    if (el?.cutBy?.[0]) {
+      ctx.dispatchCommand?.({ type: 'removeCutGeometry', cutterId: el.cutBy[0], hostId: el.id });
+    }
   },
 });
