@@ -358,16 +358,27 @@ function MepCommonRows({
     }
   >;
 }): JSX.Element {
+  const mep = el as Record<string, unknown>;
   return (
     <>
-      <FieldRow label="System Type" value={el.systemType ?? '—'} />
-      <FieldRow label="System Name" value={el.systemName ?? '—'} />
-      <FieldRow label="Flow Direction" value={el.flowDirection ?? '—'} />
-      <FieldRow label="Service Level" value={el.serviceLevel ?? '—'} />
-      <FieldRow label="Insulation" value={el.insulation ?? '—'} />
-      <FieldRow label="Connectors" value={String(el.connectors?.length ?? 0)} mono />
-      {el.clearanceZone ? <FieldRow label="Clearance Zone" value="Defined" /> : null}
-      {el.maintainAccessZone ? <FieldRow label="Access Zone" value="Defined" /> : null}
+      <FieldRow label="System Type" value={(mep.systemType as string | null | undefined) ?? '—'} />
+      <FieldRow label="System Name" value={(mep.systemName as string | null | undefined) ?? '—'} />
+      <FieldRow
+        label="Flow Direction"
+        value={(mep.flowDirection as string | null | undefined) ?? '—'}
+      />
+      <FieldRow
+        label="Service Level"
+        value={(mep.serviceLevel as string | null | undefined) ?? '—'}
+      />
+      <FieldRow label="Insulation" value={mep.insulation ? 'Yes' : '—'} />
+      <FieldRow
+        label="Connectors"
+        value={String((mep.connectors as unknown[] | undefined)?.length ?? 0)}
+        mono
+      />
+      {mep.clearanceZone ? <FieldRow label="Clearance Zone" value="Defined" /> : null}
+      {mep.maintainAccessZone ? <FieldRow label="Access Zone" value="Defined" /> : null}
     </>
   );
 }
@@ -1949,6 +1960,48 @@ export function InspectorPropertiesFor(
             <span className="text-xs text-muted">Path length (mm)</span>
             <span className="text-sm text-foreground">{pathLengthMm.toFixed(0)}</span>
           </div>
+        </div>
+      );
+    }
+    case 'family_parameter': {
+      const fp = el as Extract<Element, { kind: 'family_parameter' }>;
+      const { onPropertyChange: fpPropChange } = options ?? {};
+      return (
+        <div className="flex flex-col gap-2">
+          <label className="flex items-center gap-2 py-0.5 text-xs">
+            <span className="text-muted w-28 shrink-0">Name</span>
+            <input
+              data-testid="inspector-family-param-name"
+              className="w-40 text-xs bg-surface border border-border rounded px-1 py-0.5"
+              value={fp.name}
+              onChange={(e) => fpPropChange?.('name', e.target.value)}
+            />
+          </label>
+          <div className="flex items-center gap-2 py-0.5">
+            <span className="text-xs text-muted w-28 shrink-0">Type</span>
+            <span data-testid="inspector-family-param-type" className="text-sm text-foreground">
+              {fp.paramType}
+            </span>
+          </div>
+          <label className="flex items-center gap-2 py-0.5 text-xs">
+            <span className="text-muted w-28 shrink-0">Default Value</span>
+            <input
+              type="number"
+              data-testid="inspector-family-param-value"
+              className="w-20 text-xs bg-surface border border-border rounded px-1 py-0.5"
+              value={fp.defaultValue as number}
+              onChange={(e) => fpPropChange?.('defaultValue', +e.target.value)}
+            />
+          </label>
+          <label className="flex items-center gap-2 py-0.5 text-xs">
+            <span className="text-muted w-28 shrink-0">Instance Parameter</span>
+            <input
+              type="checkbox"
+              data-testid="inspector-family-param-instance"
+              checked={fp.isInstance}
+              onChange={(e) => fpPropChange?.('isInstance', e.target.checked)}
+            />
+          </label>
         </div>
       );
     }
@@ -4341,7 +4394,8 @@ export function InspectorPropertiesFor(
         </div>
       );
     }
-    case 'spot_coordinate':
+    case 'spot_coordinate': {
+      const { onPropertyChange: scPropChange } = options ?? {};
       return (
         <div className="flex flex-col gap-2">
           <FieldRow label="Host View" value={el.hostViewId} mono />
@@ -4350,10 +4404,41 @@ export function InspectorPropertiesFor(
             value={`(${Math.round(el.positionMm.xMm)}, ${Math.round(el.positionMm.yMm)}) mm`}
             mono
           />
-          <FieldRow label="North (mm)" value={String(Math.round(el.northMm))} mono />
-          <FieldRow label="East (mm)" value={String(Math.round(el.eastMm))} mono />
+          <div className="flex items-center gap-2 py-0.5">
+            <label className="flex items-center gap-2 py-0.5 w-full">
+              <span className="text-xs text-muted w-28 shrink-0">N (Northing)</span>
+              <input
+                type="number"
+                className="w-24 rounded border border-border bg-surface px-1 py-0.5 text-xs"
+                defaultValue={el.coordinateN ?? el.northMm ?? 0}
+                key={`${el.id}-coord-n`}
+                data-testid="inspector-spot-coord-n"
+                onChange={(e) => scPropChange?.('coordinateN', +e.target.value)}
+              />
+            </label>
+          </div>
+          <div className="flex items-center gap-2 py-0.5">
+            <label className="flex items-center gap-2 py-0.5 w-full">
+              <span className="text-xs text-muted w-28 shrink-0">E (Easting)</span>
+              <input
+                type="number"
+                className="w-24 rounded border border-border bg-surface px-1 py-0.5 text-xs"
+                defaultValue={el.coordinateE ?? el.eastMm ?? 0}
+                key={`${el.id}-coord-e`}
+                data-testid="inspector-spot-coord-e"
+                onChange={(e) => scPropChange?.('coordinateE', +e.target.value)}
+              />
+            </label>
+          </div>
+          <div className="flex items-center gap-2 py-0.5">
+            <span className="text-xs text-muted w-28 shrink-0">Elevation (mm)</span>
+            <span className="text-xs" data-testid="inspector-spot-coord-elevation">
+              {el.elevationMm ?? 0}
+            </span>
+          </div>
         </div>
       );
+    }
     case 'spot_slope': {
       const { onPropertyChange: slPropChange } = options ?? {};
       return (
@@ -4381,6 +4466,38 @@ export function InspectorPropertiesFor(
           ) : (
             <FieldRow label="Slope" value={`${el.slopePct}%`} />
           )}
+        </div>
+      );
+    }
+    case 'slope_annotation': {
+      const { onPropertyChange: saPropChange } = options ?? {};
+      return (
+        <div className="flex flex-col gap-2">
+          <FieldRow
+            label="Start"
+            value={`(${Math.round(el.startMm.xMm)}, ${Math.round(el.startMm.yMm)}) mm`}
+            mono
+          />
+          <FieldRow
+            label="End"
+            value={`(${Math.round(el.endMm.xMm)}, ${Math.round(el.endMm.yMm)}) mm`}
+            mono
+          />
+          <div className="flex items-center gap-2 py-0.5">
+            <span className="text-xs text-muted w-28 shrink-0">Slope (%)</span>
+            <input
+              type="number"
+              step={0.1}
+              className="w-20 rounded border border-border bg-surface px-1 py-0.5 text-xs"
+              defaultValue={el.slopePct}
+              key={`${el.id}-sa-slope`}
+              data-testid="inspector-slope-annotation-pct"
+              onChange={(e) => saPropChange?.('slopePct', +e.target.value)}
+            />
+          </div>
+          <span className="text-xs text-muted" data-testid="inspector-slope-annotation-ratio">
+            1:{(100 / Math.max(el.slopePct, 0.01)).toFixed(0)}
+          </span>
         </div>
       );
     }
@@ -4455,6 +4572,37 @@ export function InspectorPropertiesFor(
               </div>
             ))}
           </div>
+        </div>
+      );
+    }
+    case 'graded_region': {
+      const { onPropertyChange } = options ?? {};
+      return (
+        <div className="flex flex-col gap-2">
+          <label className="flex items-center gap-2 py-0.5">
+            <span className="text-xs text-muted w-28 shrink-0">Lower Elevation (mm)</span>
+            <input
+              type="number"
+              data-testid="inspector-graded-region-lower"
+              className="w-20 text-xs bg-surface border border-border rounded px-1 py-0.5"
+              defaultValue={el.lowerElevationMm ?? 0}
+              key={`${el.id}-lower`}
+              step={100}
+              onBlur={(e) => onPropertyChange?.('lowerElevationMm', +e.currentTarget.value)}
+            />
+          </label>
+          <label className="flex items-center gap-2 py-0.5">
+            <span className="text-xs text-muted w-28 shrink-0">Upper Elevation (mm)</span>
+            <input
+              type="number"
+              data-testid="inspector-graded-region-upper"
+              className="w-20 text-xs bg-surface border border-border rounded px-1 py-0.5"
+              defaultValue={el.upperElevationMm ?? 500}
+              key={`${el.id}-upper`}
+              step={100}
+              onBlur={(e) => onPropertyChange?.('upperElevationMm', +e.currentTarget.value)}
+            />
+          </label>
         </div>
       );
     }

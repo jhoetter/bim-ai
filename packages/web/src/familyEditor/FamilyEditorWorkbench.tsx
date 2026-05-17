@@ -1,6 +1,7 @@
 import { useMemo, useState, type DragEvent, type JSX, type MouseEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { Element, FamilyBlend, FamilySweep } from '@bim-ai/core';
+import { FamilyParameterPanel } from '../workspace/FamilyParameterPanel';
 import type {
   ArrayGeometryNode,
   FamilyDefinition,
@@ -714,6 +715,9 @@ export function FamilyEditorWorkbench({
   const [lastNestedAction, setLastNestedAction] = useState<AddNestedFamilyInstanceAction | null>(
     null,
   );
+  const [familyParameters, setFamilyParameters] = useState<
+    Extract<Element, { kind: 'family_parameter' }>[]
+  >([]);
   const projectFamilyElements = useMemo(
     () => ({ ...projectElementsById, ...localProjectFamilyTypes }),
     [localProjectFamilyTypes, projectElementsById],
@@ -2413,6 +2417,19 @@ export function FamilyEditorWorkbench({
           </p>
         </div>
       </section>
+
+      <FamilyParameterPanel
+        parameters={familyParameters}
+        onAdd={(param) =>
+          setFamilyParameters((prev) => [...prev, { ...param, id: crypto.randomUUID() }])
+        }
+        onDelete={(id) => setFamilyParameters((prev) => prev.filter((p) => p.id !== id))}
+        onValueChange={(id, value) =>
+          setFamilyParameters((prev) =>
+            prev.map((p) => (p.id === id ? { ...p, defaultValue: value } : p)),
+          )
+        }
+      />
 
       <div className="grid gap-4 md:grid-cols-[260px_1fr]">
         <LoadedFamiliesSidebar
