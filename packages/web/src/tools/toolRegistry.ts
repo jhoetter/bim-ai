@@ -113,7 +113,9 @@ export type ToolId =
   | 'dome-roof'
   | 'spire-roof'
   | 'family-blend'
-  | 'family-sweep';
+  | 'family-sweep'
+  | 'graded-region'
+  | 'terrain-split';
 
 /** Modify-group tool IDs — used by ToolPalette to insert a separator. */
 export const MODIFY_TOOL_IDS = new Set<ToolId>([
@@ -979,6 +981,24 @@ export function getToolRegistry(t: TFunction): Record<ToolId, ToolDefinition> {
       modes: ['plan'] as WorkspaceMode[],
       tooltip: 'Create a family sweep form — extrudes a 2D profile along a 3D path. §15.1.2',
     },
+    'graded-region': {
+      id: 'graded-region',
+      label: 'Graded Region',
+      icon: 'detailLine' as IconName,
+      hotkey: 'GR',
+      shortcut: 'GR',
+      modes: ['plan'] as WorkspaceMode[],
+      tooltip: 'Sketch a graded (sloped) region polygon on a toposolid surface. §5.1.6',
+    },
+    'terrain-split': {
+      id: 'terrain-split',
+      label: 'Split Terrain',
+      icon: 'detailLine' as IconName,
+      hotkey: 'TS',
+      shortcut: 'TS',
+      modes: ['plan'] as WorkspaceMode[],
+      tooltip: 'Draw a split line to divide a toposolid into two surfaces. §5.1.6',
+    },
   };
 }
 
@@ -1060,6 +1080,8 @@ const PALETTE_ORDER: ToolId[] = [
   'spire-roof',
   'family-blend',
   'family-sweep',
+  'graded-region',
+  'terrain-split',
 ];
 
 export function paletteForMode(mode: WorkspaceMode, t: TFunction): ToolDefinition[] {

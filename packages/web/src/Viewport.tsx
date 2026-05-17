@@ -120,6 +120,7 @@ import {
 } from './viewport/meshBuilders.coneRoof';
 import { buildFamilyBlendMesh } from './viewport/meshBuilders.familyBlend';
 import { buildFamilySweepMesh } from './viewport/meshBuilders.familySweep';
+import { buildGradedRegionMesh } from './viewport/meshBuilders.gradedRegion';
 import { makeMassBoxMesh } from './viewport/meshBuilders.massBox';
 import { makeMassExtrusionMesh } from './viewport/meshBuilders.massExtrusion';
 import { makeMassRevolutionMesh } from './viewport/meshBuilders.massRevolution';
@@ -827,7 +828,7 @@ export function Viewport({
       dateIso: s.dateIso,
       hours: s.timeOfDay.hours,
       minutes: s.timeOfDay.minutes,
-      daylightSavingStrategy: s.daylightSavingStrategy,
+      daylightSavingStrategy: s.daylightSavingStrategy ?? undefined,
     });
   }, [elementsById]);
 
@@ -4393,6 +4394,9 @@ export function Viewport({
           break;
         case 'toposolid':
           obj = makeToposolidMesh(e, paint, curr);
+          break;
+        case 'graded_region':
+          obj = buildGradedRegionMesh(e);
           break;
         case 'text_3d': {
           const t = e as Extract<Element, { kind: 'text_3d' }>;

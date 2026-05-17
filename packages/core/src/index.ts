@@ -78,7 +78,7 @@ export type DeleteToposolidSubdivisionCmd = {
 export type GradedRegionElem = {
   kind: 'graded_region';
   id: string;
-  hostToposolidId: string;
+  hostToposolidId: string | null;
   boundaryMm: { xMm: number; yMm: number }[];
   targetMode: 'flat' | 'slope';
   targetZMm?: number;
@@ -87,6 +87,7 @@ export type GradedRegionElem = {
   perimeterMm?: { xMm: number; yMm: number }[] | null;
   lowerElevationMm?: number | null;
   upperElevationMm?: number | null;
+  levelId?: string | null;
 };
 
 export type CreateGradedRegionCmd = {

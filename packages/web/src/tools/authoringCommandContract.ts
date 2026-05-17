@@ -876,6 +876,24 @@ export const AUTHORING_COMMAND_CONTRACTS = {
     [],
     [],
   ),
+  'graded-region': contract(
+    'graded-region',
+    'sketch',
+    ['plan'],
+    'Sketch graded region polygon (≥3 pts + Enter). §5.1.6',
+    'select-after-commit',
+    [],
+    ['finish', 'cancel'],
+  ),
+  'terrain-split': contract(
+    'terrain-split',
+    'sketch',
+    ['plan'],
+    'Draw polyline to split a toposolid into two (≥2 pts + Enter). §5.1.6',
+    'select-after-commit',
+    [],
+    ['finish', 'cancel'],
+  ),
 } satisfies Record<ToolId, AuthoringCommandContract>;
 
 export function getAuthoringCommandContract(toolId: ToolId): AuthoringCommandContract {
