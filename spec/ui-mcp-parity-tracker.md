@@ -952,7 +952,7 @@ team can schedule waves of parallel agents against the tracker.
 | -------------------------------- | --------------: | -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | M1. Truth and Inventory          |         2 weeks | Done           | Establish an auditable source of truth for backend commands, Cmd+K execution semantics, API descriptors, command schemas, and current parity gaps.                  | Generated parity report exists; all 262 backend commands, 326 Cmd+K entries, and 40 API descriptors are inventoried; command schemas are exported; first gap report is checked in; milestone status can be updated from generated evidence.                |
 | M2. First House-Capable MCP Pack |       4-6 weeks | Done           | Make an external agent capable of building a credible basic house through typed query/resolve/authoring tools instead of source-code knowledge or browser gestures. | Query/resolve tools exist; first authoring pack covers walls, floors, roofs, openings, rooms, stairs, views, sheets, advisor, dry-run, and commit; CLI mirrors the same tools; simple-house benchmark passes by MCP/CLI.                                   |
-| M3. Excellent Product Parity     |      8-12 weeks | Not Started    | Turn parity into a robust product workflow with benchmarks, sketch-to-BIM productization, documentation outputs, and transaction/audit consistency.                 | Same-house benchmark suite has UI and MCP paths for core cases; sketch-to-BIM workflow uses stable product tools; documentation/export pack covers sheets, schedules, tags, dimensions, and PDF/IFC/glTF; transaction/audit/undo/collab requirements pass. |
+| M3. Excellent Product Parity     |      8-12 weeks | Partial        | Turn parity into a robust product workflow with benchmarks, sketch-to-BIM productization, documentation outputs, and transaction/audit consistency.                 | Same-house benchmark suite has UI and MCP paths for core cases; sketch-to-BIM workflow uses stable product tools; documentation/export pack covers sheets, schedules, tags, dimensions, and PDF/IFC/glTF; transaction/audit/undo/collab requirements pass. |
 | M4. Professional Domain Parity   |      3-5 months | Not Started    | Extend parity across professional domains beyond the basic house workflow.                                                                                          | Site/context, structure, MEP, families/assets/materials, presentation, branded export, and advanced documentation capabilities have first-class UI and MCP/CLI paths with generated evidence.                                                              |
 
 ### Milestone 1 Workstreams
@@ -1350,6 +1350,36 @@ changed model.
   `pnpm audit:ui-mcp-parity`.
 - `pnpm audit:ui-mcp-parity` reports M2 `Done`, `28 / 28` first-pack surfaces,
   and `7 / 7` closure gates passed.
+
+### Milestone 3 Wave 1 Workstreams
+
+Milestone 3 starts from the now-closed M2 house-capable pack and turns it into
+product-grade parity. Wave 1 should avoid reopening M2 closure mechanics unless
+they are necessary for the M3 product surfaces.
+
+| Workstream                                               | Status  | Owner scope                                                                                                                                | Tracker items                              | Done when                                                                                                                                                                                                            |
+| -------------------------------------------------------- | ------- | ------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| M3-A. Sketch-to-BIM product tool inventory and first API | Partial | `claude-skills/sketch-to-bim`, backend API descriptors, CLI/MCP surface design, and minimal tests; avoid broad UI implementation.          | WP-005, WP-013, Sketch-to-BIM workflow.    | Stable sketch IR, underlay lifecycle, seed compile, phase apply, advisor loop, and acceptance surfaces are mapped from skill-local helpers to product APIs/CLI with gaps and first implementation slice identified.  |
+| M3-B. Documentation export first-class pack              | Partial | Sheets, viewports, schedules, dimensions, tags, PDF/IFC/glTF export descriptors/CLI/tests; coordinate with existing M2 evidence artifacts. | WP-006, documentation/export parity.       | Agent-facing typed tools exist or are precisely specified for drawing-set creation and export, with tests proving at least one complete drawing/export workflow beyond the M2 simple-house evidence harness.         |
+| M3-C. Same-house benchmark suite expansion               | Partial | Benchmark fixtures/scripts/specs only; no product implementation ownership except tiny test seams.                                         | WP-008, same-house benchmark suite.        | The benchmark suite grows beyond the single simple-house fixture and reports UI, Cmd+K, CLI/MCP, advisor, visual, export, and semantic-diff evidence per scenario without overclaiming missing UI execution.         |
+| M3-D. Transaction, audit, undo, and collaboration pass   | Partial | Backend transaction metadata, idempotency, command log, undo/redo, collaboration deltas, verifier/tests; avoid sketch/export feature work. | WP-009, transaction and audit hardening.   | M3 workflows consistently record parent revision, changed ids, agent identity, assumptions, undo metadata, collaboration deltas, and external export markers across raw, semantic, CLI, and API paths.               |
+| M3-E. Raw command promotion and parity gate strategy     | Partial | Generated ledgers, raw command promotion plan, descriptor integrity, Cmd+K/MCP parity report extensions; avoid feature implementation.     | WP-010, WP-011, WP-012, parity governance. | The tracker and generated reports identify which raw-agent-only commands must become first-class tools for M3, which stay expert/raw, and which are internal, with guardrails preventing new untracked parity drift. |
+
+### Milestone 3 Wave 1 Scheduling Notes
+
+- M3-A should start by reading the sketch-to-BIM skill workflow and mapping it
+  to stable product surfaces. It should not assume skill-local scripts are
+  already safe public MCP tools.
+- M3-B should build on M2 live evidence but target reusable documentation/export
+  product commands, not benchmark-only JSON.
+- M3-C owns benchmark shape and evidence reporting. It should keep UI parity
+  honest by distinguishing executable UI paths from validated replay or
+  traceability.
+- M3-D owns transaction semantics shared by every M3 workflow. If it finds M2
+  gaps, it should patch shared behavior rather than adding workflow-specific
+  exceptions.
+- M3-E should keep the tracker auditable as M3 broadens scope; it should prefer
+  generated source-of-truth updates over hand-maintained counts.
 
 ## Next Work Packages
 
