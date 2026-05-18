@@ -4,18 +4,30 @@
   "sourceOfIntent": "spec/ui-mcp-parity-tracker.md#same-house-parity-benchmarks",
   "paths": {
     "mcpCli": {
-      "status": "fixture-validated-live-dry-run-capable",
+      "status": "fixture-validated-live-dry-run-and-commit-capable",
       "bundle": "mcp-cli-command-bundle.json",
       "liveDryRun": {
         "status": "optional",
         "requires": ["BIM_AI_BASE_URL", "BIM_AI_MODEL_ID"],
         "surface": "POST /api/models/{model_id}/bundles",
         "mode": "dry_run"
+      },
+      "liveCommit": {
+        "status": "explicit-opt-in",
+        "requires": ["BIM_AI_BASE_URL", "BIM_AI_MODEL_ID", "--commit-live"],
+        "surface": "POST /api/models/{model_id}/bundles",
+        "mode": "commit",
+        "mutatesTargetModel": true,
+        "postCommitEvidence": [
+          "GET /api/models/{model_id}/command-log?limit=5",
+          "GET /api/models/{model_id}/snapshot"
+        ]
       }
     },
     "ui": {
-      "status": "todo",
-      "todo": "Add an equivalent UI/Cmd+K path and semantic diff against this fixture once M2 UI benchmark automation is in scope."
+      "status": "traceability-only",
+      "traceability": "ui-cmdk-traceability.json",
+      "todo": "Add an executable UI/Cmd+K path and semantic diff against this fixture once M2 UI benchmark automation is in scope."
     }
   },
   "tolerances": {
@@ -102,16 +114,45 @@
       "forbidden": ["restoreElement"]
     },
     "advisor": {
-      "status": "placeholder-or-live-dry-run-output",
-      "todo": "Live commit benchmark should persist advisor/constructability JSON from the committed model and fail on new errors."
+      "status": "placeholder-live-dry-run-or-committed-output",
+      "committedEvidence": [
+        "GET /api/models/{model_id}/validate",
+        "POST /api/models/{model_id}/qa/advisor",
+        "GET /api/models/{model_id}/evidence-package"
+      ]
+    },
+    "liveCommit": {
+      "status": "explicit-opt-in",
+      "artifacts": [
+        "live-dry-run-evidence.json",
+        "live-commit-evidence.json",
+        "command-log-summary.json",
+        "snapshot-summary.json"
+      ]
+    },
+    "committedEvidence": {
+      "status": "explicit-opt-in",
+      "artifacts": [
+        "committed-evidence.json",
+        "advisor-validation.json",
+        "visual-evidence.json",
+        "export-evidence.json"
+      ]
     },
     "screenshots": {
-      "status": "placeholder",
-      "todo": "Live benchmark should render nonblank plan and 3D screenshots for ssh-view-ground-plan and ssh-view-3d."
+      "status": "server-side-substitute-when-committed-evidence-requested",
+      "requiredViewIds": ["ssh-view-ground-plan", "ssh-view-3d"],
+      "serverSideSubstitute": "GET /api/models/{model_id}/exports/sheet-print-raster.png?sheetId=ssh-sheet-a101",
+      "todo": "Full confidence still requires browser-rendered nonblank plan and 3D screenshots for ssh-view-ground-plan and ssh-view-3d."
     },
     "exports": {
-      "status": "placeholder",
-      "todo": "Full M2/M3 exit should include IFC and glTF export evidence for this house."
+      "status": "artifact-or-manifest-check-when-committed-evidence-requested",
+      "checks": [
+        "GET /api/models/{model_id}/exports/gltf-manifest",
+        "GET /api/models/{model_id}/exports/ifc-manifest",
+        "GET /api/models/{model_id}/exports/sheet-preview.pdf?sheetId=ssh-sheet-a101"
+      ],
+      "todo": "Full M2/M3 exit should add IFC and glTF round-trip evidence for this house."
     }
   }
 }

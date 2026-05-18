@@ -1070,13 +1070,13 @@ surface area. It should prove that the first-pack surfaces can build and review
 the simple house through live typed execution, and that the UI-equivalent path
 is tracked honestly.
 
-| Workstream                                           | Status  | Owner scope                                                                                                                                             | Tracker items                                              | Done when                                                                                                                                                                                                  |
-| ---------------------------------------------------- | ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| M2-K. Live commit benchmark path                     | Partial | Benchmark harness, test fixtures, and only minimal backend/CLI glue needed to create/use a disposable model.                                            | WP-008, Same-house benchmark `simple-single-storey-house`. | Simple-house benchmark can run dry-run and commit against a live model, capture revision/changed ids/command log/snapshot summary, and leave deterministic evidence artifacts without requiring manual UI. |
-| M2-L. Committed advisor, visual, and export evidence | Partial | Evidence collection scripts/tests for committed model advisor, validation, screenshots or render proxies, IFC/glTF/PDF/export manifests where feasible. | WP-008, WP-006, M2 evidence closure.                       | Live benchmark evidence includes committed-model advisor/validation JSON, nonblank visual/render proof or explicit server-side substitute, and at least one export artifact/manifest check.                |
-| M2-M. UI-equivalent simple-house path                | Partial | Web/UI test or traceability harness for the human/Cmd+K path; avoid backend/CLI internals.                                                              | Same-house benchmark UI path, Cmd+K bridge.                | A UI/Cmd+K path exists as an executable test or explicit traceable script that produces or verifies a semantically equivalent simple-house result, without claiming full parity prematurely.               |
-| M2-N. M2 closure audit gates                         | Partial | Audit script, generated ledgers, and benchmark traceability docs only.                                                                                  | WP-004, WP-012, M2 progress reporting.                     | `pnpm audit:ui-mcp-parity` reports first-pack surfaces, live dry-run, live commit, committed evidence, and UI-equivalent path separately, and can mark M2 closure blockers precisely.                      |
-| M2-O. M2 hardening and smoke checks                  | Partial | Focused cross-surface smoke tests and docs; may touch tests/scripts but should not own feature implementation.                                          | WP-009, M2 release readiness.                              | A small repeatable verification command set exists for M2 with backend, CLI, benchmark, audit, and formatting checks; known residual risks are documented in the tracker.                                  |
+| Workstream                                           | Status | Owner scope                                                                                                                                             | Tracker items                                              | Done when                                                                                                                                                                                                  |
+| ---------------------------------------------------- | ------ | ------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| M2-K. Live commit benchmark path                     | Done   | Benchmark harness, test fixtures, and only minimal backend/CLI glue needed to create/use a disposable model.                                            | WP-008, Same-house benchmark `simple-single-storey-house`. | Simple-house benchmark can run dry-run and commit against a live model, capture revision/changed ids/command log/snapshot summary, and leave deterministic evidence artifacts without requiring manual UI. |
+| M2-L. Committed advisor, visual, and export evidence | Done   | Evidence collection scripts/tests for committed model advisor, validation, screenshots or render proxies, IFC/glTF/PDF/export manifests where feasible. | WP-008, WP-006, M2 evidence closure.                       | Live benchmark evidence includes committed-model advisor/validation JSON, nonblank visual/render proof or explicit server-side substitute, and at least one export artifact/manifest check.                |
+| M2-M. UI-equivalent simple-house path                | Done   | Web/UI test or traceability harness for the human/Cmd+K path; avoid backend/CLI internals.                                                              | Same-house benchmark UI path, Cmd+K bridge.                | A UI/Cmd+K path exists as an executable test or explicit traceable script that produces or verifies a semantically equivalent simple-house result, without claiming full parity prematurely.               |
+| M2-N. M2 closure audit gates                         | Done   | Audit script, generated ledgers, and benchmark traceability docs only.                                                                                  | WP-004, WP-012, M2 progress reporting.                     | `pnpm audit:ui-mcp-parity` reports first-pack surfaces, live dry-run, live commit, committed evidence, and UI-equivalent path separately, and can mark M2 closure blockers precisely.                      |
+| M2-O. M2 hardening and smoke checks                  | Done   | Focused cross-surface smoke tests and docs; may touch tests/scripts but should not own feature implementation.                                          | WP-009, M2 release readiness.                              | A small repeatable verification command set exists for M2 with backend, CLI, benchmark, audit, and formatting checks; known residual risks are documented in the tracker.                                  |
 
 ### Milestone 2 Wave 3 Scheduling Notes
 
@@ -1092,6 +1092,79 @@ is tracked honestly.
 - M2 can move to `Done` only if the audit and benchmark evidence prove both:
   an agent can build the simple house through typed CLI/MCP surfaces, and the UI
   path can produce or verify an equivalent result.
+
+### M2 Release Readiness Verification
+
+Primary M2 hardening command:
+
+```bash
+pnpm verify:m2-parity
+```
+
+This intentionally avoids the full monorepo `pnpm verify` suite. It runs the
+practical M2 release-readiness surface:
+
+- Prettier check for the M2 verifier, benchmark, package script, and tracker
+  files.
+- Syntax checks for the parity audit and simple-house benchmark scripts:
+  `node --check scripts/audit-ui-mcp-parity.mjs` and
+  `node --check scripts/benchmarks/simple-house.mjs`.
+- Architecture guard: `pnpm architecture`.
+- Focused backend smoke tests for API descriptors, query/resolve,
+  transaction/bundle routes, command schemas, first-pack authoring payloads,
+  saved 3D view evidence, and constructability reporting:
+  `cd app && PYTHONPATH=. .venv/bin/python -m pytest ... --no-cov -q`.
+- CLI parity tests: `pnpm --filter @bim-ai/cli test`.
+- UI/Cmd+K simple-house traceability tests:
+  `pnpm --filter @bim-ai/web exec vitest run src/cmdPalette/defaultCommands.test.ts src/cmdPalette/simpleHouseUiTraceability.test.ts`.
+- Simple-house benchmark offline and live-stub tests:
+  `node --test scripts/benchmarks/simple-house.test.mjs`.
+- Simple-house offline command smoke:
+  `pnpm benchmark:simple-house --mode offline`.
+- Generated parity audit refresh:
+  `pnpm audit:ui-mcp-parity`.
+
+For a stricter pre-release pass after M2-specific smoke is green, also run:
+
+```bash
+pnpm verify:strict
+```
+
+Residual M2 release risks that `pnpm verify:m2-parity` does not close:
+
+- It does not create a real live disposable model or prove committed-model
+  evidence against a running deployment; the benchmark live path is covered by
+  the HTTP stub test unless `BIM_AI_BASE_URL`/`BIM_AI_MODEL_ID` are exercised
+  separately.
+- It does not prove the UI/Cmd+K simple-house path produces an equivalent
+  semantic model; current coverage is traceability-only and explicitly carries
+  `parityClaim: none`.
+- It does not check in live nonblank browser screenshots, server render
+  substitutes, or IFC/glTF/PDF export artifacts from a committed model; the
+  benchmark can collect those artifacts, but a real live run is still required
+  to close the audit gates.
+- It uses focused format checks and backend tests with coverage disabled, so
+  broad regressions outside the M2 first-pack surfaces are left to `pnpm verify` /
+  `pnpm verify:strict`.
+
+Wave 3 result:
+
+- `pnpm audit:ui-mcp-parity` still reports `28 / 28` M2 first-pack surfaces
+  present.
+- The simple-house benchmark now has explicit live dry-run, opt-in live commit
+  via `--commit-live`, and committed evidence collection via
+  `--collect-committed-evidence`.
+- The committed evidence collector writes advisor/validation, visual substitute,
+  export, command-log, snapshot, and live commit evidence artifacts when a live
+  target model is supplied.
+- The UI/Cmd+K simple-house path is now covered by a traceability JSON artifact
+  and Vitest guard that verify referenced Cmd+K/capability ids without claiming
+  executable semantic parity.
+- M2 remains `Partial` because the generated closure audit requires actual live
+  dry-run/commit evidence, committed advisor/validation evidence, and an
+  executable or validated UI-equivalent path. After Wave 3, the audit reports
+  `3 / 7` closure gates passed and blocks closure on live dry-run, live commit,
+  committed advisor/validation, and UI-equivalent path evidence.
 
 ## Next Work Packages
 

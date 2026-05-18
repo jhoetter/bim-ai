@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-18T12:31:59.384Z",
+  "generatedAt": "2026-05-18T12:47:06.403Z",
   "sourceOfIntent": "spec/ui-mcp-parity-tracker.md",
   "sources": {
     "commands": "app/bim_ai/commands.py",
@@ -23,7 +23,9 @@
     "Route integrity normalizes FastAPI path params, known legacy bundle aliases, and websocket endpoints.",
     "UI surfaces from dynamically built tool capabilities are inferred from toolRegistry as ribbon and cmd-k.",
     "Unknown or missing metadata is emitted as \"unknown\" rather than guessed.",
-    "Benchmark evidence markers are traceability signals only unless they explicitly declare live typed dry-run/commit execution."
+    "Benchmark evidence markers are traceability signals only unless they explicitly declare live typed dry-run/commit execution.",
+    "M2 closure gates classify benchmark statuses conservatively: todo, placeholder, optional, fixture, and capable statuses remain blockers even when they mention live execution.",
+    "Optional M2-K/L/M evidence artifacts are discovered only as JSON files in benchmark directories with names containing benchmark-result, execution-evidence, advisor, validation, visual, render, screenshot, export, ui-equivalence, or ui-equivalent."
   ],
   "summary": {
     "backendCommandCount": 262,
@@ -45,17 +47,27 @@
     "m2FirstPackExpected": 28,
     "m2FirstPackPartial": 0,
     "m2FirstPackEvidenceOnly": 0,
-    "m2FirstPackBenchmarkMarkers": 4,
+    "m2FirstPackBenchmarkMarkers": 3,
     "m2Wave2Present": 7,
     "m2Wave2Expected": 7,
     "m2Wave2Partial": 0,
     "m2Wave2EvidenceOnly": 0,
-    "m2Wave2BenchmarkMarkers": 3,
+    "m2Wave2BenchmarkMarkers": 2,
     "m2QueryDescriptorCount": 30,
     "m2ResolveDescriptorCount": 14,
     "m2SemanticAuthoringDescriptorCount": 15,
     "m2TypedMutatingDescriptorCount": 22,
     "m2RawApplyBundleDescriptorCount": 3,
+    "m2ClosureStatus": "Partial",
+    "m2ClosureGatePassed": 3,
+    "m2ClosureGateExpected": 7,
+    "m2ClosureBlockerCount": 4,
+    "m2LiveDryRunEvidence": false,
+    "m2LiveCommitEvidence": false,
+    "m2CommittedAdvisorValidation": false,
+    "m2VisualRenderEvidence": true,
+    "m2ExportEvidence": true,
+    "m2UiEquivalentPath": false,
     "cmdkActivatorOnlyCount": 106,
     "apiDescriptorRouteMismatchCount": 0
   },
@@ -64,18 +76,22 @@
     "firstPackPresentCount": 28,
     "firstPackPartialCount": 0,
     "firstPackEvidenceOnlyCount": 0,
-    "firstPackBenchmarkMarkerCount": 4,
+    "firstPackBenchmarkMarkerCount": 3,
     "wave2ExpectedCount": 7,
     "wave2PresentCount": 7,
     "wave2PartialCount": 0,
     "wave2EvidenceOnlyCount": 0,
-    "wave2BenchmarkMarkerCount": 3,
+    "wave2BenchmarkMarkerCount": 2,
     "queryDescriptorCount": 30,
     "resolveDescriptorCount": 14,
     "semanticAuthoringDescriptorCount": 15,
     "typedMutatingDescriptorCount": 22,
     "rawApplyBundleDescriptorCount": 3,
     "semanticCmdkSurfaceCount": 12,
+    "closureGateCount": 7,
+    "closureGatePassedCount": 3,
+    "closureStatus": "Partial",
+    "closureBlockerCount": 4,
     "firstPack": [
       {
         "id": "model.show",
@@ -96,17 +112,7 @@
         "surface": "transaction-route",
         "source": "app/bim_ai/routes_commands.py:511",
         "toolKind": "raw-apply-bundle",
-        "benchmarkEvidence": [
-          {
-            "benchmarkId": "simple-single-storey-house",
-            "toolId": "model.dry_run",
-            "marker": "mcpCli path status",
-            "status": "fixture-validated-live-dry-run-capable",
-            "source": "spec/benchmarks/simple-single-storey-house/expected-semantics.json",
-            "live": true,
-            "note": "Benchmark path declares live dry-run evidence."
-          }
-        ],
+        "benchmarkEvidence": [],
         "notes": "Dedicated descriptor detected, but it still exposes bundle-shaped payloads rather than semantic authoring inputs."
       },
       {
@@ -417,10 +423,10 @@
             "benchmarkId": "simple-single-storey-house",
             "toolId": "qa.advisor",
             "marker": "advisor evidence expectation",
-            "status": "placeholder-or-live-dry-run-output",
+            "status": "placeholder-live-dry-run-or-committed-output",
             "source": "spec/benchmarks/simple-single-storey-house/expected-semantics.json",
             "live": false,
-            "note": "Live commit benchmark should persist advisor/constructability JSON from the committed model and fail on new errors."
+            "note": "Advisor evidence expectation declared by benchmark."
           }
         ],
         "notes": "Benchmark fixture exposes marker(s), but no live first-class surface was detected."
@@ -435,17 +441,7 @@
         "surface": "transaction-route",
         "source": "app/bim_ai/routes_commands.py:511",
         "toolKind": "raw-apply-bundle",
-        "benchmarkEvidence": [
-          {
-            "benchmarkId": "simple-single-storey-house",
-            "toolId": "model.dry_run",
-            "marker": "mcpCli path status",
-            "status": "fixture-validated-live-dry-run-capable",
-            "source": "spec/benchmarks/simple-single-storey-house/expected-semantics.json",
-            "live": true,
-            "note": "Benchmark path declares live dry-run evidence."
-          }
-        ],
+        "benchmarkEvidence": [],
         "notes": "Dedicated descriptor detected, but it still exposes bundle-shaped payloads rather than semantic authoring inputs."
       },
       {
@@ -526,13 +522,491 @@
             "benchmarkId": "simple-single-storey-house",
             "toolId": "qa.advisor",
             "marker": "advisor evidence expectation",
-            "status": "placeholder-or-live-dry-run-output",
+            "status": "placeholder-live-dry-run-or-committed-output",
             "source": "spec/benchmarks/simple-single-storey-house/expected-semantics.json",
             "live": false,
-            "note": "Live commit benchmark should persist advisor/constructability JSON from the committed model and fail on new errors."
+            "note": "Advisor evidence expectation declared by benchmark."
           }
         ],
         "notes": "Benchmark fixture exposes marker(s), but no live first-class surface was detected."
+      }
+    ],
+    "closureGates": [
+      {
+        "id": "firstPackSurfaces",
+        "label": "First-pack surfaces",
+        "status": "passed",
+        "passed": true,
+        "evidenceCount": 28,
+        "blocker": "",
+        "evidence": [
+          {
+            "benchmarkId": "",
+            "type": "firstPackSurfaces",
+            "status": "present",
+            "source": "app/bim_ai/routes_api.py:1211",
+            "detail": "model.show",
+            "passes": true
+          },
+          {
+            "benchmarkId": "",
+            "type": "firstPackSurfaces",
+            "status": "present",
+            "source": "app/bim_ai/routes_commands.py:511",
+            "detail": "model.dry_run",
+            "passes": true
+          },
+          {
+            "benchmarkId": "",
+            "type": "firstPackSurfaces",
+            "status": "present",
+            "source": "app/bim_ai/routes_api.py:2172",
+            "detail": "model.commit_bundle",
+            "passes": true
+          },
+          {
+            "benchmarkId": "",
+            "type": "firstPackSurfaces",
+            "status": "present",
+            "source": "app/bim_ai/query_resolve.py:395",
+            "detail": "query.elements",
+            "passes": true
+          },
+          {
+            "benchmarkId": "",
+            "type": "firstPackSurfaces",
+            "status": "present",
+            "source": "app/bim_ai/query_resolve.py:646",
+            "detail": "query.hosts",
+            "passes": true
+          },
+          {
+            "benchmarkId": "",
+            "type": "firstPackSurfaces",
+            "status": "present",
+            "source": "app/bim_ai/query_resolve.py:450",
+            "detail": "query.levels",
+            "passes": true
+          },
+          {
+            "benchmarkId": "",
+            "type": "firstPackSurfaces",
+            "status": "present",
+            "source": "app/bim_ai/query_resolve.py:507",
+            "detail": "query.types",
+            "passes": true
+          },
+          {
+            "benchmarkId": "",
+            "type": "firstPackSurfaces",
+            "status": "present",
+            "source": "app/bim_ai/query_resolve.py:567",
+            "detail": "query.views",
+            "passes": true
+          },
+          {
+            "benchmarkId": "",
+            "type": "firstPackSurfaces",
+            "status": "present",
+            "source": "app/bim_ai/query_resolve.py:672",
+            "detail": "query.nearest_wall",
+            "passes": true
+          },
+          {
+            "benchmarkId": "",
+            "type": "firstPackSurfaces",
+            "status": "present",
+            "source": "app/bim_ai/query_resolve.py:984",
+            "detail": "query.enclosed_loops",
+            "passes": true
+          },
+          {
+            "benchmarkId": "",
+            "type": "firstPackSurfaces",
+            "status": "present",
+            "source": "app/bim_ai/query_resolve.py:750",
+            "detail": "resolve.active_or_default_level",
+            "passes": true
+          },
+          {
+            "benchmarkId": "",
+            "type": "firstPackSurfaces",
+            "status": "present",
+            "source": "app/bim_ai/query_resolve.py:834",
+            "detail": "resolve.wall_by_line",
+            "passes": true
+          },
+          {
+            "benchmarkId": "",
+            "type": "firstPackSurfaces",
+            "status": "present",
+            "source": "app/bim_ai/query_resolve.py:1066",
+            "detail": "resolve.room_boundary",
+            "passes": true
+          },
+          {
+            "benchmarkId": "",
+            "type": "firstPackSurfaces",
+            "status": "present",
+            "source": "app/bim_ai/query_resolve.py:707",
+            "detail": "resolve.host_face",
+            "passes": true
+          },
+          {
+            "benchmarkId": "",
+            "type": "firstPackSurfaces",
+            "status": "present",
+            "source": "app/bim_ai/query_resolve.py:1086",
+            "detail": "resolve.family_type",
+            "passes": true
+          },
+          {
+            "benchmarkId": "",
+            "type": "firstPackSurfaces",
+            "status": "present",
+            "source": "app/bim_ai/semantic_authoring.py",
+            "detail": "author.wall",
+            "passes": true
+          },
+          {
+            "benchmarkId": "",
+            "type": "firstPackSurfaces",
+            "status": "present",
+            "source": "app/bim_ai/semantic_authoring.py",
+            "detail": "author.wall_chain",
+            "passes": true
+          },
+          {
+            "benchmarkId": "",
+            "type": "firstPackSurfaces",
+            "status": "present",
+            "source": "app/bim_ai/semantic_authoring.py",
+            "detail": "author.floor_from_boundary",
+            "passes": true
+          },
+          {
+            "benchmarkId": "",
+            "type": "firstPackSurfaces",
+            "status": "present",
+            "source": "app/bim_ai/semantic_authoring.py",
+            "detail": "author.floor_from_walls",
+            "passes": true
+          },
+          {
+            "benchmarkId": "",
+            "type": "firstPackSurfaces",
+            "status": "present",
+            "source": "app/bim_ai/semantic_authoring.py",
+            "detail": "opening.door_on_wall",
+            "passes": true
+          },
+          {
+            "benchmarkId": "",
+            "type": "firstPackSurfaces",
+            "status": "present",
+            "source": "app/bim_ai/semantic_authoring.py",
+            "detail": "opening.window_on_wall",
+            "passes": true
+          },
+          {
+            "benchmarkId": "",
+            "type": "firstPackSurfaces",
+            "status": "present",
+            "source": "app/bim_ai/semantic_authoring.py",
+            "detail": "author.roof_from_walls",
+            "passes": true
+          },
+          {
+            "benchmarkId": "",
+            "type": "firstPackSurfaces",
+            "status": "present",
+            "source": "app/bim_ai/semantic_authoring.py",
+            "detail": "opening.roof_opening",
+            "passes": true
+          },
+          {
+            "benchmarkId": "",
+            "type": "firstPackSurfaces",
+            "status": "present",
+            "source": "app/bim_ai/semantic_authoring.py",
+            "detail": "author.stair_between_levels",
+            "passes": true
+          },
+          {
+            "benchmarkId": "",
+            "type": "firstPackSurfaces",
+            "status": "present",
+            "source": "app/bim_ai/semantic_authoring.py",
+            "detail": "author.rooms_from_outlines",
+            "passes": true
+          },
+          {
+            "benchmarkId": "",
+            "type": "firstPackSurfaces",
+            "status": "present",
+            "source": "app/bim_ai/semantic_authoring.py",
+            "detail": "view.save_3d",
+            "passes": true
+          },
+          {
+            "benchmarkId": "",
+            "type": "firstPackSurfaces",
+            "status": "present",
+            "source": "app/bim_ai/semantic_authoring.py",
+            "detail": "document.sheet_with_views",
+            "passes": true
+          },
+          {
+            "benchmarkId": "",
+            "type": "firstPackSurfaces",
+            "status": "present",
+            "source": "app/bim_ai/routes_api.py:1405",
+            "detail": "qa.advisor",
+            "passes": true
+          }
+        ]
+      },
+      {
+        "id": "liveDryRunEvidence",
+        "label": "Live dry-run evidence",
+        "status": "blocked",
+        "passed": false,
+        "evidenceCount": 0,
+        "blocker": "No clean live typed dry-run benchmark evidence was detected.",
+        "evidence": [
+          {
+            "benchmarkId": "simple-single-storey-house",
+            "type": "liveDryRunEvidence",
+            "status": "fixture-validated-live-dry-run-and-commit-capable",
+            "source": "spec/benchmarks/simple-single-storey-house/expected-semantics.json",
+            "detail": "",
+            "passes": false
+          },
+          {
+            "benchmarkId": "simple-single-storey-house",
+            "type": "liveDryRunEvidence",
+            "status": "optional",
+            "source": "spec/benchmarks/simple-single-storey-house/expected-semantics.json",
+            "detail": "mode=dry_run",
+            "passes": false
+          }
+        ]
+      },
+      {
+        "id": "liveCommitEvidence",
+        "label": "Live commit evidence",
+        "status": "blocked",
+        "passed": false,
+        "evidenceCount": 0,
+        "blocker": "No live typed commit benchmark evidence was detected.",
+        "evidence": [
+          {
+            "benchmarkId": "simple-single-storey-house",
+            "type": "liveCommitEvidence",
+            "status": "explicit-opt-in",
+            "source": "spec/benchmarks/simple-single-storey-house/expected-semantics.json",
+            "detail": "",
+            "passes": false
+          },
+          {
+            "benchmarkId": "simple-single-storey-house",
+            "type": "liveCommitEvidence",
+            "status": "explicit-opt-in",
+            "source": "spec/benchmarks/simple-single-storey-house/expected-semantics.json",
+            "detail": "",
+            "passes": false
+          }
+        ]
+      },
+      {
+        "id": "committedAdvisorValidation",
+        "label": "Committed advisor/validation",
+        "status": "blocked",
+        "passed": false,
+        "evidenceCount": 0,
+        "blocker": "No committed-model advisor or validation evidence was detected.",
+        "evidence": [
+          {
+            "benchmarkId": "simple-single-storey-house",
+            "type": "committedAdvisorValidation",
+            "status": "placeholder-live-dry-run-or-committed-output",
+            "source": "spec/benchmarks/simple-single-storey-house/expected-semantics.json",
+            "detail": "",
+            "passes": false
+          },
+          {
+            "benchmarkId": "simple-single-storey-house",
+            "type": "committedAdvisorValidation",
+            "status": "placeholder-live-dry-run-or-committed-output",
+            "source": "spec/benchmarks/simple-single-storey-house/expected-semantics.json",
+            "detail": "",
+            "passes": false
+          },
+          {
+            "benchmarkId": "simple-single-storey-house",
+            "type": "committedAdvisorValidation",
+            "status": "GET /api/models/{model_id}/validate",
+            "source": "spec/benchmarks/simple-single-storey-house/expected-semantics.json",
+            "detail": "",
+            "passes": false
+          },
+          {
+            "benchmarkId": "simple-single-storey-house",
+            "type": "committedAdvisorValidation",
+            "status": "POST /api/models/{model_id}/qa/advisor",
+            "source": "spec/benchmarks/simple-single-storey-house/expected-semantics.json",
+            "detail": "",
+            "passes": false
+          },
+          {
+            "benchmarkId": "simple-single-storey-house",
+            "type": "committedAdvisorValidation",
+            "status": "GET /api/models/{model_id}/evidence-package",
+            "source": "spec/benchmarks/simple-single-storey-house/expected-semantics.json",
+            "detail": "",
+            "passes": false
+          }
+        ]
+      },
+      {
+        "id": "visualRenderEvidence",
+        "label": "Visual/render evidence",
+        "status": "passed",
+        "passed": true,
+        "evidenceCount": 2,
+        "blocker": "",
+        "evidence": [
+          {
+            "benchmarkId": "simple-single-storey-house",
+            "type": "visualRenderEvidence",
+            "status": "server-side-substitute-when-committed-evidence-requested",
+            "source": "spec/benchmarks/simple-single-storey-house/expected-semantics.json",
+            "detail": "Full confidence still requires browser-rendered nonblank plan and 3D screenshots for ssh-view-ground-plan and ssh-view-3d.",
+            "passes": true
+          },
+          {
+            "benchmarkId": "simple-single-storey-house",
+            "type": "visualRenderEvidence",
+            "status": "server-side-substitute-when-committed-evidence-requested",
+            "source": "spec/benchmarks/simple-single-storey-house/expected-semantics.json",
+            "detail": "",
+            "passes": true
+          },
+          {
+            "benchmarkId": "simple-single-storey-house",
+            "type": "visualRenderEvidence",
+            "status": "ssh-view-ground-plan",
+            "source": "spec/benchmarks/simple-single-storey-house/expected-semantics.json",
+            "detail": "",
+            "passes": false
+          },
+          {
+            "benchmarkId": "simple-single-storey-house",
+            "type": "visualRenderEvidence",
+            "status": "ssh-view-3d",
+            "source": "spec/benchmarks/simple-single-storey-house/expected-semantics.json",
+            "detail": "",
+            "passes": false
+          },
+          {
+            "benchmarkId": "simple-single-storey-house",
+            "type": "visualRenderEvidence",
+            "status": "GET /api/models/{model_id}/exports/sheet-print-raster.png?sheetId=ssh-sheet-a101",
+            "source": "spec/benchmarks/simple-single-storey-house/expected-semantics.json",
+            "detail": "",
+            "passes": false
+          }
+        ]
+      },
+      {
+        "id": "exportEvidence",
+        "label": "Export evidence",
+        "status": "passed",
+        "passed": true,
+        "evidenceCount": 4,
+        "blocker": "",
+        "evidence": [
+          {
+            "benchmarkId": "simple-single-storey-house",
+            "type": "exportEvidence",
+            "status": "artifact-or-manifest-check-when-committed-evidence-requested",
+            "source": "spec/benchmarks/simple-single-storey-house/expected-semantics.json",
+            "detail": "Full M2/M3 exit should add IFC and glTF round-trip evidence for this house.",
+            "passes": true
+          },
+          {
+            "benchmarkId": "simple-single-storey-house",
+            "type": "exportEvidence",
+            "status": "artifact-or-manifest-check-when-committed-evidence-requested",
+            "source": "spec/benchmarks/simple-single-storey-house/expected-semantics.json",
+            "detail": "",
+            "passes": true
+          },
+          {
+            "benchmarkId": "simple-single-storey-house",
+            "type": "exportEvidence",
+            "status": "GET /api/models/{model_id}/exports/gltf-manifest",
+            "source": "spec/benchmarks/simple-single-storey-house/expected-semantics.json",
+            "detail": "",
+            "passes": true
+          },
+          {
+            "benchmarkId": "simple-single-storey-house",
+            "type": "exportEvidence",
+            "status": "GET /api/models/{model_id}/exports/ifc-manifest",
+            "source": "spec/benchmarks/simple-single-storey-house/expected-semantics.json",
+            "detail": "",
+            "passes": true
+          },
+          {
+            "benchmarkId": "simple-single-storey-house",
+            "type": "exportEvidence",
+            "status": "GET /api/models/{model_id}/exports/sheet-preview.pdf?sheetId=ssh-sheet-a101",
+            "source": "spec/benchmarks/simple-single-storey-house/expected-semantics.json",
+            "detail": "",
+            "passes": false
+          }
+        ]
+      },
+      {
+        "id": "uiEquivalentPath",
+        "label": "UI-equivalent path",
+        "status": "blocked",
+        "passed": false,
+        "evidenceCount": 0,
+        "blocker": "No executable or validated UI/Cmd+K equivalent path was detected.",
+        "evidence": [
+          {
+            "benchmarkId": "simple-single-storey-house",
+            "type": "uiEquivalentPath",
+            "status": "traceability-only",
+            "source": "spec/benchmarks/simple-single-storey-house/expected-semantics.json",
+            "detail": "Add an executable UI/Cmd+K path and semantic diff against this fixture once M2 UI benchmark automation is in scope.",
+            "passes": false
+          }
+        ]
+      }
+    ],
+    "closureBlockers": [
+      {
+        "id": "liveDryRunEvidence",
+        "label": "Live dry-run evidence",
+        "blocker": "No clean live typed dry-run benchmark evidence was detected."
+      },
+      {
+        "id": "liveCommitEvidence",
+        "label": "Live commit evidence",
+        "blocker": "No live typed commit benchmark evidence was detected."
+      },
+      {
+        "id": "committedAdvisorValidation",
+        "label": "Committed advisor/validation",
+        "blocker": "No committed-model advisor or validation evidence was detected."
+      },
+      {
+        "id": "uiEquivalentPath",
+        "label": "UI-equivalent path",
+        "blocker": "No executable or validated UI/Cmd+K equivalent path was detected."
       }
     ],
     "queryDescriptors": [
@@ -628,13 +1102,13 @@
       "pathStatus": [
         {
           "id": "mcpCli",
-          "status": "fixture-validated-live-dry-run-capable",
+          "status": "fixture-validated-live-dry-run-and-commit-capable",
           "todo": ""
         },
         {
           "id": "ui",
-          "status": "todo",
-          "todo": "Add an equivalent UI/Cmd+K path and semantic diff against this fixture once M2 UI benchmark automation is in scope."
+          "status": "traceability-only",
+          "todo": "Add an executable UI/Cmd+K path and semantic diff against this fixture once M2 UI benchmark automation is in scope."
         }
       ],
       "evidenceExpectations": [
@@ -710,47 +1184,147 @@
         },
         {
           "id": "advisor",
-          "status": "placeholder-or-live-dry-run-output",
-          "todo": "Live commit benchmark should persist advisor/constructability JSON from the committed model and fail on new errors."
-        },
-        {
-          "id": "advisor.status",
-          "status": "placeholder-or-live-dry-run-output",
+          "status": "placeholder-live-dry-run-or-committed-output",
           "todo": ""
         },
         {
-          "id": "advisor.todo",
-          "status": "Live commit benchmark should persist advisor/constructability JSON from the committed model and fail on new errors.",
+          "id": "advisor.status",
+          "status": "placeholder-live-dry-run-or-committed-output",
+          "todo": ""
+        },
+        {
+          "id": "advisor.committedEvidence.0",
+          "status": "GET /api/models/{model_id}/validate",
+          "todo": ""
+        },
+        {
+          "id": "advisor.committedEvidence.1",
+          "status": "POST /api/models/{model_id}/qa/advisor",
+          "todo": ""
+        },
+        {
+          "id": "advisor.committedEvidence.2",
+          "status": "GET /api/models/{model_id}/evidence-package",
+          "todo": ""
+        },
+        {
+          "id": "liveCommit",
+          "status": "explicit-opt-in",
+          "todo": ""
+        },
+        {
+          "id": "liveCommit.status",
+          "status": "explicit-opt-in",
+          "todo": ""
+        },
+        {
+          "id": "liveCommit.artifacts.0",
+          "status": "live-dry-run-evidence.json",
+          "todo": ""
+        },
+        {
+          "id": "liveCommit.artifacts.1",
+          "status": "live-commit-evidence.json",
+          "todo": ""
+        },
+        {
+          "id": "liveCommit.artifacts.2",
+          "status": "command-log-summary.json",
+          "todo": ""
+        },
+        {
+          "id": "liveCommit.artifacts.3",
+          "status": "snapshot-summary.json",
+          "todo": ""
+        },
+        {
+          "id": "committedEvidence",
+          "status": "explicit-opt-in",
+          "todo": ""
+        },
+        {
+          "id": "committedEvidence.status",
+          "status": "explicit-opt-in",
+          "todo": ""
+        },
+        {
+          "id": "committedEvidence.artifacts.0",
+          "status": "committed-evidence.json",
+          "todo": ""
+        },
+        {
+          "id": "committedEvidence.artifacts.1",
+          "status": "advisor-validation.json",
+          "todo": ""
+        },
+        {
+          "id": "committedEvidence.artifacts.2",
+          "status": "visual-evidence.json",
+          "todo": ""
+        },
+        {
+          "id": "committedEvidence.artifacts.3",
+          "status": "export-evidence.json",
           "todo": ""
         },
         {
           "id": "screenshots",
-          "status": "placeholder",
-          "todo": "Live benchmark should render nonblank plan and 3D screenshots for ssh-view-ground-plan and ssh-view-3d."
+          "status": "server-side-substitute-when-committed-evidence-requested",
+          "todo": "Full confidence still requires browser-rendered nonblank plan and 3D screenshots for ssh-view-ground-plan and ssh-view-3d."
         },
         {
           "id": "screenshots.status",
-          "status": "placeholder",
+          "status": "server-side-substitute-when-committed-evidence-requested",
+          "todo": ""
+        },
+        {
+          "id": "screenshots.requiredViewIds.0",
+          "status": "ssh-view-ground-plan",
+          "todo": ""
+        },
+        {
+          "id": "screenshots.requiredViewIds.1",
+          "status": "ssh-view-3d",
+          "todo": ""
+        },
+        {
+          "id": "screenshots.serverSideSubstitute",
+          "status": "GET /api/models/{model_id}/exports/sheet-print-raster.png?sheetId=ssh-sheet-a101",
           "todo": ""
         },
         {
           "id": "screenshots.todo",
-          "status": "Live benchmark should render nonblank plan and 3D screenshots for ssh-view-ground-plan and ssh-view-3d.",
+          "status": "Full confidence still requires browser-rendered nonblank plan and 3D screenshots for ssh-view-ground-plan and ssh-view-3d.",
           "todo": ""
         },
         {
           "id": "exports",
-          "status": "placeholder",
-          "todo": "Full M2/M3 exit should include IFC and glTF export evidence for this house."
+          "status": "artifact-or-manifest-check-when-committed-evidence-requested",
+          "todo": "Full M2/M3 exit should add IFC and glTF round-trip evidence for this house."
         },
         {
           "id": "exports.status",
-          "status": "placeholder",
+          "status": "artifact-or-manifest-check-when-committed-evidence-requested",
+          "todo": ""
+        },
+        {
+          "id": "exports.checks.0",
+          "status": "GET /api/models/{model_id}/exports/gltf-manifest",
+          "todo": ""
+        },
+        {
+          "id": "exports.checks.1",
+          "status": "GET /api/models/{model_id}/exports/ifc-manifest",
+          "todo": ""
+        },
+        {
+          "id": "exports.checks.2",
+          "status": "GET /api/models/{model_id}/exports/sheet-preview.pdf?sheetId=ssh-sheet-a101",
           "todo": ""
         },
         {
           "id": "exports.todo",
-          "status": "Full M2/M3 exit should include IFC and glTF export evidence for this house.",
+          "status": "Full M2/M3 exit should add IFC and glTF round-trip evidence for this house.",
           "todo": ""
         }
       ],
@@ -783,20 +1357,12 @@
           "note": "Command appears in deterministic MCP/CLI fixture; this is not live typed execution evidence."
         },
         {
-          "toolId": "model.dry_run",
-          "marker": "mcpCli path status",
-          "status": "fixture-validated-live-dry-run-capable",
-          "source": "spec/benchmarks/simple-single-storey-house/expected-semantics.json",
-          "live": true,
-          "note": "Benchmark path declares live dry-run evidence."
-        },
-        {
           "toolId": "qa.advisor",
           "marker": "advisor evidence expectation",
-          "status": "placeholder-or-live-dry-run-output",
+          "status": "placeholder-live-dry-run-or-committed-output",
           "source": "spec/benchmarks/simple-single-storey-house/expected-semantics.json",
           "live": false,
-          "note": "Live commit benchmark should persist advisor/constructability JSON from the committed model and fail on new errors."
+          "note": "Advisor evidence expectation declared by benchmark."
         },
         {
           "toolId": "view.save_3d",
@@ -807,9 +1373,151 @@
           "note": "Command appears in deterministic MCP/CLI fixture; this is not live typed execution evidence."
         }
       ],
-      "uiEquivalentStatus": "todo",
-      "uiEquivalentTodo": "Add an equivalent UI/Cmd+K path and semantic diff against this fixture once M2 UI benchmark automation is in scope.",
-      "liveEvidence": true
+      "evidenceSignals": [
+        {
+          "type": "committedAdvisorValidation",
+          "status": "placeholder-live-dry-run-or-committed-output",
+          "source": "spec/benchmarks/simple-single-storey-house/expected-semantics.json",
+          "detail": "",
+          "passes": false
+        },
+        {
+          "type": "committedAdvisorValidation",
+          "status": "placeholder-live-dry-run-or-committed-output",
+          "source": "spec/benchmarks/simple-single-storey-house/expected-semantics.json",
+          "detail": "",
+          "passes": false
+        },
+        {
+          "type": "committedAdvisorValidation",
+          "status": "GET /api/models/{model_id}/validate",
+          "source": "spec/benchmarks/simple-single-storey-house/expected-semantics.json",
+          "detail": "",
+          "passes": false
+        },
+        {
+          "type": "committedAdvisorValidation",
+          "status": "POST /api/models/{model_id}/qa/advisor",
+          "source": "spec/benchmarks/simple-single-storey-house/expected-semantics.json",
+          "detail": "",
+          "passes": false
+        },
+        {
+          "type": "committedAdvisorValidation",
+          "status": "GET /api/models/{model_id}/evidence-package",
+          "source": "spec/benchmarks/simple-single-storey-house/expected-semantics.json",
+          "detail": "",
+          "passes": false
+        },
+        {
+          "type": "exportEvidence",
+          "status": "artifact-or-manifest-check-when-committed-evidence-requested",
+          "source": "spec/benchmarks/simple-single-storey-house/expected-semantics.json",
+          "detail": "Full M2/M3 exit should add IFC and glTF round-trip evidence for this house.",
+          "passes": true
+        },
+        {
+          "type": "exportEvidence",
+          "status": "artifact-or-manifest-check-when-committed-evidence-requested",
+          "source": "spec/benchmarks/simple-single-storey-house/expected-semantics.json",
+          "detail": "",
+          "passes": true
+        },
+        {
+          "type": "exportEvidence",
+          "status": "GET /api/models/{model_id}/exports/gltf-manifest",
+          "source": "spec/benchmarks/simple-single-storey-house/expected-semantics.json",
+          "detail": "",
+          "passes": true
+        },
+        {
+          "type": "exportEvidence",
+          "status": "GET /api/models/{model_id}/exports/ifc-manifest",
+          "source": "spec/benchmarks/simple-single-storey-house/expected-semantics.json",
+          "detail": "",
+          "passes": true
+        },
+        {
+          "type": "exportEvidence",
+          "status": "GET /api/models/{model_id}/exports/sheet-preview.pdf?sheetId=ssh-sheet-a101",
+          "source": "spec/benchmarks/simple-single-storey-house/expected-semantics.json",
+          "detail": "",
+          "passes": false
+        },
+        {
+          "type": "liveCommitEvidence",
+          "status": "explicit-opt-in",
+          "source": "spec/benchmarks/simple-single-storey-house/expected-semantics.json",
+          "detail": "",
+          "passes": false
+        },
+        {
+          "type": "liveCommitEvidence",
+          "status": "explicit-opt-in",
+          "source": "spec/benchmarks/simple-single-storey-house/expected-semantics.json",
+          "detail": "",
+          "passes": false
+        },
+        {
+          "type": "liveDryRunEvidence",
+          "status": "fixture-validated-live-dry-run-and-commit-capable",
+          "source": "spec/benchmarks/simple-single-storey-house/expected-semantics.json",
+          "detail": "",
+          "passes": false
+        },
+        {
+          "type": "liveDryRunEvidence",
+          "status": "optional",
+          "source": "spec/benchmarks/simple-single-storey-house/expected-semantics.json",
+          "detail": "mode=dry_run",
+          "passes": false
+        },
+        {
+          "type": "uiEquivalentPath",
+          "status": "traceability-only",
+          "source": "spec/benchmarks/simple-single-storey-house/expected-semantics.json",
+          "detail": "Add an executable UI/Cmd+K path and semantic diff against this fixture once M2 UI benchmark automation is in scope.",
+          "passes": false
+        },
+        {
+          "type": "visualRenderEvidence",
+          "status": "server-side-substitute-when-committed-evidence-requested",
+          "source": "spec/benchmarks/simple-single-storey-house/expected-semantics.json",
+          "detail": "Full confidence still requires browser-rendered nonblank plan and 3D screenshots for ssh-view-ground-plan and ssh-view-3d.",
+          "passes": true
+        },
+        {
+          "type": "visualRenderEvidence",
+          "status": "server-side-substitute-when-committed-evidence-requested",
+          "source": "spec/benchmarks/simple-single-storey-house/expected-semantics.json",
+          "detail": "",
+          "passes": true
+        },
+        {
+          "type": "visualRenderEvidence",
+          "status": "ssh-view-ground-plan",
+          "source": "spec/benchmarks/simple-single-storey-house/expected-semantics.json",
+          "detail": "",
+          "passes": false
+        },
+        {
+          "type": "visualRenderEvidence",
+          "status": "ssh-view-3d",
+          "source": "spec/benchmarks/simple-single-storey-house/expected-semantics.json",
+          "detail": "",
+          "passes": false
+        },
+        {
+          "type": "visualRenderEvidence",
+          "status": "GET /api/models/{model_id}/exports/sheet-print-raster.png?sheetId=ssh-sheet-a101",
+          "source": "spec/benchmarks/simple-single-storey-house/expected-semantics.json",
+          "detail": "",
+          "passes": false
+        }
+      ],
+      "uiEquivalentStatus": "traceability-only",
+      "uiEquivalentTodo": "Add an executable UI/Cmd+K path and semantic diff against this fixture once M2 UI benchmark automation is in scope.",
+      "liveEvidence": false
     }
   ],
   "backendCommands": [
@@ -16500,6 +17208,38 @@
       "id": "tool.floor-sketch",
       "status": "UI-only",
       "detail": "Cmd+K entry activates an interactive tool and is not a complete agent operation."
+    },
+    {
+      "priority": "P0",
+      "domain": "m2-closure",
+      "kind": "m2-closure-gate-blocked",
+      "id": "committedAdvisorValidation",
+      "status": "Gap",
+      "detail": "No committed-model advisor or validation evidence was detected."
+    },
+    {
+      "priority": "P0",
+      "domain": "m2-closure",
+      "kind": "m2-closure-gate-blocked",
+      "id": "liveCommitEvidence",
+      "status": "Gap",
+      "detail": "No live typed commit benchmark evidence was detected."
+    },
+    {
+      "priority": "P0",
+      "domain": "m2-closure",
+      "kind": "m2-closure-gate-blocked",
+      "id": "liveDryRunEvidence",
+      "status": "Gap",
+      "detail": "No clean live typed dry-run benchmark evidence was detected."
+    },
+    {
+      "priority": "P0",
+      "domain": "m2-closure",
+      "kind": "m2-closure-gate-blocked",
+      "id": "uiEquivalentPath",
+      "status": "Gap",
+      "detail": "No executable or validated UI/Cmd+K equivalent path was detected."
     },
     {
       "priority": "P0",

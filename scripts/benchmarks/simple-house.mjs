@@ -14,7 +14,12 @@ function usage() {
   console.error(`Usage:
   node scripts/benchmarks/simple-house.mjs [--bundle <path>] [--expected <path>] [--json]
     [--mode offline|auto|live] [--base-url <url>] [--model-id <id>]
-    [--parent-revision <rev>] [--user-id <id>] [--out-dir <path>]
+    [--parent-revision <rev>] [--user-id <id>] [--out-dir <path>] [--commit-live]
+    [--collect-committed-evidence]
+
+  --commit-live mutates the target model. Without it, live mode only dry-runs.
+  --collect-committed-evidence reads advisor/validation/visual/export evidence
+  from the current target model without posting a commit.
 `);
   process.exit(2);
 }
@@ -30,10 +35,14 @@ function parseArgs(argv) {
     parentRevision: process.env.BIM_AI_PARENT_REVISION ?? null,
     userId: process.env.BIM_AI_USER_ID ?? 'benchmark-agent',
     outDir: null,
+    commitLive: false,
+    collectCommittedEvidence: false,
   };
   for (let i = 0; i < argv.length; i += 1) {
     const arg = argv[i];
     if (arg === '--json') args.json = true;
+    else if (arg === '--commit-live') args.commitLive = true;
+    else if (arg === '--collect-committed-evidence') args.collectCommittedEvidence = true;
     else if (arg === '--bundle' && argv[i + 1]) args.bundle = path.resolve(argv[++i]);
     else if (arg === '--expected' && argv[i + 1]) args.expected = path.resolve(argv[++i]);
     else if (arg === '--mode' && argv[i + 1]) args.mode = argv[++i];
@@ -379,23 +388,140 @@ async function postJson(url, body) {
   }
 }
 
-function normalizeLiveDryRunEvidence({ baseUrl, modelId, userId, bundle, response }) {
+async function getJson(url) {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 30_000);
+  try {
+    const response = await fetch(url, { signal: controller.signal });
+    const text = await response.text();
+    let json;
+    try {
+      json = text ? JSON.parse(text) : null;
+    } catch {
+      json = { raw: text };
+    }
+    return { status: response.status, ok: response.ok, body: json };
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
+async function getArtifact(url, accept) {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 30_000);
+  try {
+    const response = await fetch(url, {
+      headers: accept ? { accept } : undefined,
+      signal: controller.signal,
+    });
+    const bytes = Buffer.from(await response.arrayBuffer());
+    return {
+      status: response.status,
+      ok: response.ok,
+      contentType: response.headers.get('content-type') ?? null,
+      byteLength: bytes.length,
+      sha256: createHash('sha256').update(bytes).digest('hex'),
+      headerHex: bytes.subarray(0, 8).toString('hex'),
+      headers: Object.fromEntries(response.headers.entries()),
+    };
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
+function responseValue(body, keys) {
+  for (const key of keys) {
+    if (body?.[key] !== undefined) return body[key];
+    if (body?.result?.[key] !== undefined) return body.result[key];
+  }
+  return null;
+}
+
+function extractChangedIds(body) {
+  const candidates = [
+    body?.changedIds,
+    body?.changedElementIds,
+    body?.result?.changedIds,
+    body?.result?.changedElementIds,
+    body?.delta?.changedIds,
+    body?.delta?.changedElementIds,
+    body?.modelDelta?.changedIds,
+    body?.modelDelta?.changedElementIds,
+  ];
+  const ids = new Set();
+  for (const candidate of candidates) {
+    if (Array.isArray(candidate)) {
+      for (const id of candidate) ids.add(String(id));
+    }
+  }
+  return [...ids].sort();
+}
+
+function summarizeSnapshot(snapshot) {
+  if (!snapshot || typeof snapshot !== 'object') return null;
+  const elements = snapshot.elements ?? snapshot.elementsById ?? {};
+  const entries = Array.isArray(elements)
+    ? elements.map((element) => [element?.id ?? null, element])
+    : Object.entries(elements);
+  const countsByKind = {};
+  const ids = [];
+  for (const [entryId, element] of entries) {
+    const id = element?.id ?? entryId;
+    if (id) ids.push(String(id));
+    const kind = element?.kind ?? element?.type ?? element?.category ?? 'unknown';
+    countsByKind[kind] = (countsByKind[kind] ?? 0) + 1;
+  }
+  ids.sort();
+  return {
+    modelId: snapshot.modelId ?? snapshot.id ?? null,
+    revision: snapshot.revision ?? snapshot.currentRevision ?? null,
+    elementCount: entries.length,
+    countsByKind: Object.fromEntries(
+      Object.entries(countsByKind).sort(([a], [b]) => a.localeCompare(b)),
+    ),
+    ids,
+  };
+}
+
+function summarizeCommandLog(commandLog) {
+  if (!commandLog || typeof commandLog !== 'object') return null;
+  const entries = Array.isArray(commandLog.entries) ? commandLog.entries : [];
+  return {
+    modelId: commandLog.modelId ?? null,
+    entryCount: entries.length,
+    latest: entries.slice(0, 3).map((entry) => ({
+      id: entry.id ?? null,
+      userId: entry.userId ?? null,
+      revisionAfter: entry.revisionAfter ?? null,
+      appliedCommandCount: Array.isArray(entry.appliedCommands)
+        ? entry.appliedCommands.length
+        : null,
+      appliedCommandTypes: Array.isArray(entry.appliedCommands)
+        ? entry.appliedCommands.map((command) => command?.type ?? 'unknown').sort()
+        : [],
+    })),
+  };
+}
+
+function normalizeLiveBundleEvidence({ baseUrl, modelId, userId, bundle, response, requestMode }) {
   const endpointPath = `/api/models/${encodeURIComponent(modelId)}/bundles`;
   const body = response.body ?? {};
   const violations = body.violations ?? body.result?.violations ?? [];
+  const revision = responseValue(body, ['newRevision', 'revision']);
+  const wouldRevision = responseValue(body, ['wouldRevision']);
   return {
-    mode: 'live-dry-run',
+    mode: requestMode === 'commit' ? 'live-commit' : 'live-dry-run',
     ok: response.ok && body.ok !== false,
     publicSurface: {
       kind: 'cmd-v3-api',
       method: 'POST',
       endpoint: endpointPath,
       url: `${baseUrl.replace(/\/$/, '')}${endpointPath}`,
-      requestMode: 'dry_run',
+      requestMode,
       cliEquivalent: `BIM_AI_BASE_URL=${baseUrl} BIM_AI_MODEL_ID=${modelId} pnpm --dir ${REPO_ROOT} --filter @bim-ai/cli exec bim-ai apply-bundle ${path.relative(
         REPO_ROOT,
         DEFAULT_BUNDLE,
-      )} --base <parentRevision> --dry-run`,
+      )} --base <parentRevision> --${requestMode === 'commit' ? 'commit' : 'dry-run'}`,
     },
     request: {
       bundleDigest: sha256(bundle),
@@ -408,11 +534,15 @@ function normalizeLiveDryRunEvidence({ baseUrl, modelId, userId, bundle, respons
       ok: response.ok,
       bodyOk: body.ok ?? null,
       reason: body.reason ?? body.result?.reason ?? null,
-      wouldRevision: body.wouldRevision ?? body.result?.wouldRevision ?? null,
-      revision: body.revision ?? body.result?.revision ?? null,
+      applied: body.applied ?? body.result?.applied ?? null,
+      wouldRevision,
+      revision,
+      newRevision: responseValue(body, ['newRevision']),
+      changedIds: extractChangedIds(body),
+      checkpointSnapshotId: responseValue(body, ['checkpointSnapshotId']),
     },
     validation: {
-      status: 'live-dry-run-response',
+      status: requestMode === 'commit' ? 'live-commit-response' : 'live-dry-run-response',
       ok: response.ok && body.ok !== false,
       violationCount: violations.length,
       violations,
@@ -438,13 +568,299 @@ async function runLiveDryRun(args, bundle) {
     userId: args.userId,
     submitter: 'benchmark-agent',
   });
-  return normalizeLiveDryRunEvidence({
+  return normalizeLiveBundleEvidence({
     baseUrl,
     modelId: args.modelId,
     userId: args.userId,
     bundle: liveBundle,
     response,
+    requestMode: 'dry_run',
   });
+}
+
+async function runLiveCommit(args, bundle) {
+  const liveBundle = withParentRevision(bundle, args.parentRevision);
+  const baseUrl = args.baseUrl.replace(/\/$/, '');
+  const endpointPath = `/api/models/${encodeURIComponent(args.modelId)}/bundles`;
+  const response = await postJson(`${baseUrl}${endpointPath}`, {
+    bundle: liveBundle,
+    mode: 'commit',
+    userId: args.userId,
+    submitter: 'benchmark-agent',
+  });
+  const evidence = normalizeLiveBundleEvidence({
+    baseUrl,
+    modelId: args.modelId,
+    userId: args.userId,
+    bundle: liveBundle,
+    response,
+    requestMode: 'commit',
+  });
+
+  const commandLogUrl = `${baseUrl}/api/models/${encodeURIComponent(args.modelId)}/command-log?limit=5`;
+  const snapshotUrl = `${baseUrl}/api/models/${encodeURIComponent(args.modelId)}/snapshot`;
+  const [commandLogResponse, snapshotResponse] = await Promise.all([
+    getJson(commandLogUrl).catch((error) => ({
+      status: null,
+      ok: false,
+      body: { error: error.message },
+    })),
+    getJson(snapshotUrl).catch((error) => ({
+      status: null,
+      ok: false,
+      body: { error: error.message },
+    })),
+  ]);
+
+  evidence.postCommit = {
+    commandLog: {
+      publicSurface: {
+        kind: 'cmd-v3-command-log-api',
+        method: 'GET',
+        endpoint: `/api/models/${encodeURIComponent(args.modelId)}/command-log?limit=5`,
+        url: commandLogUrl,
+      },
+      httpStatus: commandLogResponse.status,
+      ok: commandLogResponse.ok,
+      summary: summarizeCommandLog(commandLogResponse.body),
+      bodyDigest: sha256(commandLogResponse.body ?? {}),
+    },
+    snapshot: {
+      publicSurface: {
+        kind: 'model-snapshot-api',
+        method: 'GET',
+        endpoint: `/api/models/${encodeURIComponent(args.modelId)}/snapshot`,
+        url: snapshotUrl,
+      },
+      httpStatus: snapshotResponse.status,
+      ok: snapshotResponse.ok,
+      summary: summarizeSnapshot(snapshotResponse.body),
+      bodyDigest: sha256(snapshotResponse.body ?? {}),
+    },
+  };
+  return evidence;
+}
+
+function unavailableEvidence(label, response) {
+  return {
+    status: 'unavailable',
+    httpStatus: response?.status ?? null,
+    reason: response?.body?.error ?? `${label} was not returned by the live server.`,
+    body: response?.body ?? null,
+  };
+}
+
+function jsonEvidence(label, response) {
+  if (!response?.ok) return unavailableEvidence(label, response);
+  return response.body ?? {};
+}
+
+function artifactEvidence(label, response) {
+  if (!response?.ok) {
+    return {
+      artifactKind: label,
+      status: 'unavailable',
+      httpStatus: response?.status ?? null,
+      reason: `${label} was not returned by the live server.`,
+    };
+  }
+  return {
+    artifactKind: label,
+    status: response.byteLength > 0 ? 'artifact-returned' : 'blank-artifact',
+    httpStatus: response.status,
+    contentType: response.contentType,
+    byteLength: response.byteLength,
+    sha256: response.sha256,
+  };
+}
+
+function manifestEvidence(label, response) {
+  if (!response?.ok) return unavailableEvidence(label, response);
+  return {
+    artifactKind: label,
+    status: 'manifest-returned',
+    httpStatus: response.status,
+    digest: sha256(response.body ?? {}),
+    body: response.body ?? {},
+  };
+}
+
+function sheetRasterEvidence(response) {
+  const pngSignature = '89504e470d0a1a0a';
+  const ok = response?.ok && response.headerHex === pngSignature && response.byteLength > 64;
+  if (!response?.ok) {
+    return {
+      status: 'unavailable',
+      httpStatus: response?.status ?? null,
+      reason: 'No deterministic server-side sheet raster substitute was returned.',
+    };
+  }
+  return {
+    status: ok ? 'server-side-substitute' : 'invalid',
+    substituteKind: 'deterministic-sheet-print-raster',
+    explicitLimitation:
+      response.headers['x-bim-ai-sheet-print-raster-full-raster-status'] ??
+      'server-side substitute; not a browser screenshot',
+    contentType: response.contentType,
+    byteLength: response.byteLength,
+    sha256: response.sha256,
+    pngSignatureOk: response.headerHex === pngSignature,
+    nonblankProof: {
+      method: 'png-signature-and-byte-length',
+      ok,
+    },
+    contract: response.headers['x-bim-ai-sheet-print-raster-contract'] ?? null,
+    widthPx: response.headers['x-bim-ai-sheet-print-raster-width'] ?? null,
+    heightPx: response.headers['x-bim-ai-sheet-print-raster-height'] ?? null,
+  };
+}
+
+async function collectCommittedEvidence(args, liveCommitEvidence = null) {
+  const baseUrl = args.baseUrl.replace(/\/$/, '');
+  const modelPath = `/api/models/${encodeURIComponent(args.modelId)}`;
+  const sheetId = 'ssh-sheet-a101';
+  const urls = {
+    validate: `${baseUrl}${modelPath}/validate`,
+    advisor: `${baseUrl}${modelPath}/qa/advisor`,
+    evidencePackage: `${baseUrl}${modelPath}/evidence-package`,
+    snapshot: `${baseUrl}${modelPath}/snapshot`,
+    summary: `${baseUrl}${modelPath}/summary`,
+    gltfManifest: `${baseUrl}${modelPath}/exports/gltf-manifest`,
+    ifcManifest: `${baseUrl}${modelPath}/exports/ifc-manifest`,
+    sheetRaster: `${baseUrl}${modelPath}/exports/sheet-print-raster.png?sheetId=${encodeURIComponent(sheetId)}`,
+    sheetPdf: `${baseUrl}${modelPath}/exports/sheet-preview.pdf?sheetId=${encodeURIComponent(sheetId)}`,
+  };
+  const [
+    validate,
+    evidencePackage,
+    snapshot,
+    summary,
+    gltfManifest,
+    ifcManifest,
+    sheetRaster,
+    sheetPdf,
+  ] = await Promise.all([
+    getJson(urls.validate).catch((error) => ({
+      ok: false,
+      status: null,
+      body: { error: error.message },
+    })),
+    getJson(urls.evidencePackage).catch((error) => ({
+      ok: false,
+      status: null,
+      body: { error: error.message },
+    })),
+    getJson(urls.snapshot).catch((error) => ({
+      ok: false,
+      status: null,
+      body: { error: error.message },
+    })),
+    getJson(urls.summary).catch((error) => ({
+      ok: false,
+      status: null,
+      body: { error: error.message },
+    })),
+    getJson(urls.gltfManifest).catch((error) => ({
+      ok: false,
+      status: null,
+      body: { error: error.message },
+    })),
+    getJson(urls.ifcManifest).catch((error) => ({
+      ok: false,
+      status: null,
+      body: { error: error.message },
+    })),
+    getArtifact(urls.sheetRaster, 'image/png').catch((error) => ({
+      ok: false,
+      status: null,
+      error: error.message,
+    })),
+    getArtifact(urls.sheetPdf, 'application/pdf').catch((error) => ({
+      ok: false,
+      status: null,
+      error: error.message,
+    })),
+  ]);
+  const advisor = await postJson(urls.advisor, {
+    scope: 'committed-model',
+    benchmarkId: 'simple-single-storey-house',
+  }).catch((error) => ({ ok: false, status: null, body: { error: error.message } }));
+
+  const validation = jsonEvidence('committed validation', validate);
+  const advisorBody = jsonEvidence('committed advisor', advisor);
+  const evidencePackageBody = jsonEvidence('evidence package', evidencePackage);
+  const visual = {
+    status: sheetRaster?.ok ? 'server-side-substitute' : 'unavailable',
+    requiredViewIds: ['ssh-view-ground-plan', 'ssh-view-3d'],
+    evidencePackageVisualHints: {
+      deterministicPlanViewEvidence: evidencePackageBody.deterministicPlanViewEvidence ?? null,
+      deterministic3dViewEvidence: evidencePackageBody.deterministic3dViewEvidence ?? null,
+      deterministicSheetEvidence: evidencePackageBody.deterministicSheetEvidence ?? null,
+      recommendedPngEvidenceBackend: evidencePackageBody.recommendedPngEvidenceBackend ?? null,
+      svgRasterBackendAvailable: evidencePackageBody.svgRasterBackendAvailable ?? null,
+    },
+    sheetPrintRaster: sheetRasterEvidence(sheetRaster),
+  };
+  const exports = {
+    status:
+      gltfManifest?.ok || ifcManifest?.ok || sheetPdf?.ok
+        ? 'artifact-or-manifest-returned'
+        : 'unavailable',
+    manifests: {
+      gltf: manifestEvidence('gltf-manifest', gltfManifest),
+      ifc: manifestEvidence('ifc-manifest', ifcManifest),
+    },
+    artifacts: {
+      sheetPdf: artifactEvidence('sheet-preview-pdf', sheetPdf),
+    },
+  };
+  const validationOk =
+    validate.ok &&
+    (validation?.checks?.errorViolationCount ?? 0) === 0 &&
+    (validation?.checks?.blockingViolationCount ?? 0) === 0;
+  const visualOk = visual.sheetPrintRaster.nonblankProof?.ok === true;
+  const exportOk =
+    exports.manifests.gltf.status === 'manifest-returned' ||
+    exports.manifests.ifc.status === 'manifest-returned' ||
+    exports.artifacts.sheetPdf.status === 'artifact-returned';
+
+  return {
+    mode: liveCommitEvidence ? 'post-commit-live' : 'committed-model-live',
+    ok: Boolean(validationOk && visualOk && exportOk),
+    modelId: args.modelId,
+    revision:
+      snapshot.body?.revision ??
+      summary.body?.revision ??
+      validation?.revision ??
+      liveCommitEvidence?.response?.newRevision ??
+      null,
+    commandLog: {
+      status: liveCommitEvidence?.postCommit?.commandLog?.ok
+        ? 'public-command-log'
+        : liveCommitEvidence?.response?.changedIds?.length
+          ? 'commit-response-changed-ids'
+          : 'unavailable',
+      summary: liveCommitEvidence?.postCommit?.commandLog?.summary ?? null,
+      changedIds: liveCommitEvidence?.response?.changedIds ?? [],
+      note: liveCommitEvidence?.postCommit?.commandLog?.ok
+        ? 'Command-log summary was collected from the public command-log endpoint.'
+        : 'No public command-log response was available; commit response changed ids and snapshot summary are the fallback.',
+    },
+    snapshotSummary: {
+      snapshot: summarizeSnapshot(snapshot.body),
+      summary: summary.body ?? null,
+    },
+    validation,
+    advisor: advisorBody,
+    evidencePackage: evidencePackageBody,
+    visual,
+    exports,
+    publicSurfaces: urls,
+    remainingConfidenceGaps: [
+      'Browser-rendered plan and 3D screenshots are not captured by this server-side helper.',
+      'Export confidence checks artifact/manifest presence; it does not round-trip IFC/glTF geometry.',
+    ],
+  };
 }
 
 function shouldRunLive(args) {
@@ -476,7 +892,7 @@ function uiEquivalentTodos() {
 async function writeEvidence(outDir, result) {
   if (!outDir) return;
   await fs.mkdir(outDir, { recursive: true });
-  await Promise.all([
+  const writes = [
     fs.writeFile(
       path.join(outDir, 'semantic-summary.json'),
       `${JSON.stringify(result.summary, null, 2)}\n`,
@@ -490,10 +906,65 @@ async function writeEvidence(outDir, result) {
       `${JSON.stringify(result.executionEvidence, null, 2)}\n`,
     ),
     fs.writeFile(
+      path.join(outDir, 'committed-evidence.json'),
+      `${JSON.stringify(result.committedEvidence, null, 2)}\n`,
+    ),
+    fs.writeFile(
+      path.join(outDir, 'advisor-validation.json'),
+      `${JSON.stringify(
+        {
+          validation:
+            result.committedEvidence?.validation ?? result.executionEvidence?.validation ?? null,
+          advisor: result.committedEvidence?.advisor ?? result.executionEvidence?.advisor ?? null,
+        },
+        null,
+        2,
+      )}\n`,
+    ),
+    fs.writeFile(
+      path.join(outDir, 'visual-evidence.json'),
+      `${JSON.stringify(result.committedEvidence?.visual ?? null, null, 2)}\n`,
+    ),
+    fs.writeFile(
+      path.join(outDir, 'export-evidence.json'),
+      `${JSON.stringify(result.committedEvidence?.exports ?? null, null, 2)}\n`,
+    ),
+    fs.writeFile(
       path.join(outDir, 'benchmark-result.json'),
       `${JSON.stringify(result, null, 2)}\n`,
     ),
-  ]);
+  ];
+  if (result.executionEvidence?.liveDryRun) {
+    writes.push(
+      fs.writeFile(
+        path.join(outDir, 'live-dry-run-evidence.json'),
+        `${JSON.stringify(result.executionEvidence.liveDryRun, null, 2)}\n`,
+      ),
+    );
+  }
+  if (result.executionEvidence?.liveCommit) {
+    writes.push(
+      fs.writeFile(
+        path.join(outDir, 'live-commit-evidence.json'),
+        `${JSON.stringify(result.executionEvidence.liveCommit, null, 2)}\n`,
+      ),
+      fs.writeFile(
+        path.join(outDir, 'command-log-summary.json'),
+        `${JSON.stringify(result.executionEvidence.liveCommit.postCommit?.commandLog?.summary ?? null, null, 2)}\n`,
+      ),
+      fs.writeFile(
+        path.join(outDir, 'snapshot-summary.json'),
+        `${JSON.stringify(
+          result.committedEvidence?.snapshotSummary?.snapshot ??
+            result.executionEvidence.liveCommit.postCommit?.snapshot?.summary ??
+            null,
+          null,
+          2,
+        )}\n`,
+      ),
+    );
+  }
+  await Promise.all(writes);
 }
 
 export async function runBenchmark(rawArgs = []) {
@@ -502,28 +973,58 @@ export async function runBenchmark(rawArgs = []) {
   const summary = summarize(bundle, expected);
   const semanticDiff = diffSummary(summary, expected);
   let executionEvidence = buildOfflineExecutionEvidence(bundle, summary);
+  let committedEvidence = {
+    mode: 'not-requested',
+    ok: false,
+    todo: 'Run live with --commit-live or --collect-committed-evidence to capture committed advisor, visual substitute, and export evidence.',
+  };
   if (shouldRunLive(args)) {
     if (!args.baseUrl || !args.modelId) {
       throw new Error(
         '--mode live requires --base-url/--model-id or BIM_AI_BASE_URL/BIM_AI_MODEL_ID.',
       );
     }
-    executionEvidence = await runLiveDryRun(args, bundle);
+    const liveDryRun = await runLiveDryRun(args, bundle);
+    executionEvidence = liveDryRun;
+    if (args.commitLive) {
+      const liveCommit = await runLiveCommit(args, bundle);
+      committedEvidence = await collectCommittedEvidence(args, liveCommit);
+      executionEvidence = {
+        mode: 'live-dry-run-and-commit',
+        ok: liveDryRun.ok && liveCommit.ok,
+        mutationWarning:
+          '--commit-live was set; the benchmark posted mode=commit and mutated the target model if the server accepted the bundle.',
+        liveDryRun,
+        liveCommit,
+      };
+    } else if (args.collectCommittedEvidence) {
+      committedEvidence = await collectCommittedEvidence(args);
+    }
   }
   const result = {
     benchmarkId: expected.benchmarkId,
     path: 'mcp-cli',
-    ok: semanticDiff.length === 0 && executionEvidence.ok,
+    ok:
+      semanticDiff.length === 0 &&
+      executionEvidence.ok &&
+      (!args.commitLive && !args.collectCommittedEvidence ? true : committedEvidence.ok),
     summary,
     semanticDiff,
     executionEvidence,
+    committedEvidence,
     uiEquivalentTodos: uiEquivalentTodos(),
     remainingExitCriteria: [
       'UI/Cmd+K equivalent path',
-      'live commit execution through typed MCP/CLI surface after dry-run is clean',
-      'advisor/constructability JSON from committed live model',
-      'nonblank plan and 3D screenshots',
-      'IFC and glTF export evidence',
+      ...(args.commitLive
+        ? []
+        : ['live commit execution through typed MCP/CLI surface after dry-run is clean']),
+      ...(committedEvidence.ok
+        ? []
+        : [
+            'advisor/constructability JSON from committed live model',
+            'nonblank plan and 3D screenshots or accepted server-side render substitute',
+            'IFC/glTF/PDF export artifact or manifest evidence',
+          ]),
     ],
   };
   await writeEvidence(args.outDir, result);

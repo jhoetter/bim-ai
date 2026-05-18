@@ -60,6 +60,44 @@ const M2_WAVE2_TOOLS = [
   'qa.advisor',
 ];
 
+const M2_CLOSURE_GATES = [
+  {
+    id: 'firstPackSurfaces',
+    label: 'First-pack surfaces',
+    blocker: 'M2 first-pack surfaces are not all present.',
+  },
+  {
+    id: 'liveDryRunEvidence',
+    label: 'Live dry-run evidence',
+    blocker: 'No clean live typed dry-run benchmark evidence was detected.',
+  },
+  {
+    id: 'liveCommitEvidence',
+    label: 'Live commit evidence',
+    blocker: 'No live typed commit benchmark evidence was detected.',
+  },
+  {
+    id: 'committedAdvisorValidation',
+    label: 'Committed advisor/validation',
+    blocker: 'No committed-model advisor or validation evidence was detected.',
+  },
+  {
+    id: 'visualRenderEvidence',
+    label: 'Visual/render evidence',
+    blocker: 'No nonblank visual/render evidence was detected.',
+  },
+  {
+    id: 'exportEvidence',
+    label: 'Export evidence',
+    blocker: 'No export artifact or manifest evidence was detected.',
+  },
+  {
+    id: 'uiEquivalentPath',
+    label: 'UI-equivalent path',
+    blocker: 'No executable or validated UI/Cmd+K equivalent path was detected.',
+  },
+];
+
 const BENCHMARK_COMMAND_TOOL_MARKERS = new Map([
   ['createWall', ['author.wall']],
   ['createWallChain', ['author.wall_chain']],
@@ -765,6 +803,95 @@ function listBenchmarkDirs() {
   }
 }
 
+function listBenchmarkEvidenceFiles(dir) {
+  const absDir = path.join(ROOT, dir);
+  try {
+    return fs
+      .readdirSync(absDir, { withFileTypes: true })
+      .filter((entry) => entry.isFile() && /\.json$/i.test(entry.name))
+      .map((entry) => `${dir}/${entry.name}`)
+      .filter((relPath) =>
+        /(^|\/)(benchmark-result|execution-evidence|advisor|validation|visual|render|screenshot|export|ui-equivalence|ui-equivalent)[^/]*\.json$/i.test(
+          relPath,
+        ),
+      )
+      .sort();
+  } catch {
+    return [];
+  }
+}
+
+function isBlockingEvidenceStatus(status) {
+  return /todo|placeholder|optional|capable|expected|required|requires|missing|none|unknown|declared|fixture|traceability-only|opt[-_\s]?in/i.test(
+    String(status),
+  );
+}
+
+function isPositiveEvidenceStatus(status) {
+  const text = String(status);
+  return (
+    /live|validated|passing|passed|clean|committed|executable|nonblank|artifact|manifest|done/i.test(
+      text,
+    ) && !isBlockingEvidenceStatus(text)
+  );
+}
+
+function addEvidenceSignal(signals, type, status, source, detail = '') {
+  signals.push({
+    type,
+    status: String(status ?? 'unknown'),
+    source,
+    detail: String(detail ?? ''),
+    passes: isPositiveEvidenceStatus(status),
+  });
+}
+
+function collectJsonEvidenceSignals(value, source) {
+  if (!value || typeof value !== 'object') return [];
+  const signals = [];
+  const execution =
+    value.executionEvidence && typeof value.executionEvidence === 'object'
+      ? value.executionEvidence
+      : value;
+  const mode = String(execution.mode ?? value.mode ?? '');
+  const ok = execution.ok === true || value.ok === true;
+  if (ok && /live/i.test(mode) && /dry[-_\s]?run/i.test(mode)) {
+    addEvidenceSignal(signals, 'liveDryRunEvidence', 'live-validated', source, mode);
+  }
+  if (ok && /live/i.test(mode) && /commit/i.test(mode)) {
+    addEvidenceSignal(signals, 'liveCommitEvidence', 'live-validated', source, mode);
+  }
+  const statusText = JSON.stringify(value).slice(0, 20000);
+  if (
+    /committed|post[-_\s]?commit/i.test(statusText) &&
+    /advisor|validation|constructability/i.test(statusText) &&
+    !/remainingExitCriteria|todo/i.test(statusText)
+  ) {
+    addEvidenceSignal(signals, 'committedAdvisorValidation', 'committed-evidence', source);
+  }
+  if (
+    /nonblank|screenshot|visual|render/i.test(statusText) &&
+    !/placeholder|todo|remainingExitCriteria/i.test(statusText)
+  ) {
+    addEvidenceSignal(signals, 'visualRenderEvidence', 'nonblank-evidence', source);
+  }
+  if (
+    /export|ifc|gltf|glb|pdf/i.test(statusText) &&
+    /artifact|manifest|validated|live|passed|done/i.test(statusText) &&
+    !/placeholder|todo|remainingExitCriteria/i.test(statusText)
+  ) {
+    addEvidenceSignal(signals, 'exportEvidence', 'export-evidence', source);
+  }
+  if (
+    /ui[-_\s]?equivalent|cmd\+k|playwright|semantic diff/i.test(statusText) &&
+    /validated|passing|passed|executable|done/i.test(statusText) &&
+    !/placeholder|todo|remainingExitCriteria/i.test(statusText)
+  ) {
+    addEvidenceSignal(signals, 'uiEquivalentPath', 'ui-equivalent-validated', source);
+  }
+  return signals;
+}
+
 function flattenEvidenceExpectations(value, prefix = '') {
   if (!value || typeof value !== 'object') return [];
   const rows = [];
@@ -814,6 +941,7 @@ function parseBenchmarkEvidence() {
       todo: String(value?.todo ?? ''),
     }));
     const evidenceRows = flattenEvidenceExpectations(expected.evidenceExpectations ?? {});
+    const evidenceSignals = [];
     for (const row of evidenceRows) {
       if (row.id === 'advisor') {
         toolMarkers.push({
@@ -825,9 +953,52 @@ function parseBenchmarkEvidence() {
           note: row.todo || 'Advisor evidence expectation declared by benchmark.',
         });
       }
+      if (/(^|\.)(todo|artifacts?)(\.|$)/i.test(row.id)) continue;
+      if (/live[-_\s]?dry[-_\s]?run/i.test(row.id)) {
+        addEvidenceSignal(
+          evidenceSignals,
+          'liveDryRunEvidence',
+          row.status,
+          expectedPath,
+          row.todo,
+        );
+      }
+      if (/live[-_\s]?commit/i.test(row.id)) {
+        addEvidenceSignal(
+          evidenceSignals,
+          'liveCommitEvidence',
+          row.status,
+          expectedPath,
+          row.todo,
+        );
+      }
+      if (/advisor|validation|constructability/i.test(row.id)) {
+        addEvidenceSignal(
+          evidenceSignals,
+          'committedAdvisorValidation',
+          row.status,
+          expectedPath,
+          row.todo,
+        );
+      }
+      if (/screenshot|visual|render/i.test(row.id)) {
+        addEvidenceSignal(
+          evidenceSignals,
+          'visualRenderEvidence',
+          row.status,
+          expectedPath,
+          row.todo,
+        );
+      }
+      if (/export|ifc|gltf|glb|pdf/i.test(row.id)) {
+        addEvidenceSignal(evidenceSignals, 'exportEvidence', row.status, expectedPath, row.todo);
+      }
     }
     for (const row of pathRows) {
-      if (/live[-_\s]?dry[-_\s]?run|dry[-_\s]?run.*live/i.test(row.status)) {
+      if (
+        /live[-_\s]?dry[-_\s]?run|dry[-_\s]?run.*live/i.test(row.status) &&
+        isPositiveEvidenceStatus(row.status)
+      ) {
         toolMarkers.push({
           toolId: 'model.dry_run',
           marker: `${row.id} path status`,
@@ -837,7 +1008,19 @@ function parseBenchmarkEvidence() {
           note: row.todo || 'Benchmark path declares live dry-run evidence.',
         });
       }
-      if (/live[-_\s]?commit|commit.*live/i.test(row.status)) {
+      if (/live[-_\s]?dry[-_\s]?run|dry[-_\s]?run.*live/i.test(row.status)) {
+        addEvidenceSignal(
+          evidenceSignals,
+          'liveDryRunEvidence',
+          row.status,
+          expectedPath,
+          row.todo,
+        );
+      }
+      if (
+        /live[-_\s]?commit|commit.*live/i.test(row.status) &&
+        isPositiveEvidenceStatus(row.status)
+      ) {
         toolMarkers.push({
           toolId: 'model.commit_bundle',
           marker: `${row.id} path status`,
@@ -847,6 +1030,32 @@ function parseBenchmarkEvidence() {
           note: row.todo || 'Benchmark path declares live commit evidence.',
         });
       }
+      if (/live[-_\s]?commit|commit.*live/i.test(row.status)) {
+        addEvidenceSignal(
+          evidenceSignals,
+          'liveCommitEvidence',
+          row.status,
+          expectedPath,
+          row.todo,
+        );
+      }
+      if (/ui/i.test(row.id)) {
+        addEvidenceSignal(evidenceSignals, 'uiEquivalentPath', row.status, expectedPath, row.todo);
+      }
+    }
+    const mcpCliPath = paths.mcpCli && typeof paths.mcpCli === 'object' ? paths.mcpCli : {};
+    const liveDryRun = mcpCliPath.liveDryRun;
+    if (liveDryRun && typeof liveDryRun === 'object') {
+      addEvidenceSignal(
+        evidenceSignals,
+        'liveDryRunEvidence',
+        liveDryRun.status,
+        expectedPath,
+        liveDryRun.mode ? `mode=${liveDryRun.mode}` : '',
+      );
+    }
+    for (const relPath of listBenchmarkEvidenceFiles(dir)) {
+      evidenceSignals.push(...collectJsonEvidenceSignals(parseJsonFile(relPath), relPath));
     }
     return {
       id: expected.benchmarkId ?? path.basename(dir),
@@ -857,6 +1066,9 @@ function parseBenchmarkEvidence() {
       evidenceExpectations: evidenceRows,
       commandTypes,
       toolMarkers: toolMarkers.sort((a, b) => a.toolId.localeCompare(b.toolId)),
+      evidenceSignals: evidenceSignals.sort(
+        (a, b) => a.type.localeCompare(b.type) || a.source.localeCompare(b.source),
+      ),
       uiEquivalentStatus: String(paths.ui?.status ?? 'unknown'),
       uiEquivalentTodo: String(paths.ui?.todo ?? ''),
       liveEvidence: toolMarkers.some((marker) => marker.live),
@@ -1024,6 +1236,56 @@ function benchmarkMarkersForTool(benchmarkEvidence, toolId) {
   );
 }
 
+function benchmarkSignalsForGate(benchmarkEvidence, gateId) {
+  return benchmarkEvidence.flatMap((benchmark) =>
+    (benchmark.evidenceSignals ?? [])
+      .filter((signal) => signal.type === gateId)
+      .map((signal) => ({
+        benchmarkId: benchmark.id,
+        ...signal,
+      })),
+  );
+}
+
+function buildM2ClosureGates(firstPack, benchmarkEvidence) {
+  const surfaceMissing = firstPack.filter((row) => row.status !== 'present');
+  return M2_CLOSURE_GATES.map((gate) => {
+    if (gate.id === 'firstPackSurfaces') {
+      return {
+        id: gate.id,
+        label: gate.label,
+        status: surfaceMissing.length ? 'blocked' : 'passed',
+        passed: surfaceMissing.length === 0,
+        evidenceCount: firstPack.length - surfaceMissing.length,
+        blocker: surfaceMissing.length
+          ? `${gate.blocker} Missing/partial: ${surfaceMissing.map((row) => row.id).join(', ')}.`
+          : '',
+        evidence: firstPack
+          .filter((row) => row.status === 'present')
+          .map((row) => ({
+            benchmarkId: '',
+            type: gate.id,
+            status: row.status,
+            source: row.source,
+            detail: row.id,
+            passes: true,
+          })),
+      };
+    }
+    const signals = benchmarkSignalsForGate(benchmarkEvidence, gate.id);
+    const passing = signals.filter((signal) => signal.passes);
+    return {
+      id: gate.id,
+      label: gate.label,
+      status: passing.length ? 'passed' : signals.length ? 'blocked' : 'missing',
+      passed: passing.length > 0,
+      evidenceCount: passing.length,
+      blocker: passing.length ? '' : gate.blocker,
+      evidence: signals,
+    };
+  });
+}
+
 function m2ExpectedStatus(expected, descriptors, surfaces, implementedRoutes, benchmarkEvidence) {
   const match = descriptors.find(
     (descriptor) =>
@@ -1130,6 +1392,10 @@ function buildM2Summary(
   const wave2 = M2_WAVE2_TOOLS.map((id) =>
     m2ExpectedStatus(id, apiLedger, optionalSurfaces, implementedRoutes, benchmarkEvidence),
   );
+  const closureGates = buildM2ClosureGates(firstPack, benchmarkEvidence);
+  const closureBlockers = closureGates
+    .filter((gate) => !gate.passed)
+    .map((gate) => ({ id: gate.id, label: gate.label, blocker: gate.blocker }));
   return {
     firstPackExpectedCount: firstPack.length,
     firstPackPresentCount: firstPack.filter((row) => row.status === 'present').length,
@@ -1148,8 +1414,14 @@ function buildM2Summary(
     typedMutatingDescriptorCount: typedMutatingDescriptors.length,
     rawApplyBundleDescriptorCount: rawApplyBundleDescriptors.length,
     semanticCmdkSurfaceCount: semanticCmdkSurfaces.length,
+    closureGateCount: closureGates.length,
+    closureGatePassedCount: closureGates.filter((gate) => gate.passed).length,
+    closureStatus: closureBlockers.length ? 'Partial' : 'Done',
+    closureBlockerCount: closureBlockers.length,
     firstPack,
     wave2,
+    closureGates,
+    closureBlockers,
     queryDescriptors: queryDescriptors.map((row) => row.id).sort(),
     resolveDescriptors: resolveDescriptors.map((row) => row.id).sort(),
     semanticAuthoringDescriptors: semanticAuthoringDescriptors.map((row) => row.id).sort(),
@@ -1380,6 +1652,14 @@ function buildAudit() {
   );
 
   const gaps = [
+    ...m2.closureBlockers.map((gate) => ({
+      priority: 'P0',
+      domain: 'm2-closure',
+      kind: 'm2-closure-gate-blocked',
+      id: gate.id,
+      status: 'Gap',
+      detail: gate.blocker,
+    })),
     ...m2.firstPack
       .filter((row) => row.status === 'missing' || row.status === 'evidence-only')
       .map((row) => ({
@@ -1485,6 +1765,8 @@ function buildAudit() {
       'UI surfaces from dynamically built tool capabilities are inferred from toolRegistry as ribbon and cmd-k.',
       'Unknown or missing metadata is emitted as "unknown" rather than guessed.',
       'Benchmark evidence markers are traceability signals only unless they explicitly declare live typed dry-run/commit execution.',
+      'M2 closure gates classify benchmark statuses conservatively: todo, placeholder, optional, fixture, and capable statuses remain blockers even when they mention live execution.',
+      'Optional M2-K/L/M evidence artifacts are discovered only as JSON files in benchmark directories with names containing benchmark-result, execution-evidence, advisor, validation, visual, render, screenshot, export, ui-equivalence, or ui-equivalent.',
     ],
     summary: {
       backendCommandCount: backendLedger.length,
@@ -1517,6 +1799,21 @@ function buildAudit() {
       m2SemanticAuthoringDescriptorCount: m2.semanticAuthoringDescriptorCount,
       m2TypedMutatingDescriptorCount: m2.typedMutatingDescriptorCount,
       m2RawApplyBundleDescriptorCount: m2.rawApplyBundleDescriptorCount,
+      m2ClosureStatus: m2.closureStatus,
+      m2ClosureGatePassed: m2.closureGatePassedCount,
+      m2ClosureGateExpected: m2.closureGateCount,
+      m2ClosureBlockerCount: m2.closureBlockerCount,
+      m2LiveDryRunEvidence: m2.closureGates.find((gate) => gate.id === 'liveDryRunEvidence')
+        ?.passed,
+      m2LiveCommitEvidence: m2.closureGates.find((gate) => gate.id === 'liveCommitEvidence')
+        ?.passed,
+      m2CommittedAdvisorValidation: m2.closureGates.find(
+        (gate) => gate.id === 'committedAdvisorValidation',
+      )?.passed,
+      m2VisualRenderEvidence: m2.closureGates.find((gate) => gate.id === 'visualRenderEvidence')
+        ?.passed,
+      m2ExportEvidence: m2.closureGates.find((gate) => gate.id === 'exportEvidence')?.passed,
+      m2UiEquivalentPath: m2.closureGates.find((gate) => gate.id === 'uiEquivalentPath')?.passed,
       cmdkActivatorOnlyCount: cmdkLedger.filter((row) => row.executionKind === 'activates-tool')
         .length,
       apiDescriptorRouteMismatchCount: apiLedger.filter((row) => !row.routeImplemented).length,
@@ -1738,6 +2035,15 @@ function renderGapReport(audit) {
     }
     return rows;
   });
+  const closureRows = audit.m2.closureGates.map((gate) => [
+    gate.label,
+    gate.status,
+    gate.evidenceCount,
+    gate.blocker || 'none',
+    (gate.evidence ?? [])
+      .map((item) => `${item.benchmarkId || 'audit'}:${item.status}@${item.source || 'source'}`)
+      .join(', ') || 'none',
+  ]);
   const sections = [
     '# Parity Gap Report',
     sourceStamp(audit),
@@ -1754,11 +2060,16 @@ function renderGapReport(audit) {
     `M2 first-pack partial surfaces: ${audit.summary.m2FirstPackPartial}`,
     `M2 first-pack evidence-only markers: ${audit.summary.m2FirstPackEvidenceOnly}`,
     `M2 first-pack benchmark trace markers: ${audit.summary.m2FirstPackBenchmarkMarkers}`,
+    `M2 closure status: ${audit.summary.m2ClosureStatus}`,
+    `M2 closure gates passed: ${audit.summary.m2ClosureGatePassed} / ${audit.summary.m2ClosureGateExpected}`,
+    `M2 closure blockers: ${audit.summary.m2ClosureBlockerCount}`,
     `Query surfaces detected: ${audit.summary.m2QueryDescriptorCount}`,
     `Resolve surfaces detected: ${audit.summary.m2ResolveDescriptorCount}`,
     `Semantic authoring surfaces detected: ${audit.summary.m2SemanticAuthoringDescriptorCount}`,
     `Typed mutating descriptors detected: ${audit.summary.m2TypedMutatingDescriptorCount}`,
     `Raw apply-bundle descriptors detected: ${audit.summary.m2RawApplyBundleDescriptorCount}`,
+    '### M2 Closure Gates',
+    table(['Gate', 'Status', 'Passing evidence', 'Blocker', 'Evidence'], closureRows),
     table(m2TableHeaders, audit.m2.firstPack.map(m2TableRow)),
     '## M2 Wave 2 Audit',
     `Wave 2 surfaces present: ${audit.summary.m2Wave2Present} / ${audit.summary.m2Wave2Expected}`,
@@ -1828,6 +2139,12 @@ function validateAudit(audit) {
   }
   if (audit.summary.m2RawApplyBundleDescriptorCount > audit.summary.apiDescriptorCount) {
     throw new Error('M2 raw apply-bundle count exceeds total API descriptors.');
+  }
+  if (
+    audit.summary.m2ClosureStatus === 'Done' &&
+    audit.m2.closureGates.some((gate) => !gate.passed)
+  ) {
+    throw new Error('M2 closure cannot be Done while any closure gate is blocked.');
   }
 }
 
