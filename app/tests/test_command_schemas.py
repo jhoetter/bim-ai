@@ -6,7 +6,6 @@ from fastapi.testclient import TestClient
 
 from bim_ai.command_schemas import (
     COMMAND_SCHEMA_EXPORT_VERSION,
-    EXAMPLE_TODO,
     command_model_map,
     export_command_schemas,
     get_command_schema,
@@ -34,12 +33,21 @@ def test_command_schema_export_has_json_schema_and_todo_metadata() -> None:
 
     assert create_wall_schema["properties"]["type"]["const"] == "createWall"
     assert "levelId" in create_wall_schema["properties"]
-    assert create_wall_metadata == {
-        "name": "createWall",
-        "modelClass": "CreateWallCmd",
-        "example": None,
-        "exampleStatus": "todo",
-        "todo": EXAMPLE_TODO,
+    assert create_wall_metadata["name"] == "createWall"
+    assert create_wall_metadata["modelClass"] == "CreateWallCmd"
+    assert create_wall_metadata["example"] == {
+        "type": "createWall",
+        "levelId": "level-1",
+        "start": {"xMm": 0.0, "yMm": 0.0},
+        "end": {"xMm": 0.0, "yMm": 0.0},
+    }
+    assert create_wall_metadata["exampleStatus"] == "generated-minimal"
+    assert create_wall_metadata["exampleError"] is None
+    assert create_wall_metadata["mappingStatus"] == "explicit-raw-expert"
+    assert create_wall_metadata["rawSemanticMapping"]["rawExecution"] == {
+        "available": True,
+        "transport": "POST /api/models/{model_id}/bundles",
+        "bundlePath": "bundle.commands[]",
     }
     json.dumps(export)
 
