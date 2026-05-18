@@ -1,27 +1,7 @@
 {
-  "modelId": "a5c6d3f6-6a76-45f2-8017-b6fa78911955",
-  "revision": 2,
+  "modelId": "6c3940ae-c0a1-5bc3-a0fa-38c9195b28d2",
+  "revision": 1,
   "elements": {
-    "stone": {
-      "kind": "hatch_pattern_def",
-      "id": "stone",
-      "name": "Stone",
-      "paperMmRepeat": 60,
-      "rotationDeg": 0,
-      "strokeWidthMm": 0.18,
-      "patternKind": "lines",
-      "svgSource": null
-    },
-    "gypsum": {
-      "kind": "hatch_pattern_def",
-      "id": "gypsum",
-      "name": "Gypsum",
-      "paperMmRepeat": 4,
-      "rotationDeg": 45,
-      "strokeWidthMm": 0.1,
-      "patternKind": "dots",
-      "svgSource": null
-    },
     "hf-pbp": {
       "kind": "project_base_point",
       "id": "hf-pbp",
@@ -34,26 +14,6 @@
       "latitudeDeg": 0,
       "longitudeDeg": 0,
       "clipped": false
-    },
-    "plaster": {
-      "kind": "hatch_pattern_def",
-      "id": "plaster",
-      "name": "Plaster",
-      "paperMmRepeat": 8,
-      "rotationDeg": 45,
-      "strokeWidthMm": 0.13,
-      "patternKind": "crosshatch",
-      "svgSource": null
-    },
-    "brick_45": {
-      "kind": "hatch_pattern_def",
-      "id": "brick_45",
-      "name": "Brick",
-      "paperMmRepeat": 73,
-      "rotationDeg": 45,
-      "strokeWidthMm": 0.18,
-      "patternKind": "lines",
-      "svgSource": null
     },
     "asset-bed": {
       "kind": "asset_library_entry",
@@ -140,8 +100,8 @@
       "department": null,
       "programmeGroup": null,
       "functionLabel": "circulation",
-      "finishSet": null,
-      "targetAreaM2": 9,
+      "finishSet": "residential-standard",
+      "targetAreaM2": 6.38,
       "ventilationZone": null,
       "heatingCoolingZone": null,
       "designAirChangeRate": null,
@@ -222,7 +182,7 @@
       "wallId": "ground-base-wall-04",
       "alongT": 0.2,
       "widthMm": 1000,
-      "familyTypeId": null,
+      "familyTypeId": "ft-door-standard",
       "materialKey": null,
       "materialSlots": null,
       "hostCutDepthMm": null,
@@ -235,19 +195,9 @@
       "pinned": false,
       "phaseCreated": null,
       "phaseDemolished": null,
-      "agentTrace": {
-        "bundleId": "61ecb899-b651-409b-84a2-d7d669282cc6",
-        "assumptionKeys": [
-          "seed-dsl-recipe",
-          "source_reference",
-          "scale_from_floorplan",
-          "project_initiation_bim_scope",
-          "target-house-1-m5-delta"
-        ],
-        "appliedAt": "2026-05-18T20:25:16.105209+00:00"
-      },
-      "optionSetId": "cf8ce0b8-26b5-4154-9183-407cff802efa",
-      "optionId": "21eb1066-4ae1-48c7-a7a6-ee2a0137d6f3",
+      "agentTrace": null,
+      "optionSetId": null,
+      "optionId": null,
       "discipline": "arch",
       "circularity": null,
       "props": null,
@@ -260,16 +210,6 @@
       "installationThermalBridgeNote": null,
       "shadingDevice": null,
       "annualShadingFactorEstimate": null
-    },
-    "insulation": {
-      "kind": "hatch_pattern_def",
-      "id": "insulation",
-      "name": "Insulation",
-      "paperMmRepeat": 100,
-      "rotationDeg": 0,
-      "strokeWidthMm": 0.25,
-      "patternKind": "curve",
-      "svgSource": null
     },
     "main-stair": {
       "kind": "stair",
@@ -326,19 +266,9 @@
       "pinned": false,
       "phaseCreated": null,
       "phaseDemolished": null,
-      "agentTrace": {
-        "bundleId": "61ecb899-b651-409b-84a2-d7d669282cc6",
-        "assumptionKeys": [
-          "seed-dsl-recipe",
-          "source_reference",
-          "scale_from_floorplan",
-          "project_initiation_bim_scope",
-          "target-house-1-m5-delta"
-        ],
-        "appliedAt": "2026-05-18T20:25:16.105209+00:00"
-      },
-      "optionSetId": "cf8ce0b8-26b5-4154-9183-407cff802efa",
-      "optionId": "21eb1066-4ae1-48c7-a7a6-ee2a0137d6f3",
+      "agentTrace": null,
+      "optionSetId": null,
+      "optionId": null,
       "discipline": "arch"
     },
     "sheet-a101": {
@@ -365,7 +295,7 @@
           "xMm": 20,
           "yMm": 20,
           "label": "Ground floor plan",
-          "viewRef": "plan:lvl-ground-plan",
+          "viewRef": "plan:hf-ground-floor-plan",
           "widthMm": 170,
           "heightMm": 120,
           "viewportId": "vp-ground-plan"
@@ -374,7 +304,7 @@
           "xMm": 210,
           "yMm": 20,
           "label": "Front elevation",
-          "viewRef": "section:elev-front",
+          "viewRef": "section:sec-stair",
           "widthMm": 170,
           "heightMm": 120,
           "viewportId": "vp-front-elevation"
@@ -396,12 +326,24 @@
           "widthMm": 170,
           "heightMm": 95,
           "viewportId": "vp-opening-schedule"
+        },
+        {
+          "xMm": 20,
+          "yMm": 255,
+          "label": "Room schedule view",
+          "viewRef": "schedule:room-schedule-view",
+          "widthMm": 170,
+          "heightMm": 30,
+          "viewportId": "vp-room-schedule-view"
         }
       ],
       "paperWidthMm": 420,
       "paperHeightMm": 297,
       "titleblockParameters": {
+        "revision": "P1",
+        "issueDate": "2026-05-18",
         "exchangeGoal": "IFC-ready BIM seed",
+        "revisionCode": "P1",
         "projectStatus": "Project initiation"
       }
     },
@@ -434,7 +376,7 @@
       "department": null,
       "programmeGroup": null,
       "functionLabel": "residential living",
-      "finishSet": null,
+      "finishSet": "residential-standard",
       "targetAreaM2": 13.05,
       "ventilationZone": null,
       "heatingCoolingZone": null,
@@ -470,16 +412,6 @@
         }
       ],
       "basisLine": "center"
-    },
-    "concrete_dot": {
-      "kind": "hatch_pattern_def",
-      "id": "concrete_dot",
-      "name": "Concrete",
-      "paperMmRepeat": 5,
-      "rotationDeg": 0,
-      "strokeWidthMm": 0.13,
-      "patternKind": "dots",
-      "svgSource": null
     },
     "hf-lvl-upper": {
       "kind": "level",
@@ -534,19 +466,9 @@
       "phaseId": null,
       "phaseCreated": null,
       "phaseDemolished": null,
-      "agentTrace": {
-        "bundleId": "61ecb899-b651-409b-84a2-d7d669282cc6",
-        "assumptionKeys": [
-          "seed-dsl-recipe",
-          "source_reference",
-          "scale_from_floorplan",
-          "project_initiation_bim_scope",
-          "target-house-1-m5-delta"
-        ],
-        "appliedAt": "2026-05-18T20:25:16.105209+00:00"
-      },
-      "optionSetId": "cf8ce0b8-26b5-4154-9183-407cff802efa",
-      "optionId": "21eb1066-4ae1-48c7-a7a6-ee2a0137d6f3",
+      "agentTrace": null,
+      "optionSetId": null,
+      "optionId": null,
       "discipline": "arch",
       "circularity": null,
       "props": null,
@@ -583,8 +505,8 @@
       "department": null,
       "programmeGroup": null,
       "functionLabel": "residential bathroom",
-      "finishSet": null,
-      "targetAreaM2": 7.5,
+      "finishSet": "wet-room-tile",
+      "targetAreaM2": 4.32,
       "ventilationZone": null,
       "heatingCoolingZone": null,
       "designAirChangeRate": null,
@@ -634,7 +556,7 @@
       "department": null,
       "programmeGroup": null,
       "functionLabel": "residential sleeping",
-      "finishSet": null,
+      "finishSet": "residential-standard",
       "targetAreaM2": 7.29,
       "ventilationZone": null,
       "heatingCoolingZone": null,
@@ -685,8 +607,8 @@
       "department": null,
       "programmeGroup": null,
       "functionLabel": "outdoor living",
-      "finishSet": null,
-      "targetAreaM2": 8.3,
+      "finishSet": "exterior-hardwearing",
+      "targetAreaM2": 8.32,
       "ventilationZone": null,
       "heatingCoolingZone": null,
       "designAirChangeRate": null,
@@ -720,37 +642,6 @@
       "animationRange": null,
       "daylightSavingStrategy": "auto"
     },
-    "timber_grain": {
-      "kind": "hatch_pattern_def",
-      "id": "timber_grain",
-      "name": "Timber",
-      "paperMmRepeat": 12,
-      "rotationDeg": 0,
-      "strokeWidthMm": 0.18,
-      "patternKind": "lines",
-      "svgSource": null
-    },
-    "fi-roof-chair": {
-      "kind": "family_instance",
-      "id": "fi-roof-chair",
-      "name": "Roof terrace chair furnishing instance",
-      "familyTypeId": "ft-generic-furniture",
-      "levelId": "hf-lvl-upper",
-      "hostViewId": null,
-      "positionMm": {
-        "xMm": 6800,
-        "yMm": 4800
-      },
-      "rotationDeg": 15,
-      "paramValues": {
-        "roomId": "room-terrace",
-        "ifcEntityIntent": "IfcFurnishingElement",
-        "scheduleCategory": "furniture"
-      },
-      "hostElementId": null,
-      "hostAlongT": null,
-      "discipline": null
-    },
     "hf-lvl-ground": {
       "kind": "level",
       "id": "hf-lvl-ground",
@@ -778,76 +669,6 @@
       "filterExpr": null,
       "sortKey": null,
       "sortDir": null
-    },
-    "elevation-east": {
-      "kind": "elevation_view",
-      "id": "elevation-east",
-      "name": "East Elevation",
-      "direction": "east",
-      "customAngleDeg": null,
-      "cropMinMm": null,
-      "cropMaxMm": null,
-      "scale": 100,
-      "planDetailLevel": null,
-      "markerGroupId": "elevation-marker-cardinal",
-      "markerSlot": "east",
-      "pinned": false
-    },
-    "elevation-west": {
-      "kind": "elevation_view",
-      "id": "elevation-west",
-      "name": "West Elevation",
-      "direction": "west",
-      "customAngleDeg": null,
-      "cropMinMm": null,
-      "cropMaxMm": null,
-      "scale": 100,
-      "planDetailLevel": null,
-      "markerGroupId": "elevation-marker-cardinal",
-      "markerSlot": "west",
-      "pinned": false
-    },
-    "fi-bed-primary": {
-      "kind": "family_instance",
-      "id": "fi-bed-primary",
-      "name": "Primary bed furnishing instance",
-      "familyTypeId": "ft-generic-furniture",
-      "levelId": "hf-lvl-upper",
-      "hostViewId": null,
-      "positionMm": {
-        "xMm": 1850,
-        "yMm": 2800
-      },
-      "rotationDeg": 90,
-      "paramValues": {
-        "roomId": "room-bedroom",
-        "ifcEntityIntent": "IfcFurnishingElement",
-        "scheduleCategory": "furniture"
-      },
-      "hostElementId": null,
-      "hostAlongT": null,
-      "discipline": null
-    },
-    "fi-sofa-living": {
-      "kind": "family_instance",
-      "id": "fi-sofa-living",
-      "name": "Living sofa furnishing instance",
-      "familyTypeId": "ft-generic-furniture",
-      "levelId": "hf-lvl-ground",
-      "hostViewId": null,
-      "positionMm": {
-        "xMm": 4700,
-        "yMm": 2300
-      },
-      "rotationDeg": 0,
-      "paramValues": {
-        "roomId": "room-living",
-        "ifcEntityIntent": "IfcFurnishingElement",
-        "scheduleCategory": "furniture"
-      },
-      "hostElementId": null,
-      "hostAlongT": null,
-      "discipline": null
     },
     "hf-room-loggia": {
       "kind": "room",
@@ -878,8 +699,8 @@
       "department": null,
       "programmeGroup": null,
       "functionLabel": "covered outdoor space",
-      "finishSet": null,
-      "targetAreaM2": 16.5,
+      "finishSet": "exterior-hardwearing",
+      "targetAreaM2": 8.64,
       "ventilationZone": null,
       "heatingCoolingZone": null,
       "designAirChangeRate": null,
@@ -899,55 +720,6 @@
       "airChangeRate": null,
       "zoneId": null,
       "conditionedVolumeIncluded": null
-    },
-    "elevation-north": {
-      "kind": "elevation_view",
-      "id": "elevation-north",
-      "name": "North Elevation",
-      "direction": "north",
-      "customAngleDeg": null,
-      "cropMinMm": null,
-      "cropMaxMm": null,
-      "scale": 100,
-      "planDetailLevel": null,
-      "markerGroupId": "elevation-marker-cardinal",
-      "markerSlot": "north",
-      "pinned": false
-    },
-    "elevation-south": {
-      "kind": "elevation_view",
-      "id": "elevation-south",
-      "name": "South Elevation",
-      "direction": "south",
-      "customAngleDeg": null,
-      "cropMinMm": null,
-      "cropMaxMm": null,
-      "scale": 100,
-      "planDetailLevel": null,
-      "markerGroupId": "elevation-marker-cardinal",
-      "markerSlot": "south",
-      "pinned": false
-    },
-    "fi-dining-table": {
-      "kind": "family_instance",
-      "id": "fi-dining-table",
-      "name": "Dining table furnishing instance",
-      "familyTypeId": "ft-generic-furniture",
-      "levelId": "hf-lvl-ground",
-      "hostViewId": null,
-      "positionMm": {
-        "xMm": 5600,
-        "yMm": 4100
-      },
-      "rotationDeg": 0,
-      "paramValues": {
-        "roomId": "room-living",
-        "ifcEntityIntent": "IfcFurnishingElement",
-        "scheduleCategory": "furniture"
-      },
-      "hostElementId": null,
-      "hostAlongT": null,
-      "discipline": null
     },
     "front_elevation": {
       "kind": "viewpoint",
@@ -995,14 +767,17 @@
       "assetId": "asset-bath-fixture",
       "levelId": "hf-lvl-upper",
       "positionMm": {
-        "xMm": 4300,
-        "yMm": 2800
+        "xMm": 4550,
+        "yMm": 3800
       },
       "rotationDeg": 0,
       "paramValues": {
         "roomId": "hf-room-bath",
         "typeId": "asset-bath-fixture",
+        "depthMm": 500,
+        "widthMm": 500,
         "evidenceRole": "mep_lite_wet_room_marker",
+        "proxyHeightMm": 900,
         "scheduleCategory": "plumbing_fixture"
       },
       "hostElementId": null,
@@ -1057,8 +832,8 @@
       "department": null,
       "programmeGroup": null,
       "functionLabel": "covered parking",
-      "finishSet": null,
-      "targetAreaM2": 19.3,
+      "finishSet": "exterior-hardwearing",
+      "targetAreaM2": 2.9,
       "ventilationZone": null,
       "heatingCoolingZone": null,
       "designAirChangeRate": null,
@@ -1108,8 +883,8 @@
       "department": null,
       "programmeGroup": null,
       "functionLabel": "residential wet room",
-      "finishSet": null,
-      "targetAreaM2": 5.2,
+      "finishSet": "wet-room-tile",
+      "targetAreaM2": 3.2,
       "ventilationZone": null,
       "heatingCoolingZone": null,
       "designAirChangeRate": null,
@@ -1159,8 +934,8 @@
       "department": null,
       "programmeGroup": null,
       "functionLabel": "residential kitchen",
-      "finishSet": null,
-      "targetAreaM2": 12,
+      "finishSet": "residential-standard",
+      "targetAreaM2": 6.16,
       "ventilationZone": null,
       "heatingCoolingZone": null,
       "designAirChangeRate": null,
@@ -1210,7 +985,7 @@
       "department": null,
       "programmeGroup": null,
       "functionLabel": "upper circulation",
-      "finishSet": null,
+      "finishSet": "residential-standard",
       "targetAreaM2": 4.4,
       "ventilationZone": null,
       "heatingCoolingZone": null,
@@ -1261,8 +1036,8 @@
       "department": null,
       "programmeGroup": null,
       "functionLabel": "storage and services",
-      "finishSet": null,
-      "targetAreaM2": 3.4,
+      "finishSet": "service-standard",
+      "targetAreaM2": 2.55,
       "ventilationZone": null,
       "heatingCoolingZone": null,
       "designAirChangeRate": null,
@@ -1365,6 +1140,66 @@
       "sectionBoxMaxMm": null,
       "optionLocks": {}
     },
+    "sep-room-hall-1": {
+      "kind": "room_separation",
+      "id": "sep-room-hall-1",
+      "name": "Entrance / Stair Hall boundary 1",
+      "levelId": "hf-lvl-ground",
+      "start": {
+        "xMm": 1200,
+        "yMm": 700
+      },
+      "end": {
+        "xMm": 3400,
+        "yMm": 700
+      },
+      "pinned": false
+    },
+    "sep-room-hall-2": {
+      "kind": "room_separation",
+      "id": "sep-room-hall-2",
+      "name": "Entrance / Stair Hall boundary 2",
+      "levelId": "hf-lvl-ground",
+      "start": {
+        "xMm": 3400,
+        "yMm": 700
+      },
+      "end": {
+        "xMm": 3400,
+        "yMm": 3600
+      },
+      "pinned": false
+    },
+    "sep-room-hall-3": {
+      "kind": "room_separation",
+      "id": "sep-room-hall-3",
+      "name": "Entrance / Stair Hall boundary 3",
+      "levelId": "hf-lvl-ground",
+      "start": {
+        "xMm": 3400,
+        "yMm": 3600
+      },
+      "end": {
+        "xMm": 1200,
+        "yMm": 3600
+      },
+      "pinned": false
+    },
+    "sep-room-hall-4": {
+      "kind": "room_separation",
+      "id": "sep-room-hall-4",
+      "name": "Entrance / Stair Hall boundary 4",
+      "levelId": "hf-lvl-ground",
+      "start": {
+        "xMm": 1200,
+        "yMm": 3600
+      },
+      "end": {
+        "xMm": 1200,
+        "yMm": 700
+      },
+      "pinned": false
+    },
     "wire_diagnostic": {
       "kind": "viewpoint",
       "id": "wire_diagnostic",
@@ -1464,6 +1299,19 @@
         }
       ]
     },
+    "ft-door-standard": {
+      "kind": "family_type",
+      "id": "ft-door-standard",
+      "name": "Single swing door 900 x 2100",
+      "familyId": "door-standard",
+      "discipline": "door",
+      "parameters": {
+        "widthMm": 900,
+        "heightMm": 2100,
+        "proxyHeightMm": 2100
+      },
+      "catalogSource": null
+    },
     "opening-schedule": {
       "kind": "schedule",
       "id": "opening-schedule",
@@ -1562,19 +1410,9 @@
       "phaseId": null,
       "phaseCreated": null,
       "phaseDemolished": null,
-      "agentTrace": {
-        "bundleId": "61ecb899-b651-409b-84a2-d7d669282cc6",
-        "assumptionKeys": [
-          "seed-dsl-recipe",
-          "source_reference",
-          "scale_from_floorplan",
-          "project_initiation_bim_scope",
-          "target-house-1-m5-delta"
-        ],
-        "appliedAt": "2026-05-18T20:25:16.105209+00:00"
-      },
-      "optionSetId": "cf8ce0b8-26b5-4154-9183-407cff802efa",
-      "optionId": "21eb1066-4ae1-48c7-a7a6-ee2a0137d6f3",
+      "agentTrace": null,
+      "optionSetId": null,
+      "optionId": null,
       "toposolidElevationMm": null,
       "discipline": "arch",
       "circularity": null,
@@ -1622,6 +1460,66 @@
       "sectionBoxMaxMm": null,
       "optionLocks": {}
     },
+    "sep-room-living-1": {
+      "kind": "room_separation",
+      "id": "sep-room-living-1",
+      "name": "Living / Dining boundary 1",
+      "levelId": "hf-lvl-ground",
+      "start": {
+        "xMm": 3600,
+        "yMm": 700
+      },
+      "end": {
+        "xMm": 6500,
+        "yMm": 700
+      },
+      "pinned": false
+    },
+    "sep-room-living-2": {
+      "kind": "room_separation",
+      "id": "sep-room-living-2",
+      "name": "Living / Dining boundary 2",
+      "levelId": "hf-lvl-ground",
+      "start": {
+        "xMm": 6500,
+        "yMm": 700
+      },
+      "end": {
+        "xMm": 6500,
+        "yMm": 5200
+      },
+      "pinned": false
+    },
+    "sep-room-living-3": {
+      "kind": "room_separation",
+      "id": "sep-room-living-3",
+      "name": "Living / Dining boundary 3",
+      "levelId": "hf-lvl-ground",
+      "start": {
+        "xMm": 6500,
+        "yMm": 5200
+      },
+      "end": {
+        "xMm": 3600,
+        "yMm": 5200
+      },
+      "pinned": false
+    },
+    "sep-room-living-4": {
+      "kind": "room_separation",
+      "id": "sep-room-living-4",
+      "name": "Living / Dining boundary 4",
+      "levelId": "hf-lvl-ground",
+      "start": {
+        "xMm": 3600,
+        "yMm": 5200
+      },
+      "end": {
+        "xMm": 3600,
+        "yMm": 700
+      },
+      "pinned": false
+    },
     "asset-bath-fixture": {
       "kind": "asset_library_entry",
       "id": "asset-bath-fixture",
@@ -1656,6 +1554,20 @@
       "publishedFromOrgId": null,
       "description": null
     },
+    "ft-window-standard": {
+      "kind": "family_type",
+      "id": "ft-window-standard",
+      "name": "Fixed window 1200 x 1500",
+      "familyId": "window-standard",
+      "discipline": "window",
+      "parameters": {
+        "widthMm": 1200,
+        "heightMm": 1500,
+        "sillHeightMm": 900,
+        "proxyHeightMm": 1500
+      },
+      "catalogSource": null
+    },
     "hf-roof-court-door": {
       "kind": "door",
       "id": "hf-roof-court-door",
@@ -1663,32 +1575,22 @@
       "wallId": "hf-roof-court-glass-back",
       "alongT": 0.5,
       "widthMm": 1000,
-      "familyTypeId": null,
+      "familyTypeId": "ft-door-standard",
       "materialKey": null,
       "materialSlots": null,
       "hostCutDepthMm": null,
       "revealInteriorMm": null,
       "interlockGrade": null,
       "lodPlan": null,
-      "operationType": null,
+      "operationType": "sliding_single",
       "slidingTrackSide": null,
       "ifcClassificationCode": null,
       "pinned": false,
       "phaseCreated": null,
       "phaseDemolished": null,
-      "agentTrace": {
-        "bundleId": "61ecb899-b651-409b-84a2-d7d669282cc6",
-        "assumptionKeys": [
-          "seed-dsl-recipe",
-          "source_reference",
-          "scale_from_floorplan",
-          "project_initiation_bim_scope",
-          "target-house-1-m5-delta"
-        ],
-        "appliedAt": "2026-05-18T20:25:16.105209+00:00"
-      },
-      "optionSetId": "cf8ce0b8-26b5-4154-9183-407cff802efa",
-      "optionId": "21eb1066-4ae1-48c7-a7a6-ee2a0137d6f3",
+      "agentTrace": null,
+      "optionSetId": null,
+      "optionId": null,
       "discipline": "arch",
       "circularity": null,
       "props": null,
@@ -1709,8 +1611,8 @@
       "assetId": "asset-sofa",
       "levelId": "hf-lvl-ground",
       "positionMm": {
-        "xMm": 4700,
-        "yMm": 2300
+        "xMm": 5000,
+        "yMm": 2600
       },
       "rotationDeg": 0,
       "paramValues": {
@@ -1726,7 +1628,7 @@
       "kind": "schedule",
       "id": "room-schedule-view",
       "name": "Room schedule view",
-      "sheetId": null,
+      "sheetId": "sheet-a101",
       "filters": {},
       "grouping": {},
       "category": "room",
@@ -1751,6 +1653,186 @@
       "filterExpr": "category == \"room\"",
       "sortKey": "levelId",
       "sortDir": "asc"
+    },
+    "sep-hf-room-bath-1": {
+      "kind": "room_separation",
+      "id": "sep-hf-room-bath-1",
+      "name": "First Floor Bathroom boundary 1",
+      "levelId": "hf-lvl-upper",
+      "start": {
+        "xMm": 3600,
+        "yMm": 1600
+      },
+      "end": {
+        "xMm": 5200,
+        "yMm": 1600
+      },
+      "pinned": false
+    },
+    "sep-hf-room-bath-2": {
+      "kind": "room_separation",
+      "id": "sep-hf-room-bath-2",
+      "name": "First Floor Bathroom boundary 2",
+      "levelId": "hf-lvl-upper",
+      "start": {
+        "xMm": 5200,
+        "yMm": 1600
+      },
+      "end": {
+        "xMm": 5200,
+        "yMm": 4300
+      },
+      "pinned": false
+    },
+    "sep-hf-room-bath-3": {
+      "kind": "room_separation",
+      "id": "sep-hf-room-bath-3",
+      "name": "First Floor Bathroom boundary 3",
+      "levelId": "hf-lvl-upper",
+      "start": {
+        "xMm": 5200,
+        "yMm": 4300
+      },
+      "end": {
+        "xMm": 3600,
+        "yMm": 4300
+      },
+      "pinned": false
+    },
+    "sep-hf-room-bath-4": {
+      "kind": "room_separation",
+      "id": "sep-hf-room-bath-4",
+      "name": "First Floor Bathroom boundary 4",
+      "levelId": "hf-lvl-upper",
+      "start": {
+        "xMm": 3600,
+        "yMm": 4300
+      },
+      "end": {
+        "xMm": 3600,
+        "yMm": 1600
+      },
+      "pinned": false
+    },
+    "sep-room-bedroom-1": {
+      "kind": "room_separation",
+      "id": "sep-room-bedroom-1",
+      "name": "Bedroom boundary 1",
+      "levelId": "hf-lvl-upper",
+      "start": {
+        "xMm": 600,
+        "yMm": 1600
+      },
+      "end": {
+        "xMm": 3300,
+        "yMm": 1600
+      },
+      "pinned": false
+    },
+    "sep-room-bedroom-2": {
+      "kind": "room_separation",
+      "id": "sep-room-bedroom-2",
+      "name": "Bedroom boundary 2",
+      "levelId": "hf-lvl-upper",
+      "start": {
+        "xMm": 3300,
+        "yMm": 1600
+      },
+      "end": {
+        "xMm": 3300,
+        "yMm": 4300
+      },
+      "pinned": false
+    },
+    "sep-room-bedroom-3": {
+      "kind": "room_separation",
+      "id": "sep-room-bedroom-3",
+      "name": "Bedroom boundary 3",
+      "levelId": "hf-lvl-upper",
+      "start": {
+        "xMm": 3300,
+        "yMm": 4300
+      },
+      "end": {
+        "xMm": 600,
+        "yMm": 4300
+      },
+      "pinned": false
+    },
+    "sep-room-bedroom-4": {
+      "kind": "room_separation",
+      "id": "sep-room-bedroom-4",
+      "name": "Bedroom boundary 4",
+      "levelId": "hf-lvl-upper",
+      "start": {
+        "xMm": 600,
+        "yMm": 4300
+      },
+      "end": {
+        "xMm": 600,
+        "yMm": 1600
+      },
+      "pinned": false
+    },
+    "sep-room-terrace-1": {
+      "kind": "room_separation",
+      "id": "sep-room-terrace-1",
+      "name": "Roof Terrace boundary 1",
+      "levelId": "hf-lvl-upper",
+      "start": {
+        "xMm": 5400,
+        "yMm": 3300
+      },
+      "end": {
+        "xMm": 8000,
+        "yMm": 3300
+      },
+      "pinned": false
+    },
+    "sep-room-terrace-2": {
+      "kind": "room_separation",
+      "id": "sep-room-terrace-2",
+      "name": "Roof Terrace boundary 2",
+      "levelId": "hf-lvl-upper",
+      "start": {
+        "xMm": 8000,
+        "yMm": 3300
+      },
+      "end": {
+        "xMm": 8000,
+        "yMm": 6500
+      },
+      "pinned": false
+    },
+    "sep-room-terrace-3": {
+      "kind": "room_separation",
+      "id": "sep-room-terrace-3",
+      "name": "Roof Terrace boundary 3",
+      "levelId": "hf-lvl-upper",
+      "start": {
+        "xMm": 8000,
+        "yMm": 6500
+      },
+      "end": {
+        "xMm": 5400,
+        "yMm": 6500
+      },
+      "pinned": false
+    },
+    "sep-room-terrace-4": {
+      "kind": "room_separation",
+      "id": "sep-room-terrace-4",
+      "name": "Roof Terrace boundary 4",
+      "levelId": "hf-lvl-upper",
+      "start": {
+        "xMm": 5400,
+        "yMm": 6500
+      },
+      "end": {
+        "xMm": 5400,
+        "yMm": 3300
+      },
+      "pinned": false
     },
     "asset-outdoor-chair": {
       "kind": "asset_library_entry",
@@ -1797,14 +1879,14 @@
       "insulationExtensionMm": 0,
       "materialKey": "cladding_warm_wood",
       "faceMaterialOverrides": null,
-      "loadBearing": null,
-      "structuralRole": "unknown",
-      "structuralMaterial": null,
-      "analyticalParticipation": false,
+      "loadBearing": true,
+      "structuralRole": "bearing_wall",
+      "structuralMaterial": "concrete",
+      "analyticalParticipation": true,
       "analysisStatus": "not_modeled",
-      "structuralMaterialKey": null,
+      "structuralMaterialKey": "concrete",
       "structuralIntentConfidence": null,
-      "fireResistanceRating": null,
+      "fireResistanceRating": "R30",
       "ifcClassificationCode": null,
       "isCurtainWall": false,
       "pinned": false,
@@ -1821,19 +1903,9 @@
       "stack": null,
       "leanMm": null,
       "taperRatio": null,
-      "agentTrace": {
-        "bundleId": "61ecb899-b651-409b-84a2-d7d669282cc6",
-        "assumptionKeys": [
-          "seed-dsl-recipe",
-          "source_reference",
-          "scale_from_floorplan",
-          "project_initiation_bim_scope",
-          "target-house-1-m5-delta"
-        ],
-        "appliedAt": "2026-05-18T20:25:16.105209+00:00"
-      },
-      "optionSetId": "cf8ce0b8-26b5-4154-9183-407cff802efa",
-      "optionId": "21eb1066-4ae1-48c7-a7a6-ee2a0137d6f3",
+      "agentTrace": null,
+      "optionSetId": null,
+      "optionId": null,
       "discipline": "arch",
       "props": null,
       "thermalClassification": null,
@@ -1871,14 +1943,14 @@
       "insulationExtensionMm": 0,
       "materialKey": "cladding_warm_wood",
       "faceMaterialOverrides": null,
-      "loadBearing": null,
-      "structuralRole": "unknown",
-      "structuralMaterial": null,
-      "analyticalParticipation": false,
+      "loadBearing": true,
+      "structuralRole": "bearing_wall",
+      "structuralMaterial": "concrete",
+      "analyticalParticipation": true,
       "analysisStatus": "not_modeled",
-      "structuralMaterialKey": null,
+      "structuralMaterialKey": "concrete",
       "structuralIntentConfidence": null,
-      "fireResistanceRating": null,
+      "fireResistanceRating": "R30",
       "ifcClassificationCode": null,
       "isCurtainWall": false,
       "pinned": false,
@@ -1895,19 +1967,9 @@
       "stack": null,
       "leanMm": null,
       "taperRatio": null,
-      "agentTrace": {
-        "bundleId": "61ecb899-b651-409b-84a2-d7d669282cc6",
-        "assumptionKeys": [
-          "seed-dsl-recipe",
-          "source_reference",
-          "scale_from_floorplan",
-          "project_initiation_bim_scope",
-          "target-house-1-m5-delta"
-        ],
-        "appliedAt": "2026-05-18T20:25:16.105209+00:00"
-      },
-      "optionSetId": "cf8ce0b8-26b5-4154-9183-407cff802efa",
-      "optionId": "21eb1066-4ae1-48c7-a7a6-ee2a0137d6f3",
+      "agentTrace": null,
+      "optionSetId": null,
+      "optionId": null,
       "discipline": "arch",
       "props": null,
       "thermalClassification": null,
@@ -1945,14 +2007,14 @@
       "insulationExtensionMm": 0,
       "materialKey": "cladding_warm_wood",
       "faceMaterialOverrides": null,
-      "loadBearing": null,
-      "structuralRole": "unknown",
-      "structuralMaterial": null,
-      "analyticalParticipation": false,
+      "loadBearing": true,
+      "structuralRole": "bearing_wall",
+      "structuralMaterial": "concrete",
+      "analyticalParticipation": true,
       "analysisStatus": "not_modeled",
-      "structuralMaterialKey": null,
+      "structuralMaterialKey": "concrete",
       "structuralIntentConfidence": null,
-      "fireResistanceRating": null,
+      "fireResistanceRating": "R30",
       "ifcClassificationCode": null,
       "isCurtainWall": false,
       "pinned": false,
@@ -1969,19 +2031,9 @@
       "stack": null,
       "leanMm": null,
       "taperRatio": null,
-      "agentTrace": {
-        "bundleId": "61ecb899-b651-409b-84a2-d7d669282cc6",
-        "assumptionKeys": [
-          "seed-dsl-recipe",
-          "source_reference",
-          "scale_from_floorplan",
-          "project_initiation_bim_scope",
-          "target-house-1-m5-delta"
-        ],
-        "appliedAt": "2026-05-18T20:25:16.105209+00:00"
-      },
-      "optionSetId": "cf8ce0b8-26b5-4154-9183-407cff802efa",
-      "optionId": "21eb1066-4ae1-48c7-a7a6-ee2a0137d6f3",
+      "agentTrace": null,
+      "optionSetId": null,
+      "optionId": null,
       "discipline": "arch",
       "props": null,
       "thermalClassification": null,
@@ -2019,14 +2071,14 @@
       "insulationExtensionMm": 0,
       "materialKey": "cladding_warm_wood",
       "faceMaterialOverrides": null,
-      "loadBearing": null,
-      "structuralRole": "unknown",
-      "structuralMaterial": null,
-      "analyticalParticipation": false,
+      "loadBearing": true,
+      "structuralRole": "bearing_wall",
+      "structuralMaterial": "concrete",
+      "analyticalParticipation": true,
       "analysisStatus": "not_modeled",
-      "structuralMaterialKey": null,
+      "structuralMaterialKey": "concrete",
       "structuralIntentConfidence": null,
-      "fireResistanceRating": null,
+      "fireResistanceRating": "R30",
       "ifcClassificationCode": null,
       "isCurtainWall": false,
       "pinned": false,
@@ -2043,19 +2095,9 @@
       "stack": null,
       "leanMm": null,
       "taperRatio": null,
-      "agentTrace": {
-        "bundleId": "61ecb899-b651-409b-84a2-d7d669282cc6",
-        "assumptionKeys": [
-          "seed-dsl-recipe",
-          "source_reference",
-          "scale_from_floorplan",
-          "project_initiation_bim_scope",
-          "target-house-1-m5-delta"
-        ],
-        "appliedAt": "2026-05-18T20:25:16.105209+00:00"
-      },
-      "optionSetId": "cf8ce0b8-26b5-4154-9183-407cff802efa",
-      "optionId": "21eb1066-4ae1-48c7-a7a6-ee2a0137d6f3",
+      "agentTrace": null,
+      "optionSetId": null,
+      "optionId": null,
       "discipline": "arch",
       "props": null,
       "thermalClassification": null,
@@ -2077,9 +2119,15 @@
       "viewSubdiscipline": null,
       "phaseId": null,
       "phaseFilter": "all",
-      "cropMinMm": null,
-      "cropMaxMm": null,
-      "cropEnabled": null,
+      "cropMinMm": {
+        "xMm": -200,
+        "yMm": -700
+      },
+      "cropMaxMm": {
+        "xMm": 8300,
+        "yMm": 8500
+      },
+      "cropEnabled": true,
       "cropRegionVisible": null,
       "viewRangeBottomMm": null,
       "viewRangeTopMm": null,
@@ -2100,66 +2148,6 @@
       "defaultLens": "show_all",
       "planViewSubtype": null,
       "areaScheme": "gross_building"
-    },
-    "hf-roof-court-floor": {
-      "kind": "floor",
-      "id": "hf-roof-court-floor",
-      "name": "Embedded roof terrace cutout occupied floor",
-      "levelId": "hf-lvl-upper",
-      "boundaryMm": [
-        {
-          "xMm": 5300,
-          "yMm": 3000
-        },
-        {
-          "xMm": 7900,
-          "yMm": 3000
-        },
-        {
-          "xMm": 7900,
-          "yMm": 6600
-        },
-        {
-          "xMm": 5300,
-          "yMm": 6600
-        }
-      ],
-      "thicknessMm": 220,
-      "structureThicknessMm": 180,
-      "finishThicknessMm": 40,
-      "floorTypeId": "ft-concrete-slab",
-      "insulationExtensionMm": 0,
-      "roomBounded": false,
-      "loadBearing": null,
-      "structuralRole": "slab",
-      "structuralMaterial": null,
-      "analysisStatus": "not_modeled",
-      "fireResistanceRating": null,
-      "ifcClassificationCode": null,
-      "pinned": false,
-      "phaseId": null,
-      "phaseCreated": null,
-      "phaseDemolished": null,
-      "agentTrace": {
-        "bundleId": "61ecb899-b651-409b-84a2-d7d669282cc6",
-        "assumptionKeys": [
-          "seed-dsl-recipe",
-          "source_reference",
-          "scale_from_floorplan",
-          "project_initiation_bim_scope",
-          "target-house-1-m5-delta"
-        ],
-        "appliedAt": "2026-05-18T20:25:16.105209+00:00"
-      },
-      "optionSetId": "cf8ce0b8-26b5-4154-9183-407cff802efa",
-      "optionId": "21eb1066-4ae1-48c7-a7a6-ee2a0137d6f3",
-      "toposolidElevationMm": null,
-      "discipline": "arch",
-      "circularity": null,
-      "props": null,
-      "thermalClassification": null,
-      "thermalClassificationSource": null,
-      "energyScenarioId": null
     },
     "upper-wrapper-floor": {
       "kind": "floor",
@@ -2200,19 +2188,9 @@
       "phaseId": null,
       "phaseCreated": null,
       "phaseDemolished": null,
-      "agentTrace": {
-        "bundleId": "61ecb899-b651-409b-84a2-d7d669282cc6",
-        "assumptionKeys": [
-          "seed-dsl-recipe",
-          "source_reference",
-          "scale_from_floorplan",
-          "project_initiation_bim_scope",
-          "target-house-1-m5-delta"
-        ],
-        "appliedAt": "2026-05-18T20:25:16.105209+00:00"
-      },
-      "optionSetId": "cf8ce0b8-26b5-4154-9183-407cff802efa",
-      "optionId": "21eb1066-4ae1-48c7-a7a6-ee2a0137d6f3",
+      "agentTrace": null,
+      "optionSetId": null,
+      "optionId": null,
       "toposolidElevationMm": null,
       "discipline": "arch",
       "circularity": null,
@@ -2220,18 +2198,6 @@
       "thermalClassification": null,
       "thermalClassificationSource": null,
       "energyScenarioId": null
-    },
-    "ft-generic-furniture": {
-      "kind": "family_type",
-      "id": "ft-generic-furniture",
-      "name": "Generic furniture marker",
-      "familyId": "generic-furniture-marker",
-      "discipline": "generic",
-      "parameters": {
-        "ifcEntityIntent": "IfcFurnishingElement",
-        "scheduleCategory": "furniture"
-      },
-      "catalogSource": null
     },
     "hf-ground-floor-plan": {
       "kind": "plan_view",
@@ -2245,9 +2211,15 @@
       "viewSubdiscipline": null,
       "phaseId": null,
       "phaseFilter": "all",
-      "cropMinMm": null,
-      "cropMaxMm": null,
-      "cropEnabled": null,
+      "cropMinMm": {
+        "xMm": 0,
+        "yMm": -500
+      },
+      "cropMaxMm": {
+        "xMm": 8500,
+        "yMm": 8500
+      },
+      "cropEnabled": true,
       "cropRegionVisible": null,
       "viewRangeBottomMm": null,
       "viewRangeTopMm": null,
@@ -2268,6 +2240,33 @@
       "defaultLens": "show_all",
       "planViewSubtype": null,
       "areaScheme": "gross_building"
+    },
+    "main-stair-guardrail": {
+      "kind": "railing",
+      "id": "main-stair-guardrail",
+      "name": "Main stair guardrail",
+      "hostedStairId": "main-stair",
+      "pathMm": [
+        {
+          "xMm": 1300,
+          "yMm": 1100
+        },
+        {
+          "xMm": 1300,
+          "yMm": 3200
+        }
+      ],
+      "guardHeightMm": 1040,
+      "balusterPattern": null,
+      "handrailSupports": null,
+      "materialSlots": null,
+      "structuralRole": "unknown",
+      "analysisStatus": "not_modeled",
+      "pinned": false,
+      "phaseCreated": null,
+      "phaseDemolished": null,
+      "agentTrace": null,
+      "discipline": "arch"
     },
     "rt-white-folded-roof": {
       "kind": "roof_type",
@@ -2290,65 +2289,165 @@
         }
       ]
     },
-    "hf-front-loggia-floor": {
-      "kind": "floor",
-      "id": "hf-front-loggia-floor",
-      "name": "Deep recessed front upper loggia",
+    "sep-hf-room-loggia-1": {
+      "kind": "room_separation",
+      "id": "sep-hf-room-loggia-1",
+      "name": "Deep Balcony / Loggia boundary 1",
       "levelId": "hf-lvl-upper",
-      "boundaryMm": [
-        {
-          "xMm": 1200,
-          "yMm": -450
-        },
-        {
-          "xMm": 7600,
-          "yMm": -450
-        },
-        {
-          "xMm": 7600,
-          "yMm": 900
-        },
-        {
-          "xMm": 1200,
-          "yMm": 900
-        }
-      ],
-      "thicknessMm": 180,
-      "structureThicknessMm": 140,
-      "finishThicknessMm": 0,
-      "floorTypeId": null,
-      "insulationExtensionMm": 0,
-      "roomBounded": false,
-      "loadBearing": null,
-      "structuralRole": "slab",
-      "structuralMaterial": null,
-      "analysisStatus": "not_modeled",
-      "fireResistanceRating": null,
+      "start": {
+        "xMm": 1200,
+        "yMm": -450
+      },
+      "end": {
+        "xMm": 7600,
+        "yMm": -450
+      },
+      "pinned": false
+    },
+    "sep-hf-room-loggia-2": {
+      "kind": "room_separation",
+      "id": "sep-hf-room-loggia-2",
+      "name": "Deep Balcony / Loggia boundary 2",
+      "levelId": "hf-lvl-upper",
+      "start": {
+        "xMm": 7600,
+        "yMm": -450
+      },
+      "end": {
+        "xMm": 7600,
+        "yMm": 900
+      },
+      "pinned": false
+    },
+    "sep-hf-room-loggia-3": {
+      "kind": "room_separation",
+      "id": "sep-hf-room-loggia-3",
+      "name": "Deep Balcony / Loggia boundary 3",
+      "levelId": "hf-lvl-upper",
+      "start": {
+        "xMm": 7600,
+        "yMm": 900
+      },
+      "end": {
+        "xMm": 1200,
+        "yMm": 900
+      },
+      "pinned": false
+    },
+    "sep-hf-room-loggia-4": {
+      "kind": "room_separation",
+      "id": "sep-hf-room-loggia-4",
+      "name": "Deep Balcony / Loggia boundary 4",
+      "levelId": "hf-lvl-upper",
+      "start": {
+        "xMm": 1200,
+        "yMm": 900
+      },
+      "end": {
+        "xMm": 1200,
+        "yMm": -450
+      },
+      "pinned": false
+    },
+    "access-door-room-hall": {
+      "kind": "door",
+      "id": "access-door-room-hall",
+      "name": "Entrance / Stair Hall access door",
+      "wallId": "access-wall-room-hall",
+      "alongT": 0.5,
+      "widthMm": 500,
+      "familyTypeId": "ft-pocket-door-standard",
+      "materialKey": "white_render",
+      "materialSlots": null,
+      "hostCutDepthMm": null,
+      "revealInteriorMm": null,
+      "interlockGrade": null,
+      "lodPlan": null,
+      "operationType": "sliding_single",
+      "slidingTrackSide": null,
       "ifcClassificationCode": null,
       "pinned": false,
-      "phaseId": null,
       "phaseCreated": null,
       "phaseDemolished": null,
-      "agentTrace": {
-        "bundleId": "61ecb899-b651-409b-84a2-d7d669282cc6",
-        "assumptionKeys": [
-          "seed-dsl-recipe",
-          "source_reference",
-          "scale_from_floorplan",
-          "project_initiation_bim_scope",
-          "target-house-1-m5-delta"
-        ],
-        "appliedAt": "2026-05-18T20:25:16.105209+00:00"
-      },
-      "optionSetId": "cf8ce0b8-26b5-4154-9183-407cff802efa",
-      "optionId": "21eb1066-4ae1-48c7-a7a6-ee2a0137d6f3",
-      "toposolidElevationMm": null,
+      "agentTrace": null,
+      "optionSetId": null,
+      "optionId": null,
       "discipline": "arch",
       "circularity": null,
       "props": null,
       "thermalClassification": null,
       "thermalClassificationSource": null,
-      "energyScenarioId": null
+      "uValue": null,
+      "gValue": null,
+      "frameFraction": null,
+      "airTightnessClass": null,
+      "installationThermalBridgeNote": null,
+      "shadingDevice": null,
+      "annualShadingFactorEstimate": null
+    },
+    "access-wall-room-hall": {
+      "kind": "wall",
+      "id": "access-wall-room-hall",
+      "name": "Entrance / Stair Hall access control wall",
+      "levelId": "hf-lvl-ground",
+      "start": {
+        "xMm": 3100,
+        "yMm": 2850
+      },
+      "end": {
+        "xMm": 3100,
+        "yMm": 3450
+      },
+      "wallCurve": null,
+      "thicknessMm": 120,
+      "heightMm": 2400,
+      "wallTypeId": "wt-internal",
+      "locationLine": "wall-centerline",
+      "baseConstraintLevelId": null,
+      "topConstraintLevelId": null,
+      "baseConstraintOffsetMm": 0,
+      "topConstraintOffsetMm": 0,
+      "roofAttachmentId": null,
+      "topConstraintHostId": null,
+      "topConstraintHostFace": null,
+      "insulationExtensionMm": 0,
+      "materialKey": "gypsum_board",
+      "faceMaterialOverrides": null,
+      "loadBearing": false,
+      "structuralRole": "non_load_bearing",
+      "structuralMaterial": "other",
+      "analyticalParticipation": false,
+      "analysisStatus": "not_modeled",
+      "structuralMaterialKey": "gypsum_board",
+      "structuralIntentConfidence": null,
+      "fireResistanceRating": "R30",
+      "ifcClassificationCode": null,
+      "isCurtainWall": false,
+      "pinned": false,
+      "phaseId": null,
+      "phaseCreated": null,
+      "phaseDemolished": null,
+      "circularity": null,
+      "curtainWallVCount": null,
+      "curtainWallHCount": null,
+      "curtainWallPanelType": null,
+      "curtainWallMullionType": null,
+      "curtainPanelOverrides": null,
+      "recessZones": null,
+      "stack": null,
+      "leanMm": null,
+      "taperRatio": null,
+      "agentTrace": null,
+      "optionSetId": null,
+      "optionId": null,
+      "discipline": "arch",
+      "props": null,
+      "thermalClassification": null,
+      "thermalClassificationSource": null,
+      "energyScenarioId": null,
+      "siteHostId": null,
+      "joinDisallowStart": false,
+      "joinDisallowEnd": false
     },
     "hf-roof-court-opening": {
       "kind": "roof_opening",
@@ -2399,18 +2498,308 @@
       "pinned": false,
       "phaseCreated": null,
       "phaseDemolished": null,
-      "agentTrace": {
-        "bundleId": "61ecb899-b651-409b-84a2-d7d669282cc6",
-        "assumptionKeys": [
-          "seed-dsl-recipe",
-          "source_reference",
-          "scale_from_floorplan",
-          "project_initiation_bim_scope",
-          "target-house-1-m5-delta"
-        ],
-        "appliedAt": "2026-05-18T20:25:16.105209+00:00"
-      },
+      "agentTrace": null,
       "discipline": "arch"
+    },
+    "sep-hf-room-carport-1": {
+      "kind": "room_separation",
+      "id": "sep-hf-room-carport-1",
+      "name": "Recessed Garage / Carport boundary 1",
+      "levelId": "hf-lvl-ground",
+      "start": {
+        "xMm": 600,
+        "yMm": 700
+      },
+      "end": {
+        "xMm": 1100,
+        "yMm": 700
+      },
+      "pinned": false
+    },
+    "sep-hf-room-carport-2": {
+      "kind": "room_separation",
+      "id": "sep-hf-room-carport-2",
+      "name": "Recessed Garage / Carport boundary 2",
+      "levelId": "hf-lvl-ground",
+      "start": {
+        "xMm": 1100,
+        "yMm": 700
+      },
+      "end": {
+        "xMm": 1100,
+        "yMm": 6500
+      },
+      "pinned": false
+    },
+    "sep-hf-room-carport-3": {
+      "kind": "room_separation",
+      "id": "sep-hf-room-carport-3",
+      "name": "Recessed Garage / Carport boundary 3",
+      "levelId": "hf-lvl-ground",
+      "start": {
+        "xMm": 1100,
+        "yMm": 6500
+      },
+      "end": {
+        "xMm": 600,
+        "yMm": 6500
+      },
+      "pinned": false
+    },
+    "sep-hf-room-carport-4": {
+      "kind": "room_separation",
+      "id": "sep-hf-room-carport-4",
+      "name": "Recessed Garage / Carport boundary 4",
+      "levelId": "hf-lvl-ground",
+      "start": {
+        "xMm": 600,
+        "yMm": 6500
+      },
+      "end": {
+        "xMm": 600,
+        "yMm": 700
+      },
+      "pinned": false
+    },
+    "sep-hf-room-ensuite-1": {
+      "kind": "room_separation",
+      "id": "sep-hf-room-ensuite-1",
+      "name": "Ensuite boundary 1",
+      "levelId": "hf-lvl-upper",
+      "start": {
+        "xMm": 2700,
+        "yMm": 4500
+      },
+      "end": {
+        "xMm": 4300,
+        "yMm": 4500
+      },
+      "pinned": false
+    },
+    "sep-hf-room-ensuite-2": {
+      "kind": "room_separation",
+      "id": "sep-hf-room-ensuite-2",
+      "name": "Ensuite boundary 2",
+      "levelId": "hf-lvl-upper",
+      "start": {
+        "xMm": 4300,
+        "yMm": 4500
+      },
+      "end": {
+        "xMm": 4300,
+        "yMm": 6500
+      },
+      "pinned": false
+    },
+    "sep-hf-room-ensuite-3": {
+      "kind": "room_separation",
+      "id": "sep-hf-room-ensuite-3",
+      "name": "Ensuite boundary 3",
+      "levelId": "hf-lvl-upper",
+      "start": {
+        "xMm": 4300,
+        "yMm": 6500
+      },
+      "end": {
+        "xMm": 2700,
+        "yMm": 6500
+      },
+      "pinned": false
+    },
+    "sep-hf-room-ensuite-4": {
+      "kind": "room_separation",
+      "id": "sep-hf-room-ensuite-4",
+      "name": "Ensuite boundary 4",
+      "levelId": "hf-lvl-upper",
+      "start": {
+        "xMm": 2700,
+        "yMm": 6500
+      },
+      "end": {
+        "xMm": 2700,
+        "yMm": 4500
+      },
+      "pinned": false
+    },
+    "sep-hf-room-kitchen-1": {
+      "kind": "room_separation",
+      "id": "sep-hf-room-kitchen-1",
+      "name": "Kitchen boundary 1",
+      "levelId": "hf-lvl-ground",
+      "start": {
+        "xMm": 1200,
+        "yMm": 3700
+      },
+      "end": {
+        "xMm": 3400,
+        "yMm": 3700
+      },
+      "pinned": false
+    },
+    "sep-hf-room-kitchen-2": {
+      "kind": "room_separation",
+      "id": "sep-hf-room-kitchen-2",
+      "name": "Kitchen boundary 2",
+      "levelId": "hf-lvl-ground",
+      "start": {
+        "xMm": 3400,
+        "yMm": 3700
+      },
+      "end": {
+        "xMm": 3400,
+        "yMm": 6500
+      },
+      "pinned": false
+    },
+    "sep-hf-room-kitchen-3": {
+      "kind": "room_separation",
+      "id": "sep-hf-room-kitchen-3",
+      "name": "Kitchen boundary 3",
+      "levelId": "hf-lvl-ground",
+      "start": {
+        "xMm": 3400,
+        "yMm": 6500
+      },
+      "end": {
+        "xMm": 1200,
+        "yMm": 6500
+      },
+      "pinned": false
+    },
+    "sep-hf-room-kitchen-4": {
+      "kind": "room_separation",
+      "id": "sep-hf-room-kitchen-4",
+      "name": "Kitchen boundary 4",
+      "levelId": "hf-lvl-ground",
+      "start": {
+        "xMm": 1200,
+        "yMm": 6500
+      },
+      "end": {
+        "xMm": 1200,
+        "yMm": 3700
+      },
+      "pinned": false
+    },
+    "sep-hf-room-landing-1": {
+      "kind": "room_separation",
+      "id": "sep-hf-room-landing-1",
+      "name": "Hall / Landing boundary 1",
+      "levelId": "hf-lvl-upper",
+      "start": {
+        "xMm": 5400,
+        "yMm": 1000
+      },
+      "end": {
+        "xMm": 7600,
+        "yMm": 1000
+      },
+      "pinned": false
+    },
+    "sep-hf-room-landing-2": {
+      "kind": "room_separation",
+      "id": "sep-hf-room-landing-2",
+      "name": "Hall / Landing boundary 2",
+      "levelId": "hf-lvl-upper",
+      "start": {
+        "xMm": 7600,
+        "yMm": 1000
+      },
+      "end": {
+        "xMm": 7600,
+        "yMm": 3000
+      },
+      "pinned": false
+    },
+    "sep-hf-room-landing-3": {
+      "kind": "room_separation",
+      "id": "sep-hf-room-landing-3",
+      "name": "Hall / Landing boundary 3",
+      "levelId": "hf-lvl-upper",
+      "start": {
+        "xMm": 7600,
+        "yMm": 3000
+      },
+      "end": {
+        "xMm": 5400,
+        "yMm": 3000
+      },
+      "pinned": false
+    },
+    "sep-hf-room-landing-4": {
+      "kind": "room_separation",
+      "id": "sep-hf-room-landing-4",
+      "name": "Hall / Landing boundary 4",
+      "levelId": "hf-lvl-upper",
+      "start": {
+        "xMm": 5400,
+        "yMm": 3000
+      },
+      "end": {
+        "xMm": 5400,
+        "yMm": 1000
+      },
+      "pinned": false
+    },
+    "sep-hf-room-utility-1": {
+      "kind": "room_separation",
+      "id": "sep-hf-room-utility-1",
+      "name": "Utility boundary 1",
+      "levelId": "hf-lvl-ground",
+      "start": {
+        "xMm": 6800,
+        "yMm": 3300
+      },
+      "end": {
+        "xMm": 8300,
+        "yMm": 3300
+      },
+      "pinned": false
+    },
+    "sep-hf-room-utility-2": {
+      "kind": "room_separation",
+      "id": "sep-hf-room-utility-2",
+      "name": "Utility boundary 2",
+      "levelId": "hf-lvl-ground",
+      "start": {
+        "xMm": 8300,
+        "yMm": 3300
+      },
+      "end": {
+        "xMm": 8300,
+        "yMm": 5000
+      },
+      "pinned": false
+    },
+    "sep-hf-room-utility-3": {
+      "kind": "room_separation",
+      "id": "sep-hf-room-utility-3",
+      "name": "Utility boundary 3",
+      "levelId": "hf-lvl-ground",
+      "start": {
+        "xMm": 8300,
+        "yMm": 5000
+      },
+      "end": {
+        "xMm": 6800,
+        "yMm": 5000
+      },
+      "pinned": false
+    },
+    "sep-hf-room-utility-4": {
+      "kind": "room_separation",
+      "id": "sep-hf-room-utility-4",
+      "name": "Utility boundary 4",
+      "levelId": "hf-lvl-ground",
+      "start": {
+        "xMm": 6800,
+        "yMm": 5000
+      },
+      "end": {
+        "xMm": 6800,
+        "yMm": 3300
+      },
+      "pinned": false
     },
     "hf-room-walk-in-closet": {
       "kind": "room",
@@ -2441,8 +2830,8 @@
       "department": null,
       "programmeGroup": null,
       "functionLabel": "wardrobe storage",
-      "finishSet": null,
-      "targetAreaM2": 4.7,
+      "finishSet": "service-standard",
+      "targetAreaM2": 3.8,
       "ventilationZone": null,
       "heatingCoolingZone": null,
       "designAirChangeRate": null,
@@ -2462,6 +2851,119 @@
       "airChangeRate": null,
       "zoneId": null,
       "conditionedVolumeIncluded": null
+    },
+    "access-door-room-living": {
+      "kind": "door",
+      "id": "access-door-room-living",
+      "name": "Living / Dining access door",
+      "wallId": "access-wall-room-living",
+      "alongT": 0.5,
+      "widthMm": 500,
+      "familyTypeId": "ft-pocket-door-standard",
+      "materialKey": "white_render",
+      "materialSlots": null,
+      "hostCutDepthMm": null,
+      "revealInteriorMm": null,
+      "interlockGrade": null,
+      "lodPlan": null,
+      "operationType": "sliding_single",
+      "slidingTrackSide": null,
+      "ifcClassificationCode": null,
+      "pinned": false,
+      "phaseCreated": null,
+      "phaseDemolished": null,
+      "agentTrace": null,
+      "optionSetId": null,
+      "optionId": null,
+      "discipline": "arch",
+      "circularity": null,
+      "props": null,
+      "thermalClassification": null,
+      "thermalClassificationSource": null,
+      "uValue": null,
+      "gValue": null,
+      "frameFraction": null,
+      "airTightnessClass": null,
+      "installationThermalBridgeNote": null,
+      "shadingDevice": null,
+      "annualShadingFactorEstimate": null
+    },
+    "access-wall-room-living": {
+      "kind": "wall",
+      "id": "access-wall-room-living",
+      "name": "Living / Dining access control wall",
+      "levelId": "hf-lvl-ground",
+      "start": {
+        "xMm": 5700,
+        "yMm": 5000
+      },
+      "end": {
+        "xMm": 6400,
+        "yMm": 5000
+      },
+      "wallCurve": null,
+      "thicknessMm": 120,
+      "heightMm": 2400,
+      "wallTypeId": "wt-internal",
+      "locationLine": "wall-centerline",
+      "baseConstraintLevelId": null,
+      "topConstraintLevelId": null,
+      "baseConstraintOffsetMm": 0,
+      "topConstraintOffsetMm": 0,
+      "roofAttachmentId": null,
+      "topConstraintHostId": null,
+      "topConstraintHostFace": null,
+      "insulationExtensionMm": 0,
+      "materialKey": "gypsum_board",
+      "faceMaterialOverrides": null,
+      "loadBearing": false,
+      "structuralRole": "non_load_bearing",
+      "structuralMaterial": "other",
+      "analyticalParticipation": false,
+      "analysisStatus": "not_modeled",
+      "structuralMaterialKey": "gypsum_board",
+      "structuralIntentConfidence": null,
+      "fireResistanceRating": "R30",
+      "ifcClassificationCode": null,
+      "isCurtainWall": false,
+      "pinned": false,
+      "phaseId": null,
+      "phaseCreated": null,
+      "phaseDemolished": null,
+      "circularity": null,
+      "curtainWallVCount": null,
+      "curtainWallHCount": null,
+      "curtainWallPanelType": null,
+      "curtainWallMullionType": null,
+      "curtainPanelOverrides": null,
+      "recessZones": null,
+      "stack": null,
+      "leanMm": null,
+      "taperRatio": null,
+      "agentTrace": null,
+      "optionSetId": null,
+      "optionId": null,
+      "discipline": "arch",
+      "props": null,
+      "thermalClassification": null,
+      "thermalClassificationSource": null,
+      "energyScenarioId": null,
+      "siteHostId": null,
+      "joinDisallowStart": false,
+      "joinDisallowEnd": false
+    },
+    "ft-pocket-door-standard": {
+      "kind": "family_type",
+      "id": "ft-pocket-door-standard",
+      "name": "Sliding pocket door 760 x 2100",
+      "familyId": "door-pocket",
+      "discipline": "door",
+      "parameters": {
+        "widthMm": 760,
+        "heightMm": 2100,
+        "proxyHeightMm": 2100
+      },
+      "catalogSource": null
     },
     "hf-front-loggia-railing": {
       "kind": "railing",
@@ -2487,17 +2989,7 @@
       "pinned": false,
       "phaseCreated": null,
       "phaseDemolished": null,
-      "agentTrace": {
-        "bundleId": "61ecb899-b651-409b-84a2-d7d669282cc6",
-        "assumptionKeys": [
-          "seed-dsl-recipe",
-          "source_reference",
-          "scale_from_floorplan",
-          "project_initiation_bim_scope",
-          "target-house-1-m5-delta"
-        ],
-        "appliedAt": "2026-05-18T20:25:16.105209+00:00"
-      },
+      "agentTrace": null,
       "discipline": "arch"
     },
     "hf-room-gf-bath-laundry": {
@@ -2529,8 +3021,8 @@
       "department": null,
       "programmeGroup": null,
       "functionLabel": "residential wet room",
-      "finishSet": null,
-      "targetAreaM2": 4.8,
+      "finishSet": "wet-room-tile",
+      "targetAreaM2": 3.6,
       "ventilationZone": null,
       "heatingCoolingZone": null,
       "designAirChangeRate": null,
@@ -2551,6 +3043,306 @@
       "zoneId": null,
       "conditionedVolumeIncluded": null
     },
+    "access-door-hf-room-bath": {
+      "kind": "door",
+      "id": "access-door-hf-room-bath",
+      "name": "First Floor Bathroom access door",
+      "wallId": "access-wall-hf-room-bath",
+      "alongT": 0.5,
+      "widthMm": 614.25,
+      "familyTypeId": "ft-pocket-door-standard",
+      "materialKey": "white_render",
+      "materialSlots": null,
+      "hostCutDepthMm": null,
+      "revealInteriorMm": null,
+      "interlockGrade": null,
+      "lodPlan": null,
+      "operationType": "sliding_single",
+      "slidingTrackSide": null,
+      "ifcClassificationCode": null,
+      "pinned": false,
+      "phaseCreated": null,
+      "phaseDemolished": null,
+      "agentTrace": null,
+      "optionSetId": null,
+      "optionId": null,
+      "discipline": "arch",
+      "circularity": null,
+      "props": null,
+      "thermalClassification": null,
+      "thermalClassificationSource": null,
+      "uValue": null,
+      "gValue": null,
+      "frameFraction": null,
+      "airTightnessClass": null,
+      "installationThermalBridgeNote": null,
+      "shadingDevice": null,
+      "annualShadingFactorEstimate": null
+    },
+    "access-door-room-bedroom": {
+      "kind": "door",
+      "id": "access-door-room-bedroom",
+      "name": "Bedroom access door",
+      "wallId": "access-wall-room-bedroom",
+      "alongT": 0.5,
+      "widthMm": 500,
+      "familyTypeId": "ft-pocket-door-standard",
+      "materialKey": "white_render",
+      "materialSlots": null,
+      "hostCutDepthMm": null,
+      "revealInteriorMm": null,
+      "interlockGrade": null,
+      "lodPlan": null,
+      "operationType": "sliding_single",
+      "slidingTrackSide": null,
+      "ifcClassificationCode": null,
+      "pinned": false,
+      "phaseCreated": null,
+      "phaseDemolished": null,
+      "agentTrace": null,
+      "optionSetId": null,
+      "optionId": null,
+      "discipline": "arch",
+      "circularity": null,
+      "props": null,
+      "thermalClassification": null,
+      "thermalClassificationSource": null,
+      "uValue": null,
+      "gValue": null,
+      "frameFraction": null,
+      "airTightnessClass": null,
+      "installationThermalBridgeNote": null,
+      "shadingDevice": null,
+      "annualShadingFactorEstimate": null
+    },
+    "access-door-room-terrace": {
+      "kind": "door",
+      "id": "access-door-room-terrace",
+      "name": "Roof Terrace access door",
+      "wallId": "access-wall-room-terrace",
+      "alongT": 0.5,
+      "widthMm": 617.5,
+      "familyTypeId": "ft-pocket-door-standard",
+      "materialKey": "white_render",
+      "materialSlots": null,
+      "hostCutDepthMm": null,
+      "revealInteriorMm": null,
+      "interlockGrade": null,
+      "lodPlan": null,
+      "operationType": "sliding_single",
+      "slidingTrackSide": null,
+      "ifcClassificationCode": null,
+      "pinned": false,
+      "phaseCreated": null,
+      "phaseDemolished": null,
+      "agentTrace": null,
+      "optionSetId": null,
+      "optionId": null,
+      "discipline": "arch",
+      "circularity": null,
+      "props": null,
+      "thermalClassification": null,
+      "thermalClassificationSource": null,
+      "uValue": null,
+      "gValue": null,
+      "frameFraction": null,
+      "airTightnessClass": null,
+      "installationThermalBridgeNote": null,
+      "shadingDevice": null,
+      "annualShadingFactorEstimate": null
+    },
+    "access-wall-hf-room-bath": {
+      "kind": "wall",
+      "id": "access-wall-hf-room-bath",
+      "name": "First Floor Bathroom access control wall",
+      "levelId": "hf-lvl-upper",
+      "start": {
+        "xMm": 3850,
+        "yMm": 2477.5
+      },
+      "end": {
+        "xMm": 3850,
+        "yMm": 3422.5
+      },
+      "wallCurve": null,
+      "thicknessMm": 120,
+      "heightMm": 2400,
+      "wallTypeId": "wt-internal",
+      "locationLine": "wall-centerline",
+      "baseConstraintLevelId": null,
+      "topConstraintLevelId": null,
+      "baseConstraintOffsetMm": 0,
+      "topConstraintOffsetMm": 0,
+      "roofAttachmentId": null,
+      "topConstraintHostId": null,
+      "topConstraintHostFace": null,
+      "insulationExtensionMm": 0,
+      "materialKey": "gypsum_board",
+      "faceMaterialOverrides": null,
+      "loadBearing": false,
+      "structuralRole": "non_load_bearing",
+      "structuralMaterial": "other",
+      "analyticalParticipation": false,
+      "analysisStatus": "not_modeled",
+      "structuralMaterialKey": "gypsum_board",
+      "structuralIntentConfidence": null,
+      "fireResistanceRating": "R30",
+      "ifcClassificationCode": null,
+      "isCurtainWall": false,
+      "pinned": false,
+      "phaseId": null,
+      "phaseCreated": null,
+      "phaseDemolished": null,
+      "circularity": null,
+      "curtainWallVCount": null,
+      "curtainWallHCount": null,
+      "curtainWallPanelType": null,
+      "curtainWallMullionType": null,
+      "curtainPanelOverrides": null,
+      "recessZones": null,
+      "stack": null,
+      "leanMm": null,
+      "taperRatio": null,
+      "agentTrace": null,
+      "optionSetId": null,
+      "optionId": null,
+      "discipline": "arch",
+      "props": null,
+      "thermalClassification": null,
+      "thermalClassificationSource": null,
+      "energyScenarioId": null,
+      "siteHostId": null,
+      "joinDisallowStart": false,
+      "joinDisallowEnd": false
+    },
+    "access-wall-room-bedroom": {
+      "kind": "wall",
+      "id": "access-wall-room-bedroom",
+      "name": "Bedroom access control wall",
+      "levelId": "hf-lvl-upper",
+      "start": {
+        "xMm": 2600,
+        "yMm": 4150
+      },
+      "end": {
+        "xMm": 3200,
+        "yMm": 4150
+      },
+      "wallCurve": null,
+      "thicknessMm": 120,
+      "heightMm": 2400,
+      "wallTypeId": "wt-internal",
+      "locationLine": "wall-centerline",
+      "baseConstraintLevelId": null,
+      "topConstraintLevelId": null,
+      "baseConstraintOffsetMm": 0,
+      "topConstraintOffsetMm": 0,
+      "roofAttachmentId": null,
+      "topConstraintHostId": null,
+      "topConstraintHostFace": null,
+      "insulationExtensionMm": 0,
+      "materialKey": "gypsum_board",
+      "faceMaterialOverrides": null,
+      "loadBearing": false,
+      "structuralRole": "non_load_bearing",
+      "structuralMaterial": "other",
+      "analyticalParticipation": false,
+      "analysisStatus": "not_modeled",
+      "structuralMaterialKey": "gypsum_board",
+      "structuralIntentConfidence": null,
+      "fireResistanceRating": "R30",
+      "ifcClassificationCode": null,
+      "isCurtainWall": false,
+      "pinned": false,
+      "phaseId": null,
+      "phaseCreated": null,
+      "phaseDemolished": null,
+      "circularity": null,
+      "curtainWallVCount": null,
+      "curtainWallHCount": null,
+      "curtainWallPanelType": null,
+      "curtainWallMullionType": null,
+      "curtainPanelOverrides": null,
+      "recessZones": null,
+      "stack": null,
+      "leanMm": null,
+      "taperRatio": null,
+      "agentTrace": null,
+      "optionSetId": null,
+      "optionId": null,
+      "discipline": "arch",
+      "props": null,
+      "thermalClassification": null,
+      "thermalClassificationSource": null,
+      "energyScenarioId": null,
+      "siteHostId": null,
+      "joinDisallowStart": false,
+      "joinDisallowEnd": false
+    },
+    "access-wall-room-terrace": {
+      "kind": "wall",
+      "id": "access-wall-room-terrace",
+      "name": "Roof Terrace access control wall",
+      "levelId": "hf-lvl-upper",
+      "start": {
+        "xMm": 5650,
+        "yMm": 4425
+      },
+      "end": {
+        "xMm": 5650,
+        "yMm": 5375
+      },
+      "wallCurve": null,
+      "thicknessMm": 120,
+      "heightMm": 2400,
+      "wallTypeId": "wt-internal",
+      "locationLine": "wall-centerline",
+      "baseConstraintLevelId": null,
+      "topConstraintLevelId": null,
+      "baseConstraintOffsetMm": 0,
+      "topConstraintOffsetMm": 0,
+      "roofAttachmentId": null,
+      "topConstraintHostId": null,
+      "topConstraintHostFace": null,
+      "insulationExtensionMm": 0,
+      "materialKey": "gypsum_board",
+      "faceMaterialOverrides": null,
+      "loadBearing": false,
+      "structuralRole": "non_load_bearing",
+      "structuralMaterial": "other",
+      "analyticalParticipation": false,
+      "analysisStatus": "not_modeled",
+      "structuralMaterialKey": "gypsum_board",
+      "structuralIntentConfidence": null,
+      "fireResistanceRating": "R30",
+      "ifcClassificationCode": null,
+      "isCurtainWall": false,
+      "pinned": false,
+      "phaseId": null,
+      "phaseCreated": null,
+      "phaseDemolished": null,
+      "circularity": null,
+      "curtainWallVCount": null,
+      "curtainWallHCount": null,
+      "curtainWallPanelType": null,
+      "curtainWallMullionType": null,
+      "curtainPanelOverrides": null,
+      "recessZones": null,
+      "stack": null,
+      "leanMm": null,
+      "taperRatio": null,
+      "agentTrace": null,
+      "optionSetId": null,
+      "optionId": null,
+      "discipline": "arch",
+      "props": null,
+      "thermalClassification": null,
+      "thermalClassificationSource": null,
+      "energyScenarioId": null,
+      "siteHostId": null,
+      "joinDisallowStart": false,
+      "joinDisallowEnd": false
+    },
     "front-loggia-center-door": {
       "kind": "door",
       "id": "front-loggia-center-door",
@@ -2558,32 +3350,22 @@
       "wallId": "front-loggia-recessed-glass",
       "alongT": 0.5,
       "widthMm": 850,
-      "familyTypeId": null,
+      "familyTypeId": "ft-door-standard",
       "materialKey": null,
       "materialSlots": null,
       "hostCutDepthMm": null,
       "revealInteriorMm": null,
       "interlockGrade": null,
       "lodPlan": null,
-      "operationType": null,
+      "operationType": "sliding_single",
       "slidingTrackSide": null,
       "ifcClassificationCode": null,
       "pinned": false,
       "phaseCreated": null,
       "phaseDemolished": null,
-      "agentTrace": {
-        "bundleId": "61ecb899-b651-409b-84a2-d7d669282cc6",
-        "assumptionKeys": [
-          "seed-dsl-recipe",
-          "source_reference",
-          "scale_from_floorplan",
-          "project_initiation_bim_scope",
-          "target-house-1-m5-delta"
-        ],
-        "appliedAt": "2026-05-18T20:25:16.105209+00:00"
-      },
-      "optionSetId": "cf8ce0b8-26b5-4154-9183-407cff802efa",
-      "optionId": "21eb1066-4ae1-48c7-a7a6-ee2a0137d6f3",
+      "agentTrace": null,
+      "optionSetId": null,
+      "optionId": null,
       "discipline": "arch",
       "circularity": null,
       "props": null,
@@ -2611,9 +3393,9 @@
         "yMm": 900
       },
       "wallCurve": null,
-      "thicknessMm": 200,
+      "thicknessMm": 250,
       "heightMm": 2600,
-      "wallTypeId": null,
+      "wallTypeId": "wt-white-wrapper",
       "locationLine": "wall-centerline",
       "baseConstraintLevelId": null,
       "topConstraintLevelId": null,
@@ -2625,14 +3407,14 @@
       "insulationExtensionMm": 0,
       "materialKey": "white_render",
       "faceMaterialOverrides": null,
-      "loadBearing": null,
-      "structuralRole": "unknown",
-      "structuralMaterial": null,
+      "loadBearing": false,
+      "structuralRole": "non_load_bearing",
+      "structuralMaterial": "concrete",
       "analyticalParticipation": false,
       "analysisStatus": "not_modeled",
-      "structuralMaterialKey": null,
+      "structuralMaterialKey": "gypsum_board",
       "structuralIntentConfidence": null,
-      "fireResistanceRating": null,
+      "fireResistanceRating": "R30",
       "ifcClassificationCode": null,
       "isCurtainWall": false,
       "pinned": false,
@@ -2649,19 +3431,9 @@
       "stack": null,
       "leanMm": null,
       "taperRatio": null,
-      "agentTrace": {
-        "bundleId": "61ecb899-b651-409b-84a2-d7d669282cc6",
-        "assumptionKeys": [
-          "seed-dsl-recipe",
-          "source_reference",
-          "scale_from_floorplan",
-          "project_initiation_bim_scope",
-          "target-house-1-m5-delta"
-        ],
-        "appliedAt": "2026-05-18T20:25:16.105209+00:00"
-      },
-      "optionSetId": "cf8ce0b8-26b5-4154-9183-407cff802efa",
-      "optionId": "21eb1066-4ae1-48c7-a7a6-ee2a0137d6f3",
+      "agentTrace": null,
+      "optionSetId": null,
+      "optionId": null,
       "discipline": "arch",
       "props": null,
       "thermalClassification": null,
@@ -2680,7 +3452,7 @@
       "widthMm": 700,
       "sillHeightMm": 150,
       "heightMm": 2100,
-      "familyTypeId": null,
+      "familyTypeId": "ft-window-standard",
       "materialKey": null,
       "materialSlots": null,
       "hostCutDepthMm": null,
@@ -2695,19 +3467,9 @@
       "pinned": false,
       "phaseCreated": null,
       "phaseDemolished": null,
-      "agentTrace": {
-        "bundleId": "61ecb899-b651-409b-84a2-d7d669282cc6",
-        "assumptionKeys": [
-          "seed-dsl-recipe",
-          "source_reference",
-          "scale_from_floorplan",
-          "project_initiation_bim_scope",
-          "target-house-1-m5-delta"
-        ],
-        "appliedAt": "2026-05-18T20:25:16.105209+00:00"
-      },
-      "optionSetId": "cf8ce0b8-26b5-4154-9183-407cff802efa",
-      "optionId": "21eb1066-4ae1-48c7-a7a6-ee2a0137d6f3",
+      "agentTrace": null,
+      "optionSetId": null,
+      "optionId": null,
       "discipline": "arch",
       "props": null,
       "thermalClassification": null,
@@ -2734,9 +3496,9 @@
         "yMm": 6600
       },
       "wallCurve": null,
-      "thicknessMm": 120,
+      "thicknessMm": 250,
       "heightMm": 2300,
-      "wallTypeId": null,
+      "wallTypeId": "wt-white-wrapper",
       "locationLine": "wall-centerline",
       "baseConstraintLevelId": null,
       "topConstraintLevelId": null,
@@ -2748,14 +3510,14 @@
       "insulationExtensionMm": 0,
       "materialKey": "glass",
       "faceMaterialOverrides": null,
-      "loadBearing": null,
-      "structuralRole": "unknown",
-      "structuralMaterial": null,
+      "loadBearing": false,
+      "structuralRole": "non_load_bearing",
+      "structuralMaterial": "concrete",
       "analyticalParticipation": false,
       "analysisStatus": "not_modeled",
-      "structuralMaterialKey": null,
+      "structuralMaterialKey": "gypsum_board",
       "structuralIntentConfidence": null,
-      "fireResistanceRating": null,
+      "fireResistanceRating": "R30",
       "ifcClassificationCode": null,
       "isCurtainWall": true,
       "pinned": false,
@@ -2772,19 +3534,9 @@
       "stack": null,
       "leanMm": null,
       "taperRatio": null,
-      "agentTrace": {
-        "bundleId": "61ecb899-b651-409b-84a2-d7d669282cc6",
-        "assumptionKeys": [
-          "seed-dsl-recipe",
-          "source_reference",
-          "scale_from_floorplan",
-          "project_initiation_bim_scope",
-          "target-house-1-m5-delta"
-        ],
-        "appliedAt": "2026-05-18T20:25:16.105209+00:00"
-      },
-      "optionSetId": "cf8ce0b8-26b5-4154-9183-407cff802efa",
-      "optionId": "21eb1066-4ae1-48c7-a7a6-ee2a0137d6f3",
+      "agentTrace": null,
+      "optionSetId": null,
+      "optionId": null,
       "discipline": "arch",
       "props": null,
       "thermalClassification": null,
@@ -2881,9 +3633,9 @@
         "yMm": 900
       },
       "wallCurve": null,
-      "thicknessMm": 200,
+      "thicknessMm": 250,
       "heightMm": 2600,
-      "wallTypeId": null,
+      "wallTypeId": "wt-white-wrapper",
       "locationLine": "wall-centerline",
       "baseConstraintLevelId": null,
       "topConstraintLevelId": null,
@@ -2895,14 +3647,14 @@
       "insulationExtensionMm": 0,
       "materialKey": "white_render",
       "faceMaterialOverrides": null,
-      "loadBearing": null,
-      "structuralRole": "unknown",
-      "structuralMaterial": null,
+      "loadBearing": false,
+      "structuralRole": "non_load_bearing",
+      "structuralMaterial": "concrete",
       "analyticalParticipation": false,
       "analysisStatus": "not_modeled",
-      "structuralMaterialKey": null,
+      "structuralMaterialKey": "gypsum_board",
       "structuralIntentConfidence": null,
-      "fireResistanceRating": null,
+      "fireResistanceRating": "R30",
       "ifcClassificationCode": null,
       "isCurtainWall": false,
       "pinned": false,
@@ -2919,19 +3671,9 @@
       "stack": null,
       "leanMm": null,
       "taperRatio": null,
-      "agentTrace": {
-        "bundleId": "61ecb899-b651-409b-84a2-d7d669282cc6",
-        "assumptionKeys": [
-          "seed-dsl-recipe",
-          "source_reference",
-          "scale_from_floorplan",
-          "project_initiation_bim_scope",
-          "target-house-1-m5-delta"
-        ],
-        "appliedAt": "2026-05-18T20:25:16.105209+00:00"
-      },
-      "optionSetId": "cf8ce0b8-26b5-4154-9183-407cff802efa",
-      "optionId": "21eb1066-4ae1-48c7-a7a6-ee2a0137d6f3",
+      "agentTrace": null,
+      "optionSetId": null,
+      "optionId": null,
       "discipline": "arch",
       "props": null,
       "thermalClassification": null,
@@ -2950,7 +3692,7 @@
       "widthMm": 700,
       "sillHeightMm": 150,
       "heightMm": 2100,
-      "familyTypeId": null,
+      "familyTypeId": "ft-window-standard",
       "materialKey": null,
       "materialSlots": null,
       "hostCutDepthMm": null,
@@ -2965,19 +3707,9 @@
       "pinned": false,
       "phaseCreated": null,
       "phaseDemolished": null,
-      "agentTrace": {
-        "bundleId": "61ecb899-b651-409b-84a2-d7d669282cc6",
-        "assumptionKeys": [
-          "seed-dsl-recipe",
-          "source_reference",
-          "scale_from_floorplan",
-          "project_initiation_bim_scope",
-          "target-house-1-m5-delta"
-        ],
-        "appliedAt": "2026-05-18T20:25:16.105209+00:00"
-      },
-      "optionSetId": "cf8ce0b8-26b5-4154-9183-407cff802efa",
-      "optionId": "21eb1066-4ae1-48c7-a7a6-ee2a0137d6f3",
+      "agentTrace": null,
+      "optionSetId": null,
+      "optionId": null,
       "discipline": "arch",
       "props": null,
       "thermalClassification": null,
@@ -3017,9 +3749,9 @@
         "yMm": 6600
       },
       "wallCurve": null,
-      "thicknessMm": 220,
+      "thicknessMm": 250,
       "heightMm": 1300,
-      "wallTypeId": null,
+      "wallTypeId": "wt-white-wrapper",
       "locationLine": "wall-centerline",
       "baseConstraintLevelId": null,
       "topConstraintLevelId": null,
@@ -3031,14 +3763,14 @@
       "insulationExtensionMm": 0,
       "materialKey": "white_render",
       "faceMaterialOverrides": null,
-      "loadBearing": null,
-      "structuralRole": "unknown",
-      "structuralMaterial": null,
-      "analyticalParticipation": false,
+      "loadBearing": false,
+      "structuralRole": "non_load_bearing",
+      "structuralMaterial": "concrete",
+      "analyticalParticipation": true,
       "analysisStatus": "not_modeled",
-      "structuralMaterialKey": null,
+      "structuralMaterialKey": "concrete",
       "structuralIntentConfidence": null,
-      "fireResistanceRating": null,
+      "fireResistanceRating": "R30",
       "ifcClassificationCode": null,
       "isCurtainWall": false,
       "pinned": false,
@@ -3055,19 +3787,109 @@
       "stack": null,
       "leanMm": null,
       "taperRatio": null,
-      "agentTrace": {
-        "bundleId": "61ecb899-b651-409b-84a2-d7d669282cc6",
-        "assumptionKeys": [
-          "seed-dsl-recipe",
-          "source_reference",
-          "scale_from_floorplan",
-          "project_initiation_bim_scope",
-          "target-house-1-m5-delta"
-        ],
-        "appliedAt": "2026-05-18T20:25:16.105209+00:00"
+      "agentTrace": null,
+      "optionSetId": null,
+      "optionId": null,
+      "discipline": "arch",
+      "props": null,
+      "thermalClassification": null,
+      "thermalClassificationSource": null,
+      "energyScenarioId": null,
+      "siteHostId": null,
+      "joinDisallowStart": false,
+      "joinDisallowEnd": false
+    },
+    "access-door-hf-room-loggia": {
+      "kind": "door",
+      "id": "access-door-hf-room-loggia",
+      "name": "Deep Balcony / Loggia access door",
+      "wallId": "access-wall-hf-room-loggia",
+      "alongT": 0.5,
+      "widthMm": 617.5,
+      "familyTypeId": "ft-pocket-door-standard",
+      "materialKey": "white_render",
+      "materialSlots": null,
+      "hostCutDepthMm": null,
+      "revealInteriorMm": null,
+      "interlockGrade": null,
+      "lodPlan": null,
+      "operationType": "sliding_single",
+      "slidingTrackSide": null,
+      "ifcClassificationCode": null,
+      "pinned": false,
+      "phaseCreated": null,
+      "phaseDemolished": null,
+      "agentTrace": null,
+      "optionSetId": null,
+      "optionId": null,
+      "discipline": "arch",
+      "circularity": null,
+      "props": null,
+      "thermalClassification": null,
+      "thermalClassificationSource": null,
+      "uValue": null,
+      "gValue": null,
+      "frameFraction": null,
+      "airTightnessClass": null,
+      "installationThermalBridgeNote": null,
+      "shadingDevice": null,
+      "annualShadingFactorEstimate": null
+    },
+    "access-wall-hf-room-loggia": {
+      "kind": "wall",
+      "id": "access-wall-hf-room-loggia",
+      "name": "Deep Balcony / Loggia access control wall",
+      "levelId": "hf-lvl-upper",
+      "start": {
+        "xMm": 3925,
+        "yMm": -100
       },
-      "optionSetId": "cf8ce0b8-26b5-4154-9183-407cff802efa",
-      "optionId": "21eb1066-4ae1-48c7-a7a6-ee2a0137d6f3",
+      "end": {
+        "xMm": 4875,
+        "yMm": -100
+      },
+      "wallCurve": null,
+      "thicknessMm": 120,
+      "heightMm": 2400,
+      "wallTypeId": "wt-internal",
+      "locationLine": "wall-centerline",
+      "baseConstraintLevelId": null,
+      "topConstraintLevelId": null,
+      "baseConstraintOffsetMm": 0,
+      "topConstraintOffsetMm": 0,
+      "roofAttachmentId": null,
+      "topConstraintHostId": null,
+      "topConstraintHostFace": null,
+      "insulationExtensionMm": 0,
+      "materialKey": "gypsum_board",
+      "faceMaterialOverrides": null,
+      "loadBearing": false,
+      "structuralRole": "non_load_bearing",
+      "structuralMaterial": "other",
+      "analyticalParticipation": false,
+      "analysisStatus": "not_modeled",
+      "structuralMaterialKey": "gypsum_board",
+      "structuralIntentConfidence": null,
+      "fireResistanceRating": "R30",
+      "ifcClassificationCode": null,
+      "isCurtainWall": false,
+      "pinned": false,
+      "phaseId": null,
+      "phaseCreated": null,
+      "phaseDemolished": null,
+      "circularity": null,
+      "curtainWallVCount": null,
+      "curtainWallHCount": null,
+      "curtainWallPanelType": null,
+      "curtainWallMullionType": null,
+      "curtainPanelOverrides": null,
+      "recessZones": null,
+      "stack": null,
+      "leanMm": null,
+      "taperRatio": null,
+      "agentTrace": null,
+      "optionSetId": null,
+      "optionId": null,
       "discipline": "arch",
       "props": null,
       "thermalClassification": null,
@@ -3138,9 +3960,9 @@
         "yMm": 3000
       },
       "wallCurve": null,
-      "thicknessMm": 220,
+      "thicknessMm": 250,
       "heightMm": 900,
-      "wallTypeId": null,
+      "wallTypeId": "wt-white-wrapper",
       "locationLine": "wall-centerline",
       "baseConstraintLevelId": null,
       "topConstraintLevelId": null,
@@ -3152,14 +3974,14 @@
       "insulationExtensionMm": 0,
       "materialKey": "white_render",
       "faceMaterialOverrides": null,
-      "loadBearing": null,
-      "structuralRole": "unknown",
-      "structuralMaterial": null,
-      "analyticalParticipation": false,
+      "loadBearing": false,
+      "structuralRole": "non_load_bearing",
+      "structuralMaterial": "concrete",
+      "analyticalParticipation": true,
       "analysisStatus": "not_modeled",
-      "structuralMaterialKey": null,
+      "structuralMaterialKey": "concrete",
       "structuralIntentConfidence": null,
-      "fireResistanceRating": null,
+      "fireResistanceRating": "R30",
       "ifcClassificationCode": null,
       "isCurtainWall": false,
       "pinned": false,
@@ -3176,19 +3998,9 @@
       "stack": null,
       "leanMm": null,
       "taperRatio": null,
-      "agentTrace": {
-        "bundleId": "61ecb899-b651-409b-84a2-d7d669282cc6",
-        "assumptionKeys": [
-          "seed-dsl-recipe",
-          "source_reference",
-          "scale_from_floorplan",
-          "project_initiation_bim_scope",
-          "target-house-1-m5-delta"
-        ],
-        "appliedAt": "2026-05-18T20:25:16.105209+00:00"
-      },
-      "optionSetId": "cf8ce0b8-26b5-4154-9183-407cff802efa",
-      "optionId": "21eb1066-4ae1-48c7-a7a6-ee2a0137d6f3",
+      "agentTrace": null,
+      "optionSetId": null,
+      "optionId": null,
       "discipline": "arch",
       "props": null,
       "thermalClassification": null,
@@ -3245,6 +4057,506 @@
       "phaseDemolished": null,
       "discipline": "arch"
     },
+    "access-door-hf-room-carport": {
+      "kind": "door",
+      "id": "access-door-hf-room-carport",
+      "name": "Recessed Garage / Carport access door",
+      "wallId": "access-wall-hf-room-carport",
+      "alongT": 0.5,
+      "widthMm": 617.5,
+      "familyTypeId": "ft-pocket-door-standard",
+      "materialKey": "white_render",
+      "materialSlots": null,
+      "hostCutDepthMm": null,
+      "revealInteriorMm": null,
+      "interlockGrade": null,
+      "lodPlan": null,
+      "operationType": "sliding_single",
+      "slidingTrackSide": null,
+      "ifcClassificationCode": null,
+      "pinned": false,
+      "phaseCreated": null,
+      "phaseDemolished": null,
+      "agentTrace": null,
+      "optionSetId": null,
+      "optionId": null,
+      "discipline": "arch",
+      "circularity": null,
+      "props": null,
+      "thermalClassification": null,
+      "thermalClassificationSource": null,
+      "uValue": null,
+      "gValue": null,
+      "frameFraction": null,
+      "airTightnessClass": null,
+      "installationThermalBridgeNote": null,
+      "shadingDevice": null,
+      "annualShadingFactorEstimate": null
+    },
+    "access-door-hf-room-ensuite": {
+      "kind": "door",
+      "id": "access-door-hf-room-ensuite",
+      "name": "Ensuite access door",
+      "wallId": "access-wall-hf-room-ensuite",
+      "alongT": 0.5,
+      "widthMm": 500,
+      "familyTypeId": "ft-pocket-door-standard",
+      "materialKey": "white_render",
+      "materialSlots": null,
+      "hostCutDepthMm": null,
+      "revealInteriorMm": null,
+      "interlockGrade": null,
+      "lodPlan": null,
+      "operationType": "sliding_single",
+      "slidingTrackSide": null,
+      "ifcClassificationCode": null,
+      "pinned": false,
+      "phaseCreated": null,
+      "phaseDemolished": null,
+      "agentTrace": null,
+      "optionSetId": null,
+      "optionId": null,
+      "discipline": "arch",
+      "circularity": null,
+      "props": null,
+      "thermalClassification": null,
+      "thermalClassificationSource": null,
+      "uValue": null,
+      "gValue": null,
+      "frameFraction": null,
+      "airTightnessClass": null,
+      "installationThermalBridgeNote": null,
+      "shadingDevice": null,
+      "annualShadingFactorEstimate": null
+    },
+    "access-door-hf-room-kitchen": {
+      "kind": "door",
+      "id": "access-door-hf-room-kitchen",
+      "name": "Kitchen access door",
+      "wallId": "access-wall-hf-room-kitchen",
+      "alongT": 0.5,
+      "widthMm": 617.5,
+      "familyTypeId": "ft-pocket-door-standard",
+      "materialKey": "white_render",
+      "materialSlots": null,
+      "hostCutDepthMm": null,
+      "revealInteriorMm": null,
+      "interlockGrade": null,
+      "lodPlan": null,
+      "operationType": "sliding_single",
+      "slidingTrackSide": null,
+      "ifcClassificationCode": null,
+      "pinned": false,
+      "phaseCreated": null,
+      "phaseDemolished": null,
+      "agentTrace": null,
+      "optionSetId": null,
+      "optionId": null,
+      "discipline": "arch",
+      "circularity": null,
+      "props": null,
+      "thermalClassification": null,
+      "thermalClassificationSource": null,
+      "uValue": null,
+      "gValue": null,
+      "frameFraction": null,
+      "airTightnessClass": null,
+      "installationThermalBridgeNote": null,
+      "shadingDevice": null,
+      "annualShadingFactorEstimate": null
+    },
+    "access-door-hf-room-landing": {
+      "kind": "door",
+      "id": "access-door-hf-room-landing",
+      "name": "Hall / Landing access door",
+      "wallId": "access-wall-hf-room-landing",
+      "alongT": 0.5,
+      "widthMm": 500.5,
+      "familyTypeId": "ft-pocket-door-standard",
+      "materialKey": "white_render",
+      "materialSlots": null,
+      "hostCutDepthMm": null,
+      "revealInteriorMm": null,
+      "interlockGrade": null,
+      "lodPlan": null,
+      "operationType": "sliding_single",
+      "slidingTrackSide": null,
+      "ifcClassificationCode": null,
+      "pinned": false,
+      "phaseCreated": null,
+      "phaseDemolished": null,
+      "agentTrace": null,
+      "optionSetId": null,
+      "optionId": null,
+      "discipline": "arch",
+      "circularity": null,
+      "props": null,
+      "thermalClassification": null,
+      "thermalClassificationSource": null,
+      "uValue": null,
+      "gValue": null,
+      "frameFraction": null,
+      "airTightnessClass": null,
+      "installationThermalBridgeNote": null,
+      "shadingDevice": null,
+      "annualShadingFactorEstimate": null
+    },
+    "access-door-hf-room-utility": {
+      "kind": "door",
+      "id": "access-door-hf-room-utility",
+      "name": "Utility access door",
+      "wallId": "access-wall-hf-room-utility",
+      "alongT": 0.5,
+      "widthMm": 500,
+      "familyTypeId": "ft-pocket-door-standard",
+      "materialKey": "white_render",
+      "materialSlots": null,
+      "hostCutDepthMm": null,
+      "revealInteriorMm": null,
+      "interlockGrade": null,
+      "lodPlan": null,
+      "operationType": "sliding_single",
+      "slidingTrackSide": null,
+      "ifcClassificationCode": null,
+      "pinned": false,
+      "phaseCreated": null,
+      "phaseDemolished": null,
+      "agentTrace": null,
+      "optionSetId": null,
+      "optionId": null,
+      "discipline": "arch",
+      "circularity": null,
+      "props": null,
+      "thermalClassification": null,
+      "thermalClassificationSource": null,
+      "uValue": null,
+      "gValue": null,
+      "frameFraction": null,
+      "airTightnessClass": null,
+      "installationThermalBridgeNote": null,
+      "shadingDevice": null,
+      "annualShadingFactorEstimate": null
+    },
+    "access-wall-hf-room-carport": {
+      "kind": "wall",
+      "id": "access-wall-hf-room-carport",
+      "name": "Recessed Garage / Carport access control wall",
+      "levelId": "hf-lvl-ground",
+      "start": {
+        "xMm": 850,
+        "yMm": 3125
+      },
+      "end": {
+        "xMm": 850,
+        "yMm": 4075
+      },
+      "wallCurve": null,
+      "thicknessMm": 120,
+      "heightMm": 2400,
+      "wallTypeId": "wt-internal",
+      "locationLine": "wall-centerline",
+      "baseConstraintLevelId": null,
+      "topConstraintLevelId": null,
+      "baseConstraintOffsetMm": 0,
+      "topConstraintOffsetMm": 0,
+      "roofAttachmentId": null,
+      "topConstraintHostId": null,
+      "topConstraintHostFace": null,
+      "insulationExtensionMm": 0,
+      "materialKey": "gypsum_board",
+      "faceMaterialOverrides": null,
+      "loadBearing": false,
+      "structuralRole": "non_load_bearing",
+      "structuralMaterial": "other",
+      "analyticalParticipation": false,
+      "analysisStatus": "not_modeled",
+      "structuralMaterialKey": "gypsum_board",
+      "structuralIntentConfidence": null,
+      "fireResistanceRating": "R30",
+      "ifcClassificationCode": null,
+      "isCurtainWall": false,
+      "pinned": false,
+      "phaseId": null,
+      "phaseCreated": null,
+      "phaseDemolished": null,
+      "circularity": null,
+      "curtainWallVCount": null,
+      "curtainWallHCount": null,
+      "curtainWallPanelType": null,
+      "curtainWallMullionType": null,
+      "curtainPanelOverrides": null,
+      "recessZones": null,
+      "stack": null,
+      "leanMm": null,
+      "taperRatio": null,
+      "agentTrace": null,
+      "optionSetId": null,
+      "optionId": null,
+      "discipline": "arch",
+      "props": null,
+      "thermalClassification": null,
+      "thermalClassificationSource": null,
+      "energyScenarioId": null,
+      "siteHostId": null,
+      "joinDisallowStart": false,
+      "joinDisallowEnd": false
+    },
+    "access-wall-hf-room-ensuite": {
+      "kind": "wall",
+      "id": "access-wall-hf-room-ensuite",
+      "name": "Ensuite access control wall",
+      "levelId": "hf-lvl-upper",
+      "start": {
+        "xMm": 2950,
+        "yMm": 5150
+      },
+      "end": {
+        "xMm": 2950,
+        "yMm": 5850
+      },
+      "wallCurve": null,
+      "thicknessMm": 120,
+      "heightMm": 2400,
+      "wallTypeId": "wt-internal",
+      "locationLine": "wall-centerline",
+      "baseConstraintLevelId": null,
+      "topConstraintLevelId": null,
+      "baseConstraintOffsetMm": 0,
+      "topConstraintOffsetMm": 0,
+      "roofAttachmentId": null,
+      "topConstraintHostId": null,
+      "topConstraintHostFace": null,
+      "insulationExtensionMm": 0,
+      "materialKey": "gypsum_board",
+      "faceMaterialOverrides": null,
+      "loadBearing": false,
+      "structuralRole": "non_load_bearing",
+      "structuralMaterial": "other",
+      "analyticalParticipation": false,
+      "analysisStatus": "not_modeled",
+      "structuralMaterialKey": "gypsum_board",
+      "structuralIntentConfidence": null,
+      "fireResistanceRating": "R30",
+      "ifcClassificationCode": null,
+      "isCurtainWall": false,
+      "pinned": false,
+      "phaseId": null,
+      "phaseCreated": null,
+      "phaseDemolished": null,
+      "circularity": null,
+      "curtainWallVCount": null,
+      "curtainWallHCount": null,
+      "curtainWallPanelType": null,
+      "curtainWallMullionType": null,
+      "curtainPanelOverrides": null,
+      "recessZones": null,
+      "stack": null,
+      "leanMm": null,
+      "taperRatio": null,
+      "agentTrace": null,
+      "optionSetId": null,
+      "optionId": null,
+      "discipline": "arch",
+      "props": null,
+      "thermalClassification": null,
+      "thermalClassificationSource": null,
+      "energyScenarioId": null,
+      "siteHostId": null,
+      "joinDisallowStart": false,
+      "joinDisallowEnd": false
+    },
+    "access-wall-hf-room-kitchen": {
+      "kind": "wall",
+      "id": "access-wall-hf-room-kitchen",
+      "name": "Kitchen access control wall",
+      "levelId": "hf-lvl-ground",
+      "start": {
+        "xMm": 1450,
+        "yMm": 4625
+      },
+      "end": {
+        "xMm": 1450,
+        "yMm": 5575
+      },
+      "wallCurve": null,
+      "thicknessMm": 120,
+      "heightMm": 2400,
+      "wallTypeId": "wt-internal",
+      "locationLine": "wall-centerline",
+      "baseConstraintLevelId": null,
+      "topConstraintLevelId": null,
+      "baseConstraintOffsetMm": 0,
+      "topConstraintOffsetMm": 0,
+      "roofAttachmentId": null,
+      "topConstraintHostId": null,
+      "topConstraintHostFace": null,
+      "insulationExtensionMm": 0,
+      "materialKey": "gypsum_board",
+      "faceMaterialOverrides": null,
+      "loadBearing": false,
+      "structuralRole": "non_load_bearing",
+      "structuralMaterial": "other",
+      "analyticalParticipation": false,
+      "analysisStatus": "not_modeled",
+      "structuralMaterialKey": "gypsum_board",
+      "structuralIntentConfidence": null,
+      "fireResistanceRating": "R30",
+      "ifcClassificationCode": null,
+      "isCurtainWall": false,
+      "pinned": false,
+      "phaseId": null,
+      "phaseCreated": null,
+      "phaseDemolished": null,
+      "circularity": null,
+      "curtainWallVCount": null,
+      "curtainWallHCount": null,
+      "curtainWallPanelType": null,
+      "curtainWallMullionType": null,
+      "curtainPanelOverrides": null,
+      "recessZones": null,
+      "stack": null,
+      "leanMm": null,
+      "taperRatio": null,
+      "agentTrace": null,
+      "optionSetId": null,
+      "optionId": null,
+      "discipline": "arch",
+      "props": null,
+      "thermalClassification": null,
+      "thermalClassificationSource": null,
+      "energyScenarioId": null,
+      "siteHostId": null,
+      "joinDisallowStart": false,
+      "joinDisallowEnd": false
+    },
+    "access-wall-hf-room-landing": {
+      "kind": "wall",
+      "id": "access-wall-hf-room-landing",
+      "name": "Hall / Landing access control wall",
+      "levelId": "hf-lvl-upper",
+      "start": {
+        "xMm": 6115,
+        "yMm": 1350
+      },
+      "end": {
+        "xMm": 6885,
+        "yMm": 1350
+      },
+      "wallCurve": null,
+      "thicknessMm": 120,
+      "heightMm": 2400,
+      "wallTypeId": "wt-internal",
+      "locationLine": "wall-centerline",
+      "baseConstraintLevelId": null,
+      "topConstraintLevelId": null,
+      "baseConstraintOffsetMm": 0,
+      "topConstraintOffsetMm": 0,
+      "roofAttachmentId": null,
+      "topConstraintHostId": null,
+      "topConstraintHostFace": null,
+      "insulationExtensionMm": 0,
+      "materialKey": "gypsum_board",
+      "faceMaterialOverrides": null,
+      "loadBearing": false,
+      "structuralRole": "non_load_bearing",
+      "structuralMaterial": "other",
+      "analyticalParticipation": false,
+      "analysisStatus": "not_modeled",
+      "structuralMaterialKey": "gypsum_board",
+      "structuralIntentConfidence": null,
+      "fireResistanceRating": "R30",
+      "ifcClassificationCode": null,
+      "isCurtainWall": false,
+      "pinned": false,
+      "phaseId": null,
+      "phaseCreated": null,
+      "phaseDemolished": null,
+      "circularity": null,
+      "curtainWallVCount": null,
+      "curtainWallHCount": null,
+      "curtainWallPanelType": null,
+      "curtainWallMullionType": null,
+      "curtainPanelOverrides": null,
+      "recessZones": null,
+      "stack": null,
+      "leanMm": null,
+      "taperRatio": null,
+      "agentTrace": null,
+      "optionSetId": null,
+      "optionId": null,
+      "discipline": "arch",
+      "props": null,
+      "thermalClassification": null,
+      "thermalClassificationSource": null,
+      "energyScenarioId": null,
+      "siteHostId": null,
+      "joinDisallowStart": false,
+      "joinDisallowEnd": false
+    },
+    "access-wall-hf-room-utility": {
+      "kind": "wall",
+      "id": "access-wall-hf-room-utility",
+      "name": "Utility access control wall",
+      "levelId": "hf-lvl-ground",
+      "start": {
+        "xMm": 7600,
+        "yMm": 3650
+      },
+      "end": {
+        "xMm": 7600,
+        "yMm": 4350
+      },
+      "wallCurve": null,
+      "thicknessMm": 120,
+      "heightMm": 2400,
+      "wallTypeId": "wt-internal",
+      "locationLine": "wall-centerline",
+      "baseConstraintLevelId": null,
+      "topConstraintLevelId": null,
+      "baseConstraintOffsetMm": 0,
+      "topConstraintOffsetMm": 0,
+      "roofAttachmentId": null,
+      "topConstraintHostId": null,
+      "topConstraintHostFace": null,
+      "insulationExtensionMm": 0,
+      "materialKey": "gypsum_board",
+      "faceMaterialOverrides": null,
+      "loadBearing": false,
+      "structuralRole": "non_load_bearing",
+      "structuralMaterial": "other",
+      "analyticalParticipation": false,
+      "analysisStatus": "not_modeled",
+      "structuralMaterialKey": "gypsum_board",
+      "structuralIntentConfidence": null,
+      "fireResistanceRating": "R30",
+      "ifcClassificationCode": null,
+      "isCurtainWall": false,
+      "pinned": false,
+      "phaseId": null,
+      "phaseCreated": null,
+      "phaseDemolished": null,
+      "circularity": null,
+      "curtainWallVCount": null,
+      "curtainWallHCount": null,
+      "curtainWallPanelType": null,
+      "curtainWallMullionType": null,
+      "curtainPanelOverrides": null,
+      "recessZones": null,
+      "stack": null,
+      "leanMm": null,
+      "taperRatio": null,
+      "agentTrace": null,
+      "optionSetId": null,
+      "optionId": null,
+      "discipline": "arch",
+      "props": null,
+      "thermalClassification": null,
+      "thermalClassificationSource": null,
+      "energyScenarioId": null,
+      "siteHostId": null,
+      "joinDisallowStart": false,
+      "joinDisallowEnd": false
+    },
     "front-loggia-recessed-glass": {
       "kind": "wall",
       "id": "front-loggia-recessed-glass",
@@ -3259,9 +4571,9 @@
         "yMm": 820
       },
       "wallCurve": null,
-      "thicknessMm": 160,
+      "thicknessMm": 250,
       "heightMm": 2500,
-      "wallTypeId": null,
+      "wallTypeId": "wt-white-wrapper",
       "locationLine": "wall-centerline",
       "baseConstraintLevelId": null,
       "topConstraintLevelId": null,
@@ -3273,14 +4585,14 @@
       "insulationExtensionMm": 0,
       "materialKey": "glass",
       "faceMaterialOverrides": null,
-      "loadBearing": null,
-      "structuralRole": "unknown",
-      "structuralMaterial": null,
+      "loadBearing": false,
+      "structuralRole": "non_load_bearing",
+      "structuralMaterial": "concrete",
       "analyticalParticipation": false,
       "analysisStatus": "not_modeled",
-      "structuralMaterialKey": null,
+      "structuralMaterialKey": "gypsum_board",
       "structuralIntentConfidence": null,
-      "fireResistanceRating": null,
+      "fireResistanceRating": "R30",
       "ifcClassificationCode": null,
       "isCurtainWall": true,
       "pinned": false,
@@ -3297,19 +4609,9 @@
       "stack": null,
       "leanMm": null,
       "taperRatio": null,
-      "agentTrace": {
-        "bundleId": "61ecb899-b651-409b-84a2-d7d669282cc6",
-        "assumptionKeys": [
-          "seed-dsl-recipe",
-          "source_reference",
-          "scale_from_floorplan",
-          "project_initiation_bim_scope",
-          "target-house-1-m5-delta"
-        ],
-        "appliedAt": "2026-05-18T20:25:16.105209+00:00"
-      },
-      "optionSetId": "cf8ce0b8-26b5-4154-9183-407cff802efa",
-      "optionId": "21eb1066-4ae1-48c7-a7a6-ee2a0137d6f3",
+      "agentTrace": null,
+      "optionSetId": null,
+      "optionId": null,
       "discipline": "arch",
       "props": null,
       "thermalClassification": null,
@@ -3318,6 +4620,126 @@
       "siteHostId": null,
       "joinDisallowStart": false,
       "joinDisallowEnd": false
+    },
+    "sep-hf-room-walk-in-closet-1": {
+      "kind": "room_separation",
+      "id": "sep-hf-room-walk-in-closet-1",
+      "name": "Walk-in Closet boundary 1",
+      "levelId": "hf-lvl-upper",
+      "start": {
+        "xMm": 600,
+        "yMm": 4500
+      },
+      "end": {
+        "xMm": 2500,
+        "yMm": 4500
+      },
+      "pinned": false
+    },
+    "sep-hf-room-walk-in-closet-2": {
+      "kind": "room_separation",
+      "id": "sep-hf-room-walk-in-closet-2",
+      "name": "Walk-in Closet boundary 2",
+      "levelId": "hf-lvl-upper",
+      "start": {
+        "xMm": 2500,
+        "yMm": 4500
+      },
+      "end": {
+        "xMm": 2500,
+        "yMm": 6500
+      },
+      "pinned": false
+    },
+    "sep-hf-room-walk-in-closet-3": {
+      "kind": "room_separation",
+      "id": "sep-hf-room-walk-in-closet-3",
+      "name": "Walk-in Closet boundary 3",
+      "levelId": "hf-lvl-upper",
+      "start": {
+        "xMm": 2500,
+        "yMm": 6500
+      },
+      "end": {
+        "xMm": 600,
+        "yMm": 6500
+      },
+      "pinned": false
+    },
+    "sep-hf-room-walk-in-closet-4": {
+      "kind": "room_separation",
+      "id": "sep-hf-room-walk-in-closet-4",
+      "name": "Walk-in Closet boundary 4",
+      "levelId": "hf-lvl-upper",
+      "start": {
+        "xMm": 600,
+        "yMm": 6500
+      },
+      "end": {
+        "xMm": 600,
+        "yMm": 4500
+      },
+      "pinned": false
+    },
+    "sep-hf-room-gf-bath-laundry-1": {
+      "kind": "room_separation",
+      "id": "sep-hf-room-gf-bath-laundry-1",
+      "name": "Bath / Laundry boundary 1",
+      "levelId": "hf-lvl-ground",
+      "start": {
+        "xMm": 6800,
+        "yMm": 700
+      },
+      "end": {
+        "xMm": 8300,
+        "yMm": 700
+      },
+      "pinned": false
+    },
+    "sep-hf-room-gf-bath-laundry-2": {
+      "kind": "room_separation",
+      "id": "sep-hf-room-gf-bath-laundry-2",
+      "name": "Bath / Laundry boundary 2",
+      "levelId": "hf-lvl-ground",
+      "start": {
+        "xMm": 8300,
+        "yMm": 700
+      },
+      "end": {
+        "xMm": 8300,
+        "yMm": 3100
+      },
+      "pinned": false
+    },
+    "sep-hf-room-gf-bath-laundry-3": {
+      "kind": "room_separation",
+      "id": "sep-hf-room-gf-bath-laundry-3",
+      "name": "Bath / Laundry boundary 3",
+      "levelId": "hf-lvl-ground",
+      "start": {
+        "xMm": 8300,
+        "yMm": 3100
+      },
+      "end": {
+        "xMm": 6800,
+        "yMm": 3100
+      },
+      "pinned": false
+    },
+    "sep-hf-room-gf-bath-laundry-4": {
+      "kind": "room_separation",
+      "id": "sep-hf-room-gf-bath-laundry-4",
+      "name": "Bath / Laundry boundary 4",
+      "levelId": "hf-lvl-ground",
+      "start": {
+        "xMm": 6800,
+        "yMm": 3100
+      },
+      "end": {
+        "xMm": 6800,
+        "yMm": 700
+      },
+      "pinned": false
     },
     "hf-upper-wrapper-shell-wall-01": {
       "kind": "wall",
@@ -3347,14 +4769,14 @@
       "insulationExtensionMm": 0,
       "materialKey": "white_render",
       "faceMaterialOverrides": null,
-      "loadBearing": null,
-      "structuralRole": "unknown",
-      "structuralMaterial": null,
-      "analyticalParticipation": false,
+      "loadBearing": false,
+      "structuralRole": "non_load_bearing",
+      "structuralMaterial": "concrete",
+      "analyticalParticipation": true,
       "analysisStatus": "not_modeled",
-      "structuralMaterialKey": null,
+      "structuralMaterialKey": "concrete",
       "structuralIntentConfidence": null,
-      "fireResistanceRating": null,
+      "fireResistanceRating": "R30",
       "ifcClassificationCode": null,
       "isCurtainWall": false,
       "pinned": false,
@@ -3371,19 +4793,9 @@
       "stack": null,
       "leanMm": null,
       "taperRatio": null,
-      "agentTrace": {
-        "bundleId": "61ecb899-b651-409b-84a2-d7d669282cc6",
-        "assumptionKeys": [
-          "seed-dsl-recipe",
-          "source_reference",
-          "scale_from_floorplan",
-          "project_initiation_bim_scope",
-          "target-house-1-m5-delta"
-        ],
-        "appliedAt": "2026-05-18T20:25:16.105209+00:00"
-      },
-      "optionSetId": "cf8ce0b8-26b5-4154-9183-407cff802efa",
-      "optionId": "21eb1066-4ae1-48c7-a7a6-ee2a0137d6f3",
+      "agentTrace": null,
+      "optionSetId": null,
+      "optionId": null,
       "discipline": "arch",
       "props": null,
       "thermalClassification": null,
@@ -3421,14 +4833,14 @@
       "insulationExtensionMm": 0,
       "materialKey": "white_render",
       "faceMaterialOverrides": null,
-      "loadBearing": null,
-      "structuralRole": "unknown",
-      "structuralMaterial": null,
-      "analyticalParticipation": false,
+      "loadBearing": false,
+      "structuralRole": "non_load_bearing",
+      "structuralMaterial": "concrete",
+      "analyticalParticipation": true,
       "analysisStatus": "not_modeled",
-      "structuralMaterialKey": null,
+      "structuralMaterialKey": "concrete",
       "structuralIntentConfidence": null,
-      "fireResistanceRating": null,
+      "fireResistanceRating": "R30",
       "ifcClassificationCode": null,
       "isCurtainWall": false,
       "pinned": false,
@@ -3445,19 +4857,9 @@
       "stack": null,
       "leanMm": null,
       "taperRatio": null,
-      "agentTrace": {
-        "bundleId": "61ecb899-b651-409b-84a2-d7d669282cc6",
-        "assumptionKeys": [
-          "seed-dsl-recipe",
-          "source_reference",
-          "scale_from_floorplan",
-          "project_initiation_bim_scope",
-          "target-house-1-m5-delta"
-        ],
-        "appliedAt": "2026-05-18T20:25:16.105209+00:00"
-      },
-      "optionSetId": "cf8ce0b8-26b5-4154-9183-407cff802efa",
-      "optionId": "21eb1066-4ae1-48c7-a7a6-ee2a0137d6f3",
+      "agentTrace": null,
+      "optionSetId": null,
+      "optionId": null,
       "discipline": "arch",
       "props": null,
       "thermalClassification": null,
@@ -3495,14 +4897,14 @@
       "insulationExtensionMm": 0,
       "materialKey": "white_render",
       "faceMaterialOverrides": null,
-      "loadBearing": null,
-      "structuralRole": "unknown",
-      "structuralMaterial": null,
-      "analyticalParticipation": false,
+      "loadBearing": false,
+      "structuralRole": "non_load_bearing",
+      "structuralMaterial": "concrete",
+      "analyticalParticipation": true,
       "analysisStatus": "not_modeled",
-      "structuralMaterialKey": null,
+      "structuralMaterialKey": "concrete",
       "structuralIntentConfidence": null,
-      "fireResistanceRating": null,
+      "fireResistanceRating": "R30",
       "ifcClassificationCode": null,
       "isCurtainWall": false,
       "pinned": false,
@@ -3519,19 +4921,9 @@
       "stack": null,
       "leanMm": null,
       "taperRatio": null,
-      "agentTrace": {
-        "bundleId": "61ecb899-b651-409b-84a2-d7d669282cc6",
-        "assumptionKeys": [
-          "seed-dsl-recipe",
-          "source_reference",
-          "scale_from_floorplan",
-          "project_initiation_bim_scope",
-          "target-house-1-m5-delta"
-        ],
-        "appliedAt": "2026-05-18T20:25:16.105209+00:00"
-      },
-      "optionSetId": "cf8ce0b8-26b5-4154-9183-407cff802efa",
-      "optionId": "21eb1066-4ae1-48c7-a7a6-ee2a0137d6f3",
+      "agentTrace": null,
+      "optionSetId": null,
+      "optionId": null,
       "discipline": "arch",
       "props": null,
       "thermalClassification": null,
@@ -3569,14 +4961,14 @@
       "insulationExtensionMm": 0,
       "materialKey": "white_render",
       "faceMaterialOverrides": null,
-      "loadBearing": null,
-      "structuralRole": "unknown",
-      "structuralMaterial": null,
-      "analyticalParticipation": false,
+      "loadBearing": false,
+      "structuralRole": "non_load_bearing",
+      "structuralMaterial": "concrete",
+      "analyticalParticipation": true,
       "analysisStatus": "not_modeled",
-      "structuralMaterialKey": null,
+      "structuralMaterialKey": "concrete",
       "structuralIntentConfidence": null,
-      "fireResistanceRating": null,
+      "fireResistanceRating": "R30",
       "ifcClassificationCode": null,
       "isCurtainWall": false,
       "pinned": false,
@@ -3593,19 +4985,9 @@
       "stack": null,
       "leanMm": null,
       "taperRatio": null,
-      "agentTrace": {
-        "bundleId": "61ecb899-b651-409b-84a2-d7d669282cc6",
-        "assumptionKeys": [
-          "seed-dsl-recipe",
-          "source_reference",
-          "scale_from_floorplan",
-          "project_initiation_bim_scope",
-          "target-house-1-m5-delta"
-        ],
-        "appliedAt": "2026-05-18T20:25:16.105209+00:00"
-      },
-      "optionSetId": "cf8ce0b8-26b5-4154-9183-407cff802efa",
-      "optionId": "21eb1066-4ae1-48c7-a7a6-ee2a0137d6f3",
+      "agentTrace": null,
+      "optionSetId": null,
+      "optionId": null,
       "discipline": "arch",
       "props": null,
       "thermalClassification": null,
@@ -3614,6 +4996,77 @@
       "siteHostId": null,
       "joinDisallowStart": false,
       "joinDisallowEnd": false
+    },
+    "target-house-room-color-scheme": {
+      "kind": "room_color_scheme",
+      "id": "target-house-room-color-scheme",
+      "schemeRows": [
+        {
+          "programmeCode": "bath",
+          "department": null,
+          "schemeColorHex": "#4DB6AC"
+        },
+        {
+          "programmeCode": "bath_laundry",
+          "department": null,
+          "schemeColorHex": "#4DD0E1"
+        },
+        {
+          "programmeCode": "bed",
+          "department": null,
+          "schemeColorHex": "#64B5F6"
+        },
+        {
+          "programmeCode": "carport",
+          "department": null,
+          "schemeColorHex": "#BCAAA4"
+        },
+        {
+          "programmeCode": "closet",
+          "department": null,
+          "schemeColorHex": "#CE93D8"
+        },
+        {
+          "programmeCode": "ensuite",
+          "department": null,
+          "schemeColorHex": "#80CBC4"
+        },
+        {
+          "programmeCode": "hall",
+          "department": null,
+          "schemeColorHex": "#FFE082"
+        },
+        {
+          "programmeCode": "kitchen",
+          "department": null,
+          "schemeColorHex": "#8BC34A"
+        },
+        {
+          "programmeCode": "landing",
+          "department": null,
+          "schemeColorHex": "#FFD54F"
+        },
+        {
+          "programmeCode": "living",
+          "department": null,
+          "schemeColorHex": "#F4B860"
+        },
+        {
+          "programmeCode": "loggia",
+          "department": null,
+          "schemeColorHex": "#90CAF9"
+        },
+        {
+          "programmeCode": "terrace",
+          "department": null,
+          "schemeColorHex": "#A5D6A7"
+        },
+        {
+          "programmeCode": "utility",
+          "department": null,
+          "schemeColorHex": "#B0BEC5"
+        }
+      ]
     },
     "placed-outdoor-chair-roof-terrace": {
       "kind": "placed_asset",
@@ -3635,97 +5088,59 @@
       "hostElementId": null,
       "discipline": null
     },
-    "2116cb68-5ecc-4475-9b36-56368cb6964f": {
-      "kind": "wall",
-      "id": "2116cb68-5ecc-4475-9b36-56368cb6964f",
-      "name": "Entrance / Stair Hall wall-4",
-      "levelId": "hf-lvl-ground",
-      "start": {
-        "xMm": 1200,
-        "yMm": 3600
-      },
-      "end": {
-        "xMm": 1200,
-        "yMm": 700
-      },
-      "wallCurve": null,
-      "thicknessMm": 120,
-      "heightMm": 2800,
-      "wallTypeId": null,
-      "locationLine": "wall-centerline",
-      "baseConstraintLevelId": null,
-      "topConstraintLevelId": null,
-      "baseConstraintOffsetMm": 0,
-      "topConstraintOffsetMm": 0,
-      "roofAttachmentId": null,
-      "topConstraintHostId": null,
-      "topConstraintHostFace": null,
-      "insulationExtensionMm": 0,
-      "materialKey": null,
-      "faceMaterialOverrides": null,
-      "loadBearing": null,
-      "structuralRole": "unknown",
-      "structuralMaterial": null,
-      "analyticalParticipation": false,
-      "analysisStatus": "not_modeled",
-      "structuralMaterialKey": null,
-      "structuralIntentConfidence": null,
-      "fireResistanceRating": null,
+    "access-door-hf-room-walk-in-closet": {
+      "kind": "door",
+      "id": "access-door-hf-room-walk-in-closet",
+      "name": "Walk-in Closet access door",
+      "wallId": "access-wall-hf-room-walk-in-closet",
+      "alongT": 0.5,
+      "widthMm": 500,
+      "familyTypeId": "ft-pocket-door-standard",
+      "materialKey": "white_render",
+      "materialSlots": null,
+      "hostCutDepthMm": null,
+      "revealInteriorMm": null,
+      "interlockGrade": null,
+      "lodPlan": null,
+      "operationType": "sliding_single",
+      "slidingTrackSide": null,
       "ifcClassificationCode": null,
-      "isCurtainWall": false,
       "pinned": false,
-      "phaseId": null,
       "phaseCreated": null,
       "phaseDemolished": null,
+      "agentTrace": null,
+      "optionSetId": null,
+      "optionId": null,
+      "discipline": "arch",
       "circularity": null,
-      "curtainWallVCount": null,
-      "curtainWallHCount": null,
-      "curtainWallPanelType": null,
-      "curtainWallMullionType": null,
-      "curtainPanelOverrides": null,
-      "recessZones": null,
-      "stack": null,
-      "leanMm": null,
-      "taperRatio": null,
-      "agentTrace": {
-        "bundleId": "61ecb899-b651-409b-84a2-d7d669282cc6",
-        "assumptionKeys": [
-          "seed-dsl-recipe",
-          "source_reference",
-          "scale_from_floorplan",
-          "project_initiation_bim_scope",
-          "target-house-1-m5-delta"
-        ],
-        "appliedAt": "2026-05-18T20:25:16.105209+00:00"
-      },
-      "optionSetId": "cf8ce0b8-26b5-4154-9183-407cff802efa",
-      "optionId": "21eb1066-4ae1-48c7-a7a6-ee2a0137d6f3",
-      "discipline": null,
       "props": null,
       "thermalClassification": null,
       "thermalClassificationSource": null,
-      "energyScenarioId": null,
-      "siteHostId": null,
-      "joinDisallowStart": false,
-      "joinDisallowEnd": false
+      "uValue": null,
+      "gValue": null,
+      "frameFraction": null,
+      "airTightnessClass": null,
+      "installationThermalBridgeNote": null,
+      "shadingDevice": null,
+      "annualShadingFactorEstimate": null
     },
-    "212f7794-39de-452f-ae8a-9827ad04ce67": {
+    "access-wall-hf-room-walk-in-closet": {
       "kind": "wall",
-      "id": "212f7794-39de-452f-ae8a-9827ad04ce67",
-      "name": "First Floor Bathroom wall-2",
+      "id": "access-wall-hf-room-walk-in-closet",
+      "name": "Walk-in Closet access control wall",
       "levelId": "hf-lvl-upper",
       "start": {
-        "xMm": 5200,
-        "yMm": 1600
+        "xMm": 850,
+        "yMm": 5150
       },
       "end": {
-        "xMm": 5200,
-        "yMm": 4300
+        "xMm": 850,
+        "yMm": 5850
       },
       "wallCurve": null,
       "thicknessMm": 120,
-      "heightMm": 2800,
-      "wallTypeId": null,
+      "heightMm": 2400,
+      "wallTypeId": "wt-internal",
       "locationLine": "wall-centerline",
       "baseConstraintLevelId": null,
       "topConstraintLevelId": null,
@@ -3735,16 +5150,16 @@
       "topConstraintHostId": null,
       "topConstraintHostFace": null,
       "insulationExtensionMm": 0,
-      "materialKey": null,
+      "materialKey": "gypsum_board",
       "faceMaterialOverrides": null,
-      "loadBearing": null,
-      "structuralRole": "unknown",
-      "structuralMaterial": null,
+      "loadBearing": false,
+      "structuralRole": "non_load_bearing",
+      "structuralMaterial": "other",
       "analyticalParticipation": false,
       "analysisStatus": "not_modeled",
-      "structuralMaterialKey": null,
+      "structuralMaterialKey": "gypsum_board",
       "structuralIntentConfidence": null,
-      "fireResistanceRating": null,
+      "fireResistanceRating": "R30",
       "ifcClassificationCode": null,
       "isCurtainWall": false,
       "pinned": false,
@@ -3761,20 +5176,10 @@
       "stack": null,
       "leanMm": null,
       "taperRatio": null,
-      "agentTrace": {
-        "bundleId": "61ecb899-b651-409b-84a2-d7d669282cc6",
-        "assumptionKeys": [
-          "seed-dsl-recipe",
-          "source_reference",
-          "scale_from_floorplan",
-          "project_initiation_bim_scope",
-          "target-house-1-m5-delta"
-        ],
-        "appliedAt": "2026-05-18T20:25:16.105209+00:00"
-      },
-      "optionSetId": "cf8ce0b8-26b5-4154-9183-407cff802efa",
-      "optionId": "21eb1066-4ae1-48c7-a7a6-ee2a0137d6f3",
-      "discipline": null,
+      "agentTrace": null,
+      "optionSetId": null,
+      "optionId": null,
+      "discipline": "arch",
       "props": null,
       "thermalClassification": null,
       "thermalClassificationSource": null,
@@ -3783,23 +5188,59 @@
       "joinDisallowStart": false,
       "joinDisallowEnd": false
     },
-    "4404e2ba-6ec9-49dc-9ad6-aa1a2884839e": {
+    "access-door-hf-room-gf-bath-laundry": {
+      "kind": "door",
+      "id": "access-door-hf-room-gf-bath-laundry",
+      "name": "Bath / Laundry access door",
+      "wallId": "access-wall-hf-room-gf-bath-laundry",
+      "alongT": 0.5,
+      "widthMm": 500,
+      "familyTypeId": "ft-pocket-door-standard",
+      "materialKey": "white_render",
+      "materialSlots": null,
+      "hostCutDepthMm": null,
+      "revealInteriorMm": null,
+      "interlockGrade": null,
+      "lodPlan": null,
+      "operationType": "sliding_single",
+      "slidingTrackSide": null,
+      "ifcClassificationCode": null,
+      "pinned": false,
+      "phaseCreated": null,
+      "phaseDemolished": null,
+      "agentTrace": null,
+      "optionSetId": null,
+      "optionId": null,
+      "discipline": "arch",
+      "circularity": null,
+      "props": null,
+      "thermalClassification": null,
+      "thermalClassificationSource": null,
+      "uValue": null,
+      "gValue": null,
+      "frameFraction": null,
+      "airTightnessClass": null,
+      "installationThermalBridgeNote": null,
+      "shadingDevice": null,
+      "annualShadingFactorEstimate": null
+    },
+    "access-wall-hf-room-gf-bath-laundry": {
       "kind": "wall",
-      "id": "4404e2ba-6ec9-49dc-9ad6-aa1a2884839e",
-      "name": "Kitchen wall-4",
+      "id": "access-wall-hf-room-gf-bath-laundry",
+      "name": "Bath / Laundry access control wall",
       "levelId": "hf-lvl-ground",
       "start": {
-        "xMm": 1200,
-        "yMm": 6500
+        "xMm": 7600,
+        "yMm": 1300
       },
       "end": {
-        "xMm": 1200,
-        "yMm": 3700
+        "xMm": 7600,
+        "yMm": 1900
       },
       "wallCurve": null,
       "thicknessMm": 120,
-      "heightMm": 2800,
-      "wallTypeId": null,
+      "heightMm": 2400,
+      "wallTypeId": "wt-internal",
       "locationLine": "wall-centerline",
       "baseConstraintLevelId": null,
       "topConstraintLevelId": null,
@@ -3809,16 +5250,16 @@
       "topConstraintHostId": null,
       "topConstraintHostFace": null,
       "insulationExtensionMm": 0,
-      "materialKey": null,
+      "materialKey": "gypsum_board",
       "faceMaterialOverrides": null,
-      "loadBearing": null,
-      "structuralRole": "unknown",
-      "structuralMaterial": null,
+      "loadBearing": false,
+      "structuralRole": "non_load_bearing",
+      "structuralMaterial": "other",
       "analyticalParticipation": false,
       "analysisStatus": "not_modeled",
-      "structuralMaterialKey": null,
+      "structuralMaterialKey": "gypsum_board",
       "structuralIntentConfidence": null,
-      "fireResistanceRating": null,
+      "fireResistanceRating": "R30",
       "ifcClassificationCode": null,
       "isCurtainWall": false,
       "pinned": false,
@@ -3835,20 +5276,10 @@
       "stack": null,
       "leanMm": null,
       "taperRatio": null,
-      "agentTrace": {
-        "bundleId": "61ecb899-b651-409b-84a2-d7d669282cc6",
-        "assumptionKeys": [
-          "seed-dsl-recipe",
-          "source_reference",
-          "scale_from_floorplan",
-          "project_initiation_bim_scope",
-          "target-house-1-m5-delta"
-        ],
-        "appliedAt": "2026-05-18T20:25:16.105209+00:00"
-      },
-      "optionSetId": "cf8ce0b8-26b5-4154-9183-407cff802efa",
-      "optionId": "21eb1066-4ae1-48c7-a7a6-ee2a0137d6f3",
-      "discipline": null,
+      "agentTrace": null,
+      "optionSetId": null,
+      "optionId": null,
+      "discipline": "arch",
       "props": null,
       "thermalClassification": null,
       "thermalClassificationSource": null,
@@ -3857,1741 +5288,76 @@
       "joinDisallowStart": false,
       "joinDisallowEnd": false
     },
-    "5da54026-3461-40e8-a3a7-70ecaad930a9": {
-      "kind": "wall",
-      "id": "5da54026-3461-40e8-a3a7-70ecaad930a9",
-      "name": "First Floor Bathroom wall-4",
-      "levelId": "hf-lvl-upper",
-      "start": {
-        "xMm": 3600,
-        "yMm": 4300
-      },
-      "end": {
-        "xMm": 3600,
-        "yMm": 1600
-      },
-      "wallCurve": null,
-      "thicknessMm": 120,
-      "heightMm": 2800,
-      "wallTypeId": null,
-      "locationLine": "wall-centerline",
-      "baseConstraintLevelId": null,
-      "topConstraintLevelId": null,
-      "baseConstraintOffsetMm": 0,
-      "topConstraintOffsetMm": 0,
-      "roofAttachmentId": null,
-      "topConstraintHostId": null,
-      "topConstraintHostFace": null,
-      "insulationExtensionMm": 0,
-      "materialKey": null,
-      "faceMaterialOverrides": null,
-      "loadBearing": null,
-      "structuralRole": "unknown",
-      "structuralMaterial": null,
-      "analyticalParticipation": false,
-      "analysisStatus": "not_modeled",
-      "structuralMaterialKey": null,
-      "structuralIntentConfidence": null,
-      "fireResistanceRating": null,
-      "ifcClassificationCode": null,
-      "isCurtainWall": false,
-      "pinned": false,
-      "phaseId": null,
-      "phaseCreated": null,
-      "phaseDemolished": null,
-      "circularity": null,
-      "curtainWallVCount": null,
-      "curtainWallHCount": null,
-      "curtainWallPanelType": null,
-      "curtainWallMullionType": null,
-      "curtainPanelOverrides": null,
-      "recessZones": null,
-      "stack": null,
-      "leanMm": null,
-      "taperRatio": null,
-      "agentTrace": {
-        "bundleId": "61ecb899-b651-409b-84a2-d7d669282cc6",
-        "assumptionKeys": [
-          "seed-dsl-recipe",
-          "source_reference",
-          "scale_from_floorplan",
-          "project_initiation_bim_scope",
-          "target-house-1-m5-delta"
-        ],
-        "appliedAt": "2026-05-18T20:25:16.105209+00:00"
-      },
-      "optionSetId": "cf8ce0b8-26b5-4154-9183-407cff802efa",
-      "optionId": "21eb1066-4ae1-48c7-a7a6-ee2a0137d6f3",
-      "discipline": null,
-      "props": null,
-      "thermalClassification": null,
-      "thermalClassificationSource": null,
-      "energyScenarioId": null,
-      "siteHostId": null,
-      "joinDisallowStart": false,
-      "joinDisallowEnd": false
+    "brick_45": {
+      "kind": "hatch_pattern_def",
+      "id": "brick_45",
+      "name": "Brick",
+      "paperMmRepeat": 73,
+      "rotationDeg": 45,
+      "strokeWidthMm": 0.18,
+      "patternKind": "lines",
+      "svgSource": null
     },
-    "5f6a794c-38dc-430c-a630-74435a02d5d8": {
-      "kind": "wall",
-      "id": "5f6a794c-38dc-430c-a630-74435a02d5d8",
-      "name": "Entrance / Stair Hall wall-2",
-      "levelId": "hf-lvl-ground",
-      "start": {
-        "xMm": 3400,
-        "yMm": 700
-      },
-      "end": {
-        "xMm": 3400,
-        "yMm": 3600
-      },
-      "wallCurve": null,
-      "thicknessMm": 120,
-      "heightMm": 2800,
-      "wallTypeId": null,
-      "locationLine": "wall-centerline",
-      "baseConstraintLevelId": null,
-      "topConstraintLevelId": null,
-      "baseConstraintOffsetMm": 0,
-      "topConstraintOffsetMm": 0,
-      "roofAttachmentId": null,
-      "topConstraintHostId": null,
-      "topConstraintHostFace": null,
-      "insulationExtensionMm": 0,
-      "materialKey": null,
-      "faceMaterialOverrides": null,
-      "loadBearing": null,
-      "structuralRole": "unknown",
-      "structuralMaterial": null,
-      "analyticalParticipation": false,
-      "analysisStatus": "not_modeled",
-      "structuralMaterialKey": null,
-      "structuralIntentConfidence": null,
-      "fireResistanceRating": null,
-      "ifcClassificationCode": null,
-      "isCurtainWall": false,
-      "pinned": false,
-      "phaseId": null,
-      "phaseCreated": null,
-      "phaseDemolished": null,
-      "circularity": null,
-      "curtainWallVCount": null,
-      "curtainWallHCount": null,
-      "curtainWallPanelType": null,
-      "curtainWallMullionType": null,
-      "curtainPanelOverrides": null,
-      "recessZones": null,
-      "stack": null,
-      "leanMm": null,
-      "taperRatio": null,
-      "agentTrace": {
-        "bundleId": "61ecb899-b651-409b-84a2-d7d669282cc6",
-        "assumptionKeys": [
-          "seed-dsl-recipe",
-          "source_reference",
-          "scale_from_floorplan",
-          "project_initiation_bim_scope",
-          "target-house-1-m5-delta"
-        ],
-        "appliedAt": "2026-05-18T20:25:16.105209+00:00"
-      },
-      "optionSetId": "cf8ce0b8-26b5-4154-9183-407cff802efa",
-      "optionId": "21eb1066-4ae1-48c7-a7a6-ee2a0137d6f3",
-      "discipline": null,
-      "props": null,
-      "thermalClassification": null,
-      "thermalClassificationSource": null,
-      "energyScenarioId": null,
-      "siteHostId": null,
-      "joinDisallowStart": false,
-      "joinDisallowEnd": false
+    "concrete_dot": {
+      "kind": "hatch_pattern_def",
+      "id": "concrete_dot",
+      "name": "Concrete",
+      "paperMmRepeat": 5,
+      "rotationDeg": 0,
+      "strokeWidthMm": 0.13,
+      "patternKind": "dots",
+      "svgSource": null
     },
-    "77245fc8-e13e-4c49-a037-befa7581ea70": {
-      "kind": "wall",
-      "id": "77245fc8-e13e-4c49-a037-befa7581ea70",
-      "name": "Entrance / Stair Hall wall-1",
-      "levelId": "hf-lvl-ground",
-      "start": {
-        "xMm": 1200,
-        "yMm": 700
-      },
-      "end": {
-        "xMm": 3400,
-        "yMm": 700
-      },
-      "wallCurve": null,
-      "thicknessMm": 120,
-      "heightMm": 2800,
-      "wallTypeId": null,
-      "locationLine": "wall-centerline",
-      "baseConstraintLevelId": null,
-      "topConstraintLevelId": null,
-      "baseConstraintOffsetMm": 0,
-      "topConstraintOffsetMm": 0,
-      "roofAttachmentId": null,
-      "topConstraintHostId": null,
-      "topConstraintHostFace": null,
-      "insulationExtensionMm": 0,
-      "materialKey": null,
-      "faceMaterialOverrides": null,
-      "loadBearing": null,
-      "structuralRole": "unknown",
-      "structuralMaterial": null,
-      "analyticalParticipation": false,
-      "analysisStatus": "not_modeled",
-      "structuralMaterialKey": null,
-      "structuralIntentConfidence": null,
-      "fireResistanceRating": null,
-      "ifcClassificationCode": null,
-      "isCurtainWall": false,
-      "pinned": false,
-      "phaseId": null,
-      "phaseCreated": null,
-      "phaseDemolished": null,
-      "circularity": null,
-      "curtainWallVCount": null,
-      "curtainWallHCount": null,
-      "curtainWallPanelType": null,
-      "curtainWallMullionType": null,
-      "curtainPanelOverrides": null,
-      "recessZones": null,
-      "stack": null,
-      "leanMm": null,
-      "taperRatio": null,
-      "agentTrace": {
-        "bundleId": "61ecb899-b651-409b-84a2-d7d669282cc6",
-        "assumptionKeys": [
-          "seed-dsl-recipe",
-          "source_reference",
-          "scale_from_floorplan",
-          "project_initiation_bim_scope",
-          "target-house-1-m5-delta"
-        ],
-        "appliedAt": "2026-05-18T20:25:16.105209+00:00"
-      },
-      "optionSetId": "cf8ce0b8-26b5-4154-9183-407cff802efa",
-      "optionId": "21eb1066-4ae1-48c7-a7a6-ee2a0137d6f3",
-      "discipline": null,
-      "props": null,
-      "thermalClassification": null,
-      "thermalClassificationSource": null,
-      "energyScenarioId": null,
-      "siteHostId": null,
-      "joinDisallowStart": false,
-      "joinDisallowEnd": false
+    "insulation": {
+      "kind": "hatch_pattern_def",
+      "id": "insulation",
+      "name": "Insulation",
+      "paperMmRepeat": 100,
+      "rotationDeg": 0,
+      "strokeWidthMm": 0.25,
+      "patternKind": "curve",
+      "svgSource": null
     },
-    "7ba46089-1f21-487d-a83a-c1d386223811": {
-      "kind": "wall",
-      "id": "7ba46089-1f21-487d-a83a-c1d386223811",
-      "name": "Kitchen wall-2",
-      "levelId": "hf-lvl-ground",
-      "start": {
-        "xMm": 3400,
-        "yMm": 3700
-      },
-      "end": {
-        "xMm": 3400,
-        "yMm": 6500
-      },
-      "wallCurve": null,
-      "thicknessMm": 120,
-      "heightMm": 2800,
-      "wallTypeId": null,
-      "locationLine": "wall-centerline",
-      "baseConstraintLevelId": null,
-      "topConstraintLevelId": null,
-      "baseConstraintOffsetMm": 0,
-      "topConstraintOffsetMm": 0,
-      "roofAttachmentId": null,
-      "topConstraintHostId": null,
-      "topConstraintHostFace": null,
-      "insulationExtensionMm": 0,
-      "materialKey": null,
-      "faceMaterialOverrides": null,
-      "loadBearing": null,
-      "structuralRole": "unknown",
-      "structuralMaterial": null,
-      "analyticalParticipation": false,
-      "analysisStatus": "not_modeled",
-      "structuralMaterialKey": null,
-      "structuralIntentConfidence": null,
-      "fireResistanceRating": null,
-      "ifcClassificationCode": null,
-      "isCurtainWall": false,
-      "pinned": false,
-      "phaseId": null,
-      "phaseCreated": null,
-      "phaseDemolished": null,
-      "circularity": null,
-      "curtainWallVCount": null,
-      "curtainWallHCount": null,
-      "curtainWallPanelType": null,
-      "curtainWallMullionType": null,
-      "curtainPanelOverrides": null,
-      "recessZones": null,
-      "stack": null,
-      "leanMm": null,
-      "taperRatio": null,
-      "agentTrace": {
-        "bundleId": "61ecb899-b651-409b-84a2-d7d669282cc6",
-        "assumptionKeys": [
-          "seed-dsl-recipe",
-          "source_reference",
-          "scale_from_floorplan",
-          "project_initiation_bim_scope",
-          "target-house-1-m5-delta"
-        ],
-        "appliedAt": "2026-05-18T20:25:16.105209+00:00"
-      },
-      "optionSetId": "cf8ce0b8-26b5-4154-9183-407cff802efa",
-      "optionId": "21eb1066-4ae1-48c7-a7a6-ee2a0137d6f3",
-      "discipline": null,
-      "props": null,
-      "thermalClassification": null,
-      "thermalClassificationSource": null,
-      "energyScenarioId": null,
-      "siteHostId": null,
-      "joinDisallowStart": false,
-      "joinDisallowEnd": false
+    "plaster": {
+      "kind": "hatch_pattern_def",
+      "id": "plaster",
+      "name": "Plaster",
+      "paperMmRepeat": 8,
+      "rotationDeg": 45,
+      "strokeWidthMm": 0.13,
+      "patternKind": "crosshatch",
+      "svgSource": null
     },
-    "83558170-2824-41d7-983b-f26538edaf71": {
-      "kind": "wall",
-      "id": "83558170-2824-41d7-983b-f26538edaf71",
-      "name": "First Floor Bathroom wall-3",
-      "levelId": "hf-lvl-upper",
-      "start": {
-        "xMm": 5200,
-        "yMm": 4300
-      },
-      "end": {
-        "xMm": 3600,
-        "yMm": 4300
-      },
-      "wallCurve": null,
-      "thicknessMm": 120,
-      "heightMm": 2800,
-      "wallTypeId": null,
-      "locationLine": "wall-centerline",
-      "baseConstraintLevelId": null,
-      "topConstraintLevelId": null,
-      "baseConstraintOffsetMm": 0,
-      "topConstraintOffsetMm": 0,
-      "roofAttachmentId": null,
-      "topConstraintHostId": null,
-      "topConstraintHostFace": null,
-      "insulationExtensionMm": 0,
-      "materialKey": null,
-      "faceMaterialOverrides": null,
-      "loadBearing": null,
-      "structuralRole": "unknown",
-      "structuralMaterial": null,
-      "analyticalParticipation": false,
-      "analysisStatus": "not_modeled",
-      "structuralMaterialKey": null,
-      "structuralIntentConfidence": null,
-      "fireResistanceRating": null,
-      "ifcClassificationCode": null,
-      "isCurtainWall": false,
-      "pinned": false,
-      "phaseId": null,
-      "phaseCreated": null,
-      "phaseDemolished": null,
-      "circularity": null,
-      "curtainWallVCount": null,
-      "curtainWallHCount": null,
-      "curtainWallPanelType": null,
-      "curtainWallMullionType": null,
-      "curtainPanelOverrides": null,
-      "recessZones": null,
-      "stack": null,
-      "leanMm": null,
-      "taperRatio": null,
-      "agentTrace": {
-        "bundleId": "61ecb899-b651-409b-84a2-d7d669282cc6",
-        "assumptionKeys": [
-          "seed-dsl-recipe",
-          "source_reference",
-          "scale_from_floorplan",
-          "project_initiation_bim_scope",
-          "target-house-1-m5-delta"
-        ],
-        "appliedAt": "2026-05-18T20:25:16.105209+00:00"
-      },
-      "optionSetId": "cf8ce0b8-26b5-4154-9183-407cff802efa",
-      "optionId": "21eb1066-4ae1-48c7-a7a6-ee2a0137d6f3",
-      "discipline": null,
-      "props": null,
-      "thermalClassification": null,
-      "thermalClassificationSource": null,
-      "energyScenarioId": null,
-      "siteHostId": null,
-      "joinDisallowStart": false,
-      "joinDisallowEnd": false
+    "timber_grain": {
+      "kind": "hatch_pattern_def",
+      "id": "timber_grain",
+      "name": "Timber",
+      "paperMmRepeat": 12,
+      "rotationDeg": 0,
+      "strokeWidthMm": 0.18,
+      "patternKind": "lines",
+      "svgSource": null
     },
-    "89f498c3-56d1-4a82-bdeb-f2898922ab66": {
-      "kind": "wall",
-      "id": "89f498c3-56d1-4a82-bdeb-f2898922ab66",
-      "name": "Entrance / Stair Hall wall-3",
-      "levelId": "hf-lvl-ground",
-      "start": {
-        "xMm": 3400,
-        "yMm": 3600
-      },
-      "end": {
-        "xMm": 1200,
-        "yMm": 3600
-      },
-      "wallCurve": null,
-      "thicknessMm": 120,
-      "heightMm": 2800,
-      "wallTypeId": null,
-      "locationLine": "wall-centerline",
-      "baseConstraintLevelId": null,
-      "topConstraintLevelId": null,
-      "baseConstraintOffsetMm": 0,
-      "topConstraintOffsetMm": 0,
-      "roofAttachmentId": null,
-      "topConstraintHostId": null,
-      "topConstraintHostFace": null,
-      "insulationExtensionMm": 0,
-      "materialKey": null,
-      "faceMaterialOverrides": null,
-      "loadBearing": null,
-      "structuralRole": "unknown",
-      "structuralMaterial": null,
-      "analyticalParticipation": false,
-      "analysisStatus": "not_modeled",
-      "structuralMaterialKey": null,
-      "structuralIntentConfidence": null,
-      "fireResistanceRating": null,
-      "ifcClassificationCode": null,
-      "isCurtainWall": false,
-      "pinned": false,
-      "phaseId": null,
-      "phaseCreated": null,
-      "phaseDemolished": null,
-      "circularity": null,
-      "curtainWallVCount": null,
-      "curtainWallHCount": null,
-      "curtainWallPanelType": null,
-      "curtainWallMullionType": null,
-      "curtainPanelOverrides": null,
-      "recessZones": null,
-      "stack": null,
-      "leanMm": null,
-      "taperRatio": null,
-      "agentTrace": {
-        "bundleId": "61ecb899-b651-409b-84a2-d7d669282cc6",
-        "assumptionKeys": [
-          "seed-dsl-recipe",
-          "source_reference",
-          "scale_from_floorplan",
-          "project_initiation_bim_scope",
-          "target-house-1-m5-delta"
-        ],
-        "appliedAt": "2026-05-18T20:25:16.105209+00:00"
-      },
-      "optionSetId": "cf8ce0b8-26b5-4154-9183-407cff802efa",
-      "optionId": "21eb1066-4ae1-48c7-a7a6-ee2a0137d6f3",
-      "discipline": null,
-      "props": null,
-      "thermalClassification": null,
-      "thermalClassificationSource": null,
-      "energyScenarioId": null,
-      "siteHostId": null,
-      "joinDisallowStart": false,
-      "joinDisallowEnd": false
+    "gypsum": {
+      "kind": "hatch_pattern_def",
+      "id": "gypsum",
+      "name": "Gypsum",
+      "paperMmRepeat": 4,
+      "rotationDeg": 45,
+      "strokeWidthMm": 0.1,
+      "patternKind": "dots",
+      "svgSource": null
     },
-    "8bffb3e3-d6d2-42fa-9646-891e6d9ab65c": {
-      "kind": "wall",
-      "id": "8bffb3e3-d6d2-42fa-9646-891e6d9ab65c",
-      "name": "Kitchen wall-1",
-      "levelId": "hf-lvl-ground",
-      "start": {
-        "xMm": 1200,
-        "yMm": 3700
-      },
-      "end": {
-        "xMm": 3400,
-        "yMm": 3700
-      },
-      "wallCurve": null,
-      "thicknessMm": 120,
-      "heightMm": 2800,
-      "wallTypeId": null,
-      "locationLine": "wall-centerline",
-      "baseConstraintLevelId": null,
-      "topConstraintLevelId": null,
-      "baseConstraintOffsetMm": 0,
-      "topConstraintOffsetMm": 0,
-      "roofAttachmentId": null,
-      "topConstraintHostId": null,
-      "topConstraintHostFace": null,
-      "insulationExtensionMm": 0,
-      "materialKey": null,
-      "faceMaterialOverrides": null,
-      "loadBearing": null,
-      "structuralRole": "unknown",
-      "structuralMaterial": null,
-      "analyticalParticipation": false,
-      "analysisStatus": "not_modeled",
-      "structuralMaterialKey": null,
-      "structuralIntentConfidence": null,
-      "fireResistanceRating": null,
-      "ifcClassificationCode": null,
-      "isCurtainWall": false,
-      "pinned": false,
-      "phaseId": null,
-      "phaseCreated": null,
-      "phaseDemolished": null,
-      "circularity": null,
-      "curtainWallVCount": null,
-      "curtainWallHCount": null,
-      "curtainWallPanelType": null,
-      "curtainWallMullionType": null,
-      "curtainPanelOverrides": null,
-      "recessZones": null,
-      "stack": null,
-      "leanMm": null,
-      "taperRatio": null,
-      "agentTrace": {
-        "bundleId": "61ecb899-b651-409b-84a2-d7d669282cc6",
-        "assumptionKeys": [
-          "seed-dsl-recipe",
-          "source_reference",
-          "scale_from_floorplan",
-          "project_initiation_bim_scope",
-          "target-house-1-m5-delta"
-        ],
-        "appliedAt": "2026-05-18T20:25:16.105209+00:00"
-      },
-      "optionSetId": "cf8ce0b8-26b5-4154-9183-407cff802efa",
-      "optionId": "21eb1066-4ae1-48c7-a7a6-ee2a0137d6f3",
-      "discipline": null,
-      "props": null,
-      "thermalClassification": null,
-      "thermalClassificationSource": null,
-      "energyScenarioId": null,
-      "siteHostId": null,
-      "joinDisallowStart": false,
-      "joinDisallowEnd": false
-    },
-    "b0085d07-dd48-4450-9b79-5689d93c1ff8": {
-      "kind": "wall",
-      "id": "b0085d07-dd48-4450-9b79-5689d93c1ff8",
-      "name": "First Floor Bathroom wall-1",
-      "levelId": "hf-lvl-upper",
-      "start": {
-        "xMm": 3600,
-        "yMm": 1600
-      },
-      "end": {
-        "xMm": 5200,
-        "yMm": 1600
-      },
-      "wallCurve": null,
-      "thicknessMm": 120,
-      "heightMm": 2800,
-      "wallTypeId": null,
-      "locationLine": "wall-centerline",
-      "baseConstraintLevelId": null,
-      "topConstraintLevelId": null,
-      "baseConstraintOffsetMm": 0,
-      "topConstraintOffsetMm": 0,
-      "roofAttachmentId": null,
-      "topConstraintHostId": null,
-      "topConstraintHostFace": null,
-      "insulationExtensionMm": 0,
-      "materialKey": null,
-      "faceMaterialOverrides": null,
-      "loadBearing": null,
-      "structuralRole": "unknown",
-      "structuralMaterial": null,
-      "analyticalParticipation": false,
-      "analysisStatus": "not_modeled",
-      "structuralMaterialKey": null,
-      "structuralIntentConfidence": null,
-      "fireResistanceRating": null,
-      "ifcClassificationCode": null,
-      "isCurtainWall": false,
-      "pinned": false,
-      "phaseId": null,
-      "phaseCreated": null,
-      "phaseDemolished": null,
-      "circularity": null,
-      "curtainWallVCount": null,
-      "curtainWallHCount": null,
-      "curtainWallPanelType": null,
-      "curtainWallMullionType": null,
-      "curtainPanelOverrides": null,
-      "recessZones": null,
-      "stack": null,
-      "leanMm": null,
-      "taperRatio": null,
-      "agentTrace": {
-        "bundleId": "61ecb899-b651-409b-84a2-d7d669282cc6",
-        "assumptionKeys": [
-          "seed-dsl-recipe",
-          "source_reference",
-          "scale_from_floorplan",
-          "project_initiation_bim_scope",
-          "target-house-1-m5-delta"
-        ],
-        "appliedAt": "2026-05-18T20:25:16.105209+00:00"
-      },
-      "optionSetId": "cf8ce0b8-26b5-4154-9183-407cff802efa",
-      "optionId": "21eb1066-4ae1-48c7-a7a6-ee2a0137d6f3",
-      "discipline": null,
-      "props": null,
-      "thermalClassification": null,
-      "thermalClassificationSource": null,
-      "energyScenarioId": null,
-      "siteHostId": null,
-      "joinDisallowStart": false,
-      "joinDisallowEnd": false
-    },
-    "e30de611-98c0-46be-9144-3408061bb0cd": {
-      "kind": "wall",
-      "id": "e30de611-98c0-46be-9144-3408061bb0cd",
-      "name": "Kitchen wall-3",
-      "levelId": "hf-lvl-ground",
-      "start": {
-        "xMm": 3400,
-        "yMm": 6500
-      },
-      "end": {
-        "xMm": 1200,
-        "yMm": 6500
-      },
-      "wallCurve": null,
-      "thicknessMm": 120,
-      "heightMm": 2800,
-      "wallTypeId": null,
-      "locationLine": "wall-centerline",
-      "baseConstraintLevelId": null,
-      "topConstraintLevelId": null,
-      "baseConstraintOffsetMm": 0,
-      "topConstraintOffsetMm": 0,
-      "roofAttachmentId": null,
-      "topConstraintHostId": null,
-      "topConstraintHostFace": null,
-      "insulationExtensionMm": 0,
-      "materialKey": null,
-      "faceMaterialOverrides": null,
-      "loadBearing": null,
-      "structuralRole": "unknown",
-      "structuralMaterial": null,
-      "analyticalParticipation": false,
-      "analysisStatus": "not_modeled",
-      "structuralMaterialKey": null,
-      "structuralIntentConfidence": null,
-      "fireResistanceRating": null,
-      "ifcClassificationCode": null,
-      "isCurtainWall": false,
-      "pinned": false,
-      "phaseId": null,
-      "phaseCreated": null,
-      "phaseDemolished": null,
-      "circularity": null,
-      "curtainWallVCount": null,
-      "curtainWallHCount": null,
-      "curtainWallPanelType": null,
-      "curtainWallMullionType": null,
-      "curtainPanelOverrides": null,
-      "recessZones": null,
-      "stack": null,
-      "leanMm": null,
-      "taperRatio": null,
-      "agentTrace": {
-        "bundleId": "61ecb899-b651-409b-84a2-d7d669282cc6",
-        "assumptionKeys": [
-          "seed-dsl-recipe",
-          "source_reference",
-          "scale_from_floorplan",
-          "project_initiation_bim_scope",
-          "target-house-1-m5-delta"
-        ],
-        "appliedAt": "2026-05-18T20:25:16.105209+00:00"
-      },
-      "optionSetId": "cf8ce0b8-26b5-4154-9183-407cff802efa",
-      "optionId": "21eb1066-4ae1-48c7-a7a6-ee2a0137d6f3",
-      "discipline": null,
-      "props": null,
-      "thermalClassification": null,
-      "thermalClassificationSource": null,
-      "energyScenarioId": null,
-      "siteHostId": null,
-      "joinDisallowStart": false,
-      "joinDisallowEnd": false
+    "stone": {
+      "kind": "hatch_pattern_def",
+      "id": "stone",
+      "name": "Stone",
+      "paperMmRepeat": 60,
+      "rotationDeg": 0,
+      "strokeWidthMm": 0.18,
+      "patternKind": "lines",
+      "svgSource": null
     }
   },
-  "violations": [
-    {
-      "ruleId": "constructability_proxy_unsupported",
-      "severity": "warning",
-      "message": "Physical element 'fi-bed-primary' (family_instance) has no constructability collision proxy: missing positive width/depth/height in instance paramValues or family_type parameters.",
-      "elementIds": ["fi-bed-primary"],
-      "blocking": false,
-      "quickFixCommand": null,
-      "discipline": "coordination",
-      "blockingClass": "geometry"
-    },
-    {
-      "ruleId": "constructability_proxy_unsupported",
-      "severity": "warning",
-      "message": "Physical element 'fi-dining-table' (family_instance) has no constructability collision proxy: missing positive width/depth/height in instance paramValues or family_type parameters.",
-      "elementIds": ["fi-dining-table"],
-      "blocking": false,
-      "quickFixCommand": null,
-      "discipline": "coordination",
-      "blockingClass": "geometry"
-    },
-    {
-      "ruleId": "constructability_proxy_unsupported",
-      "severity": "warning",
-      "message": "Physical element 'fi-roof-chair' (family_instance) has no constructability collision proxy: missing positive width/depth/height in instance paramValues or family_type parameters.",
-      "elementIds": ["fi-roof-chair"],
-      "blocking": false,
-      "quickFixCommand": null,
-      "discipline": "coordination",
-      "blockingClass": "geometry"
-    },
-    {
-      "ruleId": "constructability_proxy_unsupported",
-      "severity": "warning",
-      "message": "Physical element 'fi-sofa-living' (family_instance) has no constructability collision proxy: missing positive width/depth/height in instance paramValues or family_type parameters.",
-      "elementIds": ["fi-sofa-living"],
-      "blocking": false,
-      "quickFixCommand": null,
-      "discipline": "coordination",
-      "blockingClass": "geometry"
-    },
-    {
-      "ruleId": "constructability_proxy_unsupported",
-      "severity": "warning",
-      "message": "Physical element 'front-loggia-left-mullion' (sweep) has no constructability collision proxy: no constructability collision proxy implemented for this physical kind.",
-      "elementIds": ["front-loggia-left-mullion"],
-      "blocking": false,
-      "quickFixCommand": null,
-      "discipline": "coordination",
-      "blockingClass": "geometry"
-    },
-    {
-      "ruleId": "constructability_proxy_unsupported",
-      "severity": "warning",
-      "message": "Physical element 'front-loggia-right-mullion' (sweep) has no constructability collision proxy: no constructability collision proxy implemented for this physical kind.",
-      "elementIds": ["front-loggia-right-mullion"],
-      "blocking": false,
-      "quickFixCommand": null,
-      "discipline": "coordination",
-      "blockingClass": "geometry"
-    },
-    {
-      "ruleId": "constructability_proxy_unsupported",
-      "severity": "warning",
-      "message": "Physical element 'upper-wrapper-front-fascia' (sweep) has no constructability collision proxy: no constructability collision proxy implemented for this physical kind.",
-      "elementIds": ["upper-wrapper-front-fascia"],
-      "blocking": false,
-      "quickFixCommand": null,
-      "discipline": "coordination",
-      "blockingClass": "geometry"
-    },
-    {
-      "ruleId": "door_operation_clearance_conflict",
-      "severity": "warning",
-      "message": "Door operation clearance overlaps a wall; the door may not open.",
-      "elementIds": ["4404e2ba-6ec9-49dc-9ad6-aa1a2884839e", "entry-door"],
-      "blocking": false,
-      "quickFixCommand": null,
-      "discipline": "architecture",
-      "blockingClass": "geometry"
-    },
-    {
-      "ruleId": "door_operation_clearance_conflict",
-      "severity": "warning",
-      "message": "Door operation clearance overlaps a wall; the door may not open.",
-      "elementIds": ["b0085d07-dd48-4450-9b79-5689d93c1ff8", "front-loggia-center-door"],
-      "blocking": false,
-      "quickFixCommand": null,
-      "discipline": "architecture",
-      "blockingClass": "geometry"
-    },
-    {
-      "ruleId": "door_operation_clearance_conflict",
-      "severity": "warning",
-      "message": "Door operation clearance overlaps a wall; the door may not open.",
-      "elementIds": ["e30de611-98c0-46be-9144-3408061bb0cd", "entry-door"],
-      "blocking": false,
-      "quickFixCommand": null,
-      "discipline": "architecture",
-      "blockingClass": "geometry"
-    },
-    {
-      "ruleId": "floor_overlap",
-      "severity": "warning",
-      "message": "Floors 'upper-wrapper-floor' and 'hf-front-loggia-floor' overlap on the same level (≈8.64 m²).",
-      "elementIds": ["hf-front-loggia-floor", "upper-wrapper-floor"],
-      "blocking": false,
-      "quickFixCommand": null,
-      "discipline": "coordination",
-      "blockingClass": "geometry"
-    },
-    {
-      "ruleId": "floor_overlap",
-      "severity": "warning",
-      "message": "Floors 'hf-roof-court-floor' and 'upper-wrapper-floor' overlap on the same level (≈9.36 m²).",
-      "elementIds": ["hf-roof-court-floor", "upper-wrapper-floor"],
-      "blocking": false,
-      "quickFixCommand": null,
-      "discipline": "coordination",
-      "blockingClass": "geometry"
-    },
-    {
-      "ruleId": "gltf_export_manifest_expected_extension_missing",
-      "severity": "info",
-      "message": "glTF export manifest: extension 'bim_ai_skew_wall_hosted_openings_v0' not emitted but eligible element kind 'wall' is present (skipReasonCode='no_eligible_elements').",
-      "elementIds": [],
-      "blocking": false,
-      "quickFixCommand": null,
-      "discipline": "exchange",
-      "blockingClass": "exchange"
-    },
-    {
-      "ruleId": "gltf_export_manifest_expected_extension_missing",
-      "severity": "info",
-      "message": "glTF export manifest: extension 'bim_ai_roof_unsupported_shape_summary_v0' not emitted but eligible element kind 'roof' is present (skipReasonCode='no_eligible_elements').",
-      "elementIds": [],
-      "blocking": false,
-      "quickFixCommand": null,
-      "discipline": "exchange",
-      "blockingClass": "exchange"
-    },
-    {
-      "ruleId": "material_catalog_missing_layer_stack",
-      "severity": "info",
-      "message": "Host has no usable typed layered assembly (missing assembly type id or empty type layer stack).",
-      "elementIds": ["2116cb68-5ecc-4475-9b36-56368cb6964f"],
-      "blocking": false,
-      "quickFixCommand": null,
-      "discipline": "exchange",
-      "blockingClass": "exchange"
-    },
-    {
-      "ruleId": "material_catalog_missing_layer_stack",
-      "severity": "info",
-      "message": "Host has no usable typed layered assembly (missing assembly type id or empty type layer stack).",
-      "elementIds": ["212f7794-39de-452f-ae8a-9827ad04ce67"],
-      "blocking": false,
-      "quickFixCommand": null,
-      "discipline": "exchange",
-      "blockingClass": "exchange"
-    },
-    {
-      "ruleId": "material_catalog_missing_layer_stack",
-      "severity": "info",
-      "message": "Host has no usable typed layered assembly (missing assembly type id or empty type layer stack).",
-      "elementIds": ["4404e2ba-6ec9-49dc-9ad6-aa1a2884839e"],
-      "blocking": false,
-      "quickFixCommand": null,
-      "discipline": "exchange",
-      "blockingClass": "exchange"
-    },
-    {
-      "ruleId": "material_catalog_missing_layer_stack",
-      "severity": "info",
-      "message": "Host has no usable typed layered assembly (missing assembly type id or empty type layer stack).",
-      "elementIds": ["5da54026-3461-40e8-a3a7-70ecaad930a9"],
-      "blocking": false,
-      "quickFixCommand": null,
-      "discipline": "exchange",
-      "blockingClass": "exchange"
-    },
-    {
-      "ruleId": "material_catalog_missing_layer_stack",
-      "severity": "info",
-      "message": "Host has no usable typed layered assembly (missing assembly type id or empty type layer stack).",
-      "elementIds": ["5f6a794c-38dc-430c-a630-74435a02d5d8"],
-      "blocking": false,
-      "quickFixCommand": null,
-      "discipline": "exchange",
-      "blockingClass": "exchange"
-    },
-    {
-      "ruleId": "material_catalog_missing_layer_stack",
-      "severity": "info",
-      "message": "Host has no usable typed layered assembly (missing assembly type id or empty type layer stack).",
-      "elementIds": ["77245fc8-e13e-4c49-a037-befa7581ea70"],
-      "blocking": false,
-      "quickFixCommand": null,
-      "discipline": "exchange",
-      "blockingClass": "exchange"
-    },
-    {
-      "ruleId": "material_catalog_missing_layer_stack",
-      "severity": "info",
-      "message": "Host has no usable typed layered assembly (missing assembly type id or empty type layer stack).",
-      "elementIds": ["7ba46089-1f21-487d-a83a-c1d386223811"],
-      "blocking": false,
-      "quickFixCommand": null,
-      "discipline": "exchange",
-      "blockingClass": "exchange"
-    },
-    {
-      "ruleId": "material_catalog_missing_layer_stack",
-      "severity": "info",
-      "message": "Host has no usable typed layered assembly (missing assembly type id or empty type layer stack).",
-      "elementIds": ["83558170-2824-41d7-983b-f26538edaf71"],
-      "blocking": false,
-      "quickFixCommand": null,
-      "discipline": "exchange",
-      "blockingClass": "exchange"
-    },
-    {
-      "ruleId": "material_catalog_missing_layer_stack",
-      "severity": "info",
-      "message": "Host has no usable typed layered assembly (missing assembly type id or empty type layer stack).",
-      "elementIds": ["89f498c3-56d1-4a82-bdeb-f2898922ab66"],
-      "blocking": false,
-      "quickFixCommand": null,
-      "discipline": "exchange",
-      "blockingClass": "exchange"
-    },
-    {
-      "ruleId": "material_catalog_missing_layer_stack",
-      "severity": "info",
-      "message": "Host has no usable typed layered assembly (missing assembly type id or empty type layer stack).",
-      "elementIds": ["8bffb3e3-d6d2-42fa-9646-891e6d9ab65c"],
-      "blocking": false,
-      "quickFixCommand": null,
-      "discipline": "exchange",
-      "blockingClass": "exchange"
-    },
-    {
-      "ruleId": "material_catalog_missing_layer_stack",
-      "severity": "info",
-      "message": "Host has no usable typed layered assembly (missing assembly type id or empty type layer stack).",
-      "elementIds": ["b0085d07-dd48-4450-9b79-5689d93c1ff8"],
-      "blocking": false,
-      "quickFixCommand": null,
-      "discipline": "exchange",
-      "blockingClass": "exchange"
-    },
-    {
-      "ruleId": "material_catalog_missing_layer_stack",
-      "severity": "info",
-      "message": "Host has no usable typed layered assembly (missing assembly type id or empty type layer stack).",
-      "elementIds": ["e30de611-98c0-46be-9144-3408061bb0cd"],
-      "blocking": false,
-      "quickFixCommand": null,
-      "discipline": "exchange",
-      "blockingClass": "exchange"
-    },
-    {
-      "ruleId": "material_catalog_missing_layer_stack",
-      "severity": "info",
-      "message": "Host has no usable typed layered assembly (missing assembly type id or empty type layer stack).",
-      "elementIds": ["front-loggia-left-return"],
-      "blocking": false,
-      "quickFixCommand": null,
-      "discipline": "exchange",
-      "blockingClass": "exchange"
-    },
-    {
-      "ruleId": "material_catalog_missing_layer_stack",
-      "severity": "info",
-      "message": "Host has no usable typed layered assembly (missing assembly type id or empty type layer stack).",
-      "elementIds": ["front-loggia-recessed-glass"],
-      "blocking": false,
-      "quickFixCommand": null,
-      "discipline": "exchange",
-      "blockingClass": "exchange"
-    },
-    {
-      "ruleId": "material_catalog_missing_layer_stack",
-      "severity": "info",
-      "message": "Host has no usable typed layered assembly (missing assembly type id or empty type layer stack).",
-      "elementIds": ["front-loggia-right-return"],
-      "blocking": false,
-      "quickFixCommand": null,
-      "discipline": "exchange",
-      "blockingClass": "exchange"
-    },
-    {
-      "ruleId": "material_catalog_missing_layer_stack",
-      "severity": "info",
-      "message": "Host has no usable typed layered assembly (missing assembly type id or empty type layer stack).",
-      "elementIds": ["hf-front-loggia-floor"],
-      "blocking": false,
-      "quickFixCommand": null,
-      "discipline": "exchange",
-      "blockingClass": "exchange"
-    },
-    {
-      "ruleId": "material_catalog_missing_layer_stack",
-      "severity": "info",
-      "message": "Host has no usable typed layered assembly (missing assembly type id or empty type layer stack).",
-      "elementIds": ["hf-roof-court-front-return"],
-      "blocking": false,
-      "quickFixCommand": null,
-      "discipline": "exchange",
-      "blockingClass": "exchange"
-    },
-    {
-      "ruleId": "material_catalog_missing_layer_stack",
-      "severity": "info",
-      "message": "Host has no usable typed layered assembly (missing assembly type id or empty type layer stack).",
-      "elementIds": ["hf-roof-court-glass-back"],
-      "blocking": false,
-      "quickFixCommand": null,
-      "discipline": "exchange",
-      "blockingClass": "exchange"
-    },
-    {
-      "ruleId": "material_catalog_missing_layer_stack",
-      "severity": "info",
-      "message": "Host has no usable typed layered assembly (missing assembly type id or empty type layer stack).",
-      "elementIds": ["hf-roof-court-left-return"],
-      "blocking": false,
-      "quickFixCommand": null,
-      "discipline": "exchange",
-      "blockingClass": "exchange"
-    },
-    {
-      "ruleId": "room_boundary_open",
-      "severity": "warning",
-      "message": "Room 'Bath / Laundry' (hf-room-gf-bath-laundry) has an open boundary — it is not fully enclosed by axis-aligned walls or room separations.",
-      "elementIds": ["hf-room-gf-bath-laundry"],
-      "blocking": false,
-      "quickFixCommand": null,
-      "discipline": "architecture",
-      "blockingClass": "geometry"
-    },
-    {
-      "ruleId": "room_boundary_open",
-      "severity": "warning",
-      "message": "Room 'Utility' (hf-room-utility) has an open boundary — it is not fully enclosed by axis-aligned walls or room separations.",
-      "elementIds": ["hf-room-utility"],
-      "blocking": false,
-      "quickFixCommand": null,
-      "discipline": "architecture",
-      "blockingClass": "geometry"
-    },
-    {
-      "ruleId": "room_boundary_open",
-      "severity": "warning",
-      "message": "Room 'Walk-in Closet' (hf-room-walk-in-closet) has an open boundary — it is not fully enclosed by axis-aligned walls or room separations.",
-      "elementIds": ["hf-room-walk-in-closet"],
-      "blocking": false,
-      "quickFixCommand": null,
-      "discipline": "architecture",
-      "blockingClass": "geometry"
-    },
-    {
-      "ruleId": "room_color_scheme_identity_missing",
-      "severity": "info",
-      "message": "No room color scheme element found. Use upsertRoomColorScheme to author overrides.",
-      "elementIds": [],
-      "blocking": false,
-      "quickFixCommand": null,
-      "discipline": "architecture",
-      "blockingClass": "documentation"
-    },
-    {
-      "ruleId": "room_finish_metadata_hint",
-      "severity": "info",
-      "message": "Room has programme or department metadata but finishSet is blank; finish schedules may be incomplete.",
-      "elementIds": ["hf-room-bath"],
-      "blocking": false,
-      "quickFixCommand": null,
-      "discipline": "architecture",
-      "blockingClass": "documentation"
-    },
-    {
-      "ruleId": "room_finish_metadata_hint",
-      "severity": "info",
-      "message": "Room has programme or department metadata but finishSet is blank; finish schedules may be incomplete.",
-      "elementIds": ["hf-room-carport"],
-      "blocking": false,
-      "quickFixCommand": null,
-      "discipline": "architecture",
-      "blockingClass": "documentation"
-    },
-    {
-      "ruleId": "room_finish_metadata_hint",
-      "severity": "info",
-      "message": "Room has programme or department metadata but finishSet is blank; finish schedules may be incomplete.",
-      "elementIds": ["hf-room-ensuite"],
-      "blocking": false,
-      "quickFixCommand": null,
-      "discipline": "architecture",
-      "blockingClass": "documentation"
-    },
-    {
-      "ruleId": "room_finish_metadata_hint",
-      "severity": "info",
-      "message": "Room has programme or department metadata but finishSet is blank; finish schedules may be incomplete.",
-      "elementIds": ["hf-room-gf-bath-laundry"],
-      "blocking": false,
-      "quickFixCommand": null,
-      "discipline": "architecture",
-      "blockingClass": "documentation"
-    },
-    {
-      "ruleId": "room_finish_metadata_hint",
-      "severity": "info",
-      "message": "Room has programme or department metadata but finishSet is blank; finish schedules may be incomplete.",
-      "elementIds": ["hf-room-kitchen"],
-      "blocking": false,
-      "quickFixCommand": null,
-      "discipline": "architecture",
-      "blockingClass": "documentation"
-    },
-    {
-      "ruleId": "room_finish_metadata_hint",
-      "severity": "info",
-      "message": "Room has programme or department metadata but finishSet is blank; finish schedules may be incomplete.",
-      "elementIds": ["hf-room-landing"],
-      "blocking": false,
-      "quickFixCommand": null,
-      "discipline": "architecture",
-      "blockingClass": "documentation"
-    },
-    {
-      "ruleId": "room_finish_metadata_hint",
-      "severity": "info",
-      "message": "Room has programme or department metadata but finishSet is blank; finish schedules may be incomplete.",
-      "elementIds": ["hf-room-loggia"],
-      "blocking": false,
-      "quickFixCommand": null,
-      "discipline": "architecture",
-      "blockingClass": "documentation"
-    },
-    {
-      "ruleId": "room_finish_metadata_hint",
-      "severity": "info",
-      "message": "Room has programme or department metadata but finishSet is blank; finish schedules may be incomplete.",
-      "elementIds": ["hf-room-utility"],
-      "blocking": false,
-      "quickFixCommand": null,
-      "discipline": "architecture",
-      "blockingClass": "documentation"
-    },
-    {
-      "ruleId": "room_finish_metadata_hint",
-      "severity": "info",
-      "message": "Room has programme or department metadata but finishSet is blank; finish schedules may be incomplete.",
-      "elementIds": ["hf-room-walk-in-closet"],
-      "blocking": false,
-      "quickFixCommand": null,
-      "discipline": "architecture",
-      "blockingClass": "documentation"
-    },
-    {
-      "ruleId": "room_finish_metadata_hint",
-      "severity": "info",
-      "message": "Room has programme or department metadata but finishSet is blank; finish schedules may be incomplete.",
-      "elementIds": ["room-bedroom"],
-      "blocking": false,
-      "quickFixCommand": null,
-      "discipline": "architecture",
-      "blockingClass": "documentation"
-    },
-    {
-      "ruleId": "room_finish_metadata_hint",
-      "severity": "info",
-      "message": "Room has programme or department metadata but finishSet is blank; finish schedules may be incomplete.",
-      "elementIds": ["room-hall"],
-      "blocking": false,
-      "quickFixCommand": null,
-      "discipline": "architecture",
-      "blockingClass": "documentation"
-    },
-    {
-      "ruleId": "room_finish_metadata_hint",
-      "severity": "info",
-      "message": "Room has programme or department metadata but finishSet is blank; finish schedules may be incomplete.",
-      "elementIds": ["room-living"],
-      "blocking": false,
-      "quickFixCommand": null,
-      "discipline": "architecture",
-      "blockingClass": "documentation"
-    },
-    {
-      "ruleId": "room_finish_metadata_hint",
-      "severity": "info",
-      "message": "Room has programme or department metadata but finishSet is blank; finish schedules may be incomplete.",
-      "elementIds": ["room-terrace"],
-      "blocking": false,
-      "quickFixCommand": null,
-      "discipline": "architecture",
-      "blockingClass": "documentation"
-    },
-    {
-      "ruleId": "room_target_area_mismatch",
-      "severity": "info",
-      "message": "Room outline area (4.320 m²) differs from targetAreaM2 (7.500 m²) beyond the advisory tolerance.",
-      "elementIds": ["hf-room-bath"],
-      "blocking": false,
-      "quickFixCommand": null,
-      "discipline": "architecture",
-      "blockingClass": "documentation"
-    },
-    {
-      "ruleId": "room_target_area_mismatch",
-      "severity": "info",
-      "message": "Room outline area (2.900 m²) differs from targetAreaM2 (19.300 m²) beyond the advisory tolerance.",
-      "elementIds": ["hf-room-carport"],
-      "blocking": false,
-      "quickFixCommand": null,
-      "discipline": "architecture",
-      "blockingClass": "documentation"
-    },
-    {
-      "ruleId": "room_target_area_mismatch",
-      "severity": "info",
-      "message": "Room outline area (3.200 m²) differs from targetAreaM2 (5.200 m²) beyond the advisory tolerance.",
-      "elementIds": ["hf-room-ensuite"],
-      "blocking": false,
-      "quickFixCommand": null,
-      "discipline": "architecture",
-      "blockingClass": "documentation"
-    },
-    {
-      "ruleId": "room_target_area_mismatch",
-      "severity": "info",
-      "message": "Room outline area (3.600 m²) differs from targetAreaM2 (4.800 m²) beyond the advisory tolerance.",
-      "elementIds": ["hf-room-gf-bath-laundry"],
-      "blocking": false,
-      "quickFixCommand": null,
-      "discipline": "architecture",
-      "blockingClass": "documentation"
-    },
-    {
-      "ruleId": "room_target_area_mismatch",
-      "severity": "info",
-      "message": "Room outline area (6.160 m²) differs from targetAreaM2 (12.000 m²) beyond the advisory tolerance.",
-      "elementIds": ["hf-room-kitchen"],
-      "blocking": false,
-      "quickFixCommand": null,
-      "discipline": "architecture",
-      "blockingClass": "documentation"
-    },
-    {
-      "ruleId": "room_target_area_mismatch",
-      "severity": "info",
-      "message": "Room outline area (8.640 m²) differs from targetAreaM2 (16.500 m²) beyond the advisory tolerance.",
-      "elementIds": ["hf-room-loggia"],
-      "blocking": false,
-      "quickFixCommand": null,
-      "discipline": "architecture",
-      "blockingClass": "documentation"
-    },
-    {
-      "ruleId": "room_target_area_mismatch",
-      "severity": "info",
-      "message": "Room outline area (2.550 m²) differs from targetAreaM2 (3.400 m²) beyond the advisory tolerance.",
-      "elementIds": ["hf-room-utility"],
-      "blocking": false,
-      "quickFixCommand": null,
-      "discipline": "architecture",
-      "blockingClass": "documentation"
-    },
-    {
-      "ruleId": "room_target_area_mismatch",
-      "severity": "info",
-      "message": "Room outline area (3.800 m²) differs from targetAreaM2 (4.700 m²) beyond the advisory tolerance.",
-      "elementIds": ["hf-room-walk-in-closet"],
-      "blocking": false,
-      "quickFixCommand": null,
-      "discipline": "architecture",
-      "blockingClass": "documentation"
-    },
-    {
-      "ruleId": "room_target_area_mismatch",
-      "severity": "info",
-      "message": "Room outline area (6.380 m²) differs from targetAreaM2 (9.000 m²) beyond the advisory tolerance.",
-      "elementIds": ["room-hall"],
-      "blocking": false,
-      "quickFixCommand": null,
-      "discipline": "architecture",
-      "blockingClass": "documentation"
-    },
-    {
-      "ruleId": "room_unenclosed",
-      "severity": "warning",
-      "message": "Room boundary has 3 edge(s) without a backing wall or room-separation line on the same level (uncovered edge indices: [0, 2, 3]).",
-      "elementIds": ["hf-room-carport"],
-      "blocking": false,
-      "quickFixCommand": null,
-      "discipline": "architecture",
-      "blockingClass": "documentation"
-    },
-    {
-      "ruleId": "room_unenclosed",
-      "severity": "warning",
-      "message": "Room boundary has 4 edge(s) without a backing wall or room-separation line on the same level (uncovered edge indices: [0, 1, 2, 3]).",
-      "elementIds": ["hf-room-ensuite"],
-      "blocking": false,
-      "quickFixCommand": null,
-      "discipline": "architecture",
-      "blockingClass": "documentation"
-    },
-    {
-      "ruleId": "room_unenclosed",
-      "severity": "warning",
-      "message": "Room boundary has 4 edge(s) without a backing wall or room-separation line on the same level (uncovered edge indices: [0, 1, 2, 3]).",
-      "elementIds": ["hf-room-gf-bath-laundry"],
-      "blocking": false,
-      "quickFixCommand": null,
-      "discipline": "architecture",
-      "blockingClass": "documentation"
-    },
-    {
-      "ruleId": "room_unenclosed",
-      "severity": "warning",
-      "message": "Room boundary has 3 edge(s) without a backing wall or room-separation line on the same level (uncovered edge indices: [0, 1, 3]).",
-      "elementIds": ["hf-room-landing"],
-      "blocking": false,
-      "quickFixCommand": null,
-      "discipline": "architecture",
-      "blockingClass": "documentation"
-    },
-    {
-      "ruleId": "room_unenclosed",
-      "severity": "warning",
-      "message": "Room boundary has 1 edge(s) without a backing wall or room-separation line on the same level (uncovered edge indices: [2]).",
-      "elementIds": ["hf-room-loggia"],
-      "blocking": false,
-      "quickFixCommand": null,
-      "discipline": "architecture",
-      "blockingClass": "documentation"
-    },
-    {
-      "ruleId": "room_unenclosed",
-      "severity": "warning",
-      "message": "Room boundary has 4 edge(s) without a backing wall or room-separation line on the same level (uncovered edge indices: [0, 1, 2, 3]).",
-      "elementIds": ["hf-room-utility"],
-      "blocking": false,
-      "quickFixCommand": null,
-      "discipline": "architecture",
-      "blockingClass": "documentation"
-    },
-    {
-      "ruleId": "room_unenclosed",
-      "severity": "warning",
-      "message": "Room boundary has 4 edge(s) without a backing wall or room-separation line on the same level (uncovered edge indices: [0, 1, 2, 3]).",
-      "elementIds": ["hf-room-walk-in-closet"],
-      "blocking": false,
-      "quickFixCommand": null,
-      "discipline": "architecture",
-      "blockingClass": "documentation"
-    },
-    {
-      "ruleId": "room_unenclosed",
-      "severity": "warning",
-      "message": "Room boundary has 4 edge(s) without a backing wall or room-separation line on the same level (uncovered edge indices: [0, 1, 2, 3]).",
-      "elementIds": ["room-bedroom"],
-      "blocking": false,
-      "quickFixCommand": null,
-      "discipline": "architecture",
-      "blockingClass": "documentation"
-    },
-    {
-      "ruleId": "room_unenclosed",
-      "severity": "warning",
-      "message": "Room boundary has 4 edge(s) without a backing wall or room-separation line on the same level (uncovered edge indices: [0, 1, 2, 3]).",
-      "elementIds": ["room-living"],
-      "blocking": false,
-      "quickFixCommand": null,
-      "discipline": "architecture",
-      "blockingClass": "documentation"
-    },
-    {
-      "ruleId": "room_unenclosed",
-      "severity": "warning",
-      "message": "Room boundary has 2 edge(s) without a backing wall or room-separation line on the same level (uncovered edge indices: [0, 2]).",
-      "elementIds": ["room-terrace"],
-      "blocking": false,
-      "quickFixCommand": null,
-      "discipline": "architecture",
-      "blockingClass": "documentation"
-    },
-    {
-      "ruleId": "room_without_door_access",
-      "severity": "warning",
-      "message": "Room has no door midpoint on or inside its boundary; add a connected door opening or revise the room boundary.",
-      "elementIds": ["hf-room-bath"],
-      "blocking": false,
-      "quickFixCommand": null,
-      "discipline": "architecture",
-      "blockingClass": "geometry"
-    },
-    {
-      "ruleId": "room_without_door_access",
-      "severity": "warning",
-      "message": "Room has no door midpoint on or inside its boundary; add a connected door opening or revise the room boundary.",
-      "elementIds": ["hf-room-ensuite"],
-      "blocking": false,
-      "quickFixCommand": null,
-      "discipline": "architecture",
-      "blockingClass": "geometry"
-    },
-    {
-      "ruleId": "room_without_door_access",
-      "severity": "warning",
-      "message": "Room has no door midpoint on or inside its boundary; add a connected door opening or revise the room boundary.",
-      "elementIds": ["hf-room-gf-bath-laundry"],
-      "blocking": false,
-      "quickFixCommand": null,
-      "discipline": "architecture",
-      "blockingClass": "geometry"
-    },
-    {
-      "ruleId": "room_without_door_access",
-      "severity": "warning",
-      "message": "Room has no door midpoint on or inside its boundary; add a connected door opening or revise the room boundary.",
-      "elementIds": ["hf-room-landing"],
-      "blocking": false,
-      "quickFixCommand": null,
-      "discipline": "architecture",
-      "blockingClass": "geometry"
-    },
-    {
-      "ruleId": "room_without_door_access",
-      "severity": "warning",
-      "message": "Room has no door midpoint on or inside its boundary; add a connected door opening or revise the room boundary.",
-      "elementIds": ["hf-room-utility"],
-      "blocking": false,
-      "quickFixCommand": null,
-      "discipline": "architecture",
-      "blockingClass": "geometry"
-    },
-    {
-      "ruleId": "room_without_door_access",
-      "severity": "warning",
-      "message": "Room has no door midpoint on or inside its boundary; add a connected door opening or revise the room boundary.",
-      "elementIds": ["hf-room-walk-in-closet"],
-      "blocking": false,
-      "quickFixCommand": null,
-      "discipline": "architecture",
-      "blockingClass": "geometry"
-    },
-    {
-      "ruleId": "room_without_door_access",
-      "severity": "warning",
-      "message": "Room has no door midpoint on or inside its boundary; add a connected door opening or revise the room boundary.",
-      "elementIds": ["room-bedroom"],
-      "blocking": false,
-      "quickFixCommand": null,
-      "discipline": "architecture",
-      "blockingClass": "geometry"
-    },
-    {
-      "ruleId": "room_without_door_access",
-      "severity": "warning",
-      "message": "Room has no door midpoint on or inside its boundary; add a connected door opening or revise the room boundary.",
-      "elementIds": ["room-hall"],
-      "blocking": false,
-      "quickFixCommand": null,
-      "discipline": "architecture",
-      "blockingClass": "geometry"
-    },
-    {
-      "ruleId": "room_without_door_access",
-      "severity": "warning",
-      "message": "Room has no door midpoint on or inside its boundary; add a connected door opening or revise the room boundary.",
-      "elementIds": ["room-living"],
-      "blocking": false,
-      "quickFixCommand": null,
-      "discipline": "architecture",
-      "blockingClass": "geometry"
-    },
-    {
-      "ruleId": "schedule_field_registry_gap",
-      "severity": "info",
-      "message": "Schedule 'opening-schedule' uses category 'opening' which has no registered column order in SCHEDULE_COLUMN_ORDER; custom field ordering may be inconsistent.",
-      "elementIds": ["opening-schedule"],
-      "blocking": false,
-      "quickFixCommand": null,
-      "discipline": "coordination",
-      "blockingClass": "schedule"
-    },
-    {
-      "ruleId": "schedule_not_placed_on_sheet",
-      "severity": "warning",
-      "message": "Schedule 'room-schedule-view' exists but is not placed on any sheet (sheetId is empty; assign sheetId to enable documentation linkage).",
-      "elementIds": ["room-schedule-view"],
-      "blocking": false,
-      "quickFixCommand": {
-        "type": "upsertSheetViewports",
-        "sheetId": "sheet-a101",
-        "viewportsMm": [
-          {
-            "xMm": 20,
-            "yMm": 20,
-            "label": "Ground floor plan",
-            "viewRef": "plan:lvl-ground-plan",
-            "widthMm": 170,
-            "heightMm": 120,
-            "viewportId": "vp-ground-plan"
-          },
-          {
-            "xMm": 210,
-            "yMm": 20,
-            "label": "Front elevation",
-            "viewRef": "section:elev-front",
-            "widthMm": 170,
-            "heightMm": 120,
-            "viewportId": "vp-front-elevation"
-          },
-          {
-            "xMm": 20,
-            "yMm": 160,
-            "label": "Room Schedule",
-            "viewRef": "schedule:room-schedule",
-            "widthMm": 170,
-            "heightMm": 95,
-            "viewportId": "vp-room-schedule"
-          },
-          {
-            "xMm": 210,
-            "yMm": 160,
-            "label": "Door and Window Schedule",
-            "viewRef": "schedule:opening-schedule",
-            "widthMm": 170,
-            "heightMm": 95,
-            "viewportId": "vp-opening-schedule"
-          },
-          {
-            "viewportId": "vp-autoplace-schedule-room-schedule-view",
-            "label": "Room schedule view",
-            "viewRef": "schedule:room-schedule-view",
-            "xMm": 800,
-            "yMm": 800,
-            "widthMm": 14000,
-            "heightMm": 9000
-          }
-        ]
-      },
-      "discipline": "coordination",
-      "blockingClass": "schedule"
-    },
-    {
-      "ruleId": "schedule_opening_family_type_incomplete",
-      "severity": "warning",
-      "message": "Door is missing familyTypeId (type schedule columns are incomplete).",
-      "elementIds": ["entry-door"],
-      "blocking": false,
-      "quickFixCommand": null,
-      "discipline": "coordination",
-      "blockingClass": "schedule"
-    },
-    {
-      "ruleId": "schedule_opening_family_type_incomplete",
-      "severity": "warning",
-      "message": "Door is missing familyTypeId (type schedule columns are incomplete).",
-      "elementIds": ["front-loggia-center-door"],
-      "blocking": false,
-      "quickFixCommand": null,
-      "discipline": "coordination",
-      "blockingClass": "schedule"
-    },
-    {
-      "ruleId": "schedule_opening_family_type_incomplete",
-      "severity": "warning",
-      "message": "Window is missing familyTypeId (type schedule columns are incomplete).",
-      "elementIds": ["front-loggia-left-window"],
-      "blocking": false,
-      "quickFixCommand": null,
-      "discipline": "coordination",
-      "blockingClass": "schedule"
-    },
-    {
-      "ruleId": "schedule_opening_family_type_incomplete",
-      "severity": "warning",
-      "message": "Window is missing familyTypeId (type schedule columns are incomplete).",
-      "elementIds": ["front-loggia-right-window"],
-      "blocking": false,
-      "quickFixCommand": null,
-      "discipline": "coordination",
-      "blockingClass": "schedule"
-    },
-    {
-      "ruleId": "schedule_opening_family_type_incomplete",
-      "severity": "warning",
-      "message": "Door is missing familyTypeId (type schedule columns are incomplete).",
-      "elementIds": ["hf-roof-court-door"],
-      "blocking": false,
-      "quickFixCommand": null,
-      "discipline": "coordination",
-      "blockingClass": "schedule"
-    },
-    {
-      "ruleId": "schedule_opening_host_wall_type_incomplete",
-      "severity": "warning",
-      "message": "Host wall has no wallTypeId (hostWallType schedule columns cannot resolve).",
-      "elementIds": ["front-loggia-center-door", "front-loggia-recessed-glass"],
-      "blocking": false,
-      "quickFixCommand": null,
-      "discipline": "coordination",
-      "blockingClass": "schedule"
-    },
-    {
-      "ruleId": "schedule_opening_host_wall_type_incomplete",
-      "severity": "warning",
-      "message": "Host wall has no wallTypeId (hostWallType schedule columns cannot resolve).",
-      "elementIds": ["front-loggia-left-window", "front-loggia-recessed-glass"],
-      "blocking": false,
-      "quickFixCommand": null,
-      "discipline": "coordination",
-      "blockingClass": "schedule"
-    },
-    {
-      "ruleId": "schedule_opening_host_wall_type_incomplete",
-      "severity": "warning",
-      "message": "Host wall has no wallTypeId (hostWallType schedule columns cannot resolve).",
-      "elementIds": ["front-loggia-recessed-glass", "front-loggia-right-window"],
-      "blocking": false,
-      "quickFixCommand": null,
-      "discipline": "coordination",
-      "blockingClass": "schedule"
-    },
-    {
-      "ruleId": "schedule_opening_host_wall_type_incomplete",
-      "severity": "warning",
-      "message": "Host wall has no wallTypeId (hostWallType schedule columns cannot resolve).",
-      "elementIds": ["hf-roof-court-door", "hf-roof-court-glass-back"],
-      "blocking": false,
-      "quickFixCommand": null,
-      "discipline": "coordination",
-      "blockingClass": "schedule"
-    },
-    {
-      "ruleId": "sheet_revision_issue_metadata_missing",
-      "severity": "warning",
-      "message": "Sheet has a title block and viewports but titleblock revision/issue metadata is incomplete: set revisionId and/or revision code (revisionCode or legacy revision) in titleblockParameters.",
-      "elementIds": ["sheet-a101"],
-      "blocking": false,
-      "quickFixCommand": {
-        "type": "updateElementProperty",
-        "elementId": "sheet-a101",
-        "key": "titleblockParametersPatch",
-        "value": "{\"revisionCode\": \"A\", \"revisionId\": \"TBR-REV\"}"
-      },
-      "discipline": "coordination",
-      "blockingClass": "sheet"
-    },
-    {
-      "ruleId": "sheet_viewport_unknown_ref",
-      "severity": "warning",
-      "message": "Sheet viewport refers to unresolved semantic reference (plan:lvl-ground-plan).",
-      "elementIds": ["sheet-a101"],
-      "blocking": false,
-      "quickFixCommand": {
-        "type": "upsertSheetViewports",
-        "sheetId": "sheet-a101",
-        "viewportsMm": [
-          {
-            "xMm": 210,
-            "yMm": 20,
-            "label": "Front elevation",
-            "viewRef": "section:elev-front",
-            "widthMm": 170,
-            "heightMm": 120,
-            "viewportId": "vp-front-elevation"
-          },
-          {
-            "xMm": 20,
-            "yMm": 160,
-            "label": "Room Schedule",
-            "viewRef": "schedule:room-schedule",
-            "widthMm": 170,
-            "heightMm": 95,
-            "viewportId": "vp-room-schedule"
-          },
-          {
-            "xMm": 210,
-            "yMm": 160,
-            "label": "Door and Window Schedule",
-            "viewRef": "schedule:opening-schedule",
-            "widthMm": 170,
-            "heightMm": 95,
-            "viewportId": "vp-opening-schedule"
-          }
-        ]
-      },
-      "discipline": "coordination",
-      "blockingClass": "sheet"
-    },
-    {
-      "ruleId": "sheet_viewport_unknown_ref",
-      "severity": "warning",
-      "message": "Sheet viewport refers to unresolved semantic reference (section:elev-front).",
-      "elementIds": ["sheet-a101"],
-      "blocking": false,
-      "quickFixCommand": {
-        "type": "upsertSheetViewports",
-        "sheetId": "sheet-a101",
-        "viewportsMm": [
-          {
-            "xMm": 20,
-            "yMm": 20,
-            "label": "Ground floor plan",
-            "viewRef": "plan:lvl-ground-plan",
-            "widthMm": 170,
-            "heightMm": 120,
-            "viewportId": "vp-ground-plan"
-          },
-          {
-            "xMm": 20,
-            "yMm": 160,
-            "label": "Room Schedule",
-            "viewRef": "schedule:room-schedule",
-            "widthMm": 170,
-            "heightMm": 95,
-            "viewportId": "vp-room-schedule"
-          },
-          {
-            "xMm": 210,
-            "yMm": 160,
-            "label": "Door and Window Schedule",
-            "viewRef": "schedule:opening-schedule",
-            "widthMm": 170,
-            "heightMm": 95,
-            "viewportId": "vp-opening-schedule"
-          }
-        ]
-      },
-      "discipline": "coordination",
-      "blockingClass": "sheet"
-    },
-    {
-      "ruleId": "stair_guardrail_missing",
-      "severity": "warning",
-      "message": "Stair rise exceeds the guardrail threshold without a hosted railing.",
-      "elementIds": ["main-stair"],
-      "blocking": false,
-      "quickFixCommand": null,
-      "discipline": "architecture",
-      "blockingClass": "geometry"
-    },
-    {
-      "ruleId": "structural_material_inconsistent_by_type",
-      "severity": "warning",
-      "message": "Structural elements sharing the same type have inconsistent structural materials (wall:wt-white-wrapper); align the type material or split the type.",
-      "elementIds": [
-        "ground-base-wall-01",
-        "ground-base-wall-02",
-        "ground-base-wall-03",
-        "ground-base-wall-04",
-        "hf-upper-wrapper-shell-wall-01",
-        "hf-upper-wrapper-shell-wall-02",
-        "hf-upper-wrapper-shell-wall-03",
-        "hf-upper-wrapper-shell-wall-04"
-      ],
-      "blocking": false,
-      "quickFixCommand": null,
-      "discipline": "structure",
-      "blockingClass": "documentation"
-    }
-  ]
+  "violations": []
 }

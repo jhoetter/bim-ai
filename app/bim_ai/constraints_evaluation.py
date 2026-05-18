@@ -721,6 +721,13 @@ def evaluate(
             )
             continue
         if code == "ambiguous_interior_separation":
+            authored_sep_ids = [
+                str(x)
+                for key in ("separationIds", "boundarySeparationIds")
+                for x in d.get(key) or []
+            ]
+            if authored_sep_ids and all(x.startswith("sep-") for x in authored_sep_ids):
+                continue
             eids: set[str] = set()
             for k in ("separationIds", "wallIds"):
                 for x in d.get(k) or []:

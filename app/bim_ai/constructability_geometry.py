@@ -65,6 +65,7 @@ _PHYSICAL_KINDS = {
     "placed_asset",
     "family_instance",
     "family_kit_instance",
+    "sweep",
     "toposolid",
 }
 
@@ -233,6 +234,7 @@ def physical_participant_for_element(
         "placed_asset": _aabb_for_placed_asset,
         "family_instance": _aabb_for_family_instance,
         "family_kit_instance": _aabb_for_family_kit_instance,
+        "sweep": _aabb_for_sweep,
         "toposolid": _aabb_for_toposolid,
     }
     builder = builders.get(kind)
@@ -966,6 +968,31 @@ def _aabb_for_family_kit_instance(elem: Any, elements: dict[str, Element]) -> AA
         (ex + nx * (half_wall + depth), ey + ny * (half_wall + depth)),
     ]
     return _bounds_from_points(points, base_z, base_z + height)
+
+
+def _aabb_for_sweep(elem: Any, elements: dict[str, Element]) -> AABB | None:
+    path = list(getattr(elem, "path_mm", []) or [])
+    if not path:
+        return None
+    xs = [float(getattr(point, "x_mm", 0.0)) for point in path]
+    ys = [float(getattr(point, "y_mm", 0.0)) for point in path]
+    zs = [float(getattr(point, "z_mm", 0.0)) for point in path]
+    profile = list(getattr(elem, "profile_mm", []) or [])
+    if profile:
+        us = [float(getattr(point, "u_mm", 0.0)) for point in profile]
+        vs = [float(getattr(point, "v_mm", 0.0)) for point in profile]
+        pad_xy = max(max(us) - min(us), max(vs) - min(vs), 1.0) / 2.0
+    else:
+        pad_xy = 50.0
+    level_z = _level_elevation_mm(elements, getattr(elem, "level_id", None))
+    return AABB(
+        min(xs) - pad_xy,
+        min(ys) - pad_xy,
+        level_z + min(zs),
+        max(xs) + pad_xy,
+        max(ys) + pad_xy,
+        level_z + max(zs) + max(pad_xy, 1.0),
+    )
 
 
 def _dimension_from_sources(

@@ -448,6 +448,8 @@ def _door_clearance_violations(
     for element in elements.values():
         if not isinstance(element, DoorElem):
             continue
+        if str(getattr(element, "operation_type", "") or "").startswith(("sliding", "pocket")):
+            continue
         wall = walls_by_id.get(element.wall_id)
         if wall is None:
             continue

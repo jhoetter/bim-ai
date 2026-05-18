@@ -7,12 +7,14 @@ import numpy as np
 
 from bim_ai.document import Document
 from bim_ai.elements import (
+    AssetLibraryEntryElem,
     BeamElem,
     CeilingElem,
     ColumnElem,
     DoorElem,
     FloorElem,
     LevelElem,
+    PlacedAssetElem,
     RailingElem,
     RoofElem,
     RoofOpeningElem,
@@ -91,6 +93,49 @@ def _kernel_ifc_wall_common_props(wall: WallElem) -> dict[str, Any]:
     if wall.structural_intent_confidence is not None:
         props["BimAiStructuralIntentConfidence"] = float(wall.structural_intent_confidence)
     return props
+
+
+def _asset_numeric_param(
+    target: PlacedAssetElem, entry: AssetLibraryEntryElem | None, keys: tuple[str, ...]
+) -> float | None:
+    for key in keys:
+        raw = target.param_values.get(key)
+        try:
+            value = float(raw)
+        except (TypeError, ValueError):
+            continue
+        if value > 0:
+            return value
+    for key in keys:
+        for param in entry.param_schema if entry and entry.param_schema else []:
+            if param.key != key:
+                continue
+            try:
+                value = float(param.default)
+            except (TypeError, ValueError):
+                continue
+            if value > 0:
+                return value
+    return None
+
+
+def _placed_asset_box_mm(
+    target: PlacedAssetElem, entry: AssetLibraryEntryElem | None
+) -> tuple[float, float, float]:
+    width = _asset_numeric_param(target, entry, ("widthMm", "lengthMm", "diameterMm"))
+    if width is None:
+        width = entry.thumbnail_width_mm if entry and entry.thumbnail_width_mm else 1000.0
+    depth = _asset_numeric_param(target, entry, ("depthMm", "diameterMm"))
+    if depth is None:
+        depth = entry.thumbnail_height_mm if entry and entry.thumbnail_height_mm else 1000.0
+    height = _asset_numeric_param(target, entry, ("heightMm", "proxyHeightMm", "seatHeightMm"))
+    if height is None:
+        height = 750.0
+    return (
+        float(clamp(width, 50.0, 10000.0)),
+        float(clamp(depth, 50.0, 10000.0)),
+        float(clamp(height, 50.0, 5000.0)),
+    )
 
 
 def try_build_kernel_ifc(doc: Document) -> tuple[str | None, int]:
@@ -178,6 +223,9 @@ def try_build_kernel_ifc(doc: Document) -> tuple[str | None, int]:
     # IFC-03: per-roof rough z-center used to position opening features.
     roof_z_center_by_id: dict[str, float] = {}
     roof_extrusion_depth_by_id: dict[str, float] = {}
+    asset_entries_by_id: dict[str, AssetLibraryEntryElem] = {
+        eid: e for eid, e in doc.elements.items() if isinstance(e, AssetLibraryEntryElem)
+    }
 
     def attach_kernel_identity_pset(
         product: Any, pset_name: str, reference: str, **props: Any
@@ -1316,6 +1364,59 @@ def try_build_kernel_ifc(doc: Document) -> tuple[str | None, int]:
         geo_products += 1
         attach_kernel_identity_pset(railing_ent, "Pset_RailingCommon", rid)
         attach_railing_common_pset(f, railing_ent, rl)
+
+    for aid in sorted(eid for eid, e in doc.elements.items() if isinstance(e, PlacedAssetElem)):
+        asset = doc.elements[aid]
+        assert isinstance(asset, PlacedAssetElem)
+        entry = asset_entries_by_id.get(asset.asset_id)
+        width_mm, depth_mm, height_mm = _placed_asset_box_mm(asset, entry)
+        width_m = width_mm / 1000.0
+        depth_m = depth_mm / 1000.0
+        height_m = height_mm / 1000.0
+        profile = [
+            (-width_m / 2.0, -depth_m / 2.0),
+            (width_m / 2.0, -depth_m / 2.0),
+            (width_m / 2.0, depth_m / 2.0),
+            (-width_m / 2.0, depth_m / 2.0),
+            (-width_m / 2.0, -depth_m / 2.0),
+        ]
+
+        furnishing = ifcopenshell.api.root.create_entity(
+            f, ifc_class="IfcFurnishingElement", name=asset.name or aid
+        )
+        rep_furnishing = add_slab_representation(f, body_ctx, depth=height_m, polyline=profile)
+        mat = np.eye(4, dtype=float)
+        theta = math.radians(float(asset.rotation_deg or 0.0))
+        mat[0, 0] = math.cos(theta)
+        mat[0, 1] = -math.sin(theta)
+        mat[1, 0] = math.sin(theta)
+        mat[1, 1] = math.cos(theta)
+        mat[0, 3] = float(asset.position_mm.x_mm) / 1000.0
+        mat[1, 3] = float(asset.position_mm.y_mm) / 1000.0
+        mat[2, 3] = level_elevation_m(doc, asset.level_id) + height_m / 2.0
+        edit_object_placement(f, product=furnishing, matrix=mat)
+        assign_representation(f, furnishing, rep_furnishing)
+        ifcopenshell.api.spatial.assign_container(
+            f, products=[furnishing], relating_structure=storey_for(asset.level_id)
+        )
+        geo_products += 1
+        attach_kernel_identity_pset(
+            furnishing,
+            "Pset_FurnitureTypeCommon",
+            aid,
+            AssetId=asset.asset_id,
+        )
+        try_attach_qto(
+            f,
+            furnishing,
+            "Qto_FurnitureBaseQuantities",
+            {
+                "Width": width_m,
+                "Depth": depth_m,
+                "Height": height_m,
+                "GrossVolume": width_m * depth_m * height_m,
+            },
+        )
 
     if geo_products == 0:
         return None, 0

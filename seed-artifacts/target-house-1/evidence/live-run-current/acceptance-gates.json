@@ -2665,10 +2665,10 @@
     "ok": true,
     "sourcePath": "/tmp/bim-ai-target-house-1-run/final-live-evidence/tool-run-summary.json",
     "recorded": {
-      "gitHead": "0bfceb543a1f06e3e6579ef01462da7f9d85622b",
+      "gitHead": "db78505123d0d471257479335091b0f9dfc71d3b",
       "modelId": "a5c6d3f6-6a76-45f2-8017-b6fa78911955",
       "modelRevision": 2,
-      "advisorRuleDigest": "11c74e8fdc684fb1efd0140b212e130e0d1bb82bd6a85c9583501a5e4a115f7b",
+      "advisorRuleDigest": "e2c9ee443c19b318c07e585ba6a2005f900c1931c1009eeb8031978471d2f5a5",
       "advisorRuleFiles": [
         "app/bim_ai/constructability_advisories.py",
         "app/bim_ai/constructability_report.py",
@@ -2682,10 +2682,10 @@
       "capabilitiesSha256": "e3faa00d4724d5e375ee853d5e3d56b21254a969a84e702d67013a8bb0125dbb"
     },
     "current": {
-      "gitHead": "0bfceb543a1f06e3e6579ef01462da7f9d85622b",
+      "gitHead": "db78505123d0d471257479335091b0f9dfc71d3b",
       "modelId": "a5c6d3f6-6a76-45f2-8017-b6fa78911955",
       "modelRevision": 2,
-      "advisorRuleDigest": "11c74e8fdc684fb1efd0140b212e130e0d1bb82bd6a85c9583501a5e4a115f7b",
+      "advisorRuleDigest": "e2c9ee443c19b318c07e585ba6a2005f900c1931c1009eeb8031978471d2f5a5",
       "advisorRuleFiles": [
         "app/bim_ai/constructability_advisories.py",
         "app/bim_ai/constructability_report.py",
@@ -2710,8 +2710,8 @@
         "status": "pass",
         "code": "git_head_current",
         "message": "Evidence git head matches current inputs.",
-        "recorded": "0bfceb543a1f06e3e6579ef01462da7f9d85622b",
-        "current": "0bfceb543a1f06e3e6579ef01462da7f9d85622b"
+        "recorded": "db78505123d0d471257479335091b0f9dfc71d3b",
+        "current": "db78505123d0d471257479335091b0f9dfc71d3b"
       },
       {
         "id": "model_revision",
@@ -2726,8 +2726,8 @@
         "status": "pass",
         "code": "advisor_rule_digest_current",
         "message": "Evidence Advisor rule digest matches current inputs.",
-        "recorded": "11c74e8fdc684fb1efd0140b212e130e0d1bb82bd6a85c9583501a5e4a115f7b",
-        "current": "11c74e8fdc684fb1efd0140b212e130e0d1bb82bd6a85c9583501a5e4a115f7b"
+        "recorded": "e2c9ee443c19b318c07e585ba6a2005f900c1931c1009eeb8031978471d2f5a5",
+        "current": "e2c9ee443c19b318c07e585ba6a2005f900c1931c1009eeb8031978471d2f5a5"
       },
       {
         "id": "ir_sha256",

@@ -1,11 +1,11 @@
 {
   "schemaVersion": "sketch.visual-evidence-contract.v1",
-  "generatedAt": "2026-05-18T20:25:16.484Z",
+  "generatedAt": "2026-05-18T21:10:07.091Z",
   "browserAutomationRequired": false,
   "note": "Screenshots are an evidence capture method. Core snapshot, validate, evidence package, Advisor, constructability, and model stats checks do not require browser automation.",
   "inputs": {
-    "modelId": "a5c6d3f6-6a76-45f2-8017-b6fa78911955",
-    "revision": 2,
+    "modelId": "6c3940ae-c0a1-5bc3-a0fa-38c9195b28d2",
+    "revision": 1,
     "requiredViews": [
       {
         "id": "main_front_left",
@@ -80,10 +80,10 @@
     ]
   },
   "outputs": {
-    "screenshotsDirectory": "/tmp/bim-ai-target-house-1-run/final-live-evidence/live/screenshots",
-    "screenshotManifest": "/tmp/bim-ai-target-house-1-run/final-live-evidence/live/screenshot-manifest.json",
-    "visualGateReport": "/tmp/bim-ai-target-house-1-run/final-live-evidence/live/visual-gate-report.json",
-    "semanticChecklist": "/tmp/bim-ai-target-house-1-run/final-live-evidence/live/semantic-checklist.json"
+    "screenshotsDirectory": "seed-artifacts/target-house-1/evidence/live-run-current/screenshots",
+    "screenshotManifest": "seed-artifacts/target-house-1/evidence/live-run-current/screenshot-manifest.json",
+    "visualGateReport": "seed-artifacts/target-house-1/evidence/live-run-current/visual-gate-report.json",
+    "semanticChecklist": "seed-artifacts/target-house-1/evidence/live-run-current/semantic-checklist.json"
   },
   "captureMethods": [
     {

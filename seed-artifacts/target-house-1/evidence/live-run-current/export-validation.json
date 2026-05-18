@@ -1,6 +1,6 @@
 {
   "schemaVersion": "sketch.exchange-validation.v1",
-  "generatedAt": "2026-05-18T20:25:16.500Z",
+  "generatedAt": "2026-05-18T21:10:07.106Z",
   "qualityTarget": "project_initiation_bim",
   "source": "ifc_manifest",
   "ok": true,
@@ -37,8 +37,8 @@
       "id": "project_hierarchy",
       "status": "pass",
       "message": "Project/model hierarchy is represented in the normalized exchange manifest.",
-      "modelId": "a5c6d3f6-6a76-45f2-8017-b6fa78911955",
-      "revision": 2
+      "modelId": "6c3940ae-c0a1-5bc3-a0fa-38c9195b28d2",
+      "revision": 1
     },
     {
       "id": "entity_classes",
@@ -58,15 +58,15 @@
       ],
       "countsByIfcEntity": {
         "IfcSpace": 13,
-        "IfcWall": 26,
-        "IfcWallStandardCase": 26,
-        "IfcSlab": 4,
+        "IfcWall": 27,
+        "IfcWallStandardCase": 27,
+        "IfcSlab": 2,
         "IfcRoof": 1,
         "IfcStair": 1,
-        "IfcDoor": 3,
+        "IfcDoor": 16,
         "IfcWindow": 2,
-        "IfcRailing": 2,
-        "IfcFurnishingElement": 4
+        "IfcRailing": 3,
+        "IfcFurnishingElement": 5
       },
       "source": "ifc_manifest"
     },

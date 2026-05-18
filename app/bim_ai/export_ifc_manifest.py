@@ -4,9 +4,11 @@ from typing import Any
 
 from bim_ai.document import Document
 from bim_ai.elements import (
+    AssetLibraryEntryElem,
     DoorElem,
     FloorElem,
     LevelElem,
+    PlacedAssetElem,
     RoofElem,
     RoofOpeningElem,
     RoomElem,
@@ -18,7 +20,19 @@ from bim_ai.elements import (
 )
 
 KERNEL_IFC_DOMINANT_KINDS: frozenset[str] = frozenset(
-    {"level", "wall", "floor", "door", "window", "room", "roof", "stair", "slab_opening", "site"}
+    {
+        "level",
+        "wall",
+        "floor",
+        "door",
+        "window",
+        "room",
+        "roof",
+        "stair",
+        "slab_opening",
+        "site",
+        "placed_asset",
+    }
 )
 
 
@@ -48,6 +62,9 @@ def ifc_kernel_geometry_skip_counts(doc: Document) -> dict[str, int]:
         if isinstance(e, FloorElem) and len(getattr(e, "boundary_mm", ()) or ()) >= 3
     }
     level_ids = {eid for eid, e in doc.elements.items() if isinstance(e, LevelElem)}
+    asset_library_ids = {
+        eid for eid, e in doc.elements.items() if isinstance(e, AssetLibraryEntryElem)
+    }
 
     for e in doc.elements.values():
         if isinstance(e, DoorElem):
@@ -74,6 +91,11 @@ def ifc_kernel_geometry_skip_counts(doc: Document) -> dict[str, int]:
             outl = getattr(e, "outline_mm", ()) or ()
             if len(outl) < 3:
                 skips["room_space_skipped"] = skips.get("room_space_skipped", 0) + 1
+        elif isinstance(e, PlacedAssetElem):
+            if e.asset_id not in asset_library_ids:
+                skips["placed_asset_missing_library_entry"] = (
+                    skips.get("placed_asset_missing_library_entry", 0) + 1
+                )
 
     return skips
 
@@ -146,6 +168,14 @@ def kernel_expected_ifc_emit_counts(doc: Document) -> dict[str, int]:
         and e.host_roof_id in roofs_with_body
         and len(getattr(e, "boundary_mm", ()) or ()) >= 3
     )
+    asset_library_ids = {
+        eid for eid, e in doc.elements.items() if isinstance(e, AssetLibraryEntryElem)
+    }
+    placed_asset_emit = sum(
+        1
+        for e in doc.elements.values()
+        if isinstance(e, PlacedAssetElem) and e.asset_id in asset_library_ids
+    )
 
     kinds: dict[str, int] = {}
     if storey_n:
@@ -171,6 +201,8 @@ def kernel_expected_ifc_emit_counts(doc: Document) -> dict[str, int]:
     site_emit = sum(1 for e in doc.elements.values() if isinstance(e, SiteElem))
     if site_emit:
         kinds["site"] = site_emit
+    if placed_asset_emit:
+        kinds["placed_asset"] = placed_asset_emit
     return dict(sorted(kinds.items()))
 
 
@@ -187,7 +219,8 @@ def ifc_manifest_artifact_hints(
             "Kernel IFC encodes Proj→IfcSite→IfcBuilding→storeys; kernel **SiteElem** maps to identity "
             "**`Pset_SiteCommon.Reference`** on **`IfcSite`** (comma-joined sorted ids when multiple); walls+floors, "
             "roofs (IfcRoof prism), stairs (IfcStair run prism), hosted door/window openings, slab voids via "
-            "IfcOpeningElement on host IfcSlab, and rooms as IfcSpace footprints; IfcOpenShell emits minimal IFC4 "
+            "IfcOpeningElement on host IfcSlab, placed assets as IfcFurnishingElement proxies, and rooms as "
+            "IfcSpace footprints; IfcOpenShell emits minimal IFC4 "
             "**property sets** (e.g. Pset_*Common `Reference` from kernel ids on physical products); **narrow `Qto_*` "
             "quantities** attach to walls/fillings/slab/space when IfcOpenShell qto helpers succeed. IFC import and "
             "full boolean regeneration remain deferred."

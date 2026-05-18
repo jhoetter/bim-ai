@@ -65,7 +65,7 @@ def _missing_wall_requirements(wall: WallElem) -> list[str]:
             "fireRating",
             "FireRating",
             "fire_rating",
-        ):
+        ) and not str(wall.fire_resistance_rating or "").strip():
             missing.append("Pset_WallCommon.FireRating")
     if wall.load_bearing is True and not (
         wall.structural_material_key

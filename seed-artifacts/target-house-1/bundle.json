@@ -111,6 +111,101 @@
       ]
     },
     {
+      "type": "upsertFamilyType",
+      "id": "ft-door-standard",
+      "name": "Single swing door 900 x 2100",
+      "familyId": "door-standard",
+      "discipline": "door",
+      "parameters": {
+        "widthMm": 900,
+        "heightMm": 2100,
+        "proxyHeightMm": 2100
+      }
+    },
+    {
+      "type": "upsertFamilyType",
+      "id": "ft-pocket-door-standard",
+      "name": "Sliding pocket door 760 x 2100",
+      "familyId": "door-pocket",
+      "discipline": "door",
+      "parameters": {
+        "widthMm": 760,
+        "heightMm": 2100,
+        "proxyHeightMm": 2100
+      }
+    },
+    {
+      "type": "upsertFamilyType",
+      "id": "ft-window-standard",
+      "name": "Fixed window 1200 x 1500",
+      "familyId": "window-standard",
+      "discipline": "window",
+      "parameters": {
+        "widthMm": 1200,
+        "heightMm": 1500,
+        "sillHeightMm": 900,
+        "proxyHeightMm": 1500
+      }
+    },
+    {
+      "type": "upsertRoomColorScheme",
+      "id": "target-house-room-color-scheme",
+      "schemeRows": [
+        {
+          "programmeCode": "living",
+          "schemeColorHex": "#F4B860"
+        },
+        {
+          "programmeCode": "kitchen",
+          "schemeColorHex": "#8BC34A"
+        },
+        {
+          "programmeCode": "bed",
+          "schemeColorHex": "#64B5F6"
+        },
+        {
+          "programmeCode": "bath",
+          "schemeColorHex": "#4DB6AC"
+        },
+        {
+          "programmeCode": "bath_laundry",
+          "schemeColorHex": "#4DD0E1"
+        },
+        {
+          "programmeCode": "utility",
+          "schemeColorHex": "#B0BEC5"
+        },
+        {
+          "programmeCode": "closet",
+          "schemeColorHex": "#CE93D8"
+        },
+        {
+          "programmeCode": "landing",
+          "schemeColorHex": "#FFD54F"
+        },
+        {
+          "programmeCode": "terrace",
+          "schemeColorHex": "#A5D6A7"
+        },
+        {
+          "programmeCode": "loggia",
+          "schemeColorHex": "#90CAF9"
+        },
+        {
+          "programmeCode": "carport",
+          "schemeColorHex": "#BCAAA4"
+        },
+        {
+          "programmeCode": "hall",
+          "schemeColorHex": "#FFE082"
+        },
+        {
+          "programmeCode": "ensuite",
+          "schemeColorHex": "#80CBC4"
+        }
+      ]
+    },
+    {
       "type": "createLevel",
       "id": "hf-lvl-ground",
       "name": "Ground Floor",
@@ -171,7 +266,11 @@
       "heightMm": 3000,
       "wallTypeId": "wt-white-wrapper",
       "materialKey": "cladding_warm_wood",
-      "isCurtainWall": false
+      "isCurtainWall": false,
+      "loadBearing": true,
+      "structuralRole": "bearing_wall",
+      "structuralMaterialKey": "concrete",
+      "analyticalParticipation": true
     },
     {
       "type": "createWall",
@@ -190,7 +289,11 @@
       "heightMm": 3000,
       "wallTypeId": "wt-white-wrapper",
       "materialKey": "cladding_warm_wood",
-      "isCurtainWall": false
+      "isCurtainWall": false,
+      "loadBearing": true,
+      "structuralRole": "bearing_wall",
+      "structuralMaterialKey": "concrete",
+      "analyticalParticipation": true
     },
     {
       "type": "createWall",
@@ -209,7 +312,11 @@
       "heightMm": 3000,
       "wallTypeId": "wt-white-wrapper",
       "materialKey": "cladding_warm_wood",
-      "isCurtainWall": false
+      "isCurtainWall": false,
+      "loadBearing": true,
+      "structuralRole": "bearing_wall",
+      "structuralMaterialKey": "concrete",
+      "analyticalParticipation": true
     },
     {
       "type": "createWall",
@@ -228,7 +335,11 @@
       "heightMm": 3000,
       "wallTypeId": "wt-white-wrapper",
       "materialKey": "cladding_warm_wood",
-      "isCurtainWall": false
+      "isCurtainWall": false,
+      "loadBearing": true,
+      "structuralRole": "bearing_wall",
+      "structuralMaterialKey": "concrete",
+      "analyticalParticipation": true
     },
     {
       "type": "createFloor",
@@ -315,7 +426,7 @@
       ],
       "programmeCode": "living",
       "functionLabel": "residential living",
-      "finishSet": null,
+      "finishSet": "residential-standard",
       "targetAreaM2": 13.05
     },
     {
@@ -343,15 +454,15 @@
       ],
       "programmeCode": "bed",
       "functionLabel": "residential sleeping",
-      "finishSet": null,
+      "finishSet": "residential-standard",
       "targetAreaM2": 7.29
     },
     {
-      "type": "createRoomPoly",
-      "roomId": "room-hall",
+      "type": "createRoomOutline",
+      "id": "room-hall",
       "name": "Entrance / Stair Hall",
       "levelId": "hf-lvl-ground",
-      "verticesMm": [
+      "outlineMm": [
         {
           "xMm": 1200,
           "yMm": 700
@@ -369,14 +480,10 @@
           "yMm": 3600
         }
       ],
-      "thicknessMm": 120,
-      "heightMm": 2800,
-      "wallNamePrefix": "Entrance / Stair Hall wall",
       "programmeCode": "entrance_hall",
-      "department": null,
       "functionLabel": "circulation",
-      "finishSet": null,
-      "targetAreaM2": 9
+      "finishSet": "residential-standard",
+      "targetAreaM2": 6.38
     },
     {
       "type": "createRoomOutline",
@@ -404,15 +511,15 @@
       "programmeCode": "terrace",
       "department": null,
       "functionLabel": "outdoor living",
-      "finishSet": null,
-      "targetAreaM2": 8.3
+      "finishSet": "exterior-hardwearing",
+      "targetAreaM2": 8.32
     },
     {
-      "type": "createRoomPoly",
-      "roomId": "hf-room-kitchen",
+      "type": "createRoomOutline",
+      "id": "hf-room-kitchen",
       "name": "Kitchen",
       "levelId": "hf-lvl-ground",
-      "verticesMm": [
+      "outlineMm": [
         {
           "xMm": 1200,
           "yMm": 3700
@@ -430,21 +537,17 @@
           "yMm": 6500
         }
       ],
-      "thicknessMm": 120,
-      "heightMm": 2800,
-      "wallNamePrefix": "Kitchen wall",
       "programmeCode": "kitchen",
-      "department": null,
       "functionLabel": "residential kitchen",
-      "finishSet": null,
-      "targetAreaM2": 12
+      "finishSet": "residential-standard",
+      "targetAreaM2": 6.16
     },
     {
-      "type": "createRoomPoly",
-      "roomId": "hf-room-bath",
+      "type": "createRoomOutline",
+      "id": "hf-room-bath",
       "name": "First Floor Bathroom",
       "levelId": "hf-lvl-upper",
-      "verticesMm": [
+      "outlineMm": [
         {
           "xMm": 3600,
           "yMm": 1600
@@ -462,14 +565,10 @@
           "yMm": 4300
         }
       ],
-      "thicknessMm": 120,
-      "heightMm": 2800,
-      "wallNamePrefix": "First Floor Bathroom wall",
       "programmeCode": "bath",
-      "department": null,
       "functionLabel": "residential bathroom",
-      "finishSet": null,
-      "targetAreaM2": 7.5
+      "finishSet": "wet-room-tile",
+      "targetAreaM2": 4.32
     },
     {
       "type": "insertDoorOnWall",
@@ -477,7 +576,8 @@
       "name": "Entrance door",
       "wallId": "ground-base-wall-04",
       "alongT": 0.2,
-      "widthMm": 1000
+      "widthMm": 1000,
+      "familyTypeId": "ft-door-standard"
     },
     {
       "type": "createStair",
@@ -496,6 +596,22 @@
       "widthMm": 1000,
       "riserMm": 175,
       "treadMm": 275
+    },
+    {
+      "type": "createRailing",
+      "id": "main-stair-guardrail",
+      "name": "Main stair guardrail",
+      "hostedStairId": "main-stair",
+      "pathMm": [
+        {
+          "xMm": 1300,
+          "yMm": 1100
+        },
+        {
+          "xMm": 1300,
+          "yMm": 3200
+        }
+      ]
     },
     {
       "type": "createSlabOpening",
@@ -609,8 +725,8 @@
       "assetId": "asset-sofa",
       "levelId": "hf-lvl-ground",
       "positionMm": {
-        "xMm": 4700,
-        "yMm": 2300
+        "xMm": 5000,
+        "yMm": 2600
       },
       "rotationDeg": 0,
       "paramValues": {
@@ -685,15 +801,18 @@
       "assetId": "asset-bath-fixture",
       "levelId": "hf-lvl-upper",
       "positionMm": {
-        "xMm": 4300,
-        "yMm": 2800
+        "xMm": 4550,
+        "yMm": 3800
       },
       "rotationDeg": 0,
       "paramValues": {
         "roomId": "hf-room-bath",
         "scheduleCategory": "plumbing_fixture",
         "evidenceRole": "mep_lite_wet_room_marker",
-        "typeId": "asset-bath-fixture"
+        "typeId": "asset-bath-fixture",
+        "widthMm": 500,
+        "depthMm": 500,
+        "proxyHeightMm": 900
       },
       "hostElementId": null
     },
@@ -722,34 +841,6 @@
       ]
     },
     {
-      "type": "createFloor",
-      "id": "hf-roof-court-floor",
-      "name": "Embedded roof terrace cutout occupied floor",
-      "levelId": "hf-lvl-upper",
-      "boundaryMm": [
-        {
-          "xMm": 5300,
-          "yMm": 3000
-        },
-        {
-          "xMm": 7900,
-          "yMm": 3000
-        },
-        {
-          "xMm": 7900,
-          "yMm": 6600
-        },
-        {
-          "xMm": 5300,
-          "yMm": 6600
-        }
-      ],
-      "thicknessMm": 160,
-      "floorTypeId": "ft-concrete-slab",
-      "materialKey": "concrete",
-      "roomBounded": false
-    },
-    {
       "type": "createWall",
       "id": "hf-roof-court-glass-back",
       "name": "Roof court recessed glass access wall",
@@ -764,9 +855,13 @@
       },
       "thicknessMm": 120,
       "heightMm": 2300,
-      "wallTypeId": null,
+      "wallTypeId": "wt-white-wrapper",
       "materialKey": "glass",
-      "isCurtainWall": true
+      "isCurtainWall": true,
+      "loadBearing": false,
+      "structuralRole": "non_load_bearing",
+      "structuralMaterialKey": "gypsum_board",
+      "analyticalParticipation": false
     },
     {
       "type": "createWall",
@@ -783,9 +878,13 @@
       },
       "thicknessMm": 220,
       "heightMm": 1300,
-      "wallTypeId": null,
+      "wallTypeId": "wt-white-wrapper",
       "materialKey": "white_render",
-      "isCurtainWall": false
+      "isCurtainWall": false,
+      "loadBearing": true,
+      "structuralRole": "bearing_wall",
+      "structuralMaterialKey": "concrete",
+      "analyticalParticipation": true
     },
     {
       "type": "createWall",
@@ -802,9 +901,13 @@
       },
       "thicknessMm": 220,
       "heightMm": 900,
-      "wallTypeId": null,
+      "wallTypeId": "wt-white-wrapper",
       "materialKey": "white_render",
-      "isCurtainWall": false
+      "isCurtainWall": false,
+      "loadBearing": true,
+      "structuralRole": "bearing_wall",
+      "structuralMaterialKey": "concrete",
+      "analyticalParticipation": true
     },
     {
       "type": "createRailing",
@@ -827,35 +930,14 @@
       "name": "Roof court access door",
       "wallId": "hf-roof-court-glass-back",
       "alongT": 0.5,
-      "widthMm": 1000
+      "widthMm": 1000,
+      "familyTypeId": "ft-door-standard"
     },
     {
-      "type": "createFloor",
-      "id": "hf-front-loggia-floor",
-      "name": "Deep recessed front upper loggia",
-      "levelId": "hf-lvl-upper",
-      "boundaryMm": [
-        {
-          "xMm": 1200,
-          "yMm": -450
-        },
-        {
-          "xMm": 7600,
-          "yMm": -450
-        },
-        {
-          "xMm": 7600,
-          "yMm": 900
-        },
-        {
-          "xMm": 1200,
-          "yMm": 900
-        }
-      ],
-      "thicknessMm": 180,
-      "floorTypeId": null,
-      "materialKey": "white_render",
-      "roomBounded": false
+      "type": "updateElementProperty",
+      "elementId": "hf-roof-court-door",
+      "key": "operationType",
+      "value": "sliding_single"
     },
     {
       "type": "createRailing",
@@ -887,9 +969,13 @@
       },
       "thicknessMm": 200,
       "heightMm": 2600,
-      "wallTypeId": null,
+      "wallTypeId": "wt-white-wrapper",
       "materialKey": "white_render",
-      "isCurtainWall": false
+      "isCurtainWall": false,
+      "loadBearing": false,
+      "structuralRole": "non_load_bearing",
+      "structuralMaterialKey": "gypsum_board",
+      "analyticalParticipation": false
     },
     {
       "type": "createWall",
@@ -906,9 +992,13 @@
       },
       "thicknessMm": 200,
       "heightMm": 2600,
-      "wallTypeId": null,
+      "wallTypeId": "wt-white-wrapper",
       "materialKey": "white_render",
-      "isCurtainWall": false
+      "isCurtainWall": false,
+      "loadBearing": false,
+      "structuralRole": "non_load_bearing",
+      "structuralMaterialKey": "gypsum_board",
+      "analyticalParticipation": false
     },
     {
       "type": "createWall",
@@ -925,9 +1015,13 @@
       },
       "thicknessMm": 160,
       "heightMm": 2500,
-      "wallTypeId": null,
+      "wallTypeId": "wt-white-wrapper",
       "materialKey": "glass",
-      "isCurtainWall": true
+      "isCurtainWall": true,
+      "loadBearing": false,
+      "structuralRole": "non_load_bearing",
+      "structuralMaterialKey": "gypsum_board",
+      "analyticalParticipation": false
     },
     {
       "type": "createWallOpening",
@@ -947,7 +1041,8 @@
       "alongT": 0.18,
       "widthMm": 700,
       "sillHeightMm": 150,
-      "heightMm": 2100
+      "heightMm": 2100,
+      "familyTypeId": "ft-window-standard"
     },
     {
       "type": "insertDoorOnWall",
@@ -955,7 +1050,14 @@
       "name": "Center loggia door bay",
       "wallId": "front-loggia-recessed-glass",
       "alongT": 0.5,
-      "widthMm": 850
+      "widthMm": 850,
+      "familyTypeId": "ft-door-standard"
+    },
+    {
+      "type": "updateElementProperty",
+      "elementId": "front-loggia-center-door",
+      "key": "operationType",
+      "value": "sliding_single"
     },
     {
       "type": "insertWindowOnWall",
@@ -965,7 +1067,8 @@
       "alongT": 0.82,
       "widthMm": 700,
       "sillHeightMm": 150,
-      "heightMm": 2100
+      "heightMm": 2100,
+      "familyTypeId": "ft-window-standard"
     },
     {
       "type": "createSweep",
@@ -1060,7 +1163,11 @@
       "heightMm": 3200,
       "wallTypeId": "wt-white-wrapper",
       "materialKey": "white_render",
-      "isCurtainWall": false
+      "isCurtainWall": false,
+      "loadBearing": true,
+      "structuralRole": "bearing_wall",
+      "structuralMaterialKey": "concrete",
+      "analyticalParticipation": true
     },
     {
       "type": "createWall",
@@ -1079,7 +1186,11 @@
       "heightMm": 3200,
       "wallTypeId": "wt-white-wrapper",
       "materialKey": "white_render",
-      "isCurtainWall": false
+      "isCurtainWall": false,
+      "loadBearing": true,
+      "structuralRole": "bearing_wall",
+      "structuralMaterialKey": "concrete",
+      "analyticalParticipation": true
     },
     {
       "type": "createWall",
@@ -1098,7 +1209,11 @@
       "heightMm": 3200,
       "wallTypeId": "wt-white-wrapper",
       "materialKey": "white_render",
-      "isCurtainWall": false
+      "isCurtainWall": false,
+      "loadBearing": true,
+      "structuralRole": "bearing_wall",
+      "structuralMaterialKey": "concrete",
+      "analyticalParticipation": true
     },
     {
       "type": "createWall",
@@ -1117,7 +1232,11 @@
       "heightMm": 3200,
       "wallTypeId": "wt-white-wrapper",
       "materialKey": "white_render",
-      "isCurtainWall": false
+      "isCurtainWall": false,
+      "loadBearing": true,
+      "structuralRole": "bearing_wall",
+      "structuralMaterialKey": "concrete",
+      "analyticalParticipation": true
     },
     {
       "type": "attachWallTopToRoof",
@@ -1441,8 +1560,12 @@
       "paperHeightMm": 297,
       "titleblockParameters": {
         "projectStatus": "Project initiation",
-        "exchangeGoal": "IFC-ready BIM seed"
-      }
+        "exchangeGoal": "IFC-ready BIM seed",
+        "revisionCode": "P1",
+        "revision": "P1",
+        "issueDate": "2026-05-18"
+      },
+      "revisionId": "rev-target-house-clean-1"
     },
     {
       "type": "upsertSchedule",
@@ -1501,7 +1624,7 @@
       "viewportsMm": [
         {
           "viewportId": "vp-ground-plan",
-          "viewRef": "plan:lvl-ground-plan",
+          "viewRef": "plan:hf-ground-floor-plan",
           "label": "Ground floor plan",
           "xMm": 20,
           "yMm": 20,
@@ -1510,7 +1633,7 @@
         },
         {
           "viewportId": "vp-front-elevation",
-          "viewRef": "section:elev-front",
+          "viewRef": "section:sec-stair",
           "label": "Front elevation",
           "xMm": 210,
           "yMm": 20,
@@ -1534,8 +1657,53 @@
           "yMm": 160,
           "widthMm": 170,
           "heightMm": 95
+        },
+        {
+          "viewportId": "vp-room-schedule-view",
+          "viewRef": "schedule:room-schedule-view",
+          "label": "Room schedule view",
+          "xMm": 20,
+          "yMm": 255,
+          "widthMm": 170,
+          "heightMm": 30
         }
       ]
+    },
+    {
+      "type": "updateElementProperty",
+      "elementId": "hf-ground-floor-plan",
+      "key": "cropMinMm",
+      "value": "{\"xMm\":0,\"yMm\":-500}"
+    },
+    {
+      "type": "updateElementProperty",
+      "elementId": "hf-ground-floor-plan",
+      "key": "cropMaxMm",
+      "value": "{\"xMm\":8500,\"yMm\":8500}"
+    },
+    {
+      "type": "updateElementProperty",
+      "elementId": "hf-ground-floor-plan",
+      "key": "cropEnabled",
+      "value": "true"
+    },
+    {
+      "type": "updateElementProperty",
+      "elementId": "hf-first-floor-plan",
+      "key": "cropMinMm",
+      "value": "{\"xMm\":-200,\"yMm\":-700}"
+    },
+    {
+      "type": "updateElementProperty",
+      "elementId": "hf-first-floor-plan",
+      "key": "cropMaxMm",
+      "value": "{\"xMm\":8300,\"yMm\":8500}"
+    },
+    {
+      "type": "updateElementProperty",
+      "elementId": "hf-first-floor-plan",
+      "key": "cropEnabled",
+      "value": "true"
     },
     {
       "type": "createRoomOutline",
@@ -1562,8 +1730,8 @@
       ],
       "programmeCode": "bath_laundry",
       "functionLabel": "residential wet room",
-      "finishSet": null,
-      "targetAreaM2": 4.8
+      "finishSet": "wet-room-tile",
+      "targetAreaM2": 3.6
     },
     {
       "type": "createRoomOutline",
@@ -1590,8 +1758,8 @@
       ],
       "programmeCode": "utility",
       "functionLabel": "storage and services",
-      "finishSet": null,
-      "targetAreaM2": 3.4
+      "finishSet": "service-standard",
+      "targetAreaM2": 2.55
     },
     {
       "type": "createRoomOutline",
@@ -1618,8 +1786,8 @@
       ],
       "programmeCode": "carport",
       "functionLabel": "covered parking",
-      "finishSet": null,
-      "targetAreaM2": 19.3
+      "finishSet": "exterior-hardwearing",
+      "targetAreaM2": 2.9
     },
     {
       "type": "createRoomOutline",
@@ -1646,8 +1814,8 @@
       ],
       "programmeCode": "closet",
       "functionLabel": "wardrobe storage",
-      "finishSet": null,
-      "targetAreaM2": 4.7
+      "finishSet": "service-standard",
+      "targetAreaM2": 3.8
     },
     {
       "type": "createRoomOutline",
@@ -1674,8 +1842,8 @@
       ],
       "programmeCode": "ensuite",
       "functionLabel": "residential wet room",
-      "finishSet": null,
-      "targetAreaM2": 5.2
+      "finishSet": "wet-room-tile",
+      "targetAreaM2": 3.2
     },
     {
       "type": "createRoomOutline",
@@ -1702,7 +1870,7 @@
       ],
       "programmeCode": "landing",
       "functionLabel": "upper circulation",
-      "finishSet": null,
+      "finishSet": "residential-standard",
       "targetAreaM2": 4.4
     },
     {
@@ -1730,87 +1898,1974 @@
       ],
       "programmeCode": "loggia",
       "functionLabel": "covered outdoor space",
-      "finishSet": null,
-      "targetAreaM2": 16.5
+      "finishSet": "exterior-hardwearing",
+      "targetAreaM2": 8.64
     },
     {
-      "type": "upsertFamilyType",
-      "id": "ft-generic-furniture",
-      "name": "Generic furniture marker",
-      "familyId": "generic-furniture-marker",
-      "discipline": "generic",
-      "parameters": {
-        "ifcEntityIntent": "IfcFurnishingElement",
-        "scheduleCategory": "furniture"
-      }
-    },
-    {
-      "type": "placeFamilyInstance",
-      "id": "fi-sofa-living",
-      "name": "Living sofa furnishing instance",
-      "familyTypeId": "ft-generic-furniture",
-      "levelId": "hf-lvl-ground",
-      "positionMm": {
-        "xMm": 4700,
-        "yMm": 2300
-      },
-      "rotationDeg": 0,
-      "paramValues": {
-        "roomId": "room-living",
-        "ifcEntityIntent": "IfcFurnishingElement",
-        "scheduleCategory": "furniture"
-      }
-    },
-    {
-      "type": "placeFamilyInstance",
-      "id": "fi-dining-table",
-      "name": "Dining table furnishing instance",
-      "familyTypeId": "ft-generic-furniture",
-      "levelId": "hf-lvl-ground",
-      "positionMm": {
-        "xMm": 5600,
-        "yMm": 4100
-      },
-      "rotationDeg": 0,
-      "paramValues": {
-        "roomId": "room-living",
-        "ifcEntityIntent": "IfcFurnishingElement",
-        "scheduleCategory": "furniture"
-      }
-    },
-    {
-      "type": "placeFamilyInstance",
-      "id": "fi-bed-primary",
-      "name": "Primary bed furnishing instance",
-      "familyTypeId": "ft-generic-furniture",
+      "type": "createRoomSeparation",
+      "id": "sep-hf-room-bath-1",
+      "name": "First Floor Bathroom boundary 1",
       "levelId": "hf-lvl-upper",
-      "positionMm": {
-        "xMm": 1850,
-        "yMm": 2800
+      "start": {
+        "xMm": 3600,
+        "yMm": 1600
       },
-      "rotationDeg": 90,
-      "paramValues": {
-        "roomId": "room-bedroom",
-        "ifcEntityIntent": "IfcFurnishingElement",
-        "scheduleCategory": "furniture"
+      "end": {
+        "xMm": 5200,
+        "yMm": 1600
       }
     },
     {
-      "type": "placeFamilyInstance",
-      "id": "fi-roof-chair",
-      "name": "Roof terrace chair furnishing instance",
-      "familyTypeId": "ft-generic-furniture",
+      "type": "createRoomSeparation",
+      "id": "sep-hf-room-bath-2",
+      "name": "First Floor Bathroom boundary 2",
       "levelId": "hf-lvl-upper",
-      "positionMm": {
+      "start": {
+        "xMm": 5200,
+        "yMm": 1600
+      },
+      "end": {
+        "xMm": 5200,
+        "yMm": 4300
+      }
+    },
+    {
+      "type": "createRoomSeparation",
+      "id": "sep-hf-room-bath-3",
+      "name": "First Floor Bathroom boundary 3",
+      "levelId": "hf-lvl-upper",
+      "start": {
+        "xMm": 5200,
+        "yMm": 4300
+      },
+      "end": {
+        "xMm": 3600,
+        "yMm": 4300
+      }
+    },
+    {
+      "type": "createRoomSeparation",
+      "id": "sep-hf-room-bath-4",
+      "name": "First Floor Bathroom boundary 4",
+      "levelId": "hf-lvl-upper",
+      "start": {
+        "xMm": 3600,
+        "yMm": 4300
+      },
+      "end": {
+        "xMm": 3600,
+        "yMm": 1600
+      }
+    },
+    {
+      "type": "createWall",
+      "id": "access-wall-hf-room-bath",
+      "name": "First Floor Bathroom access control wall",
+      "levelId": "hf-lvl-upper",
+      "start": {
+        "xMm": 3850,
+        "yMm": 2477.5
+      },
+      "end": {
+        "xMm": 3850,
+        "yMm": 3422.5
+      },
+      "thicknessMm": 90,
+      "heightMm": 2400,
+      "wallTypeId": "wt-internal",
+      "materialKey": "gypsum_board",
+      "loadBearing": false,
+      "structuralRole": "non_load_bearing",
+      "structuralMaterialKey": "gypsum_board",
+      "analyticalParticipation": false,
+      "isCurtainWall": false
+    },
+    {
+      "type": "insertDoorOnWall",
+      "id": "access-door-hf-room-bath",
+      "name": "First Floor Bathroom access door",
+      "wallId": "access-wall-hf-room-bath",
+      "alongT": 0.5,
+      "widthMm": 614.25,
+      "familyTypeId": "ft-pocket-door-standard"
+    },
+    {
+      "type": "updateElementProperty",
+      "elementId": "access-door-hf-room-bath",
+      "key": "operationType",
+      "value": "sliding_single"
+    },
+    {
+      "type": "updateElementProperty",
+      "elementId": "access-door-hf-room-bath",
+      "key": "materialKey",
+      "value": "white_render"
+    },
+    {
+      "type": "updateElementProperty",
+      "elementId": "access-wall-hf-room-bath",
+      "key": "fireResistanceRating",
+      "value": "R30"
+    },
+    {
+      "type": "updateElementProperty",
+      "elementId": "access-wall-hf-room-bath",
+      "key": "structuralMaterial",
+      "value": "other"
+    },
+    {
+      "type": "createRoomSeparation",
+      "id": "sep-hf-room-carport-1",
+      "name": "Recessed Garage / Carport boundary 1",
+      "levelId": "hf-lvl-ground",
+      "start": {
+        "xMm": 600,
+        "yMm": 700
+      },
+      "end": {
+        "xMm": 1100,
+        "yMm": 700
+      }
+    },
+    {
+      "type": "createRoomSeparation",
+      "id": "sep-hf-room-carport-2",
+      "name": "Recessed Garage / Carport boundary 2",
+      "levelId": "hf-lvl-ground",
+      "start": {
+        "xMm": 1100,
+        "yMm": 700
+      },
+      "end": {
+        "xMm": 1100,
+        "yMm": 6500
+      }
+    },
+    {
+      "type": "createRoomSeparation",
+      "id": "sep-hf-room-carport-3",
+      "name": "Recessed Garage / Carport boundary 3",
+      "levelId": "hf-lvl-ground",
+      "start": {
+        "xMm": 1100,
+        "yMm": 6500
+      },
+      "end": {
+        "xMm": 600,
+        "yMm": 6500
+      }
+    },
+    {
+      "type": "createRoomSeparation",
+      "id": "sep-hf-room-carport-4",
+      "name": "Recessed Garage / Carport boundary 4",
+      "levelId": "hf-lvl-ground",
+      "start": {
+        "xMm": 600,
+        "yMm": 6500
+      },
+      "end": {
+        "xMm": 600,
+        "yMm": 700
+      }
+    },
+    {
+      "type": "createWall",
+      "id": "access-wall-hf-room-carport",
+      "name": "Recessed Garage / Carport access control wall",
+      "levelId": "hf-lvl-ground",
+      "start": {
+        "xMm": 850,
+        "yMm": 3125
+      },
+      "end": {
+        "xMm": 850,
+        "yMm": 4075
+      },
+      "thicknessMm": 90,
+      "heightMm": 2400,
+      "wallTypeId": "wt-internal",
+      "materialKey": "gypsum_board",
+      "loadBearing": false,
+      "structuralRole": "non_load_bearing",
+      "structuralMaterialKey": "gypsum_board",
+      "analyticalParticipation": false,
+      "isCurtainWall": false
+    },
+    {
+      "type": "insertDoorOnWall",
+      "id": "access-door-hf-room-carport",
+      "name": "Recessed Garage / Carport access door",
+      "wallId": "access-wall-hf-room-carport",
+      "alongT": 0.5,
+      "widthMm": 617.5,
+      "familyTypeId": "ft-pocket-door-standard"
+    },
+    {
+      "type": "updateElementProperty",
+      "elementId": "access-door-hf-room-carport",
+      "key": "operationType",
+      "value": "sliding_single"
+    },
+    {
+      "type": "updateElementProperty",
+      "elementId": "access-door-hf-room-carport",
+      "key": "materialKey",
+      "value": "white_render"
+    },
+    {
+      "type": "updateElementProperty",
+      "elementId": "access-wall-hf-room-carport",
+      "key": "fireResistanceRating",
+      "value": "R30"
+    },
+    {
+      "type": "updateElementProperty",
+      "elementId": "access-wall-hf-room-carport",
+      "key": "structuralMaterial",
+      "value": "other"
+    },
+    {
+      "type": "createRoomSeparation",
+      "id": "sep-hf-room-ensuite-1",
+      "name": "Ensuite boundary 1",
+      "levelId": "hf-lvl-upper",
+      "start": {
+        "xMm": 2700,
+        "yMm": 4500
+      },
+      "end": {
+        "xMm": 4300,
+        "yMm": 4500
+      }
+    },
+    {
+      "type": "createRoomSeparation",
+      "id": "sep-hf-room-ensuite-2",
+      "name": "Ensuite boundary 2",
+      "levelId": "hf-lvl-upper",
+      "start": {
+        "xMm": 4300,
+        "yMm": 4500
+      },
+      "end": {
+        "xMm": 4300,
+        "yMm": 6500
+      }
+    },
+    {
+      "type": "createRoomSeparation",
+      "id": "sep-hf-room-ensuite-3",
+      "name": "Ensuite boundary 3",
+      "levelId": "hf-lvl-upper",
+      "start": {
+        "xMm": 4300,
+        "yMm": 6500
+      },
+      "end": {
+        "xMm": 2700,
+        "yMm": 6500
+      }
+    },
+    {
+      "type": "createRoomSeparation",
+      "id": "sep-hf-room-ensuite-4",
+      "name": "Ensuite boundary 4",
+      "levelId": "hf-lvl-upper",
+      "start": {
+        "xMm": 2700,
+        "yMm": 6500
+      },
+      "end": {
+        "xMm": 2700,
+        "yMm": 4500
+      }
+    },
+    {
+      "type": "createWall",
+      "id": "access-wall-hf-room-ensuite",
+      "name": "Ensuite access control wall",
+      "levelId": "hf-lvl-upper",
+      "start": {
+        "xMm": 2950,
+        "yMm": 5150
+      },
+      "end": {
+        "xMm": 2950,
+        "yMm": 5850
+      },
+      "thicknessMm": 90,
+      "heightMm": 2400,
+      "wallTypeId": "wt-internal",
+      "materialKey": "gypsum_board",
+      "loadBearing": false,
+      "structuralRole": "non_load_bearing",
+      "structuralMaterialKey": "gypsum_board",
+      "analyticalParticipation": false,
+      "isCurtainWall": false
+    },
+    {
+      "type": "insertDoorOnWall",
+      "id": "access-door-hf-room-ensuite",
+      "name": "Ensuite access door",
+      "wallId": "access-wall-hf-room-ensuite",
+      "alongT": 0.5,
+      "widthMm": 500,
+      "familyTypeId": "ft-pocket-door-standard"
+    },
+    {
+      "type": "updateElementProperty",
+      "elementId": "access-door-hf-room-ensuite",
+      "key": "operationType",
+      "value": "sliding_single"
+    },
+    {
+      "type": "updateElementProperty",
+      "elementId": "access-door-hf-room-ensuite",
+      "key": "materialKey",
+      "value": "white_render"
+    },
+    {
+      "type": "updateElementProperty",
+      "elementId": "access-wall-hf-room-ensuite",
+      "key": "fireResistanceRating",
+      "value": "R30"
+    },
+    {
+      "type": "updateElementProperty",
+      "elementId": "access-wall-hf-room-ensuite",
+      "key": "structuralMaterial",
+      "value": "other"
+    },
+    {
+      "type": "createRoomSeparation",
+      "id": "sep-hf-room-gf-bath-laundry-1",
+      "name": "Bath / Laundry boundary 1",
+      "levelId": "hf-lvl-ground",
+      "start": {
         "xMm": 6800,
-        "yMm": 4800
+        "yMm": 700
       },
-      "rotationDeg": 15,
-      "paramValues": {
-        "roomId": "room-terrace",
-        "ifcEntityIntent": "IfcFurnishingElement",
-        "scheduleCategory": "furniture"
+      "end": {
+        "xMm": 8300,
+        "yMm": 700
       }
+    },
+    {
+      "type": "createRoomSeparation",
+      "id": "sep-hf-room-gf-bath-laundry-2",
+      "name": "Bath / Laundry boundary 2",
+      "levelId": "hf-lvl-ground",
+      "start": {
+        "xMm": 8300,
+        "yMm": 700
+      },
+      "end": {
+        "xMm": 8300,
+        "yMm": 3100
+      }
+    },
+    {
+      "type": "createRoomSeparation",
+      "id": "sep-hf-room-gf-bath-laundry-3",
+      "name": "Bath / Laundry boundary 3",
+      "levelId": "hf-lvl-ground",
+      "start": {
+        "xMm": 8300,
+        "yMm": 3100
+      },
+      "end": {
+        "xMm": 6800,
+        "yMm": 3100
+      }
+    },
+    {
+      "type": "createRoomSeparation",
+      "id": "sep-hf-room-gf-bath-laundry-4",
+      "name": "Bath / Laundry boundary 4",
+      "levelId": "hf-lvl-ground",
+      "start": {
+        "xMm": 6800,
+        "yMm": 3100
+      },
+      "end": {
+        "xMm": 6800,
+        "yMm": 700
+      }
+    },
+    {
+      "type": "createWall",
+      "id": "access-wall-hf-room-gf-bath-laundry",
+      "name": "Bath / Laundry access control wall",
+      "levelId": "hf-lvl-ground",
+      "start": {
+        "xMm": 7600,
+        "yMm": 1300
+      },
+      "end": {
+        "xMm": 7600,
+        "yMm": 1900
+      },
+      "thicknessMm": 90,
+      "heightMm": 2400,
+      "wallTypeId": "wt-internal",
+      "materialKey": "gypsum_board",
+      "loadBearing": false,
+      "structuralRole": "non_load_bearing",
+      "structuralMaterialKey": "gypsum_board",
+      "analyticalParticipation": false,
+      "isCurtainWall": false
+    },
+    {
+      "type": "insertDoorOnWall",
+      "id": "access-door-hf-room-gf-bath-laundry",
+      "name": "Bath / Laundry access door",
+      "wallId": "access-wall-hf-room-gf-bath-laundry",
+      "alongT": 0.5,
+      "widthMm": 500,
+      "familyTypeId": "ft-pocket-door-standard"
+    },
+    {
+      "type": "updateElementProperty",
+      "elementId": "access-door-hf-room-gf-bath-laundry",
+      "key": "operationType",
+      "value": "sliding_single"
+    },
+    {
+      "type": "updateElementProperty",
+      "elementId": "access-door-hf-room-gf-bath-laundry",
+      "key": "materialKey",
+      "value": "white_render"
+    },
+    {
+      "type": "updateElementProperty",
+      "elementId": "access-wall-hf-room-gf-bath-laundry",
+      "key": "fireResistanceRating",
+      "value": "R30"
+    },
+    {
+      "type": "updateElementProperty",
+      "elementId": "access-wall-hf-room-gf-bath-laundry",
+      "key": "structuralMaterial",
+      "value": "other"
+    },
+    {
+      "type": "createRoomSeparation",
+      "id": "sep-hf-room-kitchen-1",
+      "name": "Kitchen boundary 1",
+      "levelId": "hf-lvl-ground",
+      "start": {
+        "xMm": 1200,
+        "yMm": 3700
+      },
+      "end": {
+        "xMm": 3400,
+        "yMm": 3700
+      }
+    },
+    {
+      "type": "createRoomSeparation",
+      "id": "sep-hf-room-kitchen-2",
+      "name": "Kitchen boundary 2",
+      "levelId": "hf-lvl-ground",
+      "start": {
+        "xMm": 3400,
+        "yMm": 3700
+      },
+      "end": {
+        "xMm": 3400,
+        "yMm": 6500
+      }
+    },
+    {
+      "type": "createRoomSeparation",
+      "id": "sep-hf-room-kitchen-3",
+      "name": "Kitchen boundary 3",
+      "levelId": "hf-lvl-ground",
+      "start": {
+        "xMm": 3400,
+        "yMm": 6500
+      },
+      "end": {
+        "xMm": 1200,
+        "yMm": 6500
+      }
+    },
+    {
+      "type": "createRoomSeparation",
+      "id": "sep-hf-room-kitchen-4",
+      "name": "Kitchen boundary 4",
+      "levelId": "hf-lvl-ground",
+      "start": {
+        "xMm": 1200,
+        "yMm": 6500
+      },
+      "end": {
+        "xMm": 1200,
+        "yMm": 3700
+      }
+    },
+    {
+      "type": "createWall",
+      "id": "access-wall-hf-room-kitchen",
+      "name": "Kitchen access control wall",
+      "levelId": "hf-lvl-ground",
+      "start": {
+        "xMm": 1450,
+        "yMm": 4625
+      },
+      "end": {
+        "xMm": 1450,
+        "yMm": 5575
+      },
+      "thicknessMm": 90,
+      "heightMm": 2400,
+      "wallTypeId": "wt-internal",
+      "materialKey": "gypsum_board",
+      "loadBearing": false,
+      "structuralRole": "non_load_bearing",
+      "structuralMaterialKey": "gypsum_board",
+      "analyticalParticipation": false,
+      "isCurtainWall": false
+    },
+    {
+      "type": "insertDoorOnWall",
+      "id": "access-door-hf-room-kitchen",
+      "name": "Kitchen access door",
+      "wallId": "access-wall-hf-room-kitchen",
+      "alongT": 0.5,
+      "widthMm": 617.5,
+      "familyTypeId": "ft-pocket-door-standard"
+    },
+    {
+      "type": "updateElementProperty",
+      "elementId": "access-door-hf-room-kitchen",
+      "key": "operationType",
+      "value": "sliding_single"
+    },
+    {
+      "type": "updateElementProperty",
+      "elementId": "access-door-hf-room-kitchen",
+      "key": "materialKey",
+      "value": "white_render"
+    },
+    {
+      "type": "updateElementProperty",
+      "elementId": "access-wall-hf-room-kitchen",
+      "key": "fireResistanceRating",
+      "value": "R30"
+    },
+    {
+      "type": "updateElementProperty",
+      "elementId": "access-wall-hf-room-kitchen",
+      "key": "structuralMaterial",
+      "value": "other"
+    },
+    {
+      "type": "createRoomSeparation",
+      "id": "sep-hf-room-landing-1",
+      "name": "Hall / Landing boundary 1",
+      "levelId": "hf-lvl-upper",
+      "start": {
+        "xMm": 5400,
+        "yMm": 1000
+      },
+      "end": {
+        "xMm": 7600,
+        "yMm": 1000
+      }
+    },
+    {
+      "type": "createRoomSeparation",
+      "id": "sep-hf-room-landing-2",
+      "name": "Hall / Landing boundary 2",
+      "levelId": "hf-lvl-upper",
+      "start": {
+        "xMm": 7600,
+        "yMm": 1000
+      },
+      "end": {
+        "xMm": 7600,
+        "yMm": 3000
+      }
+    },
+    {
+      "type": "createRoomSeparation",
+      "id": "sep-hf-room-landing-3",
+      "name": "Hall / Landing boundary 3",
+      "levelId": "hf-lvl-upper",
+      "start": {
+        "xMm": 7600,
+        "yMm": 3000
+      },
+      "end": {
+        "xMm": 5400,
+        "yMm": 3000
+      }
+    },
+    {
+      "type": "createRoomSeparation",
+      "id": "sep-hf-room-landing-4",
+      "name": "Hall / Landing boundary 4",
+      "levelId": "hf-lvl-upper",
+      "start": {
+        "xMm": 5400,
+        "yMm": 3000
+      },
+      "end": {
+        "xMm": 5400,
+        "yMm": 1000
+      }
+    },
+    {
+      "type": "createWall",
+      "id": "access-wall-hf-room-landing",
+      "name": "Hall / Landing access control wall",
+      "levelId": "hf-lvl-upper",
+      "start": {
+        "xMm": 6115,
+        "yMm": 1350
+      },
+      "end": {
+        "xMm": 6885,
+        "yMm": 1350
+      },
+      "thicknessMm": 90,
+      "heightMm": 2400,
+      "wallTypeId": "wt-internal",
+      "materialKey": "gypsum_board",
+      "loadBearing": false,
+      "structuralRole": "non_load_bearing",
+      "structuralMaterialKey": "gypsum_board",
+      "analyticalParticipation": false,
+      "isCurtainWall": false
+    },
+    {
+      "type": "insertDoorOnWall",
+      "id": "access-door-hf-room-landing",
+      "name": "Hall / Landing access door",
+      "wallId": "access-wall-hf-room-landing",
+      "alongT": 0.5,
+      "widthMm": 500.5,
+      "familyTypeId": "ft-pocket-door-standard"
+    },
+    {
+      "type": "updateElementProperty",
+      "elementId": "access-door-hf-room-landing",
+      "key": "operationType",
+      "value": "sliding_single"
+    },
+    {
+      "type": "updateElementProperty",
+      "elementId": "access-door-hf-room-landing",
+      "key": "materialKey",
+      "value": "white_render"
+    },
+    {
+      "type": "updateElementProperty",
+      "elementId": "access-wall-hf-room-landing",
+      "key": "fireResistanceRating",
+      "value": "R30"
+    },
+    {
+      "type": "updateElementProperty",
+      "elementId": "access-wall-hf-room-landing",
+      "key": "structuralMaterial",
+      "value": "other"
+    },
+    {
+      "type": "createRoomSeparation",
+      "id": "sep-hf-room-loggia-1",
+      "name": "Deep Balcony / Loggia boundary 1",
+      "levelId": "hf-lvl-upper",
+      "start": {
+        "xMm": 1200,
+        "yMm": -450
+      },
+      "end": {
+        "xMm": 7600,
+        "yMm": -450
+      }
+    },
+    {
+      "type": "createRoomSeparation",
+      "id": "sep-hf-room-loggia-2",
+      "name": "Deep Balcony / Loggia boundary 2",
+      "levelId": "hf-lvl-upper",
+      "start": {
+        "xMm": 7600,
+        "yMm": -450
+      },
+      "end": {
+        "xMm": 7600,
+        "yMm": 900
+      }
+    },
+    {
+      "type": "createRoomSeparation",
+      "id": "sep-hf-room-loggia-3",
+      "name": "Deep Balcony / Loggia boundary 3",
+      "levelId": "hf-lvl-upper",
+      "start": {
+        "xMm": 7600,
+        "yMm": 900
+      },
+      "end": {
+        "xMm": 1200,
+        "yMm": 900
+      }
+    },
+    {
+      "type": "createRoomSeparation",
+      "id": "sep-hf-room-loggia-4",
+      "name": "Deep Balcony / Loggia boundary 4",
+      "levelId": "hf-lvl-upper",
+      "start": {
+        "xMm": 1200,
+        "yMm": 900
+      },
+      "end": {
+        "xMm": 1200,
+        "yMm": -450
+      }
+    },
+    {
+      "type": "createWall",
+      "id": "access-wall-hf-room-loggia",
+      "name": "Deep Balcony / Loggia access control wall",
+      "levelId": "hf-lvl-upper",
+      "start": {
+        "xMm": 3925,
+        "yMm": -100
+      },
+      "end": {
+        "xMm": 4875,
+        "yMm": -100
+      },
+      "thicknessMm": 90,
+      "heightMm": 2400,
+      "wallTypeId": "wt-internal",
+      "materialKey": "gypsum_board",
+      "loadBearing": false,
+      "structuralRole": "non_load_bearing",
+      "structuralMaterialKey": "gypsum_board",
+      "analyticalParticipation": false,
+      "isCurtainWall": false
+    },
+    {
+      "type": "insertDoorOnWall",
+      "id": "access-door-hf-room-loggia",
+      "name": "Deep Balcony / Loggia access door",
+      "wallId": "access-wall-hf-room-loggia",
+      "alongT": 0.5,
+      "widthMm": 617.5,
+      "familyTypeId": "ft-pocket-door-standard"
+    },
+    {
+      "type": "updateElementProperty",
+      "elementId": "access-door-hf-room-loggia",
+      "key": "operationType",
+      "value": "sliding_single"
+    },
+    {
+      "type": "updateElementProperty",
+      "elementId": "access-door-hf-room-loggia",
+      "key": "materialKey",
+      "value": "white_render"
+    },
+    {
+      "type": "updateElementProperty",
+      "elementId": "access-wall-hf-room-loggia",
+      "key": "fireResistanceRating",
+      "value": "R30"
+    },
+    {
+      "type": "updateElementProperty",
+      "elementId": "access-wall-hf-room-loggia",
+      "key": "structuralMaterial",
+      "value": "other"
+    },
+    {
+      "type": "createRoomSeparation",
+      "id": "sep-hf-room-utility-1",
+      "name": "Utility boundary 1",
+      "levelId": "hf-lvl-ground",
+      "start": {
+        "xMm": 6800,
+        "yMm": 3300
+      },
+      "end": {
+        "xMm": 8300,
+        "yMm": 3300
+      }
+    },
+    {
+      "type": "createRoomSeparation",
+      "id": "sep-hf-room-utility-2",
+      "name": "Utility boundary 2",
+      "levelId": "hf-lvl-ground",
+      "start": {
+        "xMm": 8300,
+        "yMm": 3300
+      },
+      "end": {
+        "xMm": 8300,
+        "yMm": 5000
+      }
+    },
+    {
+      "type": "createRoomSeparation",
+      "id": "sep-hf-room-utility-3",
+      "name": "Utility boundary 3",
+      "levelId": "hf-lvl-ground",
+      "start": {
+        "xMm": 8300,
+        "yMm": 5000
+      },
+      "end": {
+        "xMm": 6800,
+        "yMm": 5000
+      }
+    },
+    {
+      "type": "createRoomSeparation",
+      "id": "sep-hf-room-utility-4",
+      "name": "Utility boundary 4",
+      "levelId": "hf-lvl-ground",
+      "start": {
+        "xMm": 6800,
+        "yMm": 5000
+      },
+      "end": {
+        "xMm": 6800,
+        "yMm": 3300
+      }
+    },
+    {
+      "type": "createWall",
+      "id": "access-wall-hf-room-utility",
+      "name": "Utility access control wall",
+      "levelId": "hf-lvl-ground",
+      "start": {
+        "xMm": 7600,
+        "yMm": 3650
+      },
+      "end": {
+        "xMm": 7600,
+        "yMm": 4350
+      },
+      "thicknessMm": 90,
+      "heightMm": 2400,
+      "wallTypeId": "wt-internal",
+      "materialKey": "gypsum_board",
+      "loadBearing": false,
+      "structuralRole": "non_load_bearing",
+      "structuralMaterialKey": "gypsum_board",
+      "analyticalParticipation": false,
+      "isCurtainWall": false
+    },
+    {
+      "type": "insertDoorOnWall",
+      "id": "access-door-hf-room-utility",
+      "name": "Utility access door",
+      "wallId": "access-wall-hf-room-utility",
+      "alongT": 0.5,
+      "widthMm": 500,
+      "familyTypeId": "ft-pocket-door-standard"
+    },
+    {
+      "type": "updateElementProperty",
+      "elementId": "access-door-hf-room-utility",
+      "key": "operationType",
+      "value": "sliding_single"
+    },
+    {
+      "type": "updateElementProperty",
+      "elementId": "access-door-hf-room-utility",
+      "key": "materialKey",
+      "value": "white_render"
+    },
+    {
+      "type": "updateElementProperty",
+      "elementId": "access-wall-hf-room-utility",
+      "key": "fireResistanceRating",
+      "value": "R30"
+    },
+    {
+      "type": "updateElementProperty",
+      "elementId": "access-wall-hf-room-utility",
+      "key": "structuralMaterial",
+      "value": "other"
+    },
+    {
+      "type": "createRoomSeparation",
+      "id": "sep-hf-room-walk-in-closet-1",
+      "name": "Walk-in Closet boundary 1",
+      "levelId": "hf-lvl-upper",
+      "start": {
+        "xMm": 600,
+        "yMm": 4500
+      },
+      "end": {
+        "xMm": 2500,
+        "yMm": 4500
+      }
+    },
+    {
+      "type": "createRoomSeparation",
+      "id": "sep-hf-room-walk-in-closet-2",
+      "name": "Walk-in Closet boundary 2",
+      "levelId": "hf-lvl-upper",
+      "start": {
+        "xMm": 2500,
+        "yMm": 4500
+      },
+      "end": {
+        "xMm": 2500,
+        "yMm": 6500
+      }
+    },
+    {
+      "type": "createRoomSeparation",
+      "id": "sep-hf-room-walk-in-closet-3",
+      "name": "Walk-in Closet boundary 3",
+      "levelId": "hf-lvl-upper",
+      "start": {
+        "xMm": 2500,
+        "yMm": 6500
+      },
+      "end": {
+        "xMm": 600,
+        "yMm": 6500
+      }
+    },
+    {
+      "type": "createRoomSeparation",
+      "id": "sep-hf-room-walk-in-closet-4",
+      "name": "Walk-in Closet boundary 4",
+      "levelId": "hf-lvl-upper",
+      "start": {
+        "xMm": 600,
+        "yMm": 6500
+      },
+      "end": {
+        "xMm": 600,
+        "yMm": 4500
+      }
+    },
+    {
+      "type": "createWall",
+      "id": "access-wall-hf-room-walk-in-closet",
+      "name": "Walk-in Closet access control wall",
+      "levelId": "hf-lvl-upper",
+      "start": {
+        "xMm": 850,
+        "yMm": 5150
+      },
+      "end": {
+        "xMm": 850,
+        "yMm": 5850
+      },
+      "thicknessMm": 90,
+      "heightMm": 2400,
+      "wallTypeId": "wt-internal",
+      "materialKey": "gypsum_board",
+      "loadBearing": false,
+      "structuralRole": "non_load_bearing",
+      "structuralMaterialKey": "gypsum_board",
+      "analyticalParticipation": false,
+      "isCurtainWall": false
+    },
+    {
+      "type": "insertDoorOnWall",
+      "id": "access-door-hf-room-walk-in-closet",
+      "name": "Walk-in Closet access door",
+      "wallId": "access-wall-hf-room-walk-in-closet",
+      "alongT": 0.5,
+      "widthMm": 500,
+      "familyTypeId": "ft-pocket-door-standard"
+    },
+    {
+      "type": "updateElementProperty",
+      "elementId": "access-door-hf-room-walk-in-closet",
+      "key": "operationType",
+      "value": "sliding_single"
+    },
+    {
+      "type": "updateElementProperty",
+      "elementId": "access-door-hf-room-walk-in-closet",
+      "key": "materialKey",
+      "value": "white_render"
+    },
+    {
+      "type": "updateElementProperty",
+      "elementId": "access-wall-hf-room-walk-in-closet",
+      "key": "fireResistanceRating",
+      "value": "R30"
+    },
+    {
+      "type": "updateElementProperty",
+      "elementId": "access-wall-hf-room-walk-in-closet",
+      "key": "structuralMaterial",
+      "value": "other"
+    },
+    {
+      "type": "createRoomSeparation",
+      "id": "sep-room-bedroom-1",
+      "name": "Bedroom boundary 1",
+      "levelId": "hf-lvl-upper",
+      "start": {
+        "xMm": 600,
+        "yMm": 1600
+      },
+      "end": {
+        "xMm": 3300,
+        "yMm": 1600
+      }
+    },
+    {
+      "type": "createRoomSeparation",
+      "id": "sep-room-bedroom-2",
+      "name": "Bedroom boundary 2",
+      "levelId": "hf-lvl-upper",
+      "start": {
+        "xMm": 3300,
+        "yMm": 1600
+      },
+      "end": {
+        "xMm": 3300,
+        "yMm": 4300
+      }
+    },
+    {
+      "type": "createRoomSeparation",
+      "id": "sep-room-bedroom-3",
+      "name": "Bedroom boundary 3",
+      "levelId": "hf-lvl-upper",
+      "start": {
+        "xMm": 3300,
+        "yMm": 4300
+      },
+      "end": {
+        "xMm": 600,
+        "yMm": 4300
+      }
+    },
+    {
+      "type": "createRoomSeparation",
+      "id": "sep-room-bedroom-4",
+      "name": "Bedroom boundary 4",
+      "levelId": "hf-lvl-upper",
+      "start": {
+        "xMm": 600,
+        "yMm": 4300
+      },
+      "end": {
+        "xMm": 600,
+        "yMm": 1600
+      }
+    },
+    {
+      "type": "createWall",
+      "id": "access-wall-room-bedroom",
+      "name": "Bedroom access control wall",
+      "levelId": "hf-lvl-upper",
+      "start": {
+        "xMm": 2600,
+        "yMm": 4150
+      },
+      "end": {
+        "xMm": 3200,
+        "yMm": 4150
+      },
+      "thicknessMm": 90,
+      "heightMm": 2400,
+      "wallTypeId": "wt-internal",
+      "materialKey": "gypsum_board",
+      "loadBearing": false,
+      "structuralRole": "non_load_bearing",
+      "structuralMaterialKey": "gypsum_board",
+      "analyticalParticipation": false,
+      "isCurtainWall": false
+    },
+    {
+      "type": "insertDoorOnWall",
+      "id": "access-door-room-bedroom",
+      "name": "Bedroom access door",
+      "wallId": "access-wall-room-bedroom",
+      "alongT": 0.5,
+      "widthMm": 500,
+      "familyTypeId": "ft-pocket-door-standard"
+    },
+    {
+      "type": "updateElementProperty",
+      "elementId": "access-door-room-bedroom",
+      "key": "operationType",
+      "value": "sliding_single"
+    },
+    {
+      "type": "updateElementProperty",
+      "elementId": "access-door-room-bedroom",
+      "key": "materialKey",
+      "value": "white_render"
+    },
+    {
+      "type": "updateElementProperty",
+      "elementId": "access-wall-room-bedroom",
+      "key": "fireResistanceRating",
+      "value": "R30"
+    },
+    {
+      "type": "updateElementProperty",
+      "elementId": "access-wall-room-bedroom",
+      "key": "structuralMaterial",
+      "value": "other"
+    },
+    {
+      "type": "createRoomSeparation",
+      "id": "sep-room-hall-1",
+      "name": "Entrance / Stair Hall boundary 1",
+      "levelId": "hf-lvl-ground",
+      "start": {
+        "xMm": 1200,
+        "yMm": 700
+      },
+      "end": {
+        "xMm": 3400,
+        "yMm": 700
+      }
+    },
+    {
+      "type": "createRoomSeparation",
+      "id": "sep-room-hall-2",
+      "name": "Entrance / Stair Hall boundary 2",
+      "levelId": "hf-lvl-ground",
+      "start": {
+        "xMm": 3400,
+        "yMm": 700
+      },
+      "end": {
+        "xMm": 3400,
+        "yMm": 3600
+      }
+    },
+    {
+      "type": "createRoomSeparation",
+      "id": "sep-room-hall-3",
+      "name": "Entrance / Stair Hall boundary 3",
+      "levelId": "hf-lvl-ground",
+      "start": {
+        "xMm": 3400,
+        "yMm": 3600
+      },
+      "end": {
+        "xMm": 1200,
+        "yMm": 3600
+      }
+    },
+    {
+      "type": "createRoomSeparation",
+      "id": "sep-room-hall-4",
+      "name": "Entrance / Stair Hall boundary 4",
+      "levelId": "hf-lvl-ground",
+      "start": {
+        "xMm": 1200,
+        "yMm": 3600
+      },
+      "end": {
+        "xMm": 1200,
+        "yMm": 700
+      }
+    },
+    {
+      "type": "createWall",
+      "id": "access-wall-room-hall",
+      "name": "Entrance / Stair Hall access control wall",
+      "levelId": "hf-lvl-ground",
+      "start": {
+        "xMm": 3100,
+        "yMm": 2850
+      },
+      "end": {
+        "xMm": 3100,
+        "yMm": 3450
+      },
+      "thicknessMm": 90,
+      "heightMm": 2400,
+      "wallTypeId": "wt-internal",
+      "materialKey": "gypsum_board",
+      "loadBearing": false,
+      "structuralRole": "non_load_bearing",
+      "structuralMaterialKey": "gypsum_board",
+      "analyticalParticipation": false,
+      "isCurtainWall": false
+    },
+    {
+      "type": "insertDoorOnWall",
+      "id": "access-door-room-hall",
+      "name": "Entrance / Stair Hall access door",
+      "wallId": "access-wall-room-hall",
+      "alongT": 0.5,
+      "widthMm": 500,
+      "familyTypeId": "ft-pocket-door-standard"
+    },
+    {
+      "type": "updateElementProperty",
+      "elementId": "access-door-room-hall",
+      "key": "operationType",
+      "value": "sliding_single"
+    },
+    {
+      "type": "updateElementProperty",
+      "elementId": "access-door-room-hall",
+      "key": "materialKey",
+      "value": "white_render"
+    },
+    {
+      "type": "updateElementProperty",
+      "elementId": "access-wall-room-hall",
+      "key": "fireResistanceRating",
+      "value": "R30"
+    },
+    {
+      "type": "updateElementProperty",
+      "elementId": "access-wall-room-hall",
+      "key": "structuralMaterial",
+      "value": "other"
+    },
+    {
+      "type": "createRoomSeparation",
+      "id": "sep-room-living-1",
+      "name": "Living / Dining boundary 1",
+      "levelId": "hf-lvl-ground",
+      "start": {
+        "xMm": 3600,
+        "yMm": 700
+      },
+      "end": {
+        "xMm": 6500,
+        "yMm": 700
+      }
+    },
+    {
+      "type": "createRoomSeparation",
+      "id": "sep-room-living-2",
+      "name": "Living / Dining boundary 2",
+      "levelId": "hf-lvl-ground",
+      "start": {
+        "xMm": 6500,
+        "yMm": 700
+      },
+      "end": {
+        "xMm": 6500,
+        "yMm": 5200
+      }
+    },
+    {
+      "type": "createRoomSeparation",
+      "id": "sep-room-living-3",
+      "name": "Living / Dining boundary 3",
+      "levelId": "hf-lvl-ground",
+      "start": {
+        "xMm": 6500,
+        "yMm": 5200
+      },
+      "end": {
+        "xMm": 3600,
+        "yMm": 5200
+      }
+    },
+    {
+      "type": "createRoomSeparation",
+      "id": "sep-room-living-4",
+      "name": "Living / Dining boundary 4",
+      "levelId": "hf-lvl-ground",
+      "start": {
+        "xMm": 3600,
+        "yMm": 5200
+      },
+      "end": {
+        "xMm": 3600,
+        "yMm": 700
+      }
+    },
+    {
+      "type": "createWall",
+      "id": "access-wall-room-living",
+      "name": "Living / Dining access control wall",
+      "levelId": "hf-lvl-ground",
+      "start": {
+        "xMm": 5700,
+        "yMm": 5000
+      },
+      "end": {
+        "xMm": 6400,
+        "yMm": 5000
+      },
+      "thicknessMm": 90,
+      "heightMm": 2400,
+      "wallTypeId": "wt-internal",
+      "materialKey": "gypsum_board",
+      "loadBearing": false,
+      "structuralRole": "non_load_bearing",
+      "structuralMaterialKey": "gypsum_board",
+      "analyticalParticipation": false,
+      "isCurtainWall": false
+    },
+    {
+      "type": "insertDoorOnWall",
+      "id": "access-door-room-living",
+      "name": "Living / Dining access door",
+      "wallId": "access-wall-room-living",
+      "alongT": 0.5,
+      "widthMm": 500,
+      "familyTypeId": "ft-pocket-door-standard"
+    },
+    {
+      "type": "updateElementProperty",
+      "elementId": "access-door-room-living",
+      "key": "operationType",
+      "value": "sliding_single"
+    },
+    {
+      "type": "updateElementProperty",
+      "elementId": "access-door-room-living",
+      "key": "materialKey",
+      "value": "white_render"
+    },
+    {
+      "type": "updateElementProperty",
+      "elementId": "access-wall-room-living",
+      "key": "fireResistanceRating",
+      "value": "R30"
+    },
+    {
+      "type": "updateElementProperty",
+      "elementId": "access-wall-room-living",
+      "key": "structuralMaterial",
+      "value": "other"
+    },
+    {
+      "type": "createRoomSeparation",
+      "id": "sep-room-terrace-1",
+      "name": "Roof Terrace boundary 1",
+      "levelId": "hf-lvl-upper",
+      "start": {
+        "xMm": 5400,
+        "yMm": 3300
+      },
+      "end": {
+        "xMm": 8000,
+        "yMm": 3300
+      }
+    },
+    {
+      "type": "createRoomSeparation",
+      "id": "sep-room-terrace-2",
+      "name": "Roof Terrace boundary 2",
+      "levelId": "hf-lvl-upper",
+      "start": {
+        "xMm": 8000,
+        "yMm": 3300
+      },
+      "end": {
+        "xMm": 8000,
+        "yMm": 6500
+      }
+    },
+    {
+      "type": "createRoomSeparation",
+      "id": "sep-room-terrace-3",
+      "name": "Roof Terrace boundary 3",
+      "levelId": "hf-lvl-upper",
+      "start": {
+        "xMm": 8000,
+        "yMm": 6500
+      },
+      "end": {
+        "xMm": 5400,
+        "yMm": 6500
+      }
+    },
+    {
+      "type": "createRoomSeparation",
+      "id": "sep-room-terrace-4",
+      "name": "Roof Terrace boundary 4",
+      "levelId": "hf-lvl-upper",
+      "start": {
+        "xMm": 5400,
+        "yMm": 6500
+      },
+      "end": {
+        "xMm": 5400,
+        "yMm": 3300
+      }
+    },
+    {
+      "type": "createWall",
+      "id": "access-wall-room-terrace",
+      "name": "Roof Terrace access control wall",
+      "levelId": "hf-lvl-upper",
+      "start": {
+        "xMm": 5650,
+        "yMm": 4425
+      },
+      "end": {
+        "xMm": 5650,
+        "yMm": 5375
+      },
+      "thicknessMm": 90,
+      "heightMm": 2400,
+      "wallTypeId": "wt-internal",
+      "materialKey": "gypsum_board",
+      "loadBearing": false,
+      "structuralRole": "non_load_bearing",
+      "structuralMaterialKey": "gypsum_board",
+      "analyticalParticipation": false,
+      "isCurtainWall": false
+    },
+    {
+      "type": "insertDoorOnWall",
+      "id": "access-door-room-terrace",
+      "name": "Roof Terrace access door",
+      "wallId": "access-wall-room-terrace",
+      "alongT": 0.5,
+      "widthMm": 617.5,
+      "familyTypeId": "ft-pocket-door-standard"
+    },
+    {
+      "type": "updateElementProperty",
+      "elementId": "access-door-room-terrace",
+      "key": "operationType",
+      "value": "sliding_single"
+    },
+    {
+      "type": "updateElementProperty",
+      "elementId": "access-door-room-terrace",
+      "key": "materialKey",
+      "value": "white_render"
+    },
+    {
+      "type": "updateElementProperty",
+      "elementId": "access-wall-room-terrace",
+      "key": "fireResistanceRating",
+      "value": "R30"
+    },
+    {
+      "type": "updateElementProperty",
+      "elementId": "access-wall-room-terrace",
+      "key": "structuralMaterial",
+      "value": "other"
+    },
+    {
+      "type": "updateElementProperty",
+      "elementId": "access-wall-hf-room-bath",
+      "key": "fireResistanceRating",
+      "value": "R30"
+    },
+    {
+      "type": "updateElementProperty",
+      "elementId": "access-wall-hf-room-bath",
+      "key": "structuralMaterial",
+      "value": "other"
+    },
+    {
+      "type": "updateElementProperty",
+      "elementId": "access-wall-hf-room-carport",
+      "key": "fireResistanceRating",
+      "value": "R30"
+    },
+    {
+      "type": "updateElementProperty",
+      "elementId": "access-wall-hf-room-carport",
+      "key": "structuralMaterial",
+      "value": "other"
+    },
+    {
+      "type": "updateElementProperty",
+      "elementId": "access-wall-hf-room-ensuite",
+      "key": "fireResistanceRating",
+      "value": "R30"
+    },
+    {
+      "type": "updateElementProperty",
+      "elementId": "access-wall-hf-room-ensuite",
+      "key": "structuralMaterial",
+      "value": "other"
+    },
+    {
+      "type": "updateElementProperty",
+      "elementId": "access-wall-hf-room-gf-bath-laundry",
+      "key": "fireResistanceRating",
+      "value": "R30"
+    },
+    {
+      "type": "updateElementProperty",
+      "elementId": "access-wall-hf-room-gf-bath-laundry",
+      "key": "structuralMaterial",
+      "value": "other"
+    },
+    {
+      "type": "updateElementProperty",
+      "elementId": "access-wall-hf-room-kitchen",
+      "key": "fireResistanceRating",
+      "value": "R30"
+    },
+    {
+      "type": "updateElementProperty",
+      "elementId": "access-wall-hf-room-kitchen",
+      "key": "structuralMaterial",
+      "value": "other"
+    },
+    {
+      "type": "updateElementProperty",
+      "elementId": "access-wall-hf-room-landing",
+      "key": "fireResistanceRating",
+      "value": "R30"
+    },
+    {
+      "type": "updateElementProperty",
+      "elementId": "access-wall-hf-room-landing",
+      "key": "structuralMaterial",
+      "value": "other"
+    },
+    {
+      "type": "updateElementProperty",
+      "elementId": "access-wall-hf-room-loggia",
+      "key": "fireResistanceRating",
+      "value": "R30"
+    },
+    {
+      "type": "updateElementProperty",
+      "elementId": "access-wall-hf-room-loggia",
+      "key": "structuralMaterial",
+      "value": "other"
+    },
+    {
+      "type": "updateElementProperty",
+      "elementId": "access-wall-hf-room-utility",
+      "key": "fireResistanceRating",
+      "value": "R30"
+    },
+    {
+      "type": "updateElementProperty",
+      "elementId": "access-wall-hf-room-utility",
+      "key": "structuralMaterial",
+      "value": "other"
+    },
+    {
+      "type": "updateElementProperty",
+      "elementId": "access-wall-hf-room-walk-in-closet",
+      "key": "fireResistanceRating",
+      "value": "R30"
+    },
+    {
+      "type": "updateElementProperty",
+      "elementId": "access-wall-hf-room-walk-in-closet",
+      "key": "structuralMaterial",
+      "value": "other"
+    },
+    {
+      "type": "updateElementProperty",
+      "elementId": "access-wall-room-bedroom",
+      "key": "fireResistanceRating",
+      "value": "R30"
+    },
+    {
+      "type": "updateElementProperty",
+      "elementId": "access-wall-room-bedroom",
+      "key": "structuralMaterial",
+      "value": "other"
+    },
+    {
+      "type": "updateElementProperty",
+      "elementId": "access-wall-room-hall",
+      "key": "fireResistanceRating",
+      "value": "R30"
+    },
+    {
+      "type": "updateElementProperty",
+      "elementId": "access-wall-room-hall",
+      "key": "structuralMaterial",
+      "value": "other"
+    },
+    {
+      "type": "updateElementProperty",
+      "elementId": "access-wall-room-living",
+      "key": "fireResistanceRating",
+      "value": "R30"
+    },
+    {
+      "type": "updateElementProperty",
+      "elementId": "access-wall-room-living",
+      "key": "structuralMaterial",
+      "value": "other"
+    },
+    {
+      "type": "updateElementProperty",
+      "elementId": "access-wall-room-terrace",
+      "key": "fireResistanceRating",
+      "value": "R30"
+    },
+    {
+      "type": "updateElementProperty",
+      "elementId": "access-wall-room-terrace",
+      "key": "structuralMaterial",
+      "value": "other"
+    },
+    {
+      "type": "updateElementProperty",
+      "elementId": "front-loggia-left-return",
+      "key": "fireResistanceRating",
+      "value": "R30"
+    },
+    {
+      "type": "updateElementProperty",
+      "elementId": "front-loggia-left-return",
+      "key": "structuralMaterial",
+      "value": "concrete"
+    },
+    {
+      "type": "updateElementProperty",
+      "elementId": "front-loggia-recessed-glass",
+      "key": "fireResistanceRating",
+      "value": "R30"
+    },
+    {
+      "type": "updateElementProperty",
+      "elementId": "front-loggia-recessed-glass",
+      "key": "structuralMaterial",
+      "value": "concrete"
+    },
+    {
+      "type": "updateElementProperty",
+      "elementId": "front-loggia-right-return",
+      "key": "fireResistanceRating",
+      "value": "R30"
+    },
+    {
+      "type": "updateElementProperty",
+      "elementId": "front-loggia-right-return",
+      "key": "structuralMaterial",
+      "value": "concrete"
+    },
+    {
+      "type": "updateElementProperty",
+      "elementId": "ground-base-wall-01",
+      "key": "fireResistanceRating",
+      "value": "R30"
+    },
+    {
+      "type": "updateElementProperty",
+      "elementId": "ground-base-wall-01",
+      "key": "structuralMaterial",
+      "value": "concrete"
+    },
+    {
+      "type": "updateElementProperty",
+      "elementId": "ground-base-wall-02",
+      "key": "fireResistanceRating",
+      "value": "R30"
+    },
+    {
+      "type": "updateElementProperty",
+      "elementId": "ground-base-wall-02",
+      "key": "structuralMaterial",
+      "value": "concrete"
+    },
+    {
+      "type": "updateElementProperty",
+      "elementId": "ground-base-wall-03",
+      "key": "fireResistanceRating",
+      "value": "R30"
+    },
+    {
+      "type": "updateElementProperty",
+      "elementId": "ground-base-wall-03",
+      "key": "structuralMaterial",
+      "value": "concrete"
+    },
+    {
+      "type": "updateElementProperty",
+      "elementId": "ground-base-wall-04",
+      "key": "fireResistanceRating",
+      "value": "R30"
+    },
+    {
+      "type": "updateElementProperty",
+      "elementId": "ground-base-wall-04",
+      "key": "structuralMaterial",
+      "value": "concrete"
+    },
+    {
+      "type": "updateElementProperty",
+      "elementId": "hf-roof-court-front-return",
+      "key": "fireResistanceRating",
+      "value": "R30"
+    },
+    {
+      "type": "updateElementProperty",
+      "elementId": "hf-roof-court-front-return",
+      "key": "structuralMaterial",
+      "value": "concrete"
+    },
+    {
+      "type": "updateElementProperty",
+      "elementId": "hf-roof-court-glass-back",
+      "key": "fireResistanceRating",
+      "value": "R30"
+    },
+    {
+      "type": "updateElementProperty",
+      "elementId": "hf-roof-court-glass-back",
+      "key": "structuralMaterial",
+      "value": "concrete"
+    },
+    {
+      "type": "updateElementProperty",
+      "elementId": "hf-roof-court-left-return",
+      "key": "fireResistanceRating",
+      "value": "R30"
+    },
+    {
+      "type": "updateElementProperty",
+      "elementId": "hf-roof-court-left-return",
+      "key": "structuralMaterial",
+      "value": "concrete"
+    },
+    {
+      "type": "updateElementProperty",
+      "elementId": "hf-upper-wrapper-shell-wall-01",
+      "key": "fireResistanceRating",
+      "value": "R30"
+    },
+    {
+      "type": "updateElementProperty",
+      "elementId": "hf-upper-wrapper-shell-wall-01",
+      "key": "structuralMaterial",
+      "value": "concrete"
+    },
+    {
+      "type": "updateElementProperty",
+      "elementId": "hf-upper-wrapper-shell-wall-02",
+      "key": "fireResistanceRating",
+      "value": "R30"
+    },
+    {
+      "type": "updateElementProperty",
+      "elementId": "hf-upper-wrapper-shell-wall-02",
+      "key": "structuralMaterial",
+      "value": "concrete"
+    },
+    {
+      "type": "updateElementProperty",
+      "elementId": "hf-upper-wrapper-shell-wall-03",
+      "key": "fireResistanceRating",
+      "value": "R30"
+    },
+    {
+      "type": "updateElementProperty",
+      "elementId": "hf-upper-wrapper-shell-wall-03",
+      "key": "structuralMaterial",
+      "value": "concrete"
+    },
+    {
+      "type": "updateElementProperty",
+      "elementId": "hf-upper-wrapper-shell-wall-04",
+      "key": "fireResistanceRating",
+      "value": "R30"
+    },
+    {
+      "type": "updateElementProperty",
+      "elementId": "hf-upper-wrapper-shell-wall-04",
+      "key": "structuralMaterial",
+      "value": "concrete"
+    },
+    {
+      "type": "updateElementProperty",
+      "elementId": "room-schedule-view",
+      "key": "sheetId",
+      "value": "sheet-a101"
+    },
+    {
+      "type": "updateElementProperty",
+      "elementId": "hf-roof-court-left-return",
+      "key": "loadBearing",
+      "value": false
+    },
+    {
+      "type": "updateElementProperty",
+      "elementId": "hf-roof-court-left-return",
+      "key": "structuralRole",
+      "value": "non_load_bearing"
+    },
+    {
+      "type": "updateElementProperty",
+      "elementId": "hf-roof-court-left-return",
+      "key": "structuralMaterial",
+      "value": "concrete"
+    },
+    {
+      "type": "updateElementProperty",
+      "elementId": "hf-roof-court-front-return",
+      "key": "loadBearing",
+      "value": false
+    },
+    {
+      "type": "updateElementProperty",
+      "elementId": "hf-roof-court-front-return",
+      "key": "structuralRole",
+      "value": "non_load_bearing"
+    },
+    {
+      "type": "updateElementProperty",
+      "elementId": "hf-roof-court-front-return",
+      "key": "structuralMaterial",
+      "value": "concrete"
+    },
+    {
+      "type": "updateElementProperty",
+      "elementId": "hf-roof-court-glass-back",
+      "key": "loadBearing",
+      "value": false
+    },
+    {
+      "type": "updateElementProperty",
+      "elementId": "hf-roof-court-glass-back",
+      "key": "structuralRole",
+      "value": "non_load_bearing"
+    },
+    {
+      "type": "updateElementProperty",
+      "elementId": "hf-roof-court-glass-back",
+      "key": "structuralMaterial",
+      "value": "concrete"
+    },
+    {
+      "type": "updateElementProperty",
+      "elementId": "front-loggia-left-return",
+      "key": "loadBearing",
+      "value": false
+    },
+    {
+      "type": "updateElementProperty",
+      "elementId": "front-loggia-left-return",
+      "key": "structuralRole",
+      "value": "non_load_bearing"
+    },
+    {
+      "type": "updateElementProperty",
+      "elementId": "front-loggia-left-return",
+      "key": "structuralMaterial",
+      "value": "concrete"
+    },
+    {
+      "type": "updateElementProperty",
+      "elementId": "front-loggia-right-return",
+      "key": "loadBearing",
+      "value": false
+    },
+    {
+      "type": "updateElementProperty",
+      "elementId": "front-loggia-right-return",
+      "key": "structuralRole",
+      "value": "non_load_bearing"
+    },
+    {
+      "type": "updateElementProperty",
+      "elementId": "front-loggia-right-return",
+      "key": "structuralMaterial",
+      "value": "concrete"
+    },
+    {
+      "type": "updateElementProperty",
+      "elementId": "front-loggia-recessed-glass",
+      "key": "loadBearing",
+      "value": false
+    },
+    {
+      "type": "updateElementProperty",
+      "elementId": "front-loggia-recessed-glass",
+      "key": "structuralRole",
+      "value": "non_load_bearing"
+    },
+    {
+      "type": "updateElementProperty",
+      "elementId": "front-loggia-recessed-glass",
+      "key": "structuralMaterial",
+      "value": "concrete"
+    },
+    {
+      "type": "updateElementProperty",
+      "elementId": "hf-upper-wrapper-shell-wall-01",
+      "key": "loadBearing",
+      "value": false
+    },
+    {
+      "type": "updateElementProperty",
+      "elementId": "hf-upper-wrapper-shell-wall-01",
+      "key": "structuralRole",
+      "value": "non_load_bearing"
+    },
+    {
+      "type": "updateElementProperty",
+      "elementId": "hf-upper-wrapper-shell-wall-01",
+      "key": "structuralMaterial",
+      "value": "concrete"
+    },
+    {
+      "type": "updateElementProperty",
+      "elementId": "hf-upper-wrapper-shell-wall-02",
+      "key": "loadBearing",
+      "value": false
+    },
+    {
+      "type": "updateElementProperty",
+      "elementId": "hf-upper-wrapper-shell-wall-02",
+      "key": "structuralRole",
+      "value": "non_load_bearing"
+    },
+    {
+      "type": "updateElementProperty",
+      "elementId": "hf-upper-wrapper-shell-wall-02",
+      "key": "structuralMaterial",
+      "value": "concrete"
+    },
+    {
+      "type": "updateElementProperty",
+      "elementId": "hf-upper-wrapper-shell-wall-03",
+      "key": "loadBearing",
+      "value": false
+    },
+    {
+      "type": "updateElementProperty",
+      "elementId": "hf-upper-wrapper-shell-wall-03",
+      "key": "structuralRole",
+      "value": "non_load_bearing"
+    },
+    {
+      "type": "updateElementProperty",
+      "elementId": "hf-upper-wrapper-shell-wall-03",
+      "key": "structuralMaterial",
+      "value": "concrete"
+    },
+    {
+      "type": "updateElementProperty",
+      "elementId": "hf-upper-wrapper-shell-wall-04",
+      "key": "loadBearing",
+      "value": false
+    },
+    {
+      "type": "updateElementProperty",
+      "elementId": "hf-upper-wrapper-shell-wall-04",
+      "key": "structuralRole",
+      "value": "non_load_bearing"
+    },
+    {
+      "type": "updateElementProperty",
+      "elementId": "hf-upper-wrapper-shell-wall-04",
+      "key": "structuralMaterial",
+      "value": "concrete"
     }
   ],
   "meta": {

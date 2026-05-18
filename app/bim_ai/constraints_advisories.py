@@ -617,8 +617,12 @@ def _gltf_manifest_closure_advisory_violations(elements: dict[str, Element]) -> 
         token = entry.get("token", "")
         if entry.get("status") == "skipped_ineligible":
             eligible_kind = GLTF_EXTENSION_TOKEN_ELIGIBLE_KIND.get(token)
-            if eligible_kind and counts_by_kind.get(eligible_kind, 0) > 0:
-                skip_code = entry.get("skipReasonCode") or "unknown"
+            skip_code = entry.get("skipReasonCode") or "unknown"
+            if (
+                eligible_kind
+                and counts_by_kind.get(eligible_kind, 0) > 0
+                and skip_code != "no_eligible_elements"
+            ):
                 out.append(
                     Violation(
                         rule_id="gltf_export_manifest_expected_extension_missing",

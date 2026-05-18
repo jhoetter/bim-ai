@@ -6,10 +6,10 @@
   "phaseId": null,
   "baseUrl": "http://127.0.0.1:8500",
   "currentHead": {
-    "gitHead": "0bfceb543a1f06e3e6579ef01462da7f9d85622b",
+    "gitHead": "db78505123d0d471257479335091b0f9dfc71d3b",
     "modelId": "a5c6d3f6-6a76-45f2-8017-b6fa78911955",
     "modelRevision": 2,
-    "advisorRuleDigest": "11c74e8fdc684fb1efd0140b212e130e0d1bb82bd6a85c9583501a5e4a115f7b",
+    "advisorRuleDigest": "e2c9ee443c19b318c07e585ba6a2005f900c1931c1009eeb8031978471d2f5a5",
     "advisorRuleFiles": [
       "app/bim_ai/constructability_advisories.py",
       "app/bim_ai/constructability_report.py",

@@ -1285,7 +1285,7 @@ function normalizedIfcKindCounts(ifcManifest, modelStats) {
     IfcDoor: ['door'],
     IfcWindow: ['window'],
     IfcRailing: ['railing'],
-    IfcFurnishingElement: ['asset', 'furniture', 'family_instance'],
+    IfcFurnishingElement: ['asset', 'furniture', 'family_instance', 'placed_asset'],
     IfcBuildingElementProxy: ['mass', 'proxy'],
   };
   for (const [ifcKind, kinds] of Object.entries(kindMap)) {
