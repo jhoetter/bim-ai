@@ -211,6 +211,59 @@ def test_openings_room_stair_view_and_sheet_command_shapes() -> None:
     assert sheet.commands[1]["viewportsMm"][0]["viewRef"] == "plan:plan-eg"
 
 
+def test_vertical_circulation_opening_and_railing_command_shapes() -> None:
+    slab = build_semantic_authoring_bundle(
+        "slab_opening",
+        {
+            "id": "stair-void-l1",
+            "name": "Stair void L1",
+            "hostFloorId": "floor-l1",
+            "boundaryMm": _RECT_POINTS,
+        },
+    )
+    shaft = build_semantic_authoring_bundle(
+        "shaft_opening",
+        {
+            "hostFloorId": "floor-l2",
+            "boundaryMm": [*_RECT_POINTS, _RECT_POINTS[0]],
+            "isShaft": False,
+        },
+    )
+    railing = build_semantic_authoring_bundle(
+        "railing",
+        {
+            "id": "rail-stair-1",
+            "hostedStairId": "stair-1",
+            "pathMm": [
+                {"xMm": 1000, "yMm": 1000},
+                {"xMm": 1000, "yMm": 4200},
+            ],
+            "balusterPattern": {"rule": "regular", "spacingMm": 120},
+        },
+    )
+
+    assert slab.metadata["kernelCommandTypes"] == ["createSlabOpening"]
+    assert slab.commands[0] == {
+        "type": "createSlabOpening",
+        "id": "stair-void-l1",
+        "name": "Stair void L1",
+        "hostFloorId": "floor-l1",
+        "boundaryMm": [
+            {"xMm": 0.0, "yMm": 0.0},
+            {"xMm": 8000.0, "yMm": 0.0},
+            {"xMm": 8000.0, "yMm": 5000.0},
+            {"xMm": 0.0, "yMm": 5000.0},
+        ],
+        "isShaft": False,
+    }
+    assert shaft.operation == "shaft_opening"
+    assert shaft.commands[0]["isShaft"] is True
+    assert shaft.commands[0]["name"] == "Shaft opening"
+    assert railing.metadata["kernelCommandTypes"] == ["createRailing"]
+    assert railing.commands[0]["hostedStairId"] == "stair-1"
+    assert railing.commands[0]["balusterPattern"] == {"rule": "regular", "spacingMm": 120.0}
+
+
 def test_roof_opening_generates_valid_create_roof_opening() -> None:
     bundle = build_semantic_authoring_bundle(
         "roof_opening",
@@ -297,11 +350,37 @@ def test_semantic_authoring_route_accepts_first_pack_surface_ids() -> None:
             ],
         },
     )
+    stair = client.post(
+        "/api/semantic-authoring/author.stair_between_levels",
+        json={
+            "baseLevelId": "level-1",
+            "topLevelId": "level-2",
+            "runStartMm": {"xMm": 1000, "yMm": 1000},
+            "runEndMm": {"xMm": 1000, "yMm": 4200},
+        },
+    )
+    shaft = client.post(
+        "/api/semantic-authoring/opening.shaft_opening",
+        json={"hostFloorId": "floor-1", "boundaryMm": _RECT_POINTS},
+    )
+    railing = client.post(
+        "/api/semantic-authoring/author.railing",
+        json={
+            "hostedStairId": "stair-1",
+            "pathMm": [{"xMm": 0, "yMm": 0}, {"xMm": 0, "yMm": 4000}],
+        },
+    )
 
     assert wall.status_code == 200
     assert wall.json()["commands"][0]["type"] == "createWall"
     assert roof_opening.status_code == 200
     assert roof_opening.json()["commands"][0]["type"] == "createRoofOpening"
+    assert stair.status_code == 200
+    assert stair.json()["commands"][0]["type"] == "createStair"
+    assert shaft.status_code == 200
+    assert shaft.json()["commands"][0]["isShaft"] is True
+    assert railing.status_code == 200
+    assert railing.json()["commands"][0]["type"] == "createRailing"
 
 
 def test_command_bundle_payload_is_cmd_v3_dry_run_ready() -> None:
@@ -362,6 +441,41 @@ def test_validation_errors_are_explicit_for_bad_payloads() -> None:
                         "widthMm": 100,
                         "heightMm": 100,
                     }
+                ],
+            },
+        )
+
+    with pytest.raises(ValidationError, match="distinct baseLevelId"):
+        build_semantic_authoring_bundle(
+            "stair_between_levels",
+            {
+                "baseLevelId": "level-1",
+                "topLevelId": "level-1",
+                "runStartMm": {"xMm": 0, "yMm": 0},
+                "runEndMm": {"xMm": 0, "yMm": 1000},
+            },
+        )
+
+    with pytest.raises(ValidationError, match="at least three unique points"):
+        build_semantic_authoring_bundle(
+            "slab_opening",
+            {
+                "hostFloorId": "floor-1",
+                "boundaryMm": [
+                    {"xMm": 0, "yMm": 0},
+                    {"xMm": 1000, "yMm": 0},
+                    {"xMm": 0, "yMm": 0},
+                ],
+            },
+        )
+
+    with pytest.raises(ValidationError, match="zero-length segment"):
+        build_semantic_authoring_bundle(
+            "railing",
+            {
+                "pathMm": [
+                    {"xMm": 0, "yMm": 0},
+                    {"xMm": 0, "yMm": 0},
                 ],
             },
         )

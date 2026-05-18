@@ -49,6 +49,10 @@ _KERNEL_COMMANDS_BY_TOOL: dict[str, tuple[str, ...]] = {
     "set-view-lens": ("setViewLens",),
     "set-element-construction": ("setElementConstruction",),
     "create-schedule-view": ("create_schedule_view",),
+    "author.stair_between_levels": ("createStair",),
+    "opening.slab_opening": ("createSlabOpening",),
+    "opening.shaft_opening": ("createSlabOpening",),
+    "author.railing": ("createRailing",),
     "set-element-prop": ("set_element_prop",),
     "update-stair-treads": ("update_stair_treads",),
     "place-kitchen-kit": ("place_kit",),
@@ -794,6 +798,180 @@ _SHEET_VIEWPORT_SCHEMA: dict[str, Any] = {
     "additionalProperties": True,
 }
 
+_CMD_V3_BUNDLE_OUTPUT_SCHEMA: dict[str, Any] = {
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "title": "SemanticAuthoringBundle",
+    "type": "object",
+    "required": ["operation", "commands", "metadata"],
+    "properties": {
+        "operation": {"type": "string"},
+        "commands": {"type": "array", "items": {"type": "object"}},
+        "todo": {"type": "array", "items": {"type": "object"}},
+        "metadata": {"type": "object"},
+    },
+}
+
+_SLAB_OPENING_INPUT_SCHEMA: dict[str, Any] = {
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "title": "SlabOpeningInput",
+    "type": "object",
+    "required": ["hostFloorId", "boundaryMm"],
+    "properties": {
+        "id": {"type": "string"},
+        "name": {"type": "string"},
+        "hostFloorId": {"type": "string"},
+        "boundaryMm": {"type": "array", "minItems": 3, "items": _POINT_2_SCHEMA},
+        "isShaft": {"type": "boolean", "default": False},
+    },
+    "additionalProperties": False,
+}
+
+register(
+    ToolDescriptor(
+        name="author.stair_between_levels",
+        category="mutation",
+        inputSchema={
+            "$schema": "http://json-schema.org/draft-07/schema#",
+            "title": "StairBetweenLevelsInput",
+            "type": "object",
+            "required": ["baseLevelId", "topLevelId", "runStartMm", "runEndMm"],
+            "properties": {
+                "id": {"type": "string"},
+                "name": {"type": "string"},
+                "baseLevelId": {"type": "string"},
+                "topLevelId": {"type": "string"},
+                "runStartMm": _POINT_2_SCHEMA,
+                "runEndMm": _POINT_2_SCHEMA,
+                "widthMm": {"type": "number", "exclusiveMinimum": 0, "default": 1000},
+                "riserMm": {"type": "number", "exclusiveMinimum": 0, "default": 175},
+                "treadMm": {"type": "number", "exclusiveMinimum": 0, "default": 275},
+            },
+            "additionalProperties": False,
+        },
+        outputSchema=_CMD_V3_BUNDLE_OUTPUT_SCHEMA,
+        exitCodes={
+            "ok": ExitCode(code=0, meaning="Typed createStair bundle generated"),
+            "invalid": ExitCode(code=422, meaning="Invalid stair payload"),
+        },
+        cliExample=(
+            "bim-ai author stair-between-levels --base-level lvl-0 --top-level lvl-1 "
+            "--run '1000,1000;1000,4200' --json"
+        ),
+        restEndpoint=RestEndpoint(method="POST", path="/api/semantic-authoring/{surface_id}"),
+        sideEffects="mutates-kernel",
+        agentSafetyNotes=(
+            "Generates createStair only; submit through model.dry_run or model.commit_bundle for "
+            "transaction safety and advisor validation."
+        ),
+        schemaRefs=["input:StairBetweenLevelsInput", "output:SemanticAuthoringBundle"],
+        exampleRefs=["cli:author:stair-between-levels"],
+        resourceGroups=["semantic-authoring", "vertical-circulation", "kernel-command"],
+        uiFeatures=["tool:stair", "cmd-k:tool.stair"],
+    )
+)
+
+register(
+    ToolDescriptor(
+        name="opening.slab_opening",
+        category="mutation",
+        inputSchema=_SLAB_OPENING_INPUT_SCHEMA,
+        outputSchema=_CMD_V3_BUNDLE_OUTPUT_SCHEMA,
+        exitCodes={
+            "ok": ExitCode(code=0, meaning="Typed createSlabOpening bundle generated"),
+            "invalid": ExitCode(code=422, meaning="Invalid slab opening payload"),
+        },
+        cliExample=(
+            "bim-ai opening slab-opening --floor floor-1 --boundary "
+            "'1000,1000;2200,1000;2200,2200;1000,2200' --json"
+        ),
+        restEndpoint=RestEndpoint(method="POST", path="/api/semantic-authoring/{surface_id}"),
+        sideEffects="mutates-kernel",
+        agentSafetyNotes="Host floor id must be resolved before calling; dry-run before commit.",
+        schemaRefs=["input:SlabOpeningInput", "output:SemanticAuthoringBundle"],
+        exampleRefs=["cli:opening:slab-opening"],
+        resourceGroups=["semantic-authoring", "vertical-circulation", "opening", "kernel-command"],
+        uiFeatures=["tool:vertical-opening", "cmd-k:tool.floor-opening"],
+    )
+)
+
+register(
+    ToolDescriptor(
+        name="opening.shaft_opening",
+        category="mutation",
+        inputSchema={
+            **_SLAB_OPENING_INPUT_SCHEMA,
+            "title": "ShaftOpeningInput",
+            "properties": {
+                **_SLAB_OPENING_INPUT_SCHEMA["properties"],
+                "isShaft": {"type": "boolean", "const": True, "default": True},
+            },
+        },
+        outputSchema=_CMD_V3_BUNDLE_OUTPUT_SCHEMA,
+        exitCodes={
+            "ok": ExitCode(code=0, meaning="Typed shaft createSlabOpening bundle generated"),
+            "invalid": ExitCode(code=422, meaning="Invalid shaft opening payload"),
+        },
+        cliExample=(
+            "bim-ai opening shaft-opening --floor floor-1 --boundary "
+            "'1000,1000;2200,1000;2200,2200;1000,2200' --json"
+        ),
+        restEndpoint=RestEndpoint(method="POST", path="/api/semantic-authoring/{surface_id}"),
+        sideEffects="mutates-kernel",
+        agentSafetyNotes=(
+            "Creates one shaft-marked slab opening on an explicit floor. Multi-floor shaft "
+            "propagation still requires one typed opening per host floor."
+        ),
+        schemaRefs=["input:ShaftOpeningInput", "output:SemanticAuthoringBundle"],
+        exampleRefs=["cli:opening:shaft-opening"],
+        resourceGroups=[
+            "semantic-authoring",
+            "vertical-circulation",
+            "opening",
+            "shaft",
+            "kernel-command",
+        ],
+        uiFeatures=["tool:shaft-opening", "cmd-k:tool.shaft"],
+    )
+)
+
+register(
+    ToolDescriptor(
+        name="author.railing",
+        category="mutation",
+        inputSchema={
+            "$schema": "http://json-schema.org/draft-07/schema#",
+            "title": "RailingInput",
+            "type": "object",
+            "required": ["pathMm"],
+            "properties": {
+                "id": {"type": "string"},
+                "name": {"type": "string"},
+                "hostedStairId": {"type": "string"},
+                "pathMm": {"type": "array", "minItems": 2, "items": _POINT_2_SCHEMA},
+                "balusterPattern": {"type": "object"},
+                "handrailSupports": {"type": "array", "items": {"type": "object"}},
+            },
+            "additionalProperties": False,
+        },
+        outputSchema=_CMD_V3_BUNDLE_OUTPUT_SCHEMA,
+        exitCodes={
+            "ok": ExitCode(code=0, meaning="Typed createRailing bundle generated"),
+            "invalid": ExitCode(code=422, meaning="Invalid railing payload"),
+        },
+        cliExample="bim-ai author railing --hosted-stair stair-1 --path '1000,1000;1000,4200' --json",
+        restEndpoint=RestEndpoint(method="POST", path="/api/semantic-authoring/{surface_id}"),
+        sideEffects="mutates-kernel",
+        agentSafetyNotes=(
+            "Railing path is explicit 2D model geometry. Use hostedStairId when it follows a stair; "
+            "dry-run catches invalid baluster/support payloads."
+        ),
+        schemaRefs=["input:RailingInput", "output:SemanticAuthoringBundle"],
+        exampleRefs=["cli:author:railing"],
+        resourceGroups=["semantic-authoring", "vertical-circulation", "railing", "kernel-command"],
+        uiFeatures=["tool:railing", "cmd-k:tool.railing"],
+    )
+)
+
 register(
     ToolDescriptor(
         name="document.create_drawing_set",
@@ -920,7 +1098,7 @@ register(
         },
         cliExample=(
             "bim-ai documentation pack --sheet-id A101 --sheet-name 'GA Plan' "
-            "--viewports '[{\"viewportId\":\"vp-plan\",\"viewRef\":\"plan:plan-gf\",\"xMm\":20,\"yMm\":20,\"widthMm\":160,\"heightMm\":110}]' "
+            '--viewports \'[{"viewportId":"vp-plan","viewRef":"plan:plan-gf","xMm":20,"yMm":20,"widthMm":160,"heightMm":110}]\' '
             "--schedule-id sch-rooms --schedule-category room --place-schedule --dry-run"
         ),
         restEndpoint=RestEndpoint(method="POST", path="/api/models/{model_id}/bundles"),
@@ -989,7 +1167,10 @@ register(
             "required": ["modelId"],
             "properties": {
                 "modelId": {"type": "string", "format": "uuid"},
-                "sheetId": {"type": "string", "description": "Optional sheet id; first sheet is used if omitted."},
+                "sheetId": {
+                    "type": "string",
+                    "description": "Optional sheet id; first sheet is used if omitted.",
+                },
             },
             "additionalProperties": False,
         },
@@ -999,7 +1180,9 @@ register(
             "not_found": ExitCode(code=1, meaning="Model or sheet not found"),
         },
         cliExample="bim-ai export pdf --sheet-id A101 --out A101.pdf",
-        restEndpoint=RestEndpoint(method="GET", path="/api/models/{model_id}/exports/sheet-preview.pdf"),
+        restEndpoint=RestEndpoint(
+            method="GET", path="/api/models/{model_id}/exports/sheet-preview.pdf"
+        ),
         sideEffects="none",
         agentSafetyNotes=(
             "Read-only sheet PDF artifact. The PDF is a server-side sheet preview/export listing path; "
@@ -3253,8 +3436,15 @@ register(
             "phase acceptance still requires live evidence."
         ),
         requiredPermissions=["model:read"],
-        schemaRefs=["input:SketchIrValidateRequest", "output:SketchIrValidateResult", _SKETCH_IR_REF],
-        exampleRefs=["cli:sketch:ir:validate", "spec:examples/sketch-understanding-ir.example.json"],
+        schemaRefs=[
+            "input:SketchIrValidateRequest",
+            "output:SketchIrValidateResult",
+            _SKETCH_IR_REF,
+        ],
+        exampleRefs=[
+            "cli:sketch:ir:validate",
+            "spec:examples/sketch-understanding-ir.example.json",
+        ],
         resourceGroups=["sketch-to-bim", "sketch-ir", "initiation"],
     )
 )
@@ -3352,7 +3542,11 @@ register(
         ),
         agentSafetyNotes="Default to dry_run. A commit must include parentRevision and preserve bundle assumptions.",
         kernelCommands=["*"],
-        schemaRefs=["input:SketchPhaseApplyRequest", "output:SketchPhaseApplyDelegation", _CMD_V3_REF],
+        schemaRefs=[
+            "input:SketchPhaseApplyRequest",
+            "output:SketchPhaseApplyDelegation",
+            _CMD_V3_REF,
+        ],
         exampleRefs=["cli:sketch:phase:apply"],
         resourceGroups=["sketch-to-bim", "phase", "transaction", "kernel-command"],
     )
@@ -3404,7 +3598,11 @@ register(
             "Do not treat stale packets as final acceptance."
         ),
         requiredPermissions=["model:read"],
-        schemaRefs=["input:SketchPhaseAcceptRequest", "output:SketchPhaseAcceptResult", _SKETCH_PACKET_REF],
+        schemaRefs=[
+            "input:SketchPhaseAcceptRequest",
+            "output:SketchPhaseAcceptResult",
+            _SKETCH_PACKET_REF,
+        ],
         exampleRefs=["cli:sketch:phase:accept"],
         resourceGroups=["sketch-to-bim", "phase", "acceptance", "evidence"],
     )

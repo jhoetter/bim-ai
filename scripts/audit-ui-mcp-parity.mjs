@@ -164,6 +164,62 @@ const M3_WAVE2_WORKSTREAMS = [
   },
 ];
 
+const M3_WAVE3_WORKSTREAMS = [
+  {
+    id: 'M3-K',
+    label: 'Typed vertical-circulation MCP tools',
+    requiredSurfaceGroups: [
+      {
+        id: 'typed-stair-authoring',
+        label: 'Typed stair-between-levels authoring',
+        acceptedStableIds: ['author.stair_between_levels', 'create_stair_between_levels'],
+        rawFallbackCommands: ['createStair'],
+      },
+      {
+        id: 'typed-stair-opening-authoring',
+        label: 'Typed stair or shaft opening authoring',
+        acceptedStableIds: [
+          'opening.slab_opening',
+          'opening.shaft_opening',
+          'opening.shaft',
+          'opening.floor_opening',
+          'create_floor_opening',
+          'create_slab_opening',
+        ],
+        rawFallbackCommands: ['createSlabOpening'],
+      },
+      {
+        id: 'typed-railing-authoring',
+        label: 'Typed railing authoring',
+        acceptedStableIds: ['author.railing', 'create_railing'],
+        rawFallbackCommands: ['createRailing'],
+      },
+    ],
+  },
+  {
+    id: 'M3-L',
+    label: 'Two-storey live advisor, visual, and export evidence',
+    scenarioId: 'two-storey-house-with-stair',
+  },
+  {
+    id: 'M3-M',
+    label: 'Two-storey UI and Cmd+K executable equivalence',
+    scenarioId: 'two-storey-house-with-stair',
+  },
+  {
+    id: 'M3-N',
+    label: 'Documentation/export clean artifact closure',
+  },
+  {
+    id: 'M3-O',
+    label: 'Idempotency, stale revision, and workflow evidence closure',
+  },
+  {
+    id: 'M3-P',
+    label: 'Wave 3 audit, verifier, and tracker finalization',
+  },
+];
+
 function read(relPath) {
   try {
     return fs.readFileSync(path.join(ROOT, relPath), 'utf8');
@@ -2497,6 +2553,7 @@ function buildAudit() {
 
   const m3 = buildM3Governance(backendLedger, cmdkLedger, apiLedger);
   const m3Wave2 = buildM3Wave2(apiLedger);
+  const m3Wave3 = buildM3Wave3(apiLedger, backendLedger);
 
   const m2 = buildM2Summary(
     apiLedger,
@@ -2519,6 +2576,14 @@ function buildAudit() {
       priority: 'P0',
       domain: 'm3-wave2',
       kind: 'm3-wave2-gate-blocked',
+      id: gate.id,
+      status: 'Gap',
+      detail: gate.blocker,
+    })),
+    ...m3Wave3.blockers.map((gate) => ({
+      priority: 'P0',
+      domain: 'm3-wave3',
+      kind: 'm3-wave3-gate-blocked',
       id: gate.id,
       status: 'Gap',
       detail: gate.blocker,
@@ -2632,6 +2697,7 @@ function buildAudit() {
       'Wave 6 closure evidence must carry simple-house semantic proof: live dry-run needs command intent, and commit/advisor/visual/export artifacts need changed ids plus committed wall/opening/floor/roof counts.',
       'M2 evidence artifacts are discovered as matching JSON files below benchmark directories and spec/generated; docs, traceability-only files, and generated audit ledgers are not passing evidence.',
       'M3 Wave 2 gates are evidence aggregators only: CLI-only mappings, scenario seeds, traceability-only UI files, PDF shells, and generic transaction metadata can make a workstream Partial but not Done.',
+      'M3 Wave 3 gates are evidence aggregators only: raw vertical-circulation bundles, traceability-only two-storey UI/Cmd+K artifacts, unavailable export artifacts, and generic transaction metadata can make a workstream Partial but not Done.',
     ],
     summary: {
       backendCommandCount: backendLedger.length,
@@ -2694,17 +2760,25 @@ function buildAudit() {
       m3Wave2GatePassed: m3Wave2.summary.gatesPassed,
       m3Wave2GateExpected: m3Wave2.summary.gatesExpected,
       m3Wave2BlockerCount: m3Wave2.summary.blockerCount,
+      m3Wave3Status: m3Wave3.status,
+      m3Wave3GatePassed: m3Wave3.summary.gatesPassed,
+      m3Wave3GateExpected: m3Wave3.summary.gatesExpected,
+      m3Wave3BlockerCount: m3Wave3.summary.blockerCount,
+      m3Wave3NextWaveItemCount: m3Wave3.summary.nextWaveItemCount,
     },
     m2,
     m3: {
       ...m3,
       wave2: m3Wave2,
+      wave3: m3Wave3,
       status:
-        m3Wave2.status === 'Done' && m3.summary.gatesPassed === m3.summary.gatesExpected
+        m3Wave2.status === 'Done' &&
+        m3Wave3.status === 'Done' &&
+        m3.summary.gatesPassed === m3.summary.gatesExpected
           ? 'Done'
-          : m3Wave2.status === 'Not Started'
+          : m3Wave2.status === 'Not Started' && m3Wave3.status === 'Not Started'
             ? 'Partial'
-            : m3Wave2.status,
+            : 'Partial',
     },
     benchmarkEvidence,
     backendCommands: backendLedger,
@@ -3376,6 +3450,14 @@ function exportArtifactPass(exportEvidence, key) {
   return exportEvidence?.artifacts?.[key]?.pass === true;
 }
 
+function exportArtifactStatus(exportEvidence, key) {
+  return (
+    exportEvidence?.artifacts?.[key]?.status ??
+    exportEvidence?.manifests?.[key]?.status ??
+    'missing-or-failed'
+  );
+}
+
 function exportedDocCounts(exportEvidence) {
   return (
     exportEvidence?.manifests?.gltf?.summary?.geometryProof?.counts?.counts ??
@@ -3618,6 +3700,362 @@ function buildM3Wave2(apiLedger) {
       gatesExpected: gates.length,
       gatesPassed: gates.filter((gate) => gate.passed).length,
       blockerCount: blockers.length,
+    },
+  };
+}
+
+function implementedDescriptorEvidence(apiLedger, ids, sourceFallback) {
+  const descriptor = apiLedger.find((row) => ids.some((id) => descriptorMatchesStableId(row, id)));
+  return {
+    type: 'api-descriptor',
+    status: descriptor
+      ? descriptor.routeImplemented
+        ? 'implemented'
+        : 'route-mismatch'
+      : 'missing',
+    source: descriptor?.source ?? sourceFallback,
+    detail: descriptor
+      ? `${descriptor.id} -> ${descriptor.method} ${descriptor.path}`
+      : `missing stable id: ${ids.join(' or ')}`,
+    passes: Boolean(descriptor?.routeImplemented),
+  };
+}
+
+function rawFallbackEvidence(backendLedger, commandIds, sourceFallback) {
+  const matched = backendLedger.filter((row) =>
+    commandIds.some((id) => row.backendCommands.includes(id)),
+  );
+  return {
+    type: 'raw-fallback',
+    status: matched.length ? 'raw-command-only' : 'missing',
+    source: matched.map((row) => row.source).join(', ') || sourceFallback,
+    detail: matched.length
+      ? `${commandIds.join(', ')} exists through raw apply-bundle; no typed public descriptor matched.`
+      : `${commandIds.join(', ')} not detected as backend fallback commands.`,
+    passes: false,
+  };
+}
+
+function buildM3VerticalCirculationWorkstream(apiLedger, backendLedger) {
+  const config = M3_WAVE3_WORKSTREAMS.find((row) => row.id === 'M3-K');
+  const gates = config.requiredSurfaceGroups.map((group) => {
+    const descriptorEvidence = implementedDescriptorEvidence(
+      apiLedger,
+      group.acceptedStableIds,
+      SOURCES.apiRegistry,
+    );
+    const fallbackEvidence = rawFallbackEvidence(
+      backendLedger,
+      group.rawFallbackCommands,
+      SOURCES.commands,
+    );
+    return m3Gate(
+      group.id,
+      group.label,
+      descriptorEvidence.passes,
+      `${group.label} is not exposed as an implemented first-class API/MCP descriptor; raw bundle fallback is not enough for Wave 3 typed vertical-circulation parity.`,
+      [descriptorEvidence, fallbackEvidence],
+      fallbackEvidence.status !== 'missing',
+    );
+  });
+  return {
+    id: config.id,
+    label: config.label,
+    status: statusFromGates(gates),
+    gatesPassed: gates.filter((gate) => gate.passed).length,
+    gatesExpected: gates.length,
+    gates,
+  };
+}
+
+function scenarioEvidenceSignal(scenario, scenarioPath, kind) {
+  const section = scenario?.evidence?.[kind];
+  let status = scenarioEvidenceStatus(scenario, kind);
+  if (section?.classification === 'traceability-only') status = 'partial';
+  return {
+    type: 'scenario-evidence',
+    status,
+    source: scenarioPath,
+    detail: `${kind}: ${section?.classification ?? 'missing'} / ${section?.status ?? 'missing'}`,
+    passes: status === 'passed',
+  };
+}
+
+function buildM3TwoStoreyEvidenceWorkstream() {
+  const config = M3_WAVE3_WORKSTREAMS.find((row) => row.id === 'M3-L');
+  const scenarioPath = `spec/benchmarks/${config.scenarioId}/scenario.json`;
+  const scenario = parseJsonFile(scenarioPath);
+  const requiredKinds = ['advisor', 'visual', 'export', 'semanticDiff'];
+  const gates = requiredKinds.map((kind) => {
+    const evidence = [scenarioEvidenceSignal(scenario, scenarioPath, kind)];
+    return m3Gate(
+      `two-storey-${kind}`,
+      `Two-storey ${kind} evidence`,
+      evidence.every((item) => item.passes),
+      `Two-storey ${kind} evidence is not an executable or accepted pass/fail artifact yet.`,
+      evidence,
+      evidence.some((item) => item.status === 'partial'),
+    );
+  });
+  return {
+    id: config.id,
+    label: config.label,
+    status: statusFromGates(gates),
+    gatesPassed: gates.filter((gate) => gate.passed).length,
+    gatesExpected: gates.length,
+    scenarioId: config.scenarioId,
+    gates,
+  };
+}
+
+function buildM3TwoStoreyUiWorkstream() {
+  const config = M3_WAVE3_WORKSTREAMS.find((row) => row.id === 'M3-M');
+  const scenarioPath = `spec/benchmarks/${config.scenarioId}/scenario.json`;
+  const scenario = parseJsonFile(scenarioPath);
+  const requiredKinds = ['ui', 'cmdK'];
+  const gates = requiredKinds.map((kind) => {
+    const evidence = [scenarioEvidenceSignal(scenario, scenarioPath, kind)];
+    return m3Gate(
+      `two-storey-${kind}`,
+      `Two-storey ${kind} executable or validated replay`,
+      evidence.every((item) => item.passes),
+      `Two-storey ${kind} path is still traceability-only or missing; activator-only Cmd+K entries cannot close semantic parity.`,
+      evidence,
+      evidence.some((item) => item.status === 'partial'),
+    );
+  });
+  return {
+    id: config.id,
+    label: config.label,
+    status: statusFromGates(gates),
+    gatesPassed: gates.filter((gate) => gate.passed).length,
+    gatesExpected: gates.length,
+    scenarioId: config.scenarioId,
+    gates,
+  };
+}
+
+function buildM3CleanExportWorkstream() {
+  const config = M3_WAVE3_WORKSTREAMS.find((row) => row.id === 'M3-N');
+  const exportEvidencePath =
+    'spec/benchmarks/simple-single-storey-house/live-evidence/export-evidence.json';
+  const exportEvidence = parseJsonFile(exportEvidencePath);
+  const artifactSignals = [
+    {
+      id: 'clean-gltf',
+      label: 'Clean glTF/GLB export manifest',
+      key: 'gltf',
+      passes: exportManifestKindPass(exportEvidence, 'gltf'),
+    },
+    {
+      id: 'clean-ifc',
+      label: 'Clean IFC export manifest',
+      key: 'ifc',
+      passes: exportManifestKindPass(exportEvidence, 'ifc'),
+    },
+    {
+      id: 'clean-pdf',
+      label: 'Clean sheet PDF artifact',
+      key: 'sheetPdf',
+      passes: exportArtifactPass(exportEvidence, 'sheetPdf'),
+    },
+  ];
+  const gates = artifactSignals.map((signal) =>
+    m3Gate(
+      signal.id,
+      signal.label,
+      signal.passes,
+      `${signal.label} is missing, unavailable, or failed in production evidence.`,
+      [
+        {
+          type: 'export-artifact',
+          status: signal.passes ? 'passed' : exportArtifactStatus(exportEvidence, signal.key),
+          source: exportEvidencePath,
+          detail: signal.label,
+          passes: signal.passes,
+        },
+      ],
+      Boolean(exportEvidence),
+    ),
+  );
+  return {
+    id: config.id,
+    label: config.label,
+    status: statusFromGates(gates),
+    gatesPassed: gates.filter((gate) => gate.passed).length,
+    gatesExpected: gates.length,
+    gates,
+  };
+}
+
+function buildM3WorkflowEvidenceWorkstream() {
+  const config = M3_WAVE3_WORKSTREAMS.find((row) => row.id === 'M3-O');
+  const commitEvidencePath =
+    'spec/benchmarks/simple-single-storey-house/live-evidence/live-commit-evidence.json';
+  const commitEvidence = parseJsonFile(commitEvidencePath);
+  const signals = [
+    {
+      id: 'client-op-or-digest-replay',
+      label: 'clientOpId or bundle-digest replay dedup',
+      status:
+        commitEvidence?.idempotency?.pass === true ||
+        commitEvidence?.transaction?.idempotency?.pass === true
+          ? 'passed'
+          : 'missing',
+      passes:
+        commitEvidence?.idempotency?.pass === true ||
+        commitEvidence?.transaction?.idempotency?.pass === true,
+    },
+    {
+      id: 'stale-revision-protection',
+      label: 'stale revision protection',
+      status:
+        commitEvidence?.staleRevisionProtection?.pass === true ||
+        commitEvidence?.transaction?.staleRevisionProtection?.pass === true
+          ? 'passed'
+          : 'missing',
+      passes:
+        commitEvidence?.staleRevisionProtection?.pass === true ||
+        commitEvidence?.transaction?.staleRevisionProtection?.pass === true,
+    },
+    {
+      id: 'm3-workflow-metadata',
+      label: 'M3 sketch/export/import workflow metadata',
+      status:
+        commitEvidence?.workflowMetadata?.m3SketchExportImportCoverage === true ||
+        commitEvidence?.transaction?.workflowMetadata?.m3SketchExportImportCoverage === true
+          ? 'passed'
+          : 'missing',
+      passes:
+        commitEvidence?.workflowMetadata?.m3SketchExportImportCoverage === true ||
+        commitEvidence?.transaction?.workflowMetadata?.m3SketchExportImportCoverage === true,
+    },
+  ];
+  const gates = signals.map((signal) =>
+    m3Gate(
+      signal.id,
+      signal.label,
+      signal.passes,
+      `${signal.label} proof was not detected in benchmark transaction evidence.`,
+      [
+        {
+          type: 'transaction-evidence',
+          status: signal.status,
+          source: commitEvidencePath,
+          detail: signal.label,
+          passes: signal.passes,
+        },
+      ],
+      Boolean(commitEvidence),
+    ),
+  );
+  return {
+    id: config.id,
+    label: config.label,
+    status: statusFromGates(gates),
+    gatesPassed: gates.filter((gate) => gate.passed).length,
+    gatesExpected: gates.length,
+    gates,
+  };
+}
+
+function buildM3Wave3FinalizationWorkstream(wave3Workstreams) {
+  const config = M3_WAVE3_WORKSTREAMS.find((row) => row.id === 'M3-P');
+  const plannedWorkstreamIds = M3_WAVE3_WORKSTREAMS.filter((row) => row.id !== 'M3-P').map(
+    (row) => row.id,
+  );
+  const observedWorkstreamIds = new Set(wave3Workstreams.map((row) => row.id));
+  const reportInputsComplete = plannedWorkstreamIds.every((id) => observedWorkstreamIds.has(id));
+  const gates = [
+    m3Gate(
+      'wave3-workstreams-enumerated',
+      'Wave 3 workstreams enumerated',
+      reportInputsComplete,
+      'Wave 3 audit did not enumerate every M3-K through M3-O workstream.',
+      plannedWorkstreamIds.map((id) => ({
+        type: 'audit-workstream',
+        status: observedWorkstreamIds.has(id) ? 'present' : 'missing',
+        source: 'scripts/audit-ui-mcp-parity.mjs',
+        detail: id,
+        passes: observedWorkstreamIds.has(id),
+      })),
+      wave3Workstreams.length > 0,
+    ),
+    m3Gate(
+      'next-wave-schedule-derived',
+      'Next-wave schedule derived from blockers',
+      reportInputsComplete,
+      'Wave 3 audit cannot derive next-wave schedule until all workstream gates are visible.',
+      [
+        {
+          type: 'audit-report',
+          status: reportInputsComplete ? 'derived' : 'incomplete',
+          source: 'scripts/audit-ui-mcp-parity.mjs',
+          detail:
+            'Generated report ranks remaining M3-K through M3-O blockers by workstream order and gate id.',
+          passes: reportInputsComplete,
+        },
+      ],
+      wave3Workstreams.length > 0,
+    ),
+  ];
+  return {
+    id: config.id,
+    label: config.label,
+    status: statusFromGates(gates),
+    gatesPassed: gates.filter((gate) => gate.passed).length,
+    gatesExpected: gates.length,
+    gates,
+  };
+}
+
+function buildM3Wave3(apiLedger, backendLedger) {
+  const evidenceWorkstreams = [
+    buildM3VerticalCirculationWorkstream(apiLedger, backendLedger),
+    buildM3TwoStoreyEvidenceWorkstream(),
+    buildM3TwoStoreyUiWorkstream(),
+    buildM3CleanExportWorkstream(),
+    buildM3WorkflowEvidenceWorkstream(),
+  ];
+  const workstreams = [
+    ...evidenceWorkstreams,
+    buildM3Wave3FinalizationWorkstream(evidenceWorkstreams),
+  ];
+  const gates = workstreams.flatMap((workstream) =>
+    workstream.gates.map((gate) => ({
+      workstreamId: workstream.id,
+      workstreamLabel: workstream.label,
+      ...gate,
+    })),
+  );
+  const blockers = gates
+    .filter((gate) => !gate.passed)
+    .map((gate) => ({
+      id: `${gate.workstreamId}:${gate.id}`,
+      blocker: gate.blocker,
+    }));
+  const status = workstreams.every((workstream) => workstream.status === 'Done')
+    ? 'Done'
+    : workstreams.some((workstream) => workstream.status !== 'Not Started')
+      ? 'Partial'
+      : 'Not Started';
+  return {
+    status,
+    workstreams,
+    gates,
+    blockers,
+    nextWaveSchedule: blockers.map((blocker, index) => ({
+      order: index + 1,
+      sourceBlocker: blocker.id,
+      recommendedFocus: blocker.blocker,
+    })),
+    summary: {
+      status,
+      workstreamStatusCounts: countBy(workstreams, (row) => row.status),
+      gatesExpected: gates.length,
+      gatesPassed: gates.filter((gate) => gate.passed).length,
+      blockerCount: blockers.length,
+      nextWaveItemCount: blockers.length,
     },
   };
 }
@@ -3883,6 +4321,55 @@ function renderM3Wave2Report(audit) {
   ].join('\n\n');
 }
 
+function renderM3Wave3Report(audit) {
+  const wave3 = audit.m3.wave3;
+  return [
+    '# M3 Wave 3 Parity Report',
+    sourceStamp(audit),
+    `M3 Wave 3 status: ${wave3.status}`,
+    `M3 Wave 3 gates passed: ${wave3.summary.gatesPassed} / ${wave3.summary.gatesExpected}`,
+    `M3 Wave 3 blockers: ${wave3.summary.blockerCount}`,
+    table(
+      ['Workstream', 'Label', 'Status', 'Gates', 'Blockers'],
+      wave3.workstreams.map((workstream) => [
+        workstream.id,
+        workstream.label,
+        workstream.status,
+        `${workstream.gatesPassed} / ${workstream.gatesExpected}`,
+        workstream.gates
+          .filter((gate) => !gate.passed)
+          .map((gate) => `${gate.id}: ${gate.blocker}`)
+          .join('; ') || 'none',
+      ]),
+    ),
+    '## Gates',
+    table(
+      ['Workstream', 'Gate', 'Status', 'Blocker', 'Evidence'],
+      wave3.gates.map((gate) => [
+        gate.workstreamId,
+        gate.label,
+        gate.status,
+        gate.blocker || 'none',
+        (gate.evidence ?? [])
+          .map((item) => `${item.status}@${item.source}`)
+          .slice(0, 6)
+          .join('<br>') || 'none',
+      ]),
+    ),
+    '## Next Wave Schedule',
+    wave3.nextWaveSchedule.length
+      ? table(
+          ['Order', 'Source blocker', 'Recommended focus'],
+          wave3.nextWaveSchedule.map((item) => [
+            item.order,
+            item.sourceBlocker,
+            item.recommendedFocus,
+          ]),
+        )
+      : 'No remaining Wave 3 blockers were detected.',
+  ].join('\n\n');
+}
+
 function renderGapReport(audit) {
   const m2TableHeaders = [
     'M2 tool',
@@ -3975,6 +4462,28 @@ function renderGapReport(audit) {
         workstream.status,
         `${workstream.gatesPassed} / ${workstream.gatesExpected}`,
         workstream.gates.find((gate) => !gate.passed)?.blocker ?? 'none',
+      ]),
+    ),
+    '## M3 Wave 3 Summary',
+    `M3 Wave 3 status: ${audit.summary.m3Wave3Status}`,
+    `M3 Wave 3 gates passed: ${audit.summary.m3Wave3GatePassed} / ${audit.summary.m3Wave3GateExpected}`,
+    `M3 Wave 3 blockers: ${audit.summary.m3Wave3BlockerCount}`,
+    `Next-wave schedule items: ${audit.summary.m3Wave3NextWaveItemCount}`,
+    table(
+      ['Workstream', 'Status', 'Gates', 'Primary blocker'],
+      audit.m3.wave3.workstreams.map((workstream) => [
+        `${workstream.id} ${workstream.label}`,
+        workstream.status,
+        `${workstream.gatesPassed} / ${workstream.gatesExpected}`,
+        workstream.gates.find((gate) => !gate.passed)?.blocker ?? 'none',
+      ]),
+    ),
+    table(
+      ['Order', 'Source blocker', 'Recommended focus'],
+      audit.m3.wave3.nextWaveSchedule.map((item) => [
+        item.order,
+        item.sourceBlocker,
+        item.recommendedFocus,
       ]),
     ),
     table(
@@ -4116,6 +4625,10 @@ async function main() {
   await writeMarkdown(
     path.join(args.generatedDir, 'm3-wave2-report.md'),
     renderM3Wave2Report(audit),
+  );
+  await writeMarkdown(
+    path.join(args.generatedDir, 'm3-wave3-report.md'),
+    renderM3Wave3Report(audit),
   );
   await writeMarkdown(path.join(args.generatedDir, 'parity-gap-report.md'), renderGapReport(audit));
   console.log(

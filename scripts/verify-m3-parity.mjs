@@ -45,15 +45,20 @@ function reportM3AuditStatus() {
   const auditPath = path.join(REPO_ROOT, 'spec', 'generated', 'ui-mcp-parity.json');
   const audit = JSON.parse(fs.readFileSync(auditPath, 'utf8'));
   const wave2 = audit.m3?.wave2;
+  const wave3 = audit.m3?.wave3;
   if (!wave2) {
     console.error('Generated audit is missing m3.wave2.');
     return 1;
   }
+  if (!wave3) {
+    console.error('Generated audit is missing m3.wave3.');
+    return 1;
+  }
 
   console.log(
-    `M3 status: ${audit.m3?.status ?? 'Unknown'}; Wave 2 ${wave2.status}; gates ${wave2.summary.gatesPassed} / ${wave2.summary.gatesExpected}.`,
+    `M3 status: ${audit.m3?.status ?? 'Unknown'}; Wave 2 ${wave2.status}; gates ${wave2.summary.gatesPassed} / ${wave2.summary.gatesExpected}; Wave 3 ${wave3.status}; gates ${wave3.summary.gatesPassed} / ${wave3.summary.gatesExpected}.`,
   );
-  for (const workstream of wave2.workstreams ?? []) {
+  for (const workstream of [...(wave2.workstreams ?? []), ...(wave3.workstreams ?? [])]) {
     console.log(
       `- ${workstream.id}: ${workstream.status} (${workstream.gatesPassed} / ${workstream.gatesExpected} gates)`,
     );
@@ -62,7 +67,10 @@ function reportM3AuditStatus() {
     }
   }
 
-  const doneWorkstreamsWithSyntheticEvidence = (wave2.workstreams ?? []).flatMap((workstream) => {
+  const doneWorkstreamsWithSyntheticEvidence = [
+    ...(wave2.workstreams ?? []),
+    ...(wave3.workstreams ?? []),
+  ].flatMap((workstream) => {
     if (workstream.status !== 'Done') return [];
     return (workstream.gates ?? []).flatMap((gate) =>
       (gate.evidence ?? [])
@@ -76,11 +84,15 @@ function reportM3AuditStatus() {
     return 1;
   }
 
-  const requiredDone = ['M3-F', 'M3-G', 'M3-H', 'M3-I'];
-  const unfinished = requiredDone.filter(
-    (id) => wave2.workstreams?.find((workstream) => workstream.id === id)?.status !== 'Done',
+  const requiredDone = ['M3-F', 'M3-G', 'M3-H', 'M3-I', 'M3-K', 'M3-L', 'M3-M', 'M3-N', 'M3-O'];
+  const workstreamsById = new Map(
+    [...(wave2.workstreams ?? []), ...(wave3.workstreams ?? [])].map((workstream) => [
+      workstream.id,
+      workstream,
+    ]),
   );
-  if ((audit.m3?.status === 'Done' || wave2.status === 'Done') && unfinished.length) {
+  const unfinished = requiredDone.filter((id) => workstreamsById.get(id)?.status !== 'Done');
+  if (audit.m3?.status === 'Done' && unfinished.length) {
     console.error(
       `M3 cannot be Done while these workstreams are unfinished: ${unfinished.join(', ')}.`,
     );

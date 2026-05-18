@@ -1423,6 +1423,10 @@ _SEMANTIC_SURFACE_ALIASES = {
     "opening.door_on_wall": "door_on_wall",
     "opening.window_on_wall": "window_on_wall",
     "opening.roof_opening": "roof_opening",
+    "opening.slab_opening": "slab_opening",
+    "opening.shaft_opening": "shaft_opening",
+    "author.stair_between_levels": "stair_between_levels",
+    "author.railing": "railing",
     "view.save_3d": "save_3d_view",
     "view.plan": "plan_view",
 }

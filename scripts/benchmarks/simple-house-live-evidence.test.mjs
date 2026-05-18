@@ -93,6 +93,21 @@ function makePng(width, height) {
   ]);
 }
 
+function stableJson(value) {
+  if (Array.isArray(value)) return `[${value.map(stableJson).join(',')}]`;
+  if (value && typeof value === 'object') {
+    return `{${Object.keys(value)
+      .sort()
+      .map((key) => `${JSON.stringify(key)}:${stableJson(value[key])}`)
+      .join(',')}}`;
+  }
+  return JSON.stringify(value);
+}
+
+function sha256(value) {
+  return createHash('sha256').update(stableJson(value)).digest('hex');
+}
+
 function simpleHouseSnapshotElements() {
   return {
     'ssh-lvl-ground': { id: 'ssh-lvl-ground', kind: 'level' },
@@ -163,9 +178,24 @@ function createEvidenceServer({
   summaryBody = simpleHouseSummary(committedRevision),
 } = {}) {
   const requests = [];
+  let committedTransaction = null;
   const pngBytes = makePng(128, 112);
   const pngSha256 = createHash('sha256').update(pngBytes).digest('hex');
-  const pdfBytes = Buffer.from('%PDF-1.4\n% simple-house live runner stub\n', 'utf8');
+  const pdfBytes = Buffer.from(
+    `%PDF-1.4
+% simple-house live runner stub
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R >>
+endobj
+2 0 obj
+<< /Type /Pages /Count 0 >>
+endobj
+trailer
+<< /Root 1 0 R >>
+%%EOF
+`,
+    'utf8',
+  );
   const server = http.createServer(async (request, response) => {
     const body = request.method === 'POST' ? JSON.parse(await readBody(request)) : null;
     requests.push({ method: request.method, url: request.url, body });
@@ -181,6 +211,71 @@ function createEvidenceServer({
     }
 
     if (request.method === 'POST' && request.url === '/api/models/model-disposable/bundles') {
+      const bundleDigest = sha256({
+        commands: body.bundle.commands,
+        parentRevision: body.bundle.parentRevision,
+        assumptions: body.bundle.assumptions,
+        route: '/api/models/{model_id}/bundles',
+        submitter: body.submitter,
+      });
+      const idempotency = {
+        clientOpId: body.clientOpId ?? null,
+        bundleDigestSha256: bundleDigest,
+      };
+      if (body.mode === 'commit' && committedTransaction) {
+        const sameUser = body.userId === committedTransaction.userId;
+        const sameClientOpId =
+          body.clientOpId && body.clientOpId === committedTransaction.idempotency.clientOpId;
+        const sameDigest = bundleDigest === committedTransaction.idempotency.bundleDigestSha256;
+        if (sameUser && (sameClientOpId || sameDigest)) {
+          writeJson(response, 200, {
+            ok: true,
+            applied: true,
+            newRevision: committedRevision,
+            currentRevision: committedRevision,
+            changedIds: commitChangedIds,
+            violations: [],
+            transactionMetadata: committedTransaction.transactionMetadata,
+            idempotentReplay: true,
+            idempotencyMatch: committedTransaction.idempotency,
+          });
+          return;
+        }
+        writeJson(response, 409, {
+          detail: {
+            result: { applied: false },
+            violations: [
+              {
+                advisoryClass: 'revision_conflict',
+                message: `parentRevision ${body.bundle.parentRevision} != current revision ${committedRevision}`,
+                blocking: true,
+              },
+            ],
+          },
+        });
+        return;
+      }
+      const transactionMetadata =
+        body.mode === 'commit'
+          ? {
+              schemaVersion: 'txn-v1.0',
+              changedIds: commitChangedIds,
+              idempotency,
+              workflow: {
+                route: '/api/models/{model_id}/bundles',
+                entryPoint: 'cmd-v3-apply-bundle',
+                surface: 'api-v3',
+                mode: 'commit',
+              },
+            }
+          : null;
+      if (body.mode === 'commit') {
+        committedTransaction = {
+          userId: body.userId,
+          idempotency,
+          transactionMetadata,
+        };
+      }
       writeJson(response, 200, {
         ok: true,
         applied: body.mode === 'commit',
@@ -189,6 +284,7 @@ function createEvidenceServer({
         changedIds: body.mode === 'commit' ? commitChangedIds : [],
         checkpointSnapshotId: body.mode === 'commit' ? `checkpoint-${committedRevision}` : null,
         violations: [],
+        transactionMetadata,
         replayDiagnostics: { commandCount: body.bundle.commands.length },
       });
       return;
@@ -430,7 +526,7 @@ test('live evidence runner commits only with explicit opt-in against disposable 
         requests
           .filter((request) => request.method === 'POST' && request.url.endsWith('/bundles'))
           .map((request) => request.body.mode),
-        ['dry_run', 'commit'],
+        ['dry_run', 'commit', 'commit', 'commit', 'commit'],
       );
       const liveCommit = JSON.parse(
         await fs.readFile(path.join(outDir, 'live-commit-evidence.json'), 'utf8'),
@@ -470,6 +566,16 @@ test('live evidence runner commits only with explicit opt-in against disposable 
       assert.equal(liveCommit.semanticClosure.pass, true);
       assert.equal(liveCommit.semanticClosure.counts.walls, 6);
       assert.equal(liveCommit.semanticClosure.counts.openings, 6);
+      assert.equal(liveCommit.idempotency.pass, true);
+      assert.equal(liveCommit.idempotency.clientOpIdReplay.pass, true);
+      assert.equal(liveCommit.idempotency.bundleDigestReplay.pass, true);
+      assert.equal(liveCommit.staleRevisionProtection.pass, true);
+      assert.deepEqual(
+        liveCommit.staleRevisionProtection.staleParentRevisionRejected.advisoryClasses,
+        ['revision_conflict'],
+      );
+      assert.equal(liveCommit.workflowMetadata.m3SketchExportImportCoverage, true);
+      assert.equal(liveCommit.transaction.workflowMetadata.m3SketchExportImportCoverage, true);
       assert.equal(execution.clean, true);
       assert.equal(execution.pass, true);
       assert.equal(execution.liveCommit.status, 'live-commit-clean');
@@ -481,7 +587,7 @@ test('live evidence runner commits only with explicit opt-in against disposable 
       assert.equal(visual.pass, true);
       assert.equal(visual.sheetPrintRaster.widthPx, 128);
       assert.equal(visual.sheetPrintRaster.heightPx, 112);
-      assert.equal(exports.pass, true);
+      assert.equal(exports.pass, true, JSON.stringify(exports, null, 2));
       assert.equal(
         exports.manifests.ifc.summary.exportedKindCount,
         SIMPLE_HOUSE_EXPORTED_KIND_COUNT,

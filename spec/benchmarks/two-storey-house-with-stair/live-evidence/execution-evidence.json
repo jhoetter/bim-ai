@@ -1,0 +1,15 @@
+{
+  "mode": "offline-fixture",
+  "ok": true,
+  "publicSurface": {
+    "kind": "deterministic-fixture",
+    "cliEquivalent": "node scripts/benchmarks/two-storey-stair.mjs --mode offline --json"
+  },
+  "bundleDigest": "142e8dde2b71732b7d11ab9aaae6425ebde571893eee752f62b573ea239043f7",
+  "commandCount": 48,
+  "validation": {
+    "status": "fixture-semantic-diff",
+    "ok": true
+  },
+  "rawBundleOnlyCapabilities": ["createStair", "createSlabOpening", "createRailing"]
+}

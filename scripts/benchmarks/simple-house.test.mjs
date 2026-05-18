@@ -98,6 +98,21 @@ function makePng(width, height) {
   ]);
 }
 
+function makePdfBytes(label = 'simple-house-export-evidence') {
+  const body = [
+    '%PDF-1.4',
+    '1 0 obj << /Type /Catalog /Pages 2 0 R >> endobj',
+    '2 0 obj << /Type /Pages /Kids [3 0 R] /Count 1 >> endobj',
+    `3 0 obj << /Type /Page /Parent 2 0 R /Resources <<>> /MediaBox [0 0 612 792] /Contents 4 0 R >> endobj`,
+    `4 0 obj << /Length ${label.length + 48} >> stream`,
+    `BT /F1 12 Tf 72 720 Td (${label}) Tj ET`,
+    'endstream endobj',
+    'trailer << /Root 1 0 R >>',
+    '%%EOF',
+  ].join('\n');
+  return Buffer.from(body, 'utf8');
+}
+
 function simpleHouseSnapshotBody(modelId) {
   return {
     modelId,
@@ -181,7 +196,7 @@ function createCommittedEvidenceServer({
     exportedIfcKindsInArtifact: SIMPLE_HOUSE_EXPORT_COUNTS_BY_KIND,
   },
   ifcManifestStatus = 200,
-  sheetPdfBytes = Buffer.from('%PDF-1.4\n% simple-house stub\n', 'utf8'),
+  sheetPdfBytes = makePdfBytes(),
   sheetPdfStatus = 200,
   validationBody = ({ modelId: id }) => ({
     modelId: id,
@@ -407,6 +422,7 @@ test('simple-house collect committed evidence writes clean advisor-validation ar
       '2',
       '--user-id',
       'agent-test',
+      '--commit-live',
       '--collect-committed-evidence',
       '--out-dir',
       outDir,
@@ -455,6 +471,80 @@ test('simple-house collect committed evidence writes clean advisor-validation ar
     assert.equal(advisorValidation.semanticSourceChecks.pass, true);
     assert.equal(advisorValidation.preflight.liveAdvisorValidationCaptured, true);
     assert.equal(advisorValidation.preflight.semanticSourceMatchesExpected, true);
+
+    const exports = JSON.parse(
+      await fs.readFile(path.join(outDir, 'export-evidence.json'), 'utf8'),
+    );
+    assert.equal(exports.status, 'artifact-or-manifest-returned');
+    assert.equal(exports.pass, true);
+    assert.equal(exports.changedModelProof.pass, true);
+    assert.deepEqual(exports.changedIds, ['ssh-door-entry', 'ssh-wall-north']);
+    assert.equal(exports.manifests.gltf.status, 'manifest-returned');
+    assert.equal(exports.manifests.ifc.status, 'manifest-returned');
+    assert.equal(exports.artifacts.sheetPdf.status, 'artifact-returned');
+    assert.equal(exports.artifacts.sheetPdf.nonPlaceholderProof.pass, true);
+  } finally {
+    await close(server);
+    await fs.rm(outDir, { recursive: true, force: true });
+  }
+});
+
+test('simple-house export evidence accepts explicit optional IFC backend manifest', async () => {
+  const { server } = createCommittedEvidenceServer({
+    modelId: 'model-optional-ifc',
+    ifcManifestBody: {
+      format: 'ifc_manifest_v0',
+      artifactHasGeometryEntities: false,
+      ifcEncoding: 'empty_ifc_skeleton_v0',
+      exportedIfcKindsInArtifact: {},
+      countsByKind: {
+        ...SIMPLE_HOUSE_EXPORT_COUNTS_BY_KIND,
+        sheet: 1,
+        schedule: 1,
+        placed_tag: 1,
+        dimension: 2,
+      },
+      kernelExpectedIfcKinds: SIMPLE_HOUSE_EXPORT_COUNTS_BY_KIND,
+      ifcImportPreview_v0: { available: false, reason: 'ifcopenshell_not_installed' },
+    },
+  });
+
+  const address = await listen(server);
+  const outDir = await fs.mkdtemp(path.join(os.tmpdir(), 'simple-house-optional-ifc-'));
+  try {
+    const baseUrl = `http://${address.address}:${address.port}`;
+    const { result } = await runBenchmark([
+      '--mode',
+      'live',
+      '--base-url',
+      baseUrl,
+      '--model-id',
+      'model-optional-ifc',
+      '--parent-revision',
+      '2',
+      '--commit-live',
+      '--collect-committed-evidence',
+      '--out-dir',
+      outDir,
+    ]);
+
+    assert.equal(result.ok, true);
+    assert.equal(result.committedEvidence.exports.pass, true);
+    assert.equal(
+      result.committedEvidence.exports.manifests.ifc.status,
+      'optional-backend-manifest-returned',
+    );
+    assert.equal(
+      result.committedEvidence.exports.manifests.ifc.optionalBackendManifest_v1.reason,
+      'ifcopenshell_not_installed',
+    );
+
+    const exports = JSON.parse(
+      await fs.readFile(path.join(outDir, 'export-evidence.json'), 'utf8'),
+    );
+    assert.equal(exports.pass, true);
+    assert.equal(exports.manifests.ifc.pass, true);
+    assert.equal(exports.artifacts.sheetPdf.nonPlaceholderProof.pass, true);
   } finally {
     await close(server);
     await fs.rm(outDir, { recursive: true, force: true });

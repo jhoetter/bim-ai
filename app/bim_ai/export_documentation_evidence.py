@@ -54,6 +54,37 @@ def _sha256_json(data: Any) -> str:
     return _sha256_bytes(blob)
 
 
+def _artifact_status(
+    *,
+    byte_length: int,
+    digest_sha256: str,
+    optional_backend: bool = False,
+    artifact_has_geometry: bool | None = None,
+) -> dict[str, Any]:
+    non_placeholder = bool(
+        byte_length > 0
+        and len(digest_sha256) == 64
+        and digest_sha256 != hashlib.sha256(b"").hexdigest()
+    )
+    if optional_backend:
+        status = "optional-backend-manifest"
+        pass_value = True
+    else:
+        geometry_ok = artifact_has_geometry is not False
+        status = "artifact-returned" if non_placeholder and geometry_ok else "invalid-artifact"
+        pass_value = non_placeholder and geometry_ok
+    return {
+        "status": status,
+        "pass": pass_value,
+        "nonPlaceholderProof": {
+            "method": "byte-length-and-sha256",
+            "pass": non_placeholder,
+            "byteLength": byte_length,
+            "digestSha256": digest_sha256,
+        },
+    }
+
+
 def _export_href(model_id: UUID | str | None, path: str, *, sheet_id: str | None = None) -> str | None:
     if model_id is None:
         return None
@@ -90,6 +121,13 @@ def _sheet_rows(doc: Document, model_id: UUID | str | None) -> list[dict[str, An
                 "digestSha256": _sha256_bytes(pdf_bytes),
             },
         ]
+        for artifact in artifacts:
+            artifact.update(
+                _artifact_status(
+                    byte_length=int(artifact["byteLength"]),
+                    digest_sha256=str(artifact["digestSha256"]),
+                )
+            )
         rows.append(
             {
                 "sheetId": sh.id,
@@ -190,6 +228,29 @@ def _model_export_rows(doc: Document, model_id: UUID | str | None) -> list[dict[
     glb_bytes = document_to_glb_bytes(doc)
     gltf_manifest = build_visual_export_manifest(doc)
 
+    ifc_digest = _sha256_bytes(ifc_step.encode("utf-8"))
+    gltf_digest = _sha256_bytes(gltf_bytes)
+    glb_digest = _sha256_bytes(glb_bytes)
+    ifc_optional_backend = not IFC_AVAILABLE and not ifc_has_physical_geometry
+
+    ifc_status = _artifact_status(
+        byte_length=len(ifc_step.encode("utf-8")),
+        digest_sha256=ifc_digest,
+        optional_backend=ifc_optional_backend,
+        artifact_has_geometry=ifc_has_physical_geometry,
+    )
+    if ifc_optional_backend:
+        ifc_status["optionalBackendManifest_v1"] = {
+            "backend": "ifcopenshell",
+            "available": False,
+            "reason": "ifcopenshell_not_installed",
+            "stableFallback": "minimal_empty_ifc_skeleton",
+            "overclaimProtection": (
+                "artifactHasPhysicalGeometry=false and status=optional-backend-manifest; "
+                "the skeleton digest is provided only as fallback-manifest evidence."
+            ),
+        }
+
     return [
         {
             "artifactId": "model:ifc",
@@ -198,7 +259,7 @@ def _model_export_rows(doc: Document, model_id: UUID | str | None) -> list[dict[
             "mimeType": "application/x-step",
             "href": _export_href(model_id, "model.ifc"),
             "byteLength": len(ifc_step.encode("utf-8")),
-            "digestSha256": _sha256_bytes(ifc_step.encode("utf-8")),
+            "digestSha256": ifc_digest,
             "encoding": ifc_encoding,
             "ifcOpenShellAvailable": IFC_AVAILABLE,
             "artifactHasPhysicalGeometry": ifc_has_physical_geometry,
@@ -206,6 +267,7 @@ def _model_export_rows(doc: Document, model_id: UUID | str | None) -> list[dict[
                 doc, emitting_kernel_body=ifc_has_physical_geometry
             ),
             "semanticReadback": inspect_kernel_ifc_semantics(doc=doc),
+            **ifc_status,
         },
         {
             "artifactId": "model:gltf",
@@ -214,9 +276,10 @@ def _model_export_rows(doc: Document, model_id: UUID | str | None) -> list[dict[
             "mimeType": "model/gltf+json",
             "href": _export_href(model_id, "model.gltf"),
             "byteLength": len(gltf_bytes),
-            "digestSha256": _sha256_bytes(gltf_bytes),
+            "digestSha256": gltf_digest,
             "manifestDigestSha256": _sha256_json(gltf_manifest),
             "manifestExtension": gltf_manifest["extensions"]["BIM_AI_exportManifest_v0"],
+            **_artifact_status(byte_length=len(gltf_bytes), digest_sha256=gltf_digest),
         },
         {
             "artifactId": "model:glb",
@@ -225,7 +288,8 @@ def _model_export_rows(doc: Document, model_id: UUID | str | None) -> list[dict[
             "mimeType": "model/gltf-binary",
             "href": _export_href(model_id, "model.glb"),
             "byteLength": len(glb_bytes),
-            "digestSha256": _sha256_bytes(glb_bytes),
+            "digestSha256": glb_digest,
+            **_artifact_status(byte_length=len(glb_bytes), digest_sha256=glb_digest),
         },
     ]
 
@@ -255,6 +319,8 @@ def build_documentation_export_production_evidence_v1(
             "href": artifact.get("href"),
             "digestSha256": artifact.get("digestSha256"),
             "byteLength": artifact.get("byteLength"),
+            "status": artifact.get("status"),
+            "pass": artifact.get("pass"),
         }
         for artifact in all_artifacts
     ]
@@ -300,6 +366,23 @@ def build_documentation_export_production_evidence_v1(
         "glbArtifactCount": sum(1 for artifact in all_artifacts if artifact.get("kind") == "glb"),
         "externalExportMarkerCount": len(marker_rows),
     }
+    artifact_closure_rows = [
+        {
+            "artifactId": artifact["artifactId"],
+            "kind": artifact["kind"],
+            "artifactName": artifact["artifactName"],
+            "status": artifact.get("status"),
+            "pass": artifact.get("pass"),
+            "byteLength": artifact.get("byteLength"),
+            "digestSha256": artifact.get("digestSha256"),
+            "href": artifact.get("href"),
+            "optionalBackendManifest_v1": artifact.get("optionalBackendManifest_v1"),
+            "nonPlaceholderProof": artifact.get("nonPlaceholderProof"),
+        }
+        for artifact in all_artifacts
+    ]
+    artifact_closure_rows.sort(key=lambda row: str(row["artifactId"]))
+    clean_or_explicit = all(row.get("pass") is True for row in artifact_closure_rows)
     body: dict[str, Any] = {
         "format": DOCUMENTATION_EXPORT_PRODUCTION_EVIDENCE_V1,
         "modelId": str(model_id) if model_id is not None else None,
@@ -310,6 +393,15 @@ def build_documentation_export_production_evidence_v1(
         "tags": tags,
         "dimensions": dimensions,
         "modelExports": model_exports,
+        "artifactClosure_v1": {
+            "format": "documentationExportArtifactClosure_v1",
+            "status": "clean-or-explicit-optional-backend"
+            if clean_or_explicit
+            else "artifact-closure-incomplete",
+            "pass": clean_or_explicit,
+            "rows": artifact_closure_rows,
+            "digestSha256": _sha256_json(artifact_closure_rows),
+        },
         "externalExportMarkers_v1": {
             "format": "externalExportMarkers_v1",
             "markers": marker_rows,

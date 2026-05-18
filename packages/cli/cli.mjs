@@ -928,12 +928,74 @@ async function cmdAuthor(modelId, userId, sub, args) {
     await runGeneratedBundle(modelId, userId, bundle, opts.mode, opts.jsonOnly);
     return;
   }
+  if (sub === 'stair-between-levels') {
+    const baseLevelId = flagValue(args, ['--base-level', '--base']);
+    const topLevelId = flagValue(args, ['--top-level', '--top']);
+    const run = parsePoint2List(flagValue(args, ['--run', '--line']), '--run');
+    if (!baseLevelId || !topLevelId) {
+      console.error('author stair-between-levels requires --base-level <id> --top-level <id>.');
+      process.exit(1);
+    }
+    if (run.length !== 2) {
+      console.error('author stair-between-levels requires --run "x,y;x,y".');
+      process.exit(1);
+    }
+    const command = {
+      type: 'createStair',
+      baseLevelId,
+      topLevelId,
+      runStartMm: run[0],
+      runEndMm: run[1],
+      name: flagValue(args, '--name') ?? 'Stair',
+      widthMm: parseNumber(flagValue(args, '--width'), 1000),
+      riserMm: parseNumber(flagValue(args, '--riser'), 175),
+      treadMm: parseNumber(flagValue(args, '--tread'), 275),
+    };
+    const id = flagValue(args, '--id');
+    if (id) command.id = id;
+    const bundle = buildGeneratedBundle({
+      toolId: 'author.stair_between_levels',
+      commands: [command],
+      parentRevision: opts.parentRevision,
+    });
+    await runGeneratedBundle(modelId, userId, bundle, opts.mode, opts.jsonOnly);
+    return;
+  }
+  if (sub === 'railing') {
+    const pathMm = parsePoint2List(flagValue(args, ['--path', '--points']), '--path');
+    const command = {
+      type: 'createRailing',
+      pathMm,
+      name: flagValue(args, '--name') ?? 'Railing',
+    };
+    const id = flagValue(args, '--id');
+    const hostedStairId = flagValue(args, ['--hosted-stair', '--stair']);
+    const balusterPattern = parseJsonObjectFlag(
+      flagValue(args, '--baluster-pattern'),
+      '--baluster-pattern',
+    );
+    const handrailSupports = parseJsonArrayFlag(
+      flagValue(args, '--handrail-supports'),
+      '--handrail-supports',
+    );
+    if (id) command.id = id;
+    if (hostedStairId) command.hostedStairId = hostedStairId;
+    if (balusterPattern) command.balusterPattern = balusterPattern;
+    if (handrailSupports.length) command.handrailSupports = handrailSupports;
+    const bundle = buildGeneratedBundle({
+      toolId: 'author.railing',
+      commands: [command],
+      parentRevision: opts.parentRevision,
+    });
+    await runGeneratedBundle(modelId, userId, bundle, opts.mode, opts.jsonOnly);
+    return;
+  }
   if (sub === 'opening') {
     await cmdOpening(modelId, userId, flagValue(args, '--kind') ?? 'wall-opening', args);
     return;
   }
   console.error(
-    `Unknown author subcommand: ${sub ?? '(none)'}. Use wall | wall-chain | floor-boundary | opening.`,
+    `Unknown author subcommand: ${sub ?? '(none)'}. Use wall | wall-chain | floor-boundary | stair-between-levels | railing | opening.`,
   );
   process.exit(1);
 }
@@ -1152,9 +1214,26 @@ async function cmdOpening(modelId, userId, sub, args) {
     const id = flagValue(args, '--id');
     if (id) command.id = id;
     toolId = 'opening.roof_opening';
+  } else if (sub === 'slab-opening' || sub === 'shaft-opening') {
+    const hostFloorId = flagValue(args, ['--floor', '--host-floor']);
+    if (!hostFloorId) {
+      console.error(`opening ${sub} requires --floor <id>.`);
+      process.exit(1);
+    }
+    command = {
+      type: 'createSlabOpening',
+      hostFloorId,
+      boundaryMm: parsePoint2List(flagValue(args, ['--boundary', '--points']), '--boundary'),
+      isShaft: sub === 'shaft-opening' || hasFlag(args, '--shaft'),
+      name:
+        flagValue(args, '--name') ?? (sub === 'shaft-opening' ? 'Shaft opening' : 'Slab opening'),
+    };
+    const id = flagValue(args, '--id');
+    if (id) command.id = id;
+    toolId = sub === 'shaft-opening' ? 'opening.shaft_opening' : 'opening.slab_opening';
   } else {
     console.error(
-      `Unknown opening subcommand: ${sub ?? '(none)'}. Use door-on-wall | window-on-wall | wall-opening | roof-opening.`,
+      `Unknown opening subcommand: ${sub ?? '(none)'}. Use door-on-wall | window-on-wall | wall-opening | roof-opening | slab-opening | shaft-opening.`,
     );
     process.exit(1);
   }
@@ -2725,8 +2804,12 @@ Commands:
                                       MCP-M2-C: generate createWallChain cmd-v3 bundle.
   author floor-boundary --level <id> --boundary "x,y;x,y;..." [--dry-run|--commit|--json]
                                       MCP-M2-C: generate createFloor cmd-v3 bundle.
-  opening door-on-wall|window-on-wall|wall-opening|roof-opening ...
-                                      MCP-M2-C: generate hosted/opening cmd-v3 bundles.
+  author stair-between-levels --base-level <id> --top-level <id> --run "x,y;x,y" [--json]
+                                      MCP-M3-K: generate typed createStair cmd-v3 bundle.
+  author railing --path "x,y;x,y;..." [--hosted-stair <id>] [--json]
+                                      MCP-M3-K: generate typed createRailing cmd-v3 bundle.
+  opening door-on-wall|window-on-wall|wall-opening|roof-opening|slab-opening|shaft-opening ...
+                                      MCP-M2/M3-K: generate hosted/opening cmd-v3 bundles.
   view save-3d [--id <id>] [--name <n>] [--camera <json>] [--dry-run|--commit|--json]
                                       MCP-M2-H: generate saveViewpoint cmd-v3 bundle.
   qa advisor [--output json] [--severity info|warning|error]

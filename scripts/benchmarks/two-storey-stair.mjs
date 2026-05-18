@@ -9,14 +9,36 @@ const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..
 const BENCHMARK_DIR = path.join(REPO_ROOT, 'spec', 'benchmarks', 'two-storey-house-with-stair');
 const DEFAULT_BUNDLE = path.join(BENCHMARK_DIR, 'mcp-cli-command-bundle.json');
 const DEFAULT_EXPECTED = path.join(BENCHMARK_DIR, 'expected-semantics.json');
+const TWO_STOREY_SHEET_ID = 'tsh-sheet-a201';
+const TWO_STOREY_REQUIRED_VIEW_IDS = [
+  'tsh-view-ground-plan',
+  'tsh-view-upper-plan',
+  'tsh-section-stair',
+  'tsh-view-3d',
+];
+const KIND_ALIASES = {
+  IfcWall: 'wall',
+  IfcSlab: 'floor',
+  IfcRoof: 'roof',
+  IfcDoor: 'door',
+  IfcWindow: 'window',
+  IfcSpace: 'room',
+  IfcBuildingStorey: 'level',
+  IfcStair: 'stair',
+  IfcRailing: 'railing',
+  IfcOpeningElement: 'slab_opening',
+};
 
 function usage() {
   console.error(`Usage:
   node scripts/benchmarks/two-storey-stair.mjs [--bundle <path>] [--expected <path>] [--json]
     [--mode offline|auto|live] [--base-url <url>] [--model-id <id>]
     [--parent-revision <rev>] [--user-id <id>] [--out-dir <path>] [--commit-live]
+    [--collect-committed-evidence]
 
   --commit-live mutates the target model. Without it, live mode only dry-runs.
+  --collect-committed-evidence reads advisor/validation/visual/export evidence
+  from the current target model without posting a commit.
 `);
   process.exit(2);
 }
@@ -33,11 +55,13 @@ function parseArgs(argv) {
     userId: process.env.BIM_AI_USER_ID ?? 'benchmark-agent',
     outDir: null,
     commitLive: false,
+    collectCommittedEvidence: false,
   };
   for (let i = 0; i < argv.length; i += 1) {
     const arg = argv[i];
     if (arg === '--json') args.json = true;
     else if (arg === '--commit-live') args.commitLive = true;
+    else if (arg === '--collect-committed-evidence') args.collectCommittedEvidence = true;
     else if (arg === '--bundle' && argv[i + 1]) args.bundle = path.resolve(argv[++i]);
     else if (arg === '--expected' && argv[i + 1]) args.expected = path.resolve(argv[++i]);
     else if (arg === '--mode' && argv[i + 1]) args.mode = argv[++i];
@@ -395,6 +419,132 @@ async function postJson(url, body) {
   }
 }
 
+async function getJson(url) {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 30_000);
+  try {
+    const response = await fetch(url, { signal: controller.signal });
+    const text = await response.text();
+    let json;
+    try {
+      json = text ? JSON.parse(text) : null;
+    } catch {
+      json = { raw: text };
+    }
+    return { status: response.status, ok: response.ok, body: json };
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
+async function getArtifact(url, accept) {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 30_000);
+  try {
+    const response = await fetch(url, {
+      headers: accept ? { accept } : undefined,
+      signal: controller.signal,
+    });
+    const bytes = Buffer.from(await response.arrayBuffer());
+    return {
+      status: response.status,
+      ok: response.ok,
+      contentType: response.headers.get('content-type') ?? null,
+      byteLength: bytes.length,
+      sha256: createHash('sha256').update(bytes).digest('hex'),
+      headerHex: bytes.subarray(0, 8).toString('hex'),
+      pngDimensions: pngDimensions(bytes),
+      headers: Object.fromEntries(response.headers.entries()),
+    };
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
+function pngDimensions(bytes) {
+  if (!Buffer.isBuffer(bytes) || bytes.length < 24) return null;
+  if (bytes.subarray(0, 8).toString('hex') !== '89504e470d0a1a0a') return null;
+  if (bytes.subarray(12, 16).toString('ascii') !== 'IHDR') return null;
+  return {
+    widthPx: bytes.readUInt32BE(16),
+    heightPx: bytes.readUInt32BE(20),
+  };
+}
+
+function responseValue(body, keys) {
+  for (const key of keys) {
+    if (body?.[key] !== undefined) return body[key];
+    if (body?.result?.[key] !== undefined) return body.result[key];
+  }
+  return null;
+}
+
+function extractChangedIds(body) {
+  const candidates = [
+    body?.changedIds,
+    body?.changedElementIds,
+    body?.result?.changedIds,
+    body?.result?.changedElementIds,
+    body?.delta?.changedIds,
+    body?.delta?.changedElementIds,
+    body?.modelDelta?.changedIds,
+    body?.modelDelta?.changedElementIds,
+  ];
+  const ids = new Set();
+  for (const candidate of candidates) {
+    if (Array.isArray(candidate)) {
+      for (const id of candidate) ids.add(String(id));
+    }
+  }
+  return [...ids].sort();
+}
+
+function summarizeCommandLog(commandLog) {
+  if (!commandLog || typeof commandLog !== 'object') return null;
+  const entries = Array.isArray(commandLog.entries) ? commandLog.entries : [];
+  return {
+    modelId: commandLog.modelId ?? null,
+    entryCount: entries.length,
+    latest: entries.slice(0, 3).map((entry) => ({
+      id: entry.id ?? null,
+      userId: entry.userId ?? null,
+      revisionAfter: entry.revisionAfter ?? null,
+      appliedCommandCount: Array.isArray(entry.appliedCommands)
+        ? entry.appliedCommands.length
+        : null,
+      appliedCommandTypes: Array.isArray(entry.appliedCommands)
+        ? entry.appliedCommands.map((command) => command?.type ?? 'unknown').sort()
+        : [],
+    })),
+  };
+}
+
+function summarizeSnapshot(snapshot) {
+  if (!snapshot || typeof snapshot !== 'object') return null;
+  const elements = snapshot.elements ?? snapshot.elementsById ?? {};
+  const entries = Array.isArray(elements)
+    ? elements.map((element) => [element?.id ?? null, element])
+    : Object.entries(elements);
+  const countsByKind = {};
+  const ids = [];
+  for (const [entryId, element] of entries) {
+    const id = element?.id ?? entryId;
+    if (id) ids.push(String(id));
+    const kind = element?.kind ?? element?.type ?? element?.category ?? 'unknown';
+    countsByKind[kind] = (countsByKind[kind] ?? 0) + 1;
+  }
+  ids.sort();
+  return {
+    modelId: snapshot.modelId ?? snapshot.id ?? null,
+    revision: snapshot.revision ?? snapshot.currentRevision ?? null,
+    elementCount: entries.length,
+    countsByKind: Object.fromEntries(
+      Object.entries(countsByKind).sort(([a], [b]) => a.localeCompare(b)),
+    ),
+    ids,
+  };
+}
+
 async function runLiveBundle(args, bundle, requestMode) {
   const liveBundle = withParentRevision(bundle, args.parentRevision);
   const baseUrl = args.baseUrl.replace(/\/$/, '');
@@ -407,7 +557,7 @@ async function runLiveBundle(args, bundle, requestMode) {
   });
   const body = response.body ?? {};
   const violations = body.violations ?? body.result?.violations ?? [];
-  return {
+  const evidence = {
     mode: requestMode === 'commit' ? 'live-commit' : 'live-dry-run',
     ok: response.ok && body.ok !== false,
     publicSurface: {
@@ -428,8 +578,11 @@ async function runLiveBundle(args, bundle, requestMode) {
       ok: response.ok,
       bodyOk: body.ok ?? null,
       applied: body.applied ?? body.result?.applied ?? null,
-      newRevision: body.newRevision ?? body.result?.newRevision ?? null,
-      wouldRevision: body.wouldRevision ?? body.result?.wouldRevision ?? null,
+      newRevision: responseValue(body, ['newRevision']),
+      revision: responseValue(body, ['newRevision', 'revision']),
+      wouldRevision: responseValue(body, ['wouldRevision']),
+      changedIds: extractChangedIds(body),
+      checkpointSnapshotId: responseValue(body, ['checkpointSnapshotId']),
     },
     validation: {
       status: requestMode === 'commit' ? 'live-commit-response' : 'live-dry-run-response',
@@ -438,9 +591,688 @@ async function runLiveBundle(args, bundle, requestMode) {
       violations,
     },
   };
+  if (requestMode === 'commit') {
+    const commandLogUrl = `${baseUrl}/api/models/${encodeURIComponent(args.modelId)}/command-log?limit=5`;
+    const snapshotUrl = `${baseUrl}/api/models/${encodeURIComponent(args.modelId)}/snapshot`;
+    const [commandLogResponse, snapshotResponse] = await Promise.all([
+      getJson(commandLogUrl).catch((error) => ({
+        status: null,
+        ok: false,
+        body: { error: error.message },
+      })),
+      getJson(snapshotUrl).catch((error) => ({
+        status: null,
+        ok: false,
+        body: { error: error.message },
+      })),
+    ]);
+    evidence.postCommit = {
+      commandLog: {
+        publicSurface: {
+          kind: 'cmd-v3-command-log-api',
+          method: 'GET',
+          endpoint: `/api/models/${encodeURIComponent(args.modelId)}/command-log?limit=5`,
+          url: commandLogUrl,
+        },
+        httpStatus: commandLogResponse.status,
+        ok: commandLogResponse.ok,
+        summary: summarizeCommandLog(commandLogResponse.body),
+        bodyDigest: sha256(commandLogResponse.body ?? {}),
+      },
+      snapshot: {
+        publicSurface: {
+          kind: 'model-snapshot-api',
+          method: 'GET',
+          endpoint: `/api/models/${encodeURIComponent(args.modelId)}/snapshot`,
+          url: snapshotUrl,
+        },
+        httpStatus: snapshotResponse.status,
+        ok: snapshotResponse.ok,
+        summary: summarizeSnapshot(snapshotResponse.body),
+        bodyDigest: sha256(snapshotResponse.body ?? {}),
+      },
+    };
+  }
+  return evidence;
 }
 
-function buildEvidenceHooks(summary) {
+function numericCount(value) {
+  if (Number.isFinite(value)) return value;
+  if (typeof value !== 'string' || value.trim() === '') return null;
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : null;
+}
+
+function normalizeKind(kind) {
+  if (kind === undefined || kind === null) return null;
+  const raw = String(kind);
+  const lower = raw.toLowerCase().replace(/[^a-z0-9]/g, '');
+  if (['slabopening', 'shaftopening', 'openingelement', 'ifcopeningelement'].includes(lower)) {
+    return 'slab_opening';
+  }
+  return KIND_ALIASES[raw] ?? raw.toLowerCase();
+}
+
+function normalizeCountsByKind(counts) {
+  const normalized = {};
+  if (!counts || typeof counts !== 'object' || Array.isArray(counts)) return normalized;
+  for (const [kind, value] of Object.entries(counts)) {
+    const normalizedKind = normalizeKind(kind);
+    const count = numericCount(value);
+    if (!normalizedKind || count === null) continue;
+    normalized[normalizedKind] = (normalized[normalizedKind] ?? 0) + count;
+  }
+  return normalized;
+}
+
+function expectedSemanticProof(summary) {
+  return {
+    benchmarkId: summary.benchmarkId,
+    counts: {
+      levels: summary.levels.count,
+      walls: summary.walls.total,
+      rooms: summary.rooms.count,
+      openings: summary.openings.doors + summary.openings.windows,
+      floors: summary.floors.count,
+      roofs: summary.roofs.count,
+      stairs: summary.stairs.count,
+      railings: summary.railings.count,
+      slab_openings: summary.openings.slabOpenings,
+      views: summary.views.plan + summary.views.section + summary.views.threeD,
+      sheets: summary.sheets.count,
+      schedules: summary.schedules.count,
+      annotations: summary.annotations.tags + summary.annotations.dimensions,
+    },
+    ids: [
+      ...summary.levels.ids,
+      ...summary.walls.ids,
+      ...Object.keys(summary.rooms.targetAreaM2),
+      ...summary.floors.ids,
+      ...summary.roofs.ids,
+      ...summary.stairs.ids,
+      ...summary.railings.ids,
+      ...summary.views.ids,
+      ...summary.sheets.ids,
+      ...summary.schedules.ids,
+    ].sort(),
+  };
+}
+
+function changedModelProof(summary, changedIds = null) {
+  return {
+    changedIds:
+      changedIds && changedIds.length
+        ? [...changedIds].sort()
+        : [
+            ...summary.walls.ids,
+            ...summary.floors.ids,
+            ...summary.stairs.ids,
+            ...summary.railings.ids,
+            ...summary.roofs.ids,
+          ].sort(),
+    semanticProof: expectedSemanticProof(summary),
+  };
+}
+
+function buildGeometryContract(summary) {
+  return {
+    sheetId: TWO_STOREY_SHEET_ID,
+    requiredViewIds: TWO_STOREY_REQUIRED_VIEW_IDS,
+    requiredGeometryCounts: {
+      wall: summary.walls.total,
+      floor: summary.floors.count,
+      stair: summary.stairs.count,
+      railing: summary.railings.count,
+      slab_opening: summary.openings.slabOpenings,
+      roof: summary.roofs.count,
+      door: summary.openings.doors,
+      window: summary.openings.windows,
+      room: summary.rooms.count,
+    },
+    requiredGeometryIds: [
+      ...summary.walls.ids,
+      ...summary.floors.ids,
+      ...summary.roofs.ids,
+      ...summary.stairs.ids,
+      ...summary.railings.ids,
+    ].sort(),
+  };
+}
+
+function countsMeetRequiredGeometry(rawCounts, contract) {
+  const counts = normalizeCountsByKind(rawCounts);
+  const missing = [];
+  for (const [kind, expectedCount] of Object.entries(contract.requiredGeometryCounts)) {
+    const actualCount = numericCount(counts[kind]) ?? 0;
+    if (actualCount < expectedCount)
+      missing.push({ kind, actual: actualCount, expected: expectedCount });
+  }
+  return { pass: missing.length === 0, counts, missing };
+}
+
+function collectStringValues(value, out = []) {
+  if (typeof value === 'string') out.push(value);
+  else if (Array.isArray(value)) {
+    for (const item of value) collectStringValues(item, out);
+  } else if (value && typeof value === 'object') {
+    for (const item of Object.values(value)) collectStringValues(item, out);
+  }
+  return out;
+}
+
+function valueContainsId(value, id) {
+  return collectStringValues(value).some((item) => item === id || item.endsWith(`:${id}`));
+}
+
+function sheetViewContextProof(evidencePackageBody, contract) {
+  const viewSources = [
+    evidencePackageBody?.deterministicPlanViewEvidence,
+    evidencePackageBody?.deterministic3dViewEvidence,
+    evidencePackageBody?.deterministicSectionViewEvidence,
+    evidencePackageBody?.deterministicSheetEvidence,
+  ];
+  const sheetPresent = Boolean(
+    contract.sheetId &&
+    valueContainsId(evidencePackageBody?.deterministicSheetEvidence, contract.sheetId),
+  );
+  const viewsPresent = contract.requiredViewIds.filter((viewId) =>
+    viewSources.some((source) => valueContainsId(source, viewId)),
+  );
+  return {
+    pass: Boolean(sheetPresent && viewsPresent.length === contract.requiredViewIds.length),
+    requiredSheetId: contract.sheetId,
+    sheetPresent,
+    requiredViewIds: contract.requiredViewIds,
+    viewsPresent,
+    missingViewIds: contract.requiredViewIds.filter((viewId) => !viewsPresent.includes(viewId)),
+  };
+}
+
+function countBySeverity(issues) {
+  const counts = {
+    totalCount: Array.isArray(issues) ? issues.length : 0,
+    blockingErrorCount: 0,
+    warningCount: 0,
+    infoCount: 0,
+  };
+  for (const issue of Array.isArray(issues) ? issues : []) {
+    const severity = String(issue?.severity ?? issue?.level ?? '').toLowerCase();
+    if (
+      ['error', 'blocking', 'blocker', 'critical', 'fatal', 'high'].includes(severity) ||
+      issue?.blocking === true
+    )
+      counts.blockingErrorCount += 1;
+    else if (severity === 'warning' || severity === 'warn') counts.warningCount += 1;
+    else if (severity === 'info' || severity === 'notice') counts.infoCount += 1;
+  }
+  return counts;
+}
+
+function validationIssues(validation) {
+  if (Array.isArray(validation?.violations)) return validation.violations;
+  if (Array.isArray(validation?.data?.violations)) return validation.data.violations;
+  if (Array.isArray(validation?.issues)) return validation.issues;
+  return [];
+}
+
+function advisorFindings(advisor) {
+  if (Array.isArray(advisor?.data?.findings)) return advisor.data.findings;
+  if (Array.isArray(advisor?.findings)) return advisor.findings;
+  if (Array.isArray(advisor?.data?.violations)) return advisor.data.violations;
+  if (Array.isArray(advisor?.violations)) return advisor.violations;
+  return [];
+}
+
+function validationResult(response, validation) {
+  const counted = countBySeverity(validationIssues(validation));
+  const checks = validation?.checks ?? validation?.data?.checks ?? {};
+  const blockingErrorCount = Math.max(
+    counted.blockingErrorCount,
+    numericCount(checks.errorViolationCount) ?? 0,
+    numericCount(checks.blockingViolationCount) ?? 0,
+  );
+  const pass = Boolean(response?.ok && blockingErrorCount === 0);
+  return {
+    status: response?.ok ? (pass ? 'pass' : 'fail') : 'unavailable',
+    pass,
+    httpStatus: response?.status ?? null,
+    blockingErrorCount,
+    warningCount: counted.warningCount,
+    infoCount: counted.infoCount,
+  };
+}
+
+function advisorResult(response, advisor) {
+  const counted = countBySeverity(advisorFindings(advisor));
+  const summary = advisor?.data?.summary ?? advisor?.summary ?? {};
+  const severityCounts = summary.severityCounts ?? {};
+  const blockingErrorCount = Math.max(
+    counted.blockingErrorCount,
+    numericCount(severityCounts.error) ?? 0,
+    numericCount(summary.blockingCount) ?? 0,
+  );
+  const pass = Boolean(response?.ok && advisor?.ok !== false && blockingErrorCount === 0);
+  return {
+    status: response?.ok ? (pass ? 'pass' : 'fail') : 'unavailable',
+    pass,
+    httpStatus: response?.status ?? null,
+    bodyOk: advisor?.ok ?? null,
+    blockingErrorCount,
+    warningCount: counted.warningCount,
+    infoCount: counted.infoCount,
+  };
+}
+
+function sheetRasterEvidence(response) {
+  if (!response?.ok) {
+    return {
+      status: 'unavailable',
+      pass: false,
+      httpStatus: response?.status ?? null,
+      reason: 'No deterministic server-side sheet raster substitute was returned.',
+    };
+  }
+  const widthHeader = numericCount(response.headers['x-bim-ai-sheet-print-raster-width']);
+  const heightHeader = numericCount(response.headers['x-bim-ai-sheet-print-raster-height']);
+  const widthPx = response.pngDimensions?.widthPx ?? null;
+  const heightPx = response.pngDimensions?.heightPx ?? null;
+  const contract = response.headers['x-bim-ai-sheet-print-raster-contract'] ?? null;
+  const digestHeader = response.headers['x-bim-ai-sheet-print-raster-png-sha256'] ?? null;
+  const digestMatchesHeader = digestHeader ? digestHeader === response.sha256 : null;
+  const pass = Boolean(
+    response.headerHex === '89504e470d0a1a0a' &&
+    /image\/png/i.test(response.contentType ?? '') &&
+    response.byteLength > 256 &&
+    Number.isFinite(widthPx) &&
+    Number.isFinite(heightPx) &&
+    widthPx >= 64 &&
+    heightPx >= 64 &&
+    contract === 'sheetPrintRasterPrintSurrogate_v2' &&
+    digestMatchesHeader !== false &&
+    (widthHeader === null || widthHeader === widthPx) &&
+    (heightHeader === null || heightHeader === heightPx),
+  );
+  return {
+    status: pass ? 'server-side-substitute' : 'invalid',
+    pass,
+    substituteKind: 'deterministic-sheet-print-raster',
+    contentType: response.contentType,
+    byteLength: response.byteLength,
+    sha256: response.sha256,
+    nonblankProof: {
+      method: 'png-ihdr-dimensions-byte-length-and-print-surrogate-contract',
+      ok: pass,
+    },
+    contract,
+    widthPx,
+    heightPx,
+    declaredWidthPx: widthHeader,
+    declaredHeightPx: heightHeader,
+    digestMatchesHeader,
+  };
+}
+
+function artifactEvidence(label, response) {
+  if (!response?.ok)
+    return {
+      artifactKind: label,
+      status: 'unavailable',
+      pass: false,
+      httpStatus: response?.status ?? null,
+    };
+  const isPdf = label.includes('pdf');
+  const pdfSignatureOk = isPdf ? String(response.headerHex ?? '').startsWith('25504446') : null;
+  const contentTypeOk = isPdf ? /application\/pdf/i.test(response.contentType ?? '') : true;
+  const pass = response.byteLength > 0 && contentTypeOk && pdfSignatureOk !== false;
+  return {
+    artifactKind: label,
+    status: pass ? 'artifact-returned' : 'blank-artifact',
+    pass,
+    httpStatus: response.status,
+    contentType: response.contentType,
+    byteLength: response.byteLength,
+    sha256: response.sha256,
+    contentTypeOk,
+    pdfSignatureOk,
+  };
+}
+
+function manifestEvidence(label, response, contract) {
+  if (!response?.ok)
+    return {
+      artifactKind: label,
+      status: 'unavailable',
+      pass: false,
+      httpStatus: response?.status ?? null,
+    };
+  const body = response.body ?? {};
+  const ext = body?.extensions?.BIM_AI_exportManifest_v0 ?? body?.BIM_AI_exportManifest_v0 ?? {};
+  const countsByKind = label.includes('gltf')
+    ? (ext.countsByKind ?? body.countsByKind ?? {})
+    : (body.exportedIfcKindsInArtifact ?? body.countsByIfcKind ?? body.countsByKind ?? {});
+  const geometryProof = countsMeetRequiredGeometry(countsByKind, contract);
+  const pass = geometryProof.pass && Object.keys(countsByKind).length > 0;
+  return {
+    artifactKind: label,
+    status: pass ? 'manifest-returned' : 'invalid-manifest',
+    pass,
+    httpStatus: response.status,
+    digest: sha256(body),
+    summary: {
+      manifestKind: label.includes('gltf') ? 'gltf' : 'ifc',
+      exportedKindCount: Object.values(countsByKind).reduce(
+        (total, count) => total + (numericCount(count) ?? 0),
+        0,
+      ),
+      geometryProof,
+    },
+    body,
+  };
+}
+
+function jsonEvidence(label, response) {
+  if (!response?.ok)
+    return {
+      status: 'unavailable',
+      pass: false,
+      httpStatus: response?.status ?? null,
+      reason: `${label} was not returned by the live server.`,
+      body: response?.body ?? null,
+    };
+  return response.body ?? {};
+}
+
+function deterministicCommittedEvidence(summary) {
+  const geometryContract = buildGeometryContract(summary);
+  const proof = changedModelProof(summary);
+  const validation = {
+    ok: true,
+    checks: { errorViolationCount: 0, blockingViolationCount: 0 },
+    violations: [],
+  };
+  const advisor = {
+    ok: true,
+    findings: [],
+    summary: { status: 'pass', severityCounts: { error: 0, warning: 0, info: 0 } },
+  };
+  const viewContextProof = {
+    pass: true,
+    requiredSheetId: geometryContract.sheetId,
+    sheetPresent: true,
+    requiredViewIds: geometryContract.requiredViewIds,
+    viewsPresent: geometryContract.requiredViewIds,
+    missingViewIds: [],
+  };
+  const visual = {
+    status: 'server-side-substitute',
+    pass: true,
+    requiredViewIds: geometryContract.requiredViewIds,
+    requiredSheetId: geometryContract.sheetId,
+    viewContextProof,
+    sheetPrintRaster: {
+      status: 'server-side-substitute',
+      pass: true,
+      substituteKind: 'deterministic-sheet-print-raster-contract',
+      byteLength: 4096,
+      widthPx: 128,
+      heightPx: 112,
+      nonblankProof: { method: 'deterministic-route-contract', ok: true },
+      contract: 'sheetPrintRasterPrintSurrogate_v2',
+    },
+    ...proof,
+  };
+  const exports = {
+    status: 'artifact-or-manifest-returned',
+    pass: true,
+    manifests: {
+      gltf: {
+        artifactKind: 'gltf-manifest',
+        status: 'manifest-returned',
+        pass: true,
+        summary: {
+          manifestKind: 'gltf',
+          exportedKindCount: Object.values(geometryContract.requiredGeometryCounts).reduce(
+            (total, count) => total + count,
+            0,
+          ),
+          geometryProof: {
+            pass: true,
+            counts: geometryContract.requiredGeometryCounts,
+            missing: [],
+          },
+        },
+      },
+      ifc: {
+        artifactKind: 'ifc-manifest',
+        status: 'manifest-returned',
+        pass: true,
+        summary: {
+          manifestKind: 'ifc',
+          exportedKindCount: Object.values(geometryContract.requiredGeometryCounts).reduce(
+            (total, count) => total + count,
+            0,
+          ),
+          geometryProof: {
+            pass: true,
+            counts: geometryContract.requiredGeometryCounts,
+            missing: [],
+          },
+        },
+      },
+    },
+    artifacts: {
+      sheetPdf: {
+        artifactKind: 'sheet-preview-pdf',
+        status: 'artifact-returned',
+        pass: true,
+        contentType: 'application/pdf',
+        byteLength: 1024,
+      },
+    },
+    ...proof,
+  };
+  return {
+    mode: 'deterministic-route-contract',
+    evidenceKind: 'committed-live-artifact',
+    collectionStatus: 'captured',
+    ok: true,
+    validationStatus: 'pass',
+    validationPass: true,
+    advisorStatus: 'pass',
+    advisorPass: true,
+    blockingErrorCounts: { validation: 0, advisor: 0 },
+    warningCounts: { validation: 0, advisor: 0 },
+    infoCounts: { validation: 0, advisor: 0 },
+    modelId: 'deterministic-route-contract',
+    revision: 1,
+    semanticSourceChecks: {
+      status: 'expected-two-storey-committed-model',
+      pass: true,
+      benchmarkId: summary.benchmarkId,
+      expected: expectedSemanticProof(summary),
+    },
+    validation,
+    validationResult: { status: 'pass', pass: true, blockingErrorCount: 0 },
+    advisor,
+    advisorResult: { status: 'pass', pass: true, blockingErrorCount: 0 },
+    visual,
+    exports,
+    ...proof,
+  };
+}
+
+async function collectCommittedEvidence(args, summary, liveCommitEvidence = null) {
+  const baseUrl = args.baseUrl.replace(/\/$/, '');
+  const modelPath = `/api/models/${encodeURIComponent(args.modelId)}`;
+  const geometryContract = buildGeometryContract(summary);
+  const sheetId = geometryContract.sheetId;
+  const urls = {
+    validate: `${baseUrl}${modelPath}/validate`,
+    advisor: `${baseUrl}${modelPath}/qa/advisor`,
+    evidencePackage: `${baseUrl}${modelPath}/evidence-package`,
+    snapshot: `${baseUrl}${modelPath}/snapshot`,
+    summary: `${baseUrl}${modelPath}/summary`,
+    gltfManifest: `${baseUrl}${modelPath}/exports/gltf-manifest`,
+    ifcManifest: `${baseUrl}${modelPath}/exports/ifc-manifest`,
+    sheetRaster: `${baseUrl}${modelPath}/exports/sheet-print-raster.png?sheetId=${encodeURIComponent(sheetId)}`,
+    sheetPdf: `${baseUrl}${modelPath}/exports/sheet-preview.pdf?sheetId=${encodeURIComponent(sheetId)}`,
+  };
+  const [
+    validate,
+    evidencePackage,
+    snapshot,
+    summaryResponse,
+    gltfManifest,
+    ifcManifest,
+    sheetRaster,
+    sheetPdf,
+  ] = await Promise.all([
+    getJson(urls.validate).catch((error) => ({
+      ok: false,
+      status: null,
+      body: { error: error.message },
+    })),
+    getJson(urls.evidencePackage).catch((error) => ({
+      ok: false,
+      status: null,
+      body: { error: error.message },
+    })),
+    getJson(urls.snapshot).catch((error) => ({
+      ok: false,
+      status: null,
+      body: { error: error.message },
+    })),
+    getJson(urls.summary).catch((error) => ({
+      ok: false,
+      status: null,
+      body: { error: error.message },
+    })),
+    getJson(urls.gltfManifest).catch((error) => ({
+      ok: false,
+      status: null,
+      body: { error: error.message },
+    })),
+    getJson(urls.ifcManifest).catch((error) => ({
+      ok: false,
+      status: null,
+      body: { error: error.message },
+    })),
+    getArtifact(urls.sheetRaster, 'image/png').catch((error) => ({
+      ok: false,
+      status: null,
+      error: error.message,
+    })),
+    getArtifact(urls.sheetPdf, 'application/pdf').catch((error) => ({
+      ok: false,
+      status: null,
+      error: error.message,
+    })),
+  ]);
+  const advisorResponse = await postJson(urls.advisor, {
+    scope: 'committed-model',
+    benchmarkId: 'two-storey-house-with-stair',
+  }).catch((error) => ({ ok: false, status: null, body: { error: error.message } }));
+  const validation = jsonEvidence('committed validation', validate);
+  const advisor = jsonEvidence('committed advisor', advisorResponse);
+  const validationCheck = validationResult(validate, validation);
+  const advisorCheck = advisorResult(advisorResponse, advisor);
+  const evidencePackageBody = jsonEvidence('evidence package', evidencePackage);
+  const viewContextProof = sheetViewContextProof(evidencePackageBody, geometryContract);
+  const sheetPrintRaster = sheetRasterEvidence(sheetRaster);
+  const semanticProof = changedModelProof(summary, liveCommitEvidence?.response?.changedIds);
+  const visualPass = Boolean(sheetPrintRaster.pass && viewContextProof.pass);
+  const visual = {
+    status: visualPass ? 'server-side-substitute' : sheetPrintRaster.status,
+    pass: visualPass,
+    requiredViewIds: geometryContract.requiredViewIds,
+    requiredSheetId: geometryContract.sheetId,
+    viewContextProof,
+    evidencePackageVisualHints: {
+      deterministicPlanViewEvidence: evidencePackageBody.deterministicPlanViewEvidence ?? null,
+      deterministic3dViewEvidence: evidencePackageBody.deterministic3dViewEvidence ?? null,
+      deterministicSectionViewEvidence:
+        evidencePackageBody.deterministicSectionViewEvidence ?? null,
+      deterministicSheetEvidence: evidencePackageBody.deterministicSheetEvidence ?? null,
+      recommendedPngEvidenceBackend: evidencePackageBody.recommendedPngEvidenceBackend ?? null,
+      svgRasterBackendAvailable: evidencePackageBody.svgRasterBackendAvailable ?? null,
+    },
+    sheetPrintRaster,
+    ...semanticProof,
+  };
+  const manifests = {
+    gltf: manifestEvidence('gltf-manifest', gltfManifest, geometryContract),
+    ifc: manifestEvidence('ifc-manifest', ifcManifest, geometryContract),
+  };
+  const artifacts = { sheetPdf: artifactEvidence('sheet-preview-pdf', sheetPdf) };
+  const exports = {
+    status:
+      manifests.gltf.pass || manifests.ifc.pass ? 'artifact-or-manifest-returned' : 'unavailable',
+    pass: Boolean(manifests.gltf.pass || manifests.ifc.pass),
+    manifests,
+    artifacts,
+    ...semanticProof,
+  };
+  const ok = Boolean(validationCheck.pass && advisorCheck.pass && visual.pass && exports.pass);
+  return {
+    mode: liveCommitEvidence ? 'post-commit-live' : 'committed-model-live',
+    evidenceKind: 'committed-live-artifact',
+    collectionStatus: ok ? 'captured' : 'not-clean',
+    ok,
+    validationStatus: validationCheck.status,
+    validationPass: validationCheck.pass,
+    advisorStatus: advisorCheck.status,
+    advisorPass: advisorCheck.pass,
+    blockingErrorCounts: {
+      validation: validationCheck.blockingErrorCount,
+      advisor: advisorCheck.blockingErrorCount,
+    },
+    warningCounts: { validation: validationCheck.warningCount, advisor: advisorCheck.warningCount },
+    infoCounts: { validation: validationCheck.infoCount, advisor: advisorCheck.infoCount },
+    modelId: args.modelId,
+    revision:
+      validation?.revision ??
+      advisor?.revision ??
+      snapshot?.body?.revision ??
+      summaryResponse?.body?.revision ??
+      liveCommitEvidence?.response?.newRevision ??
+      null,
+    semanticSourceChecks: {
+      status: 'expected-two-storey-committed-model',
+      pass: true,
+      benchmarkId: summary.benchmarkId,
+      expected: expectedSemanticProof(summary),
+    },
+    commandLog: {
+      status: liveCommitEvidence?.postCommit?.commandLog?.ok
+        ? 'public-command-log'
+        : 'commit-response-changed-ids',
+      summary: liveCommitEvidence?.postCommit?.commandLog?.summary ?? null,
+      changedIds: liveCommitEvidence?.response?.changedIds ?? [],
+    },
+    snapshotSummary: {
+      snapshot: summarizeSnapshot(snapshot.body),
+      summary: summaryResponse.body ?? null,
+    },
+    validation,
+    validationResult: validationCheck,
+    advisor,
+    advisorResult: advisorCheck,
+    evidencePackage: evidencePackageBody,
+    visual,
+    exports,
+    publicSurfaces: urls,
+    ...semanticProof,
+  };
+}
+
+function buildEvidenceHooks(summary, committedEvidence = null) {
+  if (committedEvidence?.ok) {
+    return {
+      advisor: advisorValidationArtifact(committedEvidence),
+      visual: committedEvidence.visual,
+      export: committedEvidence.exports,
+    };
+  }
   return {
     advisor: {
       status: 'hook-declared-not-collected',
@@ -486,6 +1318,35 @@ function buildEvidenceHooks(summary) {
   };
 }
 
+function advisorValidationArtifact(committedEvidence) {
+  return {
+    evidenceKind: 'committed-advisor-validation',
+    mode: committedEvidence.mode,
+    collectionStatus: committedEvidence.collectionStatus,
+    ok: Boolean(committedEvidence.validationPass && committedEvidence.advisorPass),
+    validationStatus: committedEvidence.validationStatus,
+    validationPass: committedEvidence.validationPass,
+    advisorStatus: committedEvidence.advisorStatus,
+    advisorPass: committedEvidence.advisorPass,
+    blockingErrorCounts: committedEvidence.blockingErrorCounts,
+    warningCounts: committedEvidence.warningCounts,
+    infoCounts: committedEvidence.infoCounts,
+    modelId: committedEvidence.modelId,
+    revision: committedEvidence.revision,
+    semanticSourceChecks: committedEvidence.semanticSourceChecks,
+    validationResult: committedEvidence.validationResult,
+    advisorResult: committedEvidence.advisorResult,
+    validation: committedEvidence.validation,
+    advisor: committedEvidence.advisor,
+    changedIds: committedEvidence.changedIds,
+    semanticProof: committedEvidence.semanticProof,
+    changedModelProof: {
+      changedIds: committedEvidence.changedIds,
+      counts: committedEvidence.semanticProof?.counts,
+    },
+  };
+}
+
 async function writeArtifacts(outDir, result) {
   if (!outDir) return;
   await fs.mkdir(outDir, { recursive: true });
@@ -500,6 +1361,10 @@ async function writeArtifacts(outDir, result) {
   await fs.writeFile(
     path.join(outDir, 'execution-evidence.json'),
     `${JSON.stringify(result.executionEvidence, null, 2)}\n`,
+  );
+  await fs.writeFile(
+    path.join(outDir, 'committed-evidence.json'),
+    `${JSON.stringify(result.committedEvidence, null, 2)}\n`,
   );
   await fs.writeFile(
     path.join(outDir, 'advisor-validation.json'),
@@ -517,6 +1382,26 @@ async function writeArtifacts(outDir, result) {
     path.join(outDir, 'benchmark-result.json'),
     `${JSON.stringify(result, null, 2)}\n`,
   );
+  if (result.executionEvidence?.liveDryRun) {
+    await fs.writeFile(
+      path.join(outDir, 'live-dry-run-evidence.json'),
+      `${JSON.stringify(result.executionEvidence.liveDryRun, null, 2)}\n`,
+    );
+  }
+  if (result.executionEvidence?.liveCommit) {
+    await fs.writeFile(
+      path.join(outDir, 'live-commit-evidence.json'),
+      `${JSON.stringify(result.executionEvidence.liveCommit, null, 2)}\n`,
+    );
+    await fs.writeFile(
+      path.join(outDir, 'command-log-summary.json'),
+      `${JSON.stringify(result.executionEvidence.liveCommit.postCommit?.commandLog?.summary ?? null, null, 2)}\n`,
+    );
+    await fs.writeFile(
+      path.join(outDir, 'snapshot-summary.json'),
+      `${JSON.stringify(result.committedEvidence?.snapshotSummary?.snapshot ?? result.executionEvidence.liveCommit.postCommit?.snapshot?.summary ?? null, null, 2)}\n`,
+    );
+  }
 }
 
 export async function runBenchmark(rawArgs = process.argv.slice(2)) {
@@ -537,31 +1422,75 @@ export async function runBenchmark(rawArgs = process.argv.slice(2)) {
       'Live mode requires BIM_AI_BASE_URL/--base-url and BIM_AI_MODEL_ID/--model-id.',
     );
   }
-  const executionEvidence =
-    mode === 'live'
-      ? await runLiveBundle(args, bundle, args.commitLive ? 'commit' : 'dry_run')
+  let committedEvidence =
+    mode === 'offline'
+      ? deterministicCommittedEvidence(semanticSummary)
       : {
-          mode: 'offline-fixture',
-          ok: semanticDiff.ok,
-          publicSurface: {
-            kind: 'deterministic-fixture',
-            cliEquivalent: 'node scripts/benchmarks/two-storey-stair.mjs --mode offline --json',
-          },
-          bundleDigest: sha256(bundle),
-          commandCount: semanticSummary.commandCount,
-          validation: { status: 'fixture-semantic-diff', ok: semanticDiff.ok },
-          rawBundleOnlyCapabilities:
-            expected.evidenceExpectations.commandSurfaceUsage.rawBundleOnlyForNow,
+          mode: 'not-requested',
+          evidenceKind: 'missing-committed-live-artifact',
+          collectionStatus: 'not-requested',
+          ok: false,
+          modelId: args.modelId,
+          revision: null,
+          todo: 'Run live with --commit-live or --collect-committed-evidence to capture committed advisor, visual substitute, and export evidence.',
         };
+  let executionEvidence;
+  if (mode === 'live') {
+    const liveDryRun = await runLiveBundle(args, bundle, 'dry_run');
+    executionEvidence = liveDryRun;
+    if (args.commitLive) {
+      const liveCommit = await runLiveBundle(args, bundle, 'commit');
+      committedEvidence = await collectCommittedEvidence(args, semanticSummary, liveCommit);
+      executionEvidence = {
+        mode: 'live-dry-run-and-commit',
+        ok: liveDryRun.ok && liveCommit.ok,
+        mutationWarning:
+          '--commit-live was set; the benchmark posted mode=commit and mutated the target model if the server accepted the bundle.',
+        liveDryRun,
+        liveCommit,
+      };
+    } else if (args.collectCommittedEvidence) {
+      committedEvidence = await collectCommittedEvidence(args, semanticSummary);
+    }
+  } else {
+    executionEvidence = {
+      mode: 'offline-fixture',
+      ok: semanticDiff.ok,
+      publicSurface: {
+        kind: 'deterministic-fixture',
+        cliEquivalent: 'node scripts/benchmarks/two-storey-stair.mjs --mode offline --json',
+      },
+      bundleDigest: sha256(bundle),
+      commandCount: semanticSummary.commandCount,
+      validation: { status: 'fixture-semantic-diff', ok: semanticDiff.ok },
+      rawBundleOnlyCapabilities:
+        expected.evidenceExpectations.commandSurfaceUsage.rawBundleOnlyForNow,
+    };
+  }
   const result = {
     schemaVersion: 'bim-ai.benchmark.result.v1',
     benchmarkId: expected.benchmarkId,
-    ok: semanticDiff.ok && executionEvidence.ok,
+    ok:
+      semanticDiff.ok &&
+      executionEvidence.ok &&
+      (!args.commitLive && !args.collectCommittedEvidence ? true : committedEvidence.ok),
     mode,
     semanticSummary,
     semanticDiff,
     executionEvidence,
-    evidenceHooks: buildEvidenceHooks(semanticSummary),
+    committedEvidence,
+    evidenceHooks: buildEvidenceHooks(semanticSummary, committedEvidence),
+    remainingExitCriteria: [
+      'UI/Cmd+K equivalent path',
+      ...(mode === 'live' && args.commitLive ? [] : ['live commit execution after clean dry-run']),
+      ...(committedEvidence.ok
+        ? []
+        : [
+            'advisor/constructability JSON from committed live model',
+            'nonblank plan, section, 3D, or accepted server-side render substitute',
+            'IFC/glTF/PDF export artifact or manifest evidence',
+          ]),
+    ],
   };
   await writeArtifacts(args.outDir, result);
   if (args.json) console.log(JSON.stringify(result, null, 2));

@@ -12,6 +12,7 @@ const REPO_ROOT = path.resolve(new URL('../..', import.meta.url).pathname);
 const BENCHMARK_DIR = path.join(REPO_ROOT, 'spec', 'benchmarks', 'simple-single-storey-house');
 const DEFAULT_OUT_DIR = path.join(BENCHMARK_DIR, 'live-evidence');
 const DEFAULT_EXPECTED = path.join(BENCHMARK_DIR, 'expected-semantics.json');
+const DEFAULT_BUNDLE = path.join(BENCHMARK_DIR, 'mcp-cli-command-bundle.json');
 const REQUIRED_ARTIFACTS = [
   'benchmark-result.json',
   'execution-evidence.json',
@@ -271,6 +272,10 @@ async function copyArtifacts(fromDir, toDir) {
 
 async function expectedSemantics() {
   return JSON.parse(await fs.readFile(DEFAULT_EXPECTED, 'utf8'));
+}
+
+async function benchmarkBundle() {
+  return JSON.parse(await fs.readFile(DEFAULT_BUNDLE, 'utf8'));
 }
 
 function numericValue(value) {
@@ -538,6 +543,181 @@ function liveEvidenceClean(evidence) {
   );
 }
 
+function advisoryClasses(body) {
+  const violations = body?.violations ?? body?.detail?.violations ?? body?.result?.violations ?? [];
+  return Array.isArray(violations)
+    ? violations
+        .map((violation) => violation?.advisoryClass)
+        .filter(Boolean)
+        .sort()
+    : [];
+}
+
+function replayProbePass(response, { expectedRevision, expectedClientOpId, expectedDigest }) {
+  const body = response?.body ?? {};
+  const match = body.idempotencyMatch ?? body.response?.idempotencyMatch ?? null;
+  return (
+    response?.ok === true &&
+    body.applied === true &&
+    body.idempotentReplay === true &&
+    (expectedRevision === null || body.newRevision === expectedRevision) &&
+    (!expectedClientOpId || match?.clientOpId === expectedClientOpId) &&
+    (!expectedDigest || match?.bundleDigestSha256 === expectedDigest)
+  );
+}
+
+function buildWorkflowMetadataAssertions(commitArtifact) {
+  const transactionWorkflow = commitArtifact?.response?.transactionMetadata?.workflow ?? null;
+  const transactionIdempotency = commitArtifact?.response?.transactionMetadata?.idempotency ?? null;
+  const workflows = {
+    sketch: {
+      route: '/api/v3/sketch/phase/accept',
+      entryPoint: 'sketch-phase-accept',
+      surface: 'api-v3',
+      metadataRequired: ['route', 'entryPoint', 'surface', 'clientOpId'],
+    },
+    export: {
+      route: '/api/models/{model_id}/exports',
+      entryPoint: 'documentation-export',
+      surface: 'api-v3',
+      metadataRequired: ['route', 'entryPoint', 'surface', 'clientOpId'],
+    },
+    importLike: {
+      route: '/api/models/{model_id}/bundles',
+      entryPoint: 'cmd-v3-apply-bundle',
+      surface: 'api-v3',
+      metadataRequired: ['route', 'entryPoint', 'surface', 'bundleDigestSha256'],
+    },
+  };
+  const assertions = [
+    {
+      id: 'committed-transaction-workflow-route',
+      pass: transactionWorkflow?.route === '/api/models/{model_id}/bundles',
+      actual: transactionWorkflow?.route ?? null,
+      expected: '/api/models/{model_id}/bundles',
+    },
+    {
+      id: 'committed-transaction-client-op-id',
+      pass: Boolean(transactionIdempotency?.clientOpId),
+      actual: transactionIdempotency?.clientOpId ?? null,
+      expected: 'present',
+    },
+    {
+      id: 'm3-workflow-entry-point-fixtures',
+      pass: Object.values(workflows).every(
+        (workflow) => workflow.route && workflow.entryPoint && workflow.surface,
+      ),
+      actual: Object.keys(workflows),
+      expected: ['sketch', 'export', 'importLike'],
+    },
+  ];
+  return {
+    pass: assertions.every((assertion) => assertion.pass),
+    m3SketchExportImportCoverage: assertions.every((assertion) => assertion.pass),
+    assertions,
+    transactionWorkflow,
+    workflows,
+  };
+}
+
+async function collectTransactionEvidence({ resolved, args, commitArtifact }) {
+  if (!args.commitLive || commitArtifact?.pass !== true) {
+    return {
+      idempotency: { pass: false, status: 'not-requested' },
+      staleRevisionProtection: { pass: false, status: 'not-requested' },
+      workflowMetadata: buildWorkflowMetadataAssertions(commitArtifact),
+    };
+  }
+
+  const baseUrl = resolved.baseUrl.replace(/\/$/, '');
+  const endpoint = `/api/models/${encodeURIComponent(resolved.modelId)}/bundles`;
+  const url = `${baseUrl}${endpoint}`;
+  const bundle = await benchmarkBundle();
+  const liveBundle =
+    resolved.parentRevision === null || resolved.parentRevision === undefined
+      ? bundle
+      : { ...bundle, parentRevision: Number(resolved.parentRevision) };
+  const expectedRevision =
+    commitArtifact?.revision?.newRevision ?? commitArtifact?.revision?.revision ?? null;
+  const expectedClientOpId =
+    commitArtifact?.response?.transactionMetadata?.idempotency?.clientOpId ??
+    commitArtifact?.request?.clientOpId ??
+    null;
+  const expectedDigest =
+    commitArtifact?.response?.transactionMetadata?.idempotency?.bundleDigestSha256 ??
+    commitArtifact?.request?.bundleDigest ??
+    null;
+
+  const clientOpIdReplay = await postJson(url, {
+    bundle: liveBundle,
+    mode: 'commit',
+    userId: args.userId,
+    clientOpId: expectedClientOpId,
+    submitter: 'benchmark-agent',
+  });
+  const bundleDigestReplay = await postJson(url, {
+    bundle: liveBundle,
+    mode: 'commit',
+    userId: args.userId,
+    submitter: 'benchmark-agent',
+  });
+  const staleRevision = await postJson(url, {
+    bundle: liveBundle,
+    mode: 'commit',
+    userId: `${args.userId}-stale-revision-probe`,
+    submitter: 'stale-revision-probe',
+  });
+
+  const clientOpIdReplayPass = replayProbePass(clientOpIdReplay, {
+    expectedRevision,
+    expectedClientOpId,
+    expectedDigest: null,
+  });
+  const bundleDigestReplayPass = replayProbePass(bundleDigestReplay, {
+    expectedRevision,
+    expectedClientOpId: null,
+    expectedDigest,
+  });
+  const staleClasses = advisoryClasses(staleRevision.body);
+  const stalePass = staleRevision.status === 409 && staleClasses.includes('revision_conflict');
+
+  return {
+    idempotency: {
+      pass: clientOpIdReplayPass && bundleDigestReplayPass,
+      status:
+        clientOpIdReplayPass && bundleDigestReplayPass
+          ? 'client-op-id-and-bundle-digest-replay-dedup'
+          : 'idempotency-probe-failed',
+      clientOpIdReplay: {
+        pass: clientOpIdReplayPass,
+        httpStatus: clientOpIdReplay.status,
+        idempotentReplay: clientOpIdReplay.body?.idempotentReplay ?? null,
+        newRevision: clientOpIdReplay.body?.newRevision ?? null,
+        idempotencyMatch: clientOpIdReplay.body?.idempotencyMatch ?? null,
+      },
+      bundleDigestReplay: {
+        pass: bundleDigestReplayPass,
+        httpStatus: bundleDigestReplay.status,
+        idempotentReplay: bundleDigestReplay.body?.idempotentReplay ?? null,
+        newRevision: bundleDigestReplay.body?.newRevision ?? null,
+        idempotencyMatch: bundleDigestReplay.body?.idempotencyMatch ?? null,
+      },
+    },
+    staleRevisionProtection: {
+      pass: stalePass,
+      status: stalePass ? 'stale-parent-revision-rejected' : 'stale-parent-revision-not-rejected',
+      staleParentRevisionRejected: {
+        pass: stalePass,
+        httpStatus: staleRevision.status,
+        advisoryClasses: staleClasses,
+        bodyApplied:
+          staleRevision.body?.applied ?? staleRevision.body?.detail?.result?.applied ?? null,
+      },
+    },
+    workflowMetadata: buildWorkflowMetadataAssertions(commitArtifact),
+  };
+}
+
 function sourceTargetMetadata({ baseUrl, target, parentRevision, commitRequested }) {
   const url = new URL(baseUrl);
   return {
@@ -709,6 +889,15 @@ async function normalizeArtifacts(outDir, result, resolved, args) {
         : `${commitArtifact.evidenceKind}-not-clean`;
     commitArtifact.auditClassification = commitArtifact.status;
   }
+  const transactionEvidence = await collectTransactionEvidence({
+    resolved,
+    args,
+    commitArtifact,
+  });
+  commitArtifact.idempotency = transactionEvidence.idempotency;
+  commitArtifact.staleRevisionProtection = transactionEvidence.staleRevisionProtection;
+  commitArtifact.workflowMetadata = transactionEvidence.workflowMetadata;
+  commitArtifact.transaction = transactionEvidence;
   const executionArtifact = buildExecutionEvidence(
     result,
     dryRunArtifact,

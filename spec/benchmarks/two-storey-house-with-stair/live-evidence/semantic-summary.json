@@ -1,0 +1,138 @@
+{
+  "benchmarkId": "two-storey-house-with-stair",
+  "commandCount": 48,
+  "commandSurfaceUsage": {
+    "createLevel": 2,
+    "upsertWallType": 2,
+    "upsertFloorType": 1,
+    "upsertRoofType": 1,
+    "upsertFamilyType": 2,
+    "createFloor": 2,
+    "createWallChain": 4,
+    "createStair": 1,
+    "createSlabOpening": 1,
+    "createRailing": 1,
+    "insertDoorOnWall": 6,
+    "insertWindowOnWall": 8,
+    "createRoomOutline": 6,
+    "createRoof": 1,
+    "createSectionCut": 1,
+    "saveViewpoint": 1,
+    "create_schedule_view": 1,
+    "CreateSheet": 1,
+    "PlaceViewOnSheet": 3,
+    "placeTag": 1,
+    "createDimension": 2
+  },
+  "levels": {
+    "count": 2,
+    "ids": ["tsh-lvl-ground", "tsh-lvl-upper"],
+    "elevationsMm": {
+      "tsh-lvl-ground": 0,
+      "tsh-lvl-upper": 3200
+    }
+  },
+  "walls": {
+    "total": 12,
+    "exterior": 8,
+    "interior": 4,
+    "ids": [
+      "tsh-wall-g-east",
+      "tsh-wall-g-hall",
+      "tsh-wall-g-north",
+      "tsh-wall-g-service",
+      "tsh-wall-g-south",
+      "tsh-wall-g-west",
+      "tsh-wall-u-bedrooms",
+      "tsh-wall-u-corridor",
+      "tsh-wall-u-east",
+      "tsh-wall-u-north",
+      "tsh-wall-u-south",
+      "tsh-wall-u-west"
+    ]
+  },
+  "rooms": {
+    "count": 6,
+    "names": [
+      "Bath / Hall",
+      "Bedroom 2",
+      "Entry / Service",
+      "Kitchen / Dining",
+      "Living",
+      "Primary Bedroom"
+    ],
+    "targetAreaM2": {
+      "tsh-room-g-living": 46.8,
+      "tsh-room-g-kitchen": 35.36,
+      "tsh-room-g-service": 25.84,
+      "tsh-room-u-primary": 46.8,
+      "tsh-room-u-bedroom-2": 31.96,
+      "tsh-room-u-bath-hall": 29.24
+    },
+    "computedAreaM2": {
+      "tsh-room-g-living": 46.8,
+      "tsh-room-g-kitchen": 35.36,
+      "tsh-room-g-service": 25.84,
+      "tsh-room-u-primary": 46.8,
+      "tsh-room-u-bedroom-2": 31.96,
+      "tsh-room-u-bath-hall": 29.24
+    }
+  },
+  "openings": {
+    "doors": 6,
+    "windows": 8,
+    "hosted": 14,
+    "missingHost": [],
+    "missingFamilyType": [],
+    "slabOpenings": 1,
+    "shaftOpenings": 1
+  },
+  "floors": {
+    "count": 2,
+    "ids": ["tsh-floor-ground", "tsh-floor-upper"],
+    "roomBounded": true
+  },
+  "stairs": {
+    "count": 1,
+    "ids": ["tsh-stair-main"],
+    "betweenLevels": [
+      {
+        "baseLevelId": "tsh-lvl-ground",
+        "topLevelId": "tsh-lvl-upper"
+      }
+    ]
+  },
+  "railings": {
+    "count": 1,
+    "ids": ["tsh-railing-stair"],
+    "hostedOnStairs": 1,
+    "missingHostedStair": []
+  },
+  "roofs": {
+    "count": 1,
+    "ids": ["tsh-roof-main"],
+    "geometryModes": ["gable"]
+  },
+  "views": {
+    "plan": 2,
+    "section": 1,
+    "threeD": 1,
+    "ids": ["tsh-section-stair", "tsh-view-3d", "tsh-view-ground-plan", "tsh-view-upper-plan"]
+  },
+  "sheets": {
+    "count": 1,
+    "ids": ["tsh-sheet-a201"],
+    "placedViewsBySheet": {
+      "tsh-sheet-a201": ["tsh-view-ground-plan", "tsh-view-upper-plan", "tsh-section-stair"]
+    }
+  },
+  "schedules": {
+    "count": 1,
+    "ids": ["tsh-schedule-vertical-circulation"],
+    "categories": ["opening"]
+  },
+  "annotations": {
+    "tags": 1,
+    "dimensions": 2
+  }
+}

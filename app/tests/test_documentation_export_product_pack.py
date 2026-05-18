@@ -155,6 +155,9 @@ def test_documentation_pack_commands_produce_exportable_drawing_set() -> None:
         "externalExportMarkerCount": 8,
     }
     assert len(evidence["evidenceDigestSha256"]) == 64
+    assert evidence["artifactClosure_v1"]["format"] == "documentationExportArtifactClosure_v1"
+    assert evidence["artifactClosure_v1"]["pass"] is True
+    assert len(evidence["artifactClosure_v1"]["digestSha256"]) == 64
 
     sheet_row = evidence["sheets"][0]
     assert sheet_row["sheetId"] == "A101"
@@ -166,6 +169,11 @@ def test_documentation_pack_commands_produce_exportable_drawing_set() -> None:
     }
     assert all(artifact["byteLength"] > 100 for artifact in sheet_row["artifacts"])
     assert all(len(artifact["digestSha256"]) == 64 for artifact in sheet_row["artifacts"])
+    assert all(artifact["status"] == "artifact-returned" for artifact in sheet_row["artifacts"])
+    assert all(artifact["pass"] is True for artifact in sheet_row["artifacts"])
+    assert all(
+        artifact["nonPlaceholderProof"]["pass"] is True for artifact in sheet_row["artifacts"]
+    )
     assert all(
         artifact["href"].startswith(
             "/api/models/00000000-0000-0000-0000-000000000123/exports/"
@@ -193,18 +201,36 @@ def test_documentation_pack_commands_produce_exportable_drawing_set() -> None:
     exports_by_kind = {row["kind"]: row for row in evidence["modelExports"]}
     assert {"ifc", "gltf", "glb"} <= set(exports_by_kind)
     assert exports_by_kind["ifc"]["href"].endswith("/exports/model.ifc")
+    assert exports_by_kind["gltf"]["status"] == "artifact-returned"
     assert exports_by_kind["gltf"]["manifestExtension"]["exportedGeometryKinds"]["wall"] == 1
+    assert exports_by_kind["gltf"]["nonPlaceholderProof"]["pass"] is True
+    assert exports_by_kind["glb"]["status"] == "artifact-returned"
     assert exports_by_kind["glb"]["byteLength"] > 20
 
     ifc_export = exports_by_kind["ifc"]
     assert ifc_export["ifcOpenShellAvailable"] is IFC_AVAILABLE
     assert ifc_export["semanticReadback"]["available"] is IFC_AVAILABLE
     if IFC_AVAILABLE:
+        assert ifc_export["status"] == "artifact-returned"
+        assert ifc_export["pass"] is True
         assert ifc_export["artifactHasPhysicalGeometry"] is True
         assert ifc_export["manifestHints"]["exportedIfcKindsInArtifact"]["wall"] == 1
+        assert "optionalBackendManifest_v1" not in ifc_export
     else:
+        assert ifc_export["status"] == "optional-backend-manifest"
+        assert ifc_export["pass"] is True
         assert ifc_export["artifactHasPhysicalGeometry"] is False
         assert ifc_export["semanticReadback"]["reason"] == "ifcopenshell_not_installed"
+        assert ifc_export["optionalBackendManifest_v1"] == {
+            "backend": "ifcopenshell",
+            "available": False,
+            "reason": "ifcopenshell_not_installed",
+            "stableFallback": "minimal_empty_ifc_skeleton",
+            "overclaimProtection": (
+                "artifactHasPhysicalGeometry=false and status=optional-backend-manifest; "
+                "the skeleton digest is provided only as fallback-manifest evidence."
+            ),
+        }
 
     marker_ids = {row["markerId"] for row in evidence["externalExportMarkers_v1"]["markers"]}
     assert {
@@ -216,3 +242,44 @@ def test_documentation_pack_commands_produce_exportable_drawing_set() -> None:
         "tag:tag-room-101",
         "dimension:dim-overall",
     } <= marker_ids
+    markers_by_id = {
+        row["markerId"]: row for row in evidence["externalExportMarkers_v1"]["markers"]
+    }
+    assert markers_by_id["model:ifc"]["pass"] is True
+    assert markers_by_id["sheet:A101:pdf"]["status"] == "artifact-returned"
+
+
+def test_documentation_export_ifc_optional_backend_manifest_is_stable(monkeypatch) -> None:
+    doc = Document(
+        revision=1,
+        elements={
+            "lvl-0": LevelElem(kind="level", id="lvl-0", name="Ground", elevationMm=0),
+            "wall-a": WallElem(
+                kind="wall",
+                id="wall-a",
+                levelId="lvl-0",
+                start={"xMm": 0, "yMm": 0},
+                end={"xMm": 1000, "yMm": 0},
+                thicknessMm=200,
+                heightMm=3000,
+            ),
+        },
+    )
+
+    monkeypatch.setattr("bim_ai.export_documentation_evidence.IFC_AVAILABLE", False)
+    monkeypatch.setattr(
+        "bim_ai.export_documentation_evidence.serialize_ifc_artifact",
+        lambda _doc: ("ISO-10303-21;\nDATA;\nENDSEC;\nEND-ISO-10303-21;\n", "empty_ifc_skeleton_v0", False),
+    )
+
+    evidence_a = build_documentation_export_production_evidence_v1(doc)
+    evidence_b = build_documentation_export_production_evidence_v1(doc)
+    ifc_a = {row["kind"]: row for row in evidence_a["modelExports"]}["ifc"]
+    ifc_b = {row["kind"]: row for row in evidence_b["modelExports"]}["ifc"]
+
+    assert ifc_a["status"] == "optional-backend-manifest"
+    assert ifc_a["pass"] is True
+    assert ifc_a["artifactHasPhysicalGeometry"] is False
+    assert ifc_a["optionalBackendManifest_v1"]["reason"] == "ifcopenshell_not_installed"
+    assert ifc_a["digestSha256"] == ifc_b["digestSha256"]
+    assert evidence_a["artifactClosure_v1"]["pass"] is True

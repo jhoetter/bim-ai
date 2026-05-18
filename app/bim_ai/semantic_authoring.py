@@ -16,10 +16,12 @@ from bim_ai.cmd.types import AssumptionEntry, CommandBundle
 from bim_ai.commands import (
     Command,
     CreateFloorCmd,
+    CreateRailingCmd,
     CreateRoofCmd,
     CreateRoofOpeningCmd,
     CreateRoomOutlineCmd,
     CreateSavedViewCmd,
+    CreateSlabOpeningCmd,
     CreateStairCmd,
     CreateWallChainCmd,
     CreateWallCmd,
@@ -43,6 +45,9 @@ SemanticOperation = Literal[
     "roof_from_wall_segments",
     "room_outline",
     "stair_between_levels",
+    "slab_opening",
+    "shaft_opening",
+    "railing",
     "save_3d_view",
     "plan_view",
     "sheet_with_viewports",
@@ -60,6 +65,9 @@ SUPPORTED_OPERATIONS: tuple[str, ...] = (
     "roof_from_wall_segments",
     "room_outline",
     "stair_between_levels",
+    "slab_opening",
+    "shaft_opening",
+    "railing",
     "save_3d_view",
     "plan_view",
     "sheet_with_viewports",
@@ -342,6 +350,49 @@ class StairBetweenLevelsPayload(BaseModel):
         return self
 
 
+class SlabOpeningPayload(BaseModel):
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+
+    id: str | None = None
+    name: str = "Slab opening"
+    host_floor_id: str = Field(alias="hostFloorId", min_length=1)
+    boundary_mm: list[Point2] = Field(alias="boundaryMm", min_length=3)
+    is_shaft: bool = Field(default=False, alias="isShaft")
+
+    @model_validator(mode="after")
+    def _valid_boundary(self) -> SlabOpeningPayload:
+        self.boundary_mm = _normalize_polygon(self.boundary_mm)
+        return self
+
+
+class ShaftOpeningPayload(SlabOpeningPayload):
+    name: str = "Shaft opening"
+    is_shaft: bool = Field(default=True, alias="isShaft")
+
+    @model_validator(mode="after")
+    def _force_shaft_marker(self) -> ShaftOpeningPayload:
+        self.is_shaft = True
+        return self
+
+
+class RailingPayload(BaseModel):
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+
+    id: str | None = None
+    name: str = "Railing"
+    hosted_stair_id: str | None = Field(default=None, alias="hostedStairId")
+    path_mm: list[Point2] = Field(alias="pathMm", min_length=2)
+    baluster_pattern: dict[str, Any] | None = Field(default=None, alias="balusterPattern")
+    handrail_supports: list[dict[str, Any]] | None = Field(default=None, alias="handrailSupports")
+
+    @model_validator(mode="after")
+    def _valid_path(self) -> RailingPayload:
+        for index in range(len(self.path_mm) - 1):
+            if _same_point(self.path_mm[index], self.path_mm[index + 1]):
+                raise ValueError("railing pathMm contains a zero-length segment")
+        return self
+
+
 class PlanViewPayload(BaseModel):
     model_config = ConfigDict(populate_by_name=True, extra="ignore")
 
@@ -443,6 +494,14 @@ def build_semantic_authoring_bundle(
         return room_outline_bundle(RoomOutlinePayload.model_validate(data))
     if operation == "stair_between_levels":
         return stair_between_levels_bundle(StairBetweenLevelsPayload.model_validate(data))
+    if operation == "slab_opening":
+        return slab_opening_bundle(SlabOpeningPayload.model_validate(data))
+    if operation == "shaft_opening":
+        return slab_opening_bundle(
+            ShaftOpeningPayload.model_validate(data), operation="shaft_opening"
+        )
+    if operation == "railing":
+        return railing_bundle(RailingPayload.model_validate(data))
     if operation == "save_3d_view":
         return save_3d_view_bundle(Save3dViewPayload.model_validate(data))
     if operation == "plan_view":
@@ -600,6 +659,31 @@ def stair_between_levels_bundle(payload: StairBetweenLevelsPayload) -> SemanticB
         treadMm=payload.tread_mm,
     )
     return _bundle("stair_between_levels", [command])
+
+
+def slab_opening_bundle(
+    payload: SlabOpeningPayload, *, operation: str = "slab_opening"
+) -> SemanticBundle:
+    command = CreateSlabOpeningCmd(
+        id=payload.id,
+        name=payload.name,
+        hostFloorId=payload.host_floor_id,
+        boundaryMm=[p.wire() for p in payload.boundary_mm],
+        isShaft=payload.is_shaft,
+    )
+    return _bundle(operation, [command])
+
+
+def railing_bundle(payload: RailingPayload) -> SemanticBundle:
+    command = CreateRailingCmd(
+        id=payload.id,
+        name=payload.name,
+        hostedStairId=payload.hosted_stair_id,
+        pathMm=[p.wire() for p in payload.path_mm],
+        balusterPattern=payload.baluster_pattern,
+        handrailSupports=payload.handrail_supports,
+    )
+    return _bundle("railing", [command])
 
 
 def plan_view_bundle(payload: PlanViewPayload) -> SemanticBundle:

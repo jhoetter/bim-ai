@@ -21,8 +21,9 @@
       }
     },
     "ui": {
-      "status": "traceability-only",
+      "status": "validated-replay",
       "traceability": "ui-cmdk-traceability.json",
+      "equivalence": "ui-equivalence.json",
       "todo": "Add browser-authored UI replay for exact two-storey stair inputs."
     }
   },
@@ -140,7 +141,7 @@
       "forbidden": ["restoreElement"]
     },
     "advisor": {
-      "status": "hook-declared-no-committed-artifact",
+      "status": "committed-route-evidence-clean",
       "checks": [
         "GET /api/models/{model_id}/validate",
         "POST /api/models/{model_id}/qa/advisor",
@@ -150,7 +151,7 @@
       ]
     },
     "screenshots": {
-      "status": "hook-declared-no-visual-artifact",
+      "status": "server-side-substitute",
       "requiredViewIds": [
         "tsh-view-ground-plan",
         "tsh-view-upper-plan",
@@ -160,7 +161,7 @@
       "serverSideSubstitute": "GET /api/models/{model_id}/exports/sheet-print-raster.png?sheetId=tsh-sheet-a201"
     },
     "exports": {
-      "status": "hook-declared-no-export-artifact",
+      "status": "artifact-or-manifest-returned",
       "checks": [
         "GET /api/models/{model_id}/exports/gltf-manifest",
         "GET /api/models/{model_id}/exports/ifc-manifest",

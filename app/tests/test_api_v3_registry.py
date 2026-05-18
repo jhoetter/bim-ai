@@ -42,6 +42,13 @@ EXPECTED_M3B_DOCUMENT_EXPORT_TOOLS = {
     "export.glb",
 }
 
+EXPECTED_M3K_VERTICAL_CIRCULATION_TOOLS = {
+    "author.stair_between_levels",
+    "opening.slab_opening",
+    "opening.shaft_opening",
+    "author.railing",
+}
+
 VALID_CATEGORIES = {"query", "mutation", "transform", "job", "introspection"}
 VALID_SIDE_EFFECTS = {"none", "mutates-kernel", "enqueues-job", "writes-audit"}
 VALID_REST_METHODS = {"GET", "POST"}
@@ -220,6 +227,34 @@ class TestToolRegistry:
         assert "output:BundleResult" in commit.schemaRefs
         assert "cli:apply-bundle:commit" in commit.exampleRefs
 
+    def test_m3k_vertical_circulation_tools_are_first_class_descriptors(self):
+        names = {tool.name for tool in get_catalog().tools}
+        assert EXPECTED_M3K_VERTICAL_CIRCULATION_TOOLS <= names
+
+        stair = get_descriptor("author.stair_between_levels")
+        assert stair is not None
+        assert stair.restEndpoint.path == "/api/semantic-authoring/{surface_id}"
+        assert stair.kernelCommands == ["createStair"]
+        assert {"semantic-authoring", "vertical-circulation"} <= set(stair.resourceGroups)
+        assert stair.inputSchema["required"] == [
+            "baseLevelId",
+            "topLevelId",
+            "runStartMm",
+            "runEndMm",
+        ]
+
+        slab = get_descriptor("opening.slab_opening")
+        shaft = get_descriptor("opening.shaft_opening")
+        railing = get_descriptor("author.railing")
+        assert slab is not None
+        assert shaft is not None
+        assert railing is not None
+        assert slab.kernelCommands == ["createSlabOpening"]
+        assert shaft.kernelCommands == ["createSlabOpening"]
+        assert shaft.inputSchema["properties"]["isShaft"]["const"] is True
+        assert railing.kernelCommands == ["createRailing"]
+        assert "pathMm" in railing.inputSchema["required"]
+
     @pytest.mark.parametrize(
         ("name", "path"),
         [
@@ -251,9 +286,7 @@ class TestToolRegistry:
             "placeTag",
             "createDimension",
         } <= set(drawing.kernelCommands)
-        assert {"sheet", "viewport", "schedule", "tag", "dimension"} <= set(
-            drawing.resourceGroups
-        )
+        assert {"sheet", "viewport", "schedule", "tag", "dimension"} <= set(drawing.resourceGroups)
 
         for name, content_type in [
             ("export.pdf", "pdf"),

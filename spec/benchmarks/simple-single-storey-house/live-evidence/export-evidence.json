@@ -1,32 +1,2526 @@
 {
   "status": "artifact-or-manifest-returned",
   "pass": true,
+  "source": {
+    "modelId": "0c55b59d-84c3-4497-90e6-63225749bc4a",
+    "revision": 2,
+    "requestedModelId": "0c55b59d-84c3-4497-90e6-63225749bc4a",
+    "hasModelId": true,
+    "hasRevision": true,
+    "modelIdMatchesRequest": true
+  },
+  "semanticSourceChecks": {
+    "status": "expected-simple-house-committed-model",
+    "pass": true,
+    "benchmarkId": "simple-single-storey-house",
+    "expected": {
+      "counts": {
+        "levels": 1,
+        "walls": 6,
+        "rooms": 3,
+        "openings": 6,
+        "floors": 1,
+        "roofs": 1,
+        "views": 2,
+        "sheets": 1,
+        "schedules": 1,
+        "annotations": 3
+      },
+      "ids": [
+        "ssh-floor-ground",
+        "ssh-lvl-ground",
+        "ssh-roof-main",
+        "ssh-room-bedroom",
+        "ssh-room-kitchen",
+        "ssh-room-living",
+        "ssh-schedule-openings",
+        "ssh-sheet-a101",
+        "ssh-view-3d",
+        "ssh-view-ground-plan",
+        "ssh-wall-bath",
+        "ssh-wall-east",
+        "ssh-wall-hall-bedroom",
+        "ssh-wall-north",
+        "ssh-wall-south",
+        "ssh-wall-west"
+      ]
+    },
+    "requiredCountKeys": [
+      "levels",
+      "walls",
+      "rooms",
+      "openings",
+      "floors",
+      "roofs",
+      "views",
+      "sheets",
+      "schedules"
+    ],
+    "sources": {
+      "snapshot": {
+        "available": true,
+        "counts": {
+          "levels": 1,
+          "walls": 6,
+          "rooms": 3,
+          "openings": 6,
+          "floors": 1,
+          "roofs": 1,
+          "views": 2,
+          "sheets": 1,
+          "schedules": 1,
+          "annotations": 3
+        },
+        "ids": [
+          "ssh-dim-overall-depth",
+          "ssh-dim-overall-width",
+          "ssh-door-bath",
+          "ssh-door-bedroom",
+          "ssh-door-entry",
+          "ssh-door-single",
+          "ssh-floor-ground",
+          "ssh-ft-slab",
+          "ssh-lvl-ground",
+          "ssh-roof-main",
+          "ssh-room-bedroom",
+          "ssh-room-kitchen",
+          "ssh-room-living",
+          "ssh-rt-gable",
+          "ssh-schedule-openings",
+          "ssh-sheet-a101",
+          "ssh-tag-living",
+          "ssh-view-3d",
+          "ssh-view-ground-plan",
+          "ssh-wall-bath",
+          "ssh-wall-east",
+          "ssh-wall-hall-bedroom",
+          "ssh-wall-north",
+          "ssh-wall-south",
+          "ssh-wall-west",
+          "ssh-window-bedroom",
+          "ssh-window-fixed",
+          "ssh-window-kitchen",
+          "ssh-window-living",
+          "ssh-wt-exterior",
+          "ssh-wt-interior"
+        ]
+      },
+      "summary": {
+        "available": true,
+        "counts": {},
+        "ids": [
+          "ssh-lvl-ground",
+          "ssh-wall-east",
+          "ssh-wall-north",
+          "ssh-wall-south",
+          "ssh-wall-west"
+        ]
+      },
+      "postCommitSnapshot": {
+        "available": true,
+        "counts": {},
+        "ids": []
+      }
+    },
+    "countChecks": {
+      "levels": [
+        {
+          "source": "snapshot",
+          "actual": 1,
+          "expected": 1,
+          "matches": true
+        }
+      ],
+      "walls": [
+        {
+          "source": "snapshot",
+          "actual": 6,
+          "expected": 6,
+          "matches": true
+        }
+      ],
+      "rooms": [
+        {
+          "source": "snapshot",
+          "actual": 3,
+          "expected": 3,
+          "matches": true
+        }
+      ],
+      "openings": [
+        {
+          "source": "snapshot",
+          "actual": 6,
+          "expected": 6,
+          "matches": true
+        }
+      ],
+      "floors": [
+        {
+          "source": "snapshot",
+          "actual": 1,
+          "expected": 1,
+          "matches": true
+        }
+      ],
+      "roofs": [
+        {
+          "source": "snapshot",
+          "actual": 1,
+          "expected": 1,
+          "matches": true
+        }
+      ],
+      "views": [
+        {
+          "source": "snapshot",
+          "actual": 2,
+          "expected": 2,
+          "matches": true
+        }
+      ],
+      "sheets": [
+        {
+          "source": "snapshot",
+          "actual": 1,
+          "expected": 1,
+          "matches": true
+        }
+      ],
+      "schedules": [
+        {
+          "source": "snapshot",
+          "actual": 1,
+          "expected": 1,
+          "matches": true
+        }
+      ]
+    },
+    "coverageMissing": [],
+    "mismatches": [],
+    "idCheck": {
+      "requiredWhenIdsAreExposed": true,
+      "checked": true,
+      "observedCount": 31,
+      "expectedCount": 16,
+      "missingExpectedIds": []
+    }
+  },
+  "changedIds": [
+    "default-a1-titleblock",
+    "ssh-dim-overall-depth",
+    "ssh-dim-overall-width",
+    "ssh-door-bath",
+    "ssh-door-bedroom",
+    "ssh-door-entry",
+    "ssh-door-single",
+    "ssh-floor-ground",
+    "ssh-ft-slab",
+    "ssh-lvl-ground",
+    "ssh-roof-main",
+    "ssh-room-bedroom",
+    "ssh-room-kitchen",
+    "ssh-room-living",
+    "ssh-rt-gable",
+    "ssh-schedule-openings",
+    "ssh-sheet-a101",
+    "ssh-tag-living",
+    "ssh-view-3d",
+    "ssh-view-ground-plan",
+    "ssh-wall-bath",
+    "ssh-wall-east",
+    "ssh-wall-hall-bedroom",
+    "ssh-wall-north",
+    "ssh-wall-south",
+    "ssh-wall-west",
+    "ssh-window-bedroom",
+    "ssh-window-fixed",
+    "ssh-window-kitchen",
+    "ssh-window-living",
+    "ssh-wt-exterior",
+    "ssh-wt-interior"
+  ],
+  "changedModelProof": {
+    "pass": true,
+    "changedIds": [
+      "default-a1-titleblock",
+      "ssh-dim-overall-depth",
+      "ssh-dim-overall-width",
+      "ssh-door-bath",
+      "ssh-door-bedroom",
+      "ssh-door-entry",
+      "ssh-door-single",
+      "ssh-floor-ground",
+      "ssh-ft-slab",
+      "ssh-lvl-ground",
+      "ssh-roof-main",
+      "ssh-room-bedroom",
+      "ssh-room-kitchen",
+      "ssh-room-living",
+      "ssh-rt-gable",
+      "ssh-schedule-openings",
+      "ssh-sheet-a101",
+      "ssh-tag-living",
+      "ssh-view-3d",
+      "ssh-view-ground-plan",
+      "ssh-wall-bath",
+      "ssh-wall-east",
+      "ssh-wall-hall-bedroom",
+      "ssh-wall-north",
+      "ssh-wall-south",
+      "ssh-wall-west",
+      "ssh-window-bedroom",
+      "ssh-window-fixed",
+      "ssh-window-kitchen",
+      "ssh-window-living",
+      "ssh-wt-exterior",
+      "ssh-wt-interior"
+    ],
+    "counts": {
+      "countsByKind": {
+        "dimension": 2,
+        "door": 3,
+        "family_type": 2,
+        "floor": 1,
+        "floor_type": 1,
+        "internal_origin": 1,
+        "level": 1,
+        "placed_tag": 1,
+        "plan_view": 1,
+        "roof": 1,
+        "roof_type": 1,
+        "room": 3,
+        "schedule": 1,
+        "sheet": 1,
+        "sun_settings": 1,
+        "titleblock_type": 1,
+        "viewpoint": 1,
+        "wall": 6,
+        "wall_type": 2,
+        "window": 3
+      },
+      "walls": 6,
+      "openings": 6,
+      "floors": 1,
+      "roofs": 1
+    },
+    "source": "documentationExportProductionEvidence_v1"
+  },
+  "documentationExportProductionEvidence_v1": {
+    "format": "documentationExportProductionEvidence_v1",
+    "modelId": "0c55b59d-84c3-4497-90e6-63225749bc4a",
+    "revision": 1,
+    "coverage": {
+      "sheetCount": 1,
+      "scheduleCount": 1,
+      "tagCount": 1,
+      "dimensionCount": 2,
+      "pdfArtifactCount": 1,
+      "ifcArtifactCount": 1,
+      "gltfArtifactCount": 1,
+      "glbArtifactCount": 1,
+      "externalExportMarkerCount": 9
+    },
+    "sheets": [
+      {
+        "sheetId": "ssh-sheet-a101",
+        "sheetName": "Simple House Plans and 3D",
+        "viewportCount": 0,
+        "listingLineCount": 1,
+        "exportListingDigestSha256": "ee0638e0f781a0de01c8cf3e5135dcd3ac969e09cdbabd47e1276b033cff71c0",
+        "artifacts": [
+          {
+            "artifactId": "sheet:ssh-sheet-a101:svg",
+            "kind": "sheet_svg",
+            "artifactName": "sheet-preview.svg",
+            "mimeType": "image/svg+xml",
+            "href": "/api/models/0c55b59d-84c3-4497-90e6-63225749bc4a/exports/sheet-preview.svg?sheetId=ssh-sheet-a101",
+            "byteLength": 501,
+            "digestSha256": "33ca01d427c30db7e6a1654c54ca02cccf4d0acf1c520879dbae924995b99138",
+            "status": "artifact-returned",
+            "pass": true,
+            "nonPlaceholderProof": {
+              "method": "byte-length-and-sha256",
+              "pass": true,
+              "byteLength": 501,
+              "digestSha256": "33ca01d427c30db7e6a1654c54ca02cccf4d0acf1c520879dbae924995b99138"
+            }
+          },
+          {
+            "artifactId": "sheet:ssh-sheet-a101:pdf",
+            "kind": "sheet_pdf",
+            "artifactName": "sheet-preview.pdf",
+            "mimeType": "application/pdf",
+            "href": "/api/models/0c55b59d-84c3-4497-90e6-63225749bc4a/exports/sheet-preview.pdf?sheetId=ssh-sheet-a101",
+            "byteLength": 1679,
+            "digestSha256": "afcad79df9b0edbf1cb12119ddcf54800497cd96dcc1a6093c212e3278d5ff40",
+            "status": "artifact-returned",
+            "pass": true,
+            "nonPlaceholderProof": {
+              "method": "byte-length-and-sha256",
+              "pass": true,
+              "byteLength": 1679,
+              "digestSha256": "afcad79df9b0edbf1cb12119ddcf54800497cd96dcc1a6093c212e3278d5ff40"
+            }
+          }
+        ]
+      }
+    ],
+    "schedules": [
+      {
+        "scheduleId": "ssh-schedule-openings",
+        "scheduleName": "Door and window schedule",
+        "sheetId": null,
+        "rowCount": 0,
+        "columnCount": 0,
+        "schedulePlacement": null,
+        "payloadDigestSha256": "d2857b0085c3ba756ef6071f6c442e235adc5a019e10ffaf459c27d04447aca2"
+      }
+    ],
+    "tags": [
+      {
+        "tagId": "ssh-tag-living",
+        "tagKind": "placed_tag",
+        "hostViewId": "ssh-view-ground-plan",
+        "hostElementId": "ssh-room-living",
+        "textOverride": "Living / Dining",
+        "resolvesHostElement": true,
+        "resolvesHostView": true,
+        "tagDefinitionId": null
+      }
+    ],
+    "dimensions": [
+      {
+        "dimensionId": "ssh-dim-overall-depth",
+        "dimensionKind": "dimension",
+        "hostViewId": null,
+        "levelId": "ssh-lvl-ground",
+        "autoGenerated": false,
+        "state": "linked",
+        "refElementIdA": "ssh-wall-south",
+        "refElementIdB": "ssh-wall-north",
+        "resolvesRefElementA": true,
+        "resolvesRefElementB": true
+      },
+      {
+        "dimensionId": "ssh-dim-overall-width",
+        "dimensionKind": "dimension",
+        "hostViewId": null,
+        "levelId": "ssh-lvl-ground",
+        "autoGenerated": false,
+        "state": "linked",
+        "refElementIdA": "ssh-wall-west",
+        "refElementIdB": "ssh-wall-east",
+        "resolvesRefElementA": true,
+        "resolvesRefElementB": true
+      }
+    ],
+    "modelExports": [
+      {
+        "artifactId": "model:ifc",
+        "kind": "ifc",
+        "artifactName": "model.ifc",
+        "mimeType": "application/x-step",
+        "href": "/api/models/0c55b59d-84c3-4497-90e6-63225749bc4a/exports/model.ifc",
+        "byteLength": 35355,
+        "digestSha256": "8f24ab3d0ca968b5bc7a824a56da193dc980c8fc4044c36239d460a5f003e5c3",
+        "encoding": "bim_ai_ifc_kernel_v1",
+        "ifcOpenShellAvailable": true,
+        "artifactHasPhysicalGeometry": true,
+        "manifestHints": {
+          "exportedIfcKindsInArtifact": {
+            "door": 3,
+            "floor": 1,
+            "level": 1,
+            "roof": 1,
+            "room": 3,
+            "wall": 6,
+            "window": 3
+          },
+          "ifcEmittedKernelKinds": [
+            "door",
+            "floor",
+            "level",
+            "roof",
+            "room",
+            "site",
+            "slab_opening",
+            "stair",
+            "wall",
+            "window"
+          ],
+          "kernelNote": "Kernel IFC encodes Proj\u2192IfcSite\u2192IfcBuilding\u2192storeys; kernel **SiteElem** maps to identity **`Pset_SiteCommon.Reference`** on **`IfcSite`** (comma-joined sorted ids when multiple); walls+floors, roofs (IfcRoof prism), stairs (IfcStair run prism), hosted door/window openings, slab voids via IfcOpeningElement on host IfcSlab, and rooms as IfcSpace footprints; IfcOpenShell emits minimal IFC4 **property sets** (e.g. Pset_*Common `Reference` from kernel ids on physical products); **narrow `Qto_*` quantities** attach to walls/fillings/slab/space when IfcOpenShell qto helpers succeed. IFC import and full boolean regeneration remain deferred."
+        },
+        "semanticReadback": {
+          "matrixVersion": 1,
+          "available": true,
+          "buildingStorey": {
+            "count": 1,
+            "elevationsPresent": 1
+          },
+          "products": {
+            "IfcWall": 6,
+            "IfcSlab": 1,
+            "IfcRoof": 1,
+            "IfcStair": 0,
+            "IfcOpeningElement": 6,
+            "IfcDoor": 3,
+            "IfcWindow": 3,
+            "IfcSpace": 3
+          },
+          "openingsByHostKind": {
+            "roof": 0,
+            "slab": 0,
+            "wall": 6,
+            "other": 0
+          },
+          "identityPsets": {
+            "wallWithPsetWallCommonReference": 6,
+            "slabWithPsetSlabCommonReference": 1,
+            "spaceWithPsetSpaceCommonReference": 3,
+            "doorWithPsetDoorCommonReference": 3,
+            "windowWithPsetWindowCommonReference": 3,
+            "roofWithPsetRoofCommonReference": 1,
+            "roofWithBimAiRoofTypeId": 1,
+            "roofWithGablePitchedBodyV0": 1,
+            "stairWithPsetStairCommonReference": 0,
+            "siteWithPsetSiteCommonReference": 0
+          },
+          "qtoLinkedProducts": {
+            "IfcWall": 6,
+            "IfcSlab": 1,
+            "IfcSpace": 3,
+            "IfcDoor": 3,
+            "IfcWindow": 3,
+            "IfcStair": 0
+          },
+          "spaceProgrammeFields": {
+            "ProgrammeCode": 3,
+            "Department": 0,
+            "FunctionLabel": 0,
+            "FinishSet": 0
+          },
+          "qtoTemplates": [
+            "Qto_DoorBaseQuantities",
+            "Qto_SlabBaseQuantities",
+            "Qto_SpaceBaseQuantities",
+            "Qto_WallBaseQuantities",
+            "Qto_WindowBaseQuantities"
+          ],
+          "importScopeUnsupportedIfcProducts_v0": {
+            "schemaVersion": 0,
+            "countsByClass": {}
+          },
+          "siteExchangeEvidence_v0": {
+            "schemaVersion": 0,
+            "kernelSiteCount": 0,
+            "joinedKernelSiteIdsExpected": "",
+            "ifcSiteCount": 1,
+            "sitesWithPsetSiteCommonReference": 0,
+            "identityReferenceJoined": null,
+            "kernelIdsMatchJoinedReference": true
+          },
+          "materialLayerSetReadback_v0": {
+            "schemaVersion": 0,
+            "available": true,
+            "hosts": [
+              {
+                "hostElementId": "ssh-floor-ground",
+                "hostKind": "floor",
+                "hostIfcClass": "IfcSlab",
+                "typeElementId": "ssh-ft-slab",
+                "typeName": "Benchmark ground slab",
+                "docLayerCount": 2,
+                "docTotalThicknessMm": 220.0,
+                "ifcLayerCount": 2,
+                "ifcTotalThicknessMm": 220.0,
+                "materialKeysOrLabelsExpected": ["concrete_smooth", "oak_floor"],
+                "materialTokensReadFromIfc": ["concrete_smooth", "oak_floor"],
+                "readbackState": "matched",
+                "materialCatalogLabelsExpected": ["Smooth concrete", ""]
+              },
+              {
+                "hostElementId": "ssh-roof-main",
+                "hostKind": "roof",
+                "hostIfcClass": "IfcRoof",
+                "typeElementId": "ssh-rt-gable",
+                "typeName": "Benchmark simple gable roof",
+                "docLayerCount": 2,
+                "docTotalThicknessMm": 210.0,
+                "ifcLayerCount": 2,
+                "ifcTotalThicknessMm": 210.0,
+                "materialKeysOrLabelsExpected": ["timber_roof", "standing_seam_grey"],
+                "materialTokensReadFromIfc": ["timber_roof", "standing_seam_grey"],
+                "readbackState": "matched",
+                "materialCatalogLabelsExpected": ["", ""]
+              },
+              {
+                "hostElementId": "ssh-wall-bath",
+                "hostKind": "wall",
+                "hostIfcClass": "IfcWall",
+                "typeElementId": "ssh-wt-interior",
+                "typeName": "Benchmark interior partition",
+                "docLayerCount": 1,
+                "docTotalThicknessMm": 120.0,
+                "ifcLayerCount": 1,
+                "ifcTotalThicknessMm": 120.0,
+                "materialKeysOrLabelsExpected": ["gypsum_board"],
+                "materialTokensReadFromIfc": ["gypsum_board"],
+                "readbackState": "matched",
+                "materialCatalogLabelsExpected": [""]
+              },
+              {
+                "hostElementId": "ssh-wall-east",
+                "hostKind": "wall",
+                "hostIfcClass": "IfcWall",
+                "typeElementId": "ssh-wt-exterior",
+                "typeName": "Benchmark exterior wall",
+                "docLayerCount": 3,
+                "docTotalThicknessMm": 300.0,
+                "ifcLayerCount": 3,
+                "ifcTotalThicknessMm": 300.0,
+                "materialKeysOrLabelsExpected": ["brick_light", "timber_frame", "gypsum_board"],
+                "materialTokensReadFromIfc": ["brick_light", "timber_frame", "gypsum_board"],
+                "readbackState": "matched",
+                "materialCatalogLabelsExpected": ["", "", ""]
+              },
+              {
+                "hostElementId": "ssh-wall-hall-bedroom",
+                "hostKind": "wall",
+                "hostIfcClass": "IfcWall",
+                "typeElementId": "ssh-wt-interior",
+                "typeName": "Benchmark interior partition",
+                "docLayerCount": 1,
+                "docTotalThicknessMm": 120.0,
+                "ifcLayerCount": 1,
+                "ifcTotalThicknessMm": 120.0,
+                "materialKeysOrLabelsExpected": ["gypsum_board"],
+                "materialTokensReadFromIfc": ["gypsum_board"],
+                "readbackState": "matched",
+                "materialCatalogLabelsExpected": [""]
+              },
+              {
+                "hostElementId": "ssh-wall-north",
+                "hostKind": "wall",
+                "hostIfcClass": "IfcWall",
+                "typeElementId": "ssh-wt-exterior",
+                "typeName": "Benchmark exterior wall",
+                "docLayerCount": 3,
+                "docTotalThicknessMm": 300.0,
+                "ifcLayerCount": 3,
+                "ifcTotalThicknessMm": 300.0,
+                "materialKeysOrLabelsExpected": ["brick_light", "timber_frame", "gypsum_board"],
+                "materialTokensReadFromIfc": ["brick_light", "timber_frame", "gypsum_board"],
+                "readbackState": "matched",
+                "materialCatalogLabelsExpected": ["", "", ""]
+              },
+              {
+                "hostElementId": "ssh-wall-south",
+                "hostKind": "wall",
+                "hostIfcClass": "IfcWall",
+                "typeElementId": "ssh-wt-exterior",
+                "typeName": "Benchmark exterior wall",
+                "docLayerCount": 3,
+                "docTotalThicknessMm": 300.0,
+                "ifcLayerCount": 3,
+                "ifcTotalThicknessMm": 300.0,
+                "materialKeysOrLabelsExpected": ["brick_light", "timber_frame", "gypsum_board"],
+                "materialTokensReadFromIfc": ["brick_light", "timber_frame", "gypsum_board"],
+                "readbackState": "matched",
+                "materialCatalogLabelsExpected": ["", "", ""]
+              },
+              {
+                "hostElementId": "ssh-wall-west",
+                "hostKind": "wall",
+                "hostIfcClass": "IfcWall",
+                "typeElementId": "ssh-wt-exterior",
+                "typeName": "Benchmark exterior wall",
+                "docLayerCount": 3,
+                "docTotalThicknessMm": 300.0,
+                "ifcLayerCount": 3,
+                "ifcTotalThicknessMm": 300.0,
+                "materialKeysOrLabelsExpected": ["brick_light", "timber_frame", "gypsum_board"],
+                "materialTokensReadFromIfc": ["brick_light", "timber_frame", "gypsum_board"],
+                "readbackState": "matched",
+                "materialCatalogLabelsExpected": ["", "", ""]
+              }
+            ],
+            "summary": {
+              "hostsCompared": 8,
+              "hostsMatched": 8,
+              "hostsMissingIfcLayers": 0,
+              "hostsPartialMismatch": 0,
+              "hostsNoDocExpectation": 0,
+              "allMatchedComparedHosts": true
+            }
+          },
+          "propertySetCoverageEvidence_v0": {
+            "schemaVersion": 0,
+            "available": true,
+            "rows": [
+              {
+                "kernelKind": "door",
+                "kernelElementId": "ssh-door-bath",
+                "ifcProductClass": "IfcDoor",
+                "ifcGlobalId": "0P_LCexnHFUgUNwNoWvHQN",
+                "expectedPropertySetNames": ["Pset_DoorCommon"],
+                "criticalPropertiesByPset": {
+                  "Pset_DoorCommon": ["Reference"]
+                },
+                "exportedPropertySetNames": ["Pset_DoorCommon", "Qto_DoorBaseQuantities"],
+                "exportedPropertiesByPset": {
+                  "Pset_DoorCommon": ["Reference", "id"],
+                  "Qto_DoorBaseQuantities": ["Area", "Height", "Width", "id"]
+                },
+                "qtoTemplateExpected": "Qto_DoorBaseQuantities",
+                "qtoLinked": true,
+                "materialLayerReadbackToken": "not_applicable",
+                "readbackStatus": "ok",
+                "idsGapReasonToken": "ids_ok"
+              },
+              {
+                "kernelKind": "door",
+                "kernelElementId": "ssh-door-bedroom",
+                "ifcProductClass": "IfcDoor",
+                "ifcGlobalId": "0rikKgqMr2pgnoy6_IQDu6",
+                "expectedPropertySetNames": ["Pset_DoorCommon"],
+                "criticalPropertiesByPset": {
+                  "Pset_DoorCommon": ["Reference"]
+                },
+                "exportedPropertySetNames": ["Pset_DoorCommon", "Qto_DoorBaseQuantities"],
+                "exportedPropertiesByPset": {
+                  "Pset_DoorCommon": ["Reference", "id"],
+                  "Qto_DoorBaseQuantities": ["Area", "Height", "Width", "id"]
+                },
+                "qtoTemplateExpected": "Qto_DoorBaseQuantities",
+                "qtoLinked": true,
+                "materialLayerReadbackToken": "not_applicable",
+                "readbackStatus": "ok",
+                "idsGapReasonToken": "ids_ok"
+              },
+              {
+                "kernelKind": "door",
+                "kernelElementId": "ssh-door-entry",
+                "ifcProductClass": "IfcDoor",
+                "ifcGlobalId": "11yxbVonf28uc9HafsPOqw",
+                "expectedPropertySetNames": ["Pset_DoorCommon"],
+                "criticalPropertiesByPset": {
+                  "Pset_DoorCommon": ["Reference"]
+                },
+                "exportedPropertySetNames": ["Pset_DoorCommon", "Qto_DoorBaseQuantities"],
+                "exportedPropertiesByPset": {
+                  "Pset_DoorCommon": ["Reference", "id"],
+                  "Qto_DoorBaseQuantities": ["Area", "Height", "Width", "id"]
+                },
+                "qtoTemplateExpected": "Qto_DoorBaseQuantities",
+                "qtoLinked": true,
+                "materialLayerReadbackToken": "not_applicable",
+                "readbackStatus": "ok",
+                "idsGapReasonToken": "ids_ok"
+              },
+              {
+                "kernelKind": "roof",
+                "kernelElementId": "ssh-roof-main",
+                "ifcProductClass": "IfcRoof",
+                "ifcGlobalId": "2TgUT9w8n3FPixlkq2DY8p",
+                "expectedPropertySetNames": ["Pset_RoofCommon"],
+                "criticalPropertiesByPset": {
+                  "Pset_RoofCommon": ["Reference"]
+                },
+                "exportedPropertySetNames": [
+                  "Pset_BimAiKernel",
+                  "Pset_RoofCommon",
+                  "Qto_SlabBaseQuantities"
+                ],
+                "exportedPropertiesByPset": {
+                  "Pset_BimAiKernel": [
+                    "BimAiRoofGeometryMode",
+                    "BimAiRoofPlanFootprintMm",
+                    "BimAiRoofTypeId",
+                    "Reference",
+                    "id"
+                  ],
+                  "Pset_RoofCommon": ["Reference", "id"],
+                  "Qto_SlabBaseQuantities": ["GrossArea", "NetArea", "Perimeter", "id"]
+                },
+                "qtoTemplateExpected": null,
+                "qtoLinked": null,
+                "materialLayerReadbackToken": "aligned",
+                "readbackStatus": "ok",
+                "idsGapReasonToken": "ids_ok"
+              },
+              {
+                "kernelKind": "site",
+                "kernelElementId": "",
+                "ifcProductClass": "IfcSite",
+                "ifcGlobalId": "2M9PzzKVn7LQkuK9RcHYwv",
+                "expectedPropertySetNames": ["Pset_SiteCommon"],
+                "criticalPropertiesByPset": {
+                  "Pset_SiteCommon": ["Reference"]
+                },
+                "exportedPropertySetNames": [],
+                "exportedPropertiesByPset": {},
+                "qtoTemplateExpected": null,
+                "qtoLinked": null,
+                "materialLayerReadbackToken": "not_applicable",
+                "readbackStatus": "ok",
+                "idsGapReasonToken": "ids_ok"
+              },
+              {
+                "kernelKind": "floor",
+                "kernelElementId": "ssh-floor-ground",
+                "ifcProductClass": "IfcSlab",
+                "ifcGlobalId": "3aWln6jeHELAi3nuTJN8P0",
+                "expectedPropertySetNames": ["Pset_SlabCommon"],
+                "criticalPropertiesByPset": {
+                  "Pset_SlabCommon": ["Reference"]
+                },
+                "exportedPropertySetNames": ["Pset_SlabCommon", "Qto_SlabBaseQuantities"],
+                "exportedPropertiesByPset": {
+                  "Pset_SlabCommon": ["Reference", "id"],
+                  "Qto_SlabBaseQuantities": ["GrossArea", "NetArea", "Perimeter", "Width", "id"]
+                },
+                "qtoTemplateExpected": "Qto_SlabBaseQuantities",
+                "qtoLinked": true,
+                "materialLayerReadbackToken": "aligned",
+                "readbackStatus": "ok",
+                "idsGapReasonToken": "ids_ok"
+              },
+              {
+                "kernelKind": "floor_type",
+                "kernelElementId": "ssh-ft-slab",
+                "ifcProductClass": "IfcSlabType",
+                "ifcGlobalId": "2nrzCWmBL8mxcS8qPtWMVI",
+                "expectedPropertySetNames": ["Pset_SlabCommon"],
+                "criticalPropertiesByPset": {
+                  "Pset_SlabCommon": ["Reference"]
+                },
+                "exportedPropertySetNames": ["Pset_SlabCommon"],
+                "exportedPropertiesByPset": {
+                  "Pset_SlabCommon": ["Reference", "id"]
+                },
+                "qtoTemplateExpected": null,
+                "qtoLinked": null,
+                "materialLayerReadbackToken": "not_applicable",
+                "readbackStatus": "ok",
+                "idsGapReasonToken": "ids_ok"
+              },
+              {
+                "kernelKind": "room",
+                "kernelElementId": "ssh-room-bedroom",
+                "ifcProductClass": "IfcSpace",
+                "ifcGlobalId": "2WzG_s_WDCvRMzVX8x0OMX",
+                "expectedPropertySetNames": ["Pset_SpaceCommon"],
+                "criticalPropertiesByPset": {
+                  "Pset_SpaceCommon": ["Reference", "ProgrammeCode"]
+                },
+                "exportedPropertySetNames": ["Pset_SpaceCommon", "Qto_SpaceBaseQuantities"],
+                "exportedPropertiesByPset": {
+                  "Pset_SpaceCommon": ["ProgrammeCode", "Reference", "id"],
+                  "Qto_SpaceBaseQuantities": [
+                    "GrossFloorArea",
+                    "NetFloorArea",
+                    "NetPerimeter",
+                    "NetVolume",
+                    "id"
+                  ]
+                },
+                "qtoTemplateExpected": "Qto_SpaceBaseQuantities",
+                "qtoLinked": true,
+                "materialLayerReadbackToken": "not_applicable",
+                "readbackStatus": "ok",
+                "idsGapReasonToken": "ids_ok"
+              },
+              {
+                "kernelKind": "room",
+                "kernelElementId": "ssh-room-kitchen",
+                "ifcProductClass": "IfcSpace",
+                "ifcGlobalId": "2Z0_4uk15B1A0VOV1wV_0P",
+                "expectedPropertySetNames": ["Pset_SpaceCommon"],
+                "criticalPropertiesByPset": {
+                  "Pset_SpaceCommon": ["Reference", "ProgrammeCode"]
+                },
+                "exportedPropertySetNames": ["Pset_SpaceCommon", "Qto_SpaceBaseQuantities"],
+                "exportedPropertiesByPset": {
+                  "Pset_SpaceCommon": ["ProgrammeCode", "Reference", "id"],
+                  "Qto_SpaceBaseQuantities": [
+                    "GrossFloorArea",
+                    "NetFloorArea",
+                    "NetPerimeter",
+                    "NetVolume",
+                    "id"
+                  ]
+                },
+                "qtoTemplateExpected": "Qto_SpaceBaseQuantities",
+                "qtoLinked": true,
+                "materialLayerReadbackToken": "not_applicable",
+                "readbackStatus": "ok",
+                "idsGapReasonToken": "ids_ok"
+              },
+              {
+                "kernelKind": "room",
+                "kernelElementId": "ssh-room-living",
+                "ifcProductClass": "IfcSpace",
+                "ifcGlobalId": "2cEg5rCBjFq9he8OUtrZGA",
+                "expectedPropertySetNames": ["Pset_SpaceCommon"],
+                "criticalPropertiesByPset": {
+                  "Pset_SpaceCommon": ["Reference", "ProgrammeCode"]
+                },
+                "exportedPropertySetNames": ["Pset_SpaceCommon", "Qto_SpaceBaseQuantities"],
+                "exportedPropertiesByPset": {
+                  "Pset_SpaceCommon": ["ProgrammeCode", "Reference", "id"],
+                  "Qto_SpaceBaseQuantities": [
+                    "GrossFloorArea",
+                    "NetFloorArea",
+                    "NetPerimeter",
+                    "NetVolume",
+                    "id"
+                  ]
+                },
+                "qtoTemplateExpected": "Qto_SpaceBaseQuantities",
+                "qtoLinked": true,
+                "materialLayerReadbackToken": "not_applicable",
+                "readbackStatus": "ok",
+                "idsGapReasonToken": "ids_ok"
+              },
+              {
+                "kernelKind": "wall",
+                "kernelElementId": "ssh-wall-bath",
+                "ifcProductClass": "IfcWall",
+                "ifcGlobalId": "0vfBY4Nof64A76ayh1cexB",
+                "expectedPropertySetNames": ["Pset_WallCommon"],
+                "criticalPropertiesByPset": {
+                  "Pset_WallCommon": ["Reference"]
+                },
+                "exportedPropertySetNames": ["Pset_WallCommon", "Qto_WallBaseQuantities"],
+                "exportedPropertiesByPset": {
+                  "Pset_WallCommon": ["Reference", "id"],
+                  "Qto_WallBaseQuantities": [
+                    "GrossSideArea",
+                    "Height",
+                    "Length",
+                    "NetSideArea",
+                    "Width",
+                    "id"
+                  ]
+                },
+                "qtoTemplateExpected": "Qto_WallBaseQuantities",
+                "qtoLinked": true,
+                "materialLayerReadbackToken": "aligned",
+                "readbackStatus": "ok",
+                "idsGapReasonToken": "ids_ok"
+              },
+              {
+                "kernelKind": "wall",
+                "kernelElementId": "ssh-wall-east",
+                "ifcProductClass": "IfcWall",
+                "ifcGlobalId": "1hJKBpuNr7APNfSmcZo_gG",
+                "expectedPropertySetNames": ["Pset_WallCommon"],
+                "criticalPropertiesByPset": {
+                  "Pset_WallCommon": ["Reference"]
+                },
+                "exportedPropertySetNames": ["Pset_WallCommon", "Qto_WallBaseQuantities"],
+                "exportedPropertiesByPset": {
+                  "Pset_WallCommon": ["Reference", "id"],
+                  "Qto_WallBaseQuantities": [
+                    "GrossSideArea",
+                    "Height",
+                    "Length",
+                    "NetSideArea",
+                    "Width",
+                    "id"
+                  ]
+                },
+                "qtoTemplateExpected": "Qto_WallBaseQuantities",
+                "qtoLinked": true,
+                "materialLayerReadbackToken": "aligned",
+                "readbackStatus": "ok",
+                "idsGapReasonToken": "ids_ok"
+              },
+              {
+                "kernelKind": "wall",
+                "kernelElementId": "ssh-wall-hall-bedroom",
+                "ifcProductClass": "IfcWall",
+                "ifcGlobalId": "1lmRoNBLXD8PVuXzLWafId",
+                "expectedPropertySetNames": ["Pset_WallCommon"],
+                "criticalPropertiesByPset": {
+                  "Pset_WallCommon": ["Reference"]
+                },
+                "exportedPropertySetNames": ["Pset_WallCommon", "Qto_WallBaseQuantities"],
+                "exportedPropertiesByPset": {
+                  "Pset_WallCommon": ["Reference", "id"],
+                  "Qto_WallBaseQuantities": [
+                    "GrossSideArea",
+                    "Height",
+                    "Length",
+                    "NetSideArea",
+                    "Width",
+                    "id"
+                  ]
+                },
+                "qtoTemplateExpected": "Qto_WallBaseQuantities",
+                "qtoLinked": true,
+                "materialLayerReadbackToken": "aligned",
+                "readbackStatus": "ok",
+                "idsGapReasonToken": "ids_ok"
+              },
+              {
+                "kernelKind": "wall",
+                "kernelElementId": "ssh-wall-north",
+                "ifcProductClass": "IfcWall",
+                "ifcGlobalId": "1laE_K_D9AqP5ErTmjjuoq",
+                "expectedPropertySetNames": ["Pset_WallCommon"],
+                "criticalPropertiesByPset": {
+                  "Pset_WallCommon": ["Reference"]
+                },
+                "exportedPropertySetNames": ["Pset_WallCommon", "Qto_WallBaseQuantities"],
+                "exportedPropertiesByPset": {
+                  "Pset_WallCommon": ["Reference", "id"],
+                  "Qto_WallBaseQuantities": [
+                    "GrossSideArea",
+                    "Height",
+                    "Length",
+                    "NetSideArea",
+                    "Width",
+                    "id"
+                  ]
+                },
+                "qtoTemplateExpected": "Qto_WallBaseQuantities",
+                "qtoLinked": true,
+                "materialLayerReadbackToken": "aligned",
+                "readbackStatus": "ok",
+                "idsGapReasonToken": "ids_ok"
+              },
+              {
+                "kernelKind": "wall",
+                "kernelElementId": "ssh-wall-south",
+                "ifcProductClass": "IfcWall",
+                "ifcGlobalId": "1kuuQ914X3BPCWm48HJPz1",
+                "expectedPropertySetNames": ["Pset_WallCommon"],
+                "criticalPropertiesByPset": {
+                  "Pset_WallCommon": ["Reference"]
+                },
+                "exportedPropertySetNames": ["Pset_WallCommon", "Qto_WallBaseQuantities"],
+                "exportedPropertiesByPset": {
+                  "Pset_WallCommon": ["Reference", "id"],
+                  "Qto_WallBaseQuantities": [
+                    "GrossSideArea",
+                    "Height",
+                    "Length",
+                    "NetSideArea",
+                    "Width",
+                    "id"
+                  ]
+                },
+                "qtoTemplateExpected": "Qto_WallBaseQuantities",
+                "qtoLinked": true,
+                "materialLayerReadbackToken": "aligned",
+                "readbackStatus": "ok",
+                "idsGapReasonToken": "ids_ok"
+              },
+              {
+                "kernelKind": "wall",
+                "kernelElementId": "ssh-wall-west",
+                "ifcProductClass": "IfcWall",
+                "ifcGlobalId": "3aQmJle6X8Iw5MumL5EkSL",
+                "expectedPropertySetNames": ["Pset_WallCommon"],
+                "criticalPropertiesByPset": {
+                  "Pset_WallCommon": ["Reference"]
+                },
+                "exportedPropertySetNames": ["Pset_WallCommon", "Qto_WallBaseQuantities"],
+                "exportedPropertiesByPset": {
+                  "Pset_WallCommon": ["Reference", "id"],
+                  "Qto_WallBaseQuantities": [
+                    "GrossSideArea",
+                    "Height",
+                    "Length",
+                    "NetSideArea",
+                    "Width",
+                    "id"
+                  ]
+                },
+                "qtoTemplateExpected": "Qto_WallBaseQuantities",
+                "qtoLinked": true,
+                "materialLayerReadbackToken": "aligned",
+                "readbackStatus": "ok",
+                "idsGapReasonToken": "ids_ok"
+              },
+              {
+                "kernelKind": "window",
+                "kernelElementId": "ssh-window-bedroom",
+                "ifcProductClass": "IfcWindow",
+                "ifcGlobalId": "2pwiq_6Mz4xPLkTeoR86nX",
+                "expectedPropertySetNames": ["Pset_WindowCommon"],
+                "criticalPropertiesByPset": {
+                  "Pset_WindowCommon": ["Reference"]
+                },
+                "exportedPropertySetNames": ["Pset_WindowCommon", "Qto_WindowBaseQuantities"],
+                "exportedPropertiesByPset": {
+                  "Pset_WindowCommon": ["Reference", "id"],
+                  "Qto_WindowBaseQuantities": ["Area", "Height", "Width", "id"]
+                },
+                "qtoTemplateExpected": "Qto_WindowBaseQuantities",
+                "qtoLinked": true,
+                "materialLayerReadbackToken": "not_applicable",
+                "readbackStatus": "ok",
+                "idsGapReasonToken": "ids_ok"
+              },
+              {
+                "kernelKind": "window",
+                "kernelElementId": "ssh-window-kitchen",
+                "ifcProductClass": "IfcWindow",
+                "ifcGlobalId": "3q4_jhRLD4gRIcvWQGT7jO",
+                "expectedPropertySetNames": ["Pset_WindowCommon"],
+                "criticalPropertiesByPset": {
+                  "Pset_WindowCommon": ["Reference"]
+                },
+                "exportedPropertySetNames": ["Pset_WindowCommon", "Qto_WindowBaseQuantities"],
+                "exportedPropertiesByPset": {
+                  "Pset_WindowCommon": ["Reference", "id"],
+                  "Qto_WindowBaseQuantities": ["Area", "Height", "Width", "id"]
+                },
+                "qtoTemplateExpected": "Qto_WindowBaseQuantities",
+                "qtoLinked": true,
+                "materialLayerReadbackToken": "not_applicable",
+                "readbackStatus": "ok",
+                "idsGapReasonToken": "ids_ok"
+              },
+              {
+                "kernelKind": "window",
+                "kernelElementId": "ssh-window-living",
+                "ifcProductClass": "IfcWindow",
+                "ifcGlobalId": "1ftwqYXNT47Ripe2meei4T",
+                "expectedPropertySetNames": ["Pset_WindowCommon"],
+                "criticalPropertiesByPset": {
+                  "Pset_WindowCommon": ["Reference"]
+                },
+                "exportedPropertySetNames": ["Pset_WindowCommon", "Qto_WindowBaseQuantities"],
+                "exportedPropertiesByPset": {
+                  "Pset_WindowCommon": ["Reference", "id"],
+                  "Qto_WindowBaseQuantities": ["Area", "Height", "Width", "id"]
+                },
+                "qtoTemplateExpected": "Qto_WindowBaseQuantities",
+                "qtoLinked": true,
+                "materialLayerReadbackToken": "not_applicable",
+                "readbackStatus": "ok",
+                "idsGapReasonToken": "ids_ok"
+              }
+            ],
+            "summary": {
+              "rowsTotal": 19,
+              "rowsOk": 19,
+              "rowsWithGap": 0,
+              "idsGapReasonCounts": {
+                "ids_ok": 19
+              },
+              "slabVoidOpeningsWithoutIdentityPset": 0
+            }
+          },
+          "propertySetCoverageExpansion_v1": {
+            "schemaVersion": 1,
+            "available": true,
+            "rows": [
+              {
+                "ifcProductClass": "IfcWall",
+                "primaryPsetName": "Pset_WallCommon",
+                "productCount": 6,
+                "psetFieldCountTotal": 6,
+                "psetFieldPopulatedCount": 6,
+                "psetFieldGapCount": 0,
+                "populatedRatio": 1.0
+              },
+              {
+                "ifcProductClass": "IfcSlab",
+                "primaryPsetName": "Pset_SlabCommon",
+                "productCount": 1,
+                "psetFieldCountTotal": 1,
+                "psetFieldPopulatedCount": 1,
+                "psetFieldGapCount": 0,
+                "populatedRatio": 1.0
+              },
+              {
+                "ifcProductClass": "IfcRoof",
+                "primaryPsetName": "Pset_RoofCommon",
+                "productCount": 1,
+                "psetFieldCountTotal": 1,
+                "psetFieldPopulatedCount": 1,
+                "psetFieldGapCount": 0,
+                "populatedRatio": 1.0
+              },
+              {
+                "ifcProductClass": "IfcStair",
+                "primaryPsetName": "Pset_StairCommon",
+                "productCount": 0,
+                "psetFieldCountTotal": 0,
+                "psetFieldPopulatedCount": 0,
+                "psetFieldGapCount": 0,
+                "populatedRatio": null
+              },
+              {
+                "ifcProductClass": "IfcSpace",
+                "primaryPsetName": "Pset_SpaceCommon",
+                "productCount": 3,
+                "psetFieldCountTotal": 6,
+                "psetFieldPopulatedCount": 6,
+                "psetFieldGapCount": 0,
+                "populatedRatio": 1.0
+              },
+              {
+                "ifcProductClass": "IfcDoor",
+                "primaryPsetName": "Pset_DoorCommon",
+                "productCount": 3,
+                "psetFieldCountTotal": 3,
+                "psetFieldPopulatedCount": 3,
+                "psetFieldGapCount": 0,
+                "populatedRatio": 1.0
+              },
+              {
+                "ifcProductClass": "IfcWindow",
+                "primaryPsetName": "Pset_WindowCommon",
+                "productCount": 3,
+                "psetFieldCountTotal": 3,
+                "psetFieldPopulatedCount": 3,
+                "psetFieldGapCount": 0,
+                "populatedRatio": 1.0
+              },
+              {
+                "ifcProductClass": "IfcSite",
+                "primaryPsetName": "Pset_SiteCommon",
+                "productCount": 1,
+                "psetFieldCountTotal": 0,
+                "psetFieldPopulatedCount": 0,
+                "psetFieldGapCount": 0,
+                "populatedRatio": null
+              }
+            ]
+          }
+        },
+        "status": "artifact-returned",
+        "pass": true,
+        "nonPlaceholderProof": {
+          "method": "byte-length-and-sha256",
+          "pass": true,
+          "byteLength": 35355,
+          "digestSha256": "8f24ab3d0ca968b5bc7a824a56da193dc980c8fc4044c36239d460a5f003e5c3"
+        }
+      },
+      {
+        "artifactId": "model:gltf",
+        "kind": "gltf",
+        "artifactName": "model.gltf",
+        "mimeType": "model/gltf+json",
+        "href": "/api/models/0c55b59d-84c3-4497-90e6-63225749bc4a/exports/model.gltf",
+        "byteLength": 80038,
+        "digestSha256": "7184746a8868208c4f2348b88c48c8241f6da2f3762b0068d488bff196eb242f",
+        "manifestDigestSha256": "f6ebc1d4ab7da64342f659c23713f7119d7f869c50c8e14895bd4a00c2790f14",
+        "manifestExtension": {
+          "elementCount": 34,
+          "countsByKind": {
+            "dimension": 2,
+            "door": 3,
+            "family_type": 2,
+            "floor": 1,
+            "floor_type": 1,
+            "internal_origin": 1,
+            "level": 1,
+            "placed_tag": 1,
+            "plan_view": 1,
+            "roof": 1,
+            "roof_type": 1,
+            "room": 3,
+            "schedule": 1,
+            "sheet": 1,
+            "sun_settings": 1,
+            "titleblock_type": 1,
+            "viewpoint": 1,
+            "wall": 6,
+            "wall_type": 2,
+            "window": 3
+          },
+          "exportedGeometryKinds": {
+            "door": 3,
+            "floor": 1,
+            "roof": 1,
+            "room": 3,
+            "wall": 6,
+            "window": 3
+          },
+          "unsupportedDocumentKindsDetailed": [
+            {
+              "kind": "dimension",
+              "count": 2
+            },
+            {
+              "kind": "family_type",
+              "count": 2
+            },
+            {
+              "kind": "floor_type",
+              "count": 1
+            },
+            {
+              "kind": "internal_origin",
+              "count": 1
+            },
+            {
+              "kind": "placed_tag",
+              "count": 1
+            },
+            {
+              "kind": "plan_view",
+              "count": 1
+            },
+            {
+              "kind": "roof_type",
+              "count": 1
+            },
+            {
+              "kind": "schedule",
+              "count": 1
+            },
+            {
+              "kind": "sheet",
+              "count": 1
+            },
+            {
+              "kind": "sun_settings",
+              "count": 1
+            },
+            {
+              "kind": "titleblock_type",
+              "count": 1
+            },
+            {
+              "kind": "viewpoint",
+              "count": 1
+            },
+            {
+              "kind": "wall_type",
+              "count": 2
+            }
+          ],
+          "meshEncoding": "bim_ai_box_primitive_v0+bim_ai_gable_roof_v0+bim_ai_roof_geometry_evidence_v1+bim_ai_wall_corner_joins_v0+bim_ai_wall_corner_join_summary_v1+bim_ai_wall_opening_cut_fidelity_v1+bim_ai_layered_assembly_cut_alignment_v0+bim_ai_layered_assembly_witness_v0+bim_ai_roof_layered_prism_witness_v1+bim_ai_saved_3d_view_clip_v1",
+          "hint": "Meshes: GET /api/models/{id}/exports/model.gltf",
+          "wallOpeningCutFidelityEvidence_v1": {
+            "format": "wallOpeningCutFidelityEvidence_v1",
+            "rows": [
+              {
+                "openingId": "ssh-door-bath",
+                "kind": "door",
+                "hostWallId": "ssh-wall-bath",
+                "openingTSpanNormalized": [0.15, 0.35],
+                "halfSpanAlongWallMm": 400.0,
+                "nominalWidthMm": 800.0,
+                "cutStatus": "full_cut",
+                "skipReason": null,
+                "cornerInteractionToken": null,
+                "cornerAdjacentWallId": null,
+                "cornerVertexMm": null
+              },
+              {
+                "openingId": "ssh-window-bedroom",
+                "kind": "window",
+                "hostWallId": "ssh-wall-east",
+                "openingTSpanNormalized": [0.62625, 0.81375],
+                "halfSpanAlongWallMm": 750.0,
+                "nominalWidthMm": 1500.0,
+                "cutStatus": "full_cut",
+                "skipReason": null,
+                "cornerInteractionToken": null,
+                "cornerAdjacentWallId": null,
+                "cornerVertexMm": null
+              },
+              {
+                "openingId": "ssh-door-bedroom",
+                "kind": "door",
+                "hostWallId": "ssh-wall-hall-bedroom",
+                "openingTSpanNormalized": [0.49375, 0.60625],
+                "halfSpanAlongWallMm": 450.0,
+                "nominalWidthMm": 900.0,
+                "cutStatus": "full_cut",
+                "skipReason": null,
+                "cornerInteractionToken": null,
+                "cornerAdjacentWallId": null,
+                "cornerVertexMm": null
+              },
+              {
+                "openingId": "ssh-window-kitchen",
+                "kind": "window",
+                "hostWallId": "ssh-wall-north",
+                "openingTSpanNormalized": [0.26, 0.38],
+                "halfSpanAlongWallMm": 600.0,
+                "nominalWidthMm": 1200.0,
+                "cutStatus": "full_cut",
+                "skipReason": null,
+                "cornerInteractionToken": null,
+                "cornerAdjacentWallId": null,
+                "cornerVertexMm": null
+              },
+              {
+                "openingId": "ssh-door-entry",
+                "kind": "door",
+                "hostWallId": "ssh-wall-south",
+                "openingTSpanNormalized": [0.13, 0.23],
+                "halfSpanAlongWallMm": 500.0,
+                "nominalWidthMm": 1000.0,
+                "cutStatus": "full_cut",
+                "skipReason": null,
+                "cornerInteractionToken": null,
+                "cornerAdjacentWallId": null,
+                "cornerVertexMm": null
+              },
+              {
+                "openingId": "ssh-window-living",
+                "kind": "window",
+                "hostWallId": "ssh-wall-west",
+                "openingTSpanNormalized": [0.2675, 0.4925],
+                "halfSpanAlongWallMm": 900.0,
+                "nominalWidthMm": 1800.0,
+                "cutStatus": "full_cut",
+                "skipReason": null,
+                "cornerInteractionToken": null,
+                "cornerAdjacentWallId": null,
+                "cornerVertexMm": null
+              }
+            ]
+          },
+          "materialAssemblyEvidence_v0": {
+            "format": "materialAssemblyEvidence_v0",
+            "hosts": [
+              {
+                "hostElementId": "ssh-wall-bath",
+                "hostKind": "wall",
+                "assemblyTypeId": "ssh-wt-interior",
+                "layers": [
+                  {
+                    "function": "structure",
+                    "materialKey": "gypsum_board",
+                    "thicknessMm": 120.0
+                  }
+                ]
+              },
+              {
+                "hostElementId": "ssh-wall-east",
+                "hostKind": "wall",
+                "assemblyTypeId": "ssh-wt-exterior",
+                "layers": [
+                  {
+                    "function": "finish",
+                    "materialKey": "brick_light",
+                    "thicknessMm": 110.0
+                  },
+                  {
+                    "function": "structure",
+                    "materialKey": "timber_frame",
+                    "thicknessMm": 140.0
+                  },
+                  {
+                    "function": "finish",
+                    "materialKey": "gypsum_board",
+                    "thicknessMm": 50.0
+                  }
+                ]
+              },
+              {
+                "hostElementId": "ssh-wall-hall-bedroom",
+                "hostKind": "wall",
+                "assemblyTypeId": "ssh-wt-interior",
+                "layers": [
+                  {
+                    "function": "structure",
+                    "materialKey": "gypsum_board",
+                    "thicknessMm": 120.0
+                  }
+                ]
+              },
+              {
+                "hostElementId": "ssh-wall-north",
+                "hostKind": "wall",
+                "assemblyTypeId": "ssh-wt-exterior",
+                "layers": [
+                  {
+                    "function": "finish",
+                    "materialKey": "brick_light",
+                    "thicknessMm": 110.0
+                  },
+                  {
+                    "function": "structure",
+                    "materialKey": "timber_frame",
+                    "thicknessMm": 140.0
+                  },
+                  {
+                    "function": "finish",
+                    "materialKey": "gypsum_board",
+                    "thicknessMm": 50.0
+                  }
+                ]
+              },
+              {
+                "hostElementId": "ssh-wall-south",
+                "hostKind": "wall",
+                "assemblyTypeId": "ssh-wt-exterior",
+                "layers": [
+                  {
+                    "function": "finish",
+                    "materialKey": "brick_light",
+                    "thicknessMm": 110.0
+                  },
+                  {
+                    "function": "structure",
+                    "materialKey": "timber_frame",
+                    "thicknessMm": 140.0
+                  },
+                  {
+                    "function": "finish",
+                    "materialKey": "gypsum_board",
+                    "thicknessMm": 50.0
+                  }
+                ]
+              },
+              {
+                "hostElementId": "ssh-wall-west",
+                "hostKind": "wall",
+                "assemblyTypeId": "ssh-wt-exterior",
+                "layers": [
+                  {
+                    "function": "finish",
+                    "materialKey": "brick_light",
+                    "thicknessMm": 110.0
+                  },
+                  {
+                    "function": "structure",
+                    "materialKey": "timber_frame",
+                    "thicknessMm": 140.0
+                  },
+                  {
+                    "function": "finish",
+                    "materialKey": "gypsum_board",
+                    "thicknessMm": 50.0
+                  }
+                ]
+              },
+              {
+                "hostElementId": "ssh-floor-ground",
+                "hostKind": "floor",
+                "assemblyTypeId": "ssh-ft-slab",
+                "layers": [
+                  {
+                    "function": "structure",
+                    "materialKey": "concrete_smooth",
+                    "thicknessMm": 180.0
+                  },
+                  {
+                    "function": "finish",
+                    "materialKey": "oak_floor",
+                    "thicknessMm": 40.0
+                  }
+                ]
+              },
+              {
+                "hostElementId": "ssh-roof-main",
+                "hostKind": "roof",
+                "assemblyTypeId": "ssh-rt-gable",
+                "layers": [
+                  {
+                    "function": "structure",
+                    "materialKey": "timber_roof",
+                    "thicknessMm": 180.0
+                  },
+                  {
+                    "function": "finish",
+                    "materialKey": "standing_seam_grey",
+                    "thicknessMm": 30.0
+                  }
+                ]
+              }
+            ]
+          },
+          "materialCatalogAuditEvidence_v0": {
+            "format": "materialCatalogAuditEvidence_v0",
+            "rows": [
+              {
+                "hostElementId": "ssh-floor-ground",
+                "hostKind": "floor",
+                "assemblyTypeId": "ssh-ft-slab",
+                "materialKeys": ["concrete_smooth", "oak_floor"],
+                "effectiveMaterialKey": "concrete_smooth",
+                "effectiveMaterialDisplay": "Smooth concrete",
+                "effectiveMaterialSource": "type_stack",
+                "effectiveMaterialFace": "top",
+                "layerCount": 2,
+                "totalThicknessMm": 220.0,
+                "layerSource": "type_stack",
+                "catalogStatus": "clean",
+                "propagationStatus": "clean",
+                "assemblyMaterialKeysDigest": "085a45952f6963c737daf94e72df5660cb34b66bc75942e9b6017c95ed780c7b"
+              },
+              {
+                "hostElementId": "ssh-roof-main",
+                "hostKind": "roof",
+                "assemblyTypeId": "ssh-rt-gable",
+                "materialKeys": ["timber_roof", "standing_seam_grey"],
+                "effectiveMaterialKey": "timber_roof",
+                "effectiveMaterialDisplay": "",
+                "effectiveMaterialSource": "roof_type_stack",
+                "effectiveMaterialFace": "top",
+                "layerCount": 2,
+                "totalThicknessMm": 210.0,
+                "layerSource": "roof_type_stack",
+                "catalogStatus": "clean",
+                "propagationStatus": "clean",
+                "assemblyMaterialKeysDigest": "b8a62331e4d2a57c15c27259153d60954410369b0816c6ed8f8d11112fa1cf9b"
+              },
+              {
+                "hostElementId": "ssh-wall-bath",
+                "hostKind": "wall",
+                "assemblyTypeId": "ssh-wt-interior",
+                "materialKeys": ["gypsum_board"],
+                "effectiveMaterialKey": "gypsum_board",
+                "effectiveMaterialDisplay": "",
+                "effectiveMaterialSource": "type_stack",
+                "effectiveMaterialFace": "exterior",
+                "layerCount": 1,
+                "totalThicknessMm": 120.0,
+                "layerSource": "type_stack",
+                "catalogStatus": "clean",
+                "propagationStatus": "clean",
+                "assemblyMaterialKeysDigest": "269f2918989d2a86a8c4367c29d289c6036ac14ad3d5f04c28c9710768e84623"
+              },
+              {
+                "hostElementId": "ssh-wall-east",
+                "hostKind": "wall",
+                "assemblyTypeId": "ssh-wt-exterior",
+                "materialKeys": ["brick_light", "timber_frame", "gypsum_board"],
+                "effectiveMaterialKey": "brick_light",
+                "effectiveMaterialDisplay": "",
+                "effectiveMaterialSource": "type_stack",
+                "effectiveMaterialFace": "exterior",
+                "layerCount": 3,
+                "totalThicknessMm": 300.0,
+                "layerSource": "type_stack",
+                "catalogStatus": "clean",
+                "propagationStatus": "clean",
+                "assemblyMaterialKeysDigest": "03509473b7d90cf00aa6b5820654224eaa8322da6f8fdc9f71a78f53af002540"
+              },
+              {
+                "hostElementId": "ssh-wall-hall-bedroom",
+                "hostKind": "wall",
+                "assemblyTypeId": "ssh-wt-interior",
+                "materialKeys": ["gypsum_board"],
+                "effectiveMaterialKey": "gypsum_board",
+                "effectiveMaterialDisplay": "",
+                "effectiveMaterialSource": "type_stack",
+                "effectiveMaterialFace": "exterior",
+                "layerCount": 1,
+                "totalThicknessMm": 120.0,
+                "layerSource": "type_stack",
+                "catalogStatus": "clean",
+                "propagationStatus": "clean",
+                "assemblyMaterialKeysDigest": "269f2918989d2a86a8c4367c29d289c6036ac14ad3d5f04c28c9710768e84623"
+              },
+              {
+                "hostElementId": "ssh-wall-north",
+                "hostKind": "wall",
+                "assemblyTypeId": "ssh-wt-exterior",
+                "materialKeys": ["brick_light", "timber_frame", "gypsum_board"],
+                "effectiveMaterialKey": "brick_light",
+                "effectiveMaterialDisplay": "",
+                "effectiveMaterialSource": "type_stack",
+                "effectiveMaterialFace": "exterior",
+                "layerCount": 3,
+                "totalThicknessMm": 300.0,
+                "layerSource": "type_stack",
+                "catalogStatus": "clean",
+                "propagationStatus": "clean",
+                "assemblyMaterialKeysDigest": "03509473b7d90cf00aa6b5820654224eaa8322da6f8fdc9f71a78f53af002540"
+              },
+              {
+                "hostElementId": "ssh-wall-south",
+                "hostKind": "wall",
+                "assemblyTypeId": "ssh-wt-exterior",
+                "materialKeys": ["brick_light", "timber_frame", "gypsum_board"],
+                "effectiveMaterialKey": "brick_light",
+                "effectiveMaterialDisplay": "",
+                "effectiveMaterialSource": "type_stack",
+                "effectiveMaterialFace": "exterior",
+                "layerCount": 3,
+                "totalThicknessMm": 300.0,
+                "layerSource": "type_stack",
+                "catalogStatus": "clean",
+                "propagationStatus": "clean",
+                "assemblyMaterialKeysDigest": "03509473b7d90cf00aa6b5820654224eaa8322da6f8fdc9f71a78f53af002540"
+              },
+              {
+                "hostElementId": "ssh-wall-west",
+                "hostKind": "wall",
+                "assemblyTypeId": "ssh-wt-exterior",
+                "materialKeys": ["brick_light", "timber_frame", "gypsum_board"],
+                "effectiveMaterialKey": "brick_light",
+                "effectiveMaterialDisplay": "",
+                "effectiveMaterialSource": "type_stack",
+                "effectiveMaterialFace": "exterior",
+                "layerCount": 3,
+                "totalThicknessMm": 300.0,
+                "layerSource": "type_stack",
+                "catalogStatus": "clean",
+                "propagationStatus": "clean",
+                "assemblyMaterialKeysDigest": "03509473b7d90cf00aa6b5820654224eaa8322da6f8fdc9f71a78f53af002540"
+              }
+            ]
+          },
+          "roofGeometryEvidence_v1": {
+            "format": "roofGeometryEvidence_v1",
+            "roofs": [
+              {
+                "elementId": "ssh-roof-main",
+                "roofGeometryMode": "gable_pitched_rectangle",
+                "footprintVertexCount": 4,
+                "footprintPlanWinding": "ccw",
+                "planSpanXmMm": 10900.0,
+                "planSpanZmMm": 8900.0,
+                "slopeDeg": 28.0,
+                "overhangMm": 450.0,
+                "roofElementName": "Simple gable roof",
+                "roofPlanGeometryReadout_v0": "gable_projection_supported",
+                "roofGeometrySupportToken": "gable_pitched_rectangle_supported",
+                "roofTypeId": "ssh-rt-gable",
+                "roofTypeName": "Benchmark simple gable roof",
+                "roofTopologyToken": "gable",
+                "ridgeAxisPlan": "alongZ",
+                "ridgeSegmentPlanMm": [
+                  [5000.0, -450.0],
+                  [5000.0, 8450.0]
+                ],
+                "ridgeRiseMm": 2897.816,
+                "ridgeZMm": 2897.816,
+                "eavePlateZMm": 0.0,
+                "layerStackSkipReason": null,
+                "layerStackCount": 2,
+                "layerStackTotalThicknessMm": 210.0,
+                "primaryMaterialKey": "timber_roof",
+                "primaryMaterialLabel": "",
+                "roofFasciaEdgePlanToken": "eaveParallelPlanZ_gableRakeParallelPlanX",
+                "roofLayeredPrismWitness_v1": {
+                  "format": "roofLayeredPrismWitness_v1",
+                  "roofLayeredPrismStackModel_v0": "vertical_stack_from_eave",
+                  "elementId": "ssh-roof-main",
+                  "assemblyTotalThicknessMm": 210.0,
+                  "eavePlateZMm": 0.0,
+                  "ridgeZMm": 2897.816,
+                  "ridgeEnvelopeTopZMm": 3107.816,
+                  "ridgeAxisPlan": "alongZ",
+                  "ridgeSegmentPlanMm": [
+                    [5000.0, -450.0],
+                    [5000.0, 8450.0]
+                  ],
+                  "footprintPlanExtentsMm": {
+                    "xMin": -450.0,
+                    "xMax": 10450.0,
+                    "zMin": -450.0,
+                    "zMax": 8450.0
+                  },
+                  "layerReadouts": [
+                    {
+                      "layerIndex": 0,
+                      "function": "structure",
+                      "materialKey": "timber_roof",
+                      "thicknessMm": 180.0,
+                      "cumulativeThicknessFromAssemblyBottomMm": 180.0,
+                      "offsetBottomMmAboveEave": 0.0,
+                      "offsetTopMmAboveEave": 180.0,
+                      "worldZBottomMm": 0.0,
+                      "worldZTopMm": 180.0
+                    },
+                    {
+                      "layerIndex": 1,
+                      "function": "finish",
+                      "materialKey": "standing_seam_grey",
+                      "thicknessMm": 30.0,
+                      "cumulativeThicknessFromAssemblyBottomMm": 210.0,
+                      "offsetBottomMmAboveEave": 180.0,
+                      "offsetTopMmAboveEave": 210.0,
+                      "worldZBottomMm": 180.0,
+                      "worldZTopMm": 210.0
+                    }
+                  ]
+                }
+              }
+            ]
+          },
+          "wallCornerJoinEvidence_v0": {
+            "format": "wallCornerJoinEvidence_v0",
+            "joins": [
+              {
+                "wallIds": ["ssh-wall-south", "ssh-wall-west"],
+                "vertexMm": {
+                  "xMm": 0.0,
+                  "yMm": 0.0
+                },
+                "levelId": "ssh-lvl-ground",
+                "joinKind": "corner"
+              },
+              {
+                "wallIds": ["ssh-wall-north", "ssh-wall-west"],
+                "vertexMm": {
+                  "xMm": 0.0,
+                  "yMm": 8000.0
+                },
+                "levelId": "ssh-lvl-ground",
+                "joinKind": "corner"
+              },
+              {
+                "wallIds": ["ssh-wall-east", "ssh-wall-south"],
+                "vertexMm": {
+                  "xMm": 10000.0,
+                  "yMm": 0.0
+                },
+                "levelId": "ssh-lvl-ground",
+                "joinKind": "corner"
+              },
+              {
+                "wallIds": ["ssh-wall-east", "ssh-wall-north"],
+                "vertexMm": {
+                  "xMm": 10000.0,
+                  "yMm": 8000.0
+                },
+                "levelId": "ssh-lvl-ground",
+                "joinKind": "corner"
+              }
+            ]
+          },
+          "wallCornerJoinSummary_v1": {
+            "format": "wallCornerJoinSummary_v1",
+            "joins": [
+              {
+                "joinId": "join:ssh-lvl-ground:0.0:0.0:ssh-wall-south:ssh-wall-west",
+                "wallIds": ["ssh-wall-south", "ssh-wall-west"],
+                "vertexMm": {
+                  "xMm": 0.0,
+                  "yMm": 0.0
+                },
+                "levelId": "ssh-lvl-ground",
+                "joinKind": "butt",
+                "planDisplayToken": "WJ_BUTT_AA",
+                "affectedOpeningIds": [],
+                "skipReason": null
+              },
+              {
+                "joinId": "join:ssh-lvl-ground:0.0:8000.0:ssh-wall-north:ssh-wall-west",
+                "wallIds": ["ssh-wall-north", "ssh-wall-west"],
+                "vertexMm": {
+                  "xMm": 0.0,
+                  "yMm": 8000.0
+                },
+                "levelId": "ssh-lvl-ground",
+                "joinKind": "butt",
+                "planDisplayToken": "WJ_BUTT_AA",
+                "affectedOpeningIds": [],
+                "skipReason": null
+              },
+              {
+                "joinId": "join:ssh-lvl-ground:10000.0:0.0:ssh-wall-east:ssh-wall-south",
+                "wallIds": ["ssh-wall-east", "ssh-wall-south"],
+                "vertexMm": {
+                  "xMm": 10000.0,
+                  "yMm": 0.0
+                },
+                "levelId": "ssh-lvl-ground",
+                "joinKind": "butt",
+                "planDisplayToken": "WJ_BUTT_AA",
+                "affectedOpeningIds": [],
+                "skipReason": null
+              },
+              {
+                "joinId": "join:ssh-lvl-ground:10000.0:8000.0:ssh-wall-east:ssh-wall-north",
+                "wallIds": ["ssh-wall-east", "ssh-wall-north"],
+                "vertexMm": {
+                  "xMm": 10000.0,
+                  "yMm": 8000.0
+                },
+                "levelId": "ssh-lvl-ground",
+                "joinKind": "butt",
+                "planDisplayToken": "WJ_BUTT_AA",
+                "affectedOpeningIds": [],
+                "skipReason": null
+              }
+            ]
+          },
+          "layeredAssemblyCutAlignmentEvidence_v0": {
+            "format": "layeredAssemblyCutAlignmentEvidence_v0",
+            "hosts": [
+              {
+                "hostElementId": "ssh-floor-ground",
+                "assemblyTypeId": "ssh-ft-slab",
+                "hostKind": "floor",
+                "layerCount": 2,
+                "layerTotalThicknessMm": 220.0,
+                "cutThicknessMm": 220.0,
+                "layerStackMatchesCutThickness": true
+              },
+              {
+                "hostElementId": "ssh-roof-main",
+                "assemblyTypeId": "ssh-rt-gable",
+                "hostKind": "roof",
+                "layerCount": 2,
+                "layerTotalThicknessMm": 210.0,
+                "cutThicknessMm": null,
+                "layerStackMatchesCutThickness": null
+              },
+              {
+                "hostElementId": "ssh-wall-bath",
+                "assemblyTypeId": "ssh-wt-interior",
+                "hostKind": "wall",
+                "layerCount": 1,
+                "layerTotalThicknessMm": 120.0,
+                "cutThicknessMm": 120.0,
+                "layerStackMatchesCutThickness": true
+              },
+              {
+                "hostElementId": "ssh-wall-east",
+                "assemblyTypeId": "ssh-wt-exterior",
+                "hostKind": "wall",
+                "layerCount": 3,
+                "layerTotalThicknessMm": 300.0,
+                "cutThicknessMm": 300.0,
+                "layerStackMatchesCutThickness": true
+              },
+              {
+                "hostElementId": "ssh-wall-hall-bedroom",
+                "assemblyTypeId": "ssh-wt-interior",
+                "hostKind": "wall",
+                "layerCount": 1,
+                "layerTotalThicknessMm": 120.0,
+                "cutThicknessMm": 120.0,
+                "layerStackMatchesCutThickness": true
+              },
+              {
+                "hostElementId": "ssh-wall-north",
+                "assemblyTypeId": "ssh-wt-exterior",
+                "hostKind": "wall",
+                "layerCount": 3,
+                "layerTotalThicknessMm": 300.0,
+                "cutThicknessMm": 300.0,
+                "layerStackMatchesCutThickness": true
+              },
+              {
+                "hostElementId": "ssh-wall-south",
+                "assemblyTypeId": "ssh-wt-exterior",
+                "hostKind": "wall",
+                "layerCount": 3,
+                "layerTotalThicknessMm": 300.0,
+                "cutThicknessMm": 300.0,
+                "layerStackMatchesCutThickness": true
+              },
+              {
+                "hostElementId": "ssh-wall-west",
+                "assemblyTypeId": "ssh-wt-exterior",
+                "hostKind": "wall",
+                "layerCount": 3,
+                "layerTotalThicknessMm": 300.0,
+                "cutThicknessMm": 300.0,
+                "layerStackMatchesCutThickness": true
+              }
+            ]
+          },
+          "layeredAssemblyWitness_v0": {
+            "format": "layeredAssemblyWitness_v0",
+            "witnesses": [
+              {
+                "hostElementId": "ssh-floor-ground",
+                "hostKind": "floor",
+                "assemblyTypeId": "ssh-ft-slab",
+                "layerSummaries": [
+                  {
+                    "function": "structure",
+                    "materialKey": "concrete_smooth",
+                    "thicknessMm": 180.0
+                  },
+                  {
+                    "function": "finish",
+                    "materialKey": "oak_floor",
+                    "thicknessMm": 40.0
+                  }
+                ],
+                "layerCount": 2,
+                "layerTotalThicknessMm": 220.0,
+                "cutProxyThicknessMm": 220.0,
+                "layerStackMatchesCutThickness": true,
+                "layerSource": "type_stack",
+                "exposedFaces": {
+                  "top": "concrete_smooth",
+                  "bottom": "oak_floor",
+                  "cut": ["concrete_smooth", "oak_floor"]
+                },
+                "skipReason": null
+              },
+              {
+                "hostElementId": "ssh-roof-main",
+                "hostKind": "roof",
+                "assemblyTypeId": "ssh-rt-gable",
+                "layerSummaries": [
+                  {
+                    "function": "structure",
+                    "materialKey": "timber_roof",
+                    "thicknessMm": 180.0
+                  },
+                  {
+                    "function": "finish",
+                    "materialKey": "standing_seam_grey",
+                    "thicknessMm": 30.0
+                  }
+                ],
+                "layerCount": 2,
+                "layerTotalThicknessMm": 210.0,
+                "cutProxyThicknessMm": null,
+                "layerStackMatchesCutThickness": null,
+                "layerSource": "roof_type_stack",
+                "exposedFaces": {
+                  "top": "timber_roof",
+                  "bottom": "standing_seam_grey",
+                  "cut": ["timber_roof", "standing_seam_grey"]
+                },
+                "skipReason": null
+              },
+              {
+                "hostElementId": "ssh-wall-bath",
+                "hostKind": "wall",
+                "assemblyTypeId": "ssh-wt-interior",
+                "layerSummaries": [
+                  {
+                    "function": "structure",
+                    "materialKey": "gypsum_board",
+                    "thicknessMm": 120.0
+                  }
+                ],
+                "layerCount": 1,
+                "layerTotalThicknessMm": 120.0,
+                "cutProxyThicknessMm": 120.0,
+                "layerStackMatchesCutThickness": true,
+                "layerSource": "type_stack",
+                "exposedFaces": {
+                  "exterior": "gypsum_board",
+                  "interior": "gypsum_board",
+                  "cut": ["gypsum_board"]
+                },
+                "skipReason": null
+              },
+              {
+                "hostElementId": "ssh-wall-east",
+                "hostKind": "wall",
+                "assemblyTypeId": "ssh-wt-exterior",
+                "layerSummaries": [
+                  {
+                    "function": "finish",
+                    "materialKey": "brick_light",
+                    "thicknessMm": 110.0
+                  },
+                  {
+                    "function": "structure",
+                    "materialKey": "timber_frame",
+                    "thicknessMm": 140.0
+                  },
+                  {
+                    "function": "finish",
+                    "materialKey": "gypsum_board",
+                    "thicknessMm": 50.0
+                  }
+                ],
+                "layerCount": 3,
+                "layerTotalThicknessMm": 300.0,
+                "cutProxyThicknessMm": 300.0,
+                "layerStackMatchesCutThickness": true,
+                "layerSource": "type_stack",
+                "exposedFaces": {
+                  "exterior": "brick_light",
+                  "interior": "gypsum_board",
+                  "cut": ["brick_light", "timber_frame", "gypsum_board"]
+                },
+                "skipReason": null
+              },
+              {
+                "hostElementId": "ssh-wall-hall-bedroom",
+                "hostKind": "wall",
+                "assemblyTypeId": "ssh-wt-interior",
+                "layerSummaries": [
+                  {
+                    "function": "structure",
+                    "materialKey": "gypsum_board",
+                    "thicknessMm": 120.0
+                  }
+                ],
+                "layerCount": 1,
+                "layerTotalThicknessMm": 120.0,
+                "cutProxyThicknessMm": 120.0,
+                "layerStackMatchesCutThickness": true,
+                "layerSource": "type_stack",
+                "exposedFaces": {
+                  "exterior": "gypsum_board",
+                  "interior": "gypsum_board",
+                  "cut": ["gypsum_board"]
+                },
+                "skipReason": null
+              },
+              {
+                "hostElementId": "ssh-wall-north",
+                "hostKind": "wall",
+                "assemblyTypeId": "ssh-wt-exterior",
+                "layerSummaries": [
+                  {
+                    "function": "finish",
+                    "materialKey": "brick_light",
+                    "thicknessMm": 110.0
+                  },
+                  {
+                    "function": "structure",
+                    "materialKey": "timber_frame",
+                    "thicknessMm": 140.0
+                  },
+                  {
+                    "function": "finish",
+                    "materialKey": "gypsum_board",
+                    "thicknessMm": 50.0
+                  }
+                ],
+                "layerCount": 3,
+                "layerTotalThicknessMm": 300.0,
+                "cutProxyThicknessMm": 300.0,
+                "layerStackMatchesCutThickness": true,
+                "layerSource": "type_stack",
+                "exposedFaces": {
+                  "exterior": "brick_light",
+                  "interior": "gypsum_board",
+                  "cut": ["brick_light", "timber_frame", "gypsum_board"]
+                },
+                "skipReason": null
+              },
+              {
+                "hostElementId": "ssh-wall-south",
+                "hostKind": "wall",
+                "assemblyTypeId": "ssh-wt-exterior",
+                "layerSummaries": [
+                  {
+                    "function": "finish",
+                    "materialKey": "brick_light",
+                    "thicknessMm": 110.0
+                  },
+                  {
+                    "function": "structure",
+                    "materialKey": "timber_frame",
+                    "thicknessMm": 140.0
+                  },
+                  {
+                    "function": "finish",
+                    "materialKey": "gypsum_board",
+                    "thicknessMm": 50.0
+                  }
+                ],
+                "layerCount": 3,
+                "layerTotalThicknessMm": 300.0,
+                "cutProxyThicknessMm": 300.0,
+                "layerStackMatchesCutThickness": true,
+                "layerSource": "type_stack",
+                "exposedFaces": {
+                  "exterior": "brick_light",
+                  "interior": "gypsum_board",
+                  "cut": ["brick_light", "timber_frame", "gypsum_board"]
+                },
+                "skipReason": null
+              },
+              {
+                "hostElementId": "ssh-wall-west",
+                "hostKind": "wall",
+                "assemblyTypeId": "ssh-wt-exterior",
+                "layerSummaries": [
+                  {
+                    "function": "finish",
+                    "materialKey": "brick_light",
+                    "thicknessMm": 110.0
+                  },
+                  {
+                    "function": "structure",
+                    "materialKey": "timber_frame",
+                    "thicknessMm": 140.0
+                  },
+                  {
+                    "function": "finish",
+                    "materialKey": "gypsum_board",
+                    "thicknessMm": 50.0
+                  }
+                ],
+                "layerCount": 3,
+                "layerTotalThicknessMm": 300.0,
+                "cutProxyThicknessMm": 300.0,
+                "layerStackMatchesCutThickness": true,
+                "layerSource": "type_stack",
+                "exposedFaces": {
+                  "exterior": "brick_light",
+                  "interior": "gypsum_board",
+                  "cut": ["brick_light", "timber_frame", "gypsum_board"]
+                },
+                "skipReason": null
+              }
+            ]
+          },
+          "saved3dViewClipEvidence_v1": {
+            "format": "saved3dViewClipEvidence_v1",
+            "viewCount": 1,
+            "views": [
+              {
+                "viewId": "ssh-view-3d",
+                "viewName": "Simple house 3D evidence",
+                "clipEnabled": false,
+                "viewerClipCapElevMm": null,
+                "viewerClipFloorElevMm": null,
+                "cutawayStyle": null,
+                "hiddenCategoryCount": 0,
+                "sectionBoxEnabled": null,
+                "planOverlayEnabled": false,
+                "planOverlaySourcePlanViewId": null,
+                "planOverlayOffsetMm": null,
+                "planOverlayOpacity": null,
+                "planOverlayLineOpacity": null,
+                "planOverlayFillOpacity": null,
+                "planOverlayAnnotationsVisible": null,
+                "planOverlayWitnessLinesVisible": null
+              }
+            ]
+          },
+          "gltfExportManifestClosure_v1": {
+            "format": "gltfExportManifestClosure_v1",
+            "extensionTokens": [
+              "bim_ai_box_primitive_v0",
+              "bim_ai_gable_roof_v0",
+              "bim_ai_roof_geometry_evidence_v1",
+              "bim_ai_wall_corner_joins_v0",
+              "bim_ai_wall_corner_join_summary_v1",
+              "bim_ai_wall_opening_cut_fidelity_v1",
+              "bim_ai_layered_assembly_cut_alignment_v0",
+              "bim_ai_layered_assembly_witness_v0",
+              "bim_ai_roof_layered_prism_witness_v1",
+              "bim_ai_saved_3d_view_clip_v1"
+            ],
+            "extensionDigests": {
+              "bim_ai_box_primitive_v0": "095c0809d769ca9f42d8c69064377aa44f82679ae157b660606294bd172b9bad",
+              "bim_ai_gable_roof_v0": "851abebc7f6152905593d0841ec1e4ba4a07984843de6c8f561118873ff89c95",
+              "bim_ai_roof_geometry_evidence_v1": "851abebc7f6152905593d0841ec1e4ba4a07984843de6c8f561118873ff89c95",
+              "bim_ai_wall_corner_joins_v0": "b5eaa85ea3c1eaa93826a0e59475553e33355ef12dfe6fc6bdb8694862cd34af",
+              "bim_ai_wall_corner_join_summary_v1": "381bddcf8506d46bde4cd73bcc909750bda8b9a223650b2ddeef32b165fed421",
+              "bim_ai_wall_opening_cut_fidelity_v1": "65dd4025b1924cfc9568a365a73bc78d40135a91d6f4ca9001e64e49a2bcbed8",
+              "bim_ai_layered_assembly_cut_alignment_v0": "45cca39a6ac99e899bf7800427ed51ad7c297fd529735afcc99525f6c7c7bb1e",
+              "bim_ai_layered_assembly_witness_v0": "c9147a55273b8703a3cdacc5723cdd45b5b817932385d670622b86cdb79c821d",
+              "bim_ai_roof_layered_prism_witness_v1": "851abebc7f6152905593d0841ec1e4ba4a07984843de6c8f561118873ff89c95",
+              "bim_ai_saved_3d_view_clip_v1": "17eabf8424a0b550791e2b877482267129acb9007c186886dcf339886b1cc336"
+            },
+            "gltfExportManifestClosureDigestSha256": "c62015c9e1ab8633cce2042756a3f7bada38d811ea7d5d440989a588ff974283",
+            "extensionPresenceMatrix": [
+              {
+                "token": "bim_ai_box_primitive_v0",
+                "status": "emitted",
+                "digestSha256": "095c0809d769ca9f42d8c69064377aa44f82679ae157b660606294bd172b9bad",
+                "skipReasonCode": null
+              },
+              {
+                "token": "bim_ai_gable_roof_v0",
+                "status": "emitted",
+                "digestSha256": "851abebc7f6152905593d0841ec1e4ba4a07984843de6c8f561118873ff89c95",
+                "skipReasonCode": null
+              },
+              {
+                "token": "bim_ai_roof_geometry_evidence_v1",
+                "status": "emitted",
+                "digestSha256": "851abebc7f6152905593d0841ec1e4ba4a07984843de6c8f561118873ff89c95",
+                "skipReasonCode": null
+              },
+              {
+                "token": "bim_ai_wall_corner_joins_v0",
+                "status": "emitted",
+                "digestSha256": "b5eaa85ea3c1eaa93826a0e59475553e33355ef12dfe6fc6bdb8694862cd34af",
+                "skipReasonCode": null
+              },
+              {
+                "token": "bim_ai_wall_corner_join_summary_v1",
+                "status": "emitted",
+                "digestSha256": "381bddcf8506d46bde4cd73bcc909750bda8b9a223650b2ddeef32b165fed421",
+                "skipReasonCode": null
+              },
+              {
+                "token": "bim_ai_skew_wall_hosted_openings_v0",
+                "status": "skipped_ineligible",
+                "digestSha256": null,
+                "skipReasonCode": "no_eligible_elements"
+              },
+              {
+                "token": "bim_ai_wall_opening_cut_fidelity_v1",
+                "status": "emitted",
+                "digestSha256": "65dd4025b1924cfc9568a365a73bc78d40135a91d6f4ca9001e64e49a2bcbed8",
+                "skipReasonCode": null
+              },
+              {
+                "token": "bim_ai_layered_assembly_cut_alignment_v0",
+                "status": "emitted",
+                "digestSha256": "45cca39a6ac99e899bf7800427ed51ad7c297fd529735afcc99525f6c7c7bb1e",
+                "skipReasonCode": null
+              },
+              {
+                "token": "bim_ai_layered_assembly_witness_v0",
+                "status": "emitted",
+                "digestSha256": "c9147a55273b8703a3cdacc5723cdd45b5b817932385d670622b86cdb79c821d",
+                "skipReasonCode": null
+              },
+              {
+                "token": "bim_ai_site_context_v0",
+                "status": "skipped_ineligible",
+                "digestSha256": null,
+                "skipReasonCode": "no_eligible_elements"
+              },
+              {
+                "token": "bim_ai_roof_unsupported_shape_summary_v0",
+                "status": "skipped_ineligible",
+                "digestSha256": null,
+                "skipReasonCode": "no_eligible_elements"
+              },
+              {
+                "token": "bim_ai_roof_layered_prism_witness_v1",
+                "status": "emitted",
+                "digestSha256": "851abebc7f6152905593d0841ec1e4ba4a07984843de6c8f561118873ff89c95",
+                "skipReasonCode": null
+              },
+              {
+                "token": "bim_ai_saved_3d_view_clip_v1",
+                "status": "emitted",
+                "digestSha256": "17eabf8424a0b550791e2b877482267129acb9007c186886dcf339886b1cc336",
+                "skipReasonCode": null
+              }
+            ]
+          }
+        },
+        "status": "artifact-returned",
+        "pass": true,
+        "nonPlaceholderProof": {
+          "method": "byte-length-and-sha256",
+          "pass": true,
+          "byteLength": 80038,
+          "digestSha256": "7184746a8868208c4f2348b88c48c8241f6da2f3762b0068d488bff196eb242f"
+        }
+      },
+      {
+        "artifactId": "model:glb",
+        "kind": "glb",
+        "artifactName": "model.glb",
+        "mimeType": "model/gltf-binary",
+        "href": "/api/models/0c55b59d-84c3-4497-90e6-63225749bc4a/exports/model.glb",
+        "byteLength": 73000,
+        "digestSha256": "faaecd33847a23a88d4bf50e5d189bd7eb046ec3f5e6ed7e10f312ed07c59ec8",
+        "status": "artifact-returned",
+        "pass": true,
+        "nonPlaceholderProof": {
+          "method": "byte-length-and-sha256",
+          "pass": true,
+          "byteLength": 73000,
+          "digestSha256": "faaecd33847a23a88d4bf50e5d189bd7eb046ec3f5e6ed7e10f312ed07c59ec8"
+        }
+      }
+    ],
+    "artifactClosure_v1": {
+      "format": "documentationExportArtifactClosure_v1",
+      "status": "clean-or-explicit-optional-backend",
+      "pass": true,
+      "rows": [
+        {
+          "artifactId": "model:glb",
+          "kind": "glb",
+          "artifactName": "model.glb",
+          "status": "artifact-returned",
+          "pass": true,
+          "byteLength": 73000,
+          "digestSha256": "faaecd33847a23a88d4bf50e5d189bd7eb046ec3f5e6ed7e10f312ed07c59ec8",
+          "href": "/api/models/0c55b59d-84c3-4497-90e6-63225749bc4a/exports/model.glb",
+          "optionalBackendManifest_v1": null,
+          "nonPlaceholderProof": {
+            "method": "byte-length-and-sha256",
+            "pass": true,
+            "byteLength": 73000,
+            "digestSha256": "faaecd33847a23a88d4bf50e5d189bd7eb046ec3f5e6ed7e10f312ed07c59ec8"
+          }
+        },
+        {
+          "artifactId": "model:gltf",
+          "kind": "gltf",
+          "artifactName": "model.gltf",
+          "status": "artifact-returned",
+          "pass": true,
+          "byteLength": 80038,
+          "digestSha256": "7184746a8868208c4f2348b88c48c8241f6da2f3762b0068d488bff196eb242f",
+          "href": "/api/models/0c55b59d-84c3-4497-90e6-63225749bc4a/exports/model.gltf",
+          "optionalBackendManifest_v1": null,
+          "nonPlaceholderProof": {
+            "method": "byte-length-and-sha256",
+            "pass": true,
+            "byteLength": 80038,
+            "digestSha256": "7184746a8868208c4f2348b88c48c8241f6da2f3762b0068d488bff196eb242f"
+          }
+        },
+        {
+          "artifactId": "model:ifc",
+          "kind": "ifc",
+          "artifactName": "model.ifc",
+          "status": "artifact-returned",
+          "pass": true,
+          "byteLength": 35355,
+          "digestSha256": "8f24ab3d0ca968b5bc7a824a56da193dc980c8fc4044c36239d460a5f003e5c3",
+          "href": "/api/models/0c55b59d-84c3-4497-90e6-63225749bc4a/exports/model.ifc",
+          "optionalBackendManifest_v1": null,
+          "nonPlaceholderProof": {
+            "method": "byte-length-and-sha256",
+            "pass": true,
+            "byteLength": 35355,
+            "digestSha256": "8f24ab3d0ca968b5bc7a824a56da193dc980c8fc4044c36239d460a5f003e5c3"
+          }
+        },
+        {
+          "artifactId": "sheet:ssh-sheet-a101:pdf",
+          "kind": "sheet_pdf",
+          "artifactName": "sheet-preview.pdf",
+          "status": "artifact-returned",
+          "pass": true,
+          "byteLength": 1679,
+          "digestSha256": "afcad79df9b0edbf1cb12119ddcf54800497cd96dcc1a6093c212e3278d5ff40",
+          "href": "/api/models/0c55b59d-84c3-4497-90e6-63225749bc4a/exports/sheet-preview.pdf?sheetId=ssh-sheet-a101",
+          "optionalBackendManifest_v1": null,
+          "nonPlaceholderProof": {
+            "method": "byte-length-and-sha256",
+            "pass": true,
+            "byteLength": 1679,
+            "digestSha256": "afcad79df9b0edbf1cb12119ddcf54800497cd96dcc1a6093c212e3278d5ff40"
+          }
+        },
+        {
+          "artifactId": "sheet:ssh-sheet-a101:svg",
+          "kind": "sheet_svg",
+          "artifactName": "sheet-preview.svg",
+          "status": "artifact-returned",
+          "pass": true,
+          "byteLength": 501,
+          "digestSha256": "33ca01d427c30db7e6a1654c54ca02cccf4d0acf1c520879dbae924995b99138",
+          "href": "/api/models/0c55b59d-84c3-4497-90e6-63225749bc4a/exports/sheet-preview.svg?sheetId=ssh-sheet-a101",
+          "optionalBackendManifest_v1": null,
+          "nonPlaceholderProof": {
+            "method": "byte-length-and-sha256",
+            "pass": true,
+            "byteLength": 501,
+            "digestSha256": "33ca01d427c30db7e6a1654c54ca02cccf4d0acf1c520879dbae924995b99138"
+          }
+        }
+      ],
+      "digestSha256": "b3dc65bb8bd46f8918c0aeb313d0ee219634a20bf107f0e10c7b2c7c5ff96224"
+    },
+    "externalExportMarkers_v1": {
+      "format": "externalExportMarkers_v1",
+      "markers": [
+        {
+          "markerId": "sheet:ssh-sheet-a101:svg",
+          "kind": "sheet_svg",
+          "href": "/api/models/0c55b59d-84c3-4497-90e6-63225749bc4a/exports/sheet-preview.svg?sheetId=ssh-sheet-a101",
+          "digestSha256": "33ca01d427c30db7e6a1654c54ca02cccf4d0acf1c520879dbae924995b99138",
+          "byteLength": 501,
+          "status": "artifact-returned",
+          "pass": true
+        },
+        {
+          "markerId": "sheet:ssh-sheet-a101:pdf",
+          "kind": "sheet_pdf",
+          "href": "/api/models/0c55b59d-84c3-4497-90e6-63225749bc4a/exports/sheet-preview.pdf?sheetId=ssh-sheet-a101",
+          "digestSha256": "afcad79df9b0edbf1cb12119ddcf54800497cd96dcc1a6093c212e3278d5ff40",
+          "byteLength": 1679,
+          "status": "artifact-returned",
+          "pass": true
+        },
+        {
+          "markerId": "model:ifc",
+          "kind": "ifc",
+          "href": "/api/models/0c55b59d-84c3-4497-90e6-63225749bc4a/exports/model.ifc",
+          "digestSha256": "8f24ab3d0ca968b5bc7a824a56da193dc980c8fc4044c36239d460a5f003e5c3",
+          "byteLength": 35355,
+          "status": "artifact-returned",
+          "pass": true
+        },
+        {
+          "markerId": "model:gltf",
+          "kind": "gltf",
+          "href": "/api/models/0c55b59d-84c3-4497-90e6-63225749bc4a/exports/model.gltf",
+          "digestSha256": "7184746a8868208c4f2348b88c48c8241f6da2f3762b0068d488bff196eb242f",
+          "byteLength": 80038,
+          "status": "artifact-returned",
+          "pass": true
+        },
+        {
+          "markerId": "model:glb",
+          "kind": "glb",
+          "href": "/api/models/0c55b59d-84c3-4497-90e6-63225749bc4a/exports/model.glb",
+          "digestSha256": "faaecd33847a23a88d4bf50e5d189bd7eb046ec3f5e6ed7e10f312ed07c59ec8",
+          "byteLength": 73000,
+          "status": "artifact-returned",
+          "pass": true
+        },
+        {
+          "markerId": "schedule:ssh-schedule-openings",
+          "kind": "schedule_table",
+          "digestSha256": "d2857b0085c3ba756ef6071f6c442e235adc5a019e10ffaf459c27d04447aca2",
+          "rowCount": 0,
+          "columnCount": 0
+        },
+        {
+          "markerId": "tag:ssh-tag-living",
+          "kind": "placed_tag",
+          "hostElementId": "ssh-room-living",
+          "hostViewId": "ssh-view-ground-plan"
+        },
+        {
+          "markerId": "dimension:ssh-dim-overall-depth",
+          "kind": "dimension",
+          "hostViewId": null,
+          "levelId": "ssh-lvl-ground"
+        },
+        {
+          "markerId": "dimension:ssh-dim-overall-width",
+          "kind": "dimension",
+          "hostViewId": null,
+          "levelId": "ssh-lvl-ground"
+        }
+      ]
+    },
+    "evidenceDigestSha256": "56e339a4de9e3d46c8b5e48b21e3a0f8576afaee9ce1977295b95f7dfdc5c717"
+  },
   "manifests": {
     "gltf": {
       "artifactKind": "gltf-manifest",
       "status": "manifest-returned",
       "pass": true,
       "httpStatus": 200,
-      "digest": "470703792522f07a9e51b7cd7cb18eb1f0afcf768d8228897aae12c623f8886c",
+      "digest": "f6ebc1d4ab7da64342f659c23713f7119d7f869c50c8e14895bd4a00c2790f14",
       "summary": {
         "manifestKind": "gltf",
-        "exportedKindCount": 45,
-        "exportedGeometryKinds": [],
-        "ids": [],
-        "closureDigest": "3c5ac02d64b5dc09b61c186d84af39f30505cf0c3a1ad0ae071912b573eb8529",
+        "exportedKindCount": 34,
+        "exportedGeometryKinds": {
+          "door": 3,
+          "floor": 1,
+          "roof": 1,
+          "room": 3,
+          "wall": 6,
+          "window": 3
+        },
+        "closureDigest": "c62015c9e1ab8633cce2042756a3f7bada38d811ea7d5d440989a588ff974283",
         "geometryProof": {
-          "source": "gltf manifest countsByKind",
+          "source": "documentation export glTF manifest countsByKind",
           "pass": true,
           "counts": {
             "pass": true,
             "counts": {
               "dimension": 2,
               "door": 3,
-              "elevation_view": 4,
               "family_type": 2,
               "floor": 1,
               "floor_type": 1,
-              "hatch_pattern_def": 7,
               "internal_origin": 1,
               "level": 1,
               "placed_tag": 1,
@@ -44,20 +2538,6 @@
               "window": 3
             },
             "missing": []
-          },
-          "ids": {
-            "pass": false,
-            "ids": [],
-            "missing": [
-              "ssh-floor-ground",
-              "ssh-roof-main",
-              "ssh-wall-bath",
-              "ssh-wall-east",
-              "ssh-wall-hall-bedroom",
-              "ssh-wall-north",
-              "ssh-wall-south",
-              "ssh-wall-west"
-            ]
           }
         }
       },
@@ -69,15 +2549,13 @@
         "extensionsUsed": ["BIM_AI_exportManifest_v0"],
         "extensions": {
           "BIM_AI_exportManifest_v0": {
-            "elementCount": 45,
+            "elementCount": 34,
             "countsByKind": {
               "dimension": 2,
               "door": 3,
-              "elevation_view": 4,
               "family_type": 2,
               "floor": 1,
               "floor_type": 1,
-              "hatch_pattern_def": 7,
               "internal_origin": 1,
               "level": 1,
               "placed_tag": 1,
@@ -108,20 +2586,12 @@
                 "count": 2
               },
               {
-                "kind": "elevation_view",
-                "count": 4
-              },
-              {
                 "kind": "family_type",
                 "count": 2
               },
               {
                 "kind": "floor_type",
                 "count": 1
-              },
-              {
-                "kind": "hatch_pattern_def",
-                "count": 7
               },
               {
                 "kind": "internal_origin",
@@ -174,8 +2644,8 @@
                   "kind": "door",
                   "hostWallId": "ssh-wall-bath",
                   "openingTSpanNormalized": [0.15, 0.35],
-                  "halfSpanAlongWallMm": 400,
-                  "nominalWidthMm": 800,
+                  "halfSpanAlongWallMm": 400.0,
+                  "nominalWidthMm": 800.0,
                   "cutStatus": "full_cut",
                   "skipReason": null,
                   "cornerInteractionToken": null,
@@ -187,8 +2657,8 @@
                   "kind": "window",
                   "hostWallId": "ssh-wall-east",
                   "openingTSpanNormalized": [0.62625, 0.81375],
-                  "halfSpanAlongWallMm": 750,
-                  "nominalWidthMm": 1500,
+                  "halfSpanAlongWallMm": 750.0,
+                  "nominalWidthMm": 1500.0,
                   "cutStatus": "full_cut",
                   "skipReason": null,
                   "cornerInteractionToken": null,
@@ -200,8 +2670,8 @@
                   "kind": "door",
                   "hostWallId": "ssh-wall-hall-bedroom",
                   "openingTSpanNormalized": [0.49375, 0.60625],
-                  "halfSpanAlongWallMm": 450,
-                  "nominalWidthMm": 900,
+                  "halfSpanAlongWallMm": 450.0,
+                  "nominalWidthMm": 900.0,
                   "cutStatus": "full_cut",
                   "skipReason": null,
                   "cornerInteractionToken": null,
@@ -213,8 +2683,8 @@
                   "kind": "window",
                   "hostWallId": "ssh-wall-north",
                   "openingTSpanNormalized": [0.26, 0.38],
-                  "halfSpanAlongWallMm": 600,
-                  "nominalWidthMm": 1200,
+                  "halfSpanAlongWallMm": 600.0,
+                  "nominalWidthMm": 1200.0,
                   "cutStatus": "full_cut",
                   "skipReason": null,
                   "cornerInteractionToken": null,
@@ -226,8 +2696,8 @@
                   "kind": "door",
                   "hostWallId": "ssh-wall-south",
                   "openingTSpanNormalized": [0.13, 0.23],
-                  "halfSpanAlongWallMm": 500,
-                  "nominalWidthMm": 1000,
+                  "halfSpanAlongWallMm": 500.0,
+                  "nominalWidthMm": 1000.0,
                   "cutStatus": "full_cut",
                   "skipReason": null,
                   "cornerInteractionToken": null,
@@ -239,8 +2709,8 @@
                   "kind": "window",
                   "hostWallId": "ssh-wall-west",
                   "openingTSpanNormalized": [0.2675, 0.4925],
-                  "halfSpanAlongWallMm": 900,
-                  "nominalWidthMm": 1800,
+                  "halfSpanAlongWallMm": 900.0,
+                  "nominalWidthMm": 1800.0,
                   "cutStatus": "full_cut",
                   "skipReason": null,
                   "cornerInteractionToken": null,
@@ -260,7 +2730,7 @@
                     {
                       "function": "structure",
                       "materialKey": "gypsum_board",
-                      "thicknessMm": 120
+                      "thicknessMm": 120.0
                     }
                   ]
                 },
@@ -272,17 +2742,17 @@
                     {
                       "function": "finish",
                       "materialKey": "brick_light",
-                      "thicknessMm": 110
+                      "thicknessMm": 110.0
                     },
                     {
                       "function": "structure",
                       "materialKey": "timber_frame",
-                      "thicknessMm": 140
+                      "thicknessMm": 140.0
                     },
                     {
                       "function": "finish",
                       "materialKey": "gypsum_board",
-                      "thicknessMm": 50
+                      "thicknessMm": 50.0
                     }
                   ]
                 },
@@ -294,7 +2764,7 @@
                     {
                       "function": "structure",
                       "materialKey": "gypsum_board",
-                      "thicknessMm": 120
+                      "thicknessMm": 120.0
                     }
                   ]
                 },
@@ -306,17 +2776,17 @@
                     {
                       "function": "finish",
                       "materialKey": "brick_light",
-                      "thicknessMm": 110
+                      "thicknessMm": 110.0
                     },
                     {
                       "function": "structure",
                       "materialKey": "timber_frame",
-                      "thicknessMm": 140
+                      "thicknessMm": 140.0
                     },
                     {
                       "function": "finish",
                       "materialKey": "gypsum_board",
-                      "thicknessMm": 50
+                      "thicknessMm": 50.0
                     }
                   ]
                 },
@@ -328,17 +2798,17 @@
                     {
                       "function": "finish",
                       "materialKey": "brick_light",
-                      "thicknessMm": 110
+                      "thicknessMm": 110.0
                     },
                     {
                       "function": "structure",
                       "materialKey": "timber_frame",
-                      "thicknessMm": 140
+                      "thicknessMm": 140.0
                     },
                     {
                       "function": "finish",
                       "materialKey": "gypsum_board",
-                      "thicknessMm": 50
+                      "thicknessMm": 50.0
                     }
                   ]
                 },
@@ -350,17 +2820,17 @@
                     {
                       "function": "finish",
                       "materialKey": "brick_light",
-                      "thicknessMm": 110
+                      "thicknessMm": 110.0
                     },
                     {
                       "function": "structure",
                       "materialKey": "timber_frame",
-                      "thicknessMm": 140
+                      "thicknessMm": 140.0
                     },
                     {
                       "function": "finish",
                       "materialKey": "gypsum_board",
-                      "thicknessMm": 50
+                      "thicknessMm": 50.0
                     }
                   ]
                 },
@@ -372,12 +2842,12 @@
                     {
                       "function": "structure",
                       "materialKey": "concrete_smooth",
-                      "thicknessMm": 180
+                      "thicknessMm": 180.0
                     },
                     {
                       "function": "finish",
                       "materialKey": "oak_floor",
-                      "thicknessMm": 40
+                      "thicknessMm": 40.0
                     }
                   ]
                 },
@@ -389,12 +2859,12 @@
                     {
                       "function": "structure",
                       "materialKey": "timber_roof",
-                      "thicknessMm": 180
+                      "thicknessMm": 180.0
                     },
                     {
                       "function": "finish",
                       "materialKey": "standing_seam_grey",
-                      "thicknessMm": 30
+                      "thicknessMm": 30.0
                     }
                   ]
                 }
@@ -413,7 +2883,7 @@
                   "effectiveMaterialSource": "type_stack",
                   "effectiveMaterialFace": "top",
                   "layerCount": 2,
-                  "totalThicknessMm": 220,
+                  "totalThicknessMm": 220.0,
                   "layerSource": "type_stack",
                   "catalogStatus": "clean",
                   "propagationStatus": "clean",
@@ -429,7 +2899,7 @@
                   "effectiveMaterialSource": "roof_type_stack",
                   "effectiveMaterialFace": "top",
                   "layerCount": 2,
-                  "totalThicknessMm": 210,
+                  "totalThicknessMm": 210.0,
                   "layerSource": "roof_type_stack",
                   "catalogStatus": "clean",
                   "propagationStatus": "clean",
@@ -445,7 +2915,7 @@
                   "effectiveMaterialSource": "type_stack",
                   "effectiveMaterialFace": "exterior",
                   "layerCount": 1,
-                  "totalThicknessMm": 120,
+                  "totalThicknessMm": 120.0,
                   "layerSource": "type_stack",
                   "catalogStatus": "clean",
                   "propagationStatus": "clean",
@@ -461,7 +2931,7 @@
                   "effectiveMaterialSource": "type_stack",
                   "effectiveMaterialFace": "exterior",
                   "layerCount": 3,
-                  "totalThicknessMm": 300,
+                  "totalThicknessMm": 300.0,
                   "layerSource": "type_stack",
                   "catalogStatus": "clean",
                   "propagationStatus": "clean",
@@ -477,7 +2947,7 @@
                   "effectiveMaterialSource": "type_stack",
                   "effectiveMaterialFace": "exterior",
                   "layerCount": 1,
-                  "totalThicknessMm": 120,
+                  "totalThicknessMm": 120.0,
                   "layerSource": "type_stack",
                   "catalogStatus": "clean",
                   "propagationStatus": "clean",
@@ -493,7 +2963,7 @@
                   "effectiveMaterialSource": "type_stack",
                   "effectiveMaterialFace": "exterior",
                   "layerCount": 3,
-                  "totalThicknessMm": 300,
+                  "totalThicknessMm": 300.0,
                   "layerSource": "type_stack",
                   "catalogStatus": "clean",
                   "propagationStatus": "clean",
@@ -509,7 +2979,7 @@
                   "effectiveMaterialSource": "type_stack",
                   "effectiveMaterialFace": "exterior",
                   "layerCount": 3,
-                  "totalThicknessMm": 300,
+                  "totalThicknessMm": 300.0,
                   "layerSource": "type_stack",
                   "catalogStatus": "clean",
                   "propagationStatus": "clean",
@@ -525,7 +2995,7 @@
                   "effectiveMaterialSource": "type_stack",
                   "effectiveMaterialFace": "exterior",
                   "layerCount": 3,
-                  "totalThicknessMm": 300,
+                  "totalThicknessMm": 300.0,
                   "layerSource": "type_stack",
                   "catalogStatus": "clean",
                   "propagationStatus": "clean",
@@ -541,10 +3011,10 @@
                   "roofGeometryMode": "gable_pitched_rectangle",
                   "footprintVertexCount": 4,
                   "footprintPlanWinding": "ccw",
-                  "planSpanXmMm": 10900,
-                  "planSpanZmMm": 8900,
-                  "slopeDeg": 28,
-                  "overhangMm": 450,
+                  "planSpanXmMm": 10900.0,
+                  "planSpanZmMm": 8900.0,
+                  "slopeDeg": 28.0,
+                  "overhangMm": 450.0,
                   "roofElementName": "Simple gable roof",
                   "roofPlanGeometryReadout_v0": "gable_projection_supported",
                   "roofGeometrySupportToken": "gable_pitched_rectangle_supported",
@@ -553,15 +3023,15 @@
                   "roofTopologyToken": "gable",
                   "ridgeAxisPlan": "alongZ",
                   "ridgeSegmentPlanMm": [
-                    [5000, -450],
-                    [5000, 8450]
+                    [5000.0, -450.0],
+                    [5000.0, 8450.0]
                   ],
                   "ridgeRiseMm": 2897.816,
                   "ridgeZMm": 2897.816,
-                  "eavePlateZMm": 0,
+                  "eavePlateZMm": 0.0,
                   "layerStackSkipReason": null,
                   "layerStackCount": 2,
-                  "layerStackTotalThicknessMm": 210,
+                  "layerStackTotalThicknessMm": 210.0,
                   "primaryMaterialKey": "timber_roof",
                   "primaryMaterialLabel": "",
                   "roofFasciaEdgePlanToken": "eaveParallelPlanZ_gableRakeParallelPlanX",
@@ -569,43 +3039,43 @@
                     "format": "roofLayeredPrismWitness_v1",
                     "roofLayeredPrismStackModel_v0": "vertical_stack_from_eave",
                     "elementId": "ssh-roof-main",
-                    "assemblyTotalThicknessMm": 210,
-                    "eavePlateZMm": 0,
+                    "assemblyTotalThicknessMm": 210.0,
+                    "eavePlateZMm": 0.0,
                     "ridgeZMm": 2897.816,
                     "ridgeEnvelopeTopZMm": 3107.816,
                     "ridgeAxisPlan": "alongZ",
                     "ridgeSegmentPlanMm": [
-                      [5000, -450],
-                      [5000, 8450]
+                      [5000.0, -450.0],
+                      [5000.0, 8450.0]
                     ],
                     "footprintPlanExtentsMm": {
-                      "xMin": -450,
-                      "xMax": 10450,
-                      "zMin": -450,
-                      "zMax": 8450
+                      "xMin": -450.0,
+                      "xMax": 10450.0,
+                      "zMin": -450.0,
+                      "zMax": 8450.0
                     },
                     "layerReadouts": [
                       {
                         "layerIndex": 0,
                         "function": "structure",
                         "materialKey": "timber_roof",
-                        "thicknessMm": 180,
-                        "cumulativeThicknessFromAssemblyBottomMm": 180,
-                        "offsetBottomMmAboveEave": 0,
-                        "offsetTopMmAboveEave": 180,
-                        "worldZBottomMm": 0,
-                        "worldZTopMm": 180
+                        "thicknessMm": 180.0,
+                        "cumulativeThicknessFromAssemblyBottomMm": 180.0,
+                        "offsetBottomMmAboveEave": 0.0,
+                        "offsetTopMmAboveEave": 180.0,
+                        "worldZBottomMm": 0.0,
+                        "worldZTopMm": 180.0
                       },
                       {
                         "layerIndex": 1,
                         "function": "finish",
                         "materialKey": "standing_seam_grey",
-                        "thicknessMm": 30,
-                        "cumulativeThicknessFromAssemblyBottomMm": 210,
-                        "offsetBottomMmAboveEave": 180,
-                        "offsetTopMmAboveEave": 210,
-                        "worldZBottomMm": 180,
-                        "worldZTopMm": 210
+                        "thicknessMm": 30.0,
+                        "cumulativeThicknessFromAssemblyBottomMm": 210.0,
+                        "offsetBottomMmAboveEave": 180.0,
+                        "offsetTopMmAboveEave": 210.0,
+                        "worldZBottomMm": 180.0,
+                        "worldZTopMm": 210.0
                       }
                     ]
                   }
@@ -618,8 +3088,8 @@
                 {
                   "wallIds": ["ssh-wall-south", "ssh-wall-west"],
                   "vertexMm": {
-                    "xMm": 0,
-                    "yMm": 0
+                    "xMm": 0.0,
+                    "yMm": 0.0
                   },
                   "levelId": "ssh-lvl-ground",
                   "joinKind": "corner"
@@ -627,8 +3097,8 @@
                 {
                   "wallIds": ["ssh-wall-north", "ssh-wall-west"],
                   "vertexMm": {
-                    "xMm": 0,
-                    "yMm": 8000
+                    "xMm": 0.0,
+                    "yMm": 8000.0
                   },
                   "levelId": "ssh-lvl-ground",
                   "joinKind": "corner"
@@ -636,8 +3106,8 @@
                 {
                   "wallIds": ["ssh-wall-east", "ssh-wall-south"],
                   "vertexMm": {
-                    "xMm": 10000,
-                    "yMm": 0
+                    "xMm": 10000.0,
+                    "yMm": 0.0
                   },
                   "levelId": "ssh-lvl-ground",
                   "joinKind": "corner"
@@ -645,8 +3115,8 @@
                 {
                   "wallIds": ["ssh-wall-east", "ssh-wall-north"],
                   "vertexMm": {
-                    "xMm": 10000,
-                    "yMm": 8000
+                    "xMm": 10000.0,
+                    "yMm": 8000.0
                   },
                   "levelId": "ssh-lvl-ground",
                   "joinKind": "corner"
@@ -660,8 +3130,8 @@
                   "joinId": "join:ssh-lvl-ground:0.0:0.0:ssh-wall-south:ssh-wall-west",
                   "wallIds": ["ssh-wall-south", "ssh-wall-west"],
                   "vertexMm": {
-                    "xMm": 0,
-                    "yMm": 0
+                    "xMm": 0.0,
+                    "yMm": 0.0
                   },
                   "levelId": "ssh-lvl-ground",
                   "joinKind": "butt",
@@ -673,8 +3143,8 @@
                   "joinId": "join:ssh-lvl-ground:0.0:8000.0:ssh-wall-north:ssh-wall-west",
                   "wallIds": ["ssh-wall-north", "ssh-wall-west"],
                   "vertexMm": {
-                    "xMm": 0,
-                    "yMm": 8000
+                    "xMm": 0.0,
+                    "yMm": 8000.0
                   },
                   "levelId": "ssh-lvl-ground",
                   "joinKind": "butt",
@@ -686,8 +3156,8 @@
                   "joinId": "join:ssh-lvl-ground:10000.0:0.0:ssh-wall-east:ssh-wall-south",
                   "wallIds": ["ssh-wall-east", "ssh-wall-south"],
                   "vertexMm": {
-                    "xMm": 10000,
-                    "yMm": 0
+                    "xMm": 10000.0,
+                    "yMm": 0.0
                   },
                   "levelId": "ssh-lvl-ground",
                   "joinKind": "butt",
@@ -699,8 +3169,8 @@
                   "joinId": "join:ssh-lvl-ground:10000.0:8000.0:ssh-wall-east:ssh-wall-north",
                   "wallIds": ["ssh-wall-east", "ssh-wall-north"],
                   "vertexMm": {
-                    "xMm": 10000,
-                    "yMm": 8000
+                    "xMm": 10000.0,
+                    "yMm": 8000.0
                   },
                   "levelId": "ssh-lvl-ground",
                   "joinKind": "butt",
@@ -718,8 +3188,8 @@
                   "assemblyTypeId": "ssh-ft-slab",
                   "hostKind": "floor",
                   "layerCount": 2,
-                  "layerTotalThicknessMm": 220,
-                  "cutThicknessMm": 220,
+                  "layerTotalThicknessMm": 220.0,
+                  "cutThicknessMm": 220.0,
                   "layerStackMatchesCutThickness": true
                 },
                 {
@@ -727,7 +3197,7 @@
                   "assemblyTypeId": "ssh-rt-gable",
                   "hostKind": "roof",
                   "layerCount": 2,
-                  "layerTotalThicknessMm": 210,
+                  "layerTotalThicknessMm": 210.0,
                   "cutThicknessMm": null,
                   "layerStackMatchesCutThickness": null
                 },
@@ -736,8 +3206,8 @@
                   "assemblyTypeId": "ssh-wt-interior",
                   "hostKind": "wall",
                   "layerCount": 1,
-                  "layerTotalThicknessMm": 120,
-                  "cutThicknessMm": 120,
+                  "layerTotalThicknessMm": 120.0,
+                  "cutThicknessMm": 120.0,
                   "layerStackMatchesCutThickness": true
                 },
                 {
@@ -745,8 +3215,8 @@
                   "assemblyTypeId": "ssh-wt-exterior",
                   "hostKind": "wall",
                   "layerCount": 3,
-                  "layerTotalThicknessMm": 300,
-                  "cutThicknessMm": 300,
+                  "layerTotalThicknessMm": 300.0,
+                  "cutThicknessMm": 300.0,
                   "layerStackMatchesCutThickness": true
                 },
                 {
@@ -754,8 +3224,8 @@
                   "assemblyTypeId": "ssh-wt-interior",
                   "hostKind": "wall",
                   "layerCount": 1,
-                  "layerTotalThicknessMm": 120,
-                  "cutThicknessMm": 120,
+                  "layerTotalThicknessMm": 120.0,
+                  "cutThicknessMm": 120.0,
                   "layerStackMatchesCutThickness": true
                 },
                 {
@@ -763,8 +3233,8 @@
                   "assemblyTypeId": "ssh-wt-exterior",
                   "hostKind": "wall",
                   "layerCount": 3,
-                  "layerTotalThicknessMm": 300,
-                  "cutThicknessMm": 300,
+                  "layerTotalThicknessMm": 300.0,
+                  "cutThicknessMm": 300.0,
                   "layerStackMatchesCutThickness": true
                 },
                 {
@@ -772,8 +3242,8 @@
                   "assemblyTypeId": "ssh-wt-exterior",
                   "hostKind": "wall",
                   "layerCount": 3,
-                  "layerTotalThicknessMm": 300,
-                  "cutThicknessMm": 300,
+                  "layerTotalThicknessMm": 300.0,
+                  "cutThicknessMm": 300.0,
                   "layerStackMatchesCutThickness": true
                 },
                 {
@@ -781,8 +3251,8 @@
                   "assemblyTypeId": "ssh-wt-exterior",
                   "hostKind": "wall",
                   "layerCount": 3,
-                  "layerTotalThicknessMm": 300,
-                  "cutThicknessMm": 300,
+                  "layerTotalThicknessMm": 300.0,
+                  "cutThicknessMm": 300.0,
                   "layerStackMatchesCutThickness": true
                 }
               ]
@@ -798,17 +3268,17 @@
                     {
                       "function": "structure",
                       "materialKey": "concrete_smooth",
-                      "thicknessMm": 180
+                      "thicknessMm": 180.0
                     },
                     {
                       "function": "finish",
                       "materialKey": "oak_floor",
-                      "thicknessMm": 40
+                      "thicknessMm": 40.0
                     }
                   ],
                   "layerCount": 2,
-                  "layerTotalThicknessMm": 220,
-                  "cutProxyThicknessMm": 220,
+                  "layerTotalThicknessMm": 220.0,
+                  "cutProxyThicknessMm": 220.0,
                   "layerStackMatchesCutThickness": true,
                   "layerSource": "type_stack",
                   "exposedFaces": {
@@ -826,16 +3296,16 @@
                     {
                       "function": "structure",
                       "materialKey": "timber_roof",
-                      "thicknessMm": 180
+                      "thicknessMm": 180.0
                     },
                     {
                       "function": "finish",
                       "materialKey": "standing_seam_grey",
-                      "thicknessMm": 30
+                      "thicknessMm": 30.0
                     }
                   ],
                   "layerCount": 2,
-                  "layerTotalThicknessMm": 210,
+                  "layerTotalThicknessMm": 210.0,
                   "cutProxyThicknessMm": null,
                   "layerStackMatchesCutThickness": null,
                   "layerSource": "roof_type_stack",
@@ -854,12 +3324,12 @@
                     {
                       "function": "structure",
                       "materialKey": "gypsum_board",
-                      "thicknessMm": 120
+                      "thicknessMm": 120.0
                     }
                   ],
                   "layerCount": 1,
-                  "layerTotalThicknessMm": 120,
-                  "cutProxyThicknessMm": 120,
+                  "layerTotalThicknessMm": 120.0,
+                  "cutProxyThicknessMm": 120.0,
                   "layerStackMatchesCutThickness": true,
                   "layerSource": "type_stack",
                   "exposedFaces": {
@@ -877,22 +3347,22 @@
                     {
                       "function": "finish",
                       "materialKey": "brick_light",
-                      "thicknessMm": 110
+                      "thicknessMm": 110.0
                     },
                     {
                       "function": "structure",
                       "materialKey": "timber_frame",
-                      "thicknessMm": 140
+                      "thicknessMm": 140.0
                     },
                     {
                       "function": "finish",
                       "materialKey": "gypsum_board",
-                      "thicknessMm": 50
+                      "thicknessMm": 50.0
                     }
                   ],
                   "layerCount": 3,
-                  "layerTotalThicknessMm": 300,
-                  "cutProxyThicknessMm": 300,
+                  "layerTotalThicknessMm": 300.0,
+                  "cutProxyThicknessMm": 300.0,
                   "layerStackMatchesCutThickness": true,
                   "layerSource": "type_stack",
                   "exposedFaces": {
@@ -910,12 +3380,12 @@
                     {
                       "function": "structure",
                       "materialKey": "gypsum_board",
-                      "thicknessMm": 120
+                      "thicknessMm": 120.0
                     }
                   ],
                   "layerCount": 1,
-                  "layerTotalThicknessMm": 120,
-                  "cutProxyThicknessMm": 120,
+                  "layerTotalThicknessMm": 120.0,
+                  "cutProxyThicknessMm": 120.0,
                   "layerStackMatchesCutThickness": true,
                   "layerSource": "type_stack",
                   "exposedFaces": {
@@ -933,22 +3403,22 @@
                     {
                       "function": "finish",
                       "materialKey": "brick_light",
-                      "thicknessMm": 110
+                      "thicknessMm": 110.0
                     },
                     {
                       "function": "structure",
                       "materialKey": "timber_frame",
-                      "thicknessMm": 140
+                      "thicknessMm": 140.0
                     },
                     {
                       "function": "finish",
                       "materialKey": "gypsum_board",
-                      "thicknessMm": 50
+                      "thicknessMm": 50.0
                     }
                   ],
                   "layerCount": 3,
-                  "layerTotalThicknessMm": 300,
-                  "cutProxyThicknessMm": 300,
+                  "layerTotalThicknessMm": 300.0,
+                  "cutProxyThicknessMm": 300.0,
                   "layerStackMatchesCutThickness": true,
                   "layerSource": "type_stack",
                   "exposedFaces": {
@@ -966,22 +3436,22 @@
                     {
                       "function": "finish",
                       "materialKey": "brick_light",
-                      "thicknessMm": 110
+                      "thicknessMm": 110.0
                     },
                     {
                       "function": "structure",
                       "materialKey": "timber_frame",
-                      "thicknessMm": 140
+                      "thicknessMm": 140.0
                     },
                     {
                       "function": "finish",
                       "materialKey": "gypsum_board",
-                      "thicknessMm": 50
+                      "thicknessMm": 50.0
                     }
                   ],
                   "layerCount": 3,
-                  "layerTotalThicknessMm": 300,
-                  "cutProxyThicknessMm": 300,
+                  "layerTotalThicknessMm": 300.0,
+                  "cutProxyThicknessMm": 300.0,
                   "layerStackMatchesCutThickness": true,
                   "layerSource": "type_stack",
                   "exposedFaces": {
@@ -999,22 +3469,22 @@
                     {
                       "function": "finish",
                       "materialKey": "brick_light",
-                      "thicknessMm": 110
+                      "thicknessMm": 110.0
                     },
                     {
                       "function": "structure",
                       "materialKey": "timber_frame",
-                      "thicknessMm": 140
+                      "thicknessMm": 140.0
                     },
                     {
                       "function": "finish",
                       "materialKey": "gypsum_board",
-                      "thicknessMm": 50
+                      "thicknessMm": 50.0
                     }
                   ],
                   "layerCount": 3,
-                  "layerTotalThicknessMm": 300,
-                  "cutProxyThicknessMm": 300,
+                  "layerTotalThicknessMm": 300.0,
+                  "cutProxyThicknessMm": 300.0,
                   "layerStackMatchesCutThickness": true,
                   "layerSource": "type_stack",
                   "exposedFaces": {
@@ -1065,7 +3535,7 @@
                 "bim_ai_saved_3d_view_clip_v1"
               ],
               "extensionDigests": {
-                "bim_ai_box_primitive_v0": "15ef0c0c5e81add66787f1157e7f0dd9767fc4505ec05c995aa42784bd499f06",
+                "bim_ai_box_primitive_v0": "095c0809d769ca9f42d8c69064377aa44f82679ae157b660606294bd172b9bad",
                 "bim_ai_gable_roof_v0": "851abebc7f6152905593d0841ec1e4ba4a07984843de6c8f561118873ff89c95",
                 "bim_ai_roof_geometry_evidence_v1": "851abebc7f6152905593d0841ec1e4ba4a07984843de6c8f561118873ff89c95",
                 "bim_ai_wall_corner_joins_v0": "b5eaa85ea3c1eaa93826a0e59475553e33355ef12dfe6fc6bdb8694862cd34af",
@@ -1076,12 +3546,12 @@
                 "bim_ai_roof_layered_prism_witness_v1": "851abebc7f6152905593d0841ec1e4ba4a07984843de6c8f561118873ff89c95",
                 "bim_ai_saved_3d_view_clip_v1": "17eabf8424a0b550791e2b877482267129acb9007c186886dcf339886b1cc336"
               },
-              "gltfExportManifestClosureDigestSha256": "3c5ac02d64b5dc09b61c186d84af39f30505cf0c3a1ad0ae071912b573eb8529",
+              "gltfExportManifestClosureDigestSha256": "c62015c9e1ab8633cce2042756a3f7bada38d811ea7d5d440989a588ff974283",
               "extensionPresenceMatrix": [
                 {
                   "token": "bim_ai_box_primitive_v0",
                   "status": "emitted",
-                  "digestSha256": "15ef0c0c5e81add66787f1157e7f0dd9767fc4505ec05c995aa42784bd499f06",
+                  "digestSha256": "095c0809d769ca9f42d8c69064377aa44f82679ae157b660606294bd172b9bad",
                   "skipReasonCode": null
                 },
                 {
@@ -1159,87 +3629,54 @@
               ]
             }
           }
-        },
-        "scenes": [
-          {
-            "nodes": []
-          }
-        ],
-        "scene": 0,
-        "nodes": [],
-        "meshes": []
+        }
       }
     },
     "ifc": {
       "artifactKind": "ifc-manifest",
-      "status": "invalid-manifest",
-      "pass": false,
+      "status": "manifest-returned",
+      "pass": true,
       "httpStatus": 200,
-      "digest": "0c5c1a4a2dd9b2198ca24afd67a09c2ca664a77fe97193634d62d2f532f75c11",
+      "digest": "8f24ab3d0ca968b5bc7a824a56da193dc980c8fc4044c36239d460a5f003e5c3",
       "summary": {
         "manifestKind": "ifc",
-        "exportedKindCount": 0,
-        "countsByIfcKind": {},
-        "ids": [],
+        "exportedKindCount": 18,
+        "countsByIfcKind": {
+          "door": 3,
+          "floor": 1,
+          "level": 1,
+          "roof": 1,
+          "room": 3,
+          "wall": 6,
+          "window": 3
+        },
         "geometryProof": {
-          "source": "ifc manifest countsByKind",
+          "source": "documentation export IFC artifact closure",
           "pass": true,
-          "counts": {
-            "pass": true,
-            "counts": {
-              "dimension": 2,
-              "door": 3,
-              "elevation_view": 4,
-              "family_type": 2,
-              "floor": 1,
-              "floor_type": 1,
-              "hatch_pattern_def": 7,
-              "internal_origin": 1,
-              "level": 1,
-              "placed_tag": 1,
-              "plan_view": 1,
-              "roof": 1,
-              "roof_type": 1,
-              "room": 3,
-              "schedule": 1,
-              "sheet": 1,
-              "sun_settings": 1,
-              "titleblock_type": 1,
-              "viewpoint": 1,
-              "wall": 6,
-              "wall_type": 2,
-              "window": 3
-            },
-            "missing": []
-          },
-          "ids": {
-            "pass": false,
-            "ids": [],
-            "missing": [
-              "ssh-floor-ground",
-              "ssh-roof-main",
-              "ssh-wall-bath",
-              "ssh-wall-east",
-              "ssh-wall-hall-bedroom",
-              "ssh-wall-north",
-              "ssh-wall-south",
-              "ssh-wall-west"
-            ]
-          }
-        }
+          "artifactHasPhysicalGeometry": true
+        },
+        "optionalBackendManifest_v1": null
       },
+      "optionalBackendManifest_v1": null,
       "body": {
         "format": "ifc_manifest_v0",
-        "revision": 2,
-        "elementCount": 45,
+        "artifactHasGeometryEntities": true,
+        "ifcEncoding": "bim_ai_ifc_kernel_v1",
+        "exportedIfcKindsInArtifact": {
+          "door": 3,
+          "floor": 1,
+          "level": 1,
+          "roof": 1,
+          "room": 3,
+          "wall": 6,
+          "window": 3
+        },
         "countsByKind": {
           "dimension": 2,
           "door": 3,
-          "elevation_view": 4,
           "family_type": 2,
           "floor": 1,
           "floor_type": 1,
-          "hatch_pattern_def": 7,
           "internal_origin": 1,
           "level": 1,
           "placed_tag": 1,
@@ -1256,141 +3693,6 @@
           "wall_type": 2,
           "window": 3
         },
-        "exportedGeometryKinds": {
-          "door": 3,
-          "floor": 1,
-          "roof": 1,
-          "room": 3,
-          "wall": 6,
-          "window": 3
-        },
-        "unsupportedDocumentKindsDetailed": [
-          {
-            "kind": "dimension",
-            "count": 2
-          },
-          {
-            "kind": "elevation_view",
-            "count": 4
-          },
-          {
-            "kind": "family_type",
-            "count": 2
-          },
-          {
-            "kind": "floor_type",
-            "count": 1
-          },
-          {
-            "kind": "hatch_pattern_def",
-            "count": 7
-          },
-          {
-            "kind": "internal_origin",
-            "count": 1
-          },
-          {
-            "kind": "placed_tag",
-            "count": 1
-          },
-          {
-            "kind": "plan_view",
-            "count": 1
-          },
-          {
-            "kind": "roof_type",
-            "count": 1
-          },
-          {
-            "kind": "schedule",
-            "count": 1
-          },
-          {
-            "kind": "sheet",
-            "count": 1
-          },
-          {
-            "kind": "sun_settings",
-            "count": 1
-          },
-          {
-            "kind": "titleblock_type",
-            "count": 1
-          },
-          {
-            "kind": "viewpoint",
-            "count": 1
-          },
-          {
-            "kind": "wall_type",
-            "count": 2
-          }
-        ],
-        "exportedIfcKindsInArtifact": {},
-        "ifcEmittedKernelKinds": [],
-        "kernelNote": "Kernel IFC encodes Proj→IfcSite→IfcBuilding→storeys; kernel **SiteElem** maps to identity **`Pset_SiteCommon.Reference`** on **`IfcSite`** (comma-joined sorted ids when multiple); walls+floors, roofs (IfcRoof prism), stairs (IfcStair run prism), hosted door/window openings, slab voids via IfcOpeningElement on host IfcSlab, and rooms as IfcSpace footprints; IfcOpenShell emits minimal IFC4 **property sets** (e.g. Pset_*Common `Reference` from kernel ids on physical products); **narrow `Qto_*` quantities** attach to walls/fillings/slab/space when IfcOpenShell qto helpers succeed. IFC import and full boolean regeneration remain deferred.",
-        "ifcEncoding": "bim_ai_ifc_empty_shell_v0",
-        "artifactHasGeometryEntities": false,
-        "plannedIfcEntitiesHints": [
-          "dimension",
-          "door",
-          "elevation_view",
-          "family_type",
-          "floor",
-          "floor_type",
-          "hatch_pattern_def",
-          "internal_origin",
-          "level",
-          "placed_tag",
-          "plan_view",
-          "roof",
-          "roof_type",
-          "room",
-          "schedule",
-          "sheet",
-          "sun_settings",
-          "titleblock_type",
-          "viewpoint",
-          "wall",
-          "wall_type",
-          "window"
-        ],
-        "plannedEntitiesReference": "spec/workpackage-master-tracker.md",
-        "ifcSemanticImportScope_v0": {
-          "schemaVersion": 0,
-          "semanticReadBackSupported": [
-            "IfcBuildingStorey counts and elevationsPresent",
-            "IfcWall, IfcSlab, IfcRoof, IfcStair, IfcSpace product counts",
-            "IfcOpeningElement, IfcDoor, IfcWindow counts",
-            "Pset_*Common Reference identity coverage (wall, slab, space, door, window, roof, stair, site)",
-            "Pset_SpaceCommon programme string fields",
-            "IfcElementQuantity Qto_* template names",
-            "inspect_kernel_ifc_semantics.qtoLinkedProducts — per-product Qto_* linkage counts",
-            "inspect_kernel_ifc_semantics.importScopeUnsupportedIfcProducts_v0 — IfcProduct classes outside kernel slice roots",
-            "inspect_kernel_ifc_semantics.siteExchangeEvidence_v0 — kernel SiteElem ↔ IfcSite counts + Pset_SiteCommon.Reference joined ids",
-            "inspect_kernel_ifc_semantics.materialLayerSetReadback_v0 — IfcMaterialLayerSet read-back vs document layer stacks for IfcWall / IfcSlab / IfcRoof (when kernel export eligible)",
-            "inspect_kernel_ifc_semantics.propertySetCoverageEvidence_v0 — per-product IFC pset/QTO/material gap tokens aligned with IDS/cleanroom read-back",
-            "ifc_manifest_v0.siteExchangeEvidence_v0 — document-only kernel site participation when IFC export not eligible",
-            "ifc_manifest_v0.ifcMaterialLayerSetReadbackEvidence_v0 — re-export STEP + same read-back slice for exchange manifest (when IfcOpenShell + kernel export eligible)",
-            "ifc_manifest_v0.ifcPropertySetCoverageEvidence_v0 — re-export STEP + same coverage row grid for exchange manifest",
-            "Kernel geometry skip map from Document",
-            "summarize_kernel_ifc_semantic_roundtrip export→re-parse deltas (identityCoverage, qtoCoverage, materialLayerReadback summary, propertySetCoverage summary)",
-            "summarize_kernel_ifc_semantic_roundtrip.commandSketch — level echo, storeys read-back, QTO names, programme samples",
-            "summarize_kernel_ifc_semantic_roundtrip.commandSketch.authoritativeReplay_v0 — kernel IFC re-parse → deterministic createLevel/createFloor/createWall/createRoof (IfcRoof prism, identity Pset_RoofCommon.Reference, inferred slopeDeg/overhangMm/mass_box from exporter-aligned placement) /createStair (IfcStair, identity Pset_StairCommon.Reference, top storey from elevation + body height when unique) / createRoomOutline (IfcSpace) + wall-hosted insertDoorOnWall/insertWindowOnWall + slab-hosted createSlabOpening (IfcOpeningElement voids on IfcSlab, op:<id> names); authoritativeSubset.roofs + kernelRoofSkippedNoReference; IfcSlabType + Pset_SlabCommon type Reference when floorTypeId set; typedFloorAuthoritativeReplayEvidence_v0; slabRoofHostedVoidReplaySkipped_v0 skip ledger; idsAuthoritativeReplayMap_v0 spaces + roofs + floors IDS linkage, unsupportedIfcProducts_v0 vs replay distinction",
-            "engine.try_apply_kernel_ifc_authoritative_replay_v0 — additive apply of authoritativeReplay_v0 commands via try_commit_bundle (preflight merge_id_collision / merge_reference_unresolved)",
-            "build_ifc_import_preview_v0 — deterministic IFC import preview: commandCountsByKind, unresolvedReferences (extractionGaps), idCollisionClasses (command kinds with duplicate replay IDs in the STEP file), skipCountsByReason, authoritativeProducts subset map, unsupportedProducts countsByClass, idsPointerCoverage (spaces/roofs/floors QTO+identity rows), safeApplyClassification (authoritativeSliceSafeApply + notApplyReasons); stable across repeated runs",
-            "build_ifc_unsupported_merge_map_v0 — unsupported IFC merge map: unsupportedIfcProductsByClass (products outside kernel slice), extractionGapsByReason (reasons kernel failed to extract command from supported product), mergeConstraints (permanent architectural limits); offline-safe mergeConstraints always present",
-            "ifc_manifest_v0.ifcImportPreview_v0 — same schema as build_ifc_import_preview_v0 (requires IfcOpenShell + kernel export eligible); offline stub sets available=False + reason",
-            "ifc_manifest_v0.ifcUnsupportedMergeMap_v0 — same schema as build_ifc_unsupported_merge_map_v0 (mergeConstraints always present; full map requires IfcOpenShell + kernel export eligible)",
-            "ifc_manifest_v0.ifcExchangeManifestClosure_v0 — deterministic cross-manifest closure: authoritativeProductsAlignmentToken (aligned/replay_missing_products/preview_missing_products), unsupportedClassAlignmentToken (aligned/class_set_drift), idsPointerCoverageAlignmentToken (aligned/coverage_drift), ifcExchangeManifestClosureDigestSha256; offline tokens set to unavailable_offline"
-          ],
-          "importMergeUnsupported": [
-            "IFC ingest → Document merge / replay for arbitrary IFC entity graphs",
-            "Full IDS fixture exchange matrix beyond authoring-side rules + semantic inspector",
-            "Boolean regeneration from IFC openings vs kernel proxies",
-            "engine.try_apply_kernel_ifc_authoritative_replay_v0 — full populated-document arbitrary IFC merge (v0 is kernel authoritative bundle + preflight only)"
-          ]
-        },
         "kernelExpectedIfcKinds": {
           "door": 3,
           "floor": 1,
@@ -1400,354 +3702,75 @@
           "wall": 6,
           "window": 3
         },
-        "hint": "IFC artifact: GET /api/models/{id}/exports/model.ifc",
-        "note": "Kernel slice emits IfcWall + IfcSlab + storey graph, roof/stair/slab-hosted openings, and IfcSpace when geometry is eligible; otherwise empty DATA hull.",
-        "materialAssemblyEvidence_v0": {
-          "format": "materialAssemblyEvidence_v0",
-          "hosts": [
-            {
-              "hostElementId": "ssh-wall-bath",
-              "hostKind": "wall",
-              "assemblyTypeId": "ssh-wt-interior",
-              "layers": [
-                {
-                  "function": "structure",
-                  "materialKey": "gypsum_board",
-                  "thicknessMm": 120
-                }
-              ]
-            },
-            {
-              "hostElementId": "ssh-wall-east",
-              "hostKind": "wall",
-              "assemblyTypeId": "ssh-wt-exterior",
-              "layers": [
-                {
-                  "function": "finish",
-                  "materialKey": "brick_light",
-                  "thicknessMm": 110
-                },
-                {
-                  "function": "structure",
-                  "materialKey": "timber_frame",
-                  "thicknessMm": 140
-                },
-                {
-                  "function": "finish",
-                  "materialKey": "gypsum_board",
-                  "thicknessMm": 50
-                }
-              ]
-            },
-            {
-              "hostElementId": "ssh-wall-hall-bedroom",
-              "hostKind": "wall",
-              "assemblyTypeId": "ssh-wt-interior",
-              "layers": [
-                {
-                  "function": "structure",
-                  "materialKey": "gypsum_board",
-                  "thicknessMm": 120
-                }
-              ]
-            },
-            {
-              "hostElementId": "ssh-wall-north",
-              "hostKind": "wall",
-              "assemblyTypeId": "ssh-wt-exterior",
-              "layers": [
-                {
-                  "function": "finish",
-                  "materialKey": "brick_light",
-                  "thicknessMm": 110
-                },
-                {
-                  "function": "structure",
-                  "materialKey": "timber_frame",
-                  "thicknessMm": 140
-                },
-                {
-                  "function": "finish",
-                  "materialKey": "gypsum_board",
-                  "thicknessMm": 50
-                }
-              ]
-            },
-            {
-              "hostElementId": "ssh-wall-south",
-              "hostKind": "wall",
-              "assemblyTypeId": "ssh-wt-exterior",
-              "layers": [
-                {
-                  "function": "finish",
-                  "materialKey": "brick_light",
-                  "thicknessMm": 110
-                },
-                {
-                  "function": "structure",
-                  "materialKey": "timber_frame",
-                  "thicknessMm": 140
-                },
-                {
-                  "function": "finish",
-                  "materialKey": "gypsum_board",
-                  "thicknessMm": 50
-                }
-              ]
-            },
-            {
-              "hostElementId": "ssh-wall-west",
-              "hostKind": "wall",
-              "assemblyTypeId": "ssh-wt-exterior",
-              "layers": [
-                {
-                  "function": "finish",
-                  "materialKey": "brick_light",
-                  "thicknessMm": 110
-                },
-                {
-                  "function": "structure",
-                  "materialKey": "timber_frame",
-                  "thicknessMm": 140
-                },
-                {
-                  "function": "finish",
-                  "materialKey": "gypsum_board",
-                  "thicknessMm": 50
-                }
-              ]
-            },
-            {
-              "hostElementId": "ssh-floor-ground",
-              "hostKind": "floor",
-              "assemblyTypeId": "ssh-ft-slab",
-              "layers": [
-                {
-                  "function": "structure",
-                  "materialKey": "concrete_smooth",
-                  "thicknessMm": 180
-                },
-                {
-                  "function": "finish",
-                  "materialKey": "oak_floor",
-                  "thicknessMm": 40
-                }
-              ]
-            },
-            {
-              "hostElementId": "ssh-roof-main",
-              "hostKind": "roof",
-              "assemblyTypeId": "ssh-rt-gable",
-              "layers": [
-                {
-                  "function": "structure",
-                  "materialKey": "timber_roof",
-                  "thicknessMm": 180
-                },
-                {
-                  "function": "finish",
-                  "materialKey": "standing_seam_grey",
-                  "thicknessMm": 30
-                }
-              ]
-            }
-          ]
-        },
-        "materialCatalogAuditEvidence_v0": {
-          "format": "materialCatalogAuditEvidence_v0",
-          "rows": [
-            {
-              "hostElementId": "ssh-floor-ground",
-              "hostKind": "floor",
-              "assemblyTypeId": "ssh-ft-slab",
-              "materialKeys": ["concrete_smooth", "oak_floor"],
-              "effectiveMaterialKey": "concrete_smooth",
-              "effectiveMaterialDisplay": "Smooth concrete",
-              "effectiveMaterialSource": "type_stack",
-              "effectiveMaterialFace": "top",
-              "layerCount": 2,
-              "totalThicknessMm": 220,
-              "layerSource": "type_stack",
-              "catalogStatus": "clean",
-              "propagationStatus": "clean",
-              "assemblyMaterialKeysDigest": "085a45952f6963c737daf94e72df5660cb34b66bc75942e9b6017c95ed780c7b"
-            },
-            {
-              "hostElementId": "ssh-roof-main",
-              "hostKind": "roof",
-              "assemblyTypeId": "ssh-rt-gable",
-              "materialKeys": ["timber_roof", "standing_seam_grey"],
-              "effectiveMaterialKey": "timber_roof",
-              "effectiveMaterialDisplay": "",
-              "effectiveMaterialSource": "roof_type_stack",
-              "effectiveMaterialFace": "top",
-              "layerCount": 2,
-              "totalThicknessMm": 210,
-              "layerSource": "roof_type_stack",
-              "catalogStatus": "clean",
-              "propagationStatus": "clean",
-              "assemblyMaterialKeysDigest": "b8a62331e4d2a57c15c27259153d60954410369b0816c6ed8f8d11112fa1cf9b"
-            },
-            {
-              "hostElementId": "ssh-wall-bath",
-              "hostKind": "wall",
-              "assemblyTypeId": "ssh-wt-interior",
-              "materialKeys": ["gypsum_board"],
-              "effectiveMaterialKey": "gypsum_board",
-              "effectiveMaterialDisplay": "",
-              "effectiveMaterialSource": "type_stack",
-              "effectiveMaterialFace": "exterior",
-              "layerCount": 1,
-              "totalThicknessMm": 120,
-              "layerSource": "type_stack",
-              "catalogStatus": "clean",
-              "propagationStatus": "clean",
-              "assemblyMaterialKeysDigest": "269f2918989d2a86a8c4367c29d289c6036ac14ad3d5f04c28c9710768e84623"
-            },
-            {
-              "hostElementId": "ssh-wall-east",
-              "hostKind": "wall",
-              "assemblyTypeId": "ssh-wt-exterior",
-              "materialKeys": ["brick_light", "timber_frame", "gypsum_board"],
-              "effectiveMaterialKey": "brick_light",
-              "effectiveMaterialDisplay": "",
-              "effectiveMaterialSource": "type_stack",
-              "effectiveMaterialFace": "exterior",
-              "layerCount": 3,
-              "totalThicknessMm": 300,
-              "layerSource": "type_stack",
-              "catalogStatus": "clean",
-              "propagationStatus": "clean",
-              "assemblyMaterialKeysDigest": "03509473b7d90cf00aa6b5820654224eaa8322da6f8fdc9f71a78f53af002540"
-            },
-            {
-              "hostElementId": "ssh-wall-hall-bedroom",
-              "hostKind": "wall",
-              "assemblyTypeId": "ssh-wt-interior",
-              "materialKeys": ["gypsum_board"],
-              "effectiveMaterialKey": "gypsum_board",
-              "effectiveMaterialDisplay": "",
-              "effectiveMaterialSource": "type_stack",
-              "effectiveMaterialFace": "exterior",
-              "layerCount": 1,
-              "totalThicknessMm": 120,
-              "layerSource": "type_stack",
-              "catalogStatus": "clean",
-              "propagationStatus": "clean",
-              "assemblyMaterialKeysDigest": "269f2918989d2a86a8c4367c29d289c6036ac14ad3d5f04c28c9710768e84623"
-            },
-            {
-              "hostElementId": "ssh-wall-north",
-              "hostKind": "wall",
-              "assemblyTypeId": "ssh-wt-exterior",
-              "materialKeys": ["brick_light", "timber_frame", "gypsum_board"],
-              "effectiveMaterialKey": "brick_light",
-              "effectiveMaterialDisplay": "",
-              "effectiveMaterialSource": "type_stack",
-              "effectiveMaterialFace": "exterior",
-              "layerCount": 3,
-              "totalThicknessMm": 300,
-              "layerSource": "type_stack",
-              "catalogStatus": "clean",
-              "propagationStatus": "clean",
-              "assemblyMaterialKeysDigest": "03509473b7d90cf00aa6b5820654224eaa8322da6f8fdc9f71a78f53af002540"
-            },
-            {
-              "hostElementId": "ssh-wall-south",
-              "hostKind": "wall",
-              "assemblyTypeId": "ssh-wt-exterior",
-              "materialKeys": ["brick_light", "timber_frame", "gypsum_board"],
-              "effectiveMaterialKey": "brick_light",
-              "effectiveMaterialDisplay": "",
-              "effectiveMaterialSource": "type_stack",
-              "effectiveMaterialFace": "exterior",
-              "layerCount": 3,
-              "totalThicknessMm": 300,
-              "layerSource": "type_stack",
-              "catalogStatus": "clean",
-              "propagationStatus": "clean",
-              "assemblyMaterialKeysDigest": "03509473b7d90cf00aa6b5820654224eaa8322da6f8fdc9f71a78f53af002540"
-            },
-            {
-              "hostElementId": "ssh-wall-west",
-              "hostKind": "wall",
-              "assemblyTypeId": "ssh-wt-exterior",
-              "materialKeys": ["brick_light", "timber_frame", "gypsum_board"],
-              "effectiveMaterialKey": "brick_light",
-              "effectiveMaterialDisplay": "",
-              "effectiveMaterialSource": "type_stack",
-              "effectiveMaterialFace": "exterior",
-              "layerCount": 3,
-              "totalThicknessMm": 300,
-              "layerSource": "type_stack",
-              "catalogStatus": "clean",
-              "propagationStatus": "clean",
-              "assemblyMaterialKeysDigest": "03509473b7d90cf00aa6b5820654224eaa8322da6f8fdc9f71a78f53af002540"
-            }
-          ]
-        },
-        "siteExchangeEvidence_v0": {
-          "schemaVersion": 0,
-          "kernelSiteCount": 0,
-          "kernelIfcExportEligible": true,
-          "joinedKernelSiteIdsExpected": ""
-        },
-        "ifcImportPreview_v0": {
-          "schemaVersion": 0,
-          "available": false,
-          "reason": "ifcopenshell_not_installed",
-          "commandCountsByKind": {},
-          "commandCountTotal": 0,
-          "unresolvedReferences": [],
-          "unresolvedReferenceCount": 0,
-          "idCollisionClasses": {},
-          "skipCountsByReason": {},
-          "authoritativeProducts": {},
-          "unsupportedProducts": {
-            "schemaVersion": 0,
-            "countsByClass": {}
-          },
-          "idsPointerCoverage": {
-            "schemaVersion": 0,
-            "available": false
-          },
-          "safeApplyClassification": {
-            "authoritativeSliceSafeApply": false,
-            "notApplyReasons": ["ifcopenshell_not_installed"],
-            "note": "IfcOpenShell is not installed; install '.[ifc]' to enable preview."
-          }
-        },
-        "ifcUnsupportedMergeMap_v0": {
-          "schemaVersion": 0,
-          "available": false,
-          "reason": "ifcopenshell_not_installed",
-          "unsupportedIfcProductsByClass": {},
-          "extractionGapsByReason": {},
-          "extractionGapTotal": 0,
-          "mergeConstraints": [
-            "IFC ingest → Document merge / replay for arbitrary IFC entity graphs",
-            "Full IDS fixture exchange matrix beyond authoring-side rules + semantic inspector",
-            "Boolean regeneration from IFC openings vs kernel proxies",
-            "engine.try_apply_kernel_ifc_authoritative_replay_v0 — full populated-document arbitrary IFC merge (v0 is kernel authoritative bundle + preflight only)"
-          ]
-        },
-        "ifcExchangeManifestClosure_v0": {
-          "schemaVersion": 0,
-          "authoritativeProductsAlignmentToken": "unavailable_offline",
-          "unsupportedClassAlignmentToken": "unavailable_offline",
-          "idsPointerCoverageAlignmentToken": "unavailable_offline",
-          "ifcExchangeManifestClosureDigestSha256": "856d4768ae1a4225ad3397e5e7c1e37586fb4d625b0b9eb08d472ffdedf2b54d"
-        }
+        "optionalBackendManifest_v1": null
       }
     }
   },
   "artifacts": {
     "sheetPdf": {
       "artifactKind": "sheet-preview-pdf",
-      "status": "unavailable",
-      "pass": false,
-      "httpStatus": 500,
-      "reason": "sheet-preview-pdf was not returned by the live server."
+      "status": "artifact-returned",
+      "pass": true,
+      "httpStatus": 200,
+      "contentType": "application/pdf",
+      "byteLength": 1679,
+      "sha256": "afcad79df9b0edbf1cb12119ddcf54800497cd96dcc1a6093c212e3278d5ff40",
+      "digestSha256": "afcad79df9b0edbf1cb12119ddcf54800497cd96dcc1a6093c212e3278d5ff40",
+      "contentTypeOk": true,
+      "pdfSignatureOk": true,
+      "nonPlaceholderProof": {
+        "method": "byte-length-and-sha256",
+        "pass": true,
+        "byteLength": 1679,
+        "digestSha256": "afcad79df9b0edbf1cb12119ddcf54800497cd96dcc1a6093c212e3278d5ff40"
+      }
+    },
+    "modelGltf": {
+      "artifactKind": "model-gltf-json",
+      "status": "artifact-returned",
+      "pass": true,
+      "byteLength": 80038,
+      "sha256": "7184746a8868208c4f2348b88c48c8241f6da2f3762b0068d488bff196eb242f",
+      "digestSha256": "7184746a8868208c4f2348b88c48c8241f6da2f3762b0068d488bff196eb242f",
+      "nonPlaceholderProof": {
+        "method": "byte-length-and-sha256",
+        "pass": true,
+        "byteLength": 80038,
+        "digestSha256": "7184746a8868208c4f2348b88c48c8241f6da2f3762b0068d488bff196eb242f"
+      }
+    },
+    "modelGlb": {
+      "artifactKind": "model-glb",
+      "status": "artifact-returned",
+      "pass": true,
+      "byteLength": 73000,
+      "sha256": "faaecd33847a23a88d4bf50e5d189bd7eb046ec3f5e6ed7e10f312ed07c59ec8",
+      "digestSha256": "faaecd33847a23a88d4bf50e5d189bd7eb046ec3f5e6ed7e10f312ed07c59ec8",
+      "nonPlaceholderProof": {
+        "method": "byte-length-and-sha256",
+        "pass": true,
+        "byteLength": 73000,
+        "digestSha256": "faaecd33847a23a88d4bf50e5d189bd7eb046ec3f5e6ed7e10f312ed07c59ec8"
+      }
+    },
+    "modelIfc": {
+      "artifactKind": "model-ifc",
+      "status": "artifact-returned",
+      "pass": true,
+      "byteLength": 35355,
+      "sha256": "8f24ab3d0ca968b5bc7a824a56da193dc980c8fc4044c36239d460a5f003e5c3",
+      "digestSha256": "8f24ab3d0ca968b5bc7a824a56da193dc980c8fc4044c36239d460a5f003e5c3",
+      "artifactHasPhysicalGeometry": true,
+      "optionalBackendManifest_v1": null,
+      "nonPlaceholderProof": {
+        "method": "byte-length-and-sha256",
+        "pass": true,
+        "byteLength": 35355,
+        "digestSha256": "8f24ab3d0ca968b5bc7a824a56da193dc980c8fc4044c36239d460a5f003e5c3"
+      }
     }
+  },
+  "optionalBackendBehavior": {
+    "ifc": "geometry-bearing-artifact-or-manifest"
   }
 }

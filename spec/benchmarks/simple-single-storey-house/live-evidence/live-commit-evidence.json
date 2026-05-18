@@ -13,7 +13,8 @@
     "bundleDigest": "b38f24cf8579a5abd28db02a132c36aea24210e0a49447ce11d58abb863bdf87",
     "commandCount": 28,
     "userId": "m2-u-local-live-target",
-    "parentRevision": 1
+    "parentRevision": 1,
+    "clientOpId": "simple-house-live-commit-b38f24cf8579a5ab"
   },
   "response": {
     "httpStatus": 200,
@@ -58,7 +59,63 @@
       "ssh-wt-exterior",
       "ssh-wt-interior"
     ],
-    "checkpointSnapshotId": "15d89264561661946bdff80195bf12f5b3a6823354fc8ee3f5d0f2227dbdbcbb"
+    "checkpointSnapshotId": "15d89264561661946bdff80195bf12f5b3a6823354fc8ee3f5d0f2227dbdbcbb",
+    "transactionMetadata": {
+      "schemaVersion": "txn-v1.0",
+      "action": "commit",
+      "parentRevision": 1,
+      "revisionBefore": 1,
+      "revisionAfter": 2,
+      "changedIds": [
+        "default-a1-titleblock",
+        "ssh-dim-overall-depth",
+        "ssh-dim-overall-width",
+        "ssh-door-bath",
+        "ssh-door-bedroom",
+        "ssh-door-entry",
+        "ssh-door-single",
+        "ssh-floor-ground",
+        "ssh-ft-slab",
+        "ssh-lvl-ground",
+        "ssh-roof-main",
+        "ssh-room-bedroom",
+        "ssh-room-kitchen",
+        "ssh-room-living",
+        "ssh-rt-gable",
+        "ssh-schedule-openings",
+        "ssh-sheet-a101",
+        "ssh-tag-living",
+        "ssh-view-3d",
+        "ssh-view-ground-plan",
+        "ssh-wall-bath",
+        "ssh-wall-east",
+        "ssh-wall-hall-bedroom",
+        "ssh-wall-north",
+        "ssh-wall-south",
+        "ssh-wall-west",
+        "ssh-window-bedroom",
+        "ssh-window-fixed",
+        "ssh-window-kitchen",
+        "ssh-window-living",
+        "ssh-wt-exterior",
+        "ssh-wt-interior"
+      ],
+      "commandCount": 28,
+      "agentIdentity": {
+        "userId": "m2-u-local-live-target",
+        "submitter": "benchmark-agent"
+      },
+      "idempotency": {
+        "clientOpId": "simple-house-live-commit-b38f24cf8579a5ab",
+        "bundleDigestSha256": "b38f24cf8579a5abd28db02a132c36aea24210e0a49447ce11d58abb863bdf87"
+      },
+      "workflow": {
+        "route": "/api/models/{model_id}/bundles",
+        "entryPoint": "cmd-v3-apply-bundle",
+        "surface": "api-v3",
+        "mode": "commit"
+      }
+    }
   },
   "validation": {
     "status": "live-commit-response",
@@ -610,6 +667,176 @@
       "parentRevision": 1,
       "candidateRevisions": [2, 2, 2, 2],
       "pass": true
+    }
+  },
+  "idempotency": {
+    "pass": true,
+    "status": "client-op-id-and-bundle-digest-replay-dedup",
+    "clientOpIdReplay": {
+      "pass": true,
+      "httpStatus": 200,
+      "idempotentReplay": true,
+      "newRevision": 2,
+      "idempotencyMatch": {
+        "clientOpId": "simple-house-live-commit-b38f24cf8579a5ab",
+        "bundleDigestSha256": "b38f24cf8579a5abd28db02a132c36aea24210e0a49447ce11d58abb863bdf87"
+      }
+    },
+    "bundleDigestReplay": {
+      "pass": true,
+      "httpStatus": 200,
+      "idempotentReplay": true,
+      "newRevision": 2,
+      "idempotencyMatch": {
+        "clientOpId": "simple-house-live-commit-b38f24cf8579a5ab",
+        "bundleDigestSha256": "b38f24cf8579a5abd28db02a132c36aea24210e0a49447ce11d58abb863bdf87"
+      }
+    }
+  },
+  "staleRevisionProtection": {
+    "pass": true,
+    "status": "stale-parent-revision-rejected",
+    "staleParentRevisionRejected": {
+      "pass": true,
+      "httpStatus": 409,
+      "advisoryClasses": ["revision_conflict"],
+      "bodyApplied": false
+    }
+  },
+  "workflowMetadata": {
+    "pass": true,
+    "m3SketchExportImportCoverage": true,
+    "transactionWorkflow": {
+      "route": "/api/models/{model_id}/bundles",
+      "entryPoint": "cmd-v3-apply-bundle",
+      "surface": "api-v3",
+      "mode": "commit"
+    },
+    "assertions": [
+      {
+        "id": "committed-transaction-workflow-route",
+        "pass": true,
+        "actual": "/api/models/{model_id}/bundles",
+        "expected": "/api/models/{model_id}/bundles"
+      },
+      {
+        "id": "committed-transaction-client-op-id",
+        "pass": true,
+        "actual": "simple-house-live-commit-b38f24cf8579a5ab",
+        "expected": "present"
+      },
+      {
+        "id": "m3-workflow-entry-point-fixtures",
+        "pass": true,
+        "actual": ["sketch", "export", "importLike"],
+        "expected": ["sketch", "export", "importLike"]
+      }
+    ],
+    "workflows": {
+      "sketch": {
+        "route": "/api/v3/sketch/phase/accept",
+        "entryPoint": "sketch-phase-accept",
+        "surface": "api-v3",
+        "metadataRequired": ["route", "entryPoint", "surface", "clientOpId"]
+      },
+      "export": {
+        "route": "/api/models/{model_id}/exports",
+        "entryPoint": "documentation-export",
+        "surface": "api-v3",
+        "metadataRequired": ["route", "entryPoint", "surface", "clientOpId"]
+      },
+      "importLike": {
+        "route": "/api/models/{model_id}/bundles",
+        "entryPoint": "cmd-v3-apply-bundle",
+        "surface": "api-v3",
+        "metadataRequired": ["route", "entryPoint", "surface", "bundleDigestSha256"]
+      }
+    }
+  },
+  "transaction": {
+    "idempotency": {
+      "pass": true,
+      "status": "client-op-id-and-bundle-digest-replay-dedup",
+      "clientOpIdReplay": {
+        "pass": true,
+        "httpStatus": 200,
+        "idempotentReplay": true,
+        "newRevision": 2,
+        "idempotencyMatch": {
+          "clientOpId": "simple-house-live-commit-b38f24cf8579a5ab",
+          "bundleDigestSha256": "b38f24cf8579a5abd28db02a132c36aea24210e0a49447ce11d58abb863bdf87"
+        }
+      },
+      "bundleDigestReplay": {
+        "pass": true,
+        "httpStatus": 200,
+        "idempotentReplay": true,
+        "newRevision": 2,
+        "idempotencyMatch": {
+          "clientOpId": "simple-house-live-commit-b38f24cf8579a5ab",
+          "bundleDigestSha256": "b38f24cf8579a5abd28db02a132c36aea24210e0a49447ce11d58abb863bdf87"
+        }
+      }
+    },
+    "staleRevisionProtection": {
+      "pass": true,
+      "status": "stale-parent-revision-rejected",
+      "staleParentRevisionRejected": {
+        "pass": true,
+        "httpStatus": 409,
+        "advisoryClasses": ["revision_conflict"],
+        "bodyApplied": false
+      }
+    },
+    "workflowMetadata": {
+      "pass": true,
+      "m3SketchExportImportCoverage": true,
+      "transactionWorkflow": {
+        "route": "/api/models/{model_id}/bundles",
+        "entryPoint": "cmd-v3-apply-bundle",
+        "surface": "api-v3",
+        "mode": "commit"
+      },
+      "assertions": [
+        {
+          "id": "committed-transaction-workflow-route",
+          "pass": true,
+          "actual": "/api/models/{model_id}/bundles",
+          "expected": "/api/models/{model_id}/bundles"
+        },
+        {
+          "id": "committed-transaction-client-op-id",
+          "pass": true,
+          "actual": "simple-house-live-commit-b38f24cf8579a5ab",
+          "expected": "present"
+        },
+        {
+          "id": "m3-workflow-entry-point-fixtures",
+          "pass": true,
+          "actual": ["sketch", "export", "importLike"],
+          "expected": ["sketch", "export", "importLike"]
+        }
+      ],
+      "workflows": {
+        "sketch": {
+          "route": "/api/v3/sketch/phase/accept",
+          "entryPoint": "sketch-phase-accept",
+          "surface": "api-v3",
+          "metadataRequired": ["route", "entryPoint", "surface", "clientOpId"]
+        },
+        "export": {
+          "route": "/api/models/{model_id}/exports",
+          "entryPoint": "documentation-export",
+          "surface": "api-v3",
+          "metadataRequired": ["route", "entryPoint", "surface", "clientOpId"]
+        },
+        "importLike": {
+          "route": "/api/models/{model_id}/bundles",
+          "entryPoint": "cmd-v3-apply-bundle",
+          "surface": "api-v3",
+          "metadataRequired": ["route", "entryPoint", "surface", "bundleDigestSha256"]
+        }
+      }
     }
   }
 }

@@ -1455,16 +1455,13 @@ semantics, and audit gates, while keeping each lane independently reviewable.
 Wave 2 audit result:
 
 - `pnpm audit:ui-mcp-parity` now emits `spec/generated/m3-wave2-report.md` and
-  reports M3 Wave 2 `Partial`, with `10 / 13` gates passing.
+  reports M3 Wave 2 `Partial`, with `12 / 13` gates passing.
 - `pnpm verify:m3-parity` passes in default reporting mode and keeps M3
   `Partial` unless `BIM_AI_M3_REQUIRE_DONE=1` is set and all generated M3-F
   through M3-I gates pass.
-- Generated facts on 2026-05-18: M3-F is `Done`; M3-G remains `Partial` because
-  Cmd+K, advisor, visual, and export evidence are traceability-only rather than
-  collected pass/fail artifacts; M3-H remains `Partial` because PDF/export
-  artifact depth is not yet clean across PDF, IFC, and glTF/GLB; M3-I remains
-  `Partial` because idempotent replay, stale revision protection, and M3
-  workflow metadata proof are not yet detected in benchmark evidence.
+- Generated facts on 2026-05-18: M3-F, M3-H, and M3-I are `Done`; M3-G remains
+  `Partial` because two-storey UI/Cmd+K evidence is still traceability-only
+  rather than executable or validated replay evidence.
 
 ### Milestone 3 Wave 3 Workstreams
 
@@ -1473,14 +1470,14 @@ blockers. It should turn implemented product surfaces into accepted benchmark
 proof, without weakening the audit gates or counting traceability-only artifacts
 as executable parity.
 
-| Workstream                                                       | Status      | Owner scope                                                                                                                                                   | Tracker items                                      | Done when                                                                                                                                                                                                                   |
-| ---------------------------------------------------------------- | ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| M3-K. Typed vertical-circulation MCP tools                       | Not Started | Backend semantic helpers/descriptors/CLI/tests for stair-between-levels, stair/shaft openings, and railing; avoid benchmark/audit/generated ownership.        | WP-003, WP-008, raw-command promotion P0/P1.       | The two-storey stair workflow no longer needs raw `createStair`, `createSlabOpening`, or `createRailing` bundle commands for MCP/CLI authoring, or blockers are explicitly route-tested with promotion rationale.           |
-| M3-L. Two-storey live advisor, visual, and export evidence       | Not Started | Two-storey benchmark live/stub evidence runner, evidence artifacts, scenario fixture updates, and benchmark tests; avoid backend feature implementation.      | WP-008, two-storey benchmark evidence-set blocker. | Advisor, visual/render, export, and semantic-diff evidence for `two-storey-house-with-stair` are collected or deterministically stubbed from product routes with pass/fail artifacts accepted by the audit.                 |
-| M3-M. Two-storey UI and Cmd+K executable equivalence             | Not Started | Web/UI/Cmd+K traceability or replay harness and tests for the two-storey scenario; avoid backend implementation and benchmark runner internals unless needed. | WP-008, WP-011, Cmd+K bridge.                      | UI/Cmd+K evidence advances beyond traceability-only by producing an executable or validated replay artifact that maps exact user/Cmd+K operations to the two-storey semantic fixture without activator-only overclaiming.   |
-| M3-N. Documentation/export clean artifact closure                | Not Started | Documentation/export artifact generation, manifest quality, evidence tests, and benchmark artifact ingestion; avoid sketch/transaction feature work.          | WP-006, M3-H export-artifacts blocker.             | Audit-accepted evidence proves clean PDF, IFC, and glTF/GLB artifacts or explicit optional-backend manifests, including digests and non-placeholder checks for agent consumption.                                           |
-| M3-O. Idempotency, stale revision, and workflow evidence closure | Not Started | Transaction evidence runner/tests, benchmark artifact updates, workflow metadata assertions, and audit detector fit; avoid sketch/export implementation.      | WP-009, M3-I idempotent-replay blocker.            | Benchmark evidence proves clientOpId and bundle-digest replay dedup, stale revision protection, and M3 workflow metadata for sketch/export/import-like entry points; `pnpm verify:m3-parity` reports the M3-I gate passing. |
-| M3-P. Wave 3 audit, verifier, and tracker finalization           | Not Started | Audit script, generated reports, M3 verifier, tracker Wave 3 result, and package scripts only; consume other lanes but do not create product behavior.        | WP-004, WP-010, WP-012, M3 milestone reporting.    | Generated audit reflects Wave 3 evidence truthfully, M3 remains `Partial` unless all generated gates pass, and the next wave schedule is derived from remaining blockers rather than hand-maintained optimism.              |
+| Workstream                                                       | Status  | Owner scope                                                                                                                                                   | Tracker items                                      | Done when                                                                                                                                                                                                                   |
+| ---------------------------------------------------------------- | ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| M3-K. Typed vertical-circulation MCP tools                       | Done    | Backend semantic helpers/descriptors/CLI/tests for stair-between-levels, stair/shaft openings, and railing; avoid benchmark/audit/generated ownership.        | WP-003, WP-008, raw-command promotion P0/P1.       | The two-storey stair workflow no longer needs raw `createStair`, `createSlabOpening`, or `createRailing` bundle commands for MCP/CLI authoring, or blockers are explicitly route-tested with promotion rationale.           |
+| M3-L. Two-storey live advisor, visual, and export evidence       | Done    | Two-storey benchmark live/stub evidence runner, evidence artifacts, scenario fixture updates, and benchmark tests; avoid backend feature implementation.      | WP-008, two-storey benchmark evidence-set blocker. | Advisor, visual/render, export, and semantic-diff evidence for `two-storey-house-with-stair` are collected or deterministically stubbed from product routes with pass/fail artifacts accepted by the audit.                 |
+| M3-M. Two-storey UI and Cmd+K executable equivalence             | Partial | Web/UI/Cmd+K traceability or replay harness and tests for the two-storey scenario; avoid backend implementation and benchmark runner internals unless needed. | WP-008, WP-011, Cmd+K bridge.                      | UI/Cmd+K evidence advances beyond traceability-only by producing an executable or validated replay artifact that maps exact user/Cmd+K operations to the two-storey semantic fixture without activator-only overclaiming.   |
+| M3-N. Documentation/export clean artifact closure                | Done    | Documentation/export artifact generation, manifest quality, evidence tests, and benchmark artifact ingestion; avoid sketch/transaction feature work.          | WP-006, M3-H export-artifacts blocker.             | Audit-accepted evidence proves clean PDF, IFC, and glTF/GLB artifacts or explicit optional-backend manifests, including digests and non-placeholder checks for agent consumption.                                           |
+| M3-O. Idempotency, stale revision, and workflow evidence closure | Done    | Transaction evidence runner/tests, benchmark artifact updates, workflow metadata assertions, and audit detector fit; avoid sketch/export implementation.      | WP-009, M3-I idempotent-replay blocker.            | Benchmark evidence proves clientOpId and bundle-digest replay dedup, stale revision protection, and M3 workflow metadata for sketch/export/import-like entry points; `pnpm verify:m3-parity` reports the M3-I gate passing. |
+| M3-P. Wave 3 audit, verifier, and tracker finalization           | Done    | Audit script, generated reports, M3 verifier, tracker Wave 3 result, and package scripts only; consume other lanes but do not create product behavior.        | WP-004, WP-010, WP-012, M3 milestone reporting.    | Generated audit reflects Wave 3 evidence truthfully, M3 remains `Partial` unless all generated gates pass, and the next wave schedule is derived from remaining blockers rather than hand-maintained optimism.              |
 
 ### Milestone 3 Wave 3 Scheduling Notes
 
@@ -1498,6 +1495,21 @@ as executable parity.
   It should not weaken stale revision protection to make replay easier.
 - M3-P should run after or degrade gracefully around other Wave 3 lanes, and it
   should be the only lane that updates generated M3 Wave 3 reports.
+
+Wave 3 audit result:
+
+- `pnpm audit:ui-mcp-parity` now emits
+  `spec/generated/m3-wave3-report.md` and reports M3 Wave 3 `Partial`, with
+  `15 / 17` gates passing.
+- `pnpm verify:m3-parity` reports both Wave 2 and Wave 3 generated gates and
+  keeps M3 `Partial` unless all generated M3-F through M3-O workstream gates
+  pass.
+- Generated facts on 2026-05-18: M3-K, M3-L, M3-N, M3-O, and M3-P are `Done`;
+  M3-M remains `Partial` because two-storey UI/Cmd+K equivalence remains
+  traceability-only. Activator-only Cmd+K entries still cannot close semantic
+  parity for the exact two-storey fixture inputs.
+- The generated next-wave schedule is derived from the remaining Wave 3
+  blockers rather than hand-maintained priority notes.
 
 ## Next Work Packages
 

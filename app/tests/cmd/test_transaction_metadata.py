@@ -87,3 +87,55 @@ def test_cmd_v3_commit_transaction_metadata_captures_revision_identity_audit_and
     assert len(metadata["audit"]["agentTraceBundleIds"]) == 1
     assert metadata["commandCount"] == 1
     assert metadata["commandTypes"] == ["createWall"]
+
+
+def test_m3_workflow_transaction_metadata_preserves_entry_point_identity() -> None:
+    doc = Document(revision=1, elements={})  # type: ignore[arg-type]
+    ensure_internal_origin(doc)
+    bundle = CommandBundle.model_validate({
+        "schemaVersion": "cmd-v3.0",
+        "commands": [_CREATE_LEVEL],
+        "assumptions": [_ASSUMPTION],
+        "parentRevision": doc.revision,
+    })
+    result, new_doc = apply_bundle(doc, bundle, "commit", submitter="agent")
+    assert result.applied is True
+    assert new_doc is not None
+
+    workflows = {
+        "sketch": {
+            "route": "/api/v3/sketch/phase/accept",
+            "entryPoint": "sketch-phase-accept",
+            "surface": "api-v3",
+        },
+        "export": {
+            "route": "/api/models/{model_id}/exports",
+            "entryPoint": "documentation-export",
+            "surface": "api-v3",
+        },
+        "importLike": {
+            "route": "/api/models/{model_id}/bundles",
+            "entryPoint": "cmd-v3-apply-bundle",
+            "surface": "api-v3",
+        },
+    }
+
+    for workflow_name, workflow in workflows.items():
+        metadata = build_transaction_metadata(
+            doc_before=doc,
+            new_doc=new_doc,
+            commands=bundle.commands,
+            user_id="agent-1",
+            submitter="agent",
+            parent_revision=bundle.parent_revision,
+            assumptions=list(bundle.assumptions),
+            client_op_id=f"m3-{workflow_name}-op",
+            workflow=workflow,
+        )
+
+        assert metadata["workflow"] == workflow
+        assert metadata["idempotency"]["clientOpId"] == f"m3-{workflow_name}-op"
+        assert len(metadata["idempotency"]["bundleDigestSha256"]) == 64
+        assert metadata["collaborationDelta"]["clientOpId"] == f"m3-{workflow_name}-op"
+        assert metadata["parentRevision"] == 1
+        assert metadata["revisionAfter"] == 2

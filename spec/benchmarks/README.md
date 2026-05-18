@@ -29,7 +29,8 @@ node --test scripts/benchmarks/suite.test.mjs
 ```
 
 The suite currently contains the closed `simple-single-storey-house` fixture and
-the M3-G executable `two-storey-house-with-stair` fixture. The stair scenario has
-an offline MCP/CLI semantic runner and UI/Cmd+K traceability, but stair, slab
-opening, and railing creation are still raw bundle only; advisor, visual, and
-export evidence remain live hooks until collected against a committed target.
+the M3-L `two-storey-house-with-stair` fixture. The stair scenario has an offline
+MCP/CLI semantic runner, advisor/visual/export route evidence, and UI/Cmd+K
+traceability, but stair, slab opening, and railing creation are still raw bundle
+only. UI/Cmd+K remains traceability-only until a browser-authored exact replay is
+available.

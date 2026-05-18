@@ -233,6 +233,87 @@ test('author wall --json generates deterministic createWall payload', async () =
   assert.equal(command.heightMm, 3000);
 });
 
+test('author stair-between-levels --json generates typed createStair payload', async () => {
+  const res = await runCli(
+    [
+      'author',
+      'stair-between-levels',
+      '--base-level',
+      'lvl-0',
+      '--top-level',
+      'lvl-1',
+      '--run',
+      '1000,1000;1000,4200',
+      '--id',
+      'stair-main',
+      '--width',
+      '1100',
+      '--json',
+    ],
+    { BIM_AI_BASE_URL: 'http://127.0.0.1:1', BIM_AI_MODEL_ID: 'model-1' },
+  );
+
+  assert.equal(res.code, 0, res.stderr);
+  const out = JSON.parse(res.stdout);
+  const command = out.body.bundle.commands[0];
+  assert.equal(out.body.bundle.assumptions[0].value, 'author.stair_between_levels');
+  assert.equal(command.type, 'createStair');
+  assert.equal(command.id, 'stair-main');
+  assert.equal(command.baseLevelId, 'lvl-0');
+  assert.equal(command.topLevelId, 'lvl-1');
+  assert.deepEqual(command.runStartMm, { xMm: 1000, yMm: 1000 });
+  assert.deepEqual(command.runEndMm, { xMm: 1000, yMm: 4200 });
+  assert.equal(command.widthMm, 1100);
+});
+
+test('opening shaft-opening --json generates typed createSlabOpening payload', async () => {
+  const res = await runCli(
+    [
+      'opening',
+      'shaft-opening',
+      '--floor',
+      'floor-l1',
+      '--boundary',
+      '1000,1000;2200,1000;2200,2200;1000,2200',
+      '--json',
+    ],
+    { BIM_AI_BASE_URL: 'http://127.0.0.1:1', BIM_AI_MODEL_ID: 'model-1' },
+  );
+
+  assert.equal(res.code, 0, res.stderr);
+  const command = JSON.parse(res.stdout).body.bundle.commands[0];
+  assert.equal(command.type, 'createSlabOpening');
+  assert.equal(command.hostFloorId, 'floor-l1');
+  assert.equal(command.isShaft, true);
+});
+
+test('author railing --json generates typed createRailing payload', async () => {
+  const res = await runCli(
+    [
+      'author',
+      'railing',
+      '--hosted-stair',
+      'stair-main',
+      '--path',
+      '1000,1000;1000,4200',
+      '--baluster-pattern',
+      '{"rule":"regular","spacingMm":120}',
+      '--json',
+    ],
+    { BIM_AI_BASE_URL: 'http://127.0.0.1:1', BIM_AI_MODEL_ID: 'model-1' },
+  );
+
+  assert.equal(res.code, 0, res.stderr);
+  const command = JSON.parse(res.stdout).body.bundle.commands[0];
+  assert.equal(command.type, 'createRailing');
+  assert.equal(command.hostedStairId, 'stair-main');
+  assert.deepEqual(command.pathMm, [
+    { xMm: 1000, yMm: 1000 },
+    { xMm: 1000, yMm: 4200 },
+  ]);
+  assert.deepEqual(command.balusterPattern, { rule: 'regular', spacingMm: 120 });
+});
+
 test('author floor-boundary --json generates createFloor payload', async () => {
   const res = await runCli(
     [

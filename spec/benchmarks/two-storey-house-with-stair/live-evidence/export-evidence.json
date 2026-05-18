@@ -1,0 +1,133 @@
+{
+  "status": "artifact-or-manifest-returned",
+  "pass": true,
+  "manifests": {
+    "gltf": {
+      "artifactKind": "gltf-manifest",
+      "status": "manifest-returned",
+      "pass": true,
+      "summary": {
+        "manifestKind": "gltf",
+        "exportedKindCount": 38,
+        "geometryProof": {
+          "pass": true,
+          "counts": {
+            "wall": 12,
+            "floor": 2,
+            "stair": 1,
+            "railing": 1,
+            "slab_opening": 1,
+            "roof": 1,
+            "door": 6,
+            "window": 8,
+            "room": 6
+          },
+          "missing": []
+        }
+      }
+    },
+    "ifc": {
+      "artifactKind": "ifc-manifest",
+      "status": "manifest-returned",
+      "pass": true,
+      "summary": {
+        "manifestKind": "ifc",
+        "exportedKindCount": 38,
+        "geometryProof": {
+          "pass": true,
+          "counts": {
+            "wall": 12,
+            "floor": 2,
+            "stair": 1,
+            "railing": 1,
+            "slab_opening": 1,
+            "roof": 1,
+            "door": 6,
+            "window": 8,
+            "room": 6
+          },
+          "missing": []
+        }
+      }
+    }
+  },
+  "artifacts": {
+    "sheetPdf": {
+      "artifactKind": "sheet-preview-pdf",
+      "status": "artifact-returned",
+      "pass": true,
+      "contentType": "application/pdf",
+      "byteLength": 1024
+    }
+  },
+  "changedIds": [
+    "tsh-floor-ground",
+    "tsh-floor-upper",
+    "tsh-railing-stair",
+    "tsh-roof-main",
+    "tsh-stair-main",
+    "tsh-wall-g-east",
+    "tsh-wall-g-hall",
+    "tsh-wall-g-north",
+    "tsh-wall-g-service",
+    "tsh-wall-g-south",
+    "tsh-wall-g-west",
+    "tsh-wall-u-bedrooms",
+    "tsh-wall-u-corridor",
+    "tsh-wall-u-east",
+    "tsh-wall-u-north",
+    "tsh-wall-u-south",
+    "tsh-wall-u-west"
+  ],
+  "semanticProof": {
+    "benchmarkId": "two-storey-house-with-stair",
+    "counts": {
+      "levels": 2,
+      "walls": 12,
+      "rooms": 6,
+      "openings": 14,
+      "floors": 2,
+      "roofs": 1,
+      "stairs": 1,
+      "railings": 1,
+      "slab_openings": 1,
+      "views": 4,
+      "sheets": 1,
+      "schedules": 1,
+      "annotations": 3
+    },
+    "ids": [
+      "tsh-floor-ground",
+      "tsh-floor-upper",
+      "tsh-lvl-ground",
+      "tsh-lvl-upper",
+      "tsh-railing-stair",
+      "tsh-roof-main",
+      "tsh-room-g-kitchen",
+      "tsh-room-g-living",
+      "tsh-room-g-service",
+      "tsh-room-u-bath-hall",
+      "tsh-room-u-bedroom-2",
+      "tsh-room-u-primary",
+      "tsh-schedule-vertical-circulation",
+      "tsh-section-stair",
+      "tsh-sheet-a201",
+      "tsh-stair-main",
+      "tsh-view-3d",
+      "tsh-view-ground-plan",
+      "tsh-view-upper-plan",
+      "tsh-wall-g-east",
+      "tsh-wall-g-hall",
+      "tsh-wall-g-north",
+      "tsh-wall-g-service",
+      "tsh-wall-g-south",
+      "tsh-wall-g-west",
+      "tsh-wall-u-bedrooms",
+      "tsh-wall-u-corridor",
+      "tsh-wall-u-east",
+      "tsh-wall-u-north",
+      "tsh-wall-u-south",
+      "tsh-wall-u-west"
+    ]
+  }
+}

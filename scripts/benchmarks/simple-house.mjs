@@ -788,7 +788,15 @@ function summarizeCommandLog(commandLog) {
   };
 }
 
-function normalizeLiveBundleEvidence({ baseUrl, modelId, userId, bundle, response, requestMode }) {
+function normalizeLiveBundleEvidence({
+  baseUrl,
+  modelId,
+  userId,
+  bundle,
+  response,
+  requestMode,
+  clientOpId = null,
+}) {
   const endpointPath = `/api/models/${encodeURIComponent(modelId)}/bundles`;
   const body = response.body ?? {};
   const violations = body.violations ?? body.result?.violations ?? [];
@@ -812,6 +820,7 @@ function normalizeLiveBundleEvidence({ baseUrl, modelId, userId, bundle, respons
       bundleDigest: sha256(bundle),
       commandCount: commandList(bundle).length,
       userId,
+      clientOpId,
       parentRevision: bundle.parentRevision ?? null,
     },
     response: {
@@ -825,6 +834,9 @@ function normalizeLiveBundleEvidence({ baseUrl, modelId, userId, bundle, respons
       newRevision: responseValue(body, ['newRevision']),
       changedIds: extractChangedIds(body),
       checkpointSnapshotId: responseValue(body, ['checkpointSnapshotId']),
+      idempotentReplay: body.idempotentReplay ?? null,
+      idempotencyMatch: body.idempotencyMatch ?? null,
+      transactionMetadata: body.transactionMetadata ?? null,
     },
     validation: {
       status: requestMode === 'commit' ? 'live-commit-response' : 'live-dry-run-response',
@@ -867,10 +879,12 @@ async function runLiveCommit(args, bundle) {
   const liveBundle = withParentRevision(bundle, args.parentRevision);
   const baseUrl = args.baseUrl.replace(/\/$/, '');
   const endpointPath = `/api/models/${encodeURIComponent(args.modelId)}/bundles`;
+  const clientOpId = `simple-house-live-commit-${sha256(liveBundle).slice(0, 16)}`;
   const response = await postJson(`${baseUrl}${endpointPath}`, {
     bundle: liveBundle,
     mode: 'commit',
     userId: args.userId,
+    clientOpId,
     submitter: 'benchmark-agent',
   });
   const evidence = normalizeLiveBundleEvidence({
@@ -880,6 +894,7 @@ async function runLiveCommit(args, bundle) {
     bundle: liveBundle,
     response,
     requestMode: 'commit',
+    clientOpId,
   });
 
   const commandLogUrl = `${baseUrl}/api/models/${encodeURIComponent(args.modelId)}/command-log?limit=5`;
@@ -957,7 +972,17 @@ function artifactEvidence(label, response) {
   const contentTypeOk = label.includes('pdf')
     ? /application\/pdf/i.test(response.contentType ?? '')
     : true;
-  const pass = response.byteLength > 0 && contentTypeOk && pdfSignatureOk !== false;
+  const minByteLength = label.includes('pdf') ? 128 : 1;
+  const nonPlaceholderProof = {
+    method: label.includes('pdf')
+      ? 'pdf-signature-content-type-byte-length-and-sha256'
+      : 'byte-length-and-sha256',
+    pass: response.byteLength >= minByteLength && Boolean(response.sha256),
+    minByteLength,
+    byteLength: response.byteLength,
+    sha256: response.sha256,
+  };
+  const pass = nonPlaceholderProof.pass && contentTypeOk && pdfSignatureOk !== false;
   return {
     artifactKind: label,
     status: pass ? 'artifact-returned' : 'blank-artifact',
@@ -968,6 +993,7 @@ function artifactEvidence(label, response) {
     sha256: response.sha256,
     contentTypeOk,
     pdfSignatureOk,
+    nonPlaceholderProof,
   };
 }
 
@@ -975,13 +1001,20 @@ function manifestEvidence(label, response, contract = null) {
   if (!response?.ok) return unavailableEvidence(label, response);
   const body = response.body ?? {};
   const manifest = manifestProof(label, body, contract);
+  const optionalBackend = manifest.summary?.optionalBackendManifest_v1 ?? null;
+  const status = manifest.pass
+    ? optionalBackend
+      ? 'optional-backend-manifest-returned'
+      : 'manifest-returned'
+    : 'invalid-manifest';
   return {
     artifactKind: label,
-    status: manifest.pass ? 'manifest-returned' : 'invalid-manifest',
+    status,
     pass: manifest.pass,
     httpStatus: response.status,
     digest: sha256(body),
     summary: manifest.summary,
+    optionalBackendManifest_v1: optionalBackend,
     body,
   };
 }
@@ -1189,6 +1222,20 @@ function manifestProof(label, body, contract = null) {
   if (label.includes('ifc')) {
     const countsByIfcKind = body?.exportedIfcKindsInArtifact ?? body?.countsByIfcKind ?? {};
     const exportedKindCount = countObjectTotal(countsByIfcKind);
+    const artifactHasGeometry = body?.artifactHasGeometryEntities === true;
+    const optionalBackendManifest =
+      artifactHasGeometry === false &&
+      exportedKindCount === 0 &&
+      Object.keys(body?.kernelExpectedIfcKinds ?? {}).length > 0
+        ? {
+            backend: 'ifcopenshell',
+            available: false,
+            reason: body?.ifcImportPreview_v0?.reason ?? 'ifc_backend_unavailable_or_not_emitting',
+            stableFallback: body?.ifcEncoding ?? 'empty_ifc_skeleton_v0',
+            overclaimProtection:
+              'artifactHasGeometryEntities=false; this is an explicit optional-backend manifest, not a geometry-bearing IFC artifact.',
+          }
+        : null;
     const geometryProof = contract
       ? firstGeometryProof(
           [
@@ -1201,9 +1248,10 @@ function manifestProof(label, body, contract = null) {
       : { pass: exportedKindCount > 0 || ids.length > 0 };
     return {
       pass: Boolean(
-        (body?.format || body?.schemaVersion || Object.keys(countsByIfcKind).length > 0) &&
-        exportedKindCount > 0 &&
-        geometryProof.pass,
+        optionalBackendManifest ||
+        ((body?.format || body?.schemaVersion || Object.keys(countsByIfcKind).length > 0) &&
+          exportedKindCount > 0 &&
+          geometryProof.pass),
       ),
       summary: {
         manifestKind: 'ifc',
@@ -1211,6 +1259,7 @@ function manifestProof(label, body, contract = null) {
         countsByIfcKind,
         ids,
         geometryProof,
+        optionalBackendManifest_v1: optionalBackendManifest,
       },
     };
   }
@@ -1571,7 +1620,16 @@ async function collectCommittedEvidence(args, expectedSummary, liveCommitEvidenc
   const exportArtifacts = {
     sheetPdf: artifactEvidence('sheet-preview-pdf', sheetPdf),
   };
-  const exportPass = Boolean(exportManifests.gltf.pass || exportManifests.ifc.pass);
+  const exportPass = Boolean(
+    exportManifests.gltf.pass && exportManifests.ifc.pass && exportArtifacts.sheetPdf.pass,
+  );
+  const changedIds = liveCommitEvidence?.response?.changedIds ?? [];
+  const changedModelProof = {
+    pass: semanticSourceChecks.pass,
+    changedIds,
+    counts: semanticSourceChecks.expected?.counts ?? null,
+    source: 'committedSemanticSourceChecks',
+  };
   const exports = {
     status: exportPass
       ? 'artifact-or-manifest-returned'
@@ -1579,6 +1637,15 @@ async function collectCommittedEvidence(args, expectedSummary, liveCommitEvidenc
         ? 'invalid'
         : 'unavailable',
     pass: exportPass,
+    source,
+    semanticSourceChecks,
+    changedIds,
+    changedModelProof,
+    optionalBackendBehavior: {
+      ifc: exportManifests.ifc.optionalBackendManifest_v1
+        ? 'explicit-optional-backend-manifest'
+        : 'geometry-bearing-artifact-or-manifest',
+    },
     manifests: exportManifests,
     artifacts: exportArtifacts,
   };

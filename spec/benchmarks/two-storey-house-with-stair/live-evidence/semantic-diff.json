@@ -1,0 +1,6 @@
+{
+  "schemaVersion": "bim-ai.benchmark.semantic-diff.v1",
+  "benchmarkId": "two-storey-house-with-stair",
+  "ok": true,
+  "diff": []
+}
