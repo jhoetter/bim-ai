@@ -80,6 +80,8 @@ export interface ProjectMenuProps {
   exportLevels?: { id: string; name: string }[];
   /** §12.4.3: trigger DWG export (DXF with AC1015 header, .dwg extension). */
   onExportDwg?: () => void;
+  /** §12.4.3: trigger DGN export (MicroStation DGN seed format). */
+  onExportDgn?: () => void;
   /** Optional project name used as default download filename. */
   projectName?: string;
   /** §1.6.2: open the Project Templates dialog. */
@@ -127,6 +129,7 @@ export function ProjectMenu({
   onExportIfc,
   onExportDxf,
   onExportDwg,
+  onExportDgn,
   exportLevels,
   projectName,
   onOpenProjectTemplates,
@@ -534,6 +537,17 @@ export function ProjectMenu({
             onClick={() => {
               onOpenChange(false);
               onExportDwg();
+            }}
+          />
+        ) : null}
+        {onExportDgn ? (
+          <MenuItem
+            label="Export → DGN (MicroStation)…"
+            icon="externalLink"
+            testId="export-dgn-button"
+            onClick={() => {
+              onOpenChange(false);
+              onExportDgn();
             }}
           />
         ) : null}
