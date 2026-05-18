@@ -2592,6 +2592,23 @@ export function FamilyEditorWorkbench({
         >
           ✂ Opening Cut
         </button>
+        {/* §15.1.3: reference plane */}
+        <button
+          data-testid="family-editor-add-ref-plane-btn"
+          onClick={() =>
+            onSemanticCommand?.({
+              type: 'addFamilyReferencePlane',
+              familyId: familyId,
+              name: `Ref Plane ${refPlanes.length + 1}`,
+              axis: 'x',
+              offsetMm: 0,
+              isReference: true,
+            })
+          }
+          style={{ fontSize: 11, padding: '2px 6px', cursor: 'pointer' }}
+        >
+          + Ref Plane
+        </button>
       </div>
 
       <div className="grid gap-4 md:grid-cols-[260px_1fr]">

@@ -2590,6 +2590,67 @@ export function InspectorPropertiesFor(
         </div>
       );
     }
+    case 'family_reference_plane': {
+      const frp = el as any;
+      return (
+        <div style={{ fontSize: 11, padding: 8, display: 'flex', flexDirection: 'column', gap: 6 }}>
+          <div style={{ fontWeight: 600, marginBottom: 4 }}>Reference Plane</div>
+          <label>
+            Name
+            <input
+              data-testid="inspector-ref-plane-name"
+              type="text"
+              value={frp.name ?? ''}
+              onChange={(e) =>
+                onSemanticCommand?.({
+                  type: 'updateElementProperty',
+                  elementId: frp.id,
+                  key: 'name',
+                  value: e.target.value,
+                })
+              }
+              style={{ marginLeft: 6, fontSize: 11, width: 120 }}
+            />
+          </label>
+          <label>
+            Axis
+            <select
+              data-testid="inspector-ref-plane-axis"
+              value={frp.axis ?? 'x'}
+              onChange={(e) =>
+                onSemanticCommand?.({
+                  type: 'updateElementProperty',
+                  elementId: frp.id,
+                  key: 'axis',
+                  value: e.target.value,
+                })
+              }
+              style={{ marginLeft: 6, fontSize: 11 }}
+            >
+              <option value="x">X (vertical)</option>
+              <option value="z">Z (horizontal)</option>
+            </select>
+          </label>
+          <label>
+            Offset (mm)
+            <input
+              data-testid="inspector-ref-plane-offset"
+              type="number"
+              value={frp.offsetMm ?? 0}
+              onChange={(e) =>
+                onSemanticCommand?.({
+                  type: 'updateElementProperty',
+                  elementId: frp.id,
+                  key: 'offsetMm',
+                  value: Number(e.target.value),
+                })
+              }
+              style={{ marginLeft: 6, fontSize: 11, width: 70 }}
+            />
+          </label>
+        </div>
+      );
+    }
     case 'stair': {
       const { onPropertyChange: stairPropChange } = options ?? {};
       return (
