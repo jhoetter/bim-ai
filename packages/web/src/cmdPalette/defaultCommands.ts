@@ -3203,3 +3203,16 @@ registerCommand({
     ctx.dispatchCommand?.({ type: 'showInteriorElevationHatch' });
   },
 });
+
+// §9.1.3 — Toggle Column Structural/Non-Structural
+registerCommand({
+  id: 'modify.toggle-column-structural',
+  label: 'Toggle Column Structural/Non-Structural',
+  keywords: ['column', 'non-structural', 'architectural', 'decorative', 'pilaster'],
+  category: 'modify',
+  isAvailable: (ctx) => (ctx.selectedElements ?? []).some((e) => e.kind === 'column'),
+  invoke: (ctx) => {
+    const col = (ctx.selectedElements ?? []).find((e) => e.kind === 'column');
+    if (col) ctx.dispatchCommand?.({ type: 'toggleColumnStructural', columnId: col.id });
+  },
+});
