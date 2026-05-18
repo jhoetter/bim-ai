@@ -34,18 +34,21 @@
     "ui": {
       "classification": "validated-replay",
       "status": "validated",
+      "pass": true,
       "artifacts": ["ui-equivalence.json", "ui-validated-replay.json"],
       "claim": "Validated replay steps contain parameter-level UI submissions for family, asset, kit, material, paint, and decal workflows; none are recorded as activator-only."
     },
     "cmdK": {
       "classification": "validated-replay",
       "status": "validated",
+      "pass": true,
       "artifacts": ["ui-cmdk-traceability.json", "ui-validated-replay.json"],
       "claim": "Cmd+K replay entries resolve to concrete tool ids and deterministic payloads for every M4-D authoring surface."
     },
     "mcpCli": {
       "classification": "executable",
       "status": "passed",
+      "pass": true,
       "artifacts": [
         "mcp-cli-command-bundle.json",
         "catalog-evidence.json",
@@ -58,24 +61,28 @@
     "advisor": {
       "classification": "executable",
       "status": "clean",
+      "pass": true,
       "artifacts": ["live-evidence/advisor-validation.json"],
       "claim": "Advisor evidence accepts the authored catalog references, host references, material UV metadata, and decal placement."
     },
     "visual": {
       "classification": "executable",
-      "status": "nonblank",
+      "status": "visual-clean",
+      "pass": true,
       "artifacts": ["live-evidence/visual-evidence.json"],
       "claim": "Server-side visual evidence records nonblank material swatches, asset silhouettes, painted face overlays, and decal raster checks."
     },
     "export": {
       "classification": "executable",
       "status": "manifest-returned",
+      "pass": true,
       "artifacts": ["live-evidence/export-evidence.json"],
       "claim": "Export manifest evidence includes family instances, asset placements, material PBR slots, face overrides, and decals."
     },
     "semanticDiff": {
       "classification": "executable",
       "status": "passed",
+      "pass": true,
       "artifacts": ["live-evidence/semantic-diff.json", "expected-semantics.json"],
       "command": "node --test scripts/benchmarks/families-assets-materials.test.mjs"
     }
