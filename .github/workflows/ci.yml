@@ -33,7 +33,7 @@ jobs:
 
       - run: cd packages/web && pnpm exec playwright install chromium --with-deps
 
-      - run: cd packages/web && pnpm exec playwright test
+      - run: cd packages/web && pnpm run test:e2e:ci
         env:
           CI: true
 

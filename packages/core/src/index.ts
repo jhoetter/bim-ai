@@ -5101,8 +5101,6 @@ export interface FamilySweptBlend {
   materialKey?: string;
 }
 
-export type { FamilySweptBlend };
-
 export type WalkthroughKeyframe = {
   positionMm: { x: number; y: number; z: number };
   targetMm: { x: number; y: number; z: number };
