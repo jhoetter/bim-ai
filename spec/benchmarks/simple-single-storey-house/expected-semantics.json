@@ -1,0 +1,111 @@
+{
+  "schemaVersion": "bim-ai.benchmark.expected-semantics.v1",
+  "benchmarkId": "simple-single-storey-house",
+  "sourceOfIntent": "spec/ui-mcp-parity-tracker.md#same-house-parity-benchmarks",
+  "paths": {
+    "mcpCli": {
+      "status": "fixture-validated",
+      "bundle": "mcp-cli-command-bundle.json"
+    },
+    "ui": {
+      "status": "todo",
+      "todo": "Add an equivalent UI/Cmd+K path and semantic diff against this fixture once M2 UI benchmark automation is in scope."
+    }
+  },
+  "tolerances": {
+    "countDelta": 0,
+    "dimensionMm": 1,
+    "areaM2": 0.05
+  },
+  "expected": {
+    "levels": {
+      "count": 1,
+      "ids": ["ssh-lvl-ground"],
+      "elevationsMm": { "ssh-lvl-ground": 0 }
+    },
+    "walls": {
+      "total": 6,
+      "exterior": 4,
+      "interior": 2,
+      "exteriorWallTypeIds": ["ssh-wt-exterior"],
+      "interiorWallTypeIds": ["ssh-wt-interior"]
+    },
+    "rooms": {
+      "count": 3,
+      "names": ["Bedroom", "Kitchen", "Living / Dining"],
+      "targetAreaM2": {
+        "ssh-room-living": 48,
+        "ssh-room-bedroom": 17.6,
+        "ssh-room-kitchen": 14.4
+      }
+    },
+    "openings": {
+      "doors": 3,
+      "windows": 3,
+      "hosted": 6,
+      "allHaveHost": true,
+      "allHaveFamilyType": true
+    },
+    "floors": {
+      "count": 1,
+      "ids": ["ssh-floor-ground"],
+      "roomBounded": true
+    },
+    "roofs": {
+      "count": 1,
+      "ids": ["ssh-roof-main"],
+      "geometryModes": ["gable"]
+    },
+    "views": {
+      "plan": 1,
+      "threeD": 1,
+      "ids": ["ssh-view-ground-plan", "ssh-view-3d"]
+    },
+    "sheets": {
+      "count": 1,
+      "ids": ["ssh-sheet-a101"],
+      "minPlacedViews": 2
+    },
+    "schedules": {
+      "count": 1,
+      "ids": ["ssh-schedule-openings"],
+      "categories": ["opening"]
+    },
+    "annotations": {
+      "tags": 1,
+      "dimensions": 2
+    }
+  },
+  "evidenceExpectations": {
+    "semanticSummary": true,
+    "semanticDiff": true,
+    "commandSurfaceUsage": {
+      "mustInclude": [
+        "createLevel",
+        "createWallChain",
+        "createFloor",
+        "createRoof",
+        "insertDoorOnWall",
+        "insertWindowOnWall",
+        "createRoomOutline",
+        "saveViewpoint",
+        "CreateSheet",
+        "PlaceViewOnSheet",
+        "create_schedule_view"
+      ],
+      "forbidden": ["restoreElement"]
+    },
+    "advisor": {
+      "status": "placeholder",
+      "todo": "Live benchmark should persist advisor/constructability JSON and fail on new errors."
+    },
+    "screenshots": {
+      "status": "placeholder",
+      "todo": "Live benchmark should render nonblank plan and 3D screenshots for ssh-view-ground-plan and ssh-view-3d."
+    },
+    "exports": {
+      "status": "placeholder",
+      "todo": "Full M2/M3 exit should include IFC and glTF export evidence for this house."
+    }
+  }
+}

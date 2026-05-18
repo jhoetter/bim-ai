@@ -81,6 +81,22 @@ async function fetchJson(method, url, bodyObj) {
   return json;
 }
 
+async function fetchJsonResponse(method, url, bodyObj) {
+  const res = await fetch(url, {
+    method,
+    headers: bodyObj ? { 'content-type': 'application/json' } : undefined,
+    body: bodyObj ? JSON.stringify(bodyObj) : undefined,
+  });
+  const text = await res.text();
+  let json;
+  try {
+    json = JSON.parse(text);
+  } catch {
+    json = { raw: text };
+  }
+  return { ok: res.ok, status: res.status, body: json };
+}
+
 async function fetchOkText(method, url) {
   const res = await fetch(url, {
     method,
@@ -264,6 +280,620 @@ async function cmdLinksList(modelId) {
     }
   }
   console.log(JSON.stringify({ modelId, links: rows }, null, 2));
+}
+
+function flagValue(args, names) {
+  const list = Array.isArray(names) ? names : [names];
+  for (const name of list) {
+    const eq = args.find((arg) => arg.startsWith(`${name}=`));
+    if (eq) return eq.slice(name.length + 1);
+    const idx = args.indexOf(name);
+    if (idx !== -1 && args[idx + 1] && !args[idx + 1].startsWith('--')) return args[idx + 1];
+  }
+  return undefined;
+}
+
+function hasFlag(args, name) {
+  return args.includes(name);
+}
+
+function parseCsv(value) {
+  if (!value) return [];
+  return String(value)
+    .split(',')
+    .map((item) => item.trim())
+    .filter(Boolean);
+}
+
+function parseNumber(value, fallback) {
+  if (value == null || value === '') return fallback;
+  const n = Number(value);
+  if (!Number.isFinite(n)) {
+    console.error(`Invalid number: ${value}`);
+    process.exit(1);
+  }
+  return n;
+}
+
+function parseJsonObjectFlag(value, flagName) {
+  if (!value) return undefined;
+  try {
+    const parsed = JSON.parse(value);
+    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) throw new Error('object');
+    return parsed;
+  } catch {
+    console.error(`${flagName} must be a JSON object.`);
+    process.exit(1);
+  }
+}
+
+function point2FromPair(value) {
+  if (Array.isArray(value)) return { xMm: Number(value[0]), yMm: Number(value[1]) };
+  if (value && typeof value === 'object') {
+    return { xMm: Number(value.xMm ?? value.x), yMm: Number(value.yMm ?? value.y) };
+  }
+  const parts = String(value)
+    .split(',')
+    .map((part) => Number(part.trim()));
+  return { xMm: parts[0], yMm: parts[1] };
+}
+
+function parsePoint2List(value, flagName = '--points') {
+  if (!value) {
+    console.error(`${flagName} required.`);
+    process.exit(1);
+  }
+  let rawPoints;
+  if (String(value).trim().startsWith('[')) {
+    try {
+      rawPoints = JSON.parse(value);
+    } catch {
+      console.error(`${flagName} must be JSON or "x,y;x,y;...".`);
+      process.exit(1);
+    }
+  } else {
+    rawPoints = String(value)
+      .split(';')
+      .map((part) => part.trim())
+      .filter(Boolean);
+  }
+  const points = rawPoints.map(point2FromPair);
+  if (
+    points.length < 2 ||
+    points.some((point) => !Number.isFinite(point.xMm) || !Number.isFinite(point.yMm))
+  ) {
+    console.error(`${flagName} must contain at least two valid x/y mm points.`);
+    process.exit(1);
+  }
+  return points;
+}
+
+function samePoint2(a, b) {
+  return a && b && a.xMm === b.xMm && a.yMm === b.yMm;
+}
+
+function queryGeometrySummary(element) {
+  if (!element || typeof element !== 'object') return null;
+  if (element.kind === 'wall' && element.start && element.end) {
+    return {
+      representation: 'line_extrusion',
+      startMm: [element.start.xMm, element.start.yMm],
+      endMm: [element.end.xMm, element.end.yMm],
+      heightMm: element.heightMm ?? null,
+      thicknessMm: element.thicknessMm ?? null,
+    };
+  }
+  const boundary = element.boundaryMm ?? element.footprintMm ?? element.outlineMm;
+  if (Array.isArray(boundary)) {
+    return {
+      representation: 'plan_boundary',
+      boundaryMm: boundary.map((point) => [point.xMm ?? point[0], point.yMm ?? point[1]]),
+      thicknessMm: element.thicknessMm ?? null,
+    };
+  }
+  if (element.camera) return { representation: 'camera', camera: element.camera };
+  return null;
+}
+
+function bboxForElement(element) {
+  const points = [];
+  if (element?.start) points.push(element.start);
+  if (element?.end) points.push(element.end);
+  for (const key of ['boundaryMm', 'footprintMm', 'outlineMm']) {
+    if (Array.isArray(element?.[key])) points.push(...element[key]);
+  }
+  if (!points.length) return null;
+  const xs = points.map((point) => Number(point.xMm ?? point[0])).filter(Number.isFinite);
+  const ys = points.map((point) => Number(point.yMm ?? point[1])).filter(Number.isFinite);
+  if (!xs.length || !ys.length) return null;
+  const z0 = Number(element.elevationMm ?? element.baseElevationMm ?? 0);
+  const z1 = z0 + Number(element.heightMm ?? element.thicknessMm ?? 0);
+  return [Math.min(...xs), Math.min(...ys), z0, Math.max(...xs), Math.max(...ys), z1];
+}
+
+function bboxIntersects(a, b) {
+  if (!a || !b || a.length !== 6 || b.length !== 6) return false;
+  return (
+    a[0] <= b[3] && a[3] >= b[0] && a[1] <= b[4] && a[4] >= b[1] && a[2] <= b[5] && a[5] >= b[2]
+  );
+}
+
+function bboxContains(a, b) {
+  if (!a || !b || a.length !== 6 || b.length !== 6) return false;
+  return (
+    a[0] <= b[0] && a[1] <= b[1] && a[2] <= b[2] && a[3] >= b[3] && a[4] >= b[4] && a[5] >= b[5]
+  );
+}
+
+function elementMatchesQuery(element, filter) {
+  if (filter.ids?.length && !filter.ids.includes(element.id)) return false;
+  if (filter.kinds?.length && !filter.kinds.includes(element.kind)) return false;
+  if (
+    filter.levelIds?.length &&
+    !filter.levelIds.includes(element.levelId ?? element.referenceLevelId)
+  )
+    return false;
+  if (filter.typeIds?.length) {
+    const ids = [
+      element.typeId,
+      element.wallTypeId,
+      element.floorTypeId,
+      element.roofTypeId,
+      element.familyTypeId,
+    ].filter(Boolean);
+    if (!ids.some((id) => filter.typeIds.includes(id))) return false;
+  }
+  if (filter.createdBy && element.createdBy !== filter.createdBy) return false;
+  if (filter.text) {
+    const text = JSON.stringify([
+      element.id,
+      element.name,
+      element.kind,
+      element.mark ?? '',
+    ]).toLowerCase();
+    if (!text.includes(String(filter.text).toLowerCase())) return false;
+  }
+  if (filter.properties) {
+    for (const [key, expected] of Object.entries(filter.properties)) {
+      if (element[key] !== expected) return false;
+    }
+  }
+  const bbox = bboxForElement(element);
+  if (filter.bboxIntersectsMm && !bboxIntersects(bbox, filter.bboxIntersectsMm)) return false;
+  if (filter.bboxContainsMm && !bboxContains(filter.bboxContainsMm, bbox)) return false;
+  return true;
+}
+
+function projectElementForQuery(element, include) {
+  const row = {
+    id: element.id,
+    kind: element.kind,
+    name: element.name ?? null,
+    levelId: element.levelId ?? element.referenceLevelId ?? null,
+    typeId:
+      element.typeId ??
+      element.wallTypeId ??
+      element.floorTypeId ??
+      element.roofTypeId ??
+      element.familyTypeId ??
+      null,
+    bboxMm: bboxForElement(element),
+  };
+  if (include.includes('geometrySummary')) row.geometrySummary = queryGeometrySummary(element);
+  if (include.includes('hostRefs')) {
+    row.hostRefs = {
+      wallId: element.wallId ?? element.hostWallId ?? null,
+      floorId: element.hostFloorId ?? null,
+      roofId: element.hostRoofId ?? null,
+    };
+  }
+  if (include.includes('scheduleSummary')) {
+    row.scheduleSummary = {
+      mark: element.mark ?? null,
+      familyTypeId: element.familyTypeId ?? null,
+      roomId: element.roomId ?? null,
+    };
+  }
+  if (include.includes('raw')) row.raw = element;
+  return row;
+}
+
+async function cmdQuerySummary(modelId) {
+  await cmdSummary(modelId);
+}
+
+async function cmdQueryElements(modelId, args) {
+  const snap = await fetchJson('GET', `${base}/api/models/${encodeURIComponent(modelId)}/snapshot`);
+  const elements = snap.elements && typeof snap.elements === 'object' ? snap.elements : {};
+  const filter = {
+    ids: parseCsv(flagValue(args, '--ids')),
+    kinds: parseCsv(flagValue(args, ['--kinds', '--kind'])),
+    levelIds: parseCsv(flagValue(args, ['--level-ids', '--level'])),
+    typeIds: parseCsv(flagValue(args, ['--type-ids', '--type'])),
+    createdBy: flagValue(args, '--created-by'),
+    text: flagValue(args, '--text'),
+    properties: parseJsonObjectFlag(flagValue(args, '--properties'), '--properties'),
+  };
+  const bboxIntersectsArg = flagValue(args, '--bbox-intersects');
+  const bboxContainsArg = flagValue(args, '--bbox-contains');
+  if (bboxIntersectsArg) filter.bboxIntersectsMm = parseCsv(bboxIntersectsArg).map(Number);
+  if (bboxContainsArg) filter.bboxContainsMm = parseCsv(bboxContainsArg).map(Number);
+  const include = parseCsv(flagValue(args, '--include') ?? 'geometrySummary,hostRefs');
+  const limit = parseNumber(flagValue(args, '--limit'), 50);
+  const rows = Object.values(elements)
+    .filter((element) => element && typeof element === 'object')
+    .filter((element) => elementMatchesQuery(element, filter))
+    .slice(0, limit)
+    .map((element) => projectElementForQuery(element, include));
+  console.log(
+    JSON.stringify(
+      {
+        ok: true,
+        modelId,
+        revision: snap.revision,
+        data: { elements: rows },
+        warnings: [],
+        nextCursor: null,
+      },
+      null,
+      2,
+    ),
+  );
+}
+
+async function cmdQueryLevels(modelId, args) {
+  const snap = await fetchJson('GET', `${base}/api/models/${encodeURIComponent(modelId)}/snapshot`);
+  const elements = snap.elements && typeof snap.elements === 'object' ? snap.elements : {};
+  const include = parseCsv(flagValue(args, '--include'));
+  const planViews = Object.values(elements).filter((e) => e?.kind === 'plan_view');
+  const levels = Object.values(elements)
+    .filter((e) => e?.kind === 'level')
+    .map((level) => ({
+      id: level.id,
+      name: level.name ?? null,
+      elevationMm: level.elevationMm ?? null,
+      ...(include.includes('planViews')
+        ? { planViewIds: planViews.filter((v) => v.levelId === level.id).map((v) => v.id) }
+        : {}),
+      ...(include.includes('constraints')
+        ? {
+            constraints: {
+              usedByElementCount: Object.values(elements).filter(
+                (e) => e?.levelId === level.id || e?.referenceLevelId === level.id,
+              ).length,
+            },
+          }
+        : {}),
+    }));
+  console.log(
+    JSON.stringify({ ok: true, modelId, revision: snap.revision, data: { levels } }, null, 2),
+  );
+}
+
+async function cmdQueryTypes(modelId, args) {
+  const snap = await fetchJson('GET', `${base}/api/models/${encodeURIComponent(modelId)}/snapshot`);
+  const elements = snap.elements && typeof snap.elements === 'object' ? snap.elements : {};
+  const categories = parseCsv(flagValue(args, ['--categories', '--category']));
+  const kinds = parseCsv(flagValue(args, ['--kinds', '--kind']));
+  const text = flagValue(args, '--text');
+  const types = Object.values(elements)
+    .filter((e) => e && typeof e === 'object')
+    .filter((e) => String(e.kind ?? '').includes('type') || ['material', 'family'].includes(e.kind))
+    .filter(
+      (e) =>
+        !categories.length ||
+        categories.includes(e.category ?? String(e.kind).replace(/_?type$/, '')),
+    )
+    .filter((e) => !kinds.length || kinds.includes(e.kind))
+    .filter((e) => !text || JSON.stringify(e).toLowerCase().includes(String(text).toLowerCase()))
+    .map((e) => ({
+      id: e.id,
+      kind: e.kind,
+      category: e.category ?? String(e.kind).replace(/_?type$/, ''),
+      name: e.name ?? null,
+      parameters: e.parameters ?? {
+        thicknessMm: e.thicknessMm ?? undefined,
+        widthMm: e.widthMm ?? undefined,
+        heightMm: e.heightMm ?? undefined,
+      },
+      materialIds: e.materialIds ?? [],
+    }));
+  console.log(
+    JSON.stringify({ ok: true, modelId, revision: snap.revision, data: { types } }, null, 2),
+  );
+}
+
+async function cmdQueryViews(modelId, args) {
+  const snap = await fetchJson('GET', `${base}/api/models/${encodeURIComponent(modelId)}/snapshot`);
+  const elements = snap.elements && typeof snap.elements === 'object' ? snap.elements : {};
+  const kinds = parseCsv(flagValue(args, ['--kinds', '--kind']));
+  const levelIds = parseCsv(flagValue(args, ['--level-ids', '--level']));
+  const text = flagValue(args, '--text');
+  const viewKinds = new Set([
+    'plan_view',
+    'viewpoint',
+    'saved_view',
+    'section_view',
+    'elevation_view',
+    'sheet',
+    'schedule',
+    'view_template',
+  ]);
+  const views = Object.values(elements)
+    .filter((e) => e && typeof e === 'object' && viewKinds.has(e.kind))
+    .filter((e) => !kinds.length || kinds.includes(e.kind))
+    .filter((e) => !levelIds.length || levelIds.includes(e.levelId))
+    .filter(
+      (e) =>
+        !text ||
+        JSON.stringify([e.id, e.name, e.kind]).toLowerCase().includes(String(text).toLowerCase()),
+    )
+    .map((e) => ({
+      id: e.id,
+      kind: e.kind,
+      name: e.name ?? null,
+      levelId: e.levelId ?? null,
+      scale: e.scale ?? null,
+      raw: e,
+    }));
+  console.log(
+    JSON.stringify({ ok: true, modelId, revision: snap.revision, data: { views } }, null, 2),
+  );
+}
+
+async function cmdQueryHosts(modelId, args) {
+  await cmdQueryElements(modelId, [
+    '--kind',
+    flagValue(args, '--host-kind') ?? 'wall',
+    '--include',
+    'geometrySummary,hostRefs,raw',
+    '--level',
+    flagValue(args, '--level') ?? '',
+  ]);
+}
+
+async function cmdResolveViaBackend(modelId, toolId, routePath, payload) {
+  // M2 backend resolver routes:
+  // POST /api/models/{model_id}/resolve/wall-by-line
+  // POST /api/models/{model_id}/resolve/host-face
+  const endpoint = `/api/models/${encodeURIComponent(modelId)}/resolve/${routePath}`;
+  const url = `${base}${endpoint}`;
+  const res = await fetchJsonResponse('POST', url, payload);
+  if (res.ok) {
+    console.log(JSON.stringify(res.body, null, 2));
+    return;
+  }
+  if (res.status === 404 || res.status === 405) {
+    console.error(
+      JSON.stringify(
+        {
+          ok: false,
+          code: 'backend_route_missing',
+          toolId,
+          endpoint: `POST /api/models/{model_id}/resolve/${routePath}`,
+          status: res.status,
+          message: 'Backend resolver route is not available yet; CLI command shape is ready.',
+        },
+        null,
+        2,
+      ),
+    );
+    process.exit(2);
+  }
+  console.error(JSON.stringify({ status: res.status, body: res.body }, null, 2));
+  process.exit(1);
+}
+
+function buildGeneratedBundle({ toolId, commands, parentRevision, assumptions = [] }) {
+  const bundle = {
+    schemaVersion: 'cmd-v3.0',
+    commands,
+    assumptions: [
+      {
+        key: 'ui-mcp-parity-cli-tool',
+        value: toolId,
+        confidence: 1,
+        source: '@bim-ai/cli',
+      },
+      ...assumptions,
+    ],
+  };
+  if (Number.isFinite(parentRevision)) bundle.parentRevision = parentRevision;
+  return bundle;
+}
+
+async function runGeneratedBundle(modelId, userId, bundle, mode, jsonOnly) {
+  const endpoint = `/api/models/${encodeURIComponent(modelId)}/bundles`;
+  const body = { bundle, mode, userId };
+  if (jsonOnly) {
+    console.log(JSON.stringify({ ok: true, endpoint: `POST ${endpoint}`, body }, null, 2));
+    return;
+  }
+  const res = await fetchJsonResponse('POST', `${base}${endpoint}`, body);
+  console.log(JSON.stringify(res.body, null, 2));
+  if (!res.ok) process.exit(res.status === 409 ? 2 : 1);
+}
+
+function generatedModeFromArgs(args) {
+  if (hasFlag(args, '--commit') && hasFlag(args, '--dry-run')) {
+    console.error('Use only one of --dry-run or --commit.');
+    process.exit(1);
+  }
+  return hasFlag(args, '--commit') ? 'commit' : 'dry_run';
+}
+
+function authorOptions(args) {
+  return {
+    mode: generatedModeFromArgs(args),
+    jsonOnly: hasFlag(args, '--json'),
+    parentRevision: parseNumber(flagValue(args, ['--parent-revision', '--base']), undefined),
+  };
+}
+
+async function cmdAuthor(modelId, userId, sub, args) {
+  const opts = authorOptions(args);
+  if (sub === 'wall-chain') {
+    const levelId = flagValue(args, '--level');
+    const points = parsePoint2List(flagValue(args, ['--points', '--boundary']));
+    if (!levelId) {
+      console.error('author wall-chain requires --level <id>.');
+      process.exit(1);
+    }
+    const closed = hasFlag(args, '--closed');
+    const chain =
+      closed && !samePoint2(points[0], points[points.length - 1]) ? [...points, points[0]] : points;
+    const heightMm = parseNumber(flagValue(args, '--height'), 2800);
+    const thicknessMm = parseNumber(flagValue(args, '--thickness'), 200);
+    const idPrefix = flagValue(args, '--id-prefix');
+    const segments = [];
+    for (let i = 0; i < chain.length - 1; i++) {
+      segments.push({
+        ...(idPrefix ? { id: `${idPrefix}-${i + 1}` } : {}),
+        start: chain[i],
+        end: chain[i + 1],
+        thicknessMm,
+        heightMm,
+      });
+    }
+    const command = {
+      type: 'createWallChain',
+      levelId,
+      namePrefix: flagValue(args, '--name-prefix') ?? 'Wall',
+      segments,
+    };
+    const wallTypeId = flagValue(args, ['--wall-type', '--type']);
+    if (wallTypeId) command.wallTypeId = wallTypeId;
+    const bundle = buildGeneratedBundle({
+      toolId: 'author.wall_chain',
+      commands: [command],
+      parentRevision: opts.parentRevision,
+    });
+    await runGeneratedBundle(modelId, userId, bundle, opts.mode, opts.jsonOnly);
+    return;
+  }
+  if (sub === 'floor-boundary') {
+    const levelId = flagValue(args, '--level');
+    const boundaryMm = parsePoint2List(flagValue(args, ['--boundary', '--points']), '--boundary');
+    if (!levelId) {
+      console.error('author floor-boundary requires --level <id>.');
+      process.exit(1);
+    }
+    const command = {
+      type: 'createFloor',
+      levelId,
+      boundaryMm,
+      name: flagValue(args, '--name') ?? 'Floor',
+      thicknessMm: parseNumber(flagValue(args, '--thickness'), 220),
+    };
+    const id = flagValue(args, '--id');
+    const floorTypeId = flagValue(args, ['--floor-type', '--type']);
+    if (id) command.id = id;
+    if (floorTypeId) command.floorTypeId = floorTypeId;
+    const bundle = buildGeneratedBundle({
+      toolId: 'author.floor_from_boundary',
+      commands: [command],
+      parentRevision: opts.parentRevision,
+    });
+    await runGeneratedBundle(modelId, userId, bundle, opts.mode, opts.jsonOnly);
+    return;
+  }
+  if (sub === 'opening') {
+    await cmdOpening(modelId, userId, flagValue(args, '--kind') ?? 'wall-opening', args);
+    return;
+  }
+  console.error(
+    `Unknown author subcommand: ${sub ?? '(none)'}. Use wall-chain | floor-boundary | opening.`,
+  );
+  process.exit(1);
+}
+
+async function cmdOpening(modelId, userId, sub, args) {
+  const opts = authorOptions(args);
+  let command;
+  let toolId;
+  if (sub === 'door-on-wall') {
+    const wallId = flagValue(args, ['--wall', '--host-wall']);
+    if (!wallId) {
+      console.error('opening door-on-wall requires --wall <id>.');
+      process.exit(1);
+    }
+    command = {
+      type: 'insertDoorOnWall',
+      wallId,
+      alongT: parseNumber(flagValue(args, '--along-t'), 0.5),
+      widthMm: parseNumber(flagValue(args, '--width'), 900),
+      name: flagValue(args, '--name') ?? 'Door',
+    };
+    const id = flagValue(args, '--id');
+    const familyTypeId = flagValue(args, ['--family-type', '--type']);
+    if (id) command.id = id;
+    if (familyTypeId) command.familyTypeId = familyTypeId;
+    toolId = 'opening.door_on_wall';
+  } else if (sub === 'window-on-wall') {
+    const wallId = flagValue(args, ['--wall', '--host-wall']);
+    if (!wallId) {
+      console.error('opening window-on-wall requires --wall <id>.');
+      process.exit(1);
+    }
+    command = {
+      type: 'insertWindowOnWall',
+      wallId,
+      alongT: parseNumber(flagValue(args, '--along-t'), 0.5),
+      widthMm: parseNumber(flagValue(args, '--width'), 1200),
+      sillHeightMm: parseNumber(flagValue(args, '--sill-height'), 900),
+      heightMm: parseNumber(flagValue(args, '--height'), 1500),
+      name: flagValue(args, '--name') ?? 'Window',
+    };
+    const id = flagValue(args, '--id');
+    const familyTypeId = flagValue(args, ['--family-type', '--type']);
+    if (id) command.id = id;
+    if (familyTypeId) command.familyTypeId = familyTypeId;
+    toolId = 'opening.window_on_wall';
+  } else if (sub === 'wall-opening') {
+    const hostWallId = flagValue(args, ['--wall', '--host-wall']);
+    if (!hostWallId) {
+      console.error('opening wall-opening requires --wall <id>.');
+      process.exit(1);
+    }
+    command = {
+      type: 'createWallOpening',
+      hostWallId,
+      alongTStart: parseNumber(flagValue(args, '--along-t-start'), 0.4),
+      alongTEnd: parseNumber(flagValue(args, '--along-t-end'), 0.6),
+      sillHeightMm: parseNumber(flagValue(args, '--sill-height'), 0),
+      headHeightMm: parseNumber(flagValue(args, '--head-height'), 2100),
+      name: flagValue(args, '--name') ?? 'Wall opening',
+    };
+    const id = flagValue(args, '--id');
+    if (id) command.id = id;
+    toolId = 'opening.wall_opening';
+  } else if (sub === 'roof-opening') {
+    const hostRoofId = flagValue(args, ['--roof', '--host-roof']);
+    if (!hostRoofId) {
+      console.error('opening roof-opening requires --roof <id>.');
+      process.exit(1);
+    }
+    command = {
+      type: 'createRoofOpening',
+      hostRoofId,
+      boundaryMm: parsePoint2List(flagValue(args, ['--boundary', '--points']), '--boundary'),
+      name: flagValue(args, '--name') ?? 'Roof opening',
+    };
+    const id = flagValue(args, '--id');
+    if (id) command.id = id;
+    toolId = 'opening.roof_opening';
+  } else {
+    console.error(
+      `Unknown opening subcommand: ${sub ?? '(none)'}. Use door-on-wall | window-on-wall | wall-opening | roof-opening.`,
+    );
+    process.exit(1);
+  }
+  const bundle = buildGeneratedBundle({
+    toolId,
+    commands: [command],
+    parentRevision: opts.parentRevision,
+  });
+  await runGeneratedBundle(modelId, userId, bundle, opts.mode, opts.jsonOnly);
 }
 
 async function postCommand(modelId, userId, command) {
@@ -1708,6 +2338,22 @@ Commands:
                                        visibility ∈ host_view|linked_view (default host_view).
   unlink <link_id>                    FED-01: delete the link_model with id <link_id>.
   links                               FED-01: list every link_model in BIM_AI_MODEL_ID with pin/drift status.
+  query summary                       MCP-M2-C: GET model summary.
+  query elements [--kind wall] [--level <id>] [--include geometrySummary,hostRefs,raw]
+                                      MCP-M2-C: snapshot-backed element discovery.
+  query levels|types|views            MCP-M2-C: snapshot-backed level/type/view discovery.
+  query hosts [--host-kind wall] [--level <id>]
+                                      MCP-M2-C: host candidate discovery; local mirror until API v3 query routes land.
+  resolve wall --line "x,y;x,y" [--level <id>] [--tolerance <mm>]
+                                      MCP-M2-C: calls POST /api/models/:id/resolve/wall-by-line.
+  resolve host-face --point x,y,z [--for-kind door] [--level <id>]
+                                      MCP-M2-C: calls POST /api/models/:id/resolve/host-face.
+  author wall-chain --level <id> --points "x,y;x,y;..." [--closed] [--dry-run|--commit|--json]
+                                      MCP-M2-C: generate createWallChain cmd-v3 bundle.
+  author floor-boundary --level <id> --boundary "x,y;x,y;..." [--dry-run|--commit|--json]
+                                      MCP-M2-C: generate createFloor cmd-v3 bundle.
+  opening door-on-wall|window-on-wall|wall-opening|roof-opening ...
+                                      MCP-M2-C: generate hosted/opening cmd-v3 bundles.
   tokens encode                       TKN-V3-01: encode current kernel state → TokenSequence (stdout JSON)
   tokens decode [file|-]              TKN-V3-01: decode TokenSequence → commands (reads JSON from file or stdin)
   tokens diff --a <path> --b <path>   TKN-V3-01: structural diff between two TokenSequence JSON files
@@ -2154,6 +2800,94 @@ async function main() {
         ? rest[rest.indexOf('--severity') + 1]
         : (rest.find((a) => a.startsWith('--severity='))?.split('=')[1] ?? null);
       await cmdAdvisor(modelId, { output, severity });
+      return;
+    }
+
+    if (cmd === 'query') {
+      const sub = argv[1];
+      const rest = argv.slice(2);
+      if (sub === 'summary') {
+        await cmdQuerySummary(modelId);
+        return;
+      }
+      if (sub === 'elements') {
+        await cmdQueryElements(modelId, rest);
+        return;
+      }
+      if (sub === 'levels') {
+        await cmdQueryLevels(modelId, rest);
+        return;
+      }
+      if (sub === 'types') {
+        await cmdQueryTypes(modelId, rest);
+        return;
+      }
+      if (sub === 'views') {
+        await cmdQueryViews(modelId, rest);
+        return;
+      }
+      if (sub === 'hosts') {
+        await cmdQueryHosts(modelId, rest);
+        return;
+      }
+      console.error(
+        `Unknown query subcommand: ${sub ?? '(none)'}. Use summary | elements | levels | types | views | hosts.`,
+      );
+      process.exit(1);
+    }
+
+    if (cmd === 'resolve') {
+      const sub = argv[1];
+      const rest = argv.slice(2);
+      if (sub === 'wall') {
+        const line = parsePoint2List(flagValue(rest, '--line'), '--line');
+        if (line.length !== 2) {
+          console.error('resolve wall --line must contain exactly two points.');
+          process.exit(1);
+        }
+        const payload = {
+          modelId,
+          levelId: flagValue(rest, '--level') ?? null,
+          lineMm: line.map((point) => [point.xMm, point.yMm]),
+          toleranceMm: parseNumber(flagValue(rest, '--tolerance'), 100),
+        };
+        const prefer = flagValue(rest, '--prefer-nearest');
+        if (prefer) {
+          const point = parsePosTriple(prefer);
+          payload.preferNearestToMm = [point.xMm, point.yMm, point.zMm];
+        }
+        await cmdResolveViaBackend(modelId, 'resolve.wall_by_line', 'wall-by-line', payload);
+        return;
+      }
+      if (sub === 'host-face') {
+        const point = parsePosTriple(flagValue(rest, '--point'));
+        const payload = {
+          modelId,
+          forKind: flagValue(rest, '--for-kind') ?? 'door',
+          pointMm: [point.xMm, point.yMm, point.zMm],
+          hostKinds: parseCsv(flagValue(rest, '--host-kinds') ?? 'wall'),
+          levelId: flagValue(rest, '--level') ?? null,
+          maxDistanceMm: parseNumber(flagValue(rest, '--max-distance'), 500),
+        };
+        const normal = flagValue(rest, '--normal');
+        if (normal) {
+          const n = parsePosTriple(normal);
+          payload.normalHint = [n.xMm, n.yMm, n.zMm];
+        }
+        await cmdResolveViaBackend(modelId, 'resolve.host_face', 'host-face', payload);
+        return;
+      }
+      console.error(`Unknown resolve subcommand: ${sub ?? '(none)'}. Use wall | host-face.`);
+      process.exit(1);
+    }
+
+    if (cmd === 'author') {
+      await cmdAuthor(modelId, userId, argv[1], argv.slice(2));
+      return;
+    }
+
+    if (cmd === 'opening') {
+      await cmdOpening(modelId, userId, argv[1], argv.slice(2));
       return;
     }
 

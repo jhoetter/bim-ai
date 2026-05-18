@@ -11,6 +11,7 @@ logger = logging.getLogger(__name__)
 
 from fastapi import (
     APIRouter,
+    Body,
     Depends,
     Form,
     HTTPException,
@@ -20,7 +21,7 @@ from fastapi import (
     WebSocket,
     WebSocketDisconnect,
 )
-from fastapi.responses import PlainTextResponse
+from fastapi.responses import JSONResponse, PlainTextResponse
 from pydantic import BaseModel, ConfigDict, Field, TypeAdapter
 from sqlalchemy import desc, select
 from sqlalchemy.exc import IntegrityError
@@ -111,6 +112,23 @@ from bim_ai.plan_projection_wire import (
     section_cut_projection_wire,
 )
 from bim_ai.prd_blocking_advisor_matrix import build_prd_blocking_advisor_matrix
+from bim_ai.query_resolve import (
+    model_summary_resource,
+    query_elements,
+    query_enclosed_loops,
+    query_hosts,
+    query_levels,
+    query_types,
+    query_views,
+    resolve_active_or_default_level,
+    resolve_default_plan_view,
+    resolve_family_type,
+    resolve_host_face,
+    resolve_loop_for_boundary,
+    resolve_room_boundary,
+    resolve_wall_by_line,
+    success_envelope,
+)
 from bim_ai.room_color_scheme_override_evidence import (
     build_room_color_scheme_override_evidence_v1,
     roomColourSchemeLegendEvidence_v1,
@@ -1144,6 +1162,220 @@ async def architecture_lens_query(
         raise HTTPException(status_code=404, detail="Model not found")
     doc = Document.model_validate(row.document)
     return build_architecture_lens_query(doc)
+
+
+# ---------------------------------------------------------------------------
+# M2-A Query/Resolve read-only routes
+# ---------------------------------------------------------------------------
+
+
+def _query_resolve_response(payload: dict[str, Any]) -> dict[str, Any] | JSONResponse:
+    if payload.get("ok") is not False:
+        return payload
+    status = int(payload.pop("status", 400))
+    return JSONResponse(status_code=status, content=payload)
+
+
+async def _load_query_resolve_doc(
+    model_id: UUID,
+    session: AsyncSession,
+) -> tuple[str, Document] | JSONResponse:
+    row = await load_model_row(session, model_id)
+    if row is None:
+        return JSONResponse(
+            status_code=404,
+            content={
+                "ok": False,
+                "error": {
+                    "code": "model_not_found",
+                    "message": "Model not found",
+                    "retryable": False,
+                    "details": {},
+                },
+            },
+        )
+    return str(model_id), Document.model_validate(row.document)
+
+
+@api_router.get("/models/{model_id}/query/summary")
+async def query_model_summary_route(
+    model_id: UUID,
+    session: AsyncSession = Depends(get_session),
+) -> Any:
+    loaded = await _load_query_resolve_doc(model_id, session)
+    if isinstance(loaded, JSONResponse):
+        return loaded
+    mid, doc = loaded
+    return success_envelope(mid, doc, model_summary_resource(mid, doc))
+
+
+@api_router.post("/models/{model_id}/query/elements")
+async def query_elements_route(
+    model_id: UUID,
+    body: dict[str, Any] = Body(default_factory=dict),
+    session: AsyncSession = Depends(get_session),
+) -> Any:
+    loaded = await _load_query_resolve_doc(model_id, session)
+    if isinstance(loaded, JSONResponse):
+        return loaded
+    mid, doc = loaded
+    return _query_resolve_response(query_elements(mid, doc, body, include=body.get("include")))
+
+
+@api_router.post("/models/{model_id}/query/levels")
+async def query_levels_route(
+    model_id: UUID,
+    body: dict[str, Any] = Body(default_factory=dict),
+    session: AsyncSession = Depends(get_session),
+) -> Any:
+    loaded = await _load_query_resolve_doc(model_id, session)
+    if isinstance(loaded, JSONResponse):
+        return loaded
+    mid, doc = loaded
+    return _query_resolve_response(query_levels(mid, doc, include=body.get("include")))
+
+
+@api_router.post("/models/{model_id}/query/types")
+async def query_types_route(
+    model_id: UUID,
+    body: dict[str, Any] = Body(default_factory=dict),
+    session: AsyncSession = Depends(get_session),
+) -> Any:
+    loaded = await _load_query_resolve_doc(model_id, session)
+    if isinstance(loaded, JSONResponse):
+        return loaded
+    mid, doc = loaded
+    return _query_resolve_response(query_types(mid, doc, body, include=body.get("include")))
+
+
+@api_router.post("/models/{model_id}/query/views")
+async def query_views_route(
+    model_id: UUID,
+    body: dict[str, Any] = Body(default_factory=dict),
+    session: AsyncSession = Depends(get_session),
+) -> Any:
+    loaded = await _load_query_resolve_doc(model_id, session)
+    if isinstance(loaded, JSONResponse):
+        return loaded
+    mid, doc = loaded
+    return _query_resolve_response(query_views(mid, doc, body, include=body.get("include")))
+
+
+@api_router.post("/models/{model_id}/query/hosts")
+async def query_hosts_route(
+    model_id: UUID,
+    body: dict[str, Any] = Body(default_factory=dict),
+    session: AsyncSession = Depends(get_session),
+) -> Any:
+    loaded = await _load_query_resolve_doc(model_id, session)
+    if isinstance(loaded, JSONResponse):
+        return loaded
+    mid, doc = loaded
+    return _query_resolve_response(query_hosts(mid, doc, body))
+
+
+@api_router.post("/models/{model_id}/query/enclosed-loops")
+async def query_enclosed_loops_route(
+    model_id: UUID,
+    body: dict[str, Any] = Body(default_factory=dict),
+    session: AsyncSession = Depends(get_session),
+) -> Any:
+    loaded = await _load_query_resolve_doc(model_id, session)
+    if isinstance(loaded, JSONResponse):
+        return loaded
+    mid, doc = loaded
+    return _query_resolve_response(query_enclosed_loops(mid, doc, body))
+
+
+@api_router.post("/models/{model_id}/resolve/active-or-default-level")
+async def resolve_active_or_default_level_route(
+    model_id: UUID,
+    body: dict[str, Any] = Body(default_factory=dict),
+    session: AsyncSession = Depends(get_session),
+) -> Any:
+    loaded = await _load_query_resolve_doc(model_id, session)
+    if isinstance(loaded, JSONResponse):
+        return loaded
+    mid, doc = loaded
+    return _query_resolve_response(resolve_active_or_default_level(mid, doc, body))
+
+
+@api_router.post("/models/{model_id}/resolve/default-plan-view")
+async def resolve_default_plan_view_route(
+    model_id: UUID,
+    body: dict[str, Any] = Body(default_factory=dict),
+    session: AsyncSession = Depends(get_session),
+) -> Any:
+    loaded = await _load_query_resolve_doc(model_id, session)
+    if isinstance(loaded, JSONResponse):
+        return loaded
+    mid, doc = loaded
+    return _query_resolve_response(resolve_default_plan_view(mid, doc, body))
+
+
+@api_router.post("/models/{model_id}/resolve/wall-by-line")
+async def resolve_wall_by_line_route(
+    model_id: UUID,
+    body: dict[str, Any] = Body(default_factory=dict),
+    session: AsyncSession = Depends(get_session),
+) -> Any:
+    loaded = await _load_query_resolve_doc(model_id, session)
+    if isinstance(loaded, JSONResponse):
+        return loaded
+    mid, doc = loaded
+    return _query_resolve_response(resolve_wall_by_line(mid, doc, body))
+
+
+@api_router.post("/models/{model_id}/resolve/host-face")
+async def resolve_host_face_route(
+    model_id: UUID,
+    body: dict[str, Any] = Body(default_factory=dict),
+    session: AsyncSession = Depends(get_session),
+) -> Any:
+    loaded = await _load_query_resolve_doc(model_id, session)
+    if isinstance(loaded, JSONResponse):
+        return loaded
+    mid, doc = loaded
+    return _query_resolve_response(resolve_host_face(mid, doc, body))
+
+
+@api_router.post("/models/{model_id}/resolve/family-type")
+async def resolve_family_type_route(
+    model_id: UUID,
+    body: dict[str, Any] = Body(default_factory=dict),
+    session: AsyncSession = Depends(get_session),
+) -> Any:
+    loaded = await _load_query_resolve_doc(model_id, session)
+    if isinstance(loaded, JSONResponse):
+        return loaded
+    mid, doc = loaded
+    return _query_resolve_response(resolve_family_type(mid, doc, body))
+
+
+@api_router.post("/models/{model_id}/resolve/room-boundary")
+async def resolve_room_boundary_route(
+    model_id: UUID,
+    body: dict[str, Any] = Body(default_factory=dict),
+    session: AsyncSession = Depends(get_session),
+) -> Any:
+    loaded = await _load_query_resolve_doc(model_id, session)
+    if isinstance(loaded, JSONResponse):
+        return loaded
+    mid, doc = loaded
+    return _query_resolve_response(resolve_room_boundary(mid, doc, body))
+
+
+@api_router.post("/models/{model_id}/resolve/loop-for-boundary")
+async def resolve_loop_for_boundary_route(
+    model_id: UUID,
+    body: dict[str, Any] = Body(default_factory=dict),
+    session: AsyncSession = Depends(get_session),
+) -> Any:
+    loaded = await _load_query_resolve_doc(model_id, session)
+    if isinstance(loaded, JSONResponse):
+        return loaded
+    mid, doc = loaded
+    return _query_resolve_response(resolve_loop_for_boundary(mid, doc, body))
 
 
 # ---------------------------------------------------------------------------

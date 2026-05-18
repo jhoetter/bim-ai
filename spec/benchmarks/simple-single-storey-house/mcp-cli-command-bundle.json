@@ -1,0 +1,359 @@
+{
+  "schemaVersion": "cmd-v3.0",
+  "parentRevision": null,
+  "targetOptionId": null,
+  "meta": {
+    "benchmarkId": "simple-single-storey-house",
+    "path": "mcp-cli",
+    "generatedBy": "M2-D deterministic fixture",
+    "sourceOfIntent": "spec/ui-mcp-parity-tracker.md#same-house-parity-benchmarks"
+  },
+  "assumptions": [
+    {
+      "key": "m2-d-fixture-mode",
+      "value": "Deterministic command bundle and semantic expectations; live server execution is a follow-up gate.",
+      "confidence": 1,
+      "source": "Milestone 2 Wave 1 M2-D"
+    }
+  ],
+  "commands": [
+    {
+      "type": "createLevel",
+      "id": "ssh-lvl-ground",
+      "name": "Ground Floor",
+      "elevationMm": 0,
+      "alsoCreatePlanView": true,
+      "planViewId": "ssh-view-ground-plan"
+    },
+    {
+      "type": "upsertWallType",
+      "id": "ssh-wt-exterior",
+      "name": "Benchmark exterior wall",
+      "layers": [
+        { "thicknessMm": 110, "function": "finish", "materialKey": "brick_light" },
+        { "thicknessMm": 140, "function": "structure", "materialKey": "timber_frame" },
+        { "thicknessMm": 50, "function": "finish", "materialKey": "gypsum_board" }
+      ],
+      "basisLine": "center"
+    },
+    {
+      "type": "upsertWallType",
+      "id": "ssh-wt-interior",
+      "name": "Benchmark interior partition",
+      "layers": [{ "thicknessMm": 120, "function": "structure", "materialKey": "gypsum_board" }],
+      "basisLine": "center"
+    },
+    {
+      "type": "upsertFloorType",
+      "id": "ssh-ft-slab",
+      "name": "Benchmark ground slab",
+      "layers": [
+        { "thicknessMm": 180, "function": "structure", "materialKey": "concrete_smooth" },
+        { "thicknessMm": 40, "function": "finish", "materialKey": "oak_floor" }
+      ]
+    },
+    {
+      "type": "upsertRoofType",
+      "id": "ssh-rt-gable",
+      "name": "Benchmark simple gable roof",
+      "layers": [
+        { "thicknessMm": 180, "function": "structure", "materialKey": "timber_roof" },
+        { "thicknessMm": 30, "function": "finish", "materialKey": "standing_seam_grey" }
+      ]
+    },
+    {
+      "type": "upsertFamilyType",
+      "id": "ssh-door-single",
+      "name": "Benchmark single exterior/interior door",
+      "familyId": "builtin-door-single",
+      "discipline": "door",
+      "parameters": { "widthMm": 900, "heightMm": 2100 }
+    },
+    {
+      "type": "upsertFamilyType",
+      "id": "ssh-window-fixed",
+      "name": "Benchmark fixed window",
+      "familyId": "builtin-window-fixed",
+      "discipline": "window",
+      "parameters": { "widthMm": 1200, "heightMm": 1400, "sillHeightMm": 900 }
+    },
+    {
+      "type": "createFloor",
+      "id": "ssh-floor-ground",
+      "name": "Ground floor slab",
+      "levelId": "ssh-lvl-ground",
+      "boundaryMm": [
+        { "xMm": 0, "yMm": 0 },
+        { "xMm": 10000, "yMm": 0 },
+        { "xMm": 10000, "yMm": 8000 },
+        { "xMm": 0, "yMm": 8000 }
+      ],
+      "thicknessMm": 220,
+      "structureThicknessMm": 180,
+      "finishThicknessMm": 40,
+      "floorTypeId": "ssh-ft-slab",
+      "roomBounded": true
+    },
+    {
+      "type": "createWallChain",
+      "levelId": "ssh-lvl-ground",
+      "namePrefix": "Exterior wall",
+      "wallTypeId": "ssh-wt-exterior",
+      "segments": [
+        {
+          "id": "ssh-wall-south",
+          "start": { "xMm": 0, "yMm": 0 },
+          "end": { "xMm": 10000, "yMm": 0 },
+          "thicknessMm": 300,
+          "heightMm": 3000
+        },
+        {
+          "id": "ssh-wall-east",
+          "start": { "xMm": 10000, "yMm": 0 },
+          "end": { "xMm": 10000, "yMm": 8000 },
+          "thicknessMm": 300,
+          "heightMm": 3000
+        },
+        {
+          "id": "ssh-wall-north",
+          "start": { "xMm": 10000, "yMm": 8000 },
+          "end": { "xMm": 0, "yMm": 8000 },
+          "thicknessMm": 300,
+          "heightMm": 3000
+        },
+        {
+          "id": "ssh-wall-west",
+          "start": { "xMm": 0, "yMm": 8000 },
+          "end": { "xMm": 0, "yMm": 0 },
+          "thicknessMm": 300,
+          "heightMm": 3000
+        }
+      ]
+    },
+    {
+      "type": "createWallChain",
+      "levelId": "ssh-lvl-ground",
+      "namePrefix": "Interior partition",
+      "wallTypeId": "ssh-wt-interior",
+      "segments": [
+        {
+          "id": "ssh-wall-hall-bedroom",
+          "start": { "xMm": 6000, "yMm": 0 },
+          "end": { "xMm": 6000, "yMm": 8000 },
+          "thicknessMm": 120,
+          "heightMm": 2800
+        },
+        {
+          "id": "ssh-wall-bath",
+          "start": { "xMm": 6000, "yMm": 3600 },
+          "end": { "xMm": 10000, "yMm": 3600 },
+          "thicknessMm": 120,
+          "heightMm": 2800
+        }
+      ]
+    },
+    {
+      "type": "insertDoorOnWall",
+      "id": "ssh-door-entry",
+      "name": "Entry door",
+      "wallId": "ssh-wall-south",
+      "alongT": 0.18,
+      "widthMm": 1000,
+      "familyTypeId": "ssh-door-single"
+    },
+    {
+      "type": "insertDoorOnWall",
+      "id": "ssh-door-bedroom",
+      "name": "Bedroom door",
+      "wallId": "ssh-wall-hall-bedroom",
+      "alongT": 0.55,
+      "widthMm": 900,
+      "familyTypeId": "ssh-door-single"
+    },
+    {
+      "type": "insertDoorOnWall",
+      "id": "ssh-door-bath",
+      "name": "Bath door",
+      "wallId": "ssh-wall-bath",
+      "alongT": 0.25,
+      "widthMm": 800,
+      "familyTypeId": "ssh-door-single"
+    },
+    {
+      "type": "insertWindowOnWall",
+      "id": "ssh-window-living",
+      "name": "Living window",
+      "wallId": "ssh-wall-west",
+      "alongT": 0.38,
+      "widthMm": 1800,
+      "sillHeightMm": 750,
+      "heightMm": 1500,
+      "familyTypeId": "ssh-window-fixed"
+    },
+    {
+      "type": "insertWindowOnWall",
+      "id": "ssh-window-kitchen",
+      "name": "Kitchen window",
+      "wallId": "ssh-wall-north",
+      "alongT": 0.32,
+      "widthMm": 1200,
+      "sillHeightMm": 900,
+      "heightMm": 1200,
+      "familyTypeId": "ssh-window-fixed"
+    },
+    {
+      "type": "insertWindowOnWall",
+      "id": "ssh-window-bedroom",
+      "name": "Bedroom window",
+      "wallId": "ssh-wall-east",
+      "alongT": 0.72,
+      "widthMm": 1500,
+      "sillHeightMm": 800,
+      "heightMm": 1400,
+      "familyTypeId": "ssh-window-fixed"
+    },
+    {
+      "type": "createRoomOutline",
+      "id": "ssh-room-living",
+      "name": "Living / Dining",
+      "levelId": "ssh-lvl-ground",
+      "programmeCode": "living",
+      "targetAreaM2": 48,
+      "outlineMm": [
+        { "xMm": 0, "yMm": 0 },
+        { "xMm": 6000, "yMm": 0 },
+        { "xMm": 6000, "yMm": 8000 },
+        { "xMm": 0, "yMm": 8000 }
+      ]
+    },
+    {
+      "type": "createRoomOutline",
+      "id": "ssh-room-bedroom",
+      "name": "Bedroom",
+      "levelId": "ssh-lvl-ground",
+      "programmeCode": "bedroom",
+      "targetAreaM2": 17.6,
+      "outlineMm": [
+        { "xMm": 6000, "yMm": 3600 },
+        { "xMm": 10000, "yMm": 3600 },
+        { "xMm": 10000, "yMm": 8000 },
+        { "xMm": 6000, "yMm": 8000 }
+      ]
+    },
+    {
+      "type": "createRoomOutline",
+      "id": "ssh-room-kitchen",
+      "name": "Kitchen",
+      "levelId": "ssh-lvl-ground",
+      "programmeCode": "kitchen",
+      "targetAreaM2": 14.4,
+      "outlineMm": [
+        { "xMm": 6000, "yMm": 0 },
+        { "xMm": 10000, "yMm": 0 },
+        { "xMm": 10000, "yMm": 3600 },
+        { "xMm": 6000, "yMm": 3600 }
+      ]
+    },
+    {
+      "type": "createRoof",
+      "id": "ssh-roof-main",
+      "name": "Simple gable roof",
+      "referenceLevelId": "ssh-lvl-ground",
+      "footprintMm": [
+        { "xMm": -450, "yMm": -450 },
+        { "xMm": 10450, "yMm": -450 },
+        { "xMm": 10450, "yMm": 8450 },
+        { "xMm": -450, "yMm": 8450 }
+      ],
+      "overhangMm": 450,
+      "slopeDeg": 28,
+      "roofGeometryMode": "gable",
+      "roofTypeId": "ssh-rt-gable",
+      "materialKey": "standing_seam_grey"
+    },
+    {
+      "type": "saveViewpoint",
+      "id": "ssh-view-3d",
+      "name": "Simple house 3D evidence",
+      "mode": "orbit_3d",
+      "camera": {
+        "position": { "xMm": -9000, "yMm": -9000, "zMm": 6500 },
+        "target": { "xMm": 5000, "yMm": 4000, "zMm": 1600 },
+        "up": { "xMm": 0, "yMm": 0, "zMm": 1 }
+      }
+    },
+    {
+      "type": "create_schedule_view",
+      "id": "ssh-schedule-openings",
+      "name": "Door and window schedule",
+      "category": "opening",
+      "columns": [
+        { "key": "name", "label": "Name" },
+        { "key": "hostWallId", "label": "Host wall" },
+        { "key": "widthMm", "label": "Width" }
+      ],
+      "sortKey": "name",
+      "sortDir": "asc"
+    },
+    {
+      "type": "CreateSheet",
+      "sheetId": "ssh-sheet-a101",
+      "name": "Simple House Plans and 3D",
+      "number": "A101",
+      "size": "A1",
+      "orientation": "landscape",
+      "metadata": { "benchmarkId": "simple-single-storey-house" }
+    },
+    {
+      "type": "PlaceViewOnSheet",
+      "sheetId": "ssh-sheet-a101",
+      "viewId": "ssh-view-ground-plan",
+      "minXY": { "x": 40, "y": 40 },
+      "size": { "width": 420, "height": 300 },
+      "scale": 100
+    },
+    {
+      "type": "PlaceViewOnSheet",
+      "sheetId": "ssh-sheet-a101",
+      "viewId": "ssh-view-3d",
+      "minXY": { "x": 500, "y": 40 },
+      "size": { "width": 300, "height": 260 },
+      "scale": 100
+    },
+    {
+      "type": "placeTag",
+      "id": "ssh-tag-living",
+      "hostElementId": "ssh-room-living",
+      "hostViewId": "ssh-view-ground-plan",
+      "positionMm": { "xMm": 2800, "yMm": 4200 },
+      "textOverride": "Living / Dining",
+      "autoGenerated": false
+    },
+    {
+      "type": "createDimension",
+      "id": "ssh-dim-overall-width",
+      "name": "Overall width",
+      "levelId": "ssh-lvl-ground",
+      "aMm": { "xMm": 0, "yMm": 0 },
+      "bMm": { "xMm": 10000, "yMm": 0 },
+      "offsetMm": { "xMm": 0, "yMm": -800 },
+      "state": "linked",
+      "refElementIdA": "ssh-wall-west",
+      "refElementIdB": "ssh-wall-east",
+      "autoGenerated": false
+    },
+    {
+      "type": "createDimension",
+      "id": "ssh-dim-overall-depth",
+      "name": "Overall depth",
+      "levelId": "ssh-lvl-ground",
+      "aMm": { "xMm": 0, "yMm": 0 },
+      "bMm": { "xMm": 0, "yMm": 8000 },
+      "offsetMm": { "xMm": -800, "yMm": 0 },
+      "state": "linked",
+      "refElementIdA": "ssh-wall-south",
+      "refElementIdB": "ssh-wall-north",
+      "autoGenerated": false
+    }
+  ]
+}

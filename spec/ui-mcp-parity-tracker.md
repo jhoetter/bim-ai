@@ -984,13 +984,13 @@ Milestone 2 Wave 1 starts the first house-capable MCP pack. The goal of this
 wave is not full M2 closure; it is to create the first typed query/resolve and
 authoring path that can drive a simple-house benchmark without browser gestures.
 
-| Workstream                               | Status  | Owner scope                                                                                                  | Tracker items                                              | Done when                                                                                                                                                                                                                           |
-| ---------------------------------------- | ------- | ------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| M2-A. Query/resolve API pack             | Partial | Backend read-only resources and tests for model summary, element search, levels, types, views, hosts, loops. | WP-007, P0 read/query/context parity.                      | An agent can discover levels, elements, types, views, candidate hosts, and simple enclosed loops through typed API responses with stable ids and compact geometry summaries.                                                        |
-| M2-B. Semantic authoring bundle builders | Partial | Backend helper module and tests for first house authoring operations.                                        | WP-003, P0 semantic authoring MCP tools.                   | Typed helpers can build validated command bundles for wall chains, floors, roof-from-walls/simple roof, hosted openings, rooms, stairs, sheets/views where current kernel commands support them.                                    |
-| M2-C. CLI mirror for first MCP pack      | Partial | `packages/cli` commands and tests for query/resolve plus first authoring operations.                         | WP-003, WP-007, M2 CLI mirror.                             | CLI can call the typed query/resolve endpoints and generate or submit first-pack authoring payloads with `--dry-run`, `--commit`, `--parent-revision`, and `--json` where applicable.                                               |
-| M2-D. Simple-house benchmark harness     | Partial | Benchmark fixtures/scripts/specs that compare generated model output.                                        | WP-008, Same-house benchmark `simple-single-storey-house`. | A reproducible simple-house benchmark exists with MCP/CLI path, semantic summary, advisor/validation output, generated command-surface usage, and clear TODOs for the UI path if not implemented in this wave.                      |
-| M2-E. M2 audit/tracker integration       | Partial | Audit script and generated ledgers only; no ownership of backend/web implementation.                         | WP-004, WP-012, M2 progress reporting.                     | The parity audit recognizes first-pack query/resolve and semantic authoring surfaces, separates first-class typed tools from raw bundles, and reports M2 status/gaps in generated artifacts without hand-edited evidence inflation. |
+| Workstream                               | Status | Owner scope                                                                                                  | Tracker items                                              | Done when                                                                                                                                                                                                                           |
+| ---------------------------------------- | ------ | ------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| M2-A. Query/resolve API pack             | Done   | Backend read-only resources and tests for model summary, element search, levels, types, views, hosts, loops. | WP-007, P0 read/query/context parity.                      | An agent can discover levels, elements, types, views, candidate hosts, and simple enclosed loops through typed API responses with stable ids and compact geometry summaries.                                                        |
+| M2-B. Semantic authoring bundle builders | Done   | Backend helper module and tests for first house authoring operations.                                        | WP-003, P0 semantic authoring MCP tools.                   | Typed helpers can build validated command bundles for wall chains, floors, roof-from-walls/simple roof, hosted openings, rooms, stairs, sheets/views where current kernel commands support them.                                    |
+| M2-C. CLI mirror for first MCP pack      | Done   | `packages/cli` commands and tests for query/resolve plus first authoring operations.                         | WP-003, WP-007, M2 CLI mirror.                             | CLI can call the typed query/resolve endpoints and generate or submit first-pack authoring payloads with `--dry-run`, `--commit`, `--parent-revision`, and `--json` where applicable.                                               |
+| M2-D. Simple-house benchmark harness     | Done   | Benchmark fixtures/scripts/specs that compare generated model output.                                        | WP-008, Same-house benchmark `simple-single-storey-house`. | A reproducible simple-house benchmark exists with MCP/CLI path, semantic summary, advisor/validation output, generated command-surface usage, and clear TODOs for the UI path if not implemented in this wave.                      |
+| M2-E. M2 audit/tracker integration       | Done   | Audit script and generated ledgers only; no ownership of backend/web implementation.                         | WP-004, WP-012, M2 progress reporting.                     | The parity audit recognizes first-pack query/resolve and semantic authoring surfaces, separates first-class typed tools from raw bundles, and reports M2 status/gaps in generated artifacts without hand-edited evidence inflation. |
 
 ### Milestone 2 Wave 1 Scheduling Notes
 
@@ -1004,6 +1004,20 @@ authoring path that can drive a simple-house benchmark without browser gestures.
   should mark missing surfaces explicitly rather than guessing.
 - M2 remains `Partial` until a simple-house benchmark can pass through the
   typed MCP/CLI path.
+
+Wave 1 result:
+
+- `pnpm audit:ui-mcp-parity` reports `21 / 28` M2 first-pack surfaces present.
+- Query/resolve backend routes exist for summary, elements, levels, types,
+  views, hosts, enclosed loops, default level/view, wall-by-line, host-face,
+  family type, room boundary, and loop-for-boundary.
+- Semantic authoring helpers exist for wall chains, floors, roofs, openings,
+  room outlines, stairs, plan views, and sheets where kernel commands are clear.
+- CLI mirrors query/resolve and first authoring/opening bundle generation.
+- `pnpm benchmark:simple-house` validates the deterministic MCP/CLI fixture.
+- Remaining M2 gaps include `model.dry_run`, `model.commit_bundle`,
+  `query.nearest_wall`, `author.wall`, `opening.roof_opening`, `view.save_3d`,
+  `qa.advisor`, live typed execution evidence, and UI-equivalent benchmark path.
 
 ## Next Work Packages
 
