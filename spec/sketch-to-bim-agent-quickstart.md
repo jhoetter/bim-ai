@@ -49,6 +49,23 @@ planned evidence gate and later screenshot/Advisor proof.
 Prefer semantic recipes or typed CLI commands. Use raw bundles only when no
 semantic surface exists, and document the gap.
 
+For a project-initiation seed, the recipe should carry real BIM starter data,
+not only visible massing:
+
+- `types.wallTypes`, `types.floorTypes`, and `types.roofTypes` with layers,
+  total thickness, exterior/interior role, U-value/fire placeholders,
+  classification intent, and `assignToElementIds` where the assignment is known.
+- `features.facadeRhythms[]` for hosted door/window bays and mullion proxies
+  instead of non-cutting facade marks.
+- `assets[]` and `placedAssets[]` with `typeId`, `roomId`, `scheduleCategory`,
+  and `evidenceRole` for furniture/equipment schedule markers.
+- `documentation.views`, `documentation.sheets`, `documentation.schedules`, and
+  `documentation.scheduleViews` for the starter sheet, room schedule, and
+  door/window schedule.
+
+Use `spec/examples/seed-dsl-modern-house.example.json` as the smoke-tested
+reference for these fields.
+
 ```bash
 node packages/cli/cli.mjs sketch seed compile \
   --recipe <recipe.json> \

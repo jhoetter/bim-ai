@@ -170,7 +170,9 @@ function openingCommandForHostedWall(opening, path) {
       headHeightMm: Number.isFinite(opening.headHeightMm) ? opening.headHeightMm : 2100,
     };
   }
-  throw new Error(`${path}.kind must be door, access_door, window, glazing, wall_opening, or void.`);
+  throw new Error(
+    `${path}.kind must be door, access_door, window, glazing, wall_opening, or void.`,
+  );
 }
 
 function sweepCommandForFeature(sweep, path, defaults = {}) {
@@ -200,30 +202,62 @@ function compileLevels(recipe) {
 
 function compileTypes(recipe) {
   const commands = [];
+  const typeIntentCommands = (typeId, kind, row, assignmentKey) => {
+    const intent = {
+      kind,
+      role: row.role ?? row.exteriorInteriorRole ?? null,
+      totalThicknessMm: row.totalThicknessMm ?? row.thicknessMm ?? null,
+      uValueWPerM2K: row.uValueWPerM2K ?? null,
+      fireRating: row.fireRating ?? row.fire ?? null,
+      acousticRating: row.acousticRating ?? row.acoustic ?? null,
+      classification: row.classification ?? null,
+      ifcEntityIntent: row.ifcEntityIntent ?? null,
+      scheduleCategory: row.scheduleCategory ?? null,
+    };
+    const hasIntent = Object.values(intent).some((value) => value != null);
+    const out = hasIntent
+      ? [{ type: 'updateElementProperty', elementId: typeId, key: 'bimTypeIntent', value: intent }]
+      : [];
+    for (const elementId of row.assignToElementIds ?? []) {
+      out.push({
+        type: 'updateElementProperty',
+        elementId: assertString(elementId, `$.types.${kind}.${typeId}.assignToElementIds[]`),
+        key: assignmentKey,
+        value: typeId,
+      });
+    }
+    return out;
+  };
   for (const wallType of recipe.types?.wallTypes ?? []) {
+    const id = assertString(wallType.id, '$.types.wallTypes[].id');
     commands.push({
       type: wallType.upsert === false ? 'createWallType' : 'upsertWallType',
-      id: assertString(wallType.id, '$.types.wallTypes[].id'),
-      name: wallType.name ?? wallType.id,
+      id,
+      name: wallType.name ?? id,
       layers: assertArray(wallType.layers ?? [], `$.types.wallTypes.${wallType.id}.layers`),
       basisLine: wallType.basisLine ?? 'center',
     });
+    commands.push(...typeIntentCommands(id, 'wallTypes', wallType, 'wallTypeId'));
   }
   for (const floorType of recipe.types?.floorTypes ?? []) {
+    const id = assertString(floorType.id, '$.types.floorTypes[].id');
     commands.push({
       type: 'upsertFloorType',
-      id: assertString(floorType.id, '$.types.floorTypes[].id'),
-      name: floorType.name ?? floorType.id,
+      id,
+      name: floorType.name ?? id,
       layers: assertArray(floorType.layers ?? [], `$.types.floorTypes.${floorType.id}.layers`),
     });
+    commands.push(...typeIntentCommands(id, 'floorTypes', floorType, 'floorTypeId'));
   }
   for (const roofType of recipe.types?.roofTypes ?? []) {
+    const id = assertString(roofType.id, '$.types.roofTypes[].id');
     commands.push({
       type: 'upsertRoofType',
-      id: assertString(roofType.id, '$.types.roofTypes[].id'),
-      name: roofType.name ?? roofType.id,
+      id,
+      name: roofType.name ?? id,
       layers: assertArray(roofType.layers ?? [], `$.types.roofTypes.${roofType.id}.layers`),
     });
+    commands.push(...typeIntentCommands(id, 'roofTypes', roofType, 'roofTypeId'));
   }
   return commands;
 }
@@ -288,11 +322,13 @@ function compileRoofs(recipe) {
 }
 
 function compileRooms(recipe) {
-  return (recipe.rooms ?? []).map((room, index) => {
+  const commands = [];
+  for (const [index, room] of (recipe.rooms ?? []).entries()) {
     const outlineMm = assertFootprint(room.outlineMm, `$.rooms[${index}].outlineMm`);
-    return {
+    const id = room.id ?? `room-${String(index + 1).padStart(2, '0')}`;
+    commands.push({
       type: 'createRoomOutline',
-      id: room.id ?? `room-${String(index + 1).padStart(2, '0')}`,
+      id,
       name: room.name ?? `Room ${index + 1}`,
       levelId: assertString(room.levelId, `$.rooms[${index}].levelId`),
       outlineMm,
@@ -300,8 +336,24 @@ function compileRooms(recipe) {
       functionLabel: room.functionLabel ?? null,
       finishSet: room.finishSet ?? null,
       targetAreaM2: Number.isFinite(room.targetAreaM2) ? room.targetAreaM2 : areaM2(outlineMm),
-    };
-  });
+    });
+    commands.push(...roomMetadataCommands(id, room));
+  }
+  return commands;
+}
+
+function roomMetadataCommands(roomId, room) {
+  const value = {
+    number: room.number ?? null,
+    occupancyUse: room.occupancyUse ?? null,
+    boundingStatus: room.boundingStatus ?? null,
+    access: isObject(room.access) ? room.access : null,
+    schedule: isObject(room.schedule) ? room.schedule : null,
+    classification: isObject(room.classification) ? room.classification : null,
+    ifcEntityIntent: room.ifcEntityIntent ?? room.classification?.ifcEntityIntent ?? null,
+  };
+  if (!Object.values(value).some((item) => item != null)) return [];
+  return [{ type: 'updateElementProperty', elementId: roomId, key: 'roomBimIntent', value }];
 }
 
 function compileRoomProgrammes(recipe) {
@@ -353,6 +405,7 @@ function compileRoomProgrammes(recipe) {
           targetAreaM2: Number.isFinite(room.targetAreaM2) ? room.targetAreaM2 : areaM2(outlineMm),
         });
       }
+      commands.push(...roomMetadataCommands(roomId, room));
     }
     for (const door of programme.doors ?? []) {
       commands.push(
@@ -558,10 +611,33 @@ function compileAssets(recipe) {
       paramSchema: asset.paramSchema ?? null,
       description: asset.description ?? null,
     });
+    const scheduleMetadata = {
+      typeId: asset.typeId ?? id,
+      scheduleCategory: asset.scheduleCategory ?? null,
+      evidenceRole: asset.evidenceRole ?? null,
+      ifcEntityIntent: asset.ifcEntityIntent ?? null,
+    };
+    if (Object.values(scheduleMetadata).some((value) => value != null)) {
+      commands.push({
+        type: 'updateElementProperty',
+        elementId: id,
+        key: 'assetScheduleMetadata',
+        value: scheduleMetadata,
+      });
+    }
   }
   for (const placement of recipe.placedAssets ?? []) {
     const id = placement.id ?? null;
     const assetId = assertString(placement.assetId, `$.placedAssets.${id ?? 'item'}.assetId`);
+    const paramValues = isObject(placement.paramValues) ? { ...placement.paramValues } : {};
+    for (const [key, value] of Object.entries({
+      roomId: placement.roomId ?? placement.roomAssociation ?? null,
+      scheduleCategory: placement.scheduleCategory ?? null,
+      evidenceRole: placement.evidenceRole ?? null,
+      typeId: placement.typeId ?? assetId,
+    })) {
+      if (value != null && paramValues[key] == null) paramValues[key] = value;
+    }
     commands.push({
       type: 'PlaceAsset',
       id,
@@ -570,7 +646,7 @@ function compileAssets(recipe) {
       levelId: assertString(placement.levelId, `$.placedAssets.${assetId}.levelId`),
       positionMm: assertPoint(placement.positionMm, `$.placedAssets.${assetId}.positionMm`),
       rotationDeg: Number.isFinite(placement.rotationDeg) ? placement.rotationDeg : 0,
-      paramValues: isObject(placement.paramValues) ? placement.paramValues : {},
+      paramValues,
       hostElementId: placement.hostElementId ?? null,
     });
   }
@@ -719,6 +795,47 @@ function compileFeatureMacros(recipe) {
       );
     }
   }
+  for (const rhythm of recipe.features?.facadeRhythms ?? []) {
+    const id = assertString(rhythm.id, '$.features.facadeRhythms[].id');
+    const hostWallId = assertString(rhythm.hostWallId, `$.features.facadeRhythms.${id}.hostWallId`);
+    for (const bay of rhythm.bays ?? rhythm.openings ?? []) {
+      const bayId = assertString(bay.id, `$.features.facadeRhythms.${id}.bays[].id`);
+      const opening = {
+        ...bay,
+        id: bayId,
+        wallId: hostWallId,
+        alongT: Number.isFinite(bay.centerT) ? bay.centerT : bay.alongT,
+      };
+      commands.push(
+        openingCommandForHostedWall(opening, `$.features.facadeRhythms.${id}.bays.${bayId}`),
+      );
+      const scheduleMetadata = {
+        featureId: id,
+        bayId,
+        scheduleCategory: bay.scheduleCategory ?? (opening.kind === 'door' ? 'door' : 'window'),
+        evidenceRole: bay.evidenceRole ?? rhythm.evidenceRole ?? null,
+        typeId: bay.typeId ?? bay.familyTypeId ?? null,
+      };
+      commands.push({
+        type: 'updateElementProperty',
+        elementId: bayId,
+        key: 'openingScheduleMetadata',
+        value: scheduleMetadata,
+      });
+    }
+    for (const mullion of rhythm.mullionProxies ?? []) {
+      commands.push(
+        sweepCommandForFeature(
+          mullion,
+          `$.features.facadeRhythms.${id}.mullionProxies.${mullion.id}`,
+          {
+            levelId: rhythm.levelId,
+            materialKey: mullion.materialKey ?? rhythm.mullionMaterialKey ?? rhythm.materialKey,
+          },
+        ),
+      );
+    }
+  }
   for (const wrapper of recipe.features?.foldedWrappers ?? []) {
     const id = assertString(wrapper.id, '$.features.foldedWrappers[].id');
     const footprint = assertFootprint(
@@ -774,6 +891,112 @@ function compileFeatureMacros(recipe) {
         }),
       );
     }
+  }
+  return commands;
+}
+
+function compileDocumentation(recipe) {
+  const doc = recipe.documentation;
+  if (!doc || !isObject(doc)) return [];
+  const commands = [];
+  const sheetViewports = new Map();
+  const addViewport = (sheetId, viewport) => {
+    if (!sheetId) return;
+    const rows = sheetViewports.get(sheetId) ?? [];
+    rows.push(viewport);
+    sheetViewports.set(sheetId, rows);
+  };
+
+  for (const view of doc.views ?? []) {
+    const id = assertString(view.id, '$.documentation.views[].id');
+    const kind = view.kind ?? view.type;
+    if (kind === 'elevation') {
+      commands.push({
+        type: 'createElevationView',
+        id,
+        name: view.name ?? id,
+        direction: view.direction ?? 'north',
+        ...(Number.isFinite(view.customAngleDeg) ? { customAngleDeg: view.customAngleDeg } : {}),
+        ...(view.cropMinMm
+          ? { cropMinMm: assertPoint(view.cropMinMm, `$.documentation.views.${id}.cropMinMm`) }
+          : {}),
+        ...(view.cropMaxMm
+          ? { cropMaxMm: assertPoint(view.cropMaxMm, `$.documentation.views.${id}.cropMaxMm`) }
+          : {}),
+        scale: Number.isFinite(view.scale) ? view.scale : 100,
+        ...(view.planDetailLevel ? { planDetailLevel: view.planDetailLevel } : {}),
+      });
+    } else if (kind === 'section') {
+      commands.push({
+        type: 'createSectionCut',
+        id,
+        name: view.name ?? id,
+        lineStartMm: assertPoint(view.lineStartMm, `$.documentation.views.${id}.lineStartMm`),
+        lineEndMm: assertPoint(view.lineEndMm, `$.documentation.views.${id}.lineEndMm`),
+        cropDepthMm: Number.isFinite(view.cropDepthMm) ? view.cropDepthMm : 8500,
+      });
+    }
+  }
+
+  for (const sheet of doc.sheets ?? []) {
+    const id = assertString(sheet.id, '$.documentation.sheets[].id');
+    commands.push({
+      type: 'upsertSheet',
+      id,
+      name: sheet.name ?? id,
+      ...(sheet.titleBlock ? { titleBlock: sheet.titleBlock } : {}),
+      ...(Number.isFinite(sheet.paperWidthMm) ? { paperWidthMm: sheet.paperWidthMm } : {}),
+      ...(Number.isFinite(sheet.paperHeightMm) ? { paperHeightMm: sheet.paperHeightMm } : {}),
+      ...(isObject(sheet.titleblockParameters)
+        ? { titleblockParameters: sheet.titleblockParameters }
+        : {}),
+    });
+    for (const viewport of sheet.viewports ?? []) addViewport(id, viewport);
+  }
+
+  for (const schedule of doc.schedules ?? []) {
+    const id = assertString(schedule.id, '$.documentation.schedules[].id');
+    commands.push({
+      type: 'upsertSchedule',
+      id,
+      name: schedule.name ?? id,
+      sheetId: schedule.sheetId ?? null,
+      filters: isObject(schedule.filters)
+        ? schedule.filters
+        : schedule.category
+          ? { category: schedule.category }
+          : {},
+      grouping: isObject(schedule.grouping) ? schedule.grouping : {},
+    });
+    if (schedule.placeOnSheet) {
+      addViewport(assertString(schedule.sheetId, `$.documentation.schedules.${id}.sheetId`), {
+        viewportId: schedule.viewportId ?? `vp-${id}`,
+        viewRef: `schedule:${id}`,
+        label: schedule.name ?? id,
+        xMm: Number.isFinite(schedule.xMm) ? schedule.xMm : 20,
+        yMm: Number.isFinite(schedule.yMm) ? schedule.yMm : 190,
+        widthMm: Number.isFinite(schedule.widthMm) ? schedule.widthMm : 160,
+        heightMm: Number.isFinite(schedule.heightMm) ? schedule.heightMm : 70,
+      });
+    }
+  }
+
+  for (const scheduleView of doc.scheduleViews ?? []) {
+    const id = assertString(scheduleView.id, '$.documentation.scheduleViews[].id');
+    commands.push({
+      type: 'create_schedule_view',
+      id,
+      name: scheduleView.name ?? id,
+      category: assertString(scheduleView.category, `$.documentation.scheduleViews.${id}.category`),
+      columns: Array.isArray(scheduleView.columns) ? scheduleView.columns : [],
+      ...(scheduleView.filterExpr ? { filterExpr: scheduleView.filterExpr } : {}),
+      ...(scheduleView.sortKey ? { sortKey: scheduleView.sortKey } : {}),
+      ...(scheduleView.sortDir ? { sortDir: scheduleView.sortDir } : {}),
+    });
+  }
+
+  for (const [sheetId, viewportsMm] of sheetViewports) {
+    commands.push({ type: 'upsertSheetViewports', sheetId, viewportsMm });
   }
   return commands;
 }
@@ -850,6 +1073,7 @@ export function compileSeedDsl(recipe, options = {}) {
     ...compileMaterialAssignments(recipe),
     ...compileFeatureMacros(recipe),
     ...compileViewpoints(recipe),
+    ...compileDocumentation(recipe),
     ...(recipe.commands ?? []),
   );
 

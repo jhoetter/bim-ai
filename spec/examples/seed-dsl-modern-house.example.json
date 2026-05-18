@@ -3,14 +3,30 @@
   "id": "modern-house-with-terrace-v0",
   "intent": "Small modern two-storey house seed with upper wrapper, roof terrace opening, rooms, and saved evidence views.",
   "levels": [
-    { "id": "lvl-ground", "name": "Ground Floor", "elevationMm": 0 },
-    { "id": "lvl-upper", "name": "First Floor", "elevationMm": 3000 }
+    {
+      "id": "lvl-ground",
+      "name": "Ground Floor",
+      "elevationMm": 0,
+      "planViewId": "lvl-ground-plan"
+    },
+    {
+      "id": "lvl-upper",
+      "name": "First Floor",
+      "elevationMm": 3000,
+      "planViewId": "lvl-upper-plan"
+    }
   ],
   "types": {
     "wallTypes": [
       {
         "id": "wt-white-wrapper",
         "name": "Matte white wrapper",
+        "role": "exterior",
+        "totalThicknessMm": 250,
+        "uValueWPerM2K": 0.24,
+        "fireRating": "REI placeholder",
+        "classification": { "din276CostGroup": "KG 330", "ifcClassificationRef": "planned" },
+        "ifcEntityIntent": "IfcWall",
         "layers": [
           { "thicknessMm": 170, "function": "structure", "materialKey": "concrete" },
           { "thicknessMm": 80, "function": "finish", "materialKey": "white_render" }
@@ -19,7 +35,45 @@
       {
         "id": "wt-internal",
         "name": "Internal partition",
+        "role": "interior",
+        "totalThicknessMm": 120,
+        "fireRating": "project initiation placeholder",
+        "classification": { "din276CostGroup": "KG 340", "ifcClassificationRef": "planned" },
+        "ifcEntityIntent": "IfcWall",
         "layers": [{ "thicknessMm": 120, "function": "structure", "materialKey": "gypsum_board" }]
+      }
+    ],
+    "floorTypes": [
+      {
+        "id": "ft-concrete-slab",
+        "name": "Concrete floor slab",
+        "role": "floor",
+        "totalThicknessMm": 220,
+        "fireRating": "REI placeholder",
+        "classification": { "din276CostGroup": "KG 320", "ifcClassificationRef": "planned" },
+        "ifcEntityIntent": "IfcSlab",
+        "assignToElementIds": ["ground-base-floor", "upper-wrapper-floor"],
+        "layers": [
+          { "thicknessMm": 180, "function": "structure", "materialKey": "concrete" },
+          { "thicknessMm": 40, "function": "finish", "materialKey": "screed_placeholder" }
+        ]
+      }
+    ],
+    "roofTypes": [
+      {
+        "id": "rt-white-folded-roof",
+        "name": "White folded roof build-up",
+        "role": "roof",
+        "totalThicknessMm": 260,
+        "uValueWPerM2K": 0.2,
+        "fireRating": "roof fire placeholder",
+        "classification": { "din276CostGroup": "KG 360", "ifcClassificationRef": "planned" },
+        "ifcEntityIntent": "IfcRoof",
+        "assignToElementIds": ["roof-main"],
+        "layers": [
+          { "thicknessMm": 200, "function": "structure", "materialKey": "timber_roof_placeholder" },
+          { "thicknessMm": 60, "function": "finish", "materialKey": "white_render" }
+        ]
       }
     ]
   },
@@ -80,6 +134,14 @@
       "name": "Living / Dining",
       "levelId": "lvl-ground",
       "programmeCode": "living",
+      "functionLabel": "residential living",
+      "targetAreaM2": 13.05,
+      "classification": {
+        "din277Use": "NUF living",
+        "din277AreaType": "NUF",
+        "ifcEntityIntent": "IfcSpace"
+      },
+      "schedule": { "include": true, "scheduleName": "Room Schedule" },
       "outlineMm": [
         { "xMm": 3600, "yMm": 700 },
         { "xMm": 6500, "yMm": 700 },
@@ -92,6 +154,14 @@
       "name": "Bedroom",
       "levelId": "lvl-upper",
       "programmeCode": "bed",
+      "functionLabel": "residential sleeping",
+      "targetAreaM2": 7.29,
+      "classification": {
+        "din277Use": "NUF sleeping",
+        "din277AreaType": "NUF",
+        "ifcEntityIntent": "IfcSpace"
+      },
+      "schedule": { "include": true, "scheduleName": "Room Schedule" },
       "outlineMm": [
         { "xMm": 600, "yMm": 1600 },
         { "xMm": 3300, "yMm": 1600 },
@@ -117,6 +187,9 @@
       "id": "asset-sofa",
       "name": "Sofa marker",
       "category": "furniture",
+      "typeId": "furn-sofa-2200",
+      "scheduleCategory": "furniture",
+      "evidenceRole": "living_room_scale_marker",
       "symbolKind": "sofa",
       "tags": ["living", "interior"],
       "thumbnailWidthMm": 2200,
@@ -126,6 +199,9 @@
       "id": "asset-bed",
       "name": "Bed marker",
       "category": "furniture",
+      "typeId": "furn-bed-1600",
+      "scheduleCategory": "furniture",
+      "evidenceRole": "bedroom_scale_marker",
       "symbolKind": "bed",
       "tags": ["bedroom", "interior"],
       "thumbnailWidthMm": 1600,
@@ -135,6 +211,9 @@
       "id": "asset-outdoor-chair",
       "name": "Outdoor terrace chair marker",
       "category": "furniture",
+      "typeId": "furn-outdoor-chair",
+      "scheduleCategory": "furniture",
+      "evidenceRole": "roof_terrace_occupancy_marker",
       "symbolKind": "chair",
       "tags": ["terrace", "outdoor"],
       "thumbnailWidthMm": 650,
@@ -147,6 +226,9 @@
       "assetId": "asset-sofa",
       "name": "Living sofa",
       "levelId": "lvl-ground",
+      "roomId": "room-living",
+      "scheduleCategory": "furniture",
+      "evidenceRole": "living_room_scale_marker",
       "positionMm": { "xMm": 4700, "yMm": 2300 },
       "rotationDeg": 0
     },
@@ -155,6 +237,9 @@
       "assetId": "asset-bed",
       "name": "Upper bedroom bed",
       "levelId": "lvl-upper",
+      "roomId": "room-bedroom",
+      "scheduleCategory": "furniture",
+      "evidenceRole": "bedroom_scale_marker",
       "positionMm": { "xMm": 1850, "yMm": 2800 },
       "rotationDeg": 90
     },
@@ -163,6 +248,9 @@
       "assetId": "asset-outdoor-chair",
       "name": "Roof terrace outdoor chair",
       "levelId": "lvl-upper",
+      "roomId": "room-terrace",
+      "scheduleCategory": "furniture",
+      "evidenceRole": "roof_terrace_occupancy_marker",
       "positionMm": { "xMm": 6800, "yMm": 4800 },
       "rotationDeg": 15
     }
@@ -316,6 +404,75 @@
         ]
       }
     ],
+    "facadeRhythms": [
+      {
+        "id": "front-loggia-three-bay-rhythm",
+        "hostWallId": "front-loggia-recessed-glass",
+        "levelId": "lvl-upper",
+        "evidenceRole": "front_loggia_bay_rhythm",
+        "materialKey": "dark_metal",
+        "bays": [
+          {
+            "id": "front-loggia-left-window",
+            "kind": "window",
+            "name": "Left loggia glazing bay",
+            "centerT": 0.22,
+            "widthMm": 700,
+            "heightMm": 2100,
+            "sillHeightMm": 150,
+            "scheduleCategory": "window"
+          },
+          {
+            "id": "front-loggia-center-door",
+            "kind": "door",
+            "name": "Center loggia door bay",
+            "centerT": 0.5,
+            "widthMm": 900,
+            "scheduleCategory": "door"
+          },
+          {
+            "id": "front-loggia-right-window",
+            "kind": "window",
+            "name": "Right loggia glazing bay",
+            "centerT": 0.78,
+            "widthMm": 700,
+            "heightMm": 2100,
+            "sillHeightMm": 150,
+            "scheduleCategory": "window"
+          }
+        ],
+        "mullionProxies": [
+          {
+            "id": "front-loggia-left-mullion",
+            "name": "Left vertical mullion proxy",
+            "pathMm": [
+              { "xMm": 6250, "yMm": 6410, "zMm": 3000 },
+              { "xMm": 6250, "yMm": 6410, "zMm": 5300 }
+            ],
+            "profileMm": [
+              { "uMm": 0, "vMm": 0 },
+              { "uMm": 80, "vMm": 0 },
+              { "uMm": 80, "vMm": 80 },
+              { "uMm": 0, "vMm": 80 }
+            ]
+          },
+          {
+            "id": "front-loggia-right-mullion",
+            "name": "Right vertical mullion proxy",
+            "pathMm": [
+              { "xMm": 7150, "yMm": 6410, "zMm": 3000 },
+              { "xMm": 7150, "yMm": 6410, "zMm": 5300 }
+            ],
+            "profileMm": [
+              { "uMm": 0, "vMm": 0 },
+              { "uMm": 80, "vMm": 0 },
+              { "uMm": 80, "vMm": 80 },
+              { "uMm": 0, "vMm": 80 }
+            ]
+          }
+        ]
+      }
+    ],
     "roomProgrammes": [
       {
         "id": "target-house-programme",
@@ -328,6 +485,12 @@
             "programmeCode": "entrance_hall",
             "functionLabel": "circulation",
             "targetAreaM2": 9,
+            "classification": {
+              "din277Use": "VF circulation",
+              "din277AreaType": "VF",
+              "ifcEntityIntent": "IfcSpace"
+            },
+            "schedule": { "include": true, "scheduleName": "Room Schedule" },
             "createBoundaryWalls": true,
             "outlineMm": [
               { "xMm": 1200, "yMm": 700 },
@@ -383,6 +546,102 @@
             ]
           }
         ]
+      }
+    ]
+  },
+  "documentation": {
+    "views": [
+      {
+        "id": "elev-front",
+        "kind": "elevation",
+        "name": "Front elevation",
+        "direction": "south",
+        "scale": 100,
+        "cropMinMm": { "xMm": -500, "yMm": -1200 },
+        "cropMaxMm": { "xMm": 8500, "yMm": 9000 }
+      },
+      {
+        "id": "sec-stair",
+        "kind": "section",
+        "name": "Stair and terrace section",
+        "lineStartMm": { "xMm": 1200, "yMm": 700 },
+        "lineEndMm": { "xMm": 7600, "yMm": 700 },
+        "cropDepthMm": 8200
+      }
+    ],
+    "sheets": [
+      {
+        "id": "sheet-a101",
+        "name": "A101 Plans and schedules",
+        "titleBlock": "project-initiation",
+        "paperWidthMm": 420,
+        "paperHeightMm": 297,
+        "titleblockParameters": {
+          "projectStatus": "Project initiation",
+          "exchangeGoal": "IFC-ready BIM seed"
+        },
+        "viewports": [
+          {
+            "viewportId": "vp-ground-plan",
+            "viewRef": "plan:lvl-ground-plan",
+            "label": "Ground floor plan",
+            "xMm": 20,
+            "yMm": 20,
+            "widthMm": 170,
+            "heightMm": 120
+          },
+          {
+            "viewportId": "vp-front-elevation",
+            "viewRef": "section:elev-front",
+            "label": "Front elevation",
+            "xMm": 210,
+            "yMm": 20,
+            "widthMm": 170,
+            "heightMm": 120
+          }
+        ]
+      }
+    ],
+    "schedules": [
+      {
+        "id": "room-schedule",
+        "name": "Room Schedule",
+        "category": "room",
+        "sheetId": "sheet-a101",
+        "placeOnSheet": true,
+        "xMm": 20,
+        "yMm": 160,
+        "widthMm": 170,
+        "heightMm": 95,
+        "grouping": { "sortBy": "levelId" }
+      },
+      {
+        "id": "opening-schedule",
+        "name": "Door and Window Schedule",
+        "category": "opening",
+        "sheetId": "sheet-a101",
+        "placeOnSheet": true,
+        "xMm": 210,
+        "yMm": 160,
+        "widthMm": 170,
+        "heightMm": 95,
+        "grouping": { "sortBy": "name" }
+      }
+    ],
+    "scheduleViews": [
+      {
+        "id": "room-schedule-view",
+        "name": "Room schedule view",
+        "category": "room",
+        "columns": [
+          { "key": "number", "label": "Number" },
+          { "key": "name", "label": "Name" },
+          { "key": "levelId", "label": "Level" },
+          { "key": "targetAreaM2", "label": "Target Area" }
+        ],
+        "filterExpr": "category == \"room\"",
+        "sortKey": "levelId",
+        "sortDir": "asc"
       }
     ]
   },
