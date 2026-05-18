@@ -1856,6 +1856,7 @@ export type DimStyle = {
 export function permanentDimensionThree(
   d: Extract<Element, { kind: 'permanent_dimension' }>,
   dimStyle?: DimStyle | null,
+  showConstraints?: boolean,
 ): THREE.Group {
   const grp = new THREE.Group();
   grp.userData.bimPickId = d.id;
@@ -1892,16 +1893,20 @@ export function permanentDimensionThree(
   ls.userData.dimOffsetDrag = true;
   grp.add(ls);
 
-  // Per-segment labels: "EQ" when eqEnabled, numeric otherwise
+  // Per-segment labels: "EQ" when eqEnabled or (showConstraints && isEqualityDimension), numeric otherwise
   for (let i = 0; i < pts.length - 1; i++) {
     const a = pts[i]!;
     const b = pts[i + 1]!;
-    const labelText = d.eqEnabled
-      ? 'EQ'
-      : (() => {
-          const segLenMm = Math.hypot(b.xMm - a.xMm, b.yMm - a.yMm);
-          return showUnit ? `${Math.round(segLenMm)} mm` : `${Math.round(segLenMm)}`;
-        })();
+    const isEqConstraint = showConstraints && d.isEqualityDimension;
+    const baseLabel =
+      d.eqEnabled || isEqConstraint
+        ? 'EQ'
+        : (() => {
+            const segLenMm = Math.hypot(b.xMm - a.xMm, b.yMm - a.yMm);
+            return showUnit ? `${Math.round(segLenMm)} mm` : `${Math.round(segLenMm)}`;
+          })();
+    const lockSuffix = showConstraints && d.isLocked ? ' 🔒' : '';
+    const labelText = baseLabel + lockSuffix;
     const midXMm = (a.xMm + b.xMm) / 2 + effectiveOffset.xMm;
     const midYMm = (a.yMm + b.yMm) / 2 + effectiveOffset.yMm;
     const sprite = planAnnotationLabelSprite(ux(midXMm), uz(midYMm), labelText, d.id);

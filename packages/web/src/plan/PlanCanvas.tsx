@@ -827,6 +827,13 @@ export function PlanCanvas({
   const showNeighborhoodMasses = useBimStore((s) => s.showNeighborhoodMasses);
   // F-006 — QAT Thin Lines toggle: overrides all line weights to 1 px when true.
   const thinLinesEnabled = useBimStore((s) => s.thinLinesEnabled);
+  // §3.3.5 — Show Constraints toggle: whether EQ markers and lock symbols are shown.
+  const showConstraints = useMemo(() => {
+    if (!activePlanViewId) return false;
+    const pv = elementsById[activePlanViewId];
+    if (!pv || pv.kind !== 'plan_view') return false;
+    return (pv as any).showConstraints ?? false;
+  }, [activePlanViewId, elementsById]);
   const selectLinkedEnabled = useBimStore((s) => s.selectLinkedEnabled);
   // §7.3.1 — active work plane name for the plan view header badge.
   const activeWorkPlaneName = useMemo(() => {
@@ -7635,6 +7642,28 @@ export function PlanCanvas({
         >
           TL
         </button>
+        {/* §3.3.5 — Show Constraints toggle button */}
+        {activePlanViewId ? (
+          <button
+            type="button"
+            data-testid="plan-view-show-constraints-btn"
+            title={showConstraints ? 'Hide Constraints' : 'Show Constraints'}
+            onClick={() =>
+              void onSemanticCommand({ type: 'toggleShowConstraints', viewId: activePlanViewId })
+            }
+            style={{
+              fontSize: 10,
+              padding: '1px 5px',
+              border: `1px solid ${showConstraints ? '#22c55e' : 'var(--border)'}`,
+              borderRadius: 3,
+              background: showConstraints ? 'rgba(34,197,94,0.15)' : 'transparent',
+              color: showConstraints ? '#22c55e' : 'inherit',
+              cursor: 'pointer',
+            }}
+          >
+            EQ
+          </button>
+        ) : null}
         {/* §7.3.1 — Active work plane badge */}
         {activeWorkPlaneName ? (
           <span

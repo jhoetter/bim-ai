@@ -2242,11 +2242,14 @@ export function rebuildPlanMeshes(
       | Extract<(typeof elementsById)[string], { kind: 'project_settings' }>
       | undefined;
     const dimStyle = projSettings?.dimensionStyle ?? null;
+    const activePv = opts.activeViewId ? elementsById[opts.activeViewId] : undefined;
+    const showConstraints =
+      activePv?.kind === 'plan_view' ? ((activePv as any).showConstraints ?? false) : false;
     for (const dm of Object.values(elementsById)) {
       if (dm.kind !== 'permanent_dimension') continue;
       if (kindHidden('dimension')) continue;
       if (level && dm.levelId !== level) continue;
-      holder.add(permanentDimensionThree(dm, dimStyle));
+      holder.add(permanentDimensionThree(dm, dimStyle, showConstraints));
     }
     tintNewChildren(before, 'dimension');
   }

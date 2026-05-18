@@ -3184,26 +3184,6 @@ registerCommand({
   },
 });
 
-// §3.3.5 — Show Constraints toggle (EQ markers + lock symbols on constrained dims)
-registerCommand({
-  id: 'view.toggle-show-constraints',
-  label: 'Show Constraints',
-  keywords: [
-    'show constraints',
-    'EQ',
-    'equality',
-    'lock',
-    'constrained dimensions',
-    'constraint markers',
-  ],
-  category: 'command',
-  invoke: (ctx) => {
-    if (ctx.activePlanViewId) {
-      ctx.dispatchCommand?.({ type: 'toggleShowConstraints', viewId: ctx.activePlanViewId });
-    }
-  },
-});
-
 // §4.2.6 — Stack Dimensions (redistribute parallel dims at even spacing)
 registerCommand({
   id: 'modify.stack-dimensions',
