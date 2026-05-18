@@ -4,7 +4,8 @@ import fs from 'node:fs/promises';
 import http from 'node:http';
 import os from 'node:os';
 import path from 'node:path';
-import { spawn } from 'node:child_process';
+import { execSync, spawn } from 'node:child_process';
+import { createHash } from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -54,6 +55,19 @@ function startStubServer(handler) {
 
 async function writeJson(filePath, payload) {
   await fs.writeFile(filePath, `${JSON.stringify(payload, null, 2)}\n`, 'utf8');
+}
+
+async function sha256File(filePath) {
+  return createHash('sha256')
+    .update(await fs.readFile(filePath))
+    .digest('hex');
+}
+
+function currentGitHead() {
+  return execSync('git rev-parse HEAD', {
+    cwd: path.resolve(__dirname, '../..'),
+    encoding: 'utf8',
+  }).trim();
 }
 
 function validIr() {
@@ -215,7 +229,11 @@ function validIr() {
           totalThicknessMm: 420,
           layers: [
             { function: 'structure', materialKey: 'timber_roof_placeholder', thicknessMm: 240 },
-            { function: 'insulation', materialKey: 'roof_insulation_placeholder', thicknessMm: 180 },
+            {
+              function: 'insulation',
+              materialKey: 'roof_insulation_placeholder',
+              thicknessMm: 180,
+            },
           ],
           performancePlaceholders: {
             thermal: 'roof U-value placeholder required',
@@ -228,18 +246,125 @@ function validIr() {
         roomSystem: 'DIN277',
         elementSystem: 'DIN276',
         ifcClassificationReferences: 'planned',
-        requiredPlaceholders: ['DIN277 room use', 'DIN276 cost group', 'IFC classification reference'],
+        requiredPlaceholders: [
+          'DIN277 room use',
+          'DIN276 cost group',
+          'IFC classification reference',
+        ],
+      },
+      structureLiteRequirements: {
+        loadBearingFlags: [
+          {
+            category: 'exterior_wall',
+            assumption: 'Exterior walls carry concept load-bearing intent.',
+            confidence: 'medium',
+          },
+        ],
+        primarySupportAssumptions: [
+          'Perimeter walls and stair/core zone provide primary support placeholders.',
+        ],
+        supportElementPlaceholders: [
+          {
+            type: 'beam-lite',
+            location: 'overhang edge',
+            reason: 'Concept load transfer placeholder.',
+          },
+        ],
+        openingCoordination: ['Stair and slab openings must align in plan.'],
+        loadPathNotes: ['Trace roof and upper loads to perimeter walls/core before acceptance.'],
+      },
+      mepLiteRequirements: {
+        wetRoomStacking: ['Keep wet rooms adjacent or stacked where the layout permits.'],
+        verticalShaftsOrRisers: ['Reserve riser space near the stair/core zone.'],
+        equipmentZones: ['Kitchen and wet-room equipment zones are schematic placeholders.'],
+        routePlaceholders: ['Pipe/duct/cable routes must avoid stair and door clearances.'],
+        serviceLevels: ['Ground service entry and upper distribution are placeholder assumptions.'],
+        openingRequests: ['Track slab/wall penetrations needed by risers and drainage.'],
+      },
+      planningSiteRequirements: {
+        orientationAssumption: 'Use sketch-up as project north until a survey is supplied.',
+        basePointAssumption: 'Project base point at ground footprint origin, elevation 0.',
+        surveyPointAssumption: 'Survey point unavailable; use local coordinates.',
+        propertyLineSetbackAvailability: 'Property line and setback data unavailable.',
+        sunAssumptions: 'Sun assumptions are placeholders until location and true north are known.',
+        codeLocale: 'DE concept placeholders using DIN277/DIN276.',
       },
       schedules: [
         { id: 'room-schedule', name: 'Room Schedule', includes: ['rooms'] },
-        { id: 'opening-schedule', name: 'Door and Window Schedule', includes: ['doors', 'windows'] },
+        {
+          id: 'opening-schedule',
+          name: 'Door and Window Schedule',
+          includes: ['doors', 'windows'],
+        },
       ],
       exportRequirements: {
-        outputs: ['IFC', 'GLB', 'evidence-package'],
+        outputs: ['IFC', 'GLB', 'PDF', 'schedules', 'evidence-package', 'source-bundle'],
         ifcEntityIntentRequired: true,
       },
+      sustainabilityMaterialPassportRequirements: {
+        materials: [
+          {
+            materialKey: 'masonry_placeholder',
+            epdSource: 'placeholder',
+            sourceConfidence: 'low',
+            embodiedCarbonPlaceholder: 'generic masonry carbon placeholder',
+            reuseNotes: 'reuse not assessed',
+            recyclabilityNotes: 'mineral recycling placeholder',
+            quantitySource: 'wall layer quantity',
+          },
+          {
+            materialKey: 'mineral_wool_placeholder',
+            epdSource: 'placeholder',
+            sourceConfidence: 'low',
+            embodiedCarbonPlaceholder: 'generic insulation carbon placeholder',
+            reuseNotes: 'reuse not assumed',
+            recyclabilityNotes: 'manufacturer route to confirm',
+            quantitySource: 'wall insulation quantity',
+          },
+          {
+            materialKey: 'concrete_placeholder',
+            epdSource: 'placeholder',
+            sourceConfidence: 'low',
+            embodiedCarbonPlaceholder: 'generic concrete carbon placeholder',
+            reuseNotes: 'reuse unlikely',
+            recyclabilityNotes: 'aggregate recycling placeholder',
+            quantitySource: 'slab layer quantity',
+          },
+          {
+            materialKey: 'screed_placeholder',
+            epdSource: 'placeholder',
+            sourceConfidence: 'low',
+            embodiedCarbonPlaceholder: 'generic screed carbon placeholder',
+            reuseNotes: 'reuse not assumed',
+            recyclabilityNotes: 'mineral recycling placeholder',
+            quantitySource: 'slab finish quantity',
+          },
+          {
+            materialKey: 'timber_roof_placeholder',
+            epdSource: 'placeholder',
+            sourceConfidence: 'low',
+            embodiedCarbonPlaceholder: 'generic timber carbon placeholder',
+            reuseNotes: 'potential disassembly to review',
+            recyclabilityNotes: 'end-of-life route placeholder',
+            quantitySource: 'roof structural quantity',
+          },
+          {
+            materialKey: 'roof_insulation_placeholder',
+            epdSource: 'placeholder',
+            sourceConfidence: 'low',
+            embodiedCarbonPlaceholder: 'generic roof insulation carbon placeholder',
+            reuseNotes: 'reuse not assumed',
+            recyclabilityNotes: 'manufacturer route to confirm',
+            quantitySource: 'roof insulation quantity',
+          },
+        ],
+      },
       dataQualityChecks: [
-        { id: 'bim-data-minimum', severity: 'error', checks: ['rooms', 'levels', 'types', 'classification'] },
+        {
+          id: 'bim-data-minimum',
+          severity: 'error',
+          checks: ['rooms', 'levels', 'types', 'classification'],
+        },
       ],
     },
     features: [
@@ -337,6 +462,10 @@ test('initiation-check writes coverage and visual checklist for a valid IR', asy
   assert.equal(bimDataQuality.ok, true);
   assert.equal(bimDataQuality.summary.errorCount, 0);
   assert.ok(bimDataQuality.checks.some((item) => item.id === 'room_requirements'));
+  assert.ok(bimDataQuality.checks.some((item) => item.id === 'structure_lite_requirements'));
+  assert.ok(bimDataQuality.checks.some((item) => item.id === 'mep_lite_requirements'));
+  assert.ok(bimDataQuality.checks.some((item) => item.id === 'planning_site_requirements'));
+  assert.ok(bimDataQuality.checks.some((item) => item.id === 'sustainability_material_passports'));
 
   const status = await fs.readFile(path.join(outDir, 'status.md'), 'utf8');
   assert.match(status, /Sketch-to-BIM Initiation Check/);
@@ -489,9 +618,26 @@ test('initiation-run captures live advisor and evidence artifacts without screen
     await fs.readFile(path.join(outDir, 'live', 'model-stats.json'), 'utf8'),
   );
   assert.equal(stats.countsByKind.wall, 1);
+  const toolRun = JSON.parse(await fs.readFile(path.join(outDir, 'tool-run-summary.json'), 'utf8'));
+  assert.equal(toolRun.schemaVersion, 'sketch-to-bim.tool-run.v1');
+  assert.equal(toolRun.modelRevision, 7);
+  assert.equal(toolRun.gitHead, currentGitHead());
+  assert.equal(toolRun.irSha256, await sha256File(irPath));
+  assert.equal(toolRun.capabilitiesSha256, await sha256File(matrixPath));
+  assert.equal(typeof toolRun.advisorRuleDigest, 'string');
+  const freshness = JSON.parse(
+    await fs.readFile(path.join(outDir, 'evidence-freshness.json'), 'utf8'),
+  );
+  assert.equal(freshness.ok, true);
+  assert.equal(freshness.summary.passCount, 5);
+  const acceptance = JSON.parse(
+    await fs.readFile(path.join(outDir, 'acceptance-gates.json'), 'utf8'),
+  );
+  assert.equal(acceptance.summary.evidenceFreshnessOk, true);
   const status = await fs.readFile(path.join(outDir, 'status.md'), 'utf8');
   assert.match(status, /Live Artifacts/);
   assert.match(status, /advisorWarning/);
+  assert.match(status, /Evidence Freshness/);
 });
 
 test('sketch evidence collect writes non-browser evidence manifest and visual contract', async () => {
@@ -609,6 +755,10 @@ test('sketch evidence collect writes non-browser evidence manifest and visual co
   const manifest = JSON.parse(res.stdout);
   assert.equal(manifest.schemaVersion, 'sketch.evidence.collection.v1');
   assert.equal(manifest.browserAutomationRequired, false);
+  assert.equal(manifest.currentHead.gitHead, currentGitHead());
+  assert.equal(manifest.currentHead.modelRevision, 11);
+  assert.equal(manifest.currentHead.irSha256, await sha256File(irPath));
+  assert.equal(typeof manifest.currentHead.advisorRuleDigest, 'string');
   assert.equal(manifest.summary.advisor.warning, 1);
   assert.equal(manifest.summary.advisor.info, 1);
   assert.equal(manifest.summary.constructability.profile, 'project_initiation');
@@ -878,6 +1028,80 @@ test('sketch phase accept records warning info and error dispositions', async ()
   );
   assert.equal(toleranceLedger.ok, true);
   assert.equal(toleranceLedger.tolerances[0].affectedFeatureIds[0], 'room_programme');
+});
+
+test('sketch phase accept fails acceptance for stale current-head evidence', async () => {
+  const dir = await fs.mkdtemp(path.join(os.tmpdir(), 'bim-ai-sketch-phase-stale-'));
+  const irPath = path.join(dir, 'ir.json');
+  const matrixPath = path.join(dir, 'matrix.json');
+  const outDir = path.join(dir, 'packet');
+  const evidenceDir = path.join(dir, 'evidence');
+  await writeJson(irPath, validIr());
+  await writeJson(matrixPath, validMatrix());
+  await fs.mkdir(evidenceDir, { recursive: true });
+  await writeJson(path.join(evidenceDir, 'finding-dispositions.json'), {
+    schemaVersion: 'sketch.finding-dispositions.v1',
+    modelId: 'model-1',
+    revision: 8,
+    phaseId: 'shell',
+    findings: [],
+  });
+  await writeJson(path.join(evidenceDir, 'tool-run-summary.json'), {
+    schemaVersion: 'sketch-to-bim.tool-run.v1',
+    modelId: 'model-1',
+    modelRevision: 8,
+    gitHead: 'stale-git-head',
+    irPath,
+    irSha256: 'stale-ir-hash',
+    capabilitiesPath: matrixPath,
+    capabilitiesSha256: 'stale-capability-hash',
+    advisorRuleDigest: 'stale-advisor-digest',
+    advisorRuleFiles: [],
+  });
+
+  const { server, base } = await startStubServer((req) => {
+    if (req.url?.endsWith('/snapshot')) {
+      return { body: { modelId: 'model-1', revision: 9, elements: {}, violations: [] } };
+    }
+    return { status: 404, body: { error: req.url } };
+  });
+
+  const res = await runCli(
+    [
+      'sketch',
+      'phase',
+      'accept',
+      '--ir',
+      irPath,
+      '--capabilities',
+      matrixPath,
+      '--out',
+      outDir,
+      '--phase',
+      'shell',
+      '--model',
+      'model-1',
+      '--evidence-dir',
+      evidenceDir,
+      '--fail-on-acceptance',
+    ],
+    { BIM_AI_BASE_URL: base },
+  );
+  server.close();
+
+  assert.equal(res.code, 5, res.stderr);
+  const out = JSON.parse(res.stdout);
+  const codes = new Set(out.acceptance.blockers.map((blocker) => blocker.code));
+  assert.equal(codes.has('stale_git_head'), true);
+  assert.equal(codes.has('stale_model_revision'), true);
+  assert.equal(codes.has('stale_advisor_rule_digest'), true);
+  assert.equal(codes.has('stale_ir_sha256'), true);
+  assert.equal(codes.has('stale_capabilities_sha256'), true);
+  const freshness = JSON.parse(
+    await fs.readFile(path.join(outDir, 'evidence-freshness.json'), 'utf8'),
+  );
+  assert.equal(freshness.ok, false);
+  assert.equal(freshness.summary.staleCount, 5);
 });
 
 test('seed-dsl compile emits toposolids, subdivisions, and graded regions in host order', async () => {

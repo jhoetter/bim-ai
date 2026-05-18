@@ -138,6 +138,17 @@ def git_head() -> str | None:
     return proc.stdout.strip() if proc.returncode == 0 else None
 
 
+def current_model_revision(model_id: str | None, base_url: str) -> int | None:
+    if not model_id:
+        return None
+    try:
+        snap = http_json(f"{base_url.rstrip('/')}/api/models/{model_id}/snapshot", timeout=2.0)
+    except (OSError, urllib.error.URLError, TimeoutError):
+        return None
+    revision = (snap.get("body") or {}).get("revision")
+    return revision if isinstance(revision, int) else None
+
+
 def seed_paths(seed: str) -> dict[str, Path]:
     base = ROOT / "seed-artifacts" / seed
     return {
@@ -837,10 +848,15 @@ def cmd_accept(args: argparse.Namespace) -> None:
     env["BIM_AI_MODEL_ID"] = model_id
     env["BIM_AI_BASE_URL"] = args.base_url.rstrip("/")
     run(command, env=env)
+    evidence_manifest = out_dir / "live" / "evidence-manifest.json"
+    model_revision = None
+    if evidence_manifest.is_file():
+        model_revision = read_json(evidence_manifest).get("revision")
     summary = {
         "schemaVersion": "sketch-to-bim.tool-run.v1",
         "seed": args.seed,
         "modelId": model_id,
+        "modelRevision": model_revision,
         "gitHead": git_head(),
         "bundlePath": rel(paths["bundle"]),
         "bundleSha256": file_sha256(paths["bundle"]),
@@ -866,6 +882,9 @@ def cmd_stale_check(args: argparse.Namespace) -> None:
     summary = read_json(summary_path)
     current = {
         "gitHead": git_head(),
+        "modelRevision": current_model_revision(
+            summary.get("modelId"), args.base_url.rstrip("/")
+        ),
         "bundleSha256": file_sha256(paths["bundle"]),
         "irSha256": file_sha256(paths["ir"]),
         "capabilitiesSha256": file_sha256(
@@ -876,7 +895,7 @@ def cmd_stale_check(args: argparse.Namespace) -> None:
     stale = {
         key: {"recorded": summary.get(key), "current": value}
         for key, value in current.items()
-        if summary.get(key) != value
+        if summary.get(key) != value or value is None
     }
     result = {"seed": args.seed, "evidence": rel(evidence), "stale": stale, "ok": not stale}
     print(json_dump(result))
@@ -1055,6 +1074,7 @@ def build_parser() -> argparse.ArgumentParser:
     )
     stale.add_argument("--seed", required=True)
     stale.add_argument("--evidence")
+    stale.add_argument("--base-url", default=os.environ.get("BIM_AI_BASE_URL", "http://127.0.0.1:8500"))
     stale.set_defaults(func=cmd_stale_check)
 
     return parser

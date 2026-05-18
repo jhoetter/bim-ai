@@ -23,7 +23,8 @@ export const INITIATION_MODES = {
   },
   project_initiation_bim: {
     label: 'Project-initiation BIM',
-    description: 'Usable seed model with rooms, access, advisor feedback, screenshots, and evidence packet.',
+    description:
+      'Usable seed model with rooms, access, advisor feedback, screenshots, and evidence packet.',
     requireProgramme: true,
     requireDiagnosticView: true,
     failOnAdvisorWarning: true,
@@ -31,7 +32,8 @@ export const INITIATION_MODES = {
   },
   documentation_ready: {
     label: 'Documentation ready',
-    description: 'Project-initiation BIM plus plans/sheets/schedules that can be handed off directly.',
+    description:
+      'Project-initiation BIM plus plans/sheets/schedules that can be handed off directly.',
     requireProgramme: true,
     requireDiagnosticView: true,
     failOnAdvisorWarning: true,
@@ -56,6 +58,37 @@ const REQUIRED_ELEMENT_SEMANTIC_CATEGORIES = [
   'asset',
 ];
 const REQUIRED_LAYER_SET_CATEGORIES = ['wall', 'slab', 'roof'];
+const REQUIRED_EXPORT_OUTPUTS = [
+  'IFC',
+  'GLB',
+  'PDF',
+  'schedules',
+  'evidence-package',
+  'source-bundle',
+];
+const REQUIRED_STRUCTURE_LITE_SECTIONS = [
+  'loadBearingFlags',
+  'primarySupportAssumptions',
+  'supportElementPlaceholders',
+  'openingCoordination',
+  'loadPathNotes',
+];
+const REQUIRED_MEP_LITE_SECTIONS = [
+  'wetRoomStacking',
+  'verticalShaftsOrRisers',
+  'equipmentZones',
+  'routePlaceholders',
+  'serviceLevels',
+  'openingRequests',
+];
+const REQUIRED_PLANNING_SITE_FIELDS = [
+  'orientationAssumption',
+  'basePointAssumption',
+  'surveyPointAssumption',
+  'propertyLineSetbackAvailability',
+  'sunAssumptions',
+  'codeLocale',
+];
 const IFC_ENTITY_INTENT = new Set([
   'IfcSpace',
   'IfcWall',
@@ -82,19 +115,30 @@ function issue(severity, code, pathValue, message) {
 
 function requireString(issues, obj, key, pathValue) {
   if (typeof obj?.[key] !== 'string' || obj[key].trim() === '') {
-    issues.push(issue('error', 'missing_string', `${pathValue}.${key}`, `${key} must be a non-empty string.`));
+    issues.push(
+      issue('error', 'missing_string', `${pathValue}.${key}`, `${key} must be a non-empty string.`),
+    );
   }
 }
 
 function requireBoolean(issues, obj, key, pathValue) {
   if (typeof obj?.[key] !== 'boolean') {
-    issues.push(issue('error', 'missing_boolean', `${pathValue}.${key}`, `${key} must be a boolean.`));
+    issues.push(
+      issue('error', 'missing_boolean', `${pathValue}.${key}`, `${key} must be a boolean.`),
+    );
   }
 }
 
 function requirePositiveNumber(issues, obj, key, pathValue) {
   if (!Number.isFinite(obj?.[key]) || obj[key] <= 0) {
-    issues.push(issue('error', 'missing_positive_number', `${pathValue}.${key}`, `${key} must be a positive number.`));
+    issues.push(
+      issue(
+        'error',
+        'missing_positive_number',
+        `${pathValue}.${key}`,
+        `${key} must be a positive number.`,
+      ),
+    );
   }
 }
 
@@ -104,9 +148,57 @@ function requireArray(issues, obj, key, pathValue, { min = 0 } = {}) {
     return [];
   }
   if (obj[key].length < min) {
-    issues.push(issue('error', 'array_too_short', `${pathValue}.${key}`, `${key} must contain at least ${min} item(s).`));
+    issues.push(
+      issue(
+        'error',
+        'array_too_short',
+        `${pathValue}.${key}`,
+        `${key} must contain at least ${min} item(s).`,
+      ),
+    );
   }
   return obj[key];
+}
+
+function requireObjectSection(issues, obj, key, pathValue, severity = 'error') {
+  if (!isObject(obj?.[key])) {
+    issues.push(
+      issue(severity, 'missing_object', `${pathValue}.${key}`, `${key} must be an object.`),
+    );
+    return null;
+  }
+  return obj[key];
+}
+
+function requireSectionArray(issues, obj, key, pathValue, severity = 'error') {
+  if (!Array.isArray(obj?.[key]) || obj[key].length === 0) {
+    issues.push(
+      issue(
+        severity,
+        'readiness_section_missing',
+        `${pathValue}.${key}`,
+        `${key} must contain at least one project-initiation readiness item.`,
+      ),
+    );
+    return [];
+  }
+  return obj[key];
+}
+
+function normalizeExportOutput(value) {
+  return String(value ?? '')
+    .trim()
+    .toLowerCase()
+    .replace(/[_\s]+/g, '-');
+}
+
+function hasExportOutput(outputs, requiredOutput) {
+  const normalized = new Set(outputs.map(normalizeExportOutput));
+  const required = normalizeExportOutput(requiredOutput);
+  if (required === 'glb') return normalized.has('glb') || normalized.has('gltf');
+  if (required === 'pdf')
+    return normalized.has('pdf') || normalized.has('pdf/sheets') || normalized.has('sheets');
+  return normalized.has(required);
 }
 
 export async function readJsonFile(filePath) {
@@ -132,12 +224,14 @@ function validateBimInformationRequirements(ir, mode) {
 
   const requirements = ir.informationRequirements;
   if (!isObject(requirements)) {
-    issues.push(issue(
-      severity,
-      'bim_information_requirements_missing',
-      '$.informationRequirements',
-      `${mode?.label ?? target} requires informationRequirements with LOI/LOD, rooms, element semantics, material layer sets, classifications, schedules, and data checks.`,
-    ));
+    issues.push(
+      issue(
+        severity,
+        'bim_information_requirements_missing',
+        '$.informationRequirements',
+        `${mode?.label ?? target} requires informationRequirements with LOI/LOD, rooms, element semantics, material layer sets, classifications, schedules, and data checks.`,
+      ),
+    );
     return issues;
   }
 
@@ -147,12 +241,14 @@ function validateBimInformationRequirements(ir, mode) {
     typeof target === 'string' &&
     requirements.qualityTarget !== target
   ) {
-    issues.push(issue(
-      severity,
-      'bim_quality_target_mismatch',
-      '$.informationRequirements.qualityTarget',
-      'informationRequirements.qualityTarget must match the root qualityTarget.',
-    ));
+    issues.push(
+      issue(
+        severity,
+        'bim_quality_target_mismatch',
+        '$.informationRequirements.qualityTarget',
+        'informationRequirements.qualityTarget must match the root qualityTarget.',
+      ),
+    );
   }
   for (const key of ['lodIntent', 'loiIntent', 'exchangeGoal']) {
     requireString(issues, requirements, key, '$.informationRequirements');
@@ -167,7 +263,9 @@ function validateBimInformationRequirements(ir, mode) {
   rooms.forEach((room, index) => {
     const p = `$.informationRequirements.rooms[${index}]`;
     if (!isObject(room)) {
-      issues.push(issue('error', 'invalid_room_requirement', p, 'Room requirement must be an object.'));
+      issues.push(
+        issue('error', 'invalid_room_requirement', p, 'Room requirement must be an object.'),
+      );
       return;
     }
     for (const key of ['name', 'number', 'level', 'function', 'occupancyUse', 'boundingStatus']) {
@@ -175,29 +273,61 @@ function validateBimInformationRequirements(ir, mode) {
     }
     requirePositiveNumber(issues, room, 'targetAreaM2', p);
     if (!isObject(room.access)) {
-      issues.push(issue('error', 'missing_object', `${p}.access`, 'Room access requirements must be an object.'));
+      issues.push(
+        issue(
+          'error',
+          'missing_object',
+          `${p}.access`,
+          'Room access requirements must be an object.',
+        ),
+      );
     } else {
-      const requiredDoors = Number.isFinite(room.access.requiredDoors) ? room.access.requiredDoors : 0;
+      const requiredDoors = Number.isFinite(room.access.requiredDoors)
+        ? room.access.requiredDoors
+        : 0;
       const doorRefs = Array.isArray(room.access.doorRefs) ? room.access.doorRefs : [];
       if (requiredDoors <= 0 && doorRefs.length === 0) {
-        issues.push(issue(
-          'error',
-          'room_access_missing',
-          `${p}.access`,
-          'Room access must require at least one door or list explicit doorRefs.',
-        ));
+        issues.push(
+          issue(
+            'error',
+            'room_access_missing',
+            `${p}.access`,
+            'Room access must require at least one door or list explicit doorRefs.',
+          ),
+        );
       }
     }
     if (!isObject(room.schedule)) {
-      issues.push(issue('error', 'missing_object', `${p}.schedule`, 'Room schedule intent must be an object.'));
+      issues.push(
+        issue(
+          'error',
+          'missing_object',
+          `${p}.schedule`,
+          'Room schedule intent must be an object.',
+        ),
+      );
     } else {
       requireBoolean(issues, room.schedule, 'include', `${p}.schedule`);
       if (room.schedule.include !== true) {
-        issues.push(issue('error', 'room_schedule_not_included', `${p}.schedule.include`, 'Rooms must be included in a schedule for project initiation BIM.'));
+        issues.push(
+          issue(
+            'error',
+            'room_schedule_not_included',
+            `${p}.schedule.include`,
+            'Rooms must be included in a schedule for project initiation BIM.',
+          ),
+        );
       }
     }
     if (!isObject(room.classification)) {
-      issues.push(issue('error', 'missing_object', `${p}.classification`, 'Room classification placeholders must be an object.'));
+      issues.push(
+        issue(
+          'error',
+          'missing_object',
+          `${p}.classification`,
+          'Room classification placeholders must be an object.',
+        ),
+      );
     } else {
       for (const key of ['din277Use', 'din277AreaType', 'ifcEntityIntent']) {
         requireString(issues, room.classification, key, `${p}.classification`);
@@ -206,7 +336,14 @@ function validateBimInformationRequirements(ir, mode) {
         typeof room.classification.ifcEntityIntent === 'string' &&
         room.classification.ifcEntityIntent !== 'IfcSpace'
       ) {
-        issues.push(issue('error', 'room_ifc_entity_intent', `${p}.classification.ifcEntityIntent`, 'Rooms must declare IfcSpace entity intent.'));
+        issues.push(
+          issue(
+            'error',
+            'room_ifc_entity_intent',
+            `${p}.classification.ifcEntityIntent`,
+            'Rooms must declare IfcSpace entity intent.',
+          ),
+        );
       }
     }
   });
@@ -222,7 +359,14 @@ function validateBimInformationRequirements(ir, mode) {
   semanticRows.forEach((row, index) => {
     const p = `$.informationRequirements.elementSemanticRequirements[${index}]`;
     if (!isObject(row)) {
-      issues.push(issue('error', 'invalid_element_semantic_requirement', p, 'Element semantic requirement must be an object.'));
+      issues.push(
+        issue(
+          'error',
+          'invalid_element_semantic_requirement',
+          p,
+          'Element semantic requirement must be an object.',
+        ),
+      );
       return;
     }
     for (const key of ['category', 'expectedBimCategory', 'ifcEntityIntent']) {
@@ -230,15 +374,24 @@ function validateBimInformationRequirements(ir, mode) {
     }
     if (typeof row.category === 'string') semanticCategories.add(row.category);
     if (typeof row.ifcEntityIntent === 'string' && !IFC_ENTITY_INTENT.has(row.ifcEntityIntent)) {
-      issues.push(issue(
-        'error',
-        'unknown_ifc_entity_intent',
-        `${p}.ifcEntityIntent`,
-        `ifcEntityIntent should be one of ${[...IFC_ENTITY_INTENT].join(', ')}.`,
-      ));
+      issues.push(
+        issue(
+          'error',
+          'unknown_ifc_entity_intent',
+          `${p}.ifcEntityIntent`,
+          `ifcEntityIntent should be one of ${[...IFC_ENTITY_INTENT].join(', ')}.`,
+        ),
+      );
     }
     if (!isObject(row.classification)) {
-      issues.push(issue('error', 'missing_object', `${p}.classification`, 'Element classification placeholders must be an object.'));
+      issues.push(
+        issue(
+          'error',
+          'missing_object',
+          `${p}.classification`,
+          'Element classification placeholders must be an object.',
+        ),
+      );
     } else {
       requireString(issues, row.classification, 'din276CostGroup', `${p}.classification`);
       requireString(issues, row.classification, 'ifcClassificationRef', `${p}.classification`);
@@ -246,12 +399,14 @@ function validateBimInformationRequirements(ir, mode) {
   });
   for (const category of REQUIRED_ELEMENT_SEMANTIC_CATEGORIES) {
     if (!semanticCategories.has(category)) {
-      issues.push(issue(
-        severity,
-        'element_semantic_category_missing',
-        '$.informationRequirements.elementSemanticRequirements',
-        `Missing semantic requirement for ${category}.`,
-      ));
+      issues.push(
+        issue(
+          severity,
+          'element_semantic_category_missing',
+          '$.informationRequirements.elementSemanticRequirements',
+          `Missing semantic requirement for ${category}.`,
+        ),
+      );
     }
   }
 
@@ -266,7 +421,14 @@ function validateBimInformationRequirements(ir, mode) {
   layerSets.forEach((row, index) => {
     const p = `$.informationRequirements.materialLayerSetRequirements[${index}]`;
     if (!isObject(row)) {
-      issues.push(issue('error', 'invalid_material_layer_set_requirement', p, 'Material layer-set requirement must be an object.'));
+      issues.push(
+        issue(
+          'error',
+          'invalid_material_layer_set_requirement',
+          p,
+          'Material layer-set requirement must be an object.',
+        ),
+      );
       return;
     }
     for (const key of ['id', 'layerSetName']) requireString(issues, row, key, p);
@@ -279,19 +441,23 @@ function validateBimInformationRequirements(ir, mode) {
     layers.forEach((layer, layerIndex) => {
       const layerPath = `${p}.layers[${layerIndex}]`;
       if (!isObject(layer)) {
-        issues.push(issue('error', 'invalid_material_layer', layerPath, 'Layer must be an object.'));
+        issues.push(
+          issue('error', 'invalid_material_layer', layerPath, 'Layer must be an object.'),
+        );
         return;
       }
       for (const key of ['function', 'materialKey']) requireString(issues, layer, key, layerPath);
       requirePositiveNumber(issues, layer, 'thicknessMm', layerPath);
     });
     if (!isObject(row.performancePlaceholders)) {
-      issues.push(issue(
-        'error',
-        'material_performance_placeholders_missing',
-        `${p}.performancePlaceholders`,
-        'Layer sets must include thermal/fire/acoustic placeholder intent.',
-      ));
+      issues.push(
+        issue(
+          'error',
+          'material_performance_placeholders_missing',
+          `${p}.performancePlaceholders`,
+          'Layer sets must include thermal/fire/acoustic placeholder intent.',
+        ),
+      );
     } else {
       for (const key of ['thermal', 'fire', 'acoustic']) {
         requireString(issues, row.performancePlaceholders, key, `${p}.performancePlaceholders`);
@@ -300,33 +466,190 @@ function validateBimInformationRequirements(ir, mode) {
   });
   for (const category of REQUIRED_LAYER_SET_CATEGORIES) {
     if (!layerSetCategories.has(category)) {
-      issues.push(issue(
-        severity,
-        'material_layer_set_category_missing',
-        '$.informationRequirements.materialLayerSetRequirements',
-        `Missing material/layer-set requirement for ${category}.`,
-      ));
+      issues.push(
+        issue(
+          severity,
+          'material_layer_set_category_missing',
+          '$.informationRequirements.materialLayerSetRequirements',
+          `Missing material/layer-set requirement for ${category}.`,
+        ),
+      );
     }
   }
 
   if (!isObject(requirements.classificationRequirements)) {
-    issues.push(issue(
-      severity,
-      'classification_requirements_missing',
-      '$.informationRequirements.classificationRequirements',
-      'Classification requirements must include DIN277 room placeholders, DIN276 element placeholders, and planned IFC classification references.',
-    ));
+    issues.push(
+      issue(
+        severity,
+        'classification_requirements_missing',
+        '$.informationRequirements.classificationRequirements',
+        'Classification requirements must include DIN277 room placeholders, DIN276 element placeholders, and planned IFC classification references.',
+      ),
+    );
   } else {
     const classificationPath = '$.informationRequirements.classificationRequirements';
     for (const key of ['roomSystem', 'elementSystem', 'ifcClassificationReferences']) {
       requireString(issues, requirements.classificationRequirements, key, classificationPath);
     }
-    requireArray(issues, requirements.classificationRequirements, 'requiredPlaceholders', classificationPath, { min: 1 });
+    requireArray(
+      issues,
+      requirements.classificationRequirements,
+      'requiredPlaceholders',
+      classificationPath,
+      { min: 1 },
+    );
+  }
+
+  const structurePath = '$.informationRequirements.structureLiteRequirements';
+  if (BIM_REQUIRED_TARGETS.has(target) || isObject(requirements.structureLiteRequirements)) {
+    const structure = requireObjectSection(
+      issues,
+      requirements,
+      'structureLiteRequirements',
+      '$.informationRequirements',
+      severity,
+    );
+    if (structure) {
+      for (const key of REQUIRED_STRUCTURE_LITE_SECTIONS) {
+        requireSectionArray(issues, structure, key, structurePath, severity);
+      }
+    }
+  }
+
+  const mepPath = '$.informationRequirements.mepLiteRequirements';
+  if (BIM_REQUIRED_TARGETS.has(target) || isObject(requirements.mepLiteRequirements)) {
+    const mep = requireObjectSection(
+      issues,
+      requirements,
+      'mepLiteRequirements',
+      '$.informationRequirements',
+      severity,
+    );
+    if (mep) {
+      for (const key of REQUIRED_MEP_LITE_SECTIONS) {
+        requireSectionArray(issues, mep, key, mepPath, severity);
+      }
+    }
+  }
+
+  const sitePath = '$.informationRequirements.planningSiteRequirements';
+  if (BIM_REQUIRED_TARGETS.has(target) || isObject(requirements.planningSiteRequirements)) {
+    const site = requireObjectSection(
+      issues,
+      requirements,
+      'planningSiteRequirements',
+      '$.informationRequirements',
+      severity,
+    );
+    if (site) {
+      for (const key of REQUIRED_PLANNING_SITE_FIELDS) {
+        requireString(issues, site, key, sitePath);
+      }
+    }
   }
 
   requireArray(issues, requirements, 'schedules', '$.informationRequirements', {
     min: BIM_REQUIRED_TARGETS.has(target) ? 1 : 0,
   });
+
+  if (!isObject(requirements.exportRequirements)) {
+    issues.push(
+      issue(
+        severity,
+        'export_requirements_missing',
+        '$.informationRequirements.exportRequirements',
+        'Export requirements must declare IFC, GLB/glTF, PDF/sheets, schedules, evidence package, and source bundle outputs.',
+      ),
+    );
+  } else {
+    const exportOutputs = requireArray(
+      issues,
+      requirements.exportRequirements,
+      'outputs',
+      '$.informationRequirements.exportRequirements',
+      {
+        min: BIM_REQUIRED_TARGETS.has(target) ? 1 : 0,
+      },
+    );
+    const missingOutputs = REQUIRED_EXPORT_OUTPUTS.filter(
+      (output) => !hasExportOutput(exportOutputs, output),
+    );
+    if (missingOutputs.length) {
+      issues.push(
+        issue(
+          severity,
+          'export_outputs_missing',
+          '$.informationRequirements.exportRequirements.outputs',
+          `Missing required exchange output(s): ${missingOutputs.join(', ')}.`,
+        ),
+      );
+    }
+  }
+
+  const passportPath = '$.informationRequirements.sustainabilityMaterialPassportRequirements';
+  if (
+    BIM_REQUIRED_TARGETS.has(target) ||
+    isObject(requirements.sustainabilityMaterialPassportRequirements)
+  ) {
+    const passports = requireObjectSection(
+      issues,
+      requirements,
+      'sustainabilityMaterialPassportRequirements',
+      '$.informationRequirements',
+      severity,
+    );
+    if (passports) {
+      const passportMaterials = requireArray(issues, passports, 'materials', passportPath, {
+        min: BIM_REQUIRED_TARGETS.has(target) ? 1 : 0,
+      });
+      const passportKeys = new Set();
+      passportMaterials.forEach((entry, index) => {
+        const p = `${passportPath}.materials[${index}]`;
+        if (!isObject(entry)) {
+          issues.push(
+            issue(
+              'error',
+              'invalid_material_passport',
+              p,
+              'Material passport entry must be an object.',
+            ),
+          );
+          return;
+        }
+        for (const key of [
+          'materialKey',
+          'epdSource',
+          'sourceConfidence',
+          'embodiedCarbonPlaceholder',
+          'reuseNotes',
+          'recyclabilityNotes',
+          'quantitySource',
+        ]) {
+          requireString(issues, entry, key, p);
+        }
+        if (typeof entry.materialKey === 'string') passportKeys.add(entry.materialKey);
+      });
+      const layerMaterialKeys = uniqueStrings(
+        layerSets.flatMap((row) =>
+          Array.isArray(row?.layers) ? row.layers.map((layer) => layer?.materialKey) : [],
+        ),
+      );
+      const missingPassports = layerMaterialKeys.filter(
+        (materialKey) => !passportKeys.has(materialKey),
+      );
+      if (missingPassports.length) {
+        issues.push(
+          issue(
+            severity,
+            'material_passport_entries_missing',
+            `${passportPath}.materials`,
+            `Missing material passport starter data for materialKey(s): ${missingPassports.join(', ')}.`,
+          ),
+        );
+      }
+    }
+  }
+
   requireArray(issues, requirements, 'dataQualityChecks', '$.informationRequirements', {
     min: BIM_REQUIRED_TARGETS.has(target) ? 1 : 0,
   });
@@ -340,22 +663,28 @@ export function validateSketchIr(ir) {
     return [issue('error', 'invalid_ir', '$', 'Sketch Understanding IR must be a JSON object.')];
   }
   if (ir.schemaVersion !== 'sketch-understanding-ir.v0') {
-    issues.push(issue('error', 'schema_version', '$.schemaVersion', 'Expected sketch-understanding-ir.v0.'));
+    issues.push(
+      issue('error', 'schema_version', '$.schemaVersion', 'Expected sketch-understanding-ir.v0.'),
+    );
   }
   requireString(issues, ir, 'projectType', '$');
   requireString(issues, ir, 'qualityTarget', '$');
   const mode = INITIATION_MODES[ir.qualityTarget];
   if (typeof ir.qualityTarget === 'string' && !mode) {
-    issues.push(issue(
-      'error',
-      'invalid_quality_target',
-      '$.qualityTarget',
-      `qualityTarget must be one of ${Object.keys(INITIATION_MODES).join(', ')}.`,
-    ));
+    issues.push(
+      issue(
+        'error',
+        'invalid_quality_target',
+        '$.qualityTarget',
+        `qualityTarget must be one of ${Object.keys(INITIATION_MODES).join(', ')}.`,
+      ),
+    );
   }
 
   if (!isObject(ir.sourceInputs)) {
-    issues.push(issue('error', 'missing_object', '$.sourceInputs', 'sourceInputs must be an object.'));
+    issues.push(
+      issue('error', 'missing_object', '$.sourceInputs', 'sourceInputs must be an object.'),
+    );
   } else {
     requireArray(issues, ir.sourceInputs, 'images', '$.sourceInputs', { min: 1 });
   }
@@ -378,13 +707,27 @@ export function validateSketchIr(ir) {
     requireString(issues, feature, 'id', p);
     requireString(issues, feature, 'kind', p);
     if (!PRIORITIES.has(feature.visualPriority)) {
-      issues.push(issue('error', 'invalid_priority', `${p}.visualPriority`, 'visualPriority must be critical, high, medium, or low.'));
+      issues.push(
+        issue(
+          'error',
+          'invalid_priority',
+          `${p}.visualPriority`,
+          'visualPriority must be critical, high, medium, or low.',
+        ),
+      );
     }
     requireArray(issues, feature, 'mustRenderInViews', p, { min: 1 });
     if (feature.visualPriority === 'critical') {
       const needs = Array.isArray(feature.capabilityNeeds) ? feature.capabilityNeeds : [];
       if (needs.length === 0) {
-        issues.push(issue('warning', 'critical_feature_needs_missing', `${p}.capabilityNeeds`, 'Critical features should list capabilityNeeds so the authoring route is explicit.'));
+        issues.push(
+          issue(
+            'warning',
+            'critical_feature_needs_missing',
+            `${p}.capabilityNeeds`,
+            'Critical features should list capabilityNeeds so the authoring route is explicit.',
+          ),
+        );
       }
     }
   });
@@ -414,30 +757,41 @@ export function validateSketchIr(ir) {
     requireString(issues, assumption, 'statement', p);
     requireString(issues, assumption, 'confidence', p);
     if (!assumption.validation) {
-      issues.push(issue('warning', 'assumption_validation_missing', `${p}.validation`, 'Assumption has no validation route.'));
+      issues.push(
+        issue(
+          'warning',
+          'assumption_validation_missing',
+          `${p}.validation`,
+          'Assumption has no validation route.',
+        ),
+      );
     }
   });
 
   if (!Array.isArray(ir.programme) || ir.programme.length === 0) {
-    issues.push(issue(
-      mode?.requireProgramme ? 'error' : 'warning',
-      'programme_missing',
-      '$.programme',
-      'No programme entries were supplied; room and usability checks will be weaker.',
-    ));
+    issues.push(
+      issue(
+        mode?.requireProgramme ? 'error' : 'warning',
+        'programme_missing',
+        '$.programme',
+        'No programme entries were supplied; room and usability checks will be weaker.',
+      ),
+    );
   }
 
   if (mode?.requireDiagnosticView && Array.isArray(ir.requiredViews)) {
-    const hasDiagnostic = ir.requiredViews.some((view) => (
-      ['diagnostic', 'plan', 'floor_plan', 'section'].includes(view?.kind)
-    ));
+    const hasDiagnostic = ir.requiredViews.some((view) =>
+      ['diagnostic', 'plan', 'floor_plan', 'section'].includes(view?.kind),
+    );
     if (!hasDiagnostic) {
-      issues.push(issue(
-        ir.qualityTarget === 'documentation_ready' ? 'error' : 'warning',
-        'diagnostic_view_missing',
-        '$.requiredViews',
-        `${mode.label} should include a diagnostic/plan/section view so topology defects are visible.`,
-      ));
+      issues.push(
+        issue(
+          ir.qualityTarget === 'documentation_ready' ? 'error' : 'warning',
+          'diagnostic_view_missing',
+          '$.requiredViews',
+          `${mode.label} should include a diagnostic/plan/section view so topology defects are visible.`,
+        ),
+      );
     }
   }
 
@@ -449,10 +803,19 @@ export function validateSketchIr(ir) {
 export function validateCapabilityMatrix(matrix) {
   const issues = [];
   if (!isObject(matrix)) {
-    return [issue('error', 'invalid_capability_matrix', '$', 'Capability matrix must be a JSON object.')];
+    return [
+      issue('error', 'invalid_capability_matrix', '$', 'Capability matrix must be a JSON object.'),
+    ];
   }
   if (matrix.schemaVersion !== 'sketch-to-bim-capability-matrix.v0') {
-    issues.push(issue('error', 'capability_schema_version', '$.schemaVersion', 'Expected sketch-to-bim-capability-matrix.v0.'));
+    issues.push(
+      issue(
+        'error',
+        'capability_schema_version',
+        '$.schemaVersion',
+        'Expected sketch-to-bim-capability-matrix.v0.',
+      ),
+    );
   }
   const capabilities = requireArray(issues, matrix, 'capabilities', '$', { min: 1 });
   capabilities.forEach((capability, index) => {
@@ -465,9 +828,22 @@ export function validateCapabilityMatrix(matrix) {
     requireString(issues, capability, 'title', p);
     requireArray(issues, capability, 'featureKinds', p, { min: 1 });
     if (!CAPABILITY_STATUSES.has(capability.status)) {
-      issues.push(issue('error', 'invalid_capability_status', `${p}.status`, 'Capability status must be supported, partial, or gap.'));
+      issues.push(
+        issue(
+          'error',
+          'invalid_capability_status',
+          `${p}.status`,
+          'Capability status must be supported, partial, or gap.',
+        ),
+      );
     }
-    for (const key of ['commandSurface', 'rendererSurface', 'advisorCoverage', 'knownFailureModes', 'requiredEvidence']) {
+    for (const key of [
+      'commandSurface',
+      'rendererSurface',
+      'advisorCoverage',
+      'knownFailureModes',
+      'requiredEvidence',
+    ]) {
       requireArray(issues, capability, key, p, { min: 1 });
     }
     requireString(issues, capability, 'fallback', p);
@@ -490,12 +866,18 @@ function capabilityIndex(matrix) {
 }
 
 function featureReadiness(feature, matches, missingViews) {
-  if (matches.length === 0) return feature.visualPriority === 'critical' ? 'blocked' : 'needs_attention';
-  if (feature.visualPriority === 'critical' && matches.every((capability) => capability.status === 'gap')) {
+  if (matches.length === 0)
+    return feature.visualPriority === 'critical' ? 'blocked' : 'needs_attention';
+  if (
+    feature.visualPriority === 'critical' &&
+    matches.every((capability) => capability.status === 'gap')
+  ) {
     return 'blocked';
   }
   if (missingViews.length && feature.visualPriority === 'critical') return 'blocked';
-  if (matches.some((capability) => capability.status === 'partial' || capability.status === 'gap')) {
+  if (
+    matches.some((capability) => capability.status === 'partial' || capability.status === 'gap')
+  ) {
     return 'needs_attention';
   }
   if (missingViews.length) return 'needs_attention';
@@ -503,10 +885,7 @@ function featureReadiness(feature, matches, missingViews) {
 }
 
 export function buildCapabilityCoverage(ir, matrix, options = {}) {
-  const issues = [
-    ...validateSketchIr(ir),
-    ...validateCapabilityMatrix(matrix),
-  ];
+  const issues = [...validateSketchIr(ir), ...validateCapabilityMatrix(matrix)];
   const viewIds = new Set((ir.requiredViews ?? []).map((view) => view?.id).filter(Boolean));
   const features = Array.isArray(ir.features) ? ir.features : [];
   const index = capabilityIndex(matrix);
@@ -515,7 +894,9 @@ export function buildCapabilityCoverage(ir, matrix, options = {}) {
   for (const feature of features) {
     if (!isObject(feature)) continue;
     const matches = index.get(feature.kind) ?? [];
-    const mustRenderInViews = Array.isArray(feature.mustRenderInViews) ? feature.mustRenderInViews : [];
+    const mustRenderInViews = Array.isArray(feature.mustRenderInViews)
+      ? feature.mustRenderInViews
+      : [];
     const missingViews = mustRenderInViews.filter((viewId) => !viewIds.has(viewId));
     for (const viewId of missingViews) {
       issues.push(
@@ -536,7 +917,10 @@ export function buildCapabilityCoverage(ir, matrix, options = {}) {
           `No capability maps feature kind ${feature.kind}.`,
         ),
       );
-    } else if (feature.visualPriority === 'critical' && matches.every((capability) => capability.status === 'gap')) {
+    } else if (
+      feature.visualPriority === 'critical' &&
+      matches.every((capability) => capability.status === 'gap')
+    ) {
       issues.push(
         issue(
           'error',
@@ -605,10 +989,12 @@ export function buildCapabilityCoverage(ir, matrix, options = {}) {
 export function buildCapabilityGapTasks(coverage) {
   const tasks = [];
   for (const feature of coverage.features ?? []) {
-    const gapIssues = (coverage.issues ?? []).filter((item) => (
-      ['capability_missing', 'critical_capability_gap', 'feature_view_missing'].includes(item.code) &&
-      String(item.path ?? '').includes(feature.featureId)
-    ));
+    const gapIssues = (coverage.issues ?? []).filter(
+      (item) =>
+        ['capability_missing', 'critical_capability_gap', 'feature_view_missing'].includes(
+          item.code,
+        ) && String(item.path ?? '').includes(feature.featureId),
+    );
     if (feature.readiness !== 'blocked' && gapIssues.length === 0) continue;
     const matchedGaps = (feature.capabilityMatches ?? []).filter(
       (capability) => capability.status === 'gap',
@@ -994,10 +1380,22 @@ export function buildVisualChecklist(ir, coverage) {
   }
 
   const globalChecks = [
-    ['global:silhouette', 'All required 3D views read as the sketch silhouette, not a generic building.'],
-    ['global:advisor', 'Advisor warning/error findings are fixed or explicitly tolerated with elementIds.'],
-    ['global:interior', 'Rooms, doors, stairs, and slab openings are plausible in plan and wire diagnostics.'],
-    ['global:artifacts', 'No visible gaps, z-fighting, uncut walls, false masses, or distracting material artifacts remain.'],
+    [
+      'global:silhouette',
+      'All required 3D views read as the sketch silhouette, not a generic building.',
+    ],
+    [
+      'global:advisor',
+      'Advisor warning/error findings are fixed or explicitly tolerated with elementIds.',
+    ],
+    [
+      'global:interior',
+      'Rooms, doors, stairs, and slab openings are plausible in plan and wire diagnostics.',
+    ],
+    [
+      'global:artifacts',
+      'No visible gaps, z-fighting, uncut walls, false masses, or distracting material artifacts remain.',
+    ],
   ];
   for (const [id, prompt] of globalChecks) {
     items.push({
@@ -1040,9 +1438,11 @@ export function applyScreenshotManifestToChecklist(checklist, screenshotManifest
         ...item,
         status: item.status === 'unchecked' ? 'needs_review' : item.status,
         screenshotPath: capture.screenshotPath,
-        notes: item.notes || (capture.fallbackFit
-          ? 'Screenshot captured with fit fallback because no saved viewpoint id matched this required view.'
-          : ''),
+        notes:
+          item.notes ||
+          (capture.fallbackFit
+            ? 'Screenshot captured with fit fallback because no saved viewpoint id matched this required view.'
+            : ''),
       };
     }),
   };
@@ -1076,58 +1476,72 @@ export function buildBimDataQualityReport({ ir, evidenceRun = null } = {}) {
   }
 
   if (!requirements) {
-    checks.push(qualityCheck(
-      'information_requirements_present',
-      required ? 'error' : 'warning',
-      'No BIM informationRequirements were supplied.',
-    ));
+    checks.push(
+      qualityCheck(
+        'information_requirements_present',
+        required ? 'error' : 'warning',
+        'No BIM informationRequirements were supplied.',
+      ),
+    );
   } else {
-    checks.push(qualityCheck(
-      'information_requirements_present',
-      'pass',
-      'BIM informationRequirements are present.',
-    ));
+    checks.push(
+      qualityCheck(
+        'information_requirements_present',
+        'pass',
+        'BIM informationRequirements are present.',
+      ),
+    );
   }
 
   const rooms = Array.isArray(requirements?.rooms) ? requirements.rooms : [];
   const levels = uniqueStrings(rooms.map((room) => room?.level));
   if (rooms.length > 0) {
-    checks.push(qualityCheck(
-      'room_requirements',
-      'pass',
-      `${rooms.length} room/space requirement(s) declare IfcSpace intent, access, classification, and schedule inclusion.`,
-      { requiredRooms: rooms.length, requiredLevels: levels },
-    ));
+    checks.push(
+      qualityCheck(
+        'room_requirements',
+        'pass',
+        `${rooms.length} room/space requirement(s) declare IfcSpace intent, access, classification, and schedule inclusion.`,
+        { requiredRooms: rooms.length, requiredLevels: levels },
+      ),
+    );
   } else {
-    checks.push(qualityCheck(
-      'room_requirements',
-      required ? 'error' : 'warning',
-      'No room/space requirements were declared.',
-    ));
+    checks.push(
+      qualityCheck(
+        'room_requirements',
+        required ? 'error' : 'warning',
+        'No room/space requirements were declared.',
+      ),
+    );
   }
 
   if (modelStats) {
     const roomCount = snapshotKindCount(modelStats, ['room', 'space']);
-    checks.push(qualityCheck(
-      'model_room_count',
-      roomCount >= rooms.length ? 'pass' : 'error',
-      `Live model has ${roomCount} room/space element(s); IR requires ${rooms.length}.`,
-      { actual: roomCount, expected: rooms.length },
-    ));
+    checks.push(
+      qualityCheck(
+        'model_room_count',
+        roomCount >= rooms.length ? 'pass' : 'error',
+        `Live model has ${roomCount} room/space element(s); IR requires ${rooms.length}.`,
+        { actual: roomCount, expected: rooms.length },
+      ),
+    );
     const levelCount = snapshotKindCount(modelStats, ['level']);
-    checks.push(qualityCheck(
-      'model_level_count',
-      levelCount >= levels.length ? 'pass' : 'error',
-      `Live model has ${levelCount} level element(s); IR references ${levels.length} level label(s).`,
-      { actual: levelCount, expected: levels.length },
-    ));
+    checks.push(
+      qualityCheck(
+        'model_level_count',
+        levelCount >= levels.length ? 'pass' : 'error',
+        `Live model has ${levelCount} level element(s); IR references ${levels.length} level label(s).`,
+        { actual: levelCount, expected: levels.length },
+      ),
+    );
   } else if (required) {
-    checks.push(qualityCheck(
-      'live_room_level_check',
-      'planned',
-      'Live room and level counts will be checked by initiation-run evidence.',
-      { expectedRooms: rooms.length, expectedLevelLabels: levels.length },
-    ));
+    checks.push(
+      qualityCheck(
+        'live_room_level_check',
+        'planned',
+        'Live room and level counts will be checked by initiation-run evidence.',
+        { expectedRooms: rooms.length, expectedLevelLabels: levels.length },
+      ),
+    );
   }
 
   const semanticRows = Array.isArray(requirements?.elementSemanticRequirements)
@@ -1137,14 +1551,16 @@ export function buildBimDataQualityReport({ ir, evidenceRun = null } = {}) {
   const missingSemanticCategories = REQUIRED_ELEMENT_SEMANTIC_CATEGORIES.filter(
     (category) => !semanticCategories.has(category),
   );
-  checks.push(qualityCheck(
-    'element_semantic_requirements',
-    missingSemanticCategories.length ? (required ? 'error' : 'warning') : 'pass',
-    missingSemanticCategories.length
-      ? `Missing semantic requirement(s): ${missingSemanticCategories.join(', ')}.`
-      : 'Required element categories declare BIM category and IFC entity intent.',
-    { missing: missingSemanticCategories },
-  ));
+  checks.push(
+    qualityCheck(
+      'element_semantic_requirements',
+      missingSemanticCategories.length ? (required ? 'error' : 'warning') : 'pass',
+      missingSemanticCategories.length
+        ? `Missing semantic requirement(s): ${missingSemanticCategories.join(', ')}.`
+        : 'Required element categories declare BIM category and IFC entity intent.',
+      { missing: missingSemanticCategories },
+    ),
+  );
 
   if (modelStats) {
     const categoryKindMap = {
@@ -1163,12 +1579,14 @@ export function buildBimDataQualityReport({ ir, evidenceRun = null } = {}) {
       if (!semanticCategories.has(category)) continue;
       const kinds = categoryKindMap[category] ?? [category];
       const actual = snapshotKindCount(modelStats, kinds);
-      checks.push(qualityCheck(
-        `model_category_${category}`,
-        actual > 0 ? 'pass' : 'error',
-        `Live model has ${actual} element(s) for required category ${category}.`,
-        { actual, expectedKinds: kinds },
-      ));
+      checks.push(
+        qualityCheck(
+          `model_category_${category}`,
+          actual > 0 ? 'pass' : 'error',
+          `Live model has ${actual} element(s) for required category ${category}.`,
+          { actual, expectedKinds: kinds },
+        ),
+      );
     }
   }
 
@@ -1176,58 +1594,148 @@ export function buildBimDataQualityReport({ ir, evidenceRun = null } = {}) {
     ? requirements.materialLayerSetRequirements
     : [];
   const layerSetCategories = new Set(
-    layerSets.flatMap((row) => (Array.isArray(row?.appliesToCategories) ? row.appliesToCategories : [])),
+    layerSets.flatMap((row) =>
+      Array.isArray(row?.appliesToCategories) ? row.appliesToCategories : [],
+    ),
   );
   const missingLayerSets = REQUIRED_LAYER_SET_CATEGORIES.filter(
     (category) => !layerSetCategories.has(category),
   );
-  checks.push(qualityCheck(
-    'material_layer_set_requirements',
-    missingLayerSets.length ? (required ? 'error' : 'warning') : 'pass',
-    missingLayerSets.length
-      ? `Missing material/layer-set requirement(s): ${missingLayerSets.join(', ')}.`
-      : 'Wall, slab, and roof layer-set requirements include material layers and performance placeholders.',
-    { missing: missingLayerSets },
-  ));
+  checks.push(
+    qualityCheck(
+      'material_layer_set_requirements',
+      missingLayerSets.length ? (required ? 'error' : 'warning') : 'pass',
+      missingLayerSets.length
+        ? `Missing material/layer-set requirement(s): ${missingLayerSets.join(', ')}.`
+        : 'Wall, slab, and roof layer-set requirements include material layers and performance placeholders.',
+      { missing: missingLayerSets },
+    ),
+  );
   if (modelStats) {
     const typeCount = snapshotKindCount(modelStats, ['wall_type', 'floor_type', 'roof_type']);
-    checks.push(qualityCheck(
-      'model_type_layer_set_count',
-      typeCount >= REQUIRED_LAYER_SET_CATEGORIES.length ? 'pass' : 'error',
-      `Live model has ${typeCount} wall/floor/roof type element(s); layer-set intent requires at least ${REQUIRED_LAYER_SET_CATEGORIES.length}.`,
-      { actual: typeCount, expected: REQUIRED_LAYER_SET_CATEGORIES.length },
-    ));
+    checks.push(
+      qualityCheck(
+        'model_type_layer_set_count',
+        typeCount >= REQUIRED_LAYER_SET_CATEGORIES.length ? 'pass' : 'error',
+        `Live model has ${typeCount} wall/floor/roof type element(s); layer-set intent requires at least ${REQUIRED_LAYER_SET_CATEGORIES.length}.`,
+        { actual: typeCount, expected: REQUIRED_LAYER_SET_CATEGORIES.length },
+      ),
+    );
   }
 
   const classifications = requirements?.classificationRequirements;
-  checks.push(qualityCheck(
-    'classification_placeholders',
-    isObject(classifications) ? 'pass' : (required ? 'error' : 'warning'),
-    isObject(classifications)
-      ? 'DIN277 room, DIN276 element, and planned IFC classification placeholders are declared.'
-      : 'Classification placeholders are missing.',
-  ));
+  checks.push(
+    qualityCheck(
+      'classification_placeholders',
+      isObject(classifications) ? 'pass' : required ? 'error' : 'warning',
+      isObject(classifications)
+        ? 'DIN277 room, DIN276 element, and planned IFC classification placeholders are declared.'
+        : 'Classification placeholders are missing.',
+    ),
+  );
+
+  const structure = requirements?.structureLiteRequirements;
+  const missingStructure = REQUIRED_STRUCTURE_LITE_SECTIONS.filter(
+    (key) => !Array.isArray(structure?.[key]) || structure[key].length === 0,
+  );
+  checks.push(
+    qualityCheck(
+      'structure_lite_requirements',
+      missingStructure.length ? (required ? 'error' : 'warning') : 'pass',
+      missingStructure.length
+        ? `Missing structure-lite section(s): ${missingStructure.join(', ')}.`
+        : 'Structure-lite load-bearing, support, opening coordination, and load-path assumptions are declared.',
+      { missing: missingStructure },
+    ),
+  );
+
+  const mep = requirements?.mepLiteRequirements;
+  const missingMep = REQUIRED_MEP_LITE_SECTIONS.filter(
+    (key) => !Array.isArray(mep?.[key]) || mep[key].length === 0,
+  );
+  checks.push(
+    qualityCheck(
+      'mep_lite_requirements',
+      missingMep.length ? (required ? 'error' : 'warning') : 'pass',
+      missingMep.length
+        ? `Missing MEP-lite section(s): ${missingMep.join(', ')}.`
+        : 'MEP-lite wet-room, riser, equipment, route, service-level, and opening request placeholders are declared.',
+      { missing: missingMep },
+    ),
+  );
+
+  const site = requirements?.planningSiteRequirements;
+  const missingSite = REQUIRED_PLANNING_SITE_FIELDS.filter(
+    (key) => typeof site?.[key] !== 'string' || site[key].trim() === '',
+  );
+  checks.push(
+    qualityCheck(
+      'planning_site_requirements',
+      missingSite.length ? (required ? 'error' : 'warning') : 'pass',
+      missingSite.length
+        ? `Missing planning/site field(s): ${missingSite.join(', ')}.`
+        : 'Planning/site orientation, base/survey point, setback, sun, and code-locale assumptions are declared.',
+      { missing: missingSite },
+    ),
+  );
 
   const schedules = Array.isArray(requirements?.schedules) ? requirements.schedules : [];
-  checks.push(qualityCheck(
-    'schedule_requirements',
-    schedules.length > 0 ? 'pass' : (required ? 'error' : 'warning'),
-    schedules.length > 0
-      ? `${schedules.length} schedule requirement(s) declared.`
-      : 'No schedule requirements were declared.',
-    { count: schedules.length },
-  ));
+  checks.push(
+    qualityCheck(
+      'schedule_requirements',
+      schedules.length > 0 ? 'pass' : required ? 'error' : 'warning',
+      schedules.length > 0
+        ? `${schedules.length} schedule requirement(s) declared.`
+        : 'No schedule requirements were declared.',
+      { count: schedules.length },
+    ),
+  );
 
   const exportRequirements = requirements?.exportRequirements;
-  const exportOutputs = Array.isArray(exportRequirements?.outputs) ? exportRequirements.outputs : [];
-  checks.push(qualityCheck(
-    'export_readiness_requirements',
-    exportOutputs.length > 0 ? 'pass' : (required ? 'error' : 'warning'),
-    exportOutputs.length > 0
-      ? `Export readiness outputs declared: ${exportOutputs.join(', ')}.`
-      : 'No export readiness outputs were declared.',
-    { outputs: exportOutputs },
-  ));
+  const exportOutputs = Array.isArray(exportRequirements?.outputs)
+    ? exportRequirements.outputs
+    : [];
+  const missingExportOutputs = REQUIRED_EXPORT_OUTPUTS.filter(
+    (output) => !hasExportOutput(exportOutputs, output),
+  );
+  checks.push(
+    qualityCheck(
+      'export_readiness_requirements',
+      missingExportOutputs.length === 0 ? 'pass' : required ? 'error' : 'warning',
+      missingExportOutputs.length === 0
+        ? `Export readiness outputs declared: ${exportOutputs.join(', ')}.`
+        : `Missing export readiness output(s): ${missingExportOutputs.join(', ')}.`,
+      { outputs: exportOutputs, missing: missingExportOutputs },
+    ),
+  );
+
+  const passportMaterials = Array.isArray(
+    requirements?.sustainabilityMaterialPassportRequirements?.materials,
+  )
+    ? requirements.sustainabilityMaterialPassportRequirements.materials
+    : [];
+  const passportKeys = new Set(
+    passportMaterials.map((entry) => entry?.materialKey).filter(Boolean),
+  );
+  const missingPassports = uniqueStrings(
+    layerSets.flatMap((row) =>
+      Array.isArray(row?.layers) ? row.layers.map((layer) => layer?.materialKey) : [],
+    ),
+  ).filter((materialKey) => !passportKeys.has(materialKey));
+  checks.push(
+    qualityCheck(
+      'sustainability_material_passports',
+      passportMaterials.length > 0 && missingPassports.length === 0
+        ? 'pass'
+        : required
+          ? 'error'
+          : 'warning',
+      passportMaterials.length > 0 && missingPassports.length === 0
+        ? `${passportMaterials.length} material passport starter entr${passportMaterials.length === 1 ? 'y' : 'ies'} declare EPD/source confidence, carbon placeholder, reuse/recyclability notes, and quantity source.`
+        : `Missing material passport starter data${missingPassports.length ? ` for ${missingPassports.join(', ')}` : ''}.`,
+      { count: passportMaterials.length, missing: missingPassports },
+    ),
+  );
 
   const summary = {
     passCount: checks.filter((check) => check.status === 'pass').length,
@@ -1301,7 +1809,9 @@ export function buildAcceptanceGateReport({
   if (!preflightOnly && screenshotManifest && Array.isArray(ir?.requiredViews)) {
     const captured = new Set((screenshotManifest.captures ?? []).map((capture) => capture.viewId));
     const missing = ir.requiredViews
-      .filter((view) => ['3d', 'elevation', 'diagnostic', 'plan', 'floor_plan', 'section'].includes(view?.kind))
+      .filter((view) =>
+        ['3d', 'elevation', 'diagnostic', 'plan', 'floor_plan', 'section'].includes(view?.kind),
+      )
       .map((view) => view.id)
       .filter((viewId) => !captured.has(viewId));
     if (missing.length) {
@@ -1420,9 +1930,13 @@ export function buildAcceptanceGateReport({
       bimDataQualityPlannedCount: bimQuality?.summary?.plannedCount ?? 0,
       exchangeValidationErrorCount: exchangeValidation?.summary?.errorCount ?? 0,
       exchangeValidationWarningCount: exchangeValidation?.summary?.warningCount ?? 0,
+      evidenceFreshnessOk: evidenceFreshness?.ok ?? null,
+      staleEvidenceCount: evidenceFreshness?.summary?.staleCount ?? 0,
+      missingEvidenceFreshnessCount: evidenceFreshness?.summary?.missingCount ?? 0,
     },
     bimDataQuality: bimQuality,
     exchangeValidation,
+    evidenceFreshness,
     blockers,
     tolerances,
   };
@@ -1440,11 +1954,14 @@ export function formatStatusMarkdown(coverage, checklist, liveAdvisor = null, ev
   lines.push(`Generated: ${coverage.generatedAt}`);
   if (coverage.modelId) lines.push(`Model: ${coverage.modelId}`);
   if (coverage.irPath) lines.push(`IR: ${coverage.irPath}`);
-  if (coverage.capabilityMatrixPath) lines.push(`Capability matrix: ${coverage.capabilityMatrixPath}`);
+  if (coverage.capabilityMatrixPath)
+    lines.push(`Capability matrix: ${coverage.capabilityMatrixPath}`);
   lines.push('');
   lines.push('## Summary');
   lines.push('');
-  lines.push(`- Features: ${coverage.summary.featureCount} (${coverage.summary.criticalFeatureCount} critical)`);
+  lines.push(
+    `- Features: ${coverage.summary.featureCount} (${coverage.summary.criticalFeatureCount} critical)`,
+  );
   lines.push(`- Ready: ${coverage.summary.readyCount}`);
   lines.push(`- Needs attention: ${coverage.summary.needsAttentionCount}`);
   lines.push(`- Blocked: ${coverage.summary.blockedCount}`);
@@ -1456,11 +1973,19 @@ export function formatStatusMarkdown(coverage, checklist, liveAdvisor = null, ev
   const warnings = coverage.issues.filter((item) => item.severity === 'warning');
   lines.push('## Blocking Issues');
   lines.push('');
-  lines.push(markdownTable(errors.map((item) => `- \`${item.code}\` at \`${item.path}\`: ${item.message}`)).trimEnd());
+  lines.push(
+    markdownTable(
+      errors.map((item) => `- \`${item.code}\` at \`${item.path}\`: ${item.message}`),
+    ).trimEnd(),
+  );
   lines.push('');
   lines.push('## Warnings');
   lines.push('');
-  lines.push(markdownTable(warnings.map((item) => `- \`${item.code}\` at \`${item.path}\`: ${item.message}`)).trimEnd());
+  lines.push(
+    markdownTable(
+      warnings.map((item) => `- \`${item.code}\` at \`${item.path}\`: ${item.message}`),
+    ).trimEnd(),
+  );
   lines.push('');
 
   lines.push('## Feature Coverage');
@@ -1469,15 +1994,21 @@ export function formatStatusMarkdown(coverage, checklist, liveAdvisor = null, ev
   lines.push('| --- | --- | --- | --- | --- |');
   for (const feature of coverage.features) {
     const capabilityStatus = feature.capabilityMatches.length
-      ? feature.capabilityMatches.map((capability) => `${capability.id}:${capability.status}`).join('<br>')
+      ? feature.capabilityMatches
+          .map((capability) => `${capability.id}:${capability.status}`)
+          .join('<br>')
       : 'missing';
-    lines.push(`| ${feature.featureId} | ${feature.kind} | ${feature.visualPriority} | ${feature.readiness} | ${capabilityStatus} |`);
+    lines.push(
+      `| ${feature.featureId} | ${feature.kind} | ${feature.visualPriority} | ${feature.readiness} | ${capabilityStatus} |`,
+    );
   }
   lines.push('');
   lines.push('## Visual Checklist');
   lines.push('');
   lines.push(`Checklist items: ${checklist.items.length}`);
-  lines.push('Every item starts as `unchecked`; acceptance requires screenshot evidence and pass/fail notes.');
+  lines.push(
+    'Every item starts as `unchecked`; acceptance requires screenshot evidence and pass/fail notes.',
+  );
   lines.push('');
   lines.push('## Live Advisor');
   lines.push('');
@@ -1487,7 +2018,9 @@ export function formatStatusMarkdown(coverage, checklist, liveAdvisor = null, ev
     for (const severity of ['warning', 'info']) {
       const summary = liveAdvisor[severity];
       if (!summary) continue;
-      lines.push(`- ${severity}: ${summary.total ?? 0} finding(s) across ${(summary.groups ?? []).length} group(s).`);
+      lines.push(
+        `- ${severity}: ${summary.total ?? 0} finding(s) across ${(summary.groups ?? []).length} group(s).`,
+      );
     }
   }
   lines.push('');
@@ -1498,6 +2031,21 @@ export function formatStatusMarkdown(coverage, checklist, liveAdvisor = null, ev
   } else {
     for (const [label, filePath] of Object.entries(evidenceRun.liveArtifacts)) {
       lines.push(`- ${label}: \`${filePath}\``);
+    }
+  }
+  lines.push('');
+  lines.push('## Evidence Freshness');
+  lines.push('');
+  if (!evidenceRun?.evidenceFreshness) {
+    lines.push('No current-head evidence freshness report was attached.');
+  } else {
+    const freshness = evidenceRun.evidenceFreshness;
+    lines.push(`Freshness: ${freshness.ok ? 'pass' : 'fail'}`);
+    for (const check of freshness.checks ?? []) {
+      lines.push(`- ${check.id}: ${check.status}`);
+    }
+    for (const blocker of freshness.blockers ?? []) {
+      lines.push(`- blocker \`${blocker.code}\`: ${blocker.message}`);
     }
   }
   lines.push('');
@@ -1579,7 +2127,9 @@ export function formatStatusMarkdown(coverage, checklist, liveAdvisor = null, ev
     lines.push('Not evaluated by this packet.');
   } else {
     const report = evidenceRun.acceptanceGateReport;
-    lines.push(`Result: ${report.ok ? 'pass' : 'blocked'} (${report.summary.blockerCount} blocker(s), ${report.summary.toleranceCount} tolerance(s)).`);
+    lines.push(
+      `Result: ${report.ok ? 'pass' : 'blocked'} (${report.summary.blockerCount} blocker(s), ${report.summary.toleranceCount} tolerance(s)).`,
+    );
     for (const blocker of report.blockers ?? []) {
       lines.push(`- \`${blocker.code}\`: ${blocker.message}`);
     }
@@ -1633,15 +2183,20 @@ export async function writeInitiationPacket({
   await fs.writeFile(files.ir, `${JSON.stringify(ir, null, 2)}\n`, 'utf8');
   await fs.writeFile(files.coverage, `${JSON.stringify(coverage, null, 2)}\n`, 'utf8');
   await fs.writeFile(files.checklist, `${JSON.stringify(checklist, null, 2)}\n`, 'utf8');
-  await fs.writeFile(files.bimDataQuality, `${JSON.stringify(bimDataQualityReport, null, 2)}\n`, 'utf8');
+  await fs.writeFile(
+    files.bimDataQuality,
+    `${JSON.stringify(bimDataQualityReport, null, 2)}\n`,
+    'utf8',
+  );
   await fs.writeFile(
     files.status,
-    formatStatusMarkdown(
-      coverage,
-      checklist,
-      liveAdvisor,
-      { ...(evidenceRun ?? {}), capabilityGaps, visualGateReport, acceptanceGateReport, bimDataQualityReport },
-    ),
+    formatStatusMarkdown(coverage, checklist, liveAdvisor, {
+      ...(evidenceRun ?? {}),
+      capabilityGaps,
+      visualGateReport,
+      acceptanceGateReport,
+      bimDataQualityReport,
+    }),
     'utf8',
   );
   if (liveAdvisor) {
@@ -1650,17 +2205,37 @@ export async function writeInitiationPacket({
   }
   if (screenshotManifest) {
     files.screenshotManifest = path.join(outDir, 'screenshot-manifest.json');
-    await fs.writeFile(files.screenshotManifest, `${JSON.stringify(screenshotManifest, null, 2)}\n`, 'utf8');
+    await fs.writeFile(
+      files.screenshotManifest,
+      `${JSON.stringify(screenshotManifest, null, 2)}\n`,
+      'utf8',
+    );
   }
   if (visualGateReport) {
     files.visualGate = path.join(outDir, 'visual-gate.json');
     await fs.writeFile(files.visualGate, `${JSON.stringify(visualGateReport, null, 2)}\n`, 'utf8');
   }
+  if (evidenceRun?.evidenceFreshness) {
+    files.evidenceFreshness = path.join(outDir, 'evidence-freshness.json');
+    await fs.writeFile(
+      files.evidenceFreshness,
+      `${JSON.stringify(evidenceRun.evidenceFreshness, null, 2)}\n`,
+      'utf8',
+    );
+  }
   files.acceptanceGates = path.join(outDir, 'acceptance-gates.json');
-  await fs.writeFile(files.acceptanceGates, `${JSON.stringify(acceptanceGateReport, null, 2)}\n`, 'utf8');
+  await fs.writeFile(
+    files.acceptanceGates,
+    `${JSON.stringify(acceptanceGateReport, null, 2)}\n`,
+    'utf8',
+  );
   if (capabilityGaps.taskCount > 0) {
     files.capabilityGaps = path.join(outDir, 'capability-gaps.json');
-    await fs.writeFile(files.capabilityGaps, `${JSON.stringify(capabilityGaps, null, 2)}\n`, 'utf8');
+    await fs.writeFile(
+      files.capabilityGaps,
+      `${JSON.stringify(capabilityGaps, null, 2)}\n`,
+      'utf8',
+    );
   }
 
   return {

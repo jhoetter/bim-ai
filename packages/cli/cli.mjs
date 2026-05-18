@@ -7,6 +7,7 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import { stdin } from 'node:process';
 import { execSync } from 'node:child_process';
+import { createHash } from 'node:crypto';
 
 import {
   buildExchangeValidationReport,
@@ -24,6 +25,14 @@ const base = (
   process.env.BIM_AI_API_ROOT ??
   'http://127.0.0.1:8500'
 ).replace(/\/$/, '');
+
+const ADVISOR_RULE_FILES = [
+  'app/bim_ai/constructability_advisories.py',
+  'app/bim_ai/constructability_report.py',
+  'app/bim_ai/constraints_metadata.py',
+  'packages/web/src/advisor/advisorViolationContext.ts',
+  'packages/web/src/advisor/perspectiveFilter.ts',
+];
 
 function slurpStdin() {
   return new Promise((resolve, reject) => {
@@ -357,6 +366,328 @@ function parseCsv(value) {
     .split(',')
     .map((item) => item.trim())
     .filter(Boolean);
+}
+
+async function fileSha256(filePath) {
+  if (!filePath) return null;
+  try {
+    const data = await fs.readFile(filePath);
+    return createHash('sha256').update(data).digest('hex');
+  } catch {
+    return null;
+  }
+}
+
+async function digestFiles(paths) {
+  const h = createHash('sha256');
+  for (const relPath of [...paths].sort()) {
+    h.update(relPath);
+    h.update('\0');
+    const digest = await fileSha256(path.resolve(process.cwd(), relPath));
+    h.update(digest ?? 'missing');
+    h.update('\0');
+  }
+  return h.digest('hex');
+}
+
+function currentGitHead() {
+  try {
+    return execSync('git rev-parse HEAD', {
+      cwd: process.cwd(),
+      encoding: 'utf8',
+      stdio: ['ignore', 'pipe', 'ignore'],
+    }).trim();
+  } catch {
+    return null;
+  }
+}
+
+function relativeToCwd(filePath) {
+  if (!filePath) return null;
+  const resolved = path.resolve(filePath);
+  const rel = path.relative(process.cwd(), resolved);
+  return rel && !rel.startsWith('..') && !path.isAbsolute(rel) ? rel : resolved;
+}
+
+async function currentEvidenceInputs({
+  modelId = null,
+  modelRevision = null,
+  irPath = null,
+  capabilityMatrixPath = null,
+  fetchModelRevision = false,
+} = {}) {
+  let resolvedModelRevision = modelRevision ?? null;
+  if (resolvedModelRevision == null && fetchModelRevision && modelId) {
+    try {
+      const snap = await fetchJson(
+        'GET',
+        `${base}/api/models/${encodeURIComponent(modelId)}/snapshot`,
+      );
+      resolvedModelRevision = snap?.revision ?? null;
+    } catch {
+      resolvedModelRevision = null;
+    }
+  }
+  return {
+    gitHead: currentGitHead(),
+    modelId,
+    modelRevision: resolvedModelRevision,
+    advisorRuleDigest: await digestFiles(ADVISOR_RULE_FILES),
+    advisorRuleFiles: ADVISOR_RULE_FILES,
+    irPath: relativeToCwd(irPath),
+    irSha256: await fileSha256(irPath),
+    capabilitiesPath: relativeToCwd(capabilityMatrixPath),
+    capabilitiesSha256: await fileSha256(capabilityMatrixPath),
+  };
+}
+
+function normalizeEvidenceMetadata(payload) {
+  const currentHead =
+    payload?.currentHead && typeof payload.currentHead === 'object' ? payload.currentHead : {};
+  const inputs =
+    payload?.evidenceInputs && typeof payload.evidenceInputs === 'object'
+      ? payload.evidenceInputs
+      : {};
+  return {
+    gitHead: payload?.gitHead ?? currentHead.gitHead ?? inputs.gitHead ?? null,
+    modelId: payload?.modelId ?? currentHead.modelId ?? inputs.modelId ?? null,
+    modelRevision:
+      payload?.modelRevision ??
+      payload?.revision ??
+      currentHead.modelRevision ??
+      inputs.modelRevision ??
+      null,
+    advisorRuleDigest:
+      payload?.advisorRuleDigest ??
+      currentHead.advisorRuleDigest ??
+      inputs.advisorRuleDigest ??
+      null,
+    advisorRuleFiles:
+      payload?.advisorRuleFiles ?? currentHead.advisorRuleFiles ?? inputs.advisorRuleFiles ?? null,
+    irPath: payload?.irPath ?? currentHead.irPath ?? inputs.irPath ?? null,
+    irSha256: payload?.irSha256 ?? currentHead.irSha256 ?? inputs.irSha256 ?? null,
+    capabilitiesPath:
+      payload?.capabilitiesPath ?? currentHead.capabilitiesPath ?? inputs.capabilitiesPath ?? null,
+    capabilitiesSha256:
+      payload?.capabilitiesSha256 ??
+      currentHead.capabilitiesSha256 ??
+      inputs.capabilitiesSha256 ??
+      null,
+  };
+}
+
+function evidenceFreshnessReport({ recorded, current, sourcePath = null } = {}) {
+  const fields = [
+    {
+      id: 'git_head',
+      key: 'gitHead',
+      missingRecordedCode: 'missing_git_head',
+      missingCurrentCode: 'missing_current_git_head',
+      staleCode: 'stale_git_head',
+      label: 'git head',
+    },
+    {
+      id: 'model_revision',
+      key: 'modelRevision',
+      missingRecordedCode: 'missing_model_revision',
+      missingCurrentCode: 'missing_current_model_revision',
+      staleCode: 'stale_model_revision',
+      label: 'model revision',
+    },
+    {
+      id: 'advisor_rule_digest',
+      key: 'advisorRuleDigest',
+      missingRecordedCode: 'missing_advisor_rule_digest',
+      missingCurrentCode: 'missing_current_advisor_rule_digest',
+      staleCode: 'stale_advisor_rule_digest',
+      label: 'Advisor rule digest',
+    },
+    {
+      id: 'ir_sha256',
+      key: 'irSha256',
+      missingRecordedCode: 'missing_ir_sha256',
+      missingCurrentCode: 'missing_current_ir_sha256',
+      staleCode: 'stale_ir_sha256',
+      label: 'Sketch IR hash',
+    },
+    {
+      id: 'capabilities_sha256',
+      key: 'capabilitiesSha256',
+      missingRecordedCode: 'missing_capabilities_sha256',
+      missingCurrentCode: 'missing_current_capabilities_sha256',
+      staleCode: 'stale_capabilities_sha256',
+      label: 'capability matrix hash',
+    },
+  ];
+  const checks = fields.map((field) => {
+    const recordedValue = recorded?.[field.key] ?? null;
+    const currentValue = current?.[field.key] ?? null;
+    if (recordedValue == null || recordedValue === '') {
+      return {
+        id: field.id,
+        status: 'missing_recorded',
+        code: field.missingRecordedCode,
+        message: `Evidence does not record ${field.label}.`,
+        recorded: recordedValue,
+        current: currentValue,
+      };
+    }
+    if (currentValue == null || currentValue === '') {
+      return {
+        id: field.id,
+        status: 'missing_current',
+        code: field.missingCurrentCode,
+        message: `Current ${field.label} could not be resolved for stale-evidence validation.`,
+        recorded: recordedValue,
+        current: currentValue,
+      };
+    }
+    if (String(recordedValue) !== String(currentValue)) {
+      return {
+        id: field.id,
+        status: 'stale',
+        code: field.staleCode,
+        message: `Evidence ${field.label} is stale: recorded ${recordedValue}, current ${currentValue}.`,
+        recorded: recordedValue,
+        current: currentValue,
+      };
+    }
+    return {
+      id: field.id,
+      status: 'pass',
+      code: `${field.id}_current`,
+      message: `Evidence ${field.label} matches current inputs.`,
+      recorded: recordedValue,
+      current: currentValue,
+    };
+  });
+  const blockers = checks
+    .filter((check) => check.status !== 'pass')
+    .map((check) => ({
+      code: check.code,
+      severity: 'error',
+      message: check.message,
+      recorded: check.recorded,
+      current: check.current,
+      sourcePath,
+    }));
+  return {
+    schemaVersion: 'sketch.evidence.freshness.v1',
+    generatedAt: new Date().toISOString(),
+    ok: blockers.length === 0,
+    sourcePath,
+    recorded,
+    current,
+    summary: {
+      passCount: checks.filter((check) => check.status === 'pass').length,
+      staleCount: checks.filter((check) => check.status === 'stale').length,
+      missingCount: checks.filter((check) => check.status.startsWith('missing')).length,
+      blockerCount: blockers.length,
+    },
+    checks,
+    blockers,
+  };
+}
+
+async function writeToolRunSummary({
+  outDir,
+  seed = null,
+  modelId,
+  modelRevision,
+  irPath,
+  capabilityMatrixPath,
+  bundlePath = null,
+  mode = null,
+} = {}) {
+  const current = await currentEvidenceInputs({
+    modelId,
+    modelRevision,
+    irPath,
+    capabilityMatrixPath,
+  });
+  const summary = {
+    schemaVersion: 'sketch-to-bim.tool-run.v1',
+    generatedAt: new Date().toISOString(),
+    seed,
+    modelId,
+    modelRevision: current.modelRevision,
+    gitHead: current.gitHead,
+    bundlePath: relativeToCwd(bundlePath),
+    bundleSha256: await fileSha256(bundlePath),
+    irPath: current.irPath,
+    irSha256: current.irSha256,
+    capabilitiesPath: current.capabilitiesPath,
+    capabilitiesSha256: current.capabilitiesSha256,
+    advisorRuleDigest: current.advisorRuleDigest,
+    advisorRuleFiles: current.advisorRuleFiles,
+    mode,
+  };
+  const summaryPath = path.join(outDir, 'tool-run-summary.json');
+  await writeJsonArtifact(summaryPath, summary);
+  return { summary, summaryPath };
+}
+
+async function readEvidenceMetadataFromDir(evidenceDir) {
+  if (!evidenceDir) return null;
+  const candidates = [
+    path.join(evidenceDir, 'tool-run-summary.json'),
+    path.join(evidenceDir, 'evidence-manifest.json'),
+    path.join(evidenceDir, 'live', 'evidence-manifest.json'),
+  ];
+  for (const candidate of candidates) {
+    try {
+      const payload = await readJsonFile(candidate);
+      return {
+        sourcePath: candidate,
+        payload,
+        recorded: normalizeEvidenceMetadata(payload),
+      };
+    } catch {
+      // Try the next product-owned evidence metadata file.
+    }
+  }
+  return null;
+}
+
+async function evidenceFreshnessFromDir({
+  evidenceDir,
+  modelId,
+  irPath,
+  capabilityMatrixPath,
+} = {}) {
+  const metadata = await readEvidenceMetadataFromDir(evidenceDir);
+  const current = await currentEvidenceInputs({
+    modelId: modelId ?? metadata?.recorded?.modelId ?? null,
+    irPath,
+    capabilityMatrixPath,
+    fetchModelRevision: true,
+  });
+  if (!metadata) {
+    return {
+      schemaVersion: 'sketch.evidence.freshness.v1',
+      generatedAt: new Date().toISOString(),
+      ok: false,
+      sourcePath: null,
+      recorded: null,
+      current,
+      summary: { passCount: 0, staleCount: 0, missingCount: 1, blockerCount: 1 },
+      checks: [],
+      blockers: [
+        {
+          code: 'evidence_freshness_metadata_missing',
+          severity: 'error',
+          message:
+            'Evidence directory is missing tool-run-summary.json or evidence-manifest.json, so current-head evidence cannot be proven.',
+          sourcePath: evidenceDir,
+        },
+      ],
+    };
+  }
+  return evidenceFreshnessReport({
+    recorded: metadata.recorded,
+    current,
+    sourcePath: metadata.sourcePath,
+  });
 }
 
 function parseNumber(value, fallback) {
@@ -1111,7 +1442,9 @@ async function cmdDocumentation(modelId, userId, sub, args) {
     return;
   }
   if (sub !== 'pack') {
-    console.error(`Unknown documentation subcommand: ${sub ?? '(none)'}. Use pack | presentation-pack.`);
+    console.error(
+      `Unknown documentation subcommand: ${sub ?? '(none)'}. Use pack | presentation-pack.`,
+    );
     process.exit(1);
   }
   const opts = authorOptions(args);
@@ -1203,7 +1536,9 @@ async function cmdDocumentationPresentationPack(modelId, userId, args) {
   const canvasId = flagValue(args, '--canvas-id');
   const viewId = flagValue(args, '--view-id');
   if (!sheetId || !canvasId || !viewId) {
-    console.error('documentation presentation-pack requires --sheet-id <id> --canvas-id <id> --view-id <id>.');
+    console.error(
+      'documentation presentation-pack requires --sheet-id <id> --canvas-id <id> --view-id <id>.',
+    );
     process.exit(1);
   }
 
@@ -1247,8 +1582,7 @@ async function cmdDocumentationPresentationPack(modelId, userId, args) {
     );
   }
 
-  const columns =
-    parseJsonArrayFlag(flagValue(args, '--schedule-columns'), '--schedule-columns');
+  const columns = parseJsonArrayFlag(flagValue(args, '--schedule-columns'), '--schedule-columns');
   const commands = [
     {
       type: 'create_brand_template',
@@ -1286,12 +1620,13 @@ async function cmdDocumentationPresentationPack(modelId, userId, args) {
       id: scheduleId,
       name: scheduleName,
       sheetId,
-      filters:
-        parseJsonObjectFlag(flagValue(args, '--schedule-filters'), '--schedule-filters') ??
-        { category: scheduleCategory },
-      grouping:
-        parseJsonObjectFlag(flagValue(args, '--schedule-grouping'), '--schedule-grouping') ??
-        { sortBy: flagValue(args, '--schedule-sort') ?? 'name' },
+      filters: parseJsonObjectFlag(flagValue(args, '--schedule-filters'), '--schedule-filters') ?? {
+        category: scheduleCategory,
+      },
+      grouping: parseJsonObjectFlag(
+        flagValue(args, '--schedule-grouping'),
+        '--schedule-grouping',
+      ) ?? { sortBy: flagValue(args, '--schedule-sort') ?? 'name' },
     },
     {
       type: 'create_schedule_view',
@@ -1712,7 +2047,11 @@ function commandForSiteGradedRegion(sub, args) {
     };
     withOptionalString(command, 'id', flagValue(args, '--id'));
     withOptionalNumber(command, 'targetZMm', flagValue(args, ['--target-z', '--targetZMm']));
-    withOptionalNumber(command, 'slopeAxisDeg', flagValue(args, ['--slope-axis', '--slopeAxisDeg']));
+    withOptionalNumber(
+      command,
+      'slopeAxisDeg',
+      flagValue(args, ['--slope-axis', '--slopeAxisDeg']),
+    );
     withOptionalNumber(
       command,
       'slopeDegPercent',
@@ -1731,7 +2070,11 @@ function commandForSiteGradedRegion(sub, args) {
     if (boundary) command.boundaryMm = parsePoint2List(boundary, '--boundary');
     withOptionalString(command, 'targetMode', flagValue(args, ['--target-mode', '--targetMode']));
     withOptionalNumber(command, 'targetZMm', flagValue(args, ['--target-z', '--targetZMm']));
-    withOptionalNumber(command, 'slopeAxisDeg', flagValue(args, ['--slope-axis', '--slopeAxisDeg']));
+    withOptionalNumber(
+      command,
+      'slopeAxisDeg',
+      flagValue(args, ['--slope-axis', '--slopeAxisDeg']),
+    );
     withOptionalNumber(
       command,
       'slopeDegPercent',
@@ -1747,7 +2090,9 @@ function commandForSiteGradedRegion(sub, args) {
     }
     return { type: 'DeleteGradedRegion', id };
   }
-  console.error(`Unknown site graded-region subcommand: ${sub ?? '(none)'}. Use create | update | delete.`);
+  console.error(
+    `Unknown site graded-region subcommand: ${sub ?? '(none)'}. Use create | update | delete.`,
+  );
   process.exit(1);
 }
 
@@ -1805,7 +2150,9 @@ function commandForSitePropertyLine(sub, args) {
     }
     return { type: 'deletePropertyLine', propertyLineId };
   }
-  console.error(`Unknown site property-line subcommand: ${sub ?? '(none)'}. Use create | update | delete.`);
+  console.error(
+    `Unknown site property-line subcommand: ${sub ?? '(none)'}. Use create | update | delete.`,
+  );
   process.exit(1);
 }
 
@@ -1825,7 +2172,11 @@ function commandForSiteToposolidExcavation(sub, args) {
       offsetMm: parseNumber(flagValue(args, ['--offset', '--offsetMm']), 0),
     };
     withOptionalString(command, 'id', flagValue(args, '--id'));
-    withOptionalNumber(command, 'customDepthMm', flagValue(args, ['--custom-depth', '--customDepthMm']));
+    withOptionalNumber(
+      command,
+      'customDepthMm',
+      flagValue(args, ['--custom-depth', '--customDepthMm']),
+    );
     withOptionalNumber(
       command,
       'estimatedVolumeM3',
@@ -1842,7 +2193,11 @@ function commandForSiteToposolidExcavation(sub, args) {
     const command = { type: 'UpdateToposolidExcavation', id };
     withOptionalString(command, 'cutMode', flagValue(args, ['--cut-mode', '--cutMode']));
     withOptionalNumber(command, 'offsetMm', flagValue(args, ['--offset', '--offsetMm']));
-    withOptionalNumber(command, 'customDepthMm', flagValue(args, ['--custom-depth', '--customDepthMm']));
+    withOptionalNumber(
+      command,
+      'customDepthMm',
+      flagValue(args, ['--custom-depth', '--customDepthMm']),
+    );
     withOptionalNumber(
       command,
       'estimatedVolumeM3',
@@ -1858,7 +2213,9 @@ function commandForSiteToposolidExcavation(sub, args) {
     }
     return { type: 'DeleteToposolidExcavation', id };
   }
-  console.error(`Unknown site excavation subcommand: ${sub ?? '(none)'}. Use create | update | delete.`);
+  console.error(
+    `Unknown site excavation subcommand: ${sub ?? '(none)'}. Use create | update | delete.`,
+  );
   process.exit(1);
 }
 
@@ -1873,8 +2230,16 @@ function commandForSiteSubdivision(sub, args) {
     const boundary = flagValue(args, ['--boundary', '--points']);
     if (boundary) command.boundaryMm = parsePoint2List(boundary, '--boundary');
     withOptionalString(command, 'name', flagValue(args, '--name'));
-    withOptionalString(command, 'finishCategory', flagValue(args, ['--finish-category', '--finishCategory']));
-    withOptionalString(command, 'materialKey', flagValue(args, ['--material-key', '--materialKey']));
+    withOptionalString(
+      command,
+      'finishCategory',
+      flagValue(args, ['--finish-category', '--finishCategory']),
+    );
+    withOptionalString(
+      command,
+      'materialKey',
+      flagValue(args, ['--material-key', '--materialKey']),
+    );
     return command;
   }
   if (sub === 'delete') {
@@ -1912,7 +2277,9 @@ function commandForSiteBasePoint(sub, args) {
       angleToTrueNorthDeg: parseNumber(flagValue(args, ['--true-north', '--angle']), undefined),
     };
   }
-  console.error(`Unknown site base-point subcommand: ${sub ?? '(none)'}. Use create | move | rotate.`);
+  console.error(
+    `Unknown site base-point subcommand: ${sub ?? '(none)'}. Use create | move | rotate.`,
+  );
   process.exit(1);
 }
 
@@ -1932,7 +2299,11 @@ function commandForSiteSurveyPoint(sub, args) {
       type: 'moveSurveyPoint',
       positionMm: parsePosTriple(flagValue(args, ['--position', '--pos'])),
     };
-    withOptionalNumber(command, 'sharedElevationMm', flagValue(args, ['--shared-elevation', '--elevation']));
+    withOptionalNumber(
+      command,
+      'sharedElevationMm',
+      flagValue(args, ['--shared-elevation', '--elevation']),
+    );
     return command;
   }
   console.error(`Unknown site survey-point subcommand: ${sub ?? '(none)'}. Use create | move.`);
@@ -2002,7 +2373,8 @@ function commandsForSiteSetup(args) {
       longitudeDeg: parseNumber(flagValue(args, ['--lon', '--longitude']), 11.58),
       dateIso: flagValue(args, ['--date', '--date-iso']) ?? '2026-06-21',
       timeOfDay: { hours: 14, minutes: 30 },
-      daylightSavingStrategy: flagValue(args, ['--daylight-saving', '--daylightSavingStrategy']) ?? 'auto',
+      daylightSavingStrategy:
+        flagValue(args, ['--daylight-saving', '--daylightSavingStrategy']) ?? 'auto',
     },
     {
       type: 'upsertSite',
@@ -2095,7 +2467,10 @@ function applyOptionalMepRouteFlags(command, args) {
   const systemName = flagValue(args, '--system-name');
   const flowDirection = flagValue(args, '--flow');
   const serviceLevel = flagValue(args, '--service-level');
-  const clearanceZone = parseJsonObjectFlag(flagValue(args, '--clearance-zone'), '--clearance-zone');
+  const clearanceZone = parseJsonObjectFlag(
+    flagValue(args, '--clearance-zone'),
+    '--clearance-zone',
+  );
   const maintainAccessZone = parseJsonObjectFlag(
     flagValue(args, '--maintain-access-zone'),
     '--maintain-access-zone',
@@ -2303,7 +2678,10 @@ async function cmdFamily(modelId, userId, sub, args) {
     };
     const name = flagValue(args, '--name');
     const familyId = flagValue(args, '--family-id');
-    const catalogSource = parseJsonObjectFlag(flagValue(args, '--catalog-source'), '--catalog-source');
+    const catalogSource = parseJsonObjectFlag(
+      flagValue(args, '--catalog-source'),
+      '--catalog-source',
+    );
     if (name) command.name = name;
     if (familyId) command.familyId = familyId;
     if (catalogSource) command.catalogSource = catalogSource;
@@ -2347,7 +2725,9 @@ async function cmdFamily(modelId, userId, sub, args) {
     if (hostAlongT != null) command.hostAlongT = parseNumber(hostAlongT, undefined);
     toolId = 'family.place_instance';
   } else {
-    console.error(`Unknown family subcommand: ${sub ?? '(none)'}. Use upsert-type | place-instance.`);
+    console.error(
+      `Unknown family subcommand: ${sub ?? '(none)'}. Use upsert-type | place-instance.`,
+    );
     process.exit(1);
   }
   const bundle = buildGeneratedBundle({
@@ -2431,7 +2811,9 @@ async function cmdMaterial(modelId, userId, sub, args) {
     };
     toolId = 'material.paint_face';
   } else {
-    console.error(`Unknown material subcommand: ${sub ?? '(none)'}. Use update-pbr | assign | paint-face.`);
+    console.error(
+      `Unknown material subcommand: ${sub ?? '(none)'}. Use update-pbr | assign | paint-face.`,
+    );
     process.exit(1);
   }
   const bundle = buildGeneratedBundle({
@@ -2491,7 +2873,10 @@ async function cmdPlaceKitchenKit(modelId, userId, args) {
     kitId: flagValue(args, '--kit-id') ?? 'kitchen_modular',
     hostWallId,
     startMm: parseNumber(flagValue(args, '--start'), parseNumber(flagValue(args, '--startMm'), 0)),
-    endMm: parseNumber(flagValue(args, '--end'), parseNumber(flagValue(args, '--endMm'), undefined)),
+    endMm: parseNumber(
+      flagValue(args, '--end'),
+      parseNumber(flagValue(args, '--endMm'), undefined),
+    ),
     components: parseJsonArrayFlag(flagValue(args, '--components'), '--components'),
     countertopDepthMm: parseNumber(flagValue(args, '--countertop-depth'), 600),
   };
@@ -3139,6 +3524,14 @@ async function cmdSketchPhaseAccept({
   }
   const ir = applyQualityMode(await readJsonFile(irPath), qualityMode);
   const matrix = await readJsonFile(capabilityMatrixPath);
+  const evidenceFreshness = evidenceDir
+    ? await evidenceFreshnessFromDir({
+        evidenceDir,
+        modelId,
+        irPath,
+        capabilityMatrixPath,
+      })
+    : null;
   const result = await writeInitiationPacket({
     ir,
     matrix,
@@ -3146,6 +3539,7 @@ async function cmdSketchPhaseAccept({
     irPath,
     capabilityMatrixPath,
     modelId: modelId ?? null,
+    evidenceRun: evidenceFreshness ? { evidenceFreshness } : null,
   });
   const defaultEvidenceDir = path.join(outDir, 'live');
   let dispositionSummary = null;
@@ -3180,15 +3574,24 @@ async function cmdSketchPhaseAccept({
     ...result,
   };
   console.log(JSON.stringify(payload, null, 2));
-  if (!result.ok) process.exit(2);
-  if (dispositionSummary?.ok === false) process.exit(6);
-  if (failOnAcceptance && result.acceptance?.ok === false) process.exit(5);
+  if (!result.ok) {
+    process.exitCode = 2;
+    return;
+  }
+  if (dispositionSummary?.ok === false) {
+    process.exitCode = 6;
+    return;
+  }
+  if (failOnAcceptance && result.acceptance?.ok === false) {
+    process.exitCode = 5;
+  }
 }
 
 async function cmdSketchEvidenceCollect({
   modelId,
   outDir,
   irPath,
+  capabilityMatrixPath,
   phaseId,
   constructabilityProfile,
   failOnBlockingDispositions,
@@ -3206,6 +3609,8 @@ async function cmdSketchEvidenceCollect({
     modelId,
     outDir,
     ir,
+    irPath,
+    capabilityMatrixPath,
     phaseId,
     constructabilityProfile,
   });
@@ -3256,8 +3661,7 @@ function visualEvidenceContractFromIr(ir, snap, outDir) {
     schemaVersion: 'sketch.visual-evidence-contract.v1',
     generatedAt: new Date().toISOString(),
     browserAutomationRequired: false,
-    note:
-      'Screenshots are an evidence capture method. Core snapshot, validate, evidence package, Advisor, constructability, and model stats checks do not require browser automation.',
+    note: 'Screenshots are an evidence capture method. Core snapshot, validate, evidence package, Advisor, constructability, and model stats checks do not require browser automation.',
     inputs: {
       modelId: snap?.modelId ?? null,
       revision: snap?.revision ?? null,
@@ -3357,6 +3761,8 @@ async function collectModelEvidenceArtifacts({
   modelId,
   outDir,
   ir = null,
+  irPath = null,
+  capabilityMatrixPath = null,
   phaseId = null,
   constructabilityProfile = 'construction_readiness',
 }) {
@@ -3383,6 +3789,12 @@ async function collectModelEvidenceArtifacts({
     )}`,
   );
   const modelStats = modelStatsFromSnapshot(snap);
+  const currentHead = await currentEvidenceInputs({
+    modelId,
+    modelRevision: snap.revision ?? null,
+    irPath,
+    capabilityMatrixPath,
+  });
   const visualEvidenceContract = visualEvidenceContractFromIr(ir, snap, outDir);
   const findingDispositions = {
     schemaVersion: 'sketch.finding-dispositions.v1',
@@ -3475,6 +3887,7 @@ async function collectModelEvidenceArtifacts({
     revision: snap.revision ?? null,
     phaseId,
     baseUrl: base,
+    currentHead,
     browserAutomationRequired: false,
     constructabilityProfile,
     artifacts,
@@ -3571,9 +3984,20 @@ async function applyRunnerBundle(modelId, userId, bundlePath, baseRevision, mode
   };
 }
 
-async function writeLiveEvidenceArtifacts(modelId, outDir, { ir = null, phaseId = null } = {}) {
+async function writeLiveEvidenceArtifacts(
+  modelId,
+  outDir,
+  { ir = null, irPath = null, capabilityMatrixPath = null, phaseId = null } = {},
+) {
   const liveDir = path.join(outDir, 'live');
-  return collectModelEvidenceArtifacts({ modelId, outDir: liveDir, ir, phaseId });
+  return collectModelEvidenceArtifacts({
+    modelId,
+    outDir: liveDir,
+    ir,
+    irPath,
+    capabilityMatrixPath,
+    phaseId,
+  });
 }
 
 function screenshotRequiredViews(ir) {
@@ -3810,7 +4234,30 @@ async function cmdInitiationRun({
     }
   }
 
-  const live = await writeLiveEvidenceArtifacts(modelId, outDir, { ir });
+  const live = await writeLiveEvidenceArtifacts(modelId, outDir, {
+    ir,
+    irPath,
+    capabilityMatrixPath,
+  });
+  const toolRun = await writeToolRunSummary({
+    outDir,
+    modelId,
+    modelRevision: live.snap?.revision ?? null,
+    irPath,
+    capabilityMatrixPath,
+    bundlePath: applyBundlePath,
+    mode: qualityMode ?? ir.qualityTarget ?? null,
+  });
+  const evidenceFreshness = evidenceFreshnessReport({
+    recorded: normalizeEvidenceMetadata(toolRun.summary),
+    current: await currentEvidenceInputs({
+      modelId,
+      modelRevision: live.snap?.revision ?? null,
+      irPath,
+      capabilityMatrixPath,
+    }),
+    sourcePath: toolRun.summaryPath,
+  });
   let screenshotManifest = null;
   let visualGateReport = null;
   if (screenshots) {
@@ -3829,11 +4276,16 @@ async function cmdInitiationRun({
     });
   }
   const evidenceRun = {
-    liveArtifacts: { ...runArtifacts, ...live.liveArtifacts },
+    liveArtifacts: {
+      ...runArtifacts,
+      toolRunSummary: toolRun.summaryPath,
+      ...live.liveArtifacts,
+    },
     modelStats: live.modelStats,
     exchangeValidationReport: live.exchangeValidationReport,
     screenshotManifest,
     visualGateReport,
+    evidenceFreshness,
   };
   const result = await writeInitiationPacket({
     ir,
@@ -3854,10 +4306,21 @@ async function cmdInitiationRun({
     visualGateReport,
   };
   console.log(JSON.stringify(finalResult, null, 2));
-  if (!result.ok) process.exit(2);
-  if (failOnWarning && (live.liveAdvisor.warning?.total ?? 0) > 0) process.exit(3);
-  if (failOnVisual && (visualGateReport?.summary?.failCount ?? 0) > 0) process.exit(4);
-  if (failOnAcceptance && result.acceptance?.ok === false) process.exit(5);
+  if (!result.ok) {
+    process.exitCode = 2;
+    return;
+  }
+  if (failOnWarning && (live.liveAdvisor.warning?.total ?? 0) > 0) {
+    process.exitCode = 3;
+    return;
+  }
+  if (failOnVisual && (visualGateReport?.summary?.failCount ?? 0) > 0) {
+    process.exitCode = 4;
+    return;
+  }
+  if (failOnAcceptance && result.acceptance?.ok === false) {
+    process.exitCode = 5;
+  }
 }
 
 async function cmdInitiationCompare(actualPath, targetPath, outPath, threshold) {
@@ -4436,7 +4899,7 @@ Commands:
                                        M3-F: submit a phase bundle through the transaction route.
   sketch phase accept --ir <path> --out <dir> [--capabilities <path>] [--evidence-dir <dir>] [--fail-on-acceptance]
                                        M3-F: evaluate phase packet acceptance gates and finding dispositions.
-  sketch evidence collect --model <id> --out <dir> [--ir <path>] [--phase <id>] [--profile <name>]
+  sketch evidence collect --model <id> --out <dir> [--ir <path>] [--capabilities <path>] [--phase <id>] [--profile <name>]
                                        SKB: collect snapshot, validate, evidence package, Advisor
                                        warning/info/error, constructability, model stats, visual
                                        evidence contract, tolerance ledger, IFC/exchange
@@ -4832,6 +5295,7 @@ async function main() {
       if (area === 'evidence' && subcmd === 'collect') {
         let outArg;
         let irArg;
+        let capabilityArg = DEFAULT_CAPABILITY_MATRIX_PATH;
         let phaseId;
         let constructabilityProfile = 'construction_readiness';
         let failOnBlockingDispositions = false;
@@ -4840,6 +5304,8 @@ async function main() {
           if (a === '--model' && rest[i + 1]) modelId = rest[++i];
           else if (a === '--out' && rest[i + 1]) outArg = rest[++i];
           else if (a === '--ir' && rest[i + 1]) irArg = rest[++i];
+          else if (a === '--capabilities' && rest[i + 1]) capabilityArg = rest[++i];
+          else if (a === '--capability-matrix' && rest[i + 1]) capabilityArg = rest[++i];
           else if (a === '--phase' && rest[i + 1]) phaseId = rest[++i];
           else if (a === '--phase-id' && rest[i + 1]) phaseId = rest[++i];
           else if (a === '--constructability-profile' && rest[i + 1])
@@ -4851,6 +5317,7 @@ async function main() {
           modelId,
           outDir: outArg,
           irPath: irArg,
+          capabilityMatrixPath: capabilityArg,
           phaseId,
           constructabilityProfile,
           failOnBlockingDispositions,
