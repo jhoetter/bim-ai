@@ -1,0 +1,135 @@
+{
+  "schemaVersion": "bim-ai.professional-benchmark.command-bundle.v1",
+  "scenarioId": "presentation-pack",
+  "classification": "executable",
+  "status": "passed-clean",
+  "runner": "node scripts/benchmarks/m4-presentation-documentation.test.mjs",
+  "commands": [
+    {
+      "id": "pres-cmd-001",
+      "commandType": "create_brand_template",
+      "surface": "branded-export",
+      "payload": {
+        "templateId": "pres-brand-client-review",
+        "name": "Client review",
+        "logoSlot": "titleblock-logo-primary",
+        "palette": { "ink": "#1f2933", "accent": "#0f766e", "paper": "#ffffff" },
+        "typeScale": { "titlePt": 28, "captionPt": 10 }
+      }
+    },
+    {
+      "id": "pres-cmd-002",
+      "commandType": "create_presentation_canvas",
+      "surface": "presentation",
+      "payload": {
+        "canvasId": "pres-canvas-client-board",
+        "brandTemplateId": "pres-brand-client-review",
+        "size": { "widthPx": 1920, "heightPx": 1080 },
+        "safeAreaPx": 64
+      }
+    },
+    {
+      "id": "pres-cmd-003",
+      "commandType": "saveViewpoint",
+      "surface": "presentation",
+      "payload": {
+        "viewId": "pres-view-entry-axon",
+        "name": "Entry axon",
+        "camera": { "position": [9000, -9000, 6200], "target": [4800, 3800, 1800], "fov": 38 }
+      }
+    },
+    {
+      "id": "pres-cmd-004",
+      "commandType": "saveViewpoint",
+      "surface": "presentation",
+      "payload": {
+        "viewId": "pres-view-plan-overview",
+        "name": "Plan overview",
+        "camera": {
+          "position": [5200, 3900, 12400],
+          "target": [5200, 3900, 0],
+          "projection": "orthographic"
+        }
+      }
+    },
+    {
+      "id": "pres-cmd-005",
+      "commandType": "saveViewpoint",
+      "surface": "presentation",
+      "payload": {
+        "viewId": "pres-view-evening-render",
+        "name": "Evening render",
+        "camera": { "position": [-6200, -8600, 3100], "target": [4400, 3600, 1600], "fov": 42 }
+      }
+    },
+    {
+      "id": "pres-cmd-006",
+      "commandType": "create_frame",
+      "surface": "presentation",
+      "payload": {
+        "frameId": "pres-frame-hero-3d",
+        "canvasId": "pres-canvas-client-board",
+        "viewId": "pres-view-entry-axon",
+        "rectPx": { "x": 0, "y": 0, "width": 1920, "height": 640 },
+        "caption": "Main entry massing"
+      }
+    },
+    {
+      "id": "pres-cmd-007",
+      "commandType": "create_frame",
+      "surface": "presentation",
+      "payload": {
+        "frameId": "pres-frame-plan-story",
+        "canvasId": "pres-canvas-client-board",
+        "viewId": "pres-view-plan-overview",
+        "rectPx": { "x": 96, "y": 700, "width": 760, "height": 300 },
+        "caption": "Plan organization"
+      }
+    },
+    {
+      "id": "pres-cmd-008",
+      "commandType": "create_frame",
+      "surface": "presentation",
+      "payload": {
+        "frameId": "pres-frame-material-callouts",
+        "canvasId": "pres-canvas-client-board",
+        "viewId": "pres-view-evening-render",
+        "rectPx": { "x": 960, "y": 700, "width": 820, "height": 300 },
+        "caption": "Material and lighting callouts"
+      }
+    },
+    {
+      "id": "pres-cmd-009",
+      "commandType": "create_render_bundle",
+      "surface": "presentation",
+      "payload": {
+        "renderBundleId": "pres-render-client-review",
+        "canvasId": "pres-canvas-client-board",
+        "viewIds": ["pres-view-entry-axon", "pres-view-plan-overview", "pres-view-evening-render"],
+        "outputFormats": ["png", "pdf"]
+      }
+    },
+    {
+      "id": "pres-cmd-010",
+      "commandType": "exportPresentationDeck",
+      "surface": "branded-export",
+      "payload": {
+        "exportIds": ["pres-export-pdf-deck", "pres-export-share-manifest"],
+        "canvasId": "pres-canvas-client-board",
+        "brandTemplateId": "pres-brand-client-review",
+        "includeRenderBundleId": "pres-render-client-review"
+      }
+    },
+    {
+      "id": "pres-cmd-011",
+      "commandType": "createShareLink",
+      "surface": "branded-export",
+      "payload": {
+        "shareId": "pres-share-client-review",
+        "exportId": "pres-export-pdf-deck",
+        "access": "review-only",
+        "expiresAfterDays": 14
+      }
+    }
+  ]
+}

@@ -1,0 +1,30 @@
+{
+  "schemaVersion": "bim-ai.professional-benchmark.expected-semantics.v1",
+  "scenarioId": "presentation-pack",
+  "classification": "executable",
+  "status": "passed-clean",
+  "surfaces": {
+    "brandTemplates": ["pres-brand-client-review"],
+    "presentationCanvases": ["pres-canvas-client-board"],
+    "frames": ["pres-frame-hero-3d", "pres-frame-plan-story", "pres-frame-material-callouts"],
+    "savedViews": ["pres-view-entry-axon", "pres-view-plan-overview", "pres-view-evening-render"],
+    "renderBundles": ["pres-render-client-review"],
+    "exports": ["pres-export-pdf-deck", "pres-export-share-manifest"],
+    "shareLinks": ["pres-share-client-review"]
+  },
+  "requiredMinimums": {
+    "brandTemplates": 1,
+    "presentationCanvases": 1,
+    "frames": 3,
+    "savedViews": 3,
+    "renderBundles": 1,
+    "exports": 2,
+    "shareLinks": 1
+  },
+  "qualityGates": {
+    "advisorFindings": 0,
+    "visualBlankCaptures": 0,
+    "exportManifestErrors": 0,
+    "semanticDiffMismatches": 0
+  }
+}

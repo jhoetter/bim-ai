@@ -1,0 +1,21 @@
+{
+  "schemaVersion": "bim-ai.professional-benchmark.ui-equivalence.v1",
+  "scenarioId": "presentation-pack",
+  "classification": "validated-replay",
+  "status": "validated-replay-clean",
+  "validatedReplayArtifact": "ui-validated-replay.json",
+  "cmdKBridgeCoverage": {
+    "exactFixturePayloadExecutable": true,
+    "activatorOnlyOperationCount": 0,
+    "exactUiExecutableOperationCount": 11,
+    "coveredCommandTypes": [
+      "create_brand_template",
+      "create_presentation_canvas",
+      "saveViewpoint",
+      "create_frame",
+      "create_render_bundle",
+      "exportPresentationDeck",
+      "createShareLink"
+    ]
+  }
+}

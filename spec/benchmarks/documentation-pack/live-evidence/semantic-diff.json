@@ -1,0 +1,22 @@
+{
+  "schemaVersion": "bim-ai.professional-benchmark.semantic-diff.v1",
+  "scenarioId": "documentation-pack",
+  "classification": "executable",
+  "status": "passed-clean",
+  "expectedSemantics": "../expected-semantics.json",
+  "actualSemanticsSource": "../mcp-cli-command-bundle.json",
+  "mismatches": [],
+  "coveredSurfaces": [
+    "viewTemplates",
+    "planViews",
+    "sectionViews",
+    "elevationViews",
+    "calloutViews",
+    "sheets",
+    "schedules",
+    "tags",
+    "dimensions",
+    "revisions",
+    "exports"
+  ]
+}

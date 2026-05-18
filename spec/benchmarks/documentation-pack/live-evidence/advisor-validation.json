@@ -1,0 +1,19 @@
+{
+  "schemaVersion": "bim-ai.professional-benchmark.advisor-validation.v1",
+  "scenarioId": "documentation-pack",
+  "classification": "executable",
+  "status": "passed-clean",
+  "advisor": {
+    "blockingFindings": [],
+    "warnings": [],
+    "acceptedChecks": [
+      "sheet_viewport_bounds",
+      "schedule_fields_present",
+      "revision_cloud_on_issued_sheet"
+    ]
+  },
+  "validation": {
+    "passed": true,
+    "checkedArtifact": "../mcp-cli-command-bundle.json"
+  }
+}

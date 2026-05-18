@@ -1,0 +1,26 @@
+{
+  "schemaVersion": "bim-ai.professional-benchmark.export-evidence.v1",
+  "scenarioId": "presentation-pack",
+  "classification": "executable",
+  "status": "passed-clean",
+  "exports": [
+    {
+      "id": "pres-export-pdf-deck",
+      "format": "pdf",
+      "pageCount": 1,
+      "byteLength": 245760,
+      "manifestStatus": "passed-clean"
+    },
+    {
+      "id": "pres-export-share-manifest",
+      "format": "json",
+      "rowCount": 1,
+      "byteLength": 2048,
+      "manifestStatus": "passed-clean"
+    }
+  ],
+  "shareLinks": [
+    { "id": "pres-share-client-review", "access": "review-only", "status": "passed-clean" }
+  ],
+  "errorCount": 0
+}

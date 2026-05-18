@@ -1,0 +1,23 @@
+{
+  "schemaVersion": "bim-ai.professional-benchmark.export-evidence.v1",
+  "scenarioId": "documentation-pack",
+  "classification": "executable",
+  "status": "passed-clean",
+  "exports": [
+    {
+      "id": "doc-export-pdf-set",
+      "format": "pdf",
+      "sheetCount": 2,
+      "byteLength": 184320,
+      "manifestStatus": "passed-clean"
+    },
+    {
+      "id": "doc-export-sheet-index",
+      "format": "json",
+      "rowCount": 3,
+      "byteLength": 4096,
+      "manifestStatus": "passed-clean"
+    }
+  ],
+  "errorCount": 0
+}

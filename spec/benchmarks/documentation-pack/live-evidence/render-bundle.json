@@ -1,0 +1,22 @@
+{
+  "schemaVersion": "bim-ai.professional-benchmark.render-bundle.v1",
+  "scenarioId": "documentation-pack",
+  "classification": "executable",
+  "status": "passed-clean",
+  "renderTargets": [
+    {
+      "id": "doc-render-a101",
+      "sourceView": "doc-sheet-a101",
+      "kind": "sheet",
+      "width": 1800,
+      "height": 1200
+    },
+    {
+      "id": "doc-render-a301",
+      "sourceView": "doc-sheet-a301",
+      "kind": "sheet",
+      "width": 1800,
+      "height": 1200
+    }
+  ]
+}

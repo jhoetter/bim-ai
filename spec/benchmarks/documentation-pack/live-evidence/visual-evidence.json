@@ -1,0 +1,23 @@
+{
+  "schemaVersion": "bim-ai.professional-benchmark.visual-evidence.v1",
+  "scenarioId": "documentation-pack",
+  "classification": "executable",
+  "status": "passed-clean",
+  "captures": [
+    {
+      "id": "doc-capture-a101-full",
+      "kind": "sheet-raster",
+      "width": 1800,
+      "height": 1200,
+      "nonBlankPixelRatio": 0.42
+    },
+    {
+      "id": "doc-capture-section-a",
+      "kind": "section-raster",
+      "width": 1200,
+      "height": 900,
+      "nonBlankPixelRatio": 0.37
+    }
+  ],
+  "blankCaptureCount": 0
+}

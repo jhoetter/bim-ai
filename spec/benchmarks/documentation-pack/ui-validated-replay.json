@@ -1,0 +1,36 @@
+{
+  "schemaVersion": "bim-ai.professional-benchmark.ui-validated-replay.v1",
+  "scenarioId": "documentation-pack",
+  "classification": "validated-replay",
+  "status": "validated-replay-clean",
+  "validatedBy": "scripts/benchmarks/m4-presentation-documentation.test.mjs",
+  "sourceBundle": "mcp-cli-command-bundle.json",
+  "expectedSemantics": "expected-semantics.json",
+  "replayKind": "exact-fixture-payload-replay",
+  "proof": {
+    "fixtureCommandCount": 13,
+    "replayCommandCount": 13,
+    "semanticDiffMismatches": 0
+  },
+  "replayCommandIds": [
+    "doc-cmd-001",
+    "doc-cmd-002",
+    "doc-cmd-003",
+    "doc-cmd-004",
+    "doc-cmd-005",
+    "doc-cmd-006",
+    "doc-cmd-007",
+    "doc-cmd-008",
+    "doc-cmd-009",
+    "doc-cmd-010",
+    "doc-cmd-011",
+    "doc-cmd-012",
+    "doc-cmd-013"
+  ],
+  "cmdKBridge": {
+    "classification": "validated-replay",
+    "status": "validated-replay-clean",
+    "activatorOnlyOperationCount": 0,
+    "exactFixturePayloadExecutable": true
+  }
+}

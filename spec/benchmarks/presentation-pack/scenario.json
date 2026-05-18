@@ -3,58 +3,66 @@
   "scenarioId": "presentation-pack",
   "title": "Presentation Pack",
   "sourceOfIntent": "spec/ui-mcp-parity-tracker.md#same-house-parity-benchmarks",
-  "lifecycle": "m4-wave1-placeholder",
-  "summary": "Professional M4 presentation benchmark seed for saved views, frames, branded templates, render bundles, presentation export, and share evidence.",
+  "lifecycle": "m4-j-evidence-collected",
+  "summary": "Professional M4 presentation benchmark with deterministic evidence for saved views, branded templates, presentation canvases, frames, render bundles, PDF/share export, and semantic-diff checks.",
   "fixtures": {
-    "expectedSemantics": null,
-    "mcpCliCommandBundle": null,
-    "uiCmdKTraceability": null,
-    "uiEquivalence": null,
-    "liveEvidenceDirectory": null
+    "expectedSemantics": "expected-semantics.json",
+    "mcpCliCommandBundle": "mcp-cli-command-bundle.json",
+    "uiCmdKTraceability": "ui-validated-replay.json",
+    "uiEquivalence": "ui-equivalence.json",
+    "liveEvidenceDirectory": "live-evidence"
   },
   "runner": {
-    "kind": "not-yet-implemented",
-    "command": null,
+    "kind": "node-test",
+    "command": "node --test scripts/benchmarks/m4-presentation-documentation.test.mjs",
     "mutatesModel": false
   },
   "evidence": {
     "ui": {
-      "classification": "missing",
-      "status": "missing",
-      "artifacts": []
+      "classification": "validated-replay",
+      "status": "validated-replay-clean",
+      "artifacts": ["ui-validated-replay.json", "ui-equivalence.json"],
+      "claim": "Validated replay maps the exact presentation fixture payloads; no activator-only operation is counted.",
+      "pass": true
     },
     "cmdK": {
-      "classification": "missing",
-      "status": "missing",
-      "artifacts": []
+      "classification": "validated-replay",
+      "status": "validated-replay-clean",
+      "artifacts": ["ui-validated-replay.json", "ui-equivalence.json"],
+      "claim": "Cmd+K bridge evidence uses exact fixture payload replay with zero activator-only operations.",
+      "pass": true
     },
     "mcpCli": {
-      "classification": "missing",
-      "status": "missing",
-      "artifacts": []
+      "classification": "executable",
+      "status": "passed-clean",
+      "artifacts": ["mcp-cli-command-bundle.json", "expected-semantics.json"],
+      "command": "node --test scripts/benchmarks/m4-presentation-documentation.test.mjs",
+      "pass": true
     },
     "advisor": {
-      "classification": "missing",
-      "status": "missing",
-      "artifacts": []
+      "classification": "executable",
+      "status": "passed-clean",
+      "artifacts": ["live-evidence/advisor-validation.json"],
+      "pass": true
     },
     "visual": {
-      "classification": "missing",
-      "status": "missing",
-      "artifacts": []
+      "classification": "executable",
+      "status": "passed-clean",
+      "artifacts": ["live-evidence/visual-evidence.json", "live-evidence/render-bundle.json"],
+      "pass": true
     },
     "export": {
-      "classification": "missing",
-      "status": "missing",
-      "artifacts": []
+      "classification": "executable",
+      "status": "passed-clean",
+      "artifacts": ["live-evidence/export-evidence.json"],
+      "pass": true
     },
     "semanticDiff": {
-      "classification": "missing",
-      "status": "missing",
-      "artifacts": []
+      "classification": "executable",
+      "status": "passed-clean",
+      "artifacts": ["live-evidence/semantic-diff.json", "expected-semantics.json"],
+      "pass": true
     }
   },
-  "remainingBlockers": [
-    "M4-E has not yet landed first-class presentation, branded export, render bundle, or share descriptors with executable fixture evidence."
-  ]
+  "remainingBlockers": []
 }

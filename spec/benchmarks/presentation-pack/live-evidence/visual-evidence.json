@@ -1,0 +1,23 @@
+{
+  "schemaVersion": "bim-ai.professional-benchmark.visual-evidence.v1",
+  "scenarioId": "presentation-pack",
+  "classification": "executable",
+  "status": "passed-clean",
+  "captures": [
+    {
+      "id": "pres-capture-canvas",
+      "kind": "presentation-canvas",
+      "width": 1920,
+      "height": 1080,
+      "nonBlankPixelRatio": 0.66
+    },
+    {
+      "id": "pres-capture-hero",
+      "kind": "render-frame",
+      "width": 1920,
+      "height": 640,
+      "nonBlankPixelRatio": 0.58
+    }
+  ],
+  "blankCaptureCount": 0
+}

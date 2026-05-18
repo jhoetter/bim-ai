@@ -1,0 +1,30 @@
+{
+  "schemaVersion": "bim-ai.professional-benchmark.render-bundle.v1",
+  "scenarioId": "presentation-pack",
+  "classification": "executable",
+  "status": "passed-clean",
+  "renderBundleId": "pres-render-client-review",
+  "renderTargets": [
+    {
+      "id": "pres-render-hero",
+      "sourceView": "pres-view-entry-axon",
+      "kind": "frame",
+      "width": 1920,
+      "height": 640
+    },
+    {
+      "id": "pres-render-plan",
+      "sourceView": "pres-view-plan-overview",
+      "kind": "frame",
+      "width": 760,
+      "height": 300
+    },
+    {
+      "id": "pres-render-evening",
+      "sourceView": "pres-view-evening-render",
+      "kind": "frame",
+      "width": 820,
+      "height": 300
+    }
+  ]
+}

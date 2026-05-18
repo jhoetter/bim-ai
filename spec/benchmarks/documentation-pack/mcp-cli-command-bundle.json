@@ -1,0 +1,174 @@
+{
+  "schemaVersion": "bim-ai.professional-benchmark.command-bundle.v1",
+  "scenarioId": "documentation-pack",
+  "classification": "executable",
+  "status": "passed-clean",
+  "runner": "node scripts/benchmarks/m4-presentation-documentation.test.mjs",
+  "commands": [
+    {
+      "id": "doc-cmd-001",
+      "commandType": "upsertViewTemplate",
+      "surface": "advanced-documentation",
+      "payload": {
+        "templateId": "doc-vt-plan-permit",
+        "name": "Permit plan",
+        "scale": 100,
+        "discipline": "architecture",
+        "visibleCategories": ["walls", "doors", "windows", "rooms", "dimensions", "tags"]
+      }
+    },
+    {
+      "id": "doc-cmd-002",
+      "commandType": "upsertViewTemplate",
+      "surface": "advanced-documentation",
+      "payload": {
+        "templateId": "doc-vt-section-detail",
+        "name": "Section detail",
+        "scale": 50,
+        "discipline": "architecture",
+        "visibleCategories": ["walls", "floors", "roofs", "levels", "dimensions", "revisionClouds"]
+      }
+    },
+    {
+      "id": "doc-cmd-003",
+      "commandType": "applyPlanViewTemplate",
+      "surface": "advanced-documentation",
+      "payload": {
+        "viewId": "doc-view-ground-plan",
+        "templateId": "doc-vt-plan-permit",
+        "levelId": "level-ground",
+        "cropBoxMm": { "x": -1200, "y": -1200, "width": 12400, "height": 9800 }
+      }
+    },
+    {
+      "id": "doc-cmd-004",
+      "commandType": "applyPlanViewTemplate",
+      "surface": "advanced-documentation",
+      "payload": {
+        "viewId": "doc-view-reflected-ceiling-plan",
+        "templateId": "doc-vt-plan-permit",
+        "levelId": "level-ground",
+        "viewKind": "reflected-ceiling-plan"
+      }
+    },
+    {
+      "id": "doc-cmd-005",
+      "commandType": "createSectionView",
+      "surface": "advanced-documentation",
+      "payload": {
+        "viewId": "doc-view-building-section-a",
+        "templateId": "doc-vt-section-detail",
+        "lineMm": [
+          [-800, 4200],
+          [11200, 4200]
+        ],
+        "depthMm": 9000
+      }
+    },
+    {
+      "id": "doc-cmd-006",
+      "commandType": "createElevationView",
+      "surface": "advanced-documentation",
+      "payload": {
+        "viewId": "doc-view-north-elevation",
+        "templateId": "doc-vt-section-detail",
+        "direction": "north",
+        "targetMm": [5000, 8200]
+      }
+    },
+    {
+      "id": "doc-cmd-007",
+      "commandType": "createCalloutView",
+      "surface": "advanced-documentation",
+      "payload": {
+        "viewId": "doc-view-stair-callout",
+        "parentViewId": "doc-view-building-section-a",
+        "cropBoxMm": { "x": 2500, "y": 3000, "width": 2800, "height": 2600 },
+        "scale": 20
+      }
+    },
+    {
+      "id": "doc-cmd-008",
+      "commandType": "upsertSheet",
+      "surface": "advanced-documentation",
+      "payload": {
+        "sheetId": "doc-sheet-a101",
+        "number": "A101",
+        "name": "Plans and schedules",
+        "titleblock": "branded-a1-document"
+      }
+    },
+    {
+      "id": "doc-cmd-009",
+      "commandType": "upsertSheet",
+      "surface": "advanced-documentation",
+      "payload": {
+        "sheetId": "doc-sheet-a301",
+        "number": "A301",
+        "name": "Sections and elevations",
+        "titleblock": "branded-a1-document"
+      }
+    },
+    {
+      "id": "doc-cmd-010",
+      "commandType": "upsertSheetViewports",
+      "surface": "advanced-documentation",
+      "payload": {
+        "sheetId": "doc-sheet-a101",
+        "viewports": [
+          {
+            "viewId": "doc-view-ground-plan",
+            "xMm": 45,
+            "yMm": 60,
+            "widthMm": 310,
+            "heightMm": 220
+          },
+          {
+            "viewId": "doc-view-reflected-ceiling-plan",
+            "xMm": 370,
+            "yMm": 60,
+            "widthMm": 190,
+            "heightMm": 130
+          }
+        ]
+      }
+    },
+    {
+      "id": "doc-cmd-011",
+      "commandType": "create_schedule_view",
+      "surface": "advanced-documentation",
+      "payload": {
+        "scheduleIds": ["doc-schedule-door", "doc-schedule-window", "doc-schedule-revision"],
+        "fields": ["mark", "type", "level", "widthMm", "heightMm", "revision"]
+      }
+    },
+    {
+      "id": "doc-cmd-012",
+      "commandType": "createRevisionCloud",
+      "surface": "advanced-documentation",
+      "payload": {
+        "revisionId": "doc-rev-001-client-issue",
+        "cloudId": "doc-rev-cloud-a301",
+        "sheetId": "doc-sheet-a301",
+        "viewId": "doc-view-building-section-a",
+        "polygonMm": [
+          [120, 85],
+          [220, 85],
+          [235, 145],
+          [110, 150]
+        ]
+      }
+    },
+    {
+      "id": "doc-cmd-013",
+      "commandType": "exportDocumentationPack",
+      "surface": "branded-export",
+      "payload": {
+        "exportIds": ["doc-export-pdf-set", "doc-export-sheet-index"],
+        "format": "pdf",
+        "sheetIds": ["doc-sheet-a101", "doc-sheet-a301"],
+        "includeRevisionSchedule": true
+      }
+    }
+  ]
+}

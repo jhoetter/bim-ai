@@ -1,0 +1,24 @@
+{
+  "schemaVersion": "bim-ai.professional-benchmark.ui-equivalence.v1",
+  "scenarioId": "documentation-pack",
+  "classification": "validated-replay",
+  "status": "validated-replay-clean",
+  "validatedReplayArtifact": "ui-validated-replay.json",
+  "cmdKBridgeCoverage": {
+    "exactFixturePayloadExecutable": true,
+    "activatorOnlyOperationCount": 0,
+    "exactUiExecutableOperationCount": 13,
+    "coveredCommandTypes": [
+      "upsertViewTemplate",
+      "applyPlanViewTemplate",
+      "createSectionView",
+      "createElevationView",
+      "createCalloutView",
+      "upsertSheet",
+      "upsertSheetViewports",
+      "create_schedule_view",
+      "createRevisionCloud",
+      "exportDocumentationPack"
+    ]
+  }
+}

@@ -1,0 +1,38 @@
+{
+  "schemaVersion": "bim-ai.professional-benchmark.expected-semantics.v1",
+  "scenarioId": "documentation-pack",
+  "classification": "executable",
+  "status": "passed-clean",
+  "surfaces": {
+    "viewTemplates": ["doc-vt-plan-permit", "doc-vt-section-detail"],
+    "planViews": ["doc-view-ground-plan", "doc-view-reflected-ceiling-plan"],
+    "sectionViews": ["doc-view-building-section-a"],
+    "elevationViews": ["doc-view-north-elevation"],
+    "calloutViews": ["doc-view-stair-callout"],
+    "sheets": ["doc-sheet-a101", "doc-sheet-a301"],
+    "schedules": ["doc-schedule-door", "doc-schedule-window", "doc-schedule-revision"],
+    "tags": ["doc-tag-door-main", "doc-tag-window-main", "doc-tag-room-main"],
+    "dimensions": ["doc-dim-grid-a", "doc-dim-overall-01", "doc-dim-opening-01"],
+    "revisions": ["doc-rev-001-client-issue", "doc-rev-cloud-a301"],
+    "exports": ["doc-export-pdf-set", "doc-export-sheet-index"]
+  },
+  "requiredMinimums": {
+    "viewTemplates": 2,
+    "planViews": 2,
+    "sectionViews": 1,
+    "elevationViews": 1,
+    "calloutViews": 1,
+    "sheets": 2,
+    "schedules": 3,
+    "tags": 3,
+    "dimensions": 3,
+    "revisions": 2,
+    "exports": 2
+  },
+  "qualityGates": {
+    "advisorFindings": 0,
+    "visualBlankCaptures": 0,
+    "exportManifestErrors": 0,
+    "semanticDiffMismatches": 0
+  }
+}
