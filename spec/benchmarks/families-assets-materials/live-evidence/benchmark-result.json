@@ -1,0 +1,16 @@
+{
+  "schemaVersion": "bim-ai.benchmark-result.v1",
+  "benchmarkId": "families-assets-materials",
+  "status": "passed",
+  "artifacts": [
+    "../mcp-cli-command-bundle.json",
+    "../expected-semantics.json",
+    "../catalog-evidence.json",
+    "../material-quality.json",
+    "../ui-validated-replay.json",
+    "advisor-validation.json",
+    "visual-evidence.json",
+    "export-evidence.json",
+    "semantic-diff.json"
+  ]
+}

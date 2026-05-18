@@ -3,58 +3,93 @@
   "scenarioId": "families-assets-materials",
   "title": "Families, Assets, and Materials",
   "sourceOfIntent": "spec/ui-mcp-parity-tracker.md#same-house-parity-benchmarks",
-  "lifecycle": "m4-wave1-placeholder",
-  "summary": "Professional M4 families/assets/materials benchmark seed for family type upsert, catalog query, asset placement, kits, PBR materials, material assignment, paint, and decals.",
+  "lifecycle": "m4-d-evidence-collected",
+  "summary": "Executable M4-D benchmark evidence for family type upsert, family and asset placement, kitchen kit placement, PBR material updates, element material assignment, face paint, and decal creation.",
   "fixtures": {
-    "expectedSemantics": null,
-    "mcpCliCommandBundle": null,
-    "uiCmdKTraceability": null,
-    "uiEquivalence": null,
-    "liveEvidenceDirectory": null
+    "expectedSemantics": "expected-semantics.json",
+    "mcpCliCommandBundle": "mcp-cli-command-bundle.json",
+    "uiCmdKTraceability": "ui-cmdk-traceability.json",
+    "uiEquivalence": "ui-equivalence.json",
+    "uiValidatedReplay": "ui-validated-replay.json",
+    "catalogEvidence": "catalog-evidence.json",
+    "materialQuality": "material-quality.json",
+    "liveEvidenceDirectory": "live-evidence"
   },
   "runner": {
-    "kind": "not-yet-implemented",
-    "command": null,
+    "kind": "deterministic-fixture",
+    "command": "node --test scripts/benchmarks/families-assets-materials.test.mjs",
     "mutatesModel": false
+  },
+  "semanticRequirements": {
+    "familyTypesMinimum": 2,
+    "familyInstancesMinimum": 1,
+    "assetPlacementsMinimum": 1,
+    "kitchenKitsMinimum": 1,
+    "pbrMaterialsMinimum": 2,
+    "materialAssignmentsMinimum": 1,
+    "paintedFacesMinimum": 1,
+    "decalsMinimum": 1
   },
   "evidence": {
     "ui": {
-      "classification": "missing",
-      "status": "missing",
-      "artifacts": []
+      "classification": "validated-replay",
+      "status": "validated",
+      "artifacts": ["ui-equivalence.json", "ui-validated-replay.json"],
+      "claim": "Validated replay steps contain parameter-level UI submissions for family, asset, kit, material, paint, and decal workflows; none are recorded as activator-only."
     },
     "cmdK": {
-      "classification": "missing",
-      "status": "missing",
-      "artifacts": []
+      "classification": "validated-replay",
+      "status": "validated",
+      "artifacts": ["ui-cmdk-traceability.json", "ui-validated-replay.json"],
+      "claim": "Cmd+K replay entries resolve to concrete tool ids and deterministic payloads for every M4-D authoring surface."
     },
     "mcpCli": {
-      "classification": "missing",
-      "status": "missing",
-      "artifacts": []
+      "classification": "executable",
+      "status": "passed",
+      "artifacts": [
+        "mcp-cli-command-bundle.json",
+        "catalog-evidence.json",
+        "material-quality.json",
+        "expected-semantics.json"
+      ],
+      "command": "node --test scripts/benchmarks/families-assets-materials.test.mjs",
+      "claim": "The deterministic bundle covers first-class family, asset, kit, material, paint, and decal command payloads plus catalog and material-quality fixtures."
     },
     "advisor": {
-      "classification": "missing",
-      "status": "missing",
-      "artifacts": []
+      "classification": "executable",
+      "status": "clean",
+      "artifacts": ["live-evidence/advisor-validation.json"],
+      "claim": "Advisor evidence accepts the authored catalog references, host references, material UV metadata, and decal placement."
     },
     "visual": {
-      "classification": "missing",
-      "status": "missing",
-      "artifacts": []
+      "classification": "executable",
+      "status": "nonblank",
+      "artifacts": ["live-evidence/visual-evidence.json"],
+      "claim": "Server-side visual evidence records nonblank material swatches, asset silhouettes, painted face overlays, and decal raster checks."
     },
     "export": {
-      "classification": "missing",
-      "status": "missing",
-      "artifacts": []
+      "classification": "executable",
+      "status": "manifest-returned",
+      "artifacts": ["live-evidence/export-evidence.json"],
+      "claim": "Export manifest evidence includes family instances, asset placements, material PBR slots, face overrides, and decals."
     },
     "semanticDiff": {
-      "classification": "missing",
-      "status": "missing",
-      "artifacts": []
+      "classification": "executable",
+      "status": "passed",
+      "artifacts": ["live-evidence/semantic-diff.json", "expected-semantics.json"],
+      "command": "node --test scripts/benchmarks/families-assets-materials.test.mjs"
     }
   },
-  "remainingBlockers": [
-    "M4-D has not yet landed first-class family, asset, material, paint, or decal descriptors with executable fixture evidence."
-  ]
+  "plannedPublicSurfaces": [
+    "family.upsert_type",
+    "family.place_instance",
+    "catalog-query",
+    "asset.place",
+    "place-kitchen-kit",
+    "material.upsert_pbr",
+    "material.assign",
+    "material.paint_face",
+    "decal.create"
+  ],
+  "remainingBlockers": []
 }

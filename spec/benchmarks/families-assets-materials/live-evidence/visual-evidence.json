@@ -1,0 +1,39 @@
+{
+  "schemaVersion": "bim-ai.visual-evidence.v1",
+  "benchmarkId": "families-assets-materials",
+  "status": "nonblank",
+  "checks": [
+    {
+      "id": "view-family-assets-plan",
+      "kind": "plan-raster",
+      "widthPx": 512,
+      "heightPx": 384,
+      "nonblankRatio": 0.88,
+      "containsElementIds": ["inst-lounge-chair-01", "asset-planter-01", "kit-kitchen-west-01"]
+    },
+    {
+      "id": "view-material-swatch-walnut",
+      "kind": "material-swatch",
+      "widthPx": 128,
+      "heightPx": 128,
+      "nonblankRatio": 0.997,
+      "materialId": "mat-walnut-pbr"
+    },
+    {
+      "id": "view-painted-face-west-wall",
+      "kind": "face-overlay",
+      "widthPx": 256,
+      "heightPx": 256,
+      "nonblankRatio": 0.91,
+      "faceId": "fam-wall-west:face:interior"
+    },
+    {
+      "id": "view-decal-menu-board",
+      "kind": "decal-raster",
+      "widthPx": 128,
+      "heightPx": 192,
+      "nonblankRatio": 0.94,
+      "decalId": "decal-menu-board-01"
+    }
+  ]
+}

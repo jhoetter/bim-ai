@@ -1,0 +1,27 @@
+{
+  "schemaVersion": "bim-ai.semantic-diff.v1",
+  "benchmarkId": "families-assets-materials",
+  "status": "passed",
+  "changedIds": [
+    "fam-chair-lounge-m4d",
+    "fam-pendant-350-m4d",
+    "inst-lounge-chair-01",
+    "asset-planter-01",
+    "kit-kitchen-west-01",
+    "mat-walnut-pbr",
+    "mat-quartz-pbr",
+    "fam-wall-west",
+    "decal-menu-board-01"
+  ],
+  "counts": {
+    "familyTypes": 2,
+    "familyInstances": 1,
+    "assetPlacements": 1,
+    "kitchenKits": 1,
+    "pbrMaterials": 2,
+    "materialAssignments": 1,
+    "paintedFaces": 1,
+    "decals": 1
+  },
+  "violations": []
+}

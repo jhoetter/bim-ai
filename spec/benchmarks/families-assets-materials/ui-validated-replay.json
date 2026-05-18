@@ -1,0 +1,90 @@
+{
+  "schemaVersion": "bim-ai.ui-validated-replay.v1",
+  "benchmarkId": "families-assets-materials",
+  "classification": "validated-replay",
+  "status": "validated",
+  "replayMode": "deterministic-command-payload-validation",
+  "steps": [
+    {
+      "id": "ui-step-catalog-query",
+      "surface": "asset-browser/catalog",
+      "action": "submit-filtered-query",
+      "toolId": "catalog-query",
+      "payloadRef": "catalog-evidence.json#/queries/0",
+      "assertions": ["selectedItemId resolved", "item dimensions present"],
+      "activatorOnly": false
+    },
+    {
+      "id": "ui-step-family-upsert",
+      "surface": "family-library/type-editor",
+      "action": "submit-family-type-form",
+      "toolId": "family.upsert_type",
+      "payloadRef": "mcp-cli-command-bundle.json#/commands/0",
+      "assertions": ["familyId resolved", "parameters persisted"],
+      "activatorOnly": false
+    },
+    {
+      "id": "ui-step-family-place",
+      "surface": "family-library/placement-canvas",
+      "action": "commit-placement",
+      "toolId": "family.place_instance",
+      "payloadRef": "mcp-cli-command-bundle.json#/commands/2",
+      "assertions": ["levelId set", "positionMm set", "rotationDeg set"],
+      "activatorOnly": false
+    },
+    {
+      "id": "ui-step-asset-place",
+      "surface": "asset-browser/placement-canvas",
+      "action": "commit-placement",
+      "toolId": "asset.place",
+      "payloadRef": "mcp-cli-command-bundle.json#/commands/3",
+      "assertions": ["assetId resolved", "positionMm set"],
+      "activatorOnly": false
+    },
+    {
+      "id": "ui-step-kit-place",
+      "surface": "asset-browser/kitchen-kit-panel",
+      "action": "commit-kit-run",
+      "toolId": "place-kitchen-kit",
+      "payloadRef": "mcp-cli-command-bundle.json#/commands/4",
+      "assertions": ["hostWallId set", "run length positive", "components present"],
+      "activatorOnly": false
+    },
+    {
+      "id": "ui-step-material-pbr",
+      "surface": "material-browser/pbr-editor",
+      "action": "save-pbr-material",
+      "toolId": "material.upsert_pbr",
+      "payloadRef": "mcp-cli-command-bundle.json#/commands/5",
+      "assertions": ["texture slots resolved", "uvScaleMm positive"],
+      "activatorOnly": false
+    },
+    {
+      "id": "ui-step-material-assign",
+      "surface": "material-browser/assign",
+      "action": "commit-element-material",
+      "toolId": "material.assign",
+      "payloadRef": "mcp-cli-command-bundle.json#/commands/7",
+      "assertions": ["elementId set", "materialKey set"],
+      "activatorOnly": false
+    },
+    {
+      "id": "ui-step-paint-face",
+      "surface": "material-browser/paint-face",
+      "action": "commit-face-material",
+      "toolId": "material.paint_face",
+      "payloadRef": "mcp-cli-command-bundle.json#/commands/8",
+      "assertions": ["generatedFaceId set", "uv override set"],
+      "activatorOnly": false
+    },
+    {
+      "id": "ui-step-decal-create",
+      "surface": "decal-inspector",
+      "action": "commit-decal",
+      "toolId": "decal.create",
+      "payloadRef": "mcp-cli-command-bundle.json#/commands/9",
+      "assertions": ["imageAssetId set", "uvRect bounded", "opacity bounded"],
+      "activatorOnly": false
+    }
+  ]
+}

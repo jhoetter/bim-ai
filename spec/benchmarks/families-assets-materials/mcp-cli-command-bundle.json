@@ -1,0 +1,218 @@
+{
+  "schemaVersion": "cmd-v3.0",
+  "parentRevision": null,
+  "targetOptionId": null,
+  "meta": {
+    "benchmarkId": "families-assets-materials",
+    "path": "mcp-cli",
+    "generatedBy": "M4-I deterministic fixture",
+    "sourceOfIntent": "spec/ui-mcp-parity-tracker.md#milestone-4-wave-1-workstreams",
+    "parityClassification": {
+      "family": "AG-F",
+      "asset": "AG-F",
+      "material": "AG-F",
+      "decal": "AG-F",
+      "reason": "All authoring steps use first-class descriptor-backed tool ids and deterministic payloads."
+    },
+    "toolSequence": [
+      "family.upsert_type",
+      "family.place_instance",
+      "asset.place",
+      "place-kitchen-kit",
+      "material.upsert_pbr",
+      "material.assign",
+      "material.paint_face",
+      "decal.create"
+    ]
+  },
+  "assumptions": [
+    {
+      "key": "catalog-query-preflight",
+      "value": "Catalog candidates are pinned in catalog-evidence.json and referenced by id in the command payloads.",
+      "confidence": 1,
+      "source": "M4-I deterministic fixture"
+    },
+    {
+      "key": "material-quality-preflight",
+      "value": "PBR texture ids, UV scale, and swatch checks are pinned in material-quality.json.",
+      "confidence": 1,
+      "source": "M4-I deterministic fixture"
+    }
+  ],
+  "commands": [
+    {
+      "type": "upsertFamilyType",
+      "id": "fam-chair-lounge-m4d",
+      "name": "M4D lounge chair 820",
+      "familyId": "catalog:seating/lounge-chair-parametric",
+      "discipline": "furniture",
+      "parameters": {
+        "widthMm": 820,
+        "depthMm": 760,
+        "heightMm": 780,
+        "seatHeightMm": 430,
+        "materialParameter": "mat-walnut-pbr"
+      },
+      "catalogSource": {
+        "catalogId": "builtin-assets",
+        "itemId": "seating/lounge-chair-parametric",
+        "version": "2026.05.m4d"
+      }
+    },
+    {
+      "type": "upsertFamilyType",
+      "id": "fam-pendant-350-m4d",
+      "name": "M4D pendant light 350",
+      "familyId": "catalog:lighting/pendant-350",
+      "discipline": "lighting",
+      "parameters": {
+        "diameterMm": 350,
+        "dropMm": 900,
+        "lumenOutput": 850,
+        "materialParameter": "mat-brushed-steel-pbr"
+      },
+      "catalogSource": {
+        "catalogId": "builtin-assets",
+        "itemId": "lighting/pendant-350",
+        "version": "2026.05.m4d"
+      }
+    },
+    {
+      "type": "placeFamilyInstance",
+      "id": "inst-lounge-chair-01",
+      "name": "Reading lounge chair",
+      "familyTypeId": "fam-chair-lounge-m4d",
+      "levelId": "fam-lvl-01",
+      "positionMm": {
+        "xMm": 3650,
+        "yMm": 2450
+      },
+      "rotationDeg": 18,
+      "paramValues": {
+        "finishMaterial": "mat-walnut-pbr",
+        "tag": "FAM-CHAIR-01"
+      }
+    },
+    {
+      "type": "PlaceAsset",
+      "id": "asset-planter-01",
+      "assetId": "asset:decor/indoor-planter-600",
+      "levelId": "fam-lvl-01",
+      "positionMm": {
+        "xMm": 6200,
+        "yMm": 1800
+      },
+      "rotationDeg": 270,
+      "paramValues": {
+        "potMaterial": "mat-ceramic-white-pbr",
+        "heightMm": 600
+      }
+    },
+    {
+      "type": "place_kit",
+      "id": "kit-kitchen-west-01",
+      "kitId": "kitchen_modular_linear_v2",
+      "hostWallId": "fam-wall-west",
+      "startMm": 900,
+      "endMm": 5100,
+      "countertopDepthMm": 635,
+      "countertopMaterialId": "mat-quartz-pbr",
+      "components": [
+        {
+          "id": "base-900-drawers",
+          "kind": "base_cabinet",
+          "widthMm": 900
+        },
+        {
+          "id": "sink-800",
+          "kind": "sink_base",
+          "widthMm": 800
+        },
+        {
+          "id": "range-760",
+          "kind": "appliance_range",
+          "widthMm": 760
+        },
+        {
+          "id": "wall-1200",
+          "kind": "wall_cabinet",
+          "widthMm": 1200
+        }
+      ]
+    },
+    {
+      "type": "update_material_pbr",
+      "id": "mat-walnut-pbr",
+      "name": "M4D satin walnut",
+      "albedoColor": "#8A5A32",
+      "albedoMapId": "tex-walnut-albedo-1k",
+      "normalMapId": "tex-walnut-normal-1k",
+      "roughnessMapId": "tex-walnut-roughness-1k",
+      "metallicMapId": "tex-flat-black",
+      "uvScaleMm": {
+        "uMm": 1200,
+        "vMm": 1200
+      },
+      "uvRotationDeg": 0,
+      "hatchPatternId": "hatch-wood-linear"
+    },
+    {
+      "type": "update_material_pbr",
+      "id": "mat-quartz-pbr",
+      "name": "M4D warm quartz",
+      "albedoColor": "#E7E1D5",
+      "albedoMapId": "tex-quartz-albedo-1k",
+      "normalMapId": "tex-quartz-normal-1k",
+      "roughnessMapId": "tex-quartz-roughness-1k",
+      "metallicMapId": "tex-flat-black",
+      "uvScaleMm": {
+        "uMm": 1800,
+        "vMm": 900
+      },
+      "uvRotationDeg": 90,
+      "hatchPatternId": "hatch-stone-speckle"
+    },
+    {
+      "type": "set_element_prop",
+      "elementId": "inst-lounge-chair-01",
+      "key": "materialKey",
+      "value": "mat-walnut-pbr"
+    },
+    {
+      "type": "set_element_prop",
+      "elementId": "fam-wall-west",
+      "key": "faceMaterialOverrides",
+      "value": [
+        {
+          "faceKind": "interior",
+          "generatedFaceId": "fam-wall-west:face:interior",
+          "materialKey": "mat-quartz-pbr",
+          "source": "paint",
+          "uvScaleMm": {
+            "uMm": 1800,
+            "vMm": 900
+          },
+          "uvOffsetMm": {
+            "uMm": 0,
+            "vMm": 120
+          },
+          "uvRotationDeg": 90
+        }
+      ]
+    },
+    {
+      "type": "create_decal",
+      "id": "decal-menu-board-01",
+      "parentElementId": "fam-wall-west",
+      "parentSurface": "interior",
+      "imageAssetId": "img-decal-cafe-menu-1024",
+      "uvRect": {
+        "u0": 0.42,
+        "v0": 0.18,
+        "u1": 0.58,
+        "v1": 0.44
+      },
+      "opacity": 0.92
+    }
+  ]
+}

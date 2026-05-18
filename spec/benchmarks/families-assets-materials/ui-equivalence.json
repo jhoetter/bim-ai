@@ -1,0 +1,32 @@
+{
+  "schemaVersion": "bim-ai.ui-equivalence.v1",
+  "benchmarkId": "families-assets-materials",
+  "classification": "validated-replay",
+  "status": "validated",
+  "surfaces": [
+    {
+      "uiSurface": "family-library/type-editor",
+      "toolIds": ["family.upsert_type", "family.place_instance"],
+      "validatedReplayIds": ["ui-step-family-upsert", "ui-step-family-place"]
+    },
+    {
+      "uiSurface": "asset-browser/catalog",
+      "toolIds": ["catalog-query", "asset.place", "place-kitchen-kit"],
+      "validatedReplayIds": ["ui-step-catalog-query", "ui-step-asset-place", "ui-step-kit-place"]
+    },
+    {
+      "uiSurface": "material-browser/pbr-and-paint",
+      "toolIds": ["material.upsert_pbr", "material.assign", "material.paint_face"],
+      "validatedReplayIds": [
+        "ui-step-material-pbr",
+        "ui-step-material-assign",
+        "ui-step-paint-face"
+      ]
+    },
+    {
+      "uiSurface": "decal-inspector",
+      "toolIds": ["decal.create"],
+      "validatedReplayIds": ["ui-step-decal-create"]
+    }
+  ]
+}

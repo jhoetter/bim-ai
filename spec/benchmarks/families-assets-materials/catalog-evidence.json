@@ -1,0 +1,64 @@
+{
+  "schemaVersion": "bim-ai.catalog-query-evidence.v1",
+  "benchmarkId": "families-assets-materials",
+  "queries": [
+    {
+      "toolId": "catalog-query",
+      "query": {
+        "kind": "furniture",
+        "tag": "lounge",
+        "style": "hospitality",
+        "pageSize": 3
+      },
+      "selectedItemId": "seating/lounge-chair-parametric",
+      "items": [
+        {
+          "id": "seating/lounge-chair-parametric",
+          "kind": "furniture",
+          "widthMm": 820,
+          "depthMm": 760,
+          "heightMm": 780,
+          "tags": ["lounge", "hospitality", "parametric"]
+        }
+      ]
+    },
+    {
+      "toolId": "catalog-query",
+      "query": {
+        "kind": "asset",
+        "tag": "decor",
+        "pageSize": 3
+      },
+      "selectedItemId": "decor/indoor-planter-600",
+      "items": [
+        {
+          "id": "decor/indoor-planter-600",
+          "kind": "asset",
+          "widthMm": 420,
+          "depthMm": 420,
+          "heightMm": 600,
+          "tags": ["decor", "plant", "interior"]
+        }
+      ]
+    },
+    {
+      "toolId": "catalog-query",
+      "query": {
+        "kind": "kit",
+        "tag": "kitchen",
+        "style": "linear",
+        "pageSize": 3
+      },
+      "selectedItemId": "kitchen_modular_linear_v2",
+      "items": [
+        {
+          "id": "kitchen_modular_linear_v2",
+          "kind": "kit",
+          "minRunMm": 3000,
+          "maxRunMm": 7200,
+          "tags": ["kitchen", "linear", "modular"]
+        }
+      ]
+    }
+  ]
+}

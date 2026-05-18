@@ -1,0 +1,51 @@
+{
+  "schemaVersion": "bim-ai.material-quality-evidence.v1",
+  "benchmarkId": "families-assets-materials",
+  "materials": [
+    {
+      "id": "mat-walnut-pbr",
+      "name": "M4D satin walnut",
+      "pbrSlots": {
+        "albedoMapId": "tex-walnut-albedo-1k",
+        "normalMapId": "tex-walnut-normal-1k",
+        "roughnessMapId": "tex-walnut-roughness-1k",
+        "metallicMapId": "tex-flat-black"
+      },
+      "uvScaleMm": {
+        "uMm": 1200,
+        "vMm": 1200
+      },
+      "swatch": {
+        "widthPx": 128,
+        "heightPx": 128,
+        "sha256": "9d4a8bb2c4f2b4761f90fa52a4b8d76d75ee2bfef6e1e8418f119f88c4e8a610",
+        "nonblankRatio": 0.997
+      }
+    },
+    {
+      "id": "mat-quartz-pbr",
+      "name": "M4D warm quartz",
+      "pbrSlots": {
+        "albedoMapId": "tex-quartz-albedo-1k",
+        "normalMapId": "tex-quartz-normal-1k",
+        "roughnessMapId": "tex-quartz-roughness-1k",
+        "metallicMapId": "tex-flat-black"
+      },
+      "uvScaleMm": {
+        "uMm": 1800,
+        "vMm": 900
+      },
+      "swatch": {
+        "widthPx": 128,
+        "heightPx": 128,
+        "sha256": "cf9df61f33af3be635dcbbdd21aa1394f1d44fc5356c2ed9fdfd3bd61c3d91cb",
+        "nonblankRatio": 0.995
+      }
+    }
+  ],
+  "acceptance": {
+    "allReferencedTextureIdsResolved": true,
+    "allSwatchesNonblank": true,
+    "allUvScalesPositive": true
+  }
+}

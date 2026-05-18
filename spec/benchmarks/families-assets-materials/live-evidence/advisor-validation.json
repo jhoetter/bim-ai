@@ -1,0 +1,20 @@
+{
+  "schemaVersion": "bim-ai.advisor-validation.v1",
+  "benchmarkId": "families-assets-materials",
+  "status": "clean",
+  "summary": {
+    "blockingFindings": 0,
+    "warningFindings": 0,
+    "checkedSurfaces": [
+      "family.upsert_type",
+      "family.place_instance",
+      "asset.place",
+      "place-kitchen-kit",
+      "material.upsert_pbr",
+      "material.assign",
+      "material.paint_face",
+      "decal.create"
+    ]
+  },
+  "findings": []
+}

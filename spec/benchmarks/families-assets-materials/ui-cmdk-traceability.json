@@ -1,0 +1,56 @@
+{
+  "schemaVersion": "bim-ai.ui-cmdk-traceability.v1",
+  "benchmarkId": "families-assets-materials",
+  "classification": "validated-replay",
+  "status": "validated",
+  "entries": [
+    {
+      "toolId": "family.upsert_type",
+      "cmdKIntent": "Create a lounge chair family type 820 mm wide from catalog",
+      "payloadRef": "mcp-cli-command-bundle.json#/commands/0",
+      "activatorOnly": false
+    },
+    {
+      "toolId": "family.place_instance",
+      "cmdKIntent": "Place the M4D lounge chair at 3650,2450 on Level 1",
+      "payloadRef": "mcp-cli-command-bundle.json#/commands/2",
+      "activatorOnly": false
+    },
+    {
+      "toolId": "asset.place",
+      "cmdKIntent": "Place the indoor planter asset at 6200,1800 on Level 1",
+      "payloadRef": "mcp-cli-command-bundle.json#/commands/3",
+      "activatorOnly": false
+    },
+    {
+      "toolId": "place-kitchen-kit",
+      "cmdKIntent": "Place a 4200 mm linear kitchen kit on the west wall",
+      "payloadRef": "mcp-cli-command-bundle.json#/commands/4",
+      "activatorOnly": false
+    },
+    {
+      "toolId": "material.upsert_pbr",
+      "cmdKIntent": "Update satin walnut PBR texture slots",
+      "payloadRef": "mcp-cli-command-bundle.json#/commands/5",
+      "activatorOnly": false
+    },
+    {
+      "toolId": "material.assign",
+      "cmdKIntent": "Assign walnut material to the lounge chair",
+      "payloadRef": "mcp-cli-command-bundle.json#/commands/7",
+      "activatorOnly": false
+    },
+    {
+      "toolId": "material.paint_face",
+      "cmdKIntent": "Paint the west wall interior face with warm quartz",
+      "payloadRef": "mcp-cli-command-bundle.json#/commands/8",
+      "activatorOnly": false
+    },
+    {
+      "toolId": "decal.create",
+      "cmdKIntent": "Create a menu-board decal on the west wall interior face",
+      "payloadRef": "mcp-cli-command-bundle.json#/commands/9",
+      "activatorOnly": false
+    }
+  ]
+}

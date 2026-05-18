@@ -1,0 +1,57 @@
+{
+  "schemaVersion": "bim-ai.benchmark.expected-semantics.v1",
+  "benchmarkId": "families-assets-materials",
+  "expected": {
+    "commandSurfaceUsage": {
+      "mustInclude": [
+        "upsertFamilyType",
+        "placeFamilyInstance",
+        "PlaceAsset",
+        "place_kit",
+        "update_material_pbr",
+        "set_element_prop",
+        "create_decal"
+      ],
+      "toolIds": [
+        "family.upsert_type",
+        "family.place_instance",
+        "catalog-query",
+        "asset.place",
+        "place-kitchen-kit",
+        "material.upsert_pbr",
+        "material.assign",
+        "material.paint_face",
+        "decal.create"
+      ]
+    },
+    "counts": {
+      "familyTypes": 2,
+      "familyInstances": 1,
+      "assetPlacements": 1,
+      "kitchenKits": 1,
+      "pbrMaterials": 2,
+      "materialAssignments": 1,
+      "paintedFaces": 1,
+      "decals": 1
+    },
+    "ids": {
+      "familyTypes": ["fam-chair-lounge-m4d", "fam-pendant-350-m4d"],
+      "placedElements": ["inst-lounge-chair-01", "asset-planter-01", "kit-kitchen-west-01"],
+      "materials": ["mat-walnut-pbr", "mat-quartz-pbr"],
+      "paintTargets": ["fam-wall-west:face:interior"],
+      "decals": ["decal-menu-board-01"]
+    },
+    "qualityAcceptance": {
+      "advisorBlockingFindings": 0,
+      "visualNonblankChecks": 4,
+      "exportKinds": ["family_instance", "asset_instance", "family_kit", "material", "decal"],
+      "semanticDiffChangedIds": [
+        "inst-lounge-chair-01",
+        "asset-planter-01",
+        "kit-kitchen-west-01",
+        "fam-wall-west",
+        "decal-menu-board-01"
+      ]
+    }
+  }
+}

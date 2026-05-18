@@ -1,0 +1,32 @@
+{
+  "schemaVersion": "bim-ai.export-evidence.v1",
+  "benchmarkId": "families-assets-materials",
+  "status": "manifest-returned",
+  "manifest": {
+    "format": "gltf",
+    "extensions": {
+      "BIM_AI_exportManifest_v0": {
+        "countsByKind": {
+          "family_type": 2,
+          "family_instance": 1,
+          "asset_instance": 1,
+          "family_kit": 1,
+          "material": 2,
+          "face_material_override": 1,
+          "decal": 1
+        },
+        "materialSlots": ["albedo", "normal", "roughness", "metallic"],
+        "exportedIds": [
+          "fam-chair-lounge-m4d",
+          "fam-pendant-350-m4d",
+          "inst-lounge-chair-01",
+          "asset-planter-01",
+          "kit-kitchen-west-01",
+          "mat-walnut-pbr",
+          "mat-quartz-pbr",
+          "decal-menu-board-01"
+        ]
+      }
+    }
+  }
+}
