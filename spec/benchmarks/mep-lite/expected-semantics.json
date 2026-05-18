@@ -1,0 +1,40 @@
+{
+  "schemaVersion": "bim-ai.benchmark.expected-semantics.v1",
+  "benchmarkId": "mep-lite",
+  "sourceOfIntent": "spec/ui-mcp-parity-tracker.md#m4-c-mep-lite-mcp-pack",
+  "expected": {
+    "routes": {
+      "pipe": 1,
+      "duct": 1,
+      "cableTray": 1,
+      "allHaveGeometry": true,
+      "allHaveElevation": true,
+      "allHaveSystemType": true,
+      "allHaveServiceLevel": true
+    },
+    "placed": {
+      "equipment": 1,
+      "fixtures": 1,
+      "terminals": 1,
+      "allHaveLevelAndPosition": true,
+      "allHaveSystemType": true
+    },
+    "openingRequests": {
+      "count": 1,
+      "allHaveHost": true,
+      "allHaveRequester": true,
+      "allHaveSystemType": true
+    },
+    "commandSurfaceUsage": {
+      "mustInclude": [
+        "createPipe",
+        "createDuct",
+        "createCableTray",
+        "createMepEquipment",
+        "createFixture",
+        "createMepTerminal",
+        "createMepOpeningRequest"
+      ]
+    }
+  }
+}

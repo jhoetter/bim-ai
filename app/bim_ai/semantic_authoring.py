@@ -16,11 +16,18 @@ from bim_ai.cmd.types import AssumptionEntry, CommandBundle
 from bim_ai.commands import (
     Command,
     CreateBeamCmd,
+    CreateCableTrayCmd,
     CreateColumnCmd,
     CreateConstraintCmd,
     CreateConstructionLogisticsCmd,
     CreateConstructionPackageCmd,
+    CreateDuctCmd,
+    CreateFixtureCmd,
     CreateFloorCmd,
+    CreateMepEquipmentCmd,
+    CreateMepOpeningRequestCmd,
+    CreateMepTerminalCmd,
+    CreatePipeCmd,
     CreateRailingCmd,
     CreateRoofCmd,
     CreateRoofOpeningCmd,
@@ -65,6 +72,13 @@ SemanticOperation = Literal[
     "save_3d_view",
     "plan_view",
     "sheet_with_viewports",
+    "mep_pipe_route",
+    "mep_duct_route",
+    "mep_cable_tray",
+    "mep_equipment",
+    "mep_fixture",
+    "mep_terminal",
+    "mep_opening_request",
 ]
 
 SUPPORTED_OPERATIONS: tuple[str, ...] = (
@@ -92,6 +106,13 @@ SUPPORTED_OPERATIONS: tuple[str, ...] = (
     "save_3d_view",
     "plan_view",
     "sheet_with_viewports",
+    "mep_pipe_route",
+    "mep_duct_route",
+    "mep_cable_tray",
+    "mep_equipment",
+    "mep_fixture",
+    "mep_terminal",
+    "mep_opening_request",
 )
 
 UNSUPPORTED_M2_OPERATIONS: dict[str, str] = {
@@ -134,6 +155,24 @@ class Point2(BaseModel):
 
     def wire(self) -> dict[str, float]:
         return self.model_dump(by_alias=True)
+
+
+MepSystemType = Literal[
+    "hvac_supply",
+    "hvac_return",
+    "heating",
+    "cooling",
+    "domestic_water",
+    "wastewater",
+    "electrical",
+    "data",
+    "fire_protection",
+    "other",
+]
+
+MepFlowDirection = Literal[
+    "supply", "return", "exhaust", "bidirectional", "none", "unknown"
+]
 
 
 class WallSegmentInput(BaseModel):
@@ -528,6 +567,113 @@ class ConstructionQaChecklistPayload(BaseModel):
     checklist: list[dict[str, Any]] = Field(default_factory=list)
 
 
+class MepRoutePayload(BaseModel):
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+
+    id: str | None = None
+    name: str | None = None
+    level_id: str = Field(alias="levelId", min_length=1)
+    start_mm: Point2 = Field(alias="startMm")
+    end_mm: Point2 = Field(alias="endMm")
+    elevation_mm: float = Field(default=0.0, alias="elevationMm")
+    system_type: str = Field(default="other", alias="systemType")
+    system_name: str | None = Field(default=None, alias="systemName")
+    flow_direction: MepFlowDirection = Field(default="unknown", alias="flowDirection")
+    service_level: str | None = Field(default=None, alias="serviceLevel")
+    clearance_zone: dict[str, Any] | None = Field(default=None, alias="clearanceZone")
+    maintain_access_zone: dict[str, Any] | None = Field(default=None, alias="maintainAccessZone")
+    connectors: list[dict[str, Any]] = Field(default_factory=list)
+    colour: str | None = Field(default=None)
+
+    @model_validator(mode="after")
+    def _not_degenerate(self) -> MepRoutePayload:
+        if _same_point(self.start_mm, self.end_mm):
+            raise ValueError("MEP route startMm and endMm must differ")
+        return self
+
+
+class MepPipeRoutePayload(MepRoutePayload):
+    diameter_mm: float = Field(default=25.0, alias="diameterMm", gt=0)
+    insulation: str | None = None
+    material_key: str | None = Field(default=None, alias="materialKey")
+
+
+class MepDuctRoutePayload(MepRoutePayload):
+    width_mm: float = Field(default=300.0, alias="widthMm", gt=0)
+    height_mm: float = Field(default=200.0, alias="heightMm", gt=0)
+    shape: Literal["rectangular", "round", "oval"] = "rectangular"
+    insulation: str | None = None
+
+
+class MepCableTrayPayload(MepRoutePayload):
+    name: str | None = "Cable tray"
+    system_type: MepSystemType = Field(default="electrical", alias="systemType")
+    width_mm: float = Field(default=200.0, alias="widthMm", gt=0)
+    height_mm: float = Field(default=60.0, alias="heightMm", gt=0)
+
+
+class MepPlacedPayload(BaseModel):
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+
+    id: str | None = None
+    name: str
+    level_id: str = Field(alias="levelId", min_length=1)
+    position_mm: Point2 = Field(alias="positionMm")
+    system_type: MepSystemType = Field(default="other", alias="systemType")
+    system_name: str | None = Field(default=None, alias="systemName")
+    connectors: list[dict[str, Any]] = Field(default_factory=list)
+
+
+class MepEquipmentPayload(MepPlacedPayload):
+    name: str = "MEP Equipment"
+    elevation_mm: float = Field(default=0.0, alias="elevationMm")
+    equipment_type: str | None = Field(default=None, alias="equipmentType")
+    family_type_id: str | None = Field(default=None, alias="familyTypeId")
+    service_level: str | None = Field(default=None, alias="serviceLevel")
+    clearance_zone: dict[str, Any] | None = Field(default=None, alias="clearanceZone")
+    maintain_access_zone: dict[str, Any] | None = Field(default=None, alias="maintainAccessZone")
+    electrical_load_w: float | None = Field(default=None, alias="electricalLoadW", ge=0)
+
+
+class MepFixturePayload(MepPlacedPayload):
+    name: str = "Fixture"
+    room_id: str | None = Field(default=None, alias="roomId")
+    fixture_type: str | None = Field(default=None, alias="fixtureType")
+    system_type: MepSystemType = Field(default="domestic_water", alias="systemType")
+    electrical_load_w: float | None = Field(default=None, alias="electricalLoadW", ge=0)
+
+
+class MepTerminalPayload(MepPlacedPayload):
+    name: str = "MEP Terminal"
+    terminal_kind: Literal["diffuser", "terminal", "sprinkler", "device"] = Field(
+        default="terminal", alias="terminalKind"
+    )
+    room_id: str | None = Field(default=None, alias="roomId")
+    system_type: MepSystemType = Field(default="hvac_supply", alias="systemType")
+    flow_direction: MepFlowDirection = Field(default="supply", alias="flowDirection")
+    service_level: str | None = Field(default=None, alias="serviceLevel")
+
+
+class MepOpeningRequestPayload(BaseModel):
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+
+    id: str | None = None
+    name: str = "MEP opening request"
+    host_element_id: str = Field(alias="hostElementId", min_length=1)
+    level_id: str | None = Field(default=None, alias="levelId")
+    requester_element_ids: list[str] = Field(default_factory=list, alias="requesterElementIds")
+    opening_kind: Literal["wall", "slab", "roof", "shaft"] = Field(
+        default="wall", alias="openingKind"
+    )
+    position_mm: Point2 | None = Field(default=None, alias="positionMm")
+    width_mm: float | None = Field(default=None, alias="widthMm", gt=0)
+    height_mm: float | None = Field(default=None, alias="heightMm", gt=0)
+    diameter_mm: float | None = Field(default=None, alias="diameterMm", gt=0)
+    clearance_mm: float = Field(default=50.0, alias="clearanceMm", ge=0)
+    system_type: MepSystemType = Field(default="other", alias="systemType")
+    system_name: str | None = Field(default=None, alias="systemName")
+
+
 class PlanViewPayload(BaseModel):
     model_config = ConfigDict(populate_by_name=True, extra="ignore")
 
@@ -659,6 +805,20 @@ def build_semantic_authoring_bundle(
         return plan_view_bundle(PlanViewPayload.model_validate(data))
     if operation == "sheet_with_viewports":
         return sheet_with_viewports_bundle(SheetWithViewportsPayload.model_validate(data))
+    if operation == "mep_pipe_route":
+        return mep_pipe_route_bundle(MepPipeRoutePayload.model_validate(data))
+    if operation == "mep_duct_route":
+        return mep_duct_route_bundle(MepDuctRoutePayload.model_validate(data))
+    if operation == "mep_cable_tray":
+        return mep_cable_tray_bundle(MepCableTrayPayload.model_validate(data))
+    if operation == "mep_equipment":
+        return mep_equipment_bundle(MepEquipmentPayload.model_validate(data))
+    if operation == "mep_fixture":
+        return mep_fixture_bundle(MepFixturePayload.model_validate(data))
+    if operation == "mep_terminal":
+        return mep_terminal_bundle(MepTerminalPayload.model_validate(data))
+    if operation == "mep_opening_request":
+        return mep_opening_request_bundle(MepOpeningRequestPayload.model_validate(data))
     raise UnsupportedSemanticOperationError(str(operation))
 
 
@@ -929,6 +1089,144 @@ def construction_qa_checklist_bundle(payload: ConstructionQaChecklistPayload) ->
         checklist=payload.checklist,
     )
     return _bundle("construction_qa_checklist", [command])
+
+
+def mep_pipe_route_bundle(payload: MepPipeRoutePayload) -> SemanticBundle:
+    command = CreatePipeCmd(
+        id=payload.id,
+        levelId=payload.level_id,
+        startMm=payload.start_mm.wire(),
+        endMm=payload.end_mm.wire(),
+        elevationMm=payload.elevation_mm,
+        diameterMm=payload.diameter_mm,
+        systemType=payload.system_type,
+        systemName=payload.system_name,
+        flowDirection=payload.flow_direction,
+        insulation=payload.insulation,
+        serviceLevel=payload.service_level,
+        clearanceZone=payload.clearance_zone,
+        maintainAccessZone=payload.maintain_access_zone,
+        connectors=payload.connectors,
+        materialKey=payload.material_key,
+        colour=payload.colour,
+    )
+    return _bundle("mep_pipe_route", [command])
+
+
+def mep_duct_route_bundle(payload: MepDuctRoutePayload) -> SemanticBundle:
+    command = CreateDuctCmd(
+        id=payload.id,
+        levelId=payload.level_id,
+        startMm=payload.start_mm.wire(),
+        endMm=payload.end_mm.wire(),
+        elevationMm=payload.elevation_mm,
+        widthMm=payload.width_mm,
+        heightMm=payload.height_mm,
+        shape=payload.shape,
+        systemType=payload.system_type,
+        systemName=payload.system_name,
+        flowDirection=payload.flow_direction,
+        insulation=payload.insulation,
+        serviceLevel=payload.service_level,
+        clearanceZone=payload.clearance_zone,
+        maintainAccessZone=payload.maintain_access_zone,
+        connectors=payload.connectors,
+        colour=payload.colour,
+    )
+    return _bundle("mep_duct_route", [command])
+
+
+def mep_cable_tray_bundle(payload: MepCableTrayPayload) -> SemanticBundle:
+    command = CreateCableTrayCmd(
+        id=payload.id,
+        name=payload.name or "Cable tray",
+        levelId=payload.level_id,
+        startMm=payload.start_mm.wire(),
+        endMm=payload.end_mm.wire(),
+        elevationMm=payload.elevation_mm,
+        widthMm=payload.width_mm,
+        heightMm=payload.height_mm,
+        systemType=payload.system_type,
+        systemName=payload.system_name,
+        serviceLevel=payload.service_level,
+        clearanceZone=payload.clearance_zone,
+        maintainAccessZone=payload.maintain_access_zone,
+        connectors=payload.connectors,
+        colour=payload.colour,
+    )
+    return _bundle("mep_cable_tray", [command])
+
+
+def mep_equipment_bundle(payload: MepEquipmentPayload) -> SemanticBundle:
+    command = CreateMepEquipmentCmd(
+        id=payload.id,
+        name=payload.name,
+        levelId=payload.level_id,
+        positionMm=payload.position_mm.wire(),
+        elevationMm=payload.elevation_mm,
+        equipmentType=payload.equipment_type,
+        familyTypeId=payload.family_type_id,
+        systemType=payload.system_type,
+        systemName=payload.system_name,
+        serviceLevel=payload.service_level,
+        clearanceZone=payload.clearance_zone,
+        maintainAccessZone=payload.maintain_access_zone,
+        connectors=payload.connectors,
+        electricalLoadW=payload.electrical_load_w,
+    )
+    return _bundle("mep_equipment", [command])
+
+
+def mep_fixture_bundle(payload: MepFixturePayload) -> SemanticBundle:
+    command = CreateFixtureCmd(
+        id=payload.id,
+        name=payload.name,
+        levelId=payload.level_id,
+        positionMm=payload.position_mm.wire(),
+        roomId=payload.room_id,
+        fixtureType=payload.fixture_type,
+        systemType=payload.system_type,
+        systemName=payload.system_name,
+        connectors=payload.connectors,
+        electricalLoadW=payload.electrical_load_w,
+    )
+    return _bundle("mep_fixture", [command])
+
+
+def mep_terminal_bundle(payload: MepTerminalPayload) -> SemanticBundle:
+    command = CreateMepTerminalCmd(
+        id=payload.id,
+        name=payload.name,
+        terminalKind=payload.terminal_kind,
+        levelId=payload.level_id,
+        positionMm=payload.position_mm.wire(),
+        roomId=payload.room_id,
+        systemType=payload.system_type,
+        systemName=payload.system_name,
+        flowDirection=payload.flow_direction,
+        serviceLevel=payload.service_level,
+        connectors=payload.connectors,
+    )
+    return _bundle("mep_terminal", [command])
+
+
+def mep_opening_request_bundle(payload: MepOpeningRequestPayload) -> SemanticBundle:
+    command = CreateMepOpeningRequestCmd(
+        id=payload.id,
+        name=payload.name,
+        hostElementId=payload.host_element_id,
+        levelId=payload.level_id,
+        requesterElementIds=payload.requester_element_ids,
+        openingKind=payload.opening_kind,
+        positionMm=payload.position_mm.wire() if payload.position_mm else None,
+        widthMm=payload.width_mm,
+        heightMm=payload.height_mm,
+        diameterMm=payload.diameter_mm,
+        clearanceMm=payload.clearance_mm,
+        systemType=payload.system_type,
+        systemName=payload.system_name,
+    )
+    return _bundle("mep_opening_request", [command])
 
 
 def plan_view_bundle(payload: PlanViewPayload) -> SemanticBundle:

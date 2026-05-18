@@ -398,6 +398,179 @@ test('author stair-between-levels --json generates typed createStair payload', a
   assert.equal(command.widthMm, 1100);
 });
 
+test('mep route --json commands expose geometry elevation system and service metadata', async () => {
+  const env = { BIM_AI_BASE_URL: 'http://127.0.0.1:1', BIM_AI_MODEL_ID: 'model-1' };
+  const pipe = await runCli(
+    [
+      'mep',
+      'pipe-route',
+      '--level',
+      'lvl-0',
+      '--line',
+      '0,100;3000,100',
+      '--id',
+      'pipe-cw-1',
+      '--elevation',
+      '2600',
+      '--diameter',
+      '40',
+      '--system',
+      'domestic_water',
+      '--system-name',
+      'CW-1',
+      '--flow',
+      'supply',
+      '--service-level',
+      'Level 1 ceiling',
+      '--json',
+    ],
+    env,
+  );
+  const duct = await runCli(
+    [
+      'mep',
+      'duct-route',
+      '--level',
+      'lvl-0',
+      '--line',
+      '0,800;3000,800',
+      '--id',
+      'duct-sa-1',
+      '--elevation',
+      '2800',
+      '--width',
+      '500',
+      '--height',
+      '250',
+      '--system',
+      'hvac_supply',
+      '--service-level',
+      'ceiling plenum',
+      '--json',
+    ],
+    env,
+  );
+
+  assert.equal(pipe.code, 0, pipe.stderr);
+  assert.equal(duct.code, 0, duct.stderr);
+  const pipeCommand = JSON.parse(pipe.stdout).body.bundle.commands[0];
+  const ductCommand = JSON.parse(duct.stdout).body.bundle.commands[0];
+  assert.equal(pipeCommand.type, 'createPipe');
+  assert.deepEqual(pipeCommand.startMm, { xMm: 0, yMm: 100 });
+  assert.equal(pipeCommand.elevationMm, 2600);
+  assert.equal(pipeCommand.systemType, 'domestic_water');
+  assert.equal(pipeCommand.serviceLevel, 'Level 1 ceiling');
+  assert.equal(ductCommand.type, 'createDuct');
+  assert.equal(ductCommand.widthMm, 500);
+  assert.equal(ductCommand.heightMm, 250);
+  assert.equal(ductCommand.serviceLevel, 'ceiling plenum');
+});
+
+test('mep equipment fixture terminal and opening request --json generate typed payloads', async () => {
+  const env = { BIM_AI_BASE_URL: 'http://127.0.0.1:1', BIM_AI_MODEL_ID: 'model-1' };
+  const equipment = await runCli(
+    [
+      'mep',
+      'equipment',
+      '--level',
+      'lvl-0',
+      '--position',
+      '500,500',
+      '--id',
+      'ahu-1',
+      '--equipment-type',
+      'AHU',
+      '--system',
+      'hvac_supply',
+      '--service-level',
+      'mechanical room',
+      '--electrical-load',
+      '900',
+      '--json',
+    ],
+    env,
+  );
+  const fixture = await runCli(
+    [
+      'mep',
+      'fixture',
+      '--level',
+      'lvl-0',
+      '--position',
+      '1200,900',
+      '--id',
+      'sink-1',
+      '--room',
+      'room-1',
+      '--fixture-type',
+      'sink',
+      '--system',
+      'domestic_water',
+      '--json',
+    ],
+    env,
+  );
+  const terminal = await runCli(
+    [
+      'mep',
+      'terminal',
+      '--level',
+      'lvl-0',
+      '--position',
+      '1800,900',
+      '--id',
+      'diffuser-1',
+      '--terminal-kind',
+      'diffuser',
+      '--system',
+      'hvac_supply',
+      '--service-level',
+      'ceiling',
+      '--json',
+    ],
+    env,
+  );
+  const opening = await runCli(
+    [
+      'mep',
+      'opening-request',
+      '--host',
+      'wall-1',
+      '--level',
+      'lvl-0',
+      '--requester',
+      'duct-sa-1',
+      '--opening-kind',
+      'wall',
+      '--position',
+      '1500,800',
+      '--width',
+      '600',
+      '--height',
+      '320',
+      '--system',
+      'hvac_supply',
+      '--json',
+    ],
+    env,
+  );
+
+  assert.equal(equipment.code, 0, equipment.stderr);
+  assert.equal(fixture.code, 0, fixture.stderr);
+  assert.equal(terminal.code, 0, terminal.stderr);
+  assert.equal(opening.code, 0, opening.stderr);
+  assert.equal(JSON.parse(equipment.stdout).body.bundle.commands[0].type, 'createMepEquipment');
+  assert.equal(JSON.parse(equipment.stdout).body.bundle.commands[0].equipmentType, 'AHU');
+  assert.equal(JSON.parse(fixture.stdout).body.bundle.commands[0].type, 'createFixture');
+  assert.equal(JSON.parse(fixture.stdout).body.bundle.commands[0].roomId, 'room-1');
+  assert.equal(JSON.parse(terminal.stdout).body.bundle.commands[0].type, 'createMepTerminal');
+  assert.equal(JSON.parse(terminal.stdout).body.bundle.commands[0].terminalKind, 'diffuser');
+  assert.equal(JSON.parse(opening.stdout).body.bundle.commands[0].type, 'createMepOpeningRequest');
+  assert.deepEqual(JSON.parse(opening.stdout).body.bundle.commands[0].requesterElementIds, [
+    'duct-sa-1',
+  ]);
+});
+
 test('opening shaft-opening --json generates typed createSlabOpening payload', async () => {
   const res = await runCli(
     [

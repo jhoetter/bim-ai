@@ -363,6 +363,118 @@ def test_m4b_structure_construction_fixture_maps_honest_ui_cmdk_coverage() -> No
     }
 
 
+def test_mep_lite_semantic_surfaces_generate_typed_commands() -> None:
+    pipe = build_semantic_authoring_bundle(
+        "mep_pipe_route",
+        {
+            "id": "pipe-cw-1",
+            "levelId": "level-1",
+            "startMm": {"xMm": 0, "yMm": 100},
+            "endMm": {"xMm": 3000, "yMm": 100},
+            "elevationMm": 2600,
+            "diameterMm": 40,
+            "systemType": "domestic_water",
+            "systemName": "CW-1",
+            "flowDirection": "supply",
+            "serviceLevel": "Level 1 ceiling",
+        },
+    )
+    duct = build_semantic_authoring_bundle(
+        "mep_duct_route",
+        {
+            "id": "duct-sa-1",
+            "levelId": "level-1",
+            "startMm": {"xMm": 0, "yMm": 800},
+            "endMm": {"xMm": 3000, "yMm": 800},
+            "elevationMm": 2800,
+            "widthMm": 500,
+            "heightMm": 250,
+            "systemType": "hvac_supply",
+            "serviceLevel": "ceiling plenum",
+        },
+    )
+    tray = build_semantic_authoring_bundle(
+        "mep_cable_tray",
+        {
+            "id": "tray-e-1",
+            "levelId": "level-1",
+            "startMm": {"xMm": 0, "yMm": 1200},
+            "endMm": {"xMm": 3000, "yMm": 1200},
+            "elevationMm": 2700,
+            "systemType": "electrical",
+            "serviceLevel": "overhead",
+        },
+    )
+    equipment = build_semantic_authoring_bundle(
+        "mep_equipment",
+        {
+            "id": "ahu-1",
+            "levelId": "level-1",
+            "positionMm": {"xMm": 500, "yMm": 500},
+            "elevationMm": 0,
+            "equipmentType": "AHU",
+            "systemType": "hvac_supply",
+            "serviceLevel": "mechanical room",
+            "electricalLoadW": 900,
+        },
+    )
+    fixture = build_semantic_authoring_bundle(
+        "mep_fixture",
+        {
+            "id": "sink-1",
+            "levelId": "level-1",
+            "positionMm": {"xMm": 1200, "yMm": 900},
+            "roomId": "room-1",
+            "fixtureType": "sink",
+            "systemType": "domestic_water",
+        },
+    )
+    terminal = build_semantic_authoring_bundle(
+        "mep_terminal",
+        {
+            "id": "diffuser-1",
+            "levelId": "level-1",
+            "positionMm": {"xMm": 1800, "yMm": 900},
+            "terminalKind": "diffuser",
+            "systemType": "hvac_supply",
+            "flowDirection": "supply",
+            "serviceLevel": "ceiling",
+        },
+    )
+    opening_request = build_semantic_authoring_bundle(
+        "mep_opening_request",
+        {
+            "id": "or-duct-1",
+            "hostElementId": "wall-1",
+            "levelId": "level-1",
+            "requesterElementIds": ["duct-sa-1"],
+            "openingKind": "wall",
+            "positionMm": {"xMm": 1500, "yMm": 800},
+            "widthMm": 600,
+            "heightMm": 320,
+            "clearanceMm": 50,
+            "systemType": "hvac_supply",
+        },
+    )
+
+    assert pipe.commands[0]["type"] == "createPipe"
+    assert pipe.commands[0]["elevationMm"] == 2600.0
+    assert pipe.commands[0]["systemType"] == "domestic_water"
+    assert pipe.commands[0]["serviceLevel"] == "Level 1 ceiling"
+    assert duct.commands[0]["type"] == "createDuct"
+    assert duct.commands[0]["widthMm"] == 500.0
+    assert tray.commands[0]["type"] == "createCableTray"
+    assert tray.commands[0]["systemType"] == "electrical"
+    assert equipment.commands[0]["type"] == "createMepEquipment"
+    assert equipment.commands[0]["equipmentType"] == "AHU"
+    assert fixture.commands[0]["type"] == "createFixture"
+    assert fixture.commands[0]["roomId"] == "room-1"
+    assert terminal.commands[0]["type"] == "createMepTerminal"
+    assert terminal.commands[0]["terminalKind"] == "diffuser"
+    assert opening_request.commands[0]["type"] == "createMepOpeningRequest"
+    assert opening_request.commands[0]["requesterElementIds"] == ["duct-sa-1"]
+
+
 def test_roof_opening_generates_valid_create_roof_opening() -> None:
     bundle = build_semantic_authoring_bundle(
         "roof_opening",
@@ -469,6 +581,29 @@ def test_semantic_authoring_route_accepts_first_pack_surface_ids() -> None:
             "pathMm": [{"xMm": 0, "yMm": 0}, {"xMm": 0, "yMm": 4000}],
         },
     )
+    mep_pipe = client.post(
+        "/api/semantic-authoring/mep.pipe_route",
+        json={
+            "levelId": "level-1",
+            "startMm": {"xMm": 0, "yMm": 100},
+            "endMm": {"xMm": 1000, "yMm": 100},
+            "elevationMm": 2600,
+            "systemType": "domestic_water",
+            "serviceLevel": "ceiling",
+        },
+    )
+    mep_opening = client.post(
+        "/api/semantic-authoring/mep.opening_request",
+        json={
+            "hostElementId": "wall-1",
+            "levelId": "level-1",
+            "requesterElementIds": ["duct-1"],
+            "openingKind": "wall",
+            "widthMm": 600,
+            "heightMm": 320,
+            "systemType": "hvac_supply",
+        },
+    )
     column = client.post(
         "/api/semantic-authoring/structure.column",
         json={"levelId": "level-1", "positionMm": {"xMm": 0, "yMm": 0}},
@@ -488,6 +623,11 @@ def test_semantic_authoring_route_accepts_first_pack_surface_ids() -> None:
     assert shaft.json()["commands"][0]["isShaft"] is True
     assert railing.status_code == 200
     assert railing.json()["commands"][0]["type"] == "createRailing"
+    assert mep_pipe.status_code == 200
+    assert mep_pipe.json()["commands"][0]["type"] == "createPipe"
+    assert mep_pipe.json()["commands"][0]["serviceLevel"] == "ceiling"
+    assert mep_opening.status_code == 200
+    assert mep_opening.json()["commands"][0]["type"] == "createMepOpeningRequest"
     assert column.status_code == 200
     assert column.json()["commands"][0]["type"] == "createColumn"
     assert package.status_code == 200

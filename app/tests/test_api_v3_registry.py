@@ -49,6 +49,16 @@ EXPECTED_M3K_VERTICAL_CIRCULATION_TOOLS = {
     "author.railing",
 }
 
+EXPECTED_M4C_MEP_LITE_TOOLS = {
+    "mep.pipe_route",
+    "mep.duct_route",
+    "mep.cable_tray",
+    "mep.equipment",
+    "mep.fixture",
+    "mep.terminal",
+    "mep.opening_request",
+}
+
 EXPECTED_M4B_STRUCTURE_CONSTRUCTION_TOOLS = {
     "structure.column",
     "structure.beam",
@@ -264,6 +274,31 @@ class TestToolRegistry:
         assert shaft.inputSchema["properties"]["isShaft"]["const"] is True
         assert railing.kernelCommands == ["createRailing"]
         assert "pathMm" in railing.inputSchema["required"]
+
+    def test_m4c_mep_lite_tools_are_first_class_descriptors(self):
+        names = {tool.name for tool in get_catalog().tools}
+        assert EXPECTED_M4C_MEP_LITE_TOOLS <= names
+
+        pipe = get_descriptor("mep.pipe_route")
+        assert pipe is not None
+        assert pipe.restEndpoint.path == "/api/semantic-authoring/{surface_id}"
+        assert pipe.kernelCommands == ["createPipe"]
+        assert {"semantic-authoring", "mep", "route", "pipe"} <= set(pipe.resourceGroups)
+        assert {"levelId", "startMm", "endMm"} <= set(pipe.inputSchema["required"])
+        assert "elevationMm" in pipe.inputSchema["properties"]
+        assert "systemType" in pipe.inputSchema["properties"]
+        assert "serviceLevel" in pipe.inputSchema["properties"]
+
+        duct = get_descriptor("mep.duct_route")
+        assert duct is not None
+        assert duct.kernelCommands == ["createDuct"]
+        assert {"widthMm", "heightMm", "shape"} <= set(duct.inputSchema["properties"])
+
+        opening = get_descriptor("mep.opening_request")
+        assert opening is not None
+        assert opening.kernelCommands == ["createMepOpeningRequest"]
+        assert {"hostElementId"} <= set(opening.inputSchema["required"])
+        assert "requesterElementIds" in opening.inputSchema["properties"]
 
     def test_m4b_structure_construction_tools_are_first_class_descriptors(self):
         names = {tool.name for tool in get_catalog().tools}

@@ -1436,6 +1436,13 @@ _SEMANTIC_SURFACE_ALIASES = {
     "construction.qa_checklist": "construction_qa_checklist",
     "view.save_3d": "save_3d_view",
     "view.plan": "plan_view",
+    "mep.pipe_route": "mep_pipe_route",
+    "mep.duct_route": "mep_duct_route",
+    "mep.cable_tray": "mep_cable_tray",
+    "mep.equipment": "mep_equipment",
+    "mep.fixture": "mep_fixture",
+    "mep.terminal": "mep_terminal",
+    "mep.opening_request": "mep_opening_request",
 }
 
 
