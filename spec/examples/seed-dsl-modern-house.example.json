@@ -283,8 +283,8 @@
             "id": "upper-wrapper-front-fascia",
             "name": "Thick front wrapper fascia",
             "pathMm": [
-              { "xMm": 0, "yMm": -450, "zMm": 6100 },
-              { "xMm": 8000, "yMm": -450, "zMm": 6100 }
+              { "xMm": 0, "yMm": -450, "zMm": 3100 },
+              { "xMm": 8000, "yMm": -450, "zMm": 3100 }
             ],
             "profileMm": [
               { "uMm": 0, "vMm": 0 },
@@ -446,8 +446,8 @@
             "id": "front-loggia-left-mullion",
             "name": "Left vertical mullion proxy",
             "pathMm": [
-              { "xMm": 6250, "yMm": 6410, "zMm": 3000 },
-              { "xMm": 6250, "yMm": 6410, "zMm": 5300 }
+              { "xMm": 6250, "yMm": 6410, "zMm": 0 },
+              { "xMm": 6250, "yMm": 6410, "zMm": 2300 }
             ],
             "profileMm": [
               { "uMm": 0, "vMm": 0 },
@@ -460,8 +460,8 @@
             "id": "front-loggia-right-mullion",
             "name": "Right vertical mullion proxy",
             "pathMm": [
-              { "xMm": 7150, "yMm": 6410, "zMm": 3000 },
-              { "xMm": 7150, "yMm": 6410, "zMm": 5300 }
+              { "xMm": 7150, "yMm": 6410, "zMm": 0 },
+              { "xMm": 7150, "yMm": 6410, "zMm": 2300 }
             ],
             "profileMm": [
               { "uMm": 0, "vMm": 0 },
@@ -549,6 +549,56 @@
       }
     ]
   },
+  "commands": [
+    {
+      "type": "deleteElement",
+      "elementId": "upper-wrapper-wall-01"
+    },
+    {
+      "type": "createWall",
+      "id": "upper-wrapper-wall-01",
+      "name": "Upper white folded shell wall 1 left return",
+      "levelId": "lvl-upper",
+      "start": { "xMm": 0, "yMm": -450 },
+      "end": { "xMm": 1200, "yMm": -450 },
+      "thicknessMm": 250,
+      "heightMm": 3200,
+      "wallTypeId": "wt-white-wrapper",
+      "materialKey": "white_render",
+      "isCurtainWall": false,
+      "loadBearing": false,
+      "structuralRole": "non_load_bearing",
+      "structuralMaterialKey": "concrete",
+      "analyticalParticipation": true
+    },
+    {
+      "type": "createWall",
+      "id": "upper-wrapper-wall-01-right",
+      "name": "Upper white folded shell wall 1 right return",
+      "levelId": "lvl-upper",
+      "start": { "xMm": 7600, "yMm": -450 },
+      "end": { "xMm": 8000, "yMm": -450 },
+      "thicknessMm": 250,
+      "heightMm": 3200,
+      "wallTypeId": "wt-white-wrapper",
+      "materialKey": "white_render",
+      "isCurtainWall": false,
+      "loadBearing": true,
+      "structuralRole": "bearing_wall",
+      "structuralMaterialKey": "concrete",
+      "analyticalParticipation": true
+    },
+    {
+      "type": "attachWallTopToRoof",
+      "wallId": "upper-wrapper-wall-01",
+      "roofId": "roof-main"
+    },
+    {
+      "type": "attachWallTopToRoof",
+      "wallId": "upper-wrapper-wall-01-right",
+      "roofId": "roof-main"
+    }
+  ],
   "documentation": {
     "views": [
       {

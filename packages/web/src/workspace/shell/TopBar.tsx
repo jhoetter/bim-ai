@@ -600,8 +600,8 @@ function TopBarModePills({
 }
 
 const TAB_KIND_ICON: Record<TabKind, BimIconComponent> = {
-  plan: Icons.floor!,
-  '3d': Icons.family!,
+  plan: Icons.planView!,
+  '3d': Icons.orbitView!,
   section: Icons.section!,
   sheet: Icons.sheet!,
   schedule: Icons.schedule!,

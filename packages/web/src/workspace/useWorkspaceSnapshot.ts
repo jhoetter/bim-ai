@@ -141,11 +141,13 @@ export function useWorkspaceSnapshot(): {
       );
 
       ws.onopen = () => {
+        if (wsRef.current !== ws) return;
         reconnectAttemptsRef.current = 0;
         setWsOn(true);
       };
 
       ws.onclose = () => {
+        if (wsRef.current !== ws) return;
         setWsOn(false);
         if (DISABLE_WS || !mountedRef.current) return;
 
@@ -162,7 +164,13 @@ export function useWorkspaceSnapshot(): {
         const doReconnect = () => {
           if (!mountedRef.current) return;
           wsRef.current?.close();
-          wsRef.current = connectWs(mid, lastSeqRef.current);
+          const nextWs = connectWs(mid, lastSeqRef.current);
+          wsRef.current = nextWs;
+          window.setTimeout(() => {
+            if (wsRef.current === nextWs && nextWs.readyState === WebSocket.OPEN) {
+              setWsOn(true);
+            }
+          }, 250);
         };
 
         if (document.visibilityState === 'hidden') {
@@ -179,6 +187,7 @@ export function useWorkspaceSnapshot(): {
       };
 
       ws.onmessage = (evt) => {
+        if (wsRef.current !== ws) return;
         let payload: Record<string, unknown>;
         try {
           payload = JSON.parse(String(evt.data)) as Record<string, unknown>;
@@ -243,6 +252,7 @@ export function useWorkspaceSnapshot(): {
       );
       if (!snapRes.ok) throw new Error(`snapshot ${snapRes.status}`);
       const snap = (await snapRes.json()) as Snapshot;
+      if (!mountedRef.current) return;
       hydrateFromSnapshot(snap);
       setActiveSeedLabel(label);
       // activityEvents/comments are populated by the modelId effect below.
@@ -254,7 +264,13 @@ export function useWorkspaceSnapshot(): {
       if (!DISABLE_WS) {
         const lastSeq = readLastSeq(mid);
         lastSeqRef.current = lastSeq;
-        wsRef.current = connectWs(mid, lastSeq);
+        const nextWs = connectWs(mid, lastSeq);
+        wsRef.current = nextWs;
+        window.setTimeout(() => {
+          if (wsRef.current === nextWs && nextWs.readyState === WebSocket.OPEN) {
+            setWsOn(true);
+          }
+        }, 250);
       }
     },
     [hydrateFromSnapshot, connectWs],
@@ -265,6 +281,7 @@ export function useWorkspaceSnapshot(): {
     setSeedError(null);
     try {
       const bx = await bootstrap();
+      if (!mountedRef.current) return;
       const options = seedModelsFromBootstrap(bx);
       setSeedModels(options);
       const first = options[0];
@@ -275,9 +292,10 @@ export function useWorkspaceSnapshot(): {
       }
       await loadModelSnapshot(first.id, first.label);
     } catch (err) {
+      if (!mountedRef.current) return;
       setSeedError(err instanceof Error ? err.message : 'Failed to load seed');
     } finally {
-      setSeedLoading(false);
+      if (mountedRef.current) setSeedLoading(false);
     }
   }, [loadModelSnapshot]);
 
@@ -289,6 +307,7 @@ export function useWorkspaceSnapshot(): {
         let options = seedModels;
         if (!options.some((option) => option.id === mid)) {
           const bx = await bootstrap();
+          if (!mountedRef.current) return;
           options = seedModelsFromBootstrap(bx);
           setSeedModels(options);
         }
@@ -296,9 +315,10 @@ export function useWorkspaceSnapshot(): {
         if (!selected) throw new Error(`Seed model not found: ${mid}`);
         await loadModelSnapshot(selected.id, selected.label);
       } catch (err) {
+        if (!mountedRef.current) return;
         setSeedError(err instanceof Error ? err.message : 'Failed to load seed model');
       } finally {
-        setSeedLoading(false);
+        if (mountedRef.current) setSeedLoading(false);
       }
     },
     [loadModelSnapshot, seedModels],
@@ -346,6 +366,8 @@ export function useWorkspaceSnapshot(): {
   }, []);
 
   useEffect(() => {
+    mountedRef.current = true;
+    reconnectAttemptsRef.current = 0;
     const isEmpty = Object.keys(elementsById).length === 0;
     if (!isEmpty) return;
     void insertSeedHouse();
@@ -353,7 +375,10 @@ export function useWorkspaceSnapshot(): {
       mountedRef.current = false;
       reconnectAttemptsRef.current = Infinity;
       if (reconnectTimerRef.current !== null) clearTimeout(reconnectTimerRef.current);
-      wsRef.current?.close();
+      if (wsRef.current) {
+        wsRef.current.onclose = null;
+        wsRef.current.close();
+      }
       wsRef.current = null;
     };
     // Run-once bootstrap: re-running is the user's job via the empty-state CTA.
@@ -364,7 +389,17 @@ export function useWorkspaceSnapshot(): {
   useEffect(() => {
     const id = window.setInterval(() => {
       const ws = wsRef.current;
-      if (!ws || ws.readyState !== WebSocket.OPEN) return;
+      if (!ws) {
+        setWsOn(false);
+        return;
+      }
+      if (ws.readyState !== WebSocket.OPEN) {
+        if (ws.readyState === WebSocket.CLOSED || ws.readyState === WebSocket.CLOSING) {
+          setWsOn(false);
+        }
+        return;
+      }
+      setWsOn(true);
       const st = useBimStore.getState();
       ws.send(
         JSON.stringify({

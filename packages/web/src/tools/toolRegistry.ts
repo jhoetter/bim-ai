@@ -240,7 +240,7 @@ export function getToolRegistry(t: TFunction): Record<ToolId, ToolDefinition> {
     'room-separation-sketch': {
       id: 'room-separation-sketch',
       label: 'Room Separation (Sketch)',
-      icon: 'gridLine',
+      icon: 'roomSeparator',
       hotkey: 'RS',
       modes: ['plan'],
       tooltip: 'Draw room separation lines via the sketch session.',
@@ -301,7 +301,7 @@ export function getToolRegistry(t: TFunction): Record<ToolId, ToolDefinition> {
     area: {
       id: 'area',
       label: t('tools.area.label'),
-      icon: 'room',
+      icon: 'area',
       hotkey: 'AA',
       shortcut: 'AA',
       modes: ['plan', '3d'],
@@ -343,7 +343,7 @@ export function getToolRegistry(t: TFunction): Record<ToolId, ToolDefinition> {
     component: {
       id: 'component',
       label: 'Component',
-      icon: 'tag',
+      icon: 'family',
       hotkey: 'CC',
       shortcut: 'CC',
       modes: ['plan', '3d'],
@@ -360,7 +360,7 @@ export function getToolRegistry(t: TFunction): Record<ToolId, ToolDefinition> {
     elevation: {
       id: 'elevation',
       label: t('tools.elevation.label'),
-      icon: 'section',
+      icon: 'elevationView',
       hotkey: 'EL',
       modes: ['plan'],
       tooltip: t('tools.elevation.tooltip'),
@@ -368,7 +368,7 @@ export function getToolRegistry(t: TFunction): Record<ToolId, ToolDefinition> {
     'interior-elevation': {
       id: 'interior-elevation',
       label: t('tools.interiorElevation.label'),
-      icon: 'section',
+      icon: 'elevationView',
       hotkey: 'IE',
       modes: ['plan'],
       tooltip: t('tools.interiorElevation.tooltip'),
@@ -385,7 +385,7 @@ export function getToolRegistry(t: TFunction): Record<ToolId, ToolDefinition> {
     'reference-plane': {
       id: 'reference-plane',
       label: t('tools.referencePlane.label'),
-      icon: 'gridLine',
+      icon: 'referencePlane',
       hotkey: 'RP',
       modes: ['plan', '3d'],
       tooltip: t('tools.referencePlane.tooltip'),
@@ -393,7 +393,7 @@ export function getToolRegistry(t: TFunction): Record<ToolId, ToolDefinition> {
     'property-line': {
       id: 'property-line',
       label: t('tools.propertyLine.label'),
-      icon: 'detailLine',
+      icon: 'propertyLine',
       hotkey: 'PL',
       modes: ['plan'],
       tooltip: t('tools.propertyLine.tooltip'),
@@ -401,7 +401,7 @@ export function getToolRegistry(t: TFunction): Record<ToolId, ToolDefinition> {
     'area-boundary': {
       id: 'area-boundary',
       label: t('tools.areaBoundary.label'),
-      icon: 'detailLine',
+      icon: 'areaBoundary',
       hotkey: 'AB',
       modes: ['plan'],
       tooltip: t('tools.areaBoundary.tooltip'),
@@ -409,7 +409,7 @@ export function getToolRegistry(t: TFunction): Record<ToolId, ToolDefinition> {
     'masking-region': {
       id: 'masking-region',
       label: t('tools.maskingRegion.label'),
-      icon: 'detailLine',
+      icon: 'maskingRegion',
       hotkey: 'MR',
       modes: ['plan'],
       tooltip: t('tools.maskingRegion.tooltip'),
@@ -417,7 +417,7 @@ export function getToolRegistry(t: TFunction): Record<ToolId, ToolDefinition> {
     'plan-region': {
       id: 'plan-region',
       label: 'Plan Region',
-      icon: 'detailLine',
+      icon: 'planRegion',
       hotkey: 'PR',
       modes: ['plan'],
       tooltip: 'Draw a cut-plane override region',
@@ -469,7 +469,7 @@ export function getToolRegistry(t: TFunction): Record<ToolId, ToolDefinition> {
     linework: {
       id: 'linework',
       label: 'Linework Override',
-      icon: 'pen',
+      icon: 'linework',
       hotkey: 'LW',
       shortcut: 'LW',
       modes: ['plan'],
@@ -494,7 +494,7 @@ export function getToolRegistry(t: TFunction): Record<ToolId, ToolDefinition> {
     offset: {
       id: 'offset',
       label: 'Offset',
-      icon: 'move',
+      icon: 'offset',
       hotkey: 'OF',
       shortcut: 'OF',
       modes: ['plan'],
@@ -511,7 +511,7 @@ export function getToolRegistry(t: TFunction): Record<ToolId, ToolDefinition> {
     unjoin: {
       id: 'unjoin',
       label: 'Unjoin',
-      icon: 'wall-join',
+      icon: 'unjoin',
       hotkey: 'UJ',
       modes: ['plan', '3d'],
       tooltip: 'Remove a wall join at the selected endpoint so walls end independently.',
@@ -527,7 +527,7 @@ export function getToolRegistry(t: TFunction): Record<ToolId, ToolDefinition> {
     detach: {
       id: 'detach',
       label: 'Detach Top/Base',
-      icon: 'attach',
+      icon: 'detach',
       hotkey: 'DT',
       modes: ['plan', '3d'],
       tooltip: 'Detach selected wall top or base from its current host constraint.',
@@ -605,7 +605,7 @@ export function getToolRegistry(t: TFunction): Record<ToolId, ToolDefinition> {
     'mep-opening-request': {
       id: 'mep-opening-request',
       label: 'Opening Request',
-      icon: 'wall-opening',
+      icon: 'openingRequest',
       hotkey: 'OR',
       shortcut: 'OR',
       modes: ['plan', '3d'],
@@ -641,7 +641,7 @@ export function getToolRegistry(t: TFunction): Record<ToolId, ToolDefinition> {
     brace: {
       id: 'brace',
       label: 'Brace',
-      icon: 'beam',
+      icon: 'brace',
       hotkey: 'BR',
       shortcut: 'BR',
       modes: ['plan', '3d'],
@@ -650,7 +650,7 @@ export function getToolRegistry(t: TFunction): Record<ToolId, ToolDefinition> {
     'beam-system': {
       id: 'beam-system',
       label: 'Beam System',
-      icon: 'beam',
+      icon: 'beamSystem',
       hotkey: 'BS',
       shortcut: 'BS',
       modes: ['plan', '3d'],
@@ -659,7 +659,7 @@ export function getToolRegistry(t: TFunction): Record<ToolId, ToolDefinition> {
     'steel-connection': {
       id: 'steel-connection',
       label: 'Steel Connection',
-      icon: 'beam',
+      icon: 'steelConnection',
       hotkey: 'SC',
       shortcut: 'SC',
       modes: ['plan', '3d'],
@@ -722,7 +722,7 @@ export function getToolRegistry(t: TFunction): Record<ToolId, ToolDefinition> {
     array: {
       id: 'array',
       label: 'Array',
-      icon: 'copy',
+      icon: 'array',
       hotkey: 'AR',
       shortcut: 'AR',
       modes: ['plan'],
@@ -731,7 +731,7 @@ export function getToolRegistry(t: TFunction): Record<ToolId, ToolDefinition> {
     'place-group': {
       id: 'place-group',
       label: 'Place Group',
-      icon: 'tag',
+      icon: 'group',
       hotkey: 'PG',
       shortcut: 'PG',
       modes: ['plan'],
@@ -740,7 +740,7 @@ export function getToolRegistry(t: TFunction): Record<ToolId, ToolDefinition> {
     toposolid_subdivision: {
       id: 'toposolid_subdivision',
       label: 'Subdivide Toposolid',
-      icon: 'detailLine',
+      icon: 'topoSubdivision',
       hotkey: 'TS',
       shortcut: 'TS',
       modes: ['plan'],
@@ -749,7 +749,7 @@ export function getToolRegistry(t: TFunction): Record<ToolId, ToolDefinition> {
     'terrain-point': {
       id: 'terrain-point',
       label: 'Terrain Point',
-      icon: 'detailLine',
+      icon: 'terrainPoint',
       hotkey: 'TP',
       shortcut: 'TP',
       modes: ['plan'],
@@ -759,7 +759,7 @@ export function getToolRegistry(t: TFunction): Record<ToolId, ToolDefinition> {
     'terrain-pad': {
       id: 'terrain-pad',
       label: 'Terrain Pad',
-      icon: 'detailLine',
+      icon: 'terrainPad',
       hotkey: 'TPD',
       shortcut: 'TPD',
       modes: ['plan'],
@@ -779,7 +779,7 @@ export function getToolRegistry(t: TFunction): Record<ToolId, ToolDefinition> {
     'leader-text': {
       id: 'leader-text',
       label: 'Leader Text',
-      icon: 'annotation',
+      icon: 'leaderText',
       hotkey: 'LT',
       shortcut: 'LT',
       modes: ['plan', 'section'],
@@ -789,7 +789,7 @@ export function getToolRegistry(t: TFunction): Record<ToolId, ToolDefinition> {
     'angular-dimension': {
       id: 'angular-dimension',
       label: 'Angular Dimension',
-      icon: 'dimension',
+      icon: 'angularDimension',
       hotkey: 'AD',
       shortcut: 'AD',
       modes: ['plan', 'section'],
@@ -798,7 +798,7 @@ export function getToolRegistry(t: TFunction): Record<ToolId, ToolDefinition> {
     'radial-dimension': {
       id: 'radial-dimension',
       label: 'Radial Dimension',
-      icon: 'dimension',
+      icon: 'radialDimension',
       hotkey: 'RD',
       shortcut: 'RD',
       modes: ['plan', 'section'],
@@ -807,7 +807,7 @@ export function getToolRegistry(t: TFunction): Record<ToolId, ToolDefinition> {
     'diameter-dimension': {
       id: 'diameter-dimension',
       label: 'Diameter Dimension',
-      icon: 'dimension',
+      icon: 'diameterDimension',
       hotkey: 'DD',
       shortcut: 'DD',
       modes: ['plan', 'section'],
@@ -816,7 +816,7 @@ export function getToolRegistry(t: TFunction): Record<ToolId, ToolDefinition> {
     'arc-length-dimension': {
       id: 'arc-length-dimension',
       label: 'Arc Length',
-      icon: 'dimension',
+      icon: 'arcLengthDimension',
       hotkey: 'ALD',
       shortcut: 'ALD',
       modes: ['plan', 'section'],
@@ -825,7 +825,7 @@ export function getToolRegistry(t: TFunction): Record<ToolId, ToolDefinition> {
     'spot-elevation': {
       id: 'spot-elevation',
       label: 'Spot Elevation',
-      icon: 'measure',
+      icon: 'spotElevation',
       hotkey: 'SE',
       shortcut: 'SE',
       modes: ['plan', 'section'],
@@ -834,7 +834,7 @@ export function getToolRegistry(t: TFunction): Record<ToolId, ToolDefinition> {
     'spot-coordinate': {
       id: 'spot-coordinate',
       label: 'Spot Coordinate',
-      icon: 'measure',
+      icon: 'spotCoordinate',
       hotkey: 'SP',
       shortcut: 'SP',
       modes: ['plan'],
@@ -843,7 +843,7 @@ export function getToolRegistry(t: TFunction): Record<ToolId, ToolDefinition> {
     'slope-annotation': {
       id: 'slope-annotation',
       label: 'Slope Annotation',
-      icon: 'measure',
+      icon: 'slopeAnnotation',
       hotkey: 'SL',
       shortcut: 'SL',
       modes: ['plan'],
@@ -852,7 +852,7 @@ export function getToolRegistry(t: TFunction): Record<ToolId, ToolDefinition> {
     'material-tag': {
       id: 'material-tag',
       label: 'Material Tag',
-      icon: 'material',
+      icon: 'materialTag',
       hotkey: 'MT',
       shortcut: 'MT',
       modes: ['plan', 'section'],
@@ -861,7 +861,7 @@ export function getToolRegistry(t: TFunction): Record<ToolId, ToolDefinition> {
     'north-arrow': {
       id: 'north-arrow',
       label: 'North Arrow',
-      icon: 'detailLine',
+      icon: 'northArrow',
       hotkey: 'NA',
       shortcut: 'NA',
       modes: ['plan', 'sheet'],
@@ -870,7 +870,7 @@ export function getToolRegistry(t: TFunction): Record<ToolId, ToolDefinition> {
     'project-base-point': {
       id: 'project-base-point',
       label: 'Project Base Point',
-      icon: 'detailLine' as IconName,
+      icon: 'projectBasePoint' as IconName,
       hotkey: 'BP',
       shortcut: 'BP',
       modes: ['plan'] as WorkspaceMode[],
@@ -879,7 +879,7 @@ export function getToolRegistry(t: TFunction): Record<ToolId, ToolDefinition> {
     ramp: {
       id: 'ramp',
       label: 'Ramp',
-      icon: 'floor' as IconName,
+      icon: 'ramp' as IconName,
       hotkey: 'RA',
       shortcut: 'RA',
       modes: ['plan'] as WorkspaceMode[],
@@ -888,7 +888,7 @@ export function getToolRegistry(t: TFunction): Record<ToolId, ToolDefinition> {
     'mass-box': {
       id: 'mass-box',
       label: 'Box Mass',
-      icon: 'floor',
+      icon: 'massBox',
       hotkey: 'MBX',
       shortcut: 'MBX',
       modes: ['plan', '3d'],
@@ -897,7 +897,7 @@ export function getToolRegistry(t: TFunction): Record<ToolId, ToolDefinition> {
     'mass-extrusion': {
       id: 'mass-extrusion',
       label: 'Extruded Mass',
-      icon: 'floor',
+      icon: 'massExtrusion',
       hotkey: 'MEX',
       shortcut: 'MEX',
       modes: ['plan', '3d'],
@@ -906,7 +906,7 @@ export function getToolRegistry(t: TFunction): Record<ToolId, ToolDefinition> {
     'mass-revolution': {
       id: 'mass-revolution',
       label: 'Revolved Mass',
-      icon: 'floor',
+      icon: 'massRevolution',
       hotkey: 'MRV',
       shortcut: 'MRV',
       modes: ['plan', '3d'],
@@ -915,7 +915,7 @@ export function getToolRegistry(t: TFunction): Record<ToolId, ToolDefinition> {
     walkthrough: {
       id: 'walkthrough',
       label: 'Walkthrough',
-      icon: 'measure',
+      icon: 'walkthrough',
       hotkey: 'WT',
       shortcut: 'WT',
       modes: ['3d'],
@@ -934,7 +934,7 @@ export function getToolRegistry(t: TFunction): Record<ToolId, ToolDefinition> {
     'revision-cloud': {
       id: 'revision-cloud',
       label: 'Revision Cloud',
-      icon: 'detailLine',
+      icon: 'revisionCloud',
       hotkey: 'RC',
       shortcut: 'RC',
       modes: ['plan'],
@@ -944,7 +944,7 @@ export function getToolRegistry(t: TFunction): Record<ToolId, ToolDefinition> {
     excavation: {
       id: 'excavation',
       label: 'Excavation',
-      icon: 'detailLine',
+      icon: 'terrainPad',
       hotkey: 'EX',
       shortcut: 'EX',
       modes: ['plan'],
@@ -954,7 +954,7 @@ export function getToolRegistry(t: TFunction): Record<ToolId, ToolDefinition> {
     'model-line': {
       id: 'model-line',
       label: 'Model Line',
-      icon: 'detailLine',
+      icon: 'modelLine',
       hotkey: 'ML',
       shortcut: 'ML',
       modes: ['plan'],
@@ -990,7 +990,7 @@ export function getToolRegistry(t: TFunction): Record<ToolId, ToolDefinition> {
     'family-blend': {
       id: 'family-blend',
       label: 'Family Blend',
-      icon: 'floor' as IconName,
+      icon: 'familyBlend' as IconName,
       hotkey: 'FB',
       shortcut: 'FB',
       modes: ['plan'] as WorkspaceMode[],
@@ -1000,7 +1000,7 @@ export function getToolRegistry(t: TFunction): Record<ToolId, ToolDefinition> {
     'family-sweep': {
       id: 'family-sweep',
       label: 'Family Sweep',
-      icon: 'floor' as IconName,
+      icon: 'familySweep' as IconName,
       hotkey: 'FS',
       shortcut: 'FS',
       modes: ['plan'] as WorkspaceMode[],
@@ -1009,7 +1009,7 @@ export function getToolRegistry(t: TFunction): Record<ToolId, ToolDefinition> {
     'family-swept-blend': {
       id: 'family-swept-blend',
       label: 'Swept Blend',
-      icon: 'floor' as IconName,
+      icon: 'familySweptBlend' as IconName,
       hotkey: 'FSB',
       shortcut: 'FSB',
       modes: ['plan'] as WorkspaceMode[],
@@ -1019,7 +1019,7 @@ export function getToolRegistry(t: TFunction): Record<ToolId, ToolDefinition> {
     'graded-region': {
       id: 'graded-region',
       label: 'Graded Region',
-      icon: 'detailLine' as IconName,
+      icon: 'gradedRegion' as IconName,
       hotkey: 'GR',
       shortcut: 'GR',
       modes: ['plan'] as WorkspaceMode[],
@@ -1028,7 +1028,7 @@ export function getToolRegistry(t: TFunction): Record<ToolId, ToolDefinition> {
     'terrain-split': {
       id: 'terrain-split',
       label: 'Split Terrain',
-      icon: 'detailLine' as IconName,
+      icon: 'terrainSplit' as IconName,
       hotkey: 'TS',
       shortcut: 'TS',
       modes: ['plan'] as WorkspaceMode[],
@@ -1046,7 +1046,7 @@ export function getToolRegistry(t: TFunction): Record<ToolId, ToolDefinition> {
     'detail-filled-region': {
       id: 'detail-filled-region',
       label: 'Detail Filled Region',
-      icon: 'floor' as IconName,
+      icon: 'filledRegion' as IconName,
       hotkey: 'FR',
       shortcut: 'FR',
       modes: ['plan'] as WorkspaceMode[],
@@ -1055,7 +1055,7 @@ export function getToolRegistry(t: TFunction): Record<ToolId, ToolDefinition> {
     'cut-geometry': {
       id: 'cut-geometry',
       label: 'Cut Geometry',
-      icon: 'shaft' as IconName,
+      icon: 'cutGeometry' as IconName,
       hotkey: 'CG',
       shortcut: 'CG',
       modes: ['plan'] as WorkspaceMode[],

@@ -267,8 +267,8 @@
       "wallTypeId": "wt-white-wrapper",
       "materialKey": "cladding_warm_wood",
       "isCurtainWall": false,
-      "loadBearing": true,
-      "structuralRole": "bearing_wall",
+      "loadBearing": false,
+      "structuralRole": "non_load_bearing",
       "structuralMaterialKey": "concrete",
       "analyticalParticipation": true
     },
@@ -1079,12 +1079,12 @@
         {
           "xMm": 3350,
           "yMm": 810,
-          "zMm": 3000
+          "zMm": 0
         },
         {
           "xMm": 3350,
           "yMm": 810,
-          "zMm": 5300
+          "zMm": 2300
         }
       ],
       "profileMm": [
@@ -1117,12 +1117,12 @@
         {
           "xMm": 5550,
           "yMm": 810,
-          "zMm": 3000
+          "zMm": 0
         },
         {
           "xMm": 5550,
           "yMm": 810,
-          "zMm": 5300
+          "zMm": 2300
         }
       ],
       "profileMm": [
@@ -1153,6 +1153,29 @@
       "levelId": "hf-lvl-upper",
       "start": {
         "xMm": 0,
+        "yMm": -450
+      },
+      "end": {
+        "xMm": 1200,
+        "yMm": -450
+      },
+      "thicknessMm": 250,
+      "heightMm": 3200,
+      "wallTypeId": "wt-white-wrapper",
+      "materialKey": "white_render",
+      "isCurtainWall": false,
+      "loadBearing": true,
+      "structuralRole": "bearing_wall",
+      "structuralMaterialKey": "concrete",
+      "analyticalParticipation": true
+    },
+    {
+      "type": "createWall",
+      "id": "hf-upper-wrapper-shell-wall-01-right",
+      "name": "Target House thick white folded wrapper shell wall 1 right return",
+      "levelId": "hf-lvl-upper",
+      "start": {
+        "xMm": 7600,
         "yMm": -450
       },
       "end": {
@@ -1259,6 +1282,11 @@
       "roofId": "hf-roof-main"
     },
     {
+      "type": "attachWallTopToRoof",
+      "wallId": "hf-upper-wrapper-shell-wall-01-right",
+      "roofId": "hf-roof-main"
+    },
+    {
       "type": "createSweep",
       "id": "upper-wrapper-front-fascia",
       "name": "Thick front wrapper fascia",
@@ -1267,12 +1295,12 @@
         {
           "xMm": 0,
           "yMm": -450,
-          "zMm": 6100
+          "zMm": 3100
         },
         {
           "xMm": 8000,
           "yMm": -450,
-          "zMm": 6100
+          "zMm": 3100
         }
       ],
       "profileMm": [
@@ -3647,6 +3675,18 @@
     },
     {
       "type": "updateElementProperty",
+      "elementId": "hf-upper-wrapper-shell-wall-01-right",
+      "key": "fireResistanceRating",
+      "value": "R30"
+    },
+    {
+      "type": "updateElementProperty",
+      "elementId": "hf-upper-wrapper-shell-wall-01-right",
+      "key": "structuralMaterial",
+      "value": "concrete"
+    },
+    {
+      "type": "updateElementProperty",
       "elementId": "hf-upper-wrapper-shell-wall-02",
       "key": "fireResistanceRating",
       "value": "R30"
@@ -3810,6 +3850,24 @@
     {
       "type": "updateElementProperty",
       "elementId": "hf-upper-wrapper-shell-wall-01",
+      "key": "structuralMaterial",
+      "value": "concrete"
+    },
+    {
+      "type": "updateElementProperty",
+      "elementId": "hf-upper-wrapper-shell-wall-01-right",
+      "key": "loadBearing",
+      "value": false
+    },
+    {
+      "type": "updateElementProperty",
+      "elementId": "hf-upper-wrapper-shell-wall-01-right",
+      "key": "structuralRole",
+      "value": "non_load_bearing"
+    },
+    {
+      "type": "updateElementProperty",
+      "elementId": "hf-upper-wrapper-shell-wall-01-right",
       "key": "structuralMaterial",
       "value": "concrete"
     },

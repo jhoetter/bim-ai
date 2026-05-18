@@ -325,13 +325,13 @@ export function Viewport3DLayersPanel({
     room: Icons.room,
     family_instance: Icons.family,
     placed_asset: Icons.familyType,
-    mass: Icons.assembly,
-    site: Icons.grid,
-    reference_plane: Icons.gridLine,
-    text_3d: Icons.tag,
-    sweep: Icons.wallLayer,
-    dormer: Icons.roof,
-    site_origin: Icons.grid,
+    mass: Icons.mass,
+    site: Icons.site,
+    reference_plane: Icons.referencePlane,
+    text_3d: Icons.modelText,
+    sweep: Icons.wallSweep,
+    dormer: Icons.dormerOpening,
+    site_origin: Icons.siteOrigin,
   };
   const activeStyleLabel =
     GRAPHIC_STYLE_OPTIONS.find((option) => option.value === resolvedRenderStyle)?.label ?? 'Shaded';

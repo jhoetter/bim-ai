@@ -416,12 +416,12 @@
               {
                 "xMm": 0,
                 "yMm": -450,
-                "zMm": 6100
+                "zMm": 3100
               },
               {
                 "xMm": 8000,
                 "yMm": -450,
-                "zMm": 6100
+                "zMm": 3100
               }
             ],
             "profileMm": [
@@ -684,12 +684,12 @@
               {
                 "xMm": 3350,
                 "yMm": 810,
-                "zMm": 3000
+                "zMm": 0
               },
               {
                 "xMm": 3350,
                 "yMm": 810,
-                "zMm": 5300
+                "zMm": 2300
               }
             ],
             "profileMm": [
@@ -718,12 +718,12 @@
               {
                 "xMm": 5550,
                 "yMm": 810,
-                "zMm": 3000
+                "zMm": 0
               },
               {
                 "xMm": 5550,
                 "yMm": 810,
-                "zMm": 5300
+                "zMm": 2300
               }
             ],
             "profileMm": [
@@ -1211,6 +1211,62 @@
           "zMm": 1
         }
       }
+    }
+  ],
+  "commands": [
+    {
+      "type": "deleteElement",
+      "elementId": "hf-upper-wrapper-shell-wall-01"
+    },
+    {
+      "type": "createWall",
+      "id": "hf-upper-wrapper-shell-wall-01",
+      "name": "Target House thick white folded wrapper shell wall 1 left return",
+      "levelId": "hf-lvl-upper",
+      "start": { "xMm": 0, "yMm": -450 },
+      "end": { "xMm": 1200, "yMm": -450 },
+      "thicknessMm": 250,
+      "heightMm": 3200,
+      "wallTypeId": "wt-white-wrapper",
+      "materialKey": "white_render",
+      "isCurtainWall": false,
+      "loadBearing": false,
+      "structuralRole": "non_load_bearing",
+      "structuralMaterialKey": "concrete",
+      "analyticalParticipation": true
+    },
+    {
+      "type": "createWall",
+      "id": "hf-upper-wrapper-shell-wall-01-right",
+      "name": "Target House thick white folded wrapper shell wall 1 right return",
+      "levelId": "hf-lvl-upper",
+      "start": { "xMm": 7600, "yMm": -450 },
+      "end": { "xMm": 8000, "yMm": -450 },
+      "thicknessMm": 250,
+      "heightMm": 3200,
+      "wallTypeId": "wt-white-wrapper",
+      "materialKey": "white_render",
+      "isCurtainWall": false,
+      "loadBearing": true,
+      "structuralRole": "bearing_wall",
+      "structuralMaterialKey": "concrete",
+      "analyticalParticipation": true
+    },
+    {
+      "type": "attachWallTopToRoof",
+      "wallId": "hf-upper-wrapper-shell-wall-01",
+      "roofId": "hf-roof-main"
+    },
+    {
+      "type": "attachWallTopToRoof",
+      "wallId": "hf-upper-wrapper-shell-wall-01-right",
+      "roofId": "hf-roof-main"
+    },
+    {
+      "type": "updateElementProperty",
+      "elementId": "hf-upper-wrapper-shell-wall-01-right",
+      "key": "fireResistanceRating",
+      "value": "R30"
     }
   ],
   "assumptions": [

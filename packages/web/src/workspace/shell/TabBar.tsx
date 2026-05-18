@@ -13,8 +13,8 @@ import { type TabKind, type ViewTab } from '../tabsModel';
  */
 
 const TAB_KIND_ICON: Record<TabKind, BimIconComponent> = {
-  plan: Icons.floor!,
-  '3d': Icons.family!, // Component (cube) — used for 3D views
+  plan: Icons.planView!,
+  '3d': Icons.orbitView!,
   section: Icons.section!,
   sheet: Icons.sheet!,
   schedule: Icons.schedule!,

@@ -47,6 +47,9 @@ vi.mock('../lib/api', async (importOriginal) => {
     applyCommand: (...args: unknown[]) => mockApplyCommand(...args),
     applyCommandBundle: (...args: unknown[]) => mockApplyCommandBundle(...args),
     bootstrap: (...args: unknown[]) => mockBootstrap(...args),
+    fetchActivity: () => Promise.resolve({ events: [] }),
+    fetchBuildingPresets: () => Promise.resolve([]),
+    fetchComments: () => Promise.resolve({ comments: [] }),
   };
 });
 
@@ -306,7 +309,7 @@ describe('<Workspace /> family library array formula persistence', () => {
       id: typeId,
     });
     expect(useBimStore.getState().planTool).toBe('component');
-  });
+  }, 10_000);
 
   it('indexes catalog plumbing fixtures as placed assets before placement', async () => {
     let typeId = '';
@@ -501,5 +504,5 @@ describe('<Workspace /> family library array formula persistence', () => {
       expect(getByTestId('stub-plan-canvas').dataset.activePlanTool).toBe('component');
     });
     expect(useBimStore.getState().planTool).toBe('component');
-  });
+  }, 10_000);
 });

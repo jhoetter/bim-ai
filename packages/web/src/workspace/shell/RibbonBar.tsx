@@ -1019,19 +1019,19 @@ function recommendedLensTools(
       return [
         tool('select', 'Select', 'select'),
         tool('component', 'Equipment', 'family'),
-        tool('wall-opening', 'Opening Request', 'wall-opening'),
+        tool('wall-opening', 'Opening Request', 'openingRequest'),
         action('advisor-open', 'Coordination', 'clash'),
       ];
     case 'fire-safety':
       return [
-        tool('room', 'Compartment', 'room'),
+        tool('room', 'Compartment', 'fireCompartment'),
         tool('door', 'Fire Door', 'door'),
-        tool('wall-opening', 'Penetration', 'wall-opening'),
+        tool('wall-opening', 'Penetration', 'penetration'),
         tool('tag', 'Tag', 'tag'),
       ];
     case 'energy':
       return [
-        tool('room', 'Thermal Zone', 'room'),
+        tool('room', 'Thermal Zone', 'thermalZone'),
         tool('tag', 'Thermal Tag', 'tag'),
         tool('measure', 'Measure', 'measure'),
         action('command-palette', 'Handoff', 'externalLink'),
@@ -1039,30 +1039,30 @@ function recommendedLensTools(
     case 'construction':
       return [
         tool('select', 'Select', 'select'),
-        tool('tag', 'Status Tag', 'tag'),
+        tool('tag', 'Status Tag', 'progress'),
         tool('dimension', 'Dimension', 'dimension'),
-        action('advisor-open', 'Constructability', 'clash'),
+        action('advisor-open', 'Constructability', 'qaChecklist'),
       ];
     case 'sustainability':
       return [
         tool('select', 'Select', 'select'),
-        tool('tag', 'Impact Tag', 'tag'),
-        tool('measure', 'Quantities', 'measure'),
-        action('command-palette', 'LCA Data', 'schedule'),
+        tool('tag', 'Impact Tag', 'carbonImpact'),
+        tool('measure', 'Quantities', 'quantityTakeoff'),
+        action('command-palette', 'LCA Data', 'lcaExport'),
       ];
     case 'cost-quantity':
       return [
         tool('select', 'Select', 'select'),
-        tool('tag', 'Cost Tag', 'tag'),
+        tool('tag', 'Cost Tag', 'unitRate'),
         tool('measure', 'Measure', 'measure'),
-        action('command-palette', 'Takeoff', 'schedule'),
+        action('command-palette', 'Takeoff', 'quantityTakeoff'),
       ];
     case 'coordination':
       return [
         tool('select', 'Select', 'select'),
         tool('measure', 'Measure', 'measure'),
         action('advisor-open', 'Issues', 'issue'),
-        action('project-manage-links', 'Links', 'externalLink'),
+        action('project-manage-links', 'Links', 'linkedModel'),
       ];
     default:
       return selectOnly;
@@ -1140,8 +1140,8 @@ function buildPlanRibbonTabs(
           label: 'Rooms / Areas',
           commands: [
             tool('room', 'Room', 'room'),
-            tool('area', 'Area', 'room'),
-            tool('area-boundary', 'Area Boundary', 'gridLine'),
+            tool('area', 'Area', 'area'),
+            tool('area-boundary', 'Area Boundary', 'areaBoundary'),
           ],
         },
         {
@@ -1177,7 +1177,7 @@ function buildPlanRibbonTabs(
           id: 'coordination',
           label: 'Coordinate',
           commands: [
-            tool('mep-opening-request', 'Opening Request', 'wall-opening'),
+            tool('mep-opening-request', 'Opening Request', 'openingRequest'),
             tool('shaft', 'Shaft', 'shaft'),
           ],
         },
@@ -1203,11 +1203,11 @@ function buildPlanRibbonTabs(
           id: 'coordination',
           label: 'Coordination',
           commands: [
-            tool('mep-opening-request', 'Opening Request', 'wall-opening'),
+            tool('mep-opening-request', 'Opening Request', 'openingRequest'),
             action(
               'project-manage-links',
               'Linked Models',
-              'externalLink',
+              'linkedModel',
               'ribbon-command-analyze-links',
             ),
           ],
@@ -1230,8 +1230,8 @@ function buildPlanRibbonTabs(
           id: 'site',
           label: 'Site',
           commands: [
-            tool('property-line', 'Property Line', 'detailLine'),
-            tool('toposolid_subdivision', 'Topo Subdivision', 'grid'),
+            tool('property-line', 'Property Line', 'propertyLine'),
+            tool('toposolid_subdivision', 'Topo Subdivision', 'topoSubdivision'),
           ],
         },
       ],
@@ -1281,7 +1281,7 @@ function buildPlanRibbonTabs(
           label: 'Datum',
           commands: [
             tool('grid', 'Grid', 'gridLine'),
-            tool('reference-plane', 'Ref Plane', 'gridLine'),
+            tool('reference-plane', 'Ref Plane', 'referencePlane'),
           ],
         },
       ],
@@ -1297,7 +1297,7 @@ function buildPlanRibbonTabs(
             action(
               'project-manage-links',
               'Manage Links',
-              'externalLink',
+              'linkedModel',
               'ribbon-command-manage-links',
             ),
           ],
@@ -1345,7 +1345,12 @@ function buildPlanRibbonTabs(
           label: 'Project',
           commands: [
             action('manage-phases', 'Phases', 'phase', 'ribbon-manage-phases'),
-            action('manage-global-params', 'Parameters', 'tag', 'ribbon-manage-global-params'),
+            action(
+              'manage-global-params',
+              'Parameters',
+              'validationRule',
+              'ribbon-manage-global-params',
+            ),
           ],
         },
         {
@@ -1385,7 +1390,7 @@ function buildPlanRibbonTabs(
           id: 'steel-connections',
           label: 'Connections',
           commands: [
-            tool('steel-connection' as ToolId, 'Connection', 'beam'),
+            tool('steel-connection' as ToolId, 'Connection', 'steelConnection'),
             tool('beam' as ToolId, 'Steel Beam', 'beam'),
             tool('column' as ToolId, 'Steel Column', 'column'),
           ],
@@ -1393,7 +1398,7 @@ function buildPlanRibbonTabs(
         {
           id: 'steel-framing',
           label: 'Framing',
-          commands: [tool('brace' as ToolId, 'Brace', 'beam')],
+          commands: [tool('brace' as ToolId, 'Brace', 'brace')],
         },
       ],
     },
@@ -1405,9 +1410,9 @@ function buildPlanRibbonTabs(
           id: 'precast-elements',
           label: 'Elements',
           commands: [
-            tool('column' as ToolId, 'Precast Column', 'column'),
-            tool('beam' as ToolId, 'Precast Beam', 'beam'),
-            tool('floor' as ToolId, 'Precast Slab', 'floor'),
+            tool('column' as ToolId, 'Precast Column', 'precastColumn'),
+            tool('beam' as ToolId, 'Precast Beam', 'precastBeam'),
+            tool('floor' as ToolId, 'Precast Slab', 'precastSlab'),
           ],
         },
       ],
@@ -1419,14 +1424,14 @@ function buildPlanRibbonTabs(
         {
           id: 'conceptual-mass',
           label: 'Conceptual Mass',
-          commands: [tool('mass-box' as ToolId, 'In-Place Mass', 'assembly')],
+          commands: [tool('mass-box' as ToolId, 'In-Place Mass', 'massBox')],
         },
         {
           id: 'site',
           label: 'Site',
           commands: [
-            tool('toposolid_subdivision' as ToolId, 'Toposolid', 'grid'),
-            tool('terrain-pad' as ToolId, 'Building Pad', 'floor'),
+            tool('toposolid_subdivision' as ToolId, 'Toposolid', 'topoSubdivision'),
+            tool('terrain-pad' as ToolId, 'Building Pad', 'terrainPad'),
           ],
         },
       ],
@@ -1510,7 +1515,7 @@ function build3dRibbonTabs(selectedElementKind?: string | null): RibbonTab[] {
           id: 'coordination',
           label: 'Coordinate',
           commands: [
-            tool('mep-opening-request', 'Opening Request', 'wall-opening'),
+            tool('mep-opening-request', 'Opening Request', 'openingRequest'),
             tool('shaft', 'Shaft', 'shaft'),
           ],
         },
@@ -1524,9 +1529,9 @@ function build3dRibbonTabs(selectedElementKind?: string | null): RibbonTab[] {
           id: 'conceptual-mass',
           label: 'Conceptual Mass',
           commands: [
-            tool('mass-box', 'Box Mass', 'assembly'),
-            tool('mass-extrusion', 'Extrusion', 'family'),
-            tool('mass-revolution', 'Revolve', 'group'),
+            tool('mass-box', 'Box Mass', 'massBox'),
+            tool('mass-extrusion', 'Extrusion', 'massExtrusion'),
+            tool('mass-revolution', 'Revolve', 'massRevolution'),
           ],
         },
       ],
@@ -1562,7 +1567,7 @@ function build3dRibbonTabs(selectedElementKind?: string | null): RibbonTab[] {
             action(
               'project-manage-links',
               'Manage Links',
-              'externalLink',
+              'linkedModel',
               'ribbon-command-3d-manage-links',
             ),
           ],
@@ -1593,7 +1598,7 @@ function build3dRibbonTabs(selectedElementKind?: string | null): RibbonTab[] {
             action(
               'manage-global-params',
               'Parameters',
-              'tag',
+              'validationRule',
               'ribbon-command-3d-manage-global-params',
             ),
           ],
@@ -1677,7 +1682,7 @@ function build3dRibbonTabs(selectedElementKind?: string | null): RibbonTab[] {
           label: 'Datum',
           commands: [
             tool('grid', 'Grid', 'gridLine'),
-            tool('reference-plane', 'Ref Plane', 'gridLine'),
+            tool('reference-plane', 'Ref Plane', 'referencePlane'),
           ],
         },
       ],
@@ -1861,7 +1866,7 @@ function buildPlanModifyTab(selectedElementKind: string): RibbonTab {
           tool('move', 'Move', 'move'),
           tool('copy', 'Copy', 'copy'),
           tool('rotate', 'Rotate', 'rotate'),
-          tool('array', 'Array', 'copy'),
+          tool('array', 'Array', 'array'),
         ],
       },
       {
@@ -1870,7 +1875,7 @@ function buildPlanModifyTab(selectedElementKind: string): RibbonTab {
         commands: [
           tool('mirror', 'Mirror', 'mirror'),
           tool('align', 'Align', 'align'),
-          ...(isWall ? [tool('offset', 'Offset', 'move')] : []),
+          ...(isWall ? [tool('offset', 'Offset', 'offset')] : []),
           ...(isWall ? [tool('split', 'Split', 'split')] : []),
           ...(isWall ? [tool('trim', 'Trim', 'trim')] : []),
           ...(isWall ? [tool('wall-join', 'Wall Join', 'wall-join')] : []),
@@ -1881,9 +1886,9 @@ function buildPlanModifyTab(selectedElementKind: string): RibbonTab {
         id: 'constraints',
         label: 'Constraints',
         commands: [
-          ...(isSolid ? [tool('unjoin', 'Unjoin', 'wall-join')] : []),
-          ...(isWall ? [tool('attach', 'Attach Top', 'proportional')] : []),
-          ...(isWall ? [tool('detach', 'Detach Top', 'externalLink')] : []),
+          ...(isSolid ? [tool('unjoin', 'Unjoin', 'unjoin')] : []),
+          ...(isWall ? [tool('attach', 'Attach Top', 'attach')] : []),
+          ...(isWall ? [tool('detach', 'Detach Top', 'detach')] : []),
         ],
       },
       ...(isWall
@@ -1891,7 +1896,9 @@ function buildPlanModifyTab(selectedElementKind: string): RibbonTab {
             {
               id: 'parts',
               label: 'Parts',
-              commands: [action('wall-create-parts', 'Create Parts', 'split', 'wall-create-parts')],
+              commands: [
+                action('wall-create-parts', 'Create Parts', 'createParts', 'wall-create-parts'),
+              ],
             },
           ]
         : []),
@@ -1958,9 +1965,9 @@ function build3dModifyTab(selectedElementKind: string): RibbonTab {
               id: 'constraints',
               label: 'Constraints',
               commands: [
-                ...(isSolid ? [tool('unjoin', 'Unjoin', 'wall-join')] : []),
-                ...(isWall ? [tool('attach', 'Attach Top', 'proportional')] : []),
-                ...(isWall ? [tool('detach', 'Detach Top', 'externalLink')] : []),
+                ...(isSolid ? [tool('unjoin', 'Unjoin', 'unjoin')] : []),
+                ...(isWall ? [tool('attach', 'Attach Top', 'attach')] : []),
+                ...(isWall ? [tool('detach', 'Detach Top', 'detach')] : []),
               ],
             },
           ]
