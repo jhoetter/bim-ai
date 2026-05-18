@@ -55,10 +55,79 @@ BIM_AI_PROJECT_ID=<project-id> \
 node scripts/benchmarks/simple-house-live-evidence.mjs --out-dir /tmp/simple-house-live-evidence
 ```
 
+Local disposable live target:
+
+```sh
+node scripts/benchmarks/simple-house-local-live-target.mjs
+```
+
+The local target harness is the M2-U no-secret path. It starts the local
+Postgres service from `infra/docker-compose.yml` when needed, starts the FastAPI
+backend with `uv run uvicorn bim_ai.main:app --host 127.0.0.1 --port 8500`,
+checks `/api/health` and `/openapi.json` before any DB/project mutation, then
+seeds a disposable `ProjectRecord` in the local Postgres database. It prints a
+clean `BIM_AI_BASE_URL` and `BIM_AI_PROJECT_ID` that can be passed directly to
+`simple-house-live-evidence.mjs`. No external secrets are required; it uses the
+repo's default local development database URL.
+
+When it starts uvicorn, the harness writes
+`spec/benchmarks/simple-single-storey-house/.local-live-target/uvicorn.pid` and
+`uvicorn.log`. The local Postgres service is the `postgres` service in
+`infra/docker-compose.yml`.
+
+No-mutation preflight for an already running backend:
+
+```sh
+node scripts/benchmarks/simple-house-local-live-target.mjs \
+  --no-start \
+  --preflight-only \
+  --base-url http://127.0.0.1:8500
+```
+
+The preflight verifies these public live-evidence capabilities before seeding a
+project or running benchmark mutations:
+
+- `POST /api/projects/{project_id}/models`
+- `POST /api/models/{model_id}/bundles`
+- `GET /api/models/{model_id}/validate`
+- `POST /api/models/{model_id}/qa/advisor`
+- `GET /api/models/{model_id}/evidence-package`
+- `GET /api/models/{model_id}/exports/gltf-manifest`
+- `GET /api/models/{model_id}/exports/ifc-manifest`
+- `GET /api/models/{model_id}/exports/sheet-print-raster.png`
+
+Prepare the target and run the existing live evidence runner:
+
+```sh
+node scripts/benchmarks/simple-house-local-live-target.mjs \
+  --run-evidence \
+  --out-dir /tmp/simple-house-live-evidence
+```
+
+Collect mutating commit evidence against a model created under the disposable
+local project:
+
+```sh
+node scripts/benchmarks/simple-house-local-live-target.mjs \
+  --run-evidence \
+  --commit-live \
+  --out-dir /tmp/simple-house-live-commit-evidence
+```
+
+If the backend is missing the project-model creation route or any required
+evidence route, the harness exits before project seeding or benchmark bundle
+execution. If local DB project seeding fails, it reports the remaining backend
+capability gap precisely: the backend can create models only under an existing
+project, while this repo does not expose a public no-secret project-create
+endpoint.
+
 The M2-P runner creates a disposable model through
 `POST /api/projects/{project_id}/models`, captures live dry-run evidence, and
 normalizes the artifact names consumed by the Wave 3/Wave 4 audit path. It does
 not require secrets and rejects base URLs containing credentials.
+When required target settings are missing, it fails before writing audit-facing
+artifacts and names the missing `--base-url` plus target source flags exactly, so
+the output cannot be mistaken for live evidence.
 
 To collect commit evidence against the disposable model:
 
@@ -115,6 +184,7 @@ Benchmark check:
 ```sh
 node --test scripts/benchmarks/simple-house.test.mjs
 node --test scripts/benchmarks/simple-house-live-evidence.test.mjs
+node --test scripts/benchmarks/simple-house-local-live-target.test.mjs
 ```
 
 Today the harness emits:
@@ -136,6 +206,17 @@ Today the harness emits:
 - committed validation/advisor JSON, evidence-package visual hints, deterministic
   server-side sheet raster substitute, and export artifact/manifest checks when
   `--commit-live` or `--collect-committed-evidence` is set
+- committed advisor/validation pass fields, blocking counts, warning/info counts,
+  and source model/revision metadata; when live committed capture is not run,
+  `advisor-validation.json` is explicitly marked
+  `missing-committed-live-artifact` and does not reuse offline fixture metadata
+- visual/export `pass` fields that fail closed: visual evidence must include a
+  PNG with parsed IHDR dimensions, byte length, SHA-256, matching declared
+  dimensions, and the `sheetPrintRasterPrintSurrogate_v2` server contract;
+  placeholder/stub raster contracts are rejected
+- export evidence must include at least one clean IFC/glTF manifest or PDF
+  artifact proof, with digest/bytes and extracted manifest kind counts where
+  available; empty manifests and blank artifacts are marked invalid
 - explicit UI/Cmd+K traceability markers and remaining executable UI blockers
 
 When `--out-dir` is provided, the runner writes:
@@ -165,6 +246,13 @@ when it runs:
 - `snapshot-summary.json` with `null` when no committed snapshot is available
 - `committed-evidence.json` when the underlying benchmark collects it
 - `live-runner-manifest.json` with target provenance and safety settings
+
+The normalized `live-dry-run-evidence.json`, `live-commit-evidence.json`,
+`execution-evidence.json`, and `benchmark-result.json` include explicit
+`clean`, `pass`, `status`, `auditClassification`, source target metadata,
+revision fields, changed ids when returned, and `secrets.containsSecrets:
+false`. `live-commit-evidence.json` remains a negative `not-requested` artifact
+unless `--commit-live` is set.
 
 UI/Cmd+K traceability:
 

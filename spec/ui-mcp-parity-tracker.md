@@ -1248,11 +1248,11 @@ end-to-end run against a real local or disposable live target.
 
 | Workstream                                                 | Status  | Owner scope                                                                                                                                  | Tracker items                                         | Done when                                                                                                                                                                                                                |
 | ---------------------------------------------------------- | ------- | -------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| M2-U. Local disposable live stack                          | Partial | Backend/dev-server orchestration, temporary project/model setup, fixture data, and runner compatibility; avoid UI/audit/generated ownership. | WP-008, live dry-run/commit evidence.                 | A documented local command can start or target a disposable backend model that the Wave 4 live evidence runner can use without external secrets or manual setup.                                                         |
+| M2-U. Local disposable live stack                          | Done    | Backend/dev-server orchestration, temporary project/model setup, fixture data, and runner compatibility; avoid UI/audit/generated ownership. | WP-008, live dry-run/commit evidence.                 | A documented local command can start or target a disposable backend model that the Wave 4 live evidence runner can use without external secrets or manual setup.                                                         |
 | M2-V. Live dry-run and commit evidence capture             | Partial | Evidence run scripts, sanitized artifact directories, live runner tests, and benchmark docs; coordinate with M2-U for the target model.      | WP-008, live dry-run/commit closure.                  | Clean `live-dry-run-evidence.json`, `live-commit-evidence.json`, `execution-evidence.json`, command-log, snapshot, and benchmark result artifacts are generated from a real disposable target and accepted by the audit. |
 | M2-W. Committed advisor and validation live artifacts      | Partial | Committed advisor/validation artifact capture and benchmark assertions; avoid audit implementation except evidence contract feedback.        | WP-008, WP-009, committed advisor/validation closure. | Clean committed `advisor-validation.json` and `committed-evidence.json` artifacts are produced from the committed target model and fail the run on blocking findings.                                                    |
 | M2-X. Visual/render and export live artifacts              | Partial | Server render/export artifact capture, manifest checks, artifact sanity tests, and evidence docs; avoid UI parity implementation.            | WP-006, WP-008, visual/export closure.                | Nonblank visual/render evidence plus IFC/glTF/PDF or manifest evidence are produced from the committed target model and accepted by the audit without relying on documentation metadata.                                 |
-| M2-Y. M2 final audit, verifier, and tracker closure review | Partial | Audit generated outputs, `verify:m2-parity`, tracker status, and final release notes; do not create product behavior.                        | WP-004, WP-009, WP-012, M2 milestone finalization.    | `pnpm audit:ui-mcp-parity` and `pnpm verify:m2-parity` report the final gate state; M2 moves to `Done` only if all closure gates pass from real evidence, otherwise the tracker records exact residual blockers.         |
+| M2-Y. M2 final audit, verifier, and tracker closure review | Done    | Audit generated outputs, `verify:m2-parity`, tracker status, and final release notes; do not create product behavior.                        | WP-004, WP-009, WP-012, M2 milestone finalization.    | `pnpm audit:ui-mcp-parity` and `pnpm verify:m2-parity` report the final gate state; M2 moves to `Done` only if all closure gates pass from real evidence, otherwise the tracker records exact residual blockers.         |
 
 ### Milestone 2 Wave 5 Scheduling Notes
 
@@ -1267,6 +1267,37 @@ end-to-end run against a real local or disposable live target.
   remaining gates.
 - If all evidence gates pass, run `BIM_AI_M2_REQUIRE_DONE=1 pnpm verify:m2-parity`
   before marking M2 `Done`.
+- M2-Y final review result on 2026-05-18: `pnpm audit:ui-mcp-parity`
+  regenerated the ledgers and reports M2 `Partial`, `28 / 28` first-pack
+  surfaces, and `2 / 7` closure gates passed. No committed Wave 5 live evidence
+  artifacts were detected beyond the validated UI-equivalence artifact, so the
+  remaining blockers are live dry-run evidence, live commit evidence, committed
+  advisor/validation evidence, visual/render evidence, and export evidence.
+- Conservative status policy: M2 may be marked `Done` only when generated audit
+  evidence reports all `7 / 7` closure gates passed from accepted
+  machine-readable live artifacts and `pnpm verify:m2-parity` passes with
+  `BIM_AI_M2_REQUIRE_DONE=1`. Stubs, mocked HTTP outputs, placeholder JSON,
+  unavailable artifacts, docs-only metadata, traceability-only records, and
+  opt-in/not-requested outputs remain blockers even if they mention live
+  execution.
+
+Wave 5 result:
+
+- The local disposable live target harness can start or target the local
+  FastAPI backend, seed a disposable local project, preflight required routes,
+  and run the live evidence runner without external secrets.
+- The live evidence runner and benchmark evidence contracts now fail closed for
+  missing target config, unsafe existing-model commits, missing committed
+  advisor/validation, unavailable visual/render evidence, and empty or invalid
+  export artifacts.
+- A local disposable run on 2026-05-18 proved the orchestration path reaches the
+  live backend and returns `ok`, but it also exposed the next closure blocker:
+  the commit response did not apply the 28 simple-house commands into the model
+  snapshot. The committed snapshot still contained only starter/default
+  elements, with no changed ids and no house geometry.
+- Therefore M2 remains `Partial`. The next wave should focus on live commit
+  application semantics and downstream visual/export evidence from an actually
+  mutated model, not on more evidence-schema hardening.
 
 ## Next Work Packages
 

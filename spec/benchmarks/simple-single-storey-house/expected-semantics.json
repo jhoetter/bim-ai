@@ -138,6 +138,10 @@
         "validationStatusField": "validationStatus",
         "advisorStatusField": "advisorStatus",
         "blockingErrorCountsField": "blockingErrorCounts",
+        "warningCountsField": "warningCounts",
+        "infoCountsField": "infoCounts",
+        "sourceModelRevisionFields": ["modelId", "revision", "source.modelId", "source.revision"],
+        "missingCaptureEvidenceKind": "missing-committed-live-artifact",
         "warningsAndInfoAreNonBlocking": true
       },
       "artifacts": [

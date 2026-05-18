@@ -1,9 +1,11 @@
 import assert from 'node:assert/strict';
+import { createHash } from 'node:crypto';
 import fs from 'node:fs/promises';
 import http from 'node:http';
 import os from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
+import { deflateSync } from 'node:zlib';
 
 import { runLiveEvidence } from './simple-house-live-evidence.mjs';
 
@@ -31,12 +33,57 @@ function writeJson(response, status, body) {
   response.end(JSON.stringify(body));
 }
 
+const CRC_TABLE = Array.from({ length: 256 }, (_, index) => {
+  let c = index;
+  for (let k = 0; k < 8; k += 1) c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1;
+  return c >>> 0;
+});
+
+function crc32(bytes) {
+  let crc = 0xffffffff;
+  for (const byte of bytes) crc = CRC_TABLE[(crc ^ byte) & 0xff] ^ (crc >>> 8);
+  return (crc ^ 0xffffffff) >>> 0;
+}
+
+function pngChunk(type, data) {
+  const typeBytes = Buffer.from(type, 'ascii');
+  const length = Buffer.alloc(4);
+  length.writeUInt32BE(data.length, 0);
+  const crc = Buffer.alloc(4);
+  crc.writeUInt32BE(crc32(Buffer.concat([typeBytes, data])), 0);
+  return Buffer.concat([length, typeBytes, data, crc]);
+}
+
+function makePng(width, height) {
+  const ihdr = Buffer.alloc(13);
+  ihdr.writeUInt32BE(width, 0);
+  ihdr.writeUInt32BE(height, 4);
+  ihdr[8] = 8;
+  ihdr[9] = 2;
+  const rowLength = 1 + width * 3;
+  const raw = Buffer.alloc(rowLength * height);
+  for (let y = 0; y < height; y += 1) {
+    const rowStart = y * rowLength;
+    raw[rowStart] = 0;
+    for (let x = 0; x < width; x += 1) {
+      const offset = rowStart + 1 + x * 3;
+      raw[offset] = 240;
+      raw[offset + 1] = x % 2 === 0 ? 248 : 232;
+      raw[offset + 2] = y % 2 === 0 ? 255 : 224;
+    }
+  }
+  return Buffer.concat([
+    Buffer.from('89504e470d0a1a0a', 'hex'),
+    pngChunk('IHDR', ihdr),
+    pngChunk('IDAT', deflateSync(raw)),
+    pngChunk('IEND', Buffer.alloc(0)),
+  ]);
+}
+
 function createEvidenceServer() {
   const requests = [];
-  const pngBytes = Buffer.from(
-    '89504e470d0a1a0a0000000d4948445200000001000000010802000000907753de0000000c4944415408d763f8ffff3f0005fe02fea73581e40000000049454e44ae426082',
-    'hex',
-  );
+  const pngBytes = makePng(128, 112);
+  const pngSha256 = createHash('sha256').update(pngBytes).digest('hex');
   const pdfBytes = Buffer.from('%PDF-1.4\n% simple-house live runner stub\n', 'utf8');
   const server = http.createServer(async (request, response) => {
     const body = request.method === 'POST' ? JSON.parse(await readBody(request)) : null;
@@ -158,8 +205,9 @@ function createEvidenceServer() {
     ) {
       response.writeHead(200, {
         'content-type': 'image/png',
-        'x-bim-ai-sheet-print-raster-contract': 'stub-raster-v1',
-        'x-bim-ai-sheet-print-raster-full-raster-status': 'full-raster-unavailable',
+        'x-bim-ai-sheet-print-raster-contract': 'sheetPrintRasterPrintSurrogate_v2',
+        'x-bim-ai-sheet-print-raster-full-raster-status': 'print-surrogate',
+        'x-bim-ai-sheet-print-raster-png-sha256': pngSha256,
         'x-bim-ai-sheet-print-raster-width': '128',
         'x-bim-ai-sheet-print-raster-height': '112',
       });
@@ -206,7 +254,7 @@ test('live evidence runner creates a disposable target and stays dry-run-only by
         '--json',
       ]);
 
-      assert.equal(result.ok, true);
+      assert.equal(result.ok, true, JSON.stringify(result.remainingExitCriteria));
       assert.equal(result.target.mode, 'created-disposable-model');
       assert.equal(result.mode, 'live-dry-run');
       assert.deepEqual(
@@ -218,13 +266,54 @@ test('live evidence runner creates a disposable target and stays dry-run-only by
       const names = (await fs.readdir(outDir)).sort();
       assert.ok(names.includes('benchmark-result.json'));
       assert.ok(names.includes('execution-evidence.json'));
+      assert.ok(names.includes('export-evidence.json'));
       assert.ok(names.includes('live-dry-run-evidence.json'));
+      assert.ok(names.includes('visual-evidence.json'));
       assert.ok(names.includes('command-log-summary.json'));
       assert.ok(names.includes('snapshot-summary.json'));
       const liveCommit = JSON.parse(
         await fs.readFile(path.join(outDir, 'live-commit-evidence.json'), 'utf8'),
       );
+      const liveDryRun = JSON.parse(
+        await fs.readFile(path.join(outDir, 'live-dry-run-evidence.json'), 'utf8'),
+      );
+      const execution = JSON.parse(
+        await fs.readFile(path.join(outDir, 'execution-evidence.json'), 'utf8'),
+      );
+      const manifest = JSON.parse(
+        await fs.readFile(path.join(outDir, 'live-runner-manifest.json'), 'utf8'),
+      );
+      const visual = JSON.parse(
+        await fs.readFile(path.join(outDir, 'visual-evidence.json'), 'utf8'),
+      );
+      const exports = JSON.parse(
+        await fs.readFile(path.join(outDir, 'export-evidence.json'), 'utf8'),
+      );
+      assert.equal(liveDryRun.clean, true);
+      assert.equal(liveDryRun.pass, true);
+      assert.equal(liveDryRun.status, 'live-dry-run-clean');
+      assert.equal(liveDryRun.fixtureEvidence, false);
+      assert.equal(liveDryRun.sourceTarget.targetMode, 'created-disposable-model');
+      assert.equal(liveDryRun.sourceTarget.projectId, 'project-1');
+      assert.equal(liveDryRun.sourceTarget.modelId, 'model-disposable');
+      assert.equal(liveDryRun.sourceTarget.baseUrl.credentials, false);
+      assert.equal(liveDryRun.revision.parentRevision, 1);
+      assert.equal(liveDryRun.revision.wouldRevision, 2);
+      assert.deepEqual(liveDryRun.changedIds, []);
+      assert.equal(liveDryRun.secrets.containsSecrets, false);
+      assert.equal(execution.clean, true);
+      assert.equal(execution.pass, true);
+      assert.equal(manifest.clean, true);
+      assert.equal(manifest.artifacts['visual-evidence.json'], 'written');
+      assert.equal(manifest.artifacts['export-evidence.json'], 'written');
+      assert.equal(visual.status, 'unavailable');
+      assert.equal(visual.pass, false);
+      assert.equal(exports.status, 'unavailable');
+      assert.equal(exports.pass, false);
       assert.equal(liveCommit.mode, 'not-requested');
+      assert.equal(liveCommit.clean, false);
+      assert.equal(liveCommit.pass, false);
+      assert.equal(liveCommit.auditClassification, 'not-requested');
     });
   } finally {
     await close(server);
@@ -246,7 +335,7 @@ test('live evidence runner commits only with explicit opt-in against disposable 
         '--commit-live',
       ]);
 
-      assert.equal(result.ok, true);
+      assert.equal(result.ok, true, JSON.stringify(result.remainingExitCriteria));
       assert.equal(result.mode, 'live-dry-run-and-commit');
       assert.deepEqual(
         requests
@@ -257,15 +346,46 @@ test('live evidence runner commits only with explicit opt-in against disposable 
       const liveCommit = JSON.parse(
         await fs.readFile(path.join(outDir, 'live-commit-evidence.json'), 'utf8'),
       );
+      const liveDryRun = JSON.parse(
+        await fs.readFile(path.join(outDir, 'live-dry-run-evidence.json'), 'utf8'),
+      );
+      const execution = JSON.parse(
+        await fs.readFile(path.join(outDir, 'execution-evidence.json'), 'utf8'),
+      );
       const commandLog = JSON.parse(
         await fs.readFile(path.join(outDir, 'command-log-summary.json'), 'utf8'),
       );
       const snapshot = JSON.parse(
         await fs.readFile(path.join(outDir, 'snapshot-summary.json'), 'utf8'),
       );
+      const visual = JSON.parse(
+        await fs.readFile(path.join(outDir, 'visual-evidence.json'), 'utf8'),
+      );
+      const exports = JSON.parse(
+        await fs.readFile(path.join(outDir, 'export-evidence.json'), 'utf8'),
+      );
+      assert.equal(liveDryRun.clean, true);
+      assert.equal(liveDryRun.pass, true);
       assert.equal(liveCommit.mode, 'live-commit');
+      assert.equal(liveCommit.clean, true);
+      assert.equal(liveCommit.pass, true);
+      assert.equal(liveCommit.status, 'live-commit-clean');
+      assert.equal(liveCommit.sourceTarget.targetMode, 'created-disposable-model');
+      assert.equal(liveCommit.revision.parentRevision, 1);
+      assert.equal(liveCommit.revision.newRevision, 2);
+      assert.equal(liveCommit.revision.commandLogRevisionAfter, 2);
+      assert.deepEqual(liveCommit.changedIds, ['ssh-wall-north']);
+      assert.equal(liveCommit.secrets.containsSecrets, false);
+      assert.equal(execution.clean, true);
+      assert.equal(execution.pass, true);
+      assert.equal(execution.liveCommit.status, 'live-commit-clean');
       assert.equal(commandLog.latest[0].appliedCommandCount, 1);
       assert.equal(snapshot.countsByKind.wall, 1);
+      assert.equal(visual.pass, true);
+      assert.equal(visual.sheetPrintRaster.widthPx, 128);
+      assert.equal(visual.sheetPrintRaster.heightPx, 112);
+      assert.equal(exports.pass, true);
+      assert.equal(exports.manifests.ifc.summary.exportedKindCount, 1);
     });
   } finally {
     await close(server);
@@ -294,8 +414,18 @@ test('live evidence runner fails closed when no live target is specified', async
   await withTempDir('simple-house-live-runner-missing-target-', async (outDir) => {
     await assert.rejects(
       () => runLiveEvidence(['--base-url', 'http://127.0.0.1:1', '--out-dir', outDir]),
-      /Missing live target/,
+      /one of --project-id\/BIM_AI_PROJECT_ID or --model-id\/BIM_AI_MODEL_ID/,
     );
+  });
+});
+
+test('live evidence runner reports all missing live configuration without writing artifacts', async () => {
+  await withTempDir('simple-house-live-runner-missing-config-', async (outDir) => {
+    await assert.rejects(
+      () => runLiveEvidence(['--out-dir', outDir]),
+      /--base-url or BIM_AI_BASE_URL.*one of --project-id\/BIM_AI_PROJECT_ID or --model-id\/BIM_AI_MODEL_ID/,
+    );
+    assert.deepEqual(await fs.readdir(outDir), []);
   });
 });
 
@@ -343,6 +473,25 @@ test('live evidence runner refuses underspecified existing-model commit', async 
           '--commit-live',
         ]),
       /allow-existing-model-commit/,
+    );
+  });
+});
+
+test('live evidence runner refuses existing-model commit without parent revision after allow flag', async () => {
+  await withTempDir('simple-house-live-runner-existing-commit-rev-', async (outDir) => {
+    await assert.rejects(
+      () =>
+        runLiveEvidence([
+          '--base-url',
+          'http://127.0.0.1:1',
+          '--model-id',
+          'existing-model',
+          '--out-dir',
+          outDir,
+          '--commit-live',
+          '--allow-existing-model-commit',
+        ]),
+      /requires --parent-revision/,
     );
   });
 });

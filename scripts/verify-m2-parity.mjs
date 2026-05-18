@@ -25,6 +25,17 @@ function benchmarkEvidenceArgs(extraArgs = []) {
   return [...args, ...extraArgs];
 }
 
+function liveRunnerArgs(extraArgs = []) {
+  const args = ['scripts/benchmarks/simple-house-live-evidence.mjs', '--json'];
+  if (process.env.BIM_AI_M2_EVIDENCE_OUT_DIR) {
+    args.push('--out-dir', process.env.BIM_AI_M2_EVIDENCE_OUT_DIR);
+  }
+  if (process.env.BIM_AI_BASE_URL) args.push('--base-url', process.env.BIM_AI_BASE_URL);
+  if (process.env.BIM_AI_PROJECT_ID) args.push('--project-id', process.env.BIM_AI_PROJECT_ID);
+  if (process.env.BIM_AI_TEMPLATE_ID) args.push('--template-id', process.env.BIM_AI_TEMPLATE_ID);
+  return [...args, ...extraArgs];
+}
+
 function requiredEnvMissing(names) {
   return names.filter((name) => !process.env[name]);
 }
@@ -32,6 +43,15 @@ function requiredEnvMissing(names) {
 function summarizeBlocker(text) {
   const value = String(text ?? '');
   return value.length > 500 ? `${value.slice(0, 497)}...` : value;
+}
+
+function passingEvidenceLooksSynthetic(evidence) {
+  const text = [evidence?.status, evidence?.source, evidence?.detail, evidence?.reason]
+    .filter(Boolean)
+    .join(' ');
+  return /todo|placeholder|fixture|traceability-only|documentation-only|docs-only|optional|stub|mock|unavailable|invalid|blank|not[-_\s]?requested|skipped|failed|error/i.test(
+    text,
+  );
 }
 
 function reportM2AuditClosure() {
@@ -54,6 +74,17 @@ function reportM2AuditClosure() {
 
   if (firstPackPresent !== firstPackExpected) {
     console.error('M2 first-pack surface coverage regressed.');
+    return 1;
+  }
+
+  const syntheticPassingEvidence = (m2.closureGates ?? []).flatMap((gate) =>
+    (gate.evidence ?? [])
+      .filter((evidence) => evidence.passes === true && passingEvidenceLooksSynthetic(evidence))
+      .map((evidence) => `${gate.id}: ${evidence.status}@${evidence.source ?? 'unknown'}`),
+  );
+  if (syntheticPassingEvidence.length) {
+    console.error('M2 audit accepted placeholder/stub-style evidence as passing:');
+    for (const item of syntheticPassingEvidence) console.error(`- ${item}`);
     return 1;
   }
 
@@ -99,6 +130,11 @@ const checks = [
     label: 'Live evidence runner syntax check',
     command: 'node',
     args: ['--check', 'scripts/benchmarks/simple-house-live-evidence.mjs'],
+  },
+  {
+    label: 'Local live target syntax check',
+    command: 'node',
+    args: ['--check', 'scripts/benchmarks/simple-house-local-live-target.mjs'],
   },
   {
     label: 'Architecture guard',
@@ -156,6 +192,11 @@ const checks = [
     args: ['--test', 'scripts/benchmarks/simple-house-live-evidence.test.mjs'],
   },
   {
+    label: 'Simple-house local live target tests',
+    command: 'node',
+    args: ['--test', 'scripts/benchmarks/simple-house-local-live-target.test.mjs'],
+  },
+  {
     label: 'Simple-house offline smoke command',
     command: 'pnpm',
     args: ['benchmark:simple-house', '--mode', 'offline'],
@@ -168,6 +209,15 @@ const checks = [
     requiredEnv: ['BIM_AI_BASE_URL', 'BIM_AI_MODEL_ID'],
     skipReason:
       'Set BIM_AI_M2_LIVE_DRY_RUN=1 with BIM_AI_BASE_URL and BIM_AI_MODEL_ID to run the live dry-run benchmark.',
+  },
+  {
+    label: 'Optional disposable live evidence runner',
+    command: 'node',
+    args: liveRunnerArgs(),
+    optionalEnv: 'BIM_AI_M2_LIVE_DISPOSABLE',
+    requiredEnv: ['BIM_AI_BASE_URL', 'BIM_AI_PROJECT_ID'],
+    skipReason:
+      'Set BIM_AI_M2_LIVE_DISPOSABLE=1 with BIM_AI_BASE_URL and BIM_AI_PROJECT_ID to create a disposable target and collect live dry-run evidence.',
   },
   {
     label: 'Optional committed-model evidence collection',

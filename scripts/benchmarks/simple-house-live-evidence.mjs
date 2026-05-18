@@ -13,7 +13,10 @@ const DEFAULT_OUT_DIR = path.join(BENCHMARK_DIR, 'live-evidence');
 const REQUIRED_ARTIFACTS = [
   'benchmark-result.json',
   'execution-evidence.json',
+  'export-evidence.json',
   'live-dry-run-evidence.json',
+  'live-commit-evidence.json',
+  'visual-evidence.json',
   'command-log-summary.json',
   'snapshot-summary.json',
 ];
@@ -74,6 +77,20 @@ function parseArgs(argv) {
     else usage();
   }
   return args;
+}
+
+function validateRequiredLiveConfig(args) {
+  const missing = [];
+  if (!args.baseUrl) missing.push('--base-url or BIM_AI_BASE_URL');
+  if (!args.projectId && !args.modelId) {
+    missing.push('one of --project-id/BIM_AI_PROJECT_ID or --model-id/BIM_AI_MODEL_ID');
+  }
+  if (missing.length > 0) {
+    throw new Error(
+      `Missing live evidence configuration: ${missing.join('; ')}. ` +
+        'No dry-run or commit was attempted and no live evidence artifacts were written.',
+    );
+  }
 }
 
 function normalizeBaseUrl(rawBaseUrl) {
@@ -161,6 +178,7 @@ async function createDisposableModel({ baseUrl, projectId, templateId, slug }) {
   }
   return {
     mode: 'created-disposable-model',
+    projectId,
     publicSurface: {
       kind: 'model-create-api',
       method: 'POST',
@@ -241,21 +259,176 @@ async function writeJson(file, value) {
   await fs.writeFile(file, `${JSON.stringify(value, null, 2)}\n`, 'utf8');
 }
 
-async function normalizeArtifacts(outDir, result, target) {
+function evidenceHttpOk(evidence) {
+  const status = Number(evidence?.response?.httpStatus ?? evidence?.httpStatus);
+  return !Number.isFinite(status) || (status >= 200 && status < 300);
+}
+
+function liveEvidenceClean(evidence) {
+  if (!evidence || typeof evidence !== 'object') return false;
+  return (
+    evidence.ok === true &&
+    evidence.response?.ok !== false &&
+    evidence.response?.bodyOk !== false &&
+    evidence.validation?.ok !== false &&
+    evidenceHttpOk(evidence)
+  );
+}
+
+function sourceTargetMetadata({ baseUrl, target, parentRevision, commitRequested }) {
+  const url = new URL(baseUrl);
+  return {
+    kind: 'live-backend-target',
+    targetMode: target.mode,
+    modelId: target.modelId ?? null,
+    projectId: target.projectId ?? null,
+    slug: target.slug ?? null,
+    templateId: target.templateId ?? null,
+    parentRevision: parentRevision ?? target.revision ?? null,
+    baseUrl: {
+      origin: url.origin,
+      pathname: url.pathname === '/' ? '' : url.pathname,
+      credentials: false,
+      query: false,
+      fragment: false,
+    },
+    publicSurface: target.publicSurface ?? null,
+    commitRequested: Boolean(commitRequested),
+  };
+}
+
+function revisionEvidence(evidence, parentRevision) {
+  return {
+    parentRevision: evidence?.request?.parentRevision ?? parentRevision ?? null,
+    wouldRevision: evidence?.response?.wouldRevision ?? null,
+    revision: evidence?.response?.revision ?? null,
+    newRevision: evidence?.response?.newRevision ?? null,
+    checkpointSnapshotId: evidence?.response?.checkpointSnapshotId ?? null,
+    commandLogRevisionAfter:
+      evidence?.postCommit?.commandLog?.summary?.latest?.[0]?.revisionAfter ?? null,
+    snapshotRevision: evidence?.postCommit?.snapshot?.summary?.revision ?? null,
+  };
+}
+
+function classifyLiveEvidence(evidence, { kind, sourceTarget, parentRevision }) {
+  const clean = liveEvidenceClean(evidence);
+  const changedIds = Array.isArray(evidence?.response?.changedIds)
+    ? evidence.response.changedIds.map(String).sort()
+    : [];
+  return {
+    ...evidence,
+    liveEvidence: true,
+    fixtureEvidence: false,
+    evidenceKind: kind,
+    status: clean ? `${kind}-clean` : `${kind}-not-clean`,
+    auditClassification: clean ? `${kind}-clean` : `${kind}-not-clean`,
+    clean,
+    pass: clean,
+    sourceTarget,
+    revision: revisionEvidence(evidence, parentRevision),
+    changedIds,
+    secrets: {
+      containsSecrets: false,
+      baseUrlCredentialsAccepted: false,
+      requestHeadersRecorded: false,
+    },
+  };
+}
+
+function notRequestedCommitEvidence({ sourceTarget, parentRevision }) {
+  return {
+    mode: 'not-requested',
+    ok: false,
+    clean: false,
+    pass: false,
+    liveEvidence: false,
+    fixtureEvidence: false,
+    evidenceKind: 'live-commit',
+    status: 'not-requested',
+    auditClassification: 'not-requested',
+    reason: '--commit-live was not set; no live mutation was attempted.',
+    sourceTarget,
+    revision: revisionEvidence(null, parentRevision),
+    changedIds: [],
+    secrets: {
+      containsSecrets: false,
+      baseUrlCredentialsAccepted: false,
+      requestHeadersRecorded: false,
+    },
+  };
+}
+
+function buildExecutionEvidence(result, liveDryRun, liveCommit, sourceTarget, parentRevision) {
+  const execution = result.executionEvidence ?? {};
+  if (execution?.liveDryRun || execution?.liveCommit) {
+    const clean = liveEvidenceClean(liveDryRun) && liveEvidenceClean(liveCommit);
+    return {
+      ...execution,
+      liveDryRun,
+      liveCommit,
+      liveEvidence: true,
+      fixtureEvidence: false,
+      evidenceKind: 'live-dry-run-and-commit',
+      status: clean ? 'live-dry-run-and-commit-clean' : 'live-dry-run-and-commit-not-clean',
+      auditClassification: clean
+        ? 'live-dry-run-and-commit-clean'
+        : 'live-dry-run-and-commit-not-clean',
+      clean,
+      pass: clean,
+      sourceTarget,
+      revision: revisionEvidence(liveCommit, parentRevision),
+      changedIds: Array.isArray(liveCommit?.changedIds) ? liveCommit.changedIds : [],
+      secrets: {
+        containsSecrets: false,
+        baseUrlCredentialsAccepted: false,
+        requestHeadersRecorded: false,
+      },
+    };
+  }
+  return liveDryRun;
+}
+
+async function normalizeArtifacts(outDir, result, resolved, args) {
   const executionEvidence = result.executionEvidence ?? null;
   const liveDryRun =
     executionEvidence?.liveDryRun ??
     (executionEvidence?.mode === 'live-dry-run' ? executionEvidence : null);
   const liveCommit = executionEvidence?.liveCommit ?? null;
-  await writeJson(path.join(outDir, 'live-dry-run-evidence.json'), liveDryRun);
-  await writeJson(
-    path.join(outDir, 'live-commit-evidence.json'),
-    liveCommit ?? {
-      mode: 'not-requested',
-      ok: false,
-      reason: '--commit-live was not set; no live mutation was attempted.',
-    },
+  const sourceTarget = sourceTargetMetadata({
+    baseUrl: resolved.baseUrl,
+    target: resolved.target,
+    parentRevision: resolved.parentRevision,
+    commitRequested: args.commitLive,
+  });
+  const dryRunArtifact = classifyLiveEvidence(liveDryRun, {
+    kind: 'live-dry-run',
+    sourceTarget,
+    parentRevision: resolved.parentRevision,
+  });
+  const commitArtifact = liveCommit
+    ? classifyLiveEvidence(liveCommit, {
+        kind: 'live-commit',
+        sourceTarget,
+        parentRevision: resolved.parentRevision,
+      })
+    : notRequestedCommitEvidence({
+        sourceTarget,
+        parentRevision: resolved.parentRevision,
+      });
+  const executionArtifact = buildExecutionEvidence(
+    result,
+    dryRunArtifact,
+    commitArtifact,
+    sourceTarget,
+    resolved.parentRevision,
   );
+  await writeJson(path.join(outDir, 'live-dry-run-evidence.json'), dryRunArtifact);
+  await writeJson(path.join(outDir, 'live-commit-evidence.json'), commitArtifact);
+  await writeJson(path.join(outDir, 'execution-evidence.json'), executionArtifact);
+  await writeJson(path.join(outDir, 'benchmark-result.json'), {
+    ...result,
+    executionEvidence: executionArtifact,
+  });
   await writeJson(
     path.join(outDir, 'command-log-summary.json'),
     liveCommit?.postCommit?.commandLog?.summary ?? null,
@@ -269,7 +442,10 @@ async function normalizeArtifacts(outDir, result, target) {
   await writeJson(path.join(outDir, 'live-runner-manifest.json'), {
     schemaVersion: 'bim-ai.simple-house-live-evidence-runner.v1',
     benchmarkId: result.benchmarkId,
-    target,
+    status: executionArtifact.status,
+    clean: executionArtifact.clean === true,
+    pass: executionArtifact.pass === true,
+    target: sourceTarget,
     artifacts: Object.fromEntries(
       (
         await Promise.all(
@@ -285,12 +461,15 @@ async function normalizeArtifacts(outDir, result, target) {
       commitRequiresFlag: true,
       existingModelCommitRequiresAllowFlag: true,
       secretsRecorded: false,
+      baseUrlCredentialsRejected: true,
     },
   });
+  return { dryRunArtifact, commitArtifact, executionArtifact };
 }
 
 export async function runLiveEvidence(rawArgs = []) {
   const args = parseArgs(rawArgs);
+  validateRequiredLiveConfig(args);
   const baseUrl = normalizeBaseUrl(args.baseUrl);
   validateTargetConfig(args);
   await prepareOutDir(args.outDir, args.allowExistingOutDir);
@@ -311,13 +490,15 @@ export async function runLiveEvidence(rawArgs = []) {
   ];
   if (args.commitLive) benchmarkArgs.push('--commit-live');
   const { result } = await runBenchmark(benchmarkArgs);
-  await normalizeArtifacts(args.outDir, result, resolved.target);
+  const artifacts = await normalizeArtifacts(args.outDir, result, resolved, args);
   return {
-    ok: result.ok,
+    ok: artifacts.executionArtifact.pass === true,
     benchmarkId: result.benchmarkId,
     outDir: args.outDir,
     target: resolved.target,
     mode: result.executionEvidence?.mode ?? null,
+    clean: artifacts.executionArtifact.clean === true,
+    pass: artifacts.executionArtifact.pass === true,
     artifactNames: (await fs.readdir(args.outDir)).sort(),
     remainingExitCriteria: result.remainingExitCriteria,
   };

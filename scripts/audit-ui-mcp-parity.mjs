@@ -109,7 +109,7 @@ const EVIDENCE_ARTIFACT_FILE_RE =
   /(^|\/)(benchmark-result|execution-evidence|live-dry-run-evidence|live-commit-evidence|committed-evidence|advisor-validation|visual-evidence|render-evidence|screenshot-evidence|export-evidence|ui-cmdk-traceability|ui-equivalence|ui-equivalent|semantic-diff)[^/]*\.json$/i;
 
 const BLOCKING_EVIDENCE_STATUS_RE =
-  /todo|placeholder|optional|capable|expected|required|requires|missing|none|unknown|declared|fixture|traceability-only|documentation-only|docs-only|opt[-_\s]?in|stale|expired|failed|failure|error|unavailable|invalid|blank|not[-_\s]?requested|skipped|deferred/i;
+  /todo|placeholder|optional|capable|expected|required|requires|missing|none|unknown|declared|fixture|traceability-only|documentation-only|docs-only|opt[-_\s]?in|stale|expired|failed|failure|error|unavailable|invalid|blank|not[-_\s]?requested|skipped|deferred|stub|mock/i;
 
 const POSITIVE_EVIDENCE_STATUS_RE =
   /live|validated|passing|passed|clean|committed|executable|nonblank|artifact|manifest|done|server-side-substitute/i;
@@ -892,6 +892,7 @@ function addEvidenceSignal(signals, type, status, source, detail = '', options =
 
 function evidenceRejectionReason(status, detail = '') {
   const text = `${status ?? ''} ${detail ?? ''}`;
+  if (/stub|mock/i.test(text)) return 'stub or mocked artifact is not closure evidence';
   if (/traceability-only/i.test(text))
     return 'traceability-only artifact is not executable evidence';
   if (/documentation-only|docs-only|expected|declared|fixture/i.test(text)) {
@@ -924,15 +925,65 @@ function httpOk(value) {
   return !Number.isFinite(status) || (status >= 200 && status < 300);
 }
 
-function executionOk(value) {
-  if (!value || typeof value !== 'object') return false;
+function typedBundleSurfaceOk(value, requestMode) {
+  const surface = value?.publicSurface;
+  if (!surface || typeof surface !== 'object') return false;
+  const endpoint = String(surface.endpoint ?? surface.url ?? '');
   return (
-    value.ok === true &&
-    value.response?.ok !== false &&
-    value.response?.bodyOk !== false &&
-    value.validation?.ok !== false &&
-    httpOk(value)
+    surface.kind === 'cmd-v3-api' &&
+    String(surface.method ?? '').toUpperCase() === 'POST' &&
+    /\/api\/models\/.+\/bundles($|\?)/.test(endpoint) &&
+    String(surface.requestMode ?? '') === requestMode
   );
+}
+
+function liveExecutionRejectionReason(value, requestMode) {
+  if (!value || typeof value !== 'object') return 'live execution artifact is missing or invalid';
+  const status = statusAt(value);
+  if (isBlockingEvidenceStatus(status)) return evidenceRejectionReason(status);
+  if (value.ok !== true) return 'live execution artifact does not report ok=true';
+  if (value.response?.ok === false || value.response?.bodyOk === false) {
+    return 'live execution response is not ok';
+  }
+  if (value.validation?.ok === false) return 'live execution validation is not ok';
+  if (!httpOk(value)) return 'live execution HTTP status is not successful';
+  if (!typedBundleSurfaceOk(value, requestMode)) {
+    return 'live execution artifact is not from the typed cmd-v3 bundle API';
+  }
+  const commandCount = Number(value.request?.commandCount ?? 0);
+  if (!Number.isFinite(commandCount) || commandCount <= 0) {
+    return 'live execution artifact does not include a command payload count';
+  }
+  if (requestMode === 'commit') {
+    const changedIds = Array.isArray(value.response?.changedIds) ? value.response.changedIds : [];
+    const hasCommitResponseProof =
+      value.response?.applied === true ||
+      value.response?.newRevision !== null ||
+      changedIds.length > 0 ||
+      value.response?.checkpointSnapshotId;
+    if (!hasCommitResponseProof) {
+      return 'live commit artifact does not include mutation proof';
+    }
+    if (
+      value.postCommit?.commandLog?.ok !== true ||
+      Number(value.postCommit?.commandLog?.summary?.entryCount ?? 0) <= 0
+    ) {
+      return 'live commit artifact does not include a clean post-commit command-log summary';
+    }
+    if (
+      value.postCommit?.snapshot?.ok !== true ||
+      Number(value.postCommit?.snapshot?.summary?.elementCount ?? 0) <= 0
+    ) {
+      return 'live commit artifact does not include a clean post-commit snapshot summary';
+    }
+  }
+  return '';
+}
+
+function executionOk(value, requestMode = null) {
+  if (!value || typeof value !== 'object') return false;
+  if (requestMode) return liveExecutionRejectionReason(value, requestMode) === '';
+  return value.ok === true && liveExecutionRejectionReason(value, 'dry_run') === '';
 }
 
 function validationClean(validation) {
@@ -998,6 +1049,15 @@ function visualEvidenceClean(value) {
   if (!value || typeof value !== 'object') return false;
   if (/^(unavailable|invalid|failed|blank-artifact)$/i.test(statusAt(value))) return false;
   if (value.stale === true || value.isStale === true || value.fresh === false) return false;
+  const raster =
+    value.sheetPrintRaster && typeof value.sheetPrintRaster === 'object'
+      ? value.sheetPrintRaster
+      : value;
+  if (/^(unavailable|invalid|failed|blank-artifact)$/i.test(statusAt(raster))) return false;
+  const rasterText = JSON.stringify(raster);
+  if (/stub|mock|placeholder|todo|blank|invalid|failed/i.test(rasterText)) {
+    return false;
+  }
   if (value.nonblankProof?.ok === true || value.sheetPrintRaster?.nonblankProof?.ok === true) {
     return true;
   }
@@ -1012,17 +1072,70 @@ function visualEvidenceClean(value) {
 
 function exportEvidenceClean(value) {
   if (!value || typeof value !== 'object') return false;
-  const text = JSON.stringify(value);
   if (/^(unavailable|invalid|failed|blank-artifact)$/i.test(statusAt(value))) return false;
-  return /artifact-returned|manifest-returned|artifact-or-manifest-returned/i.test(text);
+  const candidates = [
+    ...Object.values(value.manifests ?? {}),
+    ...Object.values(value.artifacts ?? {}),
+    value,
+  ].filter((candidate) => candidate && typeof candidate === 'object');
+  return candidates.some((candidate) => {
+    const text = JSON.stringify(candidate);
+    return (
+      /artifact-returned|manifest-returned|artifact-or-manifest-returned/i.test(text) &&
+      !/stub|mock|placeholder|todo|blank-artifact|invalid|failed/i.test(text)
+    );
+  });
 }
 
 function committedAdvisorValidationClean(value) {
   if (!value || typeof value !== 'object') return false;
   if (value.ok === false) return false;
+  if (isBlockingEvidenceStatus(statusAt(value))) return false;
   if (value.validationPass === true && value.advisorPass === true) return true;
   if (value.validationResult?.pass === true && value.advisorResult?.pass === true) return true;
   return validationClean(value.validation) && advisorClean(value.advisor);
+}
+
+function committedAdvisorValidationRejectionReason(value) {
+  if (!value || typeof value !== 'object') {
+    return 'committed advisor/validation artifact is missing or invalid';
+  }
+  if (value.ok === false) return 'committed advisor/validation artifact reports ok=false';
+  const status = statusAt(value);
+  if (isBlockingEvidenceStatus(status)) return evidenceRejectionReason(status);
+  if (value.validationPass === false || value.validationResult?.pass === false) {
+    return 'committed validation evidence did not pass';
+  }
+  if (value.advisorPass === false || value.advisorResult?.pass === false) {
+    return 'committed advisor evidence did not pass';
+  }
+  return 'committed advisor/validation artifact is not clean';
+}
+
+function visualEvidenceRejectionReason(value) {
+  if (!value || typeof value !== 'object') return 'visual/render artifact is missing or invalid';
+  const raster =
+    value.sheetPrintRaster && typeof value.sheetPrintRaster === 'object'
+      ? value.sheetPrintRaster
+      : value;
+  if (/^(unavailable|invalid|failed|blank-artifact)$/i.test(statusAt(raster))) {
+    return evidenceRejectionReason(statusAt(raster));
+  }
+  const rasterText = JSON.stringify(raster);
+  if (/stub|mock/i.test(rasterText)) return 'visual/render artifact is a stub or mocked raster';
+  if (/blank|invalid|failed/i.test(rasterText)) {
+    return 'visual/render artifact is blank, invalid, or failed';
+  }
+  return 'visual/render artifact does not include clean nonblank proof';
+}
+
+function exportEvidenceRejectionReason(value) {
+  if (!value || typeof value !== 'object') return 'export artifact is missing or invalid';
+  if (/^(unavailable|invalid|failed|blank-artifact)$/i.test(statusAt(value))) {
+    return evidenceRejectionReason(statusAt(value));
+  }
+  if (/stub|mock/i.test(JSON.stringify(value))) return 'export artifact is a stub or mock';
+  return 'export artifact/manifest evidence is unavailable or not clean';
 }
 
 function topLevelUiEvidenceBlocked(value) {
@@ -1078,7 +1191,7 @@ function collectJsonEvidenceSignals(value, source) {
   if (/execution-evidence|live-dry-run-evidence|benchmark-result/i.test(sourceName)) {
     const mode = String(liveDryRun.mode ?? execution.mode ?? value.mode ?? '');
     if (/live/i.test(mode) && /dry[-_\s]?run/i.test(mode)) {
-      const passes = executionOk(liveDryRun);
+      const passes = executionOk(liveDryRun, 'dry_run');
       addEvidenceSignal(
         signals,
         'liveDryRunEvidence',
@@ -1087,7 +1200,7 @@ function collectJsonEvidenceSignals(value, source) {
         mode,
         {
           passes,
-          reason: passes ? '' : 'live dry-run artifact is not ok/clean',
+          reason: passes ? '' : liveExecutionRejectionReason(liveDryRun, 'dry_run'),
         },
       );
     }
@@ -1096,7 +1209,7 @@ function collectJsonEvidenceSignals(value, source) {
   if (/execution-evidence|live-commit-evidence|benchmark-result/i.test(sourceName)) {
     const mode = String(liveCommit.mode ?? execution.mode ?? value.mode ?? '');
     if (/live/i.test(mode) && /commit/i.test(mode)) {
-      const passes = executionOk(liveCommit);
+      const passes = executionOk(liveCommit, 'commit');
       addEvidenceSignal(
         signals,
         'liveCommitEvidence',
@@ -1105,7 +1218,7 @@ function collectJsonEvidenceSignals(value, source) {
         mode,
         {
           passes,
-          reason: passes ? '' : 'live commit artifact is not ok/clean',
+          reason: passes ? '' : liveExecutionRejectionReason(liveCommit, 'commit'),
         },
       );
     }
@@ -1130,7 +1243,7 @@ function collectJsonEvidenceSignals(value, source) {
         committedMode || 'committed advisor/validation artifact',
         {
           passes,
-          reason: passes ? '' : 'committed advisor/validation artifact is not clean',
+          reason: passes ? '' : committedAdvisorValidationRejectionReason(committed),
         },
       );
     }
@@ -1151,7 +1264,7 @@ function collectJsonEvidenceSignals(value, source) {
         'visual/render evidence artifact',
         {
           passes,
-          reason: passes ? '' : 'visual/render artifact is blank, unavailable, or not proven clean',
+          reason: passes ? '' : visualEvidenceRejectionReason(visual),
         },
       );
     }
@@ -1172,7 +1285,7 @@ function collectJsonEvidenceSignals(value, source) {
         'export evidence artifact',
         {
           passes,
-          reason: passes ? '' : 'export artifact/manifest evidence is unavailable or not clean',
+          reason: passes ? '' : exportEvidenceRejectionReason(exports),
         },
       );
     }

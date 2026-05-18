@@ -422,11 +422,23 @@ async function getArtifact(url, accept) {
       byteLength: bytes.length,
       sha256: createHash('sha256').update(bytes).digest('hex'),
       headerHex: bytes.subarray(0, 8).toString('hex'),
+      pngDimensions: pngDimensions(bytes),
       headers: Object.fromEntries(response.headers.entries()),
     };
   } finally {
     clearTimeout(timeout);
   }
+}
+
+function pngDimensions(bytes) {
+  const pngSignature = '89504e470d0a1a0a';
+  if (!Buffer.isBuffer(bytes) || bytes.length < 24) return null;
+  if (bytes.subarray(0, 8).toString('hex') !== pngSignature) return null;
+  if (bytes.subarray(12, 16).toString('ascii') !== 'IHDR') return null;
+  return {
+    widthPx: bytes.readUInt32BE(16),
+    heightPx: bytes.readUInt32BE(20),
+  };
 }
 
 function responseValue(body, keys) {
@@ -644,6 +656,7 @@ async function runLiveCommit(args, bundle) {
 function unavailableEvidence(label, response) {
   return {
     status: 'unavailable',
+    pass: false,
     httpStatus: response?.status ?? null,
     reason: response?.body?.error ?? `${label} was not returned by the live server.`,
     body: response?.body ?? null,
@@ -660,28 +673,108 @@ function artifactEvidence(label, response) {
     return {
       artifactKind: label,
       status: 'unavailable',
+      pass: false,
       httpStatus: response?.status ?? null,
       reason: `${label} was not returned by the live server.`,
     };
   }
+  const pdfSignatureOk = label.includes('pdf')
+    ? String(response.headerHex ?? '').startsWith('25504446')
+    : null;
+  const contentTypeOk = label.includes('pdf')
+    ? /application\/pdf/i.test(response.contentType ?? '')
+    : true;
+  const pass = response.byteLength > 0 && contentTypeOk && pdfSignatureOk !== false;
   return {
     artifactKind: label,
-    status: response.byteLength > 0 ? 'artifact-returned' : 'blank-artifact',
+    status: pass ? 'artifact-returned' : 'blank-artifact',
+    pass,
     httpStatus: response.status,
     contentType: response.contentType,
     byteLength: response.byteLength,
     sha256: response.sha256,
+    contentTypeOk,
+    pdfSignatureOk,
   };
 }
 
 function manifestEvidence(label, response) {
   if (!response?.ok) return unavailableEvidence(label, response);
+  const body = response.body ?? {};
+  const manifest = manifestProof(label, body);
   return {
     artifactKind: label,
-    status: 'manifest-returned',
+    status: manifest.pass ? 'manifest-returned' : 'invalid-manifest',
+    pass: manifest.pass,
     httpStatus: response.status,
-    digest: sha256(response.body ?? {}),
-    body: response.body ?? {},
+    digest: sha256(body),
+    summary: manifest.summary,
+    body,
+  };
+}
+
+function countObjectTotal(value) {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return 0;
+  return Object.values(value).reduce((total, item) => {
+    const parsed = Number(item);
+    return total + (Number.isFinite(parsed) ? parsed : 0);
+  }, 0);
+}
+
+function manifestProof(label, body) {
+  const ids = [
+    body?.artifactId,
+    body?.id,
+    ...(Array.isArray(body?.artifactIds) ? body.artifactIds : []),
+    ...(Array.isArray(body?.exportedIds) ? body.exportedIds : []),
+  ]
+    .filter((id) => id !== undefined && id !== null && String(id).trim() !== '')
+    .map(String)
+    .sort();
+  if (label.includes('gltf')) {
+    const ext = body?.extensions?.BIM_AI_exportManifest_v0 ?? body?.BIM_AI_exportManifest_v0 ?? {};
+    const countsByKind = ext.countsByKind ?? body?.countsByKind ?? {};
+    const exportedGeometryKinds = Array.isArray(ext.exportedGeometryKinds)
+      ? ext.exportedGeometryKinds
+      : [];
+    const closure = ext.gltfExportManifestClosure_v1 ?? {};
+    const exportedKindCount = countObjectTotal(countsByKind);
+    return {
+      pass: Boolean(
+        ext &&
+        typeof ext === 'object' &&
+        (exportedKindCount > 0 ||
+          exportedGeometryKinds.length > 0 ||
+          closure.gltfExportManifestClosureDigestSha256),
+      ),
+      summary: {
+        manifestKind: 'gltf',
+        exportedKindCount,
+        exportedGeometryKinds,
+        ids,
+        closureDigest: closure.gltfExportManifestClosureDigestSha256 ?? null,
+      },
+    };
+  }
+  if (label.includes('ifc')) {
+    const countsByIfcKind = body?.exportedIfcKindsInArtifact ?? body?.countsByIfcKind ?? {};
+    const exportedKindCount = countObjectTotal(countsByIfcKind);
+    return {
+      pass: Boolean(
+        (body?.format || body?.schemaVersion || Object.keys(countsByIfcKind).length > 0) &&
+        exportedKindCount > 0,
+      ),
+      summary: {
+        manifestKind: 'ifc',
+        exportedKindCount,
+        countsByIfcKind,
+        ids,
+      },
+    };
+  }
+  return {
+    pass: Object.keys(body ?? {}).length > 0,
+    summary: { manifestKind: label, ids },
   };
 }
 
@@ -767,6 +860,45 @@ function committedValidationResult(response, validation) {
   };
 }
 
+function firstPresent(...values) {
+  for (const value of values) {
+    if (value !== undefined && value !== null && value !== '') return value;
+  }
+  return null;
+}
+
+function sourceModelRevision({ args, validation, advisor, snapshot, summary, liveCommitEvidence }) {
+  const sourceModelId = firstPresent(
+    validation?.modelId,
+    validation?.data?.modelId,
+    advisor?.modelId,
+    advisor?.data?.modelId,
+    snapshot?.body?.modelId,
+    summary?.body?.modelId,
+    args.modelId,
+  );
+  const sourceRevision = firstPresent(
+    validation?.revision,
+    validation?.data?.revision,
+    advisor?.revision,
+    advisor?.data?.revision,
+    snapshot?.body?.revision,
+    snapshot?.body?.currentRevision,
+    summary?.body?.revision,
+    summary?.body?.currentRevision,
+    liveCommitEvidence?.response?.newRevision,
+    liveCommitEvidence?.response?.revision,
+  );
+  return {
+    modelId: sourceModelId,
+    revision: sourceRevision,
+    requestedModelId: args.modelId,
+    hasModelId: Boolean(sourceModelId),
+    hasRevision: sourceRevision !== null,
+    modelIdMatchesRequest: sourceModelId === null || String(sourceModelId) === String(args.modelId),
+  };
+}
+
 function committedAdvisorResult(response, advisor) {
   const findings = advisorFindings(advisor);
   const counted = countBySeverity(findings);
@@ -803,16 +935,44 @@ function committedAdvisorResult(response, advisor) {
 
 function sheetRasterEvidence(response) {
   const pngSignature = '89504e470d0a1a0a';
-  const ok = response?.ok && response.headerHex === pngSignature && response.byteLength > 64;
   if (!response?.ok) {
     return {
       status: 'unavailable',
+      pass: false,
       httpStatus: response?.status ?? null,
       reason: 'No deterministic server-side sheet raster substitute was returned.',
     };
   }
+  const contract = response.headers['x-bim-ai-sheet-print-raster-contract'] ?? null;
+  const widthHeader = numericCount(response.headers['x-bim-ai-sheet-print-raster-width']);
+  const heightHeader = numericCount(response.headers['x-bim-ai-sheet-print-raster-height']);
+  const widthPx = response.pngDimensions?.widthPx ?? null;
+  const heightPx = response.pngDimensions?.heightPx ?? null;
+  const pngSignatureOk = response.headerHex === pngSignature;
+  const contentTypeOk = /image\/png/i.test(response.contentType ?? '');
+  const dimensionHeadersMatch =
+    widthHeader === null ||
+    heightHeader === null ||
+    (widthHeader === widthPx && heightHeader === heightPx);
+  const acceptedServerProof = contract === 'sheetPrintRasterPrintSurrogate_v2';
+  const placeholderContract = /placeholder|stub/i.test(contract ?? '');
+  const dimensionsCredible =
+    Number.isFinite(widthPx) && Number.isFinite(heightPx) && widthPx >= 64 && heightPx >= 64;
+  const digestHeader = response.headers['x-bim-ai-sheet-print-raster-png-sha256'] ?? null;
+  const digestMatchesHeader = digestHeader ? digestHeader === response.sha256 : null;
+  const ok = Boolean(
+    pngSignatureOk &&
+    contentTypeOk &&
+    response.byteLength > 256 &&
+    dimensionsCredible &&
+    dimensionHeadersMatch &&
+    acceptedServerProof &&
+    !placeholderContract &&
+    digestMatchesHeader !== false,
+  );
   return {
     status: ok ? 'server-side-substitute' : 'invalid',
+    pass: ok,
     substituteKind: 'deterministic-sheet-print-raster',
     explicitLimitation:
       response.headers['x-bim-ai-sheet-print-raster-full-raster-status'] ??
@@ -820,14 +980,22 @@ function sheetRasterEvidence(response) {
     contentType: response.contentType,
     byteLength: response.byteLength,
     sha256: response.sha256,
-    pngSignatureOk: response.headerHex === pngSignature,
+    contentTypeOk,
+    pngSignatureOk,
+    dimensionsCredible,
+    dimensionHeadersMatch,
+    digestMatchesHeader,
     nonblankProof: {
-      method: 'png-signature-and-byte-length',
+      method: 'png-ihdr-dimensions-byte-length-and-print-surrogate-contract',
       ok,
     },
-    contract: response.headers['x-bim-ai-sheet-print-raster-contract'] ?? null,
-    widthPx: response.headers['x-bim-ai-sheet-print-raster-width'] ?? null,
-    heightPx: response.headers['x-bim-ai-sheet-print-raster-height'] ?? null,
+    contract,
+    acceptedContracts: ['sheetPrintRasterPrintSurrogate_v2'],
+    rejectedContract: placeholderContract ? contract : null,
+    widthPx,
+    heightPx,
+    declaredWidthPx: widthHeader,
+    declaredHeightPx: heightHeader,
   };
 }
 
@@ -907,8 +1075,26 @@ async function collectCommittedEvidence(args, liveCommitEvidence = null) {
   const validationResult = committedValidationResult(validate, validation);
   const advisorResult = committedAdvisorResult(advisor, advisorBody);
   const evidencePackageBody = jsonEvidence('evidence package', evidencePackage);
+  const source = sourceModelRevision({
+    args,
+    validation,
+    advisor: advisorBody,
+    snapshot,
+    summary,
+    liveCommitEvidence,
+  });
+  const sourcePass = Boolean(
+    source.hasModelId && source.hasRevision && source.modelIdMatchesRequest,
+  );
+  const validationPass = Boolean(validationResult.pass && sourcePass);
+  const advisorPass = Boolean(advisorResult.pass && sourcePass);
+  const sheetPrintRaster = sheetRasterEvidence(sheetRaster);
   const visual = {
-    status: sheetRaster?.ok ? 'server-side-substitute' : 'unavailable',
+    status:
+      sheetPrintRaster.status === 'server-side-substitute'
+        ? 'server-side-substitute'
+        : sheetPrintRaster.status,
+    pass: sheetPrintRaster.pass === true,
     requiredViewIds: ['ssh-view-ground-plan', 'ssh-view-3d'],
     evidencePackageVisualHints: {
       deterministicPlanViewEvidence: evidencePackageBody.deterministicPlanViewEvidence ?? null,
@@ -917,45 +1103,61 @@ async function collectCommittedEvidence(args, liveCommitEvidence = null) {
       recommendedPngEvidenceBackend: evidencePackageBody.recommendedPngEvidenceBackend ?? null,
       svgRasterBackendAvailable: evidencePackageBody.svgRasterBackendAvailable ?? null,
     },
-    sheetPrintRaster: sheetRasterEvidence(sheetRaster),
+    sheetPrintRaster,
   };
+  const exportManifests = {
+    gltf: manifestEvidence('gltf-manifest', gltfManifest),
+    ifc: manifestEvidence('ifc-manifest', ifcManifest),
+  };
+  const exportArtifacts = {
+    sheetPdf: artifactEvidence('sheet-preview-pdf', sheetPdf),
+  };
+  const exportPass = Boolean(
+    exportManifests.gltf.pass || exportManifests.ifc.pass || exportArtifacts.sheetPdf.pass,
+  );
   const exports = {
-    status:
-      gltfManifest?.ok || ifcManifest?.ok || sheetPdf?.ok
-        ? 'artifact-or-manifest-returned'
+    status: exportPass
+      ? 'artifact-or-manifest-returned'
+      : gltfManifest?.ok || ifcManifest?.ok || sheetPdf?.ok
+        ? 'invalid'
         : 'unavailable',
-    manifests: {
-      gltf: manifestEvidence('gltf-manifest', gltfManifest),
-      ifc: manifestEvidence('ifc-manifest', ifcManifest),
-    },
-    artifacts: {
-      sheetPdf: artifactEvidence('sheet-preview-pdf', sheetPdf),
-    },
+    pass: exportPass,
+    manifests: exportManifests,
+    artifacts: exportArtifacts,
   };
-  const visualOk = visual.sheetPrintRaster.nonblankProof?.ok === true;
-  const exportOk =
-    exports.manifests.gltf.status === 'manifest-returned' ||
-    exports.manifests.ifc.status === 'manifest-returned' ||
-    exports.artifacts.sheetPdf.status === 'artifact-returned';
+  const visualOk = visual.pass === true;
+  const exportOk = exports.pass === true;
 
   return {
     mode: liveCommitEvidence ? 'post-commit-live' : 'committed-model-live',
-    ok: Boolean(validationResult.pass && advisorResult.pass && visualOk && exportOk),
+    evidenceKind: 'committed-live-artifact',
+    collectionStatus: sourcePass ? 'captured' : 'missing-source-model-revision',
+    ok: Boolean(validationPass && advisorPass && visualOk && exportOk),
     validationStatus: validationResult.status,
-    validationPass: validationResult.pass,
+    validationPass,
     advisorStatus: advisorResult.status,
-    advisorPass: advisorResult.pass,
+    advisorPass,
     blockingErrorCounts: {
       validation: validationResult.blockingErrorCount,
       advisor: advisorResult.blockingErrorCount,
     },
+    warningCounts: {
+      validation: validationResult.warningCount,
+      advisor: advisorResult.warningCount,
+    },
+    infoCounts: {
+      validation: validationResult.infoCount,
+      advisor: advisorResult.infoCount,
+    },
     modelId: args.modelId,
-    revision:
-      snapshot.body?.revision ??
-      summary.body?.revision ??
-      validation?.revision ??
-      liveCommitEvidence?.response?.newRevision ??
-      null,
+    revision: source.revision,
+    source,
+    preflight: {
+      sourceModelRevisionPresent: sourcePass,
+      liveAdvisorValidationCaptured: Boolean(validate?.ok && advisor?.ok),
+      validationEndpointOk: Boolean(validate?.ok),
+      advisorEndpointOk: Boolean(advisor?.ok),
+    },
     commandLog: {
       status: liveCommitEvidence?.postCommit?.commandLog?.ok
         ? 'public-command-log'
@@ -1013,6 +1215,111 @@ function uiEquivalentTodos() {
   ];
 }
 
+function missingCommittedAdvisorValidationArtifact(result) {
+  return {
+    evidenceKind: 'missing-committed-live-artifact',
+    mode: result.committedEvidence?.mode ?? 'not-requested',
+    collectionStatus: result.committedEvidence?.collectionStatus ?? 'not-requested',
+    ok: false,
+    validationStatus: result.committedEvidence?.validationStatus ?? 'not-captured',
+    validationPass: false,
+    advisorStatus: result.committedEvidence?.advisorStatus ?? 'not-captured',
+    advisorPass: false,
+    blockingErrorCounts: result.committedEvidence?.blockingErrorCounts ?? {
+      validation: null,
+      advisor: null,
+    },
+    warningCounts: result.committedEvidence?.warningCounts ?? {
+      validation: null,
+      advisor: null,
+    },
+    infoCounts: result.committedEvidence?.infoCounts ?? {
+      validation: null,
+      advisor: null,
+    },
+    modelId: result.committedEvidence?.modelId ?? null,
+    revision: result.committedEvidence?.revision ?? null,
+    source: result.committedEvidence?.source ?? null,
+    preflight: {
+      sourceModelRevisionPresent: false,
+      liveAdvisorValidationCaptured: false,
+      reason:
+        result.committedEvidence?.preflight?.reason ??
+        result.committedEvidence?.todo ??
+        'Run live with --commit-live or --collect-committed-evidence to capture committed advisor/validation evidence.',
+    },
+    validationResult: result.committedEvidence?.validationResult ?? null,
+    advisorResult: result.committedEvidence?.advisorResult ?? null,
+    validation: null,
+    advisor: null,
+  };
+}
+
+function advisorValidationArtifact(result) {
+  if (
+    result.committedEvidence?.evidenceKind === 'committed-live-artifact' ||
+    /committed|post[-_\s]?commit/i.test(String(result.committedEvidence?.mode ?? ''))
+  ) {
+    return {
+      evidenceKind: 'committed-advisor-validation',
+      mode: result.committedEvidence.mode,
+      collectionStatus: result.committedEvidence.collectionStatus ?? null,
+      ok: Boolean(result.committedEvidence.validationPass && result.committedEvidence.advisorPass),
+      validationStatus: result.committedEvidence.validationStatus ?? null,
+      validationPass: result.committedEvidence.validationPass ?? false,
+      advisorStatus: result.committedEvidence.advisorStatus ?? null,
+      advisorPass: result.committedEvidence.advisorPass ?? false,
+      blockingErrorCounts: result.committedEvidence.blockingErrorCounts ?? null,
+      warningCounts: result.committedEvidence.warningCounts ?? null,
+      infoCounts: result.committedEvidence.infoCounts ?? null,
+      modelId: result.committedEvidence.modelId ?? null,
+      revision: result.committedEvidence.revision ?? null,
+      source: result.committedEvidence.source ?? null,
+      preflight: result.committedEvidence.preflight ?? null,
+      validationResult: result.committedEvidence.validationResult ?? null,
+      advisorResult: result.committedEvidence.advisorResult ?? null,
+      validation: result.committedEvidence.validation ?? null,
+      advisor: result.committedEvidence.advisor ?? null,
+    };
+  }
+  return missingCommittedAdvisorValidationArtifact(result);
+}
+
+function visualEvidenceArtifact(result) {
+  if (result.committedEvidence?.visual) return result.committedEvidence.visual;
+  return {
+    status: 'unavailable',
+    pass: false,
+    reason:
+      result.committedEvidence?.todo ??
+      'Committed visual/render evidence was not collected. Run live with --commit-live or --collect-committed-evidence against a committed target.',
+    requiredViewIds: ['ssh-view-ground-plan', 'ssh-view-3d'],
+    sheetPrintRaster: {
+      status: 'unavailable',
+      pass: false,
+      reason: 'No server-side sheet raster artifact was requested or returned.',
+    },
+  };
+}
+
+function exportEvidenceArtifact(result) {
+  if (result.committedEvidence?.exports) return result.committedEvidence.exports;
+  return {
+    status: 'unavailable',
+    pass: false,
+    reason:
+      result.committedEvidence?.todo ??
+      'Committed export evidence was not collected. Run live with --commit-live or --collect-committed-evidence against a committed target.',
+    manifests: {
+      gltf: { artifactKind: 'gltf-manifest', status: 'unavailable', pass: false },
+      ifc: { artifactKind: 'ifc-manifest', status: 'unavailable', pass: false },
+    },
+    artifacts: {
+      sheetPdf: { artifactKind: 'sheet-preview-pdf', status: 'unavailable', pass: false },
+    },
+  };
+}
+
 async function writeEvidence(outDir, result) {
   if (!outDir) return;
   await fs.mkdir(outDir, { recursive: true });
@@ -1035,33 +1342,15 @@ async function writeEvidence(outDir, result) {
     ),
     fs.writeFile(
       path.join(outDir, 'advisor-validation.json'),
-      `${JSON.stringify(
-        {
-          ok: Boolean(
-            result.committedEvidence?.validationPass && result.committedEvidence?.advisorPass,
-          ),
-          validationStatus: result.committedEvidence?.validationStatus ?? null,
-          validationPass: result.committedEvidence?.validationPass ?? null,
-          advisorStatus: result.committedEvidence?.advisorStatus ?? null,
-          advisorPass: result.committedEvidence?.advisorPass ?? null,
-          blockingErrorCounts: result.committedEvidence?.blockingErrorCounts ?? null,
-          validationResult: result.committedEvidence?.validationResult ?? null,
-          advisorResult: result.committedEvidence?.advisorResult ?? null,
-          validation:
-            result.committedEvidence?.validation ?? result.executionEvidence?.validation ?? null,
-          advisor: result.committedEvidence?.advisor ?? result.executionEvidence?.advisor ?? null,
-        },
-        null,
-        2,
-      )}\n`,
+      `${JSON.stringify(advisorValidationArtifact(result), null, 2)}\n`,
     ),
     fs.writeFile(
       path.join(outDir, 'visual-evidence.json'),
-      `${JSON.stringify(result.committedEvidence?.visual ?? null, null, 2)}\n`,
+      `${JSON.stringify(visualEvidenceArtifact(result), null, 2)}\n`,
     ),
     fs.writeFile(
       path.join(outDir, 'export-evidence.json'),
-      `${JSON.stringify(result.committedEvidence?.exports ?? null, null, 2)}\n`,
+      `${JSON.stringify(exportEvidenceArtifact(result), null, 2)}\n`,
     ),
     fs.writeFile(
       path.join(outDir, 'benchmark-result.json'),
@@ -1109,7 +1398,24 @@ export async function runBenchmark(rawArgs = []) {
   let executionEvidence = buildOfflineExecutionEvidence(bundle, summary);
   let committedEvidence = {
     mode: 'not-requested',
+    evidenceKind: 'missing-committed-live-artifact',
+    collectionStatus: 'not-requested',
     ok: false,
+    validationStatus: 'not-captured',
+    validationPass: false,
+    advisorStatus: 'not-captured',
+    advisorPass: false,
+    blockingErrorCounts: { validation: null, advisor: null },
+    warningCounts: { validation: null, advisor: null },
+    infoCounts: { validation: null, advisor: null },
+    modelId: args.modelId,
+    revision: null,
+    source: null,
+    preflight: {
+      sourceModelRevisionPresent: false,
+      liveAdvisorValidationCaptured: false,
+      reason: 'Committed evidence collection was not requested.',
+    },
     todo: 'Run live with --commit-live or --collect-committed-evidence to capture committed advisor, visual substitute, and export evidence.',
   };
   if (shouldRunLive(args)) {

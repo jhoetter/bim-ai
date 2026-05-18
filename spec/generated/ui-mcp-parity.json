@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-18T14:01:55.483Z",
+  "generatedAt": "2026-05-18T14:25:17.385Z",
   "sourceOfIntent": "spec/ui-mcp-parity-tracker.md",
   "sources": {
     "commands": "app/bim_ai/commands.py",
