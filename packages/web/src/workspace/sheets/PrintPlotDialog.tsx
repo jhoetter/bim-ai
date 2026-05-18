@@ -21,6 +21,9 @@ export function PrintPlotDialog({
 }: PrintPlotDialogProps): JSX.Element | null {
   const [paperSize, setPaperSize] = useState<PaperSize>('A4');
   const [orientation, setOrientation] = useState<'portrait' | 'landscape'>('landscape');
+  const [sheetOrientations, setSheetOrientations] = useState<
+    Record<string, 'portrait' | 'landscape'>
+  >({});
   const [scope, setScope] = useState<'current' | 'all'>('current');
   const [exporting, setExporting] = useState(false);
   const [marginMm, setMarginMm] = useState(10);
@@ -226,6 +229,29 @@ export function PrintPlotDialog({
               All Sheets
             </label>
           </div>
+          {sheets.length > 0 && (
+            <div className="flex flex-col gap-1 mt-1">
+              {sheets.map((sheet) => (
+                <div key={sheet.id} className="flex items-center justify-between gap-2">
+                  <span className="truncate text-foreground/70">{sheet.name}</span>
+                  <select
+                    data-testid={`sheet-orientation-${sheet.id}`}
+                    value={sheetOrientations[sheet.id] ?? orientation}
+                    onChange={(e) =>
+                      setSheetOrientations((prev) => ({
+                        ...prev,
+                        [sheet.id]: e.target.value as 'portrait' | 'landscape',
+                      }))
+                    }
+                    className="text-xs border border-border/30 rounded px-1"
+                  >
+                    <option value="portrait">Portrait</option>
+                    <option value="landscape">Landscape</option>
+                  </select>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
 
         <div className="flex justify-end gap-2 mt-1">

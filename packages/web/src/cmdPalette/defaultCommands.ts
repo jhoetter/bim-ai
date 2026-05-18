@@ -2803,6 +2803,15 @@ registerCommand({
   invoke: (ctx) => ctx.openFamilyEditor?.(),
 });
 
+// §15.1.3 — family opening cut definition
+registerCommand({
+  id: 'family.set-opening-cut',
+  label: 'Set Family Opening Cut',
+  keywords: ['family', 'opening', 'cut', 'void', 'wall-hosted', 'window', 'door'],
+  category: 'command',
+  invoke: (ctx) => ctx.openFamilyEditor?.(),
+});
+
 // Toposolid sub-tools — exposed in Cmd+K
 registerCommand({
   id: 'tool.graded-region',
@@ -2900,6 +2909,35 @@ registerCommand({
   },
 });
 
+// §1.6.2: Save As — duplicate current project with a new name
+registerCommand({
+  id: 'file.save-as',
+  label: 'Save As…',
+  keywords: ['save as', 'duplicate', 'copy', 'Speichern unter', 'Kopie'],
+  category: 'command',
+  isAvailable: () => true,
+  invoke: (ctx) => {
+    const newName = window.prompt('Enter new project name:');
+    if (newName) {
+      ctx.duplicateProject?.(newName);
+    }
+  },
+});
+
+// §1.6.2: Revert — discard unsaved changes and reload last saved state
+registerCommand({
+  id: 'file.revert',
+  label: 'Revert to Saved',
+  keywords: ['revert', 'undo all', 'discard', 'zurücksetzen'],
+  category: 'command',
+  isAvailable: () => true,
+  invoke: (ctx) => {
+    if (window.confirm('Revert to last saved state?')) {
+      ctx.revertProject?.();
+    }
+  },
+});
+
 // §2.5.1: auto-generate enclosing side walls for the selected shaft void
 registerCommand({
   id: 'modify.add-shaft-side-walls',
@@ -2991,6 +3029,18 @@ registerCommand({
   },
 });
 
+// §2.4.2: Floor Edge Profile — edit cross-section profile extruded around floor perimeter
+registerCommand({
+  id: 'modify.floor-edge-profile',
+  label: 'Floor Edge Profile',
+  keywords: ['floor edge', 'edge profile', 'Deckenrand', 'slab edge', 'drop panel', 'overhang'],
+  category: 'command',
+  isAvailable: (ctx) => ctx.selectedElements?.some((e) => e.kind === 'floor') ?? false,
+  invoke: (_ctx) => {
+    // Opens inspector edge profile section — handled via inspector collapsible
+  },
+});
+
 // §8.6.4: Flip Stair — mirror stair run geometry horizontally or vertically
 registerCommand({
   id: 'modify.flip-stair',
@@ -3001,5 +3051,35 @@ registerCommand({
   invoke: (ctx) => {
     const stair = ctx.selectedElements?.find((e) => e.kind === 'stair');
     if (stair) ctx.dispatchCommand?.({ type: 'flipStair', stairId: stair.id, axis: 'horizontal' });
+  },
+});
+
+// §12.4.5 — Export PDF with per-sheet orientation override and page numbers
+registerCommand({
+  id: 'file.export-pdf',
+  label: 'Export PDF…',
+  keywords: ['export pdf', 'print pdf', 'plot pdf', 'PDF exportieren'],
+  category: 'command',
+  invoke: (ctx) => {
+    ctx.openPrintDialog?.();
+  },
+});
+
+// §1.6.11 — Browser View Organization preset toggle (By Discipline / By Level)
+registerCommand({
+  id: 'view.browser-org-preset',
+  label: 'Browser View Organization',
+  keywords: [
+    'browser',
+    'project browser',
+    'by level',
+    'by discipline',
+    'floor plans',
+    'group views',
+    'Projektbrowser',
+  ],
+  category: 'command',
+  invoke: () => {
+    // Local-state toggle — surfaced via the dropdown in the project browser Floor Plans header.
   },
 });

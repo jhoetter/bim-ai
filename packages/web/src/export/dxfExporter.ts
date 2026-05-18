@@ -34,20 +34,25 @@ function dxfHeader(units: 'mm' | 'm'): string {
   ].join('\n');
 }
 
+/** ACI color assignments per layer name (§12.4.3). */
+const LAYER_ACI_COLORS: Record<string, number> = {
+  'A-WALL': 7,
+  'A-DOOR': 1,
+  'A-GLAZ': 3,
+  'A-AREA': 4,
+  'S-GRID': 8,
+  'A-ANNO-DIMS': 2,
+  'A-REFP': 6,
+  'S-COLS': 5,
+  'S-BEAM': 5,
+};
+
 function dxfTablesSection(layers: string[]): string {
   const unique = [...new Set(layers)];
-  const layerDefs = unique.flatMap((name) => [
-    '0',
-    'LAYER',
-    '2',
-    name,
-    '70',
-    '0',
-    '62',
-    '7',
-    '6',
-    'CONTINUOUS',
-  ]);
+  const layerDefs = unique.flatMap((name) => {
+    const aciColor = LAYER_ACI_COLORS[name] ?? 7;
+    return ['0', 'LAYER', '2', name, '70', '0', '62', String(aciColor), '6', 'CONTINUOUS'];
+  });
   return [
     '0',
     'SECTION',

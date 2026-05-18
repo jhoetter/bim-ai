@@ -80,6 +80,8 @@ async function addPageToPdf(
   orientation: 'portrait' | 'landscape',
   isFirstPage: boolean,
   marginMm = 10,
+  pageIndex = 0,
+  totalPages = 1,
 ): Promise<void> {
   const pngDataUrl = await captureElementToPng(element);
 
@@ -123,6 +125,12 @@ async function addPageToPdf(
   const offsetY = marginMm + (printH - drawH) / 2;
 
   doc.addImage(pngDataUrl, 'PNG', offsetX, offsetY, drawW, drawH);
+
+  // Page number in the bottom margin area (§12.4.5)
+  const pageNum = pageIndex + 1;
+  doc.setFontSize(7);
+  doc.setTextColor(102, 102, 102);
+  doc.text(`${pageNum} / ${totalPages}`, pageMmW / 2, pageMmH - 5, { align: 'center' });
 }
 
 /**
@@ -148,7 +156,7 @@ export async function exportSheetToPdf(
     format: [pageMmW, pageMmH],
   });
 
-  await addPageToPdf(doc, canvasElement, paperSize, orientation, true, marginMm);
+  await addPageToPdf(doc, canvasElement, paperSize, orientation, true, marginMm, 0, 1);
 
   doc.save(filename);
 }
@@ -182,7 +190,16 @@ export async function exportSheetsToPdf(
   for (let i = 0; i < sheetCanvases.length; i++) {
     const sheet = sheetCanvases[i];
     const size = sheet.paperSize ?? defaultPaperSize;
-    await addPageToPdf(doc, sheet.element, size, orientation, i === 0, marginMm);
+    await addPageToPdf(
+      doc,
+      sheet.element,
+      size,
+      orientation,
+      i === 0,
+      marginMm,
+      i,
+      sheetCanvases.length,
+    );
   }
 
   doc.save(filename);
