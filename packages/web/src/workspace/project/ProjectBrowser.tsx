@@ -2321,6 +2321,8 @@ export function ProjectBrowserV3({
   // §1.6.11 — Families / Groups sections collapsed by default
   const [familiesCollapsed, setFamiliesCollapsed] = useState(true);
   const [groupsCollapsed, setGroupsCollapsed] = useState(true);
+  // §1.6.11 — plan view organization preset
+  const [viewOrgPreset, setViewOrgPreset] = useState<'discipline' | 'level'>('discipline');
 
   // Derive groups from elements.
   const {
@@ -2332,6 +2334,7 @@ export function ProjectBrowserV3({
     cameraViewRows,
     familyRows,
     groupDefRows,
+    planViewRows,
   } = useMemo(() => {
     const lower = search.toLowerCase();
     const matches = (name: string) => !lower || name.toLowerCase().includes(lower);
@@ -2393,6 +2396,15 @@ export function ProjectBrowserV3({
     // §1.6.11 — group definitions (instances counted via group_instance kind)
     const groupDefRows = elements.filter((e) => e.kind === 'group_definition');
 
+    // §1.6.11 — plan views for the Floor Plans section
+    const planViewRows = elements
+      .filter((e) => e.kind === 'plan_view' && matches((e as { name?: string }).name ?? e.id))
+      .sort((a, b) =>
+        ((a as { name?: string }).name ?? a.id).localeCompare(
+          (b as { name?: string }).name ?? b.id,
+        ),
+      );
+
     return {
       viewRows: sortedViews,
       scheduleRows: schedules,
@@ -2402,6 +2414,7 @@ export function ProjectBrowserV3({
       cameraViewRows: cameraViews,
       familyRows,
       groupDefRows,
+      planViewRows,
     };
   }, [elements, search, localOrder]);
 
@@ -2540,6 +2553,24 @@ export function ProjectBrowserV3({
 
   const viewGroups = groupByDiscipline(viewRows);
 
+  // §1.6.11: level-grouped plan views for "By Level" org preset
+  const levelGroupedViews = useMemo(() => {
+    if (viewOrgPreset !== 'level') return null;
+    const byLevel: Record<string, typeof planViewRows> = {};
+    for (const pv of planViewRows) {
+      const levelId = (pv as { levelId?: string }).levelId ?? 'unassigned';
+      if (!byLevel[levelId]) byLevel[levelId] = [];
+      byLevel[levelId].push(pv);
+    }
+    return byLevel;
+  }, [planViewRows, viewOrgPreset]);
+
+  const getLevelName = (levelId: string): string => {
+    if (levelId === 'unassigned') return 'Unassigned';
+    const lvl = elements.find((el) => el.id === levelId && el.kind === 'level');
+    return lvl ? ((lvl as { name?: string }).name ?? levelId) : levelId;
+  };
+
   return (
     <div style={railStyle} aria-label="Project browser">
       {/* Search */}
@@ -2653,6 +2684,114 @@ export function ProjectBrowserV3({
               </div>
             ))}
           </PbGroup>
+        ) : null}
+
+        {/* §1.6.11 — Floor Plans group with org preset */}
+        {planViewRows.length > 0 ? (
+          <div style={{ marginBottom: 'var(--space-2)' }} data-pb-group="Floor Plans">
+            <div
+              style={{
+                padding: 'var(--space-1) var(--space-3)',
+                fontSize: 'var(--text-sm, 12.5px)',
+                color: 'var(--color-muted-foreground)',
+                letterSpacing: 'var(--text-eyebrow-tracking, 0.04em)',
+                textTransform: 'uppercase',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 'var(--space-1)',
+              }}
+            >
+              <span>Floor Plans</span>
+              <select
+                data-testid="browser-view-org-preset"
+                value={viewOrgPreset}
+                onChange={(e) => setViewOrgPreset(e.target.value as 'discipline' | 'level')}
+                onClick={(e) => e.stopPropagation()}
+                style={{
+                  marginLeft: 'auto',
+                  fontSize: 'var(--text-xs, 10px)',
+                  border: '1px solid var(--color-border)',
+                  borderRadius: 'var(--radius-sm, 4px)',
+                  padding: '0 var(--space-1)',
+                  background: 'var(--color-background)',
+                  color: 'var(--color-foreground)',
+                  cursor: 'pointer',
+                }}
+              >
+                <option value="discipline">By Discipline</option>
+                <option value="level">By Level</option>
+              </select>
+            </div>
+            {viewOrgPreset === 'level' && levelGroupedViews
+              ? Object.entries(levelGroupedViews)
+                  .sort(([a], [b]) => a.localeCompare(b))
+                  .map(([levelId, views]) => (
+                    <div key={levelId} data-testid={`browser-level-group-${levelId}`}>
+                      <div
+                        style={{
+                          padding: 'var(--space-0-5) var(--space-3)',
+                          fontSize: 'var(--text-xs, 10px)',
+                          fontWeight: 600,
+                          color: 'var(--color-muted-foreground)',
+                        }}
+                      >
+                        {getLevelName(levelId)}
+                      </div>
+                      <ul style={{ listStyle: 'none', margin: 0, padding: 0 }}>
+                        {views.map((pv) => (
+                          <li key={pv.id}>
+                            <button
+                              type="button"
+                              data-testid={`browser-view-row-${pv.id}`}
+                              style={{
+                                width: '100%',
+                                textAlign: 'left',
+                                padding: 'var(--space-0-5) var(--space-4)',
+                                fontSize: 'var(--text-sm, 12.5px)',
+                                color: 'var(--color-foreground)',
+                                background:
+                                  pv.id === activeViewId
+                                    ? 'var(--color-accent-soft)'
+                                    : 'transparent',
+                                border: 'none',
+                                cursor: 'pointer',
+                              }}
+                              onClick={() => onActivateView(pv.id)}
+                            >
+                              {(pv as { name?: string }).name ?? pv.id}
+                            </button>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  ))
+              : planViewRows.map((pv) => {
+                  const discLabel = disciplineLabel(pv);
+                  return (
+                    <div key={pv.id}>
+                      <button
+                        type="button"
+                        data-testid={`browser-view-row-${pv.id}`}
+                        style={{
+                          width: '100%',
+                          textAlign: 'left',
+                          padding: 'var(--space-0-5) var(--space-3)',
+                          fontSize: 'var(--text-sm, 12.5px)',
+                          color: 'var(--color-foreground)',
+                          background:
+                            pv.id === activeViewId ? 'var(--color-accent-soft)' : 'transparent',
+                          border: 'none',
+                          cursor: 'pointer',
+                        }}
+                        onClick={() => onActivateView(pv.id)}
+                        title={discLabel ?? undefined}
+                      >
+                        {(pv as { name?: string }).name ?? pv.id}
+                      </button>
+                    </div>
+                  );
+                })}
+          </div>
         ) : null}
 
         {/* 3D Views group */}
