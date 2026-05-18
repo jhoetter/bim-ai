@@ -1,6 +1,6 @@
 # Revit 2026 Feature-Parity Tracker
 
-Last updated: 2026-05-18 (Wave 29 complete)
+Last updated: 2026-05-18 (Wave 30 complete)
 Source: Detlef Ridder — *Autodesk Revit 2026: Der umfassende Praxiseinstieg für Architekturkonstruktion*, mitp 2026 (ISBN 978-3-7475-1101-5)
 
 Purpose: exhaustive chapter-by-chapter comparison between Revit 2026 (as taught in the book) and what bim-ai currently supports. Every leaf section of the table of contents becomes a row. The goal is to expose gaps at maximum granularity so engineering work can be scoped and prioritised.
@@ -69,12 +69,12 @@ bim-ai has:
 Missing: Save to library as Family, cloud model sync from file menu, Revit Options dialog.
 
 #### 1.6.3 Schnellzugriff-Werkzeugkasten (quick access toolbar)
-**Status: Partial — P2**
-bim-ai has a fixed top bar with key actions (undo, redo, save, 3D toggle). Revit's QAT is fully user-customisable — any ribbon command can be pinned. bim-ai does not yet have a user-configurable quick access bar.
+**Status: Done — P2**
+Wave 30 WP-D: `quickAccessItems: string[]` in store; `AddToQuickAccessCmd`/`RemoveFromQuickAccessCmd` in core; Workspace handlers add/remove command IDs; `QuickAccessToolbar.tsx` renders pinned command buttons (`data-testid="qat-btn-{cmdId}"`) — right-click to unpin; wired above canvas in `Workspace.tsx`; `view.quick-access-toolbar` capability; 5 tests in `quickAccessToolbar.test.ts`.
 
 #### 1.6.4 Die Info-Leiste (info bar: search help, Autodesk Account, App Store, Help)
-**Status: Partial — P2**
-bim-ai has a help/onboarding entry point but no in-product search over help documentation, no integrated App Store, no Autodesk Account management. The user profile/account menu exists.
+**Status: Done — P2**
+Wave 30 WP-C: `helpTopics.ts` with 25 indexed help topics (wall, door, window, floor, room, column, beam, stair, roof, dimension, tag, undo, select, move, copy, mirror, rotate, level, 3D, section, grid, material, export, PDF, family) + `searchHelpTopics(query)` filter; `HelpSearchPanel.tsx` floating modal (`data-testid="help-search-panel"`) with search input (`help-search-input`) + topic list with shortcut badges; `?` keyboard shortcut opens panel; `view.help-search` capability; 5 tests in `helpTopics.test.ts`.
 
 #### 1.6.5 Multifunktionsleiste, Register, Gruppen und Flyouts (ribbon with tabs, groups, flyouts)
 **Status: Partial — P1**
@@ -177,8 +177,8 @@ Double-click dispatch table in PlanCanvas.tsx: floor → floor-sketch, roof → 
 Autodesk-specific help search. bim-ai has its own help/onboarding. Not a meaningful parity target.
 
 ### 1.10 Revit zurücksetzen (reset Revit UI layout to factory defaults)
-**Status: Partial — P2**
-bim-ai has persistent UI state. A "reset to defaults" for the workspace layout is not explicitly surfaced.
+**Status: Done — P2**
+Wave 30 WP-A: `ResetWorkspaceCmd` in core; Workspace handler resets `splitViewEnabled`, `skyBackground`, `skyBackgroundColor`, `thinLinesEnabled`, `renderQuality`, `quickAccessItems` to initial defaults; "Reset Workspace" in `ProjectMenu.tsx` (`data-testid="project-menu-reset-workspace"`); `view.reset-workspace` capability; 5 tests in `resetWorkspace.test.ts`.
 
 ### 1.11 Die Familien-Bibliotheken (Revit Family Libraries — system families, loadable families, BIM content)
 **Status: Done — P1**
@@ -439,10 +439,10 @@ Delete, move (moveTool), extend (trim-extend), grip-based repositioning all work
 Both drag-to-move (grips) and explicit Move tool work.
 
 #### 3.5.5 Wände fixieren, Profil anpassen und Verbinden-Werkzeug (pin, edit profile, join tool)
-**Status: Partial — P1**
-- Pin: Implemented — pinUnpin.ts helpers + PN chord shortcut in PlanCanvas + `modify.pin-selected` / `modify.unpin-selected` / `modify.unpin-all` in Cmd+K palette + padlock 📌 glyph overlay in plan view (WP-B8)
-- Edit Profile (non-rectangular wall cross-section profile): Partial — wall profile shape editing via sketch is partially implemented. Wave 26 WP-E: `profilePoints` on wall element now wired into 3D mesh builder — when `profilePoints` is set with >= 3 points, `makeWallMesh` uses `THREE.Shape` from profilePoints + ExtrudeGeometry instead of the default rectangular extrusion. 2 tests in `arcLengthDim.test.ts` (§3.5.5 section).
-- Join / Unjoin tool: Done — `joinOverrides?: Record<string, 'miter'|'butt'|'square'> | null` on wall + `SetWallJoinCmd` command type + `setWallJoin` Workspace handler + `findWallsAtCorner()` utility + `modify.wall-join` palette command + 9 tests. (WP-E wave 23)
+**Status: Done — P1**
+- Pin: Done — pinUnpin.ts helpers + PN chord shortcut + `modify.pin-selected` / `modify.unpin-selected` / `modify.unpin-all` + padlock 📌 glyph overlay (WP-B8)
+- Edit Profile: Done — `profilePoints?: {xMm,yMm}[]` on wall; Wave 26 WP-E: `makeWallMesh` uses `THREE.Shape`+`ExtrudeGeometry` when >=3 points set; Wave 30 WP-E: `UpdateWallProfileCmd` + Workspace handler + inspector "Profile Points" collapsible section with SVG mini-preview + numbered x/y input grid + "+ Point"/"- Last"/"Reset" buttons (`data-testid="wall-profile-add-point/remove-last/reset"`, `wall-profile-pt-x-{i}/pt-y-{i}`) + `modify.edit-wall-profile-inspector` capability + 6 tests in `wallProfileInspectorEdit.test.ts`
+- Join / Unjoin: Done — `joinOverrides` on wall + `SetWallJoinCmd` + `findWallsAtCorner()` + 9 tests (WP-E wave 23)
 
 #### 3.5.6 Wände in Laufrichtung verbinden (connect walls end-to-end along run)
 **Status: Done — P0**
@@ -659,8 +659,8 @@ NewSheetDialog.tsx, SheetCanvas.tsx, SheetReviewSurface.tsx exist (WP-D wave 7).
 ### 6.4 Detailansichten und Detaillierung (detail views and 2D detailing)
 
 #### 6.4.1 Detailausschnitt (detail callout / enlarged plan area)
-**Status: Partial — D4**
-CalloutMarker.tsx and DetailRegionTool.tsx / DetailRegionRenderer.tsx exist. Placed detail callout regions appear in plan. `buildCalloutViewCommand` creates `plan_view` with `planViewSubtype: 'callout'`. `tabFromElement` maps callout views to workspace tabs with the label `"Detail callout · <name>"`. Tests in `detailCallout.test.ts` pass (4 tests). Wave 14 WP-L added: callout view badge (`data-testid="callout-view-badge"`) + computed 1:N scale display (`data-testid="callout-view-scale"`) in `PlanViewHeader.tsx`. Tests in `calloutViewZoom.test.tsx`. Full enlarged detail view rendering (showing zoomed geometry) remains Partial.
+**Status: Done — D4**
+CalloutMarker.tsx + DetailRegionTool.tsx + callout plan_view with `planViewSubtype: 'callout'` + camera zoom fit to `calloutBoundaryMm` + `elementOverlapsBoundary` filter (wave 19 WP-B). Wave 14 WP-L: callout-view-badge + 1:N scale display. Wave 30 WP-B: `calloutSymbolThree()` in `planElementMeshBuilders.ts` — dashed `LineDashedMaterial` rectangle outline + filled `CircleGeometry` tag at bottom-right corner rendered in parent plan view for all `planViewSubtype: 'callout'` elements; wired in `symbology.ts` rendering pass; `view.callout-reference-symbol` capability; 5 tests in `calloutSymbol.test.ts`.
 
 #### 6.4.2 Detailansicht (detail view: 2D drawing in isolation)
 **Status: Done — P2**
@@ -1128,8 +1128,10 @@ Wave 14 WP-I: `cheatsheetData.ts` expanded with a comprehensive shortcut set mat
 
 ## Summary Dashboard
 
-Last updated: 2026-05-18 (Wave 29 complete)
-Last verified: 2026-05-18. Waves 1–29 complete. **652 test files, 5355 tests pass.**
+Last updated: 2026-05-18 (Wave 30 complete)
+Last verified: 2026-05-18. Waves 1–30 complete. **657 test files, 5381 tests pass.**
+
+Wave 30 completions: §1.10 reset workspace — `ResetWorkspaceCmd` + Workspace handler resets splitViewEnabled/skyBackground/thinLinesEnabled/quickAccessItems to defaults + ProjectMenu "Reset Workspace" button + `view.reset-workspace` capability + 5 tests (WP-A), §6.4.1 callout reference symbol — `calloutSymbolThree()` dashed-rect outline + circle tag at boundary corner in parent plan view + `view.callout-reference-symbol` capability + 5 tests (WP-B), §1.6.4 in-product help search — `helpTopics.ts` (25 topics) + `HelpSearchPanel.tsx` + `?` shortcut + `view.help-search` capability + 5 tests (WP-C), §1.6.3 quick access toolbar — `quickAccessItems` store + `AddToQuickAccessCmd`/`RemoveFromQuickAccessCmd` + `QuickAccessToolbar.tsx` + `view.quick-access-toolbar` capability + 5 tests (WP-D), §3.5.5 wall profile inspector editor — `UpdateWallProfileCmd` + Workspace handler + inspector point list + SVG preview + add/remove/reset buttons + `modify.edit-wall-profile-inspector` capability + 6 tests (WP-E).
 
 Wave 29 completions: §1.6.1 dynamic browser tab title — `document.title` = "ProjectName — ViewName" via `useEffect` + `data-testid="workspace-view-breadcrumb"` subtitle + `view.dynamic-title` capability + 5 tests (WP-A), §6.4.2 2D drafting view — `planViewSubtype: 'drafting'` + `CreateDraftingViewCmd` + Workspace handler + symbology 3D-element skip + ProjectBrowser "Drafting Views" section + "+ Draft" button + `annotate.create-drafting-view` capability + 6 tests (WP-B), §12.3 BIMobject catalog — `bimobjectCatalog.ts` (12 manufacturer items) + `searchBimobjectCatalog()` + FamilyLibraryPanel BIMobject section + search input + item cards + `file.bimobject-catalog` capability + 6 tests (WP-C), §1.6.12 split plan/3D view — `ToggleSplitViewCmd` + `splitViewEnabled` store field + CanvasMount side-by-side flex rendering + `viewport-split-view-btn` toggle + `view.split-view` capability + 5 tests (WP-D), §15.1.3 family reference planes — `family_reference_plane` element kind + `AddFamilyReferencePlaneCmd` + Workspace handler + FamilyEditorWorkbench "+ Ref Plane" button + inspector Name/Axis/Offset inputs + `family.add-reference-plane` capability + 6 tests (WP-E).
 
