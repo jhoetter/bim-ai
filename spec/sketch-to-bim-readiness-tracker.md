@@ -25,9 +25,9 @@ Related sources:
 
 The sketch-to-BIM workflow has the right process shape: visual read, Sketch
 Understanding IR, capability matrix, phased authoring, live Advisor, screenshots,
-visual gate, and final acceptance. The product also has a strong generic agent
-base: typed CLI commands, `cmd-v3.0` bundles, dry-run/commit, query helpers, and
-an API descriptor catalogue.
+visual gate, warning/error-led refinement, and final acceptance. The product also
+has a strong generic agent base: typed CLI commands, `cmd-v3.0` bundles,
+dry-run/commit, query helpers, and an API descriptor catalogue.
 
 The remaining problem is integration maturity. Some sketch tools are still
 skill-local orchestration, some API descriptors are contract-only, and the
@@ -120,6 +120,16 @@ not be treated as the public product surface. Skill-local commands are allowed t
 compose public CLI/API calls, capture browser evidence, and write phase packets.
 They should not be the only way to perform a core product operation.
 
+### Error Detection As Authoring Feedback
+
+The product's Advisor, constructability profiles, validation reports, dry-run
+warnings, evidence-package findings, and UI warning surfaces are core authoring
+inputs. A sketch-to-BIM agent must inspect them while building, not merely at the
+end. Every phase packet should preserve the finding code, severity, profile,
+affected element ids, and disposition. Current-phase warnings are work items:
+fix them, schedule them for a later phase only when the phase boundary is
+legitimate, or write a tolerance with evidence and expiry.
+
 ## Tracker Items
 
 ### A. Active Workflow And Preflight
@@ -193,6 +203,7 @@ They should not be the only way to perform a core product operation.
 | `SKB-RDY-E06` | P1 | Not started | IFC/IDS-style validation gate. | Exported IFC or normalized BIM exchange manifest is validated for project hierarchy, entity classes, spaces, material layers, Psets, quantities, and classifications. |
 | `SKB-RDY-E07` | P1 | Not started | Semantic visual evaluator. | Beyond pixel deltas, checklist or CV-assisted evaluator detects critical features such as roof cutout present, wrapper shell thickness, loggia recess, and cladding rhythm. |
 | `SKB-RDY-E08` | P1 | Partial | Tolerance protocol. | Every unresolved warning/gap has severity, affected feature, reason, owner, expiry condition, and evidence link. |
+| `SKB-RDY-E10` | P0 | Not started | Advisor-driven refinement loop. | Phase tooling records warning/info/error findings after dry-run and after commit; current-phase findings must be fixed, deferred with phase rationale, tolerated with evidence, or marked blocked before phase acceptance. |
 | `SKB-RDY-E09` | P2 | Not started | Benchmark goldens for sketch cases. | Golden cases include live screenshot/advisor/evidence baselines for archetypes, not just deterministic packet checks. |
 
 ### F. Target-House-1 Specific Readiness
