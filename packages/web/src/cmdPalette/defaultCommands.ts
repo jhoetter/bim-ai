@@ -3344,3 +3344,27 @@ registerCommand({
     ctx.dispatchCommand?.({ type: 'resetWorkspace' });
   },
 });
+
+// §3.5.5 — Edit Wall Profile Points in Inspector
+registerCommand({
+  id: 'modify.edit-wall-profile-inspector',
+  label: 'Edit Wall Profile Points',
+  keywords: ['wall profile', 'custom profile', 'non-rectangular', 'profile points', 'extrude'],
+  category: 'modify',
+  isAvailable: (ctx) => (ctx.selectedElements ?? []).some((e) => e.kind === 'wall'),
+  invoke: () => {
+    // Profile editor is in the inspector — selecting a wall opens it automatically
+  },
+});
+
+// §1.6.3 — Quick Access Toolbar
+registerCommand({
+  id: 'view.quick-access-toolbar',
+  label: 'Pin Command to Quick Access Toolbar',
+  keywords: ['quick access', 'pin', 'toolbar', 'QAT', 'customize', 'shortcut'],
+  category: 'view',
+  isAvailable: () => true,
+  invoke: () => {
+    // QAT is configured via addToQuickAccess command; this is an informational entry
+  },
+});

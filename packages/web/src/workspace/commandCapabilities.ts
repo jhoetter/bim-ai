@@ -3034,4 +3034,19 @@ const MASS_CAPABILITIES: CommandCapability[] = [
     notes:
       '§3.5.5: UpdateWallProfileCmd + inspector profile editor with point list (x/y inputs) + SVG mini-preview + add/remove/reset buttons; profilePoints >= 3 triggers ExtrudeGeometry in makeWallMesh.',
   },
+  {
+    id: 'view.quick-access-toolbar',
+    label: 'Quick Access Toolbar',
+    owner: 'workspace/QuickAccessToolbar',
+    group: 'view',
+    scope: 'global',
+    intendedModes: ['plan', '3d'],
+    surfaces: ['workspace-header', 'cmd-k'],
+    executionSurface: 'store',
+    preconditions: [],
+    status: 'implemented',
+    usabilityScore: 8,
+    notes:
+      '§1.6.3: quickAccessItems string[] in store; AddToQuickAccessCmd/RemoveFromQuickAccessCmd; QuickAccessToolbar renders pinned command buttons (right-click to unpin).',
+  },
 ];

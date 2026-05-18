@@ -1196,6 +1196,162 @@ export function InspectorPropertiesFor(
             </div>
           </details>
 
+          {/* §3.5.5: wall profile editor — point list, SVG preview, add/remove/reset */}
+          <details style={{ marginTop: 8 }}>
+            <summary
+              style={{ fontSize: 11, cursor: 'pointer', userSelect: 'none', fontWeight: 600 }}
+            >
+              Profile Points ({((el as any).profilePoints ?? []).length})
+            </summary>
+            <div style={{ marginTop: 6, display: 'flex', flexDirection: 'column', gap: 4 }}>
+              {/* Mini SVG preview */}
+              {((el as any).profilePoints ?? []).length >= 3 && (
+                <svg
+                  data-testid="wall-profile-preview"
+                  width={120}
+                  height={60}
+                  style={{
+                    border: '1px solid var(--border, #444)',
+                    borderRadius: 3,
+                    background: '#111',
+                  }}
+                >
+                  {(() => {
+                    const pts: { xMm: number; yMm: number }[] = (el as any).profilePoints;
+                    const xs = pts.map((p) => p.xMm);
+                    const ys = pts.map((p) => p.yMm);
+                    const minX = Math.min(...xs);
+                    const maxX = Math.max(...xs);
+                    const minY = Math.min(...ys);
+                    const maxY = Math.max(...ys);
+                    const scaleX = 110 / (maxX - minX || 1);
+                    const scaleY = 50 / (maxY - minY || 1);
+                    const pathD =
+                      pts
+                        .map(
+                          (p, i) =>
+                            `${i === 0 ? 'M' : 'L'} ${5 + (p.xMm - minX) * scaleX} ${55 - (p.yMm - minY) * scaleY}`,
+                        )
+                        .join(' ') + ' Z';
+                    return (
+                      <path
+                        d={pathD}
+                        stroke="#a78bfa"
+                        strokeWidth={1.5}
+                        fill="rgba(167,139,250,0.1)"
+                      />
+                    );
+                  })()}
+                </svg>
+              )}
+              {/* Point list */}
+              {((el as any).profilePoints ?? []).map(
+                (pt: { xMm: number; yMm: number }, i: number) => (
+                  <div
+                    key={i}
+                    style={{
+                      display: 'grid',
+                      gridTemplateColumns: '20px 1fr 1fr',
+                      gap: 4,
+                      alignItems: 'center',
+                    }}
+                  >
+                    <span style={{ fontSize: 10, color: '#888' }}>{i + 1}</span>
+                    <input
+                      data-testid={`wall-profile-pt-x-${i}`}
+                      type="number"
+                      value={pt.xMm}
+                      onChange={(e) => {
+                        const pts = [...((el as any).profilePoints ?? [])];
+                        pts[i] = { ...pts[i], xMm: Number(e.target.value) };
+                        onDispatchCommand?.({
+                          type: 'updateWallProfile',
+                          wallId: el.id,
+                          profilePoints: pts,
+                        });
+                      }}
+                      style={{
+                        fontSize: 11,
+                        padding: '1px 4px',
+                        border: '1px solid var(--border)',
+                        borderRadius: 2,
+                        background: 'transparent',
+                        color: 'inherit',
+                      }}
+                    />
+                    <input
+                      data-testid={`wall-profile-pt-y-${i}`}
+                      type="number"
+                      value={pt.yMm}
+                      onChange={(e) => {
+                        const pts = [...((el as any).profilePoints ?? [])];
+                        pts[i] = { ...pts[i], yMm: Number(e.target.value) };
+                        onDispatchCommand?.({
+                          type: 'updateWallProfile',
+                          wallId: el.id,
+                          profilePoints: pts,
+                        });
+                      }}
+                      style={{
+                        fontSize: 11,
+                        padding: '1px 4px',
+                        border: '1px solid var(--border)',
+                        borderRadius: 2,
+                        background: 'transparent',
+                        color: 'inherit',
+                      }}
+                    />
+                  </div>
+                ),
+              )}
+              {/* Buttons */}
+              <div style={{ display: 'flex', gap: 4, marginTop: 4 }}>
+                <button
+                  data-testid="wall-profile-add-point"
+                  onClick={() => {
+                    const pts = [...((el as any).profilePoints ?? [])];
+                    pts.push({ xMm: 0, yMm: 0 });
+                    onDispatchCommand?.({
+                      type: 'updateWallProfile',
+                      wallId: el.id,
+                      profilePoints: pts,
+                    });
+                  }}
+                  style={{ fontSize: 10, padding: '2px 6px', cursor: 'pointer' }}
+                >
+                  + Point
+                </button>
+                <button
+                  data-testid="wall-profile-remove-last"
+                  onClick={() => {
+                    const pts = [...((el as any).profilePoints ?? [])].slice(0, -1);
+                    onDispatchCommand?.({
+                      type: 'updateWallProfile',
+                      wallId: el.id,
+                      profilePoints: pts.length >= 3 ? pts : null,
+                    });
+                  }}
+                  style={{ fontSize: 10, padding: '2px 6px', cursor: 'pointer' }}
+                >
+                  - Last
+                </button>
+                <button
+                  data-testid="wall-profile-reset"
+                  onClick={() =>
+                    onDispatchCommand?.({
+                      type: 'updateWallProfile',
+                      wallId: el.id,
+                      profilePoints: null,
+                    })
+                  }
+                  style={{ fontSize: 10, padding: '2px 6px', cursor: 'pointer' }}
+                >
+                  Reset
+                </button>
+              </div>
+            </div>
+          </details>
+
           <div className="flex items-center gap-2 py-0.5">
             <span className="text-xs text-muted w-28 shrink-0">{f('roofAttachment')}</span>
             <select

@@ -167,6 +167,7 @@ import { CheatsheetModal } from '../cmd/CheatsheetModal';
 import { Save3dViewAsDialog } from '../Save3dViewAsDialog';
 import { CommandPalette } from '../cmdPalette/CommandPalette';
 import '../cmdPalette/defaultCommands';
+import { getRegistry } from '../cmdPalette/registry';
 import {
   FamilyLibraryPanel,
   type ExternalCatalogPlacement,
@@ -220,6 +221,7 @@ import type { WorkspaceId } from './chrome/workspaces';
 import type { SheetMarkupShape, SheetReviewMode } from './sheets/sheetReviewUi';
 import { PrintPlotDialog } from './sheets/PrintPlotDialog';
 import { ProjectTemplatesDialog } from './ProjectTemplatesDialog';
+import { QuickAccessToolbar } from './QuickAccessToolbar';
 import {
   generateWallsFromMass,
   generateFloorsFromMass,
@@ -2918,6 +2920,25 @@ export function Workspace(): JSX.Element {
         useBimStore.setState({ elementsById: remaining });
         return;
       }
+      // §3.5.5: updateWallProfile — inspector profile editor (UpdateWallProfileCmd)
+      if (cmd.type === 'updateWallProfile') {
+        const { elementsById: cur } = useBimStore.getState();
+        const wall = cur[cmd.wallId as string];
+        if (!wall || wall.kind !== 'wall') return;
+        useBimStore.setState({
+          elementsById: {
+            ...cur,
+            [wall.id]: {
+              ...wall,
+              profilePoints:
+                (cmd.profilePoints as any[] | null) && (cmd.profilePoints as any[]).length >= 3
+                  ? cmd.profilePoints
+                  : undefined,
+            },
+          },
+        });
+        return;
+      }
       // §3.5.5: commitWallProfile — store custom profile points on a wall element
       if (cmd.type === 'commitWallProfile') {
         const { elementsById: cur } = useBimStore.getState();
@@ -3201,6 +3222,41 @@ export function Workspace(): JSX.Element {
       // §1.6.12: toggleSplitView — flip splitViewEnabled in store
       if (cmd.type === 'toggleSplitView') {
         useBimStore.setState((s: any) => ({ splitViewEnabled: !s.splitViewEnabled }));
+        return;
+      }
+
+      // §1.6.3: addToQuickAccess — pin a command to the Quick Access Toolbar
+      if (cmd.type === 'addToQuickAccess') {
+        useBimStore.setState((s: any) => {
+          const existing = s.quickAccessItems ?? [];
+          if (existing.includes(cmd.commandId)) return s;
+          return { quickAccessItems: [...existing, cmd.commandId as string] };
+        });
+        return;
+      }
+
+      // §1.6.3: removeFromQuickAccess — unpin a command from the Quick Access Toolbar
+      if (cmd.type === 'removeFromQuickAccess') {
+        useBimStore.setState((s: any) => ({
+          quickAccessItems: (s.quickAccessItems ?? []).filter((id: string) => id !== cmd.commandId),
+        }));
+        return;
+      }
+
+      // §1.10: resetWorkspace — restore viewport/UI fields to initial defaults
+      if (cmd.type === 'resetWorkspace') {
+        useBimStore.setState({
+          splitViewEnabled: false,
+          skyBackground: 'default' as const,
+          skyBackgroundColor: '#87ceeb',
+          thinLinesEnabled: false,
+          quickAccessItems: [],
+          renderQuality: {
+            shadowsEnabled: false,
+            toneMappingExposure: 1.0,
+            pixelRatioScale: 'auto',
+          },
+        });
         return;
       }
 
@@ -5936,6 +5992,7 @@ export function Workspace(): JSX.Element {
         projectName={activeSeedLabel ?? 'project'}
         onDuplicateProject={handleDuplicateProject}
         onRevertProject={handleRevertProject}
+        onResetWorkspace={() => void onSemanticCommand({ type: 'resetWorkspace' })}
         dxfLayerMapping={
           (Object.values(elementsById).find((e) => e.kind === 'project_settings') as any)
             ?.dxfLayerMapping
@@ -6312,6 +6369,22 @@ export function Workspace(): JSX.Element {
               />
             ) : null}
             {showCanvasHint && !showEmptyState ? <EmptyStateHint /> : null}
+            {/* §1.6.3: Quick Access Toolbar — renders pinned command buttons above the canvas */}
+            <QuickAccessToolbar
+              onInvokeCommand={(commandId) => {
+                const entry = getRegistry().find((e) => e.id === commandId);
+                if (entry) {
+                  entry.invoke({
+                    selectedElementIds: [],
+                    activeViewId: null,
+                    dispatchCommand: (cmd) => void onSemanticCommand(cmd),
+                  });
+                }
+              }}
+              onRemoveFromQAT={(commandId) => {
+                void onSemanticCommand({ type: 'removeFromQuickAccess', commandId });
+              }}
+            />
             {renderPaneNode(paneLayout.root)}
           </div>
         }

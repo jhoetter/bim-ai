@@ -5650,6 +5650,14 @@ export type CommitWallProfileCmd = {
   points: { xPct: number; yPct: number }[];
 };
 
+/** §3.5.5: inspector profile editor — update wall profile points directly from the inspector panel. */
+export type UpdateWallProfileCmd = {
+  type: 'updateWallProfile';
+  wallId: string;
+  /** New profile points. Pass null or [] to reset to rectangular. */
+  profilePoints: { xMm: number; yMm: number }[] | null;
+};
+
 // ---------------------------------------------------------------------------
 // §8.6.2 — Stair by component commands
 // ---------------------------------------------------------------------------
@@ -5869,4 +5877,21 @@ export type CreateDraftingViewCmd = {
   type: 'createDraftingView';
   /** Human-readable name for the drafting view. */
   name: string;
+};
+
+/** §1.10: reset the workspace UI layout to factory defaults. */
+export type ResetWorkspaceCmd = {
+  type: 'resetWorkspace';
+};
+
+/** §1.6.3: pin a command palette command to the Quick Access Toolbar. */
+export type AddToQuickAccessCmd = {
+  type: 'addToQuickAccess';
+  commandId: string;
+};
+
+/** §1.6.3: unpin a command palette command from the Quick Access Toolbar. */
+export type RemoveFromQuickAccessCmd = {
+  type: 'removeFromQuickAccess';
+  commandId: string;
 };
