@@ -335,6 +335,69 @@
         "IFC classification reference"
       ]
     },
+    "structureLiteRequirements": {
+      "loadBearingFlags": [
+        {
+          "category": "exterior_wall",
+          "assumption": "Exterior walls and folded shell are load-bearing placeholders until structural design replaces them.",
+          "confidence": "medium"
+        },
+        {
+          "category": "interior_wall",
+          "assumption": "Interior partitions are non-load-bearing unless tagged as stair/core support.",
+          "confidence": "medium"
+        }
+      ],
+      "primarySupportAssumptions": [
+        "Ground perimeter walls and stair/core zone provide primary vertical support.",
+        "Upper shell overhang requires structural review before documentation."
+      ],
+      "supportElementPlaceholders": [
+        {
+          "type": "beam-lite",
+          "location": "upper shell overhang line",
+          "reason": "Concept support placeholder for visible cantilever/load transfer."
+        },
+        {
+          "type": "column-lite",
+          "location": "ground base corners where exposed",
+          "reason": "Only author if visible or needed for the overhang support note."
+        }
+      ],
+      "openingCoordination": [
+        "Stair opening must align with stair run and upper slab edge.",
+        "Roof terrace opening returns must preserve shell continuity around the void."
+      ],
+      "loadPathNotes": [
+        "Trace roof and upper shell loads to ground walls/core; unresolved cantilever reactions remain a tolerance."
+      ]
+    },
+    "mepLiteRequirements": {
+      "wetRoomStacking": [
+        "Place Guest WC below or near Bathroom service zone where the sketch allows."
+      ],
+      "verticalShaftsOrRisers": ["Reserve a riser/service zone near stair hall and wet rooms."],
+      "equipmentZones": [
+        "Kitchen, WC, bathroom, and terrace drainage equipment markers are schematic placeholders."
+      ],
+      "routePlaceholders": [
+        "Pipe and cable routes may remain schematic but must avoid stair, doors, and room boundaries."
+      ],
+      "serviceLevels": [
+        "Ground level services enter near the stair/wet zone; upper services rise through the reserved riser."
+      ],
+      "openingRequests": [
+        "Record any slab, wall, or roof penetrations needed for riser and terrace drainage coordination."
+      ]
+    },
+    "planningSiteRequirements": {
+      "orientationAssumption": "Use sketch front as project south-west until a survey or north arrow is supplied.",
+      "basePointAssumption": "Project base point at ground-floor footprint south-west corner, elevation 0.",
+      "surveyPointAssumption": "Survey point unavailable; keep local coordinates and record as tolerance.",
+      "propertyLineSetbackAvailability": "Property lines and setbacks unavailable in source imagery.",
+      "sunAssumptions": "Sun/shadow checks are placeholder only until geographic location and true north are supplied.",
+      "codeLocale": "DE concept placeholders using DIN277/DIN276 starter classifications."
+    },
     "schedules": [
       {
         "id": "room-schedule",
@@ -353,9 +416,67 @@
       }
     ],
     "exportRequirements": {
-      "outputs": ["IFC", "GLB", "evidence-package", "source-bundle"],
+      "outputs": ["IFC", "GLB", "PDF", "schedules", "evidence-package", "source-bundle"],
       "ifcEntityIntentRequired": true,
       "classificationReferencesPlanned": true
+    },
+    "sustainabilityMaterialPassportRequirements": {
+      "materials": [
+        {
+          "materialKey": "masonry_placeholder",
+          "epdSource": "placeholder",
+          "sourceConfidence": "low",
+          "embodiedCarbonPlaceholder": "generic masonry kgCO2e/m2 pending EPD",
+          "reuseNotes": "Potential reuse not assessed at project initiation.",
+          "recyclabilityNotes": "Mineral material recycling placeholder.",
+          "quantitySource": "exterior wall layer-set area x thickness"
+        },
+        {
+          "materialKey": "mineral_wool_placeholder",
+          "epdSource": "placeholder",
+          "sourceConfidence": "low",
+          "embodiedCarbonPlaceholder": "generic insulation kgCO2e/m2 pending EPD",
+          "reuseNotes": "Removal/reuse not assumed.",
+          "recyclabilityNotes": "Manufacturer recycling route to be confirmed.",
+          "quantitySource": "exterior wall insulation layer quantity"
+        },
+        {
+          "materialKey": "concrete_placeholder",
+          "epdSource": "placeholder",
+          "sourceConfidence": "low",
+          "embodiedCarbonPlaceholder": "generic concrete kgCO2e/m3 pending mix design",
+          "reuseNotes": "Reuse unlikely; design for aggregate recycling noted.",
+          "recyclabilityNotes": "Crushed aggregate recycling placeholder.",
+          "quantitySource": "slab layer-set volume"
+        },
+        {
+          "materialKey": "screed_placeholder",
+          "epdSource": "placeholder",
+          "sourceConfidence": "low",
+          "embodiedCarbonPlaceholder": "generic screed kgCO2e/m2 pending product",
+          "reuseNotes": "No reuse assumed.",
+          "recyclabilityNotes": "Mineral recycling placeholder.",
+          "quantitySource": "slab finish layer quantity"
+        },
+        {
+          "materialKey": "timber_roof_placeholder",
+          "epdSource": "placeholder",
+          "sourceConfidence": "low",
+          "embodiedCarbonPlaceholder": "generic timber kgCO2e/m3 pending species and supplier",
+          "reuseNotes": "Potential disassembly/reuse to be reviewed.",
+          "recyclabilityNotes": "Biogenic storage and end-of-life route placeholder.",
+          "quantitySource": "roof structural layer volume"
+        },
+        {
+          "materialKey": "roof_insulation_placeholder",
+          "epdSource": "placeholder",
+          "sourceConfidence": "low",
+          "embodiedCarbonPlaceholder": "generic roof insulation kgCO2e/m2 pending EPD",
+          "reuseNotes": "Removal/reuse not assumed.",
+          "recyclabilityNotes": "Manufacturer recycling route to be confirmed.",
+          "quantitySource": "roof insulation layer quantity"
+        }
+      ]
     },
     "dataQualityChecks": [
       {

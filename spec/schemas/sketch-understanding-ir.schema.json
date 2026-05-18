@@ -130,6 +130,9 @@
             }
           }
         },
+        "structureLiteRequirements": { "$ref": "#/$defs/structureLiteRequirements" },
+        "mepLiteRequirements": { "$ref": "#/$defs/mepLiteRequirements" },
+        "planningSiteRequirements": { "$ref": "#/$defs/planningSiteRequirements" },
         "schedules": { "type": "array", "minItems": 1 },
         "exportRequirements": {
           "type": "object",
@@ -141,6 +144,9 @@
               "items": { "type": "string", "minLength": 1 }
             }
           }
+        },
+        "sustainabilityMaterialPassportRequirements": {
+          "$ref": "#/$defs/sustainabilityMaterialPassportRequirements"
         },
         "dataQualityChecks": { "type": "array", "minItems": 1 }
       }
@@ -238,7 +244,75 @@
       "properties": {
         "function": { "type": "string", "minLength": 1 },
         "materialKey": { "type": "string", "minLength": 1 },
-        "thicknessMm": { "type": "number", "exclusiveMinimum": 0 }
+        "thicknessMm": { "type": "number", "exclusiveMinimum": 0 },
+        "materialPassport": { "$ref": "#/$defs/materialPassportEntry" }
+      }
+    },
+    "structureLiteRequirements": {
+      "type": "object",
+      "additionalProperties": true,
+      "properties": {
+        "loadBearingFlags": { "type": "array", "minItems": 1 },
+        "primarySupportAssumptions": { "type": "array", "minItems": 1 },
+        "supportElementPlaceholders": { "type": "array", "minItems": 1 },
+        "openingCoordination": { "type": "array", "minItems": 1 },
+        "loadPathNotes": { "type": "array", "minItems": 1 }
+      }
+    },
+    "mepLiteRequirements": {
+      "type": "object",
+      "additionalProperties": true,
+      "properties": {
+        "wetRoomStacking": { "type": "array", "minItems": 1 },
+        "verticalShaftsOrRisers": { "type": "array", "minItems": 1 },
+        "equipmentZones": { "type": "array", "minItems": 1 },
+        "routePlaceholders": { "type": "array", "minItems": 1 },
+        "serviceLevels": { "type": "array", "minItems": 1 },
+        "openingRequests": { "type": "array", "minItems": 1 }
+      }
+    },
+    "planningSiteRequirements": {
+      "type": "object",
+      "additionalProperties": true,
+      "properties": {
+        "orientationAssumption": { "type": "string", "minLength": 1 },
+        "basePointAssumption": { "type": "string", "minLength": 1 },
+        "surveyPointAssumption": { "type": "string", "minLength": 1 },
+        "propertyLineSetbackAvailability": { "type": "string", "minLength": 1 },
+        "sunAssumptions": { "type": "string", "minLength": 1 },
+        "codeLocale": { "type": "string", "minLength": 1 }
+      }
+    },
+    "sustainabilityMaterialPassportRequirements": {
+      "type": "object",
+      "additionalProperties": true,
+      "properties": {
+        "materials": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "#/$defs/materialPassportEntry" }
+        }
+      }
+    },
+    "materialPassportEntry": {
+      "type": "object",
+      "required": [
+        "materialKey",
+        "epdSource",
+        "sourceConfidence",
+        "embodiedCarbonPlaceholder",
+        "reuseNotes",
+        "recyclabilityNotes",
+        "quantitySource"
+      ],
+      "properties": {
+        "materialKey": { "type": "string", "minLength": 1 },
+        "epdSource": { "type": "string", "minLength": 1 },
+        "sourceConfidence": { "type": "string", "minLength": 1 },
+        "embodiedCarbonPlaceholder": { "type": "string", "minLength": 1 },
+        "reuseNotes": { "type": "string", "minLength": 1 },
+        "recyclabilityNotes": { "type": "string", "minLength": 1 },
+        "quantitySource": { "type": "string", "minLength": 1 }
       }
     }
   }
