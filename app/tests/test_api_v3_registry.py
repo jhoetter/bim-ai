@@ -49,6 +49,16 @@ EXPECTED_M3K_VERTICAL_CIRCULATION_TOOLS = {
     "author.railing",
 }
 
+EXPECTED_M4B_STRUCTURE_CONSTRUCTION_TOOLS = {
+    "structure.column",
+    "structure.beam",
+    "structure.column_update",
+    "structure.constraint",
+    "construction.package",
+    "construction.logistics",
+    "construction.qa_checklist",
+}
+
 VALID_CATEGORIES = {"query", "mutation", "transform", "job", "introspection"}
 VALID_SIDE_EFFECTS = {"none", "mutates-kernel", "enqueues-job", "writes-audit"}
 VALID_REST_METHODS = {"GET", "POST"}
@@ -254,6 +264,35 @@ class TestToolRegistry:
         assert shaft.inputSchema["properties"]["isShaft"]["const"] is True
         assert railing.kernelCommands == ["createRailing"]
         assert "pathMm" in railing.inputSchema["required"]
+
+    def test_m4b_structure_construction_tools_are_first_class_descriptors(self):
+        names = {tool.name for tool in get_catalog().tools}
+        assert EXPECTED_M4B_STRUCTURE_CONSTRUCTION_TOOLS <= names
+
+        column = get_descriptor("structure.column")
+        beam = get_descriptor("structure.beam")
+        constraint = get_descriptor("structure.constraint")
+        package = get_descriptor("construction.package")
+        logistics = get_descriptor("construction.logistics")
+        checklist = get_descriptor("construction.qa_checklist")
+        assert column is not None
+        assert beam is not None
+        assert constraint is not None
+        assert package is not None
+        assert logistics is not None
+        assert checklist is not None
+        assert column.restEndpoint.path == "/api/semantic-authoring/{surface_id}"
+        assert column.kernelCommands == ["createColumn"]
+        assert beam.kernelCommands == ["createBeam"]
+        assert constraint.kernelCommands == ["createConstraint"]
+        assert package.kernelCommands == ["createConstructionPackage"]
+        assert logistics.kernelCommands == ["createConstructionLogistics"]
+        assert checklist.kernelCommands == ["upsertConstructionQaChecklist"]
+        assert {"semantic-authoring", "structure"} <= set(column.resourceGroups)
+        assert {"semantic-authoring", "construction"} <= set(package.resourceGroups)
+        assert column.inputSchema["required"] == ["levelId", "positionMm"]
+        assert beam.inputSchema["required"] == ["levelId", "startMm", "endMm"]
+        assert logistics.inputSchema["required"] == ["name", "logisticsKind"]
 
     @pytest.mark.parametrize(
         ("name", "path"),

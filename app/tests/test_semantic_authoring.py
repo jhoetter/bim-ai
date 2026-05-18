@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+import json
+from pathlib import Path
+
 import pytest
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
@@ -264,6 +267,102 @@ def test_vertical_circulation_opening_and_railing_command_shapes() -> None:
     assert railing.commands[0]["balusterPattern"] == {"rule": "regular", "spacingMm": 120.0}
 
 
+def test_structure_and_construction_lite_command_shapes() -> None:
+    column = build_semantic_authoring_bundle(
+        "structure_column",
+        {
+            "id": "col-s1",
+            "levelId": "level-1",
+            "positionMm": {"xMm": 1200, "yMm": 2400},
+            "bMm": 350,
+            "hMm": 450,
+            "materialKey": "concrete_cast_in_place",
+        },
+    )
+    beam = build_semantic_authoring_bundle(
+        "structure_beam",
+        {
+            "id": "beam-s1",
+            "levelId": "level-1",
+            "startMm": {"xMm": 0, "yMm": 5000},
+            "endMm": {"xMm": 6000, "yMm": 5000},
+            "widthMm": 220,
+            "heightMm": 500,
+        },
+    )
+    column_update = build_semantic_authoring_bundle(
+        "structure_column_update", {"id": "col-s1", "bMm": 400}
+    )
+    constraint = build_semantic_authoring_bundle(
+        "structure_constraint",
+        {
+            "id": "constraint-grid-a",
+            "rule": "parallel",
+            "refsA": [{"elementId": "beam-s1", "anchor": "start"}],
+            "refsB": [{"elementId": "beam-s2", "anchor": "start"}],
+        },
+    )
+    package = build_semantic_authoring_bundle(
+        "construction_package",
+        {"id": "pkg-structure", "name": "Structure shell", "code": "S-001"},
+    )
+    logistics = build_semantic_authoring_bundle(
+        "construction_logistics",
+        {
+            "id": "log-crane",
+            "name": "Tower crane swing",
+            "logisticsKind": "crane_zone",
+            "boundaryMm": _RECT_POINTS,
+            "constructionPackageId": "pkg-structure",
+        },
+    )
+    checklist = build_semantic_authoring_bundle(
+        "construction_qa_checklist",
+        {
+            "id": "qa-structure",
+            "name": "Structure pour QA",
+            "targetElementIds": ["col-s1", "beam-s1"],
+            "constructionPackageId": "pkg-structure",
+            "checklist": [{"id": "rebar", "label": "Rebar inspected"}],
+        },
+    )
+
+    assert column.metadata["kernelCommandTypes"] == ["createColumn"]
+    assert column.commands[0]["positionMm"] == {"xMm": 1200.0, "yMm": 2400.0}
+    assert beam.metadata["kernelCommandTypes"] == ["createBeam"]
+    assert beam.commands[0]["heightMm"] == 500.0
+    assert column_update.metadata["kernelCommandTypes"] == ["updateColumn"]
+    assert column_update.commands[0] == {"type": "updateColumn", "id": "col-s1", "bMm": 400.0}
+    assert constraint.metadata["kernelCommandTypes"] == ["createConstraint"]
+    assert constraint.commands[0]["refsA"][0]["elementId"] == "beam-s1"
+    assert package.metadata["kernelCommandTypes"] == ["createConstructionPackage"]
+    assert package.commands[0]["code"] == "S-001"
+    assert logistics.metadata["kernelCommandTypes"] == ["createConstructionLogistics"]
+    assert logistics.commands[0]["boundaryMm"][0] == {"xMm": 0.0, "yMm": 0.0}
+    assert checklist.metadata["kernelCommandTypes"] == ["upsertConstructionQaChecklist"]
+    assert checklist.commands[0]["targetElementIds"] == ["col-s1", "beam-s1"]
+
+
+def test_m4b_structure_construction_fixture_maps_honest_ui_cmdk_coverage() -> None:
+    fixture_path = (
+        Path(__file__).parent / "fixtures" / "m4b_structure_construction_lite_authoring.json"
+    )
+    fixture = json.loads(fixture_path.read_text())
+
+    assert fixture["fixture"] == "m4b_structure_construction_lite_authoring_v1"
+    assert "Activator/lens coverage only" in fixture["uiCmdKCoverage"]["structure"]["cmdK"]
+    assert "MCP/CLI first-class" in fixture["uiCmdKCoverage"]["construction"]["cmdK"]
+    assert {row["tool"] for row in fixture["semanticSurfaces"]} == {
+        "structure.column",
+        "structure.beam",
+        "structure.column_update",
+        "structure.constraint",
+        "construction.package",
+        "construction.logistics",
+        "construction.qa_checklist",
+    }
+
+
 def test_roof_opening_generates_valid_create_roof_opening() -> None:
     bundle = build_semantic_authoring_bundle(
         "roof_opening",
@@ -370,6 +469,14 @@ def test_semantic_authoring_route_accepts_first_pack_surface_ids() -> None:
             "pathMm": [{"xMm": 0, "yMm": 0}, {"xMm": 0, "yMm": 4000}],
         },
     )
+    column = client.post(
+        "/api/semantic-authoring/structure.column",
+        json={"levelId": "level-1", "positionMm": {"xMm": 0, "yMm": 0}},
+    )
+    package = client.post(
+        "/api/semantic-authoring/construction.package",
+        json={"name": "Structure shell"},
+    )
 
     assert wall.status_code == 200
     assert wall.json()["commands"][0]["type"] == "createWall"
@@ -381,6 +488,10 @@ def test_semantic_authoring_route_accepts_first_pack_surface_ids() -> None:
     assert shaft.json()["commands"][0]["isShaft"] is True
     assert railing.status_code == 200
     assert railing.json()["commands"][0]["type"] == "createRailing"
+    assert column.status_code == 200
+    assert column.json()["commands"][0]["type"] == "createColumn"
+    assert package.status_code == 200
+    assert package.json()["commands"][0]["type"] == "createConstructionPackage"
 
 
 def test_command_bundle_payload_is_cmd_v3_dry_run_ready() -> None:
@@ -478,6 +589,25 @@ def test_validation_errors_are_explicit_for_bad_payloads() -> None:
                     {"xMm": 0, "yMm": 0},
                 ],
             },
+        )
+
+    with pytest.raises(ValidationError, match="startMm and endMm must differ"):
+        build_semantic_authoring_bundle(
+            "structure_beam",
+            {
+                "levelId": "level-1",
+                "startMm": {"xMm": 0, "yMm": 0},
+                "endMm": {"xMm": 0, "yMm": 0},
+            },
+        )
+
+    with pytest.raises(ValidationError, match="requires bMm or hMm"):
+        build_semantic_authoring_bundle("structure_column_update", {"id": "col-s1"})
+
+    with pytest.raises(ValidationError, match="requires boundaryMm or pathMm"):
+        build_semantic_authoring_bundle(
+            "construction_logistics",
+            {"name": "Laydown", "logisticsKind": "laydown_area"},
         )
 
 

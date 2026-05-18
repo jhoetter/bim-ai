@@ -1245,6 +1245,192 @@ async function cmdOpening(modelId, userId, sub, args) {
   await runGeneratedBundle(modelId, userId, bundle, opts.mode, opts.jsonOnly);
 }
 
+async function cmdStructure(modelId, userId, sub, args) {
+  const opts = authorOptions(args);
+  let command;
+  let toolId;
+  if (sub === 'column') {
+    const levelId = flagValue(args, '--level');
+    if (!levelId) {
+      console.error('structure column requires --level <id>.');
+      process.exit(1);
+    }
+    command = {
+      type: 'createColumn',
+      levelId,
+      positionMm: point2FromPair(flagValue(args, ['--position', '--point'])),
+      name: flagValue(args, '--name') ?? 'Column',
+      bMm: parseNumber(flagValue(args, '--b'), 300),
+      hMm: parseNumber(flagValue(args, '--h'), 300),
+      heightMm: parseNumber(flagValue(args, '--height'), 2800),
+      rotationDeg: parseNumber(flagValue(args, '--rotation'), 0),
+    };
+    const id = flagValue(args, '--id');
+    const materialKey = flagValue(args, '--material-key');
+    if (id) command.id = id;
+    if (materialKey) command.materialKey = materialKey;
+    toolId = 'structure.column';
+  } else if (sub === 'beam') {
+    const levelId = flagValue(args, '--level');
+    const line = parsePoint2List(flagValue(args, ['--line', '--points']), '--line');
+    if (!levelId) {
+      console.error('structure beam requires --level <id>.');
+      process.exit(1);
+    }
+    if (line.length !== 2) {
+      console.error('structure beam requires --line "x,y;x,y".');
+      process.exit(1);
+    }
+    command = {
+      type: 'createBeam',
+      levelId,
+      startMm: line[0],
+      endMm: line[1],
+      name: flagValue(args, '--name') ?? 'Beam',
+      widthMm: parseNumber(flagValue(args, '--width'), 200),
+      heightMm: parseNumber(flagValue(args, '--height'), 400),
+    };
+    const id = flagValue(args, '--id');
+    const materialKey = flagValue(args, '--material-key');
+    if (id) command.id = id;
+    if (materialKey) command.materialKey = materialKey;
+    toolId = 'structure.beam';
+  } else if (sub === 'column-update') {
+    const id = flagValue(args, '--id');
+    if (!id) {
+      console.error('structure column-update requires --id <column-id>.');
+      process.exit(1);
+    }
+    command = { type: 'updateColumn', id };
+    const bMm = parseNumber(flagValue(args, '--b'), undefined);
+    const hMm = parseNumber(flagValue(args, '--h'), undefined);
+    if (Number.isFinite(bMm)) command.bMm = bMm;
+    if (Number.isFinite(hMm)) command.hMm = hMm;
+    if (!Number.isFinite(bMm) && !Number.isFinite(hMm)) {
+      console.error('structure column-update requires --b or --h.');
+      process.exit(1);
+    }
+    toolId = 'structure.column_update';
+  } else if (sub === 'constraint') {
+    command = {
+      type: 'createConstraint',
+      rule: flagValue(args, '--rule') ?? 'equal_distance',
+      refsA: parseJsonArrayFlag(flagValue(args, '--refs-a'), '--refs-a'),
+      refsB: parseJsonArrayFlag(flagValue(args, '--refs-b'), '--refs-b'),
+      name: flagValue(args, '--name') ?? '',
+      severity: flagValue(args, '--severity') ?? 'error',
+    };
+    const id = flagValue(args, '--id');
+    const lockedValueMm = parseNumber(flagValue(args, '--locked-value'), undefined);
+    if (id) command.id = id;
+    if (Number.isFinite(lockedValueMm)) command.lockedValueMm = lockedValueMm;
+    toolId = 'structure.constraint';
+  } else {
+    console.error(
+      `Unknown structure subcommand: ${sub ?? '(none)'}. Use column | beam | column-update | constraint.`,
+    );
+    process.exit(1);
+  }
+  const bundle = buildGeneratedBundle({
+    toolId,
+    commands: [command],
+    parentRevision: opts.parentRevision,
+  });
+  await runGeneratedBundle(modelId, userId, bundle, opts.mode, opts.jsonOnly);
+}
+
+async function cmdConstruction(modelId, userId, sub, args) {
+  const opts = authorOptions(args);
+  let command;
+  let toolId;
+  if (sub === 'package') {
+    const name = flagValue(args, '--name');
+    if (!name) {
+      console.error('construction package requires --name <name>.');
+      process.exit(1);
+    }
+    command = { type: 'createConstructionPackage', name };
+    const id = flagValue(args, '--id');
+    const code = flagValue(args, '--code');
+    const phaseId = flagValue(args, '--phase');
+    const responsibleCompany = flagValue(args, '--responsible-company');
+    if (id) command.id = id;
+    if (code) command.code = code;
+    if (phaseId) command.phaseId = phaseId;
+    if (responsibleCompany) command.responsibleCompany = responsibleCompany;
+    const plannedStart = flagValue(args, '--planned-start');
+    const plannedEnd = flagValue(args, '--planned-end');
+    if (plannedStart) command.plannedStart = plannedStart;
+    if (plannedEnd) command.plannedEnd = plannedEnd;
+    const dependencies = parseCsv(flagValue(args, '--dependencies'));
+    if (dependencies.length) command.dependencies = dependencies;
+    toolId = 'construction.package';
+  } else if (sub === 'logistics') {
+    const name = flagValue(args, '--name');
+    const logisticsKind = flagValue(args, '--kind');
+    if (!name || !logisticsKind) {
+      console.error('construction logistics requires --name <name> --kind <kind>.');
+      process.exit(1);
+    }
+    command = {
+      type: 'createConstructionLogistics',
+      name,
+      logisticsKind,
+      boundaryMm: flagValue(args, '--boundary')
+        ? parsePoint2List(flagValue(args, '--boundary'), '--boundary')
+        : [],
+      pathMm: flagValue(args, '--path') ? parsePoint2List(flagValue(args, '--path'), '--path') : [],
+      progressStatus: flagValue(args, '--progress-status') ?? 'not_started',
+    };
+    if (!command.boundaryMm.length && !command.pathMm.length) {
+      console.error('construction logistics requires --boundary or --path.');
+      process.exit(1);
+    }
+    const id = flagValue(args, '--id');
+    const phaseId = flagValue(args, '--phase');
+    const constructionPackageId = flagValue(args, ['--package', '--package-id']);
+    const responsibleCompany = flagValue(args, '--responsible-company');
+    if (id) command.id = id;
+    if (phaseId) command.phaseId = phaseId;
+    if (constructionPackageId) command.constructionPackageId = constructionPackageId;
+    if (responsibleCompany) command.responsibleCompany = responsibleCompany;
+    toolId = 'construction.logistics';
+  } else if (sub === 'qa-checklist') {
+    const name = flagValue(args, '--name');
+    if (!name) {
+      console.error('construction qa-checklist requires --name <name>.');
+      process.exit(1);
+    }
+    command = {
+      type: 'upsertConstructionQaChecklist',
+      name,
+      targetElementIds: parseCsv(flagValue(args, '--targets')),
+      checklist: parseJsonArrayFlag(flagValue(args, '--checklist'), '--checklist'),
+      progressStatus: flagValue(args, '--progress-status') ?? 'not_started',
+    };
+    const id = flagValue(args, '--id');
+    const phaseId = flagValue(args, '--phase');
+    const constructionPackageId = flagValue(args, ['--package', '--package-id']);
+    const responsibleCompany = flagValue(args, '--responsible-company');
+    if (id) command.id = id;
+    if (phaseId) command.phaseId = phaseId;
+    if (constructionPackageId) command.constructionPackageId = constructionPackageId;
+    if (responsibleCompany) command.responsibleCompany = responsibleCompany;
+    toolId = 'construction.qa_checklist';
+  } else {
+    console.error(
+      `Unknown construction subcommand: ${sub ?? '(none)'}. Use package | logistics | qa-checklist.`,
+    );
+    process.exit(1);
+  }
+  const bundle = buildGeneratedBundle({
+    toolId,
+    commands: [command],
+    parentRevision: opts.parentRevision,
+  });
+  await runGeneratedBundle(modelId, userId, bundle, opts.mode, opts.jsonOnly);
+}
+
 async function postCommand(modelId, userId, command) {
   const json = await fetchJson(
     'POST',
@@ -2810,6 +2996,10 @@ Commands:
                                       MCP-M3-K: generate typed createRailing cmd-v3 bundle.
   opening door-on-wall|window-on-wall|wall-opening|roof-opening|slab-opening|shaft-opening ...
                                       MCP-M2/M3-K: generate hosted/opening cmd-v3 bundles.
+  structure column|beam|column-update|constraint ...
+                                      MCP-M4-B: generate structure typed cmd-v3 bundles.
+  construction package|logistics|qa-checklist ...
+                                      MCP-M4-B: generate construction-lite typed cmd-v3 bundles.
   view save-3d [--id <id>] [--name <n>] [--camera <json>] [--dry-run|--commit|--json]
                                       MCP-M2-H: generate saveViewpoint cmd-v3 bundle.
   qa advisor [--output json] [--severity info|warning|error]
@@ -3521,6 +3711,16 @@ async function main() {
 
     if (cmd === 'opening') {
       await cmdOpening(modelId, userId, argv[1], argv.slice(2));
+      return;
+    }
+
+    if (cmd === 'structure') {
+      await cmdStructure(modelId, userId, argv[1], argv.slice(2));
+      return;
+    }
+
+    if (cmd === 'construction') {
+      await cmdConstruction(modelId, userId, argv[1], argv.slice(2));
       return;
     }
 

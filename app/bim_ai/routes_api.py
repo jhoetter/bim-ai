@@ -1427,6 +1427,13 @@ _SEMANTIC_SURFACE_ALIASES = {
     "opening.shaft_opening": "shaft_opening",
     "author.stair_between_levels": "stair_between_levels",
     "author.railing": "railing",
+    "structure.column": "structure_column",
+    "structure.beam": "structure_beam",
+    "structure.column_update": "structure_column_update",
+    "structure.constraint": "structure_constraint",
+    "construction.package": "construction_package",
+    "construction.logistics": "construction_logistics",
+    "construction.qa_checklist": "construction_qa_checklist",
     "view.save_3d": "save_3d_view",
     "view.plan": "plan_view",
 }

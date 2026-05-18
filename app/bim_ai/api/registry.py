@@ -53,6 +53,13 @@ _KERNEL_COMMANDS_BY_TOOL: dict[str, tuple[str, ...]] = {
     "opening.slab_opening": ("createSlabOpening",),
     "opening.shaft_opening": ("createSlabOpening",),
     "author.railing": ("createRailing",),
+    "structure.column": ("createColumn",),
+    "structure.beam": ("createBeam",),
+    "structure.column_update": ("updateColumn",),
+    "structure.constraint": ("createConstraint",),
+    "construction.package": ("createConstructionPackage",),
+    "construction.logistics": ("createConstructionLogistics",),
+    "construction.qa_checklist": ("upsertConstructionQaChecklist",),
     "set-element-prop": ("set_element_prop",),
     "update-stair-treads": ("update_stair_treads",),
     "place-kitchen-kit": ("place_kit",),
@@ -825,6 +832,161 @@ _SLAB_OPENING_INPUT_SCHEMA: dict[str, Any] = {
     },
     "additionalProperties": False,
 }
+
+_STRUCTURE_CONSTRUCTION_SCHEMAS: dict[str, dict[str, Any]] = {
+    "structure.column": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "title": "StructureColumnInput",
+        "type": "object",
+        "required": ["levelId", "positionMm"],
+        "properties": {
+            "id": {"type": "string"},
+            "name": {"type": "string"},
+            "levelId": {"type": "string"},
+            "positionMm": _POINT_2_SCHEMA,
+            "bMm": {"type": "number", "exclusiveMinimum": 0, "default": 300},
+            "hMm": {"type": "number", "exclusiveMinimum": 0, "default": 300},
+            "heightMm": {"type": "number", "exclusiveMinimum": 0, "default": 2800},
+            "rotationDeg": {"type": "number", "default": 0},
+            "materialKey": {"type": "string"},
+        },
+        "additionalProperties": False,
+    },
+    "structure.beam": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "title": "StructureBeamInput",
+        "type": "object",
+        "required": ["levelId", "startMm", "endMm"],
+        "properties": {
+            "id": {"type": "string"},
+            "name": {"type": "string"},
+            "levelId": {"type": "string"},
+            "startMm": _POINT_2_SCHEMA,
+            "endMm": _POINT_2_SCHEMA,
+            "widthMm": {"type": "number", "exclusiveMinimum": 0, "default": 200},
+            "heightMm": {"type": "number", "exclusiveMinimum": 0, "default": 400},
+            "materialKey": {"type": "string"},
+        },
+        "additionalProperties": False,
+    },
+    "structure.column_update": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "title": "StructureColumnUpdateInput",
+        "type": "object",
+        "required": ["id"],
+        "properties": {
+            "id": {"type": "string"},
+            "bMm": {"type": "number", "exclusiveMinimum": 0},
+            "hMm": {"type": "number", "exclusiveMinimum": 0},
+        },
+        "additionalProperties": False,
+    },
+    "structure.constraint": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "title": "StructureConstraintInput",
+        "type": "object",
+        "required": ["rule", "refsA", "refsB"],
+        "properties": {
+            "id": {"type": "string"},
+            "name": {"type": "string"},
+            "rule": {
+                "type": "string",
+                "enum": ["equal_distance", "equal_length", "parallel", "perpendicular", "collinear"],
+            },
+            "refsA": {"type": "array", "minItems": 1, "items": {"type": "object"}},
+            "refsB": {"type": "array", "minItems": 1, "items": {"type": "object"}},
+            "lockedValueMm": {"type": "number"},
+            "severity": {"type": "string", "enum": ["warning", "error"], "default": "error"},
+        },
+        "additionalProperties": False,
+    },
+    "construction.package": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "title": "ConstructionPackageInput",
+        "type": "object",
+        "required": ["name"],
+        "properties": {
+            "id": {"type": "string"},
+            "name": {"type": "string"},
+            "code": {"type": "string"},
+            "phaseId": {"type": "string"},
+            "plannedStart": {"type": "string"},
+            "plannedEnd": {"type": "string"},
+            "actualStart": {"type": "string"},
+            "actualEnd": {"type": "string"},
+            "responsibleCompany": {"type": "string"},
+            "dependencies": {"type": "array", "items": {"type": "string"}},
+        },
+        "additionalProperties": False,
+    },
+    "construction.logistics": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "title": "ConstructionLogisticsInput",
+        "type": "object",
+        "required": ["name", "logisticsKind"],
+        "properties": {
+            "id": {"type": "string"},
+            "name": {"type": "string"},
+            "logisticsKind": {"type": "string"},
+            "boundaryMm": {"type": "array", "minItems": 3, "items": _POINT_2_SCHEMA},
+            "pathMm": {"type": "array", "minItems": 2, "items": _POINT_2_SCHEMA},
+            "phaseId": {"type": "string"},
+            "constructionPackageId": {"type": "string"},
+            "plannedStart": {"type": "string"},
+            "plannedEnd": {"type": "string"},
+            "progressStatus": {"type": "string"},
+            "responsibleCompany": {"type": "string"},
+        },
+        "additionalProperties": False,
+    },
+    "construction.qa_checklist": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "title": "ConstructionQaChecklistInput",
+        "type": "object",
+        "required": ["name"],
+        "properties": {
+            "id": {"type": "string"},
+            "name": {"type": "string"},
+            "targetElementIds": {"type": "array", "items": {"type": "string"}},
+            "constructionPackageId": {"type": "string"},
+            "phaseId": {"type": "string"},
+            "responsibleCompany": {"type": "string"},
+            "progressStatus": {"type": "string"},
+            "checklist": {"type": "array", "items": {"type": "object"}},
+        },
+        "additionalProperties": False,
+    },
+}
+
+for _tool_name, _schema in _STRUCTURE_CONSTRUCTION_SCHEMAS.items():
+    _group = "structure" if _tool_name.startswith("structure.") else "construction"
+    register(
+        ToolDescriptor(
+            name=_tool_name,
+            category="mutation",
+            inputSchema=_schema,
+            outputSchema=_CMD_V3_BUNDLE_OUTPUT_SCHEMA,
+            exitCodes={
+                "ok": ExitCode(code=0, meaning="Typed semantic authoring bundle generated"),
+                "invalid": ExitCode(code=422, meaning="Invalid semantic authoring payload"),
+            },
+            cliExample=f"bim-ai {_group} {_tool_name.split('.', 1)[1].replace('_', '-')} --json",
+            restEndpoint=RestEndpoint(method="POST", path="/api/semantic-authoring/{surface_id}"),
+            sideEffects="mutates-kernel",
+            agentSafetyNotes=(
+                "Generates typed kernel commands only; submit through model.dry_run or "
+                "model.commit_bundle for revision, permission, and advisor checks."
+            ),
+            schemaRefs=[f"input:{_schema['title']}", "output:SemanticAuthoringBundle"],
+            exampleRefs=[f"cli:{_group}:{_tool_name.split('.', 1)[1]}"],
+            resourceGroups=["semantic-authoring", _group, "kernel-command"],
+            uiFeatures=(
+                ["tool:structure", "cmd-k:structure-lens"]
+                if _group == "structure"
+                else ["lens:construction", "cmd-k:construction-lens"]
+            ),
+        )
+    )
 
 register(
     ToolDescriptor(

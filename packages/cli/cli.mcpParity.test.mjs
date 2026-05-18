@@ -233,6 +233,138 @@ test('author wall --json generates deterministic createWall payload', async () =
   assert.equal(command.heightMm, 3000);
 });
 
+test('structure column and beam --json generate typed structural payloads', async () => {
+  const env = { BIM_AI_BASE_URL: 'http://127.0.0.1:1', BIM_AI_MODEL_ID: 'model-1' };
+  const column = await runCli(
+    [
+      'structure',
+      'column',
+      '--level',
+      'lvl-0',
+      '--position',
+      '1200,2400',
+      '--id',
+      'col-s1',
+      '--b',
+      '350',
+      '--h',
+      '450',
+      '--json',
+    ],
+    env,
+  );
+  const beam = await runCli(
+    [
+      'structure',
+      'beam',
+      '--level',
+      'lvl-0',
+      '--line',
+      '0,5000;6000,5000',
+      '--id',
+      'beam-s1',
+      '--width',
+      '220',
+      '--height',
+      '500',
+      '--json',
+    ],
+    env,
+  );
+
+  assert.equal(column.code, 0, column.stderr);
+  assert.equal(beam.code, 0, beam.stderr);
+  const columnOut = JSON.parse(column.stdout);
+  const beamOut = JSON.parse(beam.stdout);
+  assert.equal(columnOut.body.bundle.assumptions[0].value, 'structure.column');
+  assert.deepEqual(columnOut.body.bundle.commands[0], {
+    type: 'createColumn',
+    levelId: 'lvl-0',
+    positionMm: { xMm: 1200, yMm: 2400 },
+    name: 'Column',
+    bMm: 350,
+    hMm: 450,
+    heightMm: 2800,
+    rotationDeg: 0,
+    id: 'col-s1',
+  });
+  assert.equal(beamOut.body.bundle.commands[0].type, 'createBeam');
+  assert.deepEqual(beamOut.body.bundle.commands[0].startMm, { xMm: 0, yMm: 5000 });
+  assert.deepEqual(beamOut.body.bundle.commands[0].endMm, { xMm: 6000, yMm: 5000 });
+  assert.equal(beamOut.body.bundle.commands[0].heightMm, 500);
+});
+
+test('structure constraint and construction lite --json generate typed payloads', async () => {
+  const env = { BIM_AI_BASE_URL: 'http://127.0.0.1:1', BIM_AI_MODEL_ID: 'model-1' };
+  const constraint = await runCli(
+    [
+      'structure',
+      'constraint',
+      '--rule',
+      'parallel',
+      '--refs-a',
+      '[{"elementId":"beam-s1","anchor":"start"}]',
+      '--refs-b',
+      '[{"elementId":"beam-s2","anchor":"start"}]',
+      '--json',
+    ],
+    env,
+  );
+  const pack = await runCli(
+    ['construction', 'package', '--id', 'pkg-structure', '--name', 'Structure shell', '--json'],
+    env,
+  );
+  const logistics = await runCli(
+    [
+      'construction',
+      'logistics',
+      '--id',
+      'log-crane',
+      '--name',
+      'Tower crane swing',
+      '--kind',
+      'crane_zone',
+      '--boundary',
+      '0,0;8000,0;8000,5000;0,5000',
+      '--package',
+      'pkg-structure',
+      '--json',
+    ],
+    env,
+  );
+  const checklist = await runCli(
+    [
+      'construction',
+      'qa-checklist',
+      '--id',
+      'qa-structure',
+      '--name',
+      'Structure pour QA',
+      '--targets',
+      'col-s1,beam-s1',
+      '--checklist',
+      '[{"id":"rebar","label":"Rebar inspected"}]',
+      '--json',
+    ],
+    env,
+  );
+
+  assert.equal(constraint.code, 0, constraint.stderr);
+  assert.equal(pack.code, 0, pack.stderr);
+  assert.equal(logistics.code, 0, logistics.stderr);
+  assert.equal(checklist.code, 0, checklist.stderr);
+  assert.equal(JSON.parse(constraint.stdout).body.bundle.commands[0].type, 'createConstraint');
+  assert.equal(JSON.parse(pack.stdout).body.bundle.commands[0].type, 'createConstructionPackage');
+  assert.equal(
+    JSON.parse(logistics.stdout).body.bundle.commands[0].type,
+    'createConstructionLogistics',
+  );
+  assert.deepEqual(JSON.parse(checklist.stdout).body.bundle.commands[0].targetElementIds, [
+    'col-s1',
+    'beam-s1',
+  ]);
+});
+
 test('author stair-between-levels --json generates typed createStair payload', async () => {
   const res = await runCli(
     [

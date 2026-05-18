@@ -15,6 +15,11 @@ from pydantic import BaseModel, ConfigDict, Field, TypeAdapter, field_validator,
 from bim_ai.cmd.types import AssumptionEntry, CommandBundle
 from bim_ai.commands import (
     Command,
+    CreateBeamCmd,
+    CreateColumnCmd,
+    CreateConstraintCmd,
+    CreateConstructionLogisticsCmd,
+    CreateConstructionPackageCmd,
     CreateFloorCmd,
     CreateRailingCmd,
     CreateRoofCmd,
@@ -28,6 +33,8 @@ from bim_ai.commands import (
     InsertDoorOnWallCmd,
     InsertWindowOnWallCmd,
     SaveViewpointCmd,
+    UpdateColumnCmd,
+    UpsertConstructionQaChecklistCmd,
     UpsertPlanViewCmd,
     UpsertSheetCmd,
     UpsertSheetViewportsCmd,
@@ -48,6 +55,13 @@ SemanticOperation = Literal[
     "slab_opening",
     "shaft_opening",
     "railing",
+    "structure_column",
+    "structure_beam",
+    "structure_column_update",
+    "structure_constraint",
+    "construction_package",
+    "construction_logistics",
+    "construction_qa_checklist",
     "save_3d_view",
     "plan_view",
     "sheet_with_viewports",
@@ -68,6 +82,13 @@ SUPPORTED_OPERATIONS: tuple[str, ...] = (
     "slab_opening",
     "shaft_opening",
     "railing",
+    "structure_column",
+    "structure_beam",
+    "structure_column_update",
+    "structure_constraint",
+    "construction_package",
+    "construction_logistics",
+    "construction_qa_checklist",
     "save_3d_view",
     "plan_view",
     "sheet_with_viewports",
@@ -393,6 +414,120 @@ class RailingPayload(BaseModel):
         return self
 
 
+class StructureColumnPayload(BaseModel):
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+
+    id: str | None = None
+    name: str = "Column"
+    level_id: str = Field(alias="levelId", min_length=1)
+    position_mm: Point2 = Field(alias="positionMm")
+    b_mm: float = Field(default=300, alias="bMm", gt=0)
+    h_mm: float = Field(default=300, alias="hMm", gt=0)
+    height_mm: float = Field(default=2800, alias="heightMm", gt=0)
+    rotation_deg: float = Field(default=0, alias="rotationDeg")
+    material_key: str | None = Field(default=None, alias="materialKey")
+
+
+class StructureColumnUpdatePayload(BaseModel):
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+
+    id: str = Field(min_length=1)
+    b_mm: float | None = Field(default=None, alias="bMm", gt=0)
+    h_mm: float | None = Field(default=None, alias="hMm", gt=0)
+
+    @model_validator(mode="after")
+    def _has_update(self) -> StructureColumnUpdatePayload:
+        if self.b_mm is None and self.h_mm is None:
+            raise ValueError("structure_column_update requires bMm or hMm")
+        return self
+
+
+class StructureBeamPayload(BaseModel):
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+
+    id: str | None = None
+    name: str = "Beam"
+    level_id: str = Field(alias="levelId", min_length=1)
+    start_mm: Point2 = Field(alias="startMm")
+    end_mm: Point2 = Field(alias="endMm")
+    width_mm: float = Field(default=200, alias="widthMm", gt=0)
+    height_mm: float = Field(default=400, alias="heightMm", gt=0)
+    material_key: str | None = Field(default=None, alias="materialKey")
+
+    @model_validator(mode="after")
+    def _not_degenerate(self) -> StructureBeamPayload:
+        if _same_point(self.start_mm, self.end_mm):
+            raise ValueError("beam startMm and endMm must differ")
+        return self
+
+
+class StructureConstraintPayload(BaseModel):
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+
+    id: str | None = None
+    name: str = ""
+    rule: Literal["equal_distance", "equal_length", "parallel", "perpendicular", "collinear"]
+    refs_a: list[dict[str, Any]] = Field(alias="refsA", min_length=1)
+    refs_b: list[dict[str, Any]] = Field(alias="refsB", min_length=1)
+    locked_value_mm: float | None = Field(default=None, alias="lockedValueMm")
+    severity: Literal["warning", "error"] = "error"
+
+
+class ConstructionPackagePayload(BaseModel):
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+
+    id: str | None = None
+    name: str = Field(min_length=1)
+    code: str | None = None
+    phase_id: str | None = Field(default=None, alias="phaseId")
+    planned_start: str | None = Field(default=None, alias="plannedStart")
+    planned_end: str | None = Field(default=None, alias="plannedEnd")
+    actual_start: str | None = Field(default=None, alias="actualStart")
+    actual_end: str | None = Field(default=None, alias="actualEnd")
+    responsible_company: str | None = Field(default=None, alias="responsibleCompany")
+    dependencies: list[str] = Field(default_factory=list)
+
+
+class ConstructionLogisticsPayload(BaseModel):
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+
+    id: str | None = None
+    name: str = Field(min_length=1)
+    logistics_kind: str = Field(alias="logisticsKind", min_length=1)
+    boundary_mm: list[Point2] = Field(default_factory=list, alias="boundaryMm")
+    path_mm: list[Point2] = Field(default_factory=list, alias="pathMm")
+    phase_id: str | None = Field(default=None, alias="phaseId")
+    construction_package_id: str | None = Field(default=None, alias="constructionPackageId")
+    planned_start: str | None = Field(default=None, alias="plannedStart")
+    planned_end: str | None = Field(default=None, alias="plannedEnd")
+    progress_status: str = Field(default="not_started", alias="progressStatus")
+    responsible_company: str | None = Field(default=None, alias="responsibleCompany")
+
+    @model_validator(mode="after")
+    def _has_geometry(self) -> ConstructionLogisticsPayload:
+        if len(self.boundary_mm) < 3 and len(self.path_mm) < 2:
+            raise ValueError("construction_logistics requires boundaryMm or pathMm")
+        if self.boundary_mm:
+            self.boundary_mm = _normalize_polygon(self.boundary_mm)
+        for index in range(len(self.path_mm) - 1):
+            if _same_point(self.path_mm[index], self.path_mm[index + 1]):
+                raise ValueError("construction_logistics pathMm contains a zero-length segment")
+        return self
+
+
+class ConstructionQaChecklistPayload(BaseModel):
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+
+    id: str | None = None
+    name: str = Field(min_length=1)
+    target_element_ids: list[str] = Field(default_factory=list, alias="targetElementIds")
+    construction_package_id: str | None = Field(default=None, alias="constructionPackageId")
+    phase_id: str | None = Field(default=None, alias="phaseId")
+    responsible_company: str | None = Field(default=None, alias="responsibleCompany")
+    progress_status: str = Field(default="not_started", alias="progressStatus")
+    checklist: list[dict[str, Any]] = Field(default_factory=list)
+
+
 class PlanViewPayload(BaseModel):
     model_config = ConfigDict(populate_by_name=True, extra="ignore")
 
@@ -502,6 +637,22 @@ def build_semantic_authoring_bundle(
         )
     if operation == "railing":
         return railing_bundle(RailingPayload.model_validate(data))
+    if operation == "structure_column":
+        return structure_column_bundle(StructureColumnPayload.model_validate(data))
+    if operation == "structure_beam":
+        return structure_beam_bundle(StructureBeamPayload.model_validate(data))
+    if operation == "structure_column_update":
+        return structure_column_update_bundle(StructureColumnUpdatePayload.model_validate(data))
+    if operation == "structure_constraint":
+        return structure_constraint_bundle(StructureConstraintPayload.model_validate(data))
+    if operation == "construction_package":
+        return construction_package_bundle(ConstructionPackagePayload.model_validate(data))
+    if operation == "construction_logistics":
+        return construction_logistics_bundle(ConstructionLogisticsPayload.model_validate(data))
+    if operation == "construction_qa_checklist":
+        return construction_qa_checklist_bundle(
+            ConstructionQaChecklistPayload.model_validate(data)
+        )
     if operation == "save_3d_view":
         return save_3d_view_bundle(Save3dViewPayload.model_validate(data))
     if operation == "plan_view":
@@ -684,6 +835,100 @@ def railing_bundle(payload: RailingPayload) -> SemanticBundle:
         handrailSupports=payload.handrail_supports,
     )
     return _bundle("railing", [command])
+
+
+def structure_column_bundle(payload: StructureColumnPayload) -> SemanticBundle:
+    command = CreateColumnCmd(
+        id=payload.id,
+        name=payload.name,
+        levelId=payload.level_id,
+        positionMm=payload.position_mm.wire(),
+        bMm=payload.b_mm,
+        hMm=payload.h_mm,
+        heightMm=payload.height_mm,
+        rotationDeg=payload.rotation_deg,
+        materialKey=payload.material_key,
+    )
+    return _bundle("structure_column", [command])
+
+
+def structure_column_update_bundle(payload: StructureColumnUpdatePayload) -> SemanticBundle:
+    command = UpdateColumnCmd(id=payload.id, bMm=payload.b_mm, hMm=payload.h_mm)
+    return _bundle("structure_column_update", [command])
+
+
+def structure_beam_bundle(payload: StructureBeamPayload) -> SemanticBundle:
+    command = CreateBeamCmd(
+        id=payload.id,
+        name=payload.name,
+        levelId=payload.level_id,
+        startMm=payload.start_mm.wire(),
+        endMm=payload.end_mm.wire(),
+        widthMm=payload.width_mm,
+        heightMm=payload.height_mm,
+        materialKey=payload.material_key,
+    )
+    return _bundle("structure_beam", [command])
+
+
+def structure_constraint_bundle(payload: StructureConstraintPayload) -> SemanticBundle:
+    command = CreateConstraintCmd(
+        id=payload.id,
+        name=payload.name,
+        rule=payload.rule,
+        refsA=payload.refs_a,
+        refsB=payload.refs_b,
+        lockedValueMm=payload.locked_value_mm,
+        severity=payload.severity,
+    )
+    return _bundle("structure_constraint", [command])
+
+
+def construction_package_bundle(payload: ConstructionPackagePayload) -> SemanticBundle:
+    command = CreateConstructionPackageCmd(
+        id=payload.id,
+        name=payload.name,
+        code=payload.code,
+        phaseId=payload.phase_id,
+        plannedStart=payload.planned_start,
+        plannedEnd=payload.planned_end,
+        actualStart=payload.actual_start,
+        actualEnd=payload.actual_end,
+        responsibleCompany=payload.responsible_company,
+        dependencies=payload.dependencies,
+    )
+    return _bundle("construction_package", [command])
+
+
+def construction_logistics_bundle(payload: ConstructionLogisticsPayload) -> SemanticBundle:
+    command = CreateConstructionLogisticsCmd(
+        id=payload.id,
+        name=payload.name,
+        logisticsKind=payload.logistics_kind,
+        boundaryMm=[p.wire() for p in payload.boundary_mm],
+        pathMm=[p.wire() for p in payload.path_mm],
+        phaseId=payload.phase_id,
+        constructionPackageId=payload.construction_package_id,
+        plannedStart=payload.planned_start,
+        plannedEnd=payload.planned_end,
+        progressStatus=payload.progress_status,
+        responsibleCompany=payload.responsible_company,
+    )
+    return _bundle("construction_logistics", [command])
+
+
+def construction_qa_checklist_bundle(payload: ConstructionQaChecklistPayload) -> SemanticBundle:
+    command = UpsertConstructionQaChecklistCmd(
+        id=payload.id,
+        name=payload.name,
+        targetElementIds=payload.target_element_ids,
+        constructionPackageId=payload.construction_package_id,
+        phaseId=payload.phase_id,
+        responsibleCompany=payload.responsible_company,
+        progressStatus=payload.progress_status,
+        checklist=payload.checklist,
+    )
+    return _bundle("construction_qa_checklist", [command])
 
 
 def plan_view_bundle(payload: PlanViewPayload) -> SemanticBundle:

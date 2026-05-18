@@ -1,0 +1,50 @@
+{
+  "fixture": "m4b_structure_construction_lite_authoring_v1",
+  "uiCmdKCoverage": {
+    "structure": {
+      "ui": "UI-F/P through structure lens tools and inspectors",
+      "cmdK": "Activator/lens coverage only; typed semantic authoring is provided by MCP/CLI surfaces"
+    },
+    "construction": {
+      "ui": "UI-P through construction lens readouts",
+      "cmdK": "Lens/report commands; package/logistics/checklist mutation coverage is MCP/CLI first-class"
+    }
+  },
+  "semanticSurfaces": [
+    {
+      "tool": "structure.column",
+      "operation": "structure_column",
+      "kernelCommands": ["createColumn"]
+    },
+    {
+      "tool": "structure.beam",
+      "operation": "structure_beam",
+      "kernelCommands": ["createBeam"]
+    },
+    {
+      "tool": "structure.column_update",
+      "operation": "structure_column_update",
+      "kernelCommands": ["updateColumn"]
+    },
+    {
+      "tool": "structure.constraint",
+      "operation": "structure_constraint",
+      "kernelCommands": ["createConstraint"]
+    },
+    {
+      "tool": "construction.package",
+      "operation": "construction_package",
+      "kernelCommands": ["createConstructionPackage"]
+    },
+    {
+      "tool": "construction.logistics",
+      "operation": "construction_logistics",
+      "kernelCommands": ["createConstructionLogistics"]
+    },
+    {
+      "tool": "construction.qa_checklist",
+      "operation": "construction_qa_checklist",
+      "kernelCommands": ["upsertConstructionQaChecklist"]
+    }
+  ]
+}
