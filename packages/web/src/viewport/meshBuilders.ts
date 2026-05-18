@@ -37,6 +37,7 @@ import { makeRampMesh, buildRampMesh } from './meshBuilders.ramp';
 import { buildBeamProfileGeometry } from './beamProfileMesh';
 import { buildWindowFrameMesh, buildGlazingMesh } from './meshBuilders.windowFrame';
 import { buildProfiledWallMesh } from './meshBuilders.wallProfile';
+import { buildFloorEdgeProfileMesh } from './buildFloorEdgeProfile';
 export { makeRampMesh, buildRampMesh };
 import { localPlanOffsetToWorld, yawForPlanSegment } from './planSegmentOrientation';
 import { resolveWindowCutDimensions } from './hostedOpeningDimensions';
@@ -649,6 +650,12 @@ export function makeFloorSlabMesh(
   mesh.receiveShadow = true;
   mesh.userData.bimPickId = floor.id;
   addEdges(mesh, 20);
+
+  // §2.4.2: edge profile skirt
+  const edgeProfileMesh = buildFloorEdgeProfileMesh(floor, effectiveThicknessMm, posY);
+  if (edgeProfileMesh) {
+    mesh.add(edgeProfileMesh);
+  }
 
   // §3.4.2: sub-floor structural pad beneath the slab
   const subThickMm = (floor as any).subFloorThicknessMm ?? 0;
