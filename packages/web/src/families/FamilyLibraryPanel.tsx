@@ -23,6 +23,7 @@ import type {
   ParamSchemaEntry,
 } from '@bim-ai/core';
 
+import { BIMOBJECT_CATALOG, searchBimobjectCatalog, type BimobjectItem } from './bimobjectCatalog';
 import { BUILT_IN_FAMILIES } from './familyCatalog';
 import { BUILT_IN_WALL_TYPES } from './wallTypeCatalog';
 import { validateFormula } from '../lib/expressionEvaluator';
@@ -937,6 +938,8 @@ export function FamilyLibraryPanel({
 }: FamilyLibraryPanelProps): JSX.Element | null {
   const [needle, setNeedle] = useState('');
   const [recentFamilyIds, setRecentFamilyIds] = useState<string[]>([]);
+  const [bimobjectQuery, setBimobjectQuery] = useState('');
+  const [bimobjectOpen, setBimobjectOpen] = useState(true);
 
   const trackRecent = (id: string) => {
     setRecentFamilyIds((prev) => [id, ...prev.filter((x) => x !== id)].slice(0, 5));
@@ -1242,6 +1245,73 @@ export function FamilyLibraryPanel({
               {catalogFamilies.error}
             </div>
           ) : null}
+          <section aria-label="BIMobject" data-testid="family-group-bimobject" className="mb-3">
+            <button
+              type="button"
+              data-testid="bimobject-section-header"
+              onClick={() => setBimobjectOpen((prev) => !prev)}
+              className="flex w-full items-center gap-2 px-2 py-1 text-left text-xs uppercase text-muted"
+              style={{ letterSpacing: 'var(--text-eyebrow-tracking, 0.06em)' }}
+            >
+              BIMobject
+              <span
+                style={{
+                  fontSize: 10,
+                  background: '#888',
+                  color: '#fff',
+                  borderRadius: 8,
+                  padding: '1px 5px',
+                  marginLeft: 4,
+                }}
+              >
+                {searchBimobjectCatalog(bimobjectQuery).length}
+              </span>
+              <span className="ml-auto text-[10px] text-muted">Online Catalog</span>
+            </button>
+            {bimobjectOpen ? (
+              <>
+                <div className="px-2 py-1">
+                  <input
+                    type="search"
+                    data-testid="bimobject-search-input"
+                    value={bimobjectQuery}
+                    onChange={(e) => setBimobjectQuery(e.target.value)}
+                    placeholder="Search BIMobject…"
+                    aria-label="Search BIMobject catalog"
+                    className="w-full rounded border border-border bg-background px-2 py-1 text-sm text-foreground outline-none focus:border-accent focus:ring-1 focus:ring-accent/40"
+                  />
+                </div>
+                <ul className="flex flex-col">
+                  {searchBimobjectCatalog(bimobjectQuery).map((item: BimobjectItem) => (
+                    <li
+                      key={item.id}
+                      className="flex items-center gap-3 rounded-md px-2 py-1.5 hover:bg-accent-soft"
+                    >
+                      <div className="flex h-16 w-16 items-center justify-center rounded border border-border bg-surface-muted text-2xl">
+                        {item.thumbnailEmoji}
+                      </div>
+                      <div className="flex flex-1 flex-col">
+                        <span className="text-sm text-foreground">{item.name}</span>
+                        <span className="text-xs text-muted">{item.manufacturer}</span>
+                        <span className="text-[10px] text-muted">{item.description}</span>
+                      </div>
+                      <button
+                        type="button"
+                        data-testid={`bimobject-item-${item.id}`}
+                        onClick={() => {
+                          onPlaceType('component_family', item.familyTypeId);
+                          onClose();
+                        }}
+                        className="rounded border border-border bg-surface-strong px-2 py-0.5 text-xs hover:bg-accent-soft"
+                      >
+                        Use
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              </>
+            ) : null}
+          </section>
           {!hasVisibleEntries && !catalogFamilies.loading ? (
             <div className="px-3 py-6 text-center text-sm text-muted">No matching families.</div>
           ) : null}

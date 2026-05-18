@@ -2914,4 +2914,34 @@ const MASS_CAPABILITIES: CommandCapability[] = [
     notes:
       '§12.4.2: dxfLayerMapping on project_settings allows renaming default layer names (A-WALL→WAND, etc.) in DXF export.',
   },
+  {
+    id: 'file.bimobject-catalog',
+    label: 'BIMobject Online Catalog',
+    owner: 'families/FamilyLibraryPanel',
+    group: 'file',
+    scope: 'global',
+    intendedModes: ['plan', '3d'],
+    surfaces: ['family-library', 'cmd-k'],
+    executionSurface: 'local-state',
+    preconditions: [],
+    status: 'implemented',
+    usabilityScore: 8,
+    notes:
+      '§12.3: curated BIMobject catalog with 12 manufacturer items (chairs, tables, sanitary, doors, windows, lighting, HVAC); searchable by name/manufacturer/category/tag.',
+  },
+  {
+    id: 'view.dynamic-title',
+    label: 'Dynamic Browser Tab Title',
+    owner: 'workspace/Workspace',
+    group: 'view',
+    scope: 'global',
+    intendedModes: ['plan', '3d'],
+    surfaces: ['header', 'cmd-k'],
+    executionSurface: 'local-state',
+    preconditions: [],
+    status: 'implemented',
+    usabilityScore: 8,
+    notes:
+      '§1.6.1: document.title updates to "ProjectName — ViewName" on view/project change; breadcrumb subtitle in workspace header.',
+  },
 ];

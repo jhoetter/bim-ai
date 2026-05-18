@@ -3249,3 +3249,26 @@ registerCommand({
     ctx.dispatchCommand?.({ type: 'setDxfLayerMapping', mapping: {} });
   },
 });
+
+registerCommand({
+  id: 'file.bimobject-catalog',
+  label: 'BIMobject Online Catalog',
+  keywords: ['bimobject', 'catalog', 'manufacturer', 'furniture', 'online library', 'family load'],
+  category: 'command',
+  isAvailable: () => true,
+  invoke: (ctx) => {
+    ctx.openFamilyLibrary?.();
+  },
+});
+
+// §1.6.1 — Dynamic Browser Tab Title
+registerCommand({
+  id: 'view.dynamic-title',
+  label: 'Dynamic Browser Tab Title',
+  keywords: ['title', 'tab', 'breadcrumb', 'view name', 'project name'],
+  category: 'view',
+  isAvailable: () => true,
+  invoke: () => {
+    // Title updates automatically via useEffect — no manual invoke needed
+  },
+});
