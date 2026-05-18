@@ -3653,33 +3653,86 @@ export function Workspace(): JSX.Element {
     [onSemanticCommand],
   );
 
-  // After the seed has hydrated, prune any restored tabs whose targets
+  // After a model has hydrated, prune any restored tabs whose targets
   // no longer exist (e.g. a sheet deleted between sessions). If the
-  // pruned set is empty, open a default Plan tab on the first level.
-  // Runs once when the store transitions from empty → non-empty.
-  const seededRef = useRef(false);
+  // pruned set is empty, open a sensible default view for this model.
+  // This is keyed by model id, not by app lifetime, because local seed
+  // workflows often switch between disposable evidence models and the
+  // final seed model in one browser session.
+  const defaultOpenedModelIdRef = useRef<string | null>(null);
   useEffect(() => {
-    if (seededRef.current) return;
-    if (Object.keys(elementsById).length === 0) return;
-    seededRef.current = true;
+    if (!modelId || modelId === 'empty') {
+      defaultOpenedModelIdRef.current = null;
+      return;
+    }
+    if (defaultOpenedModelIdRef.current === modelId) return;
+    const elements = Object.values(elementsById) as Element[];
+    if (elements.length === 0) return;
+    defaultOpenedModelIdRef.current = modelId;
+    const preferredViewpoint =
+      elements.find((e): e is Extract<Element, { kind: 'viewpoint' }> => {
+        if (e.kind !== 'viewpoint') return false;
+        const id = e.id.toLowerCase();
+        const name = String(e.name ?? '').toLowerCase();
+        return id === 'main_front_left' || name.includes('main front') || name.includes('front');
+      }) ??
+      elements.find((e): e is Extract<Element, { kind: 'viewpoint' }> => e.kind === 'viewpoint');
+    const preferredPlanView = elements.find(
+      (e): e is Extract<Element, { kind: 'plan_view' }> => e.kind === 'plan_view',
+    );
+    const levels = elements
+      .filter((e): e is Extract<Element, { kind: 'level' }> => e.kind === 'level')
+      .sort((a, b) => a.elevationMm - b.elevationMm);
+    const targetLevel =
+      levels.find((level) => level.id === activeLevelId) ?? levels[0] ?? undefined;
+    const defaultTab: Omit<ViewTab, 'id'> | null = preferredViewpoint
+      ? { kind: '3d', targetId: preferredViewpoint.id, label: `3D · ${preferredViewpoint.name}` }
+      : preferredPlanView
+        ? {
+            kind: 'plan',
+            targetId: preferredPlanView.id,
+            label: `Plan view · ${preferredPlanView.name}`,
+          }
+        : targetLevel
+          ? { kind: 'plan', targetId: targetLevel.id, label: `Plan · ${targetLevel.name}` }
+          : null;
+    if (!defaultTab) return;
     setTabsState((s) => {
       const pruned = pruneTabsAgainstElements(s, elementsById);
       if (pruned.tabs.length > 0) return pruned;
-      const levels = (Object.values(elementsById) as Element[]).filter(
-        (e): e is Extract<Element, { kind: 'level' }> => e.kind === 'level',
-      );
-      if (levels.length === 0) return pruned;
-      const targetLevel =
-        levels.find((l) => l.id === activeLevelId) ??
-        levels.sort((a, b) => a.elevationMm - b.elevationMm)[0];
-      if (!targetLevel) return pruned;
-      return openTab(pruned, {
-        kind: 'plan',
-        targetId: targetLevel.id,
-        label: `Plan · ${targetLevel.name}`,
-      });
+      return openTab(pruned, defaultTab);
     });
-  }, [elementsById, activeLevelId]);
+    if (defaultTab.kind === '3d') {
+      setMode('3d');
+      setViewerMode('orbit_3d');
+      if (preferredViewpoint?.mode === 'orbit_3d' && preferredViewpoint.camera) {
+        setOrbitCameraFromViewpointMm({
+          position: preferredViewpoint.camera.position,
+          target: preferredViewpoint.camera.target,
+          up: preferredViewpoint.camera.up,
+        });
+        useBimStore.getState().setActiveViewpointId(preferredViewpoint.id);
+      }
+    } else if (defaultTab.kind === 'plan') {
+      setMode('plan');
+      setViewerMode('plan_canvas');
+      if (preferredPlanView) {
+        activatePlanView(preferredPlanView.id);
+      } else if (targetLevel) {
+        activatePlanView(undefined);
+        setActiveLevelId(targetLevel.id);
+      }
+    }
+  }, [
+    activatePlanView,
+    activeLevelId,
+    elementsById,
+    modelId,
+    setActiveLevelId,
+    setMode,
+    setOrbitCameraFromViewpointMm,
+    setViewerMode,
+  ]);
 
   /* ── Mode wiring (§7 + §20) ────────────────────────────────────────── */
   const handleModeChange = useCallback(

@@ -6,7 +6,7 @@
   "modelRevision": 2,
   "gitHead": "0bfceb543a1f06e3e6579ef01462da7f9d85622b",
   "bundlePath": "/tmp/bim-ai-target-house-1-run/target-house-1.bundle.v2.json",
-  "bundleSha256": "f5304f1db87621d3d7315d88047d6a96a6f53f229e334fe015c1fa19d9da6598",
+  "bundleSha256": "244577c89658aab13d9ec207c5434a780283d30701830a23df4d38c6e3b769b0",
   "irPath": "spec/target-house/target-house-1-sketch-ir.draft.json",
   "irSha256": "cd64c22345865b1a7e0b674ebc0c15ec38433f4e561d485b4b91008b2d6f369e",
   "capabilitiesPath": "spec/sketch-to-bim-capability-matrix.json",
