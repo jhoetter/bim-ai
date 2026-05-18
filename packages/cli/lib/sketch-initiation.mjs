@@ -69,6 +69,8 @@ const IFC_ENTITY_INTENT = new Set([
   'IfcFurnishingElement',
   'IfcBuildingElementProxy',
 ]);
+const OPEN_FINDING_DISPOSITIONS = new Set(['later-phase', 'tolerated', 'blocked']);
+const BLOCKING_FINDING_DISPOSITIONS = new Set(['', 'unclassified', 'fix-now', 'fix-in-phase']);
 
 function isObject(value) {
   return value !== null && typeof value === 'object' && !Array.isArray(value);
@@ -641,6 +643,327 @@ function uniqueStrings(values) {
   return [...new Set(values.filter((value) => typeof value === 'string' && value.trim() !== ''))];
 }
 
+function firstString(...values) {
+  for (const value of values) {
+    if (typeof value === 'string' && value.trim() !== '') return value.trim();
+  }
+  return '';
+}
+
+function arrayStrings(value) {
+  if (Array.isArray(value)) return uniqueStrings(value.map((item) => String(item)));
+  if (typeof value === 'string' && value.trim() !== '') return [value.trim()];
+  return [];
+}
+
+export function buildToleranceLedgerFromDispositions(
+  payload,
+  { phaseId = null, evidenceDir = null } = {},
+) {
+  const findings = Array.isArray(payload?.findings) ? payload.findings : [];
+  const rows = [];
+  const blockingFindings = [];
+  const incompleteTolerances = [];
+
+  for (const [index, finding] of findings.entries()) {
+    if (!isObject(finding)) continue;
+    const severity = String(finding.severity ?? 'unknown');
+    if (!['error', 'warning'].includes(severity)) continue;
+    const disposition = String(finding.disposition ?? 'unclassified');
+    if (BLOCKING_FINDING_DISPOSITIONS.has(disposition)) {
+      blockingFindings.push({
+        index,
+        severity,
+        code: finding.code ?? 'unknown',
+        disposition,
+        message:
+          'Current-phase warning/error finding is not closed, deferred, tolerated, blocked, fixed, or reviewed.',
+      });
+      continue;
+    }
+    if (!OPEN_FINDING_DISPOSITIONS.has(disposition)) continue;
+
+    const affectedFeatureIds = uniqueStrings([
+      ...arrayStrings(finding.affectedFeatureIds),
+      ...arrayStrings(finding.featureIds),
+      ...arrayStrings(finding.featureId),
+      ...arrayStrings(finding.affectedFeature),
+    ]);
+    const affectedElementIds = uniqueStrings([
+      ...arrayStrings(finding.affectedElementIds),
+      ...arrayStrings(finding.elementIds),
+      ...arrayStrings(finding.elements),
+    ]);
+    const evidenceLinks = uniqueStrings([
+      ...arrayStrings(finding.evidenceLinks),
+      ...arrayStrings(finding.evidenceLink),
+      ...arrayStrings(finding.toleranceEvidence),
+    ]);
+    const row = {
+      id: firstString(
+        finding.id,
+        `${finding.source ?? 'finding'}:${finding.code ?? 'unknown'}:${index}`,
+      ),
+      source: finding.source ?? 'unknown',
+      severity,
+      code: finding.code ?? 'unknown',
+      disposition,
+      affectedFeatureIds,
+      affectedElementIds,
+      reason: firstString(finding.reason, finding.phaseRationale, finding.toleranceReason),
+      owner: firstString(finding.owner),
+      expiryCondition: firstString(finding.expiryCondition, finding.expiresWhen),
+      evidenceLinks,
+    };
+    const missing = [];
+    if (!row.severity) missing.push('severity');
+    if (!row.affectedFeatureIds.length) missing.push('affectedFeatureIds');
+    if (!row.reason) missing.push('reason');
+    if (!row.owner) missing.push('owner');
+    if (!row.expiryCondition) missing.push('expiryCondition');
+    if (!row.evidenceLinks.length) missing.push('evidenceLinks');
+    if (missing.length) {
+      incompleteTolerances.push({
+        id: row.id,
+        severity,
+        code: row.code,
+        disposition,
+        missing,
+      });
+    }
+    rows.push(row);
+  }
+
+  return {
+    schemaVersion: 'sketch.tolerance-ledger.v1',
+    generatedAt: new Date().toISOString(),
+    phaseId: phaseId ?? payload?.phaseId ?? null,
+    modelId: payload?.modelId ?? null,
+    revision: payload?.revision ?? null,
+    evidenceDir,
+    ok: blockingFindings.length === 0 && incompleteTolerances.length === 0,
+    summary: {
+      findingCount: findings.length,
+      toleranceCount: rows.length,
+      blockingFindingCount: blockingFindings.length,
+      incompleteToleranceCount: incompleteTolerances.length,
+    },
+    requiredFields: [
+      'severity',
+      'affectedFeatureIds',
+      'reason',
+      'owner',
+      'expiryCondition',
+      'evidenceLinks',
+    ],
+    tolerances: rows,
+    blockingFindings,
+    incompleteTolerances,
+  };
+}
+
+function countSnapshotKinds(modelStats, kinds) {
+  return snapshotKindCount(modelStats, kinds);
+}
+
+function exchangeCheck(id, status, message, detail = {}) {
+  return { id, status, message, ...detail };
+}
+
+function normalizedIfcKindCounts(ifcManifest, modelStats) {
+  const body = ifcManifest?.body ?? ifcManifest ?? {};
+  const raw =
+    body.exportedIfcKindsInArtifact ??
+    body.countsByIfcKind ??
+    body.countsByKind ??
+    body.extensions?.BIM_AI_exportManifest_v0?.countsByIfcKind ??
+    {};
+  const out = {};
+  for (const [key, value] of Object.entries(raw)) {
+    out[String(key)] = Number(value) || 0;
+  }
+  if (Object.keys(out).length > 0 || !modelStats) return out;
+  const kindMap = {
+    IfcSpace: ['room', 'space'],
+    IfcWall: ['wall'],
+    IfcWallStandardCase: ['wall'],
+    IfcSlab: ['floor', 'slab'],
+    IfcRoof: ['roof'],
+    IfcStair: ['stair'],
+    IfcDoor: ['door'],
+    IfcWindow: ['window'],
+    IfcRailing: ['railing'],
+    IfcFurnishingElement: ['asset', 'furniture', 'family_instance'],
+    IfcBuildingElementProxy: ['mass', 'proxy'],
+  };
+  for (const [ifcKind, kinds] of Object.entries(kindMap)) {
+    const count = countSnapshotKinds(modelStats, kinds);
+    if (count > 0) out[ifcKind] = count;
+  }
+  return out;
+}
+
+export function buildExchangeValidationReport({
+  ir,
+  modelStats = null,
+  validate = null,
+  evidencePackage = null,
+  ifcManifest = null,
+  gltfManifest = null,
+} = {}) {
+  const requirements = isObject(ir?.informationRequirements) ? ir.informationRequirements : {};
+  const requirementsPresent = isObject(ir?.informationRequirements);
+  const required = BIM_REQUIRED_TARGETS.has(ir?.qualityTarget);
+  const exportOutputs = Array.isArray(requirements?.exportRequirements?.outputs)
+    ? requirements.exportRequirements.outputs.map((item) => String(item).toLowerCase())
+    : [];
+  const ifcRequired = exportOutputs.includes('ifc');
+  const checks = [];
+  const ifcAvailable = Boolean(ifcManifest?.ok);
+  const gltfAvailable = Boolean(gltfManifest?.ok);
+  const ifcCounts = normalizedIfcKindCounts(ifcManifest, modelStats);
+  const hasIfcGeometry = Object.values(ifcCounts).some((count) => Number(count) > 0);
+
+  checks.push(
+    exchangeCheck(
+      'ifc_manifest_available',
+      ifcAvailable ? 'pass' : ifcRequired ? 'warning' : 'planned',
+      ifcAvailable
+        ? 'IFC export manifest endpoint returned a manifest.'
+        : ifcRequired
+          ? 'IFC is required but no IFC export manifest was available; normalized snapshot checks were used.'
+          : 'IFC export manifest is not required by this IR.',
+      { status: ifcManifest?.status ?? null },
+    ),
+  );
+  checks.push(
+    exchangeCheck(
+      'gltf_manifest_available',
+      gltfAvailable
+        ? 'pass'
+        : exportOutputs.includes('glb') || exportOutputs.includes('gltf')
+          ? 'warning'
+          : 'planned',
+      gltfAvailable
+        ? 'glTF/GLB export manifest endpoint returned a manifest.'
+        : 'glTF/GLB manifest was not available for this run.',
+      { status: gltfManifest?.status ?? null },
+    ),
+  );
+  checks.push(
+    exchangeCheck(
+      'project_hierarchy',
+      modelStats?.modelId || ifcManifest?.body?.projectHierarchy || ifcManifest?.body?.ifcProject
+        ? 'pass'
+        : 'error',
+      'Project/model hierarchy is represented in the normalized exchange manifest.',
+      { modelId: modelStats?.modelId ?? null, revision: modelStats?.revision ?? null },
+    ),
+  );
+
+  const semanticRows = Array.isArray(requirements?.elementSemanticRequirements)
+    ? requirements.elementSemanticRequirements
+    : [];
+  const expectedEntities = uniqueStrings(
+    semanticRows
+      .map((row) => row?.ifcEntityIntent)
+      .filter((entity) => IFC_ENTITY_INTENT.has(entity)),
+  );
+  const missingEntities = expectedEntities.filter((entity) => (ifcCounts[entity] ?? 0) <= 0);
+  checks.push(
+    exchangeCheck(
+      'entity_classes',
+      missingEntities.length ? 'error' : 'pass',
+      missingEntities.length
+        ? `Missing expected IFC entity class(es): ${missingEntities.join(', ')}.`
+        : 'Expected IFC entity classes are present in the normalized exchange manifest.',
+      {
+        expectedEntities,
+        countsByIfcEntity: ifcCounts,
+        source: hasIfcGeometry ? 'ifc_manifest' : 'snapshot_normalized',
+      },
+    ),
+  );
+
+  const roomRequirements = Array.isArray(requirements?.rooms) ? requirements.rooms : [];
+  const spaceCount = (ifcCounts.IfcSpace ?? 0) + countSnapshotKinds(modelStats, ['room', 'space']);
+  checks.push(
+    exchangeCheck(
+      'spaces',
+      spaceCount >= roomRequirements.length ? 'pass' : 'error',
+      `Normalized exchange manifest has ${spaceCount} space/room representation(s); IR requires ${roomRequirements.length}.`,
+      { actual: spaceCount, expected: roomRequirements.length },
+    ),
+  );
+
+  const layerSets = Array.isArray(requirements?.materialLayerSetRequirements)
+    ? requirements.materialLayerSetRequirements
+    : [];
+  const typeCount = countSnapshotKinds(modelStats, ['wall_type', 'floor_type', 'roof_type']);
+  checks.push(
+    exchangeCheck(
+      'material_layers',
+      layerSets.length > 0 && (typeCount > 0 || ifcAvailable)
+        ? 'pass'
+        : requirementsPresent
+          ? required
+            ? 'error'
+            : 'warning'
+          : 'planned',
+      layerSets.length > 0
+        ? 'Material layer-set intent is present for normalized exchange validation.'
+        : 'No material layer-set requirements are available for exchange validation.',
+      { requiredLayerSetCount: layerSets.length, modelTypeCount: typeCount },
+    ),
+  );
+
+  const classifications = requirements?.classificationRequirements;
+  checks.push(
+    exchangeCheck(
+      'classifications',
+      isObject(classifications) ? 'pass' : requirementsPresent && required ? 'error' : 'planned',
+      isObject(classifications)
+        ? 'Classification placeholder requirements are present for IFC classification references.'
+        : 'Classification requirements are missing.',
+    ),
+  );
+  checks.push(
+    exchangeCheck(
+      'psets',
+      Array.isArray(requirements?.dataQualityChecks) && requirements.dataQualityChecks.length > 0
+        ? 'planned'
+        : 'warning',
+      'Property-set validation is tracked as a normalized manifest requirement until the IFC backend exposes concrete Pset rows.',
+      { requiredChecks: requirements?.dataQualityChecks ?? [] },
+    ),
+  );
+  checks.push(
+    exchangeCheck(
+      'quantities',
+      evidencePackage || validate ? 'planned' : 'warning',
+      'Quantity validation is planned from evidence-package/validate output until explicit IFC quantity rows are exposed.',
+      { evidencePackageFormat: evidencePackage?.format ?? evidencePackage?.body?.format ?? null },
+    ),
+  );
+
+  const summary = {
+    passCount: checks.filter((check) => check.status === 'pass').length,
+    warningCount: checks.filter((check) => check.status === 'warning').length,
+    errorCount: checks.filter((check) => check.status === 'error').length,
+    plannedCount: checks.filter((check) => check.status === 'planned').length,
+  };
+  return {
+    schemaVersion: 'sketch.exchange-validation.v1',
+    generatedAt: new Date().toISOString(),
+    qualityTarget: ir?.qualityTarget ?? null,
+    source: hasIfcGeometry ? 'ifc_manifest' : 'snapshot_normalized',
+    ok: summary.errorCount === 0,
+    summary,
+    requiredOutputs: exportOutputs,
+    checks,
+  };
+}
+
 export function buildVisualChecklist(ir, coverage) {
   const viewMap = new Map((ir.requiredViews ?? []).map((view) => [view.id, view]));
   const items = [];
@@ -1039,6 +1362,49 @@ export function buildAcceptanceGateReport({
     });
   }
 
+  const exchangeValidation = evidenceRun?.exchangeValidationReport ?? null;
+  if (
+    BIM_REQUIRED_TARGETS.has(ir?.qualityTarget) &&
+    exchangeValidation &&
+    (exchangeValidation.summary?.errorCount ?? 0) > 0
+  ) {
+    blockers.push({
+      code: 'exchange_validation_failures',
+      severity: 'error',
+      message: `${exchangeValidation.summary.errorCount} IFC/exchange validation check(s) failed.`,
+      checks: (exchangeValidation.checks ?? [])
+        .filter((check) => check.status === 'error')
+        .map((check) => ({ id: check.id, message: check.message })),
+    });
+  }
+  if ((exchangeValidation?.summary?.warningCount ?? 0) > 0) {
+    tolerances.push({
+      code: 'exchange_validation_warnings',
+      message: `${exchangeValidation.summary.warningCount} IFC/exchange validation warning(s) require review.`,
+    });
+  }
+
+  const evidenceFreshness = evidenceRun?.evidenceFreshness ?? null;
+  if (!preflightOnly && evidenceRun?.liveArtifacts && !evidenceFreshness) {
+    blockers.push({
+      code: 'evidence_freshness_missing',
+      severity: 'error',
+      message: 'Live evidence was provided without current-head freshness metadata.',
+    });
+  }
+  if (evidenceFreshness?.ok === false) {
+    for (const blocker of evidenceFreshness.blockers ?? []) {
+      blockers.push({
+        code: blocker.code ?? 'stale_evidence',
+        severity: blocker.severity ?? 'error',
+        message: blocker.message ?? 'Evidence freshness check failed.',
+        recorded: blocker.recorded,
+        current: blocker.current,
+        sourcePath: blocker.sourcePath ?? evidenceFreshness.sourcePath ?? null,
+      });
+    }
+  }
+
   return {
     schemaVersion: 'sketch-to-bim-acceptance-gates.v0',
     generatedAt: new Date().toISOString(),
@@ -1052,8 +1418,11 @@ export function buildAcceptanceGateReport({
       visualNeedsReviewCount: visualGateReport?.summary?.needsReviewCount ?? 0,
       bimDataQualityErrorCount: bimQuality?.summary?.errorCount ?? 0,
       bimDataQualityPlannedCount: bimQuality?.summary?.plannedCount ?? 0,
+      exchangeValidationErrorCount: exchangeValidation?.summary?.errorCount ?? 0,
+      exchangeValidationWarningCount: exchangeValidation?.summary?.warningCount ?? 0,
     },
     bimDataQuality: bimQuality,
+    exchangeValidation,
     blockers,
     tolerances,
   };
@@ -1182,6 +1551,21 @@ export function formatStatusMarkdown(coverage, checklist, liveAdvisor = null, ev
     const report = evidenceRun.bimDataQualityReport;
     lines.push(
       `Result: ${report.ok ? 'pass' : 'blocked'} (${report.summary.errorCount} error(s), ${report.summary.warningCount} warning(s), ${report.summary.plannedCount} planned live check(s)).`,
+    );
+    for (const check of report.checks ?? []) {
+      if (!['error', 'warning', 'planned'].includes(check.status)) continue;
+      lines.push(`- \`${check.status}\` \`${check.id}\`: ${check.message}`);
+    }
+  }
+  lines.push('');
+  lines.push('## Exchange Validation');
+  lines.push('');
+  if (!evidenceRun?.exchangeValidationReport) {
+    lines.push('Not evaluated by this packet.');
+  } else {
+    const report = evidenceRun.exchangeValidationReport;
+    lines.push(
+      `Result: ${report.ok ? 'pass' : 'blocked'} (${report.summary.errorCount} error(s), ${report.summary.warningCount} warning(s), ${report.summary.plannedCount} planned check(s)).`,
     );
     for (const check of report.checks ?? []) {
       if (!['error', 'warning', 'planned'].includes(check.status)) continue;

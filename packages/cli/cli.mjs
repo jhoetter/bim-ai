@@ -9,6 +9,8 @@ import { stdin } from 'node:process';
 import { execSync } from 'node:child_process';
 
 import {
+  buildExchangeValidationReport,
+  buildToleranceLedgerFromDispositions,
   DEFAULT_CAPABILITY_MATRIX_PATH,
   INITIATION_MODES,
   readJsonFile,
@@ -2892,6 +2894,54 @@ async function cmdInitiationGolden(manifestPath, outDir) {
         compiledBundleCommandCount: compiledBundle?.commands?.length ?? null,
       },
     });
+    let liveGoldenPlan = null;
+    const liveGoldenConfig =
+      goldenCase.liveGolden && typeof goldenCase.liveGolden === 'object'
+        ? { ...(manifest.liveGoldenDefaults ?? {}), ...goldenCase.liveGolden }
+        : null;
+    if (liveGoldenConfig) {
+      const liveGoldenAcceptance = {
+        ...((manifest.liveGoldenDefaults ?? {}).acceptance ?? {}),
+        ...(goldenCase.liveGolden?.acceptance ?? {}),
+      };
+      liveGoldenPlan = {
+        schemaVersion: 'sketch-to-bim-live-golden-plan.v1',
+        generatedAt: new Date().toISOString(),
+        caseId: id,
+        status: liveGoldenConfig.status ?? 'planned',
+        baselinePolicy:
+          liveGoldenConfig.baselinePolicy ??
+          'Capture only after a live committed model exists; do not create seed artifacts from golden preflight.',
+        requiredArtifacts: liveGoldenConfig.requiredArtifacts ?? [
+          'live-runner-manifest.json',
+          'tool-run-summary.json',
+          'snapshot.json',
+          'validate.json',
+          'evidence-package.json',
+          'advisor-warning.json',
+          'advisor-info.json',
+          'visual-evidence-contract.json',
+          'screenshot-manifest.json',
+          'visual-gate.json',
+          'export-validation.json',
+          'tolerance-ledger.json',
+        ],
+        captureCommand:
+          liveGoldenConfig.captureCommand ??
+          `node packages/cli/cli.mjs initiation-run --ir ${irPath} --capabilities ${capabilityPath} --model <model-id> --out <live-evidence-dir> --fail-on-acceptance`,
+        acceptance: Object.keys(liveGoldenAcceptance).length
+          ? liveGoldenAcceptance
+          : {
+              requireCurrentHead: true,
+              requireAdvisorBaseline: true,
+              requireVisualBaseline: true,
+              requireExchangeValidation: true,
+              requireToleranceLedger: true,
+            },
+        noSeedArtifactCreated: true,
+      };
+      await writeJsonArtifact(path.join(caseDir, 'live-golden-plan.json'), liveGoldenPlan);
+    }
     const expected = goldenCase.expected ?? {};
     const maxErrors = Number.isFinite(expected.maxCoverageErrors) ? expected.maxCoverageErrors : 0;
     const maxBlocked = Number.isFinite(expected.maxBlockedFeatures)
@@ -2908,6 +2958,8 @@ async function cmdInitiationGolden(manifestPath, outDir) {
       coverageOk: result.ok,
       acceptanceOk: result.acceptance?.ok ?? null,
       commandCount: compiledBundle?.commands?.length ?? null,
+      liveGoldenPlanned: Boolean(liveGoldenPlan),
+      liveGoldenPlan: liveGoldenPlan ? path.join(caseDir, 'live-golden-plan.json') : null,
       summary: result.summary,
     });
   }
@@ -2918,6 +2970,7 @@ async function cmdInitiationGolden(manifestPath, outDir) {
     caseCount: rows.length,
     passCount: rows.filter((row) => row.pass).length,
     failCount: rows.filter((row) => !row.pass).length,
+    liveGoldenPlanCount: rows.filter((row) => row.liveGoldenPlanned).length,
     cases: rows,
   };
   await writeJsonArtifact(path.join(outDir, 'golden-summary.json'), summary);
@@ -3019,6 +3072,10 @@ async function loadPhaseFindingDispositions(evidenceDir) {
   try {
     const payload = await readJsonFile(filePath);
     const findings = Array.isArray(payload?.findings) ? payload.findings : [];
+    const toleranceLedger = buildToleranceLedgerFromDispositions(payload, {
+      phaseId: payload?.phaseId ?? null,
+      evidenceDir,
+    });
     const unclassifiedBlocking = findings.filter(
       (finding) =>
         ['error', 'warning'].includes(String(finding?.severity ?? '')) &&
@@ -3045,9 +3102,10 @@ async function loadPhaseFindingDispositions(evidenceDir) {
         acc[disposition] = (acc[disposition] ?? 0) + 1;
         return acc;
       }, {}),
+      toleranceLedger,
       unclassifiedBlocking,
       blockers,
-      ok: unclassifiedBlocking.length === 0 && blockers.length === 0,
+      ok: unclassifiedBlocking.length === 0 && blockers.length === 0 && toleranceLedger.ok,
     };
   } catch (error) {
     return {
@@ -3058,6 +3116,7 @@ async function loadPhaseFindingDispositions(evidenceDir) {
       findingCount: 0,
       countsBySeverity: {},
       countsByDisposition: {},
+      toleranceLedger: null,
       unclassifiedBlocking: [],
       blockers: [],
     };
@@ -3107,6 +3166,12 @@ async function cmdSketchPhaseAccept({
       evidenceDir: evidenceDir ?? defaultEvidenceDir,
       ...dispositionSummary,
     });
+    if (dispositionSummary.toleranceLedger) {
+      await writeJsonArtifact(
+        path.join(outDir, 'phase-tolerance-ledger.json'),
+        dispositionSummary.toleranceLedger,
+      );
+    }
   }
   const payload = {
     schemaVersion: 'sketch.phase.accept.cli-result.v0',
@@ -3347,6 +3412,26 @@ async function collectModelEvidenceArtifacts({
         String(a.code).localeCompare(String(b.code)),
     ),
   };
+  const toleranceLedger = buildToleranceLedgerFromDispositions(findingDispositions, {
+    phaseId,
+    evidenceDir: outDir,
+  });
+  const gltfManifest = await fetchJsonResponseNoThrow(
+    'GET',
+    `${base}/api/models/${encodeURIComponent(modelId)}/exports/gltf-manifest`,
+  );
+  const ifcManifest = await fetchJsonResponseNoThrow(
+    'GET',
+    `${base}/api/models/${encodeURIComponent(modelId)}/exports/ifc-manifest`,
+  );
+  const exchangeValidationReport = buildExchangeValidationReport({
+    ir,
+    modelStats,
+    validate,
+    evidencePackage,
+    gltfManifest,
+    ifcManifest,
+  });
   const artifacts = {
     snapshot: await writeJsonArtifact(path.join(outDir, 'snapshot.json'), snap),
     validate: await writeJsonArtifact(path.join(outDir, 'validate.json'), validate),
@@ -3374,6 +3459,14 @@ async function collectModelEvidenceArtifacts({
       path.join(outDir, 'finding-dispositions.json'),
       findingDispositions,
     ),
+    toleranceLedger: await writeJsonArtifact(
+      path.join(outDir, 'tolerance-ledger.json'),
+      toleranceLedger,
+    ),
+    exportValidation: await writeJsonArtifact(
+      path.join(outDir, 'export-validation.json'),
+      exchangeValidationReport,
+    ),
   };
   const manifest = {
     schemaVersion: 'sketch.evidence.collection.v1',
@@ -3400,6 +3493,8 @@ async function collectModelEvidenceArtifacts({
           ['error', 'warning'].includes(finding.severity) &&
           ['unclassified', 'fix-now', 'fix-in-phase'].includes(finding.disposition),
       ).length,
+      toleranceLedger: toleranceLedger.summary,
+      exchangeValidation: exchangeValidationReport.summary,
     },
   };
   artifacts.manifest = await writeJsonArtifact(path.join(outDir, 'evidence-manifest.json'), {
@@ -3415,6 +3510,8 @@ async function collectModelEvidenceArtifacts({
     constructability,
     visualEvidenceContract,
     findingDispositions,
+    toleranceLedger,
+    exchangeValidationReport,
     liveArtifacts: artifacts,
     manifest: { ...manifest, artifacts },
   };
@@ -3734,6 +3831,7 @@ async function cmdInitiationRun({
   const evidenceRun = {
     liveArtifacts: { ...runArtifacts, ...live.liveArtifacts },
     modelStats: live.modelStats,
+    exchangeValidationReport: live.exchangeValidationReport,
     screenshotManifest,
     visualGateReport,
   };
@@ -4341,7 +4439,8 @@ Commands:
   sketch evidence collect --model <id> --out <dir> [--ir <path>] [--phase <id>] [--profile <name>]
                                        SKB: collect snapshot, validate, evidence package, Advisor
                                        warning/info/error, constructability, model stats, visual
-                                       evidence contract, and manifest without browser automation.
+                                       evidence contract, tolerance ledger, IFC/exchange
+                                       validation, and manifest without browser automation.
   initiation-check --ir <path> --out <dir> [--capabilities <path>] [--model <id>] [--live]
                    [--mode massing_only|concept_bim|project_initiation_bim|documentation_ready]
                    [--fail-on-acceptance]
@@ -4355,7 +4454,8 @@ Commands:
                  [--fail-on-acceptance]
                                        SKB: live project-initiation evidence runner. Captures snapshot,
                                        validate, evidence-package, advisor warning/info, screenshot
-                                       manifest, visual-gate scoring, and populated status/checklist artifacts.
+                                       manifest, visual-gate scoring, exchange validation, and
+                                       populated status/checklist artifacts.
   initiation-modes                     SKB: print supported sketch-to-BIM quality modes and defaults.
   initiation-compare --actual <png> --target <png> [--threshold <float>] [--out <path>]
                                        SKB: compare a checkpoint screenshot with a target/reference PNG.

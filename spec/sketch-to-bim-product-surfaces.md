@@ -73,6 +73,35 @@ CLI commands for the product surfaces:
 - `qa.constructability`: implemented API descriptor/route for constructability
   profile reports.
 
+## B08-B11 Resource And Query Slice
+
+The model-state and discovery surfaces are now descriptor-backed where the
+backend route already existed:
+
+- B08 model resources: `model-show`, `model.summary`, `query.levels`,
+  `query.views`, `query.types`, `query.elements`, `qa.advisor`,
+  `model.command_log`, and `evidence.package` cover snapshot, summary, levels,
+  views, types, elements, Advisor, command log, and evidence package. Generated
+  audit coverage: 9/9 executable.
+- B09 command schema export: `commands.schema.catalog` maps to
+  `GET /api/v3/commands`, and `commands.schema.inspect` maps to
+  `GET /api/v3/commands/{name}`. The route is executable and returns the kernel
+  command JSON Schemas; per-command examples and complete raw/semantic mapping
+  metadata remain partial and are explicitly marked by the command metadata.
+- B10 query/resolve parity: descriptors cover `query.elements`, `query.hosts`,
+  `query.levels`, `query.types`, `query.views`, `query.nearest_wall`,
+  `query.enclosed_loops`, `resolve.active_or_default_level`,
+  `resolve.default_plan_view`, `resolve.wall_by_line`, `resolve.host_face`,
+  `resolve.family_type`, `resolve.room_boundary`, and
+  `resolve.loop_for_boundary`. Generated audit coverage: 14/14 executable.
+- B11 Cmd+K equivalence: the generated audit reads the command capability graph
+  and reports 106/106 activator entries with agent-equivalence metadata and zero
+  unmapped activators.
+
+The machine-readable status lives in `spec/generated/ui-mcp-parity.json` under
+`skb`, and the human ledger lives in `spec/generated/api-descriptor-ledger.md`
+under `SKB B08-B11 Audit`.
+
 ## Blockers Before Claiming Full M3-A Parity
 
 - Seed compilation is intentionally `CLI-only` for execution; the API descriptor

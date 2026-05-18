@@ -2121,6 +2121,931 @@ register(
         restEndpoint=RestEndpoint(method="GET", path="/api/models/{model_id}/snapshot"),
         sideEffects="none",
         agentSafetyNotes="Safe to call freely; read-only snapshot.",
+        stableId="model.show",
+        requiredPermissions=["model:read"],
+        schemaRefs=["input:ModelShowInput", "output:ModelSnapshot"],
+        exampleRefs=["route:model-snapshot", "cli:snapshot"],
+        resourceGroups=["model", "snapshot", "mcp-resource", "sketch-to-bim"],
+        uiFeatures=["model-browser", "workspace"],
+    )
+)
+
+register(
+    ToolDescriptor(
+        name="model.summary",
+        category="query",
+        inputSchema={
+            "$schema": "http://json-schema.org/draft-07/schema#",
+            "title": "ModelSummaryInput",
+            "type": "object",
+            "required": ["modelId"],
+            "properties": {"modelId": {"type": "string", "format": "uuid"}},
+            "additionalProperties": False,
+        },
+        outputSchema={
+            "$schema": "http://json-schema.org/draft-07/schema#",
+            "title": "ModelSummaryResource",
+            "type": "object",
+            "required": ["modelId", "revision", "summary"],
+            "properties": {
+                "modelId": {"type": "string"},
+                "revision": {"type": "integer"},
+                "summary": {"type": "object"},
+            },
+            "additionalProperties": True,
+        },
+        exitCodes={
+            "ok": ExitCode(code=0, meaning="Model summary returned"),
+            "not_found": ExitCode(code=1, meaning="Model not found"),
+        },
+        cliExample="bim-ai model summary --output json",
+        restEndpoint=RestEndpoint(method="GET", path="/api/models/{model_id}/summary"),
+        sideEffects="none",
+        agentSafetyNotes=(
+            "Read-only compact model resource for planning. Use snapshot or query.elements "
+            "when element payloads are required."
+        ),
+        requiredPermissions=["model:read"],
+        schemaRefs=["input:ModelSummaryInput", "output:ModelSummaryResource"],
+        exampleRefs=["route:model-summary", "cli:model:summary"],
+        resourceGroups=["model", "summary", "mcp-resource", "sketch-to-bim"],
+        uiFeatures=["model-browser", "workspace-summary"],
+    )
+)
+
+register(
+    ToolDescriptor(
+        name="model.command_log",
+        category="query",
+        inputSchema={
+            "$schema": "http://json-schema.org/draft-07/schema#",
+            "title": "ModelCommandLogInput",
+            "type": "object",
+            "required": ["modelId"],
+            "properties": {
+                "modelId": {"type": "string", "format": "uuid"},
+                "limit": {"type": "integer", "minimum": 1, "maximum": 500, "default": 100},
+            },
+            "additionalProperties": False,
+        },
+        outputSchema={
+            "$schema": "http://json-schema.org/draft-07/schema#",
+            "title": "ModelCommandLog",
+            "type": "object",
+            "required": ["modelId", "revision", "commands"],
+            "properties": {
+                "modelId": {"type": "string"},
+                "revision": {"type": "integer"},
+                "commands": {"type": "array", "items": {"type": "object"}},
+            },
+            "additionalProperties": True,
+        },
+        exitCodes={
+            "ok": ExitCode(code=0, meaning="Recent command log returned"),
+            "not_found": ExitCode(code=1, meaning="Model not found"),
+        },
+        cliExample="curl /api/models/$BIM_AI_MODEL_ID/command-log",
+        restEndpoint=RestEndpoint(method="GET", path="/api/models/{model_id}/command-log"),
+        sideEffects="none",
+        agentSafetyNotes=(
+            "Read-only audit trail for recent model commits, undo metadata, command payloads, "
+            "and agent/user attribution when recorded."
+        ),
+        requiredPermissions=["model:read"],
+        schemaRefs=["input:ModelCommandLogInput", "output:ModelCommandLog"],
+        exampleRefs=["route:model-command-log"],
+        resourceGroups=["model", "command-log", "audit", "mcp-resource", "sketch-to-bim"],
+        uiFeatures=["activity-stream", "undo-redo"],
+    )
+)
+
+register(
+    ToolDescriptor(
+        name="evidence.package",
+        category="query",
+        inputSchema={
+            "$schema": "http://json-schema.org/draft-07/schema#",
+            "title": "EvidencePackageInput",
+            "type": "object",
+            "required": ["modelId"],
+            "properties": {"modelId": {"type": "string", "format": "uuid"}},
+            "additionalProperties": False,
+        },
+        outputSchema={
+            "$schema": "http://json-schema.org/draft-07/schema#",
+            "title": "EvidencePackage",
+            "type": "object",
+            "required": ["format", "modelId", "revision", "summary", "validate"],
+            "properties": {
+                "format": {"const": "evidencePackage_v1"},
+                "modelId": {"type": "string"},
+                "revision": {"type": "integer"},
+                "summary": {"type": "object"},
+                "validate": {"type": "object"},
+                "advisorSeveritySummary_v1": {"type": "object"},
+                "semanticDigestSha256": {"type": "string"},
+            },
+            "additionalProperties": True,
+        },
+        exitCodes={
+            "ok": ExitCode(code=0, meaning="Evidence package returned"),
+            "not_found": ExitCode(code=1, meaning="Model not found"),
+        },
+        cliExample="bim-ai evidence-package --output json",
+        restEndpoint=RestEndpoint(method="GET", path="/api/models/{model_id}/evidence-package"),
+        sideEffects="none",
+        agentSafetyNotes=(
+            "Read-only evidence package for agent review. It includes validation, summary, "
+            "export links, deterministic evidence manifests, and Advisor severity rollups; "
+            "live screenshot capture remains a separate evidence step."
+        ),
+        requiredPermissions=["model:read"],
+        schemaRefs=["input:EvidencePackageInput", "output:EvidencePackage"],
+        exampleRefs=["route:evidence-package", "cli:evidence-package"],
+        resourceGroups=["evidence", "model", "validation", "mcp-resource", "sketch-to-bim"],
+        uiFeatures=["agent-review", "advisor-panel"],
+    )
+)
+
+register(
+    ToolDescriptor(
+        name="commands.schema.catalog",
+        category="introspection",
+        inputSchema={
+            "$schema": "http://json-schema.org/draft-07/schema#",
+            "title": "CommandSchemaCatalogInput",
+            "type": "object",
+            "properties": {},
+            "additionalProperties": False,
+        },
+        outputSchema={
+            "$schema": "http://json-schema.org/draft-07/schema#",
+            "title": "CommandSchemaCatalog",
+            "type": "object",
+            "required": ["schemaVersion", "commandCount", "commandNames", "schemas", "metadata"],
+            "properties": {
+                "schemaVersion": {"const": "command-schemas-v1"},
+                "commandCount": {"type": "integer"},
+                "commandNames": {"type": "array", "items": {"type": "string"}},
+                "schemas": {"type": "object"},
+                "metadata": {"type": "object"},
+                "unionSchema": {"type": "object"},
+            },
+            "additionalProperties": True,
+        },
+        exitCodes={"ok": ExitCode(code=0, meaning="Kernel command schemas returned")},
+        cliExample="bim-ai api list-commands --output json",
+        restEndpoint=RestEndpoint(method="GET", path="/api/v3/commands"),
+        sideEffects="none",
+        agentSafetyNotes=(
+            "Exports the full backend Command union as per-command JSON Schemas. "
+            "Examples and semantic-tool mapping metadata are still explicitly partial."
+        ),
+        requiredPermissions=["model:read"],
+        schemaRefs=["input:CommandSchemaCatalogInput", "output:CommandSchemaCatalog"],
+        exampleRefs=["route:v3-commands"],
+        resourceGroups=["api-descriptor", "command-schema", "kernel-command", "mcp-resource"],
+        uiFeatures=["developer-tools"],
+    )
+)
+
+register(
+    ToolDescriptor(
+        name="commands.schema.inspect",
+        category="introspection",
+        inputSchema={
+            "$schema": "http://json-schema.org/draft-07/schema#",
+            "title": "CommandSchemaInspectInput",
+            "type": "object",
+            "required": ["name"],
+            "properties": {"name": {"type": "string", "description": "Kernel command type."}},
+            "additionalProperties": False,
+        },
+        outputSchema={
+            "$schema": "http://json-schema.org/draft-07/schema#",
+            "title": "CommandSchemaInspectResult",
+            "type": "object",
+            "required": ["schemaVersion", "name", "schema", "metadata"],
+            "properties": {
+                "schemaVersion": {"const": "command-schemas-v1"},
+                "name": {"type": "string"},
+                "schema": {"type": "object"},
+                "metadata": {"type": "object"},
+            },
+            "additionalProperties": True,
+        },
+        exitCodes={
+            "ok": ExitCode(code=0, meaning="Kernel command schema returned"),
+            "not_found": ExitCode(code=1, meaning="Command not found"),
+        },
+        cliExample="bim-ai api inspect-command createWall --output json",
+        restEndpoint=RestEndpoint(method="GET", path="/api/v3/commands/{name}"),
+        sideEffects="none",
+        agentSafetyNotes=(
+            "Inspect a single backend command schema. The schema is executable through "
+            "raw apply-bundle, but first-class semantic descriptors remain preferred "
+            "where available."
+        ),
+        requiredPermissions=["model:read"],
+        schemaRefs=["input:CommandSchemaInspectInput", "output:CommandSchemaInspectResult"],
+        exampleRefs=["route:v3-command"],
+        resourceGroups=["api-descriptor", "command-schema", "kernel-command", "mcp-resource"],
+        uiFeatures=["developer-tools"],
+    )
+)
+
+register(
+    ToolDescriptor(
+        name="query.elements",
+        category="query",
+        inputSchema={
+            "$schema": "http://json-schema.org/draft-07/schema#",
+            "title": "QueryElementsInput",
+            "type": "object",
+            "properties": {
+                "modelId": {"type": "string", "format": "uuid"},
+                "filter": {"type": "object"},
+                "include": {
+                    "type": "array",
+                    "items": {
+                        "type": "string",
+                        "enum": ["geometrySummary", "hostRefs", "scheduleSummary", "raw"],
+                    },
+                },
+                "limit": {"type": "integer", "minimum": 1, "maximum": 1000},
+                "cursor": {"type": "string"},
+            },
+            "additionalProperties": True,
+        },
+        outputSchema={
+            "$schema": "http://json-schema.org/draft-07/schema#",
+            "title": "QueryResolveEnvelope",
+            "type": "object",
+            "required": ["ok", "modelId", "revision", "data", "warnings"],
+            "properties": {
+                "ok": {"type": "boolean"},
+                "modelId": {"type": "string"},
+                "revision": {"type": "integer"},
+                "data": {"type": "object"},
+                "warnings": {"type": "array", "items": {"type": "object"}},
+                "nextCursor": {"type": ["string", "null"]},
+            },
+            "additionalProperties": True,
+        },
+        exitCodes={
+            "ok": ExitCode(code=0, meaning="Matching elements returned"),
+            "bad_request": ExitCode(code=2, meaning="Unsupported filter/include value"),
+            "not_found": ExitCode(code=1, meaning="Model not found"),
+        },
+        cliExample="bim-ai query elements --category wall --include geometrySummary --output json",
+        restEndpoint=RestEndpoint(method="POST", path="/api/models/{model_id}/query/elements"),
+        sideEffects="none",
+        agentSafetyNotes=(
+            "Read-only element discovery for replacing UI selection. Supports category, "
+            "level, type, bbox, property, and createdBy-style filters where implemented."
+        ),
+        requiredPermissions=["model:read"],
+        schemaRefs=["input:QueryElementsInput", "output:QueryResolveEnvelope"],
+        exampleRefs=["route:query-elements", "cli:query:elements"],
+        resourceGroups=["query", "elements", "model", "mcp-resource", "sketch-to-bim"],
+        uiFeatures=["selection", "model-browser", "inspector"],
+    )
+)
+
+register(
+    ToolDescriptor(
+        name="query.levels",
+        category="query",
+        inputSchema={
+            "$schema": "http://json-schema.org/draft-07/schema#",
+            "title": "QueryLevelsInput",
+            "type": "object",
+            "properties": {
+                "modelId": {"type": "string", "format": "uuid"},
+                "include": {
+                    "type": "array",
+                    "items": {"type": "string", "enum": ["planViews", "constraints"]},
+                },
+            },
+            "additionalProperties": True,
+        },
+        outputSchema={
+            "$schema": "http://json-schema.org/draft-07/schema#",
+            "title": "QueryLevelsResult",
+            "type": "object",
+            "required": ["ok", "modelId", "revision", "data"],
+            "properties": {
+                "ok": {"type": "boolean"},
+                "modelId": {"type": "string"},
+                "revision": {"type": "integer"},
+                "data": {"type": "object"},
+                "warnings": {"type": "array", "items": {"type": "object"}},
+            },
+            "additionalProperties": True,
+        },
+        exitCodes={
+            "ok": ExitCode(code=0, meaning="Levels returned"),
+            "bad_request": ExitCode(code=2, meaning="Unsupported include value"),
+            "not_found": ExitCode(code=1, meaning="Model not found"),
+        },
+        cliExample="bim-ai query levels --include planViews --output json",
+        restEndpoint=RestEndpoint(method="POST", path="/api/models/{model_id}/query/levels"),
+        sideEffects="none",
+        agentSafetyNotes="Read-only level and plan-view discovery for explicit level ids.",
+        requiredPermissions=["model:read"],
+        schemaRefs=["input:QueryLevelsInput", "output:QueryLevelsResult"],
+        exampleRefs=["route:query-levels", "cli:query:levels"],
+        resourceGroups=["query", "levels", "model", "mcp-resource", "sketch-to-bim"],
+        uiFeatures=["level-browser", "project-browser"],
+    )
+)
+
+register(
+    ToolDescriptor(
+        name="query.types",
+        category="query",
+        inputSchema={
+            "$schema": "http://json-schema.org/draft-07/schema#",
+            "title": "QueryTypesInput",
+            "type": "object",
+            "properties": {
+                "modelId": {"type": "string", "format": "uuid"},
+                "filter": {"type": "object"},
+                "include": {
+                    "type": "array",
+                    "items": {"type": "string", "enum": ["parameters", "materials"]},
+                },
+            },
+            "additionalProperties": True,
+        },
+        outputSchema={
+            "$schema": "http://json-schema.org/draft-07/schema#",
+            "title": "QueryTypesResult",
+            "type": "object",
+            "required": ["ok", "modelId", "revision", "data"],
+            "properties": {
+                "ok": {"type": "boolean"},
+                "modelId": {"type": "string"},
+                "revision": {"type": "integer"},
+                "data": {"type": "object"},
+                "warnings": {"type": "array", "items": {"type": "object"}},
+            },
+            "additionalProperties": True,
+        },
+        exitCodes={
+            "ok": ExitCode(code=0, meaning="Type/material catalog returned"),
+            "bad_request": ExitCode(code=2, meaning="Unsupported filter/include value"),
+            "not_found": ExitCode(code=1, meaning="Model not found"),
+        },
+        cliExample="bim-ai query types --category wall_type --include materials --output json",
+        restEndpoint=RestEndpoint(method="POST", path="/api/models/{model_id}/query/types"),
+        sideEffects="none",
+        agentSafetyNotes=(
+            "Read-only type/material discovery. Agents should resolve existing types before "
+            "authoring walls, slabs, roofs, openings, or assets."
+        ),
+        requiredPermissions=["model:read"],
+        schemaRefs=["input:QueryTypesInput", "output:QueryTypesResult"],
+        exampleRefs=["route:query-types", "cli:query:types"],
+        resourceGroups=["query", "types", "materials", "model", "mcp-resource", "sketch-to-bim"],
+        uiFeatures=["type-browser", "inspector"],
+    )
+)
+
+register(
+    ToolDescriptor(
+        name="query.views",
+        category="query",
+        inputSchema={
+            "$schema": "http://json-schema.org/draft-07/schema#",
+            "title": "QueryViewsInput",
+            "type": "object",
+            "properties": {
+                "modelId": {"type": "string", "format": "uuid"},
+                "filter": {"type": "object"},
+                "include": {
+                    "type": "array",
+                    "items": {"type": "string", "enum": ["crop", "placements", "templates"]},
+                },
+            },
+            "additionalProperties": True,
+        },
+        outputSchema={
+            "$schema": "http://json-schema.org/draft-07/schema#",
+            "title": "QueryViewsResult",
+            "type": "object",
+            "required": ["ok", "modelId", "revision", "data"],
+            "properties": {
+                "ok": {"type": "boolean"},
+                "modelId": {"type": "string"},
+                "revision": {"type": "integer"},
+                "data": {"type": "object"},
+                "warnings": {"type": "array", "items": {"type": "object"}},
+            },
+            "additionalProperties": True,
+        },
+        exitCodes={
+            "ok": ExitCode(code=0, meaning="Views returned"),
+            "bad_request": ExitCode(code=2, meaning="Unsupported filter/include value"),
+            "not_found": ExitCode(code=1, meaning="Model not found"),
+        },
+        cliExample="bim-ai query views --kind plan --output json",
+        restEndpoint=RestEndpoint(method="POST", path="/api/models/{model_id}/query/views"),
+        sideEffects="none",
+        agentSafetyNotes="Read-only view/sheet/schedule discovery for review and documentation.",
+        requiredPermissions=["model:read"],
+        schemaRefs=["input:QueryViewsInput", "output:QueryViewsResult"],
+        exampleRefs=["route:query-views", "cli:query:views"],
+        resourceGroups=["query", "views", "sheets", "schedules", "model", "mcp-resource"],
+        uiFeatures=["project-browser", "view-browser", "sheet-browser"],
+    )
+)
+
+register(
+    ToolDescriptor(
+        name="query.hosts",
+        category="query",
+        inputSchema={
+            "$schema": "http://json-schema.org/draft-07/schema#",
+            "title": "QueryHostsInput",
+            "type": "object",
+            "properties": {
+                "modelId": {"type": "string", "format": "uuid"},
+                "hostKinds": {
+                    "type": "array",
+                    "items": {"type": "string", "enum": ["wall", "floor", "roof", "slab"]},
+                },
+                "pointMm": {"type": "array", "items": {"type": "number"}, "minItems": 2},
+                "lineMm": {"type": "array", "items": {"type": "array", "items": {"type": "number"}}},
+                "include": {
+                    "type": "array",
+                    "items": {"type": "string", "enum": ["hostFaces", "normalizedPosition"]},
+                },
+            },
+            "additionalProperties": True,
+        },
+        outputSchema={
+            "$schema": "http://json-schema.org/draft-07/schema#",
+            "title": "QueryHostsResult",
+            "type": "object",
+            "required": ["ok", "modelId", "revision", "data"],
+            "properties": {
+                "ok": {"type": "boolean"},
+                "modelId": {"type": "string"},
+                "revision": {"type": "integer"},
+                "data": {"type": "object"},
+                "warnings": {"type": "array", "items": {"type": "object"}},
+            },
+            "additionalProperties": True,
+        },
+        exitCodes={
+            "ok": ExitCode(code=0, meaning="Candidate hosts returned"),
+            "bad_request": ExitCode(code=2, meaning="Unsupported host query"),
+            "not_found": ExitCode(code=1, meaning="Model not found"),
+        },
+        cliExample="bim-ai query hosts --kind wall --point-mm 1200,0 --output json",
+        restEndpoint=RestEndpoint(method="POST", path="/api/models/{model_id}/query/hosts"),
+        sideEffects="none",
+        agentSafetyNotes=(
+            "Read-only host discovery for wall, roof, floor/slab, and hosted-opening workflows."
+        ),
+        requiredPermissions=["model:read"],
+        schemaRefs=["input:QueryHostsInput", "output:QueryHostsResult"],
+        exampleRefs=["route:query-hosts", "cli:query:hosts"],
+        resourceGroups=["query", "hosts", "walls", "roofs", "slabs", "mcp-resource"],
+        uiFeatures=["canvas-hover", "selection"],
+    )
+)
+
+register(
+    ToolDescriptor(
+        name="query.nearest_wall",
+        category="query",
+        inputSchema={
+            "$schema": "http://json-schema.org/draft-07/schema#",
+            "title": "QueryNearestWallInput",
+            "type": "object",
+            "properties": {
+                "modelId": {"type": "string", "format": "uuid"},
+                "pointMm": {"type": "array", "items": {"type": "number"}, "minItems": 2},
+                "maxDistanceMm": {"type": "number", "minimum": 0},
+                "levelId": {"type": "string"},
+            },
+            "additionalProperties": True,
+        },
+        outputSchema={
+            "$schema": "http://json-schema.org/draft-07/schema#",
+            "title": "QueryNearestWallResult",
+            "type": "object",
+            "required": ["ok", "modelId", "revision", "data"],
+            "properties": {
+                "ok": {"type": "boolean"},
+                "modelId": {"type": "string"},
+                "revision": {"type": "integer"},
+                "data": {"type": "object"},
+                "warnings": {"type": "array", "items": {"type": "object"}},
+            },
+            "additionalProperties": True,
+        },
+        exitCodes={
+            "ok": ExitCode(code=0, meaning="Nearest wall result returned"),
+            "bad_request": ExitCode(code=2, meaning="Invalid point or tolerance"),
+            "not_found": ExitCode(code=1, meaning="Model not found"),
+        },
+        cliExample="bim-ai query nearest-wall --point-mm 1200,300 --output json",
+        restEndpoint=RestEndpoint(method="POST", path="/api/models/{model_id}/query/nearest-wall"),
+        sideEffects="none",
+        agentSafetyNotes="Read-only wall proximity resolver for hosted openings and line matching.",
+        requiredPermissions=["model:read"],
+        schemaRefs=["input:QueryNearestWallInput", "output:QueryNearestWallResult"],
+        exampleRefs=["route:query-nearest-wall", "cli:query:nearest-wall"],
+        resourceGroups=["query", "walls", "resolver", "mcp-resource", "sketch-to-bim"],
+        uiFeatures=["canvas-hover", "wall-tool"],
+    )
+)
+
+register(
+    ToolDescriptor(
+        name="query.enclosed_loops",
+        category="query",
+        inputSchema={
+            "$schema": "http://json-schema.org/draft-07/schema#",
+            "title": "QueryEnclosedLoopsInput",
+            "type": "object",
+            "properties": {
+                "modelId": {"type": "string", "format": "uuid"},
+                "levelId": {"type": "string"},
+                "sourceElementIds": {"type": "array", "items": {"type": "string"}},
+                "include": {
+                    "type": "array",
+                    "items": {"type": "string", "enum": ["area", "segments", "sourceElementIds"]},
+                },
+            },
+            "additionalProperties": True,
+        },
+        outputSchema={
+            "$schema": "http://json-schema.org/draft-07/schema#",
+            "title": "QueryEnclosedLoopsResult",
+            "type": "object",
+            "required": ["ok", "modelId", "revision", "data"],
+            "properties": {
+                "ok": {"type": "boolean"},
+                "modelId": {"type": "string"},
+                "revision": {"type": "integer"},
+                "data": {"type": "object"},
+                "warnings": {"type": "array", "items": {"type": "object"}},
+            },
+            "additionalProperties": True,
+        },
+        exitCodes={
+            "ok": ExitCode(code=0, meaning="Candidate enclosed loops returned"),
+            "bad_request": ExitCode(code=2, meaning="Invalid loop query"),
+            "not_found": ExitCode(code=1, meaning="Model not found"),
+        },
+        cliExample="bim-ai query loops --level level-1 --include area --output json",
+        restEndpoint=RestEndpoint(
+            method="POST", path="/api/models/{model_id}/query/enclosed-loops"
+        ),
+        sideEffects="none",
+        agentSafetyNotes=(
+            "Read-only loop discovery for floors, roofs, rooms, and wall-chain-derived boundaries."
+        ),
+        requiredPermissions=["model:read"],
+        schemaRefs=["input:QueryEnclosedLoopsInput", "output:QueryEnclosedLoopsResult"],
+        exampleRefs=["route:query-enclosed-loops", "cli:query:loops"],
+        resourceGroups=["query", "loops", "rooms", "floors", "roofs", "mcp-resource"],
+        uiFeatures=["floor-tool", "roof-sketch", "room-tool"],
+    )
+)
+
+register(
+    ToolDescriptor(
+        name="resolve.active_or_default_level",
+        category="query",
+        inputSchema={
+            "$schema": "http://json-schema.org/draft-07/schema#",
+            "title": "ResolveActiveOrDefaultLevelInput",
+            "type": "object",
+            "properties": {
+                "modelId": {"type": "string", "format": "uuid"},
+                "activeLevelId": {"type": "string"},
+                "preferredElevationMm": {"type": "number"},
+            },
+            "additionalProperties": True,
+        },
+        outputSchema={
+            "$schema": "http://json-schema.org/draft-07/schema#",
+            "title": "ResolveLevelResult",
+            "type": "object",
+            "required": ["ok", "modelId", "revision", "data"],
+            "properties": {
+                "ok": {"type": "boolean"},
+                "modelId": {"type": "string"},
+                "revision": {"type": "integer"},
+                "data": {"type": "object"},
+                "warnings": {"type": "array", "items": {"type": "object"}},
+            },
+            "additionalProperties": True,
+        },
+        exitCodes={
+            "ok": ExitCode(code=0, meaning="Level resolved"),
+            "not_found": ExitCode(code=1, meaning="Model not found or no level exists"),
+        },
+        cliExample="bim-ai resolve level --active-or-default --output json",
+        restEndpoint=RestEndpoint(
+            method="POST", path="/api/models/{model_id}/resolve/active-or-default-level"
+        ),
+        sideEffects="none",
+        agentSafetyNotes="Read-only replacement for UI active-level state.",
+        requiredPermissions=["model:read"],
+        schemaRefs=["input:ResolveActiveOrDefaultLevelInput", "output:ResolveLevelResult"],
+        exampleRefs=["route:resolve-active-or-default-level", "cli:resolve:level"],
+        resourceGroups=["resolve", "levels", "context", "mcp-resource", "sketch-to-bim"],
+        uiFeatures=["active-level-picker"],
+    )
+)
+
+register(
+    ToolDescriptor(
+        name="resolve.default_plan_view",
+        category="query",
+        inputSchema={
+            "$schema": "http://json-schema.org/draft-07/schema#",
+            "title": "ResolveDefaultPlanViewInput",
+            "type": "object",
+            "properties": {
+                "modelId": {"type": "string", "format": "uuid"},
+                "levelId": {"type": "string"},
+            },
+            "additionalProperties": True,
+        },
+        outputSchema={
+            "$schema": "http://json-schema.org/draft-07/schema#",
+            "title": "ResolveDefaultPlanViewResult",
+            "type": "object",
+            "required": ["ok", "modelId", "revision", "data"],
+            "properties": {
+                "ok": {"type": "boolean"},
+                "modelId": {"type": "string"},
+                "revision": {"type": "integer"},
+                "data": {"type": "object"},
+                "warnings": {"type": "array", "items": {"type": "object"}},
+            },
+            "additionalProperties": True,
+        },
+        exitCodes={
+            "ok": ExitCode(code=0, meaning="Plan view resolved"),
+            "not_found": ExitCode(code=1, meaning="Model, level, or plan view not found"),
+        },
+        cliExample="bim-ai resolve default-plan-view --level level-1 --output json",
+        restEndpoint=RestEndpoint(
+            method="POST", path="/api/models/{model_id}/resolve/default-plan-view"
+        ),
+        sideEffects="none",
+        agentSafetyNotes="Read-only replacement for UI active-plan-view context.",
+        requiredPermissions=["model:read"],
+        schemaRefs=["input:ResolveDefaultPlanViewInput", "output:ResolveDefaultPlanViewResult"],
+        exampleRefs=["route:resolve-default-plan-view", "cli:resolve:default-plan-view"],
+        resourceGroups=["resolve", "views", "levels", "context", "mcp-resource"],
+        uiFeatures=["project-browser", "active-view"],
+    )
+)
+
+register(
+    ToolDescriptor(
+        name="resolve.wall_by_line",
+        category="query",
+        inputSchema={
+            "$schema": "http://json-schema.org/draft-07/schema#",
+            "title": "ResolveWallByLineInput",
+            "type": "object",
+            "properties": {
+                "modelId": {"type": "string", "format": "uuid"},
+                "startMm": {"type": "array", "items": {"type": "number"}, "minItems": 2},
+                "endMm": {"type": "array", "items": {"type": "number"}, "minItems": 2},
+                "toleranceMm": {"type": "number", "minimum": 0},
+                "levelId": {"type": "string"},
+            },
+            "additionalProperties": True,
+        },
+        outputSchema={
+            "$schema": "http://json-schema.org/draft-07/schema#",
+            "title": "ResolveWallByLineResult",
+            "type": "object",
+            "required": ["ok", "modelId", "revision", "data"],
+            "properties": {
+                "ok": {"type": "boolean"},
+                "modelId": {"type": "string"},
+                "revision": {"type": "integer"},
+                "data": {"type": "object"},
+                "warnings": {"type": "array", "items": {"type": "object"}},
+            },
+            "additionalProperties": True,
+        },
+        exitCodes={
+            "ok": ExitCode(code=0, meaning="Wall resolved by line"),
+            "not_found": ExitCode(code=1, meaning="Model not found or no wall matched"),
+            "bad_request": ExitCode(code=2, meaning="Invalid line/tolerance"),
+        },
+        cliExample="bim-ai resolve wall --line 0,0:6000,0 --tolerance-mm 50 --output json",
+        restEndpoint=RestEndpoint(method="POST", path="/api/models/{model_id}/resolve/wall-by-line"),
+        sideEffects="none",
+        agentSafetyNotes="Read-only line-matched wall resolver for sketch wall/host equivalence.",
+        requiredPermissions=["model:read"],
+        schemaRefs=["input:ResolveWallByLineInput", "output:ResolveWallByLineResult"],
+        exampleRefs=["route:resolve-wall-by-line", "cli:resolve:wall"],
+        resourceGroups=["resolve", "walls", "line-match", "mcp-resource", "sketch-to-bim"],
+        uiFeatures=["wall-tool", "selection"],
+    )
+)
+
+register(
+    ToolDescriptor(
+        name="resolve.host_face",
+        category="query",
+        inputSchema={
+            "$schema": "http://json-schema.org/draft-07/schema#",
+            "title": "ResolveHostFaceInput",
+            "type": "object",
+            "properties": {
+                "modelId": {"type": "string", "format": "uuid"},
+                "hostId": {"type": "string"},
+                "hostKinds": {"type": "array", "items": {"type": "string"}},
+                "pointMm": {"type": "array", "items": {"type": "number"}, "minItems": 2},
+            },
+            "additionalProperties": True,
+        },
+        outputSchema={
+            "$schema": "http://json-schema.org/draft-07/schema#",
+            "title": "ResolveHostFaceResult",
+            "type": "object",
+            "required": ["ok", "modelId", "revision", "data"],
+            "properties": {
+                "ok": {"type": "boolean"},
+                "modelId": {"type": "string"},
+                "revision": {"type": "integer"},
+                "data": {"type": "object"},
+                "warnings": {"type": "array", "items": {"type": "object"}},
+            },
+            "additionalProperties": True,
+        },
+        exitCodes={
+            "ok": ExitCode(code=0, meaning="Host face resolved"),
+            "not_found": ExitCode(code=1, meaning="Model or host not found"),
+            "bad_request": ExitCode(code=2, meaning="Invalid host-face request"),
+        },
+        cliExample="bim-ai resolve host-face --host wall-1 --point-mm 1000,0 --output json",
+        restEndpoint=RestEndpoint(method="POST", path="/api/models/{model_id}/resolve/host-face"),
+        sideEffects="none",
+        agentSafetyNotes="Read-only hosted-placement resolver for walls, roof faces, and slab faces.",
+        requiredPermissions=["model:read"],
+        schemaRefs=["input:ResolveHostFaceInput", "output:ResolveHostFaceResult"],
+        exampleRefs=["route:resolve-host-face", "cli:resolve:host-face"],
+        resourceGroups=["resolve", "hosts", "host-face", "walls", "roofs", "slabs"],
+        uiFeatures=["canvas-hover", "hosted-placement-tools"],
+    )
+)
+
+register(
+    ToolDescriptor(
+        name="resolve.family_type",
+        category="query",
+        inputSchema={
+            "$schema": "http://json-schema.org/draft-07/schema#",
+            "title": "ResolveFamilyTypeInput",
+            "type": "object",
+            "properties": {
+                "modelId": {"type": "string", "format": "uuid"},
+                "category": {"type": "string"},
+                "name": {"type": "string"},
+                "constraints": {"type": "object"},
+            },
+            "additionalProperties": True,
+        },
+        outputSchema={
+            "$schema": "http://json-schema.org/draft-07/schema#",
+            "title": "ResolveFamilyTypeResult",
+            "type": "object",
+            "required": ["ok", "modelId", "revision", "data"],
+            "properties": {
+                "ok": {"type": "boolean"},
+                "modelId": {"type": "string"},
+                "revision": {"type": "integer"},
+                "data": {"type": "object"},
+                "warnings": {"type": "array", "items": {"type": "object"}},
+            },
+            "additionalProperties": True,
+        },
+        exitCodes={
+            "ok": ExitCode(code=0, meaning="Family/type resolved"),
+            "not_found": ExitCode(code=1, meaning="No matching type found"),
+            "bad_request": ExitCode(code=2, meaning="Invalid resolver request"),
+        },
+        cliExample="bim-ai resolve family-type --category door --name Entry --output json",
+        restEndpoint=RestEndpoint(method="POST", path="/api/models/{model_id}/resolve/family-type"),
+        sideEffects="none",
+        agentSafetyNotes="Read-only replacement for UI family/type picker state.",
+        requiredPermissions=["model:read"],
+        schemaRefs=["input:ResolveFamilyTypeInput", "output:ResolveFamilyTypeResult"],
+        exampleRefs=["route:resolve-family-type", "cli:resolve:family-type"],
+        resourceGroups=["resolve", "types", "families", "catalog", "mcp-resource"],
+        uiFeatures=["type-picker", "family-browser"],
+    )
+)
+
+register(
+    ToolDescriptor(
+        name="resolve.room_boundary",
+        category="query",
+        inputSchema={
+            "$schema": "http://json-schema.org/draft-07/schema#",
+            "title": "ResolveRoomBoundaryInput",
+            "type": "object",
+            "properties": {
+                "modelId": {"type": "string", "format": "uuid"},
+                "roomId": {"type": "string"},
+                "pointMm": {"type": "array", "items": {"type": "number"}, "minItems": 2},
+                "levelId": {"type": "string"},
+            },
+            "additionalProperties": True,
+        },
+        outputSchema={
+            "$schema": "http://json-schema.org/draft-07/schema#",
+            "title": "ResolveRoomBoundaryResult",
+            "type": "object",
+            "required": ["ok", "modelId", "revision", "data"],
+            "properties": {
+                "ok": {"type": "boolean"},
+                "modelId": {"type": "string"},
+                "revision": {"type": "integer"},
+                "data": {"type": "object"},
+                "warnings": {"type": "array", "items": {"type": "object"}},
+            },
+            "additionalProperties": True,
+        },
+        exitCodes={
+            "ok": ExitCode(code=0, meaning="Room boundary resolved"),
+            "not_found": ExitCode(code=1, meaning="Room or boundary not found"),
+            "bad_request": ExitCode(code=2, meaning="Invalid room-boundary request"),
+        },
+        cliExample="bim-ai resolve room-boundary --room room-1 --output json",
+        restEndpoint=RestEndpoint(method="POST", path="/api/models/{model_id}/resolve/room-boundary"),
+        sideEffects="none",
+        agentSafetyNotes="Read-only room/space boundary resolver for room-programme authoring.",
+        requiredPermissions=["model:read"],
+        schemaRefs=["input:ResolveRoomBoundaryInput", "output:ResolveRoomBoundaryResult"],
+        exampleRefs=["route:resolve-room-boundary", "cli:resolve:room-boundary"],
+        resourceGroups=["resolve", "rooms", "boundaries", "loops", "mcp-resource"],
+        uiFeatures=["room-tool", "inspector"],
+    )
+)
+
+register(
+    ToolDescriptor(
+        name="resolve.loop_for_boundary",
+        category="query",
+        inputSchema={
+            "$schema": "http://json-schema.org/draft-07/schema#",
+            "title": "ResolveLoopForBoundaryInput",
+            "type": "object",
+            "properties": {
+                "modelId": {"type": "string", "format": "uuid"},
+                "boundaryElementIds": {"type": "array", "items": {"type": "string"}},
+                "levelId": {"type": "string"},
+                "pointMm": {"type": "array", "items": {"type": "number"}, "minItems": 2},
+            },
+            "additionalProperties": True,
+        },
+        outputSchema={
+            "$schema": "http://json-schema.org/draft-07/schema#",
+            "title": "ResolveLoopForBoundaryResult",
+            "type": "object",
+            "required": ["ok", "modelId", "revision", "data"],
+            "properties": {
+                "ok": {"type": "boolean"},
+                "modelId": {"type": "string"},
+                "revision": {"type": "integer"},
+                "data": {"type": "object"},
+                "warnings": {"type": "array", "items": {"type": "object"}},
+            },
+            "additionalProperties": True,
+        },
+        exitCodes={
+            "ok": ExitCode(code=0, meaning="Boundary loop resolved"),
+            "not_found": ExitCode(code=1, meaning="No loop matched"),
+            "bad_request": ExitCode(code=2, meaning="Invalid boundary request"),
+        },
+        cliExample="bim-ai resolve loop-for-boundary --level level-1 --output json",
+        restEndpoint=RestEndpoint(
+            method="POST", path="/api/models/{model_id}/resolve/loop-for-boundary"
+        ),
+        sideEffects="none",
+        agentSafetyNotes="Read-only resolver from selected/detected boundary context to explicit loop id.",
+        requiredPermissions=["model:read"],
+        schemaRefs=["input:ResolveLoopForBoundaryInput", "output:ResolveLoopForBoundaryResult"],
+        exampleRefs=["route:resolve-loop-for-boundary", "cli:resolve:loop-for-boundary"],
+        resourceGroups=["resolve", "loops", "boundaries", "floors", "roofs", "mcp-resource"],
+        uiFeatures=["floor-tool", "roof-sketch", "room-tool"],
     )
 )
 

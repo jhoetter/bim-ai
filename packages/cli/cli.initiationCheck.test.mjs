@@ -506,6 +506,16 @@ test('sketch evidence collect writes non-browser evidence manifest and visual co
       main: { kind: 'viewpoint', id: 'main' },
       'wall-1': { kind: 'wall', id: 'wall-1' },
       'room-1': { kind: 'room', id: 'room-1' },
+      'floor-1': { kind: 'floor', id: 'floor-1' },
+      'roof-1': { kind: 'roof', id: 'roof-1' },
+      'stair-1': { kind: 'stair', id: 'stair-1' },
+      'door-1': { kind: 'door', id: 'door-1' },
+      'window-1': { kind: 'window', id: 'window-1' },
+      'rail-1': { kind: 'railing', id: 'rail-1' },
+      'chair-1': { kind: 'furniture', id: 'chair-1' },
+      'wt-ext': { kind: 'wall_type', id: 'wt-ext' },
+      'ft-slab': { kind: 'floor_type', id: 'ft-slab' },
+      'rt-roof': { kind: 'roof_type', id: 'rt-roof' },
     },
     violations: [
       {
@@ -546,6 +556,32 @@ test('sketch evidence collect writes non-browser evidence manifest and visual co
         },
       };
     }
+    if (req.url?.endsWith('/exports/ifc-manifest')) {
+      return {
+        body: {
+          format: 'ifc_manifest_v0',
+          exportedIfcKindsInArtifact: {
+            IfcSpace: 1,
+            IfcWall: 1,
+            IfcSlab: 1,
+            IfcRoof: 1,
+            IfcStair: 1,
+            IfcDoor: 1,
+            IfcWindow: 1,
+            IfcRailing: 1,
+            IfcFurnishingElement: 1,
+          },
+        },
+      };
+    }
+    if (req.url?.endsWith('/exports/gltf-manifest')) {
+      return {
+        body: {
+          format: 'gltf_manifest_v0',
+          extensions: { BIM_AI_exportManifest_v0: { countsByKind: { wall: 1, room: 1 } } },
+        },
+      };
+    }
     return { status: 404, body: { error: req.url } };
   });
 
@@ -577,6 +613,8 @@ test('sketch evidence collect writes non-browser evidence manifest and visual co
   assert.equal(manifest.summary.advisor.info, 1);
   assert.equal(manifest.summary.constructability.profile, 'project_initiation');
   assert.equal(manifest.summary.unclassifiedBlockingFindingCount, 2);
+  assert.equal(manifest.summary.toleranceLedger.blockingFindingCount, 2);
+  assert.equal(manifest.summary.exchangeValidation.errorCount, 0);
 
   const visualContract = JSON.parse(
     await fs.readFile(path.join(outDir, 'visual-evidence-contract.json'), 'utf8'),
@@ -590,6 +628,16 @@ test('sketch evidence collect writes non-browser evidence manifest and visual co
   );
   assert.equal(dispositions.schemaVersion, 'sketch.finding-dispositions.v1');
   assert.equal(dispositions.findings.filter((finding) => finding.severity === 'warning').length, 2);
+  const toleranceLedger = JSON.parse(
+    await fs.readFile(path.join(outDir, 'tolerance-ledger.json'), 'utf8'),
+  );
+  assert.equal(toleranceLedger.schemaVersion, 'sketch.tolerance-ledger.v1');
+  assert.equal(toleranceLedger.ok, false);
+  const exportValidation = JSON.parse(
+    await fs.readFile(path.join(outDir, 'export-validation.json'), 'utf8'),
+  );
+  assert.equal(exportValidation.schemaVersion, 'sketch.exchange-validation.v1');
+  assert.equal(exportValidation.ok, true);
 });
 
 test('initiation-compare scores identical PNGs as passing', async () => {
@@ -773,7 +821,11 @@ test('sketch phase accept records warning info and error dispositions', async ()
         severity: 'warning',
         code: 'room_not_enclosed',
         disposition: 'later-phase',
+        affectedFeatureIds: ['room_programme'],
         phaseRationale: 'Rooms are accepted in the room programme phase.',
+        owner: 'architecture-agent',
+        expiryCondition: 'Before room programme phase acceptance.',
+        evidenceLinks: ['evidence/advisor-warning.json'],
         elementIds: ['room-1'],
       },
       {
@@ -821,6 +873,11 @@ test('sketch phase accept records warning info and error dispositions', async ()
   assert.equal(summary.countsByDisposition['later-phase'], 1);
   assert.equal(summary.countsByDisposition.reviewed, 1);
   assert.equal(summary.countsByDisposition.fixed, 1);
+  const toleranceLedger = JSON.parse(
+    await fs.readFile(path.join(outDir, 'phase-tolerance-ledger.json'), 'utf8'),
+  );
+  assert.equal(toleranceLedger.ok, true);
+  assert.equal(toleranceLedger.tolerances[0].affectedFeatureIds[0], 'room_programme');
 });
 
 test('seed-dsl compile emits toposolids, subdivisions, and graded regions in host order', async () => {
@@ -986,6 +1043,17 @@ test('initiation-golden runs the preflight golden suite', async () => {
   const summary = JSON.parse(res.stdout);
   assert.equal(summary.caseCount, 3);
   assert.equal(summary.failCount, 0);
+  assert.equal(summary.liveGoldenPlanCount, 3);
   const written = JSON.parse(await fs.readFile(path.join(dir, 'golden-summary.json'), 'utf8'));
   assert.equal(written.passCount, 3);
+  const plan = JSON.parse(
+    await fs.readFile(
+      path.join(dir, 'target-house-project-initiation', 'live-golden-plan.json'),
+      'utf8',
+    ),
+  );
+  assert.equal(plan.schemaVersion, 'sketch-to-bim-live-golden-plan.v1');
+  assert.equal(plan.noSeedArtifactCreated, true);
+  assert.ok(plan.requiredArtifacts.includes('export-validation.json'));
+  assert.equal(plan.acceptance.requireToleranceLedger, true);
 });

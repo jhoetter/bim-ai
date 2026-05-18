@@ -29,6 +29,7 @@ function usage() {
   node scripts/verify-sketch-seed-artifacts.mjs [--root seed-artifacts] [--seed <name>]
     [--require-final-evidence] [--live] [--base-url <url>]
     [--require-phase-packets] [--require-material-check]
+    [--require-tolerance-ledger] [--require-exchange-validation]
 
 Checks manifest/bundle consistency for seed artifacts. With
 --require-final-evidence, also requires evidence/live-run-current/tool-run-summary.json
@@ -46,6 +47,8 @@ function parseArgs(argv) {
     live: false,
     requirePhasePackets: false,
     requireMaterialCheck: false,
+    requireToleranceLedger: false,
+    requireExchangeValidation: false,
     baseUrl: process.env.BIM_AI_BASE_URL || 'http://127.0.0.1:8500',
   };
   for (let i = 0; i < argv.length; i += 1) {
@@ -53,6 +56,8 @@ function parseArgs(argv) {
     if (arg === '--require-final-evidence') args.requireFinalEvidence = true;
     else if (arg === '--require-phase-packets') args.requirePhasePackets = true;
     else if (arg === '--require-material-check') args.requireMaterialCheck = true;
+    else if (arg === '--require-tolerance-ledger') args.requireToleranceLedger = true;
+    else if (arg === '--require-exchange-validation') args.requireExchangeValidation = true;
     else if (arg === '--live') {
       args.live = true;
       args.requireFinalEvidence = true;
@@ -62,6 +67,28 @@ function parseArgs(argv) {
     else usage();
   }
   return args;
+}
+
+async function readIfExists(file) {
+  if (!(await exists(file))) return null;
+  return readJson(file);
+}
+
+async function verifyRequiredJsonOk(findings, file, codePrefix, label) {
+  const payload = await readIfExists(file);
+  if (!payload) {
+    addFinding(findings, 'error', `${codePrefix}_missing`, `Missing ${label}.`, {
+      expected: portable(file),
+    });
+    return null;
+  }
+  if (payload.ok !== true) {
+    addFinding(findings, 'error', `${codePrefix}_failed`, `${label} is not ok.`, {
+      artifact: portable(file),
+      summary: payload.summary ?? null,
+    });
+  }
+  return payload;
 }
 
 async function readJson(file) {
@@ -228,6 +255,41 @@ async function verifyArtifact(artifactDir, args, currentHead) {
         });
       }
     }
+  }
+
+  if (args.requireToleranceLedger) {
+    const liveLedgerPath = path.join(evidenceDir, 'tolerance-ledger.json');
+    await verifyRequiredJsonOk(
+      findings,
+      liveLedgerPath,
+      'tolerance_ledger',
+      'final live evidence tolerance-ledger.json',
+    );
+    const evidenceRoot = path.join(artifactDir, 'evidence');
+    const entries = await fs.readdir(evidenceRoot, { withFileTypes: true }).catch(() => []);
+    for (const entry of entries.filter((item) => item.isDirectory() && item.name.startsWith('phase-'))) {
+      const phaseLedgerPath = path.join(evidenceRoot, entry.name, 'phase-tolerance-ledger.json');
+      const evidenceLedgerPath = path.join(evidenceRoot, entry.name, 'tolerance-ledger.json');
+      const payload = (await readIfExists(phaseLedgerPath)) ?? (await readIfExists(evidenceLedgerPath));
+      if (!payload) {
+        addFinding(findings, 'error', 'phase_tolerance_ledger_missing', `Missing ${entry.name} tolerance ledger.`, {
+          expectedOneOf: [portable(phaseLedgerPath), portable(evidenceLedgerPath)],
+        });
+      } else if (payload.ok !== true) {
+        addFinding(findings, 'error', 'phase_tolerance_ledger_failed', `${entry.name} tolerance ledger is not ok.`, {
+          summary: payload.summary ?? null,
+        });
+      }
+    }
+  }
+
+  if (args.requireExchangeValidation) {
+    await verifyRequiredJsonOk(
+      findings,
+      path.join(evidenceDir, 'export-validation.json'),
+      'exchange_validation',
+      'final live evidence export-validation.json',
+    );
   }
 
   if (args.live) {

@@ -47,6 +47,84 @@ const READINESS_ADJACENT_SURFACES = [
   },
 ];
 
+const SKB_B08_REQUIRED_RESOURCES = [
+  {
+    id: 'snapshot',
+    acceptedIds: ['model.show', 'model-show'],
+    requiredRoute: 'GET /api/models/{model_id}/snapshot',
+  },
+  {
+    id: 'summary',
+    acceptedIds: ['model.summary', 'model-show'],
+    requiredRoute: 'GET /api/models/{model_id}/summary',
+  },
+  {
+    id: 'levels',
+    acceptedIds: ['query.levels'],
+    requiredRoute: 'POST /api/models/{model_id}/query/levels',
+  },
+  {
+    id: 'views',
+    acceptedIds: ['query.views'],
+    requiredRoute: 'POST /api/models/{model_id}/query/views',
+  },
+  {
+    id: 'types',
+    acceptedIds: ['query.types'],
+    requiredRoute: 'POST /api/models/{model_id}/query/types',
+  },
+  {
+    id: 'elements',
+    acceptedIds: ['query.elements'],
+    requiredRoute: 'POST /api/models/{model_id}/query/elements',
+  },
+  {
+    id: 'advisor',
+    acceptedIds: ['qa.advisor'],
+    requiredRoute: 'POST /api/models/{model_id}/qa/advisor',
+  },
+  {
+    id: 'command-log',
+    acceptedIds: ['model.command_log'],
+    requiredRoute: 'GET /api/models/{model_id}/command-log',
+  },
+  {
+    id: 'evidence-package',
+    acceptedIds: ['evidence.package'],
+    requiredRoute: 'GET /api/models/{model_id}/evidence-package',
+  },
+];
+
+const SKB_B09_COMMAND_SCHEMA_SURFACES = [
+  {
+    id: 'schema-catalog',
+    acceptedIds: ['commands.schema.catalog'],
+    requiredRoute: 'GET /api/v3/commands',
+  },
+  {
+    id: 'schema-inspect',
+    acceptedIds: ['commands.schema.inspect'],
+    requiredRoute: 'GET /api/v3/commands/{name}',
+  },
+];
+
+const SKB_B10_REQUIRED_QUERY_RESOLVE = [
+  'query.elements',
+  'query.hosts',
+  'query.levels',
+  'query.types',
+  'query.views',
+  'query.nearest_wall',
+  'query.enclosed_loops',
+  'resolve.active_or_default_level',
+  'resolve.default_plan_view',
+  'resolve.wall_by_line',
+  'resolve.host_face',
+  'resolve.family_type',
+  'resolve.room_boundary',
+  'resolve.loop_for_boundary',
+];
+
 const SOURCES = {
   commands: 'app/bim_ai/commands.py',
   apiRegistry: 'app/bim_ai/api/registry.py',
@@ -2822,6 +2900,7 @@ function buildAudit() {
       ? []
       : ['Descriptor endpoint path did not match an implemented FastAPI route exactly.'],
   }));
+  const skb = buildSkbReadinessAudit(apiLedger, cmdkLedger);
 
   for (const row of backendLedger) {
     row.m3Promotion =
@@ -3032,6 +3111,15 @@ function buildAudit() {
         ?.passed,
       m2ExportEvidence: m2.closureGates.find((gate) => gate.id === 'exportEvidence')?.passed,
       m2UiEquivalentPath: m2.closureGates.find((gate) => gate.id === 'uiEquivalentPath')?.passed,
+      skbB08ResourceExecutable: skb.summary.b08ResourceExecutable,
+      skbB08ResourceExpected: skb.summary.b08ResourceExpected,
+      skbB09CommandSchemaExecutable: skb.summary.b09CommandSchemaExecutable,
+      skbB09CommandSchemaExpected: skb.summary.b09CommandSchemaExpected,
+      skbB10QueryResolveExecutable: skb.summary.b10QueryResolveExecutable,
+      skbB10QueryResolveExpected: skb.summary.b10QueryResolveExpected,
+      skbB11CmdkMappedEntryCount: skb.summary.b11CmdkMappedEntryCount,
+      skbB11CmdkActivatorMappedEntryCount: skb.summary.b11CmdkActivatorMappedEntryCount,
+      skbB11CmdkActivatorEntryCount: skb.summary.b11CmdkActivatorEntryCount,
       cmdkActivatorOnlyCount: cmdkLedger.filter((row) => row.executionKind === 'activates-tool')
         .length,
       apiDescriptorRouteMismatchCount: apiLedger.filter((row) => !row.routeImplemented).length,
@@ -3077,6 +3165,7 @@ function buildAudit() {
       status: m4Wave1.status === 'Done' ? 'Done' : 'Partial',
       wave1: m4Wave1,
     },
+    skb,
     benchmarkEvidence,
     backendCommands: backendLedger,
     cmdkEntries: cmdkLedger,
@@ -5004,7 +5093,14 @@ function readinessSurfaceRows(apiDescriptors) {
       (row) =>
         row.id.startsWith('sketch.') ||
         row.id.startsWith('qa.') ||
-        row.id.startsWith('export.'),
+        row.id.startsWith('export.') ||
+        row.id.startsWith('query.') ||
+        row.id.startsWith('resolve.') ||
+        row.id.startsWith('commands.schema.') ||
+        row.id === 'model-show' ||
+        row.id === 'model.summary' ||
+        row.id === 'model.command_log' ||
+        row.id === 'evidence.package',
     )
     .map((row) => ({
       id: row.id,
@@ -5015,9 +5111,94 @@ function readinessSurfaceRows(apiDescriptors) {
       notes: row.surfaceNotes,
       source: row.source,
     }));
-  return [...descriptorRows, ...READINESS_ADJACENT_SURFACES].sort((a, b) =>
-    a.id.localeCompare(b.id),
+  const rowsById = new Map();
+  for (const row of [...descriptorRows, ...READINESS_ADJACENT_SURFACES]) {
+    if (!rowsById.has(row.id)) rowsById.set(row.id, row);
+  }
+  return [...rowsById.values()].sort((a, b) => a.id.localeCompare(b.id));
+}
+
+function findDescriptorByAcceptedId(apiDescriptors, acceptedIds) {
+  return apiDescriptors.find((row) =>
+    acceptedIds.some(
+      (id) => normalizedId(row.id) === normalizedId(id) || normalizedId(row.stableId) === normalizedId(id),
+    ),
   );
+}
+
+function skbSurfaceCoverage(requiredRows, apiDescriptors) {
+  return requiredRows.map((required) => {
+    const descriptor = findDescriptorByAcceptedId(apiDescriptors, required.acceptedIds);
+    return {
+      id: required.id,
+      requiredRoute: required.requiredRoute,
+      descriptor: descriptor?.id ?? '',
+      stableId: descriptor?.stableId ?? '',
+      status: descriptor
+        ? descriptor.surfaceStatus === 'executable'
+          ? 'executable'
+          : descriptor.surfaceStatus
+        : 'missing',
+      routeImplemented: descriptor?.routeImplemented ?? false,
+      source: descriptor?.source ?? '',
+      notes: descriptor?.surfaceNotes ?? '',
+    };
+  });
+}
+
+function buildSkbReadinessAudit(apiDescriptors, cmdkLedger) {
+  const resources = skbSurfaceCoverage(SKB_B08_REQUIRED_RESOURCES, apiDescriptors);
+  const commandSchemas = skbSurfaceCoverage(SKB_B09_COMMAND_SCHEMA_SURFACES, apiDescriptors);
+  const queryResolve = SKB_B10_REQUIRED_QUERY_RESOLVE.map((id) => {
+    const descriptor = findDescriptorByAcceptedId(apiDescriptors, [id]);
+    return {
+      id,
+      descriptor: descriptor?.id ?? '',
+      status: descriptor
+        ? descriptor.surfaceStatus === 'executable'
+          ? 'executable'
+          : descriptor.surfaceStatus
+        : 'missing',
+      routeImplemented: descriptor?.routeImplemented ?? false,
+      source: descriptor?.source ?? '',
+      notes: descriptor?.surfaceNotes ?? '',
+    };
+  });
+  const cmdkMappedRows = cmdkLedger.filter((row) => row.agentToolId || row.agentCompletionKind !== 'none');
+  const cmdkActivatorRows = cmdkLedger.filter((row) => row.executionKind === 'activates-tool');
+  const cmdkActivatorMappedRows = cmdkActivatorRows.filter(
+    (row) => row.agentToolId || row.agentCompletionKind !== 'none',
+  );
+  return {
+    resources,
+    commandSchemas,
+    queryResolve,
+    cmdkEquivalence: {
+      entryCount: cmdkLedger.length,
+      mappedEntryCount: cmdkMappedRows.length,
+      activatorEntryCount: cmdkActivatorRows.length,
+      mappedActivatorEntryCount: cmdkActivatorMappedRows.length,
+      unmappedActivatorIds: cmdkActivatorRows
+        .filter((row) => !(row.agentToolId || row.agentCompletionKind !== 'none'))
+        .map((row) => row.id)
+        .sort(),
+      sampleMappedEntries: cmdkMappedRows
+        .slice(0, 25)
+        .map((row) => `${row.id} -> ${row.agentToolId || row.agentCompletionKind}`),
+    },
+    summary: {
+      b08ResourceExecutable: resources.filter((row) => row.status === 'executable').length,
+      b08ResourceExpected: resources.length,
+      b09CommandSchemaExecutable: commandSchemas.filter((row) => row.status === 'executable')
+        .length,
+      b09CommandSchemaExpected: commandSchemas.length,
+      b10QueryResolveExecutable: queryResolve.filter((row) => row.status === 'executable').length,
+      b10QueryResolveExpected: queryResolve.length,
+      b11CmdkMappedEntryCount: cmdkMappedRows.length,
+      b11CmdkActivatorMappedEntryCount: cmdkActivatorMappedRows.length,
+      b11CmdkActivatorEntryCount: cmdkActivatorRows.length,
+    },
+  };
 }
 
 function renderApiLedger(audit) {
@@ -5037,6 +5218,57 @@ function renderApiLedger(audit) {
         row.notes || 'none',
         row.source,
       ]),
+    ),
+    '## SKB B08-B11 Audit',
+    `B08 model resource coverage: ${audit.skb.summary.b08ResourceExecutable}/${audit.skb.summary.b08ResourceExpected} executable.`,
+    table(
+      ['Resource', 'Status', 'Descriptor', 'Required route', 'Route implemented', 'Notes', 'Source'],
+      audit.skb.resources.map((row) => [
+        row.id,
+        row.status,
+        row.descriptor || 'none',
+        row.requiredRoute,
+        row.routeImplemented ? 'yes' : 'no',
+        row.notes || 'none',
+        row.source || 'none',
+      ]),
+    ),
+    `B09 command schema export coverage: ${audit.skb.summary.b09CommandSchemaExecutable}/${audit.skb.summary.b09CommandSchemaExpected} executable. Example payload and raw/semantic mapping metadata remain partial where command metadata reports TODO.`,
+    table(
+      ['Surface', 'Status', 'Descriptor', 'Required route', 'Route implemented', 'Notes', 'Source'],
+      audit.skb.commandSchemas.map((row) => [
+        row.id,
+        row.status,
+        row.descriptor || 'none',
+        row.requiredRoute,
+        row.routeImplemented ? 'yes' : 'no',
+        row.notes || 'none',
+        row.source || 'none',
+      ]),
+    ),
+    `B10 query/resolve coverage: ${audit.skb.summary.b10QueryResolveExecutable}/${audit.skb.summary.b10QueryResolveExpected} executable.`,
+    table(
+      ['Surface', 'Status', 'Descriptor', 'Route implemented', 'Notes', 'Source'],
+      audit.skb.queryResolve.map((row) => [
+        row.id,
+        row.status,
+        row.descriptor || 'none',
+        row.routeImplemented ? 'yes' : 'no',
+        row.notes || 'none',
+        row.source || 'none',
+      ]),
+    ),
+    `B11 Cmd+K agent-equivalence metadata: ${audit.skb.summary.b11CmdkMappedEntryCount}/${audit.skb.cmdkEquivalence.entryCount} entries mapped; ${audit.skb.summary.b11CmdkActivatorMappedEntryCount}/${audit.skb.summary.b11CmdkActivatorEntryCount} activator entries mapped.`,
+    table(
+      ['Metric', 'Value'],
+      [
+        ['unmapped activator count', audit.skb.cmdkEquivalence.unmappedActivatorIds.length],
+        [
+          'unmapped activator ids',
+          audit.skb.cmdkEquivalence.unmappedActivatorIds.slice(0, 50).join(', ') || 'none',
+        ],
+        ['sample mapped entries', audit.skb.cmdkEquivalence.sampleMappedEntries.join(', ') || 'none'],
+      ],
     ),
     '## Descriptor Ledger',
     table(
