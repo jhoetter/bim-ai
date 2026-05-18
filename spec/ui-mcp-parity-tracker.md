@@ -1,0 +1,1049 @@
+# UI to MCP Parity Tracker
+
+Last updated: 2026-05-18
+
+Purpose: track whether every BIM capability that exists in the backend can be used
+by a human through the UI and by an AI agent through CLI / MCP-style tools. This
+is deliberately stricter than the Revit parity tracker. A capability is not
+"agent-ready" just because a backend command exists, and it is not "UI-complete"
+just because Cmd+K can activate an interactive tool.
+
+Related specs and sources:
+
+- `spec/revit-parity/revit2026-parity-tracker.md`
+- `spec/archive/sketch-to-bim-methodology.md`
+- `claude-skills/sketch-to-bim/SKILL.md`
+- `app/bim_ai/commands.py`
+- `app/bim_ai/routes_commands.py`
+- `app/bim_ai/api/registry.py`
+- `packages/web/src/workspace/commandCapabilities.ts`
+- `packages/web/src/cmdPalette/defaultCommands.ts`
+- `packages/web/src/tools/authoringCommandContract.ts`
+- `packages/cli/lib/seed-dsl.mjs`
+
+## Executive Summary
+
+Current inventory from source:
+
+| Surface | Current count | Meaning |
+| --- | ---: | --- |
+| Backend command types | 262 | Pydantic command discriminators in `app/bim_ai/commands.py`; most can be applied through `/commands` or `/commands/bundle`. |
+| Web tool IDs | 101 | Interactive tool registry entries in `packages/web/src/tools/toolRegistry.ts`. |
+| Cmd+K entries | 321 | Human command-palette entries in `packages/web/src/cmdPalette/defaultCommands.ts`. Many activate a tool or open a dialog. |
+| API v3 tool descriptors | 40 | First-class API/CLI descriptors in `app/bim_ai/api/registry.py`. This is the closest current MCP-like catalogue. |
+
+Assessment:
+
+- UI and Cmd+K reachability are broad.
+- Backend command coverage is broad.
+- First-class agentic coverage is incomplete.
+- Generic `apply-bundle` makes most backend commands technically reachable by an
+  expert agent, but this is not enough for product-level MCP parity because the
+  agent must already know opaque internal command shapes.
+- Cmd+K is a good UI capability directory, but it should not be treated as proof
+  that a capability is agent-ready. `tool.wall` starts a wall tool; it does not
+  create a wall unless a user or browser-driving agent performs the geometry
+  gestures.
+
+## Completeness Standard
+
+This tracker is complete only when it can answer this question for every
+capability:
+
+> Can a human using the UI and an external agent using only CLI / MCP create,
+> inspect, revise, document, and export the same BIM result without source-code
+> knowledge?
+
+That standard includes more than create commands. A complete parity design must
+cover:
+
+1. Creation: the object or document artifact can be authored from explicit
+   inputs.
+2. Discovery: an agent can find the relevant existing elements, levels, views,
+   types, materials, and host references.
+3. Editing: the object can be moved, reshaped, retargeted, retyped, and deleted.
+4. Validation: dry-run, advisor, constructability, and schema errors are exposed
+   before destructive commits.
+5. Documentation: views, sheets, tags, dimensions, schedules, legends, and
+   exports can be produced.
+6. Review: visual snapshots, rendered views, model summaries, and command logs
+   are available to a non-browser agent.
+7. Transaction safety: parent revisions, undo/redo, collaboration deltas, and
+   audit metadata work the same way for UI and agent commits.
+8. Permission and scope: commands declare whether they mutate the model, create
+   external assets, call external services, or export data.
+
+Raw bundle access is necessary but not sufficient. For product-grade parity, an
+agent should not need to know internal Pydantic class names, hidden defaults,
+canvas gesture semantics, React component state, or undocumented element-shape
+conventions.
+
+## Status Model
+
+### UI Status
+
+| Code | Meaning |
+| --- | --- |
+| UI-F | Full human workflow exists and can commit the feature from the UI. |
+| UI-A | Activator only. UI can start a tool, but the user must still complete canvas gestures or modal input. |
+| UI-C | Contextual direct command exists from Cmd+K, ribbon, sidebar, or inspector and commits without manual drawing. |
+| UI-P | Partial UI. Some properties are inspectable/editable, but the full workflow is not coherent. |
+| UI-N | No known UI surface. |
+
+### Agent Status
+
+| Code | Meaning |
+| --- | --- |
+| AG-F | First-class typed agent tool exists through API v3 / CLI / future MCP. The tool has input/output schema and safety notes. |
+| AG-D | Seed DSL or domain macro can generate the capability as deterministic bundle commands. |
+| AG-R | Raw command is reachable only through generic `apply` / `apply-bundle`; schema is not exposed as a first-class tool. |
+| AG-B | Browser automation only. An agent could operate the UI, but there is no stable CLI/API command surface. |
+| AG-N | No known agentic path. |
+
+### Parity Status
+
+| Code | Meaning |
+| --- | --- |
+| Parity | Human and agent can both produce the same semantic model result without relying on hidden knowledge. |
+| Usable | Both can do it, but the agent path is raw-bundle or too low-level. |
+| UI-only | Human path exists; agent path is missing or browser-only. |
+| Agent-only | Backend/API path exists; UI path is missing or too weak. |
+| Gap | Neither side has a complete, tested workflow. |
+
+## Design Target
+
+The durable target is a three-layer capability model:
+
+1. Kernel commands
+   - Low-level authoritative verbs such as `createWall`, `createFloor`,
+     `insertDoorOnWall`, `createRoofOpening`, `createPipe`.
+   - All kernel commands should have exported JSON Schema and examples.
+
+2. Semantic authoring tools
+   - Agent-friendly operations that compose kernel commands into real workflows:
+     `create_wall_chain`, `create_floor_from_wall_loop`,
+     `place_openings_on_facade`, `create_roof_with_terrace_cutout`,
+     `create_project_initiation_house`, `generate_documentation_sheet_set`.
+   - These should be the primary MCP tools for authoring.
+
+3. UI / Cmd+K commands
+   - Human workflow entries. Some activate interactive tools; some commit direct
+     semantic commands; some open dialogs.
+   - Cmd+K remains a searchable directory and bridge, not necessarily the agent
+     contract.
+
+## Current Surface Inventory
+
+### Backend Commit Boundary
+
+Backend commands have two related commit paths.
+
+Raw engine commands are applied through:
+
+- `POST /api/models/{model_id}/commands`
+- `POST /api/models/{model_id}/commands/dry-run`
+- `POST /api/models/{model_id}/commands/bundle`
+- `POST /api/models/{model_id}/commands/bundle/dry-run`
+
+CMD-v3 agent bundles are applied through:
+
+- `POST /api/models/{model_id}/bundles`
+
+These routes validate commands with the engine, commit the document, write undo
+records, and broadcast deltas. This is the authoritative agent execution path.
+
+Current issue: the generic bundle and CMD-v3 bundle descriptors ultimately carry
+kernel commands as `items: {"type": "object"}`. That is powerful but opaque. An
+MCP client can call them, but cannot discover the exact legal payloads without
+reading source or external documentation.
+
+### Cmd+K / UI Command Graph
+
+The web capability graph declares every tool as available through `ribbon` and
+`cmd-k`, then augments it with navigation, system, schedule, sheet, 3D, edit,
+visibility, and mass commands. Tests enforce that every `cmd-k` capability is
+registered in the command palette.
+
+Current issue: many tool entries invoke `startPlanTool(...)`. This is correct for
+humans but not equivalent to a complete agent action.
+
+Examples:
+
+| Cmd+K entry | Current UI behavior | Agent interpretation |
+| --- | --- | --- |
+| `tool.wall` | Activates wall tool. User still picks endpoints or lines. | Needs `createWall` / `createWallChain` or a higher-level wall-loop tool. |
+| `tool.floor` | Activates sketch or 3D floor workflow. | Needs `createFloor` or `create_floor_from_boundary`. |
+| `tool.door` | Activates hosted placement. User still picks host and position. | Needs `insertDoorOnWall` with host wall and normalized position. |
+| `tool.roof-sketch` | Activates footprint sketch. | Needs `createRoof`, `createRoofOpening`, roof macro, or wall-loop derivation. |
+| `tool.stair` | Activates stair sketch. | Needs `createStair` or stair-by-runs macro. |
+| `generate.walls-from-boundary` | Direct contextual command from selected floor/room. | Good semantic pattern; should become first-class agent tool. |
+| `tool.roof-from-walls` | Direct contextual command from selected walls. | Good semantic pattern; should become first-class agent tool. |
+
+### API v3 / MCP-like Tool Registry
+
+The current API v3 registry exposes 40 descriptors:
+
+| Tool group | First-class descriptors |
+| --- | --- |
+| Introspection | `api-list-tools`, `api-inspect`, `api-version` |
+| Generic model access | `model-show`, `apply-bundle`, `collab-ws` |
+| Site | `toposolid-create`, `toposolid-update`, `toposolid-delete`, `create-graded-region`, `create-toposolid-subdivision`, `import-neighborhood` |
+| Lenses and metadata | `fire-safety-lens-review-status`, `cost-quantity-lens-review-status`, `construction-lens-report`, `set-view-lens`, `set-element-discipline`, `set-element-construction` |
+| Presentation/export | `presentation-create`, `presentation-revoke`, `presentation-list`, `create-frame`, `export-presentation`, `create-brand-template`, `export-branded-pdf`, `export-render-bundle` |
+| Image/sketch/material/assets | `img-trace`, `import-image-underlay`, `catalog-query`, `place-kitchen-kit`, `update-material-pbr`, `commit-concept-seed`, `list-concept-seeds` |
+| Schedule/detail/property | `create-schedule-view`, `set-element-prop`, `draw-detail-region` |
+| QA | `compare-snapshots`, `external-model-call-audit-export` |
+
+Current issue: the registry has useful islands, but it is not a complete mirror
+of the 262 backend command types and it is not yet organized as a complete BIM
+authoring MCP.
+
+## Audit Dimensions
+
+Every row in the final generated parity ledger should include these fields.
+These are intentionally stricter than a feature checklist because they separate
+"reachable somehow" from "designed for humans and agents."
+
+| Field | Required meaning |
+| --- | --- |
+| Capability id | Stable product-level capability name, not just a command class. Example: `author.wall.chain`. |
+| Backend commands | Exact command discriminators that commit the result. |
+| Element/document kinds | Wall, floor, roof, view, sheet, schedule, material, link, etc. |
+| UI surface | Ribbon tab, toolbar, inspector, canvas tool, browser, modal, right rail, or project menu path. |
+| UI completion kind | `direct`, `interactive-gesture`, `modal-submit`, `contextual-action`, `read-only`, or `none`. |
+| Cmd+K entries | All command palette ids that expose or approximate the capability. |
+| Cmd+K execution kind | `activates-tool`, `opens-dialog`, `commits-command`, `commits-bundle`, `navigates`, `local-ui-only`. |
+| Agent surface | MCP tool id, API v3 descriptor id, CLI subcommand, seed DSL primitive, or raw bundle only. |
+| Agent completion kind | `typed-tool`, `semantic-macro`, `raw-command`, `browser-automation`, `none`. |
+| Context requirements | Required level, host, selected element, view, work plane, family type, material, or active document state. |
+| Agent context substitute | Explicit ids, query tools, resolver tools, or defaults that replace UI selection/active view. |
+| Read/query support | Whether an agent can discover the state it needs before mutation. |
+| Dry-run support | Whether the exact operation can be validated without commit. |
+| Commit support | Whether the operation can be committed through the stable external contract. |
+| Undo/collab support | Whether undo records and websocket deltas are created consistently. |
+| Evidence | Unit test, integration test, Playwright proof, screenshot/render proof, advisor proof, or golden model. |
+| Priority | P0, P1, P2, P3 based on importance for same-house parity. |
+| Status | `Parity`, `Usable`, `UI-only`, `Agent-only`, or `Gap`. |
+| Owner/spec link | Implementation owner or work package. |
+
+The automated audit should generate the mechanical parts of this table from
+source. Humans should maintain the product semantics, priority, and acceptance
+evidence.
+
+## Target MCP Surface
+
+The MCP layer should not expose UI gestures. It should expose typed BIM
+operations, model resources, and validation/reporting tools.
+
+### MCP Resources
+
+| Resource | Purpose |
+| --- | --- |
+| `model://{modelId}/snapshot` | Current model snapshot or selected normalized subset. |
+| `model://{modelId}/summary` | Counts, levels, views, sheets, warnings, recent revisions. |
+| `model://{modelId}/commands/schema` | Exported JSON Schema for all kernel commands. |
+| `model://{modelId}/elements/{elementId}` | Element properties, geometry summary, host relationships, references. |
+| `model://{modelId}/levels` | Level ids, elevations, plan view ids, constraints. |
+| `model://{modelId}/views` | Plan, 3D, section, elevation, sheet, schedule, and template metadata. |
+| `model://{modelId}/types` | Wall/floor/roof/family/material/type catalog visible to the model. |
+| `model://{modelId}/schedules/{scheduleId}` | Schedule definition and rows. |
+| `model://{modelId}/advisor` | Current advisor/constructability findings. |
+| `model://{modelId}/command-log` | Recent commits, authors, assumptions, and undo metadata. |
+| `catalog://assets` | Queryable external asset and family catalog. |
+| `sketch://{assetId}/trace` | Trace output, detected scale, candidate geometry, and uncertainty. |
+
+### MCP Tool Namespaces
+
+| Namespace | Tool family | Required examples |
+| --- | --- | --- |
+| `model.*` | Generic model lifecycle and transactions | `model.show`, `model.dry_run`, `model.commit_bundle`, `model.undo`, `model.redo`, `model.compare_snapshots`. |
+| `query.*` | Read/query/discovery | `query.elements`, `query.hosts`, `query.levels`, `query.types`, `query.views`, `query.nearest_wall`, `query.enclosed_loops`. |
+| `resolve.*` | Replace UI selection and active context | `resolve.active_or_default_level`, `resolve.wall_by_line`, `resolve.room_boundary`, `resolve.host_face`, `resolve.family_type`. |
+| `author.*` | Core building authoring | `author.wall`, `author.wall_chain`, `author.floor_from_boundary`, `author.roof_from_walls`, `author.stair_between_levels`, `author.rooms_from_program`. |
+| `opening.*` | Hosted openings | `opening.door_on_wall`, `opening.window_on_wall`, `opening.wall_opening`, `opening.roof_opening`, `opening.shaft`. |
+| `edit.*` | General modifications | `edit.move`, `edit.rotate`, `edit.mirror`, `edit.align`, `edit.trim`, `edit.split`, `edit.join_geometry`, `edit.delete`, `edit.set_properties`. |
+| `view.*` | Views, cameras, visibility | `view.plan`, `view.section`, `view.elevation`, `view.callout`, `view.save_3d`, `view.template_apply`, `view.set_visibility`. |
+| `document.*` | Drawing production | `document.sheet`, `document.place_view`, `document.schedule`, `document.dimension`, `document.tag`, `document.revision`, `document.legend`. |
+| `site.*` | Site and context | `site.toposolid`, `site.grade_region`, `site.property_line`, `site.georeference`, `site.import_neighborhood`. |
+| `structure.*` | Structural authoring | `structure.column`, `structure.beam`, `structure.brace`, `structure.connection`, `structure.constraint`. |
+| `mep.*` | MEP authoring | `mep.pipe_route`, `mep.duct_route`, `mep.cable_tray`, `mep.equipment`, `mep.fixture`, `mep.opening_request`. |
+| `family.*` | Families/assets/materials | `family.place_instance`, `family.upsert_type`, `asset.query`, `asset.place`, `material.upsert_pbr`, `material.paint_face`, `decal.create`. |
+| `qa.*` | Review and validation | `qa.advisor`, `qa.constructability`, `qa.visual_evidence`, `qa.phase_acceptance`, `qa.audit_external_calls`. |
+| `sketch.*` | Sketch-to-BIM | `sketch.import_underlay`, `sketch.trace`, `sketch.create_ir`, `sketch.compile_seed`, `sketch.apply_phase`. |
+| `export.*` | External outputs | `export.ifc`, `export.gltf`, `export.pdf`, `export.presentation`, `export.render_bundle`, `export.branded_pdf`. |
+
+### MCP Tool Contract
+
+All mutating MCP tools should share a common envelope:
+
+```json
+{
+  "modelId": "string",
+  "parentRevision": "string",
+  "mode": "dry-run | commit",
+  "assumptions": ["string"],
+  "idempotencyKey": "string"
+}
+```
+
+All mutating MCP responses should include:
+
+```json
+{
+  "ok": true,
+  "revision": "string",
+  "createdElementIds": ["string"],
+  "updatedElementIds": ["string"],
+  "deletedElementIds": ["string"],
+  "warnings": ["string"],
+  "advisorFindings": ["string"],
+  "undoToken": "string"
+}
+```
+
+Tool descriptors must also declare:
+
+- Whether the tool writes to the model.
+- Whether it creates external assets or exports data.
+- Whether it requires a live browser or can run server-side.
+- Which kernel commands it may emit.
+- Which UI feature it corresponds to.
+- Which examples are accepted golden payloads.
+
+## Target CLI Surface
+
+The CLI should mirror MCP semantics so external agents can use either transport.
+The raw bundle path remains available, but common workflows should be
+discoverable and typed.
+
+| CLI family | Required examples |
+| --- | --- |
+| `bim-ai model` | `show`, `summary`, `diff`, `dry-run`, `commit-bundle`, `undo`, `redo`. |
+| `bim-ai query` | `elements`, `levels`, `views`, `types`, `hosts`, `loops`, `schedule-rows`. |
+| `bim-ai resolve` | `level`, `wall`, `host-face`, `family-type`, `room-boundary`. |
+| `bim-ai author` | `wall`, `wall-chain`, `floor-boundary`, `floor-from-walls`, `roof-from-walls`, `stair-between-levels`, `rooms-from-program`. |
+| `bim-ai opening` | `door-on-wall`, `window-on-wall`, `wall-opening`, `roof-opening`, `shaft`. |
+| `bim-ai edit` | `move`, `rotate`, `mirror`, `align`, `trim`, `split`, `join`, `delete`, `set-prop`. |
+| `bim-ai document` | `sheet`, `place-view`, `schedule`, `dimension`, `tag`, `revision`. |
+| `bim-ai qa` | `advisor`, `constructability`, `evidence`, `visual-compare`, `phase-accept`. |
+| `bim-ai sketch` | `import-underlay`, `trace`, `create-ir`, `compile-seed`, `apply-phase`. |
+| `bim-ai export` | `ifc`, `gltf`, `pdf`, `presentation`, `render-bundle`. |
+
+CLI commands should support `--dry-run`, `--commit`, `--parent-revision`,
+`--json`, and `--assumption` consistently. If a CLI command is just a thin
+wrapper around raw bundle application, it should be marked as expert/raw in help
+text and in the generated parity report.
+
+## Cmd+K Role and Required Metadata
+
+Cmd+K should remain a fast human directory for UI capabilities. It is still
+valuable for parity because it gives a searchable map of product intent, but it
+needs metadata that prevents false positives.
+
+Required metadata per command palette entry:
+
+| Field | Meaning |
+| --- | --- |
+| `executionKind` | Whether it activates a tool, opens a dialog, commits a command, commits a bundle, navigates, or is local UI only. |
+| `capabilityId` | Product capability id shared with UI/MCP/CLI trackers. |
+| `agentEquivalent` | Optional MCP/CLI tool id that performs the completed semantic action. |
+| `requiredContext` | Selection, active view, document state, or feature flag needed for the UI command. |
+| `resultKind` | `model-mutation`, `view-change`, `dialog`, `navigation`, `export`, `local-state`, or `read-only`. |
+| `proof` | UI test or integration proof that the entry still works. |
+
+Examples:
+
+| Cmd+K id | Correct classification | Agent equivalent |
+| --- | --- | --- |
+| `tool.wall` | `activates-tool` | `author.wall` or `author.wall_chain`. |
+| `tool.door` | `activates-tool` | `opening.door_on_wall`. |
+| `generate.walls-from-boundary` | `commits-command` or `commits-bundle` | `author.walls_from_boundary`. |
+| `view.save` | `commits-command` | `view.save_3d`. |
+| `project.export-ifc` | `opens-dialog` or `commits-export` depending implementation | `export.ifc`. |
+
+## Read and Query Parity
+
+An agent cannot safely build the same house as a human unless it can inspect the
+same state the human sees. Query parity is therefore P0, not a convenience.
+
+| Query capability | Why it matters | Target surface |
+| --- | --- | --- |
+| Model summary | Gives the agent a compact starting point before planning edits. | `model.summary`, `model://summary`. |
+| Element search | Lets the agent find hosts and existing geometry without UI selection. | `query.elements` with filters by category, level, bbox, type, property, createdBy. |
+| Geometry summaries | Supports placement and collision decisions without loading the whole model. | `query.elements(..., includeGeometrySummary=true)`. |
+| Topology/loops | Replaces canvas picking for floor, room, roof, and boundary tools. | `query.enclosed_loops`, `query.wall_chains`, `query.room_boundaries`. |
+| Host resolution | Finds the correct wall/face/roof/slab for hosted elements. | `resolve.host_face`, `resolve.wall_by_line`, `resolve.nearest_wall`. |
+| Type/material catalogs | Prevents agents from inventing invalid family/type/material ids. | `query.types`, `catalog.query`, `material.query`. |
+| View/sheet/schedule listing | Lets an agent document and review existing output. | `query.views`, `query.sheets`, `query.schedules`. |
+| Schedule rows | Lets an agent verify quantities and documentation. | `document.schedule_rows` or schedule resource. |
+| Advisor and warnings | Lets an agent iterate without reading UI panels. | `qa.advisor`, `qa.constructability`. |
+| Command/revision log | Lets an agent understand what changed and recover. | `model.command_log`, `model.compare_snapshots`. |
+
+## Context and Selection Parity
+
+Many UI commands rely on implicit state: active view, selected element, hovered
+host, current level, selected type, current tool mode, or a modal's draft
+values. MCP and CLI tools must make those inputs explicit or provide resolvers.
+
+| UI implicit context | Agent substitute |
+| --- | --- |
+| Selected wall | `wallId`, `query.elements(category=Wall, ...)`, or `resolve.wall_by_line`. |
+| Active level | `levelId` or `resolve.active_or_default_level`. |
+| Active plan view | `viewId` or `resolve.default_plan_view(levelId)`. |
+| Current family/type picker | `typeId` or `resolve.family_type(category, nameOrConstraints)`. |
+| Canvas click position | Explicit world coordinate, wall-normalized parameter, or host face UV. |
+| Sketch loop | Explicit polyline, room boundary id, selected wall loop id, or traced sketch loop id. |
+| Current design option/phase | `phaseId`, `optionId`, or declared default resolution. |
+| UI warning toast | Structured dry-run warning/error response. |
+| Inspector draft | Explicit patch payload with schema-aware property validation. |
+
+No MCP tool should require "the current selection" unless the MCP session has a
+separate, explicit selection resource with stable semantics.
+
+## Transactions, Safety, and Collaboration
+
+Agent parity must use the same transaction discipline as the UI.
+
+Required contract:
+
+- Every mutating request includes `parentRevision` or an explicit conflict
+  policy.
+- Every mutating tool supports `dry-run` unless the operation is intrinsically
+  read-only or external-export-only.
+- Every commit returns revision id, changed element ids, warnings, and undo
+  metadata.
+- Every commit writes an audit trail with user/agent identity, tool id,
+  assumptions, and source payload reference.
+- Every commit emits the same websocket/collaboration deltas expected by the
+  web app.
+- External calls and exports are marked separately from model mutations.
+- Bulk tools must be idempotent or accept an idempotency key.
+- Undo/redo works for raw commands, semantic tools, CLI, and MCP commits.
+
+## Evidence and Tests
+
+The parity tracker should not rely on manual confidence. Each completed row
+needs evidence.
+
+| Evidence kind | Required for |
+| --- | --- |
+| Schema snapshot test | Every backend command schema and every MCP/CLI descriptor. |
+| Descriptor-route test | Every API v3/MCP descriptor id and endpoint path. |
+| Dry-run integration test | Every mutating semantic agent tool. |
+| Commit integration test | Every mutating semantic agent tool. |
+| Undo/collab test | Shared mutation paths and bulk tools. |
+| UI test | Every UI workflow marked `UI-F` or `UI-C`. |
+| Cmd+K metadata test | Every palette entry and capability id. |
+| Golden model test | Core same-house workflows. |
+| Advisor/render proof | Geometry workflows where a committed command can be syntactically valid but visually wrong. |
+| CLI help/schema test | Every typed CLI command. |
+
+The generated parity report should fail CI only for regressions once a row has
+been promoted to `Parity`. During rollout it should emit a gap report without
+blocking unrelated work.
+
+## Capability Matrix
+
+### A. Core Building Authoring
+
+| Capability | Backend commands | UI surface | Cmd+K behavior | CLI/MCP status | Parity | Notes / required work |
+| --- | --- | --- | --- | --- | --- | --- |
+| Levels and plan views | `createLevel`, `moveLevelElevation`, `upsertPlanView`, `createPlanRegion`, `updatePlanRegion` | UI-F through project setup, levels, browser, plan-region UI | Mixed: direct dialogs and tool activation | AG-R. Raw bundle, partial CLI helpers for plan region | Usable | Promote `create-level`, `move-level`, `create-plan-view`, `create-plan-region` as typed tools. |
+| Walls | `createWall`, `createWallChain`, `moveWallDelta`, `moveWallEndpoints`, `updateWall`, `setWallStack`, `setWallLeanTaper`, constraints | UI-F for drawing/editing; UI-A from command palette | `tool.wall` activates drawing; some contextual direct commands exist | AG-D for seed DSL volumes; AG-R for raw commands | Usable | First-class MCP should expose `create_wall`, `create_wall_chain`, `update_wall_endpoints`, `set_wall_type/layers`. |
+| Wall from boundary | `createWallChain` | UI-C from selected floor/room sidebar and Cmd+K | Direct contextual command `generate.walls-from-boundary` | AG-R currently | Usable | Good pattern. Promote to semantic agent tool because it solves the "draw the lines" problem. |
+| Doors | `insertDoorOnWall`, `updateDoor`, `assignOpeningFamily` | UI-F hosted placement and inspector | `tool.door` activates hosted placement; 3D selected-wall commands can dispatch direct insert | AG-R | Usable | Add first-class `place_door_on_wall` with wall id, along distance/t, type, width, swing/handing. |
+| Windows | `insertWindowOnWall`, `updateWindow`, `assignOpeningFamily` | UI-F hosted placement and inspector | `tool.window` activates; type preset entries still activate window tool | AG-R | Usable | Add first-class `place_window_on_wall` with sill/head/height/type. |
+| Wall openings | `createWallOpening`, `updateWallOpening`, `assignOpeningFamily`, `updateOpeningCleanroom` | UI-F through tool/inspector/contextual 3D actions | Mixed activator and direct selected-wall command | AG-R | Usable | Add `create_wall_opening` agent tool and make family cut semantics explicit. |
+| Floors | `createFloor`, `upsertFloorType`, `extendFloorInsulation`, floor profile/properties through updates | UI-F via sketch, picked walls, inspector | `tool.floor`/`tool.floor-sketch` activate; `tool.floor-auto-detect` starts tool | AG-D for seed DSL volumes; AG-R raw | Usable | Add `create_floor_from_boundary`, `create_floor_from_walls`, `set_floor_type`, `set_floor_slope_points`. |
+| Roofs | `createRoof`, `upsertRoofType`, `createRoofOpening`, `createRoofJoin`, `attachWallTopToRoof`, `detachWallTop`, `createDormer`, `createSoffit` | UI-F/P depending roof form; sketch and inspector exist | Activators plus direct `tool.roof-from-walls` | AG-D for seed DSL roofs/openings; AG-R raw | Usable | Critical for sketch-to-BIM. Need semantic tools for gable/hip/flat/terrace cutout and explicit render evidence. |
+| Roof openings / terraces | `createRoofOpening`, `createFloor`, `createRailing`, `createWallOpening`, `createBalcony` | UI-P. Pieces exist; composed terrace workflow is not a single robust authoring path | Mostly activators or contextual commands | AG-D partial via seed DSL roof openings/loggia; AG-R raw | Gap | Needs semantic `create_roof_terrace_cutout` with roof void, terrace slab, returns, railing, access door, advisor checks. |
+| Rooms and areas | `createRoomOutline`, `createRoomRectangle`, `createRoomPoly`, `placeRoomAtPoint`, `createRoomSeparation`, `createArea`, `updateArea`, room volume/color scheme | UI-F for placement/inspector; advisor catches many issues | `tool.room`, `tool.area`, `tool.room-separation-sketch` activate | AG-D for seed DSL room outlines; AG-R raw | Usable | Add typed `create_rooms_from_program`, `place_room`, `create_room_boundaries`; forbid fake closure shortcuts in agent tools. |
+| Stairs | `createStair`, `setStairSubKind`, `update_stair_treads`, stair run/landing edit commands | UI-F for creation/editing; stair inspector and grips | Activator plus some direct edit/flip commands | AG-R plus API descriptor `update-stair-treads` | Usable | Add `create_stair_by_runs`, `create_stair_between_levels`, `create_stair_with_shaft`. |
+| Shafts and slab openings | `createSlabOpening`, `createRoofOpening`, shaft-related UI handlers | UI-F/P through shaft tool and inspector actions | `tool.shaft`, `modify.shaft-apply-cut`, `modify.add-shaft-side-walls` | AG-R | Usable | Add first-class `create_shaft`, `apply_shaft_cut`, `create_stair_shaft`. |
+| Railings and balconies | `createRailing`, `setRailingBalusterPattern`, `setRailingHandrailSupports`, `createBalcony` | UI-F/P; railing path tool and terrace preset exist | `tool.railing` activates; terrace preset opens dialog | AG-R | Usable | Add semantic `create_railing_path`, `create_balcony`, `create_terrace_from_floor`. |
+| Ceilings | `createCeiling` | UI-F via ceiling tool/inspector | `tool.ceiling` activates | AG-R | Usable | Add `create_ceiling_from_boundary`. |
+| Massing and materialization | `createMass`, `materializeMassToWalls`, `createVoidCut`, mass generation commands | UI-F/P through mass tools and commands | `tool.mass-*`, `mass.generate-*` | AG-R | Usable | MCP should distinguish temporary mass studies from final BIM geometry. |
+
+### B. Modify and Editing
+
+| Capability | Backend commands | UI surface | Cmd+K behavior | CLI/MCP status | Parity | Notes / required work |
+| --- | --- | --- | --- | --- | --- | --- |
+| Move/copy/rotate/mirror | `moveElementsDelta`, `rotateElements`, `mirrorElements`, `moveElement`, copy UI helpers | UI-F through tools/grips | Activators; some direct model commands | AG-R | Usable | Add first-class `move_elements`, `copy_elements`, `rotate_elements`, `mirror_elements`. |
+| Align/trim/split/offset | `alignElementToReference`, `trimElementToReference`, `trimExtendToCorner`, `splitWallAt` | UI-F for plan tools | Activators | AG-R | Usable | Agent tools should accept explicit ids/reference geometry. |
+| Join/unjoin/cut geometry | `createJoinGeometry`, `setWallJoinVariant`, `setWallJoinDisallow`, cut geometry commands | UI-C/F via contextual commands and tools | Direct `modify.join-geometry`, activators for cut | AG-R | Usable | Promote direct typed tools with exactly-two-elements validation. |
+| Pin/unpin/delete/restore | `pinElement`, `unpinElement`, `deleteElement`, `deleteElements`, `restoreElement` | UI-F through inspector/contextual commands | Direct commands | AG-R | Usable | Straightforward first-class tools. |
+| Element properties | `updateElementProperty`, `set_element_prop`, type-specific update commands | UI-F through inspectors | Mixed direct commands and inspector surfaces | AG-F for `set-element-prop`; AG-R for general property command | Usable | Add schema-aware property introspection so agents do not set invalid keys. |
+| Phases/options | `createPhase`, `renamePhase`, `reorderPhase`, `deletePhase`, `setElementPhase`, `setViewPhase`, `createOptionSet`, `addOption`, `assignElementToOption` | UI-F/P for phase dialogs and option handling | Manage commands open dialogs | AG-R | Usable | Add first-class phase/design-option tools because this is important for professional parity. |
+
+### C. Annotation and Documentation
+
+| Capability | Backend commands | UI surface | Cmd+K behavior | CLI/MCP status | Parity | Notes / required work |
+| --- | --- | --- | --- | --- | --- | --- |
+| Dimensions | `createDimension`, `createAngularDimension`, `createRadialDimension`, `createDiameterDimension`, `createArcLengthDimension`, stacking | UI-F through tools/inspector | Activators plus direct stack command | AG-R | Usable | Add `create_dimension_between_refs`, `create_angular_dimension`, `stack_dimensions`. |
+| Tags and symbols | `placeTag`, `createMaterialTag`, `createMultiCategoryTag`, `upsertTagDefinition`, `createAnnotationSymbol` | UI-F/P | Tag activators plus auto-tag commands | AG-R | Usable | Add first-class auto-tag and place-tag tools. |
+| Text/detail regions/detail components | `createTextNote`, `createDetailLine`, `createDetailRegion`, `create_detail_region`, `update_detail_region`, `createDetailComponent`, `createRepeatingDetail` | UI-F/P | Activators and one API descriptor for detail region | AG-F for `draw-detail-region`; AG-R otherwise | Usable | Expand API descriptors for text/detail line/detail component. |
+| Revision clouds and markups | `createRevisionCloud`, `createRevision`, sheet revision commands | UI-F/P | Activators/dialogs | AG-R | Usable | Add `create_revision`, `assign_revision_to_sheet`, `draw_revision_cloud`. |
+| Spot annotations, keynote, north arrow, span direction, tread numbers | Many `createSpot*`, `createKeynote`, `createTreadNumber`, `createSpanDirection` | UI-P/F depending annotation | Mostly activators | AG-R | Usable | Useful but lower priority than model authoring. |
+
+### D. Views, Sheets, Schedules, Presentation
+
+| Capability | Backend commands | UI surface | Cmd+K behavior | CLI/MCP status | Parity | Notes / required work |
+| --- | --- | --- | --- | --- | --- | --- |
+| Plan/section/elevation/callout views | `upsertPlanView`, `createSectionCut`, `createElevationView`, `createCallout`, `CreateDraftingView` | UI-F through browser/tools | Activators/direct browser commands | AG-R | Usable | Add `create_plan_view`, `create_section`, `create_elevation`, `create_callout`. |
+| View templates, visibility, crop/range | `upsertViewTemplate`, `applyPlanViewTemplate`, `updatePlanViewCrop`, `updatePlanViewRange`, `hideElementInView`, `unhideElementInView`, `set_view_lens` | UI-F through dialogs/header/browser | Direct/open-dialog commands | AG-F for `set-view-lens`; AG-R otherwise | Usable | Add first-class view-template and visibility tools. |
+| 3D/saved views/cameras | `saveViewpoint`, `create_saved_view`, `update_saved_view`, `delete_saved_view` | UI-F through viewport/browser | Direct camera save/update/reset commands | AG-D for seed DSL viewpoints; AG-R raw | Usable | Add stable `save_viewpoint`/`set_camera` CLI tools for evidence workflows. |
+| Sheets/viewports/titleblocks | `upsertSheet`, `upsertSheetViewports`, `CreateSheet`, `PlaceViewOnSheet`, `MoveViewOnSheet`, `RemoveViewFromSheet`, `SetSheetTitleblock` | UI-F through sheet mode/dialogs | Sheet commands direct/open dialogs | AG-R | Usable | Add typed documentation tools for agents. |
+| Schedules | `upsertSchedule`, `upsertScheduleFilters`, `create_schedule_view` | UI-F through schedule mode | Direct/open commands | AG-F for `create-schedule-view`; AG-R for other schedule ops | Usable | Expand schedule query/mutation tools. |
+| Presentation canvases/frames/export/share links | `create_presentation_canvas`, `create_frame`, `update_frame`, presentation link endpoints | UI-F/P | Direct/open share commands | AG-F for link/frame/export pieces | Usable | Stronger than many domains; still needs one semantic `create_presentation_deck`. |
+
+### E. Site, Context, Import/Export
+
+| Capability | Backend commands | UI surface | Cmd+K behavior | CLI/MCP status | Parity | Notes / required work |
+| --- | --- | --- | --- | --- | --- | --- |
+| Toposolid and grading | `CreateToposolid`, `UpdateToposolid`, `CreateGradedRegion`, subdivisions, excavations | UI-F/P through terrain tools/inspectors | Activators | AG-F for toposolid and graded region subset; AG-D seed DSL; AG-R for excavation/update variants | Usable | API coverage is comparatively good; fill missing excavation/update/delete descriptors. |
+| Property lines, base/survey point, sun/settings | `createPropertyLine`, `createProjectBasePoint`, `createSurveyPoint`, `createSunSettings`, updates | UI-F/P | Activators/direct dialogs | AG-R | Usable | Add first-class georeference/site setup toolset. |
+| Neighborhood/site import | OSM/context commands, `upsertSite` | UI-P | Direct/display commands | AG-F for `import-neighborhood`; AG-D georeference in seed DSL | Usable | Need deterministic site context authoring contract. |
+| Links/imports | `createLinkModel`, `createLinkDxf`, `createExternalLink`, update/delete variants | UI-F through Manage Links/project menu | Direct/open dialogs | AG-R plus CLI `link` commands for model links | Usable | Add MCP descriptors for all link CRUD and reload semantics. |
+| Image underlay and tracing | `import_image_underlay`, move/scale/rotate/delete underlay, `TraceImage` | UI-F/P | Import/open commands | AG-F for import underlay and `img-trace`; AG-R for transform commands | Usable | Important for sketch-to-BIM. Add complete underlay transform descriptors. |
+| Export | IFC/DXF/DGN/PDF/glTF/render bundles/branded PDF | UI-F/P through project/export menus | Export commands open/direct | AG-F for render/branded/presentation exports; CLI has gltf/glb/ifc/json | Usable | Need one export registry that matches UI export choices. |
+
+### F. Structure, MEP, Families, Materials
+
+| Capability | Backend commands | UI surface | Cmd+K behavior | CLI/MCP status | Parity | Notes / required work |
+| --- | --- | --- | --- | --- | --- | --- |
+| Structural columns/beams/braces/connections | `createColumn`, `createBeam`, `createConstraint`, steel connection/beam profile commands | UI-F/P through structure/steel tabs and inspectors | Activators plus contextual commands | AG-R | Usable | Add typed structure authoring tools. |
+| Construction metadata/logistics/QA | `setElementConstruction`, `createConstructionPackage`, `createConstructionLogistics`, `upsertConstructionQaChecklist` | UI-P through construction lens/readouts | Lens commands | AG-F for report/set-element-construction; AG-R for package/logistics/checklist | Usable | Expand construction package mutation tools. |
+| MEP routes/equipment/opening requests | `createPipe`, `createDuct`, `createCableTray`, `createMepEquipment`, `createFixture`, `createMepTerminal`, `createMepOpeningRequest`, legends | UI-F/P through MEP lens/tools | Activators | AG-R | UI-only for practical use | Add first-class MEP tools with route geometry, elevation, system type, service level. |
+| Families and assets | `upsertFamilyType`, `placeFamilyInstance`, `IndexAsset`, `PlaceAsset`, `place_kit`, family editor local commands | UI-F/P through family library/editor | Activators/open panels/direct kitchen kit concept | AG-F for `catalog-query`, `place-kitchen-kit`; AG-R for asset/family basics | Usable | Need first-class `place_family_instance`, `index_asset`, family parameter/cut/category tools. |
+| Materials/PBR/paint/decal | `update_material_pbr`, paint face commands, decal commands | UI-F/P through material browser/paint/decal inspectors | Activators/direct material browser | AG-F for `update-material-pbr`; AG-R for paint/decal creation | Usable | Add face/material assignment and decal tools. |
+
+### G. Sketch-to-BIM Agent Workflow
+
+| Workflow capability | Current state | UI status | Agent status | Parity | Required work |
+| --- | --- | --- | --- | --- | --- |
+| Intake sketch and produce IR | Methodology and examples exist. `img-trace` extracts floorplan structure, but broad visual interpretation is still agent cognition. | UI-N/P | AG-F for image trace, AG-B/agent cognition for visual read | Usable | Add first-class `create_sketch_ir` or external-agent contract for images/briefs. |
+| Compile design intent into commands | `seed-dsl.v0` compiles levels, types, volumes, roofs/openings, rooms, terrain, assets, materials, loggias/wrappers, viewpoints, raw commands. | UI-N | AG-D | Usable | Extend DSL primitives for stairs, openings, facade rhythm, MEP, sheets, roof terrace, wall attachments. |
+| Load/apply generated model | `make seed`, CLI `apply-bundle`, API bundle routes | UI-P through loaded model | AG-F/AG-R | Usable | Standardize one MCP "apply design bundle" tool with dry-run, commit, evidence output. |
+| Validate model | Advisor, constructability report, evidence package, screenshots, visual gate | UI-F advisor/right rail | AG-F/P through CLI helper and endpoints | Usable | Promote helper functions to stable API tools: advisor, constructability, browser evidence, phase accept. |
+| Iterate to accepted seed | Skill enforces loop, but requires expert agent and live app | UI-F for inspection | AG-D/AG-B | Usable | Build higher-level `run_sketch_to_bim_phase` and `accept_sketch_seed` tools. |
+
+## Same-House Parity Benchmarks
+
+The most important acceptance test is not whether every command is callable. It
+is whether the same design can be produced through both interaction models.
+
+Each benchmark should have:
+
+- A human/UI path using ribbon, canvas, inspectors, browser, and Cmd+K where
+  appropriate.
+- An agent path using only MCP/CLI/resources, no browser automation unless the
+  row explicitly tests browser fallback.
+- A golden model snapshot or semantic comparison.
+- Rendered screenshots from agreed viewpoints.
+- Advisor/constructability output.
+- A documentation/export output when relevant.
+- A command log that proves both paths used supported public surfaces.
+
+### Benchmark Set
+
+| Benchmark | Must cover | Why it matters |
+| --- | --- | --- |
+| `simple-single-storey-house` | Levels, exterior/interior walls, rooms, doors, windows, floor, roof, tags, dimensions, sheet, schedule, IFC/glTF export. | Baseline "can build a real house" parity. |
+| `two-storey-house-with-stair` | Multiple levels, stair, shaft/slab opening, hosted openings, railings, plan/section views, sheets. | Tests vertical circulation and cross-level constraints. |
+| `roof-terrace-house` | Roof opening, terrace slab, parapet/railing, access door, drainage/slope hints, rendered evidence. | Directly tests a workflow that raw tool activation does not solve. |
+| `sketch-to-bim-floorplan` | Image underlay, trace, scale calibration, wall chain, rooms, openings, validation loop. | Tests the expected external-AI workflow. |
+| `site-and-context-house` | Toposolid, graded region, property line, base/survey point, sun settings, neighborhood/context import. | Tests site context and georeference parity. |
+| `documentation-pack` | View templates, plan views, section/elevation/callout, sheets, schedules, tags, dimensions, revisions, PDF export. | Tests whether an agent can create deliverables, not just model geometry. |
+| `structure-and-mep-lite` | Columns/beams, simple pipe/duct route, equipment/fixtures, opening request, discipline metadata. | Tests professional downstream domains. |
+| `presentation-pack` | Saved views, frames, branded template, render bundle, presentation export/share. | Tests client-facing output parity. |
+
+### Semantic Comparison Rules
+
+The UI and agent results do not need identical command histories. They do need
+semantic equivalence:
+
+- Element categories and counts match within benchmark-specific tolerances.
+- Key dimensions, levels, room names, openings, and host relationships match.
+- Required views/sheets/schedules/exports exist.
+- Advisor severity does not regress.
+- Rendered views are nonblank and show the expected building parts.
+- No private/raw-only operation is used when a first-class tool exists.
+
+## Highest Priority Gaps
+
+### P0. Export kernel command schemas
+
+Every backend command discriminator in `app/bim_ai/commands.py` should be
+available as generated JSON Schema through API introspection.
+
+Acceptance criteria:
+
+- `GET /api/v3/commands` returns all command schemas.
+- `GET /api/v3/commands/createWall` returns exact input schema, examples, and
+  side effects.
+- `bim-ai api list-commands --output json` mirrors it.
+- CI fails when a new `*Cmd` class is added without schema/export metadata.
+
+### P0. Add semantic authoring MCP tools for common BIM tasks
+
+Minimum first wave:
+
+- `create_wall`
+- `create_wall_chain`
+- `create_walls_from_boundary`
+- `create_floor_from_boundary`
+- `create_floor_from_walls`
+- `place_door_on_wall`
+- `place_window_on_wall`
+- `create_roof_from_walls`
+- `create_roof_opening`
+- `create_stair_between_levels`
+- `create_rooms_from_outlines`
+- `save_viewpoint`
+- `create_sheet_with_views`
+- `run_advisor`
+- `dry_run_bundle`
+- `commit_bundle`
+
+Acceptance criteria:
+
+- Each tool has an API descriptor with input/output schema, CLI example, and
+  agent safety notes.
+- Each tool has at least one dry-run and commit test.
+- Each tool maps to the same backend commands the UI uses.
+
+### P0. Mark Cmd+K entries by execution semantics
+
+Cmd+K should explicitly classify each entry:
+
+- `activates-tool`
+- `opens-dialog`
+- `commits-command`
+- `commits-bundle`
+- `navigates`
+- `local-ui-only`
+
+Acceptance criteria:
+
+- `PaletteEntry` or command capability metadata includes `executionKind`.
+- Tests prove tool activators are not counted as agent-complete actions.
+- The command palette can still show human-friendly labels while the tracker can
+  audit true executability.
+
+### P0. Add read/query/context parity tools
+
+Agents need to discover model state before issuing mutations. Without this, a
+tool like `place_door_on_wall` is only usable by an agent that already knows
+wall ids and type ids.
+
+Minimum first wave:
+
+- `model.summary`
+- `query.elements`
+- `query.levels`
+- `query.types`
+- `query.views`
+- `query.sheets`
+- `query.schedules`
+- `query.enclosed_loops`
+- `resolve.active_or_default_level`
+- `resolve.wall_by_line`
+- `resolve.nearest_wall`
+- `resolve.family_type`
+- `resolve.host_face`
+
+Acceptance criteria:
+
+- Every P0 authoring tool can be completed using only MCP/CLI query and resolve
+  tools plus explicit user/agent inputs.
+- No first-class MCP authoring tool depends on browser selection or active UI
+  state.
+- Query responses are compact enough for agents but include stable ids and
+  enough geometry/reference metadata to act.
+
+### P0. Establish same-house parity benchmarks
+
+Create the benchmark suite described above and run it from CI or a reproducible
+local command.
+
+Acceptance criteria:
+
+- At least `simple-single-storey-house`, `two-storey-house-with-stair`, and
+  `sketch-to-bim-floorplan` have both UI and MCP/CLI paths.
+- The benchmark emits semantic diff, advisor report, screenshots, and command
+  surface usage.
+- A feature can move to `Parity` only when it participates in at least one
+  passing benchmark or has equivalent focused proof.
+
+### P1. Create an automated parity report
+
+Add a script that emits:
+
+```text
+backend command -> UI surfaces -> Cmd+K entry -> API/CLI descriptor -> seed DSL support -> status
+```
+
+Acceptance criteria:
+
+- `node scripts/audit-ui-mcp-parity.mjs --out spec/generated/ui-mcp-parity.json`
+- Flags backend commands with no UI and no first-class agent tool.
+- Flags Cmd+K entries that are activators only.
+- Flags API descriptors whose endpoint paths do not match implemented routes.
+
+Required generated artifacts:
+
+| Artifact | Contents |
+| --- | --- |
+| `spec/generated/ui-mcp-parity.json` | Machine-readable capability ledger with backend/UI/Cmd+K/CLI/API/MCP status. |
+| `spec/generated/backend-command-ledger.md` | One row per backend command discriminator, grouped by domain. |
+| `spec/generated/cmdk-execution-ledger.md` | One row per command palette id with execution kind and agent equivalent. |
+| `spec/generated/api-descriptor-ledger.md` | One row per API v3/MCP descriptor with route, schema, examples, and tests. |
+| `spec/generated/parity-gap-report.md` | Human-readable current gaps sorted by P0/P1/P2 and capability domain. |
+
+The generated files should not replace this tracker. They should make this
+tracker auditable and keep it honest as code changes.
+
+### P1. Verify descriptor-route integrity
+
+The registry must not advertise tools whose routes, payloads, or examples drift
+from implementation.
+
+Acceptance criteria:
+
+- Every API v3/MCP descriptor has a route test that verifies method/path
+  existence.
+- Every descriptor example passes validation and reaches dry-run or a mocked
+  handler.
+- `api-list-tools` output includes stable ids, version, mutability, required
+  permissions, and schema references.
+- Deprecated descriptors declare replacements and remain visible until the
+  migration window closes.
+
+### P1. Split generic `apply-bundle` from first-class tools in docs and UX
+
+The generic bundle route is the escape hatch. It should stay, but it should not
+be the only official agent path for core authoring.
+
+Acceptance criteria:
+
+- API docs call `apply-bundle` "expert/raw".
+- First-class semantic tools are the recommended MCP path.
+- Sketch-to-BIM skill uses semantic tools first, raw bundle only for unsupported
+  features with a documented reason.
+
+### P1. Promote sketch-to-BIM helper operations to stable API tools
+
+The current skill-local helper is useful but local. The product API should expose
+the stable parts.
+
+Acceptance criteria:
+
+- `advisor-report`
+- `constructability-report`
+- `evidence-package`
+- `browser-evidence` or server-rendered view capture equivalent
+- `visual-compare`
+- `phase-acceptance`
+- `seed-stale-check`
+
+## Tracker Rows by Raw Backend Command Group
+
+This section is a raw inventory starting point. It intentionally marks many
+commands as `AG-R` because they are currently reachable only by generic bundle
+application, even if the UI can exercise them through interactive workflows.
+
+The final generated ledger must expand every command listed here into an
+individual row. Group status is useful for planning, but it is not enough to
+close parity because commands in the same group can have different UI paths,
+context requirements, examples, and agent readiness.
+
+Per-command rows must answer:
+
+- Is this command public product behavior, internal implementation detail, or
+  compatibility/deprecated behavior?
+- Which capability id owns it?
+- Which UI flow emits it today?
+- Which Cmd+K entry exposes or approximates it?
+- Which MCP/CLI tool should call it directly or indirectly?
+- Does the command need a first-class public tool, or should it remain available
+  only through expert/raw bundle application?
+- Which query/resolve tools supply its required ids and references?
+- Which tests and examples prove it works?
+
+### Annotation and Documentation
+
+Commands:
+`bumpMonitoredRevisions`, `clearAutoGeneratedAnnotations`, `createAngularDimension`,
+`createAnnotationSymbol`, `createArcLengthDimension`, `createDetailComponent`,
+`createDetailGroup`, `createDetailLine`, `createDetailRegion`,
+`createDiameterDimension`, `createDimension`, `createInsulationAnnotation`,
+`createKeynote`, `createMaskingRegion`, `createMaterialTag`,
+`createMultiCategoryTag`, `createRadialDimension`, `createRepeatingDetail`,
+`createRevisionCloud`, `createSpanDirection`, `createSpotCoordinate`,
+`createSpotElevation`, `createSpotSlope`, `createText3d`, `createTextNote`,
+`createTreadNumber`, `create_detail_region`, `deleteMaskingRegion`, `placeTag`,
+`updateMaskingRegion`, `update_detail_region`, `upsertPlanTagStyle`,
+`upsertTagDefinition`.
+
+Status: UI-F/P, Cmd+K mixed activator/direct, AG-F for `draw-detail-region`,
+AG-R for most commands. Priority: P1 for dimensions/tags/text; P2 for special
+annotations.
+
+### Building Authoring
+
+Commands:
+`CreateWindowLegendView`, `assignOpeningFamily`, `assignWallDatumConstraints`,
+`attachWallTop`, `attachWallTopToRoof`, `createArea`, `createBalcony`,
+`createCeiling`, `createDormer`, `createFloor`, `createMepOpeningRequest`,
+`createRailing`, `createRoof`, `createRoofJoin`, `createRoofOpening`,
+`createRoomOutline`, `createRoomPoly`, `createRoomRectangle`,
+`createRoomSeparation`, `createSlabOpening`, `createSoffit`, `createStair`,
+`createSweep`, `createWall`, `createWallChain`, `createWallOpening`,
+`createWallType`, `deleteArea`, `detachWallTop`, `extendFloorInsulation`,
+`insertDoorOnWall`, `insertWindowOnWall`, `materializeMassToWalls`,
+`moveWallDelta`, `moveWallEndpoints`, `placeRoomAtPoint`,
+`setRailingBalusterPattern`, `setRailingHandrailSupports`, `setStairSubKind`,
+`setWallJoinDisallow`, `setWallJoinVariant`, `setWallLeanTaper`,
+`setWallRecessZones`, `setWallStack`, `splitWallAt`, `updateArea`,
+`updateDoor`, `updateOpeningCleanroom`, `updateWall`, `updateWallOpening`,
+`updateWindow`, `update_stair_treads`, `upsertFloorType`, `upsertRoofType`,
+`upsertRoomColorScheme`, `upsertRoomVolume`, `upsertWallType`.
+
+Status: UI-F/P, Cmd+K broad but often activator, AG-D for seed DSL subset,
+AG-F only for `update-stair-treads`, AG-R for most. Priority: P0.
+
+### Edit and Model Management
+
+Commands:
+`SetElementOverride`, `addOption`, `alignElementToReference`,
+`assignElementToOption`, `createJoinGeometry`, `createOptionSet`, `createPhase`,
+`deleteElement`, `deleteElements`, `deletePhase`, `deletePlanRegion`,
+`deleteReferencePlane`, `delete_frame`, `mirrorElements`, `moveElement`,
+`moveElementsDelta`, `moveGridLineEndpoints`, `pinElement`, `removeOption`,
+`reorderPhase`, `restoreElement`, `rotateElements`, `setElementDiscipline`,
+`setElementPhase`, `setPrimaryOption`, `trimElementToReference`,
+`trimExtendToCorner`, `unpinElement`.
+
+Status: UI-F/P, Cmd+K mixed, AG-F for `set-element-discipline`, AG-R for most.
+Priority: P0 for move/copy/rotate/delete/join, P1 for phases/options.
+
+### Families, Assets, Materials
+
+Commands:
+`IndexAsset`, `PlaceAsset`, `TraceImage`, `create_decal`,
+`delete_image_underlay`, `import_image_underlay`, `moveAssetDelta`,
+`move_image_underlay`, `placeFamilyInstance`, `place_kit`,
+`rotate_image_underlay`, `scale_image_underlay`, `update_kit_component`,
+`update_material_pbr`, `upsertFamilyType`.
+
+Status: UI-F/P, Cmd+K mixed, AG-F for `img-trace`, `import-image-underlay`,
+`catalog-query`, `place-kitchen-kit`, `update-material-pbr`, AG-R for general
+family/asset/decal operations. Priority: P1.
+
+### Interop and Links
+
+Commands:
+`createExternalLink`, `createLinkDxf`, `createLinkModel`, `deleteExternalLink`,
+`deleteLinkModel`, `updateExternalLink`, `updateLinkDxf`, `updateLinkModel`.
+
+Status: UI-F, Cmd+K opens dialogs, CLI has model link helpers, AG-R for full
+CRUD/reload. Priority: P1.
+
+### MEP
+
+Commands:
+`createCableTray`, `createDuct`, `createDuctLegend`, `createFixture`,
+`createMepEquipment`, `createMepTerminal`, `createPipe`, `createPipeLegend`.
+
+Status: UI-F/P through MEP tools, Cmd+K activators, AG-R. Priority: P1 if MEP
+authoring parity is a near-term goal, otherwise P2.
+
+### Presentation and Concept
+
+Commands:
+`commit_concept_seed`, `consume_concept_seed`, `create_concept_seed`,
+`create_frame`, `create_presentation_canvas`, `reorder_frame`, `update_frame`,
+`update_presentation_canvas`.
+
+Status: UI-P/F, Cmd+K mixed, AG-F for concept seed commit/list, create frame,
+presentation export/link operations, AG-R for canvas/frame updates. Priority: P2.
+
+### Site and Context
+
+Commands:
+`CreateGradedRegion`, `CreateToposolid`, `CreateToposolidExcavation`,
+`DeleteGradedRegion`, `DeleteToposolid`, `DeleteToposolidExcavation`,
+`UpdateGradedRegion`, `UpdateToposolid`, `UpdateToposolidExcavation`,
+`createProjectBasePoint`, `createPropertyLine`, `createSunSettings`,
+`createSurveyPoint`, `create_property_definition`,
+`create_toposolid_subdivision`, `deletePropertyLine`,
+`delete_toposolid_subdivision`, `moveProjectBasePoint`, `moveSurveyPoint`,
+`rotateProjectBasePoint`, `updateElementProperty`, `updatePropertyLine`,
+`updateSunSettings`, `update_toposolid_subdivision`, `upsertSite`.
+
+Status: UI-F/P, Cmd+K mixed, AG-F for toposolid create/update/delete, graded
+region create, subdivision create, neighborhood import; AG-R for many updates
+and setup commands. Priority: P1.
+
+### Structure and Constraints
+
+Commands:
+`createBeam`, `createColumn`, `createConstraint`, `createConstructionLogistics`,
+`createConstructionPackage`, `moveBeamEndpoints`, `moveColumnDelta`,
+`setElementConstruction`, `updateColumn`, `upsertConstructionQaChecklist`.
+
+Status: UI-F/P through structure/construction lenses, Cmd+K activators/direct
+metadata commands, AG-F for construction report and set-element-construction,
+AG-R for structural geometry and package/checklist creation. Priority: P1.
+
+### Views, Sheets, Schedules
+
+Commands:
+`AddViewBreak`, `ApplyViewTemplate`, `CreateCallout`, `CreateDraftingView`,
+`CreateSheet`, `CreateViewTemplate`, `DeleteViewTemplate`, `MoveViewOnSheet`,
+`PlaceViewOnSheet`, `RemoveViewBreak`, `RemoveViewFromSheet`,
+`SetSheetTitleblock`, `UnbindViewTemplate`, `UpdateSheetMetadata`,
+`UpdateViewTemplate`, `applyPlanViewTemplate`, `createCallout`,
+`createElevationView`, `createSectionCut`, `create_brand_template`,
+`create_saved_view`, `create_schedule_view`, `delete_brand_template`,
+`delete_saved_view`, `hideElementInView`, `moveLevelElevation`, `reorder_view`,
+`saveViewpoint`, `setViewOptionLock`, `setViewPhase`, `setViewPhaseFilter`,
+`set_view_lens`, `unhideElementInView`, `updatePlanViewCrop`,
+`updatePlanViewRange`, `update_brand_template`, `update_saved_view`,
+`upsertPlanView`, `upsertPlanViewTemplate`, `upsertSchedule`,
+`upsertScheduleFilters`, `upsertSheet`, `upsertSheetViewports`,
+`upsertViewTemplate`.
+
+Status: UI-F/P, Cmd+K broad, AG-F for `create-schedule-view`,
+`set-view-lens`, brand/export descriptors, AG-D for seed DSL viewpoints, AG-R
+for most documentation setup. Priority: P1.
+
+## Definition of Done for UI-MCP Parity
+
+A capability can be marked `Parity` only when all of these are true:
+
+1. Backend command or semantic tool exists and has schema.
+2. UI can complete the workflow without hidden developer-only steps.
+3. Cmd+K either activates a human workflow or invokes the same semantic command,
+   and its execution semantics are explicit.
+4. CLI/API/MCP has a first-class typed path, not only raw `apply-bundle`.
+5. Dry-run and commit tests exist for the agent path.
+6. At least one UI test or Playwright proof exists for the human path.
+7. For modeling geometry, a render/snapshot/advisor check proves the committed
+   result is visible and usable.
+8. Query/resolve tools expose every model id, type id, host, level, view, or
+   material the agent needs to complete the workflow.
+9. The workflow records parent revision, changed ids, warnings, audit metadata,
+   undo metadata, and collaboration deltas.
+10. The capability participates in a same-house benchmark or has an equivalent
+    focused golden test.
+11. Documentation for the feature states the UI path, Cmd+K path, MCP/CLI path,
+    examples, limitations, and known raw-bundle fallback if any.
+12. New backend commands, Cmd+K entries, or API descriptors cannot silently
+    bypass the generated parity audit.
+
+## Milestone Schedule
+
+Milestones are tracked the same way as individual parity items. Each milestone
+must remain visible as `Not Started`, `Partial`, `Done`, or `Blocked` so the
+team can schedule waves of parallel agents against the tracker.
+
+| Milestone | Target duration | Current status | Goal | Exit criteria |
+| --- | ---: | --- | --- | --- |
+| M1. Truth and Inventory | 2 weeks | Not Started | Establish an auditable source of truth for backend commands, Cmd+K execution semantics, API descriptors, command schemas, and current parity gaps. | Generated parity report exists; all backend commands, Cmd+K entries, and API descriptors are inventoried; command schemas are exported; first gap report is checked in; milestone status can be updated from generated evidence. |
+| M2. First House-Capable MCP Pack | 4-6 weeks | Not Started | Make an external agent capable of building a credible basic house through typed query/resolve/authoring tools instead of source-code knowledge or browser gestures. | Query/resolve tools exist; first authoring pack covers walls, floors, roofs, openings, rooms, stairs, views, sheets, advisor, dry-run, and commit; CLI mirrors the same tools; simple-house benchmark passes by MCP/CLI. |
+| M3. Excellent Product Parity | 8-12 weeks | Not Started | Turn parity into a robust product workflow with benchmarks, sketch-to-BIM productization, documentation outputs, and transaction/audit consistency. | Same-house benchmark suite has UI and MCP paths for core cases; sketch-to-BIM workflow uses stable product tools; documentation/export pack covers sheets, schedules, tags, dimensions, and PDF/IFC/glTF; transaction/audit/undo/collab requirements pass. |
+| M4. Professional Domain Parity | 3-5 months | Not Started | Extend parity across professional domains beyond the basic house workflow. | Site/context, structure, MEP, families/assets/materials, presentation, branded export, and advanced documentation capabilities have first-class UI and MCP/CLI paths with generated evidence. |
+
+### Milestone 1 Workstreams
+
+Milestone 1 should be split across about five parallel agents with disjoint
+ownership:
+
+| Workstream | Owner scope | Tracker items | Done when |
+| --- | --- | --- | --- |
+| M1-A. Backend command schema export | `app/bim_ai/commands.py`, command schema generation, command introspection route/CLI. | WP-001, P0 command schemas. | All 262 command discriminators are exported as JSON Schema with examples/metadata or explicit TODO markers; API/CLI can list and inspect schemas. |
+| M1-B. Cmd+K capability metadata | `packages/web/src/cmdPalette`, `packages/web/src/workspace/commandCapabilities.ts`, related tests. | WP-002, WP-011, P0 Cmd+K execution semantics. | Every palette/capability entry has `capabilityId`, `executionKind`, `resultKind`, required context where known, and optional agent equivalent. |
+| M1-C. API descriptor and MCP inventory | `app/bim_ai/api/registry.py`, route tests, descriptor metadata. | WP-010, P1 descriptor-route integrity. | Every descriptor maps to an implemented route or is flagged; descriptors declare mutability, schema refs, examples, and kernel command/resource mapping. |
+| M1-D. Automated parity audit | `scripts/audit-ui-mcp-parity.*`, `spec/generated/*`. | WP-004, P1 automated parity report. | Script emits backend command ledger, Cmd+K ledger, API descriptor ledger, and sorted gap report from source. |
+| M1-E. Query/resolve design spike | API/CLI resource design only unless very small implementation is obvious. | WP-007, P0 read/query/context parity. | Concrete interface spec and first minimal model summary/query inventory plan are added, with dependencies identified for M2 implementation. |
+
+### Milestone 1 Scheduling Notes
+
+- M1-A and M1-D should coordinate on the command schema output format.
+- M1-B and M1-D should coordinate on Cmd+K metadata field names.
+- M1-C and M1-D should coordinate on descriptor ids, routes, and mutability
+  fields.
+- M1-E should avoid broad implementation during M1 unless it unblocks the audit.
+- No M1 workstream should mark a capability as `Parity`; M1 is about creating
+  truthful measurement and inventory.
+
+## Next Work Packages
+
+### WP-001: Command Schema Export
+
+Generate JSON Schema for all backend command types and expose them through API
+and CLI.
+
+### WP-002: Cmd+K Execution Semantics
+
+Add execution-kind metadata to command capabilities and palette entries.
+
+### WP-003: First Authoring MCP Pack
+
+Implement first-class agent tools for walls, floors, roofs, openings, rooms,
+stairs, sheets, viewpoints, advisor, dry-run, and commit.
+
+### WP-004: Automated Parity Audit
+
+Create a repeatable script that regenerates counts, command inventory, and gap
+reports from source.
+
+### WP-005: Sketch-to-BIM MCP Pack
+
+Promote the stable skill helper operations into API descriptors and CLI
+subcommands that an external MCP agent can call.
+
+### WP-006: Documentation Export Pack
+
+Add typed tools for sheets, viewports, schedules, dimensions, tags, and exports
+so an agent can produce the same drawing set a user can create.
+
+### WP-007: Read/Query/Resolve Pack
+
+Implement compact model resources and resolver tools for elements, levels,
+types, views, hosts, loops, schedules, advisor findings, and command logs.
+
+### WP-008: Same-House Benchmark Harness
+
+Create reproducible UI and MCP/CLI paths for the benchmark set, with semantic
+diffs, advisor reports, screenshots, exports, and command-surface usage reports.
+
+### WP-009: Transaction and Audit Hardening
+
+Make parent revision, dry-run, idempotency, undo metadata, collaboration deltas,
+agent identity, assumptions, and external-export markers consistent across raw
+commands, semantic tools, CLI, and MCP.
+
+### WP-010: Descriptor and Route Integrity
+
+Add tests that every API v3/MCP descriptor points to an implemented route, has
+valid examples, declares mutability/permissions, and maps to documented kernel
+commands or read resources.
+
+### WP-011: Cmd+K Capability Metadata
+
+Add `capabilityId`, `executionKind`, `resultKind`, `requiredContext`, and
+`agentEquivalent` to command palette entries and command capability metadata.
+
+### WP-012: Raw Command Promotion Plan
+
+Use the generated backend command ledger to decide which commands need
+first-class semantic tools, which can remain expert/raw, and which are internal
+implementation details that should not become public MCP tools.
+
+### WP-013: Sketch-to-BIM Productization
+
+Convert the skill-local workflow into stable product tools: sketch IR creation,
+underlay lifecycle, seed compilation, phase application, advisor/evidence loop,
+and phase acceptance.
