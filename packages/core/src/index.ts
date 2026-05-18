@@ -482,6 +482,7 @@ export type ElemKind =
   | 'text_tag'
   | 'link_ifc'
   | 'link_pdf'
+  | 'link_pointcloud'
   | 'work_plane';
 
 export type PhaseFilter = 'all' | 'existing' | 'demolition' | 'new' | 'show_all';
@@ -2961,6 +2962,18 @@ export type Element =
       scaleMm: number;
       levelId: string;
       hidden?: boolean;
+    }
+  | {
+      // §12.1.1: point cloud link element
+      kind: 'link_pointcloud';
+      id: string;
+      name: string;
+      /** Display color (hex number). Default 0xffa500 (orange). */
+      color?: number;
+      /** Whether the point cloud is visible in the viewport. */
+      visible?: boolean;
+      /** Approximate point count (informational). */
+      pointCount?: number;
     }
   | {
       /**
@@ -5643,6 +5656,25 @@ export type TogglePdfLinkCmd = {
   linkId: string;
 };
 
+/** §12.1.1: add a point cloud link element client-side. */
+export type AddPointCloudCmd = {
+  type: 'addPointCloud';
+  name: string;
+  color?: number;
+};
+
+/** §12.1.1: remove a point cloud link element by id. */
+export type RemovePointCloudCmd = {
+  type: 'removePointCloud';
+  linkId: string;
+};
+
+/** §12.1.1: toggle visibility of a point cloud link element. */
+export type TogglePointCloudCmd = {
+  type: 'togglePointCloud';
+  linkId: string;
+};
+
 /** §3.5.5 — commit a custom wall profile polygon for a specific wall. */
 export type CommitWallProfileCmd = {
   type: 'commitWallProfile';
@@ -5894,4 +5926,19 @@ export type AddToQuickAccessCmd = {
 export type RemoveFromQuickAccessCmd = {
   type: 'removeFromQuickAccess';
   commandId: string;
+};
+
+/** §1.6.11: Apply (or clear) a view_template on a plan_view element. */
+export type ApplyViewTemplateCmd = {
+  type: 'applyViewTemplate';
+  /** ID of the plan_view to update. */
+  planViewId: string;
+  /** ID of the view_template to apply. Pass null to clear. */
+  templateId: string | null;
+};
+
+/** §1.5: open a recently used project by its ID. */
+export type OpenRecentProjectCmd = {
+  type: 'openRecentProject';
+  projectId: string;
 };

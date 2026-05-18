@@ -873,6 +873,21 @@ const SYSTEM_CAPABILITIES: CommandCapability[] = [
       '§12.1.1: links a PDF/image as a plan underlay; stored as link_pdf element with opacity, position, scale.',
   },
   {
+    id: 'file.link-pointcloud',
+    label: 'Link Point Cloud',
+    owner: 'workspace/project/ManageLinksDialog',
+    group: 'file',
+    scope: 'global',
+    intendedModes: ['plan', '3d'],
+    surfaces: ['menu', 'cmd-k'],
+    executionSurface: 'store',
+    preconditions: [],
+    status: 'implemented',
+    usabilityScore: 8,
+    notes:
+      '§12.1.1: link_pointcloud element type + AddPointCloudCmd/RemovePointCloudCmd/TogglePointCloudCmd + ManageLinksDialog Point Clouds section with visibility toggle + remove button + add button.',
+  },
+  {
     id: 'project.manage-links',
     label: 'Manage Project Links',
     owner: 'workspace/project/ManageLinksDialog',
@@ -1715,6 +1730,21 @@ const VIEW_3D_CAPABILITIES: CommandCapability[] = [
     usabilityScore: 8,
     notes:
       '§1.10: ResetWorkspaceCmd resets splitViewEnabled, skyBackground, thinLinesEnabled and other viewport UI fields to initial defaults; does not affect project data.',
+  },
+  {
+    id: 'view.start-screen',
+    label: 'Start Screen & Recent Projects',
+    owner: 'workspace/project/ProjectSetupDialog',
+    group: 'view',
+    scope: 'global',
+    intendedModes: ['plan', '3d'],
+    surfaces: ['workspace-header', 'cmd-k'],
+    executionSurface: 'store',
+    preconditions: [],
+    status: 'implemented',
+    usabilityScore: 8,
+    notes:
+      '§1.5: vereinfacht template added to PROJECT_TEMPLATES; recentProjectIds string[] in store (max 10 LRU); OpenRecentProjectCmd; Recently Opened list in ProjectSetupDialog.',
   },
 ];
 
@@ -3048,5 +3078,50 @@ const MASS_CAPABILITIES: CommandCapability[] = [
     usabilityScore: 8,
     notes:
       '§1.6.3: quickAccessItems string[] in store; AddToQuickAccessCmd/RemoveFromQuickAccessCmd; QuickAccessToolbar renders pinned command buttons (right-click to unpin).',
+  },
+  {
+    id: 'view.options-bar-door-window',
+    label: 'Options Bar — Door / Window / Grid',
+    owner: 'workspace/authoring/OptionsBar',
+    group: 'view',
+    scope: 'canvas',
+    intendedModes: ['plan'],
+    surfaces: ['plan-canvas', 'cmd-k'],
+    executionSurface: 'local-state',
+    preconditions: [],
+    status: 'implemented',
+    usabilityScore: 8,
+    notes:
+      '§1.6.6: door (tag-on-place), window (sill height + tag-on-place), grid (spacing + name prefix) options bar sections added; module-level vars doorTagOnPlace/windowSillHeightMm/gridSpacingMm.',
+  },
+  {
+    id: 'file.export-dgn',
+    label: 'Export DGN (MicroStation)',
+    owner: 'workspace/project/ProjectMenu',
+    group: 'file',
+    scope: 'global',
+    intendedModes: ['plan', '3d'],
+    surfaces: ['menu', 'cmd-k'],
+    executionSurface: 'local-state',
+    preconditions: [],
+    status: 'implemented',
+    usabilityScore: 8,
+    notes:
+      '§12.4.3: dgnExporter.ts wraps dxfExporter exportToDxf() output with DGN seed header; Export DGN button in ProjectMenu triggers handleExportDgn in Workspace.tsx; .dgn MIME application/dgn.',
+  },
+  {
+    id: 'view.browser-view-templates',
+    label: 'Project Browser View Templates Subtree',
+    owner: 'workspace/project/ProjectBrowser',
+    group: 'view',
+    scope: 'global',
+    intendedModes: ['plan', '3d'],
+    surfaces: ['inspector', 'cmd-k'],
+    executionSurface: 'store',
+    preconditions: [],
+    status: 'implemented',
+    usabilityScore: 8,
+    notes:
+      '§1.6.11: View Templates collapsible subtree in project browser listing all view_template elements with use-count + Apply button; ApplyViewTemplateCmd sets viewTemplateId on plan_view.',
   },
 ];

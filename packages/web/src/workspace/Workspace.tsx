@@ -189,6 +189,7 @@ import { exportToIfc } from '../export/ifcExporter';
 import { exportToDxf } from '../export/dxfExporter';
 import { createToposolidFromDxf } from '../tools/dxfContourImport';
 import { exportSceneToDwg } from '../viewport/dwgExport';
+import { exportSceneToDgn } from '../export/dgnExporter';
 import { OnboardingTour } from '../onboarding/OnboardingTour';
 import { readOnboardingProgress, resetOnboarding } from '../onboarding/tour';
 import { canvasContainerStyle, CanvasMount } from './viewport';
@@ -1747,6 +1748,21 @@ export function Workspace(): JSX.Element {
     exportSceneToDwg(els as Parameters<typeof exportSceneToDwg>[0]);
   }, []);
 
+  const handleExportDgn = useCallback(() => {
+    const { elementsById } = useBimStore.getState();
+    const levels = Object.values(elementsById)
+      .filter((e): e is any => e.kind === 'level')
+      .sort((a, b) => a.elevationMm - b.elevationMm);
+    const content = exportSceneToDgn(elementsById as any, levels as any);
+    const blob = new Blob([content], { type: 'application/dgn' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'export.dgn';
+    a.click();
+    URL.revokeObjectURL(url);
+  }, []);
+
   const handleRestoreSnapshot = useCallback(
     async (file: File): Promise<void> => {
       try {
@@ -2381,6 +2397,19 @@ export function Workspace(): JSX.Element {
             useBimStore.setState({ selectedId: primary, selectedIds: rest });
           }
         }
+        return;
+      }
+      // §1.6.11: applyViewTemplate — set viewTemplateId on a plan_view (client-only).
+      if (cmd.type === 'applyViewTemplate') {
+        const { elementsById: cur } = useBimStore.getState();
+        const pv = cur[cmd.planViewId as string];
+        if (!pv || pv.kind !== 'plan_view') return;
+        useBimStore.setState({
+          elementsById: {
+            ...cur,
+            [pv.id]: { ...pv, viewTemplateId: (cmd.templateId as string | null) ?? undefined },
+          },
+        });
         return;
       }
       // §1.6.11: selectGroupElements — select all elements in a model group definition (client-only).
@@ -3062,6 +3091,42 @@ export function Workspace(): JSX.Element {
         });
         return;
       }
+      // §12.1.1: addPointCloud — store link_pointcloud element client-side
+      if (cmd.type === 'addPointCloud') {
+        const id = `pc-${Date.now()}`;
+        const { elementsById: cur } = useBimStore.getState();
+        useBimStore.setState({
+          elementsById: {
+            ...cur,
+            [id]: {
+              kind: 'link_pointcloud',
+              id,
+              name: cmd.name as string,
+              color: (cmd.color as number | undefined) ?? 0xffa500,
+              visible: true,
+            },
+          },
+        });
+        return;
+      }
+      // §12.1.1: removePointCloud — delete link_pointcloud element client-side
+      if (cmd.type === 'removePointCloud') {
+        const { elementsById: cur } = useBimStore.getState();
+        const next = { ...cur };
+        delete next[cmd.linkId as string];
+        useBimStore.setState({ elementsById: next });
+        return;
+      }
+      // §12.1.1: togglePointCloud — flip visible flag of link_pointcloud element client-side
+      if (cmd.type === 'togglePointCloud') {
+        const { elementsById: cur } = useBimStore.getState();
+        const link = cur[cmd.linkId as string];
+        if (!link || link.kind !== 'link_pointcloud') return;
+        useBimStore.setState({
+          elementsById: { ...cur, [link.id]: { ...link, visible: !(link as any).visible } },
+        });
+        return;
+      }
       // §3.4.2: addFloorSlopePoint — add a drainage slope point to a floor client-side
       if (cmd.type === 'addFloorSlopePoint') {
         const { elementsById: cur } = useBimStore.getState();
@@ -3239,6 +3304,17 @@ export function Workspace(): JSX.Element {
       if (cmd.type === 'removeFromQuickAccess') {
         useBimStore.setState((s: any) => ({
           quickAccessItems: (s.quickAccessItems ?? []).filter((id: string) => id !== cmd.commandId),
+        }));
+        return;
+      }
+
+      // §1.5: openRecentProject — prepend to recentProjectIds in store (LRU, max 10)
+      if (cmd.type === 'openRecentProject') {
+        useBimStore.setState((s: any) => ({
+          recentProjectIds: [
+            cmd.projectId as string,
+            ...(s.recentProjectIds ?? []).filter((x: string) => x !== cmd.projectId),
+          ].slice(0, 10),
         }));
         return;
       }
@@ -5986,6 +6062,7 @@ export function Workspace(): JSX.Element {
         onExportIfc={handleExportIfc}
         onExportDxf={handleExportDxf}
         onExportDwg={handleExportDwg}
+        onExportDgn={handleExportDgn}
         exportLevels={Object.values(elementsById)
           .filter((e) => e.kind === 'level')
           .map((e) => ({ id: e.id, name: (e as { name?: string }).name ?? e.id }))}

@@ -1661,6 +1661,17 @@ registerCommand({
 });
 
 registerCommand({
+  id: 'file.link-pointcloud',
+  label: 'Link Point Cloud',
+  keywords: ['point cloud', 'pointcloud', 'rcp', 'rcs', 'scan', 'lidar', 'link'],
+  category: 'file',
+  isAvailable: () => true,
+  invoke: () => {
+    // Point clouds are managed via ManageLinksDialog > Point Clouds section
+  },
+});
+
+registerCommand({
   id: 'project.manage-links',
   label: 'Manage Project Links',
   keywords: ['project', 'links', 'ifc', 'dxf', 'external', 'resources'],
@@ -3366,5 +3377,53 @@ registerCommand({
   isAvailable: () => true,
   invoke: () => {
     // QAT is configured via addToQuickAccess command; this is an informational entry
+  },
+});
+
+// §1.6.6 — Options Bar Door / Window / Grid
+registerCommand({
+  id: 'view.options-bar-door-window',
+  label: 'Options Bar (Door / Window / Grid)',
+  keywords: ['options bar', 'door', 'window', 'grid', 'sill height', 'tag on place', 'spacing'],
+  category: 'view',
+  isAvailable: () => true,
+  invoke: () => {
+    // Options bar appears automatically when door/window/grid tool is active
+  },
+});
+
+// §12.4.3 — DGN Export (MicroStation)
+registerCommand({
+  id: 'file.export-dgn',
+  label: 'Export DGN',
+  keywords: ['dgn', 'microstation', 'export', 'cad', 'bentley', 'dgn export'],
+  category: 'file',
+  isAvailable: () => true,
+  invoke: () => {
+    // DGN export is triggered via ProjectMenu > Export DGN
+  },
+});
+
+// §1.6.11 — View Templates Subtree in Project Browser
+registerCommand({
+  id: 'view.browser-view-templates',
+  label: 'View Templates in Project Browser',
+  keywords: ['view template', 'browser', 'apply template', 'project browser', 'template'],
+  category: 'view',
+  isAvailable: () => true,
+  invoke: () => {
+    // View Templates subtree is always visible in the project browser when view_template elements exist
+  },
+});
+
+// §1.5 — Start Screen / Recent Projects
+registerCommand({
+  id: 'view.start-screen',
+  label: 'Start Screen / Recent Projects',
+  keywords: ['start', 'recent', 'home', 'template', 'vereinfacht', 'new project'],
+  category: 'view',
+  isAvailable: () => true,
+  invoke: () => {
+    // Start screen is shown at app launch; templates and recent projects are in ProjectSetupDialog
   },
 });

@@ -94,4 +94,20 @@ export const PROJECT_TEMPLATES: ProjectTemplate[] = [
       { type: 'createPhase', id: 'phase-new', name: 'Neubau', ord: 0 },
     ],
   },
+  {
+    id: 'vereinfacht',
+    name: 'BIM Architektur vereinfacht',
+    description: 'Simplified architectural template — 2 levels (EG/OG), standard phases, no MEP.',
+    commands: [
+      { type: 'createLevel', id: 'level-eg', name: 'EG', elevationMm: 0, alsoCreatePlanView: true },
+      {
+        type: 'createLevel',
+        id: 'level-og',
+        name: 'OG',
+        elevationMm: 3000,
+        alsoCreatePlanView: true,
+      },
+      { type: 'createPhase', id: 'phase-new', name: 'Neubau', ord: 0 },
+    ],
+  },
 ];

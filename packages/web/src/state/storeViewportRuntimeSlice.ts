@@ -94,6 +94,8 @@ export type ViewportRuntimeSlice = Pick<
   | 'setRenderQuality'
   | 'splitViewEnabled'
   | 'quickAccessItems'
+  | 'recentProjectIds'
+  | 'addRecentProject'
 >;
 
 function writeLocalStorageString(key: string, value: string): void {
@@ -350,6 +352,16 @@ export function createViewportRuntimeSlice(set: StoreSet, get: StoreGet): Viewpo
 
     /** §1.6.3: IDs of command palette commands pinned to the Quick Access Toolbar. */
     quickAccessItems: [],
+
+    /** §1.5: IDs of recently opened projects (max 10, LRU order). */
+    recentProjectIds: [],
+    addRecentProject: (id: string) =>
+      set((s: any) => ({
+        recentProjectIds: [id, ...(s.recentProjectIds ?? []).filter((x: string) => x !== id)].slice(
+          0,
+          10,
+        ),
+      })),
 
     renderQuality: { shadowsEnabled: false, toneMappingExposure: 1.0, pixelRatioScale: 'auto' },
     setRenderQuality: (settings: Partial<RenderQualitySettings>) =>

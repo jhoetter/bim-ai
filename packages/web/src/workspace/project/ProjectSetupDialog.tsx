@@ -2,6 +2,7 @@ import { type JSX, useEffect, useMemo, useState } from 'react';
 
 import type { Element } from '@bim-ai/core';
 import { PROJECT_TEMPLATES } from '../../onboarding/projectTemplates';
+import { useBimStore } from '../../state/store';
 import { GeoMapPicker, type GeoAnchor } from './GeoMapPicker';
 
 function defaultBbox(lat: number, lon: number, radiusM = 300) {
@@ -1473,6 +1474,7 @@ function TemplatePicker({
 }): JSX.Element {
   const [selectedId, setSelectedId] = useState(PROJECT_TEMPLATES[0]?.id ?? '');
   const selected = PROJECT_TEMPLATES.find((t) => t.id === selectedId) ?? PROJECT_TEMPLATES[0];
+  const recentProjectIds = useBimStore((s) => s.recentProjectIds);
 
   async function applyTemplate() {
     if (!selected) return;
@@ -1520,6 +1522,48 @@ function TemplatePicker({
       <SetupButton busy={busy} onClick={() => void applyTemplate()}>
         Apply Template
       </SetupButton>
+      {/* §1.5: recently opened projects */}
+      {recentProjectIds.length > 0 && (
+        <div style={{ marginTop: 16 }}>
+          <h4
+            style={{
+              fontSize: 11,
+              fontWeight: 600,
+              marginBottom: 6,
+              color: '#888',
+              textTransform: 'uppercase',
+            }}
+          >
+            Recently Opened
+          </h4>
+          <ul
+            style={{
+              listStyle: 'none',
+              padding: 0,
+              margin: 0,
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 4,
+            }}
+          >
+            {recentProjectIds.slice(0, 5).map((id: string) => (
+              <li
+                key={id}
+                data-testid={`recent-project-${id}`}
+                style={{
+                  fontSize: 12,
+                  padding: '4px 8px',
+                  borderRadius: 4,
+                  border: '1px solid var(--border, #444)',
+                  cursor: 'pointer',
+                }}
+              >
+                {id}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
     </section>
   );
 }

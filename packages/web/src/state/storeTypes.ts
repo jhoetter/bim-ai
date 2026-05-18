@@ -509,6 +509,10 @@ export type StoreState = {
   /** §1.6.3: IDs of command palette commands pinned to the Quick Access Toolbar. */
   quickAccessItems: string[];
 
+  /** §1.5: IDs of recently opened projects (max 10, LRU order). */
+  recentProjectIds: string[];
+  addRecentProject: (id: string) => void;
+
   /** §14.6 — client-side camera paths from walkthrough captures; not persisted to server. */
   cameraPaths: CameraPathElem[];
   addCameraPath: (path: CameraPathElem) => void;
