@@ -156,7 +156,7 @@ legitimate, or write a tolerance with evidence and expiry.
 | `SKB-RDY-B06` | P0       | Done        | Add evidence collection tool.                                              | CLI `sketch evidence collect` writes snapshot, validate, evidence package, Advisor error/warning/info/all, constructability report, model stats, finding dispositions, visual contract, and manifest without browser automation.                                                                    |
 | `SKB-RDY-B07` | P0       | Done        | Add visual evidence contract.                                              | `sketch.visual-evidence-contract.v1` defines required screenshot/viewpoint inputs and outputs. Browser automation can implement capture, but the evidence schema is product-owned.                                                                                                                  |
 | `SKB-RDY-B08` | P1       | Done        | Add MCP resources for model state.                                         | API descriptors and equivalent routes expose snapshot, summary, levels, views, types, elements, Advisor, command log, and evidence package. `spec/generated/api-descriptor-ledger.md` reports B08 resource coverage as 9/9 executable.                                                              |
-| `SKB-RDY-B09` | P1       | Partial     | Export backend command schemas.                                            | `GET /api/v3/commands` and `GET /api/v3/commands/{name}` are descriptor-backed and executable. `spec/generated/api-descriptor-ledger.md` reports 2/2 command schema surfaces executable; example payloads and full raw/semantic mapping remain explicitly partial in command metadata.              |
+| `SKB-RDY-B09` | P1       | Done        | Export backend command schemas.                                            | `GET /api/v3/commands` and `GET /api/v3/commands/{name}` are descriptor-backed and executable. `spec/generated/api-descriptor-ledger.md` reports 2/2 command schema surfaces executable, 262/262 generated examples, and 262/262 raw/semantic mapping rows with raw/expert commands explicit.      |
 | `SKB-RDY-B10` | P1       | Done        | Query/resolve parity for sketch authoring.                                 | API descriptors and equivalent routes cover elements, levels, views, types, host discovery, loops, nearest wall, line-matched wall, host face, family type, room boundary, default plan view, and active/default level. The generated audit reports B10 query/resolve coverage as 14/14 executable. |
 | `SKB-RDY-B11` | P1       | Done        | Cmd+K-to-agent equivalence map.                                            | Cmd+K entries that activate tools declare execution kind and agent-equivalence metadata through the command capability graph. The generated audit reports 106/106 activator entries mapped and zero unmapped activators.                                                                            |
 | `SKB-RDY-B12` | P1       | Not started | One command to run a phase loop.                                           | `sketch phase run` or equivalent takes IR, phase plan, bundle/recipe, model id, and returns dry-run/commit/evidence/acceptance packet.                                                                                                                                                              |
@@ -165,9 +165,9 @@ Closeout note for B08-B11: Wave 2 Worker 3 added API v3 descriptors for model
 summary, command log, evidence package, command schema export, and query/resolve
 routes. `scripts/audit-ui-mcp-parity.mjs` now emits a machine-auditable
 `SKB B08-B11 Audit` section in `spec/generated/api-descriptor-ledger.md`. B09 is
-kept `Partial` because the schema export route is live, but per-command examples
-and complete raw/semantic promotion metadata are still marked TODO in the command
-schema catalogue.
+closed by generated command-schema metadata: every backend command has a
+validated minimal example and either typed/semantic descriptor mapping or an
+explicit raw/expert disposition.
 
 ### C. Sketch Understanding And BIM Information Requirements
 

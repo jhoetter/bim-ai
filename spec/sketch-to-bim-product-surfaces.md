@@ -86,8 +86,9 @@ backend route already existed:
 - B09 command schema export: `commands.schema.catalog` maps to
   `GET /api/v3/commands`, and `commands.schema.inspect` maps to
   `GET /api/v3/commands/{name}`. The route is executable and returns the kernel
-  command JSON Schemas; per-command examples and complete raw/semantic mapping
-  metadata remain partial and are explicitly marked by the command metadata.
+  command JSON Schemas. Generated command metadata now covers 262/262 commands
+  with validated minimal examples and 262/262 raw/semantic mapping rows; commands
+  without a typed or semantic descriptor are explicitly marked raw/expert.
 - B10 query/resolve parity: descriptors cover `query.elements`, `query.hosts`,
   `query.levels`, `query.types`, `query.views`, `query.nearest_wall`,
   `query.enclosed_loops`, `resolve.active_or_default_level`,

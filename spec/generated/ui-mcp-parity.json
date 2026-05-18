@@ -1,8 +1,9 @@
 {
-  "generatedAt": "2026-05-18T19:25:58.863Z",
+  "generatedAt": "2026-05-18T19:58:21.468Z",
   "sourceOfIntent": "spec/ui-mcp-parity-tracker.md",
   "sources": {
     "commands": "app/bim_ai/commands.py",
+    "commandSchemas": "app/bim_ai/command_schemas.py",
     "apiRegistry": "app/bim_ai/api/registry.py",
     "apiRoutesGlob": "app/bim_ai/routes_*.py",
     "cmdk": "packages/web/src/cmdPalette/defaultCommands.ts",
@@ -76,6 +77,9 @@
     "skbB08ResourceExpected": 9,
     "skbB09CommandSchemaExecutable": 2,
     "skbB09CommandSchemaExpected": 2,
+    "skbB09CommandSchemaExamples": 262,
+    "skbB09CommandSchemaMappings": 262,
+    "skbB09CommandSchemaCommandCount": 262,
     "skbB10QueryResolveExecutable": 14,
     "skbB10QueryResolveExpected": 14,
     "skbB11CmdkMappedEntryCount": 127,
@@ -10031,7 +10035,7 @@
                 {
                   "type": "api-descriptor",
                   "status": "implemented",
-                  "source": "app/bim_ai/api/registry.py:5651",
+                  "source": "app/bim_ai/api/registry.py:5665",
                   "detail": "sketch.ir.validate -> POST /api/v3/sketch/ir/validate",
                   "passes": true
                 }
@@ -10047,7 +10051,7 @@
                 {
                   "type": "api-descriptor",
                   "status": "implemented",
-                  "source": "app/bim_ai/api/registry.py:5717",
+                  "source": "app/bim_ai/api/registry.py:5731",
                   "detail": "sketch.seed.compile -> POST /api/v3/sketch/seed/compile",
                   "passes": true
                 }
@@ -10063,7 +10067,7 @@
                 {
                   "type": "api-descriptor",
                   "status": "implemented",
-                  "source": "app/bim_ai/api/registry.py:5763",
+                  "source": "app/bim_ai/api/registry.py:5777",
                   "detail": "sketch.phase.apply -> POST /api/v3/sketch/phase/apply",
                   "passes": true
                 }
@@ -10079,7 +10083,7 @@
                 {
                   "type": "api-descriptor",
                   "status": "implemented",
-                  "source": "app/bim_ai/api/registry.py:5820",
+                  "source": "app/bim_ai/api/registry.py:5834",
                   "detail": "sketch.phase.accept -> POST /api/v3/sketch/phase/accept",
                   "passes": true
                 }
@@ -10272,7 +10276,7 @@
                 {
                   "type": "api-descriptor",
                   "status": "implemented",
-                  "source": "app/bim_ai/api/registry.py:3806",
+                  "source": "app/bim_ai/api/registry.py:3820",
                   "detail": "create-schedule-view -> POST /api/v3/models/{modelId}/bundles",
                   "passes": true
                 },
@@ -10472,7 +10476,7 @@
             {
               "type": "api-descriptor",
               "status": "implemented",
-              "source": "app/bim_ai/api/registry.py:5651",
+              "source": "app/bim_ai/api/registry.py:5665",
               "detail": "sketch.ir.validate -> POST /api/v3/sketch/ir/validate",
               "passes": true
             }
@@ -10490,7 +10494,7 @@
             {
               "type": "api-descriptor",
               "status": "implemented",
-              "source": "app/bim_ai/api/registry.py:5717",
+              "source": "app/bim_ai/api/registry.py:5731",
               "detail": "sketch.seed.compile -> POST /api/v3/sketch/seed/compile",
               "passes": true
             }
@@ -10508,7 +10512,7 @@
             {
               "type": "api-descriptor",
               "status": "implemented",
-              "source": "app/bim_ai/api/registry.py:5763",
+              "source": "app/bim_ai/api/registry.py:5777",
               "detail": "sketch.phase.apply -> POST /api/v3/sketch/phase/apply",
               "passes": true
             }
@@ -10526,7 +10530,7 @@
             {
               "type": "api-descriptor",
               "status": "implemented",
-              "source": "app/bim_ai/api/registry.py:5820",
+              "source": "app/bim_ai/api/registry.py:5834",
               "detail": "sketch.phase.accept -> POST /api/v3/sketch/phase/accept",
               "passes": true
             }
@@ -10710,7 +10714,7 @@
             {
               "type": "api-descriptor",
               "status": "implemented",
-              "source": "app/bim_ai/api/registry.py:3806",
+              "source": "app/bim_ai/api/registry.py:3820",
               "detail": "create-schedule-view -> POST /api/v3/models/{modelId}/bundles",
               "passes": true
             },
@@ -11727,21 +11731,21 @@
                 {
                   "type": "api-descriptor",
                   "status": "implemented",
-                  "source": "app/bim_ai/api/registry.py:3183",
+                  "source": "app/bim_ai/api/registry.py:3197",
                   "detail": "toposolid-create -> POST /api/models/{model_id}/bundles",
                   "passes": true
                 },
                 {
                   "type": "api-descriptor",
                   "status": "implemented",
-                  "source": "app/bim_ai/api/registry.py:3249",
+                  "source": "app/bim_ai/api/registry.py:3263",
                   "detail": "toposolid-update -> POST /api/models/{model_id}/bundles",
                   "passes": true
                 },
                 {
                   "type": "api-descriptor",
                   "status": "implemented",
-                  "source": "app/bim_ai/api/registry.py:4768",
+                  "source": "app/bim_ai/api/registry.py:4782",
                   "detail": "create-toposolid-subdivision -> POST /api/v3/models/{modelId}/bundles",
                   "passes": true
                 },
@@ -11771,7 +11775,7 @@
                 {
                   "type": "api-descriptor",
                   "status": "implemented",
-                  "source": "app/bim_ai/api/registry.py:3876",
+                  "source": "app/bim_ai/api/registry.py:3890",
                   "detail": "create-graded-region -> POST /api/models/{model_id}/bundles",
                   "passes": true
                 },
@@ -11820,7 +11824,7 @@
                 {
                   "type": "api-descriptor",
                   "status": "implemented",
-                  "source": "app/bim_ai/api/registry.py:4716",
+                  "source": "app/bim_ai/api/registry.py:4730",
                   "detail": "import-neighborhood -> POST /api/v3/models/{modelId}/neighborhood-import",
                   "passes": true
                 }
@@ -12403,35 +12407,35 @@
                 {
                   "type": "api-descriptor",
                   "status": "implemented",
-                  "source": "app/bim_ai/api/registry.py:4431",
+                  "source": "app/bim_ai/api/registry.py:4445",
                   "detail": "family.upsert_type -> POST /api/models/{model_id}/bundles",
                   "passes": true
                 },
                 {
                   "type": "api-descriptor",
                   "status": "implemented",
-                  "source": "app/bim_ai/api/registry.py:4472",
+                  "source": "app/bim_ai/api/registry.py:4486",
                   "detail": "family.place_instance -> POST /api/models/{model_id}/bundles",
                   "passes": true
                 },
                 {
                   "type": "api-descriptor",
                   "status": "implemented",
-                  "source": "app/bim_ai/api/registry.py:4513",
+                  "source": "app/bim_ai/api/registry.py:4527",
                   "detail": "asset.query -> GET /api/v3/catalog",
                   "passes": true
                 },
                 {
                   "type": "api-descriptor",
                   "status": "implemented",
-                  "source": "app/bim_ai/api/registry.py:4537",
+                  "source": "app/bim_ai/api/registry.py:4551",
                   "detail": "asset.place -> POST /api/models/{model_id}/bundles",
                   "passes": true
                 },
                 {
                   "type": "api-descriptor",
                   "status": "implemented",
-                  "source": "app/bim_ai/api/registry.py:4384",
+                  "source": "app/bim_ai/api/registry.py:4398",
                   "detail": "place-kitchen-kit -> POST /api/v3/models/{modelId}/bundles",
                   "passes": true
                 }
@@ -12447,28 +12451,28 @@
                 {
                   "type": "api-descriptor",
                   "status": "implemented",
-                  "source": "app/bim_ai/api/registry.py:4594",
+                  "source": "app/bim_ai/api/registry.py:4608",
                   "detail": "material.upsert_pbr -> POST /api/models/{model_id}/bundles",
                   "passes": true
                 },
                 {
                   "type": "api-descriptor",
                   "status": "implemented",
-                  "source": "app/bim_ai/api/registry.py:4629",
+                  "source": "app/bim_ai/api/registry.py:4643",
                   "detail": "material.assign -> POST /api/models/{model_id}/bundles",
                   "passes": true
                 },
                 {
                   "type": "api-descriptor",
                   "status": "implemented",
-                  "source": "app/bim_ai/api/registry.py:4652",
+                  "source": "app/bim_ai/api/registry.py:4666",
                   "detail": "material.paint_face -> POST /api/models/{model_id}/bundles",
                   "passes": true
                 },
                 {
                   "type": "api-descriptor",
                   "status": "implemented",
-                  "source": "app/bim_ai/api/registry.py:4682",
+                  "source": "app/bim_ai/api/registry.py:4696",
                   "detail": "decal.create -> POST /api/models/{model_id}/bundles",
                   "passes": true
                 }
@@ -12635,35 +12639,35 @@
                 {
                   "type": "api-descriptor",
                   "status": "implemented",
-                  "source": "app/bim_ai/api/registry.py:5199",
+                  "source": "app/bim_ai/api/registry.py:5213",
                   "detail": "create-frame -> POST /api/v3/models/{modelId}/bundles",
                   "passes": true
                 },
                 {
                   "type": "api-descriptor",
                   "status": "implemented",
-                  "source": "app/bim_ai/api/registry.py:5323",
+                  "source": "app/bim_ai/api/registry.py:5337",
                   "detail": "create-brand-template -> POST /api/models/{modelId}/bundles",
                   "passes": true
                 },
                 {
                   "type": "api-descriptor",
                   "status": "implemented",
-                  "source": "app/bim_ai/api/registry.py:5447",
+                  "source": "app/bim_ai/api/registry.py:5461",
                   "detail": "export-render-bundle -> GET /api/v3/models/{modelId}/export",
                   "passes": true
                 },
                 {
                   "type": "api-descriptor",
                   "status": "implemented",
-                  "source": "app/bim_ai/api/registry.py:3583",
+                  "source": "app/bim_ai/api/registry.py:3597",
                   "detail": "presentation-create -> POST /api/models/{model_id}/presentations",
                   "passes": true
                 },
                 {
                   "type": "api-descriptor",
                   "status": "implemented",
-                  "source": "app/bim_ai/api/registry.py:5259",
+                  "source": "app/bim_ai/api/registry.py:5273",
                   "detail": "export-presentation -> GET /api/v3/models/{modelId}/presentation-canvases/{canvasId}/export",
                   "passes": true
                 }
@@ -12686,7 +12690,7 @@
                 {
                   "type": "api-descriptor",
                   "status": "implemented",
-                  "source": "app/bim_ai/api/registry.py:3806",
+                  "source": "app/bim_ai/api/registry.py:3820",
                   "detail": "create-schedule-view -> POST /api/v3/models/{modelId}/bundles",
                   "passes": true
                 },
@@ -12700,7 +12704,7 @@
                 {
                   "type": "api-descriptor",
                   "status": "implemented",
-                  "source": "app/bim_ai/api/registry.py:5382",
+                  "source": "app/bim_ai/api/registry.py:5396",
                   "detail": "export-branded-pdf -> GET /api/v3/models/{modelId}/export/pdf",
                   "passes": true
                 }
@@ -13034,21 +13038,21 @@
             {
               "type": "api-descriptor",
               "status": "implemented",
-              "source": "app/bim_ai/api/registry.py:3183",
+              "source": "app/bim_ai/api/registry.py:3197",
               "detail": "toposolid-create -> POST /api/models/{model_id}/bundles",
               "passes": true
             },
             {
               "type": "api-descriptor",
               "status": "implemented",
-              "source": "app/bim_ai/api/registry.py:3249",
+              "source": "app/bim_ai/api/registry.py:3263",
               "detail": "toposolid-update -> POST /api/models/{model_id}/bundles",
               "passes": true
             },
             {
               "type": "api-descriptor",
               "status": "implemented",
-              "source": "app/bim_ai/api/registry.py:4768",
+              "source": "app/bim_ai/api/registry.py:4782",
               "detail": "create-toposolid-subdivision -> POST /api/v3/models/{modelId}/bundles",
               "passes": true
             },
@@ -13080,7 +13084,7 @@
             {
               "type": "api-descriptor",
               "status": "implemented",
-              "source": "app/bim_ai/api/registry.py:3876",
+              "source": "app/bim_ai/api/registry.py:3890",
               "detail": "create-graded-region -> POST /api/models/{model_id}/bundles",
               "passes": true
             },
@@ -13129,7 +13133,7 @@
             {
               "type": "api-descriptor",
               "status": "implemented",
-              "source": "app/bim_ai/api/registry.py:4716",
+              "source": "app/bim_ai/api/registry.py:4730",
               "detail": "import-neighborhood -> POST /api/v3/models/{modelId}/neighborhood-import",
               "passes": true
             }
@@ -13713,35 +13717,35 @@
             {
               "type": "api-descriptor",
               "status": "implemented",
-              "source": "app/bim_ai/api/registry.py:4431",
+              "source": "app/bim_ai/api/registry.py:4445",
               "detail": "family.upsert_type -> POST /api/models/{model_id}/bundles",
               "passes": true
             },
             {
               "type": "api-descriptor",
               "status": "implemented",
-              "source": "app/bim_ai/api/registry.py:4472",
+              "source": "app/bim_ai/api/registry.py:4486",
               "detail": "family.place_instance -> POST /api/models/{model_id}/bundles",
               "passes": true
             },
             {
               "type": "api-descriptor",
               "status": "implemented",
-              "source": "app/bim_ai/api/registry.py:4513",
+              "source": "app/bim_ai/api/registry.py:4527",
               "detail": "asset.query -> GET /api/v3/catalog",
               "passes": true
             },
             {
               "type": "api-descriptor",
               "status": "implemented",
-              "source": "app/bim_ai/api/registry.py:4537",
+              "source": "app/bim_ai/api/registry.py:4551",
               "detail": "asset.place -> POST /api/models/{model_id}/bundles",
               "passes": true
             },
             {
               "type": "api-descriptor",
               "status": "implemented",
-              "source": "app/bim_ai/api/registry.py:4384",
+              "source": "app/bim_ai/api/registry.py:4398",
               "detail": "place-kitchen-kit -> POST /api/v3/models/{modelId}/bundles",
               "passes": true
             }
@@ -13759,28 +13763,28 @@
             {
               "type": "api-descriptor",
               "status": "implemented",
-              "source": "app/bim_ai/api/registry.py:4594",
+              "source": "app/bim_ai/api/registry.py:4608",
               "detail": "material.upsert_pbr -> POST /api/models/{model_id}/bundles",
               "passes": true
             },
             {
               "type": "api-descriptor",
               "status": "implemented",
-              "source": "app/bim_ai/api/registry.py:4629",
+              "source": "app/bim_ai/api/registry.py:4643",
               "detail": "material.assign -> POST /api/models/{model_id}/bundles",
               "passes": true
             },
             {
               "type": "api-descriptor",
               "status": "implemented",
-              "source": "app/bim_ai/api/registry.py:4652",
+              "source": "app/bim_ai/api/registry.py:4666",
               "detail": "material.paint_face -> POST /api/models/{model_id}/bundles",
               "passes": true
             },
             {
               "type": "api-descriptor",
               "status": "implemented",
-              "source": "app/bim_ai/api/registry.py:4682",
+              "source": "app/bim_ai/api/registry.py:4696",
               "detail": "decal.create -> POST /api/models/{model_id}/bundles",
               "passes": true
             }
@@ -13946,35 +13950,35 @@
             {
               "type": "api-descriptor",
               "status": "implemented",
-              "source": "app/bim_ai/api/registry.py:5199",
+              "source": "app/bim_ai/api/registry.py:5213",
               "detail": "create-frame -> POST /api/v3/models/{modelId}/bundles",
               "passes": true
             },
             {
               "type": "api-descriptor",
               "status": "implemented",
-              "source": "app/bim_ai/api/registry.py:5323",
+              "source": "app/bim_ai/api/registry.py:5337",
               "detail": "create-brand-template -> POST /api/models/{modelId}/bundles",
               "passes": true
             },
             {
               "type": "api-descriptor",
               "status": "implemented",
-              "source": "app/bim_ai/api/registry.py:5447",
+              "source": "app/bim_ai/api/registry.py:5461",
               "detail": "export-render-bundle -> GET /api/v3/models/{modelId}/export",
               "passes": true
             },
             {
               "type": "api-descriptor",
               "status": "implemented",
-              "source": "app/bim_ai/api/registry.py:3583",
+              "source": "app/bim_ai/api/registry.py:3597",
               "detail": "presentation-create -> POST /api/models/{model_id}/presentations",
               "passes": true
             },
             {
               "type": "api-descriptor",
               "status": "implemented",
-              "source": "app/bim_ai/api/registry.py:5259",
+              "source": "app/bim_ai/api/registry.py:5273",
               "detail": "export-presentation -> GET /api/v3/models/{modelId}/presentation-canvases/{canvasId}/export",
               "passes": true
             }
@@ -13999,7 +14003,7 @@
             {
               "type": "api-descriptor",
               "status": "implemented",
-              "source": "app/bim_ai/api/registry.py:3806",
+              "source": "app/bim_ai/api/registry.py:3820",
               "detail": "create-schedule-view -> POST /api/v3/models/{modelId}/bundles",
               "passes": true
             },
@@ -14013,7 +14017,7 @@
             {
               "type": "api-descriptor",
               "status": "implemented",
-              "source": "app/bim_ai/api/registry.py:5382",
+              "source": "app/bim_ai/api/registry.py:5396",
               "detail": "export-branded-pdf -> GET /api/v3/models/{modelId}/export/pdf",
               "passes": true
             }
@@ -14379,7 +14383,7 @@
         "stableId": "query.levels",
         "status": "executable",
         "routeImplemented": true,
-        "source": "app/bim_ai/api/registry.py:2416",
+        "source": "app/bim_ai/api/registry.py:2430",
         "notes": "Read-only level and plan-view discovery for explicit level ids."
       },
       {
@@ -14389,7 +14393,7 @@
         "stableId": "query.views",
         "status": "executable",
         "routeImplemented": true,
-        "source": "app/bim_ai/api/registry.py:2516",
+        "source": "app/bim_ai/api/registry.py:2530",
         "notes": "Read-only view/sheet/schedule discovery for review and documentation."
       },
       {
@@ -14399,7 +14403,7 @@
         "stableId": "query.types",
         "status": "executable",
         "routeImplemented": true,
-        "source": "app/bim_ai/api/registry.py:2464",
+        "source": "app/bim_ai/api/registry.py:2478",
         "notes": ""
       },
       {
@@ -14409,7 +14413,7 @@
         "stableId": "query.elements",
         "status": "executable",
         "routeImplemented": true,
-        "source": "app/bim_ai/api/registry.py:2358",
+        "source": "app/bim_ai/api/registry.py:2372",
         "notes": ""
       },
       {
@@ -14461,17 +14465,26 @@
         "stableId": "commands.schema.inspect",
         "status": "executable",
         "routeImplemented": true,
-        "source": "app/bim_ai/api/registry.py:2313",
+        "source": "app/bim_ai/api/registry.py:2321",
         "notes": ""
       }
     ],
+    "commandSchemaMetadata": {
+      "status": "ok",
+      "commandCount": 262,
+      "generatedExampleCount": 262,
+      "unavailableExampleCount": 0,
+      "mappingCount": 262,
+      "mappedCount": 72,
+      "rawExpertCount": 190
+    },
     "queryResolve": [
       {
         "id": "query.elements",
         "descriptor": "query.elements",
         "status": "executable",
         "routeImplemented": true,
-        "source": "app/bim_ai/api/registry.py:2358",
+        "source": "app/bim_ai/api/registry.py:2372",
         "notes": ""
       },
       {
@@ -14479,7 +14492,7 @@
         "descriptor": "query.hosts",
         "status": "executable",
         "routeImplemented": true,
-        "source": "app/bim_ai/api/registry.py:2565",
+        "source": "app/bim_ai/api/registry.py:2579",
         "notes": ""
       },
       {
@@ -14487,7 +14500,7 @@
         "descriptor": "query.levels",
         "status": "executable",
         "routeImplemented": true,
-        "source": "app/bim_ai/api/registry.py:2416",
+        "source": "app/bim_ai/api/registry.py:2430",
         "notes": "Read-only level and plan-view discovery for explicit level ids."
       },
       {
@@ -14495,7 +14508,7 @@
         "descriptor": "query.types",
         "status": "executable",
         "routeImplemented": true,
-        "source": "app/bim_ai/api/registry.py:2464",
+        "source": "app/bim_ai/api/registry.py:2478",
         "notes": ""
       },
       {
@@ -14503,7 +14516,7 @@
         "descriptor": "query.views",
         "status": "executable",
         "routeImplemented": true,
-        "source": "app/bim_ai/api/registry.py:2516",
+        "source": "app/bim_ai/api/registry.py:2530",
         "notes": "Read-only view/sheet/schedule discovery for review and documentation."
       },
       {
@@ -14511,7 +14524,7 @@
         "descriptor": "query.nearest_wall",
         "status": "executable",
         "routeImplemented": true,
-        "source": "app/bim_ai/api/registry.py:2621",
+        "source": "app/bim_ai/api/registry.py:2635",
         "notes": "Read-only wall proximity resolver for hosted openings and line matching."
       },
       {
@@ -14519,7 +14532,7 @@
         "descriptor": "query.enclosed_loops",
         "status": "executable",
         "routeImplemented": true,
-        "source": "app/bim_ai/api/registry.py:2668",
+        "source": "app/bim_ai/api/registry.py:2682",
         "notes": ""
       },
       {
@@ -14527,7 +14540,7 @@
         "descriptor": "resolve.active_or_default_level",
         "status": "executable",
         "routeImplemented": true,
-        "source": "app/bim_ai/api/registry.py:2722",
+        "source": "app/bim_ai/api/registry.py:2736",
         "notes": "Read-only replacement for UI active-level state."
       },
       {
@@ -14535,7 +14548,7 @@
         "descriptor": "resolve.default_plan_view",
         "status": "executable",
         "routeImplemented": true,
-        "source": "app/bim_ai/api/registry.py:2769",
+        "source": "app/bim_ai/api/registry.py:2783",
         "notes": "Read-only replacement for UI active-plan-view context."
       },
       {
@@ -14543,7 +14556,7 @@
         "descriptor": "resolve.wall_by_line",
         "status": "executable",
         "routeImplemented": true,
-        "source": "app/bim_ai/api/registry.py:2815",
+        "source": "app/bim_ai/api/registry.py:2829",
         "notes": "Read-only line-matched wall resolver for sketch wall/host equivalence."
       },
       {
@@ -14551,7 +14564,7 @@
         "descriptor": "resolve.host_face",
         "status": "executable",
         "routeImplemented": true,
-        "source": "app/bim_ai/api/registry.py:2863",
+        "source": "app/bim_ai/api/registry.py:2877",
         "notes": "Read-only hosted-placement resolver for walls, roof faces, and slab faces."
       },
       {
@@ -14559,7 +14572,7 @@
         "descriptor": "resolve.family_type",
         "status": "executable",
         "routeImplemented": true,
-        "source": "app/bim_ai/api/registry.py:2910",
+        "source": "app/bim_ai/api/registry.py:2924",
         "notes": "Read-only replacement for UI family/type picker state."
       },
       {
@@ -14567,7 +14580,7 @@
         "descriptor": "resolve.room_boundary",
         "status": "executable",
         "routeImplemented": true,
-        "source": "app/bim_ai/api/registry.py:2957",
+        "source": "app/bim_ai/api/registry.py:2971",
         "notes": "Read-only room/space boundary resolver for room-programme authoring."
       },
       {
@@ -14575,7 +14588,7 @@
         "descriptor": "resolve.loop_for_boundary",
         "status": "executable",
         "routeImplemented": true,
-        "source": "app/bim_ai/api/registry.py:3004",
+        "source": "app/bim_ai/api/registry.py:3018",
         "notes": "Read-only resolver from selected/detected boundary context to explicit loop id."
       }
     ],
@@ -14618,6 +14631,10 @@
       "b08ResourceExpected": 9,
       "b09CommandSchemaExecutable": 2,
       "b09CommandSchemaExpected": 2,
+      "b09CommandSchemaExamples": 262,
+      "b09CommandSchemaMappings": 262,
+      "b09CommandSchemaCommandCount": 262,
+      "b09CommandSchemaUnavailableExamples": 0,
       "b10QueryResolveExecutable": 14,
       "b10QueryResolveExpected": 14,
       "b11CmdkMappedEntryCount": 127,
@@ -32105,7 +32122,7 @@
       "resourceGroups": ["asset", "asset-library", "kernel-command"],
       "uiFeatures": ["group:asset", "group:asset-library", "group:kernel-command"],
       "agentSafetyNotes": "Places an existing AssetLibraryEntry as a PlacedAssetElem.",
-      "source": "app/bim_ai/api/registry.py:4537",
+      "source": "app/bim_ai/api/registry.py:4551",
       "routeImplemented": true,
       "routeSource": "app/bim_ai/routes_api.py:2193",
       "surfaceStatus": "executable",
@@ -32137,7 +32154,7 @@
       "resourceGroups": ["asset-catalog", "asset-library"],
       "uiFeatures": ["group:asset-catalog", "group:asset-library"],
       "agentSafetyNotes": "Read-only catalog/library query. Empty result sets are valid evidence.",
-      "source": "app/bim_ai/api/registry.py:4513",
+      "source": "app/bim_ai/api/registry.py:4527",
       "routeImplemented": true,
       "routeSource": "app/bim_ai/routes_api.py:3763",
       "surfaceStatus": "executable",
@@ -32233,7 +32250,7 @@
       "resourceGroups": ["asset-catalog"],
       "uiFeatures": ["group:asset-catalog"],
       "agentSafetyNotes": "",
-      "source": "app/bim_ai/api/registry.py:4302",
+      "source": "app/bim_ai/api/registry.py:4316",
       "routeImplemented": true,
       "routeSource": "app/bim_ai/routes_api.py:3763",
       "surfaceStatus": "executable",
@@ -32329,7 +32346,7 @@
       "resourceGroups": ["api-descriptor", "command-schema", "kernel-command", "mcp-resource"],
       "uiFeatures": ["developer-tools"],
       "agentSafetyNotes": "",
-      "source": "app/bim_ai/api/registry.py:2313",
+      "source": "app/bim_ai/api/registry.py:2321",
       "routeImplemented": true,
       "routeSource": "app/bim_ai/routes_api.py:3141",
       "surfaceStatus": "executable",
@@ -32361,7 +32378,7 @@
       "resourceGroups": ["kernel-command"],
       "uiFeatures": ["group:kernel-command"],
       "agentSafetyNotes": "",
-      "source": "app/bim_ai/api/registry.py:5084",
+      "source": "app/bim_ai/api/registry.py:5098",
       "routeImplemented": true,
       "routeSource": "app/bim_ai/routes_api.py:2193",
       "surfaceStatus": "executable",
@@ -32393,7 +32410,7 @@
       "resourceGroups": [],
       "uiFeatures": [],
       "agentSafetyNotes": "Safe to call any number of times. Same inputs → byte-identical output.",
-      "source": "app/bim_ai/api/registry.py:4258",
+      "source": "app/bim_ai/api/registry.py:4272",
       "routeImplemented": true,
       "routeSource": "app/bim_ai/routes_api.py:3065",
       "surfaceStatus": "executable",
@@ -32425,7 +32442,7 @@
       "resourceGroups": ["lens", "construction"],
       "uiFeatures": ["group:lens", "group:construction"],
       "agentSafetyNotes": "",
-      "source": "app/bim_ai/api/registry.py:3461",
+      "source": "app/bim_ai/api/registry.py:3475",
       "routeImplemented": true,
       "routeSource": "app/bim_ai/routes_api.py:803",
       "surfaceStatus": "executable",
@@ -32553,7 +32570,7 @@
       "resourceGroups": ["lens", "cost-quantity"],
       "uiFeatures": ["group:lens", "group:cost-quantity"],
       "agentSafetyNotes": "",
-      "source": "app/bim_ai/api/registry.py:3108",
+      "source": "app/bim_ai/api/registry.py:3122",
       "routeImplemented": true,
       "routeSource": "app/bim_ai/routes_api.py:739",
       "surfaceStatus": "executable",
@@ -32585,7 +32602,7 @@
       "resourceGroups": ["kernel-command"],
       "uiFeatures": ["group:kernel-command"],
       "agentSafetyNotes": "Wrap in a CommandBundle with type=",
-      "source": "app/bim_ai/api/registry.py:5323",
+      "source": "app/bim_ai/api/registry.py:5337",
       "routeImplemented": true,
       "routeSource": "app/bim_ai/routes_api.py:2193",
       "surfaceStatus": "executable",
@@ -32617,7 +32634,7 @@
       "resourceGroups": ["kernel-command"],
       "uiFeatures": ["group:kernel-command"],
       "agentSafetyNotes": "Requires a valid presentationCanvasId; canvas must exist before adding frames.",
-      "source": "app/bim_ai/api/registry.py:5199",
+      "source": "app/bim_ai/api/registry.py:5213",
       "routeImplemented": true,
       "routeSource": "app/bim_ai/routes_api.py:2193",
       "surfaceStatus": "executable",
@@ -32649,7 +32666,7 @@
       "resourceGroups": ["kernel-command"],
       "uiFeatures": ["group:kernel-command"],
       "agentSafetyNotes": "",
-      "source": "app/bim_ai/api/registry.py:3876",
+      "source": "app/bim_ai/api/registry.py:3890",
       "routeImplemented": true,
       "routeSource": "app/bim_ai/routes_api.py:2193",
       "surfaceStatus": "executable",
@@ -32681,7 +32698,7 @@
       "resourceGroups": ["kernel-command"],
       "uiFeatures": ["group:kernel-command"],
       "agentSafetyNotes": "",
-      "source": "app/bim_ai/api/registry.py:3806",
+      "source": "app/bim_ai/api/registry.py:3820",
       "routeImplemented": true,
       "routeSource": "app/bim_ai/routes_api.py:2193",
       "surfaceStatus": "executable",
@@ -32713,7 +32730,7 @@
       "resourceGroups": ["kernel-command"],
       "uiFeatures": ["group:kernel-command"],
       "agentSafetyNotes": "",
-      "source": "app/bim_ai/api/registry.py:4768",
+      "source": "app/bim_ai/api/registry.py:4782",
       "routeImplemented": true,
       "routeSource": "app/bim_ai/routes_api.py:2193",
       "surfaceStatus": "executable",
@@ -32745,7 +32762,7 @@
       "resourceGroups": ["decal", "material", "kernel-command"],
       "uiFeatures": ["group:decal", "group:material", "group:kernel-command"],
       "agentSafetyNotes": "Creates a DecalElem hosted on an existing parent element surface.",
-      "source": "app/bim_ai/api/registry.py:4682",
+      "source": "app/bim_ai/api/registry.py:4696",
       "routeImplemented": true,
       "routeSource": "app/bim_ai/routes_api.py:2193",
       "surfaceStatus": "executable",
@@ -32777,7 +32794,7 @@
       "resourceGroups": ["image-underlay", "sketch-to-bim", "kernel-command"],
       "uiFeatures": ["group:image-underlay", "group:sketch-to-bim", "group:kernel-command"],
       "agentSafetyNotes": "",
-      "source": "app/bim_ai/api/registry.py:5041",
+      "source": "app/bim_ai/api/registry.py:5055",
       "routeImplemented": true,
       "routeSource": "app/bim_ai/routes_api.py:2193",
       "surfaceStatus": "executable",
@@ -32853,7 +32870,7 @@
       "resourceGroups": ["kernel-command"],
       "uiFeatures": ["group:kernel-command"],
       "agentSafetyNotes": "",
-      "source": "app/bim_ai/api/registry.py:5522",
+      "source": "app/bim_ai/api/registry.py:5536",
       "routeImplemented": true,
       "routeSource": "app/bim_ai/routes_api.py:2193",
       "surfaceStatus": "executable",
@@ -32917,7 +32934,7 @@
       "resourceGroups": ["presentation", "export"],
       "uiFeatures": ["group:presentation", "group:export"],
       "agentSafetyNotes": "Read-only; safe to call freely.",
-      "source": "app/bim_ai/api/registry.py:5382",
+      "source": "app/bim_ai/api/registry.py:5396",
       "routeImplemented": true,
       "routeSource": "app/bim_ai/routes_exports.py:586",
       "surfaceStatus": "executable",
@@ -32953,7 +32970,7 @@
       "resourceGroups": ["presentation", "export"],
       "uiFeatures": ["group:presentation", "group:export"],
       "agentSafetyNotes": "Read-only export; safe to call at any time. Returns JSON bundle, not a binary .pptx file.",
-      "source": "app/bim_ai/api/registry.py:5259",
+      "source": "app/bim_ai/api/registry.py:5273",
       "routeImplemented": true,
       "routeSource": "app/bim_ai/routes_api.py:3868",
       "surfaceStatus": "executable",
@@ -32985,7 +33002,7 @@
       "resourceGroups": ["render", "export"],
       "uiFeatures": ["group:render", "group:export"],
       "agentSafetyNotes": "",
-      "source": "app/bim_ai/api/registry.py:5447",
+      "source": "app/bim_ai/api/registry.py:5461",
       "routeImplemented": true,
       "routeSource": "app/bim_ai/routes_api.py:3923",
       "surfaceStatus": "executable",
@@ -33145,7 +33162,7 @@
       "resourceGroups": ["audit"],
       "uiFeatures": ["group:audit"],
       "agentSafetyNotes": "",
-      "source": "app/bim_ai/api/registry.py:5880",
+      "source": "app/bim_ai/api/registry.py:5894",
       "routeImplemented": true,
       "routeSource": "app/bim_ai/routes_api.py:338",
       "surfaceStatus": "executable",
@@ -33177,7 +33194,7 @@
       "resourceGroups": ["family", "family-instance", "kernel-command"],
       "uiFeatures": ["group:family", "group:family-instance", "group:kernel-command"],
       "agentSafetyNotes": "",
-      "source": "app/bim_ai/api/registry.py:4472",
+      "source": "app/bim_ai/api/registry.py:4486",
       "routeImplemented": true,
       "routeSource": "app/bim_ai/routes_api.py:2193",
       "surfaceStatus": "executable",
@@ -33209,7 +33226,7 @@
       "resourceGroups": ["family", "family-type", "kernel-command"],
       "uiFeatures": ["group:family", "group:family-type", "group:kernel-command"],
       "agentSafetyNotes": "",
-      "source": "app/bim_ai/api/registry.py:4431",
+      "source": "app/bim_ai/api/registry.py:4445",
       "routeImplemented": true,
       "routeSource": "app/bim_ai/routes_api.py:2193",
       "surfaceStatus": "executable",
@@ -33241,7 +33258,7 @@
       "resourceGroups": ["lens", "fire-safety"],
       "uiFeatures": ["group:lens", "group:fire-safety"],
       "agentSafetyNotes": "",
-      "source": "app/bim_ai/api/registry.py:3053",
+      "source": "app/bim_ai/api/registry.py:3067",
       "routeImplemented": true,
       "routeSource": "app/bim_ai/routes_api.py:727",
       "surfaceStatus": "executable",
@@ -33273,7 +33290,7 @@
       "resourceGroups": ["image", "sketch"],
       "uiFeatures": ["group:image", "group:sketch"],
       "agentSafetyNotes": "",
-      "source": "app/bim_ai/api/registry.py:3712",
+      "source": "app/bim_ai/api/registry.py:3726",
       "routeImplemented": true,
       "routeSource": "app/bim_ai/routes_api.py:2973",
       "surfaceStatus": "executable",
@@ -33305,7 +33322,7 @@
       "resourceGroups": ["image-underlay", "sketch-to-bim", "kernel-command"],
       "uiFeatures": ["group:image-underlay", "group:sketch-to-bim", "group:kernel-command"],
       "agentSafetyNotes": "",
-      "source": "app/bim_ai/api/registry.py:4840",
+      "source": "app/bim_ai/api/registry.py:4854",
       "routeImplemented": true,
       "routeSource": "app/bim_ai/routes_api.py:2193",
       "surfaceStatus": "executable",
@@ -33337,7 +33354,7 @@
       "resourceGroups": ["site", "context"],
       "uiFeatures": ["group:site", "group:context"],
       "agentSafetyNotes": "",
-      "source": "app/bim_ai/api/registry.py:4716",
+      "source": "app/bim_ai/api/registry.py:4730",
       "routeImplemented": true,
       "routeSource": "app/bim_ai/routes_api.py:3791",
       "surfaceStatus": "executable",
@@ -33369,7 +33386,7 @@
       "resourceGroups": ["concept-seed"],
       "uiFeatures": ["group:concept-seed"],
       "agentSafetyNotes": "Safe read-only query. T9 polls this endpoint to discover seeds ready for ingestion.",
-      "source": "app/bim_ai/api/registry.py:5162",
+      "source": "app/bim_ai/api/registry.py:5176",
       "routeImplemented": true,
       "routeSource": "app/bim_ai/routes_api.py:3837",
       "surfaceStatus": "executable",
@@ -33401,7 +33418,7 @@
       "resourceGroups": ["material", "kernel-command"],
       "uiFeatures": ["group:material", "group:kernel-command"],
       "agentSafetyNotes": "Sets materialKey on element kinds that support the property, currently including walls.",
-      "source": "app/bim_ai/api/registry.py:4629",
+      "source": "app/bim_ai/api/registry.py:4643",
       "routeImplemented": true,
       "routeSource": "app/bim_ai/routes_api.py:2193",
       "surfaceStatus": "executable",
@@ -33433,7 +33450,7 @@
       "resourceGroups": ["material", "paint", "kernel-command"],
       "uiFeatures": ["group:material", "group:paint", "group:kernel-command"],
       "agentSafetyNotes": "",
-      "source": "app/bim_ai/api/registry.py:4652",
+      "source": "app/bim_ai/api/registry.py:4666",
       "routeImplemented": true,
       "routeSource": "app/bim_ai/routes_api.py:2193",
       "surfaceStatus": "executable",
@@ -33465,7 +33482,7 @@
       "resourceGroups": ["material", "material-catalog"],
       "uiFeatures": ["group:material", "group:material-catalog"],
       "agentSafetyNotes": "",
-      "source": "app/bim_ai/api/registry.py:4569",
+      "source": "app/bim_ai/api/registry.py:4583",
       "routeImplemented": true,
       "routeSource": "app/bim_ai/routes_api.py:1113",
       "surfaceStatus": "executable",
@@ -33497,7 +33514,7 @@
       "resourceGroups": ["material", "pbr", "kernel-command"],
       "uiFeatures": ["group:material", "group:pbr", "group:kernel-command"],
       "agentSafetyNotes": "",
-      "source": "app/bim_ai/api/registry.py:4594",
+      "source": "app/bim_ai/api/registry.py:4608",
       "routeImplemented": true,
       "routeSource": "app/bim_ai/routes_api.py:2193",
       "surfaceStatus": "executable",
@@ -33919,7 +33936,7 @@
       "resourceGroups": ["image-underlay", "sketch-to-bim", "kernel-command"],
       "uiFeatures": ["group:image-underlay", "group:sketch-to-bim", "group:kernel-command"],
       "agentSafetyNotes": "",
-      "source": "app/bim_ai/api/registry.py:4907",
+      "source": "app/bim_ai/api/registry.py:4921",
       "routeImplemented": true,
       "routeSource": "app/bim_ai/routes_api.py:2193",
       "surfaceStatus": "executable",
@@ -34021,7 +34038,7 @@
       "resourceGroups": ["kernel-command"],
       "uiFeatures": ["group:kernel-command"],
       "agentSafetyNotes": "",
-      "source": "app/bim_ai/api/registry.py:4384",
+      "source": "app/bim_ai/api/registry.py:4398",
       "routeImplemented": true,
       "routeSource": "app/bim_ai/routes_api.py:2193",
       "surfaceStatus": "executable",
@@ -34053,7 +34070,7 @@
       "resourceGroups": ["presentation", "share-link"],
       "uiFeatures": ["group:presentation", "group:share-link"],
       "agentSafetyNotes": "Creates a public shareable link. Use pageScopeIds to restrict visible pages.",
-      "source": "app/bim_ai/api/registry.py:3583",
+      "source": "app/bim_ai/api/registry.py:3597",
       "routeImplemented": true,
       "routeSource": "app/bim_ai/routes_api.py:3446",
       "surfaceStatus": "executable",
@@ -34159,7 +34176,7 @@
       "resourceGroups": ["presentation", "share-link"],
       "uiFeatures": ["group:presentation", "group:share-link"],
       "agentSafetyNotes": "Safe to call freely; lists non-revoked presentation links only.",
-      "source": "app/bim_ai/api/registry.py:3662",
+      "source": "app/bim_ai/api/registry.py:3676",
       "routeImplemented": true,
       "routeSource": "app/bim_ai/routes_api.py:3499",
       "surfaceStatus": "executable",
@@ -34191,7 +34208,7 @@
       "resourceGroups": ["presentation", "share-link"],
       "uiFeatures": ["group:presentation", "group:share-link"],
       "agentSafetyNotes": "Immediately invalidates the link and pushes {type: revoked} to all active WS viewers.",
-      "source": "app/bim_ai/api/registry.py:3625",
+      "source": "app/bim_ai/api/registry.py:3639",
       "routeImplemented": true,
       "routeSource": "app/bim_ai/routes_api.py:3536",
       "surfaceStatus": "executable",
@@ -34287,7 +34304,7 @@
       "resourceGroups": ["query", "elements", "model", "mcp-resource", "sketch-to-bim"],
       "uiFeatures": ["selection", "model-browser", "inspector"],
       "agentSafetyNotes": "",
-      "source": "app/bim_ai/api/registry.py:2358",
+      "source": "app/bim_ai/api/registry.py:2372",
       "routeImplemented": true,
       "routeSource": "app/bim_ai/routes_api.py:1225",
       "surfaceStatus": "executable",
@@ -34319,7 +34336,7 @@
       "resourceGroups": ["query", "loops", "rooms", "floors", "roofs", "mcp-resource"],
       "uiFeatures": ["floor-tool", "roof-sketch", "room-tool"],
       "agentSafetyNotes": "",
-      "source": "app/bim_ai/api/registry.py:2668",
+      "source": "app/bim_ai/api/registry.py:2682",
       "routeImplemented": true,
       "routeSource": "app/bim_ai/routes_api.py:1303",
       "surfaceStatus": "executable",
@@ -34357,7 +34374,7 @@
       "resourceGroups": ["query", "hosts", "walls", "roofs", "slabs", "mcp-resource"],
       "uiFeatures": ["canvas-hover", "selection"],
       "agentSafetyNotes": "",
-      "source": "app/bim_ai/api/registry.py:2565",
+      "source": "app/bim_ai/api/registry.py:2579",
       "routeImplemented": true,
       "routeSource": "app/bim_ai/routes_api.py:1277",
       "surfaceStatus": "executable",
@@ -34389,7 +34406,7 @@
       "resourceGroups": ["query", "levels", "model", "mcp-resource", "sketch-to-bim"],
       "uiFeatures": ["level-browser", "project-browser"],
       "agentSafetyNotes": "Read-only level and plan-view discovery for explicit level ids.",
-      "source": "app/bim_ai/api/registry.py:2416",
+      "source": "app/bim_ai/api/registry.py:2430",
       "routeImplemented": true,
       "routeSource": "app/bim_ai/routes_api.py:1238",
       "surfaceStatus": "executable",
@@ -34421,7 +34438,7 @@
       "resourceGroups": ["query", "walls", "resolver", "mcp-resource", "sketch-to-bim"],
       "uiFeatures": ["canvas-hover", "wall-tool"],
       "agentSafetyNotes": "Read-only wall proximity resolver for hosted openings and line matching.",
-      "source": "app/bim_ai/api/registry.py:2621",
+      "source": "app/bim_ai/api/registry.py:2635",
       "routeImplemented": true,
       "routeSource": "app/bim_ai/routes_api.py:1290",
       "surfaceStatus": "executable",
@@ -34453,7 +34470,7 @@
       "resourceGroups": ["query", "types", "materials", "model", "mcp-resource", "sketch-to-bim"],
       "uiFeatures": ["type-browser", "inspector"],
       "agentSafetyNotes": "",
-      "source": "app/bim_ai/api/registry.py:2464",
+      "source": "app/bim_ai/api/registry.py:2478",
       "routeImplemented": true,
       "routeSource": "app/bim_ai/routes_api.py:1251",
       "surfaceStatus": "executable",
@@ -34485,7 +34502,7 @@
       "resourceGroups": ["query", "views", "sheets", "schedules", "model", "mcp-resource"],
       "uiFeatures": ["project-browser", "view-browser", "sheet-browser"],
       "agentSafetyNotes": "Read-only view/sheet/schedule discovery for review and documentation.",
-      "source": "app/bim_ai/api/registry.py:2516",
+      "source": "app/bim_ai/api/registry.py:2530",
       "routeImplemented": true,
       "routeSource": "app/bim_ai/routes_api.py:1264",
       "surfaceStatus": "executable",
@@ -34517,7 +34534,7 @@
       "resourceGroups": ["resolve", "levels", "context", "mcp-resource", "sketch-to-bim"],
       "uiFeatures": ["active-level-picker"],
       "agentSafetyNotes": "Read-only replacement for UI active-level state.",
-      "source": "app/bim_ai/api/registry.py:2722",
+      "source": "app/bim_ai/api/registry.py:2736",
       "routeImplemented": true,
       "routeSource": "app/bim_ai/routes_api.py:1316",
       "surfaceStatus": "executable",
@@ -34549,7 +34566,7 @@
       "resourceGroups": ["resolve", "views", "levels", "context", "mcp-resource"],
       "uiFeatures": ["project-browser", "active-view"],
       "agentSafetyNotes": "Read-only replacement for UI active-plan-view context.",
-      "source": "app/bim_ai/api/registry.py:2769",
+      "source": "app/bim_ai/api/registry.py:2783",
       "routeImplemented": true,
       "routeSource": "app/bim_ai/routes_api.py:1329",
       "surfaceStatus": "executable",
@@ -34589,7 +34606,7 @@
       "resourceGroups": ["resolve", "types", "families", "catalog", "mcp-resource"],
       "uiFeatures": ["type-picker", "family-browser"],
       "agentSafetyNotes": "Read-only replacement for UI family/type picker state.",
-      "source": "app/bim_ai/api/registry.py:2910",
+      "source": "app/bim_ai/api/registry.py:2924",
       "routeImplemented": true,
       "routeSource": "app/bim_ai/routes_api.py:1368",
       "surfaceStatus": "executable",
@@ -34621,7 +34638,7 @@
       "resourceGroups": ["resolve", "hosts", "host-face", "walls", "roofs", "slabs"],
       "uiFeatures": ["canvas-hover", "hosted-placement-tools"],
       "agentSafetyNotes": "Read-only hosted-placement resolver for walls, roof faces, and slab faces.",
-      "source": "app/bim_ai/api/registry.py:2863",
+      "source": "app/bim_ai/api/registry.py:2877",
       "routeImplemented": true,
       "routeSource": "app/bim_ai/routes_api.py:1355",
       "surfaceStatus": "executable",
@@ -34653,7 +34670,7 @@
       "resourceGroups": ["resolve", "loops", "boundaries", "floors", "roofs", "mcp-resource"],
       "uiFeatures": ["floor-tool", "roof-sketch", "room-tool"],
       "agentSafetyNotes": "Read-only resolver from selected/detected boundary context to explicit loop id.",
-      "source": "app/bim_ai/api/registry.py:3004",
+      "source": "app/bim_ai/api/registry.py:3018",
       "routeImplemented": true,
       "routeSource": "app/bim_ai/routes_api.py:1394",
       "surfaceStatus": "executable",
@@ -34685,7 +34702,7 @@
       "resourceGroups": ["resolve", "rooms", "boundaries", "loops", "mcp-resource"],
       "uiFeatures": ["room-tool", "inspector"],
       "agentSafetyNotes": "Read-only room/space boundary resolver for room-programme authoring.",
-      "source": "app/bim_ai/api/registry.py:2957",
+      "source": "app/bim_ai/api/registry.py:2971",
       "routeImplemented": true,
       "routeSource": "app/bim_ai/routes_api.py:1381",
       "surfaceStatus": "executable",
@@ -34725,7 +34742,7 @@
       "resourceGroups": ["resolve", "walls", "line-match", "mcp-resource", "sketch-to-bim"],
       "uiFeatures": ["wall-tool", "selection"],
       "agentSafetyNotes": "Read-only line-matched wall resolver for sketch wall/host equivalence.",
-      "source": "app/bim_ai/api/registry.py:2815",
+      "source": "app/bim_ai/api/registry.py:2829",
       "routeImplemented": true,
       "routeSource": "app/bim_ai/routes_api.py:1342",
       "surfaceStatus": "executable",
@@ -34757,7 +34774,7 @@
       "resourceGroups": ["image-underlay", "sketch-to-bim", "kernel-command"],
       "uiFeatures": ["group:image-underlay", "group:sketch-to-bim", "group:kernel-command"],
       "agentSafetyNotes": "Use the standard bundle dry-run path first. Rotation is stored in degrees.",
-      "source": "app/bim_ai/api/registry.py:5004",
+      "source": "app/bim_ai/api/registry.py:5018",
       "routeImplemented": true,
       "routeSource": "app/bim_ai/routes_api.py:2193",
       "surfaceStatus": "executable",
@@ -34789,7 +34806,7 @@
       "resourceGroups": ["image-underlay", "sketch-to-bim", "kernel-command"],
       "uiFeatures": ["group:image-underlay", "group:sketch-to-bim", "group:kernel-command"],
       "agentSafetyNotes": "",
-      "source": "app/bim_ai/api/registry.py:4963",
+      "source": "app/bim_ai/api/registry.py:4977",
       "routeImplemented": true,
       "routeSource": "app/bim_ai/routes_api.py:2193",
       "surfaceStatus": "executable",
@@ -34821,7 +34838,7 @@
       "resourceGroups": ["kernel-command"],
       "uiFeatures": ["group:kernel-command"],
       "agentSafetyNotes": "",
-      "source": "app/bim_ai/api/registry.py:3506",
+      "source": "app/bim_ai/api/registry.py:3520",
       "routeImplemented": true,
       "routeSource": "app/bim_ai/routes_api.py:2193",
       "surfaceStatus": "executable",
@@ -34853,7 +34870,7 @@
       "resourceGroups": ["kernel-command"],
       "uiFeatures": ["group:kernel-command"],
       "agentSafetyNotes": "",
-      "source": "app/bim_ai/api/registry.py:3322",
+      "source": "app/bim_ai/api/registry.py:3336",
       "routeImplemented": true,
       "routeSource": "app/bim_ai/routes_api.py:2193",
       "surfaceStatus": "executable",
@@ -34885,7 +34902,7 @@
       "resourceGroups": ["kernel-command"],
       "uiFeatures": ["group:kernel-command"],
       "agentSafetyNotes": "Merges into element.props dict. Element must exist; unknown elementId raises 400.",
-      "source": "app/bim_ai/api/registry.py:3844",
+      "source": "app/bim_ai/api/registry.py:3858",
       "routeImplemented": true,
       "routeSource": "app/bim_ai/routes_api.py:2193",
       "surfaceStatus": "executable",
@@ -34949,7 +34966,7 @@
       "resourceGroups": ["kernel-command"],
       "uiFeatures": ["group:kernel-command"],
       "agentSafetyNotes": "",
-      "source": "app/bim_ai/api/registry.py:3397",
+      "source": "app/bim_ai/api/registry.py:3411",
       "routeImplemented": true,
       "routeSource": "app/bim_ai/routes_api.py:2193",
       "surfaceStatus": "executable",
@@ -35249,7 +35266,7 @@
       "resourceGroups": ["sketch-to-bim", "sketch-ir", "initiation"],
       "uiFeatures": ["group:sketch-to-bim", "group:sketch-ir", "group:initiation"],
       "agentSafetyNotes": "",
-      "source": "app/bim_ai/api/registry.py:5651",
+      "source": "app/bim_ai/api/registry.py:5665",
       "routeImplemented": true,
       "routeSource": "app/bim_ai/routes_sketch_product.py:115",
       "surfaceStatus": "executable",
@@ -35281,7 +35298,7 @@
       "resourceGroups": ["sketch-to-bim", "phase", "acceptance", "evidence"],
       "uiFeatures": ["group:sketch-to-bim", "group:phase", "group:acceptance", "group:evidence"],
       "agentSafetyNotes": "",
-      "source": "app/bim_ai/api/registry.py:5820",
+      "source": "app/bim_ai/api/registry.py:5834",
       "routeImplemented": true,
       "routeSource": "app/bim_ai/routes_sketch_product.py:190",
       "surfaceStatus": "executable",
@@ -35318,7 +35335,7 @@
         "group:kernel-command"
       ],
       "agentSafetyNotes": "Default to dry_run. A commit must include parentRevision and preserve bundle assumptions.",
-      "source": "app/bim_ai/api/registry.py:5763",
+      "source": "app/bim_ai/api/registry.py:5777",
       "routeImplemented": true,
       "routeSource": "app/bim_ai/routes_sketch_product.py:159",
       "surfaceStatus": "CLI-only",
@@ -35350,7 +35367,7 @@
       "resourceGroups": ["sketch-to-bim", "seed-dsl", "command-bundle"],
       "uiFeatures": ["group:sketch-to-bim", "group:seed-dsl", "group:command-bundle"],
       "agentSafetyNotes": "Compiled output must be submitted through model.dry_run before commit.",
-      "source": "app/bim_ai/api/registry.py:5717",
+      "source": "app/bim_ai/api/registry.py:5731",
       "routeImplemented": true,
       "routeSource": "app/bim_ai/routes_sketch_product.py:140",
       "surfaceStatus": "CLI-only",
@@ -35478,7 +35495,7 @@
       "resourceGroups": ["kernel-command"],
       "uiFeatures": ["group:kernel-command"],
       "agentSafetyNotes": "",
-      "source": "app/bim_ai/api/registry.py:3183",
+      "source": "app/bim_ai/api/registry.py:3197",
       "routeImplemented": true,
       "routeSource": "app/bim_ai/routes_api.py:2193",
       "surfaceStatus": "executable",
@@ -35510,7 +35527,7 @@
       "resourceGroups": ["kernel-command"],
       "uiFeatures": ["group:kernel-command"],
       "agentSafetyNotes": "",
-      "source": "app/bim_ai/api/registry.py:3285",
+      "source": "app/bim_ai/api/registry.py:3299",
       "routeImplemented": true,
       "routeSource": "app/bim_ai/routes_api.py:2193",
       "surfaceStatus": "executable",
@@ -35542,7 +35559,7 @@
       "resourceGroups": ["kernel-command"],
       "uiFeatures": ["group:kernel-command"],
       "agentSafetyNotes": "",
-      "source": "app/bim_ai/api/registry.py:3249",
+      "source": "app/bim_ai/api/registry.py:3263",
       "routeImplemented": true,
       "routeSource": "app/bim_ai/routes_api.py:2193",
       "surfaceStatus": "executable",
@@ -35574,7 +35591,7 @@
       "resourceGroups": ["kernel-command"],
       "uiFeatures": ["group:kernel-command"],
       "agentSafetyNotes": "",
-      "source": "app/bim_ai/api/registry.py:5582",
+      "source": "app/bim_ai/api/registry.py:5596",
       "routeImplemented": true,
       "routeSource": "app/bim_ai/routes_api.py:2193",
       "surfaceStatus": "executable",
@@ -35606,7 +35623,7 @@
       "resourceGroups": ["kernel-command"],
       "uiFeatures": ["group:kernel-command"],
       "agentSafetyNotes": "",
-      "source": "app/bim_ai/api/registry.py:4346",
+      "source": "app/bim_ai/api/registry.py:4360",
       "routeImplemented": true,
       "routeSource": "app/bim_ai/routes_api.py:2193",
       "surfaceStatus": "executable",

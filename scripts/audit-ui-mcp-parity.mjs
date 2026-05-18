@@ -2,6 +2,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import process from 'node:process';
+import { execFileSync } from 'node:child_process';
 
 const ROOT = process.cwd();
 const UNKNOWN = 'unknown';
@@ -19,7 +20,8 @@ const READINESS_ADJACENT_SURFACES = [
     id: 'evidence.package',
     stableId: 'evidence.package',
     surfaceStatus: 'executable',
-    canonicalTransport: 'GET /api/models/{model_id}/evidence-package; CLI `bim-ai evidence-package`',
+    canonicalTransport:
+      'GET /api/models/{model_id}/evidence-package; CLI `bim-ai evidence-package`',
     path: '/api/models/{model_id}/evidence-package',
     notes:
       'Backend route-backed evidence package. It does not replace live screenshots or phase acceptance.',
@@ -127,6 +129,7 @@ const SKB_B10_REQUIRED_QUERY_RESOLVE = [
 
 const SOURCES = {
   commands: 'app/bim_ai/commands.py',
+  commandSchemas: 'app/bim_ai/command_schemas.py',
   apiRegistry: 'app/bim_ai/api/registry.py',
   apiRoutesGlob: 'app/bim_ai/routes_*.py',
   cmdk: 'packages/web/src/cmdPalette/defaultCommands.ts',
@@ -3115,6 +3118,9 @@ function buildAudit() {
       skbB08ResourceExpected: skb.summary.b08ResourceExpected,
       skbB09CommandSchemaExecutable: skb.summary.b09CommandSchemaExecutable,
       skbB09CommandSchemaExpected: skb.summary.b09CommandSchemaExpected,
+      skbB09CommandSchemaExamples: skb.summary.b09CommandSchemaExamples,
+      skbB09CommandSchemaMappings: skb.summary.b09CommandSchemaMappings,
+      skbB09CommandSchemaCommandCount: skb.summary.b09CommandSchemaCommandCount,
       skbB10QueryResolveExecutable: skb.summary.b10QueryResolveExecutable,
       skbB10QueryResolveExpected: skb.summary.b10QueryResolveExpected,
       skbB11CmdkMappedEntryCount: skb.summary.b11CmdkMappedEntryCount,
@@ -5121,7 +5127,9 @@ function readinessSurfaceRows(apiDescriptors) {
 function findDescriptorByAcceptedId(apiDescriptors, acceptedIds) {
   return apiDescriptors.find((row) =>
     acceptedIds.some(
-      (id) => normalizedId(row.id) === normalizedId(id) || normalizedId(row.stableId) === normalizedId(id),
+      (id) =>
+        normalizedId(row.id) === normalizedId(id) ||
+        normalizedId(row.stableId) === normalizedId(id),
     ),
   );
 }
@@ -5146,9 +5154,61 @@ function skbSurfaceCoverage(requiredRows, apiDescriptors) {
   });
 }
 
+function inspectCommandSchemaMetadataExport() {
+  const script = `
+import json
+from bim_ai.command_schemas import export_command_schemas
+
+catalog = export_command_schemas()
+metadata = list(catalog.get("metadata", {}).values())
+print(json.dumps({
+    "status": "ok",
+    "commandCount": catalog.get("commandCount", 0),
+    "generatedExampleCount": sum(1 for row in metadata if row.get("example") is not None and row.get("exampleStatus") != "todo"),
+    "unavailableExampleCount": sum(1 for row in metadata if row.get("example") is None or row.get("exampleStatus") == "todo"),
+    "mappingCount": sum(1 for row in metadata if row.get("rawSemanticMapping") and row.get("mappingStatus") in {"mapped", "explicit-raw-expert"}),
+    "mappedCount": sum(1 for row in metadata if row.get("mappingStatus") == "mapped"),
+    "rawExpertCount": sum(1 for row in metadata if row.get("mappingStatus") == "explicit-raw-expert"),
+}))
+`.trim();
+  for (const bin of ['python', 'python3']) {
+    try {
+      return JSON.parse(
+        execFileSync(bin, ['-c', script], {
+          cwd: ROOT,
+          encoding: 'utf8',
+          stdio: ['ignore', 'pipe', 'pipe'],
+        }),
+      );
+    } catch {
+      // Try the next interpreter, then fall back to a static contract check.
+    }
+  }
+
+  const source = read(SOURCES.commandSchemas);
+  const hasExampleContract =
+    source.includes('_validated_example') &&
+    source.includes('"exampleStatus": example_status') &&
+    !source.includes('"exampleStatus": "todo"');
+  const hasMappingContract =
+    source.includes('"rawSemanticMapping": mapping') &&
+    source.includes('explicit-raw-expert') &&
+    source.includes('"descriptorMappings"');
+  return {
+    status: hasExampleContract && hasMappingContract ? 'static-contract' : 'missing',
+    commandCount: 0,
+    generatedExampleCount: 0,
+    unavailableExampleCount: hasExampleContract ? 0 : 1,
+    mappingCount: 0,
+    mappedCount: 0,
+    rawExpertCount: 0,
+  };
+}
+
 function buildSkbReadinessAudit(apiDescriptors, cmdkLedger) {
   const resources = skbSurfaceCoverage(SKB_B08_REQUIRED_RESOURCES, apiDescriptors);
   const commandSchemas = skbSurfaceCoverage(SKB_B09_COMMAND_SCHEMA_SURFACES, apiDescriptors);
+  const commandSchemaMetadata = inspectCommandSchemaMetadataExport();
   const queryResolve = SKB_B10_REQUIRED_QUERY_RESOLVE.map((id) => {
     const descriptor = findDescriptorByAcceptedId(apiDescriptors, [id]);
     return {
@@ -5164,7 +5224,9 @@ function buildSkbReadinessAudit(apiDescriptors, cmdkLedger) {
       notes: descriptor?.surfaceNotes ?? '',
     };
   });
-  const cmdkMappedRows = cmdkLedger.filter((row) => row.agentToolId || row.agentCompletionKind !== 'none');
+  const cmdkMappedRows = cmdkLedger.filter(
+    (row) => row.agentToolId || row.agentCompletionKind !== 'none',
+  );
   const cmdkActivatorRows = cmdkLedger.filter((row) => row.executionKind === 'activates-tool');
   const cmdkActivatorMappedRows = cmdkActivatorRows.filter(
     (row) => row.agentToolId || row.agentCompletionKind !== 'none',
@@ -5172,6 +5234,7 @@ function buildSkbReadinessAudit(apiDescriptors, cmdkLedger) {
   return {
     resources,
     commandSchemas,
+    commandSchemaMetadata,
     queryResolve,
     cmdkEquivalence: {
       entryCount: cmdkLedger.length,
@@ -5192,6 +5255,10 @@ function buildSkbReadinessAudit(apiDescriptors, cmdkLedger) {
       b09CommandSchemaExecutable: commandSchemas.filter((row) => row.status === 'executable')
         .length,
       b09CommandSchemaExpected: commandSchemas.length,
+      b09CommandSchemaExamples: commandSchemaMetadata.generatedExampleCount,
+      b09CommandSchemaMappings: commandSchemaMetadata.mappingCount,
+      b09CommandSchemaCommandCount: commandSchemaMetadata.commandCount,
+      b09CommandSchemaUnavailableExamples: commandSchemaMetadata.unavailableExampleCount,
       b10QueryResolveExecutable: queryResolve.filter((row) => row.status === 'executable').length,
       b10QueryResolveExpected: queryResolve.length,
       b11CmdkMappedEntryCount: cmdkMappedRows.length,
@@ -5222,7 +5289,15 @@ function renderApiLedger(audit) {
     '## SKB B08-B11 Audit',
     `B08 model resource coverage: ${audit.skb.summary.b08ResourceExecutable}/${audit.skb.summary.b08ResourceExpected} executable.`,
     table(
-      ['Resource', 'Status', 'Descriptor', 'Required route', 'Route implemented', 'Notes', 'Source'],
+      [
+        'Resource',
+        'Status',
+        'Descriptor',
+        'Required route',
+        'Route implemented',
+        'Notes',
+        'Source',
+      ],
       audit.skb.resources.map((row) => [
         row.id,
         row.status,
@@ -5233,7 +5308,7 @@ function renderApiLedger(audit) {
         row.source || 'none',
       ]),
     ),
-    `B09 command schema export coverage: ${audit.skb.summary.b09CommandSchemaExecutable}/${audit.skb.summary.b09CommandSchemaExpected} executable. Example payload and raw/semantic mapping metadata remain partial where command metadata reports TODO.`,
+    `B09 command schema export coverage: ${audit.skb.summary.b09CommandSchemaExecutable}/${audit.skb.summary.b09CommandSchemaExpected} executable. Examples: ${audit.skb.summary.b09CommandSchemaExamples}/${audit.skb.summary.b09CommandSchemaCommandCount}; raw/semantic mappings: ${audit.skb.summary.b09CommandSchemaMappings}/${audit.skb.summary.b09CommandSchemaCommandCount}; raw/expert explicit: ${audit.skb.commandSchemaMetadata.rawExpertCount}; typed/semantic mapped: ${audit.skb.commandSchemaMetadata.mappedCount}.`,
     table(
       ['Surface', 'Status', 'Descriptor', 'Required route', 'Route implemented', 'Notes', 'Source'],
       audit.skb.commandSchemas.map((row) => [
@@ -5245,6 +5320,18 @@ function renderApiLedger(audit) {
         row.notes || 'none',
         row.source || 'none',
       ]),
+    ),
+    table(
+      ['Metadata contract', 'Value'],
+      [
+        ['export inspection', audit.skb.commandSchemaMetadata.status],
+        ['commands covered', audit.skb.summary.b09CommandSchemaCommandCount],
+        ['generated examples', audit.skb.summary.b09CommandSchemaExamples],
+        ['unavailable examples', audit.skb.summary.b09CommandSchemaUnavailableExamples],
+        ['raw/semantic mappings', audit.skb.summary.b09CommandSchemaMappings],
+        ['typed or semantic descriptor mappings', audit.skb.commandSchemaMetadata.mappedCount],
+        ['explicit raw/expert commands', audit.skb.commandSchemaMetadata.rawExpertCount],
+      ],
     ),
     `B10 query/resolve coverage: ${audit.skb.summary.b10QueryResolveExecutable}/${audit.skb.summary.b10QueryResolveExpected} executable.`,
     table(
@@ -5267,7 +5354,10 @@ function renderApiLedger(audit) {
           'unmapped activator ids',
           audit.skb.cmdkEquivalence.unmappedActivatorIds.slice(0, 50).join(', ') || 'none',
         ],
-        ['sample mapped entries', audit.skb.cmdkEquivalence.sampleMappedEntries.join(', ') || 'none'],
+        [
+          'sample mapped entries',
+          audit.skb.cmdkEquivalence.sampleMappedEntries.join(', ') || 'none',
+        ],
       ],
     ),
     '## Descriptor Ledger',

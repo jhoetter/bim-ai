@@ -2288,7 +2288,14 @@ register(
                 "commandCount": {"type": "integer"},
                 "commandNames": {"type": "array", "items": {"type": "string"}},
                 "schemas": {"type": "object"},
-                "metadata": {"type": "object"},
+                "metadata": {
+                    "type": "object",
+                    "description": (
+                        "Per-command metadata keyed by discriminator. Each row includes "
+                        "a generated example, example status, rawSemanticMapping, and "
+                        "mappingStatus ('mapped' or 'explicit-raw-expert')."
+                    ),
+                },
                 "unionSchema": {"type": "object"},
             },
             "additionalProperties": True,
@@ -2299,7 +2306,8 @@ register(
         sideEffects="none",
         agentSafetyNotes=(
             "Exports the full backend Command union as per-command JSON Schemas. "
-            "Examples and semantic-tool mapping metadata are still explicitly partial."
+            "Each command carries a generated minimal example plus raw/semantic mapping "
+            "metadata; commands without a typed descriptor are explicitly marked raw/expert."
         ),
         requiredPermissions=["model:read"],
         schemaRefs=["input:CommandSchemaCatalogInput", "output:CommandSchemaCatalog"],
@@ -2330,7 +2338,13 @@ register(
                 "schemaVersion": {"const": "command-schemas-v1"},
                 "name": {"type": "string"},
                 "schema": {"type": "object"},
-                "metadata": {"type": "object"},
+                "metadata": {
+                    "type": "object",
+                    "description": (
+                        "Command metadata with generated example, exampleStatus, "
+                        "rawSemanticMapping, and mappingStatus."
+                    ),
+                },
             },
             "additionalProperties": True,
         },
