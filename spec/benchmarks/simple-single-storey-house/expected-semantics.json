@@ -132,6 +132,14 @@
     },
     "committedEvidence": {
       "status": "explicit-opt-in",
+      "advisorValidationContract": {
+        "validationPassField": "validationPass",
+        "advisorPassField": "advisorPass",
+        "validationStatusField": "validationStatus",
+        "advisorStatusField": "advisorStatus",
+        "blockingErrorCountsField": "blockingErrorCounts",
+        "warningsAndInfoAreNonBlocking": true
+      },
       "artifacts": [
         "committed-evidence.json",
         "advisor-validation.json",

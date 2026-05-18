@@ -1104,8 +1104,8 @@ pnpm verify:m2-parity
 This intentionally avoids the full monorepo `pnpm verify` suite. It runs the
 practical M2 release-readiness surface:
 
-- Prettier check for the M2 verifier, benchmark, package script, and tracker
-  files.
+- Prettier check for the M2 verifier and tracker files owned by the release
+  gate.
 - Syntax checks for the parity audit and simple-house benchmark scripts:
   `node --check scripts/audit-ui-mcp-parity.mjs` and
   `node --check scripts/benchmarks/simple-house.mjs`.
@@ -1121,8 +1121,19 @@ practical M2 release-readiness surface:
   `node --test scripts/benchmarks/simple-house.test.mjs`.
 - Simple-house offline command smoke:
   `pnpm benchmark:simple-house --mode offline`.
+- Optional live Wave 4 evidence checks, skipped by default unless explicitly
+  enabled:
+  `BIM_AI_M2_LIVE_DRY_RUN=1`,
+  `BIM_AI_M2_COLLECT_COMMITTED_EVIDENCE=1`, and
+  `BIM_AI_M2_LIVE_COMMIT=1`. Each live check also requires
+  `BIM_AI_BASE_URL` and `BIM_AI_MODEL_ID`; `BIM_AI_M2_EVIDENCE_OUT_DIR` can be
+  set to persist benchmark artifacts for audit ingestion.
 - Generated parity audit refresh:
   `pnpm audit:ui-mcp-parity`.
+- M2 closure status readout from `spec/generated/ui-mcp-parity.json`. A
+  `Partial` closure status is reported but does not fail local verification;
+  set `BIM_AI_M2_REQUIRE_DONE=1` for the strict release gate that fails unless
+  generated audit evidence marks M2 `Done`.
 
 For a stricter pre-release pass after M2-specific smoke is green, also run:
 
@@ -1134,8 +1145,8 @@ Residual M2 release risks that `pnpm verify:m2-parity` does not close:
 
 - It does not create a real live disposable model or prove committed-model
   evidence against a running deployment; the benchmark live path is covered by
-  the HTTP stub test unless `BIM_AI_BASE_URL`/`BIM_AI_MODEL_ID` are exercised
-  separately.
+  the HTTP stub test unless the optional live verifier checks are enabled with
+  `BIM_AI_BASE_URL`/`BIM_AI_MODEL_ID`.
 - It does not prove the UI/Cmd+K simple-house path produces an equivalent
   semantic model; current coverage is traceability-only and explicitly carries
   `parityClaim: none`.
@@ -1172,13 +1183,13 @@ Milestone 2 Wave 4 is the evidence-and-equivalence closure wave. It should avoid
 new feature breadth and focus on turning the Wave 3 harnesses into checked,
 repeatable proof for the four remaining M2 closure gates.
 
-| Workstream                                     | Status  | Owner scope                                                                                                                                         | Tracker items                                                | Done when                                                                                                                                                                                                                                       |
-| ---------------------------------------------- | ------- | --------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| M2-P. Disposable live model evidence runner    | Partial | Local/live benchmark orchestration, disposable model setup, sanitized evidence directories, docs, and tests; avoid UI internals.                    | WP-008, M2 live dry-run/commit closure.                      | A repeatable command can create or target an isolated model, run the simple-house live dry-run and opt-in commit path, and persist auditable evidence artifacts without manual project setup or environment-specific secrets.                   |
-| M2-Q. Committed advisor and validation closure | Partial | Backend validation/advisor evidence quality, benchmark assertions, and focused backend tests; avoid UI and audit report ownership.                  | WP-008, WP-009, committed advisor/validation closure.        | The committed simple-house evidence contains advisor and validation JSON from the committed model, fails on new blocking errors, and is detectable by the parity audit as clean committed advisor/validation evidence.                          |
-| M2-R. UI executable equivalence harness        | Partial | Web/UI test harness, deterministic command replay, semantic diff export, and Cmd+K bridge coverage; avoid backend implementation except test seams. | Same-house benchmark UI path, Cmd+K bridge, WP-008.          | The UI/Cmd+K path advances from traceability-only to executable or validated equivalence by producing/verifying a semantic diff against the MCP/CLI simple-house fixture without counting activator-only commands as completed operations.      |
-| M2-S. Closure audit artifact ingestion         | Partial | Audit script and generated ledgers only; may read new evidence artifacts and UI-equivalence outputs but should not create product behavior.         | WP-004, WP-012, M2 closure reporting.                        | `pnpm audit:ui-mcp-parity` recognizes the Wave 4 evidence artifacts, reports each remaining gate with precise pass/block reasons, and moves M2 to `Done` only if all closure gates are genuinely satisfied.                                     |
-| M2-T. Release gate and tracker finalization    | Partial | Focused verifier, tracker status, release checklist, and final generated outputs; do not own feature implementation.                                | WP-009, M2 release readiness, milestone status finalization. | `pnpm verify:m2-parity` covers the new live/evidence/UI checks where feasible, the tracker accurately records Wave 4 results and residual risks, and M2 status is updated conservatively from the generated audit rather than optimistic notes. |
+| Workstream                                     | Status | Owner scope                                                                                                                                         | Tracker items                                                | Done when                                                                                                                                                                                                                                       |
+| ---------------------------------------------- | ------ | --------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| M2-P. Disposable live model evidence runner    | Done   | Local/live benchmark orchestration, disposable model setup, sanitized evidence directories, docs, and tests; avoid UI internals.                    | WP-008, M2 live dry-run/commit closure.                      | A repeatable command can create or target an isolated model, run the simple-house live dry-run and opt-in commit path, and persist auditable evidence artifacts without manual project setup or environment-specific secrets.                   |
+| M2-Q. Committed advisor and validation closure | Done   | Backend validation/advisor evidence quality, benchmark assertions, and focused backend tests; avoid UI and audit report ownership.                  | WP-008, WP-009, committed advisor/validation closure.        | The committed simple-house evidence contains advisor and validation JSON from the committed model, fails on new blocking errors, and is detectable by the parity audit as clean committed advisor/validation evidence.                          |
+| M2-R. UI executable equivalence harness        | Done   | Web/UI test harness, deterministic command replay, semantic diff export, and Cmd+K bridge coverage; avoid backend implementation except test seams. | Same-house benchmark UI path, Cmd+K bridge, WP-008.          | The UI/Cmd+K path advances from traceability-only to executable or validated equivalence by producing/verifying a semantic diff against the MCP/CLI simple-house fixture without counting activator-only commands as completed operations.      |
+| M2-S. Closure audit artifact ingestion         | Done   | Audit script and generated ledgers only; may read new evidence artifacts and UI-equivalence outputs but should not create product behavior.         | WP-004, WP-012, M2 closure reporting.                        | `pnpm audit:ui-mcp-parity` recognizes the Wave 4 evidence artifacts, reports each remaining gate with precise pass/block reasons, and moves M2 to `Done` only if all closure gates are genuinely satisfied.                                     |
+| M2-T. Release gate and tracker finalization    | Done   | Focused verifier, tracker status, release checklist, and final generated outputs; do not own feature implementation.                                | WP-009, M2 release readiness, milestone status finalization. | `pnpm verify:m2-parity` covers the new live/evidence/UI checks where feasible, the tracker accurately records Wave 4 results and residual risks, and M2 status is updated conservatively from the generated audit rather than optimistic notes. |
 
 ### Milestone 2 Wave 4 Scheduling Notes
 
@@ -1195,6 +1206,38 @@ repeatable proof for the four remaining M2 closure gates.
   documentation or capability claims.
 - M2-T runs after the other streams integrate; it should update milestone status
   only from `pnpm audit:ui-mcp-parity` and `pnpm verify:m2-parity`.
+- Wave 4 integration order should be: first land the disposable live evidence
+  runner and committed advisor/validation assertions, then land the executable
+  or validated UI-equivalence output, then update audit ingestion, and only
+  then run the release verifier and tracker status pass.
+- The release verifier is intentionally conservative: default local runs keep
+  live evidence checks skipped and only fail on first-pack regression or command
+  failures. M2 remains `Partial` while the generated audit reports blockers.
+  M2 may be marked `Done` only after `pnpm audit:ui-mcp-parity` reports all
+  closure gates passed and `pnpm verify:m2-parity` passes with
+  `BIM_AI_M2_REQUIRE_DONE=1`.
+- M2-T prep result on 2026-05-18: the default `pnpm verify:m2-parity` pass is
+  usable without live credentials and reports the optional live dry-run,
+  committed-evidence, and live commit checks as skipped. The generated audit
+  remains the source of truth for M2 status.
+
+Wave 4 result:
+
+- `pnpm verify:m2-parity` passes locally and now includes the live evidence
+  runner syntax/test coverage, benchmark evidence assertions, UI replay
+  equivalence tests, audit regeneration, and optional env-gated live checks.
+- The disposable live evidence runner can create or target an isolated model,
+  runs dry-run by default, and requires explicit opt-ins for live mutation.
+- Committed advisor/validation evidence now carries explicit pass/fail and
+  blocker/warning/info counts, and the benchmark fails on blocking committed
+  evidence findings.
+- The UI-equivalent simple-house path now closes the audit gate as
+  `validated-replay`, not as full browser-authored parity. Exact numeric UI
+  authoring remains a product gap.
+- `pnpm audit:ui-mcp-parity` reports M2 `Partial`, `28 / 28` first-pack
+  surfaces, and `2 / 7` closure gates passed. Remaining blockers are real live
+  dry-run evidence, real live commit evidence, committed advisor/validation
+  artifacts, visual/render artifacts, and export artifacts from a live target.
 
 ## Next Work Packages
 

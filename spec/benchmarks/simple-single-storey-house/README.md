@@ -47,6 +47,57 @@ committed-model evidence from public advisor, validation, evidence-package, and
 export endpoints. To inspect an already committed target without mutating it,
 use `--collect-committed-evidence` instead of `--commit-live`.
 
+Disposable live evidence runner:
+
+```sh
+BIM_AI_BASE_URL=http://127.0.0.1:8500 \
+BIM_AI_PROJECT_ID=<project-id> \
+node scripts/benchmarks/simple-house-live-evidence.mjs --out-dir /tmp/simple-house-live-evidence
+```
+
+The M2-P runner creates a disposable model through
+`POST /api/projects/{project_id}/models`, captures live dry-run evidence, and
+normalizes the artifact names consumed by the Wave 3/Wave 4 audit path. It does
+not require secrets and rejects base URLs containing credentials.
+
+To collect commit evidence against the disposable model:
+
+```sh
+BIM_AI_BASE_URL=http://127.0.0.1:8500 \
+BIM_AI_PROJECT_ID=<project-id> \
+node scripts/benchmarks/simple-house-live-evidence.mjs \
+  --commit-live \
+  --out-dir /tmp/simple-house-live-commit-evidence
+```
+
+Targeting an already isolated model is supported for dry-runs:
+
+```sh
+BIM_AI_BASE_URL=http://127.0.0.1:8500 \
+BIM_AI_MODEL_ID=<isolated-model-id> \
+BIM_AI_PARENT_REVISION=<revision> \
+node scripts/benchmarks/simple-house-live-evidence.mjs --out-dir /tmp/simple-house-live-evidence
+```
+
+Commit against an existing model is intentionally refused unless both
+`--commit-live` and `--allow-existing-model-commit` are passed, and
+`--parent-revision` or `BIM_AI_PARENT_REVISION` is present. This keeps live
+mutation explicit and revision-scoped. If disposable model creation is not
+available on the backend, the runner fails before running the benchmark and
+reports the missing capability instead of silently mutating another model.
+
+Runner environment and flags:
+
+- `BIM_AI_BASE_URL` / `--base-url`: live backend URL, without credentials.
+- `BIM_AI_PROJECT_ID` / `--project-id`: project where a disposable model is
+  created.
+- `BIM_AI_MODEL_ID` / `--model-id`: already isolated live model target.
+- `BIM_AI_PARENT_REVISION` / `--parent-revision`: existing model revision.
+- `BIM_AI_TEMPLATE_ID` / `--template-id`: optional model template for creation.
+- `BIM_AI_SIMPLE_HOUSE_EVIDENCE_DIR` / `--out-dir`: artifact directory.
+- `--allow-existing-out-dir`: permit writing into a non-empty artifact
+  directory.
+
 Committed evidence surfaces:
 
 - `GET /api/models/{model_id}/validate`
@@ -63,6 +114,7 @@ Benchmark check:
 
 ```sh
 node --test scripts/benchmarks/simple-house.test.mjs
+node --test scripts/benchmarks/simple-house-live-evidence.test.mjs
 ```
 
 Today the harness emits:
@@ -100,6 +152,19 @@ When `--out-dir` is provided, the runner writes:
 - `live-commit-evidence.json` in live commit mode
 - `command-log-summary.json` in live commit mode
 - `snapshot-summary.json` in live commit mode
+
+The disposable live evidence runner always normalizes these audit-facing names
+when it runs:
+
+- `benchmark-result.json`
+- `execution-evidence.json`
+- `live-dry-run-evidence.json`
+- `live-commit-evidence.json` with `mode: "not-requested"` when no commit was
+  requested
+- `command-log-summary.json` with `null` when no commit log is available
+- `snapshot-summary.json` with `null` when no committed snapshot is available
+- `committed-evidence.json` when the underlying benchmark collects it
+- `live-runner-manifest.json` with target provenance and safety settings
 
 UI/Cmd+K traceability:
 

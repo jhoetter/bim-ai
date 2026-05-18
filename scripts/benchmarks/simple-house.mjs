@@ -685,6 +685,122 @@ function manifestEvidence(label, response) {
   };
 }
 
+function numericCount(value) {
+  if (Number.isFinite(value)) return value;
+  if (typeof value !== 'string' || value.trim() === '') return null;
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : null;
+}
+
+function severityOf(issue) {
+  return String(issue?.severity ?? issue?.level ?? issue?.kind ?? 'unknown').toLowerCase();
+}
+
+function countBySeverity(issues) {
+  const counts = {
+    totalCount: Array.isArray(issues) ? issues.length : 0,
+    errorCount: 0,
+    blockingCount: 0,
+    warningCount: 0,
+    infoCount: 0,
+    blockingErrorCount: 0,
+  };
+  for (const issue of Array.isArray(issues) ? issues : []) {
+    const severity = severityOf(issue);
+    const isBlockingSeverity = [
+      'error',
+      'blocking',
+      'blocker',
+      'critical',
+      'fatal',
+      'high',
+    ].includes(severity);
+    const isBlocking = issue?.blocking === true || isBlockingSeverity;
+    if (severity === 'error') counts.errorCount += 1;
+    if (issue?.blocking === true) counts.blockingCount += 1;
+    if (severity === 'warning' || severity === 'warn') counts.warningCount += 1;
+    if (severity === 'info' || severity === 'notice') counts.infoCount += 1;
+    if (isBlocking) counts.blockingErrorCount += 1;
+  }
+  return counts;
+}
+
+function validationIssues(validation) {
+  if (Array.isArray(validation?.violations)) return validation.violations;
+  if (Array.isArray(validation?.data?.violations)) return validation.data.violations;
+  if (Array.isArray(validation?.issues)) return validation.issues;
+  return [];
+}
+
+function advisorFindings(advisor) {
+  if (Array.isArray(advisor?.data?.findings)) return advisor.data.findings;
+  if (Array.isArray(advisor?.findings)) return advisor.findings;
+  if (Array.isArray(advisor?.data?.violations)) return advisor.data.violations;
+  if (Array.isArray(advisor?.violations)) return advisor.violations;
+  return [];
+}
+
+function advisorSeverityCounts(advisor) {
+  return advisor?.data?.summary?.severityCounts ?? advisor?.summary?.severityCounts ?? {};
+}
+
+function committedValidationResult(response, validation) {
+  const issues = validationIssues(validation);
+  const counted = countBySeverity(issues);
+  const checks = validation?.checks ?? validation?.data?.checks ?? {};
+  const errorCount = numericCount(checks.errorViolationCount) ?? counted.errorCount;
+  const blockingCount = numericCount(checks.blockingViolationCount) ?? counted.blockingCount;
+  const blockingErrorCount = Math.max(counted.blockingErrorCount, errorCount, blockingCount);
+  const pass = Boolean(response?.ok && blockingErrorCount === 0);
+  return {
+    status: response?.ok ? (pass ? 'pass' : 'fail') : 'unavailable',
+    pass,
+    httpOk: Boolean(response?.ok),
+    httpStatus: response?.status ?? null,
+    totalCount: issues.length,
+    blockingErrorCount,
+    errorCount,
+    blockingCount,
+    warningCount: counted.warningCount,
+    infoCount: counted.infoCount,
+    source: 'GET /api/models/{model_id}/validate',
+  };
+}
+
+function committedAdvisorResult(response, advisor) {
+  const findings = advisorFindings(advisor);
+  const counted = countBySeverity(findings);
+  const severityCounts = advisorSeverityCounts(advisor);
+  const summary = advisor?.data?.summary ?? advisor?.summary ?? {};
+  const errorCount = numericCount(severityCounts.error) ?? counted.errorCount;
+  const warningCount =
+    numericCount(severityCounts.warning) ??
+    numericCount(severityCounts.warn) ??
+    counted.warningCount;
+  const infoCount =
+    numericCount(severityCounts.info) ?? numericCount(severityCounts.notice) ?? counted.infoCount;
+  const blockingCount = numericCount(summary.blockingCount) ?? counted.blockingCount;
+  const blockingErrorCount = Math.max(counted.blockingErrorCount, errorCount, blockingCount);
+  const totalCount = numericCount(summary.findingCount) ?? counted.totalCount;
+  const returnedCount = numericCount(summary.returnedCount) ?? findings.length;
+  const pass = Boolean(response?.ok && advisor?.ok !== false && blockingErrorCount === 0);
+  return {
+    status: response?.ok ? (pass ? 'pass' : 'fail') : 'unavailable',
+    pass,
+    httpOk: Boolean(response?.ok),
+    bodyOk: advisor?.ok ?? null,
+    httpStatus: response?.status ?? null,
+    totalCount,
+    returnedCount,
+    blockingErrorCount,
+    errorCount,
+    blockingCount,
+    warningCount,
+    infoCount,
+    source: 'POST /api/models/{model_id}/qa/advisor',
+  };
+}
+
 function sheetRasterEvidence(response) {
   const pngSignature = '89504e470d0a1a0a';
   const ok = response?.ok && response.headerHex === pngSignature && response.byteLength > 64;
@@ -788,6 +904,8 @@ async function collectCommittedEvidence(args, liveCommitEvidence = null) {
 
   const validation = jsonEvidence('committed validation', validate);
   const advisorBody = jsonEvidence('committed advisor', advisor);
+  const validationResult = committedValidationResult(validate, validation);
+  const advisorResult = committedAdvisorResult(advisor, advisorBody);
   const evidencePackageBody = jsonEvidence('evidence package', evidencePackage);
   const visual = {
     status: sheetRaster?.ok ? 'server-side-substitute' : 'unavailable',
@@ -814,10 +932,6 @@ async function collectCommittedEvidence(args, liveCommitEvidence = null) {
       sheetPdf: artifactEvidence('sheet-preview-pdf', sheetPdf),
     },
   };
-  const validationOk =
-    validate.ok &&
-    (validation?.checks?.errorViolationCount ?? 0) === 0 &&
-    (validation?.checks?.blockingViolationCount ?? 0) === 0;
   const visualOk = visual.sheetPrintRaster.nonblankProof?.ok === true;
   const exportOk =
     exports.manifests.gltf.status === 'manifest-returned' ||
@@ -826,7 +940,15 @@ async function collectCommittedEvidence(args, liveCommitEvidence = null) {
 
   return {
     mode: liveCommitEvidence ? 'post-commit-live' : 'committed-model-live',
-    ok: Boolean(validationOk && visualOk && exportOk),
+    ok: Boolean(validationResult.pass && advisorResult.pass && visualOk && exportOk),
+    validationStatus: validationResult.status,
+    validationPass: validationResult.pass,
+    advisorStatus: advisorResult.status,
+    advisorPass: advisorResult.pass,
+    blockingErrorCounts: {
+      validation: validationResult.blockingErrorCount,
+      advisor: advisorResult.blockingErrorCount,
+    },
     modelId: args.modelId,
     revision:
       snapshot.body?.revision ??
@@ -851,7 +973,9 @@ async function collectCommittedEvidence(args, liveCommitEvidence = null) {
       summary: summary.body ?? null,
     },
     validation,
+    validationResult,
     advisor: advisorBody,
+    advisorResult,
     evidencePackage: evidencePackageBody,
     visual,
     exports,
@@ -913,6 +1037,16 @@ async function writeEvidence(outDir, result) {
       path.join(outDir, 'advisor-validation.json'),
       `${JSON.stringify(
         {
+          ok: Boolean(
+            result.committedEvidence?.validationPass && result.committedEvidence?.advisorPass,
+          ),
+          validationStatus: result.committedEvidence?.validationStatus ?? null,
+          validationPass: result.committedEvidence?.validationPass ?? null,
+          advisorStatus: result.committedEvidence?.advisorStatus ?? null,
+          advisorPass: result.committedEvidence?.advisorPass ?? null,
+          blockingErrorCounts: result.committedEvidence?.blockingErrorCounts ?? null,
+          validationResult: result.committedEvidence?.validationResult ?? null,
+          advisorResult: result.committedEvidence?.advisorResult ?? null,
           validation:
             result.committedEvidence?.validation ?? result.executionEvidence?.validation ?? null,
           advisor: result.committedEvidence?.advisor ?? result.executionEvidence?.advisor ?? null,

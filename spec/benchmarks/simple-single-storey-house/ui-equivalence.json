@@ -1,0 +1,256 @@
+{
+  "schemaVersion": "bim-ai.benchmark.ui-cmdk-equivalence.v1",
+  "benchmarkId": "simple-single-storey-house",
+  "sourceOfIntent": "spec/ui-mcp-parity-tracker.md#same-house-parity-benchmarks",
+  "status": "validated-replay",
+  "pathKind": "validated-replay",
+  "auditClassification": "validated-replay",
+  "parityClaim": "partial-ui-cmdk-equivalence",
+  "uiEquivalentEvidence": true,
+  "semanticFixture": "mcp-cli-command-bundle.json",
+  "traceabilityArtifact": "ui-cmdk-traceability.json",
+  "expectedSemantics": "expected-semantics.json",
+  "validation": {
+    "method": "static-cmdk-bridge-plus-fixture-replay",
+    "validatedBy": "packages/web/src/cmdPalette/simpleHouseUiTraceability.test.ts",
+    "browserAuthoredModel": false,
+    "exactNumericUiInputExecutable": false,
+    "notes": [
+      "The semantic replay uses the MCP/CLI fixture as the deterministic payload source.",
+      "Cmd+K entries are validated as registered UI bridge surfaces with capability metadata.",
+      "Activator, navigation, dialog, and local UI entries remain blockers and are excluded from deterministic Cmd+K commit counts."
+    ]
+  },
+  "semanticReplayDiff": {
+    "status": "matches-mcp-cli-fixture",
+    "source": "mcp-cli-command-bundle.json",
+    "fixtureCommandCount": 28,
+    "replayedCommandCount": 28,
+    "unmatchedFixtureCommandCount": 0,
+    "unexpectedReplayCommandCount": 0,
+    "countDeltaByCommandType": {
+      "CreateSheet": 0,
+      "PlaceViewOnSheet": 0,
+      "createDimension": 0,
+      "createFloor": 0,
+      "createLevel": 0,
+      "createRoof": 0,
+      "createRoomOutline": 0,
+      "createWallChain": 0,
+      "create_schedule_view": 0,
+      "insertDoorOnWall": 0,
+      "insertWindowOnWall": 0,
+      "placeTag": 0,
+      "saveViewpoint": 0,
+      "upsertFamilyType": 0,
+      "upsertFloorType": 0,
+      "upsertRoofType": 0,
+      "upsertWallType": 0
+    }
+  },
+  "cmdKBridgeCoverage": {
+    "fixtureCommandCount": 28,
+    "fixtureCommandTypesTotal": 17,
+    "deterministicCmdKCommitCommandTypes": [
+      "PlaceViewOnSheet",
+      "createDimension",
+      "createRoof",
+      "createWallChain",
+      "insertDoorOnWall",
+      "insertWindowOnWall",
+      "placeTag"
+    ],
+    "exactUiExecutableCommandTypes": [],
+    "exactUiExecutableOperationCount": 0,
+    "activatorOnlyCommandIds": ["tool.floor-sketch", "tool.wall", "tool.room"],
+    "blockedOrUnmappedCommandTypes": [
+      "CreateSheet",
+      "createFloor",
+      "createLevel",
+      "createRoomOutline",
+      "create_schedule_view",
+      "saveViewpoint",
+      "upsertFamilyType",
+      "upsertFloorType",
+      "upsertRoofType",
+      "upsertWallType"
+    ],
+    "rows": [
+      {
+        "commandType": "createLevel",
+        "fixtureCount": 1,
+        "validatedReplayCount": 1,
+        "cmdKIds": ["project.open-settings"],
+        "bridgeStatus": "blocked-local-ui-only",
+        "completedByCmdK": false,
+        "blocker": "Project setup opens UI state but does not expose a deterministic createLevel payload."
+      },
+      {
+        "commandType": "upsertWallType",
+        "fixtureCount": 2,
+        "validatedReplayCount": 2,
+        "cmdKIds": ["project.open-settings"],
+        "bridgeStatus": "blocked-local-ui-only",
+        "completedByCmdK": false,
+        "blocker": "Wall type setup is available only through project/type UI state, not a typed Cmd+K semantic commit."
+      },
+      {
+        "commandType": "upsertFloorType",
+        "fixtureCount": 1,
+        "validatedReplayCount": 1,
+        "cmdKIds": ["project.open-settings"],
+        "bridgeStatus": "blocked-local-ui-only",
+        "completedByCmdK": false,
+        "blocker": "Floor type setup is available only through project/type UI state, not a typed Cmd+K semantic commit."
+      },
+      {
+        "commandType": "upsertRoofType",
+        "fixtureCount": 1,
+        "validatedReplayCount": 1,
+        "cmdKIds": ["project.open-settings"],
+        "bridgeStatus": "blocked-local-ui-only",
+        "completedByCmdK": false,
+        "blocker": "Roof type setup is available only through project/type UI state, not a typed Cmd+K semantic commit."
+      },
+      {
+        "commandType": "upsertFamilyType",
+        "fixtureCount": 2,
+        "validatedReplayCount": 2,
+        "cmdKIds": ["project.open-settings"],
+        "bridgeStatus": "blocked-local-ui-only",
+        "completedByCmdK": false,
+        "blocker": "Door and window family type setup is not encoded as exact Cmd+K payload input."
+      },
+      {
+        "commandType": "createFloor",
+        "fixtureCount": 1,
+        "validatedReplayCount": 1,
+        "cmdKIds": ["tool.floor-sketch"],
+        "bridgeStatus": "blocked-activator-only",
+        "completedByCmdK": false,
+        "blocker": "The floor command activates sketch mode; the exact 10000mm x 8000mm boundary remains gesture state."
+      },
+      {
+        "commandType": "createWallChain",
+        "fixtureCount": 2,
+        "validatedReplayCount": 2,
+        "cmdKIds": ["generate.walls-from-boundary", "tool.wall"],
+        "deterministicCmdKIds": ["generate.walls-from-boundary"],
+        "activatorOnlyCmdKIds": ["tool.wall"],
+        "bridgeStatus": "partial-deterministic-cmdk-commit",
+        "completedByCmdK": true,
+        "exactFixturePayloadExecutable": false,
+        "blocker": "Exterior walls can be generated from a selected floor or room boundary, but interior partitions still depend on exact wall tool gestures."
+      },
+      {
+        "commandType": "insertDoorOnWall",
+        "fixtureCount": 3,
+        "validatedReplayCount": 3,
+        "cmdKIds": ["view.3d.wall.insert-door"],
+        "deterministicCmdKIds": ["view.3d.wall.insert-door"],
+        "bridgeStatus": "deterministic-cmdk-commit-defaults",
+        "completedByCmdK": true,
+        "exactFixturePayloadExecutable": false,
+        "blocker": "The command commits a default selected-wall door; fixture-specific ids, along-wall positions, widths, and family type ids are not supplied by Cmd+K."
+      },
+      {
+        "commandType": "insertWindowOnWall",
+        "fixtureCount": 3,
+        "validatedReplayCount": 3,
+        "cmdKIds": ["view.3d.wall.insert-window"],
+        "deterministicCmdKIds": ["view.3d.wall.insert-window"],
+        "bridgeStatus": "deterministic-cmdk-commit-defaults",
+        "completedByCmdK": true,
+        "exactFixturePayloadExecutable": false,
+        "blocker": "The command commits a default selected-wall window; fixture-specific ids, along-wall positions, dimensions, sill heights, and family type ids are not supplied by Cmd+K."
+      },
+      {
+        "commandType": "createRoomOutline",
+        "fixtureCount": 3,
+        "validatedReplayCount": 3,
+        "cmdKIds": ["tool.room"],
+        "bridgeStatus": "blocked-activator-only",
+        "completedByCmdK": false,
+        "blocker": "The room command activates placement; exact polygons, names, programme codes, and target areas remain gesture or inspector state."
+      },
+      {
+        "commandType": "createRoof",
+        "fixtureCount": 1,
+        "validatedReplayCount": 1,
+        "cmdKIds": ["tool.roof-from-walls"],
+        "deterministicCmdKIds": ["tool.roof-from-walls"],
+        "bridgeStatus": "deterministic-cmdk-commit-derived",
+        "completedByCmdK": true,
+        "exactFixturePayloadExecutable": false,
+        "blocker": "The command derives a roof from selected walls, but the current UI default uses derived parameters rather than the fixture's exact gable overhang, slope, id, and type payload."
+      },
+      {
+        "commandType": "saveViewpoint",
+        "fixtureCount": 1,
+        "validatedReplayCount": 1,
+        "cmdKIds": ["view.create.3d-view"],
+        "bridgeStatus": "blocked-navigation",
+        "completedByCmdK": false,
+        "blocker": "The 3D view command calls a host callback and is classified as navigation, not a deterministic saveViewpoint command with camera coordinates."
+      },
+      {
+        "commandType": "create_schedule_view",
+        "fixtureCount": 1,
+        "validatedReplayCount": 1,
+        "cmdKIds": ["view.create.schedule"],
+        "bridgeStatus": "blocked-navigation",
+        "completedByCmdK": false,
+        "blocker": "The schedule command opens or creates schedule UI through a host callback without the exact opening schedule definition."
+      },
+      {
+        "commandType": "CreateSheet",
+        "fixtureCount": 1,
+        "validatedReplayCount": 1,
+        "cmdKIds": ["view.create.sheet"],
+        "bridgeStatus": "blocked-navigation",
+        "completedByCmdK": false,
+        "blocker": "The sheet command opens or creates a sheet through a host callback without the exact A101 size, number, name, and metadata payload."
+      },
+      {
+        "commandType": "PlaceViewOnSheet",
+        "fixtureCount": 2,
+        "validatedReplayCount": 2,
+        "cmdKIds": ["sheet.place-recommended-views"],
+        "deterministicCmdKIds": ["sheet.place-recommended-views"],
+        "bridgeStatus": "deterministic-cmdk-commit-derived",
+        "completedByCmdK": true,
+        "exactFixturePayloadExecutable": false,
+        "blocker": "Recommended placement can commit viewports, but no static Cmd+K entry encodes the exact A101 plan and 3D viewport layout."
+      },
+      {
+        "commandType": "placeTag",
+        "fixtureCount": 1,
+        "validatedReplayCount": 1,
+        "cmdKIds": ["annotate.tag-all-rooms"],
+        "deterministicCmdKIds": ["annotate.tag-all-rooms"],
+        "bridgeStatus": "deterministic-cmdk-commit-derived",
+        "completedByCmdK": true,
+        "exactFixturePayloadExecutable": false,
+        "blocker": "The command can tag all rooms, but it does not expose the fixture's single explicit tag id, host view id, position, and text override."
+      },
+      {
+        "commandType": "createDimension",
+        "fixtureCount": 2,
+        "validatedReplayCount": 2,
+        "cmdKIds": ["annotate.auto-dimension-walls"],
+        "deterministicCmdKIds": ["annotate.auto-dimension-walls"],
+        "bridgeStatus": "deterministic-cmdk-commit-derived",
+        "completedByCmdK": true,
+        "exactFixturePayloadExecutable": false,
+        "blocker": "Auto-dimensioning commits derived dimensions, but the fixture uses two explicit overall dimension payloads."
+      }
+    ]
+  },
+  "remainingUiBlockers": [
+    "No browser harness enters exact numeric slab, wall, room, opening, roof, sheet, schedule, tag, dimension, and camera payloads and then authors the model through UI state.",
+    "Activator-only entries are still blockers for exact floor, interior wall, and room geometry: tool.floor-sketch, tool.wall, and tool.room.",
+    "Project/type setup lacks deterministic Cmd+K payloads for createLevel, wall types, floor type, roof type, and family types.",
+    "View, schedule, and sheet creation use host navigation callbacks rather than typed saveViewpoint, create_schedule_view, and CreateSheet commits.",
+    "Hosted opening, roof, sheet placement, tag, and dimension commands commit defaults or derived payloads; they do not encode the benchmark's exact ids, dimensions, positions, and layout."
+  ]
+}

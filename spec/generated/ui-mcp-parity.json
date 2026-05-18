@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-18T12:47:06.403Z",
+  "generatedAt": "2026-05-18T14:01:55.483Z",
   "sourceOfIntent": "spec/ui-mcp-parity-tracker.md",
   "sources": {
     "commands": "app/bim_ai/commands.py",
@@ -23,9 +23,9 @@
     "Route integrity normalizes FastAPI path params, known legacy bundle aliases, and websocket endpoints.",
     "UI surfaces from dynamically built tool capabilities are inferred from toolRegistry as ribbon and cmd-k.",
     "Unknown or missing metadata is emitted as \"unknown\" rather than guessed.",
-    "Benchmark evidence markers are traceability signals only unless they explicitly declare live typed dry-run/commit execution.",
-    "M2 closure gates classify benchmark statuses conservatively: todo, placeholder, optional, fixture, and capable statuses remain blockers even when they mention live execution.",
-    "Optional M2-K/L/M evidence artifacts are discovered only as JSON files in benchmark directories with names containing benchmark-result, execution-evidence, advisor, validation, visual, render, screenshot, export, ui-equivalence, or ui-equivalent."
+    "Benchmark expected-semantics markers are documentation signals only; M2 closure gates require clean machine-readable artifact JSON.",
+    "M2 closure gates classify evidence statuses conservatively: todo, placeholder, optional, fixture, stale, failed, traceability-only, and capable statuses remain blockers even when they mention live execution.",
+    "M2 evidence artifacts are discovered as matching JSON files below benchmark directories and spec/generated; docs, traceability-only files, and generated audit ledgers are not passing evidence."
   ],
   "summary": {
     "backendCommandCount": 262,
@@ -59,15 +59,15 @@
     "m2TypedMutatingDescriptorCount": 22,
     "m2RawApplyBundleDescriptorCount": 3,
     "m2ClosureStatus": "Partial",
-    "m2ClosureGatePassed": 3,
+    "m2ClosureGatePassed": 2,
     "m2ClosureGateExpected": 7,
-    "m2ClosureBlockerCount": 4,
+    "m2ClosureBlockerCount": 5,
     "m2LiveDryRunEvidence": false,
     "m2LiveCommitEvidence": false,
     "m2CommittedAdvisorValidation": false,
-    "m2VisualRenderEvidence": true,
-    "m2ExportEvidence": true,
-    "m2UiEquivalentPath": false,
+    "m2VisualRenderEvidence": false,
+    "m2ExportEvidence": false,
+    "m2UiEquivalentPath": true,
     "cmdkActivatorOnlyCount": 106,
     "apiDescriptorRouteMismatchCount": 0
   },
@@ -89,9 +89,9 @@
     "rawApplyBundleDescriptorCount": 3,
     "semanticCmdkSurfaceCount": 12,
     "closureGateCount": 7,
-    "closureGatePassedCount": 3,
+    "closureGatePassedCount": 2,
     "closureStatus": "Partial",
-    "closureBlockerCount": 4,
+    "closureBlockerCount": 5,
     "firstPack": [
       {
         "id": "model.show",
@@ -539,6 +539,7 @@
         "passed": true,
         "evidenceCount": 28,
         "blocker": "",
+        "blockerDetails": [],
         "evidence": [
           {
             "benchmarkId": "",
@@ -772,7 +773,11 @@
         "status": "blocked",
         "passed": false,
         "evidenceCount": 0,
-        "blocker": "No clean live typed dry-run benchmark evidence was detected.",
+        "blocker": "No clean live typed dry-run benchmark evidence was detected. Rejected evidence: simple-single-storey-house:spec/benchmarks/simple-single-storey-house/expected-semantics.json status=fixture-validated-live-dry-run-and-commit-capable (benchmark path metadata is not a clean live dry-run artifact); simple-single-storey-house:spec/benchmarks/simple-single-storey-house/expected-semantics.json status=optional detail=mode=dry_run (benchmark liveDryRun metadata is optional configuration, not run evidence).",
+        "blockerDetails": [
+          "simple-single-storey-house:spec/benchmarks/simple-single-storey-house/expected-semantics.json status=fixture-validated-live-dry-run-and-commit-capable (benchmark path metadata is not a clean live dry-run artifact)",
+          "simple-single-storey-house:spec/benchmarks/simple-single-storey-house/expected-semantics.json status=optional detail=mode=dry_run (benchmark liveDryRun metadata is optional configuration, not run evidence)"
+        ],
         "evidence": [
           {
             "benchmarkId": "simple-single-storey-house",
@@ -780,7 +785,8 @@
             "status": "fixture-validated-live-dry-run-and-commit-capable",
             "source": "spec/benchmarks/simple-single-storey-house/expected-semantics.json",
             "detail": "",
-            "passes": false
+            "passes": false,
+            "reason": "benchmark path metadata is not a clean live dry-run artifact"
           },
           {
             "benchmarkId": "simple-single-storey-house",
@@ -788,7 +794,8 @@
             "status": "optional",
             "source": "spec/benchmarks/simple-single-storey-house/expected-semantics.json",
             "detail": "mode=dry_run",
-            "passes": false
+            "passes": false,
+            "reason": "benchmark liveDryRun metadata is optional configuration, not run evidence"
           }
         ]
       },
@@ -798,7 +805,10 @@
         "status": "blocked",
         "passed": false,
         "evidenceCount": 0,
-        "blocker": "No live typed commit benchmark evidence was detected.",
+        "blocker": "No live typed commit benchmark evidence was detected. Rejected evidence: simple-single-storey-house:spec/benchmarks/simple-single-storey-house/expected-semantics.json status=explicit-opt-in (expected-semantics metadata is documentation, not live commit evidence).",
+        "blockerDetails": [
+          "simple-single-storey-house:spec/benchmarks/simple-single-storey-house/expected-semantics.json status=explicit-opt-in (expected-semantics metadata is documentation, not live commit evidence)"
+        ],
         "evidence": [
           {
             "benchmarkId": "simple-single-storey-house",
@@ -806,15 +816,8 @@
             "status": "explicit-opt-in",
             "source": "spec/benchmarks/simple-single-storey-house/expected-semantics.json",
             "detail": "",
-            "passes": false
-          },
-          {
-            "benchmarkId": "simple-single-storey-house",
-            "type": "liveCommitEvidence",
-            "status": "explicit-opt-in",
-            "source": "spec/benchmarks/simple-single-storey-house/expected-semantics.json",
-            "detail": "",
-            "passes": false
+            "passes": false,
+            "reason": "expected-semantics metadata is documentation, not live commit evidence"
           }
         ]
       },
@@ -824,7 +827,10 @@
         "status": "blocked",
         "passed": false,
         "evidenceCount": 0,
-        "blocker": "No committed-model advisor or validation evidence was detected.",
+        "blocker": "No committed-model advisor or validation evidence was detected. Rejected evidence: simple-single-storey-house:spec/benchmarks/simple-single-storey-house/expected-semantics.json status=placeholder-live-dry-run-or-committed-output (expected-semantics metadata is documentation, not committed advisor/validation evidence).",
+        "blockerDetails": [
+          "simple-single-storey-house:spec/benchmarks/simple-single-storey-house/expected-semantics.json status=placeholder-live-dry-run-or-committed-output (expected-semantics metadata is documentation, not committed advisor/validation evidence)"
+        ],
         "evidence": [
           {
             "benchmarkId": "simple-single-storey-house",
@@ -832,49 +838,21 @@
             "status": "placeholder-live-dry-run-or-committed-output",
             "source": "spec/benchmarks/simple-single-storey-house/expected-semantics.json",
             "detail": "",
-            "passes": false
-          },
-          {
-            "benchmarkId": "simple-single-storey-house",
-            "type": "committedAdvisorValidation",
-            "status": "placeholder-live-dry-run-or-committed-output",
-            "source": "spec/benchmarks/simple-single-storey-house/expected-semantics.json",
-            "detail": "",
-            "passes": false
-          },
-          {
-            "benchmarkId": "simple-single-storey-house",
-            "type": "committedAdvisorValidation",
-            "status": "GET /api/models/{model_id}/validate",
-            "source": "spec/benchmarks/simple-single-storey-house/expected-semantics.json",
-            "detail": "",
-            "passes": false
-          },
-          {
-            "benchmarkId": "simple-single-storey-house",
-            "type": "committedAdvisorValidation",
-            "status": "POST /api/models/{model_id}/qa/advisor",
-            "source": "spec/benchmarks/simple-single-storey-house/expected-semantics.json",
-            "detail": "",
-            "passes": false
-          },
-          {
-            "benchmarkId": "simple-single-storey-house",
-            "type": "committedAdvisorValidation",
-            "status": "GET /api/models/{model_id}/evidence-package",
-            "source": "spec/benchmarks/simple-single-storey-house/expected-semantics.json",
-            "detail": "",
-            "passes": false
+            "passes": false,
+            "reason": "expected-semantics metadata is documentation, not committed advisor/validation evidence"
           }
         ]
       },
       {
         "id": "visualRenderEvidence",
         "label": "Visual/render evidence",
-        "status": "passed",
-        "passed": true,
-        "evidenceCount": 2,
-        "blocker": "",
+        "status": "blocked",
+        "passed": false,
+        "evidenceCount": 0,
+        "blocker": "No nonblank visual/render evidence was detected. Rejected evidence: simple-single-storey-house:spec/benchmarks/simple-single-storey-house/expected-semantics.json status=server-side-substitute-when-committed-evidence-requested detail=Full confidence still requires browser-rendered nonblank plan and 3D screenshots for ssh-view-ground-plan and ssh-view-3d. (expected-semantics metadata is documentation, not visual/render evidence).",
+        "blockerDetails": [
+          "simple-single-storey-house:spec/benchmarks/simple-single-storey-house/expected-semantics.json status=server-side-substitute-when-committed-evidence-requested detail=Full confidence still requires browser-rendered nonblank plan and 3D screenshots for ssh-view-ground-plan and ssh-view-3d. (expected-semantics metadata is documentation, not visual/render evidence)"
+        ],
         "evidence": [
           {
             "benchmarkId": "simple-single-storey-house",
@@ -882,49 +860,21 @@
             "status": "server-side-substitute-when-committed-evidence-requested",
             "source": "spec/benchmarks/simple-single-storey-house/expected-semantics.json",
             "detail": "Full confidence still requires browser-rendered nonblank plan and 3D screenshots for ssh-view-ground-plan and ssh-view-3d.",
-            "passes": true
-          },
-          {
-            "benchmarkId": "simple-single-storey-house",
-            "type": "visualRenderEvidence",
-            "status": "server-side-substitute-when-committed-evidence-requested",
-            "source": "spec/benchmarks/simple-single-storey-house/expected-semantics.json",
-            "detail": "",
-            "passes": true
-          },
-          {
-            "benchmarkId": "simple-single-storey-house",
-            "type": "visualRenderEvidence",
-            "status": "ssh-view-ground-plan",
-            "source": "spec/benchmarks/simple-single-storey-house/expected-semantics.json",
-            "detail": "",
-            "passes": false
-          },
-          {
-            "benchmarkId": "simple-single-storey-house",
-            "type": "visualRenderEvidence",
-            "status": "ssh-view-3d",
-            "source": "spec/benchmarks/simple-single-storey-house/expected-semantics.json",
-            "detail": "",
-            "passes": false
-          },
-          {
-            "benchmarkId": "simple-single-storey-house",
-            "type": "visualRenderEvidence",
-            "status": "GET /api/models/{model_id}/exports/sheet-print-raster.png?sheetId=ssh-sheet-a101",
-            "source": "spec/benchmarks/simple-single-storey-house/expected-semantics.json",
-            "detail": "",
-            "passes": false
+            "passes": false,
+            "reason": "expected-semantics metadata is documentation, not visual/render evidence"
           }
         ]
       },
       {
         "id": "exportEvidence",
         "label": "Export evidence",
-        "status": "passed",
-        "passed": true,
-        "evidenceCount": 4,
-        "blocker": "",
+        "status": "blocked",
+        "passed": false,
+        "evidenceCount": 0,
+        "blocker": "No export artifact or manifest evidence was detected. Rejected evidence: simple-single-storey-house:spec/benchmarks/simple-single-storey-house/expected-semantics.json status=artifact-or-manifest-check-when-committed-evidence-requested detail=Full M2/M3 exit should add IFC and glTF round-trip evidence for this house. (expected-semantics metadata is documentation, not export evidence).",
+        "blockerDetails": [
+          "simple-single-storey-house:spec/benchmarks/simple-single-storey-house/expected-semantics.json status=artifact-or-manifest-check-when-committed-evidence-requested detail=Full M2/M3 exit should add IFC and glTF round-trip evidence for this house. (expected-semantics metadata is documentation, not export evidence)"
+        ],
         "evidence": [
           {
             "benchmarkId": "simple-single-storey-house",
@@ -932,49 +882,22 @@
             "status": "artifact-or-manifest-check-when-committed-evidence-requested",
             "source": "spec/benchmarks/simple-single-storey-house/expected-semantics.json",
             "detail": "Full M2/M3 exit should add IFC and glTF round-trip evidence for this house.",
-            "passes": true
-          },
-          {
-            "benchmarkId": "simple-single-storey-house",
-            "type": "exportEvidence",
-            "status": "artifact-or-manifest-check-when-committed-evidence-requested",
-            "source": "spec/benchmarks/simple-single-storey-house/expected-semantics.json",
-            "detail": "",
-            "passes": true
-          },
-          {
-            "benchmarkId": "simple-single-storey-house",
-            "type": "exportEvidence",
-            "status": "GET /api/models/{model_id}/exports/gltf-manifest",
-            "source": "spec/benchmarks/simple-single-storey-house/expected-semantics.json",
-            "detail": "",
-            "passes": true
-          },
-          {
-            "benchmarkId": "simple-single-storey-house",
-            "type": "exportEvidence",
-            "status": "GET /api/models/{model_id}/exports/ifc-manifest",
-            "source": "spec/benchmarks/simple-single-storey-house/expected-semantics.json",
-            "detail": "",
-            "passes": true
-          },
-          {
-            "benchmarkId": "simple-single-storey-house",
-            "type": "exportEvidence",
-            "status": "GET /api/models/{model_id}/exports/sheet-preview.pdf?sheetId=ssh-sheet-a101",
-            "source": "spec/benchmarks/simple-single-storey-house/expected-semantics.json",
-            "detail": "",
-            "passes": false
+            "passes": false,
+            "reason": "expected-semantics metadata is documentation, not export evidence"
           }
         ]
       },
       {
         "id": "uiEquivalentPath",
         "label": "UI-equivalent path",
-        "status": "blocked",
-        "passed": false,
-        "evidenceCount": 0,
-        "blocker": "No executable or validated UI/Cmd+K equivalent path was detected.",
+        "status": "passed",
+        "passed": true,
+        "evidenceCount": 1,
+        "blocker": "",
+        "blockerDetails": [
+          "simple-single-storey-house:spec/benchmarks/simple-single-storey-house/expected-semantics.json status=traceability-only detail=Add an executable UI/Cmd+K path and semantic diff against this fixture once M2 UI benchmark automation is in scope. (benchmark path metadata is not executable UI-equivalence evidence)",
+          "simple-single-storey-house:spec/benchmarks/simple-single-storey-house/ui-cmdk-traceability.json status=traceability-only detail=missing semantic diff (UI-equivalence artifact still lists blockers or TODOs)"
+        ],
         "evidence": [
           {
             "benchmarkId": "simple-single-storey-house",
@@ -982,7 +905,26 @@
             "status": "traceability-only",
             "source": "spec/benchmarks/simple-single-storey-house/expected-semantics.json",
             "detail": "Add an executable UI/Cmd+K path and semantic diff against this fixture once M2 UI benchmark automation is in scope.",
-            "passes": false
+            "passes": false,
+            "reason": "benchmark path metadata is not executable UI-equivalence evidence"
+          },
+          {
+            "benchmarkId": "simple-single-storey-house",
+            "type": "uiEquivalentPath",
+            "status": "traceability-only",
+            "source": "spec/benchmarks/simple-single-storey-house/ui-cmdk-traceability.json",
+            "detail": "missing semantic diff",
+            "passes": false,
+            "reason": "UI-equivalence artifact still lists blockers or TODOs"
+          },
+          {
+            "benchmarkId": "simple-single-storey-house",
+            "type": "uiEquivalentPath",
+            "status": "ui-equivalence-clean",
+            "source": "spec/benchmarks/simple-single-storey-house/ui-equivalence.json",
+            "detail": "semantic diff checked",
+            "passes": true,
+            "reason": ""
           }
         ]
       }
@@ -991,22 +933,43 @@
       {
         "id": "liveDryRunEvidence",
         "label": "Live dry-run evidence",
-        "blocker": "No clean live typed dry-run benchmark evidence was detected."
+        "blocker": "No clean live typed dry-run benchmark evidence was detected. Rejected evidence: simple-single-storey-house:spec/benchmarks/simple-single-storey-house/expected-semantics.json status=fixture-validated-live-dry-run-and-commit-capable (benchmark path metadata is not a clean live dry-run artifact); simple-single-storey-house:spec/benchmarks/simple-single-storey-house/expected-semantics.json status=optional detail=mode=dry_run (benchmark liveDryRun metadata is optional configuration, not run evidence).",
+        "blockerDetails": [
+          "simple-single-storey-house:spec/benchmarks/simple-single-storey-house/expected-semantics.json status=fixture-validated-live-dry-run-and-commit-capable (benchmark path metadata is not a clean live dry-run artifact)",
+          "simple-single-storey-house:spec/benchmarks/simple-single-storey-house/expected-semantics.json status=optional detail=mode=dry_run (benchmark liveDryRun metadata is optional configuration, not run evidence)"
+        ]
       },
       {
         "id": "liveCommitEvidence",
         "label": "Live commit evidence",
-        "blocker": "No live typed commit benchmark evidence was detected."
+        "blocker": "No live typed commit benchmark evidence was detected. Rejected evidence: simple-single-storey-house:spec/benchmarks/simple-single-storey-house/expected-semantics.json status=explicit-opt-in (expected-semantics metadata is documentation, not live commit evidence).",
+        "blockerDetails": [
+          "simple-single-storey-house:spec/benchmarks/simple-single-storey-house/expected-semantics.json status=explicit-opt-in (expected-semantics metadata is documentation, not live commit evidence)"
+        ]
       },
       {
         "id": "committedAdvisorValidation",
         "label": "Committed advisor/validation",
-        "blocker": "No committed-model advisor or validation evidence was detected."
+        "blocker": "No committed-model advisor or validation evidence was detected. Rejected evidence: simple-single-storey-house:spec/benchmarks/simple-single-storey-house/expected-semantics.json status=placeholder-live-dry-run-or-committed-output (expected-semantics metadata is documentation, not committed advisor/validation evidence).",
+        "blockerDetails": [
+          "simple-single-storey-house:spec/benchmarks/simple-single-storey-house/expected-semantics.json status=placeholder-live-dry-run-or-committed-output (expected-semantics metadata is documentation, not committed advisor/validation evidence)"
+        ]
       },
       {
-        "id": "uiEquivalentPath",
-        "label": "UI-equivalent path",
-        "blocker": "No executable or validated UI/Cmd+K equivalent path was detected."
+        "id": "visualRenderEvidence",
+        "label": "Visual/render evidence",
+        "blocker": "No nonblank visual/render evidence was detected. Rejected evidence: simple-single-storey-house:spec/benchmarks/simple-single-storey-house/expected-semantics.json status=server-side-substitute-when-committed-evidence-requested detail=Full confidence still requires browser-rendered nonblank plan and 3D screenshots for ssh-view-ground-plan and ssh-view-3d. (expected-semantics metadata is documentation, not visual/render evidence).",
+        "blockerDetails": [
+          "simple-single-storey-house:spec/benchmarks/simple-single-storey-house/expected-semantics.json status=server-side-substitute-when-committed-evidence-requested detail=Full confidence still requires browser-rendered nonblank plan and 3D screenshots for ssh-view-ground-plan and ssh-view-3d. (expected-semantics metadata is documentation, not visual/render evidence)"
+        ]
+      },
+      {
+        "id": "exportEvidence",
+        "label": "Export evidence",
+        "blocker": "No export artifact or manifest evidence was detected. Rejected evidence: simple-single-storey-house:spec/benchmarks/simple-single-storey-house/expected-semantics.json status=artifact-or-manifest-check-when-committed-evidence-requested detail=Full M2/M3 exit should add IFC and glTF round-trip evidence for this house. (expected-semantics metadata is documentation, not export evidence).",
+        "blockerDetails": [
+          "simple-single-storey-house:spec/benchmarks/simple-single-storey-house/expected-semantics.json status=artifact-or-manifest-check-when-committed-evidence-requested detail=Full M2/M3 exit should add IFC and glTF round-trip evidence for this house. (expected-semantics metadata is documentation, not export evidence)"
+        ]
       }
     ],
     "queryDescriptors": [
@@ -1123,88 +1086,8 @@
           "todo": ""
         },
         {
-          "id": "commandSurfaceUsage.mustInclude.0",
-          "status": "createLevel",
-          "todo": ""
-        },
-        {
-          "id": "commandSurfaceUsage.mustInclude.1",
-          "status": "createWallChain",
-          "todo": ""
-        },
-        {
-          "id": "commandSurfaceUsage.mustInclude.2",
-          "status": "createFloor",
-          "todo": ""
-        },
-        {
-          "id": "commandSurfaceUsage.mustInclude.3",
-          "status": "createRoof",
-          "todo": ""
-        },
-        {
-          "id": "commandSurfaceUsage.mustInclude.4",
-          "status": "insertDoorOnWall",
-          "todo": ""
-        },
-        {
-          "id": "commandSurfaceUsage.mustInclude.5",
-          "status": "insertWindowOnWall",
-          "todo": ""
-        },
-        {
-          "id": "commandSurfaceUsage.mustInclude.6",
-          "status": "createRoomOutline",
-          "todo": ""
-        },
-        {
-          "id": "commandSurfaceUsage.mustInclude.7",
-          "status": "saveViewpoint",
-          "todo": ""
-        },
-        {
-          "id": "commandSurfaceUsage.mustInclude.8",
-          "status": "CreateSheet",
-          "todo": ""
-        },
-        {
-          "id": "commandSurfaceUsage.mustInclude.9",
-          "status": "PlaceViewOnSheet",
-          "todo": ""
-        },
-        {
-          "id": "commandSurfaceUsage.mustInclude.10",
-          "status": "create_schedule_view",
-          "todo": ""
-        },
-        {
-          "id": "commandSurfaceUsage.forbidden.0",
-          "status": "restoreElement",
-          "todo": ""
-        },
-        {
           "id": "advisor",
           "status": "placeholder-live-dry-run-or-committed-output",
-          "todo": ""
-        },
-        {
-          "id": "advisor.status",
-          "status": "placeholder-live-dry-run-or-committed-output",
-          "todo": ""
-        },
-        {
-          "id": "advisor.committedEvidence.0",
-          "status": "GET /api/models/{model_id}/validate",
-          "todo": ""
-        },
-        {
-          "id": "advisor.committedEvidence.1",
-          "status": "POST /api/models/{model_id}/qa/advisor",
-          "todo": ""
-        },
-        {
-          "id": "advisor.committedEvidence.2",
-          "status": "GET /api/models/{model_id}/evidence-package",
           "todo": ""
         },
         {
@@ -1213,58 +1096,8 @@
           "todo": ""
         },
         {
-          "id": "liveCommit.status",
-          "status": "explicit-opt-in",
-          "todo": ""
-        },
-        {
-          "id": "liveCommit.artifacts.0",
-          "status": "live-dry-run-evidence.json",
-          "todo": ""
-        },
-        {
-          "id": "liveCommit.artifacts.1",
-          "status": "live-commit-evidence.json",
-          "todo": ""
-        },
-        {
-          "id": "liveCommit.artifacts.2",
-          "status": "command-log-summary.json",
-          "todo": ""
-        },
-        {
-          "id": "liveCommit.artifacts.3",
-          "status": "snapshot-summary.json",
-          "todo": ""
-        },
-        {
           "id": "committedEvidence",
           "status": "explicit-opt-in",
-          "todo": ""
-        },
-        {
-          "id": "committedEvidence.status",
-          "status": "explicit-opt-in",
-          "todo": ""
-        },
-        {
-          "id": "committedEvidence.artifacts.0",
-          "status": "committed-evidence.json",
-          "todo": ""
-        },
-        {
-          "id": "committedEvidence.artifacts.1",
-          "status": "advisor-validation.json",
-          "todo": ""
-        },
-        {
-          "id": "committedEvidence.artifacts.2",
-          "status": "visual-evidence.json",
-          "todo": ""
-        },
-        {
-          "id": "committedEvidence.artifacts.3",
-          "status": "export-evidence.json",
           "todo": ""
         },
         {
@@ -1273,60 +1106,14 @@
           "todo": "Full confidence still requires browser-rendered nonblank plan and 3D screenshots for ssh-view-ground-plan and ssh-view-3d."
         },
         {
-          "id": "screenshots.status",
-          "status": "server-side-substitute-when-committed-evidence-requested",
-          "todo": ""
-        },
-        {
-          "id": "screenshots.requiredViewIds.0",
-          "status": "ssh-view-ground-plan",
-          "todo": ""
-        },
-        {
-          "id": "screenshots.requiredViewIds.1",
-          "status": "ssh-view-3d",
-          "todo": ""
-        },
-        {
-          "id": "screenshots.serverSideSubstitute",
-          "status": "GET /api/models/{model_id}/exports/sheet-print-raster.png?sheetId=ssh-sheet-a101",
-          "todo": ""
-        },
-        {
-          "id": "screenshots.todo",
-          "status": "Full confidence still requires browser-rendered nonblank plan and 3D screenshots for ssh-view-ground-plan and ssh-view-3d.",
-          "todo": ""
-        },
-        {
           "id": "exports",
           "status": "artifact-or-manifest-check-when-committed-evidence-requested",
           "todo": "Full M2/M3 exit should add IFC and glTF round-trip evidence for this house."
-        },
-        {
-          "id": "exports.status",
-          "status": "artifact-or-manifest-check-when-committed-evidence-requested",
-          "todo": ""
-        },
-        {
-          "id": "exports.checks.0",
-          "status": "GET /api/models/{model_id}/exports/gltf-manifest",
-          "todo": ""
-        },
-        {
-          "id": "exports.checks.1",
-          "status": "GET /api/models/{model_id}/exports/ifc-manifest",
-          "todo": ""
-        },
-        {
-          "id": "exports.checks.2",
-          "status": "GET /api/models/{model_id}/exports/sheet-preview.pdf?sheetId=ssh-sheet-a101",
-          "todo": ""
-        },
-        {
-          "id": "exports.todo",
-          "status": "Full M2/M3 exit should add IFC and glTF round-trip evidence for this house.",
-          "todo": ""
         }
+      ],
+      "evidenceArtifactPaths": [
+        "spec/benchmarks/simple-single-storey-house/ui-cmdk-traceability.json",
+        "spec/benchmarks/simple-single-storey-house/ui-equivalence.json"
       ],
       "commandTypes": [
         "CreateSheet",
@@ -1379,140 +1166,72 @@
           "status": "placeholder-live-dry-run-or-committed-output",
           "source": "spec/benchmarks/simple-single-storey-house/expected-semantics.json",
           "detail": "",
-          "passes": false
-        },
-        {
-          "type": "committedAdvisorValidation",
-          "status": "placeholder-live-dry-run-or-committed-output",
-          "source": "spec/benchmarks/simple-single-storey-house/expected-semantics.json",
-          "detail": "",
-          "passes": false
-        },
-        {
-          "type": "committedAdvisorValidation",
-          "status": "GET /api/models/{model_id}/validate",
-          "source": "spec/benchmarks/simple-single-storey-house/expected-semantics.json",
-          "detail": "",
-          "passes": false
-        },
-        {
-          "type": "committedAdvisorValidation",
-          "status": "POST /api/models/{model_id}/qa/advisor",
-          "source": "spec/benchmarks/simple-single-storey-house/expected-semantics.json",
-          "detail": "",
-          "passes": false
-        },
-        {
-          "type": "committedAdvisorValidation",
-          "status": "GET /api/models/{model_id}/evidence-package",
-          "source": "spec/benchmarks/simple-single-storey-house/expected-semantics.json",
-          "detail": "",
-          "passes": false
+          "passes": false,
+          "reason": "expected-semantics metadata is documentation, not committed advisor/validation evidence"
         },
         {
           "type": "exportEvidence",
           "status": "artifact-or-manifest-check-when-committed-evidence-requested",
           "source": "spec/benchmarks/simple-single-storey-house/expected-semantics.json",
           "detail": "Full M2/M3 exit should add IFC and glTF round-trip evidence for this house.",
-          "passes": true
-        },
-        {
-          "type": "exportEvidence",
-          "status": "artifact-or-manifest-check-when-committed-evidence-requested",
-          "source": "spec/benchmarks/simple-single-storey-house/expected-semantics.json",
-          "detail": "",
-          "passes": true
-        },
-        {
-          "type": "exportEvidence",
-          "status": "GET /api/models/{model_id}/exports/gltf-manifest",
-          "source": "spec/benchmarks/simple-single-storey-house/expected-semantics.json",
-          "detail": "",
-          "passes": true
-        },
-        {
-          "type": "exportEvidence",
-          "status": "GET /api/models/{model_id}/exports/ifc-manifest",
-          "source": "spec/benchmarks/simple-single-storey-house/expected-semantics.json",
-          "detail": "",
-          "passes": true
-        },
-        {
-          "type": "exportEvidence",
-          "status": "GET /api/models/{model_id}/exports/sheet-preview.pdf?sheetId=ssh-sheet-a101",
-          "source": "spec/benchmarks/simple-single-storey-house/expected-semantics.json",
-          "detail": "",
-          "passes": false
+          "passes": false,
+          "reason": "expected-semantics metadata is documentation, not export evidence"
         },
         {
           "type": "liveCommitEvidence",
           "status": "explicit-opt-in",
           "source": "spec/benchmarks/simple-single-storey-house/expected-semantics.json",
           "detail": "",
-          "passes": false
-        },
-        {
-          "type": "liveCommitEvidence",
-          "status": "explicit-opt-in",
-          "source": "spec/benchmarks/simple-single-storey-house/expected-semantics.json",
-          "detail": "",
-          "passes": false
+          "passes": false,
+          "reason": "expected-semantics metadata is documentation, not live commit evidence"
         },
         {
           "type": "liveDryRunEvidence",
           "status": "fixture-validated-live-dry-run-and-commit-capable",
           "source": "spec/benchmarks/simple-single-storey-house/expected-semantics.json",
           "detail": "",
-          "passes": false
+          "passes": false,
+          "reason": "benchmark path metadata is not a clean live dry-run artifact"
         },
         {
           "type": "liveDryRunEvidence",
           "status": "optional",
           "source": "spec/benchmarks/simple-single-storey-house/expected-semantics.json",
           "detail": "mode=dry_run",
-          "passes": false
+          "passes": false,
+          "reason": "benchmark liveDryRun metadata is optional configuration, not run evidence"
         },
         {
           "type": "uiEquivalentPath",
           "status": "traceability-only",
           "source": "spec/benchmarks/simple-single-storey-house/expected-semantics.json",
           "detail": "Add an executable UI/Cmd+K path and semantic diff against this fixture once M2 UI benchmark automation is in scope.",
-          "passes": false
+          "passes": false,
+          "reason": "benchmark path metadata is not executable UI-equivalence evidence"
+        },
+        {
+          "type": "uiEquivalentPath",
+          "status": "traceability-only",
+          "source": "spec/benchmarks/simple-single-storey-house/ui-cmdk-traceability.json",
+          "detail": "missing semantic diff",
+          "passes": false,
+          "reason": "UI-equivalence artifact still lists blockers or TODOs"
+        },
+        {
+          "type": "uiEquivalentPath",
+          "status": "ui-equivalence-clean",
+          "source": "spec/benchmarks/simple-single-storey-house/ui-equivalence.json",
+          "detail": "semantic diff checked",
+          "passes": true,
+          "reason": ""
         },
         {
           "type": "visualRenderEvidence",
           "status": "server-side-substitute-when-committed-evidence-requested",
           "source": "spec/benchmarks/simple-single-storey-house/expected-semantics.json",
           "detail": "Full confidence still requires browser-rendered nonblank plan and 3D screenshots for ssh-view-ground-plan and ssh-view-3d.",
-          "passes": true
-        },
-        {
-          "type": "visualRenderEvidence",
-          "status": "server-side-substitute-when-committed-evidence-requested",
-          "source": "spec/benchmarks/simple-single-storey-house/expected-semantics.json",
-          "detail": "",
-          "passes": true
-        },
-        {
-          "type": "visualRenderEvidence",
-          "status": "ssh-view-ground-plan",
-          "source": "spec/benchmarks/simple-single-storey-house/expected-semantics.json",
-          "detail": "",
-          "passes": false
-        },
-        {
-          "type": "visualRenderEvidence",
-          "status": "ssh-view-3d",
-          "source": "spec/benchmarks/simple-single-storey-house/expected-semantics.json",
-          "detail": "",
-          "passes": false
-        },
-        {
-          "type": "visualRenderEvidence",
-          "status": "GET /api/models/{model_id}/exports/sheet-print-raster.png?sheetId=ssh-sheet-a101",
-          "source": "spec/benchmarks/simple-single-storey-house/expected-semantics.json",
-          "detail": "",
-          "passes": false
+          "passes": false,
+          "reason": "expected-semantics metadata is documentation, not visual/render evidence"
         }
       ],
       "uiEquivalentStatus": "traceability-only",
@@ -17215,7 +16934,15 @@
       "kind": "m2-closure-gate-blocked",
       "id": "committedAdvisorValidation",
       "status": "Gap",
-      "detail": "No committed-model advisor or validation evidence was detected."
+      "detail": "No committed-model advisor or validation evidence was detected. Rejected evidence: simple-single-storey-house:spec/benchmarks/simple-single-storey-house/expected-semantics.json status=placeholder-live-dry-run-or-committed-output (expected-semantics metadata is documentation, not committed advisor/validation evidence)."
+    },
+    {
+      "priority": "P0",
+      "domain": "m2-closure",
+      "kind": "m2-closure-gate-blocked",
+      "id": "exportEvidence",
+      "status": "Gap",
+      "detail": "No export artifact or manifest evidence was detected. Rejected evidence: simple-single-storey-house:spec/benchmarks/simple-single-storey-house/expected-semantics.json status=artifact-or-manifest-check-when-committed-evidence-requested detail=Full M2/M3 exit should add IFC and glTF round-trip evidence for this house. (expected-semantics metadata is documentation, not export evidence)."
     },
     {
       "priority": "P0",
@@ -17223,7 +16950,7 @@
       "kind": "m2-closure-gate-blocked",
       "id": "liveCommitEvidence",
       "status": "Gap",
-      "detail": "No live typed commit benchmark evidence was detected."
+      "detail": "No live typed commit benchmark evidence was detected. Rejected evidence: simple-single-storey-house:spec/benchmarks/simple-single-storey-house/expected-semantics.json status=explicit-opt-in (expected-semantics metadata is documentation, not live commit evidence)."
     },
     {
       "priority": "P0",
@@ -17231,15 +16958,15 @@
       "kind": "m2-closure-gate-blocked",
       "id": "liveDryRunEvidence",
       "status": "Gap",
-      "detail": "No clean live typed dry-run benchmark evidence was detected."
+      "detail": "No clean live typed dry-run benchmark evidence was detected. Rejected evidence: simple-single-storey-house:spec/benchmarks/simple-single-storey-house/expected-semantics.json status=fixture-validated-live-dry-run-and-commit-capable (benchmark path metadata is not a clean live dry-run artifact); simple-single-storey-house:spec/benchmarks/simple-single-storey-house/expected-semantics.json status=optional detail=mode=dry_run (benchmark liveDryRun metadata is optional configuration, not run evidence)."
     },
     {
       "priority": "P0",
       "domain": "m2-closure",
       "kind": "m2-closure-gate-blocked",
-      "id": "uiEquivalentPath",
+      "id": "visualRenderEvidence",
       "status": "Gap",
-      "detail": "No executable or validated UI/Cmd+K equivalent path was detected."
+      "detail": "No nonblank visual/render evidence was detected. Rejected evidence: simple-single-storey-house:spec/benchmarks/simple-single-storey-house/expected-semantics.json status=server-side-substitute-when-committed-evidence-requested detail=Full confidence still requires browser-rendered nonblank plan and 3D screenshots for ssh-view-ground-plan and ssh-view-3d. (expected-semantics metadata is documentation, not visual/render evidence)."
     },
     {
       "priority": "P0",

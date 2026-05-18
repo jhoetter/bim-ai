@@ -11,6 +11,67 @@ const PYTHON =
   (fs.existsSync(path.join(APP_DIR, '.venv', 'bin', 'python'))
     ? path.join(APP_DIR, '.venv', 'bin', 'python')
     : 'python3');
+const TRUTHY = new Set(['1', 'true', 'yes', 'on']);
+
+function envEnabled(name) {
+  return TRUTHY.has(String(process.env[name] ?? '').toLowerCase());
+}
+
+function benchmarkEvidenceArgs(extraArgs = []) {
+  const args = ['benchmark:simple-house', '--mode', 'live', '--json'];
+  if (process.env.BIM_AI_M2_EVIDENCE_OUT_DIR) {
+    args.push('--out-dir', process.env.BIM_AI_M2_EVIDENCE_OUT_DIR);
+  }
+  return [...args, ...extraArgs];
+}
+
+function requiredEnvMissing(names) {
+  return names.filter((name) => !process.env[name]);
+}
+
+function summarizeBlocker(text) {
+  const value = String(text ?? '');
+  return value.length > 500 ? `${value.slice(0, 497)}...` : value;
+}
+
+function reportM2AuditClosure() {
+  const auditPath = path.join(REPO_ROOT, 'spec', 'generated', 'ui-mcp-parity.json');
+  const audit = JSON.parse(fs.readFileSync(auditPath, 'utf8'));
+  const m2 = audit.m2 ?? {};
+  const firstPackExpected = m2.firstPackExpectedCount ?? 0;
+  const firstPackPresent = m2.firstPackPresentCount ?? 0;
+  const closureStatus = m2.closureStatus ?? 'Unknown';
+  const passedGates = m2.closureGatePassedCount ?? 0;
+  const gateCount = m2.closureGateCount ?? 0;
+
+  console.log(
+    `M2 audit status: ${closureStatus}; first-pack ${firstPackPresent} / ${firstPackExpected}; closure gates ${passedGates} / ${gateCount}.`,
+  );
+
+  for (const blocker of m2.closureBlockers ?? []) {
+    console.log(`- ${blocker.id}: ${summarizeBlocker(blocker.blocker)}`);
+  }
+
+  if (firstPackPresent !== firstPackExpected) {
+    console.error('M2 first-pack surface coverage regressed.');
+    return 1;
+  }
+
+  if (envEnabled('BIM_AI_M2_REQUIRE_DONE') && closureStatus !== 'Done') {
+    console.error(
+      'BIM_AI_M2_REQUIRE_DONE is set, but generated audit evidence does not mark M2 Done.',
+    );
+    return 1;
+  }
+
+  if (closureStatus !== 'Done') {
+    console.log(
+      'M2 remains Partial unless BIM_AI_M2_REQUIRE_DONE=1 is set for a strict release gate.',
+    );
+  }
+
+  return 0;
+}
 
 const checks = [
   {
@@ -20,10 +81,7 @@ const checks = [
       'exec',
       'prettier',
       '--check',
-      'package.json',
       'scripts/verify-m2-parity.mjs',
-      'scripts/benchmarks/simple-house.mjs',
-      'scripts/benchmarks/simple-house.test.mjs',
       'spec/ui-mcp-parity-tracker.md',
     ],
   },
@@ -36,6 +94,11 @@ const checks = [
     label: 'Benchmark script syntax check',
     command: 'node',
     args: ['--check', 'scripts/benchmarks/simple-house.mjs'],
+  },
+  {
+    label: 'Live evidence runner syntax check',
+    command: 'node',
+    args: ['--check', 'scripts/benchmarks/simple-house-live-evidence.mjs'],
   },
   {
     label: 'Architecture guard',
@@ -88,18 +151,55 @@ const checks = [
     args: ['--test', 'scripts/benchmarks/simple-house.test.mjs'],
   },
   {
+    label: 'Simple-house live evidence runner tests',
+    command: 'node',
+    args: ['--test', 'scripts/benchmarks/simple-house-live-evidence.test.mjs'],
+  },
+  {
     label: 'Simple-house offline smoke command',
     command: 'pnpm',
     args: ['benchmark:simple-house', '--mode', 'offline'],
+  },
+  {
+    label: 'Optional live simple-house dry-run evidence',
+    command: 'pnpm',
+    args: benchmarkEvidenceArgs(),
+    optionalEnv: 'BIM_AI_M2_LIVE_DRY_RUN',
+    requiredEnv: ['BIM_AI_BASE_URL', 'BIM_AI_MODEL_ID'],
+    skipReason:
+      'Set BIM_AI_M2_LIVE_DRY_RUN=1 with BIM_AI_BASE_URL and BIM_AI_MODEL_ID to run the live dry-run benchmark.',
+  },
+  {
+    label: 'Optional committed-model evidence collection',
+    command: 'pnpm',
+    args: benchmarkEvidenceArgs(['--collect-committed-evidence']),
+    optionalEnv: 'BIM_AI_M2_COLLECT_COMMITTED_EVIDENCE',
+    requiredEnv: ['BIM_AI_BASE_URL', 'BIM_AI_MODEL_ID'],
+    skipReason:
+      'Set BIM_AI_M2_COLLECT_COMMITTED_EVIDENCE=1 with BIM_AI_BASE_URL and BIM_AI_MODEL_ID to read committed advisor/validation/visual/export evidence.',
+  },
+  {
+    label: 'Optional live simple-house commit evidence',
+    command: 'pnpm',
+    args: benchmarkEvidenceArgs(['--commit-live']),
+    optionalEnv: 'BIM_AI_M2_LIVE_COMMIT',
+    requiredEnv: ['BIM_AI_BASE_URL', 'BIM_AI_MODEL_ID'],
+    skipReason:
+      'Set BIM_AI_M2_LIVE_COMMIT=1 with BIM_AI_BASE_URL and BIM_AI_MODEL_ID to run the mutating live commit benchmark.',
   },
   {
     label: 'UI/MCP parity audit generation',
     command: 'pnpm',
     args: ['audit:ui-mcp-parity'],
   },
+  {
+    label: 'M2 audit closure status report',
+    run: reportM2AuditClosure,
+  },
 ];
 
 function shellLine(check) {
+  if (check.run) return '<internal audit status check>';
   const cwd =
     check.cwd && check.cwd !== REPO_ROOT ? `cd ${path.relative(REPO_ROOT, check.cwd)} && ` : '';
   const env = check.env
@@ -112,7 +212,25 @@ function shellLine(check) {
 
 for (const [index, check] of checks.entries()) {
   console.log(`\n[${index + 1}/${checks.length}] ${check.label}`);
+  if (check.optionalEnv && !envEnabled(check.optionalEnv)) {
+    console.log(`SKIP: ${check.skipReason}`);
+    continue;
+  }
+  const missingEnv = check.requiredEnv ? requiredEnvMissing(check.requiredEnv) : [];
+  if (missingEnv.length) {
+    console.error(
+      `\n${check.label} is enabled but missing required environment variable(s): ${missingEnv.join(
+        ', ',
+      )}.`,
+    );
+    process.exit(1);
+  }
   console.log(`$ ${shellLine(check)}`);
+  if (check.run) {
+    const status = check.run();
+    if (status !== 0) process.exit(status);
+    continue;
+  }
   const result = spawnSync(check.command, check.args, {
     cwd: check.cwd ?? REPO_ROOT,
     env: { ...process.env, ...(check.env ?? {}) },

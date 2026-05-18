@@ -26,6 +26,143 @@ async function readBody(request) {
   return Buffer.concat(chunks).toString('utf8');
 }
 
+function sendJson(response, body, status = 200) {
+  response.writeHead(status, { 'content-type': 'application/json' });
+  response.end(JSON.stringify(body));
+}
+
+function valueOrFactory(value, context) {
+  return typeof value === 'function' ? value(context) : value;
+}
+
+function createCommittedEvidenceServer({
+  modelId = 'model-commit',
+  validationBody = ({ modelId: id }) => ({
+    modelId: id,
+    revision: 3,
+    violations: [],
+    checks: { errorViolationCount: 0, blockingViolationCount: 0 },
+  }),
+  advisorBody = () => ({
+    ok: true,
+    data: {
+      format: 'qaAdvisor_v1',
+      findings: [],
+      summary: { findingCount: 0, returnedCount: 0, severityCounts: {} },
+    },
+    warnings: [],
+  }),
+} = {}) {
+  const requests = [];
+  const modelPath = `/api/models/${modelId}`;
+  const pngBytes = Buffer.from(
+    '89504e470d0a1a0a0000000d4948445200000001000000010802000000907753de0000000c4944415408d763f8ffff3f0005fe02fea73581e40000000049454e44ae426082',
+    'hex',
+  );
+  const pdfBytes = Buffer.from('%PDF-1.4\n% simple-house stub\n', 'utf8');
+  const server = http.createServer(async (request, response) => {
+    const body = request.method === 'POST' ? JSON.parse(await readBody(request)) : null;
+    requests.push({ method: request.method, url: request.url, body });
+    if (request.method === 'POST' && request.url === `${modelPath}/bundles`) {
+      sendJson(response, {
+        schemaVersion: 'cmd-v3.0',
+        applied: body.mode === 'commit',
+        newRevision: body.mode === 'commit' ? 3 : null,
+        wouldRevision: body.mode === 'dry_run' ? 3 : null,
+        changedIds: ['ssh-wall-north', 'ssh-door-entry'],
+        checkpointSnapshotId: 'checkpoint-3',
+        violations: [],
+      });
+      return;
+    }
+    if (request.method === 'POST' && request.url === `${modelPath}/qa/advisor`) {
+      sendJson(response, valueOrFactory(advisorBody, { modelId, body }));
+      return;
+    }
+    if (request.method === 'GET' && request.url === `${modelPath}/command-log?limit=5`) {
+      sendJson(response, {
+        modelId,
+        entries: [
+          {
+            id: 10,
+            userId: 'agent-test',
+            revisionAfter: 3,
+            createdAt: '2026-05-18T00:00:00.000Z',
+            appliedCommands: [{ type: 'createLevel' }, { type: 'createWallChain' }],
+          },
+        ],
+      });
+      return;
+    }
+    if (request.method === 'GET' && request.url === `${modelPath}/snapshot`) {
+      sendJson(response, {
+        modelId,
+        revision: 3,
+        elements: {
+          'ssh-wall-north': { id: 'ssh-wall-north', kind: 'wall' },
+          'ssh-door-entry': { id: 'ssh-door-entry', kind: 'opening' },
+        },
+      });
+      return;
+    }
+    if (request.method === 'GET' && request.url === `${modelPath}/summary`) {
+      sendJson(response, { modelId, revision: 3, summary: { walls: 1 } });
+      return;
+    }
+    if (request.method === 'GET' && request.url === `${modelPath}/validate`) {
+      sendJson(response, valueOrFactory(validationBody, { modelId }));
+      return;
+    }
+    if (request.method === 'GET' && request.url === `${modelPath}/evidence-package`) {
+      sendJson(response, {
+        format: 'evidencePackage_v1',
+        modelId,
+        revision: 3,
+        deterministicPlanViewEvidence: [{ planViewId: 'ssh-view-ground-plan' }],
+        deterministic3dViewEvidence: [{ viewId: 'ssh-view-3d' }],
+        deterministicSheetEvidence: [{ sheetId: 'ssh-sheet-a101' }],
+        recommendedPngEvidenceBackend: 'playwright_ci',
+        svgRasterBackendAvailable: true,
+      });
+      return;
+    }
+    if (request.method === 'GET' && request.url === `${modelPath}/exports/gltf-manifest`) {
+      sendJson(response, {
+        extensions: { BIM_AI_exportManifest_v0: { countsByKind: { wall: 1 } } },
+      });
+      return;
+    }
+    if (request.method === 'GET' && request.url === `${modelPath}/exports/ifc-manifest`) {
+      sendJson(response, { format: 'ifc_manifest_v0', exportedIfcKindsInArtifact: { IfcWall: 1 } });
+      return;
+    }
+    if (
+      request.method === 'GET' &&
+      request.url === `${modelPath}/exports/sheet-print-raster.png?sheetId=ssh-sheet-a101`
+    ) {
+      response.writeHead(200, {
+        'content-type': 'image/png',
+        'x-bim-ai-sheet-print-raster-contract': 'stub-raster-v1',
+        'x-bim-ai-sheet-print-raster-full-raster-status': 'full-raster-unavailable',
+        'x-bim-ai-sheet-print-raster-width': '128',
+        'x-bim-ai-sheet-print-raster-height': '112',
+      });
+      response.end(pngBytes);
+      return;
+    }
+    if (
+      request.method === 'GET' &&
+      request.url === `${modelPath}/exports/sheet-preview.pdf?sheetId=ssh-sheet-a101`
+    ) {
+      response.writeHead(200, { 'content-type': 'application/pdf' });
+      response.end(pdfBytes);
+      return;
+    }
+    sendJson(response, { error: 'not found' }, 404);
+  });
+  return { requests, server };
+}
+
 test('simple-house benchmark remains deterministic in offline fixture mode', async () => {
   const { result } = await runBenchmark(['--mode', 'offline']);
 
@@ -93,148 +230,31 @@ test('simple-house live mode posts cmd-v3 dry-run evidence to public bundle API'
 });
 
 test('simple-house live commit requires explicit flag and writes committed evidence artifacts', async () => {
-  const requests = [];
-  const pngBytes = Buffer.from(
-    '89504e470d0a1a0a0000000d4948445200000001000000010802000000907753de0000000c4944415408d763f8ffff3f0005fe02fea73581e40000000049454e44ae426082',
-    'hex',
-  );
-  const pdfBytes = Buffer.from('%PDF-1.4\n% simple-house stub\n', 'utf8');
-  const server = http.createServer(async (request, response) => {
-    const body = request.method === 'POST' ? JSON.parse(await readBody(request)) : null;
-    requests.push({ method: request.method, url: request.url, body });
-    if (request.method === 'POST' && request.url === '/api/models/model-commit/bundles') {
-      response.writeHead(200, { 'content-type': 'application/json' });
-      response.end(
-        JSON.stringify({
-          schemaVersion: 'cmd-v3.0',
-          applied: body.mode === 'commit',
-          newRevision: body.mode === 'commit' ? 3 : null,
-          wouldRevision: body.mode === 'dry_run' ? 3 : null,
-          changedIds: ['ssh-wall-north', 'ssh-door-entry'],
-          checkpointSnapshotId: 'checkpoint-3',
-          violations: [],
-        }),
-      );
-      return;
-    }
-    if (request.method === 'POST' && request.url === '/api/models/model-commit/qa/advisor') {
-      response.writeHead(200, { 'content-type': 'application/json' });
-      response.end(JSON.stringify({ ok: true, findings: [], summary: { status: 'pass' } }));
-      return;
-    }
-    if (
-      request.method === 'GET' &&
-      request.url === '/api/models/model-commit/command-log?limit=5'
-    ) {
-      response.writeHead(200, { 'content-type': 'application/json' });
-      response.end(
-        JSON.stringify({
-          modelId: 'model-commit',
-          entries: [
-            {
-              id: 10,
-              userId: 'agent-test',
-              revisionAfter: 3,
-              createdAt: '2026-05-18T00:00:00.000Z',
-              appliedCommands: [{ type: 'createLevel' }, { type: 'createWallChain' }],
-            },
-          ],
-        }),
-      );
-      return;
-    }
-    if (request.method === 'GET' && request.url === '/api/models/model-commit/snapshot') {
-      response.writeHead(200, { 'content-type': 'application/json' });
-      response.end(
-        JSON.stringify({
-          modelId: 'model-commit',
-          revision: 3,
-          elements: {
-            'ssh-wall-north': { id: 'ssh-wall-north', kind: 'wall' },
-            'ssh-door-entry': { id: 'ssh-door-entry', kind: 'opening' },
-          },
-        }),
-      );
-      return;
-    }
-    if (request.method === 'GET' && request.url === '/api/models/model-commit/summary') {
-      response.writeHead(200, { 'content-type': 'application/json' });
-      response.end(JSON.stringify({ modelId: 'model-commit', revision: 3, summary: { walls: 1 } }));
-      return;
-    }
-    if (request.method === 'GET' && request.url === '/api/models/model-commit/validate') {
-      response.writeHead(200, { 'content-type': 'application/json' });
-      response.end(
-        JSON.stringify({
-          modelId: 'model-commit',
-          revision: 3,
-          violations: [],
-          checks: { errorViolationCount: 0, blockingViolationCount: 0 },
-        }),
-      );
-      return;
-    }
-    if (request.method === 'GET' && request.url === '/api/models/model-commit/evidence-package') {
-      response.writeHead(200, { 'content-type': 'application/json' });
-      response.end(
-        JSON.stringify({
-          format: 'evidencePackage_v1',
-          modelId: 'model-commit',
-          revision: 3,
-          deterministicPlanViewEvidence: [{ planViewId: 'ssh-view-ground-plan' }],
-          deterministic3dViewEvidence: [{ viewId: 'ssh-view-3d' }],
-          deterministicSheetEvidence: [{ sheetId: 'ssh-sheet-a101' }],
-          recommendedPngEvidenceBackend: 'playwright_ci',
-          svgRasterBackendAvailable: true,
-        }),
-      );
-      return;
-    }
-    if (
-      request.method === 'GET' &&
-      request.url === '/api/models/model-commit/exports/gltf-manifest'
-    ) {
-      response.writeHead(200, { 'content-type': 'application/json' });
-      response.end(
-        JSON.stringify({ extensions: { BIM_AI_exportManifest_v0: { countsByKind: { wall: 1 } } } }),
-      );
-      return;
-    }
-    if (
-      request.method === 'GET' &&
-      request.url === '/api/models/model-commit/exports/ifc-manifest'
-    ) {
-      response.writeHead(200, { 'content-type': 'application/json' });
-      response.end(
-        JSON.stringify({ format: 'ifc_manifest_v0', exportedIfcKindsInArtifact: { IfcWall: 1 } }),
-      );
-      return;
-    }
-    if (
-      request.method === 'GET' &&
-      request.url ===
-        '/api/models/model-commit/exports/sheet-print-raster.png?sheetId=ssh-sheet-a101'
-    ) {
-      response.writeHead(200, {
-        'content-type': 'image/png',
-        'x-bim-ai-sheet-print-raster-contract': 'stub-raster-v1',
-        'x-bim-ai-sheet-print-raster-full-raster-status': 'full-raster-unavailable',
-        'x-bim-ai-sheet-print-raster-width': '128',
-        'x-bim-ai-sheet-print-raster-height': '112',
-      });
-      response.end(pngBytes);
-      return;
-    }
-    if (
-      request.method === 'GET' &&
-      request.url === '/api/models/model-commit/exports/sheet-preview.pdf?sheetId=ssh-sheet-a101'
-    ) {
-      response.writeHead(200, { 'content-type': 'application/pdf' });
-      response.end(pdfBytes);
-      return;
-    }
-    response.writeHead(404, { 'content-type': 'application/json' });
-    response.end(JSON.stringify({ error: 'not found' }));
+  const { requests, server } = createCommittedEvidenceServer({
+    validationBody: ({ modelId }) => ({
+      modelId,
+      revision: 3,
+      violations: [{ severity: 'warning', code: 'minor-clearance' }],
+      checks: { errorViolationCount: 0, blockingViolationCount: 0 },
+    }),
+    advisorBody: ({ modelId }) => ({
+      ok: true,
+      modelId,
+      revision: 3,
+      data: {
+        format: 'qaAdvisor_v1',
+        findings: [
+          { severity: 'warning', ruleId: 'constructability_proxy_unsupported' },
+          { severity: 'info', ruleId: 'documentation_hint' },
+        ],
+        summary: {
+          findingCount: 2,
+          returnedCount: 2,
+          severityCounts: { info: 1, warning: 1 },
+        },
+      },
+      warnings: [],
+    }),
   });
 
   const address = await listen(server);
@@ -263,6 +283,13 @@ test('simple-house live commit requires explicit flag and writes committed evide
     assert.equal(result.executionEvidence.liveCommit.mode, 'live-commit');
     assert.equal(result.committedEvidence.mode, 'post-commit-live');
     assert.equal(result.committedEvidence.ok, true);
+    assert.equal(result.committedEvidence.validationPass, true);
+    assert.equal(result.committedEvidence.advisorPass, true);
+    assert.equal(result.committedEvidence.validationResult.warningCount, 1);
+    assert.equal(result.committedEvidence.advisorResult.warningCount, 1);
+    assert.equal(result.committedEvidence.advisorResult.infoCount, 1);
+    assert.equal(result.committedEvidence.blockingErrorCounts.validation, 0);
+    assert.equal(result.committedEvidence.blockingErrorCounts.advisor, 0);
     assert.equal(result.committedEvidence.visual.sheetPrintRaster.nonblankProof.ok, true);
     assert.equal(result.committedEvidence.exports.artifacts.sheetPdf.status, 'artifact-returned');
     assert.equal(result.executionEvidence.liveCommit.response.newRevision, 3);
@@ -303,8 +330,121 @@ test('simple-house live commit requires explicit flag and writes committed evide
     );
     assert.equal(snapshotSummary.countsByKind.opening, 1);
     assert.equal(snapshotSummary.countsByKind.wall, 1);
+    const advisorValidation = JSON.parse(
+      await fs.readFile(path.join(outDir, 'advisor-validation.json'), 'utf8'),
+    );
+    assert.equal(advisorValidation.ok, true);
+    assert.equal(advisorValidation.validationStatus, 'pass');
+    assert.equal(advisorValidation.advisorStatus, 'pass');
+    assert.equal(advisorValidation.validationResult.warningCount, 1);
+    assert.equal(advisorValidation.advisorResult.infoCount, 1);
   } finally {
     await close(server);
     await fs.rm(outDir, { recursive: true, force: true });
+  }
+});
+
+test('simple-house committed evidence fails on blocking validation errors', async () => {
+  const { server } = createCommittedEvidenceServer({
+    modelId: 'model-validation-fail',
+    validationBody: ({ modelId }) => ({
+      modelId,
+      revision: 3,
+      violations: [
+        {
+          severity: 'error',
+          blocking: true,
+          code: 'overlapping-hosted-opening',
+          elementIds: ['ssh-door-entry'],
+        },
+        { severity: 'warning', code: 'minor-clearance' },
+      ],
+      checks: { errorViolationCount: 1, blockingViolationCount: 1 },
+    }),
+  });
+
+  const address = await listen(server);
+  try {
+    const baseUrl = `http://${address.address}:${address.port}`;
+    const { result } = await runBenchmark([
+      '--mode',
+      'live',
+      '--base-url',
+      baseUrl,
+      '--model-id',
+      'model-validation-fail',
+      '--parent-revision',
+      '2',
+      '--user-id',
+      'agent-test',
+      '--collect-committed-evidence',
+    ]);
+
+    assert.equal(result.ok, false);
+    assert.equal(result.committedEvidence.ok, false);
+    assert.equal(result.committedEvidence.validationStatus, 'fail');
+    assert.equal(result.committedEvidence.validationPass, false);
+    assert.equal(result.committedEvidence.validationResult.blockingErrorCount, 1);
+    assert.equal(result.committedEvidence.validationResult.warningCount, 1);
+    assert.equal(result.committedEvidence.advisorPass, true);
+  } finally {
+    await close(server);
+  }
+});
+
+test('simple-house committed evidence fails on blocking advisor errors', async () => {
+  const { server } = createCommittedEvidenceServer({
+    modelId: 'model-advisor-fail',
+    advisorBody: ({ modelId }) => ({
+      ok: true,
+      modelId,
+      revision: 3,
+      data: {
+        format: 'qaAdvisor_v1',
+        findings: [
+          {
+            severity: 'error',
+            blocking: true,
+            ruleId: 'constructability_metadata_requirement_missing',
+            elementIds: ['ssh-roof-main'],
+          },
+          { severity: 'warning', ruleId: 'documentation_hint' },
+        ],
+        summary: {
+          findingCount: 2,
+          returnedCount: 2,
+          severityCounts: { error: 1, warning: 1 },
+        },
+      },
+      warnings: [],
+    }),
+  });
+
+  const address = await listen(server);
+  try {
+    const baseUrl = `http://${address.address}:${address.port}`;
+    const { result } = await runBenchmark([
+      '--mode',
+      'live',
+      '--base-url',
+      baseUrl,
+      '--model-id',
+      'model-advisor-fail',
+      '--parent-revision',
+      '2',
+      '--user-id',
+      'agent-test',
+      '--collect-committed-evidence',
+    ]);
+
+    assert.equal(result.ok, false);
+    assert.equal(result.committedEvidence.ok, false);
+    assert.equal(result.committedEvidence.validationPass, true);
+    assert.equal(result.committedEvidence.advisorStatus, 'fail');
+    assert.equal(result.committedEvidence.advisorPass, false);
+    assert.equal(result.committedEvidence.advisorResult.blockingErrorCount, 1);
+    assert.equal(result.committedEvidence.advisorResult.warningCount, 1);
+  } finally {
+    await close(server);
   }
 });

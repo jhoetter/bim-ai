@@ -105,6 +105,15 @@ const BENCHMARK_COMMAND_TOOL_MARKERS = new Map([
   ['saveViewpoint', ['view.save_3d']],
 ]);
 
+const EVIDENCE_ARTIFACT_FILE_RE =
+  /(^|\/)(benchmark-result|execution-evidence|live-dry-run-evidence|live-commit-evidence|committed-evidence|advisor-validation|visual-evidence|render-evidence|screenshot-evidence|export-evidence|ui-cmdk-traceability|ui-equivalence|ui-equivalent|semantic-diff)[^/]*\.json$/i;
+
+const BLOCKING_EVIDENCE_STATUS_RE =
+  /todo|placeholder|optional|capable|expected|required|requires|missing|none|unknown|declared|fixture|traceability-only|documentation-only|docs-only|opt[-_\s]?in|stale|expired|failed|failure|error|unavailable|invalid|blank|not[-_\s]?requested|skipped|deferred/i;
+
+const POSITIVE_EVIDENCE_STATUS_RE =
+  /live|validated|passing|passed|clean|committed|executable|nonblank|artifact|manifest|done|server-side-substitute/i;
+
 function read(relPath) {
   try {
     return fs.readFileSync(path.join(ROOT, relPath), 'utf8');
@@ -804,100 +813,414 @@ function listBenchmarkDirs() {
 }
 
 function listBenchmarkEvidenceFiles(dir) {
-  const absDir = path.join(ROOT, dir);
-  try {
-    return fs
-      .readdirSync(absDir, { withFileTypes: true })
-      .filter((entry) => entry.isFile() && /\.json$/i.test(entry.name))
-      .map((entry) => `${dir}/${entry.name}`)
-      .filter((relPath) =>
-        /(^|\/)(benchmark-result|execution-evidence|advisor|validation|visual|render|screenshot|export|ui-equivalence|ui-equivalent)[^/]*\.json$/i.test(
-          relPath,
-        ),
-      )
-      .sort();
-  } catch {
-    return [];
+  return listEvidenceArtifactFiles(dir);
+}
+
+function listEvidenceArtifactFiles(relDir, maxDepth = 6) {
+  const rootAbs = path.join(ROOT, relDir);
+  const files = [];
+  function visit(absDir, depth) {
+    if (depth > maxDepth) return;
+    let entries = [];
+    try {
+      entries = fs.readdirSync(absDir, { withFileTypes: true });
+    } catch {
+      return;
+    }
+    for (const entry of entries) {
+      const absPath = path.join(absDir, entry.name);
+      if (entry.isDirectory()) {
+        visit(absPath, depth + 1);
+      } else if (entry.isFile()) {
+        const relPath = path.relative(ROOT, absPath).replaceAll(path.sep, '/');
+        if (EVIDENCE_ARTIFACT_FILE_RE.test(relPath)) files.push(relPath);
+      }
+    }
   }
+  visit(rootAbs, 0);
+  return files.sort();
+}
+
+function benchmarkIdFromEvidence(value, source) {
+  const candidates = [
+    value?.benchmarkId,
+    value?.benchmark?.id,
+    value?.metadata?.benchmarkId,
+    value?.uiEquivalence?.benchmarkId,
+  ];
+  const explicit = candidates.find((candidate) => typeof candidate === 'string' && candidate);
+  if (explicit) return explicit;
+  const match = source.match(/spec\/benchmarks\/([^/]+)/);
+  return match?.[1] ?? '';
+}
+
+function listGeneratedEvidenceFilesForBenchmark(benchmarkId) {
+  if (!benchmarkId) return [];
+  return listEvidenceArtifactFiles('spec/generated')
+    .filter((relPath) => relPath !== 'spec/generated/ui-mcp-parity.json')
+    .filter((relPath) => {
+      const value = parseJsonFile(relPath);
+      const artifactBenchmarkId = benchmarkIdFromEvidence(value, relPath);
+      return (
+        artifactBenchmarkId === benchmarkId ||
+        normalizedId(relPath).includes(normalizedId(benchmarkId))
+      );
+    });
 }
 
 function isBlockingEvidenceStatus(status) {
-  return /todo|placeholder|optional|capable|expected|required|requires|missing|none|unknown|declared|fixture|traceability-only|opt[-_\s]?in/i.test(
-    String(status),
-  );
+  return BLOCKING_EVIDENCE_STATUS_RE.test(String(status));
 }
 
 function isPositiveEvidenceStatus(status) {
   const text = String(status);
-  return (
-    /live|validated|passing|passed|clean|committed|executable|nonblank|artifact|manifest|done/i.test(
-      text,
-    ) && !isBlockingEvidenceStatus(text)
-  );
+  return POSITIVE_EVIDENCE_STATUS_RE.test(text) && !isBlockingEvidenceStatus(text);
 }
 
-function addEvidenceSignal(signals, type, status, source, detail = '') {
+function addEvidenceSignal(signals, type, status, source, detail = '', options = {}) {
+  const passes =
+    typeof options.passes === 'boolean' ? options.passes : isPositiveEvidenceStatus(status);
   signals.push({
     type,
     status: String(status ?? 'unknown'),
     source,
     detail: String(detail ?? ''),
-    passes: isPositiveEvidenceStatus(status),
+    passes,
+    reason: String(options.reason ?? (passes ? '' : evidenceRejectionReason(status, detail))),
   });
+}
+
+function evidenceRejectionReason(status, detail = '') {
+  const text = `${status ?? ''} ${detail ?? ''}`;
+  if (/traceability-only/i.test(text))
+    return 'traceability-only artifact is not executable evidence';
+  if (/documentation-only|docs-only|expected|declared|fixture/i.test(text)) {
+    return 'documentation or fixture metadata is not closure evidence';
+  }
+  if (/optional|opt[-_\s]?in|requires|required/i.test(text)) {
+    return 'artifact describes an optional or not-yet-run path';
+  }
+  if (/placeholder|todo|not[-_\s]?requested|skipped|deferred/i.test(text)) {
+    return 'artifact is a placeholder or TODO';
+  }
+  if (/stale|expired/i.test(text)) return 'artifact is stale';
+  if (/failed|failure|error|unavailable|invalid|blank/i.test(text)) {
+    return 'artifact reports failed or unavailable evidence';
+  }
+  if (/unknown|none|missing/i.test(text)) return 'artifact does not contain a known clean status';
+  return 'artifact does not contain explicit clean/pass machine-readable evidence';
+}
+
+function statusAt(value, keys = ['status', 'mode']) {
+  if (!value || typeof value !== 'object') return '';
+  for (const key of keys) {
+    if (typeof value[key] === 'string') return value[key];
+  }
+  return '';
+}
+
+function httpOk(value) {
+  const status = Number(value?.httpStatus ?? value?.response?.httpStatus ?? value?.statusCode);
+  return !Number.isFinite(status) || (status >= 200 && status < 300);
+}
+
+function executionOk(value) {
+  if (!value || typeof value !== 'object') return false;
+  return (
+    value.ok === true &&
+    value.response?.ok !== false &&
+    value.response?.bodyOk !== false &&
+    value.validation?.ok !== false &&
+    httpOk(value)
+  );
+}
+
+function validationClean(validation) {
+  if (!validation || typeof validation !== 'object') return false;
+  if (validation.ok === false) return false;
+  if (isBlockingEvidenceStatus(statusAt(validation, ['status', 'result', 'outcome']))) return false;
+  const checks =
+    validation.checks && typeof validation.checks === 'object' ? validation.checks : {};
+  const blocking = Number(
+    checks.blockingViolationCount ??
+      checks.errorViolationCount ??
+      validation.blockingViolationCount ??
+      validation.errorViolationCount ??
+      0,
+  );
+  if (Number.isFinite(blocking) && blocking > 0) return false;
+  const violations = validation.violations;
+  if (
+    Array.isArray(violations) &&
+    violations.some((item) => /error|blocking/i.test(item?.severity))
+  ) {
+    return false;
+  }
+  return true;
+}
+
+function advisorClean(advisor) {
+  if (!advisor || typeof advisor !== 'object') return true;
+  if (advisor.ok === false) return false;
+  if (isBlockingEvidenceStatus(statusAt(advisor, ['status', 'result', 'outcome']))) return false;
+  const summaryStatus = advisor.summary?.status;
+  if (typeof summaryStatus === 'string' && /fail|error|block/i.test(summaryStatus)) return false;
+  const findings = Array.isArray(advisor.findings) ? advisor.findings : [];
+  return !findings.some((item) => /error|blocking/i.test(item?.severity ?? item?.level ?? ''));
+}
+
+function semanticDiffClean(diff) {
+  if (Array.isArray(diff)) return diff.length === 0;
+  if (!diff || typeof diff !== 'object') return false;
+  if (diff.ok === true || diff.clean === true || diff.passed === true) return true;
+  if (
+    Number(diff.unmatchedFixtureCommandCount ?? 0) === 0 &&
+    Number(diff.unexpectedReplayCommandCount ?? 0) === 0 &&
+    diff.countDeltaByCommandType &&
+    typeof diff.countDeltaByCommandType === 'object' &&
+    Object.values(diff.countDeltaByCommandType).every((value) => Number(value) === 0)
+  ) {
+    return true;
+  }
+  const counts = [
+    diff.mismatchCount,
+    diff.differenceCount,
+    diff.deltaCount,
+    diff.failures,
+    diff.errors,
+  ].filter((value) => value !== undefined);
+  if (counts.length && counts.every((value) => Number(value) === 0)) return true;
+  const differences = diff.differences ?? diff.diffs ?? diff.items;
+  return Array.isArray(differences) && differences.length === 0;
+}
+
+function visualEvidenceClean(value) {
+  if (!value || typeof value !== 'object') return false;
+  if (/^(unavailable|invalid|failed|blank-artifact)$/i.test(statusAt(value))) return false;
+  if (value.stale === true || value.isStale === true || value.fresh === false) return false;
+  if (value.nonblankProof?.ok === true || value.sheetPrintRaster?.nonblankProof?.ok === true) {
+    return true;
+  }
+  if (
+    value.ok === true &&
+    /nonblank|server-side-substitute|render|screenshot/i.test(JSON.stringify(value))
+  ) {
+    return true;
+  }
+  return false;
+}
+
+function exportEvidenceClean(value) {
+  if (!value || typeof value !== 'object') return false;
+  const text = JSON.stringify(value);
+  if (/^(unavailable|invalid|failed|blank-artifact)$/i.test(statusAt(value))) return false;
+  return /artifact-returned|manifest-returned|artifact-or-manifest-returned/i.test(text);
+}
+
+function committedAdvisorValidationClean(value) {
+  if (!value || typeof value !== 'object') return false;
+  if (value.ok === false) return false;
+  if (value.validationPass === true && value.advisorPass === true) return true;
+  if (value.validationResult?.pass === true && value.advisorResult?.pass === true) return true;
+  return validationClean(value.validation) && advisorClean(value.advisor);
+}
+
+function topLevelUiEvidenceBlocked(value) {
+  const statuses = [
+    value?.status,
+    value?.pathKind,
+    value?.auditClassification,
+    value?.parityClaim,
+    value?.freshness,
+  ].filter((item) => typeof item === 'string');
+  return statuses.some((status) => isBlockingEvidenceStatus(status));
+}
+
+function uiEquivalentEvidenceClean(value) {
+  if (!value || typeof value !== 'object') return false;
+  if (value.ok === false || value.uiEquivalentEvidence === false) return false;
+  if (topLevelUiEvidenceBlocked(value)) return false;
+  const status = String(value.status ?? value.pathKind ?? value.auditClassification ?? '');
+  const explicitlyValidated =
+    value.uiEquivalentEvidence === true ||
+    /validated[-_\s]?replay|executable|passed|passing|clean|done/i.test(status);
+  if (!explicitlyValidated) return false;
+  const semanticDiff =
+    value.semanticDiff ?? value.semanticReplayDiff ?? value.diff ?? value.replayDiff ?? null;
+  if (!semanticDiffClean(semanticDiff)) return false;
+  const rows = Array.isArray(value.cmdKBridgeCoverage?.rows) ? value.cmdKBridgeCoverage.rows : [];
+  return !rows.some(
+    (row) =>
+      /blocked|activator/i.test(String(row.bridgeStatus ?? '')) &&
+      row.completedByCmdK === true &&
+      row.exactFixturePayloadExecutable !== false,
+  );
 }
 
 function collectJsonEvidenceSignals(value, source) {
   if (!value || typeof value !== 'object') return [];
   const signals = [];
+  const sourceName = path.basename(source);
+  const statusText = JSON.stringify(value).slice(0, 50000);
   const execution =
     value.executionEvidence && typeof value.executionEvidence === 'object'
       ? value.executionEvidence
       : value;
-  const mode = String(execution.mode ?? value.mode ?? '');
-  const ok = execution.ok === true || value.ok === true;
-  if (ok && /live/i.test(mode) && /dry[-_\s]?run/i.test(mode)) {
-    addEvidenceSignal(signals, 'liveDryRunEvidence', 'live-validated', source, mode);
+  const liveDryRun =
+    execution.liveDryRun && typeof execution.liveDryRun === 'object'
+      ? execution.liveDryRun
+      : execution;
+  const liveCommit =
+    execution.liveCommit && typeof execution.liveCommit === 'object'
+      ? execution.liveCommit
+      : execution;
+
+  if (/execution-evidence|live-dry-run-evidence|benchmark-result/i.test(sourceName)) {
+    const mode = String(liveDryRun.mode ?? execution.mode ?? value.mode ?? '');
+    if (/live/i.test(mode) && /dry[-_\s]?run/i.test(mode)) {
+      const passes = executionOk(liveDryRun);
+      addEvidenceSignal(
+        signals,
+        'liveDryRunEvidence',
+        passes ? 'live-dry-run-clean' : statusAt(liveDryRun) || mode,
+        source,
+        mode,
+        {
+          passes,
+          reason: passes ? '' : 'live dry-run artifact is not ok/clean',
+        },
+      );
+    }
   }
-  if (ok && /live/i.test(mode) && /commit/i.test(mode)) {
-    addEvidenceSignal(signals, 'liveCommitEvidence', 'live-validated', source, mode);
+
+  if (/execution-evidence|live-commit-evidence|benchmark-result/i.test(sourceName)) {
+    const mode = String(liveCommit.mode ?? execution.mode ?? value.mode ?? '');
+    if (/live/i.test(mode) && /commit/i.test(mode)) {
+      const passes = executionOk(liveCommit);
+      addEvidenceSignal(
+        signals,
+        'liveCommitEvidence',
+        passes ? 'live-commit-clean' : statusAt(liveCommit) || mode,
+        source,
+        mode,
+        {
+          passes,
+          reason: passes ? '' : 'live commit artifact is not ok/clean',
+        },
+      );
+    }
   }
-  const statusText = JSON.stringify(value).slice(0, 20000);
-  if (
-    /committed|post[-_\s]?commit/i.test(statusText) &&
-    /advisor|validation|constructability/i.test(statusText) &&
-    !/remainingExitCriteria|todo/i.test(statusText)
-  ) {
-    addEvidenceSignal(signals, 'committedAdvisorValidation', 'committed-evidence', source);
+
+  if (/committed-evidence|advisor-validation|benchmark-result/i.test(sourceName)) {
+    const committed =
+      value.committedEvidence && typeof value.committedEvidence === 'object'
+        ? value.committedEvidence
+        : value;
+    const committedMode = String(committed.mode ?? '');
+    if (
+      /committed|post[-_\s]?commit/i.test(`${committedMode} ${statusText}`) ||
+      /advisor-validation/i.test(sourceName)
+    ) {
+      const passes = committedAdvisorValidationClean(committed);
+      addEvidenceSignal(
+        signals,
+        'committedAdvisorValidation',
+        passes ? 'committed-advisor-validation-clean' : statusAt(committed) || 'committed-evidence',
+        source,
+        committedMode || 'committed advisor/validation artifact',
+        {
+          passes,
+          reason: passes ? '' : 'committed advisor/validation artifact is not clean',
+        },
+      );
+    }
   }
-  if (
-    /nonblank|screenshot|visual|render/i.test(statusText) &&
-    !/placeholder|todo|remainingExitCriteria/i.test(statusText)
-  ) {
-    addEvidenceSignal(signals, 'visualRenderEvidence', 'nonblank-evidence', source);
+
+  if (/visual|render|screenshot|committed-evidence|benchmark-result/i.test(sourceName)) {
+    const visual = value.visual ?? value.committedEvidence?.visual ?? value;
+    const claimsVisual = /visual|render|screenshot|nonblank|sheetPrintRaster/i.test(
+      `${sourceName} ${statusText}`,
+    );
+    if (claimsVisual) {
+      const passes = visualEvidenceClean(visual);
+      addEvidenceSignal(
+        signals,
+        'visualRenderEvidence',
+        passes ? 'visual-render-clean' : statusAt(visual) || 'visual-evidence',
+        source,
+        'visual/render evidence artifact',
+        {
+          passes,
+          reason: passes ? '' : 'visual/render artifact is blank, unavailable, or not proven clean',
+        },
+      );
+    }
   }
-  if (
-    /export|ifc|gltf|glb|pdf/i.test(statusText) &&
-    /artifact|manifest|validated|live|passed|done/i.test(statusText) &&
-    !/placeholder|todo|remainingExitCriteria/i.test(statusText)
-  ) {
-    addEvidenceSignal(signals, 'exportEvidence', 'export-evidence', source);
+
+  if (/export|committed-evidence|benchmark-result/i.test(sourceName)) {
+    const exports = value.exports ?? value.committedEvidence?.exports ?? value;
+    const claimsExport = /export|ifc|gltf|glb|pdf|manifest|artifact/i.test(
+      `${sourceName} ${statusText}`,
+    );
+    if (claimsExport) {
+      const passes = exportEvidenceClean(exports);
+      addEvidenceSignal(
+        signals,
+        'exportEvidence',
+        passes ? 'export-clean' : statusAt(exports) || 'export-evidence',
+        source,
+        'export evidence artifact',
+        {
+          passes,
+          reason: passes ? '' : 'export artifact/manifest evidence is unavailable or not clean',
+        },
+      );
+    }
   }
-  if (
-    /ui[-_\s]?equivalent|cmd\+k|playwright|semantic diff/i.test(statusText) &&
-    /validated|passing|passed|executable|done/i.test(statusText) &&
-    !/placeholder|todo|remainingExitCriteria/i.test(statusText)
-  ) {
-    addEvidenceSignal(signals, 'uiEquivalentPath', 'ui-equivalent-validated', source);
+
+  if (/ui-cmdk-traceability|ui-equivalence|ui-equivalent/i.test(sourceName)) {
+    const ui =
+      value.uiEquivalence && typeof value.uiEquivalence === 'object' ? value.uiEquivalence : value;
+    const pathKind = String(ui.pathKind ?? ui.kind ?? ui.mode ?? ui.status ?? '');
+    const semanticDiff =
+      ui.semanticDiff ??
+      ui.semanticReplayDiff ??
+      value.semanticDiff ??
+      value.semanticReplayDiff ??
+      ui.diff ??
+      value.diff;
+    const hasBlockers =
+      (Array.isArray(ui.remainingUiBlockers) && ui.remainingUiBlockers.length > 0) ||
+      (Array.isArray(ui.blockers) && ui.blockers.length > 0) ||
+      (Array.isArray(ui.todos) && ui.todos.length > 0) ||
+      (Array.isArray(ui.remainingExitCriteria) && ui.remainingExitCriteria.length > 0);
+    const passes = uiEquivalentEvidenceClean(ui);
+    addEvidenceSignal(
+      signals,
+      'uiEquivalentPath',
+      passes ? 'ui-equivalence-clean' : pathKind || statusAt(ui) || 'ui-equivalence',
+      source,
+      semanticDiff === undefined ? 'missing semantic diff' : 'semantic diff checked',
+      {
+        passes,
+        reason: passes
+          ? ''
+          : hasBlockers
+            ? 'UI-equivalence artifact still lists blockers or TODOs'
+            : 'UI-equivalence artifact is not executable, clean, and semantically equal',
+      },
+    );
   }
   return signals;
 }
 
 function flattenEvidenceExpectations(value, prefix = '') {
   if (!value || typeof value !== 'object') return [];
+  if (Array.isArray(value)) return [];
   const rows = [];
   for (const [key, child] of Object.entries(value)) {
     const id = prefix ? `${prefix}.${key}` : key;
-    if (child === true || child === false || typeof child === 'string') {
+    if (child === true || child === false) {
       rows.push({ id, status: String(child), todo: '' });
     } else if (child && typeof child === 'object') {
       if ('status' in child || 'todo' in child) {
@@ -906,6 +1229,7 @@ function flattenEvidenceExpectations(value, prefix = '') {
           status: String(child.status ?? 'declared'),
           todo: String(child.todo ?? ''),
         });
+        continue;
       }
       rows.push(...flattenEvidenceExpectations(child, id));
     }
@@ -961,6 +1285,10 @@ function parseBenchmarkEvidence() {
           row.status,
           expectedPath,
           row.todo,
+          {
+            passes: false,
+            reason: 'expected-semantics metadata is documentation, not live dry-run evidence',
+          },
         );
       }
       if (/live[-_\s]?commit/i.test(row.id)) {
@@ -970,6 +1298,10 @@ function parseBenchmarkEvidence() {
           row.status,
           expectedPath,
           row.todo,
+          {
+            passes: false,
+            reason: 'expected-semantics metadata is documentation, not live commit evidence',
+          },
         );
       }
       if (/advisor|validation|constructability/i.test(row.id)) {
@@ -979,6 +1311,11 @@ function parseBenchmarkEvidence() {
           row.status,
           expectedPath,
           row.todo,
+          {
+            passes: false,
+            reason:
+              'expected-semantics metadata is documentation, not committed advisor/validation evidence',
+          },
         );
       }
       if (/screenshot|visual|render/i.test(row.id)) {
@@ -988,10 +1325,17 @@ function parseBenchmarkEvidence() {
           row.status,
           expectedPath,
           row.todo,
+          {
+            passes: false,
+            reason: 'expected-semantics metadata is documentation, not visual/render evidence',
+          },
         );
       }
       if (/export|ifc|gltf|glb|pdf/i.test(row.id)) {
-        addEvidenceSignal(evidenceSignals, 'exportEvidence', row.status, expectedPath, row.todo);
+        addEvidenceSignal(evidenceSignals, 'exportEvidence', row.status, expectedPath, row.todo, {
+          passes: false,
+          reason: 'expected-semantics metadata is documentation, not export evidence',
+        });
       }
     }
     for (const row of pathRows) {
@@ -1015,6 +1359,10 @@ function parseBenchmarkEvidence() {
           row.status,
           expectedPath,
           row.todo,
+          {
+            passes: false,
+            reason: 'benchmark path metadata is not a clean live dry-run artifact',
+          },
         );
       }
       if (
@@ -1037,10 +1385,17 @@ function parseBenchmarkEvidence() {
           row.status,
           expectedPath,
           row.todo,
+          {
+            passes: false,
+            reason: 'benchmark path metadata is not a clean live commit artifact',
+          },
         );
       }
       if (/ui/i.test(row.id)) {
-        addEvidenceSignal(evidenceSignals, 'uiEquivalentPath', row.status, expectedPath, row.todo);
+        addEvidenceSignal(evidenceSignals, 'uiEquivalentPath', row.status, expectedPath, row.todo, {
+          passes: false,
+          reason: 'benchmark path metadata is not executable UI-equivalence evidence',
+        });
       }
     }
     const mcpCliPath = paths.mcpCli && typeof paths.mcpCli === 'object' ? paths.mcpCli : {};
@@ -1052,9 +1407,19 @@ function parseBenchmarkEvidence() {
         liveDryRun.status,
         expectedPath,
         liveDryRun.mode ? `mode=${liveDryRun.mode}` : '',
+        {
+          passes: false,
+          reason: 'benchmark liveDryRun metadata is optional configuration, not run evidence',
+        },
       );
     }
-    for (const relPath of listBenchmarkEvidenceFiles(dir)) {
+    const artifactPaths = [
+      ...new Set([
+        ...listBenchmarkEvidenceFiles(dir),
+        ...listGeneratedEvidenceFilesForBenchmark(expected.benchmarkId ?? path.basename(dir)),
+      ]),
+    ].sort();
+    for (const relPath of artifactPaths) {
       evidenceSignals.push(...collectJsonEvidenceSignals(parseJsonFile(relPath), relPath));
     }
     return {
@@ -1064,6 +1429,7 @@ function parseBenchmarkEvidence() {
       commandBundle: fs.existsSync(path.join(ROOT, bundlePath)) ? bundlePath : '',
       pathStatus: pathRows,
       evidenceExpectations: evidenceRows,
+      evidenceArtifactPaths: artifactPaths,
       commandTypes,
       toolMarkers: toolMarkers.sort((a, b) => a.toolId.localeCompare(b.toolId)),
       evidenceSignals: evidenceSignals.sort(
@@ -1247,6 +1613,13 @@ function benchmarkSignalsForGate(benchmarkEvidence, gateId) {
   );
 }
 
+function formatSignalReason(signal) {
+  const status = signal.status ? `status=${signal.status}` : 'status=unknown';
+  const reason = signal.reason || evidenceRejectionReason(signal.status, signal.detail);
+  const detail = signal.detail ? ` detail=${signal.detail}` : '';
+  return `${signal.benchmarkId || 'audit'}:${signal.source || 'unknown source'} ${status}${detail} (${reason})`;
+}
+
 function buildM2ClosureGates(firstPack, benchmarkEvidence) {
   const surfaceMissing = firstPack.filter((row) => row.status !== 'present');
   return M2_CLOSURE_GATES.map((gate) => {
@@ -1260,6 +1633,9 @@ function buildM2ClosureGates(firstPack, benchmarkEvidence) {
         blocker: surfaceMissing.length
           ? `${gate.blocker} Missing/partial: ${surfaceMissing.map((row) => row.id).join(', ')}.`
           : '',
+        blockerDetails: surfaceMissing.map(
+          (row) => `${row.id}: ${row.status}; source=${row.source || 'none'}`,
+        ),
         evidence: firstPack
           .filter((row) => row.status === 'present')
           .map((row) => ({
@@ -1274,13 +1650,21 @@ function buildM2ClosureGates(firstPack, benchmarkEvidence) {
     }
     const signals = benchmarkSignalsForGate(benchmarkEvidence, gate.id);
     const passing = signals.filter((signal) => signal.passes);
+    const rejected = signals.filter((signal) => !signal.passes);
+    const blockerDetails = rejected.map(formatSignalReason);
+    const blocker = passing.length
+      ? ''
+      : blockerDetails.length
+        ? `${gate.blocker} Rejected evidence: ${blockerDetails.join('; ')}.`
+        : gate.blocker;
     return {
       id: gate.id,
       label: gate.label,
       status: passing.length ? 'passed' : signals.length ? 'blocked' : 'missing',
       passed: passing.length > 0,
       evidenceCount: passing.length,
-      blocker: passing.length ? '' : gate.blocker,
+      blocker,
+      blockerDetails,
       evidence: signals,
     };
   });
@@ -1395,7 +1779,12 @@ function buildM2Summary(
   const closureGates = buildM2ClosureGates(firstPack, benchmarkEvidence);
   const closureBlockers = closureGates
     .filter((gate) => !gate.passed)
-    .map((gate) => ({ id: gate.id, label: gate.label, blocker: gate.blocker }));
+    .map((gate) => ({
+      id: gate.id,
+      label: gate.label,
+      blocker: gate.blocker,
+      blockerDetails: gate.blockerDetails ?? [],
+    }));
   return {
     firstPackExpectedCount: firstPack.length,
     firstPackPresentCount: firstPack.filter((row) => row.status === 'present').length,
@@ -1764,9 +2153,9 @@ function buildAudit() {
       'Route integrity normalizes FastAPI path params, known legacy bundle aliases, and websocket endpoints.',
       'UI surfaces from dynamically built tool capabilities are inferred from toolRegistry as ribbon and cmd-k.',
       'Unknown or missing metadata is emitted as "unknown" rather than guessed.',
-      'Benchmark evidence markers are traceability signals only unless they explicitly declare live typed dry-run/commit execution.',
-      'M2 closure gates classify benchmark statuses conservatively: todo, placeholder, optional, fixture, and capable statuses remain blockers even when they mention live execution.',
-      'Optional M2-K/L/M evidence artifacts are discovered only as JSON files in benchmark directories with names containing benchmark-result, execution-evidence, advisor, validation, visual, render, screenshot, export, ui-equivalence, or ui-equivalent.',
+      'Benchmark expected-semantics markers are documentation signals only; M2 closure gates require clean machine-readable artifact JSON.',
+      'M2 closure gates classify evidence statuses conservatively: todo, placeholder, optional, fixture, stale, failed, traceability-only, and capable statuses remain blockers even when they mention live execution.',
+      'M2 evidence artifacts are discovered as matching JSON files below benchmark directories and spec/generated; docs, traceability-only files, and generated audit ledgers are not passing evidence.',
     ],
     summary: {
       backendCommandCount: backendLedger.length,
@@ -2033,6 +2422,15 @@ function renderGapReport(audit) {
     for (const marker of benchmark.toolMarkers) {
       rows.push([benchmark.id, marker.toolId, marker.status, marker.note || 'none', marker.source]);
     }
+    for (const artifactPath of benchmark.evidenceArtifactPaths ?? []) {
+      rows.push([
+        benchmark.id,
+        'evidence-artifact',
+        'discovered',
+        'machine-readable JSON',
+        artifactPath,
+      ]);
+    }
     return rows;
   });
   const closureRows = audit.m2.closureGates.map((gate) => [
@@ -2041,7 +2439,12 @@ function renderGapReport(audit) {
     gate.evidenceCount,
     gate.blocker || 'none',
     (gate.evidence ?? [])
-      .map((item) => `${item.benchmarkId || 'audit'}:${item.status}@${item.source || 'source'}`)
+      .map(
+        (item) =>
+          `${item.benchmarkId || 'audit'}:${item.status}@${item.source || 'source'}${
+            item.passes ? '' : ` (${item.reason || 'rejected'})`
+          }`,
+      )
       .join(', ') || 'none',
   ]);
   const sections = [
