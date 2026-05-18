@@ -1,0 +1,60 @@
+{
+  "schemaVersion": "bim-ai.professional-benchmark.scenario.v1",
+  "scenarioId": "documentation-pack",
+  "title": "Advanced Documentation Pack",
+  "sourceOfIntent": "spec/ui-mcp-parity-tracker.md#same-house-parity-benchmarks",
+  "lifecycle": "m4-wave1-placeholder",
+  "summary": "Professional M4 documentation benchmark seed for advanced sheets, views, schedules, revisions, branded exports, and document artifact checks.",
+  "fixtures": {
+    "expectedSemantics": null,
+    "mcpCliCommandBundle": null,
+    "uiCmdKTraceability": null,
+    "uiEquivalence": null,
+    "liveEvidenceDirectory": null
+  },
+  "runner": {
+    "kind": "not-yet-implemented",
+    "command": null,
+    "mutatesModel": false
+  },
+  "evidence": {
+    "ui": {
+      "classification": "missing",
+      "status": "missing",
+      "artifacts": []
+    },
+    "cmdK": {
+      "classification": "missing",
+      "status": "missing",
+      "artifacts": []
+    },
+    "mcpCli": {
+      "classification": "missing",
+      "status": "missing",
+      "artifacts": []
+    },
+    "advisor": {
+      "classification": "missing",
+      "status": "missing",
+      "artifacts": []
+    },
+    "visual": {
+      "classification": "missing",
+      "status": "missing",
+      "artifacts": []
+    },
+    "export": {
+      "classification": "missing",
+      "status": "missing",
+      "artifacts": []
+    },
+    "semanticDiff": {
+      "classification": "missing",
+      "status": "missing",
+      "artifacts": []
+    }
+  },
+  "remainingBlockers": [
+    "M4-E has not yet landed first-class advanced documentation descriptors with executable fixture evidence."
+  ]
+}

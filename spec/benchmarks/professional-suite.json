@@ -1,0 +1,39 @@
+{
+  "schemaVersion": "bim-ai.professional-benchmark.suite.v1",
+  "suiteId": "m4-professional-domain-packs",
+  "sourceOfIntent": "spec/ui-mcp-parity-tracker.md#milestone-4-wave-1-workstreams",
+  "milestone": "M4-F",
+  "requiredEvidenceKinds": ["ui", "cmdK", "mcpCli", "advisor", "visual", "export", "semanticDiff"],
+  "scenarios": [
+    {
+      "scenarioId": "site-and-context-house",
+      "directory": "site-and-context-house",
+      "scenarioSpec": "scenario.json",
+      "workstreams": ["M4-A"]
+    },
+    {
+      "scenarioId": "structure-and-mep-lite",
+      "directory": "structure-and-mep-lite",
+      "scenarioSpec": "scenario.json",
+      "workstreams": ["M4-B", "M4-C"]
+    },
+    {
+      "scenarioId": "families-assets-materials",
+      "directory": "families-assets-materials",
+      "scenarioSpec": "scenario.json",
+      "workstreams": ["M4-D"]
+    },
+    {
+      "scenarioId": "documentation-pack",
+      "directory": "documentation-pack",
+      "scenarioSpec": "scenario.json",
+      "workstreams": ["M4-E"]
+    },
+    {
+      "scenarioId": "presentation-pack",
+      "directory": "presentation-pack",
+      "scenarioSpec": "scenario.json",
+      "workstreams": ["M4-E"]
+    }
+  ]
+}

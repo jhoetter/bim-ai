@@ -220,6 +220,143 @@ const M3_WAVE3_WORKSTREAMS = [
   },
 ];
 
+const M4_WAVE1_WORKSTREAMS = [
+  {
+    id: 'M4-A',
+    label: 'Site/context first-class MCP pack',
+    domain: 'site-context',
+    scenarioIds: ['site-and-context-house'],
+    requiredSurfaceGroups: [
+      {
+        id: 'toposolid-authoring',
+        label: 'Toposolid create/update authoring',
+        acceptedStableIds: ['site.toposolid.upsert', 'site.create_toposolid', 'create_toposolid'],
+      },
+      {
+        id: 'grading-property-line-georeference',
+        label: 'Grading, property line, and georeference tools',
+        acceptedStableIds: [
+          'site.graded_region',
+          'site.property_line',
+          'site.base_survey_point',
+          'site.sun_settings',
+          'site.context_import',
+        ],
+      },
+    ],
+  },
+  {
+    id: 'M4-B',
+    label: 'Structure and construction-lite MCP pack',
+    domain: 'structure-construction',
+    scenarioIds: ['structure-and-mep-lite'],
+    requiredSurfaceGroups: [
+      {
+        id: 'structural-authoring',
+        label: 'Structural column and beam authoring',
+        acceptedStableIds: [
+          'structure.column.place',
+          'structure.beam.place',
+          'author.column',
+          'author.beam',
+        ],
+      },
+      {
+        id: 'construction-lite',
+        label: 'Construction package, logistics, and checklist tools',
+        acceptedStableIds: [
+          'construction.package.create',
+          'construction.logistics.create',
+          'construction.qa_checklist.upsert',
+        ],
+      },
+    ],
+  },
+  {
+    id: 'M4-C',
+    label: 'MEP-lite MCP pack',
+    domain: 'mep-lite',
+    scenarioIds: ['structure-and-mep-lite'],
+    requiredSurfaceGroups: [
+      {
+        id: 'mep-route-authoring',
+        label: 'Pipe, duct, and cable route authoring',
+        acceptedStableIds: [
+          'mep.pipe_route.create',
+          'mep.duct_route.create',
+          'mep.cable_route.create',
+        ],
+      },
+      {
+        id: 'mep-equipment-fixtures-openings',
+        label: 'MEP equipment, fixtures, terminals, and opening requests',
+        acceptedStableIds: [
+          'mep.equipment.place',
+          'mep.fixture.place',
+          'mep.terminal.place',
+          'mep.opening_request.create',
+        ],
+      },
+    ],
+  },
+  {
+    id: 'M4-D',
+    label: 'Families, assets, materials, decals pack',
+    domain: 'families-assets-materials',
+    scenarioIds: ['families-assets-materials'],
+    requiredSurfaceGroups: [
+      {
+        id: 'family-asset-catalog',
+        label: 'Family type upsert, catalog query, and asset placement',
+        acceptedStableIds: [
+          'family.type.upsert',
+          'family.catalog.query',
+          'asset.place',
+          'asset.kit.place',
+        ],
+      },
+      {
+        id: 'material-decal-authoring',
+        label: 'PBR material update, assignment, paint, and decals',
+        acceptedStableIds: [
+          'material.pbr.upsert',
+          'material.assign',
+          'material.paint_face',
+          'decal.place',
+        ],
+      },
+    ],
+  },
+  {
+    id: 'M4-E',
+    label: 'Presentation, branded export, and advanced docs',
+    domain: 'presentation-advanced-docs',
+    scenarioIds: ['documentation-pack', 'presentation-pack'],
+    requiredSurfaceGroups: [
+      {
+        id: 'presentation-pack',
+        label: 'Presentation frames, branded templates, render bundle, and share/export',
+        acceptedStableIds: [
+          'presentation.frame.create',
+          'presentation.template.apply',
+          'presentation.render_bundle.create',
+          'presentation.share',
+        ],
+      },
+      {
+        id: 'advanced-documentation',
+        label: 'Advanced sheets, schedules, revisions, and documentation exports',
+        acceptedStableIds: [
+          'document.advanced_sheet.create',
+          'document.schedule.advanced',
+          'document.revision.create',
+          'export.branded_pack',
+        ],
+      },
+    ],
+  },
+];
+
 function read(relPath) {
   try {
     return fs.readFileSync(path.join(ROOT, relPath), 'utf8');
@@ -2554,6 +2691,7 @@ function buildAudit() {
   const m3 = buildM3Governance(backendLedger, cmdkLedger, apiLedger);
   const m3Wave2 = buildM3Wave2(apiLedger);
   const m3Wave3 = buildM3Wave3(apiLedger, backendLedger);
+  const m4Wave1 = buildM4Wave1(apiLedger);
 
   const m2 = buildM2Summary(
     apiLedger,
@@ -2584,6 +2722,14 @@ function buildAudit() {
       priority: 'P0',
       domain: 'm3-wave3',
       kind: 'm3-wave3-gate-blocked',
+      id: gate.id,
+      status: 'Gap',
+      detail: gate.blocker,
+    })),
+    ...m4Wave1.blockers.map((gate) => ({
+      priority: 'P0',
+      domain: 'm4-wave1',
+      kind: 'm4-wave1-gate-blocked',
       id: gate.id,
       status: 'Gap',
       detail: gate.blocker,
@@ -2698,6 +2844,7 @@ function buildAudit() {
       'M2 evidence artifacts are discovered as matching JSON files below benchmark directories and spec/generated; docs, traceability-only files, and generated audit ledgers are not passing evidence.',
       'M3 Wave 2 gates are evidence aggregators only: CLI-only mappings, scenario seeds, traceability-only UI files, PDF shells, and generic transaction metadata can make a workstream Partial but not Done.',
       'M3 Wave 3 gates are evidence aggregators only: raw vertical-circulation bundles, traceability-only two-storey UI/Cmd+K artifacts, unavailable export artifacts, and generic transaction metadata can make a workstream Partial but not Done.',
+      'M4 Wave 1 gates are domain-pack aggregators only: raw apply-bundle reachability, Cmd+K activators, and placeholder professional scenarios are blockers until first-class descriptors and executable or validated replay evidence land.',
     ],
     summary: {
       backendCommandCount: backendLedger.length,
@@ -2765,6 +2912,12 @@ function buildAudit() {
       m3Wave3GateExpected: m3Wave3.summary.gatesExpected,
       m3Wave3BlockerCount: m3Wave3.summary.blockerCount,
       m3Wave3NextWaveItemCount: m3Wave3.summary.nextWaveItemCount,
+      m4Status: m4Wave1.status === 'Done' ? 'Done' : 'Partial',
+      m4Wave1Status: m4Wave1.status,
+      m4Wave1GatePassed: m4Wave1.summary.gatesPassed,
+      m4Wave1GateExpected: m4Wave1.summary.gatesExpected,
+      m4Wave1BlockerCount: m4Wave1.summary.blockerCount,
+      m4Wave1NextWaveItemCount: m4Wave1.summary.nextWaveItemCount,
     },
     m2,
     m3: {
@@ -2779,6 +2932,10 @@ function buildAudit() {
           : m3Wave2.status === 'Not Started' && m3Wave3.status === 'Not Started'
             ? 'Partial'
             : 'Partial',
+    },
+    m4: {
+      status: m4Wave1.status === 'Done' ? 'Done' : 'Partial',
+      wave1: m4Wave1,
     },
     benchmarkEvidence,
     backendCommands: backendLedger,
@@ -3019,6 +3176,15 @@ function classifyRawCommandForM3(row) {
 }
 
 function classifyDescriptorForM3(row, backendCommandIds) {
+  if (row.id === UNKNOWN) {
+    return {
+      disposition: 'tracked',
+      category: 'parser-placeholder',
+      detail:
+        'Static descriptor parser emitted an unknown placeholder; excluded from public surface governance until it has a stable id.',
+      unknownKernelCommands: [],
+    };
+  }
   const kernelCommands = (row.kernelCommands ?? []).filter((id) => id !== '*');
   const backendCommandList = [...backendCommandIds];
   const unknownKernelCommands = kernelCommands.filter(
@@ -4256,6 +4422,267 @@ function buildM3Wave3(apiLedger, backendLedger) {
   };
 }
 
+function m4ScenarioPath(scenarioId) {
+  return `spec/benchmarks/${scenarioId}/scenario.json`;
+}
+
+function loadProfessionalBenchmarkSuite() {
+  const suitePath = 'spec/benchmarks/professional-suite.json';
+  const suite = parseJsonFile(suitePath);
+  const scenarioIds = Array.isArray(suite?.scenarios)
+    ? suite.scenarios.map((entry) => entry.scenarioId).filter(Boolean)
+    : [];
+  const scenarios = Object.fromEntries(
+    scenarioIds.map((scenarioId) => [scenarioId, parseJsonFile(m4ScenarioPath(scenarioId))]),
+  );
+  return { suitePath, suite, scenarioIds, scenarios };
+}
+
+function m4ScenarioEvidenceSignal(scenarioId, kind, suiteInfo) {
+  const source = m4ScenarioPath(scenarioId);
+  const scenario = suiteInfo.scenarios[scenarioId];
+  const entry = scenario?.evidence?.[kind];
+  if (!scenario) {
+    return {
+      type: 'professional-scenario-evidence',
+      status: 'missing',
+      source,
+      detail: `${scenarioId} scenario is missing.`,
+      passes: false,
+      reason: `${source} is missing.`,
+    };
+  }
+  if (!entry || typeof entry !== 'object') {
+    return {
+      type: 'professional-scenario-evidence',
+      status: 'missing',
+      source,
+      detail: `${kind} evidence is missing.`,
+      passes: false,
+      reason: `${kind} evidence is missing from ${source}.`,
+    };
+  }
+  const status = String(entry.status ?? entry.classification ?? 'missing');
+  const classification = String(entry.classification ?? 'missing');
+  const passes =
+    ['executable', 'validated-replay'].includes(classification) &&
+    isPositiveEvidenceStatus(status) &&
+    !isBlockingEvidenceStatus(status) &&
+    entry.pass !== false;
+  return {
+    type: 'professional-scenario-evidence',
+    status: passes ? 'passed' : status,
+    source,
+    detail: `${scenarioId}.${kind}: ${classification} / ${status}`,
+    passes,
+    reason: passes ? '' : evidenceRejectionReason(status, classification),
+  };
+}
+
+function buildM4DomainWorkstream(config, apiLedger, suiteInfo) {
+  const descriptorGates = config.requiredSurfaceGroups.map((group) => {
+    const evidence = group.acceptedStableIds.map((id) =>
+      implementedDescriptorEvidence(apiLedger, [id], SOURCES.apiRegistry),
+    );
+    const passed = evidence.some((item) => item.passes);
+    return m3Gate(
+      group.id,
+      group.label,
+      passed,
+      `${group.label} lacks an implemented first-class API/MCP descriptor; raw apply-bundle reachability does not count for M4.`,
+      evidence,
+      evidence.some((item) => item.status !== 'missing'),
+    );
+  });
+  const scenarioSignals = config.scenarioIds.map((scenarioId) => {
+    const scenario = suiteInfo.scenarios[scenarioId];
+    return {
+      type: 'professional-scenario',
+      status: scenario ? 'present' : 'missing',
+      source: m4ScenarioPath(scenarioId),
+      detail: scenario?.summary ?? `${scenarioId} scenario missing.`,
+      passes: Boolean(scenario),
+      reason: scenario ? '' : `${m4ScenarioPath(scenarioId)} is missing.`,
+    };
+  });
+  const mcpCliSignals = config.scenarioIds.map((scenarioId) =>
+    m4ScenarioEvidenceSignal(scenarioId, 'mcpCli', suiteInfo),
+  );
+  const uiSignals = config.scenarioIds.flatMap((scenarioId) => [
+    m4ScenarioEvidenceSignal(scenarioId, 'ui', suiteInfo),
+    m4ScenarioEvidenceSignal(scenarioId, 'cmdK', suiteInfo),
+  ]);
+  const qualitySignals = config.scenarioIds.flatMap((scenarioId) => [
+    m4ScenarioEvidenceSignal(scenarioId, 'advisor', suiteInfo),
+    m4ScenarioEvidenceSignal(scenarioId, 'visual', suiteInfo),
+    m4ScenarioEvidenceSignal(scenarioId, 'export', suiteInfo),
+    m4ScenarioEvidenceSignal(scenarioId, 'semanticDiff', suiteInfo),
+  ]);
+  const gates = [
+    ...descriptorGates,
+    m3Gate(
+      'benchmark-scenario-fixtures',
+      'Professional benchmark scenario fixtures',
+      scenarioSignals.every((item) => item.passes),
+      `${config.label} benchmark scenario fixture(s) are missing from the professional suite.`,
+      scenarioSignals,
+      scenarioSignals.some((item) => item.passes),
+    ),
+    m3Gate(
+      'mcp-cli-benchmark-evidence',
+      'MCP/CLI executable benchmark evidence',
+      mcpCliSignals.every((item) => item.passes),
+      `${config.label} lacks executable MCP/CLI benchmark evidence.`,
+      mcpCliSignals,
+      mcpCliSignals.some((item) => item.status !== 'missing'),
+    ),
+    m3Gate(
+      'ui-cmdk-equivalence-evidence',
+      'UI and Cmd+K executable or validated replay evidence',
+      uiSignals.every((item) => item.passes),
+      `${config.label} lacks UI/Cmd+K executable or validated replay evidence; activator-only mappings are excluded.`,
+      uiSignals,
+      uiSignals.some((item) => item.status !== 'missing'),
+    ),
+    m3Gate(
+      'quality-export-semantic-evidence',
+      'Advisor, visual, export, and semantic-diff evidence',
+      qualitySignals.every((item) => item.passes),
+      `${config.label} lacks accepted advisor, visual, export, or semantic-diff evidence.`,
+      qualitySignals,
+      qualitySignals.some((item) => item.status !== 'missing'),
+    ),
+  ];
+  return {
+    id: config.id,
+    label: config.label,
+    domain: config.domain,
+    scenarioIds: config.scenarioIds,
+    status: statusFromGates(gates),
+    gatesPassed: gates.filter((gate) => gate.passed).length,
+    gatesExpected: gates.length,
+    gates,
+  };
+}
+
+function buildM4AuditWorkstream(domainWorkstreams, suiteInfo) {
+  const plannedWorkstreamIds = M4_WAVE1_WORKSTREAMS.map((row) => row.id);
+  const observedWorkstreamIds = new Set(domainWorkstreams.map((row) => row.id));
+  const suitePresent = Boolean(suiteInfo.suite);
+  const suiteScenarioIds = new Set(suiteInfo.scenarioIds);
+  const plannedScenarioIds = new Set(M4_WAVE1_WORKSTREAMS.flatMap((row) => row.scenarioIds));
+  const scenarioCoverage = [...plannedScenarioIds].every((id) => suiteScenarioIds.has(id));
+  const reportInputsComplete = plannedWorkstreamIds.every((id) => observedWorkstreamIds.has(id));
+  const gates = [
+    m3Gate(
+      'professional-suite-manifest',
+      'Professional benchmark suite manifest',
+      suitePresent && scenarioCoverage,
+      'Professional benchmark suite manifest is missing one or more M4 domain scenarios.',
+      [
+        {
+          type: 'professional-suite',
+          status: suitePresent ? 'present' : 'missing',
+          source: suiteInfo.suitePath,
+          detail: `scenario coverage ${suiteInfo.scenarioIds.length} / ${plannedScenarioIds.size}`,
+          passes: suitePresent && scenarioCoverage,
+        },
+      ],
+      suitePresent,
+    ),
+    m3Gate(
+      'wave1-workstreams-enumerated',
+      'Wave 1 domain workstreams enumerated',
+      reportInputsComplete,
+      'M4 audit did not enumerate every M4-A through M4-E domain workstream.',
+      plannedWorkstreamIds.map((id) => ({
+        type: 'audit-workstream',
+        status: observedWorkstreamIds.has(id) ? 'present' : 'missing',
+        source: 'scripts/audit-ui-mcp-parity.mjs',
+        detail: id,
+        passes: observedWorkstreamIds.has(id),
+      })),
+      domainWorkstreams.length > 0,
+    ),
+    m3Gate(
+      'blocker-ledger-derived',
+      'Blocker ledger and next wave schedule derived from gates',
+      reportInputsComplete,
+      'M4 audit cannot derive blocker ledgers until all domain workstream gates are visible.',
+      [
+        {
+          type: 'audit-report',
+          status: reportInputsComplete ? 'derived' : 'incomplete',
+          source: 'scripts/audit-ui-mcp-parity.mjs',
+          detail:
+            'Generated M4 reports rank remaining M4-A through M4-E blockers by workstream and gate.',
+          passes: reportInputsComplete,
+        },
+      ],
+      domainWorkstreams.length > 0,
+    ),
+  ];
+  return {
+    id: 'M4-F',
+    label: 'Professional benchmark suite and M4 audit gates',
+    domain: 'm4-audit',
+    status: statusFromGates(gates),
+    gatesPassed: gates.filter((gate) => gate.passed).length,
+    gatesExpected: gates.length,
+    gates,
+  };
+}
+
+function buildM4Wave1(apiLedger) {
+  const suiteInfo = loadProfessionalBenchmarkSuite();
+  const domainWorkstreams = M4_WAVE1_WORKSTREAMS.map((config) =>
+    buildM4DomainWorkstream(config, apiLedger, suiteInfo),
+  );
+  const workstreams = [...domainWorkstreams, buildM4AuditWorkstream(domainWorkstreams, suiteInfo)];
+  const gates = workstreams.flatMap((workstream) =>
+    workstream.gates.map((gate) => ({
+      workstreamId: workstream.id,
+      workstreamLabel: workstream.label,
+      ...gate,
+    })),
+  );
+  const blockers = gates
+    .filter((gate) => !gate.passed)
+    .map((gate) => ({
+      id: `${gate.workstreamId}:${gate.id}`,
+      blocker: gate.blocker,
+    }));
+  const status = workstreams.every((workstream) => workstream.status === 'Done')
+    ? 'Done'
+    : workstreams.some((workstream) => workstream.status !== 'Not Started')
+      ? 'Partial'
+      : 'Not Started';
+  return {
+    status,
+    suite: {
+      source: suiteInfo.suitePath,
+      suiteId: suiteInfo.suite?.suiteId ?? 'missing',
+      scenarioIds: suiteInfo.scenarioIds,
+    },
+    workstreams,
+    gates,
+    blockers,
+    nextWaveSchedule: blockers.map((blocker, index) => ({
+      order: index + 1,
+      sourceBlocker: blocker.id,
+      recommendedFocus: blocker.blocker,
+    })),
+    summary: {
+      status,
+      workstreamStatusCounts: countBy(workstreams, (row) => row.status),
+      gatesExpected: gates.length,
+      gatesPassed: gates.filter((gate) => gate.passed).length,
+      blockerCount: blockers.length,
+      nextWaveItemCount: blockers.length,
+    },
+  };
+}
+
 function countBy(rows, keyFn) {
   const counts = {};
   for (const row of rows) {
@@ -4566,6 +4993,77 @@ function renderM3Wave3Report(audit) {
   ].join('\n\n');
 }
 
+function renderM4Wave1Report(audit) {
+  const wave1 = audit.m4.wave1;
+  return [
+    '# M4 Wave 1 Parity Report',
+    sourceStamp(audit),
+    `M4 status: ${audit.m4.status}`,
+    `M4 Wave 1 status: ${wave1.status}`,
+    `M4 Wave 1 gates passed: ${wave1.summary.gatesPassed} / ${wave1.summary.gatesExpected}`,
+    `M4 Wave 1 blockers: ${wave1.summary.blockerCount}`,
+    `Professional suite: ${wave1.suite.suiteId} (${wave1.suite.source})`,
+    table(
+      ['Workstream', 'Label', 'Status', 'Gates', 'Scenarios', 'Blockers'],
+      wave1.workstreams.map((workstream) => [
+        workstream.id,
+        workstream.label,
+        workstream.status,
+        `${workstream.gatesPassed} / ${workstream.gatesExpected}`,
+        (workstream.scenarioIds ?? []).join(', ') || 'none',
+        workstream.gates
+          .filter((gate) => !gate.passed)
+          .map((gate) => `${gate.id}: ${gate.blocker}`)
+          .join('; ') || 'none',
+      ]),
+    ),
+    '## Gates',
+    table(
+      ['Workstream', 'Gate', 'Status', 'Blocker', 'Evidence'],
+      wave1.gates.map((gate) => [
+        gate.workstreamId,
+        gate.label,
+        gate.status,
+        gate.blocker || 'none',
+        (gate.evidence ?? [])
+          .map((item) => `${item.status}@${item.source}`)
+          .slice(0, 8)
+          .join('<br>') || 'none',
+      ]),
+    ),
+    '## Next Wave Schedule',
+    wave1.nextWaveSchedule.length
+      ? table(
+          ['Order', 'Source blocker', 'Recommended focus'],
+          wave1.nextWaveSchedule.map((item) => [
+            item.order,
+            item.sourceBlocker,
+            item.recommendedFocus,
+          ]),
+        )
+      : 'No remaining M4 Wave 1 blockers were detected.',
+  ].join('\n\n');
+}
+
+function renderM4BlockerLedger(audit) {
+  const wave1 = audit.m4.wave1;
+  return [
+    '# M4 Blocker Ledger',
+    sourceStamp(audit),
+    `M4 status: ${audit.m4.status}`,
+    `M4 Wave 1 gates passed: ${wave1.summary.gatesPassed} / ${wave1.summary.gatesExpected}`,
+    wave1.blockers.length
+      ? table(
+          ['Priority', 'Source blocker', 'Workstream', 'Blocker'],
+          wave1.blockers.map((blocker) => {
+            const workstreamId = blocker.id.split(':')[0];
+            return ['P0', blocker.id, workstreamId, blocker.blocker];
+          }),
+        )
+      : 'No M4 blockers were detected.',
+  ].join('\n\n');
+}
+
 function renderGapReport(audit) {
   const m2TableHeaders = [
     'M2 tool',
@@ -4682,6 +5180,29 @@ function renderGapReport(audit) {
         item.recommendedFocus,
       ]),
     ),
+    '## M4 Wave 1 Summary',
+    `M4 status: ${audit.summary.m4Status}`,
+    `M4 Wave 1 status: ${audit.summary.m4Wave1Status}`,
+    `M4 Wave 1 gates passed: ${audit.summary.m4Wave1GatePassed} / ${audit.summary.m4Wave1GateExpected}`,
+    `M4 Wave 1 blockers: ${audit.summary.m4Wave1BlockerCount}`,
+    `Next-wave schedule items: ${audit.summary.m4Wave1NextWaveItemCount}`,
+    table(
+      ['Workstream', 'Status', 'Gates', 'Primary blocker'],
+      audit.m4.wave1.workstreams.map((workstream) => [
+        `${workstream.id} ${workstream.label}`,
+        workstream.status,
+        `${workstream.gatesPassed} / ${workstream.gatesExpected}`,
+        workstream.gates.find((gate) => !gate.passed)?.blocker ?? 'none',
+      ]),
+    ),
+    table(
+      ['Order', 'Source blocker', 'Recommended focus'],
+      audit.m4.wave1.nextWaveSchedule.map((item) => [
+        item.order,
+        item.sourceBlocker,
+        item.recommendedFocus,
+      ]),
+    ),
     table(
       ['Priority', 'Category', 'Domain', 'Command', 'Workstream', 'Rationale'],
       audit.m3.rawCommandPromotionPlan
@@ -4755,8 +5276,9 @@ function sourceStamp(audit) {
   return `Generated by \`node scripts/audit-ui-mcp-parity.mjs --out spec/generated/ui-mcp-parity.json\` at ${audit.generatedAt}. Source of intent: \`${audit.sourceOfIntent}\`.`;
 }
 
-function assertUniqueIds(label, rows) {
-  const duplicates = duplicateIds(rows);
+function assertUniqueIds(label, rows, options = {}) {
+  const filteredRows = options.ignoreUnknown ? rows.filter((row) => row.id !== UNKNOWN) : rows;
+  const duplicates = duplicateIds(filteredRows);
   if (duplicates.length) {
     throw new Error(`${label} contains duplicate ids: ${duplicates.sort().join(', ')}`);
   }
@@ -4773,7 +5295,7 @@ function duplicateIds(rows) {
 }
 
 function validateAudit(audit) {
-  assertUniqueIds('API descriptor ledger', audit.apiDescriptors);
+  assertUniqueIds('API descriptor ledger', audit.apiDescriptors, { ignoreUnknown: true });
   if (audit.m2.firstPack.length !== M2_FIRST_PACK_TOOLS.length) {
     throw new Error('M2 first-pack summary length drifted from the expected tool list.');
   }
@@ -4793,6 +5315,13 @@ function validateAudit(audit) {
         .map((gate) => `${gate.id}: ${gate.blocker}`)
         .join('; ')}`,
     );
+  }
+  if (audit.m4.status === 'Done' && audit.m4.wave1.gates.some((gate) => !gate.passed)) {
+    throw new Error('M4 cannot be Done while any Wave 1 gate is blocked.');
+  }
+  const m4Audit = audit.m4.wave1.workstreams.find((workstream) => workstream.id === 'M4-F');
+  if (!m4Audit) {
+    throw new Error('M4 Wave 1 audit workstream M4-F is missing.');
   }
 }
 
@@ -4825,6 +5354,14 @@ async function main() {
   await writeMarkdown(
     path.join(args.generatedDir, 'm3-wave3-report.md'),
     renderM3Wave3Report(audit),
+  );
+  await writeMarkdown(
+    path.join(args.generatedDir, 'm4-wave1-report.md'),
+    renderM4Wave1Report(audit),
+  );
+  await writeMarkdown(
+    path.join(args.generatedDir, 'm4-blocker-ledger.md'),
+    renderM4BlockerLedger(audit),
   );
   await writeMarkdown(path.join(args.generatedDir, 'parity-gap-report.md'), renderGapReport(audit));
   console.log(

@@ -34,3 +34,10 @@ MCP/CLI semantic runner, advisor/visual/export route evidence, and UI/Cmd+K
 traceability, but stair, slab opening, and railing creation are still raw bundle
 only. UI/Cmd+K remains traceability-only until a browser-authored exact replay is
 available.
+
+The M4 professional-domain suite is `professional-suite.json`. It enumerates
+the first benchmark slots for `site-and-context-house`,
+`structure-and-mep-lite`, `families-assets-materials`, `documentation-pack`, and
+`presentation-pack`. These M4 scenarios are intentionally placeholder fixtures
+until the M4-A through M4-E feature lanes land first-class descriptors and
+executable or validated replay evidence.

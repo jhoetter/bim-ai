@@ -1558,7 +1558,7 @@ domain benchmarks prove UI/Cmd+K and MCP/CLI equivalence.
 | M4-C. MEP-lite MCP pack                               | Not Started | MEP route/equipment/fixture/terminal/opening-request semantic tools, descriptors, CLI/tests, and a deterministic MEP-lite fixture.                        | MEP, structure-and-mep-lite downstream coordination.        | Agents can create simple pipe/duct/cable routes, equipment/fixtures/terminals, and MEP opening requests through typed MCP/CLI surfaces with system/elevation/service metadata.                                         |
 | M4-D. Families, assets, materials, decals pack        | Not Started | Family/asset/material/decal semantic tools, descriptors, CLI/tests, and catalog/material evidence; avoid presentation/site/MEP ownership.                 | Families/assets/materials.                                  | Agents can upsert family types, place family/assets/kits, update PBR materials, assign materials/paint/decal surfaces where supported, with catalog/query and evidence coverage.                                       |
 | M4-E. Presentation, branded export, and advanced docs | Not Started | Presentation decks/canvases/frames, branded templates, render bundles, advanced view/sheet/schedule/revision/documentation tools and evidence fixtures.   | Presentation/export, documentation-pack, presentation-pack. | Agents can create a client-facing presentation/documentation pack with frames, branded export/share, advanced sheets/views/schedules/revisions, and accepted export/render evidence.                                   |
-| M4-F. Professional benchmark suite and M4 audit gates | Not Started | Benchmark manifests/fixtures, audit/verifier scripts, generated reports, tracker Wave 1 result; consume other lanes but do not create feature behavior.   | M4 milestone reporting, generated evidence source of truth. | `pnpm verify:m4-parity` reports domain-pack status from source/evidence, generated ledgers identify remaining M4 blockers precisely, and the next M4 wave is scheduled from generated facts rather than hand optimism. |
+| M4-F. Professional benchmark suite and M4 audit gates | Done        | Benchmark manifests/fixtures, audit/verifier scripts, generated reports, tracker Wave 1 result; consume other lanes but do not create feature behavior.   | M4 milestone reporting, generated evidence source of truth. | `pnpm verify:m4-parity` reports domain-pack status from source/evidence, generated ledgers identify remaining M4 blockers precisely, and the next M4 wave is scheduled from generated facts rather than hand optimism. |
 
 ### Milestone 4 Wave 1 Scheduling Notes
 
@@ -1572,6 +1572,31 @@ domain benchmarks prove UI/Cmd+K and MCP/CLI equivalence.
 - M4-F owns generated M4 reports and verifier behavior. It should degrade
   gracefully if feature lanes have not landed yet and should keep M4 `Partial`
   until all generated gates pass.
+
+Wave 1 audit result:
+
+- `pnpm audit:ui-mcp-parity` now emits `spec/generated/m4-wave1-report.md`
+  and `spec/generated/m4-blocker-ledger.md` from source and benchmark evidence.
+- `pnpm verify:m4-parity` reports generated M4 Wave 1 status and keeps M4
+  `Partial` unless `BIM_AI_M4_REQUIRE_DONE=1` is set and all M4-A through M4-E
+  domain-pack gates pass.
+- Generated facts on 2026-05-18: M4-F is `Done`; M4-A, M4-B, M4-C, M4-D, and
+  M4-E remain blocked by missing first-class descriptors and executable or
+  validated replay benchmark evidence in the professional-domain fixture slots.
+
+### Milestone 4 Wave 2 Workstreams
+
+Milestone 4 Wave 2 should be scheduled from the generated M4 blocker ledger.
+The current next wave remains focused on closing the domain-pack evidence gaps,
+not on broadening M4 scope.
+
+| Workstream                                            | Status  | Owner scope                                                                                                                                                | Tracker items                                               | Done when                                                                                                                                                                                  |
+| ----------------------------------------------------- | ------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| M4-G. Site/context executable evidence closure        | Planned | First-class site/context descriptors, CLI/tests, and `site-and-context-house` executable or validated replay evidence; avoid M4 audit ownership.           | M4-A, site/context, `site-and-context-house`.               | Generated M4 gates pass for site/context descriptors, MCP/CLI evidence, UI/Cmd+K equivalence, and advisor/visual/export/semantic-diff evidence.                                            |
+| M4-H. Structure and MEP-lite executable evidence      | Planned | Structure/construction-lite and MEP-lite descriptors, CLI/tests, and `structure-and-mep-lite` evidence; coordinate shared fixture semantics.               | M4-B, M4-C, `structure-and-mep-lite`.                       | Generated M4 gates pass for structure, construction-lite, MEP routes/equipment/opening requests, and shared benchmark evidence without relying on raw apply-bundle reachability.           |
+| M4-I. Families/assets/materials executable evidence   | Planned | Families/assets/materials/decal descriptors, catalog/material fixtures, CLI/tests, and `families-assets-materials` evidence; avoid presentation ownership. | M4-D, families/assets/materials.                            | Generated M4 gates pass for family/catalog/asset and material/decal descriptor groups plus executable or validated replay professional benchmark evidence.                                 |
+| M4-J. Presentation and advanced documentation closure | Planned | Presentation, branded export, advanced documentation descriptors and evidence for `documentation-pack` and `presentation-pack`; avoid site/MEP ownership.  | M4-E, documentation-pack, presentation-pack.                | Generated M4 gates pass for presentation/branded export and advanced documentation descriptor groups plus accepted UI/Cmd+K, MCP/CLI, advisor, visual, export, and semantic-diff evidence. |
+| M4-K. Wave 2 M4 verifier finalization                 | Planned | M4 audit/verifier generated reports and tracker result updates only; consume M4-G through M4-J but do not create feature behavior.                         | M4 milestone reporting, generated evidence source of truth. | Generated M4 reports reflect Wave 2 evidence truthfully and keep M4 `Partial` unless all domain-pack gates pass.                                                                           |
 
 ## Next Work Packages
 

@@ -19,6 +19,7 @@
     "benchmark:simple-house": "node scripts/benchmarks/simple-house.mjs",
     "verify:m2-parity": "node scripts/verify-m2-parity.mjs",
     "verify:m3-parity": "node scripts/verify-m3-parity.mjs",
+    "verify:m4-parity": "node scripts/verify-m4-parity.mjs",
     "verify": "pnpm format:check && pnpm architecture && pnpm test",
     "verify:strict": "pnpm format:check && pnpm lint:root && pnpm architecture && pnpm typecheck && pnpm test && pnpm build",
     "build:dist": "pnpm --filter @bim-ai/hofos-ui build",

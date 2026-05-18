@@ -1,0 +1,60 @@
+{
+  "schemaVersion": "bim-ai.professional-benchmark.scenario.v1",
+  "scenarioId": "structure-and-mep-lite",
+  "title": "Structure and MEP Lite",
+  "sourceOfIntent": "spec/ui-mcp-parity-tracker.md#same-house-parity-benchmarks",
+  "lifecycle": "m4-wave1-placeholder",
+  "summary": "Professional M4 structure/MEP-lite benchmark seed for structural columns, beams, construction metadata, simple routes, equipment, fixtures, terminals, and opening requests.",
+  "fixtures": {
+    "expectedSemantics": null,
+    "mcpCliCommandBundle": null,
+    "uiCmdKTraceability": null,
+    "uiEquivalence": null,
+    "liveEvidenceDirectory": null
+  },
+  "runner": {
+    "kind": "not-yet-implemented",
+    "command": null,
+    "mutatesModel": false
+  },
+  "evidence": {
+    "ui": {
+      "classification": "missing",
+      "status": "missing",
+      "artifacts": []
+    },
+    "cmdK": {
+      "classification": "missing",
+      "status": "missing",
+      "artifacts": []
+    },
+    "mcpCli": {
+      "classification": "missing",
+      "status": "missing",
+      "artifacts": []
+    },
+    "advisor": {
+      "classification": "missing",
+      "status": "missing",
+      "artifacts": []
+    },
+    "visual": {
+      "classification": "missing",
+      "status": "missing",
+      "artifacts": []
+    },
+    "export": {
+      "classification": "missing",
+      "status": "missing",
+      "artifacts": []
+    },
+    "semanticDiff": {
+      "classification": "missing",
+      "status": "missing",
+      "artifacts": []
+    }
+  },
+  "remainingBlockers": [
+    "M4-B and M4-C have not yet landed first-class structure, construction-lite, or MEP-lite descriptors with executable fixture evidence."
+  ]
+}
