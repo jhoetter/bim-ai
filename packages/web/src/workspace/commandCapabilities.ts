@@ -1686,6 +1686,21 @@ const VIEW_3D_CAPABILITIES: CommandCapability[] = [
     usabilityScore: 8,
     notes: 'Switches to the high-quality raster PBR fallback with soft shadow filtering.',
   },
+  {
+    id: 'view.split-view',
+    label: 'Split Plan/3D View',
+    owner: 'workspace/CanvasMount',
+    group: 'view',
+    scope: 'global',
+    intendedModes: ['plan'],
+    surfaces: ['cmd-k', 'secondary-sidebar'],
+    executionSurface: 'store',
+    preconditions: [],
+    status: 'implemented',
+    usabilityScore: 8,
+    notes:
+      '§1.6.12: toggleSplitView command + splitViewEnabled store field renders plan (left 50%) and 3D viewport (right 50%) simultaneously.',
+  },
 ];
 
 const EDIT_3D_CAPABILITIES: CommandCapability[] = [
@@ -2590,6 +2605,21 @@ const MASS_CAPABILITIES: CommandCapability[] = [
     usabilityScore: 8,
     notes:
       '§15.1.2: assigns a Revit-style category (Doors, Windows, Furniture, etc.) to a family definition.',
+  },
+  {
+    id: 'family.add-reference-plane',
+    label: 'Add Family Reference Plane',
+    owner: 'families/FamilyEditorWorkbench',
+    group: 'family',
+    scope: 'canvas',
+    intendedModes: ['plan'],
+    surfaces: ['family-editor', 'cmd-k'],
+    executionSurface: 'store',
+    preconditions: [],
+    status: 'implemented',
+    usabilityScore: 8,
+    notes:
+      '§15.1.3: family_reference_plane element (name, axis x|z, offsetMm, isReference) in family editor — parametric construction planes for anchoring family geometry.',
   },
   {
     id: 'view.update-crop-region',

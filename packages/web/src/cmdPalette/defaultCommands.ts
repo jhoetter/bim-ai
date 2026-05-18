@@ -2870,6 +2870,30 @@ registerCommand({
   invoke: (ctx) => ctx.openFamilyEditor?.(),
 });
 
+// §15.1.3 — family reference plane
+registerCommand({
+  id: 'family.add-reference-plane',
+  label: 'Add Family Reference Plane',
+  keywords: ['reference plane', 'family', 'parametric', 'axis', 'construction plane', 'ref plane'],
+  category: 'command',
+  isAvailable: (ctx) => !!(ctx as any).activeFamilyId,
+  invoke: (ctx) => {
+    const activeFamilyId = (ctx as any).activeFamilyId;
+    if (activeFamilyId) {
+      ctx.dispatchCommand?.({
+        type: 'addFamilyReferencePlane',
+        familyId: activeFamilyId,
+        name: 'Reference Plane',
+        axis: 'x',
+        offsetMm: 0,
+        isReference: true,
+      });
+    } else {
+      ctx.openFamilyEditor?.();
+    }
+  },
+});
+
 // §3.3.7 — paint surface / face material override
 registerCommand({
   id: 'modify.paint-face',
@@ -3270,5 +3294,17 @@ registerCommand({
   isAvailable: () => true,
   invoke: () => {
     // Title updates automatically via useEffect — no manual invoke needed
+  },
+});
+
+// §1.6.12 — Split Plan/3D View
+registerCommand({
+  id: 'view.split-view',
+  label: 'Toggle Split Plan/3D View',
+  keywords: ['split', 'side by side', 'plan 3d', 'tile', 'tiled view', 'split view'],
+  category: 'view',
+  isAvailable: () => true,
+  invoke: (ctx) => {
+    ctx.dispatchCommand?.({ type: 'toggleSplitView' });
   },
 });

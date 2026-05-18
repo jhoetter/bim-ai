@@ -478,6 +478,7 @@ export type ElemKind =
   | 'family_swept_blend'
   | 'family_component'
   | 'family_opening_cut'
+  | 'family_reference_plane'
   | 'text_tag'
   | 'link_ifc'
   | 'link_pdf'
@@ -2278,7 +2279,8 @@ export type Element =
         | 'power_plan'
         | 'coordination_plan'
         | 'callout'
-        | 'ceiling_plan';
+        | 'ceiling_plan'
+        | 'drafting';
       /** D4: id of the parent plan_view this callout enlarges. */
       parentViewId?: string | null;
       /** D4: numeric scale multiplier relative to the parent view (default 5). */
@@ -3662,6 +3664,20 @@ export type Element =
       originMm: { xMm: number; yMm: number; zMm: number };
       /** Rotation in degrees around the vertical (Z) axis. */
       rotationDeg?: number;
+    }
+  | {
+      /** §15.1.3: a construction reference plane in a family definition. Defines parametric axes and origins. */
+      kind: 'family_reference_plane';
+      id: string;
+      familyId: string;
+      /** Human-readable name (e.g. "Center (Left/Right)", "Width Reference"). */
+      name: string;
+      /** Axis direction in the family's local XZ plane: 'x' (vertical line) or 'z' (horizontal line). */
+      axis: 'x' | 'z';
+      /** Offset from origin along the perpendicular axis, in mm. */
+      offsetMm: number;
+      /** Whether this is a strong reference (can be dimensioned to from the project). */
+      isReference?: boolean;
     }
   | {
       /** §15.1.2: a top-level family definition element stored in the project BIM store. */
@@ -5564,6 +5580,16 @@ export type RemoveFamilyConstraintCmd = {
   constraintId: string;
 };
 
+/** §15.1.3: add a new reference plane element to a family definition. */
+export type AddFamilyReferencePlaneCmd = {
+  type: 'addFamilyReferencePlane';
+  familyId: string;
+  name: string;
+  axis: 'x' | 'z';
+  offsetMm: number;
+  isReference?: boolean;
+};
+
 /** §5.4.2: set the angle from project north to true geographic north on project_settings. */
 export type SetAngleToTrueNorthCmd = {
   type: 'setAngleToTrueNorth';
@@ -5831,4 +5857,16 @@ export type SetDxfLayerMappingCmd = {
   type: 'setDxfLayerMapping';
   /** Merged partial update to dxfLayerMapping on project_settings. */
   mapping: Record<string, string>;
+};
+
+/** §1.6.12: toggle split plan/3D view mode. */
+export type ToggleSplitViewCmd = {
+  type: 'toggleSplitView';
+};
+
+/** §6.4.2: create a drafting (detail) view — a plan_view with planViewSubtype='drafting'. */
+export type CreateDraftingViewCmd = {
+  type: 'createDraftingView';
+  /** Human-readable name for the drafting view. */
+  name: string;
 };

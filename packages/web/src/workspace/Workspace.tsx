@@ -1139,6 +1139,22 @@ export function Workspace(): JSX.Element {
   const [recentProjects, setRecentProjects] = useState<ProjectMenuItemRecent[]>(() =>
     readRecentProjects().map((r) => ({ id: r.id, label: r.label })),
   );
+
+  // §1.6.1: derive active plan view display name for document.title and breadcrumb
+  const activePlanViewName = useMemo(() => {
+    if (!activePlanViewId) return undefined;
+    const pv = elementsById[activePlanViewId];
+    if (!pv || pv.kind !== 'plan_view') return undefined;
+    return (pv as Extract<Element, { kind: 'plan_view' }>).name;
+  }, [activePlanViewId, elementsById]);
+
+  // §1.6.1: update browser tab title to "ProjectName — ViewName"
+  useEffect(() => {
+    const project = activeSeedLabel ?? 'bim-ai';
+    const view = activePlanViewName ?? '';
+    document.title = view ? `${project} — ${view}` : project;
+  }, [activeSeedLabel, activePlanViewName]);
+
   const projectNameRef = useRef<HTMLButtonElement | null>(null);
   const planCameraHandleRef = useRef<PlanCameraHandle | null>(null);
   const previousSelectedIdRef = useRef<string | undefined>(selectedId);
@@ -2266,6 +2282,25 @@ export function Workspace(): JSX.Element {
         useBimStore.setState({ elementsById: { ...cur, [cmd.constraint.id]: cmd.constraint } });
         return;
       }
+      // §15.1.3: addFamilyReferencePlane — create a family_reference_plane element client-side.
+      if (cmd.type === 'addFamilyReferencePlane') {
+        const id = `frp-${Date.now()}`;
+        useBimStore.setState((s) => ({
+          elementsById: {
+            ...s.elementsById,
+            [id]: {
+              kind: 'family_reference_plane' as const,
+              id,
+              familyId: cmd.familyId as string,
+              name: (cmd.name as string) || 'Reference Plane',
+              axis: (cmd.axis as 'x' | 'z') || 'x',
+              offsetMm: (cmd.offsetMm as number) ?? 0,
+              isReference: (cmd.isReference as boolean | undefined) ?? true,
+            },
+          },
+        }));
+        return;
+      }
       // §15.1.3: removeFamilyConstraint — delete a family_constraint element client-side.
       if (cmd.type === 'removeFamilyConstraint') {
         const { elementsById: cur } = useBimStore.getState();
@@ -2845,6 +2880,24 @@ export function Workspace(): JSX.Element {
         useBimStore.setState({ elementsById: current });
         return;
       }
+      // §6.4.2: create a drafting (detail) view — plan_view with planViewSubtype='drafting'
+      if (cmd.type === 'createDraftingView') {
+        const id = `pv-drafting-${Date.now()}`;
+        useBimStore.setState((s) => ({
+          elementsById: {
+            ...s.elementsById,
+            [id]: {
+              kind: 'plan_view' as const,
+              id,
+              name: (cmd.name as string) || 'Drafting View',
+              planViewSubtype: 'drafting' as const,
+              levelId: null as any,
+              cropRegionEnabled: false,
+            },
+          },
+        }));
+        return;
+      }
 
       // §8.6.2: client-only stair component creation / removal
       if (cmd.type === 'addStairRun') {
@@ -3142,6 +3195,12 @@ export function Workspace(): JSX.Element {
             },
           },
         });
+        return;
+      }
+
+      // §1.6.12: toggleSplitView — flip splitViewEnabled in store
+      if (cmd.type === 'toggleSplitView') {
+        useBimStore.setState((s: any) => ({ splitViewEnabled: !s.splitViewEnabled }));
         return;
       }
 
@@ -6130,6 +6189,24 @@ export function Workspace(): JSX.Element {
                 onReorder={handleCompositionReorder}
                 onRename={handleCompositionRename}
               />
+              {/* §1.6.1: breadcrumb subtitle showing active view */}
+              {activePlanViewName && (
+                <div
+                  data-testid="workspace-view-breadcrumb"
+                  style={{
+                    fontSize: 10,
+                    color: 'var(--text-muted, #888)',
+                    padding: '0 12px 2px',
+                    lineHeight: 1,
+                    userSelect: 'none',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    whiteSpace: 'nowrap',
+                  }}
+                >
+                  {activeSeedLabel ?? 'bim-ai'} / {activePlanViewName}
+                </div>
+              )}
             </div>
             <div className="flex shrink-0 items-center gap-2">
               <button
