@@ -76,7 +76,16 @@ function hasTooSmallEdge(pts: PolyBoundary, minMm = 10): boolean {
 // ---------------------------------------------------------------------------
 
 type WallElem = Extract<Element, { kind: 'wall' }>;
-type HostedKind = 'door' | 'window' | 'wall-opening';
+type HostedKind = 'door' | 'window' | 'wall-opening' | 'wall_opening';
+type HostedElementFields = Element & {
+  hostId?: string;
+  wallId?: string;
+  hostWallId?: string;
+  offsetAlongHostMm?: number;
+  alongT?: number;
+  alongTStart?: number;
+  alongTEnd?: number;
+};
 
 function wallLength(w: WallElem): number {
   return Math.hypot(w.end.xMm - w.start.xMm, w.end.yMm - w.start.yMm);
@@ -92,14 +101,26 @@ function wallsAreDuplicate(a: WallElem, b: WallElem, toleranceMm = 5): boolean {
   return sameForward || sameReversed;
 }
 
-function hostedElementIsInsideWallSpan(
-  hosted: Element & { hostId?: string; offsetAlongHostMm?: number },
-  walls: WallElem[],
-): boolean {
-  const host = walls.find((w) => w.id === hosted.hostId);
+function hostedWallId(hosted: HostedElementFields): string | undefined {
+  return hosted.hostId ?? hosted.wallId ?? hosted.hostWallId;
+}
+
+function hostedOffsetAlongWallMm(hosted: HostedElementFields, host: WallElem): number {
+  const len = wallLength(host);
+  if (typeof hosted.offsetAlongHostMm === 'number') return hosted.offsetAlongHostMm;
+  if (typeof hosted.alongT === 'number') return hosted.alongT * len;
+  if (typeof hosted.alongTStart === 'number' && typeof hosted.alongTEnd === 'number') {
+    return ((hosted.alongTStart + hosted.alongTEnd) / 2) * len;
+  }
+  return 0;
+}
+
+function hostedElementIsInsideWallSpan(hosted: HostedElementFields, walls: WallElem[]): boolean {
+  const hostId = hostedWallId(hosted);
+  const host = walls.find((w) => w.id === hostId);
   if (!host) return false;
   const len = wallLength(host);
-  const offset = hosted.offsetAlongHostMm ?? 0;
+  const offset = hostedOffsetAlongWallMm(hosted, host);
   return offset >= 0 && offset <= len;
 }
 
@@ -160,23 +181,23 @@ export function findOrphanedHostedElements(
   elementsById: Record<string, Element>,
 ): ValidationIssue[] {
   const issues: ValidationIssue[] = [];
-  const HOSTED_KINDS: HostedKind[] = ['door', 'window', 'wall-opening'];
+  const HOSTED_KINDS: HostedKind[] = ['door', 'window', 'wall-opening', 'wall_opening'];
   for (const el of Object.values(elementsById)) {
     if (!HOSTED_KINDS.includes(el.kind as HostedKind)) continue;
-    const hosted = el as unknown as { hostId?: string };
-    if (!hosted.hostId) {
+    const hostId = hostedWallId(el as HostedElementFields);
+    if (!hostId) {
       issues.push({
         code: 'orphaned_no_host_ref',
         severity: 'error',
         elementIds: [el.id],
-        message: `${el.kind} "${el.id}" has no hostId — it is not attached to any wall.`,
+        message: `${el.kind} "${el.id}" has no host reference — it is not attached to any wall.`,
       });
-    } else if (!elementsById[hosted.hostId]) {
+    } else if (!elementsById[hostId]) {
       issues.push({
         code: 'orphaned_host_missing',
         severity: 'error',
         elementIds: [el.id],
-        message: `${el.kind} "${el.id}" references wall "${hosted.hostId}" which does not exist.`,
+        message: `${el.kind} "${el.id}" references wall "${hostId}" which does not exist.`,
       });
     }
   }
@@ -188,13 +209,13 @@ export function validateHostedElementSpans(
   elementsById: Record<string, Element>,
 ): ValidationIssue[] {
   const walls = Object.values(elementsById).filter((e): e is WallElem => e.kind === 'wall');
-  const HOSTED_KINDS: HostedKind[] = ['door', 'window', 'wall-opening'];
+  const HOSTED_KINDS: HostedKind[] = ['door', 'window', 'wall-opening', 'wall_opening'];
   const issues: ValidationIssue[] = [];
   for (const el of Object.values(elementsById)) {
     if (!HOSTED_KINDS.includes(el.kind as HostedKind)) continue;
-    const hosted = el as unknown as { hostId?: string; offsetAlongHostMm?: number };
-    if (!hosted.hostId) continue;
-    if (!hostedElementIsInsideWallSpan(hosted as Element & typeof hosted, walls)) {
+    const hosted = el as HostedElementFields;
+    if (!hostedWallId(hosted)) continue;
+    if (!hostedElementIsInsideWallSpan(hosted, walls)) {
       issues.push({
         code: 'hosted_outside_wall_span',
         severity: 'error',

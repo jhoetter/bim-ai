@@ -116,10 +116,24 @@ describe('WP-NEXT-49 structuralValidation', () => {
         kind: 'door',
         id: 'd1',
         levelId: 'lvl-1',
-        hostId: 'w1',
-        offsetAlongHostMm: 1000,
+        wallId: 'w1',
+        alongT: 0.25,
       } as unknown as Element;
       const issues = findOrphanedHostedElements({ w1: wall as unknown as Element, d1: door });
+      expect(issues).toHaveLength(0);
+    });
+
+    it('accepts backend wall openings hosted by hostWallId', () => {
+      const wall = makeWall('w1', 0, 0, 4000, 0);
+      const opening = {
+        kind: 'wall_opening',
+        id: 'op1',
+        levelId: 'lvl-1',
+        hostWallId: 'w1',
+        alongTStart: 0.25,
+        alongTEnd: 0.5,
+      } as unknown as Element;
+      const issues = findOrphanedHostedElements({ w1: wall as unknown as Element, op1: opening });
       expect(issues).toHaveLength(0);
     });
 
@@ -135,7 +149,7 @@ describe('WP-NEXT-49 structuralValidation', () => {
         kind: 'window',
         id: 'win1',
         levelId: 'lvl-1',
-        hostId: 'w-missing',
+        wallId: 'w-missing',
       } as unknown as Element;
       const issues = findOrphanedHostedElements({ win1: window });
       expect(issues).toHaveLength(1);
