@@ -9,7 +9,7 @@ You are the AI architect. The customer hands you a sketch (line drawing, render,
 
 This skill is the methodology a world-class architect would use, encoded as a deterministic process. Software stays deterministic; you provide the intelligence — interpreting the sketch with your own multimodal vision, judging silhouette match, picking materials, authoring corrective commands.
 
-Before any substantial sketch-to-BIM run, read `spec/sketch-to-bim-methodology.md`. Treat it as the product/engineering tracker for this workflow: it defines the user input contract, Sketch Understanding IR, capability matrix, acceptance gates, scoring rubric, and implementation backlog. This skill is the operational checklist; the spec is the durable methodology source.
+Before any substantial sketch-to-BIM run, read `spec/sketch-to-bim-methodology.md` and `spec/sketch-to-bim-readiness-tracker.md`. Treat them as the product/engineering source for this workflow: they define the user input contract, Sketch Understanding IR, BIM information requirements, capability matrix, acceptance gates, scoring rubric, product surface policy, and implementation backlog. This skill is the operational checklist; the specs are the durable methodology source.
 
 ## Tooling contract
 
@@ -250,7 +250,7 @@ These findings block phase advancement unless the user explicitly accepts them w
    ```bash
    node packages/cli/cli.mjs initiation-check \
      --ir spec/examples/sketch-understanding-ir.example.json \
-     --capabilities spec/archive/sketch-to-bim-capability-matrix.json \
+     --capabilities spec/sketch-to-bim-capability-matrix.json \
      --out nightshift/<run>/initiation-check \
      --mode project_initiation_bim \
      --fail-on-acceptance
@@ -263,7 +263,7 @@ These findings block phase advancement unless the user explicitly accepts them w
    ```bash
    node packages/cli/cli.mjs initiation-run \
      --ir spec/examples/sketch-understanding-ir.example.json \
-     --capabilities spec/archive/sketch-to-bim-capability-matrix.json \
+     --capabilities spec/sketch-to-bim-capability-matrix.json \
      --model "$BIM_AI_MODEL_ID" \
      --out nightshift/<run>/initiation-run \
      --target-image nightshift/<run>/target-reference.png \
@@ -333,7 +333,7 @@ Final seed packaging must use a fresh current-HEAD live run, normally:
 ```bash
 BIM_AI_MODEL_ID=<id> node packages/cli/cli.mjs initiation-run \
   --ir seed-artifacts/<seed-name>/evidence/sketch-ir.json \
-  --capabilities spec/archive/sketch-to-bim-capability-matrix.json \
+  --capabilities spec/sketch-to-bim-capability-matrix.json \
   --model <id> \
   --mode project_initiation_bim \
   --fail-on-warning \

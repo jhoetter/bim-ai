@@ -24,7 +24,7 @@ from typing import Any
 
 ROOT = Path(__file__).resolve().parents[2]
 CLI = ["node", "packages/cli/cli.mjs"]
-DEFAULT_CAPABILITIES = "spec/archive/sketch-to-bim-capability-matrix.json"
+DEFAULT_CAPABILITIES = "spec/sketch-to-bim-capability-matrix.json"
 DEFAULT_ARCHETYPES = "spec/sketch-to-bim-archetypes.json"
 TOOL_MANIFEST = ROOT / "claude-skills" / "sketch-to-bim" / "tools.json"
 BLOCKING_SEVERITIES = {"warning", "error"}
@@ -187,9 +187,11 @@ def cmd_doctor(args: argparse.Namespace) -> None:
             "exitCode": proc.returncode,
             "json": parse_optional_json(proc.stdout),
         }
-    checks["ok"] = bool(
-        checks["apiHealth"].get("ok") and checks["web"].get("ok") and all(checks["files"].values())
-    )
+    checks["filesOk"] = all(checks["files"].values())
+    checks["apiOk"] = bool(checks["apiHealth"].get("ok"))
+    checks["webOk"] = bool(checks["web"].get("ok"))
+    checks["liveOk"] = bool(checks["apiOk"] and checks["webOk"])
+    checks["ok"] = bool(checks["filesOk"] and checks["liveOk"])
     if args.out:
         write_json((ROOT / args.out).resolve(), checks)
     print(json_dump(checks))
