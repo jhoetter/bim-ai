@@ -10,30 +10,16 @@ afterEach(() => {
   cleanup();
 });
 
-// ---------------------------------------------------------------------------
-// Fixtures
-// ---------------------------------------------------------------------------
-
 function makeGroupDefinition(id: string, name: string): Element {
-  return {
-    kind: 'group_definition',
-    id,
-    name,
-    elementIds: [],
-  } as unknown as Element;
+  return { kind: 'group_definition', id, name, elementIds: [] } as unknown as Element;
 }
 
 function makeGroupInstance(id: string, groupDefinitionId: string): Element {
-  return {
-    kind: 'group_instance',
-    id,
-    groupDefinitionId,
-  } as unknown as Element;
+  return { kind: 'group_instance', id, groupDefinitionId } as unknown as Element;
 }
 
 const groupDef1 = makeGroupDefinition('gd-01', 'Kitchen Unit');
 const groupDef2 = makeGroupDefinition('gd-02', 'Bathroom Set');
-
 const instance1a = makeGroupInstance('gi-01a', 'gd-01');
 const instance1b = makeGroupInstance('gi-01b', 'gd-01');
 const instance2a = makeGroupInstance('gi-02a', 'gd-02');
@@ -56,10 +42,6 @@ function expandGroups(container: HTMLElement): void {
   const toggleBtn = section.querySelector('button') as HTMLElement;
   fireEvent.click(toggleBtn);
 }
-
-// ---------------------------------------------------------------------------
-// Tests
-// ---------------------------------------------------------------------------
 
 describe('ProjectBrowser Groups subtree — §1.6.11', () => {
   it('renders the browser-groups-section header', () => {
@@ -96,7 +78,7 @@ describe('ProjectBrowser Groups subtree — §1.6.11', () => {
     expect(queryByTestId('browser-group-row-gd-01')).toBeNull();
   });
 
-  it('shows 0 instance count for group_definition with no instances', () => {
+  it('shows 0 instance count for group with no instances', () => {
     const props = makeProps([groupDef1]);
     const { container, getByTestId } = render(<ProjectBrowserV3 {...props} />);
     expandGroups(container);

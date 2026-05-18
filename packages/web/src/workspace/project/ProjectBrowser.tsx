@@ -3193,7 +3193,7 @@ export function ProjectBrowserV3({
           label={`Groups (${groupDefRows.length})`}
           collapsed={groupsCollapsed}
           onToggle={() => setGroupsCollapsed((v) => !v)}
-          testId="pb-section-groups"
+          testId="browser-groups-section"
         >
           {groupDefRows.length === 0 ? (
             <div
