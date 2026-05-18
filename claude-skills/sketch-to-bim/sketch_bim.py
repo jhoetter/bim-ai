@@ -394,6 +394,35 @@ def cmd_advisor(args: argparse.Namespace) -> None:
         raise SystemExit(3)
 
 
+def cmd_evidence_collect(args: argparse.Namespace) -> None:
+    model = args.model or os.environ.get("BIM_AI_MODEL_ID")
+    if not model:
+        raise SystemExit("evidence-collect requires --model or BIM_AI_MODEL_ID.")
+    out_dir = Path(args.out).resolve() if args.out else phase_dir_for(args)
+    command = [
+        *CLI,
+        "sketch",
+        "evidence",
+        "collect",
+        "--model",
+        model,
+        "--out",
+        rel(out_dir),
+        "--profile",
+        args.profile,
+    ]
+    if args.ir:
+        command.extend(["--ir", args.ir])
+    if args.phase:
+        command.extend(["--phase", args.phase])
+    env = os.environ.copy()
+    env["BIM_AI_MODEL_ID"] = model
+    env["BIM_AI_BASE_URL"] = args.base_url.rstrip("/")
+    proc = run(command, env=env, check=False)
+    if proc.returncode != 0:
+        raise SystemExit(proc.returncode)
+
+
 def cmd_constructability_report(args: argparse.Namespace) -> None:
     model = args.model or os.environ.get("BIM_AI_MODEL_ID")
     if not model:
@@ -544,6 +573,7 @@ def cmd_issue_ledger(args: argparse.Namespace) -> None:
                     "recipeMatches": find_text_occurrences(recipe, ids) if recipe else {},
                     "bundleMatches": find_text_occurrences(bundle, ids) if bundle else {},
                     "status": "pending" if severity in BLOCKING_SEVERITIES else "reviewed",
+                    "disposition": "unclassified" if severity in BLOCKING_SEVERITIES else "reviewed",
                     "sourceEdit": "",
                     "toleranceRationale": "",
                 }
@@ -628,8 +658,13 @@ def cmd_material_check(args: argparse.Namespace) -> None:
 def cmd_phase_accept(args: argparse.Namespace) -> None:
     out_dir = phase_dir_for(args)
     required = {
+        "evidence-manifest": out_dir / "evidence-manifest.json",
         "advisor-warning": out_dir / "advisor-warning.json",
         "advisor-info": out_dir / "advisor-info.json",
+        "advisor-error": out_dir / "advisor-error.json",
+        "constructability-report": out_dir / "constructability-report.json",
+        "visual-evidence-contract": out_dir / "visual-evidence-contract.json",
+        "finding-dispositions": out_dir / "finding-dispositions.json",
         "screenshot-manifest": out_dir / "screenshot-manifest.json",
         "semantic-checklist": out_dir / "semantic-checklist.json",
         "visual-readout": out_dir / "visual-readout.md",
@@ -638,7 +673,11 @@ def cmd_phase_accept(args: argparse.Namespace) -> None:
     }
     missing = {name: rel(path) for name, path in required.items() if not path.is_file()}
     warning = load_advisor_file(required["advisor-warning"])
+    info = load_advisor_file(required["advisor-info"])
+    error = load_advisor_file(required["advisor-error"])
     warnings_total = int(warning.get("total") or 0)
+    info_total = int(info.get("total") or 0)
+    error_total = int(error.get("total") or 0)
     semantic_failures: list[dict[str, Any]] = []
     if required["semantic-checklist"].is_file():
         checklist = read_json(required["semantic-checklist"])
@@ -667,6 +706,54 @@ def cmd_phase_accept(args: argparse.Namespace) -> None:
                         "status": entry.get("status") or "pending",
                     }
                 )
+    finding_disposition_summary: dict[str, Any] = {
+        "findingCount": 0,
+        "countsBySeverity": {},
+        "countsByDisposition": {},
+        "unclassifiedBlocking": [],
+        "blocked": [],
+        "ok": False,
+    }
+    if required["finding-dispositions"].is_file():
+        dispositions = read_json(required["finding-dispositions"])
+        findings = dispositions.get("findings") if isinstance(dispositions, dict) else []
+        if not isinstance(findings, list):
+            findings = []
+        counts_by_severity: dict[str, int] = {}
+        counts_by_disposition: dict[str, int] = {}
+        unclassified_blocking = []
+        blocked = []
+        for finding in findings:
+            if not isinstance(finding, dict):
+                continue
+            severity = str(finding.get("severity") or "unknown")
+            disposition = str(finding.get("disposition") or finding.get("status") or "unclassified")
+            counts_by_severity[severity] = counts_by_severity.get(severity, 0) + 1
+            counts_by_disposition[disposition] = counts_by_disposition.get(disposition, 0) + 1
+            row = {
+                "source": finding.get("source"),
+                "severity": severity,
+                "code": finding.get("code"),
+                "elementIds": finding.get("elementIds") or [],
+                "disposition": disposition,
+            }
+            if severity in BLOCKING_SEVERITIES and disposition in {
+                "unclassified",
+                "fix-now",
+                "fix-in-phase",
+                "pending",
+            }:
+                unclassified_blocking.append(row)
+            if severity in BLOCKING_SEVERITIES and disposition == "blocked":
+                blocked.append(row)
+        finding_disposition_summary = {
+            "findingCount": len(findings),
+            "countsBySeverity": counts_by_severity,
+            "countsByDisposition": counts_by_disposition,
+            "unclassifiedBlocking": unclassified_blocking,
+            "blocked": blocked,
+            "ok": not unclassified_blocking and not blocked,
+        }
     parity_path = out_dir / "advisor-parity.json"
     parity_ok = True
     if args.require_parity:
@@ -679,8 +766,10 @@ def cmd_phase_accept(args: argparse.Namespace) -> None:
     ok = (
         not missing
         and warnings_total == 0
+        and error_total == 0
         and not semantic_failures
         and not pending_issues
+        and finding_disposition_summary["ok"]
         and parity_ok
     )
     packet = {
@@ -693,6 +782,9 @@ def cmd_phase_accept(args: argparse.Namespace) -> None:
         "files": {name: rel(path) for name, path in required.items()},
         "missing": missing,
         "advisorWarningTotal": warnings_total,
+        "advisorInfoTotal": info_total,
+        "advisorErrorTotal": error_total,
+        "findingDispositions": finding_disposition_summary,
         "semanticFailures": semantic_failures,
         "pendingIssues": pending_issues,
         "advisorParityOk": parity_ok,
@@ -838,6 +930,22 @@ def build_parser() -> argparse.ArgumentParser:
     )
     advisor.add_argument("--fail-on-warning", action="store_true")
     advisor.set_defaults(func=cmd_advisor)
+
+    evidence = sub.add_parser(
+        "evidence-collect",
+        help="Collect product-owned non-browser evidence artifacts for a model/phase.",
+    )
+    evidence.add_argument("--model")
+    evidence.add_argument("--phase")
+    evidence.add_argument("--seed")
+    evidence.add_argument("--dir")
+    evidence.add_argument("--out")
+    evidence.add_argument("--ir")
+    evidence.add_argument("--profile", default="construction_readiness")
+    evidence.add_argument(
+        "--base-url", default=os.environ.get("BIM_AI_BASE_URL", "http://127.0.0.1:8500")
+    )
+    evidence.set_defaults(func=cmd_evidence_collect)
 
     report = sub.add_parser(
         "constructability-report",

@@ -130,6 +130,38 @@
       }
     },
     {
+      "name": "skb_collect_evidence",
+      "command": "evidence-collect",
+      "description": "Collect product-owned non-browser evidence: snapshot, validate, evidence package, Advisor warning/info/error, constructability report, model stats, visual evidence contract, finding dispositions, and manifest.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "model": { "type": "string" },
+          "phase": { "type": "string" },
+          "seed": { "type": "string" },
+          "dir": { "type": "string" },
+          "out": { "type": "string" },
+          "ir": { "type": "string" },
+          "profile": { "type": "string", "default": "construction_readiness" },
+          "baseUrl": { "type": "string", "default": "http://127.0.0.1:8500" }
+        },
+        "additionalProperties": false
+      },
+      "outputSchema": {
+        "type": "object",
+        "required": ["schemaVersion", "modelId", "artifacts", "summary"],
+        "properties": {
+          "schemaVersion": { "type": "string" },
+          "modelId": { "type": "string" },
+          "revision": { "type": ["integer", "null"] },
+          "browserAutomationRequired": { "type": "boolean" },
+          "artifacts": { "type": "object" },
+          "summary": { "type": "object" }
+        },
+        "additionalProperties": true
+      }
+    },
+    {
       "name": "skb_advisor_parity",
       "command": "advisor-parity",
       "description": "Compare CLI Advisor grouping with the snapshot violations payload rendered by the right rail.",
@@ -287,6 +319,9 @@
           "phase",
           "missing",
           "advisorWarningTotal",
+          "advisorInfoTotal",
+          "advisorErrorTotal",
+          "findingDispositions",
           "semanticFailures",
           "pendingIssues"
         ],
@@ -295,6 +330,9 @@
           "phase": { "type": "string" },
           "missing": { "type": "object" },
           "advisorWarningTotal": { "type": "integer" },
+          "advisorInfoTotal": { "type": "integer" },
+          "advisorErrorTotal": { "type": "integer" },
+          "findingDispositions": { "type": "object" },
           "semanticFailures": { "type": "array" },
           "pendingIssues": { "type": "array" }
         },

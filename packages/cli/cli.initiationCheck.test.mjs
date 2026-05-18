@@ -494,6 +494,104 @@ test('initiation-run captures live advisor and evidence artifacts without screen
   assert.match(status, /advisorWarning/);
 });
 
+test('sketch evidence collect writes non-browser evidence manifest and visual contract', async () => {
+  const dir = await fs.mkdtemp(path.join(os.tmpdir(), 'bim-ai-evidence-collect-'));
+  const irPath = path.join(dir, 'ir.json');
+  const outDir = path.join(dir, 'evidence');
+  await writeJson(irPath, validIr());
+  const snapshotBody = {
+    modelId: 'model-1',
+    revision: 11,
+    elements: {
+      main: { kind: 'viewpoint', id: 'main' },
+      'wall-1': { kind: 'wall', id: 'wall-1' },
+      'room-1': { kind: 'room', id: 'room-1' },
+    },
+    violations: [
+      {
+        severity: 'warning',
+        advisoryClass: 'room_not_enclosed',
+        elementIds: ['room-1'],
+        message: 'Room is not fully enclosed.',
+      },
+      {
+        severity: 'info',
+        advisoryClass: 'material_placeholder',
+        elementIds: ['wall-1'],
+        message: 'Material intent is a placeholder.',
+      },
+    ],
+  };
+  const { server, base } = await startStubServer((req) => {
+    if (req.url?.endsWith('/snapshot')) return { body: snapshotBody };
+    if (req.url?.endsWith('/validate')) {
+      return { body: { modelId: 'model-1', revision: 11, violations: snapshotBody.violations } };
+    }
+    if (req.url?.endsWith('/evidence-package')) {
+      return { body: { format: 'evidencePackage_v1', modelId: 'model-1', revision: 11 } };
+    }
+    if (req.url?.startsWith('/api/models/model-1/constructability-report')) {
+      return {
+        body: {
+          profile: 'project_initiation',
+          summary: { severityCounts: { warning: 1, info: 0, error: 0 } },
+          findings: [
+            {
+              severity: 'warning',
+              code: 'stair_clearance_review',
+              elementIds: ['room-1'],
+              message: 'Review clearance around stair zone.',
+            },
+          ],
+        },
+      };
+    }
+    return { status: 404, body: { error: req.url } };
+  });
+
+  const res = await runCli(
+    [
+      'sketch',
+      'evidence',
+      'collect',
+      '--model',
+      'model-1',
+      '--ir',
+      irPath,
+      '--out',
+      outDir,
+      '--phase',
+      'shell',
+      '--profile',
+      'project_initiation',
+    ],
+    { BIM_AI_BASE_URL: base },
+  );
+  server.close();
+
+  assert.equal(res.code, 0, res.stderr);
+  const manifest = JSON.parse(res.stdout);
+  assert.equal(manifest.schemaVersion, 'sketch.evidence.collection.v1');
+  assert.equal(manifest.browserAutomationRequired, false);
+  assert.equal(manifest.summary.advisor.warning, 1);
+  assert.equal(manifest.summary.advisor.info, 1);
+  assert.equal(manifest.summary.constructability.profile, 'project_initiation');
+  assert.equal(manifest.summary.unclassifiedBlockingFindingCount, 2);
+
+  const visualContract = JSON.parse(
+    await fs.readFile(path.join(outDir, 'visual-evidence-contract.json'), 'utf8'),
+  );
+  assert.equal(visualContract.browserAutomationRequired, false);
+  assert.equal(visualContract.inputs.requiredViews.length, 3);
+  assert.equal(visualContract.inputs.requiredViews[0].savedViewpointPresent, true);
+
+  const dispositions = JSON.parse(
+    await fs.readFile(path.join(outDir, 'finding-dispositions.json'), 'utf8'),
+  );
+  assert.equal(dispositions.schemaVersion, 'sketch.finding-dispositions.v1');
+  assert.equal(dispositions.findings.filter((finding) => finding.severity === 'warning').length, 2);
+});
+
 test('initiation-compare scores identical PNGs as passing', async () => {
   const fixture = path.resolve(
     __dirname,
@@ -653,6 +751,76 @@ test('sketch phase apply submits bundle through transaction route', async () => 
   assert.equal(requests[0].body.bundle.parentRevision, 7);
   const payload = JSON.parse(await fs.readFile(outPath, 'utf8'));
   assert.deepEqual(payload.featureIds, ['roof_terrace', 'wrapper']);
+});
+
+test('sketch phase accept records warning info and error dispositions', async () => {
+  const dir = await fs.mkdtemp(path.join(os.tmpdir(), 'bim-ai-sketch-phase-accept-'));
+  const irPath = path.join(dir, 'ir.json');
+  const matrixPath = path.join(dir, 'matrix.json');
+  const outDir = path.join(dir, 'packet');
+  const evidenceDir = path.join(dir, 'evidence');
+  await writeJson(irPath, validIr());
+  await writeJson(matrixPath, validMatrix());
+  await fs.mkdir(evidenceDir, { recursive: true });
+  await writeJson(path.join(evidenceDir, 'finding-dispositions.json'), {
+    schemaVersion: 'sketch.finding-dispositions.v1',
+    modelId: 'model-1',
+    revision: 9,
+    phaseId: 'shell',
+    findings: [
+      {
+        source: 'advisor',
+        severity: 'warning',
+        code: 'room_not_enclosed',
+        disposition: 'later-phase',
+        phaseRationale: 'Rooms are accepted in the room programme phase.',
+        elementIds: ['room-1'],
+      },
+      {
+        source: 'advisor',
+        severity: 'info',
+        code: 'material_placeholder',
+        disposition: 'reviewed',
+        elementIds: ['wall-1'],
+      },
+      {
+        source: 'advisor',
+        severity: 'error',
+        code: 'stale_host',
+        disposition: 'fixed',
+        elementIds: ['opening-1'],
+      },
+    ],
+  });
+
+  const res = await runCli([
+    'sketch',
+    'phase',
+    'accept',
+    '--ir',
+    irPath,
+    '--capabilities',
+    matrixPath,
+    '--out',
+    outDir,
+    '--phase',
+    'shell',
+    '--evidence-dir',
+    evidenceDir,
+  ]);
+
+  assert.equal(res.code, 0, res.stderr);
+  const out = JSON.parse(res.stdout);
+  assert.equal(out.findingDispositions.findingCount, 3);
+  assert.equal(out.findingDispositions.countsBySeverity.warning, 1);
+  assert.equal(out.findingDispositions.countsBySeverity.info, 1);
+  assert.equal(out.findingDispositions.countsBySeverity.error, 1);
+  const summary = JSON.parse(
+    await fs.readFile(path.join(outDir, 'phase-finding-dispositions.json'), 'utf8'),
+  );
+  assert.equal(summary.countsByDisposition['later-phase'], 1);
+  assert.equal(summary.countsByDisposition.reviewed, 1);
+  assert.equal(summary.countsByDisposition.fixed, 1);
 });
 
 test('seed-dsl compile emits toposolids, subdivisions, and graded regions in host order', async () => {

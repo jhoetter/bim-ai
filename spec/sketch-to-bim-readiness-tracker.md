@@ -37,30 +37,30 @@ P1 items below are closed or explicitly accepted as tolerances.
 
 ## Status Model
 
-| Code | Meaning |
-| --- | --- |
-| `Done` | Implemented, documented, tested, and reflected in the active workflow. |
-| `Partial` | Usable today, but incomplete, inconsistent, or not yet fully public/productized. |
-| `Not started` | No known active implementation beyond generic/raw fallback. |
-| `Blocked` | Cannot be completed until another dependency lands. |
+| Code          | Meaning                                                                          |
+| ------------- | -------------------------------------------------------------------------------- |
+| `Done`        | Implemented, documented, tested, and reflected in the active workflow.           |
+| `Partial`     | Usable today, but incomplete, inconsistent, or not yet fully public/productized. |
+| `Not started` | No known active implementation beyond generic/raw fallback.                      |
+| `Blocked`     | Cannot be completed until another dependency lands.                              |
 
-| Priority | Meaning |
-| --- | --- |
-| `P0` | Required before a serious target-house-1 generation run. |
-| `P1` | Required before calling the workflow excellent / repeatable. |
-| `P2` | Important for broader projects, but not a blocker for target-house-1. |
-| `P3` | Nice-to-have polish or later scale work. |
+| Priority | Meaning                                                               |
+| -------- | --------------------------------------------------------------------- |
+| `P0`     | Required before a serious target-house-1 generation run.              |
+| `P1`     | Required before calling the workflow excellent / repeatable.          |
+| `P2`     | Important for broader projects, but not a blocker for target-house-1. |
+| `P3`     | Nice-to-have polish or later scale work.                              |
 
 ## Milestones
 
-| Milestone | Status | Exit Criteria |
-| --- | --- | --- |
-| `M0` Active workflow preflight | Done | Skill/helper/docs use active paths; `doctor` file checks pass; archived methodology is only historical reference; no stale default capability/archetype paths remain. |
-| `M1` Public agent surface for sketch initiation | Partial | A non-browser agent can validate IR, compile/author a phase, dry-run, commit, query, collect Advisor/constructability evidence, and accept/reject a phase through CLI/MCP-grade descriptors. |
-| `M2` Real BIM information requirements | Partial | Sketch IR and acceptance gates require rooms/spaces, element semantics, type/material layer intent, classification, quantities, and project/site assumptions appropriate to the quality target. C01-C05 are active; quantity/site expansion remains in later C items. |
-| `M3` Evidence and acceptance hardening | Partial | Current-head live evidence, screenshots, visual gates, Advisor/constructability, BIM data checks, stale checks, and exported artifacts are all required by final acceptance. |
-| `M4` Target-house readiness rehearsal | Not started | A dry rehearsal produces only planning artifacts for target-house-1: IR, BIM information requirements, capability gap map, phase plan, acceptance checklist, and risk register. No seed artifact is committed yet. |
-| `M5` Production-quality target-house-1 run | Not started | The seed is generated in phases, accepted with current-head evidence, and packaged as the only seed artifact when requested. |
+| Milestone                                       | Status      | Exit Criteria                                                                                                                                                                                                                                                                                      |
+| ----------------------------------------------- | ----------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `M0` Active workflow preflight                  | Done        | Skill/helper/docs use active paths; `doctor` file checks pass; archived methodology is only historical reference; no stale default capability/archetype paths remain.                                                                                                                              |
+| `M1` Public agent surface for sketch initiation | Partial     | P0 CLI/product contract is closed for target-house readiness: a non-browser agent can validate IR, compile/author a phase, dry-run, commit, query, collect Advisor/constructability evidence, and accept/reject a phase. MCP resources and server-hosted seed compile remain P1/P2 follow-up work. |
+| `M2` Real BIM information requirements          | Partial     | Sketch IR and acceptance gates require rooms/spaces, element semantics, type/material layer intent, classification, quantities, and project/site assumptions appropriate to the quality target. C01-C05 are active; quantity/site expansion remains in later C items.                              |
+| `M3` Evidence and acceptance hardening          | Partial     | Advisor/constructability evidence collection, finding dispositions, visual evidence contract, and BIM data checks are active. Current-head live screenshots, semantic visual evaluation, stale checks, and export validation remain open.                                                          |
+| `M4` Target-house readiness rehearsal           | Not started | A dry rehearsal produces only planning artifacts for target-house-1: IR, BIM information requirements, capability gap map, phase plan, acceptance checklist, and risk register. No seed artifact is committed yet.                                                                                 |
+| `M5` Production-quality target-house-1 run      | Not started | The seed is generated in phases, accepted with current-head evidence, and packaged as the only seed artifact when requested.                                                                                                                                                                       |
 
 ## Current Surface Assessment
 
@@ -134,62 +134,62 @@ legitimate, or write a tolerance with evidence and expiry.
 
 ### A. Active Workflow And Preflight
 
-| ID | Priority | Status | Item | Acceptance |
-| --- | --- | --- | --- | --- |
-| `SKB-RDY-A01` | P0 | Done | Create active methodology entrypoint. | `spec/sketch-to-bim-methodology.md` exists and points to the current workflow, readiness tracker, capability matrix, product surfaces, and target-house process. |
-| `SKB-RDY-A02` | P0 | Done | Replace stale archive path defaults. | Skill examples and `sketch_bim.py` default to `spec/sketch-to-bim-capability-matrix.json`; no active workflow command requires `spec/archive/*` unless explicitly reading history. |
-| `SKB-RDY-A03` | P0 | Done | Restore active archetype manifest. | `spec/sketch-to-bim-archetypes.json` exists or the helper intentionally points to the archived manifest with a clear reason. `archetypes --query` works from a clean checkout. |
-| `SKB-RDY-A04` | P0 | Done | Define current process audit tracker. | `spec/sketch-to-bim-process-audit-tracker.md` exists and identifies this tracker as the current source of readiness work, not the old archived audit. |
-| `SKB-RDY-A05` | P0 | Done | Make `doctor` actionable. | `doctor` reports separate `filesOk`, `apiOk`, `webOk`, and `liveOk` so a stopped dev server is not confused with stale docs. `--require-live` still fails if app/API are not running. |
-| `SKB-RDY-A06` | P1 | Not started | Add CI check for stale skill paths. | A test/grep fails if active skill docs point to archived capability/methodology paths for normal runs. |
-| `SKB-RDY-A07` | P1 | Not started | Add command smoke tests for skill helper. | Tests cover `doctor`, `tools`, `archetypes`, `compile` path validation, `phase-accept` packet generation, and stale-check behavior. |
+| ID            | Priority | Status      | Item                                      | Acceptance                                                                                                                                                                            |
+| ------------- | -------- | ----------- | ----------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `SKB-RDY-A01` | P0       | Done        | Create active methodology entrypoint.     | `spec/sketch-to-bim-methodology.md` exists and points to the current workflow, readiness tracker, capability matrix, product surfaces, and target-house process.                      |
+| `SKB-RDY-A02` | P0       | Done        | Replace stale archive path defaults.      | Skill examples and `sketch_bim.py` default to `spec/sketch-to-bim-capability-matrix.json`; no active workflow command requires `spec/archive/*` unless explicitly reading history.    |
+| `SKB-RDY-A03` | P0       | Done        | Restore active archetype manifest.        | `spec/sketch-to-bim-archetypes.json` exists or the helper intentionally points to the archived manifest with a clear reason. `archetypes --query` works from a clean checkout.        |
+| `SKB-RDY-A04` | P0       | Done        | Define current process audit tracker.     | `spec/sketch-to-bim-process-audit-tracker.md` exists and identifies this tracker as the current source of readiness work, not the old archived audit.                                 |
+| `SKB-RDY-A05` | P0       | Done        | Make `doctor` actionable.                 | `doctor` reports separate `filesOk`, `apiOk`, `webOk`, and `liveOk` so a stopped dev server is not confused with stale docs. `--require-live` still fails if app/API are not running. |
+| `SKB-RDY-A06` | P1       | Not started | Add CI check for stale skill paths.       | A test/grep fails if active skill docs point to archived capability/methodology paths for normal runs.                                                                                |
+| `SKB-RDY-A07` | P1       | Not started | Add command smoke tests for skill helper. | Tests cover `doctor`, `tools`, `archetypes`, `compile` path validation, `phase-accept` packet generation, and stale-check behavior.                                                   |
 
 ### B. Public CLI / MCP Surface
 
-| ID | Priority | Status | Item | Acceptance |
-| --- | --- | --- | --- | --- |
-| `SKB-RDY-B01` | P0 | Done | Keep CLI as canonical external-agent path until MCP routes are executable. | Tracker and methodology state that CLI is allowed and preferred when API/MCP descriptor is contract-only. |
-| `SKB-RDY-B02` | P0 | Partial | Make sketch tool status explicit in descriptor ledger. | Generated API ledger distinguishes executable, contract-only, CLI-only, and skill-local surfaces for every `sketch.*`, `qa.*`, and `export.*` tool. |
-| `SKB-RDY-B03` | P0 | Partial | Server-host seed compiler or formalize CLI-only compiler. | Either `POST /api/v3/sketch/seed/compile` returns a bundle, or the descriptor clearly says MCP clients must call CLI/sidecar compiler and why. |
-| `SKB-RDY-B04` | P0 | Partial | Phase apply must have one blessed transaction path. | Methodology names `/api/models/{model_id}/bundles` plus CLI `sketch phase apply` as the authoritative path; API wrapper is either implemented by delegation or documented as non-executable. |
-| `SKB-RDY-B05` | P0 | Partial | Promote Advisor to stable agent tool. | `qa.advisor` / `qa.constructability` descriptors expose warning/info/error grouping, profile selection, element ids, and UI-equivalent filter context. |
-| `SKB-RDY-B06` | P0 | Not started | Add evidence collection tool. | Stable CLI/API tool collects snapshot, validate, evidence package, Advisor warning/info, model stats, and manifest into one directory without relying on browser automation. |
-| `SKB-RDY-B07` | P0 | Not started | Add visual evidence contract. | Product surface defines required screenshot/viewpoint inputs and outputs. Browser automation can implement capture, but the evidence schema is product-owned. |
-| `SKB-RDY-B08` | P1 | Not started | Add MCP resources for model state. | Resources or equivalent routes expose snapshot, summary, levels, views, types, elements, Advisor, command log, and evidence package. |
-| `SKB-RDY-B09` | P1 | Partial | Export backend command schemas. | `GET /api/v3/commands` or equivalent exposes all kernel command JSON Schemas, examples, side effects, and raw/semantic mapping. |
-| `SKB-RDY-B10` | P1 | Partial | Query/resolve parity for sketch authoring. | Agent can discover levels, host walls, roof/slab hosts, types, rooms, loops, and nearest/line-matched elements without UI selection. |
-| `SKB-RDY-B11` | P1 | Partial | Cmd+K-to-agent equivalence map. | Cmd+K entries that activate tools declare their completed CLI/MCP equivalent and execution kind. |
-| `SKB-RDY-B12` | P1 | Not started | One command to run a phase loop. | `sketch phase run` or equivalent takes IR, phase plan, bundle/recipe, model id, and returns dry-run/commit/evidence/acceptance packet. |
+| ID            | Priority | Status      | Item                                                                       | Acceptance                                                                                                                                                                                                                       |
+| ------------- | -------- | ----------- | -------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `SKB-RDY-B01` | P0       | Done        | Keep CLI as canonical external-agent path until MCP routes are executable. | Tracker and methodology state that CLI is allowed and preferred when API/MCP descriptor is contract-only.                                                                                                                        |
+| `SKB-RDY-B02` | P0       | Done        | Make sketch tool status explicit in descriptor ledger.                     | Generated API ledger distinguishes executable, contract-only, CLI-only, and skill-local surfaces for `sketch.*`, `qa.*`, `export.*`, and evidence-adjacent tools.                                                                |
+| `SKB-RDY-B03` | P0       | Done        | Server-host seed compiler or formalize CLI-only compiler.                  | The descriptor/product docs formally mark `sketch.seed.compile` as CLI-only until the Node compiler is hosted server-side; MCP clients must call the CLI/sidecar compiler.                                                       |
+| `SKB-RDY-B04` | P0       | Done        | Phase apply must have one blessed transaction path.                        | Methodology and product docs name `/api/models/{model_id}/bundles` plus CLI `sketch phase apply` as the authoritative transaction path; the sketch wrapper is documented as contract-only.                                       |
+| `SKB-RDY-B05` | P0       | Done        | Promote Advisor to stable agent tool.                                      | `qa.advisor` and `qa.constructability` descriptors expose warning/info/error grouping, profile selection, element ids, and UI-equivalent filter context.                                                                         |
+| `SKB-RDY-B06` | P0       | Done        | Add evidence collection tool.                                              | CLI `sketch evidence collect` writes snapshot, validate, evidence package, Advisor error/warning/info/all, constructability report, model stats, finding dispositions, visual contract, and manifest without browser automation. |
+| `SKB-RDY-B07` | P0       | Done        | Add visual evidence contract.                                              | `sketch.visual-evidence-contract.v1` defines required screenshot/viewpoint inputs and outputs. Browser automation can implement capture, but the evidence schema is product-owned.                                               |
+| `SKB-RDY-B08` | P1       | Not started | Add MCP resources for model state.                                         | Resources or equivalent routes expose snapshot, summary, levels, views, types, elements, Advisor, command log, and evidence package.                                                                                             |
+| `SKB-RDY-B09` | P1       | Partial     | Export backend command schemas.                                            | `GET /api/v3/commands` or equivalent exposes all kernel command JSON Schemas, examples, side effects, and raw/semantic mapping.                                                                                                  |
+| `SKB-RDY-B10` | P1       | Partial     | Query/resolve parity for sketch authoring.                                 | Agent can discover levels, host walls, roof/slab hosts, types, rooms, loops, and nearest/line-matched elements without UI selection.                                                                                             |
+| `SKB-RDY-B11` | P1       | Partial     | Cmd+K-to-agent equivalence map.                                            | Cmd+K entries that activate tools declare their completed CLI/MCP equivalent and execution kind.                                                                                                                                 |
+| `SKB-RDY-B12` | P1       | Not started | One command to run a phase loop.                                           | `sketch phase run` or equivalent takes IR, phase plan, bundle/recipe, model id, and returns dry-run/commit/evidence/acceptance packet.                                                                                           |
 
 ### C. Sketch Understanding And BIM Information Requirements
 
-| ID | Priority | Status | Item | Acceptance |
-| --- | --- | --- | --- | --- |
-| `SKB-RDY-C01` | P0 | Done | Extend Sketch IR with BIM requirements. | Active IR validation requires `informationRequirements` for `project_initiation_bim`/`documentation_ready`, including quality target, LOD/LOI intent, exchange goal, model uses, discipline scope, and required checks. |
-| `SKB-RDY-C02` | P0 | Done | Add room/space requirements. | IR and acceptance require room names/numbers, level, target area, function, occupancy/use, bounding status, doors/access, schedule inclusion, and IfcSpace intent. |
-| `SKB-RDY-C03` | P0 | Done | Add element semantic requirements. | Exterior walls, interior walls, slabs, roofs, stairs, doors, windows, railings, rooms, and assets declare expected BIM categories and IFC export entity intent. |
-| `SKB-RDY-C04` | P0 | Done | Add material/layer-set requirements. | Wall/slab/roof layer-set requirements carry layer intent, thicknesses, and thermal/fire/acoustic placeholders where quality target requires them. |
-| `SKB-RDY-C05` | P0 | Done | Add classification requirements. | Rooms have DIN277-like area/use placeholders; building elements have DIN276/cost group placeholders; IFC classification references are planned. |
-| `SKB-RDY-C06` | P1 | Not started | Add structure-lite requirements. | Load-bearing flags, primary support assumptions, columns/beams where visible/needed, stair/slab opening coordination, and load-path notes are captured. |
-| `SKB-RDY-C07` | P1 | Not started | Add MEP-lite requirements. | Wet-room stacking, vertical shafts/risers, equipment zones, pipe/duct/cable route placeholders, service levels, and opening requests are captured. |
-| `SKB-RDY-C08` | P1 | Not started | Add planning/site requirements. | Site orientation, base point/survey point assumptions, property line/setback availability, sun assumptions, and code locale are explicit. |
-| `SKB-RDY-C09` | P1 | Not started | Add export requirements. | Required exchange outputs are explicit: IFC, glTF/GLB, PDF/sheets, schedules, evidence package, and source bundle. |
-| `SKB-RDY-C10` | P2 | Not started | Add sustainability/material passport starter data. | Materials can carry EPD/source confidence, embodied carbon placeholder, reuse/recyclability notes, and quantity source. |
+| ID            | Priority | Status      | Item                                               | Acceptance                                                                                                                                                                                                              |
+| ------------- | -------- | ----------- | -------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `SKB-RDY-C01` | P0       | Done        | Extend Sketch IR with BIM requirements.            | Active IR validation requires `informationRequirements` for `project_initiation_bim`/`documentation_ready`, including quality target, LOD/LOI intent, exchange goal, model uses, discipline scope, and required checks. |
+| `SKB-RDY-C02` | P0       | Done        | Add room/space requirements.                       | IR and acceptance require room names/numbers, level, target area, function, occupancy/use, bounding status, doors/access, schedule inclusion, and IfcSpace intent.                                                      |
+| `SKB-RDY-C03` | P0       | Done        | Add element semantic requirements.                 | Exterior walls, interior walls, slabs, roofs, stairs, doors, windows, railings, rooms, and assets declare expected BIM categories and IFC export entity intent.                                                         |
+| `SKB-RDY-C04` | P0       | Done        | Add material/layer-set requirements.               | Wall/slab/roof layer-set requirements carry layer intent, thicknesses, and thermal/fire/acoustic placeholders where quality target requires them.                                                                       |
+| `SKB-RDY-C05` | P0       | Done        | Add classification requirements.                   | Rooms have DIN277-like area/use placeholders; building elements have DIN276/cost group placeholders; IFC classification references are planned.                                                                         |
+| `SKB-RDY-C06` | P1       | Not started | Add structure-lite requirements.                   | Load-bearing flags, primary support assumptions, columns/beams where visible/needed, stair/slab opening coordination, and load-path notes are captured.                                                                 |
+| `SKB-RDY-C07` | P1       | Not started | Add MEP-lite requirements.                         | Wet-room stacking, vertical shafts/risers, equipment zones, pipe/duct/cable route placeholders, service levels, and opening requests are captured.                                                                      |
+| `SKB-RDY-C08` | P1       | Not started | Add planning/site requirements.                    | Site orientation, base point/survey point assumptions, property line/setback availability, sun assumptions, and code locale are explicit.                                                                               |
+| `SKB-RDY-C09` | P1       | Not started | Add export requirements.                           | Required exchange outputs are explicit: IFC, glTF/GLB, PDF/sheets, schedules, evidence package, and source bundle.                                                                                                      |
+| `SKB-RDY-C10` | P2       | Not started | Add sustainability/material passport starter data. | Materials can carry EPD/source confidence, embodied carbon placeholder, reuse/recyclability notes, and quantity source.                                                                                                 |
 
 ### D. Seed DSL And Authoring Macros
 
-| ID | Priority | Status | Item | Acceptance |
-| --- | --- | --- | --- | --- |
-| `SKB-RDY-D01` | P0 | Done | Document seed DSL coverage against target-house needs. | `spec/sketch-to-bim-capability-matrix.json` includes `targetHouseSeedDslCoverage`, mapping roof terrace, folded wrapper, recessed loggia, room programme, and deterministic evidence views to DSL fields, typed CLI tools, raw commands, required evidence, and remaining non-DSL gaps. |
-| `SKB-RDY-D02` | P0 | Done | Roof terrace macro. | `features.roofTerraces[]` emits roof opening, occupied terrace floor, return walls, guard rail, access openings, and feature-linked evidence views without opaque raw bundle surgery. |
-| `SKB-RDY-D03` | P0 | Done | Folded wrapper shell macro. | `features.foldedWrappers[]` emits deterministic wrapper walls, optional roof/wall attachment, explicit return walls, fascia sweeps, and material intent; final mass placeholders are not required. |
-| `SKB-RDY-D04` | P0 | Done | Recessed loggia macro. | `features.loggias[]` now covers recessed facade walls, side returns, balcony slab, rail, bay rhythm openings, and access openings. |
-| `SKB-RDY-D05` | P0 | Done | Room programme macro. | `features.roomProgrammes[]` emits room outlines or boundary-wall room polys, access doors, stairs, and slab openings, with programme metadata preserved. |
-| `SKB-RDY-D06` | P0 | Done | Viewpoint/evidence macro. | `viewpoints[]` compiles deterministic saved 3D/plan/diagnostic views with camera, clip, overlay, evidence role, and feature-id metadata. |
-| `SKB-RDY-D07` | P1 | Not started | Facade rhythm/opening macro. | Agent can place bay-based windows/doors/mullion proxies on host walls while preserving host cuts and schedules. |
-| `SKB-RDY-D08` | P1 | Not started | Wall/floor/roof type builder. | Agent can define type names, thickness, material layers, exterior/interior role, U-value/fire placeholders, and assignment. |
-| `SKB-RDY-D09` | P1 | Not started | BIM asset placement macro. | Agent can place furniture/equipment markers with type ids, room association, schedule category, and evidence role. |
-| `SKB-RDY-D10` | P1 | Not started | Sheet/schedule/documentation macro. | Agent can generate minimal floor plans, elevations/sections, room schedule, door/window schedule, and sheet layout for project initiation. |
+| ID            | Priority | Status      | Item                                                   | Acceptance                                                                                                                                                                                                                                                                              |
+| ------------- | -------- | ----------- | ------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `SKB-RDY-D01` | P0       | Done        | Document seed DSL coverage against target-house needs. | `spec/sketch-to-bim-capability-matrix.json` includes `targetHouseSeedDslCoverage`, mapping roof terrace, folded wrapper, recessed loggia, room programme, and deterministic evidence views to DSL fields, typed CLI tools, raw commands, required evidence, and remaining non-DSL gaps. |
+| `SKB-RDY-D02` | P0       | Done        | Roof terrace macro.                                    | `features.roofTerraces[]` emits roof opening, occupied terrace floor, return walls, guard rail, access openings, and feature-linked evidence views without opaque raw bundle surgery.                                                                                                   |
+| `SKB-RDY-D03` | P0       | Done        | Folded wrapper shell macro.                            | `features.foldedWrappers[]` emits deterministic wrapper walls, optional roof/wall attachment, explicit return walls, fascia sweeps, and material intent; final mass placeholders are not required.                                                                                      |
+| `SKB-RDY-D04` | P0       | Done        | Recessed loggia macro.                                 | `features.loggias[]` now covers recessed facade walls, side returns, balcony slab, rail, bay rhythm openings, and access openings.                                                                                                                                                      |
+| `SKB-RDY-D05` | P0       | Done        | Room programme macro.                                  | `features.roomProgrammes[]` emits room outlines or boundary-wall room polys, access doors, stairs, and slab openings, with programme metadata preserved.                                                                                                                                |
+| `SKB-RDY-D06` | P0       | Done        | Viewpoint/evidence macro.                              | `viewpoints[]` compiles deterministic saved 3D/plan/diagnostic views with camera, clip, overlay, evidence role, and feature-id metadata.                                                                                                                                                |
+| `SKB-RDY-D07` | P1       | Not started | Facade rhythm/opening macro.                           | Agent can place bay-based windows/doors/mullion proxies on host walls while preserving host cuts and schedules.                                                                                                                                                                         |
+| `SKB-RDY-D08` | P1       | Not started | Wall/floor/roof type builder.                          | Agent can define type names, thickness, material layers, exterior/interior role, U-value/fire placeholders, and assignment.                                                                                                                                                             |
+| `SKB-RDY-D09` | P1       | Not started | BIM asset placement macro.                             | Agent can place furniture/equipment markers with type ids, room association, schedule category, and evidence role.                                                                                                                                                                      |
+| `SKB-RDY-D10` | P1       | Not started | Sheet/schedule/documentation macro.                    | Agent can generate minimal floor plans, elevations/sections, room schedule, door/window schedule, and sheet layout for project initiation.                                                                                                                                              |
 
 Closeout note for D01-D06: seed DSL compilation now carries target-house-critical
 intent through semantic macro fields in `packages/cli/lib/seed-dsl.mjs`, and the
@@ -199,18 +199,18 @@ manual seed authoring gaps.
 
 ### E. Validation, Advisor, Evidence, And Acceptance
 
-| ID | Priority | Status | Item | Acceptance |
-| --- | --- | --- | --- | --- |
-| `SKB-RDY-E01` | P0 | Partial | Current-head evidence requirement. | Final acceptance fails if packet was generated against stale git head, stale model revision, or stale Advisor rule digest. |
-| `SKB-RDY-E02` | P0 | Partial | Phase acceptance schema. | Phase packet includes phase id, feature ids, IR coverage, capability coverage, Advisor summary, visual checklist, blockers, tolerances, and evidence paths. |
-| `SKB-RDY-E03` | P0 | Partial | Visual gates for sketch-critical features. | Required views prove roof terrace, loggia, wrapper, cladding, interior plan, and diagnostics. Missing/nonblank-only screenshots are not enough for final acceptance. |
-| `SKB-RDY-E04` | P0 | Partial | Advisor/constructability profile parity. | CLI/API evidence matches the UI Advisor/right-rail profile used for project initiation and construction readiness. |
-| `SKB-RDY-E05` | P0 | Done | BIM data quality gate. | Acceptance writes `bim-data-quality.json` and checks rooms, levels, element categories, material/type completeness, classification placeholders, schedules, and export readiness. |
-| `SKB-RDY-E06` | P1 | Not started | IFC/IDS-style validation gate. | Exported IFC or normalized BIM exchange manifest is validated for project hierarchy, entity classes, spaces, material layers, Psets, quantities, and classifications. |
-| `SKB-RDY-E07` | P1 | Not started | Semantic visual evaluator. | Beyond pixel deltas, checklist or CV-assisted evaluator detects critical features such as roof cutout present, wrapper shell thickness, loggia recess, and cladding rhythm. |
-| `SKB-RDY-E08` | P1 | Partial | Tolerance protocol. | Every unresolved warning/gap has severity, affected feature, reason, owner, expiry condition, and evidence link. |
-| `SKB-RDY-E10` | P0 | Not started | Advisor-driven refinement loop. | Phase tooling records warning/info/error findings after dry-run and after commit; current-phase findings must be fixed, deferred with phase rationale, tolerated with evidence, or marked blocked before phase acceptance. |
-| `SKB-RDY-E09` | P2 | Not started | Benchmark goldens for sketch cases. | Golden cases include live screenshot/advisor/evidence baselines for archetypes, not just deterministic packet checks. |
+| ID            | Priority | Status      | Item                                       | Acceptance                                                                                                                                                                                                                                     |
+| ------------- | -------- | ----------- | ------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `SKB-RDY-E01` | P0       | Partial     | Current-head evidence requirement.         | Final acceptance fails if packet was generated against stale git head, stale model revision, or stale Advisor rule digest.                                                                                                                     |
+| `SKB-RDY-E02` | P0       | Done        | Phase acceptance schema.                   | Phase packet includes phase id, feature ids, IR coverage, capability coverage, Advisor summary, visual checklist, BIM data quality, finding dispositions, blockers, tolerances, and evidence paths.                                            |
+| `SKB-RDY-E03` | P0       | Partial     | Visual gates for sketch-critical features. | Required views prove roof terrace, loggia, wrapper, cladding, interior plan, and diagnostics. Missing/nonblank-only screenshots are not enough for final acceptance.                                                                           |
+| `SKB-RDY-E04` | P0       | Done        | Advisor/constructability profile parity.   | CLI/API evidence captures Advisor error/warning/info/all plus constructability profile reports with profile id, element ids, and disposition tracking for project initiation.                                                                  |
+| `SKB-RDY-E05` | P0       | Done        | BIM data quality gate.                     | Acceptance writes `bim-data-quality.json` and checks rooms, levels, element categories, material/type completeness, classification placeholders, schedules, and export readiness.                                                              |
+| `SKB-RDY-E06` | P1       | Not started | IFC/IDS-style validation gate.             | Exported IFC or normalized BIM exchange manifest is validated for project hierarchy, entity classes, spaces, material layers, Psets, quantities, and classifications.                                                                          |
+| `SKB-RDY-E07` | P1       | Not started | Semantic visual evaluator.                 | Beyond pixel deltas, checklist or CV-assisted evaluator detects critical features such as roof cutout present, wrapper shell thickness, loggia recess, and cladding rhythm.                                                                    |
+| `SKB-RDY-E08` | P1       | Partial     | Tolerance protocol.                        | Every unresolved warning/gap has severity, affected feature, reason, owner, expiry condition, and evidence link.                                                                                                                               |
+| `SKB-RDY-E10` | P0       | Done        | Advisor-driven refinement loop.            | Evidence collection and phase acceptance record warning/info/error findings and enforce dispositions: current-phase findings must be fixed, deferred with phase rationale, tolerated with evidence, or marked blocked before phase acceptance. |
+| `SKB-RDY-E09` | P2       | Not started | Benchmark goldens for sketch cases.        | Golden cases include live screenshot/advisor/evidence baselines for archetypes, not just deterministic packet checks.                                                                                                                          |
 
 ### F. Target-House-1 Specific Readiness
 

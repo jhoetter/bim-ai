@@ -63,12 +63,12 @@ unless the tolerance is explicit, scoped, and visible in the final packet.
 
 ## Quality Targets
 
-| Target | Meaning |
-| --- | --- |
-| `massing_only` | Visual massing and silhouette study. |
-| `concept_bim` | Primary BIM objects with basic usability evidence. |
+| Target                   | Meaning                                                                                                  |
+| ------------------------ | -------------------------------------------------------------------------------------------------------- |
+| `massing_only`           | Visual massing and silhouette study.                                                                     |
+| `concept_bim`            | Primary BIM objects with basic usability evidence.                                                       |
 | `project_initiation_bim` | Usable project seed with rooms, access, Advisor evidence, screenshots, and BIM information requirements. |
-| `documentation_ready` | Project initiation plus sheets, schedules, exports, and documentation evidence. |
+| `documentation_ready`    | Project initiation plus sheets, schedules, exports, and documentation evidence.                          |
 
 ## Real BIM Minimum
 

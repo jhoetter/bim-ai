@@ -97,6 +97,18 @@ async function fetchJsonResponse(method, url, bodyObj) {
   return { ok: res.ok, status: res.status, body: json };
 }
 
+async function fetchJsonResponseNoThrow(method, url, bodyObj) {
+  try {
+    return await fetchJsonResponse(method, url, bodyObj);
+  } catch (error) {
+    return {
+      ok: false,
+      status: 0,
+      body: { error: error?.message ?? String(error) },
+    };
+  }
+}
+
 async function fetchOkText(method, url) {
   const res = await fetch(url, {
     method,
@@ -174,6 +186,31 @@ async function advisorSummary(modelId, { severity = null } = {}) {
     total: violations.length,
     groups: grouped,
   };
+}
+
+function severityRank(severity) {
+  return { error: 0, warning: 1, info: 2 }[severity] ?? 9;
+}
+
+function advisorFindingRows(summary, sourceLabel) {
+  const rows = [];
+  for (const group of summary?.groups ?? []) {
+    const severity = String(group?.severity ?? 'unknown');
+    rows.push({
+      source: sourceLabel,
+      severity,
+      code: group?.code ?? 'unknown',
+      count: group?.count ?? 0,
+      elementIds: group?.elementIds ?? [],
+      messages: group?.messages ?? [],
+      disposition: severity === 'info' ? 'reviewed' : 'unclassified',
+      phaseRationale: '',
+      toleranceEvidence: '',
+      owner: '',
+      expiryCondition: '',
+    });
+  }
+  return rows;
 }
 
 async function cmdAdvisor(modelId, { output = 'text', severity = null } = {}) {
@@ -2976,6 +3013,57 @@ async function cmdSketchPhaseApply({
   if (!result.ok) process.exit(1);
 }
 
+async function loadPhaseFindingDispositions(evidenceDir) {
+  if (!evidenceDir) return null;
+  const filePath = path.join(evidenceDir, 'finding-dispositions.json');
+  try {
+    const payload = await readJsonFile(filePath);
+    const findings = Array.isArray(payload?.findings) ? payload.findings : [];
+    const unclassifiedBlocking = findings.filter(
+      (finding) =>
+        ['error', 'warning'].includes(String(finding?.severity ?? '')) &&
+        ['unclassified', 'fix-now', 'fix-in-phase', ''].includes(
+          String(finding?.disposition ?? 'unclassified'),
+        ),
+    );
+    const blockers = findings.filter(
+      (finding) =>
+        ['error', 'warning'].includes(String(finding?.severity ?? '')) &&
+        String(finding?.disposition ?? '') === 'blocked',
+    );
+    return {
+      path: filePath,
+      schemaVersion: payload.schemaVersion ?? null,
+      findingCount: findings.length,
+      countsBySeverity: findings.reduce((acc, finding) => {
+        const severity = String(finding?.severity ?? 'unknown');
+        acc[severity] = (acc[severity] ?? 0) + 1;
+        return acc;
+      }, {}),
+      countsByDisposition: findings.reduce((acc, finding) => {
+        const disposition = String(finding?.disposition ?? 'unclassified');
+        acc[disposition] = (acc[disposition] ?? 0) + 1;
+        return acc;
+      }, {}),
+      unclassifiedBlocking,
+      blockers,
+      ok: unclassifiedBlocking.length === 0 && blockers.length === 0,
+    };
+  } catch (error) {
+    return {
+      path: filePath,
+      ok: false,
+      missing: true,
+      error: error?.message ?? String(error),
+      findingCount: 0,
+      countsBySeverity: {},
+      countsByDisposition: {},
+      unclassifiedBlocking: [],
+      blockers: [],
+    };
+  }
+}
+
 async function cmdSketchPhaseAccept({
   irPath,
   capabilityMatrixPath,
@@ -2984,6 +3072,7 @@ async function cmdSketchPhaseAccept({
   qualityMode,
   failOnAcceptance,
   phaseId,
+  evidenceDir,
 }) {
   if (!irPath || !outDir) {
     console.error('sketch phase accept requires --ir <path> --out <dir>.');
@@ -2999,14 +3088,66 @@ async function cmdSketchPhaseAccept({
     capabilityMatrixPath,
     modelId: modelId ?? null,
   });
+  const defaultEvidenceDir = path.join(outDir, 'live');
+  let dispositionSummary = null;
+  if (evidenceDir) {
+    dispositionSummary = await loadPhaseFindingDispositions(evidenceDir);
+  } else {
+    try {
+      await fs.access(path.join(defaultEvidenceDir, 'finding-dispositions.json'));
+      dispositionSummary = await loadPhaseFindingDispositions(defaultEvidenceDir);
+    } catch {
+      dispositionSummary = null;
+    }
+  }
+  if (dispositionSummary) {
+    await writeJsonArtifact(path.join(outDir, 'phase-finding-dispositions.json'), {
+      schemaVersion: 'sketch.phase.finding-disposition-summary.v1',
+      phaseId: phaseId ?? null,
+      evidenceDir: evidenceDir ?? defaultEvidenceDir,
+      ...dispositionSummary,
+    });
+  }
   const payload = {
     schemaVersion: 'sketch.phase.accept.cli-result.v0',
     phaseId: phaseId ?? null,
+    findingDispositions: dispositionSummary,
     ...result,
   };
   console.log(JSON.stringify(payload, null, 2));
   if (!result.ok) process.exit(2);
+  if (dispositionSummary?.ok === false) process.exit(6);
   if (failOnAcceptance && result.acceptance?.ok === false) process.exit(5);
+}
+
+async function cmdSketchEvidenceCollect({
+  modelId,
+  outDir,
+  irPath,
+  phaseId,
+  constructabilityProfile,
+  failOnBlockingDispositions,
+}) {
+  if (!modelId) {
+    console.error('sketch evidence collect requires --model <id> or BIM_AI_MODEL_ID.');
+    process.exit(1);
+  }
+  if (!outDir) {
+    console.error('sketch evidence collect requires --out <dir>.');
+    process.exit(1);
+  }
+  const ir = irPath ? await readJsonFile(irPath) : null;
+  const result = await collectModelEvidenceArtifacts({
+    modelId,
+    outDir,
+    ir,
+    phaseId,
+    constructabilityProfile,
+  });
+  console.log(JSON.stringify(result.manifest, null, 2));
+  if (failOnBlockingDispositions && result.manifest.summary.unclassifiedBlockingFindingCount > 0) {
+    process.exit(6);
+  }
 }
 
 function safeArtifactName(value) {
@@ -3033,6 +3174,249 @@ function modelStatsFromSnapshot(snap) {
     revision: snap?.revision ?? null,
     elementCount: Object.keys(elements).length,
     countsByKind,
+  };
+}
+
+function visualEvidenceContractFromIr(ir, snap, outDir) {
+  const requiredViews = Array.isArray(ir?.requiredViews) ? ir.requiredViews : [];
+  const elements = snap?.elements && typeof snap.elements === 'object' ? snap.elements : {};
+  const savedViewpoints = new Set(
+    Object.values(elements)
+      .filter((element) => element && typeof element === 'object' && element.kind === 'viewpoint')
+      .map((element) => element.id)
+      .filter(Boolean),
+  );
+  const screenshotsDir = path.join(outDir, 'screenshots');
+  return {
+    schemaVersion: 'sketch.visual-evidence-contract.v1',
+    generatedAt: new Date().toISOString(),
+    browserAutomationRequired: false,
+    note:
+      'Screenshots are an evidence capture method. Core snapshot, validate, evidence package, Advisor, constructability, and model stats checks do not require browser automation.',
+    inputs: {
+      modelId: snap?.modelId ?? null,
+      revision: snap?.revision ?? null,
+      requiredViews: requiredViews.map((view, index) => {
+        const id = view?.id ?? `view-${index + 1}`;
+        return {
+          id,
+          kind: view?.kind ?? 'unknown',
+          purpose: view?.purpose ?? '',
+          featureIds: view?.featureIds ?? [],
+          viewpointId: view?.viewpointId ?? id,
+          savedViewpointPresent: savedViewpoints.has(view?.viewpointId ?? id),
+          camera: view?.camera ?? null,
+          requiredOutput: path.join('screenshots', `${safeArtifactName(id)}.png`),
+        };
+      }),
+    },
+    outputs: {
+      screenshotsDirectory: screenshotsDir,
+      screenshotManifest: path.join(outDir, 'screenshot-manifest.json'),
+      visualGateReport: path.join(outDir, 'visual-gate-report.json'),
+      semanticChecklist: path.join(outDir, 'semantic-checklist.json'),
+    },
+    captureMethods: [
+      {
+        id: 'browser_automation',
+        role: 'ui-equivalent screenshot capture',
+        requiredForCoreValidation: false,
+      },
+      {
+        id: 'renderer_snapshot',
+        role: 'headless or server-side render from snapshot and viewpoint',
+        requiredForCoreValidation: false,
+      },
+      {
+        id: 'manual_review_upload',
+        role: 'externally captured PNG attached to the manifest',
+        requiredForCoreValidation: false,
+      },
+    ],
+    validation: {
+      nonBlankImageRequired: true,
+      semanticChecklistRequired: true,
+      staleModelRevisionMustMatchManifest: true,
+    },
+  };
+}
+
+function constructabilitySummary(report) {
+  const body = report?.body && typeof report.body === 'object' ? report.body : {};
+  const summary = body.summary && typeof body.summary === 'object' ? body.summary : {};
+  const severityCounts =
+    summary.severityCounts && typeof summary.severityCounts === 'object'
+      ? summary.severityCounts
+      : {};
+  return {
+    ok: !!report?.ok,
+    status: report?.status ?? null,
+    profile: body.profile ?? body.profileId ?? null,
+    severityCounts,
+    total:
+      Number(severityCounts.error ?? 0) +
+      Number(severityCounts.warning ?? 0) +
+      Number(severityCounts.info ?? 0),
+  };
+}
+
+function constructabilityFindingRows(report) {
+  const body = report?.body && typeof report.body === 'object' ? report.body : {};
+  const candidates = [
+    ...(Array.isArray(body.findings) ? body.findings : []),
+    ...(Array.isArray(body.advisories) ? body.advisories : []),
+    ...(Array.isArray(body.violations) ? body.violations : []),
+  ];
+  return candidates
+    .filter((row) => row && typeof row === 'object')
+    .map((row) => {
+      const severity = String(row.severity ?? row.level ?? 'warning');
+      return {
+        source: 'constructability',
+        profile: body.profile ?? body.profileId ?? null,
+        severity,
+        code: row.code ?? row.ruleId ?? row.advisoryClass ?? 'unknown',
+        count: row.count ?? 1,
+        elementIds: row.elementIds ?? row.elements ?? [],
+        messages: [row.message ?? row.title ?? row.description].filter(Boolean),
+        disposition: severity === 'info' ? 'reviewed' : 'unclassified',
+        phaseRationale: '',
+        toleranceEvidence: '',
+        owner: '',
+        expiryCondition: '',
+      };
+    });
+}
+
+async function collectModelEvidenceArtifacts({
+  modelId,
+  outDir,
+  ir = null,
+  phaseId = null,
+  constructabilityProfile = 'construction_readiness',
+}) {
+  await fs.mkdir(outDir, { recursive: true });
+  const snap = await fetchJson('GET', `${base}/api/models/${encodeURIComponent(modelId)}/snapshot`);
+  const validate = await fetchJson(
+    'GET',
+    `${base}/api/models/${encodeURIComponent(modelId)}/validate`,
+  );
+  const evidencePackage = await fetchJson(
+    'GET',
+    `${base}/api/models/${encodeURIComponent(modelId)}/evidence-package`,
+  );
+  const advisor = {
+    error: await advisorSummary(modelId, { severity: 'error' }),
+    warning: await advisorSummary(modelId, { severity: 'warning' }),
+    info: await advisorSummary(modelId, { severity: 'info' }),
+    all: await advisorSummary(modelId),
+  };
+  const constructability = await fetchJsonResponseNoThrow(
+    'GET',
+    `${base}/api/models/${encodeURIComponent(modelId)}/constructability-report?profile=${encodeURIComponent(
+      constructabilityProfile,
+    )}`,
+  );
+  const modelStats = modelStatsFromSnapshot(snap);
+  const visualEvidenceContract = visualEvidenceContractFromIr(ir, snap, outDir);
+  const findingDispositions = {
+    schemaVersion: 'sketch.finding-dispositions.v1',
+    generatedAt: new Date().toISOString(),
+    modelId,
+    revision: snap.revision ?? null,
+    phaseId,
+    allowedDispositions: [
+      'unclassified',
+      'fix-now',
+      'fix-in-phase',
+      'later-phase',
+      'tolerated',
+      'blocked',
+      'fixed',
+      'reviewed',
+    ],
+    findings: [
+      ...advisorFindingRows(advisor.error, 'advisor'),
+      ...advisorFindingRows(advisor.warning, 'advisor'),
+      ...advisorFindingRows(advisor.info, 'advisor'),
+      ...constructabilityFindingRows(constructability),
+    ].sort(
+      (a, b) =>
+        severityRank(a.severity) - severityRank(b.severity) ||
+        String(a.source).localeCompare(String(b.source)) ||
+        String(a.code).localeCompare(String(b.code)),
+    ),
+  };
+  const artifacts = {
+    snapshot: await writeJsonArtifact(path.join(outDir, 'snapshot.json'), snap),
+    validate: await writeJsonArtifact(path.join(outDir, 'validate.json'), validate),
+    evidencePackage: await writeJsonArtifact(
+      path.join(outDir, 'evidence-package.json'),
+      evidencePackage,
+    ),
+    advisorError: await writeJsonArtifact(path.join(outDir, 'advisor-error.json'), advisor.error),
+    advisorWarning: await writeJsonArtifact(
+      path.join(outDir, 'advisor-warning.json'),
+      advisor.warning,
+    ),
+    advisorInfo: await writeJsonArtifact(path.join(outDir, 'advisor-info.json'), advisor.info),
+    advisorAll: await writeJsonArtifact(path.join(outDir, 'advisor-all.json'), advisor.all),
+    constructabilityReport: await writeJsonArtifact(
+      path.join(outDir, 'constructability-report.json'),
+      constructability,
+    ),
+    modelStats: await writeJsonArtifact(path.join(outDir, 'model-stats.json'), modelStats),
+    visualEvidenceContract: await writeJsonArtifact(
+      path.join(outDir, 'visual-evidence-contract.json'),
+      visualEvidenceContract,
+    ),
+    findingDispositions: await writeJsonArtifact(
+      path.join(outDir, 'finding-dispositions.json'),
+      findingDispositions,
+    ),
+  };
+  const manifest = {
+    schemaVersion: 'sketch.evidence.collection.v1',
+    generatedAt: new Date().toISOString(),
+    modelId,
+    revision: snap.revision ?? null,
+    phaseId,
+    baseUrl: base,
+    browserAutomationRequired: false,
+    constructabilityProfile,
+    artifacts,
+    summary: {
+      modelStats,
+      advisor: {
+        error: advisor.error.total,
+        warning: advisor.warning.total,
+        info: advisor.info.total,
+      },
+      constructability: constructabilitySummary(constructability),
+      requiredVisualViewCount: visualEvidenceContract.inputs.requiredViews.length,
+      findingDispositionCount: findingDispositions.findings.length,
+      unclassifiedBlockingFindingCount: findingDispositions.findings.filter(
+        (finding) =>
+          ['error', 'warning'].includes(finding.severity) &&
+          ['unclassified', 'fix-now', 'fix-in-phase'].includes(finding.disposition),
+      ).length,
+    },
+  };
+  artifacts.manifest = await writeJsonArtifact(path.join(outDir, 'evidence-manifest.json'), {
+    ...manifest,
+    artifacts: { ...artifacts, manifest: path.join(outDir, 'evidence-manifest.json') },
+  });
+  return {
+    snap,
+    validate,
+    evidencePackage,
+    liveAdvisor: { warning: advisor.warning, info: advisor.info, error: advisor.error },
+    modelStats,
+    constructability,
+    visualEvidenceContract,
+    findingDispositions,
+    liveArtifacts: artifacts,
+    manifest: { ...manifest, artifacts },
   };
 }
 
@@ -3090,38 +3474,9 @@ async function applyRunnerBundle(modelId, userId, bundlePath, baseRevision, mode
   };
 }
 
-async function writeLiveEvidenceArtifacts(modelId, outDir) {
+async function writeLiveEvidenceArtifacts(modelId, outDir, { ir = null, phaseId = null } = {}) {
   const liveDir = path.join(outDir, 'live');
-  await fs.mkdir(liveDir, { recursive: true });
-  const snap = await fetchJson('GET', `${base}/api/models/${encodeURIComponent(modelId)}/snapshot`);
-  const validate = await fetchJson(
-    'GET',
-    `${base}/api/models/${encodeURIComponent(modelId)}/validate`,
-  );
-  const evidencePackage = await fetchJson(
-    'GET',
-    `${base}/api/models/${encodeURIComponent(modelId)}/evidence-package`,
-  );
-  const liveAdvisor = {
-    warning: await advisorSummary(modelId, { severity: 'warning' }),
-    info: await advisorSummary(modelId, { severity: 'info' }),
-  };
-  const modelStats = modelStatsFromSnapshot(snap);
-  const liveArtifacts = {
-    snapshot: await writeJsonArtifact(path.join(liveDir, 'snapshot.json'), snap),
-    validate: await writeJsonArtifact(path.join(liveDir, 'validate.json'), validate),
-    evidencePackage: await writeJsonArtifact(
-      path.join(liveDir, 'evidence-package.json'),
-      evidencePackage,
-    ),
-    advisorWarning: await writeJsonArtifact(
-      path.join(liveDir, 'advisor-warning.json'),
-      liveAdvisor.warning,
-    ),
-    advisorInfo: await writeJsonArtifact(path.join(liveDir, 'advisor-info.json'), liveAdvisor.info),
-    modelStats: await writeJsonArtifact(path.join(liveDir, 'model-stats.json'), modelStats),
-  };
-  return { snap, validate, evidencePackage, liveAdvisor, modelStats, liveArtifacts };
+  return collectModelEvidenceArtifacts({ modelId, outDir: liveDir, ir, phaseId });
 }
 
 function screenshotRequiredViews(ir) {
@@ -3358,7 +3713,7 @@ async function cmdInitiationRun({
     }
   }
 
-  const live = await writeLiveEvidenceArtifacts(modelId, outDir);
+  const live = await writeLiveEvidenceArtifacts(modelId, outDir, { ir });
   let screenshotManifest = null;
   let visualGateReport = null;
   if (screenshots) {
@@ -3981,8 +4336,12 @@ Commands:
                                        M3-F: compile seed DSL through the product seed compiler.
   sketch phase apply --model <id> --bundle <path> --base <rev> [--dry-run|--commit] [--out <path>]
                                        M3-F: submit a phase bundle through the transaction route.
-  sketch phase accept --ir <path> --out <dir> [--capabilities <path>] [--fail-on-acceptance]
-                                       M3-F: evaluate phase packet acceptance gates.
+  sketch phase accept --ir <path> --out <dir> [--capabilities <path>] [--evidence-dir <dir>] [--fail-on-acceptance]
+                                       M3-F: evaluate phase packet acceptance gates and finding dispositions.
+  sketch evidence collect --model <id> --out <dir> [--ir <path>] [--phase <id>] [--profile <name>]
+                                       SKB: collect snapshot, validate, evidence package, Advisor
+                                       warning/info/error, constructability, model stats, visual
+                                       evidence contract, and manifest without browser automation.
   initiation-check --ir <path> --out <dir> [--capabilities <path>] [--model <id>] [--live]
                    [--mode massing_only|concept_bim|project_initiation_bim|documentation_ready]
                    [--fail-on-acceptance]
@@ -4340,6 +4699,7 @@ async function main() {
         let qualityMode;
         let failOnAcceptance = false;
         let phaseId;
+        let evidenceDir;
         for (let i = 0; i < rest.length; i++) {
           const a = rest[i];
           if (a === '--ir' && rest[i + 1]) irArg = rest[++i];
@@ -4350,6 +4710,7 @@ async function main() {
           else if (a === '--mode' && rest[i + 1]) qualityMode = rest[++i];
           else if (a === '--phase' && rest[i + 1]) phaseId = rest[++i];
           else if (a === '--phase-id' && rest[i + 1]) phaseId = rest[++i];
+          else if (a === '--evidence-dir' && rest[i + 1]) evidenceDir = rest[++i];
           else if (a === '--fail-on-acceptance') failOnAcceptance = true;
         }
         if (!irArg || !outArg) {
@@ -4364,6 +4725,35 @@ async function main() {
           qualityMode,
           failOnAcceptance,
           phaseId,
+          evidenceDir,
+        });
+        return;
+      }
+      if (area === 'evidence' && subcmd === 'collect') {
+        let outArg;
+        let irArg;
+        let phaseId;
+        let constructabilityProfile = 'construction_readiness';
+        let failOnBlockingDispositions = false;
+        for (let i = 0; i < rest.length; i++) {
+          const a = rest[i];
+          if (a === '--model' && rest[i + 1]) modelId = rest[++i];
+          else if (a === '--out' && rest[i + 1]) outArg = rest[++i];
+          else if (a === '--ir' && rest[i + 1]) irArg = rest[++i];
+          else if (a === '--phase' && rest[i + 1]) phaseId = rest[++i];
+          else if (a === '--phase-id' && rest[i + 1]) phaseId = rest[++i];
+          else if (a === '--constructability-profile' && rest[i + 1])
+            constructabilityProfile = rest[++i];
+          else if (a === '--profile' && rest[i + 1]) constructabilityProfile = rest[++i];
+          else if (a === '--fail-on-blocking-dispositions') failOnBlockingDispositions = true;
+        }
+        await cmdSketchEvidenceCollect({
+          modelId,
+          outDir: outArg,
+          irPath: irArg,
+          phaseId,
+          constructabilityProfile,
+          failOnBlockingDispositions,
         });
         return;
       }
