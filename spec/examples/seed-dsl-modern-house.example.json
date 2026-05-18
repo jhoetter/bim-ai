@@ -42,6 +42,7 @@
       "id": "upper-wrapper",
       "name": "Upper white wrapper",
       "levelId": "lvl-upper",
+      "createWalls": false,
       "wallHeightMm": 3200,
       "wallTypeId": "wt-white-wrapper",
       "materialKey": "white_render",
@@ -70,18 +71,6 @@
         { "xMm": 8000, "yMm": -450 },
         { "xMm": 8000, "yMm": 8200 },
         { "xMm": 0, "yMm": 8200 }
-      ],
-      "openings": [
-        {
-          "id": "roof-terrace-opening",
-          "name": "Embedded roof terrace void",
-          "boundaryMm": [
-            { "xMm": 5400, "yMm": 3300 },
-            { "xMm": 8000, "yMm": 3300 },
-            { "xMm": 8000, "yMm": 6500 },
-            { "xMm": 5400, "yMm": 6500 }
-          ]
-        }
       ]
     }
   ],
@@ -141,6 +130,15 @@
       "tags": ["bedroom", "interior"],
       "thumbnailWidthMm": 1600,
       "thumbnailHeightMm": 2100
+    },
+    {
+      "id": "asset-outdoor-chair",
+      "name": "Outdoor terrace chair marker",
+      "category": "furniture",
+      "symbolKind": "chair",
+      "tags": ["terrace", "outdoor"],
+      "thumbnailWidthMm": 650,
+      "thumbnailHeightMm": 650
     }
   ],
   "placedAssets": [
@@ -159,6 +157,14 @@
       "levelId": "lvl-upper",
       "positionMm": { "xMm": 1850, "yMm": 2800 },
       "rotationDeg": 90
+    },
+    {
+      "id": "placed-outdoor-chair-roof-terrace",
+      "assetId": "asset-outdoor-chair",
+      "name": "Roof terrace outdoor chair",
+      "levelId": "lvl-upper",
+      "positionMm": { "xMm": 6800, "yMm": 4800 },
+      "rotationDeg": 15
     }
   ],
   "materialAssignments": [
@@ -168,6 +174,91 @@
     }
   ],
   "features": {
+    "foldedWrappers": [
+      {
+        "id": "upper-wrapper",
+        "name": "Upper white folded shell",
+        "levelId": "lvl-upper",
+        "wallHeightMm": 3200,
+        "wallThicknessMm": 250,
+        "wallTypeId": "wt-white-wrapper",
+        "materialKey": "white_render",
+        "attachWallTopsToRoofId": "roof-main",
+        "footprintMm": [
+          { "xMm": 0, "yMm": -450 },
+          { "xMm": 8000, "yMm": -450 },
+          { "xMm": 8000, "yMm": 8200 },
+          { "xMm": 0, "yMm": 8200 }
+        ],
+        "fasciaSweeps": [
+          {
+            "id": "upper-wrapper-front-fascia",
+            "name": "Thick front wrapper fascia",
+            "pathMm": [
+              { "xMm": 0, "yMm": -450, "zMm": 6100 },
+              { "xMm": 8000, "yMm": -450, "zMm": 6100 }
+            ],
+            "profileMm": [
+              { "uMm": 0, "vMm": 0 },
+              { "uMm": 520, "vMm": 0 },
+              { "uMm": 520, "vMm": 180 },
+              { "uMm": 0, "vMm": 180 }
+            ],
+            "materialKey": "white_render"
+          }
+        ]
+      }
+    ],
+    "roofTerraces": [
+      {
+        "id": "roof-terrace",
+        "name": "Occupied roof terrace cutout",
+        "levelId": "lvl-upper",
+        "hostRoofId": "roof-main",
+        "materialKey": "white_render",
+        "floorMaterialKey": "concrete",
+        "boundaryMm": [
+          { "xMm": 5400, "yMm": 3300 },
+          { "xMm": 8000, "yMm": 3300 },
+          { "xMm": 8000, "yMm": 6500 },
+          { "xMm": 5400, "yMm": 6500 }
+        ],
+        "returnWalls": [
+          {
+            "id": "roof-terrace-back-return",
+            "name": "Roof terrace recessed glass wall",
+            "start": { "xMm": 5400, "yMm": 6500 },
+            "end": { "xMm": 8000, "yMm": 6500 },
+            "heightMm": 2300,
+            "thicknessMm": 120,
+            "materialKey": "glass",
+            "isCurtainWall": true
+          },
+          {
+            "id": "roof-terrace-left-return",
+            "name": "Roof terrace white side return",
+            "start": { "xMm": 5400, "yMm": 3300 },
+            "end": { "xMm": 5400, "yMm": 6500 },
+            "heightMm": 1100,
+            "materialKey": "white_render"
+          }
+        ],
+        "railingPathMm": [
+          { "xMm": 7950, "yMm": 3380 },
+          { "xMm": 7950, "yMm": 6420 }
+        ],
+        "accessOpenings": [
+          {
+            "id": "roof-terrace-door",
+            "kind": "door",
+            "wallId": "roof-terrace-back-return",
+            "name": "Roof terrace access door",
+            "alongT": 0.5,
+            "widthMm": 1000
+          }
+        ]
+      }
+    ],
     "loggias": [
       {
         "id": "upper-terrace-loggia",
@@ -183,6 +274,114 @@
         "railingPathMm": [
           { "xMm": 5480, "yMm": 3380 },
           { "xMm": 7920, "yMm": 3380 }
+        ],
+        "returnWalls": [
+          {
+            "id": "front-loggia-left-return",
+            "start": { "xMm": 5400, "yMm": 3300 },
+            "end": { "xMm": 5400, "yMm": 6500 },
+            "heightMm": 2600,
+            "materialKey": "white_render"
+          },
+          {
+            "id": "front-loggia-right-return",
+            "start": { "xMm": 8000, "yMm": 3300 },
+            "end": { "xMm": 8000, "yMm": 6500 },
+            "heightMm": 2600,
+            "materialKey": "white_render"
+          }
+        ],
+        "recessedFacadeWalls": [
+          {
+            "id": "front-loggia-recessed-glass",
+            "name": "Recessed loggia glazing wall",
+            "start": { "xMm": 5480, "yMm": 6420 },
+            "end": { "xMm": 7920, "yMm": 6420 },
+            "heightMm": 2500,
+            "materialKey": "glass",
+            "isCurtainWall": true
+          }
+        ],
+        "bayOpenings": [
+          {
+            "id": "front-loggia-wide-opening",
+            "kind": "wall_opening",
+            "wallId": "front-loggia-recessed-glass",
+            "name": "Full-height loggia glazing bay",
+            "alongTStart": 0.15,
+            "alongTEnd": 0.85,
+            "sillHeightMm": 0,
+            "headHeightMm": 2300
+          }
+        ]
+      }
+    ],
+    "roomProgrammes": [
+      {
+        "id": "target-house-programme",
+        "levelId": "lvl-ground",
+        "topLevelId": "lvl-upper",
+        "rooms": [
+          {
+            "id": "room-hall",
+            "name": "Entrance / Stair Hall",
+            "programmeCode": "entrance_hall",
+            "functionLabel": "circulation",
+            "targetAreaM2": 9,
+            "createBoundaryWalls": true,
+            "outlineMm": [
+              { "xMm": 1200, "yMm": 700 },
+              { "xMm": 3400, "yMm": 700 },
+              { "xMm": 3400, "yMm": 3600 },
+              { "xMm": 1200, "yMm": 3600 }
+            ]
+          },
+          {
+            "id": "room-terrace",
+            "name": "Roof Terrace",
+            "levelId": "lvl-upper",
+            "programmeCode": "terrace",
+            "functionLabel": "outdoor living",
+            "targetAreaM2": 8.3,
+            "outlineMm": [
+              { "xMm": 5400, "yMm": 3300 },
+              { "xMm": 8000, "yMm": 3300 },
+              { "xMm": 8000, "yMm": 6500 },
+              { "xMm": 5400, "yMm": 6500 }
+            ]
+          }
+        ],
+        "doors": [
+          {
+            "id": "entry-door",
+            "kind": "door",
+            "wallId": "ground-base-wall-04",
+            "name": "Entrance door",
+            "alongT": 0.2,
+            "widthMm": 1000
+          }
+        ],
+        "stairs": [
+          {
+            "id": "main-stair",
+            "name": "Main stair",
+            "runStartMm": { "xMm": 1800, "yMm": 1100 },
+            "runEndMm": { "xMm": 1800, "yMm": 3200 },
+            "widthMm": 1000
+          }
+        ],
+        "slabOpenings": [
+          {
+            "id": "main-stair-upper-opening",
+            "name": "Upper slab stair opening",
+            "hostFloorId": "upper-wrapper-floor",
+            "boundaryMm": [
+              { "xMm": 1300, "yMm": 800 },
+              { "xMm": 2500, "yMm": 800 },
+              { "xMm": 2500, "yMm": 3400 },
+              { "xMm": 1300, "yMm": 3400 }
+            ]
+          }
         ]
       }
     ]
@@ -191,10 +390,47 @@
     {
       "id": "main-front-left",
       "name": "Main front-left evidence view",
+      "evidenceRole": "main_front_left_axonometric",
+      "featureIds": ["upper-wrapper", "upper-terrace-loggia", "roof-terrace"],
       "camera": {
         "position": { "xMm": -8500, "yMm": -10500, "zMm": 8200 },
         "target": { "xMm": 4100, "yMm": 3600, "zMm": 3100 },
         "up": { "xMm": 0, "yMm": 0, "zMm": 1 }
+      }
+    },
+    {
+      "id": "roof-terrace-high-right",
+      "name": "Roof terrace high right evidence view",
+      "evidenceRole": "roof_terrace_cutout",
+      "featureIds": ["roof-terrace"],
+      "camera": {
+        "position": { "xMm": 11000, "yMm": -3000, "zMm": 9500 },
+        "target": { "xMm": 6500, "yMm": 4800, "zMm": 4300 },
+        "up": { "xMm": 0, "yMm": 0, "zMm": 1 }
+      }
+    },
+    {
+      "id": "front-loggia-elevation",
+      "name": "Front loggia elevation evidence view",
+      "evidenceRole": "front_loggia_bay_rhythm",
+      "featureIds": ["upper-terrace-loggia"],
+      "camera": {
+        "position": { "xMm": 4000, "yMm": -12500, "zMm": 3600 },
+        "target": { "xMm": 4000, "yMm": 3600, "zMm": 3100 },
+        "up": { "xMm": 0, "yMm": 0, "zMm": 1 }
+      }
+    },
+    {
+      "id": "ground-plan-diagnostic",
+      "name": "Ground plan diagnostic evidence view",
+      "mode": "plan_2d",
+      "evidenceRole": "room_programme_diagnostic",
+      "featureIds": ["target-house-programme"],
+      "hiddenSemanticKinds3d": ["roof"],
+      "camera": {
+        "position": { "xMm": 4000, "yMm": 3900, "zMm": 14000 },
+        "target": { "xMm": 4000, "yMm": 3900, "zMm": 0 },
+        "up": { "xMm": 0, "yMm": 1, "zMm": 0 }
       }
     }
   ],

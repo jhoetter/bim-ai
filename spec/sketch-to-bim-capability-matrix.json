@@ -1,6 +1,125 @@
 {
   "schemaVersion": "sketch-to-bim-capability-matrix.v0",
   "generatedFor": "project_initiation_bim",
+  "targetHouseSeedDslCoverage": [
+    {
+      "featureId": "target-house.roof_terrace_cutout",
+      "status": "supported_by_seed_dsl_macro",
+      "seedDsl": [
+        "features.roofTerraces[].hostRoofId + boundaryMm -> createRoofOpening",
+        "features.roofTerraces[].createFloor -> occupied terrace floor",
+        "features.roofTerraces[].returnWalls -> white/glass return faces",
+        "features.roofTerraces[].railingPathMm -> createRailing",
+        "features.roofTerraces[].accessOpenings -> insertDoorOnWall/createWallOpening",
+        "viewpoints[].evidenceRole=roof_terrace_cutout"
+      ],
+      "typedCli": [
+        "opening roof-opening",
+        "author railing",
+        "opening door-on-wall",
+        "view save-3d"
+      ],
+      "rawCommands": [],
+      "requiredEvidence": [
+        "roof terrace high/right saved viewpoint",
+        "main front-left saved viewpoint",
+        "advisor warnings for roof openings and access openings"
+      ],
+      "remainingGaps": [
+        "Renderer must prove roof subtraction and return-face visibility in screenshots; DSL can author the intent but cannot certify pixels."
+      ]
+    },
+    {
+      "featureId": "target-house.folded_white_wrapper_shell",
+      "status": "supported_by_seed_dsl_macro",
+      "seedDsl": [
+        "features.foldedWrappers[].footprintMm -> deterministic upper wrapper walls",
+        "features.foldedWrappers[].attachWallTopsToRoofId -> roof-attached wall tops",
+        "features.foldedWrappers[].returnWalls -> explicit shell returns",
+        "features.foldedWrappers[].fasciaSweeps -> thick fascia/edge strips",
+        "materialIntent + materialAssignments -> continuous white wrapper material"
+      ],
+      "typedCli": ["author wall-chain", "author roof-from-walls", "view save-3d"],
+      "rawCommands": ["createSweep until promoted to first-class CLI"],
+      "requiredEvidence": [
+        "main front-left saved viewpoint",
+        "side/rear diagnostic saved viewpoint",
+        "model stats proving no final mass placeholders"
+      ],
+      "remainingGaps": [
+        "Sweeps are first-class kernel commands but still raw-command surface in the generated backend ledger."
+      ]
+    },
+    {
+      "featureId": "target-house.recessed_front_loggia",
+      "status": "supported_by_seed_dsl_macro",
+      "seedDsl": [
+        "features.loggias[].boundaryMm -> balcony/loggia slab",
+        "features.loggias[].returnWalls -> deep side returns",
+        "features.loggias[].recessedFacadeWalls -> set-back facade plane",
+        "features.loggias[].bayOpenings -> bay rhythm and full-height glazing cuts",
+        "features.loggias[].railingPathMm -> front guard rail"
+      ],
+      "typedCli": [
+        "author wall",
+        "opening wall-opening",
+        "opening window-on-wall",
+        "author railing"
+      ],
+      "rawCommands": [],
+      "requiredEvidence": [
+        "front elevation/loggia saved viewpoint",
+        "plan diagnostic saved viewpoint proving recess depth"
+      ],
+      "remainingGaps": []
+    },
+    {
+      "featureId": "target-house.room_programme",
+      "status": "supported_by_seed_dsl_macro",
+      "seedDsl": [
+        "features.roomProgrammes[].rooms[].createBoundaryWalls -> createRoomPoly",
+        "features.roomProgrammes[].rooms[] -> createRoomOutline with programme metadata",
+        "features.roomProgrammes[].doors -> hosted access doors",
+        "features.roomProgrammes[].stairs -> createStair",
+        "features.roomProgrammes[].slabOpenings -> createSlabOpening",
+        "assets + placedAssets -> furniture/equipment markers"
+      ],
+      "typedCli": ["author stair-between-levels", "opening door-on-wall", "opening slab-opening"],
+      "rawCommands": [],
+      "requiredEvidence": [
+        "ground and upper plan diagnostic saved viewpoints",
+        "advisor room access/enclosure and stair warnings",
+        "room schedule/export evidence when documentation-ready"
+      ],
+      "remainingGaps": [
+        "Room derivation quality still depends on Advisor/evidence gates; DSL prevents opaque bundles but does not guarantee design adequacy."
+      ]
+    },
+    {
+      "featureId": "target-house.deterministic_evidence_views",
+      "status": "supported_by_seed_dsl_macro",
+      "seedDsl": [
+        "viewpoints[].mode",
+        "viewpoints[].camera",
+        "viewpoints[].viewerClipCapElevMm/viewerClipFloorElevMm",
+        "viewpoints[].planOverlayEnabled",
+        "viewpoints[].evidenceRole",
+        "viewpoints[].featureIds"
+      ],
+      "typedCli": ["view save-3d"],
+      "rawCommands": [],
+      "requiredEvidence": [
+        "main front-left",
+        "roof terrace high/right",
+        "front loggia elevation",
+        "ground/upper plan diagnostics",
+        "wire/cutaway diagnostic where warnings remain"
+      ],
+      "remainingGaps": [
+        "Screenshot capture and stale evidence packaging are tracked under E-items, outside this seed DSL wave."
+      ]
+    }
+  ],
   "capabilities": [
     {
       "id": "cap.roof_attached_wall_profile",

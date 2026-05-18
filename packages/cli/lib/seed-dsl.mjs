@@ -25,6 +25,14 @@ function assertPoint(point, path) {
   return { xMm: point.xMm, yMm: point.yMm };
 }
 
+function assertPointPath(value, path) {
+  const points = assertArray(value, path).map((point, index) =>
+    assertPoint(point, `${path}[${index}]`),
+  );
+  if (points.length < 2) throw new Error(`${path} must contain at least two points.`);
+  return points;
+}
+
 function assertFootprint(value, path) {
   const points = assertArray(value, path).map((point, index) =>
     assertPoint(point, `${path}[${index}]`),
@@ -96,6 +104,87 @@ function wallCommandsForVolume(volume, footprint) {
     });
   }
   return commands;
+}
+
+function wallCommandForSegment(wall, path, defaults = {}) {
+  const id = assertString(wall.id, `${path}.id`);
+  return {
+    type: 'createWall',
+    id,
+    name: wall.name ?? id,
+    levelId: assertString(wall.levelId ?? defaults.levelId, `${path}.levelId`),
+    start: assertPoint(wall.start ?? wall.startMm, `${path}.start`),
+    end: assertPoint(wall.end ?? wall.endMm, `${path}.end`),
+    thicknessMm: Number.isFinite(wall.thicknessMm)
+      ? wall.thicknessMm
+      : Number.isFinite(defaults.thicknessMm)
+        ? defaults.thicknessMm
+        : 200,
+    heightMm: Number.isFinite(wall.heightMm)
+      ? wall.heightMm
+      : Number.isFinite(defaults.heightMm)
+        ? defaults.heightMm
+        : 3000,
+    wallTypeId: wall.wallTypeId ?? defaults.wallTypeId ?? null,
+    materialKey: wall.materialKey ?? defaults.materialKey ?? null,
+    isCurtainWall: wall.isCurtainWall === true,
+  };
+}
+
+function openingCommandForHostedWall(opening, path) {
+  const kind = opening.kind ?? opening.type ?? 'door';
+  const id = opening.id ?? null;
+  if (kind === 'door' || kind === 'access_door') {
+    return {
+      type: 'insertDoorOnWall',
+      ...(id ? { id } : {}),
+      name: opening.name ?? 'Door',
+      wallId: assertString(opening.wallId ?? opening.hostWallId, `${path}.wallId`),
+      alongT: Number.isFinite(opening.alongT) ? opening.alongT : 0.5,
+      widthMm: Number.isFinite(opening.widthMm) ? opening.widthMm : 900,
+      ...(opening.familyTypeId ? { familyTypeId: opening.familyTypeId } : {}),
+    };
+  }
+  if (kind === 'window' || kind === 'glazing') {
+    return {
+      type: 'insertWindowOnWall',
+      ...(id ? { id } : {}),
+      name: opening.name ?? 'Window',
+      wallId: assertString(opening.wallId ?? opening.hostWallId, `${path}.wallId`),
+      alongT: Number.isFinite(opening.alongT) ? opening.alongT : 0.5,
+      widthMm: Number.isFinite(opening.widthMm) ? opening.widthMm : 1200,
+      sillHeightMm: Number.isFinite(opening.sillHeightMm) ? opening.sillHeightMm : 900,
+      heightMm: Number.isFinite(opening.heightMm) ? opening.heightMm : 1500,
+      ...(opening.familyTypeId ? { familyTypeId: opening.familyTypeId } : {}),
+    };
+  }
+  if (kind === 'wall_opening' || kind === 'void') {
+    return {
+      type: 'createWallOpening',
+      ...(id ? { id } : {}),
+      name: opening.name ?? 'Wall opening',
+      hostWallId: assertString(opening.wallId ?? opening.hostWallId, `${path}.wallId`),
+      alongTStart: Number.isFinite(opening.alongTStart) ? opening.alongTStart : 0.4,
+      alongTEnd: Number.isFinite(opening.alongTEnd) ? opening.alongTEnd : 0.6,
+      sillHeightMm: Number.isFinite(opening.sillHeightMm) ? opening.sillHeightMm : 0,
+      headHeightMm: Number.isFinite(opening.headHeightMm) ? opening.headHeightMm : 2100,
+    };
+  }
+  throw new Error(`${path}.kind must be door, access_door, window, glazing, wall_opening, or void.`);
+}
+
+function sweepCommandForFeature(sweep, path, defaults = {}) {
+  const id = assertString(sweep.id, `${path}.id`);
+  return {
+    type: 'createSweep',
+    id,
+    name: sweep.name ?? id,
+    levelId: assertString(sweep.levelId ?? defaults.levelId, `${path}.levelId`),
+    pathMm: assertArray(sweep.pathMm ?? [], `${path}.pathMm`),
+    profileMm: assertArray(sweep.profileMm ?? [], `${path}.profileMm`),
+    profilePlane: sweep.profilePlane ?? 'work_plane',
+    materialKey: sweep.materialKey ?? defaults.materialKey ?? null,
+  };
 }
 
 function compileLevels(recipe) {
@@ -213,6 +302,112 @@ function compileRooms(recipe) {
       targetAreaM2: Number.isFinite(room.targetAreaM2) ? room.targetAreaM2 : areaM2(outlineMm),
     };
   });
+}
+
+function compileRoomProgrammes(recipe) {
+  const commands = [];
+  for (const programme of recipe.features?.roomProgrammes ?? []) {
+    const id = assertString(programme.id, '$.features.roomProgrammes[].id');
+    const levelId = assertString(programme.levelId, `$.features.roomProgrammes.${id}.levelId`);
+    for (const room of programme.rooms ?? []) {
+      const roomId = room.id ?? room.roomId ?? `${id}-room-${commands.length + 1}`;
+      const outlineMm = assertFootprint(
+        room.outlineMm ?? room.verticesMm,
+        `$.features.roomProgrammes.${id}.rooms.${roomId}.outlineMm`,
+      );
+      if (room.createBoundaryWalls === true) {
+        commands.push({
+          type: 'createRoomPoly',
+          roomId,
+          name: room.name ?? roomId,
+          levelId: room.levelId ?? levelId,
+          verticesMm: outlineMm,
+          thicknessMm: Number.isFinite(room.wallThicknessMm)
+            ? room.wallThicknessMm
+            : Number.isFinite(programme.wallThicknessMm)
+              ? programme.wallThicknessMm
+              : 120,
+          heightMm: Number.isFinite(room.wallHeightMm)
+            ? room.wallHeightMm
+            : Number.isFinite(programme.wallHeightMm)
+              ? programme.wallHeightMm
+              : 2800,
+          wallNamePrefix: room.wallNamePrefix ?? `${room.name ?? roomId} wall`,
+          programmeCode: room.programmeCode ?? null,
+          department: room.department ?? programme.department ?? null,
+          functionLabel: room.functionLabel ?? null,
+          finishSet: room.finishSet ?? null,
+          targetAreaM2: Number.isFinite(room.targetAreaM2) ? room.targetAreaM2 : areaM2(outlineMm),
+        });
+      } else {
+        commands.push({
+          type: 'createRoomOutline',
+          id: roomId,
+          name: room.name ?? roomId,
+          levelId: room.levelId ?? levelId,
+          outlineMm,
+          programmeCode: room.programmeCode ?? null,
+          department: room.department ?? programme.department ?? null,
+          functionLabel: room.functionLabel ?? null,
+          finishSet: room.finishSet ?? null,
+          targetAreaM2: Number.isFinite(room.targetAreaM2) ? room.targetAreaM2 : areaM2(outlineMm),
+        });
+      }
+    }
+    for (const door of programme.doors ?? []) {
+      commands.push(
+        openingCommandForHostedWall(
+          door,
+          `$.features.roomProgrammes.${id}.doors.${door.id ?? 'item'}`,
+        ),
+      );
+    }
+    for (const stair of programme.stairs ?? []) {
+      const stairId = stair.id ?? null;
+      commands.push({
+        type: 'createStair',
+        ...(stairId ? { id: stairId } : {}),
+        name: stair.name ?? 'Stair',
+        baseLevelId: assertString(
+          stair.baseLevelId ?? programme.baseLevelId ?? levelId,
+          `$.features.roomProgrammes.${id}.stairs.${stairId ?? 'item'}.baseLevelId`,
+        ),
+        topLevelId: assertString(
+          stair.topLevelId ?? programme.topLevelId,
+          `$.features.roomProgrammes.${id}.stairs.${stairId ?? 'item'}.topLevelId`,
+        ),
+        runStartMm: assertPoint(
+          stair.runStartMm,
+          `$.features.roomProgrammes.${id}.stairs.${stairId ?? 'item'}.runStartMm`,
+        ),
+        runEndMm: assertPoint(
+          stair.runEndMm,
+          `$.features.roomProgrammes.${id}.stairs.${stairId ?? 'item'}.runEndMm`,
+        ),
+        widthMm: Number.isFinite(stair.widthMm) ? stair.widthMm : 1000,
+        riserMm: Number.isFinite(stair.riserMm) ? stair.riserMm : 175,
+        treadMm: Number.isFinite(stair.treadMm) ? stair.treadMm : 275,
+      });
+    }
+    for (const opening of programme.slabOpenings ?? []) {
+      const openingId = opening.id ?? null;
+      commands.push({
+        type: 'createSlabOpening',
+        ...(openingId ? { id: openingId } : {}),
+        name: opening.name ?? 'Slab opening',
+        hostFloorId: assertString(
+          opening.hostFloorId,
+          `$.features.roomProgrammes.${id}.slabOpenings.${openingId ?? 'item'}.hostFloorId`,
+        ),
+        boundaryMm: assertFootprint(
+          opening.boundaryMm,
+          `$.features.roomProgrammes.${id}.slabOpenings.${openingId ?? 'item'}.boundaryMm`,
+        ),
+        isShaft: opening.isShaft === true,
+      });
+    }
+  }
+  return commands;
 }
 
 function compileToposolids(recipe) {
@@ -398,6 +593,67 @@ function compileMaterialAssignments(recipe) {
 
 function compileFeatureMacros(recipe) {
   const commands = [];
+  for (const terrace of recipe.features?.roofTerraces ?? []) {
+    const id = assertString(terrace.id, '$.features.roofTerraces[].id');
+    const boundary = assertFootprint(
+      terrace.boundaryMm,
+      `$.features.roofTerraces.${id}.boundaryMm`,
+    );
+    const hostRoofId = terrace.hostRoofId ?? terrace.roofId;
+    if (hostRoofId && terrace.createRoofOpening !== false) {
+      commands.push({
+        type: 'createRoofOpening',
+        id: terrace.openingId ?? `${id}-roof-opening`,
+        name: terrace.openingName ?? `${terrace.name ?? id} roof opening`,
+        hostRoofId,
+        boundaryMm: boundary,
+      });
+    }
+    if (terrace.createFloor !== false) {
+      commands.push({
+        type: 'createFloor',
+        id: terrace.floorId ?? `${id}-floor`,
+        name: terrace.floorName ?? `${terrace.name ?? id} occupied floor`,
+        levelId: assertString(terrace.levelId, `$.features.roofTerraces.${id}.levelId`),
+        boundaryMm: boundary,
+        thicknessMm: Number.isFinite(terrace.floorThicknessMm) ? terrace.floorThicknessMm : 160,
+        floorTypeId: terrace.floorTypeId ?? null,
+        materialKey: terrace.floorMaterialKey ?? terrace.materialKey ?? null,
+        roomBounded: terrace.roomBounded === true,
+      });
+    }
+    for (const wall of terrace.returnWalls ?? []) {
+      commands.push(
+        wallCommandForSegment(wall, `$.features.roofTerraces.${id}.returnWalls.${wall.id}`, {
+          levelId: terrace.levelId,
+          thicknessMm: terrace.returnWallThicknessMm ?? terrace.wallThicknessMm ?? 200,
+          heightMm: terrace.returnWallHeightMm ?? terrace.wallHeightMm ?? 1100,
+          wallTypeId: terrace.wallTypeId,
+          materialKey: terrace.returnMaterialKey ?? terrace.materialKey,
+        }),
+      );
+    }
+    if (Array.isArray(terrace.railingPathMm) && terrace.railingPathMm.length >= 2) {
+      commands.push({
+        type: 'createRailing',
+        id: terrace.railingId ?? `${id}-railing`,
+        name: terrace.railingName ?? `${id} railing`,
+        pathMm: assertPointPath(
+          terrace.railingPathMm,
+          `$.features.roofTerraces.${id}.railingPathMm`,
+        ),
+        ...(terrace.balusterPattern ? { balusterPattern: terrace.balusterPattern } : {}),
+      });
+    }
+    for (const opening of terrace.accessOpenings ?? []) {
+      commands.push(
+        openingCommandForHostedWall(
+          opening,
+          `$.features.roofTerraces.${id}.accessOpenings.${opening.id ?? 'item'}`,
+        ),
+      );
+    }
+  }
   for (const loggia of recipe.features?.loggias ?? []) {
     const id = assertString(loggia.id, '$.features.loggias[].id');
     const boundary = assertFootprint(loggia.boundaryMm, `$.features.loggias.${id}.boundaryMm`);
@@ -424,6 +680,44 @@ function compileFeatureMacros(recipe) {
         ),
       });
     }
+    for (const wall of loggia.returnWalls ?? []) {
+      commands.push(
+        wallCommandForSegment(wall, `$.features.loggias.${id}.returnWalls.${wall.id}`, {
+          levelId: loggia.levelId,
+          thicknessMm: loggia.returnWallThicknessMm ?? loggia.wallThicknessMm ?? 200,
+          heightMm: loggia.returnWallHeightMm ?? loggia.wallHeightMm ?? 2800,
+          wallTypeId: loggia.wallTypeId,
+          materialKey: loggia.returnMaterialKey ?? loggia.materialKey,
+        }),
+      );
+    }
+    for (const wall of loggia.recessedFacadeWalls ?? []) {
+      commands.push(
+        wallCommandForSegment(wall, `$.features.loggias.${id}.recessedFacadeWalls.${wall.id}`, {
+          levelId: loggia.levelId,
+          thicknessMm: loggia.facadeWallThicknessMm ?? 160,
+          heightMm: loggia.facadeWallHeightMm ?? loggia.wallHeightMm ?? 2800,
+          wallTypeId: loggia.facadeWallTypeId ?? loggia.wallTypeId,
+          materialKey: loggia.facadeMaterialKey ?? loggia.materialKey,
+        }),
+      );
+    }
+    for (const opening of loggia.accessOpenings ?? []) {
+      commands.push(
+        openingCommandForHostedWall(
+          opening,
+          `$.features.loggias.${id}.accessOpenings.${opening.id ?? 'item'}`,
+        ),
+      );
+    }
+    for (const opening of loggia.bayOpenings ?? []) {
+      commands.push(
+        openingCommandForHostedWall(
+          opening,
+          `$.features.loggias.${id}.bayOpenings.${opening.id ?? 'item'}`,
+        ),
+      );
+    }
   }
   for (const wrapper of recipe.features?.foldedWrappers ?? []) {
     const id = assertString(wrapper.id, '$.features.foldedWrappers[].id');
@@ -449,6 +743,37 @@ function compileFeatureMacros(recipe) {
         materialKey: wrapper.materialKey ?? null,
       });
     }
+    const attachRoofId =
+      wrapper.attachWallTopsToRoofId ??
+      (wrapper.attachWallTopsToRoof === true && wrapper.createRoof === true ? `${id}-roof` : null);
+    if (attachRoofId) {
+      for (let i = 0; i < footprint.length; i++) {
+        commands.push({
+          type: 'attachWallTopToRoof',
+          wallId: `${id}-wall-${String(i + 1).padStart(2, '0')}`,
+          roofId: attachRoofId,
+        });
+      }
+    }
+    for (const wall of wrapper.returnWalls ?? []) {
+      commands.push(
+        wallCommandForSegment(wall, `$.features.foldedWrappers.${id}.returnWalls.${wall.id}`, {
+          levelId: wrapper.levelId,
+          thicknessMm: wrapper.returnWallThicknessMm ?? wrapper.wallThicknessMm ?? 200,
+          heightMm: wrapper.returnWallHeightMm ?? wrapper.wallHeightMm ?? 3000,
+          wallTypeId: wrapper.wallTypeId,
+          materialKey: wrapper.materialKey,
+        }),
+      );
+    }
+    for (const sweep of wrapper.fasciaSweeps ?? []) {
+      commands.push(
+        sweepCommandForFeature(sweep, `$.features.foldedWrappers.${id}.fasciaSweeps.${sweep.id}`, {
+          levelId: wrapper.levelId,
+          materialKey: wrapper.materialKey,
+        }),
+      );
+    }
   }
   return commands;
 }
@@ -462,6 +787,12 @@ function compileViewpoints(recipe) {
     camera: viewpoint.camera,
     hiddenSemanticKinds3d: viewpoint.hiddenSemanticKinds3d ?? [],
     cutawayStyle: viewpoint.cutawayStyle ?? null,
+    viewerClipCapElevMm: viewpoint.viewerClipCapElevMm ?? null,
+    viewerClipFloorElevMm: viewpoint.viewerClipFloorElevMm ?? null,
+    planOverlayEnabled: viewpoint.planOverlayEnabled === true,
+    planOverlaySourcePlanViewId: viewpoint.planOverlaySourcePlanViewId ?? null,
+    evidenceRole: viewpoint.evidenceRole ?? null,
+    featureIds: Array.isArray(viewpoint.featureIds) ? viewpoint.featureIds : [],
   }));
 }
 
@@ -514,6 +845,7 @@ export function compileSeedDsl(recipe, options = {}) {
     ...compileToposolidExcavations(recipe),
     ...compileRoofs(recipe),
     ...compileRooms(recipe),
+    ...compileRoomProgrammes(recipe),
     ...compileAssets(recipe),
     ...compileMaterialAssignments(recipe),
     ...compileFeatureMacros(recipe),

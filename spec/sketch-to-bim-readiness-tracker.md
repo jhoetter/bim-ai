@@ -180,16 +180,22 @@ legitimate, or write a tolerance with evidence and expiry.
 
 | ID | Priority | Status | Item | Acceptance |
 | --- | --- | --- | --- | --- |
-| `SKB-RDY-D01` | P0 | Partial | Document seed DSL coverage against target-house needs. | Matrix maps target-house features to DSL primitives, typed CLI tools, raw commands, or gaps. |
-| `SKB-RDY-D02` | P0 | Partial | Roof terrace macro. | Agent can create roof opening, occupied terrace floor, return faces, guard, access door, and evidence views without manual raw bundle surgery. |
-| `SKB-RDY-D03` | P0 | Partial | Folded wrapper shell macro. | Agent can create thick upper shell using walls/roof/fascia/returns/materials with no final mass placeholders. |
-| `SKB-RDY-D04` | P0 | Partial | Recessed loggia macro. | Agent can create recessed facade plane, side returns, balcony slab, rail, bay rhythm, and access openings. |
-| `SKB-RDY-D05` | P0 | Partial | Room programme macro. | Agent can author rooms from programme/floorplan with real boundaries, doors, stairs, and slab openings. |
-| `SKB-RDY-D06` | P0 | Partial | Viewpoint/evidence macro. | Agent can save required 3D, plan, section, diagnostic, and roof views deterministically. |
+| `SKB-RDY-D01` | P0 | Done | Document seed DSL coverage against target-house needs. | `spec/sketch-to-bim-capability-matrix.json` includes `targetHouseSeedDslCoverage`, mapping roof terrace, folded wrapper, recessed loggia, room programme, and deterministic evidence views to DSL fields, typed CLI tools, raw commands, required evidence, and remaining non-DSL gaps. |
+| `SKB-RDY-D02` | P0 | Done | Roof terrace macro. | `features.roofTerraces[]` emits roof opening, occupied terrace floor, return walls, guard rail, access openings, and feature-linked evidence views without opaque raw bundle surgery. |
+| `SKB-RDY-D03` | P0 | Done | Folded wrapper shell macro. | `features.foldedWrappers[]` emits deterministic wrapper walls, optional roof/wall attachment, explicit return walls, fascia sweeps, and material intent; final mass placeholders are not required. |
+| `SKB-RDY-D04` | P0 | Done | Recessed loggia macro. | `features.loggias[]` now covers recessed facade walls, side returns, balcony slab, rail, bay rhythm openings, and access openings. |
+| `SKB-RDY-D05` | P0 | Done | Room programme macro. | `features.roomProgrammes[]` emits room outlines or boundary-wall room polys, access doors, stairs, and slab openings, with programme metadata preserved. |
+| `SKB-RDY-D06` | P0 | Done | Viewpoint/evidence macro. | `viewpoints[]` compiles deterministic saved 3D/plan/diagnostic views with camera, clip, overlay, evidence role, and feature-id metadata. |
 | `SKB-RDY-D07` | P1 | Not started | Facade rhythm/opening macro. | Agent can place bay-based windows/doors/mullion proxies on host walls while preserving host cuts and schedules. |
 | `SKB-RDY-D08` | P1 | Not started | Wall/floor/roof type builder. | Agent can define type names, thickness, material layers, exterior/interior role, U-value/fire placeholders, and assignment. |
 | `SKB-RDY-D09` | P1 | Not started | BIM asset placement macro. | Agent can place furniture/equipment markers with type ids, room association, schedule category, and evidence role. |
 | `SKB-RDY-D10` | P1 | Not started | Sheet/schedule/documentation macro. | Agent can generate minimal floor plans, elevations/sections, room schedule, door/window schedule, and sheet layout for project initiation. |
+
+Closeout note for D01-D06: seed DSL compilation now carries target-house-critical
+intent through semantic macro fields in `packages/cli/lib/seed-dsl.mjs`, and the
+modern-house example compiles those fields into reviewable `cmd-v3.0` commands.
+Remaining risks are evidence/renderer certification risks tracked in E-items, not
+manual seed authoring gaps.
 
 ### E. Validation, Advisor, Evidence, And Acceptance
 

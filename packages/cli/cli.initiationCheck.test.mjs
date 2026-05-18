@@ -327,6 +327,22 @@ test('seed-dsl compile writes a deterministic command bundle', async () => {
   assert.ok(bundle.commands.some((command) => command.type === 'PlaceAsset'));
   assert.ok(bundle.commands.some((command) => command.type === 'createRailing'));
   assert.ok(bundle.commands.some((command) => command.id === 'upper-terrace-loggia-floor'));
+  assert.ok(bundle.commands.some((command) => command.id === 'roof-terrace-floor'));
+  assert.ok(bundle.commands.some((command) => command.type === 'createRoomPoly'));
+  assert.ok(bundle.commands.some((command) => command.type === 'createStair'));
+  assert.ok(bundle.commands.some((command) => command.type === 'createSlabOpening'));
+  assert.ok(bundle.commands.some((command) => command.type === 'insertDoorOnWall'));
+  assert.ok(bundle.commands.some((command) => command.type === 'createWallOpening'));
+  assert.ok(bundle.commands.some((command) => command.type === 'attachWallTopToRoof'));
+  assert.ok(bundle.commands.some((command) => command.type === 'createSweep'));
+  assert.ok(
+    bundle.commands.some(
+      (command) =>
+        command.type === 'saveViewpoint' &&
+        command.evidenceRole === 'roof_terrace_cutout' &&
+        command.featureIds.includes('roof-terrace'),
+    ),
+  );
   assert.ok(
     bundle.commands.some(
       (command) =>
