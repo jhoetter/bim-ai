@@ -953,7 +953,7 @@ team can schedule waves of parallel agents against the tracker.
 | M1. Truth and Inventory          |         2 weeks | Done           | Establish an auditable source of truth for backend commands, Cmd+K execution semantics, API descriptors, command schemas, and current parity gaps.                  | Generated parity report exists; all 262 backend commands, 326 Cmd+K entries, and 40 API descriptors are inventoried; command schemas are exported; first gap report is checked in; milestone status can be updated from generated evidence.                |
 | M2. First House-Capable MCP Pack |       4-6 weeks | Done           | Make an external agent capable of building a credible basic house through typed query/resolve/authoring tools instead of source-code knowledge or browser gestures. | Query/resolve tools exist; first authoring pack covers walls, floors, roofs, openings, rooms, stairs, views, sheets, advisor, dry-run, and commit; CLI mirrors the same tools; simple-house benchmark passes by MCP/CLI.                                   |
 | M3. Excellent Product Parity     |      8-12 weeks | Done           | Turn parity into a robust product workflow with benchmarks, sketch-to-BIM productization, documentation outputs, and transaction/audit consistency.                 | Same-house benchmark suite has UI and MCP paths for core cases; sketch-to-BIM workflow uses stable product tools; documentation/export pack covers sheets, schedules, tags, dimensions, and PDF/IFC/glTF; transaction/audit/undo/collab requirements pass. |
-| M4. Professional Domain Parity   |      3-5 months | Not Started    | Extend parity across professional domains beyond the basic house workflow.                                                                                          | Site/context, structure, MEP, families/assets/materials, presentation, branded export, and advanced documentation capabilities have first-class UI and MCP/CLI paths with generated evidence.                                                              |
+| M4. Professional Domain Parity   |      3-5 months | Partial        | Extend parity across professional domains beyond the basic house workflow.                                                                                          | Site/context, structure, MEP, families/assets/materials, presentation, branded export, and advanced documentation capabilities have first-class UI and MCP/CLI paths with generated evidence.                                                              |
 
 ### Milestone 1 Workstreams
 
@@ -1543,6 +1543,35 @@ Wave 4 closure audit result:
   reports `17 / 17` gates, and no generated next-wave blockers remain.
 - `pnpm verify:m3-parity` rejects M3 `Done` unless Wave 2 and Wave 3 are both
   `Done` and the two M3-M closure gates carry two-storey semantic fixture proof.
+
+### Milestone 4 Wave 1 Workstreams
+
+Milestone 4 starts professional-domain parity beyond the house workflows closed
+by M3. Wave 1 should establish executable first packs for the major professional
+domains and a generated M4 verifier, without claiming full M4 closure before
+domain benchmarks prove UI/Cmd+K and MCP/CLI equivalence.
+
+| Workstream                                            | Status      | Owner scope                                                                                                                                               | Tracker items                                               | Done when                                                                                                                                                                                                              |
+| ----------------------------------------------------- | ----------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| M4-A. Site/context first-class MCP pack               | Not Started | Site/context semantic tools, descriptors, CLI/tests for toposolid updates, grading, property lines, base/survey points, sun settings, and context import. | Site/context, import/export, `site-and-context-house`.      | Agents can author and verify a site/context baseline through typed MCP/CLI surfaces, with raw fallbacks classified and a fixture or route-tested evidence contract for georeference/site setup.                        |
+| M4-B. Structure and construction-lite MCP pack        | Not Started | Structural columns/beams/constraints plus construction package/logistics/checklist typed tools, descriptors, CLI/tests, and focused evidence fixtures.    | Structure/constraints, `structure-and-mep-lite`.            | Agents can place/update structural columns/beams and create construction metadata/checklist artifacts through first-class tools, with UI/Cmd+K coverage mapped honestly.                                               |
+| M4-C. MEP-lite MCP pack                               | Not Started | MEP route/equipment/fixture/terminal/opening-request semantic tools, descriptors, CLI/tests, and a deterministic MEP-lite fixture.                        | MEP, structure-and-mep-lite downstream coordination.        | Agents can create simple pipe/duct/cable routes, equipment/fixtures/terminals, and MEP opening requests through typed MCP/CLI surfaces with system/elevation/service metadata.                                         |
+| M4-D. Families, assets, materials, decals pack        | Not Started | Family/asset/material/decal semantic tools, descriptors, CLI/tests, and catalog/material evidence; avoid presentation/site/MEP ownership.                 | Families/assets/materials.                                  | Agents can upsert family types, place family/assets/kits, update PBR materials, assign materials/paint/decal surfaces where supported, with catalog/query and evidence coverage.                                       |
+| M4-E. Presentation, branded export, and advanced docs | Not Started | Presentation decks/canvases/frames, branded templates, render bundles, advanced view/sheet/schedule/revision/documentation tools and evidence fixtures.   | Presentation/export, documentation-pack, presentation-pack. | Agents can create a client-facing presentation/documentation pack with frames, branded export/share, advanced sheets/views/schedules/revisions, and accepted export/render evidence.                                   |
+| M4-F. Professional benchmark suite and M4 audit gates | Not Started | Benchmark manifests/fixtures, audit/verifier scripts, generated reports, tracker Wave 1 result; consume other lanes but do not create feature behavior.   | M4 milestone reporting, generated evidence source of truth. | `pnpm verify:m4-parity` reports domain-pack status from source/evidence, generated ledgers identify remaining M4 blockers precisely, and the next M4 wave is scheduled from generated facts rather than hand optimism. |
+
+### Milestone 4 Wave 1 Scheduling Notes
+
+- Each feature lane should commit only its owned files locally and must not push;
+  the integrator will run cross-wave checks and push the collected commits.
+- Feature lanes should add typed public surfaces or explicit route-tested
+  blockers. Raw `apply-bundle` reachability alone must not count as M4 parity.
+- Benchmarks should prefer deterministic offline fixtures first, then live
+  evidence hooks. UI/Cmd+K evidence may be validated replay, but activator-only
+  entries must remain excluded from semantic authoring proof.
+- M4-F owns generated M4 reports and verifier behavior. It should degrade
+  gracefully if feature lanes have not landed yet and should keep M4 `Partial`
+  until all generated gates pass.
 
 ## Next Work Packages
 
