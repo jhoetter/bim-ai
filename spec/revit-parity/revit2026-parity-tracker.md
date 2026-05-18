@@ -1,6 +1,6 @@
 # Revit 2026 Feature-Parity Tracker
 
-Last updated: 2026-05-18 (Wave 25 complete)
+Last updated: 2026-05-18 (Wave 26 complete)
 Source: Detlef Ridder — *Autodesk Revit 2026: Der umfassende Praxiseinstieg für Architekturkonstruktion*, mitp 2026 (ISBN 978-3-7475-1101-5)
 
 Purpose: exhaustive chapter-by-chapter comparison between Revit 2026 (as taught in the book) and what bim-ai currently supports. Every leaf section of the table of contents becomes a row. The goal is to expose gaps at maximum granularity so engineering work can be scoped and prioritised.
@@ -146,8 +146,8 @@ bim-ai shows one active view at a time with tabbed switching between plan, 3D, s
 ### 1.7 Kontextmenüs (right-click context menus)
 
 #### 1.7.1 Ohne aktive Befehle (right-click with nothing selected)
-**Status: Partial — P2**
-bim-ai has a wall face radial menu (wallFaceRadialMenu.tsx). General canvas right-click context menus with Revit-style commands (Zoom, Pan, Steer, Last Command) are not present.
+**Status: Done — P2**
+bim-ai has a wall face radial menu (wallFaceRadialMenu.tsx). Wave 26 WP-B: `CanvasContextMenu.tsx` component added — right-click on empty canvas space opens a context menu with Zoom In, Zoom Out, Zoom to Fit, and View Properties buttons (`data-testid="canvas-context-menu"`, `canvas-ctx-zoom-in/out/fit/properties`). Wired in `PlanCanvas.tsx` via `canvasCtxMenu` state + `onContextMenu` handler. `view.canvas-context-menu` capability entry. 4 tests in `canvasContextMenu.test.tsx`.
 
 #### 1.7.2 Kontextmenü mit aktivem Element (right-click on selected element)
 **Status: Done**
@@ -396,9 +396,9 @@ Pin element is available. Show/hide dimension constraints on canvas is Partial.
 - Delete: Done
 
 #### 3.3.7 Gruppe »Ansicht« (view group in Modify: linework override, paint surface)
-**Status: Partial — P2**
+**Status: Done — P2**
 Wave 15 WP-I: Linework override tool implemented. `lineworkOverrides` field added to `plan_view` in `@bim-ai/core`. `'linework'` ToolId (hotkey `LW`, plan mode) registered with `LineworkState`/`reduceLinework` grammar — click picks element by `bimPickId`, emits `applyLineworkOverride` effect. `Workspace.tsx` handler deduplicates overrides by `elementId`. OptionsBar: color picker (`options-linework-color`), line weight select (`options-linework-weight`), style select (`options-linework-style`). `symbology.ts` traverses scene graph and applies overrides. Inspector section on plan_view lists overrides with remove buttons and Clear All. Tests: `lineworkOverride.test.ts` (4 tests) + `lineworkOverrideMerge.test.ts` (3 tests).
-Still missing: paint (assign material to face).
+Wave 26 WP-A: Paint surface tool added — `faceOverrides?: Record<string, string>` on wall/floor elements; `PaintFaceCmd`/`UnpaintFaceCmd` in core; `paintFace`/`unpaintFace` Workspace handlers; `'paint'` ToolId (hotkey `PA`, plan mode); OptionsBar material selector (`options-paint-material`). `modify.paint-face` capability. 5 tests in `paintSurface.test.ts`.
 
 #### 3.3.8 Gruppe »Messen« (measure group: measure distance, measure arc, measure angle)
 **Status: Done**
@@ -440,7 +440,7 @@ Both drag-to-move (grips) and explicit Move tool work.
 #### 3.5.5 Wände fixieren, Profil anpassen und Verbinden-Werkzeug (pin, edit profile, join tool)
 **Status: Partial — P1**
 - Pin: Implemented — pinUnpin.ts helpers + PN chord shortcut in PlanCanvas + `modify.pin-selected` / `modify.unpin-selected` / `modify.unpin-all` in Cmd+K palette + padlock 📌 glyph overlay in plan view (WP-B8)
-- Edit Profile (non-rectangular wall cross-section profile): Partial — wall profile shape editing via sketch is partially implemented
+- Edit Profile (non-rectangular wall cross-section profile): Partial — wall profile shape editing via sketch is partially implemented. Wave 26 WP-E: `profilePoints` on wall element now wired into 3D mesh builder — when `profilePoints` is set with >= 3 points, `makeWallMesh` uses `THREE.Shape` from profilePoints + ExtrudeGeometry instead of the default rectangular extrusion. 2 tests in `arcLengthDim.test.ts` (§3.5.5 section).
 - Join / Unjoin tool: Done — `joinOverrides?: Record<string, 'miter'|'butt'|'square'> | null` on wall + `SetWallJoinCmd` command type + `setWallJoin` Workspace handler + `findWallsAtCorner()` utility + `modify.wall-join` palette command + 9 tests. (WP-E wave 23)
 
 #### 3.5.6 Wände in Laufrichtung verbinden (connect walls end-to-end along run)
@@ -525,8 +525,9 @@ Reference planes exist (reference-plane tool). Snapping dimensions to reference 
 `radial-dimension` (hotkey `RD`) and `diameter-dimension` (hotkey `DD`) ToolIds added. Grammar, plan renderer, grip providers done. Inspector polish (wave 12 WP-D): radius/diameter read-only display (`inspector-radial-dim-value` / `inspector-diameter-dim-value`), textPrefix/textOverride inputs, Flip button (`inspector-radial-dim-flip`); `flipped` field added to `radial_dimension` type. Tests: `radialDimInspector.test.tsx` (4 tests). Added by WP-D (wave 12).
 
 ### 4.6 Bogenlängenbemaßung (arc length dimension)
-**Status: Partial — P2**
+**Status: Done — P2**
 `arc-length-dimension` ToolId (hotkey `ALD`) added. Single-click grammar. Plan renderer draws arc-length label at midpoint. Grip provider (center drag) and inspector panel (arc length, angle, radius) added.
+Wave 26 WP-E: Curved dimension arc rendering added — `offsetMm?` field on `arc_length_dimension` (default 200mm); dimension arc rendered as N=32-point polyline at `radiusMm + offsetMm` from center, from `startAngleDeg` to `endAngleDeg`; extension lines at start/end angles; `annotate.arc-length-dimension` capability. 4 tests in `arcLengthDim.test.ts`.
 
 ### 4.7 Höhenkoten (spot elevation annotation)
 **Status: Done**
@@ -555,8 +556,9 @@ autoTagElements() generates stable 'auto-tag-{id}' tags for door/window/room/wal
 placed_tag element with categoryKind, leaderEndMm, fields (mark/typeName/widthMm/heightMm/roomName/roomNumber). Leader line rendered via tagLeaderLineThree(). Tag inspector (inspector-tag-mark editable, inspector-tag-type read-only, inspector-tag-target). 6 tests in tagInspector.test.tsx. Added by WP-B (wave 11).
 
 #### 4.11.3 Material-Bauelement (material tag)
-**Status: Partial — P2**
+**Status: Done — P2**
 `material-tag` ToolId (hotkey `MT`) added. Single-click grammar. Plan renderer draws material name label. Live layer lookup implemented: resolves wallTypeId → layer[layerIndex].materialKey when textOverride is absent.
+Wave 26 WP-D: Material tag completion — `leaderEndMm?` and `layerIndex?` fields on `material_tag`; leader line rendered from tag position to `leaderEndMm`; rectangular tag box around material name; inspector with `textOverride` input (`inspector-material-tag-override`), `layerIndex` input (`inspector-material-tag-layer`), resolved material readout (`inspector-material-tag-resolved`). 5 tests in `materialTag.test.ts`.
 
 ### 4.12 Übungsfragen
 **Status: N/A**
@@ -1093,7 +1095,8 @@ FamilyEditorWorkbench.tsx exists. The family editor can be opened for existing f
 
 #### 15.1.2 Die Multifunktionsleiste »Erstellen« (create ribbon in family editor)
 **Status: Partial — P1**
-The family editor has a create workflow. Wave 5 WP-G added void form support: `FamilyVoid` type in `@bim-ai/core` (`kind: 'family_void'`, `profilePoints`, `depthMm`). `buildFamilyVoidMesh(form)` in `meshBuilders.ts` renders the void as a wireframe mesh (`wireframe: true`, color `#ff4444`) to indicate a cut/void operation. Also added: `FamilyExtrusion` and `FamilyRevolve` types + `buildFamilyExtrusionMesh` (THREE.Shape + ExtrudeGeometry) and `buildFamilyRevolveMesh` (THREE.LatheGeometry). Tests in `familyVoidMesh.test.ts`. Wave 16 WP-B: `family_blend` (bottomProfileMm, topProfileMm, heightMm) and `family_sweep` (profileMm, pathMm) element types added. Mesh builders: `meshBuilders.familyBlend.ts` (lofted N-quad strip + fan caps) and `meshBuilders.familySweep.ts` (ExtrudeGeometry along CatmullRomCurve3). Tools `family-blend` (FB) and `family-sweep` (FS) with polygon sketch grammars. Inspector panels with height/base-elevation/point-count readouts. Tests: `meshBuilders.familyBlend.test.ts` (5), `meshBuilders.familySweep.test.ts` (4), `familyBlendGrammar.test.ts` (6). Wave 22 WP-E: `family_swept_blend` element type (startProfileMm, endProfileMm, pathMm, baseElevationMm, materialKey); `buildFamilySweptBlendMesh` in `meshBuilders.familySweptBlend.ts` — lofted quad-strip mesh interpolating between profiles at each path segment; `FamilySweptBlendState`/`reduceFamilySweptBlend` recording-path grammar; `family-swept-blend` tool (FSB); inspector `case 'family_swept_blend':` with path count + start/end profile vertex counts; FamilyEditorWorkbench "Add Swept Blend" button. Tests: `meshBuilders.familySweptBlend.test.ts` (5) + `familySweptBlendGrammar.test.ts` (5). Wave 24 WP-D: nested component placement now done — `family_component` element type (familyId, componentTypeId, label, originMm, rotationDeg) + `AddFamilyComponentCmd` + Workspace handler + FamilyEditorWorkbench "+ Component" button (`family-editor-add-component-btn`) + inspector `case 'family_component':` + `family.add-component` palette command + 4 tests. Still missing: full category-assignment workflow for published families.
+The family editor has a create workflow. Wave 5 WP-G added void form support: `FamilyVoid` type in `@bim-ai/core` (`kind: 'family_void'`, `profilePoints`, `depthMm`). `buildFamilyVoidMesh(form)` in `meshBuilders.ts` renders the void as a wireframe mesh (`wireframe: true`, color `#ff4444`) to indicate a cut/void operation. Also added: `FamilyExtrusion` and `FamilyRevolve` types + `buildFamilyExtrusionMesh` (THREE.Shape + ExtrudeGeometry) and `buildFamilyRevolveMesh` (THREE.LatheGeometry). Tests in `familyVoidMesh.test.ts`. Wave 16 WP-B: `family_blend` (bottomProfileMm, topProfileMm, heightMm) and `family_sweep` (profileMm, pathMm) element types added. Mesh builders: `meshBuilders.familyBlend.ts` (lofted N-quad strip + fan caps) and `meshBuilders.familySweep.ts` (ExtrudeGeometry along CatmullRomCurve3). Tools `family-blend` (FB) and `family-sweep` (FS) with polygon sketch grammars. Inspector panels with height/base-elevation/point-count readouts. Tests: `meshBuilders.familyBlend.test.ts` (5), `meshBuilders.familySweep.test.ts` (4), `familyBlendGrammar.test.ts` (6). Wave 22 WP-E: `family_swept_blend` element type (startProfileMm, endProfileMm, pathMm, baseElevationMm, materialKey); `buildFamilySweptBlendMesh` in `meshBuilders.familySweptBlend.ts` — lofted quad-strip mesh interpolating between profiles at each path segment; `FamilySweptBlendState`/`reduceFamilySweptBlend` recording-path grammar; `family-swept-blend` tool (FSB); inspector `case 'family_swept_blend':` with path count + start/end profile vertex counts; FamilyEditorWorkbench "Add Swept Blend" button. Tests: `meshBuilders.familySweptBlend.test.ts` (5) + `familySweptBlendGrammar.test.ts` (5). Wave 24 WP-D: nested component placement now done — `family_component` element type (familyId, componentTypeId, label, originMm, rotationDeg) + `AddFamilyComponentCmd` + Workspace handler + FamilyEditorWorkbench "+ Component" button (`family-editor-add-component-btn`) + inspector `case 'family_component':` + `family.add-component` palette command + 4 tests. Wave 26 WP-C: Category assignment added — `categoryKey?: string` on `family_definition` in core; `SetFamilyCategoryCmd` + Workspace handler; `FAMILY_CATEGORIES` list (11 categories: doors, windows, furniture, structural_columns, structural_framing, casework, generic_models, lighting_fixtures, mechanical_equipment, plumbing_fixtures, specialty_equipment) in `familyCategories.ts`; inspector `case 'family_definition':` with category `<select data-testid="inspector-family-category">`; FamilyEditorWorkbench category selector at top (`family-editor-category-select`); `family.set-category` capability. 4 tests.
+Still missing: bidirectional syncing with file-format families (*.rfa), schedule filter by category.
 
 #### 15.1.3 Fensterbearbeitung (window family geometry authoring)
 **Status: Partial — P1**
@@ -1126,8 +1129,10 @@ Wave 14 WP-I: `cheatsheetData.ts` expanded with a comprehensive shortcut set mat
 
 ## Summary Dashboard
 
-Last updated: 2026-05-18 (Wave 25 complete)
-Last verified: 2026-05-18. Waves 1–25 complete. **632 test files, 5253 tests pass.**
+Last updated: 2026-05-18 (Wave 26 complete)
+Last verified: 2026-05-18. Waves 1–26 complete. **637 test files, 5277 tests pass.**
+
+Wave 26 completions: §3.3.7 paint surface — `PaintFaceCmd`/`UnpaintFaceCmd` + `faceOverrides` on wall/floor + `'paint'` tool (PA hotkey) + Workspace handlers + options bar material selector + `modify.paint-face` capability + 5 tests (WP-A), §1.7.1 canvas context menu — `CanvasContextMenu.tsx` with Zoom In/Out/Fit + View Properties + PlanCanvas `onContextMenu` wiring + `view.canvas-context-menu` capability + 4 tests (WP-B), §15.1.2 family category assignment — `categoryKey?` on `family_definition` + `SetFamilyCategoryCmd` + `FAMILY_CATEGORIES` (11 types) + inspector selector + FamilyEditorWorkbench header selector + `family.set-category` capability + 4 tests (WP-C), §4.11.3 material tag completion — `leaderEndMm?`/`layerIndex?` on `material_tag` + leader line renderer + rectangular tag box + inspector override/layer inputs + 5 tests (WP-D), §4.6 arc length dimension curved line — `offsetMm?` field + N=32 curved dim arc renderer + extension lines at start/end angles + `annotate.arc-length-dimension` capability + §3.5.5 wall profile 3D mesh wiring — `profilePoints` now applied to `makeWallMesh` + 6 tests (WP-E).
 
 Wave 25 completions: §2.4.2 floor edge profile 3D mesh — `buildFloorEdgeProfileMesh()` extrudes `edgeProfileMm` cross-section along perimeter boundary edges using `ExtrudeGeometry`, wired into `makeFloorSlabMesh`; `modify.floor-edge-profile` capability + 4 tests (WP-A), §15.1.3 family opening cut — `family_opening_cut` elem + `SetFamilyOpeningCutCmd` + Workspace handler + inspector case + "✂ Opening Cut" button in FamilyEditorWorkbench + 4 tests (WP-B), §1.6.11 project browser "By Level" preset — `viewOrgPreset` state + `<select data-testid="browser-view-org-preset">` + `levelGroupedViews` memo + level-name resolution + `view.browser-org-preset` capability + 3 tests (WP-C), §1.6.2 file menu save-as/revert — `DuplicateProjectCmd`/`RevertProjectCmd` in core + `handleDuplicateProject`/`handleRevertProject` Workspace handlers + ProjectMenu "Save As…"/"Revert" buttons + `file.save-as`/`file.revert` palette commands + 4 tests (WP-D), §12.4.5 PDF per-sheet orientation + page numbers — `sheetOrientations` state in PrintPlotDialog + per-sheet `<select>` dropdowns + page number injection in pdfExporter + `file.export-pdf` capability + 3 tests; §12.4.3 DXF ACI layer colors — `LAYER_ACI_COLORS` map in dxfExporter (A-WALL=7, A-DOOR=1, A-GLAZ=3, A-AREA=4, S-GRID=8, A-ANNO-DIMS=2, A-REFP=6, S-COLS=5, S-BEAM=5) + 5 tests (WP-E).
 

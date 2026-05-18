@@ -2830,6 +2830,26 @@ registerCommand({
   invoke: (ctx) => ctx.openFamilyEditor?.(),
 });
 
+// §3.3.7 — paint surface / face material override
+registerCommand({
+  id: 'modify.paint-face',
+  label: 'Paint Surface',
+  keywords: ['paint', 'surface', 'face', 'material override', 'paint face'],
+  category: 'command',
+  invoke: (ctx) => ctx.activateTool?.('paint-face'),
+});
+
+// §1.7.1 — canvas context menu (Cmd+K alias)
+registerCommand({
+  id: 'view.canvas-context-menu',
+  label: 'Canvas Context Menu',
+  keywords: ['context menu', 'right click', 'canvas', 'zoom', 'view properties'],
+  category: 'command',
+  invoke: () => {
+    // Triggered via right-click on canvas; Cmd+K alias for discoverability
+  },
+});
+
 // Toposolid sub-tools — exposed in Cmd+K
 registerCommand({
   id: 'tool.graded-region',
@@ -3111,4 +3131,13 @@ registerCommand({
   invoke: () => {
     // §1.7.1: surfaced via canvas right-click on empty space — no global invocation needed.
   },
+});
+
+// §3.3.7 (Wave 26 WP-A): Paint Surface — activate paint face tool
+registerCommand({
+  id: 'modify.paint-face',
+  label: 'Paint Surface',
+  keywords: ['paint', 'surface', 'face', 'material override', 'paint face'],
+  category: 'command',
+  invoke: (ctx) => startPlanTool(ctx, 'paint'),
 });
