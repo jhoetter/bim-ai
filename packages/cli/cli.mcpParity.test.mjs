@@ -446,6 +446,215 @@ test('author railing --json generates typed createRailing payload', async () => 
   assert.deepEqual(command.balusterPattern, { rule: 'regular', spacingMm: 120 });
 });
 
+test('family upsert/place --json generate first-class M4-D bundles', async () => {
+  const env = { BIM_AI_BASE_URL: 'http://127.0.0.1:1', BIM_AI_MODEL_ID: 'model-1' };
+  const upsert = await runCli(
+    [
+      'family',
+      'upsert-type',
+      '--id',
+      'ft-chair',
+      '--name',
+      'Chair',
+      '--family-id',
+      'fam-chair',
+      '--parameters',
+      '{"widthMm":500,"materialKey":"oak"}',
+      '--json',
+    ],
+    env,
+  );
+  const place = await runCli(
+    [
+      'family',
+      'place-instance',
+      '--id',
+      'chair-1',
+      '--family-type',
+      'ft-chair',
+      '--level',
+      'lvl-0',
+      '--pos',
+      '1200,900',
+      '--param-values',
+      '{"seatHeightMm":450}',
+      '--json',
+    ],
+    env,
+  );
+
+  assert.equal(upsert.code, 0, upsert.stderr);
+  assert.equal(place.code, 0, place.stderr);
+  const upsertCommand = JSON.parse(upsert.stdout).body.bundle.commands[0];
+  const placeCommand = JSON.parse(place.stdout).body.bundle.commands[0];
+  assert.equal(JSON.parse(upsert.stdout).body.bundle.assumptions[0].value, 'family.upsert_type');
+  assert.deepEqual(upsertCommand, {
+    type: 'upsertFamilyType',
+    id: 'ft-chair',
+    discipline: 'generic',
+    parameters: { widthMm: 500, materialKey: 'oak' },
+    name: 'Chair',
+    familyId: 'fam-chair',
+  });
+  assert.equal(JSON.parse(place.stdout).body.bundle.assumptions[0].value, 'family.place_instance');
+  assert.deepEqual(placeCommand, {
+    type: 'placeFamilyInstance',
+    familyTypeId: 'ft-chair',
+    positionMm: { xMm: 1200, yMm: 900 },
+    rotationDeg: 0,
+    paramValues: { seatHeightMm: 450 },
+    id: 'chair-1',
+    levelId: 'lvl-0',
+  });
+});
+
+test('asset place and kitchen kit --json generate typed M4-D bundles', async () => {
+  const env = { BIM_AI_BASE_URL: 'http://127.0.0.1:1', BIM_AI_MODEL_ID: 'model-1' };
+  const asset = await runCli(
+    [
+      'asset',
+      'place',
+      '--id',
+      'sofa-1',
+      '--asset',
+      'asset-sofa',
+      '--level',
+      'lvl-0',
+      '--pos',
+      '2500,1400,0',
+      '--rotation',
+      '90',
+      '--json',
+    ],
+    env,
+  );
+  const kit = await runCli(
+    [
+      'place-kitchen-kit',
+      '--id',
+      'kit-1',
+      '--host-wall',
+      'wall-1',
+      '--start',
+      '200',
+      '--end',
+      '3600',
+      '--components',
+      '[{"componentKind":"base","widthMm":600},{"componentKind":"sink"}]',
+      '--json',
+    ],
+    env,
+  );
+
+  assert.equal(asset.code, 0, asset.stderr);
+  assert.equal(kit.code, 0, kit.stderr);
+  assert.deepEqual(JSON.parse(asset.stdout).body.bundle.commands[0], {
+    type: 'PlaceAsset',
+    id: 'sofa-1',
+    assetId: 'asset-sofa',
+    levelId: 'lvl-0',
+    positionMm: { xMm: 2500, yMm: 1400 },
+    rotationDeg: 90,
+  });
+  assert.deepEqual(JSON.parse(kit.stdout).body.bundle.commands[0], {
+    type: 'place_kit',
+    id: 'kit-1',
+    kitId: 'kitchen_modular',
+    hostWallId: 'wall-1',
+    startMm: 200,
+    endMm: 3600,
+    components: [{ componentKind: 'base', widthMm: 600 }, { componentKind: 'sink' }],
+    countertopDepthMm: 600,
+  });
+});
+
+test('material and decal --json expose M4-D typed assignment surfaces', async () => {
+  const env = { BIM_AI_BASE_URL: 'http://127.0.0.1:1', BIM_AI_MODEL_ID: 'model-1' };
+  const pbr = await runCli(
+    [
+      'material',
+      'update-pbr',
+      '--id',
+      'mat-oak',
+      '--albedo-map',
+      'img-oak-albedo',
+      '--normal-map',
+      'img-oak-normal',
+      '--uv-scale',
+      '{"u":600,"v":600}',
+      '--json',
+    ],
+    env,
+  );
+  const assign = await runCli(
+    ['material', 'assign', '--element', 'wall-1', '--material', 'brick_red', '--json'],
+    env,
+  );
+  const paint = await runCli(
+    [
+      'material',
+      'paint-face',
+      '--element',
+      'wall-1',
+      '--face',
+      'exterior',
+      '--material',
+      'brick_red',
+      '--json',
+    ],
+    env,
+  );
+  const decal = await runCli(
+    [
+      'decal',
+      'create',
+      '--id',
+      'decal-logo',
+      '--parent',
+      'wall-1',
+      '--surface',
+      'front',
+      '--image-asset',
+      'img-logo',
+      '--json',
+    ],
+    env,
+  );
+
+  assert.equal(pbr.code, 0, pbr.stderr);
+  assert.equal(assign.code, 0, assign.stderr);
+  assert.equal(paint.code, 0, paint.stderr);
+  assert.equal(decal.code, 0, decal.stderr);
+  assert.deepEqual(JSON.parse(pbr.stdout).body.bundle.commands[0], {
+    type: 'update_material_pbr',
+    id: 'mat-oak',
+    albedoMapId: 'img-oak-albedo',
+    normalMapId: 'img-oak-normal',
+    uvScaleMm: { u: 600, v: 600 },
+  });
+  assert.deepEqual(JSON.parse(assign.stdout).body.bundle.commands[0], {
+    type: 'set_element_prop',
+    elementId: 'wall-1',
+    key: 'materialKey',
+    value: 'brick_red',
+  });
+  assert.deepEqual(JSON.parse(paint.stdout).body.bundle.commands[0], {
+    type: 'set_element_prop',
+    elementId: 'wall-1',
+    key: 'faceMaterialOverrides',
+    value: [{ faceKind: 'exterior', materialKey: 'brick_red', source: 'paint' }],
+  });
+  assert.deepEqual(JSON.parse(decal.stdout).body.bundle.commands[0], {
+    type: 'create_decal',
+    parentElementId: 'wall-1',
+    parentSurface: 'front',
+    imageAssetId: 'img-logo',
+    uvRect: { u0: 0, v0: 0, u1: 1, v1: 1 },
+    opacity: 1,
+    id: 'decal-logo',
+  });
+});
+
 test('author floor-boundary --json generates createFloor payload', async () => {
   const res = await runCli(
     [

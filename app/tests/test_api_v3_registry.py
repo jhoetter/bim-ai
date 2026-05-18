@@ -294,6 +294,40 @@ class TestToolRegistry:
         assert beam.inputSchema["required"] == ["levelId", "startMm", "endMm"]
         assert logistics.inputSchema["required"] == ["name", "logisticsKind"]
 
+    def test_m4d_family_asset_material_decal_tools_are_first_class_descriptors(self):
+        expected = {
+            "family.upsert_type",
+            "family.place_instance",
+            "asset.query",
+            "asset.place",
+            "material.query",
+            "material.upsert_pbr",
+            "material.assign",
+            "material.paint_face",
+            "decal.create",
+            "place-kitchen-kit",
+        }
+        names = {tool.name for tool in get_catalog().tools}
+        assert expected <= names
+
+        family = get_descriptor("family.place_instance")
+        assert family is not None
+        assert family.kernelCommands == ["placeFamilyInstance"]
+        assert {"family", "family-instance", "kernel-command"} <= set(family.resourceGroups)
+        assert family.inputSchema["required"] == ["familyTypeId", "positionMm"]
+
+        paint = get_descriptor("material.paint_face")
+        assert paint is not None
+        assert paint.kernelCommands == ["set_element_prop"]
+        assert {"material", "paint", "kernel-command"} <= set(paint.resourceGroups)
+        assert paint.inputSchema["required"] == ["elementId", "faceKind", "materialKey"]
+
+        decal = get_descriptor("decal.create")
+        assert decal is not None
+        assert decal.kernelCommands == ["create_decal"]
+        assert {"decal", "material", "kernel-command"} <= set(decal.resourceGroups)
+
+
     @pytest.mark.parametrize(
         ("name", "path"),
         [

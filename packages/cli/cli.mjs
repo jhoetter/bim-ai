@@ -220,6 +220,21 @@ function parsePosTriple(s) {
   return { xMm: parts[0], yMm: parts[1], zMm: parts[2] };
 }
 
+function parsePosPair(s, flagName = '--pos') {
+  if (!s) {
+    console.error(`${flagName} x,y required`);
+    process.exit(1);
+  }
+  const parts = String(s)
+    .split(',')
+    .map((t) => Number(t.trim()));
+  if (parts.length !== 2 || parts.some((n) => !Number.isFinite(n))) {
+    console.error(`Invalid ${flagName} value: '${s}'. Expected two comma-separated numbers (mm).`);
+    process.exit(1);
+  }
+  return { xMm: parts[0], yMm: parts[1] };
+}
+
 async function cmdLinkCreate(modelId, userId, sourceUuid, posTriple, alignMode, name, vis) {
   if (!sourceUuid) {
     console.error('link requires --source <uuid>');
@@ -2059,6 +2074,230 @@ function applyOptionalMepRouteFlags(command, args) {
   if (colour) command.colour = colour;
 }
 
+async function cmdFamily(modelId, userId, sub, args) {
+  const opts = authorOptions(args);
+  let command;
+  let toolId;
+  if (sub === 'upsert-type') {
+    const id = flagValue(args, '--id');
+    if (!id) {
+      console.error('family upsert-type requires --id <family-type-id>.');
+      process.exit(1);
+    }
+    command = {
+      type: 'upsertFamilyType',
+      id,
+      discipline: flagValue(args, '--discipline') ?? 'generic',
+      parameters: parseJsonObjectFlag(flagValue(args, '--parameters'), '--parameters') ?? {},
+    };
+    const name = flagValue(args, '--name');
+    const familyId = flagValue(args, '--family-id');
+    const catalogSource = parseJsonObjectFlag(flagValue(args, '--catalog-source'), '--catalog-source');
+    if (name) command.name = name;
+    if (familyId) command.familyId = familyId;
+    if (catalogSource) command.catalogSource = catalogSource;
+    toolId = 'family.upsert_type';
+  } else if (sub === 'place-instance') {
+    const familyTypeId = flagValue(args, ['--family-type', '--type']);
+    if (!familyTypeId) {
+      console.error('family place-instance requires --family-type <id>.');
+      process.exit(1);
+    }
+    const posArg = flagValue(args, '--pos');
+    const positionMm =
+      posArg != null
+        ? parsePosPair(posArg, '--pos')
+        : {
+            xMm: parseNumber(flagValue(args, '--x'), undefined),
+            yMm: parseNumber(flagValue(args, '--y'), undefined),
+          };
+    if (!Number.isFinite(positionMm.xMm) || !Number.isFinite(positionMm.yMm)) {
+      console.error('family place-instance requires --pos x,y or --x <n> --y <n>.');
+      process.exit(1);
+    }
+    command = {
+      type: 'placeFamilyInstance',
+      familyTypeId,
+      positionMm,
+      rotationDeg: parseNumber(flagValue(args, '--rotation'), 0),
+      paramValues: parseJsonObjectFlag(flagValue(args, '--param-values'), '--param-values') ?? {},
+    };
+    const id = flagValue(args, '--id');
+    const name = flagValue(args, '--name');
+    const levelId = flagValue(args, '--level');
+    const hostViewId = flagValue(args, '--host-view');
+    const hostElementId = flagValue(args, '--host-element');
+    const hostAlongT = flagValue(args, '--host-along-t');
+    if (id) command.id = id;
+    if (name) command.name = name;
+    if (levelId) command.levelId = levelId;
+    if (hostViewId) command.hostViewId = hostViewId;
+    if (hostElementId) command.hostElementId = hostElementId;
+    if (hostAlongT != null) command.hostAlongT = parseNumber(hostAlongT, undefined);
+    toolId = 'family.place_instance';
+  } else {
+    console.error(`Unknown family subcommand: ${sub ?? '(none)'}. Use upsert-type | place-instance.`);
+    process.exit(1);
+  }
+  const bundle = buildGeneratedBundle({
+    toolId,
+    commands: [command],
+    parentRevision: opts.parentRevision,
+  });
+  await runGeneratedBundle(modelId, userId, bundle, opts.mode, opts.jsonOnly);
+}
+
+async function cmdMaterial(modelId, userId, sub, args) {
+  const opts = authorOptions(args);
+  let command;
+  let toolId;
+  if (sub === 'update-pbr') {
+    const id = flagValue(args, '--id');
+    if (!id) {
+      console.error('material update-pbr requires --id <material-id>.');
+      process.exit(1);
+    }
+    command = { type: 'update_material_pbr', id };
+    const fields = [
+      ['--name', 'name'],
+      ['--albedo-color', 'albedoColor'],
+      ['--albedo-map', 'albedoMapId'],
+      ['--normal-map', 'normalMapId'],
+      ['--roughness-map', 'roughnessMapId'],
+      ['--metallic-map', 'metallicMapId'],
+      ['--height-map', 'heightMapId'],
+      ['--hatch-pattern', 'hatchPatternId'],
+    ];
+    for (const [flag, key] of fields) {
+      const value = flagValue(args, flag);
+      if (value != null) command[key] = value;
+    }
+    const uvScale = parseJsonObjectFlag(flagValue(args, '--uv-scale'), '--uv-scale');
+    if (uvScale) command.uvScaleMm = uvScale;
+    const uvRotation = flagValue(args, '--uv-rotation');
+    if (uvRotation != null) command.uvRotationDeg = parseNumber(uvRotation, undefined);
+    toolId = 'material.upsert_pbr';
+  } else if (sub === 'assign') {
+    const elementId = flagValue(args, '--element');
+    const materialKey = flagValue(args, '--material');
+    if (!elementId || !materialKey) {
+      console.error('material assign requires --element <id> --material <material-key>.');
+      process.exit(1);
+    }
+    command = {
+      type: 'set_element_prop',
+      elementId,
+      key: 'materialKey',
+      value: materialKey,
+    };
+    toolId = 'material.assign';
+  } else if (sub === 'paint-face') {
+    const elementId = flagValue(args, '--element');
+    const faceKind = flagValue(args, '--face');
+    const materialKey = flagValue(args, '--material');
+    if (!elementId || !faceKind || !materialKey) {
+      console.error('material paint-face requires --element <id> --face <kind> --material <key>.');
+      process.exit(1);
+    }
+    const override = {
+      faceKind,
+      materialKey,
+      source: flagValue(args, '--source') ?? 'paint',
+    };
+    const generatedFaceId = flagValue(args, '--generated-face-id');
+    const uvScale = parseJsonObjectFlag(flagValue(args, '--uv-scale'), '--uv-scale');
+    const uvOffset = parseJsonObjectFlag(flagValue(args, '--uv-offset'), '--uv-offset');
+    const uvRotation = flagValue(args, '--uv-rotation');
+    if (generatedFaceId) override.generatedFaceId = generatedFaceId;
+    if (uvScale) override.uvScaleMm = uvScale;
+    if (uvOffset) override.uvOffsetMm = uvOffset;
+    if (uvRotation != null) override.uvRotationDeg = parseNumber(uvRotation, undefined);
+    command = {
+      type: 'set_element_prop',
+      elementId,
+      key: 'faceMaterialOverrides',
+      value: [override],
+    };
+    toolId = 'material.paint_face';
+  } else {
+    console.error(`Unknown material subcommand: ${sub ?? '(none)'}. Use update-pbr | assign | paint-face.`);
+    process.exit(1);
+  }
+  const bundle = buildGeneratedBundle({
+    toolId,
+    commands: [command],
+    parentRevision: opts.parentRevision,
+  });
+  await runGeneratedBundle(modelId, userId, bundle, opts.mode, opts.jsonOnly);
+}
+
+async function cmdDecal(modelId, userId, sub, args) {
+  const opts = authorOptions(args);
+  if (sub !== 'create') {
+    console.error(`Unknown decal subcommand: ${sub ?? '(none)'}. Use create.`);
+    process.exit(1);
+  }
+  const parentElementId = flagValue(args, '--parent');
+  const imageAssetId = flagValue(args, '--image-asset');
+  if (!parentElementId || !imageAssetId) {
+    console.error('decal create requires --parent <element-id> --image-asset <image-asset-id>.');
+    process.exit(1);
+  }
+  const command = {
+    type: 'create_decal',
+    parentElementId,
+    parentSurface: flagValue(args, '--surface') ?? 'front',
+    imageAssetId,
+    uvRect: parseJsonObjectFlag(flagValue(args, '--uv-rect'), '--uv-rect') ?? {
+      u0: 0,
+      v0: 0,
+      u1: 1,
+      v1: 1,
+    },
+    opacity: parseNumber(flagValue(args, '--opacity'), 1),
+  };
+  const id = flagValue(args, '--id');
+  if (id) command.id = id;
+  const bundle = buildGeneratedBundle({
+    toolId: 'decal.create',
+    commands: [command],
+    parentRevision: opts.parentRevision,
+  });
+  await runGeneratedBundle(modelId, userId, bundle, opts.mode, opts.jsonOnly);
+}
+
+async function cmdPlaceKitchenKit(modelId, userId, args) {
+  const opts = authorOptions(args);
+  const id = flagValue(args, '--id');
+  const hostWallId = flagValue(args, ['--host-wall', '--hostWallId']);
+  if (!id || !hostWallId) {
+    console.error('place-kitchen-kit requires --id <id> --host-wall <wall-id>.');
+    process.exit(1);
+  }
+  const command = {
+    type: 'place_kit',
+    id,
+    kitId: flagValue(args, '--kit-id') ?? 'kitchen_modular',
+    hostWallId,
+    startMm: parseNumber(flagValue(args, '--start'), parseNumber(flagValue(args, '--startMm'), 0)),
+    endMm: parseNumber(flagValue(args, '--end'), parseNumber(flagValue(args, '--endMm'), undefined)),
+    components: parseJsonArrayFlag(flagValue(args, '--components'), '--components'),
+    countertopDepthMm: parseNumber(flagValue(args, '--countertop-depth'), 600),
+  };
+  const countertopMaterialId = flagValue(args, '--countertop-material');
+  if (!Number.isFinite(command.endMm)) {
+    console.error('place-kitchen-kit requires --end <mm>.');
+    process.exit(1);
+  }
+  if (countertopMaterialId) command.countertopMaterialId = countertopMaterialId;
+  const bundle = buildGeneratedBundle({
+    toolId: 'place-kitchen-kit',
+    commands: [command],
+    parentRevision: opts.parentRevision,
+  });
+  await runGeneratedBundle(modelId, userId, bundle, opts.mode, opts.jsonOnly);
+}
+
 async function postCommand(modelId, userId, command) {
   const json = await fetchJson(
     'POST',
@@ -3642,6 +3881,20 @@ Commands:
   site excavation create|update|delete ...
   site subdivision update|delete ...
                                       M4-A: typed site/context cmd-v3 bundle mirrors.
+  family upsert-type --id <id> [--name <n>] [--family-id <id>] [--parameters <json>] [--json]
+                                      M4-D: generate upsertFamilyType cmd-v3 bundle.
+  family place-instance --family-type <id> (--pos x,y | --x <n> --y <n>) [--level <id>] [--json]
+                                      M4-D: generate placeFamilyInstance cmd-v3 bundle.
+  material update-pbr --id <material-id> [--albedo-map <id>] [--normal-map <id>] [--json]
+                                      M4-D: generate update_material_pbr cmd-v3 bundle.
+  material assign --element <id> --material <key> [--json]
+                                      M4-D: assign an element-level materialKey via typed bundle.
+  material paint-face --element <id> --face <kind> --material <key> [--json]
+                                      M4-D: set faceMaterialOverrides for supported wall faces.
+  decal create --parent <id> --image-asset <id> [--surface front] [--uv-rect <json>] [--json]
+                                      M4-D: generate create_decal cmd-v3 bundle.
+  place-kitchen-kit --id <id> --host-wall <id> --start <mm> --end <mm> [--components <json>] [--json]
+                                      M4-D: generate place_kit cmd-v3 bundle.
   view save-3d [--id <id>] [--name <n>] [--camera <json>] [--dry-run|--commit|--json]
                                       MCP-M2-H: generate saveViewpoint cmd-v3 bundle.
   qa advisor [--output json] [--severity info|warning|error]
@@ -4379,6 +4632,30 @@ async function main() {
       return;
     }
 
+    if (cmd === 'family') {
+      if (!modelId) usage();
+      await cmdFamily(modelId, userId, argv[1], argv.slice(2));
+      return;
+    }
+
+    if (cmd === 'material') {
+      if (!modelId) usage();
+      await cmdMaterial(modelId, userId, argv[1], argv.slice(2));
+      return;
+    }
+
+    if (cmd === 'decal') {
+      if (!modelId) usage();
+      await cmdDecal(modelId, userId, argv[1], argv.slice(2));
+      return;
+    }
+
+    if (cmd === 'place-kitchen-kit') {
+      if (!modelId) usage();
+      await cmdPlaceKitchenKit(modelId, userId, argv.slice(1));
+      return;
+    }
+
     if (cmd === 'view') {
       await cmdView(modelId, userId, argv[1], argv.slice(2));
       return;
@@ -5099,11 +5376,13 @@ async function main() {
       const sub = argv[1];
       if (sub === 'index') {
         if (!modelId) usage();
+        const opts = authorOptions(argv.slice(2));
         const rest = argv.slice(2);
-        let name, category, assetKind, tagsArg, description;
+        let id, name, category, assetKind, tagsArg, description;
         for (let i = 0; i < rest.length; i++) {
           const a = rest[i];
-          if (a === '--name' && rest[i + 1]) name = rest[++i];
+          if (a === '--id' && rest[i + 1]) id = rest[++i];
+          else if (a === '--name' && rest[i + 1]) name = rest[++i];
           else if (a === '--category' && rest[i + 1]) category = rest[++i];
           else if (a === '--kind' && rest[i + 1]) assetKind = rest[++i];
           else if (a === '--tags' && rest[i + 1]) tagsArg = rest[++i];
@@ -5115,6 +5394,7 @@ async function main() {
         }
         const command = {
           type: 'IndexAsset',
+          ...(id ? { id } : {}),
           name,
           category,
           ...(assetKind ? { assetKind } : {}),
@@ -5128,18 +5408,31 @@ async function main() {
             : {}),
           ...(description ? { description } : {}),
         };
-        await postCommand(modelId, userId, command);
+        const bundle = buildGeneratedBundle({
+          toolId: 'asset.query_index',
+          commands: [command],
+          parentRevision: opts.parentRevision,
+        });
+        await runGeneratedBundle(modelId, userId, bundle, opts.mode, opts.jsonOnly);
         return;
       }
       if (sub === 'place') {
         if (!modelId) usage();
+        const opts = authorOptions(argv.slice(2));
         const rest = argv.slice(2);
+        const id = rest.find((_, i) => rest[i - 1] === '--id');
         const assetId = rest.find((_, i) => rest[i - 1] === '--asset');
         const levelId = rest.find((_, i) => rest[i - 1] === '--level');
         const posArg = rest.find((_, i) => rest[i - 1] === '--pos');
         const xArg = rest.find((_, i) => rest[i - 1] === '--x');
         const yArg = rest.find((_, i) => rest[i - 1] === '--y');
         const zArg = rest.find((_, i) => rest[i - 1] === '--z');
+        const rotationArg = rest.find((_, i) => rest[i - 1] === '--rotation');
+        const paramValues = parseJsonObjectFlag(
+          rest.find((_, i) => rest[i - 1] === '--param-values'),
+          '--param-values',
+        );
+        const hostElementId = rest.find((_, i) => rest[i - 1] === '--host-element');
         if (!assetId) {
           console.error('asset place requires --asset <asset-id>');
           process.exit(1);
@@ -5159,11 +5452,20 @@ async function main() {
         }
         const command = {
           type: 'PlaceAsset',
+          ...(id ? { id } : {}),
           assetId,
           levelId,
           positionMm: { xMm: positionMm.xMm, yMm: positionMm.yMm },
+          rotationDeg: parseNumber(rotationArg, 0),
+          ...(paramValues ? { paramValues } : {}),
+          ...(hostElementId ? { hostElementId } : {}),
         };
-        await postCommand(modelId, userId, command);
+        const bundle = buildGeneratedBundle({
+          toolId: 'asset.place',
+          commands: [command],
+          parentRevision: opts.parentRevision,
+        });
+        await runGeneratedBundle(modelId, userId, bundle, opts.mode, opts.jsonOnly);
         return;
       }
       console.error(`Unknown asset subcommand: ${sub ?? '(none)'}. Use index | place.`);
