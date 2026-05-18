@@ -121,6 +121,16 @@ describe('command capability graph', () => {
         toolId: 'create_wall_chain',
       },
     });
+    expect(getCommandCapability('benchmark.two-storey-stair.replay-fixture')).toMatchObject({
+      capabilityId: 'benchmark.two-storey-stair.validated-replay',
+      executionKind: 'commits-bundle',
+      resultKind: 'model-elements',
+      requiredContext: [],
+      agentEquivalent: {
+        completionKind: 'raw-command',
+        toolId: 'two-storey-house-with-stair:mcp-cli-command-bundle',
+      },
+    });
   });
 
   it('does not count Cmd+K tool activators as agent-complete actions — Milestone 1-B', () => {
@@ -134,6 +144,11 @@ describe('command capability graph', () => {
     ).toBe(true);
     expect(
       isAgentCompleteCommandCapability(getCommandCapability('generate.walls-from-boundary')!),
+    ).toBe(true);
+    expect(
+      isAgentCompleteCommandCapability(
+        getCommandCapability('benchmark.two-storey-stair.replay-fixture')!,
+      ),
     ).toBe(true);
   });
 
@@ -355,6 +370,7 @@ describe('command capability graph', () => {
       'theme.toggle',
       'settings.language.toggle',
       'shell.toggle-primary-sidebar',
+      'benchmark.two-storey-stair.replay-fixture',
       'project.open-settings',
       'view.create.floor-plan',
       'view.create.3d-view',

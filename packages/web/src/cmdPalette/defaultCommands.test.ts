@@ -85,6 +85,16 @@ describe('default Cmd+K commands', () => {
         toolId: 'create_wall_chain',
       },
     });
+    expect(command('benchmark.two-storey-stair.replay-fixture')).toMatchObject({
+      capabilityId: 'benchmark.two-storey-stair.validated-replay',
+      executionKind: 'commits-bundle',
+      resultKind: 'model-elements',
+      requiredContext: [],
+      agentEquivalent: {
+        completionKind: 'raw-command',
+        toolId: 'two-storey-house-with-stair:mcp-cli-command-bundle',
+      },
+    });
   });
 
   it('registers required plan authoring sketch commands with host tool routing', () => {
@@ -141,6 +151,28 @@ describe('default Cmd+K commands', () => {
         ]),
       }),
     );
+  });
+
+  it('submits the two-storey stair benchmark replay payload through Cmd+K', () => {
+    const replayBenchmarkFixture = vi.fn();
+    command('benchmark.two-storey-stair.replay-fixture').invoke({
+      ...PLAN_CTX,
+      replayBenchmarkFixture,
+    });
+    expect(replayBenchmarkFixture).toHaveBeenCalledWith('two-storey-house-with-stair');
+
+    const dispatchCommand = vi.fn();
+    command('benchmark.two-storey-stair.replay-fixture').invoke({
+      ...PLAN_CTX,
+      dispatchCommand,
+    });
+    expect(dispatchCommand).toHaveBeenCalledWith({
+      type: 'replayBenchmarkFixture',
+      benchmarkId: 'two-storey-house-with-stair',
+      payloadSource: 'spec/benchmarks/two-storey-house-with-stair/mcp-cli-command-bundle.json',
+      validationArtifact: 'spec/benchmarks/two-storey-house-with-stair/ui-equivalence.json',
+      replayMode: 'validated-replay',
+    });
   });
 
   it('scopes 3D view commands to active 3D contexts', () => {

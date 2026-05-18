@@ -261,6 +261,34 @@ registerCommand({
 });
 
 registerCommand({
+  id: 'benchmark.two-storey-stair.replay-fixture',
+  label: 'Replay Two-Storey Stair Fixture',
+  keywords: [
+    'two storey',
+    'two-story',
+    'stair',
+    'benchmark',
+    'fixture',
+    'validated replay',
+    'cmdk parity',
+  ],
+  category: 'command',
+  invoke: (ctx) => {
+    if (ctx.replayBenchmarkFixture) {
+      ctx.replayBenchmarkFixture('two-storey-house-with-stair');
+      return;
+    }
+    ctx.dispatchCommand?.({
+      type: 'replayBenchmarkFixture',
+      benchmarkId: 'two-storey-house-with-stair',
+      payloadSource: 'spec/benchmarks/two-storey-house-with-stair/mcp-cli-command-bundle.json',
+      validationArtifact: 'spec/benchmarks/two-storey-house-with-stair/ui-equivalence.json',
+      replayMode: 'validated-replay',
+    });
+  },
+});
+
+registerCommand({
   id: 'tool.roof-sketch',
   label: 'Sketch Roof Footprint',
   keywords: ['roof', 'roofing', 'sketch', 'footprint'],

@@ -81,6 +81,8 @@ export type PaletteContext = {
   openElement?: (id: string) => void;
   /** Dispatches semantic model commands from command-palette actions. */
   dispatchCommand?: (cmd: Record<string, unknown>) => void;
+  /** Replays a deterministic benchmark fixture through the same semantic command bridge. */
+  replayBenchmarkFixture?: (benchmarkId: string) => void;
   openProjectMenu?: () => void;
   openProjectSettings?: () => void;
   saveSnapshot?: () => void;

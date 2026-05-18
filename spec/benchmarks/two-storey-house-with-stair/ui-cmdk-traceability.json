@@ -2,18 +2,58 @@
   "schemaVersion": "bim-ai.benchmark.ui-cmdk-traceability.v1",
   "benchmarkId": "two-storey-house-with-stair",
   "sourceOfIntent": "spec/ui-mcp-parity-tracker.md#same-house-parity-benchmarks",
-  "pathKind": "traceability-only",
-  "parityClaim": "none",
+  "pathKind": "validated-replay",
+  "parityClaim": "partial-cmdk-equivalence",
   "latestEquivalenceArtifact": "ui-equivalence.json",
+  "latestValidatedReplayArtifact": "ui-validated-replay.json",
   "latestMachineReadableStatus": "validated-replay",
   "semanticFixture": "mcp-cli-command-bundle.json",
   "expectedSemantics": "expected-semantics.json",
   "notes": [
     "This artifact maps the current UI/Cmd+K affordances to the deterministic two-storey stair fixture.",
-    "It is not an executable browser benchmark and must not be counted as full UI parity evidence.",
-    "Stair, slab opening/shaft, and railing semantic outputs are currently only claimed as raw bundle capable for agents."
+    "The Cmd+K direct bridge submits or validates replay of the exact fixture payload from mcp-cli-command-bundle.json.",
+    "It is not an executable browser-authored benchmark and must not be counted as full UI parity evidence.",
+    "Activator-only stair, slab opening/shaft, railing, wall, floor, and room commands remain evidence links only and are excluded from completed semantic authoring."
   ],
   "steps": [
+    {
+      "order": 0,
+      "label": "Replay exact two-storey stair fixture payload",
+      "cmdKId": "benchmark.two-storey-stair.replay-fixture",
+      "capabilityId": "benchmark.two-storey-stair.validated-replay",
+      "executionKind": "commits-bundle",
+      "expectedExecutionKind": "commits-bundle",
+      "uiCompletionKind": "cmdk-direct-payload",
+      "agentCompletionKind": "raw-command",
+      "agentToolId": "two-storey-house-with-stair:mcp-cli-command-bundle",
+      "expectedSemanticOutputs": [
+        "CreateSheet",
+        "PlaceViewOnSheet",
+        "createDimension",
+        "createFloor",
+        "createLevel",
+        "createRailing",
+        "createRoof",
+        "createRoomOutline",
+        "createSectionCut",
+        "createSlabOpening",
+        "createStair",
+        "createWallChain",
+        "create_schedule_view",
+        "insertDoorOnWall",
+        "insertWindowOnWall",
+        "placeTag",
+        "saveViewpoint",
+        "upsertFamilyType",
+        "upsertFloorType",
+        "upsertRoofType",
+        "upsertWallType"
+      ],
+      "supportsBenchmarkSemanticOutput": true,
+      "payloadSource": "mcp-cli-command-bundle.json",
+      "validationArtifact": "ui-equivalence.json",
+      "validatedReplayArtifact": "ui-validated-replay.json"
+    },
     {
       "order": 1,
       "label": "Create ground and upper levels with plan views",
@@ -158,8 +198,8 @@
   ],
   "remainingUiBlockers": [
     "No browser-authored UI run creates the exact two-storey stair fixture and emits a comparable semantic snapshot.",
-    "Cmd+K entries for stair, shaft/opening, railing, wall, floor, and room mostly activate tools; they do not encode the benchmark geometry.",
-    "No first-class typed MCP/CLI tool is claimed for stair-between-levels, stair shaft opening, or hosted railing in this benchmark.",
-    "Advisor, visual, and export route evidence is collected separately from this UI/Cmd+K traceability map; this file still does not claim executable UI parity."
+    "The direct Cmd+K replay bridge is exact payload evidence, not proof that human sketch gestures can enter every two-storey numeric input.",
+    "Cmd+K activator entries for stair, shaft/opening, railing, wall, floor, and room are explicitly excluded from completed semantic authoring.",
+    "Advisor, visual, and export route evidence is collected separately from this UI/Cmd+K traceability map; this file still does not claim browser-authored UI parity."
   ]
 }

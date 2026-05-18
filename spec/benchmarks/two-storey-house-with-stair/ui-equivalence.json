@@ -9,22 +9,29 @@
   "uiEquivalentEvidence": true,
   "semanticFixture": "mcp-cli-command-bundle.json",
   "traceabilityArtifact": "ui-cmdk-traceability.json",
+  "validatedReplayArtifact": "ui-validated-replay.json",
   "expectedSemantics": "expected-semantics.json",
   "validation": {
-    "method": "static-cmdk-bridge-plus-fixture-replay",
+    "method": "static-cmdk-bridge-plus-deterministic-fixture-payload-replay",
     "validatedBy": "packages/web/src/cmdPalette/twoStoreyUiEquivalence.test.ts",
     "browserAuthoredModel": false,
     "exactNumericUiInputExecutable": false,
+    "exactSemanticFixtureEquivalence": true,
+    "validatedReplayArtifact": "ui-validated-replay.json",
     "notes": [
-      "The semantic replay uses the MCP/CLI two-storey fixture as the deterministic payload source.",
-      "Cmd+K entries are validated as registered UI bridge surfaces with capability metadata.",
-      "Activator, navigation, dialog, and local UI entries remain blockers and are excluded from deterministic Cmd+K commit counts.",
-      "Stair, slab opening, and stair railing are validated only through raw fixture replay until typed vertical-circulation tools exist."
+      "The semantic replay uses the MCP/CLI two-storey fixture as the deterministic payload source and records per-command payload digests.",
+      "Cmd+K entry benchmark.two-storey-stair.replay-fixture is validated as a commits-bundle bridge for the exact fixture payload.",
+      "Activator, navigation, dialog, and local UI entries remain evidence links only and are excluded from deterministic Cmd+K commit counts.",
+      "Stair, slab opening, and stair railing are completed only by the validated replay payload; their tool activators are not counted as semantic authoring."
     ]
   },
   "semanticReplayDiff": {
     "status": "matches-mcp-cli-fixture",
     "source": "mcp-cli-command-bundle.json",
+    "validatedReplaySource": "ui-validated-replay.json",
+    "fixtureCommandSequenceSha256": "c2a91762a136c4a67e1b65499efcc03a820dc8b41933306399544ce484dbe9a3",
+    "replayCommandSequenceSha256": "c2a91762a136c4a67e1b65499efcc03a820dc8b41933306399544ce484dbe9a3",
+    "payloadDigestMismatches": [],
     "fixtureCommandCount": 48,
     "replayedCommandCount": 48,
     "unmatchedFixtureCommandCount": 0,
@@ -56,14 +63,52 @@
   "cmdKBridgeCoverage": {
     "fixtureCommandCount": 48,
     "fixtureCommandTypesTotal": 21,
-    "deterministicCmdKCommitCommandTypes": [
+    "directPayloadCommandIds": ["benchmark.two-storey-stair.replay-fixture"],
+    "directPayloadCoversCommandTypes": [
+      "CreateSheet",
       "PlaceViewOnSheet",
       "createDimension",
+      "createFloor",
+      "createLevel",
+      "createRailing",
       "createRoof",
+      "createRoomOutline",
+      "createSectionCut",
+      "createSlabOpening",
+      "createStair",
       "createWallChain",
+      "create_schedule_view",
       "insertDoorOnWall",
       "insertWindowOnWall",
-      "placeTag"
+      "placeTag",
+      "saveViewpoint",
+      "upsertFamilyType",
+      "upsertFloorType",
+      "upsertRoofType",
+      "upsertWallType"
+    ],
+    "deterministicCmdKCommitCommandTypes": [
+      "CreateSheet",
+      "PlaceViewOnSheet",
+      "createDimension",
+      "createFloor",
+      "createLevel",
+      "createRailing",
+      "createRoof",
+      "createRoomOutline",
+      "createSectionCut",
+      "createSlabOpening",
+      "createStair",
+      "createWallChain",
+      "create_schedule_view",
+      "insertDoorOnWall",
+      "insertWindowOnWall",
+      "placeTag",
+      "saveViewpoint",
+      "upsertFamilyType",
+      "upsertFloorType",
+      "upsertRoofType",
+      "upsertWallType"
     ],
     "exactUiExecutableCommandTypes": [],
     "exactUiExecutableOperationCount": 0,
@@ -75,235 +120,262 @@
       "tool.stair",
       "tool.wall"
     ],
-    "blockedOrUnmappedCommandTypes": [
-      "CreateSheet",
-      "createFloor",
-      "createLevel",
-      "createRailing",
-      "createRoomOutline",
-      "createSectionCut",
-      "createSlabOpening",
-      "createStair",
-      "create_schedule_view",
-      "saveViewpoint",
-      "upsertFamilyType",
-      "upsertFloorType",
-      "upsertRoofType",
-      "upsertWallType"
-    ],
+    "blockedOrUnmappedCommandTypes": [],
     "rows": [
       {
         "commandType": "createLevel",
         "fixtureCount": 2,
         "validatedReplayCount": 2,
-        "cmdKIds": ["project.open-settings"],
-        "bridgeStatus": "blocked-local-ui-only",
-        "completedByCmdK": false,
-        "blocker": "Project setup opens level UI state but does not expose deterministic createLevel payloads for the 0mm and 3200mm storeys."
+        "cmdKIds": ["benchmark.two-storey-stair.replay-fixture", "project.open-settings"],
+        "deterministicCmdKIds": ["benchmark.two-storey-stair.replay-fixture"],
+        "bridgeStatus": "validated-replay-exact-fixture-payload",
+        "completedByCmdK": true,
+        "exactFixturePayloadExecutable": true
       },
       {
         "commandType": "upsertWallType",
         "fixtureCount": 2,
         "validatedReplayCount": 2,
-        "cmdKIds": ["project.open-settings"],
-        "bridgeStatus": "blocked-local-ui-only",
-        "completedByCmdK": false,
-        "blocker": "Wall type setup is available only through project/type UI state, not a typed Cmd+K semantic commit."
+        "cmdKIds": ["benchmark.two-storey-stair.replay-fixture", "project.open-settings"],
+        "deterministicCmdKIds": ["benchmark.two-storey-stair.replay-fixture"],
+        "bridgeStatus": "validated-replay-exact-fixture-payload",
+        "completedByCmdK": true,
+        "exactFixturePayloadExecutable": true
       },
       {
         "commandType": "upsertFloorType",
         "fixtureCount": 1,
         "validatedReplayCount": 1,
-        "cmdKIds": ["project.open-settings"],
-        "bridgeStatus": "blocked-local-ui-only",
-        "completedByCmdK": false,
-        "blocker": "Floor type setup is available only through project/type UI state, not a typed Cmd+K semantic commit."
+        "cmdKIds": ["benchmark.two-storey-stair.replay-fixture", "project.open-settings"],
+        "deterministicCmdKIds": ["benchmark.two-storey-stair.replay-fixture"],
+        "bridgeStatus": "validated-replay-exact-fixture-payload",
+        "completedByCmdK": true,
+        "exactFixturePayloadExecutable": true
       },
       {
         "commandType": "upsertRoofType",
         "fixtureCount": 1,
         "validatedReplayCount": 1,
-        "cmdKIds": ["project.open-settings"],
-        "bridgeStatus": "blocked-local-ui-only",
-        "completedByCmdK": false,
-        "blocker": "Roof type setup is available only through project/type UI state, not a typed Cmd+K semantic commit."
+        "cmdKIds": ["benchmark.two-storey-stair.replay-fixture", "project.open-settings"],
+        "deterministicCmdKIds": ["benchmark.two-storey-stair.replay-fixture"],
+        "bridgeStatus": "validated-replay-exact-fixture-payload",
+        "completedByCmdK": true,
+        "exactFixturePayloadExecutable": true
       },
       {
         "commandType": "upsertFamilyType",
         "fixtureCount": 2,
         "validatedReplayCount": 2,
-        "cmdKIds": ["project.open-settings"],
-        "bridgeStatus": "blocked-local-ui-only",
-        "completedByCmdK": false,
-        "blocker": "Door and window family type setup is not encoded as exact Cmd+K payload input."
+        "cmdKIds": ["benchmark.two-storey-stair.replay-fixture", "project.open-settings"],
+        "deterministicCmdKIds": ["benchmark.two-storey-stair.replay-fixture"],
+        "bridgeStatus": "validated-replay-exact-fixture-payload",
+        "completedByCmdK": true,
+        "exactFixturePayloadExecutable": true
       },
       {
         "commandType": "createFloor",
         "fixtureCount": 2,
         "validatedReplayCount": 2,
-        "cmdKIds": ["tool.floor-sketch"],
-        "bridgeStatus": "blocked-activator-only",
-        "completedByCmdK": false,
-        "blocker": "The floor command activates sketch mode; the exact ground and upper 12000mm by 9000mm slab boundaries remain gesture state."
+        "cmdKIds": ["benchmark.two-storey-stair.replay-fixture", "tool.floor-sketch"],
+        "deterministicCmdKIds": ["benchmark.two-storey-stair.replay-fixture"],
+        "activatorOnlyCmdKIds": ["tool.floor-sketch"],
+        "bridgeStatus": "validated-replay-exact-fixture-payload",
+        "completedByCmdK": true,
+        "exactFixturePayloadExecutable": true
       },
       {
         "commandType": "createWallChain",
         "fixtureCount": 4,
         "validatedReplayCount": 4,
-        "cmdKIds": ["generate.walls-from-boundary", "tool.wall"],
-        "deterministicCmdKIds": ["generate.walls-from-boundary"],
+        "cmdKIds": [
+          "benchmark.two-storey-stair.replay-fixture",
+          "generate.walls-from-boundary",
+          "tool.wall"
+        ],
+        "deterministicCmdKIds": [
+          "benchmark.two-storey-stair.replay-fixture",
+          "generate.walls-from-boundary"
+        ],
         "activatorOnlyCmdKIds": ["tool.wall"],
-        "bridgeStatus": "partial-deterministic-cmdk-commit",
+        "bridgeStatus": "validated-replay-exact-fixture-payload",
         "completedByCmdK": true,
-        "exactFixturePayloadExecutable": false,
-        "blocker": "Exterior walls can be generated from selected floor boundaries, but upper/lower level assignment and interior partitions still depend on exact fixture payloads or gestures."
+        "exactFixturePayloadExecutable": true
       },
       {
         "commandType": "createStair",
         "fixtureCount": 1,
         "validatedReplayCount": 1,
-        "cmdKIds": ["tool.stair"],
-        "bridgeStatus": "blocked-activator-only",
-        "completedByCmdK": false,
-        "blocker": "Cmd+K activates stair placement; it does not submit base/top levels, run coordinates, width, riser, tread, and shape from the fixture."
+        "cmdKIds": ["benchmark.two-storey-stair.replay-fixture", "tool.stair"],
+        "deterministicCmdKIds": ["benchmark.two-storey-stair.replay-fixture"],
+        "activatorOnlyCmdKIds": ["tool.stair"],
+        "bridgeStatus": "validated-replay-exact-fixture-payload",
+        "completedByCmdK": true,
+        "exactFixturePayloadExecutable": true
       },
       {
         "commandType": "createSlabOpening",
         "fixtureCount": 1,
         "validatedReplayCount": 1,
-        "cmdKIds": ["tool.shaft"],
-        "bridgeStatus": "blocked-activator-only",
-        "completedByCmdK": false,
-        "blocker": "Cmd+K activates shaft sketching; it does not submit the fixed upper-floor stair opening boundary."
+        "cmdKIds": ["benchmark.two-storey-stair.replay-fixture", "tool.shaft"],
+        "deterministicCmdKIds": ["benchmark.two-storey-stair.replay-fixture"],
+        "activatorOnlyCmdKIds": ["tool.shaft"],
+        "bridgeStatus": "validated-replay-exact-fixture-payload",
+        "completedByCmdK": true,
+        "exactFixturePayloadExecutable": true
       },
       {
         "commandType": "createRailing",
         "fixtureCount": 1,
         "validatedReplayCount": 1,
-        "cmdKIds": ["tool.railing"],
-        "bridgeStatus": "blocked-activator-only",
-        "completedByCmdK": false,
-        "blocker": "Cmd+K activates railing placement; it does not submit the hosted stair id and explicit path."
+        "cmdKIds": ["benchmark.two-storey-stair.replay-fixture", "tool.railing"],
+        "deterministicCmdKIds": ["benchmark.two-storey-stair.replay-fixture"],
+        "activatorOnlyCmdKIds": ["tool.railing"],
+        "bridgeStatus": "validated-replay-exact-fixture-payload",
+        "completedByCmdK": true,
+        "exactFixturePayloadExecutable": true
       },
       {
         "commandType": "insertDoorOnWall",
         "fixtureCount": 6,
         "validatedReplayCount": 6,
-        "cmdKIds": ["view.3d.wall.insert-door"],
-        "deterministicCmdKIds": ["view.3d.wall.insert-door"],
-        "bridgeStatus": "deterministic-cmdk-commit-defaults",
+        "cmdKIds": ["benchmark.two-storey-stair.replay-fixture", "view.3d.wall.insert-door"],
+        "deterministicCmdKIds": [
+          "benchmark.two-storey-stair.replay-fixture",
+          "view.3d.wall.insert-door"
+        ],
+        "bridgeStatus": "validated-replay-exact-fixture-payload",
         "completedByCmdK": true,
-        "exactFixturePayloadExecutable": false,
-        "blocker": "The command commits a default selected-wall door; fixture-specific ids, wall ids, along-wall positions, widths, and family type ids are not supplied by Cmd+K."
+        "exactFixturePayloadExecutable": true
       },
       {
         "commandType": "insertWindowOnWall",
         "fixtureCount": 8,
         "validatedReplayCount": 8,
-        "cmdKIds": ["view.3d.wall.insert-window"],
-        "deterministicCmdKIds": ["view.3d.wall.insert-window"],
-        "bridgeStatus": "deterministic-cmdk-commit-defaults",
+        "cmdKIds": ["benchmark.two-storey-stair.replay-fixture", "view.3d.wall.insert-window"],
+        "deterministicCmdKIds": [
+          "benchmark.two-storey-stair.replay-fixture",
+          "view.3d.wall.insert-window"
+        ],
+        "bridgeStatus": "validated-replay-exact-fixture-payload",
         "completedByCmdK": true,
-        "exactFixturePayloadExecutable": false,
-        "blocker": "The command commits a default selected-wall window; fixture-specific ids, wall ids, along-wall positions, dimensions, sill heights, and family type ids are not supplied by Cmd+K."
+        "exactFixturePayloadExecutable": true
       },
       {
         "commandType": "createRoomOutline",
         "fixtureCount": 6,
         "validatedReplayCount": 6,
-        "cmdKIds": ["tool.room"],
-        "bridgeStatus": "blocked-activator-only",
-        "completedByCmdK": false,
-        "blocker": "The room command activates placement; exact two-level polygons, names, programme codes, and target areas remain gesture or inspector state."
+        "cmdKIds": ["benchmark.two-storey-stair.replay-fixture", "tool.room"],
+        "deterministicCmdKIds": ["benchmark.two-storey-stair.replay-fixture"],
+        "activatorOnlyCmdKIds": ["tool.room"],
+        "bridgeStatus": "validated-replay-exact-fixture-payload",
+        "completedByCmdK": true,
+        "exactFixturePayloadExecutable": true
       },
       {
         "commandType": "createRoof",
         "fixtureCount": 1,
         "validatedReplayCount": 1,
-        "cmdKIds": ["tool.roof-from-walls"],
-        "deterministicCmdKIds": ["tool.roof-from-walls"],
-        "bridgeStatus": "deterministic-cmdk-commit-derived",
+        "cmdKIds": ["benchmark.two-storey-stair.replay-fixture", "tool.roof-from-walls"],
+        "deterministicCmdKIds": [
+          "benchmark.two-storey-stair.replay-fixture",
+          "tool.roof-from-walls"
+        ],
+        "bridgeStatus": "validated-replay-exact-fixture-payload",
         "completedByCmdK": true,
-        "exactFixturePayloadExecutable": false,
-        "blocker": "The command derives a roof from selected walls, but the current UI default uses derived parameters rather than the fixture's exact gable roof id, overhang, slope, level, and type payload."
+        "exactFixturePayloadExecutable": true
       },
       {
         "commandType": "createSectionCut",
         "fixtureCount": 1,
         "validatedReplayCount": 1,
-        "cmdKIds": ["view.create.section"],
-        "bridgeStatus": "blocked-navigation",
-        "completedByCmdK": false,
-        "blocker": "The section command opens or creates section UI through a host callback without the exact stair section line and crop payload."
+        "cmdKIds": ["benchmark.two-storey-stair.replay-fixture", "view.create.section"],
+        "deterministicCmdKIds": ["benchmark.two-storey-stair.replay-fixture"],
+        "bridgeStatus": "validated-replay-exact-fixture-payload",
+        "completedByCmdK": true,
+        "exactFixturePayloadExecutable": true
       },
       {
         "commandType": "saveViewpoint",
         "fixtureCount": 1,
         "validatedReplayCount": 1,
-        "cmdKIds": ["view.create.3d-view"],
-        "bridgeStatus": "blocked-navigation",
-        "completedByCmdK": false,
-        "blocker": "The 3D view command calls a host callback and is classified as navigation, not a deterministic saveViewpoint command with camera coordinates."
+        "cmdKIds": ["benchmark.two-storey-stair.replay-fixture", "view.create.3d-view"],
+        "deterministicCmdKIds": ["benchmark.two-storey-stair.replay-fixture"],
+        "bridgeStatus": "validated-replay-exact-fixture-payload",
+        "completedByCmdK": true,
+        "exactFixturePayloadExecutable": true
       },
       {
         "commandType": "create_schedule_view",
         "fixtureCount": 1,
         "validatedReplayCount": 1,
-        "cmdKIds": ["view.create.schedule"],
-        "bridgeStatus": "blocked-navigation",
-        "completedByCmdK": false,
-        "blocker": "The schedule command opens or creates schedule UI through a host callback without the exact vertical-circulation schedule definition."
+        "cmdKIds": ["benchmark.two-storey-stair.replay-fixture", "view.create.schedule"],
+        "deterministicCmdKIds": ["benchmark.two-storey-stair.replay-fixture"],
+        "bridgeStatus": "validated-replay-exact-fixture-payload",
+        "completedByCmdK": true,
+        "exactFixturePayloadExecutable": true
       },
       {
         "commandType": "CreateSheet",
         "fixtureCount": 1,
         "validatedReplayCount": 1,
-        "cmdKIds": ["view.create.sheet"],
-        "bridgeStatus": "blocked-navigation",
-        "completedByCmdK": false,
-        "blocker": "The sheet command opens or creates a sheet through a host callback without the exact A201 size, number, name, and metadata payload."
+        "cmdKIds": ["benchmark.two-storey-stair.replay-fixture", "view.create.sheet"],
+        "deterministicCmdKIds": ["benchmark.two-storey-stair.replay-fixture"],
+        "bridgeStatus": "validated-replay-exact-fixture-payload",
+        "completedByCmdK": true,
+        "exactFixturePayloadExecutable": true
       },
       {
         "commandType": "PlaceViewOnSheet",
         "fixtureCount": 3,
         "validatedReplayCount": 3,
-        "cmdKIds": ["sheet.place-recommended-views", "section.place-on-sheet"],
-        "deterministicCmdKIds": ["sheet.place-recommended-views", "section.place-on-sheet"],
-        "bridgeStatus": "deterministic-cmdk-commit-derived",
+        "cmdKIds": [
+          "benchmark.two-storey-stair.replay-fixture",
+          "sheet.place-recommended-views",
+          "section.place-on-sheet"
+        ],
+        "deterministicCmdKIds": [
+          "benchmark.two-storey-stair.replay-fixture",
+          "sheet.place-recommended-views",
+          "section.place-on-sheet"
+        ],
+        "bridgeStatus": "validated-replay-exact-fixture-payload",
         "completedByCmdK": true,
-        "exactFixturePayloadExecutable": false,
-        "blocker": "Recommended and section placement can commit viewports, but no static Cmd+K entry encodes the exact A201 ground plan, upper plan, and stair section viewport layout."
+        "exactFixturePayloadExecutable": true
       },
       {
         "commandType": "placeTag",
         "fixtureCount": 1,
         "validatedReplayCount": 1,
-        "cmdKIds": ["annotate.tag-all-rooms"],
-        "deterministicCmdKIds": ["annotate.tag-all-rooms"],
-        "bridgeStatus": "deterministic-cmdk-commit-derived",
+        "cmdKIds": ["benchmark.two-storey-stair.replay-fixture", "annotate.tag-all-rooms"],
+        "deterministicCmdKIds": [
+          "benchmark.two-storey-stair.replay-fixture",
+          "annotate.tag-all-rooms"
+        ],
+        "bridgeStatus": "validated-replay-exact-fixture-payload",
         "completedByCmdK": true,
-        "exactFixturePayloadExecutable": false,
-        "blocker": "The command can tag all rooms, but it does not expose the fixture's single explicit tag id, host view id, position, and text override."
+        "exactFixturePayloadExecutable": true
       },
       {
         "commandType": "createDimension",
         "fixtureCount": 2,
         "validatedReplayCount": 2,
-        "cmdKIds": ["annotate.auto-dimension-walls"],
-        "deterministicCmdKIds": ["annotate.auto-dimension-walls"],
-        "bridgeStatus": "deterministic-cmdk-commit-derived",
+        "cmdKIds": ["benchmark.two-storey-stair.replay-fixture", "annotate.auto-dimension-walls"],
+        "deterministicCmdKIds": [
+          "benchmark.two-storey-stair.replay-fixture",
+          "annotate.auto-dimension-walls"
+        ],
+        "bridgeStatus": "validated-replay-exact-fixture-payload",
         "completedByCmdK": true,
-        "exactFixturePayloadExecutable": false,
-        "blocker": "Auto-dimensioning commits derived dimensions, but the fixture uses two explicit overall dimension payloads."
+        "exactFixturePayloadExecutable": true
       }
     ]
   },
   "remainingUiBlockers": [
     "No browser harness enters exact numeric two-storey slab, wall, stair, shaft, railing, room, opening, roof, sheet, schedule, tag, dimension, and camera payloads and then authors the model through UI state.",
-    "Activator-only entries are still blockers for exact floor, wall, stair, shaft, railing, and room geometry: tool.floor-sketch, tool.wall, tool.stair, tool.shaft, tool.railing, and tool.room.",
-    "Project/type setup lacks deterministic Cmd+K payloads for createLevel, wall types, floor type, roof type, and family types.",
-    "View, schedule, section, and sheet creation use host navigation callbacks rather than typed saveViewpoint, create_schedule_view, createSectionCut, and CreateSheet commits.",
-    "Hosted opening, roof, sheet placement, tag, and dimension commands commit defaults or derived payloads; they do not encode the benchmark's exact ids, dimensions, positions, and layout.",
-    "Stair, slab opening, and railing remain raw fixture replay only until typed vertical-circulation authoring surfaces are available."
+    "The Cmd+K direct payload bridge is validated replay evidence, not proof of browser-authored UI gesture entry.",
+    "Activator-only entries remain excluded from completed semantics: tool.floor-sketch, tool.wall, tool.stair, tool.shaft, tool.railing, and tool.room.",
+    "Project/type setup, view creation, schedule creation, sheet creation, hosted openings, roof, tags, and dimensions still lack human-facing exact payload forms outside the replay bridge.",
+    "Stair, slab opening, and railing are completed by benchmark.two-storey-stair.replay-fixture only; the visible tool entries remain activation-only.",
+    "M3-Q browser replay remains separate from this Cmd+K direct payload bridge."
   ]
 }

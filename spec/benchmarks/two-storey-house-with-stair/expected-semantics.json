@@ -24,6 +24,7 @@
       "status": "validated-replay",
       "traceability": "ui-cmdk-traceability.json",
       "equivalence": "ui-equivalence.json",
+      "validatedReplay": "ui-validated-replay.json",
       "todo": "Add browser-authored UI replay for exact two-storey stair inputs."
     }
   },

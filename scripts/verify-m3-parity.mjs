@@ -35,9 +35,28 @@ function summarize(text) {
 }
 
 function evidenceLooksSynthetic(evidence) {
+  if (
+    ['scenario', 'scenario-runner', 'scenario-fixture', 'scenario-evidence'].includes(
+      evidence?.type,
+    ) &&
+    /^(present|passed|node-script|declared)$/i.test(String(evidence?.status ?? ''))
+  ) {
+    return /todo|placeholder|traceability-only|documentation-only|docs-only|stub|mock|unavailable|invalid|blank|not[-_\s]?requested|skipped|failed|error|missing|required/i.test(
+      [evidence?.detail, evidence?.reason].filter(Boolean).join(' '),
+    );
+  }
   const text = [evidence?.status, evidence?.detail, evidence?.reason].filter(Boolean).join(' ');
   return /todo|placeholder|fixture|traceability-only|documentation-only|docs-only|optional|stub|mock|unavailable|invalid|blank|not[-_\s]?requested|skipped|failed|error|missing|required/i.test(
     text,
+  );
+}
+
+function m3ClosureEvidenceHasProof(workstream, gate, evidence) {
+  if (workstream.id !== 'M3-M') return true;
+  if (!['two-storey-ui', 'two-storey-cmdK'].includes(gate.id)) return true;
+  return (
+    evidence?.proof?.twoStoreySemanticFixtureEquivalent === true &&
+    evidence.proof.kind === (gate.id === 'two-storey-cmdK' ? 'cmdK' : 'ui')
   );
 }
 
@@ -84,6 +103,21 @@ function reportM3AuditStatus() {
     return 1;
   }
 
+  const missingClosureProof = [...(wave2.workstreams ?? []), ...(wave3.workstreams ?? [])].flatMap(
+    (workstream) =>
+      (workstream.gates ?? []).flatMap((gate) =>
+        (gate.evidence ?? [])
+          .filter((evidence) => evidence.passes === true)
+          .filter((evidence) => !m3ClosureEvidenceHasProof(workstream, gate, evidence))
+          .map((evidence) => `${workstream.id}:${gate.id}: ${evidence.status}@${evidence.source}`),
+      ),
+  );
+  if (missingClosureProof.length) {
+    console.error('M3 audit accepted two-storey closure evidence without semantic proof:');
+    for (const item of missingClosureProof) console.error(`- ${item}`);
+    return 1;
+  }
+
   const requiredDone = ['M3-F', 'M3-G', 'M3-H', 'M3-I', 'M3-K', 'M3-L', 'M3-M', 'M3-N', 'M3-O'];
   const workstreamsById = new Map(
     [...(wave2.workstreams ?? []), ...(wave3.workstreams ?? [])].map((workstream) => [
@@ -96,6 +130,14 @@ function reportM3AuditStatus() {
     console.error(
       `M3 cannot be Done while these workstreams are unfinished: ${unfinished.join(', ')}.`,
     );
+    return 1;
+  }
+  if (
+    (wave2.status === 'Done' || wave3.status === 'Done') &&
+    audit.m3?.status !== 'Done' &&
+    !unfinished.length
+  ) {
+    console.error('M3 status drifted from generated Wave 2/Wave 3 Done evidence.');
     return 1;
   }
   if (envEnabled('BIM_AI_M3_REQUIRE_DONE') && (audit.m3?.status !== 'Done' || unfinished.length)) {

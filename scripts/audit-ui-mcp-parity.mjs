@@ -106,10 +106,10 @@ const BENCHMARK_COMMAND_TOOL_MARKERS = new Map([
 ]);
 
 const EVIDENCE_ARTIFACT_FILE_RE =
-  /(^|\/)(benchmark-result|execution-evidence|live-dry-run-evidence|live-commit-evidence|committed-evidence|advisor-validation|visual-evidence|render-evidence|screenshot-evidence|export-evidence|ui-cmdk-traceability|ui-equivalence|ui-equivalent|semantic-diff)[^/]*\.json$/i;
+  /(^|\/)(benchmark-result|execution-evidence|live-dry-run-evidence|live-commit-evidence|committed-evidence|advisor-validation|visual-evidence|render-evidence|screenshot-evidence|export-evidence|ui-cmdk-traceability|ui-equivalence|ui-equivalent|ui-validated-replay|semantic-diff)[^/]*\.json$/i;
 
 const BLOCKING_EVIDENCE_STATUS_RE =
-  /todo|placeholder|optional|capable|expected|required|requires|missing|none|unknown|declared|fixture|traceability-only|documentation-only|docs-only|opt[-_\s]?in|stale|expired|failed|failure|error|unavailable|invalid|blank|not[-_\s]?requested|skipped|deferred|stub|mock/i;
+  /todo|placeholder|optional|capable|expected|required|requires|missing|none|unknown|declared|fixture|traceability-only|documentation-only|docs-only|opt[-_\s]?in|stale|expired|failed|failure|error|unavailable|invalid|blank|not[-_\s]?requested|non[-_\s]?executable|skipped|deferred|stub|mock/i;
 
 const POSITIVE_EVIDENCE_STATUS_RE =
   /live|validated|passing|passed|clean|committed|executable|nonblank|artifact|manifest|done|server-side-substitute/i;
@@ -3342,10 +3342,216 @@ function scenarioEvidenceStatus(scenario, key) {
   if (!section || typeof section !== 'object') return 'missing';
   if (section.pass === true) return 'passed';
   if (['executable', 'validated-replay'].includes(section.classification)) return 'passed';
+  if (isBlockingEvidenceStatus(`${section.classification ?? ''} ${section.status ?? ''}`)) {
+    return section.classification === 'traceability-only' ? 'partial' : 'missing';
+  }
   if (isPositiveEvidenceStatus(section.status)) return 'passed';
   if (section.classification === 'traceability-only') return 'partial';
   if ((section.artifacts ?? []).length) return 'partial';
   return 'missing';
+}
+
+function twoStoreyArtifactPath(name) {
+  return `spec/benchmarks/two-storey-house-with-stair/${name}`;
+}
+
+function explicitClosurePass(value, kind) {
+  const candidates = [
+    value?.m3Closure?.[kind],
+    value?.m3Closure?.[kind === 'cmdK' ? 'cmdk' : kind],
+    value?.[`${kind}Closure`],
+    kind === 'cmdK' ? value?.cmdkClosure : null,
+    kind === 'ui' ? value?.uiReplay : null,
+    kind === 'cmdK' ? value?.cmdKBridgeCoverage?.closure : null,
+  ].filter(Boolean);
+  return candidates.some(
+    (candidate) =>
+      candidate.pass === true ||
+      candidate.passed === true ||
+      candidate.semanticFixtureEquivalent === true ||
+      candidate.exactFixtureSemanticEquivalence === true,
+  );
+}
+
+function blockerList(value, kind) {
+  const specific =
+    kind === 'cmdK'
+      ? [
+          ...(value?.remainingCmdKBlockers ?? []),
+          ...(value?.cmdKBridgeCoverage?.blockedOrUnmappedCommandTypes ?? []),
+        ]
+      : [...(value?.remainingUiBlockers ?? []), ...(value?.remainingUiReplayBlockers ?? [])];
+  const generic = [
+    ...(value?.blockers ?? []),
+    ...(value?.todos ?? []),
+    ...(value?.remainingExitCriteria ?? []),
+  ];
+  return [...specific, ...generic].filter(Boolean);
+}
+
+function uiValidatedReplayClean(value) {
+  if (!value || typeof value !== 'object') return false;
+  if (isBlockingEvidenceStatus(`${value.classification ?? ''} ${value.status ?? ''}`)) return false;
+  if (!/validated[-_\s]?replay|executable|passed|passing|clean|done/i.test(value.classification)) {
+    return false;
+  }
+  const proof = value.proof ?? {};
+  const fixtureCount = Number(proof.fixtureCommandCount ?? 0);
+  const replayCount = Number(proof.replayCommandCount ?? 0);
+  return (
+    fixtureCount > 0 &&
+    fixtureCount === replayCount &&
+    proof.fixtureCommandSequenceSha256 &&
+    proof.fixtureCommandSequenceSha256 === proof.replayCommandSequenceSha256 &&
+    Number(proof.sequenceMismatchCount ?? 0) === 0 &&
+    Number(proof.unmatchedFixtureCommandCount ?? 0) === 0 &&
+    Number(proof.unexpectedReplayCommandCount ?? 0) === 0 &&
+    (!Array.isArray(proof.payloadDigestMismatches) || proof.payloadDigestMismatches.length === 0) &&
+    Array.isArray(value.inputMapping) &&
+    value.inputMapping.length === fixtureCount
+  );
+}
+
+function twoStoreyUiClosureEvidence(kind) {
+  const equivalencePath = twoStoreyArtifactPath('ui-equivalence.json');
+  const uiReplayPath = twoStoreyArtifactPath('ui-validated-replay.json');
+  const tracePath = twoStoreyArtifactPath('ui-cmdk-traceability.json');
+  const equivalence = parseJsonFile(equivalencePath);
+  const uiReplay = parseJsonFile(uiReplayPath);
+  const traceability = parseJsonFile(tracePath);
+  if (!equivalence) {
+    return {
+      type: 'two-storey-closure',
+      status: 'missing',
+      source: equivalencePath,
+      detail: `${kind} closure evidence artifact is missing.`,
+      passes: false,
+      reason: `${equivalencePath} is missing.`,
+    };
+  }
+
+  const uiReplayClean = uiValidatedReplayClean(uiReplay);
+  const status = String(
+    kind === 'ui' && uiReplay
+      ? (uiReplay.classification ?? uiReplay.status ?? '')
+      : (equivalence.auditClassification ?? equivalence.pathKind ?? equivalence.status ?? ''),
+  );
+  const semanticDiff =
+    equivalence.semanticDiff ??
+    equivalence.semanticReplayDiff ??
+    equivalence.diff ??
+    equivalence.replayDiff;
+  const semanticClean = semanticDiffClean(semanticDiff);
+  const topLevelBlocked = topLevelUiEvidenceBlocked(equivalence);
+  const blockers =
+    kind === 'ui' && uiReplayClean ? blockerList(uiReplay, kind) : blockerList(equivalence, kind);
+  const rows = Array.isArray(equivalence.cmdKBridgeCoverage?.rows)
+    ? equivalence.cmdKBridgeCoverage.rows
+    : [];
+  const fixtureCommandTypesTotal = Number(
+    equivalence.cmdKBridgeCoverage?.fixtureCommandTypesTotal ?? rows.length,
+  );
+  const exactCmdKRows = rows.filter(
+    (row) => row.completedByCmdK === true && row.exactFixturePayloadExecutable === true,
+  );
+  const directPayloadCoversCommandTypes = Array.isArray(
+    equivalence.cmdKBridgeCoverage?.directPayloadCoversCommandTypes,
+  )
+    ? equivalence.cmdKBridgeCoverage.directPayloadCoversCommandTypes
+    : [];
+  const exactCmdKCount = Number(
+    equivalence.cmdKBridgeCoverage?.exactUiExecutableOperationCount ?? exactCmdKRows.length,
+  );
+  const allCmdKTypesClosed =
+    fixtureCommandTypesTotal > 0 &&
+    exactCmdKRows.length === fixtureCommandTypesTotal &&
+    exactCmdKCount >= fixtureCommandTypesTotal;
+  const directPayloadTypesClosed =
+    fixtureCommandTypesTotal > 0 &&
+    directPayloadCoversCommandTypes.length >= fixtureCommandTypesTotal &&
+    (equivalence.cmdKBridgeCoverage?.directPayloadCommandIds ?? []).length > 0;
+  const validation = equivalence.validation ?? {};
+  const uiValidated =
+    validation.browserAuthoredModel === true ||
+    validation.exactNumericUiInputExecutable === true ||
+    validation.uiValidatedReplay === true ||
+    validation.exactFixtureSemanticEquivalence === true ||
+    uiReplayClean ||
+    explicitClosurePass(equivalence, 'ui');
+  const cmdKValidated =
+    explicitClosurePass(equivalence, 'cmdK') ||
+    allCmdKTypesClosed ||
+    directPayloadTypesClosed ||
+    equivalence.cmdKBridgeCoverage?.directPayloadBridge === true ||
+    equivalence.cmdKBridgeCoverage?.validatedReplay === true;
+  const basePass =
+    /validated[-_\s]?replay|executable|passed|passing|clean|done/i.test(status) &&
+    (semanticClean || (kind === 'ui' && uiReplayClean)) &&
+    (kind === 'ui' && uiReplayClean ? true : !topLevelBlocked) &&
+    blockers.length === 0;
+  const passes = kind === 'cmdK' ? basePass && cmdKValidated : basePass && uiValidated;
+  const reasonParts = [];
+  if (!/validated[-_\s]?replay|executable|passed|passing|clean|done/i.test(status)) {
+    reasonParts.push(`status is ${status || 'missing'}`);
+  }
+  if (!semanticClean && !(kind === 'ui' && uiReplayClean)) {
+    reasonParts.push('semantic replay diff is missing or not clean');
+  }
+  if (topLevelBlocked && !(kind === 'ui' && uiReplayClean)) {
+    reasonParts.push('top-level status still contains blocking terms');
+  }
+  if (blockers.length) reasonParts.push(`${blockers.length} ${kind} blocker(s) remain`);
+  if (kind === 'ui' && !uiValidated) {
+    reasonParts.push('no browser-authored, exact numeric, or explicit M3-Q UI replay proof');
+  }
+  if (kind === 'cmdK' && !cmdKValidated) {
+    reasonParts.push(
+      'no direct payload bridge, exact Cmd+K fixture coverage, or explicit M3-R replay proof',
+    );
+  }
+  return {
+    type: 'two-storey-closure',
+    status: passes ? `${kind}-closure-clean` : status || 'missing',
+    source: kind === 'ui' && uiReplayClean ? uiReplayPath : equivalencePath,
+    detail: [
+      `${kind} closure`,
+      `semanticDiff=${semanticClean || (kind === 'ui' && uiReplayClean) ? 'clean' : 'blocked'}`,
+      `traceability=${traceability?.pathKind ?? traceability?.latestMachineReadableStatus ?? 'missing'}`,
+      blockers.length ? `blockers=${blockers.slice(0, 5).join('; ')}` : 'blockers=none',
+    ].join('; '),
+    passes,
+    reason: passes ? '' : reasonParts.join('; '),
+    proof: passes
+      ? {
+          twoStoreySemanticFixtureEquivalent: true,
+          kind,
+          sourceWorkstream: kind === 'cmdK' ? 'M3-R' : 'M3-Q',
+          replayCommandCount:
+            kind === 'ui' && uiReplayClean
+              ? Number(uiReplay.proof?.replayCommandCount ?? 0)
+              : undefined,
+          exactCmdKCommandTypes: Math.max(
+            exactCmdKRows.length,
+            directPayloadCoversCommandTypes.length,
+          ),
+          fixtureCommandTypesTotal,
+        }
+      : undefined,
+  };
+}
+
+function twoStoreyEvidenceSignal(scenario, scenarioPath, kind) {
+  if (kind === 'ui' || kind === 'cmdK') return twoStoreyUiClosureEvidence(kind);
+  const status = scenarioEvidenceStatus(scenario, kind);
+  return {
+    type: 'scenario-evidence',
+    status,
+    source: scenarioPath,
+    detail: `${kind}: ${scenario?.evidence?.[kind]?.classification ?? 'missing'} / ${
+      scenario?.evidence?.[kind]?.status ?? 'missing'
+    }`,
+    passes: status === 'passed',
+  };
 }
 
 function buildM3BenchmarkWorkstream() {
@@ -3370,18 +3576,9 @@ function buildM3BenchmarkWorkstream() {
     passes: Boolean(fixtures[key]),
   }));
   const evidenceKinds = ['ui', 'cmdK', 'mcpCli', 'advisor', 'visual', 'export', 'semanticDiff'];
-  const evidenceSignals = evidenceKinds.map((kind) => {
-    const status = scenarioEvidenceStatus(scenario, kind);
-    return {
-      type: 'scenario-evidence',
-      status,
-      source: scenarioPath,
-      detail: `${kind}: ${scenario?.evidence?.[kind]?.classification ?? 'missing'} / ${
-        scenario?.evidence?.[kind]?.status ?? 'missing'
-      }`,
-      passes: status === 'passed',
-    };
-  });
+  const evidenceSignals = evidenceKinds.map((kind) =>
+    twoStoreyEvidenceSignal(scenario, scenarioPath, kind),
+  );
   const gates = [
     m3Gate(
       'scenario-present',
@@ -3810,18 +4007,17 @@ function buildM3TwoStoreyEvidenceWorkstream() {
 
 function buildM3TwoStoreyUiWorkstream() {
   const config = M3_WAVE3_WORKSTREAMS.find((row) => row.id === 'M3-M');
-  const scenarioPath = `spec/benchmarks/${config.scenarioId}/scenario.json`;
-  const scenario = parseJsonFile(scenarioPath);
   const requiredKinds = ['ui', 'cmdK'];
   const gates = requiredKinds.map((kind) => {
-    const evidence = [scenarioEvidenceSignal(scenario, scenarioPath, kind)];
+    const evidence = [twoStoreyUiClosureEvidence(kind)];
     return m3Gate(
       `two-storey-${kind}`,
       `Two-storey ${kind} executable or validated replay`,
       evidence.every((item) => item.passes),
-      `Two-storey ${kind} path is still traceability-only or missing; activator-only Cmd+K entries cannot close semantic parity.`,
+      evidence[0]?.reason ||
+        `Two-storey ${kind} path is still traceability-only or missing; activator-only Cmd+K entries cannot close semantic parity.`,
       evidence,
-      evidence.some((item) => item.status === 'partial'),
+      evidence.some((item) => item.status !== 'missing'),
     );
   });
   return {

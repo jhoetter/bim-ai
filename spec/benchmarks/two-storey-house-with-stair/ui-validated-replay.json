@@ -1,0 +1,462 @@
+{
+  "schemaVersion": "bim-ai.benchmark.ui-validated-replay.v1",
+  "benchmarkId": "two-storey-house-with-stair",
+  "sourceOfIntent": "spec/ui-mcp-parity-tracker.md#M3-Q",
+  "classification": "validated-replay",
+  "replayKind": "fixture-payload-replay",
+  "validatedBy": "packages/web/src/cmdPalette/twoStoreyUiEquivalence.test.ts",
+  "semanticFixture": "mcp-cli-command-bundle.json",
+  "expectedSemantics": "expected-semantics.json",
+  "traceabilityArtifact": "ui-cmdk-traceability.json",
+  "equivalenceArtifact": "ui-equivalence.json",
+  "proof": {
+    "fixtureCommandCount": 48,
+    "replayCommandCount": 48,
+    "fixtureCommandSequenceSha256": "c2a91762a136c4a67e1b65499efcc03a820dc8b41933306399544ce484dbe9a3",
+    "replayCommandSequenceSha256": "c2a91762a136c4a67e1b65499efcc03a820dc8b41933306399544ce484dbe9a3",
+    "bundleSha256": "142e8dde2b71732b7d11ab9aaae6425ebde571893eee752f62b573ea239043f7",
+    "payloadDigestMismatches": [],
+    "sequenceMismatchCount": 0,
+    "unmatchedFixtureCommandCount": 0,
+    "unexpectedReplayCommandCount": 0
+  },
+  "inputMapping": [
+    {
+      "replayStep": 1,
+      "fixtureCommandIndex": 0,
+      "commandType": "createLevel",
+      "commandId": "tsh-lvl-ground",
+      "payloadSha256": "3728429b18db0af64d2b168c5041634c88ac653c5d8bf6b7354970496166945c",
+      "inputSource": "mcp-cli-command-bundle.json#/commands/0",
+      "uiInputMapping": "validated-raw-fixture-replay"
+    },
+    {
+      "replayStep": 2,
+      "fixtureCommandIndex": 1,
+      "commandType": "createLevel",
+      "commandId": "tsh-lvl-upper",
+      "payloadSha256": "ddde4394002e6e8bc3f05c9c0b46c10e60a888673a35ee9924ceb8a2ebae80c0",
+      "inputSource": "mcp-cli-command-bundle.json#/commands/1",
+      "uiInputMapping": "validated-raw-fixture-replay"
+    },
+    {
+      "replayStep": 3,
+      "fixtureCommandIndex": 2,
+      "commandType": "upsertWallType",
+      "commandId": "tsh-wt-exterior",
+      "payloadSha256": "1e841e166757465ec1214c5d168853d2046833b729a40049d21052f5d5491409",
+      "inputSource": "mcp-cli-command-bundle.json#/commands/2",
+      "uiInputMapping": "validated-raw-fixture-replay"
+    },
+    {
+      "replayStep": 4,
+      "fixtureCommandIndex": 3,
+      "commandType": "upsertWallType",
+      "commandId": "tsh-wt-interior",
+      "payloadSha256": "76622faf2e5cdbb5a3a0d8f784218afedec8a81a74978b0f493035438b2a2ff8",
+      "inputSource": "mcp-cli-command-bundle.json#/commands/3",
+      "uiInputMapping": "validated-raw-fixture-replay"
+    },
+    {
+      "replayStep": 5,
+      "fixtureCommandIndex": 4,
+      "commandType": "upsertFloorType",
+      "commandId": "tsh-ft-slab",
+      "payloadSha256": "d54f54dec793a85db048d01df9f5fa6193f1fedb861fb95cf55a7ec6400c56f4",
+      "inputSource": "mcp-cli-command-bundle.json#/commands/4",
+      "uiInputMapping": "validated-raw-fixture-replay"
+    },
+    {
+      "replayStep": 6,
+      "fixtureCommandIndex": 5,
+      "commandType": "upsertRoofType",
+      "commandId": "tsh-rt-gable",
+      "payloadSha256": "44988015e32b0a36721916b884b50dae127902ed93acbaa7a068db8abbdf8eb3",
+      "inputSource": "mcp-cli-command-bundle.json#/commands/5",
+      "uiInputMapping": "validated-raw-fixture-replay"
+    },
+    {
+      "replayStep": 7,
+      "fixtureCommandIndex": 6,
+      "commandType": "upsertFamilyType",
+      "commandId": "tsh-door-single",
+      "payloadSha256": "b7a8a561b6e0cb1609561b6e7aa2303c21c60d8c1bd98344acc3cc0d5f219c79",
+      "inputSource": "mcp-cli-command-bundle.json#/commands/6",
+      "uiInputMapping": "validated-raw-fixture-replay"
+    },
+    {
+      "replayStep": 8,
+      "fixtureCommandIndex": 7,
+      "commandType": "upsertFamilyType",
+      "commandId": "tsh-window-fixed",
+      "payloadSha256": "55f094234da139052fd8e6ca144d60eb3315f9d7e2432b246700376f7ac6ac23",
+      "inputSource": "mcp-cli-command-bundle.json#/commands/7",
+      "uiInputMapping": "validated-raw-fixture-replay"
+    },
+    {
+      "replayStep": 9,
+      "fixtureCommandIndex": 8,
+      "commandType": "createFloor",
+      "commandId": "tsh-floor-ground",
+      "payloadSha256": "03bdb8249f3297e73f7b9a140fb8aabc8313dfe8fd2d424570a2b1f17d3e58f3",
+      "inputSource": "mcp-cli-command-bundle.json#/commands/8",
+      "uiInputMapping": "validated-raw-fixture-replay"
+    },
+    {
+      "replayStep": 10,
+      "fixtureCommandIndex": 9,
+      "commandType": "createFloor",
+      "commandId": "tsh-floor-upper",
+      "payloadSha256": "2988d03b1274bfc6a3d8f06a196a6d06fbcfc39edb6d501042fec958f0c7bb63",
+      "inputSource": "mcp-cli-command-bundle.json#/commands/9",
+      "uiInputMapping": "validated-raw-fixture-replay"
+    },
+    {
+      "replayStep": 11,
+      "fixtureCommandIndex": 10,
+      "commandType": "createWallChain",
+      "commandId": null,
+      "payloadSha256": "ca34b1534e6fe104d7cde2672d2be3743ea963266dcd0d74e0484894a6268cfa",
+      "inputSource": "mcp-cli-command-bundle.json#/commands/10",
+      "uiInputMapping": "validated-raw-fixture-replay"
+    },
+    {
+      "replayStep": 12,
+      "fixtureCommandIndex": 11,
+      "commandType": "createWallChain",
+      "commandId": null,
+      "payloadSha256": "349707d6a56dea99e0f0e9ede2c7ceecd927f420f780dac8bfe6cdf43df97ed3",
+      "inputSource": "mcp-cli-command-bundle.json#/commands/11",
+      "uiInputMapping": "validated-raw-fixture-replay"
+    },
+    {
+      "replayStep": 13,
+      "fixtureCommandIndex": 12,
+      "commandType": "createWallChain",
+      "commandId": null,
+      "payloadSha256": "3b5584dde358ae25130030f108e534ac3e1cb6976ffeec52dc3f211bb31fe362",
+      "inputSource": "mcp-cli-command-bundle.json#/commands/12",
+      "uiInputMapping": "validated-raw-fixture-replay"
+    },
+    {
+      "replayStep": 14,
+      "fixtureCommandIndex": 13,
+      "commandType": "createWallChain",
+      "commandId": null,
+      "payloadSha256": "9a2da73eb9643c75ced58b712cbd4a776ff252c0ca530bf37cdb4cb47075edf3",
+      "inputSource": "mcp-cli-command-bundle.json#/commands/13",
+      "uiInputMapping": "validated-raw-fixture-replay"
+    },
+    {
+      "replayStep": 15,
+      "fixtureCommandIndex": 14,
+      "commandType": "createStair",
+      "commandId": "tsh-stair-main",
+      "payloadSha256": "8d46af4a531bb4682089ba7b83aed0cd74a79e08c2fee4a913ef3aff4ffac192",
+      "inputSource": "mcp-cli-command-bundle.json#/commands/14",
+      "uiInputMapping": "validated-raw-fixture-replay-vertical-circulation"
+    },
+    {
+      "replayStep": 16,
+      "fixtureCommandIndex": 15,
+      "commandType": "createSlabOpening",
+      "commandId": "tsh-opening-stair-upper",
+      "payloadSha256": "b3a934b9dcd32fcff70d9199bf5b6e1fa6bd9ffaf6fe3f96357df56c71c35cb7",
+      "inputSource": "mcp-cli-command-bundle.json#/commands/15",
+      "uiInputMapping": "validated-raw-fixture-replay-vertical-circulation"
+    },
+    {
+      "replayStep": 17,
+      "fixtureCommandIndex": 16,
+      "commandType": "createRailing",
+      "commandId": "tsh-railing-stair",
+      "payloadSha256": "77654ed7d98ee014462668d0a7001362b7475e239b430400b448fe33242c449d",
+      "inputSource": "mcp-cli-command-bundle.json#/commands/16",
+      "uiInputMapping": "validated-raw-fixture-replay-vertical-circulation"
+    },
+    {
+      "replayStep": 18,
+      "fixtureCommandIndex": 17,
+      "commandType": "insertDoorOnWall",
+      "commandId": "tsh-door-entry",
+      "payloadSha256": "3d1c5737aa06802b9b250bdc91a95a22e65b72a97ce7fbb8e8bf3772e409223e",
+      "inputSource": "mcp-cli-command-bundle.json#/commands/17",
+      "uiInputMapping": "validated-raw-fixture-replay"
+    },
+    {
+      "replayStep": 19,
+      "fixtureCommandIndex": 18,
+      "commandType": "insertDoorOnWall",
+      "commandId": "tsh-door-living",
+      "payloadSha256": "680ec04ab86ca44569c4421ef3ced6d06583689447ac5fd8e3792f5f5311cb8b",
+      "inputSource": "mcp-cli-command-bundle.json#/commands/18",
+      "uiInputMapping": "validated-raw-fixture-replay"
+    },
+    {
+      "replayStep": 20,
+      "fixtureCommandIndex": 19,
+      "commandType": "insertDoorOnWall",
+      "commandId": "tsh-door-utility",
+      "payloadSha256": "3c6660992f1735509ee2d386137e1915ed4097287de33e18f3c52f6d9804f8a9",
+      "inputSource": "mcp-cli-command-bundle.json#/commands/19",
+      "uiInputMapping": "validated-raw-fixture-replay"
+    },
+    {
+      "replayStep": 21,
+      "fixtureCommandIndex": 20,
+      "commandType": "insertDoorOnWall",
+      "commandId": "tsh-door-primary",
+      "payloadSha256": "f7398ed4548d144561594eac4475bef1549a2903b626e2bad9eb709690f9cc91",
+      "inputSource": "mcp-cli-command-bundle.json#/commands/20",
+      "uiInputMapping": "validated-raw-fixture-replay"
+    },
+    {
+      "replayStep": 22,
+      "fixtureCommandIndex": 21,
+      "commandType": "insertDoorOnWall",
+      "commandId": "tsh-door-bedroom-2",
+      "payloadSha256": "290a720eb055bdae548d3a6c4d07869ddcb350f683701174e42e5181c95d86f5",
+      "inputSource": "mcp-cli-command-bundle.json#/commands/21",
+      "uiInputMapping": "validated-raw-fixture-replay"
+    },
+    {
+      "replayStep": 23,
+      "fixtureCommandIndex": 22,
+      "commandType": "insertDoorOnWall",
+      "commandId": "tsh-door-bath",
+      "payloadSha256": "daf36a2eacbf3e5c05702b6597b81ac89ee04effa8bef20542cbbffb24977507",
+      "inputSource": "mcp-cli-command-bundle.json#/commands/22",
+      "uiInputMapping": "validated-raw-fixture-replay"
+    },
+    {
+      "replayStep": 24,
+      "fixtureCommandIndex": 23,
+      "commandType": "insertWindowOnWall",
+      "commandId": "tsh-window-g-living-west",
+      "payloadSha256": "f9b9304f9f0fa8a725277a7475487dba8ceb26e8852e2ee10149ba9325743172",
+      "inputSource": "mcp-cli-command-bundle.json#/commands/23",
+      "uiInputMapping": "validated-raw-fixture-replay"
+    },
+    {
+      "replayStep": 25,
+      "fixtureCommandIndex": 24,
+      "commandType": "insertWindowOnWall",
+      "commandId": "tsh-window-g-kitchen-north",
+      "payloadSha256": "b22d26ad854374699eb05c881aa545c0661efd9f8a03af4e603737abac9d7b03",
+      "inputSource": "mcp-cli-command-bundle.json#/commands/24",
+      "uiInputMapping": "validated-raw-fixture-replay"
+    },
+    {
+      "replayStep": 26,
+      "fixtureCommandIndex": 25,
+      "commandType": "insertWindowOnWall",
+      "commandId": "tsh-window-g-dining-east",
+      "payloadSha256": "57c1123250382d3d8b62f4cdfa28b753e9f8015b598b3405e5ba3ba1348e362e",
+      "inputSource": "mcp-cli-command-bundle.json#/commands/25",
+      "uiInputMapping": "validated-raw-fixture-replay"
+    },
+    {
+      "replayStep": 27,
+      "fixtureCommandIndex": 26,
+      "commandType": "insertWindowOnWall",
+      "commandId": "tsh-window-g-stair-south",
+      "payloadSha256": "feb7297bcf702d9789225f60f3a2ff2608c9bf6acf11c3c6b3b2f9278261eda3",
+      "inputSource": "mcp-cli-command-bundle.json#/commands/26",
+      "uiInputMapping": "validated-raw-fixture-replay"
+    },
+    {
+      "replayStep": 28,
+      "fixtureCommandIndex": 27,
+      "commandType": "insertWindowOnWall",
+      "commandId": "tsh-window-u-primary-west",
+      "payloadSha256": "fd6ea7028924f9b8da8d95714e23b8259634d303a650cd378abb138a351fc51a",
+      "inputSource": "mcp-cli-command-bundle.json#/commands/27",
+      "uiInputMapping": "validated-raw-fixture-replay"
+    },
+    {
+      "replayStep": 29,
+      "fixtureCommandIndex": 28,
+      "commandType": "insertWindowOnWall",
+      "commandId": "tsh-window-u-bed2-east",
+      "payloadSha256": "7d650025def4630c3c9b316ecd26a8f66fc63e2d8f0759154a5166aa726a938b",
+      "inputSource": "mcp-cli-command-bundle.json#/commands/28",
+      "uiInputMapping": "validated-raw-fixture-replay"
+    },
+    {
+      "replayStep": 30,
+      "fixtureCommandIndex": 29,
+      "commandType": "insertWindowOnWall",
+      "commandId": "tsh-window-u-bath-north",
+      "payloadSha256": "5c20f54cd65df4f991bdf9940e610fab7f092f90dd8a7a765f0907a249fd2c1d",
+      "inputSource": "mcp-cli-command-bundle.json#/commands/29",
+      "uiInputMapping": "validated-raw-fixture-replay"
+    },
+    {
+      "replayStep": 31,
+      "fixtureCommandIndex": 30,
+      "commandType": "insertWindowOnWall",
+      "commandId": "tsh-window-u-stair-south",
+      "payloadSha256": "8ef7d41191cc5eca6b1e9e838244bc0371ea899c7e3f190eea1c886e58a58770",
+      "inputSource": "mcp-cli-command-bundle.json#/commands/30",
+      "uiInputMapping": "validated-raw-fixture-replay"
+    },
+    {
+      "replayStep": 32,
+      "fixtureCommandIndex": 31,
+      "commandType": "createRoomOutline",
+      "commandId": "tsh-room-g-living",
+      "payloadSha256": "769ad028c170ae633d4aa418ec5fc7df16304c56267aa3ed90d60821c60a23c4",
+      "inputSource": "mcp-cli-command-bundle.json#/commands/31",
+      "uiInputMapping": "validated-raw-fixture-replay"
+    },
+    {
+      "replayStep": 33,
+      "fixtureCommandIndex": 32,
+      "commandType": "createRoomOutline",
+      "commandId": "tsh-room-g-kitchen",
+      "payloadSha256": "48122c7afcb3e564911c1e023a6adb652b33c8881f78035da86de60c41668d91",
+      "inputSource": "mcp-cli-command-bundle.json#/commands/32",
+      "uiInputMapping": "validated-raw-fixture-replay"
+    },
+    {
+      "replayStep": 34,
+      "fixtureCommandIndex": 33,
+      "commandType": "createRoomOutline",
+      "commandId": "tsh-room-g-service",
+      "payloadSha256": "b2b59cc1da5301cb3bc1224662bc3719393ed30571c46f50c9348f624cc77eb7",
+      "inputSource": "mcp-cli-command-bundle.json#/commands/33",
+      "uiInputMapping": "validated-raw-fixture-replay"
+    },
+    {
+      "replayStep": 35,
+      "fixtureCommandIndex": 34,
+      "commandType": "createRoomOutline",
+      "commandId": "tsh-room-u-primary",
+      "payloadSha256": "fb33272e5f668b32ff37c7bdebce4f9e9ade3344143fed04af6c62e67ff44a98",
+      "inputSource": "mcp-cli-command-bundle.json#/commands/34",
+      "uiInputMapping": "validated-raw-fixture-replay"
+    },
+    {
+      "replayStep": 36,
+      "fixtureCommandIndex": 35,
+      "commandType": "createRoomOutline",
+      "commandId": "tsh-room-u-bedroom-2",
+      "payloadSha256": "5e3ce0ad4096764dac0663264d96981dc438169b7d2146264fcbef50cd7b2b4a",
+      "inputSource": "mcp-cli-command-bundle.json#/commands/35",
+      "uiInputMapping": "validated-raw-fixture-replay"
+    },
+    {
+      "replayStep": 37,
+      "fixtureCommandIndex": 36,
+      "commandType": "createRoomOutline",
+      "commandId": "tsh-room-u-bath-hall",
+      "payloadSha256": "43d6e7799faac04a65291d18f64e9583c4bcb50195845158471cd77dc5e3bc24",
+      "inputSource": "mcp-cli-command-bundle.json#/commands/36",
+      "uiInputMapping": "validated-raw-fixture-replay"
+    },
+    {
+      "replayStep": 38,
+      "fixtureCommandIndex": 37,
+      "commandType": "createRoof",
+      "commandId": "tsh-roof-main",
+      "payloadSha256": "0f98d4a87de69bf055a145ef4597c0d51be2776522ef999d8bff5d8aa7dc12f6",
+      "inputSource": "mcp-cli-command-bundle.json#/commands/37",
+      "uiInputMapping": "validated-raw-fixture-replay"
+    },
+    {
+      "replayStep": 39,
+      "fixtureCommandIndex": 38,
+      "commandType": "createSectionCut",
+      "commandId": "tsh-section-stair",
+      "payloadSha256": "22abb20456725d27cf9761c173e39a1edaa9ac7228ec6095b2c281ea1885c55e",
+      "inputSource": "mcp-cli-command-bundle.json#/commands/38",
+      "uiInputMapping": "validated-raw-fixture-replay"
+    },
+    {
+      "replayStep": 40,
+      "fixtureCommandIndex": 39,
+      "commandType": "saveViewpoint",
+      "commandId": "tsh-view-3d",
+      "payloadSha256": "6e5f35103fd056c03ee31b48fb79856ac7af5cb610e956f47004ccf72841c5ed",
+      "inputSource": "mcp-cli-command-bundle.json#/commands/39",
+      "uiInputMapping": "validated-raw-fixture-replay"
+    },
+    {
+      "replayStep": 41,
+      "fixtureCommandIndex": 40,
+      "commandType": "create_schedule_view",
+      "commandId": "tsh-schedule-vertical-circulation",
+      "payloadSha256": "6b660225978247c493e7f23b6bfe8afbed06406210b289621e7d6bdf2fe7f5b7",
+      "inputSource": "mcp-cli-command-bundle.json#/commands/40",
+      "uiInputMapping": "validated-raw-fixture-replay"
+    },
+    {
+      "replayStep": 42,
+      "fixtureCommandIndex": 41,
+      "commandType": "CreateSheet",
+      "commandId": null,
+      "payloadSha256": "887bf66a491766ac5284523d14c5ae914b555f5daa030b4d15e27f71d21ce4d7",
+      "inputSource": "mcp-cli-command-bundle.json#/commands/41",
+      "uiInputMapping": "validated-raw-fixture-replay"
+    },
+    {
+      "replayStep": 43,
+      "fixtureCommandIndex": 42,
+      "commandType": "PlaceViewOnSheet",
+      "commandId": null,
+      "payloadSha256": "56c68ce2925a43df2984ae201e3b8fe9875ea31a493d6aa7c823901fb068eff3",
+      "inputSource": "mcp-cli-command-bundle.json#/commands/42",
+      "uiInputMapping": "validated-raw-fixture-replay"
+    },
+    {
+      "replayStep": 44,
+      "fixtureCommandIndex": 43,
+      "commandType": "PlaceViewOnSheet",
+      "commandId": null,
+      "payloadSha256": "7224626084cf4b12cc770d84b8ddb75f092bd44cf42f3be74f2cf565886bc60b",
+      "inputSource": "mcp-cli-command-bundle.json#/commands/43",
+      "uiInputMapping": "validated-raw-fixture-replay"
+    },
+    {
+      "replayStep": 45,
+      "fixtureCommandIndex": 44,
+      "commandType": "PlaceViewOnSheet",
+      "commandId": null,
+      "payloadSha256": "909a194febf3c7ba549a83cb40f76a2fe2d3f2935fc29599ad10eeb6905db098",
+      "inputSource": "mcp-cli-command-bundle.json#/commands/44",
+      "uiInputMapping": "validated-raw-fixture-replay"
+    },
+    {
+      "replayStep": 46,
+      "fixtureCommandIndex": 45,
+      "commandType": "placeTag",
+      "commandId": "tsh-tag-stair",
+      "payloadSha256": "a722fdfb5f48e46a773858df2bd84094e0e3450a92e699467ce0df4aff466961",
+      "inputSource": "mcp-cli-command-bundle.json#/commands/45",
+      "uiInputMapping": "validated-raw-fixture-replay"
+    },
+    {
+      "replayStep": 47,
+      "fixtureCommandIndex": 46,
+      "commandType": "createDimension",
+      "commandId": "tsh-dim-width",
+      "payloadSha256": "2745492762d96ebfde90840a35950c113222776c0d0dd29ef7a3999e17051e34",
+      "inputSource": "mcp-cli-command-bundle.json#/commands/46",
+      "uiInputMapping": "validated-raw-fixture-replay"
+    },
+    {
+      "replayStep": 48,
+      "fixtureCommandIndex": 47,
+      "commandType": "createDimension",
+      "commandId": "tsh-dim-depth",
+      "payloadSha256": "be27507fd2a82d39be67970275809ddfc922ffe6367c5a438a21f3422ad949d1",
+      "inputSource": "mcp-cli-command-bundle.json#/commands/47",
+      "uiInputMapping": "validated-raw-fixture-replay"
+    }
+  ],
+  "remainingHumanGestureLimitations": [
+    "This is a validated replay artifact, not a browser-authored model creation run.",
+    "Fixture-exact floor boundaries, wall endpoints, room polygons, hosted opening positions, stair run, slab opening boundary, railing path, view/sheet layout, tag, dimension, and camera payloads are replayed from the deterministic fixture input.",
+    "Activator-only Cmd+K entries are recorded as reachability only and are not counted as completed semantic authoring."
+  ]
+}

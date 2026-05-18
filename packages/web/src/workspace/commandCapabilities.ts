@@ -466,6 +466,7 @@ function withCommandCapabilityMetadata(capability: CommandCapabilityDraft): Comm
 
 function productCapabilityIdForCommand(capability: CommandCapabilityDraft): string {
   const explicit: Record<string, string> = {
+    'benchmark.two-storey-stair.replay-fixture': 'benchmark.two-storey-stair.validated-replay',
     'generate.walls-from-boundary': 'author.wall.chain-from-boundary',
     'tool.roof-from-walls': 'author.roof.from-wall-loop',
     'view.3d.wall.insert-door': 'author.door.hosted-in-wall',
@@ -483,6 +484,7 @@ function productCapabilityIdForCommand(capability: CommandCapabilityDraft): stri
 }
 
 function executionKindForCommand(capability: CommandCapabilityDraft): CommandExecutionKind {
+  if (capability.id === 'benchmark.two-storey-stair.replay-fixture') return 'commits-bundle';
   if (capability.id === 'tool.roof-from-walls') return 'commits-command';
   if (capability.id.startsWith('tool.')) return 'activates-tool';
   if (
@@ -525,6 +527,9 @@ function resultKindForCommand(capability: CommandCapabilityDraft): CommandResult
   if (executionKind === 'navigates') return 'navigation';
   if (capability.group === 'review') return 'analysis-report';
   if (capability.group === 'file' || capability.id.includes('export')) return 'export-artifact';
+  if (capability.executionKind === 'commits-bundle' || executionKind === 'commits-bundle') {
+    return 'model-elements';
+  }
   if (capability.group === 'document' || capability.id.startsWith('sheet.')) {
     return 'document-artifact';
   }
@@ -549,6 +554,12 @@ function agentEquivalentForCommand(capability: CommandCapabilityDraft): AgentEqu
       toolId: 'create_wall_chain',
       notes:
         'UI derives a createWallChain payload from the selected floor or room boundary; MCP should accept explicit boundary or source ids.',
+    },
+    'benchmark.two-storey-stair.replay-fixture': {
+      completionKind: 'raw-command',
+      toolId: 'two-storey-house-with-stair:mcp-cli-command-bundle',
+      notes:
+        'Cmd+K submits the validated two-storey stair benchmark command bundle as a deterministic replay payload; tool activators are evidence links only.',
     },
     'tool.roof-from-walls': {
       completionKind: 'semantic-macro',
@@ -991,6 +1002,29 @@ const SYSTEM_CAPABILITIES: CommandCapabilityDraft[] = [
     preconditions: [],
     status: 'implemented',
     usabilityScore: 8,
+  },
+  {
+    id: 'benchmark.two-storey-stair.replay-fixture',
+    label: 'Replay Two-Storey Stair Fixture',
+    owner: 'cmdPalette/defaultCommands',
+    group: 'model',
+    scope: 'model',
+    intendedModes: [...CAPABILITY_VIEW_MODES],
+    surfaces: ['cmd-k'],
+    executionSurface: 'global',
+    preconditions: [],
+    executionKind: 'commits-bundle',
+    resultKind: 'model-elements',
+    status: 'implemented',
+    usabilityScore: 8,
+    agentEquivalent: {
+      completionKind: 'raw-command',
+      toolId: 'two-storey-house-with-stair:mcp-cli-command-bundle',
+      notes:
+        'Submits or validates replay of the exact two-storey stair fixture payload from spec/benchmarks/two-storey-house-with-stair/mcp-cli-command-bundle.json.',
+    },
+    notes:
+      'M3-R Cmd+K bridge: deterministic benchmark replay payload. Does not convert tool activators into completed semantic authoring.',
   },
   {
     id: 'view.create.floor-plan',
