@@ -1632,6 +1632,40 @@ registerCommand({
   invoke: (ctx) => ctx.tagAllRooms?.(),
 });
 
+// §4.1 — Angular Dimension (annotate ribbon shortcut)
+registerCommand({
+  id: 'annotate.angular-dimension',
+  label: 'Angular Dimension',
+  keywords: ['angular', 'dimension', 'angle', 'annotate'],
+  category: 'command',
+  invoke: (ctx) => {
+    ctx.dispatchCommand?.({
+      type: 'createAngularDimension',
+      hostViewId: ctx.activePlanViewId ?? '',
+      vertexMm: { xMm: 0, yMm: 0 },
+      rayAMm: { xMm: 800, yMm: 0 },
+      rayBMm: { xMm: 565, yMm: 565 },
+      arcRadiusMm: 400,
+    });
+  },
+});
+
+// §4.1 — Radial Dimension (annotate ribbon shortcut)
+registerCommand({
+  id: 'annotate.radial-dimension',
+  label: 'Radial Dimension',
+  keywords: ['radial', 'dimension', 'radius', 'arc', 'annotate'],
+  category: 'command',
+  invoke: (ctx) => {
+    ctx.dispatchCommand?.({
+      type: 'createRadialDimension',
+      hostViewId: ctx.activePlanViewId ?? '',
+      centerMm: { xMm: 0, yMm: 0 },
+      arcPointMm: { xMm: 500, yMm: 0 },
+    });
+  },
+});
+
 registerCommand({
   id: 'view.visibility-graphics',
   label: 'Visibility/Graphics…',
@@ -2861,5 +2895,18 @@ registerCommand({
     if (!def || def.elementIds.length === 0) return;
     const [primary, ...rest] = def.elementIds;
     useBimStore.setState({ selectedId: primary, selectedIds: rest });
+  },
+});
+
+// §8.6.4: Flip Stair — mirror stair run geometry horizontally or vertically
+registerCommand({
+  id: 'modify.flip-stair',
+  label: 'Flip Stair',
+  keywords: ['flip stair', 'mirror stair', 'stair flip', 'Treppe spiegeln'],
+  category: 'command',
+  isAvailable: (ctx) => ctx.selectedElements?.some((e) => e.kind === 'stair') ?? false,
+  invoke: (ctx) => {
+    const stair = ctx.selectedElements?.find((e) => e.kind === 'stair');
+    if (stair) ctx.dispatchCommand?.({ type: 'flipStair', stairId: stair.id, axis: 'horizontal' });
   },
 });

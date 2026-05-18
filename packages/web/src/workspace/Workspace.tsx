@@ -1803,6 +1803,20 @@ export function Workspace(): JSX.Element {
         }
         return;
       }
+      // §1.6.10: client-only crop region resize (updateCropRegion)
+      if (cmd.type === 'updateCropRegion') {
+        const { elementsById: cur } = useBimStore.getState();
+        const pv = cur[cmd.planViewId as string];
+        if (pv?.kind === 'plan_view') {
+          useBimStore.setState({
+            elementsById: {
+              ...cur,
+              [pv.id]: { ...pv, cropRegionMm: cmd.cropRegionMm as any },
+            },
+          });
+        }
+        return;
+      }
       // §1.6.10: client-only hide/isolate/reset elements in plan view
       if (cmd.type === 'hide_in_view') {
         const { elementsById: cur } = useBimStore.getState();
@@ -2042,6 +2056,62 @@ export function Workspace(): JSX.Element {
             },
           });
         }
+        return;
+      }
+      // §4.1: createAngularDimension — places an angular_dimension annotation in the active plan view.
+      if (cmd.type === 'createAngularDimension') {
+        const { elementsById: cur } = useBimStore.getState();
+        const newId = crypto.randomUUID();
+        useBimStore.setState({
+          elementsById: {
+            ...cur,
+            [newId]: {
+              kind: 'angular_dimension',
+              id: newId,
+              hostViewId: cmd.hostViewId as string,
+              vertexMm: cmd.vertexMm as { xMm: number; yMm: number },
+              rayAMm: cmd.rayAMm as { xMm: number; yMm: number },
+              rayBMm: cmd.rayBMm as { xMm: number; yMm: number },
+              arcRadiusMm: (cmd.arcRadiusMm as number) ?? 400,
+            } as any,
+          },
+        });
+        return;
+      }
+      // §4.1: createRadialDimension — places a radial_dimension annotation in the active plan view.
+      if (cmd.type === 'createRadialDimension') {
+        const { elementsById: cur } = useBimStore.getState();
+        const newId = crypto.randomUUID();
+        useBimStore.setState({
+          elementsById: {
+            ...cur,
+            [newId]: {
+              kind: 'radial_dimension',
+              id: newId,
+              hostViewId: cmd.hostViewId as string,
+              centerMm: cmd.centerMm as { xMm: number; yMm: number },
+              arcPointMm: cmd.arcPointMm as { xMm: number; yMm: number },
+            } as any,
+          },
+        });
+        return;
+      }
+      // §4.1: createDiameterDimension — places a diameter_dimension annotation in the active plan view.
+      if (cmd.type === 'createDiameterDimension') {
+        const { elementsById: cur } = useBimStore.getState();
+        const newId = crypto.randomUUID();
+        useBimStore.setState({
+          elementsById: {
+            ...cur,
+            [newId]: {
+              kind: 'diameter_dimension',
+              id: newId,
+              hostViewId: cmd.hostViewId as string,
+              centerMm: cmd.centerMm as { xMm: number; yMm: number },
+              arcPointMm: cmd.arcPointMm as { xMm: number; yMm: number },
+            } as any,
+          },
+        });
         return;
       }
       // §4.1: autoDimensionWalls — generate permanent_dimension elements from wall set.

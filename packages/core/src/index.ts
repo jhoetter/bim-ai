@@ -5517,6 +5517,14 @@ export type UpdateStairRunCmd = {
   runWidthMm?: number;
 };
 
+/** §8.6.4: mirror a stair's run geometry horizontally or vertically about its bounding box center. */
+export type FlipStairCmd = {
+  type: 'flipStair';
+  stairId: string;
+  /** 'horizontal' mirrors along the vertical axis (left↔right), 'vertical' mirrors top↔bottom */
+  axis: 'horizontal' | 'vertical';
+};
+
 // ---------------------------------------------------------------------------
 // §3.4.2 — Floor drainage slope point commands
 // ---------------------------------------------------------------------------

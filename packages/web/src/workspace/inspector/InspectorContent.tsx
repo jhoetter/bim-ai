@@ -4896,6 +4896,46 @@ export function InspectorPropertiesFor(
         </div>
       );
     }
+    case 'angular_dimension': {
+      return (
+        <div style={{ padding: 8 }}>
+          <div className="text-xs font-semibold mb-1">Angular Dimension</div>
+          <div className="text-xs text-muted">
+            Vertex: ({(el as any).vertexMm?.xMm?.toFixed(0)},{' '}
+            {(el as any).vertexMm?.yMm?.toFixed(0)})
+          </div>
+          <div className="text-xs text-muted" data-testid="inspector-angular-dim-arc-radius">
+            Arc radius: {(el as any).arcRadiusMm ?? 400} mm
+          </div>
+        </div>
+      );
+    }
+    case 'radial_dimension': {
+      const dx = ((el as any).arcPointMm?.xMm ?? 0) - ((el as any).centerMm?.xMm ?? 0);
+      const dy = ((el as any).arcPointMm?.yMm ?? 0) - ((el as any).centerMm?.yMm ?? 0);
+      const radiusMm = Math.round(Math.hypot(dx, dy));
+      return (
+        <div style={{ padding: 8 }}>
+          <div className="text-xs font-semibold mb-1">Radial Dimension</div>
+          <div className="text-xs text-muted" data-testid="inspector-radial-dim-radius">
+            Radius: {radiusMm} mm
+          </div>
+        </div>
+      );
+    }
+    case 'diameter_dimension': {
+      const dxD = ((el as any).arcPointMm?.xMm ?? 0) - ((el as any).centerMm?.xMm ?? 0);
+      const dyD = ((el as any).arcPointMm?.yMm ?? 0) - ((el as any).centerMm?.yMm ?? 0);
+      const diameterMm = Math.round(Math.hypot(dxD, dyD) * 2);
+      return (
+        <div style={{ padding: 8 }}>
+          <div className="text-xs font-semibold mb-1">Diameter Dimension</div>
+          <div className="text-xs text-muted" data-testid="inspector-diameter-dim-diameter">
+            Diameter: {diameterMm} mm
+          </div>
+        </div>
+      );
+    }
     case 'permanent_dimension': {
       const { onPropertyChange: pdPropChange } = options ?? {};
       const offsetMag = Math.round(Math.hypot(el.offsetMm.xMm, el.offsetMm.yMm));
