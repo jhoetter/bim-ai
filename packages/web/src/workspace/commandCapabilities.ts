@@ -2869,4 +2869,19 @@ const MASS_CAPABILITIES: CommandCapability[] = [
     notes:
       '§6.1.5: material hatch patterns from materialHatchPatterns.ts applied to wall fills in interior elevation SVG; storey height ruler annotation.',
   },
+  {
+    id: 'modify.toggle-column-structural',
+    label: 'Toggle Column Structural/Non-Structural',
+    owner: 'plan/symbology',
+    group: 'modify',
+    scope: 'selection',
+    intendedModes: ['plan'],
+    surfaces: ['inspector', 'cmd-k'],
+    executionSurface: 'store',
+    preconditions: ['selected-column'],
+    status: 'implemented',
+    usabilityScore: 8,
+    notes:
+      '§9.1.3: toggles isNonStructural on column elements; non-structural columns render with dashed outline.',
+  },
 ];

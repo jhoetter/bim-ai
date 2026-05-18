@@ -1854,6 +1854,29 @@ export function Workspace(): JSX.Element {
         });
         return;
       }
+      // §2.9.4: client-only plan underlay toggle + level selector
+      if (cmd.type === 'setPlanUnderlay') {
+        const { elementsById: cur } = useBimStore.getState();
+        const view = cur[cmd.viewId as string];
+        if (!view || view.kind !== 'plan_view') return;
+        useBimStore.setState({
+          elementsById: {
+            ...cur,
+            [view.id]: {
+              ...view,
+              underlayLevelId:
+                (cmd.underlayLevelId as string | null | undefined) !== undefined
+                  ? (cmd.underlayLevelId as string | null)
+                  : (view as any).underlayLevelId,
+              showUnderlay:
+                (cmd.showUnderlay as boolean | undefined) !== undefined
+                  ? (cmd.showUnderlay as boolean)
+                  : !(view as any).showUnderlay,
+            },
+          },
+        });
+        return;
+      }
       // §1.6.10: client-only crop region resize (updateCropRegion)
       if (cmd.type === 'updateCropRegion') {
         const { elementsById: cur } = useBimStore.getState();
@@ -3066,6 +3089,19 @@ export function Workspace(): JSX.Element {
         }
         return;
       }
+      // §9.1.3: toggleColumnStructural — toggle isNonStructural on a column element
+      if (cmd.type === 'toggleColumnStructural') {
+        const { elementsById: cur } = useBimStore.getState();
+        const col = cur[cmd.columnId as string];
+        if (!col || col.kind !== 'column') return;
+        useBimStore.setState({
+          elementsById: {
+            ...cur,
+            [col.id]: { ...col, isNonStructural: !(col as any).isNonStructural },
+          },
+        });
+        return;
+      }
       // §7.3.2: setWorkPlaneFace — create a work_plane element from a host wall/floor face normal
       if (cmd.type === 'setWorkPlaneFace') {
         const { elementsById: cur } = useBimStore.getState();
@@ -3085,6 +3121,26 @@ export function Workspace(): JSX.Element {
         };
         useBimStore.setState({
           elementsById: { ...cur, [newId]: wp as any },
+        });
+        return;
+      }
+
+      // §12.4.2: setDxfLayerMapping — merge partial layer name overrides onto project_settings
+      if (cmd.type === 'setDxfLayerMapping') {
+        const { elementsById: cur } = useBimStore.getState();
+        const settings = Object.values(cur).find((el) => el.kind === 'project_settings');
+        if (!settings) return;
+        useBimStore.setState({
+          elementsById: {
+            ...cur,
+            [settings.id]: {
+              ...settings,
+              dxfLayerMapping: {
+                ...((settings as any).dxfLayerMapping ?? {}),
+                ...(cmd.mapping as Record<string, string>),
+              },
+            },
+          },
         });
         return;
       }

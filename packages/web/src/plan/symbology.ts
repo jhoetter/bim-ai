@@ -1347,32 +1347,55 @@ function columnPlanThree(col: Extract<Element, { kind: 'column' }>): THREE.Group
 
   const hw = bM / 2;
   const hh = hM / 2;
-  const rectPts = [
-    new THREE.Vector3(cx - hw, Y, cz - hh),
-    new THREE.Vector3(cx + hw, Y, cz - hh),
-    new THREE.Vector3(cx + hw, Y, cz + hh),
-    new THREE.Vector3(cx - hw, Y, cz + hh),
-    new THREE.Vector3(cx - hw, Y, cz - hh),
-  ];
-  grp.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(rectPts), solidMat));
-  grp.add(
-    new THREE.Line(
+  // §9.1.3: non-structural columns render with a dashed outline only (no solid fill/cross)
+  const isNonStruct = (col as any).isNonStructural ?? false;
+  if (isNonStruct) {
+    const nonStructDashedMat = new THREE.LineDashedMaterial({
+      color: 0x6b7280,
+      dashSize: 0.04,
+      gapSize: 0.02,
+    });
+    const outline = new THREE.Line(
       new THREE.BufferGeometry().setFromPoints([
-        new THREE.Vector3(cx - hw, Y, cz - hh),
-        new THREE.Vector3(cx + hw, Y, cz + hh),
+        new THREE.Vector3(cx - hw, Y + 0.001, cz - hh),
+        new THREE.Vector3(cx + hw, Y + 0.001, cz - hh),
+        new THREE.Vector3(cx + hw, Y + 0.001, cz + hh),
+        new THREE.Vector3(cx - hw, Y + 0.001, cz + hh),
+        new THREE.Vector3(cx - hw, Y + 0.001, cz - hh),
       ]),
-      solidMat,
-    ),
-  );
-  grp.add(
-    new THREE.Line(
-      new THREE.BufferGeometry().setFromPoints([
-        new THREE.Vector3(cx + hw, Y, cz - hh),
-        new THREE.Vector3(cx - hw, Y, cz + hh),
-      ]),
-      solidMat,
-    ),
-  );
+      nonStructDashedMat,
+    );
+    outline.computeLineDistances();
+    outline.userData.bimPickId = col.id;
+    grp.add(outline);
+  } else {
+    const rectPts = [
+      new THREE.Vector3(cx - hw, Y, cz - hh),
+      new THREE.Vector3(cx + hw, Y, cz - hh),
+      new THREE.Vector3(cx + hw, Y, cz + hh),
+      new THREE.Vector3(cx - hw, Y, cz + hh),
+      new THREE.Vector3(cx - hw, Y, cz - hh),
+    ];
+    grp.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(rectPts), solidMat));
+    grp.add(
+      new THREE.Line(
+        new THREE.BufferGeometry().setFromPoints([
+          new THREE.Vector3(cx - hw, Y, cz - hh),
+          new THREE.Vector3(cx + hw, Y, cz + hh),
+        ]),
+        solidMat,
+      ),
+    );
+    grp.add(
+      new THREE.Line(
+        new THREE.BufferGeometry().setFromPoints([
+          new THREE.Vector3(cx + hw, Y, cz - hh),
+          new THREE.Vector3(cx - hw, Y, cz + hh),
+        ]),
+        solidMat,
+      ),
+    );
+  }
 
   if (col.columnUsage === 'structural') {
     const structuralMat = new THREE.LineBasicMaterial({ color: '#666666' });

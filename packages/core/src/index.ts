@@ -2316,6 +2316,8 @@ export type Element =
       cropRegionEnabled?: boolean;
       /** §3.3.5: when true, EQ equality markers and lock symbols are shown on permanent_dimension elements. */
       showConstraints?: boolean;
+      /** §2.9.4: when true, the underlay level is rendered as semi-transparent ghost lines. */
+      showUnderlay?: boolean;
     }
   | {
       kind: 'view_template';
@@ -5806,9 +5808,27 @@ export type ToggleShowConstraintsCmd = {
   viewId: string;
 };
 
+/** §2.9.4: set the plan underlay level and toggle ghost rendering. */
+export type SetPlanUnderlayCmd = {
+  type: 'setPlanUnderlay';
+  /** plan_view element ID. */
+  viewId: string;
+  /** Level ID to use as underlay, or null to clear. */
+  underlayLevelId?: string | null;
+  /** Whether to show the underlay. */
+  showUnderlay?: boolean;
+};
+
 /** §9.1.3: toggle isNonStructural on a column element (structural ↔ architectural/decorative). */
 export type ToggleColumnStructuralCmd = {
   type: 'toggleColumnStructural';
   /** Column element ID. */
   columnId: string;
+};
+
+/** §12.4.2: merge partial update to dxfLayerMapping on project_settings. */
+export type SetDxfLayerMappingCmd = {
+  type: 'setDxfLayerMapping';
+  /** Merged partial update to dxfLayerMapping on project_settings. */
+  mapping: Record<string, string>;
 };

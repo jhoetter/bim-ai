@@ -3057,6 +3057,17 @@ export function InspectorPropertiesFor(
               <option value="structural">Structural</option>
             </select>
           </div>
+          <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11 }}>
+            <input
+              data-testid="inspector-column-non-structural"
+              type="checkbox"
+              checked={(el as any).isNonStructural ?? false}
+              onChange={() =>
+                onSemanticCommand?.({ type: 'toggleColumnStructural', columnId: el.id })
+              }
+            />
+            Non-structural (architectural)
+          </label>
           <div className="flex items-center gap-2 py-0.5">
             <span className="text-xs text-muted w-28 shrink-0">Rotation (°)</span>
             <input
