@@ -72,8 +72,43 @@ export type ExecutionSurface =
 
 export type CapabilityStatus = 'implemented' | 'partial' | 'planned';
 
+export type CommandExecutionKind =
+  | 'activates-tool'
+  | 'opens-dialog'
+  | 'commits-command'
+  | 'commits-bundle'
+  | 'navigates'
+  | 'local-ui-only';
+
+export type CommandResultKind =
+  | 'tool-activation'
+  | 'model-elements'
+  | 'document-artifact'
+  | 'view-state'
+  | 'selection'
+  | 'dialog'
+  | 'navigation'
+  | 'local-ui-state'
+  | 'analysis-report'
+  | 'export-artifact'
+  | 'none';
+
+export type AgentCompletionKind =
+  | 'typed-tool'
+  | 'semantic-macro'
+  | 'raw-command'
+  | 'browser-automation'
+  | 'none';
+
+export interface AgentEquivalent {
+  completionKind: AgentCompletionKind;
+  toolId?: string;
+  notes?: string;
+}
+
 export interface CommandCapability {
   id: string;
+  capabilityId: string;
   label: string;
   owner: string;
   group: CommandGroup;
@@ -82,14 +117,41 @@ export interface CommandCapability {
   surfaces: CommandSurface[];
   executionSurface: ExecutionSurface;
   preconditions: string[];
+  requiredContext: string[];
+  executionKind: CommandExecutionKind;
+  resultKind: CommandResultKind;
   status: CapabilityStatus;
   usabilityScore: number;
+  agentEquivalent?: AgentEquivalent;
   lifecycleKind?: AuthoringCommandKind;
   completionBehavior?: AuthoringCompletionBehavior;
   previewSemantics?: string;
   bridgeToMode?: Partial<Record<CapabilityViewMode, CapabilityViewMode>>;
   notes?: string;
 }
+
+type CommandCapabilityDraft = Omit<
+  CommandCapability,
+  | 'agentEquivalent'
+  | 'capabilityId'
+  | 'executionKind'
+  | 'group'
+  | 'intendedModes'
+  | 'requiredContext'
+  | 'resultKind'
+  | 'scope'
+  | 'surfaces'
+> & {
+  group: CommandGroup | string;
+  scope: CommandCapability['scope'] | string;
+  intendedModes: Array<CapabilityViewMode | string>;
+  surfaces: Array<CommandSurface | string>;
+} & Partial<
+    Pick<
+      CommandCapability,
+      'agentEquivalent' | 'capabilityId' | 'executionKind' | 'requiredContext' | 'resultKind'
+    >
+  >;
 
 export type CommandAvailability =
   | { state: 'enabled'; capability: CommandCapability }
@@ -128,7 +190,7 @@ export function getAllCommandCapabilities(): CommandCapability[] {
     ...EDIT_3D_CAPABILITIES,
     ...VISIBILITY_CAPABILITIES,
     ...MASS_CAPABILITIES,
-  ];
+  ].map(withCommandCapabilityMetadata);
 }
 
 export function getCommandCapability(id: string): CommandCapability | undefined {
@@ -137,6 +199,22 @@ export function getCommandCapability(id: string): CommandCapability | undefined 
 
 export function capabilityIdForTool(toolId: ToolId): string {
   return `tool.${toolId}`;
+}
+
+export function isAgentCompleteCommandCapability(capability: CommandCapability): boolean {
+  if (
+    capability.executionKind === 'activates-tool' ||
+    capability.executionKind === 'opens-dialog' ||
+    capability.executionKind === 'local-ui-only'
+  ) {
+    return false;
+  }
+  const completionKind = capability.agentEquivalent?.completionKind;
+  return (
+    completionKind === 'typed-tool' ||
+    completionKind === 'semantic-macro' ||
+    completionKind === 'raw-command'
+  );
 }
 
 export function commandModeBadge(availability: CommandAvailability): string {
@@ -289,7 +367,7 @@ export function formatCapabilityMode(mode: CapabilityViewMode): string {
   }
 }
 
-function buildToolCapabilities(): CommandCapability[] {
+function buildToolCapabilities(): CommandCapabilityDraft[] {
   return Object.values(getToolRegistry(IDENTITY_T)).map((tool) => {
     const contract = getAuthoringCommandContract(tool.id);
     if (!contract) {
@@ -307,6 +385,16 @@ function buildToolCapabilities(): CommandCapability[] {
       surfaces: ['ribbon', 'cmd-k'],
       executionSurface: executionSurfaceForTool(tool),
       preconditions: [...new Set([...preconditionsForTool(tool.id), ...contract.requiredContext])],
+      requiredContext: [
+        ...new Set([...preconditionsForTool(tool.id), ...contract.requiredContext]),
+      ],
+      executionKind: 'activates-tool',
+      resultKind: 'tool-activation',
+      agentEquivalent: {
+        completionKind: 'browser-automation',
+        notes:
+          'Cmd+K activates the interactive tool; completion still requires user or browser-driven canvas gestures.',
+      },
       status: 'implemented',
       usabilityScore: 8,
       lifecycleKind: contract.kind,
@@ -360,6 +448,171 @@ function preconditionsForTool(toolId: ToolId): string[] {
   }
 }
 
+function withCommandCapabilityMetadata(capability: CommandCapabilityDraft): CommandCapability {
+  const requiredContext = capability.requiredContext ?? capability.preconditions;
+  return {
+    ...capability,
+    capabilityId: capability.capabilityId ?? productCapabilityIdForCommand(capability),
+    executionKind: capability.executionKind ?? executionKindForCommand(capability),
+    group: capability.group as CommandGroup,
+    intendedModes: capability.intendedModes as CapabilityViewMode[],
+    resultKind: capability.resultKind ?? resultKindForCommand(capability),
+    requiredContext,
+    scope: capability.scope as CommandCapability['scope'],
+    surfaces: capability.surfaces as CommandSurface[],
+    agentEquivalent: capability.agentEquivalent ?? agentEquivalentForCommand(capability),
+  };
+}
+
+function productCapabilityIdForCommand(capability: CommandCapabilityDraft): string {
+  const explicit: Record<string, string> = {
+    'generate.walls-from-boundary': 'author.wall.chain-from-boundary',
+    'tool.roof-from-walls': 'author.roof.from-wall-loop',
+    'view.3d.wall.insert-door': 'author.door.hosted-in-wall',
+    'view.3d.wall.insert-window': 'author.window.hosted-in-wall',
+    'view.3d.wall.insert-opening': 'author.opening.hosted-in-wall',
+    'view.3d.wall.generate-section': 'document.section.from-wall',
+    'view.3d.wall.generate-elevation': 'document.elevation.from-wall',
+    'mass.generate-walls': 'author.wall.from-mass',
+    'mass.generate-floors': 'author.floor.from-mass',
+    'mass.generate-roof': 'author.roof.from-mass',
+    'mass.generate-all': 'author.bim.from-mass',
+    'mass.generate-curtain-walls': 'author.curtain-wall.from-mass',
+  };
+  return explicit[capability.id] ?? capability.id;
+}
+
+function executionKindForCommand(capability: CommandCapabilityDraft): CommandExecutionKind {
+  if (capability.id === 'tool.roof-from-walls') return 'commits-command';
+  if (capability.id.startsWith('tool.')) return 'activates-tool';
+  if (
+    capability.id.startsWith('navigate.') ||
+    capability.id.startsWith('section.open-') ||
+    capability.id.startsWith('schedule.open-') ||
+    capability.id.startsWith('view.create.') ||
+    capability.group === 'navigate'
+  ) {
+    return 'navigates';
+  }
+  if (capability.executionSurface === 'modal' || capability.executionSurface === 'dialog') {
+    return 'opens-dialog';
+  }
+  if (
+    capability.id.startsWith('generate.') ||
+    capability.id.startsWith('mass.generate') ||
+    capability.id.startsWith('structural.') ||
+    capability.id.startsWith('model.') ||
+    capability.id.startsWith('modify.') ||
+    capability.id.startsWith('annotate.') ||
+    capability.id.startsWith('family.') ||
+    capability.id.startsWith('view.3d.wall.insert') ||
+    capability.id === 'project.set-true-north' ||
+    capability.id === 'project.set-elevation' ||
+    capability.id === 'schedule.duplicate' ||
+    capability.id === 'schedule.place-on-sheet' ||
+    capability.id === 'sheet.place-recommended-views' ||
+    capability.id === 'section.place-on-sheet'
+  ) {
+    return 'commits-command';
+  }
+  return 'local-ui-only';
+}
+
+function resultKindForCommand(capability: CommandCapabilityDraft): CommandResultKind {
+  const executionKind = capability.executionKind ?? executionKindForCommand(capability);
+  if (executionKind === 'activates-tool') return 'tool-activation';
+  if (executionKind === 'opens-dialog') return 'dialog';
+  if (executionKind === 'navigates') return 'navigation';
+  if (capability.group === 'review') return 'analysis-report';
+  if (capability.group === 'file' || capability.id.includes('export')) return 'export-artifact';
+  if (capability.group === 'document' || capability.id.startsWith('sheet.')) {
+    return 'document-artifact';
+  }
+  if (
+    capability.group === 'author' ||
+    capability.group === 'create' ||
+    capability.group === 'modify' ||
+    capability.group === 'model' ||
+    capability.group === 'family'
+  ) {
+    return 'model-elements';
+  }
+  if (capability.group === 'selection') return 'selection';
+  if (capability.group === 'view' || capability.group === 'visibility') return 'view-state';
+  return 'local-ui-state';
+}
+
+function agentEquivalentForCommand(capability: CommandCapabilityDraft): AgentEquivalent {
+  const explicit: Record<string, AgentEquivalent> = {
+    'generate.walls-from-boundary': {
+      completionKind: 'semantic-macro',
+      toolId: 'create_wall_chain',
+      notes:
+        'UI derives a createWallChain payload from the selected floor or room boundary; MCP should accept explicit boundary or source ids.',
+    },
+    'tool.roof-from-walls': {
+      completionKind: 'semantic-macro',
+      toolId: 'create_roof_from_wall_loop',
+      notes:
+        'UI derives createRoof parameters from selected walls; MCP should take explicit wall ids or a resolved loop.',
+    },
+    'view.3d.wall.insert-door': {
+      completionKind: 'raw-command',
+      toolId: 'insertDoorOnWall',
+      notes: 'Requires explicit wall id and along-wall placement.',
+    },
+    'view.3d.wall.insert-window': {
+      completionKind: 'raw-command',
+      toolId: 'insertWindowOnWall',
+      notes: 'Requires explicit wall id, along-wall placement, and sill/header defaults.',
+    },
+    'view.3d.wall.insert-opening': {
+      completionKind: 'raw-command',
+      toolId: 'insertOpeningOnWall',
+      notes: 'Requires explicit wall id, along-wall placement, and opening dimensions.',
+    },
+    'view.3d.wall.generate-section': {
+      completionKind: 'raw-command',
+      toolId: 'createSectionFromWall',
+      notes: 'Requires explicit wall id and section/elevation placement defaults.',
+    },
+    'view.3d.wall.generate-elevation': {
+      completionKind: 'raw-command',
+      toolId: 'createElevationFromWall',
+      notes: 'Requires explicit wall id and elevation placement defaults.',
+    },
+    'mass.generate-walls': {
+      completionKind: 'semantic-macro',
+      toolId: 'create_walls_from_mass',
+    },
+    'mass.generate-floors': {
+      completionKind: 'semantic-macro',
+      toolId: 'create_floors_from_mass',
+    },
+    'mass.generate-roof': {
+      completionKind: 'semantic-macro',
+      toolId: 'create_roof_from_mass',
+    },
+    'mass.generate-all': {
+      completionKind: 'semantic-macro',
+      toolId: 'create_bim_from_mass',
+    },
+    'mass.generate-curtain-walls': {
+      completionKind: 'semantic-macro',
+      toolId: 'create_curtain_walls_from_mass',
+    },
+  };
+  if (explicit[capability.id]) return explicit[capability.id];
+  if (capability.id.startsWith('tool.')) {
+    return {
+      completionKind: 'browser-automation',
+      notes:
+        'Cmd+K activates an interactive tool and is not itself a complete agent authoring operation.',
+    };
+  }
+  return { completionKind: 'none' };
+}
+
 function bridgeModesForTool(
   tool: ToolDefinition,
 ): Partial<Record<CapabilityViewMode, CapabilityViewMode>> | undefined {
@@ -371,7 +624,7 @@ function bridgeModesForTool(
   return Object.keys(bridge).length ? bridge : undefined;
 }
 
-const NAVIGATION_CAPABILITIES: CommandCapability[] = [
+const NAVIGATION_CAPABILITIES: CommandCapabilityDraft[] = [
   {
     id: 'navigate.plan',
     label: 'Go to Plan',
@@ -634,7 +887,7 @@ const NAVIGATION_CAPABILITIES: CommandCapability[] = [
   },
 ];
 
-const SYSTEM_CAPABILITIES: CommandCapability[] = [
+const SYSTEM_CAPABILITIES: CommandCapabilityDraft[] = [
   {
     id: 'theme.toggle',
     label: 'Toggle Theme',
@@ -1262,7 +1515,7 @@ const SYSTEM_CAPABILITIES: CommandCapability[] = [
   },
 ];
 
-const SCHEDULE_CAPABILITIES: CommandCapability[] = [
+const SCHEDULE_CAPABILITIES: CommandCapabilityDraft[] = [
   {
     id: 'schedule.open-selected-row',
     label: 'Schedule: Open Selected Row',
@@ -1317,7 +1570,7 @@ const SCHEDULE_CAPABILITIES: CommandCapability[] = [
   },
 ];
 
-const SHEET_CAPABILITIES: CommandCapability[] = [
+const SHEET_CAPABILITIES: CommandCapabilityDraft[] = [
   {
     id: 'sheet.place-recommended-views',
     label: 'Sheet: Place Recommended Views',
@@ -1463,7 +1716,7 @@ const SHEET_CAPABILITIES: CommandCapability[] = [
   },
 ];
 
-const SECTION_CAPABILITIES: CommandCapability[] = [
+const SECTION_CAPABILITIES: CommandCapabilityDraft[] = [
   {
     id: 'section.place-on-sheet',
     label: 'Section: Place on Sheet',
@@ -1531,7 +1784,7 @@ const SECTION_CAPABILITIES: CommandCapability[] = [
   },
 ];
 
-const VIEW_3D_CAPABILITIES: CommandCapability[] = [
+const VIEW_3D_CAPABILITIES: CommandCapabilityDraft[] = [
   {
     id: 'view.3d.fit',
     label: '3D: Fit Model',
@@ -1776,7 +2029,7 @@ const VIEW_3D_CAPABILITIES: CommandCapability[] = [
   },
 ];
 
-const EDIT_3D_CAPABILITIES: CommandCapability[] = [
+const EDIT_3D_CAPABILITIES: CommandCapabilityDraft[] = [
   {
     id: 'generate.walls-from-boundary',
     label: 'Create Walls from Boundary',
@@ -1861,7 +2114,7 @@ const EDIT_3D_CAPABILITIES: CommandCapability[] = [
   },
 ];
 
-const VISIBILITY_CAPABILITIES: CommandCapability[] = [
+const VISIBILITY_CAPABILITIES: CommandCapabilityDraft[] = [
   {
     id: 'visibility.active-controls',
     label: 'Open Active View Visibility Controls',
@@ -2197,7 +2450,7 @@ const VISIBILITY_CAPABILITIES: CommandCapability[] = [
   },
 ];
 
-const MASS_CAPABILITIES: CommandCapability[] = [
+const MASS_CAPABILITIES: CommandCapabilityDraft[] = [
   {
     id: 'mass.generate-walls',
     label: 'Generate Walls from Mass',

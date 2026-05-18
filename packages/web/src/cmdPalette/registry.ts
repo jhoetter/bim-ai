@@ -3,20 +3,37 @@ import fuzzysort from 'fuzzysort';
 import {
   commandModeBadge,
   evaluateCommandInMode,
+  getCommandCapability,
+  type AgentEquivalent,
   type CapabilityLensMode,
   type CapabilityViewMode,
   type CommandAvailability,
+  type CommandExecutionKind,
+  type CommandResultKind,
 } from '../workspace/commandCapabilities';
 
-export type PaletteCategory = 'command' | 'navigate' | 'select' | 'tool';
+export type PaletteCategory =
+  | 'annotate'
+  | 'command'
+  | 'file'
+  | 'modify'
+  | 'navigate'
+  | 'select'
+  | 'tool'
+  | 'view';
 export type PaletteSourceKind = 'command' | 'tool' | 'view' | 'element' | 'setting' | 'agent';
 
 export type PaletteEntry = {
   id: string;
+  capabilityId?: string;
   label: string;
   keywords?: string[];
   shortcut?: string;
   category: PaletteCategory;
+  executionKind?: CommandExecutionKind;
+  resultKind?: CommandResultKind;
+  requiredContext?: string[];
+  agentEquivalent?: AgentEquivalent;
   invoke: (context: PaletteContext) => void;
   isAvailable?: (context: PaletteContext) => boolean;
   availability?: CommandAvailability;
@@ -36,6 +53,8 @@ export type PaletteContext = {
   activeLensMode?: CapabilityLensMode;
   /** Active plan_view element id for plan-scoped commands such as templates/style. */
   activePlanViewId?: string | null;
+  /** Active plan_view element object for legacy contextual palette actions. */
+  activePlanView?: Record<string, unknown> | null;
   /** Active schedule element id for schedule-scoped commands. */
   activeScheduleId?: string | null;
   /** Active sheet element id for sheet-scoped commands. */
@@ -175,6 +194,8 @@ export type PaletteContext = {
   openEgressAnalysis?: () => void;
   /** Activate a tool by its tool ID (used by the tool palette). */
   activateTool?: (toolId: string) => void;
+  /** Selected element objects for legacy contextual palette actions. */
+  selectedElements?: Array<{ id?: string; kind?: string } & Record<string, unknown>>;
   /** §2.9.1: open the Terrace Preset dialog to create a perimeter railing from the selected floor. */
   openTerracePreset?: () => void;
 };
@@ -227,7 +248,7 @@ function matchesSourceKind(entry: PaletteEntry, sourceKind: PaletteSourceKind | 
 }
 
 export function registerCommand(entry: PaletteEntry): void {
-  _registry.push(entry);
+  _registry.push(withCapabilityMetadata(entry));
 }
 
 /** Exposed only for tests — do not call in production code. */
@@ -237,6 +258,19 @@ export function _clearRegistry(): void {
 
 export function getRegistry(): readonly PaletteEntry[] {
   return _registry;
+}
+
+function withCapabilityMetadata(entry: PaletteEntry): PaletteEntry {
+  const capability = getCommandCapability(entry.id);
+  if (!capability) return entry;
+  return {
+    ...entry,
+    capabilityId: entry.capabilityId ?? capability.capabilityId,
+    executionKind: entry.executionKind ?? capability.executionKind,
+    resultKind: entry.resultKind ?? capability.resultKind,
+    requiredContext: entry.requiredContext ?? capability.requiredContext,
+    agentEquivalent: entry.agentEquivalent ?? capability.agentEquivalent,
+  };
 }
 
 export function queryPalette(
@@ -277,9 +311,14 @@ export function queryPalette(
 
   const viewEntries: PaletteEntry[] = (context.views ?? []).map((v) => ({
     id: `view.${v.id}`,
+    capabilityId: 'navigate.dynamic-view',
     label: v.label,
     keywords: [v.keywords],
     category: 'navigate' as const,
+    executionKind: 'navigates' as const,
+    resultKind: 'navigation' as const,
+    requiredContext: [],
+    agentEquivalent: { completionKind: 'none' as const },
     sourceKind: 'view' as const,
     badge: 'Open View',
     invoke: (ctx) => ctx.openElement?.(v.id),
@@ -287,9 +326,18 @@ export function queryPalette(
 
   const planTemplateEntries: PaletteEntry[] = (context.planTemplates ?? []).map((template) => ({
     id: `view-template.apply.${template.id}`,
+    capabilityId: 'view.apply-template',
     label: `Apply Plan Template: ${template.label}`,
     keywords: ['plan template', 'view template', template.keywords ?? ''],
     category: 'command' as const,
+    executionKind: 'commits-command' as const,
+    resultKind: 'view-state' as const,
+    requiredContext: ['active-plan-view'],
+    agentEquivalent: {
+      completionKind: 'raw-command' as const,
+      toolId: 'updateElementProperty',
+      notes: 'Requires explicit plan view id and template id.',
+    },
     sourceKind: 'setting' as const,
     badge: 'Plan',
     disabledReason: context.activePlanViewId ? undefined : 'Requires an active plan view.',
@@ -305,9 +353,14 @@ export function queryPalette(
   }));
   const sheetPlaceableEntries: PaletteEntry[] = (context.sheetPlaceableViews ?? []).map((view) => ({
     id: `sheet.place-view.${view.id}`,
+    capabilityId: 'document.sheet.place-view',
     label: `Place on Sheet: ${view.label}`,
     keywords: ['sheet', 'place view', 'viewport', view.keywords ?? ''],
     category: 'command' as const,
+    executionKind: 'commits-command' as const,
+    resultKind: 'document-artifact' as const,
+    requiredContext: ['active-sheet', 'placeable-view'],
+    agentEquivalent: { completionKind: 'none' as const },
     sourceKind: 'command' as const,
     badge: 'Sheet',
     disabledReason: context.activeSheetId ? undefined : 'Requires an active sheet.',

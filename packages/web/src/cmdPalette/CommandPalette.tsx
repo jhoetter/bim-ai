@@ -15,10 +15,14 @@ export type CommandPaletteProps = {
 };
 
 const CATEGORY_LABELS: Record<PaletteCategory, string> = {
+  annotate: 'Annotate',
   command: 'Commands',
+  file: 'Files',
+  modify: 'Modify',
   navigate: 'Navigate',
   select: 'Select',
   tool: 'Tools',
+  view: 'View',
 };
 
 type PaletteSection = {

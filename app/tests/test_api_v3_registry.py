@@ -11,10 +11,13 @@ Verifies:
 from __future__ import annotations
 
 import json
+import re
 
 import pytest
+from fastapi import FastAPI
 
 from bim_ai.api.registry import get_catalog, get_descriptor
+from bim_ai.routes_api import api_router
 
 EXPECTED_SEED_TOOLS = {
     "api-list-tools",
@@ -27,6 +30,9 @@ EXPECTED_SEED_TOOLS = {
 VALID_CATEGORIES = {"query", "mutation", "transform", "job", "introspection"}
 VALID_SIDE_EFFECTS = {"none", "mutates-kernel", "enqueues-job", "writes-audit"}
 VALID_REST_METHODS = {"GET", "POST"}
+VALID_MUTABILITY = {"read", "write", "job", "transform"}
+VALID_IMPLEMENTATION_STATUS = {"implemented", "todo", "unsupported", "deprecated"}
+VALID_TRANSPORTS = {"http", "websocket"}
 
 
 def _is_json_schema_draft07(obj: object) -> bool:
@@ -36,6 +42,29 @@ def _is_json_schema_draft07(obj: object) -> bool:
         return "draft-07" in str(obj["$schema"])
     # Accept schemas that omit $schema — permitted by spec
     return True
+
+
+def _route_key(method: str, path: str) -> tuple[str, str]:
+    # FastAPI route parameter names are implementation details for this audit;
+    # descriptors may use public modelId while routes use model_id.
+    return method, re.sub(r"\{[^}]+\}", "{}", path)
+
+
+def _implemented_route_keys() -> set[tuple[str, str]]:
+    app = FastAPI()
+    app.include_router(api_router)
+    keys: set[tuple[str, str]] = set()
+    for route in app.routes:
+        path = getattr(route, "path", "")
+        methods = getattr(route, "methods", None)
+        if methods:
+            for method in methods:
+                if method in {"GET", "POST", "PATCH", "DELETE", "PUT"}:
+                    keys.add(_route_key(method, path))
+        elif path:
+            # WebSocketRoute has no .methods but is an implemented GET-upgrade route.
+            keys.add(_route_key("GET", path))
+    return keys
 
 
 class TestToolRegistry:
@@ -98,3 +127,47 @@ class TestToolRegistry:
 
     def test_get_descriptor_unknown_returns_none(self):
         assert get_descriptor("__nonexistent_tool__") is None
+
+    def test_all_descriptors_expose_m1c_machine_metadata(self):
+        for d in get_catalog().tools:
+            assert d.stableId == d.name
+            assert d.mutability in VALID_MUTABILITY, d.name
+            assert d.transport in VALID_TRANSPORTS, d.name
+            assert d.implementationStatus in VALID_IMPLEMENTATION_STATUS, d.name
+            assert d.requiredPermissions, d.name
+            assert d.schemaRefs, d.name
+            assert d.exampleRefs, d.name
+            assert isinstance(d.kernelCommands, list), d.name
+            assert isinstance(d.resourceGroups, list), d.name
+            if d.implementationStatus in {"todo", "unsupported"}:
+                assert d.unsupportedReason, d.name
+            if d.implementationStatus == "deprecated":
+                assert d.deprecatedReplacement, d.name
+
+    def test_api_list_tools_schema_declares_m1c_contract_fields(self):
+        descriptor = get_descriptor("api-list-tools")
+        assert descriptor is not None
+        tool_def = descriptor.outputSchema["definitions"]["ToolDescriptor"]
+        required = set(tool_def["required"])
+        assert {
+            "stableId",
+            "mutability",
+            "requiredPermissions",
+            "transport",
+            "implementationStatus",
+            "schemaRefs",
+            "exampleRefs",
+            "kernelCommands",
+            "resourceGroups",
+        } <= required
+
+    def test_implemented_descriptors_point_to_implemented_routes(self):
+        route_keys = _implemented_route_keys()
+        missing: list[str] = []
+        for d in get_catalog().tools:
+            if d.implementationStatus != "implemented":
+                continue
+            key = _route_key(d.restEndpoint.method, d.restEndpoint.path)
+            if key not in route_keys:
+                missing.append(f"{d.name}: {d.restEndpoint.method} {d.restEndpoint.path}")
+        assert not missing, "Descriptor endpoints without implemented routes: " + ", ".join(missing)

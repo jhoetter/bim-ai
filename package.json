@@ -15,6 +15,7 @@
     "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,yml,yaml}\"",
     "format:check": "prettier --check \"**/*.{ts,tsx,js,jsx,json,yml,yaml}\"",
     "architecture": "node scripts/check-architecture.mjs",
+    "audit:ui-mcp-parity": "node scripts/audit-ui-mcp-parity.mjs --out spec/generated/ui-mcp-parity.json",
     "verify": "pnpm format:check && pnpm architecture && pnpm test",
     "verify:strict": "pnpm format:check && pnpm lint:root && pnpm architecture && pnpm typecheck && pnpm test && pnpm build",
     "build:dist": "pnpm --filter @bim-ai/hofos-ui build",

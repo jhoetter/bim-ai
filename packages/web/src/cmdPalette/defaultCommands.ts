@@ -12,12 +12,12 @@ function is3dContext(ctx: PaletteContext): boolean {
   return ctx.activeMode === '3d';
 }
 
-function startPlanTool(ctx: PaletteContext, toolId: PlanTool): void {
+function startPlanTool(ctx: PaletteContext, toolId: string): void {
   if (ctx.startPlanTool) {
     ctx.startPlanTool(toolId);
     return;
   }
-  useBimStore.getState().setPlanTool(toolId);
+  useBimStore.getState().setPlanTool(toolId as PlanTool);
 }
 
 function setAll3dCategoriesHidden(hidden: boolean): void {

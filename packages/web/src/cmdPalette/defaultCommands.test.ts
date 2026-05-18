@@ -65,6 +65,28 @@ function command(id: string) {
 }
 
 describe('default Cmd+K commands', () => {
+  it('mirrors capability metadata onto registered palette entries', () => {
+    expect(command('tool.wall')).toMatchObject({
+      capabilityId: 'tool.wall',
+      executionKind: 'activates-tool',
+      resultKind: 'tool-activation',
+      requiredContext: [],
+      agentEquivalent: {
+        completionKind: 'browser-automation',
+      },
+    });
+    expect(command('generate.walls-from-boundary')).toMatchObject({
+      capabilityId: 'author.wall.chain-from-boundary',
+      executionKind: 'commits-command',
+      resultKind: 'model-elements',
+      requiredContext: ['selected-floor-or-room-boundary'],
+      agentEquivalent: {
+        completionKind: 'semantic-macro',
+        toolId: 'create_wall_chain',
+      },
+    });
+  });
+
   it('registers required plan authoring sketch commands with host tool routing', () => {
     const startPlanTool = vi.fn();
     for (const [commandId, toolId] of [

@@ -14,6 +14,7 @@ import {
   evaluateCommandInMode,
   getAllCommandCapabilities,
   getCommandCapability,
+  isAgentCompleteCommandCapability,
   unreachableCommandCapabilities,
 } from './commandCapabilities';
 
@@ -86,6 +87,54 @@ describe('command capability graph', () => {
     const capabilities = getAllCommandCapabilities();
     expect(new Set(capabilities.map((capability) => capability.id)).size).toBe(capabilities.length);
     expect(unreachableCommandCapabilities()).toEqual([]);
+  });
+
+  it('adds tracker metadata to every Cmd+K capability — Milestone 1-B', () => {
+    const missing = getAllCommandCapabilities()
+      .filter((capability) => capability.surfaces.includes('cmd-k'))
+      .filter(
+        (capability) =>
+          !capability.capabilityId ||
+          !capability.executionKind ||
+          !capability.resultKind ||
+          !Array.isArray(capability.requiredContext),
+      )
+      .map((capability) => capability.id);
+
+    expect(missing).toEqual([]);
+    expect(getCommandCapability('tool.wall')).toMatchObject({
+      capabilityId: 'tool.wall',
+      executionKind: 'activates-tool',
+      resultKind: 'tool-activation',
+      requiredContext: [],
+      agentEquivalent: {
+        completionKind: 'browser-automation',
+      },
+    });
+    expect(getCommandCapability('generate.walls-from-boundary')).toMatchObject({
+      capabilityId: 'author.wall.chain-from-boundary',
+      executionKind: 'commits-command',
+      resultKind: 'model-elements',
+      requiredContext: ['selected-floor-or-room-boundary'],
+      agentEquivalent: {
+        completionKind: 'semantic-macro',
+        toolId: 'create_wall_chain',
+      },
+    });
+  });
+
+  it('does not count Cmd+K tool activators as agent-complete actions — Milestone 1-B', () => {
+    const toolActivators = getAllCommandCapabilities().filter(
+      (capability) => capability.executionKind === 'activates-tool',
+    );
+
+    expect(toolActivators.length).toBeGreaterThan(0);
+    expect(
+      toolActivators.every((capability) => !isAgentCompleteCommandCapability(capability)),
+    ).toBe(true);
+    expect(
+      isAgentCompleteCommandCapability(getCommandCapability('generate.walls-from-boundary')!),
+    ).toBe(true);
   });
 
   it('keeps the runtime graph free of partial or low-scored tracked commands', () => {

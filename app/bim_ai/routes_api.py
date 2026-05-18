@@ -38,6 +38,7 @@ from bim_ai.agent_review_readout_consistency_closure import (
 from bim_ai.architecture_lens_query import build_architecture_lens_query
 from bim_ai.ai_boundary import empty_external_model_call_audit_csv, load_bill_of_rights_markdown
 from bim_ai.codes import BUILDING_PRESETS
+from bim_ai.command_schemas import export_command_schemas, get_command_schema
 from bim_ai.commands import Command
 from bim_ai.constructability_bcf import build_constructability_bcf_export
 from bim_ai.constructability_report import (
@@ -2746,6 +2747,19 @@ async def v3_inspect_tool(name: str) -> dict[str, Any]:
     if descriptor is None:
         raise HTTPException(status_code=404, detail=f"Tool '{name}' not found in registry.")
     return _descriptor_to_dict(descriptor)
+
+
+@api_router.get("/v3/commands")
+async def v3_list_command_schemas() -> dict[str, Any]:
+    return export_command_schemas()
+
+
+@api_router.get("/v3/commands/{name}")
+async def v3_inspect_command_schema(name: str) -> dict[str, Any]:
+    command_schema = get_command_schema(name)
+    if command_schema is None:
+        raise HTTPException(status_code=404, detail=f"Command '{name}' not found.")
+    return command_schema
 
 
 @api_router.get("/v3/version")
