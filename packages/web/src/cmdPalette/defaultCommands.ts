@@ -3132,12 +3132,3 @@ registerCommand({
     // §1.7.1: surfaced via canvas right-click on empty space — no global invocation needed.
   },
 });
-
-// §3.3.7 (Wave 26 WP-A): Paint Surface — activate paint face tool
-registerCommand({
-  id: 'modify.paint-face',
-  label: 'Paint Surface',
-  keywords: ['paint', 'surface', 'face', 'material override', 'paint face'],
-  category: 'command',
-  invoke: (ctx) => startPlanTool(ctx, 'paint'),
-});
