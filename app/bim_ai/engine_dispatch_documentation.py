@@ -589,6 +589,7 @@ def try_apply_documentation_command(doc, cmd, *, source_provider=None) -> bool:
                 layer_index=cmd.layer_index,
                 position_mm=cmd.position_mm,
                 text_override=cmd.text_override,
+                leader_end_mm=cmd.leader_end_mm,
                 colour=cmd.colour,
             )
 

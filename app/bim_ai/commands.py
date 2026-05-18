@@ -439,6 +439,7 @@ class CreateMaterialTagCmd(BaseModel):
     layer_index: int = Field(default=0, alias="layerIndex")
     position_mm: Vec2Mm = Field(alias="positionMm")
     text_override: str | None = Field(default=None, alias="textOverride")
+    leader_end_mm: Vec2Mm | None = Field(default=None, alias="leaderEndMm")
     colour: str = Field(default="#202020")
 
 

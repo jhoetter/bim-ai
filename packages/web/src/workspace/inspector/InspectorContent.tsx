@@ -5628,6 +5628,60 @@ export function InspectorPropertiesFor(
         </div>
       );
     }
+    case 'material_tag': {
+      const { onPropertyChange } = options ?? {};
+      const tagEl = el as Extract<Element, { kind: 'material_tag' }>;
+      const resolvedMaterial = (() => {
+        if (tagEl.textOverride) return tagEl.textOverride;
+        const target = elementsById[tagEl.hostElementId];
+        if (!target) return '—';
+        const wallTypeId = (target as any).wallTypeId;
+        const wallType = wallTypeId ? elementsById[wallTypeId] : null;
+        const layers = (wallType as any)?.layers;
+        if (layers && layers.length > 0) {
+          const idx = tagEl.layerIndex ?? 0;
+          return layers[idx]?.materialKey ?? '—';
+        }
+        return (target as any).materialKey ?? '—';
+      })();
+      return (
+        <div className="flex flex-col gap-2">
+          <div className="flex items-center gap-2 py-0.5">
+            <span className="text-xs text-muted w-28 shrink-0">Material</span>
+            <span data-testid="inspector-material-tag-resolved" className="text-xs font-semibold">
+              {resolvedMaterial}
+            </span>
+          </div>
+          <div className="flex items-center gap-2 py-0.5">
+            <span className="text-xs text-muted w-28 shrink-0">Override</span>
+            <input
+              data-testid="inspector-material-tag-override"
+              type="text"
+              className="flex-1 text-xs bg-surface border border-border rounded px-1 py-0.5"
+              defaultValue={tagEl.textOverride ?? ''}
+              key={`${tagEl.id}-override`}
+              placeholder="(auto)"
+              onBlur={(e) => onPropertyChange?.('textOverride', e.currentTarget.value || null)}
+            />
+          </div>
+          <div className="flex items-center gap-2 py-0.5">
+            <span className="text-xs text-muted w-28 shrink-0">Layer index</span>
+            <input
+              data-testid="inspector-material-tag-layer"
+              type="number"
+              min={0}
+              className="w-16 text-xs bg-surface border border-border rounded px-1 py-0.5"
+              defaultValue={tagEl.layerIndex ?? 0}
+              key={`${tagEl.id}-layer`}
+              onBlur={(e) => {
+                const v = parseInt(e.currentTarget.value, 10);
+                if (!isNaN(v)) onPropertyChange?.('layerIndex', v);
+              }}
+            />
+          </div>
+        </div>
+      );
+    }
     case 'detail_group': {
       return (
         <div className="flex flex-col gap-2">
