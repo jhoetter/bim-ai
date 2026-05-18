@@ -1,0 +1,39 @@
+{
+  "schemaVersion": "sketch-understanding-ir.v0",
+  "projectType": "single_family_house",
+  "qualityTarget": "massing_only",
+  "sourceInputs": {
+    "images": ["spec/examples/massing-placeholder-sketch.png"],
+    "userInstruction": "Create a massing-only BIM seed from a simple two-volume sketch."
+  },
+  "visualRead": {
+    "primaryView": "front-left axonometric",
+    "dominantVolumes": [
+      {
+        "id": "setback_upper",
+        "description": "A smaller upper volume set back from the ground level.",
+        "priority": "critical"
+      }
+    ],
+    "nonNegotiables": ["two readable stacked volumes", "clear upper/lower setback"]
+  },
+  "programme": [],
+  "features": [
+    {
+      "id": "primary_volumes",
+      "kind": "primary_volumes",
+      "visualPriority": "critical",
+      "mustRenderInViews": ["main"],
+      "capabilityNeeds": ["explicit floors/walls rather than final mass boxes"]
+    }
+  ],
+  "requiredViews": [{ "id": "main", "kind": "3d", "purpose": "massing silhouette" }],
+  "assumptions": [
+    {
+      "id": "scale_default",
+      "statement": "No dimensions supplied; use conservative residential scale.",
+      "confidence": "medium",
+      "validation": "visual-gate screenshot proportions"
+    }
+  ]
+}

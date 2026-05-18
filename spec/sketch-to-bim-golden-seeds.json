@@ -1,0 +1,35 @@
+{
+  "schemaVersion": "sketch-to-bim-golden-suite.v0",
+  "description": "Preflight golden cases for sketch-to-BIM project initiation. Live advisor/screenshot goldens are added by initiation-run evidence packets.",
+  "cases": [
+    {
+      "id": "target-house-project-initiation",
+      "ir": "spec/examples/sketch-understanding-ir.example.json",
+      "capabilities": "spec/sketch-to-bim-capability-matrix.json",
+      "seedDslRecipe": "spec/examples/seed-dsl-modern-house.example.json",
+      "expected": {
+        "maxCoverageErrors": 0,
+        "maxBlockedFeatures": 0
+      }
+    },
+    {
+      "id": "two-volume-massing",
+      "ir": "spec/examples/sketch-understanding-ir-massing.example.json",
+      "capabilities": "spec/sketch-to-bim-capability-matrix.json",
+      "expected": {
+        "maxCoverageErrors": 0,
+        "maxBlockedFeatures": 0
+      }
+    },
+    {
+      "id": "documentation-ready-house",
+      "ir": "spec/examples/sketch-understanding-ir-documentation.example.json",
+      "capabilities": "spec/sketch-to-bim-capability-matrix.json",
+      "seedDslRecipe": "spec/examples/seed-dsl-modern-house.example.json",
+      "expected": {
+        "maxCoverageErrors": 0,
+        "maxBlockedFeatures": 0
+      }
+    }
+  ]
+}
