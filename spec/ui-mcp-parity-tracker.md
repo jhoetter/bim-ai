@@ -1166,6 +1166,36 @@ Wave 3 result:
   `3 / 7` closure gates passed and blocks closure on live dry-run, live commit,
   committed advisor/validation, and UI-equivalent path evidence.
 
+### Milestone 2 Wave 4 Workstreams
+
+Milestone 2 Wave 4 is the evidence-and-equivalence closure wave. It should avoid
+new feature breadth and focus on turning the Wave 3 harnesses into checked,
+repeatable proof for the four remaining M2 closure gates.
+
+| Workstream                                     | Status  | Owner scope                                                                                                                                         | Tracker items                                                | Done when                                                                                                                                                                                                                                       |
+| ---------------------------------------------- | ------- | --------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| M2-P. Disposable live model evidence runner    | Partial | Local/live benchmark orchestration, disposable model setup, sanitized evidence directories, docs, and tests; avoid UI internals.                    | WP-008, M2 live dry-run/commit closure.                      | A repeatable command can create or target an isolated model, run the simple-house live dry-run and opt-in commit path, and persist auditable evidence artifacts without manual project setup or environment-specific secrets.                   |
+| M2-Q. Committed advisor and validation closure | Partial | Backend validation/advisor evidence quality, benchmark assertions, and focused backend tests; avoid UI and audit report ownership.                  | WP-008, WP-009, committed advisor/validation closure.        | The committed simple-house evidence contains advisor and validation JSON from the committed model, fails on new blocking errors, and is detectable by the parity audit as clean committed advisor/validation evidence.                          |
+| M2-R. UI executable equivalence harness        | Partial | Web/UI test harness, deterministic command replay, semantic diff export, and Cmd+K bridge coverage; avoid backend implementation except test seams. | Same-house benchmark UI path, Cmd+K bridge, WP-008.          | The UI/Cmd+K path advances from traceability-only to executable or validated equivalence by producing/verifying a semantic diff against the MCP/CLI simple-house fixture without counting activator-only commands as completed operations.      |
+| M2-S. Closure audit artifact ingestion         | Partial | Audit script and generated ledgers only; may read new evidence artifacts and UI-equivalence outputs but should not create product behavior.         | WP-004, WP-012, M2 closure reporting.                        | `pnpm audit:ui-mcp-parity` recognizes the Wave 4 evidence artifacts, reports each remaining gate with precise pass/block reasons, and moves M2 to `Done` only if all closure gates are genuinely satisfied.                                     |
+| M2-T. Release gate and tracker finalization    | Partial | Focused verifier, tracker status, release checklist, and final generated outputs; do not own feature implementation.                                | WP-009, M2 release readiness, milestone status finalization. | `pnpm verify:m2-parity` covers the new live/evidence/UI checks where feasible, the tracker accurately records Wave 4 results and residual risks, and M2 status is updated conservatively from the generated audit rather than optimistic notes. |
+
+### Milestone 2 Wave 4 Scheduling Notes
+
+- M2-P owns the repeatable live evidence command and should coordinate with
+  M2-Q on the exact committed evidence artifact paths.
+- M2-Q owns the semantic quality of committed advisor/validation evidence and
+  should treat warnings separately from blocking validation failures.
+- M2-R must distinguish deterministic UI semantic commits from Cmd+K tool
+  activation. If a fully executable browser path is not realistic in this wave,
+  it should produce a validated replay artifact and keep the audit blocker
+  honest.
+- M2-S must remain conservative. It can mark a closure gate passed only from
+  clean evidence artifacts or validated UI-equivalence outputs, not from
+  documentation or capability claims.
+- M2-T runs after the other streams integrate; it should update milestone status
+  only from `pnpm audit:ui-mcp-parity` and `pnpm verify:m2-parity`.
+
 ## Next Work Packages
 
 ### WP-001: Command Schema Export
