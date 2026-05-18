@@ -214,24 +214,24 @@ manual seed authoring gaps.
 
 ### F. Target-House-1 Specific Readiness
 
-| ID | Priority | Status | Item | Acceptance |
-| --- | --- | --- | --- | --- |
-| `SKB-RDY-F01` | P0 | Not started | Target-house Sketch IR. | IR is generated from `spec/target-house` images and seed spec, with non-negotiables, dimensions, views, assumptions, and feature ids. |
-| `SKB-RDY-F02` | P0 | Not started | Target-house BIM information requirements. | Includes rooms from floorplan, spaces, schedules, wall/roof/slab type intent, structural/MEP-lite assumptions, and export goals. |
-| `SKB-RDY-F03` | P0 | Not started | Target-house capability map. | Every critical visual/BIM feature maps to command/API/CLI/DSL support, status, evidence, and fallback. |
-| `SKB-RDY-F04` | P0 | Not started | Target-house phase plan. | Phases are envelope-first: massing/shell, roof terrace, loggia/openings, rooms/stair, BIM data, documentation/export, final acceptance. |
-| `SKB-RDY-F05` | P0 | Not started | Target-house risk register. | High-risk items include roof cutout render, folded shell thickness, roof-wall seams, cladding artifacts, stair/slab opening, room enclosure, and export semantics. |
-| `SKB-RDY-F06` | P0 | Not started | Target-house no-seed rehearsal packet. | Produces planning/evidence requirements only; no `seed-artifacts/target-house-1` is created before the user approves the generation run. |
+| ID            | Priority | Status | Item                                       | Acceptance                                                                                                                                                                                                                                                                    |
+| ------------- | -------- | ------ | ------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `SKB-RDY-F01` | P0       | Done   | Target-house Sketch IR.                    | Draft IR exists at `spec/target-house/target-house-1-sketch-ir.draft.json`, generated from target-house images, floorplan, and seed spec, with non-negotiables, dimensions, required views, assumptions, information requirements, and feature ids.                           |
+| `SKB-RDY-F02` | P0       | Done   | Target-house BIM information requirements. | `spec/target-house/target-house-1-bim-information-requirements.md` covers floorplan rooms/spaces, schedule data, wall/roof/slab type intent, classification placeholders, structure-lite, MEP-lite, and export goals.                                                         |
+| `SKB-RDY-F03` | P0       | Done   | Target-house capability map.               | `spec/target-house/target-house-1-capability-map.md` maps every critical visual/BIM feature to capability support, product surface, status, required evidence, and fallback/tolerance policy.                                                                                 |
+| `SKB-RDY-F04` | P0       | Done   | Target-house phase plan.                   | `spec/target-house/target-house-1-phase-plan.md` defines envelope-first phases: preflight, massing/plinth, shell/roof, roof terrace, loggia/openings/cladding, rooms/stair, BIM data, documentation/export, and final acceptance.                                             |
+| `SKB-RDY-F05` | P0       | Done   | Target-house risk register.                | `spec/target-house/target-house-1-risk-register.md` covers roof cutout render, folded shell thickness, roof-wall seams, cladding artifacts, loggia depth, stair/slab opening, room enclosure, scale conflict, export semantics, Advisor drift, load path, and stale evidence. |
+| `SKB-RDY-F06` | P0       | Done   | Target-house no-seed rehearsal packet.     | `spec/target-house/target-house-1-no-seed-readiness-packet.md` indexes the planning packet and states that no `seed-artifacts/target-house-1` may be created before user approval for generation.                                                                             |
 
 ### G. Documentation And Developer Experience
 
-| ID | Priority | Status | Item | Acceptance |
-| --- | --- | --- | --- | --- |
-| `SKB-RDY-G01` | P0 | Done | Clarify source-of-truth docs. | Active docs explain which files are current and which archive files are historical. |
-| `SKB-RDY-G02` | P0 | Done | Clarify CLI vs MCP decision. | Docs state when to use CLI, API/MCP descriptor, raw bundle, or skill helper. |
-| `SKB-RDY-G03` | P1 | Not started | Add one-page external-agent quickstart. | A new agent can run doctor, produce IR, validate capability matrix, compile/apply phase, collect evidence, and accept/reject without reading all source. |
-| `SKB-RDY-G04` | P1 | Not started | Add target-house readiness checklist. | Checklist can be filled before generation and attached to seed evidence after generation. |
-| `SKB-RDY-G05` | P1 | Not started | Add examples for real BIM data. | Example IR/recipe includes spaces, classifications, material layers, MEP-lite, structure-lite, schedules, and export requirements. |
+| ID            | Priority | Status      | Item                                    | Acceptance                                                                                                                                                                       |
+| ------------- | -------- | ----------- | --------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `SKB-RDY-G01` | P0       | Done        | Clarify source-of-truth docs.           | Active docs explain which files are current and which archive files are historical.                                                                                              |
+| `SKB-RDY-G02` | P0       | Done        | Clarify CLI vs MCP decision.            | Docs state when to use CLI, API/MCP descriptor, raw bundle, or skill helper.                                                                                                     |
+| `SKB-RDY-G03` | P1       | Done        | Add one-page external-agent quickstart. | `spec/sketch-to-bim-agent-quickstart.md` gives the canonical CLI path to run doctor, validate IR/capability coverage, compile/apply phases, collect evidence, and accept/reject. |
+| `SKB-RDY-G04` | P1       | Done        | Add target-house readiness checklist.   | `spec/target-house/target-house-1-acceptance-checklist.md` can be filled before generation and attached to seed evidence after generation.                                       |
+| `SKB-RDY-G05` | P1       | Not started | Add examples for real BIM data.         | Example IR/recipe includes spaces, classifications, material layers, MEP-lite, structure-lite, schedules, and export requirements.                                               |
 
 ## Pre-Target-House-1 Gate
 
