@@ -1,6 +1,6 @@
 # Revit 2026 Feature-Parity Tracker
 
-Last updated: 2026-05-17 (Wave 15 complete)
+Last updated: 2026-05-18 (Wave 23 complete)
 Source: Detlef Ridder — *Autodesk Revit 2026: Der umfassende Praxiseinstieg für Architekturkonstruktion*, mitp 2026 (ISBN 978-3-7475-1101-5)
 
 Purpose: exhaustive chapter-by-chapter comparison between Revit 2026 (as taught in the book) and what bim-ai currently supports. Every leaf section of the table of contents becomes a row. The goal is to expose gaps at maximum granularity so engineering work can be scoped and prioritised.
@@ -134,7 +134,8 @@ Missing: per-view crop region editing.
 - Families subtree: wall_type / floor_type / roof_type with context menu (F-003)
 - Links subtree (`link_model` elements)
 - Schedules, Sheets, View Templates, Sections, Elevations, 3D saved views groups
-Still missing: full hierarchical Revit-style browser organisation presets, Groups subtree (deferred to WP-B), Browser organisation presets (by level, by discipline)
+Wave 23 WP-D: Groups subtree now implemented — `PbCollapsibleSection` with `data-testid="browser-groups-section"`, group rows (`browser-group-row-{id}`), instance count spans (`pb-group-instance-count-{id}`), `selectGroupElements` semantic command; `SelectGroupElementsCmd` in core + Workspace handler selecting all group member element IDs.
+Still missing: full hierarchical Revit-style browser organisation presets, Browser organisation presets (by level, by discipline)
 
 #### 1.6.12 Zeichenfläche (drawing canvas: multiple view windows, tile/cascade)
 **Status: Partial — P2**
@@ -411,8 +412,9 @@ Wave 14 WP-K: `createSimilar.ts` helper + CS chord fully wired in `PlanCanvas.ts
 Floor boundary editing works. Slope arrow for sloped floors partially implemented. Attach Top/Base: `applyAttachFloorToRoof()` in `attachFloorToRoof.ts` sets `attachedToRoofId` + `topFaceElevationMm` from roof `baseElevationMm`. Inspector buttons (`inspector-floor-attach` / `inspector-floor-detach`) dispatch `attach_floor_to_roof` command. Tests: `attachFloorToRoof.test.ts` (3 tests), `floorAttachRoof.test.tsx` (4 tests). Added by WP-C (wave 12).
 
 #### 3.4.2 Bodenplatte im Keller bearbeiten (basement slab editing)
-**Status: Partial — P1**
-Same as floor editing above. Sub-floor thickening is Not Started. Drainage slope via sub-element editing: Done — `FloorSlopePoint` type in core (`id`, `xMm`, `yMm`, `elevationOffsetMm`) + `slopePoints?` on `FloorElem` + `addFloorSlopePoint`/`removeFloorSlopePoint`/`updateFloorSlopePoint` commands + Workspace handlers + inspector "Drainage Slope Points" collapsible section + `floorSlopePointsPlanThree()` orange circle plan symbols + 5 tests. (WP-B wave 21)
+**Status: Done — P1**
+Drainage slope via sub-element editing: Done — `FloorSlopePoint` type in core (`id`, `xMm`, `yMm`, `elevationOffsetMm`) + `slopePoints?` on `FloorElem` + `addFloorSlopePoint`/`removeFloorSlopePoint`/`updateFloorSlopePoint` commands + Workspace handlers + inspector "Drainage Slope Points" collapsible section + `floorSlopePointsPlanThree()` orange circle plan symbols + 5 tests. (WP-B wave 21)
+Sub-floor thickening: Done — `subFloorThicknessMm?: number | null` on `FloorElem` in core + `SetSubFloorThicknessCmd` command type + `setSubFloorThickness` Workspace handler + inspector "Sub-floor Pad" number input (`inspector-floor-sub-thickness`) + `modify.set-sub-floor-thickness` palette command + 3D mesh pad below slab in `makeFloorSlabMesh` + 4 tests. (WP-A wave 23)
 
 ### 3.5 Wände bearbeiten (wall editing)
 
@@ -436,7 +438,7 @@ Both drag-to-move (grips) and explicit Move tool work.
 **Status: Partial — P1**
 - Pin: Implemented — pinUnpin.ts helpers + PN chord shortcut in PlanCanvas + `modify.pin-selected` / `modify.unpin-selected` / `modify.unpin-all` in Cmd+K palette + padlock 📌 glyph overlay in plan view (WP-B8)
 - Edit Profile (non-rectangular wall cross-section profile): Partial — wall profile shape editing via sketch is partially implemented
-- Join / Unjoin tool (explicitly controlling how two walls join): Partial (wall-join tool in registry)
+- Join / Unjoin tool: Done — `joinOverrides?: Record<string, 'miter'|'butt'|'square'> | null` on wall + `SetWallJoinCmd` command type + `setWallJoin` Workspace handler + `findWallsAtCorner()` utility + `modify.wall-join` palette command + 9 tests. (WP-E wave 23)
 
 #### 3.5.6 Wände in Laufrichtung verbinden (connect walls end-to-end along run)
 **Status: Done — P0**
@@ -637,8 +639,8 @@ Elevation tool and elevation marker exist. Wave 15 WP-G: `buildElevationLines(vi
 Interior elevation placement: `interior-elevation` tool (hotkey `IE`) added to plan palette. Single-click dispatches `create_interior_elevation_marker` command; server auto-creates four `elevation_view` children (N/S/E/W). `interior_elevation_marker` element type in `@bim-ai/core` with `positionMm`, `levelId`, `radiusMm`, `activeQuadrants?: ('N'|'S'|'E'|'W')[]`, and `elevationViewIds` (N/S/E/W). Plan symbol: 4-quadrant circle with inward arrows rendered in `symbology.ts`. Inspector panel (wave 5 WP-C): radius input (`data-testid="inspector-iel-radius"`), level select (`data-testid="inspector-iel-level"`), quadrant checkboxes (`data-testid="inspector-iel-quadrants"`), drag-grip. Tests in `interiorElevationInspector.test.tsx`. Wave 16 WP-H: `buildElevationLines()` in `interiorElevationProjection.ts` projects walls/floors/openings from the 3D model into 2D screen space for a given N/S/E/W direction; `InteriorElevationViewport.tsx` renders as an SVG with view title. Tests in `interiorElevation.test.ts`.
 
 #### 6.1.6 Schnittansicht (section view: cross section, building section)
-**Status: Partial — P1**
-Section tool exists, section views are generated (sectionViewportSvg.tsx). Wave 15 WP-H: `materialHatchPatterns.ts` added with `hatchPatternForMaterial(materialKey)` (8 hatch types: concrete cross-hatch, brick running-bond, wood vertical lines, glass dots, insulation zigzag, earth horizontal+dots, metal diagonal, solid fallback; German key support). `svgHatchDef(pattern, id, scale)` returns SVG `<pattern>` defs. `sectionViewportSvg.tsx` extended: `<defs>` block with 8 SVG patterns, cut-element walls filled with material-based hatch, cut outlines use 2× strokeScale for thicker lines vs beyond-cut. Tests: `materialHatchPatterns.test.ts` (17 tests). Wave 16 WP-C: `sectionBubble.ts` adds filled circle head bubbles at section endpoints (`THREE.CircleGeometry` r=200mm, `userData.sectionBubble=true`, `userData.sectionViewId`); view title + scale label below `sectionViewportSvg`. Tests: `sectionBubble.test.ts`.
+**Status: Done — P1**
+Section tool exists, section views are generated (sectionViewportSvg.tsx). Wave 15 WP-H: `materialHatchPatterns.ts` added with `hatchPatternForMaterial(materialKey)` (8 hatch types: concrete cross-hatch, brick running-bond, wood vertical lines, glass dots, insulation zigzag, earth horizontal+dots, metal diagonal, solid fallback; German key support). `svgHatchDef(pattern, id, scale)` returns SVG `<pattern>` defs. `sectionViewportSvg.tsx` extended: `<defs>` block with 8 SVG patterns, cut-element walls filled with material-based hatch, cut outlines use 2× strokeScale for thicker lines vs beyond-cut. Tests: `materialHatchPatterns.test.ts` (17 tests). Wave 16 WP-C: `sectionBubble.ts` adds filled circle head bubbles at section endpoints (`THREE.CircleGeometry` r=200mm, `userData.sectionBubble=true`, `userData.sectionViewId`); view title + scale label below `sectionViewportSvg`. Tests: `sectionBubble.test.ts`. Wave 23 WP-B: `showLevelLines?: boolean` on `section_cut` + `sectionLevelLines.ts` (`extractLevelData()`, `buildLevelLineSvg()`) + SVG level datum lines injected in `sectionViewportSvg.tsx` when enabled + inspector checkbox (`inspector-section-cut-show-level-lines`) + 6 tests.
 
 ### 6.2 Planerstellung (sheet setup: sheet with title block)
 **Status: Done — P1**
@@ -978,7 +980,7 @@ DWG export is not implemented.
 **Status: Partial — P1**
 DGN export not implemented. DWG export (wave 5 WP-F): `exportSceneToDwg()` in `dwgExport.ts` produces a DXF string with `AC1015` (R2000) HEADER section and `.dwg` extension + `application/acad` MIME type — functionally a text DXF, not true binary DWG, but sufficient for most CAD import flows. "Export DWG" button added (`data-testid="export-dwg-button"`). 2 tests in `dwgExport.test.ts`. True binary DWG (OpenDesign/ODA format) is still not implemented.
 
-IFC 2x3 export (E1): Implemented as a pure-TypeScript ISO 10303-21 STEP writer at `packages/web/src/export/ifcExporter.ts`. Exports `IFCPROJECT`, `IFCSITE`, `IFCBUILDING`, `IFCBUILDINGSTOREY` hierarchy plus `IFCWALLSTANDARDCASE`, `IFCDOOR`, `IFCWINDOW`, `IFCOPENINGELEMENT`, `IFCRELVOIDSELEMENT`, `IFCSLAB` (FLOOR/ROOF), and `IFCSPACE`. Includes `IFCMATERIALLAYERSETUSAGE` per wall, and standard Psets: `Pset_WallCommon`, `Pset_DoorCommon`, `Pset_WindowCommon`, `Pset_SlabCommon`, `Pset_SpaceCommon` (with `NetFloorArea` / `GrossFloorArea` from polygon area). No WASM dependency. 7 passing tests in `ifcExporter.test.ts` including round-trip header validation. Menu trigger wired in `ProjectMenu.tsx` ("Export → IFC 2x3…" item, testId `project-menu-export-ifc`) with blob download from `Workspace.tsx` `handleExportIfc` callback.
+IFC 2x3 export (E1): Implemented as a pure-TypeScript ISO 10303-21 STEP writer at `packages/web/src/export/ifcExporter.ts`. Exports `IFCPROJECT`, `IFCSITE`, `IFCBUILDING`, `IFCBUILDINGSTOREY` hierarchy plus `IFCWALLSTANDARDCASE`, `IFCDOOR`, `IFCWINDOW`, `IFCOPENINGELEMENT`, `IFCRELVOIDSELEMENT`, `IFCSLAB` (FLOOR/ROOF), `IFCSPACE`, `IFCBEAM`, `IFCCOLUMN`, `IFCSTAIR`, `IFCRAILING` (`.BALUSTRADE.`). Includes `IFCMATERIALLAYERSETUSAGE` per wall, and standard Psets: `Pset_WallCommon`, `Pset_DoorCommon`, `Pset_WindowCommon`, `Pset_SlabCommon`, `Pset_SpaceCommon` (with `NetFloorArea` / `GrossFloorArea` from polygon area). No WASM dependency. 11 passing tests in `ifcExporter.test.ts` including round-trip header validation. Menu trigger wired in `ProjectMenu.tsx` ("Export → IFC 2x3…" item, testId `project-menu-export-ifc`) with blob download from `Workspace.tsx` `handleExportIfc` callback. Wave 23 WP-C: added IFCBEAM, IFCCOLUMN, IFCSTAIR, IFCRAILING entity types + 4 new tests.
 
 DXF export (E2): Implemented at `packages/web/src/export/dxfExporter.ts`. Exports per-level plan views with walls (A-WALL), doors (A-DOOR + arc swing), windows (A-GLAZ), rooms (A-AREA), grid lines (S-GRID with bubble circle), reference planes (A-REFP), linear dimensions (A-ANNO-DIMS with extension lines + label), and text notes (A-ANNO). Multi-level export supported (one DxfPlanView per level). 8 passing tests in `dxfExporter.test.ts`. Menu trigger wired in `ProjectMenu.tsx` ("Export → DXF/DWG…" item with collapsible options panel: level selector + mm/m units dropdown, testId `project-menu-export-dxf`) with per-level blob downloads from `handleExportDxf` in `Workspace.tsx`.
 
@@ -1118,7 +1120,10 @@ Wave 14 WP-I: `cheatsheetData.ts` expanded with a comprehensive shortcut set mat
 
 ## Summary Dashboard
 
-Last verified: 2026-05-18. Waves 1–22 complete. **617 test files, 5179 tests pass.**
+Last updated: 2026-05-18 (Wave 23 complete)
+Last verified: 2026-05-18. Waves 1–23 complete. **627 test files, 5204 tests pass.**
+
+Wave 23 completions: §3.4.2 sub-floor thickening — `subFloorThicknessMm?` on `FloorElem` + `SetSubFloorThicknessCmd` + Workspace handler + inspector "Sub-floor Pad" input + `modify.set-sub-floor-thickness` palette command + 3D mesh pad in `makeFloorSlabMesh` + 4 tests (WP-A), §6.1.6 section view level lines — `showLevelLines?` on `section_cut` + `sectionLevelLines.ts` (`extractLevelData`/`buildLevelLineSvg`) + SVG injection in `sectionViewportSvg.tsx` + inspector checkbox + 6 tests (WP-B), §12.4.3 IFC export expansion — IFCBEAM, IFCCOLUMN, IFCSTAIR, IFCRAILING entities in `ifcExporter.ts` + 4 new tests (WP-C), §1.6.11 project browser Groups subtree — `PbCollapsibleSection` with group rows + instance counts + `SelectGroupElementsCmd` in core + Workspace handler + 8 tests (WP-D), §3.5.5 wall join tool wiring — `joinOverrides?` on wall + `SetWallJoinCmd` + `findWallsAtCorner()` utility + `setWallJoin` Workspace handler + `modify.wall-join` palette command + 9 tests (WP-E).
 
 Wave 22 completions: §4.1 `DimWitnessPoint` type + `referencedElementId?` on witness points + `resolveDimReferences()` utility for snapping dims to element references (WP-A), §3.3.4 cut geometry command — `cutBy` field on wall/floor/column + `applyCutGeometry`/`removeCutGeometry` Workspace handlers + `reduceCutGeometry` 2-phase grammar + inspector cut-by readout + palette commands (WP-B), §8.6.2 stair assembly inspector — `getStairComponents()` + `StairAssemblySection` collapsible panel with run/landing rows + add/remove buttons (WP-C), §2.5.1 shaft side wall auto-generator — `buildShaftSideWalls()` bounding-box wall generator + inspector button + palette command (WP-D), §15.1.2 family swept blend — `family_swept_blend` type + lofted quad-strip mesh builder + `reduceFamilySweptBlend` path-recording grammar + inspector panel (WP-E).
 

@@ -649,6 +649,23 @@ export function makeFloorSlabMesh(
   mesh.receiveShadow = true;
   mesh.userData.bimPickId = floor.id;
   addEdges(mesh, 20);
+
+  // §3.4.2: sub-floor structural pad beneath the slab
+  const subThickMm = (floor as any).subFloorThicknessMm ?? 0;
+  if (subThickMm > 0) {
+    const subTh = subThickMm / 1000;
+    const subGeom = new THREE.ExtrudeGeometry(shape, { depth: subTh, bevelEnabled: false });
+    subGeom.rotateX(-Math.PI / 2);
+    const subMesh = new THREE.Mesh(
+      subGeom,
+      new THREE.MeshStandardMaterial({ color: '#888888', roughness: 0.9 }),
+    );
+    subMesh.position.set(0, -subTh, 0);
+    subMesh.castShadow = true;
+    subMesh.receiveShadow = true;
+    mesh.add(subMesh);
+  }
+
   return mesh;
 }
 
