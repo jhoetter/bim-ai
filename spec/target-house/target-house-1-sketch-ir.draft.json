@@ -773,6 +773,92 @@
         "assets"
       ]
     },
+    "structureLiteRequirements": {
+      "loadBearingFlags": [
+        {
+          "category": "upper_white_wrapper_shell",
+          "assumption": "The folded upper shell is treated as load-bearing placeholder geometry until structural design replaces it with a verified wall/roof/beam system.",
+          "confidence": "medium"
+        },
+        {
+          "category": "ground_floor_clad_base",
+          "assumption": "Ground-floor perimeter walls and stair/core walls provide the primary vertical support line for the upper shell.",
+          "confidence": "medium"
+        },
+        {
+          "category": "interior_partitions",
+          "assumption": "Interior partitions are non-load-bearing unless they bound the stair/core zone.",
+          "confidence": "medium"
+        }
+      ],
+      "primarySupportAssumptions": [
+        "Trace roof and upper shell loads to ground-floor perimeter walls and the stair/core zone.",
+        "The front/left cantilever and roof-court cutout require structural review before documentation-ready use.",
+        "Roof terrace return walls are modeled as architectural shell returns with load path still to be engineered."
+      ],
+      "supportElementPlaceholders": [
+        {
+          "type": "beam-lite",
+          "location": "front upper shell bottom sill / loggia beam line",
+          "reason": "Concept support placeholder for the deep front loggia frame and cantilever."
+        },
+        {
+          "type": "beam-lite",
+          "location": "roof terrace cutout perimeter",
+          "reason": "Concept support placeholder around the roof-court void."
+        },
+        {
+          "type": "core-wall-lite",
+          "location": "stair and wet-room band",
+          "reason": "Concept load-transfer and service coordination placeholder."
+        }
+      ],
+      "openingCoordination": [
+        "Stair slab opening must align with the modeled stair run and upper landing.",
+        "Roof terrace opening must include visible return faces while preserving shell continuity around the void.",
+        "Large loggia and ground glazing openings need host-wall cuts and lintel/support placeholders."
+      ],
+      "loadPathNotes": [
+        "Do not accept the seed as documentation-ready until cantilever reactions, roof-court edge support, and shell-wall junctions are structurally reviewed.",
+        "Any temporary support placeholders must be visible in diagnostics or listed as explicit tolerances."
+      ]
+    },
+    "mepLiteRequirements": {
+      "wetRoomStacking": [
+        "Ground bath/laundry and first-floor ensuite/bath zones should be aligned or kept near the stair/service band where the floorplan allows.",
+        "Kitchen drainage should route toward the same service band without crossing the main living/loggia glazing zones."
+      ],
+      "verticalShaftsOrRisers": [
+        "Reserve one vertical riser beside the stair/core band for domestic water, wastewater, electrical, and ventilation placeholders.",
+        "Keep riser placeholders outside the stair clear width and door swings."
+      ],
+      "equipmentZones": [
+        "Utility zone on ground floor is the initial equipment/service location.",
+        "Roof terrace drainage marker is required inside the roof-court void.",
+        "Kitchen, WC, ensuite, and bathroom fixture zones require schematic service markers."
+      ],
+      "routePlaceholders": [
+        "Pipe routes may remain schematic but must carry system, flow, elevation/service-level, and room/fixture association metadata.",
+        "Electrical route placeholders should connect entry/utility, kitchen, living area, bedrooms, and roof terrace lighting without blocking openings."
+      ],
+      "serviceLevels": [
+        "Ground ceiling/service band near utility and stair.",
+        "First-floor wet-room service band near ensuite/bathroom and roof terrace drainage."
+      ],
+      "openingRequests": [
+        "Slab opening for stair.",
+        "Small riser/slab penetrations for wet-room services.",
+        "Roof/terrace drainage penetration request near the roof-court floor."
+      ]
+    },
+    "planningSiteRequirements": {
+      "orientationAssumption": "Use floorplan up as project north and the reference axonometric as front-left visual orientation until a survey/north arrow is supplied.",
+      "basePointAssumption": "Project base point at the south-west/front-left ground-floor footprint corner at elevation 0.",
+      "surveyPointAssumption": "Survey point and georeference are unavailable; keep local millimetre coordinates and record this as a site tolerance.",
+      "propertyLineSetbackAvailability": "Property lines, setbacks, B-plan constraints, and site boundaries are unavailable in the source package.",
+      "sunAssumptions": "Sun/shadow direction is used only for visual evidence comparison until geographic location and true north are provided.",
+      "codeLocale": "Germany concept placeholders: DIN 277/DIN 276 starter classifications, residential stair comfort proxy, and project-initiation code assumptions only."
+    },
     "schedules": [
       {
         "id": "room_schedule",
@@ -803,10 +889,62 @@
         "IFC",
         "GLB",
         "PDF/sheets",
+        "schedules",
         "room schedule",
         "door/window schedule",
         "evidence package",
+        "evidence-package",
+        "source-bundle",
         "source command bundle"
+      ]
+    },
+    "sustainabilityMaterialPassportRequirements": {
+      "materials": [
+        {
+          "materialKey": "mat_smooth_white_shell",
+          "epdSource": "placeholder",
+          "sourceConfidence": "low",
+          "embodiedCarbonPlaceholder": "generic plaster/concrete/timber shell placeholder pending system selection",
+          "reuseNotes": "Potential reuse cannot be assessed until the shell assembly is structurally specified.",
+          "recyclabilityNotes": "Record final shell material and finish system before LCA/export use.",
+          "quantitySource": "upper shell wall/roof layer-set areas and thickness"
+        },
+        {
+          "materialKey": "mat_wall_core",
+          "epdSource": "placeholder",
+          "sourceConfidence": "low",
+          "embodiedCarbonPlaceholder": "generic wall core kgCO2e/m3 pending material decision",
+          "reuseNotes": "No reuse assumption at project initiation.",
+          "recyclabilityNotes": "Mineral or timber recycling path to be selected with wall system.",
+          "quantitySource": "ground clad wall layer-set core volume"
+        },
+        {
+          "materialKey": "mat_vertical_board_batten",
+          "epdSource": "placeholder",
+          "sourceConfidence": "low",
+          "embodiedCarbonPlaceholder": "generic vertical cladding kgCO2e/m2 pending product/wood species",
+          "reuseNotes": "Potential demountable cladding reuse to be reviewed.",
+          "recyclabilityNotes": "Wood/board finish recycling route depends on coating and fixing system.",
+          "quantitySource": "ground facade and central loggia pier cladding area"
+        },
+        {
+          "materialKey": "mat_light_concrete",
+          "epdSource": "placeholder",
+          "sourceConfidence": "low",
+          "embodiedCarbonPlaceholder": "generic concrete kgCO2e/m3 pending mix design",
+          "reuseNotes": "No direct reuse assumed; design for aggregate recycling noted.",
+          "recyclabilityNotes": "Crushed aggregate recycling placeholder.",
+          "quantitySource": "plinth and slab volume"
+        },
+        {
+          "materialKey": "mat_roof_waterproofing",
+          "epdSource": "placeholder",
+          "sourceConfidence": "low",
+          "embodiedCarbonPlaceholder": "generic roof waterproofing kgCO2e/m2 pending membrane/product",
+          "reuseNotes": "No reuse assumed at project initiation.",
+          "recyclabilityNotes": "Manufacturer take-back or disposal route to be confirmed.",
+          "quantitySource": "roof shell and roof terrace waterproofing area"
+        }
       ]
     },
     "dataQualityChecks": [

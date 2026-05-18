@@ -147,6 +147,34 @@ Required placeholders:
 - MEP route placeholders may remain schematic but must not conflict with stair,
   doors, or rooms.
 
+## Planning And Site
+
+Site data is not present in the source package, so the model must carry explicit
+project-initiation assumptions instead of pretending to be georeferenced:
+
+- use floorplan up as project north until a north arrow or survey is supplied;
+- set the project base point at the front-left/south-west ground-floor footprint
+  corner at elevation 0;
+- mark survey point, property lines, setbacks, B-plan constraints, and site
+  boundaries as unavailable;
+- treat sun/shadow only as visual-evidence support until geographic location and
+  true north are known;
+- use Germany-oriented DIN 277/DIN 276 placeholders and residential stair comfort
+  checks as concept assumptions, not permit confirmation.
+
+## Sustainability / Material Passport Starter
+
+The seed does not need a full LCA, but every major material key from the layer
+sets must have starter passport data:
+
+| Material Key                | Required Starter Data                                                                  |
+| --------------------------- | -------------------------------------------------------------------------------------- |
+| `mat_smooth_white_shell`    | EPD/source confidence placeholder, carbon placeholder, quantity source from shell area |
+| `mat_wall_core`             | Core wall material placeholder, quantity source from ground wall layer volume          |
+| `mat_vertical_board_batten` | Cladding product placeholder, reuse/recyclability notes, facade area quantity source   |
+| `mat_light_concrete`        | Concrete/plinth placeholder, aggregate recycling note, slab volume quantity source     |
+| `mat_roof_waterproofing`    | Membrane/product placeholder, take-back/disposal note, roof/terrace area source        |
+
 ## Export And Evidence Requirements
 
 The generation run must produce:
@@ -159,5 +187,6 @@ The generation run must produce:
   `rear_right_axon`, `ground_floor_plan`, `first_floor_plan`, and
   `wire_diagnostic`;
 - room schedule and door/window schedule;
-- export manifests for IFC, GLB, PDF/sheets, and source command bundle;
+- export manifests for IFC, GLB, PDF/sheets, schedules, evidence package, and
+  source bundle;
 - tolerance ledger for any unresolved partial capability or software limitation.
