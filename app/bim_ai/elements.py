@@ -4015,6 +4015,7 @@ Element = Annotated[
     | DormerElem
     | AreaElem
     | MaskingRegionElem
+    | RevisionCloudElem
     | SpotElevationElem
     | MaterialTagElem
     | MultiCategoryTagElem

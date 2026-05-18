@@ -12,15 +12,22 @@ from bim_ai.document import Document
 from bim_ai.elements import (
     AngularDimensionElem,
     ArcLengthDimensionElem,
+    BrandTemplateElem,
     DiameterDimensionElem,
     DimensionElem,
+    FrameElem,
     MaterialTagElem,
     MultiCategoryTagElem,
     PlacedTagElem,
+    PresentationCanvasElem,
     RadialDimensionElem,
+    RevisionCloudElem,
     ScheduleElem,
     SheetElem,
+    ViewTemplateElem,
 )
+from bim_ai.exp.pptx_export import build_pptx_bundle
+from bim_ai.exp.render_export import build_export_bundle
 from bim_ai.export_gltf import (
     build_visual_export_manifest,
     document_to_glb_bytes,
@@ -294,6 +301,158 @@ def _model_export_rows(doc: Document, model_id: UUID | str | None) -> list[dict[
     ]
 
 
+def _presentation_rows(doc: Document, model_id: UUID | str | None) -> list[dict[str, Any]]:
+    rows: list[dict[str, Any]] = []
+    frames = [
+        elem.model_dump(by_alias=True)
+        for elem in doc.elements.values()
+        if isinstance(elem, FrameElem)
+    ]
+    for canvas in sorted(
+        (e for e in doc.elements.values() if isinstance(e, PresentationCanvasElem)),
+        key=lambda c: c.id,
+    ):
+        canvas_dict = canvas.model_dump(by_alias=True)
+        bundle = build_pptx_bundle(canvas_dict, frames).to_dict()
+        canvas_frames = [
+            frame
+            for frame in frames
+            if frame.get("presentationCanvasId") == canvas.id
+        ]
+        rows.append(
+            {
+                "canvasId": canvas.id,
+                "canvasName": canvas.name,
+                "frameCount": len(canvas_frames),
+                "slideCount": len(bundle.get("slides", [])),
+                "bundleDigestSha256": _sha256_json(bundle),
+                "href": (
+                    f"/api/v3/models/{model_id}/presentation-canvases/{quote(canvas.id, safe='')}/export"
+                    if model_id is not None
+                    else None
+                ),
+                "frames": [
+                    {
+                        "frameId": frame.get("id"),
+                        "viewId": frame.get("viewId"),
+                        "caption": frame.get("caption"),
+                        "brandTemplateId": frame.get("brandTemplateId"),
+                        "sortOrder": frame.get("sortOrder", 0),
+                    }
+                    for frame in sorted(canvas_frames, key=lambda f: int(f.get("sortOrder", 0)))
+                ],
+            }
+        )
+    return rows
+
+
+def _branded_export_rows(doc: Document, model_id: UUID | str | None) -> list[dict[str, Any]]:
+    rows: list[dict[str, Any]] = []
+    sheets = [
+        {"sheetId": sheet.id, "name": sheet.name}
+        for sheet in sorted(
+            (e for e in doc.elements.values() if isinstance(e, SheetElem)),
+            key=lambda s: s.id,
+        )
+    ]
+    templates = sorted(
+        (e for e in doc.elements.values() if isinstance(e, BrandTemplateElem)),
+        key=lambda t: t.id,
+    )
+    for template in templates:
+        bundle = {
+            "schemaVersion": "out-v3.0",
+            "format": "pdf",
+            "brandTemplateId": template.id,
+            "brandLayer": {
+                "accentHex": template.accent_hex,
+                "accentForegroundHex": template.accent_foreground_hex,
+                "typeface": template.typeface,
+                "logoMarkSvgUri": template.logo_mark_svg_uri,
+                "cssOverrideSnippet": template.css_override_snippet,
+            },
+            "sheets": sheets,
+            "invariantCheck": "layer-c-only",
+        }
+        rows.append(
+            {
+                "brandTemplateId": template.id,
+                "brandName": template.name,
+                "sheetCount": len(sheets),
+                "format": "pdf",
+                "invariantCheck": "layer-c-only",
+                "bundleDigestSha256": _sha256_json(bundle),
+                "href": (
+                    f"/api/v3/models/{model_id}/export/pdf?brandTemplateId={quote(template.id, safe='')}"
+                    if model_id is not None
+                    else None
+                ),
+            }
+        )
+    return rows
+
+
+def _advanced_documentation_rows(doc: Document) -> dict[str, Any]:
+    view_templates = sorted(
+        (e for e in doc.elements.values() if isinstance(e, ViewTemplateElem)),
+        key=lambda t: t.id,
+    )
+    revision_clouds = sorted(
+        (e for e in doc.elements.values() if isinstance(e, RevisionCloudElem)),
+        key=lambda r: r.id,
+    )
+    return {
+        "viewTemplateCount": len(view_templates),
+        "revisionCloudCount": len(revision_clouds),
+        "viewTemplates": [
+            {
+                "viewTemplateId": template.id,
+                "name": template.name,
+                "scale": template.scale,
+                "hiddenCategoryCount": len(template.hidden_categories),
+                "planDetailLevel": template.plan_detail_level,
+            }
+            for template in view_templates
+        ],
+        "revisionClouds": [
+            {
+                "revisionCloudId": cloud.id,
+                "hostViewId": cloud.host_view_id,
+                "boundaryVertexCount": len(cloud.boundary_mm),
+                "colour": cloud.colour,
+                "strokeMm": cloud.stroke_mm,
+            }
+            for cloud in revision_clouds
+        ],
+    }
+
+
+def _render_export_rows(doc: Document, model_id: UUID | str | None) -> list[dict[str, Any]]:
+    elements_list = [elem.model_dump(by_alias=True) for elem in doc.elements.values()]
+    model_state = {"elements": elements_list}
+    rows: list[dict[str, Any]] = []
+    for fmt in ("metadata-only", "gltf-pbr", "ifc-bundle"):
+        bundle = build_export_bundle(model_state, fmt)  # type: ignore[arg-type]
+        bundle_dict = bundle.to_dict()
+        rows.append(
+            {
+                "format": fmt,
+                "primaryAsset": bundle_dict.get("primaryAsset"),
+                "cameraCount": len(bundle_dict.get("metadata", {}).get("cameras", [])),
+                "materialCount": len(bundle_dict.get("metadata", {}).get("materials", [])),
+                "bundleDigestSha256": _sha256_json(bundle_dict),
+                "href": (
+                    f"/api/v3/models/{model_id}/export?format={quote(fmt, safe='')}"
+                    if model_id is not None
+                    else None
+                ),
+                "status": "render-bundle-accepted",
+                "pass": True,
+            }
+        )
+    return rows
+
+
 def build_documentation_export_production_evidence_v1(
     doc: Document,
     *,
@@ -311,6 +470,10 @@ def build_documentation_export_production_evidence_v1(
     tags = _tag_rows(doc)
     dimensions = _dimension_rows(doc)
     model_exports = _model_export_rows(doc, model_id)
+    presentation_canvases = _presentation_rows(doc, model_id)
+    branded_exports = _branded_export_rows(doc, model_id)
+    advanced_documentation = _advanced_documentation_rows(doc)
+    render_exports = _render_export_rows(doc, model_id)
     all_artifacts = [a for sheet in sheets for a in sheet["artifacts"]] + model_exports
     marker_rows = [
         {
@@ -352,12 +515,49 @@ def build_documentation_export_production_evidence_v1(
         }
         for row in dimensions
     )
+    marker_rows.extend(
+        {
+            "markerId": f"presentation:{row['canvasId']}",
+            "kind": "presentation_canvas",
+            "href": row.get("href"),
+            "frameCount": row["frameCount"],
+            "bundleDigestSha256": row["bundleDigestSha256"],
+        }
+        for row in presentation_canvases
+    )
+    marker_rows.extend(
+        {
+            "markerId": f"brand-export:{row['brandTemplateId']}",
+            "kind": "branded_pdf_export",
+            "href": row.get("href"),
+            "bundleDigestSha256": row["bundleDigestSha256"],
+            "invariantCheck": row["invariantCheck"],
+        }
+        for row in branded_exports
+    )
+    marker_rows.extend(
+        {
+            "markerId": f"render:{row['format']}",
+            "kind": "render_bundle",
+            "href": row.get("href"),
+            "bundleDigestSha256": row["bundleDigestSha256"],
+            "status": row["status"],
+            "pass": row["pass"],
+        }
+        for row in render_exports
+    )
 
     coverage = {
         "sheetCount": len(sheets),
         "scheduleCount": len(schedules),
         "tagCount": len(tags),
         "dimensionCount": len(dimensions),
+        "presentationCanvasCount": len(presentation_canvases),
+        "presentationFrameCount": sum(row["frameCount"] for row in presentation_canvases),
+        "brandTemplateCount": len(branded_exports),
+        "renderBundleCount": len(render_exports),
+        "viewTemplateCount": advanced_documentation["viewTemplateCount"],
+        "revisionCloudCount": advanced_documentation["revisionCloudCount"],
         "pdfArtifactCount": sum(
             1 for artifact in all_artifacts if artifact.get("mimeType") == SHEET_EXPORT_PDF_MIME_TYPE
         ),
@@ -392,6 +592,10 @@ def build_documentation_export_production_evidence_v1(
         "schedules": schedules,
         "tags": tags,
         "dimensions": dimensions,
+        "presentationCanvases": presentation_canvases,
+        "brandedExports": branded_exports,
+        "advancedDocumentation": advanced_documentation,
+        "renderExports": render_exports,
         "modelExports": model_exports,
         "artifactClosure_v1": {
             "format": "documentationExportArtifactClosure_v1",

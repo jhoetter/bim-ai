@@ -702,6 +702,63 @@ test('documentation pack --json generates complete drawing set bundle', async ()
   assert.equal(out.body.bundle.commands[4].levelId, 'lvl-0');
 });
 
+test('documentation presentation-pack --json generates branded deck and advanced docs bundle', async () => {
+  const res = await runCli(
+    [
+      'documentation',
+      'presentation-pack',
+      '--sheet-id',
+      'A101',
+      '--canvas-id',
+      'deck-client',
+      '--view-id',
+      'plan-gf',
+      '--brand-template-id',
+      'bt-client',
+      '--schedule-id',
+      'sch-rooms',
+      '--schedule-category',
+      'room',
+      '--parent-revision',
+      '7',
+      '--json',
+    ],
+    { BIM_AI_BASE_URL: 'http://127.0.0.1:1', BIM_AI_MODEL_ID: 'model-1' },
+  );
+
+  assert.equal(res.code, 0, res.stderr);
+  const out = JSON.parse(res.stdout);
+  assert.equal(out.body.mode, 'dry_run');
+  assert.equal(out.body.bundle.parentRevision, 7);
+  assert.equal(out.body.bundle.assumptions[0].value, 'presentation.documentation_pack');
+  assert.equal(
+    out.body.bundle.assumptions[1].value.presentation,
+    '/api/v3/models/model-1/presentation-canvases/deck-client/export',
+  );
+  assert.deepEqual(
+    out.body.bundle.commands.map((command) => command.type),
+    [
+      'create_brand_template',
+      'upsertViewTemplate',
+      'applyPlanViewTemplate',
+      'upsertSheet',
+      'upsertSchedule',
+      'create_schedule_view',
+      'upsertSheetViewports',
+      'createRevisionCloud',
+      'create_presentation_canvas',
+      'create_frame',
+      'create_frame',
+    ],
+  );
+  assert.equal(out.body.bundle.commands[0].id, 'bt-client');
+  assert.equal(out.body.bundle.commands[2].planViewId, 'plan-gf');
+  assert.equal(out.body.bundle.commands[5].category, 'room');
+  assert.equal(out.body.bundle.commands[6].viewportsMm.length, 2);
+  assert.equal(out.body.bundle.commands[9].presentationCanvasId, 'deck-client');
+  assert.equal(out.body.bundle.commands[9].brandTemplateId, 'bt-client');
+});
+
 test('export pdf downloads sheet artifact route with sheet id', async () => {
   const requests = [];
   const { server, base } = await startStubServer((req) => {

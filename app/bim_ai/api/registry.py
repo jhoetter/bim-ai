@@ -123,6 +123,15 @@ _RESOURCE_GROUPS_BY_TOOL: dict[str, tuple[str, ...]] = {
     "export-presentation": ("presentation", "export"),
     "export-branded-pdf": ("presentation", "export"),
     "export-render-bundle": ("render", "export"),
+    "presentation-documentation-pack": (
+        "presentation",
+        "export",
+        "documentation",
+        "sheet",
+        "schedule",
+        "revision",
+        "render",
+    ),
     "external-model-call-audit-export": ("audit",),
     "import-neighborhood": ("site", "context"),
     "site.setup-georeference": ("site", "context", "kernel-command"),
@@ -1330,6 +1339,110 @@ register(
             "group:schedule",
             "group:documentation",
             "export:pdf",
+        ],
+    )
+)
+
+register(
+    ToolDescriptor(
+        name="presentation-documentation-pack",
+        category="mutation",
+        inputSchema={
+            "$schema": "http://json-schema.org/draft-07/schema#",
+            "title": "PresentationDocumentationPackInput",
+            "type": "object",
+            "required": ["modelId", "sheetId", "canvasId", "viewId"],
+            "properties": {
+                "modelId": {"type": "string"},
+                "sheetId": {"type": "string"},
+                "canvasId": {"type": "string"},
+                "viewId": {"type": "string"},
+                "brandTemplateId": {"type": "string", "default": "bt-client-pack"},
+                "scheduleId": {"type": "string", "default": "sch-client-pack"},
+                "scheduleCategory": {"type": "string", "default": "room"},
+                "frames": {
+                    "type": "array",
+                    "items": {"type": "object"},
+                    "description": "Optional create_frame payload fragments for deck slides.",
+                },
+            },
+            "additionalProperties": True,
+        },
+        outputSchema={
+            "$schema": "http://json-schema.org/draft-07/schema#",
+            "title": "PresentationDocumentationPackResult",
+            "type": "object",
+            "required": ["ok", "revision"],
+            "properties": {
+                "ok": {"type": "boolean"},
+                "revision": {"type": "integer"},
+                "appliedCommands": {"type": "array", "items": {"type": "object"}},
+                "evidenceRoutes": {
+                    "type": "object",
+                    "properties": {
+                        "presentation": {"type": "string"},
+                        "brandedPdf": {"type": "string"},
+                        "renderBundle": {"type": "string"},
+                    },
+                },
+            },
+            "additionalProperties": True,
+        },
+        exitCodes={
+            "ok": ExitCode(
+                code=0,
+                meaning="Presentation/documentation pack committed or dry-run validated",
+            ),
+            "revision_conflict": ExitCode(
+                code=2, meaning="parentRevision does not match current revision"
+            ),
+            "invalid_bundle": ExitCode(code=1, meaning="Generated presentation pack invalid"),
+        },
+        cliExample=(
+            "bim-ai documentation presentation-pack --sheet-id A101 --canvas-id deck-client "
+            "--view-id plan-gf --brand-template-id bt-client --schedule-id sch-rooms --dry-run"
+        ),
+        restEndpoint=RestEndpoint(method="POST", path="/api/models/{model_id}/bundles"),
+        sideEffects="mutates-kernel",
+        agentSafetyNotes=(
+            "Creates a client-facing pack through typed commands: create_brand_template, "
+            "upsertViewTemplate, applyPlanViewTemplate, upsertSheet, upsertSchedule, "
+            "create_schedule_view, upsertSheetViewports, createRevisionCloud, "
+            "create_presentation_canvas, and create_frame. Follow with read-only "
+            "presentation, branded PDF, render bundle, and documentation evidence exports."
+        ),
+        schemaRefs=[
+            "input:PresentationDocumentationPackInput",
+            "output:PresentationDocumentationPackResult",
+        ],
+        exampleRefs=["cli:documentation:presentation-pack"],
+        kernelCommands=[
+            "create_brand_template",
+            "upsertViewTemplate",
+            "applyPlanViewTemplate",
+            "upsertSheet",
+            "upsertSchedule",
+            "create_schedule_view",
+            "upsertSheetViewports",
+            "createRevisionCloud",
+            "create_presentation_canvas",
+            "create_frame",
+        ],
+        resourceGroups=[
+            "presentation",
+            "export",
+            "documentation",
+            "sheet",
+            "schedule",
+            "revision",
+            "render",
+        ],
+        uiFeatures=[
+            "group:presentation",
+            "group:documentation",
+            "group:schedule",
+            "export:branded-pdf",
+            "export:render-bundle",
         ],
     )
 )

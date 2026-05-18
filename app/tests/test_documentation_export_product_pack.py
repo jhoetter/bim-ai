@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from bim_ai.document import Document
-from bim_ai.elements import LevelElem, PlanViewElem, RoomElem, SheetElem, WallElem
+from bim_ai.elements import FrameElem, LevelElem, PlanViewElem, RoomElem, SheetElem, WallElem
 from bim_ai.engine import try_commit_bundle
 from bim_ai.export_documentation_evidence import (
     DOCUMENTATION_EXPORT_PRODUCTION_EVIDENCE_V1,
@@ -107,16 +107,92 @@ def test_documentation_pack_commands_produce_exportable_drawing_set() -> None:
             "refElementIdA": "wall-n",
             "refElementIdB": "wall-n",
         },
+        {
+            "type": "create_brand_template",
+            "id": "bt-client",
+            "name": "Client Brand",
+            "accentHex": "#2563eb",
+            "accentForegroundHex": "#ffffff",
+        },
+        {
+            "type": "upsertViewTemplate",
+            "id": "vt-client-docs",
+            "name": "Client docs",
+            "scale": "scale_100",
+            "hiddenCategories": ["analytical"],
+            "planDetailLevel": "fine",
+            "planShowRoomLabels": True,
+        },
+        {
+            "type": "applyPlanViewTemplate",
+            "planViewId": "plan-gf",
+            "templateId": "vt-client-docs",
+        },
+        {
+            "type": "create_schedule_view",
+            "id": "sch-rooms-advanced",
+            "name": "Room Schedule Advanced",
+            "category": "room",
+            "columns": [{"key": "name", "label": "Name"}],
+            "filterExpr": 'category == "room"',
+            "sortKey": "name",
+            "sortDir": "asc",
+        },
+        {
+            "type": "createRevisionCloud",
+            "id": "rev-cloud-01",
+            "hostViewId": "plan-gf",
+            "boundaryMm": [
+                {"xMm": 500, "yMm": 500},
+                {"xMm": 2500, "yMm": 500},
+                {"xMm": 2500, "yMm": 1500},
+            ],
+        },
+        {"type": "create_presentation_canvas", "id": "deck-client", "name": "Client Deck"},
+        {
+            "type": "create_frame",
+            "id": "frame-plan",
+            "presentationCanvasId": "deck-client",
+            "viewId": "plan-gf",
+            "positionMm": {"xMm": 0, "yMm": 0},
+            "sizeMm": {"widthMm": 210, "heightMm": 118},
+            "caption": "Ground floor plan",
+            "brandTemplateId": "bt-client",
+            "sortOrder": 0,
+        },
+        {
+            "type": "create_frame",
+            "id": "frame-schedule",
+            "presentationCanvasId": "deck-client",
+            "viewId": "sch-rooms",
+            "positionMm": {"xMm": 0, "yMm": 118},
+            "sizeMm": {"widthMm": 210, "heightMm": 80},
+            "caption": "Room schedule",
+            "brandTemplateId": "bt-client",
+            "sortOrder": 1,
+        },
     ]
 
     ok, candidate, _cmds, violations, code = try_commit_bundle(doc, commands)
     assert ok, (code, violations)
     assert candidate is not None
-    assert {"A101", "sch-rooms", "tag-room-101", "dim-overall"} <= set(candidate.elements)
+    assert {
+        "A101",
+        "sch-rooms",
+        "tag-room-101",
+        "dim-overall",
+        "bt-client",
+        "deck-client",
+        "frame-plan",
+        "rev-cloud-01",
+    } <= set(candidate.elements)
 
     sheet = candidate.elements["A101"]
     assert isinstance(sheet, SheetElem)
     assert len(sheet.viewports_mm) == 2
+    frame = candidate.elements["frame-plan"]
+    assert isinstance(frame, FrameElem)
+    assert frame.brand_template_id == "bt-client"
 
     schedule = derive_schedule_table(candidate, "sch-rooms")
     assert schedule["schedulePlacement"] == {"sheetId": "A101", "sheetName": "GA Plan"}
@@ -145,14 +221,20 @@ def test_documentation_pack_commands_produce_exportable_drawing_set() -> None:
     assert evidence["format"] == DOCUMENTATION_EXPORT_PRODUCTION_EVIDENCE_V1
     assert evidence["coverage"] == {
         "sheetCount": 1,
-        "scheduleCount": 1,
+        "scheduleCount": 2,
         "tagCount": 1,
         "dimensionCount": 1,
+        "presentationCanvasCount": 1,
+        "presentationFrameCount": 2,
+        "brandTemplateCount": 1,
+        "renderBundleCount": 3,
+        "viewTemplateCount": 1,
+        "revisionCloudCount": 1,
         "pdfArtifactCount": 1,
         "ifcArtifactCount": 1,
         "gltfArtifactCount": 1,
         "glbArtifactCount": 1,
-        "externalExportMarkerCount": 8,
+        "externalExportMarkerCount": 14,
     }
     assert len(evidence["evidenceDigestSha256"]) == 64
     assert evidence["artifactClosure_v1"]["format"] == "documentationExportArtifactClosure_v1"
@@ -198,6 +280,31 @@ def test_documentation_pack_commands_produce_exportable_drawing_set() -> None:
     assert dimension_row["resolvesRefElementA"] is True
     assert dimension_row["resolvesRefElementB"] is True
 
+    presentation_row = evidence["presentationCanvases"][0]
+    assert presentation_row["canvasId"] == "deck-client"
+    assert presentation_row["frameCount"] == 2
+    assert presentation_row["slideCount"] == 2
+    assert presentation_row["href"].endswith("/presentation-canvases/deck-client/export")
+    assert {row["brandTemplateId"] for row in presentation_row["frames"]} == {"bt-client"}
+
+    branded_export = evidence["brandedExports"][0]
+    assert branded_export["brandTemplateId"] == "bt-client"
+    assert branded_export["sheetCount"] == 1
+    assert branded_export["invariantCheck"] == "layer-c-only"
+    assert branded_export["href"].endswith("/export/pdf?brandTemplateId=bt-client")
+
+    assert evidence["advancedDocumentation"]["viewTemplateCount"] == 1
+    assert evidence["advancedDocumentation"]["revisionCloudCount"] == 1
+    assert evidence["advancedDocumentation"]["revisionClouds"][0]["hostViewId"] == "plan-gf"
+
+    render_formats = {row["format"]: row for row in evidence["renderExports"]}
+    assert {"metadata-only", "gltf-pbr", "ifc-bundle"} <= set(render_formats)
+    assert all(row["pass"] is True for row in render_formats.values())
+    assert render_formats["gltf-pbr"]["primaryAsset"] == {
+        "kind": "gltf",
+        "pathInArchive": "model.glb",
+    }
+
     exports_by_kind = {row["kind"]: row for row in evidence["modelExports"]}
     assert {"ifc", "gltf", "glb"} <= set(exports_by_kind)
     assert exports_by_kind["ifc"]["href"].endswith("/exports/model.ifc")
@@ -241,6 +348,9 @@ def test_documentation_pack_commands_produce_exportable_drawing_set() -> None:
         "schedule:sch-rooms",
         "tag:tag-room-101",
         "dimension:dim-overall",
+        "presentation:deck-client",
+        "brand-export:bt-client",
+        "render:gltf-pbr",
     } <= marker_ids
     markers_by_id = {
         row["markerId"]: row for row in evidence["externalExportMarkers_v1"]["markers"]
