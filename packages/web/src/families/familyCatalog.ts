@@ -94,6 +94,72 @@ const DOUBLE_DOOR: FamilyDefinition = {
   ],
 };
 
+// §3.6.2 — expanded door presets
+
+const SLIDING_DOOR: FamilyDefinition = {
+  id: 'builtin:door:sliding',
+  name: 'Sliding Door',
+  discipline: 'door',
+  params: [
+    lengthParam('leafWidthMm', 'Leaf Width', 1800, {
+      min: 900,
+      max: 4000,
+      instanceOverridable: true,
+    }),
+    lengthParam('leafHeightMm', 'Leaf Height', 2100, {
+      min: 1800,
+      max: 3000,
+      instanceOverridable: false,
+    }),
+  ],
+  defaultTypes: [
+    {
+      id: 'builtin:door:sliding:1800x2100',
+      name: 'Sliding Door 1800×2100',
+      familyId: 'builtin:door:sliding',
+      discipline: 'door',
+      parameters: { leafWidthMm: 1800, leafHeightMm: 2100 },
+      isBuiltIn: true,
+    },
+    {
+      id: 'builtin:door:sliding:1200x2100',
+      name: 'Sliding Door 1200×2100',
+      familyId: 'builtin:door:sliding',
+      discipline: 'door',
+      parameters: { leafWidthMm: 1200, leafHeightMm: 2100 },
+      isBuiltIn: true,
+    },
+  ],
+};
+
+const POCKET_DOOR: FamilyDefinition = {
+  id: 'builtin:door:pocket',
+  name: 'Pocket Door',
+  discipline: 'door',
+  params: [
+    lengthParam('leafWidthMm', 'Leaf Width', 900, {
+      min: 600,
+      max: 1200,
+      instanceOverridable: true,
+    }),
+    lengthParam('leafHeightMm', 'Leaf Height', 2100, {
+      min: 1800,
+      max: 3000,
+      instanceOverridable: false,
+    }),
+  ],
+  defaultTypes: [
+    {
+      id: 'builtin:door:pocket:900x2100',
+      name: 'Pocket Door 900×2100',
+      familyId: 'builtin:door:pocket',
+      discipline: 'door',
+      parameters: { leafWidthMm: 900, leafHeightMm: 2100 },
+      isBuiltIn: true,
+    },
+  ],
+};
+
 // ── window families ───────────────────────────────────────────────────────────
 
 const CASEMENT_WINDOW: FamilyDefinition = {
@@ -164,6 +230,87 @@ const FIXED_WINDOW: FamilyDefinition = {
       familyId: 'builtin:window:fixed',
       discipline: 'window',
       parameters: { widthMm: 3000, heightMm: 2400, sillMm: 100 },
+      isBuiltIn: true,
+    },
+  ],
+};
+
+// §3.6.2 — expanded window presets
+
+const DOUBLE_HUNG_WINDOW: FamilyDefinition = {
+  id: 'builtin:window:double_hung',
+  name: 'Double Hung Window',
+  discipline: 'window',
+  params: [
+    lengthParam('widthMm', 'Width', 900, { min: 400, max: 2400, instanceOverridable: true }),
+    lengthParam('heightMm', 'Height', 1500, { min: 600, max: 2400, instanceOverridable: true }),
+    lengthParam('sillMm', 'Sill Height', 800, { min: 200, max: 2000, instanceOverridable: true }),
+  ],
+  defaultTypes: [
+    {
+      id: 'builtin:window:double_hung:900x1500',
+      name: 'Double Hung 900×1500',
+      familyId: 'builtin:window:double_hung',
+      discipline: 'window',
+      parameters: { widthMm: 900, heightMm: 1500, sillMm: 800 },
+      isBuiltIn: true,
+    },
+    {
+      id: 'builtin:window:double_hung:600x1200',
+      name: 'Double Hung 600×1200',
+      familyId: 'builtin:window:double_hung',
+      discipline: 'window',
+      parameters: { widthMm: 600, heightMm: 1200, sillMm: 800 },
+      isBuiltIn: true,
+    },
+  ],
+};
+
+const AWNING_WINDOW: FamilyDefinition = {
+  id: 'builtin:window:awning',
+  name: 'Awning Window',
+  discipline: 'window',
+  params: [
+    lengthParam('widthMm', 'Width', 1200, { min: 400, max: 2400, instanceOverridable: true }),
+    lengthParam('heightMm', 'Height', 600, { min: 300, max: 1000, instanceOverridable: true }),
+    lengthParam('sillMm', 'Sill Height', 1400, { min: 800, max: 2200, instanceOverridable: true }),
+  ],
+  defaultTypes: [
+    {
+      id: 'builtin:window:awning:1200x600',
+      name: 'Awning 1200×600',
+      familyId: 'builtin:window:awning',
+      discipline: 'window',
+      parameters: { widthMm: 1200, heightMm: 600, sillMm: 1400 },
+      isBuiltIn: true,
+    },
+  ],
+};
+
+const SLIDING_WINDOW: FamilyDefinition = {
+  id: 'builtin:window:sliding',
+  name: 'Sliding Window',
+  discipline: 'window',
+  params: [
+    lengthParam('widthMm', 'Width', 1600, { min: 800, max: 4000, instanceOverridable: true }),
+    lengthParam('heightMm', 'Height', 2100, { min: 600, max: 3000, instanceOverridable: true }),
+    lengthParam('sillMm', 'Sill Height', 0, { min: 0, max: 1200, instanceOverridable: true }),
+  ],
+  defaultTypes: [
+    {
+      id: 'builtin:window:sliding:1600x2100',
+      name: 'Sliding 2-Panel 1600×2100',
+      familyId: 'builtin:window:sliding',
+      discipline: 'window',
+      parameters: { widthMm: 1600, heightMm: 2100, sillMm: 0 },
+      isBuiltIn: true,
+    },
+    {
+      id: 'builtin:window:sliding:2400x2100',
+      name: 'Sliding 2-Panel 2400×2100',
+      familyId: 'builtin:window:sliding',
+      discipline: 'window',
+      parameters: { widthMm: 2400, heightMm: 2100, sillMm: 0 },
       isBuiltIn: true,
     },
   ],
@@ -248,8 +395,13 @@ const POST_AND_RAIL: FamilyDefinition = {
 export const BUILT_IN_FAMILIES: FamilyDefinition[] = [
   SINGLE_DOOR,
   DOUBLE_DOOR,
+  SLIDING_DOOR,
+  POCKET_DOOR,
   CASEMENT_WINDOW,
   FIXED_WINDOW,
+  DOUBLE_HUNG_WINDOW,
+  AWNING_WINDOW,
+  SLIDING_WINDOW,
   STRAIGHT_STAIR,
   POST_AND_RAIL,
 ];

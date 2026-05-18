@@ -476,6 +476,7 @@ export type ElemKind =
   | 'family_blend'
   | 'family_sweep'
   | 'family_swept_blend'
+  | 'family_component'
   | 'text_tag'
   | 'link_ifc';
 
@@ -1578,6 +1579,8 @@ export type Element =
       installationThermalBridgeNote?: string | null;
       shadingDevice?: string | null;
       annualShadingFactorEstimate?: number | null;
+      /** §3.6.2: operation style of the door. */
+      doorStyle?: 'single' | 'sliding' | 'double_leaf' | 'pocket' | null;
     }
   | {
       kind: 'window';
@@ -1624,6 +1627,8 @@ export type Element =
       installationThermalBridgeNote?: string | null;
       shadingDevice?: string | null;
       annualShadingFactorEstimate?: number | null;
+      /** §3.6.2: visual/operation style of the window. */
+      windowStyle?: 'casement' | 'double_hung' | 'awning' | 'fixed' | 'sliding' | null;
     }
   | {
       kind: 'wall_opening';
@@ -3583,6 +3588,21 @@ export type Element =
       profilePoints: { x: number; y: number }[];
       depthMm?: number;
       levelId?: string | null;
+    }
+  | {
+      /** §15.1.2: a nested sub-component instance placed inside a family definition. */
+      kind: 'family_component';
+      id: string;
+      /** The parent family definition's element ID. */
+      familyId: string;
+      /** Which catalog family type this component represents (e.g. 'door-hardware', 'hinge'). */
+      componentTypeId: string;
+      /** Label shown in FamilyEditorWorkbench. */
+      label?: string;
+      /** Position within the family's local coordinate system (mm). */
+      originMm: { xMm: number; yMm: number; zMm: number };
+      /** Rotation in degrees around the vertical (Z) axis. */
+      rotationDeg?: number;
     }
   | {
       kind: 'group_definition';
@@ -5588,4 +5608,14 @@ export type RemoveCutGeometryCmd = {
 export type SelectGroupElementsCmd = {
   type: 'selectGroupElements';
   groupDefinitionId: string;
+};
+
+/** §15.1.2: place a nested sub-component instance inside a family definition. */
+export type AddFamilyComponentCmd = {
+  type: 'addFamilyComponent';
+  familyId: string;
+  componentTypeId: string;
+  label?: string;
+  originMm: { xMm: number; yMm: number; zMm: number };
+  rotationDeg?: number;
 };

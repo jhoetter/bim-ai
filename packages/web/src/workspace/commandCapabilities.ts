@@ -2509,7 +2509,7 @@ const MASS_CAPABILITIES: CommandCapability[] = [
     group: 'view',
     scope: 'view',
     intendedModes: ['plan'],
-    surfaces: ['canvas'],
+    surfaces: ['canvas', 'cmd-k'],
     executionSurface: 'store',
     preconditions: ['crop-region-enabled'],
     status: 'implemented',

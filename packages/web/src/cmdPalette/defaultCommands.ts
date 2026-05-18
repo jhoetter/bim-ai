@@ -152,6 +152,71 @@ registerCommand({
   invoke: (ctx) => startPlanTool(ctx, 'window'),
 });
 
+// §3.6.2 — window type preset commands
+registerCommand({
+  id: 'tool.window-casement',
+  label: 'Place Casement Window',
+  keywords: ['casement', 'window', 'Flügelfenster', 'Einfachflügel'],
+  category: 'tool',
+  isAvailable: modelHasWall,
+  invoke: (ctx) => startPlanTool(ctx, 'window'),
+});
+
+registerCommand({
+  id: 'tool.window-double-hung',
+  label: 'Place Double Hung Window',
+  keywords: ['double hung', 'window', 'Doppelt-Hänge', 'sash'],
+  category: 'tool',
+  isAvailable: modelHasWall,
+  invoke: (ctx) => startPlanTool(ctx, 'window'),
+});
+
+registerCommand({
+  id: 'tool.window-awning',
+  label: 'Place Awning Window',
+  keywords: ['awning', 'window', 'Kippfenster', 'top-hung'],
+  category: 'tool',
+  isAvailable: modelHasWall,
+  invoke: (ctx) => startPlanTool(ctx, 'window'),
+});
+
+registerCommand({
+  id: 'tool.window-sliding',
+  label: 'Place Sliding Window',
+  keywords: ['sliding', 'window', 'Schiebefenster', '2-panel'],
+  category: 'tool',
+  isAvailable: modelHasWall,
+  invoke: (ctx) => startPlanTool(ctx, 'window'),
+});
+
+// §3.6.2 — door type preset commands
+registerCommand({
+  id: 'tool.door-sliding',
+  label: 'Place Sliding Door',
+  keywords: ['sliding', 'door', 'Schiebetür'],
+  category: 'tool',
+  isAvailable: modelHasWall,
+  invoke: (ctx) => startPlanTool(ctx, 'door'),
+});
+
+registerCommand({
+  id: 'tool.door-double-leaf',
+  label: 'Place Double-leaf Door',
+  keywords: ['double leaf', 'door', 'Zweiflügeltür', 'double door'],
+  category: 'tool',
+  isAvailable: modelHasWall,
+  invoke: (ctx) => startPlanTool(ctx, 'door'),
+});
+
+registerCommand({
+  id: 'tool.door-pocket',
+  label: 'Place Pocket Door',
+  keywords: ['pocket', 'door', 'Schiebetür versenkbar', 'sliding pocket'],
+  category: 'tool',
+  isAvailable: modelHasWall,
+  invoke: (ctx) => startPlanTool(ctx, 'door'),
+});
+
 registerCommand({
   id: 'tool.floor',
   label: 'Place Floor',
@@ -2329,6 +2394,25 @@ registerCommand({
   },
 });
 
+// §1.6.10 — Resize Crop Region (canvas handle drag; cmd-k exposes for discoverability)
+registerCommand({
+  id: 'view.update-crop-region',
+  label: 'Resize Crop Region',
+  keywords: ['crop', 'region', 'resize', 'boundary', 'clip', 'view', 'handle', 'drag'],
+  category: 'command',
+  isAvailable: (ctx) => !!(ctx.activePlanView as any)?.cropRegionEnabled,
+  invoke: (ctx) => {
+    const pvId = ctx.activePlanView?.id;
+    if (pvId)
+      ctx.dispatchCommand?.({
+        type: 'updateElementProperty',
+        elementId: pvId,
+        key: 'cropRegionEnabled',
+        value: true,
+      });
+  },
+});
+
 // B6 — Selection Filter dialog
 registerCommand({
   id: 'selection.filter',
@@ -2706,6 +2790,15 @@ registerCommand({
   id: 'family.add-parameter',
   label: 'Add Family Parameter…',
   keywords: ['family', 'parameter', 'dimension', 'constraint'],
+  category: 'command',
+  invoke: (ctx) => ctx.openFamilyEditor?.(),
+});
+
+// §15.1.2 — family nested component placement
+registerCommand({
+  id: 'family.add-component',
+  label: 'Add Nested Component',
+  keywords: ['family', 'component', 'nested', 'sub-component', 'hardware', 'hinge'],
   category: 'command',
   invoke: (ctx) => ctx.openFamilyEditor?.(),
 });
