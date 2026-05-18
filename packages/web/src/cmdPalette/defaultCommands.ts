@@ -2832,6 +2832,18 @@ registerCommand({
   },
 });
 
+// §3.4.2: Set Sub-floor Thickness — structural base pad below floor slab
+registerCommand({
+  id: 'modify.set-sub-floor-thickness',
+  label: 'Set Sub-floor Thickness',
+  keywords: ['sub floor', 'basement', 'slab', 'pad', 'thickening', 'Bodenplatte', 'Keller'],
+  category: 'command',
+  isAvailable: (ctx) => ctx.selectedElements?.some((e) => e.kind === 'floor') ?? false,
+  invoke: (_ctx) => {
+    // Opens inspector — handled via inspector input
+  },
+});
+
 // §1.6.11: Select Group Elements — select all elements belonging to a model group definition
 registerCommand({
   id: 'view.select-group-elements',

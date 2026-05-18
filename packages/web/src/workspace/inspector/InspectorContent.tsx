@@ -1958,6 +1958,26 @@ export function InspectorPropertiesFor(
               </button>
             </div>
           </details>
+          {/* Sub-floor Pad Thickness */}
+          <div className="flex items-center gap-2 py-0.5" style={{ marginTop: 8 }}>
+            <span className="text-xs text-muted w-28 shrink-0">Sub-floor Pad</span>
+            <input
+              data-testid="inspector-floor-sub-thickness"
+              type="number"
+              min={0}
+              step={10}
+              className="w-20 text-sm bg-transparent border-b border-border/40 focus:outline-none"
+              value={(el as any).subFloorThicknessMm ?? 0}
+              onChange={(e) =>
+                onDispatchCommand?.({
+                  type: 'setSubFloorThickness',
+                  floorId: el.id,
+                  subFloorThicknessMm: Number(e.target.value) || null,
+                })
+              }
+            />
+            <span className="text-xs text-muted">mm</span>
+          </div>
           {/* Cut geometry readout */}
           {(el as any).cutBy?.length > 0 && (
             <details style={{ marginTop: 8 }}>

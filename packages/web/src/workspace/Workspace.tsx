@@ -2751,6 +2751,23 @@ export function Workspace(): JSX.Element {
         }
         return;
       }
+      // §3.4.2: setSubFloorThickness — set structural base pad thickness below floor slab
+      if (cmd.type === 'setSubFloorThickness') {
+        const { elementsById: cur } = useBimStore.getState();
+        const floor = cur[cmd.floorId as string];
+        if (floor?.kind === 'floor') {
+          useBimStore.setState({
+            elementsById: {
+              ...cur,
+              [floor.id]: {
+                ...floor,
+                subFloorThicknessMm: cmd.subFloorThicknessMm as number | null,
+              },
+            },
+          });
+        }
+        return;
+      }
       // §3.3.4: applyCutGeometry — add cutterId to host element's cutBy list
       if (cmd.type === 'applyCutGeometry') {
         const { elementsById: cur } = useBimStore.getState();
