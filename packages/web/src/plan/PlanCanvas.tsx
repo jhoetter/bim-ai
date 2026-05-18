@@ -202,6 +202,7 @@ import {
   type CropBounds,
   type CropHandleId,
 } from './cropRegionDragHandles';
+import { getCropRegionGrips, applyCropGripDrag } from './cropRegionGrips';
 import { extractDetailComponentPrimitives } from './detailComponentsRender';
 import { extractMaskingRegionPrimitives } from './maskingRegionRender';
 import { extractAreaPrimitives } from './areaRender';
@@ -520,6 +521,13 @@ export function PlanCanvas({
     | undefined
   >(undefined);
   const cropOverlayRef = useRef<THREE.Group | null>(null);
+  // §1.6.10: crop region grip drag state (getCropRegionGrips / applyCropGripDrag)
+  const cropGripDragRef = useRef<{
+    gripId: string;
+    startPlanPt: { xMm: number; yMm: number };
+    cropAtStart: { minXMm: number; minYMm: number; maxXMm: number; maxYMm: number };
+    planViewId: string;
+  } | null>(null);
   const alignStateRef = useRef<AlignState>(initialAlignState());
   // F-121: React state mirror of alignStateRef.current.referenceMm so SVG overlay re-renders.
   const [alignReferenceMm, setAlignReferenceMm] = useState<{
@@ -2831,6 +2839,28 @@ export function PlanCanvas({
         }
         return;
       }
+      // §1.6.10: live update for crop grip drag (getCropRegionGrips / applyCropGripDrag)
+      if (cropGripDragRef.current) {
+        const ptr = rayToPlanMm(rnd, camNow, ev.clientX, ev.clientY);
+        if (ptr) {
+          const deltaMm = {
+            xMm: ptr.xMm - cropGripDragRef.current.startPlanPt.xMm,
+            yMm: ptr.yMm - cropGripDragRef.current.startPlanPt.yMm,
+          };
+          const newCrop = applyCropGripDrag(
+            cropGripDragRef.current.cropAtStart,
+            cropGripDragRef.current.gripId,
+            deltaMm,
+          );
+          void onSemanticCommand({
+            type: 'updateCropRegion',
+            planViewId: cropGripDragRef.current.planViewId,
+            cropRegionMm: newCrop,
+          });
+          skipClickRef.current = true;
+        }
+        return;
+      }
       if (dragRef.current.dragging) {
         const rr = rayToPlanMm(rnd, camNow, ev.clientX, ev.clientY);
         if (!rr) return;
@@ -3329,6 +3359,31 @@ export function PlanCanvas({
             skipClickRef.current = true;
             return;
           }
+          // §1.6.10: crop region grip hit-test via getCropRegionGrips (4-edge midpoint grips)
+          {
+            const cropMinMax = {
+              minXMm: activeCropState.cropMinMm.xMm,
+              minYMm: activeCropState.cropMinMm.yMm,
+              maxXMm: activeCropState.cropMaxMm.xMm,
+              maxYMm: activeCropState.cropMaxMm.yMm,
+            };
+            const cropGrips = getCropRegionGrips(cropMinMax);
+            const HIT_RADIUS_MM = handleToleranceMm;
+            const hit = cropGrips.find(
+              (g) =>
+                Math.hypot(g.positionMm.xMm - ptr.xMm, g.positionMm.yMm - ptr.yMm) < HIT_RADIUS_MM,
+            );
+            if (hit) {
+              cropGripDragRef.current = {
+                gripId: hit.id,
+                startPlanPt: ptr,
+                cropAtStart: cropMinMax,
+                planViewId: activeCropState.planViewId,
+              };
+              skipClickRef.current = true;
+              return;
+            }
+          }
           // Body drag: only when select-tool active and no element under cursor.
           if (
             planTool === 'select' &&
@@ -3475,6 +3530,11 @@ export function PlanCanvas({
           }
         }
         bumpGeom((x) => x + 1);
+        return;
+      }
+      // §1.6.10: commit/clear crop grip drag (applyCropGripDrag)
+      if (cropGripDragRef.current) {
+        cropGripDragRef.current = null;
         return;
       }
 
