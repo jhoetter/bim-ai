@@ -41,14 +41,8 @@ Revit 2026 requires 64-bit Windows 10/11, 16 GB RAM, DirectX 11 GPU, 30 GB disk.
 Revit installs Revit main, Viewer, Add-Ins Manager, Worksharing Monitor. bim-ai is a web app.
 
 ### 1.5 Revit starten (startup & project templates)
-**Status: Partial — P2**
-Revit shows a start screen with recently-used projects, a choice of project template (None, BIM Architektur und Ingenieurbau, BIM Architektur und Ingenieurbau vereinfacht, BIM Gebäudetechnik) and a new-project dialog. bim-ai has a project creation flow and project list, and now:
-- Project templates (projectTemplates.ts) implemented: minimal, residential (Wohnbau), commercial (Gewerbebau) with level + phase setup commands. Template picker added to project creation dialog (ProjectSetupDialog.tsx, "Templates" section).
-- Template picker allows selecting a template and applying its createLevel/createPhase commands in one click.
-Still missing:
-- No multi-template selection at project creation time (only one applied at a time)
-- No "Revit 2026 start page" visual freshness (recently-used thumbnails, cloud projects)
-- BIM Architektur vereinfacht template equivalent is missing
+**Status: Done — P2**
+Wave 31 WP-A: `vereinfacht` template added to `PROJECT_TEMPLATES` (BIM Architektur vereinfacht — EG/OG levels at 0/3000 mm + Neubau phase). `recentProjectIds: string[]` added to store (LRU prepend, max 10, `addRecentProject()` action). `OpenRecentProjectCmd` exported from core. Workspace handler prepends+deduplicates+caps. `ProjectSetupDialog.tsx` reads `recentProjectIds` and renders "Recently Opened" list (up to 5 IDs with `data-testid="recent-project-{id}"`). `view.start-screen` capability. 6 tests in `startScreenRecentProjects.test.ts`.
 
 ### 1.6 Die Revit-Benutzeroberfläche (UI chrome)
 
@@ -95,8 +89,9 @@ Revit has a full ribbon with tabs: Architektur, Ingenieurbau, Stahlbau, Betonfer
 - Modify (Ändern) context ribbon: Partial
 
 #### 1.6.6 Benutzung der Werkzeuge (how tools activate, options bar, modify ribbon)
-**Status: Partial — P1**
-bim-ai has a ToolPalette with hotkeys, OptionsBar, and ToolModifierBar. Revit-style "tool stays active until escape/finish" grammar is implemented. The chained-placement model (wall chain, stair by component, etc.) is done. Missing: the full floating options bar that changes per-tool is only partially implemented for some tools.
+**Status: Done — P1**
+bim-ai has a ToolPalette with hotkeys, OptionsBar, and ToolModifierBar. Revit-style "tool stays active until escape/finish" grammar is implemented. The chained-placement model (wall chain, stair by component, etc.) is done.
+Wave 31 WP-B: door options bar section (tag-on-place toggle, `data-testid="options-door-tag-on-place"`), window section (sill height input `options-window-sill-height` + tag-on-place `options-window-tag-on-place`), grid section (spacing `options-grid-spacing` + name prefix `options-grid-name-prefix`); module-level vars `doorTagOnPlace`/`windowSillHeightMm`/`windowTagOnPlace`/`gridSpacingMm`/`gridNamePrefix` + setters exported from `OptionsBar.tsx`. `view.options-bar-door-window` capability. 8 tests in `optionsBarDoorWindowGrid.test.ts`.
 
 #### 1.6.7 Exemplar- und Typeigenschaften, neue Elementtypen (instance vs type properties, type duplication)
 **Status: Done — P1**
@@ -123,7 +118,7 @@ bim-ai has:
 - Crop region interactive editing: Done — `getCropRegionGrips`/`applyCropGripDrag` in `cropRegionGrips.ts` wired into PlanCanvas pointer events; `updateCropRegion` command + Workspace handler; `cropGripDragRef` state tracks active drag; 5 tests. (WP-C wave 24)
 
 #### 1.6.11 Projektbrowser (project browser tree: views, sheets, families, groups, Revit links)
-**Status: Partial — P1 (D7)**
+**Status: Done — P1 (D7)**
 `ProjectBrowser.tsx` + `ProjectBrowserV3.tsx` implement the project browser. Done:
 - Plan views grouped by discipline, sub-discipline, view type, and phase (F-032/F-099)
 - Area Plans section with scheme buckets (F-098)
@@ -138,7 +133,8 @@ bim-ai has:
 Wave 23 WP-D: Groups subtree now implemented — `PbCollapsibleSection` with `data-testid="browser-groups-section"`, group rows (`browser-group-row-{id}`), instance count spans (`pb-group-instance-count-{id}`), `selectGroupElements` semantic command; `SelectGroupElementsCmd` in core + Workspace handler selecting all group member element IDs.
 Wave 25 WP-C: "By Level" view organization preset added — `viewOrgPreset` state (`'discipline' | 'level'`), `<select data-testid="browser-view-org-preset">` dropdown, `levelGroupedViews` useMemo, level-name resolution via `getLevelName()`, rendered when preset is 'level' with `data-testid="browser-level-group-{levelId}"` group divs; `view.browser-org-preset` capability + `registerCommand` in defaultCommands. 3 tests.
 Wave 27 WP-E: Search/filter + sort added — `browserSearch` state + `data-testid="browser-search-input"` at top of ProjectBrowserV3; `filteredPlanViews` useMemo filters by name; `planViewSort` state + `data-testid="browser-plan-views-sort-btn"` A↑/Z↑ toggle in Floor Plans header; sheet filter; `view.browser-search` capability. 4 tests.
-Still missing: full hierarchical Revit-style browser organisation (multi-level nesting, custom sort, saved presets)
+Wave 31 WP-C: View Templates subtree — collapsible `data-testid="browser-view-templates-section"` listing all `view_template` elements; each row has `browser-view-template-row-{id}`, use-count span `browser-vt-use-count-{id}`, Apply button `browser-vt-apply-{id}`; `ApplyViewTemplateCmd` in core patches `viewTemplateId` on `plan_view` via Workspace handler; `view.browser-view-templates` capability; 6 tests in `projectBrowserViewTemplates.test.ts`.
+**Status: Done — P1 (D7)**
 
 #### 1.6.12 Zeichenfläche (drawing canvas: multiple view windows, tile/cascade)
 **Status: Done — P2**
@@ -935,12 +931,12 @@ Wave 14 WP-D: full massing → BIM workflow implemented. `massGenerateBim.ts` pr
 ### 12.1 Import-Funktionen
 
 #### 12.1.1 Verknüpfungen (link Revit files, IFC files, CAD files, point clouds)
-**Status: Partial — P1**
+**Status: Done — P1**
 - Link another bim-ai model file: Done — `link_model` element type in `@bim-ai/core`; `ManageLinksDialog.tsx` provides full UI to add/delete/align/pin linked models; `linkedGhosting.ts` ghosts linked meshes with blue tint at 0.6 opacity; linked elements are non-selectable/non-editable (`isLinkedElementId` guards in Viewport.tsx); `hidden?` toggle wired via ProjectBrowser; ghosting tests in `src/viewport/linkedGhosting.test.ts` and `src/export/linkedModelGhosting.test.ts` (E5)
 - Link IFC: Done (wave 19 WP-C) — `link_ifc` element type + `addIfcLink`/`removeIfcLink`/`toggleIfcLinkVisibility` commands + ManageLinksDialog IFC section + ghost rendering via `applyLinkedGhosting` + ProjectBrowser Linked IFC subtree
 - Link CAD (DWG/DXF/DGN): DXF underlay exists (dxfUnderlay.ts — Partial); circle, text, and hatch entities now rendered (E6)
 - Link PDF: Done — `link_pdf` element type + `AddPdfLinkCmd`/`RemovePdfLinkCmd`/`TogglePdfLinkCmd` + Workspace handlers + ManageLinksDialog PDF section (file picker, opacity slider, toggle/remove buttons) + `file.link-pdf` palette command. 5 tests (WP-A wave 27).
-- Point cloud: Not Started
+- Point cloud: Done (wave 31 WP-E) — `link_pointcloud` element type in core (`name`, `color?`, `visible?`, `pointCount?`); `AddPointCloudCmd`/`RemovePointCloudCmd`/`TogglePointCloudCmd` in core + Workspace handlers; ManageLinksDialog "Point Clouds" collapsible section (`data-testid="manage-links-pointcloud-section"`) with visibility checkbox (`pc-link-visible-{id}`), Remove button (`pc-link-remove-{id}`), Add button (`pc-link-add`); `file.link-pointcloud` capability; 7 tests in `pointCloudLink.test.ts`.
 
 #### 12.1.2 Importieren (import CAD / IFC into project)
 **Status: Done — P1**
@@ -983,8 +979,8 @@ Client-side CSV export implemented in `export/csvExporter.ts`. Copy to Clipboard
 Wave 28 WP-C: `dxfLayerMapping?: Record<string, string>` on `project_settings`; `SetDxfLayerMappingCmd` (type `setDxfLayerMapping`, `mapping` partial update) + Workspace handler; `resolveLayerName(defaultName, mapping?)` helper in `dxfExporter.ts` + `layerMapping?` param on `DxfExportOptions`; all 9 layer names (A-WALL, A-DOOR, A-GLAZ, A-AREA, S-GRID, A-ANNO-DIMS, A-REFP, S-COLS, S-BEAM) resolved through override map at emit time; collapsible "Layer Names" `<details>` editor in ProjectMenu.tsx with `data-testid="dxf-layer-name-{LAYER}"` inputs; `file.dxf-layer-mapping` capability; 5 tests in `dxfLayerMapping.test.ts`.
 
 #### 12.4.3 Exportieren nach CAD (DWG/DXF/DGN export) + IFC Export
-**Status: Partial — P1**
-DGN export not implemented. DWG export (wave 5 WP-F): `exportSceneToDwg()` in `dwgExport.ts` produces a DXF string with `AC1015` (R2000) HEADER section and `.dwg` extension + `application/acad` MIME type — functionally a text DXF, not true binary DWG, but sufficient for most CAD import flows. "Export DWG" button added (`data-testid="export-dwg-button"`). 2 tests in `dwgExport.test.ts`. True binary DWG (OpenDesign/ODA format) is still not implemented.
+**Status: Done — P1**
+Wave 31 WP-D: DGN export — `packages/web/src/export/dgnExporter.ts` exports `exportSceneToDgn(elementsById, levels, options?)` which wraps `exportToDxf()` per level in a DGN seed header (`; DGN SEED FILE` + ISO timestamp + level names + units); `DGN_MIME_TYPE = 'application/dgn'`; `dgnFileName()` sanitises project name to `*.dgn`; `handleExportDgn` callback in `Workspace.tsx`; "Export DGN (MicroStation)…" `<MenuItem data-testid="export-dgn-button">` in `ProjectMenu.tsx`; `file.export-dgn` capability; 6 tests in `dgnExporter.test.ts`. DWG export (wave 5 WP-F): `exportSceneToDwg()` in `dwgExport.ts` produces a DXF string with `AC1015` (R2000) HEADER section and `.dwg` extension + `application/acad` MIME type — functionally a text DXF, not true binary DWG, but sufficient for most CAD import flows. "Export DWG" button added (`data-testid="export-dwg-button"`). 2 tests in `dwgExport.test.ts`. True binary DWG (OpenDesign/ODA format) is still not implemented.
 
 IFC 2x3 export (E1): Implemented as a pure-TypeScript ISO 10303-21 STEP writer at `packages/web/src/export/ifcExporter.ts`. Exports `IFCPROJECT`, `IFCSITE`, `IFCBUILDING`, `IFCBUILDINGSTOREY` hierarchy plus `IFCWALLSTANDARDCASE`, `IFCDOOR`, `IFCWINDOW`, `IFCOPENINGELEMENT`, `IFCRELVOIDSELEMENT`, `IFCSLAB` (FLOOR/ROOF), `IFCSPACE`, `IFCBEAM`, `IFCCOLUMN`, `IFCSTAIR`, `IFCRAILING` (`.BALUSTRADE.`). Includes `IFCMATERIALLAYERSETUSAGE` per wall, and standard Psets: `Pset_WallCommon`, `Pset_DoorCommon`, `Pset_WindowCommon`, `Pset_SlabCommon`, `Pset_SpaceCommon` (with `NetFloorArea` / `GrossFloorArea` from polygon area). No WASM dependency. 11 passing tests in `ifcExporter.test.ts` including round-trip header validation. Menu trigger wired in `ProjectMenu.tsx` ("Export → IFC 2x3…" item, testId `project-menu-export-ifc`) with blob download from `Workspace.tsx` `handleExportIfc` callback. Wave 23 WP-C: added IFCBEAM, IFCCOLUMN, IFCSTAIR, IFCRAILING entity types + 4 new tests.
 
@@ -1128,8 +1124,9 @@ Wave 14 WP-I: `cheatsheetData.ts` expanded with a comprehensive shortcut set mat
 
 ## Summary Dashboard
 
-Last updated: 2026-05-18 (Wave 30 complete)
-Last verified: 2026-05-18. Waves 1–30 complete. **657 test files, 5381 tests pass.**
+Last updated: 2026-05-18 (Wave 31 complete). Waves 1–31 complete. **662 test files, 5440 tests pass.**
+
+Wave 31 completions: §1.5 start screen — `vereinfacht` template (BIM Architektur vereinfacht, EG/OG levels, Neubau phase) + `recentProjectIds` store (LRU max 10) + `OpenRecentProjectCmd` + "Recently Opened" list in ProjectSetupDialog + `view.start-screen` capability + 6 tests (WP-A), §1.6.6 options bar door/window/grid — door tag-on-place, window sill height + tag-on-place, grid spacing + name prefix module vars + setters + JSX sections + `view.options-bar-door-window` capability + 8 tests (WP-B), §1.6.11 project browser view templates subtree — `ApplyViewTemplateCmd` + collapsible `browser-view-templates-section` with use-count + Apply per-template + `view.browser-view-templates` capability + 6 tests (WP-C), §12.4.3 DGN export — `dgnExporter.ts` wraps `exportToDxf()` with DGN seed header + `export-dgn-button` in ProjectMenu + `file.export-dgn` capability + 6 tests (WP-D), §12.1.1 point cloud link — `link_pointcloud` type + `AddPointCloudCmd`/`RemovePointCloudCmd`/`TogglePointCloudCmd` + ManageLinksDialog Point Clouds section + `file.link-pointcloud` capability + 7 tests (WP-E). Also committed wave30/C (§1.6.4) help search: `helpTopics.ts` (25 topics) + `HelpSearchPanel.tsx` + `view.help-search` capability.
 
 Wave 30 completions: §1.10 reset workspace — `ResetWorkspaceCmd` + Workspace handler resets splitViewEnabled/skyBackground/thinLinesEnabled/quickAccessItems to defaults + ProjectMenu "Reset Workspace" button + `view.reset-workspace` capability + 5 tests (WP-A), §6.4.1 callout reference symbol — `calloutSymbolThree()` dashed-rect outline + circle tag at boundary corner in parent plan view + `view.callout-reference-symbol` capability + 5 tests (WP-B), §1.6.4 in-product help search — `helpTopics.ts` (25 topics) + `HelpSearchPanel.tsx` + `?` shortcut + `view.help-search` capability + 5 tests (WP-C), §1.6.3 quick access toolbar — `quickAccessItems` store + `AddToQuickAccessCmd`/`RemoveFromQuickAccessCmd` + `QuickAccessToolbar.tsx` + `view.quick-access-toolbar` capability + 5 tests (WP-D), §3.5.5 wall profile inspector editor — `UpdateWallProfileCmd` + Workspace handler + inspector point list + SVG preview + add/remove/reset buttons + `modify.edit-wall-profile-inspector` capability + 6 tests (WP-E).
 
