@@ -2834,6 +2834,15 @@ registerCommand({
   invoke: (ctx) => ctx.openFamilyEditor?.(),
 });
 
+// §15.1.2 — family parameter formula evaluation
+registerCommand({
+  id: 'family.parameter-formula',
+  label: 'Family Parameter Formula',
+  keywords: ['family', 'parameter', 'formula', 'arithmetic', 'expression', 'width', 'height'],
+  category: 'command',
+  invoke: (ctx) => ctx.openFamilyEditor?.(),
+});
+
 // §15.1.2 — family nested component placement
 registerCommand({
   id: 'family.add-component',
@@ -3181,5 +3190,16 @@ registerCommand({
   category: 'modify',
   invoke: (ctx) => {
     ctx.dispatchCommand?.({ type: 'stackDimensions' });
+  },
+});
+
+// §6.1.5 — Interior Elevation Material Hatches
+registerCommand({
+  id: 'view.interior-elevation-hatch',
+  label: 'Interior Elevation Material Hatches',
+  keywords: ['interior', 'elevation', 'hatch', 'material', 'pattern', 'wall fill'],
+  category: 'view',
+  invoke: (ctx) => {
+    ctx.dispatchCommand?.({ type: 'showInteriorElevationHatch' });
   },
 });

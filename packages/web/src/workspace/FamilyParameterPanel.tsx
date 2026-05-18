@@ -8,9 +8,17 @@ interface Props {
   onAdd: (param: Omit<FamilyParam, 'id'>) => void;
   onDelete: (id: string) => void;
   onValueChange: (id: string, value: number | boolean | string) => void;
+  /** §15.1.2: optional callback to update a parameter field (e.g. formula) by name. */
+  onUpdateParam?: (name: string, patch: Record<string, unknown>) => void;
 }
 
-export function FamilyParameterPanel({ parameters, onAdd, onDelete, onValueChange }: Props) {
+export function FamilyParameterPanel({
+  parameters,
+  onAdd,
+  onDelete,
+  onValueChange,
+  onUpdateParam,
+}: Props) {
   const [newName, setNewName] = useState('');
   const [newType, setNewType] = useState<FamilyParam['paramType']>('length');
 
@@ -23,6 +31,7 @@ export function FamilyParameterPanel({ parameters, onAdd, onDelete, onValueChang
             <th>Name</th>
             <th>Type</th>
             <th>Value</th>
+            <th>Formula</th>
             <th>Instance</th>
             <th></th>
           </tr>
@@ -44,6 +53,27 @@ export function FamilyParameterPanel({ parameters, onAdd, onDelete, onValueChang
                       p.paramType === 'boolean' ? e.target.checked : +e.target.value,
                     )
                   }
+                />
+              </td>
+              <td>
+                <input
+                  data-testid={`family-param-formula-${p.name}`}
+                  type="text"
+                  placeholder="= formula (e.g. Width / 2)"
+                  value={(p as any).formula ?? ''}
+                  onChange={(e) =>
+                    onUpdateParam?.(p.name, { formula: e.target.value || undefined })
+                  }
+                  style={{
+                    fontSize: 10,
+                    padding: '1px 4px',
+                    border: '1px solid var(--border, #555)',
+                    borderRadius: 2,
+                    background: 'transparent',
+                    color: '#a78bfa',
+                    width: '100%',
+                    boxSizing: 'border-box',
+                  }}
                 />
               </td>
               <td>

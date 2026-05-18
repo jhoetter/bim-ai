@@ -1341,6 +1341,8 @@ export type Element =
         arrowStyle?: 'arrow' | 'dot' | 'tick' | 'none';
         showUnit?: boolean;
       } | null;
+      /** §12.4.2: per-layer name overrides for DXF export. Keys are default layer names (e.g. 'A-WALL'), values are custom names. */
+      dxfLayerMapping?: Record<string, string>;
     }
   | {
       kind: 'room_color_scheme';
@@ -2597,6 +2599,8 @@ export type Element =
         lineColorHex?: string | null;
         surfaceColorHex?: string | null;
       } | null;
+      /** §9.1.3: when true, this is a decorative/architectural column (non-load-bearing). */
+      isNonStructural?: boolean;
       /** §3.3.4: IDs of elements that cut voids into this column element. */
       cutBy?: string[];
     }
@@ -3887,6 +3891,8 @@ export type Element =
       linkedDimensionId?: string | null;
       /** Optional: which property of the geometry element is driven (e.g. 'widthMm', 'heightMm'). */
       linkedProperty?: string | null;
+      /** §15.1.2: optional formula string (e.g. "Width / 2" or "Height * 0.6"). Evaluated at apply time. */
+      formula?: string;
     }
   | FamilyConstraintElem
   | {
@@ -5798,4 +5804,11 @@ export type ToggleShowConstraintsCmd = {
   type: 'toggleShowConstraints';
   /** plan_view element ID. */
   viewId: string;
+};
+
+/** §9.1.3: toggle isNonStructural on a column element (structural ↔ architectural/decorative). */
+export type ToggleColumnStructuralCmd = {
+  type: 'toggleColumnStructural';
+  /** Column element ID. */
+  columnId: string;
 };

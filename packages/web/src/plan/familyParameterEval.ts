@@ -3,8 +3,39 @@ import type { Element, FamilyConstraintElem } from '@bim-ai/core';
 type FamilyParam = Extract<Element, { kind: 'family_parameter' }>;
 
 /**
+ * §15.1.2: evaluates a simple arithmetic formula string against a parameter
+ * value map. Supports: +, -, *, /, parentheses, numeric literals, and
+ * other parameter names as identifiers.
+ *
+ * Example: evaluateFamilyParameterFormula("Width / 2", { Width: 900 }) → 450
+ * Returns NaN if the formula is invalid or references unknown params.
+ */
+export function evaluateFamilyParameterFormula(
+  formula: string,
+  params: Record<string, number>,
+): number {
+  // Replace parameter name references with their values
+  let expr = formula.trim();
+  // Replace each known param name with its numeric value
+  for (const [name, value] of Object.entries(params)) {
+    // Use word-boundary replacement to avoid partial matches
+    expr = expr.replace(new RegExp(`\\b${name}\\b`, 'g'), String(value));
+  }
+  // Safety: only allow digits, operators, parens, dots, spaces
+  if (!/^[\d\s\+\-\*\/\(\)\.]+$/.test(expr)) return NaN;
+  try {
+    // eslint-disable-next-line no-new-func
+    const result = Function(`"use strict"; return (${expr})`)();
+    return typeof result === 'number' ? result : NaN;
+  } catch {
+    return NaN;
+  }
+}
+
+/**
  * Applies family parameter values to the linked geometry element.
  * If a parameter has linkedDimensionId + linkedProperty, updates that property.
+ * §15.1.2: formula-driven params are evaluated in a second pass.
  */
 export function applyFamilyParameters(
   parameters: FamilyParam[],
@@ -12,13 +43,36 @@ export function applyFamilyParameters(
 ): Record<string, Partial<Record<string, unknown>>> {
   const updates: Record<string, Partial<Record<string, unknown>>> = {};
 
+  // Build a map of param name → numeric value for formula evaluation
+  const resolvedValues: Record<string, number> = {};
+  for (const param of parameters) {
+    if (typeof param.defaultValue === 'number') {
+      resolvedValues[param.name] = param.defaultValue;
+    }
+  }
+
+  // §15.1.2: evaluate formula-driven params (second pass after resolving base values)
+  for (const param of parameters) {
+    if (param.formula) {
+      const formulaResult = evaluateFamilyParameterFormula(param.formula, resolvedValues);
+      if (!isNaN(formulaResult)) {
+        resolvedValues[param.name] = formulaResult;
+      }
+    }
+  }
+
   for (const param of parameters) {
     if (!param.linkedDimensionId || !param.linkedProperty) continue;
     const target = elementsById[param.linkedDimensionId];
     if (!target) continue;
+    // Use formula-resolved value if available, else fall back to defaultValue
+    const resolvedValue =
+      typeof param.defaultValue === 'number' && param.name in resolvedValues
+        ? resolvedValues[param.name]
+        : param.defaultValue;
     updates[param.linkedDimensionId] = {
       ...(updates[param.linkedDimensionId] ?? {}),
-      [param.linkedProperty]: param.defaultValue,
+      [param.linkedProperty]: resolvedValue,
     };
   }
 

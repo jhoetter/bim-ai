@@ -2839,4 +2839,34 @@ const MASS_CAPABILITIES: CommandCapability[] = [
     notes:
       '§4.2.6: redistributes parallel permanent_dimension elements at even 7mm stacking offsets; §4.2.7: reference planes usable as dim witness point targets.',
   },
+  {
+    id: 'family.parameter-formula',
+    label: 'Family Parameter Formula',
+    owner: 'familyEditor/familyParameterEval',
+    group: 'family',
+    scope: 'canvas',
+    intendedModes: ['plan'],
+    surfaces: ['family-editor', 'cmd-k'],
+    executionSurface: 'local-state',
+    preconditions: [],
+    status: 'implemented',
+    usabilityScore: 8,
+    notes:
+      '§15.1.2: family_parameter.formula field + evaluateFamilyParameterFormula() evaluates arithmetic expressions against other param values at apply time.',
+  },
+  {
+    id: 'view.interior-elevation-hatch',
+    label: 'Interior Elevation Material Hatches',
+    owner: 'viewport/InteriorElevationViewport',
+    group: 'view',
+    scope: 'canvas',
+    intendedModes: ['plan'],
+    surfaces: ['elevation-viewport', 'cmd-k'],
+    executionSurface: 'local-state',
+    preconditions: [],
+    status: 'implemented',
+    usabilityScore: 8,
+    notes:
+      '§6.1.5: material hatch patterns from materialHatchPatterns.ts applied to wall fills in interior elevation SVG; storey height ruler annotation.',
+  },
 ];
