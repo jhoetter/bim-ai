@@ -43,6 +43,37 @@ function evidenceLooksSynthetic(evidence) {
   );
 }
 
+function hasMachineReadableEvidence(evidence) {
+  return ['artifacts', 'proof', 'evidence', 'metrics', 'validation'].some((key) => {
+    const value = evidence?.[key];
+    if (Array.isArray(value)) return value.length > 0;
+    if (value && typeof value === 'object') return Object.keys(value).length > 0;
+    return typeof value === 'string' && value.trim().length > 0;
+  });
+}
+
+function invalidPassingM4ScenarioEvidence(wave1) {
+  return (wave1.workstreams ?? []).flatMap((workstream) =>
+    (workstream.gates ?? []).flatMap((gate) =>
+      (gate.evidence ?? [])
+        .filter(
+          (evidence) =>
+            evidence.type === 'professional-scenario-evidence' && evidence.passes === true,
+        )
+        .filter(
+          (evidence) =>
+            !['executable', 'validated-replay'].includes(evidence.classification) ||
+            evidence.status !== 'passed' ||
+            !hasMachineReadableEvidence(evidence),
+        )
+        .map(
+          (evidence) =>
+            `${workstream.id}:${gate.id}: ${evidence.scenarioId ?? evidence.source}.${evidence.kind ?? 'unknown'} classification=${evidence.classification ?? 'missing'} status=${evidence.status ?? 'missing'}`,
+        ),
+    ),
+  );
+}
+
 function reportM4AuditStatus() {
   const auditPath = path.join(REPO_ROOT, 'spec', 'generated', 'ui-mcp-parity.json');
   const audit = JSON.parse(fs.readFileSync(auditPath, 'utf8'));
@@ -89,6 +120,15 @@ function reportM4AuditStatus() {
   if (doneWorkstreamsWithSyntheticEvidence.length) {
     console.error('M4 audit accepted placeholder-style evidence in a Done workstream:');
     for (const item of doneWorkstreamsWithSyntheticEvidence) console.error(`- ${item}`);
+    return 1;
+  }
+
+  const invalidScenarioEvidence = invalidPassingM4ScenarioEvidence(wave1);
+  if (invalidScenarioEvidence.length) {
+    console.error(
+      'M4 audit accepted scenario evidence without executable/validated-replay machine-readable proof:',
+    );
+    for (const item of invalidScenarioEvidence) console.error(`- ${item}`);
     return 1;
   }
 

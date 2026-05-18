@@ -4513,19 +4513,77 @@ function m4ScenarioEvidenceSignal(scenarioId, kind, suiteInfo) {
   }
   const status = String(entry.status ?? entry.classification ?? 'missing');
   const classification = String(entry.classification ?? 'missing');
+  const artifacts = m4MachineReadableEvidence(entry.artifacts);
+  const proof = m4MachineReadableEvidence(entry.proof);
+  const evidencePayload = m4MachineReadableEvidence(entry.evidence);
+  const metrics = m4MachineReadableEvidence(entry.metrics);
+  const validation = m4MachineReadableEvidence(entry.validation);
+  const hasPositiveBoolean =
+    entry.pass === true || entry.passed === true || entry.ok === true || entry.validated === true;
+  const hasMachineReadableEvidence = [artifacts, proof, evidencePayload, metrics, validation].some(
+    (value) => value !== undefined,
+  );
   const passes =
     ['executable', 'validated-replay'].includes(classification) &&
     isPositiveEvidenceStatus(status) &&
     !isBlockingEvidenceStatus(status) &&
-    entry.pass !== false;
-  return {
+    hasPositiveBoolean &&
+    hasMachineReadableEvidence;
+  const signal = {
     type: 'professional-scenario-evidence',
     status: passes ? 'passed' : status,
     source,
+    scenarioId,
+    kind,
+    classification,
     detail: `${scenarioId}.${kind}: ${classification} / ${status}`,
     passes,
-    reason: passes ? '' : evidenceRejectionReason(status, classification),
+    reason: passes
+      ? ''
+      : m4EvidenceRejectionReason(
+          status,
+          classification,
+          hasPositiveBoolean,
+          hasMachineReadableEvidence,
+        ),
   };
+  if (artifacts !== undefined) signal.artifacts = artifacts;
+  if (proof !== undefined) signal.proof = proof;
+  if (evidencePayload !== undefined) signal.evidence = evidencePayload;
+  if (metrics !== undefined) signal.metrics = metrics;
+  if (validation !== undefined) signal.validation = validation;
+  return signal;
+}
+
+function m4MachineReadableEvidence(value) {
+  if (Array.isArray(value)) {
+    const filtered = value.filter((item) => {
+      if (typeof item === 'string') return item.trim().length > 0;
+      return item && typeof item === 'object' && Object.keys(item).length > 0;
+    });
+    return filtered.length ? filtered : undefined;
+  }
+  if (value && typeof value === 'object' && Object.keys(value).length > 0) return value;
+  if (typeof value === 'string' && value.trim().length > 0) return value;
+  return undefined;
+}
+
+function m4EvidenceRejectionReason(
+  status,
+  classification,
+  hasPositiveBoolean,
+  hasMachineReadableEvidence,
+) {
+  if (!['executable', 'validated-replay'].includes(classification)) {
+    return 'scenario evidence must classify as executable or validated-replay';
+  }
+  if (!hasPositiveBoolean) {
+    return 'scenario evidence must include explicit pass=true, passed=true, ok=true, or validated=true';
+  }
+  if (!hasMachineReadableEvidence) {
+    return 'scenario evidence must include non-empty artifacts, proof, evidence, metrics, or validation payload';
+  }
+  return evidenceRejectionReason(status, classification);
 }
 
 function buildM4DomainWorkstream(config, apiLedger, suiteInfo) {
