@@ -1419,6 +1419,39 @@ Wave 1 result:
   unclassified raw commands, zero untracked public descriptors, zero untracked
   unmatched Cmd+K surfaces, and M2 remains `Done` with `7 / 7` closure gates.
 
+### Milestone 3 Wave 2 Workstreams
+
+Milestone 3 Wave 2 should convert the Wave 1 product maps into executable
+agent-facing workflows. It should keep M3 broad enough to prove product parity
+across sketch intake, vertical circulation, documentation/export, transaction
+semantics, and audit gates, while keeping each lane independently reviewable.
+
+| Workstream                                           | Status      | Owner scope                                                                                                                                                    | Tracker items                            | Done when                                                                                                                                                                                                                  |
+| ---------------------------------------------------- | ----------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| M3-F. Sketch IR, seed, and phase product tools       | Not Started | Sketch-to-BIM product descriptors/routes/CLI/tests; own `spec/sketch-to-bim-product-surfaces.md` updates; avoid benchmark/export/audit ownership.              | WP-005, WP-013, Sketch-to-BIM workflow.  | `sketch.ir.validate`, `sketch.seed.compile`, `sketch.phase.apply`, and `sketch.phase.accept` are product-described API/CLI/MCP surfaces or precisely blocked with route-tested contracts and examples.                     |
+| M3-G. Two-storey stair benchmark executable path     | Not Started | `two-storey-house-with-stair` benchmark fixture, runner, expected semantics, MCP/CLI bundle, UI/Cmd+K traceability artifact, and benchmark tests only.         | WP-008, same-house benchmark suite.      | The two-storey stair scenario advances from spec seed to executable MCP/CLI fixture with semantic diff, advisor, visual/export evidence hooks, and honest UI/Cmd+K traceability classification.                            |
+| M3-H. Documentation/export production evidence depth | Not Started | Sheet preview/export/render/schedule/tag/dimension evidence quality and focused backend tests; avoid registry/audit/tracker ownership except test fixtures.    | WP-006, documentation/export parity.     | Documentation/export workflows produce reusable artifacts for sheets, schedules, tags, dimensions, PDF, IFC, glTF/GLB, and external export markers beyond the first smoke test, with optional-backend behavior explicit.   |
+| M3-I. Transaction idempotency and workflow metadata  | Not Started | Transaction metadata, command log, idempotent replay/dedup, undo/redo metadata, collaboration deltas, and route tests; avoid sketch/export feature semantics.  | WP-009, transaction and audit hardening. | Successful replays with stable `clientOpId` or bundle digest are deduplicated or reported deterministically, stale revisions remain protected, and M3 sketch/export/import workflows assert transaction metadata coverage. |
+| M3-J. M3 audit, verifier, and tracker integration    | Not Started | Audit script, generated ledgers, M3 verifier command, tracker status integration, and package scripts; consume other lanes but do not create feature behavior. | WP-004, WP-010, WP-011, WP-012, WP-009.  | A repeatable M3 verifier reports M3-F through M3-I status from source/evidence, audit outputs remain conservative, and tracker Wave 2 result can be updated from generated facts rather than optimistic notes.             |
+
+### Milestone 3 Wave 2 Scheduling Notes
+
+- M3-F owns sketch product surfaces and should not treat skill-local helpers as
+  public parity unless API v3 descriptors, CLI commands, or MCP-reachable
+  contracts exist.
+- M3-G should prefer existing first-class authoring/query/export tools. If a
+  required vertical-circulation operation only exists as raw bundle commands,
+  the benchmark must record that honestly instead of claiming full parity.
+- M3-H should harden documentation/export outputs for agent consumption without
+  overlapping the descriptor work owned by M3-F or the audit work owned by M3-J.
+- M3-I is the critical consistency lane. It should protect existing M2 commit
+  semantics while adding idempotent replay and metadata assertions for M3
+  workflow entry points.
+- M3-J should run after or degrade gracefully around the other lanes. It may add
+  a verifier that reports `Partial`, but it must not mark M3 `Done` until
+  executable evidence covers sketch intake, two-storey benchmark, documentation
+  export, and transaction/audit gates.
+
 ## Next Work Packages
 
 ### WP-001: Command Schema Export
