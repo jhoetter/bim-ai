@@ -88,6 +88,8 @@ export interface ProjectMenuProps {
   onDuplicateProject?: (newName: string) => void;
   /** §1.6.2: revert to the last saved state. */
   onRevertProject?: () => void;
+  /** §1.10: reset workspace UI layout to factory defaults. */
+  onResetWorkspace?: () => void;
   /** §12.4.2: current dxfLayerMapping from project_settings. */
   dxfLayerMapping?: Record<string, string>;
   /** §12.4.2: dispatch a setDxfLayerMapping command (partial update). */
@@ -130,6 +132,7 @@ export function ProjectMenu({
   onOpenProjectTemplates,
   onDuplicateProject,
   onRevertProject,
+  onResetWorkspace,
   dxfLayerMapping,
   onSetDxfLayerMapping,
 }: ProjectMenuProps): JSX.Element | null {
@@ -340,6 +343,18 @@ export function ProjectMenu({
               if (window.confirm('Discard unsaved changes and revert to last saved state?')) {
                 onRevertProject();
               }
+            }}
+          />
+        ) : null}
+        {/* §1.10: reset workspace */}
+        {onResetWorkspace ? (
+          <MenuItem
+            label="Reset Workspace"
+            icon="settings"
+            testId="project-menu-reset-workspace"
+            onClick={() => {
+              onOpenChange(false);
+              onResetWorkspace();
             }}
           />
         ) : null}
