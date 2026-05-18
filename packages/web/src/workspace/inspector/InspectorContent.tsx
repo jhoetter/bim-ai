@@ -2433,6 +2433,33 @@ export function InspectorPropertiesFor(
         </div>
       );
     }
+    case 'family_opening_cut': {
+      return (
+        <div style={{ padding: 8 }}>
+          <div className="text-xs font-semibold mb-2">Opening Cut</div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+            <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+              <span style={{ fontSize: 11, width: 60 }}>Width</span>
+              <span data-testid="inspector-opening-cut-width" style={{ fontSize: 11 }}>
+                {(el as any).widthMm} mm
+              </span>
+            </div>
+            <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+              <span style={{ fontSize: 11, width: 60 }}>Height</span>
+              <span data-testid="inspector-opening-cut-height" style={{ fontSize: 11 }}>
+                {(el as any).heightMm} mm
+              </span>
+            </div>
+            <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+              <span style={{ fontSize: 11, width: 60 }}>Sill offset</span>
+              <span data-testid="inspector-opening-cut-sill" style={{ fontSize: 11 }}>
+                {(el as any).sillOffsetMm ?? 0} mm
+              </span>
+            </div>
+          </div>
+        </div>
+      );
+    }
     case 'family_component': {
       return (
         <div style={{ padding: 8 }}>

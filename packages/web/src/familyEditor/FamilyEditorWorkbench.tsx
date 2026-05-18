@@ -2544,6 +2544,21 @@ export function FamilyEditorWorkbench({
         >
           + Component
         </button>
+        <button
+          data-testid="family-editor-add-opening-cut-btn"
+          onClick={() =>
+            onSemanticCommand?.({
+              type: 'setFamilyOpeningCut',
+              familyId: familyId,
+              widthMm: 900,
+              heightMm: 2100,
+              sillOffsetMm: 0,
+            })
+          }
+          style={{ fontSize: 12, padding: '2px 8px', borderRadius: 4, border: '1px solid #444' }}
+        >
+          ✂ Opening Cut
+        </button>
       </div>
 
       <div className="grid gap-4 md:grid-cols-[260px_1fr]">

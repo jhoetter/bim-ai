@@ -1,6 +1,6 @@
 # Revit 2026 Feature-Parity Tracker
 
-Last updated: 2026-05-18 (Wave 23 complete)
+Last updated: 2026-05-18 (Wave 25 complete)
 Source: Detlef Ridder — *Autodesk Revit 2026: Der umfassende Praxiseinstieg für Architekturkonstruktion*, mitp 2026 (ISBN 978-3-7475-1101-5)
 
 Purpose: exhaustive chapter-by-chapter comparison between Revit 2026 (as taught in the book) and what bim-ai currently supports. Every leaf section of the table of contents becomes a row. The goal is to expose gaps at maximum granularity so engineering work can be scoped and prioritised.
@@ -65,6 +65,7 @@ bim-ai has:
 - Export (Partial — see Ch. 12)
 - Print / PDF export (Partial — see Ch. 12)
 - Save As Template / New From Template: Done — `ProjectTemplate` type, localStorage persistence, `ProjectTemplatesDialog.tsx` with save/load/delete UI, `file.project-templates` palette command. 6 tests. (WP-A wave 21)
+- Save As (Duplicate): Done — `DuplicateProjectCmd` + `RevertProjectCmd` in core, `handleDuplicateProject`/`handleRevertProject` in Workspace.tsx, "Save As…"/"Revert" buttons in ProjectMenu.tsx (`data-testid="project-menu-save-as"/"project-menu-revert"`), `file.save-as`/`file.revert` palette commands. 4 tests. (WP-D wave 25)
 Missing: Save to library as Family, cloud model sync from file menu, Revit Options dialog.
 
 #### 1.6.3 Schnellzugriff-Werkzeugkasten (quick access toolbar)
@@ -135,7 +136,8 @@ bim-ai has:
 - Links subtree (`link_model` elements)
 - Schedules, Sheets, View Templates, Sections, Elevations, 3D saved views groups
 Wave 23 WP-D: Groups subtree now implemented — `PbCollapsibleSection` with `data-testid="browser-groups-section"`, group rows (`browser-group-row-{id}`), instance count spans (`pb-group-instance-count-{id}`), `selectGroupElements` semantic command; `SelectGroupElementsCmd` in core + Workspace handler selecting all group member element IDs.
-Still missing: full hierarchical Revit-style browser organisation presets, Browser organisation presets (by level, by discipline)
+Wave 25 WP-C: "By Level" view organization preset added — `viewOrgPreset` state (`'discipline' | 'level'`), `<select data-testid="browser-view-org-preset">` dropdown, `levelGroupedViews` useMemo, level-name resolution via `getLevelName()`, rendered when preset is 'level' with `data-testid="browser-level-group-{levelId}"` group divs; `view.browser-org-preset` capability + `registerCommand` in defaultCommands. 3 tests.
+Still missing: full hierarchical Revit-style browser organisation (multi-level nesting, custom sort, saved presets)
 
 #### 1.6.12 Zeichenfläche (drawing canvas: multiple view windows, tile/cascade)
 **Status: Partial — P2**
@@ -261,8 +263,9 @@ Door tool, hosted door placement, swing direction flip, door width/height per in
 Floor tool with sketch mode (floor-sketch), boundary line editing, slope arrow. Editing existing floor boundaries works.
 
 #### 2.4.2 Alternative Deckenkonstruktion (alternative slab structures / slab by boundary)
-**Status: Partial — P1**
-Basic floor placement is done. Revit's alternative slab boundary methods (e.g. picking wall faces automatically to create the boundary) are partially implemented. Floor edge profile (Deckenrand) not yet supported. `floorTypeId` field + inspector selector implemented (WP-G wave 7): inspector shows dropdown of all `floor_type` elements, computed total thickness, and "New Floor Type…" button with inline name input.
+**Status: Done — P1**
+Basic floor placement is done. Revit's alternative slab boundary methods (e.g. picking wall faces automatically to create the boundary) are partially implemented. `floorTypeId` field + inspector selector implemented (WP-G wave 7): inspector shows dropdown of all `floor_type` elements, computed total thickness, and "New Floor Type…" button with inline name input.
+Floor edge profile (Deckenrand): Done — `buildFloorEdgeProfileMesh()` in `buildFloorEdgeProfile.ts` extrudes the cross-section `edgeProfileMm` profile along each perimeter edge of the floor boundary using `ExtrudeGeometry`; returns `THREE.Group`, wired at end of `makeFloorSlabMesh` after `addEdges`. Returns null when profile < 2 pts or boundary < 3 pts. `modify.floor-edge-profile` capability + `registerCommand`. 4 tests. (WP-A wave 25)
 
 #### 2.4.3 Unterschied: Fixieren – Verbinden (Pin vs Join geometry)
 **Status: Partial — P1**
@@ -983,14 +986,16 @@ DGN export not implemented. DWG export (wave 5 WP-F): `exportSceneToDwg()` in `d
 IFC 2x3 export (E1): Implemented as a pure-TypeScript ISO 10303-21 STEP writer at `packages/web/src/export/ifcExporter.ts`. Exports `IFCPROJECT`, `IFCSITE`, `IFCBUILDING`, `IFCBUILDINGSTOREY` hierarchy plus `IFCWALLSTANDARDCASE`, `IFCDOOR`, `IFCWINDOW`, `IFCOPENINGELEMENT`, `IFCRELVOIDSELEMENT`, `IFCSLAB` (FLOOR/ROOF), `IFCSPACE`, `IFCBEAM`, `IFCCOLUMN`, `IFCSTAIR`, `IFCRAILING` (`.BALUSTRADE.`). Includes `IFCMATERIALLAYERSETUSAGE` per wall, and standard Psets: `Pset_WallCommon`, `Pset_DoorCommon`, `Pset_WindowCommon`, `Pset_SlabCommon`, `Pset_SpaceCommon` (with `NetFloorArea` / `GrossFloorArea` from polygon area). No WASM dependency. 11 passing tests in `ifcExporter.test.ts` including round-trip header validation. Menu trigger wired in `ProjectMenu.tsx` ("Export → IFC 2x3…" item, testId `project-menu-export-ifc`) with blob download from `Workspace.tsx` `handleExportIfc` callback. Wave 23 WP-C: added IFCBEAM, IFCCOLUMN, IFCSTAIR, IFCRAILING entity types + 4 new tests.
 
 DXF export (E2): Implemented at `packages/web/src/export/dxfExporter.ts`. Exports per-level plan views with walls (A-WALL), doors (A-DOOR + arc swing), windows (A-GLAZ), rooms (A-AREA), grid lines (S-GRID with bubble circle), reference planes (A-REFP), linear dimensions (A-ANNO-DIMS with extension lines + label), and text notes (A-ANNO). Multi-level export supported (one DxfPlanView per level). 8 passing tests in `dxfExporter.test.ts`. Menu trigger wired in `ProjectMenu.tsx` ("Export → DXF/DWG…" item with collapsible options panel: level selector + mm/m units dropdown, testId `project-menu-export-dxf`) with per-level blob downloads from `handleExportDxf` in `Workspace.tsx`.
+Wave 25 WP-E: ACI layer color assignments added — `LAYER_ACI_COLORS` map: A-WALL=7, A-DOOR=1, A-GLAZ=3, A-AREA=4, S-GRID=8, A-ANNO-DIMS=2, A-REFP=6, S-COLS=5, S-BEAM=5. DXF LAYER TABLE entries now include group code 62 with ACI color number. 5 tests in `dxfLayerColors.test.ts`.
 
 #### 12.4.4 Revit-Modell in Inventor verwenden (Revit → Inventor workflow)
 **Status: N/A**
 Desktop-to-desktop Autodesk workflow. Not applicable.
 
 #### 12.4.5 PDF-Export (PDF from sheets)
-**Status: Partial — P1**
+**Status: Done — P1**
 Print to PDF from sheets: `PrintPlotDialog.tsx` + `exportSheetsToPdf` exist. Wave 14 WP-L added "Print All Sheets" button (`data-testid="print-all-sheets-btn"`) that batches all valid sheet elements through `exportSheetsToPdf`. Paper size and orientation selectors already present. Single-sheet export is Done; multi-sheet batching now Done; plotter/physical printer output remains Not Started.
+Wave 25 WP-E: Per-sheet orientation override added — `sheetOrientations` state (`Record<string, 'portrait' | 'landscape'>`) in PrintPlotDialog, per-sheet `<select data-testid="sheet-orientation-{sheet.id}">` dropdowns, effective orientation = per-sheet override ?? global. Page number injection: `addPageToPdf` extended with `pageIndex`/`totalPages` params; page number text element rendered in bottom margin. `file.export-pdf` capability + `registerCommand`. 8 tests (3 in `pdfSheetOrientation.test.ts` + 5 in `dxfLayerColors.test.ts`).
 
 ### 12.5 Autodesk Construction Cloud (ACC / BIM 360 cloud sync)
 **Status: N/A**
@@ -1092,7 +1097,8 @@ The family editor has a create workflow. Wave 5 WP-G added void form support: `F
 
 #### 15.1.3 Fensterbearbeitung (window family geometry authoring)
 **Status: Partial — P1**
-Custom window families can be created (familySketchGeometry.ts). Parametric opening cut, frame profile, nested components are Partial. Wave 17 WP-J: `family_parameter` element kind (name, paramType, defaultValue, isInstance, linkedDimensionId, linkedProperty); `FamilyParameterPanel.tsx` with add/delete/value-change UI; `familyParameterEval.ts` with `applyFamilyParameters()` + `validateFamilyParameters()`; FamilyEditorWorkbench integrated; inspector `case 'family_parameter':`. Tests: `familyParameterEval.test.ts` (6) + `FamilyParameterPanel.test.tsx` (5). Parametric constraint propagation: Done — `FamilyConstraintElem` (id, familyId, paramName, refPlaneId1, refPlaneId2, axis) in core + `applyFamilyConstraints()` moves refPlane2 position to match param value + Workspace add/remove handlers + inspector `case 'family_constraint':` + FamilyEditorWorkbench local-state constraint panel with "Add Constraint" button + 5 tests. (WP-E wave 21)
+Custom window families can be created (familySketchGeometry.ts). Frame profile and nested components are Partial. Wave 17 WP-J: `family_parameter` element kind (name, paramType, defaultValue, isInstance, linkedDimensionId, linkedProperty); `FamilyParameterPanel.tsx` with add/delete/value-change UI; `familyParameterEval.ts` with `applyFamilyParameters()` + `validateFamilyParameters()`; FamilyEditorWorkbench integrated; inspector `case 'family_parameter':`. Tests: `familyParameterEval.test.ts` (6) + `FamilyParameterPanel.test.tsx` (5). Parametric constraint propagation: Done — `FamilyConstraintElem` (id, familyId, paramName, refPlaneId1, refPlaneId2, axis) in core + `applyFamilyConstraints()` moves refPlane2 position to match param value + Workspace add/remove handlers + inspector `case 'family_constraint':` + FamilyEditorWorkbench local-state constraint panel with "Add Constraint" button + 5 tests. (WP-E wave 21)
+Wave 25 WP-B: Parametric opening cut added — `family_opening_cut` element kind (familyId, widthMm, heightMm, sillOffsetMm?) in core; `SetFamilyOpeningCutCmd` in core; Workspace handler removes existing cut for family then creates new one; inspector `case 'family_opening_cut':` with width/height/sill readouts (data-testid="inspector-opening-cut-width/height/sill"); "✂ Opening Cut" button in FamilyEditorWorkbench (`data-testid="family-editor-add-opening-cut-btn"`). `family.set-opening-cut` capability. 4 tests.
 
 #### 15.1.4 Fensterrahmen (window frame geometry in family)
 **Status: Done — P1**
@@ -1120,8 +1126,10 @@ Wave 14 WP-I: `cheatsheetData.ts` expanded with a comprehensive shortcut set mat
 
 ## Summary Dashboard
 
-Last updated: 2026-05-18 (Wave 24 complete)
-Last verified: 2026-05-18. Waves 1–24 complete. **632 test files, 5230 tests pass.**
+Last updated: 2026-05-18 (Wave 25 complete)
+Last verified: 2026-05-18. Waves 1–25 complete. **632 test files, 5253 tests pass.**
+
+Wave 25 completions: §2.4.2 floor edge profile 3D mesh — `buildFloorEdgeProfileMesh()` extrudes `edgeProfileMm` cross-section along perimeter boundary edges using `ExtrudeGeometry`, wired into `makeFloorSlabMesh`; `modify.floor-edge-profile` capability + 4 tests (WP-A), §15.1.3 family opening cut — `family_opening_cut` elem + `SetFamilyOpeningCutCmd` + Workspace handler + inspector case + "✂ Opening Cut" button in FamilyEditorWorkbench + 4 tests (WP-B), §1.6.11 project browser "By Level" preset — `viewOrgPreset` state + `<select data-testid="browser-view-org-preset">` + `levelGroupedViews` memo + level-name resolution + `view.browser-org-preset` capability + 3 tests (WP-C), §1.6.2 file menu save-as/revert — `DuplicateProjectCmd`/`RevertProjectCmd` in core + `handleDuplicateProject`/`handleRevertProject` Workspace handlers + ProjectMenu "Save As…"/"Revert" buttons + `file.save-as`/`file.revert` palette commands + 4 tests (WP-D), §12.4.5 PDF per-sheet orientation + page numbers — `sheetOrientations` state in PrintPlotDialog + per-sheet `<select>` dropdowns + page number injection in pdfExporter + `file.export-pdf` capability + 3 tests; §12.4.3 DXF ACI layer colors — `LAYER_ACI_COLORS` map in dxfExporter (A-WALL=7, A-DOOR=1, A-GLAZ=3, A-AREA=4, S-GRID=8, A-ANNO-DIMS=2, A-REFP=6, S-COLS=5, S-BEAM=5) + 5 tests (WP-E).
 
 Wave 24 completions: §4.1 angular/radial/diameter dimension Workspace handlers — `createAngularDimension`/`createRadialDimension`/`createDiameterDimension` handlers in Workspace.tsx + inspector cases + `annotate.angular-dimension`/`annotate.radial-dimension` palette commands + 4 tests (WP-A), §8.6.4 stair flip command — `FlipStairCmd` type + `flipStair` handler mirroring run geometry + inspector Flip H/V buttons + `modify.flip-stair` palette command + 5 tests (WP-B), §1.6.10 crop region interactive editing — `getCropRegionGrips`/`applyCropGripDrag` wired into PlanCanvas + `updateCropRegion` command + Workspace handler + 5 tests (WP-C), §15.1.2 family nested component placement — `family_component` type + `AddFamilyComponentCmd` + Workspace handler + FamilyEditorWorkbench button + inspector case + 4 tests (WP-D), §3.6.2 window/door type catalog expansion — 5 window presets + 4 door presets + `windowStyle`/`doorStyle` fields + 7 palette commands + 8 tests (WP-E).
 
