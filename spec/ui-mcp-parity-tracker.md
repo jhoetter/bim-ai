@@ -1299,6 +1299,35 @@ Wave 5 result:
   application semantics and downstream visual/export evidence from an actually
   mutated model, not on more evidence-schema hardening.
 
+### Milestone 2 Wave 6 Workstreams
+
+Milestone 2 Wave 6 is the live-application closure wave. Wave 5 proved that the
+local disposable backend path can run, but the accepted commit did not mutate
+the model into the simple-house geometry. Wave 6 should fix or precisely
+isolate that application gap, then regenerate closure evidence from an actually
+changed model.
+
+| Workstream                                                 | Status  | Owner scope                                                                                                                                       | Tracker items                                      | Done when                                                                                                                                                                                                             |
+| ---------------------------------------------------------- | ------- | ------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| M2-Z. Live bundle commit applies commands                  | Partial | Backend bundle route, transaction/apply engine, revision/change ids, command log, and focused backend tests; avoid benchmark/audit ownership.     | WP-008, WP-009, live commit closure.               | Posting the 28-command simple-house bundle in live commit mode mutates the disposable model, increments or records revision metadata, returns changed ids, and leaves a command-log/snapshot proof of house geometry. |
+| M2-AA. Live evidence runner semantic closure               | Partial | Live evidence runner assertions, snapshot semantic checks, artifact sanitization, and committed artifact paths; avoid backend internals.          | WP-008, live dry-run/commit evidence.              | The runner rejects commits that return `ok` but do not add expected house geometry, and produces accepted dry-run/commit artifacts only from a semantically changed simple-house model.                               |
+| M2-AB. Advisor and validation on changed committed model   | Partial | Committed advisor/validation collection and benchmark tests; coordinate with M2-Z/M2-AA for changed target model.                                 | WP-008, WP-009, committed advisor/validation.      | `advisor-validation.json` and `committed-evidence.json` pass only when sourced from the changed committed model and include no blocking validation/advisor findings.                                                  |
+| M2-AC. Visual/render and export on changed committed model | Partial | Server render/export endpoints, artifact checks, live evidence fixtures, and export/render tests; avoid audit implementation except contract fit. | WP-006, WP-008, visual/export closure.             | Visual/render and IFC/glTF/PDF or manifest evidence pass from the changed model, with nonblank/geometry-bearing proofs rather than starter-model manifests.                                                           |
+| M2-AD. Final M2 closure audit and verifier                 | Partial | Audit ingestion, generated ledgers, `verify:m2-parity`, tracker Wave 6 result, and optional strict release gate.                                  | WP-004, WP-009, WP-012, M2 milestone finalization. | Audit reports the final gate state from real evidence. M2 is marked `Done` only if all `7 / 7` closure gates pass and `BIM_AI_M2_REQUIRE_DONE=1 pnpm verify:m2-parity` succeeds; otherwise blockers remain explicit.  |
+
+### Milestone 2 Wave 6 Scheduling Notes
+
+- M2-Z is the critical path. If live commit cannot mutate the model because the
+  route is intentionally dry-run-like, document that as a product blocker rather
+  than weakening evidence criteria.
+- M2-AA must treat `ok: true` with empty `changedIds`, unchanged revision, or a
+  starter-only snapshot as failed live evidence.
+- M2-AB and M2-AC should run only against a target that M2-Z/M2-AA prove was
+  actually changed into the simple-house geometry.
+- M2-AD must not mark M2 `Done` from temporary `/tmp` evidence unless the
+  artifacts are intentionally sanitized, stable, checked into the benchmark
+  evidence location, and accepted by the audit.
+
 ## Next Work Packages
 
 ### WP-001: Command Schema Export
