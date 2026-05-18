@@ -243,26 +243,29 @@ describe('<Workspace /> family library array formula persistence', () => {
   });
 
   it('hydrates a newly loaded catalog family before entering placement mode', async () => {
-    const now = vi.spyOn(Date, 'now').mockReturnValue(1000);
-    const typeId = 'ft-catalog_living-room_chair-rs';
-    mockApplyCommandBundle.mockResolvedValueOnce({
-      revision: 4,
-      elements: {
-        [typeId]: {
-          kind: 'family_type',
-          id: typeId,
-          name: 'Lounge Chair',
-          familyId: 'catalog:living-room:chair',
-          discipline: 'generic',
-          parameters: { name: 'Lounge Chair', familyId: 'catalog:living-room:chair' },
-          catalogSource: {
-            catalogId: 'living-room-furniture',
+    let typeId = '';
+    mockApplyCommandBundle.mockImplementationOnce((_modelId, commands: unknown) => {
+      const command = (commands as Array<{ id: string }>)[0];
+      typeId = command.id;
+      return Promise.resolve({
+        revision: 4,
+        elements: {
+          [typeId]: {
+            kind: 'family_type',
+            id: typeId,
+            name: 'Lounge Chair',
             familyId: 'catalog:living-room:chair',
-            version: '1.0.0',
+            discipline: 'generic',
+            parameters: { name: 'Lounge Chair', familyId: 'catalog:living-room:chair' },
+            catalogSource: {
+              catalogId: 'living-room-furniture',
+              familyId: 'catalog:living-room:chair',
+              version: '1.0.0',
+            },
           },
         },
-      },
-      violations: [],
+        violations: [],
+      });
     });
 
     render(
@@ -296,8 +299,8 @@ describe('<Workspace /> family library array formula persistence', () => {
         },
       });
     });
-    now.mockRestore();
 
+    expect(typeId).toMatch(/^ft-catalog_living-room_chair-[a-z0-9]+$/);
     expect(useBimStore.getState().elementsById[typeId]).toMatchObject({
       kind: 'family_type',
       id: typeId,
@@ -306,41 +309,44 @@ describe('<Workspace /> family library array formula persistence', () => {
   });
 
   it('indexes catalog plumbing fixtures as placed assets before placement', async () => {
-    const now = vi.spyOn(Date, 'now').mockReturnValue(1000);
-    const typeId = 'ft-catalog_bathroom_toilet-rs';
+    let typeId = '';
     const assetId = 'catalog:bathroom:toilet';
-    mockApplyCommandBundle.mockResolvedValueOnce({
-      revision: 4,
-      elements: {
-        [typeId]: {
-          kind: 'family_type',
-          id: typeId,
-          name: 'Toilet',
-          familyId: assetId,
-          discipline: 'generic',
-          parameters: { name: 'Toilet', familyId: assetId, widthMm: 400, depthMm: 700 },
-          catalogSource: {
-            catalogId: 'bathroom-fixtures',
+    mockApplyCommandBundle.mockImplementationOnce((_modelId, commands: unknown) => {
+      const command = (commands as Array<{ id: string }>)[0];
+      typeId = command.id;
+      return Promise.resolve({
+        revision: 4,
+        elements: {
+          [typeId]: {
+            kind: 'family_type',
+            id: typeId,
+            name: 'Toilet',
             familyId: assetId,
-            version: '1.0.0',
+            discipline: 'generic',
+            parameters: { name: 'Toilet', familyId: assetId, widthMm: 400, depthMm: 700 },
+            catalogSource: {
+              catalogId: 'bathroom-fixtures',
+              familyId: assetId,
+              version: '1.0.0',
+            },
+          },
+          [assetId]: {
+            kind: 'asset_library_entry',
+            id: assetId,
+            assetKind: 'family_instance',
+            name: 'Toilet',
+            tags: ['bathroom', 'bathroom-fixtures', 'Bathroom Fixtures', 'generic'],
+            category: 'bathroom',
+            thumbnailKind: 'schematic_plan',
+            thumbnailWidthMm: 400,
+            thumbnailHeightMm: 700,
+            planSymbolKind: 'toilet',
+            renderProxyKind: 'toilet',
+            description: 'Bathroom Fixtures · 1 type',
           },
         },
-        [assetId]: {
-          kind: 'asset_library_entry',
-          id: assetId,
-          assetKind: 'family_instance',
-          name: 'Toilet',
-          tags: ['bathroom', 'bathroom-fixtures', 'Bathroom Fixtures', 'generic'],
-          category: 'bathroom',
-          thumbnailKind: 'schematic_plan',
-          thumbnailWidthMm: 400,
-          thumbnailHeightMm: 700,
-          planSymbolKind: 'toilet',
-          renderProxyKind: 'toilet',
-          description: 'Bathroom Fixtures · 1 type',
-        },
-      },
-      violations: [],
+        violations: [],
+      });
     });
 
     render(
@@ -386,8 +392,8 @@ describe('<Workspace /> family library array formula persistence', () => {
         },
       });
     });
-    now.mockRestore();
 
+    expect(typeId).toMatch(/^ft-catalog_bathroom_toilet-[a-z0-9]+$/);
     expect(mockApplyCommandBundle).toHaveBeenCalledWith(
       'model-array-formulas',
       [
