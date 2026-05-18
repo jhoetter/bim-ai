@@ -57,7 +57,7 @@ P1 items below are closed or explicitly accepted as tolerances.
 | --- | --- | --- |
 | `M0` Active workflow preflight | Done | Skill/helper/docs use active paths; `doctor` file checks pass; archived methodology is only historical reference; no stale default capability/archetype paths remain. |
 | `M1` Public agent surface for sketch initiation | Partial | A non-browser agent can validate IR, compile/author a phase, dry-run, commit, query, collect Advisor/constructability evidence, and accept/reject a phase through CLI/MCP-grade descriptors. |
-| `M2` Real BIM information requirements | Not started | Sketch IR and acceptance gates require rooms/spaces, element semantics, type/material layer intent, classification, quantities, and project/site assumptions appropriate to the quality target. |
+| `M2` Real BIM information requirements | Partial | Sketch IR and acceptance gates require rooms/spaces, element semantics, type/material layer intent, classification, quantities, and project/site assumptions appropriate to the quality target. C01-C05 are active; quantity/site expansion remains in later C items. |
 | `M3` Evidence and acceptance hardening | Partial | Current-head live evidence, screenshots, visual gates, Advisor/constructability, BIM data checks, stale checks, and exported artifacts are all required by final acceptance. |
 | `M4` Target-house readiness rehearsal | Not started | A dry rehearsal produces only planning artifacts for target-house-1: IR, BIM information requirements, capability gap map, phase plan, acceptance checklist, and risk register. No seed artifact is committed yet. |
 | `M5` Production-quality target-house-1 run | Not started | The seed is generated in phases, accepted with current-head evidence, and packaged as the only seed artifact when requested. |
@@ -165,11 +165,11 @@ legitimate, or write a tolerance with evidence and expiry.
 
 | ID | Priority | Status | Item | Acceptance |
 | --- | --- | --- | --- | --- |
-| `SKB-RDY-C01` | P0 | Partial | Extend Sketch IR with BIM requirements. | IR includes `informationRequirements` with quality target, LOD/LOI intent, exchange goal, model uses, discipline scope, and required checks. |
-| `SKB-RDY-C02` | P0 | Not started | Add room/space requirements. | IR and acceptance require room names/numbers, level, target area, function, occupancy/use, bounding status, doors/access, and schedule inclusion. |
-| `SKB-RDY-C03` | P0 | Not started | Add element semantic requirements. | Exterior walls, interior walls, slabs, roofs, stairs, doors, windows, railings, rooms, and assets declare expected BIM categories and export entity intent. |
-| `SKB-RDY-C04` | P0 | Not started | Add material/layer-set requirements. | Wall/slab/roof types carry layer intent, thicknesses, thermal/fire/acoustic placeholders where quality target requires them. |
-| `SKB-RDY-C05` | P0 | Not started | Add classification requirements. | Rooms have DIN 277-like area/use classification; building elements have DIN 276/cost group placeholders where applicable; IFC classification references are planned. |
+| `SKB-RDY-C01` | P0 | Done | Extend Sketch IR with BIM requirements. | Active IR validation requires `informationRequirements` for `project_initiation_bim`/`documentation_ready`, including quality target, LOD/LOI intent, exchange goal, model uses, discipline scope, and required checks. |
+| `SKB-RDY-C02` | P0 | Done | Add room/space requirements. | IR and acceptance require room names/numbers, level, target area, function, occupancy/use, bounding status, doors/access, schedule inclusion, and IfcSpace intent. |
+| `SKB-RDY-C03` | P0 | Done | Add element semantic requirements. | Exterior walls, interior walls, slabs, roofs, stairs, doors, windows, railings, rooms, and assets declare expected BIM categories and IFC export entity intent. |
+| `SKB-RDY-C04` | P0 | Done | Add material/layer-set requirements. | Wall/slab/roof layer-set requirements carry layer intent, thicknesses, and thermal/fire/acoustic placeholders where quality target requires them. |
+| `SKB-RDY-C05` | P0 | Done | Add classification requirements. | Rooms have DIN277-like area/use placeholders; building elements have DIN276/cost group placeholders; IFC classification references are planned. |
 | `SKB-RDY-C06` | P1 | Not started | Add structure-lite requirements. | Load-bearing flags, primary support assumptions, columns/beams where visible/needed, stair/slab opening coordination, and load-path notes are captured. |
 | `SKB-RDY-C07` | P1 | Not started | Add MEP-lite requirements. | Wet-room stacking, vertical shafts/risers, equipment zones, pipe/duct/cable route placeholders, service levels, and opening requests are captured. |
 | `SKB-RDY-C08` | P1 | Not started | Add planning/site requirements. | Site orientation, base point/survey point assumptions, property line/setback availability, sun assumptions, and code locale are explicit. |
@@ -205,7 +205,7 @@ manual seed authoring gaps.
 | `SKB-RDY-E02` | P0 | Partial | Phase acceptance schema. | Phase packet includes phase id, feature ids, IR coverage, capability coverage, Advisor summary, visual checklist, blockers, tolerances, and evidence paths. |
 | `SKB-RDY-E03` | P0 | Partial | Visual gates for sketch-critical features. | Required views prove roof terrace, loggia, wrapper, cladding, interior plan, and diagnostics. Missing/nonblank-only screenshots are not enough for final acceptance. |
 | `SKB-RDY-E04` | P0 | Partial | Advisor/constructability profile parity. | CLI/API evidence matches the UI Advisor/right-rail profile used for project initiation and construction readiness. |
-| `SKB-RDY-E05` | P0 | Not started | BIM data quality gate. | Acceptance checks rooms, levels, element categories, material/type completeness, classification placeholders, schedules, and export readiness. |
+| `SKB-RDY-E05` | P0 | Done | BIM data quality gate. | Acceptance writes `bim-data-quality.json` and checks rooms, levels, element categories, material/type completeness, classification placeholders, schedules, and export readiness. |
 | `SKB-RDY-E06` | P1 | Not started | IFC/IDS-style validation gate. | Exported IFC or normalized BIM exchange manifest is validated for project hierarchy, entity classes, spaces, material layers, Psets, quantities, and classifications. |
 | `SKB-RDY-E07` | P1 | Not started | Semantic visual evaluator. | Beyond pixel deltas, checklist or CV-assisted evaluator detects critical features such as roof cutout present, wrapper shell thickness, loggia recess, and cladding rhythm. |
 | `SKB-RDY-E08` | P1 | Partial | Tolerance protocol. | Every unresolved warning/gap has severity, affected feature, reason, owner, expiry condition, and evidence link. |

@@ -1,0 +1,245 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://bim-ai.local/schemas/sketch-understanding-ir.schema.json",
+  "title": "Sketch Understanding IR",
+  "description": "Machine-checkable visual and BIM-information brief for sketch-to-BIM project initiation.",
+  "type": "object",
+  "additionalProperties": true,
+  "required": [
+    "schemaVersion",
+    "projectType",
+    "qualityTarget",
+    "sourceInputs",
+    "visualRead",
+    "features",
+    "requiredViews",
+    "assumptions"
+  ],
+  "properties": {
+    "schemaVersion": { "const": "sketch-understanding-ir.v0" },
+    "projectType": { "type": "string", "minLength": 1 },
+    "qualityTarget": {
+      "type": "string",
+      "enum": ["massing_only", "concept_bim", "project_initiation_bim", "documentation_ready"]
+    },
+    "sourceInputs": {
+      "type": "object",
+      "required": ["images"],
+      "properties": {
+        "images": { "type": "array", "minItems": 1, "items": { "type": "string", "minLength": 1 } },
+        "briefs": { "type": "array", "items": { "type": "string", "minLength": 1 } },
+        "userInstruction": { "type": "string" }
+      }
+    },
+    "visualRead": {
+      "type": "object",
+      "required": ["primaryView", "dominantVolumes", "nonNegotiables"],
+      "properties": {
+        "primaryView": { "type": "string", "minLength": 1 },
+        "dominantVolumes": { "type": "array", "minItems": 1 },
+        "nonNegotiables": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "type": "string", "minLength": 1 }
+        }
+      }
+    },
+    "programme": { "type": "array" },
+    "informationRequirements": { "$ref": "#/$defs/informationRequirements" },
+    "features": { "type": "array", "minItems": 1 },
+    "requiredViews": { "type": "array", "minItems": 1 },
+    "assumptions": { "type": "array" }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "qualityTarget": { "enum": ["project_initiation_bim", "documentation_ready"] }
+        }
+      },
+      "then": { "required": ["informationRequirements"] }
+    }
+  ],
+  "$defs": {
+    "informationRequirements": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": [
+        "qualityTarget",
+        "lodIntent",
+        "loiIntent",
+        "exchangeGoal",
+        "modelUses",
+        "disciplineScope",
+        "requiredChecks",
+        "rooms",
+        "elementSemanticRequirements",
+        "materialLayerSetRequirements",
+        "classificationRequirements",
+        "schedules",
+        "exportRequirements",
+        "dataQualityChecks"
+      ],
+      "properties": {
+        "qualityTarget": { "type": "string", "minLength": 1 },
+        "lodIntent": { "type": "string", "minLength": 1 },
+        "loiIntent": { "type": "string", "minLength": 1 },
+        "exchangeGoal": { "type": "string", "minLength": 1 },
+        "modelUses": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "disciplineScope": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "requiredChecks": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "rooms": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/roomRequirement" } },
+        "elementSemanticRequirements": {
+          "type": "array",
+          "minItems": 10,
+          "items": { "$ref": "#/$defs/elementSemanticRequirement" }
+        },
+        "materialLayerSetRequirements": {
+          "type": "array",
+          "minItems": 3,
+          "items": { "$ref": "#/$defs/materialLayerSetRequirement" }
+        },
+        "classificationRequirements": {
+          "type": "object",
+          "required": [
+            "roomSystem",
+            "elementSystem",
+            "ifcClassificationReferences",
+            "requiredPlaceholders"
+          ],
+          "properties": {
+            "roomSystem": { "type": "string", "minLength": 1 },
+            "elementSystem": { "type": "string", "minLength": 1 },
+            "ifcClassificationReferences": { "type": "string", "minLength": 1 },
+            "requiredPlaceholders": {
+              "type": "array",
+              "minItems": 1,
+              "items": { "type": "string", "minLength": 1 }
+            }
+          }
+        },
+        "schedules": { "type": "array", "minItems": 1 },
+        "exportRequirements": {
+          "type": "object",
+          "required": ["outputs"],
+          "properties": {
+            "outputs": {
+              "type": "array",
+              "minItems": 1,
+              "items": { "type": "string", "minLength": 1 }
+            }
+          }
+        },
+        "dataQualityChecks": { "type": "array", "minItems": 1 }
+      }
+    },
+    "roomRequirement": {
+      "type": "object",
+      "required": [
+        "name",
+        "number",
+        "level",
+        "targetAreaM2",
+        "function",
+        "occupancyUse",
+        "boundingStatus",
+        "access",
+        "schedule",
+        "classification"
+      ],
+      "properties": {
+        "name": { "type": "string", "minLength": 1 },
+        "number": { "type": "string", "minLength": 1 },
+        "level": { "type": "string", "minLength": 1 },
+        "targetAreaM2": { "type": "number", "exclusiveMinimum": 0 },
+        "function": { "type": "string", "minLength": 1 },
+        "occupancyUse": { "type": "string", "minLength": 1 },
+        "boundingStatus": { "type": "string", "minLength": 1 },
+        "access": { "type": "object" },
+        "schedule": {
+          "type": "object",
+          "required": ["include"],
+          "properties": { "include": { "const": true } }
+        },
+        "classification": {
+          "type": "object",
+          "required": ["din277Use", "din277AreaType", "ifcEntityIntent"],
+          "properties": {
+            "din277Use": { "type": "string", "minLength": 1 },
+            "din277AreaType": { "type": "string", "minLength": 1 },
+            "ifcEntityIntent": { "const": "IfcSpace" }
+          }
+        }
+      }
+    },
+    "elementSemanticRequirement": {
+      "type": "object",
+      "required": ["category", "expectedBimCategory", "ifcEntityIntent", "classification"],
+      "properties": {
+        "category": { "type": "string", "minLength": 1 },
+        "expectedBimCategory": { "type": "string", "minLength": 1 },
+        "ifcEntityIntent": { "type": "string", "minLength": 1 },
+        "classification": {
+          "type": "object",
+          "required": ["din276CostGroup", "ifcClassificationRef"],
+          "properties": {
+            "din276CostGroup": { "type": "string", "minLength": 1 },
+            "ifcClassificationRef": { "type": "string", "minLength": 1 }
+          }
+        }
+      }
+    },
+    "materialLayerSetRequirement": {
+      "type": "object",
+      "required": [
+        "id",
+        "layerSetName",
+        "appliesToCategories",
+        "totalThicknessMm",
+        "layers",
+        "performancePlaceholders"
+      ],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "layerSetName": { "type": "string", "minLength": 1 },
+        "appliesToCategories": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "totalThicknessMm": { "type": "number", "exclusiveMinimum": 0 },
+        "layers": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/materialLayer" } },
+        "performancePlaceholders": {
+          "type": "object",
+          "required": ["thermal", "fire", "acoustic"],
+          "properties": {
+            "thermal": { "type": "string", "minLength": 1 },
+            "fire": { "type": "string", "minLength": 1 },
+            "acoustic": { "type": "string", "minLength": 1 }
+          }
+        }
+      }
+    },
+    "materialLayer": {
+      "type": "object",
+      "required": ["function", "materialKey", "thicknessMm"],
+      "properties": {
+        "function": { "type": "string", "minLength": 1 },
+        "materialKey": { "type": "string", "minLength": 1 },
+        "thicknessMm": { "type": "number", "exclusiveMinimum": 0 }
+      }
+    }
+  }
+}

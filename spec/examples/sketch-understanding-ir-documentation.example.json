@@ -37,6 +37,316 @@
     { "name": "Bath", "level": "upper", "programmeCode": "bathroom" },
     { "name": "Roof Terrace", "level": "upper", "programmeCode": "terrace" }
   ],
+  "informationRequirements": {
+    "qualityTarget": "documentation_ready",
+    "lodIntent": "LOD 200 plus documentation starter views and schedules",
+    "loiIntent": "LOI 200 with room numbers, IFC entity intent, DIN277/DIN276 placeholders, material layers, and schedule/export readiness",
+    "exchangeGoal": "IFC and schedule-ready architectural seed for documentation kickoff",
+    "modelUses": ["documentation starter", "room schedule", "opening schedule", "IFC handoff"],
+    "disciplineScope": ["architecture", "structure-lite", "MEP-lite"],
+    "requiredChecks": [
+      "rooms_spaces",
+      "element_semantics",
+      "material_layer_sets",
+      "classification_placeholders",
+      "schedule_export_readiness"
+    ],
+    "rooms": [
+      {
+        "name": "Entrance",
+        "number": "G-001",
+        "level": "ground",
+        "targetAreaM2": 10,
+        "function": "entry",
+        "occupancyUse": "residential circulation",
+        "boundingStatus": "target_bounded",
+        "access": { "requiredDoors": 2, "connectsTo": ["Living / Dining", "WC"] },
+        "schedule": { "include": true, "scheduleName": "Room Schedule" },
+        "classification": {
+          "din277Use": "VF circulation",
+          "din277AreaType": "VF",
+          "ifcEntityIntent": "IfcSpace"
+        }
+      },
+      {
+        "name": "Living / Dining",
+        "number": "G-101",
+        "level": "ground",
+        "targetAreaM2": 34,
+        "function": "living",
+        "occupancyUse": "residential living area",
+        "boundingStatus": "target_bounded",
+        "access": { "requiredDoors": 2, "connectsTo": ["Entrance", "Kitchen"] },
+        "schedule": { "include": true, "scheduleName": "Room Schedule" },
+        "classification": {
+          "din277Use": "NUF living",
+          "din277AreaType": "NUF",
+          "ifcEntityIntent": "IfcSpace"
+        }
+      },
+      {
+        "name": "Kitchen",
+        "number": "G-102",
+        "level": "ground",
+        "targetAreaM2": 12,
+        "function": "kitchen",
+        "occupancyUse": "residential kitchen",
+        "boundingStatus": "target_bounded",
+        "access": { "requiredDoors": 1, "connectsTo": ["Living / Dining"] },
+        "schedule": { "include": true, "scheduleName": "Room Schedule" },
+        "classification": {
+          "din277Use": "NUF kitchen",
+          "din277AreaType": "NUF",
+          "ifcEntityIntent": "IfcSpace"
+        }
+      },
+      {
+        "name": "WC",
+        "number": "G-201",
+        "level": "ground",
+        "targetAreaM2": 3,
+        "function": "toilet",
+        "occupancyUse": "residential wet room",
+        "boundingStatus": "target_bounded",
+        "access": { "requiredDoors": 1, "connectsTo": ["Entrance"] },
+        "schedule": { "include": true, "scheduleName": "Room Schedule" },
+        "classification": {
+          "din277Use": "NUF sanitary",
+          "din277AreaType": "NUF",
+          "ifcEntityIntent": "IfcSpace"
+        }
+      },
+      {
+        "name": "Bedroom 1",
+        "number": "U-101",
+        "level": "upper",
+        "targetAreaM2": 16,
+        "function": "bedroom",
+        "occupancyUse": "residential sleeping area",
+        "boundingStatus": "target_bounded",
+        "access": { "requiredDoors": 1, "connectsTo": ["Upper hall"] },
+        "schedule": { "include": true, "scheduleName": "Room Schedule" },
+        "classification": {
+          "din277Use": "NUF sleeping",
+          "din277AreaType": "NUF",
+          "ifcEntityIntent": "IfcSpace"
+        }
+      },
+      {
+        "name": "Bedroom 2",
+        "number": "U-102",
+        "level": "upper",
+        "targetAreaM2": 12,
+        "function": "bedroom",
+        "occupancyUse": "residential sleeping area",
+        "boundingStatus": "target_bounded",
+        "access": { "requiredDoors": 1, "connectsTo": ["Upper hall"] },
+        "schedule": { "include": true, "scheduleName": "Room Schedule" },
+        "classification": {
+          "din277Use": "NUF sleeping",
+          "din277AreaType": "NUF",
+          "ifcEntityIntent": "IfcSpace"
+        }
+      },
+      {
+        "name": "Bath",
+        "number": "U-201",
+        "level": "upper",
+        "targetAreaM2": 8,
+        "function": "bathroom",
+        "occupancyUse": "residential wet room",
+        "boundingStatus": "target_bounded",
+        "access": { "requiredDoors": 1, "connectsTo": ["Upper hall"] },
+        "schedule": { "include": true, "scheduleName": "Room Schedule" },
+        "classification": {
+          "din277Use": "NUF sanitary",
+          "din277AreaType": "NUF",
+          "ifcEntityIntent": "IfcSpace"
+        }
+      },
+      {
+        "name": "Roof Terrace",
+        "number": "U-301",
+        "level": "upper",
+        "targetAreaM2": 18,
+        "function": "terrace",
+        "occupancyUse": "private outdoor area",
+        "boundingStatus": "target_bounded",
+        "access": { "requiredDoors": 1, "connectsTo": ["Upper hall"] },
+        "schedule": { "include": true, "scheduleName": "Room Schedule" },
+        "classification": {
+          "din277Use": "NUF terrace",
+          "din277AreaType": "NUF",
+          "ifcEntityIntent": "IfcSpace"
+        }
+      }
+    ],
+    "elementSemanticRequirements": [
+      {
+        "category": "exterior_wall",
+        "expectedBimCategory": "wall",
+        "ifcEntityIntent": "IfcWall",
+        "classification": { "din276CostGroup": "KG 330", "ifcClassificationRef": "planned" }
+      },
+      {
+        "category": "interior_wall",
+        "expectedBimCategory": "wall",
+        "ifcEntityIntent": "IfcWall",
+        "classification": { "din276CostGroup": "KG 340", "ifcClassificationRef": "planned" }
+      },
+      {
+        "category": "slab",
+        "expectedBimCategory": "floor",
+        "ifcEntityIntent": "IfcSlab",
+        "classification": { "din276CostGroup": "KG 320", "ifcClassificationRef": "planned" }
+      },
+      {
+        "category": "roof",
+        "expectedBimCategory": "roof",
+        "ifcEntityIntent": "IfcRoof",
+        "classification": { "din276CostGroup": "KG 360", "ifcClassificationRef": "planned" }
+      },
+      {
+        "category": "stair",
+        "expectedBimCategory": "stair",
+        "ifcEntityIntent": "IfcStair",
+        "classification": { "din276CostGroup": "KG 350", "ifcClassificationRef": "planned" }
+      },
+      {
+        "category": "door",
+        "expectedBimCategory": "door",
+        "ifcEntityIntent": "IfcDoor",
+        "classification": { "din276CostGroup": "KG 334", "ifcClassificationRef": "planned" }
+      },
+      {
+        "category": "window",
+        "expectedBimCategory": "window",
+        "ifcEntityIntent": "IfcWindow",
+        "classification": { "din276CostGroup": "KG 334", "ifcClassificationRef": "planned" }
+      },
+      {
+        "category": "railing",
+        "expectedBimCategory": "railing",
+        "ifcEntityIntent": "IfcRailing",
+        "classification": { "din276CostGroup": "KG 336", "ifcClassificationRef": "planned" }
+      },
+      {
+        "category": "room",
+        "expectedBimCategory": "room",
+        "ifcEntityIntent": "IfcSpace",
+        "classification": { "din276CostGroup": "DIN277", "ifcClassificationRef": "planned" }
+      },
+      {
+        "category": "asset",
+        "expectedBimCategory": "furniture",
+        "ifcEntityIntent": "IfcFurnishingElement",
+        "classification": { "din276CostGroup": "KG 600", "ifcClassificationRef": "planned" }
+      }
+    ],
+    "materialLayerSetRequirements": [
+      {
+        "id": "mls-exterior-wall",
+        "layerSetName": "Exterior wall concept layer set",
+        "appliesToCategories": ["wall"],
+        "totalThicknessMm": 360,
+        "layers": [
+          { "function": "structure", "materialKey": "masonry_placeholder", "thicknessMm": 240 },
+          {
+            "function": "insulation",
+            "materialKey": "mineral_wool_placeholder",
+            "thicknessMm": 120
+          }
+        ],
+        "performancePlaceholders": {
+          "thermal": "U-value placeholder",
+          "fire": "fire rating placeholder",
+          "acoustic": "Rw placeholder"
+        }
+      },
+      {
+        "id": "mls-slab",
+        "layerSetName": "Slab concept layer set",
+        "appliesToCategories": ["slab"],
+        "totalThicknessMm": 300,
+        "layers": [
+          { "function": "structure", "materialKey": "concrete_placeholder", "thicknessMm": 240 },
+          { "function": "finish", "materialKey": "screed_placeholder", "thicknessMm": 60 }
+        ],
+        "performancePlaceholders": {
+          "thermal": "edge insulation placeholder",
+          "fire": "REI placeholder",
+          "acoustic": "impact sound placeholder"
+        }
+      },
+      {
+        "id": "mls-roof",
+        "layerSetName": "Roof concept layer set",
+        "appliesToCategories": ["roof"],
+        "totalThicknessMm": 420,
+        "layers": [
+          { "function": "structure", "materialKey": "timber_roof_placeholder", "thicknessMm": 240 },
+          {
+            "function": "insulation",
+            "materialKey": "roof_insulation_placeholder",
+            "thicknessMm": 180
+          }
+        ],
+        "performancePlaceholders": {
+          "thermal": "roof U-value placeholder",
+          "fire": "roof fire placeholder",
+          "acoustic": "rain noise placeholder"
+        }
+      }
+    ],
+    "classificationRequirements": {
+      "roomSystem": "DIN277",
+      "elementSystem": "DIN276",
+      "ifcClassificationReferences": "planned",
+      "requiredPlaceholders": [
+        "DIN277 room use",
+        "DIN277 area type",
+        "DIN276 cost group",
+        "IFC classification reference"
+      ]
+    },
+    "schedules": [
+      {
+        "id": "room-schedule",
+        "name": "Room Schedule",
+        "includes": ["rooms", "areas", "DIN277 placeholders"]
+      },
+      {
+        "id": "opening-schedule",
+        "name": "Door and Window Schedule",
+        "includes": ["doors", "windows"]
+      },
+      {
+        "id": "type-material-schedule",
+        "name": "Type and Material Schedule",
+        "includes": ["walls", "slabs", "roofs", "layer sets"]
+      }
+    ],
+    "exportRequirements": {
+      "outputs": ["IFC", "GLB", "PDF", "schedules", "evidence-package", "source-bundle"],
+      "ifcEntityIntentRequired": true,
+      "classificationReferencesPlanned": true
+    },
+    "dataQualityChecks": [
+      {
+        "id": "documentation-bim-data",
+        "severity": "error",
+        "checks": [
+          "rooms",
+          "levels",
+          "element categories",
+          "material layer sets",
+          "classifications",
+          "schedules",
+          "exports"
+        ]
+      }
+    ]
+  },
   "features": [
     {
       "id": "roof_terrace",

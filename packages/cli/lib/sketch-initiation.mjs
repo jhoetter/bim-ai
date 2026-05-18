@@ -41,6 +41,34 @@ export const INITIATION_MODES = {
 
 const PRIORITIES = new Set(['critical', 'high', 'medium', 'low']);
 const CAPABILITY_STATUSES = new Set(['supported', 'partial', 'gap']);
+const BIM_REQUIRED_TARGETS = new Set(['project_initiation_bim', 'documentation_ready']);
+const BIM_ADVISORY_TARGETS = new Set(['concept_bim']);
+const REQUIRED_ELEMENT_SEMANTIC_CATEGORIES = [
+  'exterior_wall',
+  'interior_wall',
+  'slab',
+  'roof',
+  'stair',
+  'door',
+  'window',
+  'railing',
+  'room',
+  'asset',
+];
+const REQUIRED_LAYER_SET_CATEGORIES = ['wall', 'slab', 'roof'];
+const IFC_ENTITY_INTENT = new Set([
+  'IfcSpace',
+  'IfcWall',
+  'IfcWallStandardCase',
+  'IfcSlab',
+  'IfcRoof',
+  'IfcStair',
+  'IfcDoor',
+  'IfcWindow',
+  'IfcRailing',
+  'IfcFurnishingElement',
+  'IfcBuildingElementProxy',
+]);
 
 function isObject(value) {
   return value !== null && typeof value === 'object' && !Array.isArray(value);
@@ -53,6 +81,18 @@ function issue(severity, code, pathValue, message) {
 function requireString(issues, obj, key, pathValue) {
   if (typeof obj?.[key] !== 'string' || obj[key].trim() === '') {
     issues.push(issue('error', 'missing_string', `${pathValue}.${key}`, `${key} must be a non-empty string.`));
+  }
+}
+
+function requireBoolean(issues, obj, key, pathValue) {
+  if (typeof obj?.[key] !== 'boolean') {
+    issues.push(issue('error', 'missing_boolean', `${pathValue}.${key}`, `${key} must be a boolean.`));
+  }
+}
+
+function requirePositiveNumber(issues, obj, key, pathValue) {
+  if (!Number.isFinite(obj?.[key]) || obj[key] <= 0) {
+    issues.push(issue('error', 'missing_positive_number', `${pathValue}.${key}`, `${key} must be a positive number.`));
   }
 }
 
@@ -75,6 +115,221 @@ export async function readJsonFile(filePath) {
     const detail = err instanceof Error ? err.message : String(err);
     throw new Error(`Invalid JSON in ${filePath}: ${detail}`);
   }
+}
+
+function validateBimInformationRequirements(ir, mode) {
+  const issues = [];
+  const target = ir?.qualityTarget;
+  const severity = BIM_REQUIRED_TARGETS.has(target) ? 'error' : 'warning';
+  const shouldValidate =
+    BIM_REQUIRED_TARGETS.has(target) ||
+    BIM_ADVISORY_TARGETS.has(target) ||
+    isObject(ir?.informationRequirements);
+
+  if (!shouldValidate) return issues;
+
+  const requirements = ir.informationRequirements;
+  if (!isObject(requirements)) {
+    issues.push(issue(
+      severity,
+      'bim_information_requirements_missing',
+      '$.informationRequirements',
+      `${mode?.label ?? target} requires informationRequirements with LOI/LOD, rooms, element semantics, material layer sets, classifications, schedules, and data checks.`,
+    ));
+    return issues;
+  }
+
+  requireString(issues, requirements, 'qualityTarget', '$.informationRequirements');
+  if (
+    typeof requirements.qualityTarget === 'string' &&
+    typeof target === 'string' &&
+    requirements.qualityTarget !== target
+  ) {
+    issues.push(issue(
+      severity,
+      'bim_quality_target_mismatch',
+      '$.informationRequirements.qualityTarget',
+      'informationRequirements.qualityTarget must match the root qualityTarget.',
+    ));
+  }
+  for (const key of ['lodIntent', 'loiIntent', 'exchangeGoal']) {
+    requireString(issues, requirements, key, '$.informationRequirements');
+  }
+  requireArray(issues, requirements, 'modelUses', '$.informationRequirements', { min: 1 });
+  requireArray(issues, requirements, 'disciplineScope', '$.informationRequirements', { min: 1 });
+  requireArray(issues, requirements, 'requiredChecks', '$.informationRequirements', { min: 1 });
+
+  const rooms = requireArray(issues, requirements, 'rooms', '$.informationRequirements', {
+    min: BIM_REQUIRED_TARGETS.has(target) ? 1 : 0,
+  });
+  rooms.forEach((room, index) => {
+    const p = `$.informationRequirements.rooms[${index}]`;
+    if (!isObject(room)) {
+      issues.push(issue('error', 'invalid_room_requirement', p, 'Room requirement must be an object.'));
+      return;
+    }
+    for (const key of ['name', 'number', 'level', 'function', 'occupancyUse', 'boundingStatus']) {
+      requireString(issues, room, key, p);
+    }
+    requirePositiveNumber(issues, room, 'targetAreaM2', p);
+    if (!isObject(room.access)) {
+      issues.push(issue('error', 'missing_object', `${p}.access`, 'Room access requirements must be an object.'));
+    } else {
+      const requiredDoors = Number.isFinite(room.access.requiredDoors) ? room.access.requiredDoors : 0;
+      const doorRefs = Array.isArray(room.access.doorRefs) ? room.access.doorRefs : [];
+      if (requiredDoors <= 0 && doorRefs.length === 0) {
+        issues.push(issue(
+          'error',
+          'room_access_missing',
+          `${p}.access`,
+          'Room access must require at least one door or list explicit doorRefs.',
+        ));
+      }
+    }
+    if (!isObject(room.schedule)) {
+      issues.push(issue('error', 'missing_object', `${p}.schedule`, 'Room schedule intent must be an object.'));
+    } else {
+      requireBoolean(issues, room.schedule, 'include', `${p}.schedule`);
+      if (room.schedule.include !== true) {
+        issues.push(issue('error', 'room_schedule_not_included', `${p}.schedule.include`, 'Rooms must be included in a schedule for project initiation BIM.'));
+      }
+    }
+    if (!isObject(room.classification)) {
+      issues.push(issue('error', 'missing_object', `${p}.classification`, 'Room classification placeholders must be an object.'));
+    } else {
+      for (const key of ['din277Use', 'din277AreaType', 'ifcEntityIntent']) {
+        requireString(issues, room.classification, key, `${p}.classification`);
+      }
+      if (
+        typeof room.classification.ifcEntityIntent === 'string' &&
+        room.classification.ifcEntityIntent !== 'IfcSpace'
+      ) {
+        issues.push(issue('error', 'room_ifc_entity_intent', `${p}.classification.ifcEntityIntent`, 'Rooms must declare IfcSpace entity intent.'));
+      }
+    }
+  });
+
+  const semanticRows = requireArray(
+    issues,
+    requirements,
+    'elementSemanticRequirements',
+    '$.informationRequirements',
+    { min: BIM_REQUIRED_TARGETS.has(target) ? REQUIRED_ELEMENT_SEMANTIC_CATEGORIES.length : 0 },
+  );
+  const semanticCategories = new Set();
+  semanticRows.forEach((row, index) => {
+    const p = `$.informationRequirements.elementSemanticRequirements[${index}]`;
+    if (!isObject(row)) {
+      issues.push(issue('error', 'invalid_element_semantic_requirement', p, 'Element semantic requirement must be an object.'));
+      return;
+    }
+    for (const key of ['category', 'expectedBimCategory', 'ifcEntityIntent']) {
+      requireString(issues, row, key, p);
+    }
+    if (typeof row.category === 'string') semanticCategories.add(row.category);
+    if (typeof row.ifcEntityIntent === 'string' && !IFC_ENTITY_INTENT.has(row.ifcEntityIntent)) {
+      issues.push(issue(
+        'error',
+        'unknown_ifc_entity_intent',
+        `${p}.ifcEntityIntent`,
+        `ifcEntityIntent should be one of ${[...IFC_ENTITY_INTENT].join(', ')}.`,
+      ));
+    }
+    if (!isObject(row.classification)) {
+      issues.push(issue('error', 'missing_object', `${p}.classification`, 'Element classification placeholders must be an object.'));
+    } else {
+      requireString(issues, row.classification, 'din276CostGroup', `${p}.classification`);
+      requireString(issues, row.classification, 'ifcClassificationRef', `${p}.classification`);
+    }
+  });
+  for (const category of REQUIRED_ELEMENT_SEMANTIC_CATEGORIES) {
+    if (!semanticCategories.has(category)) {
+      issues.push(issue(
+        severity,
+        'element_semantic_category_missing',
+        '$.informationRequirements.elementSemanticRequirements',
+        `Missing semantic requirement for ${category}.`,
+      ));
+    }
+  }
+
+  const layerSets = requireArray(
+    issues,
+    requirements,
+    'materialLayerSetRequirements',
+    '$.informationRequirements',
+    { min: BIM_REQUIRED_TARGETS.has(target) ? REQUIRED_LAYER_SET_CATEGORIES.length : 0 },
+  );
+  const layerSetCategories = new Set();
+  layerSets.forEach((row, index) => {
+    const p = `$.informationRequirements.materialLayerSetRequirements[${index}]`;
+    if (!isObject(row)) {
+      issues.push(issue('error', 'invalid_material_layer_set_requirement', p, 'Material layer-set requirement must be an object.'));
+      return;
+    }
+    for (const key of ['id', 'layerSetName']) requireString(issues, row, key, p);
+    requirePositiveNumber(issues, row, 'totalThicknessMm', p);
+    const appliesTo = requireArray(issues, row, 'appliesToCategories', p, { min: 1 });
+    appliesTo.forEach((category) => {
+      if (typeof category === 'string') layerSetCategories.add(category);
+    });
+    const layers = requireArray(issues, row, 'layers', p, { min: 1 });
+    layers.forEach((layer, layerIndex) => {
+      const layerPath = `${p}.layers[${layerIndex}]`;
+      if (!isObject(layer)) {
+        issues.push(issue('error', 'invalid_material_layer', layerPath, 'Layer must be an object.'));
+        return;
+      }
+      for (const key of ['function', 'materialKey']) requireString(issues, layer, key, layerPath);
+      requirePositiveNumber(issues, layer, 'thicknessMm', layerPath);
+    });
+    if (!isObject(row.performancePlaceholders)) {
+      issues.push(issue(
+        'error',
+        'material_performance_placeholders_missing',
+        `${p}.performancePlaceholders`,
+        'Layer sets must include thermal/fire/acoustic placeholder intent.',
+      ));
+    } else {
+      for (const key of ['thermal', 'fire', 'acoustic']) {
+        requireString(issues, row.performancePlaceholders, key, `${p}.performancePlaceholders`);
+      }
+    }
+  });
+  for (const category of REQUIRED_LAYER_SET_CATEGORIES) {
+    if (!layerSetCategories.has(category)) {
+      issues.push(issue(
+        severity,
+        'material_layer_set_category_missing',
+        '$.informationRequirements.materialLayerSetRequirements',
+        `Missing material/layer-set requirement for ${category}.`,
+      ));
+    }
+  }
+
+  if (!isObject(requirements.classificationRequirements)) {
+    issues.push(issue(
+      severity,
+      'classification_requirements_missing',
+      '$.informationRequirements.classificationRequirements',
+      'Classification requirements must include DIN277 room placeholders, DIN276 element placeholders, and planned IFC classification references.',
+    ));
+  } else {
+    const classificationPath = '$.informationRequirements.classificationRequirements';
+    for (const key of ['roomSystem', 'elementSystem', 'ifcClassificationReferences']) {
+      requireString(issues, requirements.classificationRequirements, key, classificationPath);
+    }
+    requireArray(issues, requirements.classificationRequirements, 'requiredPlaceholders', classificationPath, { min: 1 });
+  }
+
+  requireArray(issues, requirements, 'schedules', '$.informationRequirements', {
+    min: BIM_REQUIRED_TARGETS.has(target) ? 1 : 0,
+  });
+  requireArray(issues, requirements, 'dataQualityChecks', '$.informationRequirements', {
+    min: BIM_REQUIRED_TARGETS.has(target) ? 1 : 0,
+  });
+
+  return issues;
 }
 
 export function validateSketchIr(ir) {
@@ -183,6 +438,8 @@ export function validateSketchIr(ir) {
       ));
     }
   }
+
+  issues.push(...validateBimInformationRequirements(ir, mode));
 
   return issues;
 }
@@ -468,6 +725,205 @@ export function applyScreenshotManifestToChecklist(checklist, screenshotManifest
   };
 }
 
+function snapshotKindCount(modelStats, kinds) {
+  const counts = modelStats?.countsByKind ?? {};
+  return kinds.reduce((sum, kind) => sum + (counts[kind] ?? 0), 0);
+}
+
+function qualityCheck(id, status, message, detail = {}) {
+  return { id, status, message, ...detail };
+}
+
+export function buildBimDataQualityReport({ ir, evidenceRun = null } = {}) {
+  const requirements = isObject(ir?.informationRequirements) ? ir.informationRequirements : null;
+  const required = BIM_REQUIRED_TARGETS.has(ir?.qualityTarget);
+  const modelStats = evidenceRun?.modelStats ?? null;
+  const checks = [];
+
+  if (!required && !requirements) {
+    return {
+      schemaVersion: 'sketch-to-bim-data-quality.v0',
+      generatedAt: new Date().toISOString(),
+      qualityTarget: ir?.qualityTarget ?? null,
+      liveModelChecked: Boolean(modelStats),
+      ok: true,
+      summary: { passCount: 0, warningCount: 0, errorCount: 0, plannedCount: 0 },
+      checks,
+    };
+  }
+
+  if (!requirements) {
+    checks.push(qualityCheck(
+      'information_requirements_present',
+      required ? 'error' : 'warning',
+      'No BIM informationRequirements were supplied.',
+    ));
+  } else {
+    checks.push(qualityCheck(
+      'information_requirements_present',
+      'pass',
+      'BIM informationRequirements are present.',
+    ));
+  }
+
+  const rooms = Array.isArray(requirements?.rooms) ? requirements.rooms : [];
+  const levels = uniqueStrings(rooms.map((room) => room?.level));
+  if (rooms.length > 0) {
+    checks.push(qualityCheck(
+      'room_requirements',
+      'pass',
+      `${rooms.length} room/space requirement(s) declare IfcSpace intent, access, classification, and schedule inclusion.`,
+      { requiredRooms: rooms.length, requiredLevels: levels },
+    ));
+  } else {
+    checks.push(qualityCheck(
+      'room_requirements',
+      required ? 'error' : 'warning',
+      'No room/space requirements were declared.',
+    ));
+  }
+
+  if (modelStats) {
+    const roomCount = snapshotKindCount(modelStats, ['room', 'space']);
+    checks.push(qualityCheck(
+      'model_room_count',
+      roomCount >= rooms.length ? 'pass' : 'error',
+      `Live model has ${roomCount} room/space element(s); IR requires ${rooms.length}.`,
+      { actual: roomCount, expected: rooms.length },
+    ));
+    const levelCount = snapshotKindCount(modelStats, ['level']);
+    checks.push(qualityCheck(
+      'model_level_count',
+      levelCount >= levels.length ? 'pass' : 'error',
+      `Live model has ${levelCount} level element(s); IR references ${levels.length} level label(s).`,
+      { actual: levelCount, expected: levels.length },
+    ));
+  } else if (required) {
+    checks.push(qualityCheck(
+      'live_room_level_check',
+      'planned',
+      'Live room and level counts will be checked by initiation-run evidence.',
+      { expectedRooms: rooms.length, expectedLevelLabels: levels.length },
+    ));
+  }
+
+  const semanticRows = Array.isArray(requirements?.elementSemanticRequirements)
+    ? requirements.elementSemanticRequirements
+    : [];
+  const semanticCategories = new Set(semanticRows.map((row) => row?.category).filter(Boolean));
+  const missingSemanticCategories = REQUIRED_ELEMENT_SEMANTIC_CATEGORIES.filter(
+    (category) => !semanticCategories.has(category),
+  );
+  checks.push(qualityCheck(
+    'element_semantic_requirements',
+    missingSemanticCategories.length ? (required ? 'error' : 'warning') : 'pass',
+    missingSemanticCategories.length
+      ? `Missing semantic requirement(s): ${missingSemanticCategories.join(', ')}.`
+      : 'Required element categories declare BIM category and IFC entity intent.',
+    { missing: missingSemanticCategories },
+  ));
+
+  if (modelStats) {
+    const categoryKindMap = {
+      exterior_wall: ['wall'],
+      interior_wall: ['wall'],
+      slab: ['floor'],
+      roof: ['roof'],
+      stair: ['stair'],
+      door: ['door'],
+      window: ['window'],
+      railing: ['railing'],
+      room: ['room', 'space'],
+      asset: ['asset', 'furniture', 'family_instance'],
+    };
+    for (const category of REQUIRED_ELEMENT_SEMANTIC_CATEGORIES) {
+      if (!semanticCategories.has(category)) continue;
+      const kinds = categoryKindMap[category] ?? [category];
+      const actual = snapshotKindCount(modelStats, kinds);
+      checks.push(qualityCheck(
+        `model_category_${category}`,
+        actual > 0 ? 'pass' : 'error',
+        `Live model has ${actual} element(s) for required category ${category}.`,
+        { actual, expectedKinds: kinds },
+      ));
+    }
+  }
+
+  const layerSets = Array.isArray(requirements?.materialLayerSetRequirements)
+    ? requirements.materialLayerSetRequirements
+    : [];
+  const layerSetCategories = new Set(
+    layerSets.flatMap((row) => (Array.isArray(row?.appliesToCategories) ? row.appliesToCategories : [])),
+  );
+  const missingLayerSets = REQUIRED_LAYER_SET_CATEGORIES.filter(
+    (category) => !layerSetCategories.has(category),
+  );
+  checks.push(qualityCheck(
+    'material_layer_set_requirements',
+    missingLayerSets.length ? (required ? 'error' : 'warning') : 'pass',
+    missingLayerSets.length
+      ? `Missing material/layer-set requirement(s): ${missingLayerSets.join(', ')}.`
+      : 'Wall, slab, and roof layer-set requirements include material layers and performance placeholders.',
+    { missing: missingLayerSets },
+  ));
+  if (modelStats) {
+    const typeCount = snapshotKindCount(modelStats, ['wall_type', 'floor_type', 'roof_type']);
+    checks.push(qualityCheck(
+      'model_type_layer_set_count',
+      typeCount >= REQUIRED_LAYER_SET_CATEGORIES.length ? 'pass' : 'error',
+      `Live model has ${typeCount} wall/floor/roof type element(s); layer-set intent requires at least ${REQUIRED_LAYER_SET_CATEGORIES.length}.`,
+      { actual: typeCount, expected: REQUIRED_LAYER_SET_CATEGORIES.length },
+    ));
+  }
+
+  const classifications = requirements?.classificationRequirements;
+  checks.push(qualityCheck(
+    'classification_placeholders',
+    isObject(classifications) ? 'pass' : (required ? 'error' : 'warning'),
+    isObject(classifications)
+      ? 'DIN277 room, DIN276 element, and planned IFC classification placeholders are declared.'
+      : 'Classification placeholders are missing.',
+  ));
+
+  const schedules = Array.isArray(requirements?.schedules) ? requirements.schedules : [];
+  checks.push(qualityCheck(
+    'schedule_requirements',
+    schedules.length > 0 ? 'pass' : (required ? 'error' : 'warning'),
+    schedules.length > 0
+      ? `${schedules.length} schedule requirement(s) declared.`
+      : 'No schedule requirements were declared.',
+    { count: schedules.length },
+  ));
+
+  const exportRequirements = requirements?.exportRequirements;
+  const exportOutputs = Array.isArray(exportRequirements?.outputs) ? exportRequirements.outputs : [];
+  checks.push(qualityCheck(
+    'export_readiness_requirements',
+    exportOutputs.length > 0 ? 'pass' : (required ? 'error' : 'warning'),
+    exportOutputs.length > 0
+      ? `Export readiness outputs declared: ${exportOutputs.join(', ')}.`
+      : 'No export readiness outputs were declared.',
+    { outputs: exportOutputs },
+  ));
+
+  const summary = {
+    passCount: checks.filter((check) => check.status === 'pass').length,
+    warningCount: checks.filter((check) => check.status === 'warning').length,
+    errorCount: checks.filter((check) => check.status === 'error').length,
+    plannedCount: checks.filter((check) => check.status === 'planned').length,
+  };
+
+  return {
+    schemaVersion: 'sketch-to-bim-data-quality.v0',
+    generatedAt: new Date().toISOString(),
+    qualityTarget: ir?.qualityTarget ?? null,
+    liveModelChecked: Boolean(modelStats),
+    ok: summary.errorCount === 0,
+    summary,
+    checks,
+  };
+}
+
 export function buildAcceptanceGateReport({
   ir,
   coverage,
@@ -475,6 +931,7 @@ export function buildAcceptanceGateReport({
   screenshotManifest = null,
   visualGateReport = null,
   evidenceRun = null,
+  bimDataQualityReport = null,
 } = {}) {
   const mode = INITIATION_MODES[ir?.qualityTarget] ?? INITIATION_MODES.project_initiation_bim;
   const preflightOnly = evidenceRun?.acceptanceScope === 'preflight';
@@ -564,6 +1021,24 @@ export function buildAcceptanceGateReport({
     });
   }
 
+  const bimQuality = bimDataQualityReport ?? buildBimDataQualityReport({ ir, evidenceRun });
+  if (BIM_REQUIRED_TARGETS.has(ir?.qualityTarget) && (bimQuality?.summary?.errorCount ?? 0) > 0) {
+    blockers.push({
+      code: 'bim_data_quality_failures',
+      severity: 'error',
+      message: `${bimQuality.summary.errorCount} BIM data quality check(s) failed.`,
+      checks: (bimQuality.checks ?? [])
+        .filter((check) => check.status === 'error')
+        .map((check) => ({ id: check.id, message: check.message })),
+    });
+  }
+  if ((bimQuality?.summary?.plannedCount ?? 0) > 0) {
+    tolerances.push({
+      code: 'bim_data_quality_live_checks_pending',
+      message: `${bimQuality.summary.plannedCount} BIM data quality check(s) require live initiation-run evidence.`,
+    });
+  }
+
   return {
     schemaVersion: 'sketch-to-bim-acceptance-gates.v0',
     generatedAt: new Date().toISOString(),
@@ -575,7 +1050,10 @@ export function buildAcceptanceGateReport({
       advisorWarningCount: warningCount,
       visualFailCount: visualGateReport?.summary?.failCount ?? 0,
       visualNeedsReviewCount: visualGateReport?.summary?.needsReviewCount ?? 0,
+      bimDataQualityErrorCount: bimQuality?.summary?.errorCount ?? 0,
+      bimDataQualityPlannedCount: bimQuality?.summary?.plannedCount ?? 0,
     },
+    bimDataQuality: bimQuality,
     blockers,
     tolerances,
   };
@@ -696,6 +1174,21 @@ export function formatStatusMarkdown(coverage, checklist, liveAdvisor = null, ev
     }
   }
   lines.push('');
+  lines.push('## BIM Data Quality');
+  lines.push('');
+  if (!evidenceRun?.bimDataQualityReport) {
+    lines.push('Not evaluated by this packet.');
+  } else {
+    const report = evidenceRun.bimDataQualityReport;
+    lines.push(
+      `Result: ${report.ok ? 'pass' : 'blocked'} (${report.summary.errorCount} error(s), ${report.summary.warningCount} warning(s), ${report.summary.plannedCount} planned live check(s)).`,
+    );
+    for (const check of report.checks ?? []) {
+      if (!['error', 'warning', 'planned'].includes(check.status)) continue;
+      lines.push(`- \`${check.status}\` \`${check.id}\`: ${check.message}`);
+    }
+  }
+  lines.push('');
   lines.push('## Acceptance Gates');
   lines.push('');
   if (!evidenceRun?.acceptanceGateReport) {
@@ -734,6 +1227,7 @@ export async function writeInitiationPacket({
   const checklist = visualGateReport
     ? applyVisualGateToChecklist(screenshotChecklist, visualGateReport)
     : screenshotChecklist;
+  const bimDataQualityReport = buildBimDataQualityReport({ ir, evidenceRun });
   const acceptanceGateReport = buildAcceptanceGateReport({
     ir,
     coverage,
@@ -741,6 +1235,7 @@ export async function writeInitiationPacket({
     screenshotManifest,
     visualGateReport,
     evidenceRun,
+    bimDataQualityReport,
   });
   await fs.mkdir(outDir, { recursive: true });
 
@@ -748,18 +1243,20 @@ export async function writeInitiationPacket({
     ir: path.join(outDir, 'sketch-ir.json'),
     coverage: path.join(outDir, 'capability-coverage.json'),
     checklist: path.join(outDir, 'visual-checklist.json'),
+    bimDataQuality: path.join(outDir, 'bim-data-quality.json'),
     status: path.join(outDir, 'status.md'),
   };
   await fs.writeFile(files.ir, `${JSON.stringify(ir, null, 2)}\n`, 'utf8');
   await fs.writeFile(files.coverage, `${JSON.stringify(coverage, null, 2)}\n`, 'utf8');
   await fs.writeFile(files.checklist, `${JSON.stringify(checklist, null, 2)}\n`, 'utf8');
+  await fs.writeFile(files.bimDataQuality, `${JSON.stringify(bimDataQualityReport, null, 2)}\n`, 'utf8');
   await fs.writeFile(
     files.status,
     formatStatusMarkdown(
       coverage,
       checklist,
       liveAdvisor,
-      { ...(evidenceRun ?? {}), capabilityGaps, visualGateReport, acceptanceGateReport },
+      { ...(evidenceRun ?? {}), capabilityGaps, visualGateReport, acceptanceGateReport, bimDataQualityReport },
     ),
     'utf8',
   );

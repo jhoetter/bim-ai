@@ -83,6 +83,165 @@ function validIr() {
         programmeCode: 'living',
       },
     ],
+    informationRequirements: {
+      qualityTarget: 'project_initiation_bim',
+      lodIntent: 'LOD 200 project initiation geometry with named BIM objects',
+      loiIntent: 'LOI 200 with room, type, material, classification, and schedule placeholders',
+      exchangeGoal: 'IFC-ready architectural seed for project initiation review',
+      modelUses: ['spatial coordination', 'room schedule', 'IFC handoff'],
+      disciplineScope: ['architecture', 'structure-lite', 'MEP-lite'],
+      requiredChecks: [
+        'rooms_spaces',
+        'element_semantics',
+        'material_layer_sets',
+        'classification_placeholders',
+        'schedule_export_readiness',
+      ],
+      rooms: [
+        {
+          name: 'Living',
+          number: 'G-101',
+          level: 'ground',
+          targetAreaM2: 32,
+          function: 'living',
+          occupancyUse: 'residential living area',
+          boundingStatus: 'target_bounded',
+          access: { requiredDoors: 1, connectsTo: ['Entrance'] },
+          schedule: { include: true, scheduleName: 'Room Schedule' },
+          classification: {
+            din277Use: 'NUF living',
+            din277AreaType: 'NUF',
+            ifcEntityIntent: 'IfcSpace',
+          },
+        },
+      ],
+      elementSemanticRequirements: [
+        {
+          category: 'exterior_wall',
+          expectedBimCategory: 'wall',
+          ifcEntityIntent: 'IfcWall',
+          classification: { din276CostGroup: 'KG 330', ifcClassificationRef: 'planned' },
+        },
+        {
+          category: 'interior_wall',
+          expectedBimCategory: 'wall',
+          ifcEntityIntent: 'IfcWall',
+          classification: { din276CostGroup: 'KG 340', ifcClassificationRef: 'planned' },
+        },
+        {
+          category: 'slab',
+          expectedBimCategory: 'floor',
+          ifcEntityIntent: 'IfcSlab',
+          classification: { din276CostGroup: 'KG 320', ifcClassificationRef: 'planned' },
+        },
+        {
+          category: 'roof',
+          expectedBimCategory: 'roof',
+          ifcEntityIntent: 'IfcRoof',
+          classification: { din276CostGroup: 'KG 360', ifcClassificationRef: 'planned' },
+        },
+        {
+          category: 'stair',
+          expectedBimCategory: 'stair',
+          ifcEntityIntent: 'IfcStair',
+          classification: { din276CostGroup: 'KG 350', ifcClassificationRef: 'planned' },
+        },
+        {
+          category: 'door',
+          expectedBimCategory: 'door',
+          ifcEntityIntent: 'IfcDoor',
+          classification: { din276CostGroup: 'KG 334', ifcClassificationRef: 'planned' },
+        },
+        {
+          category: 'window',
+          expectedBimCategory: 'window',
+          ifcEntityIntent: 'IfcWindow',
+          classification: { din276CostGroup: 'KG 334', ifcClassificationRef: 'planned' },
+        },
+        {
+          category: 'railing',
+          expectedBimCategory: 'railing',
+          ifcEntityIntent: 'IfcRailing',
+          classification: { din276CostGroup: 'KG 336', ifcClassificationRef: 'planned' },
+        },
+        {
+          category: 'room',
+          expectedBimCategory: 'room',
+          ifcEntityIntent: 'IfcSpace',
+          classification: { din276CostGroup: 'DIN277', ifcClassificationRef: 'planned' },
+        },
+        {
+          category: 'asset',
+          expectedBimCategory: 'furniture',
+          ifcEntityIntent: 'IfcFurnishingElement',
+          classification: { din276CostGroup: 'KG 600', ifcClassificationRef: 'planned' },
+        },
+      ],
+      materialLayerSetRequirements: [
+        {
+          id: 'mls-ext-wall',
+          layerSetName: 'Exterior wall concept layers',
+          appliesToCategories: ['wall'],
+          totalThicknessMm: 360,
+          layers: [
+            { function: 'structure', materialKey: 'masonry_placeholder', thicknessMm: 240 },
+            { function: 'insulation', materialKey: 'mineral_wool_placeholder', thicknessMm: 120 },
+          ],
+          performancePlaceholders: {
+            thermal: 'U-value placeholder required',
+            fire: 'fire rating placeholder required',
+            acoustic: 'Rw placeholder required',
+          },
+        },
+        {
+          id: 'mls-slab',
+          layerSetName: 'Slab concept layers',
+          appliesToCategories: ['slab'],
+          totalThicknessMm: 300,
+          layers: [
+            { function: 'structure', materialKey: 'concrete_placeholder', thicknessMm: 240 },
+            { function: 'finish', materialKey: 'screed_placeholder', thicknessMm: 60 },
+          ],
+          performancePlaceholders: {
+            thermal: 'edge insulation placeholder required',
+            fire: 'REI placeholder required',
+            acoustic: 'impact sound placeholder required',
+          },
+        },
+        {
+          id: 'mls-roof',
+          layerSetName: 'Roof concept layers',
+          appliesToCategories: ['roof'],
+          totalThicknessMm: 420,
+          layers: [
+            { function: 'structure', materialKey: 'timber_roof_placeholder', thicknessMm: 240 },
+            { function: 'insulation', materialKey: 'roof_insulation_placeholder', thicknessMm: 180 },
+          ],
+          performancePlaceholders: {
+            thermal: 'roof U-value placeholder required',
+            fire: 'roof fire placeholder required',
+            acoustic: 'rain noise placeholder required',
+          },
+        },
+      ],
+      classificationRequirements: {
+        roomSystem: 'DIN277',
+        elementSystem: 'DIN276',
+        ifcClassificationReferences: 'planned',
+        requiredPlaceholders: ['DIN277 room use', 'DIN276 cost group', 'IFC classification reference'],
+      },
+      schedules: [
+        { id: 'room-schedule', name: 'Room Schedule', includes: ['rooms'] },
+        { id: 'opening-schedule', name: 'Door and Window Schedule', includes: ['doors', 'windows'] },
+      ],
+      exportRequirements: {
+        outputs: ['IFC', 'GLB', 'evidence-package'],
+        ifcEntityIntentRequired: true,
+      },
+      dataQualityChecks: [
+        { id: 'bim-data-minimum', severity: 'error', checks: ['rooms', 'levels', 'types', 'classification'] },
+      ],
+    },
     features: [
       {
         id: 'roof_terrace',
@@ -172,9 +331,47 @@ test('initiation-check writes coverage and visual checklist for a valid IR', asy
     await fs.readFile(path.join(outDir, 'visual-checklist.json'), 'utf8'),
   );
   assert.ok(checklist.items.some((item) => item.id === 'roof:roof_terrace'));
+  const bimDataQuality = JSON.parse(
+    await fs.readFile(path.join(outDir, 'bim-data-quality.json'), 'utf8'),
+  );
+  assert.equal(bimDataQuality.ok, true);
+  assert.equal(bimDataQuality.summary.errorCount, 0);
+  assert.ok(bimDataQuality.checks.some((item) => item.id === 'room_requirements'));
 
   const status = await fs.readFile(path.join(outDir, 'status.md'), 'utf8');
   assert.match(status, /Sketch-to-BIM Initiation Check/);
+  assert.match(status, /BIM Data Quality/);
+});
+
+test('project initiation IR requires BIM information requirements', async () => {
+  const dir = await fs.mkdtemp(path.join(os.tmpdir(), 'bim-ai-initiation-bim-ir-'));
+  const irPath = path.join(dir, 'ir.json');
+  const matrixPath = path.join(dir, 'matrix.json');
+  const outDir = path.join(dir, 'packet');
+  const ir = validIr();
+  delete ir.informationRequirements;
+  await writeJson(irPath, ir);
+  await writeJson(matrixPath, validMatrix());
+
+  const res = await runCli([
+    'initiation-check',
+    '--ir',
+    irPath,
+    '--capabilities',
+    matrixPath,
+    '--out',
+    outDir,
+  ]);
+
+  assert.equal(res.code, 2);
+  const coverage = JSON.parse(
+    await fs.readFile(path.join(outDir, 'capability-coverage.json'), 'utf8'),
+  );
+  assert.ok(coverage.issues.some((item) => item.code === 'bim_information_requirements_missing'));
+  const acceptance = JSON.parse(
+    await fs.readFile(path.join(outDir, 'acceptance-gates.json'), 'utf8'),
+  );
+  assert.equal(acceptance.summary.bimDataQualityErrorCount > 0, true);
 });
 
 test('initiation-check blocks a critical feature with no capability route', async () => {
@@ -221,7 +418,19 @@ test('initiation-run captures live advisor and evidence artifacts without screen
     revision: 7,
     elements: {
       'vp-main': { kind: 'viewpoint', id: 'main' },
+      'lvl-ground': { kind: 'level', id: 'lvl-ground', name: 'Ground', elevationMm: 0 },
+      'room-living': { kind: 'room', id: 'room-living', name: 'Living', levelId: 'lvl-ground' },
+      'wt-ext': { kind: 'wall_type', id: 'wt-ext', name: 'Exterior wall' },
+      'ft-slab': { kind: 'floor_type', id: 'ft-slab', name: 'Slab' },
+      'rt-roof': { kind: 'roof_type', id: 'rt-roof', name: 'Roof' },
       'wall-1': { kind: 'wall', id: 'wall-1' },
+      'floor-1': { kind: 'floor', id: 'floor-1' },
+      'roof-1': { kind: 'roof', id: 'roof-1' },
+      'stair-1': { kind: 'stair', id: 'stair-1' },
+      'door-1': { kind: 'door', id: 'door-1' },
+      'window-1': { kind: 'window', id: 'window-1' },
+      'rail-1': { kind: 'railing', id: 'rail-1' },
+      'chair-1': { kind: 'furniture', id: 'chair-1' },
     },
     violations: [],
   };
