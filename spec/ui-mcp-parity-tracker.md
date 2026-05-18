@@ -951,7 +951,7 @@ team can schedule waves of parallel agents against the tracker.
 | Milestone                        | Target duration | Current status | Goal                                                                                                                                                                | Exit criteria                                                                                                                                                                                                                                              |
 | -------------------------------- | --------------: | -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | M1. Truth and Inventory          |         2 weeks | Done           | Establish an auditable source of truth for backend commands, Cmd+K execution semantics, API descriptors, command schemas, and current parity gaps.                  | Generated parity report exists; all 262 backend commands, 326 Cmd+K entries, and 40 API descriptors are inventoried; command schemas are exported; first gap report is checked in; milestone status can be updated from generated evidence.                |
-| M2. First House-Capable MCP Pack |       4-6 weeks | Not Started    | Make an external agent capable of building a credible basic house through typed query/resolve/authoring tools instead of source-code knowledge or browser gestures. | Query/resolve tools exist; first authoring pack covers walls, floors, roofs, openings, rooms, stairs, views, sheets, advisor, dry-run, and commit; CLI mirrors the same tools; simple-house benchmark passes by MCP/CLI.                                   |
+| M2. First House-Capable MCP Pack |       4-6 weeks | Partial        | Make an external agent capable of building a credible basic house through typed query/resolve/authoring tools instead of source-code knowledge or browser gestures. | Query/resolve tools exist; first authoring pack covers walls, floors, roofs, openings, rooms, stairs, views, sheets, advisor, dry-run, and commit; CLI mirrors the same tools; simple-house benchmark passes by MCP/CLI.                                   |
 | M3. Excellent Product Parity     |      8-12 weeks | Not Started    | Turn parity into a robust product workflow with benchmarks, sketch-to-BIM productization, documentation outputs, and transaction/audit consistency.                 | Same-house benchmark suite has UI and MCP paths for core cases; sketch-to-BIM workflow uses stable product tools; documentation/export pack covers sheets, schedules, tags, dimensions, and PDF/IFC/glTF; transaction/audit/undo/collab requirements pass. |
 | M4. Professional Domain Parity   |      3-5 months | Not Started    | Extend parity across professional domains beyond the basic house workflow.                                                                                          | Site/context, structure, MEP, families/assets/materials, presentation, branded export, and advanced documentation capabilities have first-class UI and MCP/CLI paths with generated evidence.                                                              |
 
@@ -977,6 +977,33 @@ ownership:
 - M1-E should avoid broad implementation during M1 unless it unblocks the audit.
 - No M1 workstream should mark a capability as `Parity`; M1 is about creating
   truthful measurement and inventory.
+
+### Milestone 2 Wave 1 Workstreams
+
+Milestone 2 Wave 1 starts the first house-capable MCP pack. The goal of this
+wave is not full M2 closure; it is to create the first typed query/resolve and
+authoring path that can drive a simple-house benchmark without browser gestures.
+
+| Workstream                               | Status  | Owner scope                                                                                                  | Tracker items                                              | Done when                                                                                                                                                                                                                           |
+| ---------------------------------------- | ------- | ------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| M2-A. Query/resolve API pack             | Partial | Backend read-only resources and tests for model summary, element search, levels, types, views, hosts, loops. | WP-007, P0 read/query/context parity.                      | An agent can discover levels, elements, types, views, candidate hosts, and simple enclosed loops through typed API responses with stable ids and compact geometry summaries.                                                        |
+| M2-B. Semantic authoring bundle builders | Partial | Backend helper module and tests for first house authoring operations.                                        | WP-003, P0 semantic authoring MCP tools.                   | Typed helpers can build validated command bundles for wall chains, floors, roof-from-walls/simple roof, hosted openings, rooms, stairs, sheets/views where current kernel commands support them.                                    |
+| M2-C. CLI mirror for first MCP pack      | Partial | `packages/cli` commands and tests for query/resolve plus first authoring operations.                         | WP-003, WP-007, M2 CLI mirror.                             | CLI can call the typed query/resolve endpoints and generate or submit first-pack authoring payloads with `--dry-run`, `--commit`, `--parent-revision`, and `--json` where applicable.                                               |
+| M2-D. Simple-house benchmark harness     | Partial | Benchmark fixtures/scripts/specs that compare generated model output.                                        | WP-008, Same-house benchmark `simple-single-storey-house`. | A reproducible simple-house benchmark exists with MCP/CLI path, semantic summary, advisor/validation output, generated command-surface usage, and clear TODOs for the UI path if not implemented in this wave.                      |
+| M2-E. M2 audit/tracker integration       | Partial | Audit script and generated ledgers only; no ownership of backend/web implementation.                         | WP-004, WP-012, M2 progress reporting.                     | The parity audit recognizes first-pack query/resolve and semantic authoring surfaces, separates first-class typed tools from raw bundles, and reports M2 status/gaps in generated artifacts without hand-edited evidence inflation. |
+
+### Milestone 2 Wave 1 Scheduling Notes
+
+- M2-A should avoid broad write endpoints; it owns read/query/resolve behavior.
+- M2-B should avoid CLI and generated ledger edits; it owns reusable authoring
+  bundle construction and focused tests.
+- M2-C should consume public routes or documented payloads; it should not edit
+  backend route internals.
+- M2-D should keep the benchmark deterministic and small enough for CI.
+- M2-E should run after or degrade gracefully around the other workstreams; it
+  should mark missing surfaces explicitly rather than guessing.
+- M2 remains `Partial` until a simple-house benchmark can pass through the
+  typed MCP/CLI path.
 
 ## Next Work Packages
 
