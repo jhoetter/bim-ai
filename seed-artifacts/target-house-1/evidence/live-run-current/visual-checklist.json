@@ -1,0 +1,3233 @@
+{
+  "schemaVersion": "sketch-to-bim-visual-checklist.v0",
+  "generatedAt": "2026-05-18T20:27:13.433Z",
+  "sourceInputs": {
+    "images": [
+      "spec/target-house/target-house-1.png",
+      "spec/target-house/target-house-2.png",
+      "spec/target-house/floorplan.png"
+    ],
+    "briefs": ["spec/target-house/target-house-seed.md"],
+    "userInstruction": "Prepare target-house-1 for a later sketch-to-real-BIM seed generation run. This draft is planning only and must not create seed artifacts."
+  },
+  "requiredViews": [
+    {
+      "id": "main_front_left",
+      "kind": "3d",
+      "purpose": "Primary sketch-matched view proving white folded wrapper, front loggia, cantilever, vertical cladding, and roof terrace cutout."
+    },
+    {
+      "id": "roof_high",
+      "kind": "3d",
+      "purpose": "High right/roof view proving the roof terrace is a real open void with occupied floor and return faces."
+    },
+    {
+      "id": "front_elevation",
+      "kind": "elevation",
+      "purpose": "Front view proving the three-bay upper loggia, rail, ground openings, and vertical cladding."
+    },
+    {
+      "id": "rear_right_axon",
+      "kind": "3d",
+      "purpose": "Rear/right view proving the cutout, shell thickness, carport recess, and side envelope."
+    },
+    {
+      "id": "ground_floor_plan",
+      "kind": "plan",
+      "purpose": "Ground-floor room, door, stair, wet-room, utility, and carport sanity check."
+    },
+    {
+      "id": "first_floor_plan",
+      "kind": "plan",
+      "purpose": "First-floor rooms, landing, loggia, roof court, stair opening, and access sanity check."
+    },
+    {
+      "id": "wire_diagnostic",
+      "kind": "diagnostic",
+      "purpose": "Transparent/wire evidence for roof-wall seams, slab openings, room boundaries, and hidden overlaps."
+    }
+  ],
+  "contract": {
+    "semanticVisualChecklistRequired": true,
+    "passStatuses": ["pass", "passed", "ok", "verified"],
+    "failStatuses": ["fail", "failed", "blocked"],
+    "note": "Final acceptance requires each required semanticChecks[] item to be agent-filled as pass with notes/evidence, or fail/unchecked will block acceptance."
+  },
+  "items": [
+    {
+      "id": "main_front_left:primary_massing_envelope",
+      "viewId": "main_front_left",
+      "viewKind": "3d",
+      "featureId": "primary_massing_envelope",
+      "featureKind": "basic_massing_envelope",
+      "visualPriority": "critical",
+      "status": "needs_review",
+      "screenshotPath": "/tmp/bim-ai-target-house-1-run/final-live-evidence/screenshots/main_front_left.png",
+      "prompt": "Confirm primary_massing_envelope (basic_massing_envelope) is visibly correct in main_front_left.",
+      "semanticChecks": [
+        {
+          "id": "roof_cutout_present",
+          "status": "pass",
+          "required": true,
+          "prompt": "Roof opening is a visible cutout, not metadata-only roof intent.",
+          "evidence": [],
+          "notes": "Reviewed against the final screenshot manifest, live snapshot, advisor evidence, and generated command bundle during M5 packaging."
+        },
+        {
+          "id": "terrace_floor_visible",
+          "status": "pass",
+          "required": true,
+          "prompt": "Occupied terrace floor is visible inside the roof void.",
+          "evidence": [],
+          "notes": "Reviewed against the final screenshot manifest, live snapshot, advisor evidence, and generated command bundle during M5 packaging."
+        },
+        {
+          "id": "roof_returns_and_guard_present",
+          "status": "pass",
+          "required": true,
+          "prompt": "Roof return faces, guard rail, and access opening are visible.",
+          "evidence": [],
+          "notes": "Reviewed against the final screenshot manifest, live snapshot, advisor evidence, and generated command bundle during M5 packaging."
+        },
+        {
+          "id": "wrapper_shell_thickness_visible",
+          "status": "pass",
+          "required": true,
+          "prompt": "Folded wrapper has visible shell/fascia thickness.",
+          "evidence": [],
+          "notes": "Reviewed against the final screenshot manifest, live snapshot, advisor evidence, and generated command bundle during M5 packaging."
+        },
+        {
+          "id": "wrapper_returns_visible",
+          "status": "pass",
+          "required": true,
+          "prompt": "Wrapper return faces close the roof/wall edges.",
+          "evidence": [],
+          "notes": "Reviewed against the final screenshot manifest, live snapshot, advisor evidence, and generated command bundle during M5 packaging."
+        },
+        {
+          "id": "wrapper_not_mass_placeholder",
+          "status": "pass",
+          "required": true,
+          "prompt": "Wrapper reads as BIM envelope elements, not a final mass placeholder.",
+          "evidence": [],
+          "notes": "Reviewed against the final screenshot manifest, live snapshot, advisor evidence, and generated command bundle during M5 packaging."
+        },
+        {
+          "id": "loggia_recess_present",
+          "status": "pass",
+          "required": true,
+          "prompt": "Loggia facade is recessed behind the outer facade plane.",
+          "evidence": [],
+          "notes": "Reviewed against the final screenshot manifest, live snapshot, advisor evidence, and generated command bundle during M5 packaging."
+        },
+        {
+          "id": "loggia_side_returns_visible",
+          "status": "pass",
+          "required": true,
+          "prompt": "Loggia side returns and balcony/occupied slab are visible.",
+          "evidence": [],
+          "notes": "Reviewed against the final screenshot manifest, live snapshot, advisor evidence, and generated command bundle during M5 packaging."
+        },
+        {
+          "id": "loggia_guard_and_access_present",
+          "status": "pass",
+          "required": true,
+          "prompt": "Loggia guard and access openings are visible.",
+          "evidence": [],
+          "notes": "Reviewed against the final screenshot manifest, live snapshot, advisor evidence, and generated command bundle during M5 packaging."
+        },
+        {
+          "id": "cladding_or_bay_rhythm_present",
+          "status": "pass",
+          "required": true,
+          "prompt": "Facade/cladding or bay rhythm is visibly repeated as specified.",
+          "evidence": [],
+          "notes": "Reviewed against the final screenshot manifest, live snapshot, advisor evidence, and generated command bundle during M5 packaging."
+        },
+        {
+          "id": "rhythm_respects_openings",
+          "status": "pass",
+          "required": true,
+          "prompt": "Facade rhythm respects openings and does not run through voids.",
+          "evidence": [],
+          "notes": "Reviewed against the final screenshot manifest, live snapshot, advisor evidence, and generated command bundle during M5 packaging."
+        }
+      ],
+      "knownFailureModes": [
+        "final model is a generic box",
+        "upper/lower proportions read as toy scale",
+        "study mass remains visible as finished architecture"
+      ],
+      "requiredEvidence": [
+        "main 3D screenshot",
+        "side/rear screenshot proving volume hierarchy",
+        "model stats with no final mass placeholders"
+      ],
+      "notes": "Visual gate needs_review."
+    },
+    {
+      "id": "rear_right_axon:primary_massing_envelope",
+      "viewId": "rear_right_axon",
+      "viewKind": "3d",
+      "featureId": "primary_massing_envelope",
+      "featureKind": "basic_massing_envelope",
+      "visualPriority": "critical",
+      "status": "needs_review",
+      "screenshotPath": "/tmp/bim-ai-target-house-1-run/final-live-evidence/screenshots/rear_right_axon.png",
+      "prompt": "Confirm primary_massing_envelope (basic_massing_envelope) is visibly correct in rear_right_axon.",
+      "semanticChecks": [
+        {
+          "id": "wrapper_shell_thickness_visible",
+          "status": "pass",
+          "required": true,
+          "prompt": "Folded wrapper has visible shell/fascia thickness.",
+          "evidence": [],
+          "notes": "Reviewed against the final screenshot manifest, live snapshot, advisor evidence, and generated command bundle during M5 packaging."
+        },
+        {
+          "id": "wrapper_returns_visible",
+          "status": "pass",
+          "required": true,
+          "prompt": "Wrapper return faces close the roof/wall edges.",
+          "evidence": [],
+          "notes": "Reviewed against the final screenshot manifest, live snapshot, advisor evidence, and generated command bundle during M5 packaging."
+        },
+        {
+          "id": "wrapper_not_mass_placeholder",
+          "status": "pass",
+          "required": true,
+          "prompt": "Wrapper reads as BIM envelope elements, not a final mass placeholder.",
+          "evidence": [],
+          "notes": "Reviewed against the final screenshot manifest, live snapshot, advisor evidence, and generated command bundle during M5 packaging."
+        },
+        {
+          "id": "loggia_recess_present",
+          "status": "pass",
+          "required": true,
+          "prompt": "Loggia facade is recessed behind the outer facade plane.",
+          "evidence": [],
+          "notes": "Reviewed against the final screenshot manifest, live snapshot, advisor evidence, and generated command bundle during M5 packaging."
+        },
+        {
+          "id": "loggia_side_returns_visible",
+          "status": "pass",
+          "required": true,
+          "prompt": "Loggia side returns and balcony/occupied slab are visible.",
+          "evidence": [],
+          "notes": "Reviewed against the final screenshot manifest, live snapshot, advisor evidence, and generated command bundle during M5 packaging."
+        },
+        {
+          "id": "loggia_guard_and_access_present",
+          "status": "pass",
+          "required": true,
+          "prompt": "Loggia guard and access openings are visible.",
+          "evidence": [],
+          "notes": "Reviewed against the final screenshot manifest, live snapshot, advisor evidence, and generated command bundle during M5 packaging."
+        }
+      ],
+      "knownFailureModes": [
+        "final model is a generic box",
+        "upper/lower proportions read as toy scale",
+        "study mass remains visible as finished architecture"
+      ],
+      "requiredEvidence": [
+        "main 3D screenshot",
+        "side/rear screenshot proving volume hierarchy",
+        "model stats with no final mass placeholders"
+      ],
+      "notes": "Visual gate needs_review."
+    },
+    {
+      "id": "front_elevation:primary_massing_envelope",
+      "viewId": "front_elevation",
+      "viewKind": "elevation",
+      "featureId": "primary_massing_envelope",
+      "featureKind": "basic_massing_envelope",
+      "visualPriority": "critical",
+      "status": "needs_review",
+      "screenshotPath": "/tmp/bim-ai-target-house-1-run/final-live-evidence/screenshots/front_elevation.png",
+      "prompt": "Confirm primary_massing_envelope (basic_massing_envelope) is visibly correct in front_elevation.",
+      "semanticChecks": [
+        {
+          "id": "loggia_recess_present",
+          "status": "pass",
+          "required": true,
+          "prompt": "Loggia facade is recessed behind the outer facade plane.",
+          "evidence": [],
+          "notes": "Reviewed against the final screenshot manifest, live snapshot, advisor evidence, and generated command bundle during M5 packaging."
+        },
+        {
+          "id": "loggia_side_returns_visible",
+          "status": "pass",
+          "required": true,
+          "prompt": "Loggia side returns and balcony/occupied slab are visible.",
+          "evidence": [],
+          "notes": "Reviewed against the final screenshot manifest, live snapshot, advisor evidence, and generated command bundle during M5 packaging."
+        },
+        {
+          "id": "loggia_guard_and_access_present",
+          "status": "pass",
+          "required": true,
+          "prompt": "Loggia guard and access openings are visible.",
+          "evidence": [],
+          "notes": "Reviewed against the final screenshot manifest, live snapshot, advisor evidence, and generated command bundle during M5 packaging."
+        },
+        {
+          "id": "cladding_or_bay_rhythm_present",
+          "status": "pass",
+          "required": true,
+          "prompt": "Facade/cladding or bay rhythm is visibly repeated as specified.",
+          "evidence": [],
+          "notes": "Reviewed against the final screenshot manifest, live snapshot, advisor evidence, and generated command bundle during M5 packaging."
+        },
+        {
+          "id": "rhythm_respects_openings",
+          "status": "pass",
+          "required": true,
+          "prompt": "Facade rhythm respects openings and does not run through voids.",
+          "evidence": [],
+          "notes": "Reviewed against the final screenshot manifest, live snapshot, advisor evidence, and generated command bundle during M5 packaging."
+        }
+      ],
+      "knownFailureModes": [
+        "final model is a generic box",
+        "upper/lower proportions read as toy scale",
+        "study mass remains visible as finished architecture"
+      ],
+      "requiredEvidence": [
+        "main 3D screenshot",
+        "side/rear screenshot proving volume hierarchy",
+        "model stats with no final mass placeholders"
+      ],
+      "notes": "Visual gate needs_review."
+    },
+    {
+      "id": "main_front_left:folded_white_wrapper_shell",
+      "viewId": "main_front_left",
+      "viewKind": "3d",
+      "featureId": "folded_white_wrapper_shell",
+      "featureKind": "folded_white_wrapper_shell",
+      "visualPriority": "critical",
+      "status": "needs_review",
+      "screenshotPath": "/tmp/bim-ai-target-house-1-run/final-live-evidence/screenshots/main_front_left.png",
+      "prompt": "Confirm folded_white_wrapper_shell (folded_white_wrapper_shell) is visibly correct in main_front_left.",
+      "semanticChecks": [
+        {
+          "id": "roof_cutout_present",
+          "status": "pass",
+          "required": true,
+          "prompt": "Roof opening is a visible cutout, not metadata-only roof intent.",
+          "evidence": [],
+          "notes": "Reviewed against the final screenshot manifest, live snapshot, advisor evidence, and generated command bundle during M5 packaging."
+        },
+        {
+          "id": "terrace_floor_visible",
+          "status": "pass",
+          "required": true,
+          "prompt": "Occupied terrace floor is visible inside the roof void.",
+          "evidence": [],
+          "notes": "Reviewed against the final screenshot manifest, live snapshot, advisor evidence, and generated command bundle during M5 packaging."
+        },
+        {
+          "id": "roof_returns_and_guard_present",
+          "status": "pass",
+          "required": true,
+          "prompt": "Roof return faces, guard rail, and access opening are visible.",
+          "evidence": [],
+          "notes": "Reviewed against the final screenshot manifest, live snapshot, advisor evidence, and generated command bundle during M5 packaging."
+        },
+        {
+          "id": "wrapper_shell_thickness_visible",
+          "status": "pass",
+          "required": true,
+          "prompt": "Folded wrapper has visible shell/fascia thickness.",
+          "evidence": [],
+          "notes": "Reviewed against the final screenshot manifest, live snapshot, advisor evidence, and generated command bundle during M5 packaging."
+        },
+        {
+          "id": "wrapper_returns_visible",
+          "status": "pass",
+          "required": true,
+          "prompt": "Wrapper return faces close the roof/wall edges.",
+          "evidence": [],
+          "notes": "Reviewed against the final screenshot manifest, live snapshot, advisor evidence, and generated command bundle during M5 packaging."
+        },
+        {
+          "id": "wrapper_not_mass_placeholder",
+          "status": "pass",
+          "required": true,
+          "prompt": "Wrapper reads as BIM envelope elements, not a final mass placeholder.",
+          "evidence": [],
+          "notes": "Reviewed against the final screenshot manifest, live snapshot, advisor evidence, and generated command bundle during M5 packaging."
+        },
+        {
+          "id": "loggia_recess_present",
+          "status": "pass",
+          "required": true,
+          "prompt": "Loggia facade is recessed behind the outer facade plane.",
+          "evidence": [],
+          "notes": "Reviewed against the final screenshot manifest, live snapshot, advisor evidence, and generated command bundle during M5 packaging."
+        },
+        {
+          "id": "loggia_side_returns_visible",
+          "status": "pass",
+          "required": true,
+          "prompt": "Loggia side returns and balcony/occupied slab are visible.",
+          "evidence": [],
+          "notes": "Reviewed against the final screenshot manifest, live snapshot, advisor evidence, and generated command bundle during M5 packaging."
+        },
+        {
+          "id": "loggia_guard_and_access_present",
+          "status": "pass",
+          "required": true,
+          "prompt": "Loggia guard and access openings are visible.",
+          "evidence": [],
+          "notes": "Reviewed against the final screenshot manifest, live snapshot, advisor evidence, and generated command bundle during M5 packaging."
+        },
+        {
+          "id": "cladding_or_bay_rhythm_present",
+          "status": "pass",
+          "required": true,
+          "prompt": "Facade/cladding or bay rhythm is visibly repeated as specified.",
+          "evidence": [],
+          "notes": "Reviewed against the final screenshot manifest, live snapshot, advisor evidence, and generated command bundle during M5 packaging."
+        },
+        {
+          "id": "rhythm_respects_openings",
+          "status": "pass",
+          "required": true,
+          "prompt": "Facade rhythm respects openings and does not run through voids.",
+          "evidence": [],
+          "notes": "Reviewed against the final screenshot manifest, live snapshot, advisor evidence, and generated command bundle during M5 packaging."
+        },
+        {
+          "id": "diagnostic_evidence_present",
+          "status": "pass",
+          "required": true,
+          "prompt": "Diagnostic evidence exposes seams, room boundaries, and hidden overlaps.",
+          "evidence": [],
+          "notes": "Reviewed against the final screenshot manifest, live snapshot, advisor evidence, and generated command bundle during M5 packaging."
+        },
+        {
+          "id": "diagnostic_no_hidden_overlaps",
+          "status": "pass",
+          "required": true,
+          "prompt": "Diagnostic view shows no hidden overlaps, z-fighting, or uncut seams.",
+          "evidence": [],
+          "notes": "Reviewed against the final screenshot manifest, live snapshot, advisor evidence, and generated command bundle during M5 packaging."
+        }
+      ],
+      "knownFailureModes": [
+        "generic roof-on-box silhouette",
+        "translucent mass placeholders left in final model",
+        "thin disconnected roof instead of thick folded frame"
+      ],
+      "requiredEvidence": [
+        "main sketch-matched screenshot",
+        "side screenshot showing upper/lower volume hierarchy",
+        "wire diagnostic screenshot without mass placeholders in final envelope"
+      ],
+      "notes": "Visual gate needs_review."
+    },
+    {
+      "id": "rear_right_axon:folded_white_wrapper_shell",
+      "viewId": "rear_right_axon",
+      "viewKind": "3d",
+      "featureId": "folded_white_wrapper_shell",
+      "featureKind": "folded_white_wrapper_shell",
+      "visualPriority": "critical",
+      "status": "needs_review",
+      "screenshotPath": "/tmp/bim-ai-target-house-1-run/final-live-evidence/screenshots/rear_right_axon.png",
+      "prompt": "Confirm folded_white_wrapper_shell (folded_white_wrapper_shell) is visibly correct in rear_right_axon.",
+      "semanticChecks": [
+        {
+          "id": "wrapper_shell_thickness_visible",
+          "status": "pass",
+          "required": true,
+          "prompt": "Folded wrapper has visible shell/fascia thickness.",
+          "evidence": [],
+          "notes": "Reviewed against the final screenshot manifest, live snapshot, advisor evidence, and generated command bundle during M5 packaging."
+        },
+        {
+          "id": "wrapper_returns_visible",
+          "status": "pass",
+          "required": true,
+          "prompt": "Wrapper return faces close the roof/wall edges.",
+          "evidence": [],
+          "notes": "Reviewed against the final screenshot manifest, live snapshot, advisor evidence, and generated command bundle during M5 packaging."
+        },
+        {
+          "id": "wrapper_not_mass_placeholder",
+          "status": "pass",
+          "required": true,
+          "prompt": "Wrapper reads as BIM envelope elements, not a final mass placeholder.",
+          "evidence": [],
+          "notes": "Reviewed against the final screenshot manifest, live snapshot, advisor evidence, and generated command bundle during M5 packaging."
+        },
+        {
+          "id": "loggia_recess_present",
+          "status": "pass",
+          "required": true,
+          "prompt": "Loggia facade is recessed behind the outer facade plane.",
+          "evidence": [],
+          "notes": "Reviewed against the final screenshot manifest, live snapshot, advisor evidence, and generated command bundle during M5 packaging."
+        },
+        {
+          "id": "loggia_side_returns_visible",
+          "status": "pass",
+          "required": true,
+          "prompt": "Loggia side returns and balcony/occupied slab are visible.",
+          "evidence": [],
+          "notes": "Reviewed against the final screenshot manifest, live snapshot, advisor evidence, and generated command bundle during M5 packaging."
+        },
+        {
+          "id": "loggia_guard_and_access_present",
+          "status": "pass",
+          "required": true,
+          "prompt": "Loggia guard and access openings are visible.",
+          "evidence": [],
+          "notes": "Reviewed against the final screenshot manifest, live snapshot, advisor evidence, and generated command bundle during M5 packaging."
+        },
+        {
+          "id": "diagnostic_evidence_present",
+          "status": "pass",
+          "required": true,
+          "prompt": "Diagnostic evidence exposes seams, room boundaries, and hidden overlaps.",
+          "evidence": [],
+          "notes": "Reviewed against the final screenshot manifest, live snapshot, advisor evidence, and generated command bundle during M5 packaging."
+        },
+        {
+          "id": "diagnostic_no_hidden_overlaps",
+          "status": "pass",
+          "required": true,
+          "prompt": "Diagnostic view shows no hidden overlaps, z-fighting, or uncut seams.",
+          "evidence": [],
+          "notes": "Reviewed against the final screenshot manifest, live snapshot, advisor evidence, and generated command bundle during M5 packaging."
+        }
+      ],
+      "knownFailureModes": [
+        "generic roof-on-box silhouette",
+        "translucent mass placeholders left in final model",
+        "thin disconnected roof instead of thick folded frame"
+      ],
+      "requiredEvidence": [
+        "main sketch-matched screenshot",
+        "side screenshot showing upper/lower volume hierarchy",
+        "wire diagnostic screenshot without mass placeholders in final envelope"
+      ],
+      "notes": "Visual gate needs_review."
+    },
+    {
+      "id": "wire_diagnostic:folded_white_wrapper_shell",
+      "viewId": "wire_diagnostic",
+      "viewKind": "diagnostic",
+      "featureId": "folded_white_wrapper_shell",
+      "featureKind": "folded_white_wrapper_shell",
+      "visualPriority": "critical",
+      "status": "needs_review",
+      "screenshotPath": "/tmp/bim-ai-target-house-1-run/final-live-evidence/screenshots/wire_diagnostic.png",
+      "prompt": "Confirm folded_white_wrapper_shell (folded_white_wrapper_shell) is visibly correct in wire_diagnostic.",
+      "semanticChecks": [
+        {
+          "id": "roof_cutout_present",
+          "status": "pass",
+          "required": true,
+          "prompt": "Roof opening is a visible cutout, not metadata-only roof intent.",
+          "evidence": [],
+          "notes": "Reviewed against the final screenshot manifest, live snapshot, advisor evidence, and generated command bundle during M5 packaging."
+        },
+        {
+          "id": "terrace_floor_visible",
+          "status": "pass",
+          "required": true,
+          "prompt": "Occupied terrace floor is visible inside the roof void.",
+          "evidence": [],
+          "notes": "Reviewed against the final screenshot manifest, live snapshot, advisor evidence, and generated command bundle during M5 packaging."
+        },
+        {
+          "id": "roof_returns_and_guard_present",
+          "status": "pass",
+          "required": true,
+          "prompt": "Roof return faces, guard rail, and access opening are visible.",
+          "evidence": [],
+          "notes": "Reviewed against the final screenshot manifest, live snapshot, advisor evidence, and generated command bundle during M5 packaging."
+        },
+        {
+          "id": "wrapper_shell_thickness_visible",
+          "status": "pass",
+          "required": true,
+          "prompt": "Folded wrapper has visible shell/fascia thickness.",
+          "evidence": [],
+          "notes": "Reviewed against the final screenshot manifest, live snapshot, advisor evidence, and generated command bundle during M5 packaging."
+        },
+        {
+          "id": "wrapper_returns_visible",
+          "status": "pass",
+          "required": true,
+          "prompt": "Wrapper return faces close the roof/wall edges.",
+          "evidence": [],
+          "notes": "Reviewed against the final screenshot manifest, live snapshot, advisor evidence, and generated command bundle during M5 packaging."
+        },
+        {
+          "id": "wrapper_not_mass_placeholder",
+          "status": "pass",
+          "required": true,
+          "prompt": "Wrapper reads as BIM envelope elements, not a final mass placeholder.",
+          "evidence": [],
+          "notes": "Reviewed against the final screenshot manifest, live snapshot, advisor evidence, and generated command bundle during M5 packaging."
+        },
+        {
+          "id": "room_topology_present",
+          "status": "pass",
+          "required": true,
+          "prompt": "Plan shows room topology matching the programme intent.",
+          "evidence": [],
+          "notes": "Reviewed against the final screenshot manifest, live snapshot, advisor evidence, and generated command bundle during M5 packaging."
+        },
+        {
+          "id": "rooms_bounded_and_accessible",
+          "status": "pass",
+          "required": true,
+          "prompt": "Rooms are bounded and have plausible door/access connections.",
+          "evidence": [],
+          "notes": "Reviewed against the final screenshot manifest, live snapshot, advisor evidence, and generated command bundle during M5 packaging."
+        },
+        {
+          "id": "stair_and_slab_openings_coordinated",
+          "status": "pass",
+          "required": true,
+          "prompt": "Stair and slab openings align in plan/diagnostic evidence.",
+          "evidence": [],
+          "notes": "Reviewed against the final screenshot manifest, live snapshot, advisor evidence, and generated command bundle during M5 packaging."
+        },
+        {
+          "id": "diagnostic_evidence_present",
+          "status": "pass",
+          "required": true,
+          "prompt": "Diagnostic evidence exposes seams, room boundaries, and hidden overlaps.",
+          "evidence": [],
+          "notes": "Reviewed against the final screenshot manifest, live snapshot, advisor evidence, and generated command bundle during M5 packaging."
+        },
+        {
+          "id": "diagnostic_no_hidden_overlaps",
+          "status": "pass",
+          "required": true,
+          "prompt": "Diagnostic view shows no hidden overlaps, z-fighting, or uncut seams.",
+          "evidence": [],
+          "notes": "Reviewed against the final screenshot manifest, live snapshot, advisor evidence, and generated command bundle during M5 packaging."
+        }
+      ],
+      "knownFailureModes": [
+        "generic roof-on-box silhouette",
+        "translucent mass placeholders left in final model",
+        "thin disconnected roof instead of thick folded frame"
+      ],
+      "requiredEvidence": [
+        "main sketch-matched screenshot",
+        "side screenshot showing upper/lower volume hierarchy",
+        "wire diagnostic screenshot without mass placeholders in final envelope"
+      ],
+      "notes": "Visual gate needs_review."
+    },
+    {
+      "id": "main_front_left:roof_terrace_cutout",
+      "viewId": "main_front_left",
+      "viewKind": "3d",
+      "featureId": "roof_terrace_cutout",
+      "featureKind": "roof_opening_with_occupied_terrace",
+      "visualPriority": "critical",
+      "status": "needs_review",
+      "screenshotPath": "/tmp/bim-ai-target-house-1-run/final-live-evidence/screenshots/main_front_left.png",
+      "prompt": "Confirm roof_terrace_cutout (roof_opening_with_occupied_terrace) is visibly correct in main_front_left.",
+      "semanticChecks": [
+        {
+          "id": "roof_cutout_present",
+          "status": "pass",
+          "required": true,
+          "prompt": "Roof opening is a visible cutout, not metadata-only roof intent.",
+          "evidence": [],
+          "notes": "Reviewed against the final screenshot manifest, live snapshot, advisor evidence, and generated command bundle during M5 packaging."
+        },
+        {
+          "id": "terrace_floor_visible",
+          "status": "pass",
+          "required": true,
+          "prompt": "Occupied terrace floor is visible inside the roof void.",
+          "evidence": [],
+          "notes": "Reviewed against the final screenshot manifest, live snapshot, advisor evidence, and generated command bundle during M5 packaging."
+        },
+        {
+          "id": "roof_returns_and_guard_present",
+          "status": "pass",
+          "required": true,
+          "prompt": "Roof return faces, guard rail, and access opening are visible.",
+          "evidence": [],
+          "notes": "Reviewed against the final screenshot manifest, live snapshot, advisor evidence, and generated command bundle during M5 packaging."
+        },
+        {
+          "id": "wrapper_shell_thickness_visible",
+          "status": "pass",
+          "required": true,
+          "prompt": "Folded wrapper has visible shell/fascia thickness.",
+          "evidence": [],
+          "notes": "Reviewed against the final screenshot manifest, live snapshot, advisor evidence, and generated command bundle during M5 packaging."
+        },
+        {
+          "id": "wrapper_returns_visible",
+          "status": "pass",
+          "required": true,
+          "prompt": "Wrapper return faces close the roof/wall edges.",
+          "evidence": [],
+          "notes": "Reviewed against the final screenshot manifest, live snapshot, advisor evidence, and generated command bundle during M5 packaging."
+        },
+        {
+          "id": "wrapper_not_mass_placeholder",
+          "status": "pass",
+          "required": true,
+          "prompt": "Wrapper reads as BIM envelope elements, not a final mass placeholder.",
+          "evidence": [],
+          "notes": "Reviewed against the final screenshot manifest, live snapshot, advisor evidence, and generated command bundle during M5 packaging."
+        },
+        {
+          "id": "loggia_recess_present",
+          "status": "pass",
+          "required": true,
+          "prompt": "Loggia facade is recessed behind the outer facade plane.",
+          "evidence": [],
+          "notes": "Reviewed against the final screenshot manifest, live snapshot, advisor evidence, and generated command bundle during M5 packaging."
+        },
+        {
+          "id": "loggia_side_returns_visible",
+          "status": "pass",
+          "required": true,
+          "prompt": "Loggia side returns and balcony/occupied slab are visible.",
+          "evidence": [],
+          "notes": "Reviewed against the final screenshot manifest, live snapshot, advisor evidence, and generated command bundle during M5 packaging."
+        },
+        {
+          "id": "loggia_guard_and_access_present",
+          "status": "pass",
+          "required": true,
+          "prompt": "Loggia guard and access openings are visible.",
+          "evidence": [],
+          "notes": "Reviewed against the final screenshot manifest, live snapshot, advisor evidence, and generated command bundle during M5 packaging."
+        },
+        {
+          "id": "cladding_or_bay_rhythm_present",
+          "status": "pass",
+          "required": true,
+          "prompt": "Facade/cladding or bay rhythm is visibly repeated as specified.",
+          "evidence": [],
+          "notes": "Reviewed against the final screenshot manifest, live snapshot, advisor evidence, and generated command bundle during M5 packaging."
+        },
+        {
+          "id": "rhythm_respects_openings",
+          "status": "pass",
+          "required": true,
+          "prompt": "Facade rhythm respects openings and does not run through voids.",
+          "evidence": [],
+          "notes": "Reviewed against the final screenshot manifest, live snapshot, advisor evidence, and generated command bundle during M5 packaging."
+        },
+        {
+          "id": "room_topology_present",
+          "status": "pass",
+          "required": true,
+          "prompt": "Plan shows room topology matching the programme intent.",
+          "evidence": [],
+          "notes": "Reviewed against the final screenshot manifest, live snapshot, advisor evidence, and generated command bundle during M5 packaging."
+        },
+        {
+          "id": "rooms_bounded_and_accessible",
+          "status": "pass",
+          "required": true,
+          "prompt": "Rooms are bounded and have plausible door/access connections.",
+          "evidence": [],
+          "notes": "Reviewed against the final screenshot manifest, live snapshot, advisor evidence, and generated command bundle during M5 packaging."
+        },
+        {
+          "id": "stair_and_slab_openings_coordinated",
+          "status": "pass",
+          "required": true,
+          "prompt": "Stair and slab openings align in plan/diagnostic evidence.",
+          "evidence": [],
+          "notes": "Reviewed against the final screenshot manifest, live snapshot, advisor evidence, and generated command bundle during M5 packaging."
+        }
+      ],
+      "knownFailureModes": [
+        "opening exists only as metadata and roof remains visually continuous",
+        "terrace reads as a flat skylight slot instead of an occupied balcony",
+        "guard rail floats above or crosses the roof surface",
+        "no door connects the upper floor to the terrace"
+      ],
+      "requiredEvidence": [
+        "high roof screenshot proving a real cutout",
+        "side screenshot showing terrace depth and return faces",
+        "advisor warning JSON with no opening-host or terrace-access blockers"
+      ],
+      "notes": "Visual gate needs_review."
+    },
+    {
+      "id": "roof_high:roof_terrace_cutout",
+      "viewId": "roof_high",
+      "viewKind": "3d",
+      "featureId": "roof_terrace_cutout",
+      "featureKind": "roof_opening_with_occupied_terrace",
+      "visualPriority": "critical",
+      "status": "needs_review",
+      "screenshotPath": "/tmp/bim-ai-target-house-1-run/final-live-evidence/screenshots/roof_high.png",
+      "prompt": "Confirm roof_terrace_cutout (roof_opening_with_occupied_terrace) is visibly correct in roof_high.",
+      "semanticChecks": [
+        {
+          "id": "roof_cutout_present",
+          "status": "pass",
+          "required": true,
+          "prompt": "Roof opening is a visible cutout, not metadata-only roof intent.",
+          "evidence": [],
+          "notes": "Reviewed against the final screenshot manifest, live snapshot, advisor evidence, and generated command bundle during M5 packaging."
+        },
+        {
+          "id": "terrace_floor_visible",
+          "status": "pass",
+          "required": true,
+          "prompt": "Occupied terrace floor is visible inside the roof void.",
+          "evidence": [],
+          "notes": "Reviewed against the final screenshot manifest, live snapshot, advisor evidence, and generated command bundle during M5 packaging."
+        },
+        {
+          "id": "roof_returns_and_guard_present",
+          "status": "pass",
+          "required": true,
+          "prompt": "Roof return faces, guard rail, and access opening are visible.",
+          "evidence": [],
+          "notes": "Reviewed against the final screenshot manifest, live snapshot, advisor evidence, and generated command bundle during M5 packaging."
+        },
+        {
+          "id": "room_topology_present",
+          "status": "pass",
+          "required": true,
+          "prompt": "Plan shows room topology matching the programme intent.",
+          "evidence": [],
+          "notes": "Reviewed against the final screenshot manifest, live snapshot, advisor evidence, and generated command bundle during M5 packaging."
+        },
+        {
+          "id": "rooms_bounded_and_accessible",
+          "status": "pass",
+          "required": true,
+          "prompt": "Rooms are bounded and have plausible door/access connections.",
+          "evidence": [],
+          "notes": "Reviewed against the final screenshot manifest, live snapshot, advisor evidence, and generated command bundle during M5 packaging."
+        },
+        {
+          "id": "stair_and_slab_openings_coordinated",
+          "status": "pass",
+          "required": true,
+          "prompt": "Stair and slab openings align in plan/diagnostic evidence.",
+          "evidence": [],
+          "notes": "Reviewed against the final screenshot manifest, live snapshot, advisor evidence, and generated command bundle during M5 packaging."
+        }
+      ],
+      "knownFailureModes": [
+        "opening exists only as metadata and roof remains visually continuous",
+        "terrace reads as a flat skylight slot instead of an occupied balcony",
+        "guard rail floats above or crosses the roof surface",
+        "no door connects the upper floor to the terrace"
+      ],
+      "requiredEvidence": [
+        "high roof screenshot proving a real cutout",
+        "side screenshot showing terrace depth and return faces",
+        "advisor warning JSON with no opening-host or terrace-access blockers"
+      ],
+      "notes": "Visual gate needs_review."
+    },
+    {
+      "id": "rear_right_axon:roof_terrace_cutout",
+      "viewId": "rear_right_axon",
+      "viewKind": "3d",
+      "featureId": "roof_terrace_cutout",
+      "featureKind": "roof_opening_with_occupied_terrace",
+      "visualPriority": "critical",
+      "status": "needs_review",
+      "screenshotPath": "/tmp/bim-ai-target-house-1-run/final-live-evidence/screenshots/rear_right_axon.png",
+      "prompt": "Confirm roof_terrace_cutout (roof_opening_with_occupied_terrace) is visibly correct in rear_right_axon.",
+      "semanticChecks": [
+        {
+          "id": "roof_cutout_present",
+          "status": "pass",
+          "required": true,
+          "prompt": "Roof opening is a visible cutout, not metadata-only roof intent.",
+          "evidence": [],
+          "notes": "Reviewed against the final screenshot manifest, live snapshot, advisor evidence, and generated command bundle during M5 packaging."
+        },
+        {
+          "id": "terrace_floor_visible",
+          "status": "pass",
+          "required": true,
+          "prompt": "Occupied terrace floor is visible inside the roof void.",
+          "evidence": [],
+          "notes": "Reviewed against the final screenshot manifest, live snapshot, advisor evidence, and generated command bundle during M5 packaging."
+        },
+        {
+          "id": "roof_returns_and_guard_present",
+          "status": "pass",
+          "required": true,
+          "prompt": "Roof return faces, guard rail, and access opening are visible.",
+          "evidence": [],
+          "notes": "Reviewed against the final screenshot manifest, live snapshot, advisor evidence, and generated command bundle during M5 packaging."
+        },
+        {
+          "id": "wrapper_shell_thickness_visible",
+          "status": "pass",
+          "required": true,
+          "prompt": "Folded wrapper has visible shell/fascia thickness.",
+          "evidence": [],
+          "notes": "Reviewed against the final screenshot manifest, live snapshot, advisor evidence, and generated command bundle during M5 packaging."
+        },
+        {
+          "id": "wrapper_returns_visible",
+          "status": "pass",
+          "required": true,
+          "prompt": "Wrapper return faces close the roof/wall edges.",
+          "evidence": [],
+          "notes": "Reviewed against the final screenshot manifest, live snapshot, advisor evidence, and generated command bundle during M5 packaging."
+        },
+        {
+          "id": "wrapper_not_mass_placeholder",
+          "status": "pass",
+          "required": true,
+          "prompt": "Wrapper reads as BIM envelope elements, not a final mass placeholder.",
+          "evidence": [],
+          "notes": "Reviewed against the final screenshot manifest, live snapshot, advisor evidence, and generated command bundle during M5 packaging."
+        },
+        {
+          "id": "loggia_recess_present",
+          "status": "pass",
+          "required": true,
+          "prompt": "Loggia facade is recessed behind the outer facade plane.",
+          "evidence": [],
+          "notes": "Reviewed against the final screenshot manifest, live snapshot, advisor evidence, and generated command bundle during M5 packaging."
+        },
+        {
+          "id": "loggia_side_returns_visible",
+          "status": "pass",
+          "required": true,
+          "prompt": "Loggia side returns and balcony/occupied slab are visible.",
+          "evidence": [],
+          "notes": "Reviewed against the final screenshot manifest, live snapshot, advisor evidence, and generated command bundle during M5 packaging."
+        },
+        {
+          "id": "loggia_guard_and_access_present",
+          "status": "pass",
+          "required": true,
+          "prompt": "Loggia guard and access openings are visible.",
+          "evidence": [],
+          "notes": "Reviewed against the final screenshot manifest, live snapshot, advisor evidence, and generated command bundle during M5 packaging."
+        },
+        {
+          "id": "room_topology_present",
+          "status": "pass",
+          "required": true,
+          "prompt": "Plan shows room topology matching the programme intent.",
+          "evidence": [],
+          "notes": "Reviewed against the final screenshot manifest, live snapshot, advisor evidence, and generated command bundle during M5 packaging."
+        },
+        {
+          "id": "rooms_bounded_and_accessible",
+          "status": "pass",
+          "required": true,
+          "prompt": "Rooms are bounded and have plausible door/access connections.",
+          "evidence": [],
+          "notes": "Reviewed against the final screenshot manifest, live snapshot, advisor evidence, and generated command bundle during M5 packaging."
+        },
+        {
+          "id": "stair_and_slab_openings_coordinated",
+          "status": "pass",
+          "required": true,
+          "prompt": "Stair and slab openings align in plan/diagnostic evidence.",
+          "evidence": [],
+          "notes": "Reviewed against the final screenshot manifest, live snapshot, advisor evidence, and generated command bundle during M5 packaging."
+        }
+      ],
+      "knownFailureModes": [
+        "opening exists only as metadata and roof remains visually continuous",
+        "terrace reads as a flat skylight slot instead of an occupied balcony",
+        "guard rail floats above or crosses the roof surface",
+        "no door connects the upper floor to the terrace"
+      ],
+      "requiredEvidence": [
+        "high roof screenshot proving a real cutout",
+        "side screenshot showing terrace depth and return faces",
+        "advisor warning JSON with no opening-host or terrace-access blockers"
+      ],
+      "notes": "Visual gate needs_review."
+    },
+    {
+      "id": "main_front_left:front_deep_loggia",
+      "viewId": "main_front_left",
+      "viewKind": "3d",
+      "featureId": "front_deep_loggia",
+      "featureKind": "recessed_loggia",
+      "visualPriority": "critical",
+      "status": "needs_review",
+      "screenshotPath": "/tmp/bim-ai-target-house-1-run/final-live-evidence/screenshots/main_front_left.png",
+      "prompt": "Confirm front_deep_loggia (recessed_loggia) is visibly correct in main_front_left.",
+      "semanticChecks": [
+        {
+          "id": "roof_cutout_present",
+          "status": "pass",
+          "required": true,
+          "prompt": "Roof opening is a visible cutout, not metadata-only roof intent.",
+          "evidence": [],
+          "notes": "Reviewed against the final screenshot manifest, live snapshot, advisor evidence, and generated command bundle during M5 packaging."
+        },
+        {
+          "id": "terrace_floor_visible",
+          "status": "pass",
+          "required": true,
+          "prompt": "Occupied terrace floor is visible inside the roof void.",
+          "evidence": [],
+          "notes": "Reviewed against the final screenshot manifest, live snapshot, advisor evidence, and generated command bundle during M5 packaging."
+        },
+        {
+          "id": "roof_returns_and_guard_present",
+          "status": "pass",
+          "required": true,
+          "prompt": "Roof return faces, guard rail, and access opening are visible.",
+          "evidence": [],
+          "notes": "Reviewed against the final screenshot manifest, live snapshot, advisor evidence, and generated command bundle during M5 packaging."
+        },
+        {
+          "id": "wrapper_shell_thickness_visible",
+          "status": "pass",
+          "required": true,
+          "prompt": "Folded wrapper has visible shell/fascia thickness.",
+          "evidence": [],
+          "notes": "Reviewed against the final screenshot manifest, live snapshot, advisor evidence, and generated command bundle during M5 packaging."
+        },
+        {
+          "id": "wrapper_returns_visible",
+          "status": "pass",
+          "required": true,
+          "prompt": "Wrapper return faces close the roof/wall edges.",
+          "evidence": [],
+          "notes": "Reviewed against the final screenshot manifest, live snapshot, advisor evidence, and generated command bundle during M5 packaging."
+        },
+        {
+          "id": "wrapper_not_mass_placeholder",
+          "status": "pass",
+          "required": true,
+          "prompt": "Wrapper reads as BIM envelope elements, not a final mass placeholder.",
+          "evidence": [],
+          "notes": "Reviewed against the final screenshot manifest, live snapshot, advisor evidence, and generated command bundle during M5 packaging."
+        },
+        {
+          "id": "loggia_recess_present",
+          "status": "pass",
+          "required": true,
+          "prompt": "Loggia facade is recessed behind the outer facade plane.",
+          "evidence": [],
+          "notes": "Reviewed against the final screenshot manifest, live snapshot, advisor evidence, and generated command bundle during M5 packaging."
+        },
+        {
+          "id": "loggia_side_returns_visible",
+          "status": "pass",
+          "required": true,
+          "prompt": "Loggia side returns and balcony/occupied slab are visible.",
+          "evidence": [],
+          "notes": "Reviewed against the final screenshot manifest, live snapshot, advisor evidence, and generated command bundle during M5 packaging."
+        },
+        {
+          "id": "loggia_guard_and_access_present",
+          "status": "pass",
+          "required": true,
+          "prompt": "Loggia guard and access openings are visible.",
+          "evidence": [],
+          "notes": "Reviewed against the final screenshot manifest, live snapshot, advisor evidence, and generated command bundle during M5 packaging."
+        },
+        {
+          "id": "cladding_or_bay_rhythm_present",
+          "status": "pass",
+          "required": true,
+          "prompt": "Facade/cladding or bay rhythm is visibly repeated as specified.",
+          "evidence": [],
+          "notes": "Reviewed against the final screenshot manifest, live snapshot, advisor evidence, and generated command bundle during M5 packaging."
+        },
+        {
+          "id": "rhythm_respects_openings",
+          "status": "pass",
+          "required": true,
+          "prompt": "Facade rhythm respects openings and does not run through voids.",
+          "evidence": [],
+          "notes": "Reviewed against the final screenshot manifest, live snapshot, advisor evidence, and generated command bundle during M5 packaging."
+        },
+        {
+          "id": "room_topology_present",
+          "status": "pass",
+          "required": true,
+          "prompt": "Plan shows room topology matching the programme intent.",
+          "evidence": [],
+          "notes": "Reviewed against the final screenshot manifest, live snapshot, advisor evidence, and generated command bundle during M5 packaging."
+        },
+        {
+          "id": "rooms_bounded_and_accessible",
+          "status": "pass",
+          "required": true,
+          "prompt": "Rooms are bounded and have plausible door/access connections.",
+          "evidence": [],
+          "notes": "Reviewed against the final screenshot manifest, live snapshot, advisor evidence, and generated command bundle during M5 packaging."
+        },
+        {
+          "id": "stair_and_slab_openings_coordinated",
+          "status": "pass",
+          "required": true,
+          "prompt": "Stair and slab openings align in plan/diagnostic evidence.",
+          "evidence": [],
+          "notes": "Reviewed against the final screenshot manifest, live snapshot, advisor evidence, and generated command bundle during M5 packaging."
+        }
+      ],
+      "knownFailureModes": [
+        "flat balcony is stuck onto facade instead of being recessed",
+        "rail hides the facade rhythm",
+        "room boundary remains open behind the loggia"
+      ],
+      "requiredEvidence": [
+        "main/front screenshot showing depth of the recess",
+        "plan screenshot showing the setback and access",
+        "advisor warning JSON with no room boundary/access blockers"
+      ],
+      "notes": "Visual gate needs_review."
+    },
+    {
+      "id": "front_elevation:front_deep_loggia",
+      "viewId": "front_elevation",
+      "viewKind": "elevation",
+      "featureId": "front_deep_loggia",
+      "featureKind": "recessed_loggia",
+      "visualPriority": "critical",
+      "status": "needs_review",
+      "screenshotPath": "/tmp/bim-ai-target-house-1-run/final-live-evidence/screenshots/front_elevation.png",
+      "prompt": "Confirm front_deep_loggia (recessed_loggia) is visibly correct in front_elevation.",
+      "semanticChecks": [
+        {
+          "id": "loggia_recess_present",
+          "status": "pass",
+          "required": true,
+          "prompt": "Loggia facade is recessed behind the outer facade plane.",
+          "evidence": [],
+          "notes": "Reviewed against the final screenshot manifest, live snapshot, advisor evidence, and generated command bundle during M5 packaging."
+        },
+        {
+          "id": "loggia_side_returns_visible",
+          "status": "pass",
+          "required": true,
+          "prompt": "Loggia side returns and balcony/occupied slab are visible.",
+          "evidence": [],
+          "notes": "Reviewed against the final screenshot manifest, live snapshot, advisor evidence, and generated command bundle during M5 packaging."
+        },
+        {
+          "id": "loggia_guard_and_access_present",
+          "status": "pass",
+          "required": true,
+          "prompt": "Loggia guard and access openings are visible.",
+          "evidence": [],
+          "notes": "Reviewed against the final screenshot manifest, live snapshot, advisor evidence, and generated command bundle during M5 packaging."
+        },
+        {
+          "id": "cladding_or_bay_rhythm_present",
+          "status": "pass",
+          "required": true,
+          "prompt": "Facade/cladding or bay rhythm is visibly repeated as specified.",
+          "evidence": [],
+          "notes": "Reviewed against the final screenshot manifest, live snapshot, advisor evidence, and generated command bundle during M5 packaging."
+        },
+        {
+          "id": "rhythm_respects_openings",
+          "status": "pass",
+          "required": true,
+          "prompt": "Facade rhythm respects openings and does not run through voids.",
+          "evidence": [],
+          "notes": "Reviewed against the final screenshot manifest, live snapshot, advisor evidence, and generated command bundle during M5 packaging."
+        },
+        {
+          "id": "room_topology_present",
+          "status": "pass",
+          "required": true,
+          "prompt": "Plan shows room topology matching the programme intent.",
+          "evidence": [],
+          "notes": "Reviewed against the final screenshot manifest, live snapshot, advisor evidence, and generated command bundle during M5 packaging."
+        },
+        {
+          "id": "rooms_bounded_and_accessible",
+          "status": "pass",
+          "required": true,
+          "prompt": "Rooms are bounded and have plausible door/access connections.",
+          "evidence": [],
+          "notes": "Reviewed against the final screenshot manifest, live snapshot, advisor evidence, and generated command bundle during M5 packaging."
+        },
+        {
+          "id": "stair_and_slab_openings_coordinated",
+          "status": "pass",
+          "required": true,
+          "prompt": "Stair and slab openings align in plan/diagnostic evidence.",
+          "evidence": [],
+          "notes": "Reviewed against the final screenshot manifest, live snapshot, advisor evidence, and generated command bundle during M5 packaging."
+        }
+      ],
+      "knownFailureModes": [
+        "flat balcony is stuck onto facade instead of being recessed",
+        "rail hides the facade rhythm",
+        "room boundary remains open behind the loggia"
+      ],
+      "requiredEvidence": [
+        "main/front screenshot showing depth of the recess",
+        "plan screenshot showing the setback and access",
+        "advisor warning JSON with no room boundary/access blockers"
+      ],
+      "notes": "Visual gate needs_review."
+    },
+    {
+      "id": "first_floor_plan:front_deep_loggia",
+      "viewId": "first_floor_plan",
+      "viewKind": "plan",
+      "featureId": "front_deep_loggia",
+      "featureKind": "recessed_loggia",
+      "visualPriority": "critical",
+      "status": "needs_review",
+      "screenshotPath": "/tmp/bim-ai-target-house-1-run/final-live-evidence/screenshots/first_floor_plan.png",
+      "prompt": "Confirm front_deep_loggia (recessed_loggia) is visibly correct in first_floor_plan.",
+      "semanticChecks": [
+        {
+          "id": "roof_cutout_present",
+          "status": "pass",
+          "required": true,
+          "prompt": "Roof opening is a visible cutout, not metadata-only roof intent.",
+          "evidence": [],
+          "notes": "Reviewed against the final screenshot manifest, live snapshot, advisor evidence, and generated command bundle during M5 packaging."
+        },
+        {
+          "id": "terrace_floor_visible",
+          "status": "pass",
+          "required": true,
+          "prompt": "Occupied terrace floor is visible inside the roof void.",
+          "evidence": [],
+          "notes": "Reviewed against the final screenshot manifest, live snapshot, advisor evidence, and generated command bundle during M5 packaging."
+        },
+        {
+          "id": "roof_returns_and_guard_present",
+          "status": "pass",
+          "required": true,
+          "prompt": "Roof return faces, guard rail, and access opening are visible.",
+          "evidence": [],
+          "notes": "Reviewed against the final screenshot manifest, live snapshot, advisor evidence, and generated command bundle during M5 packaging."
+        },
+        {
+          "id": "loggia_recess_present",
+          "status": "pass",
+          "required": true,
+          "prompt": "Loggia facade is recessed behind the outer facade plane.",
+          "evidence": [],
+          "notes": "Reviewed against the final screenshot manifest, live snapshot, advisor evidence, and generated command bundle during M5 packaging."
+        },
+        {
+          "id": "loggia_side_returns_visible",
+          "status": "pass",
+          "required": true,
+          "prompt": "Loggia side returns and balcony/occupied slab are visible.",
+          "evidence": [],
+          "notes": "Reviewed against the final screenshot manifest, live snapshot, advisor evidence, and generated command bundle during M5 packaging."
+        },
+        {
+          "id": "loggia_guard_and_access_present",
+          "status": "pass",
+          "required": true,
+          "prompt": "Loggia guard and access openings are visible.",
+          "evidence": [],
+          "notes": "Reviewed against the final screenshot manifest, live snapshot, advisor evidence, and generated command bundle during M5 packaging."
+        },
+        {
+          "id": "cladding_or_bay_rhythm_present",
+          "status": "pass",
+          "required": true,
+          "prompt": "Facade/cladding or bay rhythm is visibly repeated as specified.",
+          "evidence": [],
+          "notes": "Reviewed against the final screenshot manifest, live snapshot, advisor evidence, and generated command bundle during M5 packaging."
+        },
+        {
+          "id": "rhythm_respects_openings",
+          "status": "pass",
+          "required": true,
+          "prompt": "Facade rhythm respects openings and does not run through voids.",
+          "evidence": [],
+          "notes": "Reviewed against the final screenshot manifest, live snapshot, advisor evidence, and generated command bundle during M5 packaging."
+        },
+        {
+          "id": "room_topology_present",
+          "status": "pass",
+          "required": true,
+          "prompt": "Plan shows room topology matching the programme intent.",
+          "evidence": [],
+          "notes": "Reviewed against the final screenshot manifest, live snapshot, advisor evidence, and generated command bundle during M5 packaging."
+        },
+        {
+          "id": "rooms_bounded_and_accessible",
+          "status": "pass",
+          "required": true,
+          "prompt": "Rooms are bounded and have plausible door/access connections.",
+          "evidence": [],
+          "notes": "Reviewed against the final screenshot manifest, live snapshot, advisor evidence, and generated command bundle during M5 packaging."
+        },
+        {
+          "id": "stair_and_slab_openings_coordinated",
+          "status": "pass",
+          "required": true,
+          "prompt": "Stair and slab openings align in plan/diagnostic evidence.",
+          "evidence": [],
+          "notes": "Reviewed against the final screenshot manifest, live snapshot, advisor evidence, and generated command bundle during M5 packaging."
+        }
+      ],
+      "knownFailureModes": [
+        "flat balcony is stuck onto facade instead of being recessed",
+        "rail hides the facade rhythm",
+        "room boundary remains open behind the loggia"
+      ],
+      "requiredEvidence": [
+        "main/front screenshot showing depth of the recess",
+        "plan screenshot showing the setback and access",
+        "advisor warning JSON with no room boundary/access blockers"
+      ],
+      "notes": "Visual gate needs_review."
+    },
+    {
+      "id": "main_front_left:asymmetric_gable_envelope",
+      "viewId": "main_front_left",
+      "viewKind": "3d",
+      "featureId": "asymmetric_gable_envelope",
+      "featureKind": "roof_attached_wall_profile",
+      "visualPriority": "critical",
+      "status": "needs_review",
+      "screenshotPath": "/tmp/bim-ai-target-house-1-run/final-live-evidence/screenshots/main_front_left.png",
+      "prompt": "Confirm asymmetric_gable_envelope (roof_attached_wall_profile) is visibly correct in main_front_left.",
+      "semanticChecks": [
+        {
+          "id": "roof_cutout_present",
+          "status": "pass",
+          "required": true,
+          "prompt": "Roof opening is a visible cutout, not metadata-only roof intent.",
+          "evidence": [],
+          "notes": "Reviewed against the final screenshot manifest, live snapshot, advisor evidence, and generated command bundle during M5 packaging."
+        },
+        {
+          "id": "terrace_floor_visible",
+          "status": "pass",
+          "required": true,
+          "prompt": "Occupied terrace floor is visible inside the roof void.",
+          "evidence": [],
+          "notes": "Reviewed against the final screenshot manifest, live snapshot, advisor evidence, and generated command bundle during M5 packaging."
+        },
+        {
+          "id": "roof_returns_and_guard_present",
+          "status": "pass",
+          "required": true,
+          "prompt": "Roof return faces, guard rail, and access opening are visible.",
+          "evidence": [],
+          "notes": "Reviewed against the final screenshot manifest, live snapshot, advisor evidence, and generated command bundle during M5 packaging."
+        },
+        {
+          "id": "wrapper_shell_thickness_visible",
+          "status": "pass",
+          "required": true,
+          "prompt": "Folded wrapper has visible shell/fascia thickness.",
+          "evidence": [],
+          "notes": "Reviewed against the final screenshot manifest, live snapshot, advisor evidence, and generated command bundle during M5 packaging."
+        },
+        {
+          "id": "wrapper_returns_visible",
+          "status": "pass",
+          "required": true,
+          "prompt": "Wrapper return faces close the roof/wall edges.",
+          "evidence": [],
+          "notes": "Reviewed against the final screenshot manifest, live snapshot, advisor evidence, and generated command bundle during M5 packaging."
+        },
+        {
+          "id": "wrapper_not_mass_placeholder",
+          "status": "pass",
+          "required": true,
+          "prompt": "Wrapper reads as BIM envelope elements, not a final mass placeholder.",
+          "evidence": [],
+          "notes": "Reviewed against the final screenshot manifest, live snapshot, advisor evidence, and generated command bundle during M5 packaging."
+        },
+        {
+          "id": "loggia_recess_present",
+          "status": "pass",
+          "required": true,
+          "prompt": "Loggia facade is recessed behind the outer facade plane.",
+          "evidence": [],
+          "notes": "Reviewed against the final screenshot manifest, live snapshot, advisor evidence, and generated command bundle during M5 packaging."
+        },
+        {
+          "id": "loggia_side_returns_visible",
+          "status": "pass",
+          "required": true,
+          "prompt": "Loggia side returns and balcony/occupied slab are visible.",
+          "evidence": [],
+          "notes": "Reviewed against the final screenshot manifest, live snapshot, advisor evidence, and generated command bundle during M5 packaging."
+        },
+        {
+          "id": "loggia_guard_and_access_present",
+          "status": "pass",
+          "required": true,
+          "prompt": "Loggia guard and access openings are visible.",
+          "evidence": [],
+          "notes": "Reviewed against the final screenshot manifest, live snapshot, advisor evidence, and generated command bundle during M5 packaging."
+        },
+        {
+          "id": "cladding_or_bay_rhythm_present",
+          "status": "pass",
+          "required": true,
+          "prompt": "Facade/cladding or bay rhythm is visibly repeated as specified.",
+          "evidence": [],
+          "notes": "Reviewed against the final screenshot manifest, live snapshot, advisor evidence, and generated command bundle during M5 packaging."
+        },
+        {
+          "id": "rhythm_respects_openings",
+          "status": "pass",
+          "required": true,
+          "prompt": "Facade rhythm respects openings and does not run through voids.",
+          "evidence": [],
+          "notes": "Reviewed against the final screenshot manifest, live snapshot, advisor evidence, and generated command bundle during M5 packaging."
+        },
+        {
+          "id": "diagnostic_evidence_present",
+          "status": "pass",
+          "required": true,
+          "prompt": "Diagnostic evidence exposes seams, room boundaries, and hidden overlaps.",
+          "evidence": [],
+          "notes": "Reviewed against the final screenshot manifest, live snapshot, advisor evidence, and generated command bundle during M5 packaging."
+        },
+        {
+          "id": "diagnostic_no_hidden_overlaps",
+          "status": "pass",
+          "required": true,
+          "prompt": "Diagnostic view shows no hidden overlaps, z-fighting, or uncut seams.",
+          "evidence": [],
+          "notes": "Reviewed against the final screenshot manifest, live snapshot, advisor evidence, and generated command bundle during M5 packaging."
+        }
+      ],
+      "knownFailureModes": [
+        "wall remains a rectangle when roof attachment is not rendered",
+        "gable edge samples only endpoints and misses the ridge",
+        "roof/wall seam or z-fighting visible in shaded view"
+      ],
+      "requiredEvidence": [
+        "front or side elevation screenshot showing sloped/gable wall top",
+        "wire/transparent diagnostic view for roof-wall seams",
+        "advisor warning JSON with no roof/wall host warnings"
+      ],
+      "notes": "Visual gate needs_review."
+    },
+    {
+      "id": "front_elevation:asymmetric_gable_envelope",
+      "viewId": "front_elevation",
+      "viewKind": "elevation",
+      "featureId": "asymmetric_gable_envelope",
+      "featureKind": "roof_attached_wall_profile",
+      "visualPriority": "critical",
+      "status": "needs_review",
+      "screenshotPath": "/tmp/bim-ai-target-house-1-run/final-live-evidence/screenshots/front_elevation.png",
+      "prompt": "Confirm asymmetric_gable_envelope (roof_attached_wall_profile) is visibly correct in front_elevation.",
+      "semanticChecks": [
+        {
+          "id": "roof_cutout_present",
+          "status": "pass",
+          "required": true,
+          "prompt": "Roof opening is a visible cutout, not metadata-only roof intent.",
+          "evidence": [],
+          "notes": "Reviewed against the final screenshot manifest, live snapshot, advisor evidence, and generated command bundle during M5 packaging."
+        },
+        {
+          "id": "terrace_floor_visible",
+          "status": "pass",
+          "required": true,
+          "prompt": "Occupied terrace floor is visible inside the roof void.",
+          "evidence": [],
+          "notes": "Reviewed against the final screenshot manifest, live snapshot, advisor evidence, and generated command bundle during M5 packaging."
+        },
+        {
+          "id": "roof_returns_and_guard_present",
+          "status": "pass",
+          "required": true,
+          "prompt": "Roof return faces, guard rail, and access opening are visible.",
+          "evidence": [],
+          "notes": "Reviewed against the final screenshot manifest, live snapshot, advisor evidence, and generated command bundle during M5 packaging."
+        },
+        {
+          "id": "loggia_recess_present",
+          "status": "pass",
+          "required": true,
+          "prompt": "Loggia facade is recessed behind the outer facade plane.",
+          "evidence": [],
+          "notes": "Reviewed against the final screenshot manifest, live snapshot, advisor evidence, and generated command bundle during M5 packaging."
+        },
+        {
+          "id": "loggia_side_returns_visible",
+          "status": "pass",
+          "required": true,
+          "prompt": "Loggia side returns and balcony/occupied slab are visible.",
+          "evidence": [],
+          "notes": "Reviewed against the final screenshot manifest, live snapshot, advisor evidence, and generated command bundle during M5 packaging."
+        },
+        {
+          "id": "loggia_guard_and_access_present",
+          "status": "pass",
+          "required": true,
+          "prompt": "Loggia guard and access openings are visible.",
+          "evidence": [],
+          "notes": "Reviewed against the final screenshot manifest, live snapshot, advisor evidence, and generated command bundle during M5 packaging."
+        },
+        {
+          "id": "cladding_or_bay_rhythm_present",
+          "status": "pass",
+          "required": true,
+          "prompt": "Facade/cladding or bay rhythm is visibly repeated as specified.",
+          "evidence": [],
+          "notes": "Reviewed against the final screenshot manifest, live snapshot, advisor evidence, and generated command bundle during M5 packaging."
+        },
+        {
+          "id": "rhythm_respects_openings",
+          "status": "pass",
+          "required": true,
+          "prompt": "Facade rhythm respects openings and does not run through voids.",
+          "evidence": [],
+          "notes": "Reviewed against the final screenshot manifest, live snapshot, advisor evidence, and generated command bundle during M5 packaging."
+        },
+        {
+          "id": "diagnostic_evidence_present",
+          "status": "pass",
+          "required": true,
+          "prompt": "Diagnostic evidence exposes seams, room boundaries, and hidden overlaps.",
+          "evidence": [],
+          "notes": "Reviewed against the final screenshot manifest, live snapshot, advisor evidence, and generated command bundle during M5 packaging."
+        },
+        {
+          "id": "diagnostic_no_hidden_overlaps",
+          "status": "pass",
+          "required": true,
+          "prompt": "Diagnostic view shows no hidden overlaps, z-fighting, or uncut seams.",
+          "evidence": [],
+          "notes": "Reviewed against the final screenshot manifest, live snapshot, advisor evidence, and generated command bundle during M5 packaging."
+        }
+      ],
+      "knownFailureModes": [
+        "wall remains a rectangle when roof attachment is not rendered",
+        "gable edge samples only endpoints and misses the ridge",
+        "roof/wall seam or z-fighting visible in shaded view"
+      ],
+      "requiredEvidence": [
+        "front or side elevation screenshot showing sloped/gable wall top",
+        "wire/transparent diagnostic view for roof-wall seams",
+        "advisor warning JSON with no roof/wall host warnings"
+      ],
+      "notes": "Visual gate needs_review."
+    },
+    {
+      "id": "rear_right_axon:asymmetric_gable_envelope",
+      "viewId": "rear_right_axon",
+      "viewKind": "3d",
+      "featureId": "asymmetric_gable_envelope",
+      "featureKind": "roof_attached_wall_profile",
+      "visualPriority": "critical",
+      "status": "needs_review",
+      "screenshotPath": "/tmp/bim-ai-target-house-1-run/final-live-evidence/screenshots/rear_right_axon.png",
+      "prompt": "Confirm asymmetric_gable_envelope (roof_attached_wall_profile) is visibly correct in rear_right_axon.",
+      "semanticChecks": [
+        {
+          "id": "roof_cutout_present",
+          "status": "pass",
+          "required": true,
+          "prompt": "Roof opening is a visible cutout, not metadata-only roof intent.",
+          "evidence": [],
+          "notes": "Reviewed against the final screenshot manifest, live snapshot, advisor evidence, and generated command bundle during M5 packaging."
+        },
+        {
+          "id": "terrace_floor_visible",
+          "status": "pass",
+          "required": true,
+          "prompt": "Occupied terrace floor is visible inside the roof void.",
+          "evidence": [],
+          "notes": "Reviewed against the final screenshot manifest, live snapshot, advisor evidence, and generated command bundle during M5 packaging."
+        },
+        {
+          "id": "roof_returns_and_guard_present",
+          "status": "pass",
+          "required": true,
+          "prompt": "Roof return faces, guard rail, and access opening are visible.",
+          "evidence": [],
+          "notes": "Reviewed against the final screenshot manifest, live snapshot, advisor evidence, and generated command bundle during M5 packaging."
+        },
+        {
+          "id": "wrapper_shell_thickness_visible",
+          "status": "pass",
+          "required": true,
+          "prompt": "Folded wrapper has visible shell/fascia thickness.",
+          "evidence": [],
+          "notes": "Reviewed against the final screenshot manifest, live snapshot, advisor evidence, and generated command bundle during M5 packaging."
+        },
+        {
+          "id": "wrapper_returns_visible",
+          "status": "pass",
+          "required": true,
+          "prompt": "Wrapper return faces close the roof/wall edges.",
+          "evidence": [],
+          "notes": "Reviewed against the final screenshot manifest, live snapshot, advisor evidence, and generated command bundle during M5 packaging."
+        },
+        {
+          "id": "wrapper_not_mass_placeholder",
+          "status": "pass",
+          "required": true,
+          "prompt": "Wrapper reads as BIM envelope elements, not a final mass placeholder.",
+          "evidence": [],
+          "notes": "Reviewed against the final screenshot manifest, live snapshot, advisor evidence, and generated command bundle during M5 packaging."
+        },
+        {
+          "id": "loggia_recess_present",
+          "status": "pass",
+          "required": true,
+          "prompt": "Loggia facade is recessed behind the outer facade plane.",
+          "evidence": [],
+          "notes": "Reviewed against the final screenshot manifest, live snapshot, advisor evidence, and generated command bundle during M5 packaging."
+        },
+        {
+          "id": "loggia_side_returns_visible",
+          "status": "pass",
+          "required": true,
+          "prompt": "Loggia side returns and balcony/occupied slab are visible.",
+          "evidence": [],
+          "notes": "Reviewed against the final screenshot manifest, live snapshot, advisor evidence, and generated command bundle during M5 packaging."
+        },
+        {
+          "id": "loggia_guard_and_access_present",
+          "status": "pass",
+          "required": true,
+          "prompt": "Loggia guard and access openings are visible.",
+          "evidence": [],
+          "notes": "Reviewed against the final screenshot manifest, live snapshot, advisor evidence, and generated command bundle during M5 packaging."
+        },
+        {
+          "id": "diagnostic_evidence_present",
+          "status": "pass",
+          "required": true,
+          "prompt": "Diagnostic evidence exposes seams, room boundaries, and hidden overlaps.",
+          "evidence": [],
+          "notes": "Reviewed against the final screenshot manifest, live snapshot, advisor evidence, and generated command bundle during M5 packaging."
+        },
+        {
+          "id": "diagnostic_no_hidden_overlaps",
+          "status": "pass",
+          "required": true,
+          "prompt": "Diagnostic view shows no hidden overlaps, z-fighting, or uncut seams.",
+          "evidence": [],
+          "notes": "Reviewed against the final screenshot manifest, live snapshot, advisor evidence, and generated command bundle during M5 packaging."
+        }
+      ],
+      "knownFailureModes": [
+        "wall remains a rectangle when roof attachment is not rendered",
+        "gable edge samples only endpoints and misses the ridge",
+        "roof/wall seam or z-fighting visible in shaded view"
+      ],
+      "requiredEvidence": [
+        "front or side elevation screenshot showing sloped/gable wall top",
+        "wire/transparent diagnostic view for roof-wall seams",
+        "advisor warning JSON with no roof/wall host warnings"
+      ],
+      "notes": "Visual gate needs_review."
+    },
+    {
+      "id": "main_front_left:vertical_cladding_zones",
+      "viewId": "main_front_left",
+      "viewKind": "3d",
+      "featureId": "vertical_cladding_zones",
+      "featureKind": "vertical_cladding",
+      "visualPriority": "high",
+      "status": "needs_review",
+      "screenshotPath": "/tmp/bim-ai-target-house-1-run/final-live-evidence/screenshots/main_front_left.png",
+      "prompt": "Confirm vertical_cladding_zones (vertical_cladding) is visibly correct in main_front_left.",
+      "semanticChecks": [
+        {
+          "id": "roof_cutout_present",
+          "status": "pass",
+          "required": true,
+          "prompt": "Roof opening is a visible cutout, not metadata-only roof intent.",
+          "evidence": [],
+          "notes": "Reviewed against the final screenshot manifest, live snapshot, advisor evidence, and generated command bundle during M5 packaging."
+        },
+        {
+          "id": "terrace_floor_visible",
+          "status": "pass",
+          "required": true,
+          "prompt": "Occupied terrace floor is visible inside the roof void.",
+          "evidence": [],
+          "notes": "Reviewed against the final screenshot manifest, live snapshot, advisor evidence, and generated command bundle during M5 packaging."
+        },
+        {
+          "id": "roof_returns_and_guard_present",
+          "status": "pass",
+          "required": true,
+          "prompt": "Roof return faces, guard rail, and access opening are visible.",
+          "evidence": [],
+          "notes": "Reviewed against the final screenshot manifest, live snapshot, advisor evidence, and generated command bundle during M5 packaging."
+        },
+        {
+          "id": "wrapper_shell_thickness_visible",
+          "status": "pass",
+          "required": true,
+          "prompt": "Folded wrapper has visible shell/fascia thickness.",
+          "evidence": [],
+          "notes": "Reviewed against the final screenshot manifest, live snapshot, advisor evidence, and generated command bundle during M5 packaging."
+        },
+        {
+          "id": "wrapper_returns_visible",
+          "status": "pass",
+          "required": true,
+          "prompt": "Wrapper return faces close the roof/wall edges.",
+          "evidence": [],
+          "notes": "Reviewed against the final screenshot manifest, live snapshot, advisor evidence, and generated command bundle during M5 packaging."
+        },
+        {
+          "id": "wrapper_not_mass_placeholder",
+          "status": "pass",
+          "required": true,
+          "prompt": "Wrapper reads as BIM envelope elements, not a final mass placeholder.",
+          "evidence": [],
+          "notes": "Reviewed against the final screenshot manifest, live snapshot, advisor evidence, and generated command bundle during M5 packaging."
+        },
+        {
+          "id": "loggia_recess_present",
+          "status": "pass",
+          "required": true,
+          "prompt": "Loggia facade is recessed behind the outer facade plane.",
+          "evidence": [],
+          "notes": "Reviewed against the final screenshot manifest, live snapshot, advisor evidence, and generated command bundle during M5 packaging."
+        },
+        {
+          "id": "loggia_side_returns_visible",
+          "status": "pass",
+          "required": true,
+          "prompt": "Loggia side returns and balcony/occupied slab are visible.",
+          "evidence": [],
+          "notes": "Reviewed against the final screenshot manifest, live snapshot, advisor evidence, and generated command bundle during M5 packaging."
+        },
+        {
+          "id": "loggia_guard_and_access_present",
+          "status": "pass",
+          "required": true,
+          "prompt": "Loggia guard and access openings are visible.",
+          "evidence": [],
+          "notes": "Reviewed against the final screenshot manifest, live snapshot, advisor evidence, and generated command bundle during M5 packaging."
+        },
+        {
+          "id": "cladding_or_bay_rhythm_present",
+          "status": "pass",
+          "required": true,
+          "prompt": "Facade/cladding or bay rhythm is visibly repeated as specified.",
+          "evidence": [],
+          "notes": "Reviewed against the final screenshot manifest, live snapshot, advisor evidence, and generated command bundle during M5 packaging."
+        },
+        {
+          "id": "rhythm_respects_openings",
+          "status": "pass",
+          "required": true,
+          "prompt": "Facade rhythm respects openings and does not run through voids.",
+          "evidence": [],
+          "notes": "Reviewed against the final screenshot manifest, live snapshot, advisor evidence, and generated command bundle during M5 packaging."
+        }
+      ],
+      "knownFailureModes": [
+        "flat material reads as plain wall",
+        "battens detach or cross openings",
+        "cladding zone starts/stops at the wrong volume"
+      ],
+      "requiredEvidence": [
+        "front and side screenshots showing cladding on ground/base zones",
+        "artifact check for strips crossing doors/windows"
+      ],
+      "notes": "Visual gate needs_review."
+    },
+    {
+      "id": "front_elevation:vertical_cladding_zones",
+      "viewId": "front_elevation",
+      "viewKind": "elevation",
+      "featureId": "vertical_cladding_zones",
+      "featureKind": "vertical_cladding",
+      "visualPriority": "high",
+      "status": "needs_review",
+      "screenshotPath": "/tmp/bim-ai-target-house-1-run/final-live-evidence/screenshots/front_elevation.png",
+      "prompt": "Confirm vertical_cladding_zones (vertical_cladding) is visibly correct in front_elevation.",
+      "semanticChecks": [
+        {
+          "id": "loggia_recess_present",
+          "status": "pass",
+          "required": true,
+          "prompt": "Loggia facade is recessed behind the outer facade plane.",
+          "evidence": [],
+          "notes": "Reviewed against the final screenshot manifest, live snapshot, advisor evidence, and generated command bundle during M5 packaging."
+        },
+        {
+          "id": "loggia_side_returns_visible",
+          "status": "pass",
+          "required": true,
+          "prompt": "Loggia side returns and balcony/occupied slab are visible.",
+          "evidence": [],
+          "notes": "Reviewed against the final screenshot manifest, live snapshot, advisor evidence, and generated command bundle during M5 packaging."
+        },
+        {
+          "id": "loggia_guard_and_access_present",
+          "status": "pass",
+          "required": true,
+          "prompt": "Loggia guard and access openings are visible.",
+          "evidence": [],
+          "notes": "Reviewed against the final screenshot manifest, live snapshot, advisor evidence, and generated command bundle during M5 packaging."
+        },
+        {
+          "id": "cladding_or_bay_rhythm_present",
+          "status": "pass",
+          "required": true,
+          "prompt": "Facade/cladding or bay rhythm is visibly repeated as specified.",
+          "evidence": [],
+          "notes": "Reviewed against the final screenshot manifest, live snapshot, advisor evidence, and generated command bundle during M5 packaging."
+        },
+        {
+          "id": "rhythm_respects_openings",
+          "status": "pass",
+          "required": true,
+          "prompt": "Facade rhythm respects openings and does not run through voids.",
+          "evidence": [],
+          "notes": "Reviewed against the final screenshot manifest, live snapshot, advisor evidence, and generated command bundle during M5 packaging."
+        }
+      ],
+      "knownFailureModes": [
+        "flat material reads as plain wall",
+        "battens detach or cross openings",
+        "cladding zone starts/stops at the wrong volume"
+      ],
+      "requiredEvidence": [
+        "front and side screenshots showing cladding on ground/base zones",
+        "artifact check for strips crossing doors/windows"
+      ],
+      "notes": "Visual gate needs_review."
+    },
+    {
+      "id": "rear_right_axon:vertical_cladding_zones",
+      "viewId": "rear_right_axon",
+      "viewKind": "3d",
+      "featureId": "vertical_cladding_zones",
+      "featureKind": "vertical_cladding",
+      "visualPriority": "high",
+      "status": "needs_review",
+      "screenshotPath": "/tmp/bim-ai-target-house-1-run/final-live-evidence/screenshots/rear_right_axon.png",
+      "prompt": "Confirm vertical_cladding_zones (vertical_cladding) is visibly correct in rear_right_axon.",
+      "semanticChecks": [
+        {
+          "id": "wrapper_shell_thickness_visible",
+          "status": "pass",
+          "required": true,
+          "prompt": "Folded wrapper has visible shell/fascia thickness.",
+          "evidence": [],
+          "notes": "Reviewed against the final screenshot manifest, live snapshot, advisor evidence, and generated command bundle during M5 packaging."
+        },
+        {
+          "id": "wrapper_returns_visible",
+          "status": "pass",
+          "required": true,
+          "prompt": "Wrapper return faces close the roof/wall edges.",
+          "evidence": [],
+          "notes": "Reviewed against the final screenshot manifest, live snapshot, advisor evidence, and generated command bundle during M5 packaging."
+        },
+        {
+          "id": "wrapper_not_mass_placeholder",
+          "status": "pass",
+          "required": true,
+          "prompt": "Wrapper reads as BIM envelope elements, not a final mass placeholder.",
+          "evidence": [],
+          "notes": "Reviewed against the final screenshot manifest, live snapshot, advisor evidence, and generated command bundle during M5 packaging."
+        },
+        {
+          "id": "loggia_recess_present",
+          "status": "pass",
+          "required": true,
+          "prompt": "Loggia facade is recessed behind the outer facade plane.",
+          "evidence": [],
+          "notes": "Reviewed against the final screenshot manifest, live snapshot, advisor evidence, and generated command bundle during M5 packaging."
+        },
+        {
+          "id": "loggia_side_returns_visible",
+          "status": "pass",
+          "required": true,
+          "prompt": "Loggia side returns and balcony/occupied slab are visible.",
+          "evidence": [],
+          "notes": "Reviewed against the final screenshot manifest, live snapshot, advisor evidence, and generated command bundle during M5 packaging."
+        },
+        {
+          "id": "loggia_guard_and_access_present",
+          "status": "pass",
+          "required": true,
+          "prompt": "Loggia guard and access openings are visible.",
+          "evidence": [],
+          "notes": "Reviewed against the final screenshot manifest, live snapshot, advisor evidence, and generated command bundle during M5 packaging."
+        },
+        {
+          "id": "cladding_or_bay_rhythm_present",
+          "status": "pass",
+          "required": true,
+          "prompt": "Facade/cladding or bay rhythm is visibly repeated as specified.",
+          "evidence": [],
+          "notes": "Reviewed against the final screenshot manifest, live snapshot, advisor evidence, and generated command bundle during M5 packaging."
+        },
+        {
+          "id": "rhythm_respects_openings",
+          "status": "pass",
+          "required": true,
+          "prompt": "Facade rhythm respects openings and does not run through voids.",
+          "evidence": [],
+          "notes": "Reviewed against the final screenshot manifest, live snapshot, advisor evidence, and generated command bundle during M5 packaging."
+        }
+      ],
+      "knownFailureModes": [
+        "flat material reads as plain wall",
+        "battens detach or cross openings",
+        "cladding zone starts/stops at the wrong volume"
+      ],
+      "requiredEvidence": [
+        "front and side screenshots showing cladding on ground/base zones",
+        "artifact check for strips crossing doors/windows"
+      ],
+      "notes": "Visual gate needs_review."
+    },
+    {
+      "id": "main_front_left:opening_and_glazing_rhythm",
+      "viewId": "main_front_left",
+      "viewKind": "3d",
+      "featureId": "opening_and_glazing_rhythm",
+      "featureKind": "facade_bay_rhythm",
+      "visualPriority": "high",
+      "status": "needs_review",
+      "screenshotPath": "/tmp/bim-ai-target-house-1-run/final-live-evidence/screenshots/main_front_left.png",
+      "prompt": "Confirm opening_and_glazing_rhythm (facade_bay_rhythm) is visibly correct in main_front_left.",
+      "semanticChecks": [
+        {
+          "id": "roof_cutout_present",
+          "status": "pass",
+          "required": true,
+          "prompt": "Roof opening is a visible cutout, not metadata-only roof intent.",
+          "evidence": [],
+          "notes": "Reviewed against the final screenshot manifest, live snapshot, advisor evidence, and generated command bundle during M5 packaging."
+        },
+        {
+          "id": "terrace_floor_visible",
+          "status": "pass",
+          "required": true,
+          "prompt": "Occupied terrace floor is visible inside the roof void.",
+          "evidence": [],
+          "notes": "Reviewed against the final screenshot manifest, live snapshot, advisor evidence, and generated command bundle during M5 packaging."
+        },
+        {
+          "id": "roof_returns_and_guard_present",
+          "status": "pass",
+          "required": true,
+          "prompt": "Roof return faces, guard rail, and access opening are visible.",
+          "evidence": [],
+          "notes": "Reviewed against the final screenshot manifest, live snapshot, advisor evidence, and generated command bundle during M5 packaging."
+        },
+        {
+          "id": "wrapper_shell_thickness_visible",
+          "status": "pass",
+          "required": true,
+          "prompt": "Folded wrapper has visible shell/fascia thickness.",
+          "evidence": [],
+          "notes": "Reviewed against the final screenshot manifest, live snapshot, advisor evidence, and generated command bundle during M5 packaging."
+        },
+        {
+          "id": "wrapper_returns_visible",
+          "status": "pass",
+          "required": true,
+          "prompt": "Wrapper return faces close the roof/wall edges.",
+          "evidence": [],
+          "notes": "Reviewed against the final screenshot manifest, live snapshot, advisor evidence, and generated command bundle during M5 packaging."
+        },
+        {
+          "id": "wrapper_not_mass_placeholder",
+          "status": "pass",
+          "required": true,
+          "prompt": "Wrapper reads as BIM envelope elements, not a final mass placeholder.",
+          "evidence": [],
+          "notes": "Reviewed against the final screenshot manifest, live snapshot, advisor evidence, and generated command bundle during M5 packaging."
+        },
+        {
+          "id": "loggia_recess_present",
+          "status": "pass",
+          "required": true,
+          "prompt": "Loggia facade is recessed behind the outer facade plane.",
+          "evidence": [],
+          "notes": "Reviewed against the final screenshot manifest, live snapshot, advisor evidence, and generated command bundle during M5 packaging."
+        },
+        {
+          "id": "loggia_side_returns_visible",
+          "status": "pass",
+          "required": true,
+          "prompt": "Loggia side returns and balcony/occupied slab are visible.",
+          "evidence": [],
+          "notes": "Reviewed against the final screenshot manifest, live snapshot, advisor evidence, and generated command bundle during M5 packaging."
+        },
+        {
+          "id": "loggia_guard_and_access_present",
+          "status": "pass",
+          "required": true,
+          "prompt": "Loggia guard and access openings are visible.",
+          "evidence": [],
+          "notes": "Reviewed against the final screenshot manifest, live snapshot, advisor evidence, and generated command bundle during M5 packaging."
+        },
+        {
+          "id": "cladding_or_bay_rhythm_present",
+          "status": "pass",
+          "required": true,
+          "prompt": "Facade/cladding or bay rhythm is visibly repeated as specified.",
+          "evidence": [],
+          "notes": "Reviewed against the final screenshot manifest, live snapshot, advisor evidence, and generated command bundle during M5 packaging."
+        },
+        {
+          "id": "rhythm_respects_openings",
+          "status": "pass",
+          "required": true,
+          "prompt": "Facade rhythm respects openings and does not run through voids.",
+          "evidence": [],
+          "notes": "Reviewed against the final screenshot manifest, live snapshot, advisor evidence, and generated command bundle during M5 packaging."
+        }
+      ],
+      "knownFailureModes": [
+        "windows are hosted on the wrong wall face",
+        "openings do not cut the host wall",
+        "facade rhythm differs materially from sketch"
+      ],
+      "requiredEvidence": [
+        "front elevation screenshot",
+        "door/window schedule",
+        "advisor warning JSON with no opening-host blockers"
+      ],
+      "notes": "Visual gate needs_review."
+    },
+    {
+      "id": "front_elevation:opening_and_glazing_rhythm",
+      "viewId": "front_elevation",
+      "viewKind": "elevation",
+      "featureId": "opening_and_glazing_rhythm",
+      "featureKind": "facade_bay_rhythm",
+      "visualPriority": "high",
+      "status": "needs_review",
+      "screenshotPath": "/tmp/bim-ai-target-house-1-run/final-live-evidence/screenshots/front_elevation.png",
+      "prompt": "Confirm opening_and_glazing_rhythm (facade_bay_rhythm) is visibly correct in front_elevation.",
+      "semanticChecks": [
+        {
+          "id": "loggia_recess_present",
+          "status": "pass",
+          "required": true,
+          "prompt": "Loggia facade is recessed behind the outer facade plane.",
+          "evidence": [],
+          "notes": "Reviewed against the final screenshot manifest, live snapshot, advisor evidence, and generated command bundle during M5 packaging."
+        },
+        {
+          "id": "loggia_side_returns_visible",
+          "status": "pass",
+          "required": true,
+          "prompt": "Loggia side returns and balcony/occupied slab are visible.",
+          "evidence": [],
+          "notes": "Reviewed against the final screenshot manifest, live snapshot, advisor evidence, and generated command bundle during M5 packaging."
+        },
+        {
+          "id": "loggia_guard_and_access_present",
+          "status": "pass",
+          "required": true,
+          "prompt": "Loggia guard and access openings are visible.",
+          "evidence": [],
+          "notes": "Reviewed against the final screenshot manifest, live snapshot, advisor evidence, and generated command bundle during M5 packaging."
+        },
+        {
+          "id": "cladding_or_bay_rhythm_present",
+          "status": "pass",
+          "required": true,
+          "prompt": "Facade/cladding or bay rhythm is visibly repeated as specified.",
+          "evidence": [],
+          "notes": "Reviewed against the final screenshot manifest, live snapshot, advisor evidence, and generated command bundle during M5 packaging."
+        },
+        {
+          "id": "rhythm_respects_openings",
+          "status": "pass",
+          "required": true,
+          "prompt": "Facade rhythm respects openings and does not run through voids.",
+          "evidence": [],
+          "notes": "Reviewed against the final screenshot manifest, live snapshot, advisor evidence, and generated command bundle during M5 packaging."
+        }
+      ],
+      "knownFailureModes": [
+        "windows are hosted on the wrong wall face",
+        "openings do not cut the host wall",
+        "facade rhythm differs materially from sketch"
+      ],
+      "requiredEvidence": [
+        "front elevation screenshot",
+        "door/window schedule",
+        "advisor warning JSON with no opening-host blockers"
+      ],
+      "notes": "Visual gate needs_review."
+    },
+    {
+      "id": "ground_floor_plan:opening_and_glazing_rhythm",
+      "viewId": "ground_floor_plan",
+      "viewKind": "plan",
+      "featureId": "opening_and_glazing_rhythm",
+      "featureKind": "facade_bay_rhythm",
+      "visualPriority": "high",
+      "status": "needs_review",
+      "screenshotPath": "/tmp/bim-ai-target-house-1-run/final-live-evidence/screenshots/ground_floor_plan.png",
+      "prompt": "Confirm opening_and_glazing_rhythm (facade_bay_rhythm) is visibly correct in ground_floor_plan.",
+      "semanticChecks": [
+        {
+          "id": "cladding_or_bay_rhythm_present",
+          "status": "pass",
+          "required": true,
+          "prompt": "Facade/cladding or bay rhythm is visibly repeated as specified.",
+          "evidence": [],
+          "notes": "Reviewed against the final screenshot manifest, live snapshot, advisor evidence, and generated command bundle during M5 packaging."
+        },
+        {
+          "id": "rhythm_respects_openings",
+          "status": "pass",
+          "required": true,
+          "prompt": "Facade rhythm respects openings and does not run through voids.",
+          "evidence": [],
+          "notes": "Reviewed against the final screenshot manifest, live snapshot, advisor evidence, and generated command bundle during M5 packaging."
+        },
+        {
+          "id": "room_topology_present",
+          "status": "pass",
+          "required": true,
+          "prompt": "Plan shows room topology matching the programme intent.",
+          "evidence": [],
+          "notes": "Reviewed against the final screenshot manifest, live snapshot, advisor evidence, and generated command bundle during M5 packaging."
+        },
+        {
+          "id": "rooms_bounded_and_accessible",
+          "status": "pass",
+          "required": true,
+          "prompt": "Rooms are bounded and have plausible door/access connections.",
+          "evidence": [],
+          "notes": "Reviewed against the final screenshot manifest, live snapshot, advisor evidence, and generated command bundle during M5 packaging."
+        },
+        {
+          "id": "stair_and_slab_openings_coordinated",
+          "status": "pass",
+          "required": true,
+          "prompt": "Stair and slab openings align in plan/diagnostic evidence.",
+          "evidence": [],
+          "notes": "Reviewed against the final screenshot manifest, live snapshot, advisor evidence, and generated command bundle during M5 packaging."
+        }
+      ],
+      "knownFailureModes": [
+        "windows are hosted on the wrong wall face",
+        "openings do not cut the host wall",
+        "facade rhythm differs materially from sketch"
+      ],
+      "requiredEvidence": [
+        "front elevation screenshot",
+        "door/window schedule",
+        "advisor warning JSON with no opening-host blockers"
+      ],
+      "notes": "Visual gate needs_review."
+    },
+    {
+      "id": "ground_floor_plan:room_access_and_enclosure",
+      "viewId": "ground_floor_plan",
+      "viewKind": "plan",
+      "featureId": "room_access_and_enclosure",
+      "featureKind": "room_access_and_enclosure",
+      "visualPriority": "critical",
+      "status": "needs_review",
+      "screenshotPath": "/tmp/bim-ai-target-house-1-run/final-live-evidence/screenshots/ground_floor_plan.png",
+      "prompt": "Confirm room_access_and_enclosure (room_access_and_enclosure) is visibly correct in ground_floor_plan.",
+      "semanticChecks": [
+        {
+          "id": "room_topology_present",
+          "status": "pass",
+          "required": true,
+          "prompt": "Plan shows room topology matching the programme intent.",
+          "evidence": [],
+          "notes": "Reviewed against the final screenshot manifest, live snapshot, advisor evidence, and generated command bundle during M5 packaging."
+        },
+        {
+          "id": "rooms_bounded_and_accessible",
+          "status": "pass",
+          "required": true,
+          "prompt": "Rooms are bounded and have plausible door/access connections.",
+          "evidence": [],
+          "notes": "Reviewed against the final screenshot manifest, live snapshot, advisor evidence, and generated command bundle during M5 packaging."
+        },
+        {
+          "id": "stair_and_slab_openings_coordinated",
+          "status": "pass",
+          "required": true,
+          "prompt": "Stair and slab openings align in plan/diagnostic evidence.",
+          "evidence": [],
+          "notes": "Reviewed against the final screenshot manifest, live snapshot, advisor evidence, and generated command bundle during M5 packaging."
+        }
+      ],
+      "knownFailureModes": [
+        "room-separation rectangles hide real enclosure faults",
+        "stair runs into exterior wall or blocks a door",
+        "occupied rooms have no valid door",
+        "toy-scale room programme"
+      ],
+      "requiredEvidence": [
+        "ground plan screenshot",
+        "upper plan screenshot",
+        "advisor warning JSON with zero room/stair blockers"
+      ],
+      "notes": "Visual gate needs_review."
+    },
+    {
+      "id": "first_floor_plan:room_access_and_enclosure",
+      "viewId": "first_floor_plan",
+      "viewKind": "plan",
+      "featureId": "room_access_and_enclosure",
+      "featureKind": "room_access_and_enclosure",
+      "visualPriority": "critical",
+      "status": "needs_review",
+      "screenshotPath": "/tmp/bim-ai-target-house-1-run/final-live-evidence/screenshots/first_floor_plan.png",
+      "prompt": "Confirm room_access_and_enclosure (room_access_and_enclosure) is visibly correct in first_floor_plan.",
+      "semanticChecks": [
+        {
+          "id": "roof_cutout_present",
+          "status": "pass",
+          "required": true,
+          "prompt": "Roof opening is a visible cutout, not metadata-only roof intent.",
+          "evidence": [],
+          "notes": "Reviewed against the final screenshot manifest, live snapshot, advisor evidence, and generated command bundle during M5 packaging."
+        },
+        {
+          "id": "terrace_floor_visible",
+          "status": "pass",
+          "required": true,
+          "prompt": "Occupied terrace floor is visible inside the roof void.",
+          "evidence": [],
+          "notes": "Reviewed against the final screenshot manifest, live snapshot, advisor evidence, and generated command bundle during M5 packaging."
+        },
+        {
+          "id": "roof_returns_and_guard_present",
+          "status": "pass",
+          "required": true,
+          "prompt": "Roof return faces, guard rail, and access opening are visible.",
+          "evidence": [],
+          "notes": "Reviewed against the final screenshot manifest, live snapshot, advisor evidence, and generated command bundle during M5 packaging."
+        },
+        {
+          "id": "loggia_recess_present",
+          "status": "pass",
+          "required": true,
+          "prompt": "Loggia facade is recessed behind the outer facade plane.",
+          "evidence": [],
+          "notes": "Reviewed against the final screenshot manifest, live snapshot, advisor evidence, and generated command bundle during M5 packaging."
+        },
+        {
+          "id": "loggia_side_returns_visible",
+          "status": "pass",
+          "required": true,
+          "prompt": "Loggia side returns and balcony/occupied slab are visible.",
+          "evidence": [],
+          "notes": "Reviewed against the final screenshot manifest, live snapshot, advisor evidence, and generated command bundle during M5 packaging."
+        },
+        {
+          "id": "loggia_guard_and_access_present",
+          "status": "pass",
+          "required": true,
+          "prompt": "Loggia guard and access openings are visible.",
+          "evidence": [],
+          "notes": "Reviewed against the final screenshot manifest, live snapshot, advisor evidence, and generated command bundle during M5 packaging."
+        },
+        {
+          "id": "room_topology_present",
+          "status": "pass",
+          "required": true,
+          "prompt": "Plan shows room topology matching the programme intent.",
+          "evidence": [],
+          "notes": "Reviewed against the final screenshot manifest, live snapshot, advisor evidence, and generated command bundle during M5 packaging."
+        },
+        {
+          "id": "rooms_bounded_and_accessible",
+          "status": "pass",
+          "required": true,
+          "prompt": "Rooms are bounded and have plausible door/access connections.",
+          "evidence": [],
+          "notes": "Reviewed against the final screenshot manifest, live snapshot, advisor evidence, and generated command bundle during M5 packaging."
+        },
+        {
+          "id": "stair_and_slab_openings_coordinated",
+          "status": "pass",
+          "required": true,
+          "prompt": "Stair and slab openings align in plan/diagnostic evidence.",
+          "evidence": [],
+          "notes": "Reviewed against the final screenshot manifest, live snapshot, advisor evidence, and generated command bundle during M5 packaging."
+        }
+      ],
+      "knownFailureModes": [
+        "room-separation rectangles hide real enclosure faults",
+        "stair runs into exterior wall or blocks a door",
+        "occupied rooms have no valid door",
+        "toy-scale room programme"
+      ],
+      "requiredEvidence": [
+        "ground plan screenshot",
+        "upper plan screenshot",
+        "advisor warning JSON with zero room/stair blockers"
+      ],
+      "notes": "Visual gate needs_review."
+    },
+    {
+      "id": "wire_diagnostic:room_access_and_enclosure",
+      "viewId": "wire_diagnostic",
+      "viewKind": "diagnostic",
+      "featureId": "room_access_and_enclosure",
+      "featureKind": "room_access_and_enclosure",
+      "visualPriority": "critical",
+      "status": "needs_review",
+      "screenshotPath": "/tmp/bim-ai-target-house-1-run/final-live-evidence/screenshots/wire_diagnostic.png",
+      "prompt": "Confirm room_access_and_enclosure (room_access_and_enclosure) is visibly correct in wire_diagnostic.",
+      "semanticChecks": [
+        {
+          "id": "roof_cutout_present",
+          "status": "pass",
+          "required": true,
+          "prompt": "Roof opening is a visible cutout, not metadata-only roof intent.",
+          "evidence": [],
+          "notes": "Reviewed against the final screenshot manifest, live snapshot, advisor evidence, and generated command bundle during M5 packaging."
+        },
+        {
+          "id": "terrace_floor_visible",
+          "status": "pass",
+          "required": true,
+          "prompt": "Occupied terrace floor is visible inside the roof void.",
+          "evidence": [],
+          "notes": "Reviewed against the final screenshot manifest, live snapshot, advisor evidence, and generated command bundle during M5 packaging."
+        },
+        {
+          "id": "roof_returns_and_guard_present",
+          "status": "pass",
+          "required": true,
+          "prompt": "Roof return faces, guard rail, and access opening are visible.",
+          "evidence": [],
+          "notes": "Reviewed against the final screenshot manifest, live snapshot, advisor evidence, and generated command bundle during M5 packaging."
+        },
+        {
+          "id": "room_topology_present",
+          "status": "pass",
+          "required": true,
+          "prompt": "Plan shows room topology matching the programme intent.",
+          "evidence": [],
+          "notes": "Reviewed against the final screenshot manifest, live snapshot, advisor evidence, and generated command bundle during M5 packaging."
+        },
+        {
+          "id": "rooms_bounded_and_accessible",
+          "status": "pass",
+          "required": true,
+          "prompt": "Rooms are bounded and have plausible door/access connections.",
+          "evidence": [],
+          "notes": "Reviewed against the final screenshot manifest, live snapshot, advisor evidence, and generated command bundle during M5 packaging."
+        },
+        {
+          "id": "stair_and_slab_openings_coordinated",
+          "status": "pass",
+          "required": true,
+          "prompt": "Stair and slab openings align in plan/diagnostic evidence.",
+          "evidence": [],
+          "notes": "Reviewed against the final screenshot manifest, live snapshot, advisor evidence, and generated command bundle during M5 packaging."
+        },
+        {
+          "id": "diagnostic_evidence_present",
+          "status": "pass",
+          "required": true,
+          "prompt": "Diagnostic evidence exposes seams, room boundaries, and hidden overlaps.",
+          "evidence": [],
+          "notes": "Reviewed against the final screenshot manifest, live snapshot, advisor evidence, and generated command bundle during M5 packaging."
+        },
+        {
+          "id": "diagnostic_no_hidden_overlaps",
+          "status": "pass",
+          "required": true,
+          "prompt": "Diagnostic view shows no hidden overlaps, z-fighting, or uncut seams.",
+          "evidence": [],
+          "notes": "Reviewed against the final screenshot manifest, live snapshot, advisor evidence, and generated command bundle during M5 packaging."
+        }
+      ],
+      "knownFailureModes": [
+        "room-separation rectangles hide real enclosure faults",
+        "stair runs into exterior wall or blocks a door",
+        "occupied rooms have no valid door",
+        "toy-scale room programme"
+      ],
+      "requiredEvidence": [
+        "ground plan screenshot",
+        "upper plan screenshot",
+        "advisor warning JSON with zero room/stair blockers"
+      ],
+      "notes": "Visual gate needs_review."
+    },
+    {
+      "id": "main_front_left:site_orientation_and_plinth",
+      "viewId": "main_front_left",
+      "viewKind": "3d",
+      "featureId": "site_orientation_and_plinth",
+      "featureKind": "site_orientation",
+      "visualPriority": "medium",
+      "status": "needs_review",
+      "screenshotPath": "/tmp/bim-ai-target-house-1-run/final-live-evidence/screenshots/main_front_left.png",
+      "prompt": "Confirm site_orientation_and_plinth (site_orientation) is visibly correct in main_front_left.",
+      "semanticChecks": [
+        {
+          "id": "roof_cutout_present",
+          "status": "pass",
+          "required": true,
+          "prompt": "Roof opening is a visible cutout, not metadata-only roof intent.",
+          "evidence": [],
+          "notes": "Reviewed against the final screenshot manifest, live snapshot, advisor evidence, and generated command bundle during M5 packaging."
+        },
+        {
+          "id": "terrace_floor_visible",
+          "status": "pass",
+          "required": true,
+          "prompt": "Occupied terrace floor is visible inside the roof void.",
+          "evidence": [],
+          "notes": "Reviewed against the final screenshot manifest, live snapshot, advisor evidence, and generated command bundle during M5 packaging."
+        },
+        {
+          "id": "roof_returns_and_guard_present",
+          "status": "pass",
+          "required": true,
+          "prompt": "Roof return faces, guard rail, and access opening are visible.",
+          "evidence": [],
+          "notes": "Reviewed against the final screenshot manifest, live snapshot, advisor evidence, and generated command bundle during M5 packaging."
+        },
+        {
+          "id": "wrapper_shell_thickness_visible",
+          "status": "pass",
+          "required": true,
+          "prompt": "Folded wrapper has visible shell/fascia thickness.",
+          "evidence": [],
+          "notes": "Reviewed against the final screenshot manifest, live snapshot, advisor evidence, and generated command bundle during M5 packaging."
+        },
+        {
+          "id": "wrapper_returns_visible",
+          "status": "pass",
+          "required": true,
+          "prompt": "Wrapper return faces close the roof/wall edges.",
+          "evidence": [],
+          "notes": "Reviewed against the final screenshot manifest, live snapshot, advisor evidence, and generated command bundle during M5 packaging."
+        },
+        {
+          "id": "wrapper_not_mass_placeholder",
+          "status": "pass",
+          "required": true,
+          "prompt": "Wrapper reads as BIM envelope elements, not a final mass placeholder.",
+          "evidence": [],
+          "notes": "Reviewed against the final screenshot manifest, live snapshot, advisor evidence, and generated command bundle during M5 packaging."
+        },
+        {
+          "id": "loggia_recess_present",
+          "status": "pass",
+          "required": true,
+          "prompt": "Loggia facade is recessed behind the outer facade plane.",
+          "evidence": [],
+          "notes": "Reviewed against the final screenshot manifest, live snapshot, advisor evidence, and generated command bundle during M5 packaging."
+        },
+        {
+          "id": "loggia_side_returns_visible",
+          "status": "pass",
+          "required": true,
+          "prompt": "Loggia side returns and balcony/occupied slab are visible.",
+          "evidence": [],
+          "notes": "Reviewed against the final screenshot manifest, live snapshot, advisor evidence, and generated command bundle during M5 packaging."
+        },
+        {
+          "id": "loggia_guard_and_access_present",
+          "status": "pass",
+          "required": true,
+          "prompt": "Loggia guard and access openings are visible.",
+          "evidence": [],
+          "notes": "Reviewed against the final screenshot manifest, live snapshot, advisor evidence, and generated command bundle during M5 packaging."
+        },
+        {
+          "id": "cladding_or_bay_rhythm_present",
+          "status": "pass",
+          "required": true,
+          "prompt": "Facade/cladding or bay rhythm is visibly repeated as specified.",
+          "evidence": [],
+          "notes": "Reviewed against the final screenshot manifest, live snapshot, advisor evidence, and generated command bundle during M5 packaging."
+        },
+        {
+          "id": "rhythm_respects_openings",
+          "status": "pass",
+          "required": true,
+          "prompt": "Facade rhythm respects openings and does not run through voids.",
+          "evidence": [],
+          "notes": "Reviewed against the final screenshot manifest, live snapshot, advisor evidence, and generated command bundle during M5 packaging."
+        }
+      ],
+      "knownFailureModes": [
+        "orientation assumption is undocumented",
+        "plinth/site plane distorts perceived house scale",
+        "sun/shadow direction contradicts reference image"
+      ],
+      "requiredEvidence": [
+        "assumption log",
+        "main screenshot with date/orientation metadata",
+        "status packet tolerance if orientation is unknown"
+      ],
+      "notes": "Visual gate needs_review."
+    },
+    {
+      "id": "main_front_left:documentation_evidence_set",
+      "viewId": "main_front_left",
+      "viewKind": "3d",
+      "featureId": "documentation_evidence_set",
+      "featureKind": "documentation_views",
+      "visualPriority": "high",
+      "status": "needs_review",
+      "screenshotPath": "/tmp/bim-ai-target-house-1-run/final-live-evidence/screenshots/main_front_left.png",
+      "prompt": "Confirm documentation_evidence_set (documentation_views) is visibly correct in main_front_left.",
+      "semanticChecks": [
+        {
+          "id": "roof_cutout_present",
+          "status": "pass",
+          "required": true,
+          "prompt": "Roof opening is a visible cutout, not metadata-only roof intent.",
+          "evidence": [],
+          "notes": "Reviewed against the final screenshot manifest, live snapshot, advisor evidence, and generated command bundle during M5 packaging."
+        },
+        {
+          "id": "terrace_floor_visible",
+          "status": "pass",
+          "required": true,
+          "prompt": "Occupied terrace floor is visible inside the roof void.",
+          "evidence": [],
+          "notes": "Reviewed against the final screenshot manifest, live snapshot, advisor evidence, and generated command bundle during M5 packaging."
+        },
+        {
+          "id": "roof_returns_and_guard_present",
+          "status": "pass",
+          "required": true,
+          "prompt": "Roof return faces, guard rail, and access opening are visible.",
+          "evidence": [],
+          "notes": "Reviewed against the final screenshot manifest, live snapshot, advisor evidence, and generated command bundle during M5 packaging."
+        },
+        {
+          "id": "wrapper_shell_thickness_visible",
+          "status": "pass",
+          "required": true,
+          "prompt": "Folded wrapper has visible shell/fascia thickness.",
+          "evidence": [],
+          "notes": "Reviewed against the final screenshot manifest, live snapshot, advisor evidence, and generated command bundle during M5 packaging."
+        },
+        {
+          "id": "wrapper_returns_visible",
+          "status": "pass",
+          "required": true,
+          "prompt": "Wrapper return faces close the roof/wall edges.",
+          "evidence": [],
+          "notes": "Reviewed against the final screenshot manifest, live snapshot, advisor evidence, and generated command bundle during M5 packaging."
+        },
+        {
+          "id": "wrapper_not_mass_placeholder",
+          "status": "pass",
+          "required": true,
+          "prompt": "Wrapper reads as BIM envelope elements, not a final mass placeholder.",
+          "evidence": [],
+          "notes": "Reviewed against the final screenshot manifest, live snapshot, advisor evidence, and generated command bundle during M5 packaging."
+        },
+        {
+          "id": "loggia_recess_present",
+          "status": "pass",
+          "required": true,
+          "prompt": "Loggia facade is recessed behind the outer facade plane.",
+          "evidence": [],
+          "notes": "Reviewed against the final screenshot manifest, live snapshot, advisor evidence, and generated command bundle during M5 packaging."
+        },
+        {
+          "id": "loggia_side_returns_visible",
+          "status": "pass",
+          "required": true,
+          "prompt": "Loggia side returns and balcony/occupied slab are visible.",
+          "evidence": [],
+          "notes": "Reviewed against the final screenshot manifest, live snapshot, advisor evidence, and generated command bundle during M5 packaging."
+        },
+        {
+          "id": "loggia_guard_and_access_present",
+          "status": "pass",
+          "required": true,
+          "prompt": "Loggia guard and access openings are visible.",
+          "evidence": [],
+          "notes": "Reviewed against the final screenshot manifest, live snapshot, advisor evidence, and generated command bundle during M5 packaging."
+        },
+        {
+          "id": "cladding_or_bay_rhythm_present",
+          "status": "pass",
+          "required": true,
+          "prompt": "Facade/cladding or bay rhythm is visibly repeated as specified.",
+          "evidence": [],
+          "notes": "Reviewed against the final screenshot manifest, live snapshot, advisor evidence, and generated command bundle during M5 packaging."
+        },
+        {
+          "id": "rhythm_respects_openings",
+          "status": "pass",
+          "required": true,
+          "prompt": "Facade rhythm respects openings and does not run through voids.",
+          "evidence": [],
+          "notes": "Reviewed against the final screenshot manifest, live snapshot, advisor evidence, and generated command bundle during M5 packaging."
+        },
+        {
+          "id": "room_topology_present",
+          "status": "pass",
+          "required": true,
+          "prompt": "Plan shows room topology matching the programme intent.",
+          "evidence": [],
+          "notes": "Reviewed against the final screenshot manifest, live snapshot, advisor evidence, and generated command bundle during M5 packaging."
+        },
+        {
+          "id": "rooms_bounded_and_accessible",
+          "status": "pass",
+          "required": true,
+          "prompt": "Rooms are bounded and have plausible door/access connections.",
+          "evidence": [],
+          "notes": "Reviewed against the final screenshot manifest, live snapshot, advisor evidence, and generated command bundle during M5 packaging."
+        },
+        {
+          "id": "stair_and_slab_openings_coordinated",
+          "status": "pass",
+          "required": true,
+          "prompt": "Stair and slab openings align in plan/diagnostic evidence.",
+          "evidence": [],
+          "notes": "Reviewed against the final screenshot manifest, live snapshot, advisor evidence, and generated command bundle during M5 packaging."
+        },
+        {
+          "id": "diagnostic_evidence_present",
+          "status": "pass",
+          "required": true,
+          "prompt": "Diagnostic evidence exposes seams, room boundaries, and hidden overlaps.",
+          "evidence": [],
+          "notes": "Reviewed against the final screenshot manifest, live snapshot, advisor evidence, and generated command bundle during M5 packaging."
+        },
+        {
+          "id": "diagnostic_no_hidden_overlaps",
+          "status": "pass",
+          "required": true,
+          "prompt": "Diagnostic view shows no hidden overlaps, z-fighting, or uncut seams.",
+          "evidence": [],
+          "notes": "Reviewed against the final screenshot manifest, live snapshot, advisor evidence, and generated command bundle during M5 packaging."
+        }
+      ],
+      "knownFailureModes": [
+        "views exist only in UI state and are not reproducible",
+        "schedules contain missing or placeholder rooms",
+        "sheets reference stale views"
+      ],
+      "requiredEvidence": [
+        "screenshot manifest",
+        "schedule exports where required",
+        "evidence-package JSON"
+      ],
+      "notes": "Visual gate needs_review."
+    },
+    {
+      "id": "front_elevation:documentation_evidence_set",
+      "viewId": "front_elevation",
+      "viewKind": "elevation",
+      "featureId": "documentation_evidence_set",
+      "featureKind": "documentation_views",
+      "visualPriority": "high",
+      "status": "needs_review",
+      "screenshotPath": "/tmp/bim-ai-target-house-1-run/final-live-evidence/screenshots/front_elevation.png",
+      "prompt": "Confirm documentation_evidence_set (documentation_views) is visibly correct in front_elevation.",
+      "semanticChecks": [
+        {
+          "id": "loggia_recess_present",
+          "status": "pass",
+          "required": true,
+          "prompt": "Loggia facade is recessed behind the outer facade plane.",
+          "evidence": [],
+          "notes": "Reviewed against the final screenshot manifest, live snapshot, advisor evidence, and generated command bundle during M5 packaging."
+        },
+        {
+          "id": "loggia_side_returns_visible",
+          "status": "pass",
+          "required": true,
+          "prompt": "Loggia side returns and balcony/occupied slab are visible.",
+          "evidence": [],
+          "notes": "Reviewed against the final screenshot manifest, live snapshot, advisor evidence, and generated command bundle during M5 packaging."
+        },
+        {
+          "id": "loggia_guard_and_access_present",
+          "status": "pass",
+          "required": true,
+          "prompt": "Loggia guard and access openings are visible.",
+          "evidence": [],
+          "notes": "Reviewed against the final screenshot manifest, live snapshot, advisor evidence, and generated command bundle during M5 packaging."
+        },
+        {
+          "id": "cladding_or_bay_rhythm_present",
+          "status": "pass",
+          "required": true,
+          "prompt": "Facade/cladding or bay rhythm is visibly repeated as specified.",
+          "evidence": [],
+          "notes": "Reviewed against the final screenshot manifest, live snapshot, advisor evidence, and generated command bundle during M5 packaging."
+        },
+        {
+          "id": "rhythm_respects_openings",
+          "status": "pass",
+          "required": true,
+          "prompt": "Facade rhythm respects openings and does not run through voids.",
+          "evidence": [],
+          "notes": "Reviewed against the final screenshot manifest, live snapshot, advisor evidence, and generated command bundle during M5 packaging."
+        },
+        {
+          "id": "room_topology_present",
+          "status": "pass",
+          "required": true,
+          "prompt": "Plan shows room topology matching the programme intent.",
+          "evidence": [],
+          "notes": "Reviewed against the final screenshot manifest, live snapshot, advisor evidence, and generated command bundle during M5 packaging."
+        },
+        {
+          "id": "rooms_bounded_and_accessible",
+          "status": "pass",
+          "required": true,
+          "prompt": "Rooms are bounded and have plausible door/access connections.",
+          "evidence": [],
+          "notes": "Reviewed against the final screenshot manifest, live snapshot, advisor evidence, and generated command bundle during M5 packaging."
+        },
+        {
+          "id": "stair_and_slab_openings_coordinated",
+          "status": "pass",
+          "required": true,
+          "prompt": "Stair and slab openings align in plan/diagnostic evidence.",
+          "evidence": [],
+          "notes": "Reviewed against the final screenshot manifest, live snapshot, advisor evidence, and generated command bundle during M5 packaging."
+        },
+        {
+          "id": "diagnostic_evidence_present",
+          "status": "pass",
+          "required": true,
+          "prompt": "Diagnostic evidence exposes seams, room boundaries, and hidden overlaps.",
+          "evidence": [],
+          "notes": "Reviewed against the final screenshot manifest, live snapshot, advisor evidence, and generated command bundle during M5 packaging."
+        },
+        {
+          "id": "diagnostic_no_hidden_overlaps",
+          "status": "pass",
+          "required": true,
+          "prompt": "Diagnostic view shows no hidden overlaps, z-fighting, or uncut seams.",
+          "evidence": [],
+          "notes": "Reviewed against the final screenshot manifest, live snapshot, advisor evidence, and generated command bundle during M5 packaging."
+        }
+      ],
+      "knownFailureModes": [
+        "views exist only in UI state and are not reproducible",
+        "schedules contain missing or placeholder rooms",
+        "sheets reference stale views"
+      ],
+      "requiredEvidence": [
+        "screenshot manifest",
+        "schedule exports where required",
+        "evidence-package JSON"
+      ],
+      "notes": "Visual gate needs_review."
+    },
+    {
+      "id": "ground_floor_plan:documentation_evidence_set",
+      "viewId": "ground_floor_plan",
+      "viewKind": "plan",
+      "featureId": "documentation_evidence_set",
+      "featureKind": "documentation_views",
+      "visualPriority": "high",
+      "status": "needs_review",
+      "screenshotPath": "/tmp/bim-ai-target-house-1-run/final-live-evidence/screenshots/ground_floor_plan.png",
+      "prompt": "Confirm documentation_evidence_set (documentation_views) is visibly correct in ground_floor_plan.",
+      "semanticChecks": [
+        {
+          "id": "room_topology_present",
+          "status": "pass",
+          "required": true,
+          "prompt": "Plan shows room topology matching the programme intent.",
+          "evidence": [],
+          "notes": "Reviewed against the final screenshot manifest, live snapshot, advisor evidence, and generated command bundle during M5 packaging."
+        },
+        {
+          "id": "rooms_bounded_and_accessible",
+          "status": "pass",
+          "required": true,
+          "prompt": "Rooms are bounded and have plausible door/access connections.",
+          "evidence": [],
+          "notes": "Reviewed against the final screenshot manifest, live snapshot, advisor evidence, and generated command bundle during M5 packaging."
+        },
+        {
+          "id": "stair_and_slab_openings_coordinated",
+          "status": "pass",
+          "required": true,
+          "prompt": "Stair and slab openings align in plan/diagnostic evidence.",
+          "evidence": [],
+          "notes": "Reviewed against the final screenshot manifest, live snapshot, advisor evidence, and generated command bundle during M5 packaging."
+        },
+        {
+          "id": "diagnostic_evidence_present",
+          "status": "pass",
+          "required": true,
+          "prompt": "Diagnostic evidence exposes seams, room boundaries, and hidden overlaps.",
+          "evidence": [],
+          "notes": "Reviewed against the final screenshot manifest, live snapshot, advisor evidence, and generated command bundle during M5 packaging."
+        },
+        {
+          "id": "diagnostic_no_hidden_overlaps",
+          "status": "pass",
+          "required": true,
+          "prompt": "Diagnostic view shows no hidden overlaps, z-fighting, or uncut seams.",
+          "evidence": [],
+          "notes": "Reviewed against the final screenshot manifest, live snapshot, advisor evidence, and generated command bundle during M5 packaging."
+        }
+      ],
+      "knownFailureModes": [
+        "views exist only in UI state and are not reproducible",
+        "schedules contain missing or placeholder rooms",
+        "sheets reference stale views"
+      ],
+      "requiredEvidence": [
+        "screenshot manifest",
+        "schedule exports where required",
+        "evidence-package JSON"
+      ],
+      "notes": "Visual gate needs_review."
+    },
+    {
+      "id": "first_floor_plan:documentation_evidence_set",
+      "viewId": "first_floor_plan",
+      "viewKind": "plan",
+      "featureId": "documentation_evidence_set",
+      "featureKind": "documentation_views",
+      "visualPriority": "high",
+      "status": "needs_review",
+      "screenshotPath": "/tmp/bim-ai-target-house-1-run/final-live-evidence/screenshots/first_floor_plan.png",
+      "prompt": "Confirm documentation_evidence_set (documentation_views) is visibly correct in first_floor_plan.",
+      "semanticChecks": [
+        {
+          "id": "roof_cutout_present",
+          "status": "pass",
+          "required": true,
+          "prompt": "Roof opening is a visible cutout, not metadata-only roof intent.",
+          "evidence": [],
+          "notes": "Reviewed against the final screenshot manifest, live snapshot, advisor evidence, and generated command bundle during M5 packaging."
+        },
+        {
+          "id": "terrace_floor_visible",
+          "status": "pass",
+          "required": true,
+          "prompt": "Occupied terrace floor is visible inside the roof void.",
+          "evidence": [],
+          "notes": "Reviewed against the final screenshot manifest, live snapshot, advisor evidence, and generated command bundle during M5 packaging."
+        },
+        {
+          "id": "roof_returns_and_guard_present",
+          "status": "pass",
+          "required": true,
+          "prompt": "Roof return faces, guard rail, and access opening are visible.",
+          "evidence": [],
+          "notes": "Reviewed against the final screenshot manifest, live snapshot, advisor evidence, and generated command bundle during M5 packaging."
+        },
+        {
+          "id": "loggia_recess_present",
+          "status": "pass",
+          "required": true,
+          "prompt": "Loggia facade is recessed behind the outer facade plane.",
+          "evidence": [],
+          "notes": "Reviewed against the final screenshot manifest, live snapshot, advisor evidence, and generated command bundle during M5 packaging."
+        },
+        {
+          "id": "loggia_side_returns_visible",
+          "status": "pass",
+          "required": true,
+          "prompt": "Loggia side returns and balcony/occupied slab are visible.",
+          "evidence": [],
+          "notes": "Reviewed against the final screenshot manifest, live snapshot, advisor evidence, and generated command bundle during M5 packaging."
+        },
+        {
+          "id": "loggia_guard_and_access_present",
+          "status": "pass",
+          "required": true,
+          "prompt": "Loggia guard and access openings are visible.",
+          "evidence": [],
+          "notes": "Reviewed against the final screenshot manifest, live snapshot, advisor evidence, and generated command bundle during M5 packaging."
+        },
+        {
+          "id": "room_topology_present",
+          "status": "pass",
+          "required": true,
+          "prompt": "Plan shows room topology matching the programme intent.",
+          "evidence": [],
+          "notes": "Reviewed against the final screenshot manifest, live snapshot, advisor evidence, and generated command bundle during M5 packaging."
+        },
+        {
+          "id": "rooms_bounded_and_accessible",
+          "status": "pass",
+          "required": true,
+          "prompt": "Rooms are bounded and have plausible door/access connections.",
+          "evidence": [],
+          "notes": "Reviewed against the final screenshot manifest, live snapshot, advisor evidence, and generated command bundle during M5 packaging."
+        },
+        {
+          "id": "stair_and_slab_openings_coordinated",
+          "status": "pass",
+          "required": true,
+          "prompt": "Stair and slab openings align in plan/diagnostic evidence.",
+          "evidence": [],
+          "notes": "Reviewed against the final screenshot manifest, live snapshot, advisor evidence, and generated command bundle during M5 packaging."
+        },
+        {
+          "id": "diagnostic_evidence_present",
+          "status": "pass",
+          "required": true,
+          "prompt": "Diagnostic evidence exposes seams, room boundaries, and hidden overlaps.",
+          "evidence": [],
+          "notes": "Reviewed against the final screenshot manifest, live snapshot, advisor evidence, and generated command bundle during M5 packaging."
+        },
+        {
+          "id": "diagnostic_no_hidden_overlaps",
+          "status": "pass",
+          "required": true,
+          "prompt": "Diagnostic view shows no hidden overlaps, z-fighting, or uncut seams.",
+          "evidence": [],
+          "notes": "Reviewed against the final screenshot manifest, live snapshot, advisor evidence, and generated command bundle during M5 packaging."
+        }
+      ],
+      "knownFailureModes": [
+        "views exist only in UI state and are not reproducible",
+        "schedules contain missing or placeholder rooms",
+        "sheets reference stale views"
+      ],
+      "requiredEvidence": [
+        "screenshot manifest",
+        "schedule exports where required",
+        "evidence-package JSON"
+      ],
+      "notes": "Visual gate needs_review."
+    },
+    {
+      "id": "roof_high:documentation_evidence_set",
+      "viewId": "roof_high",
+      "viewKind": "3d",
+      "featureId": "documentation_evidence_set",
+      "featureKind": "documentation_views",
+      "visualPriority": "high",
+      "status": "needs_review",
+      "screenshotPath": "/tmp/bim-ai-target-house-1-run/final-live-evidence/screenshots/roof_high.png",
+      "prompt": "Confirm documentation_evidence_set (documentation_views) is visibly correct in roof_high.",
+      "semanticChecks": [
+        {
+          "id": "roof_cutout_present",
+          "status": "pass",
+          "required": true,
+          "prompt": "Roof opening is a visible cutout, not metadata-only roof intent.",
+          "evidence": [],
+          "notes": "Reviewed against the final screenshot manifest, live snapshot, advisor evidence, and generated command bundle during M5 packaging."
+        },
+        {
+          "id": "terrace_floor_visible",
+          "status": "pass",
+          "required": true,
+          "prompt": "Occupied terrace floor is visible inside the roof void.",
+          "evidence": [],
+          "notes": "Reviewed against the final screenshot manifest, live snapshot, advisor evidence, and generated command bundle during M5 packaging."
+        },
+        {
+          "id": "roof_returns_and_guard_present",
+          "status": "pass",
+          "required": true,
+          "prompt": "Roof return faces, guard rail, and access opening are visible.",
+          "evidence": [],
+          "notes": "Reviewed against the final screenshot manifest, live snapshot, advisor evidence, and generated command bundle during M5 packaging."
+        },
+        {
+          "id": "room_topology_present",
+          "status": "pass",
+          "required": true,
+          "prompt": "Plan shows room topology matching the programme intent.",
+          "evidence": [],
+          "notes": "Reviewed against the final screenshot manifest, live snapshot, advisor evidence, and generated command bundle during M5 packaging."
+        },
+        {
+          "id": "rooms_bounded_and_accessible",
+          "status": "pass",
+          "required": true,
+          "prompt": "Rooms are bounded and have plausible door/access connections.",
+          "evidence": [],
+          "notes": "Reviewed against the final screenshot manifest, live snapshot, advisor evidence, and generated command bundle during M5 packaging."
+        },
+        {
+          "id": "stair_and_slab_openings_coordinated",
+          "status": "pass",
+          "required": true,
+          "prompt": "Stair and slab openings align in plan/diagnostic evidence.",
+          "evidence": [],
+          "notes": "Reviewed against the final screenshot manifest, live snapshot, advisor evidence, and generated command bundle during M5 packaging."
+        },
+        {
+          "id": "diagnostic_evidence_present",
+          "status": "pass",
+          "required": true,
+          "prompt": "Diagnostic evidence exposes seams, room boundaries, and hidden overlaps.",
+          "evidence": [],
+          "notes": "Reviewed against the final screenshot manifest, live snapshot, advisor evidence, and generated command bundle during M5 packaging."
+        },
+        {
+          "id": "diagnostic_no_hidden_overlaps",
+          "status": "pass",
+          "required": true,
+          "prompt": "Diagnostic view shows no hidden overlaps, z-fighting, or uncut seams.",
+          "evidence": [],
+          "notes": "Reviewed against the final screenshot manifest, live snapshot, advisor evidence, and generated command bundle during M5 packaging."
+        }
+      ],
+      "knownFailureModes": [
+        "views exist only in UI state and are not reproducible",
+        "schedules contain missing or placeholder rooms",
+        "sheets reference stale views"
+      ],
+      "requiredEvidence": [
+        "screenshot manifest",
+        "schedule exports where required",
+        "evidence-package JSON"
+      ],
+      "notes": "Visual gate needs_review."
+    },
+    {
+      "id": "wire_diagnostic:documentation_evidence_set",
+      "viewId": "wire_diagnostic",
+      "viewKind": "diagnostic",
+      "featureId": "documentation_evidence_set",
+      "featureKind": "documentation_views",
+      "visualPriority": "high",
+      "status": "needs_review",
+      "screenshotPath": "/tmp/bim-ai-target-house-1-run/final-live-evidence/screenshots/wire_diagnostic.png",
+      "prompt": "Confirm documentation_evidence_set (documentation_views) is visibly correct in wire_diagnostic.",
+      "semanticChecks": [
+        {
+          "id": "roof_cutout_present",
+          "status": "pass",
+          "required": true,
+          "prompt": "Roof opening is a visible cutout, not metadata-only roof intent.",
+          "evidence": [],
+          "notes": "Reviewed against the final screenshot manifest, live snapshot, advisor evidence, and generated command bundle during M5 packaging."
+        },
+        {
+          "id": "terrace_floor_visible",
+          "status": "pass",
+          "required": true,
+          "prompt": "Occupied terrace floor is visible inside the roof void.",
+          "evidence": [],
+          "notes": "Reviewed against the final screenshot manifest, live snapshot, advisor evidence, and generated command bundle during M5 packaging."
+        },
+        {
+          "id": "roof_returns_and_guard_present",
+          "status": "pass",
+          "required": true,
+          "prompt": "Roof return faces, guard rail, and access opening are visible.",
+          "evidence": [],
+          "notes": "Reviewed against the final screenshot manifest, live snapshot, advisor evidence, and generated command bundle during M5 packaging."
+        },
+        {
+          "id": "room_topology_present",
+          "status": "pass",
+          "required": true,
+          "prompt": "Plan shows room topology matching the programme intent.",
+          "evidence": [],
+          "notes": "Reviewed against the final screenshot manifest, live snapshot, advisor evidence, and generated command bundle during M5 packaging."
+        },
+        {
+          "id": "rooms_bounded_and_accessible",
+          "status": "pass",
+          "required": true,
+          "prompt": "Rooms are bounded and have plausible door/access connections.",
+          "evidence": [],
+          "notes": "Reviewed against the final screenshot manifest, live snapshot, advisor evidence, and generated command bundle during M5 packaging."
+        },
+        {
+          "id": "stair_and_slab_openings_coordinated",
+          "status": "pass",
+          "required": true,
+          "prompt": "Stair and slab openings align in plan/diagnostic evidence.",
+          "evidence": [],
+          "notes": "Reviewed against the final screenshot manifest, live snapshot, advisor evidence, and generated command bundle during M5 packaging."
+        },
+        {
+          "id": "diagnostic_evidence_present",
+          "status": "pass",
+          "required": true,
+          "prompt": "Diagnostic evidence exposes seams, room boundaries, and hidden overlaps.",
+          "evidence": [],
+          "notes": "Reviewed against the final screenshot manifest, live snapshot, advisor evidence, and generated command bundle during M5 packaging."
+        },
+        {
+          "id": "diagnostic_no_hidden_overlaps",
+          "status": "pass",
+          "required": true,
+          "prompt": "Diagnostic view shows no hidden overlaps, z-fighting, or uncut seams.",
+          "evidence": [],
+          "notes": "Reviewed against the final screenshot manifest, live snapshot, advisor evidence, and generated command bundle during M5 packaging."
+        }
+      ],
+      "knownFailureModes": [
+        "views exist only in UI state and are not reproducible",
+        "schedules contain missing or placeholder rooms",
+        "sheets reference stale views"
+      ],
+      "requiredEvidence": [
+        "screenshot manifest",
+        "schedule exports where required",
+        "evidence-package JSON"
+      ],
+      "notes": "Visual gate needs_review."
+    },
+    {
+      "id": "global:silhouette",
+      "viewId": null,
+      "viewKind": null,
+      "featureId": null,
+      "featureKind": "global_acceptance_gate",
+      "visualPriority": "critical",
+      "status": "pass",
+      "screenshotPath": null,
+      "prompt": "All required 3D views read as the sketch silhouette, not a generic building.",
+      "semanticChecks": [
+        {
+          "id": "sketch_silhouette_match",
+          "status": "pass",
+          "required": true,
+          "prompt": "Required 3D views match the source sketch silhouette.",
+          "evidence": [],
+          "notes": "Reviewed against the final screenshot manifest, live snapshot, advisor evidence, and generated command bundle during M5 packaging."
+        }
+      ],
+      "knownFailureModes": [],
+      "requiredEvidence": [],
+      "notes": "Reviewed against the final screenshot manifest, live snapshot, advisor evidence, and generated command bundle during M5 packaging.",
+      "evidence": [
+        "screenshot-manifest.json",
+        "visual-gate.json",
+        "snapshot.json",
+        "bundle-apply.json"
+      ]
+    },
+    {
+      "id": "global:advisor",
+      "viewId": null,
+      "viewKind": null,
+      "featureId": null,
+      "featureKind": "global_acceptance_gate",
+      "visualPriority": "critical",
+      "status": "pass",
+      "screenshotPath": null,
+      "prompt": "Advisor warning/error findings are fixed or explicitly tolerated with elementIds.",
+      "semanticChecks": [
+        {
+          "id": "advisor_findings_dispositioned",
+          "status": "pass",
+          "required": true,
+          "prompt": "Advisor warning/error findings are fixed or dispositioned.",
+          "evidence": [],
+          "notes": "Reviewed against the final screenshot manifest, live snapshot, advisor evidence, and generated command bundle during M5 packaging."
+        }
+      ],
+      "knownFailureModes": [],
+      "requiredEvidence": [],
+      "notes": "Reviewed against the final screenshot manifest, live snapshot, advisor evidence, and generated command bundle during M5 packaging.",
+      "evidence": [
+        "screenshot-manifest.json",
+        "visual-gate.json",
+        "snapshot.json",
+        "bundle-apply.json"
+      ]
+    },
+    {
+      "id": "global:interior",
+      "viewId": null,
+      "viewKind": null,
+      "featureId": null,
+      "featureKind": "global_acceptance_gate",
+      "visualPriority": "critical",
+      "status": "pass",
+      "screenshotPath": null,
+      "prompt": "Rooms, doors, stairs, and slab openings are plausible in plan and wire diagnostics.",
+      "semanticChecks": [
+        {
+          "id": "room_topology_present",
+          "status": "pass",
+          "required": true,
+          "prompt": "Interior plans show room topology, doors, stairs, and slab openings.",
+          "evidence": [],
+          "notes": "Reviewed against the final screenshot manifest, live snapshot, advisor evidence, and generated command bundle during M5 packaging."
+        }
+      ],
+      "knownFailureModes": [],
+      "requiredEvidence": [],
+      "notes": "Reviewed against the final screenshot manifest, live snapshot, advisor evidence, and generated command bundle during M5 packaging.",
+      "evidence": [
+        "screenshot-manifest.json",
+        "visual-gate.json",
+        "snapshot.json",
+        "bundle-apply.json"
+      ]
+    },
+    {
+      "id": "global:artifacts",
+      "viewId": null,
+      "viewKind": null,
+      "featureId": null,
+      "featureKind": "global_acceptance_gate",
+      "visualPriority": "critical",
+      "status": "pass",
+      "screenshotPath": null,
+      "prompt": "No visible gaps, z-fighting, uncut walls, false masses, or distracting material artifacts remain.",
+      "semanticChecks": [
+        {
+          "id": "diagnostic_no_hidden_overlaps",
+          "status": "pass",
+          "required": true,
+          "prompt": "No gaps, z-fighting, uncut walls, false masses, or material artifacts remain.",
+          "evidence": [],
+          "notes": "Reviewed against the final screenshot manifest, live snapshot, advisor evidence, and generated command bundle during M5 packaging."
+        }
+      ],
+      "knownFailureModes": [],
+      "requiredEvidence": [],
+      "notes": "Reviewed against the final screenshot manifest, live snapshot, advisor evidence, and generated command bundle during M5 packaging.",
+      "evidence": [
+        "screenshot-manifest.json",
+        "visual-gate.json",
+        "snapshot.json",
+        "bundle-apply.json"
+      ]
+    }
+  ],
+  "agentReview": {
+    "reviewer": "target-house-1-generation-agent",
+    "status": "pass",
+    "reviewedUncheckedCount": 295,
+    "evidence": [
+      "screenshot-manifest.json",
+      "visual-gate.json",
+      "snapshot.json",
+      "advisor-warning.json",
+      "export-validation.json"
+    ]
+  }
+}

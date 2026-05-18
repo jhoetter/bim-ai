@@ -1,0 +1,240 @@
+{
+  "schemaVersion": "sketch-to-bim-visual-gate.v0",
+  "generatedAt": "2026-05-18T20:26:11.008Z",
+  "threshold": 0.62,
+  "targetImagePath": null,
+  "targetMapPath": null,
+  "summary": {
+    "captureCount": 7,
+    "passCount": 0,
+    "needsReviewCount": 7,
+    "failCount": 0,
+    "blockingFailureCount": 0
+  },
+  "captures": [
+    {
+      "viewId": "main_front_left",
+      "viewKind": "3d",
+      "purpose": "Primary sketch-matched view proving white folded wrapper, front loggia, cantilever, vertical cladding, and roof terrace cutout.",
+      "screenshotPath": "/tmp/bim-ai-target-house-1-run/final-live-evidence/screenshots/main_front_left.png",
+      "usedViewpointId": "main_front_left",
+      "syntheticViewpoint": false,
+      "fallbackFit": false,
+      "analysis": {
+        "filePath": "/tmp/bim-ai-target-house-1-run/final-live-evidence/screenshots/main_front_left.png",
+        "width": 776,
+        "height": 563,
+        "contentCoverage": 0.8461299005694823,
+        "contentBoundingBox": {
+          "minX": 0,
+          "minY": 0,
+          "maxX": 775,
+          "maxY": 562,
+          "width": 776,
+          "height": 563
+        },
+        "meanLuma": 234.93532588393018,
+        "lumaStdDev": 17.290891157828607,
+        "edgeDensity": 0.007944260794311455,
+        "uniqueColorBucketsSampled": 59,
+        "blankLike": false
+      },
+      "comparison": null,
+      "status": "needs_review",
+      "blockers": [],
+      "notes": ["No target image supplied; automated gate covers screenshot quality only."]
+    },
+    {
+      "viewId": "roof_high",
+      "viewKind": "3d",
+      "purpose": "High right/roof view proving the roof terrace is a real open void with occupied floor and return faces.",
+      "screenshotPath": "/tmp/bim-ai-target-house-1-run/final-live-evidence/screenshots/roof_high.png",
+      "usedViewpointId": "roof_high",
+      "syntheticViewpoint": false,
+      "fallbackFit": false,
+      "analysis": {
+        "filePath": "/tmp/bim-ai-target-house-1-run/final-live-evidence/screenshots/roof_high.png",
+        "width": 776,
+        "height": 563,
+        "contentCoverage": 0.4849023090586146,
+        "contentBoundingBox": {
+          "minX": 0,
+          "minY": 0,
+          "maxX": 775,
+          "maxY": 562,
+          "width": 776,
+          "height": 563
+        },
+        "meanLuma": 230.72040133802372,
+        "lumaStdDev": 19.216334644628994,
+        "edgeDensity": 0.009963197811392006,
+        "uniqueColorBucketsSampled": 62,
+        "blankLike": false
+      },
+      "comparison": null,
+      "status": "needs_review",
+      "blockers": [],
+      "notes": ["No target image supplied; automated gate covers screenshot quality only."]
+    },
+    {
+      "viewId": "front_elevation",
+      "viewKind": "elevation",
+      "purpose": "Front view proving the three-bay upper loggia, rail, ground openings, and vertical cladding.",
+      "screenshotPath": "/tmp/bim-ai-target-house-1-run/final-live-evidence/screenshots/front_elevation.png",
+      "usedViewpointId": "front_elevation",
+      "syntheticViewpoint": false,
+      "fallbackFit": false,
+      "analysis": {
+        "filePath": "/tmp/bim-ai-target-house-1-run/final-live-evidence/screenshots/front_elevation.png",
+        "width": 776,
+        "height": 563,
+        "contentCoverage": 0.8049248319935544,
+        "contentBoundingBox": {
+          "minX": 0,
+          "minY": 0,
+          "maxX": 775,
+          "maxY": 562,
+          "width": 776,
+          "height": 563
+        },
+        "meanLuma": 235.8809092361766,
+        "lumaStdDev": 16.51435037044859,
+        "edgeDensity": 0.0075979363710834595,
+        "uniqueColorBucketsSampled": 57,
+        "blankLike": false
+      },
+      "comparison": null,
+      "status": "needs_review",
+      "blockers": [],
+      "notes": ["No target image supplied; automated gate covers screenshot quality only."]
+    },
+    {
+      "viewId": "rear_right_axon",
+      "viewKind": "3d",
+      "purpose": "Rear/right view proving the cutout, shell thickness, carport recess, and side envelope.",
+      "screenshotPath": "/tmp/bim-ai-target-house-1-run/final-live-evidence/screenshots/rear_right_axon.png",
+      "usedViewpointId": "rear_right_axon",
+      "syntheticViewpoint": false,
+      "fallbackFit": false,
+      "analysis": {
+        "filePath": "/tmp/bim-ai-target-house-1-run/final-live-evidence/screenshots/rear_right_axon.png",
+        "width": 776,
+        "height": 563,
+        "contentCoverage": 0.4757100217904818,
+        "contentBoundingBox": {
+          "minX": 0,
+          "minY": 0,
+          "maxX": 775,
+          "maxY": 562,
+          "width": 776,
+          "height": 563
+        },
+        "meanLuma": 230.9199982814731,
+        "lumaStdDev": 17.056966127300964,
+        "edgeDensity": 0.00857520754157632,
+        "uniqueColorBucketsSampled": 59,
+        "blankLike": false
+      },
+      "comparison": null,
+      "status": "needs_review",
+      "blockers": [],
+      "notes": ["No target image supplied; automated gate covers screenshot quality only."]
+    },
+    {
+      "viewId": "ground_floor_plan",
+      "viewKind": "plan",
+      "purpose": "Ground-floor room, door, stair, wet-room, utility, and carport sanity check.",
+      "screenshotPath": "/tmp/bim-ai-target-house-1-run/final-live-evidence/screenshots/ground_floor_plan.png",
+      "usedViewpointId": "ground_floor_plan",
+      "syntheticViewpoint": false,
+      "fallbackFit": false,
+      "analysis": {
+        "filePath": "/tmp/bim-ai-target-house-1-run/final-live-evidence/screenshots/ground_floor_plan.png",
+        "width": 776,
+        "height": 563,
+        "contentCoverage": 0.6497569171046126,
+        "contentBoundingBox": {
+          "minX": 0,
+          "minY": 0,
+          "maxX": 775,
+          "maxY": 562,
+          "width": 776,
+          "height": 563
+        },
+        "meanLuma": 220.71016672113785,
+        "lumaStdDev": 18.054526838565337,
+        "edgeDensity": 0.005055822368350091,
+        "uniqueColorBucketsSampled": 50,
+        "blankLike": false
+      },
+      "comparison": null,
+      "status": "needs_review",
+      "blockers": [],
+      "notes": ["No target image supplied; automated gate covers screenshot quality only."]
+    },
+    {
+      "viewId": "first_floor_plan",
+      "viewKind": "plan",
+      "purpose": "First-floor rooms, landing, loggia, roof court, stair opening, and access sanity check.",
+      "screenshotPath": "/tmp/bim-ai-target-house-1-run/final-live-evidence/screenshots/first_floor_plan.png",
+      "usedViewpointId": "first_floor_plan",
+      "syntheticViewpoint": false,
+      "fallbackFit": false,
+      "analysis": {
+        "filePath": "/tmp/bim-ai-target-house-1-run/final-live-evidence/screenshots/first_floor_plan.png",
+        "width": 776,
+        "height": 563,
+        "contentCoverage": 0.7741091538334768,
+        "contentBoundingBox": {
+          "minX": 0,
+          "minY": 0,
+          "maxX": 775,
+          "maxY": 562,
+          "width": 776,
+          "height": 563
+        },
+        "meanLuma": 222.9446348297075,
+        "lumaStdDev": 18.27819632368193,
+        "edgeDensity": 0.005238696963614981,
+        "uniqueColorBucketsSampled": 49,
+        "blankLike": false
+      },
+      "comparison": null,
+      "status": "needs_review",
+      "blockers": [],
+      "notes": ["No target image supplied; automated gate covers screenshot quality only."]
+    },
+    {
+      "viewId": "wire_diagnostic",
+      "viewKind": "diagnostic",
+      "purpose": "Transparent/wire evidence for roof-wall seams, slab openings, room boundaries, and hidden overlaps.",
+      "screenshotPath": "/tmp/bim-ai-target-house-1-run/final-live-evidence/screenshots/wire_diagnostic.png",
+      "usedViewpointId": "wire_diagnostic",
+      "syntheticViewpoint": false,
+      "fallbackFit": false,
+      "analysis": {
+        "filePath": "/tmp/bim-ai-target-house-1-run/final-live-evidence/screenshots/wire_diagnostic.png",
+        "width": 776,
+        "height": 563,
+        "contentCoverage": 0.8312473677464247,
+        "contentBoundingBox": {
+          "minX": 0,
+          "minY": 0,
+          "maxX": 775,
+          "maxY": 562,
+          "width": 776,
+          "height": 563
+        },
+        "meanLuma": 234.5743668079107,
+        "lumaStdDev": 17.6651974229567,
+        "edgeDensity": 0.00787412859585468,
+        "uniqueColorBucketsSampled": 60,
+        "blankLike": false
+      },
+      "comparison": null,
+      "status": "needs_review",
+      "blockers": [],
+      "notes": ["No target image supplied; automated gate covers screenshot quality only."]
+    }
+  ]
+}

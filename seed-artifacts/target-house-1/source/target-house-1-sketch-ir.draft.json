@@ -1,0 +1,985 @@
+{
+  "schemaVersion": "sketch-understanding-ir.v0",
+  "projectType": "single_family_house",
+  "qualityTarget": "project_initiation_bim",
+  "sourceInputs": {
+    "images": [
+      "spec/target-house/target-house-1.png",
+      "spec/target-house/target-house-2.png",
+      "spec/target-house/floorplan.png"
+    ],
+    "briefs": ["spec/target-house/target-house-seed.md"],
+    "userInstruction": "Prepare target-house-1 for a later sketch-to-real-BIM seed generation run. This draft is planning only and must not create seed artifacts."
+  },
+  "visualRead": {
+    "primaryView": "front-left axonometric with roof terrace visible",
+    "style": "minimalist modern residential",
+    "dominantVolumes": [
+      {
+        "id": "upper_white_wrapper_shell",
+        "description": "Dominant thick white folded upper shell that reads as one architectural wrapper across side walls, roof plane, fascia, front frame, and roof cutout returns.",
+        "priority": "critical"
+      },
+      {
+        "id": "ground_clad_base",
+        "description": "Smaller rectangular ground-floor base with continuous vertical cladding and visible portrait openings.",
+        "priority": "critical"
+      },
+      {
+        "id": "front_loggia_void",
+        "description": "Deep recessed upper-front loggia behind a thick white frame with a three-bay facade and thin black guard rail.",
+        "priority": "critical"
+      },
+      {
+        "id": "roof_court_void",
+        "description": "Large open-to-sky terrace void cut into the right/back roof plane with flat occupied floor, white returns, glass guard, and access glazing.",
+        "priority": "critical"
+      }
+    ],
+    "nonNegotiables": [
+      "white roof and walls form a single folded wrapper, not a dark pitched roof on a box",
+      "roof terrace cutout must render as a real occupied void in normal 3D views",
+      "front upper loggia must be recessed behind thick side and roof returns",
+      "upper wrapper dominates and overhangs the smaller ground-floor clad base",
+      "vertical board-and-batten cladding must be legible on the ground-floor base and central loggia pier",
+      "rooms, stairs, doors, and slab openings must be usable enough for project initiation"
+    ],
+    "forbiddenOutcomes": [
+      "generic rectangular house with a normal gable roof",
+      "roof opening present only as metadata or only visible in plan",
+      "flat balcony attached to the front instead of a recessed loggia",
+      "final envelope relying on translucent mass placeholders",
+      "room-separation geometry hiding open or inaccessible rooms",
+      "dark or brown roof material"
+    ]
+  },
+  "dimensions": {
+    "confidence": "dimensioned_floorplan_plus_visual_reference",
+    "overallWidthMm": 14000,
+    "overallDepthMm": 10000,
+    "floorToFloorMm": 3000,
+    "groundWallHeightMm": 3000,
+    "upperShellVisualThicknessMm": 500,
+    "frontLoggiaDepthMm": 1900,
+    "roofCourtWidthMm": 5300,
+    "roofCourtDepthMm": 4200,
+    "notes": [
+      "The floorplan image dimensions the plan at 14.0 m by 10.0 m. The older image-locked spec lists smaller proportion targets; target-house-1 generation must choose one scale basis before authoring and record the tolerance.",
+      "Room target dimensions below come from the floorplan where labelled."
+    ]
+  },
+  "programme": [
+    {
+      "id": "room_gf_kitchen_dining",
+      "name": "Kitchen / dining",
+      "level": "ground",
+      "programmeCode": "residential_kitchen_dining",
+      "targetAreaM2": 18.4,
+      "functionLabel": "food preparation and dining",
+      "schedule": true
+    },
+    {
+      "id": "room_gf_living",
+      "name": "Living area",
+      "level": "ground",
+      "programmeCode": "residential_living",
+      "targetAreaM2": 19.8,
+      "functionLabel": "living",
+      "schedule": true
+    },
+    {
+      "id": "room_gf_entry",
+      "name": "Entry / stair hall",
+      "level": "ground",
+      "programmeCode": "circulation",
+      "targetAreaM2": 3.4,
+      "functionLabel": "entry and vertical circulation",
+      "schedule": true
+    },
+    {
+      "id": "room_gf_bath_laundry",
+      "name": "Bath / laundry",
+      "level": "ground",
+      "programmeCode": "wet_room",
+      "targetAreaM2": 4.8,
+      "functionLabel": "bathroom and laundry",
+      "schedule": true
+    },
+    {
+      "id": "room_gf_utility",
+      "name": "Utility",
+      "level": "ground",
+      "programmeCode": "utility",
+      "targetAreaM2": 3.4,
+      "functionLabel": "storage and services",
+      "schedule": true
+    },
+    {
+      "id": "room_gf_carport",
+      "name": "Recessed garage / carport",
+      "level": "ground",
+      "programmeCode": "carport",
+      "targetAreaM2": 19.3,
+      "functionLabel": "covered parking",
+      "schedule": true
+    },
+    {
+      "id": "room_l1_primary_bedroom",
+      "name": "Primary bedroom",
+      "level": "first",
+      "programmeCode": "bedroom",
+      "targetAreaM2": 17.6,
+      "functionLabel": "sleeping",
+      "schedule": true
+    },
+    {
+      "id": "room_l1_walk_in_closet",
+      "name": "Walk-in closet",
+      "level": "first",
+      "programmeCode": "storage",
+      "targetAreaM2": 4.7,
+      "functionLabel": "wardrobe storage",
+      "schedule": true
+    },
+    {
+      "id": "room_l1_ensuite",
+      "name": "Ensuite",
+      "level": "first",
+      "programmeCode": "wet_room",
+      "targetAreaM2": 5.2,
+      "functionLabel": "bathroom",
+      "schedule": true
+    },
+    {
+      "id": "room_l1_hall_landing",
+      "name": "Hall / landing",
+      "level": "first",
+      "programmeCode": "circulation",
+      "targetAreaM2": 11.1,
+      "functionLabel": "upper circulation",
+      "schedule": true
+    },
+    {
+      "id": "room_l1_bedroom_2",
+      "name": "Bedroom 2",
+      "level": "first",
+      "programmeCode": "bedroom",
+      "targetAreaM2": 12.2,
+      "functionLabel": "sleeping",
+      "schedule": true
+    },
+    {
+      "id": "room_l1_deep_loggia",
+      "name": "Deep balcony / loggia",
+      "level": "first",
+      "programmeCode": "covered_external_space",
+      "targetAreaM2": 16.5,
+      "functionLabel": "covered outdoor space",
+      "schedule": true
+    },
+    {
+      "id": "room_l1_roof_court",
+      "name": "Open-to-sky roof court / void",
+      "level": "first",
+      "programmeCode": "terrace_void",
+      "targetAreaM2": 22.3,
+      "functionLabel": "open terrace / roof court",
+      "schedule": true
+    }
+  ],
+  "features": [
+    {
+      "id": "primary_massing_envelope",
+      "kind": "basic_massing_envelope",
+      "visualPriority": "critical",
+      "mustRenderInViews": ["main_front_left", "rear_right_axon", "front_elevation"],
+      "capabilityNeeds": [
+        "two-storey volume hierarchy",
+        "projecting plinth",
+        "upper wrapper over smaller ground base"
+      ]
+    },
+    {
+      "id": "folded_white_wrapper_shell",
+      "kind": "folded_white_wrapper_shell",
+      "visualPriority": "critical",
+      "mustRenderInViews": ["main_front_left", "rear_right_axon", "wire_diagnostic"],
+      "capabilityNeeds": [
+        "upper walls",
+        "white roof plane",
+        "fascia/returns showing 450-600 mm visual thickness",
+        "no final mass placeholder"
+      ]
+    },
+    {
+      "id": "roof_terrace_cutout",
+      "kind": "roof_opening_with_occupied_terrace",
+      "visualPriority": "critical",
+      "mustRenderInViews": ["main_front_left", "roof_high", "rear_right_axon"],
+      "capabilityNeeds": [
+        "visible roof mesh subtraction",
+        "flat terrace floor",
+        "white return walls",
+        "glass guard",
+        "terrace access door"
+      ]
+    },
+    {
+      "id": "front_deep_loggia",
+      "kind": "recessed_loggia",
+      "visualPriority": "critical",
+      "mustRenderInViews": ["main_front_left", "front_elevation", "first_floor_plan"],
+      "capabilityNeeds": [
+        "recessed facade plane",
+        "side returns",
+        "balcony floor slab",
+        "front guard rail",
+        "access openings"
+      ]
+    },
+    {
+      "id": "asymmetric_gable_envelope",
+      "kind": "roof_attached_wall_profile",
+      "visualPriority": "critical",
+      "mustRenderInViews": ["main_front_left", "front_elevation", "rear_right_axon"],
+      "capabilityNeeds": [
+        "sloped/gable upper wall top",
+        "roof-wall seam checks",
+        "sampled wall top profile"
+      ]
+    },
+    {
+      "id": "vertical_cladding_zones",
+      "kind": "vertical_cladding",
+      "visualPriority": "high",
+      "mustRenderInViews": ["main_front_left", "front_elevation", "rear_right_axon"],
+      "capabilityNeeds": [
+        "ground-floor vertical cladding",
+        "central upper loggia pier cladding",
+        "cladding does not cross openings"
+      ]
+    },
+    {
+      "id": "opening_and_glazing_rhythm",
+      "kind": "facade_bay_rhythm",
+      "visualPriority": "high",
+      "mustRenderInViews": ["main_front_left", "front_elevation", "ground_floor_plan"],
+      "capabilityNeeds": [
+        "hosted portrait windows",
+        "large sliding glazing",
+        "three-bay loggia glazing",
+        "ground stair window"
+      ]
+    },
+    {
+      "id": "room_access_and_enclosure",
+      "kind": "room_access_and_enclosure",
+      "visualPriority": "critical",
+      "mustRenderInViews": ["ground_floor_plan", "first_floor_plan", "wire_diagnostic"],
+      "capabilityNeeds": [
+        "enclosed rooms",
+        "door access",
+        "stair and slab opening coordination",
+        "room schedule data"
+      ]
+    },
+    {
+      "id": "site_orientation_and_plinth",
+      "kind": "site_orientation",
+      "visualPriority": "medium",
+      "mustRenderInViews": ["main_front_left"],
+      "capabilityNeeds": ["documented north assumption", "plinth and shadow context"]
+    },
+    {
+      "id": "documentation_evidence_set",
+      "kind": "documentation_views",
+      "visualPriority": "high",
+      "mustRenderInViews": [
+        "main_front_left",
+        "front_elevation",
+        "ground_floor_plan",
+        "first_floor_plan",
+        "roof_high",
+        "wire_diagnostic"
+      ],
+      "capabilityNeeds": [
+        "saved views",
+        "room schedule",
+        "door/window schedule",
+        "evidence package"
+      ]
+    }
+  ],
+  "requiredViews": [
+    {
+      "id": "main_front_left",
+      "kind": "3d",
+      "purpose": "Primary sketch-matched view proving white folded wrapper, front loggia, cantilever, vertical cladding, and roof terrace cutout."
+    },
+    {
+      "id": "roof_high",
+      "kind": "3d",
+      "purpose": "High right/roof view proving the roof terrace is a real open void with occupied floor and return faces."
+    },
+    {
+      "id": "front_elevation",
+      "kind": "elevation",
+      "purpose": "Front view proving the three-bay upper loggia, rail, ground openings, and vertical cladding."
+    },
+    {
+      "id": "rear_right_axon",
+      "kind": "3d",
+      "purpose": "Rear/right view proving the cutout, shell thickness, carport recess, and side envelope."
+    },
+    {
+      "id": "ground_floor_plan",
+      "kind": "plan",
+      "purpose": "Ground-floor room, door, stair, wet-room, utility, and carport sanity check."
+    },
+    {
+      "id": "first_floor_plan",
+      "kind": "plan",
+      "purpose": "First-floor rooms, landing, loggia, roof court, stair opening, and access sanity check."
+    },
+    {
+      "id": "wire_diagnostic",
+      "kind": "diagnostic",
+      "purpose": "Transparent/wire evidence for roof-wall seams, slab openings, room boundaries, and hidden overlaps."
+    }
+  ],
+  "informationRequirements": {
+    "qualityTarget": "project_initiation_bim",
+    "lodIntent": "LOD 200 architectural project-initiation geometry with explicit BIM element categories and starter type/layer intent.",
+    "loiIntent": "LOI starter data for rooms, element categories, type/material intent, classifications, schedules, assumptions, and export readiness.",
+    "exchangeGoal": "usable BIM seed for later design continuation, evidence capture, schedules, and IFC/GLB/PDF export readiness",
+    "modelUses": [
+      "visual fidelity",
+      "room programme",
+      "quantity takeoff starter",
+      "coordination sanity",
+      "documentation starter",
+      "export validation"
+    ],
+    "disciplineScope": ["architecture", "structure-lite", "MEP-lite", "site assumptions"],
+    "requiredChecks": [
+      "Advisor warning/error review after every phase",
+      "constructability construction_readiness profile before final acceptance",
+      "BIM data quality gate for rooms, categories, types, materials, classifications, schedules, and export readiness",
+      "visual gate for roof terrace cutout, folded shell, front loggia, cladding, and plan topology"
+    ],
+    "rooms": [
+      {
+        "name": "Kitchen / dining",
+        "number": "G-101",
+        "level": "ground",
+        "targetAreaM2": 18.4,
+        "function": "food preparation and dining",
+        "occupancyUse": "residential kitchen/dining",
+        "boundingStatus": "bounded",
+        "access": { "requiredDoors": 1, "doorRefs": ["door_gf_to_entry_or_living"] },
+        "schedule": { "include": true },
+        "classification": {
+          "din277Use": "living/use area",
+          "din277AreaType": "NUF",
+          "ifcEntityIntent": "IfcSpace"
+        }
+      },
+      {
+        "name": "Living area",
+        "number": "G-102",
+        "level": "ground",
+        "targetAreaM2": 19.8,
+        "function": "living",
+        "occupancyUse": "residential living",
+        "boundingStatus": "bounded_with_open_plan_edge",
+        "access": { "requiredDoors": 1, "doorRefs": ["door_gf_entry_to_living"] },
+        "schedule": { "include": true },
+        "classification": {
+          "din277Use": "living/use area",
+          "din277AreaType": "NUF",
+          "ifcEntityIntent": "IfcSpace"
+        }
+      },
+      {
+        "name": "Entry / stair hall",
+        "number": "G-103",
+        "level": "ground",
+        "targetAreaM2": 3.4,
+        "function": "entry and vertical circulation",
+        "occupancyUse": "residential circulation",
+        "boundingStatus": "bounded",
+        "access": { "requiredDoors": 2, "doorRefs": ["door_gf_entry_exterior", "stair_gf_to_l1"] },
+        "schedule": { "include": true },
+        "classification": {
+          "din277Use": "circulation area",
+          "din277AreaType": "VF",
+          "ifcEntityIntent": "IfcSpace"
+        }
+      },
+      {
+        "name": "Bath / laundry",
+        "number": "G-104",
+        "level": "ground",
+        "targetAreaM2": 4.8,
+        "function": "bathroom and laundry",
+        "occupancyUse": "residential wet room",
+        "boundingStatus": "bounded",
+        "access": { "requiredDoors": 1, "doorRefs": ["door_gf_utility_to_bath_laundry"] },
+        "schedule": { "include": true },
+        "classification": {
+          "din277Use": "service/use area",
+          "din277AreaType": "NUF",
+          "ifcEntityIntent": "IfcSpace"
+        }
+      },
+      {
+        "name": "Utility",
+        "number": "G-105",
+        "level": "ground",
+        "targetAreaM2": 3.4,
+        "function": "storage and services",
+        "occupancyUse": "residential utility",
+        "boundingStatus": "bounded",
+        "access": { "requiredDoors": 1, "doorRefs": ["door_gf_entry_to_utility"] },
+        "schedule": { "include": true },
+        "classification": {
+          "din277Use": "service/use area",
+          "din277AreaType": "NUF",
+          "ifcEntityIntent": "IfcSpace"
+        }
+      },
+      {
+        "name": "Recessed garage / carport",
+        "number": "G-106",
+        "level": "ground",
+        "targetAreaM2": 19.3,
+        "function": "covered parking",
+        "occupancyUse": "covered exterior parking",
+        "boundingStatus": "covered_external_space",
+        "access": { "requiredDoors": 1, "doorRefs": ["open_carport_vehicle_access"] },
+        "schedule": { "include": true },
+        "classification": {
+          "din277Use": "covered external area",
+          "din277AreaType": "NUF",
+          "ifcEntityIntent": "IfcSpace"
+        }
+      },
+      {
+        "name": "Primary bedroom",
+        "number": "1-201",
+        "level": "first",
+        "targetAreaM2": 17.6,
+        "function": "sleeping",
+        "occupancyUse": "residential bedroom",
+        "boundingStatus": "bounded",
+        "access": { "requiredDoors": 1, "doorRefs": ["door_l1_landing_to_primary"] },
+        "schedule": { "include": true },
+        "classification": {
+          "din277Use": "living/use area",
+          "din277AreaType": "NUF",
+          "ifcEntityIntent": "IfcSpace"
+        }
+      },
+      {
+        "name": "Walk-in closet",
+        "number": "1-202",
+        "level": "first",
+        "targetAreaM2": 4.7,
+        "function": "wardrobe storage",
+        "occupancyUse": "residential storage",
+        "boundingStatus": "bounded",
+        "access": { "requiredDoors": 1, "doorRefs": ["door_primary_to_closet"] },
+        "schedule": { "include": true },
+        "classification": {
+          "din277Use": "storage/use area",
+          "din277AreaType": "NUF",
+          "ifcEntityIntent": "IfcSpace"
+        }
+      },
+      {
+        "name": "Ensuite",
+        "number": "1-203",
+        "level": "first",
+        "targetAreaM2": 5.2,
+        "function": "bathroom",
+        "occupancyUse": "residential wet room",
+        "boundingStatus": "bounded",
+        "access": { "requiredDoors": 1, "doorRefs": ["door_primary_to_ensuite"] },
+        "schedule": { "include": true },
+        "classification": {
+          "din277Use": "service/use area",
+          "din277AreaType": "NUF",
+          "ifcEntityIntent": "IfcSpace"
+        }
+      },
+      {
+        "name": "Hall / landing",
+        "number": "1-204",
+        "level": "first",
+        "targetAreaM2": 11.1,
+        "function": "upper circulation",
+        "occupancyUse": "residential circulation",
+        "boundingStatus": "bounded",
+        "access": {
+          "requiredDoors": 4,
+          "doorRefs": [
+            "stair_gf_to_l1",
+            "door_l1_landing_to_primary",
+            "door_l1_landing_to_bedroom_2",
+            "door_l1_landing_to_roof_court"
+          ]
+        },
+        "schedule": { "include": true },
+        "classification": {
+          "din277Use": "circulation area",
+          "din277AreaType": "VF",
+          "ifcEntityIntent": "IfcSpace"
+        }
+      },
+      {
+        "name": "Bedroom 2",
+        "number": "1-205",
+        "level": "first",
+        "targetAreaM2": 12.2,
+        "function": "sleeping",
+        "occupancyUse": "residential bedroom",
+        "boundingStatus": "bounded",
+        "access": { "requiredDoors": 1, "doorRefs": ["door_l1_landing_to_bedroom_2"] },
+        "schedule": { "include": true },
+        "classification": {
+          "din277Use": "living/use area",
+          "din277AreaType": "NUF",
+          "ifcEntityIntent": "IfcSpace"
+        }
+      },
+      {
+        "name": "Deep balcony / loggia",
+        "number": "1-206",
+        "level": "first",
+        "targetAreaM2": 16.5,
+        "function": "covered outdoor space",
+        "occupancyUse": "covered exterior living",
+        "boundingStatus": "covered_external_space",
+        "access": { "requiredDoors": 1, "doorRefs": ["door_l1_room_to_loggia"] },
+        "schedule": { "include": true },
+        "classification": {
+          "din277Use": "covered external area",
+          "din277AreaType": "NUF",
+          "ifcEntityIntent": "IfcSpace"
+        }
+      },
+      {
+        "name": "Open-to-sky roof court / void",
+        "number": "1-207",
+        "level": "first",
+        "targetAreaM2": 22.3,
+        "function": "open terrace / roof court",
+        "occupancyUse": "open exterior living",
+        "boundingStatus": "open_to_sky_external_space",
+        "access": { "requiredDoors": 1, "doorRefs": ["door_l1_landing_to_roof_court"] },
+        "schedule": { "include": true },
+        "classification": {
+          "din277Use": "open external area",
+          "din277AreaType": "NUF",
+          "ifcEntityIntent": "IfcSpace"
+        }
+      }
+    ],
+    "elementSemanticRequirements": [
+      {
+        "category": "exterior_wall",
+        "expectedBimCategory": "wall",
+        "ifcEntityIntent": "IfcWall",
+        "classification": {
+          "din276CostGroup": "330/340 placeholder",
+          "ifcClassificationRef": "planned"
+        }
+      },
+      {
+        "category": "interior_wall",
+        "expectedBimCategory": "wall",
+        "ifcEntityIntent": "IfcWallStandardCase",
+        "classification": {
+          "din276CostGroup": "340 placeholder",
+          "ifcClassificationRef": "planned"
+        }
+      },
+      {
+        "category": "slab",
+        "expectedBimCategory": "floor/slab",
+        "ifcEntityIntent": "IfcSlab",
+        "classification": {
+          "din276CostGroup": "320/350 placeholder",
+          "ifcClassificationRef": "planned"
+        }
+      },
+      {
+        "category": "roof",
+        "expectedBimCategory": "roof",
+        "ifcEntityIntent": "IfcRoof",
+        "classification": {
+          "din276CostGroup": "360 placeholder",
+          "ifcClassificationRef": "planned"
+        }
+      },
+      {
+        "category": "stair",
+        "expectedBimCategory": "stair",
+        "ifcEntityIntent": "IfcStair",
+        "classification": {
+          "din276CostGroup": "370 placeholder",
+          "ifcClassificationRef": "planned"
+        }
+      },
+      {
+        "category": "door",
+        "expectedBimCategory": "door",
+        "ifcEntityIntent": "IfcDoor",
+        "classification": {
+          "din276CostGroup": "330/340 placeholder",
+          "ifcClassificationRef": "planned"
+        }
+      },
+      {
+        "category": "window",
+        "expectedBimCategory": "window",
+        "ifcEntityIntent": "IfcWindow",
+        "classification": {
+          "din276CostGroup": "330/340 placeholder",
+          "ifcClassificationRef": "planned"
+        }
+      },
+      {
+        "category": "railing",
+        "expectedBimCategory": "railing/guard",
+        "ifcEntityIntent": "IfcRailing",
+        "classification": {
+          "din276CostGroup": "370 placeholder",
+          "ifcClassificationRef": "planned"
+        }
+      },
+      {
+        "category": "room",
+        "expectedBimCategory": "room/space",
+        "ifcEntityIntent": "IfcSpace",
+        "classification": { "din276CostGroup": "not applicable", "ifcClassificationRef": "planned" }
+      },
+      {
+        "category": "asset",
+        "expectedBimCategory": "asset/furniture/equipment",
+        "ifcEntityIntent": "IfcFurnishingElement",
+        "classification": {
+          "din276CostGroup": "600 placeholder",
+          "ifcClassificationRef": "planned"
+        }
+      }
+    ],
+    "materialLayerSetRequirements": [
+      {
+        "id": "layer_wall_shell",
+        "layerSetName": "EXT-UPPER-WHITE-SHELL-500",
+        "totalThicknessMm": 500,
+        "appliesToCategories": ["wall"],
+        "layers": [
+          {
+            "function": "core/visual shell placeholder",
+            "materialKey": "mat_smooth_white_shell",
+            "thicknessMm": 500
+          }
+        ],
+        "performancePlaceholders": {
+          "thermal": "placeholder",
+          "fire": "placeholder",
+          "acoustic": "placeholder"
+        }
+      },
+      {
+        "id": "layer_wall_ground_clad",
+        "layerSetName": "EXT-GF-CLAD-200",
+        "totalThicknessMm": 200,
+        "appliesToCategories": ["wall"],
+        "layers": [
+          {
+            "function": "structural/core placeholder",
+            "materialKey": "mat_wall_core",
+            "thicknessMm": 160
+          },
+          {
+            "function": "vertical cladding finish",
+            "materialKey": "mat_vertical_board_batten",
+            "thicknessMm": 40
+          }
+        ],
+        "performancePlaceholders": {
+          "thermal": "placeholder",
+          "fire": "placeholder",
+          "acoustic": "placeholder"
+        }
+      },
+      {
+        "id": "layer_slab_plinth",
+        "layerSetName": "SLAB-GROUND-PLINTH-200",
+        "totalThicknessMm": 200,
+        "appliesToCategories": ["slab"],
+        "layers": [
+          {
+            "function": "concrete slab placeholder",
+            "materialKey": "mat_light_concrete",
+            "thicknessMm": 200
+          }
+        ],
+        "performancePlaceholders": {
+          "thermal": "placeholder",
+          "fire": "placeholder",
+          "acoustic": "placeholder"
+        }
+      },
+      {
+        "id": "layer_roof_shell",
+        "layerSetName": "ROOF-WHITE-FOLDED-SHELL-500",
+        "totalThicknessMm": 500,
+        "appliesToCategories": ["roof"],
+        "layers": [
+          {
+            "function": "roof shell placeholder",
+            "materialKey": "mat_smooth_white_shell",
+            "thicknessMm": 450
+          },
+          {
+            "function": "waterproofing placeholder",
+            "materialKey": "mat_roof_waterproofing",
+            "thicknessMm": 50
+          }
+        ],
+        "performancePlaceholders": {
+          "thermal": "placeholder",
+          "fire": "placeholder",
+          "acoustic": "placeholder"
+        }
+      }
+    ],
+    "classificationRequirements": {
+      "roomSystem": "DIN 277-like placeholder",
+      "elementSystem": "DIN 276-like placeholder",
+      "ifcClassificationReferences": "planned IFC classification references",
+      "requiredPlaceholders": [
+        "rooms",
+        "walls",
+        "slabs",
+        "roof",
+        "openings",
+        "stairs",
+        "railings",
+        "assets"
+      ]
+    },
+    "structureLiteRequirements": {
+      "loadBearingFlags": [
+        {
+          "category": "upper_white_wrapper_shell",
+          "assumption": "The folded upper shell is treated as load-bearing placeholder geometry until structural design replaces it with a verified wall/roof/beam system.",
+          "confidence": "medium"
+        },
+        {
+          "category": "ground_floor_clad_base",
+          "assumption": "Ground-floor perimeter walls and stair/core walls provide the primary vertical support line for the upper shell.",
+          "confidence": "medium"
+        },
+        {
+          "category": "interior_partitions",
+          "assumption": "Interior partitions are non-load-bearing unless they bound the stair/core zone.",
+          "confidence": "medium"
+        }
+      ],
+      "primarySupportAssumptions": [
+        "Trace roof and upper shell loads to ground-floor perimeter walls and the stair/core zone.",
+        "The front/left cantilever and roof-court cutout require structural review before documentation-ready use.",
+        "Roof terrace return walls are modeled as architectural shell returns with load path still to be engineered."
+      ],
+      "supportElementPlaceholders": [
+        {
+          "type": "beam-lite",
+          "location": "front upper shell bottom sill / loggia beam line",
+          "reason": "Concept support placeholder for the deep front loggia frame and cantilever."
+        },
+        {
+          "type": "beam-lite",
+          "location": "roof terrace cutout perimeter",
+          "reason": "Concept support placeholder around the roof-court void."
+        },
+        {
+          "type": "core-wall-lite",
+          "location": "stair and wet-room band",
+          "reason": "Concept load-transfer and service coordination placeholder."
+        }
+      ],
+      "openingCoordination": [
+        "Stair slab opening must align with the modeled stair run and upper landing.",
+        "Roof terrace opening must include visible return faces while preserving shell continuity around the void.",
+        "Large loggia and ground glazing openings need host-wall cuts and lintel/support placeholders."
+      ],
+      "loadPathNotes": [
+        "Do not accept the seed as documentation-ready until cantilever reactions, roof-court edge support, and shell-wall junctions are structurally reviewed.",
+        "Any temporary support placeholders must be visible in diagnostics or listed as explicit tolerances."
+      ]
+    },
+    "mepLiteRequirements": {
+      "wetRoomStacking": [
+        "Ground bath/laundry and first-floor ensuite/bath zones should be aligned or kept near the stair/service band where the floorplan allows.",
+        "Kitchen drainage should route toward the same service band without crossing the main living/loggia glazing zones."
+      ],
+      "verticalShaftsOrRisers": [
+        "Reserve one vertical riser beside the stair/core band for domestic water, wastewater, electrical, and ventilation placeholders.",
+        "Keep riser placeholders outside the stair clear width and door swings."
+      ],
+      "equipmentZones": [
+        "Utility zone on ground floor is the initial equipment/service location.",
+        "Roof terrace drainage marker is required inside the roof-court void.",
+        "Kitchen, WC, ensuite, and bathroom fixture zones require schematic service markers."
+      ],
+      "routePlaceholders": [
+        "Pipe routes may remain schematic but must carry system, flow, elevation/service-level, and room/fixture association metadata.",
+        "Electrical route placeholders should connect entry/utility, kitchen, living area, bedrooms, and roof terrace lighting without blocking openings."
+      ],
+      "serviceLevels": [
+        "Ground ceiling/service band near utility and stair.",
+        "First-floor wet-room service band near ensuite/bathroom and roof terrace drainage."
+      ],
+      "openingRequests": [
+        "Slab opening for stair.",
+        "Small riser/slab penetrations for wet-room services.",
+        "Roof/terrace drainage penetration request near the roof-court floor."
+      ]
+    },
+    "planningSiteRequirements": {
+      "orientationAssumption": "Use floorplan up as project north and the reference axonometric as front-left visual orientation until a survey/north arrow is supplied.",
+      "basePointAssumption": "Project base point at the south-west/front-left ground-floor footprint corner at elevation 0.",
+      "surveyPointAssumption": "Survey point and georeference are unavailable; keep local millimetre coordinates and record this as a site tolerance.",
+      "propertyLineSetbackAvailability": "Property lines, setbacks, B-plan constraints, and site boundaries are unavailable in the source package.",
+      "sunAssumptions": "Sun/shadow direction is used only for visual evidence comparison until geographic location and true north are provided.",
+      "codeLocale": "Germany concept placeholders: DIN 277/DIN 276 starter classifications, residential stair comfort proxy, and project-initiation code assumptions only."
+    },
+    "schedules": [
+      {
+        "id": "room_schedule",
+        "title": "Room schedule",
+        "requiredColumns": [
+          "number",
+          "name",
+          "level",
+          "targetAreaM2",
+          "function",
+          "boundedStatus",
+          "classification"
+        ]
+      },
+      {
+        "id": "door_window_schedule",
+        "title": "Door/window schedule",
+        "requiredColumns": ["id", "type", "host", "level", "width", "height", "roomAccess"]
+      },
+      {
+        "id": "type_material_schedule",
+        "title": "Type/material schedule",
+        "requiredColumns": ["typeName", "category", "materialKey", "thicknessMm", "layerIntent"]
+      }
+    ],
+    "exportRequirements": {
+      "outputs": [
+        "IFC",
+        "GLB",
+        "PDF/sheets",
+        "schedules",
+        "room schedule",
+        "door/window schedule",
+        "evidence package",
+        "evidence-package",
+        "source-bundle",
+        "source command bundle"
+      ]
+    },
+    "sustainabilityMaterialPassportRequirements": {
+      "materials": [
+        {
+          "materialKey": "mat_smooth_white_shell",
+          "epdSource": "placeholder",
+          "sourceConfidence": "low",
+          "embodiedCarbonPlaceholder": "generic plaster/concrete/timber shell placeholder pending system selection",
+          "reuseNotes": "Potential reuse cannot be assessed until the shell assembly is structurally specified.",
+          "recyclabilityNotes": "Record final shell material and finish system before LCA/export use.",
+          "quantitySource": "upper shell wall/roof layer-set areas and thickness"
+        },
+        {
+          "materialKey": "mat_wall_core",
+          "epdSource": "placeholder",
+          "sourceConfidence": "low",
+          "embodiedCarbonPlaceholder": "generic wall core kgCO2e/m3 pending material decision",
+          "reuseNotes": "No reuse assumption at project initiation.",
+          "recyclabilityNotes": "Mineral or timber recycling path to be selected with wall system.",
+          "quantitySource": "ground clad wall layer-set core volume"
+        },
+        {
+          "materialKey": "mat_vertical_board_batten",
+          "epdSource": "placeholder",
+          "sourceConfidence": "low",
+          "embodiedCarbonPlaceholder": "generic vertical cladding kgCO2e/m2 pending product/wood species",
+          "reuseNotes": "Potential demountable cladding reuse to be reviewed.",
+          "recyclabilityNotes": "Wood/board finish recycling route depends on coating and fixing system.",
+          "quantitySource": "ground facade and central loggia pier cladding area"
+        },
+        {
+          "materialKey": "mat_light_concrete",
+          "epdSource": "placeholder",
+          "sourceConfidence": "low",
+          "embodiedCarbonPlaceholder": "generic concrete kgCO2e/m3 pending mix design",
+          "reuseNotes": "No direct reuse assumed; design for aggregate recycling noted.",
+          "recyclabilityNotes": "Crushed aggregate recycling placeholder.",
+          "quantitySource": "plinth and slab volume"
+        },
+        {
+          "materialKey": "mat_roof_waterproofing",
+          "epdSource": "placeholder",
+          "sourceConfidence": "low",
+          "embodiedCarbonPlaceholder": "generic roof waterproofing kgCO2e/m2 pending membrane/product",
+          "reuseNotes": "No reuse assumed at project initiation.",
+          "recyclabilityNotes": "Manufacturer take-back or disposal route to be confirmed.",
+          "quantitySource": "roof shell and roof terrace waterproofing area"
+        }
+      ]
+    },
+    "dataQualityChecks": [
+      "rooms_spaces_bounded_accessible_schedulable",
+      "element_categories_and_ifc_intent_present",
+      "wall_slab_roof_layer_sets_present",
+      "classification_placeholders_present",
+      "advisor_warnings_resolved_or_tolerated",
+      "export_manifests_present"
+    ]
+  },
+  "assumptions": [
+    {
+      "id": "assumption_scale_basis",
+      "statement": "Use the dimensioned floorplan's 14.0 m by 10.0 m footprint as the first generation scale basis unless the user explicitly prefers the smaller visual proportion targets in target-house-seed.md.",
+      "confidence": "medium",
+      "validation": "Confirm before generation; record any uniform scaling in the phase packet."
+    },
+    {
+      "id": "assumption_orientation",
+      "statement": "Plan north is unknown. Use plan-up as project north and set the main axonometric sun/camera only for evidence comparison.",
+      "confidence": "low",
+      "validation": "Attach a site/orientation tolerance until a survey or north arrow is supplied."
+    },
+    {
+      "id": "assumption_roof_form",
+      "statement": "The roof/wrapper should be authored as a white folded shell with asymmetric gable-like front profile and a roof court void, even if lower-level commands require walls, roof, fascia, and return elements rather than one macro.",
+      "confidence": "high",
+      "validation": "Main, front, roof-high, and wire diagnostic views must prove the shell reads as one thick object."
+    },
+    {
+      "id": "assumption_room_boundaries",
+      "statement": "Open-plan kitchen/dining/living can use real walls plus limited room separation only where the architectural condition is intentionally open.",
+      "confidence": "medium",
+      "validation": "Advisor must have no room_boundary_open, room_no_door, or room_derived_interior_separation_ambiguous blockers."
+    }
+  ]
+}

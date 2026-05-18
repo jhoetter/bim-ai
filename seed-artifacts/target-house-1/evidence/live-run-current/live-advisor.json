@@ -1,0 +1,300 @@
+{
+  "warning": {
+    "modelId": "a5c6d3f6-6a76-45f2-8017-b6fa78911955",
+    "revision": 2,
+    "total": 49,
+    "groups": [
+      {
+        "severity": "warning",
+        "code": "constructability_proxy_unsupported",
+        "count": 7,
+        "elementIds": [
+          "fi-bed-primary",
+          "fi-dining-table",
+          "fi-roof-chair",
+          "fi-sofa-living",
+          "front-loggia-left-mullion",
+          "front-loggia-right-mullion",
+          "upper-wrapper-front-fascia"
+        ],
+        "messages": [
+          "Physical element 'fi-bed-primary' (family_instance) has no constructability collision proxy: missing positive width/depth/height in instance paramValues or family_type parameters.",
+          "Physical element 'fi-dining-table' (family_instance) has no constructability collision proxy: missing positive width/depth/height in instance paramValues or family_type parameters.",
+          "Physical element 'fi-roof-chair' (family_instance) has no constructability collision proxy: missing positive width/depth/height in instance paramValues or family_type parameters."
+        ]
+      },
+      {
+        "severity": "warning",
+        "code": "door_operation_clearance_conflict",
+        "count": 3,
+        "elementIds": [
+          "4404e2ba-6ec9-49dc-9ad6-aa1a2884839e",
+          "b0085d07-dd48-4450-9b79-5689d93c1ff8",
+          "e30de611-98c0-46be-9144-3408061bb0cd",
+          "entry-door",
+          "front-loggia-center-door"
+        ],
+        "messages": ["Door operation clearance overlaps a wall; the door may not open."]
+      },
+      {
+        "severity": "warning",
+        "code": "floor_overlap",
+        "count": 2,
+        "elementIds": ["hf-front-loggia-floor", "hf-roof-court-floor", "upper-wrapper-floor"],
+        "messages": [
+          "Floors 'upper-wrapper-floor' and 'hf-front-loggia-floor' overlap on the same level (≈8.64 m²).",
+          "Floors 'hf-roof-court-floor' and 'upper-wrapper-floor' overlap on the same level (≈9.36 m²)."
+        ]
+      },
+      {
+        "severity": "warning",
+        "code": "room_boundary_open",
+        "count": 3,
+        "elementIds": ["hf-room-gf-bath-laundry", "hf-room-utility", "hf-room-walk-in-closet"],
+        "messages": [
+          "Room 'Bath / Laundry' (hf-room-gf-bath-laundry) has an open boundary — it is not fully enclosed by axis-aligned walls or room separations.",
+          "Room 'Utility' (hf-room-utility) has an open boundary — it is not fully enclosed by axis-aligned walls or room separations.",
+          "Room 'Walk-in Closet' (hf-room-walk-in-closet) has an open boundary — it is not fully enclosed by axis-aligned walls or room separations."
+        ]
+      },
+      {
+        "severity": "warning",
+        "code": "room_unenclosed",
+        "count": 10,
+        "elementIds": [
+          "hf-room-carport",
+          "hf-room-ensuite",
+          "hf-room-gf-bath-laundry",
+          "hf-room-landing",
+          "hf-room-loggia",
+          "hf-room-utility",
+          "hf-room-walk-in-closet",
+          "room-bedroom",
+          "room-living",
+          "room-terrace"
+        ],
+        "messages": [
+          "Room boundary has 3 edge(s) without a backing wall or room-separation line on the same level (uncovered edge indices: [0, 2, 3]).",
+          "Room boundary has 4 edge(s) without a backing wall or room-separation line on the same level (uncovered edge indices: [0, 1, 2, 3]).",
+          "Room boundary has 3 edge(s) without a backing wall or room-separation line on the same level (uncovered edge indices: [0, 1, 3])."
+        ]
+      },
+      {
+        "severity": "warning",
+        "code": "room_without_door_access",
+        "count": 9,
+        "elementIds": [
+          "hf-room-bath",
+          "hf-room-ensuite",
+          "hf-room-gf-bath-laundry",
+          "hf-room-landing",
+          "hf-room-utility",
+          "hf-room-walk-in-closet",
+          "room-bedroom",
+          "room-hall",
+          "room-living"
+        ],
+        "messages": [
+          "Room has no door midpoint on or inside its boundary; add a connected door opening or revise the room boundary."
+        ]
+      },
+      {
+        "severity": "warning",
+        "code": "schedule_not_placed_on_sheet",
+        "count": 1,
+        "elementIds": ["room-schedule-view"],
+        "messages": [
+          "Schedule 'room-schedule-view' exists but is not placed on any sheet (sheetId is empty; assign sheetId to enable documentation linkage)."
+        ]
+      },
+      {
+        "severity": "warning",
+        "code": "schedule_opening_family_type_incomplete",
+        "count": 5,
+        "elementIds": [
+          "entry-door",
+          "front-loggia-center-door",
+          "front-loggia-left-window",
+          "front-loggia-right-window",
+          "hf-roof-court-door"
+        ],
+        "messages": [
+          "Door is missing familyTypeId (type schedule columns are incomplete).",
+          "Window is missing familyTypeId (type schedule columns are incomplete)."
+        ]
+      },
+      {
+        "severity": "warning",
+        "code": "schedule_opening_host_wall_type_incomplete",
+        "count": 4,
+        "elementIds": [
+          "front-loggia-center-door",
+          "front-loggia-left-window",
+          "front-loggia-recessed-glass",
+          "front-loggia-right-window",
+          "hf-roof-court-door",
+          "hf-roof-court-glass-back"
+        ],
+        "messages": ["Host wall has no wallTypeId (hostWallType schedule columns cannot resolve)."]
+      },
+      {
+        "severity": "warning",
+        "code": "sheet_revision_issue_metadata_missing",
+        "count": 1,
+        "elementIds": ["sheet-a101"],
+        "messages": [
+          "Sheet has a title block and viewports but titleblock revision/issue metadata is incomplete: set revisionId and/or revision code (revisionCode or legacy revision) in titleblockParameters."
+        ]
+      },
+      {
+        "severity": "warning",
+        "code": "sheet_viewport_unknown_ref",
+        "count": 2,
+        "elementIds": ["sheet-a101"],
+        "messages": [
+          "Sheet viewport refers to unresolved semantic reference (plan:lvl-ground-plan).",
+          "Sheet viewport refers to unresolved semantic reference (section:elev-front)."
+        ]
+      },
+      {
+        "severity": "warning",
+        "code": "stair_guardrail_missing",
+        "count": 1,
+        "elementIds": ["main-stair"],
+        "messages": ["Stair rise exceeds the guardrail threshold without a hosted railing."]
+      },
+      {
+        "severity": "warning",
+        "code": "structural_material_inconsistent_by_type",
+        "count": 1,
+        "elementIds": [
+          "ground-base-wall-01",
+          "ground-base-wall-02",
+          "ground-base-wall-03",
+          "ground-base-wall-04",
+          "hf-upper-wrapper-shell-wall-01",
+          "hf-upper-wrapper-shell-wall-02",
+          "hf-upper-wrapper-shell-wall-03",
+          "hf-upper-wrapper-shell-wall-04"
+        ],
+        "messages": [
+          "Structural elements sharing the same type have inconsistent structural materials (wall:wt-white-wrapper); align the type material or split the type."
+        ]
+      }
+    ]
+  },
+  "info": {
+    "modelId": "a5c6d3f6-6a76-45f2-8017-b6fa78911955",
+    "revision": 2,
+    "total": 45,
+    "groups": [
+      {
+        "severity": "info",
+        "code": "gltf_export_manifest_expected_extension_missing",
+        "count": 2,
+        "elementIds": [],
+        "messages": [
+          "glTF export manifest: extension 'bim_ai_skew_wall_hosted_openings_v0' not emitted but eligible element kind 'wall' is present (skipReasonCode='no_eligible_elements').",
+          "glTF export manifest: extension 'bim_ai_roof_unsupported_shape_summary_v0' not emitted but eligible element kind 'roof' is present (skipReasonCode='no_eligible_elements')."
+        ]
+      },
+      {
+        "severity": "info",
+        "code": "material_catalog_missing_layer_stack",
+        "count": 19,
+        "elementIds": [
+          "2116cb68-5ecc-4475-9b36-56368cb6964f",
+          "212f7794-39de-452f-ae8a-9827ad04ce67",
+          "4404e2ba-6ec9-49dc-9ad6-aa1a2884839e",
+          "5da54026-3461-40e8-a3a7-70ecaad930a9",
+          "5f6a794c-38dc-430c-a630-74435a02d5d8",
+          "77245fc8-e13e-4c49-a037-befa7581ea70",
+          "7ba46089-1f21-487d-a83a-c1d386223811",
+          "83558170-2824-41d7-983b-f26538edaf71",
+          "89f498c3-56d1-4a82-bdeb-f2898922ab66",
+          "8bffb3e3-d6d2-42fa-9646-891e6d9ab65c",
+          "b0085d07-dd48-4450-9b79-5689d93c1ff8",
+          "e30de611-98c0-46be-9144-3408061bb0cd",
+          "front-loggia-left-return",
+          "front-loggia-recessed-glass",
+          "front-loggia-right-return",
+          "hf-front-loggia-floor",
+          "hf-roof-court-front-return",
+          "hf-roof-court-glass-back",
+          "hf-roof-court-left-return"
+        ],
+        "messages": [
+          "Host has no usable typed layered assembly (missing assembly type id or empty type layer stack)."
+        ]
+      },
+      {
+        "severity": "info",
+        "code": "room_color_scheme_identity_missing",
+        "count": 1,
+        "elementIds": [],
+        "messages": [
+          "No room color scheme element found. Use upsertRoomColorScheme to author overrides."
+        ]
+      },
+      {
+        "severity": "info",
+        "code": "room_finish_metadata_hint",
+        "count": 13,
+        "elementIds": [
+          "hf-room-bath",
+          "hf-room-carport",
+          "hf-room-ensuite",
+          "hf-room-gf-bath-laundry",
+          "hf-room-kitchen",
+          "hf-room-landing",
+          "hf-room-loggia",
+          "hf-room-utility",
+          "hf-room-walk-in-closet",
+          "room-bedroom",
+          "room-hall",
+          "room-living",
+          "room-terrace"
+        ],
+        "messages": [
+          "Room has programme or department metadata but finishSet is blank; finish schedules may be incomplete."
+        ]
+      },
+      {
+        "severity": "info",
+        "code": "room_target_area_mismatch",
+        "count": 9,
+        "elementIds": [
+          "hf-room-bath",
+          "hf-room-carport",
+          "hf-room-ensuite",
+          "hf-room-gf-bath-laundry",
+          "hf-room-kitchen",
+          "hf-room-loggia",
+          "hf-room-utility",
+          "hf-room-walk-in-closet",
+          "room-hall"
+        ],
+        "messages": [
+          "Room outline area (4.320 m²) differs from targetAreaM2 (7.500 m²) beyond the advisory tolerance.",
+          "Room outline area (2.900 m²) differs from targetAreaM2 (19.300 m²) beyond the advisory tolerance.",
+          "Room outline area (3.200 m²) differs from targetAreaM2 (5.200 m²) beyond the advisory tolerance."
+        ]
+      },
+      {
+        "severity": "info",
+        "code": "schedule_field_registry_gap",
+        "count": 1,
+        "elementIds": ["opening-schedule"],
+        "messages": [
+          "Schedule 'opening-schedule' uses category 'opening' which has no registered column order in SCHEDULE_COLUMN_ORDER; custom field ordering may be inconsistent."
+        ]
+      }
+    ]
+  },
+  "error": {
+    "modelId": "a5c6d3f6-6a76-45f2-8017-b6fa78911955",
+    "revision": 2,
+    "total": 0,
+    "groups": []
+  }
+}

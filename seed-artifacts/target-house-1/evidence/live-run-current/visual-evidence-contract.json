@@ -1,0 +1,110 @@
+{
+  "schemaVersion": "sketch.visual-evidence-contract.v1",
+  "generatedAt": "2026-05-18T20:25:16.484Z",
+  "browserAutomationRequired": false,
+  "note": "Screenshots are an evidence capture method. Core snapshot, validate, evidence package, Advisor, constructability, and model stats checks do not require browser automation.",
+  "inputs": {
+    "modelId": "a5c6d3f6-6a76-45f2-8017-b6fa78911955",
+    "revision": 2,
+    "requiredViews": [
+      {
+        "id": "main_front_left",
+        "kind": "3d",
+        "purpose": "Primary sketch-matched view proving white folded wrapper, front loggia, cantilever, vertical cladding, and roof terrace cutout.",
+        "featureIds": [],
+        "viewpointId": "main_front_left",
+        "savedViewpointPresent": true,
+        "camera": null,
+        "requiredOutput": "screenshots/main_front_left.png"
+      },
+      {
+        "id": "roof_high",
+        "kind": "3d",
+        "purpose": "High right/roof view proving the roof terrace is a real open void with occupied floor and return faces.",
+        "featureIds": [],
+        "viewpointId": "roof_high",
+        "savedViewpointPresent": true,
+        "camera": null,
+        "requiredOutput": "screenshots/roof_high.png"
+      },
+      {
+        "id": "front_elevation",
+        "kind": "elevation",
+        "purpose": "Front view proving the three-bay upper loggia, rail, ground openings, and vertical cladding.",
+        "featureIds": [],
+        "viewpointId": "front_elevation",
+        "savedViewpointPresent": true,
+        "camera": null,
+        "requiredOutput": "screenshots/front_elevation.png"
+      },
+      {
+        "id": "rear_right_axon",
+        "kind": "3d",
+        "purpose": "Rear/right view proving the cutout, shell thickness, carport recess, and side envelope.",
+        "featureIds": [],
+        "viewpointId": "rear_right_axon",
+        "savedViewpointPresent": true,
+        "camera": null,
+        "requiredOutput": "screenshots/rear_right_axon.png"
+      },
+      {
+        "id": "ground_floor_plan",
+        "kind": "plan",
+        "purpose": "Ground-floor room, door, stair, wet-room, utility, and carport sanity check.",
+        "featureIds": [],
+        "viewpointId": "ground_floor_plan",
+        "savedViewpointPresent": true,
+        "camera": null,
+        "requiredOutput": "screenshots/ground_floor_plan.png"
+      },
+      {
+        "id": "first_floor_plan",
+        "kind": "plan",
+        "purpose": "First-floor rooms, landing, loggia, roof court, stair opening, and access sanity check.",
+        "featureIds": [],
+        "viewpointId": "first_floor_plan",
+        "savedViewpointPresent": true,
+        "camera": null,
+        "requiredOutput": "screenshots/first_floor_plan.png"
+      },
+      {
+        "id": "wire_diagnostic",
+        "kind": "diagnostic",
+        "purpose": "Transparent/wire evidence for roof-wall seams, slab openings, room boundaries, and hidden overlaps.",
+        "featureIds": [],
+        "viewpointId": "wire_diagnostic",
+        "savedViewpointPresent": true,
+        "camera": null,
+        "requiredOutput": "screenshots/wire_diagnostic.png"
+      }
+    ]
+  },
+  "outputs": {
+    "screenshotsDirectory": "/tmp/bim-ai-target-house-1-run/final-live-evidence/live/screenshots",
+    "screenshotManifest": "/tmp/bim-ai-target-house-1-run/final-live-evidence/live/screenshot-manifest.json",
+    "visualGateReport": "/tmp/bim-ai-target-house-1-run/final-live-evidence/live/visual-gate-report.json",
+    "semanticChecklist": "/tmp/bim-ai-target-house-1-run/final-live-evidence/live/semantic-checklist.json"
+  },
+  "captureMethods": [
+    {
+      "id": "browser_automation",
+      "role": "ui-equivalent screenshot capture",
+      "requiredForCoreValidation": false
+    },
+    {
+      "id": "renderer_snapshot",
+      "role": "headless or server-side render from snapshot and viewpoint",
+      "requiredForCoreValidation": false
+    },
+    {
+      "id": "manual_review_upload",
+      "role": "externally captured PNG attached to the manifest",
+      "requiredForCoreValidation": false
+    }
+  ],
+  "validation": {
+    "nonBlankImageRequired": true,
+    "semanticChecklistRequired": true,
+    "staleModelRevisionMustMatchManifest": true
+  }
+}

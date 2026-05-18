@@ -1,0 +1,1390 @@
+{
+  "modelId": "a5c6d3f6-6a76-45f2-8017-b6fa78911955",
+  "revision": 2,
+  "violations": [
+    {
+      "ruleId": "constructability_proxy_unsupported",
+      "severity": "warning",
+      "message": "Physical element 'fi-bed-primary' (family_instance) has no constructability collision proxy: missing positive width/depth/height in instance paramValues or family_type parameters.",
+      "elementIds": ["fi-bed-primary"],
+      "blocking": false,
+      "quickFixCommand": null,
+      "discipline": "coordination",
+      "blockingClass": "geometry"
+    },
+    {
+      "ruleId": "constructability_proxy_unsupported",
+      "severity": "warning",
+      "message": "Physical element 'fi-dining-table' (family_instance) has no constructability collision proxy: missing positive width/depth/height in instance paramValues or family_type parameters.",
+      "elementIds": ["fi-dining-table"],
+      "blocking": false,
+      "quickFixCommand": null,
+      "discipline": "coordination",
+      "blockingClass": "geometry"
+    },
+    {
+      "ruleId": "constructability_proxy_unsupported",
+      "severity": "warning",
+      "message": "Physical element 'fi-roof-chair' (family_instance) has no constructability collision proxy: missing positive width/depth/height in instance paramValues or family_type parameters.",
+      "elementIds": ["fi-roof-chair"],
+      "blocking": false,
+      "quickFixCommand": null,
+      "discipline": "coordination",
+      "blockingClass": "geometry"
+    },
+    {
+      "ruleId": "constructability_proxy_unsupported",
+      "severity": "warning",
+      "message": "Physical element 'fi-sofa-living' (family_instance) has no constructability collision proxy: missing positive width/depth/height in instance paramValues or family_type parameters.",
+      "elementIds": ["fi-sofa-living"],
+      "blocking": false,
+      "quickFixCommand": null,
+      "discipline": "coordination",
+      "blockingClass": "geometry"
+    },
+    {
+      "ruleId": "constructability_proxy_unsupported",
+      "severity": "warning",
+      "message": "Physical element 'front-loggia-left-mullion' (sweep) has no constructability collision proxy: no constructability collision proxy implemented for this physical kind.",
+      "elementIds": ["front-loggia-left-mullion"],
+      "blocking": false,
+      "quickFixCommand": null,
+      "discipline": "coordination",
+      "blockingClass": "geometry"
+    },
+    {
+      "ruleId": "constructability_proxy_unsupported",
+      "severity": "warning",
+      "message": "Physical element 'front-loggia-right-mullion' (sweep) has no constructability collision proxy: no constructability collision proxy implemented for this physical kind.",
+      "elementIds": ["front-loggia-right-mullion"],
+      "blocking": false,
+      "quickFixCommand": null,
+      "discipline": "coordination",
+      "blockingClass": "geometry"
+    },
+    {
+      "ruleId": "constructability_proxy_unsupported",
+      "severity": "warning",
+      "message": "Physical element 'upper-wrapper-front-fascia' (sweep) has no constructability collision proxy: no constructability collision proxy implemented for this physical kind.",
+      "elementIds": ["upper-wrapper-front-fascia"],
+      "blocking": false,
+      "quickFixCommand": null,
+      "discipline": "coordination",
+      "blockingClass": "geometry"
+    },
+    {
+      "ruleId": "door_operation_clearance_conflict",
+      "severity": "warning",
+      "message": "Door operation clearance overlaps a wall; the door may not open.",
+      "elementIds": ["4404e2ba-6ec9-49dc-9ad6-aa1a2884839e", "entry-door"],
+      "blocking": false,
+      "quickFixCommand": null,
+      "discipline": "architecture",
+      "blockingClass": "geometry"
+    },
+    {
+      "ruleId": "door_operation_clearance_conflict",
+      "severity": "warning",
+      "message": "Door operation clearance overlaps a wall; the door may not open.",
+      "elementIds": ["b0085d07-dd48-4450-9b79-5689d93c1ff8", "front-loggia-center-door"],
+      "blocking": false,
+      "quickFixCommand": null,
+      "discipline": "architecture",
+      "blockingClass": "geometry"
+    },
+    {
+      "ruleId": "door_operation_clearance_conflict",
+      "severity": "warning",
+      "message": "Door operation clearance overlaps a wall; the door may not open.",
+      "elementIds": ["e30de611-98c0-46be-9144-3408061bb0cd", "entry-door"],
+      "blocking": false,
+      "quickFixCommand": null,
+      "discipline": "architecture",
+      "blockingClass": "geometry"
+    },
+    {
+      "ruleId": "floor_overlap",
+      "severity": "warning",
+      "message": "Floors 'upper-wrapper-floor' and 'hf-front-loggia-floor' overlap on the same level (≈8.64 m²).",
+      "elementIds": ["hf-front-loggia-floor", "upper-wrapper-floor"],
+      "blocking": false,
+      "quickFixCommand": null,
+      "discipline": "coordination",
+      "blockingClass": "geometry"
+    },
+    {
+      "ruleId": "floor_overlap",
+      "severity": "warning",
+      "message": "Floors 'hf-roof-court-floor' and 'upper-wrapper-floor' overlap on the same level (≈9.36 m²).",
+      "elementIds": ["hf-roof-court-floor", "upper-wrapper-floor"],
+      "blocking": false,
+      "quickFixCommand": null,
+      "discipline": "coordination",
+      "blockingClass": "geometry"
+    },
+    {
+      "ruleId": "gltf_export_manifest_expected_extension_missing",
+      "severity": "info",
+      "message": "glTF export manifest: extension 'bim_ai_skew_wall_hosted_openings_v0' not emitted but eligible element kind 'wall' is present (skipReasonCode='no_eligible_elements').",
+      "elementIds": [],
+      "blocking": false,
+      "quickFixCommand": null,
+      "discipline": "exchange",
+      "blockingClass": "exchange"
+    },
+    {
+      "ruleId": "gltf_export_manifest_expected_extension_missing",
+      "severity": "info",
+      "message": "glTF export manifest: extension 'bim_ai_roof_unsupported_shape_summary_v0' not emitted but eligible element kind 'roof' is present (skipReasonCode='no_eligible_elements').",
+      "elementIds": [],
+      "blocking": false,
+      "quickFixCommand": null,
+      "discipline": "exchange",
+      "blockingClass": "exchange"
+    },
+    {
+      "ruleId": "material_catalog_missing_layer_stack",
+      "severity": "info",
+      "message": "Host has no usable typed layered assembly (missing assembly type id or empty type layer stack).",
+      "elementIds": ["2116cb68-5ecc-4475-9b36-56368cb6964f"],
+      "blocking": false,
+      "quickFixCommand": null,
+      "discipline": "exchange",
+      "blockingClass": "exchange"
+    },
+    {
+      "ruleId": "material_catalog_missing_layer_stack",
+      "severity": "info",
+      "message": "Host has no usable typed layered assembly (missing assembly type id or empty type layer stack).",
+      "elementIds": ["212f7794-39de-452f-ae8a-9827ad04ce67"],
+      "blocking": false,
+      "quickFixCommand": null,
+      "discipline": "exchange",
+      "blockingClass": "exchange"
+    },
+    {
+      "ruleId": "material_catalog_missing_layer_stack",
+      "severity": "info",
+      "message": "Host has no usable typed layered assembly (missing assembly type id or empty type layer stack).",
+      "elementIds": ["4404e2ba-6ec9-49dc-9ad6-aa1a2884839e"],
+      "blocking": false,
+      "quickFixCommand": null,
+      "discipline": "exchange",
+      "blockingClass": "exchange"
+    },
+    {
+      "ruleId": "material_catalog_missing_layer_stack",
+      "severity": "info",
+      "message": "Host has no usable typed layered assembly (missing assembly type id or empty type layer stack).",
+      "elementIds": ["5da54026-3461-40e8-a3a7-70ecaad930a9"],
+      "blocking": false,
+      "quickFixCommand": null,
+      "discipline": "exchange",
+      "blockingClass": "exchange"
+    },
+    {
+      "ruleId": "material_catalog_missing_layer_stack",
+      "severity": "info",
+      "message": "Host has no usable typed layered assembly (missing assembly type id or empty type layer stack).",
+      "elementIds": ["5f6a794c-38dc-430c-a630-74435a02d5d8"],
+      "blocking": false,
+      "quickFixCommand": null,
+      "discipline": "exchange",
+      "blockingClass": "exchange"
+    },
+    {
+      "ruleId": "material_catalog_missing_layer_stack",
+      "severity": "info",
+      "message": "Host has no usable typed layered assembly (missing assembly type id or empty type layer stack).",
+      "elementIds": ["77245fc8-e13e-4c49-a037-befa7581ea70"],
+      "blocking": false,
+      "quickFixCommand": null,
+      "discipline": "exchange",
+      "blockingClass": "exchange"
+    },
+    {
+      "ruleId": "material_catalog_missing_layer_stack",
+      "severity": "info",
+      "message": "Host has no usable typed layered assembly (missing assembly type id or empty type layer stack).",
+      "elementIds": ["7ba46089-1f21-487d-a83a-c1d386223811"],
+      "blocking": false,
+      "quickFixCommand": null,
+      "discipline": "exchange",
+      "blockingClass": "exchange"
+    },
+    {
+      "ruleId": "material_catalog_missing_layer_stack",
+      "severity": "info",
+      "message": "Host has no usable typed layered assembly (missing assembly type id or empty type layer stack).",
+      "elementIds": ["83558170-2824-41d7-983b-f26538edaf71"],
+      "blocking": false,
+      "quickFixCommand": null,
+      "discipline": "exchange",
+      "blockingClass": "exchange"
+    },
+    {
+      "ruleId": "material_catalog_missing_layer_stack",
+      "severity": "info",
+      "message": "Host has no usable typed layered assembly (missing assembly type id or empty type layer stack).",
+      "elementIds": ["89f498c3-56d1-4a82-bdeb-f2898922ab66"],
+      "blocking": false,
+      "quickFixCommand": null,
+      "discipline": "exchange",
+      "blockingClass": "exchange"
+    },
+    {
+      "ruleId": "material_catalog_missing_layer_stack",
+      "severity": "info",
+      "message": "Host has no usable typed layered assembly (missing assembly type id or empty type layer stack).",
+      "elementIds": ["8bffb3e3-d6d2-42fa-9646-891e6d9ab65c"],
+      "blocking": false,
+      "quickFixCommand": null,
+      "discipline": "exchange",
+      "blockingClass": "exchange"
+    },
+    {
+      "ruleId": "material_catalog_missing_layer_stack",
+      "severity": "info",
+      "message": "Host has no usable typed layered assembly (missing assembly type id or empty type layer stack).",
+      "elementIds": ["b0085d07-dd48-4450-9b79-5689d93c1ff8"],
+      "blocking": false,
+      "quickFixCommand": null,
+      "discipline": "exchange",
+      "blockingClass": "exchange"
+    },
+    {
+      "ruleId": "material_catalog_missing_layer_stack",
+      "severity": "info",
+      "message": "Host has no usable typed layered assembly (missing assembly type id or empty type layer stack).",
+      "elementIds": ["e30de611-98c0-46be-9144-3408061bb0cd"],
+      "blocking": false,
+      "quickFixCommand": null,
+      "discipline": "exchange",
+      "blockingClass": "exchange"
+    },
+    {
+      "ruleId": "material_catalog_missing_layer_stack",
+      "severity": "info",
+      "message": "Host has no usable typed layered assembly (missing assembly type id or empty type layer stack).",
+      "elementIds": ["front-loggia-left-return"],
+      "blocking": false,
+      "quickFixCommand": null,
+      "discipline": "exchange",
+      "blockingClass": "exchange"
+    },
+    {
+      "ruleId": "material_catalog_missing_layer_stack",
+      "severity": "info",
+      "message": "Host has no usable typed layered assembly (missing assembly type id or empty type layer stack).",
+      "elementIds": ["front-loggia-recessed-glass"],
+      "blocking": false,
+      "quickFixCommand": null,
+      "discipline": "exchange",
+      "blockingClass": "exchange"
+    },
+    {
+      "ruleId": "material_catalog_missing_layer_stack",
+      "severity": "info",
+      "message": "Host has no usable typed layered assembly (missing assembly type id or empty type layer stack).",
+      "elementIds": ["front-loggia-right-return"],
+      "blocking": false,
+      "quickFixCommand": null,
+      "discipline": "exchange",
+      "blockingClass": "exchange"
+    },
+    {
+      "ruleId": "material_catalog_missing_layer_stack",
+      "severity": "info",
+      "message": "Host has no usable typed layered assembly (missing assembly type id or empty type layer stack).",
+      "elementIds": ["hf-front-loggia-floor"],
+      "blocking": false,
+      "quickFixCommand": null,
+      "discipline": "exchange",
+      "blockingClass": "exchange"
+    },
+    {
+      "ruleId": "material_catalog_missing_layer_stack",
+      "severity": "info",
+      "message": "Host has no usable typed layered assembly (missing assembly type id or empty type layer stack).",
+      "elementIds": ["hf-roof-court-front-return"],
+      "blocking": false,
+      "quickFixCommand": null,
+      "discipline": "exchange",
+      "blockingClass": "exchange"
+    },
+    {
+      "ruleId": "material_catalog_missing_layer_stack",
+      "severity": "info",
+      "message": "Host has no usable typed layered assembly (missing assembly type id or empty type layer stack).",
+      "elementIds": ["hf-roof-court-glass-back"],
+      "blocking": false,
+      "quickFixCommand": null,
+      "discipline": "exchange",
+      "blockingClass": "exchange"
+    },
+    {
+      "ruleId": "material_catalog_missing_layer_stack",
+      "severity": "info",
+      "message": "Host has no usable typed layered assembly (missing assembly type id or empty type layer stack).",
+      "elementIds": ["hf-roof-court-left-return"],
+      "blocking": false,
+      "quickFixCommand": null,
+      "discipline": "exchange",
+      "blockingClass": "exchange"
+    },
+    {
+      "ruleId": "room_boundary_open",
+      "severity": "warning",
+      "message": "Room 'Bath / Laundry' (hf-room-gf-bath-laundry) has an open boundary — it is not fully enclosed by axis-aligned walls or room separations.",
+      "elementIds": ["hf-room-gf-bath-laundry"],
+      "blocking": false,
+      "quickFixCommand": null,
+      "discipline": "architecture",
+      "blockingClass": "geometry"
+    },
+    {
+      "ruleId": "room_boundary_open",
+      "severity": "warning",
+      "message": "Room 'Utility' (hf-room-utility) has an open boundary — it is not fully enclosed by axis-aligned walls or room separations.",
+      "elementIds": ["hf-room-utility"],
+      "blocking": false,
+      "quickFixCommand": null,
+      "discipline": "architecture",
+      "blockingClass": "geometry"
+    },
+    {
+      "ruleId": "room_boundary_open",
+      "severity": "warning",
+      "message": "Room 'Walk-in Closet' (hf-room-walk-in-closet) has an open boundary — it is not fully enclosed by axis-aligned walls or room separations.",
+      "elementIds": ["hf-room-walk-in-closet"],
+      "blocking": false,
+      "quickFixCommand": null,
+      "discipline": "architecture",
+      "blockingClass": "geometry"
+    },
+    {
+      "ruleId": "room_color_scheme_identity_missing",
+      "severity": "info",
+      "message": "No room color scheme element found. Use upsertRoomColorScheme to author overrides.",
+      "elementIds": [],
+      "blocking": false,
+      "quickFixCommand": null,
+      "discipline": "architecture",
+      "blockingClass": "documentation"
+    },
+    {
+      "ruleId": "room_finish_metadata_hint",
+      "severity": "info",
+      "message": "Room has programme or department metadata but finishSet is blank; finish schedules may be incomplete.",
+      "elementIds": ["hf-room-bath"],
+      "blocking": false,
+      "quickFixCommand": null,
+      "discipline": "architecture",
+      "blockingClass": "documentation"
+    },
+    {
+      "ruleId": "room_finish_metadata_hint",
+      "severity": "info",
+      "message": "Room has programme or department metadata but finishSet is blank; finish schedules may be incomplete.",
+      "elementIds": ["hf-room-carport"],
+      "blocking": false,
+      "quickFixCommand": null,
+      "discipline": "architecture",
+      "blockingClass": "documentation"
+    },
+    {
+      "ruleId": "room_finish_metadata_hint",
+      "severity": "info",
+      "message": "Room has programme or department metadata but finishSet is blank; finish schedules may be incomplete.",
+      "elementIds": ["hf-room-ensuite"],
+      "blocking": false,
+      "quickFixCommand": null,
+      "discipline": "architecture",
+      "blockingClass": "documentation"
+    },
+    {
+      "ruleId": "room_finish_metadata_hint",
+      "severity": "info",
+      "message": "Room has programme or department metadata but finishSet is blank; finish schedules may be incomplete.",
+      "elementIds": ["hf-room-gf-bath-laundry"],
+      "blocking": false,
+      "quickFixCommand": null,
+      "discipline": "architecture",
+      "blockingClass": "documentation"
+    },
+    {
+      "ruleId": "room_finish_metadata_hint",
+      "severity": "info",
+      "message": "Room has programme or department metadata but finishSet is blank; finish schedules may be incomplete.",
+      "elementIds": ["hf-room-kitchen"],
+      "blocking": false,
+      "quickFixCommand": null,
+      "discipline": "architecture",
+      "blockingClass": "documentation"
+    },
+    {
+      "ruleId": "room_finish_metadata_hint",
+      "severity": "info",
+      "message": "Room has programme or department metadata but finishSet is blank; finish schedules may be incomplete.",
+      "elementIds": ["hf-room-landing"],
+      "blocking": false,
+      "quickFixCommand": null,
+      "discipline": "architecture",
+      "blockingClass": "documentation"
+    },
+    {
+      "ruleId": "room_finish_metadata_hint",
+      "severity": "info",
+      "message": "Room has programme or department metadata but finishSet is blank; finish schedules may be incomplete.",
+      "elementIds": ["hf-room-loggia"],
+      "blocking": false,
+      "quickFixCommand": null,
+      "discipline": "architecture",
+      "blockingClass": "documentation"
+    },
+    {
+      "ruleId": "room_finish_metadata_hint",
+      "severity": "info",
+      "message": "Room has programme or department metadata but finishSet is blank; finish schedules may be incomplete.",
+      "elementIds": ["hf-room-utility"],
+      "blocking": false,
+      "quickFixCommand": null,
+      "discipline": "architecture",
+      "blockingClass": "documentation"
+    },
+    {
+      "ruleId": "room_finish_metadata_hint",
+      "severity": "info",
+      "message": "Room has programme or department metadata but finishSet is blank; finish schedules may be incomplete.",
+      "elementIds": ["hf-room-walk-in-closet"],
+      "blocking": false,
+      "quickFixCommand": null,
+      "discipline": "architecture",
+      "blockingClass": "documentation"
+    },
+    {
+      "ruleId": "room_finish_metadata_hint",
+      "severity": "info",
+      "message": "Room has programme or department metadata but finishSet is blank; finish schedules may be incomplete.",
+      "elementIds": ["room-bedroom"],
+      "blocking": false,
+      "quickFixCommand": null,
+      "discipline": "architecture",
+      "blockingClass": "documentation"
+    },
+    {
+      "ruleId": "room_finish_metadata_hint",
+      "severity": "info",
+      "message": "Room has programme or department metadata but finishSet is blank; finish schedules may be incomplete.",
+      "elementIds": ["room-hall"],
+      "blocking": false,
+      "quickFixCommand": null,
+      "discipline": "architecture",
+      "blockingClass": "documentation"
+    },
+    {
+      "ruleId": "room_finish_metadata_hint",
+      "severity": "info",
+      "message": "Room has programme or department metadata but finishSet is blank; finish schedules may be incomplete.",
+      "elementIds": ["room-living"],
+      "blocking": false,
+      "quickFixCommand": null,
+      "discipline": "architecture",
+      "blockingClass": "documentation"
+    },
+    {
+      "ruleId": "room_finish_metadata_hint",
+      "severity": "info",
+      "message": "Room has programme or department metadata but finishSet is blank; finish schedules may be incomplete.",
+      "elementIds": ["room-terrace"],
+      "blocking": false,
+      "quickFixCommand": null,
+      "discipline": "architecture",
+      "blockingClass": "documentation"
+    },
+    {
+      "ruleId": "room_target_area_mismatch",
+      "severity": "info",
+      "message": "Room outline area (4.320 m²) differs from targetAreaM2 (7.500 m²) beyond the advisory tolerance.",
+      "elementIds": ["hf-room-bath"],
+      "blocking": false,
+      "quickFixCommand": null,
+      "discipline": "architecture",
+      "blockingClass": "documentation"
+    },
+    {
+      "ruleId": "room_target_area_mismatch",
+      "severity": "info",
+      "message": "Room outline area (2.900 m²) differs from targetAreaM2 (19.300 m²) beyond the advisory tolerance.",
+      "elementIds": ["hf-room-carport"],
+      "blocking": false,
+      "quickFixCommand": null,
+      "discipline": "architecture",
+      "blockingClass": "documentation"
+    },
+    {
+      "ruleId": "room_target_area_mismatch",
+      "severity": "info",
+      "message": "Room outline area (3.200 m²) differs from targetAreaM2 (5.200 m²) beyond the advisory tolerance.",
+      "elementIds": ["hf-room-ensuite"],
+      "blocking": false,
+      "quickFixCommand": null,
+      "discipline": "architecture",
+      "blockingClass": "documentation"
+    },
+    {
+      "ruleId": "room_target_area_mismatch",
+      "severity": "info",
+      "message": "Room outline area (3.600 m²) differs from targetAreaM2 (4.800 m²) beyond the advisory tolerance.",
+      "elementIds": ["hf-room-gf-bath-laundry"],
+      "blocking": false,
+      "quickFixCommand": null,
+      "discipline": "architecture",
+      "blockingClass": "documentation"
+    },
+    {
+      "ruleId": "room_target_area_mismatch",
+      "severity": "info",
+      "message": "Room outline area (6.160 m²) differs from targetAreaM2 (12.000 m²) beyond the advisory tolerance.",
+      "elementIds": ["hf-room-kitchen"],
+      "blocking": false,
+      "quickFixCommand": null,
+      "discipline": "architecture",
+      "blockingClass": "documentation"
+    },
+    {
+      "ruleId": "room_target_area_mismatch",
+      "severity": "info",
+      "message": "Room outline area (8.640 m²) differs from targetAreaM2 (16.500 m²) beyond the advisory tolerance.",
+      "elementIds": ["hf-room-loggia"],
+      "blocking": false,
+      "quickFixCommand": null,
+      "discipline": "architecture",
+      "blockingClass": "documentation"
+    },
+    {
+      "ruleId": "room_target_area_mismatch",
+      "severity": "info",
+      "message": "Room outline area (2.550 m²) differs from targetAreaM2 (3.400 m²) beyond the advisory tolerance.",
+      "elementIds": ["hf-room-utility"],
+      "blocking": false,
+      "quickFixCommand": null,
+      "discipline": "architecture",
+      "blockingClass": "documentation"
+    },
+    {
+      "ruleId": "room_target_area_mismatch",
+      "severity": "info",
+      "message": "Room outline area (3.800 m²) differs from targetAreaM2 (4.700 m²) beyond the advisory tolerance.",
+      "elementIds": ["hf-room-walk-in-closet"],
+      "blocking": false,
+      "quickFixCommand": null,
+      "discipline": "architecture",
+      "blockingClass": "documentation"
+    },
+    {
+      "ruleId": "room_target_area_mismatch",
+      "severity": "info",
+      "message": "Room outline area (6.380 m²) differs from targetAreaM2 (9.000 m²) beyond the advisory tolerance.",
+      "elementIds": ["room-hall"],
+      "blocking": false,
+      "quickFixCommand": null,
+      "discipline": "architecture",
+      "blockingClass": "documentation"
+    },
+    {
+      "ruleId": "room_unenclosed",
+      "severity": "warning",
+      "message": "Room boundary has 3 edge(s) without a backing wall or room-separation line on the same level (uncovered edge indices: [0, 2, 3]).",
+      "elementIds": ["hf-room-carport"],
+      "blocking": false,
+      "quickFixCommand": null,
+      "discipline": "architecture",
+      "blockingClass": "documentation"
+    },
+    {
+      "ruleId": "room_unenclosed",
+      "severity": "warning",
+      "message": "Room boundary has 4 edge(s) without a backing wall or room-separation line on the same level (uncovered edge indices: [0, 1, 2, 3]).",
+      "elementIds": ["hf-room-ensuite"],
+      "blocking": false,
+      "quickFixCommand": null,
+      "discipline": "architecture",
+      "blockingClass": "documentation"
+    },
+    {
+      "ruleId": "room_unenclosed",
+      "severity": "warning",
+      "message": "Room boundary has 4 edge(s) without a backing wall or room-separation line on the same level (uncovered edge indices: [0, 1, 2, 3]).",
+      "elementIds": ["hf-room-gf-bath-laundry"],
+      "blocking": false,
+      "quickFixCommand": null,
+      "discipline": "architecture",
+      "blockingClass": "documentation"
+    },
+    {
+      "ruleId": "room_unenclosed",
+      "severity": "warning",
+      "message": "Room boundary has 3 edge(s) without a backing wall or room-separation line on the same level (uncovered edge indices: [0, 1, 3]).",
+      "elementIds": ["hf-room-landing"],
+      "blocking": false,
+      "quickFixCommand": null,
+      "discipline": "architecture",
+      "blockingClass": "documentation"
+    },
+    {
+      "ruleId": "room_unenclosed",
+      "severity": "warning",
+      "message": "Room boundary has 1 edge(s) without a backing wall or room-separation line on the same level (uncovered edge indices: [2]).",
+      "elementIds": ["hf-room-loggia"],
+      "blocking": false,
+      "quickFixCommand": null,
+      "discipline": "architecture",
+      "blockingClass": "documentation"
+    },
+    {
+      "ruleId": "room_unenclosed",
+      "severity": "warning",
+      "message": "Room boundary has 4 edge(s) without a backing wall or room-separation line on the same level (uncovered edge indices: [0, 1, 2, 3]).",
+      "elementIds": ["hf-room-utility"],
+      "blocking": false,
+      "quickFixCommand": null,
+      "discipline": "architecture",
+      "blockingClass": "documentation"
+    },
+    {
+      "ruleId": "room_unenclosed",
+      "severity": "warning",
+      "message": "Room boundary has 4 edge(s) without a backing wall or room-separation line on the same level (uncovered edge indices: [0, 1, 2, 3]).",
+      "elementIds": ["hf-room-walk-in-closet"],
+      "blocking": false,
+      "quickFixCommand": null,
+      "discipline": "architecture",
+      "blockingClass": "documentation"
+    },
+    {
+      "ruleId": "room_unenclosed",
+      "severity": "warning",
+      "message": "Room boundary has 4 edge(s) without a backing wall or room-separation line on the same level (uncovered edge indices: [0, 1, 2, 3]).",
+      "elementIds": ["room-bedroom"],
+      "blocking": false,
+      "quickFixCommand": null,
+      "discipline": "architecture",
+      "blockingClass": "documentation"
+    },
+    {
+      "ruleId": "room_unenclosed",
+      "severity": "warning",
+      "message": "Room boundary has 4 edge(s) without a backing wall or room-separation line on the same level (uncovered edge indices: [0, 1, 2, 3]).",
+      "elementIds": ["room-living"],
+      "blocking": false,
+      "quickFixCommand": null,
+      "discipline": "architecture",
+      "blockingClass": "documentation"
+    },
+    {
+      "ruleId": "room_unenclosed",
+      "severity": "warning",
+      "message": "Room boundary has 2 edge(s) without a backing wall or room-separation line on the same level (uncovered edge indices: [0, 2]).",
+      "elementIds": ["room-terrace"],
+      "blocking": false,
+      "quickFixCommand": null,
+      "discipline": "architecture",
+      "blockingClass": "documentation"
+    },
+    {
+      "ruleId": "room_without_door_access",
+      "severity": "warning",
+      "message": "Room has no door midpoint on or inside its boundary; add a connected door opening or revise the room boundary.",
+      "elementIds": ["hf-room-bath"],
+      "blocking": false,
+      "quickFixCommand": null,
+      "discipline": "architecture",
+      "blockingClass": "geometry"
+    },
+    {
+      "ruleId": "room_without_door_access",
+      "severity": "warning",
+      "message": "Room has no door midpoint on or inside its boundary; add a connected door opening or revise the room boundary.",
+      "elementIds": ["hf-room-ensuite"],
+      "blocking": false,
+      "quickFixCommand": null,
+      "discipline": "architecture",
+      "blockingClass": "geometry"
+    },
+    {
+      "ruleId": "room_without_door_access",
+      "severity": "warning",
+      "message": "Room has no door midpoint on or inside its boundary; add a connected door opening or revise the room boundary.",
+      "elementIds": ["hf-room-gf-bath-laundry"],
+      "blocking": false,
+      "quickFixCommand": null,
+      "discipline": "architecture",
+      "blockingClass": "geometry"
+    },
+    {
+      "ruleId": "room_without_door_access",
+      "severity": "warning",
+      "message": "Room has no door midpoint on or inside its boundary; add a connected door opening or revise the room boundary.",
+      "elementIds": ["hf-room-landing"],
+      "blocking": false,
+      "quickFixCommand": null,
+      "discipline": "architecture",
+      "blockingClass": "geometry"
+    },
+    {
+      "ruleId": "room_without_door_access",
+      "severity": "warning",
+      "message": "Room has no door midpoint on or inside its boundary; add a connected door opening or revise the room boundary.",
+      "elementIds": ["hf-room-utility"],
+      "blocking": false,
+      "quickFixCommand": null,
+      "discipline": "architecture",
+      "blockingClass": "geometry"
+    },
+    {
+      "ruleId": "room_without_door_access",
+      "severity": "warning",
+      "message": "Room has no door midpoint on or inside its boundary; add a connected door opening or revise the room boundary.",
+      "elementIds": ["hf-room-walk-in-closet"],
+      "blocking": false,
+      "quickFixCommand": null,
+      "discipline": "architecture",
+      "blockingClass": "geometry"
+    },
+    {
+      "ruleId": "room_without_door_access",
+      "severity": "warning",
+      "message": "Room has no door midpoint on or inside its boundary; add a connected door opening or revise the room boundary.",
+      "elementIds": ["room-bedroom"],
+      "blocking": false,
+      "quickFixCommand": null,
+      "discipline": "architecture",
+      "blockingClass": "geometry"
+    },
+    {
+      "ruleId": "room_without_door_access",
+      "severity": "warning",
+      "message": "Room has no door midpoint on or inside its boundary; add a connected door opening or revise the room boundary.",
+      "elementIds": ["room-hall"],
+      "blocking": false,
+      "quickFixCommand": null,
+      "discipline": "architecture",
+      "blockingClass": "geometry"
+    },
+    {
+      "ruleId": "room_without_door_access",
+      "severity": "warning",
+      "message": "Room has no door midpoint on or inside its boundary; add a connected door opening or revise the room boundary.",
+      "elementIds": ["room-living"],
+      "blocking": false,
+      "quickFixCommand": null,
+      "discipline": "architecture",
+      "blockingClass": "geometry"
+    },
+    {
+      "ruleId": "schedule_field_registry_gap",
+      "severity": "info",
+      "message": "Schedule 'opening-schedule' uses category 'opening' which has no registered column order in SCHEDULE_COLUMN_ORDER; custom field ordering may be inconsistent.",
+      "elementIds": ["opening-schedule"],
+      "blocking": false,
+      "quickFixCommand": null,
+      "discipline": "coordination",
+      "blockingClass": "schedule"
+    },
+    {
+      "ruleId": "schedule_not_placed_on_sheet",
+      "severity": "warning",
+      "message": "Schedule 'room-schedule-view' exists but is not placed on any sheet (sheetId is empty; assign sheetId to enable documentation linkage).",
+      "elementIds": ["room-schedule-view"],
+      "blocking": false,
+      "quickFixCommand": {
+        "type": "upsertSheetViewports",
+        "sheetId": "sheet-a101",
+        "viewportsMm": [
+          {
+            "xMm": 20,
+            "yMm": 20,
+            "label": "Ground floor plan",
+            "viewRef": "plan:lvl-ground-plan",
+            "widthMm": 170,
+            "heightMm": 120,
+            "viewportId": "vp-ground-plan"
+          },
+          {
+            "xMm": 210,
+            "yMm": 20,
+            "label": "Front elevation",
+            "viewRef": "section:elev-front",
+            "widthMm": 170,
+            "heightMm": 120,
+            "viewportId": "vp-front-elevation"
+          },
+          {
+            "xMm": 20,
+            "yMm": 160,
+            "label": "Room Schedule",
+            "viewRef": "schedule:room-schedule",
+            "widthMm": 170,
+            "heightMm": 95,
+            "viewportId": "vp-room-schedule"
+          },
+          {
+            "xMm": 210,
+            "yMm": 160,
+            "label": "Door and Window Schedule",
+            "viewRef": "schedule:opening-schedule",
+            "widthMm": 170,
+            "heightMm": 95,
+            "viewportId": "vp-opening-schedule"
+          },
+          {
+            "viewportId": "vp-autoplace-schedule-room-schedule-view",
+            "label": "Room schedule view",
+            "viewRef": "schedule:room-schedule-view",
+            "xMm": 800,
+            "yMm": 800,
+            "widthMm": 14000,
+            "heightMm": 9000
+          }
+        ]
+      },
+      "discipline": "coordination",
+      "blockingClass": "schedule"
+    },
+    {
+      "ruleId": "schedule_opening_family_type_incomplete",
+      "severity": "warning",
+      "message": "Door is missing familyTypeId (type schedule columns are incomplete).",
+      "elementIds": ["entry-door"],
+      "blocking": false,
+      "quickFixCommand": null,
+      "discipline": "coordination",
+      "blockingClass": "schedule"
+    },
+    {
+      "ruleId": "schedule_opening_family_type_incomplete",
+      "severity": "warning",
+      "message": "Door is missing familyTypeId (type schedule columns are incomplete).",
+      "elementIds": ["front-loggia-center-door"],
+      "blocking": false,
+      "quickFixCommand": null,
+      "discipline": "coordination",
+      "blockingClass": "schedule"
+    },
+    {
+      "ruleId": "schedule_opening_family_type_incomplete",
+      "severity": "warning",
+      "message": "Window is missing familyTypeId (type schedule columns are incomplete).",
+      "elementIds": ["front-loggia-left-window"],
+      "blocking": false,
+      "quickFixCommand": null,
+      "discipline": "coordination",
+      "blockingClass": "schedule"
+    },
+    {
+      "ruleId": "schedule_opening_family_type_incomplete",
+      "severity": "warning",
+      "message": "Window is missing familyTypeId (type schedule columns are incomplete).",
+      "elementIds": ["front-loggia-right-window"],
+      "blocking": false,
+      "quickFixCommand": null,
+      "discipline": "coordination",
+      "blockingClass": "schedule"
+    },
+    {
+      "ruleId": "schedule_opening_family_type_incomplete",
+      "severity": "warning",
+      "message": "Door is missing familyTypeId (type schedule columns are incomplete).",
+      "elementIds": ["hf-roof-court-door"],
+      "blocking": false,
+      "quickFixCommand": null,
+      "discipline": "coordination",
+      "blockingClass": "schedule"
+    },
+    {
+      "ruleId": "schedule_opening_host_wall_type_incomplete",
+      "severity": "warning",
+      "message": "Host wall has no wallTypeId (hostWallType schedule columns cannot resolve).",
+      "elementIds": ["front-loggia-center-door", "front-loggia-recessed-glass"],
+      "blocking": false,
+      "quickFixCommand": null,
+      "discipline": "coordination",
+      "blockingClass": "schedule"
+    },
+    {
+      "ruleId": "schedule_opening_host_wall_type_incomplete",
+      "severity": "warning",
+      "message": "Host wall has no wallTypeId (hostWallType schedule columns cannot resolve).",
+      "elementIds": ["front-loggia-left-window", "front-loggia-recessed-glass"],
+      "blocking": false,
+      "quickFixCommand": null,
+      "discipline": "coordination",
+      "blockingClass": "schedule"
+    },
+    {
+      "ruleId": "schedule_opening_host_wall_type_incomplete",
+      "severity": "warning",
+      "message": "Host wall has no wallTypeId (hostWallType schedule columns cannot resolve).",
+      "elementIds": ["front-loggia-recessed-glass", "front-loggia-right-window"],
+      "blocking": false,
+      "quickFixCommand": null,
+      "discipline": "coordination",
+      "blockingClass": "schedule"
+    },
+    {
+      "ruleId": "schedule_opening_host_wall_type_incomplete",
+      "severity": "warning",
+      "message": "Host wall has no wallTypeId (hostWallType schedule columns cannot resolve).",
+      "elementIds": ["hf-roof-court-door", "hf-roof-court-glass-back"],
+      "blocking": false,
+      "quickFixCommand": null,
+      "discipline": "coordination",
+      "blockingClass": "schedule"
+    },
+    {
+      "ruleId": "sheet_revision_issue_metadata_missing",
+      "severity": "warning",
+      "message": "Sheet has a title block and viewports but titleblock revision/issue metadata is incomplete: set revisionId and/or revision code (revisionCode or legacy revision) in titleblockParameters.",
+      "elementIds": ["sheet-a101"],
+      "blocking": false,
+      "quickFixCommand": {
+        "type": "updateElementProperty",
+        "elementId": "sheet-a101",
+        "key": "titleblockParametersPatch",
+        "value": "{\"revisionCode\": \"A\", \"revisionId\": \"TBR-REV\"}"
+      },
+      "discipline": "coordination",
+      "blockingClass": "sheet"
+    },
+    {
+      "ruleId": "sheet_viewport_unknown_ref",
+      "severity": "warning",
+      "message": "Sheet viewport refers to unresolved semantic reference (plan:lvl-ground-plan).",
+      "elementIds": ["sheet-a101"],
+      "blocking": false,
+      "quickFixCommand": {
+        "type": "upsertSheetViewports",
+        "sheetId": "sheet-a101",
+        "viewportsMm": [
+          {
+            "xMm": 210,
+            "yMm": 20,
+            "label": "Front elevation",
+            "viewRef": "section:elev-front",
+            "widthMm": 170,
+            "heightMm": 120,
+            "viewportId": "vp-front-elevation"
+          },
+          {
+            "xMm": 20,
+            "yMm": 160,
+            "label": "Room Schedule",
+            "viewRef": "schedule:room-schedule",
+            "widthMm": 170,
+            "heightMm": 95,
+            "viewportId": "vp-room-schedule"
+          },
+          {
+            "xMm": 210,
+            "yMm": 160,
+            "label": "Door and Window Schedule",
+            "viewRef": "schedule:opening-schedule",
+            "widthMm": 170,
+            "heightMm": 95,
+            "viewportId": "vp-opening-schedule"
+          }
+        ]
+      },
+      "discipline": "coordination",
+      "blockingClass": "sheet"
+    },
+    {
+      "ruleId": "sheet_viewport_unknown_ref",
+      "severity": "warning",
+      "message": "Sheet viewport refers to unresolved semantic reference (section:elev-front).",
+      "elementIds": ["sheet-a101"],
+      "blocking": false,
+      "quickFixCommand": {
+        "type": "upsertSheetViewports",
+        "sheetId": "sheet-a101",
+        "viewportsMm": [
+          {
+            "xMm": 20,
+            "yMm": 20,
+            "label": "Ground floor plan",
+            "viewRef": "plan:lvl-ground-plan",
+            "widthMm": 170,
+            "heightMm": 120,
+            "viewportId": "vp-ground-plan"
+          },
+          {
+            "xMm": 20,
+            "yMm": 160,
+            "label": "Room Schedule",
+            "viewRef": "schedule:room-schedule",
+            "widthMm": 170,
+            "heightMm": 95,
+            "viewportId": "vp-room-schedule"
+          },
+          {
+            "xMm": 210,
+            "yMm": 160,
+            "label": "Door and Window Schedule",
+            "viewRef": "schedule:opening-schedule",
+            "widthMm": 170,
+            "heightMm": 95,
+            "viewportId": "vp-opening-schedule"
+          }
+        ]
+      },
+      "discipline": "coordination",
+      "blockingClass": "sheet"
+    },
+    {
+      "ruleId": "stair_guardrail_missing",
+      "severity": "warning",
+      "message": "Stair rise exceeds the guardrail threshold without a hosted railing.",
+      "elementIds": ["main-stair"],
+      "blocking": false,
+      "quickFixCommand": null,
+      "discipline": "architecture",
+      "blockingClass": "geometry"
+    },
+    {
+      "ruleId": "structural_material_inconsistent_by_type",
+      "severity": "warning",
+      "message": "Structural elements sharing the same type have inconsistent structural materials (wall:wt-white-wrapper); align the type material or split the type.",
+      "elementIds": [
+        "ground-base-wall-01",
+        "ground-base-wall-02",
+        "ground-base-wall-03",
+        "ground-base-wall-04",
+        "hf-upper-wrapper-shell-wall-01",
+        "hf-upper-wrapper-shell-wall-02",
+        "hf-upper-wrapper-shell-wall-03",
+        "hf-upper-wrapper-shell-wall-04"
+      ],
+      "blocking": false,
+      "quickFixCommand": null,
+      "discipline": "structure",
+      "blockingClass": "documentation"
+    }
+  ],
+  "summary": {
+    "revision": 2,
+    "elementTotal": 108,
+    "scaleWorkload": {
+      "wallCount": 26,
+      "roomCount": 13,
+      "scheduleElementCount": 3
+    },
+    "countsByKind": {
+      "hatch_pattern_def": 7,
+      "project_base_point": 1,
+      "asset_library_entry": 5,
+      "viewpoint": 7,
+      "room": 13,
+      "section_cut": 1,
+      "elevation_view": 5,
+      "door": 3,
+      "stair": 1,
+      "sheet": 1,
+      "wall_type": 2,
+      "level": 2,
+      "roof": 1,
+      "sun_settings": 1,
+      "family_instance": 4,
+      "schedule": 3,
+      "placed_asset": 5,
+      "internal_origin": 1,
+      "floor_type": 1,
+      "floor": 4,
+      "wall": 26,
+      "plan_view": 2,
+      "family_type": 1,
+      "roof_type": 1,
+      "roof_opening": 1,
+      "railing": 2,
+      "window": 2,
+      "slab_opening": 1,
+      "sweep": 3,
+      "wall_opening": 1
+    },
+    "levelCount": 2,
+    "levels": [
+      {
+        "id": "hf-lvl-ground",
+        "name": "Ground Floor",
+        "elevationMm": 0
+      },
+      {
+        "id": "hf-lvl-upper",
+        "name": "First Floor",
+        "elevationMm": 3000
+      }
+    ],
+    "wallCount": 26,
+    "wallsByLevelId": {
+      "hf-lvl-ground": 12,
+      "hf-lvl-upper": 14
+    },
+    "roomCount": 13,
+    "roomsByLevelId": {
+      "hf-lvl-ground": 6,
+      "hf-lvl-upper": 7
+    },
+    "doorCount": 3,
+    "windowCount": 2,
+    "gridLineCount": 0,
+    "openIssueCount": 0,
+    "floorCount": 4,
+    "roofCount": 1,
+    "stairCount": 1,
+    "sheetCount": 1,
+    "railingCount": 2,
+    "slabOpeningCount": 1,
+    "siteCount": 0,
+    "familyTypeCount": 1,
+    "sectionCutCount": 1,
+    "planViewCount": 2,
+    "viewTemplateCount": 0,
+    "viewpointCount": 7,
+    "dimensionCount": 0,
+    "scheduleCount": 3,
+    "saved3dViewClipSummary": {
+      "saved3dViewCount": 5,
+      "clipEnabledCount": 0,
+      "sectionBoxEnabledCount": 0,
+      "totalHiddenCategoryCount": 0
+    },
+    "roomDerivationPreview": {
+      "heuristicVersion": "room_deriv_preview_v4",
+      "axisAlignedRectangleCandidates": [
+        {
+          "kind": "axis_aligned_rectangle",
+          "levelPlane": "bim_xy_mm",
+          "bboxMm": {
+            "min": {
+              "x": 1200,
+              "y": 700
+            },
+            "max": {
+              "x": 3400,
+              "y": 3600
+            }
+          },
+          "wallIds": [
+            "2116cb68-5ecc-4475-9b36-56368cb6964f",
+            "5f6a794c-38dc-430c-a630-74435a02d5d8",
+            "77245fc8-e13e-4c49-a037-befa7581ea70",
+            "89f498c3-56d1-4a82-bdeb-f2898922ab66"
+          ],
+          "boundarySeparationIds": [],
+          "perimeterSegmentIdsSorted": [
+            "2116cb68-5ecc-4475-9b36-56368cb6964f",
+            "5f6a794c-38dc-430c-a630-74435a02d5d8",
+            "77245fc8-e13e-4c49-a037-befa7581ea70",
+            "89f498c3-56d1-4a82-bdeb-f2898922ab66"
+          ],
+          "boundarySegmentEncoding": "boundary_segment_v1",
+          "approxAreaM2": 6.38,
+          "note": "Axis-aligned orthogonal loop from wall and/or axis-aligned room separation segments; authoritative derivation when interior is unambiguous and does not intersect authored outlines.",
+          "levelId": "hf-lvl-ground",
+          "levelName": "Ground Floor",
+          "volumeComputedAt": "finish_faces",
+          "volumeAreaInsetMm": 0,
+          "approxVolumeM3": 19.14,
+          "derivationAuthority": "preview_heuristic",
+          "authorityReasonCodes": [
+            "overlapping_derived_candidate_footprint",
+            "overlaps_authored_room_bbox"
+          ]
+        },
+        {
+          "kind": "axis_aligned_rectangle",
+          "levelPlane": "bim_xy_mm",
+          "bboxMm": {
+            "min": {
+              "x": 1200,
+              "y": 3700
+            },
+            "max": {
+              "x": 3400,
+              "y": 6500
+            }
+          },
+          "wallIds": [
+            "4404e2ba-6ec9-49dc-9ad6-aa1a2884839e",
+            "7ba46089-1f21-487d-a83a-c1d386223811",
+            "8bffb3e3-d6d2-42fa-9646-891e6d9ab65c",
+            "e30de611-98c0-46be-9144-3408061bb0cd"
+          ],
+          "boundarySeparationIds": [],
+          "perimeterSegmentIdsSorted": [
+            "4404e2ba-6ec9-49dc-9ad6-aa1a2884839e",
+            "7ba46089-1f21-487d-a83a-c1d386223811",
+            "8bffb3e3-d6d2-42fa-9646-891e6d9ab65c",
+            "e30de611-98c0-46be-9144-3408061bb0cd"
+          ],
+          "boundarySegmentEncoding": "boundary_segment_v1",
+          "approxAreaM2": 6.16,
+          "note": "Axis-aligned orthogonal loop from wall and/or axis-aligned room separation segments; authoritative derivation when interior is unambiguous and does not intersect authored outlines.",
+          "levelId": "hf-lvl-ground",
+          "levelName": "Ground Floor",
+          "volumeComputedAt": "finish_faces",
+          "volumeAreaInsetMm": 0,
+          "approxVolumeM3": 18.48,
+          "derivationAuthority": "preview_heuristic",
+          "authorityReasonCodes": [
+            "overlapping_derived_candidate_footprint",
+            "overlaps_authored_room_bbox"
+          ]
+        },
+        {
+          "kind": "axis_aligned_rectangle",
+          "levelPlane": "bim_xy_mm",
+          "bboxMm": {
+            "min": {
+              "x": 1000,
+              "y": 0
+            },
+            "max": {
+              "x": 7000,
+              "y": 8200
+            }
+          },
+          "wallIds": [
+            "ground-base-wall-01",
+            "ground-base-wall-02",
+            "ground-base-wall-03",
+            "ground-base-wall-04"
+          ],
+          "boundarySeparationIds": [],
+          "perimeterSegmentIdsSorted": [
+            "ground-base-wall-01",
+            "ground-base-wall-02",
+            "ground-base-wall-03",
+            "ground-base-wall-04"
+          ],
+          "boundarySegmentEncoding": "boundary_segment_v1",
+          "approxAreaM2": 49.2,
+          "note": "Axis-aligned orthogonal loop from wall and/or axis-aligned room separation segments; authoritative derivation when interior is unambiguous and does not intersect authored outlines.",
+          "levelId": "hf-lvl-ground",
+          "levelName": "Ground Floor",
+          "volumeComputedAt": "finish_faces",
+          "volumeAreaInsetMm": 0,
+          "approxVolumeM3": 147.6,
+          "derivationAuthority": "preview_heuristic",
+          "authorityReasonCodes": [
+            "overlapping_derived_candidate_footprint",
+            "overlaps_authored_room_bbox"
+          ]
+        },
+        {
+          "kind": "axis_aligned_rectangle",
+          "levelPlane": "bim_xy_mm",
+          "bboxMm": {
+            "min": {
+              "x": 3600,
+              "y": 1600
+            },
+            "max": {
+              "x": 5200,
+              "y": 4300
+            }
+          },
+          "wallIds": [
+            "212f7794-39de-452f-ae8a-9827ad04ce67",
+            "5da54026-3461-40e8-a3a7-70ecaad930a9",
+            "83558170-2824-41d7-983b-f26538edaf71",
+            "b0085d07-dd48-4450-9b79-5689d93c1ff8"
+          ],
+          "boundarySeparationIds": [],
+          "perimeterSegmentIdsSorted": [
+            "212f7794-39de-452f-ae8a-9827ad04ce67",
+            "5da54026-3461-40e8-a3a7-70ecaad930a9",
+            "83558170-2824-41d7-983b-f26538edaf71",
+            "b0085d07-dd48-4450-9b79-5689d93c1ff8"
+          ],
+          "boundarySegmentEncoding": "boundary_segment_v1",
+          "approxAreaM2": 4.32,
+          "note": "Axis-aligned orthogonal loop from wall and/or axis-aligned room separation segments; authoritative derivation when interior is unambiguous and does not intersect authored outlines.",
+          "levelId": "hf-lvl-upper",
+          "levelName": "First Floor",
+          "volumeComputedAt": "finish_faces",
+          "volumeAreaInsetMm": 0,
+          "approxVolumeM3": 12.096,
+          "derivationAuthority": "preview_heuristic",
+          "authorityReasonCodes": [
+            "overlapping_derived_candidate_footprint",
+            "overlaps_authored_room_bbox"
+          ]
+        },
+        {
+          "kind": "axis_aligned_rectangle",
+          "levelPlane": "bim_xy_mm",
+          "bboxMm": {
+            "min": {
+              "x": 0,
+              "y": -450
+            },
+            "max": {
+              "x": 8000,
+              "y": 8200
+            }
+          },
+          "wallIds": [
+            "hf-upper-wrapper-shell-wall-01",
+            "hf-upper-wrapper-shell-wall-02",
+            "hf-upper-wrapper-shell-wall-03",
+            "hf-upper-wrapper-shell-wall-04"
+          ],
+          "boundarySeparationIds": [],
+          "perimeterSegmentIdsSorted": [
+            "hf-upper-wrapper-shell-wall-01",
+            "hf-upper-wrapper-shell-wall-02",
+            "hf-upper-wrapper-shell-wall-03",
+            "hf-upper-wrapper-shell-wall-04"
+          ],
+          "boundarySegmentEncoding": "boundary_segment_v1",
+          "approxAreaM2": 69.2,
+          "note": "Axis-aligned orthogonal loop from wall and/or axis-aligned room separation segments; authoritative derivation when interior is unambiguous and does not intersect authored outlines.",
+          "levelId": "hf-lvl-upper",
+          "levelName": "First Floor",
+          "volumeComputedAt": "finish_faces",
+          "volumeAreaInsetMm": 0,
+          "approxVolumeM3": 193.76,
+          "derivationAuthority": "preview_heuristic",
+          "authorityReasonCodes": [
+            "overlapping_derived_candidate_footprint",
+            "overlaps_authored_room_bbox"
+          ]
+        }
+      ],
+      "candidateCount": 5,
+      "authoritativeCandidateCount": 0,
+      "unboundedRoomIds": ["hf-room-gf-bath-laundry", "hf-room-utility", "hf-room-walk-in-closet"],
+      "diagnostics": [],
+      "warnings": [],
+      "diagnosticCount": 0,
+      "authorityVersion": "axis_aa_authoritative_v2"
+    },
+    "regenerationDiagnostics": {
+      "documentRevision": 2,
+      "roomDerivationHeuristicVersion": "room_deriv_preview_v4",
+      "roomDerivationCandidateCount": 5,
+      "roomDerivationAuthoritativeCount": 0,
+      "roomDerivationDiagnosticCount": 0,
+      "roomDerivationWarningCount": 0,
+      "levelsWithRoomsSorted": ["hf-lvl-ground", "hf-lvl-upper"],
+      "levelsWithWallsSorted": ["hf-lvl-ground", "hf-lvl-upper"],
+      "maxRoomsOnSingleLevel": 7,
+      "maxWallsOnSingleLevel": 14
+    }
+  },
+  "checks": {
+    "errorViolationCount": 0,
+    "blockingViolationCount": 0
+  }
+}

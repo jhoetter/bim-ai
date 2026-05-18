@@ -1,0 +1,34 @@
+{
+  "schemaVersion": "bim-ai.seed-artifact.v1",
+  "name": "target-house-1",
+  "slug": "target-house-1",
+  "title": "Target House 1",
+  "description": "Image-locked Target House 1 BIM seed generated from the sketch-to-BIM methodology with final live evidence.",
+  "bundle": "bundle.json",
+  "sourceRoot": "source",
+  "evidenceRoot": "evidence",
+  "createdAt": "2026-05-18T20:27:22.126Z",
+  "generatedBy": {
+    "tool": "scripts/create-seed-artifact.mjs",
+    "version": 1
+  },
+  "acceptance": {
+    "status": "accepted",
+    "evidenceRoot": "evidence/live-run-current",
+    "gitHead": "0bfceb543a1f06e3e6579ef01462da7f9d85622b",
+    "bundleSha256": "f5304f1db87621d3d7315d88047d6a96a6f53f229e334fe015c1fa19d9da6598",
+    "irSha256": "cd64c22345865b1a7e0b674ebc0c15ec38433f4e561d485b4b91008b2d6f369e",
+    "capabilitiesSha256": "e3faa00d4724d5e375ee853d5e3d56b21254a969a84e702d67013a8bb0125dbb",
+    "advisorRuleDigest": "11c74e8fdc684fb1efd0140b212e130e0d1bb82bd6a85c9583501a5e4a115f7b"
+  },
+  "inputPaths": {
+    "source": "spec/target-house",
+    "bundle": "target-house-1.bundle.v2.json"
+  },
+  "bundleSha256": "f5304f1db87621d3d7315d88047d6a96a6f53f229e334fe015c1fa19d9da6598",
+  "commandCount": 86,
+  "commandSchemaVersion": "cmd-v3.0",
+  "entryComment": {
+    "body": "Image-locked Target House 1 BIM seed generated from the sketch-to-BIM methodology with final live evidence."
+  }
+}

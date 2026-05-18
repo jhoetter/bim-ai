@@ -1,0 +1,26 @@
+{
+  "schemaVersion": "sketch.tolerance-ledger.v1",
+  "generatedAt": "2026-05-18T20:27:13.431Z",
+  "phaseId": "m5-final",
+  "modelId": "a5c6d3f6-6a76-45f2-8017-b6fa78911955",
+  "revision": 2,
+  "evidenceDir": "/tmp/bim-ai-target-house-1-run/final-live-evidence",
+  "ok": true,
+  "summary": {
+    "findingCount": 46,
+    "toleranceCount": 0,
+    "blockingFindingCount": 0,
+    "incompleteToleranceCount": 0
+  },
+  "requiredFields": [
+    "severity",
+    "affectedFeatureIds",
+    "reason",
+    "owner",
+    "expiryCondition",
+    "evidenceLinks"
+  ],
+  "tolerances": [],
+  "blockingFindings": [],
+  "incompleteTolerances": []
+}

@@ -1,0 +1,108 @@
+{
+  "modelId": "a5c6d3f6-6a76-45f2-8017-b6fa78911955",
+  "revision": 2,
+  "total": 45,
+  "groups": [
+    {
+      "severity": "info",
+      "code": "gltf_export_manifest_expected_extension_missing",
+      "count": 2,
+      "elementIds": [],
+      "messages": [
+        "glTF export manifest: extension 'bim_ai_skew_wall_hosted_openings_v0' not emitted but eligible element kind 'wall' is present (skipReasonCode='no_eligible_elements').",
+        "glTF export manifest: extension 'bim_ai_roof_unsupported_shape_summary_v0' not emitted but eligible element kind 'roof' is present (skipReasonCode='no_eligible_elements')."
+      ]
+    },
+    {
+      "severity": "info",
+      "code": "material_catalog_missing_layer_stack",
+      "count": 19,
+      "elementIds": [
+        "2116cb68-5ecc-4475-9b36-56368cb6964f",
+        "212f7794-39de-452f-ae8a-9827ad04ce67",
+        "4404e2ba-6ec9-49dc-9ad6-aa1a2884839e",
+        "5da54026-3461-40e8-a3a7-70ecaad930a9",
+        "5f6a794c-38dc-430c-a630-74435a02d5d8",
+        "77245fc8-e13e-4c49-a037-befa7581ea70",
+        "7ba46089-1f21-487d-a83a-c1d386223811",
+        "83558170-2824-41d7-983b-f26538edaf71",
+        "89f498c3-56d1-4a82-bdeb-f2898922ab66",
+        "8bffb3e3-d6d2-42fa-9646-891e6d9ab65c",
+        "b0085d07-dd48-4450-9b79-5689d93c1ff8",
+        "e30de611-98c0-46be-9144-3408061bb0cd",
+        "front-loggia-left-return",
+        "front-loggia-recessed-glass",
+        "front-loggia-right-return",
+        "hf-front-loggia-floor",
+        "hf-roof-court-front-return",
+        "hf-roof-court-glass-back",
+        "hf-roof-court-left-return"
+      ],
+      "messages": [
+        "Host has no usable typed layered assembly (missing assembly type id or empty type layer stack)."
+      ]
+    },
+    {
+      "severity": "info",
+      "code": "room_color_scheme_identity_missing",
+      "count": 1,
+      "elementIds": [],
+      "messages": [
+        "No room color scheme element found. Use upsertRoomColorScheme to author overrides."
+      ]
+    },
+    {
+      "severity": "info",
+      "code": "room_finish_metadata_hint",
+      "count": 13,
+      "elementIds": [
+        "hf-room-bath",
+        "hf-room-carport",
+        "hf-room-ensuite",
+        "hf-room-gf-bath-laundry",
+        "hf-room-kitchen",
+        "hf-room-landing",
+        "hf-room-loggia",
+        "hf-room-utility",
+        "hf-room-walk-in-closet",
+        "room-bedroom",
+        "room-hall",
+        "room-living",
+        "room-terrace"
+      ],
+      "messages": [
+        "Room has programme or department metadata but finishSet is blank; finish schedules may be incomplete."
+      ]
+    },
+    {
+      "severity": "info",
+      "code": "room_target_area_mismatch",
+      "count": 9,
+      "elementIds": [
+        "hf-room-bath",
+        "hf-room-carport",
+        "hf-room-ensuite",
+        "hf-room-gf-bath-laundry",
+        "hf-room-kitchen",
+        "hf-room-loggia",
+        "hf-room-utility",
+        "hf-room-walk-in-closet",
+        "room-hall"
+      ],
+      "messages": [
+        "Room outline area (4.320 m²) differs from targetAreaM2 (7.500 m²) beyond the advisory tolerance.",
+        "Room outline area (2.900 m²) differs from targetAreaM2 (19.300 m²) beyond the advisory tolerance.",
+        "Room outline area (3.200 m²) differs from targetAreaM2 (5.200 m²) beyond the advisory tolerance."
+      ]
+    },
+    {
+      "severity": "info",
+      "code": "schedule_field_registry_gap",
+      "count": 1,
+      "elementIds": ["opening-schedule"],
+      "messages": [
+        "Schedule 'opening-schedule' uses category 'opening' which has no registered column order in SCHEDULE_COLUMN_ORDER; custom field ordering may be inconsistent."
+      ]
+    }
+  ]
+}

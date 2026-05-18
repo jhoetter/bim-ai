@@ -1,0 +1,1245 @@
+{
+  "schemaVersion": "seed-dsl.v0",
+  "id": "target-house-1-project-initiation-v1",
+  "intent": "Image-locked Target House 1 BIM seed: thick white folded wrapper shell, roof terrace cutout, recessed front loggia, room programme, BIM data, and evidence views.",
+  "levels": [
+    {
+      "id": "hf-lvl-ground",
+      "name": "Ground Floor",
+      "elevationMm": 0,
+      "planViewId": "hf-ground-floor-plan"
+    },
+    {
+      "id": "hf-lvl-upper",
+      "name": "First Floor",
+      "elevationMm": 3000,
+      "planViewId": "hf-first-floor-plan"
+    }
+  ],
+  "types": {
+    "wallTypes": [
+      {
+        "id": "wt-white-wrapper",
+        "name": "Matte white wrapper",
+        "layers": [
+          {
+            "thicknessMm": 170,
+            "function": "structure",
+            "materialKey": "concrete"
+          },
+          {
+            "thicknessMm": 80,
+            "function": "finish",
+            "materialKey": "white_render"
+          }
+        ]
+      },
+      {
+        "id": "wt-internal",
+        "name": "Internal partition",
+        "layers": [
+          {
+            "thicknessMm": 120,
+            "function": "structure",
+            "materialKey": "gypsum_board"
+          }
+        ]
+      }
+    ],
+    "floorTypes": [
+      {
+        "id": "ft-concrete-slab",
+        "name": "Concrete floor slab",
+        "layers": [
+          {
+            "thicknessMm": 180,
+            "function": "structure",
+            "materialKey": "concrete"
+          },
+          {
+            "thicknessMm": 40,
+            "function": "finish",
+            "materialKey": "screed_placeholder"
+          }
+        ]
+      }
+    ],
+    "roofTypes": [
+      {
+        "id": "rt-white-folded-roof",
+        "name": "White folded roof build-up",
+        "layers": [
+          {
+            "thicknessMm": 200,
+            "function": "structure",
+            "materialKey": "timber_roof_placeholder"
+          },
+          {
+            "thicknessMm": 60,
+            "function": "finish",
+            "materialKey": "white_render"
+          }
+        ]
+      }
+    ]
+  },
+  "volumes": [
+    {
+      "id": "ground-base",
+      "name": "Ground cladded base",
+      "levelId": "hf-lvl-ground",
+      "wallHeightMm": 3000,
+      "wallTypeId": "wt-white-wrapper",
+      "materialKey": "cladding_warm_wood",
+      "footprintMm": [
+        {
+          "xMm": 1000,
+          "yMm": 0
+        },
+        {
+          "xMm": 7000,
+          "yMm": 0
+        },
+        {
+          "xMm": 7000,
+          "yMm": 8200
+        },
+        {
+          "xMm": 1000,
+          "yMm": 8200
+        }
+      ],
+      "floorTypeId": "ft-concrete-slab"
+    },
+    {
+      "id": "upper-wrapper",
+      "name": "Upper white wrapper",
+      "levelId": "hf-lvl-upper",
+      "createWalls": false,
+      "wallHeightMm": 3200,
+      "wallTypeId": "wt-white-wrapper",
+      "materialKey": "white_render",
+      "footprintMm": [
+        {
+          "xMm": 0,
+          "yMm": -450
+        },
+        {
+          "xMm": 8000,
+          "yMm": -450
+        },
+        {
+          "xMm": 8000,
+          "yMm": 8200
+        },
+        {
+          "xMm": 0,
+          "yMm": 8200
+        }
+      ],
+      "floorTypeId": "ft-concrete-slab"
+    }
+  ],
+  "roofs": [
+    {
+      "id": "hf-roof-main",
+      "name": "Asymmetric gable roof with occupied terrace cutout",
+      "referenceLevelId": "hf-lvl-upper",
+      "roofGeometryMode": "asymmetric_gable",
+      "ridgeOffsetTransverseMm": 450,
+      "eaveHeightLeftMm": 2500,
+      "eaveHeightRightMm": 2350,
+      "slopeDeg": 23,
+      "overhangMm": 0,
+      "materialKey": "white_render",
+      "footprintMm": [
+        {
+          "xMm": 0,
+          "yMm": -450
+        },
+        {
+          "xMm": 8000,
+          "yMm": -450
+        },
+        {
+          "xMm": 8000,
+          "yMm": 8200
+        },
+        {
+          "xMm": 0,
+          "yMm": 8200
+        }
+      ],
+      "roofTypeId": "rt-white-folded-roof"
+    }
+  ],
+  "rooms": [
+    {
+      "id": "room-living",
+      "name": "Living / Dining",
+      "levelId": "hf-lvl-ground",
+      "programmeCode": "living",
+      "functionLabel": "residential living",
+      "targetAreaM2": 13.05,
+      "outlineMm": [
+        {
+          "xMm": 3600,
+          "yMm": 700
+        },
+        {
+          "xMm": 6500,
+          "yMm": 700
+        },
+        {
+          "xMm": 6500,
+          "yMm": 5200
+        },
+        {
+          "xMm": 3600,
+          "yMm": 5200
+        }
+      ]
+    },
+    {
+      "id": "room-bedroom",
+      "name": "Bedroom",
+      "levelId": "hf-lvl-upper",
+      "programmeCode": "bed",
+      "functionLabel": "residential sleeping",
+      "targetAreaM2": 7.29,
+      "outlineMm": [
+        {
+          "xMm": 600,
+          "yMm": 1600
+        },
+        {
+          "xMm": 3300,
+          "yMm": 1600
+        },
+        {
+          "xMm": 3300,
+          "yMm": 4300
+        },
+        {
+          "xMm": 600,
+          "yMm": 4300
+        }
+      ]
+    }
+  ],
+  "materialIntent": [
+    {
+      "surface": "upper wrapper and roof",
+      "materialKey": "white_render",
+      "evidence": "Sketch reads as one continuous white folded shell."
+    },
+    {
+      "surface": "ground floor base",
+      "materialKey": "cladding_warm_wood",
+      "evidence": "Lower storey is visually warmer and materially distinct."
+    }
+  ],
+  "assets": [
+    {
+      "id": "asset-sofa",
+      "name": "Sofa marker",
+      "category": "furniture",
+      "typeId": "furn-sofa-2200",
+      "scheduleCategory": "furniture",
+      "evidenceRole": "living_room_scale_marker",
+      "symbolKind": "sofa",
+      "tags": ["living", "interior"],
+      "thumbnailWidthMm": 2200,
+      "thumbnailHeightMm": 900
+    },
+    {
+      "id": "asset-bed",
+      "name": "Bed marker",
+      "category": "furniture",
+      "typeId": "furn-bed-1600",
+      "scheduleCategory": "furniture",
+      "evidenceRole": "bedroom_scale_marker",
+      "symbolKind": "bed",
+      "tags": ["bedroom", "interior"],
+      "thumbnailWidthMm": 1600,
+      "thumbnailHeightMm": 2100
+    },
+    {
+      "id": "asset-outdoor-chair",
+      "name": "Outdoor terrace chair marker",
+      "category": "furniture",
+      "typeId": "furn-outdoor-chair",
+      "scheduleCategory": "furniture",
+      "evidenceRole": "roof_terrace_occupancy_marker",
+      "symbolKind": "chair",
+      "tags": ["terrace", "outdoor"],
+      "thumbnailWidthMm": 650,
+      "thumbnailHeightMm": 650
+    },
+    {
+      "id": "asset-dining-table",
+      "name": "Dining table marker",
+      "category": "furniture",
+      "typeId": "furn-dining-1800",
+      "scheduleCategory": "furniture",
+      "evidenceRole": "living_dining_scale_marker",
+      "symbolKind": "table",
+      "tags": ["dining"],
+      "thumbnailWidthMm": 1800,
+      "thumbnailHeightMm": 900
+    },
+    {
+      "id": "asset-bath-fixture",
+      "name": "Bathroom fixture marker",
+      "category": "bathroom",
+      "typeId": "plumb-basin-wc",
+      "scheduleCategory": "plumbing_fixture",
+      "evidenceRole": "mep_lite_wet_room_marker",
+      "symbolKind": "bathroom_layout",
+      "tags": ["bathroom", "mep"],
+      "thumbnailWidthMm": 900,
+      "thumbnailHeightMm": 600
+    }
+  ],
+  "placedAssets": [
+    {
+      "id": "placed-sofa-living",
+      "assetId": "asset-sofa",
+      "name": "Living sofa",
+      "levelId": "hf-lvl-ground",
+      "roomId": "room-living",
+      "scheduleCategory": "furniture",
+      "evidenceRole": "living_room_scale_marker",
+      "positionMm": {
+        "xMm": 4700,
+        "yMm": 2300
+      },
+      "rotationDeg": 0
+    },
+    {
+      "id": "placed-bed-upper",
+      "assetId": "asset-bed",
+      "name": "Upper bedroom bed",
+      "levelId": "hf-lvl-upper",
+      "roomId": "room-bedroom",
+      "scheduleCategory": "furniture",
+      "evidenceRole": "bedroom_scale_marker",
+      "positionMm": {
+        "xMm": 1850,
+        "yMm": 2800
+      },
+      "rotationDeg": 90
+    },
+    {
+      "id": "placed-outdoor-chair-roof-terrace",
+      "assetId": "asset-outdoor-chair",
+      "name": "Roof terrace outdoor chair",
+      "levelId": "hf-lvl-upper",
+      "roomId": "room-terrace",
+      "scheduleCategory": "furniture",
+      "evidenceRole": "roof_terrace_occupancy_marker",
+      "positionMm": {
+        "xMm": 6800,
+        "yMm": 4800
+      },
+      "rotationDeg": 15
+    },
+    {
+      "id": "hf-dining-table",
+      "assetId": "asset-dining-table",
+      "name": "Dining table",
+      "levelId": "hf-lvl-ground",
+      "roomId": "room-living",
+      "scheduleCategory": "furniture",
+      "evidenceRole": "living_dining_scale_marker",
+      "positionMm": {
+        "xMm": 5600,
+        "yMm": 4100
+      },
+      "rotationDeg": 0
+    },
+    {
+      "id": "hf-bath-fixture",
+      "assetId": "asset-bath-fixture",
+      "name": "Bathroom fixture group",
+      "levelId": "hf-lvl-upper",
+      "roomId": "hf-room-bath",
+      "scheduleCategory": "plumbing_fixture",
+      "evidenceRole": "mep_lite_wet_room_marker",
+      "positionMm": {
+        "xMm": 4300,
+        "yMm": 2800
+      },
+      "rotationDeg": 0
+    }
+  ],
+  "materialAssignments": [
+    {
+      "elementId": "ground-base-floor",
+      "materialKey": "cladding_warm_wood"
+    }
+  ],
+  "features": {
+    "foldedWrappers": [
+      {
+        "id": "hf-upper-wrapper-shell",
+        "name": "Target House thick white folded wrapper shell",
+        "levelId": "hf-lvl-upper",
+        "wallHeightMm": 3200,
+        "wallThicknessMm": 250,
+        "wallTypeId": "wt-white-wrapper",
+        "materialKey": "white_render",
+        "attachWallTopsToRoofId": "hf-roof-main",
+        "footprintMm": [
+          {
+            "xMm": 0,
+            "yMm": -450
+          },
+          {
+            "xMm": 8000,
+            "yMm": -450
+          },
+          {
+            "xMm": 8000,
+            "yMm": 8200
+          },
+          {
+            "xMm": 0,
+            "yMm": 8200
+          }
+        ],
+        "fasciaSweeps": [
+          {
+            "id": "upper-wrapper-front-fascia",
+            "name": "Thick front wrapper fascia",
+            "pathMm": [
+              {
+                "xMm": 0,
+                "yMm": -450,
+                "zMm": 6100
+              },
+              {
+                "xMm": 8000,
+                "yMm": -450,
+                "zMm": 6100
+              }
+            ],
+            "profileMm": [
+              {
+                "uMm": 0,
+                "vMm": 0
+              },
+              {
+                "uMm": 520,
+                "vMm": 0
+              },
+              {
+                "uMm": 520,
+                "vMm": 180
+              },
+              {
+                "uMm": 0,
+                "vMm": 180
+              }
+            ],
+            "materialKey": "white_render"
+          }
+        ]
+      }
+    ],
+    "roofTerraces": [
+      {
+        "id": "hf-roof-court",
+        "name": "Embedded roof terrace cutout",
+        "levelId": "hf-lvl-upper",
+        "hostRoofId": "hf-roof-main",
+        "materialKey": "white_render",
+        "floorMaterialKey": "concrete",
+        "boundaryMm": [
+          {
+            "xMm": 5300,
+            "yMm": 3000
+          },
+          {
+            "xMm": 7900,
+            "yMm": 3000
+          },
+          {
+            "xMm": 7900,
+            "yMm": 6600
+          },
+          {
+            "xMm": 5300,
+            "yMm": 6600
+          }
+        ],
+        "returnWalls": [
+          {
+            "id": "hf-roof-court-glass-back",
+            "name": "Roof court recessed glass access wall",
+            "start": {
+              "xMm": 5300,
+              "yMm": 6600
+            },
+            "end": {
+              "xMm": 7900,
+              "yMm": 6600
+            },
+            "heightMm": 2300,
+            "thicknessMm": 120,
+            "materialKey": "glass",
+            "isCurtainWall": true
+          },
+          {
+            "id": "hf-roof-court-left-return",
+            "name": "Roof court white left return",
+            "start": {
+              "xMm": 5300,
+              "yMm": 3000
+            },
+            "end": {
+              "xMm": 5300,
+              "yMm": 6600
+            },
+            "heightMm": 1300,
+            "thicknessMm": 220,
+            "materialKey": "white_render"
+          },
+          {
+            "id": "hf-roof-court-front-return",
+            "name": "Roof court white front return",
+            "start": {
+              "xMm": 5300,
+              "yMm": 3000
+            },
+            "end": {
+              "xMm": 7900,
+              "yMm": 3000
+            },
+            "heightMm": 900,
+            "thicknessMm": 220,
+            "materialKey": "white_render"
+          }
+        ],
+        "railingPathMm": [
+          {
+            "xMm": 7850,
+            "yMm": 3100
+          },
+          {
+            "xMm": 7850,
+            "yMm": 6500
+          }
+        ],
+        "accessOpenings": [
+          {
+            "id": "hf-roof-court-door",
+            "kind": "door",
+            "wallId": "hf-roof-court-glass-back",
+            "name": "Roof court access door",
+            "alongT": 0.5,
+            "widthMm": 1000
+          }
+        ],
+        "openingId": "hf-roof-court-opening",
+        "floorId": "hf-roof-court-floor",
+        "floorTypeId": "ft-concrete-slab"
+      }
+    ],
+    "loggias": [
+      {
+        "id": "hf-front-loggia",
+        "name": "Deep recessed front upper loggia",
+        "levelId": "hf-lvl-upper",
+        "materialKey": "white_render",
+        "boundaryMm": [
+          {
+            "xMm": 1200,
+            "yMm": -450
+          },
+          {
+            "xMm": 7600,
+            "yMm": -450
+          },
+          {
+            "xMm": 7600,
+            "yMm": 900
+          },
+          {
+            "xMm": 1200,
+            "yMm": 900
+          }
+        ],
+        "railingPathMm": [
+          {
+            "xMm": 1300,
+            "yMm": -350
+          },
+          {
+            "xMm": 7500,
+            "yMm": -350
+          }
+        ],
+        "returnWalls": [
+          {
+            "id": "front-loggia-left-return",
+            "start": {
+              "xMm": 1200,
+              "yMm": -450
+            },
+            "end": {
+              "xMm": 1200,
+              "yMm": 900
+            },
+            "heightMm": 2600,
+            "materialKey": "white_render"
+          },
+          {
+            "id": "front-loggia-right-return",
+            "start": {
+              "xMm": 7600,
+              "yMm": -450
+            },
+            "end": {
+              "xMm": 7600,
+              "yMm": 900
+            },
+            "heightMm": 2600,
+            "materialKey": "white_render"
+          }
+        ],
+        "recessedFacadeWalls": [
+          {
+            "id": "front-loggia-recessed-glass",
+            "name": "Recessed loggia glazing wall",
+            "start": {
+              "xMm": 1350,
+              "yMm": 820
+            },
+            "end": {
+              "xMm": 7450,
+              "yMm": 820
+            },
+            "heightMm": 2500,
+            "materialKey": "glass",
+            "isCurtainWall": true
+          }
+        ],
+        "bayOpenings": [
+          {
+            "id": "front-loggia-wide-opening",
+            "kind": "wall_opening",
+            "wallId": "front-loggia-recessed-glass",
+            "name": "Full-height loggia glazing bay",
+            "alongTStart": 0.08,
+            "alongTEnd": 0.92,
+            "sillHeightMm": 0,
+            "headHeightMm": 2300
+          }
+        ]
+      }
+    ],
+    "facadeRhythms": [
+      {
+        "id": "hf-front-loggia-three-bay-rhythm",
+        "hostWallId": "front-loggia-recessed-glass",
+        "levelId": "hf-lvl-upper",
+        "evidenceRole": "front_loggia_bay_rhythm",
+        "materialKey": "aluminium_black",
+        "bays": [
+          {
+            "id": "front-loggia-left-window",
+            "kind": "window",
+            "name": "Left loggia glazing bay",
+            "centerT": 0.18,
+            "widthMm": 700,
+            "heightMm": 2100,
+            "sillHeightMm": 150,
+            "scheduleCategory": "window"
+          },
+          {
+            "id": "front-loggia-center-door",
+            "kind": "door",
+            "name": "Center loggia door bay",
+            "centerT": 0.5,
+            "widthMm": 850,
+            "scheduleCategory": "door"
+          },
+          {
+            "id": "front-loggia-right-window",
+            "kind": "window",
+            "name": "Right loggia glazing bay",
+            "centerT": 0.82,
+            "widthMm": 700,
+            "heightMm": 2100,
+            "sillHeightMm": 150,
+            "scheduleCategory": "window"
+          }
+        ],
+        "mullionProxies": [
+          {
+            "id": "front-loggia-left-mullion",
+            "name": "Left vertical mullion proxy",
+            "pathMm": [
+              {
+                "xMm": 3350,
+                "yMm": 810,
+                "zMm": 3000
+              },
+              {
+                "xMm": 3350,
+                "yMm": 810,
+                "zMm": 5300
+              }
+            ],
+            "profileMm": [
+              {
+                "uMm": 0,
+                "vMm": 0
+              },
+              {
+                "uMm": 80,
+                "vMm": 0
+              },
+              {
+                "uMm": 80,
+                "vMm": 80
+              },
+              {
+                "uMm": 0,
+                "vMm": 80
+              }
+            ]
+          },
+          {
+            "id": "front-loggia-right-mullion",
+            "name": "Right vertical mullion proxy",
+            "pathMm": [
+              {
+                "xMm": 5550,
+                "yMm": 810,
+                "zMm": 3000
+              },
+              {
+                "xMm": 5550,
+                "yMm": 810,
+                "zMm": 5300
+              }
+            ],
+            "profileMm": [
+              {
+                "uMm": 0,
+                "vMm": 0
+              },
+              {
+                "uMm": 80,
+                "vMm": 0
+              },
+              {
+                "uMm": 80,
+                "vMm": 80
+              },
+              {
+                "uMm": 0,
+                "vMm": 80
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "roomProgrammes": [
+      {
+        "id": "hf-room-programme",
+        "levelId": "hf-lvl-ground",
+        "topLevelId": "hf-lvl-upper",
+        "rooms": [
+          {
+            "id": "room-hall",
+            "name": "Entrance / Stair Hall",
+            "programmeCode": "entrance_hall",
+            "functionLabel": "circulation",
+            "targetAreaM2": 9,
+            "createBoundaryWalls": true,
+            "outlineMm": [
+              {
+                "xMm": 1200,
+                "yMm": 700
+              },
+              {
+                "xMm": 3400,
+                "yMm": 700
+              },
+              {
+                "xMm": 3400,
+                "yMm": 3600
+              },
+              {
+                "xMm": 1200,
+                "yMm": 3600
+              }
+            ]
+          },
+          {
+            "id": "room-terrace",
+            "name": "Roof Terrace",
+            "levelId": "hf-lvl-upper",
+            "programmeCode": "terrace",
+            "functionLabel": "outdoor living",
+            "targetAreaM2": 8.3,
+            "outlineMm": [
+              {
+                "xMm": 5400,
+                "yMm": 3300
+              },
+              {
+                "xMm": 8000,
+                "yMm": 3300
+              },
+              {
+                "xMm": 8000,
+                "yMm": 6500
+              },
+              {
+                "xMm": 5400,
+                "yMm": 6500
+              }
+            ]
+          },
+          {
+            "id": "hf-room-kitchen",
+            "name": "Kitchen",
+            "programmeCode": "kitchen",
+            "functionLabel": "residential kitchen",
+            "targetAreaM2": 12,
+            "createBoundaryWalls": true,
+            "outlineMm": [
+              {
+                "xMm": 1200,
+                "yMm": 3700
+              },
+              {
+                "xMm": 3400,
+                "yMm": 3700
+              },
+              {
+                "xMm": 3400,
+                "yMm": 6500
+              },
+              {
+                "xMm": 1200,
+                "yMm": 6500
+              }
+            ]
+          },
+          {
+            "id": "hf-room-bath",
+            "name": "First Floor Bathroom",
+            "levelId": "hf-lvl-upper",
+            "programmeCode": "bath",
+            "functionLabel": "residential bathroom",
+            "targetAreaM2": 7.5,
+            "createBoundaryWalls": true,
+            "outlineMm": [
+              {
+                "xMm": 3600,
+                "yMm": 1600
+              },
+              {
+                "xMm": 5200,
+                "yMm": 1600
+              },
+              {
+                "xMm": 5200,
+                "yMm": 4300
+              },
+              {
+                "xMm": 3600,
+                "yMm": 4300
+              }
+            ]
+          }
+        ],
+        "doors": [
+          {
+            "id": "entry-door",
+            "kind": "door",
+            "wallId": "ground-base-wall-04",
+            "name": "Entrance door",
+            "alongT": 0.2,
+            "widthMm": 1000
+          }
+        ],
+        "stairs": [
+          {
+            "id": "main-stair",
+            "name": "Main stair",
+            "runStartMm": {
+              "xMm": 1800,
+              "yMm": 1100
+            },
+            "runEndMm": {
+              "xMm": 1800,
+              "yMm": 3200
+            },
+            "widthMm": 1000
+          }
+        ],
+        "slabOpenings": [
+          {
+            "id": "main-stair-upper-opening",
+            "name": "Upper slab stair opening",
+            "hostFloorId": "upper-wrapper-floor",
+            "boundaryMm": [
+              {
+                "xMm": 1300,
+                "yMm": 800
+              },
+              {
+                "xMm": 2500,
+                "yMm": 800
+              },
+              {
+                "xMm": 2500,
+                "yMm": 3400
+              },
+              {
+                "xMm": 1300,
+                "yMm": 3400
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "documentation": {
+    "views": [
+      {
+        "id": "elev-front",
+        "kind": "elevation",
+        "name": "Front elevation",
+        "direction": "south",
+        "scale": 100,
+        "cropMinMm": {
+          "xMm": -500,
+          "yMm": -1200
+        },
+        "cropMaxMm": {
+          "xMm": 8500,
+          "yMm": 9000
+        }
+      },
+      {
+        "id": "sec-stair",
+        "kind": "section",
+        "name": "Stair and terrace section",
+        "lineStartMm": {
+          "xMm": 1200,
+          "yMm": 700
+        },
+        "lineEndMm": {
+          "xMm": 7600,
+          "yMm": 700
+        },
+        "cropDepthMm": 8200
+      }
+    ],
+    "sheets": [
+      {
+        "id": "sheet-a101",
+        "name": "A101 Plans and schedules",
+        "titleBlock": "project-initiation",
+        "paperWidthMm": 420,
+        "paperHeightMm": 297,
+        "titleblockParameters": {
+          "projectStatus": "Project initiation",
+          "exchangeGoal": "IFC-ready BIM seed"
+        },
+        "viewports": [
+          {
+            "viewportId": "vp-ground-plan",
+            "viewRef": "plan:lvl-ground-plan",
+            "label": "Ground floor plan",
+            "xMm": 20,
+            "yMm": 20,
+            "widthMm": 170,
+            "heightMm": 120
+          },
+          {
+            "viewportId": "vp-front-elevation",
+            "viewRef": "section:elev-front",
+            "label": "Front elevation",
+            "xMm": 210,
+            "yMm": 20,
+            "widthMm": 170,
+            "heightMm": 120
+          }
+        ]
+      }
+    ],
+    "schedules": [
+      {
+        "id": "room-schedule",
+        "name": "Room Schedule",
+        "category": "room",
+        "sheetId": "sheet-a101",
+        "placeOnSheet": true,
+        "xMm": 20,
+        "yMm": 160,
+        "widthMm": 170,
+        "heightMm": 95,
+        "grouping": {
+          "sortBy": "levelId"
+        }
+      },
+      {
+        "id": "opening-schedule",
+        "name": "Door and Window Schedule",
+        "category": "opening",
+        "sheetId": "sheet-a101",
+        "placeOnSheet": true,
+        "xMm": 210,
+        "yMm": 160,
+        "widthMm": 170,
+        "heightMm": 95,
+        "grouping": {
+          "sortBy": "name"
+        }
+      }
+    ],
+    "scheduleViews": [
+      {
+        "id": "room-schedule-view",
+        "name": "Room schedule view",
+        "category": "room",
+        "columns": [
+          {
+            "key": "number",
+            "label": "Number"
+          },
+          {
+            "key": "name",
+            "label": "Name"
+          },
+          {
+            "key": "levelId",
+            "label": "Level"
+          },
+          {
+            "key": "targetAreaM2",
+            "label": "Target Area"
+          }
+        ],
+        "filterExpr": "category == \"room\"",
+        "sortKey": "levelId",
+        "sortDir": "asc"
+      }
+    ]
+  },
+  "viewpoints": [
+    {
+      "id": "main_front_left",
+      "name": "Main front-left evidence view",
+      "evidenceRole": "main_front_left_axonometric",
+      "featureIds": [
+        "primary_massing_envelope",
+        "folded_white_wrapper_shell",
+        "front_deep_loggia",
+        "roof_terrace_cutout"
+      ],
+      "camera": {
+        "position": {
+          "xMm": -8500,
+          "yMm": -10500,
+          "zMm": 8200
+        },
+        "target": {
+          "xMm": 4100,
+          "yMm": 3600,
+          "zMm": 3100
+        },
+        "up": {
+          "xMm": 0,
+          "yMm": 0,
+          "zMm": 1
+        }
+      }
+    },
+    {
+      "id": "roof_high",
+      "name": "Roof terrace high right evidence view",
+      "evidenceRole": "roof_terrace_cutout",
+      "featureIds": ["roof_terrace_cutout"],
+      "camera": {
+        "position": {
+          "xMm": 11200,
+          "yMm": -2600,
+          "zMm": 9800
+        },
+        "target": {
+          "xMm": 6500,
+          "yMm": 4800,
+          "zMm": 4300
+        },
+        "up": {
+          "xMm": 0,
+          "yMm": 0,
+          "zMm": 1
+        }
+      }
+    },
+    {
+      "id": "front_elevation",
+      "name": "Front loggia elevation evidence view",
+      "evidenceRole": "front_loggia_bay_rhythm",
+      "featureIds": ["front_deep_loggia", "opening_and_glazing_rhythm", "vertical_cladding_zones"],
+      "camera": {
+        "position": {
+          "xMm": 4000,
+          "yMm": -12500,
+          "zMm": 3600
+        },
+        "target": {
+          "xMm": 4000,
+          "yMm": 3600,
+          "zMm": 3100
+        },
+        "up": {
+          "xMm": 0,
+          "yMm": 0,
+          "zMm": 1
+        }
+      }
+    },
+    {
+      "id": "rear_right_axon",
+      "name": "Rear right roof court evidence view",
+      "evidenceRole": "roof_court_and_side_envelope",
+      "featureIds": ["roof_terrace_cutout", "folded_white_wrapper_shell"],
+      "camera": {
+        "position": {
+          "xMm": 12500,
+          "yMm": 9500,
+          "zMm": 8200
+        },
+        "target": {
+          "xMm": 5700,
+          "yMm": 4700,
+          "zMm": 3300
+        },
+        "up": {
+          "xMm": 0,
+          "yMm": 0,
+          "zMm": 1
+        }
+      }
+    },
+    {
+      "id": "ground_floor_plan",
+      "name": "Ground floor plan diagnostic",
+      "mode": "plan_2d",
+      "evidenceRole": "ground_floor_room_topology",
+      "featureIds": ["room_access_and_enclosure"],
+      "hiddenSemanticKinds3d": ["roof"],
+      "camera": {
+        "position": {
+          "xMm": 4000,
+          "yMm": 3900,
+          "zMm": 14000
+        },
+        "target": {
+          "xMm": 4000,
+          "yMm": 3900,
+          "zMm": 0
+        },
+        "up": {
+          "xMm": 0,
+          "yMm": 1,
+          "zMm": 0
+        }
+      }
+    },
+    {
+      "id": "first_floor_plan",
+      "name": "First floor plan diagnostic",
+      "mode": "plan_2d",
+      "evidenceRole": "first_floor_room_and_roof_court_topology",
+      "featureIds": ["room_access_and_enclosure", "roof_terrace_cutout"],
+      "hiddenSemanticKinds3d": ["roof"],
+      "camera": {
+        "position": {
+          "xMm": 4000,
+          "yMm": 3900,
+          "zMm": 15000
+        },
+        "target": {
+          "xMm": 4000,
+          "yMm": 3900,
+          "zMm": 3000
+        },
+        "up": {
+          "xMm": 0,
+          "yMm": 1,
+          "zMm": 0
+        }
+      }
+    },
+    {
+      "id": "wire_diagnostic",
+      "name": "Wire diagnostic evidence view",
+      "evidenceRole": "hidden_overlap_and_seam_diagnostic",
+      "featureIds": [
+        "folded_white_wrapper_shell",
+        "roof_terrace_cutout",
+        "room_access_and_enclosure"
+      ],
+      "camera": {
+        "position": {
+          "xMm": -9200,
+          "yMm": -9000,
+          "zMm": 7200
+        },
+        "target": {
+          "xMm": 4100,
+          "yMm": 3900,
+          "zMm": 2800
+        },
+        "up": {
+          "xMm": 0,
+          "yMm": 0,
+          "zMm": 1
+        }
+      }
+    }
+  ],
+  "assumptions": [
+    {
+      "key": "source_reference",
+      "value": "Image-locked target-house-1 source spec and floorplan used for generation.",
+      "confidence": 0.95,
+      "source": "spec/target-house/target-house-seed.md"
+    },
+    {
+      "key": "scale_from_floorplan",
+      "value": "14 m x 10 m floorplan basis reconciled with compact reference proportions; visible shell proportions prioritized.",
+      "confidence": 0.72,
+      "source": "spec/target-house/floorplan.png"
+    },
+    {
+      "key": "project_initiation_bim_scope",
+      "value": "Real BIM categories, rooms, types, schedules, export placeholders, structure-lite and MEP-lite markers included; final detailing remains later phase.",
+      "confidence": 0.85,
+      "source": "spec/target-house/target-house-1-bim-information-requirements.md"
+    }
+  ],
+  "projectBasePoint": {
+    "id": "hf-pbp",
+    "positionMm": {
+      "xMm": 0,
+      "yMm": 0,
+      "zMm": 0
+    },
+    "angleToTrueNorthDeg": 0
+  }
+}

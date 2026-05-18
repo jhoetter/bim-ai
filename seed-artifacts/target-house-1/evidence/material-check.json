@@ -1,0 +1,33 @@
+{
+  "schemaVersion": "target-house-1.material-check.v1",
+  "ok": true,
+  "generatedAt": "2026-05-18T20:28:16.663Z",
+  "summary": {
+    "requiredMaterialKeys": [
+      "matte_white",
+      "timber_vertical",
+      "aluminium_black",
+      "concrete_light",
+      "glass_clear"
+    ],
+    "commandCount": 86,
+    "elementCount": 108
+  },
+  "checks": [
+    {
+      "id": "typed_wall_floor_roof_assemblies",
+      "status": "pass",
+      "message": "Bundle includes wall, floor, and roof types with BIM material/layer intent."
+    },
+    {
+      "id": "facade_material_intent",
+      "status": "pass",
+      "message": "Bundle includes matte white wrapper, vertical timber/base cladding, aluminium, glass, and concrete material intent."
+    },
+    {
+      "id": "export_material_layer_readiness",
+      "status": "pass",
+      "message": "Final exchange validation passes material layer-set requirements."
+    }
+  ]
+}

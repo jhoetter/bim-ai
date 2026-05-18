@@ -1,0 +1,112 @@
+{
+  "schemaVersion": "sketch.evidence.collection.v1",
+  "generatedAt": "2026-05-18T20:25:16.504Z",
+  "modelId": "a5c6d3f6-6a76-45f2-8017-b6fa78911955",
+  "revision": 2,
+  "phaseId": null,
+  "baseUrl": "http://127.0.0.1:8500",
+  "currentHead": {
+    "gitHead": "0bfceb543a1f06e3e6579ef01462da7f9d85622b",
+    "modelId": "a5c6d3f6-6a76-45f2-8017-b6fa78911955",
+    "modelRevision": 2,
+    "advisorRuleDigest": "11c74e8fdc684fb1efd0140b212e130e0d1bb82bd6a85c9583501a5e4a115f7b",
+    "advisorRuleFiles": [
+      "app/bim_ai/constructability_advisories.py",
+      "app/bim_ai/constructability_report.py",
+      "app/bim_ai/constraints_metadata.py",
+      "packages/web/src/advisor/advisorViolationContext.ts",
+      "packages/web/src/advisor/perspectiveFilter.ts"
+    ],
+    "irPath": "spec/target-house/target-house-1-sketch-ir.draft.json",
+    "irSha256": "cd64c22345865b1a7e0b674ebc0c15ec38433f4e561d485b4b91008b2d6f369e",
+    "capabilitiesPath": "spec/sketch-to-bim-capability-matrix.json",
+    "capabilitiesSha256": "e3faa00d4724d5e375ee853d5e3d56b21254a969a84e702d67013a8bb0125dbb"
+  },
+  "browserAutomationRequired": false,
+  "constructabilityProfile": "construction_readiness",
+  "artifacts": {
+    "snapshot": "/tmp/bim-ai-target-house-1-run/final-live-evidence/live/snapshot.json",
+    "validate": "/tmp/bim-ai-target-house-1-run/final-live-evidence/live/validate.json",
+    "evidencePackage": "/tmp/bim-ai-target-house-1-run/final-live-evidence/live/evidence-package.json",
+    "advisorError": "/tmp/bim-ai-target-house-1-run/final-live-evidence/live/advisor-error.json",
+    "advisorWarning": "/tmp/bim-ai-target-house-1-run/final-live-evidence/live/advisor-warning.json",
+    "advisorInfo": "/tmp/bim-ai-target-house-1-run/final-live-evidence/live/advisor-info.json",
+    "advisorAll": "/tmp/bim-ai-target-house-1-run/final-live-evidence/live/advisor-all.json",
+    "constructabilityReport": "/tmp/bim-ai-target-house-1-run/final-live-evidence/live/constructability-report.json",
+    "modelStats": "/tmp/bim-ai-target-house-1-run/final-live-evidence/live/model-stats.json",
+    "visualEvidenceContract": "/tmp/bim-ai-target-house-1-run/final-live-evidence/live/visual-evidence-contract.json",
+    "findingDispositions": "/tmp/bim-ai-target-house-1-run/final-live-evidence/live/finding-dispositions.json",
+    "toleranceLedger": "/tmp/bim-ai-target-house-1-run/final-live-evidence/live/tolerance-ledger.json",
+    "exportValidation": "/tmp/bim-ai-target-house-1-run/final-live-evidence/live/export-validation.json",
+    "manifest": "/tmp/bim-ai-target-house-1-run/final-live-evidence/live/evidence-manifest.json"
+  },
+  "summary": {
+    "modelStats": {
+      "modelId": "a5c6d3f6-6a76-45f2-8017-b6fa78911955",
+      "revision": 2,
+      "elementCount": 108,
+      "countsByKind": {
+        "hatch_pattern_def": 7,
+        "project_base_point": 1,
+        "asset_library_entry": 5,
+        "viewpoint": 7,
+        "room": 13,
+        "section_cut": 1,
+        "elevation_view": 5,
+        "door": 3,
+        "stair": 1,
+        "sheet": 1,
+        "wall_type": 2,
+        "level": 2,
+        "roof": 1,
+        "sun_settings": 1,
+        "family_instance": 4,
+        "schedule": 3,
+        "placed_asset": 5,
+        "internal_origin": 1,
+        "floor_type": 1,
+        "floor": 4,
+        "wall": 26,
+        "plan_view": 2,
+        "family_type": 1,
+        "roof_type": 1,
+        "roof_opening": 1,
+        "railing": 2,
+        "window": 2,
+        "slab_opening": 1,
+        "sweep": 3,
+        "wall_opening": 1
+      }
+    },
+    "advisor": {
+      "error": 0,
+      "warning": 49,
+      "info": 45
+    },
+    "constructability": {
+      "ok": true,
+      "status": 200,
+      "profile": "construction_readiness",
+      "severityCounts": {
+        "error": 14,
+        "warning": 13
+      },
+      "total": 27
+    },
+    "requiredVisualViewCount": 7,
+    "findingDispositionCount": 46,
+    "unclassifiedBlockingFindingCount": 40,
+    "toleranceLedger": {
+      "findingCount": 46,
+      "toleranceCount": 0,
+      "blockingFindingCount": 40,
+      "incompleteToleranceCount": 0
+    },
+    "exchangeValidation": {
+      "passCount": 5,
+      "warningCount": 0,
+      "errorCount": 0,
+      "plannedCount": 2
+    }
+  }
+}
