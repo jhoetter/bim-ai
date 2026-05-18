@@ -429,6 +429,7 @@ async function main() {
   const result = await runLocalLiveTarget(process.argv.slice(2));
   if (args.json) {
     console.log(JSON.stringify(result, null, 2));
+    if (!result.ok) process.exit(1);
     return;
   }
 

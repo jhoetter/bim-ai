@@ -114,6 +114,13 @@ const BLOCKING_EVIDENCE_STATUS_RE =
 const POSITIVE_EVIDENCE_STATUS_RE =
   /live|validated|passing|passed|clean|committed|executable|nonblank|artifact|manifest|done|server-side-substitute/i;
 
+const SIMPLE_HOUSE_MIN_SEMANTIC_COUNTS = {
+  walls: 6,
+  openings: 6,
+  floors: 1,
+  roofs: 1,
+};
+
 function read(relPath) {
   try {
     return fs.readFileSync(path.join(ROOT, relPath), 'utf8');
@@ -880,14 +887,16 @@ function isPositiveEvidenceStatus(status) {
 function addEvidenceSignal(signals, type, status, source, detail = '', options = {}) {
   const passes =
     typeof options.passes === 'boolean' ? options.passes : isPositiveEvidenceStatus(status);
-  signals.push({
+  const signal = {
     type,
     status: String(status ?? 'unknown'),
     source,
     detail: String(detail ?? ''),
     passes,
     reason: String(options.reason ?? (passes ? '' : evidenceRejectionReason(status, detail))),
-  });
+  };
+  if (options.proof && typeof options.proof === 'object') signal.proof = options.proof;
+  signals.push(signal);
 }
 
 function evidenceRejectionReason(status, detail = '') {
@@ -937,7 +946,221 @@ function typedBundleSurfaceOk(value, requestMode) {
   );
 }
 
-function liveExecutionRejectionReason(value, requestMode) {
+function finiteNumber(value) {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : null;
+}
+
+function countFromMaybeObject(value, keys = ['count', 'total']) {
+  if (value === null || value === undefined) return null;
+  if (typeof value === 'number' || typeof value === 'string') return finiteNumber(value);
+  if (typeof value !== 'object') return null;
+  for (const key of keys) {
+    const parsed = finiteNumber(value[key]);
+    if (parsed !== null) return parsed;
+  }
+  return null;
+}
+
+function normalizedKindCount(countsByKind, matchers) {
+  if (!countsByKind || typeof countsByKind !== 'object' || Array.isArray(countsByKind)) return 0;
+  let count = 0;
+  for (const [kind, rawCount] of Object.entries(countsByKind)) {
+    const normalized = normalizedId(kind);
+    if (!matchers.some((matcher) => matcher.test(normalized))) continue;
+    const parsed = finiteNumber(rawCount);
+    if (parsed !== null) count += parsed;
+  }
+  return count;
+}
+
+function semanticCountsFrom(value) {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return null;
+  const source =
+    value.semanticCounts && typeof value.semanticCounts === 'object'
+      ? value.semanticCounts
+      : value.counts && typeof value.counts === 'object'
+        ? value.counts
+        : value;
+  const countsByKind =
+    source.countsByKind ??
+    source.elementCountsByKind ??
+    source.kindCounts ??
+    source.elementsByKind ??
+    null;
+  const walls =
+    countFromMaybeObject(source.walls) ??
+    countFromMaybeObject(source.wall) ??
+    normalizedKindCount(countsByKind, [/wall/]);
+  const openings =
+    countFromMaybeObject(source.openings) ??
+    countFromMaybeObject(source.opening) ??
+    (() => {
+      const doors = countFromMaybeObject(source.doors) ?? countFromMaybeObject(source.door) ?? 0;
+      const windows =
+        countFromMaybeObject(source.windows) ?? countFromMaybeObject(source.window) ?? 0;
+      const hosted = countFromMaybeObject(source.hosted);
+      const fromKinds = normalizedKindCount(countsByKind, [/opening/, /door/, /window/]);
+      return Math.max(doors + windows, hosted ?? 0, fromKinds);
+    })();
+  const floors =
+    countFromMaybeObject(source.floors) ??
+    countFromMaybeObject(source.floor) ??
+    normalizedKindCount(countsByKind, [/floor/, /slab/]);
+  const roofs =
+    countFromMaybeObject(source.roofs) ??
+    countFromMaybeObject(source.roof) ??
+    normalizedKindCount(countsByKind, [/roof/]);
+
+  if ([walls, openings, floors, roofs].every((count) => count === null || count === 0)) {
+    return null;
+  }
+  return {
+    walls: walls ?? 0,
+    openings: openings ?? 0,
+    floors: floors ?? 0,
+    roofs: roofs ?? 0,
+  };
+}
+
+function simpleHouseSemanticCountsOk(counts) {
+  return (
+    counts &&
+    Object.entries(SIMPLE_HOUSE_MIN_SEMANTIC_COUNTS).every(
+      ([key, minimum]) => Number(counts[key] ?? 0) >= minimum,
+    )
+  );
+}
+
+function collectChangedIds(value, seen = new Set()) {
+  if (!value || typeof value !== 'object') return [];
+  if (seen.has(value)) return [];
+  seen.add(value);
+  const ids = new Set();
+  for (const [key, child] of Object.entries(value)) {
+    if (/^changed(Element)?Ids$/i.test(key) && Array.isArray(child)) {
+      for (const id of child) ids.add(String(id));
+      continue;
+    }
+    if (child && typeof child === 'object') {
+      for (const id of collectChangedIds(child, seen)) ids.add(id);
+    }
+  }
+  return [...ids].sort();
+}
+
+function semanticProofCandidates(value, context = value) {
+  const roots = [value, context].filter((item, index, items) => {
+    return item && typeof item === 'object' && items.indexOf(item) === index;
+  });
+  const candidates = [];
+  for (const root of roots) {
+    candidates.push(
+      ['changedModelProof', root.changedModelProof],
+      ['changedSimpleHouseProof', root.changedSimpleHouseProof],
+      ['simpleHouseSemanticProof', root.simpleHouseSemanticProof],
+      ['simpleHouseProof', root.simpleHouseProof],
+      ['committedModelProof', root.committedModelProof],
+      ['semanticProof', root.semanticProof],
+      ['postCommit.snapshot.summary', root.postCommit?.snapshot?.summary],
+      ['snapshotSummary.snapshot', root.snapshotSummary?.snapshot],
+      ['snapshotSummary', root.snapshotSummary],
+      ['source.changedModelProof', root.source?.changedModelProof],
+      ['source.simpleHouseSemanticProof', root.source?.simpleHouseSemanticProof],
+      ['committedEvidence.changedModelProof', root.committedEvidence?.changedModelProof],
+      [
+        'committedEvidence.changedSimpleHouseProof',
+        root.committedEvidence?.changedSimpleHouseProof,
+      ],
+      [
+        'committedEvidence.simpleHouseSemanticProof',
+        root.committedEvidence?.simpleHouseSemanticProof,
+      ],
+      [
+        'committedEvidence.snapshotSummary.snapshot',
+        root.committedEvidence?.snapshotSummary?.snapshot,
+      ],
+      ['committedEvidence.snapshotSummary', root.committedEvidence?.snapshotSummary],
+      [
+        'committedEvidence.source.changedModelProof',
+        root.committedEvidence?.source?.changedModelProof,
+      ],
+      ['visual.changedModelProof', root.visual?.changedModelProof],
+      ['visual.source.changedModelProof', root.visual?.source?.changedModelProof],
+      ['exports.changedModelProof', root.exports?.changedModelProof],
+      ['exports.source.changedModelProof', root.exports?.source?.changedModelProof],
+    );
+  }
+  return candidates.filter(([, candidate]) => candidate && typeof candidate === 'object');
+}
+
+function changedSimpleHouseProof(value, context = value) {
+  const changedIds = collectChangedIds({ value, context });
+  if (!changedIds.length) {
+    return { ok: false, changedIds, reason: 'changed ids are absent' };
+  }
+  for (const [source, candidate] of semanticProofCandidates(value, context)) {
+    const counts = semanticCountsFrom(candidate);
+    if (simpleHouseSemanticCountsOk(counts)) {
+      return {
+        ok: true,
+        changedIds,
+        counts,
+        source,
+      };
+    }
+  }
+  return {
+    ok: false,
+    changedIds,
+    reason:
+      'simple-house semantic counts are absent or below expected wall/opening/floor/roof counts',
+  };
+}
+
+function simpleHouseRequestProof(value, context = value) {
+  const candidates = [value, context].filter(Boolean);
+  const commandCounts = candidates
+    .flatMap((candidate) => [
+      candidate?.request?.commandCount,
+      candidate?.commandCount,
+      candidate?.request?.commands?.length,
+      candidate?.commands?.length,
+    ])
+    .map(finiteNumber)
+    .filter((count) => count !== null);
+  const commandCount = commandCounts.length ? Math.max(...commandCounts) : 0;
+  const commandTypes = [
+    ...new Set(
+      candidates.flatMap((candidate) => [
+        ...(Array.isArray(candidate?.request?.commandTypes) ? candidate.request.commandTypes : []),
+        ...(Array.isArray(candidate?.commandTypes) ? candidate.commandTypes : []),
+        ...(Array.isArray(candidate?.request?.commands)
+          ? candidate.request.commands.map((command) => command?.type).filter(Boolean)
+          : []),
+        ...(Array.isArray(candidate?.commands)
+          ? candidate.commands.map((command) => command?.type).filter(Boolean)
+          : []),
+      ]),
+    ),
+  ].sort();
+  const hasCoreSemanticCommands = [
+    'createWallChain',
+    'createFloor',
+    'createRoof',
+    'insertDoorOnWall',
+    'insertWindowOnWall',
+  ].every((type) => commandTypes.includes(type));
+  const ok = commandCount >= 20 || hasCoreSemanticCommands;
+  return {
+    ok,
+    commandCount,
+    commandTypes: commandTypes.slice(0, 20),
+    reason: ok ? '' : 'simple-house command count/types are absent',
+  };
+}
+
+function liveExecutionRejectionReason(value, requestMode, context = value) {
   if (!value || typeof value !== 'object') return 'live execution artifact is missing or invalid';
   const status = statusAt(value);
   if (isBlockingEvidenceStatus(status)) return evidenceRejectionReason(status);
@@ -954,8 +1177,14 @@ function liveExecutionRejectionReason(value, requestMode) {
   if (!Number.isFinite(commandCount) || commandCount <= 0) {
     return 'live execution artifact does not include a command payload count';
   }
+  if (requestMode === 'dry_run' && !simpleHouseRequestProof(value, context).ok) {
+    return 'live dry-run artifact does not include simple-house command intent proof';
+  }
   if (requestMode === 'commit') {
-    const changedIds = Array.isArray(value.response?.changedIds) ? value.response.changedIds : [];
+    const changedIds = collectChangedIds(value);
+    if (!changedIds.length) {
+      return 'live commit artifact does not include changed ids';
+    }
     const hasCommitResponseProof =
       value.response?.applied === true ||
       value.response?.newRevision !== null ||
@@ -976,14 +1205,18 @@ function liveExecutionRejectionReason(value, requestMode) {
     ) {
       return 'live commit artifact does not include a clean post-commit snapshot summary';
     }
+    const proof = changedSimpleHouseProof(value, context);
+    if (!proof.ok) {
+      return `live commit artifact does not include changed simple-house semantic proof: ${proof.reason}`;
+    }
   }
   return '';
 }
 
-function executionOk(value, requestMode = null) {
+function executionOk(value, requestMode = null, context = value) {
   if (!value || typeof value !== 'object') return false;
-  if (requestMode) return liveExecutionRejectionReason(value, requestMode) === '';
-  return value.ok === true && liveExecutionRejectionReason(value, 'dry_run') === '';
+  if (requestMode) return liveExecutionRejectionReason(value, requestMode, context) === '';
+  return value.ok === true && liveExecutionRejectionReason(value, 'dry_run', context) === '';
 }
 
 function validationClean(validation) {
@@ -1045,17 +1278,21 @@ function semanticDiffClean(diff) {
   return Array.isArray(differences) && differences.length === 0;
 }
 
-function visualEvidenceClean(value) {
+function visualEvidenceClean(value, context = value) {
   if (!value || typeof value !== 'object') return false;
   if (/^(unavailable|invalid|failed|blank-artifact)$/i.test(statusAt(value))) return false;
   if (value.stale === true || value.isStale === true || value.fresh === false) return false;
+  if (!changedSimpleHouseProof(value, context).ok) return false;
   const raster =
     value.sheetPrintRaster && typeof value.sheetPrintRaster === 'object'
       ? value.sheetPrintRaster
       : value;
   if (/^(unavailable|invalid|failed|blank-artifact)$/i.test(statusAt(raster))) return false;
+  if (raster.pass === false || raster.ok === false || raster.nonblankProof?.ok === false) {
+    return false;
+  }
   const rasterText = JSON.stringify(raster);
-  if (/stub|mock|placeholder|todo|blank|invalid|failed/i.test(rasterText)) {
+  if (/stub|mock/i.test(rasterText)) {
     return false;
   }
   if (value.nonblankProof?.ok === true || value.sheetPrintRaster?.nonblankProof?.ok === true) {
@@ -1070,9 +1307,10 @@ function visualEvidenceClean(value) {
   return false;
 }
 
-function exportEvidenceClean(value) {
+function exportEvidenceClean(value, context = value) {
   if (!value || typeof value !== 'object') return false;
   if (/^(unavailable|invalid|failed|blank-artifact)$/i.test(statusAt(value))) return false;
+  if (!changedSimpleHouseProof(value, context).ok) return false;
   const candidates = [
     ...Object.values(value.manifests ?? {}),
     ...Object.values(value.artifacts ?? {}),
@@ -1087,16 +1325,17 @@ function exportEvidenceClean(value) {
   });
 }
 
-function committedAdvisorValidationClean(value) {
+function committedAdvisorValidationClean(value, context = value) {
   if (!value || typeof value !== 'object') return false;
   if (value.ok === false) return false;
   if (isBlockingEvidenceStatus(statusAt(value))) return false;
+  if (!changedSimpleHouseProof(value, context).ok) return false;
   if (value.validationPass === true && value.advisorPass === true) return true;
   if (value.validationResult?.pass === true && value.advisorResult?.pass === true) return true;
   return validationClean(value.validation) && advisorClean(value.advisor);
 }
 
-function committedAdvisorValidationRejectionReason(value) {
+function committedAdvisorValidationRejectionReason(value, context = value) {
   if (!value || typeof value !== 'object') {
     return 'committed advisor/validation artifact is missing or invalid';
   }
@@ -1109,10 +1348,14 @@ function committedAdvisorValidationRejectionReason(value) {
   if (value.advisorPass === false || value.advisorResult?.pass === false) {
     return 'committed advisor evidence did not pass';
   }
+  const proof = changedSimpleHouseProof(value, context);
+  if (!proof.ok) {
+    return `committed advisor/validation artifact does not include changed simple-house semantic proof: ${proof.reason}`;
+  }
   return 'committed advisor/validation artifact is not clean';
 }
 
-function visualEvidenceRejectionReason(value) {
+function visualEvidenceRejectionReason(value, context = value) {
   if (!value || typeof value !== 'object') return 'visual/render artifact is missing or invalid';
   const raster =
     value.sheetPrintRaster && typeof value.sheetPrintRaster === 'object'
@@ -1121,20 +1364,28 @@ function visualEvidenceRejectionReason(value) {
   if (/^(unavailable|invalid|failed|blank-artifact)$/i.test(statusAt(raster))) {
     return evidenceRejectionReason(statusAt(raster));
   }
+  if (raster.pass === false || raster.ok === false || raster.nonblankProof?.ok === false) {
+    return 'visual/render artifact is blank, invalid, or failed';
+  }
   const rasterText = JSON.stringify(raster);
   if (/stub|mock/i.test(rasterText)) return 'visual/render artifact is a stub or mocked raster';
-  if (/blank|invalid|failed/i.test(rasterText)) {
-    return 'visual/render artifact is blank, invalid, or failed';
+  const proof = changedSimpleHouseProof(value, context);
+  if (!proof.ok) {
+    return `visual/render artifact does not include changed simple-house semantic proof: ${proof.reason}`;
   }
   return 'visual/render artifact does not include clean nonblank proof';
 }
 
-function exportEvidenceRejectionReason(value) {
+function exportEvidenceRejectionReason(value, context = value) {
   if (!value || typeof value !== 'object') return 'export artifact is missing or invalid';
   if (/^(unavailable|invalid|failed|blank-artifact)$/i.test(statusAt(value))) {
     return evidenceRejectionReason(statusAt(value));
   }
   if (/stub|mock/i.test(JSON.stringify(value))) return 'export artifact is a stub or mock';
+  const proof = changedSimpleHouseProof(value, context);
+  if (!proof.ok) {
+    return `export artifact does not include changed simple-house semantic proof: ${proof.reason}`;
+  }
   return 'export artifact/manifest evidence is unavailable or not clean';
 }
 
@@ -1191,7 +1442,8 @@ function collectJsonEvidenceSignals(value, source) {
   if (/execution-evidence|live-dry-run-evidence|benchmark-result/i.test(sourceName)) {
     const mode = String(liveDryRun.mode ?? execution.mode ?? value.mode ?? '');
     if (/live/i.test(mode) && /dry[-_\s]?run/i.test(mode)) {
-      const passes = executionOk(liveDryRun, 'dry_run');
+      const requestProof = simpleHouseRequestProof(liveDryRun, value);
+      const passes = executionOk(liveDryRun, 'dry_run', value);
       addEvidenceSignal(
         signals,
         'liveDryRunEvidence',
@@ -1200,7 +1452,14 @@ function collectJsonEvidenceSignals(value, source) {
         mode,
         {
           passes,
-          reason: passes ? '' : liveExecutionRejectionReason(liveDryRun, 'dry_run'),
+          reason: passes ? '' : liveExecutionRejectionReason(liveDryRun, 'dry_run', value),
+          proof: passes
+            ? {
+                simpleHouseRequestProof: true,
+                commandCount: requestProof.commandCount,
+                commandTypes: requestProof.commandTypes,
+              }
+            : undefined,
         },
       );
     }
@@ -1209,7 +1468,8 @@ function collectJsonEvidenceSignals(value, source) {
   if (/execution-evidence|live-commit-evidence|benchmark-result/i.test(sourceName)) {
     const mode = String(liveCommit.mode ?? execution.mode ?? value.mode ?? '');
     if (/live/i.test(mode) && /commit/i.test(mode)) {
-      const passes = executionOk(liveCommit, 'commit');
+      const proof = changedSimpleHouseProof(liveCommit, value);
+      const passes = executionOk(liveCommit, 'commit', value);
       addEvidenceSignal(
         signals,
         'liveCommitEvidence',
@@ -1218,7 +1478,15 @@ function collectJsonEvidenceSignals(value, source) {
         mode,
         {
           passes,
-          reason: passes ? '' : liveExecutionRejectionReason(liveCommit, 'commit'),
+          reason: passes ? '' : liveExecutionRejectionReason(liveCommit, 'commit', value),
+          proof: passes
+            ? {
+                changedSimpleHouseModel: true,
+                changedIds: proof.changedIds,
+                counts: proof.counts,
+                source: proof.source,
+              }
+            : undefined,
         },
       );
     }
@@ -1234,7 +1502,8 @@ function collectJsonEvidenceSignals(value, source) {
       /committed|post[-_\s]?commit/i.test(`${committedMode} ${statusText}`) ||
       /advisor-validation/i.test(sourceName)
     ) {
-      const passes = committedAdvisorValidationClean(committed);
+      const proof = changedSimpleHouseProof(committed, value);
+      const passes = committedAdvisorValidationClean(committed, value);
       addEvidenceSignal(
         signals,
         'committedAdvisorValidation',
@@ -1243,7 +1512,15 @@ function collectJsonEvidenceSignals(value, source) {
         committedMode || 'committed advisor/validation artifact',
         {
           passes,
-          reason: passes ? '' : committedAdvisorValidationRejectionReason(committed),
+          reason: passes ? '' : committedAdvisorValidationRejectionReason(committed, value),
+          proof: passes
+            ? {
+                changedSimpleHouseModel: true,
+                changedIds: proof.changedIds,
+                counts: proof.counts,
+                source: proof.source,
+              }
+            : undefined,
         },
       );
     }
@@ -1255,7 +1532,8 @@ function collectJsonEvidenceSignals(value, source) {
       `${sourceName} ${statusText}`,
     );
     if (claimsVisual) {
-      const passes = visualEvidenceClean(visual);
+      const proof = changedSimpleHouseProof(visual, value);
+      const passes = visualEvidenceClean(visual, value);
       addEvidenceSignal(
         signals,
         'visualRenderEvidence',
@@ -1264,7 +1542,15 @@ function collectJsonEvidenceSignals(value, source) {
         'visual/render evidence artifact',
         {
           passes,
-          reason: passes ? '' : visualEvidenceRejectionReason(visual),
+          reason: passes ? '' : visualEvidenceRejectionReason(visual, value),
+          proof: passes
+            ? {
+                changedSimpleHouseModel: true,
+                changedIds: proof.changedIds,
+                counts: proof.counts,
+                source: proof.source,
+              }
+            : undefined,
         },
       );
     }
@@ -1276,7 +1562,8 @@ function collectJsonEvidenceSignals(value, source) {
       `${sourceName} ${statusText}`,
     );
     if (claimsExport) {
-      const passes = exportEvidenceClean(exports);
+      const proof = changedSimpleHouseProof(exports, value);
+      const passes = exportEvidenceClean(exports, value);
       addEvidenceSignal(
         signals,
         'exportEvidence',
@@ -1285,7 +1572,15 @@ function collectJsonEvidenceSignals(value, source) {
         'export evidence artifact',
         {
           passes,
-          reason: passes ? '' : exportEvidenceRejectionReason(exports),
+          reason: passes ? '' : exportEvidenceRejectionReason(exports, value),
+          proof: passes
+            ? {
+                changedSimpleHouseModel: true,
+                changedIds: proof.changedIds,
+                counts: proof.counts,
+                source: proof.source,
+              }
+            : undefined,
         },
       );
     }
@@ -2268,6 +2563,7 @@ function buildAudit() {
       'Unknown or missing metadata is emitted as "unknown" rather than guessed.',
       'Benchmark expected-semantics markers are documentation signals only; M2 closure gates require clean machine-readable artifact JSON.',
       'M2 closure gates classify evidence statuses conservatively: todo, placeholder, optional, fixture, stale, failed, traceability-only, and capable statuses remain blockers even when they mention live execution.',
+      'Wave 6 closure evidence must carry simple-house semantic proof: live dry-run needs command intent, and commit/advisor/visual/export artifacts need changed ids plus committed wall/opening/floor/roof counts.',
       'M2 evidence artifacts are discovered as matching JSON files below benchmark directories and spec/generated; docs, traceability-only files, and generated audit ledgers are not passing evidence.',
     ],
     summary: {

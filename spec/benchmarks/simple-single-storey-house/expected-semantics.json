@@ -141,6 +141,12 @@
         "warningCountsField": "warningCounts",
         "infoCountsField": "infoCounts",
         "sourceModelRevisionFields": ["modelId", "revision", "source.modelId", "source.revision"],
+        "semanticSourceChecksField": "semanticSourceChecks",
+        "semanticSourceChecksRequire": [
+          "expected simple-house counts from committed snapshot or summary",
+          "no contradictory committed snapshot or summary counts",
+          "no missing expected ssh-* ids when semantic ids are exposed"
+        ],
         "missingCaptureEvidenceKind": "missing-committed-live-artifact",
         "warningsAndInfoAreNonBlocking": true
       },

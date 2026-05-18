@@ -1,0 +1,95 @@
+{
+  "benchmarkId": "simple-single-storey-house",
+  "commandCount": 28,
+  "commandSurfaceUsage": {
+    "createLevel": 1,
+    "upsertWallType": 2,
+    "upsertFloorType": 1,
+    "upsertRoofType": 1,
+    "upsertFamilyType": 2,
+    "createFloor": 1,
+    "createWallChain": 2,
+    "insertDoorOnWall": 3,
+    "insertWindowOnWall": 3,
+    "createRoomOutline": 3,
+    "createRoof": 1,
+    "saveViewpoint": 1,
+    "create_schedule_view": 1,
+    "CreateSheet": 1,
+    "PlaceViewOnSheet": 2,
+    "placeTag": 1,
+    "createDimension": 2
+  },
+  "levels": {
+    "count": 1,
+    "ids": ["ssh-lvl-ground"],
+    "elevationsMm": {
+      "ssh-lvl-ground": 0
+    }
+  },
+  "walls": {
+    "total": 6,
+    "exterior": 4,
+    "interior": 2,
+    "ids": [
+      "ssh-wall-bath",
+      "ssh-wall-east",
+      "ssh-wall-hall-bedroom",
+      "ssh-wall-north",
+      "ssh-wall-south",
+      "ssh-wall-west"
+    ]
+  },
+  "rooms": {
+    "count": 3,
+    "names": ["Bedroom", "Kitchen", "Living / Dining"],
+    "targetAreaM2": {
+      "ssh-room-living": 48,
+      "ssh-room-bedroom": 17.6,
+      "ssh-room-kitchen": 14.4
+    },
+    "computedAreaM2": {
+      "ssh-room-living": 48,
+      "ssh-room-bedroom": 17.6,
+      "ssh-room-kitchen": 14.4
+    }
+  },
+  "openings": {
+    "doors": 3,
+    "windows": 3,
+    "hosted": 6,
+    "missingHost": [],
+    "missingFamilyType": []
+  },
+  "floors": {
+    "count": 1,
+    "ids": ["ssh-floor-ground"],
+    "roomBounded": true
+  },
+  "roofs": {
+    "count": 1,
+    "ids": ["ssh-roof-main"],
+    "geometryModes": ["gable"]
+  },
+  "views": {
+    "plan": 1,
+    "threeD": 1,
+    "ids": ["ssh-view-3d", "ssh-view-ground-plan"]
+  },
+  "sheets": {
+    "count": 1,
+    "ids": ["ssh-sheet-a101"],
+    "placedViewsBySheet": {
+      "ssh-sheet-a101": ["ssh-view-ground-plan", "ssh-view-3d"]
+    }
+  },
+  "schedules": {
+    "count": 1,
+    "ids": ["ssh-schedule-openings"],
+    "categories": ["opening"]
+  },
+  "annotations": {
+    "tags": 1,
+    "dimensions": 2
+  }
+}

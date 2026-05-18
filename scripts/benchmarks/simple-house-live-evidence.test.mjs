@@ -9,6 +9,19 @@ import { deflateSync } from 'node:zlib';
 
 import { runLiveEvidence } from './simple-house-live-evidence.mjs';
 
+const SIMPLE_HOUSE_EXPORT_COUNTS_BY_KIND = {
+  wall: 6,
+  floor: 1,
+  roof: 1,
+  door: 3,
+  window: 3,
+  room: 3,
+};
+const SIMPLE_HOUSE_EXPORTED_KIND_COUNT = Object.values(SIMPLE_HOUSE_EXPORT_COUNTS_BY_KIND).reduce(
+  (total, count) => total + count,
+  0,
+);
+
 function listen(server) {
   return new Promise((resolve, reject) => {
     server.once('error', reject);
@@ -80,7 +93,75 @@ function makePng(width, height) {
   ]);
 }
 
-function createEvidenceServer() {
+function simpleHouseSnapshotElements() {
+  return {
+    'ssh-lvl-ground': { id: 'ssh-lvl-ground', kind: 'level' },
+    'ssh-wall-south': { id: 'ssh-wall-south', kind: 'wall' },
+    'ssh-wall-east': { id: 'ssh-wall-east', kind: 'wall' },
+    'ssh-wall-north': { id: 'ssh-wall-north', kind: 'wall' },
+    'ssh-wall-west': { id: 'ssh-wall-west', kind: 'wall' },
+    'ssh-wall-hall-bedroom': { id: 'ssh-wall-hall-bedroom', kind: 'wall' },
+    'ssh-wall-bath': { id: 'ssh-wall-bath', kind: 'wall' },
+    'ssh-floor-ground': { id: 'ssh-floor-ground', kind: 'floor' },
+    'ssh-roof-main': { id: 'ssh-roof-main', kind: 'roof' },
+    'ssh-room-living': { id: 'ssh-room-living', kind: 'room' },
+    'ssh-room-bedroom': { id: 'ssh-room-bedroom', kind: 'room' },
+    'ssh-room-kitchen': { id: 'ssh-room-kitchen', kind: 'room' },
+    'ssh-door-entry': { id: 'ssh-door-entry', kind: 'door' },
+    'ssh-door-bedroom': { id: 'ssh-door-bedroom', kind: 'door' },
+    'ssh-door-bath': { id: 'ssh-door-bath', kind: 'door' },
+    'ssh-window-living': { id: 'ssh-window-living', kind: 'window' },
+    'ssh-window-kitchen': { id: 'ssh-window-kitchen', kind: 'window' },
+    'ssh-window-bedroom': { id: 'ssh-window-bedroom', kind: 'window' },
+    'ssh-view-ground-plan': { id: 'ssh-view-ground-plan', kind: 'plan_view' },
+    'ssh-view-3d': { id: 'ssh-view-3d', kind: 'viewpoint' },
+    'ssh-sheet-a101': { id: 'ssh-sheet-a101', kind: 'sheet' },
+    'ssh-schedule-openings': { id: 'ssh-schedule-openings', kind: 'schedule' },
+  };
+}
+
+function simpleHouseSummary(revision) {
+  return {
+    modelId: 'model-disposable',
+    revision,
+    summary: {
+      levels: { count: 1 },
+      walls: { total: 6 },
+      floors: { count: 1 },
+      roofs: { count: 1 },
+      rooms: { count: 3 },
+      openings: { hosted: 6, doors: 3, windows: 3 },
+      views: { plan: 1, threeD: 1 },
+      sheets: { count: 1 },
+      schedules: { count: 1 },
+    },
+  };
+}
+
+function createEvidenceServer({
+  commitChangedIds = [
+    'ssh-wall-south',
+    'ssh-wall-east',
+    'ssh-wall-north',
+    'ssh-wall-west',
+    'ssh-wall-hall-bedroom',
+    'ssh-wall-bath',
+    'ssh-floor-ground',
+    'ssh-roof-main',
+    'ssh-room-living',
+    'ssh-room-bedroom',
+    'ssh-room-kitchen',
+    'ssh-door-entry',
+    'ssh-door-bedroom',
+    'ssh-door-bath',
+    'ssh-window-living',
+    'ssh-window-kitchen',
+    'ssh-window-bedroom',
+  ],
+  snapshotElements = simpleHouseSnapshotElements(),
+  committedRevision = 2,
+  summaryBody = simpleHouseSummary(committedRevision),
+} = {}) {
   const requests = [];
   const pngBytes = makePng(128, 112);
   const pngSha256 = createHash('sha256').update(pngBytes).digest('hex');
@@ -104,9 +185,9 @@ function createEvidenceServer() {
         ok: true,
         applied: body.mode === 'commit',
         wouldRevision: body.mode === 'dry_run' ? 2 : null,
-        newRevision: body.mode === 'commit' ? 2 : null,
-        changedIds: body.mode === 'commit' ? ['ssh-wall-north'] : [],
-        checkpointSnapshotId: body.mode === 'commit' ? 'checkpoint-2' : null,
+        newRevision: body.mode === 'commit' ? committedRevision : null,
+        changedIds: body.mode === 'commit' ? commitChangedIds : [],
+        checkpointSnapshotId: body.mode === 'commit' ? `checkpoint-${committedRevision}` : null,
         violations: [],
         replayDiagnostics: { commandCount: body.bundle.commands.length },
       });
@@ -123,7 +204,7 @@ function createEvidenceServer() {
           {
             id: 1,
             userId: 'm2-p-live-evidence-runner',
-            revisionAfter: 2,
+            revisionAfter: committedRevision,
             appliedCommands: [{ type: 'createLevel' }],
           },
         ],
@@ -134,14 +215,14 @@ function createEvidenceServer() {
     if (request.method === 'GET' && request.url === '/api/models/model-disposable/snapshot') {
       writeJson(response, 200, {
         modelId: 'model-disposable',
-        revision: 2,
-        elements: { 'ssh-wall-north': { id: 'ssh-wall-north', kind: 'wall' } },
+        revision: committedRevision,
+        elements: snapshotElements,
       });
       return;
     }
 
     if (request.method === 'GET' && request.url === '/api/models/model-disposable/summary') {
-      writeJson(response, 200, { modelId: 'model-disposable', revision: 2, summary: { walls: 1 } });
+      writeJson(response, 200, summaryBody);
       return;
     }
 
@@ -168,9 +249,15 @@ function createEvidenceServer() {
         format: 'evidencePackage_v1',
         modelId: 'model-disposable',
         revision: 2,
+        countsByKind: SIMPLE_HOUSE_EXPORT_COUNTS_BY_KIND,
         deterministicPlanViewEvidence: [{ planViewId: 'ssh-view-ground-plan' }],
         deterministic3dViewEvidence: [{ viewId: 'ssh-view-3d' }],
-        deterministicSheetEvidence: [{ sheetId: 'ssh-sheet-a101' }],
+        deterministicSheetEvidence: [
+          {
+            sheetId: 'ssh-sheet-a101',
+            viewRefs: ['plan:ssh-view-ground-plan', 'viewpoint:ssh-view-3d'],
+          },
+        ],
         recommendedPngEvidenceBackend: 'playwright_ci',
         svgRasterBackendAvailable: true,
       });
@@ -182,7 +269,9 @@ function createEvidenceServer() {
       request.url === '/api/models/model-disposable/exports/gltf-manifest'
     ) {
       writeJson(response, 200, {
-        extensions: { BIM_AI_exportManifest_v0: { countsByKind: { wall: 1 } } },
+        extensions: {
+          BIM_AI_exportManifest_v0: { countsByKind: SIMPLE_HOUSE_EXPORT_COUNTS_BY_KIND },
+        },
       });
       return;
     }
@@ -193,7 +282,7 @@ function createEvidenceServer() {
     ) {
       writeJson(response, 200, {
         format: 'ifc_manifest_v0',
-        exportedIfcKindsInArtifact: { IfcWall: 1 },
+        exportedIfcKindsInArtifact: SIMPLE_HOUSE_EXPORT_COUNTS_BY_KIND,
       });
       return;
     }
@@ -374,18 +463,76 @@ test('live evidence runner commits only with explicit opt-in against disposable 
       assert.equal(liveCommit.revision.parentRevision, 1);
       assert.equal(liveCommit.revision.newRevision, 2);
       assert.equal(liveCommit.revision.commandLogRevisionAfter, 2);
-      assert.deepEqual(liveCommit.changedIds, ['ssh-wall-north']);
+      assert.ok(liveCommit.changedIds.includes('ssh-wall-north'));
+      assert.equal(liveCommit.changedIds.length, 17);
       assert.equal(liveCommit.secrets.containsSecrets, false);
+      assert.equal(liveCommit.semanticClosure.status, 'committed-simple-house-semantics-clean');
+      assert.equal(liveCommit.semanticClosure.pass, true);
+      assert.equal(liveCommit.semanticClosure.counts.walls, 6);
+      assert.equal(liveCommit.semanticClosure.counts.openings, 6);
       assert.equal(execution.clean, true);
       assert.equal(execution.pass, true);
       assert.equal(execution.liveCommit.status, 'live-commit-clean');
       assert.equal(commandLog.latest[0].appliedCommandCount, 1);
-      assert.equal(snapshot.countsByKind.wall, 1);
+      assert.equal(snapshot.countsByKind.wall, 6);
+      assert.equal(snapshot.countsByKind.floor, 1);
+      assert.equal(snapshot.countsByKind.roof, 1);
+      assert.equal(snapshot.countsByKind.room, 3);
       assert.equal(visual.pass, true);
       assert.equal(visual.sheetPrintRaster.widthPx, 128);
       assert.equal(visual.sheetPrintRaster.heightPx, 112);
       assert.equal(exports.pass, true);
-      assert.equal(exports.manifests.ifc.summary.exportedKindCount, 1);
+      assert.equal(
+        exports.manifests.ifc.summary.exportedKindCount,
+        SIMPLE_HOUSE_EXPORTED_KIND_COUNT,
+      );
+    });
+  } finally {
+    await close(server);
+  }
+});
+
+test('live evidence runner rejects ok commit with starter-only snapshot and empty changed ids', async () => {
+  const { server } = createEvidenceServer({
+    committedRevision: 1,
+    commitChangedIds: [],
+    snapshotElements: {
+      starter: { id: 'starter', kind: 'level' },
+    },
+    summaryBody: {
+      modelId: 'model-disposable',
+      revision: 2,
+      summary: { levels: { count: 1 } },
+    },
+  });
+  const address = await listen(server);
+  try {
+    await withTempDir('simple-house-live-runner-semantic-fail-', async (outDir) => {
+      const result = await runLiveEvidence([
+        '--base-url',
+        `http://${address.address}:${address.port}`,
+        '--project-id',
+        'project-1',
+        '--out-dir',
+        outDir,
+        '--commit-live',
+      ]);
+
+      assert.equal(result.ok, false);
+      assert.equal(result.pass, false);
+      assert.equal(result.semanticClosure.status, 'committed-simple-house-semantics-not-clean');
+      assert.equal(result.semanticClosure.pass, false);
+      assert.equal(
+        result.semanticClosure.checks.find((check) => check.id === 'commit-changed-ids').pass,
+        false,
+      );
+      assert.equal(
+        result.semanticClosure.checks.find((check) => check.id === 'committed-walls-count').pass,
+        false,
+      );
+      assert.equal(result.semanticClosure.counts.walls, 0);
+      assert.equal(result.semanticClosure.counts.openings, 0);
+      assert.deepEqual(await fs.readdir(outDir), []);
     });
   } finally {
     await close(server);

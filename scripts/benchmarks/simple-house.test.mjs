@@ -9,6 +9,19 @@ import { deflateSync } from 'node:zlib';
 
 import { runBenchmark } from './simple-house.mjs';
 
+const SIMPLE_HOUSE_EXPORT_COUNTS_BY_KIND = {
+  wall: 6,
+  floor: 1,
+  roof: 1,
+  door: 3,
+  window: 3,
+  room: 3,
+};
+const SIMPLE_HOUSE_EXPORTED_KIND_COUNT = Object.values(SIMPLE_HOUSE_EXPORT_COUNTS_BY_KIND).reduce(
+  (total, count) => total + count,
+  0,
+);
+
 function listen(server) {
   return new Promise((resolve, reject) => {
     server.once('error', reject);
@@ -85,6 +98,72 @@ function makePng(width, height) {
   ]);
 }
 
+function simpleHouseSnapshotBody(modelId) {
+  return {
+    modelId,
+    revision: 3,
+    elements: {
+      'ssh-lvl-ground': { id: 'ssh-lvl-ground', kind: 'level' },
+      'ssh-view-ground-plan': { id: 'ssh-view-ground-plan', kind: 'view' },
+      'ssh-wall-south': { id: 'ssh-wall-south', kind: 'wall' },
+      'ssh-wall-east': { id: 'ssh-wall-east', kind: 'wall' },
+      'ssh-wall-north': { id: 'ssh-wall-north', kind: 'wall' },
+      'ssh-wall-west': { id: 'ssh-wall-west', kind: 'wall' },
+      'ssh-wall-hall-bedroom': { id: 'ssh-wall-hall-bedroom', kind: 'wall' },
+      'ssh-wall-bath': { id: 'ssh-wall-bath', kind: 'wall' },
+      'ssh-door-entry': { id: 'ssh-door-entry', kind: 'opening' },
+      'ssh-door-bedroom': { id: 'ssh-door-bedroom', kind: 'opening' },
+      'ssh-door-bath': { id: 'ssh-door-bath', kind: 'opening' },
+      'ssh-window-living': { id: 'ssh-window-living', kind: 'opening' },
+      'ssh-window-kitchen': { id: 'ssh-window-kitchen', kind: 'opening' },
+      'ssh-window-bedroom': { id: 'ssh-window-bedroom', kind: 'opening' },
+      'ssh-room-living': { id: 'ssh-room-living', kind: 'room' },
+      'ssh-room-bedroom': { id: 'ssh-room-bedroom', kind: 'room' },
+      'ssh-room-kitchen': { id: 'ssh-room-kitchen', kind: 'room' },
+      'ssh-floor-ground': { id: 'ssh-floor-ground', kind: 'floor' },
+      'ssh-roof-main': { id: 'ssh-roof-main', kind: 'roof' },
+      'ssh-view-3d': { id: 'ssh-view-3d', kind: 'view' },
+      'ssh-schedule-openings': { id: 'ssh-schedule-openings', kind: 'schedule' },
+      'ssh-sheet-a101': { id: 'ssh-sheet-a101', kind: 'sheet' },
+      'ssh-tag-living': { id: 'ssh-tag-living', kind: 'tag' },
+      'ssh-dim-overall-width': { id: 'ssh-dim-overall-width', kind: 'dimension' },
+      'ssh-dim-overall-depth': { id: 'ssh-dim-overall-depth', kind: 'dimension' },
+    },
+  };
+}
+
+function simpleHouseSummaryBody(modelId) {
+  return {
+    modelId,
+    revision: 3,
+    summary: {
+      levels: { count: 1, ids: ['ssh-lvl-ground'] },
+      walls: {
+        total: 6,
+        ids: [
+          'ssh-wall-south',
+          'ssh-wall-east',
+          'ssh-wall-north',
+          'ssh-wall-west',
+          'ssh-wall-hall-bedroom',
+          'ssh-wall-bath',
+        ],
+      },
+      rooms: {
+        count: 3,
+        ids: ['ssh-room-living', 'ssh-room-bedroom', 'ssh-room-kitchen'],
+      },
+      openings: { doors: 3, windows: 3 },
+      floors: { count: 1, ids: ['ssh-floor-ground'] },
+      roofs: { count: 1, ids: ['ssh-roof-main'] },
+      views: { plan: 1, threeD: 1, ids: ['ssh-view-ground-plan', 'ssh-view-3d'] },
+      sheets: { count: 1, ids: ['ssh-sheet-a101'] },
+      schedules: { count: 1, ids: ['ssh-schedule-openings'] },
+      annotations: { tags: 1, dimensions: 2 },
+    },
+  };
+}
+
 function createCommittedEvidenceServer({
   modelId = 'model-commit',
   rasterContract = 'sheetPrintRasterPrintSurrogate_v2',
@@ -94,10 +173,13 @@ function createCommittedEvidenceServer({
   rasterDeclaredHeight = '112',
   rasterStatus = 200,
   gltfManifestBody = {
-    extensions: { BIM_AI_exportManifest_v0: { countsByKind: { wall: 1 } } },
+    extensions: { BIM_AI_exportManifest_v0: { countsByKind: SIMPLE_HOUSE_EXPORT_COUNTS_BY_KIND } },
   },
   gltfManifestStatus = 200,
-  ifcManifestBody = { format: 'ifc_manifest_v0', exportedIfcKindsInArtifact: { IfcWall: 1 } },
+  ifcManifestBody = {
+    format: 'ifc_manifest_v0',
+    exportedIfcKindsInArtifact: SIMPLE_HOUSE_EXPORT_COUNTS_BY_KIND,
+  },
   ifcManifestStatus = 200,
   sheetPdfBytes = Buffer.from('%PDF-1.4\n% simple-house stub\n', 'utf8'),
   sheetPdfStatus = 200,
@@ -116,6 +198,8 @@ function createCommittedEvidenceServer({
     },
     warnings: [],
   }),
+  snapshotBody = ({ modelId: id }) => simpleHouseSnapshotBody(id),
+  summaryBody = ({ modelId: id }) => simpleHouseSummaryBody(id),
 } = {}) {
   const requests = [];
   const modelPath = `/api/models/${modelId}`;
@@ -155,18 +239,11 @@ function createCommittedEvidenceServer({
       return;
     }
     if (request.method === 'GET' && request.url === `${modelPath}/snapshot`) {
-      sendJson(response, {
-        modelId,
-        revision: 3,
-        elements: {
-          'ssh-wall-north': { id: 'ssh-wall-north', kind: 'wall' },
-          'ssh-door-entry': { id: 'ssh-door-entry', kind: 'opening' },
-        },
-      });
+      sendJson(response, valueOrFactory(snapshotBody, { modelId }));
       return;
     }
     if (request.method === 'GET' && request.url === `${modelPath}/summary`) {
-      sendJson(response, { modelId, revision: 3, summary: { walls: 1 } });
+      sendJson(response, valueOrFactory(summaryBody, { modelId }));
       return;
     }
     if (request.method === 'GET' && request.url === `${modelPath}/validate`) {
@@ -178,9 +255,15 @@ function createCommittedEvidenceServer({
         format: 'evidencePackage_v1',
         modelId,
         revision: 3,
+        countsByKind: SIMPLE_HOUSE_EXPORT_COUNTS_BY_KIND,
         deterministicPlanViewEvidence: [{ planViewId: 'ssh-view-ground-plan' }],
         deterministic3dViewEvidence: [{ viewId: 'ssh-view-3d' }],
-        deterministicSheetEvidence: [{ sheetId: 'ssh-sheet-a101' }],
+        deterministicSheetEvidence: [
+          {
+            sheetId: 'ssh-sheet-a101',
+            viewRefs: ['plan:ssh-view-ground-plan', 'viewpoint:ssh-view-3d'],
+          },
+        ],
         recommendedPngEvidenceBackend: 'playwright_ci',
         svgRasterBackendAvailable: true,
       });
@@ -341,12 +424,21 @@ test('simple-house collect committed evidence writes clean advisor-validation ar
     assert.deepEqual(result.committedEvidence.warningCounts, { validation: 0, advisor: 0 });
     assert.equal(result.committedEvidence.source.modelId, 'model-clean');
     assert.equal(result.committedEvidence.source.revision, 3);
+    assert.equal(result.committedEvidence.semanticSourceChecks.pass, true);
+    assert.equal(
+      result.committedEvidence.semanticSourceChecks.status,
+      'expected-simple-house-committed-model',
+    );
+    assert.deepEqual(result.committedEvidence.semanticSourceChecks.coverageMissing, []);
+    assert.deepEqual(result.committedEvidence.semanticSourceChecks.mismatches, []);
+    assert.deepEqual(result.committedEvidence.semanticSourceChecks.idCheck.missingExpectedIds, []);
 
     const committedEvidence = JSON.parse(
       await fs.readFile(path.join(outDir, 'committed-evidence.json'), 'utf8'),
     );
     assert.equal(committedEvidence.source.modelId, 'model-clean');
     assert.equal(committedEvidence.source.revision, 3);
+    assert.equal(committedEvidence.semanticSourceChecks.pass, true);
 
     const advisorValidation = JSON.parse(
       await fs.readFile(path.join(outDir, 'advisor-validation.json'), 'utf8'),
@@ -360,7 +452,77 @@ test('simple-house collect committed evidence writes clean advisor-validation ar
     assert.equal(advisorValidation.modelId, 'model-clean');
     assert.equal(advisorValidation.revision, 3);
     assert.equal(advisorValidation.source.modelIdMatchesRequest, true);
+    assert.equal(advisorValidation.semanticSourceChecks.pass, true);
     assert.equal(advisorValidation.preflight.liveAdvisorValidationCaptured, true);
+    assert.equal(advisorValidation.preflight.semanticSourceMatchesExpected, true);
+  } finally {
+    await close(server);
+    await fs.rm(outDir, { recursive: true, force: true });
+  }
+});
+
+test('simple-house committed advisor-validation rejects starter-only semantic source', async () => {
+  const { server } = createCommittedEvidenceServer({
+    modelId: 'model-starter-only',
+    snapshotBody: ({ modelId }) => ({
+      modelId,
+      revision: 3,
+      elements: {
+        'starter-wall-1': { id: 'starter-wall-1', kind: 'wall' },
+        'starter-opening-1': { id: 'starter-opening-1', kind: 'opening' },
+      },
+    }),
+    summaryBody: ({ modelId }) => ({
+      modelId,
+      revision: 3,
+      summary: { walls: 1, openings: 1 },
+    }),
+  });
+
+  const address = await listen(server);
+  const outDir = await fs.mkdtemp(path.join(os.tmpdir(), 'simple-house-starter-only-'));
+  try {
+    const baseUrl = `http://${address.address}:${address.port}`;
+    const { result } = await runBenchmark([
+      '--mode',
+      'live',
+      '--base-url',
+      baseUrl,
+      '--model-id',
+      'model-starter-only',
+      '--parent-revision',
+      '2',
+      '--collect-committed-evidence',
+      '--out-dir',
+      outDir,
+    ]);
+
+    assert.equal(result.ok, false);
+    assert.equal(result.committedEvidence.collectionStatus, 'semantic-source-mismatch');
+    assert.equal(result.committedEvidence.validationStatus, 'pass');
+    assert.equal(result.committedEvidence.advisorStatus, 'pass');
+    assert.equal(result.committedEvidence.validationResult.pass, true);
+    assert.equal(result.committedEvidence.advisorResult.pass, true);
+    assert.equal(result.committedEvidence.validationPass, false);
+    assert.equal(result.committedEvidence.advisorPass, false);
+    assert.equal(result.committedEvidence.semanticSourceChecks.pass, false);
+    assert.equal(result.committedEvidence.semanticSourceChecks.status, 'semantic-source-mismatch');
+    assert.ok(
+      result.committedEvidence.semanticSourceChecks.mismatches.some(
+        (mismatch) => mismatch.key === 'walls' && mismatch.actual === 1,
+      ),
+    );
+    assert.ok(result.committedEvidence.semanticSourceChecks.coverageMissing.includes('rooms'));
+
+    const advisorValidation = JSON.parse(
+      await fs.readFile(path.join(outDir, 'advisor-validation.json'), 'utf8'),
+    );
+    assert.equal(advisorValidation.ok, false);
+    assert.equal(advisorValidation.validationPass, false);
+    assert.equal(advisorValidation.advisorPass, false);
+    assert.equal(advisorValidation.semanticSourceChecks.pass, false);
+    assert.equal(advisorValidation.preflight.sourceModelRevisionPresent, true);
+    assert.equal(advisorValidation.preflight.semanticSourceMatchesExpected, false);
   } finally {
     await close(server);
     await fs.rm(outDir, { recursive: true, force: true });
@@ -417,6 +579,100 @@ test('simple-house committed visual/export evidence rejects placeholders and emp
     );
     assert.equal(visual.pass, false);
     assert.equal(exports.pass, false);
+  } finally {
+    await close(server);
+    await fs.rm(outDir, { recursive: true, force: true });
+  }
+});
+
+test('simple-house committed visual evidence rejects nonblank raster from starter-only model', async () => {
+  const starterSnapshot = ({ modelId }) => ({
+    modelId,
+    revision: 3,
+    elements: {
+      'starter-wall': { id: 'starter-wall', kind: 'wall' },
+      'starter-sheet': { id: 'starter-sheet', kind: 'sheet' },
+    },
+  });
+  const starterSummary = ({ modelId }) => ({
+    modelId,
+    revision: 3,
+    summary: { walls: { total: 1 }, sheets: { count: 1 } },
+  });
+  const { server } = createCommittedEvidenceServer({
+    modelId: 'model-starter-raster',
+    snapshotBody: starterSnapshot,
+    summaryBody: starterSummary,
+  });
+
+  const address = await listen(server);
+  const outDir = await fs.mkdtemp(path.join(os.tmpdir(), 'simple-house-starter-raster-'));
+  try {
+    const baseUrl = `http://${address.address}:${address.port}`;
+    const { result } = await runBenchmark([
+      '--mode',
+      'live',
+      '--base-url',
+      baseUrl,
+      '--model-id',
+      'model-starter-raster',
+      '--parent-revision',
+      '2',
+      '--collect-committed-evidence',
+      '--out-dir',
+      outDir,
+    ]);
+
+    assert.equal(result.ok, false);
+    assert.equal(result.committedEvidence.collectionStatus, 'semantic-source-mismatch');
+    assert.equal(result.committedEvidence.visual.sheetPrintRaster.pass, true);
+    assert.equal(result.committedEvidence.visual.semanticSourcePass, false);
+    assert.equal(result.committedEvidence.visual.pass, false);
+    assert.equal(result.committedEvidence.visual.status, 'invalid');
+  } finally {
+    await close(server);
+    await fs.rm(outDir, { recursive: true, force: true });
+  }
+});
+
+test('simple-house committed export evidence rejects starter-only manifests even with PDF shell', async () => {
+  const { server } = createCommittedEvidenceServer({
+    modelId: 'model-starter-export',
+    gltfManifestBody: {
+      extensions: { BIM_AI_exportManifest_v0: { countsByKind: { wall: 1 } } },
+    },
+    ifcManifestBody: {
+      format: 'ifc_manifest_v0',
+      exportedIfcKindsInArtifact: { IfcWall: 1 },
+    },
+  });
+
+  const address = await listen(server);
+  const outDir = await fs.mkdtemp(path.join(os.tmpdir(), 'simple-house-starter-export-'));
+  try {
+    const baseUrl = `http://${address.address}:${address.port}`;
+    const { result } = await runBenchmark([
+      '--mode',
+      'live',
+      '--base-url',
+      baseUrl,
+      '--model-id',
+      'model-starter-export',
+      '--parent-revision',
+      '2',
+      '--collect-committed-evidence',
+      '--out-dir',
+      outDir,
+    ]);
+
+    assert.equal(result.ok, false);
+    assert.equal(result.committedEvidence.visual.pass, true);
+    assert.equal(result.committedEvidence.exports.pass, false);
+    assert.equal(result.committedEvidence.exports.status, 'invalid');
+    assert.equal(result.committedEvidence.exports.manifests.gltf.pass, false);
+    assert.equal(result.committedEvidence.exports.manifests.ifc.pass, false);
+    assert.equal(result.committedEvidence.exports.artifacts.sheetPdf.status, 'artifact-returned');
+    assert.equal(result.committedEvidence.exports.artifacts.sheetPdf.pass, true);
   } finally {
     await close(server);
     await fs.rm(outDir, { recursive: true, force: true });
@@ -544,7 +800,10 @@ test('simple-house live commit requires explicit flag and writes committed evide
     assert.equal(result.committedEvidence.visual.sheetPrintRaster.nonblankProof.ok, true);
     assert.equal(result.committedEvidence.exports.pass, true);
     assert.equal(result.committedEvidence.exports.manifests.gltf.pass, true);
-    assert.equal(result.committedEvidence.exports.manifests.gltf.summary.exportedKindCount, 1);
+    assert.equal(
+      result.committedEvidence.exports.manifests.gltf.summary.exportedKindCount,
+      SIMPLE_HOUSE_EXPORTED_KIND_COUNT,
+    );
     assert.equal(result.committedEvidence.exports.artifacts.sheetPdf.status, 'artifact-returned');
     assert.equal(result.executionEvidence.liveCommit.response.newRevision, 3);
     assert.deepEqual(result.executionEvidence.liveCommit.response.changedIds, [
@@ -556,7 +815,7 @@ test('simple-house live commit requires explicit flag and writes committed evide
         .appliedCommandCount,
       2,
     );
-    assert.equal(result.executionEvidence.liveCommit.postCommit.snapshot.summary.elementCount, 2);
+    assert.equal(result.executionEvidence.liveCommit.postCommit.snapshot.summary.elementCount, 25);
     assert.deepEqual(
       requests
         .filter((request) => request.method === 'POST' && request.url.endsWith('/bundles'))
@@ -582,8 +841,9 @@ test('simple-house live commit requires explicit flag and writes committed evide
     const snapshotSummary = JSON.parse(
       await fs.readFile(path.join(outDir, 'snapshot-summary.json'), 'utf8'),
     );
-    assert.equal(snapshotSummary.countsByKind.opening, 1);
-    assert.equal(snapshotSummary.countsByKind.wall, 1);
+    assert.equal(snapshotSummary.countsByKind.opening, 6);
+    assert.equal(snapshotSummary.countsByKind.wall, 6);
+    assert.equal(snapshotSummary.countsByKind.room, 3);
     const advisorValidation = JSON.parse(
       await fs.readFile(path.join(outDir, 'advisor-validation.json'), 'utf8'),
     );
@@ -593,6 +853,7 @@ test('simple-house live commit requires explicit flag and writes committed evide
     assert.deepEqual(advisorValidation.warningCounts, { validation: 1, advisor: 1 });
     assert.equal(advisorValidation.source.modelId, 'model-commit');
     assert.equal(advisorValidation.source.revision, 3);
+    assert.equal(advisorValidation.semanticSourceChecks.pass, true);
     assert.equal(advisorValidation.validationResult.warningCount, 1);
     assert.equal(advisorValidation.advisorResult.infoCount, 1);
   } finally {

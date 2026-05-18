@@ -1,0 +1,175 @@
+{
+  "schemaVersion": "bim-ai.simple-house-live-evidence-runner.v1",
+  "benchmarkId": "simple-single-storey-house",
+  "status": "live-dry-run-and-commit-clean",
+  "clean": true,
+  "pass": true,
+  "semanticClosure": {
+    "schemaVersion": "bim-ai.simple-house-live-evidence-semantic-closure.v1",
+    "status": "committed-simple-house-semantics-clean",
+    "pass": true,
+    "commitRequested": true,
+    "checks": [
+      {
+        "id": "dry-run-command-payload",
+        "pass": true,
+        "actual": 28,
+        "expected": "> 0"
+      },
+      {
+        "id": "dry-run-revision-intent",
+        "pass": true,
+        "actual": null,
+        "expected": "optional wouldRevision evidence; dry-run command intent is authoritative"
+      },
+      {
+        "id": "commit-changed-ids",
+        "pass": true,
+        "actual": 32,
+        "expected": "> 0"
+      },
+      {
+        "id": "commit-revision-advanced",
+        "pass": true,
+        "actual": [2, 2, 2, 2],
+        "expected": "> parentRevision 1"
+      },
+      {
+        "id": "committed-snapshot-present",
+        "pass": true,
+        "actual": 45,
+        "expected": "> 0"
+      },
+      {
+        "id": "committed-walls-count",
+        "pass": true,
+        "actual": 6,
+        "expected": ">= 6"
+      },
+      {
+        "id": "committed-floors-count",
+        "pass": true,
+        "actual": 1,
+        "expected": ">= 1"
+      },
+      {
+        "id": "committed-roofs-count",
+        "pass": true,
+        "actual": 1,
+        "expected": ">= 1"
+      },
+      {
+        "id": "committed-rooms-count",
+        "pass": true,
+        "actual": 3,
+        "expected": ">= 3"
+      },
+      {
+        "id": "committed-openings-count",
+        "pass": true,
+        "actual": 8,
+        "expected": ">= 6"
+      }
+    ],
+    "counts": {
+      "walls": 6,
+      "floors": 1,
+      "roofs": 1,
+      "rooms": 3,
+      "openings": 8,
+      "doors": 4,
+      "windows": 4
+    },
+    "countSources": {
+      "snapshotPresent": true,
+      "snapshotElementCount": 45,
+      "snapshotRevision": 2,
+      "summaryPresent": true
+    },
+    "expected": {
+      "walls": 6,
+      "floors": 1,
+      "roofs": 1,
+      "rooms": 3,
+      "openings": 6
+    },
+    "changedIds": [
+      "default-a1-titleblock",
+      "ssh-dim-overall-depth",
+      "ssh-dim-overall-width",
+      "ssh-door-bath",
+      "ssh-door-bedroom",
+      "ssh-door-entry",
+      "ssh-door-single",
+      "ssh-floor-ground",
+      "ssh-ft-slab",
+      "ssh-lvl-ground",
+      "ssh-roof-main",
+      "ssh-room-bedroom",
+      "ssh-room-kitchen",
+      "ssh-room-living",
+      "ssh-rt-gable",
+      "ssh-schedule-openings",
+      "ssh-sheet-a101",
+      "ssh-tag-living",
+      "ssh-view-3d",
+      "ssh-view-ground-plan",
+      "ssh-wall-bath",
+      "ssh-wall-east",
+      "ssh-wall-hall-bedroom",
+      "ssh-wall-north",
+      "ssh-wall-south",
+      "ssh-wall-west",
+      "ssh-window-bedroom",
+      "ssh-window-fixed",
+      "ssh-window-kitchen",
+      "ssh-window-living",
+      "ssh-wt-exterior",
+      "ssh-wt-interior"
+    ],
+    "revision": {
+      "parentRevision": 1,
+      "candidateRevisions": [2, 2, 2, 2],
+      "pass": true
+    }
+  },
+  "target": {
+    "kind": "live-backend-target",
+    "targetMode": "created-disposable-model",
+    "modelId": "0c55b59d-84c3-4497-90e6-63225749bc4a",
+    "projectId": "bc1e86b7-bf7a-49d1-a1e6-a51375c50460",
+    "slug": "simple-house-m2p-2389b7c3-0719-4a3c-a1c2-2a2919e55194",
+    "templateId": null,
+    "parentRevision": "1",
+    "baseUrl": {
+      "origin": "http://127.0.0.1:8501",
+      "pathname": "",
+      "credentials": false,
+      "query": false,
+      "fragment": false
+    },
+    "publicSurface": {
+      "kind": "model-create-api",
+      "method": "POST",
+      "endpoint": "/api/projects/bc1e86b7-bf7a-49d1-a1e6-a51375c50460/models"
+    },
+    "commitRequested": true
+  },
+  "artifacts": {
+    "benchmark-result.json": "written",
+    "command-log-summary.json": "written",
+    "execution-evidence.json": "written",
+    "export-evidence.json": "written",
+    "live-commit-evidence.json": "written",
+    "live-dry-run-evidence.json": "written",
+    "snapshot-summary.json": "written",
+    "visual-evidence.json": "written"
+  },
+  "safety": {
+    "dryRunAlwaysRunsFirst": true,
+    "commitRequiresFlag": true,
+    "existingModelCommitRequiresAllowFlag": true,
+    "secretsRecorded": false,
+    "baseUrlCredentialsRejected": true
+  }
+}

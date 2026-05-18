@@ -1,0 +1,42 @@
+{
+  "modelId": "0c55b59d-84c3-4497-90e6-63225749bc4a",
+  "entryCount": 1,
+  "latest": [
+    {
+      "id": 566,
+      "userId": "m2-u-local-live-target",
+      "revisionAfter": 2,
+      "appliedCommandCount": 28,
+      "appliedCommandTypes": [
+        "CreateSheet",
+        "PlaceViewOnSheet",
+        "PlaceViewOnSheet",
+        "createDimension",
+        "createDimension",
+        "createFloor",
+        "createLevel",
+        "createRoof",
+        "createRoomOutline",
+        "createRoomOutline",
+        "createRoomOutline",
+        "createWallChain",
+        "createWallChain",
+        "create_schedule_view",
+        "insertDoorOnWall",
+        "insertDoorOnWall",
+        "insertDoorOnWall",
+        "insertWindowOnWall",
+        "insertWindowOnWall",
+        "insertWindowOnWall",
+        "placeTag",
+        "saveViewpoint",
+        "upsertFamilyType",
+        "upsertFamilyType",
+        "upsertFloorType",
+        "upsertRoofType",
+        "upsertWallType",
+        "upsertWallType"
+      ]
+    }
+  ]
+}

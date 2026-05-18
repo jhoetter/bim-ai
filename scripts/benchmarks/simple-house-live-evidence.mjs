@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 import fs from 'node:fs/promises';
 import { randomUUID } from 'node:crypto';
+import os from 'node:os';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 import process from 'node:process';
@@ -10,6 +11,7 @@ import { runBenchmark } from './simple-house.mjs';
 const REPO_ROOT = path.resolve(new URL('../..', import.meta.url).pathname);
 const BENCHMARK_DIR = path.join(REPO_ROOT, 'spec', 'benchmarks', 'simple-single-storey-house');
 const DEFAULT_OUT_DIR = path.join(BENCHMARK_DIR, 'live-evidence');
+const DEFAULT_EXPECTED = path.join(BENCHMARK_DIR, 'expected-semantics.json');
 const REQUIRED_ARTIFACTS = [
   'benchmark-result.json',
   'execution-evidence.json',
@@ -259,6 +261,267 @@ async function writeJson(file, value) {
   await fs.writeFile(file, `${JSON.stringify(value, null, 2)}\n`, 'utf8');
 }
 
+async function copyArtifacts(fromDir, toDir) {
+  await fs.mkdir(toDir, { recursive: true });
+  const names = await fs.readdir(fromDir);
+  await Promise.all(
+    names.map((name) => fs.copyFile(path.join(fromDir, name), path.join(toDir, name))),
+  );
+}
+
+async function expectedSemantics() {
+  return JSON.parse(await fs.readFile(DEFAULT_EXPECTED, 'utf8'));
+}
+
+function numericValue(value) {
+  if (Number.isFinite(value)) return value;
+  if (typeof value !== 'string' || value.trim() === '') return null;
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : null;
+}
+
+function pathValue(value, pathParts) {
+  let current = value;
+  for (const part of pathParts) {
+    if (!current || typeof current !== 'object') return null;
+    current = current[part];
+  }
+  return numericValue(current);
+}
+
+function maxCount(...values) {
+  const numbers = values
+    .flat()
+    .map((value) => numericValue(value))
+    .filter((value) => value !== null);
+  return numbers.length ? Math.max(...numbers) : null;
+}
+
+function countAliases(countsByKind, aliases) {
+  if (!countsByKind || typeof countsByKind !== 'object') return null;
+  const normalized = new Map();
+  for (const [key, value] of Object.entries(countsByKind)) {
+    const normalizedKey = String(key)
+      .toLowerCase()
+      .replace(/[^a-z0-9]/g, '');
+    normalized.set(
+      normalizedKey,
+      (normalized.get(normalizedKey) ?? 0) + (numericValue(value) ?? 0),
+    );
+  }
+  let total = 0;
+  let found = false;
+  for (const alias of aliases) {
+    const key = alias.toLowerCase().replace(/[^a-z0-9]/g, '');
+    if (normalized.has(key)) {
+      total += normalized.get(key);
+      found = true;
+    }
+  }
+  return found ? total : null;
+}
+
+function expectedIdCount(snapshotIds, expectedIds, prefixPattern) {
+  const ids = new Set((snapshotIds ?? []).map(String));
+  const exactMatches = (expectedIds ?? []).filter((id) => ids.has(String(id))).length;
+  const prefixMatches = prefixPattern ? [...ids].filter((id) => prefixPattern.test(id)).length : 0;
+  return Math.max(exactMatches, prefixMatches);
+}
+
+function summaryRoots(summaryBody) {
+  const roots = [];
+  const push = (value) => {
+    if (value && typeof value === 'object') roots.push(value);
+  };
+  push(summaryBody);
+  push(summaryBody?.summary);
+  push(summaryBody?.semanticSummary);
+  push(summaryBody?.counts);
+  push(summaryBody?.elementCounts);
+  return roots;
+}
+
+function rootPathMax(roots, paths) {
+  return maxCount(paths.map((parts) => roots.map((root) => pathValue(root, parts))).flat());
+}
+
+function committedSemanticCounts(result) {
+  const snapshot =
+    result.committedEvidence?.snapshotSummary?.snapshot ??
+    result.executionEvidence?.liveCommit?.postCommit?.snapshot?.summary ??
+    null;
+  const summary = result.committedEvidence?.snapshotSummary?.summary ?? null;
+  const roots = summaryRoots(summary);
+  const countsByKind = snapshot?.countsByKind ?? {};
+  const ids = snapshot?.ids ?? [];
+  const fixture = result.summary ?? {};
+  const walls = maxCount(
+    countAliases(countsByKind, ['wall', 'walls', 'basicwall', 'ifcwall', 'ifcwallstandardcase']),
+    rootPathMax(roots, [['walls'], ['walls', 'total'], ['walls', 'count'], ['wallCount']]),
+    expectedIdCount(ids, fixture.walls?.ids, /^ssh-wall-/),
+  );
+  const floors = maxCount(
+    countAliases(countsByKind, ['floor', 'floors', 'slab', 'slabs', 'ifcslab']),
+    rootPathMax(roots, [['floors'], ['floors', 'count'], ['floorCount']]),
+    expectedIdCount(ids, fixture.floors?.ids, /^ssh-floor-/),
+  );
+  const roofs = maxCount(
+    countAliases(countsByKind, ['roof', 'roofs', 'ifcroof']),
+    rootPathMax(roots, [['roofs'], ['roofs', 'count'], ['roofCount']]),
+    expectedIdCount(ids, fixture.roofs?.ids, /^ssh-roof-/),
+  );
+  const rooms = maxCount(
+    countAliases(countsByKind, ['room', 'rooms', 'space', 'spaces', 'ifcspace']),
+    rootPathMax(roots, [['rooms'], ['rooms', 'count'], ['roomCount']]),
+    expectedIdCount(ids, Object.keys(fixture.rooms?.targetAreaM2 ?? {}), /^ssh-room-/),
+  );
+  const doors = maxCount(
+    countAliases(countsByKind, ['door', 'doors', 'ifcdoor']),
+    rootPathMax(roots, [['openings', 'doors'], ['doors'], ['doorCount']]),
+    expectedIdCount(ids, [], /^ssh-door-/),
+  );
+  const windows = maxCount(
+    countAliases(countsByKind, ['window', 'windows', 'ifcwindow']),
+    rootPathMax(roots, [['openings', 'windows'], ['windows'], ['windowCount']]),
+    expectedIdCount(ids, [], /^ssh-window-/),
+  );
+  const genericOpenings = maxCount(
+    countAliases(countsByKind, ['opening', 'openings']),
+    rootPathMax(roots, [
+      ['openings'],
+      ['openings', 'count'],
+      ['openings', 'hosted'],
+      ['openingCount'],
+    ]),
+  );
+  return {
+    sources: {
+      snapshotPresent: Boolean(snapshot),
+      snapshotElementCount: snapshot?.elementCount ?? null,
+      snapshotRevision: snapshot?.revision ?? null,
+      summaryPresent: Boolean(summary),
+    },
+    counts: {
+      walls,
+      floors,
+      roofs,
+      rooms,
+      openings: maxCount(genericOpenings, (doors ?? 0) + (windows ?? 0)),
+      doors,
+      windows,
+    },
+  };
+}
+
+function commitRevisionChanged(revision) {
+  const parent = numericValue(revision?.parentRevision);
+  const candidates = [
+    revision?.newRevision,
+    revision?.revision,
+    revision?.commandLogRevisionAfter,
+    revision?.snapshotRevision,
+  ].map(numericValue);
+  const advanced =
+    parent === null ? [] : candidates.filter((value) => value !== null && value > parent);
+  return {
+    parentRevision: parent,
+    candidateRevisions: candidates.filter((value) => value !== null),
+    pass: parent !== null && advanced.length > 0,
+  };
+}
+
+function buildSemanticClosure(result, { dryRunArtifact, commitArtifact, commitRequested }) {
+  const expected = result.expectedSemantics?.expected ?? null;
+  const checks = [];
+  const dryRunCommandCount = numericValue(dryRunArtifact?.request?.commandCount);
+  const dryRunWouldRevision = dryRunArtifact?.revision?.wouldRevision ?? null;
+  checks.push({
+    id: 'dry-run-command-payload',
+    pass: dryRunCommandCount !== null && dryRunCommandCount > 0,
+    actual: dryRunCommandCount,
+    expected: '> 0',
+  });
+  checks.push({
+    id: 'dry-run-revision-intent',
+    pass: true,
+    actual: dryRunWouldRevision,
+    expected: 'optional wouldRevision evidence; dry-run command intent is authoritative',
+  });
+
+  if (!commitRequested) {
+    const pass = checks.every((check) => check.pass);
+    return {
+      schemaVersion: 'bim-ai.simple-house-live-evidence-semantic-closure.v1',
+      status: pass ? 'dry-run-intent-clean' : 'dry-run-intent-not-clean',
+      pass,
+      commitRequested: false,
+      checks,
+      counts: null,
+      expected: null,
+      note: 'Dry-run-only mode has no committed snapshot; commit semantic closure requires --commit-live.',
+    };
+  }
+
+  const semanticCounts = committedSemanticCounts(result);
+  const revision = commitRevisionChanged(commitArtifact?.revision);
+  const changedIds = Array.isArray(commitArtifact?.changedIds) ? commitArtifact.changedIds : [];
+  const required = {
+    walls: expected?.walls?.total ?? 6,
+    floors: expected?.floors?.count ?? 1,
+    roofs: expected?.roofs?.count ?? 1,
+    rooms: expected?.rooms?.count ?? 3,
+    openings:
+      expected?.openings?.hosted ??
+      (expected?.openings?.doors ?? 0) + (expected?.openings?.windows ?? 0),
+  };
+  checks.push(
+    {
+      id: 'commit-changed-ids',
+      pass: changedIds.length > 0,
+      actual: changedIds.length,
+      expected: '> 0',
+    },
+    {
+      id: 'commit-revision-advanced',
+      pass: revision.pass,
+      actual: revision.candidateRevisions,
+      expected: `> parentRevision ${revision.parentRevision}`,
+    },
+    {
+      id: 'committed-snapshot-present',
+      pass:
+        semanticCounts.sources.snapshotPresent &&
+        numericValue(semanticCounts.sources.snapshotElementCount) !== null &&
+        semanticCounts.sources.snapshotElementCount > 0,
+      actual: semanticCounts.sources.snapshotElementCount,
+      expected: '> 0',
+    },
+    ...Object.entries(required).map(([key, expectedCount]) => ({
+      id: `committed-${key}-count`,
+      pass:
+        numericValue(semanticCounts.counts[key]) !== null &&
+        semanticCounts.counts[key] >= expectedCount,
+      actual: semanticCounts.counts[key],
+      expected: `>= ${expectedCount}`,
+    })),
+  );
+  const pass = checks.every((check) => check.pass);
+  return {
+    schemaVersion: 'bim-ai.simple-house-live-evidence-semantic-closure.v1',
+    status: pass
+      ? 'committed-simple-house-semantics-clean'
+      : 'committed-simple-house-semantics-not-clean',
+    pass,
+    commitRequested: true,
+    checks,
+    counts: semanticCounts.counts,
+    countSources: semanticCounts.sources,
+    expected: required,
+    changedIds,
+    revision,
+  };
+}
+
 function evidenceHttpOk(evidence) {
   const status = Number(evidence?.response?.httpStatus ?? evidence?.httpStatus);
   return !Number.isFinite(status) || (status >= 200 && status < 300);
@@ -358,10 +621,20 @@ function notRequestedCommitEvidence({ sourceTarget, parentRevision }) {
   };
 }
 
-function buildExecutionEvidence(result, liveDryRun, liveCommit, sourceTarget, parentRevision) {
+function buildExecutionEvidence(
+  result,
+  liveDryRun,
+  liveCommit,
+  sourceTarget,
+  parentRevision,
+  semanticClosure,
+) {
   const execution = result.executionEvidence ?? {};
   if (execution?.liveDryRun || execution?.liveCommit) {
-    const clean = liveEvidenceClean(liveDryRun) && liveEvidenceClean(liveCommit);
+    const clean =
+      liveEvidenceClean(liveDryRun) &&
+      liveEvidenceClean(liveCommit) &&
+      semanticClosure.pass === true;
     return {
       ...execution,
       liveDryRun,
@@ -378,6 +651,7 @@ function buildExecutionEvidence(result, liveDryRun, liveCommit, sourceTarget, pa
       sourceTarget,
       revision: revisionEvidence(liveCommit, parentRevision),
       changedIds: Array.isArray(liveCommit?.changedIds) ? liveCommit.changedIds : [],
+      semanticClosure,
       secrets: {
         containsSecrets: false,
         baseUrlCredentialsAccepted: false,
@@ -385,7 +659,7 @@ function buildExecutionEvidence(result, liveDryRun, liveCommit, sourceTarget, pa
       },
     };
   }
-  return liveDryRun;
+  return { ...liveDryRun, semanticClosure };
 }
 
 async function normalizeArtifacts(outDir, result, resolved, args) {
@@ -415,12 +689,33 @@ async function normalizeArtifacts(outDir, result, resolved, args) {
         sourceTarget,
         parentRevision: resolved.parentRevision,
       });
+  const semanticClosure = buildSemanticClosure(result, {
+    dryRunArtifact,
+    commitArtifact,
+    commitRequested: args.commitLive,
+  });
+  dryRunArtifact.semanticClosure = semanticClosure;
+  commitArtifact.semanticClosure = semanticClosure;
+  if (semanticClosure.pass !== true) {
+    dryRunArtifact.clean = false;
+    dryRunArtifact.pass = false;
+    dryRunArtifact.status = `${dryRunArtifact.evidenceKind}-not-clean`;
+    dryRunArtifact.auditClassification = `${dryRunArtifact.evidenceKind}-not-clean`;
+    commitArtifact.clean = false;
+    commitArtifact.pass = false;
+    commitArtifact.status =
+      commitArtifact.mode === 'not-requested'
+        ? 'not-requested'
+        : `${commitArtifact.evidenceKind}-not-clean`;
+    commitArtifact.auditClassification = commitArtifact.status;
+  }
   const executionArtifact = buildExecutionEvidence(
     result,
     dryRunArtifact,
     commitArtifact,
     sourceTarget,
     resolved.parentRevision,
+    semanticClosure,
   );
   await writeJson(path.join(outDir, 'live-dry-run-evidence.json'), dryRunArtifact);
   await writeJson(path.join(outDir, 'live-commit-evidence.json'), commitArtifact);
@@ -445,6 +740,7 @@ async function normalizeArtifacts(outDir, result, resolved, args) {
     status: executionArtifact.status,
     clean: executionArtifact.clean === true,
     pass: executionArtifact.pass === true,
+    semanticClosure,
     target: sourceTarget,
     artifacts: Object.fromEntries(
       (
@@ -474,6 +770,7 @@ export async function runLiveEvidence(rawArgs = []) {
   validateTargetConfig(args);
   await prepareOutDir(args.outDir, args.allowExistingOutDir);
   const resolved = await resolveTarget(args, baseUrl);
+  const stageDir = await fs.mkdtemp(path.join(os.tmpdir(), 'simple-house-live-evidence-stage-'));
   const benchmarkArgs = [
     '--mode',
     'live',
@@ -486,22 +783,38 @@ export async function runLiveEvidence(rawArgs = []) {
     '--user-id',
     args.userId,
     '--out-dir',
-    args.outDir,
+    stageDir,
   ];
   if (args.commitLive) benchmarkArgs.push('--commit-live');
-  const { result } = await runBenchmark(benchmarkArgs);
-  const artifacts = await normalizeArtifacts(args.outDir, result, resolved, args);
-  return {
-    ok: artifacts.executionArtifact.pass === true,
-    benchmarkId: result.benchmarkId,
-    outDir: args.outDir,
-    target: resolved.target,
-    mode: result.executionEvidence?.mode ?? null,
-    clean: artifacts.executionArtifact.clean === true,
-    pass: artifacts.executionArtifact.pass === true,
-    artifactNames: (await fs.readdir(args.outDir)).sort(),
-    remainingExitCriteria: result.remainingExitCriteria,
-  };
+  try {
+    const { result } = await runBenchmark(benchmarkArgs);
+    result.expectedSemantics = await expectedSemantics();
+    const stagedArtifacts = await normalizeArtifacts(stageDir, result, resolved, args);
+    if (stagedArtifacts.executionArtifact.semanticClosure?.pass === true) {
+      await copyArtifacts(stageDir, args.outDir);
+    }
+    const artifactNames = (await fs.readdir(args.outDir)).sort();
+    return {
+      ok: stagedArtifacts.executionArtifact.pass === true,
+      benchmarkId: result.benchmarkId,
+      outDir: args.outDir,
+      target: resolved.target,
+      mode: result.executionEvidence?.mode ?? null,
+      clean: stagedArtifacts.executionArtifact.clean === true,
+      pass: stagedArtifacts.executionArtifact.pass === true,
+      semanticClosure: stagedArtifacts.executionArtifact.semanticClosure,
+      artifactNames,
+      remainingExitCriteria:
+        stagedArtifacts.executionArtifact.semanticClosure?.pass === true
+          ? result.remainingExitCriteria
+          : [
+              'committed simple-house semantic counts from live snapshot/summary',
+              ...result.remainingExitCriteria,
+            ],
+    };
+  } finally {
+    await fs.rm(stageDir, { recursive: true, force: true });
+  }
 }
 
 async function main() {

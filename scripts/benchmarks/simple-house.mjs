@@ -9,6 +9,17 @@ const REPO_ROOT = path.resolve(new URL('../..', import.meta.url).pathname);
 const BENCHMARK_DIR = path.join(REPO_ROOT, 'spec', 'benchmarks', 'simple-single-storey-house');
 const DEFAULT_BUNDLE = path.join(BENCHMARK_DIR, 'mcp-cli-command-bundle.json');
 const DEFAULT_EXPECTED = path.join(BENCHMARK_DIR, 'expected-semantics.json');
+const SIMPLE_HOUSE_SHEET_ID = 'ssh-sheet-a101';
+const SIMPLE_HOUSE_REQUIRED_VIEW_IDS = ['ssh-view-ground-plan', 'ssh-view-3d'];
+const IFC_KIND_ALIASES = {
+  IfcWall: 'wall',
+  IfcSlab: 'floor',
+  IfcRoof: 'roof',
+  IfcDoor: 'door',
+  IfcWindow: 'window',
+  IfcSpace: 'room',
+  IfcBuildingStorey: 'level',
+};
 
 function usage() {
   console.error(`Usage:
@@ -495,6 +506,268 @@ function summarizeSnapshot(snapshot) {
   };
 }
 
+function countValue(value, keys = ['count', 'total']) {
+  if (Number.isFinite(value)) return value;
+  if (!value || typeof value !== 'object') return null;
+  for (const key of keys) {
+    const parsed = numericCount(value[key]);
+    if (parsed !== null) return parsed;
+  }
+  return null;
+}
+
+function countAt(root, key, keys = ['count', 'total']) {
+  return firstPresent(
+    countValue(root?.[key], keys),
+    countValue(root?.summary?.[key], keys),
+    numericCount(root?.[key]),
+    numericCount(root?.summary?.[key]),
+  );
+}
+
+function collectSemanticIds(value, ids = new Set()) {
+  if (typeof value === 'string') {
+    if (value.startsWith('ssh-')) ids.add(value);
+  } else if (Array.isArray(value)) {
+    for (const item of value) collectSemanticIds(item, ids);
+  } else if (value && typeof value === 'object') {
+    for (const [key, item] of Object.entries(value)) {
+      if (key.startsWith('ssh-')) ids.add(key);
+      collectSemanticIds(item, ids);
+    }
+  }
+  return [...ids].sort();
+}
+
+function incrementSemanticKind(counts, id, kind) {
+  const normalizedKind = String(kind ?? '').toLowerCase();
+  const normalizedId = String(id ?? '').toLowerCase();
+  if (
+    normalizedKind.endsWith('_type') ||
+    normalizedKind === 'family_type' ||
+    normalizedKind === 'titleblock_type' ||
+    normalizedKind === 'hatch_pattern_def' ||
+    normalizedKind === 'elevation_view'
+  ) {
+    return;
+  }
+  if (normalizedKind.includes('level') || normalizedId.startsWith('ssh-lvl-')) counts.levels += 1;
+  else if (normalizedKind.includes('wall') || normalizedId.startsWith('ssh-wall-'))
+    counts.walls += 1;
+  else if (
+    normalizedKind.includes('room') ||
+    normalizedKind.includes('space') ||
+    normalizedId.startsWith('ssh-room-')
+  )
+    counts.rooms += 1;
+  else if (
+    normalizedKind.includes('opening') ||
+    normalizedKind.includes('door') ||
+    normalizedKind.includes('window') ||
+    normalizedId.startsWith('ssh-door-') ||
+    normalizedId.startsWith('ssh-window-')
+  )
+    counts.openings += 1;
+  else if (normalizedKind.includes('floor') || normalizedId.startsWith('ssh-floor-'))
+    counts.floors += 1;
+  else if (normalizedKind.includes('roof') || normalizedId.startsWith('ssh-roof-'))
+    counts.roofs += 1;
+  else if (
+    normalizedKind.includes('view') ||
+    normalizedKind.includes('viewpoint') ||
+    normalizedId.startsWith('ssh-view-')
+  )
+    counts.views += 1;
+  else if (normalizedKind.includes('sheet') || normalizedId.startsWith('ssh-sheet-'))
+    counts.sheets += 1;
+  else if (normalizedKind.includes('schedule') || normalizedId.startsWith('ssh-schedule-'))
+    counts.schedules += 1;
+  else if (
+    normalizedKind.includes('annotation') ||
+    normalizedKind.includes('tag') ||
+    normalizedKind.includes('dimension') ||
+    normalizedId.startsWith('ssh-tag-') ||
+    normalizedId.startsWith('ssh-dim-')
+  )
+    counts.annotations += 1;
+}
+
+function semanticCountsFromSnapshotBody(snapshot) {
+  if (!snapshot || typeof snapshot !== 'object') return {};
+  const elements = snapshot.elements ?? snapshot.elementsById ?? {};
+  const entries = Array.isArray(elements)
+    ? elements.map((element) => [element?.id ?? null, element])
+    : Object.entries(elements);
+  const counts = {
+    levels: 0,
+    walls: 0,
+    rooms: 0,
+    openings: 0,
+    floors: 0,
+    roofs: 0,
+    views: 0,
+    sheets: 0,
+    schedules: 0,
+    annotations: 0,
+  };
+  for (const [entryId, element] of entries) {
+    const id = element?.id ?? entryId;
+    const kind = element?.kind ?? element?.type ?? element?.category;
+    incrementSemanticKind(counts, id, kind);
+  }
+  return Object.fromEntries(Object.entries(counts).filter(([, count]) => count > 0));
+}
+
+function sumCounts(...values) {
+  let total = 0;
+  let present = false;
+  for (const value of values) {
+    const count = numericCount(value);
+    if (count !== null) {
+      total += count;
+      present = true;
+    }
+  }
+  return present ? total : null;
+}
+
+function semanticCountsFromSummaryBody(summary) {
+  if (!summary || typeof summary !== 'object') return {};
+  const openings = firstPresent(
+    countAt(summary, 'openings'),
+    sumCounts(summary?.openings?.doors, summary?.openings?.windows),
+    sumCounts(summary?.summary?.openings?.doors, summary?.summary?.openings?.windows),
+  );
+  const views = firstPresent(
+    countAt(summary, 'views'),
+    sumCounts(summary?.views?.plan, summary?.views?.threeD),
+    sumCounts(summary?.summary?.views?.plan, summary?.summary?.views?.threeD),
+  );
+  const annotations = firstPresent(
+    countAt(summary, 'annotations'),
+    sumCounts(summary?.annotations?.tags, summary?.annotations?.dimensions),
+    sumCounts(summary?.summary?.annotations?.tags, summary?.summary?.annotations?.dimensions),
+  );
+  return Object.fromEntries(
+    Object.entries({
+      levels: countAt(summary, 'levels'),
+      walls: countAt(summary, 'walls'),
+      rooms: countAt(summary, 'rooms'),
+      openings,
+      floors: countAt(summary, 'floors'),
+      roofs: countAt(summary, 'roofs'),
+      views,
+      sheets: countAt(summary, 'sheets'),
+      schedules: countAt(summary, 'schedules'),
+      annotations,
+    }).filter(([, count]) => Number.isFinite(count)),
+  );
+}
+
+function expectedSemanticSource(summary) {
+  return {
+    counts: {
+      levels: summary.levels.count,
+      walls: summary.walls.total,
+      rooms: summary.rooms.count,
+      openings: summary.openings.doors + summary.openings.windows,
+      floors: summary.floors.count,
+      roofs: summary.roofs.count,
+      views: summary.views.plan + summary.views.threeD,
+      sheets: summary.sheets.count,
+      schedules: summary.schedules.count,
+      annotations: summary.annotations.tags + summary.annotations.dimensions,
+    },
+    ids: [
+      ...summary.levels.ids,
+      ...summary.walls.ids,
+      ...Object.keys(summary.rooms.targetAreaM2),
+      ...summary.floors.ids,
+      ...summary.roofs.ids,
+      ...summary.views.ids,
+      ...summary.sheets.ids,
+      ...summary.schedules.ids,
+    ].sort(),
+  };
+}
+
+function committedSemanticSourceChecks({ expectedSummary, snapshot, summary, liveCommitEvidence }) {
+  const expected = expectedSemanticSource(expectedSummary);
+  const requiredCountKeys = [
+    'levels',
+    'walls',
+    'rooms',
+    'openings',
+    'floors',
+    'roofs',
+    'views',
+    'sheets',
+    'schedules',
+  ];
+  const sources = {
+    snapshot: {
+      available: Boolean(snapshot?.ok),
+      counts: semanticCountsFromSnapshotBody(snapshot?.body),
+      ids: collectSemanticIds(snapshot?.body),
+    },
+    summary: {
+      available: Boolean(summary?.ok),
+      counts: semanticCountsFromSummaryBody(summary?.body),
+      ids: collectSemanticIds(summary?.body),
+    },
+    postCommitSnapshot: {
+      available: Boolean(liveCommitEvidence?.postCommit?.snapshot?.ok),
+      counts: semanticCountsFromSnapshotBody(liveCommitEvidence?.postCommit?.snapshot?.body),
+      ids: collectSemanticIds(liveCommitEvidence?.postCommit?.snapshot?.body),
+    },
+  };
+  const countChecks = {};
+  const coverageMissing = [];
+  const mismatches = [];
+  for (const key of requiredCountKeys) {
+    const expectedCount = expected.counts[key];
+    const provided = Object.entries(sources)
+      .map(([sourceName, source]) => ({
+        source: sourceName,
+        actual: source.counts[key],
+        expected: expectedCount,
+        matches: source.counts[key] === expectedCount,
+      }))
+      .filter((check) => Number.isFinite(check.actual));
+    countChecks[key] = provided;
+    if (provided.length === 0) coverageMissing.push(key);
+    for (const check of provided) {
+      if (!check.matches) mismatches.push({ key, ...check });
+    }
+  }
+  const observedIds = new Set(Object.values(sources).flatMap((source) => source.ids));
+  const missingExpectedIds = expected.ids.filter((id) => !observedIds.has(id));
+  const hasAnySemanticIds = observedIds.size > 0;
+  const pass = Boolean(
+    coverageMissing.length === 0 &&
+    mismatches.length === 0 &&
+    (!hasAnySemanticIds || missingExpectedIds.length === 0),
+  );
+  return {
+    status: pass ? 'expected-simple-house-committed-model' : 'semantic-source-mismatch',
+    pass,
+    benchmarkId: expectedSummary.benchmarkId,
+    expected,
+    requiredCountKeys,
+    sources,
+    countChecks,
+    coverageMissing,
+    mismatches,
+    idCheck: {
+      requiredWhenIdsAreExposed: true,
+      checked: hasAnySemanticIds,
+      observedCount: observedIds.size,
+      expectedCount: expected.ids.length,
+      missingExpectedIds,
+    },
+  };
+}
+
 function summarizeCommandLog(commandLog) {
   if (!commandLog || typeof commandLog !== 'object') return null;
   const entries = Array.isArray(commandLog.entries) ? commandLog.entries : [];
@@ -698,10 +971,10 @@ function artifactEvidence(label, response) {
   };
 }
 
-function manifestEvidence(label, response) {
+function manifestEvidence(label, response, contract = null) {
   if (!response?.ok) return unavailableEvidence(label, response);
   const body = response.body ?? {};
-  const manifest = manifestProof(label, body);
+  const manifest = manifestProof(label, body, contract);
   return {
     artifactKind: label,
     status: manifest.pass ? 'manifest-returned' : 'invalid-manifest',
@@ -713,6 +986,151 @@ function manifestEvidence(label, response) {
   };
 }
 
+function buildCommittedGeometryContract(summary) {
+  return {
+    sheetId: SIMPLE_HOUSE_SHEET_ID,
+    requiredViewIds: SIMPLE_HOUSE_REQUIRED_VIEW_IDS,
+    requiredGeometryCounts: Object.fromEntries(
+      Object.entries({
+        wall: summary?.walls?.total,
+        floor: summary?.floors?.count,
+        roof: summary?.roofs?.count,
+        door: summary?.openings?.doors,
+        window: summary?.openings?.windows,
+        room: summary?.rooms?.count,
+      }).filter(([, count]) => Number.isFinite(count) && count > 0),
+    ),
+    requiredGeometryIds: [
+      ...(summary?.walls?.ids ?? []),
+      ...(summary?.floors?.ids ?? []),
+      ...(summary?.roofs?.ids ?? []),
+    ].sort(),
+  };
+}
+
+function normalizeKind(kind) {
+  if (kind === undefined || kind === null) return null;
+  const raw = String(kind);
+  return IFC_KIND_ALIASES[raw] ?? raw.toLowerCase();
+}
+
+function normalizeCountsByKind(counts) {
+  const normalized = {};
+  if (!counts || typeof counts !== 'object' || Array.isArray(counts)) return normalized;
+  for (const [kind, value] of Object.entries(counts)) {
+    const normalizedKind = normalizeKind(kind);
+    const count = numericCount(value);
+    if (!normalizedKind || count === null) continue;
+    normalized[normalizedKind] = (normalized[normalizedKind] ?? 0) + count;
+  }
+  return normalized;
+}
+
+function countsMeetRequiredGeometry(rawCounts, contract) {
+  const counts = normalizeCountsByKind(rawCounts);
+  const missing = [];
+  for (const [kind, expectedCount] of Object.entries(contract?.requiredGeometryCounts ?? {})) {
+    const actualCount = numericCount(counts[kind]) ?? 0;
+    if (actualCount < expectedCount) {
+      missing.push({ kind, actual: actualCount, expected: expectedCount });
+    }
+  }
+  return {
+    pass: missing.length === 0 && Object.keys(contract?.requiredGeometryCounts ?? {}).length > 0,
+    counts,
+    missing,
+  };
+}
+
+function collectStringValues(value, out = []) {
+  if (typeof value === 'string') {
+    out.push(value);
+  } else if (Array.isArray(value)) {
+    for (const item of value) collectStringValues(item, out);
+  } else if (value && typeof value === 'object') {
+    for (const item of Object.values(value)) collectStringValues(item, out);
+  }
+  return out;
+}
+
+function collectIds(value) {
+  return [...new Set(collectStringValues(value).filter((item) => item.trim() !== ''))].sort();
+}
+
+function valueContainsId(value, id) {
+  return collectStringValues(value).some((item) => item === id || item.endsWith(`:${id}`));
+}
+
+function idsMeetRequiredGeometry(value, contract) {
+  const ids = collectIds(value);
+  const required = contract?.requiredGeometryIds ?? [];
+  const missing = required.filter((id) => !ids.includes(id));
+  return {
+    pass: required.length > 0 && missing.length === 0,
+    ids,
+    missing,
+  };
+}
+
+function firstGeometryProof(candidates, contract) {
+  const attempts = candidates
+    .filter((candidate) => candidate?.value !== undefined && candidate?.value !== null)
+    .map((candidate) => {
+      const counts = countsMeetRequiredGeometry(candidate.value, contract);
+      const ids = idsMeetRequiredGeometry(candidate.value, contract);
+      return {
+        source: candidate.source,
+        pass: counts.pass || ids.pass,
+        counts,
+        ids,
+      };
+    });
+  return (
+    attempts.find((attempt) => attempt.pass) ?? {
+      source: null,
+      pass: false,
+      counts: {
+        pass: false,
+        counts: {},
+        missing: Object.entries(contract?.requiredGeometryCounts ?? {}).map(([kind, expected]) => ({
+          kind,
+          actual: 0,
+          expected,
+        })),
+      },
+      ids: {
+        pass: false,
+        ids: [],
+        missing: contract?.requiredGeometryIds ?? [],
+      },
+      attempts,
+    }
+  );
+}
+
+function sheetViewContextProof(evidencePackageBody, contract) {
+  const sheetId = contract?.sheetId;
+  const viewIds = contract?.requiredViewIds ?? [];
+  const deterministicSheetEvidence = evidencePackageBody?.deterministicSheetEvidence;
+  const deterministicPlanViewEvidence = evidencePackageBody?.deterministicPlanViewEvidence;
+  const deterministic3dViewEvidence = evidencePackageBody?.deterministic3dViewEvidence;
+  const sheetPresent = Boolean(sheetId && valueContainsId(deterministicSheetEvidence, sheetId));
+  const viewsPresent = viewIds.filter(
+    (viewId) =>
+      valueContainsId(deterministicPlanViewEvidence, viewId) ||
+      valueContainsId(deterministic3dViewEvidence, viewId) ||
+      valueContainsId(deterministicSheetEvidence, viewId),
+  );
+  return {
+    pass: Boolean(sheetPresent && viewsPresent.length === viewIds.length),
+    requiredSheetId: sheetId,
+    sheetPresent,
+    requiredViewIds: viewIds,
+    viewsPresent,
+    missingViewIds: viewIds.filter((viewId) => !viewsPresent.includes(viewId)),
+  };
+}
+
 function countObjectTotal(value) {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return 0;
   return Object.values(value).reduce((total, item) => {
@@ -721,7 +1139,7 @@ function countObjectTotal(value) {
   }, 0);
 }
 
-function manifestProof(label, body) {
+function manifestProof(label, body, contract = null) {
   const ids = [
     body?.artifactId,
     body?.id,
@@ -739,10 +1157,21 @@ function manifestProof(label, body) {
       : [];
     const closure = ext.gltfExportManifestClosure_v1 ?? {};
     const exportedKindCount = countObjectTotal(countsByKind);
+    const geometryProof = contract
+      ? firstGeometryProof(
+          [
+            { source: 'gltf manifest countsByKind', value: countsByKind },
+            { source: 'gltf manifest exportedGeometryKinds', value: ext.exportedGeometryKinds },
+            { source: 'gltf manifest exported ids', value: { ids, body } },
+          ],
+          contract,
+        )
+      : { pass: exportedKindCount > 0 || ids.length > 0 };
     return {
       pass: Boolean(
         ext &&
         typeof ext === 'object' &&
+        geometryProof.pass &&
         (exportedKindCount > 0 ||
           exportedGeometryKinds.length > 0 ||
           closure.gltfExportManifestClosureDigestSha256),
@@ -753,22 +1182,35 @@ function manifestProof(label, body) {
         exportedGeometryKinds,
         ids,
         closureDigest: closure.gltfExportManifestClosureDigestSha256 ?? null,
+        geometryProof,
       },
     };
   }
   if (label.includes('ifc')) {
     const countsByIfcKind = body?.exportedIfcKindsInArtifact ?? body?.countsByIfcKind ?? {};
     const exportedKindCount = countObjectTotal(countsByIfcKind);
+    const geometryProof = contract
+      ? firstGeometryProof(
+          [
+            { source: 'ifc manifest exportedIfcKindsInArtifact', value: countsByIfcKind },
+            { source: 'ifc manifest countsByKind', value: body?.countsByKind },
+            { source: 'ifc manifest exported ids', value: { ids, body } },
+          ],
+          contract,
+        )
+      : { pass: exportedKindCount > 0 || ids.length > 0 };
     return {
       pass: Boolean(
         (body?.format || body?.schemaVersion || Object.keys(countsByIfcKind).length > 0) &&
-        exportedKindCount > 0,
+        exportedKindCount > 0 &&
+        geometryProof.pass,
       ),
       summary: {
         manifestKind: 'ifc',
         exportedKindCount,
         countsByIfcKind,
         ids,
+        geometryProof,
       },
     };
   }
@@ -999,10 +1441,11 @@ function sheetRasterEvidence(response) {
   };
 }
 
-async function collectCommittedEvidence(args, liveCommitEvidence = null) {
+async function collectCommittedEvidence(args, expectedSummary, liveCommitEvidence = null) {
   const baseUrl = args.baseUrl.replace(/\/$/, '');
   const modelPath = `/api/models/${encodeURIComponent(args.modelId)}`;
-  const sheetId = 'ssh-sheet-a101';
+  const geometryContract = buildCommittedGeometryContract(expectedSummary);
+  const sheetId = geometryContract.sheetId;
   const urls = {
     validate: `${baseUrl}${modelPath}/validate`,
     advisor: `${baseUrl}${modelPath}/qa/advisor`,
@@ -1083,19 +1526,35 @@ async function collectCommittedEvidence(args, liveCommitEvidence = null) {
     summary,
     liveCommitEvidence,
   });
-  const sourcePass = Boolean(
+  const semanticSourceChecks = committedSemanticSourceChecks({
+    expectedSummary,
+    snapshot,
+    summary,
+    liveCommitEvidence,
+  });
+  const sourceIdentityPass = Boolean(
     source.hasModelId && source.hasRevision && source.modelIdMatchesRequest,
   );
+  const sourcePass = Boolean(sourceIdentityPass && semanticSourceChecks.pass);
   const validationPass = Boolean(validationResult.pass && sourcePass);
   const advisorPass = Boolean(advisorResult.pass && sourcePass);
+  const viewContextProof = sheetViewContextProof(evidencePackageBody, geometryContract);
   const sheetPrintRaster = sheetRasterEvidence(sheetRaster);
+  const visualPass = Boolean(
+    sheetPrintRaster.pass === true && semanticSourceChecks.pass && viewContextProof.pass,
+  );
   const visual = {
     status:
-      sheetPrintRaster.status === 'server-side-substitute'
+      visualPass && sheetPrintRaster.status === 'server-side-substitute'
         ? 'server-side-substitute'
-        : sheetPrintRaster.status,
-    pass: sheetPrintRaster.pass === true,
-    requiredViewIds: ['ssh-view-ground-plan', 'ssh-view-3d'],
+        : sheetPrintRaster.status === 'unavailable'
+          ? 'unavailable'
+          : 'invalid',
+    pass: visualPass,
+    requiredViewIds: geometryContract.requiredViewIds,
+    requiredSheetId: geometryContract.sheetId,
+    semanticSourcePass: semanticSourceChecks.pass,
+    viewContextProof,
     evidencePackageVisualHints: {
       deterministicPlanViewEvidence: evidencePackageBody.deterministicPlanViewEvidence ?? null,
       deterministic3dViewEvidence: evidencePackageBody.deterministic3dViewEvidence ?? null,
@@ -1106,15 +1565,13 @@ async function collectCommittedEvidence(args, liveCommitEvidence = null) {
     sheetPrintRaster,
   };
   const exportManifests = {
-    gltf: manifestEvidence('gltf-manifest', gltfManifest),
-    ifc: manifestEvidence('ifc-manifest', ifcManifest),
+    gltf: manifestEvidence('gltf-manifest', gltfManifest, geometryContract),
+    ifc: manifestEvidence('ifc-manifest', ifcManifest, geometryContract),
   };
   const exportArtifacts = {
     sheetPdf: artifactEvidence('sheet-preview-pdf', sheetPdf),
   };
-  const exportPass = Boolean(
-    exportManifests.gltf.pass || exportManifests.ifc.pass || exportArtifacts.sheetPdf.pass,
-  );
+  const exportPass = Boolean(exportManifests.gltf.pass || exportManifests.ifc.pass);
   const exports = {
     status: exportPass
       ? 'artifact-or-manifest-returned'
@@ -1131,7 +1588,11 @@ async function collectCommittedEvidence(args, liveCommitEvidence = null) {
   return {
     mode: liveCommitEvidence ? 'post-commit-live' : 'committed-model-live',
     evidenceKind: 'committed-live-artifact',
-    collectionStatus: sourcePass ? 'captured' : 'missing-source-model-revision',
+    collectionStatus: sourcePass
+      ? 'captured'
+      : sourceIdentityPass
+        ? 'semantic-source-mismatch'
+        : 'missing-source-model-revision',
     ok: Boolean(validationPass && advisorPass && visualOk && exportOk),
     validationStatus: validationResult.status,
     validationPass,
@@ -1152,8 +1613,10 @@ async function collectCommittedEvidence(args, liveCommitEvidence = null) {
     modelId: args.modelId,
     revision: source.revision,
     source,
+    semanticSourceChecks,
     preflight: {
-      sourceModelRevisionPresent: sourcePass,
+      sourceModelRevisionPresent: sourceIdentityPass,
+      semanticSourceMatchesExpected: semanticSourceChecks.pass,
       liveAdvisorValidationCaptured: Boolean(validate?.ok && advisor?.ok),
       validationEndpointOk: Boolean(validate?.ok),
       advisorEndpointOk: Boolean(advisor?.ok),
@@ -1240,6 +1703,7 @@ function missingCommittedAdvisorValidationArtifact(result) {
     modelId: result.committedEvidence?.modelId ?? null,
     revision: result.committedEvidence?.revision ?? null,
     source: result.committedEvidence?.source ?? null,
+    semanticSourceChecks: result.committedEvidence?.semanticSourceChecks ?? null,
     preflight: {
       sourceModelRevisionPresent: false,
       liveAdvisorValidationCaptured: false,
@@ -1275,6 +1739,7 @@ function advisorValidationArtifact(result) {
       modelId: result.committedEvidence.modelId ?? null,
       revision: result.committedEvidence.revision ?? null,
       source: result.committedEvidence.source ?? null,
+      semanticSourceChecks: result.committedEvidence.semanticSourceChecks ?? null,
       preflight: result.committedEvidence.preflight ?? null,
       validationResult: result.committedEvidence.validationResult ?? null,
       advisorResult: result.committedEvidence.advisorResult ?? null,
@@ -1428,7 +1893,7 @@ export async function runBenchmark(rawArgs = []) {
     executionEvidence = liveDryRun;
     if (args.commitLive) {
       const liveCommit = await runLiveCommit(args, bundle);
-      committedEvidence = await collectCommittedEvidence(args, liveCommit);
+      committedEvidence = await collectCommittedEvidence(args, summary, liveCommit);
       executionEvidence = {
         mode: 'live-dry-run-and-commit',
         ok: liveDryRun.ok && liveCommit.ok,
@@ -1438,7 +1903,7 @@ export async function runBenchmark(rawArgs = []) {
         liveCommit,
       };
     } else if (args.collectCommittedEvidence) {
-      committedEvidence = await collectCommittedEvidence(args);
+      committedEvidence = await collectCommittedEvidence(args, summary);
     }
   }
   const result = {

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Annotated, Any, Literal
 
-from pydantic import AliasChoices, BaseModel, ConfigDict, Field, model_validator
+from pydantic import AliasChoices, BaseModel, ConfigDict, Field, field_validator, model_validator
 
 from bim_ai.elements import (
     BalusterPattern,
@@ -867,6 +867,13 @@ class CreateRoofCmd(BaseModel):
     eave_height_right_mm: float | None = Field(default=None, alias="eaveHeightRightMm")
     roof_type_id: str | None = Field(default=None, alias="roofTypeId")
     material_key: str | None = Field(default=None, alias="materialKey")
+
+    @field_validator("roof_geometry_mode", mode="before")
+    @classmethod
+    def _normalize_roof_geometry_mode(cls, value: Any) -> Any:
+        if value == "gable":
+            return "gable_pitched_rectangle"
+        return value
 
 
 class ExtendFloorInsulationCmd(BaseModel):

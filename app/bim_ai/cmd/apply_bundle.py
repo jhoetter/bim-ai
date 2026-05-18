@@ -70,6 +70,14 @@ def _checkpoint_id(elements: dict[str, Any]) -> str:
     return hashlib.sha256(payload.encode()).hexdigest()
 
 
+def _changed_element_ids(old_elements: dict[str, Any], new_elements: dict[str, Any]) -> list[str]:
+    changed: list[str] = []
+    for eid in sorted(set(old_elements) | set(new_elements)):
+        if old_elements.get(eid) != new_elements.get(eid):
+            changed.append(eid)
+    return changed
+
+
 def _attach_agent_traces(
     new_elements: dict[str, Any],
     old_elements: dict[str, Any],
@@ -111,6 +119,14 @@ def _write_assumption_audit(
 
 
 _AGENT_PROPOSALS_SET_NAME = "Agent proposals"
+
+
+def _provenance_submitter(submitter: str) -> Literal["agent", "human", "ci"]:
+    if submitter in ("agent", "human", "ci"):
+        return submitter  # type: ignore[return-value]
+    if "agent" in submitter.lower():
+        return "agent"
+    return "human"
 
 
 def _resolve_bundle_target(
@@ -164,7 +180,7 @@ def _apply_option_routing(
     """
     timestamp_ms = int(datetime.now(UTC).timestamp() * 1000)
     provenance = DesignOptionProvenance(
-        submitter=submitter,
+        submitter=_provenance_submitter(submitter),
         bundle_id=bundle_id,
         created_at=timestamp_ms,
     )
@@ -288,6 +304,14 @@ def apply_bundle(
     # Step 4: run the engine
     ok, new_doc, _cmds, violations, _code = try_commit_bundle(doc, bundle.commands)
     violations_wire = [v.model_dump(by_alias=True) for v in violations]
+    if not ok and not violations_wire:
+        violations_wire = [
+            {
+                "advisoryClass": "bundle_apply_failed",
+                "message": _code or "Bundle could not be applied.",
+                "blocking": True,
+            }
+        ]
 
     # Step 5: checkpoint snapshot id
     checkpoint_id = _checkpoint_id(
@@ -323,6 +347,8 @@ def apply_bundle(
                 is_auto_routed,
             )
             out_option_id = target_option_id
+        changed_ids = _changed_element_ids(doc.elements, new_doc.elements)
+        checkpoint_id = _checkpoint_id(new_doc.elements)
 
         applied_at = datetime.now(UTC).isoformat()
         if model_id is not None:
@@ -335,6 +361,7 @@ def apply_bundle(
             BundleResult(
                 applied=True,
                 new_revision=new_doc.revision,
+                changed_ids=changed_ids,
                 option_id=out_option_id,
                 violations=violations_wire,
                 checkpoint_snapshot_id=checkpoint_id,

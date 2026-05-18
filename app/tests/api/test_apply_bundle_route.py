@@ -6,7 +6,10 @@ following the same pattern as test_agent_iterate.py.
 
 from __future__ import annotations
 
+import json
 import uuid
+from collections import Counter
+from pathlib import Path
 from typing import Any
 
 import pytest
@@ -16,7 +19,12 @@ from fastapi.testclient import TestClient
 from bim_ai.cmd.apply_bundle import apply_bundle as _apply_bundle
 from bim_ai.cmd.types import CommandBundle
 from bim_ai.document import Document
-from bim_ai.engine import ensure_internal_origin
+from bim_ai.engine import (
+    ensure_cardinal_elevation_views,
+    ensure_internal_origin,
+    ensure_seed_hatches,
+    ensure_sun_settings,
+)
 
 _VALID_ASSUMPTION = {
     "key": "ground_level_mm",
@@ -38,11 +46,16 @@ MODEL_ID = str(uuid.uuid4())
 def _build_test_app() -> FastAPI:
     """Stub app with in-memory model store — no DB required."""
     _models: dict[str, dict[str, Any]] = {}
+    _command_log: dict[str, list[dict[str, Any]]] = {}
 
     def _seed(model_id: str, revision: int = 1) -> None:
         doc = Document(revision=revision, elements={})  # type: ignore[arg-type]
         ensure_internal_origin(doc)
+        ensure_cardinal_elevation_views(doc)
+        ensure_sun_settings(doc)
+        ensure_seed_hatches(doc)
         _models[model_id] = {"revision": doc.revision, "doc": doc}
+        _command_log[model_id] = []
 
     _seed(MODEL_ID)
 
@@ -92,6 +105,15 @@ def _build_test_app() -> FastAPI:
 
         if result.applied and result.new_revision is not None and new_doc_from_bundle is not None:
             _models[model_id] = {"revision": new_doc_from_bundle.revision, "doc": new_doc_from_bundle}
+            _command_log.setdefault(model_id, []).insert(
+                0,
+                {
+                    "id": len(_command_log.get(model_id, [])) + 1,
+                    "userId": body.get("userId") or "local-dev",
+                    "revisionAfter": new_doc_from_bundle.revision,
+                    "appliedCommands": bundle.commands,
+                },
+            )
 
         return result.model_dump(by_alias=True)
 
@@ -101,7 +123,20 @@ def _build_test_app() -> FastAPI:
         if model_id not in _models:
             raise HTTPException(status_code=404, detail="Model not found")
         doc = _models[model_id]["doc"]
-        return {"modelId": model_id, "revision": doc.revision}
+        return {
+            "modelId": model_id,
+            "revision": doc.revision,
+            "elements": {
+                k: v.model_dump(mode="json", by_alias=True) for k, v in doc.elements.items()
+            },
+        }
+
+    @app.get("/api/models/{model_id}/command-log")
+    async def command_log(model_id: str) -> Any:
+        from fastapi import HTTPException
+        if model_id not in _models:
+            raise HTTPException(status_code=404, detail="Model not found")
+        return {"modelId": model_id, "entries": _command_log.get(model_id, [])}
 
     return app
 
@@ -123,6 +158,27 @@ def _bundle_body(**overrides: Any) -> dict[str, Any]:
     }
     defaults.update(overrides)
     return defaults
+
+
+def _simple_house_bundle(parent_revision: int) -> dict[str, Any]:
+    path = (
+        Path(__file__).resolve().parents[3]
+        / "spec"
+        / "benchmarks"
+        / "simple-single-storey-house"
+        / "mcp-cli-command-bundle.json"
+    )
+    bundle = json.loads(path.read_text())
+    bundle["parentRevision"] = parent_revision
+    return bundle
+
+
+def _kind_counts(snapshot_body: dict[str, Any]) -> Counter[str]:
+    return Counter(
+        element.get("kind")
+        for element in snapshot_body.get("elements", {}).values()
+        if isinstance(element, dict)
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -161,6 +217,73 @@ class TestCommitRoute:
         client.post(f"/api/models/{MODEL_ID}/bundles", json=_bundle_body(mode="commit"))
         snap = client.get(f"/api/models/{MODEL_ID}/snapshot")
         assert snap.json()["revision"] == 2
+
+    def test_commit_simple_house_bundle_materializes_geometry_and_command_log(
+        self, client: TestClient
+    ) -> None:
+        before = client.get(f"/api/models/{MODEL_ID}/snapshot").json()
+        before_counts = _kind_counts(before)
+        assert before_counts["wall"] == 0
+        assert before_counts["roof"] == 0
+
+        bundle = _simple_house_bundle(parent_revision=before["revision"])
+        res = client.post(
+            f"/api/models/{MODEL_ID}/bundles",
+            json={
+                "bundle": bundle,
+                "mode": "commit",
+                "userId": "benchmark-agent",
+                "submitter": "benchmark-agent",
+            },
+        )
+
+        assert res.status_code == 200
+        body = res.json()
+        assert body["applied"] is True
+        assert body["newRevision"] == before["revision"] + 1
+        assert len(body["changedIds"]) >= 20
+        assert {"ssh-roof-main", "ssh-floor-ground", "ssh-wall-north"} <= set(
+            body["changedIds"]
+        )
+
+        after = client.get(f"/api/models/{MODEL_ID}/snapshot").json()
+        after_counts = _kind_counts(after)
+        assert after["revision"] == body["newRevision"]
+        assert after_counts["wall"] == 6
+        assert after_counts["floor"] == 1
+        assert after_counts["roof"] == 1
+        assert after_counts["room"] == 3
+        assert after_counts["door"] == 3
+        assert after_counts["window"] == 3
+        assert "ssh-roof-main" in after["elements"]
+
+        log = client.get(f"/api/models/{MODEL_ID}/command-log").json()
+        assert log["entries"][0]["revisionAfter"] == body["newRevision"]
+        assert len(log["entries"][0]["appliedCommands"]) == 28
+
+    def test_dry_run_simple_house_bundle_does_not_mutate(self, client: TestClient) -> None:
+        before = client.get(f"/api/models/{MODEL_ID}/snapshot").json()
+        bundle = _simple_house_bundle(parent_revision=before["revision"])
+
+        res = client.post(
+            f"/api/models/{MODEL_ID}/bundles",
+            json={
+                "bundle": bundle,
+                "mode": "dry_run",
+                "userId": "benchmark-agent",
+                "submitter": "benchmark-agent",
+            },
+        )
+
+        assert res.status_code == 200
+        body = res.json()
+        assert body["applied"] is False
+        assert body["newRevision"] is None
+        assert body["changedIds"] == []
+        after = client.get(f"/api/models/{MODEL_ID}/snapshot").json()
+        assert after["revision"] == before["revision"]
+        assert after["elements"] == before["elements"]
+        assert client.get(f"/api/models/{MODEL_ID}/command-log").json()["entries"] == []
 
 
 class TestConflictRoute:

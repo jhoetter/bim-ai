@@ -1,0 +1,1233 @@
+{
+  "mode": "live-dry-run-and-commit",
+  "ok": true,
+  "mutationWarning": "--commit-live was set; the benchmark posted mode=commit and mutated the target model if the server accepted the bundle.",
+  "liveDryRun": {
+    "mode": "live-dry-run",
+    "ok": true,
+    "publicSurface": {
+      "kind": "cmd-v3-api",
+      "method": "POST",
+      "endpoint": "/api/models/0c55b59d-84c3-4497-90e6-63225749bc4a/bundles",
+      "url": "http://127.0.0.1:8501/api/models/0c55b59d-84c3-4497-90e6-63225749bc4a/bundles",
+      "requestMode": "dry_run",
+      "cliEquivalent": "BIM_AI_BASE_URL=http://127.0.0.1:8501 BIM_AI_MODEL_ID=0c55b59d-84c3-4497-90e6-63225749bc4a pnpm --dir /Users/jhoetter/repos/bim-ai --filter @bim-ai/cli exec bim-ai apply-bundle spec/benchmarks/simple-single-storey-house/mcp-cli-command-bundle.json --base <parentRevision> --dry-run"
+    },
+    "request": {
+      "bundleDigest": "b38f24cf8579a5abd28db02a132c36aea24210e0a49447ce11d58abb863bdf87",
+      "commandCount": 28,
+      "userId": "m2-u-local-live-target",
+      "parentRevision": 1
+    },
+    "response": {
+      "httpStatus": 200,
+      "ok": true,
+      "bodyOk": null,
+      "reason": null,
+      "applied": false,
+      "wouldRevision": null,
+      "revision": null,
+      "newRevision": null,
+      "changedIds": [],
+      "checkpointSnapshotId": "c78bfd818a8f8d8161d8d903a8983192b291c89a65eced2653aa68ca20910de2"
+    },
+    "validation": {
+      "status": "live-dry-run-response",
+      "ok": true,
+      "violationCount": 8,
+      "violations": [
+        {
+          "ruleId": "floor_span_without_support_metadata",
+          "severity": "warning",
+          "message": "Floor span exceeds the default constructability threshold without structural system, beam grid, or engineering review metadata.",
+          "elementIds": ["ssh-floor-ground"],
+          "blocking": false,
+          "quickFixCommand": null,
+          "discipline": "structure",
+          "blockingClass": "documentation"
+        },
+        {
+          "ruleId": "gltf_export_manifest_expected_extension_missing",
+          "severity": "info",
+          "message": "glTF export manifest: extension 'bim_ai_skew_wall_hosted_openings_v0' not emitted but eligible element kind 'wall' is present (skipReasonCode='no_eligible_elements').",
+          "elementIds": [],
+          "blocking": false,
+          "quickFixCommand": null,
+          "discipline": "exchange",
+          "blockingClass": "exchange"
+        },
+        {
+          "ruleId": "gltf_export_manifest_expected_extension_missing",
+          "severity": "info",
+          "message": "glTF export manifest: extension 'bim_ai_roof_unsupported_shape_summary_v0' not emitted but eligible element kind 'roof' is present (skipReasonCode='no_eligible_elements').",
+          "elementIds": [],
+          "blocking": false,
+          "quickFixCommand": null,
+          "discipline": "exchange",
+          "blockingClass": "exchange"
+        },
+        {
+          "ruleId": "room_color_scheme_identity_missing",
+          "severity": "info",
+          "message": "No room color scheme element found. Use upsertRoomColorScheme to author overrides.",
+          "elementIds": [],
+          "blocking": false,
+          "quickFixCommand": null,
+          "discipline": "architecture",
+          "blockingClass": "documentation"
+        },
+        {
+          "ruleId": "room_finish_metadata_hint",
+          "severity": "info",
+          "message": "Room has programme or department metadata but finishSet is blank; finish schedules may be incomplete.",
+          "elementIds": ["ssh-room-bedroom"],
+          "blocking": false,
+          "quickFixCommand": null,
+          "discipline": "architecture",
+          "blockingClass": "documentation"
+        },
+        {
+          "ruleId": "room_finish_metadata_hint",
+          "severity": "info",
+          "message": "Room has programme or department metadata but finishSet is blank; finish schedules may be incomplete.",
+          "elementIds": ["ssh-room-kitchen"],
+          "blocking": false,
+          "quickFixCommand": null,
+          "discipline": "architecture",
+          "blockingClass": "documentation"
+        },
+        {
+          "ruleId": "room_finish_metadata_hint",
+          "severity": "info",
+          "message": "Room has programme or department metadata but finishSet is blank; finish schedules may be incomplete.",
+          "elementIds": ["ssh-room-living"],
+          "blocking": false,
+          "quickFixCommand": null,
+          "discipline": "architecture",
+          "blockingClass": "documentation"
+        },
+        {
+          "ruleId": "schedule_not_placed_on_sheet",
+          "severity": "warning",
+          "message": "Schedule 'ssh-schedule-openings' exists but is not placed on any sheet (sheetId is empty; assign sheetId to enable documentation linkage).",
+          "elementIds": ["ssh-schedule-openings"],
+          "blocking": false,
+          "quickFixCommand": {
+            "type": "upsertSheetViewports",
+            "sheetId": "ssh-sheet-a101",
+            "viewportsMm": [
+              {
+                "viewportId": "vp-autoplace-schedule-ssh-schedule-openings",
+                "label": "Door and window schedule",
+                "viewRef": "schedule:ssh-schedule-openings",
+                "xMm": 800,
+                "yMm": 800,
+                "widthMm": 14000,
+                "heightMm": 9000
+              }
+            ]
+          },
+          "discipline": "coordination",
+          "blockingClass": "schedule"
+        }
+      ],
+      "replayDiagnostics": null
+    },
+    "advisor": {
+      "status": "live-validation-output",
+      "findings": [
+        {
+          "ruleId": "floor_span_without_support_metadata",
+          "severity": "warning",
+          "message": "Floor span exceeds the default constructability threshold without structural system, beam grid, or engineering review metadata.",
+          "elementIds": ["ssh-floor-ground"],
+          "blocking": false,
+          "quickFixCommand": null,
+          "discipline": "structure",
+          "blockingClass": "documentation"
+        },
+        {
+          "ruleId": "gltf_export_manifest_expected_extension_missing",
+          "severity": "info",
+          "message": "glTF export manifest: extension 'bim_ai_skew_wall_hosted_openings_v0' not emitted but eligible element kind 'wall' is present (skipReasonCode='no_eligible_elements').",
+          "elementIds": [],
+          "blocking": false,
+          "quickFixCommand": null,
+          "discipline": "exchange",
+          "blockingClass": "exchange"
+        },
+        {
+          "ruleId": "gltf_export_manifest_expected_extension_missing",
+          "severity": "info",
+          "message": "glTF export manifest: extension 'bim_ai_roof_unsupported_shape_summary_v0' not emitted but eligible element kind 'roof' is present (skipReasonCode='no_eligible_elements').",
+          "elementIds": [],
+          "blocking": false,
+          "quickFixCommand": null,
+          "discipline": "exchange",
+          "blockingClass": "exchange"
+        },
+        {
+          "ruleId": "room_color_scheme_identity_missing",
+          "severity": "info",
+          "message": "No room color scheme element found. Use upsertRoomColorScheme to author overrides.",
+          "elementIds": [],
+          "blocking": false,
+          "quickFixCommand": null,
+          "discipline": "architecture",
+          "blockingClass": "documentation"
+        },
+        {
+          "ruleId": "room_finish_metadata_hint",
+          "severity": "info",
+          "message": "Room has programme or department metadata but finishSet is blank; finish schedules may be incomplete.",
+          "elementIds": ["ssh-room-bedroom"],
+          "blocking": false,
+          "quickFixCommand": null,
+          "discipline": "architecture",
+          "blockingClass": "documentation"
+        },
+        {
+          "ruleId": "room_finish_metadata_hint",
+          "severity": "info",
+          "message": "Room has programme or department metadata but finishSet is blank; finish schedules may be incomplete.",
+          "elementIds": ["ssh-room-kitchen"],
+          "blocking": false,
+          "quickFixCommand": null,
+          "discipline": "architecture",
+          "blockingClass": "documentation"
+        },
+        {
+          "ruleId": "room_finish_metadata_hint",
+          "severity": "info",
+          "message": "Room has programme or department metadata but finishSet is blank; finish schedules may be incomplete.",
+          "elementIds": ["ssh-room-living"],
+          "blocking": false,
+          "quickFixCommand": null,
+          "discipline": "architecture",
+          "blockingClass": "documentation"
+        },
+        {
+          "ruleId": "schedule_not_placed_on_sheet",
+          "severity": "warning",
+          "message": "Schedule 'ssh-schedule-openings' exists but is not placed on any sheet (sheetId is empty; assign sheetId to enable documentation linkage).",
+          "elementIds": ["ssh-schedule-openings"],
+          "blocking": false,
+          "quickFixCommand": {
+            "type": "upsertSheetViewports",
+            "sheetId": "ssh-sheet-a101",
+            "viewportsMm": [
+              {
+                "viewportId": "vp-autoplace-schedule-ssh-schedule-openings",
+                "label": "Door and window schedule",
+                "viewRef": "schedule:ssh-schedule-openings",
+                "xMm": 800,
+                "yMm": 800,
+                "widthMm": 14000,
+                "heightMm": 9000
+              }
+            ]
+          },
+          "discipline": "coordination",
+          "blockingClass": "schedule"
+        }
+      ],
+      "agentBriefCommandProtocol_v1": null,
+      "agentGeneratedBundleQaChecklist_v1": null,
+      "agentBriefAcceptanceReadout_v1": null
+    },
+    "liveEvidence": true,
+    "fixtureEvidence": false,
+    "evidenceKind": "live-dry-run",
+    "status": "live-dry-run-clean",
+    "auditClassification": "live-dry-run-clean",
+    "clean": true,
+    "pass": true,
+    "sourceTarget": {
+      "kind": "live-backend-target",
+      "targetMode": "created-disposable-model",
+      "modelId": "0c55b59d-84c3-4497-90e6-63225749bc4a",
+      "projectId": "bc1e86b7-bf7a-49d1-a1e6-a51375c50460",
+      "slug": "simple-house-m2p-2389b7c3-0719-4a3c-a1c2-2a2919e55194",
+      "templateId": null,
+      "parentRevision": "1",
+      "baseUrl": {
+        "origin": "http://127.0.0.1:8501",
+        "pathname": "",
+        "credentials": false,
+        "query": false,
+        "fragment": false
+      },
+      "publicSurface": {
+        "kind": "model-create-api",
+        "method": "POST",
+        "endpoint": "/api/projects/bc1e86b7-bf7a-49d1-a1e6-a51375c50460/models"
+      },
+      "commitRequested": true
+    },
+    "revision": {
+      "parentRevision": 1,
+      "wouldRevision": null,
+      "revision": null,
+      "newRevision": null,
+      "checkpointSnapshotId": "c78bfd818a8f8d8161d8d903a8983192b291c89a65eced2653aa68ca20910de2",
+      "commandLogRevisionAfter": null,
+      "snapshotRevision": null
+    },
+    "changedIds": [],
+    "secrets": {
+      "containsSecrets": false,
+      "baseUrlCredentialsAccepted": false,
+      "requestHeadersRecorded": false
+    },
+    "semanticClosure": {
+      "schemaVersion": "bim-ai.simple-house-live-evidence-semantic-closure.v1",
+      "status": "committed-simple-house-semantics-clean",
+      "pass": true,
+      "commitRequested": true,
+      "checks": [
+        {
+          "id": "dry-run-command-payload",
+          "pass": true,
+          "actual": 28,
+          "expected": "> 0"
+        },
+        {
+          "id": "dry-run-revision-intent",
+          "pass": true,
+          "actual": null,
+          "expected": "optional wouldRevision evidence; dry-run command intent is authoritative"
+        },
+        {
+          "id": "commit-changed-ids",
+          "pass": true,
+          "actual": 32,
+          "expected": "> 0"
+        },
+        {
+          "id": "commit-revision-advanced",
+          "pass": true,
+          "actual": [2, 2, 2, 2],
+          "expected": "> parentRevision 1"
+        },
+        {
+          "id": "committed-snapshot-present",
+          "pass": true,
+          "actual": 45,
+          "expected": "> 0"
+        },
+        {
+          "id": "committed-walls-count",
+          "pass": true,
+          "actual": 6,
+          "expected": ">= 6"
+        },
+        {
+          "id": "committed-floors-count",
+          "pass": true,
+          "actual": 1,
+          "expected": ">= 1"
+        },
+        {
+          "id": "committed-roofs-count",
+          "pass": true,
+          "actual": 1,
+          "expected": ">= 1"
+        },
+        {
+          "id": "committed-rooms-count",
+          "pass": true,
+          "actual": 3,
+          "expected": ">= 3"
+        },
+        {
+          "id": "committed-openings-count",
+          "pass": true,
+          "actual": 8,
+          "expected": ">= 6"
+        }
+      ],
+      "counts": {
+        "walls": 6,
+        "floors": 1,
+        "roofs": 1,
+        "rooms": 3,
+        "openings": 8,
+        "doors": 4,
+        "windows": 4
+      },
+      "countSources": {
+        "snapshotPresent": true,
+        "snapshotElementCount": 45,
+        "snapshotRevision": 2,
+        "summaryPresent": true
+      },
+      "expected": {
+        "walls": 6,
+        "floors": 1,
+        "roofs": 1,
+        "rooms": 3,
+        "openings": 6
+      },
+      "changedIds": [
+        "default-a1-titleblock",
+        "ssh-dim-overall-depth",
+        "ssh-dim-overall-width",
+        "ssh-door-bath",
+        "ssh-door-bedroom",
+        "ssh-door-entry",
+        "ssh-door-single",
+        "ssh-floor-ground",
+        "ssh-ft-slab",
+        "ssh-lvl-ground",
+        "ssh-roof-main",
+        "ssh-room-bedroom",
+        "ssh-room-kitchen",
+        "ssh-room-living",
+        "ssh-rt-gable",
+        "ssh-schedule-openings",
+        "ssh-sheet-a101",
+        "ssh-tag-living",
+        "ssh-view-3d",
+        "ssh-view-ground-plan",
+        "ssh-wall-bath",
+        "ssh-wall-east",
+        "ssh-wall-hall-bedroom",
+        "ssh-wall-north",
+        "ssh-wall-south",
+        "ssh-wall-west",
+        "ssh-window-bedroom",
+        "ssh-window-fixed",
+        "ssh-window-kitchen",
+        "ssh-window-living",
+        "ssh-wt-exterior",
+        "ssh-wt-interior"
+      ],
+      "revision": {
+        "parentRevision": 1,
+        "candidateRevisions": [2, 2, 2, 2],
+        "pass": true
+      }
+    }
+  },
+  "liveCommit": {
+    "mode": "live-commit",
+    "ok": true,
+    "publicSurface": {
+      "kind": "cmd-v3-api",
+      "method": "POST",
+      "endpoint": "/api/models/0c55b59d-84c3-4497-90e6-63225749bc4a/bundles",
+      "url": "http://127.0.0.1:8501/api/models/0c55b59d-84c3-4497-90e6-63225749bc4a/bundles",
+      "requestMode": "commit",
+      "cliEquivalent": "BIM_AI_BASE_URL=http://127.0.0.1:8501 BIM_AI_MODEL_ID=0c55b59d-84c3-4497-90e6-63225749bc4a pnpm --dir /Users/jhoetter/repos/bim-ai --filter @bim-ai/cli exec bim-ai apply-bundle spec/benchmarks/simple-single-storey-house/mcp-cli-command-bundle.json --base <parentRevision> --commit"
+    },
+    "request": {
+      "bundleDigest": "b38f24cf8579a5abd28db02a132c36aea24210e0a49447ce11d58abb863bdf87",
+      "commandCount": 28,
+      "userId": "m2-u-local-live-target",
+      "parentRevision": 1
+    },
+    "response": {
+      "httpStatus": 200,
+      "ok": true,
+      "bodyOk": null,
+      "reason": null,
+      "applied": true,
+      "wouldRevision": null,
+      "revision": 2,
+      "newRevision": 2,
+      "changedIds": [
+        "default-a1-titleblock",
+        "ssh-dim-overall-depth",
+        "ssh-dim-overall-width",
+        "ssh-door-bath",
+        "ssh-door-bedroom",
+        "ssh-door-entry",
+        "ssh-door-single",
+        "ssh-floor-ground",
+        "ssh-ft-slab",
+        "ssh-lvl-ground",
+        "ssh-roof-main",
+        "ssh-room-bedroom",
+        "ssh-room-kitchen",
+        "ssh-room-living",
+        "ssh-rt-gable",
+        "ssh-schedule-openings",
+        "ssh-sheet-a101",
+        "ssh-tag-living",
+        "ssh-view-3d",
+        "ssh-view-ground-plan",
+        "ssh-wall-bath",
+        "ssh-wall-east",
+        "ssh-wall-hall-bedroom",
+        "ssh-wall-north",
+        "ssh-wall-south",
+        "ssh-wall-west",
+        "ssh-window-bedroom",
+        "ssh-window-fixed",
+        "ssh-window-kitchen",
+        "ssh-window-living",
+        "ssh-wt-exterior",
+        "ssh-wt-interior"
+      ],
+      "checkpointSnapshotId": "15d89264561661946bdff80195bf12f5b3a6823354fc8ee3f5d0f2227dbdbcbb"
+    },
+    "validation": {
+      "status": "live-commit-response",
+      "ok": true,
+      "violationCount": 8,
+      "violations": [
+        {
+          "ruleId": "floor_span_without_support_metadata",
+          "severity": "warning",
+          "message": "Floor span exceeds the default constructability threshold without structural system, beam grid, or engineering review metadata.",
+          "elementIds": ["ssh-floor-ground"],
+          "blocking": false,
+          "quickFixCommand": null,
+          "discipline": "structure",
+          "blockingClass": "documentation"
+        },
+        {
+          "ruleId": "gltf_export_manifest_expected_extension_missing",
+          "severity": "info",
+          "message": "glTF export manifest: extension 'bim_ai_skew_wall_hosted_openings_v0' not emitted but eligible element kind 'wall' is present (skipReasonCode='no_eligible_elements').",
+          "elementIds": [],
+          "blocking": false,
+          "quickFixCommand": null,
+          "discipline": "exchange",
+          "blockingClass": "exchange"
+        },
+        {
+          "ruleId": "gltf_export_manifest_expected_extension_missing",
+          "severity": "info",
+          "message": "glTF export manifest: extension 'bim_ai_roof_unsupported_shape_summary_v0' not emitted but eligible element kind 'roof' is present (skipReasonCode='no_eligible_elements').",
+          "elementIds": [],
+          "blocking": false,
+          "quickFixCommand": null,
+          "discipline": "exchange",
+          "blockingClass": "exchange"
+        },
+        {
+          "ruleId": "room_color_scheme_identity_missing",
+          "severity": "info",
+          "message": "No room color scheme element found. Use upsertRoomColorScheme to author overrides.",
+          "elementIds": [],
+          "blocking": false,
+          "quickFixCommand": null,
+          "discipline": "architecture",
+          "blockingClass": "documentation"
+        },
+        {
+          "ruleId": "room_finish_metadata_hint",
+          "severity": "info",
+          "message": "Room has programme or department metadata but finishSet is blank; finish schedules may be incomplete.",
+          "elementIds": ["ssh-room-bedroom"],
+          "blocking": false,
+          "quickFixCommand": null,
+          "discipline": "architecture",
+          "blockingClass": "documentation"
+        },
+        {
+          "ruleId": "room_finish_metadata_hint",
+          "severity": "info",
+          "message": "Room has programme or department metadata but finishSet is blank; finish schedules may be incomplete.",
+          "elementIds": ["ssh-room-kitchen"],
+          "blocking": false,
+          "quickFixCommand": null,
+          "discipline": "architecture",
+          "blockingClass": "documentation"
+        },
+        {
+          "ruleId": "room_finish_metadata_hint",
+          "severity": "info",
+          "message": "Room has programme or department metadata but finishSet is blank; finish schedules may be incomplete.",
+          "elementIds": ["ssh-room-living"],
+          "blocking": false,
+          "quickFixCommand": null,
+          "discipline": "architecture",
+          "blockingClass": "documentation"
+        },
+        {
+          "ruleId": "schedule_not_placed_on_sheet",
+          "severity": "warning",
+          "message": "Schedule 'ssh-schedule-openings' exists but is not placed on any sheet (sheetId is empty; assign sheetId to enable documentation linkage).",
+          "elementIds": ["ssh-schedule-openings"],
+          "blocking": false,
+          "quickFixCommand": {
+            "type": "upsertSheetViewports",
+            "sheetId": "ssh-sheet-a101",
+            "viewportsMm": [
+              {
+                "viewportId": "vp-autoplace-schedule-ssh-schedule-openings",
+                "label": "Door and window schedule",
+                "viewRef": "schedule:ssh-schedule-openings",
+                "xMm": 800,
+                "yMm": 800,
+                "widthMm": 14000,
+                "heightMm": 9000
+              }
+            ]
+          },
+          "discipline": "coordination",
+          "blockingClass": "schedule"
+        }
+      ],
+      "replayDiagnostics": null
+    },
+    "advisor": {
+      "status": "live-validation-output",
+      "findings": [
+        {
+          "ruleId": "floor_span_without_support_metadata",
+          "severity": "warning",
+          "message": "Floor span exceeds the default constructability threshold without structural system, beam grid, or engineering review metadata.",
+          "elementIds": ["ssh-floor-ground"],
+          "blocking": false,
+          "quickFixCommand": null,
+          "discipline": "structure",
+          "blockingClass": "documentation"
+        },
+        {
+          "ruleId": "gltf_export_manifest_expected_extension_missing",
+          "severity": "info",
+          "message": "glTF export manifest: extension 'bim_ai_skew_wall_hosted_openings_v0' not emitted but eligible element kind 'wall' is present (skipReasonCode='no_eligible_elements').",
+          "elementIds": [],
+          "blocking": false,
+          "quickFixCommand": null,
+          "discipline": "exchange",
+          "blockingClass": "exchange"
+        },
+        {
+          "ruleId": "gltf_export_manifest_expected_extension_missing",
+          "severity": "info",
+          "message": "glTF export manifest: extension 'bim_ai_roof_unsupported_shape_summary_v0' not emitted but eligible element kind 'roof' is present (skipReasonCode='no_eligible_elements').",
+          "elementIds": [],
+          "blocking": false,
+          "quickFixCommand": null,
+          "discipline": "exchange",
+          "blockingClass": "exchange"
+        },
+        {
+          "ruleId": "room_color_scheme_identity_missing",
+          "severity": "info",
+          "message": "No room color scheme element found. Use upsertRoomColorScheme to author overrides.",
+          "elementIds": [],
+          "blocking": false,
+          "quickFixCommand": null,
+          "discipline": "architecture",
+          "blockingClass": "documentation"
+        },
+        {
+          "ruleId": "room_finish_metadata_hint",
+          "severity": "info",
+          "message": "Room has programme or department metadata but finishSet is blank; finish schedules may be incomplete.",
+          "elementIds": ["ssh-room-bedroom"],
+          "blocking": false,
+          "quickFixCommand": null,
+          "discipline": "architecture",
+          "blockingClass": "documentation"
+        },
+        {
+          "ruleId": "room_finish_metadata_hint",
+          "severity": "info",
+          "message": "Room has programme or department metadata but finishSet is blank; finish schedules may be incomplete.",
+          "elementIds": ["ssh-room-kitchen"],
+          "blocking": false,
+          "quickFixCommand": null,
+          "discipline": "architecture",
+          "blockingClass": "documentation"
+        },
+        {
+          "ruleId": "room_finish_metadata_hint",
+          "severity": "info",
+          "message": "Room has programme or department metadata but finishSet is blank; finish schedules may be incomplete.",
+          "elementIds": ["ssh-room-living"],
+          "blocking": false,
+          "quickFixCommand": null,
+          "discipline": "architecture",
+          "blockingClass": "documentation"
+        },
+        {
+          "ruleId": "schedule_not_placed_on_sheet",
+          "severity": "warning",
+          "message": "Schedule 'ssh-schedule-openings' exists but is not placed on any sheet (sheetId is empty; assign sheetId to enable documentation linkage).",
+          "elementIds": ["ssh-schedule-openings"],
+          "blocking": false,
+          "quickFixCommand": {
+            "type": "upsertSheetViewports",
+            "sheetId": "ssh-sheet-a101",
+            "viewportsMm": [
+              {
+                "viewportId": "vp-autoplace-schedule-ssh-schedule-openings",
+                "label": "Door and window schedule",
+                "viewRef": "schedule:ssh-schedule-openings",
+                "xMm": 800,
+                "yMm": 800,
+                "widthMm": 14000,
+                "heightMm": 9000
+              }
+            ]
+          },
+          "discipline": "coordination",
+          "blockingClass": "schedule"
+        }
+      ],
+      "agentBriefCommandProtocol_v1": null,
+      "agentGeneratedBundleQaChecklist_v1": null,
+      "agentBriefAcceptanceReadout_v1": null
+    },
+    "postCommit": {
+      "commandLog": {
+        "publicSurface": {
+          "kind": "cmd-v3-command-log-api",
+          "method": "GET",
+          "endpoint": "/api/models/0c55b59d-84c3-4497-90e6-63225749bc4a/command-log?limit=5",
+          "url": "http://127.0.0.1:8501/api/models/0c55b59d-84c3-4497-90e6-63225749bc4a/command-log?limit=5"
+        },
+        "httpStatus": 200,
+        "ok": true,
+        "summary": {
+          "modelId": "0c55b59d-84c3-4497-90e6-63225749bc4a",
+          "entryCount": 1,
+          "latest": [
+            {
+              "id": 566,
+              "userId": "m2-u-local-live-target",
+              "revisionAfter": 2,
+              "appliedCommandCount": 28,
+              "appliedCommandTypes": [
+                "CreateSheet",
+                "PlaceViewOnSheet",
+                "PlaceViewOnSheet",
+                "createDimension",
+                "createDimension",
+                "createFloor",
+                "createLevel",
+                "createRoof",
+                "createRoomOutline",
+                "createRoomOutline",
+                "createRoomOutline",
+                "createWallChain",
+                "createWallChain",
+                "create_schedule_view",
+                "insertDoorOnWall",
+                "insertDoorOnWall",
+                "insertDoorOnWall",
+                "insertWindowOnWall",
+                "insertWindowOnWall",
+                "insertWindowOnWall",
+                "placeTag",
+                "saveViewpoint",
+                "upsertFamilyType",
+                "upsertFamilyType",
+                "upsertFloorType",
+                "upsertRoofType",
+                "upsertWallType",
+                "upsertWallType"
+              ]
+            }
+          ]
+        },
+        "bodyDigest": "7d5aa11ba67606f69b87cfaf72feaacca02d7ea5a546ffba9363935a611754a5"
+      },
+      "snapshot": {
+        "publicSurface": {
+          "kind": "model-snapshot-api",
+          "method": "GET",
+          "endpoint": "/api/models/0c55b59d-84c3-4497-90e6-63225749bc4a/snapshot",
+          "url": "http://127.0.0.1:8501/api/models/0c55b59d-84c3-4497-90e6-63225749bc4a/snapshot"
+        },
+        "httpStatus": 200,
+        "ok": true,
+        "summary": {
+          "modelId": "0c55b59d-84c3-4497-90e6-63225749bc4a",
+          "revision": 2,
+          "elementCount": 45,
+          "countsByKind": {
+            "dimension": 2,
+            "door": 3,
+            "elevation_view": 4,
+            "family_type": 2,
+            "floor": 1,
+            "floor_type": 1,
+            "hatch_pattern_def": 7,
+            "internal_origin": 1,
+            "level": 1,
+            "placed_tag": 1,
+            "plan_view": 1,
+            "roof": 1,
+            "roof_type": 1,
+            "room": 3,
+            "schedule": 1,
+            "sheet": 1,
+            "sun_settings": 1,
+            "titleblock_type": 1,
+            "viewpoint": 1,
+            "wall": 6,
+            "wall_type": 2,
+            "window": 3
+          },
+          "ids": [
+            "brick_45",
+            "concrete_dot",
+            "default-a1-titleblock",
+            "elevation-east",
+            "elevation-north",
+            "elevation-south",
+            "elevation-west",
+            "gypsum",
+            "insulation",
+            "internal_origin",
+            "plaster",
+            "ssh-dim-overall-depth",
+            "ssh-dim-overall-width",
+            "ssh-door-bath",
+            "ssh-door-bedroom",
+            "ssh-door-entry",
+            "ssh-door-single",
+            "ssh-floor-ground",
+            "ssh-ft-slab",
+            "ssh-lvl-ground",
+            "ssh-roof-main",
+            "ssh-room-bedroom",
+            "ssh-room-kitchen",
+            "ssh-room-living",
+            "ssh-rt-gable",
+            "ssh-schedule-openings",
+            "ssh-sheet-a101",
+            "ssh-tag-living",
+            "ssh-view-3d",
+            "ssh-view-ground-plan",
+            "ssh-wall-bath",
+            "ssh-wall-east",
+            "ssh-wall-hall-bedroom",
+            "ssh-wall-north",
+            "ssh-wall-south",
+            "ssh-wall-west",
+            "ssh-window-bedroom",
+            "ssh-window-fixed",
+            "ssh-window-kitchen",
+            "ssh-window-living",
+            "ssh-wt-exterior",
+            "ssh-wt-interior",
+            "stone",
+            "sun_settings",
+            "timber_grain"
+          ]
+        },
+        "bodyDigest": "a5c44fc4b437af5200744486c9325c6025f0e289f2c52e48b91af2eea1148993"
+      }
+    },
+    "liveEvidence": true,
+    "fixtureEvidence": false,
+    "evidenceKind": "live-commit",
+    "status": "live-commit-clean",
+    "auditClassification": "live-commit-clean",
+    "clean": true,
+    "pass": true,
+    "sourceTarget": {
+      "kind": "live-backend-target",
+      "targetMode": "created-disposable-model",
+      "modelId": "0c55b59d-84c3-4497-90e6-63225749bc4a",
+      "projectId": "bc1e86b7-bf7a-49d1-a1e6-a51375c50460",
+      "slug": "simple-house-m2p-2389b7c3-0719-4a3c-a1c2-2a2919e55194",
+      "templateId": null,
+      "parentRevision": "1",
+      "baseUrl": {
+        "origin": "http://127.0.0.1:8501",
+        "pathname": "",
+        "credentials": false,
+        "query": false,
+        "fragment": false
+      },
+      "publicSurface": {
+        "kind": "model-create-api",
+        "method": "POST",
+        "endpoint": "/api/projects/bc1e86b7-bf7a-49d1-a1e6-a51375c50460/models"
+      },
+      "commitRequested": true
+    },
+    "revision": {
+      "parentRevision": 1,
+      "wouldRevision": null,
+      "revision": 2,
+      "newRevision": 2,
+      "checkpointSnapshotId": "15d89264561661946bdff80195bf12f5b3a6823354fc8ee3f5d0f2227dbdbcbb",
+      "commandLogRevisionAfter": 2,
+      "snapshotRevision": 2
+    },
+    "changedIds": [
+      "default-a1-titleblock",
+      "ssh-dim-overall-depth",
+      "ssh-dim-overall-width",
+      "ssh-door-bath",
+      "ssh-door-bedroom",
+      "ssh-door-entry",
+      "ssh-door-single",
+      "ssh-floor-ground",
+      "ssh-ft-slab",
+      "ssh-lvl-ground",
+      "ssh-roof-main",
+      "ssh-room-bedroom",
+      "ssh-room-kitchen",
+      "ssh-room-living",
+      "ssh-rt-gable",
+      "ssh-schedule-openings",
+      "ssh-sheet-a101",
+      "ssh-tag-living",
+      "ssh-view-3d",
+      "ssh-view-ground-plan",
+      "ssh-wall-bath",
+      "ssh-wall-east",
+      "ssh-wall-hall-bedroom",
+      "ssh-wall-north",
+      "ssh-wall-south",
+      "ssh-wall-west",
+      "ssh-window-bedroom",
+      "ssh-window-fixed",
+      "ssh-window-kitchen",
+      "ssh-window-living",
+      "ssh-wt-exterior",
+      "ssh-wt-interior"
+    ],
+    "secrets": {
+      "containsSecrets": false,
+      "baseUrlCredentialsAccepted": false,
+      "requestHeadersRecorded": false
+    },
+    "semanticClosure": {
+      "schemaVersion": "bim-ai.simple-house-live-evidence-semantic-closure.v1",
+      "status": "committed-simple-house-semantics-clean",
+      "pass": true,
+      "commitRequested": true,
+      "checks": [
+        {
+          "id": "dry-run-command-payload",
+          "pass": true,
+          "actual": 28,
+          "expected": "> 0"
+        },
+        {
+          "id": "dry-run-revision-intent",
+          "pass": true,
+          "actual": null,
+          "expected": "optional wouldRevision evidence; dry-run command intent is authoritative"
+        },
+        {
+          "id": "commit-changed-ids",
+          "pass": true,
+          "actual": 32,
+          "expected": "> 0"
+        },
+        {
+          "id": "commit-revision-advanced",
+          "pass": true,
+          "actual": [2, 2, 2, 2],
+          "expected": "> parentRevision 1"
+        },
+        {
+          "id": "committed-snapshot-present",
+          "pass": true,
+          "actual": 45,
+          "expected": "> 0"
+        },
+        {
+          "id": "committed-walls-count",
+          "pass": true,
+          "actual": 6,
+          "expected": ">= 6"
+        },
+        {
+          "id": "committed-floors-count",
+          "pass": true,
+          "actual": 1,
+          "expected": ">= 1"
+        },
+        {
+          "id": "committed-roofs-count",
+          "pass": true,
+          "actual": 1,
+          "expected": ">= 1"
+        },
+        {
+          "id": "committed-rooms-count",
+          "pass": true,
+          "actual": 3,
+          "expected": ">= 3"
+        },
+        {
+          "id": "committed-openings-count",
+          "pass": true,
+          "actual": 8,
+          "expected": ">= 6"
+        }
+      ],
+      "counts": {
+        "walls": 6,
+        "floors": 1,
+        "roofs": 1,
+        "rooms": 3,
+        "openings": 8,
+        "doors": 4,
+        "windows": 4
+      },
+      "countSources": {
+        "snapshotPresent": true,
+        "snapshotElementCount": 45,
+        "snapshotRevision": 2,
+        "summaryPresent": true
+      },
+      "expected": {
+        "walls": 6,
+        "floors": 1,
+        "roofs": 1,
+        "rooms": 3,
+        "openings": 6
+      },
+      "changedIds": [
+        "default-a1-titleblock",
+        "ssh-dim-overall-depth",
+        "ssh-dim-overall-width",
+        "ssh-door-bath",
+        "ssh-door-bedroom",
+        "ssh-door-entry",
+        "ssh-door-single",
+        "ssh-floor-ground",
+        "ssh-ft-slab",
+        "ssh-lvl-ground",
+        "ssh-roof-main",
+        "ssh-room-bedroom",
+        "ssh-room-kitchen",
+        "ssh-room-living",
+        "ssh-rt-gable",
+        "ssh-schedule-openings",
+        "ssh-sheet-a101",
+        "ssh-tag-living",
+        "ssh-view-3d",
+        "ssh-view-ground-plan",
+        "ssh-wall-bath",
+        "ssh-wall-east",
+        "ssh-wall-hall-bedroom",
+        "ssh-wall-north",
+        "ssh-wall-south",
+        "ssh-wall-west",
+        "ssh-window-bedroom",
+        "ssh-window-fixed",
+        "ssh-window-kitchen",
+        "ssh-window-living",
+        "ssh-wt-exterior",
+        "ssh-wt-interior"
+      ],
+      "revision": {
+        "parentRevision": 1,
+        "candidateRevisions": [2, 2, 2, 2],
+        "pass": true
+      }
+    }
+  },
+  "liveEvidence": true,
+  "fixtureEvidence": false,
+  "evidenceKind": "live-dry-run-and-commit",
+  "status": "live-dry-run-and-commit-clean",
+  "auditClassification": "live-dry-run-and-commit-clean",
+  "clean": true,
+  "pass": true,
+  "sourceTarget": {
+    "kind": "live-backend-target",
+    "targetMode": "created-disposable-model",
+    "modelId": "0c55b59d-84c3-4497-90e6-63225749bc4a",
+    "projectId": "bc1e86b7-bf7a-49d1-a1e6-a51375c50460",
+    "slug": "simple-house-m2p-2389b7c3-0719-4a3c-a1c2-2a2919e55194",
+    "templateId": null,
+    "parentRevision": "1",
+    "baseUrl": {
+      "origin": "http://127.0.0.1:8501",
+      "pathname": "",
+      "credentials": false,
+      "query": false,
+      "fragment": false
+    },
+    "publicSurface": {
+      "kind": "model-create-api",
+      "method": "POST",
+      "endpoint": "/api/projects/bc1e86b7-bf7a-49d1-a1e6-a51375c50460/models"
+    },
+    "commitRequested": true
+  },
+  "revision": {
+    "parentRevision": 1,
+    "wouldRevision": null,
+    "revision": 2,
+    "newRevision": 2,
+    "checkpointSnapshotId": "15d89264561661946bdff80195bf12f5b3a6823354fc8ee3f5d0f2227dbdbcbb",
+    "commandLogRevisionAfter": 2,
+    "snapshotRevision": 2
+  },
+  "changedIds": [
+    "default-a1-titleblock",
+    "ssh-dim-overall-depth",
+    "ssh-dim-overall-width",
+    "ssh-door-bath",
+    "ssh-door-bedroom",
+    "ssh-door-entry",
+    "ssh-door-single",
+    "ssh-floor-ground",
+    "ssh-ft-slab",
+    "ssh-lvl-ground",
+    "ssh-roof-main",
+    "ssh-room-bedroom",
+    "ssh-room-kitchen",
+    "ssh-room-living",
+    "ssh-rt-gable",
+    "ssh-schedule-openings",
+    "ssh-sheet-a101",
+    "ssh-tag-living",
+    "ssh-view-3d",
+    "ssh-view-ground-plan",
+    "ssh-wall-bath",
+    "ssh-wall-east",
+    "ssh-wall-hall-bedroom",
+    "ssh-wall-north",
+    "ssh-wall-south",
+    "ssh-wall-west",
+    "ssh-window-bedroom",
+    "ssh-window-fixed",
+    "ssh-window-kitchen",
+    "ssh-window-living",
+    "ssh-wt-exterior",
+    "ssh-wt-interior"
+  ],
+  "semanticClosure": {
+    "schemaVersion": "bim-ai.simple-house-live-evidence-semantic-closure.v1",
+    "status": "committed-simple-house-semantics-clean",
+    "pass": true,
+    "commitRequested": true,
+    "checks": [
+      {
+        "id": "dry-run-command-payload",
+        "pass": true,
+        "actual": 28,
+        "expected": "> 0"
+      },
+      {
+        "id": "dry-run-revision-intent",
+        "pass": true,
+        "actual": null,
+        "expected": "optional wouldRevision evidence; dry-run command intent is authoritative"
+      },
+      {
+        "id": "commit-changed-ids",
+        "pass": true,
+        "actual": 32,
+        "expected": "> 0"
+      },
+      {
+        "id": "commit-revision-advanced",
+        "pass": true,
+        "actual": [2, 2, 2, 2],
+        "expected": "> parentRevision 1"
+      },
+      {
+        "id": "committed-snapshot-present",
+        "pass": true,
+        "actual": 45,
+        "expected": "> 0"
+      },
+      {
+        "id": "committed-walls-count",
+        "pass": true,
+        "actual": 6,
+        "expected": ">= 6"
+      },
+      {
+        "id": "committed-floors-count",
+        "pass": true,
+        "actual": 1,
+        "expected": ">= 1"
+      },
+      {
+        "id": "committed-roofs-count",
+        "pass": true,
+        "actual": 1,
+        "expected": ">= 1"
+      },
+      {
+        "id": "committed-rooms-count",
+        "pass": true,
+        "actual": 3,
+        "expected": ">= 3"
+      },
+      {
+        "id": "committed-openings-count",
+        "pass": true,
+        "actual": 8,
+        "expected": ">= 6"
+      }
+    ],
+    "counts": {
+      "walls": 6,
+      "floors": 1,
+      "roofs": 1,
+      "rooms": 3,
+      "openings": 8,
+      "doors": 4,
+      "windows": 4
+    },
+    "countSources": {
+      "snapshotPresent": true,
+      "snapshotElementCount": 45,
+      "snapshotRevision": 2,
+      "summaryPresent": true
+    },
+    "expected": {
+      "walls": 6,
+      "floors": 1,
+      "roofs": 1,
+      "rooms": 3,
+      "openings": 6
+    },
+    "changedIds": [
+      "default-a1-titleblock",
+      "ssh-dim-overall-depth",
+      "ssh-dim-overall-width",
+      "ssh-door-bath",
+      "ssh-door-bedroom",
+      "ssh-door-entry",
+      "ssh-door-single",
+      "ssh-floor-ground",
+      "ssh-ft-slab",
+      "ssh-lvl-ground",
+      "ssh-roof-main",
+      "ssh-room-bedroom",
+      "ssh-room-kitchen",
+      "ssh-room-living",
+      "ssh-rt-gable",
+      "ssh-schedule-openings",
+      "ssh-sheet-a101",
+      "ssh-tag-living",
+      "ssh-view-3d",
+      "ssh-view-ground-plan",
+      "ssh-wall-bath",
+      "ssh-wall-east",
+      "ssh-wall-hall-bedroom",
+      "ssh-wall-north",
+      "ssh-wall-south",
+      "ssh-wall-west",
+      "ssh-window-bedroom",
+      "ssh-window-fixed",
+      "ssh-window-kitchen",
+      "ssh-window-living",
+      "ssh-wt-exterior",
+      "ssh-wt-interior"
+    ],
+    "revision": {
+      "parentRevision": 1,
+      "candidateRevisions": [2, 2, 2, 2],
+      "pass": true
+    }
+  },
+  "secrets": {
+    "containsSecrets": false,
+    "baseUrlCredentialsAccepted": false,
+    "requestHeadersRecorded": false
+  }
+}

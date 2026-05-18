@@ -54,6 +54,32 @@ function passingEvidenceLooksSynthetic(evidence) {
   );
 }
 
+function passingClosureEvidenceHasSemanticProof(gate, evidence) {
+  if (gate.id === 'liveDryRunEvidence') {
+    return evidence?.proof?.simpleHouseRequestProof === true;
+  }
+  if (
+    [
+      'liveCommitEvidence',
+      'committedAdvisorValidation',
+      'visualRenderEvidence',
+      'exportEvidence',
+    ].includes(gate.id)
+  ) {
+    return (
+      evidence?.proof?.changedSimpleHouseModel === true &&
+      Array.isArray(evidence?.proof?.changedIds) &&
+      evidence.proof.changedIds.length > 0 &&
+      evidence?.proof?.counts &&
+      Number(evidence.proof.counts.walls ?? 0) >= 6 &&
+      Number(evidence.proof.counts.openings ?? 0) >= 6 &&
+      Number(evidence.proof.counts.floors ?? 0) >= 1 &&
+      Number(evidence.proof.counts.roofs ?? 0) >= 1
+    );
+  }
+  return true;
+}
+
 function reportM2AuditClosure() {
   const auditPath = path.join(REPO_ROOT, 'spec', 'generated', 'ui-mcp-parity.json');
   const audit = JSON.parse(fs.readFileSync(auditPath, 'utf8'));
@@ -85,6 +111,18 @@ function reportM2AuditClosure() {
   if (syntheticPassingEvidence.length) {
     console.error('M2 audit accepted placeholder/stub-style evidence as passing:');
     for (const item of syntheticPassingEvidence) console.error(`- ${item}`);
+    return 1;
+  }
+
+  const missingSemanticProof = (m2.closureGates ?? []).flatMap((gate) =>
+    (gate.evidence ?? [])
+      .filter((evidence) => evidence.passes === true)
+      .filter((evidence) => !passingClosureEvidenceHasSemanticProof(gate, evidence))
+      .map((evidence) => `${gate.id}: ${evidence.status}@${evidence.source ?? 'unknown'}`),
+  );
+  if (missingSemanticProof.length) {
+    console.error('M2 audit accepted closure evidence without Wave 6 semantic proof:');
+    for (const item of missingSemanticProof) console.error(`- ${item}`);
     return 1;
   }
 

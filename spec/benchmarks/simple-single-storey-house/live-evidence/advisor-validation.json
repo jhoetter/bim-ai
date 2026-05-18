@@ -1,0 +1,530 @@
+{
+  "evidenceKind": "committed-advisor-validation",
+  "mode": "post-commit-live",
+  "collectionStatus": "captured",
+  "ok": true,
+  "validationStatus": "pass",
+  "validationPass": true,
+  "advisorStatus": "pass",
+  "advisorPass": true,
+  "blockingErrorCounts": {
+    "validation": 0,
+    "advisor": 0
+  },
+  "warningCounts": {
+    "validation": 2,
+    "advisor": 1
+  },
+  "infoCounts": {
+    "validation": 6,
+    "advisor": 0
+  },
+  "modelId": "0c55b59d-84c3-4497-90e6-63225749bc4a",
+  "revision": 2,
+  "source": {
+    "modelId": "0c55b59d-84c3-4497-90e6-63225749bc4a",
+    "revision": 2,
+    "requestedModelId": "0c55b59d-84c3-4497-90e6-63225749bc4a",
+    "hasModelId": true,
+    "hasRevision": true,
+    "modelIdMatchesRequest": true
+  },
+  "semanticSourceChecks": {
+    "status": "expected-simple-house-committed-model",
+    "pass": true,
+    "benchmarkId": "simple-single-storey-house",
+    "expected": {
+      "counts": {
+        "levels": 1,
+        "walls": 6,
+        "rooms": 3,
+        "openings": 6,
+        "floors": 1,
+        "roofs": 1,
+        "views": 2,
+        "sheets": 1,
+        "schedules": 1,
+        "annotations": 3
+      },
+      "ids": [
+        "ssh-floor-ground",
+        "ssh-lvl-ground",
+        "ssh-roof-main",
+        "ssh-room-bedroom",
+        "ssh-room-kitchen",
+        "ssh-room-living",
+        "ssh-schedule-openings",
+        "ssh-sheet-a101",
+        "ssh-view-3d",
+        "ssh-view-ground-plan",
+        "ssh-wall-bath",
+        "ssh-wall-east",
+        "ssh-wall-hall-bedroom",
+        "ssh-wall-north",
+        "ssh-wall-south",
+        "ssh-wall-west"
+      ]
+    },
+    "requiredCountKeys": [
+      "levels",
+      "walls",
+      "rooms",
+      "openings",
+      "floors",
+      "roofs",
+      "views",
+      "sheets",
+      "schedules"
+    ],
+    "sources": {
+      "snapshot": {
+        "available": true,
+        "counts": {
+          "levels": 1,
+          "walls": 6,
+          "rooms": 3,
+          "openings": 6,
+          "floors": 1,
+          "roofs": 1,
+          "views": 2,
+          "sheets": 1,
+          "schedules": 1,
+          "annotations": 3
+        },
+        "ids": [
+          "ssh-dim-overall-depth",
+          "ssh-dim-overall-width",
+          "ssh-door-bath",
+          "ssh-door-bedroom",
+          "ssh-door-entry",
+          "ssh-door-single",
+          "ssh-floor-ground",
+          "ssh-ft-slab",
+          "ssh-lvl-ground",
+          "ssh-roof-main",
+          "ssh-room-bedroom",
+          "ssh-room-kitchen",
+          "ssh-room-living",
+          "ssh-rt-gable",
+          "ssh-schedule-openings",
+          "ssh-sheet-a101",
+          "ssh-tag-living",
+          "ssh-view-3d",
+          "ssh-view-ground-plan",
+          "ssh-wall-bath",
+          "ssh-wall-east",
+          "ssh-wall-hall-bedroom",
+          "ssh-wall-north",
+          "ssh-wall-south",
+          "ssh-wall-west",
+          "ssh-window-bedroom",
+          "ssh-window-fixed",
+          "ssh-window-kitchen",
+          "ssh-window-living",
+          "ssh-wt-exterior",
+          "ssh-wt-interior"
+        ]
+      },
+      "summary": {
+        "available": true,
+        "counts": {},
+        "ids": [
+          "ssh-lvl-ground",
+          "ssh-wall-east",
+          "ssh-wall-north",
+          "ssh-wall-south",
+          "ssh-wall-west"
+        ]
+      },
+      "postCommitSnapshot": {
+        "available": true,
+        "counts": {},
+        "ids": []
+      }
+    },
+    "countChecks": {
+      "levels": [
+        {
+          "source": "snapshot",
+          "actual": 1,
+          "expected": 1,
+          "matches": true
+        }
+      ],
+      "walls": [
+        {
+          "source": "snapshot",
+          "actual": 6,
+          "expected": 6,
+          "matches": true
+        }
+      ],
+      "rooms": [
+        {
+          "source": "snapshot",
+          "actual": 3,
+          "expected": 3,
+          "matches": true
+        }
+      ],
+      "openings": [
+        {
+          "source": "snapshot",
+          "actual": 6,
+          "expected": 6,
+          "matches": true
+        }
+      ],
+      "floors": [
+        {
+          "source": "snapshot",
+          "actual": 1,
+          "expected": 1,
+          "matches": true
+        }
+      ],
+      "roofs": [
+        {
+          "source": "snapshot",
+          "actual": 1,
+          "expected": 1,
+          "matches": true
+        }
+      ],
+      "views": [
+        {
+          "source": "snapshot",
+          "actual": 2,
+          "expected": 2,
+          "matches": true
+        }
+      ],
+      "sheets": [
+        {
+          "source": "snapshot",
+          "actual": 1,
+          "expected": 1,
+          "matches": true
+        }
+      ],
+      "schedules": [
+        {
+          "source": "snapshot",
+          "actual": 1,
+          "expected": 1,
+          "matches": true
+        }
+      ]
+    },
+    "coverageMissing": [],
+    "mismatches": [],
+    "idCheck": {
+      "requiredWhenIdsAreExposed": true,
+      "checked": true,
+      "observedCount": 31,
+      "expectedCount": 16,
+      "missingExpectedIds": []
+    }
+  },
+  "preflight": {
+    "sourceModelRevisionPresent": true,
+    "semanticSourceMatchesExpected": true,
+    "liveAdvisorValidationCaptured": true,
+    "validationEndpointOk": true,
+    "advisorEndpointOk": true
+  },
+  "validationResult": {
+    "status": "pass",
+    "pass": true,
+    "httpOk": true,
+    "httpStatus": 200,
+    "totalCount": 8,
+    "blockingErrorCount": 0,
+    "errorCount": 0,
+    "blockingCount": 0,
+    "warningCount": 2,
+    "infoCount": 6,
+    "source": "GET /api/models/{model_id}/validate"
+  },
+  "advisorResult": {
+    "status": "pass",
+    "pass": true,
+    "httpOk": true,
+    "bodyOk": true,
+    "httpStatus": 200,
+    "totalCount": 1,
+    "returnedCount": 1,
+    "blockingErrorCount": 0,
+    "errorCount": 0,
+    "blockingCount": 0,
+    "warningCount": 1,
+    "infoCount": 0,
+    "source": "POST /api/models/{model_id}/qa/advisor"
+  },
+  "validation": {
+    "modelId": "0c55b59d-84c3-4497-90e6-63225749bc4a",
+    "revision": 2,
+    "violations": [
+      {
+        "ruleId": "floor_span_without_support_metadata",
+        "severity": "warning",
+        "message": "Floor span exceeds the default constructability threshold without structural system, beam grid, or engineering review metadata.",
+        "elementIds": ["ssh-floor-ground"],
+        "blocking": false,
+        "quickFixCommand": null,
+        "discipline": "structure",
+        "blockingClass": "documentation"
+      },
+      {
+        "ruleId": "gltf_export_manifest_expected_extension_missing",
+        "severity": "info",
+        "message": "glTF export manifest: extension 'bim_ai_skew_wall_hosted_openings_v0' not emitted but eligible element kind 'wall' is present (skipReasonCode='no_eligible_elements').",
+        "elementIds": [],
+        "blocking": false,
+        "quickFixCommand": null,
+        "discipline": "exchange",
+        "blockingClass": "exchange"
+      },
+      {
+        "ruleId": "gltf_export_manifest_expected_extension_missing",
+        "severity": "info",
+        "message": "glTF export manifest: extension 'bim_ai_roof_unsupported_shape_summary_v0' not emitted but eligible element kind 'roof' is present (skipReasonCode='no_eligible_elements').",
+        "elementIds": [],
+        "blocking": false,
+        "quickFixCommand": null,
+        "discipline": "exchange",
+        "blockingClass": "exchange"
+      },
+      {
+        "ruleId": "room_color_scheme_identity_missing",
+        "severity": "info",
+        "message": "No room color scheme element found. Use upsertRoomColorScheme to author overrides.",
+        "elementIds": [],
+        "blocking": false,
+        "quickFixCommand": null,
+        "discipline": "architecture",
+        "blockingClass": "documentation"
+      },
+      {
+        "ruleId": "room_finish_metadata_hint",
+        "severity": "info",
+        "message": "Room has programme or department metadata but finishSet is blank; finish schedules may be incomplete.",
+        "elementIds": ["ssh-room-bedroom"],
+        "blocking": false,
+        "quickFixCommand": null,
+        "discipline": "architecture",
+        "blockingClass": "documentation"
+      },
+      {
+        "ruleId": "room_finish_metadata_hint",
+        "severity": "info",
+        "message": "Room has programme or department metadata but finishSet is blank; finish schedules may be incomplete.",
+        "elementIds": ["ssh-room-kitchen"],
+        "blocking": false,
+        "quickFixCommand": null,
+        "discipline": "architecture",
+        "blockingClass": "documentation"
+      },
+      {
+        "ruleId": "room_finish_metadata_hint",
+        "severity": "info",
+        "message": "Room has programme or department metadata but finishSet is blank; finish schedules may be incomplete.",
+        "elementIds": ["ssh-room-living"],
+        "blocking": false,
+        "quickFixCommand": null,
+        "discipline": "architecture",
+        "blockingClass": "documentation"
+      },
+      {
+        "ruleId": "schedule_not_placed_on_sheet",
+        "severity": "warning",
+        "message": "Schedule 'ssh-schedule-openings' exists but is not placed on any sheet (sheetId is empty; assign sheetId to enable documentation linkage).",
+        "elementIds": ["ssh-schedule-openings"],
+        "blocking": false,
+        "quickFixCommand": {
+          "type": "upsertSheetViewports",
+          "sheetId": "ssh-sheet-a101",
+          "viewportsMm": [
+            {
+              "viewportId": "vp-autoplace-schedule-ssh-schedule-openings",
+              "label": "Door and window schedule",
+              "viewRef": "schedule:ssh-schedule-openings",
+              "xMm": 800,
+              "yMm": 800,
+              "widthMm": 14000,
+              "heightMm": 9000
+            }
+          ]
+        },
+        "discipline": "coordination",
+        "blockingClass": "schedule"
+      }
+    ],
+    "summary": {
+      "revision": 2,
+      "elementTotal": 45,
+      "scaleWorkload": {
+        "wallCount": 6,
+        "roomCount": 3,
+        "scheduleElementCount": 1
+      },
+      "countsByKind": {
+        "hatch_pattern_def": 7,
+        "floor_type": 1,
+        "viewpoint": 1,
+        "roof_type": 1,
+        "sun_settings": 1,
+        "door": 3,
+        "roof": 1,
+        "wall": 6,
+        "elevation_view": 4,
+        "level": 1,
+        "sheet": 1,
+        "placed_tag": 1,
+        "internal_origin": 1,
+        "family_type": 2,
+        "room": 3,
+        "wall_type": 2,
+        "floor": 1,
+        "window": 3,
+        "plan_view": 1,
+        "titleblock_type": 1,
+        "dimension": 2,
+        "schedule": 1
+      },
+      "levelCount": 1,
+      "levels": [
+        {
+          "id": "ssh-lvl-ground",
+          "name": "Ground Floor",
+          "elevationMm": 0
+        }
+      ],
+      "wallCount": 6,
+      "wallsByLevelId": {
+        "ssh-lvl-ground": 6
+      },
+      "roomCount": 3,
+      "roomsByLevelId": {
+        "ssh-lvl-ground": 3
+      },
+      "doorCount": 3,
+      "windowCount": 3,
+      "gridLineCount": 0,
+      "openIssueCount": 0,
+      "floorCount": 1,
+      "roofCount": 1,
+      "stairCount": 0,
+      "sheetCount": 1,
+      "railingCount": 0,
+      "slabOpeningCount": 0,
+      "siteCount": 0,
+      "familyTypeCount": 2,
+      "sectionCutCount": 0,
+      "planViewCount": 1,
+      "viewTemplateCount": 0,
+      "viewpointCount": 1,
+      "dimensionCount": 2,
+      "scheduleCount": 1,
+      "saved3dViewClipSummary": {
+        "saved3dViewCount": 1,
+        "clipEnabledCount": 0,
+        "sectionBoxEnabledCount": 0,
+        "totalHiddenCategoryCount": 0
+      },
+      "roomDerivationPreview": {
+        "heuristicVersion": "room_deriv_preview_v4",
+        "axisAlignedRectangleCandidates": [
+          {
+            "kind": "axis_aligned_rectangle",
+            "levelPlane": "bim_xy_mm",
+            "bboxMm": {
+              "min": {
+                "x": 0,
+                "y": 0
+              },
+              "max": {
+                "x": 10000,
+                "y": 8000
+              }
+            },
+            "wallIds": ["ssh-wall-east", "ssh-wall-north", "ssh-wall-south", "ssh-wall-west"],
+            "boundarySeparationIds": [],
+            "perimeterSegmentIdsSorted": [
+              "ssh-wall-east",
+              "ssh-wall-north",
+              "ssh-wall-south",
+              "ssh-wall-west"
+            ],
+            "boundarySegmentEncoding": "boundary_segment_v1",
+            "approxAreaM2": 80,
+            "note": "Axis-aligned orthogonal loop from wall and/or axis-aligned room separation segments; authoritative derivation when interior is unambiguous and does not intersect authored outlines.",
+            "levelId": "ssh-lvl-ground",
+            "levelName": "Ground Floor",
+            "volumeComputedAt": "finish_faces",
+            "volumeAreaInsetMm": 0,
+            "approxVolumeM3": 224,
+            "derivationAuthority": "preview_heuristic",
+            "authorityReasonCodes": ["overlaps_authored_room_bbox"]
+          }
+        ],
+        "candidateCount": 1,
+        "authoritativeCandidateCount": 0,
+        "unboundedRoomIds": [],
+        "diagnostics": [],
+        "warnings": [],
+        "diagnosticCount": 0,
+        "authorityVersion": "axis_aa_authoritative_v2"
+      },
+      "regenerationDiagnostics": {
+        "documentRevision": 2,
+        "roomDerivationHeuristicVersion": "room_deriv_preview_v4",
+        "roomDerivationCandidateCount": 1,
+        "roomDerivationAuthoritativeCount": 0,
+        "roomDerivationDiagnosticCount": 0,
+        "roomDerivationWarningCount": 0,
+        "levelsWithRoomsSorted": ["ssh-lvl-ground"],
+        "levelsWithWallsSorted": ["ssh-lvl-ground"],
+        "maxRoomsOnSingleLevel": 3,
+        "maxWallsOnSingleLevel": 6
+      }
+    },
+    "checks": {
+      "errorViolationCount": 0,
+      "blockingViolationCount": 0
+    }
+  },
+  "advisor": {
+    "ok": true,
+    "modelId": "0c55b59d-84c3-4497-90e6-63225749bc4a",
+    "revision": 2,
+    "data": {
+      "format": "qaAdvisor_v1",
+      "profile": "authoring_default",
+      "findings": [
+        {
+          "ruleId": "floor_span_without_support_metadata",
+          "severity": "warning",
+          "message": "Floor span exceeds the default constructability threshold without structural system, beam grid, or engineering review metadata.",
+          "elementIds": ["ssh-floor-ground"],
+          "blocking": false,
+          "discipline": "structure",
+          "blockingClass": "documentation"
+        }
+      ],
+      "summary": {
+        "findingCount": 1,
+        "returnedCount": 1,
+        "severityCounts": {
+          "warning": 1
+        }
+      },
+      "limitations": [
+        "M2-G qa.advisor is read-only and wraps constructability advisory checks only.",
+        "It does not run visual evidence, external-code, benchmark, or UI panel state checks."
+      ]
+    },
+    "warnings": [],
+    "nextCursor": null
+  }
+}

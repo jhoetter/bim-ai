@@ -1,0 +1,272 @@
+{
+  "status": "server-side-substitute",
+  "pass": true,
+  "requiredViewIds": ["ssh-view-ground-plan", "ssh-view-3d"],
+  "requiredSheetId": "ssh-sheet-a101",
+  "semanticSourcePass": true,
+  "viewContextProof": {
+    "pass": true,
+    "requiredSheetId": "ssh-sheet-a101",
+    "sheetPresent": true,
+    "requiredViewIds": ["ssh-view-ground-plan", "ssh-view-3d"],
+    "viewsPresent": ["ssh-view-ground-plan", "ssh-view-3d"],
+    "missingViewIds": []
+  },
+  "evidencePackageVisualHints": {
+    "deterministicPlanViewEvidence": [
+      {
+        "planViewId": "ssh-view-ground-plan",
+        "name": "Ground Floor — Plan",
+        "levelId": "ssh-lvl-ground",
+        "planPresentation": "default",
+        "playwrightSuggestedFilenames": {
+          "pngPlanCanvas": "bim-ai-evidence-d0e5e4dd0f3d530d-r2-plan-ssh-view-ground-plan.png"
+        },
+        "correlation": {
+          "format": "evidencePlanViewCorrelation_v1",
+          "semanticDigestSha256": "d0e5e4dd0f3d530d6e726a99b9aced8e5da0c48b4ef591bf07d100cb077a82d1",
+          "semanticDigestPrefix16": "d0e5e4dd0f3d530d",
+          "modelRevision": 2,
+          "modelId": "0c55b59d-84c3-4497-90e6-63225749bc4a",
+          "suggestedEvidenceBundleEvidencePackageJson": "bim-ai-evidence-d0e5e4dd0f3d530d-r2-evidence-package.json"
+        }
+      }
+    ],
+    "deterministic3dViewEvidence": [
+      {
+        "viewpointId": "ssh-view-3d",
+        "viewpointName": "Simple house 3D evidence",
+        "viewerClipCapElevMm": null,
+        "viewerClipFloorElevMm": null,
+        "hiddenSemanticKinds3d": [],
+        "hiddenCategoryCount": 0,
+        "cutawayStyle": null,
+        "sectionBoxEnabled": null,
+        "planOverlayEnabled": false,
+        "planOverlaySourcePlanViewId": null,
+        "planOverlayOffsetMm": null,
+        "planOverlayOpacity": null,
+        "planOverlayLineOpacity": null,
+        "planOverlayFillOpacity": null,
+        "planOverlayAnnotationsVisible": null,
+        "planOverlayWitnessLinesVisible": null,
+        "playwrightSuggestedFilenames": {
+          "pngViewport": "bim-ai-evidence-d0e5e4dd0f3d530d-r2-3d-ssh-view-3d.png"
+        },
+        "correlation": {
+          "format": "evidence3dViewCorrelation_v1",
+          "semanticDigestSha256": "d0e5e4dd0f3d530d6e726a99b9aced8e5da0c48b4ef591bf07d100cb077a82d1",
+          "semanticDigestPrefix16": "d0e5e4dd0f3d530d",
+          "modelRevision": 2,
+          "modelId": "0c55b59d-84c3-4497-90e6-63225749bc4a",
+          "suggestedEvidenceBundleEvidencePackageJson": "bim-ai-evidence-d0e5e4dd0f3d530d-r2-evidence-package.json"
+        }
+      }
+    ],
+    "deterministicSheetEvidence": [
+      {
+        "sheetId": "ssh-sheet-a101",
+        "sheetName": "Simple House Plans and 3D",
+        "svgHref": "/api/models/0c55b59d-84c3-4497-90e6-63225749bc4a/exports/sheet-preview.svg?sheetId=ssh-sheet-a101",
+        "pdfHref": "/api/models/0c55b59d-84c3-4497-90e6-63225749bc4a/exports/sheet-preview.pdf?sheetId=ssh-sheet-a101",
+        "printRasterPngHref": "/api/models/0c55b59d-84c3-4497-90e6-63225749bc4a/exports/sheet-print-raster.png?sheetId=ssh-sheet-a101",
+        "sheetPrintRasterIngest_v1": {
+          "format": "sheetPrintRasterIngest_v1",
+          "contract": "sheetPrintRasterPrintSurrogate_v2",
+          "svgContentSha256": "33ca01d427c30db7e6a1654c54ca02cccf4d0acf1c520879dbae924995b99138",
+          "placeholderPngSha256": "3f4866de3a8e3e80c25cfd6b365a6bc7f8d8e8137cee853937b36ba3a0aab661",
+          "diffCorrelation": {
+            "format": "sheetPrintRasterDiffCorrelation_v1",
+            "playwrightBaselineSlot": "pngFullSheet",
+            "notes": "Server print-surrogate PNG (128×112) stacks a 128×96 viewport layout stamp with SVG UTF-8 salt and a 16px deterministic titleblock metadata band; it does not pixel-match Playwright captures or fully render the SVG. Use for CI artifact/hash correlation and layout/titleblock evidence; baseline visual diff remains client-side on pngFullSheet / pngViewport."
+          }
+        },
+        "sheetPrintRasterPrintContract_v3": {
+          "format": "sheetPrintRasterPrintContract_v3",
+          "artifactName": "sheet-print-raster.png",
+          "mimeType": "image/png",
+          "relativeArtifactPath": "exports/sheet-print-raster.png",
+          "surrogateVersion": "sheetPrintRasterPrintSurrogate_v2",
+          "fullRasterExportStatus": "unsupported_full_raster_renderer_unavailable",
+          "widthPx": 128,
+          "heightPx": 112,
+          "colorMode": "rgb8",
+          "paperWidthMm": 42000,
+          "paperHeightMm": 29700,
+          "paperSizeKey": "42000x29700mm",
+          "titleblockSymbol": "title_block",
+          "titleblockParameterDigestSha256": "9ec0f2c6c262fb809ae9ac3a64115bb1b7b1d2db1b675419b7ad37ead4526591",
+          "layoutBandsMm": [],
+          "viewportSegmentCorrelation": [],
+          "svgListingSegmentsDigestSha256": "ee0638e0f781a0de01c8cf3e5135dcd3ac969e09cdbabd47e1276b033cff71c0",
+          "pdfListingSegmentsDigestSha256": "ee0638e0f781a0de01c8cf3e5135dcd3ac969e09cdbabd47e1276b033cff71c0",
+          "exportListingParityToken": "svgPdfListingParity_v1",
+          "exportListingParityDigestMatch": true,
+          "svgContentSha256": "33ca01d427c30db7e6a1654c54ca02cccf4d0acf1c520879dbae924995b99138",
+          "pngByteSha256": "3f4866de3a8e3e80c25cfd6b365a6bc7f8d8e8137cee853937b36ba3a0aab661",
+          "checks": [
+            {
+              "id": "png_ihdr_wh",
+              "ok": true
+            },
+            {
+              "id": "png_wh_surrogate_v2",
+              "ok": true
+            },
+            {
+              "id": "png_rgb8",
+              "ok": true
+            },
+            {
+              "id": "png_sha256",
+              "ok": true
+            },
+            {
+              "id": "surrogate_png_bytes_match_v2",
+              "ok": true
+            },
+            {
+              "id": "segments_recomputed",
+              "ok": true
+            }
+          ],
+          "valid": true
+        },
+        "playwrightSuggestedFilenames": {
+          "svgProbe": "bim-ai-evidence-d0e5e4dd0f3d530d-r2-sheet-ssh-sheet-a101.svg.probe.txt",
+          "pdfProbe": "bim-ai-evidence-d0e5e4dd0f3d530d-r2-sheet-ssh-sheet-a101.pdf.probe.bin",
+          "pngViewport": "bim-ai-evidence-d0e5e4dd0f3d530d-r2-sheet-ssh-sheet-a101-viewport.png",
+          "pngFullSheet": "bim-ai-evidence-d0e5e4dd0f3d530d-r2-sheet-ssh-sheet-a101-full.png",
+          "rasterPlaceholderProbe": "bim-ai-evidence-d0e5e4dd0f3d530d-r2-sheet-ssh-sheet-a101.raster-placeholder.png"
+        },
+        "viewportEvidenceHints_v0": [],
+        "planSheetViewportPlacementEvidence_v1": [],
+        "detailCalloutReadout_v0": [],
+        "planRoomProgrammeLegendHints_v0": [],
+        "roomColorSchemeLegendPlacementEvidence_v1": {
+          "format": "roomColorSchemeLegendPlacementEvidence_v1",
+          "placedLegendCount": 0,
+          "placementDigestSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+          "schemeIdentity": null,
+          "schemeOverrideRowCount": 0,
+          "overrideEvidence": {
+            "format": "roomColorSchemeOverrideEvidence_v1",
+            "schemeIdentity": null,
+            "overrideRowCount": 0,
+            "rows": [],
+            "rowDigestSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+            "advisoryFindings": [
+              {
+                "code": "room_color_scheme_identity_missing",
+                "severity": "info",
+                "message": "No room color scheme element found. Use upsertRoomColorScheme to author overrides."
+              }
+            ]
+          },
+          "placedRows": []
+        },
+        "sheetTitleblockRevisionIssueManifest_v1": {
+          "format": "sheetTitleblockRevisionIssueManifest_v1",
+          "revisionId": "",
+          "revisionCode": "",
+          "revisionDate": "",
+          "revisionDescription": "",
+          "issueStatus": "",
+          "revisionDescriptionDigestPrefix8": "",
+          "titleblockDisplaySegment": "",
+          "exportListingSegment": ""
+        },
+        "sectionOnSheetIntegrationEvidence_v1": {
+          "format": "sectionOnSheetIntegrationEvidence_v1",
+          "sheetId": "ssh-sheet-a101",
+          "rows": [],
+          "sectionOnSheetIntegrationDigestSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "scheduleSheetExportParityEvidence_v1": {
+          "format": "scheduleSheetExportParityEvidence_v1",
+          "sheetId": "ssh-sheet-a101",
+          "rows": [],
+          "scheduleSheetExportParityDigestSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "sheetExportArtifactManifest_v1": {
+          "format": "sheetExportArtifactManifest_v1",
+          "sheetId": "ssh-sheet-a101",
+          "artifacts": [
+            {
+              "artifactName": "sheet-preview.svg",
+              "mimeType": "image/svg+xml",
+              "relativeArtifactPath": "exports/sheet-preview.svg",
+              "digestSha256": "33ca01d427c30db7e6a1654c54ca02cccf4d0acf1c520879dbae924995b99138"
+            },
+            {
+              "artifactName": "sheet-preview.pdf",
+              "mimeType": "application/pdf",
+              "relativeArtifactPath": "exports/sheet-preview.pdf",
+              "digestSha256": null,
+              "note": "PDF bytes not deterministically available server-side; correlate via exportListingDigestSha256."
+            },
+            {
+              "artifactName": "sheet-print-raster.png",
+              "mimeType": "image/png",
+              "relativeArtifactPath": "exports/sheet-print-raster.png",
+              "digestSha256": "3f4866de3a8e3e80c25cfd6b365a6bc7f8d8e8137cee853937b36ba3a0aab661",
+              "surrogateContract": "sheetPrintRasterPrintSurrogate_v2",
+              "fullRasterExportStatus": "unsupported_full_raster_renderer_unavailable"
+            }
+          ],
+          "exportListingParityToken": "svgPdfListingParity_v1",
+          "svgListingDigestSha256": "ee0638e0f781a0de01c8cf3e5135dcd3ac969e09cdbabd47e1276b033cff71c0",
+          "pdfListingDigestSha256": "ee0638e0f781a0de01c8cf3e5135dcd3ac969e09cdbabd47e1276b033cff71c0",
+          "exportListingParityDigestMatch": true,
+          "ciBaselineCorrelation": {
+            "format": "sheetExportCiBaselineCorrelation_v1",
+            "sheetId": "ssh-sheet-a101",
+            "sheetName": "Simple House Plans and 3D",
+            "svgArtifactName": "sheet-preview.svg",
+            "pngArtifactName": "sheet-print-raster.png",
+            "svgDigestSha256": "33ca01d427c30db7e6a1654c54ca02cccf4d0acf1c520879dbae924995b99138",
+            "pngDigestSha256": "3f4866de3a8e3e80c25cfd6b365a6bc7f8d8e8137cee853937b36ba3a0aab661",
+            "exportListingDigestSha256": "ee0638e0f781a0de01c8cf3e5135dcd3ac969e09cdbabd47e1276b033cff71c0",
+            "surrogateContract": "sheetPrintRasterPrintSurrogate_v2",
+            "fullRasterExportStatus": "unsupported_full_raster_renderer_unavailable"
+          }
+        },
+        "correlation": {
+          "format": "evidenceSheetCorrelation_v1",
+          "semanticDigestSha256": "d0e5e4dd0f3d530d6e726a99b9aced8e5da0c48b4ef591bf07d100cb077a82d1",
+          "semanticDigestPrefix16": "d0e5e4dd0f3d530d",
+          "modelRevision": 2,
+          "modelId": "0c55b59d-84c3-4497-90e6-63225749bc4a",
+          "suggestedEvidenceBundleEvidencePackageJson": "bim-ai-evidence-d0e5e4dd0f3d530d-r2-evidence-package.json"
+        }
+      }
+    ],
+    "recommendedPngEvidenceBackend": "playwright_ci",
+    "svgRasterBackendAvailable": true
+  },
+  "sheetPrintRaster": {
+    "status": "server-side-substitute",
+    "pass": true,
+    "substituteKind": "deterministic-sheet-print-raster",
+    "explicitLimitation": "unsupported_full_raster_renderer_unavailable",
+    "contentType": "image/png",
+    "byteLength": 6513,
+    "sha256": "3f4866de3a8e3e80c25cfd6b365a6bc7f8d8e8137cee853937b36ba3a0aab661",
+    "contentTypeOk": true,
+    "pngSignatureOk": true,
+    "dimensionsCredible": true,
+    "dimensionHeadersMatch": true,
+    "digestMatchesHeader": true,
+    "nonblankProof": {
+      "method": "png-ihdr-dimensions-byte-length-and-print-surrogate-contract",
+      "ok": true
+    },
+    "contract": "sheetPrintRasterPrintSurrogate_v2",
+    "acceptedContracts": ["sheetPrintRasterPrintSurrogate_v2"],
+    "rejectedContract": null,
+    "widthPx": 128,
+    "heightPx": 112,
+    "declaredWidthPx": 128,
+    "declaredHeightPx": 112
+  }
+}

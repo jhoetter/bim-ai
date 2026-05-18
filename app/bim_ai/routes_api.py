@@ -2222,6 +2222,7 @@ async def apply_bundle_route(
         "assumption_log_duplicate_key",
         "direct_main_commit_forbidden",
         "option_not_found",
+        "bundle_apply_failed",
     }
     if not result.applied and result.violations:
         blocking_classes = {v.get("advisoryClass") for v in result.violations}

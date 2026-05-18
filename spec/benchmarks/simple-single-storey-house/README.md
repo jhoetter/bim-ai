@@ -207,16 +207,23 @@ Today the harness emits:
   server-side sheet raster substitute, and export artifact/manifest checks when
   `--commit-live` or `--collect-committed-evidence` is set
 - committed advisor/validation pass fields, blocking counts, warning/info counts,
-  and source model/revision metadata; when live committed capture is not run,
-  `advisor-validation.json` is explicitly marked
-  `missing-committed-live-artifact` and does not reuse offline fixture metadata
+  source model/revision metadata, and `semanticSourceChecks` comparing the
+  committed snapshot/summary to the expected simple-house counts and exposed
+  `ssh-*` ids; clean advisor/validation responses still fail if the source
+  model is starter-only or otherwise does not match the simple-house semantics.
+  When live committed capture is not run, `advisor-validation.json` is
+  explicitly marked `missing-committed-live-artifact` and does not reuse offline
+  fixture metadata
 - visual/export `pass` fields that fail closed: visual evidence must include a
   PNG with parsed IHDR dimensions, byte length, SHA-256, matching declared
-  dimensions, and the `sheetPrintRasterPrintSurrogate_v2` server contract;
-  placeholder/stub raster contracts are rejected
-- export evidence must include at least one clean IFC/glTF manifest or PDF
-  artifact proof, with digest/bytes and extracted manifest kind counts where
-  available; empty manifests and blank artifacts are marked invalid
+  dimensions, the `sheetPrintRasterPrintSurrogate_v2` server contract, expected
+  `ssh-sheet-a101` / `ssh-view-*` context, and committed simple-house semantic
+  source checks; placeholder/stub raster contracts and starter-only snapshots
+  are rejected
+- export evidence must include at least one clean IFC/glTF manifest with
+  expected simple-house geometry counts or ids. PDF artifacts are recorded as
+  supporting artifacts, but a PDF shell alone does not make export evidence
+  pass; empty or starter-only manifests and blank artifacts are marked invalid
 - explicit UI/Cmd+K traceability markers and remaining executable UI blockers
 
 When `--out-dir` is provided, the runner writes:

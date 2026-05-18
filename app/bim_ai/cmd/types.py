@@ -42,6 +42,7 @@ class BundleResult(BaseModel):
     schema_version: str = Field(default="cmd-v3.0", alias="schemaVersion")
     applied: bool
     new_revision: int | None = Field(default=None, alias="newRevision")
+    changed_ids: list[str] = Field(default_factory=list, alias="changedIds")
     option_id: str | None = Field(default=None, alias="optionId")
     violations: list[dict[str, Any]] = Field(default_factory=list)
     checkpoint_snapshot_id: str | None = Field(default=None, alias="checkpointSnapshotId")
