@@ -1,0 +1,25 @@
+{
+  "schemaVersion": "bim-ai.benchmark.execution-evidence.v1",
+  "benchmarkId": "structure-and-mep-lite",
+  "status": "passed",
+  "pass": true,
+  "runner": "node scripts/benchmarks/structure-and-mep-lite.mjs --mode offline --json",
+  "mode": "offline",
+  "commandCount": 16,
+  "surfaces": [
+    "structure.column",
+    "structure.beam",
+    "structure.column_update",
+    "structure.constraint",
+    "construction.package",
+    "construction.logistics",
+    "construction.qa_checklist",
+    "mep.pipe_route",
+    "mep.duct_route",
+    "mep.cable_tray",
+    "mep.equipment",
+    "mep.fixture",
+    "mep.terminal",
+    "mep.opening_request"
+  ]
+}

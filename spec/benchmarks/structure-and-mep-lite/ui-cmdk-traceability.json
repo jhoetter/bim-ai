@@ -1,0 +1,109 @@
+{
+  "schemaVersion": "bim-ai.benchmark.ui-cmdk-traceability.v1",
+  "benchmarkId": "structure-and-mep-lite",
+  "sourceOfIntent": "spec/ui-mcp-parity-tracker.md#m4-h-structure-and-mep-lite-executable-evidence",
+  "coverage": [
+    {
+      "path": "ribbon.structure.column",
+      "cmdK": "tool.structure-column",
+      "toolSurface": "structure.column",
+      "commandTypes": ["createColumn"],
+      "replayStepIds": ["ui-structure-column-a1", "cmdk-structure-column-a2"]
+    },
+    {
+      "path": "ribbon.structure.beam",
+      "cmdK": "tool.structure-beam",
+      "toolSurface": "structure.beam",
+      "commandTypes": ["createBeam"],
+      "replayStepIds": ["ui-structure-beam-a", "cmdk-structure-beam-b"]
+    },
+    {
+      "path": "inspector.structure.column-size",
+      "cmdK": "tool.structure-column-update",
+      "toolSurface": "structure.column_update",
+      "commandTypes": ["updateColumn"],
+      "replayStepIds": ["ui-structure-column-update"]
+    },
+    {
+      "path": "inspector.constraints.structural",
+      "cmdK": "tool.structure-constraint",
+      "toolSurface": "structure.constraint",
+      "commandTypes": ["createConstraint"],
+      "replayStepIds": ["cmdk-structure-constraint"]
+    },
+    {
+      "path": "right-rail.construction.package",
+      "cmdK": "tool.construction-package",
+      "toolSurface": "construction.package",
+      "commandTypes": ["createConstructionPackage"],
+      "replayStepIds": ["ui-construction-package"]
+    },
+    {
+      "path": "right-rail.construction.logistics",
+      "cmdK": "tool.construction-logistics",
+      "toolSurface": "construction.logistics",
+      "commandTypes": ["createConstructionLogistics"],
+      "replayStepIds": ["cmdk-construction-logistics"]
+    },
+    {
+      "path": "right-rail.construction.qa-checklist",
+      "cmdK": "tool.construction-qa-checklist",
+      "toolSurface": "construction.qa_checklist",
+      "commandTypes": ["upsertConstructionQaChecklist"],
+      "replayStepIds": ["ui-construction-qa"]
+    },
+    {
+      "path": "ribbon.mep.routes",
+      "cmdK": "tool.mep-pipe-route",
+      "toolSurface": "mep.pipe_route",
+      "commandTypes": ["createPipe"],
+      "replayStepIds": ["cmdk-mep-pipe"]
+    },
+    {
+      "path": "ribbon.mep.routes",
+      "cmdK": "tool.mep-duct-route",
+      "toolSurface": "mep.duct_route",
+      "commandTypes": ["createDuct"],
+      "replayStepIds": ["ui-mep-duct"]
+    },
+    {
+      "path": "ribbon.mep.routes",
+      "cmdK": "tool.mep-cable-tray",
+      "toolSurface": "mep.cable_tray",
+      "commandTypes": ["createCableTray"],
+      "replayStepIds": ["cmdk-mep-cable-tray"]
+    },
+    {
+      "path": "ribbon.mep.devices",
+      "cmdK": "tool.mep-equipment",
+      "toolSurface": "mep.equipment",
+      "commandTypes": ["createMepEquipment"],
+      "replayStepIds": ["ui-mep-equipment"]
+    },
+    {
+      "path": "ribbon.mep.devices",
+      "cmdK": "tool.mep-fixture",
+      "toolSurface": "mep.fixture",
+      "commandTypes": ["createFixture"],
+      "replayStepIds": ["cmdk-mep-fixture"]
+    },
+    {
+      "path": "ribbon.mep.devices",
+      "cmdK": "tool.mep-terminal",
+      "toolSurface": "mep.terminal",
+      "commandTypes": ["createMepTerminal"],
+      "replayStepIds": ["ui-mep-terminal"]
+    },
+    {
+      "path": "ribbon.mep.coordination.opening-request",
+      "cmdK": "tool.mep-opening-request",
+      "toolSurface": "mep.opening_request",
+      "commandTypes": ["createMepOpeningRequest"],
+      "replayStepIds": ["cmdk-mep-opening-request"]
+    }
+  ],
+  "exclusions": {
+    "activatorOnlyCount": 0,
+    "notes": "Each mapping is tied to exact typed cmd-v3 output in ui-validated-replay.json."
+  }
+}

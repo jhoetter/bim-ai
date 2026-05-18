@@ -1,0 +1,229 @@
+{
+  "schemaVersion": "cmd-v3.0",
+  "meta": {
+    "benchmarkId": "structure-and-mep-lite",
+    "sourceOfIntent": "spec/ui-mcp-parity-tracker.md#m4-h-structure-and-mep-lite-executable-evidence",
+    "description": "Combined M4-B/M4-C typed command bundle for structural framing, construction-lite coordination, and MEP-lite routing."
+  },
+  "commands": [
+    {
+      "type": "createColumn",
+      "id": "sml-col-grid-a1",
+      "levelId": "sml-lvl-1",
+      "positionMm": { "xMm": 0, "yMm": 0 },
+      "name": "Grid A1 concrete column",
+      "bMm": 400,
+      "hMm": 400,
+      "heightMm": 3200,
+      "rotationDeg": 0,
+      "materialKey": "cast_in_place_concrete"
+    },
+    {
+      "type": "createColumn",
+      "id": "sml-col-grid-a2",
+      "levelId": "sml-lvl-1",
+      "positionMm": { "xMm": 6000, "yMm": 0 },
+      "name": "Grid A2 concrete column",
+      "bMm": 400,
+      "hMm": 400,
+      "heightMm": 3200,
+      "rotationDeg": 0,
+      "materialKey": "cast_in_place_concrete"
+    },
+    {
+      "type": "updateColumn",
+      "id": "sml-col-grid-a2",
+      "bMm": 450,
+      "hMm": 450
+    },
+    {
+      "type": "createBeam",
+      "id": "sml-beam-grid-a",
+      "levelId": "sml-lvl-1",
+      "startMm": { "xMm": 0, "yMm": 0 },
+      "endMm": { "xMm": 6000, "yMm": 0 },
+      "name": "Grid A primary beam",
+      "widthMm": 300,
+      "heightMm": 550,
+      "materialKey": "structural_steel"
+    },
+    {
+      "type": "createBeam",
+      "id": "sml-beam-grid-b",
+      "levelId": "sml-lvl-1",
+      "startMm": { "xMm": 0, "yMm": 4000 },
+      "endMm": { "xMm": 6000, "yMm": 4000 },
+      "name": "Grid B primary beam",
+      "widthMm": 300,
+      "heightMm": 550,
+      "materialKey": "structural_steel"
+    },
+    {
+      "type": "createConstraint",
+      "id": "sml-constraint-beam-parallel",
+      "name": "Primary beams remain parallel",
+      "rule": "parallel",
+      "severity": "error",
+      "refsA": [{ "elementId": "sml-beam-grid-a", "anchor": "axis" }],
+      "refsB": [{ "elementId": "sml-beam-grid-b", "anchor": "axis" }]
+    },
+    {
+      "type": "createConstructionPackage",
+      "id": "sml-pkg-structure",
+      "name": "Structure shell package",
+      "code": "S-100",
+      "phaseId": "phase-new-construction",
+      "responsibleCompany": "Structure Trade",
+      "plannedStart": "2026-06-01",
+      "plannedEnd": "2026-06-14"
+    },
+    {
+      "type": "createConstructionLogistics",
+      "id": "sml-log-crane",
+      "name": "Mobile crane setup zone",
+      "logisticsKind": "crane_zone",
+      "constructionPackageId": "sml-pkg-structure",
+      "phaseId": "phase-new-construction",
+      "responsibleCompany": "Site Logistics",
+      "progressStatus": "planned",
+      "boundaryMm": [
+        { "xMm": -2000, "yMm": -1500 },
+        { "xMm": 7500, "yMm": -1500 },
+        { "xMm": 7500, "yMm": 1500 },
+        { "xMm": -2000, "yMm": 1500 }
+      ],
+      "pathMm": []
+    },
+    {
+      "type": "upsertConstructionQaChecklist",
+      "id": "sml-qa-structure",
+      "name": "Structure pour and steel QA",
+      "constructionPackageId": "sml-pkg-structure",
+      "phaseId": "phase-new-construction",
+      "responsibleCompany": "QA Lead",
+      "progressStatus": "in_progress",
+      "targetElementIds": ["sml-col-grid-a1", "sml-col-grid-a2", "sml-beam-grid-a"],
+      "checklist": [
+        { "id": "rebar", "label": "Rebar inspected", "status": "complete" },
+        { "id": "embed-plates", "label": "Embed plates verified", "status": "open" }
+      ]
+    },
+    {
+      "type": "createPipe",
+      "id": "sml-pipe-cw-1",
+      "levelId": "sml-lvl-1",
+      "startMm": { "xMm": 500, "yMm": 900 },
+      "endMm": { "xMm": 5500, "yMm": 900 },
+      "elevationMm": 2600,
+      "diameterMm": 40,
+      "systemType": "domestic_water",
+      "systemName": "CW-1",
+      "flowDirection": "supply",
+      "serviceLevel": "Level 1 ceiling"
+    },
+    {
+      "type": "createDuct",
+      "id": "sml-duct-sa-1",
+      "levelId": "sml-lvl-1",
+      "startMm": { "xMm": 500, "yMm": 1600 },
+      "endMm": { "xMm": 5500, "yMm": 1600 },
+      "elevationMm": 2800,
+      "widthMm": 500,
+      "heightMm": 250,
+      "shape": "rectangular",
+      "systemType": "hvac_supply",
+      "systemName": "SA-1",
+      "flowDirection": "supply",
+      "serviceLevel": "ceiling plenum"
+    },
+    {
+      "type": "createCableTray",
+      "id": "sml-tray-e-1",
+      "name": "Electrical tray E-1",
+      "levelId": "sml-lvl-1",
+      "startMm": { "xMm": 500, "yMm": 2300 },
+      "endMm": { "xMm": 5500, "yMm": 2300 },
+      "elevationMm": 2700,
+      "widthMm": 200,
+      "heightMm": 60,
+      "systemType": "electrical",
+      "systemName": "E-1",
+      "serviceLevel": "overhead"
+    },
+    {
+      "type": "createMepEquipment",
+      "id": "sml-ahu-1",
+      "name": "AHU-1",
+      "levelId": "sml-lvl-1",
+      "positionMm": { "xMm": 1000, "yMm": 3200 },
+      "elevationMm": 0,
+      "equipmentType": "AHU",
+      "systemType": "hvac_supply",
+      "systemName": "SA-1",
+      "serviceLevel": "mechanical room",
+      "electricalLoadW": 900
+    },
+    {
+      "type": "createFixture",
+      "id": "sml-sink-1",
+      "name": "Break room sink",
+      "levelId": "sml-lvl-1",
+      "positionMm": { "xMm": 1800, "yMm": 3200 },
+      "roomId": "sml-room-break",
+      "fixtureType": "sink",
+      "systemType": "domestic_water",
+      "systemName": "CW-1"
+    },
+    {
+      "type": "createMepTerminal",
+      "id": "sml-diffuser-1",
+      "name": "Supply diffuser",
+      "terminalKind": "diffuser",
+      "levelId": "sml-lvl-1",
+      "positionMm": { "xMm": 3200, "yMm": 3200 },
+      "roomId": "sml-room-break",
+      "systemType": "hvac_supply",
+      "systemName": "SA-1",
+      "flowDirection": "supply",
+      "serviceLevel": "ceiling"
+    },
+    {
+      "type": "createMepOpeningRequest",
+      "id": "sml-or-duct-1",
+      "name": "Duct sleeve through Grid A beam zone",
+      "hostElementId": "sml-beam-grid-a",
+      "levelId": "sml-lvl-1",
+      "requesterElementIds": ["sml-duct-sa-1"],
+      "openingKind": "beam_web",
+      "positionMm": { "xMm": 3000, "yMm": 1600 },
+      "widthMm": 600,
+      "heightMm": 320,
+      "clearanceMm": 50,
+      "systemType": "hvac_supply",
+      "systemName": "SA-1"
+    }
+  ],
+  "assumptions": [
+    {
+      "key": "cli-tool-surfaces",
+      "value": [
+        "structure.column",
+        "structure.beam",
+        "structure.column_update",
+        "structure.constraint",
+        "construction.package",
+        "construction.logistics",
+        "construction.qa_checklist",
+        "mep.pipe_route",
+        "mep.duct_route",
+        "mep.cable_tray",
+        "mep.equipment",
+        "mep.fixture",
+        "mep.terminal",
+        "mep.opening_request"
+      ],
+      "confidence": 1,
+      "source": "packages/cli/cli.mjs"
+    }
+  ]
+}

@@ -1,0 +1,36 @@
+{
+  "schemaVersion": "bim-ai.benchmark.ui-validated-replay.v1",
+  "benchmarkId": "structure-and-mep-lite",
+  "sourceBundle": "mcp-cli-command-bundle.json",
+  "sourceTraceability": "ui-cmdk-traceability.json",
+  "validation": {
+    "status": "validated",
+    "validatedAt": "2026-05-18T00:00:00.000Z",
+    "replayKind": "deterministic-ui-cmdk-command-replay",
+    "activatorOnlyCount": 0,
+    "semanticEquivalentToBundle": true,
+    "commandDigest": "computed-by-runner"
+  },
+  "steps": [
+    { "id": "ui-structure-column-a1", "surface": "ui", "commandIds": ["sml-col-grid-a1"] },
+    { "id": "cmdk-structure-column-a2", "surface": "cmdK", "commandIds": ["sml-col-grid-a2"] },
+    { "id": "ui-structure-column-update", "surface": "ui", "commandIds": ["sml-col-grid-a2"] },
+    { "id": "ui-structure-beam-a", "surface": "ui", "commandIds": ["sml-beam-grid-a"] },
+    { "id": "cmdk-structure-beam-b", "surface": "cmdK", "commandIds": ["sml-beam-grid-b"] },
+    {
+      "id": "cmdk-structure-constraint",
+      "surface": "cmdK",
+      "commandIds": ["sml-constraint-beam-parallel"]
+    },
+    { "id": "ui-construction-package", "surface": "ui", "commandIds": ["sml-pkg-structure"] },
+    { "id": "cmdk-construction-logistics", "surface": "cmdK", "commandIds": ["sml-log-crane"] },
+    { "id": "ui-construction-qa", "surface": "ui", "commandIds": ["sml-qa-structure"] },
+    { "id": "cmdk-mep-pipe", "surface": "cmdK", "commandIds": ["sml-pipe-cw-1"] },
+    { "id": "ui-mep-duct", "surface": "ui", "commandIds": ["sml-duct-sa-1"] },
+    { "id": "cmdk-mep-cable-tray", "surface": "cmdK", "commandIds": ["sml-tray-e-1"] },
+    { "id": "ui-mep-equipment", "surface": "ui", "commandIds": ["sml-ahu-1"] },
+    { "id": "cmdk-mep-fixture", "surface": "cmdK", "commandIds": ["sml-sink-1"] },
+    { "id": "ui-mep-terminal", "surface": "ui", "commandIds": ["sml-diffuser-1"] },
+    { "id": "cmdk-mep-opening-request", "surface": "cmdK", "commandIds": ["sml-or-duct-1"] }
+  ]
+}

@@ -1,0 +1,66 @@
+{
+  "schemaVersion": "bim-ai.benchmark.expected-semantics.v1",
+  "benchmarkId": "structure-and-mep-lite",
+  "sourceOfIntent": "spec/ui-mcp-parity-tracker.md#m4-h-structure-and-mep-lite-executable-evidence",
+  "expected": {
+    "structure": {
+      "columns": 2,
+      "columnUpdates": 1,
+      "beams": 2,
+      "constraints": 1,
+      "allStructuralMembersHaveLevel": true,
+      "allStructuralMembersHaveGeometry": true,
+      "constraintRefsResolve": true
+    },
+    "construction": {
+      "packages": 1,
+      "logistics": 1,
+      "qaChecklists": 1,
+      "allConstructionItemsHavePackageOrPhase": true,
+      "checklistTargetsResolve": true
+    },
+    "mep": {
+      "routes": {
+        "pipe": 1,
+        "duct": 1,
+        "cableTray": 1,
+        "allHaveGeometry": true,
+        "allHaveElevation": true,
+        "allHaveSystemType": true,
+        "allHaveServiceLevel": true
+      },
+      "placed": {
+        "equipment": 1,
+        "fixtures": 1,
+        "terminals": 1,
+        "allHaveLevelAndPosition": true,
+        "allHaveSystemType": true
+      },
+      "openingRequests": {
+        "count": 1,
+        "allHaveHost": true,
+        "allHaveRequester": true,
+        "allHaveSystemType": true,
+        "hostedByStructuralElement": true
+      }
+    },
+    "commandSurfaceUsage": {
+      "mustInclude": [
+        "createColumn",
+        "updateColumn",
+        "createBeam",
+        "createConstraint",
+        "createConstructionPackage",
+        "createConstructionLogistics",
+        "upsertConstructionQaChecklist",
+        "createPipe",
+        "createDuct",
+        "createCableTray",
+        "createMepEquipment",
+        "createFixture",
+        "createMepTerminal",
+        "createMepOpeningRequest"
+      ]
+    }
+  }
+}

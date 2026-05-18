@@ -1,0 +1,21 @@
+{
+  "schemaVersion": "bim-ai.benchmark.advisor-validation.v1",
+  "benchmarkId": "structure-and-mep-lite",
+  "evidenceKind": "deterministic-route-contract",
+  "status": "passed",
+  "pass": true,
+  "validation": {
+    "pass": true,
+    "blockingErrorCounts": { "structure": 0, "construction": 0, "mep": 0 },
+    "warningCounts": { "structure": 0, "construction": 0, "mep": 0 }
+  },
+  "advisor": {
+    "pass": true,
+    "profile": "coordination_readiness",
+    "acceptedChecks": [
+      "structural members have dimensions and levels",
+      "construction QA targets resolve to authored elements",
+      "MEP opening request has host and requester metadata"
+    ]
+  }
+}

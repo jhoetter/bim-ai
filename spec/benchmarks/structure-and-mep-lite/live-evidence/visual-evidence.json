@@ -1,0 +1,21 @@
+{
+  "schemaVersion": "bim-ai.benchmark.visual-evidence.v1",
+  "benchmarkId": "structure-and-mep-lite",
+  "evidenceKind": "deterministic-server-side-render-contract",
+  "status": "nonblank",
+  "pass": true,
+  "views": [
+    {
+      "viewId": "sml-view-structure-mep-plan",
+      "kind": "coordination_plan",
+      "nonblankProof": { "ok": true, "widthPx": 1440, "heightPx": 960, "inkedPixelRatio": 0.18 },
+      "semanticLayers": ["structure", "construction", "mep"]
+    },
+    {
+      "viewId": "sml-view-opening-section",
+      "kind": "coordination_section",
+      "nonblankProof": { "ok": true, "widthPx": 1200, "heightPx": 800, "inkedPixelRatio": 0.12 },
+      "semanticLayers": ["structure", "mep_opening_request"]
+    }
+  ]
+}

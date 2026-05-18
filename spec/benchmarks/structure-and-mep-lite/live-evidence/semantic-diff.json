@@ -1,0 +1,22 @@
+{
+  "schemaVersion": "bim-ai.benchmark.semantic-diff.v1",
+  "benchmarkId": "structure-and-mep-lite",
+  "status": "passed",
+  "pass": true,
+  "sourceBundle": "../mcp-cli-command-bundle.json",
+  "expectedSemantics": "../expected-semantics.json",
+  "actual": {
+    "structure": { "columns": 2, "columnUpdates": 1, "beams": 2, "constraints": 1 },
+    "construction": { "packages": 1, "logistics": 1, "qaChecklists": 1 },
+    "mep": {
+      "routes": { "pipe": 1, "duct": 1, "cableTray": 1 },
+      "placed": { "equipment": 1, "fixtures": 1, "terminals": 1 },
+      "openingRequests": { "count": 1 }
+    }
+  },
+  "diff": {
+    "missingCommandTypes": [],
+    "missingIds": [],
+    "unresolvedReferences": []
+  }
+}

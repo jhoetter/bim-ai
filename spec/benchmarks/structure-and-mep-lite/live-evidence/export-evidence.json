@@ -1,0 +1,51 @@
+{
+  "schemaVersion": "bim-ai.benchmark.export-evidence.v1",
+  "benchmarkId": "structure-and-mep-lite",
+  "evidenceKind": "deterministic-export-manifest",
+  "status": "manifest",
+  "pass": true,
+  "manifests": {
+    "gltf": {
+      "pass": true,
+      "status": "manifest",
+      "summary": {
+        "geometryProof": {
+          "counts": {
+            "columns": 2,
+            "beams": 2,
+            "pipes": 1,
+            "ducts": 1,
+            "cableTrays": 1,
+            "mepEquipment": 1,
+            "fixtures": 1,
+            "mepTerminals": 1,
+            "mepOpeningRequests": 1
+          }
+        }
+      }
+    },
+    "ifc": {
+      "pass": true,
+      "status": "manifest",
+      "summary": {
+        "countsByKind": {
+          "IfcColumn": 2,
+          "IfcBeam": 2,
+          "IfcPipeSegment": 1,
+          "IfcDuctSegment": 1,
+          "IfcCableCarrierSegment": 1,
+          "IfcDistributionElement": 3,
+          "IfcOpeningElement": 1
+        }
+      }
+    }
+  },
+  "artifacts": {
+    "coordinationSheetPdf": {
+      "pass": true,
+      "status": "artifact",
+      "pageCount": 1,
+      "semanticLayers": ["structure", "construction", "mep"]
+    }
+  }
+}
