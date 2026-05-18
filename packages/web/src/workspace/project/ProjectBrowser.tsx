@@ -1231,7 +1231,7 @@ export function ProjectBrowser(props: {
         </div>
       ) : null}
 
-      <div className="space-y-1">
+      <div className="space-y-1" data-testid="browser-view-templates-section">
         <div className="flex items-center gap-1">
           <button
             type="button"
@@ -1296,8 +1296,15 @@ export function ProjectBrowser(props: {
               const planViews = Object.values(props.elementsById).filter(
                 (e): e is Extract<Element, { kind: 'plan_view' }> => e.kind === 'plan_view',
               );
+              const usedCount = planViews.filter(
+                (pv) => (pv as any).viewTemplateId === vt.id,
+              ).length;
               return (
-                <li key={vt.id} className="flex flex-col gap-0.5">
+                <li
+                  key={vt.id}
+                  className="flex flex-col gap-0.5"
+                  data-testid={`browser-view-template-row-${vt.id}`}
+                >
                   <div className="flex items-center gap-1 px-1">
                     <button
                       type="button"
@@ -1307,8 +1314,19 @@ export function ProjectBrowser(props: {
                     >
                       <span className="text-muted">⬡</span> {vt.name}
                     </button>
+                    {usedCount > 0 && (
+                      <span
+                        data-testid={`browser-vt-use-count-${vt.id}`}
+                        className="text-[9px] text-muted"
+                      >
+                        {usedCount} view{usedCount !== 1 ? 's' : ''}
+                      </span>
+                    )}
                     <details className="relative">
-                      <summary className="cursor-pointer list-none text-[9px] text-muted hover:text-foreground">
+                      <summary
+                        className="cursor-pointer list-none text-[9px] text-muted hover:text-foreground"
+                        data-testid={`browser-vt-apply-${vt.id}`}
+                      >
                         Apply ▾
                       </summary>
                       <ul className="absolute right-0 z-50 min-w-[140px] rounded border bg-[var(--color-surface-strong)] py-1 shadow-md">
@@ -1318,6 +1336,11 @@ export function ProjectBrowser(props: {
                               type="button"
                               className="w-full px-3 py-1 text-left text-[10px] hover:bg-surface-strong"
                               onClick={async () => {
+                                void props.onSemanticCommand?.({
+                                  type: 'applyViewTemplate',
+                                  planViewId: pv.id,
+                                  templateId: vt.id,
+                                });
                                 if (!modelId) return;
                                 await vtStore.applyTemplate(modelId, pv.id, vt.id);
                               }}
