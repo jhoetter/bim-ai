@@ -479,7 +479,9 @@ export type ElemKind =
   | 'family_component'
   | 'family_opening_cut'
   | 'text_tag'
-  | 'link_ifc';
+  | 'link_ifc'
+  | 'link_pdf'
+  | 'work_plane';
 
 export type PhaseFilter = 'all' | 'existing' | 'demolition' | 'new' | 'show_all';
 
@@ -2306,6 +2308,8 @@ export type Element =
       cropRegionMm?: { xMm: number; yMm: number; widthMm: number; heightMm: number } | null;
       /** §1.6.10: whether the crop region is active (visible + clipping enabled). */
       cropRegionEnabled?: boolean;
+      /** §3.3.5: when true, EQ equality markers and lock symbols are shown on permanent_dimension elements. */
+      showConstraints?: boolean;
     }
   | {
       kind: 'view_template';
@@ -2926,6 +2930,28 @@ export type Element =
     }
   | {
       /**
+       * §12.1.1 — Link PDF as plan underlay.
+       *
+       * Stores a PDF page (as a data URL or blob URL) as a translucent visual
+       * underlay for tracing over in plan view.
+       */
+      kind: 'link_pdf';
+      id: string;
+      /** Data URL or blob URL of the PDF page image (client-side only). */
+      url: string;
+      /** Page index (0-based). */
+      pageIndex: number;
+      /** Opacity 0–1. Default 0.5. */
+      opacity: number;
+      /** Origin position in plan (mm). */
+      positionMm: { xMm: number; yMm: number };
+      /** Scale factor: mm per pixel of the original image. Default 1. */
+      scaleMm: number;
+      levelId: string;
+      hidden?: boolean;
+    }
+  | {
+      /**
        * KRN-15 — project-level swept solid.
        *
        * Extrudes a closed 2D `profileMm` along an open or closed
@@ -3479,6 +3505,10 @@ export type Element =
       eqEnabled?: boolean;
       /** When true, dimension line is on the opposite side of the witness chain. */
       flipped?: boolean | null;
+      /** §3.3.5: When true, this dimension drives an equality constraint (EQ). */
+      isEqualityDimension?: boolean;
+      /** §3.3.5: When true, the dimension is locked (cannot be changed by moving elements). */
+      isLocked?: boolean;
     }
   | {
       kind: 'sheet_viewport';
@@ -3880,6 +3910,20 @@ export type Element =
       elevationMm: number;
       /** Landing index (0-based). */
       landingIndex: number;
+    }
+  | {
+      /** §7.3.2: active work plane derived from a wall/floor face or a level elevation. */
+      kind: 'work_plane';
+      id: string;
+      /** Display name for the work plane. */
+      name: string;
+      /** Host element ID (wall, floor, roof) whose face defines the plane. */
+      hostElementId?: string;
+      /** Elevation of the work plane in mm (for horizontal planes). */
+      elevationMm: number;
+      /** Normal vector in plan (degrees from +X axis). 0 = XY plane (horizontal). */
+      normalDeg?: number;
+      levelId: string;
     };
 
 export type Violation = {
@@ -5269,6 +5313,15 @@ export type AutoDimensionWallsCmd = {
   offsetMm?: number;
 };
 
+/** §4.2.6 — Stack parallel permanent_dimension elements at even spacing offsets. */
+export type StackDimensionsCmd = {
+  type: 'stackDimensions';
+  /** IDs of the permanent_dimension elements to stack. If empty, stacks all in active view. */
+  dimensionIds?: string[];
+  /** Spacing between stacked dim lines in mm. Default 7. */
+  spacingMm?: number;
+};
+
 // ---------------------------------------------------------------------------
 // COL-V3-06 — Offline-tolerant authoring: display-only sync badge type
 // ---------------------------------------------------------------------------
@@ -5511,6 +5564,29 @@ export type ToggleIfcLinkVisibilityCmd = {
   linkId: string;
 };
 
+/** §12.1.1: add a PDF underlay link element client-side. */
+export type AddPdfLinkCmd = {
+  type: 'addPdfLink';
+  url: string;
+  pageIndex?: number;
+  opacity?: number;
+  positionMm?: { xMm: number; yMm: number };
+  scaleMm?: number;
+  levelId: string;
+};
+
+/** §12.1.1: remove a PDF underlay link element by id. */
+export type RemovePdfLinkCmd = {
+  type: 'removePdfLink';
+  linkId: string;
+};
+
+/** §12.1.1: toggle hidden flag of a PDF underlay link element. */
+export type TogglePdfLinkCmd = {
+  type: 'togglePdfLink';
+  linkId: string;
+};
+
 /** §3.5.5 — commit a custom wall profile polygon for a specific wall. */
 export type CommitWallProfileCmd = {
   type: 'commitWallProfile';
@@ -5678,4 +5754,26 @@ export type SetFamilyCategoryCmd = {
   type: 'setFamilyCategory';
   familyId: string;
   categoryKey: string;
+};
+
+// ---------------------------------------------------------------------------
+// §7.3.2 — Work Plane Face Orientation
+// ---------------------------------------------------------------------------
+
+/** §7.3.2: pick a wall/floor face and store its normal as the active work plane. */
+export type SetWorkPlaneFaceCmd = {
+  type: 'setWorkPlaneFace';
+  /** ID of the wall/floor element whose face to use as the work plane. */
+  hostElementId: string;
+  /** Which face: 'front' | 'back' | 'top' | 'bottom'. Default 'front'. */
+  faceKey?: string;
+  /** Display name. */
+  name?: string;
+};
+
+/** §3.3.5: toggle Show Constraints mode on a plan view — shows EQ markers and lock symbols. */
+export type ToggleShowConstraintsCmd = {
+  type: 'toggleShowConstraints';
+  /** plan_view element ID. */
+  viewId: string;
 };

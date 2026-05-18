@@ -29,9 +29,12 @@ export interface ManageLinksDialogProps {
   applyCommandImpl?: typeof applyCommand;
   /**
    * §12.1.1: client-side semantic command handler for IFC link commands
-   * (addIfcLink, removeIfcLink, toggleIfcLinkVisibility).
+   * (addIfcLink, removeIfcLink, toggleIfcLinkVisibility) and PDF link commands
+   * (addPdfLink, removePdfLink, togglePdfLink).
    */
   onSemanticCommand?: (cmd: Record<string, unknown>) => void | Promise<void>;
+  /** Active level id — used as default levelId when adding a PDF underlay. */
+  activeLevelId?: string;
 }
 
 type LinkRow = Extract<Element, { kind: 'link_model' }>;
@@ -63,6 +66,7 @@ export function ManageLinksDialog({
   onClose,
   applyCommandImpl,
   onSemanticCommand,
+  activeLevelId,
 }: ManageLinksDialogProps): JSX.Element | null {
   const dialogRef = useRef<HTMLDivElement>(null);
   useFocusTrap(dialogRef, open);
@@ -101,6 +105,15 @@ export function ManageLinksDialog({
       Object.values(elementsById)
         .filter((e): e is IfcLinkRow => e.kind === 'link_ifc')
         .sort((a, b) => a.name.localeCompare(b.name)),
+    [elementsById],
+  );
+
+  type PdfLinkRow = Extract<Element, { kind: 'link_pdf' }>;
+  const pdfLinks: PdfLinkRow[] = useMemo(
+    () =>
+      Object.values(elementsById)
+        .filter((e): e is PdfLinkRow => e.kind === 'link_pdf')
+        .sort((a, b) => a.id.localeCompare(b.id)),
     [elementsById],
   );
 
@@ -1051,6 +1064,105 @@ export function ManageLinksDialog({
               ))}
             </ul>
           ) : null}
+        </section>
+
+        {/* §12.1.1 — PDF Underlays section */}
+        <section className="mb-4">
+          <h3 className="mb-1 text-[10px] uppercase text-muted" style={{ letterSpacing: '0.06em' }}>
+            PDF Underlays
+          </h3>
+          {pdfLinks.length > 0 ? (
+            <ul className="mt-1 flex flex-col gap-1">
+              {pdfLinks.map((link) => (
+                <li
+                  key={link.id}
+                  data-testid={`pdf-link-row-${link.id}`}
+                  className="flex items-center gap-2 rounded border border-border px-2 py-1 text-xs"
+                >
+                  <span style={{ fontSize: 11, flex: 1 }}>PDF p.{link.pageIndex + 1}</span>
+                  <input
+                    type="range"
+                    min={0}
+                    max={1}
+                    step={0.05}
+                    value={link.opacity}
+                    data-testid={`pdf-link-opacity-${link.id}`}
+                    onChange={(e) =>
+                      void onSemanticCommand?.({
+                        type: 'updateElementProperty',
+                        elementId: link.id,
+                        property: 'opacity',
+                        value: parseFloat(e.target.value),
+                      })
+                    }
+                    style={{ width: 80 }}
+                  />
+                  <button
+                    type="button"
+                    data-testid={`pdf-link-toggle-${link.id}`}
+                    onClick={() =>
+                      void onSemanticCommand?.({ type: 'togglePdfLink', linkId: link.id })
+                    }
+                    className="rounded border border-border px-2 py-0.5 text-[11px] hover:bg-surface-strong"
+                  >
+                    {link.hidden ? 'Show' : 'Hide'}
+                  </button>
+                  <button
+                    type="button"
+                    data-testid={`pdf-link-remove-${link.id}`}
+                    onClick={() =>
+                      void onSemanticCommand?.({ type: 'removePdfLink', linkId: link.id })
+                    }
+                    className="rounded border border-border px-2 py-0.5 text-[11px] hover:bg-surface-strong"
+                    style={{ color: '#f87171' }}
+                  >
+                    Remove
+                  </button>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <div className="text-xs text-muted" data-testid="pdf-links-empty">
+              No PDF underlays.
+            </div>
+          )}
+          <label
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 8,
+              fontSize: 11,
+              cursor: 'pointer',
+              marginTop: 4,
+            }}
+          >
+            <input
+              type="file"
+              accept="image/*,.pdf"
+              data-testid="pdf-link-file-input"
+              style={{ display: 'none' }}
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (!file) return;
+                const reader = new FileReader();
+                reader.onload = (ev) => {
+                  if (ev.target?.result) {
+                    void onSemanticCommand?.({
+                      type: 'addPdfLink',
+                      url: ev.target.result as string,
+                      levelId: activeLevelId ?? '',
+                    });
+                  }
+                };
+                reader.readAsDataURL(file);
+              }}
+            />
+            <span
+              style={{ padding: '2px 8px', border: '1px solid var(--border)', borderRadius: 4 }}
+            >
+              + Add PDF Underlay
+            </span>
+          </label>
         </section>
 
         <section>

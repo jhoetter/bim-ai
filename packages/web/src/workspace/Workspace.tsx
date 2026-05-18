@@ -27,6 +27,7 @@ import { shaftBoundaryFromStair } from '../plan/stairShaft';
 import { computeShaftCutFloors } from '../plan/shaftCutFloors';
 import { createSimilarPayload } from '../plan/createSimilar';
 import { equalizeWitnessSpacing } from '../plan/equalizeWitnessSpacing';
+import { stackDimensions } from '../plan/stackDimensions';
 import { applyFamilyParameters } from '../plan/familyParameterEval';
 import { autoDimensionWalls, tagAllRooms as tagAllRoomsFn } from '../plan/autoDimension';
 import { autoDimensionWalls as autoDimensionWallsCmd } from '../plan/autoDimensionWalls';
@@ -1840,6 +1841,19 @@ export function Workspace(): JSX.Element {
         }
         return;
       }
+      // §3.3.5: client-only toggle Show Constraints mode on a plan view
+      if (cmd.type === 'toggleShowConstraints') {
+        const { elementsById: cur } = useBimStore.getState();
+        const view = cur[cmd.viewId as string];
+        if (!view || view.kind !== 'plan_view') return;
+        useBimStore.setState({
+          elementsById: {
+            ...cur,
+            [view.id]: { ...view, showConstraints: !(view as any).showConstraints },
+          },
+        });
+        return;
+      }
       // §1.6.10: client-only crop region resize (updateCropRegion)
       if (cmd.type === 'updateCropRegion') {
         const { elementsById: cur } = useBimStore.getState();
@@ -2164,6 +2178,23 @@ export function Workspace(): JSX.Element {
           next[dim.id] = dim;
         }
         useBimStore.setState({ elementsById: next });
+        return;
+      }
+      // §4.2.6: stackDimensions — redistribute parallel permanent_dimension offsetMm at even spacing.
+      if (cmd.type === 'stackDimensions') {
+        const { elementsById: cur } = useBimStore.getState();
+        const allDims = Object.values(cur).filter(
+          (el) => el.kind === 'permanent_dimension',
+        ) as any[];
+        const targetDims = (cmd.dimensionIds as string[] | undefined)?.length
+          ? allDims.filter((d) => (cmd.dimensionIds as string[]).includes(d.id))
+          : allDims;
+        const offsets = stackDimensions(targetDims, (cmd.spacingMm as number | undefined) ?? 7);
+        const updates: Record<string, any> = { ...cur };
+        for (const [id, offsetMm] of offsets) {
+          updates[id] = { ...cur[id], offsetMm };
+        }
+        useBimStore.setState({ elementsById: updates });
         return;
       }
       // §15.1.3: addFamilyParameter — add a family_parameter element client-side.
@@ -2864,6 +2895,51 @@ export function Workspace(): JSX.Element {
         }
         return;
       }
+      // §12.1.1: addPdfLink — store link_pdf element client-side (no server round-trip)
+      if (cmd.type === 'addPdfLink') {
+        const newId = crypto.randomUUID();
+        const { elementsById: cur } = useBimStore.getState();
+        useBimStore.setState({
+          elementsById: {
+            ...cur,
+            [newId]: {
+              kind: 'link_pdf',
+              id: newId,
+              url: cmd.url as string,
+              pageIndex: (cmd.pageIndex as number | undefined) ?? 0,
+              opacity: (cmd.opacity as number | undefined) ?? 0.5,
+              positionMm: (cmd.positionMm as { xMm: number; yMm: number } | undefined) ?? {
+                xMm: 0,
+                yMm: 0,
+              },
+              scaleMm: (cmd.scaleMm as number | undefined) ?? 1,
+              levelId: cmd.levelId as string,
+              hidden: false,
+            } as any,
+          },
+        });
+        return;
+      }
+      // §12.1.1: removePdfLink — delete link_pdf element client-side
+      if (cmd.type === 'removePdfLink') {
+        const { elementsById: cur } = useBimStore.getState();
+        const { [cmd.linkId as string]: _, ...rest } = cur;
+        useBimStore.setState({ elementsById: rest });
+        return;
+      }
+      // §12.1.1: togglePdfLink — flip hidden flag of link_pdf element client-side
+      if (cmd.type === 'togglePdfLink') {
+        const { elementsById: cur } = useBimStore.getState();
+        const link = cur[cmd.linkId as string];
+        if (!link) return;
+        useBimStore.setState({
+          elementsById: {
+            ...cur,
+            [link.id]: { ...link, hidden: !(link as any).hidden } as any,
+          },
+        });
+        return;
+      }
       // §3.4.2: addFloorSlopePoint — add a drainage slope point to a floor client-side
       if (cmd.type === 'addFloorSlopePoint') {
         const { elementsById: cur } = useBimStore.getState();
@@ -2963,6 +3039,28 @@ export function Workspace(): JSX.Element {
             },
           });
         }
+        return;
+      }
+      // §7.3.2: setWorkPlaneFace — create a work_plane element from a host wall/floor face normal
+      if (cmd.type === 'setWorkPlaneFace') {
+        const { elementsById: cur } = useBimStore.getState();
+        const host = cur[cmd.hostElementId as string];
+        if (!host) return;
+        const newId = crypto.randomUUID();
+        const normalDeg = host.kind === 'wall' ? (((host as any).angleDeg ?? 0) + 90) % 360 : 0;
+        const elevationMm = host.kind === 'floor' ? ((host as any).baseElevationMm ?? 0) : 0;
+        const wp = {
+          kind: 'work_plane' as const,
+          id: newId,
+          name: (cmd.name as string | undefined) ?? `Face of ${host.kind} ${host.id.slice(0, 6)}`,
+          hostElementId: cmd.hostElementId as string,
+          elevationMm,
+          normalDeg,
+          levelId: (host as any).levelId ?? '',
+        };
+        useBimStore.setState({
+          elementsById: { ...cur, [newId]: wp as any },
+        });
         return;
       }
 
@@ -5715,6 +5813,7 @@ export function Workspace(): JSX.Element {
         open={manageLinksOpen}
         onClose={() => setManageLinksOpen(false)}
         onSemanticCommand={onSemanticCommand}
+        activeLevelId={activeLevelId ?? undefined}
       />
       {dxfImportOpen && (
         <DxfImportDialog

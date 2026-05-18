@@ -1653,6 +1653,14 @@ registerCommand({
 });
 
 registerCommand({
+  id: 'file.link-pdf',
+  label: 'Link PDF Underlay',
+  keywords: ['pdf', 'underlay', 'link', 'attach'],
+  category: 'command',
+  invoke: (ctx) => ctx.openManageLinks?.(),
+});
+
+registerCommand({
   id: 'project.manage-links',
   label: 'Manage Project Links',
   keywords: ['project', 'links', 'ifc', 'dxf', 'external', 'resources'],
@@ -3119,6 +3127,26 @@ registerCommand({
   category: 'command',
   invoke: () => {
     // Local-state toggle — surfaced via the dropdown in the project browser Floor Plans header.
+  },
+});
+
+// §1.6.11 — Browser Search/Filter (WP-E: search input + plan view sort toggle)
+registerCommand({
+  id: 'view.browser-search',
+  label: 'Browser Search/Filter',
+  keywords: [
+    'browser',
+    'project browser',
+    'search views',
+    'filter views',
+    'floor plans',
+    'sort views',
+    'Projektbrowser',
+    'Suche',
+  ],
+  category: 'command',
+  invoke: () => {
+    // Local-state — the search input is always visible at the top of the project browser.
   },
 });
 

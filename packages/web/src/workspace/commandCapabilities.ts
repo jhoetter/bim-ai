@@ -858,6 +858,21 @@ const SYSTEM_CAPABILITIES: CommandCapability[] = [
     notes: '§12.1.1: opens ManageLinksDialog IFC section for client-side IFC file linking.',
   },
   {
+    id: 'file.link-pdf',
+    label: 'Link PDF Underlay',
+    owner: 'workspace/ManageLinksDialog',
+    group: 'file',
+    scope: 'global',
+    intendedModes: ['plan', '3d'],
+    surfaces: ['cmd-k', 'dialog'],
+    executionSurface: 'store',
+    preconditions: [],
+    status: 'implemented',
+    usabilityScore: 8,
+    notes:
+      '§12.1.1: links a PDF/image as a plan underlay; stored as link_pdf element with opacity, position, scale.',
+  },
+  {
     id: 'project.manage-links',
     label: 'Manage Project Links',
     owner: 'workspace/project/ManageLinksDialog',
@@ -2364,6 +2379,21 @@ const MASS_CAPABILITIES: CommandCapability[] = [
     notes: '§1.6.10: toggles cropRegionEnabled on the active plan view.',
   },
   {
+    id: 'view.toggle-show-constraints',
+    label: 'Show Constraints',
+    owner: 'plan/PlanViewHeader',
+    group: 'view',
+    scope: 'canvas',
+    intendedModes: ['plan'],
+    surfaces: ['plan-header'],
+    executionSurface: 'store',
+    preconditions: [],
+    status: 'implemented',
+    usabilityScore: 7,
+    notes:
+      '§3.3.5: toggles visibility of EQ equality constraint markers and lock symbols on permanent_dimension elements.',
+  },
+  {
     id: 'selection.toggle-select-linked',
     label: 'Toggle Select Linked Elements',
     owner: 'cmdPalette/defaultCommands',
@@ -2720,6 +2750,21 @@ const MASS_CAPABILITIES: CommandCapability[] = [
       '§1.6.11: toggles plan view grouping in project browser between By Discipline and By Level.',
   },
   {
+    id: 'view.browser-search',
+    label: 'Browser Search/Filter',
+    owner: 'workspace/ProjectBrowser',
+    group: 'view',
+    scope: 'canvas',
+    intendedModes: ['plan', '3d'],
+    surfaces: ['project-browser', 'cmd-k'],
+    executionSurface: 'local-state',
+    preconditions: [],
+    status: 'implemented',
+    usabilityScore: 8,
+    notes:
+      '§1.6.11: search input at top of ProjectBrowser filters all views/sheets by name; sort toggle for plan views.',
+  },
+  {
     id: 'view.canvas-context-menu',
     label: 'Canvas Context Menu',
     owner: 'plan/CanvasContextMenu',
@@ -2763,5 +2808,20 @@ const MASS_CAPABILITIES: CommandCapability[] = [
     usabilityScore: 8,
     notes:
       '§3.3.7: assigns a material to an element face; stores faceOverrides on wall/floor elements.',
+  },
+  {
+    id: 'view.set-work-plane-face',
+    label: 'Set Work Plane to Face',
+    owner: 'workspace/SetWorkPlaneDialog',
+    group: 'view',
+    scope: 'canvas',
+    intendedModes: ['plan', '3d'],
+    surfaces: ['inspector', 'cmd-k'],
+    executionSurface: 'store',
+    preconditions: [],
+    status: 'implemented',
+    usabilityScore: 8,
+    notes:
+      '§7.3.2: creates a work_plane element from a selected wall/floor face normal; §7.3.3: dialog shows host element selector.',
   },
 ];
