@@ -2411,6 +2411,18 @@ registerCommand({
   },
 });
 
+// §3.3.5 — Toggle Show Constraints (EQ markers + lock symbols on dimensions)
+registerCommand({
+  id: 'view.toggle-show-constraints',
+  label: 'Show Constraints',
+  keywords: ['constraints', 'eq', 'equality', 'lock', 'dimension', 'show constraints'],
+  category: 'command',
+  invoke: (ctx) => {
+    const pvId = ctx.activePlanView?.id;
+    if (pvId) ctx.dispatchCommand?.({ type: 'toggleShowConstraints', viewId: pvId });
+  },
+});
+
 // §1.6.10 — Resize Crop Region (canvas handle drag; cmd-k exposes for discoverability)
 registerCommand({
   id: 'view.update-crop-region',
@@ -2560,6 +2572,17 @@ registerCommand({
   id: 'view.set-work-plane',
   label: 'Set Work Plane',
   keywords: ['work plane', 'reference plane', 'set plane'],
+  category: 'command',
+  invoke: (ctx) => {
+    ctx.setWorkPlaneOpen?.(true);
+  },
+});
+
+// §7.3.2: Set Work Plane to Face
+registerCommand({
+  id: 'view.set-work-plane-face',
+  label: 'Set Work Plane to Face',
+  keywords: ['work plane', 'face', 'wall face', 'floor face', 'orient plane'],
   category: 'command',
   invoke: (ctx) => {
     ctx.setWorkPlaneOpen?.(true);
@@ -3158,5 +3181,36 @@ registerCommand({
   category: 'command',
   invoke: () => {
     // §1.7.1: surfaced via canvas right-click on empty space — no global invocation needed.
+  },
+});
+
+// §3.3.5 — Show Constraints toggle (EQ markers + lock symbols on constrained dims)
+registerCommand({
+  id: 'view.toggle-show-constraints',
+  label: 'Show Constraints',
+  keywords: [
+    'show constraints',
+    'EQ',
+    'equality',
+    'lock',
+    'constrained dimensions',
+    'constraint markers',
+  ],
+  category: 'command',
+  invoke: (ctx) => {
+    if (ctx.activePlanViewId) {
+      ctx.dispatchCommand?.({ type: 'toggleShowConstraints', viewId: ctx.activePlanViewId });
+    }
+  },
+});
+
+// §4.2.6 — Stack Dimensions (redistribute parallel dims at even spacing)
+registerCommand({
+  id: 'modify.stack-dimensions',
+  label: 'Stack Dimensions',
+  keywords: ['stack', 'dimensions', 'align', 'spacing', 'EQ', 'parallel dims'],
+  category: 'modify',
+  invoke: (ctx) => {
+    ctx.dispatchCommand?.({ type: 'stackDimensions' });
   },
 });

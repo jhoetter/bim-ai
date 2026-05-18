@@ -2323,6 +2323,8 @@ export function ProjectBrowserV3({
   const [groupsCollapsed, setGroupsCollapsed] = useState(true);
   // §1.6.11 — plan view organization preset
   const [viewOrgPreset, setViewOrgPreset] = useState<'discipline' | 'level'>('discipline');
+  // §1.6.11 — plan view sort order (WP-E)
+  const [planViewSort, setPlanViewSort] = useState<'az' | 'za'>('az');
 
   // Derive groups from elements.
   const {
@@ -2396,14 +2398,14 @@ export function ProjectBrowserV3({
     // §1.6.11 — group definitions (instances counted via group_instance kind)
     const groupDefRows = elements.filter((e) => e.kind === 'group_definition');
 
-    // §1.6.11 — plan views for the Floor Plans section
+    // §1.6.11 — plan views for the Floor Plans section (WP-E: sort controlled by planViewSort)
     const planViewRows = elements
       .filter((e) => e.kind === 'plan_view' && matches((e as { name?: string }).name ?? e.id))
-      .sort((a, b) =>
-        ((a as { name?: string }).name ?? a.id).localeCompare(
-          (b as { name?: string }).name ?? b.id,
-        ),
-      );
+      .sort((a, b) => {
+        const nameA = (a as { name?: string }).name ?? a.id;
+        const nameB = (b as { name?: string }).name ?? b.id;
+        return planViewSort === 'az' ? nameA.localeCompare(nameB) : nameB.localeCompare(nameA);
+      });
 
     return {
       viewRows: sortedViews,
@@ -2416,7 +2418,7 @@ export function ProjectBrowserV3({
       groupDefRows,
       planViewRows,
     };
-  }, [elements, search, localOrder]);
+  }, [elements, search, localOrder, planViewSort]);
 
   const closeCtx = useCallback(() => setCtxMenu(null), []);
 
@@ -2581,6 +2583,7 @@ export function ProjectBrowserV3({
         }}
       >
         <input
+          data-testid="browser-search-input"
           type="search"
           placeholder="Search project…"
           value={search}
@@ -2702,6 +2705,26 @@ export function ProjectBrowserV3({
               }}
             >
               <span>Floor Plans</span>
+              <button
+                data-testid="browser-plan-views-sort-btn"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setPlanViewSort((s) => (s === 'az' ? 'za' : 'az'));
+                }}
+                title={planViewSort === 'az' ? 'Sort Z→A' : 'Sort A→Z'}
+                style={{
+                  fontSize: 9,
+                  padding: '1px 4px',
+                  border: '1px solid var(--color-border)',
+                  borderRadius: 2,
+                  background: 'transparent',
+                  cursor: 'pointer',
+                  marginLeft: 4,
+                  color: 'inherit',
+                }}
+              >
+                {planViewSort === 'az' ? 'A↑' : 'Z↑'}
+              </button>
               <select
                 data-testid="browser-view-org-preset"
                 value={viewOrgPreset}

@@ -2385,11 +2385,11 @@ const MASS_CAPABILITIES: CommandCapability[] = [
     group: 'view',
     scope: 'canvas',
     intendedModes: ['plan'],
-    surfaces: ['plan-header'],
+    surfaces: ['plan-header', 'cmd-k'],
     executionSurface: 'store',
     preconditions: [],
     status: 'implemented',
-    usabilityScore: 7,
+    usabilityScore: 8,
     notes:
       '§3.3.5: toggles visibility of EQ equality constraint markers and lock symbols on permanent_dimension elements.',
   },
@@ -2823,5 +2823,20 @@ const MASS_CAPABILITIES: CommandCapability[] = [
     usabilityScore: 8,
     notes:
       '§7.3.2: creates a work_plane element from a selected wall/floor face normal; §7.3.3: dialog shows host element selector.',
+  },
+  {
+    id: 'modify.stack-dimensions',
+    label: 'Stack Dimensions',
+    owner: 'plan/stackDimensions',
+    group: 'modify',
+    scope: 'canvas',
+    intendedModes: ['plan'],
+    surfaces: ['cmd-k'],
+    executionSurface: 'store',
+    preconditions: [],
+    status: 'implemented',
+    usabilityScore: 8,
+    notes:
+      '§4.2.6: redistributes parallel permanent_dimension elements at even 7mm stacking offsets; §4.2.7: reference planes usable as dim witness point targets.',
   },
 ];
