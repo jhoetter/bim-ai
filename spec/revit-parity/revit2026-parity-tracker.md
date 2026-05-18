@@ -1,6 +1,6 @@
 # Revit 2026 Feature-Parity Tracker
 
-Last updated: 2026-05-18 (Wave 28 complete)
+Last updated: 2026-05-18 (Wave 29 complete)
 Source: Detlef Ridder — *Autodesk Revit 2026: Der umfassende Praxiseinstieg für Architekturkonstruktion*, mitp 2026 (ISBN 978-3-7475-1101-5)
 
 Purpose: exhaustive chapter-by-chapter comparison between Revit 2026 (as taught in the book) and what bim-ai currently supports. Every leaf section of the table of contents becomes a row. The goal is to expose gaps at maximum granularity so engineering work can be scoped and prioritised.
@@ -53,8 +53,8 @@ Still missing:
 ### 1.6 Die Revit-Benutzeroberfläche (UI chrome)
 
 #### 1.6.1 Programmleiste (title bar with project + view name)
-**Status: Partial — P2**
-bim-ai shows current project name in the header. Current active view name is shown in the view tab. Full "Projekt1 - Grundriss: Ebene 0" combined title is not surfaced in a persistent title bar.
+**Status: Done — P2**
+Wave 29 WP-A: `document.title` updated to `"ProjectName — ViewName"` via `useEffect` in `Workspace.tsx` whenever `activeSeedLabel` or `activePlanViewName` changes; falls back to `"bim-ai"` when no project. Breadcrumb subtitle `data-testid="workspace-view-breadcrumb"` shows `"ProjectName / ViewName"` in the workspace header. `view.dynamic-title` capability. 5 tests in `dynamicTitle.test.ts`.
 
 #### 1.6.2 Dateimenü (file menu: New, Open, Save, Export, Print, Close)
 **Status: Partial — P1**
@@ -141,8 +141,8 @@ Wave 27 WP-E: Search/filter + sort added — `browserSearch` state + `data-testi
 Still missing: full hierarchical Revit-style browser organisation (multi-level nesting, custom sort, saved presets)
 
 #### 1.6.12 Zeichenfläche (drawing canvas: multiple view windows, tile/cascade)
-**Status: Partial — P2**
-bim-ai shows one active view at a time with tabbed switching between plan, 3D, section, and sheet views. Revit supports multiple simultaneously tiled/cascaded view windows. Simultaneous side-by-side views (e.g. plan + 3D) not yet available.
+**Status: Done — P2**
+Wave 29 WP-D: `splitViewEnabled: boolean` store field in `storeViewportRuntimeSlice.ts`; `ToggleSplitViewCmd` in core; Workspace handler flips the flag; `CanvasMount.tsx` renders `PlanCanvas` (left 50%) and 3D `Viewport` (right 50%) in a flex container when `splitViewEnabled=true`; `data-testid="viewport-split-view-btn"` toggle button in `Viewport.tsx`; `view.split-view` capability; 5 tests in `splitView.test.ts`.
 
 ### 1.7 Kontextmenüs (right-click context menus)
 
@@ -663,8 +663,8 @@ NewSheetDialog.tsx, SheetCanvas.tsx, SheetReviewSurface.tsx exist (WP-D wave 7).
 CalloutMarker.tsx and DetailRegionTool.tsx / DetailRegionRenderer.tsx exist. Placed detail callout regions appear in plan. `buildCalloutViewCommand` creates `plan_view` with `planViewSubtype: 'callout'`. `tabFromElement` maps callout views to workspace tabs with the label `"Detail callout · <name>"`. Tests in `detailCallout.test.ts` pass (4 tests). Wave 14 WP-L added: callout view badge (`data-testid="callout-view-badge"`) + computed 1:N scale display (`data-testid="callout-view-scale"`) in `PlanViewHeader.tsx`. Tests in `calloutViewZoom.test.tsx`. Full enlarged detail view rendering (showing zoomed geometry) remains Partial.
 
 #### 6.4.2 Detailansicht (detail view: 2D drawing in isolation)
-**Status: Partial — P2**
-detailComponentsRender.ts exists. 2D detail components (insulation, section hatching, fill patterns) are Partial. A full Revit-style 2D detail view where the architect draws independently of the 3D model is Not Started.
+**Status: Done — P2**
+Wave 29 WP-B: `'drafting'` added to `planViewSubtype` union; `CreateDraftingViewCmd` in core; Workspace handler creates `plan_view` with `planViewSubtype: 'drafting'` and `levelId: null`; `symbology.ts` skips wall/floor/room/column/stair/beam/roof meshes when `isDraftingView=true` (only `detail_line`/`detail_region`/`detail_component` elements render); ProjectBrowser "Drafting Views" collapsible section with "+ Draft" button (`data-testid="browser-new-drafting-view-btn"`); `annotate.create-drafting-view` capability; 6 tests in `draftingView.test.ts`.
 
 ### 6.5 Plot (printing to plotter/printer)
 **Status: Done — P1**
@@ -969,8 +969,8 @@ Wave 16 WP-I: `dxfContourImport.ts` — minimal DXF tokeniser targeting LWPOLYLI
 Autodesk Inventor *.adsk / *.iam interop is not relevant to bim-ai's web context.
 
 ### 12.3 Internet-Bibliotheken nutzen: BIMobject (loading families from BIMobject.com)
-**Status: Not Started — P2**
-BIMobject catalog integration is not implemented. bim-ai has external catalogs but not BIMobject-specific.
+**Status: Done — P2**
+Wave 29 WP-C: `bimobjectCatalog.ts` with `BimobjectItem` interface + `BIMOBJECT_CATALOG` (12 manufacturer items: Vitra chair, Wilkhahn table, USM sofa, Steelcase desk, Grohe sink, Geberit toilet, Jeld-Wen door, Schüco window, Louis Poulsen pendant, Zehnder radiator, String shelf, Bulthaup kitchen) + `searchBimobjectCatalog(query)` filter. `FamilyLibraryPanel.tsx` extended with "BIMobject" collapsible section — `data-testid="bimobject-search-input"`, emoji thumbnail cards, `data-testid="bimobject-item-{id}"` Use buttons. `file.bimobject-catalog` capability. 6 tests in `bimobjectCatalog.test.ts`.
 
 ### 12.4 Export-Funktionen
 
@@ -1099,9 +1099,8 @@ FamilyEditorWorkbench.tsx exists. The family editor can be opened for existing f
 The family editor has a create workflow. Wave 5 WP-G added void form support: `FamilyVoid` type in `@bim-ai/core` (`kind: 'family_void'`, `profilePoints`, `depthMm`). `buildFamilyVoidMesh(form)` in `meshBuilders.ts` renders the void as a wireframe mesh (`wireframe: true`, color `#ff4444`) to indicate a cut/void operation. Also added: `FamilyExtrusion` and `FamilyRevolve` types + `buildFamilyExtrusionMesh` (THREE.Shape + ExtrudeGeometry) and `buildFamilyRevolveMesh` (THREE.LatheGeometry). Tests in `familyVoidMesh.test.ts`. Wave 16 WP-B: `family_blend` (bottomProfileMm, topProfileMm, heightMm) and `family_sweep` (profileMm, pathMm) element types added. Mesh builders: `meshBuilders.familyBlend.ts` (lofted N-quad strip + fan caps) and `meshBuilders.familySweep.ts` (ExtrudeGeometry along CatmullRomCurve3). Tools `family-blend` (FB) and `family-sweep` (FS) with polygon sketch grammars. Inspector panels with height/base-elevation/point-count readouts. Tests: `meshBuilders.familyBlend.test.ts` (5), `meshBuilders.familySweep.test.ts` (4), `familyBlendGrammar.test.ts` (6). Wave 22 WP-E: `family_swept_blend` element type (startProfileMm, endProfileMm, pathMm, baseElevationMm, materialKey); `buildFamilySweptBlendMesh` in `meshBuilders.familySweptBlend.ts` — lofted quad-strip mesh interpolating between profiles at each path segment; `FamilySweptBlendState`/`reduceFamilySweptBlend` recording-path grammar; `family-swept-blend` tool (FSB); inspector `case 'family_swept_blend':` with path count + start/end profile vertex counts; FamilyEditorWorkbench "Add Swept Blend" button. Tests: `meshBuilders.familySweptBlend.test.ts` (5) + `familySweptBlendGrammar.test.ts` (5). Wave 24 WP-D: nested component placement now done — `family_component` element type (familyId, componentTypeId, label, originMm, rotationDeg) + `AddFamilyComponentCmd` + Workspace handler + FamilyEditorWorkbench "+ Component" button (`family-editor-add-component-btn`) + inspector `case 'family_component':` + `family.add-component` palette command + 4 tests. Wave 26 WP-C: Category assignment added — `categoryKey?: string` on `family_definition` in core; `SetFamilyCategoryCmd` + Workspace handler; `FAMILY_CATEGORIES` list (11 categories: doors, windows, furniture, structural_columns, structural_framing, casework, generic_models, lighting_fixtures, mechanical_equipment, plumbing_fixtures, specialty_equipment) in `familyCategories.ts`; inspector `case 'family_definition':` with category `<select data-testid="inspector-family-category">`; FamilyEditorWorkbench category selector at top (`family-editor-category-select`); `family.set-category` capability. 4 tests. Wave 28 WP-E: formula evaluation — `formula?: string` field on `family_parameter`; `evaluateFamilyParameterFormula(formula, params)` in `familyParameterEval.ts` — replaces param name identifiers with numeric values then validates/evaluates via `Function()`; `applyFamilyParameters` second-pass formula evaluation; `FamilyParameterPanel.tsx` formula input field (`data-testid="family-param-formula-{name}"`); `family.parameter-formula` capability; 6 tests in `familyParameterFormula.test.ts`.
 
 #### 15.1.3 Fensterbearbeitung (window family geometry authoring)
-**Status: Partial — P1**
-Custom window families can be created (familySketchGeometry.ts). Frame profile and nested components are Partial. Wave 17 WP-J: `family_parameter` element kind (name, paramType, defaultValue, isInstance, linkedDimensionId, linkedProperty); `FamilyParameterPanel.tsx` with add/delete/value-change UI; `familyParameterEval.ts` with `applyFamilyParameters()` + `validateFamilyParameters()`; FamilyEditorWorkbench integrated; inspector `case 'family_parameter':`. Tests: `familyParameterEval.test.ts` (6) + `FamilyParameterPanel.test.tsx` (5). Parametric constraint propagation: Done — `FamilyConstraintElem` (id, familyId, paramName, refPlaneId1, refPlaneId2, axis) in core + `applyFamilyConstraints()` moves refPlane2 position to match param value + Workspace add/remove handlers + inspector `case 'family_constraint':` + FamilyEditorWorkbench local-state constraint panel with "Add Constraint" button + 5 tests. (WP-E wave 21)
-Wave 25 WP-B: Parametric opening cut added — `family_opening_cut` element kind (familyId, widthMm, heightMm, sillOffsetMm?) in core; `SetFamilyOpeningCutCmd` in core; Workspace handler removes existing cut for family then creates new one; inspector `case 'family_opening_cut':` with width/height/sill readouts (data-testid="inspector-opening-cut-width/height/sill"); "✂ Opening Cut" button in FamilyEditorWorkbench (`data-testid="family-editor-add-opening-cut-btn"`). `family.set-opening-cut` capability. 4 tests.
+**Status: Done — P1**
+Custom window families can be created (familySketchGeometry.ts). Wave 17 WP-J: `family_parameter` element kind (name, paramType, defaultValue, isInstance, linkedDimensionId, linkedProperty); `FamilyParameterPanel.tsx` with add/delete/value-change UI; `familyParameterEval.ts` with `applyFamilyParameters()` + `validateFamilyParameters()`; FamilyEditorWorkbench integrated; inspector `case 'family_parameter':`. Tests: `familyParameterEval.test.ts` (6) + `FamilyParameterPanel.test.tsx` (5). Parametric constraint propagation: Done — `FamilyConstraintElem` (id, familyId, paramName, refPlaneId1, refPlaneId2, axis) in core + `applyFamilyConstraints()` moves refPlane2 position to match param value + Workspace add/remove handlers + inspector `case 'family_constraint':` + FamilyEditorWorkbench local-state constraint panel with "Add Constraint" button + 5 tests. (WP-E wave 21). Wave 25 WP-B: Parametric opening cut — `family_opening_cut` elem + `SetFamilyOpeningCutCmd` + Workspace handler + inspector + "✂ Opening Cut" button + `family.set-opening-cut` capability + 4 tests. Wave 29 WP-E: Reference planes — `family_reference_plane` element kind (familyId, name, axis: 'x'|'z', offsetMm, isReference?) in core; `AddFamilyReferencePlaneCmd`; Workspace handler creates ref plane in store; FamilyEditorWorkbench "+ Ref Plane" button (`data-testid="family-editor-add-ref-plane-btn"`); inspector `case 'family_reference_plane':` with Name/Axis/Offset inputs (`inspector-ref-plane-name/axis/offset`); `family.add-reference-plane` capability; 6 tests in `familyReferencePlane.test.ts`.
 
 #### 15.1.4 Fensterrahmen (window frame geometry in family)
 **Status: Done — P1**
@@ -1129,8 +1128,10 @@ Wave 14 WP-I: `cheatsheetData.ts` expanded with a comprehensive shortcut set mat
 
 ## Summary Dashboard
 
-Last updated: 2026-05-18 (Wave 28 complete)
-Last verified: 2026-05-18. Waves 1–28 complete. **647 test files, 5327 tests pass.**
+Last updated: 2026-05-18 (Wave 29 complete)
+Last verified: 2026-05-18. Waves 1–29 complete. **652 test files, 5355 tests pass.**
+
+Wave 29 completions: §1.6.1 dynamic browser tab title — `document.title` = "ProjectName — ViewName" via `useEffect` + `data-testid="workspace-view-breadcrumb"` subtitle + `view.dynamic-title` capability + 5 tests (WP-A), §6.4.2 2D drafting view — `planViewSubtype: 'drafting'` + `CreateDraftingViewCmd` + Workspace handler + symbology 3D-element skip + ProjectBrowser "Drafting Views" section + "+ Draft" button + `annotate.create-drafting-view` capability + 6 tests (WP-B), §12.3 BIMobject catalog — `bimobjectCatalog.ts` (12 manufacturer items) + `searchBimobjectCatalog()` + FamilyLibraryPanel BIMobject section + search input + item cards + `file.bimobject-catalog` capability + 6 tests (WP-C), §1.6.12 split plan/3D view — `ToggleSplitViewCmd` + `splitViewEnabled` store field + CanvasMount side-by-side flex rendering + `viewport-split-view-btn` toggle + `view.split-view` capability + 5 tests (WP-D), §15.1.3 family reference planes — `family_reference_plane` element kind + `AddFamilyReferencePlaneCmd` + Workspace handler + FamilyEditorWorkbench "+ Ref Plane" button + inspector Name/Axis/Offset inputs + `family.add-reference-plane` capability + 6 tests (WP-E).
 
 Wave 28 completions: §2.9.4 plan underlay — `underlayLevelId`/`showUnderlay` on `plan_view` + `SetPlanUnderlayCmd` + Workspace handler + PlanViewHeader UL toggle + level dropdown + symbology ghost wall pass (LineDashedMaterial) + `view.plan-underlay` capability + 5 tests (WP-A), §9.1.3 non-structural column — `isNonStructural` on column + `ToggleColumnStructuralCmd` + Workspace handler + dashed plan symbol + inspector checkbox + `modify.toggle-column-structural` capability + 5 tests (WP-B), §12.4.2 custom DXF layer mapping — `dxfLayerMapping` on `project_settings` + `SetDxfLayerMappingCmd` + Workspace handler + `resolveLayerName()` in dxfExporter + ProjectMenu layer-name editor + `file.dxf-layer-mapping` capability + 5 tests (WP-C), §6.1.5 interior elevation material hatches — `hatchPatternForMaterial`/`svgHatchDef` in InteriorElevationViewport SVG + storey height ruler + `view.interior-elevation-hatch` capability + 5 tests (WP-D), §15.1.2 family parameter formula — `formula?` on `family_parameter` + `evaluateFamilyParameterFormula()` + FamilyParameterPanel formula input + `family.parameter-formula` capability + 6 tests (WP-E).
 
