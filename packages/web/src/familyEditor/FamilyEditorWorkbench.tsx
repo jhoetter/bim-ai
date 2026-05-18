@@ -53,6 +53,7 @@ import {
   getFamilyTemplateBrowserEntry,
 } from './familyTemplateCatalog';
 import type { FamilyReloadOverwriteOption } from '../families/catalogFamilyReload';
+import { FAMILY_CATEGORIES } from './familyCategories';
 
 /** VIE-02 — plan detail levels usable for per-node visibility binding. */
 type DetailLevelKey = 'coarse' | 'medium' | 'fine';
@@ -673,6 +674,7 @@ export function FamilyEditorWorkbench({
   const [familyTypes, setFamilyTypes] = useState<FamilyTypeRow[]>(() => initialFamilyTypeRows());
   const [activeFamilyTypeId, setActiveFamilyTypeId] = useState(DEFAULT_FAMILY_TYPE_ID);
   const [familyTypesDialogOpen, setFamilyTypesDialogOpen] = useState(false);
+  const [familyCategoryKey, setFamilyCategoryKey] = useState<string>('');
   const [categorySettings, setCategorySettings] =
     useState<FamilyCategorySettings>(DEFAULT_CATEGORY_SETTINGS);
   const [viewRange, setViewRange] = useState<FamilyViewRange>(DEFAULT_FAMILY_VIEW_RANGE);
@@ -2198,6 +2200,37 @@ export function FamilyEditorWorkbench({
           <p className="text-sm text-muted">
             Author reusable parametric families outside the main workspace shell.
           </p>
+        </div>
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 8,
+            padding: '4px 8px',
+            borderBottom: '1px solid #444',
+          }}
+        >
+          <span style={{ fontSize: 11, color: '#aaa' }}>Category:</span>
+          <select
+            data-testid="family-editor-category-select"
+            value={familyCategoryKey}
+            onChange={(e) => {
+              setFamilyCategoryKey(e.target.value);
+              onSemanticCommand?.({
+                type: 'setFamilyCategory',
+                familyId: familyId,
+                categoryKey: e.target.value,
+              });
+            }}
+            style={{ fontSize: 11 }}
+          >
+            <option value="">-- Select Category --</option>
+            {FAMILY_CATEGORIES.map((cat) => (
+              <option key={cat.key} value={cat.key}>
+                {cat.label}
+              </option>
+            ))}
+          </select>
         </div>
       </header>
 

@@ -1213,6 +1213,15 @@ registerCommand({
   invoke: (ctx) => startPlanTool(ctx, 'arc-length-dimension'),
 });
 
+// §4.6 — arc length dimension (non-tool command alias for Cmd+K)
+registerCommand({
+  id: 'annotate.arc-length-dimension',
+  label: 'Arc Length Dimension',
+  keywords: ['arc length', 'arc length dimension', 'arc annotation', 'curved dimension'],
+  category: 'command',
+  invoke: (ctx) => startPlanTool(ctx, 'arc-length-dimension'),
+});
+
 registerCommand({
   id: 'tool.spot-elevation',
   label: 'Spot Elevation',
@@ -2812,6 +2821,15 @@ registerCommand({
   invoke: (ctx) => ctx.openFamilyEditor?.(),
 });
 
+// §15.1.2 — family category assignment
+registerCommand({
+  id: 'family.set-category',
+  label: 'Set Family Category',
+  keywords: ['family', 'category', 'doors', 'windows', 'furniture', 'structural', 'classification'],
+  category: 'command',
+  invoke: (ctx) => ctx.openFamilyEditor?.(),
+});
+
 // Toposolid sub-tools — exposed in Cmd+K
 registerCommand({
   id: 'tool.graded-region',
@@ -3081,5 +3099,16 @@ registerCommand({
   category: 'command',
   invoke: () => {
     // Local-state toggle — surfaced via the dropdown in the project browser Floor Plans header.
+  },
+});
+
+// §1.7.1 — Canvas Context Menu (right-click on empty canvas space)
+registerCommand({
+  id: 'view.canvas-context-menu',
+  label: 'Canvas Context Menu',
+  keywords: ['zoom in', 'zoom out', 'zoom to fit', 'view properties', 'canvas menu', 'right click'],
+  category: 'command',
+  invoke: () => {
+    // §1.7.1: surfaced via canvas right-click on empty space — no global invocation needed.
   },
 });

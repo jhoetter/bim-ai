@@ -2220,6 +2220,16 @@ export function Workspace(): JSX.Element {
         useBimStore.setState({ elementsById: next });
         return;
       }
+      // §15.1.2: setFamilyCategory — assign a Revit-style category key to a family_definition element.
+      if (cmd.type === 'setFamilyCategory') {
+        const { elementsById: cur } = useBimStore.getState();
+        const el = cur[cmd.familyId as string];
+        if (!el || el.kind !== 'family_definition') return;
+        useBimStore.setState({
+          elementsById: { ...cur, [el.id]: { ...el, categoryKey: cmd.categoryKey as string } },
+        });
+        return;
+      }
       // §15.1.3: setFamilyOpeningCut — add/update the parametric opening cut on a wall-hosted family.
       if (cmd.type === 'setFamilyOpeningCut') {
         const { elementsById: cur } = useBimStore.getState();

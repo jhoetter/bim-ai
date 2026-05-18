@@ -233,6 +233,7 @@ import { elevationFromWall } from '../lib/sectionElevationFromWall';
 import { WallContextMenu, type WallContextMenuCommand } from '../workspace/viewport';
 import { ElementContextMenu } from '../workspace/ElementContextMenu';
 import { contextMenuItemsForElement } from '../workspace/contextMenuItems';
+import { CanvasContextMenu } from './CanvasContextMenu';
 import { createSimilarPayload } from './createSimilar';
 import { SketchCanvas, type MmToScreen, type PointerToMm } from './SketchCanvas';
 import { snapPointToNearestWallFaceMm } from './SketchCanvasPickWalls';
@@ -711,6 +712,8 @@ export function PlanCanvas({
     el: Element;
     position: { x: number; y: number };
   } | null>(null);
+  // §1.7.1: state for the canvas-level right-click context menu (empty space).
+  const [canvasCtxMenu, setCanvasCtxMenu] = useState<{ x: number; y: number } | null>(null);
   const [dxfQueryHover, setDxfQueryHover] = useState<DxfPrimitiveQueryHit | null>(null);
   const [dxfQueryDialog, setDxfQueryDialog] = useState<{
     hit: DxfPrimitiveQueryHit;
@@ -1966,12 +1969,42 @@ export function PlanCanvas({
           sprite.userData.detailComponent = true;
           sprite.userData.bimPickId = p.id;
           grp.add(sprite);
+        } else if (p.kind === 'material_tag') {
+          // ANN-12 — material tag with optional leader line and tag box
+          const labelText = p.textOverride ?? 'Material';
+          const ac = document.createElement('canvas');
+          ac.width = 256;
+          ac.height = 64;
+          const ac2 = ac.getContext('2d');
+          if (ac2) {
+            // Draw box frame around label
+            ac2.strokeStyle = p.colour;
+            ac2.lineWidth = 2;
+            ac2.strokeRect(1, 1, 254, 62);
+            ac2.fillStyle = p.colour;
+            ac2.font = '26px sans-serif';
+            ac2.textBaseline = 'middle';
+            ac2.fillText(labelText, 8, 32);
+          }
+          const aTex = new THREE.CanvasTexture(ac);
+          aTex.minFilter = THREE.LinearFilter;
+          const aS = new THREE.Sprite(new THREE.SpriteMaterial({ map: aTex, transparent: true }));
+          aS.scale.set(0.3 * (256 / 64), 0.3, 1);
+          aS.position.set(p.positionMm.xMm / 1000, SLICE_Y + 0.01, p.positionMm.yMm / 1000);
+          aS.userData.detailComponent = true;
+          aS.userData.bimPickId = p.id;
+          grp.add(aS);
+          // Draw leader line from tag position to leaderEndMm (if set)
+          if (p.leaderEndMm) {
+            const leader = tagLeaderLineThree(p.leaderEndMm, p.positionMm, SLICE_Y + 0.002);
+            leader.userData.detailComponent = true;
+            grp.add(leader);
+          }
         } else if (
           p.kind === 'annotation_symbol' ||
           p.kind === 'spot_elevation' ||
           p.kind === 'spot_coordinate' ||
-          p.kind === 'spot_slope' ||
-          p.kind === 'material_tag'
+          p.kind === 'spot_slope'
         ) {
           const lt =
             p.kind === 'spot_elevation'
@@ -1980,9 +2013,7 @@ export function PlanCanvas({
                 ? `N${(p.northMm / 1000).toFixed(2)} E${(p.eastMm / 1000).toFixed(2)}`
                 : p.kind === 'spot_slope'
                   ? `${p.slopePct.toFixed(1)}%`
-                  : p.kind === 'material_tag'
-                    ? (p.textOverride ?? 'Material')
-                    : p.symbolType;
+                  : p.symbolType;
           const ac = document.createElement('canvas');
           ac.width = 256;
           ac.height = 64;
@@ -2042,14 +2073,68 @@ export function PlanCanvas({
           rS.userData.bimPickId = p.id;
           grp.add(rS);
         } else if (p.kind === 'arc_length_dimension') {
-          const midRad = (((p.startAngleDeg + p.endAngleDeg) / 2) * Math.PI) / 180;
+          const aldOffsetMm = p.offsetMm ?? 200;
+          const aldInnerRadM = p.radiusMm / 1000;
+          const aldDimRadM = (p.radiusMm + aldOffsetMm) / 1000;
+          const aldOuterRadM = aldDimRadM + 50 / 1000;
+          const aldCx = p.centerMm.xMm / 1000;
+          const aldCz = p.centerMm.yMm / 1000;
+          const aldColour = p.colour;
+          const aldLineMat = new THREE.LineBasicMaterial({ color: aldColour });
+
+          // Dimension arc (N=32 segments)
+          const ALD_N = 32;
+          const aldArcPts: THREE.Vector3[] = [];
+          for (let i = 0; i <= ALD_N; i++) {
+            const angRad = THREE.MathUtils.degToRad(
+              p.startAngleDeg + ((p.endAngleDeg - p.startAngleDeg) * i) / ALD_N,
+            );
+            aldArcPts.push(
+              new THREE.Vector3(
+                aldCx + Math.cos(angRad) * aldDimRadM,
+                SLICE_Y + 0.01,
+                aldCz + Math.sin(angRad) * aldDimRadM,
+              ),
+            );
+          }
+          const aldArcGeom = new THREE.BufferGeometry().setFromPoints(aldArcPts);
+          const aldArcLine = new THREE.Line(aldArcGeom, aldLineMat);
+          aldArcLine.userData.detailComponent = true;
+          aldArcLine.userData.bimPickId = p.id;
+          grp.add(aldArcLine);
+
+          // Extension lines at start and end angles
+          [p.startAngleDeg, p.endAngleDeg].forEach((deg) => {
+            const angRad = THREE.MathUtils.degToRad(deg);
+            const cosA = Math.cos(angRad);
+            const sinA = Math.sin(angRad);
+            const extGeom = new THREE.BufferGeometry().setFromPoints([
+              new THREE.Vector3(
+                aldCx + cosA * aldInnerRadM,
+                SLICE_Y + 0.01,
+                aldCz + sinA * aldInnerRadM,
+              ),
+              new THREE.Vector3(
+                aldCx + cosA * aldOuterRadM,
+                SLICE_Y + 0.01,
+                aldCz + sinA * aldOuterRadM,
+              ),
+            ]);
+            const extLine = new THREE.Line(extGeom, aldLineMat);
+            extLine.userData.detailComponent = true;
+            extLine.userData.bimPickId = p.id;
+            grp.add(extLine);
+          });
+
+          // Text label at midpoint of dimension arc
+          const aldMidRad = THREE.MathUtils.degToRad((p.startAngleDeg + p.endAngleDeg) / 2);
           const arcLen = ((Math.abs(p.endAngleDeg - p.startAngleDeg) * Math.PI) / 180) * p.radiusMm;
           const aLC = document.createElement('canvas');
           aLC.width = 192;
           aLC.height = 64;
           const aLCtx = aLC.getContext('2d');
           if (aLCtx) {
-            aLCtx.fillStyle = '#404040';
+            aLCtx.fillStyle = aldColour;
             aLCtx.font = '28px sans-serif';
             aLCtx.textBaseline = 'middle';
             aLCtx.fillText(`arc ${arcLen.toFixed(0)}`, 4, 32);
@@ -2059,9 +2144,9 @@ export function PlanCanvas({
           const aLS = new THREE.Sprite(new THREE.SpriteMaterial({ map: aLTex, transparent: true }));
           aLS.scale.set(0.25 * (192 / 64), 0.25, 1);
           aLS.position.set(
-            p.centerMm.xMm / 1000 + (p.radiusMm / 1000) * Math.cos(midRad),
-            SLICE_Y + 0.01,
-            p.centerMm.yMm / 1000 + (p.radiusMm / 1000) * Math.sin(midRad),
+            aldCx + Math.cos(aldMidRad) * aldDimRadM,
+            SLICE_Y + 0.015,
+            aldCz + Math.sin(aldMidRad) * aldDimRadM,
           );
           aLS.userData.detailComponent = true;
           aLS.userData.bimPickId = p.id;
@@ -5792,12 +5877,15 @@ export function PlanCanvas({
         if (!activePlanViewId) return;
         const nearest = nearestWallAt(elementsById, displayLevelId || undefined, sp.xMm, sp.yMm);
         if (nearest && nearest.distMm < 2000) {
+          // Tag position is offset ~500mm diagonally from click; leader end touches the wall
+          const tagPos = { xMm: sp.xMm + 500, yMm: sp.yMm - 500 };
           onSemanticCommand({
             type: 'createMaterialTag',
             hostViewId: activePlanViewId,
             hostElementId: nearest.wall.id,
             layerIndex: 0,
-            positionMm: sp,
+            positionMm: tagPos,
+            leaderEndMm: sp,
           });
         }
         return;
@@ -7025,6 +7113,9 @@ export function PlanCanvas({
         (x) => typeof (x.object.userData as { bimPickId?: unknown }).bimPickId === 'string',
       );
       if (!h) {
+        // §1.7.1: no element hit — show canvas-level context menu with navigation commands.
+        ev.preventDefault();
+        setCanvasCtxMenu({ x: ev.clientX, y: ev.clientY });
         setWallContextMenu(null);
         setUnhideContextMenu(null);
         setWallJoinCtxMenu(null);
@@ -7590,6 +7681,23 @@ export function PlanCanvas({
           position={wallContextMenu.position}
           onCommand={handleWallContextMenuCommand}
           onClose={() => setWallContextMenu(null)}
+        />
+      )}
+      {/* §1.7.1: canvas right-click context menu — shown when right-clicking on empty canvas space */}
+      {canvasCtxMenu && (
+        <CanvasContextMenu
+          x={canvasCtxMenu.x}
+          y={canvasCtxMenu.y}
+          onClose={() => setCanvasCtxMenu(null)}
+          onZoomIn={() => {
+            camRef.current.half = Math.max(HALF_MIN, camRef.current.half * Math.exp(-0.5));
+            resizeCam();
+          }}
+          onZoomOut={() => {
+            camRef.current.half = Math.min(HALF_MAX, camRef.current.half * Math.exp(0.5));
+            resizeCam();
+          }}
+          onZoomFit={handleFitToView}
         />
       )}
       {/* §1.7.2: generic element right-click context menu for non-wall elements */}

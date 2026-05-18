@@ -39,6 +39,7 @@ import { stairBoundaryMm } from '../../plan/stairBoundingBox';
 import { angleBetweenVectors } from '../../plan/measureGeometry';
 import { getStairComponents } from '../../plan/stairComponentList';
 import { buildShaftSideWalls } from '../../plan/buildShaftSideWalls';
+import { FAMILY_CATEGORIES } from '../../familyEditor/familyCategories';
 
 /**
  * Inspector parameter renderers — spec §13.
@@ -2473,6 +2474,36 @@ export function InspectorPropertiesFor(
           <div className="text-xs text-muted">
             Origin: ({(el as any).originMm?.xMm?.toFixed(0)},{' '}
             {(el as any).originMm?.yMm?.toFixed(0)}, {(el as any).originMm?.zMm?.toFixed(0)}) mm
+          </div>
+        </div>
+      );
+    }
+    case 'family_definition': {
+      const familyDef = el as any;
+      return (
+        <div style={{ padding: 8 }}>
+          <div className="text-xs font-semibold mb-2">Family Definition</div>
+          <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 4 }}>
+            <span style={{ fontSize: 11, width: 70 }}>Category</span>
+            <select
+              data-testid="inspector-family-category"
+              value={familyDef.categoryKey ?? ''}
+              onChange={(e) =>
+                onSemanticCommand?.({
+                  type: 'setFamilyCategory',
+                  familyId: el.id,
+                  categoryKey: e.target.value,
+                })
+              }
+              style={{ fontSize: 11, flex: 1 }}
+            >
+              <option value="">-- Select Category --</option>
+              {FAMILY_CATEGORIES.map((cat) => (
+                <option key={cat.key} value={cat.key}>
+                  {cat.label}
+                </option>
+              ))}
+            </select>
           </div>
         </div>
       );

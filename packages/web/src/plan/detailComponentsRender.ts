@@ -93,6 +93,8 @@ export type ArcLengthDimensionPrimitive = {
   radiusMm: number;
   startAngleDeg: number;
   endAngleDeg: number;
+  /** Radial offset of the dimension arc from the element arc (mm). Defaults to 200. */
+  offsetMm?: number;
   colour: string;
 };
 
@@ -130,6 +132,8 @@ export type MaterialTagPrimitive = {
   hostElementId: string;
   layerIndex: number;
   textOverride: string | null;
+  /** Optional leader line end point (tip touching the element). */
+  leaderEndMm?: XY | null;
   colour: string;
 };
 
@@ -372,6 +376,7 @@ export function extractDetailComponentPrimitives(
         radiusMm: el.radiusMm,
         startAngleDeg: el.startAngleDeg,
         endAngleDeg: el.endAngleDeg,
+        offsetMm: el.offsetMm,
         colour: el.colour ?? '#202020',
       });
     } else if (el.kind === 'material_tag' && el.hostViewId === viewId) {
@@ -395,6 +400,7 @@ export function extractDetailComponentPrimitives(
         hostElementId: el.hostElementId,
         layerIndex: el.layerIndex ?? 0,
         textOverride: resolvedMaterialText,
+        leaderEndMm: el.leaderEndMm ?? null,
         colour: el.colour ?? '#202020',
       });
     } else if (el.kind === 'multi_category_tag' && el.hostViewId === viewId) {

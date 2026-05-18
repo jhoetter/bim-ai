@@ -35,6 +35,7 @@ export type CommandSurface =
   | 'element-sidebar'
   | 'canvas-context'
   | 'canvas'
+  | 'canvas-right-click'
   | 'footer'
   | 'dialog'
   | 'project-browser';
@@ -66,7 +67,8 @@ export type ExecutionSurface =
   | 'modal'
   | 'global'
   | 'dialog'
-  | 'store';
+  | 'store'
+  | 'local-state';
 
 export type CapabilityStatus = 'implemented' | 'partial' | 'planned';
 
@@ -2545,6 +2547,21 @@ const MASS_CAPABILITIES: CommandCapability[] = [
     notes: '§15.1.3: defines the void cut shape within a wall-hosted family (window/door opening).',
   },
   {
+    id: 'family.set-category',
+    label: 'Set Family Category',
+    owner: 'familyEditor/FamilyEditorWorkbench',
+    group: 'family',
+    scope: 'canvas',
+    intendedModes: ['family-editor'],
+    surfaces: ['family-editor', 'cmd-k'],
+    executionSurface: 'store',
+    preconditions: ['family-editor-open'],
+    status: 'implemented',
+    usabilityScore: 8,
+    notes:
+      '§15.1.2: assigns a Revit-style category (Doors, Windows, Furniture, etc.) to a family definition.',
+  },
+  {
     id: 'view.update-crop-region',
     label: 'Resize Crop Region',
     owner: 'plan/PlanCanvas',
@@ -2701,5 +2718,50 @@ const MASS_CAPABILITIES: CommandCapability[] = [
     usabilityScore: 8,
     notes:
       '§1.6.11: toggles plan view grouping in project browser between By Discipline and By Level.',
+  },
+  {
+    id: 'view.canvas-context-menu',
+    label: 'Canvas Context Menu',
+    owner: 'plan/CanvasContextMenu',
+    group: 'view',
+    scope: 'canvas',
+    intendedModes: ['plan', '3d'],
+    surfaces: ['canvas-right-click', 'cmd-k'],
+    executionSurface: 'local-state',
+    preconditions: [],
+    status: 'implemented',
+    usabilityScore: 8,
+    notes:
+      '§1.7.1: right-click context menu on empty canvas with Zoom In/Out/Fit and View Properties.',
+  },
+  {
+    id: 'annotate.arc-length-dimension',
+    label: 'Arc Length Dimension',
+    owner: 'plan/PlanCanvas',
+    group: 'document',
+    scope: 'view',
+    intendedModes: ['plan'],
+    surfaces: ['ribbon', 'cmd-k'],
+    executionSurface: 'store',
+    preconditions: [],
+    status: 'implemented',
+    usabilityScore: 8,
+    notes:
+      '§4.6: arc length dimension with curved dimension line, extension lines, and arc length label.',
+  },
+  {
+    id: 'modify.paint-face',
+    label: 'Paint Surface',
+    owner: 'plan/PlanCanvas',
+    group: 'modify',
+    scope: 'canvas',
+    intendedModes: ['plan'],
+    surfaces: ['ribbon', 'cmd-k'],
+    executionSurface: 'store',
+    preconditions: [],
+    status: 'implemented',
+    usabilityScore: 8,
+    notes:
+      '§3.3.7: assigns a material to an element face; stores faceOverrides on wall/floor elements.',
   },
 ];
