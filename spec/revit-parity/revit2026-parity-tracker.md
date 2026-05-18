@@ -937,7 +937,7 @@ Wave 14 WP-D: full massing → BIM workflow implemented. `massGenerateBim.ts` pr
 #### 12.1.1 Verknüpfungen (link Revit files, IFC files, CAD files, point clouds)
 **Status: Partial — P1**
 - Link another bim-ai model file: Done — `link_model` element type in `@bim-ai/core`; `ManageLinksDialog.tsx` provides full UI to add/delete/align/pin linked models; `linkedGhosting.ts` ghosts linked meshes with blue tint at 0.6 opacity; linked elements are non-selectable/non-editable (`isLinkedElementId` guards in Viewport.tsx); `hidden?` toggle wired via ProjectBrowser; ghosting tests in `src/viewport/linkedGhosting.test.ts` and `src/export/linkedModelGhosting.test.ts` (E5)
-- Link IFC: Not Started
+- Link IFC: Done (wave 19 WP-C) — `link_ifc` element type + `addIfcLink`/`removeIfcLink`/`toggleIfcLinkVisibility` commands + ManageLinksDialog IFC section + ghost rendering via `applyLinkedGhosting` + ProjectBrowser Linked IFC subtree
 - Link CAD (DWG/DXF/DGN): DXF underlay exists (dxfUnderlay.ts — Partial); circle, text, and hatch entities now rendered (E6)
 - Link PDF: Done — `link_pdf` element type + `AddPdfLinkCmd`/`RemovePdfLinkCmd`/`TogglePdfLinkCmd` + Workspace handlers + ManageLinksDialog PDF section (file picker, opacity slider, toggle/remove buttons) + `file.link-pdf` palette command. 5 tests (WP-A wave 27).
 - Point cloud: Not Started
