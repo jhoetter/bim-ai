@@ -1,4 +1,4 @@
-import { type JSX, useEffect, useRef, useState } from 'react';
+import React, { type JSX, useEffect, useRef, useState } from 'react';
 import { ICON_SIZE, Icons } from '@bim-ai/ui';
 import {
   coerceCheckpointRetentionLimit,
@@ -88,6 +88,10 @@ export interface ProjectMenuProps {
   onDuplicateProject?: (newName: string) => void;
   /** §1.6.2: revert to the last saved state. */
   onRevertProject?: () => void;
+  /** §12.4.2: current dxfLayerMapping from project_settings. */
+  dxfLayerMapping?: Record<string, string>;
+  /** §12.4.2: dispatch a setDxfLayerMapping command (partial update). */
+  onSetDxfLayerMapping?: (mapping: Record<string, string>) => void;
 }
 
 export function ProjectMenu({
@@ -126,6 +130,8 @@ export function ProjectMenu({
   onOpenProjectTemplates,
   onDuplicateProject,
   onRevertProject,
+  dxfLayerMapping,
+  onSetDxfLayerMapping,
 }: ProjectMenuProps): JSX.Element | null {
   const popoverRef = useRef<HTMLDivElement | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
@@ -431,6 +437,62 @@ export function ProjectMenu({
                     DWG: open the DXF in any CAD tool (BricsCAD, Teigha) and save as DWG — the
                     geometry is identical.
                   </p>
+                  {/* §12.4.2: Custom layer name mapping */}
+                  <details style={{ marginTop: 8 }}>
+                    <summary
+                      style={{ fontSize: 11, cursor: 'pointer', userSelect: 'none' }}
+                      onKeyDown={(e) => e.stopPropagation()}
+                    >
+                      Layer Names
+                    </summary>
+                    <div
+                      style={{
+                        paddingTop: 6,
+                        display: 'grid',
+                        gridTemplateColumns: '1fr 1fr',
+                        gap: '4px 8px',
+                        fontSize: 11,
+                      }}
+                    >
+                      {[
+                        'A-WALL',
+                        'A-DOOR',
+                        'A-GLAZ',
+                        'A-AREA',
+                        'S-GRID',
+                        'A-ANNO-DIMS',
+                        'A-REFP',
+                        'S-COLS',
+                        'S-BEAM',
+                      ].map((layer) => (
+                        <React.Fragment key={layer}>
+                          <span style={{ alignSelf: 'center', color: 'var(--text-muted, #888)' }}>
+                            {layer}
+                          </span>
+                          <input
+                            data-testid={`dxf-layer-name-${layer}`}
+                            type="text"
+                            defaultValue={(dxfLayerMapping ?? {})[layer] ?? layer}
+                            onBlur={(e) => {
+                              const val = e.target.value.trim();
+                              if (val && val !== layer) {
+                                onSetDxfLayerMapping?.({ [layer]: val });
+                              }
+                            }}
+                            onKeyDown={(e) => e.stopPropagation()}
+                            style={{
+                              fontSize: 11,
+                              padding: '1px 4px',
+                              border: '1px solid var(--border)',
+                              borderRadius: 2,
+                              background: 'transparent',
+                              color: 'inherit',
+                            }}
+                          />
+                        </React.Fragment>
+                      ))}
+                    </div>
+                  </details>
                   <button
                     type="button"
                     role="menuitem"

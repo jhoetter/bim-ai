@@ -4,6 +4,8 @@ export interface DxfExportOptions {
   levelId?: string;
   units?: 'mm' | 'm';
   layerStyle?: 'revit-compatible' | 'custom';
+  /** §12.4.2: per-layer name overrides. Keys are default layer names (e.g. 'A-WALL'), values are custom names. */
+  layerMapping?: Record<string, string>;
 }
 
 export interface DxfPlanView {
@@ -199,12 +201,24 @@ function wallRect(
   ];
 }
 
+/** §12.4.2: returns the custom layer name override, or the default name if no override is set. */
+export function resolveLayerName(defaultName: string, mapping?: Record<string, string>): string {
+  return mapping?.[defaultName] ?? defaultName;
+}
+
 export function exportToDxf(
   elementsById: Record<string, Element>,
   opts?: DxfExportOptions,
 ): DxfPlanView[] {
   const units: 'mm' | 'm' = opts?.units ?? 'mm';
   const scale = SCALE[units];
+
+  // §12.4.2: read layerMapping from opts, or from project_settings.dxfLayerMapping
+  const projectSettings = Object.values(elementsById).find(
+    (e): e is Extract<Element, { kind: 'project_settings' }> => e.kind === 'project_settings',
+  );
+  const layerMapping: Record<string, string> | undefined =
+    opts?.layerMapping ?? (projectSettings as any)?.dxfLayerMapping;
 
   const elements = Object.values(elementsById);
   const levels = elements.filter(
@@ -215,11 +229,12 @@ export function exportToDxf(
 
   if (targetLevels.length === 0 && levels.length === 0) {
     const syntheticLevel = { id: '_default', name: 'Level 1', elevationMm: 0 };
-    return [buildPlanView(elements, syntheticLevel, scale, units)];
+    return [buildPlanView(elements, syntheticLevel, scale, units, layerMapping)];
   }
 
-  if (targetLevels.length === 0) return levels.map((l) => buildPlanView(elements, l, scale, units));
-  return targetLevels.map((l) => buildPlanView(elements, l, scale, units));
+  if (targetLevels.length === 0)
+    return levels.map((l) => buildPlanView(elements, l, scale, units, layerMapping));
+  return targetLevels.map((l) => buildPlanView(elements, l, scale, units, layerMapping));
 }
 
 function buildPlanView(
@@ -227,9 +242,15 @@ function buildPlanView(
   level: { id: string; name: string; elevationMm: number },
   scale: number,
   units: 'mm' | 'm',
+  layerMapping?: Record<string, string>,
 ): DxfPlanView {
   const entities: string[] = [];
   const usedLayers: string[] = [];
+
+  /** §12.4.2: resolve a layer name using the mapping, or return the default. */
+  function rln(defaultName: string): string {
+    return resolveLayerName(defaultName, layerMapping);
+  }
 
   function emit(layer: string, entity: string) {
     usedLayers.push(layer);
@@ -243,7 +264,8 @@ function buildPlanView(
       const ex = el.end.xMm * scale;
       const ey = el.end.yMm * scale;
       const t = el.thicknessMm * scale;
-      emit('A-WALL', dxfPolyline('A-WALL', wallRect(sx, sy, ex, ey, t), true));
+      const wallLn = rln('A-WALL');
+      emit(wallLn, dxfPolyline(wallLn, wallRect(sx, sy, ex, ey, t), true));
     }
 
     if (el.kind === 'door') {
@@ -260,9 +282,10 @@ function buildPlanView(
       const wallLen = Math.sqrt(dx * dx + dy * dy) || 1;
       const ux = dx / wallLen;
       const uy = dy / wallLen;
-      emit('A-DOOR', dxfLine('A-DOOR', px, py, px + ux * w, py + uy * w));
+      const doorLn = rln('A-DOOR');
+      emit(doorLn, dxfLine(doorLn, px, py, px + ux * w, py + uy * w));
       const angleDeg = (Math.atan2(uy, ux) * 180) / Math.PI;
-      emit('A-DOOR', dxfArc('A-DOOR', px, py, w, angleDeg, angleDeg + 90));
+      emit(doorLn, dxfArc(doorLn, px, py, w, angleDeg, angleDeg + 90));
     }
 
     if (el.kind === 'window') {
@@ -283,14 +306,16 @@ function buildPlanView(
       const ny = ux * 50 * scale;
       const ex = px + ux * w;
       const ey = py + uy * w;
-      emit('A-GLAZ', dxfLine('A-GLAZ', px, py, ex, ey));
-      emit('A-GLAZ', dxfLine('A-GLAZ', px + nx, py + ny, ex + nx, ey + ny));
-      emit('A-GLAZ', dxfLine('A-GLAZ', px - nx, py - ny, ex - nx, ey - ny));
+      const glazLn = rln('A-GLAZ');
+      emit(glazLn, dxfLine(glazLn, px, py, ex, ey));
+      emit(glazLn, dxfLine(glazLn, px + nx, py + ny, ex + nx, ey + ny));
+      emit(glazLn, dxfLine(glazLn, px - nx, py - ny, ex - nx, ey - ny));
     }
 
     if (el.kind === 'room' && el.levelId === level.id) {
       const pts = el.outlineMm.map((p): [number, number] => [p.xMm * scale, p.yMm * scale]);
-      if (pts.length >= 2) emit('A-AREA', dxfPolyline('A-AREA', pts, true));
+      const areaLn = rln('A-AREA');
+      if (pts.length >= 2) emit(areaLn, dxfPolyline(areaLn, pts, true));
     }
 
     if (el.kind === 'level') {
@@ -304,10 +329,11 @@ function buildPlanView(
       const x2 = el.end.xMm * scale;
       const y2 = el.end.yMm * scale;
       const bubbleR = 300 * scale;
-      emit('S-GRID', dxfLine('S-GRID', x1, y1, x2, y2));
-      emit('S-GRID', dxfCircle('S-GRID', x2, y2, bubbleR));
+      const gridLn = rln('S-GRID');
+      emit(gridLn, dxfLine(gridLn, x1, y1, x2, y2));
+      emit(gridLn, dxfCircle(gridLn, x2, y2, bubbleR));
       if (el.label) {
-        emit('S-GRID', dxfText('S-GRID', x2, y2, 200 * scale, el.label));
+        emit(gridLn, dxfText(gridLn, x2, y2, 200 * scale, el.label));
       }
     }
 
@@ -316,11 +342,12 @@ function buildPlanView(
       const y1 = el.startMm.yMm * scale;
       const x2 = el.endMm.xMm * scale;
       const y2 = el.endMm.yMm * scale;
-      emit('A-REFP', dxfLine('A-REFP', x1, y1, x2, y2));
+      const refpLn = rln('A-REFP');
+      emit(refpLn, dxfLine(refpLn, x1, y1, x2, y2));
       if (el.name) {
         const mx = (x1 + x2) / 2;
         const my = (y1 + y2) / 2;
-        emit('A-REFP', dxfText('A-REFP', mx, my, 150 * scale, el.name));
+        emit(refpLn, dxfText(refpLn, mx, my, 150 * scale, el.name));
       }
     }
 
@@ -334,15 +361,16 @@ function buildPlanView(
       const distMm = Math.round(
         Math.sqrt((el.bMm.xMm - el.aMm.xMm) ** 2 + (el.bMm.yMm - el.aMm.yMm) ** 2),
       );
+      const dimsLn = rln('A-ANNO-DIMS');
       // Extension lines from measurement points to offset (dim line)
-      emit('A-ANNO-DIMS', dxfLine('A-ANNO-DIMS', ax, ay, ax + ox, ay + oy));
-      emit('A-ANNO-DIMS', dxfLine('A-ANNO-DIMS', bx, by, bx + ox, by + oy));
+      emit(dimsLn, dxfLine(dimsLn, ax, ay, ax + ox, ay + oy));
+      emit(dimsLn, dxfLine(dimsLn, bx, by, bx + ox, by + oy));
       // Dimension line along the offset
-      emit('A-ANNO-DIMS', dxfLine('A-ANNO-DIMS', ax + ox, ay + oy, bx + ox, by + oy));
+      emit(dimsLn, dxfLine(dimsLn, ax + ox, ay + oy, bx + ox, by + oy));
       // Label at midpoint
       const mx = (ax + bx) / 2 + ox;
       const my = (ay + by) / 2 + oy;
-      emit('A-ANNO-DIMS', dxfText('A-ANNO-DIMS', mx, my, 150 * scale, String(distMm)));
+      emit(dimsLn, dxfText(dimsLn, mx, my, 150 * scale, String(distMm)));
     }
 
     if (el.kind === 'text_note' && el.hostViewId === level.id) {
@@ -362,7 +390,8 @@ function buildPlanView(
         [(cx + hw) * scale, (cy + hd) * scale],
         [(cx - hw) * scale, (cy + hd) * scale],
       ];
-      emit('S-COLS', dxfPolyline('S-COLS', pts, true));
+      const colsLn = rln('S-COLS');
+      emit(colsLn, dxfPolyline(colsLn, pts, true));
     }
 
     if (el.kind === 'beam' && (el as any).levelId === level.id) {
@@ -370,7 +399,8 @@ function buildPlanView(
       const sy = (el as any).startMm?.yMm ?? 0;
       const ex = (el as any).endMm?.xMm ?? 0;
       const ey = (el as any).endMm?.yMm ?? 0;
-      emit('S-BEAM', dxfLine('S-BEAM', sx * scale, sy * scale, ex * scale, ey * scale));
+      const beamLn = rln('S-BEAM');
+      emit(beamLn, dxfLine(beamLn, sx * scale, sy * scale, ex * scale, ey * scale));
     }
 
     if (el.kind === 'floor' && (el as any).levelId === level.id) {
