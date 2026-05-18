@@ -2121,7 +2121,7 @@ register(
         restEndpoint=RestEndpoint(method="GET", path="/api/models/{model_id}/snapshot"),
         sideEffects="none",
         agentSafetyNotes="Safe to call freely; read-only snapshot.",
-        stableId="model.show",
+        stableId="model-show",
         requiredPermissions=["model:read"],
         schemaRefs=["input:ModelShowInput", "output:ModelSnapshot"],
         exampleRefs=["route:model-snapshot", "cli:snapshot"],

@@ -54,6 +54,7 @@ from bim_ai.diff_engine import compute_element_diff
 from bim_ai.document import Document
 from bim_ai.elements import Element, LevelElem, LinkModelElem, PlanViewElem
 from bim_ai.fire_safety_lens import fire_safety_lens_review_status
+from bim_ai.assets import search_assets
 from bim_ai.material_image_assets import ImageAssetUpload, build_image_asset_from_upload
 from bim_ai.cmd.apply_bundle import apply_bundle as _apply_bundle
 from bim_ai.cmd.types import CommandBundle, BundleResult
@@ -479,6 +480,34 @@ async def snapshot(
         # drift badges on pinned links without an extra round-trip.
         out["linkSourceRevisions"] = link_source_revisions
     return out
+
+
+@api_router.get("/models/{model_id}/assets/search")
+async def search_model_assets(
+    model_id: UUID,
+    query: str = "",
+    category: str | None = None,
+    disciplineTag: str | None = Query(default=None),  # noqa: N803 — wire-format alias
+    limit: int = Query(default=20, ge=1, le=100),
+    session: AsyncSession = Depends(get_session),
+) -> dict[str, Any]:
+    row = await load_model_row(session, model_id)
+    if row is None:
+        raise HTTPException(status_code=404, detail="Model not found")
+    doc = Document.model_validate(row.document)
+    results = search_assets(
+        query,
+        doc.elements,
+        category=category,
+        discipline_tag=disciplineTag,
+        limit=limit,
+    )
+    return {
+        "results": [
+            entry.model_dump(by_alias=True, exclude_none=True)
+            for entry in results
+        ]
+    }
 
 
 async def _resolve_link_source_revisions(
