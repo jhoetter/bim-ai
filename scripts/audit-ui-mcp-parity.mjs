@@ -16,6 +16,7 @@ const SOURCES = {
   seedDsl: 'packages/cli/lib/seed-dsl.mjs',
   queryResolve: 'app/bim_ai/query_resolve.py',
   semanticAuthoring: 'app/bim_ai/semantic_authoring.py',
+  benchmarkRoot: 'spec/benchmarks',
 };
 
 const M2_FIRST_PACK_TOOLS = [
@@ -48,6 +49,23 @@ const M2_FIRST_PACK_TOOLS = [
   'document.sheet_with_views',
   'qa.advisor',
 ];
+
+const M2_WAVE2_TOOLS = [
+  'model.dry_run',
+  'model.commit_bundle',
+  'query.nearest_wall',
+  'author.wall',
+  'opening.roof_opening',
+  'view.save_3d',
+  'qa.advisor',
+];
+
+const BENCHMARK_COMMAND_TOOL_MARKERS = new Map([
+  ['createWall', ['author.wall']],
+  ['createWallChain', ['author.wall_chain']],
+  ['createRoofOpening', ['opening.roof_opening']],
+  ['saveViewpoint', ['view.save_3d']],
+]);
 
 function read(relPath) {
   try {
@@ -626,6 +644,7 @@ function parseImplementedRoutes() {
 
 function stableToolIdFromRoute(route) {
   const path = route.path.replace('/api/models/{}/', '');
+  if (path === 'qa/advisor') return 'qa.advisor';
   const match = path.match(/^(query|resolve)\/(.+)$/);
   if (!match) return null;
   const name = match[2].replace(/-/g, '_');
@@ -648,7 +667,12 @@ function parseQueryResolveSurfaces(implementedRoutes) {
       return id
         ? {
             id,
-            kind: id.startsWith('query.') || id === 'model.show' ? 'query-route' : 'resolve-route',
+            kind:
+              id.startsWith('query.') || id === 'model.show'
+                ? 'query-route'
+                : id.startsWith('resolve.')
+                  ? 'resolve-route'
+                  : 'qa-route',
             source: route.source,
           }
         : null;
@@ -665,17 +689,23 @@ function parseSemanticAuthoringSurfaces() {
   const operationBlock =
     source.match(/SUPPORTED_OPERATIONS:\s*tuple\[str,\s*\.\.\.\]\s*=\s*\(([\s\S]*?)\)/)?.[1] ?? '';
   const operationMap = {
+    wall: 'author.wall',
     wall_chain: 'author.wall_chain',
     floor_from_boundary: 'author.floor_from_boundary',
     floor_from_wall_segments: 'author.floor_from_walls',
     door_on_wall: 'opening.door_on_wall',
     window_on_wall: 'opening.window_on_wall',
+    roof_opening: 'opening.roof_opening',
     roof_from_boundary: 'author.roof_from_boundary',
     roof_from_wall_segments: 'author.roof_from_walls',
     room_outline: 'author.rooms_from_outlines',
     stair_between_levels: 'author.stair_between_levels',
     plan_view: 'view.plan',
+    save_3d: 'view.save_3d',
+    save_3d_view: 'view.save_3d',
     sheet_with_viewports: 'document.sheet_with_views',
+    advisor: 'qa.advisor',
+    qa_advisor: 'qa.advisor',
   };
   const operations = [...operationBlock.matchAll(/["']([^"']+)["']/g)]
     .map((match) => operationMap[match[1]] ?? `author.${match[1]}`)
@@ -695,6 +725,143 @@ function parseSemanticAuthoringSurfaces() {
       ]
     : [];
   return [...operations, ...builder].sort((a, b) => a.id.localeCompare(b.id));
+}
+
+function parseSemanticRouteAliases() {
+  const source = read('app/bim_ai/routes_api.py');
+  const start = source.indexOf('_SEMANTIC_SURFACE_ALIASES');
+  if (start < 0) return [];
+  const open = source.indexOf('{', start);
+  const close = open >= 0 ? findMatchingParen(source, open) : -1;
+  if (close < 0) return [];
+  const block = source.slice(open, close + 1);
+  return [...block.matchAll(/["']([^"']+)["']\s*:/g)]
+    .map((match) => ({
+      id: match[1],
+      kind: 'semantic-authoring-route',
+      source: `app/bim_ai/routes_api.py:${lineNumber(source, start)}`,
+    }))
+    .sort((a, b) => a.id.localeCompare(b.id));
+}
+
+function parseJsonFile(relPath) {
+  try {
+    return JSON.parse(read(relPath));
+  } catch {
+    return null;
+  }
+}
+
+function listBenchmarkDirs() {
+  const root = path.join(ROOT, SOURCES.benchmarkRoot);
+  try {
+    return fs
+      .readdirSync(root, { withFileTypes: true })
+      .filter((entry) => entry.isDirectory())
+      .map((entry) => `${SOURCES.benchmarkRoot}/${entry.name}`)
+      .sort();
+  } catch {
+    return [];
+  }
+}
+
+function flattenEvidenceExpectations(value, prefix = '') {
+  if (!value || typeof value !== 'object') return [];
+  const rows = [];
+  for (const [key, child] of Object.entries(value)) {
+    const id = prefix ? `${prefix}.${key}` : key;
+    if (child === true || child === false || typeof child === 'string') {
+      rows.push({ id, status: String(child), todo: '' });
+    } else if (child && typeof child === 'object') {
+      if ('status' in child || 'todo' in child) {
+        rows.push({
+          id,
+          status: String(child.status ?? 'declared'),
+          todo: String(child.todo ?? ''),
+        });
+      }
+      rows.push(...flattenEvidenceExpectations(child, id));
+    }
+  }
+  return rows;
+}
+
+function parseBenchmarkEvidence() {
+  return listBenchmarkDirs().map((dir) => {
+    const expectedPath = `${dir}/expected-semantics.json`;
+    const bundlePath = `${dir}/mcp-cli-command-bundle.json`;
+    const expected = parseJsonFile(expectedPath) ?? {};
+    const bundle = parseJsonFile(bundlePath) ?? {};
+    const commands = Array.isArray(bundle.commands) ? bundle.commands : [];
+    const commandTypes = [...new Set(commands.map((cmd) => cmd?.type).filter(Boolean))].sort();
+    const toolMarkers = [];
+    for (const commandType of commandTypes) {
+      for (const toolId of BENCHMARK_COMMAND_TOOL_MARKERS.get(commandType) ?? []) {
+        toolMarkers.push({
+          toolId,
+          marker: commandType,
+          status: 'fixture-command',
+          source: bundlePath,
+          live: false,
+          note: 'Command appears in deterministic MCP/CLI fixture; this is not live typed execution evidence.',
+        });
+      }
+    }
+    const paths = expected.paths && typeof expected.paths === 'object' ? expected.paths : {};
+    const pathRows = Object.entries(paths).map(([id, value]) => ({
+      id,
+      status: String(value?.status ?? 'unknown'),
+      todo: String(value?.todo ?? ''),
+    }));
+    const evidenceRows = flattenEvidenceExpectations(expected.evidenceExpectations ?? {});
+    for (const row of evidenceRows) {
+      if (row.id === 'advisor') {
+        toolMarkers.push({
+          toolId: 'qa.advisor',
+          marker: 'advisor evidence expectation',
+          status: row.status,
+          source: expectedPath,
+          live: row.status === 'live' || row.status === 'validated',
+          note: row.todo || 'Advisor evidence expectation declared by benchmark.',
+        });
+      }
+    }
+    for (const row of pathRows) {
+      if (/live[-_\s]?dry[-_\s]?run|dry[-_\s]?run.*live/i.test(row.status)) {
+        toolMarkers.push({
+          toolId: 'model.dry_run',
+          marker: `${row.id} path status`,
+          status: row.status,
+          source: expectedPath,
+          live: true,
+          note: row.todo || 'Benchmark path declares live dry-run evidence.',
+        });
+      }
+      if (/live[-_\s]?commit|commit.*live/i.test(row.status)) {
+        toolMarkers.push({
+          toolId: 'model.commit_bundle',
+          marker: `${row.id} path status`,
+          status: row.status,
+          source: expectedPath,
+          live: true,
+          note: row.todo || 'Benchmark path declares live commit evidence.',
+        });
+      }
+    }
+    return {
+      id: expected.benchmarkId ?? path.basename(dir),
+      dir,
+      expectedSemantics: fs.existsSync(path.join(ROOT, expectedPath)) ? expectedPath : '',
+      commandBundle: fs.existsSync(path.join(ROOT, bundlePath)) ? bundlePath : '',
+      pathStatus: pathRows,
+      evidenceExpectations: evidenceRows,
+      commandTypes,
+      toolMarkers: toolMarkers.sort((a, b) => a.toolId.localeCompare(b.toolId)),
+      uiEquivalentStatus: String(paths.ui?.status ?? 'unknown'),
+      uiEquivalentTodo: String(paths.ui?.todo ?? ''),
+      liveEvidence: toolMarkers.some((marker) => marker.live),
+    };
+  });
 }
 
 function normalizeRoute(routePath) {
@@ -820,7 +987,44 @@ function isSemanticAuthoringDescriptor(descriptor) {
   );
 }
 
-function m2ExpectedStatus(expected, descriptors, surfaces) {
+function descriptorSupportsBundleMode(descriptor, mode) {
+  if (descriptor.id !== 'apply-bundle' && descriptor.stableId !== 'apply-bundle') return false;
+  return (
+    descriptor.routeImplemented && descriptor.cliExample.includes(`--${mode.replace('_', '-')}`)
+  );
+}
+
+function implementedRouteForStableId(id, implementedRoutes) {
+  const expected = {
+    'model.dry_run': [
+      ['POST', '/api/models/{}/commands/dry-run'],
+      ['POST', '/api/models/{}/commands/bundle/dry-run'],
+    ],
+    'model.commit_bundle': [
+      ['POST', '/api/models/{}/commands/bundle'],
+      ['POST', '/api/models/{}/bundles'],
+    ],
+  }[id];
+  if (!expected) return null;
+  return (
+    implementedRoutes.find((route) =>
+      expected.some(([method, routePath]) => route.method === method && route.path === routePath),
+    ) ?? null
+  );
+}
+
+function benchmarkMarkersForTool(benchmarkEvidence, toolId) {
+  return benchmarkEvidence.flatMap((benchmark) =>
+    benchmark.toolMarkers
+      .filter((marker) => marker.toolId === toolId)
+      .map((marker) => ({
+        benchmarkId: benchmark.id,
+        ...marker,
+      })),
+  );
+}
+
+function m2ExpectedStatus(expected, descriptors, surfaces, implementedRoutes, benchmarkEvidence) {
   const match = descriptors.find(
     (descriptor) =>
       normalizedId(descriptor.id) === normalizedId(expected) ||
@@ -829,18 +1033,74 @@ function m2ExpectedStatus(expected, descriptors, surfaces) {
   const surface = surfaces.find(
     (candidate) => normalizedId(candidate.id) === normalizedId(expected),
   );
+  const transactionRoute = implementedRouteForStableId(expected, implementedRoutes);
+  const transactionDescriptor =
+    expected === 'model.dry_run'
+      ? descriptors.find((descriptor) => descriptorSupportsBundleMode(descriptor, 'dry_run'))
+      : expected === 'model.commit_bundle'
+        ? descriptors.find((descriptor) => descriptorSupportsBundleMode(descriptor, 'commit'))
+        : null;
+  const benchmarkMarkers = benchmarkMarkersForTool(benchmarkEvidence, expected);
+  const benchmarkLiveMarkers = benchmarkMarkers.filter((marker) => marker.live);
+  const status =
+    match || surface
+      ? 'present'
+      : transactionDescriptor || transactionRoute
+        ? 'partial'
+        : benchmarkLiveMarkers.length
+          ? 'evidence-only'
+          : 'missing';
+  const fallbackSource =
+    surface?.source ??
+    transactionDescriptor?.source ??
+    transactionRoute?.source ??
+    benchmarkMarkers[0]?.source ??
+    '';
+  const fallbackSurface = surface
+    ? surface.kind
+    : transactionDescriptor
+      ? 'transaction-descriptor-mode'
+      : transactionRoute
+        ? 'transaction-route'
+        : benchmarkMarkers.length
+          ? 'benchmark-marker'
+          : '';
   return {
     id: expected,
-    status: match || surface ? 'present' : 'missing',
+    status,
     descriptor: match?.id ?? '',
     stableId: match?.stableId ?? '',
-    surface: surface?.kind ?? '',
-    source: surface?.source ?? '',
-    toolKind: match ? descriptorToolKind(match) : (surface?.kind ?? 'missing'),
+    surface: fallbackSurface,
+    source: fallbackSource,
+    toolKind: match
+      ? descriptorToolKind(match)
+      : surface
+        ? surface.kind
+        : transactionDescriptor || transactionRoute
+          ? 'transaction-mode'
+          : benchmarkMarkers.length
+            ? 'benchmark-marker'
+            : 'missing',
+    benchmarkEvidence: benchmarkMarkers,
+    notes: match
+      ? descriptorToolKind(match) === 'raw-apply-bundle'
+        ? 'Dedicated descriptor detected, but it still exposes bundle-shaped payloads rather than semantic authoring inputs.'
+        : ''
+      : transactionDescriptor || transactionRoute
+        ? 'Detected through existing transaction route/apply-bundle mode; not a dedicated first-class MCP descriptor.'
+        : benchmarkMarkers.length
+          ? 'Benchmark fixture exposes marker(s), but no live first-class surface was detected.'
+          : '',
   };
 }
 
-function buildM2Summary(apiLedger, cmdkLedger, optionalSurfaces) {
+function buildM2Summary(
+  apiLedger,
+  cmdkLedger,
+  optionalSurfaces,
+  implementedRoutes,
+  benchmarkEvidence,
+) {
   const queryDescriptors = apiLedger.filter(isQueryDescriptor);
   const resolveDescriptors = apiLedger.filter(isResolveDescriptor);
   const semanticAuthoringDescriptors = apiLedger.filter(isSemanticAuthoringDescriptor);
@@ -865,11 +1125,22 @@ function buildM2Summary(apiLedger, cmdkLedger, optionalSurfaces) {
     (row) => row.agentCompletionKind === 'semantic-macro' || row.agentToolId,
   );
   const firstPack = M2_FIRST_PACK_TOOLS.map((id) =>
-    m2ExpectedStatus(id, apiLedger, optionalSurfaces),
+    m2ExpectedStatus(id, apiLedger, optionalSurfaces, implementedRoutes, benchmarkEvidence),
+  );
+  const wave2 = M2_WAVE2_TOOLS.map((id) =>
+    m2ExpectedStatus(id, apiLedger, optionalSurfaces, implementedRoutes, benchmarkEvidence),
   );
   return {
     firstPackExpectedCount: firstPack.length,
     firstPackPresentCount: firstPack.filter((row) => row.status === 'present').length,
+    firstPackPartialCount: firstPack.filter((row) => row.status === 'partial').length,
+    firstPackEvidenceOnlyCount: firstPack.filter((row) => row.status === 'evidence-only').length,
+    firstPackBenchmarkMarkerCount: firstPack.filter((row) => row.benchmarkEvidence.length).length,
+    wave2ExpectedCount: wave2.length,
+    wave2PresentCount: wave2.filter((row) => row.status === 'present').length,
+    wave2PartialCount: wave2.filter((row) => row.status === 'partial').length,
+    wave2EvidenceOnlyCount: wave2.filter((row) => row.status === 'evidence-only').length,
+    wave2BenchmarkMarkerCount: wave2.filter((row) => row.benchmarkEvidence.length).length,
     queryDescriptorCount: queryDescriptors.length + querySurfaces.length,
     resolveDescriptorCount: resolveDescriptors.length + resolveSurfaces.length,
     semanticAuthoringDescriptorCount:
@@ -878,6 +1149,7 @@ function buildM2Summary(apiLedger, cmdkLedger, optionalSurfaces) {
     rawApplyBundleDescriptorCount: rawApplyBundleDescriptors.length,
     semanticCmdkSurfaceCount: semanticCmdkSurfaces.length,
     firstPack,
+    wave2,
     queryDescriptors: queryDescriptors.map((row) => row.id).sort(),
     resolveDescriptors: resolveDescriptors.map((row) => row.id).sort(),
     semanticAuthoringDescriptors: semanticAuthoringDescriptors.map((row) => row.id).sort(),
@@ -897,9 +1169,11 @@ function buildAudit() {
   const cmdkEntries = parseCmdkEntries();
   const apiDescriptors = parseApiDescriptors();
   const implementedRoutes = parseImplementedRoutes();
+  const benchmarkEvidence = parseBenchmarkEvidence();
   const optionalM2Surfaces = [
     ...parseQueryResolveSurfaces(implementedRoutes),
     ...parseSemanticAuthoringSurfaces(),
+    ...parseSemanticRouteAliases(),
   ];
   const descriptorsWithRoutes = apiDescriptors.map((descriptor) => {
     const route = routeMatches(descriptor, implementedRoutes);
@@ -1097,18 +1371,28 @@ function buildAudit() {
       : ['Descriptor endpoint path did not match an implemented FastAPI route exactly.'],
   }));
 
-  const m2 = buildM2Summary(apiLedger, cmdkLedger, optionalM2Surfaces);
+  const m2 = buildM2Summary(
+    apiLedger,
+    cmdkLedger,
+    optionalM2Surfaces,
+    implementedRoutes,
+    benchmarkEvidence,
+  );
 
   const gaps = [
     ...m2.firstPack
-      .filter((row) => row.status === 'missing')
+      .filter((row) => row.status === 'missing' || row.status === 'evidence-only')
       .map((row) => ({
         priority: row.id.startsWith('query.') || row.id.startsWith('resolve.') ? 'P0' : 'P1',
         domain: domainFor(row.id),
-        kind: 'm2-first-pack-missing',
+        kind:
+          row.status === 'evidence-only' ? 'm2-first-pack-evidence-only' : 'm2-first-pack-missing',
         id: row.id,
         status: 'Gap',
-        detail: 'M2 first-pack tool was not found by descriptor id or stableId.',
+        detail:
+          row.status === 'evidence-only'
+            ? 'Benchmark evidence marker exists, but no first-class descriptor/helper surface was detected.'
+            : 'M2 first-pack tool was not found by descriptor id, stableId, route, or helper surface.',
       })),
     ...(m2.queryDescriptorCount
       ? []
@@ -1200,6 +1484,7 @@ function buildAudit() {
       'Route integrity normalizes FastAPI path params, known legacy bundle aliases, and websocket endpoints.',
       'UI surfaces from dynamically built tool capabilities are inferred from toolRegistry as ribbon and cmd-k.',
       'Unknown or missing metadata is emitted as "unknown" rather than guessed.',
+      'Benchmark evidence markers are traceability signals only unless they explicitly declare live typed dry-run/commit execution.',
     ],
     summary: {
       backendCommandCount: backendLedger.length,
@@ -1219,6 +1504,14 @@ function buildAudit() {
       ).length,
       m2FirstPackPresent: m2.firstPackPresentCount,
       m2FirstPackExpected: m2.firstPackExpectedCount,
+      m2FirstPackPartial: m2.firstPackPartialCount,
+      m2FirstPackEvidenceOnly: m2.firstPackEvidenceOnlyCount,
+      m2FirstPackBenchmarkMarkers: m2.firstPackBenchmarkMarkerCount,
+      m2Wave2Present: m2.wave2PresentCount,
+      m2Wave2Expected: m2.wave2ExpectedCount,
+      m2Wave2Partial: m2.wave2PartialCount,
+      m2Wave2EvidenceOnly: m2.wave2EvidenceOnlyCount,
+      m2Wave2BenchmarkMarkers: m2.wave2BenchmarkMarkerCount,
       m2QueryDescriptorCount: m2.queryDescriptorCount,
       m2ResolveDescriptorCount: m2.resolveDescriptorCount,
       m2SemanticAuthoringDescriptorCount: m2.semanticAuthoringDescriptorCount,
@@ -1229,6 +1522,7 @@ function buildAudit() {
       apiDescriptorRouteMismatchCount: apiLedger.filter((row) => !row.routeImplemented).length,
     },
     m2,
+    benchmarkEvidence,
     backendCommands: backendLedger,
     cmdkEntries: cmdkLedger,
     apiDescriptors: apiLedger,
@@ -1407,6 +1701,43 @@ function renderApiLedger(audit) {
 }
 
 function renderGapReport(audit) {
+  const m2TableHeaders = [
+    'M2 tool',
+    'Status',
+    'Descriptor',
+    'Stable id',
+    'Surface',
+    'Tool kind',
+    'Evidence',
+    'Notes',
+  ];
+  const m2TableRow = (row) => [
+    row.id,
+    row.status,
+    row.descriptor || 'none',
+    row.stableId || 'none',
+    row.surface || 'none',
+    row.toolKind,
+    (row.benchmarkEvidence ?? [])
+      .map((marker) => `${marker.benchmarkId}:${marker.status}`)
+      .join(', ') || 'none',
+    row.notes || 'none',
+  ];
+  const benchmarkRows = audit.benchmarkEvidence.flatMap((benchmark) => {
+    const rows = [
+      [
+        benchmark.id,
+        'ui-equivalent',
+        benchmark.uiEquivalentStatus,
+        benchmark.uiEquivalentTodo || 'none',
+        benchmark.expectedSemantics || benchmark.dir,
+      ],
+    ];
+    for (const marker of benchmark.toolMarkers) {
+      rows.push([benchmark.id, marker.toolId, marker.status, marker.note || 'none', marker.source]);
+    }
+    return rows;
+  });
   const sections = [
     '# Parity Gap Report',
     sourceStamp(audit),
@@ -1420,22 +1751,26 @@ function renderGapReport(audit) {
     `API descriptor route mismatches: ${audit.summary.apiDescriptorRouteMismatchCount}`,
     '## M2 Audit Summary',
     `M2 first-pack surfaces present: ${audit.summary.m2FirstPackPresent} / ${audit.summary.m2FirstPackExpected}`,
+    `M2 first-pack partial surfaces: ${audit.summary.m2FirstPackPartial}`,
+    `M2 first-pack evidence-only markers: ${audit.summary.m2FirstPackEvidenceOnly}`,
+    `M2 first-pack benchmark trace markers: ${audit.summary.m2FirstPackBenchmarkMarkers}`,
     `Query surfaces detected: ${audit.summary.m2QueryDescriptorCount}`,
     `Resolve surfaces detected: ${audit.summary.m2ResolveDescriptorCount}`,
     `Semantic authoring surfaces detected: ${audit.summary.m2SemanticAuthoringDescriptorCount}`,
     `Typed mutating descriptors detected: ${audit.summary.m2TypedMutatingDescriptorCount}`,
     `Raw apply-bundle descriptors detected: ${audit.summary.m2RawApplyBundleDescriptorCount}`,
-    table(
-      ['M2 tool', 'Status', 'Descriptor', 'Stable id', 'Surface', 'Tool kind'],
-      audit.m2.firstPack.map((row) => [
-        row.id,
-        row.status,
-        row.descriptor || 'none',
-        row.stableId || 'none',
-        row.surface || 'none',
-        row.toolKind,
-      ]),
-    ),
+    table(m2TableHeaders, audit.m2.firstPack.map(m2TableRow)),
+    '## M2 Wave 2 Audit',
+    `Wave 2 surfaces present: ${audit.summary.m2Wave2Present} / ${audit.summary.m2Wave2Expected}`,
+    `Wave 2 partial surfaces: ${audit.summary.m2Wave2Partial}`,
+    `Wave 2 evidence-only markers: ${audit.summary.m2Wave2EvidenceOnly}`,
+    `Wave 2 benchmark trace markers: ${audit.summary.m2Wave2BenchmarkMarkers}`,
+    'Partial means the audit found a lower-level transaction route or mode, but not a dedicated first-class Wave 2 descriptor/helper. Evidence-only means a benchmark fixture references the behavior without proving live typed execution.',
+    table(m2TableHeaders, audit.m2.wave2.map(m2TableRow)),
+    '### Benchmark Traceability',
+    benchmarkRows.length
+      ? table(['Benchmark', 'Trace item', 'Status', 'Detail', 'Source'], benchmarkRows)
+      : 'No benchmark traceability files were detected.',
     '### Detected M2 Surfaces',
     table(
       ['Surface', 'Descriptors'],

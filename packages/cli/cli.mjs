@@ -684,6 +684,35 @@ async function cmdResolveViaBackend(modelId, toolId, routePath, payload) {
   process.exit(1);
 }
 
+async function cmdQueryViaBackend(modelId, toolId, routePath, payload) {
+  const endpoint = `/api/models/${encodeURIComponent(modelId)}/query/${routePath}`;
+  const url = `${base}${endpoint}`;
+  const res = await fetchJsonResponse('POST', url, payload);
+  if (res.ok) {
+    console.log(JSON.stringify(res.body, null, 2));
+    return;
+  }
+  if (res.status === 404 || res.status === 405) {
+    console.error(
+      JSON.stringify(
+        {
+          ok: false,
+          code: 'backend_route_missing',
+          toolId,
+          endpoint: `POST /api/models/{model_id}/query/${routePath}`,
+          status: res.status,
+          message: 'Backend query route is not available yet; CLI command shape is ready.',
+        },
+        null,
+        2,
+      ),
+    );
+    process.exit(2);
+  }
+  console.error(JSON.stringify({ status: res.status, body: res.body }, null, 2));
+  process.exit(1);
+}
+
 function buildGeneratedBundle({ toolId, commands, parentRevision, assumptions = [] }) {
   const bundle = {
     schemaVersion: 'cmd-v3.0',
@@ -714,6 +743,58 @@ async function runGeneratedBundle(modelId, userId, bundle, mode, jsonOnly) {
   if (!res.ok) process.exit(res.status === 409 ? 2 : 1);
 }
 
+function bundleFromBlob(blob, parentRevision, toolId) {
+  const bundle =
+    blob && typeof blob === 'object' && blob.schemaVersion === 'cmd-v3.0'
+      ? blob
+      : buildGeneratedBundle({
+          toolId,
+          commands: commandsFromBundleJson(blob),
+          parentRevision,
+          assumptions: [{ key: 'cli-legacy-wrapper', value: true, confidence: 0, source: 'cli' }],
+        });
+  if (Number.isFinite(parentRevision)) bundle.parentRevision = parentRevision;
+  return bundle;
+}
+
+async function cmdModelBundle(modelId, userId, sub, args) {
+  let fileArg;
+  let parentRevision;
+  for (let i = 0; i < args.length; i++) {
+    const arg = args[i];
+    if ((arg === '--parent-revision' || arg === '--base') && args[i + 1]) {
+      parentRevision = parseNumber(args[++i], arg);
+    } else if (arg.startsWith('--parent-revision=')) {
+      parentRevision = parseNumber(arg.slice('--parent-revision='.length), '--parent-revision');
+    } else if (arg.startsWith('--base=')) {
+      parentRevision = parseNumber(arg.slice('--base='.length), '--base');
+    } else if (arg === '-' || !arg.startsWith('-')) {
+      fileArg = fileArg ?? arg;
+    }
+  }
+  if (!fileArg) {
+    console.error(`model ${sub} requires a bundle file path or - for stdin.`);
+    process.exit(1);
+  }
+  const raw = (await readPayloadOrStdin(fileArg)).trim();
+  if (!raw) {
+    console.error(`Empty JSON for model ${sub}`);
+    process.exit(1);
+  }
+  const bundle = bundleFromBlob(
+    JSON.parse(raw),
+    parentRevision,
+    sub === 'commit-bundle' ? 'model.commit_bundle' : 'model.dry_run',
+  );
+  await runGeneratedBundle(
+    modelId,
+    userId,
+    bundle,
+    sub === 'commit-bundle' ? 'commit' : 'dry_run',
+    false,
+  );
+}
+
 function generatedModeFromArgs(args) {
   if (hasFlag(args, '--commit') && hasFlag(args, '--dry-run')) {
     console.error('Use only one of --dry-run or --commit.');
@@ -732,6 +813,44 @@ function authorOptions(args) {
 
 async function cmdAuthor(modelId, userId, sub, args) {
   const opts = authorOptions(args);
+  if (sub === 'wall') {
+    const levelId = flagValue(args, '--level');
+    const lineArg = flagValue(args, '--line');
+    const line = lineArg
+      ? parsePoint2List(lineArg, '--line')
+      : [point2FromPair(flagValue(args, '--start')), point2FromPair(flagValue(args, '--end'))];
+    if (!levelId) {
+      console.error('author wall requires --level <id>.');
+      process.exit(1);
+    }
+    if (
+      line.length !== 2 ||
+      line.some((point) => !Number.isFinite(point.xMm) || !Number.isFinite(point.yMm))
+    ) {
+      console.error('author wall requires --line "x,y;x,y" or --start x,y --end x,y.');
+      process.exit(1);
+    }
+    const command = {
+      type: 'createWall',
+      levelId,
+      start: line[0],
+      end: line[1],
+      name: flagValue(args, '--name') ?? 'Wall',
+      thicknessMm: parseNumber(flagValue(args, '--thickness'), 200),
+      heightMm: parseNumber(flagValue(args, '--height'), 2800),
+    };
+    const id = flagValue(args, '--id');
+    const wallTypeId = flagValue(args, ['--wall-type', '--type']);
+    if (id) command.id = id;
+    if (wallTypeId) command.wallTypeId = wallTypeId;
+    const bundle = buildGeneratedBundle({
+      toolId: 'author.wall',
+      commands: [command],
+      parentRevision: opts.parentRevision,
+    });
+    await runGeneratedBundle(modelId, userId, bundle, opts.mode, opts.jsonOnly);
+    return;
+  }
   if (sub === 'wall-chain') {
     const levelId = flagValue(args, '--level');
     const points = parsePoint2List(flagValue(args, ['--points', '--boundary']));
@@ -802,9 +921,60 @@ async function cmdAuthor(modelId, userId, sub, args) {
     return;
   }
   console.error(
-    `Unknown author subcommand: ${sub ?? '(none)'}. Use wall-chain | floor-boundary | opening.`,
+    `Unknown author subcommand: ${sub ?? '(none)'}. Use wall | wall-chain | floor-boundary | opening.`,
   );
   process.exit(1);
+}
+
+function defaultSave3dCamera() {
+  return {
+    position: { xMm: 8000, yMm: -8000, zMm: 5000 },
+    target: { xMm: 0, yMm: 0, zMm: 0 },
+    up: { xMm: 0, yMm: 0, zMm: 1 },
+  };
+}
+
+function parseCamera(args) {
+  const camera = parseJsonObjectFlag(flagValue(args, '--camera'), '--camera');
+  if (camera) return camera;
+  const positionArg = flagValue(args, '--position');
+  const targetArg = flagValue(args, '--target');
+  const upArg = flagValue(args, '--up');
+  if (!positionArg && !targetArg && !upArg) return defaultSave3dCamera();
+  return {
+    position: positionArg ? parsePosTriple(positionArg) : defaultSave3dCamera().position,
+    target: targetArg ? parsePosTriple(targetArg) : defaultSave3dCamera().target,
+    up: upArg ? parsePosTriple(upArg) : defaultSave3dCamera().up,
+  };
+}
+
+async function cmdView(modelId, userId, sub, args) {
+  if (sub !== 'save-3d') {
+    console.error(`Unknown view subcommand: ${sub ?? '(none)'}. Use save-3d.`);
+    process.exit(1);
+  }
+  const opts = authorOptions(args);
+  const command = {
+    type: 'saveViewpoint',
+    name: flagValue(args, '--name') ?? '3D View',
+    mode: 'orbit_3d',
+    camera: parseCamera(args),
+    hiddenSemanticKinds3d: parseCsv(flagValue(args, '--hidden-kinds')),
+  };
+  const id = flagValue(args, '--id');
+  const cutawayStyle = flagValue(args, '--cutaway-style');
+  const cap = parseNumber(flagValue(args, '--clip-cap'), undefined);
+  const floor = parseNumber(flagValue(args, '--clip-floor'), undefined);
+  if (id) command.id = id;
+  if (cutawayStyle) command.cutawayStyle = cutawayStyle;
+  if (Number.isFinite(cap)) command.viewerClipCapElevMm = cap;
+  if (Number.isFinite(floor)) command.viewerClipFloorElevMm = floor;
+  const bundle = buildGeneratedBundle({
+    toolId: 'view.save_3d',
+    commands: [command],
+    parentRevision: opts.parentRevision,
+  });
+  await runGeneratedBundle(modelId, userId, bundle, opts.mode, opts.jsonOnly);
 }
 
 async function cmdOpening(modelId, userId, sub, args) {
@@ -2280,6 +2450,11 @@ Commands:
   templates                           GET /api/templates (catalog of project templates)
   schema                              GET /api/schema (commands + presets ids)
   presets                             summarize schema + building presets
+  model show|summary                  Model-scoped snapshot/summary aliases.
+  model dry-run <bundle|-> [--parent-revision <rev>]
+                                      MCP-M2-H: submit cmd-v3 bundle to /bundles in dry_run mode.
+  model commit-bundle <bundle|-> [--parent-revision <rev>]
+                                      MCP-M2-H: submit cmd-v3 bundle to /bundles in commit mode.
   snapshot                            GET snapshot (needs BIM_AI_MODEL_ID)
   advisor [--output json] [--severity info|warning|error]
                                       Group snapshot violations/advisories for agent refinement.
@@ -2344,16 +2519,24 @@ Commands:
   query levels|types|views            MCP-M2-C: snapshot-backed level/type/view discovery.
   query hosts [--host-kind wall] [--level <id>]
                                       MCP-M2-C: host candidate discovery; local mirror until API v3 query routes land.
+  query nearest-wall --point x,y,z [--level <id>] [--max-distance <mm>]
+                                      MCP-M2-H: calls POST /api/models/:id/query/nearest-wall.
   resolve wall --line "x,y;x,y" [--level <id>] [--tolerance <mm>]
                                       MCP-M2-C: calls POST /api/models/:id/resolve/wall-by-line.
   resolve host-face --point x,y,z [--for-kind door] [--level <id>]
                                       MCP-M2-C: calls POST /api/models/:id/resolve/host-face.
+  author wall --level <id> --line "x,y;x,y" [--dry-run|--commit|--json]
+                                      MCP-M2-H: generate createWall cmd-v3 bundle.
   author wall-chain --level <id> --points "x,y;x,y;..." [--closed] [--dry-run|--commit|--json]
                                       MCP-M2-C: generate createWallChain cmd-v3 bundle.
   author floor-boundary --level <id> --boundary "x,y;x,y;..." [--dry-run|--commit|--json]
                                       MCP-M2-C: generate createFloor cmd-v3 bundle.
   opening door-on-wall|window-on-wall|wall-opening|roof-opening ...
                                       MCP-M2-C: generate hosted/opening cmd-v3 bundles.
+  view save-3d [--id <id>] [--name <n>] [--camera <json>] [--dry-run|--commit|--json]
+                                      MCP-M2-H: generate saveViewpoint cmd-v3 bundle.
+  qa advisor [--output json] [--severity info|warning|error]
+                                      MCP-M2-H: advisor alias for agent evidence.
   tokens encode                       TKN-V3-01: encode current kernel state → TokenSequence (stdout JSON)
   tokens decode [file|-]              TKN-V3-01: decode TokenSequence → commands (reads JSON from file or stdin)
   tokens diff --a <path> --b <path>   TKN-V3-01: structural diff between two TokenSequence JSON files
@@ -2803,6 +2986,43 @@ async function main() {
       return;
     }
 
+    if (cmd === 'model') {
+      const sub = argv[1];
+      if (sub === 'show' || sub === 'snapshot') {
+        await snapshot(modelId);
+        return;
+      }
+      if (sub === 'summary') {
+        await cmdSummary(modelId);
+        return;
+      }
+      if (sub === 'dry-run' || sub === 'commit-bundle') {
+        await cmdModelBundle(modelId, userId, sub, argv.slice(2));
+        return;
+      }
+      console.error(
+        `Unknown model subcommand: ${sub ?? '(none)'}. Use show | summary | dry-run | commit-bundle.`,
+      );
+      process.exit(1);
+    }
+
+    if (cmd === 'qa') {
+      const sub = argv[1];
+      const rest = argv.slice(2);
+      if (sub === 'advisor') {
+        const output = rest.includes('--output')
+          ? rest[rest.indexOf('--output') + 1]
+          : (rest.find((a) => a.startsWith('--output='))?.split('=')[1] ?? 'json');
+        const severity = rest.includes('--severity')
+          ? rest[rest.indexOf('--severity') + 1]
+          : (rest.find((a) => a.startsWith('--severity='))?.split('=')[1] ?? null);
+        await cmdAdvisor(modelId, { output, severity });
+        return;
+      }
+      console.error(`Unknown qa subcommand: ${sub ?? '(none)'}. Use advisor.`);
+      process.exit(1);
+    }
+
     if (cmd === 'query') {
       const sub = argv[1];
       const rest = argv.slice(2);
@@ -2830,8 +3050,20 @@ async function main() {
         await cmdQueryHosts(modelId, rest);
         return;
       }
+      if (sub === 'nearest-wall') {
+        const point = parsePosTriple(flagValue(rest, '--point'));
+        const payload = {
+          modelId,
+          pointMm: [point.xMm, point.yMm, point.zMm],
+          levelId: flagValue(rest, '--level') ?? null,
+          maxDistanceMm: parseNumber(flagValue(rest, '--max-distance'), 1000),
+          includeGeometry: hasFlag(rest, '--include-geometry'),
+        };
+        await cmdQueryViaBackend(modelId, 'query.nearest_wall', 'nearest-wall', payload);
+        return;
+      }
       console.error(
-        `Unknown query subcommand: ${sub ?? '(none)'}. Use summary | elements | levels | types | views | hosts.`,
+        `Unknown query subcommand: ${sub ?? '(none)'}. Use summary | elements | levels | types | views | hosts | nearest-wall.`,
       );
       process.exit(1);
     }
@@ -2888,6 +3120,11 @@ async function main() {
 
     if (cmd === 'opening') {
       await cmdOpening(modelId, userId, argv[1], argv.slice(2));
+      return;
+    }
+
+    if (cmd === 'view') {
+      await cmdView(modelId, userId, argv[1], argv.slice(2));
       return;
     }
 

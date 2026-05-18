@@ -1025,13 +1025,13 @@ Milestone 2 Wave 2 is targeted at closing the first-pack gaps reported by the
 audit and turning the simple-house benchmark from fixture validation into live
 typed execution evidence.
 
-| Workstream                               | Status  | Owner scope                                                                                                                                   | Tracker items                                              | Done when                                                                                                                                                                                                  |
-| ---------------------------------------- | ------- | --------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| M2-F. Model transaction tools            | Partial | Backend API/registry/tests for `model.dry_run` and `model.commit_bundle`; keep commit semantics aligned with existing bundle routes.          | WP-003, WP-009, M2 first-pack gaps.                        | API descriptors and tests expose typed dry-run and commit-bundle surfaces that wrap the existing authoritative bundle execution path without inventing a second transaction model.                         |
-| M2-G. Missing first-pack semantic tools  | Partial | Backend query/resolve/semantic helper gaps for `query.nearest_wall`, `author.wall`, `opening.roof_opening`, `view.save_3d`, and `qa.advisor`. | WP-003, WP-007, M2 first-pack gaps.                        | Helpers/routes exist where appropriate, unsupported cases are explicit, and tests prove command payloads/query results for each missing first-pack surface.                                                |
-| M2-H. CLI live execution and evidence    | Partial | `packages/cli` commands/tests for Wave 2 tools and live-oriented evidence commands.                                                           | WP-003, WP-007, M2 CLI mirror.                             | CLI mirrors `model dry-run`, `model commit-bundle`, nearest-wall, single-wall authoring, roof opening, save-3D, advisor, and can drive the simple-house path using typed commands rather than raw bundles. |
-| M2-I. Live simple-house benchmark        | Partial | Benchmark harness/fixtures/tests only; may use existing API/CLI surfaces but should not own backend internals.                                | WP-008, Same-house benchmark `simple-single-storey-house`. | Benchmark can run a live dry-run path and, where test infrastructure permits, a commit path, then emit semantic summary, advisor/validation evidence, command-surface usage, and remaining UI-path TODOs.  |
-| M2-J. Audit and UI-equivalence reporting | Partial | Audit script, generated ledgers, and small UI/Cmd+K benchmark traceability notes; avoid backend/CLI implementation.                           | WP-004, WP-012, M2 progress reporting.                     | Generated audit recognizes Wave 2 surfaces, reports first-pack closure accurately, and records the UI-equivalent simple-house benchmark gap without inflating parity status.                               |
+| Workstream                               | Status | Owner scope                                                                                                                                   | Tracker items                                              | Done when                                                                                                                                                                                                  |
+| ---------------------------------------- | ------ | --------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| M2-F. Model transaction tools            | Done   | Backend API/registry/tests for `model.dry_run` and `model.commit_bundle`; keep commit semantics aligned with existing bundle routes.          | WP-003, WP-009, M2 first-pack gaps.                        | API descriptors and tests expose typed dry-run and commit-bundle surfaces that wrap the existing authoritative bundle execution path without inventing a second transaction model.                         |
+| M2-G. Missing first-pack semantic tools  | Done   | Backend query/resolve/semantic helper gaps for `query.nearest_wall`, `author.wall`, `opening.roof_opening`, `view.save_3d`, and `qa.advisor`. | WP-003, WP-007, M2 first-pack gaps.                        | Helpers/routes exist where appropriate, unsupported cases are explicit, and tests prove command payloads/query results for each missing first-pack surface.                                                |
+| M2-H. CLI live execution and evidence    | Done   | `packages/cli` commands/tests for Wave 2 tools and live-oriented evidence commands.                                                           | WP-003, WP-007, M2 CLI mirror.                             | CLI mirrors `model dry-run`, `model commit-bundle`, nearest-wall, single-wall authoring, roof opening, save-3D, advisor, and can drive the simple-house path using typed commands rather than raw bundles. |
+| M2-I. Live simple-house benchmark        | Done   | Benchmark harness/fixtures/tests only; may use existing API/CLI surfaces but should not own backend internals.                                | WP-008, Same-house benchmark `simple-single-storey-house`. | Benchmark can run a live dry-run path and, where test infrastructure permits, a commit path, then emit semantic summary, advisor/validation evidence, command-surface usage, and remaining UI-path TODOs.  |
+| M2-J. Audit and UI-equivalence reporting | Done   | Audit script, generated ledgers, and small UI/Cmd+K benchmark traceability notes; avoid backend/CLI implementation.                           | WP-004, WP-012, M2 progress reporting.                     | Generated audit recognizes Wave 2 surfaces, reports first-pack closure accurately, and records the UI-equivalent simple-house benchmark gap without inflating parity status.                               |
 
 ### Milestone 2 Wave 2 Scheduling Notes
 
@@ -1044,6 +1044,24 @@ typed execution evidence.
 - M2 can move toward `Done` only after `pnpm audit:ui-mcp-parity` reports all
   first-pack surfaces present and the simple-house benchmark has live typed
   dry-run/commit evidence plus a tracked UI-equivalent path.
+
+Wave 2 result:
+
+- `pnpm audit:ui-mcp-parity` reports `28 / 28` M2 first-pack surfaces present
+  and Wave 2 `7 / 7` present.
+- API descriptors now expose `model.dry_run` and `model.commit_bundle` as typed
+  transaction surfaces over the existing authoritative bundle routes.
+- Backend helper/routes now cover `query.nearest_wall`, `author.wall`,
+  `opening.roof_opening`, `view.save_3d`, and `qa.advisor`.
+- CLI mirrors the Wave 2 surfaces and can emit or submit typed bundles for
+  model transactions, single walls, roof openings, saved 3D views, and advisor
+  evidence.
+- `pnpm benchmark:simple-house` still validates offline fixture semantics, and
+  the benchmark can produce live dry-run evidence when `BIM_AI_BASE_URL` and
+  `BIM_AI_MODEL_ID` are provided.
+- M2 remains `Partial` because full live commit evidence, committed-model
+  advisor/visual/export evidence, and the UI-equivalent simple-house benchmark
+  path are still open.
 
 ## Next Work Packages
 

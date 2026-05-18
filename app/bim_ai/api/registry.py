@@ -96,7 +96,9 @@ def _mutability_for(
     return "write"
 
 
-def _schema_refs(name: str, input_schema: dict[str, Any], output_schema: dict[str, Any]) -> list[str]:
+def _schema_refs(
+    name: str, input_schema: dict[str, Any], output_schema: dict[str, Any]
+) -> list[str]:
     refs: list[str] = []
     for direction, schema in (("input", input_schema), ("output", output_schema)):
         title = schema.get("title")
@@ -137,7 +139,9 @@ class ToolDescriptor:
 
     def __post_init__(self) -> None:
         if self.restEndpoint.path in _LEGACY_ENDPOINT_ALIASES:
-            object.__setattr__(self, "restEndpoint", _LEGACY_ENDPOINT_ALIASES[self.restEndpoint.path])
+            object.__setattr__(
+                self, "restEndpoint", _LEGACY_ENDPOINT_ALIASES[self.restEndpoint.path]
+            )
 
         if self.stableId is None:
             object.__setattr__(self, "stableId", self.name)
@@ -588,6 +592,170 @@ register(
 
 register(
     ToolDescriptor(
+        name="model.dry_run",
+        category="transform",
+        inputSchema={
+            "$schema": "http://json-schema.org/draft-07/schema#",
+            "title": "ModelDryRunInput",
+            "type": "object",
+            "required": ["modelId", "commands"],
+            "properties": {
+                "modelId": {"type": "string", "format": "uuid"},
+                "commands": {
+                    "type": "array",
+                    "minItems": 1,
+                    "items": {"type": "object"},
+                    "description": "Kernel commands to validate through the authoritative bundle pipeline.",
+                },
+                "userId": {
+                    "type": "string",
+                    "default": "local-dev",
+                    "description": "User identity for diagnostics attribution.",
+                },
+                "clientOpId": {
+                    "type": "string",
+                    "description": "Optional idempotency/correlation id supplied by the caller.",
+                },
+            },
+            "additionalProperties": False,
+        },
+        outputSchema={
+            "$schema": "http://json-schema.org/draft-07/schema#",
+            "title": "ModelDryRunResult",
+            "type": "object",
+            "required": ["ok", "modelId", "reason", "violations", "summaryBefore"],
+            "properties": {
+                "ok": {"type": "boolean"},
+                "modelId": {"type": "string"},
+                "reason": {"type": "string"},
+                "violations": {"type": "array", "items": {"type": "object"}},
+                "summaryBefore": {"type": "object"},
+                "summaryAfter": {"type": ["object", "null"]},
+                "wouldRevision": {"type": ["integer", "null"]},
+                "appliedCommandsPreview": {"type": "array", "items": {"type": "object"}},
+                "replayDiagnostics": {"type": "object"},
+                "agentBriefCommandProtocol_v1": {"type": "object"},
+                "agentGeneratedBundleQaChecklist_v1": {"type": "object"},
+                "agentBriefAcceptanceReadout_v1": {"type": "object"},
+                "agentReviewReadoutConsistencyClosure_v1": {"type": "object"},
+            },
+            "additionalProperties": True,
+        },
+        exitCodes={
+            "ok": ExitCode(code=0, meaning="Bundle validated without mutating the model"),
+            "invalid_bundle": ExitCode(code=1, meaning="Bundle payload could not be validated"),
+            "not_found": ExitCode(code=1, meaning="Model not found"),
+        },
+        cliExample="bim-ai apply-bundle bundle.json --base 1 --dry-run",
+        restEndpoint=RestEndpoint(
+            method="POST", path="/api/models/{model_id}/commands/bundle/dry-run"
+        ),
+        sideEffects="none",
+        agentSafetyNotes=(
+            "Validation only: this route computes would-apply summaries and diagnostics without persisting. "
+            "It delegates to try_commit_bundle, the same deterministic kernel boundary used by commits."
+        ),
+        schemaRefs=["input:BundleEnvelope", "output:ModelDryRunResult"],
+        exampleRefs=["cli:apply-bundle:dry-run"],
+        kernelCommands=["*"],
+        resourceGroups=["model", "transaction", "kernel-command"],
+        uiFeatures=["transaction:dry-run", "group:model", "group:transaction"],
+    )
+)
+
+register(
+    ToolDescriptor(
+        name="model.commit_bundle",
+        category="mutation",
+        inputSchema={
+            "$schema": "http://json-schema.org/draft-07/schema#",
+            "title": "ModelCommitBundleInput",
+            "type": "object",
+            "required": ["modelId", "bundle"],
+            "properties": {
+                "modelId": {"type": "string", "format": "uuid"},
+                "bundle": {
+                    "type": "object",
+                    "required": ["schemaVersion", "commands", "assumptions"],
+                    "properties": {
+                        "schemaVersion": {"type": "string", "enum": ["cmd-v3.0"]},
+                        "commands": {
+                            "type": "array",
+                            "minItems": 1,
+                            "items": {"type": "object"},
+                        },
+                        "assumptions": {
+                            "type": "array",
+                            "minItems": 1,
+                            "items": {"type": "object"},
+                            "description": "CMD-V3-02 non-empty assumption log.",
+                        },
+                        "parentRevision": {
+                            "type": "integer",
+                            "description": "Optimistic-concurrency lock for the authoritative commit route.",
+                        },
+                        "targetOptionId": {"type": "string"},
+                        "tolerances": {"type": "array", "items": {"type": "object"}},
+                    },
+                    "additionalProperties": False,
+                },
+                "mode": {
+                    "type": "string",
+                    "const": "commit",
+                    "default": "commit",
+                    "description": "Typed MCP surface for committing; dry-runs use model.dry_run.",
+                },
+                "userId": {"type": "string", "default": "local-dev"},
+                "submitter": {"type": "string", "default": "agent"},
+            },
+            "additionalProperties": False,
+        },
+        outputSchema={
+            "$schema": "http://json-schema.org/draft-07/schema#",
+            "title": "BundleResult",
+            "type": "object",
+            "required": ["schemaVersion", "applied", "violations"],
+            "properties": {
+                "schemaVersion": {"type": "string"},
+                "applied": {"type": "boolean"},
+                "newRevision": {"type": "integer"},
+                "optionId": {"type": "string"},
+                "violations": {"type": "array", "items": {"type": "object"}},
+                "checkpointSnapshotId": {"type": "string"},
+                "elements": {"type": "object"},
+            },
+            "additionalProperties": True,
+        },
+        exitCodes={
+            "ok": ExitCode(code=0, meaning="Bundle committed through CMD-V3-01"),
+            "revision_conflict": ExitCode(
+                code=2, meaning="parentRevision does not match current revision"
+            ),
+            "assumption_log_required": ExitCode(
+                code=3, meaning="assumptions field missing or malformed"
+            ),
+            "assumption_log_malformed": ExitCode(
+                code=4, meaning="assumption entry is missing required field or has invalid value"
+            ),
+            "error": ExitCode(code=1, meaning="Unexpected error"),
+        },
+        cliExample="bim-ai apply-bundle bundle.json --base 1 --commit",
+        restEndpoint=RestEndpoint(method="POST", path="/api/models/{model_id}/bundles"),
+        sideEffects="mutates-kernel",
+        agentSafetyNotes=(
+            "Commits only through the existing CMD-V3-01 apply-bundle route; use model.dry_run first. "
+            "parentRevision and CMD-V3-02 assumptions are enforced by the authoritative route."
+        ),
+        schemaRefs=["input:CommandBundleRequest", "output:BundleResult"],
+        exampleRefs=["cli:apply-bundle:commit"],
+        kernelCommands=["*"],
+        resourceGroups=["model", "transaction", "kernel-command"],
+        uiFeatures=["transaction:commit", "group:model", "group:transaction"],
+    )
+)
+
+register(
+    ToolDescriptor(
         name="set-tool-pref",
         category="mutation",
         inputSchema={
@@ -720,9 +888,7 @@ register(
             "not_found": ExitCode(code=1, meaning="Model not found"),
         },
         cliExample="bim-ai fire-safety-lens-review-status --model-id <id>",
-        restEndpoint=RestEndpoint(
-            method="GET", path="/api/models/{model_id}/fire-safety-lens"
-        ),
+        restEndpoint=RestEndpoint(method="GET", path="/api/models/{model_id}/fire-safety-lens"),
         sideEffects="none",
         agentSafetyNotes=(
             "Read-only Brandschutz review payload. It exposes consultant-review "
@@ -780,9 +946,7 @@ register(
             "not_found": ExitCode(code=1, meaning="Model not found"),
         },
         cliExample="bim-ai cost-quantity-lens-review-status --model-id <id>",
-        restEndpoint=RestEndpoint(
-            method="GET", path="/api/models/{model_id}/cost-quantity-lens"
-        ),
+        restEndpoint=RestEndpoint(method="GET", path="/api/models/{model_id}/cost-quantity-lens"),
         sideEffects="none",
         agentSafetyNotes=(
             "Read-only Kosten und Mengen payload. Unit rates without source references "
@@ -1513,7 +1677,10 @@ register(
             "properties": {
                 "modelId": {"type": "string", "format": "uuid"},
                 "id": {"type": "string"},
-                "hostToposolidId": {"type": "string", "description": "Id of the host toposolid element"},
+                "hostToposolidId": {
+                    "type": "string",
+                    "description": "Id of the host toposolid element",
+                },
                 "boundaryMm": {
                     "type": "array",
                     "minItems": 3,
@@ -1560,7 +1727,7 @@ register(
         cliExample=(
             "bim-ai create-graded-region "
             "--hostToposolidId topo-1 "
-            "--boundary '[{\"xMm\":0,\"yMm\":0},{\"xMm\":5000,\"yMm\":0},{\"xMm\":5000,\"yMm\":5000}]' "
+            '--boundary \'[{"xMm":0,"yMm":0},{"xMm":5000,"yMm":0},{"xMm":5000,"yMm":5000}]\' '
             "--targetMode flat --targetZMm 0"
         ),
         restEndpoint=RestEndpoint(method="POST", path="/api/models/{model_id}/bundles"),
@@ -1623,7 +1790,10 @@ register(
         inputSchema={
             "type": "object",
             "properties": {
-                "kind": {"type": "string", "description": "Element kind to filter (e.g. 'door', 'window', 'sofa')"},
+                "kind": {
+                    "type": "string",
+                    "description": "Element kind to filter (e.g. 'door', 'window', 'sofa')",
+                },
                 "maxWidthMm": {"type": "number"},
                 "minWidthMm": {"type": "number"},
                 "tag": {"type": "string"},
@@ -1796,7 +1966,14 @@ register(
             "$schema": "http://json-schema.org/draft-07/schema#",
             "title": "CreateToposolidSubdivisionInput",
             "type": "object",
-            "required": ["modelId", "id", "hostToposolidId", "boundaryMm", "finishCategory", "materialKey"],
+            "required": [
+                "modelId",
+                "id",
+                "hostToposolidId",
+                "boundaryMm",
+                "finishCategory",
+                "materialKey",
+            ],
             "properties": {
                 "modelId": {"type": "string", "format": "uuid"},
                 "id": {"type": "string"},
@@ -1985,7 +2162,9 @@ register(
             },
         },
         exitCodes={
-            "ok": ExitCode(code=0, meaning="Seed transitioned to 'committed'; T9 may now consume it"),
+            "ok": ExitCode(
+                code=0, meaning="Seed transitioned to 'committed'; T9 may now consume it"
+            ),
             "not_found": ExitCode(code=1, meaning="No ConceptSeedElem found with the given id"),
             "invalid_state": ExitCode(code=2, meaning="Seed is not in 'draft' state"),
             "error": ExitCode(code=1, meaning="Unexpected error"),
@@ -2027,9 +2206,7 @@ register(
             "not_found": ExitCode(code=1, meaning="Model not found"),
         },
         cliExample="bim-ai api concept-seeds --model <id> --status committed",
-        restEndpoint=RestEndpoint(
-            method="GET", path="/api/v3/models/{modelId}/concept-seeds"
-        ),
+        restEndpoint=RestEndpoint(method="GET", path="/api/v3/models/{modelId}/concept-seeds"),
         sideEffects="none",
         agentSafetyNotes="Safe read-only query. T9 polls this endpoint to discover seeds ready for ingestion.",
     )
@@ -2277,9 +2454,7 @@ register(
             "not_found": ExitCode(code=1, meaning="Model or brandTemplateId not found"),
         },
         cliExample="bim-ai export-branded-pdf --modelId <uuid> --brandTemplateId bt-1",
-        restEndpoint=RestEndpoint(
-            method="GET", path="/api/v3/models/{modelId}/export/pdf"
-        ),
+        restEndpoint=RestEndpoint(method="GET", path="/api/v3/models/{modelId}/export/pdf"),
         sideEffects="none",
         agentSafetyNotes="Read-only; safe to call freely.",
     )

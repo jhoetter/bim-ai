@@ -7,6 +7,8 @@ from bim_ai.elements import (
     FloorElem,
     LevelElem,
     PlanViewElem,
+    RoofElem,
+    RoofOpeningElem,
     RoomElem,
     Vec2Mm,
     WallElem,
@@ -14,10 +16,12 @@ from bim_ai.elements import (
 )
 from bim_ai.query_resolve import (
     model_summary_resource,
+    qa_advisor,
     query_elements,
     query_enclosed_loops,
     query_hosts,
     query_levels,
+    query_nearest_wall,
     query_types,
     query_views,
     resolve_active_or_default_level,
@@ -189,6 +193,43 @@ def test_query_hosts_and_resolve_host_face_find_nearest_wall() -> None:
     assert hosts["data"]["hosts"][0]["position"]["t"] == 0.25
     assert resolved["data"]["host"]["elementId"] == "w-s"
     assert resolved["data"]["placement"]["u"] == 0.25
+
+
+def test_query_nearest_wall_alias_returns_closest_wall_placement() -> None:
+    result = query_nearest_wall(
+        MODEL_ID,
+        _doc(),
+        {"levelId": "level-0", "pointMm": [11950, 3000, 0], "maxDistanceMm": 200},
+    )
+
+    assert result["ok"] is True
+    assert result["data"]["wall"]["elementId"] == "w-e"
+    assert result["data"]["placement"]["t"] == 0.333333
+    assert result["data"]["resolution"]["strategy"] == "query_hosts_nearest_wall"
+
+
+def test_qa_advisor_wraps_constructability_findings_with_limitations() -> None:
+    doc = _doc()
+    doc.elements["roof-1"] = RoofElem(
+        id="roof-1",
+        name="Main roof",
+        referenceLevelId="level-0",
+        footprintMm=[_pt(0, 0), _pt(12000, 0), _pt(12000, 9000), _pt(0, 9000)],
+    )
+    doc.elements["roof-opening-1"] = RoofOpeningElem(
+        id="roof-opening-1",
+        name="Orphan skylight",
+        hostRoofId="missing-roof",
+        boundaryMm=[_pt(1000, 1000), _pt(2000, 1000), _pt(2000, 2000), _pt(1000, 2000)],
+    )
+
+    result = qa_advisor(MODEL_ID, doc, {"limit": 10})
+
+    assert result["ok"] is True
+    assert result["data"]["format"] == "qaAdvisor_v1"
+    assert result["data"]["summary"]["findingCount"] >= 1
+    assert "constructability advisory checks only" in result["data"]["limitations"][0]
+    assert any(f["ruleId"] == "roof_opening_missing_host" for f in result["data"]["findings"])
 
 
 def test_resolve_wall_by_line_and_defaults() -> None:

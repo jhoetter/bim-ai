@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-18T12:19:34.773Z",
+  "generatedAt": "2026-05-18T12:31:59.384Z",
   "sourceOfIntent": "spec/ui-mcp-parity-tracker.md",
   "sources": {
     "commands": "app/bim_ai/commands.py",
@@ -10,7 +10,8 @@
     "toolRegistry": "packages/web/src/tools/toolRegistry.ts",
     "seedDsl": "packages/cli/lib/seed-dsl.mjs",
     "queryResolve": "app/bim_ai/query_resolve.py",
-    "semanticAuthoring": "app/bim_ai/semantic_authoring.py"
+    "semanticAuthoring": "app/bim_ai/semantic_authoring.py",
+    "benchmarkRoot": "spec/benchmarks"
   },
   "parserLimitations": [
     "TypeScript and Python are parsed with balanced-block and regex extraction; no AST/typechecker is invoked.",
@@ -21,7 +22,8 @@
     "M2 first-pack coverage is matched by normalized descriptor id or stableId, so aliases are recognized but semantic equivalence is not proven.",
     "Route integrity normalizes FastAPI path params, known legacy bundle aliases, and websocket endpoints.",
     "UI surfaces from dynamically built tool capabilities are inferred from toolRegistry as ribbon and cmd-k.",
-    "Unknown or missing metadata is emitted as \"unknown\" rather than guessed."
+    "Unknown or missing metadata is emitted as \"unknown\" rather than guessed.",
+    "Benchmark evidence markers are traceability signals only unless they explicitly declare live typed dry-run/commit execution."
   ],
   "summary": {
     "backendCommandCount": 262,
@@ -34,29 +36,45 @@
       "tool.spire-roof",
       "tool.terrain-split"
     ],
-    "apiDescriptorCount": 40,
-    "implementedRouteCount": 143,
+    "apiDescriptorCount": 42,
+    "implementedRouteCount": 146,
     "backendCommandsWithoutMatchedUi": 141,
     "backendCommandsRawAgentOnly": 218,
     "backendCommandsTypedAgentTool": 29,
-    "m2FirstPackPresent": 21,
+    "m2FirstPackPresent": 28,
     "m2FirstPackExpected": 28,
-    "m2QueryDescriptorCount": 28,
+    "m2FirstPackPartial": 0,
+    "m2FirstPackEvidenceOnly": 0,
+    "m2FirstPackBenchmarkMarkers": 4,
+    "m2Wave2Present": 7,
+    "m2Wave2Expected": 7,
+    "m2Wave2Partial": 0,
+    "m2Wave2EvidenceOnly": 0,
+    "m2Wave2BenchmarkMarkers": 3,
+    "m2QueryDescriptorCount": 30,
     "m2ResolveDescriptorCount": 14,
-    "m2SemanticAuthoringDescriptorCount": 12,
+    "m2SemanticAuthoringDescriptorCount": 15,
     "m2TypedMutatingDescriptorCount": 22,
-    "m2RawApplyBundleDescriptorCount": 1,
+    "m2RawApplyBundleDescriptorCount": 3,
     "cmdkActivatorOnlyCount": 106,
     "apiDescriptorRouteMismatchCount": 0
   },
   "m2": {
     "firstPackExpectedCount": 28,
-    "firstPackPresentCount": 21,
-    "queryDescriptorCount": 28,
+    "firstPackPresentCount": 28,
+    "firstPackPartialCount": 0,
+    "firstPackEvidenceOnlyCount": 0,
+    "firstPackBenchmarkMarkerCount": 4,
+    "wave2ExpectedCount": 7,
+    "wave2PresentCount": 7,
+    "wave2PartialCount": 0,
+    "wave2EvidenceOnlyCount": 0,
+    "wave2BenchmarkMarkerCount": 3,
+    "queryDescriptorCount": 30,
     "resolveDescriptorCount": 14,
-    "semanticAuthoringDescriptorCount": 12,
+    "semanticAuthoringDescriptorCount": 15,
     "typedMutatingDescriptorCount": 22,
-    "rawApplyBundleDescriptorCount": 1,
+    "rawApplyBundleDescriptorCount": 3,
     "semanticCmdkSurfaceCount": 12,
     "firstPack": [
       {
@@ -65,26 +83,42 @@
         "descriptor": "model-show",
         "stableId": "model-show",
         "surface": "query-route",
-        "source": "app/bim_ai/routes_api.py:1200",
-        "toolKind": "query"
+        "source": "app/bim_ai/routes_api.py:1211",
+        "toolKind": "query",
+        "benchmarkEvidence": [],
+        "notes": ""
       },
       {
         "id": "model.dry_run",
-        "status": "missing",
-        "descriptor": "",
-        "stableId": "",
-        "surface": "",
-        "source": "",
-        "toolKind": "missing"
+        "status": "present",
+        "descriptor": "model.dry_run",
+        "stableId": "model.dry_run",
+        "surface": "transaction-route",
+        "source": "app/bim_ai/routes_commands.py:511",
+        "toolKind": "raw-apply-bundle",
+        "benchmarkEvidence": [
+          {
+            "benchmarkId": "simple-single-storey-house",
+            "toolId": "model.dry_run",
+            "marker": "mcpCli path status",
+            "status": "fixture-validated-live-dry-run-capable",
+            "source": "spec/benchmarks/simple-single-storey-house/expected-semantics.json",
+            "live": true,
+            "note": "Benchmark path declares live dry-run evidence."
+          }
+        ],
+        "notes": "Dedicated descriptor detected, but it still exposes bundle-shaped payloads rather than semantic authoring inputs."
       },
       {
         "id": "model.commit_bundle",
-        "status": "missing",
-        "descriptor": "",
-        "stableId": "",
-        "surface": "",
-        "source": "",
-        "toolKind": "missing"
+        "status": "present",
+        "descriptor": "model.commit_bundle",
+        "stableId": "model.commit_bundle",
+        "surface": "transaction-route",
+        "source": "app/bim_ai/routes_api.py:2172",
+        "toolKind": "raw-apply-bundle",
+        "benchmarkEvidence": [],
+        "notes": "Dedicated descriptor detected, but it still exposes bundle-shaped payloads rather than semantic authoring inputs."
       },
       {
         "id": "query.elements",
@@ -92,8 +126,10 @@
         "descriptor": "",
         "stableId": "",
         "surface": "query-helper",
-        "source": "app/bim_ai/query_resolve.py:390",
-        "toolKind": "query-helper"
+        "source": "app/bim_ai/query_resolve.py:395",
+        "toolKind": "query-helper",
+        "benchmarkEvidence": [],
+        "notes": ""
       },
       {
         "id": "query.hosts",
@@ -101,8 +137,10 @@
         "descriptor": "",
         "stableId": "",
         "surface": "query-helper",
-        "source": "app/bim_ai/query_resolve.py:641",
-        "toolKind": "query-helper"
+        "source": "app/bim_ai/query_resolve.py:646",
+        "toolKind": "query-helper",
+        "benchmarkEvidence": [],
+        "notes": ""
       },
       {
         "id": "query.levels",
@@ -110,8 +148,10 @@
         "descriptor": "",
         "stableId": "",
         "surface": "query-helper",
-        "source": "app/bim_ai/query_resolve.py:445",
-        "toolKind": "query-helper"
+        "source": "app/bim_ai/query_resolve.py:450",
+        "toolKind": "query-helper",
+        "benchmarkEvidence": [],
+        "notes": ""
       },
       {
         "id": "query.types",
@@ -119,8 +159,10 @@
         "descriptor": "",
         "stableId": "",
         "surface": "query-helper",
-        "source": "app/bim_ai/query_resolve.py:502",
-        "toolKind": "query-helper"
+        "source": "app/bim_ai/query_resolve.py:507",
+        "toolKind": "query-helper",
+        "benchmarkEvidence": [],
+        "notes": ""
       },
       {
         "id": "query.views",
@@ -128,17 +170,21 @@
         "descriptor": "",
         "stableId": "",
         "surface": "query-helper",
-        "source": "app/bim_ai/query_resolve.py:562",
-        "toolKind": "query-helper"
+        "source": "app/bim_ai/query_resolve.py:567",
+        "toolKind": "query-helper",
+        "benchmarkEvidence": [],
+        "notes": ""
       },
       {
         "id": "query.nearest_wall",
-        "status": "missing",
+        "status": "present",
         "descriptor": "",
         "stableId": "",
-        "surface": "",
-        "source": "",
-        "toolKind": "missing"
+        "surface": "query-helper",
+        "source": "app/bim_ai/query_resolve.py:672",
+        "toolKind": "query-helper",
+        "benchmarkEvidence": [],
+        "notes": ""
       },
       {
         "id": "query.enclosed_loops",
@@ -146,8 +192,10 @@
         "descriptor": "",
         "stableId": "",
         "surface": "query-helper",
-        "source": "app/bim_ai/query_resolve.py:944",
-        "toolKind": "query-helper"
+        "source": "app/bim_ai/query_resolve.py:984",
+        "toolKind": "query-helper",
+        "benchmarkEvidence": [],
+        "notes": ""
       },
       {
         "id": "resolve.active_or_default_level",
@@ -155,8 +203,10 @@
         "descriptor": "",
         "stableId": "",
         "surface": "resolve-helper",
-        "source": "app/bim_ai/query_resolve.py:710",
-        "toolKind": "resolve-helper"
+        "source": "app/bim_ai/query_resolve.py:750",
+        "toolKind": "resolve-helper",
+        "benchmarkEvidence": [],
+        "notes": ""
       },
       {
         "id": "resolve.wall_by_line",
@@ -164,8 +214,10 @@
         "descriptor": "",
         "stableId": "",
         "surface": "resolve-helper",
-        "source": "app/bim_ai/query_resolve.py:794",
-        "toolKind": "resolve-helper"
+        "source": "app/bim_ai/query_resolve.py:834",
+        "toolKind": "resolve-helper",
+        "benchmarkEvidence": [],
+        "notes": ""
       },
       {
         "id": "resolve.room_boundary",
@@ -173,8 +225,10 @@
         "descriptor": "",
         "stableId": "",
         "surface": "resolve-helper",
-        "source": "app/bim_ai/query_resolve.py:1026",
-        "toolKind": "resolve-helper"
+        "source": "app/bim_ai/query_resolve.py:1066",
+        "toolKind": "resolve-helper",
+        "benchmarkEvidence": [],
+        "notes": ""
       },
       {
         "id": "resolve.host_face",
@@ -182,8 +236,10 @@
         "descriptor": "",
         "stableId": "",
         "surface": "resolve-helper",
-        "source": "app/bim_ai/query_resolve.py:667",
-        "toolKind": "resolve-helper"
+        "source": "app/bim_ai/query_resolve.py:707",
+        "toolKind": "resolve-helper",
+        "benchmarkEvidence": [],
+        "notes": ""
       },
       {
         "id": "resolve.family_type",
@@ -191,17 +247,21 @@
         "descriptor": "",
         "stableId": "",
         "surface": "resolve-helper",
-        "source": "app/bim_ai/query_resolve.py:1046",
-        "toolKind": "resolve-helper"
+        "source": "app/bim_ai/query_resolve.py:1086",
+        "toolKind": "resolve-helper",
+        "benchmarkEvidence": [],
+        "notes": ""
       },
       {
         "id": "author.wall",
-        "status": "missing",
+        "status": "present",
         "descriptor": "",
         "stableId": "",
-        "surface": "",
-        "source": "",
-        "toolKind": "missing"
+        "surface": "semantic-authoring-helper",
+        "source": "app/bim_ai/semantic_authoring.py",
+        "toolKind": "semantic-authoring-helper",
+        "benchmarkEvidence": [],
+        "notes": ""
       },
       {
         "id": "author.wall_chain",
@@ -210,7 +270,19 @@
         "stableId": "",
         "surface": "semantic-authoring-helper",
         "source": "app/bim_ai/semantic_authoring.py",
-        "toolKind": "semantic-authoring-helper"
+        "toolKind": "semantic-authoring-helper",
+        "benchmarkEvidence": [
+          {
+            "benchmarkId": "simple-single-storey-house",
+            "toolId": "author.wall_chain",
+            "marker": "createWallChain",
+            "status": "fixture-command",
+            "source": "spec/benchmarks/simple-single-storey-house/mcp-cli-command-bundle.json",
+            "live": false,
+            "note": "Command appears in deterministic MCP/CLI fixture; this is not live typed execution evidence."
+          }
+        ],
+        "notes": "Benchmark fixture exposes marker(s), but no live first-class surface was detected."
       },
       {
         "id": "author.floor_from_boundary",
@@ -219,7 +291,9 @@
         "stableId": "",
         "surface": "semantic-authoring-helper",
         "source": "app/bim_ai/semantic_authoring.py",
-        "toolKind": "semantic-authoring-helper"
+        "toolKind": "semantic-authoring-helper",
+        "benchmarkEvidence": [],
+        "notes": ""
       },
       {
         "id": "author.floor_from_walls",
@@ -228,7 +302,9 @@
         "stableId": "",
         "surface": "semantic-authoring-helper",
         "source": "app/bim_ai/semantic_authoring.py",
-        "toolKind": "semantic-authoring-helper"
+        "toolKind": "semantic-authoring-helper",
+        "benchmarkEvidence": [],
+        "notes": ""
       },
       {
         "id": "opening.door_on_wall",
@@ -237,7 +313,9 @@
         "stableId": "",
         "surface": "semantic-authoring-helper",
         "source": "app/bim_ai/semantic_authoring.py",
-        "toolKind": "semantic-authoring-helper"
+        "toolKind": "semantic-authoring-helper",
+        "benchmarkEvidence": [],
+        "notes": ""
       },
       {
         "id": "opening.window_on_wall",
@@ -246,7 +324,9 @@
         "stableId": "",
         "surface": "semantic-authoring-helper",
         "source": "app/bim_ai/semantic_authoring.py",
-        "toolKind": "semantic-authoring-helper"
+        "toolKind": "semantic-authoring-helper",
+        "benchmarkEvidence": [],
+        "notes": ""
       },
       {
         "id": "author.roof_from_walls",
@@ -255,16 +335,20 @@
         "stableId": "",
         "surface": "semantic-authoring-helper",
         "source": "app/bim_ai/semantic_authoring.py",
-        "toolKind": "semantic-authoring-helper"
+        "toolKind": "semantic-authoring-helper",
+        "benchmarkEvidence": [],
+        "notes": ""
       },
       {
         "id": "opening.roof_opening",
-        "status": "missing",
+        "status": "present",
         "descriptor": "",
         "stableId": "",
-        "surface": "",
-        "source": "",
-        "toolKind": "missing"
+        "surface": "semantic-authoring-helper",
+        "source": "app/bim_ai/semantic_authoring.py",
+        "toolKind": "semantic-authoring-helper",
+        "benchmarkEvidence": [],
+        "notes": ""
       },
       {
         "id": "author.stair_between_levels",
@@ -273,7 +357,9 @@
         "stableId": "",
         "surface": "semantic-authoring-helper",
         "source": "app/bim_ai/semantic_authoring.py",
-        "toolKind": "semantic-authoring-helper"
+        "toolKind": "semantic-authoring-helper",
+        "benchmarkEvidence": [],
+        "notes": ""
       },
       {
         "id": "author.rooms_from_outlines",
@@ -282,16 +368,30 @@
         "stableId": "",
         "surface": "semantic-authoring-helper",
         "source": "app/bim_ai/semantic_authoring.py",
-        "toolKind": "semantic-authoring-helper"
+        "toolKind": "semantic-authoring-helper",
+        "benchmarkEvidence": [],
+        "notes": ""
       },
       {
         "id": "view.save_3d",
-        "status": "missing",
+        "status": "present",
         "descriptor": "",
         "stableId": "",
-        "surface": "",
-        "source": "",
-        "toolKind": "missing"
+        "surface": "semantic-authoring-helper",
+        "source": "app/bim_ai/semantic_authoring.py",
+        "toolKind": "semantic-authoring-helper",
+        "benchmarkEvidence": [
+          {
+            "benchmarkId": "simple-single-storey-house",
+            "toolId": "view.save_3d",
+            "marker": "saveViewpoint",
+            "status": "fixture-command",
+            "source": "spec/benchmarks/simple-single-storey-house/mcp-cli-command-bundle.json",
+            "live": false,
+            "note": "Command appears in deterministic MCP/CLI fixture; this is not live typed execution evidence."
+          }
+        ],
+        "notes": "Benchmark fixture exposes marker(s), but no live first-class surface was detected."
       },
       {
         "id": "document.sheet_with_views",
@@ -300,16 +400,139 @@
         "stableId": "",
         "surface": "semantic-authoring-helper",
         "source": "app/bim_ai/semantic_authoring.py",
-        "toolKind": "semantic-authoring-helper"
+        "toolKind": "semantic-authoring-helper",
+        "benchmarkEvidence": [],
+        "notes": ""
       },
       {
         "id": "qa.advisor",
-        "status": "missing",
+        "status": "present",
         "descriptor": "",
         "stableId": "",
-        "surface": "",
-        "source": "",
-        "toolKind": "missing"
+        "surface": "qa-route",
+        "source": "app/bim_ai/routes_api.py:1405",
+        "toolKind": "qa-route",
+        "benchmarkEvidence": [
+          {
+            "benchmarkId": "simple-single-storey-house",
+            "toolId": "qa.advisor",
+            "marker": "advisor evidence expectation",
+            "status": "placeholder-or-live-dry-run-output",
+            "source": "spec/benchmarks/simple-single-storey-house/expected-semantics.json",
+            "live": false,
+            "note": "Live commit benchmark should persist advisor/constructability JSON from the committed model and fail on new errors."
+          }
+        ],
+        "notes": "Benchmark fixture exposes marker(s), but no live first-class surface was detected."
+      }
+    ],
+    "wave2": [
+      {
+        "id": "model.dry_run",
+        "status": "present",
+        "descriptor": "model.dry_run",
+        "stableId": "model.dry_run",
+        "surface": "transaction-route",
+        "source": "app/bim_ai/routes_commands.py:511",
+        "toolKind": "raw-apply-bundle",
+        "benchmarkEvidence": [
+          {
+            "benchmarkId": "simple-single-storey-house",
+            "toolId": "model.dry_run",
+            "marker": "mcpCli path status",
+            "status": "fixture-validated-live-dry-run-capable",
+            "source": "spec/benchmarks/simple-single-storey-house/expected-semantics.json",
+            "live": true,
+            "note": "Benchmark path declares live dry-run evidence."
+          }
+        ],
+        "notes": "Dedicated descriptor detected, but it still exposes bundle-shaped payloads rather than semantic authoring inputs."
+      },
+      {
+        "id": "model.commit_bundle",
+        "status": "present",
+        "descriptor": "model.commit_bundle",
+        "stableId": "model.commit_bundle",
+        "surface": "transaction-route",
+        "source": "app/bim_ai/routes_api.py:2172",
+        "toolKind": "raw-apply-bundle",
+        "benchmarkEvidence": [],
+        "notes": "Dedicated descriptor detected, but it still exposes bundle-shaped payloads rather than semantic authoring inputs."
+      },
+      {
+        "id": "query.nearest_wall",
+        "status": "present",
+        "descriptor": "",
+        "stableId": "",
+        "surface": "query-helper",
+        "source": "app/bim_ai/query_resolve.py:672",
+        "toolKind": "query-helper",
+        "benchmarkEvidence": [],
+        "notes": ""
+      },
+      {
+        "id": "author.wall",
+        "status": "present",
+        "descriptor": "",
+        "stableId": "",
+        "surface": "semantic-authoring-helper",
+        "source": "app/bim_ai/semantic_authoring.py",
+        "toolKind": "semantic-authoring-helper",
+        "benchmarkEvidence": [],
+        "notes": ""
+      },
+      {
+        "id": "opening.roof_opening",
+        "status": "present",
+        "descriptor": "",
+        "stableId": "",
+        "surface": "semantic-authoring-helper",
+        "source": "app/bim_ai/semantic_authoring.py",
+        "toolKind": "semantic-authoring-helper",
+        "benchmarkEvidence": [],
+        "notes": ""
+      },
+      {
+        "id": "view.save_3d",
+        "status": "present",
+        "descriptor": "",
+        "stableId": "",
+        "surface": "semantic-authoring-helper",
+        "source": "app/bim_ai/semantic_authoring.py",
+        "toolKind": "semantic-authoring-helper",
+        "benchmarkEvidence": [
+          {
+            "benchmarkId": "simple-single-storey-house",
+            "toolId": "view.save_3d",
+            "marker": "saveViewpoint",
+            "status": "fixture-command",
+            "source": "spec/benchmarks/simple-single-storey-house/mcp-cli-command-bundle.json",
+            "live": false,
+            "note": "Command appears in deterministic MCP/CLI fixture; this is not live typed execution evidence."
+          }
+        ],
+        "notes": "Benchmark fixture exposes marker(s), but no live first-class surface was detected."
+      },
+      {
+        "id": "qa.advisor",
+        "status": "present",
+        "descriptor": "",
+        "stableId": "",
+        "surface": "qa-route",
+        "source": "app/bim_ai/routes_api.py:1405",
+        "toolKind": "qa-route",
+        "benchmarkEvidence": [
+          {
+            "benchmarkId": "simple-single-storey-house",
+            "toolId": "qa.advisor",
+            "marker": "advisor evidence expectation",
+            "status": "placeholder-or-live-dry-run-output",
+            "source": "spec/benchmarks/simple-single-storey-house/expected-semantics.json",
+            "live": false,
+            "note": "Live commit benchmark should persist advisor/constructability JSON from the committed model and fail on new errors."
+          }
+        ],
+        "notes": "Benchmark fixture exposes marker(s), but no live first-class surface was detected."
       }
     ],
     "queryDescriptors": [
@@ -341,6 +564,8 @@
       "query.hosts (query-route)",
       "query.levels (query-helper)",
       "query.levels (query-route)",
+      "query.nearest_wall (query-helper)",
+      "query.nearest_wall (query-route)",
       "query.types (query-helper)",
       "query.types (query-route)",
       "query.views (query-helper)",
@@ -370,11 +595,14 @@
       "author.rooms_from_outlines (semantic-authoring-helper)",
       "author.semantic_bundle (semantic-authoring-helper)",
       "author.stair_between_levels (semantic-authoring-helper)",
+      "author.wall (semantic-authoring-helper)",
       "author.wall_chain (semantic-authoring-helper)",
       "document.sheet_with_views (semantic-authoring-helper)",
       "opening.door_on_wall (semantic-authoring-helper)",
+      "opening.roof_opening (semantic-authoring-helper)",
       "opening.window_on_wall (semantic-authoring-helper)",
-      "view.plan (semantic-authoring-helper)"
+      "view.plan (semantic-authoring-helper)",
+      "view.save_3d (semantic-authoring-helper)"
     ],
     "semanticCmdkSurfaces": [
       "generate.walls-from-boundary",
@@ -391,6 +619,199 @@
       "view.3d.wall.insert-window"
     ]
   },
+  "benchmarkEvidence": [
+    {
+      "id": "simple-single-storey-house",
+      "dir": "spec/benchmarks/simple-single-storey-house",
+      "expectedSemantics": "spec/benchmarks/simple-single-storey-house/expected-semantics.json",
+      "commandBundle": "spec/benchmarks/simple-single-storey-house/mcp-cli-command-bundle.json",
+      "pathStatus": [
+        {
+          "id": "mcpCli",
+          "status": "fixture-validated-live-dry-run-capable",
+          "todo": ""
+        },
+        {
+          "id": "ui",
+          "status": "todo",
+          "todo": "Add an equivalent UI/Cmd+K path and semantic diff against this fixture once M2 UI benchmark automation is in scope."
+        }
+      ],
+      "evidenceExpectations": [
+        {
+          "id": "semanticSummary",
+          "status": "true",
+          "todo": ""
+        },
+        {
+          "id": "semanticDiff",
+          "status": "true",
+          "todo": ""
+        },
+        {
+          "id": "commandSurfaceUsage.mustInclude.0",
+          "status": "createLevel",
+          "todo": ""
+        },
+        {
+          "id": "commandSurfaceUsage.mustInclude.1",
+          "status": "createWallChain",
+          "todo": ""
+        },
+        {
+          "id": "commandSurfaceUsage.mustInclude.2",
+          "status": "createFloor",
+          "todo": ""
+        },
+        {
+          "id": "commandSurfaceUsage.mustInclude.3",
+          "status": "createRoof",
+          "todo": ""
+        },
+        {
+          "id": "commandSurfaceUsage.mustInclude.4",
+          "status": "insertDoorOnWall",
+          "todo": ""
+        },
+        {
+          "id": "commandSurfaceUsage.mustInclude.5",
+          "status": "insertWindowOnWall",
+          "todo": ""
+        },
+        {
+          "id": "commandSurfaceUsage.mustInclude.6",
+          "status": "createRoomOutline",
+          "todo": ""
+        },
+        {
+          "id": "commandSurfaceUsage.mustInclude.7",
+          "status": "saveViewpoint",
+          "todo": ""
+        },
+        {
+          "id": "commandSurfaceUsage.mustInclude.8",
+          "status": "CreateSheet",
+          "todo": ""
+        },
+        {
+          "id": "commandSurfaceUsage.mustInclude.9",
+          "status": "PlaceViewOnSheet",
+          "todo": ""
+        },
+        {
+          "id": "commandSurfaceUsage.mustInclude.10",
+          "status": "create_schedule_view",
+          "todo": ""
+        },
+        {
+          "id": "commandSurfaceUsage.forbidden.0",
+          "status": "restoreElement",
+          "todo": ""
+        },
+        {
+          "id": "advisor",
+          "status": "placeholder-or-live-dry-run-output",
+          "todo": "Live commit benchmark should persist advisor/constructability JSON from the committed model and fail on new errors."
+        },
+        {
+          "id": "advisor.status",
+          "status": "placeholder-or-live-dry-run-output",
+          "todo": ""
+        },
+        {
+          "id": "advisor.todo",
+          "status": "Live commit benchmark should persist advisor/constructability JSON from the committed model and fail on new errors.",
+          "todo": ""
+        },
+        {
+          "id": "screenshots",
+          "status": "placeholder",
+          "todo": "Live benchmark should render nonblank plan and 3D screenshots for ssh-view-ground-plan and ssh-view-3d."
+        },
+        {
+          "id": "screenshots.status",
+          "status": "placeholder",
+          "todo": ""
+        },
+        {
+          "id": "screenshots.todo",
+          "status": "Live benchmark should render nonblank plan and 3D screenshots for ssh-view-ground-plan and ssh-view-3d.",
+          "todo": ""
+        },
+        {
+          "id": "exports",
+          "status": "placeholder",
+          "todo": "Full M2/M3 exit should include IFC and glTF export evidence for this house."
+        },
+        {
+          "id": "exports.status",
+          "status": "placeholder",
+          "todo": ""
+        },
+        {
+          "id": "exports.todo",
+          "status": "Full M2/M3 exit should include IFC and glTF export evidence for this house.",
+          "todo": ""
+        }
+      ],
+      "commandTypes": [
+        "CreateSheet",
+        "PlaceViewOnSheet",
+        "createDimension",
+        "createFloor",
+        "createLevel",
+        "createRoof",
+        "createRoomOutline",
+        "createWallChain",
+        "create_schedule_view",
+        "insertDoorOnWall",
+        "insertWindowOnWall",
+        "placeTag",
+        "saveViewpoint",
+        "upsertFamilyType",
+        "upsertFloorType",
+        "upsertRoofType",
+        "upsertWallType"
+      ],
+      "toolMarkers": [
+        {
+          "toolId": "author.wall_chain",
+          "marker": "createWallChain",
+          "status": "fixture-command",
+          "source": "spec/benchmarks/simple-single-storey-house/mcp-cli-command-bundle.json",
+          "live": false,
+          "note": "Command appears in deterministic MCP/CLI fixture; this is not live typed execution evidence."
+        },
+        {
+          "toolId": "model.dry_run",
+          "marker": "mcpCli path status",
+          "status": "fixture-validated-live-dry-run-capable",
+          "source": "spec/benchmarks/simple-single-storey-house/expected-semantics.json",
+          "live": true,
+          "note": "Benchmark path declares live dry-run evidence."
+        },
+        {
+          "toolId": "qa.advisor",
+          "marker": "advisor evidence expectation",
+          "status": "placeholder-or-live-dry-run-output",
+          "source": "spec/benchmarks/simple-single-storey-house/expected-semantics.json",
+          "live": false,
+          "note": "Live commit benchmark should persist advisor/constructability JSON from the committed model and fail on new errors."
+        },
+        {
+          "toolId": "view.save_3d",
+          "marker": "saveViewpoint",
+          "status": "fixture-command",
+          "source": "spec/benchmarks/simple-single-storey-house/mcp-cli-command-bundle.json",
+          "live": false,
+          "note": "Command appears in deterministic MCP/CLI fixture; this is not live typed execution evidence."
+        }
+      ],
+      "uiEquivalentStatus": "todo",
+      "uiEquivalentTodo": "Add an equivalent UI/Cmd+K path and semantic diff against this fixture once M2 UI benchmark automation is in scope.",
+      "liveEvidence": true
+    }
+  ],
   "backendCommands": [
     {
       "capabilityId": "kernel.annotation.createAngularDimension",
@@ -14877,9 +15298,9 @@
       "resourceGroups": ["api-descriptor"],
       "uiFeatures": ["group:api-descriptor"],
       "agentSafetyNotes": "Safe to call freely; read-only, no kernel side-effects.",
-      "source": "app/bim_ai/api/registry.py:333",
+      "source": "app/bim_ai/api/registry.py:337",
       "routeImplemented": true,
-      "routeSource": "app/bim_ai/routes_api.py:2976",
+      "routeSource": "app/bim_ai/routes_api.py:3049",
       "toolKind": "query",
       "matchedBackendCommands": [],
       "parserNotes": []
@@ -14905,9 +15326,9 @@
       "resourceGroups": ["api-descriptor"],
       "uiFeatures": ["group:api-descriptor"],
       "agentSafetyNotes": "Safe to call freely; read-only, no kernel side-effects.",
-      "source": "app/bim_ai/api/registry.py:219",
+      "source": "app/bim_ai/api/registry.py:223",
       "routeImplemented": true,
-      "routeSource": "app/bim_ai/routes_api.py:2967",
+      "routeSource": "app/bim_ai/routes_api.py:3040",
       "toolKind": "query",
       "matchedBackendCommands": [],
       "parserNotes": []
@@ -14933,9 +15354,9 @@
       "resourceGroups": ["api-descriptor"],
       "uiFeatures": ["group:api-descriptor"],
       "agentSafetyNotes": "",
-      "source": "app/bim_ai/api/registry.py:375",
+      "source": "app/bim_ai/api/registry.py:379",
       "routeImplemented": true,
-      "routeSource": "app/bim_ai/routes_api.py:2997",
+      "routeSource": "app/bim_ai/routes_api.py:3070",
       "toolKind": "query",
       "matchedBackendCommands": [],
       "parserNotes": []
@@ -14967,9 +15388,9 @@
       "resourceGroups": ["kernel-command"],
       "uiFeatures": ["group:kernel-command"],
       "agentSafetyNotes": "",
-      "source": "app/bim_ai/api/registry.py:407",
+      "source": "app/bim_ai/api/registry.py:411",
       "routeImplemented": true,
-      "routeSource": "app/bim_ai/routes_api.py:2099",
+      "routeSource": "app/bim_ai/routes_api.py:2172",
       "toolKind": "raw-apply-bundle",
       "matchedBackendCommands": [],
       "parserNotes": []
@@ -14995,9 +15416,9 @@
       "resourceGroups": ["asset-catalog"],
       "uiFeatures": ["group:asset-catalog"],
       "agentSafetyNotes": "",
-      "source": "app/bim_ai/api/registry.py:1620",
+      "source": "app/bim_ai/api/registry.py:1787",
       "routeImplemented": true,
-      "routeSource": "app/bim_ai/routes_api.py:3611",
+      "routeSource": "app/bim_ai/routes_api.py:3684",
       "toolKind": "query",
       "matchedBackendCommands": ["updateDoor"],
       "parserNotes": []
@@ -15023,9 +15444,9 @@
       "resourceGroups": ["collaboration"],
       "uiFeatures": ["group:collaboration"],
       "agentSafetyNotes": "",
-      "source": "app/bim_ai/api/registry.py:553",
+      "source": "app/bim_ai/api/registry.py:557",
       "routeImplemented": true,
-      "routeSource": "app/bim_ai/routes_api.py:2766",
+      "routeSource": "app/bim_ai/routes_api.py:2839",
       "toolKind": "query",
       "matchedBackendCommands": [],
       "parserNotes": []
@@ -15051,9 +15472,9 @@
       "resourceGroups": ["kernel-command"],
       "uiFeatures": ["group:kernel-command"],
       "agentSafetyNotes": "",
-      "source": "app/bim_ai/api/registry.py:1928",
+      "source": "app/bim_ai/api/registry.py:2105",
       "routeImplemented": true,
-      "routeSource": "app/bim_ai/routes_api.py:2099",
+      "routeSource": "app/bim_ai/routes_api.py:2172",
       "toolKind": "typed-kernel-tool",
       "matchedBackendCommands": ["commit_concept_seed"],
       "parserNotes": []
@@ -15079,9 +15500,9 @@
       "resourceGroups": [],
       "uiFeatures": [],
       "agentSafetyNotes": "Safe to call any number of times. Same inputs → byte-identical output.",
-      "source": "app/bim_ai/api/registry.py:1576",
+      "source": "app/bim_ai/api/registry.py:1743",
       "routeImplemented": true,
-      "routeSource": "app/bim_ai/routes_api.py:2913",
+      "routeSource": "app/bim_ai/routes_api.py:2986",
       "toolKind": "query",
       "matchedBackendCommands": [],
       "parserNotes": []
@@ -15107,9 +15528,9 @@
       "resourceGroups": ["lens", "construction"],
       "uiFeatures": ["group:lens", "group:construction"],
       "agentSafetyNotes": "",
-      "source": "app/bim_ai/api/registry.py:1090",
+      "source": "app/bim_ai/api/registry.py:1254",
       "routeImplemented": true,
-      "routeSource": "app/bim_ai/routes_api.py:795",
+      "routeSource": "app/bim_ai/routes_api.py:801",
       "toolKind": "query",
       "matchedBackendCommands": [],
       "parserNotes": []
@@ -15135,9 +15556,9 @@
       "resourceGroups": ["lens", "cost-quantity"],
       "uiFeatures": ["group:lens", "group:cost-quantity"],
       "agentSafetyNotes": "",
-      "source": "app/bim_ai/api/registry.py:735",
+      "source": "app/bim_ai/api/registry.py:901",
       "routeImplemented": true,
-      "routeSource": "app/bim_ai/routes_api.py:731",
+      "routeSource": "app/bim_ai/routes_api.py:737",
       "toolKind": "query",
       "matchedBackendCommands": [],
       "parserNotes": []
@@ -15163,9 +15584,9 @@
       "resourceGroups": ["kernel-command"],
       "uiFeatures": ["group:kernel-command"],
       "agentSafetyNotes": "Wrap in a CommandBundle with type=",
-      "source": "app/bim_ai/api/registry.py:2167",
+      "source": "app/bim_ai/api/registry.py:2344",
       "routeImplemented": true,
-      "routeSource": "app/bim_ai/routes_api.py:2099",
+      "routeSource": "app/bim_ai/routes_api.py:2172",
       "toolKind": "typed-kernel-tool",
       "matchedBackendCommands": ["create_brand_template"],
       "parserNotes": []
@@ -15191,9 +15612,9 @@
       "resourceGroups": ["kernel-command"],
       "uiFeatures": ["group:kernel-command"],
       "agentSafetyNotes": "Requires a valid presentationCanvasId; canvas must exist before adding frames.",
-      "source": "app/bim_ai/api/registry.py:2043",
+      "source": "app/bim_ai/api/registry.py:2220",
       "routeImplemented": true,
-      "routeSource": "app/bim_ai/routes_api.py:2099",
+      "routeSource": "app/bim_ai/routes_api.py:2172",
       "toolKind": "typed-kernel-tool",
       "matchedBackendCommands": ["create_frame"],
       "parserNotes": []
@@ -15219,9 +15640,9 @@
       "resourceGroups": ["kernel-command"],
       "uiFeatures": ["group:kernel-command"],
       "agentSafetyNotes": "",
-      "source": "app/bim_ai/api/registry.py:1505",
+      "source": "app/bim_ai/api/registry.py:1669",
       "routeImplemented": true,
-      "routeSource": "app/bim_ai/routes_api.py:2099",
+      "routeSource": "app/bim_ai/routes_api.py:2172",
       "toolKind": "typed-kernel-tool",
       "matchedBackendCommands": ["CreateGradedRegion"],
       "parserNotes": []
@@ -15247,9 +15668,9 @@
       "resourceGroups": ["kernel-command"],
       "uiFeatures": ["group:kernel-command"],
       "agentSafetyNotes": "",
-      "source": "app/bim_ai/api/registry.py:1435",
+      "source": "app/bim_ai/api/registry.py:1599",
       "routeImplemented": true,
-      "routeSource": "app/bim_ai/routes_api.py:2099",
+      "routeSource": "app/bim_ai/routes_api.py:2172",
       "toolKind": "typed-kernel-tool",
       "matchedBackendCommands": ["create_schedule_view"],
       "parserNotes": []
@@ -15275,9 +15696,9 @@
       "resourceGroups": ["kernel-command"],
       "uiFeatures": ["group:kernel-command"],
       "agentSafetyNotes": "",
-      "source": "app/bim_ai/api/registry.py:1792",
+      "source": "app/bim_ai/api/registry.py:1962",
       "routeImplemented": true,
-      "routeSource": "app/bim_ai/routes_api.py:2099",
+      "routeSource": "app/bim_ai/routes_api.py:2172",
       "toolKind": "typed-kernel-tool",
       "matchedBackendCommands": ["create_toposolid_subdivision"],
       "parserNotes": []
@@ -15303,9 +15724,9 @@
       "resourceGroups": ["kernel-command"],
       "uiFeatures": ["group:kernel-command"],
       "agentSafetyNotes": "",
-      "source": "app/bim_ai/api/registry.py:2368",
+      "source": "app/bim_ai/api/registry.py:2543",
       "routeImplemented": true,
-      "routeSource": "app/bim_ai/routes_api.py:2099",
+      "routeSource": "app/bim_ai/routes_api.py:2172",
       "toolKind": "typed-kernel-tool",
       "matchedBackendCommands": ["create_detail_region", "createDetailRegion"],
       "parserNotes": []
@@ -15331,7 +15752,7 @@
       "resourceGroups": ["presentation", "export"],
       "uiFeatures": ["group:presentation", "group:export"],
       "agentSafetyNotes": "Read-only; safe to call freely.",
-      "source": "app/bim_ai/api/registry.py:2226",
+      "source": "app/bim_ai/api/registry.py:2403",
       "routeImplemented": true,
       "routeSource": "app/bim_ai/routes_exports.py:586",
       "toolKind": "query",
@@ -15363,9 +15784,9 @@
       "resourceGroups": ["presentation", "export"],
       "uiFeatures": ["group:presentation", "group:export"],
       "agentSafetyNotes": "Read-only export; safe to call at any time. Returns JSON bundle, not a binary .pptx file.",
-      "source": "app/bim_ai/api/registry.py:2103",
+      "source": "app/bim_ai/api/registry.py:2280",
       "routeImplemented": true,
-      "routeSource": "app/bim_ai/routes_api.py:3716",
+      "routeSource": "app/bim_ai/routes_api.py:3789",
       "toolKind": "query",
       "matchedBackendCommands": ["create_presentation_canvas", "update_presentation_canvas"],
       "parserNotes": []
@@ -15391,9 +15812,9 @@
       "resourceGroups": ["render", "export"],
       "uiFeatures": ["group:render", "group:export"],
       "agentSafetyNotes": "",
-      "source": "app/bim_ai/api/registry.py:2293",
+      "source": "app/bim_ai/api/registry.py:2468",
       "routeImplemented": true,
-      "routeSource": "app/bim_ai/routes_api.py:3771",
+      "routeSource": "app/bim_ai/routes_api.py:3844",
       "toolKind": "typed-tool",
       "matchedBackendCommands": [],
       "parserNotes": []
@@ -15419,9 +15840,9 @@
       "resourceGroups": ["audit"],
       "uiFeatures": ["group:audit"],
       "agentSafetyNotes": "",
-      "source": "app/bim_ai/api/registry.py:2491",
+      "source": "app/bim_ai/api/registry.py:2666",
       "routeImplemented": true,
-      "routeSource": "app/bim_ai/routes_api.py:330",
+      "routeSource": "app/bim_ai/routes_api.py:336",
       "toolKind": "query",
       "matchedBackendCommands": [],
       "parserNotes": []
@@ -15447,9 +15868,9 @@
       "resourceGroups": ["lens", "fire-safety"],
       "uiFeatures": ["group:lens", "group:fire-safety"],
       "agentSafetyNotes": "",
-      "source": "app/bim_ai/api/registry.py:678",
+      "source": "app/bim_ai/api/registry.py:846",
       "routeImplemented": true,
-      "routeSource": "app/bim_ai/routes_api.py:719",
+      "routeSource": "app/bim_ai/routes_api.py:725",
       "toolKind": "query",
       "matchedBackendCommands": [],
       "parserNotes": []
@@ -15475,9 +15896,9 @@
       "resourceGroups": ["image", "sketch"],
       "uiFeatures": ["group:image", "group:sketch"],
       "agentSafetyNotes": "",
-      "source": "app/bim_ai/api/registry.py:1341",
+      "source": "app/bim_ai/api/registry.py:1505",
       "routeImplemented": true,
-      "routeSource": "app/bim_ai/routes_api.py:2821",
+      "routeSource": "app/bim_ai/routes_api.py:2894",
       "toolKind": "typed-tool",
       "matchedBackendCommands": ["TraceImage"],
       "parserNotes": []
@@ -15503,9 +15924,9 @@
       "resourceGroups": ["kernel-command"],
       "uiFeatures": ["group:kernel-command"],
       "agentSafetyNotes": "",
-      "source": "app/bim_ai/api/registry.py:1857",
+      "source": "app/bim_ai/api/registry.py:2034",
       "routeImplemented": true,
-      "routeSource": "app/bim_ai/routes_api.py:2099",
+      "routeSource": "app/bim_ai/routes_api.py:2172",
       "toolKind": "typed-kernel-tool",
       "matchedBackendCommands": ["import_image_underlay"],
       "parserNotes": []
@@ -15531,9 +15952,9 @@
       "resourceGroups": ["site", "context"],
       "uiFeatures": ["group:site", "group:context"],
       "agentSafetyNotes": "",
-      "source": "app/bim_ai/api/registry.py:1740",
+      "source": "app/bim_ai/api/registry.py:1910",
       "routeImplemented": true,
-      "routeSource": "app/bim_ai/routes_api.py:3639",
+      "routeSource": "app/bim_ai/routes_api.py:3712",
       "toolKind": "typed-tool",
       "matchedBackendCommands": [],
       "parserNotes": []
@@ -15559,9 +15980,9 @@
       "resourceGroups": ["concept-seed"],
       "uiFeatures": ["group:concept-seed"],
       "agentSafetyNotes": "Safe read-only query. T9 polls this endpoint to discover seeds ready for ingestion.",
-      "source": "app/bim_ai/api/registry.py:2004",
+      "source": "app/bim_ai/api/registry.py:2183",
       "routeImplemented": true,
-      "routeSource": "app/bim_ai/routes_api.py:3685",
+      "routeSource": "app/bim_ai/routes_api.py:3758",
       "toolKind": "query",
       "matchedBackendCommands": [],
       "parserNotes": []
@@ -15587,10 +16008,72 @@
       "resourceGroups": ["model", "snapshot"],
       "uiFeatures": ["group:model", "group:snapshot"],
       "agentSafetyNotes": "Safe to call freely; read-only snapshot.",
-      "source": "app/bim_ai/api/registry.py:641",
+      "source": "app/bim_ai/api/registry.py:809",
       "routeImplemented": true,
-      "routeSource": "app/bim_ai/routes_api.py:441",
+      "routeSource": "app/bim_ai/routes_api.py:447",
       "toolKind": "query",
+      "matchedBackendCommands": [],
+      "parserNotes": []
+    },
+    {
+      "id": "model.commit_bundle",
+      "stableId": "model.commit_bundle",
+      "category": "mutation",
+      "sideEffects": "mutates-kernel",
+      "mutability": "write",
+      "implementationStatus": "implemented",
+      "transport": "http",
+      "requiresBrowser": false,
+      "createsExternalAssets": false,
+      "exportsData": false,
+      "method": "POST",
+      "path": "/api/models/{model_id}/bundles",
+      "inputSchema": "ModelCommitBundleInput",
+      "outputSchema": "BundleResult",
+      "cliExample": "bim-ai apply-bundle bundle.json --base 1 --commit",
+      "exitCodes": [
+        "ok",
+        "revision_conflict",
+        "assumption_log_required",
+        "assumption_log_malformed",
+        "error"
+      ],
+      "kernelCommands": ["*"],
+      "resourceGroups": ["model", "transaction", "kernel-command"],
+      "uiFeatures": ["transaction:commit", "group:model", "group:transaction"],
+      "agentSafetyNotes": "",
+      "source": "app/bim_ai/api/registry.py:667",
+      "routeImplemented": true,
+      "routeSource": "app/bim_ai/routes_api.py:2172",
+      "toolKind": "raw-apply-bundle",
+      "matchedBackendCommands": [],
+      "parserNotes": []
+    },
+    {
+      "id": "model.dry_run",
+      "stableId": "model.dry_run",
+      "category": "transform",
+      "sideEffects": "none",
+      "mutability": "transform",
+      "implementationStatus": "implemented",
+      "transport": "http",
+      "requiresBrowser": false,
+      "createsExternalAssets": false,
+      "exportsData": false,
+      "method": "POST",
+      "path": "/api/models/{model_id}/commands/bundle/dry-run",
+      "inputSchema": "ModelDryRunInput",
+      "outputSchema": "ModelDryRunResult",
+      "cliExample": "bim-ai apply-bundle bundle.json --base 1 --dry-run",
+      "exitCodes": ["ok", "invalid_bundle", "not_found"],
+      "kernelCommands": ["*"],
+      "resourceGroups": ["model", "transaction", "kernel-command"],
+      "uiFeatures": ["transaction:dry-run", "group:model", "group:transaction"],
+      "agentSafetyNotes": "",
+      "source": "app/bim_ai/api/registry.py:594",
+      "routeImplemented": true,
+      "routeSource": "app/bim_ai/routes_commands.py:668",
+      "toolKind": "raw-apply-bundle",
       "matchedBackendCommands": [],
       "parserNotes": []
     },
@@ -15615,9 +16098,9 @@
       "resourceGroups": ["kernel-command"],
       "uiFeatures": ["group:kernel-command"],
       "agentSafetyNotes": "",
-      "source": "app/bim_ai/api/registry.py:1699",
+      "source": "app/bim_ai/api/registry.py:1869",
       "routeImplemented": true,
-      "routeSource": "app/bim_ai/routes_api.py:2099",
+      "routeSource": "app/bim_ai/routes_api.py:2172",
       "toolKind": "typed-kernel-tool",
       "matchedBackendCommands": ["place_kit"],
       "parserNotes": []
@@ -15643,9 +16126,9 @@
       "resourceGroups": ["presentation", "share-link"],
       "uiFeatures": ["group:presentation", "group:share-link"],
       "agentSafetyNotes": "Creates a public shareable link. Use pageScopeIds to restrict visible pages.",
-      "source": "app/bim_ai/api/registry.py:1212",
+      "source": "app/bim_ai/api/registry.py:1376",
       "routeImplemented": true,
-      "routeSource": "app/bim_ai/routes_api.py:3294",
+      "routeSource": "app/bim_ai/routes_api.py:3367",
       "toolKind": "typed-tool",
       "matchedBackendCommands": [
         "createLinkModel",
@@ -15677,9 +16160,9 @@
       "resourceGroups": ["presentation", "share-link"],
       "uiFeatures": ["group:presentation", "group:share-link"],
       "agentSafetyNotes": "Safe to call freely; lists non-revoked presentation links only.",
-      "source": "app/bim_ai/api/registry.py:1291",
+      "source": "app/bim_ai/api/registry.py:1455",
       "routeImplemented": true,
-      "routeSource": "app/bim_ai/routes_api.py:3347",
+      "routeSource": "app/bim_ai/routes_api.py:3420",
       "toolKind": "query",
       "matchedBackendCommands": [],
       "parserNotes": []
@@ -15705,9 +16188,9 @@
       "resourceGroups": ["presentation", "share-link"],
       "uiFeatures": ["group:presentation", "group:share-link"],
       "agentSafetyNotes": "Immediately invalidates the link and pushes {type: revoked} to all active WS viewers.",
-      "source": "app/bim_ai/api/registry.py:1254",
+      "source": "app/bim_ai/api/registry.py:1418",
       "routeImplemented": true,
-      "routeSource": "app/bim_ai/routes_api.py:3384",
+      "routeSource": "app/bim_ai/routes_api.py:3457",
       "toolKind": "typed-tool",
       "matchedBackendCommands": [],
       "parserNotes": []
@@ -15733,9 +16216,9 @@
       "resourceGroups": ["kernel-command"],
       "uiFeatures": ["group:kernel-command"],
       "agentSafetyNotes": "",
-      "source": "app/bim_ai/api/registry.py:1135",
+      "source": "app/bim_ai/api/registry.py:1299",
       "routeImplemented": true,
-      "routeSource": "app/bim_ai/routes_api.py:2099",
+      "routeSource": "app/bim_ai/routes_api.py:2172",
       "toolKind": "typed-kernel-tool",
       "matchedBackendCommands": ["setElementConstruction"],
       "parserNotes": []
@@ -15761,9 +16244,9 @@
       "resourceGroups": ["kernel-command"],
       "uiFeatures": ["group:kernel-command"],
       "agentSafetyNotes": "",
-      "source": "app/bim_ai/api/registry.py:951",
+      "source": "app/bim_ai/api/registry.py:1115",
       "routeImplemented": true,
-      "routeSource": "app/bim_ai/routes_api.py:2099",
+      "routeSource": "app/bim_ai/routes_api.py:2172",
       "toolKind": "typed-kernel-tool",
       "matchedBackendCommands": ["setElementDiscipline"],
       "parserNotes": []
@@ -15789,9 +16272,9 @@
       "resourceGroups": ["kernel-command"],
       "uiFeatures": ["group:kernel-command"],
       "agentSafetyNotes": "Merges into element.props dict. Element must exist; unknown elementId raises 400.",
-      "source": "app/bim_ai/api/registry.py:1473",
+      "source": "app/bim_ai/api/registry.py:1637",
       "routeImplemented": true,
-      "routeSource": "app/bim_ai/routes_api.py:2099",
+      "routeSource": "app/bim_ai/routes_api.py:2172",
       "toolKind": "typed-kernel-tool",
       "matchedBackendCommands": ["set_element_prop"],
       "parserNotes": []
@@ -15817,7 +16300,7 @@
       "resourceGroups": ["kernel-command"],
       "uiFeatures": ["group:kernel-command"],
       "agentSafetyNotes": "",
-      "source": "app/bim_ai/api/registry.py:590",
+      "source": "app/bim_ai/api/registry.py:758",
       "routeImplemented": true,
       "routeSource": "app/bim_ai/routes_commands.py:422",
       "toolKind": "typed-kernel-tool",
@@ -15845,9 +16328,9 @@
       "resourceGroups": ["kernel-command"],
       "uiFeatures": ["group:kernel-command"],
       "agentSafetyNotes": "",
-      "source": "app/bim_ai/api/registry.py:1026",
+      "source": "app/bim_ai/api/registry.py:1190",
       "routeImplemented": true,
-      "routeSource": "app/bim_ai/routes_api.py:2099",
+      "routeSource": "app/bim_ai/routes_api.py:2172",
       "toolKind": "typed-kernel-tool",
       "matchedBackendCommands": ["set_view_lens"],
       "parserNotes": []
@@ -15873,9 +16356,9 @@
       "resourceGroups": ["kernel-command"],
       "uiFeatures": ["group:kernel-command"],
       "agentSafetyNotes": "",
-      "source": "app/bim_ai/api/registry.py:812",
+      "source": "app/bim_ai/api/registry.py:976",
       "routeImplemented": true,
-      "routeSource": "app/bim_ai/routes_api.py:2099",
+      "routeSource": "app/bim_ai/routes_api.py:2172",
       "toolKind": "typed-kernel-tool",
       "matchedBackendCommands": ["CreateToposolid"],
       "parserNotes": []
@@ -15901,9 +16384,9 @@
       "resourceGroups": ["kernel-command"],
       "uiFeatures": ["group:kernel-command"],
       "agentSafetyNotes": "",
-      "source": "app/bim_ai/api/registry.py:914",
+      "source": "app/bim_ai/api/registry.py:1078",
       "routeImplemented": true,
-      "routeSource": "app/bim_ai/routes_api.py:2099",
+      "routeSource": "app/bim_ai/routes_api.py:2172",
       "toolKind": "typed-kernel-tool",
       "matchedBackendCommands": ["DeleteToposolid"],
       "parserNotes": []
@@ -15929,9 +16412,9 @@
       "resourceGroups": ["kernel-command"],
       "uiFeatures": ["group:kernel-command"],
       "agentSafetyNotes": "",
-      "source": "app/bim_ai/api/registry.py:878",
+      "source": "app/bim_ai/api/registry.py:1042",
       "routeImplemented": true,
-      "routeSource": "app/bim_ai/routes_api.py:2099",
+      "routeSource": "app/bim_ai/routes_api.py:2172",
       "toolKind": "typed-kernel-tool",
       "matchedBackendCommands": ["UpdateToposolid"],
       "parserNotes": []
@@ -15957,9 +16440,9 @@
       "resourceGroups": ["kernel-command"],
       "uiFeatures": ["group:kernel-command"],
       "agentSafetyNotes": "",
-      "source": "app/bim_ai/api/registry.py:2428",
+      "source": "app/bim_ai/api/registry.py:2603",
       "routeImplemented": true,
-      "routeSource": "app/bim_ai/routes_api.py:2099",
+      "routeSource": "app/bim_ai/routes_api.py:2172",
       "toolKind": "typed-kernel-tool",
       "matchedBackendCommands": ["update_material_pbr"],
       "parserNotes": []
@@ -15985,9 +16468,9 @@
       "resourceGroups": ["kernel-command"],
       "uiFeatures": ["group:kernel-command"],
       "agentSafetyNotes": "",
-      "source": "app/bim_ai/api/registry.py:1661",
+      "source": "app/bim_ai/api/registry.py:1831",
       "routeImplemented": true,
-      "routeSource": "app/bim_ai/routes_api.py:2099",
+      "routeSource": "app/bim_ai/routes_api.py:2172",
       "toolKind": "typed-kernel-tool",
       "matchedBackendCommands": ["update_stair_treads"],
       "parserNotes": []
@@ -16781,14 +17264,6 @@
     {
       "priority": "P0",
       "domain": "wall",
-      "kind": "m2-first-pack-missing",
-      "id": "query.nearest_wall",
-      "status": "Gap",
-      "detail": "M2 first-pack tool was not found by descriptor id or stableId."
-    },
-    {
-      "priority": "P0",
-      "domain": "wall",
       "kind": "raw-agent-only",
       "id": "setWallJoinDisallow",
       "status": "Usable",
@@ -17068,30 +17543,6 @@
     },
     {
       "priority": "P1",
-      "domain": "general",
-      "kind": "m2-first-pack-missing",
-      "id": "model.commit_bundle",
-      "status": "Gap",
-      "detail": "M2 first-pack tool was not found by descriptor id or stableId."
-    },
-    {
-      "priority": "P1",
-      "domain": "general",
-      "kind": "m2-first-pack-missing",
-      "id": "model.dry_run",
-      "status": "Gap",
-      "detail": "M2 first-pack tool was not found by descriptor id or stableId."
-    },
-    {
-      "priority": "P1",
-      "domain": "general",
-      "kind": "m2-first-pack-missing",
-      "id": "qa.advisor",
-      "status": "Gap",
-      "detail": "M2 first-pack tool was not found by descriptor id or stableId."
-    },
-    {
-      "priority": "P1",
       "domain": "link-import",
       "kind": "backend-without-ui",
       "id": "createExternalLink",
@@ -17161,14 +17612,6 @@
       "id": "update_material_pbr",
       "status": "Agent-only",
       "detail": "Backend command has no matched Cmd+K/UI surface."
-    },
-    {
-      "priority": "P1",
-      "domain": "opening",
-      "kind": "m2-first-pack-missing",
-      "id": "opening.roof_opening",
-      "status": "Gap",
-      "detail": "M2 first-pack tool was not found by descriptor id or stableId."
     },
     {
       "priority": "P1",
@@ -17361,22 +17804,6 @@
       "id": "upsertSite",
       "status": "Agent-only",
       "detail": "Backend command has no matched Cmd+K/UI surface."
-    },
-    {
-      "priority": "P1",
-      "domain": "view",
-      "kind": "m2-first-pack-missing",
-      "id": "view.save_3d",
-      "status": "Gap",
-      "detail": "M2 first-pack tool was not found by descriptor id or stableId."
-    },
-    {
-      "priority": "P1",
-      "domain": "wall",
-      "kind": "m2-first-pack-missing",
-      "id": "author.wall",
-      "status": "Gap",
-      "detail": "M2 first-pack tool was not found by descriptor id or stableId."
     },
     {
       "priority": "P2",

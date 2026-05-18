@@ -11,6 +11,11 @@ import math
 from collections import Counter
 from typing import Any
 
+from bim_ai.constraints_core import (
+    annotate_violation_blocking_classes,
+    annotate_violation_disciplines,
+)
+from bim_ai.constructability_advisories import constructability_advisory_violations
 from bim_ai.document import Document
 from bim_ai.elements import (
     ElevationViewElem,
@@ -664,6 +669,41 @@ def query_hosts(model_id: str, doc: Document, request: dict[str, Any]) -> dict[s
     return success_envelope(model_id, doc, {"hosts": candidates})
 
 
+def query_nearest_wall(model_id: str, doc: Document, request: dict[str, Any]) -> dict[str, Any]:
+    """Return the closest straight wall using the existing host proximity resolver."""
+
+    hosts_req = dict(request)
+    hosts_req["hostKind"] = "wall"
+    if "nearPointMm" not in hosts_req and "pointMm" in hosts_req:
+        hosts_req["nearPointMm"] = hosts_req["pointMm"]
+    result = query_hosts(model_id, doc, hosts_req)
+    if not result.get("ok"):
+        return result
+    hosts = result["data"]["hosts"]
+    if not hosts:
+        return error_envelope("not_found", "No wall found within maxDistanceMm.", status=404)
+    nearest = hosts[0]
+    return success_envelope(
+        model_id,
+        doc,
+        {
+            "wall": {
+                "elementId": nearest["elementId"],
+                "kind": "wall",
+                "distanceMm": nearest["distanceMm"],
+                "score": nearest["score"],
+            },
+            "placement": nearest["position"],
+            "normalMm": nearest["normalMm"],
+            "resolution": {
+                "strategy": "query_hosts_nearest_wall",
+                "confidence": nearest["score"],
+            },
+            "candidates": hosts[:10],
+        },
+    )
+
+
 def resolve_host_face(model_id: str, doc: Document, request: dict[str, Any]) -> dict[str, Any]:
     hosts_req = {
         "hostKind": (request.get("hostKinds") or ["wall"])[0],
@@ -1078,5 +1118,40 @@ def resolve_family_type(model_id: str, doc: Document, request: dict[str, Any]) -
             "name": chosen.name,
             "parameters": chosen.parameters,
             "resolution": {"strategy": "text_or_default_match", "confidence": 0.9},
+        },
+    )
+
+
+def qa_advisor(model_id: str, doc: Document, request: dict[str, Any]) -> dict[str, Any]:
+    """Read-only advisor wrapper over current constructability advisory checks."""
+
+    profile = str(request.get("profile") or "authoring_default")
+    limit = min(int(request.get("limit") or 100), 500)
+    violations = constructability_advisory_violations(doc.elements, profile=profile)
+    violations = annotate_violation_disciplines(annotate_violation_blocking_classes(violations))
+    severity = request.get("severity")
+    if severity:
+        violations = [v for v in violations if v.severity == severity]
+    element_ids = set(request.get("elementIds") or [])
+    if element_ids:
+        violations = [v for v in violations if element_ids.intersection(v.element_ids)]
+    findings = [v.model_dump(by_alias=True, exclude_none=True) for v in violations[:limit]]
+    counts = Counter(v.severity for v in violations)
+    return success_envelope(
+        model_id,
+        doc,
+        {
+            "format": "qaAdvisor_v1",
+            "profile": profile,
+            "findings": findings,
+            "summary": {
+                "findingCount": len(violations),
+                "returnedCount": len(findings),
+                "severityCounts": dict(sorted(counts.items())),
+            },
+            "limitations": [
+                "M2-G qa.advisor is read-only and wraps constructability advisory checks only.",
+                "It does not run visual evidence, external-code, benchmark, or UI panel state checks.",
+            ],
         },
     )

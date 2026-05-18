@@ -36,7 +36,7 @@ function startStubServer(handler) {
   });
 }
 
-function runCli(args, env) {
+function runCli(args, env, input = null) {
   return new Promise((resolve) => {
     const child = spawn('node', [CLI, ...args], {
       env: { ...process.env, ...env },
@@ -49,6 +49,9 @@ function runCli(args, env) {
     child.stderr.on('data', (c) => {
       stderr += c.toString();
     });
+    if (input != null) {
+      child.stdin.end(input);
+    }
     child.on('exit', (code) => resolve({ code, stdout, stderr }));
   });
 }
@@ -81,8 +84,58 @@ const snapshotBody = {
         { xMm: 6000, yMm: 4000 },
       ],
     },
+    'roof-1': {
+      kind: 'roof',
+      id: 'roof-1',
+      referenceLevelId: 'lvl-0',
+      footprintMm: [
+        { xMm: 0, yMm: 0 },
+        { xMm: 6000, yMm: 0 },
+        { xMm: 6000, yMm: 4000 },
+      ],
+    },
   },
+  violations: [
+    {
+      severity: 'warning',
+      advisoryClass: 'opening_without_host',
+      elementIds: ['opening-1'],
+      message: 'Opening needs a host.',
+    },
+  ],
 };
+
+test('model dry-run and commit-bundle submit cmd-v3 bundles to transaction endpoint', async () => {
+  const requests = [];
+  const { server, base } = await startStubServer((req, body) => {
+    requests.push({ method: req.method, url: req.url, body });
+    return { body: { ok: true, mode: body.mode, revision: body.mode === 'commit' ? 8 : 7 } };
+  });
+  const bundleJson = JSON.stringify({
+    schemaVersion: 'cmd-v3.0',
+    commands: [
+      { type: 'createWall', levelId: 'lvl-0', start: { xMm: 0, yMm: 0 }, end: { xMm: 1, yMm: 0 } },
+    ],
+    assumptions: [],
+  });
+  const env = { BIM_AI_BASE_URL: base, BIM_AI_MODEL_ID: 'model-1', BIM_AI_USER_ID: 'agent-1' };
+  const dry = await runCli(['model', 'dry-run', '-', '--parent-revision', '7'], env, bundleJson);
+  const commit = await runCli(
+    ['model', 'commit-bundle', '-', '--parent-revision', '7'],
+    env,
+    bundleJson,
+  );
+  server.close();
+
+  assert.equal(dry.code, 0, dry.stderr);
+  assert.equal(commit.code, 0, commit.stderr);
+  assert.equal(requests.length, 2);
+  assert.equal(requests[0].url, '/api/models/model-1/bundles');
+  assert.equal(requests[0].body.mode, 'dry_run');
+  assert.equal(requests[0].body.bundle.parentRevision, 7);
+  assert.equal(requests[1].body.mode, 'commit');
+  assert.equal(requests[1].body.userId, 'agent-1');
+});
 
 test('query elements filters snapshot and emits geometry summaries', async () => {
   const { server, base } = await startStubServer((req) => {
@@ -150,6 +203,36 @@ test('author wall-chain --json generates a cmd-v3 bundle without network apply',
   assert.equal(out.body.bundle.commands[0].segments[0].id, 'wall-1');
 });
 
+test('author wall --json generates deterministic createWall payload', async () => {
+  const res = await runCli(
+    [
+      'author',
+      'wall',
+      '--level',
+      'lvl-0',
+      '--line',
+      '0,0;6000,0',
+      '--id',
+      'wall-north',
+      '--wall-type',
+      'wt-ext',
+      '--height',
+      '3000',
+      '--json',
+    ],
+    { BIM_AI_BASE_URL: 'http://127.0.0.1:1', BIM_AI_MODEL_ID: 'model-1' },
+  );
+
+  assert.equal(res.code, 0, res.stderr);
+  const command = JSON.parse(res.stdout).body.bundle.commands[0];
+  assert.equal(command.type, 'createWall');
+  assert.equal(command.id, 'wall-north');
+  assert.equal(command.wallTypeId, 'wt-ext');
+  assert.deepEqual(command.start, { xMm: 0, yMm: 0 });
+  assert.deepEqual(command.end, { xMm: 6000, yMm: 0 });
+  assert.equal(command.heightMm, 3000);
+});
+
 test('author floor-boundary --json generates createFloor payload', async () => {
   const res = await runCli(
     [
@@ -177,6 +260,71 @@ test('author floor-boundary --json generates createFloor payload', async () => {
   assert.equal(command.floorTypeId, 'ft-slab');
   assert.equal(command.thicknessMm, 240);
   assert.equal(command.boundaryMm.length, 4);
+});
+
+test('opening roof-opening --json generates createRoofOpening payload', async () => {
+  const res = await runCli(
+    [
+      'opening',
+      'roof-opening',
+      '--roof',
+      'roof-1',
+      '--boundary',
+      '1000,1000;2000,1000;2000,2000;1000,2000',
+      '--id',
+      'roof-open-1',
+      '--parent-revision',
+      '7',
+      '--json',
+    ],
+    { BIM_AI_BASE_URL: 'http://127.0.0.1:1', BIM_AI_MODEL_ID: 'model-1' },
+  );
+
+  assert.equal(res.code, 0, res.stderr);
+  const out = JSON.parse(res.stdout);
+  assert.equal(out.body.bundle.parentRevision, 7);
+  assert.deepEqual(out.body.bundle.commands[0], {
+    type: 'createRoofOpening',
+    hostRoofId: 'roof-1',
+    boundaryMm: [
+      { xMm: 1000, yMm: 1000 },
+      { xMm: 2000, yMm: 1000 },
+      { xMm: 2000, yMm: 2000 },
+      { xMm: 1000, yMm: 2000 },
+    ],
+    name: 'Roof opening',
+    id: 'roof-open-1',
+  });
+});
+
+test('view save-3d --json generates saveViewpoint payload with camera', async () => {
+  const res = await runCli(
+    [
+      'view',
+      'save-3d',
+      '--id',
+      'vp-1',
+      '--name',
+      'Southwest axo',
+      '--position',
+      '8000,-8000,5000',
+      '--target',
+      '3000,2000,0',
+      '--hidden-kinds',
+      'analytical,grid',
+      '--json',
+    ],
+    { BIM_AI_BASE_URL: 'http://127.0.0.1:1', BIM_AI_MODEL_ID: 'model-1' },
+  );
+
+  assert.equal(res.code, 0, res.stderr);
+  const command = JSON.parse(res.stdout).body.bundle.commands[0];
+  assert.equal(command.type, 'saveViewpoint');
+  assert.equal(command.id, 'vp-1');
+  assert.equal(command.mode, 'orbit_3d');
+  assert.deepEqual(command.camera.position, { xMm: 8000, yMm: -8000, zMm: 5000 });
+  assert.deepEqual(command.camera.target, { xMm: 3000, yMm: 2000, zMm: 0 });
+  assert.deepEqual(command.hiddenSemanticKinds3d, ['analytical', 'grid']);
 });
 
 test('opening door-on-wall --commit posts generated bundle to bundles endpoint', async () => {
@@ -219,6 +367,42 @@ test('opening door-on-wall --commit posts generated bundle to bundles endpoint',
     name: 'Door',
     familyTypeId: 'door-single',
   });
+});
+
+test('query nearest-wall reports missing planned backend route clearly', async () => {
+  const { server, base } = await startStubServer(() => ({
+    status: 404,
+    body: { detail: 'not found' },
+  }));
+  const res = await runCli(['query', 'nearest-wall', '--point', '3000,100,0'], {
+    BIM_AI_BASE_URL: base,
+    BIM_AI_MODEL_ID: 'model-1',
+  });
+  server.close();
+
+  assert.equal(res.code, 2);
+  const err = JSON.parse(res.stderr);
+  assert.equal(err.code, 'backend_route_missing');
+  assert.equal(err.toolId, 'query.nearest_wall');
+  assert.match(err.endpoint, /query\/nearest-wall/);
+});
+
+test('qa advisor aliases grouped advisor JSON evidence', async () => {
+  const { server, base } = await startStubServer((req) => {
+    assert.match(req.url, /\/api\/models\/model-1\/snapshot$/);
+    return { body: snapshotBody };
+  });
+  const res = await runCli(['qa', 'advisor', '--severity', 'warning'], {
+    BIM_AI_BASE_URL: base,
+    BIM_AI_MODEL_ID: 'model-1',
+  });
+  server.close();
+
+  assert.equal(res.code, 0, res.stderr);
+  const out = JSON.parse(res.stdout);
+  assert.equal(out.total, 1);
+  assert.equal(out.groups[0].code, 'opening_without_host');
+  assert.deepEqual(out.groups[0].elementIds, ['opening-1']);
 });
 
 test('resolve wall reports missing planned backend route clearly', async () => {

@@ -22,7 +22,7 @@ from fastapi import (
     WebSocketDisconnect,
 )
 from fastapi.responses import JSONResponse, PlainTextResponse
-from pydantic import BaseModel, ConfigDict, Field, TypeAdapter
+from pydantic import BaseModel, ConfigDict, Field, TypeAdapter, ValidationError
 from sqlalchemy import desc, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -114,10 +114,12 @@ from bim_ai.plan_projection_wire import (
 from bim_ai.prd_blocking_advisor_matrix import build_prd_blocking_advisor_matrix
 from bim_ai.query_resolve import (
     model_summary_resource,
+    qa_advisor,
     query_elements,
     query_enclosed_loops,
     query_hosts,
     query_levels,
+    query_nearest_wall,
     query_types,
     query_views,
     resolve_active_or_default_level,
@@ -136,6 +138,10 @@ from bim_ai.room_color_scheme_override_evidence import (
 from bim_ai.room_derivation_preview import (
     room_derivation_candidates_review,
     room_derivation_preview,
+)
+from bim_ai.semantic_authoring import (
+    UnsupportedSemanticOperationError,
+    build_semantic_authoring_bundle,
 )
 from bim_ai.routes_activity import activity_router
 from bim_ai.routes_commands import commands_router
@@ -819,6 +825,7 @@ async def mep_lens_projection(
     doc = Document.model_validate(row.document)
     return {"modelId": str(model_id), "revision": doc.revision, **build_mep_lens_payload(doc)}
 
+
 @api_router.get("/models/{model_id}/sustainability")
 async def sustainability_lens_projection(
     model_id: UUID,
@@ -828,7 +835,11 @@ async def sustainability_lens_projection(
     if row is None:
         raise HTTPException(status_code=404, detail="Model not found")
     doc = Document.model_validate(row.document)
-    return {"modelId": str(model_id), "revision": doc.revision, **sustainability_lens_manifest_v1(doc)}
+    return {
+        "modelId": str(model_id),
+        "revision": doc.revision,
+        **sustainability_lens_manifest_v1(doc),
+    }
 
 
 @api_router.get("/models/{model_id}/evidence-package")
@@ -1274,6 +1285,19 @@ async def query_hosts_route(
     return _query_resolve_response(query_hosts(mid, doc, body))
 
 
+@api_router.post("/models/{model_id}/query/nearest-wall")
+async def query_nearest_wall_route(
+    model_id: UUID,
+    body: dict[str, Any] = Body(default_factory=dict),
+    session: AsyncSession = Depends(get_session),
+) -> Any:
+    loaded = await _load_query_resolve_doc(model_id, session)
+    if isinstance(loaded, JSONResponse):
+        return loaded
+    mid, doc = loaded
+    return _query_resolve_response(query_nearest_wall(mid, doc, body))
+
+
 @api_router.post("/models/{model_id}/query/enclosed-loops")
 async def query_enclosed_loops_route(
     model_id: UUID,
@@ -1376,6 +1400,55 @@ async def resolve_loop_for_boundary_route(
         return loaded
     mid, doc = loaded
     return _query_resolve_response(resolve_loop_for_boundary(mid, doc, body))
+
+
+@api_router.post("/models/{model_id}/qa/advisor")
+async def qa_advisor_route(
+    model_id: UUID,
+    body: dict[str, Any] = Body(default_factory=dict),
+    session: AsyncSession = Depends(get_session),
+) -> Any:
+    loaded = await _load_query_resolve_doc(model_id, session)
+    if isinstance(loaded, JSONResponse):
+        return loaded
+    mid, doc = loaded
+    return _query_resolve_response(qa_advisor(mid, doc, body))
+
+
+_SEMANTIC_SURFACE_ALIASES = {
+    "author.wall": "wall",
+    "author.wall_chain": "wall_chain",
+    "opening.door_on_wall": "door_on_wall",
+    "opening.window_on_wall": "window_on_wall",
+    "opening.roof_opening": "roof_opening",
+    "view.save_3d": "save_3d_view",
+    "view.plan": "plan_view",
+}
+
+
+@api_router.post("/semantic-authoring/{surface_id}")
+async def semantic_authoring_route(
+    surface_id: str,
+    body: dict[str, Any] = Body(default_factory=dict),
+) -> Any:
+    operation = _SEMANTIC_SURFACE_ALIASES.get(surface_id, surface_id)
+    try:
+        bundle = build_semantic_authoring_bundle(operation, body)
+    except UnsupportedSemanticOperationError as exc:
+        raise HTTPException(
+            status_code=422,
+            detail={
+                "code": "unsupported_semantic_operation",
+                "operation": exc.operation,
+                "message": exc.reason,
+            },
+        ) from exc
+    except ValidationError as exc:
+        raise HTTPException(
+            status_code=422,
+            detail={"code": "invalid_semantic_payload", "message": str(exc)},
+        ) from exc
+    return bundle.model_dump(by_alias=True)
 
 
 # ---------------------------------------------------------------------------

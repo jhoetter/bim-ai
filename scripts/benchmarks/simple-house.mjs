@@ -1,6 +1,8 @@
 #!/usr/bin/env node
 import fs from 'node:fs/promises';
+import { createHash } from 'node:crypto';
 import path from 'node:path';
+import { pathToFileURL } from 'node:url';
 import process from 'node:process';
 
 const REPO_ROOT = path.resolve(new URL('../..', import.meta.url).pathname);
@@ -11,19 +13,38 @@ const DEFAULT_EXPECTED = path.join(BENCHMARK_DIR, 'expected-semantics.json');
 function usage() {
   console.error(`Usage:
   node scripts/benchmarks/simple-house.mjs [--bundle <path>] [--expected <path>] [--json]
+    [--mode offline|auto|live] [--base-url <url>] [--model-id <id>]
+    [--parent-revision <rev>] [--user-id <id>] [--out-dir <path>]
 `);
   process.exit(2);
 }
 
 function parseArgs(argv) {
-  const args = { bundle: DEFAULT_BUNDLE, expected: DEFAULT_EXPECTED, json: false };
+  const args = {
+    bundle: DEFAULT_BUNDLE,
+    expected: DEFAULT_EXPECTED,
+    json: false,
+    mode: 'auto',
+    baseUrl: process.env.BIM_AI_BASE_URL ?? null,
+    modelId: process.env.BIM_AI_MODEL_ID ?? null,
+    parentRevision: process.env.BIM_AI_PARENT_REVISION ?? null,
+    userId: process.env.BIM_AI_USER_ID ?? 'benchmark-agent',
+    outDir: null,
+  };
   for (let i = 0; i < argv.length; i += 1) {
     const arg = argv[i];
     if (arg === '--json') args.json = true;
     else if (arg === '--bundle' && argv[i + 1]) args.bundle = path.resolve(argv[++i]);
     else if (arg === '--expected' && argv[i + 1]) args.expected = path.resolve(argv[++i]);
+    else if (arg === '--mode' && argv[i + 1]) args.mode = argv[++i];
+    else if (arg === '--base-url' && argv[i + 1]) args.baseUrl = argv[++i];
+    else if (arg === '--model-id' && argv[i + 1]) args.modelId = argv[++i];
+    else if (arg === '--parent-revision' && argv[i + 1]) args.parentRevision = argv[++i];
+    else if (arg === '--user-id' && argv[i + 1]) args.userId = argv[++i];
+    else if (arg === '--out-dir' && argv[i + 1]) args.outDir = path.resolve(argv[++i]);
     else usage();
   }
+  if (!['offline', 'auto', 'live'].includes(args.mode)) usage();
   return args;
 }
 
@@ -46,6 +67,21 @@ function commandList(bundle) {
   if (Array.isArray(bundle)) return bundle;
   if (bundle && Array.isArray(bundle.commands)) return bundle.commands;
   throw new Error('Bundle must be an array or an object with commands[].');
+}
+
+function stableJson(value) {
+  if (Array.isArray(value)) return `[${value.map(stableJson).join(',')}]`;
+  if (value && typeof value === 'object') {
+    return `{${Object.keys(value)
+      .sort()
+      .map((key) => `${JSON.stringify(key)}:${stableJson(value[key])}`)
+      .join(',')}}`;
+  }
+  return JSON.stringify(value);
+}
+
+function sha256(value) {
+  return createHash('sha256').update(stableJson(value)).digest('hex');
 }
 
 function summarize(bundle, expected) {
@@ -287,31 +323,221 @@ function diffSummary(summary, expected) {
   return diff;
 }
 
-async function main() {
-  const args = parseArgs(process.argv.slice(2));
+function buildOfflineExecutionEvidence(bundle, summary) {
+  return {
+    mode: 'offline-fixture',
+    ok: true,
+    publicSurface: {
+      kind: 'deterministic-fixture',
+      cliEquivalent: 'node scripts/benchmarks/simple-house.mjs --mode offline --json',
+      apiEquivalent: null,
+    },
+    bundleDigest: sha256(bundle),
+    commandCount: summary.commandCount,
+    validation: {
+      status: 'fixture-semantic-diff',
+      ok: true,
+    },
+    advisor: {
+      status: 'placeholder',
+      findings: [],
+      todo: 'Run with BIM_AI_BASE_URL and BIM_AI_MODEL_ID to capture live dry-run violations/advisor readouts when available.',
+    },
+  };
+}
+
+function withParentRevision(bundle, parentRevision) {
+  if (parentRevision === null || parentRevision === undefined || parentRevision === '')
+    return bundle;
+  const parsed = Number(parentRevision);
+  return {
+    ...bundle,
+    parentRevision: Number.isFinite(parsed) ? parsed : parentRevision,
+  };
+}
+
+async function postJson(url, body) {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 30_000);
+  try {
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify(body),
+      signal: controller.signal,
+    });
+    const text = await response.text();
+    let json;
+    try {
+      json = text ? JSON.parse(text) : null;
+    } catch {
+      json = { raw: text };
+    }
+    return { status: response.status, ok: response.ok, body: json };
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
+function normalizeLiveDryRunEvidence({ baseUrl, modelId, userId, bundle, response }) {
+  const endpointPath = `/api/models/${encodeURIComponent(modelId)}/bundles`;
+  const body = response.body ?? {};
+  const violations = body.violations ?? body.result?.violations ?? [];
+  return {
+    mode: 'live-dry-run',
+    ok: response.ok && body.ok !== false,
+    publicSurface: {
+      kind: 'cmd-v3-api',
+      method: 'POST',
+      endpoint: endpointPath,
+      url: `${baseUrl.replace(/\/$/, '')}${endpointPath}`,
+      requestMode: 'dry_run',
+      cliEquivalent: `BIM_AI_BASE_URL=${baseUrl} BIM_AI_MODEL_ID=${modelId} pnpm --dir ${REPO_ROOT} --filter @bim-ai/cli exec bim-ai apply-bundle ${path.relative(
+        REPO_ROOT,
+        DEFAULT_BUNDLE,
+      )} --base <parentRevision> --dry-run`,
+    },
+    request: {
+      bundleDigest: sha256(bundle),
+      commandCount: commandList(bundle).length,
+      userId,
+      parentRevision: bundle.parentRevision ?? null,
+    },
+    response: {
+      httpStatus: response.status,
+      ok: response.ok,
+      bodyOk: body.ok ?? null,
+      reason: body.reason ?? body.result?.reason ?? null,
+      wouldRevision: body.wouldRevision ?? body.result?.wouldRevision ?? null,
+      revision: body.revision ?? body.result?.revision ?? null,
+    },
+    validation: {
+      status: 'live-dry-run-response',
+      ok: response.ok && body.ok !== false,
+      violationCount: violations.length,
+      violations,
+      replayDiagnostics: body.replayDiagnostics ?? body.result?.replayDiagnostics ?? null,
+    },
+    advisor: {
+      status: violations.length ? 'live-validation-output' : 'live-validation-empty',
+      findings: violations,
+      agentBriefCommandProtocol_v1: body.agentBriefCommandProtocol_v1 ?? null,
+      agentGeneratedBundleQaChecklist_v1: body.agentGeneratedBundleQaChecklist_v1 ?? null,
+      agentBriefAcceptanceReadout_v1: body.agentBriefAcceptanceReadout_v1 ?? null,
+    },
+  };
+}
+
+async function runLiveDryRun(args, bundle) {
+  const liveBundle = withParentRevision(bundle, args.parentRevision);
+  const baseUrl = args.baseUrl.replace(/\/$/, '');
+  const endpointPath = `/api/models/${encodeURIComponent(args.modelId)}/bundles`;
+  const response = await postJson(`${baseUrl}${endpointPath}`, {
+    bundle: liveBundle,
+    mode: 'dry_run',
+    userId: args.userId,
+    submitter: 'benchmark-agent',
+  });
+  return normalizeLiveDryRunEvidence({
+    baseUrl,
+    modelId: args.modelId,
+    userId: args.userId,
+    bundle: liveBundle,
+    response,
+  });
+}
+
+function shouldRunLive(args) {
+  if (args.mode === 'offline') return false;
+  if (args.mode === 'live') return true;
+  return Boolean(args.baseUrl && args.modelId);
+}
+
+function uiEquivalentTodos() {
+  return [
+    {
+      path: 'UI/Cmd+K',
+      status: 'todo',
+      todo: 'Automate an equivalent human path using Cmd+K/ribbon activators plus canvas or direct commands, then compare its semantic summary against this benchmark.',
+    },
+    {
+      path: 'UI evidence',
+      status: 'todo',
+      todo: 'Capture nonblank plan and 3D screenshots for ssh-view-ground-plan and ssh-view-3d from the UI-rendered model.',
+    },
+    {
+      path: 'UI documentation/export',
+      status: 'todo',
+      todo: 'Verify sheet, schedule, tags, dimensions, IFC, and glTF outputs through UI-accessible export/documentation surfaces.',
+    },
+  ];
+}
+
+async function writeEvidence(outDir, result) {
+  if (!outDir) return;
+  await fs.mkdir(outDir, { recursive: true });
+  await Promise.all([
+    fs.writeFile(
+      path.join(outDir, 'semantic-summary.json'),
+      `${JSON.stringify(result.summary, null, 2)}\n`,
+    ),
+    fs.writeFile(
+      path.join(outDir, 'semantic-diff.json'),
+      `${JSON.stringify(result.semanticDiff, null, 2)}\n`,
+    ),
+    fs.writeFile(
+      path.join(outDir, 'execution-evidence.json'),
+      `${JSON.stringify(result.executionEvidence, null, 2)}\n`,
+    ),
+    fs.writeFile(
+      path.join(outDir, 'benchmark-result.json'),
+      `${JSON.stringify(result, null, 2)}\n`,
+    ),
+  ]);
+}
+
+export async function runBenchmark(rawArgs = []) {
+  const args = parseArgs(rawArgs);
   const [bundle, expected] = await Promise.all([readJson(args.bundle), readJson(args.expected)]);
   const summary = summarize(bundle, expected);
   const semanticDiff = diffSummary(summary, expected);
+  let executionEvidence = buildOfflineExecutionEvidence(bundle, summary);
+  if (shouldRunLive(args)) {
+    if (!args.baseUrl || !args.modelId) {
+      throw new Error(
+        '--mode live requires --base-url/--model-id or BIM_AI_BASE_URL/BIM_AI_MODEL_ID.',
+      );
+    }
+    executionEvidence = await runLiveDryRun(args, bundle);
+  }
   const result = {
     benchmarkId: expected.benchmarkId,
     path: 'mcp-cli',
-    ok: semanticDiff.length === 0,
+    ok: semanticDiff.length === 0 && executionEvidence.ok,
     summary,
     semanticDiff,
+    executionEvidence,
+    uiEquivalentTodos: uiEquivalentTodos(),
     remainingExitCriteria: [
       'UI/Cmd+K equivalent path',
-      'live dry-run and commit execution through typed MCP/CLI surface',
-      'advisor/constructability JSON from live model',
+      'live commit execution through typed MCP/CLI surface after dry-run is clean',
+      'advisor/constructability JSON from committed live model',
       'nonblank plan and 3D screenshots',
       'IFC and glTF export evidence',
     ],
   };
+  await writeEvidence(args.outDir, result);
+  return { args, result };
+}
 
+async function main() {
+  const { args, result } = await runBenchmark(process.argv.slice(2));
   if (args.json) {
     console.log(JSON.stringify(result, null, 2));
   } else if (result.ok) {
+    const mode = result.executionEvidence.mode;
     console.log(
-      `simple-single-storey-house mcp-cli fixture OK: ${summary.commandCount} commands, ${summary.walls.total} walls, ${summary.rooms.count} rooms, ${summary.openings.doors} doors, ${summary.openings.windows} windows.`,
+      `simple-single-storey-house ${mode} OK: ${result.summary.commandCount} commands, ${result.summary.walls.total} walls, ${result.summary.rooms.count} rooms, ${result.summary.openings.doors} doors, ${result.summary.openings.windows} windows.`,
     );
   } else {
     console.error(JSON.stringify(result, null, 2));
@@ -320,7 +546,9 @@ async function main() {
   if (!result.ok) process.exit(1);
 }
 
-main().catch((error) => {
-  console.error(error.stack || error.message);
-  process.exit(1);
-});
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
+  main().catch((error) => {
+    console.error(error.stack || error.message);
+    process.exit(1);
+  });
+}

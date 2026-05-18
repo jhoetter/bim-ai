@@ -24,7 +24,14 @@ EXPECTED_SEED_TOOLS = {
     "api-inspect",
     "api-version",
     "apply-bundle",
+    "model.commit_bundle",
+    "model.dry_run",
     "model-show",
+}
+
+EXPECTED_M2_TRANSACTION_TOOLS = {
+    "model.dry_run",
+    "model.commit_bundle",
 }
 
 VALID_CATEGORIES = {"query", "mutation", "transform", "job", "introspection"}
@@ -171,3 +178,49 @@ class TestToolRegistry:
             if key not in route_keys:
                 missing.append(f"{d.name}: {d.restEndpoint.method} {d.restEndpoint.path}")
         assert not missing, "Descriptor endpoints without implemented routes: " + ", ".join(missing)
+
+    def test_m2_model_transaction_tools_are_first_class_descriptors(self):
+        names = {tool.name for tool in get_catalog().tools}
+        assert EXPECTED_M2_TRANSACTION_TOOLS <= names
+
+        dry_run = get_descriptor("model.dry_run")
+        assert dry_run is not None
+        assert dry_run.stableId == "model.dry_run"
+        assert dry_run.category == "transform"
+        assert dry_run.mutability == "transform"
+        assert dry_run.sideEffects == "none"
+        assert dry_run.restEndpoint.method == "POST"
+        assert dry_run.restEndpoint.path == "/api/models/{model_id}/commands/bundle/dry-run"
+        assert dry_run.kernelCommands == ["*"]
+        assert {"model", "transaction", "kernel-command"} <= set(dry_run.resourceGroups)
+        assert "input:BundleEnvelope" in dry_run.schemaRefs
+        assert "output:ModelDryRunResult" in dry_run.schemaRefs
+        assert "cli:apply-bundle:dry-run" in dry_run.exampleRefs
+
+        commit = get_descriptor("model.commit_bundle")
+        assert commit is not None
+        assert commit.stableId == "model.commit_bundle"
+        assert commit.category == "mutation"
+        assert commit.mutability == "write"
+        assert commit.sideEffects == "mutates-kernel"
+        assert commit.restEndpoint.method == "POST"
+        assert commit.restEndpoint.path == "/api/models/{model_id}/bundles"
+        assert commit.inputSchema["properties"]["mode"]["const"] == "commit"
+        assert commit.kernelCommands == ["*"]
+        assert {"model", "transaction", "kernel-command"} <= set(commit.resourceGroups)
+        assert "input:CommandBundleRequest" in commit.schemaRefs
+        assert "output:BundleResult" in commit.schemaRefs
+        assert "cli:apply-bundle:commit" in commit.exampleRefs
+
+    @pytest.mark.parametrize(
+        ("name", "path"),
+        [
+            ("model.dry_run", "/api/models/{model_id}/commands/bundle/dry-run"),
+            ("model.commit_bundle", "/api/models/{model_id}/bundles"),
+        ],
+    )
+    def test_m2_model_transaction_tool_routes_are_implemented(self, name: str, path: str):
+        descriptor = get_descriptor(name)
+        assert descriptor is not None
+        assert descriptor.restEndpoint.path == path
+        assert _route_key(descriptor.restEndpoint.method, path) in _implemented_route_keys()

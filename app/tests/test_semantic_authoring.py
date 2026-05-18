@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import pytest
+from fastapi import FastAPI
+from fastapi.testclient import TestClient
 from pydantic import ValidationError
 
 from bim_ai.semantic_authoring import (
@@ -69,6 +71,27 @@ def test_wall_chain_closed_payload_generates_valid_create_wall_chain() -> None:
             ],
         }
     ]
+
+
+def test_wall_payload_generates_valid_create_wall() -> None:
+    bundle = build_semantic_authoring_bundle(
+        "wall",
+        {
+            "id": "wall-1",
+            "name": "Partition",
+            "levelId": "level-1",
+            "start": {"xMm": 0, "yMm": 0},
+            "end": {"xMm": 5000, "yMm": 0},
+            "thicknessMm": 150,
+            "heightMm": 2700,
+        },
+    )
+
+    assert bundle.metadata["kernelCommandTypes"] == ["createWall"]
+    assert bundle.commands[0]["type"] == "createWall"
+    assert bundle.commands[0]["id"] == "wall-1"
+    assert bundle.commands[0]["start"] == {"xMm": 0.0, "yMm": 0.0}
+    assert bundle.commands[0]["heightMm"] == 2700.0
 
 
 def test_floor_from_wall_segments_derives_closed_boundary() -> None:
@@ -188,6 +211,99 @@ def test_openings_room_stair_view_and_sheet_command_shapes() -> None:
     assert sheet.commands[1]["viewportsMm"][0]["viewRef"] == "plan:plan-eg"
 
 
+def test_roof_opening_generates_valid_create_roof_opening() -> None:
+    bundle = build_semantic_authoring_bundle(
+        "roof_opening",
+        {
+            "id": "roof-opening-1",
+            "name": "Skylight",
+            "hostRoofId": "roof-1",
+            "boundaryMm": [
+                {"xMm": 1000, "yMm": 1000},
+                {"xMm": 2000, "yMm": 1000},
+                {"xMm": 2000, "yMm": 2000},
+                {"xMm": 1000, "yMm": 2000},
+                {"xMm": 1000, "yMm": 1000},
+            ],
+        },
+    )
+
+    assert bundle.metadata["kernelCommandTypes"] == ["createRoofOpening"]
+    assert bundle.commands[0] == {
+        "type": "createRoofOpening",
+        "id": "roof-opening-1",
+        "name": "Skylight",
+        "hostRoofId": "roof-1",
+        "boundaryMm": [
+            {"xMm": 1000.0, "yMm": 1000.0},
+            {"xMm": 2000.0, "yMm": 1000.0},
+            {"xMm": 2000.0, "yMm": 2000.0},
+            {"xMm": 1000.0, "yMm": 2000.0},
+        ],
+    }
+
+
+def test_save_3d_view_generates_viewpoint_or_saved_view_command() -> None:
+    camera = {
+        "position": {"xMm": 1, "yMm": 2, "zMm": 3},
+        "target": {"xMm": 4, "yMm": 5, "zMm": 6},
+        "up": {"xMm": 0, "yMm": 0, "zMm": 1},
+    }
+
+    viewpoint = build_semantic_authoring_bundle(
+        "save_3d_view",
+        {"id": "vp-1", "name": "3D coordination", "camera": camera, "cutawayStyle": "box"},
+    )
+    saved_view = build_semantic_authoring_bundle(
+        "save_3d_view",
+        {
+            "id": "saved-1",
+            "name": "Presentation view",
+            "baseViewId": "vp-1",
+            "cameraState": camera,
+        },
+    )
+
+    assert viewpoint.commands[0]["type"] == "saveViewpoint"
+    assert viewpoint.commands[0]["mode"] == "orbit_3d"
+    assert viewpoint.commands[0]["camera"] == camera
+    assert saved_view.commands[0]["type"] == "create_saved_view"
+    assert saved_view.commands[0]["baseViewId"] == "vp-1"
+
+
+def test_semantic_authoring_route_accepts_first_pack_surface_ids() -> None:
+    from bim_ai.routes_api import api_router
+
+    app = FastAPI()
+    app.include_router(api_router)
+    client = TestClient(app)
+
+    wall = client.post(
+        "/api/semantic-authoring/author.wall",
+        json={
+            "levelId": "level-1",
+            "start": {"xMm": 0, "yMm": 0},
+            "end": {"xMm": 1000, "yMm": 0},
+        },
+    )
+    roof_opening = client.post(
+        "/api/semantic-authoring/opening.roof_opening",
+        json={
+            "hostRoofId": "roof-1",
+            "boundaryMm": [
+                {"xMm": 0, "yMm": 0},
+                {"xMm": 1000, "yMm": 0},
+                {"xMm": 1000, "yMm": 1000},
+            ],
+        },
+    )
+
+    assert wall.status_code == 200
+    assert wall.json()["commands"][0]["type"] == "createWall"
+    assert roof_opening.status_code == 200
+    assert roof_opening.json()["commands"][0]["type"] == "createRoofOpening"
+
+
 def test_command_bundle_payload_is_cmd_v3_dry_run_ready() -> None:
     bundle = build_semantic_authoring_bundle("door_on_wall", {"wallId": "wall-1", "alongT": 0.5})
 
@@ -205,6 +321,19 @@ def test_command_bundle_payload_is_cmd_v3_dry_run_ready() -> None:
 def test_validation_errors_are_explicit_for_bad_payloads() -> None:
     with pytest.raises(ValidationError, match="alongT"):
         build_semantic_authoring_bundle("door_on_wall", {"wallId": "wall-1", "alongT": 1.5})
+
+    with pytest.raises(ValidationError, match="start and end must differ"):
+        build_semantic_authoring_bundle(
+            "wall",
+            {
+                "levelId": "level-1",
+                "start": {"xMm": 0, "yMm": 0},
+                "end": {"xMm": 0, "yMm": 0},
+            },
+        )
+
+    with pytest.raises(ValidationError, match="save_3d_view requires camera"):
+        build_semantic_authoring_bundle("save_3d_view", {"name": "Current view"})
 
     with pytest.raises(ValidationError, match="closed loop"):
         build_semantic_authoring_bundle(

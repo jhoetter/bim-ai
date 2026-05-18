@@ -4,8 +4,14 @@
   "sourceOfIntent": "spec/ui-mcp-parity-tracker.md#same-house-parity-benchmarks",
   "paths": {
     "mcpCli": {
-      "status": "fixture-validated",
-      "bundle": "mcp-cli-command-bundle.json"
+      "status": "fixture-validated-live-dry-run-capable",
+      "bundle": "mcp-cli-command-bundle.json",
+      "liveDryRun": {
+        "status": "optional",
+        "requires": ["BIM_AI_BASE_URL", "BIM_AI_MODEL_ID"],
+        "surface": "POST /api/models/{model_id}/bundles",
+        "mode": "dry_run"
+      }
     },
     "ui": {
       "status": "todo",
@@ -96,8 +102,8 @@
       "forbidden": ["restoreElement"]
     },
     "advisor": {
-      "status": "placeholder",
-      "todo": "Live benchmark should persist advisor/constructability JSON and fail on new errors."
+      "status": "placeholder-or-live-dry-run-output",
+      "todo": "Live commit benchmark should persist advisor/constructability JSON from the committed model and fail on new errors."
     },
     "screenshots": {
       "status": "placeholder",

@@ -17,40 +17,50 @@ from bim_ai.commands import (
     Command,
     CreateFloorCmd,
     CreateRoofCmd,
+    CreateRoofOpeningCmd,
     CreateRoomOutlineCmd,
+    CreateSavedViewCmd,
     CreateStairCmd,
     CreateWallChainCmd,
+    CreateWallCmd,
     InsertDoorOnWallCmd,
     InsertWindowOnWallCmd,
+    SaveViewpointCmd,
     UpsertPlanViewCmd,
     UpsertSheetCmd,
     UpsertSheetViewportsCmd,
 )
 
 SemanticOperation = Literal[
+    "wall",
     "wall_chain",
     "floor_from_boundary",
     "floor_from_wall_segments",
     "door_on_wall",
     "window_on_wall",
+    "roof_opening",
     "roof_from_boundary",
     "roof_from_wall_segments",
     "room_outline",
     "stair_between_levels",
+    "save_3d_view",
     "plan_view",
     "sheet_with_viewports",
 ]
 
 SUPPORTED_OPERATIONS: tuple[str, ...] = (
+    "wall",
     "wall_chain",
     "floor_from_boundary",
     "floor_from_wall_segments",
     "door_on_wall",
     "window_on_wall",
+    "roof_opening",
     "roof_from_boundary",
     "roof_from_wall_segments",
     "room_outline",
     "stair_between_levels",
+    "save_3d_view",
     "plan_view",
     "sheet_with_viewports",
 )
@@ -61,6 +71,7 @@ UNSUPPORTED_M2_OPERATIONS: dict[str, str] = {
     "room_from_wall_enclosure": "placeRoomAtPoint exists but requires an existing closed model enclosure.",
     "stair_by_runs": "createStair has run fields, but this helper only covers clear straight stairs.",
     "sheet_auto_layout": "Viewport layout needs view extents/model context; explicit viewports are supported.",
+    "save_3d_current_view": "Requires live viewer camera state; provide camera for saveViewpoint or baseViewId for create_saved_view.",
 }
 
 _COMMAND_ADAPTER: TypeAdapter[Command] = TypeAdapter(Command)
@@ -109,6 +120,34 @@ class WallSegmentInput(BaseModel):
     def _not_degenerate(self) -> WallSegmentInput:
         if _same_point(self.start, self.end):
             raise ValueError("wall segment start and end must differ")
+        return self
+
+
+class WallPayload(BaseModel):
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+
+    id: str | None = None
+    name: str = "Wall"
+    level_id: str = Field(alias="levelId", min_length=1)
+    start: Point2
+    end: Point2
+    thickness_mm: float = Field(default=200, alias="thicknessMm", gt=0)
+    height_mm: float = Field(default=2800, alias="heightMm", gt=0)
+    wall_type_id: str | None = Field(default=None, alias="wallTypeId")
+    location_line: str = Field(default="wall-centerline", alias="locationLine")
+    base_constraint_level_id: str | None = Field(default=None, alias="baseConstraintLevelId")
+    top_constraint_level_id: str | None = Field(default=None, alias="topConstraintLevelId")
+    base_constraint_offset_mm: float = Field(default=0, alias="baseConstraintOffsetMm")
+    top_constraint_offset_mm: float = Field(default=0, alias="topConstraintOffsetMm")
+    material_key: str | None = Field(default=None, alias="materialKey")
+    load_bearing: bool | None = Field(default=None, alias="loadBearing")
+    structural_role: str = Field(default="unknown", alias="structuralRole")
+    analytical_participation: bool = Field(default=False, alias="analyticalParticipation")
+
+    @model_validator(mode="after")
+    def _not_degenerate(self) -> WallPayload:
+        if _same_point(self.start, self.end):
+            raise ValueError("wall start and end must differ")
         return self
 
 
@@ -253,6 +292,20 @@ class WindowOnWallPayload(OpeningPayload):
     height_mm: float = Field(default=1500, alias="heightMm", gt=0)
 
 
+class RoofOpeningPayload(BaseModel):
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+
+    id: str | None = None
+    name: str = "Roof opening"
+    host_roof_id: str = Field(alias="hostRoofId", min_length=1)
+    boundary_mm: list[Point2] = Field(alias="boundaryMm", min_length=3)
+
+    @model_validator(mode="after")
+    def _valid_boundary(self) -> RoofOpeningPayload:
+        self.boundary_mm = _normalize_polygon(self.boundary_mm)
+        return self
+
+
 class RoomOutlinePayload(BoundaryPayload):
     name: str = "Room"
     programme_code: str | None = Field(default=None, alias="programmeCode")
@@ -299,6 +352,37 @@ class PlanViewPayload(BaseModel):
     plan_view_subtype: str | None = Field(default=None, alias="planViewSubtype")
 
 
+class Save3dViewPayload(BaseModel):
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+
+    id: str | None = None
+    name: str = "Viewpoint"
+    camera: dict[str, Any] | None = None
+    base_view_id: str | None = Field(default=None, alias="baseViewId")
+    camera_state: dict[str, Any] | None = Field(default=None, alias="cameraState")
+    visibility_overrides: dict[str, Any] | None = Field(default=None, alias="visibilityOverrides")
+    detail_level: str | None = Field(default=None, alias="detailLevel")
+    mode: Literal["plan_2d", "orbit_3d", "plan_canvas"] = "orbit_3d"
+    viewer_clip_cap_elev_mm: float | None = Field(default=None, alias="viewerClipCapElevMm")
+    viewer_clip_floor_elev_mm: float | None = Field(default=None, alias="viewerClipFloorElevMm")
+    hidden_semantic_kinds_3d: list[str] = Field(default_factory=list, alias="hiddenSemanticKinds3d")
+    cutaway_style: Literal["none", "cap", "floor", "box"] | None = Field(
+        default=None, alias="cutawayStyle"
+    )
+
+    @model_validator(mode="after")
+    def _has_supported_source(self) -> Save3dViewPayload:
+        if self.base_view_id:
+            if not self.id:
+                raise ValueError("save_3d_view create_saved_view mode requires id")
+            return self
+        if self.camera:
+            return self
+        raise ValueError(
+            "save_3d_view requires camera for saveViewpoint or baseViewId for create_saved_view"
+        )
+
+
 class ViewportPayload(BaseModel):
     model_config = ConfigDict(populate_by_name=True, extra="allow")
 
@@ -337,6 +421,8 @@ def build_semantic_authoring_bundle(
     if operation not in SUPPORTED_OPERATIONS:
         raise UnsupportedSemanticOperationError(str(operation))
     data = payload.model_dump(by_alias=True) if isinstance(payload, BaseModel) else payload
+    if operation == "wall":
+        return wall_bundle(WallPayload.model_validate(data))
     if operation == "wall_chain":
         return wall_chain_bundle(WallChainPayload.model_validate(data))
     if operation == "floor_from_boundary":
@@ -347,6 +433,8 @@ def build_semantic_authoring_bundle(
         return door_on_wall_bundle(DoorOnWallPayload.model_validate(data))
     if operation == "window_on_wall":
         return window_on_wall_bundle(WindowOnWallPayload.model_validate(data))
+    if operation == "roof_opening":
+        return roof_opening_bundle(RoofOpeningPayload.model_validate(data))
     if operation == "roof_from_boundary":
         return roof_from_boundary_bundle(RoofFromBoundaryPayload.model_validate(data))
     if operation == "roof_from_wall_segments":
@@ -355,6 +443,8 @@ def build_semantic_authoring_bundle(
         return room_outline_bundle(RoomOutlinePayload.model_validate(data))
     if operation == "stair_between_levels":
         return stair_between_levels_bundle(StairBetweenLevelsPayload.model_validate(data))
+    if operation == "save_3d_view":
+        return save_3d_view_bundle(Save3dViewPayload.model_validate(data))
     if operation == "plan_view":
         return plan_view_bundle(PlanViewPayload.model_validate(data))
     if operation == "sheet_with_viewports":
@@ -364,6 +454,29 @@ def build_semantic_authoring_bundle(
 
 def unsupported_semantic_operation(operation: str) -> None:
     raise UnsupportedSemanticOperationError(operation)
+
+
+def wall_bundle(payload: WallPayload) -> SemanticBundle:
+    command = CreateWallCmd(
+        id=payload.id,
+        name=payload.name,
+        levelId=payload.level_id,
+        start=payload.start.wire(),
+        end=payload.end.wire(),
+        thicknessMm=payload.thickness_mm,
+        heightMm=payload.height_mm,
+        wallTypeId=payload.wall_type_id,
+        locationLine=payload.location_line,
+        baseConstraintLevelId=payload.base_constraint_level_id,
+        topConstraintLevelId=payload.top_constraint_level_id,
+        baseConstraintOffsetMm=payload.base_constraint_offset_mm,
+        topConstraintOffsetMm=payload.top_constraint_offset_mm,
+        materialKey=payload.material_key,
+        loadBearing=payload.load_bearing,
+        structuralRole=payload.structural_role,
+        analyticalParticipation=payload.analytical_participation,
+    )
+    return _bundle("wall", [command])
 
 
 def wall_chain_bundle(payload: WallChainPayload) -> SemanticBundle:
@@ -434,6 +547,16 @@ def window_on_wall_bundle(payload: WindowOnWallPayload) -> SemanticBundle:
     return _bundle("window_on_wall", [command])
 
 
+def roof_opening_bundle(payload: RoofOpeningPayload) -> SemanticBundle:
+    command = CreateRoofOpeningCmd(
+        id=payload.id,
+        name=payload.name,
+        hostRoofId=payload.host_roof_id,
+        boundaryMm=[p.wire() for p in payload.boundary_mm],
+    )
+    return _bundle("roof_opening", [command])
+
+
 def roof_from_boundary_bundle(payload: RoofFromBoundaryPayload) -> SemanticBundle:
     command = CreateRoofCmd(
         id=payload.id,
@@ -488,6 +611,30 @@ def plan_view_bundle(payload: PlanViewPayload) -> SemanticBundle:
         planViewSubtype=payload.plan_view_subtype,
     )
     return _bundle("plan_view", [command])
+
+
+def save_3d_view_bundle(payload: Save3dViewPayload) -> SemanticBundle:
+    if payload.base_view_id:
+        command = CreateSavedViewCmd(
+            id=payload.id or "",
+            name=payload.name,
+            baseViewId=payload.base_view_id,
+            cameraState=payload.camera_state or payload.camera,
+            visibilityOverrides=payload.visibility_overrides,
+            detailLevel=payload.detail_level,
+        )
+        return _bundle("save_3d_view", [command])
+    command = SaveViewpointCmd(
+        id=payload.id,
+        name=payload.name,
+        camera=payload.camera,
+        mode=payload.mode,
+        viewerClipCapElevMm=payload.viewer_clip_cap_elev_mm,
+        viewerClipFloorElevMm=payload.viewer_clip_floor_elev_mm,
+        hiddenSemanticKinds3d=payload.hidden_semantic_kinds_3d,
+        cutawayStyle=payload.cutaway_style,
+    )
+    return _bundle("save_3d_view", [command])
 
 
 def sheet_with_viewports_bundle(payload: SheetWithViewportsPayload) -> SemanticBundle:
