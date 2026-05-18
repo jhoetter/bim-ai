@@ -49,6 +49,8 @@ export interface ProjectMenuProps {
   onSaveSnapshot?: () => void;
   modelId?: string | null;
   onOpenMilestone?: () => void;
+  /** §1.6.2: open cloud-native milestone version history. */
+  onOpenVersionHistory?: () => void;
   onOpenMaterialBrowser?: () => void;
   onOpenAppearanceAssetBrowser?: () => void;
   onOpenProjectSetup?: () => void;
@@ -66,6 +68,8 @@ export interface ProjectMenuProps {
   onOpenGlobalParams?: () => void;
   /** F3: open the Project Information dialog. */
   onOpenProjectInfo?: () => void;
+  /** §1.6.2: open app-level settings/preferences. */
+  onOpenSettings?: () => void;
   /** FED-01: open the Manage Links dialog (Insert → Link Model). */
   onManageLinks?: () => void;
   /** FED-04: import an IFC file as a shadow-model link. */
@@ -111,6 +115,7 @@ export function ProjectMenu({
   onSaveSnapshot,
   modelId,
   onOpenMilestone,
+  onOpenVersionHistory,
   onOpenMaterialBrowser,
   onOpenAppearanceAssetBrowser,
   onOpenProjectSetup,
@@ -123,6 +128,7 @@ export function ProjectMenu({
   onManagePhases,
   onOpenGlobalParams,
   onOpenProjectInfo,
+  onOpenSettings,
   onManageLinks,
   onLinkIfc,
   onLinkDxf,
@@ -633,6 +639,17 @@ export function ProjectMenu({
             }}
           />
         ) : null}
+        {onOpenSettings ? (
+          <MenuItem
+            label="Settings…"
+            icon="settings"
+            testId="project-menu-settings"
+            onClick={() => {
+              onOpenChange(false);
+              onOpenSettings();
+            }}
+          />
+        ) : null}
         {onOpenProjectTemplates ? (
           <MenuItem
             label="Project Templates…"
@@ -641,6 +658,17 @@ export function ProjectMenu({
             onClick={() => {
               onOpenChange(false);
               onOpenProjectTemplates();
+            }}
+          />
+        ) : null}
+        {onOpenVersionHistory ? (
+          <MenuItem
+            label="Version History…"
+            icon="settings"
+            testId="project-menu-version-history"
+            onClick={() => {
+              onOpenChange(false);
+              onOpenVersionHistory();
             }}
           />
         ) : null}

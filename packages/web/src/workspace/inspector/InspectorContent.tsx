@@ -3684,6 +3684,20 @@ export function InspectorPropertiesFor(
               />
             </div>
           )}
+          <div className="flex items-center gap-2 py-0.5">
+            <span className="text-xs text-muted w-28 shrink-0">Custom Section ID</span>
+            <input
+              type="text"
+              className="w-32 text-xs bg-surface border border-border rounded px-1 py-0.5"
+              defaultValue={(el as { sectionProfileId?: string | null }).sectionProfileId ?? ''}
+              key={`${el.id}-section-profile-id`}
+              onBlur={(e) => {
+                const profileId = e.currentTarget.value.trim() || null;
+                onDispatchCommand?.({ type: 'setBeamSectionProfile', beamId: el.id, profileId });
+              }}
+              data-testid="inspector-beam-section-profile-id"
+            />
+          </div>
           <PhaseSection
             phaseCreated={el.phaseCreated}
             phaseDemolished={el.phaseDemolished}
@@ -4694,6 +4708,20 @@ export function InspectorPropertiesFor(
               Layer Priorities: {prioritySummary}
             </p>
           ) : null}
+          <button
+            type="button"
+            data-testid="inspector-save-to-library"
+            className="rounded border border-border px-2 py-1 text-xs text-foreground hover:bg-surface-strong"
+            onClick={() =>
+              onDispatchCommand?.({
+                type: 'saveFamilyToLibrary',
+                elementId: el.id,
+                familyName: (el as { name?: string }).name,
+              })
+            }
+          >
+            Save to Family Library
+          </button>
         </div>
       );
     }

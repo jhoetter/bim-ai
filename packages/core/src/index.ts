@@ -466,6 +466,7 @@ export type ElemKind =
   | 'permanent_dimension'
   | 'sheet_viewport'
   | 'steel_connection'
+  | 'beam_section_profile'
   | 'toposolid_pad'
   | 'shaft'
   | 'saved_3d_view'
@@ -2636,6 +2637,8 @@ export type Element =
       props?: Record<string, unknown>;
       /** §9.2: section profile type (I/H/C/L/T/HSS) for cross-section shape. */
       sectionProfile?: 'rectangular' | 'I' | 'H' | 'C' | 'L' | 'T' | 'HSS' | null;
+      /** §9.5.4: optional custom parametric cross-section profile element. */
+      sectionProfileId?: string | null;
       /** §9.2: flange width in mm — used for I, H, C profiles. */
       flangeWidthMm?: number | null;
       /** §9.2: flange thickness in mm — used for I, H profiles. */
@@ -2664,6 +2667,15 @@ export type Element =
       boltRows?: number;
       boltCols?: number;
       boltDiameterMm?: number;
+    }
+  | {
+      /** §9.5.4: parametric beam cross-section profile. */
+      kind: 'beam_section_profile';
+      id: string;
+      name: string;
+      profilePoints: { xMm: number; yMm: number }[];
+      widthMm?: number;
+      heightMm?: number;
     }
   | ToposolidPadElement
   | {
@@ -5339,6 +5351,13 @@ export type UpdateSteelConnectionCmd = {
   patch: Partial<Omit<Extract<Element, { kind: 'steel_connection' }>, 'kind' | 'id'>>;
 };
 
+export type SetBeamSectionProfileCmd = {
+  type: 'setBeamSectionProfile';
+  beamId: string;
+  /** ID of a beam_section_profile element, or null to reset to the default section. */
+  profileId: string | null;
+};
+
 export type CreatePermanentDimensionCmd = {
   type: 'create_permanent_dimension';
   id: string;
@@ -5800,6 +5819,18 @@ export type RemoveCutGeometryCmd = {
   hostId: string;
 };
 
+export type JoinGeometryCmd = {
+  type: 'joinGeometry';
+  elementId1: string;
+  elementId2: string;
+};
+
+export type UnjoinGeometryCmd = {
+  type: 'unjoinGeometry';
+  elementId1: string;
+  elementId2: string;
+};
+
 // ---------------------------------------------------------------------------
 // §1.6.11 — Project Browser Groups commands
 // ---------------------------------------------------------------------------
@@ -5850,6 +5881,14 @@ export type SetFamilyCategoryCmd = {
   type: 'setFamilyCategory';
   familyId: string;
   categoryKey: string;
+};
+
+export type SaveFamilyToLibraryCmd = {
+  type: 'saveFamilyToLibrary';
+  /** ID of the element type element to save as a reusable family_definition. */
+  elementId: string;
+  /** Human-readable name to save under; defaults to the source element name. */
+  familyName?: string;
 };
 
 // ---------------------------------------------------------------------------
@@ -5941,4 +5980,9 @@ export type ApplyViewTemplateCmd = {
 export type OpenRecentProjectCmd = {
   type: 'openRecentProject';
   projectId: string;
+};
+
+export type RestoreMilestoneCmd = {
+  type: 'restoreMilestone';
+  milestoneId: string;
 };

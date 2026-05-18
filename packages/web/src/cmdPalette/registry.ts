@@ -79,6 +79,10 @@ export type PaletteContext = {
   openAdvisor?: () => void;
   openJobs?: () => void;
   openMilestone?: () => void;
+  /** §1.6.2: open cloud-native version history. */
+  openVersionHistory?: () => void;
+  /** §1.6.2: open app-level settings/preferences. */
+  openAppSettings?: () => void;
   hasAdvisorQuickFix?: boolean;
   applyFirstAdvisorFix?: () => void;
   openPlanVisibilityGraphics?: () => void;

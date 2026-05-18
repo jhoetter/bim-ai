@@ -96,6 +96,8 @@ export type ViewportRuntimeSlice = Pick<
   | 'quickAccessItems'
   | 'recentProjectIds'
   | 'addRecentProject'
+  | 'appSettings'
+  | 'joinedPairs'
 >;
 
 function writeLocalStorageString(key: string, value: string): void {
@@ -362,6 +364,12 @@ export function createViewportRuntimeSlice(set: StoreSet, get: StoreGet): Viewpo
           10,
         ),
       })),
+
+    /** §1.6.2: app-level preferences. */
+    appSettings: { defaultUnits: 'mm', uiDensity: 'normal' },
+
+    /** §2.4.3: sorted element ID pairs joined by Join Geometry. */
+    joinedPairs: [],
 
     renderQuality: { shadowsEnabled: false, toneMappingExposure: 1.0, pixelRatioScale: 'auto' },
     setRenderQuality: (settings: Partial<RenderQualitySettings>) =>

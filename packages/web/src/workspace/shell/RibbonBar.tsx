@@ -120,6 +120,7 @@ export interface RibbonCommandMetadata {
   tabId: RibbonTabId;
   panelId: string;
   label: string;
+  icon: IconName;
   behavior: 'direct' | 'bridge' | 'disabled' | 'missing-metadata';
   disabledReason?: string;
 }
@@ -793,6 +794,7 @@ export function ribbonCommandMetadataForMode(
           tabId: tab.id,
           panelId: panel.id,
           label: command.label,
+          icon: command.icon,
           behavior:
             availability?.state === 'bridge'
               ? 'bridge'
@@ -943,7 +945,7 @@ function buildLensRibbonTab(
   const recommendedTools = recommendedLensTools(lensMode, mode);
   const reviewCommands: RibbonCommand[] = [
     action('advisor-open', 'Checks', 'clash'),
-    action('command-palette', 'More', 'commandPalette'),
+    action('command-palette', 'More', 'search'),
   ];
   if (lensMode === 'coordination') {
     reviewCommands.unshift(action('project-manage-links', 'Links', 'externalLink'));
@@ -1154,8 +1156,8 @@ function buildPlanRibbonTabs(
       label: 'Systems',
       panels: [
         {
-          id: 'routes',
-          label: 'Routes',
+          id: 'mep-routes',
+          label: 'MEP Routes',
           commands: [
             tool('duct', 'Duct', 'duct'),
             tool('pipe', 'Pipe', 'pipe'),
@@ -1163,7 +1165,7 @@ function buildPlanRibbonTabs(
           ],
         },
         {
-          id: 'devices',
+          id: 'mep-devices',
           label: 'Devices',
           commands: [
             tool('mep-equipment', 'Equipment', 'mepEquipment'),
@@ -1177,6 +1179,37 @@ function buildPlanRibbonTabs(
           commands: [
             tool('mep-opening-request', 'Opening Request', 'wall-opening'),
             tool('shaft', 'Shaft', 'shaft'),
+          ],
+        },
+      ],
+    },
+    {
+      id: 'analyze',
+      label: 'Analyze',
+      panels: [
+        {
+          id: 'checks',
+          label: 'Checks',
+          commands: [
+            action('advisor-open', 'Model Checks', 'clash', 'ribbon-command-analyze-checks'),
+          ],
+        },
+        {
+          id: 'measure',
+          label: 'Measure',
+          commands: [tool('measure', 'Measure', 'measure')],
+        },
+        {
+          id: 'coordination',
+          label: 'Coordination',
+          commands: [
+            tool('mep-opening-request', 'Opening Request', 'wall-opening'),
+            action(
+              'project-manage-links',
+              'Linked Models',
+              'externalLink',
+              'ribbon-command-analyze-links',
+            ),
           ],
         },
       ],
@@ -1254,6 +1287,86 @@ function buildPlanRibbonTabs(
       ],
     },
     {
+      id: 'collaborate',
+      label: 'Collaborate',
+      panels: [
+        {
+          id: 'links',
+          label: 'Links',
+          commands: [
+            action(
+              'project-manage-links',
+              'Manage Links',
+              'externalLink',
+              'ribbon-command-manage-links',
+            ),
+          ],
+        },
+        {
+          id: 'coordination',
+          label: 'Coordination',
+          commands: [
+            action('advisor-open', 'Coordination', 'clash', 'ribbon-command-collaboration-checks'),
+          ],
+        },
+      ],
+    },
+    {
+      id: 'view',
+      label: 'View',
+      panels: [
+        {
+          id: 'view-create',
+          label: 'Create',
+          commands: [
+            tool('section', 'Section', 'sectionView'),
+            tool('elevation', 'Elevation', 'elevationView'),
+            action('create-section-view', 'Create Section', 'sectionView'),
+          ],
+        },
+        {
+          id: 'graphics',
+          label: 'Graphics',
+          commands: [action('visibility-graphics', 'VG Overrides', 'layerOff', 'ribbon-vg')],
+        },
+        {
+          id: 'view-tools',
+          label: 'Tools',
+          commands: [action('command-palette', 'More Views', 'search', 'ribbon-command-view-more')],
+        },
+      ],
+    },
+    {
+      id: 'manage',
+      label: 'Manage',
+      panels: [
+        {
+          id: 'project-settings',
+          label: 'Project',
+          commands: [
+            action('manage-phases', 'Phases', 'phase', 'ribbon-manage-phases'),
+            action('manage-global-params', 'Parameters', 'tag', 'ribbon-manage-global-params'),
+          ],
+        },
+        {
+          id: 'standards',
+          label: 'Standards',
+          commands: [
+            action('dimension-style', 'Dim Style', 'dimension', 'ribbon-dimension-style'),
+            action('visibility-graphics', 'VG Overrides', 'layerOff', 'ribbon-vg'),
+          ],
+        },
+        {
+          id: 'application',
+          label: 'Application',
+          commands: [
+            action('settings', 'Shortcuts', 'settings', 'ribbon-command-settings'),
+            action('command-palette', 'Command Search', 'search', 'ribbon-command-command-palette'),
+          ],
+        },
+      ],
+    },
+    {
       id: 'review',
       label: 'Review',
       panels: [
@@ -1262,19 +1375,59 @@ function buildPlanRibbonTabs(
           label: 'Review',
           commands: [action('advisor-open', 'Checks', 'clash', 'plan-checks')],
         },
+      ],
+    },
+    {
+      id: 'steel' as RibbonTabId,
+      label: 'Steel',
+      panels: [
         {
-          id: 'manage',
-          label: 'Manage',
+          id: 'steel-connections',
+          label: 'Connections',
           commands: [
-            action('manage-phases', 'Phases', 'phase', 'ribbon-manage-phases'),
-            action('manage-global-params', 'Parameters', 'tag', 'ribbon-manage-global-params'),
-            action('dimension-style', 'Dim Style', 'dimension', 'ribbon-dimension-style'),
+            tool('steel-connection' as ToolId, 'Connection', 'beam'),
+            tool('beam' as ToolId, 'Steel Beam', 'beam'),
+            tool('column' as ToolId, 'Steel Column', 'column'),
           ],
         },
         {
-          id: 'graphics',
-          label: 'Graphics',
-          commands: [action('visibility-graphics', 'VG Overrides', 'layerOff', 'ribbon-vg')],
+          id: 'steel-framing',
+          label: 'Framing',
+          commands: [tool('brace' as ToolId, 'Brace', 'beam')],
+        },
+      ],
+    },
+    {
+      id: 'precast' as RibbonTabId,
+      label: 'Precast',
+      panels: [
+        {
+          id: 'precast-elements',
+          label: 'Elements',
+          commands: [
+            tool('column' as ToolId, 'Precast Column', 'column'),
+            tool('beam' as ToolId, 'Precast Beam', 'beam'),
+            tool('floor' as ToolId, 'Precast Slab', 'floor'),
+          ],
+        },
+      ],
+    },
+    {
+      id: 'massing-site' as RibbonTabId,
+      label: 'Massing & Site',
+      panels: [
+        {
+          id: 'conceptual-mass',
+          label: 'Conceptual Mass',
+          commands: [tool('mass-box' as ToolId, 'In-Place Mass', 'assembly')],
+        },
+        {
+          id: 'site',
+          label: 'Site',
+          commands: [
+            tool('toposolid_subdivision' as ToolId, 'Toposolid', 'grid'),
+            tool('terrain-pad' as ToolId, 'Building Pad', 'floor'),
+          ],
         },
       ],
     },
@@ -1336,8 +1489,8 @@ function build3dRibbonTabs(selectedElementKind?: string | null): RibbonTab[] {
       label: 'Systems',
       panels: [
         {
-          id: 'routes',
-          label: 'Routes',
+          id: 'mep-routes',
+          label: 'MEP Routes',
           commands: [
             tool('duct', 'Duct', 'duct'),
             tool('pipe', 'Pipe', 'pipe'),
@@ -1345,7 +1498,7 @@ function build3dRibbonTabs(selectedElementKind?: string | null): RibbonTab[] {
           ],
         },
         {
-          id: 'devices',
+          id: 'mep-devices',
           label: 'Devices',
           commands: [
             tool('mep-equipment', 'Equipment', 'mepEquipment'),
@@ -1359,6 +1512,21 @@ function build3dRibbonTabs(selectedElementKind?: string | null): RibbonTab[] {
           commands: [
             tool('mep-opening-request', 'Opening Request', 'wall-opening'),
             tool('shaft', 'Shaft', 'shaft'),
+          ],
+        },
+      ],
+    },
+    {
+      id: 'massing-site',
+      label: 'Massing & Site',
+      panels: [
+        {
+          id: 'conceptual-mass',
+          label: 'Conceptual Mass',
+          commands: [
+            tool('mass-box', 'Box Mass', 'assembly'),
+            tool('mass-extrusion', 'Extrusion', 'family'),
+            tool('mass-revolution', 'Revolve', 'group'),
           ],
         },
       ],
@@ -1384,6 +1552,75 @@ function build3dRibbonTabs(selectedElementKind?: string | null): RibbonTab[] {
       ],
     },
     {
+      id: 'collaborate',
+      label: 'Collaborate',
+      panels: [
+        {
+          id: 'links',
+          label: 'Links',
+          commands: [
+            action(
+              'project-manage-links',
+              'Manage Links',
+              'externalLink',
+              'ribbon-command-3d-manage-links',
+            ),
+          ],
+        },
+        {
+          id: 'coordination',
+          label: 'Coordination',
+          commands: [
+            action(
+              'advisor-open',
+              'Coordination',
+              'clash',
+              'ribbon-command-3d-coordination-checks',
+            ),
+          ],
+        },
+      ],
+    },
+    {
+      id: 'manage',
+      label: 'Manage',
+      panels: [
+        {
+          id: 'project-settings',
+          label: 'Project',
+          commands: [
+            action('manage-phases', 'Phases', 'phase', 'ribbon-command-3d-manage-phases'),
+            action(
+              'manage-global-params',
+              'Parameters',
+              'tag',
+              'ribbon-command-3d-manage-global-params',
+            ),
+          ],
+        },
+        {
+          id: 'standards',
+          label: 'Standards',
+          commands: [
+            action('dimension-style', 'Dim Style', 'dimension', 'ribbon-command-3d-dim-style'),
+          ],
+        },
+        {
+          id: 'application',
+          label: 'Application',
+          commands: [
+            action('settings', 'Shortcuts', 'settings', 'ribbon-command-3d-settings'),
+            action(
+              'command-palette',
+              'Command Search',
+              'search',
+              'ribbon-command-3d-command-palette',
+            ),
+          ],
+        },
+      ],
+    },
+    {
       id: 'insert',
       label: 'Insert',
       panels: [
@@ -1399,7 +1636,7 @@ function build3dRibbonTabs(selectedElementKind?: string | null): RibbonTab[] {
     },
     {
       id: 'analyze',
-      label: 'Review',
+      label: 'Analyze',
       panels: [
         {
           id: 'annotate',
@@ -1624,7 +1861,7 @@ function buildPlanModifyTab(selectedElementKind: string): RibbonTab {
           tool('move', 'Move', 'move'),
           tool('copy', 'Copy', 'copy'),
           tool('rotate', 'Rotate', 'rotate'),
-          tool('array', 'Array', 'array'),
+          tool('array', 'Array', 'copy'),
         ],
       },
       {
@@ -1644,9 +1881,9 @@ function buildPlanModifyTab(selectedElementKind: string): RibbonTab {
         id: 'constraints',
         label: 'Constraints',
         commands: [
-          ...(isSolid ? [tool('unjoin', 'Unjoin', 'unjoin')] : []),
-          ...(isWall ? [tool('attach', 'Attach Top', 'attach')] : []),
-          ...(isWall ? [tool('detach', 'Detach Top', 'detach')] : []),
+          ...(isSolid ? [tool('unjoin', 'Unjoin', 'wall-join')] : []),
+          ...(isWall ? [tool('attach', 'Attach Top', 'proportional')] : []),
+          ...(isWall ? [tool('detach', 'Detach Top', 'externalLink')] : []),
         ],
       },
       ...(isWall
@@ -1665,10 +1902,15 @@ function buildPlanModifyTab(selectedElementKind: string): RibbonTab {
           action(
             'structural-delete-duplicate-wall',
             'Delete Duplicate',
-            'delete',
+            'close',
             'structural-delete-duplicate-wall',
           ),
-          action('structural-detach-orphan', 'Detach Orphan', 'detach', 'structural-detach-orphan'),
+          action(
+            'structural-detach-orphan',
+            'Detach Orphan',
+            'externalLink',
+            'structural-detach-orphan',
+          ),
         ],
       },
     ],
@@ -1716,9 +1958,9 @@ function build3dModifyTab(selectedElementKind: string): RibbonTab {
               id: 'constraints',
               label: 'Constraints',
               commands: [
-                ...(isSolid ? [tool('unjoin', 'Unjoin', 'unjoin')] : []),
-                ...(isWall ? [tool('attach', 'Attach Top', 'attach')] : []),
-                ...(isWall ? [tool('detach', 'Detach Top', 'detach')] : []),
+                ...(isSolid ? [tool('unjoin', 'Unjoin', 'wall-join')] : []),
+                ...(isWall ? [tool('attach', 'Attach Top', 'proportional')] : []),
+                ...(isWall ? [tool('detach', 'Detach Top', 'externalLink')] : []),
               ],
             },
           ]
@@ -1871,7 +2113,7 @@ function ribbonCapabilityId(command: RibbonCommand): string | null {
   }
   switch (command.id) {
     case 'command-palette':
-      return null;
+      return 'shell.command-palette';
     case 'project-manage-links':
       return 'project.manage-links';
     case 'advisor-open':

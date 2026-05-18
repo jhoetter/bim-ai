@@ -816,6 +816,7 @@ export function PlanCanvas({
   const orthoSnapHold = useBimStore((s) => s.orthoSnapHold);
   const groupRegistry = useBimStore((s) => s.groupRegistry);
   const groupEditModeDefinitionId = useBimStore((s) => s.groupEditModeDefinitionId);
+  const joinedPairs = useBimStore((s) => s.joinedPairs);
   const selectEl = useBimStore((s) => s.select);
   const setActiveLevelId = useBimStore((s) => s.setActiveLevelId);
   const activateElevationView = useBimStore((s) => s.activateElevationView);
@@ -1475,6 +1476,7 @@ export function PlanCanvas({
       phaseFilterMode,
       groupRegistry,
       groupEditModeDefinitionId,
+      joinedPairs,
       lineworkOverrides:
         activePvForPhase?.kind === 'plan_view'
           ? (activePvForPhase.lineworkOverrides ?? null)
@@ -2470,6 +2472,7 @@ export function PlanCanvas({
     draftGridVisible,
     lensMode,
     groupRegistry,
+    joinedPairs,
   ]);
 
   // Column-at-grids: highlight selected grids + show intersection preview dots

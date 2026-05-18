@@ -615,6 +615,46 @@ function gridLineThreeFromPlanWire(
   return grp;
 }
 
+function elementJoinAnchorMm(el: Element): { xMm: number; yMm: number } | null {
+  if (el.kind === 'wall') {
+    return {
+      xMm: (el.start.xMm + el.end.xMm) / 2,
+      yMm: (el.start.yMm + el.end.yMm) / 2,
+    };
+  }
+  const anyEl = el as unknown as {
+    positionMm?: { xMm?: number; yMm?: number };
+    startMm?: { xMm?: number; yMm?: number };
+    start?: { xMm?: number; yMm?: number };
+  };
+  const p = anyEl.positionMm ?? anyEl.startMm ?? anyEl.start;
+  if (p?.xMm == null || p.yMm == null) return null;
+  return { xMm: p.xMm, yMm: p.yMm };
+}
+
+function addJoinGeometryIndicators(
+  holder: THREE.Object3D,
+  elementsById: Record<string, Element>,
+  joinedPairs?: [string, string][],
+): void {
+  for (const [idA, idB] of joinedPairs ?? []) {
+    const a = elementsById[idA];
+    const b = elementsById[idB];
+    if (!a || !b) continue;
+    const pa = elementJoinAnchorMm(a);
+    const pb = elementJoinAnchorMm(b);
+    if (!pa || !pb) continue;
+    const geo = new THREE.CircleGeometry(0.04, 8);
+    const mat = new THREE.MeshBasicMaterial({ color: 0x60a5fa, depthTest: false });
+    const mesh = new THREE.Mesh(geo, mat);
+    mesh.rotation.x = -Math.PI / 2;
+    mesh.position.set(ux((pa.xMm + pb.xMm) / 2), PLAN_Y + 0.012, uz((pa.yMm + pb.yMm) / 2));
+    mesh.userData.joinIndicator = true;
+    mesh.userData.joinedPair = [idA, idB];
+    holder.add(mesh);
+  }
+}
+
 function rebuildPlanMeshesFromWire(
   holder: THREE.Object3D,
   elementsById: Record<string, Element>,
@@ -631,6 +671,7 @@ function rebuildPlanMeshesFromWire(
     detailLevel?: 'coarse' | 'medium' | 'fine';
     /** CAN-V3-01: when projMinor is null, floor/roof outlines are suppressed entirely. */
     lineWeights?: LineWeights | null;
+    joinedPairs?: [string, string][];
   },
 ): void {
   while (holder.children.length) holder.remove(holder.children[0]!);
@@ -992,6 +1033,7 @@ function rebuildPlanMeshesFromWire(
           };
     holder.add(dimensionsThree(dEl));
   }
+  addJoinGeometryIndicators(holder, elementsById, opts.joinedPairs);
 }
 
 function addPlacedAssetPlanSymbols(
@@ -1671,6 +1713,8 @@ export function rebuildPlanMeshes(
       lineWeightPx: number;
       lineDash?: number[];
     }> | null;
+    /** §2.4.3: joined geometry pairs rendered as plan join indicators. */
+    joinedPairs?: [string, string][];
   },
 ): void {
   while (holder.children.length) holder.remove(holder.children[0]!);
@@ -1699,6 +1743,7 @@ export function rebuildPlanMeshes(
       planTagFontScales: opts.planTagFontScales ?? null,
       detailLevel,
       lineWeights: opts.lineWeights,
+      joinedPairs: opts.joinedPairs,
     });
     return;
   }
@@ -2608,6 +2653,8 @@ export function rebuildPlanMeshes(
       }
     });
   }
+
+  addJoinGeometryIndicators(holder, elementsById, opts.joinedPairs);
 }
 
 /** Optional documentation overlays from `planProjectionPrimitives_v1.stairs[]` (Prompt-2). */

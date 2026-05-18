@@ -13,7 +13,7 @@
  * the same category-specific placement adapters used by in-project families.
  */
 
-import { useEffect, useMemo, useState, type JSX } from 'react';
+import { useEffect, useMemo, useRef, useState, type JSX } from 'react';
 
 import type {
   AssetCategory,
@@ -153,6 +153,10 @@ export interface FamilyLibraryPanelProps {
    * formula exposed by a project asset or external catalog family.
    */
   onUpdateArrayFormula?: (update: FamilyLibraryArrayFormulaUpdate) => void;
+  /** §1.6.2: import DB-backed reusable family definitions from JSON. */
+  onImportLibraryFamilies?: (
+    families: Array<Extract<Element, { kind: 'family_definition' }>>,
+  ) => void;
   /**
    * Optional client for the external-catalog API. Provided so tests can
    * inject a stub without spinning up the real fetch path. Defaults to a
@@ -934,12 +938,14 @@ export function FamilyLibraryPanel({
   onPlaceCatalogFamily,
   onLoadCatalogFamily,
   onUpdateArrayFormula,
+  onImportLibraryFamilies,
   catalogClient = DEFAULT_CATALOG_CLIENT,
 }: FamilyLibraryPanelProps): JSX.Element | null {
   const [needle, setNeedle] = useState('');
   const [recentFamilyIds, setRecentFamilyIds] = useState<string[]>([]);
   const [bimobjectQuery, setBimobjectQuery] = useState('');
   const [bimobjectOpen, setBimobjectOpen] = useState(true);
+  const importInputRef = useRef<HTMLInputElement | null>(null);
 
   const trackRecent = (id: string) => {
     setRecentFamilyIds((prev) => [id, ...prev.filter((x) => x !== id)].slice(0, 5));
@@ -968,6 +974,37 @@ export function FamilyLibraryPanel({
     const assetEntries = combinedAssetGroups.flatMap(({ entries }) => entries);
     return [...disciplineEntries, ...assetEntries];
   }, [grouped, combinedAssetGroups]);
+  const projectFamilyDefinitions = useMemo(
+    () =>
+      Object.values(elementsById).filter(
+        (el): el is Extract<Element, { kind: 'family_definition' }> =>
+          el.kind === 'family_definition',
+      ),
+    [elementsById],
+  );
+
+  const exportFamilyDefinitions = (): void => {
+    const blob = new Blob([JSON.stringify({ families: projectFamilyDefinitions }, null, 2)], {
+      type: 'application/json',
+    });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'bim-ai-family-library.json';
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const importFamilyDefinitions = async (file: File): Promise<void> => {
+    const payload = JSON.parse(await file.text()) as {
+      families?: Array<Extract<Element, { kind: 'family_definition' }>>;
+    };
+    const families = (payload.families ?? []).filter(
+      (el): el is Extract<Element, { kind: 'family_definition' }> =>
+        el?.kind === 'family_definition' && typeof el.id === 'string',
+    );
+    if (families.length > 0) onImportLibraryFamilies?.(families);
+  };
 
   useEffect(() => {
     if (!open) return;
@@ -1021,6 +1058,36 @@ export function FamilyLibraryPanel({
             aria-label="Search families"
             className="w-full rounded border border-border bg-background px-2 py-1 text-sm text-foreground outline-none focus:border-accent focus:ring-1 focus:ring-accent/40"
           />
+          <div className="mt-2 flex items-center gap-2">
+            <button
+              type="button"
+              data-testid="family-library-export-json"
+              className="rounded border border-border px-2 py-1 text-xs text-foreground hover:bg-surface-strong"
+              onClick={exportFamilyDefinitions}
+            >
+              Export JSON
+            </button>
+            <button
+              type="button"
+              data-testid="family-library-import-json"
+              className="rounded border border-border px-2 py-1 text-xs text-foreground hover:bg-surface-strong"
+              onClick={() => importInputRef.current?.click()}
+            >
+              Import JSON
+            </button>
+            <input
+              ref={importInputRef}
+              type="file"
+              accept="application/json,.json"
+              data-testid="family-library-import-json-input"
+              className="hidden"
+              onChange={(e) => {
+                const file = e.currentTarget.files?.[0];
+                if (file) void importFamilyDefinitions(file);
+                e.currentTarget.value = '';
+              }}
+            />
+          </div>
         </div>
         <div
           id="family-library-panel-results"

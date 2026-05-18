@@ -47,6 +47,8 @@ export const VIEWPORT_STORE_KEYS = [
   'viewerPhaseFilter',
   'orbitCameraNonce',
   'orbitCameraPoseMm',
+  'appSettings',
+  'joinedPairs',
   'activatePlanView',
   'setActiveViewpointId',
   'activateElevationView',

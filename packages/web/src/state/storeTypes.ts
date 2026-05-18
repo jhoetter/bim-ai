@@ -31,6 +31,10 @@ export type PlanRoomSchemeWireReadout = {
 
 export type ViewerMode = 'plan_canvas' | 'orbit_3d';
 export type DisciplineWorkspaceId = 'arch' | 'struct' | 'mep';
+export type AppSettings = {
+  defaultUnits: 'mm' | 'cm' | 'm';
+  uiDensity: 'compact' | 'normal';
+};
 export type RoofJoinPreview = {
   primaryRoofId: string;
   secondaryRoofId: string;
@@ -512,6 +516,12 @@ export type StoreState = {
   /** §1.5: IDs of recently opened projects (max 10, LRU order). */
   recentProjectIds: string[];
   addRecentProject: (id: string) => void;
+
+  /** §1.6.2: app-level preferences stored with cloud project state. */
+  appSettings: AppSettings;
+
+  /** §2.4.3: sorted pairs of joined element IDs for visual join state. */
+  joinedPairs: [string, string][];
 
   /** §14.6 — client-side camera paths from walkthrough captures; not persisted to server. */
   cameraPaths: CameraPathElem[];

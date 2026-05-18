@@ -128,6 +128,32 @@ describe('command capability graph', () => {
     expect(withoutCmdK).toEqual([]);
   });
 
+  it('tracks the Wave 33 complete ribbon coverage marker', () => {
+    const capability = getCommandCapability('view.ribbon-complete-tabs');
+    const paletteIds = new Set(getRegistry().map((entry) => entry.id));
+
+    expect(capability).toMatchObject({
+      label: 'Ribbon Complete Tab Coverage',
+      owner: 'workspace/shell/RibbonBar',
+      scope: 'global',
+      intendedModes: ['plan'],
+      surfaces: ['ribbon', 'cmd-k'],
+      status: 'implemented',
+    });
+    expect(capability?.notes).toContain('Systems/MEP');
+    expect(capability?.notes).toContain('Insert');
+    expect(capability?.notes).toContain('Annotate');
+    expect(capability?.notes).toContain('Analyze');
+    expect(capability?.notes).toContain('Collaborate');
+    expect(capability?.notes).toContain('View');
+    expect(capability?.notes).toContain('Manage');
+    expect(capability?.notes).toContain('Modify');
+    expect(capability?.notes).toContain('Steel');
+    expect(capability?.notes).toContain('Precast');
+    expect(capability?.notes).toContain('Massing/Site');
+    expect(paletteIds.has('view.ribbon-complete-tabs')).toBe(true);
+  });
+
   it('covers every modal/dialog command with canonical trigger ownership — UX-RISK-005', () => {
     const dialogTriggers = new Map<string, readonly string[]>([
       ['project.restore-snapshot', ['cmd-k', 'primary-sidebar']],

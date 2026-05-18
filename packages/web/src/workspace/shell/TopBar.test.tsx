@@ -4,7 +4,11 @@ import { cleanup, fireEvent, render } from '@testing-library/react';
 import { I18nextProvider } from 'react-i18next';
 import { Icons } from '@bim-ai/ui';
 import { TopBar, WORKSPACE_MODES } from './TopBar';
-import { RibbonBar, ribbonCommandReachabilityForMode } from './RibbonBar';
+import {
+  RibbonBar,
+  ribbonCommandMetadataForMode,
+  ribbonCommandReachabilityForMode,
+} from './RibbonBar';
 import { TopBarV3 } from '../chrome/TopBar';
 import type { ViewTab } from '../tabsModel';
 import i18n from '../../i18n';
@@ -357,15 +361,76 @@ describe('RibbonBar — F-005', () => {
     expect(getByRole('tab', { name: 'Review' })).toBeTruthy();
     expect(() => getByRole('tab', { name: 'Architecture' })).toThrow();
     expect(() => getByRole('tab', { name: 'Structure' })).toThrow();
-    expect(() => getByRole('tab', { name: 'Massing & Site' })).toThrow();
-    expect(() => getByRole('tab', { name: 'Analyze' })).toThrow();
-    expect(() => getByRole('tab', { name: 'Steel' })).toThrow();
-    expect(() => getByRole('tab', { name: 'Precast' })).toThrow();
+    expect(getByRole('tab', { name: 'Analyze' })).toBeTruthy();
+    expect(getByRole('tab', { name: 'Collaborate' })).toBeTruthy();
+    expect(getByRole('tab', { name: 'View' })).toBeTruthy();
+    expect(getByRole('tab', { name: 'Manage' })).toBeTruthy();
+    expect(getByRole('tab', { name: 'Steel' })).toBeTruthy();
+    expect(getByRole('tab', { name: 'Precast' })).toBeTruthy();
+    expect(getByRole('tab', { name: 'Massing & Site' })).toBeTruthy();
     expect(getByRole('tab', { name: 'Systems' })).toBeTruthy();
     expect(() => getByRole('tab', { name: 'Add-Ins' })).toThrow();
     expect(getByTestId('ribbon-command-select')).toBeTruthy();
     expect(getByTestId('ribbon-command-wall').getAttribute('aria-pressed')).toBe('true');
     expect(getByTestId('ribbon-command-door')).toBeTruthy();
+  });
+
+  it('opens remaining Revit-style plan ribbon tabs with live commands — Wave 33 WP-A', () => {
+    const onOpenAdvisor = vi.fn();
+    const onOpenManageLinks = vi.fn();
+    const onCreateSectionView = vi.fn();
+    const onOpenVisibilityGraphics = vi.fn();
+    const onOpenManagePhases = vi.fn();
+    const onOpenManageGlobalParams = vi.fn();
+    const onOpenDimensionStyle = vi.fn();
+    const onOpenSettings = vi.fn();
+    const onOpenCommandPalette = vi.fn();
+    const { getByTestId } = render(
+      <RibbonBar
+        activeMode="plan"
+        onOpenAdvisor={onOpenAdvisor}
+        onOpenManageLinks={onOpenManageLinks}
+        onCreateSectionView={onCreateSectionView}
+        onOpenVisibilityGraphics={onOpenVisibilityGraphics}
+        onOpenManagePhases={onOpenManagePhases}
+        onOpenManageGlobalParams={onOpenManageGlobalParams}
+        onOpenDimensionStyle={onOpenDimensionStyle}
+        onOpenSettings={onOpenSettings}
+        onOpenCommandPalette={onOpenCommandPalette}
+      />,
+    );
+
+    fireEvent.click(getByTestId('ribbon-tab-systems'));
+    expect(getByTestId('ribbon-command-duct')).toBeTruthy();
+    expect(getByTestId('ribbon-command-mep-opening-request')).toBeTruthy();
+
+    fireEvent.click(getByTestId('ribbon-tab-analyze'));
+    fireEvent.click(getByTestId('ribbon-command-analyze-checks'));
+    fireEvent.click(getByTestId('ribbon-command-analyze-links'));
+    expect(onOpenAdvisor).toHaveBeenCalledTimes(1);
+    expect(onOpenManageLinks).toHaveBeenCalledTimes(1);
+
+    fireEvent.click(getByTestId('ribbon-tab-collaborate'));
+    fireEvent.click(getByTestId('ribbon-command-manage-links'));
+    expect(onOpenManageLinks).toHaveBeenCalledTimes(2);
+
+    fireEvent.click(getByTestId('ribbon-tab-view'));
+    fireEvent.click(getByTestId('ribbon-command-create-section-view'));
+    fireEvent.click(getByTestId('ribbon-vg'));
+    expect(onCreateSectionView).toHaveBeenCalledTimes(1);
+    expect(onOpenVisibilityGraphics).toHaveBeenCalledTimes(1);
+
+    fireEvent.click(getByTestId('ribbon-tab-manage'));
+    fireEvent.click(getByTestId('ribbon-manage-phases'));
+    fireEvent.click(getByTestId('ribbon-manage-global-params'));
+    fireEvent.click(getByTestId('ribbon-dimension-style'));
+    fireEvent.click(getByTestId('ribbon-command-settings'));
+    fireEvent.click(getByTestId('ribbon-command-command-palette'));
+    expect(onOpenManagePhases).toHaveBeenCalledTimes(1);
+    expect(onOpenManageGlobalParams).toHaveBeenCalledTimes(1);
+    expect(onOpenDimensionStyle).toHaveBeenCalledTimes(1);
+    expect(onOpenSettings).toHaveBeenCalledTimes(1);
+    expect(onOpenCommandPalette).toHaveBeenCalledTimes(1);
   });
 
   it('routes plan Floor and Roof ribbon buttons into explicit sketch tools', () => {
@@ -577,6 +642,19 @@ describe('RibbonBar — F-005', () => {
     for (const iconName of ribbonIconNames) {
       expect(Icons[iconName]).toBeTruthy();
       expect(Icons[iconName]).not.toBe(Icons.commandPalette);
+    }
+  });
+
+  it('resolves every active ribbon schema icon without command-palette fallbacks', () => {
+    for (const mode of ['plan', '3d', 'section', 'sheet', 'schedule'] as const) {
+      for (const row of ribbonCommandMetadataForMode(mode, 'wall')) {
+        expect(Icons[row.icon], `${mode}:${row.tabId}:${row.panelId}:${row.label}`).toBeTruthy();
+        if (row.icon !== 'commandPalette') {
+          expect(Icons[row.icon], `${mode}:${row.tabId}:${row.panelId}:${row.label}`).not.toBe(
+            Icons.commandPalette,
+          );
+        }
+      }
     }
   });
 

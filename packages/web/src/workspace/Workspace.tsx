@@ -200,6 +200,8 @@ import {
 } from './WorkspaceHelpers';
 import { EmptyStateHint } from './shell';
 import { MilestoneDialog } from '../collab/MilestoneDialog';
+import { AppSettingsPanel } from './AppSettingsPanel';
+import { ProjectVersionHistoryPanel } from './ProjectVersionHistoryPanel';
 import { PasteToLevelsDialog } from '../clipboard/PasteToLevelsDialog';
 import { SelectionFilterDialog } from '../plan/selectionFilter';
 import { CreateGroupDialog } from '../groups/CreateGroupDialog';
@@ -1134,6 +1136,8 @@ export function Workspace(): JSX.Element {
   const applyOrbitViewpointPreset = useBimStore((s) => s.applyOrbitViewpointPreset);
   const [commentsOpen, setCommentsOpen] = useState(false);
   const [milestoneDialogOpen, setMilestoneDialogOpen] = useState(false);
+  const [versionHistoryOpen, setVersionHistoryOpen] = useState(false);
+  const [appSettingsOpen, setAppSettingsOpen] = useState(false);
   const [pasteToLevelsOpen, setPasteToLevelsOpen] = useState(false);
   const [selectionFilterOpen, setSelectionFilterOpen] = useState(false);
   const [createGroupOpen, setCreateGroupOpen] = useState(false);
@@ -1959,6 +1963,10 @@ export function Workspace(): JSX.Element {
         useBimStore.getState().setActiveGroupEditId(null);
         return;
       }
+      if (cmd.type === 'restoreMilestone') {
+        // Restore is server-backed; the panel dispatches intent and closes.
+        return;
+      }
       // §5.1.4: create a terrain pad element client-side
       if (cmd.type === 'create_toposolid_pad') {
         const current = useBimStore.getState().elementsById;
@@ -2334,6 +2342,29 @@ export function Workspace(): JSX.Element {
         if (!el || el.kind !== 'family_definition') return;
         useBimStore.setState({
           elementsById: { ...cur, [el.id]: { ...el, categoryKey: cmd.categoryKey as string } },
+        });
+        return;
+      }
+      // §1.6.2: save a reusable element type into the DB-backed family library.
+      if (cmd.type === 'saveFamilyToLibrary') {
+        const { elementsById: cur } = useBimStore.getState();
+        const el = cur[cmd.elementId as string];
+        if (!el) return;
+        const famId = `fam-lib-${Date.now()}`;
+        const familyName =
+          (cmd.familyName as string | undefined) ??
+          ((el as { name?: string }).name || `${el.kind} family`);
+        useBimStore.setState({
+          elementsById: {
+            ...cur,
+            [famId]: {
+              kind: 'family_definition',
+              id: famId,
+              name: familyName,
+              categoryKey: (el as { categoryKey?: string }).categoryKey ?? el.kind,
+              sourceElementId: el.id,
+            } as any,
+          },
         });
         return;
       }
@@ -3194,6 +3225,22 @@ export function Workspace(): JSX.Element {
         }
         return;
       }
+      // §9.5.4: assign or reset a custom parametric beam section profile.
+      if (cmd.type === 'setBeamSectionProfile') {
+        const { elementsById: cur } = useBimStore.getState();
+        const beam = cur[cmd.beamId as string];
+        if (!beam || beam.kind !== 'beam') return;
+        useBimStore.setState({
+          elementsById: {
+            ...cur,
+            [beam.id]: {
+              ...beam,
+              sectionProfileId: (cmd.profileId as string | null) ?? undefined,
+            },
+          },
+        });
+        return;
+      }
       // §3.3.4: applyCutGeometry — add cutterId to host element's cutBy list
       if (cmd.type === 'applyCutGeometry') {
         const { elementsById: cur } = useBimStore.getState();
@@ -3226,6 +3273,27 @@ export function Workspace(): JSX.Element {
             },
           });
         }
+        return;
+      }
+      if (cmd.type === 'joinGeometry') {
+        const pair = [cmd.elementId1 as string, cmd.elementId2 as string].sort() as [
+          string,
+          string,
+        ];
+        useBimStore.setState((s: any) => {
+          const existing: [string, string][] = s.joinedPairs ?? [];
+          const alreadyJoined = existing.some(([a, b]) => a === pair[0] && b === pair[1]);
+          return alreadyJoined ? {} : { joinedPairs: [...existing, pair] };
+        });
+        return;
+      }
+      if (cmd.type === 'unjoinGeometry') {
+        const pair = [cmd.elementId1 as string, cmd.elementId2 as string].sort();
+        useBimStore.setState((s: any) => ({
+          joinedPairs: (s.joinedPairs ?? []).filter(
+            ([a, b]: [string, string]) => !(a === pair[0] && b === pair[1]),
+          ),
+        }));
         return;
       }
       // §9.1.3: toggleColumnStructural — toggle isNonStructural on a column element
@@ -5729,6 +5797,8 @@ export function Workspace(): JSX.Element {
           openAdvisor: () => setAdvisorOpen(true),
           openJobs: () => setJobsOpen(true),
           openMilestone: openMilestoneDialog,
+          openVersionHistory: () => setVersionHistoryOpen(true),
+          openAppSettings: () => setAppSettingsOpen(true),
           openPasteToLevels: () => setPasteToLevelsOpen(true),
           openSelectionFilter: () => setSelectionFilterOpen(true),
           openCreateGroup: () => setCreateGroupOpen(true),
@@ -5866,6 +5936,20 @@ export function Workspace(): JSX.Element {
         onPlaceCatalogFamily={handlePlaceCatalogFamily}
         onLoadCatalogFamily={handleLoadCatalogFamily}
         onUpdateArrayFormula={handleUpdateArrayFormula}
+        onImportLibraryFamilies={(families) => {
+          const { elementsById: cur } = useBimStore.getState();
+          useBimStore.setState({
+            elementsById: {
+              ...cur,
+              ...Object.fromEntries(
+                families.map((family) => {
+                  const id = cur[family.id] ? `fam-import-${Date.now()}-${family.id}` : family.id;
+                  return [id, { ...family, id }];
+                }),
+              ),
+            },
+          });
+        }}
       />
       {materialBrowserOpen ? (
         <MaterialBrowserDialog
@@ -5901,6 +5985,17 @@ export function Workspace(): JSX.Element {
       ) : null}
       <OnboardingTour open={tourOpen} onClose={() => setTourOpen(false)} />
       {templatesOpen && <ProjectTemplatesDialog onClose={() => setTemplatesOpen(false)} />}
+      {versionHistoryOpen ? (
+        <ProjectVersionHistoryPanel
+          modelId={modelId ?? 'empty'}
+          onClose={() => setVersionHistoryOpen(false)}
+          onRestore={(milestoneId) => {
+            void onSemanticCommand({ type: 'restoreMilestone', milestoneId });
+            setVersionHistoryOpen(false);
+          }}
+        />
+      ) : null}
+      {appSettingsOpen ? <AppSettingsPanel onClose={() => setAppSettingsOpen(false)} /> : null}
       <VVDialog open={vvDialogOpen} onClose={closeVVDialog} />
       {advisorOpen ? (
         <div
@@ -6024,6 +6119,7 @@ export function Workspace(): JSX.Element {
         onSaveAsMaximumBackupsChange={handleSaveAsMaximumBackupsChange}
         onRestoreSnapshot={(f) => void handleRestoreSnapshot(f)}
         onOpenMilestone={openMilestoneDialog}
+        onOpenVersionHistory={() => setVersionHistoryOpen(true)}
         onOpenMaterialBrowser={() => openMaterialBrowser()}
         onOpenAppearanceAssetBrowser={() => openAppearanceAssetBrowser()}
         onOpenProjectSetup={() => setProjectSetupOpen(true)}
@@ -6031,6 +6127,7 @@ export function Workspace(): JSX.Element {
         onManagePhases={() => setPhaseManagerOpen(true)}
         onOpenGlobalParams={() => setGlobalParamsOpen(true)}
         onOpenProjectInfo={() => setProjectInfoOpen(true)}
+        onOpenSettings={() => setAppSettingsOpen(true)}
         onOpenProjectTemplates={() => setTemplatesOpen(true)}
         onNewClear={handleNewClear}
         onReplayTour={replayOnboardingTour}
