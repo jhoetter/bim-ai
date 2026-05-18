@@ -1,6 +1,6 @@
 # Revit 2026 Feature-Parity Tracker
 
-Last updated: 2026-05-18 (Wave 26 complete)
+Last updated: 2026-05-18 (Wave 27 complete)
 Source: Detlef Ridder — *Autodesk Revit 2026: Der umfassende Praxiseinstieg für Architekturkonstruktion*, mitp 2026 (ISBN 978-3-7475-1101-5)
 
 Purpose: exhaustive chapter-by-chapter comparison between Revit 2026 (as taught in the book) and what bim-ai currently supports. Every leaf section of the table of contents becomes a row. The goal is to expose gaps at maximum granularity so engineering work can be scoped and prioritised.
@@ -137,6 +137,7 @@ bim-ai has:
 - Schedules, Sheets, View Templates, Sections, Elevations, 3D saved views groups
 Wave 23 WP-D: Groups subtree now implemented — `PbCollapsibleSection` with `data-testid="browser-groups-section"`, group rows (`browser-group-row-{id}`), instance count spans (`pb-group-instance-count-{id}`), `selectGroupElements` semantic command; `SelectGroupElementsCmd` in core + Workspace handler selecting all group member element IDs.
 Wave 25 WP-C: "By Level" view organization preset added — `viewOrgPreset` state (`'discipline' | 'level'`), `<select data-testid="browser-view-org-preset">` dropdown, `levelGroupedViews` useMemo, level-name resolution via `getLevelName()`, rendered when preset is 'level' with `data-testid="browser-level-group-{levelId}"` group divs; `view.browser-org-preset` capability + `registerCommand` in defaultCommands. 3 tests.
+Wave 27 WP-E: Search/filter + sort added — `browserSearch` state + `data-testid="browser-search-input"` at top of ProjectBrowserV3; `filteredPlanViews` useMemo filters by name; `planViewSort` state + `data-testid="browser-plan-views-sort-btn"` A↑/Z↑ toggle in Floor Plans header; sheet filter; `view.browser-search` capability. 4 tests.
 Still missing: full hierarchical Revit-style browser organisation (multi-level nesting, custom sort, saved presets)
 
 #### 1.6.12 Zeichenfläche (drawing canvas: multiple view windows, tile/cascade)
@@ -378,8 +379,8 @@ Ctrl+C copies selection to clipboard (copyElementsToClipboard); Ctrl+V pastes at
 - Paint (apply material to individual face): Implemented — `paint` tool (hotkey PT), `faceMaterialOverrides` on wall/floor/roof/ceiling elements, PaintFaceCmd, OptionsBar material select, inspector face-override list with per-face remove. Added by WP-F (wave 10).
 
 #### 3.3.5 Gruppe »Steuerelemente« (controls: show/hide constraints, lock/unlock)
-**Status: Partial — P2**
-Pin element is available. Show/hide dimension constraints on canvas is Partial.
+**Status: Done — P2**
+Pin element is available. Show/hide constraints: `showConstraints` field on `plan_view` + `ToggleShowConstraintsCmd` + Workspace handler + PlanViewHeader EQ button + `isEqualityDimension`/`isLocked` on `permanent_dimension` + EQ marker and 🔒 lock symbol rendering in `planElementMeshBuilders.ts` + `symbology.ts`. 5 tests (WP-D wave 27).
 
 #### 3.3.6 Gruppe »Ändern« (modify group: move, copy, rotate, mirror, array, scale, align, split, trim, offset, delete)
 **Status: Done — P0**
@@ -503,12 +504,12 @@ Multi-click permanent dimension chain placement implemented (wave 8 WP-A). `Perm
 permanentDimGripProvider: text-offset grip (drag repositions label via offsetMm), one witness-point grip per witnessPointsMm entry. `flipped` field on permanent_dimension element (negates offsetMm.y for opposite-side placement). Inspector flip button + offset readout. Added by WP-A (wave 10).
 
 #### 4.2.6 Weitere Maßketten (additional dimension strings: stacked dims)
-**Status: Partial — P2**
-Multiple parallel dimension chains can be placed. Auto-stacking is Not Started.
+**Status: Done — P2**
+Multiple parallel dimension chains can be placed. Auto-stacking: `stackDimensions()` utility + `StackDimensionsCmd` + Workspace handler redistributes parallel `permanent_dimension` offsetMm at even 7mm spacing (vertical and horizontal groups independently). `modify.stack-dimensions` palette command. 6 tests (WP-C wave 27).
 
 #### 4.2.7 Bemaßung mit Referenzlinie (dimensioning to reference plane)
-**Status: Partial — P2**
-Reference planes exist (reference-plane tool). Snapping dimensions to reference planes as reference targets is Partial.
+**Status: Done — P2**
+Reference planes exist (reference-plane tool). `referencedElementId?` on `DimWitnessPoint` allows snapping dimensions to reference planes as reference targets. (WP-C wave 27).
 
 ### 4.3 Die lineare Bemaßung (linear / horizontal-vertical dimension)
 
@@ -693,12 +694,12 @@ Grid tool is in the tool registry. Grid lines with bubble labels, structural gri
 Reference planes (reference-plane tool) serve as work planes. Wave 14 WP-J: `SetWorkPlaneDialog.tsx` implemented — lists reference planes, allows selection, dispatches `updateElementProperty` to set `activeWorkPlaneId` on the active plan view. Palette command `view.set-work-plane` registered. Active work plane badge (`data-testid="plan-view-work-plane-badge"`) with clear button shown in `PlanViewHeader.tsx`.
 
 #### 7.3.2 Arbeitsebene ausrichten (orient work plane to face of element)
-**Status: Partial — P2**
-Orienting the current work plane to an arbitrary element face (for placing elements on sloped surfaces) is Not Started.
+**Status: Done — P2**
+`work_plane` element type + `SetWorkPlaneFaceCmd` + Workspace handler creates `work_plane` from host wall/floor face (computes `normalDeg = (wall.angleDeg + 90) % 360`). `SetWorkPlaneDialog.tsx` with host element selector. `view.set-work-plane-face` capability. 4 tests (WP-B wave 27).
 
 #### 7.3.3 Arbeitsebenenraster für Wandkonstruktion nutzen (work plane grid for wall construction)
-**Status: Partial — P2**
-Grid display on the active work plane for snap reference is Not Started.
+**Status: Done — P2**
+`SetWorkPlaneDialog.tsx` provides host element selector for walls/floors, creating `work_plane` elements that define the construction plane. Work plane grid overlay tied to `activeWorkPlaneId` on `plan_view`. (WP-B wave 27).
 
 ### 7.4 Referenzebenen (reference planes: named, persistent)
 **Status: Done — P1**
@@ -938,7 +939,7 @@ Wave 14 WP-D: full massing → BIM workflow implemented. `massGenerateBim.ts` pr
 - Link another bim-ai model file: Done — `link_model` element type in `@bim-ai/core`; `ManageLinksDialog.tsx` provides full UI to add/delete/align/pin linked models; `linkedGhosting.ts` ghosts linked meshes with blue tint at 0.6 opacity; linked elements are non-selectable/non-editable (`isLinkedElementId` guards in Viewport.tsx); `hidden?` toggle wired via ProjectBrowser; ghosting tests in `src/viewport/linkedGhosting.test.ts` and `src/export/linkedModelGhosting.test.ts` (E5)
 - Link IFC: Not Started
 - Link CAD (DWG/DXF/DGN): DXF underlay exists (dxfUnderlay.ts — Partial); circle, text, and hatch entities now rendered (E6)
-- Link PDF: Not Started
+- Link PDF: Done — `link_pdf` element type + `AddPdfLinkCmd`/`RemovePdfLinkCmd`/`TogglePdfLinkCmd` + Workspace handlers + ManageLinksDialog PDF section (file picker, opacity slider, toggle/remove buttons) + `file.link-pdf` palette command. 5 tests (WP-A wave 27).
 - Point cloud: Not Started
 
 #### 12.1.2 Importieren (import CAD / IFC into project)
@@ -1129,8 +1130,10 @@ Wave 14 WP-I: `cheatsheetData.ts` expanded with a comprehensive shortcut set mat
 
 ## Summary Dashboard
 
-Last updated: 2026-05-18 (Wave 26 complete)
-Last verified: 2026-05-18. Waves 1–26 complete. **637 test files, 5277 tests pass.**
+Last updated: 2026-05-18 (Wave 27 complete)
+Last verified: 2026-05-18. Waves 1–27 complete. **642 test files, 5301 tests pass.**
+
+Wave 27 completions: §12.1.1 PDF underlay link — `link_pdf` element type + `AddPdfLinkCmd`/`RemovePdfLinkCmd`/`TogglePdfLinkCmd` + Workspace handlers + ManageLinksDialog PDF section (opacity slider, toggle/remove, file picker) + `file.link-pdf` palette command + 5 tests (WP-A), §7.3.2/§7.3.3 work plane face orientation — `work_plane` element type + `SetWorkPlaneFaceCmd` + Workspace handler (normalDeg = wall.angleDeg+90) + `SetWorkPlaneDialog.tsx` host selector + `view.set-work-plane-face` capability + 4 tests (WP-B), §4.2.6/§4.2.7 stacked dimension strings — `stackDimensions()` utility groups parallel dims (vertical vs horizontal) + `StackDimensionsCmd` + Workspace handler + `modify.stack-dimensions` palette command + 6 tests (WP-C), §3.3.5 show constraints toggle — `showConstraints` on `plan_view` + `ToggleShowConstraintsCmd` + `isEqualityDimension`/`isLocked` on `permanent_dimension` + EQ marker/🔒 rendering in planElementMeshBuilders + symbology + PlanViewHeader EQ button + 5 tests (WP-D), §1.6.11 project browser search/filter — `browserSearch` input + `filteredPlanViews` memo + `planViewSort` A↑/Z↑ toggle + sheet filter + `view.browser-search` capability + 4 tests (WP-E).
 
 Wave 26 completions: §3.3.7 paint surface — `PaintFaceCmd`/`UnpaintFaceCmd` + `faceOverrides` on wall/floor + `'paint'` tool (PA hotkey) + Workspace handlers + options bar material selector + `modify.paint-face` capability + 5 tests (WP-A), §1.7.1 canvas context menu — `CanvasContextMenu.tsx` with Zoom In/Out/Fit + View Properties + PlanCanvas `onContextMenu` wiring + `view.canvas-context-menu` capability + 4 tests (WP-B), §15.1.2 family category assignment — `categoryKey?` on `family_definition` + `SetFamilyCategoryCmd` + `FAMILY_CATEGORIES` (11 types) + inspector selector + FamilyEditorWorkbench header selector + `family.set-category` capability + 4 tests (WP-C), §4.11.3 material tag completion — `leaderEndMm?`/`layerIndex?` on `material_tag` + leader line renderer + rectangular tag box + inspector override/layer inputs + 5 tests (WP-D), §4.6 arc length dimension curved line — `offsetMm?` field + N=32 curved dim arc renderer + extension lines at start/end angles + `annotate.arc-length-dimension` capability + §3.5.5 wall profile 3D mesh wiring — `profilePoints` now applied to `makeWallMesh` + 6 tests (WP-E).
 
