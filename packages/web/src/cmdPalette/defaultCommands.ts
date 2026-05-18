@@ -3308,3 +3308,15 @@ registerCommand({
     ctx.dispatchCommand?.({ type: 'toggleSplitView' });
   },
 });
+
+// §6.4.2 — Create Drafting View
+registerCommand({
+  id: 'annotate.create-drafting-view',
+  label: 'Create Drafting View',
+  keywords: ['drafting', 'detail view', 'detail drawing', '2D view', 'isolation'],
+  category: 'annotate',
+  isAvailable: () => true,
+  invoke: (ctx) => {
+    ctx.dispatchCommand?.({ type: 'createDraftingView', name: 'Drafting View' });
+  },
+});

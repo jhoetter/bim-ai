@@ -2321,6 +2321,8 @@ export function ProjectBrowserV3({
   // §1.6.11 — Families / Groups sections collapsed by default
   const [familiesCollapsed, setFamiliesCollapsed] = useState(true);
   const [groupsCollapsed, setGroupsCollapsed] = useState(true);
+  // §6.4.2 — Drafting Views section collapsed by default
+  const [draftingViewsCollapsed, setDraftingViewsCollapsed] = useState(false);
   // §1.6.11 — plan view organization preset
   const [viewOrgPreset, setViewOrgPreset] = useState<'discipline' | 'level'>('discipline');
   // §1.6.11 — plan view sort order (WP-E)
@@ -2337,6 +2339,7 @@ export function ProjectBrowserV3({
     familyRows,
     groupDefRows,
     planViewRows,
+    draftingViews,
   } = useMemo(() => {
     const lower = search.toLowerCase();
     const matches = (name: string) => !lower || name.toLowerCase().includes(lower);
@@ -2399,13 +2402,27 @@ export function ProjectBrowserV3({
     const groupDefRows = elements.filter((e) => e.kind === 'group_definition');
 
     // §1.6.11 — plan views for the Floor Plans section (WP-E: sort controlled by planViewSort)
+    // §6.4.2: exclude drafting views from the Floor Plans section
     const planViewRows = elements
-      .filter((e) => e.kind === 'plan_view' && matches((e as { name?: string }).name ?? e.id))
+      .filter(
+        (e) =>
+          e.kind === 'plan_view' &&
+          (e as any).planViewSubtype !== 'drafting' &&
+          matches((e as { name?: string }).name ?? e.id),
+      )
       .sort((a, b) => {
         const nameA = (a as { name?: string }).name ?? a.id;
         const nameB = (b as { name?: string }).name ?? b.id;
         return planViewSort === 'az' ? nameA.localeCompare(nameB) : nameB.localeCompare(nameA);
       });
+
+    // §6.4.2: drafting views — plan_view elements with planViewSubtype='drafting'
+    const draftingViews = elements.filter(
+      (e) =>
+        e.kind === 'plan_view' &&
+        (e as any).planViewSubtype === 'drafting' &&
+        matches((e as { name?: string }).name ?? e.id),
+    );
 
     return {
       viewRows: sortedViews,
@@ -2417,6 +2434,7 @@ export function ProjectBrowserV3({
       familyRows,
       groupDefRows,
       planViewRows,
+      draftingViews,
     };
   }, [elements, search, localOrder, planViewSort]);
 
@@ -2816,6 +2834,73 @@ export function ProjectBrowserV3({
                 })}
           </div>
         ) : null}
+
+        {/* §6.4.2: Drafting Views section */}
+        <PbCollapsibleSection
+          label={`Drafting Views${draftingViews.length > 0 ? ` (${draftingViews.length})` : ''}`}
+          collapsed={draftingViewsCollapsed}
+          onToggle={() => setDraftingViewsCollapsed((v) => !v)}
+          testId="browser-drafting-views-section"
+        >
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              padding: '0 var(--space-3) var(--space-1)',
+            }}
+          >
+            <button
+              type="button"
+              data-testid="browser-new-drafting-view-btn"
+              onClick={() =>
+                void onSemanticCommand?.({
+                  type: 'createDraftingView',
+                  name: `Detail ${draftingViews.length + 1}`,
+                })
+              }
+              style={{
+                fontSize: 10,
+                padding: '2px 6px',
+                border: '1px solid var(--color-border)',
+                borderRadius: 2,
+                background: 'transparent',
+                cursor: 'pointer',
+                color: 'inherit',
+              }}
+            >
+              + Draft
+            </button>
+          </div>
+          {draftingViews.length === 0 ? (
+            <div
+              style={{
+                padding: 'var(--space-1) var(--space-4)',
+                fontSize: 'var(--text-sm, 12.5px)',
+                color: 'var(--color-muted-foreground)',
+                fontStyle: 'italic',
+              }}
+            >
+              No drafting views
+            </div>
+          ) : (
+            draftingViews.map((pv) => (
+              <div
+                key={pv.id}
+                data-testid={`browser-drafting-view-${pv.id}`}
+                style={{
+                  padding: 'var(--space-0-5) var(--space-4)',
+                  fontSize: 'var(--text-sm, 12.5px)',
+                  color: 'var(--color-foreground)',
+                  cursor: 'pointer',
+                  background: pv.id === activeViewId ? 'var(--color-accent-soft)' : 'transparent',
+                }}
+                onClick={() => onActivateView(pv.id)}
+              >
+                {(pv as any).name ?? pv.id}
+              </div>
+            ))
+          )}
+        </PbCollapsibleSection>
 
         {/* 3D Views group */}
         <PbGroup label="3D Views">

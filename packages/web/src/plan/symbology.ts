@@ -1710,6 +1710,10 @@ export function rebuildPlanMeshes(
   const kindHidden = (k: string) => (hidden?.has(k) ?? false) && !(revealed?.has(k) ?? false);
   const kindRevealMagenta = (k: string) => Boolean(revealed?.has(k));
 
+  // §6.4.2: drafting views show only 2D detail components, not 3D model geometry
+  const activePlanView = opts.activeViewId ? elementsById[opts.activeViewId] : undefined;
+  const isDraftingView = (activePlanView as any)?.planViewSubtype === 'drafting';
+
   /** Tint all mesh/line children of obj to magenta at 55% opacity. */
   function tintMagenta(obj: THREE.Object3D): void {
     obj.traverse((child) => {
@@ -1778,10 +1782,13 @@ export function rebuildPlanMeshes(
 
   type WallElem = Extract<Element, { kind: 'wall' }>;
 
-  const walls = Object.values(elementsById).filter(
-    (e): e is WallElem =>
-      e.kind === 'wall' && !kindHidden('wall') && (!level || e.levelId === level),
-  );
+  // §6.4.2: in drafting views, 3D model geometry (walls, doors, windows, etc.) is excluded
+  const walls = isDraftingView
+    ? []
+    : Object.values(elementsById).filter(
+        (e): e is WallElem =>
+          e.kind === 'wall' && !kindHidden('wall') && (!level || e.levelId === level),
+      );
 
   const wallsById: Record<string, WallElem> = Object.fromEntries(walls.map((w) => [w.id, w]));
 
@@ -1929,7 +1936,7 @@ export function rebuildPlanMeshes(
     tintNewChildren(before, 'shaft');
   }
 
-  {
+  if (!isDraftingView) {
     const before = holder.children.length;
     for (const r of Object.values(elementsById)) {
       if (r.kind !== 'room') continue;
@@ -1961,7 +1968,7 @@ export function rebuildPlanMeshes(
   // CAN-V3-01: floor/roof outlines are projection geometry — suppress when projMajor is null (1:500+).
   const suppressProjectionFallback = opts.lineWeights != null && opts.lineWeights.projMajor == null;
 
-  if (!suppressProjectionFallback) {
+  if (!suppressProjectionFallback && !isDraftingView) {
     {
       const before = holder.children.length;
       for (const f of Object.values(elementsById)) {
@@ -2046,7 +2053,7 @@ export function rebuildPlanMeshes(
     tintNewChildren(before, 'brace');
   }
 
-  {
+  if (!isDraftingView) {
     const before = holder.children.length;
     for (const el of Object.values(elementsById)) {
       if (el.kind !== 'beam_system') continue;
@@ -2058,7 +2065,7 @@ export function rebuildPlanMeshes(
   }
 
   // F3 (WP-F): column plan symbols.
-  {
+  if (!isDraftingView) {
     const before = holder.children.length;
     for (const el of Object.values(elementsById)) {
       if (el.kind !== 'column') continue;
@@ -2220,7 +2227,7 @@ export function rebuildPlanMeshes(
     tintNewChildren(before, 'window');
   }
 
-  {
+  if (!isDraftingView) {
     const before = holder.children.length;
     for (const st of Object.values(elementsById)) {
       if (st.kind !== 'stair') continue;
