@@ -52,15 +52,16 @@ Wave 29 WP-A: `document.title` updated to `"ProjectName — ViewName"` via `useE
 
 #### 1.6.2 Dateimenü (file menu: New, Open, Save, Export, Print, Close)
 **Status: Partial — P1**
-bim-ai has:
+bim-ai is cloud-native: state is persisted continuously to the DB; "Save" in the Revit sense is a named version commit (milestone), not a file write. Import/export use files only at the boundary (IFC, DXF, DWG, DGN, PDF). Done:
 - New project (Done)
-- Open project (Done)
-- Save / auto-save (Done)
-- Export (Partial — see Ch. 12)
-- Print / PDF export (Partial — see Ch. 12)
-- Save As Template / New From Template: Done — `ProjectTemplate` type, localStorage persistence, `ProjectTemplatesDialog.tsx` with save/load/delete UI, `file.project-templates` palette command. 6 tests. (WP-A wave 21)
-- Save As (Duplicate): Done — `DuplicateProjectCmd` + `RevertProjectCmd` in core, `handleDuplicateProject`/`handleRevertProject` in Workspace.tsx, "Save As…"/"Revert" buttons in ProjectMenu.tsx (`data-testid="project-menu-save-as"/"project-menu-revert"`), `file.save-as`/`file.revert` palette commands. 4 tests. (WP-D wave 25)
-Missing: Save to library as Family, cloud model sync from file menu, Revit Options dialog.
+- Open project / project switcher (Done)
+- Continuous persistence / auto-save (Done — DB-backed, no manual save needed)
+- Named milestones (cloud commits): `milestoneStore.ts` fetches `/api/models/{id}/milestones`, create/delete wired; "Save Milestone" button in ProjectMenu (`project-menu-save-milestone`). This is the cloud-native equivalent of Revit's Save.
+- Save As Template / New From Template (Done — wave 21)
+- Save As / Duplicate project (Done — wave 25)
+- Export: IFC/DXF/DWG/DGN/STL/3MF/PDF (Done — see Ch. 12)
+- Revert to last milestone (Done — `project-menu-revert`)
+Missing (wave 32): version history panel (browse + restore named milestones); save element type to family library (DB-based, JSON export/import); app settings/preferences panel (units, theme, shortcuts).
 
 #### 1.6.3 Schnellzugriff-Werkzeugkasten (quick access toolbar)
 **Status: Done — P2**
@@ -961,8 +962,8 @@ DXF underlay (dxfUnderlay.ts) + ImageTraceDropZone.tsx — importing a CAD/image
 Wave 16 WP-I: `dxfContourImport.ts` — minimal DXF tokeniser targeting LWPOLYLINE, POLYLINE+VERTEX, LINE entities; auto-detects metres vs mm (×1000 when max coord < 1000). `dxfContoursToHeightSamples()` flattens polylines to `{ xMm, yMm, zMm }[]`. `createToposolidFromDxf()` builds a `toposolid` element with bounding-box `perimeterMm` and `heightSamples`. `DxfImportDialog.tsx`: file picker + live contour count preview + Import/Cancel. Palette command `file.import-dxf-terrain`. Tests in `dxfContourImport.test.ts` (15 tests).
 
 #### 12.2.3 BIM-Import aus Inventor (ADSK exchange format for Inventor interop)
-**Status: Not Started — P3**
-Autodesk Inventor *.adsk / *.iam interop is not relevant to bim-ai's web context.
+**Status: N/A**
+Autodesk Inventor *.adsk / *.iam desktop-to-desktop workflow is not applicable to bim-ai's web-native, cloud-first context.
 
 ### 12.3 Internet-Bibliotheken nutzen: BIMobject (loading families from BIMobject.com)
 **Status: Done — P2**
