@@ -2974,4 +2974,19 @@ const MASS_CAPABILITIES: CommandCapability[] = [
     notes:
       '§1.6.1: document.title updates to "ProjectName — ViewName" on view/project change; breadcrumb subtitle in workspace header.',
   },
+  {
+    id: 'annotate.create-drafting-view',
+    label: 'Create Drafting View',
+    owner: 'workspace/project/ProjectBrowser',
+    group: 'annotate',
+    scope: 'global',
+    intendedModes: ['plan'],
+    surfaces: ['project-browser', 'cmd-k'],
+    executionSurface: 'store',
+    preconditions: [],
+    status: 'implemented',
+    usabilityScore: 8,
+    notes:
+      '§6.4.2: creates plan_view with planViewSubtype=drafting; drafting views show only 2D detail_line/detail_region/detail_component elements (3D model geometry hidden).',
+  },
 ];

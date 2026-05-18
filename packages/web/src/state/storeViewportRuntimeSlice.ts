@@ -92,6 +92,7 @@ export type ViewportRuntimeSlice = Pick<
   | 'setSkyBackgroundColor'
   | 'renderQuality'
   | 'setRenderQuality'
+  | 'splitViewEnabled'
 >;
 
 function writeLocalStorageString(key: string, value: string): void {
@@ -342,6 +343,9 @@ export function createViewportRuntimeSlice(set: StoreSet, get: StoreGet): Viewpo
     skyBackgroundColor: '#87ceeb',
     setSkyBackground: (bg) => set({ skyBackground: bg }),
     setSkyBackgroundColor: (color) => set({ skyBackgroundColor: color }),
+
+    /** §1.6.12: when true, plan and 3D views are shown side by side. */
+    splitViewEnabled: false,
 
     renderQuality: { shadowsEnabled: false, toneMappingExposure: 1.0, pixelRatioScale: 'auto' },
     setRenderQuality: (settings: Partial<RenderQualitySettings>) =>

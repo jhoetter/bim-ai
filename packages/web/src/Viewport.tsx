@@ -699,6 +699,8 @@ export function Viewport({
   const [draftPlaneAngleWarning, setDraftPlaneAngleWarning] = useState(false);
   const [skyPanelOpen, setSkyPanelOpen] = useState(false);
   const [renderQualityOpen, setRenderQualityOpen] = useState(false);
+  // §1.6.12: split plan/3D view toggle
+  const splitViewEnabled = useBimStore((s: any) => s.splitViewEnabled ?? false);
   const draftPlaneAngleWarningRef = useRef(draftPlaneAngleWarning);
   draftPlaneAngleWarningRef.current = draftPlaneAngleWarning;
   const planToolRef = useRef(planTool);
@@ -6110,6 +6112,30 @@ export function Viewport({
         &#9881;
       </button>
       {renderQualityOpen && <RenderQualityPanel onClose={() => setRenderQualityOpen(false)} />}
+
+      {/* §1.6.12 — split plan/3D view toggle button */}
+      <button
+        type="button"
+        data-testid="viewport-split-view-btn"
+        title={splitViewEnabled ? 'Exit Split View' : 'Split Plan/3D View'}
+        onClick={() => onSemanticCommand?.({ type: 'toggleSplitView' })}
+        style={{
+          fontSize: 10,
+          padding: '2px 6px',
+          border: `1px solid ${splitViewEnabled ? '#a78bfa' : 'var(--border)'}`,
+          borderRadius: 3,
+          background: splitViewEnabled ? 'rgba(167,139,250,0.15)' : 'transparent',
+          color: splitViewEnabled ? '#a78bfa' : 'inherit',
+          cursor: 'pointer',
+          position: 'absolute',
+          bottom: '5.25rem',
+          right: '0.75rem',
+          zIndex: 20,
+          pointerEvents: 'auto',
+        }}
+      >
+        &#8862;
+      </button>
 
       <div
         ref={mountRef}

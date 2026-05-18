@@ -7,6 +7,7 @@ import { ErrorBoundary } from '../../ErrorBoundary';
 import { PlanCanvas, type PlanCameraHandle } from '../../plan/PlanCanvas';
 import { ElevationViewport } from '../../plan/ElevationViewport';
 import type { PlanTool } from '../../state/store';
+import { useBimStore } from '../../state/store';
 import type { SnapSettings } from '../../plan/snapSettings';
 import type { SheetMarkupShape, SheetReviewMode } from '../sheets/sheetReviewUi';
 import { ScheduleModeShell, SectionModeShell, SheetModeShell } from '../ModeShells';
@@ -145,6 +146,62 @@ export function CanvasMount({
   onOpenSectionSourcePlan?: () => void;
   onOpenSection3dContext?: () => void;
 }): JSX.Element {
+  // §1.6.12: split plan/3D view
+  // eslint-disable-next-line react-hooks/rules-of-hooks
+  const splitViewEnabled = useBimStore((s: any) => s.splitViewEnabled ?? false);
+
+  if (
+    splitViewEnabled &&
+    (mode === 'plan' || mode === '3d' || mode === null || mode === undefined)
+  ) {
+    const planCanvasJsx = (
+      <PlanCanvas
+        wsConnected={wsOn ?? false}
+        activeLevelResolvedId={activeLevelId}
+        activePlanViewId={activePlanViewId}
+        onSemanticCommand={onSemanticCommand}
+        cameraHandleRef={cameraHandleRef}
+        initialCamera={initialCamera}
+        lensMode={lensMode}
+        activePlanTool={activePlanTool}
+        onActivePlanToolChange={onActivePlanToolChange}
+        snapSettings={snapSettings}
+      />
+    );
+    const viewportJsx = (
+      <ErrorBoundary label="Viewport3D-Split">
+        <Viewport
+          wsConnected={wsOn ?? false}
+          onPersistViewpointField={onPersistViewpointField}
+          onSemanticCommand={onSemanticCommand}
+          lensMode={lensMode}
+          activePlanTool={activePlanTool}
+          snapSettings={snapSettings}
+          viewOverlayRightInset={viewOverlayRightInset}
+        />
+      </ErrorBoundary>
+    );
+    return (
+      <div style={{ display: 'flex', width: '100%', height: '100%' }}>
+        <div style={{ width: '50%', height: '100%', position: 'relative' }}>
+          {/* Plan canvas — left pane */}
+          {planCanvasJsx}
+        </div>
+        <div
+          style={{
+            width: '50%',
+            height: '100%',
+            position: 'relative',
+            borderLeft: '1px solid var(--border, #444)',
+          }}
+        >
+          {/* 3D viewport — right pane */}
+          {viewportJsx}
+        </div>
+      </div>
+    );
+  }
+
   if (mode === '3d')
     return (
       <ErrorBoundary label="Viewport3D">

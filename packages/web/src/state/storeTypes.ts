@@ -503,6 +503,9 @@ export type StoreState = {
   /** §14.4 — set the solid sky background color. */
   setSkyBackgroundColor: (color: string) => void;
 
+  /** §1.6.12: when true, plan and 3D views are shown side by side. */
+  splitViewEnabled: boolean;
+
   /** §14.6 — client-side camera paths from walkthrough captures; not persisted to server. */
   cameraPaths: CameraPathElem[];
   addCameraPath: (path: CameraPathElem) => void;
