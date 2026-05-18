@@ -117,6 +117,15 @@ export function ManageLinksDialog({
     [elementsById],
   );
 
+  type PointCloudRow = Extract<Element, { kind: 'link_pointcloud' }>;
+  const pointClouds: PointCloudRow[] = useMemo(
+    () =>
+      Object.values(elementsById)
+        .filter((e): e is PointCloudRow => e.kind === 'link_pointcloud')
+        .sort((a, b) => a.name.localeCompare(b.name)),
+    [elementsById],
+  );
+
   const [name, setName] = useState('Linked structure');
   const [sourceModelId, setSourceModelId] = useState('');
   const [posXMm, setPosXMm] = useState('0');
@@ -1164,6 +1173,73 @@ export function ManageLinksDialog({
             </span>
           </label>
         </section>
+
+        {/* §12.1.1: Point Clouds */}
+        <details data-testid="manage-links-pointcloud-section" style={{ marginTop: 8 }}>
+          <summary style={{ fontSize: 12, fontWeight: 600, cursor: 'pointer', userSelect: 'none' }}>
+            Point Clouds ({pointClouds.length})
+          </summary>
+          <div
+            style={{
+              paddingLeft: 8,
+              marginTop: 6,
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 4,
+            }}
+          >
+            {pointClouds.map((pc) => (
+              <div
+                key={pc.id}
+                data-testid={`pc-link-row-${pc.id}`}
+                style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12 }}
+              >
+                <input
+                  type="checkbox"
+                  data-testid={`pc-link-visible-${pc.id}`}
+                  checked={pc.visible !== false}
+                  onChange={() =>
+                    void onSemanticCommand?.({ type: 'togglePointCloud', linkId: pc.id })
+                  }
+                />
+                <span style={{ flex: 1 }}>{pc.name}</span>
+                {pc.pointCount && (
+                  <span style={{ fontSize: 10, color: '#888' }}>
+                    {pc.pointCount.toLocaleString()} pts
+                  </span>
+                )}
+                <button
+                  data-testid={`pc-link-remove-${pc.id}`}
+                  onClick={() =>
+                    void onSemanticCommand?.({ type: 'removePointCloud', linkId: pc.id })
+                  }
+                  style={{ fontSize: 10, padding: '1px 6px', cursor: 'pointer' }}
+                >
+                  Remove
+                </button>
+              </div>
+            ))}
+            <button
+              data-testid="pc-link-add"
+              onClick={() =>
+                void onSemanticCommand?.({
+                  type: 'addPointCloud',
+                  name: `Point Cloud ${pointClouds.length + 1}`,
+                  color: 0xffa500,
+                })
+              }
+              style={{
+                fontSize: 11,
+                marginTop: 4,
+                padding: '3px 8px',
+                cursor: 'pointer',
+                alignSelf: 'flex-start',
+              }}
+            >
+              + Add Point Cloud
+            </button>
+          </div>
+        </details>
 
         <section>
           <h3 className="mb-1 text-[10px] uppercase text-muted" style={{ letterSpacing: '0.06em' }}>

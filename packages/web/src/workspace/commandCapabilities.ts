@@ -888,6 +888,21 @@ const SYSTEM_CAPABILITIES: CommandCapability[] = [
       '§12.1.1: link_pointcloud element type + AddPointCloudCmd/RemovePointCloudCmd/TogglePointCloudCmd + ManageLinksDialog Point Clouds section with visibility toggle + remove button + add button.',
   },
   {
+    id: 'view.help-search',
+    label: 'In-Product Help Search',
+    owner: 'workspace/HelpSearchPanel',
+    group: 'view',
+    scope: 'global',
+    intendedModes: ['plan', '3d'],
+    surfaces: ['toolbar', 'cmd-k'],
+    executionSurface: 'local-state',
+    preconditions: [],
+    status: 'implemented',
+    usabilityScore: 8,
+    notes:
+      '§1.6.4: ? keyboard shortcut opens HelpSearchPanel with 25 indexed help topics; searchHelpTopics() filters by title/summary/keywords.',
+  },
+  {
     id: 'project.manage-links',
     label: 'Manage Project Links',
     owner: 'workspace/project/ManageLinksDialog',

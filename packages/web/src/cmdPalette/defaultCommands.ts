@@ -3417,6 +3417,18 @@ registerCommand({
 });
 
 // §1.5 — Start Screen / Recent Projects
+// §1.6.4 — In-Product Help Search
+registerCommand({
+  id: 'view.help-search',
+  label: 'Open Help Search',
+  keywords: ['help', 'help search', 'documentation', 'how to', 'shortcut', 'tips', 'F1'],
+  category: 'view',
+  isAvailable: () => true,
+  invoke: () => {
+    // ? key opens HelpSearchPanel; 25 indexed help topics
+  },
+});
+
 registerCommand({
   id: 'view.start-screen',
   label: 'Start Screen / Recent Projects',

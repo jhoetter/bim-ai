@@ -117,6 +117,32 @@ export function setRailingFollowSlope(v: boolean): void {
   railingFollowSlope = v;
 }
 
+// §1.6.6: door options bar state
+export let doorTagOnPlace = false;
+export function setDoorTagOnPlace(v: boolean) {
+  doorTagOnPlace = v;
+}
+
+// §1.6.6: window options bar state
+export let windowSillHeightMm = 900;
+export function setWindowSillHeightMm(v: number) {
+  windowSillHeightMm = v;
+}
+export let windowTagOnPlace = false;
+export function setWindowTagOnPlace(v: boolean) {
+  windowTagOnPlace = v;
+}
+
+// §1.6.6: grid options bar state
+export let gridSpacingMm = 6000;
+export function setGridSpacingMm(v: number) {
+  gridSpacingMm = v;
+}
+export let gridNamePrefix = 'A';
+export function setGridNamePrefix(v: string) {
+  gridNamePrefix = v;
+}
+
 /** §3.3.7 — Linework override options. Read at click-time by PlanCanvas. */
 // eslint-disable-next-line prefer-const, bim-ai/no-hex-in-chrome
 export let lineworkColorHex = '#ff0000';
@@ -1103,6 +1129,89 @@ export function OptionsBar({
             aria-label="Railing follow slope"
           />
           <span>Follow Slope</span>
+        </label>
+      </div>
+    );
+  }
+
+  {
+    /* §1.6.6: door options bar */
+  }
+  if (planTool === 'door') {
+    return (
+      <div data-testid="options-bar" className={BAR_CLASS}>
+        <label style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
+          <input
+            type="checkbox"
+            data-testid="options-door-tag-on-place"
+            defaultChecked={doorTagOnPlace}
+            onChange={(ev) => setDoorTagOnPlace(ev.currentTarget.checked)}
+          />
+          <span>Tag on Placement</span>
+        </label>
+      </div>
+    );
+  }
+
+  {
+    /* §1.6.6: window options bar */
+  }
+  if (planTool === 'window') {
+    return (
+      <div data-testid="options-bar" className={BAR_CLASS}>
+        <label style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
+          <span>Sill Height (mm):</span>
+          <input
+            type="number"
+            data-testid="options-window-sill-height"
+            defaultValue={windowSillHeightMm}
+            step={50}
+            min={0}
+            onChange={(ev) => setWindowSillHeightMm(Number(ev.currentTarget.value))}
+            style={{ width: 72 }}
+          />
+        </label>
+        <label style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
+          <input
+            type="checkbox"
+            data-testid="options-window-tag-on-place"
+            defaultChecked={windowTagOnPlace}
+            onChange={(ev) => setWindowTagOnPlace(ev.currentTarget.checked)}
+          />
+          <span>Tag on Placement</span>
+        </label>
+      </div>
+    );
+  }
+
+  {
+    /* §1.6.6: grid options bar */
+  }
+  if (planTool === 'grid') {
+    return (
+      <div data-testid="options-bar" className={BAR_CLASS}>
+        <label style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
+          <span>Spacing (mm):</span>
+          <input
+            type="number"
+            data-testid="options-grid-spacing"
+            defaultValue={gridSpacingMm}
+            step={500}
+            min={100}
+            onChange={(ev) => setGridSpacingMm(Number(ev.currentTarget.value))}
+            style={{ width: 80 }}
+          />
+        </label>
+        <label style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
+          <span>Prefix:</span>
+          <input
+            type="text"
+            data-testid="options-grid-name-prefix"
+            defaultValue={gridNamePrefix}
+            maxLength={4}
+            onChange={(ev) => setGridNamePrefix(ev.currentTarget.value)}
+            style={{ width: 48 }}
+          />
         </label>
       </div>
     );
