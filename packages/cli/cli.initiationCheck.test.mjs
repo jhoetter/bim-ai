@@ -8,6 +8,12 @@ import { execSync, spawn } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 
+import {
+  buildAcceptanceGateReport,
+  buildCapabilityCoverage,
+  buildVisualChecklist,
+} from './lib/sketch-initiation.mjs';
+
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const CLI = path.join(__dirname, 'cli.mjs');
@@ -470,6 +476,97 @@ test('initiation-check writes coverage and visual checklist for a valid IR', asy
   const status = await fs.readFile(path.join(outDir, 'status.md'), 'utf8');
   assert.match(status, /Sketch-to-BIM Initiation Check/);
   assert.match(status, /BIM Data Quality/);
+});
+
+test('visual checklist requires semantic checks for sketch-critical features', () => {
+  const ir = validIr();
+  const coverage = buildCapabilityCoverage(ir, validMatrix());
+  const checklist = buildVisualChecklist(ir, coverage);
+
+  const roofItem = checklist.items.find((item) => item.id === 'roof:roof_terrace');
+  assert.ok(roofItem);
+  assert.ok(
+    roofItem.semanticChecks.some((check) => check.id === 'roof_cutout_present'),
+    'roof terrace checklist item should require semantic roof cutout confirmation',
+  );
+  assert.ok(
+    checklist.items
+      .find((item) => item.id === 'global:interior')
+      .semanticChecks.some((check) => check.id === 'room_topology_present'),
+    'global interior gate should require room topology confirmation',
+  );
+});
+
+test('acceptance blocks missing or failed semantic visual checklist items', () => {
+  const ir = validIr();
+  const coverage = buildCapabilityCoverage(ir, validMatrix());
+  const checklist = buildVisualChecklist(ir, coverage);
+  checklist.items[0].semanticChecks = [];
+  checklist.items[1].semanticChecks[0].status = 'fail';
+  checklist.items[1].semanticChecks[0].notes = 'Roof cutout is not visible.';
+  const screenshotManifest = {
+    captures: ir.requiredViews.map((view) => ({
+      viewId: view.id,
+      viewKind: view.kind,
+      screenshotPath: `/tmp/${view.id}.png`,
+    })),
+  };
+  const visualGateReport = {
+    summary: { failCount: 0, needsReviewCount: 0 },
+    captures: screenshotManifest.captures.map((capture) => ({ ...capture, status: 'pass' })),
+  };
+
+  const acceptance = buildAcceptanceGateReport({
+    ir,
+    coverage,
+    screenshotManifest,
+    visualGateReport,
+    visualChecklist: checklist,
+  });
+
+  assert.equal(acceptance.ok, false);
+  const semanticBlocker = acceptance.blockers.find(
+    (blocker) => blocker.code === 'semantic_visual_checklist_failures',
+  );
+  assert.ok(semanticBlocker);
+  assert.equal(acceptance.summary.semanticVisualFailureCount > 0, true);
+  assert.ok(semanticBlocker.failures.some((failure) => failure.status === 'missing'));
+  assert.ok(semanticBlocker.failures.some((failure) => failure.status === 'fail'));
+});
+
+test('acceptance passes semantic visual checklist only when required checks have pass evidence', () => {
+  const ir = validIr();
+  const coverage = buildCapabilityCoverage(ir, validMatrix());
+  const checklist = buildVisualChecklist(ir, coverage);
+  for (const item of checklist.items) {
+    for (const check of item.semanticChecks ?? []) {
+      check.status = 'pass';
+      check.notes = `Verified ${check.id}.`;
+    }
+  }
+  const screenshotManifest = {
+    captures: ir.requiredViews.map((view) => ({
+      viewId: view.id,
+      viewKind: view.kind,
+      screenshotPath: `/tmp/${view.id}.png`,
+    })),
+  };
+  const visualGateReport = {
+    summary: { failCount: 0, needsReviewCount: 0 },
+    captures: screenshotManifest.captures.map((capture) => ({ ...capture, status: 'pass' })),
+  };
+
+  const acceptance = buildAcceptanceGateReport({
+    ir,
+    coverage,
+    screenshotManifest,
+    visualGateReport,
+    visualChecklist: checklist,
+  });
+
+  assert.equal(acceptance.ok, true);
+  assert.equal(acceptance.summary.semanticVisualFailureCount, 0);
+  assert.equal(acceptance.semanticVisual.summary.requiredCount > 0, true);
 });
 
 test('project initiation IR requires BIM information requirements', async () => {

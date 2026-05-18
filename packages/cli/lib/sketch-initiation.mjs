@@ -104,6 +104,112 @@ const IFC_ENTITY_INTENT = new Set([
 ]);
 const OPEN_FINDING_DISPOSITIONS = new Set(['later-phase', 'tolerated', 'blocked']);
 const BLOCKING_FINDING_DISPOSITIONS = new Set(['', 'unclassified', 'fix-now', 'fix-in-phase']);
+const SEMANTIC_VISUAL_PASS_STATUSES = new Set(['pass', 'passed', 'ok', 'verified']);
+const SEMANTIC_VISUAL_FAIL_STATUSES = new Set(['fail', 'failed', 'blocked']);
+const SEMANTIC_VISUAL_REVIEW_STATUSES = new Set([
+  '',
+  'unchecked',
+  'needs_review',
+  'review',
+  'pending',
+]);
+
+const SEMANTIC_VISUAL_FEATURE_TEMPLATES = [
+  {
+    match: /roof.*(opening|terrace|cutout)|terrace.*roof/i,
+    checks: [
+      ['roof_cutout_present', 'Roof opening is a visible cutout, not metadata-only roof intent.'],
+      ['terrace_floor_visible', 'Occupied terrace floor is visible inside the roof void.'],
+      [
+        'roof_returns_and_guard_present',
+        'Roof return faces, guard rail, and access opening are visible.',
+      ],
+    ],
+  },
+  {
+    match: /(folded|wrapper|shell)/i,
+    checks: [
+      ['wrapper_shell_thickness_visible', 'Folded wrapper has visible shell/fascia thickness.'],
+      ['wrapper_returns_visible', 'Wrapper return faces close the roof/wall edges.'],
+      [
+        'wrapper_not_mass_placeholder',
+        'Wrapper reads as BIM envelope elements, not a final mass placeholder.',
+      ],
+    ],
+  },
+  {
+    match: /loggia|recess/i,
+    checks: [
+      ['loggia_recess_present', 'Loggia facade is recessed behind the outer facade plane.'],
+      ['loggia_side_returns_visible', 'Loggia side returns and balcony/occupied slab are visible.'],
+      ['loggia_guard_and_access_present', 'Loggia guard and access openings are visible.'],
+    ],
+  },
+  {
+    match: /cladding|facade_bay|bay_rhythm|opening.*rhythm/i,
+    checks: [
+      [
+        'cladding_or_bay_rhythm_present',
+        'Facade/cladding or bay rhythm is visibly repeated as specified.',
+      ],
+      [
+        'rhythm_respects_openings',
+        'Facade rhythm respects openings and does not run through voids.',
+      ],
+    ],
+  },
+  {
+    match: /room|programme|program|access|enclosure|floor_plan|topology/i,
+    checks: [
+      ['room_topology_present', 'Plan shows room topology matching the programme intent.'],
+      [
+        'rooms_bounded_and_accessible',
+        'Rooms are bounded and have plausible door/access connections.',
+      ],
+      [
+        'stair_and_slab_openings_coordinated',
+        'Stair and slab openings align in plan/diagnostic evidence.',
+      ],
+    ],
+  },
+  {
+    match: /diagnostic|documentation_views|evidence/i,
+    checks: [
+      [
+        'diagnostic_evidence_present',
+        'Diagnostic evidence exposes seams, room boundaries, and hidden overlaps.',
+      ],
+      [
+        'diagnostic_no_hidden_overlaps',
+        'Diagnostic view shows no hidden overlaps, z-fighting, or uncut seams.',
+      ],
+    ],
+  },
+];
+
+const SEMANTIC_VISUAL_GLOBAL_TEMPLATES = {
+  'global:silhouette': [
+    ['sketch_silhouette_match', 'Required 3D views match the source sketch silhouette.'],
+  ],
+  'global:advisor': [
+    [
+      'advisor_findings_dispositioned',
+      'Advisor warning/error findings are fixed or dispositioned.',
+    ],
+  ],
+  'global:interior': [
+    [
+      'room_topology_present',
+      'Interior plans show room topology, doors, stairs, and slab openings.',
+    ],
+  ],
+  'global:artifacts': [
+    [
+      'diagnostic_no_hidden_overlaps',
+      'No gaps, z-fighting, uncut walls, false masses, or material artifacts remain.',
+    ],
+  ],
+};
 
 function isObject(value) {
   return value !== null && typeof value === 'object' && !Array.isArray(value);
@@ -1354,6 +1460,51 @@ export function buildVisualChecklist(ir, coverage) {
   const viewMap = new Map((ir.requiredViews ?? []).map((view) => [view.id, view]));
   const items = [];
 
+  const semanticChecksForFeature = (feature, viewId) => {
+    const view = viewMap.get(viewId);
+    const haystack = [
+      feature.featureId,
+      feature.kind,
+      view?.kind,
+      view?.purpose,
+      ...(feature.capabilityMatches ?? []).flatMap((capability) => [
+        capability.title,
+        ...(capability.requiredEvidence ?? []),
+        ...(capability.knownFailureModes ?? []),
+      ]),
+    ]
+      .filter(Boolean)
+      .join(' ');
+    const checks = [];
+    for (const template of SEMANTIC_VISUAL_FEATURE_TEMPLATES) {
+      if (!template.match.test(haystack)) continue;
+      for (const [id, prompt] of template.checks) {
+        checks.push({ id, prompt });
+      }
+    }
+    if (checks.length === 0) {
+      checks.push({
+        id: 'feature_visible_correct',
+        prompt: 'Feature is visibly present and semantically matches its sketch intent.',
+      });
+    }
+    const seen = new Set();
+    return checks
+      .filter((check) => {
+        if (seen.has(check.id)) return false;
+        seen.add(check.id);
+        return true;
+      })
+      .map((check) => ({
+        id: check.id,
+        status: 'unchecked',
+        required: true,
+        prompt: check.prompt,
+        evidence: [],
+        notes: '',
+      }));
+  };
+
   for (const feature of coverage.features ?? []) {
     const knownFailureModes = uniqueStrings(
       feature.capabilityMatches.flatMap((capability) => capability.knownFailureModes ?? []),
@@ -1372,6 +1523,7 @@ export function buildVisualChecklist(ir, coverage) {
         status: 'unchecked',
         screenshotPath: null,
         prompt: `Confirm ${feature.featureId} (${feature.kind}) is visibly correct in ${viewId}.`,
+        semanticChecks: semanticChecksForFeature(feature, viewId),
         knownFailureModes,
         requiredEvidence,
         notes: '',
@@ -1408,6 +1560,16 @@ export function buildVisualChecklist(ir, coverage) {
       status: 'unchecked',
       screenshotPath: null,
       prompt,
+      semanticChecks: (SEMANTIC_VISUAL_GLOBAL_TEMPLATES[id] ?? []).map(
+        ([checkId, checkPrompt]) => ({
+          id: checkId,
+          status: 'unchecked',
+          required: true,
+          prompt: checkPrompt,
+          evidence: [],
+          notes: '',
+        }),
+      ),
       knownFailureModes: [],
       requiredEvidence: [],
       notes: '',
@@ -1419,6 +1581,12 @@ export function buildVisualChecklist(ir, coverage) {
     generatedAt: new Date().toISOString(),
     sourceInputs: ir.sourceInputs ?? {},
     requiredViews: ir.requiredViews ?? [],
+    contract: {
+      semanticVisualChecklistRequired: BIM_REQUIRED_TARGETS.has(ir?.qualityTarget),
+      passStatuses: [...SEMANTIC_VISUAL_PASS_STATUSES],
+      failStatuses: [...SEMANTIC_VISUAL_FAIL_STATUSES],
+      note: 'Final acceptance requires each required semanticChecks[] item to be agent-filled as pass with notes/evidence, or fail/unchecked will block acceptance.',
+    },
     items,
   };
 }
@@ -1445,6 +1613,162 @@ export function applyScreenshotManifestToChecklist(checklist, screenshotManifest
             : ''),
       };
     }),
+  };
+}
+
+function mergeVisualChecklistContract(generatedChecklist, providedChecklist) {
+  if (!isObject(providedChecklist) || !Array.isArray(providedChecklist.items)) {
+    return generatedChecklist;
+  }
+  const providedItems = new Map(
+    providedChecklist.items
+      .filter((item) => item && typeof item.id === 'string')
+      .map((item) => [item.id, item]),
+  );
+  return {
+    ...generatedChecklist,
+    filledChecklistSource: providedChecklist.sourcePath ?? providedChecklist.path ?? null,
+    items: (generatedChecklist.items ?? []).map((generatedItem) => {
+      const providedItem = providedItems.get(generatedItem.id);
+      if (!providedItem) return generatedItem;
+      const providedChecks = new Map(
+        (providedItem.semanticChecks ?? [])
+          .filter((check) => check && typeof check.id === 'string')
+          .map((check) => [check.id, check]),
+      );
+      return {
+        ...generatedItem,
+        ...providedItem,
+        semanticChecks: (generatedItem.semanticChecks ?? []).map((generatedCheck) => ({
+          ...generatedCheck,
+          ...(providedChecks.get(generatedCheck.id) ?? {}),
+        })),
+      };
+    }),
+  };
+}
+
+function hasSemanticPassEvidence(check) {
+  if (typeof check.notes === 'string' && check.notes.trim()) return true;
+  if (Array.isArray(check.evidence) && check.evidence.some((entry) => String(entry ?? '').trim())) {
+    return true;
+  }
+  if (typeof check.evidencePath === 'string' && check.evidencePath.trim()) return true;
+  return false;
+}
+
+function evaluateSemanticVisualChecklist({ ir, coverage, checklist }) {
+  const expected = buildVisualChecklist(ir, coverage);
+  const actualItems = new Map(
+    (checklist?.items ?? [])
+      .filter((item) => item && typeof item.id === 'string')
+      .map((item) => [item.id, item]),
+  );
+  const failures = [];
+  let requiredCount = 0;
+  let passCount = 0;
+
+  for (const expectedItem of expected.items ?? []) {
+    const expectedChecks = (expectedItem.semanticChecks ?? []).filter(
+      (check) => check?.required !== false,
+    );
+    if (expectedChecks.length === 0) continue;
+    const actualItem = actualItems.get(expectedItem.id);
+    if (!actualItem) {
+      requiredCount += expectedChecks.length;
+      failures.push({
+        itemId: expectedItem.id,
+        viewId: expectedItem.viewId ?? null,
+        featureId: expectedItem.featureId ?? null,
+        checkIds: expectedChecks.map((check) => check.id),
+        status: 'missing',
+        message: 'Required semantic visual checklist item is missing.',
+      });
+      continue;
+    }
+    const actualChecks = new Map(
+      (actualItem.semanticChecks ?? [])
+        .filter((check) => check && typeof check.id === 'string')
+        .map((check) => [check.id, check]),
+    );
+    for (const expectedCheck of expectedChecks) {
+      requiredCount += 1;
+      const actualCheck = actualChecks.get(expectedCheck.id);
+      const status = String(actualCheck?.status ?? '')
+        .trim()
+        .toLowerCase();
+      if (!actualCheck) {
+        failures.push({
+          itemId: expectedItem.id,
+          viewId: expectedItem.viewId ?? null,
+          featureId: expectedItem.featureId ?? null,
+          checkId: expectedCheck.id,
+          status: 'missing',
+          message: expectedCheck.prompt,
+        });
+      } else if (SEMANTIC_VISUAL_PASS_STATUSES.has(status)) {
+        if (hasSemanticPassEvidence(actualCheck)) {
+          passCount += 1;
+        } else {
+          failures.push({
+            itemId: expectedItem.id,
+            viewId: expectedItem.viewId ?? null,
+            featureId: expectedItem.featureId ?? null,
+            checkId: expectedCheck.id,
+            status: 'pass_evidence_missing',
+            message: `${expectedCheck.prompt} Pass status requires notes or evidence.`,
+          });
+        }
+      } else if (SEMANTIC_VISUAL_FAIL_STATUSES.has(status)) {
+        failures.push({
+          itemId: expectedItem.id,
+          viewId: expectedItem.viewId ?? null,
+          featureId: expectedItem.featureId ?? null,
+          checkId: expectedCheck.id,
+          status: status || 'fail',
+          message: actualCheck.notes || expectedCheck.prompt,
+        });
+      } else if (SEMANTIC_VISUAL_REVIEW_STATUSES.has(status)) {
+        failures.push({
+          itemId: expectedItem.id,
+          viewId: expectedItem.viewId ?? null,
+          featureId: expectedItem.featureId ?? null,
+          checkId: expectedCheck.id,
+          status: status || 'unchecked',
+          message: expectedCheck.prompt,
+        });
+      } else {
+        failures.push({
+          itemId: expectedItem.id,
+          viewId: expectedItem.viewId ?? null,
+          featureId: expectedItem.featureId ?? null,
+          checkId: expectedCheck.id,
+          status,
+          message: `Unknown semantic visual checklist status "${status}".`,
+        });
+      }
+    }
+  }
+
+  return {
+    schemaVersion: 'sketch.semantic-visual-checklist-evaluation.v1',
+    generatedAt: new Date().toISOString(),
+    required: BIM_REQUIRED_TARGETS.has(ir?.qualityTarget),
+    ok: failures.length === 0,
+    summary: {
+      requiredCount,
+      passCount,
+      failureCount: failures.length,
+      missingCount: failures.filter((failure) => failure.status === 'missing').length,
+      failedCount: failures.filter((failure) => SEMANTIC_VISUAL_FAIL_STATUSES.has(failure.status))
+        .length,
+      unverifiedCount: failures.filter(
+        (failure) =>
+          SEMANTIC_VISUAL_REVIEW_STATUSES.has(failure.status) ||
+          failure.status === 'pass_evidence_missing',
+      ).length,
+    },
+    failures,
   };
 }
 
@@ -1761,6 +2085,7 @@ export function buildAcceptanceGateReport({
   liveAdvisor = null,
   screenshotManifest = null,
   visualGateReport = null,
+  visualChecklist = null,
   evidenceRun = null,
   bimDataQualityReport = null,
 } = {}) {
@@ -1854,6 +2179,27 @@ export function buildAcceptanceGateReport({
     });
   }
 
+  const semanticVisual = evaluateSemanticVisualChecklist({
+    ir,
+    coverage,
+    checklist: visualChecklist ?? evidenceRun?.visualChecklist ?? null,
+  });
+  if (BIM_REQUIRED_TARGETS.has(ir?.qualityTarget) && !semanticVisual.ok) {
+    blockers.push({
+      code: 'semantic_visual_checklist_failures',
+      severity: 'error',
+      message: `${semanticVisual.summary.failureCount} required semantic visual checklist item(s) are missing, failed, or unverified.`,
+      failures: semanticVisual.failures.map((failure) => ({
+        itemId: failure.itemId,
+        viewId: failure.viewId,
+        featureId: failure.featureId,
+        checkId: failure.checkId ?? null,
+        status: failure.status,
+        message: failure.message,
+      })),
+    });
+  }
+
   const bimQuality = bimDataQualityReport ?? buildBimDataQualityReport({ ir, evidenceRun });
   if (BIM_REQUIRED_TARGETS.has(ir?.qualityTarget) && (bimQuality?.summary?.errorCount ?? 0) > 0) {
     blockers.push({
@@ -1926,6 +2272,8 @@ export function buildAcceptanceGateReport({
       advisorWarningCount: warningCount,
       visualFailCount: visualGateReport?.summary?.failCount ?? 0,
       visualNeedsReviewCount: visualGateReport?.summary?.needsReviewCount ?? 0,
+      semanticVisualRequiredCount: semanticVisual.summary.requiredCount,
+      semanticVisualFailureCount: semanticVisual.summary.failureCount,
       bimDataQualityErrorCount: bimQuality?.summary?.errorCount ?? 0,
       bimDataQualityPlannedCount: bimQuality?.summary?.plannedCount ?? 0,
       exchangeValidationErrorCount: exchangeValidation?.summary?.errorCount ?? 0,
@@ -1934,6 +2282,7 @@ export function buildAcceptanceGateReport({
       staleEvidenceCount: evidenceFreshness?.summary?.staleCount ?? 0,
       missingEvidenceFreshnessCount: evidenceFreshness?.summary?.missingCount ?? 0,
     },
+    semanticVisual,
     bimDataQuality: bimQuality,
     exchangeValidation,
     evidenceFreshness,
@@ -2007,8 +2356,13 @@ export function formatStatusMarkdown(coverage, checklist, liveAdvisor = null, ev
   lines.push('');
   lines.push(`Checklist items: ${checklist.items.length}`);
   lines.push(
-    'Every item starts as `unchecked`; acceptance requires screenshot evidence and pass/fail notes.',
+    'Every item starts as `unchecked`; acceptance requires screenshot evidence and semantic pass/fail notes.',
   );
+  const semanticTotal = (checklist.items ?? []).reduce(
+    (sum, item) => sum + (item.semanticChecks ?? []).length,
+    0,
+  );
+  lines.push(`Semantic checklist items: ${semanticTotal}`);
   lines.push('');
   lines.push('## Live Advisor');
   lines.push('');
@@ -2130,6 +2484,11 @@ export function formatStatusMarkdown(coverage, checklist, liveAdvisor = null, ev
     lines.push(
       `Result: ${report.ok ? 'pass' : 'blocked'} (${report.summary.blockerCount} blocker(s), ${report.summary.toleranceCount} tolerance(s)).`,
     );
+    if (report.semanticVisual) {
+      lines.push(
+        `Semantic visual: ${report.semanticVisual.ok ? 'pass' : 'blocked'} (${report.semanticVisual.summary.failureCount} failure(s) / ${report.semanticVisual.summary.requiredCount} required).`,
+      );
+    }
     for (const blocker of report.blockers ?? []) {
       lines.push(`- \`${blocker.code}\`: ${blocker.message}`);
     }
@@ -2155,12 +2514,16 @@ export async function writeInitiationPacket({
 }) {
   const coverage = buildCapabilityCoverage(ir, matrix, { irPath, capabilityMatrixPath, modelId });
   const capabilityGaps = buildCapabilityGapTasks(coverage);
-  const screenshotChecklist = screenshotManifest
+  const generatedScreenshotChecklist = screenshotManifest
     ? applyScreenshotManifestToChecklist(buildVisualChecklist(ir, coverage), screenshotManifest)
     : buildVisualChecklist(ir, coverage);
-  const checklist = visualGateReport
-    ? applyVisualGateToChecklist(screenshotChecklist, visualGateReport)
-    : screenshotChecklist;
+  const generatedChecklist = visualGateReport
+    ? applyVisualGateToChecklist(generatedScreenshotChecklist, visualGateReport)
+    : generatedScreenshotChecklist;
+  const checklist = mergeVisualChecklistContract(
+    generatedChecklist,
+    evidenceRun?.visualChecklist ?? null,
+  );
   const bimDataQualityReport = buildBimDataQualityReport({ ir, evidenceRun });
   const acceptanceGateReport = buildAcceptanceGateReport({
     ir,
@@ -2168,6 +2531,7 @@ export async function writeInitiationPacket({
     liveAdvisor,
     screenshotManifest,
     visualGateReport,
+    visualChecklist: checklist,
     evidenceRun,
     bimDataQualityReport,
   });

@@ -3508,6 +3508,20 @@ async function loadPhaseFindingDispositions(evidenceDir) {
   }
 }
 
+async function loadVisualChecklistEvidence(evidenceDir) {
+  if (!evidenceDir) return null;
+  for (const name of ['visual-checklist.json', 'semantic-checklist.json']) {
+    const filePath = path.join(evidenceDir, name);
+    try {
+      const parsed = await readJsonFile(filePath);
+      if (parsed && typeof parsed === 'object') return { ...parsed, sourcePath: filePath };
+    } catch {
+      // Optional agent-filled artifact. Missing or invalid files leave acceptance unverified.
+    }
+  }
+  return null;
+}
+
 async function buildSketchPhaseAcceptance({
   irPath,
   capabilityMatrixPath,
@@ -3527,6 +3541,12 @@ async function buildSketchPhaseAcceptance({
         capabilityMatrixPath,
       })
     : null;
+  const defaultEvidenceDir = path.join(outDir, 'live');
+  const visualChecklist =
+    (await loadVisualChecklistEvidence(evidenceDir)) ??
+    (await loadVisualChecklistEvidence(defaultEvidenceDir));
+  const evidenceRun =
+    evidenceFreshness || visualChecklist ? { evidenceFreshness, visualChecklist } : null;
   const result = await writeInitiationPacket({
     ir,
     matrix,
@@ -3534,9 +3554,8 @@ async function buildSketchPhaseAcceptance({
     irPath,
     capabilityMatrixPath,
     modelId: modelId ?? null,
-    evidenceRun: evidenceFreshness ? { evidenceFreshness } : null,
+    evidenceRun,
   });
-  const defaultEvidenceDir = path.join(outDir, 'live');
   let dispositionSummary = null;
   if (evidenceDir) {
     dispositionSummary = await loadPhaseFindingDispositions(evidenceDir);
