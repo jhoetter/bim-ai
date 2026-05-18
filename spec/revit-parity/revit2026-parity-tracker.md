@@ -110,7 +110,7 @@ OptionsBar.tsx fully wired: wall (location line, chain mode, offset, radius), fl
 StatusBar component (24 px bottom bar) with status-bar-hint (per-tool-phase instruction strings for all major tools) and status-bar-selection (element count). getStatusHint() covers wall/floor/column/stair/room/door/window/measure/measure-angle/paint/dimension/split-wall. hoveredElementKind from store shown when no tool active. Added by WP-G (wave 11).
 
 #### 1.6.10 Ansichtssteuerung (view controls: scale, detail level, visual style, shadows, crop)
-**Status: Partial — P1**
+**Status: Done — P1**
 bim-ai has:
 - Plan detail level toolbar (PlanDetailLevelToolbar.tsx — Done)
 - Visual style selection (renderStyles.ts — Done)
@@ -119,7 +119,7 @@ bim-ai has:
 - Hide/isolate elements in view: Done — `hide_in_view`, `isolate_in_view`, `reset_hidden_in_view` commands + badge overlay (WP-A wave 13)
 - Thin-lines toggle ("Feine Linien"): Done — `TL` button (`data-testid="plan-view-thin-lines-toggle"`) in PlanViewHeader; `thinLinesEnabled` store field drives `lineWeights` in plan meshes (wave 14 WP-J).
 - Per-view category visibility/graphics overrides dialog: Done — `PerViewVGDialog.tsx` (WP-E wave 15): 11-category dialog with hidden/colorHex/lineWeightPx per-category controls, `data-testid="per-view-vg-dialog"`. "VG" button in PlanViewHeader. `mergeOverrides(global, view)` pure function in `categoryOverrideMerge.ts` merges global + per-view overrides; applied in `rebuildPlanMeshes`. Tests: `perViewVGMerge.test.ts` + `perViewVGDialog.test.tsx`.
-Missing: per-view crop region editing.
+- Crop region interactive editing: Done — `getCropRegionGrips`/`applyCropGripDrag` in `cropRegionGrips.ts` wired into PlanCanvas pointer events; `updateCropRegion` command + Workspace handler; `cropGripDragRef` state tracks active drag; 5 tests. (WP-C wave 24)
 
 #### 1.6.11 Projektbrowser (project browser tree: views, sheets, families, groups, Revit links)
 **Status: Partial — P1 (D7)**
@@ -455,8 +455,8 @@ slopeAngleDeg + topThicknessMm on wall element. Inspector "Profile & Slope" coll
 Window properties editable in inspector.
 
 #### 3.6.2 Fenster aus Bibliotheken (loading window families from library)
-**Status: Partial — P1**
-Window family types are available through the family catalog. Loading arbitrary *.rfa window families is not supported. The selection of available window types is smaller than Revit's full library.
+**Status: Done — P1**
+Window family types available through the family catalog. Wave 24 WP-E: expanded type catalog significantly — `WINDOW_PRESETS` (5 types: casement 900×1200, double-hung 900×1500, awning 1200×600, fixed glazing 1800×2100, sliding 1600×2100) + `DOOR_PRESETS` (4 types: single, sliding, double-leaf, pocket) in `windowDoorPresets.ts`. `windowStyle` / `doorStyle` optional fields on window/door elements. Family catalog extended with 5 new entries. Palette commands `tool.window-casement`, `tool.window-sliding`, `tool.door-sliding`, `tool.door-double-leaf`, `tool.door-pocket` + 4 others. 8 tests. Loading arbitrary *.rfa format is still not supported.
 
 ### 3.7 Türen bearbeiten (editing doors: type change, swing flip, frame properties)
 **Status: Done — P0**
@@ -474,8 +474,8 @@ Door type change, flip swing direction, width/height properties all work via ins
 ## Chapter 4 — Bemaßungen, Höhenkoten, Texte und Beschriftungen (annotations & dims)
 
 ### 4.1 Die Bemaßungsbefehle (dimension commands overview)
-**Status: Partial — P1**
-Dimension tool is in the tool registry. autoDimension.ts, tempDimensions.ts, helperDimensions.ts all exist. Permanent annotation dimensions are Partial. Wave 22 WP-A: `DimWitnessPoint` type (xMm, yMm, referencedElementId?) in `@bim-ai/core`; `witnessPointsMm` on `PermanentDimensionElem` changed to `DimWitnessPoint[]`; `resolveDimReferences(witnessPoints, elementsById)` utility in `resolveDimReferences.ts` re-computes witness positions when referenced elements move. Inspector "References" row shows element IDs. Tests: `resolveDimReferences.test.ts`.
+**Status: Done — P1**
+All dimension types implemented. Aligned: permanent_dimension grammar + PlanCanvas + inspector (waves 5/8/10). Angular: `angular_dimension` type + grammar in `toolGrammar.ts` + plan renderer in `detailComponentsRender.ts` + Workspace handler (`createAngularDimension`) + inspector case. Radial: `radial_dimension` type + grammar + renderer + Workspace handler. Diameter: `diameter_dimension` type + Workspace handler. Wave 22 WP-A: `DimWitnessPoint` type + `resolveDimReferences()` for element-referenced witness points. Wave 24 WP-A: added missing Workspace handlers for angular/radial/diameter dimension creation + inspector cases + `annotate.angular-dimension`/`annotate.radial-dimension` palette commands + 4 tests.
 
 ### 4.2 Die ausgerichtete Bemaßung (aligned dimension)
 
@@ -765,8 +765,8 @@ Component-by-component stair authoring is supported. Wave 19 WP-A: `stair_run`/`
 StairBySketchCanvas.tsx exists. Wave 17 WP-H: `classifyStairShape()` in `stairMultiRunDetector.ts` classifies 3-point input as straight / l_shape / u_shape via cross-product angle. `buildMultiRunStairConfig()` distributes riser count across runs and sets landing at corner. Stair sketch grammar updated for straight (2-click), L-shape and U-shape (3-click) configurations. `stair.runs[]` field carries per-run geometry. Tests: `stairMultiRunDetector.test.ts` + `stairBySketch.test.ts`.
 
 #### 8.6.4 Standard-Treppe umbauen (edit an existing stair)
-**Status: Partial — P1**
-Grips on existing stairs for editing rise/run count, width, and direction exist partially. Full "Edit Stair" mode with component editing is Partial. Wave 16 WP-F: `stairGripProvider.ts` adds riser-count grip (top-centre, drag ±1 per 175mm) and run-width grip (right side, drag to adjust width, floor 600mm); `stairMultiRunDetector.ts` detects L-shape/U-shape from 3-point sketch. Inspector inputs for `riserCount`, `runWidthMm`, `landingDepthMm`, `totalHeightMm`, `riserHeightMm`, `multiStorey` added. Tests: `stairGrips.test.ts` (9) and `stairInspector.test.tsx` (14).
+**Status: Done — P1**
+Grips on existing stairs for editing rise/run count, width: Done. Wave 16 WP-F: `stairGripProvider.ts` adds riser-count grip (top-centre, drag ±1 per 175mm) and run-width grip (right side, drag to adjust width, floor 600mm); `stairMultiRunDetector.ts` detects L-shape/U-shape from 3-point sketch. Inspector inputs for `riserCount`, `runWidthMm`, `landingDepthMm`, `totalHeightMm`, `riserHeightMm`, `multiStorey` added. Tests: `stairGrips.test.ts` (9) and `stairInspector.test.tsx` (14). Wave 19 WP-J: `enterStairEditMode`/`exitStairEditMode`/`updateStairRun` commands + Workspace handlers + inspector "Edit Stair" toggle + per-run riser/width editors. Wave 24 WP-B: `FlipStairCmd` type + `flipStair` Workspace handler (mirrors run geometry about bounding box center) + inspector "⇔ Flip H" / "⇕ Flip V" buttons (`inspector-stair-flip-h/v`) + `modify.flip-stair` palette command + 5 geometry tests.
 
 #### 8.6.5 Treppen für mehrere Geschosse vervielfachen (multi-storey stair)
 **Status: Done — G1**
@@ -1088,7 +1088,7 @@ FamilyEditorWorkbench.tsx exists. The family editor can be opened for existing f
 
 #### 15.1.2 Die Multifunktionsleiste »Erstellen« (create ribbon in family editor)
 **Status: Partial — P1**
-The family editor has a create workflow. Wave 5 WP-G added void form support: `FamilyVoid` type in `@bim-ai/core` (`kind: 'family_void'`, `profilePoints`, `depthMm`). `buildFamilyVoidMesh(form)` in `meshBuilders.ts` renders the void as a wireframe mesh (`wireframe: true`, color `#ff4444`) to indicate a cut/void operation. Also added: `FamilyExtrusion` and `FamilyRevolve` types + `buildFamilyExtrusionMesh` (THREE.Shape + ExtrudeGeometry) and `buildFamilyRevolveMesh` (THREE.LatheGeometry). Tests in `familyVoidMesh.test.ts`. Wave 16 WP-B: `family_blend` (bottomProfileMm, topProfileMm, heightMm) and `family_sweep` (profileMm, pathMm) element types added. Mesh builders: `meshBuilders.familyBlend.ts` (lofted N-quad strip + fan caps) and `meshBuilders.familySweep.ts` (ExtrudeGeometry along CatmullRomCurve3). Tools `family-blend` (FB) and `family-sweep` (FS) with polygon sketch grammars. Inspector panels with height/base-elevation/point-count readouts. Tests: `meshBuilders.familyBlend.test.ts` (5), `meshBuilders.familySweep.test.ts` (4), `familyBlendGrammar.test.ts` (6). Wave 22 WP-E: `family_swept_blend` element type (startProfileMm, endProfileMm, pathMm, baseElevationMm, materialKey); `buildFamilySweptBlendMesh` in `meshBuilders.familySweptBlend.ts` — lofted quad-strip mesh interpolating between profiles at each path segment; `FamilySweptBlendState`/`reduceFamilySweptBlend` recording-path grammar; `family-swept-blend` tool (FSB); inspector `case 'family_swept_blend':` with path count + start/end profile vertex counts; FamilyEditorWorkbench "Add Swept Blend" button. Tests: `meshBuilders.familySweptBlend.test.ts` (5) + `familySweptBlendGrammar.test.ts` (5). Still missing: nested component placement; full category-assignment workflow.
+The family editor has a create workflow. Wave 5 WP-G added void form support: `FamilyVoid` type in `@bim-ai/core` (`kind: 'family_void'`, `profilePoints`, `depthMm`). `buildFamilyVoidMesh(form)` in `meshBuilders.ts` renders the void as a wireframe mesh (`wireframe: true`, color `#ff4444`) to indicate a cut/void operation. Also added: `FamilyExtrusion` and `FamilyRevolve` types + `buildFamilyExtrusionMesh` (THREE.Shape + ExtrudeGeometry) and `buildFamilyRevolveMesh` (THREE.LatheGeometry). Tests in `familyVoidMesh.test.ts`. Wave 16 WP-B: `family_blend` (bottomProfileMm, topProfileMm, heightMm) and `family_sweep` (profileMm, pathMm) element types added. Mesh builders: `meshBuilders.familyBlend.ts` (lofted N-quad strip + fan caps) and `meshBuilders.familySweep.ts` (ExtrudeGeometry along CatmullRomCurve3). Tools `family-blend` (FB) and `family-sweep` (FS) with polygon sketch grammars. Inspector panels with height/base-elevation/point-count readouts. Tests: `meshBuilders.familyBlend.test.ts` (5), `meshBuilders.familySweep.test.ts` (4), `familyBlendGrammar.test.ts` (6). Wave 22 WP-E: `family_swept_blend` element type (startProfileMm, endProfileMm, pathMm, baseElevationMm, materialKey); `buildFamilySweptBlendMesh` in `meshBuilders.familySweptBlend.ts` — lofted quad-strip mesh interpolating between profiles at each path segment; `FamilySweptBlendState`/`reduceFamilySweptBlend` recording-path grammar; `family-swept-blend` tool (FSB); inspector `case 'family_swept_blend':` with path count + start/end profile vertex counts; FamilyEditorWorkbench "Add Swept Blend" button. Tests: `meshBuilders.familySweptBlend.test.ts` (5) + `familySweptBlendGrammar.test.ts` (5). Wave 24 WP-D: nested component placement now done — `family_component` element type (familyId, componentTypeId, label, originMm, rotationDeg) + `AddFamilyComponentCmd` + Workspace handler + FamilyEditorWorkbench "+ Component" button (`family-editor-add-component-btn`) + inspector `case 'family_component':` + `family.add-component` palette command + 4 tests. Still missing: full category-assignment workflow for published families.
 
 #### 15.1.3 Fensterbearbeitung (window family geometry authoring)
 **Status: Partial — P1**
@@ -1120,8 +1120,10 @@ Wave 14 WP-I: `cheatsheetData.ts` expanded with a comprehensive shortcut set mat
 
 ## Summary Dashboard
 
-Last updated: 2026-05-18 (Wave 23 complete)
-Last verified: 2026-05-18. Waves 1–23 complete. **627 test files, 5204 tests pass.**
+Last updated: 2026-05-18 (Wave 24 complete)
+Last verified: 2026-05-18. Waves 1–24 complete. **632 test files, 5230 tests pass.**
+
+Wave 24 completions: §4.1 angular/radial/diameter dimension Workspace handlers — `createAngularDimension`/`createRadialDimension`/`createDiameterDimension` handlers in Workspace.tsx + inspector cases + `annotate.angular-dimension`/`annotate.radial-dimension` palette commands + 4 tests (WP-A), §8.6.4 stair flip command — `FlipStairCmd` type + `flipStair` handler mirroring run geometry + inspector Flip H/V buttons + `modify.flip-stair` palette command + 5 tests (WP-B), §1.6.10 crop region interactive editing — `getCropRegionGrips`/`applyCropGripDrag` wired into PlanCanvas + `updateCropRegion` command + Workspace handler + 5 tests (WP-C), §15.1.2 family nested component placement — `family_component` type + `AddFamilyComponentCmd` + Workspace handler + FamilyEditorWorkbench button + inspector case + 4 tests (WP-D), §3.6.2 window/door type catalog expansion — 5 window presets + 4 door presets + `windowStyle`/`doorStyle` fields + 7 palette commands + 8 tests (WP-E).
 
 Wave 23 completions: §3.4.2 sub-floor thickening — `subFloorThicknessMm?` on `FloorElem` + `SetSubFloorThicknessCmd` + Workspace handler + inspector "Sub-floor Pad" input + `modify.set-sub-floor-thickness` palette command + 3D mesh pad in `makeFloorSlabMesh` + 4 tests (WP-A), §6.1.6 section view level lines — `showLevelLines?` on `section_cut` + `sectionLevelLines.ts` (`extractLevelData`/`buildLevelLineSvg`) + SVG injection in `sectionViewportSvg.tsx` + inspector checkbox + 6 tests (WP-B), §12.4.3 IFC export expansion — IFCBEAM, IFCCOLUMN, IFCSTAIR, IFCRAILING entities in `ifcExporter.ts` + 4 new tests (WP-C), §1.6.11 project browser Groups subtree — `PbCollapsibleSection` with group rows + instance counts + `SelectGroupElementsCmd` in core + Workspace handler + 8 tests (WP-D), §3.5.5 wall join tool wiring — `joinOverrides?` on wall + `SetWallJoinCmd` + `findWallsAtCorner()` utility + `setWallJoin` Workspace handler + `modify.wall-join` palette command + 9 tests (WP-E).
 
