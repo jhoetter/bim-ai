@@ -5,6 +5,47 @@ import process from 'node:process';
 
 const ROOT = process.cwd();
 const UNKNOWN = 'unknown';
+const SURFACE_EXECUTION_STATUSES = new Set([
+  'executable',
+  'contract-only',
+  'CLI-only',
+  'skill-local',
+]);
+
+const CLI_ONLY_DESCRIPTOR_IDS = new Set(['sketch.seed.compile', 'sketch.phase.apply']);
+
+const READINESS_ADJACENT_SURFACES = [
+  {
+    id: 'evidence.package',
+    stableId: 'evidence.package',
+    surfaceStatus: 'executable',
+    canonicalTransport: 'GET /api/models/{model_id}/evidence-package; CLI `bim-ai evidence-package`',
+    path: '/api/models/{model_id}/evidence-package',
+    notes:
+      'Backend route-backed evidence package. It does not replace live screenshots or phase acceptance.',
+    source: 'app/bim_ai/routes_api.py',
+  },
+  {
+    id: 'sketch.evidence.collect',
+    stableId: 'sketch.evidence.collect',
+    surfaceStatus: 'CLI-only',
+    canonicalTransport: 'CLI `bim-ai initiation-run`',
+    path: 'none',
+    notes:
+      'Collects snapshot, validate, evidence package, Advisor warning/info, stats, and optional screenshot artifacts. No dedicated API/MCP descriptor yet.',
+    source: 'packages/cli/cli.mjs',
+  },
+  {
+    id: 'browser-evidence',
+    stableId: 'browser-evidence',
+    surfaceStatus: 'skill-local',
+    canonicalTransport: 'Skill-local browser automation only',
+    path: 'none',
+    notes:
+      'Allowed for UI-equivalence and screenshot capture; not a public product authoring surface.',
+    source: 'claude-skills/sketch-to-bim',
+  },
+];
 
 const SOURCES = {
   commands: 'app/bim_ai/commands.py',
@@ -886,6 +927,7 @@ function parseApiDescriptors() {
                 ? 'job'
                 : 'write'),
         implementationStatus: extractStringProp(block, 'implementationStatus') ?? 'implemented',
+        unsupportedReason: extractStringProp(block, 'unsupportedReason') ?? '',
         transport:
           extractStringProp(block, 'transport') ?? (id === 'collab-ws' ? 'websocket' : 'http'),
         requiresBrowser: extractBoolProp(block, 'requiresBrowser') ?? false,
@@ -928,6 +970,7 @@ function parseApiDescriptors() {
         sideEffects: querySurface ? 'none' : 'mutates-kernel',
         mutability: querySurface ? 'read' : 'write',
         implementationStatus: 'implemented',
+        unsupportedReason: '',
         transport: 'http',
         requiresBrowser: false,
         createsExternalAssets: id.includes('export'),
@@ -2170,6 +2213,51 @@ function routeMatches(descriptor, implementedRoutes) {
   );
 }
 
+function cliCommandLabel(cliExample) {
+  const value = String(cliExample || '').trim();
+  if (!value || value === UNKNOWN) return '';
+  if (value.startsWith('bim-ai ')) {
+    return `CLI \`${value.split(/\s+/).slice(0, 4).join(' ')}\``;
+  }
+  return value.startsWith('curl ') ? `HTTP ${value}` : value;
+}
+
+function descriptorSurfaceStatus(descriptor) {
+  if (descriptor.requiresBrowser) return 'skill-local';
+  if (CLI_ONLY_DESCRIPTOR_IDS.has(descriptor.id)) return 'CLI-only';
+  if (descriptor.implementationStatus !== 'implemented') return 'contract-only';
+  if (!descriptor.routeImplemented) {
+    return descriptor.cliExample?.startsWith('bim-ai ') ? 'CLI-only' : 'contract-only';
+  }
+  return 'executable';
+}
+
+function descriptorCanonicalTransport(descriptor) {
+  if (descriptor.id === 'sketch.phase.apply') {
+    return 'CLI `bim-ai sketch phase apply`; transaction API `POST /api/models/{model_id}/bundles`';
+  }
+  if (descriptor.id === 'sketch.seed.compile') {
+    return 'CLI `bim-ai sketch seed compile`; API route is a 501 contract until server-hosted';
+  }
+  const cli = cliCommandLabel(descriptor.cliExample);
+  if (descriptorSurfaceStatus(descriptor) === 'executable') {
+    return `${descriptor.method} ${descriptor.path}${cli ? `; ${cli}` : ''}`;
+  }
+  if (descriptorSurfaceStatus(descriptor) === 'CLI-only') return cli || 'CLI';
+  if (descriptorSurfaceStatus(descriptor) === 'skill-local') return 'Skill-local helper';
+  return descriptor.unsupportedReason || 'Descriptor contract only';
+}
+
+function descriptorSurfaceNotes(descriptor) {
+  if (descriptor.id === 'sketch.phase.apply') {
+    return 'Sketch wrapper is contract-only; the blessed commit path is the generic bundle transaction route.';
+  }
+  if (descriptor.id === 'sketch.seed.compile') {
+    return 'Compiler currently lives in packages/cli/lib/seed-dsl.mjs; use CLI/sidecar compiler.';
+  }
+  return descriptor.unsupportedReason || descriptor.agentSafetyNotes || '';
+}
+
 function commandStem(value) {
   return String(value)
     .replace(/Cmd$/, '')
@@ -2717,6 +2805,9 @@ function buildAudit() {
 
   const apiLedger = descriptorsWithRoutes.map((descriptor) => ({
     ...descriptor,
+    surfaceStatus: descriptorSurfaceStatus(descriptor),
+    canonicalTransport: descriptorCanonicalTransport(descriptor),
+    surfaceNotes: descriptorSurfaceNotes(descriptor),
     toolKind: descriptorToolKind(descriptor),
     matchedBackendCommands: backendCommands
       .filter(
@@ -4907,16 +4998,56 @@ function renderCmdkLedger(audit) {
   ].join('\n\n');
 }
 
+function readinessSurfaceRows(apiDescriptors) {
+  const descriptorRows = apiDescriptors
+    .filter(
+      (row) =>
+        row.id.startsWith('sketch.') ||
+        row.id.startsWith('qa.') ||
+        row.id.startsWith('export.'),
+    )
+    .map((row) => ({
+      id: row.id,
+      stableId: row.stableId,
+      surfaceStatus: row.surfaceStatus,
+      canonicalTransport: row.canonicalTransport,
+      path: row.path,
+      notes: row.surfaceNotes,
+      source: row.source,
+    }));
+  return [...descriptorRows, ...READINESS_ADJACENT_SURFACES].sort((a, b) =>
+    a.id.localeCompare(b.id),
+  );
+}
+
 function renderApiLedger(audit) {
+  const readinessRows = readinessSurfaceRows(audit.apiDescriptors);
   return [
     '# API Descriptor Ledger',
     sourceStamp(audit),
+    '## Sketch Readiness Surface Status',
+    'Execution status is product-facing: `executable` means the named API route/descriptor can be called directly; `contract-only` means the descriptor documents a blocked or future route; `CLI-only` means the CLI is the canonical public transport; `skill-local` means the operation is helper/browser automation and not a public product surface.',
+    table(
+      ['Tool', 'Status', 'Canonical transport', 'Path', 'Notes', 'Source'],
+      readinessRows.map((row) => [
+        row.id,
+        row.surfaceStatus,
+        row.canonicalTransport,
+        row.path || 'none',
+        row.notes || 'none',
+        row.source,
+      ]),
+    ),
+    '## Descriptor Ledger',
     table(
       [
         'Descriptor',
         'Stable id',
+        'Agent status',
+        'Canonical transport',
         'Tool kind',
         'Category',
+        'Implementation',
         'Method',
         'Path',
         'Route implemented',
@@ -4931,8 +5062,11 @@ function renderApiLedger(audit) {
       audit.apiDescriptors.map((row) => [
         row.id,
         row.stableId,
+        row.surfaceStatus,
+        row.canonicalTransport,
         row.toolKind,
         row.category,
+        row.implementationStatus,
         row.method,
         row.path,
         row.routeImplemented ? 'yes' : 'no',
@@ -5403,6 +5537,31 @@ function duplicateIds(rows) {
 
 function validateAudit(audit) {
   assertUniqueIds('API descriptor ledger', audit.apiDescriptors, { ignoreUnknown: true });
+  for (const row of audit.apiDescriptors) {
+    if (!SURFACE_EXECUTION_STATUSES.has(row.surfaceStatus)) {
+      throw new Error(`API descriptor ${row.id} has invalid surface status: ${row.surfaceStatus}`);
+    }
+  }
+  const descriptorById = new Map(audit.apiDescriptors.map((row) => [row.id, row]));
+  const requiredReadinessStatuses = new Map([
+    ['sketch.ir.validate', 'executable'],
+    ['sketch.seed.compile', 'CLI-only'],
+    ['sketch.phase.apply', 'CLI-only'],
+    ['sketch.phase.accept', 'executable'],
+    ['qa.advisor', 'executable'],
+    ['qa.constructability', 'executable'],
+  ]);
+  for (const [id, expectedStatus] of requiredReadinessStatuses) {
+    const descriptor = descriptorById.get(id);
+    if (!descriptor) {
+      throw new Error(`Readiness descriptor ${id} is missing from the API ledger.`);
+    }
+    if (descriptor.surfaceStatus !== expectedStatus) {
+      throw new Error(
+        `Readiness descriptor ${id} expected status ${expectedStatus}, got ${descriptor.surfaceStatus}.`,
+      );
+    }
+  }
   if (audit.m2.firstPack.length !== M2_FIRST_PACK_TOOLS.length) {
     throw new Error('M2 first-pack summary length drifted from the expected tool list.');
   }

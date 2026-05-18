@@ -1952,6 +1952,141 @@ register(
     )
 )
 
+# ---------------------------------------------------------------------------
+# SKB readiness — QA/advisor product surfaces
+# ---------------------------------------------------------------------------
+
+register(
+    ToolDescriptor(
+        name="qa.advisor",
+        category="query",
+        inputSchema={
+            "$schema": "http://json-schema.org/draft-07/schema#",
+            "title": "QaAdvisorInput",
+            "type": "object",
+            "required": ["modelId"],
+            "properties": {
+                "modelId": {"type": "string", "format": "uuid"},
+                "profile": {
+                    "type": "string",
+                    "default": "authoring_default",
+                    "description": "Constructability/advisor profile to evaluate.",
+                },
+                "severity": {"type": "string", "enum": ["info", "warning", "error"]},
+                "elementIds": {"type": "array", "items": {"type": "string"}},
+                "limit": {"type": "integer", "minimum": 1, "maximum": 500, "default": 100},
+            },
+            "additionalProperties": False,
+        },
+        outputSchema={
+            "$schema": "http://json-schema.org/draft-07/schema#",
+            "title": "QaAdvisorResult",
+            "type": "object",
+            "required": ["format", "profile", "findings", "summary"],
+            "properties": {
+                "format": {"const": "qaAdvisor_v1"},
+                "profile": {"type": "string"},
+                "findings": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "ruleId": {"type": "string"},
+                            "severity": {"type": "string"},
+                            "message": {"type": "string"},
+                            "recommendation": {"type": "string"},
+                            "elementIds": {"type": "array", "items": {"type": "string"}},
+                            "blockingClass": {"type": "string"},
+                        },
+                        "additionalProperties": True,
+                    },
+                },
+                "summary": {
+                    "type": "object",
+                    "properties": {
+                        "findingCount": {"type": "integer"},
+                        "returnedCount": {"type": "integer"},
+                        "severityCounts": {"type": "object"},
+                    },
+                    "additionalProperties": True,
+                },
+                "limitations": {"type": "array", "items": {"type": "string"}},
+            },
+            "additionalProperties": True,
+        },
+        exitCodes={
+            "ok": ExitCode(code=0, meaning="Advisor findings returned"),
+            "not_found": ExitCode(code=1, meaning="Model not found"),
+        },
+        cliExample="bim-ai qa advisor --output json --severity warning",
+        restEndpoint=RestEndpoint(method="POST", path="/api/models/{model_id}/qa/advisor"),
+        sideEffects="none",
+        agentSafetyNotes=(
+            "Read-only Advisor surface for agent refinement. Findings preserve severity, "
+            "profile, recommendation, and affected element ids where available."
+        ),
+        requiredPermissions=["model:read"],
+        schemaRefs=["input:QaAdvisorInput", "output:QaAdvisorResult"],
+        exampleRefs=["cli:qa:advisor", "route:qa:advisor"],
+        resourceGroups=["qa", "advisor", "constructability", "sketch-to-bim"],
+        uiFeatures=["advisor-panel", "group:advisor"],
+    )
+)
+
+register(
+    ToolDescriptor(
+        name="qa.constructability",
+        category="query",
+        inputSchema={
+            "$schema": "http://json-schema.org/draft-07/schema#",
+            "title": "QaConstructabilityInput",
+            "type": "object",
+            "required": ["modelId"],
+            "properties": {
+                "modelId": {"type": "string", "format": "uuid"},
+                "profile": {"type": "string", "default": "authoring_default"},
+                "phaseFilter": {"type": "string", "default": "all"},
+                "optionLocks": {"type": "string"},
+            },
+            "additionalProperties": False,
+        },
+        outputSchema={
+            "$schema": "http://json-schema.org/draft-07/schema#",
+            "title": "QaConstructabilityReport",
+            "type": "object",
+            "required": ["modelId", "summary"],
+            "properties": {
+                "modelId": {"type": "string"},
+                "profile": {"type": "string"},
+                "summary": {"type": "object"},
+                "issues": {"type": "array", "items": {"type": "object"}},
+                "viewpoints": {"type": "array", "items": {"type": "object"}},
+            },
+            "additionalProperties": True,
+        },
+        exitCodes={
+            "ok": ExitCode(code=0, meaning="Constructability report returned"),
+            "not_found": ExitCode(code=1, meaning="Model not found"),
+        },
+        cliExample=(
+            "curl /api/models/$BIM_AI_MODEL_ID/constructability-report?profile=authoring_default"
+        ),
+        restEndpoint=RestEndpoint(
+            method="GET", path="/api/models/{model_id}/constructability-report"
+        ),
+        sideEffects="none",
+        agentSafetyNotes=(
+            "Read-only constructability profile report for phase acceptance. Use qa.advisor "
+            "when an element-filterable warning/info/error list is needed."
+        ),
+        requiredPermissions=["model:read"],
+        schemaRefs=["input:QaConstructabilityInput", "output:QaConstructabilityReport"],
+        exampleRefs=["route:constructability-report"],
+        resourceGroups=["qa", "constructability", "profile", "sketch-to-bim"],
+        uiFeatures=["advisor-panel", "construction-lens", "group:constructability"],
+    )
+)
+
 register(
     ToolDescriptor(
         name="model-show",

@@ -103,6 +103,12 @@ Use the strongest public surface available:
 5. Browser automation only for evidence capture or UI equivalence checks, not as
    the sole authoring contract.
 
+Current sketch-specific exceptions are intentional. `sketch.seed.compile` is
+CLI-only until the Node seed compiler is hosted server-side. `sketch.phase.apply`
+is a CLI wrapper plus a contract-only API descriptor; the blessed API transaction
+path is `POST /api/models/{model_id}/bundles`, with CLI `sketch phase apply` as
+the external-agent convenience path over the same `cmd-v3.0` bundle semantics.
+
 ## Current Gate
 
 Before generating `target-house-1`, close or explicitly tolerate the P0 items in
