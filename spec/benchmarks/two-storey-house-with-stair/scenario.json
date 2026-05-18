@@ -1,0 +1,95 @@
+{
+  "schemaVersion": "bim-ai.benchmark.scenario.v1",
+  "scenarioId": "two-storey-house-with-stair",
+  "title": "Two-Storey House With Stair",
+  "sourceOfIntent": "spec/ui-mcp-parity-tracker.md#same-house-parity-benchmarks",
+  "lifecycle": "m3-suite-seed",
+  "summary": "First M3 suite expansion scenario for cross-level residential authoring: two levels, stair, stair opening, hosted openings, plan/section evidence, and drawing-sheet output.",
+  "fixtures": {
+    "expectedSemantics": null,
+    "mcpCliCommandBundle": null,
+    "uiCmdKTraceability": null,
+    "uiEquivalence": null,
+    "liveEvidenceDirectory": null
+  },
+  "runner": {
+    "kind": "not-yet-implemented",
+    "command": null,
+    "mutatesModel": false
+  },
+  "semanticRequirements": {
+    "levels": 2,
+    "stairs": 1,
+    "stairOpenings": 1,
+    "railings": 1,
+    "wallsMinimum": 10,
+    "roomsMinimum": 5,
+    "doorsMinimum": 5,
+    "windowsMinimum": 6,
+    "floorsMinimum": 2,
+    "roofs": 1,
+    "planViewsMinimum": 2,
+    "sectionViewsMinimum": 1,
+    "sheetsMinimum": 1
+  },
+  "evidence": {
+    "ui": {
+      "classification": "missing",
+      "status": "not-yet-authored",
+      "artifacts": [],
+      "claim": "No executable or replayed UI path exists for this scenario yet."
+    },
+    "cmdK": {
+      "classification": "traceability-only",
+      "status": "required-path-declared",
+      "artifacts": [],
+      "claim": "The scenario requires Cmd+K coverage for levels, stair, opening, view, and sheet operations, but no traceability artifact has been authored yet."
+    },
+    "mcpCli": {
+      "classification": "missing",
+      "status": "fixture-not-yet-authored",
+      "artifacts": [],
+      "claim": "No MCP/CLI bundle exists yet for the two-storey stair case."
+    },
+    "advisor": {
+      "classification": "missing",
+      "status": "not-yet-collected",
+      "artifacts": []
+    },
+    "visual": {
+      "classification": "missing",
+      "status": "not-yet-collected",
+      "artifacts": []
+    },
+    "export": {
+      "classification": "missing",
+      "status": "not-yet-collected",
+      "artifacts": []
+    },
+    "semanticDiff": {
+      "classification": "missing",
+      "status": "not-yet-collected",
+      "artifacts": []
+    }
+  },
+  "plannedPublicSurfaces": [
+    "createLevel",
+    "createWallChain",
+    "createFloor",
+    "create_stair_between_levels",
+    "create_floor_opening",
+    "create_railing",
+    "insertDoorOnWall",
+    "insertWindowOnWall",
+    "createRoomOutline",
+    "saveViewpoint",
+    "CreateSheet",
+    "PlaceViewOnSheet",
+    "create_schedule_view"
+  ],
+  "remainingBlockers": [
+    "Typed stair, stair-opening, and railing MCP/CLI fixtures are not present in this benchmark suite yet.",
+    "No UI/Cmd+K traceability artifact maps the vertical-circulation workflow to deterministic semantic outputs.",
+    "No advisor, visual, export, or semantic-diff artifacts have been collected."
+  ]
+}

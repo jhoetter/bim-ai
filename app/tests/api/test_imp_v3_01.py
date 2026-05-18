@@ -512,3 +512,30 @@ def test_import_image_underlay_tool_in_registry(client: TestClient) -> None:
     assert resp.status_code == 200
     tools = {t["name"] for t in resp.json()["tools"]}
     assert "import-image-underlay" in tools
+
+
+def test_image_underlay_lifecycle_tools_in_registry(client: TestClient) -> None:
+    """Sketch-to-BIM underlay lifecycle descriptors are first-class product tools."""
+    resp = client.get("/api/v3/tools")
+    assert resp.status_code == 200
+    tools = {t["name"]: t for t in resp.json()["tools"]}
+
+    expected = {
+        "import-image-underlay": "import_image_underlay",
+        "move-image-underlay": "move_image_underlay",
+        "scale-image-underlay": "scale_image_underlay",
+        "rotate-image-underlay": "rotate_image_underlay",
+        "delete-image-underlay": "delete_image_underlay",
+    }
+    for name, command_type in expected.items():
+        descriptor = tools[name]
+        assert descriptor["category"] == "mutation"
+        assert descriptor["restEndpoint"] == {
+            "method": "POST",
+            "path": "/api/models/{model_id}/bundles",
+        }
+        assert descriptor["kernelCommands"] == [command_type]
+        assert {"image-underlay", "sketch-to-bim", "kernel-command"} <= set(
+            descriptor["resourceGroups"]
+        )
+        assert descriptor["mutability"] == "write"

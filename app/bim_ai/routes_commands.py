@@ -49,6 +49,7 @@ from bim_ai.routes_deps import (
 )
 from bim_ai.schedule_derivation import list_schedule_ids
 from bim_ai.tables import ModelRecord, RedoStackRecord, UndoStackRecord
+from bim_ai.transaction_metadata import build_transaction_metadata
 
 commands_router = APIRouter()
 
@@ -413,6 +414,7 @@ async def command_log_full(
                 "revisionAfter": u.revision_after,
                 "createdAt": u.created_at.isoformat(),
                 "appliedCommands": list(u.forward_commands),
+                "transactionMetadata": u.transaction_metadata,
             }
         )
 
@@ -455,6 +457,15 @@ async def apply_command(
         raise HTTPException(status_code=409, detail={"reason": code, "violations": viols_wire})
 
     undo_cmds = diff_undo_cmds(doc_before, new_doc)
+    transaction_metadata = build_transaction_metadata(
+        doc_before=doc_before,
+        new_doc=new_doc,
+        commands=[command_for_commit],
+        user_id=uid,
+        submitter="raw-command",
+        parent_revision=doc_before.revision,
+        client_op_id=body.client_op_id,
+    )
     await delete_redos(session, model_id, uid)
 
     undo_row = UndoStackRecord(
@@ -463,6 +474,7 @@ async def apply_command(
         revision_after=new_doc.revision,
         forward_commands=[command_for_commit],
         undo_commands=undo_cmds,
+        transaction_metadata=transaction_metadata,
         created_at=datetime.now(UTC),
     )
     session.add(undo_row)
@@ -493,6 +505,7 @@ async def apply_command(
         "appliedCommand": command_for_commit,
         "clientOpId": body.client_op_id,
         "delta": delta,
+        "transactionMetadata": transaction_metadata,
     }
     if _commands_include_move_level_elevation([body.command]):
         payload["levelElevationPropagationEvidence_v0"] = (
@@ -597,6 +610,15 @@ async def apply_command_bundle(
         )
 
     undo_cmds = diff_undo_cmds(doc_before, new_doc)
+    transaction_metadata = build_transaction_metadata(
+        doc_before=doc_before,
+        new_doc=new_doc,
+        commands=commands_for_commit,
+        user_id=uid,
+        submitter="raw-bundle",
+        parent_revision=doc_before.revision,
+        client_op_id=body.client_op_id,
+    )
 
     await delete_redos(session, model_id, uid)
 
@@ -606,6 +628,7 @@ async def apply_command_bundle(
         revision_after=new_doc.revision,
         forward_commands=commands_for_commit,
         undo_commands=undo_cmds,
+        transaction_metadata=transaction_metadata,
         created_at=datetime.now(UTC),
     )
 
@@ -641,6 +664,7 @@ async def apply_command_bundle(
         "appliedCommands": commands_for_commit,
         "clientOpId": body.client_op_id,
         "delta": delta,
+        "transactionMetadata": transaction_metadata,
         "replayDiagnostics": bundle_replay_diagnostics(commands_for_commit),
     }
     if _commands_include_move_level_elevation(commands_for_commit):
@@ -805,12 +829,22 @@ async def undo_model(
         )
 
     await session.delete(undo_row)
+    transaction_metadata = build_transaction_metadata(
+        doc_before=baseline,
+        new_doc=new_doc,
+        commands=list(undo_row.undo_commands),
+        user_id=uid,
+        submitter="undo",
+        parent_revision=baseline.revision,
+        action="undo",
+    )
     session.add(
         RedoStackRecord(
             model_id=model_id,
             user_id=uid,
             revision_after=new_doc.revision,
             forward_commands=list(undo_row.forward_commands),
+            transaction_metadata=undo_row.transaction_metadata,
             created_at=datetime.now(UTC),
         ),
     )
@@ -826,6 +860,7 @@ async def undo_model(
         client_op_id=None,
     )
     out["action"] = "undo"
+    out["transactionMetadata"] = transaction_metadata
     return out
 
 
@@ -876,6 +911,15 @@ async def redo_model(
         )
 
     undo_cmds = diff_undo_cmds(baseline, new_doc)
+    transaction_metadata = build_transaction_metadata(
+        doc_before=baseline,
+        new_doc=new_doc,
+        commands=list(redo_row.forward_commands),
+        user_id=uid,
+        submitter="redo",
+        parent_revision=baseline.revision,
+        action="redo",
+    )
 
     await session.delete(redo_row)
     session.add(
@@ -885,6 +929,7 @@ async def redo_model(
             revision_after=new_doc.revision,
             forward_commands=list(redo_row.forward_commands),
             undo_commands=undo_cmds,
+            transaction_metadata=transaction_metadata,
             created_at=datetime.now(UTC),
         ),
     )
@@ -901,4 +946,5 @@ async def redo_model(
         client_op_id=None,
     )
     out["action"] = "redo"
+    out["transactionMetadata"] = transaction_metadata
     return out

@@ -22,7 +22,7 @@ def sheet_elem_to_pdf_bytes(doc: Document, sh: SheetElem) -> bytes:
     c.drawString(margin, ph - margin, str(sh.name or sh.id))
     c.setFont("Helvetica", 11)
     c.drawString(margin, ph - margin - 24, f"Titleblock {sh.title_block or '—'}")
-    c.setDrawColor(0.15, 0.15, 0.15)
+    c.setStrokeColorRGB(0.15, 0.15, 0.15)
 
     c.setFont("Helvetica", 9)
     tb_p = sh.titleblock_parameters or {}

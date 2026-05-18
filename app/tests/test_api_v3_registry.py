@@ -34,6 +34,14 @@ EXPECTED_M2_TRANSACTION_TOOLS = {
     "model.commit_bundle",
 }
 
+EXPECTED_M3B_DOCUMENT_EXPORT_TOOLS = {
+    "document.create_drawing_set",
+    "export.pdf",
+    "export.ifc",
+    "export.gltf",
+    "export.glb",
+}
+
 VALID_CATEGORIES = {"query", "mutation", "transform", "job", "introspection"}
 VALID_SIDE_EFFECTS = {"none", "mutates-kernel", "enqueues-job", "writes-audit"}
 VALID_REST_METHODS = {"GET", "POST"}
@@ -224,3 +232,43 @@ class TestToolRegistry:
         assert descriptor is not None
         assert descriptor.restEndpoint.path == path
         assert _route_key(descriptor.restEndpoint.method, path) in _implemented_route_keys()
+
+    def test_m3b_documentation_export_tools_are_first_class_descriptors(self):
+        names = {tool.name for tool in get_catalog().tools}
+        assert EXPECTED_M3B_DOCUMENT_EXPORT_TOOLS <= names
+
+        drawing = get_descriptor("document.create_drawing_set")
+        assert drawing is not None
+        assert drawing.category == "mutation"
+        assert drawing.mutability == "write"
+        assert drawing.sideEffects == "mutates-kernel"
+        assert drawing.restEndpoint.method == "POST"
+        assert drawing.restEndpoint.path == "/api/models/{model_id}/bundles"
+        assert {
+            "upsertSheet",
+            "upsertSheetViewports",
+            "upsertSchedule",
+            "placeTag",
+            "createDimension",
+        } <= set(drawing.kernelCommands)
+        assert {"sheet", "viewport", "schedule", "tag", "dimension"} <= set(
+            drawing.resourceGroups
+        )
+
+        for name, content_type in [
+            ("export.pdf", "pdf"),
+            ("export.ifc", "ifc"),
+            ("export.gltf", "gltf"),
+            ("export.glb", "gltf"),
+        ]:
+            descriptor = get_descriptor(name)
+            assert descriptor is not None
+            assert descriptor.category == "query"
+            assert descriptor.mutability == "read"
+            assert descriptor.sideEffects == "none"
+            assert descriptor.exportsData is True
+            assert "model:read" in descriptor.requiredPermissions
+            assert "artifact" in descriptor.outputSchema["properties"]
+            assert "evidence" in descriptor.outputSchema["properties"]
+            assert "limitations" in descriptor.outputSchema["properties"]
+            assert content_type in " ".join(descriptor.resourceGroups + descriptor.exampleRefs)

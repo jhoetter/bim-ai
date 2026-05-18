@@ -1,0 +1,25 @@
+{
+  "schemaVersion": "bim-ai.benchmark.suite.v1",
+  "suiteId": "same-house-core-product-cases",
+  "sourceOfIntent": "spec/ui-mcp-parity-tracker.md#same-house-parity-benchmarks",
+  "milestone": "M3-C",
+  "requiredEvidenceKinds": ["ui", "cmdK", "mcpCli", "advisor", "visual", "export", "semanticDiff"],
+  "uiEvidenceClassifications": {
+    "executable": "A browser/UI path creates or verifies the scenario model through public UI interactions and emits comparable artifacts.",
+    "validated-replay": "A deterministic replay or bridge test validates UI/Cmd+K mapping against the scenario fixture, but does not prove browser-authored exact input.",
+    "traceability-only": "The scenario maps intended UI/Cmd+K affordances to semantic outputs without executing or replaying them.",
+    "missing": "No UI evidence exists yet for this scenario."
+  },
+  "scenarios": [
+    {
+      "scenarioId": "simple-single-storey-house",
+      "directory": "simple-single-storey-house",
+      "scenarioSpec": "scenario.json"
+    },
+    {
+      "scenarioId": "two-storey-house-with-stair",
+      "directory": "two-storey-house-with-stair",
+      "scenarioSpec": "scenario.json"
+    }
+  ]
+}

@@ -20,11 +20,13 @@ from bim_ai.cmd.apply_bundle import apply_bundle as _apply_bundle
 from bim_ai.cmd.types import CommandBundle
 from bim_ai.document import Document
 from bim_ai.engine import (
+    compute_delta_wire,
     ensure_cardinal_elevation_views,
     ensure_internal_origin,
     ensure_seed_hatches,
     ensure_sun_settings,
 )
+from bim_ai.transaction_metadata import build_transaction_metadata
 
 _VALID_ASSUMPTION = {
     "key": "ground_level_mm",
@@ -104,16 +106,33 @@ def _build_test_app() -> FastAPI:
                 )
 
         if result.applied and result.new_revision is not None and new_doc_from_bundle is not None:
+            old_doc = doc
+            uid = body.get("userId") or "local-dev"
+            submitter = body.get("submitter") or "human"
+            transaction_metadata = build_transaction_metadata(
+                doc_before=old_doc,
+                new_doc=new_doc_from_bundle,
+                commands=bundle.commands,
+                user_id=uid,
+                submitter=submitter,
+                parent_revision=bundle.parent_revision,
+                assumptions=list(bundle.assumptions),
+            )
             _models[model_id] = {"revision": new_doc_from_bundle.revision, "doc": new_doc_from_bundle}
             _command_log.setdefault(model_id, []).insert(
                 0,
                 {
                     "id": len(_command_log.get(model_id, [])) + 1,
-                    "userId": body.get("userId") or "local-dev",
+                    "userId": uid,
                     "revisionAfter": new_doc_from_bundle.revision,
                     "appliedCommands": bundle.commands,
+                    "transactionMetadata": transaction_metadata,
                 },
             )
+            out = result.model_dump(by_alias=True)
+            out["transactionMetadata"] = transaction_metadata
+            out["delta"] = compute_delta_wire(old_doc, new_doc_from_bundle)
+            return out
 
         return result.model_dump(by_alias=True)
 
@@ -242,6 +261,18 @@ class TestCommitRoute:
         assert body["applied"] is True
         assert body["newRevision"] == before["revision"] + 1
         assert len(body["changedIds"]) >= 20
+        tx = body["transactionMetadata"]
+        assert tx["parentRevision"] == before["revision"]
+        assert tx["revisionBefore"] == before["revision"]
+        assert tx["revisionAfter"] == body["newRevision"]
+        assert tx["agentIdentity"] == {
+            "userId": "benchmark-agent",
+            "submitter": "benchmark-agent",
+        }
+        assert tx["assumptions"]["count"] == len(bundle["assumptions"])
+        assert tx["audit"]["hasAssumptionAudit"] is True
+        assert "ssh-wall-north" in tx["changedIds"]
+        assert "ssh-wall-north" in tx["collaborationDelta"]["changedIds"]
         assert {"ssh-roof-main", "ssh-floor-ground", "ssh-wall-north"} <= set(
             body["changedIds"]
         )
@@ -260,6 +291,7 @@ class TestCommitRoute:
         log = client.get(f"/api/models/{MODEL_ID}/command-log").json()
         assert log["entries"][0]["revisionAfter"] == body["newRevision"]
         assert len(log["entries"][0]["appliedCommands"]) == 28
+        assert log["entries"][0]["transactionMetadata"] == tx
 
     def test_dry_run_simple_house_bundle_does_not_mutate(self, client: TestClient) -> None:
         before = client.get(f"/api/models/{MODEL_ID}/snapshot").json()

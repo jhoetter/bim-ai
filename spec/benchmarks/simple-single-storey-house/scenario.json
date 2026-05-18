@@ -1,0 +1,78 @@
+{
+  "schemaVersion": "bim-ai.benchmark.scenario.v1",
+  "scenarioId": "simple-single-storey-house",
+  "title": "Simple Single-Storey House",
+  "sourceOfIntent": "spec/ui-mcp-parity-tracker.md#same-house-parity-benchmarks",
+  "lifecycle": "m2-closed-fixture",
+  "summary": "Canonical M2 house-capable fixture covering a single-level residential model, documentation shell, advisor, visual surrogate, export manifests, and semantic diff.",
+  "fixtures": {
+    "expectedSemantics": "expected-semantics.json",
+    "mcpCliCommandBundle": "mcp-cli-command-bundle.json",
+    "uiCmdKTraceability": "ui-cmdk-traceability.json",
+    "uiEquivalence": "ui-equivalence.json",
+    "liveEvidenceDirectory": "live-evidence"
+  },
+  "runner": {
+    "kind": "node-script",
+    "command": "node scripts/benchmarks/simple-house.mjs --mode offline --json",
+    "mutatesModel": false
+  },
+  "semanticRequirements": {
+    "levels": 1,
+    "walls": 6,
+    "rooms": 3,
+    "doors": 3,
+    "windows": 3,
+    "floors": 1,
+    "roofs": 1,
+    "sheets": 1,
+    "schedules": 1
+  },
+  "evidence": {
+    "ui": {
+      "classification": "validated-replay",
+      "status": "partial-ui-cmdk-equivalence",
+      "artifacts": ["ui-equivalence.json", "ui-cmdk-traceability.json"],
+      "claim": "Cmd+K bridge and deterministic replay are validated against the fixture; exact browser-authored numeric UI input is not claimed."
+    },
+    "cmdK": {
+      "classification": "validated-replay",
+      "status": "partial-deterministic-bridge-coverage",
+      "artifacts": ["ui-equivalence.json", "ui-cmdk-traceability.json"],
+      "claim": "Activator-only, navigation, dialog, and local UI entries remain excluded from completed operation counts."
+    },
+    "mcpCli": {
+      "classification": "executable",
+      "status": "offline-fixture-and-live-capable",
+      "artifacts": ["mcp-cli-command-bundle.json", "expected-semantics.json"],
+      "command": "node scripts/benchmarks/simple-house.mjs --mode offline --json"
+    },
+    "advisor": {
+      "classification": "executable",
+      "status": "committed-artifact-available",
+      "artifacts": [
+        "live-evidence/advisor-validation.json",
+        "live-evidence/committed-evidence.json"
+      ]
+    },
+    "visual": {
+      "classification": "executable",
+      "status": "server-side-visual-surrogate-artifact-available",
+      "artifacts": ["live-evidence/visual-evidence.json"]
+    },
+    "export": {
+      "classification": "executable",
+      "status": "manifest-and-pdf-artifact-available",
+      "artifacts": ["live-evidence/export-evidence.json"]
+    },
+    "semanticDiff": {
+      "classification": "executable",
+      "status": "artifact-available",
+      "artifacts": ["live-evidence/semantic-diff.json", "live-evidence/semantic-summary.json"]
+    }
+  },
+  "remainingBlockers": [
+    "No browser-authored UI run enters the exact fixture dimensions and produces an independent model snapshot.",
+    "Visual evidence currently accepts the committed server-side sheet raster substitute rather than a browser screenshot."
+  ]
+}

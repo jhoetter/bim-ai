@@ -2189,6 +2189,7 @@ async def apply_bundle_route(
     from bim_ai.engine import compute_delta_wire, diff_undo_cmds
     from bim_ai.routes_deps import delete_redos, document_to_wire
     from bim_ai.tables import UndoStackRecord
+    from bim_ai.transaction_metadata import build_transaction_metadata
 
     row = await load_model_row(session, model_id)
     if row is None:
@@ -2240,6 +2241,15 @@ async def apply_bundle_route(
         uid = body.user_id or "local-dev"
         doc_before = clone_document(doc)
         undo_cmds = diff_undo_cmds(doc_before, new_doc)
+        transaction_metadata = build_transaction_metadata(
+            doc_before=doc_before,
+            new_doc=new_doc,
+            commands=body.bundle.commands,
+            user_id=uid,
+            submitter=body.submitter,
+            parent_revision=body.bundle.parent_revision,
+            assumptions=list(body.bundle.assumptions),
+        )
         await delete_redos(session, model_id, uid)
 
         session.add(
@@ -2249,6 +2259,7 @@ async def apply_bundle_route(
                 revision_after=new_doc.revision,
                 forward_commands=body.bundle.commands,
                 undo_commands=undo_cmds,
+                transaction_metadata=transaction_metadata,
                 created_at=datetime.now(UTC),
             )
         )
@@ -2279,6 +2290,10 @@ async def apply_bundle_route(
             await hub.publish(model_id, {"type": "delta", "modelId": str(model_id), **delta})
         except Exception:
             pass
+
+        result_wire = result.model_dump(by_alias=True)
+        result_wire["transactionMetadata"] = transaction_metadata
+        return result_wire
 
     return result.model_dump(by_alias=True)
 

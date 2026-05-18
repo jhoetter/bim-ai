@@ -1357,19 +1357,24 @@ Milestone 3 starts from the now-closed M2 house-capable pack and turns it into
 product-grade parity. Wave 1 should avoid reopening M2 closure mechanics unless
 they are necessary for the M3 product surfaces.
 
-| Workstream                                               | Status  | Owner scope                                                                                                                                | Tracker items                              | Done when                                                                                                                                                                                                            |
-| -------------------------------------------------------- | ------- | ------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| M3-A. Sketch-to-BIM product tool inventory and first API | Partial | `claude-skills/sketch-to-bim`, backend API descriptors, CLI/MCP surface design, and minimal tests; avoid broad UI implementation.          | WP-005, WP-013, Sketch-to-BIM workflow.    | Stable sketch IR, underlay lifecycle, seed compile, phase apply, advisor loop, and acceptance surfaces are mapped from skill-local helpers to product APIs/CLI with gaps and first implementation slice identified.  |
-| M3-B. Documentation export first-class pack              | Partial | Sheets, viewports, schedules, dimensions, tags, PDF/IFC/glTF export descriptors/CLI/tests; coordinate with existing M2 evidence artifacts. | WP-006, documentation/export parity.       | Agent-facing typed tools exist or are precisely specified for drawing-set creation and export, with tests proving at least one complete drawing/export workflow beyond the M2 simple-house evidence harness.         |
-| M3-C. Same-house benchmark suite expansion               | Partial | Benchmark fixtures/scripts/specs only; no product implementation ownership except tiny test seams.                                         | WP-008, same-house benchmark suite.        | The benchmark suite grows beyond the single simple-house fixture and reports UI, Cmd+K, CLI/MCP, advisor, visual, export, and semantic-diff evidence per scenario without overclaiming missing UI execution.         |
-| M3-D. Transaction, audit, undo, and collaboration pass   | Partial | Backend transaction metadata, idempotency, command log, undo/redo, collaboration deltas, verifier/tests; avoid sketch/export feature work. | WP-009, transaction and audit hardening.   | M3 workflows consistently record parent revision, changed ids, agent identity, assumptions, undo metadata, collaboration deltas, and external export markers across raw, semantic, CLI, and API paths.               |
-| M3-E. Raw command promotion and parity gate strategy     | Partial | Generated ledgers, raw command promotion plan, descriptor integrity, Cmd+K/MCP parity report extensions; avoid feature implementation.     | WP-010, WP-011, WP-012, parity governance. | The tracker and generated reports identify which raw-agent-only commands must become first-class tools for M3, which stay expert/raw, and which are internal, with guardrails preventing new untracked parity drift. |
+| Workstream                                               | Status  | Owner scope                                                                                                                                | Tracker items                              | Done when                                                                                                                                                                                                                     |
+| -------------------------------------------------------- | ------- | ------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| M3-A. Sketch-to-BIM product tool inventory and first API | Done    | `claude-skills/sketch-to-bim`, backend API descriptors, CLI/MCP surface design, and minimal tests; avoid broad UI implementation.          | WP-005, WP-013, Sketch-to-BIM workflow.    | Stable sketch IR, underlay lifecycle, seed compile, phase apply, advisor loop, and acceptance surfaces are mapped from skill-local helpers to product APIs/CLI with gaps and first implementation slice identified.           |
+| M3-B. Documentation export first-class pack              | Done    | Sheets, viewports, schedules, dimensions, tags, PDF/IFC/glTF export descriptors/CLI/tests; coordinate with existing M2 evidence artifacts. | WP-006, documentation/export parity.       | Agent-facing typed tools exist or are precisely specified for drawing-set creation and export, with tests proving at least one complete drawing/export workflow beyond the M2 simple-house evidence harness.                  |
+| M3-C. Same-house benchmark suite expansion               | Done    | Benchmark fixtures/scripts/specs only; no product implementation ownership except tiny test seams.                                         | WP-008, same-house benchmark suite.        | The benchmark suite grows beyond the single simple-house fixture and reports UI, Cmd+K, CLI/MCP, advisor, visual, export, and semantic-diff evidence per scenario without overclaiming missing UI execution.                  |
+| M3-D. Transaction, audit, undo, and collaboration pass   | Partial | Backend transaction metadata, idempotency, command log, undo/redo, collaboration deltas, verifier/tests; avoid sketch/export feature work. | WP-009, transaction and audit hardening.   | M3 workflows consistently record parent revision, changed ids, agent identity, assumptions, undo metadata, collaboration deltas, and external export markers across raw, semantic, CLI, and API paths.                        |
+| M3-E. Raw command promotion and parity gate strategy     | Done    | Generated ledgers, raw command promotion plan, descriptor integrity, Cmd+K/MCP parity report extensions; avoid feature implementation.     | WP-010, WP-011, WP-012, parity governance. | `pnpm audit:ui-mcp-parity` emits the M3 governance gates and generated raw-command promotion plan, classifying raw-agent-only commands as first-class, expert/raw, or internal with zero untracked descriptor/Cmd+K surfaces. |
 
 ### Milestone 3 Wave 1 Scheduling Notes
 
 - M3-A should start by reading the sketch-to-BIM skill workflow and mapping it
   to stable product surfaces. It should not assume skill-local scripts are
   already safe public MCP tools.
+- M3-A inventory lives in `spec/sketch-to-bim-product-surfaces.md`. The first
+  product slice promotes the full image-underlay lifecycle
+  (`import/move/scale/rotate/delete`) to API v3 descriptors backed by the
+  existing bundle route; remaining SKB helper operations stay local until a
+  product API/CLI descriptor exposes them.
 - M3-B should build on M2 live evidence but target reusable documentation/export
   product commands, not benchmark-only JSON.
 - M3-C owns benchmark shape and evidence reporting. It should keep UI parity
@@ -1380,6 +1385,39 @@ they are necessary for the M3 product surfaces.
   exceptions.
 - M3-E should keep the tracker auditable as M3 broadens scope; it should prefer
   generated source-of-truth updates over hand-maintained counts.
+- M3-E Wave 1 baseline is generated in
+  `spec/generated/raw-command-promotion-plan.md`: 111 raw-agent-only commands
+  are tracked for first-class promotion, 83 remain intentional expert/raw
+  surfaces, 14 are internal-only, and all three governance gates pass. The
+  audit now fails if a new raw command, public descriptor/MCP surface, or
+  unmatched Cmd+K entry cannot be classified by the M3 governance policy.
+
+Wave 1 result:
+
+- Sketch-to-BIM product mapping is now tracked in
+  `spec/sketch-to-bim-product-surfaces.md`. Image-underlay import, move, scale,
+  rotate, and delete are promoted to API v3 descriptors backed by the existing
+  bundle route; stable sketch IR validation, seed compile, phase apply,
+  advisor/evidence loop, and acceptance remain next-wave productization work.
+- Documentation/export now has first-class descriptors for drawing-set
+  creation plus PDF, IFC, glTF, and GLB export, with CLI coverage for
+  `documentation pack` and `export pdf`. A focused backend test proves one
+  drawing/export workflow with sheet, schedule, tags, dimensions, PDF, IFC shell
+  or kernel export when available, and glTF manifest evidence.
+- The benchmark suite now has a suite manifest and per-scenario evidence
+  contract for UI, Cmd+K, MCP/CLI, advisor, visual, export, and semantic diff.
+  The M2 single-storey house remains executable/validated; the new two-storey
+  house with stair is an explicit M3 seed with missing evidence recorded rather
+  than overclaimed.
+- Transaction metadata v1 is persisted on bundle command-log rows and returned
+  for apply-bundle paths, including parent revision, before/after revision,
+  changed ids, agent identity, assumptions, audit fields, trace bundle ids, and
+  collaboration deltas. M3-D stays `Partial` because idempotent replay/dedup by
+  `clientOpId` or bundle digest and explicit metadata assertions for
+  sketch/export/import workflows are still open.
+- `pnpm audit:ui-mcp-parity` reports M3 governance gates `3 / 3`, zero
+  unclassified raw commands, zero untracked public descriptors, zero untracked
+  unmatched Cmd+K surfaces, and M2 remains `Done` with `7 / 7` closure gates.
 
 ## Next Work Packages
 

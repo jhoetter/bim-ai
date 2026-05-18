@@ -327,6 +327,72 @@ test('view save-3d --json generates saveViewpoint payload with camera', async ()
   assert.deepEqual(command.hiddenSemanticKinds3d, ['analytical', 'grid']);
 });
 
+test('documentation pack --json generates complete drawing set bundle', async () => {
+  const res = await runCli(
+    [
+      'documentation',
+      'pack',
+      '--sheet-id',
+      'A101',
+      '--sheet-name',
+      'GA Plan',
+      '--title-block',
+      'A1-titleblock',
+      '--viewports',
+      '[{"viewportId":"vp-plan","viewRef":"plan:plan-gf","label":"Ground","xMm":20,"yMm":20,"widthMm":160,"heightMm":110}]',
+      '--schedule-id',
+      'sch-rooms',
+      '--schedule-name',
+      'Room Schedule',
+      '--schedule-category',
+      'room',
+      '--place-schedule',
+      '--tags',
+      '[{"id":"tag-room-101","hostElementId":"room-101","hostViewId":"plan-gf","positionMm":{"xMm":1500,"yMm":1200},"textOverride":"101"}]',
+      '--dimensions',
+      '[{"id":"dim-overall","levelId":"lvl-0","aMm":{"xMm":0,"yMm":0},"bMm":{"xMm":6000,"yMm":0},"offsetMm":{"xMm":0,"yMm":-500}}]',
+      '--parent-revision',
+      '7',
+      '--json',
+    ],
+    { BIM_AI_BASE_URL: 'http://127.0.0.1:1', BIM_AI_MODEL_ID: 'model-1' },
+  );
+
+  assert.equal(res.code, 0, res.stderr);
+  const out = JSON.parse(res.stdout);
+  assert.equal(out.body.mode, 'dry_run');
+  assert.equal(out.body.bundle.parentRevision, 7);
+  assert.equal(out.body.bundle.assumptions[0].value, 'document.create_drawing_set');
+  assert.deepEqual(
+    out.body.bundle.commands.map((command) => command.type),
+    ['upsertSheet', 'upsertSchedule', 'upsertSheetViewports', 'placeTag', 'createDimension'],
+  );
+  assert.equal(out.body.bundle.commands[0].titleBlock, 'A1-titleblock');
+  assert.equal(out.body.bundle.commands[1].sheetId, 'A101');
+  assert.equal(out.body.bundle.commands[2].viewportsMm.length, 2);
+  assert.equal(out.body.bundle.commands[3].hostElementId, 'room-101');
+  assert.equal(out.body.bundle.commands[4].levelId, 'lvl-0');
+});
+
+test('export pdf downloads sheet artifact route with sheet id', async () => {
+  const requests = [];
+  const { server, base } = await startStubServer((req) => {
+    requests.push({ method: req.method, url: req.url });
+    return { body: { pdf: true } };
+  });
+  const res = await runCli(['export', 'pdf', '--sheet-id', 'A101', '--out', '-'], {
+    BIM_AI_BASE_URL: base,
+    BIM_AI_MODEL_ID: 'model-1',
+  });
+  server.close();
+
+  assert.equal(res.code, 0, res.stderr);
+  assert.equal(requests.length, 1);
+  assert.equal(requests[0].method, 'GET');
+  assert.equal(requests[0].url, '/api/models/model-1/exports/sheet-preview.pdf?sheetId=A101');
+  assert.match(res.stdout, /pdf/);
+});
+
 test('opening door-on-wall --commit posts generated bundle to bundles endpoint', async () => {
   const requests = [];
   const { server, base } = await startStubServer((req, body) => {

@@ -1,5 +1,6 @@
 from collections.abc import AsyncIterator
 
+from sqlalchemy import text
 from sqlalchemy.ext.asyncio import (
     AsyncSession,
     async_sessionmaker,
@@ -27,3 +28,9 @@ async def get_session() -> AsyncIterator[AsyncSession]:
 async def init_db_schema() -> None:
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
+        await conn.execute(
+            text("ALTER TABLE bim_undo_stack ADD COLUMN IF NOT EXISTS transaction_metadata JSONB")
+        )
+        await conn.execute(
+            text("ALTER TABLE bim_redo_stack ADD COLUMN IF NOT EXISTS transaction_metadata JSONB")
+        )
