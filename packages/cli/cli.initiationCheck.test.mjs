@@ -338,6 +338,98 @@ test('seed-dsl compile writes a deterministic command bundle', async () => {
   assert.ok(Array.isArray(bundle.meta.materialIntent));
 });
 
+test('sketch ir validate aliases initiation-check packet creation', async () => {
+  const dir = await fs.mkdtemp(path.join(os.tmpdir(), 'bim-ai-sketch-ir-'));
+  const irPath = path.join(dir, 'ir.json');
+  const matrixPath = path.join(dir, 'matrix.json');
+  const outDir = path.join(dir, 'packet');
+  await writeJson(irPath, validIr());
+  await writeJson(matrixPath, validMatrix());
+
+  const res = await runCli([
+    'sketch',
+    'ir',
+    'validate',
+    '--ir',
+    irPath,
+    '--capabilities',
+    matrixPath,
+    '--out',
+    outDir,
+  ]);
+
+  assert.equal(res.code, 0, res.stderr);
+  const summary = JSON.parse(res.stdout);
+  assert.equal(summary.ok, true);
+  const acceptance = JSON.parse(
+    await fs.readFile(path.join(outDir, 'acceptance-gates.json'), 'utf8'),
+  );
+  assert.equal(acceptance.schemaVersion, 'sketch-to-bim-acceptance-gates.v0');
+});
+
+test('sketch seed compile aliases seed-dsl compile', async () => {
+  const dir = await fs.mkdtemp(path.join(os.tmpdir(), 'bim-ai-sketch-seed-'));
+  const outPath = path.join(dir, 'bundle.json');
+  const recipePath = path.resolve(
+    __dirname,
+    '../../spec/examples/seed-dsl-modern-house.example.json',
+  );
+
+  const res = await runCli(['sketch', 'seed', 'compile', '--recipe', recipePath, '--out', outPath]);
+
+  assert.equal(res.code, 0, res.stderr);
+  const summary = JSON.parse(res.stdout);
+  assert.equal(summary.ok, true);
+  const bundle = JSON.parse(await fs.readFile(outPath, 'utf8'));
+  assert.equal(bundle.schemaVersion, 'cmd-v3.0');
+});
+
+test('sketch phase apply submits bundle through transaction route', async () => {
+  const dir = await fs.mkdtemp(path.join(os.tmpdir(), 'bim-ai-sketch-phase-'));
+  const bundlePath = path.join(dir, 'bundle.json');
+  const outPath = path.join(dir, 'apply-result.json');
+  await writeJson(bundlePath, {
+    schemaVersion: 'cmd-v3.0',
+    commands: [{ type: 'createLevel', id: 'lvl-0', name: 'Ground', elevationMm: 0 }],
+    assumptions: [],
+  });
+  const requests = [];
+  const { server, base } = await startStubServer((req, body) => {
+    requests.push({ url: req.url, body });
+    return { body: { ok: true, revision: 8 } };
+  });
+
+  const res = await runCli(
+    [
+      'sketch',
+      'phase',
+      'apply',
+      '--model',
+      'model-1',
+      '--bundle',
+      bundlePath,
+      '--base',
+      '7',
+      '--dry-run',
+      '--phase',
+      'seed-shell',
+      '--features',
+      'roof_terrace,wrapper',
+      '--out',
+      outPath,
+    ],
+    { BIM_AI_BASE_URL: base, BIM_AI_USER_ID: 'agent-1' },
+  );
+  server.close();
+
+  assert.equal(res.code, 0, res.stderr);
+  assert.equal(requests[0].url, '/api/models/model-1/bundles');
+  assert.equal(requests[0].body.mode, 'dry_run');
+  assert.equal(requests[0].body.bundle.parentRevision, 7);
+  const payload = JSON.parse(await fs.readFile(outPath, 'utf8'));
+  assert.deepEqual(payload.featureIds, ['roof_terrace', 'wrapper']);
+});
+
 test('seed-dsl compile emits toposolids, subdivisions, and graded regions in host order', async () => {
   const dir = await fs.mkdtemp(path.join(os.tmpdir(), 'bim-ai-seed-dsl-site-'));
   const recipePath = path.join(dir, 'recipe.json');

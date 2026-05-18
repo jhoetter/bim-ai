@@ -59,6 +59,11 @@ def test_cmd_v3_commit_transaction_metadata_captures_revision_identity_audit_and
         parent_revision=bundle.parent_revision,
         assumptions=list(bundle.assumptions),
         client_op_id="op-123",
+        workflow={
+            "route": "/api/models/{model_id}/bundles",
+            "entryPoint": "cmd-v3-apply-bundle",
+            "surface": "api-v3",
+        },
     )
 
     assert metadata["schemaVersion"] == "txn-v1.0"
@@ -70,6 +75,13 @@ def test_cmd_v3_commit_transaction_metadata_captures_revision_identity_audit_and
     assert "wall-01" in metadata["collaborationDelta"]["changedIds"]
     assert "wall-01" in metadata["collaborationDelta"]["elementPatchIds"]
     assert metadata["collaborationDelta"]["clientOpId"] == "op-123"
+    assert metadata["idempotency"]["clientOpId"] == "op-123"
+    assert len(metadata["idempotency"]["bundleDigestSha256"]) == 64
+    assert metadata["workflow"] == {
+        "route": "/api/models/{model_id}/bundles",
+        "entryPoint": "cmd-v3-apply-bundle",
+        "surface": "api-v3",
+    }
     assert metadata["assumptions"]["keys"] == ["ground_level_mm"]
     assert metadata["audit"]["hasAssumptionAudit"] is True
     assert len(metadata["audit"]["agentTraceBundleIds"]) == 1

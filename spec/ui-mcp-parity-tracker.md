@@ -1426,13 +1426,13 @@ agent-facing workflows. It should keep M3 broad enough to prove product parity
 across sketch intake, vertical circulation, documentation/export, transaction
 semantics, and audit gates, while keeping each lane independently reviewable.
 
-| Workstream                                           | Status      | Owner scope                                                                                                                                                    | Tracker items                            | Done when                                                                                                                                                                                                                  |
-| ---------------------------------------------------- | ----------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| M3-F. Sketch IR, seed, and phase product tools       | Not Started | Sketch-to-BIM product descriptors/routes/CLI/tests; own `spec/sketch-to-bim-product-surfaces.md` updates; avoid benchmark/export/audit ownership.              | WP-005, WP-013, Sketch-to-BIM workflow.  | `sketch.ir.validate`, `sketch.seed.compile`, `sketch.phase.apply`, and `sketch.phase.accept` are product-described API/CLI/MCP surfaces or precisely blocked with route-tested contracts and examples.                     |
-| M3-G. Two-storey stair benchmark executable path     | Not Started | `two-storey-house-with-stair` benchmark fixture, runner, expected semantics, MCP/CLI bundle, UI/Cmd+K traceability artifact, and benchmark tests only.         | WP-008, same-house benchmark suite.      | The two-storey stair scenario advances from spec seed to executable MCP/CLI fixture with semantic diff, advisor, visual/export evidence hooks, and honest UI/Cmd+K traceability classification.                            |
-| M3-H. Documentation/export production evidence depth | Not Started | Sheet preview/export/render/schedule/tag/dimension evidence quality and focused backend tests; avoid registry/audit/tracker ownership except test fixtures.    | WP-006, documentation/export parity.     | Documentation/export workflows produce reusable artifacts for sheets, schedules, tags, dimensions, PDF, IFC, glTF/GLB, and external export markers beyond the first smoke test, with optional-backend behavior explicit.   |
-| M3-I. Transaction idempotency and workflow metadata  | Not Started | Transaction metadata, command log, idempotent replay/dedup, undo/redo metadata, collaboration deltas, and route tests; avoid sketch/export feature semantics.  | WP-009, transaction and audit hardening. | Successful replays with stable `clientOpId` or bundle digest are deduplicated or reported deterministically, stale revisions remain protected, and M3 sketch/export/import workflows assert transaction metadata coverage. |
-| M3-J. M3 audit, verifier, and tracker integration    | Not Started | Audit script, generated ledgers, M3 verifier command, tracker status integration, and package scripts; consume other lanes but do not create feature behavior. | WP-004, WP-010, WP-011, WP-012, WP-009.  | A repeatable M3 verifier reports M3-F through M3-I status from source/evidence, audit outputs remain conservative, and tracker Wave 2 result can be updated from generated facts rather than optimistic notes.             |
+| Workstream                                           | Status  | Owner scope                                                                                                                                                    | Tracker items                            | Done when                                                                                                                                                                                                                  |
+| ---------------------------------------------------- | ------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| M3-F. Sketch IR, seed, and phase product tools       | Done    | Sketch-to-BIM product descriptors/routes/CLI/tests; own `spec/sketch-to-bim-product-surfaces.md` updates; avoid benchmark/export/audit ownership.              | WP-005, WP-013, Sketch-to-BIM workflow.  | `sketch.ir.validate`, `sketch.seed.compile`, `sketch.phase.apply`, and `sketch.phase.accept` are product-described API/CLI/MCP surfaces or precisely blocked with route-tested contracts and examples.                     |
+| M3-G. Two-storey stair benchmark executable path     | Partial | `two-storey-house-with-stair` benchmark fixture, runner, expected semantics, MCP/CLI bundle, UI/Cmd+K traceability artifact, and benchmark tests only.         | WP-008, same-house benchmark suite.      | The two-storey stair scenario advances from spec seed to executable MCP/CLI fixture with semantic diff, advisor, visual/export evidence hooks, and honest UI/Cmd+K traceability classification.                            |
+| M3-H. Documentation/export production evidence depth | Partial | Sheet preview/export/render/schedule/tag/dimension evidence quality and focused backend tests; avoid registry/audit/tracker ownership except test fixtures.    | WP-006, documentation/export parity.     | Documentation/export workflows produce reusable artifacts for sheets, schedules, tags, dimensions, PDF, IFC, glTF/GLB, and external export markers beyond the first smoke test, with optional-backend behavior explicit.   |
+| M3-I. Transaction idempotency and workflow metadata  | Partial | Transaction metadata, command log, idempotent replay/dedup, undo/redo metadata, collaboration deltas, and route tests; avoid sketch/export feature semantics.  | WP-009, transaction and audit hardening. | Successful replays with stable `clientOpId` or bundle digest are deduplicated or reported deterministically, stale revisions remain protected, and M3 sketch/export/import workflows assert transaction metadata coverage. |
+| M3-J. M3 audit, verifier, and tracker integration    | Done    | Audit script, generated ledgers, M3 verifier command, tracker status integration, and package scripts; consume other lanes but do not create feature behavior. | WP-004, WP-010, WP-011, WP-012, WP-009.  | A repeatable M3 verifier reports M3-F through M3-I status from source/evidence, audit outputs remain conservative, and tracker Wave 2 result can be updated from generated facts rather than optimistic notes.             |
 
 ### Milestone 3 Wave 2 Scheduling Notes
 
@@ -1451,6 +1451,20 @@ semantics, and audit gates, while keeping each lane independently reviewable.
   a verifier that reports `Partial`, but it must not mark M3 `Done` until
   executable evidence covers sketch intake, two-storey benchmark, documentation
   export, and transaction/audit gates.
+
+Wave 2 audit result:
+
+- `pnpm audit:ui-mcp-parity` now emits `spec/generated/m3-wave2-report.md` and
+  reports M3 Wave 2 `Partial`, with `10 / 13` gates passing.
+- `pnpm verify:m3-parity` passes in default reporting mode and keeps M3
+  `Partial` unless `BIM_AI_M3_REQUIRE_DONE=1` is set and all generated M3-F
+  through M3-I gates pass.
+- Generated facts on 2026-05-18: M3-F is `Done`; M3-G remains `Partial` because
+  Cmd+K, advisor, visual, and export evidence are traceability-only rather than
+  collected pass/fail artifacts; M3-H remains `Partial` because PDF/export
+  artifact depth is not yet clean across PDF, IFC, and glTF/GLB; M3-I remains
+  `Partial` because idempotent replay, stale revision protection, and M3
+  workflow metadata proof are not yet detected in benchmark evidence.
 
 ## Next Work Packages
 

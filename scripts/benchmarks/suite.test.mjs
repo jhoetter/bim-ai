@@ -45,13 +45,16 @@ test('UI evidence classifications distinguish replay, traceability, and missing 
     'executable',
   );
 
-  assert.equal(scenarios.get('two-storey-house-with-stair').evidence.ui.classification, 'missing');
+  assert.equal(
+    scenarios.get('two-storey-house-with-stair').evidence.ui.classification,
+    'traceability-only',
+  );
   assert.equal(
     scenarios.get('two-storey-house-with-stair').evidence.cmdK.classification,
     'traceability-only',
   );
   assert.equal(
     scenarios.get('two-storey-house-with-stair').evidence.semanticDiff.classification,
-    'missing',
+    'executable',
   );
 });

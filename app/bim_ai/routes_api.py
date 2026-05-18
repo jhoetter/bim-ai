@@ -49,7 +49,7 @@ from bim_ai.constructability_report import (
 from bim_ai.coordination_lens import build_coordination_lens_snapshot
 from bim_ai.construction_lens import build_construction_lens_payload
 from bim_ai.cost_quantity import cost_quantity_lens_review_status
-from bim_ai.db import SessionMaker, get_session
+from bim_ai.db import SessionMaker, find_idempotent_undo_record, get_session
 from bim_ai.diff_engine import compute_element_diff
 from bim_ai.document import Document
 from bim_ai.elements import Element, LevelElem, LinkModelElem, PlanViewElem
@@ -155,6 +155,7 @@ from bim_ai.routes_deps import (
 )
 from bim_ai.routes_exports import exports_router
 from bim_ai.routes_sketch import sketch_router
+from bim_ai.routes_sketch_product import sketch_product_router
 from bim_ai.schedule_csv import schedule_payload_to_csv, schedule_payload_with_column_subset
 from bim_ai.schedule_derivation import derive_schedule_table, list_schedule_ids
 from bim_ai.sheet_preview_svg import SHEET_PRINT_RASTER_PRINT_SURROGATE_CONTRACT_V2
@@ -185,6 +186,7 @@ api_router.include_router(exports_router)
 api_router.include_router(commands_router)
 api_router.include_router(activity_router)
 api_router.include_router(sketch_router)
+api_router.include_router(sketch_product_router)
 
 
 def _get_job_queue() -> JobQueue:
@@ -2166,6 +2168,7 @@ class CommandBundleRequest(BaseModel):
     bundle: CommandBundle
     mode: str = Field(default="dry_run")
     user_id: str | None = Field(default="local-dev", alias="userId")
+    client_op_id: str | None = Field(default=None, alias="clientOpId")
     submitter: str = Field(default="human")
 
 
@@ -2189,7 +2192,7 @@ async def apply_bundle_route(
     from bim_ai.engine import compute_delta_wire, diff_undo_cmds
     from bim_ai.routes_deps import delete_redos, document_to_wire
     from bim_ai.tables import UndoStackRecord
-    from bim_ai.transaction_metadata import build_transaction_metadata
+    from bim_ai.transaction_metadata import build_transaction_metadata, command_bundle_digest
 
     row = await load_model_row(session, model_id)
     if row is None:
@@ -2210,6 +2213,41 @@ async def apply_bundle_route(
 
     doc = Document.model_validate(row.document)
     mode = body.mode if body.mode in ("dry_run", "commit") else "dry_run"
+    uid = body.user_id or "local-dev"
+    bundle_digest = command_bundle_digest(
+        body.bundle.commands,
+        parent_revision=body.bundle.parent_revision,
+        assumptions=list(body.bundle.assumptions),
+        submitter=body.submitter,
+        route="/api/models/{model_id}/bundles",
+    )
+
+    if mode == "commit":
+        prior = await find_idempotent_undo_record(
+            session,
+            model_id=model_id,
+            client_op_id=body.client_op_id,
+            bundle_digest=bundle_digest,
+            user_id=uid,
+        )
+        if prior is not None:
+            metadata = prior.transaction_metadata or {}
+            return {
+                "schemaVersion": "cmd-v3.0",
+                "applied": True,
+                "newRevision": prior.revision_after,
+                "currentRevision": row.revision,
+                "changedIds": (
+                    metadata.get("changedIds", []) if isinstance(metadata, dict) else []
+                ),
+                "violations": [],
+                "checkpointSnapshotId": None,
+                "transactionMetadata": metadata,
+                "idempotentReplay": True,
+                "idempotencyMatch": (
+                    metadata.get("idempotency") if isinstance(metadata, dict) else None
+                ),
+            }
 
     result, new_doc_from_bundle = _apply_bundle(
         doc, body.bundle, mode, model_id=str(model_id), submitter=body.submitter
@@ -2238,7 +2276,6 @@ async def apply_bundle_route(
 
     if result.applied and result.new_revision is not None and new_doc_from_bundle is not None:
         new_doc = new_doc_from_bundle
-        uid = body.user_id or "local-dev"
         doc_before = clone_document(doc)
         undo_cmds = diff_undo_cmds(doc_before, new_doc)
         transaction_metadata = build_transaction_metadata(
@@ -2249,6 +2286,14 @@ async def apply_bundle_route(
             submitter=body.submitter,
             parent_revision=body.bundle.parent_revision,
             assumptions=list(body.bundle.assumptions),
+            client_op_id=body.client_op_id,
+            workflow={
+                "route": "/api/models/{model_id}/bundles",
+                "entryPoint": "cmd-v3-apply-bundle",
+                "surface": "api-v3",
+                "mode": "commit",
+            },
+            bundle_digest=bundle_digest,
         )
         await delete_redos(session, model_id, uid)
 

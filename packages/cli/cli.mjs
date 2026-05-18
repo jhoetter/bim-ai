@@ -1641,6 +1641,70 @@ async function cmdInitiationCheck(
   if (failOnAcceptance && result.acceptance?.ok === false) process.exit(5);
 }
 
+async function cmdSketchPhaseApply({
+  modelId,
+  userId,
+  bundlePath,
+  baseRevision,
+  applyMode,
+  outPath,
+  phaseId,
+  featureIds,
+}) {
+  if (!modelId) {
+    console.error('sketch phase apply requires --model <id> or BIM_AI_MODEL_ID.');
+    process.exit(1);
+  }
+  if (!bundlePath) {
+    console.error('sketch phase apply requires --bundle <path>.');
+    process.exit(1);
+  }
+  const result = await applyRunnerBundle(modelId, userId, bundlePath, baseRevision, applyMode);
+  const payload = {
+    schemaVersion: 'sketch.phase.apply.result.v0',
+    ok: result.ok,
+    phaseId: phaseId ?? null,
+    featureIds,
+    transaction: result,
+  };
+  if (outPath) await writeJsonArtifact(outPath, payload);
+  console.log(JSON.stringify(payload, null, 2));
+  if (!result.ok) process.exit(1);
+}
+
+async function cmdSketchPhaseAccept({
+  irPath,
+  capabilityMatrixPath,
+  outDir,
+  modelId,
+  qualityMode,
+  failOnAcceptance,
+  phaseId,
+}) {
+  if (!irPath || !outDir) {
+    console.error('sketch phase accept requires --ir <path> --out <dir>.');
+    process.exit(1);
+  }
+  const ir = applyQualityMode(await readJsonFile(irPath), qualityMode);
+  const matrix = await readJsonFile(capabilityMatrixPath);
+  const result = await writeInitiationPacket({
+    ir,
+    matrix,
+    outDir,
+    irPath,
+    capabilityMatrixPath,
+    modelId: modelId ?? null,
+  });
+  const payload = {
+    schemaVersion: 'sketch.phase.accept.cli-result.v0',
+    phaseId: phaseId ?? null,
+    ...result,
+  };
+  console.log(JSON.stringify(payload, null, 2));
+  if (!result.ok) process.exit(2);
+  if (failOnAcceptance && result.acceptance?.ok === false) process.exit(5);
+}
+
 function safeArtifactName(value) {
   return (
     String(value || 'view')
@@ -2603,6 +2667,14 @@ Commands:
                                        validate brief JSON → write neutral DSL starter bundle
   seed-dsl compile --recipe <path> --out <path> [--model-hint id]
                                        SKB: compile architectural seed DSL intent into a deterministic cmd-v3.0 bundle.
+  sketch ir validate --ir <path> --out <dir> [--capabilities <path>]
+                                       M3-F: validate Sketch Understanding IR and write an evidence packet.
+  sketch seed compile --recipe <path> --out <path> [--model-hint id]
+                                       M3-F: compile seed DSL through the product seed compiler.
+  sketch phase apply --model <id> --bundle <path> --base <rev> [--dry-run|--commit] [--out <path>]
+                                       M3-F: submit a phase bundle through the transaction route.
+  sketch phase accept --ir <path> --out <dir> [--capabilities <path>] [--fail-on-acceptance]
+                                       M3-F: evaluate phase packet acceptance gates.
   initiation-check --ir <path> --out <dir> [--capabilities <path>] [--model <id>] [--live]
                    [--mode massing_only|concept_bim|project_initiation_bim|documentation_ready]
                    [--fail-on-acceptance]
@@ -2839,6 +2911,123 @@ async function main() {
       if (subcmd !== 'compile' || !recipeArg || !outArg) usage();
       await cmdSeedDslCompile(recipeArg, outArg, modelHint);
       return;
+    }
+    if (cmd === 'sketch') {
+      const area = argv[1];
+      const subcmd = argv[2];
+      const rest = argv.slice(3);
+      if (area === 'ir' && subcmd === 'validate') {
+        let irArg;
+        let outArg;
+        let capabilityArg = DEFAULT_CAPABILITY_MATRIX_PATH;
+        let qualityMode;
+        let failOnAcceptance = false;
+        for (let i = 0; i < rest.length; i++) {
+          const a = rest[i];
+          if (a === '--ir' && rest[i + 1]) irArg = rest[++i];
+          else if (a === '--out' && rest[i + 1]) outArg = rest[++i];
+          else if (a === '--capabilities' && rest[i + 1]) capabilityArg = rest[++i];
+          else if (a === '--capability-matrix' && rest[i + 1]) capabilityArg = rest[++i];
+          else if (a === '--model' && rest[i + 1]) modelId = rest[++i];
+          else if (a === '--mode' && rest[i + 1]) qualityMode = rest[++i];
+          else if (a === '--fail-on-acceptance') failOnAcceptance = true;
+        }
+        if (!irArg || !outArg) {
+          console.error('sketch ir validate requires --ir <path> --out <dir>.');
+          usage();
+        }
+        await cmdInitiationCheck(
+          irArg,
+          capabilityArg,
+          outArg,
+          modelId,
+          false,
+          qualityMode,
+          failOnAcceptance,
+        );
+        return;
+      }
+      if (area === 'seed' && subcmd === 'compile') {
+        let recipeArg;
+        let outArg;
+        let modelHint;
+        for (let i = 0; i < rest.length; i++) {
+          const a = rest[i];
+          if (a === '--recipe' && rest[i + 1]) recipeArg = rest[++i];
+          else if (a === '--out' && rest[i + 1]) outArg = rest[++i];
+          else if (a === '--model-hint' && rest[i + 1]) modelHint = rest[++i];
+        }
+        if (!recipeArg || !outArg) usage();
+        await cmdSeedDslCompile(recipeArg, outArg, modelHint);
+        return;
+      }
+      if (area === 'phase' && subcmd === 'apply') {
+        let bundlePath;
+        let baseRevision;
+        let applyMode = 'dry_run';
+        let outPath;
+        let phaseId;
+        let featureIds = [];
+        for (let i = 0; i < rest.length; i++) {
+          const a = rest[i];
+          if (a === '--model' && rest[i + 1]) modelId = rest[++i];
+          else if (a === '--bundle' && rest[i + 1]) bundlePath = rest[++i];
+          else if (a === '--base' && rest[i + 1]) baseRevision = Number(rest[++i]);
+          else if (a === '--parent-revision' && rest[i + 1]) baseRevision = Number(rest[++i]);
+          else if (a === '--commit') applyMode = 'commit';
+          else if (a === '--dry-run') applyMode = 'dry_run';
+          else if (a === '--out' && rest[i + 1]) outPath = rest[++i];
+          else if (a === '--phase' && rest[i + 1]) phaseId = rest[++i];
+          else if (a === '--phase-id' && rest[i + 1]) phaseId = rest[++i];
+          else if (a === '--features' && rest[i + 1]) featureIds = parseCsv(rest[++i]);
+        }
+        await cmdSketchPhaseApply({
+          modelId,
+          userId,
+          bundlePath,
+          baseRevision,
+          applyMode,
+          outPath,
+          phaseId,
+          featureIds,
+        });
+        return;
+      }
+      if (area === 'phase' && subcmd === 'accept') {
+        let irArg;
+        let outArg;
+        let capabilityArg = DEFAULT_CAPABILITY_MATRIX_PATH;
+        let qualityMode;
+        let failOnAcceptance = false;
+        let phaseId;
+        for (let i = 0; i < rest.length; i++) {
+          const a = rest[i];
+          if (a === '--ir' && rest[i + 1]) irArg = rest[++i];
+          else if (a === '--out' && rest[i + 1]) outArg = rest[++i];
+          else if (a === '--capabilities' && rest[i + 1]) capabilityArg = rest[++i];
+          else if (a === '--capability-matrix' && rest[i + 1]) capabilityArg = rest[++i];
+          else if (a === '--model' && rest[i + 1]) modelId = rest[++i];
+          else if (a === '--mode' && rest[i + 1]) qualityMode = rest[++i];
+          else if (a === '--phase' && rest[i + 1]) phaseId = rest[++i];
+          else if (a === '--phase-id' && rest[i + 1]) phaseId = rest[++i];
+          else if (a === '--fail-on-acceptance') failOnAcceptance = true;
+        }
+        if (!irArg || !outArg) {
+          console.error('sketch phase accept requires --ir <path> --out <dir>.');
+          usage();
+        }
+        await cmdSketchPhaseAccept({
+          irPath: irArg,
+          capabilityMatrixPath: capabilityArg,
+          outDir: outArg,
+          modelId,
+          qualityMode,
+          failOnAcceptance,
+          phaseId,
+        });
+        return;
+      }
+      usage();
     }
     if (cmd === 'initiation-modes' || cmd === 'initiate-modes') {
       await cmdInitiationModes();

@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import hashlib
+import json
 from typing import Any
 
 from bim_ai.document import Document
@@ -42,6 +44,33 @@ def _agent_trace_bundle_ids(doc: Document, changed_ids: list[str]) -> list[str]:
     return sorted(bundle_ids)
 
 
+def canonical_transaction_digest(payload: Any) -> str:
+    """Stable SHA-256 digest for idempotency keys derived from JSON payloads."""
+    canonical = json.dumps(payload, sort_keys=True, separators=(",", ":"), default=str)
+    return hashlib.sha256(canonical.encode("utf-8")).hexdigest()
+
+
+def command_bundle_digest(
+    commands: list[dict[str, Any]],
+    *,
+    parent_revision: int | None = None,
+    assumptions: list[Any] | None = None,
+    submitter: str | None = None,
+    route: str | None = None,
+) -> str:
+    """Stable digest for a submitted command/bundle transaction."""
+    assumption_entries = [_wire_assumption(a) for a in assumptions or []]
+    return canonical_transaction_digest(
+        {
+            "commands": commands,
+            "parentRevision": parent_revision,
+            "assumptions": assumption_entries,
+            "submitter": submitter,
+            "route": route,
+        }
+    )
+
+
 def build_transaction_metadata(
     *,
     doc_before: Document,
@@ -53,6 +82,8 @@ def build_transaction_metadata(
     assumptions: list[Any] | None = None,
     client_op_id: str | None = None,
     action: str = "commit",
+    workflow: dict[str, Any] | None = None,
+    bundle_digest: str | None = None,
 ) -> dict[str, Any]:
     """Shared transaction/audit summary for commits, command-log, and collab deltas."""
     assumption_entries = [_wire_assumption(a) for a in assumptions or []]
@@ -62,6 +93,14 @@ def build_transaction_metadata(
     element_patch_ids = sorted(str(k) for k in delta.get("elements", {}).keys())
     removed_ids = sorted(str(x) for x in delta.get("removedIds", []))
     command_types = [str(c.get("type", "")) for c in commands if isinstance(c, dict)]
+    route = str(workflow.get("route")) if workflow and workflow.get("route") else None
+    digest = bundle_digest or command_bundle_digest(
+        commands,
+        parent_revision=parent_revision if parent_revision is not None else doc_before.revision,
+        assumptions=assumption_entries,
+        submitter=submitter,
+        route=route,
+    )
 
     metadata: dict[str, Any] = {
         "schemaVersion": TRANSACTION_METADATA_SCHEMA_VERSION,
@@ -96,6 +135,14 @@ def build_transaction_metadata(
         "undo": {
             "available": action in {"commit", "redo"},
             "redoAvailable": action == "undo",
+        },
+        "idempotency": {
+            "clientOpId": client_op_id,
+            "bundleDigestSha256": digest,
+        },
+        "workflow": workflow or {
+            "route": route or "unknown",
+            "entryPoint": submitter or "unknown",
         },
     }
     if client_op_id:

@@ -29,6 +29,7 @@ node --test scripts/benchmarks/suite.test.mjs
 ```
 
 The suite currently contains the closed `simple-single-storey-house` fixture and
-the first M3 expansion seed, `two-storey-house-with-stair`. The second scenario
-is deliberately spec-only until its MCP/CLI bundle, UI/Cmd+K traceability,
-advisor, visual, export, and semantic-diff artifacts exist.
+the M3-G executable `two-storey-house-with-stair` fixture. The stair scenario has
+an offline MCP/CLI semantic runner and UI/Cmd+K traceability, but stair, slab
+opening, and railing creation are still raw bundle only; advisor, visual, and
+export evidence remain live hooks until collected against a committed target.

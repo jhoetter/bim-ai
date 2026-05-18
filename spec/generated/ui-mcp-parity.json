@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-18T15:41:39.950Z",
+  "generatedAt": "2026-05-18T15:57:26.819Z",
   "sourceOfIntent": "spec/ui-mcp-parity-tracker.md",
   "sources": {
     "commands": "app/bim_ai/commands.py",
@@ -26,7 +26,8 @@
     "Benchmark expected-semantics markers are documentation signals only; M2 closure gates require clean machine-readable artifact JSON.",
     "M2 closure gates classify evidence statuses conservatively: todo, placeholder, optional, fixture, stale, failed, traceability-only, and capable statuses remain blockers even when they mention live execution.",
     "Wave 6 closure evidence must carry simple-house semantic proof: live dry-run needs command intent, and commit/advisor/visual/export artifacts need changed ids plus committed wall/opening/floor/roof counts.",
-    "M2 evidence artifacts are discovered as matching JSON files below benchmark directories and spec/generated; docs, traceability-only files, and generated audit ledgers are not passing evidence."
+    "M2 evidence artifacts are discovered as matching JSON files below benchmark directories and spec/generated; docs, traceability-only files, and generated audit ledgers are not passing evidence.",
+    "M3 Wave 2 gates are evidence aggregators only: CLI-only mappings, scenario seeds, traceability-only UI files, PDF shells, and generic transaction metadata can make a workstream Partial but not Done."
   ],
   "summary": {
     "backendCommandCount": 262,
@@ -39,8 +40,8 @@
       "tool.spire-roof",
       "tool.terrain-split"
     ],
-    "apiDescriptorCount": 51,
-    "implementedRouteCount": 146,
+    "apiDescriptorCount": 55,
+    "implementedRouteCount": 150,
     "backendCommandsWithoutMatchedUi": 141,
     "backendCommandsRawAgentOnly": 208,
     "backendCommandsTypedAgentTool": 39,
@@ -58,7 +59,7 @@
     "m2ResolveDescriptorCount": 14,
     "m2SemanticAuthoringDescriptorCount": 15,
     "m2TypedMutatingDescriptorCount": 27,
-    "m2RawApplyBundleDescriptorCount": 3,
+    "m2RawApplyBundleDescriptorCount": 4,
     "m2ClosureStatus": "Done",
     "m2ClosureGatePassed": 7,
     "m2ClosureGateExpected": 7,
@@ -78,7 +79,11 @@
     "m3GovernanceGatePassed": 3,
     "m3GovernanceGateExpected": 3,
     "m3DescriptorUntrackedSurfaceCount": 0,
-    "m3CmdkUntrackedSurfaceCount": 0
+    "m3CmdkUntrackedSurfaceCount": 0,
+    "m3Wave2Status": "Partial",
+    "m3Wave2GatePassed": 10,
+    "m3Wave2GateExpected": 13,
+    "m3Wave2BlockerCount": 3
   },
   "m2": {
     "firstPackExpectedCount": 28,
@@ -95,7 +100,7 @@
     "resolveDescriptorCount": 14,
     "semanticAuthoringDescriptorCount": 15,
     "typedMutatingDescriptorCount": 27,
-    "rawApplyBundleDescriptorCount": 3,
+    "rawApplyBundleDescriptorCount": 4,
     "semanticCmdkSurfaceCount": 12,
     "closureGateCount": 7,
     "closureGatePassedCount": 7,
@@ -108,7 +113,7 @@
         "descriptor": "model-show",
         "stableId": "model-show",
         "surface": "query-route",
-        "source": "app/bim_ai/routes_api.py:1211",
+        "source": "app/bim_ai/routes_api.py:1213",
         "toolKind": "query",
         "benchmarkEvidence": [],
         "notes": ""
@@ -119,7 +124,7 @@
         "descriptor": "model.dry_run",
         "stableId": "model.dry_run",
         "surface": "transaction-route",
-        "source": "app/bim_ai/routes_commands.py:524",
+        "source": "app/bim_ai/routes_commands.py:585",
         "toolKind": "raw-apply-bundle",
         "benchmarkEvidence": [],
         "notes": "Dedicated descriptor detected, but it still exposes bundle-shaped payloads rather than semantic authoring inputs."
@@ -130,7 +135,7 @@
         "descriptor": "model.commit_bundle",
         "stableId": "model.commit_bundle",
         "surface": "transaction-route",
-        "source": "app/bim_ai/routes_api.py:2172",
+        "source": "app/bim_ai/routes_api.py:2175",
         "toolKind": "raw-apply-bundle",
         "benchmarkEvidence": [],
         "notes": "Dedicated descriptor detected, but it still exposes bundle-shaped payloads rather than semantic authoring inputs."
@@ -295,6 +300,15 @@
             "source": "spec/benchmarks/simple-single-storey-house/mcp-cli-command-bundle.json",
             "live": false,
             "note": "Command appears in deterministic MCP/CLI fixture; this is not live typed execution evidence."
+          },
+          {
+            "benchmarkId": "two-storey-house-with-stair",
+            "toolId": "author.wall_chain",
+            "marker": "createWallChain",
+            "status": "fixture-command",
+            "source": "spec/benchmarks/two-storey-house-with-stair/mcp-cli-command-bundle.json",
+            "live": false,
+            "note": "Command appears in deterministic MCP/CLI fixture; this is not live typed execution evidence."
           }
         ],
         "notes": "Benchmark fixture exposes marker(s), but no live first-class surface was detected."
@@ -404,6 +418,15 @@
             "source": "spec/benchmarks/simple-single-storey-house/mcp-cli-command-bundle.json",
             "live": false,
             "note": "Command appears in deterministic MCP/CLI fixture; this is not live typed execution evidence."
+          },
+          {
+            "benchmarkId": "two-storey-house-with-stair",
+            "toolId": "view.save_3d",
+            "marker": "saveViewpoint",
+            "status": "fixture-command",
+            "source": "spec/benchmarks/two-storey-house-with-stair/mcp-cli-command-bundle.json",
+            "live": false,
+            "note": "Command appears in deterministic MCP/CLI fixture; this is not live typed execution evidence."
           }
         ],
         "notes": "Benchmark fixture exposes marker(s), but no live first-class surface was detected."
@@ -425,7 +448,7 @@
         "descriptor": "",
         "stableId": "",
         "surface": "qa-route",
-        "source": "app/bim_ai/routes_api.py:1405",
+        "source": "app/bim_ai/routes_api.py:1407",
         "toolKind": "qa-route",
         "benchmarkEvidence": [
           {
@@ -434,6 +457,15 @@
             "marker": "advisor evidence expectation",
             "status": "placeholder-live-dry-run-or-committed-output",
             "source": "spec/benchmarks/simple-single-storey-house/expected-semantics.json",
+            "live": false,
+            "note": "Advisor evidence expectation declared by benchmark."
+          },
+          {
+            "benchmarkId": "two-storey-house-with-stair",
+            "toolId": "qa.advisor",
+            "marker": "advisor evidence expectation",
+            "status": "hook-declared-no-committed-artifact",
+            "source": "spec/benchmarks/two-storey-house-with-stair/expected-semantics.json",
             "live": false,
             "note": "Advisor evidence expectation declared by benchmark."
           }
@@ -448,7 +480,7 @@
         "descriptor": "model.dry_run",
         "stableId": "model.dry_run",
         "surface": "transaction-route",
-        "source": "app/bim_ai/routes_commands.py:524",
+        "source": "app/bim_ai/routes_commands.py:585",
         "toolKind": "raw-apply-bundle",
         "benchmarkEvidence": [],
         "notes": "Dedicated descriptor detected, but it still exposes bundle-shaped payloads rather than semantic authoring inputs."
@@ -459,7 +491,7 @@
         "descriptor": "model.commit_bundle",
         "stableId": "model.commit_bundle",
         "surface": "transaction-route",
-        "source": "app/bim_ai/routes_api.py:2172",
+        "source": "app/bim_ai/routes_api.py:2175",
         "toolKind": "raw-apply-bundle",
         "benchmarkEvidence": [],
         "notes": "Dedicated descriptor detected, but it still exposes bundle-shaped payloads rather than semantic authoring inputs."
@@ -514,6 +546,15 @@
             "source": "spec/benchmarks/simple-single-storey-house/mcp-cli-command-bundle.json",
             "live": false,
             "note": "Command appears in deterministic MCP/CLI fixture; this is not live typed execution evidence."
+          },
+          {
+            "benchmarkId": "two-storey-house-with-stair",
+            "toolId": "view.save_3d",
+            "marker": "saveViewpoint",
+            "status": "fixture-command",
+            "source": "spec/benchmarks/two-storey-house-with-stair/mcp-cli-command-bundle.json",
+            "live": false,
+            "note": "Command appears in deterministic MCP/CLI fixture; this is not live typed execution evidence."
           }
         ],
         "notes": "Benchmark fixture exposes marker(s), but no live first-class surface was detected."
@@ -524,7 +565,7 @@
         "descriptor": "",
         "stableId": "",
         "surface": "qa-route",
-        "source": "app/bim_ai/routes_api.py:1405",
+        "source": "app/bim_ai/routes_api.py:1407",
         "toolKind": "qa-route",
         "benchmarkEvidence": [
           {
@@ -533,6 +574,15 @@
             "marker": "advisor evidence expectation",
             "status": "placeholder-live-dry-run-or-committed-output",
             "source": "spec/benchmarks/simple-single-storey-house/expected-semantics.json",
+            "live": false,
+            "note": "Advisor evidence expectation declared by benchmark."
+          },
+          {
+            "benchmarkId": "two-storey-house-with-stair",
+            "toolId": "qa.advisor",
+            "marker": "advisor evidence expectation",
+            "status": "hook-declared-no-committed-artifact",
+            "source": "spec/benchmarks/two-storey-house-with-stair/expected-semantics.json",
             "live": false,
             "note": "Advisor evidence expectation declared by benchmark."
           }
@@ -554,7 +604,7 @@
             "benchmarkId": "",
             "type": "firstPackSurfaces",
             "status": "present",
-            "source": "app/bim_ai/routes_api.py:1211",
+            "source": "app/bim_ai/routes_api.py:1213",
             "detail": "model.show",
             "passes": true
           },
@@ -562,7 +612,7 @@
             "benchmarkId": "",
             "type": "firstPackSurfaces",
             "status": "present",
-            "source": "app/bim_ai/routes_commands.py:524",
+            "source": "app/bim_ai/routes_commands.py:585",
             "detail": "model.dry_run",
             "passes": true
           },
@@ -570,7 +620,7 @@
             "benchmarkId": "",
             "type": "firstPackSurfaces",
             "status": "present",
-            "source": "app/bim_ai/routes_api.py:2172",
+            "source": "app/bim_ai/routes_api.py:2175",
             "detail": "model.commit_bundle",
             "passes": true
           },
@@ -770,7 +820,7 @@
             "benchmarkId": "",
             "type": "firstPackSurfaces",
             "status": "present",
-            "source": "app/bim_ai/routes_api.py:1405",
+            "source": "app/bim_ai/routes_api.py:1407",
             "detail": "qa.advisor",
             "passes": true
           }
@@ -785,7 +835,9 @@
         "blocker": "",
         "blockerDetails": [
           "simple-single-storey-house:spec/benchmarks/simple-single-storey-house/expected-semantics.json status=fixture-validated-live-dry-run-and-commit-capable (benchmark path metadata is not a clean live dry-run artifact)",
-          "simple-single-storey-house:spec/benchmarks/simple-single-storey-house/expected-semantics.json status=optional detail=mode=dry_run (benchmark liveDryRun metadata is optional configuration, not run evidence)"
+          "simple-single-storey-house:spec/benchmarks/simple-single-storey-house/expected-semantics.json status=optional detail=mode=dry_run (benchmark liveDryRun metadata is optional configuration, not run evidence)",
+          "two-storey-house-with-stair:spec/benchmarks/two-storey-house-with-stair/expected-semantics.json status=fixture-validated-offline-raw-bundle-live-dry-run-capable (benchmark path metadata is not a clean live dry-run artifact)",
+          "two-storey-house-with-stair:spec/benchmarks/two-storey-house-with-stair/expected-semantics.json status=optional detail=mode=dry_run (benchmark liveDryRun metadata is optional configuration, not run evidence)"
         ],
         "evidence": [
           {
@@ -847,6 +899,24 @@
               "commandCount": 28,
               "commandTypes": []
             }
+          },
+          {
+            "benchmarkId": "two-storey-house-with-stair",
+            "type": "liveDryRunEvidence",
+            "status": "fixture-validated-offline-raw-bundle-live-dry-run-capable",
+            "source": "spec/benchmarks/two-storey-house-with-stair/expected-semantics.json",
+            "detail": "",
+            "passes": false,
+            "reason": "benchmark path metadata is not a clean live dry-run artifact"
+          },
+          {
+            "benchmarkId": "two-storey-house-with-stair",
+            "type": "liveDryRunEvidence",
+            "status": "optional",
+            "source": "spec/benchmarks/two-storey-house-with-stair/expected-semantics.json",
+            "detail": "mode=dry_run",
+            "passes": false,
+            "reason": "benchmark liveDryRun metadata is optional configuration, not run evidence"
           }
         ]
       },
@@ -1040,7 +1110,8 @@
         "blocker": "",
         "blockerDetails": [
           "simple-single-storey-house:spec/benchmarks/simple-single-storey-house/expected-semantics.json status=placeholder-live-dry-run-or-committed-output (expected-semantics metadata is documentation, not committed advisor/validation evidence)",
-          "simple-single-storey-house:spec/benchmarks/simple-single-storey-house/live-evidence/advisor-validation.json status=post-commit-live detail=post-commit-live (committed advisor/validation artifact does not include changed simple-house semantic proof: changed ids are absent)"
+          "simple-single-storey-house:spec/benchmarks/simple-single-storey-house/live-evidence/advisor-validation.json status=post-commit-live detail=post-commit-live (committed advisor/validation artifact does not include changed simple-house semantic proof: changed ids are absent)",
+          "two-storey-house-with-stair:spec/benchmarks/two-storey-house-with-stair/expected-semantics.json status=hook-declared-no-committed-artifact (expected-semantics metadata is documentation, not committed advisor/validation evidence)"
         ],
         "evidence": [
           {
@@ -1166,6 +1237,15 @@
               },
               "source": "snapshotSummary.snapshot"
             }
+          },
+          {
+            "benchmarkId": "two-storey-house-with-stair",
+            "type": "committedAdvisorValidation",
+            "status": "hook-declared-no-committed-artifact",
+            "source": "spec/benchmarks/two-storey-house-with-stair/expected-semantics.json",
+            "detail": "",
+            "passes": false,
+            "reason": "expected-semantics metadata is documentation, not committed advisor/validation evidence"
           }
         ]
       },
@@ -1178,7 +1258,8 @@
         "blocker": "",
         "blockerDetails": [
           "simple-single-storey-house:spec/benchmarks/simple-single-storey-house/expected-semantics.json status=server-side-substitute-when-committed-evidence-requested detail=Full confidence still requires browser-rendered nonblank plan and 3D screenshots for ssh-view-ground-plan and ssh-view-3d. (expected-semantics metadata is documentation, not visual/render evidence)",
-          "simple-single-storey-house:spec/benchmarks/simple-single-storey-house/live-evidence/visual-evidence.json status=server-side-substitute detail=visual/render evidence artifact (visual/render artifact does not include changed simple-house semantic proof: changed ids are absent)"
+          "simple-single-storey-house:spec/benchmarks/simple-single-storey-house/live-evidence/visual-evidence.json status=server-side-substitute detail=visual/render evidence artifact (visual/render artifact does not include changed simple-house semantic proof: changed ids are absent)",
+          "two-storey-house-with-stair:spec/benchmarks/two-storey-house-with-stair/expected-semantics.json status=hook-declared-no-visual-artifact (expected-semantics metadata is documentation, not visual/render evidence)"
         ],
         "evidence": [
           {
@@ -1304,6 +1385,15 @@
             "detail": "visual/render evidence artifact",
             "passes": false,
             "reason": "visual/render artifact does not include changed simple-house semantic proof: changed ids are absent"
+          },
+          {
+            "benchmarkId": "two-storey-house-with-stair",
+            "type": "visualRenderEvidence",
+            "status": "hook-declared-no-visual-artifact",
+            "source": "spec/benchmarks/two-storey-house-with-stair/expected-semantics.json",
+            "detail": "",
+            "passes": false,
+            "reason": "expected-semantics metadata is documentation, not visual/render evidence"
           }
         ]
       },
@@ -1316,7 +1406,8 @@
         "blocker": "",
         "blockerDetails": [
           "simple-single-storey-house:spec/benchmarks/simple-single-storey-house/expected-semantics.json status=artifact-or-manifest-check-when-committed-evidence-requested detail=Full M2/M3 exit should add IFC and glTF round-trip evidence for this house. (expected-semantics metadata is documentation, not export evidence)",
-          "simple-single-storey-house:spec/benchmarks/simple-single-storey-house/live-evidence/export-evidence.json status=artifact-or-manifest-returned detail=export evidence artifact (export artifact is a stub or mock)"
+          "simple-single-storey-house:spec/benchmarks/simple-single-storey-house/live-evidence/export-evidence.json status=artifact-or-manifest-returned detail=export evidence artifact (export artifact is a stub or mock)",
+          "two-storey-house-with-stair:spec/benchmarks/two-storey-house-with-stair/expected-semantics.json status=hook-declared-no-export-artifact (expected-semantics metadata is documentation, not export evidence)"
         ],
         "evidence": [
           {
@@ -1442,6 +1533,15 @@
             "detail": "export evidence artifact",
             "passes": false,
             "reason": "export artifact is a stub or mock"
+          },
+          {
+            "benchmarkId": "two-storey-house-with-stair",
+            "type": "exportEvidence",
+            "status": "hook-declared-no-export-artifact",
+            "source": "spec/benchmarks/two-storey-house-with-stair/expected-semantics.json",
+            "detail": "",
+            "passes": false,
+            "reason": "expected-semantics metadata is documentation, not export evidence"
           }
         ]
       },
@@ -1454,7 +1554,10 @@
         "blocker": "",
         "blockerDetails": [
           "simple-single-storey-house:spec/benchmarks/simple-single-storey-house/expected-semantics.json status=traceability-only detail=Add an executable UI/Cmd+K path and semantic diff against this fixture once M2 UI benchmark automation is in scope. (benchmark path metadata is not executable UI-equivalence evidence)",
-          "simple-single-storey-house:spec/benchmarks/simple-single-storey-house/ui-cmdk-traceability.json status=traceability-only detail=missing semantic diff (UI-equivalence artifact still lists blockers or TODOs)"
+          "simple-single-storey-house:spec/benchmarks/simple-single-storey-house/ui-cmdk-traceability.json status=traceability-only detail=missing semantic diff (UI-equivalence artifact still lists blockers or TODOs)",
+          "two-storey-house-with-stair:spec/benchmarks/two-storey-house-with-stair/expected-semantics.json status=traceability-only detail=Add browser-authored UI replay for exact two-storey stair inputs. (benchmark path metadata is not executable UI-equivalence evidence)",
+          "two-storey-house-with-stair:spec/benchmarks/two-storey-house-with-stair/ui-cmdk-traceability.json status=traceability-only detail=missing semantic diff (UI-equivalence artifact still lists blockers or TODOs)",
+          "two-storey-house-with-stair:spec/benchmarks/two-storey-house-with-stair/ui-equivalence.json status=traceability-only detail=missing semantic diff (UI-equivalence artifact is not executable, clean, and semantically equal)"
         ],
         "evidence": [
           {
@@ -1483,6 +1586,33 @@
             "detail": "semantic diff checked",
             "passes": true,
             "reason": ""
+          },
+          {
+            "benchmarkId": "two-storey-house-with-stair",
+            "type": "uiEquivalentPath",
+            "status": "traceability-only",
+            "source": "spec/benchmarks/two-storey-house-with-stair/expected-semantics.json",
+            "detail": "Add browser-authored UI replay for exact two-storey stair inputs.",
+            "passes": false,
+            "reason": "benchmark path metadata is not executable UI-equivalence evidence"
+          },
+          {
+            "benchmarkId": "two-storey-house-with-stair",
+            "type": "uiEquivalentPath",
+            "status": "traceability-only",
+            "source": "spec/benchmarks/two-storey-house-with-stair/ui-cmdk-traceability.json",
+            "detail": "missing semantic diff",
+            "passes": false,
+            "reason": "UI-equivalence artifact still lists blockers or TODOs"
+          },
+          {
+            "benchmarkId": "two-storey-house-with-stair",
+            "type": "uiEquivalentPath",
+            "status": "traceability-only",
+            "source": "spec/benchmarks/two-storey-house-with-stair/ui-equivalence.json",
+            "detail": "missing semantic diff",
+            "passes": false,
+            "reason": "UI-equivalence artifact is not executable, clean, and semantically equal"
           }
         ]
       }
@@ -1599,7 +1729,7 @@
         "M3-D transaction/audit hardening": 63
       },
       "descriptorSurfaceByDisposition": {
-        "tracked": 51
+        "tracked": 55
       },
       "cmdkSurfaceByDisposition": {
         "tracked-promotion": 70,
@@ -4798,6 +4928,62 @@
         "matchedBackendCommands": ["set_view_lens"],
         "disposition": "tracked",
         "detail": "Descriptor maps to documented backend command metadata or a matched command heuristic.",
+        "unknownKernelCommands": []
+      },
+      {
+        "id": "sketch.ir.validate",
+        "stableId": "sketch.ir.validate",
+        "category": "typed-non-kernel-tool",
+        "toolKind": "typed-tool",
+        "method": "POST",
+        "path": "/api/v3/sketch/ir/validate",
+        "routeImplemented": true,
+        "kernelCommands": [],
+        "matchedBackendCommands": [],
+        "disposition": "tracked",
+        "detail": "Typed route-level tool does not apply a kernel command directly.",
+        "unknownKernelCommands": []
+      },
+      {
+        "id": "sketch.phase.accept",
+        "stableId": "sketch.phase.accept",
+        "category": "typed-non-kernel-tool",
+        "toolKind": "typed-tool",
+        "method": "POST",
+        "path": "/api/v3/sketch/phase/accept",
+        "routeImplemented": true,
+        "kernelCommands": [],
+        "matchedBackendCommands": [],
+        "disposition": "tracked",
+        "detail": "Typed route-level tool does not apply a kernel command directly.",
+        "unknownKernelCommands": []
+      },
+      {
+        "id": "sketch.phase.apply",
+        "stableId": "sketch.phase.apply",
+        "category": "raw-transaction",
+        "toolKind": "raw-apply-bundle",
+        "method": "POST",
+        "path": "/api/v3/sketch/phase/apply",
+        "routeImplemented": true,
+        "kernelCommands": ["*"],
+        "matchedBackendCommands": [],
+        "disposition": "tracked",
+        "detail": "Wildcard descriptor intentionally exposes bundle-shaped raw command execution.",
+        "unknownKernelCommands": []
+      },
+      {
+        "id": "sketch.seed.compile",
+        "stableId": "sketch.seed.compile",
+        "category": "typed-non-kernel-tool",
+        "toolKind": "typed-tool",
+        "method": "POST",
+        "path": "/api/v3/sketch/seed/compile",
+        "routeImplemented": true,
+        "kernelCommands": [],
+        "matchedBackendCommands": [],
+        "disposition": "tracked",
+        "detail": "Typed route-level tool does not apply a kernel command directly.",
         "unknownKernelCommands": []
       },
       {
@@ -8894,7 +9080,882 @@
         "detail": "Cmd+K entry already maps to a backend command or declares an agent equivalent.",
         "workstream": "M3-E parity governance"
       }
-    ]
+    ],
+    "wave2": {
+      "status": "Partial",
+      "workstreams": [
+        {
+          "id": "M3-F",
+          "label": "Sketch IR, seed, and phase product tools",
+          "status": "Done",
+          "gatesPassed": 4,
+          "gatesExpected": 4,
+          "gates": [
+            {
+              "id": "sketch.ir.validate",
+              "label": "sketch.ir.validate",
+              "status": "passed",
+              "passed": true,
+              "blocker": "",
+              "evidence": [
+                {
+                  "type": "api-descriptor",
+                  "status": "implemented",
+                  "source": "app/bim_ai/api/registry.py:3204",
+                  "detail": "sketch.ir.validate -> POST /api/v3/sketch/ir/validate",
+                  "passes": true
+                }
+              ]
+            },
+            {
+              "id": "sketch.seed.compile",
+              "label": "sketch.seed.compile",
+              "status": "passed",
+              "passed": true,
+              "blocker": "",
+              "evidence": [
+                {
+                  "type": "api-descriptor",
+                  "status": "implemented",
+                  "source": "app/bim_ai/api/registry.py:3263",
+                  "detail": "sketch.seed.compile -> POST /api/v3/sketch/seed/compile",
+                  "passes": true
+                }
+              ]
+            },
+            {
+              "id": "sketch.phase.apply",
+              "label": "sketch.phase.apply",
+              "status": "passed",
+              "passed": true,
+              "blocker": "",
+              "evidence": [
+                {
+                  "type": "api-descriptor",
+                  "status": "implemented",
+                  "source": "app/bim_ai/api/registry.py:3309",
+                  "detail": "sketch.phase.apply -> POST /api/v3/sketch/phase/apply",
+                  "passes": true
+                }
+              ]
+            },
+            {
+              "id": "sketch.phase.accept",
+              "label": "sketch.phase.accept",
+              "status": "passed",
+              "passed": true,
+              "blocker": "",
+              "evidence": [
+                {
+                  "type": "api-descriptor",
+                  "status": "implemented",
+                  "source": "app/bim_ai/api/registry.py:3362",
+                  "detail": "sketch.phase.accept -> POST /api/v3/sketch/phase/accept",
+                  "passes": true
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "M3-G",
+          "label": "Two-storey stair benchmark executable path",
+          "status": "Partial",
+          "gatesPassed": 3,
+          "gatesExpected": 4,
+          "scenarioId": "two-storey-house-with-stair",
+          "gates": [
+            {
+              "id": "scenario-present",
+              "label": "Scenario spec present",
+              "status": "passed",
+              "passed": true,
+              "blocker": "",
+              "evidence": [
+                {
+                  "type": "scenario",
+                  "status": "present",
+                  "source": "spec/benchmarks/two-storey-house-with-stair/scenario.json",
+                  "detail": "M3 executable fixture for cross-level residential authoring: two levels, raw-bundle stair, raw-bundle stair opening, raw-bundle railing, hosted openings, plan/section evidence hooks, and drawing-sheet output.",
+                  "passes": true
+                }
+              ]
+            },
+            {
+              "id": "runner-executable",
+              "label": "Executable benchmark runner",
+              "status": "passed",
+              "passed": true,
+              "blocker": "",
+              "evidence": [
+                {
+                  "type": "scenario-runner",
+                  "status": "node-script",
+                  "source": "spec/benchmarks/two-storey-house-with-stair/scenario.json",
+                  "detail": "node scripts/benchmarks/two-storey-stair.mjs --mode offline --json",
+                  "passes": true
+                }
+              ]
+            },
+            {
+              "id": "fixture-set",
+              "label": "Expected semantics and fixture artifacts",
+              "status": "passed",
+              "passed": true,
+              "blocker": "",
+              "evidence": [
+                {
+                  "type": "scenario-fixture",
+                  "status": "declared",
+                  "source": "spec/benchmarks/two-storey-house-with-stair/scenario.json",
+                  "detail": "expectedSemantics: expected-semantics.json",
+                  "passes": true
+                },
+                {
+                  "type": "scenario-fixture",
+                  "status": "declared",
+                  "source": "spec/benchmarks/two-storey-house-with-stair/scenario.json",
+                  "detail": "mcpCliCommandBundle: mcp-cli-command-bundle.json",
+                  "passes": true
+                },
+                {
+                  "type": "scenario-fixture",
+                  "status": "declared",
+                  "source": "spec/benchmarks/two-storey-house-with-stair/scenario.json",
+                  "detail": "uiCmdKTraceability: ui-cmdk-traceability.json",
+                  "passes": true
+                },
+                {
+                  "type": "scenario-fixture",
+                  "status": "declared",
+                  "source": "spec/benchmarks/two-storey-house-with-stair/scenario.json",
+                  "detail": "uiEquivalence: ui-equivalence.json",
+                  "passes": true
+                },
+                {
+                  "type": "scenario-fixture",
+                  "status": "declared",
+                  "source": "spec/benchmarks/two-storey-house-with-stair/scenario.json",
+                  "detail": "liveEvidenceDirectory: live-evidence",
+                  "passes": true
+                }
+              ]
+            },
+            {
+              "id": "evidence-set",
+              "label": "Executable evidence set",
+              "status": "partial",
+              "passed": false,
+              "blocker": "Two-storey benchmark lacks passing UI/Cmd+K, MCP/CLI, advisor, visual, export, or semantic-diff evidence.",
+              "evidence": [
+                {
+                  "type": "scenario-evidence",
+                  "status": "passed",
+                  "source": "spec/benchmarks/two-storey-house-with-stair/scenario.json",
+                  "detail": "ui: traceability-only / non-executable-ui-map-authored",
+                  "passes": true
+                },
+                {
+                  "type": "scenario-evidence",
+                  "status": "partial",
+                  "source": "spec/benchmarks/two-storey-house-with-stair/scenario.json",
+                  "detail": "cmdK: traceability-only / path-mapped-with-activator-limitations",
+                  "passes": false
+                },
+                {
+                  "type": "scenario-evidence",
+                  "status": "passed",
+                  "source": "spec/benchmarks/two-storey-house-with-stair/scenario.json",
+                  "detail": "mcpCli: executable / offline-fixture-raw-bundle-live-dry-run-capable",
+                  "passes": true
+                },
+                {
+                  "type": "scenario-evidence",
+                  "status": "partial",
+                  "source": "spec/benchmarks/two-storey-house-with-stair/scenario.json",
+                  "detail": "advisor: traceability-only / hook-declared-not-collected",
+                  "passes": false
+                },
+                {
+                  "type": "scenario-evidence",
+                  "status": "partial",
+                  "source": "spec/benchmarks/two-storey-house-with-stair/scenario.json",
+                  "detail": "visual: traceability-only / hook-declared-not-collected",
+                  "passes": false
+                },
+                {
+                  "type": "scenario-evidence",
+                  "status": "partial",
+                  "source": "spec/benchmarks/two-storey-house-with-stair/scenario.json",
+                  "detail": "export: traceability-only / hook-declared-not-collected",
+                  "passes": false
+                },
+                {
+                  "type": "scenario-evidence",
+                  "status": "passed",
+                  "source": "spec/benchmarks/two-storey-house-with-stair/scenario.json",
+                  "detail": "semanticDiff: executable / offline-semantic-diff-runner",
+                  "passes": true
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "M3-H",
+          "label": "Documentation/export production evidence depth",
+          "status": "Partial",
+          "gatesPassed": 2,
+          "gatesExpected": 3,
+          "gates": [
+            {
+              "id": "descriptor-pack",
+              "label": "Documentation/export descriptor pack",
+              "status": "passed",
+              "passed": true,
+              "blocker": "",
+              "evidence": [
+                {
+                  "type": "api-descriptor",
+                  "status": "implemented",
+                  "source": "app/bim_ai/api/registry.py:798",
+                  "detail": "document.create_drawing_set -> POST /api/models/{model_id}/bundles",
+                  "passes": true
+                },
+                {
+                  "type": "api-descriptor",
+                  "status": "implemented",
+                  "source": "app/bim_ai/api/registry.py:1958",
+                  "detail": "create-schedule-view -> POST /api/v3/models/{modelId}/bundles",
+                  "passes": true
+                },
+                {
+                  "type": "api-descriptor",
+                  "status": "implemented",
+                  "source": "app/bim_ai/api/registry.py:982",
+                  "detail": "export.pdf -> GET /api/models/{model_id}/exports/sheet-preview.pdf",
+                  "passes": true
+                },
+                {
+                  "type": "api-descriptor",
+                  "status": "implemented",
+                  "source": "app/bim_ai/api/registry.py:1018",
+                  "detail": "export.ifc -> GET /api/models/{model_id}/exports/model.ifc",
+                  "passes": true
+                },
+                {
+                  "type": "api-descriptor",
+                  "status": "implemented",
+                  "source": "app/bim_ai/api/registry.py:1051",
+                  "detail": "export.gltf -> GET /api/models/{model_id}/exports/model.gltf",
+                  "passes": true
+                },
+                {
+                  "type": "api-descriptor",
+                  "status": "implemented",
+                  "source": "app/bim_ai/api/registry.py:1084",
+                  "detail": "export.glb -> GET /api/models/{model_id}/exports/model.glb",
+                  "passes": true
+                }
+              ]
+            },
+            {
+              "id": "document-artifact-counts",
+              "label": "Sheet, schedule, tag, and dimension evidence",
+              "status": "passed",
+              "passed": true,
+              "blocker": "",
+              "evidence": [
+                {
+                  "type": "export-count",
+                  "status": "present",
+                  "source": "spec/benchmarks/simple-single-storey-house/live-evidence/export-evidence.json",
+                  "detail": "sheet: 1",
+                  "passes": true
+                },
+                {
+                  "type": "export-count",
+                  "status": "present",
+                  "source": "spec/benchmarks/simple-single-storey-house/live-evidence/export-evidence.json",
+                  "detail": "schedule: 1",
+                  "passes": true
+                },
+                {
+                  "type": "export-count",
+                  "status": "present",
+                  "source": "spec/benchmarks/simple-single-storey-house/live-evidence/export-evidence.json",
+                  "detail": "placed_tag: 1",
+                  "passes": true
+                },
+                {
+                  "type": "export-count",
+                  "status": "present",
+                  "source": "spec/benchmarks/simple-single-storey-house/live-evidence/export-evidence.json",
+                  "detail": "dimension: 2",
+                  "passes": true
+                }
+              ]
+            },
+            {
+              "id": "export-artifacts",
+              "label": "PDF, IFC, and glTF/GLB artifacts",
+              "status": "partial",
+              "passed": false,
+              "blocker": "Production evidence must include clean PDF, IFC, and glTF/GLB export artifacts or manifests; PDF shells alone are not enough.",
+              "evidence": [
+                {
+                  "type": "export-artifact",
+                  "status": "passed",
+                  "source": "spec/benchmarks/simple-single-storey-house/live-evidence/export-evidence.json",
+                  "detail": "glTF/GLB manifest evidence",
+                  "passes": true
+                },
+                {
+                  "type": "export-artifact",
+                  "status": "missing-or-failed",
+                  "source": "spec/benchmarks/simple-single-storey-house/live-evidence/export-evidence.json",
+                  "detail": "IFC manifest evidence",
+                  "passes": false
+                },
+                {
+                  "type": "export-artifact",
+                  "status": "missing-or-failed",
+                  "source": "spec/benchmarks/simple-single-storey-house/live-evidence/export-evidence.json",
+                  "detail": "Sheet PDF artifact evidence",
+                  "passes": false
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "M3-I",
+          "label": "Transaction idempotency and workflow metadata",
+          "status": "Partial",
+          "gatesPassed": 1,
+          "gatesExpected": 2,
+          "gates": [
+            {
+              "id": "basic-transaction-metadata",
+              "label": "Parent revision, changed ids, agent, and command log metadata",
+              "status": "passed",
+              "passed": true,
+              "blocker": "",
+              "evidence": [
+                {
+                  "type": "transaction-metadata",
+                  "status": "present",
+                  "source": "spec/benchmarks/simple-single-storey-house/live-evidence/live-commit-evidence.json",
+                  "detail": "parentRevision: 1",
+                  "passes": true
+                },
+                {
+                  "type": "transaction-metadata",
+                  "status": "present",
+                  "source": "spec/benchmarks/simple-single-storey-house/live-evidence/live-commit-evidence.json",
+                  "detail": "newRevision: 2",
+                  "passes": true
+                },
+                {
+                  "type": "transaction-metadata",
+                  "status": "present",
+                  "source": "spec/benchmarks/simple-single-storey-house/live-evidence/live-commit-evidence.json",
+                  "detail": "changedIds: 32",
+                  "passes": true
+                },
+                {
+                  "type": "transaction-metadata",
+                  "status": "present",
+                  "source": "spec/benchmarks/simple-single-storey-house/live-evidence/command-log-summary.json",
+                  "detail": "agentIdentity: m2-u-local-live-target",
+                  "passes": true
+                },
+                {
+                  "type": "transaction-metadata",
+                  "status": "present",
+                  "source": "spec/benchmarks/simple-single-storey-house/live-evidence/command-log-summary.json",
+                  "detail": "commandLogRevisionAfter: 2",
+                  "passes": true
+                }
+              ]
+            },
+            {
+              "id": "idempotent-replay",
+              "label": "Idempotent replay and stale revision gates",
+              "status": "blocked",
+              "passed": false,
+              "blocker": "No clean clientOpId/bundle-digest replay dedup, stale revision protection, and M3 workflow metadata proof was detected.",
+              "evidence": [
+                {
+                  "type": "idempotency",
+                  "status": "missing",
+                  "source": "spec/benchmarks/simple-single-storey-house/live-evidence/live-commit-evidence.json",
+                  "detail": "clientOpId or bundle digest replay dedup proof",
+                  "passes": false
+                },
+                {
+                  "type": "stale-revision",
+                  "status": "missing",
+                  "source": "spec/benchmarks/simple-single-storey-house/live-evidence/live-commit-evidence.json",
+                  "detail": "stale parent revision rejection proof",
+                  "passes": false
+                },
+                {
+                  "type": "workflow-metadata",
+                  "status": "missing",
+                  "source": "spec/benchmarks/simple-single-storey-house/live-evidence/live-commit-evidence.json",
+                  "detail": "M3 sketch/export/import workflow metadata assertions",
+                  "passes": false
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "gates": [
+        {
+          "workstreamId": "M3-F",
+          "workstreamLabel": "Sketch IR, seed, and phase product tools",
+          "id": "sketch.ir.validate",
+          "label": "sketch.ir.validate",
+          "status": "passed",
+          "passed": true,
+          "blocker": "",
+          "evidence": [
+            {
+              "type": "api-descriptor",
+              "status": "implemented",
+              "source": "app/bim_ai/api/registry.py:3204",
+              "detail": "sketch.ir.validate -> POST /api/v3/sketch/ir/validate",
+              "passes": true
+            }
+          ]
+        },
+        {
+          "workstreamId": "M3-F",
+          "workstreamLabel": "Sketch IR, seed, and phase product tools",
+          "id": "sketch.seed.compile",
+          "label": "sketch.seed.compile",
+          "status": "passed",
+          "passed": true,
+          "blocker": "",
+          "evidence": [
+            {
+              "type": "api-descriptor",
+              "status": "implemented",
+              "source": "app/bim_ai/api/registry.py:3263",
+              "detail": "sketch.seed.compile -> POST /api/v3/sketch/seed/compile",
+              "passes": true
+            }
+          ]
+        },
+        {
+          "workstreamId": "M3-F",
+          "workstreamLabel": "Sketch IR, seed, and phase product tools",
+          "id": "sketch.phase.apply",
+          "label": "sketch.phase.apply",
+          "status": "passed",
+          "passed": true,
+          "blocker": "",
+          "evidence": [
+            {
+              "type": "api-descriptor",
+              "status": "implemented",
+              "source": "app/bim_ai/api/registry.py:3309",
+              "detail": "sketch.phase.apply -> POST /api/v3/sketch/phase/apply",
+              "passes": true
+            }
+          ]
+        },
+        {
+          "workstreamId": "M3-F",
+          "workstreamLabel": "Sketch IR, seed, and phase product tools",
+          "id": "sketch.phase.accept",
+          "label": "sketch.phase.accept",
+          "status": "passed",
+          "passed": true,
+          "blocker": "",
+          "evidence": [
+            {
+              "type": "api-descriptor",
+              "status": "implemented",
+              "source": "app/bim_ai/api/registry.py:3362",
+              "detail": "sketch.phase.accept -> POST /api/v3/sketch/phase/accept",
+              "passes": true
+            }
+          ]
+        },
+        {
+          "workstreamId": "M3-G",
+          "workstreamLabel": "Two-storey stair benchmark executable path",
+          "id": "scenario-present",
+          "label": "Scenario spec present",
+          "status": "passed",
+          "passed": true,
+          "blocker": "",
+          "evidence": [
+            {
+              "type": "scenario",
+              "status": "present",
+              "source": "spec/benchmarks/two-storey-house-with-stair/scenario.json",
+              "detail": "M3 executable fixture for cross-level residential authoring: two levels, raw-bundle stair, raw-bundle stair opening, raw-bundle railing, hosted openings, plan/section evidence hooks, and drawing-sheet output.",
+              "passes": true
+            }
+          ]
+        },
+        {
+          "workstreamId": "M3-G",
+          "workstreamLabel": "Two-storey stair benchmark executable path",
+          "id": "runner-executable",
+          "label": "Executable benchmark runner",
+          "status": "passed",
+          "passed": true,
+          "blocker": "",
+          "evidence": [
+            {
+              "type": "scenario-runner",
+              "status": "node-script",
+              "source": "spec/benchmarks/two-storey-house-with-stair/scenario.json",
+              "detail": "node scripts/benchmarks/two-storey-stair.mjs --mode offline --json",
+              "passes": true
+            }
+          ]
+        },
+        {
+          "workstreamId": "M3-G",
+          "workstreamLabel": "Two-storey stair benchmark executable path",
+          "id": "fixture-set",
+          "label": "Expected semantics and fixture artifacts",
+          "status": "passed",
+          "passed": true,
+          "blocker": "",
+          "evidence": [
+            {
+              "type": "scenario-fixture",
+              "status": "declared",
+              "source": "spec/benchmarks/two-storey-house-with-stair/scenario.json",
+              "detail": "expectedSemantics: expected-semantics.json",
+              "passes": true
+            },
+            {
+              "type": "scenario-fixture",
+              "status": "declared",
+              "source": "spec/benchmarks/two-storey-house-with-stair/scenario.json",
+              "detail": "mcpCliCommandBundle: mcp-cli-command-bundle.json",
+              "passes": true
+            },
+            {
+              "type": "scenario-fixture",
+              "status": "declared",
+              "source": "spec/benchmarks/two-storey-house-with-stair/scenario.json",
+              "detail": "uiCmdKTraceability: ui-cmdk-traceability.json",
+              "passes": true
+            },
+            {
+              "type": "scenario-fixture",
+              "status": "declared",
+              "source": "spec/benchmarks/two-storey-house-with-stair/scenario.json",
+              "detail": "uiEquivalence: ui-equivalence.json",
+              "passes": true
+            },
+            {
+              "type": "scenario-fixture",
+              "status": "declared",
+              "source": "spec/benchmarks/two-storey-house-with-stair/scenario.json",
+              "detail": "liveEvidenceDirectory: live-evidence",
+              "passes": true
+            }
+          ]
+        },
+        {
+          "workstreamId": "M3-G",
+          "workstreamLabel": "Two-storey stair benchmark executable path",
+          "id": "evidence-set",
+          "label": "Executable evidence set",
+          "status": "partial",
+          "passed": false,
+          "blocker": "Two-storey benchmark lacks passing UI/Cmd+K, MCP/CLI, advisor, visual, export, or semantic-diff evidence.",
+          "evidence": [
+            {
+              "type": "scenario-evidence",
+              "status": "passed",
+              "source": "spec/benchmarks/two-storey-house-with-stair/scenario.json",
+              "detail": "ui: traceability-only / non-executable-ui-map-authored",
+              "passes": true
+            },
+            {
+              "type": "scenario-evidence",
+              "status": "partial",
+              "source": "spec/benchmarks/two-storey-house-with-stair/scenario.json",
+              "detail": "cmdK: traceability-only / path-mapped-with-activator-limitations",
+              "passes": false
+            },
+            {
+              "type": "scenario-evidence",
+              "status": "passed",
+              "source": "spec/benchmarks/two-storey-house-with-stair/scenario.json",
+              "detail": "mcpCli: executable / offline-fixture-raw-bundle-live-dry-run-capable",
+              "passes": true
+            },
+            {
+              "type": "scenario-evidence",
+              "status": "partial",
+              "source": "spec/benchmarks/two-storey-house-with-stair/scenario.json",
+              "detail": "advisor: traceability-only / hook-declared-not-collected",
+              "passes": false
+            },
+            {
+              "type": "scenario-evidence",
+              "status": "partial",
+              "source": "spec/benchmarks/two-storey-house-with-stair/scenario.json",
+              "detail": "visual: traceability-only / hook-declared-not-collected",
+              "passes": false
+            },
+            {
+              "type": "scenario-evidence",
+              "status": "partial",
+              "source": "spec/benchmarks/two-storey-house-with-stair/scenario.json",
+              "detail": "export: traceability-only / hook-declared-not-collected",
+              "passes": false
+            },
+            {
+              "type": "scenario-evidence",
+              "status": "passed",
+              "source": "spec/benchmarks/two-storey-house-with-stair/scenario.json",
+              "detail": "semanticDiff: executable / offline-semantic-diff-runner",
+              "passes": true
+            }
+          ]
+        },
+        {
+          "workstreamId": "M3-H",
+          "workstreamLabel": "Documentation/export production evidence depth",
+          "id": "descriptor-pack",
+          "label": "Documentation/export descriptor pack",
+          "status": "passed",
+          "passed": true,
+          "blocker": "",
+          "evidence": [
+            {
+              "type": "api-descriptor",
+              "status": "implemented",
+              "source": "app/bim_ai/api/registry.py:798",
+              "detail": "document.create_drawing_set -> POST /api/models/{model_id}/bundles",
+              "passes": true
+            },
+            {
+              "type": "api-descriptor",
+              "status": "implemented",
+              "source": "app/bim_ai/api/registry.py:1958",
+              "detail": "create-schedule-view -> POST /api/v3/models/{modelId}/bundles",
+              "passes": true
+            },
+            {
+              "type": "api-descriptor",
+              "status": "implemented",
+              "source": "app/bim_ai/api/registry.py:982",
+              "detail": "export.pdf -> GET /api/models/{model_id}/exports/sheet-preview.pdf",
+              "passes": true
+            },
+            {
+              "type": "api-descriptor",
+              "status": "implemented",
+              "source": "app/bim_ai/api/registry.py:1018",
+              "detail": "export.ifc -> GET /api/models/{model_id}/exports/model.ifc",
+              "passes": true
+            },
+            {
+              "type": "api-descriptor",
+              "status": "implemented",
+              "source": "app/bim_ai/api/registry.py:1051",
+              "detail": "export.gltf -> GET /api/models/{model_id}/exports/model.gltf",
+              "passes": true
+            },
+            {
+              "type": "api-descriptor",
+              "status": "implemented",
+              "source": "app/bim_ai/api/registry.py:1084",
+              "detail": "export.glb -> GET /api/models/{model_id}/exports/model.glb",
+              "passes": true
+            }
+          ]
+        },
+        {
+          "workstreamId": "M3-H",
+          "workstreamLabel": "Documentation/export production evidence depth",
+          "id": "document-artifact-counts",
+          "label": "Sheet, schedule, tag, and dimension evidence",
+          "status": "passed",
+          "passed": true,
+          "blocker": "",
+          "evidence": [
+            {
+              "type": "export-count",
+              "status": "present",
+              "source": "spec/benchmarks/simple-single-storey-house/live-evidence/export-evidence.json",
+              "detail": "sheet: 1",
+              "passes": true
+            },
+            {
+              "type": "export-count",
+              "status": "present",
+              "source": "spec/benchmarks/simple-single-storey-house/live-evidence/export-evidence.json",
+              "detail": "schedule: 1",
+              "passes": true
+            },
+            {
+              "type": "export-count",
+              "status": "present",
+              "source": "spec/benchmarks/simple-single-storey-house/live-evidence/export-evidence.json",
+              "detail": "placed_tag: 1",
+              "passes": true
+            },
+            {
+              "type": "export-count",
+              "status": "present",
+              "source": "spec/benchmarks/simple-single-storey-house/live-evidence/export-evidence.json",
+              "detail": "dimension: 2",
+              "passes": true
+            }
+          ]
+        },
+        {
+          "workstreamId": "M3-H",
+          "workstreamLabel": "Documentation/export production evidence depth",
+          "id": "export-artifacts",
+          "label": "PDF, IFC, and glTF/GLB artifacts",
+          "status": "partial",
+          "passed": false,
+          "blocker": "Production evidence must include clean PDF, IFC, and glTF/GLB export artifacts or manifests; PDF shells alone are not enough.",
+          "evidence": [
+            {
+              "type": "export-artifact",
+              "status": "passed",
+              "source": "spec/benchmarks/simple-single-storey-house/live-evidence/export-evidence.json",
+              "detail": "glTF/GLB manifest evidence",
+              "passes": true
+            },
+            {
+              "type": "export-artifact",
+              "status": "missing-or-failed",
+              "source": "spec/benchmarks/simple-single-storey-house/live-evidence/export-evidence.json",
+              "detail": "IFC manifest evidence",
+              "passes": false
+            },
+            {
+              "type": "export-artifact",
+              "status": "missing-or-failed",
+              "source": "spec/benchmarks/simple-single-storey-house/live-evidence/export-evidence.json",
+              "detail": "Sheet PDF artifact evidence",
+              "passes": false
+            }
+          ]
+        },
+        {
+          "workstreamId": "M3-I",
+          "workstreamLabel": "Transaction idempotency and workflow metadata",
+          "id": "basic-transaction-metadata",
+          "label": "Parent revision, changed ids, agent, and command log metadata",
+          "status": "passed",
+          "passed": true,
+          "blocker": "",
+          "evidence": [
+            {
+              "type": "transaction-metadata",
+              "status": "present",
+              "source": "spec/benchmarks/simple-single-storey-house/live-evidence/live-commit-evidence.json",
+              "detail": "parentRevision: 1",
+              "passes": true
+            },
+            {
+              "type": "transaction-metadata",
+              "status": "present",
+              "source": "spec/benchmarks/simple-single-storey-house/live-evidence/live-commit-evidence.json",
+              "detail": "newRevision: 2",
+              "passes": true
+            },
+            {
+              "type": "transaction-metadata",
+              "status": "present",
+              "source": "spec/benchmarks/simple-single-storey-house/live-evidence/live-commit-evidence.json",
+              "detail": "changedIds: 32",
+              "passes": true
+            },
+            {
+              "type": "transaction-metadata",
+              "status": "present",
+              "source": "spec/benchmarks/simple-single-storey-house/live-evidence/command-log-summary.json",
+              "detail": "agentIdentity: m2-u-local-live-target",
+              "passes": true
+            },
+            {
+              "type": "transaction-metadata",
+              "status": "present",
+              "source": "spec/benchmarks/simple-single-storey-house/live-evidence/command-log-summary.json",
+              "detail": "commandLogRevisionAfter: 2",
+              "passes": true
+            }
+          ]
+        },
+        {
+          "workstreamId": "M3-I",
+          "workstreamLabel": "Transaction idempotency and workflow metadata",
+          "id": "idempotent-replay",
+          "label": "Idempotent replay and stale revision gates",
+          "status": "blocked",
+          "passed": false,
+          "blocker": "No clean clientOpId/bundle-digest replay dedup, stale revision protection, and M3 workflow metadata proof was detected.",
+          "evidence": [
+            {
+              "type": "idempotency",
+              "status": "missing",
+              "source": "spec/benchmarks/simple-single-storey-house/live-evidence/live-commit-evidence.json",
+              "detail": "clientOpId or bundle digest replay dedup proof",
+              "passes": false
+            },
+            {
+              "type": "stale-revision",
+              "status": "missing",
+              "source": "spec/benchmarks/simple-single-storey-house/live-evidence/live-commit-evidence.json",
+              "detail": "stale parent revision rejection proof",
+              "passes": false
+            },
+            {
+              "type": "workflow-metadata",
+              "status": "missing",
+              "source": "spec/benchmarks/simple-single-storey-house/live-evidence/live-commit-evidence.json",
+              "detail": "M3 sketch/export/import workflow metadata assertions",
+              "passes": false
+            }
+          ]
+        }
+      ],
+      "blockers": [
+        {
+          "id": "M3-G:evidence-set",
+          "blocker": "Two-storey benchmark lacks passing UI/Cmd+K, MCP/CLI, advisor, visual, export, or semantic-diff evidence."
+        },
+        {
+          "id": "M3-H:export-artifacts",
+          "blocker": "Production evidence must include clean PDF, IFC, and glTF/GLB export artifacts or manifests; PDF shells alone are not enough."
+        },
+        {
+          "id": "M3-I:idempotent-replay",
+          "blocker": "No clean clientOpId/bundle-digest replay dedup, stale revision protection, and M3 workflow metadata proof was detected."
+        }
+      ],
+      "summary": {
+        "status": "Partial",
+        "workstreamStatusCounts": {
+          "Done": 1,
+          "Partial": 3
+        },
+        "gatesExpected": 13,
+        "gatesPassed": 10,
+        "blockerCount": 3
+      }
+    },
+    "status": "Partial"
   },
   "benchmarkEvidence": [
     {
@@ -9621,16 +10682,168 @@
     {
       "id": "two-storey-house-with-stair",
       "dir": "spec/benchmarks/two-storey-house-with-stair",
-      "expectedSemantics": "",
-      "commandBundle": "",
-      "pathStatus": [],
-      "evidenceExpectations": [],
-      "evidenceArtifactPaths": [],
-      "commandTypes": [],
-      "toolMarkers": [],
-      "evidenceSignals": [],
-      "uiEquivalentStatus": "unknown",
-      "uiEquivalentTodo": "",
+      "expectedSemantics": "spec/benchmarks/two-storey-house-with-stair/expected-semantics.json",
+      "commandBundle": "spec/benchmarks/two-storey-house-with-stair/mcp-cli-command-bundle.json",
+      "pathStatus": [
+        {
+          "id": "mcpCli",
+          "status": "fixture-validated-offline-raw-bundle-live-dry-run-capable",
+          "todo": ""
+        },
+        {
+          "id": "ui",
+          "status": "traceability-only",
+          "todo": "Add browser-authored UI replay for exact two-storey stair inputs."
+        }
+      ],
+      "evidenceExpectations": [
+        {
+          "id": "semanticSummary",
+          "status": "true",
+          "todo": ""
+        },
+        {
+          "id": "semanticDiff",
+          "status": "true",
+          "todo": ""
+        },
+        {
+          "id": "advisor",
+          "status": "hook-declared-no-committed-artifact",
+          "todo": ""
+        },
+        {
+          "id": "screenshots",
+          "status": "hook-declared-no-visual-artifact",
+          "todo": ""
+        },
+        {
+          "id": "exports",
+          "status": "hook-declared-no-export-artifact",
+          "todo": ""
+        }
+      ],
+      "evidenceArtifactPaths": [
+        "spec/benchmarks/two-storey-house-with-stair/ui-cmdk-traceability.json",
+        "spec/benchmarks/two-storey-house-with-stair/ui-equivalence.json"
+      ],
+      "commandTypes": [
+        "CreateSheet",
+        "PlaceViewOnSheet",
+        "createDimension",
+        "createFloor",
+        "createLevel",
+        "createRailing",
+        "createRoof",
+        "createRoomOutline",
+        "createSectionCut",
+        "createSlabOpening",
+        "createStair",
+        "createWallChain",
+        "create_schedule_view",
+        "insertDoorOnWall",
+        "insertWindowOnWall",
+        "placeTag",
+        "saveViewpoint",
+        "upsertFamilyType",
+        "upsertFloorType",
+        "upsertRoofType",
+        "upsertWallType"
+      ],
+      "toolMarkers": [
+        {
+          "toolId": "author.wall_chain",
+          "marker": "createWallChain",
+          "status": "fixture-command",
+          "source": "spec/benchmarks/two-storey-house-with-stair/mcp-cli-command-bundle.json",
+          "live": false,
+          "note": "Command appears in deterministic MCP/CLI fixture; this is not live typed execution evidence."
+        },
+        {
+          "toolId": "qa.advisor",
+          "marker": "advisor evidence expectation",
+          "status": "hook-declared-no-committed-artifact",
+          "source": "spec/benchmarks/two-storey-house-with-stair/expected-semantics.json",
+          "live": false,
+          "note": "Advisor evidence expectation declared by benchmark."
+        },
+        {
+          "toolId": "view.save_3d",
+          "marker": "saveViewpoint",
+          "status": "fixture-command",
+          "source": "spec/benchmarks/two-storey-house-with-stair/mcp-cli-command-bundle.json",
+          "live": false,
+          "note": "Command appears in deterministic MCP/CLI fixture; this is not live typed execution evidence."
+        }
+      ],
+      "evidenceSignals": [
+        {
+          "type": "committedAdvisorValidation",
+          "status": "hook-declared-no-committed-artifact",
+          "source": "spec/benchmarks/two-storey-house-with-stair/expected-semantics.json",
+          "detail": "",
+          "passes": false,
+          "reason": "expected-semantics metadata is documentation, not committed advisor/validation evidence"
+        },
+        {
+          "type": "exportEvidence",
+          "status": "hook-declared-no-export-artifact",
+          "source": "spec/benchmarks/two-storey-house-with-stair/expected-semantics.json",
+          "detail": "",
+          "passes": false,
+          "reason": "expected-semantics metadata is documentation, not export evidence"
+        },
+        {
+          "type": "liveDryRunEvidence",
+          "status": "fixture-validated-offline-raw-bundle-live-dry-run-capable",
+          "source": "spec/benchmarks/two-storey-house-with-stair/expected-semantics.json",
+          "detail": "",
+          "passes": false,
+          "reason": "benchmark path metadata is not a clean live dry-run artifact"
+        },
+        {
+          "type": "liveDryRunEvidence",
+          "status": "optional",
+          "source": "spec/benchmarks/two-storey-house-with-stair/expected-semantics.json",
+          "detail": "mode=dry_run",
+          "passes": false,
+          "reason": "benchmark liveDryRun metadata is optional configuration, not run evidence"
+        },
+        {
+          "type": "uiEquivalentPath",
+          "status": "traceability-only",
+          "source": "spec/benchmarks/two-storey-house-with-stair/expected-semantics.json",
+          "detail": "Add browser-authored UI replay for exact two-storey stair inputs.",
+          "passes": false,
+          "reason": "benchmark path metadata is not executable UI-equivalence evidence"
+        },
+        {
+          "type": "uiEquivalentPath",
+          "status": "traceability-only",
+          "source": "spec/benchmarks/two-storey-house-with-stair/ui-cmdk-traceability.json",
+          "detail": "missing semantic diff",
+          "passes": false,
+          "reason": "UI-equivalence artifact still lists blockers or TODOs"
+        },
+        {
+          "type": "uiEquivalentPath",
+          "status": "traceability-only",
+          "source": "spec/benchmarks/two-storey-house-with-stair/ui-equivalence.json",
+          "detail": "missing semantic diff",
+          "passes": false,
+          "reason": "UI-equivalence artifact is not executable, clean, and semantically equal"
+        },
+        {
+          "type": "visualRenderEvidence",
+          "status": "hook-declared-no-visual-artifact",
+          "source": "spec/benchmarks/two-storey-house-with-stair/expected-semantics.json",
+          "detail": "",
+          "passes": false,
+          "reason": "expected-semantics metadata is documentation, not visual/render evidence"
+        }
+      ],
+      "uiEquivalentStatus": "traceability-only",
+      "uiEquivalentTodo": "Add browser-authored UI replay for exact two-storey stair inputs.",
       "liveEvidence": false
     }
   ],
@@ -25617,7 +26830,7 @@
       "agentSafetyNotes": "Safe to call freely; read-only, no kernel side-effects.",
       "source": "app/bim_ai/api/registry.py:346",
       "routeImplemented": true,
-      "routeSource": "app/bim_ai/routes_api.py:3065",
+      "routeSource": "app/bim_ai/routes_api.py:3110",
       "toolKind": "query",
       "matchedBackendCommands": [],
       "parserNotes": []
@@ -25645,7 +26858,7 @@
       "agentSafetyNotes": "Safe to call freely; read-only, no kernel side-effects.",
       "source": "app/bim_ai/api/registry.py:232",
       "routeImplemented": true,
-      "routeSource": "app/bim_ai/routes_api.py:3056",
+      "routeSource": "app/bim_ai/routes_api.py:3101",
       "toolKind": "query",
       "matchedBackendCommands": [],
       "parserNotes": []
@@ -25673,7 +26886,7 @@
       "agentSafetyNotes": "",
       "source": "app/bim_ai/api/registry.py:388",
       "routeImplemented": true,
-      "routeSource": "app/bim_ai/routes_api.py:3086",
+      "routeSource": "app/bim_ai/routes_api.py:3131",
       "toolKind": "query",
       "matchedBackendCommands": [],
       "parserNotes": []
@@ -25707,7 +26920,7 @@
       "agentSafetyNotes": "",
       "source": "app/bim_ai/api/registry.py:420",
       "routeImplemented": true,
-      "routeSource": "app/bim_ai/routes_api.py:2172",
+      "routeSource": "app/bim_ai/routes_api.py:2175",
       "toolKind": "raw-apply-bundle",
       "matchedBackendCommands": [],
       "parserNotes": []
@@ -25735,7 +26948,7 @@
       "agentSafetyNotes": "",
       "source": "app/bim_ai/api/registry.py:2146",
       "routeImplemented": true,
-      "routeSource": "app/bim_ai/routes_api.py:3700",
+      "routeSource": "app/bim_ai/routes_api.py:3745",
       "toolKind": "query",
       "matchedBackendCommands": ["updateDoor"],
       "parserNotes": []
@@ -25763,7 +26976,7 @@
       "agentSafetyNotes": "",
       "source": "app/bim_ai/api/registry.py:566",
       "routeImplemented": true,
-      "routeSource": "app/bim_ai/routes_api.py:2855",
+      "routeSource": "app/bim_ai/routes_api.py:2900",
       "toolKind": "query",
       "matchedBackendCommands": [],
       "parserNotes": []
@@ -25791,7 +27004,7 @@
       "agentSafetyNotes": "",
       "source": "app/bim_ai/api/registry.py:2637",
       "routeImplemented": true,
-      "routeSource": "app/bim_ai/routes_api.py:2172",
+      "routeSource": "app/bim_ai/routes_api.py:2175",
       "toolKind": "typed-kernel-tool",
       "matchedBackendCommands": ["commit_concept_seed"],
       "parserNotes": []
@@ -25819,7 +27032,7 @@
       "agentSafetyNotes": "Safe to call any number of times. Same inputs → byte-identical output.",
       "source": "app/bim_ai/api/registry.py:2102",
       "routeImplemented": true,
-      "routeSource": "app/bim_ai/routes_api.py:3002",
+      "routeSource": "app/bim_ai/routes_api.py:3047",
       "toolKind": "query",
       "matchedBackendCommands": [],
       "parserNotes": []
@@ -25847,7 +27060,7 @@
       "agentSafetyNotes": "",
       "source": "app/bim_ai/api/registry.py:1613",
       "routeImplemented": true,
-      "routeSource": "app/bim_ai/routes_api.py:801",
+      "routeSource": "app/bim_ai/routes_api.py:803",
       "toolKind": "query",
       "matchedBackendCommands": [],
       "parserNotes": []
@@ -25875,7 +27088,7 @@
       "agentSafetyNotes": "",
       "source": "app/bim_ai/api/registry.py:1260",
       "routeImplemented": true,
-      "routeSource": "app/bim_ai/routes_api.py:737",
+      "routeSource": "app/bim_ai/routes_api.py:739",
       "toolKind": "query",
       "matchedBackendCommands": [],
       "parserNotes": []
@@ -25903,7 +27116,7 @@
       "agentSafetyNotes": "Wrap in a CommandBundle with type=",
       "source": "app/bim_ai/api/registry.py:2876",
       "routeImplemented": true,
-      "routeSource": "app/bim_ai/routes_api.py:2172",
+      "routeSource": "app/bim_ai/routes_api.py:2175",
       "toolKind": "typed-kernel-tool",
       "matchedBackendCommands": ["create_brand_template"],
       "parserNotes": []
@@ -25931,7 +27144,7 @@
       "agentSafetyNotes": "Requires a valid presentationCanvasId; canvas must exist before adding frames.",
       "source": "app/bim_ai/api/registry.py:2752",
       "routeImplemented": true,
-      "routeSource": "app/bim_ai/routes_api.py:2172",
+      "routeSource": "app/bim_ai/routes_api.py:2175",
       "toolKind": "typed-kernel-tool",
       "matchedBackendCommands": ["create_frame"],
       "parserNotes": []
@@ -25959,7 +27172,7 @@
       "agentSafetyNotes": "",
       "source": "app/bim_ai/api/registry.py:2028",
       "routeImplemented": true,
-      "routeSource": "app/bim_ai/routes_api.py:2172",
+      "routeSource": "app/bim_ai/routes_api.py:2175",
       "toolKind": "typed-kernel-tool",
       "matchedBackendCommands": ["CreateGradedRegion"],
       "parserNotes": []
@@ -25987,7 +27200,7 @@
       "agentSafetyNotes": "",
       "source": "app/bim_ai/api/registry.py:1958",
       "routeImplemented": true,
-      "routeSource": "app/bim_ai/routes_api.py:2172",
+      "routeSource": "app/bim_ai/routes_api.py:2175",
       "toolKind": "typed-kernel-tool",
       "matchedBackendCommands": ["create_schedule_view"],
       "parserNotes": []
@@ -26015,7 +27228,7 @@
       "agentSafetyNotes": "",
       "source": "app/bim_ai/api/registry.py:2321",
       "routeImplemented": true,
-      "routeSource": "app/bim_ai/routes_api.py:2172",
+      "routeSource": "app/bim_ai/routes_api.py:2175",
       "toolKind": "typed-kernel-tool",
       "matchedBackendCommands": ["create_toposolid_subdivision"],
       "parserNotes": []
@@ -26043,7 +27256,7 @@
       "agentSafetyNotes": "",
       "source": "app/bim_ai/api/registry.py:2594",
       "routeImplemented": true,
-      "routeSource": "app/bim_ai/routes_api.py:2172",
+      "routeSource": "app/bim_ai/routes_api.py:2175",
       "toolKind": "typed-kernel-tool",
       "matchedBackendCommands": ["delete_image_underlay"],
       "parserNotes": []
@@ -26077,7 +27290,7 @@
       "agentSafetyNotes": "",
       "source": "app/bim_ai/api/registry.py:798",
       "routeImplemented": true,
-      "routeSource": "app/bim_ai/routes_api.py:2172",
+      "routeSource": "app/bim_ai/routes_api.py:2175",
       "toolKind": "typed-kernel-tool",
       "matchedBackendCommands": [
         "createDimension",
@@ -26111,7 +27324,7 @@
       "agentSafetyNotes": "",
       "source": "app/bim_ai/api/registry.py:3075",
       "routeImplemented": true,
-      "routeSource": "app/bim_ai/routes_api.py:2172",
+      "routeSource": "app/bim_ai/routes_api.py:2175",
       "toolKind": "typed-kernel-tool",
       "matchedBackendCommands": ["create_detail_region", "createDetailRegion"],
       "parserNotes": []
@@ -26171,7 +27384,7 @@
       "agentSafetyNotes": "Read-only export; safe to call at any time. Returns JSON bundle, not a binary .pptx file.",
       "source": "app/bim_ai/api/registry.py:2812",
       "routeImplemented": true,
-      "routeSource": "app/bim_ai/routes_api.py:3805",
+      "routeSource": "app/bim_ai/routes_api.py:3850",
       "toolKind": "query",
       "matchedBackendCommands": ["create_presentation_canvas", "update_presentation_canvas"],
       "parserNotes": []
@@ -26199,7 +27412,7 @@
       "agentSafetyNotes": "",
       "source": "app/bim_ai/api/registry.py:3000",
       "routeImplemented": true,
-      "routeSource": "app/bim_ai/routes_api.py:3860",
+      "routeSource": "app/bim_ai/routes_api.py:3905",
       "toolKind": "typed-tool",
       "matchedBackendCommands": [],
       "parserNotes": []
@@ -26337,9 +27550,9 @@
       "resourceGroups": ["audit"],
       "uiFeatures": ["group:audit"],
       "agentSafetyNotes": "",
-      "source": "app/bim_ai/api/registry.py:3198",
+      "source": "app/bim_ai/api/registry.py:3418",
       "routeImplemented": true,
-      "routeSource": "app/bim_ai/routes_api.py:336",
+      "routeSource": "app/bim_ai/routes_api.py:338",
       "toolKind": "query",
       "matchedBackendCommands": [],
       "parserNotes": []
@@ -26367,7 +27580,7 @@
       "agentSafetyNotes": "",
       "source": "app/bim_ai/api/registry.py:1205",
       "routeImplemented": true,
-      "routeSource": "app/bim_ai/routes_api.py:725",
+      "routeSource": "app/bim_ai/routes_api.py:727",
       "toolKind": "query",
       "matchedBackendCommands": [],
       "parserNotes": []
@@ -26395,7 +27608,7 @@
       "agentSafetyNotes": "",
       "source": "app/bim_ai/api/registry.py:1864",
       "routeImplemented": true,
-      "routeSource": "app/bim_ai/routes_api.py:2910",
+      "routeSource": "app/bim_ai/routes_api.py:2955",
       "toolKind": "typed-tool",
       "matchedBackendCommands": ["TraceImage"],
       "parserNotes": []
@@ -26423,7 +27636,7 @@
       "agentSafetyNotes": "",
       "source": "app/bim_ai/api/registry.py:2393",
       "routeImplemented": true,
-      "routeSource": "app/bim_ai/routes_api.py:2172",
+      "routeSource": "app/bim_ai/routes_api.py:2175",
       "toolKind": "typed-kernel-tool",
       "matchedBackendCommands": ["import_image_underlay"],
       "parserNotes": []
@@ -26451,7 +27664,7 @@
       "agentSafetyNotes": "",
       "source": "app/bim_ai/api/registry.py:2269",
       "routeImplemented": true,
-      "routeSource": "app/bim_ai/routes_api.py:3728",
+      "routeSource": "app/bim_ai/routes_api.py:3773",
       "toolKind": "typed-tool",
       "matchedBackendCommands": [],
       "parserNotes": []
@@ -26479,7 +27692,7 @@
       "agentSafetyNotes": "Safe read-only query. T9 polls this endpoint to discover seeds ready for ingestion.",
       "source": "app/bim_ai/api/registry.py:2715",
       "routeImplemented": true,
-      "routeSource": "app/bim_ai/routes_api.py:3774",
+      "routeSource": "app/bim_ai/routes_api.py:3819",
       "toolKind": "query",
       "matchedBackendCommands": [],
       "parserNotes": []
@@ -26507,7 +27720,7 @@
       "agentSafetyNotes": "Safe to call freely; read-only snapshot.",
       "source": "app/bim_ai/api/registry.py:1168",
       "routeImplemented": true,
-      "routeSource": "app/bim_ai/routes_api.py:447",
+      "routeSource": "app/bim_ai/routes_api.py:449",
       "toolKind": "query",
       "matchedBackendCommands": [],
       "parserNotes": []
@@ -26541,7 +27754,7 @@
       "agentSafetyNotes": "",
       "source": "app/bim_ai/api/registry.py:676",
       "routeImplemented": true,
-      "routeSource": "app/bim_ai/routes_api.py:2172",
+      "routeSource": "app/bim_ai/routes_api.py:2175",
       "toolKind": "raw-apply-bundle",
       "matchedBackendCommands": [],
       "parserNotes": []
@@ -26569,7 +27782,7 @@
       "agentSafetyNotes": "",
       "source": "app/bim_ai/api/registry.py:603",
       "routeImplemented": true,
-      "routeSource": "app/bim_ai/routes_commands.py:692",
+      "routeSource": "app/bim_ai/routes_commands.py:779",
       "toolKind": "raw-apply-bundle",
       "matchedBackendCommands": [],
       "parserNotes": []
@@ -26597,7 +27810,7 @@
       "agentSafetyNotes": "",
       "source": "app/bim_ai/api/registry.py:2460",
       "routeImplemented": true,
-      "routeSource": "app/bim_ai/routes_api.py:2172",
+      "routeSource": "app/bim_ai/routes_api.py:2175",
       "toolKind": "typed-kernel-tool",
       "matchedBackendCommands": ["move_image_underlay"],
       "parserNotes": []
@@ -26625,7 +27838,7 @@
       "agentSafetyNotes": "",
       "source": "app/bim_ai/api/registry.py:2228",
       "routeImplemented": true,
-      "routeSource": "app/bim_ai/routes_api.py:2172",
+      "routeSource": "app/bim_ai/routes_api.py:2175",
       "toolKind": "typed-kernel-tool",
       "matchedBackendCommands": ["place_kit"],
       "parserNotes": []
@@ -26653,7 +27866,7 @@
       "agentSafetyNotes": "Creates a public shareable link. Use pageScopeIds to restrict visible pages.",
       "source": "app/bim_ai/api/registry.py:1735",
       "routeImplemented": true,
-      "routeSource": "app/bim_ai/routes_api.py:3383",
+      "routeSource": "app/bim_ai/routes_api.py:3428",
       "toolKind": "typed-tool",
       "matchedBackendCommands": [
         "createLinkModel",
@@ -26687,7 +27900,7 @@
       "agentSafetyNotes": "Safe to call freely; lists non-revoked presentation links only.",
       "source": "app/bim_ai/api/registry.py:1814",
       "routeImplemented": true,
-      "routeSource": "app/bim_ai/routes_api.py:3436",
+      "routeSource": "app/bim_ai/routes_api.py:3481",
       "toolKind": "query",
       "matchedBackendCommands": [],
       "parserNotes": []
@@ -26715,7 +27928,7 @@
       "agentSafetyNotes": "Immediately invalidates the link and pushes {type: revoked} to all active WS viewers.",
       "source": "app/bim_ai/api/registry.py:1777",
       "routeImplemented": true,
-      "routeSource": "app/bim_ai/routes_api.py:3473",
+      "routeSource": "app/bim_ai/routes_api.py:3518",
       "toolKind": "typed-tool",
       "matchedBackendCommands": [],
       "parserNotes": []
@@ -26743,7 +27956,7 @@
       "agentSafetyNotes": "Use the standard bundle dry-run path first. Rotation is stored in degrees.",
       "source": "app/bim_ai/api/registry.py:2557",
       "routeImplemented": true,
-      "routeSource": "app/bim_ai/routes_api.py:2172",
+      "routeSource": "app/bim_ai/routes_api.py:2175",
       "toolKind": "typed-kernel-tool",
       "matchedBackendCommands": ["rotate_image_underlay"],
       "parserNotes": []
@@ -26771,7 +27984,7 @@
       "agentSafetyNotes": "",
       "source": "app/bim_ai/api/registry.py:2516",
       "routeImplemented": true,
-      "routeSource": "app/bim_ai/routes_api.py:2172",
+      "routeSource": "app/bim_ai/routes_api.py:2175",
       "toolKind": "typed-kernel-tool",
       "matchedBackendCommands": ["scale_image_underlay"],
       "parserNotes": []
@@ -26799,7 +28012,7 @@
       "agentSafetyNotes": "",
       "source": "app/bim_ai/api/registry.py:1658",
       "routeImplemented": true,
-      "routeSource": "app/bim_ai/routes_api.py:2172",
+      "routeSource": "app/bim_ai/routes_api.py:2175",
       "toolKind": "typed-kernel-tool",
       "matchedBackendCommands": ["setElementConstruction"],
       "parserNotes": []
@@ -26827,7 +28040,7 @@
       "agentSafetyNotes": "",
       "source": "app/bim_ai/api/registry.py:1474",
       "routeImplemented": true,
-      "routeSource": "app/bim_ai/routes_api.py:2172",
+      "routeSource": "app/bim_ai/routes_api.py:2175",
       "toolKind": "typed-kernel-tool",
       "matchedBackendCommands": ["setElementDiscipline"],
       "parserNotes": []
@@ -26855,7 +28068,7 @@
       "agentSafetyNotes": "Merges into element.props dict. Element must exist; unknown elementId raises 400.",
       "source": "app/bim_ai/api/registry.py:1996",
       "routeImplemented": true,
-      "routeSource": "app/bim_ai/routes_api.py:2172",
+      "routeSource": "app/bim_ai/routes_api.py:2175",
       "toolKind": "typed-kernel-tool",
       "matchedBackendCommands": ["set_element_prop"],
       "parserNotes": []
@@ -26883,7 +28096,7 @@
       "agentSafetyNotes": "",
       "source": "app/bim_ai/api/registry.py:1117",
       "routeImplemented": true,
-      "routeSource": "app/bim_ai/routes_commands.py:424",
+      "routeSource": "app/bim_ai/routes_commands.py:459",
       "toolKind": "typed-kernel-tool",
       "matchedBackendCommands": ["setToolPref"],
       "parserNotes": []
@@ -26911,9 +28124,126 @@
       "agentSafetyNotes": "",
       "source": "app/bim_ai/api/registry.py:1549",
       "routeImplemented": true,
-      "routeSource": "app/bim_ai/routes_api.py:2172",
+      "routeSource": "app/bim_ai/routes_api.py:2175",
       "toolKind": "typed-kernel-tool",
       "matchedBackendCommands": ["set_view_lens"],
+      "parserNotes": []
+    },
+    {
+      "id": "sketch.ir.validate",
+      "stableId": "sketch.ir.validate",
+      "category": "transform",
+      "sideEffects": "none",
+      "mutability": "transform",
+      "implementationStatus": "implemented",
+      "transport": "http",
+      "requiresBrowser": false,
+      "createsExternalAssets": false,
+      "exportsData": false,
+      "method": "POST",
+      "path": "/api/v3/sketch/ir/validate",
+      "inputSchema": "SketchIrValidateRequest",
+      "outputSchema": "SketchIrValidateResult",
+      "cliExample": "unknown",
+      "exitCodes": ["ok", "invalid"],
+      "kernelCommands": [],
+      "resourceGroups": ["sketch-to-bim", "sketch-ir", "initiation"],
+      "uiFeatures": ["group:sketch-to-bim", "group:sketch-ir", "group:initiation"],
+      "agentSafetyNotes": "",
+      "source": "app/bim_ai/api/registry.py:3204",
+      "routeImplemented": true,
+      "routeSource": "app/bim_ai/routes_sketch_product.py:115",
+      "toolKind": "typed-tool",
+      "matchedBackendCommands": [],
+      "parserNotes": []
+    },
+    {
+      "id": "sketch.phase.accept",
+      "stableId": "sketch.phase.accept",
+      "category": "transform",
+      "sideEffects": "none",
+      "mutability": "transform",
+      "implementationStatus": "implemented",
+      "transport": "http",
+      "requiresBrowser": false,
+      "createsExternalAssets": false,
+      "exportsData": false,
+      "method": "POST",
+      "path": "/api/v3/sketch/phase/accept",
+      "inputSchema": "SketchPhaseAcceptRequest",
+      "outputSchema": "SketchPhaseAcceptResult",
+      "cliExample": "unknown",
+      "exitCodes": ["ok", "blocked"],
+      "kernelCommands": [],
+      "resourceGroups": ["sketch-to-bim", "phase", "acceptance", "evidence"],
+      "uiFeatures": ["group:sketch-to-bim", "group:phase", "group:acceptance", "group:evidence"],
+      "agentSafetyNotes": "",
+      "source": "app/bim_ai/api/registry.py:3362",
+      "routeImplemented": true,
+      "routeSource": "app/bim_ai/routes_sketch_product.py:190",
+      "toolKind": "typed-tool",
+      "matchedBackendCommands": [],
+      "parserNotes": []
+    },
+    {
+      "id": "sketch.phase.apply",
+      "stableId": "sketch.phase.apply",
+      "category": "mutation",
+      "sideEffects": "mutates-kernel",
+      "mutability": "write",
+      "implementationStatus": "unsupported",
+      "transport": "http",
+      "requiresBrowser": false,
+      "createsExternalAssets": false,
+      "exportsData": false,
+      "method": "POST",
+      "path": "/api/v3/sketch/phase/apply",
+      "inputSchema": "SketchPhaseApplyRequest",
+      "outputSchema": "SketchPhaseApplyDelegation",
+      "cliExample": "unknown",
+      "exitCodes": ["ok", "blocked"],
+      "kernelCommands": ["*"],
+      "resourceGroups": ["sketch-to-bim", "phase", "transaction", "kernel-command"],
+      "uiFeatures": [
+        "group:sketch-to-bim",
+        "group:phase",
+        "group:transaction",
+        "group:kernel-command"
+      ],
+      "agentSafetyNotes": "Default to dry_run. A commit must include parentRevision and preserve bundle assumptions.",
+      "source": "app/bim_ai/api/registry.py:3309",
+      "routeImplemented": true,
+      "routeSource": "app/bim_ai/routes_sketch_product.py:159",
+      "toolKind": "raw-apply-bundle",
+      "matchedBackendCommands": [],
+      "parserNotes": []
+    },
+    {
+      "id": "sketch.seed.compile",
+      "stableId": "sketch.seed.compile",
+      "category": "transform",
+      "sideEffects": "none",
+      "mutability": "transform",
+      "implementationStatus": "unsupported",
+      "transport": "http",
+      "requiresBrowser": false,
+      "createsExternalAssets": false,
+      "exportsData": false,
+      "method": "POST",
+      "path": "/api/v3/sketch/seed/compile",
+      "inputSchema": "SketchSeedCompileRequest",
+      "outputSchema": "CommandBundle",
+      "cliExample": "bim-ai sketch seed compile --recipe seed.json --out bundle.json",
+      "exitCodes": ["ok", "blocked"],
+      "kernelCommands": [],
+      "resourceGroups": ["sketch-to-bim", "seed-dsl", "command-bundle"],
+      "uiFeatures": ["group:sketch-to-bim", "group:seed-dsl", "group:command-bundle"],
+      "agentSafetyNotes": "Compiled output must be submitted through model.dry_run before commit.",
+      "source": "app/bim_ai/api/registry.py:3263",
+      "routeImplemented": true,
+      "routeSource": "app/bim_ai/routes_sketch_product.py:140",
+      "toolKind": "typed-tool",
+      "matchedBackendCommands": [],
       "parserNotes": []
     },
     {
@@ -26939,7 +28269,7 @@
       "agentSafetyNotes": "",
       "source": "app/bim_ai/api/registry.py:1335",
       "routeImplemented": true,
-      "routeSource": "app/bim_ai/routes_api.py:2172",
+      "routeSource": "app/bim_ai/routes_api.py:2175",
       "toolKind": "typed-kernel-tool",
       "matchedBackendCommands": ["CreateToposolid"],
       "parserNotes": []
@@ -26967,7 +28297,7 @@
       "agentSafetyNotes": "",
       "source": "app/bim_ai/api/registry.py:1437",
       "routeImplemented": true,
-      "routeSource": "app/bim_ai/routes_api.py:2172",
+      "routeSource": "app/bim_ai/routes_api.py:2175",
       "toolKind": "typed-kernel-tool",
       "matchedBackendCommands": ["DeleteToposolid"],
       "parserNotes": []
@@ -26995,7 +28325,7 @@
       "agentSafetyNotes": "",
       "source": "app/bim_ai/api/registry.py:1401",
       "routeImplemented": true,
-      "routeSource": "app/bim_ai/routes_api.py:2172",
+      "routeSource": "app/bim_ai/routes_api.py:2175",
       "toolKind": "typed-kernel-tool",
       "matchedBackendCommands": ["UpdateToposolid"],
       "parserNotes": []
@@ -27023,7 +28353,7 @@
       "agentSafetyNotes": "",
       "source": "app/bim_ai/api/registry.py:3135",
       "routeImplemented": true,
-      "routeSource": "app/bim_ai/routes_api.py:2172",
+      "routeSource": "app/bim_ai/routes_api.py:2175",
       "toolKind": "typed-kernel-tool",
       "matchedBackendCommands": ["update_material_pbr"],
       "parserNotes": []
@@ -27051,7 +28381,7 @@
       "agentSafetyNotes": "",
       "source": "app/bim_ai/api/registry.py:2190",
       "routeImplemented": true,
-      "routeSource": "app/bim_ai/routes_api.py:2172",
+      "routeSource": "app/bim_ai/routes_api.py:2175",
       "toolKind": "typed-kernel-tool",
       "matchedBackendCommands": ["update_stair_treads"],
       "parserNotes": []
@@ -27081,6 +28411,30 @@
       "id": "tool.floor-sketch",
       "status": "UI-only",
       "detail": "Cmd+K entry activates an interactive tool and is not a complete agent operation."
+    },
+    {
+      "priority": "P0",
+      "domain": "m3-wave2",
+      "kind": "m3-wave2-gate-blocked",
+      "id": "M3-G:evidence-set",
+      "status": "Gap",
+      "detail": "Two-storey benchmark lacks passing UI/Cmd+K, MCP/CLI, advisor, visual, export, or semantic-diff evidence."
+    },
+    {
+      "priority": "P0",
+      "domain": "m3-wave2",
+      "kind": "m3-wave2-gate-blocked",
+      "id": "M3-H:export-artifacts",
+      "status": "Gap",
+      "detail": "Production evidence must include clean PDF, IFC, and glTF/GLB export artifacts or manifests; PDF shells alone are not enough."
+    },
+    {
+      "priority": "P0",
+      "domain": "m3-wave2",
+      "kind": "m3-wave2-gate-blocked",
+      "id": "M3-I:idempotent-replay",
+      "status": "Gap",
+      "detail": "No clean clientOpId/bundle-digest replay dedup, stale revision protection, and M3 workflow metadata proof was detected."
     },
     {
       "priority": "P0",

@@ -1,0 +1,628 @@
+{
+  "schemaVersion": "cmd-v3.0",
+  "parentRevision": null,
+  "targetOptionId": null,
+  "meta": {
+    "benchmarkId": "two-storey-house-with-stair",
+    "path": "mcp-cli",
+    "generatedBy": "M3-G deterministic fixture",
+    "sourceOfIntent": "spec/ui-mcp-parity-tracker.md#same-house-parity-benchmarks",
+    "parityClassification": {
+      "stair": "AG-R",
+      "stairOpening": "AG-R",
+      "railing": "AG-R",
+      "reason": "createStair, createSlabOpening, and createRailing are reachable through raw bundle commands, but no first-class typed MCP/CLI authoring tool is claimed by this fixture."
+    }
+  },
+  "assumptions": [
+    {
+      "key": "m3-g-fixture-mode",
+      "value": "Deterministic command bundle and semantic expectations; live server execution is optional and requires a target model.",
+      "confidence": 1,
+      "source": "Milestone 3 Wave 2 M3-G"
+    },
+    {
+      "key": "vertical-circulation-agent-surface",
+      "value": "Stair, slab opening, and railing use raw kernel command payloads because typed author.stair_between_levels/opening.shaft/railing path tools are not present in this benchmark surface.",
+      "confidence": 1,
+      "source": "spec/ui-mcp-parity-tracker.md"
+    }
+  ],
+  "commands": [
+    {
+      "type": "createLevel",
+      "id": "tsh-lvl-ground",
+      "name": "Ground Floor",
+      "elevationMm": 0,
+      "alsoCreatePlanView": true,
+      "planViewId": "tsh-view-ground-plan"
+    },
+    {
+      "type": "createLevel",
+      "id": "tsh-lvl-upper",
+      "name": "Upper Floor",
+      "elevationMm": 3200,
+      "alsoCreatePlanView": true,
+      "planViewId": "tsh-view-upper-plan"
+    },
+    {
+      "type": "upsertWallType",
+      "id": "tsh-wt-exterior",
+      "name": "Benchmark two-storey exterior wall",
+      "layers": [
+        { "thicknessMm": 120, "function": "finish", "materialKey": "brick_light" },
+        { "thicknessMm": 160, "function": "structure", "materialKey": "timber_frame" },
+        { "thicknessMm": 50, "function": "finish", "materialKey": "gypsum_board" }
+      ],
+      "basisLine": "center"
+    },
+    {
+      "type": "upsertWallType",
+      "id": "tsh-wt-interior",
+      "name": "Benchmark two-storey interior partition",
+      "layers": [{ "thicknessMm": 120, "function": "structure", "materialKey": "gypsum_board" }],
+      "basisLine": "center"
+    },
+    {
+      "type": "upsertFloorType",
+      "id": "tsh-ft-slab",
+      "name": "Benchmark composite floor",
+      "layers": [
+        { "thicknessMm": 180, "function": "structure", "materialKey": "concrete_smooth" },
+        { "thicknessMm": 40, "function": "finish", "materialKey": "oak_floor" }
+      ]
+    },
+    {
+      "type": "upsertRoofType",
+      "id": "tsh-rt-gable",
+      "name": "Benchmark two-storey gable roof",
+      "layers": [
+        { "thicknessMm": 180, "function": "structure", "materialKey": "timber_roof" },
+        { "thicknessMm": 30, "function": "finish", "materialKey": "standing_seam_grey" }
+      ]
+    },
+    {
+      "type": "upsertFamilyType",
+      "id": "tsh-door-single",
+      "name": "Benchmark single door",
+      "familyId": "builtin-door-single",
+      "discipline": "door",
+      "parameters": { "widthMm": 900, "heightMm": 2100 }
+    },
+    {
+      "type": "upsertFamilyType",
+      "id": "tsh-window-fixed",
+      "name": "Benchmark fixed window",
+      "familyId": "builtin-window-fixed",
+      "discipline": "window",
+      "parameters": { "widthMm": 1200, "heightMm": 1400, "sillHeightMm": 900 }
+    },
+    {
+      "type": "createFloor",
+      "id": "tsh-floor-ground",
+      "name": "Ground floor slab",
+      "levelId": "tsh-lvl-ground",
+      "boundaryMm": [
+        { "xMm": 0, "yMm": 0 },
+        { "xMm": 12000, "yMm": 0 },
+        { "xMm": 12000, "yMm": 9000 },
+        { "xMm": 0, "yMm": 9000 }
+      ],
+      "thicknessMm": 220,
+      "floorTypeId": "tsh-ft-slab",
+      "roomBounded": true
+    },
+    {
+      "type": "createFloor",
+      "id": "tsh-floor-upper",
+      "name": "Upper floor deck",
+      "levelId": "tsh-lvl-upper",
+      "boundaryMm": [
+        { "xMm": 0, "yMm": 0 },
+        { "xMm": 12000, "yMm": 0 },
+        { "xMm": 12000, "yMm": 9000 },
+        { "xMm": 0, "yMm": 9000 }
+      ],
+      "thicknessMm": 220,
+      "floorTypeId": "tsh-ft-slab",
+      "roomBounded": true
+    },
+    {
+      "type": "createWallChain",
+      "levelId": "tsh-lvl-ground",
+      "namePrefix": "Ground exterior wall",
+      "wallTypeId": "tsh-wt-exterior",
+      "segments": [
+        {
+          "id": "tsh-wall-g-south",
+          "start": { "xMm": 0, "yMm": 0 },
+          "end": { "xMm": 12000, "yMm": 0 },
+          "thicknessMm": 330,
+          "heightMm": 3200
+        },
+        {
+          "id": "tsh-wall-g-east",
+          "start": { "xMm": 12000, "yMm": 0 },
+          "end": { "xMm": 12000, "yMm": 9000 },
+          "thicknessMm": 330,
+          "heightMm": 3200
+        },
+        {
+          "id": "tsh-wall-g-north",
+          "start": { "xMm": 12000, "yMm": 9000 },
+          "end": { "xMm": 0, "yMm": 9000 },
+          "thicknessMm": 330,
+          "heightMm": 3200
+        },
+        {
+          "id": "tsh-wall-g-west",
+          "start": { "xMm": 0, "yMm": 9000 },
+          "end": { "xMm": 0, "yMm": 0 },
+          "thicknessMm": 330,
+          "heightMm": 3200
+        }
+      ]
+    },
+    {
+      "type": "createWallChain",
+      "levelId": "tsh-lvl-upper",
+      "namePrefix": "Upper exterior wall",
+      "wallTypeId": "tsh-wt-exterior",
+      "segments": [
+        {
+          "id": "tsh-wall-u-south",
+          "start": { "xMm": 0, "yMm": 0 },
+          "end": { "xMm": 12000, "yMm": 0 },
+          "thicknessMm": 330,
+          "heightMm": 3000
+        },
+        {
+          "id": "tsh-wall-u-east",
+          "start": { "xMm": 12000, "yMm": 0 },
+          "end": { "xMm": 12000, "yMm": 9000 },
+          "thicknessMm": 330,
+          "heightMm": 3000
+        },
+        {
+          "id": "tsh-wall-u-north",
+          "start": { "xMm": 12000, "yMm": 9000 },
+          "end": { "xMm": 0, "yMm": 9000 },
+          "thicknessMm": 330,
+          "heightMm": 3000
+        },
+        {
+          "id": "tsh-wall-u-west",
+          "start": { "xMm": 0, "yMm": 9000 },
+          "end": { "xMm": 0, "yMm": 0 },
+          "thicknessMm": 330,
+          "heightMm": 3000
+        }
+      ]
+    },
+    {
+      "type": "createWallChain",
+      "levelId": "tsh-lvl-ground",
+      "namePrefix": "Ground interior partition",
+      "wallTypeId": "tsh-wt-interior",
+      "segments": [
+        {
+          "id": "tsh-wall-g-hall",
+          "start": { "xMm": 5200, "yMm": 0 },
+          "end": { "xMm": 5200, "yMm": 9000 },
+          "thicknessMm": 120,
+          "heightMm": 3000
+        },
+        {
+          "id": "tsh-wall-g-service",
+          "start": { "xMm": 5200, "yMm": 3800 },
+          "end": { "xMm": 12000, "yMm": 3800 },
+          "thicknessMm": 120,
+          "heightMm": 3000
+        }
+      ]
+    },
+    {
+      "type": "createWallChain",
+      "levelId": "tsh-lvl-upper",
+      "namePrefix": "Upper interior partition",
+      "wallTypeId": "tsh-wt-interior",
+      "segments": [
+        {
+          "id": "tsh-wall-u-corridor",
+          "start": { "xMm": 5200, "yMm": 0 },
+          "end": { "xMm": 5200, "yMm": 9000 },
+          "thicknessMm": 120,
+          "heightMm": 2800
+        },
+        {
+          "id": "tsh-wall-u-bedrooms",
+          "start": { "xMm": 5200, "yMm": 4300 },
+          "end": { "xMm": 12000, "yMm": 4300 },
+          "thicknessMm": 120,
+          "heightMm": 2800
+        }
+      ]
+    },
+    {
+      "type": "createStair",
+      "id": "tsh-stair-main",
+      "name": "Main stair",
+      "baseLevelId": "tsh-lvl-ground",
+      "topLevelId": "tsh-lvl-upper",
+      "runStartMm": { "xMm": 3900, "yMm": 900 },
+      "runEndMm": { "xMm": 3900, "yMm": 5200 },
+      "widthMm": 1100,
+      "riserMm": 178,
+      "treadMm": 280,
+      "shape": "straight",
+      "authoringMode": "by_component"
+    },
+    {
+      "type": "createSlabOpening",
+      "id": "tsh-opening-stair-upper",
+      "name": "Upper stair opening",
+      "hostFloorId": "tsh-floor-upper",
+      "boundaryMm": [
+        { "xMm": 3300, "yMm": 650 },
+        { "xMm": 4550, "yMm": 650 },
+        { "xMm": 4550, "yMm": 5450 },
+        { "xMm": 3300, "yMm": 5450 }
+      ],
+      "isShaft": true
+    },
+    {
+      "type": "createRailing",
+      "id": "tsh-railing-stair",
+      "name": "Main stair guard",
+      "hostedStairId": "tsh-stair-main",
+      "pathMm": [
+        { "xMm": 4550, "yMm": 900 },
+        { "xMm": 4550, "yMm": 5200 }
+      ],
+      "balusterPattern": { "spacingMm": 120, "postHeightMm": 1000, "topRailHeightMm": 950 }
+    },
+    {
+      "type": "insertDoorOnWall",
+      "id": "tsh-door-entry",
+      "name": "Entry door",
+      "wallId": "tsh-wall-g-south",
+      "alongT": 0.18,
+      "widthMm": 1000,
+      "familyTypeId": "tsh-door-single"
+    },
+    {
+      "type": "insertDoorOnWall",
+      "id": "tsh-door-living",
+      "name": "Living door",
+      "wallId": "tsh-wall-g-hall",
+      "alongT": 0.38,
+      "widthMm": 900,
+      "familyTypeId": "tsh-door-single"
+    },
+    {
+      "type": "insertDoorOnWall",
+      "id": "tsh-door-utility",
+      "name": "Utility door",
+      "wallId": "tsh-wall-g-service",
+      "alongT": 0.22,
+      "widthMm": 800,
+      "familyTypeId": "tsh-door-single"
+    },
+    {
+      "type": "insertDoorOnWall",
+      "id": "tsh-door-primary",
+      "name": "Primary bedroom door",
+      "wallId": "tsh-wall-u-corridor",
+      "alongT": 0.32,
+      "widthMm": 900,
+      "familyTypeId": "tsh-door-single"
+    },
+    {
+      "type": "insertDoorOnWall",
+      "id": "tsh-door-bedroom-2",
+      "name": "Bedroom two door",
+      "wallId": "tsh-wall-u-bedrooms",
+      "alongT": 0.28,
+      "widthMm": 900,
+      "familyTypeId": "tsh-door-single"
+    },
+    {
+      "type": "insertDoorOnWall",
+      "id": "tsh-door-bath",
+      "name": "Bath door",
+      "wallId": "tsh-wall-u-bedrooms",
+      "alongT": 0.68,
+      "widthMm": 800,
+      "familyTypeId": "tsh-door-single"
+    },
+    {
+      "type": "insertWindowOnWall",
+      "id": "tsh-window-g-living-west",
+      "name": "Living west window",
+      "wallId": "tsh-wall-g-west",
+      "alongT": 0.34,
+      "widthMm": 1800,
+      "sillHeightMm": 750,
+      "heightMm": 1500,
+      "familyTypeId": "tsh-window-fixed"
+    },
+    {
+      "type": "insertWindowOnWall",
+      "id": "tsh-window-g-kitchen-north",
+      "name": "Kitchen north window",
+      "wallId": "tsh-wall-g-north",
+      "alongT": 0.73,
+      "widthMm": 1400,
+      "sillHeightMm": 900,
+      "heightMm": 1300,
+      "familyTypeId": "tsh-window-fixed"
+    },
+    {
+      "type": "insertWindowOnWall",
+      "id": "tsh-window-g-dining-east",
+      "name": "Dining east window",
+      "wallId": "tsh-wall-g-east",
+      "alongT": 0.42,
+      "widthMm": 1600,
+      "sillHeightMm": 800,
+      "heightMm": 1400,
+      "familyTypeId": "tsh-window-fixed"
+    },
+    {
+      "type": "insertWindowOnWall",
+      "id": "tsh-window-g-stair-south",
+      "name": "Stair south window",
+      "wallId": "tsh-wall-g-south",
+      "alongT": 0.36,
+      "widthMm": 900,
+      "sillHeightMm": 900,
+      "heightMm": 1600,
+      "familyTypeId": "tsh-window-fixed"
+    },
+    {
+      "type": "insertWindowOnWall",
+      "id": "tsh-window-u-primary-west",
+      "name": "Primary west window",
+      "wallId": "tsh-wall-u-west",
+      "alongT": 0.36,
+      "widthMm": 1600,
+      "sillHeightMm": 800,
+      "heightMm": 1400,
+      "familyTypeId": "tsh-window-fixed"
+    },
+    {
+      "type": "insertWindowOnWall",
+      "id": "tsh-window-u-bed2-east",
+      "name": "Bedroom two east window",
+      "wallId": "tsh-wall-u-east",
+      "alongT": 0.34,
+      "widthMm": 1400,
+      "sillHeightMm": 850,
+      "heightMm": 1300,
+      "familyTypeId": "tsh-window-fixed"
+    },
+    {
+      "type": "insertWindowOnWall",
+      "id": "tsh-window-u-bath-north",
+      "name": "Bath north window",
+      "wallId": "tsh-wall-u-north",
+      "alongT": 0.78,
+      "widthMm": 900,
+      "sillHeightMm": 1200,
+      "heightMm": 900,
+      "familyTypeId": "tsh-window-fixed"
+    },
+    {
+      "type": "insertWindowOnWall",
+      "id": "tsh-window-u-stair-south",
+      "name": "Upper stair south window",
+      "wallId": "tsh-wall-u-south",
+      "alongT": 0.36,
+      "widthMm": 900,
+      "sillHeightMm": 900,
+      "heightMm": 1600,
+      "familyTypeId": "tsh-window-fixed"
+    },
+    {
+      "type": "createRoomOutline",
+      "id": "tsh-room-g-living",
+      "name": "Living",
+      "levelId": "tsh-lvl-ground",
+      "programmeCode": "living",
+      "targetAreaM2": 46.8,
+      "outlineMm": [
+        { "xMm": 0, "yMm": 0 },
+        { "xMm": 5200, "yMm": 0 },
+        { "xMm": 5200, "yMm": 9000 },
+        { "xMm": 0, "yMm": 9000 }
+      ]
+    },
+    {
+      "type": "createRoomOutline",
+      "id": "tsh-room-g-kitchen",
+      "name": "Kitchen / Dining",
+      "levelId": "tsh-lvl-ground",
+      "programmeCode": "kitchen",
+      "targetAreaM2": 35.36,
+      "outlineMm": [
+        { "xMm": 5200, "yMm": 3800 },
+        { "xMm": 12000, "yMm": 3800 },
+        { "xMm": 12000, "yMm": 9000 },
+        { "xMm": 5200, "yMm": 9000 }
+      ]
+    },
+    {
+      "type": "createRoomOutline",
+      "id": "tsh-room-g-service",
+      "name": "Entry / Service",
+      "levelId": "tsh-lvl-ground",
+      "programmeCode": "service",
+      "targetAreaM2": 25.84,
+      "outlineMm": [
+        { "xMm": 5200, "yMm": 0 },
+        { "xMm": 12000, "yMm": 0 },
+        { "xMm": 12000, "yMm": 3800 },
+        { "xMm": 5200, "yMm": 3800 }
+      ]
+    },
+    {
+      "type": "createRoomOutline",
+      "id": "tsh-room-u-primary",
+      "name": "Primary Bedroom",
+      "levelId": "tsh-lvl-upper",
+      "programmeCode": "bedroom",
+      "targetAreaM2": 46.8,
+      "outlineMm": [
+        { "xMm": 0, "yMm": 0 },
+        { "xMm": 5200, "yMm": 0 },
+        { "xMm": 5200, "yMm": 9000 },
+        { "xMm": 0, "yMm": 9000 }
+      ]
+    },
+    {
+      "type": "createRoomOutline",
+      "id": "tsh-room-u-bedroom-2",
+      "name": "Bedroom 2",
+      "levelId": "tsh-lvl-upper",
+      "programmeCode": "bedroom",
+      "targetAreaM2": 31.96,
+      "outlineMm": [
+        { "xMm": 5200, "yMm": 4300 },
+        { "xMm": 12000, "yMm": 4300 },
+        { "xMm": 12000, "yMm": 9000 },
+        { "xMm": 5200, "yMm": 9000 }
+      ]
+    },
+    {
+      "type": "createRoomOutline",
+      "id": "tsh-room-u-bath-hall",
+      "name": "Bath / Hall",
+      "levelId": "tsh-lvl-upper",
+      "programmeCode": "bath",
+      "targetAreaM2": 29.24,
+      "outlineMm": [
+        { "xMm": 5200, "yMm": 0 },
+        { "xMm": 12000, "yMm": 0 },
+        { "xMm": 12000, "yMm": 4300 },
+        { "xMm": 5200, "yMm": 4300 }
+      ]
+    },
+    {
+      "type": "createRoof",
+      "id": "tsh-roof-main",
+      "name": "Two-storey gable roof",
+      "referenceLevelId": "tsh-lvl-upper",
+      "footprintMm": [
+        { "xMm": -500, "yMm": -500 },
+        { "xMm": 12500, "yMm": -500 },
+        { "xMm": 12500, "yMm": 9500 },
+        { "xMm": -500, "yMm": 9500 }
+      ],
+      "overhangMm": 500,
+      "slopeDeg": 30,
+      "roofGeometryMode": "gable",
+      "roofTypeId": "tsh-rt-gable",
+      "materialKey": "standing_seam_grey"
+    },
+    {
+      "type": "createSectionCut",
+      "id": "tsh-section-stair",
+      "name": "Stair Section",
+      "lineStartMm": { "xMm": 2500, "yMm": 3000 },
+      "lineEndMm": { "xMm": 5600, "yMm": 3000 },
+      "cropDepthMm": 9000
+    },
+    {
+      "type": "saveViewpoint",
+      "id": "tsh-view-3d",
+      "name": "Two-storey stair 3D evidence",
+      "mode": "orbit_3d",
+      "camera": {
+        "position": { "xMm": -9000, "yMm": -10000, "zMm": 8500 },
+        "target": { "xMm": 6000, "yMm": 4500, "zMm": 2800 },
+        "up": { "xMm": 0, "yMm": 0, "zMm": 1 }
+      }
+    },
+    {
+      "type": "create_schedule_view",
+      "id": "tsh-schedule-vertical-circulation",
+      "name": "Vertical circulation and openings schedule",
+      "category": "opening",
+      "columns": [
+        { "key": "name", "label": "Name" },
+        { "key": "hostWallId", "label": "Host wall" },
+        { "key": "widthMm", "label": "Width" }
+      ],
+      "sortKey": "name",
+      "sortDir": "asc"
+    },
+    {
+      "type": "CreateSheet",
+      "sheetId": "tsh-sheet-a201",
+      "name": "Two-Storey Stair Plans and Section",
+      "number": "A201",
+      "size": "A1",
+      "orientation": "landscape",
+      "metadata": { "benchmarkId": "two-storey-house-with-stair" }
+    },
+    {
+      "type": "PlaceViewOnSheet",
+      "sheetId": "tsh-sheet-a201",
+      "viewId": "tsh-view-ground-plan",
+      "minXY": { "x": 35, "y": 40 },
+      "size": { "width": 280, "height": 220 },
+      "scale": 100
+    },
+    {
+      "type": "PlaceViewOnSheet",
+      "sheetId": "tsh-sheet-a201",
+      "viewId": "tsh-view-upper-plan",
+      "minXY": { "x": 335, "y": 40 },
+      "size": { "width": 280, "height": 220 },
+      "scale": 100
+    },
+    {
+      "type": "PlaceViewOnSheet",
+      "sheetId": "tsh-sheet-a201",
+      "viewId": "tsh-section-stair",
+      "minXY": { "x": 635, "y": 40 },
+      "size": { "width": 260, "height": 220 },
+      "scale": 100
+    },
+    {
+      "type": "placeTag",
+      "id": "tsh-tag-stair",
+      "hostElementId": "tsh-stair-main",
+      "hostViewId": "tsh-view-ground-plan",
+      "positionMm": { "xMm": 4450, "yMm": 3300 },
+      "textOverride": "UP",
+      "autoGenerated": false
+    },
+    {
+      "type": "createDimension",
+      "id": "tsh-dim-width",
+      "name": "Overall width",
+      "levelId": "tsh-lvl-ground",
+      "aMm": { "xMm": 0, "yMm": 0 },
+      "bMm": { "xMm": 12000, "yMm": 0 },
+      "offsetMm": { "xMm": 0, "yMm": -800 },
+      "state": "linked",
+      "refElementIdA": "tsh-wall-g-west",
+      "refElementIdB": "tsh-wall-g-east",
+      "autoGenerated": false
+    },
+    {
+      "type": "createDimension",
+      "id": "tsh-dim-depth",
+      "name": "Overall depth",
+      "levelId": "tsh-lvl-ground",
+      "aMm": { "xMm": 0, "yMm": 0 },
+      "bMm": { "xMm": 0, "yMm": 9000 },
+      "offsetMm": { "xMm": -800, "yMm": 0 },
+      "state": "linked",
+      "refElementIdA": "tsh-wall-g-south",
+      "refElementIdB": "tsh-wall-g-north",
+      "autoGenerated": false
+    }
+  ]
+}

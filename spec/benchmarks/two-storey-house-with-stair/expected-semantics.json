@@ -1,0 +1,171 @@
+{
+  "schemaVersion": "bim-ai.benchmark.expected-semantics.v1",
+  "benchmarkId": "two-storey-house-with-stair",
+  "sourceOfIntent": "spec/ui-mcp-parity-tracker.md#same-house-parity-benchmarks",
+  "paths": {
+    "mcpCli": {
+      "status": "fixture-validated-offline-raw-bundle-live-dry-run-capable",
+      "bundle": "mcp-cli-command-bundle.json",
+      "liveDryRun": {
+        "status": "optional",
+        "requires": ["BIM_AI_BASE_URL", "BIM_AI_MODEL_ID"],
+        "surface": "POST /api/models/{model_id}/bundles",
+        "mode": "dry_run"
+      },
+      "liveCommit": {
+        "status": "explicit-opt-in-not-default",
+        "requires": ["BIM_AI_BASE_URL", "BIM_AI_MODEL_ID", "--commit-live"],
+        "surface": "POST /api/models/{model_id}/bundles",
+        "mode": "commit",
+        "mutatesTargetModel": true
+      }
+    },
+    "ui": {
+      "status": "traceability-only",
+      "traceability": "ui-cmdk-traceability.json",
+      "todo": "Add browser-authored UI replay for exact two-storey stair inputs."
+    }
+  },
+  "tolerances": {
+    "countDelta": 0,
+    "dimensionMm": 1,
+    "areaM2": 0.05
+  },
+  "expected": {
+    "levels": {
+      "count": 2,
+      "ids": ["tsh-lvl-ground", "tsh-lvl-upper"],
+      "elevationsMm": { "tsh-lvl-ground": 0, "tsh-lvl-upper": 3200 }
+    },
+    "walls": {
+      "total": 12,
+      "exterior": 8,
+      "interior": 4,
+      "exteriorWallTypeIds": ["tsh-wt-exterior"],
+      "interiorWallTypeIds": ["tsh-wt-interior"]
+    },
+    "rooms": {
+      "count": 6,
+      "names": [
+        "Bath / Hall",
+        "Bedroom 2",
+        "Entry / Service",
+        "Kitchen / Dining",
+        "Living",
+        "Primary Bedroom"
+      ],
+      "targetAreaM2": {
+        "tsh-room-g-living": 46.8,
+        "tsh-room-g-kitchen": 35.36,
+        "tsh-room-g-service": 25.84,
+        "tsh-room-u-primary": 46.8,
+        "tsh-room-u-bedroom-2": 31.96,
+        "tsh-room-u-bath-hall": 29.24
+      }
+    },
+    "openings": {
+      "doors": 6,
+      "windows": 8,
+      "hosted": 14,
+      "allHaveHost": true,
+      "allHaveFamilyType": true,
+      "slabOpenings": 1,
+      "shaftOpenings": 1
+    },
+    "floors": {
+      "count": 2,
+      "ids": ["tsh-floor-ground", "tsh-floor-upper"],
+      "roomBounded": true
+    },
+    "stairs": {
+      "count": 1,
+      "ids": ["tsh-stair-main"],
+      "betweenLevels": [{ "baseLevelId": "tsh-lvl-ground", "topLevelId": "tsh-lvl-upper" }],
+      "authoringSurface": "raw-command"
+    },
+    "railings": {
+      "count": 1,
+      "ids": ["tsh-railing-stair"],
+      "hostedOnStairs": 1,
+      "authoringSurface": "raw-command"
+    },
+    "roofs": {
+      "count": 1,
+      "ids": ["tsh-roof-main"],
+      "geometryModes": ["gable"]
+    },
+    "views": {
+      "plan": 2,
+      "section": 1,
+      "threeD": 1,
+      "ids": ["tsh-view-ground-plan", "tsh-view-upper-plan", "tsh-section-stair", "tsh-view-3d"]
+    },
+    "sheets": {
+      "count": 1,
+      "ids": ["tsh-sheet-a201"],
+      "minPlacedViews": 3
+    },
+    "schedules": {
+      "count": 1,
+      "ids": ["tsh-schedule-vertical-circulation"],
+      "categories": ["opening"]
+    },
+    "annotations": {
+      "tags": 1,
+      "dimensions": 2
+    }
+  },
+  "evidenceExpectations": {
+    "semanticSummary": true,
+    "semanticDiff": true,
+    "commandSurfaceUsage": {
+      "mustInclude": [
+        "createLevel",
+        "createWallChain",
+        "createFloor",
+        "createStair",
+        "createSlabOpening",
+        "createRailing",
+        "createRoof",
+        "insertDoorOnWall",
+        "insertWindowOnWall",
+        "createRoomOutline",
+        "createSectionCut",
+        "saveViewpoint",
+        "CreateSheet",
+        "PlaceViewOnSheet",
+        "create_schedule_view"
+      ],
+      "rawBundleOnlyForNow": ["createStair", "createSlabOpening", "createRailing"],
+      "forbidden": ["restoreElement"]
+    },
+    "advisor": {
+      "status": "hook-declared-no-committed-artifact",
+      "checks": [
+        "GET /api/models/{model_id}/validate",
+        "POST /api/models/{model_id}/qa/advisor",
+        "stair_floor_penetration_without_slab_opening",
+        "stair_guardrail_missing",
+        "stair_headroom_clearance_conflict"
+      ]
+    },
+    "screenshots": {
+      "status": "hook-declared-no-visual-artifact",
+      "requiredViewIds": [
+        "tsh-view-ground-plan",
+        "tsh-view-upper-plan",
+        "tsh-section-stair",
+        "tsh-view-3d"
+      ],
+      "serverSideSubstitute": "GET /api/models/{model_id}/exports/sheet-print-raster.png?sheetId=tsh-sheet-a201"
+    },
+    "exports": {
+      "status": "hook-declared-no-export-artifact",
+      "checks": [
+        "GET /api/models/{model_id}/exports/gltf-manifest",
+        "GET /api/models/{model_id}/exports/ifc-manifest",
+        "GET /api/models/{model_id}/exports/sheet-preview.pdf?sheetId=tsh-sheet-a201"
+      ]
+    }
+  }
+}

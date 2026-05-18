@@ -130,6 +130,40 @@ const M3_WORKSTREAMS = {
   later: 'post-M3 expert/raw backlog',
 };
 
+const M3_WAVE2_WORKSTREAMS = [
+  {
+    id: 'M3-F',
+    label: 'Sketch IR, seed, and phase product tools',
+    requiredSurfaces: [
+      'sketch.ir.validate',
+      'sketch.seed.compile',
+      'sketch.phase.apply',
+      'sketch.phase.accept',
+    ],
+  },
+  {
+    id: 'M3-G',
+    label: 'Two-storey stair benchmark executable path',
+    scenarioId: 'two-storey-house-with-stair',
+  },
+  {
+    id: 'M3-H',
+    label: 'Documentation/export production evidence depth',
+    requiredDescriptors: [
+      'document.create_drawing_set',
+      'create-schedule-view',
+      'export.pdf',
+      'export.ifc',
+      'export.gltf',
+      'export.glb',
+    ],
+  },
+  {
+    id: 'M3-I',
+    label: 'Transaction idempotency and workflow metadata',
+  },
+];
+
 function read(relPath) {
   try {
     return fs.readFileSync(path.join(ROOT, relPath), 'utf8');
@@ -688,13 +722,20 @@ function parseImplementedRoutes() {
   const routes = [];
   for (const relPath of files) {
     const source = read(relPath);
+    const routerPrefixes = new Map();
+    for (const prefixMatch of source.matchAll(
+      /(\w+_router)\s*=\s*APIRouter\(\s*prefix\s*=\s*["']([^"']*)["']/g,
+    )) {
+      routerPrefixes.set(prefixMatch[1], prefixMatch[2]);
+    }
     for (const match of source.matchAll(
       /@(\w+_router)\.(get|post|put|delete|patch|websocket)\(\s*["']([^"']+)["']/g,
     )) {
       const router = match[1];
       const method = match[2] === 'websocket' ? 'WEBSOCKET' : match[2].toUpperCase();
       const routePath = match[3];
-      const prefix = router === 'api_router' ? '/api' : '/api';
+      const localPrefix = routerPrefixes.get(router) ?? '';
+      const prefix = router === 'api_router' ? localPrefix || '/api' : `/api${localPrefix}`;
       routes.push({
         method,
         path: normalizeRoute(`${prefix}${routePath}`),
@@ -2455,6 +2496,7 @@ function buildAudit() {
   }
 
   const m3 = buildM3Governance(backendLedger, cmdkLedger, apiLedger);
+  const m3Wave2 = buildM3Wave2(apiLedger);
 
   const m2 = buildM2Summary(
     apiLedger,
@@ -2469,6 +2511,14 @@ function buildAudit() {
       priority: 'P0',
       domain: 'm2-closure',
       kind: 'm2-closure-gate-blocked',
+      id: gate.id,
+      status: 'Gap',
+      detail: gate.blocker,
+    })),
+    ...m3Wave2.blockers.map((gate) => ({
+      priority: 'P0',
+      domain: 'm3-wave2',
+      kind: 'm3-wave2-gate-blocked',
       id: gate.id,
       status: 'Gap',
       detail: gate.blocker,
@@ -2581,6 +2631,7 @@ function buildAudit() {
       'M2 closure gates classify evidence statuses conservatively: todo, placeholder, optional, fixture, stale, failed, traceability-only, and capable statuses remain blockers even when they mention live execution.',
       'Wave 6 closure evidence must carry simple-house semantic proof: live dry-run needs command intent, and commit/advisor/visual/export artifacts need changed ids plus committed wall/opening/floor/roof counts.',
       'M2 evidence artifacts are discovered as matching JSON files below benchmark directories and spec/generated; docs, traceability-only files, and generated audit ledgers are not passing evidence.',
+      'M3 Wave 2 gates are evidence aggregators only: CLI-only mappings, scenario seeds, traceability-only UI files, PDF shells, and generic transaction metadata can make a workstream Partial but not Done.',
     ],
     summary: {
       backendCommandCount: backendLedger.length,
@@ -2639,9 +2690,22 @@ function buildAudit() {
       m3GovernanceGateExpected: m3.summary.gatesExpected,
       m3DescriptorUntrackedSurfaceCount: m3.summary.descriptorUntrackedSurfaceCount,
       m3CmdkUntrackedSurfaceCount: m3.summary.cmdkUntrackedSurfaceCount,
+      m3Wave2Status: m3Wave2.status,
+      m3Wave2GatePassed: m3Wave2.summary.gatesPassed,
+      m3Wave2GateExpected: m3Wave2.summary.gatesExpected,
+      m3Wave2BlockerCount: m3Wave2.summary.blockerCount,
     },
     m2,
-    m3,
+    m3: {
+      ...m3,
+      wave2: m3Wave2,
+      status:
+        m3Wave2.status === 'Done' && m3.summary.gatesPassed === m3.summary.gatesExpected
+          ? 'Done'
+          : m3Wave2.status === 'Not Started'
+            ? 'Partial'
+            : m3Wave2.status,
+    },
     benchmarkEvidence,
     backendCommands: backendLedger,
     cmdkEntries: cmdkLedger,
@@ -3121,6 +3185,443 @@ function buildM3Governance(backendLedger, cmdkLedger, apiLedger) {
   };
 }
 
+function descriptorMatchesStableId(row, id) {
+  return [row.id, row.stableId].some((value) => normalizedId(value) === normalizedId(id));
+}
+
+function statusFromGates(gates) {
+  if (gates.every((gate) => gate.passed)) return 'Done';
+  if (gates.some((gate) => gate.status === 'partial' || gate.passed)) return 'Partial';
+  return 'Not Started';
+}
+
+function m3Gate(id, label, passed, blocker, evidence = [], partial = false) {
+  return {
+    id,
+    label,
+    status: passed ? 'passed' : partial ? 'partial' : 'blocked',
+    passed,
+    blocker: passed ? '' : blocker,
+    evidence,
+  };
+}
+
+function sketchSurfaceEvidence(apiLedger, surfaceId) {
+  const descriptor = apiLedger.find((row) => descriptorMatchesStableId(row, surfaceId));
+  if (descriptor) {
+    return {
+      type: 'api-descriptor',
+      status: descriptor.routeImplemented ? 'implemented' : 'route-mismatch',
+      source: descriptor.source,
+      detail: `${descriptor.id} -> ${descriptor.method} ${descriptor.path}`,
+      passes: descriptor.routeImplemented,
+    };
+  }
+
+  const productMap = read('spec/sketch-to-bim-product-surfaces.md');
+  const text = productMap.toLowerCase();
+  const mentionsSurface = text.includes(surfaceId.toLowerCase());
+  const mentionsCli =
+    (surfaceId === 'sketch.ir.validate' && /initiation-check|initiation-run/.test(text)) ||
+    (surfaceId === 'sketch.seed.compile' && /seed-dsl compile/.test(text)) ||
+    (surfaceId === 'sketch.phase.apply' && /apply-bundle/.test(text)) ||
+    (surfaceId === 'sketch.phase.accept' && /fail-on-acceptance|phase acceptance/.test(text));
+
+  return {
+    type: 'product-map',
+    status: mentionsCli || mentionsSurface ? 'cli-or-gap-documented' : 'missing',
+    source: 'spec/sketch-to-bim-product-surfaces.md',
+    detail:
+      mentionsCli || mentionsSurface
+        ? 'Product map documents a CLI/generic path or explicit gap, but no stable API/MCP descriptor was detected.'
+        : 'No product descriptor, CLI mapping, or blocker text was detected.',
+    passes: false,
+  };
+}
+
+function buildM3SketchWorkstream(apiLedger) {
+  const config = M3_WAVE2_WORKSTREAMS.find((row) => row.id === 'M3-F');
+  const gates = config.requiredSurfaces.map((surfaceId) => {
+    const evidence = [sketchSurfaceEvidence(apiLedger, surfaceId)];
+    const passed = evidence.some((item) => item.passes);
+    return m3Gate(
+      surfaceId,
+      surfaceId,
+      passed,
+      `No implemented stable API/MCP descriptor was detected for ${surfaceId}. CLI-only or product-map entries remain Partial evidence.`,
+      evidence,
+      evidence.some((item) => item.status !== 'missing'),
+    );
+  });
+  return {
+    id: config.id,
+    label: config.label,
+    status: statusFromGates(gates),
+    gatesPassed: gates.filter((gate) => gate.passed).length,
+    gatesExpected: gates.length,
+    gates,
+  };
+}
+
+function scenarioEvidenceStatus(scenario, key) {
+  const section = scenario?.evidence?.[key];
+  if (!section || typeof section !== 'object') return 'missing';
+  if (section.pass === true) return 'passed';
+  if (['executable', 'validated-replay'].includes(section.classification)) return 'passed';
+  if (isPositiveEvidenceStatus(section.status)) return 'passed';
+  if (section.classification === 'traceability-only') return 'partial';
+  if ((section.artifacts ?? []).length) return 'partial';
+  return 'missing';
+}
+
+function buildM3BenchmarkWorkstream() {
+  const config = M3_WAVE2_WORKSTREAMS.find((row) => row.id === 'M3-G');
+  const scenarioPath = `spec/benchmarks/${config.scenarioId}/scenario.json`;
+  const scenario = parseJsonFile(scenarioPath);
+  const hasScenario = Boolean(scenario);
+  const fixtures = scenario?.fixtures ?? {};
+  const runner = scenario?.runner ?? {};
+  const requiredFixtureKeys = [
+    'expectedSemantics',
+    'mcpCliCommandBundle',
+    'uiCmdKTraceability',
+    'uiEquivalence',
+    'liveEvidenceDirectory',
+  ];
+  const fixtureEvidence = requiredFixtureKeys.map((key) => ({
+    type: 'scenario-fixture',
+    status: fixtures[key] ? 'declared' : 'missing',
+    source: scenarioPath,
+    detail: `${key}: ${fixtures[key] ?? 'missing'}`,
+    passes: Boolean(fixtures[key]),
+  }));
+  const evidenceKinds = ['ui', 'cmdK', 'mcpCli', 'advisor', 'visual', 'export', 'semanticDiff'];
+  const evidenceSignals = evidenceKinds.map((kind) => {
+    const status = scenarioEvidenceStatus(scenario, kind);
+    return {
+      type: 'scenario-evidence',
+      status,
+      source: scenarioPath,
+      detail: `${kind}: ${scenario?.evidence?.[kind]?.classification ?? 'missing'} / ${
+        scenario?.evidence?.[kind]?.status ?? 'missing'
+      }`,
+      passes: status === 'passed',
+    };
+  });
+  const gates = [
+    m3Gate(
+      'scenario-present',
+      'Scenario spec present',
+      hasScenario,
+      `${scenarioPath} is missing.`,
+      [
+        {
+          type: 'scenario',
+          status: hasScenario ? 'present' : 'missing',
+          source: scenarioPath,
+          detail: scenario?.summary ?? '',
+          passes: hasScenario,
+        },
+      ],
+    ),
+    m3Gate(
+      'runner-executable',
+      'Executable benchmark runner',
+      runner.kind && runner.kind !== 'not-yet-implemented' && Boolean(runner.command),
+      'Two-storey benchmark runner is not executable yet.',
+      [
+        {
+          type: 'scenario-runner',
+          status: runner.kind ?? 'missing',
+          source: scenarioPath,
+          detail: runner.command ?? 'no command',
+          passes: runner.kind && runner.kind !== 'not-yet-implemented' && Boolean(runner.command),
+        },
+      ],
+      hasScenario,
+    ),
+    m3Gate(
+      'fixture-set',
+      'Expected semantics and fixture artifacts',
+      fixtureEvidence.every((item) => item.passes),
+      'Two-storey benchmark expected semantics, MCP/CLI bundle, UI traceability, UI equivalence, or live evidence directory is missing.',
+      fixtureEvidence,
+      fixtureEvidence.some((item) => item.passes),
+    ),
+    m3Gate(
+      'evidence-set',
+      'Executable evidence set',
+      evidenceSignals.every((item) => item.passes),
+      'Two-storey benchmark lacks passing UI/Cmd+K, MCP/CLI, advisor, visual, export, or semantic-diff evidence.',
+      evidenceSignals,
+      evidenceSignals.some((item) => item.status === 'partial' || item.passes),
+    ),
+  ];
+  return {
+    id: config.id,
+    label: config.label,
+    status: statusFromGates(gates),
+    gatesPassed: gates.filter((gate) => gate.passed).length,
+    gatesExpected: gates.length,
+    scenarioId: config.scenarioId,
+    gates,
+  };
+}
+
+function exportManifestKindPass(exportEvidence, key) {
+  return exportEvidence?.manifests?.[key]?.pass === true;
+}
+
+function exportArtifactPass(exportEvidence, key) {
+  return exportEvidence?.artifacts?.[key]?.pass === true;
+}
+
+function exportedDocCounts(exportEvidence) {
+  return (
+    exportEvidence?.manifests?.gltf?.summary?.geometryProof?.counts?.counts ??
+    exportEvidence?.manifests?.gltf?.body?.extensions?.BIM_AI_exportManifest_v0?.countsByKind ??
+    {}
+  );
+}
+
+function buildM3DocumentationExportWorkstream(apiLedger) {
+  const config = M3_WAVE2_WORKSTREAMS.find((row) => row.id === 'M3-H');
+  const descriptorEvidence = config.requiredDescriptors.map((id) => {
+    const descriptor = apiLedger.find((row) => descriptorMatchesStableId(row, id));
+    return {
+      type: 'api-descriptor',
+      status: descriptor
+        ? descriptor.routeImplemented
+          ? 'implemented'
+          : 'route-mismatch'
+        : 'missing',
+      source: descriptor?.source ?? SOURCES.apiRegistry,
+      detail: descriptor ? `${descriptor.id} -> ${descriptor.method} ${descriptor.path}` : id,
+      passes: Boolean(descriptor?.routeImplemented),
+    };
+  });
+  const exportEvidencePath =
+    'spec/benchmarks/simple-single-storey-house/live-evidence/export-evidence.json';
+  const exportEvidence = parseJsonFile(exportEvidencePath);
+  const counts = exportedDocCounts(exportEvidence);
+  const countSignals = ['sheet', 'schedule', 'placed_tag', 'dimension'].map((kind) => ({
+    type: 'export-count',
+    status: Number(counts[kind] ?? 0) > 0 ? 'present' : 'missing',
+    source: exportEvidencePath,
+    detail: `${kind}: ${counts[kind] ?? 0}`,
+    passes: Number(counts[kind] ?? 0) > 0,
+  }));
+  const artifactSignals = [
+    {
+      type: 'export-artifact',
+      status: exportManifestKindPass(exportEvidence, 'gltf') ? 'passed' : 'missing-or-failed',
+      source: exportEvidencePath,
+      detail: 'glTF/GLB manifest evidence',
+      passes: exportManifestKindPass(exportEvidence, 'gltf'),
+    },
+    {
+      type: 'export-artifact',
+      status: exportManifestKindPass(exportEvidence, 'ifc') ? 'passed' : 'missing-or-failed',
+      source: exportEvidencePath,
+      detail: 'IFC manifest evidence',
+      passes: exportManifestKindPass(exportEvidence, 'ifc'),
+    },
+    {
+      type: 'export-artifact',
+      status: exportArtifactPass(exportEvidence, 'sheetPdf') ? 'passed' : 'missing-or-failed',
+      source: exportEvidencePath,
+      detail: 'Sheet PDF artifact evidence',
+      passes: exportArtifactPass(exportEvidence, 'sheetPdf'),
+    },
+  ];
+  const gates = [
+    m3Gate(
+      'descriptor-pack',
+      'Documentation/export descriptor pack',
+      descriptorEvidence.every((item) => item.passes),
+      'One or more documentation/export API descriptors are missing or route-mismatched.',
+      descriptorEvidence,
+      descriptorEvidence.some((item) => item.passes),
+    ),
+    m3Gate(
+      'document-artifact-counts',
+      'Sheet, schedule, tag, and dimension evidence',
+      countSignals.every((item) => item.passes),
+      'Export evidence does not include sheet, schedule, tag, and dimension counts.',
+      countSignals,
+      countSignals.some((item) => item.passes),
+    ),
+    m3Gate(
+      'export-artifacts',
+      'PDF, IFC, and glTF/GLB artifacts',
+      artifactSignals.every((item) => item.passes),
+      'Production evidence must include clean PDF, IFC, and glTF/GLB export artifacts or manifests; PDF shells alone are not enough.',
+      artifactSignals,
+      artifactSignals.some((item) => item.passes),
+    ),
+  ];
+  return {
+    id: config.id,
+    label: config.label,
+    status: statusFromGates(gates),
+    gatesPassed: gates.filter((gate) => gate.passed).length,
+    gatesExpected: gates.length,
+    gates,
+  };
+}
+
+function buildM3TransactionWorkstream() {
+  const commitEvidencePath =
+    'spec/benchmarks/simple-single-storey-house/live-evidence/live-commit-evidence.json';
+  const commandLogPath =
+    'spec/benchmarks/simple-single-storey-house/live-evidence/command-log-summary.json';
+  const commitEvidence = parseJsonFile(commitEvidencePath);
+  const commandLog = parseJsonFile(commandLogPath);
+  const latestLog =
+    commandLog?.latest?.[0] ?? commitEvidence?.postCommit?.commandLog?.summary?.latest?.[0];
+  const basicMetadata = [
+    {
+      key: 'parentRevision',
+      value: commitEvidence?.revision?.parentRevision,
+      source: commitEvidencePath,
+    },
+    {
+      key: 'newRevision',
+      value: commitEvidence?.revision?.newRevision ?? commitEvidence?.revision?.revision,
+      source: commitEvidencePath,
+    },
+    {
+      key: 'changedIds',
+      value: Array.isArray(commitEvidence?.changedIds) ? commitEvidence.changedIds.length : 0,
+      source: commitEvidencePath,
+    },
+    {
+      key: 'agentIdentity',
+      value: latestLog?.userId,
+      source: commandLogPath,
+    },
+    {
+      key: 'commandLogRevisionAfter',
+      value: latestLog?.revisionAfter ?? commitEvidence?.revision?.commandLogRevisionAfter,
+      source: commandLogPath,
+    },
+  ].map((item) => ({
+    type: 'transaction-metadata',
+    status:
+      item.value === undefined || item.value === null || item.value === 0 ? 'missing' : 'present',
+    source: item.source,
+    detail: `${item.key}: ${item.value ?? 'missing'}`,
+    passes: !(item.value === undefined || item.value === null || item.value === 0),
+  }));
+  const idempotencySignals = [
+    {
+      type: 'idempotency',
+      status:
+        commitEvidence?.idempotency?.pass === true ||
+        commitEvidence?.transaction?.idempotency?.pass === true
+          ? 'passed'
+          : 'missing',
+      source: commitEvidencePath,
+      detail: 'clientOpId or bundle digest replay dedup proof',
+      passes:
+        commitEvidence?.idempotency?.pass === true ||
+        commitEvidence?.transaction?.idempotency?.pass === true,
+    },
+    {
+      type: 'stale-revision',
+      status:
+        commitEvidence?.staleRevisionProtection?.pass === true ||
+        commitEvidence?.transaction?.staleRevisionProtection?.pass === true
+          ? 'passed'
+          : 'missing',
+      source: commitEvidencePath,
+      detail: 'stale parent revision rejection proof',
+      passes:
+        commitEvidence?.staleRevisionProtection?.pass === true ||
+        commitEvidence?.transaction?.staleRevisionProtection?.pass === true,
+    },
+    {
+      type: 'workflow-metadata',
+      status:
+        commitEvidence?.workflowMetadata?.m3SketchExportImportCoverage === true ||
+        commitEvidence?.transaction?.workflowMetadata?.m3SketchExportImportCoverage === true
+          ? 'passed'
+          : 'missing',
+      source: commitEvidencePath,
+      detail: 'M3 sketch/export/import workflow metadata assertions',
+      passes:
+        commitEvidence?.workflowMetadata?.m3SketchExportImportCoverage === true ||
+        commitEvidence?.transaction?.workflowMetadata?.m3SketchExportImportCoverage === true,
+    },
+  ];
+  const gates = [
+    m3Gate(
+      'basic-transaction-metadata',
+      'Parent revision, changed ids, agent, and command log metadata',
+      basicMetadata.every((item) => item.passes),
+      'Committed evidence does not include complete basic transaction metadata.',
+      basicMetadata,
+      basicMetadata.some((item) => item.passes),
+    ),
+    m3Gate(
+      'idempotent-replay',
+      'Idempotent replay and stale revision gates',
+      idempotencySignals.every((item) => item.passes),
+      'No clean clientOpId/bundle-digest replay dedup, stale revision protection, and M3 workflow metadata proof was detected.',
+      idempotencySignals,
+      idempotencySignals.some((item) => item.passes),
+    ),
+  ];
+  return {
+    id: 'M3-I',
+    label: 'Transaction idempotency and workflow metadata',
+    status: statusFromGates(gates),
+    gatesPassed: gates.filter((gate) => gate.passed).length,
+    gatesExpected: gates.length,
+    gates,
+  };
+}
+
+function buildM3Wave2(apiLedger) {
+  const workstreams = [
+    buildM3SketchWorkstream(apiLedger),
+    buildM3BenchmarkWorkstream(),
+    buildM3DocumentationExportWorkstream(apiLedger),
+    buildM3TransactionWorkstream(),
+  ];
+  const gates = workstreams.flatMap((workstream) =>
+    workstream.gates.map((gate) => ({
+      workstreamId: workstream.id,
+      workstreamLabel: workstream.label,
+      ...gate,
+    })),
+  );
+  const blockers = gates
+    .filter((gate) => !gate.passed)
+    .map((gate) => ({
+      id: `${gate.workstreamId}:${gate.id}`,
+      blocker: gate.blocker,
+    }));
+  const status = workstreams.every((workstream) => workstream.status === 'Done')
+    ? 'Done'
+    : workstreams.some((workstream) => workstream.status !== 'Not Started')
+      ? 'Partial'
+      : 'Not Started';
+  return {
+    status,
+    workstreams,
+    gates,
+    blockers,
+    summary: {
+      status,
+      workstreamStatusCounts: countBy(workstreams, (row) => row.status),
+      gatesExpected: gates.length,
+      gatesPassed: gates.filter((gate) => gate.passed).length,
+      blockerCount: blockers.length,
+    },
+  };
+}
+
 function countBy(rows, keyFn) {
   const counts = {};
   for (const row of rows) {
@@ -3344,6 +3845,44 @@ function renderRawCommandPromotionPlan(audit) {
   ].join('\n\n');
 }
 
+function renderM3Wave2Report(audit) {
+  const wave2 = audit.m3.wave2;
+  return [
+    '# M3 Wave 2 Parity Report',
+    sourceStamp(audit),
+    `M3 Wave 2 status: ${wave2.status}`,
+    `M3 Wave 2 gates passed: ${wave2.summary.gatesPassed} / ${wave2.summary.gatesExpected}`,
+    `M3 Wave 2 blockers: ${wave2.summary.blockerCount}`,
+    table(
+      ['Workstream', 'Label', 'Status', 'Gates', 'Blockers'],
+      wave2.workstreams.map((workstream) => [
+        workstream.id,
+        workstream.label,
+        workstream.status,
+        `${workstream.gatesPassed} / ${workstream.gatesExpected}`,
+        workstream.gates
+          .filter((gate) => !gate.passed)
+          .map((gate) => `${gate.id}: ${gate.blocker}`)
+          .join('; ') || 'none',
+      ]),
+    ),
+    '## Gates',
+    table(
+      ['Workstream', 'Gate', 'Status', 'Blocker', 'Evidence'],
+      wave2.gates.map((gate) => [
+        gate.workstreamId,
+        gate.label,
+        gate.status,
+        gate.blocker || 'none',
+        (gate.evidence ?? [])
+          .map((item) => `${item.status}@${item.source}`)
+          .slice(0, 6)
+          .join('<br>') || 'none',
+      ]),
+    ),
+  ].join('\n\n');
+}
+
 function renderGapReport(audit) {
   const m2TableHeaders = [
     'M2 tool',
@@ -3424,6 +3963,19 @@ function renderGapReport(audit) {
     table(
       ['Gate', 'Status', 'Blocker'],
       audit.m3.gates.map((gate) => [gate.label, gate.status, gate.blocker || 'none']),
+    ),
+    '## M3 Wave 2 Summary',
+    `M3 Wave 2 status: ${audit.summary.m3Wave2Status}`,
+    `M3 Wave 2 gates passed: ${audit.summary.m3Wave2GatePassed} / ${audit.summary.m3Wave2GateExpected}`,
+    `M3 Wave 2 blockers: ${audit.summary.m3Wave2BlockerCount}`,
+    table(
+      ['Workstream', 'Status', 'Gates', 'Primary blocker'],
+      audit.m3.wave2.workstreams.map((workstream) => [
+        `${workstream.id} ${workstream.label}`,
+        workstream.status,
+        `${workstream.gatesPassed} / ${workstream.gatesExpected}`,
+        workstream.gates.find((gate) => !gate.passed)?.blocker ?? 'none',
+      ]),
     ),
     table(
       ['Priority', 'Category', 'Domain', 'Command', 'Workstream', 'Rationale'],
@@ -3560,6 +4112,10 @@ async function main() {
   await writeMarkdown(
     path.join(args.generatedDir, 'raw-command-promotion-plan.md'),
     renderRawCommandPromotionPlan(audit),
+  );
+  await writeMarkdown(
+    path.join(args.generatedDir, 'm3-wave2-report.md'),
+    renderM3Wave2Report(audit),
   );
   await writeMarkdown(path.join(args.generatedDir, 'parity-gap-report.md'), renderGapReport(audit));
   console.log(

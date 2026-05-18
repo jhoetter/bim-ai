@@ -26,7 +26,7 @@ from bim_ai.engine import (
     ensure_seed_hatches,
     ensure_sun_settings,
 )
-from bim_ai.transaction_metadata import build_transaction_metadata
+from bim_ai.transaction_metadata import build_transaction_metadata, command_bundle_digest
 
 _VALID_ASSUMPTION = {
     "key": "ground_level_mm",
@@ -92,6 +92,39 @@ def _build_test_app() -> FastAPI:
         mode = mode_raw if mode_raw in ("dry_run", "commit") else "dry_run"
 
         doc = _models[model_id]["doc"]
+        uid = body.get("userId") or "local-dev"
+        submitter = body.get("submitter") or "human"
+        bundle_digest = command_bundle_digest(
+            bundle.commands,
+            parent_revision=bundle.parent_revision,
+            assumptions=list(bundle.assumptions),
+            submitter=submitter,
+            route="/api/models/{model_id}/bundles",
+        )
+        client_op_id = body.get("clientOpId")
+        if mode == "commit":
+            for entry in _command_log.get(model_id, []):
+                if entry.get("userId") != uid:
+                    continue
+                tx = entry.get("transactionMetadata") or {}
+                idem = tx.get("idempotency") or {}
+                if (
+                    client_op_id
+                    and idem.get("clientOpId") == client_op_id
+                    or idem.get("bundleDigestSha256") == bundle_digest
+                ):
+                    return {
+                        "schemaVersion": "cmd-v3.0",
+                        "applied": True,
+                        "newRevision": entry["revisionAfter"],
+                        "currentRevision": doc.revision,
+                        "changedIds": tx.get("changedIds", []),
+                        "violations": [],
+                        "checkpointSnapshotId": None,
+                        "transactionMetadata": tx,
+                        "idempotentReplay": True,
+                        "idempotencyMatch": idem,
+                    }
         result, new_doc_from_bundle = _apply_bundle(doc, bundle, mode)  # type: ignore[arg-type]
 
         if not result.applied and result.violations:
@@ -107,8 +140,6 @@ def _build_test_app() -> FastAPI:
 
         if result.applied and result.new_revision is not None and new_doc_from_bundle is not None:
             old_doc = doc
-            uid = body.get("userId") or "local-dev"
-            submitter = body.get("submitter") or "human"
             transaction_metadata = build_transaction_metadata(
                 doc_before=old_doc,
                 new_doc=new_doc_from_bundle,
@@ -117,6 +148,14 @@ def _build_test_app() -> FastAPI:
                 submitter=submitter,
                 parent_revision=bundle.parent_revision,
                 assumptions=list(bundle.assumptions),
+                client_op_id=client_op_id,
+                workflow={
+                    "route": "/api/models/{model_id}/bundles",
+                    "entryPoint": "cmd-v3-apply-bundle",
+                    "surface": "api-v3",
+                    "mode": "commit",
+                },
+                bundle_digest=bundle_digest,
             )
             _models[model_id] = {"revision": new_doc_from_bundle.revision, "doc": new_doc_from_bundle}
             _command_log.setdefault(model_id, []).insert(
@@ -317,17 +356,63 @@ class TestCommitRoute:
         assert after["elements"] == before["elements"]
         assert client.get(f"/api/models/{MODEL_ID}/command-log").json()["entries"] == []
 
+    def test_commit_replay_with_same_client_op_id_is_idempotent(
+        self, client: TestClient
+    ) -> None:
+        body = _bundle_body(
+            mode="commit",
+            clientOpId="stable-op-1",
+            userId="agent-1",
+            submitter="agent-runner",
+        )
+        first = client.post(f"/api/models/{MODEL_ID}/bundles", json=body)
+        assert first.status_code == 200
+        first_body = first.json()
+        assert first_body["applied"] is True
+        assert first_body["newRevision"] == 2
+
+        replay = client.post(f"/api/models/{MODEL_ID}/bundles", json=body)
+        assert replay.status_code == 200
+        replay_body = replay.json()
+        assert replay_body["idempotentReplay"] is True
+        assert replay_body["newRevision"] == first_body["newRevision"]
+        assert replay_body["currentRevision"] == first_body["newRevision"]
+        assert replay_body["transactionMetadata"] == first_body["transactionMetadata"]
+        assert replay_body["idempotencyMatch"]["clientOpId"] == "stable-op-1"
+        assert client.get(f"/api/models/{MODEL_ID}/snapshot").json()["revision"] == 2
+        assert len(client.get(f"/api/models/{MODEL_ID}/command-log").json()["entries"]) == 1
+
+    def test_commit_replay_with_same_bundle_digest_is_idempotent_even_when_stale(
+        self, client: TestClient
+    ) -> None:
+        body = _bundle_body(mode="commit", userId="agent-1", submitter="agent-runner")
+        first = client.post(f"/api/models/{MODEL_ID}/bundles", json=body)
+        assert first.status_code == 200
+        first_body = first.json()
+
+        replay = client.post(f"/api/models/{MODEL_ID}/bundles", json=body)
+        assert replay.status_code == 200
+        replay_body = replay.json()
+        assert replay_body["idempotentReplay"] is True
+        assert replay_body["newRevision"] == first_body["newRevision"]
+        assert replay_body["idempotencyMatch"]["bundleDigestSha256"] == (
+            first_body["transactionMetadata"]["idempotency"]["bundleDigestSha256"]
+        )
+        assert len(client.get(f"/api/models/{MODEL_ID}/command-log").json()["entries"]) == 1
+
 
 class TestConflictRoute:
     def test_409_stale_revision(self, client: TestClient) -> None:
+        client.post(f"/api/models/{MODEL_ID}/bundles", json=_bundle_body(mode="commit"))
         body = _bundle_body(
             bundle={
                 "schemaVersion": "cmd-v3.0",
                 "commands": [_CREATE_LEVEL],
                 "assumptions": [_VALID_ASSUMPTION],
-                "parentRevision": 99,
+                "parentRevision": 1,
             },
             mode="commit",
+            userId="other-agent",
         )
         res = client.post(f"/api/models/{MODEL_ID}/bundles", json=body)
         assert res.status_code == 409

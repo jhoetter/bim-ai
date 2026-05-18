@@ -18,7 +18,7 @@ from bim_ai.agent_generated_bundle_qa_checklist import (
 from bim_ai.agent_review_readout_consistency_closure import (
     agent_review_readout_consistency_closure_v1,
 )
-from bim_ai.db import get_session
+from bim_ai.db import find_idempotent_undo_record, get_session
 from bim_ai.document import Document
 from bim_ai.elements import ExternalLinkElem, LinkDxfElem, LinkModelElem
 from bim_ai.engine import (
@@ -49,7 +49,7 @@ from bim_ai.routes_deps import (
 )
 from bim_ai.schedule_derivation import list_schedule_ids
 from bim_ai.tables import ModelRecord, RedoStackRecord, UndoStackRecord
-from bim_ai.transaction_metadata import build_transaction_metadata
+from bim_ai.transaction_metadata import build_transaction_metadata, command_bundle_digest
 
 commands_router = APIRouter()
 
@@ -387,6 +387,41 @@ async def _commit_doc_and_broadcast(
     }
 
 
+def _idempotent_command_payload(
+    *,
+    row: ModelRecord,
+    model_id: UUID,
+    undo_row: UndoStackRecord,
+    client_op_id: str | None,
+    single_command: bool,
+) -> dict[str, Any]:
+    doc = Document.model_validate(row.document)
+    wire_doc = document_to_wire(doc)
+    metadata = undo_row.transaction_metadata or {}
+    delta = (metadata.get("collaborationDelta") if isinstance(metadata, dict) else None) or {}
+    if client_op_id:
+        delta = {**delta, "clientOpId": client_op_id}
+    payload: dict[str, Any] = {
+        "ok": True,
+        "modelId": str(model_id),
+        "revision": undo_row.revision_after,
+        "currentRevision": row.revision,
+        "elements": wire_doc["elements"],
+        "violations": violations_wire(doc.elements),
+        "clientOpId": client_op_id,
+        "delta": delta,
+        "transactionMetadata": metadata,
+        "idempotentReplay": True,
+        "idempotencyMatch": metadata.get("idempotency") if isinstance(metadata, dict) else None,
+    }
+    if single_command:
+        payload["appliedCommand"] = list(undo_row.forward_commands)[0]
+    else:
+        payload["appliedCommands"] = list(undo_row.forward_commands)
+        payload["replayDiagnostics"] = bundle_replay_diagnostics(list(undo_row.forward_commands))
+    return payload
+
+
 @commands_router.get("/models/{model_id}/command-log")
 async def command_log_full(
     model_id: UUID,
@@ -436,6 +471,26 @@ async def apply_command(
 
     baseline_doc = Document.model_validate(row.document)
     command_for_commit = _expand_link_reload_command(baseline_doc, body.command)
+    command_digest = command_bundle_digest(
+        [command_for_commit],
+        submitter="raw-command",
+        route="/api/models/{model_id}/commands",
+    )
+    prior = await find_idempotent_undo_record(
+        session,
+        model_id=model_id,
+        client_op_id=body.client_op_id,
+        bundle_digest=command_digest if body.client_op_id is None else None,
+        user_id=uid,
+    )
+    if prior is not None:
+        return _idempotent_command_payload(
+            row=row,
+            model_id=model_id,
+            undo_row=prior,
+            client_op_id=body.client_op_id,
+            single_command=True,
+        )
 
     await _validate_link_model_command_against_db(session, model_id, command_for_commit)
 
@@ -465,6 +520,12 @@ async def apply_command(
         submitter="raw-command",
         parent_revision=doc_before.revision,
         client_op_id=body.client_op_id,
+        workflow={
+            "route": "/api/models/{model_id}/commands",
+            "entryPoint": "raw-command",
+            "surface": "api-v2",
+        },
+        bundle_digest=command_digest,
     )
     await delete_redos(session, model_id, uid)
 
@@ -580,6 +641,26 @@ async def apply_command_bundle(
     uid = body.user_id or "local-dev"
     baseline_doc = Document.model_validate(row.document)
     commands_for_commit = [_expand_link_reload_command(baseline_doc, c) for c in body.commands]
+    bundle_digest = command_bundle_digest(
+        commands_for_commit,
+        submitter="raw-bundle",
+        route="/api/models/{model_id}/commands/bundle",
+    )
+    prior = await find_idempotent_undo_record(
+        session,
+        model_id=model_id,
+        client_op_id=body.client_op_id,
+        bundle_digest=bundle_digest,
+        user_id=uid,
+    )
+    if prior is not None:
+        return _idempotent_command_payload(
+            row=row,
+            model_id=model_id,
+            undo_row=prior,
+            client_op_id=body.client_op_id,
+            single_command=False,
+        )
     doc_before = clone_document(baseline_doc)
 
     src_provider: SourceDocProvider | None = None
@@ -618,6 +699,12 @@ async def apply_command_bundle(
         submitter="raw-bundle",
         parent_revision=doc_before.revision,
         client_op_id=body.client_op_id,
+        workflow={
+            "route": "/api/models/{model_id}/commands/bundle",
+            "entryPoint": "raw-bundle",
+            "surface": "api-v2",
+        },
+        bundle_digest=bundle_digest,
     )
 
     await delete_redos(session, model_id, uid)
@@ -837,6 +924,11 @@ async def undo_model(
         submitter="undo",
         parent_revision=baseline.revision,
         action="undo",
+        workflow={
+            "route": "/api/models/{model_id}/undo",
+            "entryPoint": "undo",
+            "surface": "api-v2",
+        },
     )
     session.add(
         RedoStackRecord(
@@ -919,6 +1011,11 @@ async def redo_model(
         submitter="redo",
         parent_revision=baseline.revision,
         action="redo",
+        workflow={
+            "route": "/api/models/{model_id}/redo",
+            "entryPoint": "redo",
+            "surface": "api-v2",
+        },
     )
 
     await session.delete(redo_row)
