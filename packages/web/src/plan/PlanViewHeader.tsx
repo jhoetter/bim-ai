@@ -73,6 +73,16 @@ export type PlanViewHeaderProps = {
   cropRegionEnabled?: boolean;
   /** §1.6.10: called when the user clicks the crop region toggle button. */
   onCropRegionToggle?: () => void;
+  /** §2.9.4: whether the plan underlay ghost is currently visible. */
+  showUnderlay?: boolean;
+  /** §2.9.4: called when the user clicks the UL toggle button. */
+  onUnderlayToggle?: () => void;
+  /** §2.9.4: the currently selected underlay level ID. */
+  underlayLevelId?: string | null;
+  /** §2.9.4: list of level elements to populate the underlay level selector. */
+  underlayLevels?: Array<{ id: string; name?: string }>;
+  /** §2.9.4: called when the user selects a different underlay level. */
+  onUnderlayLevelChange?: (levelId: string | null) => void;
 };
 
 const PHASE_FILTER_MODE_LABELS: Record<string, string> = {
@@ -112,6 +122,11 @@ export function PlanViewHeader({
   cropRegionMm,
   cropRegionEnabled = false,
   onCropRegionToggle,
+  showUnderlay = false,
+  onUnderlayToggle,
+  underlayLevelId,
+  underlayLevels = [],
+  onUnderlayLevelChange,
 }: PlanViewHeaderProps): JSX.Element {
   const [viewRangeOpen, setViewRangeOpen] = useState(false);
   const [colorSchemeOpen, setColorSchemeOpen] = useState(false);
@@ -453,6 +468,47 @@ export function PlanViewHeader({
         >
           {cropRegionEnabled ? '⬜ Crop ON' : '⬜ Crop OFF'}
         </button>
+      ) : null}
+      {/* §2.9.4: Underlay toggle + level selector */}
+      {onUnderlayToggle ? (
+        <button
+          type="button"
+          data-testid="plan-view-underlay-btn"
+          title={showUnderlay ? 'Hide Underlay' : 'Show Underlay'}
+          onClick={onUnderlayToggle}
+          style={{
+            fontSize: 10,
+            padding: '1px 5px',
+            border: `1px solid ${showUnderlay ? '#a78bfa' : 'var(--border)'}`,
+            borderRadius: 3,
+            background: showUnderlay ? 'rgba(167,139,250,0.15)' : 'transparent',
+            color: showUnderlay ? '#a78bfa' : 'inherit',
+            cursor: 'pointer',
+          }}
+        >
+          UL
+        </button>
+      ) : null}
+      {showUnderlay && onUnderlayLevelChange ? (
+        <select
+          data-testid="plan-view-underlay-level-select"
+          value={underlayLevelId ?? ''}
+          onChange={(e) => onUnderlayLevelChange(e.target.value || null)}
+          style={{
+            fontSize: 10,
+            padding: '1px 4px',
+            background: 'transparent',
+            color: 'inherit',
+            border: '1px solid var(--border)',
+          }}
+        >
+          <option value="">-- No Underlay --</option>
+          {underlayLevels.map((lv) => (
+            <option key={lv.id} value={lv.id}>
+              {lv.name ?? lv.id}
+            </option>
+          ))}
+        </select>
       ) : null}
     </div>
   );

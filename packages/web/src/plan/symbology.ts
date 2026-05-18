@@ -2542,6 +2542,38 @@ export function rebuildPlanMeshes(
     }
   }
 
+  // §2.9.4: underlay — render walls from underlayLevelId as ghost dashed purple lines
+  {
+    const activePlanViewEl = opts.activeViewId ? elementsById[opts.activeViewId] : undefined;
+    const underlayLevelId = (activePlanViewEl as any)?.underlayLevelId as string | undefined;
+    const underlayEnabled = (activePlanViewEl as any)?.showUnderlay ?? false;
+    if (underlayEnabled && underlayLevelId) {
+      for (const el of Object.values(elementsById)) {
+        if (el.kind !== 'wall') continue;
+        if ((el as any).levelId !== underlayLevelId) continue;
+        const wall = el as any;
+        const startMm = wall.startMm ?? wall.start;
+        const endMm = wall.endMm ?? wall.end;
+        if (!startMm || !endMm) continue;
+        const pts = [
+          new THREE.Vector3(ux(startMm.xMm), PLAN_Y + 0.001, uz(startMm.yMm)),
+          new THREE.Vector3(ux(endMm.xMm), PLAN_Y + 0.001, uz(endMm.yMm)),
+        ];
+        const geo = new THREE.BufferGeometry().setFromPoints(pts);
+        const mat = new THREE.LineDashedMaterial({
+          color: 0x8b5cf6,
+          dashSize: 0.05,
+          gapSize: 0.03,
+          opacity: 0.4,
+          transparent: true,
+        });
+        const line = new THREE.Line(geo, mat);
+        line.computeLineDistances();
+        holder.add(line);
+      }
+    }
+  }
+
   // §3.3.7: apply per-element linework overrides
   const lineworkOverrides = opts.lineworkOverrides ?? [];
   for (const override of lineworkOverrides) {

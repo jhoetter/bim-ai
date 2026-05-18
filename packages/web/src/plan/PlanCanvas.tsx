@@ -834,6 +834,26 @@ export function PlanCanvas({
     if (!pv || pv.kind !== 'plan_view') return false;
     return (pv as any).showConstraints ?? false;
   }, [activePlanViewId, elementsById]);
+  // §2.9.4 — plan underlay ghost toggle state
+  const showUnderlay = useMemo(() => {
+    if (!activePlanViewId) return false;
+    const pv = elementsById[activePlanViewId];
+    if (!pv || pv.kind !== 'plan_view') return false;
+    return (pv as any).showUnderlay ?? false;
+  }, [activePlanViewId, elementsById]);
+  const underlayLevelId = useMemo(() => {
+    if (!activePlanViewId) return null;
+    const pv = elementsById[activePlanViewId];
+    if (!pv || pv.kind !== 'plan_view') return null;
+    return (pv as any).underlayLevelId ?? null;
+  }, [activePlanViewId, elementsById]);
+  const underlayLevels = useMemo(
+    () =>
+      Object.values(elementsById)
+        .filter((e) => e.kind === 'level')
+        .map((e) => ({ id: e.id, name: (e as any).name ?? e.id })),
+    [elementsById],
+  );
   const selectLinkedEnabled = useBimStore((s) => s.selectLinkedEnabled);
   // §7.3.1 — active work plane name for the plan view header badge.
   const activeWorkPlaneName = useMemo(() => {
@@ -7692,6 +7712,56 @@ export function PlanCanvas({
           >
             EQ
           </button>
+        ) : null}
+        {/* §2.9.4 — Plan underlay toggle + level selector */}
+        {activePlanViewId ? (
+          <button
+            type="button"
+            data-testid="plan-view-underlay-btn"
+            title={showUnderlay ? 'Hide Underlay' : 'Show Underlay'}
+            onClick={() =>
+              void onSemanticCommand({ type: 'setPlanUnderlay', viewId: activePlanViewId })
+            }
+            style={{
+              fontSize: 10,
+              padding: '1px 5px',
+              border: `1px solid ${showUnderlay ? '#a78bfa' : 'var(--border)'}`,
+              borderRadius: 3,
+              background: showUnderlay ? 'rgba(167,139,250,0.15)' : 'transparent',
+              color: showUnderlay ? '#a78bfa' : 'inherit',
+              cursor: 'pointer',
+            }}
+          >
+            UL
+          </button>
+        ) : null}
+        {showUnderlay && activePlanViewId ? (
+          <select
+            data-testid="plan-view-underlay-level-select"
+            value={underlayLevelId ?? ''}
+            onChange={(e) =>
+              void onSemanticCommand({
+                type: 'setPlanUnderlay',
+                viewId: activePlanViewId,
+                underlayLevelId: e.target.value || null,
+                showUnderlay: true,
+              })
+            }
+            style={{
+              fontSize: 10,
+              padding: '1px 4px',
+              background: 'transparent',
+              color: 'inherit',
+              border: '1px solid var(--border)',
+            }}
+          >
+            <option value="">-- No Underlay --</option>
+            {underlayLevels.map((lv) => (
+              <option key={lv.id} value={lv.id}>
+                {lv.name}
+              </option>
+            ))}
+          </select>
         ) : null}
         {/* §7.3.1 — Active work plane badge */}
         {activeWorkPlaneName ? (

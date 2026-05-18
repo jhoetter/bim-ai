@@ -5877,6 +5877,13 @@ export function Workspace(): JSX.Element {
         projectName={activeSeedLabel ?? 'project'}
         onDuplicateProject={handleDuplicateProject}
         onRevertProject={handleRevertProject}
+        dxfLayerMapping={
+          (Object.values(elementsById).find((e) => e.kind === 'project_settings') as any)
+            ?.dxfLayerMapping
+        }
+        onSetDxfLayerMapping={(mapping) =>
+          void onSemanticCommand({ type: 'setDxfLayerMapping', mapping })
+        }
       />
       <ProjectSetupDialog
         open={projectSetupOpen}

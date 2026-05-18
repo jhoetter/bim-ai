@@ -3216,3 +3216,36 @@ registerCommand({
     if (col) ctx.dispatchCommand?.({ type: 'toggleColumnStructural', columnId: col.id });
   },
 });
+
+// §2.9.4 — Plan Underlay (Show Lower Floor)
+registerCommand({
+  id: 'view.plan-underlay',
+  label: 'Plan Underlay (Show Lower Floor)',
+  keywords: ['underlay', 'plan', 'lower floor', 'ghost', 'reference', 'Raster'],
+  category: 'view',
+  isAvailable: hasActivePlanView,
+  invoke: (ctx) => {
+    if (!ctx.activePlanViewId) return;
+    ctx.dispatchCommand?.({ type: 'setPlanUnderlay', viewId: ctx.activePlanViewId });
+  },
+});
+
+// §12.4.2 — Custom DXF Layer Names
+registerCommand({
+  id: 'file.dxf-layer-mapping',
+  label: 'Custom DXF Layer Names',
+  keywords: [
+    'dxf',
+    'layer',
+    'layer names',
+    'export',
+    'DXF layer mapping',
+    'WAND',
+    'TÜR',
+    'FENSTER',
+  ],
+  category: 'command',
+  invoke: (ctx) => {
+    ctx.dispatchCommand?.({ type: 'setDxfLayerMapping', mapping: {} });
+  },
+});

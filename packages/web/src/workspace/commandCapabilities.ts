@@ -2884,4 +2884,34 @@ const MASS_CAPABILITIES: CommandCapability[] = [
     notes:
       '§9.1.3: toggles isNonStructural on column elements; non-structural columns render with dashed outline.',
   },
+  {
+    id: 'view.plan-underlay',
+    label: 'Plan Underlay (Show Lower Floor)',
+    owner: 'plan/PlanViewHeader',
+    group: 'view',
+    scope: 'canvas',
+    intendedModes: ['plan'],
+    surfaces: ['plan-header', 'cmd-k'],
+    executionSurface: 'store',
+    preconditions: [],
+    status: 'implemented',
+    usabilityScore: 8,
+    notes:
+      '§2.9.4: toggle + level selector shows lower floor walls as ghost/underlay lines in plan view.',
+  },
+  {
+    id: 'file.dxf-layer-mapping',
+    label: 'Custom DXF Layer Names',
+    owner: 'workspace/sheets/PrintPlotDialog',
+    group: 'file',
+    scope: 'global',
+    intendedModes: ['plan', '3d'],
+    surfaces: ['export-dialog', 'cmd-k'],
+    executionSurface: 'store',
+    preconditions: [],
+    status: 'implemented',
+    usabilityScore: 8,
+    notes:
+      '§12.4.2: dxfLayerMapping on project_settings allows renaming default layer names (A-WALL→WAND, etc.) in DXF export.',
+  },
 ];
