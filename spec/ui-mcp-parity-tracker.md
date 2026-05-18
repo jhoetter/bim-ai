@@ -1019,6 +1019,32 @@ Wave 1 result:
   `query.nearest_wall`, `author.wall`, `opening.roof_opening`, `view.save_3d`,
   `qa.advisor`, live typed execution evidence, and UI-equivalent benchmark path.
 
+### Milestone 2 Wave 2 Workstreams
+
+Milestone 2 Wave 2 is targeted at closing the first-pack gaps reported by the
+audit and turning the simple-house benchmark from fixture validation into live
+typed execution evidence.
+
+| Workstream                               | Status  | Owner scope                                                                                                                                   | Tracker items                                              | Done when                                                                                                                                                                                                  |
+| ---------------------------------------- | ------- | --------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| M2-F. Model transaction tools            | Partial | Backend API/registry/tests for `model.dry_run` and `model.commit_bundle`; keep commit semantics aligned with existing bundle routes.          | WP-003, WP-009, M2 first-pack gaps.                        | API descriptors and tests expose typed dry-run and commit-bundle surfaces that wrap the existing authoritative bundle execution path without inventing a second transaction model.                         |
+| M2-G. Missing first-pack semantic tools  | Partial | Backend query/resolve/semantic helper gaps for `query.nearest_wall`, `author.wall`, `opening.roof_opening`, `view.save_3d`, and `qa.advisor`. | WP-003, WP-007, M2 first-pack gaps.                        | Helpers/routes exist where appropriate, unsupported cases are explicit, and tests prove command payloads/query results for each missing first-pack surface.                                                |
+| M2-H. CLI live execution and evidence    | Partial | `packages/cli` commands/tests for Wave 2 tools and live-oriented evidence commands.                                                           | WP-003, WP-007, M2 CLI mirror.                             | CLI mirrors `model dry-run`, `model commit-bundle`, nearest-wall, single-wall authoring, roof opening, save-3D, advisor, and can drive the simple-house path using typed commands rather than raw bundles. |
+| M2-I. Live simple-house benchmark        | Partial | Benchmark harness/fixtures/tests only; may use existing API/CLI surfaces but should not own backend internals.                                | WP-008, Same-house benchmark `simple-single-storey-house`. | Benchmark can run a live dry-run path and, where test infrastructure permits, a commit path, then emit semantic summary, advisor/validation evidence, command-surface usage, and remaining UI-path TODOs.  |
+| M2-J. Audit and UI-equivalence reporting | Partial | Audit script, generated ledgers, and small UI/Cmd+K benchmark traceability notes; avoid backend/CLI implementation.                           | WP-004, WP-012, M2 progress reporting.                     | Generated audit recognizes Wave 2 surfaces, reports first-pack closure accurately, and records the UI-equivalent simple-house benchmark gap without inflating parity status.                               |
+
+### Milestone 2 Wave 2 Scheduling Notes
+
+- M2-F owns transaction descriptors and should avoid semantic authoring logic.
+- M2-G owns missing backend helper/query behavior and should avoid CLI code.
+- M2-H consumes public backend routes and should not edit backend internals.
+- M2-I should keep live benchmark execution deterministic and CI-suitable.
+- M2-J should run after or degrade gracefully around other workstreams, then
+  regenerate ledgers from source.
+- M2 can move toward `Done` only after `pnpm audit:ui-mcp-parity` reports all
+  first-pack surfaces present and the simple-house benchmark has live typed
+  dry-run/commit evidence plus a tracked UI-equivalent path.
+
 ## Next Work Packages
 
 ### WP-001: Command Schema Export
