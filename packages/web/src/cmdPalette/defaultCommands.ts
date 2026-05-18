@@ -3173,17 +3173,6 @@ registerCommand({
   },
 });
 
-// §1.7.1 — Canvas Context Menu (right-click on empty canvas space)
-registerCommand({
-  id: 'view.canvas-context-menu',
-  label: 'Canvas Context Menu',
-  keywords: ['zoom in', 'zoom out', 'zoom to fit', 'view properties', 'canvas menu', 'right click'],
-  category: 'command',
-  invoke: () => {
-    // §1.7.1: surfaced via canvas right-click on empty space — no global invocation needed.
-  },
-});
-
 // §4.2.6 — Stack Dimensions (redistribute parallel dims at even spacing)
 registerCommand({
   id: 'modify.stack-dimensions',

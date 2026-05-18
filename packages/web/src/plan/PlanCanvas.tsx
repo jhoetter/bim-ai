@@ -4759,6 +4759,35 @@ export function PlanCanvas({
         }
         return;
       }
+      if (planTool === 'paint') {
+        const rectBox = rnd.domElement.getBoundingClientRect();
+        const ray = new THREE.Raycaster();
+        ray.setFromCamera(
+          new THREE.Vector2(
+            ((ev.clientX - rectBox.left) / rectBox.width) * 2 - 1,
+            -(((ev.clientY - rectBox.top) / rectBox.height) * 2 - 1),
+          ),
+          camNow,
+        );
+        const hits = ray.intersectObjects(grp.children, true);
+        const h = hits.find(
+          (x) => typeof (x.object.userData as { bimPickId?: unknown }).bimPickId === 'string',
+        );
+        const pickedElementId =
+          typeof (h?.object.userData as { bimPickId?: unknown }).bimPickId === 'string'
+            ? (h!.object.userData as { bimPickId: string }).bimPickId
+            : undefined;
+        if (pickedElementId) {
+          const paintMaterialKey = useBimStore.getState().activePaintMaterialId ?? 'concrete';
+          void onSemanticCommand({
+            type: 'paintFace',
+            elementId: pickedElementId,
+            faceKey: 'front',
+            materialKey: paintMaterialKey,
+          });
+        }
+        return;
+      }
       if (planTool === 'component') {
         const assetId = activeComponentAssetId;
         const familyTypeId = activeComponentFamilyTypeId;

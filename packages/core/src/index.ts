@@ -1400,6 +1400,8 @@ export type Element =
       materialKey?: string | null;
       /** MAT-09 — Revit-like Paint tool overrides for individual wall faces. */
       faceMaterialOverrides?: MaterialFaceOverride[] | null;
+      /** §3.3.7 Paint surface: per-face material override. Key: face identifier (e.g. 'front', 'back', 'top', 'bottom'). Value: materialKey string. */
+      faceOverrides?: Record<string, string>;
       loadBearing?: boolean | null;
       structuralRole?: WallStructuralRole;
       structuralMaterial?: StructuralMaterial | string | null;
@@ -1892,6 +1894,8 @@ export type Element =
       slopePercent?: number | null;
       /** §3.3.4 Paint tool face material overrides. Key = faceId string, value = materialId. */
       faceMaterialOverrides?: Record<string, string> | null;
+      /** §3.3.7 Paint surface: per-face material override. Key: face identifier (e.g. 'front', 'back', 'top', 'bottom'). Value: materialKey string. */
+      faceOverrides?: Record<string, string>;
       /** §3.4.1: when set, the floor's top face is snapped to the underside of this roof element. */
       attachedToRoofId?: string | null;
       /** §3.4.1: computed top-face elevation (mm above datum). Set by attach command; used by mesh builder. */
@@ -5349,6 +5353,24 @@ export type PaintFaceCmd = {
   faceId: string;
   /** materialId to apply, or null to remove the override (restore to type default). */
   materialId: string | null;
+};
+
+// ---------------------------------------------------------------------------
+// §3.3.7 — Paint surface: per-face material override commands (Wave 26 WP-A)
+// ---------------------------------------------------------------------------
+
+export type PaintFaceSurfaceCmd = {
+  type: 'paintFace';
+  elementId: string;
+  /** Face identifier: 'front' | 'back' | 'top' | 'bottom' | 'inner' | 'outer' */
+  faceKey: string;
+  materialKey: string;
+};
+
+export type UnpaintFaceCmd = {
+  type: 'unpaintFace';
+  elementId: string;
+  faceKey: string;
 };
 
 /** Per-category visual overrides for the plan view (§2.1.4). */

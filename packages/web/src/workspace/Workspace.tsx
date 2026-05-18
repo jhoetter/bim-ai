@@ -2440,6 +2440,31 @@ export function Workspace(): JSX.Element {
         });
         return;
       }
+      // §3.3.7 (Wave 26 WP-A): paint surface — assign a material to an individual element face
+      if (cmd.type === 'paintFace') {
+        const { elementsById: cur } = useBimStore.getState();
+        const el = cur[cmd.elementId as string];
+        if (!el) return;
+        const overrides = {
+          ...((el as any).faceOverrides ?? {}),
+          [cmd.faceKey as string]: cmd.materialKey as string,
+        };
+        useBimStore.setState({
+          elementsById: { ...cur, [el.id]: { ...el, faceOverrides: overrides } as any },
+        });
+        return;
+      }
+      if (cmd.type === 'unpaintFace') {
+        const { elementsById: cur } = useBimStore.getState();
+        const el = cur[cmd.elementId as string];
+        if (!el) return;
+        const overrides = { ...((el as any).faceOverrides ?? {}) };
+        delete overrides[cmd.faceKey as string];
+        useBimStore.setState({
+          elementsById: { ...cur, [el.id]: { ...el, faceOverrides: overrides } as any },
+        });
+        return;
+      }
       // §6.1.3: save/restore/delete named 3D views
       if (cmd.type === 'save_3d_view') {
         const st = useBimStore.getState();
