@@ -618,6 +618,121 @@ def test_create_graded_region_tool_in_catalog(client: TestClient) -> None:
     assert "create-graded-region" in tool_names
 
 
+def test_site_context_m4a_descriptors_in_catalog(client: TestClient) -> None:
+    resp = client.get("/api/v3/tools")
+    assert resp.status_code == 200
+    tools = {t["name"]: t for t in resp.json()["tools"]}
+    expected = {
+        "site.setup-georeference",
+        "site.property-line-create",
+        "site.property-line-update",
+        "site.property-line-delete",
+        "site.project-base-point-create",
+        "site.project-base-point-move",
+        "site.project-base-point-rotate",
+        "site.survey-point-create",
+        "site.survey-point-move",
+        "site.sun-settings-create",
+        "site.sun-settings-update",
+        "site.graded-region-update",
+        "site.graded-region-delete",
+        "site.toposolid-subdivision-update",
+        "site.toposolid-subdivision-delete",
+        "site.toposolid-excavation-create",
+        "site.toposolid-excavation-update",
+        "site.toposolid-excavation-delete",
+    }
+    assert expected <= set(tools)
+    assert tools["site.setup-georeference"]["implementationStatus"] == "implemented"
+    assert set(tools["site.setup-georeference"]["resourceGroups"]) >= {"site", "context"}
+    assert tools["site.toposolid-excavation-create"]["kernelCommands"] == [
+        "CreateToposolidExcavation"
+    ]
+
+
+def test_site_context_georeference_setup_bundle_commits_through_route(client: TestClient) -> None:
+    boundary = [
+        {"xMm": 0, "yMm": 0},
+        {"xMm": 20000, "yMm": 0},
+        {"xMm": 20000, "yMm": 12000},
+        {"xMm": 0, "yMm": 12000},
+    ]
+    body = _bundle(
+        [
+            _CREATE_LEVEL,
+            {
+                "type": "createProjectBasePoint",
+                "id": "site-a-pbp",
+                "positionMm": {"xMm": 100, "yMm": 200, "zMm": 0},
+                "angleToTrueNorthDeg": 12.5,
+            },
+            {
+                "type": "createSurveyPoint",
+                "id": "site-a-survey",
+                "positionMm": {"xMm": 1000, "yMm": 2000, "zMm": 0},
+                "sharedElevationMm": 510000,
+            },
+            {
+                "type": "createSunSettings",
+                "id": "site-a-sun",
+                "latitudeDeg": 48.13,
+                "longitudeDeg": 11.58,
+                "dateIso": "2026-06-21",
+                "timeOfDay": {"hours": 9, "minutes": 30},
+            },
+            {
+                "type": "upsertSite",
+                "id": "site-a",
+                "name": "Deterministic site",
+                "referenceLevelId": "lvl-1",
+                "boundaryMm": boundary,
+                "northDegCwFromPlanX": 12.5,
+                "contextObjects": [
+                    {
+                        "id": "ctx-tree",
+                        "contextType": "tree",
+                        "label": "Existing tree",
+                        "positionMm": {"xMm": 12000, "yMm": 6000},
+                        "scale": 1.2,
+                    }
+                ],
+            },
+            {
+                "type": "CreateToposolid",
+                "toposolidId": "site-a-topo",
+                "name": "Site terrain",
+                "boundaryMm": boundary,
+                "thicknessMm": 1500,
+                "baseElevationMm": 0,
+            },
+            {
+                "type": "createPropertyLine",
+                "id": "pl-street",
+                "name": "Street boundary",
+                "startMm": {"xMm": 0, "yMm": 0},
+                "endMm": {"xMm": 20000, "yMm": 0},
+                "setbackMm": 4500,
+                "classification": "street",
+            },
+        ]
+    )
+
+    resp = client.post(f"/api/models/{MODEL_ID}/bundles", json=body)
+    assert resp.status_code == 200, resp.text
+    assert resp.json()["applied"] is True, resp.json()
+    snapshot = client.get(f"/api/models/{MODEL_ID}/snapshot")
+    assert snapshot.status_code == 200
+    elements = snapshot.json()["elements"]
+    assert elements["site-a"]["kind"] == "site"
+    assert elements["site-a"]["northDegCwFromPlanX"] == 12.5
+    assert elements["site-a"]["contextObjects"][0]["id"] == "ctx-tree"
+    assert elements["site-a-topo"]["kind"] == "toposolid"
+    assert elements["pl-street"]["classification"] == "street"
+    assert elements["site-a-pbp"]["kind"] == "project_base_point"
+    assert elements["site-a-survey"]["kind"] == "survey_point"
+    assert elements["site-a-sun"]["kind"] == "sun_settings"
+
+
 # ---------------------------------------------------------------------------
 # Test: Delete nonexistent graded region → raises
 # ---------------------------------------------------------------------------

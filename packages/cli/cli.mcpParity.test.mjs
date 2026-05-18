@@ -510,6 +510,121 @@ test('opening roof-opening --json generates createRoofOpening payload', async ()
   });
 });
 
+test('site setup --json generates deterministic georeference/site baseline bundle', async () => {
+  const propertyLines = JSON.stringify([
+    {
+      id: 'pl-street',
+      name: 'Street boundary',
+      start: [0, 0],
+      end: [20000, 0],
+      setbackMm: 4500,
+      classification: 'street',
+    },
+  ]);
+  const contextObjects = JSON.stringify([
+    { id: 'ctx-tree', contextType: 'tree', label: 'Existing tree', positionMm: { xMm: 12000, yMm: 6000 }, scale: 1.2 },
+  ]);
+  const res = await runCli(
+    [
+      'site',
+      'setup',
+      '--site-id',
+      'site-a',
+      '--reference-level',
+      'lvl-0',
+      '--boundary',
+      '0,0;20000,0;20000,12000;0,12000',
+      '--lat',
+      '48.13',
+      '--lon',
+      '11.58',
+      '--true-north',
+      '12.5',
+      '--time',
+      '09:30',
+      '--property-lines',
+      propertyLines,
+      '--context-objects',
+      contextObjects,
+      '--json',
+    ],
+    { BIM_AI_BASE_URL: 'http://127.0.0.1:1', BIM_AI_MODEL_ID: 'model-1' },
+  );
+
+  assert.equal(res.code, 0, res.stderr);
+  const out = JSON.parse(res.stdout);
+  const commands = out.body.bundle.commands;
+  assert.equal(out.body.bundle.assumptions[0].value, 'site.setup_georeference');
+  assert.deepEqual(
+    commands.map((command) => command.type),
+    [
+      'createProjectBasePoint',
+      'createSurveyPoint',
+      'createSunSettings',
+      'upsertSite',
+      'CreateToposolid',
+      'createPropertyLine',
+    ],
+  );
+  assert.equal(commands[0].angleToTrueNorthDeg, 12.5);
+  assert.equal(commands[2].latitudeDeg, 48.13);
+  assert.deepEqual(commands[2].timeOfDay, { hours: 9, minutes: 30 });
+  assert.equal(commands[3].referenceLevelId, 'lvl-0');
+  assert.equal(commands[3].contextObjects.length, 1);
+  assert.equal(commands[4].toposolidId, 'site-a-toposolid');
+  assert.equal(commands[5].classification, 'street');
+});
+
+test('site focused commands generate typed grading/property/origin/sun/excavation payloads', async () => {
+  const env = { BIM_AI_BASE_URL: 'http://127.0.0.1:1', BIM_AI_MODEL_ID: 'model-1' };
+  const graded = await runCli(
+    [
+      'site',
+      'graded-region',
+      'update',
+      'gr-1',
+      '--target-mode',
+      'slope',
+      '--slope-axis',
+      '90',
+      '--slope-percent',
+      '4',
+      '--json',
+    ],
+    env,
+  );
+  const propertyLine = await runCli(
+    ['site', 'property-line', 'create', '--line', '0,0;25000,0', '--classification', 'street', '--setback', '4500', '--json'],
+    env,
+  );
+  const basePoint = await runCli(
+    ['site', 'base-point', 'rotate', '--true-north', '15', '--json'],
+    env,
+  );
+  const surveyPoint = await runCli(
+    ['site', 'survey-point', 'move', '--position', '1000,2000,0', '--shared-elevation', '510000', '--json'],
+    env,
+  );
+  const sun = await runCli(
+    ['site', 'sun-settings', 'update', '--date', '2026-12-21', '--time', '9:00', '--json'],
+    env,
+  );
+  const excavation = await runCli(
+    ['site', 'excavation', 'create', '--id', 'ex-1', '--host-toposolid', 'topo-1', '--cutter', 'floor-1', '--cut-mode', 'custom_depth', '--custom-depth', '1200', '--json'],
+    env,
+  );
+
+  for (const res of [graded, propertyLine, basePoint, surveyPoint, sun, excavation]) {
+    assert.equal(res.code, 0, res.stderr);
+  }
+  assert.equal(JSON.parse(graded.stdout).body.bundle.commands[0].type, 'UpdateGradedRegion');
+  assert.equal(JSON.parse(propertyLine.stdout).body.bundle.commands[0].type, 'createPropertyLine');
+  assert.equal(JSON.parse(basePoint.stdout).body.bundle.commands[0].type, 'rotateProjectBasePoint');
+  assert.equal(JSON.parse(surveyPoint.stdout).body.bundle.commands[0].type, 'moveSurveyPoint');
+  assert.equal(JSON.parse(sun.stdout).body.bundle.commands[0].type, 'updateSunSettings');
+  assert.equal(JSON.parse(excavation.stdout).body.bundle.commands[0].type, 'CreateToposolidExcavation');
+});
+
 test('view save-3d --json generates saveViewpoint payload with camera', async () => {
   const res = await runCli(
     [
