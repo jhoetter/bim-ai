@@ -3,6 +3,7 @@
   "description": "Preflight golden cases for sketch-to-BIM project initiation. Live baselines are planned here and captured only after a model is intentionally generated.",
   "liveGoldenDefaults": {
     "status": "planned",
+    "phase": "post_generation_acceptance",
     "baselinePolicy": "Do not create seed artifacts during golden preflight. After an approved live run, capture current-head screenshot, Advisor, evidence, export-validation, and tolerance-ledger baselines beside the run evidence.",
     "requiredArtifacts": [
       "live-runner-manifest.json",
@@ -29,6 +30,7 @@
   "cases": [
     {
       "id": "target-house-project-initiation",
+      "seedArtifactName": "target-house-1",
       "ir": "spec/examples/sketch-understanding-ir.example.json",
       "capabilities": "spec/sketch-to-bim-capability-matrix.json",
       "seedDslRecipe": "spec/examples/seed-dsl-modern-house.example.json",
@@ -42,6 +44,7 @@
     },
     {
       "id": "two-volume-massing",
+      "seedArtifactName": "two-volume-massing",
       "ir": "spec/examples/sketch-understanding-ir-massing.example.json",
       "capabilities": "spec/sketch-to-bim-capability-matrix.json",
       "liveGolden": {
@@ -61,6 +64,7 @@
     },
     {
       "id": "documentation-ready-house",
+      "seedArtifactName": "documentation-ready-house",
       "ir": "spec/examples/sketch-understanding-ir-documentation.example.json",
       "capabilities": "spec/sketch-to-bim-capability-matrix.json",
       "seedDslRecipe": "spec/examples/seed-dsl-modern-house.example.json",

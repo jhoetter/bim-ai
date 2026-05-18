@@ -16,6 +16,7 @@ import { spawnSync } from 'node:child_process';
 const REPO_ROOT = path.resolve(new URL('..', import.meta.url).pathname);
 const DEFAULT_ROOT = path.join(REPO_ROOT, 'seed-artifacts');
 const DEFAULT_CAPABILITIES = 'spec/sketch-to-bim-capability-matrix.json';
+const DEFAULT_GOLDEN_MANIFEST = 'spec/sketch-to-bim-golden-seeds.json';
 const ADVISOR_RULE_FILES = [
   'app/bim_ai/constructability_advisories.py',
   'app/bim_ai/constructability_report.py',
@@ -30,10 +31,14 @@ function usage() {
     [--require-final-evidence] [--live] [--base-url <url>]
     [--require-phase-packets] [--require-material-check]
     [--require-tolerance-ledger] [--require-exchange-validation]
+    [--golden-manifest spec/sketch-to-bim-golden-seeds.json]
+    [--no-golden-requirements]
 
 Checks manifest/bundle consistency for seed artifacts. With
 --require-final-evidence, also requires evidence/live-run-current/tool-run-summary.json
 to match the current git HEAD, bundle, IR, and capability-matrix hashes.
+Seed artifacts mapped by the golden manifest also require their planned
+post-generation live baseline artifacts when the artifact exists.
 With --live, runs the strict sketch_bim.py accept helper for each seed.
 `);
   process.exit(2);
@@ -49,6 +54,8 @@ function parseArgs(argv) {
     requireMaterialCheck: false,
     requireToleranceLedger: false,
     requireExchangeValidation: false,
+    goldenManifest: DEFAULT_GOLDEN_MANIFEST,
+    goldenRequirements: true,
     baseUrl: process.env.BIM_AI_BASE_URL || 'http://127.0.0.1:8500',
   };
   for (let i = 0; i < argv.length; i += 1) {
@@ -58,15 +65,66 @@ function parseArgs(argv) {
     else if (arg === '--require-material-check') args.requireMaterialCheck = true;
     else if (arg === '--require-tolerance-ledger') args.requireToleranceLedger = true;
     else if (arg === '--require-exchange-validation') args.requireExchangeValidation = true;
+    else if (arg === '--no-golden-requirements') args.goldenRequirements = false;
     else if (arg === '--live') {
       args.live = true;
       args.requireFinalEvidence = true;
     } else if (arg === '--root' && argv[i + 1]) args.root = argv[++i];
     else if (arg === '--seed' && argv[i + 1]) args.seed = argv[++i];
     else if (arg === '--base-url' && argv[i + 1]) args.baseUrl = argv[++i];
+    else if (arg === '--golden-manifest' && argv[i + 1]) args.goldenManifest = argv[++i];
     else usage();
   }
   return args;
+}
+
+function asArray(value) {
+  if (Array.isArray(value)) return value;
+  if (value === undefined || value === null) return [];
+  return [value];
+}
+
+function addGoldenName(names, value) {
+  if (typeof value !== 'string') return;
+  const name = value.trim();
+  if (name) names.add(name);
+}
+
+async function loadGoldenRequirements(args) {
+  if (!args.goldenRequirements) return new Map();
+  const manifestPath = path.resolve(args.goldenManifest);
+  if (!(await exists(manifestPath))) return new Map();
+  const manifest = await readJson(manifestPath);
+  const defaults = manifest.liveGoldenDefaults ?? {};
+  const requirements = new Map();
+  for (const goldenCase of manifest.cases ?? []) {
+    if (!goldenCase || typeof goldenCase !== 'object') continue;
+    if (!goldenCase.liveGolden || typeof goldenCase.liveGolden !== 'object') continue;
+    const liveGolden = { ...defaults, ...goldenCase.liveGolden };
+    const acceptance = {
+      ...(defaults.acceptance ?? {}),
+      ...(goldenCase.liveGolden.acceptance ?? {}),
+    };
+    const names = new Set();
+    for (const key of ['seedArtifactName', 'seedArtifact', 'artifactName', 'slug']) {
+      addGoldenName(names, goldenCase[key]);
+      addGoldenName(names, liveGolden[key]);
+    }
+    for (const key of ['seedArtifactNames', 'seedArtifacts', 'artifactNames', 'slugs']) {
+      for (const name of asArray(goldenCase[key])) addGoldenName(names, name);
+      for (const name of asArray(liveGolden[key])) addGoldenName(names, name);
+    }
+    if (!names.size) addGoldenName(names, goldenCase.id);
+    const requirement = {
+      caseId: goldenCase.id,
+      manifest: portable(manifestPath),
+      status: liveGolden.status ?? 'planned',
+      requiredArtifacts: liveGolden.requiredArtifacts ?? [],
+      acceptance,
+    };
+    for (const name of names) requirements.set(name, requirement);
+  }
+  return requirements;
 }
 
 async function readIfExists(file) {
@@ -136,6 +194,13 @@ function portable(absPath) {
     : absPath;
 }
 
+function evidenceArtifactPath(evidenceDir, relPath) {
+  if (typeof relPath !== 'string' || !relPath.trim()) return null;
+  const normalized = path.normalize(relPath);
+  if (path.isAbsolute(normalized) || normalized.startsWith('..')) return null;
+  return path.join(evidenceDir, normalized);
+}
+
 async function commandCount(bundlePath) {
   const bundle = await readJson(bundlePath);
   if (Array.isArray(bundle)) return bundle.length;
@@ -158,7 +223,144 @@ function addFinding(findings, severity, code, message, details = {}) {
   findings.push({ severity, code, message, ...details });
 }
 
-async function verifyArtifact(artifactDir, args, currentHead) {
+function findGoldenRequirement(goldenRequirements, seedName, manifest) {
+  for (const candidate of [seedName, manifest.name, manifest.slug]) {
+    if (typeof candidate === 'string' && goldenRequirements.has(candidate)) {
+      return goldenRequirements.get(candidate);
+    }
+  }
+  return null;
+}
+
+async function requireGoldenArtifact(findings, evidenceDir, relPath, requirement, seen = null) {
+  const artifactPath = evidenceArtifactPath(evidenceDir, relPath);
+  if (!artifactPath) {
+    addFinding(
+      findings,
+      'error',
+      'live_golden_artifact_path_invalid',
+      'Live golden artifact path is invalid.',
+      {
+        caseId: requirement.caseId,
+        artifact: relPath,
+      },
+    );
+    return null;
+  }
+  if (seen?.has(path.relative(evidenceDir, artifactPath))) return artifactPath;
+  seen?.add(path.relative(evidenceDir, artifactPath));
+  if (!(await exists(artifactPath))) {
+    addFinding(
+      findings,
+      'error',
+      'live_golden_artifact_missing',
+      'Missing live golden baseline artifact.',
+      {
+        caseId: requirement.caseId,
+        expected: portable(artifactPath),
+      },
+    );
+    return null;
+  }
+  return artifactPath;
+}
+
+async function verifyGoldenRequiredJsonOk(
+  findings,
+  evidenceDir,
+  relPath,
+  codePrefix,
+  label,
+  requirement,
+  seen,
+) {
+  const artifactPath = evidenceArtifactPath(evidenceDir, relPath);
+  if (!artifactPath) {
+    addFinding(findings, 'error', `${codePrefix}_path_invalid`, `${label} path is invalid.`, {
+      caseId: requirement.caseId,
+      artifact: relPath,
+    });
+    return;
+  }
+  const rel = path.relative(evidenceDir, artifactPath);
+  const alreadyRequired = seen.has(rel);
+  if (!alreadyRequired) {
+    await requireGoldenArtifact(findings, evidenceDir, relPath, requirement, seen);
+  }
+  const payload = await readIfExists(artifactPath);
+  if (!payload) return;
+  if (payload.ok !== true) {
+    addFinding(findings, 'error', `${codePrefix}_failed`, `${label} is not ok.`, {
+      artifact: portable(artifactPath),
+      summary: payload.summary ?? null,
+    });
+  }
+}
+
+async function verifyLiveGoldenRequirements(findings, evidenceDir, requirement, hasSummary) {
+  const seen = new Set();
+  for (const relPath of requirement.requiredArtifacts) {
+    await requireGoldenArtifact(findings, evidenceDir, relPath, requirement, seen);
+  }
+  const acceptance = requirement.acceptance ?? {};
+  if (acceptance.requireCurrentHead && !hasSummary) {
+    addFinding(
+      findings,
+      'error',
+      'live_golden_current_head_missing',
+      'Live golden baseline lacks current-head proof.',
+      {
+        caseId: requirement.caseId,
+        expected: portable(path.join(evidenceDir, 'tool-run-summary.json')),
+      },
+    );
+  }
+  if (acceptance.requireAdvisorBaseline) {
+    await requireGoldenArtifact(findings, evidenceDir, 'advisor-warning.json', requirement, seen);
+    await requireGoldenArtifact(findings, evidenceDir, 'advisor-info.json', requirement, seen);
+  }
+  if (acceptance.requireVisualBaseline) {
+    await requireGoldenArtifact(
+      findings,
+      evidenceDir,
+      'visual-evidence-contract.json',
+      requirement,
+      seen,
+    );
+    await requireGoldenArtifact(
+      findings,
+      evidenceDir,
+      'screenshot-manifest.json',
+      requirement,
+      seen,
+    );
+    await requireGoldenArtifact(findings, evidenceDir, 'visual-gate.json', requirement, seen);
+  }
+  if (acceptance.requireExchangeValidation) {
+    await verifyGoldenRequiredJsonOk(
+      findings,
+      evidenceDir,
+      'export-validation.json',
+      'live_golden_exchange_validation',
+      `Live golden ${requirement.caseId} export-validation.json`,
+      requirement,
+      seen,
+    );
+  }
+  if (acceptance.requireToleranceLedger) {
+    await verifyGoldenRequiredJsonOk(
+      findings,
+      evidenceDir,
+      'tolerance-ledger.json',
+      'live_golden_tolerance_ledger',
+      `Live golden ${requirement.caseId} tolerance-ledger.json`,
+      requirement,
+      seen,
+    );
+  }
+}
+
+async function verifyArtifact(artifactDir, args, currentHead, goldenRequirements) {
   const name = path.basename(artifactDir);
   const findings = [];
   const manifestPath = path.join(artifactDir, 'manifest.json');
@@ -168,8 +370,14 @@ async function verifyArtifact(artifactDir, args, currentHead) {
   }
 
   const manifest = await readJson(manifestPath);
+  const goldenRequirement = findGoldenRequirement(goldenRequirements, name, manifest);
   if (manifest.schemaVersion !== 'bim-ai.seed-artifact.v1') {
-    addFinding(findings, 'error', 'manifest_schema', 'Manifest schemaVersion is not bim-ai.seed-artifact.v1.');
+    addFinding(
+      findings,
+      'error',
+      'manifest_schema',
+      'Manifest schemaVersion is not bim-ai.seed-artifact.v1.',
+    );
   }
   const bundleRel = manifest.bundle || 'bundle.json';
   const bundlePath = path.join(artifactDir, bundleRel);
@@ -178,17 +386,29 @@ async function verifyArtifact(artifactDir, args, currentHead) {
   } else {
     const hash = await sha256File(bundlePath);
     if (manifest.bundleSha256 && manifest.bundleSha256 !== hash) {
-      addFinding(findings, 'error', 'bundle_hash_mismatch', 'Manifest bundleSha256 does not match bundle.json.', {
-        manifestHash: manifest.bundleSha256,
-        currentHash: hash,
-      });
+      addFinding(
+        findings,
+        'error',
+        'bundle_hash_mismatch',
+        'Manifest bundleSha256 does not match bundle.json.',
+        {
+          manifestHash: manifest.bundleSha256,
+          currentHash: hash,
+        },
+      );
     }
     const count = await commandCount(bundlePath);
     if (Number(manifest.commandCount) !== count) {
-      addFinding(findings, 'error', 'command_count_mismatch', 'Manifest commandCount does not match bundle commands.', {
-        manifestCount: manifest.commandCount,
-        currentCount: count,
-      });
+      addFinding(
+        findings,
+        'error',
+        'command_count_mismatch',
+        'Manifest commandCount does not match bundle commands.',
+        {
+          manifestCount: manifest.commandCount,
+          currentCount: count,
+        },
+      );
     }
   }
 
@@ -196,42 +416,67 @@ async function verifyArtifact(artifactDir, args, currentHead) {
   const summaryPath = path.join(evidenceDir, 'tool-run-summary.json');
   const hasSummary = await exists(summaryPath);
   if (args.requireFinalEvidence && !hasSummary) {
-    addFinding(findings, 'error', 'final_evidence_missing', 'Missing final live evidence tool-run-summary.json.', {
-      expected: portable(summaryPath),
-    });
+    addFinding(
+      findings,
+      'error',
+      'final_evidence_missing',
+      'Missing final live evidence tool-run-summary.json.',
+      {
+        expected: portable(summaryPath),
+      },
+    );
   }
   if (hasSummary) {
     const summary = await readJson(summaryPath);
     const checks = {
       gitHead: currentHead,
       bundleSha256: await sha256File(bundlePath),
-      irSha256: await sha256File(path.join(artifactDir, 'evidence', 'sketch-ir.json')).catch(() => null),
-      capabilitiesSha256: await sha256File(path.join(REPO_ROOT, summary.capabilitiesPath || DEFAULT_CAPABILITIES)).catch(
+      irSha256: await sha256File(path.join(artifactDir, 'evidence', 'sketch-ir.json')).catch(
         () => null,
       ),
+      capabilitiesSha256: await sha256File(
+        path.join(REPO_ROOT, summary.capabilitiesPath || DEFAULT_CAPABILITIES),
+      ).catch(() => null),
       advisorRuleDigest: await digestFiles(summary.advisorRuleFiles || ADVISOR_RULE_FILES),
     };
     for (const [key, current] of Object.entries(checks)) {
       if (summary[key] !== current) {
-        addFinding(findings, 'error', `${key}_stale`, `Final evidence ${key} does not match current input.`, {
-          recorded: summary[key],
-          current,
-        });
+        addFinding(
+          findings,
+          'error',
+          `${key}_stale`,
+          `Final evidence ${key} does not match current input.`,
+          {
+            recorded: summary[key],
+            current,
+          },
+        );
       }
     }
+  }
+
+  if (goldenRequirement) {
+    await verifyLiveGoldenRequirements(findings, evidenceDir, goldenRequirement, hasSummary);
   }
 
   if (args.requirePhasePackets) {
     const evidenceRoot = path.join(artifactDir, 'evidence');
     const entries = await fs.readdir(evidenceRoot, { withFileTypes: true }).catch(() => []);
-    const phaseDirs = entries.filter((entry) => entry.isDirectory() && entry.name.startsWith('phase-'));
+    const phaseDirs = entries.filter(
+      (entry) => entry.isDirectory() && entry.name.startsWith('phase-'),
+    );
     if (!phaseDirs.length) {
       addFinding(findings, 'error', 'phase_packets_missing', 'No evidence/phase-* packets found.');
     }
     for (const entry of phaseDirs) {
       const packetPath = path.join(evidenceRoot, entry.name, 'phase-packet.json');
       if (!(await exists(packetPath))) {
-        addFinding(findings, 'error', 'phase_packet_missing', `Missing ${entry.name}/phase-packet.json.`);
+        addFinding(
+          findings,
+          'error',
+          'phase_packet_missing',
+          `Missing ${entry.name}/phase-packet.json.`,
+        );
       } else {
         const packet = await readJson(packetPath);
         if (!packet.ok) {
@@ -246,7 +491,12 @@ async function verifyArtifact(artifactDir, args, currentHead) {
   if (args.requireMaterialCheck) {
     const materialPath = path.join(artifactDir, 'evidence', 'material-check.json');
     if (!(await exists(materialPath))) {
-      addFinding(findings, 'error', 'material_check_missing', 'Missing evidence/material-check.json.');
+      addFinding(
+        findings,
+        'error',
+        'material_check_missing',
+        'Missing evidence/material-check.json.',
+      );
     } else {
       const materialCheck = await readJson(materialPath);
       if (!materialCheck.ok) {
@@ -267,18 +517,33 @@ async function verifyArtifact(artifactDir, args, currentHead) {
     );
     const evidenceRoot = path.join(artifactDir, 'evidence');
     const entries = await fs.readdir(evidenceRoot, { withFileTypes: true }).catch(() => []);
-    for (const entry of entries.filter((item) => item.isDirectory() && item.name.startsWith('phase-'))) {
+    for (const entry of entries.filter(
+      (item) => item.isDirectory() && item.name.startsWith('phase-'),
+    )) {
       const phaseLedgerPath = path.join(evidenceRoot, entry.name, 'phase-tolerance-ledger.json');
       const evidenceLedgerPath = path.join(evidenceRoot, entry.name, 'tolerance-ledger.json');
-      const payload = (await readIfExists(phaseLedgerPath)) ?? (await readIfExists(evidenceLedgerPath));
+      const payload =
+        (await readIfExists(phaseLedgerPath)) ?? (await readIfExists(evidenceLedgerPath));
       if (!payload) {
-        addFinding(findings, 'error', 'phase_tolerance_ledger_missing', `Missing ${entry.name} tolerance ledger.`, {
-          expectedOneOf: [portable(phaseLedgerPath), portable(evidenceLedgerPath)],
-        });
+        addFinding(
+          findings,
+          'error',
+          'phase_tolerance_ledger_missing',
+          `Missing ${entry.name} tolerance ledger.`,
+          {
+            expectedOneOf: [portable(phaseLedgerPath), portable(evidenceLedgerPath)],
+          },
+        );
       } else if (payload.ok !== true) {
-        addFinding(findings, 'error', 'phase_tolerance_ledger_failed', `${entry.name} tolerance ledger is not ok.`, {
-          summary: payload.summary ?? null,
-        });
+        addFinding(
+          findings,
+          'error',
+          'phase_tolerance_ledger_failed',
+          `${entry.name} tolerance ledger is not ok.`,
+          {
+            summary: payload.summary ?? null,
+          },
+        );
       }
     }
   }
@@ -318,6 +583,7 @@ async function verifyArtifact(artifactDir, args, currentHead) {
   return {
     name,
     artifact: portable(artifactDir),
+    liveGoldenCaseId: goldenRequirement?.caseId ?? null,
     ok: findings.every((finding) => finding.severity !== 'error'),
     findings,
   };
@@ -331,9 +597,10 @@ async function main() {
     throw new Error(`No seed artifacts found at ${portable(root)}.`);
   }
   const currentHead = gitHead();
+  const goldenRequirements = await loadGoldenRequirements(args);
   const results = [];
   for (const artifact of artifacts) {
-    results.push(await verifyArtifact(artifact, args, currentHead));
+    results.push(await verifyArtifact(artifact, args, currentHead, goldenRequirements));
   }
   const payload = {
     schemaVersion: 'sketch-to-bim.seed-artifact-verification.v1',
