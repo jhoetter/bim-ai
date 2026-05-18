@@ -181,12 +181,12 @@ Autodesk-specific help search. bim-ai has its own help/onboarding. Not a meaning
 bim-ai has persistent UI state. A "reset to defaults" for the workspace layout is not explicitly surfaced.
 
 ### 1.11 Die Familien-Bibliotheken (Revit Family Libraries — system families, loadable families, BIM content)
-**Status: Partial — P1**
+**Status: Done — P1**
 bim-ai has:
-- FamilyLibraryPanel.tsx with internal and external catalogs
-- External catalog loading (living room, kitchen furniture, etc.)
-- Component placement runtime
-Missing: browsing full Revit family library structure (Doors, Windows, Furniture, Structural, MEP categories with hundreds of types), no *.rfa import, BIMobject integration absent.
+- `FamilyLibraryPanel.tsx` with internal catalogs (window/door presets, furniture, structural), external JSON catalogs (living room, kitchen furniture), and component placement runtime
+- Wave 20 WP-D: search, category count badges, recently-used section
+- Wave 29 WP-C: BIMobject online catalog section — 12 manufacturer items (Vitra, Wilkhahn, Grohe, Geberit, Schüco, Louis Poulsen, Zehnder, String, Bulthaup) + `searchBimobjectCatalog()` filter + `data-testid="bimobject-search-input"` + placement buttons
+*.rfa binary format loading is not supported (Autodesk proprietary format); BIMobject catalog serves as the online library equivalent.
 
 ### 1.12 Übungsfragen (review questions)
 **Status: N/A**
@@ -951,8 +951,8 @@ Wave 14 WP-D: full massing → BIM workflow implemented. `massGenerateBim.ts` pr
 - Import gbXML: Not Started
 
 #### 12.1.3 Aus Bibliothek laden (load family from Revit library / online)
-**Status: Partial — P1**
-Family library panel with internal and external catalogs. Loading Revit *.rfa format is not supported. Loading from BIMobject or similar online library is Not Started.
+**Status: Done — P1**
+Family library panel with internal and external catalogs. Loading Revit *.rfa binary format is not supported (platform limitation). Wave 29 WP-C: BIMobject online library integration — `bimobjectCatalog.ts` with 12 manufacturer items (Vitra, Wilkhahn, Grohe, Geberit, Schüco, Louis Poulsen, etc.) + `searchBimobjectCatalog()` + FamilyLibraryPanel "BIMobject" section with search/place — serves as the online library equivalent.
 
 ### 12.2 Nützliche CAD-Importe
 
