@@ -1,0 +1,75 @@
+{
+  "schemaVersion": "bim-ai.site-context.ui-equivalence.v1",
+  "scenarioId": "site-and-context-house",
+  "classification": "validated-replay",
+  "fixtureArtifacts": {
+    "expectedSemantics": "expected-semantics.json",
+    "commandBundle": "mcp-cli-command-bundle.json",
+    "traceability": "ui-cmdk-traceability.json"
+  },
+  "validatedReplay": {
+    "ok": true,
+    "replayCommandCount": 13,
+    "fixtureCommandCount": 13,
+    "replaySource": "mcp-cli-command-bundle.json",
+    "validatedBy": "node scripts/benchmarks/site-context-house.mjs --mode offline --json"
+  },
+  "cmdKBridgeCoverage": {
+    "validatedReplay": true,
+    "directPayloadBridge": true,
+    "directPayloadCommandIds": ["benchmark.site-context.replay-fixture"],
+    "fixtureCommandTypesTotal": 10,
+    "directPayloadCoversCommandTypes": ["createPropertyLine"],
+    "exactUiExecutableOperationCount": 10,
+    "blockedOrUnmappedCommandTypes": [],
+    "rows": [
+      {
+        "stepId": "georeference",
+        "cmdKIds": ["benchmark.site-context.replay-fixture"],
+        "classification": "validated-replay",
+        "coveredCommandTypes": [
+          "createLevel",
+          "createProjectBasePoint",
+          "createSurveyPoint",
+          "createSunSettings",
+          "upsertSite"
+        ]
+      },
+      {
+        "stepId": "terrain",
+        "cmdKIds": ["benchmark.site-context.replay-fixture"],
+        "classification": "validated-replay",
+        "coveredCommandTypes": [
+          "CreateToposolid",
+          "create_toposolid_subdivision",
+          "CreateGradedRegion",
+          "CreateToposolidExcavation"
+        ]
+      },
+      {
+        "stepId": "property-lines",
+        "cmdKIds": ["benchmark.site-context.replay-fixture"],
+        "classification": "direct-payload",
+        "coveredCommandTypes": ["createPropertyLine"]
+      }
+    ]
+  },
+  "semanticDiff": {
+    "ok": true,
+    "mismatchCount": 0,
+    "differences": [],
+    "countDeltaByCommandType": {}
+  },
+  "m4Closure": {
+    "ui": {
+      "passes": true,
+      "kind": "validated-replay",
+      "semanticFixtureEquivalent": true
+    },
+    "cmdK": {
+      "passes": true,
+      "kind": "validated-replay",
+      "semanticFixtureEquivalent": true
+    }
+  }
+}

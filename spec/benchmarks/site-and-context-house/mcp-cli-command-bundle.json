@@ -1,0 +1,231 @@
+{
+  "schemaVersion": "bim-ai.site-context.mcp-cli-command-bundle.v1",
+  "scenarioId": "site-and-context-house",
+  "executionMode": "deterministic-offline",
+  "command": "node scripts/benchmarks/site-context-house.mjs --mode offline --json",
+  "request": {
+    "route": "POST /api/models/{model_id}/bundles",
+    "mode": "dry_run",
+    "idempotencyKey": "site-context-house-m4-g"
+  },
+  "commands": [
+    {
+      "stepId": "level",
+      "toolId": "model.create_level",
+      "command": {
+        "type": "createLevel",
+        "id": "site-level-0",
+        "name": "Site Level",
+        "elevationMm": 0
+      }
+    },
+    {
+      "stepId": "project-base-point",
+      "toolId": "site.setup-georeference",
+      "command": {
+        "type": "createProjectBasePoint",
+        "id": "site-context-pbp",
+        "positionMm": { "xMm": 0, "yMm": 0, "zMm": 0 },
+        "angleToTrueNorthDeg": 12.5,
+        "clipped": false
+      }
+    },
+    {
+      "stepId": "survey-point",
+      "toolId": "site.setup-georeference",
+      "command": {
+        "type": "createSurveyPoint",
+        "id": "site-context-survey",
+        "positionMm": { "xMm": 1230, "yMm": -860, "zMm": 0 },
+        "sharedElevationMm": 519300,
+        "clipped": true
+      }
+    },
+    {
+      "stepId": "sun-settings",
+      "toolId": "site.setup-georeference",
+      "command": {
+        "type": "createSunSettings",
+        "id": "site-context-sun",
+        "latitudeDeg": 48.137154,
+        "longitudeDeg": 11.576124,
+        "dateIso": "2026-06-21",
+        "timeOfDay": { "hours": 10, "minutes": 15 },
+        "daylightSavingStrategy": "auto"
+      }
+    },
+    {
+      "stepId": "site-shell",
+      "toolId": "site.setup-georeference",
+      "command": {
+        "type": "upsertSite",
+        "id": "site-context-main",
+        "name": "M4-G deterministic site",
+        "referenceLevelId": "site-level-0",
+        "boundaryMm": [
+          { "xMm": -6000, "yMm": -5000 },
+          { "xMm": 26000, "yMm": -5000 },
+          { "xMm": 26000, "yMm": 19000 },
+          { "xMm": -6000, "yMm": 19000 }
+        ],
+        "padThicknessMm": 120,
+        "baseOffsetMm": 0,
+        "northDegCwFromPlanX": 12.5,
+        "uniformSetbackMm": 3500,
+        "contextObjects": [
+          {
+            "id": "ctx-oak",
+            "contextType": "tree",
+            "label": "Existing oak",
+            "positionMm": { "xMm": 20400, "yMm": 14200 },
+            "scale": 1.1
+          },
+          {
+            "id": "ctx-neighbor-west",
+            "contextType": "building",
+            "label": "West neighbor",
+            "positionMm": { "xMm": -11500, "yMm": 7000 },
+            "scale": 1
+          },
+          {
+            "id": "ctx-road",
+            "contextType": "road",
+            "label": "Street edge",
+            "positionMm": { "xMm": 10000, "yMm": -7200 },
+            "scale": 1
+          }
+        ]
+      }
+    },
+    {
+      "stepId": "toposolid",
+      "toolId": "toposolid-create",
+      "command": {
+        "type": "CreateToposolid",
+        "toposolidId": "site-context-topo",
+        "name": "Sloped site terrain",
+        "boundaryMm": [
+          { "xMm": -6000, "yMm": -5000 },
+          { "xMm": 26000, "yMm": -5000 },
+          { "xMm": 26000, "yMm": 19000 },
+          { "xMm": -6000, "yMm": 19000 }
+        ],
+        "heightSamples": [
+          { "xMm": -6000, "yMm": -5000, "zMm": -180 },
+          { "xMm": 10000, "yMm": -5000, "zMm": -80 },
+          { "xMm": 26000, "yMm": -5000, "zMm": 40 },
+          { "xMm": -6000, "yMm": 7000, "zMm": 120 },
+          { "xMm": 10000, "yMm": 7000, "zMm": 230 },
+          { "xMm": 26000, "yMm": 7000, "zMm": 320 },
+          { "xMm": -6000, "yMm": 19000, "zMm": 210 },
+          { "xMm": 10000, "yMm": 19000, "zMm": 360 },
+          { "xMm": 26000, "yMm": 19000, "zMm": 460 }
+        ],
+        "thicknessMm": 1800,
+        "baseElevationMm": 0,
+        "defaultMaterialKey": "site.grass"
+      }
+    },
+    {
+      "stepId": "toposolid-subdivision",
+      "toolId": "create-toposolid-subdivision",
+      "command": {
+        "type": "create_toposolid_subdivision",
+        "id": "site-context-lawn",
+        "hostToposolidId": "site-context-topo",
+        "name": "Rear lawn finish",
+        "boundaryMm": [
+          { "xMm": 2000, "yMm": 8000 },
+          { "xMm": 22500, "yMm": 8000 },
+          { "xMm": 22500, "yMm": 17000 },
+          { "xMm": 2000, "yMm": 17000 }
+        ],
+        "finishCategory": "softscape",
+        "materialKey": "site.lawn"
+      }
+    },
+    {
+      "stepId": "graded-drive",
+      "toolId": "create-graded-region",
+      "command": {
+        "type": "CreateGradedRegion",
+        "id": "site-context-drive",
+        "hostToposolidId": "site-context-topo",
+        "boundaryMm": [
+          { "xMm": 2000, "yMm": -3500 },
+          { "xMm": 8200, "yMm": -3500 },
+          { "xMm": 8200, "yMm": 5200 },
+          { "xMm": 2000, "yMm": 5200 }
+        ],
+        "targetMode": "slope",
+        "slopeAxisDeg": 90,
+        "slopeDegPercent": 2.5
+      }
+    },
+    {
+      "stepId": "property-line-street",
+      "toolId": "site.property-line-create",
+      "command": {
+        "type": "createPropertyLine",
+        "id": "site-context-pl-street",
+        "name": "Street property line",
+        "startMm": { "xMm": -6000, "yMm": -5000 },
+        "endMm": { "xMm": 26000, "yMm": -5000 },
+        "setbackMm": 4500,
+        "classification": "street"
+      }
+    },
+    {
+      "stepId": "property-line-east",
+      "toolId": "site.property-line-create",
+      "command": {
+        "type": "createPropertyLine",
+        "id": "site-context-pl-east",
+        "name": "East side property line",
+        "startMm": { "xMm": 26000, "yMm": -5000 },
+        "endMm": { "xMm": 26000, "yMm": 19000 },
+        "setbackMm": 3000,
+        "classification": "side"
+      }
+    },
+    {
+      "stepId": "property-line-rear",
+      "toolId": "site.property-line-create",
+      "command": {
+        "type": "createPropertyLine",
+        "id": "site-context-pl-rear",
+        "name": "Rear property line",
+        "startMm": { "xMm": 26000, "yMm": 19000 },
+        "endMm": { "xMm": -6000, "yMm": 19000 },
+        "setbackMm": 6000,
+        "classification": "rear"
+      }
+    },
+    {
+      "stepId": "property-line-west",
+      "toolId": "site.property-line-create",
+      "command": {
+        "type": "createPropertyLine",
+        "id": "site-context-pl-west",
+        "name": "West side property line",
+        "startMm": { "xMm": -6000, "yMm": 19000 },
+        "endMm": { "xMm": -6000, "yMm": -5000 },
+        "setbackMm": 3000,
+        "classification": "side"
+      }
+    },
+    {
+      "stepId": "excavation",
+      "toolId": "site.toposolid-excavation-create",
+      "command": {
+        "type": "CreateToposolidExcavation",
+        "id": "site-context-pad-cut",
+        "hostToposolidId": "site-context-topo",
+        "cutterElementId": "site-context-drive",
+        "cutMode": "custom_depth",
+        "customDepthMm": 260,
+        "estimatedVolumeM3": 11.8
+      }
+    }
+  ]
+}

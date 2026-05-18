@@ -1,0 +1,19 @@
+{
+  "schemaVersion": "bim-ai.site-context.execution-evidence.v1",
+  "scenarioId": "site-and-context-house",
+  "ok": true,
+  "status": "passed",
+  "mode": "offline-fixture",
+  "command": "node scripts/benchmarks/site-context-house.mjs --mode offline --json",
+  "request": {
+    "route": "POST /api/models/{model_id}/bundles",
+    "mode": "dry_run"
+  },
+  "result": {
+    "commandCount": 13,
+    "semanticDiffOk": true,
+    "advisorOk": true,
+    "visualOk": true,
+    "exportOk": true
+  }
+}

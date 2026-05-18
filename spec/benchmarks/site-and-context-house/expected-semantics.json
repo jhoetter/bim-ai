@@ -1,0 +1,107 @@
+{
+  "schemaVersion": "bim-ai.site-context.expected-semantics.v1",
+  "scenarioId": "site-and-context-house",
+  "benchmarkId": "site-and-context-house",
+  "description": "Deterministic site/context fixture semantics for an M4-A house site pack.",
+  "requiredCommandTypes": [
+    "createLevel",
+    "createProjectBasePoint",
+    "createSurveyPoint",
+    "createSunSettings",
+    "upsertSite",
+    "CreateToposolid",
+    "create_toposolid_subdivision",
+    "CreateGradedRegion",
+    "createPropertyLine",
+    "CreateToposolidExcavation"
+  ],
+  "requiredToolIds": [
+    "site.setup-georeference",
+    "toposolid-create",
+    "create-toposolid-subdivision",
+    "create-graded-region",
+    "site.property-line-create",
+    "site.toposolid-excavation-create"
+  ],
+  "requiredSemanticCounts": {
+    "level": 1,
+    "project_base_point": 1,
+    "survey_point": 1,
+    "sun_settings": 1,
+    "site": 1,
+    "toposolid": 1,
+    "toposolid_subdivision": 1,
+    "graded_region": 1,
+    "property_line": 4,
+    "toposolid_excavation": 1,
+    "context_object": 3
+  },
+  "expectedIds": {
+    "site": "site-context-main",
+    "level": "site-level-0",
+    "projectBasePoint": "site-context-pbp",
+    "surveyPoint": "site-context-survey",
+    "sunSettings": "site-context-sun",
+    "toposolid": "site-context-topo",
+    "subdivision": "site-context-lawn",
+    "gradedRegion": "site-context-drive",
+    "excavation": "site-context-pad-cut",
+    "propertyLines": [
+      "site-context-pl-street",
+      "site-context-pl-east",
+      "site-context-pl-rear",
+      "site-context-pl-west"
+    ]
+  },
+  "georeference": {
+    "latitudeDeg": 48.137154,
+    "longitudeDeg": 11.576124,
+    "sharedElevationMm": 519300,
+    "angleToTrueNorthDeg": 12.5,
+    "contextRadiusM": 160
+  },
+  "siteBoundaryMm": [
+    { "xMm": -6000, "yMm": -5000 },
+    { "xMm": 26000, "yMm": -5000 },
+    { "xMm": 26000, "yMm": 19000 },
+    { "xMm": -6000, "yMm": 19000 }
+  ],
+  "terrain": {
+    "toposolidId": "site-context-topo",
+    "baseElevationMm": 0,
+    "thicknessMm": 1800,
+    "heightSampleCount": 9,
+    "heightRangeMm": { "min": -180, "max": 460 }
+  },
+  "qualityContract": {
+    "advisor": {
+      "ok": true,
+      "blockingFindingCount": 0,
+      "warningsAccepted": [
+        "No building envelope is required for this site/context-only fixture."
+      ]
+    },
+    "visual": {
+      "requiredViews": ["site-plan", "terrain-3d", "solar-context"],
+      "nonBlankEvidence": true,
+      "renderedElementKinds": [
+        "toposolid",
+        "graded_region",
+        "property_line",
+        "site_origin",
+        "neighborhood_mass"
+      ]
+    },
+    "export": {
+      "requiredFormats": ["gltf-manifest", "ifc-manifest", "pdf-manifest"],
+      "requiredElementKinds": [
+        "toposolid",
+        "graded_region",
+        "property_line",
+        "project_base_point",
+        "survey_point",
+        "sun_settings"
+      ]
+    }
+  }
+}

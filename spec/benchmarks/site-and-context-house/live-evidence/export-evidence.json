@@ -1,0 +1,43 @@
+{
+  "schemaVersion": "bim-ai.site-context.export-evidence.v1",
+  "scenarioId": "site-and-context-house",
+  "ok": true,
+  "status": "passed",
+  "evidenceKind": "deterministic-export-manifest",
+  "manifests": {
+    "gltf": {
+      "status": "passed",
+      "artifact": "site-context-house.gltf.manifest.json",
+      "summary": {
+        "geometryProof": {
+          "counts": {
+            "toposolid": 1,
+            "toposolid_subdivision": 1,
+            "graded_region": 1,
+            "property_line": 4
+          }
+        }
+      }
+    },
+    "ifc": {
+      "status": "passed",
+      "artifact": "site-context-house.ifc.manifest.json",
+      "summary": {
+        "entityKinds": [
+          "IfcSite",
+          "IfcGeographicElement",
+          "IfcBuildingElementProxy"
+        ],
+        "georeferenceIncluded": true
+      }
+    },
+    "pdf": {
+      "status": "passed",
+      "artifact": "site-context-house-site-plan.pdf.manifest.json",
+      "summary": {
+        "sheetCount": 1,
+        "views": ["site-plan", "solar-context"]
+      }
+    }
+  }
+}

@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "bim-ai.site-context.semantic-summary.v1",
+  "scenarioId": "site-and-context-house",
+  "ok": true,
+  "sourceArtifacts": ["expected-semantics.json", "mcp-cli-command-bundle.json"],
+  "commandCount": 13,
+  "commandTypes": [
+    "CreateGradedRegion",
+    "CreateToposolid",
+    "CreateToposolidExcavation",
+    "createLevel",
+    "createProjectBasePoint",
+    "createPropertyLine",
+    "createSunSettings",
+    "createSurveyPoint",
+    "create_toposolid_subdivision",
+    "upsertSite"
+  ],
+  "semanticCounts": {
+    "level": 1,
+    "project_base_point": 1,
+    "survey_point": 1,
+    "sun_settings": 1,
+    "site": 1,
+    "toposolid": 1,
+    "toposolid_subdivision": 1,
+    "graded_region": 1,
+    "property_line": 4,
+    "toposolid_excavation": 1,
+    "context_object": 3
+  },
+  "toolIds": [
+    "create-graded-region",
+    "create-toposolid-subdivision",
+    "model.create_level",
+    "site.property-line-create",
+    "site.setup-georeference",
+    "site.toposolid-excavation-create",
+    "toposolid-create"
+  ],
+  "georeference": {
+    "latitudeDeg": 48.137154,
+    "longitudeDeg": 11.576124,
+    "sharedElevationMm": 519300,
+    "angleToTrueNorthDeg": 12.5
+  }
+}

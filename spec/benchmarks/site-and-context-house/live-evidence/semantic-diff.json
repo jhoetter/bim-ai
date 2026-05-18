@@ -1,0 +1,11 @@
+{
+  "schemaVersion": "bim-ai.site-context.semantic-diff.v1",
+  "scenarioId": "site-and-context-house",
+  "ok": true,
+  "mismatchCount": 0,
+  "differenceCount": 0,
+  "differences": [],
+  "countDeltaByCommandType": {},
+  "unmatchedFixtureCommandCount": 0,
+  "unexpectedReplayCommandCount": 0
+}

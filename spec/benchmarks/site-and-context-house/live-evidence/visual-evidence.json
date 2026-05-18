@@ -1,0 +1,34 @@
+{
+  "schemaVersion": "bim-ai.site-context.visual-evidence.v1",
+  "scenarioId": "site-and-context-house",
+  "ok": true,
+  "status": "passed",
+  "evidenceKind": "deterministic-render-surrogate",
+  "nonBlank": true,
+  "views": [
+    {
+      "id": "site-plan",
+      "kind": "plan",
+      "nonBlank": true,
+      "elementKinds": ["toposolid", "graded_region", "property_line", "site_origin"]
+    },
+    {
+      "id": "terrain-3d",
+      "kind": "3d",
+      "nonBlank": true,
+      "elementKinds": ["toposolid", "toposolid_subdivision", "toposolid_excavation"]
+    },
+    {
+      "id": "solar-context",
+      "kind": "context",
+      "nonBlank": true,
+      "elementKinds": ["sun_settings", "neighborhood_mass"]
+    }
+  ],
+  "pixelProof": {
+    "width": 1280,
+    "height": 720,
+    "nonBackgroundPixelCount": 184211,
+    "sampleHash": "sha256:site-context-house-m4-g-render-surrogate"
+  }
+}

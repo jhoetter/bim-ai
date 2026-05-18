@@ -1,0 +1,32 @@
+{
+  "schemaVersion": "bim-ai.site-context.advisor-validation.v1",
+  "scenarioId": "site-and-context-house",
+  "ok": true,
+  "status": "passed",
+  "advisor": {
+    "ok": true,
+    "summary": {
+      "status": "passed",
+      "findingCount": 1,
+      "blockingFindingCount": 0
+    },
+    "findings": [
+      {
+        "id": "site-context-only-envelope-note",
+        "severity": "info",
+        "message": "Fixture intentionally validates site/context semantics before house envelope authoring."
+      }
+    ]
+  },
+  "validation": {
+    "ok": true,
+    "checks": {
+      "blockingViolationCount": 0,
+      "errorViolationCount": 0,
+      "requiredSemanticCountsMet": true,
+      "georeferencePresent": true,
+      "propertyBoundaryClosed": true
+    },
+    "violations": []
+  }
+}

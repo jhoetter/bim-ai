@@ -1,0 +1,50 @@
+{
+  "schemaVersion": "bim-ai.site-context.ui-cmdk-traceability.v1",
+  "scenarioId": "site-and-context-house",
+  "classification": "validated-replay",
+  "semanticFixture": "mcp-cli-command-bundle.json",
+  "entries": [
+    {
+      "stepId": "georeference",
+      "cmdKId": "benchmark.site-context.replay-fixture",
+      "uiSurface": "Manage / Site setup panel",
+      "submissionKind": "validated-replay",
+      "coveredCommandTypes": [
+        "createLevel",
+        "createProjectBasePoint",
+        "createSurveyPoint",
+        "createSunSettings",
+        "upsertSite"
+      ],
+      "payloadArtifact": "mcp-cli-command-bundle.json"
+    },
+    {
+      "stepId": "terrain",
+      "cmdKId": "benchmark.site-context.replay-fixture",
+      "uiSurface": "Massing and Site / Toposolid tools",
+      "submissionKind": "validated-replay",
+      "coveredCommandTypes": [
+        "CreateToposolid",
+        "create_toposolid_subdivision",
+        "CreateGradedRegion",
+        "CreateToposolidExcavation"
+      ],
+      "payloadArtifact": "mcp-cli-command-bundle.json"
+    },
+    {
+      "stepId": "property-lines",
+      "cmdKId": "benchmark.site-context.replay-fixture",
+      "uiSurface": "Massing and Site / Property Line",
+      "submissionKind": "direct-payload",
+      "coveredCommandTypes": ["createPropertyLine"],
+      "payloadArtifact": "mcp-cli-command-bundle.json"
+    }
+  ],
+  "coverage": {
+    "validatedReplay": true,
+    "directPayloadCommandIds": ["benchmark.site-context.replay-fixture"],
+    "coveredCommandTypeCount": 10,
+    "fixtureCommandTypeCount": 10,
+    "unmappedCommandTypes": []
+  }
+}
