@@ -1756,6 +1756,43 @@ export function Workspace(): JSX.Element {
     setTabsState(EMPTY_TABS);
   }, [hydrateFromSnapshot]);
 
+  /* ── §1.6.2: Save As / Revert handlers ─────────────────────────── */
+  const handleDuplicateProject = useCallback(
+    (newName: string) => {
+      const st = useBimStore.getState();
+      if (!st.modelId) {
+        setSeedError('Nothing to duplicate — bootstrap a model first.');
+        return;
+      }
+      const newId = crypto.randomUUID();
+      const snap: Snapshot = {
+        modelId: newId,
+        revision: 0,
+        elements: st.elementsById as unknown as Record<string, unknown>,
+        violations: [],
+      };
+      const payload = buildSnapshotPayload(snap, newName);
+      const next = pushRecentProject(payload);
+      setRecentProjects(next.map((r) => ({ id: r.id, label: r.label })));
+    },
+    [setSeedError],
+  );
+
+  const handleRevertProject = useCallback(() => {
+    const recent = readRecentProjects();
+    const st = useBimStore.getState();
+    const currentModelId = st.modelId;
+    // Find the most recent snapshot for the current project
+    const match =
+      recent.find(
+        (r) =>
+          r.payload.snapshot.modelId === currentModelId || r.payload.snapshot.modelId === 'empty',
+      ) ?? recent[0];
+    if (match) {
+      hydrateFromSnapshot(match.payload.snapshot);
+    }
+  }, [hydrateFromSnapshot]);
+
   /* ── Comments + presence handlers (T-16) ─────────────────────────── */
   const handleCommentPost = useCallback(
     async (body: string): Promise<void> => {
@@ -2181,6 +2218,32 @@ export function Workspace(): JSX.Element {
         const next = { ...cur };
         delete next[cmd.constraintId];
         useBimStore.setState({ elementsById: next });
+        return;
+      }
+      // §15.1.3: setFamilyOpeningCut — add/update the parametric opening cut on a wall-hosted family.
+      if (cmd.type === 'setFamilyOpeningCut') {
+        const { elementsById: cur } = useBimStore.getState();
+        // Remove any existing family_opening_cut for this family
+        const without = Object.fromEntries(
+          Object.entries(cur).filter(
+            ([, el]) =>
+              !(el.kind === 'family_opening_cut' && (el as any).familyId === cmd.familyId),
+          ),
+        );
+        const newId = crypto.randomUUID();
+        useBimStore.setState({
+          elementsById: {
+            ...without,
+            [newId]: {
+              kind: 'family_opening_cut',
+              id: newId,
+              familyId: cmd.familyId as string,
+              widthMm: cmd.widthMm as number,
+              heightMm: cmd.heightMm as number,
+              sillOffsetMm: (cmd.sillOffsetMm as number | undefined) ?? 0,
+            } as any,
+          },
+        });
         return;
       }
       // §15.1.2: addFamilyComponent — place a nested sub-component instance inside a family definition.
@@ -5341,6 +5404,8 @@ export function Workspace(): JSX.Element {
           sectionBoxFromPlan,
           openPrintDialog: () => setPrintPlotOpen(true),
           openProjectTemplates: () => setTemplatesOpen(true),
+          duplicateProject: handleDuplicateProject,
+          revertProject: handleRevertProject,
           autoDimWalls: () => {
             const lvlId = activeLevelId ?? '';
             if (!lvlId) return;
@@ -5621,6 +5686,8 @@ export function Workspace(): JSX.Element {
           .filter((e) => e.kind === 'level')
           .map((e) => ({ id: e.id, name: (e as { name?: string }).name ?? e.id }))}
         projectName={activeSeedLabel ?? 'project'}
+        onDuplicateProject={handleDuplicateProject}
+        onRevertProject={handleRevertProject}
       />
       <ProjectSetupDialog
         open={projectSetupOpen}

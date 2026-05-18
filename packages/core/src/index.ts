@@ -477,6 +477,7 @@ export type ElemKind =
   | 'family_sweep'
   | 'family_swept_blend'
   | 'family_component'
+  | 'family_opening_cut'
   | 'text_tag'
   | 'link_ifc';
 
@@ -3590,6 +3591,20 @@ export type Element =
       levelId?: string | null;
     }
   | {
+      /** §15.1.3: parametric opening cut shape within a wall-hosted family definition.
+       *  When the family is placed in a wall, this geometry defines the void cut. */
+      kind: 'family_opening_cut';
+      id: string;
+      /** Parent family definition element ID. */
+      familyId: string;
+      /** Width of the opening cut in mm (local family X axis). */
+      widthMm: number;
+      /** Height of the opening cut in mm (local family Z axis). */
+      heightMm: number;
+      /** Vertical offset from sill (bottom of opening) in mm. Defaults to 0. */
+      sillOffsetMm?: number;
+    }
+  | {
       /** §15.1.2: a nested sub-component instance placed inside a family definition. */
       kind: 'family_component';
       id: string;
@@ -5618,4 +5633,29 @@ export type AddFamilyComponentCmd = {
   label?: string;
   originMm: { xMm: number; yMm: number; zMm: number };
   rotationDeg?: number;
+};
+
+// ---------------------------------------------------------------------------
+// §1.6.2 — File Menu: Save As / Revert commands
+// ---------------------------------------------------------------------------
+
+/** §1.6.2: duplicate the current project with a new name (Save As). */
+export type DuplicateProjectCmd = {
+  type: 'duplicateProject';
+  /** New name for the duplicated project. */
+  newName: string;
+};
+
+/** §1.6.2: discard unsaved changes and reload the last saved state (Revert). */
+export type RevertProjectCmd = {
+  type: 'revertProject';
+};
+
+/** §15.1.3: add or update the parametric opening cut on a wall-hosted family definition. */
+export type SetFamilyOpeningCutCmd = {
+  type: 'setFamilyOpeningCut';
+  familyId: string;
+  widthMm: number;
+  heightMm: number;
+  sillOffsetMm?: number;
 };

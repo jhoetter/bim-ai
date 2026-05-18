@@ -84,6 +84,10 @@ export interface ProjectMenuProps {
   projectName?: string;
   /** §1.6.2: open the Project Templates dialog. */
   onOpenProjectTemplates?: () => void;
+  /** §1.6.2: duplicate the current project under a new name (Save As). */
+  onDuplicateProject?: (newName: string) => void;
+  /** §1.6.2: revert to the last saved state. */
+  onRevertProject?: () => void;
 }
 
 export function ProjectMenu({
@@ -118,8 +122,10 @@ export function ProjectMenu({
   onExportDxf,
   onExportDwg,
   exportLevels,
-  projectName: _projectName,
+  projectName,
   onOpenProjectTemplates,
+  onDuplicateProject,
+  onRevertProject,
 }: ProjectMenuProps): JSX.Element | null {
   const popoverRef = useRef<HTMLDivElement | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
@@ -301,6 +307,36 @@ export function ProjectMenu({
             onSaveSnapshot?.();
           }}
         />
+        {onDuplicateProject ? (
+          <MenuItem
+            label="Save As…"
+            icon="evidence"
+            testId="project-menu-save-as"
+            onClick={() => {
+              onOpenChange(false);
+              const newName = window.prompt(
+                'Enter new project name:',
+                (projectName ?? 'Project') + ' (copy)',
+              );
+              if (newName) {
+                onDuplicateProject(newName);
+              }
+            }}
+          />
+        ) : null}
+        {onRevertProject ? (
+          <MenuItem
+            label="Revert"
+            icon="close"
+            testId="project-menu-revert"
+            onClick={() => {
+              onOpenChange(false);
+              if (window.confirm('Discard unsaved changes and revert to last saved state?')) {
+                onRevertProject();
+              }
+            }}
+          />
+        ) : null}
         <MenuItem
           label="Save milestone…"
           icon="saveViewpoint"
