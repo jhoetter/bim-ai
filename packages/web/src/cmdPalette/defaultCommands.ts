@@ -3320,3 +3320,27 @@ registerCommand({
     ctx.dispatchCommand?.({ type: 'createDraftingView', name: 'Drafting View' });
   },
 });
+
+// §6.4.1 — Callout Reference Symbol in Plan
+registerCommand({
+  id: 'view.callout-reference-symbol',
+  label: 'Callout Reference Symbol in Plan',
+  keywords: ['callout', 'detail', 'reference', 'bubble', 'enlarged plan'],
+  category: 'view',
+  isAvailable: () => true,
+  invoke: () => {
+    // Callout symbols render automatically — no manual invoke needed
+  },
+});
+
+// §1.10 — Reset Workspace to Defaults
+registerCommand({
+  id: 'view.reset-workspace',
+  label: 'Reset Workspace to Defaults',
+  keywords: ['reset', 'workspace', 'layout', 'defaults', 'factory', 'restore'],
+  category: 'view',
+  isAvailable: () => true,
+  invoke: (ctx) => {
+    ctx.dispatchCommand?.({ type: 'resetWorkspace' });
+  },
+});

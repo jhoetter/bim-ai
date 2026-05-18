@@ -1701,6 +1701,21 @@ const VIEW_3D_CAPABILITIES: CommandCapability[] = [
     notes:
       '§1.6.12: toggleSplitView command + splitViewEnabled store field renders plan (left 50%) and 3D viewport (right 50%) simultaneously.',
   },
+  {
+    id: 'view.reset-workspace',
+    label: 'Reset Workspace to Defaults',
+    owner: 'workspace/project/ProjectMenu',
+    group: 'view',
+    scope: 'global',
+    intendedModes: ['plan', '3d'],
+    surfaces: ['project-menu', 'cmd-k'],
+    executionSurface: 'store',
+    preconditions: [],
+    status: 'implemented',
+    usabilityScore: 8,
+    notes:
+      '§1.10: ResetWorkspaceCmd resets splitViewEnabled, skyBackground, thinLinesEnabled and other viewport UI fields to initial defaults; does not affect project data.',
+  },
 ];
 
 const EDIT_3D_CAPABILITIES: CommandCapability[] = [
@@ -2988,5 +3003,35 @@ const MASS_CAPABILITIES: CommandCapability[] = [
     usabilityScore: 8,
     notes:
       '§6.4.2: creates plan_view with planViewSubtype=drafting; drafting views show only 2D detail_line/detail_region/detail_component elements (3D model geometry hidden).',
+  },
+  {
+    id: 'view.callout-reference-symbol',
+    label: 'Callout Reference Symbol in Plan',
+    owner: 'plan/planElementMeshBuilders',
+    group: 'view',
+    scope: 'canvas',
+    intendedModes: ['plan'],
+    surfaces: ['plan-canvas', 'cmd-k'],
+    executionSurface: 'local-state',
+    preconditions: [],
+    status: 'implemented',
+    usabilityScore: 8,
+    notes:
+      '§6.4.1: callout plan_view elements render a dashed-rectangle reference symbol + circle tag in the parent plan view at calloutBoundaryMm position.',
+  },
+  {
+    id: 'modify.edit-wall-profile-inspector',
+    label: 'Edit Wall Profile Points in Inspector',
+    owner: 'workspace/WorkspaceRightRail',
+    group: 'modify',
+    scope: 'selection',
+    intendedModes: ['plan'],
+    surfaces: ['inspector', 'cmd-k'],
+    executionSurface: 'store',
+    preconditions: ['selected-wall'],
+    status: 'implemented',
+    usabilityScore: 8,
+    notes:
+      '§3.5.5: UpdateWallProfileCmd + inspector profile editor with point list (x/y inputs) + SVG mini-preview + add/remove/reset buttons; profilePoints >= 3 triggers ExtrudeGeometry in makeWallMesh.',
   },
 ];

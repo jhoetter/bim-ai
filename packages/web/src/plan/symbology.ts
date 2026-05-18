@@ -42,6 +42,7 @@ import {
   revisionCloudPlanThree,
   modelLinePlanThree,
   slopeAnnotationPlanThree,
+  calloutSymbolThree,
 } from './planElementMeshBuilders';
 import type { WallJoinRecord } from './planElementMeshBuilders';
 import { dormerPlanGroup } from './dormerPlanSymbol';
@@ -2579,6 +2580,18 @@ export function rebuildPlanMeshes(
         holder.add(line);
       }
     }
+  }
+
+  // §6.4.1: callout reference symbols — dashed-rect outline + circle tag in the parent plan view.
+  {
+    const before = holder.children.length;
+    for (const el of Object.values(elementsById)) {
+      if (el.kind !== 'plan_view') continue;
+      if ((el as any).planViewSubtype !== 'callout') continue;
+      const sym = calloutSymbolThree(el as any);
+      holder.add(sym);
+    }
+    tintNewChildren(before, 'plan_view');
   }
 
   // §3.3.7: apply per-element linework overrides

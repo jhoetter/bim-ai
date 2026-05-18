@@ -2509,3 +2509,54 @@ export function slopeAnnotationPlanThree(
   grp.userData.bimPickId = el.id;
   return grp;
 }
+
+/**
+ * §6.4.1: builds the callout reference symbol for display in the parent plan view.
+ * Returns a THREE.Group with a dashed rectangle outline and a reference tag circle.
+ *
+ * @param calloutView - the plan_view element with planViewSubtype=callout
+ */
+export function calloutSymbolThree(calloutView: {
+  id: string;
+  name?: string | null;
+  calloutBoundaryMm?: { xMm: number; yMm: number; widthMm: number; heightMm: number } | null;
+}): THREE.Group {
+  const grp = new THREE.Group();
+  const b = calloutView.calloutBoundaryMm;
+  if (!b) return grp;
+
+  const x0 = ux(b.xMm);
+  const x1 = ux(b.xMm + b.widthMm);
+  const z0 = uz(b.yMm);
+  const z1 = uz(b.yMm + b.heightMm);
+  const Y = PLAN_Y + 0.002;
+
+  // Dashed rectangle outline
+  const pts = [
+    new THREE.Vector3(x0, Y, z0),
+    new THREE.Vector3(x1, Y, z0),
+    new THREE.Vector3(x1, Y, z1),
+    new THREE.Vector3(x0, Y, z1),
+    new THREE.Vector3(x0, Y, z0),
+  ];
+  const geo = new THREE.BufferGeometry().setFromPoints(pts);
+  const mat = new THREE.LineDashedMaterial({ color: 0x4b5563, dashSize: 0.08, gapSize: 0.04 });
+  const outline = new THREE.Line(geo, mat);
+  outline.computeLineDistances();
+  outline.renderOrder = 8;
+  grp.add(outline);
+
+  // Reference tag — small filled circle at bottom-right corner
+  const tagGeo = new THREE.CircleGeometry(0.06, 12);
+  const tagMat = new THREE.MeshBasicMaterial({ color: 0xffffff, side: THREE.DoubleSide });
+  const tagMesh = new THREE.Mesh(tagGeo, tagMat);
+  tagMesh.rotation.x = -Math.PI / 2;
+  tagMesh.position.set(x1, PLAN_Y + 0.003, z1);
+  tagMesh.renderOrder = 9;
+  tagMesh.userData.calloutViewId = calloutView.id;
+  grp.add(tagMesh);
+
+  grp.userData.calloutViewId = calloutView.id;
+  grp.userData.bimPickId = calloutView.id;
+  return grp;
+}
