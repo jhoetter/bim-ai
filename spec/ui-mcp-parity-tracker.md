@@ -1511,6 +1511,28 @@ Wave 3 audit result:
 - The generated next-wave schedule is derived from the remaining Wave 3
   blockers rather than hand-maintained priority notes.
 
+### Milestone 3 Wave 4 Workstreams
+
+Milestone 3 Wave 4 is the M3-M closure wave. It should focus only on the
+remaining two-storey UI/Cmd+K equivalence blockers, because M3-K, M3-L, M3-N,
+M3-O, and M3-P are already closed by generated Wave 3 evidence.
+
+| Workstream                                             | Status      | Owner scope                                                                                                                                                 | Tracker items                       | Done when                                                                                                                                                                                                          |
+| ------------------------------------------------------ | ----------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| M3-Q. Two-storey UI executable or validated replay     | Not Started | Web/UI replay harness, deterministic fixture input mapping, UI test artifacts, and two-storey scenario UI evidence; avoid backend and audit implementation. | WP-008, M3-M two-storey UI blocker. | The UI path is no longer traceability-only: it produces an executable or validated replay artifact proving exact two-storey semantic fixture equivalence, while recording any remaining human gesture limitations. |
+| M3-R. Two-storey Cmd+K direct payload bridge           | Not Started | Cmd+K capability metadata/actions/tests and two-storey Cmd+K evidence artifacts; avoid backend implementation unless a tiny test seam is unavoidable.       | WP-011, M3-M two-storey Cmd+K.      | Cmd+K evidence proves direct payload submission or validated replay for the exact two-storey fixture operations; activator-only entries are not counted as completed semantic authoring operations.                |
+| M3-S. M3 closure audit, verifier, and tracker finality | Not Started | Audit script, generated ledgers/reports, strict M3 verifier, tracker Wave 4 result, and closure checklist only; do not create feature behavior.             | WP-004, WP-012, M3 milestone.       | `pnpm verify:m3-parity` reports Wave 2 and Wave 3 done; M3 moves to `Done` only if generated evidence closes both UI and Cmd+K two-storey gates, otherwise the remaining blockers are scheduled precisely.         |
+
+### Milestone 3 Wave 4 Scheduling Notes
+
+- M3-Q and M3-R must not turn tool activation into authoring proof. Exact
+  fixture payloads or semantically equivalent replay artifacts are required.
+- Validated replay is acceptable only if it compares against
+  `two-storey-house-with-stair` expected semantics and records command-surface
+  limitations.
+- M3-S should run after or degrade gracefully around M3-Q/M3-R. It owns the
+  generated closure status and should keep `BIM_AI_M3_REQUIRE_DONE=1` strict.
+
 ## Next Work Packages
 
 ### WP-001: Command Schema Export
