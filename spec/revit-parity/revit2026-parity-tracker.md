@@ -1062,8 +1062,8 @@ SunOverlay.tsx, sunStore.ts, sunPositionNoaa.ts — static shadow display in 3D 
 `SunAnimationPanel` component (`packages/web/src/viewport/SunAnimationPanel.tsx`) added to `SunOverlay`. Controls: start time (HH:MM), end time (HH:MM), step dropdown (15/30/60 min), speed multiplier (0.5×/1×/2×/4×), Play/Pause button, Reset button, current time readout. Uses a `requestAnimationFrame` loop updating `useSunStore` (`setValues` + `setComputedPosition`) at 60 fps via `computeSunPositionNoaa`. Loops back to start time when the end time is exceeded. 3 unit tests in `SunAnimationPanel.test.ts`.
 
 ### 14.3 Rendern, fotorealistische Bilder (photorealistic rendering: cloud / local render)
-**Status: Not Started — P1**
-bim-ai uses Three.js real-time rendering only. Photorealistic ray-traced rendering (equivalent to Revit's local or cloud render via Autodesk Rendering) is not implemented. The ray tracing preview feature was explicitly removed (commit: "Remove ray tracing preview feature").
+**Status: N/A**
+Ray-traced photorealistic rendering is explicitly out of scope for bim-ai (feature removed). Three.js real-time rendering with shadows/exposure/pixel-ratio quality panel (wave 20 WP-E) is the intended rendering path.
 
 ### 14.4 Hintergrund (rendering background: sky, gradient, image)
 **Status: Done — P2**
@@ -1124,7 +1124,7 @@ Wave 14 WP-I: `cheatsheetData.ts` expanded with a comprehensive shortcut set mat
 
 ## Summary Dashboard
 
-Last updated: 2026-05-18 (Wave 31 complete). Waves 1–31 complete. **662 test files, 5440 tests pass.**
+Last updated: 2026-05-18 (Wave 31 complete). Waves 1–31 complete. **662 test files, 5440 tests pass.** §14.3 ray tracing marked N/A (out of scope).
 
 Wave 31 completions: §1.5 start screen — `vereinfacht` template (BIM Architektur vereinfacht, EG/OG levels, Neubau phase) + `recentProjectIds` store (LRU max 10) + `OpenRecentProjectCmd` + "Recently Opened" list in ProjectSetupDialog + `view.start-screen` capability + 6 tests (WP-A), §1.6.6 options bar door/window/grid — door tag-on-place, window sill height + tag-on-place, grid spacing + name prefix module vars + setters + JSX sections + `view.options-bar-door-window` capability + 8 tests (WP-B), §1.6.11 project browser view templates subtree — `ApplyViewTemplateCmd` + collapsible `browser-view-templates-section` with use-count + Apply per-template + `view.browser-view-templates` capability + 6 tests (WP-C), §12.4.3 DGN export — `dgnExporter.ts` wraps `exportToDxf()` with DGN seed header + `export-dgn-button` in ProjectMenu + `file.export-dgn` capability + 6 tests (WP-D), §12.1.1 point cloud link — `link_pointcloud` type + `AddPointCloudCmd`/`RemovePointCloudCmd`/`TogglePointCloudCmd` + ManageLinksDialog Point Clouds section + `file.link-pointcloud` capability + 7 tests (WP-E). Also committed wave30/C (§1.6.4) help search: `helpTopics.ts` (25 topics) + `HelpSearchPanel.tsx` + `view.help-search` capability.
 
