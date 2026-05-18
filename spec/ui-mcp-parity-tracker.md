@@ -1239,6 +1239,35 @@ Wave 4 result:
   dry-run evidence, real live commit evidence, committed advisor/validation
   artifacts, visual/render artifacts, and export artifacts from a live target.
 
+### Milestone 2 Wave 5 Workstreams
+
+Milestone 2 Wave 5 is the live-evidence closure wave. It should use the Wave 4
+runner and audit ingestion to produce or verify clean evidence for the five
+remaining M2 closure gates. The goal is not another harness; it is an auditable
+end-to-end run against a real local or disposable live target.
+
+| Workstream                                                 | Status  | Owner scope                                                                                                                                  | Tracker items                                         | Done when                                                                                                                                                                                                                |
+| ---------------------------------------------------------- | ------- | -------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| M2-U. Local disposable live stack                          | Partial | Backend/dev-server orchestration, temporary project/model setup, fixture data, and runner compatibility; avoid UI/audit/generated ownership. | WP-008, live dry-run/commit evidence.                 | A documented local command can start or target a disposable backend model that the Wave 4 live evidence runner can use without external secrets or manual setup.                                                         |
+| M2-V. Live dry-run and commit evidence capture             | Partial | Evidence run scripts, sanitized artifact directories, live runner tests, and benchmark docs; coordinate with M2-U for the target model.      | WP-008, live dry-run/commit closure.                  | Clean `live-dry-run-evidence.json`, `live-commit-evidence.json`, `execution-evidence.json`, command-log, snapshot, and benchmark result artifacts are generated from a real disposable target and accepted by the audit. |
+| M2-W. Committed advisor and validation live artifacts      | Partial | Committed advisor/validation artifact capture and benchmark assertions; avoid audit implementation except evidence contract feedback.        | WP-008, WP-009, committed advisor/validation closure. | Clean committed `advisor-validation.json` and `committed-evidence.json` artifacts are produced from the committed target model and fail the run on blocking findings.                                                    |
+| M2-X. Visual/render and export live artifacts              | Partial | Server render/export artifact capture, manifest checks, artifact sanity tests, and evidence docs; avoid UI parity implementation.            | WP-006, WP-008, visual/export closure.                | Nonblank visual/render evidence plus IFC/glTF/PDF or manifest evidence are produced from the committed target model and accepted by the audit without relying on documentation metadata.                                 |
+| M2-Y. M2 final audit, verifier, and tracker closure review | Partial | Audit generated outputs, `verify:m2-parity`, tracker status, and final release notes; do not create product behavior.                        | WP-004, WP-009, WP-012, M2 milestone finalization.    | `pnpm audit:ui-mcp-parity` and `pnpm verify:m2-parity` report the final gate state; M2 moves to `Done` only if all closure gates pass from real evidence, otherwise the tracker records exact residual blockers.         |
+
+### Milestone 2 Wave 5 Scheduling Notes
+
+- M2-U and M2-V are the critical path. If the repo cannot start a true local
+  disposable backend target, they must document the missing backend capability
+  precisely and keep M2 `Partial`.
+- M2-V, M2-W, and M2-X should write evidence to stable benchmark artifact paths
+  only after sanitizing secrets, volatile hostnames, timestamps where possible,
+  and any model identifiers that cannot be checked into the repo.
+- M2-Y must not convert capability checks or stubbed HTTP tests into closure
+  evidence. Only real local/live artifacts accepted by the audit can close the
+  remaining gates.
+- If all evidence gates pass, run `BIM_AI_M2_REQUIRE_DONE=1 pnpm verify:m2-parity`
+  before marking M2 `Done`.
+
 ## Next Work Packages
 
 ### WP-001: Command Schema Export
