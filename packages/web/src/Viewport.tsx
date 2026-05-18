@@ -4879,40 +4879,43 @@ export function Viewport({
     renderer.toneMappingExposure = Math.pow(2, viewerPhotographicExposureEv);
   }, [viewerPhotographicExposureEv]);
 
-  // ── F-113: background colour ──────────────────────────────────────────────
-  useEffect(() => {
-    const rnd = rendererRef.current;
-    if (!rnd) return;
-    if (viewerBackground === 'light_grey') {
-      // Let the CSS sky gradient show through.
-      rnd.setClearColor(0x000000, 0);
-    } else {
-      const colorMap: Record<'white' | 'dark', number> = { white: 0xffffff, dark: 0x1a1a2e };
-      rnd.setClearColor(colorMap[viewerBackground], 1);
-    }
-  }, [viewerBackground]);
-
-  // ── §14.4: sky / environment background ──────────────────────────────────
+  // ── F-113 + §14.4: background colour / sky environment ───────────────────
   useEffect(() => {
     const scene = sceneRef.current;
     const renderer = rendererRef.current;
-    if (!scene) return;
+    if (!scene || !renderer) return;
+
+    let fogColor: THREE.ColorRepresentation | null = null;
+
     if (skyBackground === 'gradient-sky') {
       scene.background = new THREE.Color('#87ceeb');
-      scene.fog = new THREE.Fog('#e8f4ff', 50, 500);
-      if (renderer) renderer.setClearColor('#87ceeb');
+      renderer.setClearColor('#87ceeb', 1);
+      fogColor = '#e8f4ff';
     } else if (skyBackground === 'overcast') {
       scene.background = new THREE.Color('#c8c8c8');
-      scene.fog = new THREE.Fog('#c8c8c8', 30, 300);
+      renderer.setClearColor('#c8c8c8', 1);
+      fogColor = '#c8c8c8';
     } else if (skyBackground === 'solid') {
       scene.background = new THREE.Color(skyBackgroundColor);
-      scene.fog = null;
+      renderer.setClearColor(skyBackgroundColor, 1);
+      fogColor = skyBackgroundColor;
     } else {
-      // 'default'
-      scene.background = new THREE.Color('#aaaaaa');
-      scene.fog = null;
+      // Let the renderer clear colour drive the default background controls.
+      scene.background = null;
+      if (viewerBackground === 'light_grey') {
+        // Let the CSS sky gradient show through the transparent canvas.
+        renderer.setClearColor(0x000000, 0);
+        fogColor = '#e8f4fd';
+      } else {
+        const colorMap: Record<'white' | 'dark', number> = { white: 0xffffff, dark: 0x1a1a2e };
+        const color = colorMap[viewerBackground];
+        renderer.setClearColor(color, 1);
+        fogColor = color;
+      }
     }
-  }, [skyBackground, skyBackgroundColor]);
+
+    scene.fog = viewerDepthCueEnabled && fogColor != null ? new THREE.Fog(fogColor, 28, 140) : null;
+  }, [skyBackground, skyBackgroundColor, viewerBackground, viewerDepthCueEnabled]);
 
   // ── F-113: shadows, ambient occlusion, depth cue, and silhouette edges ──
   useEffect(() => {
@@ -4988,22 +4991,6 @@ export function Viewport({
     ssao.enabled =
       viewerAmbientOcclusionEnabled && !reducedMotion && viewerRenderStyle !== 'hidden-line';
   }, [viewerAmbientOcclusionEnabled, viewerRenderStyle]);
-
-  useEffect(() => {
-    const scene = sceneRef.current;
-    if (!scene) return;
-    if (!viewerDepthCueEnabled) {
-      scene.fog = null;
-      return;
-    }
-    const fogColor =
-      viewerBackground === 'dark'
-        ? new THREE.Color(0x1a1a2e)
-        : viewerBackground === 'white'
-          ? new THREE.Color(0xffffff)
-          : new THREE.Color(0xe8f4fd);
-    scene.fog = new THREE.Fog(fogColor, 28, 140);
-  }, [viewerBackground, viewerDepthCueEnabled]);
 
   useEffect(() => {
     const root = rootGroupRef.current;
