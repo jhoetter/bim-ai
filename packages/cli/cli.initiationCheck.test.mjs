@@ -951,6 +951,94 @@ test('sketch phase apply submits bundle through transaction route', async () => 
   assert.deepEqual(payload.featureIds, ['roof_terrace', 'wrapper']);
 });
 
+test('sketch phase run defaults to dry-run and writes evidence plus acceptance packet', async () => {
+  const dir = await fs.mkdtemp(path.join(os.tmpdir(), 'bim-ai-sketch-phase-run-'));
+  const irPath = path.join(dir, 'ir.json');
+  const matrixPath = path.join(dir, 'matrix.json');
+  const bundlePath = path.join(dir, 'bundle.json');
+  const outDir = path.join(dir, 'phase-loop');
+  await writeJson(irPath, validIr());
+  await writeJson(matrixPath, validMatrix());
+  await writeJson(bundlePath, {
+    schemaVersion: 'cmd-v3.0',
+    commands: [{ type: 'createLevel', id: 'lvl-0', name: 'Ground', elevationMm: 0 }],
+    assumptions: [],
+  });
+  const requests = [];
+  const snapshotBody = {
+    modelId: 'model-1',
+    revision: 7,
+    elements: {},
+    violations: [],
+  };
+  const { server, base } = await startStubServer((req, body) => {
+    requests.push({ url: req.url, body });
+    if (req.url === '/api/models/model-1/bundles') {
+      return { body: { ok: true, revision: 7, dryRun: true } };
+    }
+    if (req.url === '/api/models/model-1/snapshot') return { body: snapshotBody };
+    if (req.url === '/api/models/model-1/validate') {
+      return { body: { ok: true, violations: [], summary: { error: 0, warning: 0 } } };
+    }
+    if (req.url === '/api/models/model-1/evidence-package') {
+      return { body: { ok: true, checklist: [], manifests: [] } };
+    }
+    if (req.url?.startsWith('/api/models/model-1/constructability-report')) {
+      return { body: { ok: true, profile: 'construction_readiness', findings: [] } };
+    }
+    if (req.url === '/api/models/model-1/exports/gltf-manifest') {
+      return { body: { ok: true, countsByKind: {} } };
+    }
+    if (req.url === '/api/models/model-1/exports/ifc-manifest') {
+      return { body: { ok: true, countsByIfcEntity: {} } };
+    }
+    return { status: 404, body: { error: req.url } };
+  });
+
+  const res = await runCli(
+    [
+      'sketch',
+      'phase',
+      'run',
+      '--model',
+      'model-1',
+      '--ir',
+      irPath,
+      '--capabilities',
+      matrixPath,
+      '--phase',
+      'shell',
+      '--bundle',
+      bundlePath,
+      '--base',
+      '7',
+      '--out',
+      outDir,
+      '--features',
+      'wrapper,roof_terrace',
+    ],
+    { BIM_AI_BASE_URL: base, BIM_AI_USER_ID: 'agent-1' },
+  );
+  server.close();
+
+  assert.equal(res.code, 0, res.stderr);
+  const bundleRequest = requests.find((request) => request.url === '/api/models/model-1/bundles');
+  assert.equal(bundleRequest.body.mode, 'dry_run');
+  assert.equal(bundleRequest.body.bundle.parentRevision, 7);
+  const payload = JSON.parse(res.stdout);
+  assert.equal(payload.schemaVersion, 'sketch.phase.run.result.v0');
+  assert.equal(payload.applyMode, 'dry_run');
+  assert.deepEqual(payload.featureIds, ['wrapper', 'roof_terrace']);
+  assert.equal(payload.apply.transaction.mode, 'dry_run');
+  assert.equal(payload.evidence.schemaVersion, 'sketch.evidence.collection.v1');
+  assert.equal(payload.acceptance.schemaVersion, 'sketch.phase.accept.cli-result.v0');
+  await fs.access(path.join(outDir, 'phase-dry-run.json'));
+  await fs.access(path.join(outDir, 'evidence', 'evidence-manifest.json'));
+  await fs.access(path.join(outDir, 'evidence', 'tool-run-summary.json'));
+  await fs.access(path.join(outDir, 'acceptance', 'acceptance-gates.json'));
+  await fs.access(path.join(outDir, 'phase-run.json'));
+});
+
 test('sketch phase accept records warning info and error dispositions', async () => {
   const dir = await fs.mkdtemp(path.join(os.tmpdir(), 'bim-ai-sketch-phase-accept-'));
   const irPath = path.join(dir, 'ir.json');

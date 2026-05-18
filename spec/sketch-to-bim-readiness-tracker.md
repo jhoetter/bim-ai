@@ -159,7 +159,7 @@ legitimate, or write a tolerance with evidence and expiry.
 | `SKB-RDY-B09` | P1       | Done        | Export backend command schemas.                                            | `GET /api/v3/commands` and `GET /api/v3/commands/{name}` are descriptor-backed and executable. `spec/generated/api-descriptor-ledger.md` reports 2/2 command schema surfaces executable, 262/262 generated examples, and 262/262 raw/semantic mapping rows with raw/expert commands explicit.      |
 | `SKB-RDY-B10` | P1       | Done        | Query/resolve parity for sketch authoring.                                 | API descriptors and equivalent routes cover elements, levels, views, types, host discovery, loops, nearest wall, line-matched wall, host face, family type, room boundary, default plan view, and active/default level. The generated audit reports B10 query/resolve coverage as 14/14 executable. |
 | `SKB-RDY-B11` | P1       | Done        | Cmd+K-to-agent equivalence map.                                            | Cmd+K entries that activate tools declare execution kind and agent-equivalence metadata through the command capability graph. The generated audit reports 106/106 activator entries mapped and zero unmapped activators.                                                                            |
-| `SKB-RDY-B12` | P1       | Not started | One command to run a phase loop.                                           | `sketch phase run` or equivalent takes IR, phase plan, bundle/recipe, model id, and returns dry-run/commit/evidence/acceptance packet.                                                                                                                                                              |
+| `SKB-RDY-B12` | P1       | Done        | One command to run a phase loop.                                           | `sketch phase run` takes IR, optional phase plan, phase id, bundle/recipe, model id, base revision, mode, and evidence output directories, then returns dry-run/commit, evidence, and acceptance packet paths.                                                                                       |
 
 Closeout note for B08-B11: Wave 2 Worker 3 added API v3 descriptors for model
 summary, command log, evidence package, command schema export, and query/resolve
@@ -168,6 +168,13 @@ routes. `scripts/audit-ui-mcp-parity.mjs` now emits a machine-auditable
 closed by generated command-schema metadata: every backend command has a
 validated minimal example and either typed/semantic descriptor mapping or an
 explicit raw/expert disposition.
+
+Closeout note for B12: `sketch phase run` is the one-command phase loop. It
+defaults to dry-run, requires explicit `--commit` for mutation, can compile a
+recipe or use an existing bundle, applies through `/api/models/{model_id}/bundles`,
+collects product-owned evidence, writes a tool-run freshness summary, and writes
+the phase acceptance packet. The sketch skill exposes the same loop as
+`phase-run`.
 
 ### C. Sketch Understanding And BIM Information Requirements
 

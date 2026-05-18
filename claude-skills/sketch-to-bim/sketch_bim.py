@@ -434,6 +434,59 @@ def cmd_evidence_collect(args: argparse.Namespace) -> None:
         raise SystemExit(proc.returncode)
 
 
+def cmd_phase_run(args: argparse.Namespace) -> None:
+    model = args.model or os.environ.get("BIM_AI_MODEL_ID")
+    if not model:
+        raise SystemExit("phase-run requires --model or BIM_AI_MODEL_ID.")
+    command = [
+        *CLI,
+        "sketch",
+        "phase",
+        "run",
+        "--model",
+        model,
+        "--ir",
+        args.ir,
+        "--phase",
+        args.phase,
+    ]
+    if args.phase_plan:
+        command.extend(["--phase-plan", args.phase_plan])
+    if args.recipe:
+        command.extend(["--recipe", args.recipe])
+    if args.bundle:
+        command.extend(["--bundle", args.bundle])
+    if args.bundle_out:
+        command.extend(["--bundle-out", args.bundle_out])
+    if args.base is not None:
+        command.extend(["--base", str(args.base)])
+    command.append("--commit" if args.commit else "--dry-run")
+    if args.mode:
+        command.extend(["--mode", args.mode])
+    if args.out:
+        command.extend(["--out", args.out])
+    if args.evidence_out:
+        command.extend(["--evidence-out", args.evidence_out])
+    if args.acceptance_out:
+        command.extend(["--acceptance-out", args.acceptance_out])
+    if args.capabilities:
+        command.extend(["--capabilities", args.capabilities])
+    if args.profile:
+        command.extend(["--profile", args.profile])
+    if args.features:
+        command.extend(["--features", args.features])
+    if args.fail_on_acceptance:
+        command.append("--fail-on-acceptance")
+    if args.fail_on_blocking_dispositions:
+        command.append("--fail-on-blocking-dispositions")
+    env = os.environ.copy()
+    env["BIM_AI_MODEL_ID"] = model
+    env["BIM_AI_BASE_URL"] = args.base_url.rstrip("/")
+    proc = run(command, env=env, check=False)
+    if proc.returncode != 0:
+        raise SystemExit(proc.returncode)
+
+
 def cmd_constructability_report(args: argparse.Namespace) -> None:
     model = args.model or os.environ.get("BIM_AI_MODEL_ID")
     if not model:
@@ -965,6 +1018,33 @@ def build_parser() -> argparse.ArgumentParser:
         "--base-url", default=os.environ.get("BIM_AI_BASE_URL", "http://127.0.0.1:8500")
     )
     evidence.set_defaults(func=cmd_evidence_collect)
+
+    phase_run = sub.add_parser(
+        "phase-run",
+        help="Run one phase loop: apply bundle/recipe, collect evidence, and write acceptance.",
+    )
+    phase_run.add_argument("--model")
+    phase_run.add_argument("--ir", required=True)
+    phase_run.add_argument("--phase", required=True)
+    phase_run.add_argument("--phase-plan")
+    phase_run.add_argument("--recipe")
+    phase_run.add_argument("--bundle")
+    phase_run.add_argument("--bundle-out")
+    phase_run.add_argument("--base", type=int)
+    phase_run.add_argument("--mode", default="project_initiation_bim")
+    phase_run.add_argument("--out")
+    phase_run.add_argument("--evidence-out")
+    phase_run.add_argument("--acceptance-out")
+    phase_run.add_argument("--capabilities", default=DEFAULT_CAPABILITIES)
+    phase_run.add_argument("--profile", default="construction_readiness")
+    phase_run.add_argument("--features")
+    phase_run.add_argument("--commit", action="store_true")
+    phase_run.add_argument("--fail-on-acceptance", action="store_true")
+    phase_run.add_argument("--fail-on-blocking-dispositions", action="store_true")
+    phase_run.add_argument(
+        "--base-url", default=os.environ.get("BIM_AI_BASE_URL", "http://127.0.0.1:8500")
+    )
+    phase_run.set_defaults(func=cmd_phase_run)
 
     report = sub.add_parser(
         "constructability-report",

@@ -3508,20 +3508,15 @@ async function loadPhaseFindingDispositions(evidenceDir) {
   }
 }
 
-async function cmdSketchPhaseAccept({
+async function buildSketchPhaseAcceptance({
   irPath,
   capabilityMatrixPath,
   outDir,
   modelId,
   qualityMode,
-  failOnAcceptance,
   phaseId,
   evidenceDir,
 }) {
-  if (!irPath || !outDir) {
-    console.error('sketch phase accept requires --ir <path> --out <dir>.');
-    process.exit(1);
-  }
   const ir = applyQualityMode(await readJsonFile(irPath), qualityMode);
   const matrix = await readJsonFile(capabilityMatrixPath);
   const evidenceFreshness = evidenceDir
@@ -3573,16 +3568,206 @@ async function cmdSketchPhaseAccept({
     findingDispositions: dispositionSummary,
     ...result,
   };
+  return payload;
+}
+
+async function cmdSketchPhaseAccept({
+  irPath,
+  capabilityMatrixPath,
+  outDir,
+  modelId,
+  qualityMode,
+  failOnAcceptance,
+  phaseId,
+  evidenceDir,
+}) {
+  if (!irPath || !outDir) {
+    console.error('sketch phase accept requires --ir <path> --out <dir>.');
+    process.exit(1);
+  }
+  const payload = await buildSketchPhaseAcceptance({
+    irPath,
+    capabilityMatrixPath,
+    outDir,
+    modelId,
+    qualityMode,
+    phaseId,
+    evidenceDir,
+  });
   console.log(JSON.stringify(payload, null, 2));
-  if (!result.ok) {
+  if (!payload.ok) {
     process.exitCode = 2;
     return;
   }
-  if (dispositionSummary?.ok === false) {
+  if (payload.findingDispositions?.ok === false) {
     process.exitCode = 6;
     return;
   }
-  if (failOnAcceptance && result.acceptance?.ok === false) {
+  if (failOnAcceptance && payload.acceptance?.ok === false) {
+    process.exitCode = 5;
+  }
+}
+
+async function cmdSketchPhaseRun({
+  modelId,
+  userId,
+  irPath,
+  phasePlanPath,
+  recipePath,
+  bundlePath,
+  bundleOutPath,
+  baseRevision,
+  applyMode,
+  outDir,
+  evidenceDir,
+  acceptanceOutDir,
+  applyOutPath,
+  capabilityMatrixPath,
+  qualityMode,
+  phaseId,
+  featureIds,
+  constructabilityProfile,
+  failOnAcceptance,
+  failOnBlockingDispositions,
+}) {
+  if (!modelId) {
+    console.error('sketch phase run requires --model <id> or BIM_AI_MODEL_ID.');
+    process.exit(1);
+  }
+  if (!irPath || !phaseId) {
+    console.error('sketch phase run requires --ir <path> --phase <id>.');
+    process.exit(1);
+  }
+  if (!bundlePath && !recipePath) {
+    console.error('sketch phase run requires --bundle <path> or --recipe <path>.');
+    process.exit(1);
+  }
+  const runRoot = outDir ?? evidenceDir;
+  if (!runRoot) {
+    console.error('sketch phase run requires --out <dir> or --evidence-out <dir>.');
+    process.exit(1);
+  }
+  const resolvedEvidenceDir = evidenceDir ?? path.join(runRoot, 'evidence');
+  const resolvedAcceptanceDir = acceptanceOutDir ?? path.join(runRoot, 'acceptance');
+  const resolvedBundlePath =
+    bundlePath ??
+    bundleOutPath ??
+    path.join(runRoot, `phase-${safeArtifactName(phaseId)}.bundle.json`);
+  const resolvedApplyOutPath =
+    applyOutPath ??
+    path.join(runRoot, applyMode === 'commit' ? 'phase-commit.json' : 'phase-dry-run.json');
+
+  await fs.mkdir(runRoot, { recursive: true });
+  if (recipePath && !bundlePath) {
+    const recipe = await readJsonFile(recipePath);
+    const bundle = compileSeedDsl(recipe, { modelHint: modelId });
+    await writeJsonArtifact(resolvedBundlePath, bundle);
+  }
+
+  const applyResult = await applyRunnerBundle(
+    modelId,
+    userId,
+    resolvedBundlePath,
+    baseRevision,
+    applyMode,
+  );
+  const applyPayload = {
+    schemaVersion: 'sketch.phase.apply.result.v0',
+    ok: applyResult.ok,
+    phaseId: phaseId ?? null,
+    featureIds,
+    transaction: applyResult,
+  };
+  await writeJsonArtifact(resolvedApplyOutPath, applyPayload);
+  if (!applyResult.ok) {
+    const payload = {
+      schemaVersion: 'sketch.phase.run.result.v0',
+      ok: false,
+      phaseId,
+      modelId,
+      applyMode,
+      qualityMode: qualityMode ?? null,
+      phasePlanPath: relativeToCwd(phasePlanPath),
+      paths: {
+        runRoot,
+        recipe: relativeToCwd(recipePath),
+        bundle: relativeToCwd(resolvedBundlePath),
+        apply: relativeToCwd(resolvedApplyOutPath),
+        evidence: relativeToCwd(resolvedEvidenceDir),
+        acceptance: relativeToCwd(resolvedAcceptanceDir),
+      },
+      apply: applyPayload,
+      evidence: null,
+      acceptance: null,
+    };
+    await writeJsonArtifact(path.join(runRoot, 'phase-run.json'), payload);
+    console.log(JSON.stringify(payload, null, 2));
+    process.exit(1);
+  }
+
+  const ir = applyQualityMode(await readJsonFile(irPath), qualityMode);
+  const evidence = await collectModelEvidenceArtifacts({
+    modelId,
+    outDir: resolvedEvidenceDir,
+    ir,
+    irPath,
+    capabilityMatrixPath,
+    phaseId,
+    constructabilityProfile,
+  });
+  const toolRun = await writeToolRunSummary({
+    outDir: resolvedEvidenceDir,
+    modelId,
+    modelRevision: evidence.snap?.revision ?? null,
+    irPath,
+    capabilityMatrixPath,
+    bundlePath: resolvedBundlePath,
+    mode: qualityMode ?? ir.qualityTarget ?? null,
+  });
+  const acceptance = await buildSketchPhaseAcceptance({
+    irPath,
+    capabilityMatrixPath,
+    outDir: resolvedAcceptanceDir,
+    modelId,
+    qualityMode,
+    phaseId,
+    evidenceDir: resolvedEvidenceDir,
+  });
+  const dispositionsOk = acceptance.findingDispositions?.ok !== false;
+  const acceptanceOk = acceptance.ok !== false && acceptance.acceptance?.ok !== false;
+  const payload = {
+    schemaVersion: 'sketch.phase.run.result.v0',
+    ok: applyPayload.ok && dispositionsOk && acceptanceOk,
+    phaseId,
+    modelId,
+    applyMode,
+    qualityMode: qualityMode ?? ir.qualityTarget ?? null,
+    phasePlanPath: relativeToCwd(phasePlanPath),
+    featureIds,
+    paths: {
+      runRoot: relativeToCwd(runRoot),
+      recipe: relativeToCwd(recipePath),
+      bundle: relativeToCwd(resolvedBundlePath),
+      apply: relativeToCwd(resolvedApplyOutPath),
+      evidence: relativeToCwd(resolvedEvidenceDir),
+      acceptance: relativeToCwd(resolvedAcceptanceDir),
+      toolRunSummary: relativeToCwd(toolRun.summaryPath),
+    },
+    apply: applyPayload,
+    evidence: evidence.manifest,
+    acceptance,
+  };
+  await writeJsonArtifact(path.join(runRoot, 'phase-run.json'), payload);
+  console.log(JSON.stringify(payload, null, 2));
+  if (!acceptance.ok) {
+    process.exitCode = 2;
+    return;
+  }
+  if (failOnBlockingDispositions && !dispositionsOk) {
+    process.exitCode = 6;
+    return;
+  }
+  if (failOnAcceptance && acceptance.acceptance?.ok === false) {
     process.exitCode = 5;
   }
 }
@@ -4897,6 +5082,12 @@ Commands:
                                        M3-F: compile seed DSL through the product seed compiler.
   sketch phase apply --model <id> --bundle <path> --base <rev> [--dry-run|--commit] [--out <path>]
                                        M3-F: submit a phase bundle through the transaction route.
+  sketch phase run --model <id> --ir <path> --phase <id> (--bundle <path>|--recipe <path>)
+                   --base <rev> --out <dir> [--phase-plan <path>] [--mode <quality>]
+                   [--dry-run|--commit] [--evidence-out <dir>] [--acceptance-out <dir>]
+                                       SKB: one-command phase loop: apply, collect product
+                                       evidence, and write the phase acceptance packet. Default
+                                       apply mode is --dry-run; commits require explicit --commit.
   sketch phase accept --ir <path> --out <dir> [--capabilities <path>] [--evidence-dir <dir>] [--fail-on-acceptance]
                                        M3-F: evaluate phase packet acceptance gates and finding dispositions.
   sketch evidence collect --model <id> --out <dir> [--ir <path>] [--capabilities <path>] [--phase <id>] [--profile <name>]
@@ -5252,6 +5443,91 @@ async function main() {
           outPath,
           phaseId,
           featureIds,
+        });
+        return;
+      }
+      if (area === 'phase' && subcmd === 'run') {
+        let irArg;
+        let phasePlanArg;
+        let recipeArg;
+        let bundlePath;
+        let bundleOutPath;
+        let baseRevision;
+        let applyMode = 'dry_run';
+        let outArg;
+        let evidenceOutArg;
+        let acceptanceOutArg;
+        let applyOutPath;
+        let capabilityArg = DEFAULT_CAPABILITY_MATRIX_PATH;
+        let qualityMode;
+        let phaseId;
+        let featureIds = [];
+        let constructabilityProfile = 'construction_readiness';
+        let failOnAcceptance = false;
+        let failOnBlockingDispositions = false;
+        for (let i = 0; i < rest.length; i++) {
+          const a = rest[i];
+          if (a === '--model' && rest[i + 1]) modelId = rest[++i];
+          else if (a === '--ir' && rest[i + 1]) irArg = rest[++i];
+          else if (a === '--phase-plan' && rest[i + 1]) phasePlanArg = rest[++i];
+          else if (a === '--plan' && rest[i + 1]) phasePlanArg = rest[++i];
+          else if (a === '--recipe' && rest[i + 1]) recipeArg = rest[++i];
+          else if (a === '--bundle' && rest[i + 1]) bundlePath = rest[++i];
+          else if (a === '--bundle-out' && rest[i + 1]) bundleOutPath = rest[++i];
+          else if (a === '--base' && rest[i + 1]) baseRevision = Number(rest[++i]);
+          else if (a === '--parent-revision' && rest[i + 1]) baseRevision = Number(rest[++i]);
+          else if (a === '--commit') applyMode = 'commit';
+          else if (a === '--dry-run') applyMode = 'dry_run';
+          else if (a === '--apply-mode' && rest[i + 1]) {
+            const value = rest[++i];
+            if (value === 'commit') applyMode = 'commit';
+            else if (value === 'dry-run' || value === 'dry_run') applyMode = 'dry_run';
+            else {
+              console.error('--apply-mode must be dry-run or commit.');
+              process.exit(1);
+            }
+          } else if (a === '--mode' && rest[i + 1]) {
+            const value = rest[++i];
+            if (value === 'commit') applyMode = 'commit';
+            else if (value === 'dry-run' || value === 'dry_run') applyMode = 'dry_run';
+            else qualityMode = value;
+          } else if (a === '--quality-mode' && rest[i + 1]) qualityMode = rest[++i];
+          else if (a === '--out' && rest[i + 1]) outArg = rest[++i];
+          else if (a === '--evidence-out' && rest[i + 1]) evidenceOutArg = rest[++i];
+          else if (a === '--acceptance-out' && rest[i + 1]) acceptanceOutArg = rest[++i];
+          else if (a === '--apply-out' && rest[i + 1]) applyOutPath = rest[++i];
+          else if (a === '--capabilities' && rest[i + 1]) capabilityArg = rest[++i];
+          else if (a === '--capability-matrix' && rest[i + 1]) capabilityArg = rest[++i];
+          else if (a === '--phase' && rest[i + 1]) phaseId = rest[++i];
+          else if (a === '--phase-id' && rest[i + 1]) phaseId = rest[++i];
+          else if (a === '--features' && rest[i + 1]) featureIds = parseCsv(rest[++i]);
+          else if (a === '--constructability-profile' && rest[i + 1])
+            constructabilityProfile = rest[++i];
+          else if (a === '--profile' && rest[i + 1]) constructabilityProfile = rest[++i];
+          else if (a === '--fail-on-acceptance') failOnAcceptance = true;
+          else if (a === '--fail-on-blocking-dispositions') failOnBlockingDispositions = true;
+        }
+        await cmdSketchPhaseRun({
+          modelId,
+          userId,
+          irPath: irArg,
+          phasePlanPath: phasePlanArg,
+          recipePath: recipeArg,
+          bundlePath,
+          bundleOutPath,
+          baseRevision,
+          applyMode,
+          outDir: outArg,
+          evidenceDir: evidenceOutArg,
+          acceptanceOutDir: acceptanceOutArg,
+          applyOutPath,
+          capabilityMatrixPath: capabilityArg,
+          qualityMode,
+          phaseId,
+          featureIds,
+          constructabilityProfile,
+          failOnAcceptance,
+          failOnBlockingDispositions,
         });
         return;
       }

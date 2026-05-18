@@ -71,6 +71,15 @@ node packages/cli/cli.mjs sketch seed compile \
   --recipe <recipe.json> \
   --out <bundle.json>
 
+node packages/cli/cli.mjs sketch phase run \
+  --model "$BIM_AI_MODEL_ID" \
+  --ir <ir.json> \
+  --phase <phase-id> \
+  --bundle <bundle.json> \
+  --base <revision> \
+  --out <phase-loop-dir> \
+  --dry-run
+
 node packages/cli/cli.mjs sketch phase apply \
   --model "$BIM_AI_MODEL_ID" \
   --bundle <bundle.json> \
@@ -86,7 +95,11 @@ node packages/cli/cli.mjs sketch phase apply \
   --out <phase-commit.json>
 ```
 
-Never commit a phase with unresolved dry-run blockers.
+`sketch phase run` is the preferred one-command loop for external agents. It
+applies the phase bundle through the transaction route, collects non-browser
+evidence, and writes the phase acceptance packet. It defaults to dry-run;
+committing requires explicit `--commit`. Never commit a phase with unresolved
+dry-run blockers.
 
 ## 5. Collect Evidence
 
