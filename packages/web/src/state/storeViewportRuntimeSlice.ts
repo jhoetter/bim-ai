@@ -93,6 +93,7 @@ export type ViewportRuntimeSlice = Pick<
   | 'renderQuality'
   | 'setRenderQuality'
   | 'splitViewEnabled'
+  | 'quickAccessItems'
 >;
 
 function writeLocalStorageString(key: string, value: string): void {
@@ -346,6 +347,9 @@ export function createViewportRuntimeSlice(set: StoreSet, get: StoreGet): Viewpo
 
     /** §1.6.12: when true, plan and 3D views are shown side by side. */
     splitViewEnabled: false,
+
+    /** §1.6.3: IDs of command palette commands pinned to the Quick Access Toolbar. */
+    quickAccessItems: [],
 
     renderQuality: { shadowsEnabled: false, toneMappingExposure: 1.0, pixelRatioScale: 'auto' },
     setRenderQuality: (settings: Partial<RenderQualitySettings>) =>
