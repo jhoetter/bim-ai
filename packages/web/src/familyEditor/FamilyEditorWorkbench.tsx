@@ -635,6 +635,7 @@ export interface FamilyEditorWorkbenchProps {
   storage?: Pick<Storage, 'getItem' | 'setItem'> | null;
   now?: () => number;
   onLoadIntoProject?: (plan: AuthoredFamilyLoadPlan) => void | Promise<void>;
+  onSemanticCommand?: (cmd: Record<string, unknown>) => void;
 }
 
 export function FamilyEditorWorkbench({
@@ -642,6 +643,7 @@ export function FamilyEditorWorkbench({
   storage,
   now = () => Date.now(),
   onLoadIntoProject,
+  onSemanticCommand,
 }: FamilyEditorWorkbenchProps = {}): JSX.Element {
   const { t } = useTranslation();
   const effectiveStorage =
@@ -2525,6 +2527,22 @@ export function FamilyEditorWorkbench({
           }
         >
           + Add Constraint
+        </button>
+        <button
+          data-testid="family-editor-add-component-btn"
+          onClick={() =>
+            onSemanticCommand?.({
+              type: 'addFamilyComponent',
+              familyId: familyId,
+              componentTypeId: 'generic-component',
+              label: 'Component',
+              originMm: { xMm: 0, yMm: 0, zMm: 0 },
+              rotationDeg: 0,
+            })
+          }
+          style={{ fontSize: 12, padding: '2px 8px', borderRadius: 4, border: '1px solid #444' }}
+        >
+          + Component
         </button>
       </div>
 

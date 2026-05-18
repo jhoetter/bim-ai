@@ -2183,6 +2183,26 @@ export function Workspace(): JSX.Element {
         useBimStore.setState({ elementsById: next });
         return;
       }
+      // §15.1.2: addFamilyComponent — place a nested sub-component instance inside a family definition.
+      if (cmd.type === 'addFamilyComponent') {
+        const { elementsById: cur } = useBimStore.getState();
+        const newId = crypto.randomUUID();
+        useBimStore.setState({
+          elementsById: {
+            ...cur,
+            [newId]: {
+              kind: 'family_component',
+              id: newId,
+              familyId: cmd.familyId as string,
+              componentTypeId: cmd.componentTypeId as string,
+              label: (cmd.label as string | undefined) ?? cmd.componentTypeId,
+              originMm: cmd.originMm as { xMm: number; yMm: number; zMm: number },
+              rotationDeg: (cmd.rotationDeg as number | undefined) ?? 0,
+            } as any,
+          },
+        });
+        return;
+      }
       // §1.8.1: selectSimilar — select all elements of the same kind (client-only).
       // Matches the `selection.select-all-instances` palette command behaviour.
       if (cmd.type === 'selectSimilar') {

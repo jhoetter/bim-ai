@@ -2433,6 +2433,23 @@ export function InspectorPropertiesFor(
         </div>
       );
     }
+    case 'family_component': {
+      return (
+        <div style={{ padding: 8 }}>
+          <div className="text-xs font-semibold mb-1">Nested Component</div>
+          <div className="text-xs text-muted" data-testid="inspector-family-component-type">
+            Type: {(el as any).componentTypeId}
+          </div>
+          <div className="text-xs text-muted" data-testid="inspector-family-component-label">
+            Label: {(el as any).label ?? (el as any).componentTypeId}
+          </div>
+          <div className="text-xs text-muted">
+            Origin: ({(el as any).originMm?.xMm?.toFixed(0)},{' '}
+            {(el as any).originMm?.yMm?.toFixed(0)}, {(el as any).originMm?.zMm?.toFixed(0)}) mm
+          </div>
+        </div>
+      );
+    }
     case 'family_parameter': {
       const fp = el as Extract<Element, { kind: 'family_parameter' }>;
       const { onPropertyChange: fpPropChange } = options ?? {};
