@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-18T17:48:34.432Z",
+  "generatedAt": "2026-05-18T18:12:47.129Z",
   "sourceOfIntent": "spec/ui-mcp-parity-tracker.md",
   "sources": {
     "commands": "app/bim_ai/commands.py",
@@ -42,11 +42,11 @@
       "tool.spire-roof",
       "tool.terrain-split"
     ],
-    "apiDescriptorCount": 71,
+    "apiDescriptorCount": 90,
     "implementedRouteCount": 150,
     "backendCommandsWithoutMatchedUi": 141,
-    "backendCommandsRawAgentOnly": 200,
-    "backendCommandsTypedAgentTool": 49,
+    "backendCommandsRawAgentOnly": 181,
+    "backendCommandsTypedAgentTool": 70,
     "m2FirstPackPresent": 28,
     "m2FirstPackExpected": 28,
     "m2FirstPackPartial": 0,
@@ -59,8 +59,8 @@
     "m2Wave2BenchmarkMarkers": 2,
     "m2QueryDescriptorCount": 36,
     "m2ResolveDescriptorCount": 14,
-    "m2SemanticAuthoringDescriptorCount": 38,
-    "m2TypedMutatingDescriptorCount": 41,
+    "m2SemanticAuthoringDescriptorCount": 37,
+    "m2TypedMutatingDescriptorCount": 60,
     "m2RawApplyBundleDescriptorCount": 4,
     "m2ClosureStatus": "Done",
     "m2ClosureGatePassed": 7,
@@ -74,8 +74,8 @@
     "m2UiEquivalentPath": true,
     "cmdkActivatorOnlyCount": 106,
     "apiDescriptorRouteMismatchCount": 0,
-    "m3RawPromotionPromoteFirstClass": 107,
-    "m3RawPromotionExpertRaw": 79,
+    "m3RawPromotionPromoteFirstClass": 95,
+    "m3RawPromotionExpertRaw": 72,
     "m3RawPromotionInternal": 14,
     "m3RawPromotionUnclassified": 0,
     "m3GovernanceGatePassed": 3,
@@ -93,10 +93,10 @@
     "m3Wave3NextWaveItemCount": 0,
     "m4Status": "Partial",
     "m4Wave1Status": "Partial",
-    "m4Wave1GatePassed": 10,
+    "m4Wave1GatePassed": 18,
     "m4Wave1GateExpected": 33,
-    "m4Wave1BlockerCount": 23,
-    "m4Wave1NextWaveItemCount": 23
+    "m4Wave1BlockerCount": 15,
+    "m4Wave1NextWaveItemCount": 15
   },
   "m2": {
     "firstPackExpectedCount": 28,
@@ -111,8 +111,8 @@
     "wave2BenchmarkMarkerCount": 2,
     "queryDescriptorCount": 36,
     "resolveDescriptorCount": 14,
-    "semanticAuthoringDescriptorCount": 38,
-    "typedMutatingDescriptorCount": 41,
+    "semanticAuthoringDescriptorCount": 37,
+    "typedMutatingDescriptorCount": 60,
     "rawApplyBundleDescriptorCount": 4,
     "semanticCmdkSurfaceCount": 13,
     "closureGateCount": 7,
@@ -2042,9 +2042,9 @@
     "semanticAuthoringDescriptors": [
       "author.railing",
       "author.stair_between_levels",
+      "mep.opening_request",
       "opening.shaft_opening",
-      "opening.slab_opening",
-      "unknown"
+      "opening.slab_opening"
     ],
     "querySurfaces": [
       "model.show (query-route)",
@@ -2098,7 +2098,6 @@
       "author.rooms_from_outlines (semantic-authoring-helper)",
       "author.semantic_bundle (semantic-authoring-helper)",
       "author.shaft_opening (semantic-authoring-helper)",
-      "author.site_context_baseline (semantic-authoring-helper)",
       "author.slab_opening (semantic-authoring-helper)",
       "author.stair_between_levels (semantic-authoring-helper)",
       "author.structure_beam (semantic-authoring-helper)",
@@ -2133,27 +2132,27 @@
   "m3": {
     "summary": {
       "rawPromotionByCategory": {
-        "promote-first-class": 107,
-        "expert-raw": 79,
+        "promote-first-class": 95,
+        "expert-raw": 72,
         "internal": 14,
         "unclassified": 0
       },
       "rawPromotionByPriority": {
-        "P0": 36,
-        "P1": 67,
-        "P2": 83,
+        "P0": 35,
+        "P1": 56,
+        "P2": 76,
         "P3": 14
       },
       "rawPromotionByWorkstream": {
-        "M3-E parity governance": 36,
+        "M3-E parity governance": 35,
         "M3-B documentation/export first-class pack": 41,
-        "M3-A sketch-to-BIM productization": 10,
-        "M3-C benchmark parity expansion": 16,
-        "post-M3 expert/raw backlog": 34,
-        "M3-D transaction/audit hardening": 63
+        "M3-A sketch-to-BIM productization": 7,
+        "M3-C benchmark parity expansion": 8,
+        "post-M3 expert/raw backlog": 31,
+        "M3-D transaction/audit hardening": 59
       },
       "descriptorSurfaceByDisposition": {
-        "tracked": 71
+        "tracked": 90
       },
       "cmdkSurfaceByDisposition": {
         "tracked-promotion": 70,
@@ -2196,18 +2195,6 @@
         "uiCompletionKind": "none",
         "status": "Agent-only",
         "source": "app/bim_ai/commands.py:1107",
-        "category": "promote-first-class",
-        "promotionPriority": "P0",
-        "m3Workstream": "M3-E parity governance",
-        "gateDisposition": "tracked-promotion",
-        "rationale": "High-value authoring, documentation, review, or benchmark workflow command; agents need semantic inputs and stable typed descriptors."
-      },
-      {
-        "id": "createMepOpeningRequest",
-        "domain": "opening",
-        "uiCompletionKind": "interactive-gesture",
-        "status": "Usable",
-        "source": "app/bim_ai/commands.py:3663",
         "category": "promote-first-class",
         "promotionPriority": "P0",
         "m3Workstream": "M3-E parity governance",
@@ -2731,18 +2718,6 @@
         "rationale": "Sketch/site workflow command with user-visible lifecycle semantics that should not rely on opaque bundle payloads."
       },
       {
-        "id": "UpdateGradedRegion",
-        "domain": "general",
-        "uiCompletionKind": "interactive-gesture",
-        "status": "Usable",
-        "source": "app/bim_ai/commands.py:2802",
-        "category": "promote-first-class",
-        "promotionPriority": "P1",
-        "m3Workstream": "M3-A sketch-to-BIM productization",
-        "gateDisposition": "tracked-promotion",
-        "rationale": "Sketch/site workflow command with user-visible lifecycle semantics that should not rely on opaque bundle payloads."
-      },
-      {
         "id": "createExternalLink",
         "domain": "link-import",
         "uiCompletionKind": "none",
@@ -2803,71 +2778,11 @@
         "rationale": "Import/link lifecycle affects documentation/export parity and should be exposed through typed descriptors before broad agent use."
       },
       {
-        "id": "createDuct",
-        "domain": "mep",
-        "uiCompletionKind": "interactive-gesture",
-        "status": "Usable",
-        "source": "app/bim_ai/commands.py:3537",
-        "category": "promote-first-class",
-        "promotionPriority": "P1",
-        "m3Workstream": "M3-C benchmark parity expansion",
-        "gateDisposition": "tracked-promotion",
-        "rationale": "Domain authoring command is user-visible and should be promoted when its workflow enters the product pack."
-      },
-      {
         "id": "createDuctLegend",
         "domain": "mep",
         "uiCompletionKind": "interactive-gesture",
         "status": "Usable",
         "source": "app/bim_ai/commands.py:3695",
-        "category": "promote-first-class",
-        "promotionPriority": "P1",
-        "m3Workstream": "M3-C benchmark parity expansion",
-        "gateDisposition": "tracked-promotion",
-        "rationale": "Domain authoring command is user-visible and should be promoted when its workflow enters the product pack."
-      },
-      {
-        "id": "createFixture",
-        "domain": "mep",
-        "uiCompletionKind": "interactive-gesture",
-        "status": "Usable",
-        "source": "app/bim_ai/commands.py:3628",
-        "category": "promote-first-class",
-        "promotionPriority": "P1",
-        "m3Workstream": "M3-C benchmark parity expansion",
-        "gateDisposition": "tracked-promotion",
-        "rationale": "Domain authoring command is user-visible and should be promoted when its workflow enters the product pack."
-      },
-      {
-        "id": "createMepEquipment",
-        "domain": "mep",
-        "uiCompletionKind": "interactive-gesture",
-        "status": "Usable",
-        "source": "app/bim_ai/commands.py:3609",
-        "category": "promote-first-class",
-        "promotionPriority": "P1",
-        "m3Workstream": "M3-C benchmark parity expansion",
-        "gateDisposition": "tracked-promotion",
-        "rationale": "Domain authoring command is user-visible and should be promoted when its workflow enters the product pack."
-      },
-      {
-        "id": "createMepTerminal",
-        "domain": "mep",
-        "uiCompletionKind": "interactive-gesture",
-        "status": "Usable",
-        "source": "app/bim_ai/commands.py:3643",
-        "category": "promote-first-class",
-        "promotionPriority": "P1",
-        "m3Workstream": "M3-C benchmark parity expansion",
-        "gateDisposition": "tracked-promotion",
-        "rationale": "Domain authoring command is user-visible and should be promoted when its workflow enters the product pack."
-      },
-      {
-        "id": "createPipe",
-        "domain": "mep",
-        "uiCompletionKind": "interactive-gesture",
-        "status": "Usable",
-        "source": "app/bim_ai/commands.py:3494",
         "category": "promote-first-class",
         "promotionPriority": "P1",
         "m3Workstream": "M3-C benchmark parity expansion",
@@ -2897,30 +2812,6 @@
         "m3Workstream": "M3-C benchmark parity expansion",
         "gateDisposition": "tracked-promotion",
         "rationale": "Domain authoring command is user-visible and should be promoted when its workflow enters the product pack."
-      },
-      {
-        "id": "createConstructionLogistics",
-        "domain": "qa-review",
-        "uiCompletionKind": "none",
-        "status": "Agent-only",
-        "source": "app/bim_ai/commands.py:2435",
-        "category": "promote-first-class",
-        "promotionPriority": "P1",
-        "m3Workstream": "M3-C benchmark parity expansion",
-        "gateDisposition": "tracked-promotion",
-        "rationale": "High-value authoring, documentation, review, or benchmark workflow command; agents need semantic inputs and stable typed descriptors."
-      },
-      {
-        "id": "createConstructionPackage",
-        "domain": "qa-review",
-        "uiCompletionKind": "none",
-        "status": "Agent-only",
-        "source": "app/bim_ai/commands.py:2420",
-        "category": "promote-first-class",
-        "promotionPriority": "P1",
-        "m3Workstream": "M3-C benchmark parity expansion",
-        "gateDisposition": "tracked-promotion",
-        "rationale": "High-value authoring, documentation, review, or benchmark workflow command; agents need semantic inputs and stable typed descriptors."
       },
       {
         "id": "createIssueFromViolation",
@@ -2964,18 +2855,6 @@
         "uiCompletionKind": "none",
         "status": "Agent-only",
         "source": "app/bim_ai/commands.py:1807",
-        "category": "promote-first-class",
-        "promotionPriority": "P1",
-        "m3Workstream": "M3-C benchmark parity expansion",
-        "gateDisposition": "tracked-promotion",
-        "rationale": "High-value authoring, documentation, review, or benchmark workflow command; agents need semantic inputs and stable typed descriptors."
-      },
-      {
-        "id": "upsertConstructionQaChecklist",
-        "domain": "qa-review",
-        "uiCompletionKind": "none",
-        "status": "Agent-only",
-        "source": "app/bim_ai/commands.py:2451",
         "category": "promote-first-class",
         "promotionPriority": "P1",
         "m3Workstream": "M3-C benchmark parity expansion",
@@ -3091,35 +2970,11 @@
         "rationale": "Sketch/site workflow command with user-visible lifecycle semantics that should not rely on opaque bundle payloads."
       },
       {
-        "id": "update_toposolid_subdivision",
-        "domain": "site",
-        "uiCompletionKind": "interactive-gesture",
-        "status": "Usable",
-        "source": "app/bim_ai/commands.py:2759",
-        "category": "promote-first-class",
-        "promotionPriority": "P1",
-        "m3Workstream": "M3-A sketch-to-BIM productization",
-        "gateDisposition": "tracked-promotion",
-        "rationale": "Sketch/site workflow command with user-visible lifecycle semantics that should not rely on opaque bundle payloads."
-      },
-      {
         "id": "UpdateToposolidExcavation",
         "domain": "site",
         "uiCompletionKind": "interactive-gesture",
         "status": "Usable",
         "source": "app/bim_ai/commands.py:2845",
-        "category": "promote-first-class",
-        "promotionPriority": "P1",
-        "m3Workstream": "M3-A sketch-to-BIM productization",
-        "gateDisposition": "tracked-promotion",
-        "rationale": "Sketch/site workflow command with user-visible lifecycle semantics that should not rely on opaque bundle payloads."
-      },
-      {
-        "id": "upsertSite",
-        "domain": "site",
-        "uiCompletionKind": "none",
-        "status": "Agent-only",
-        "source": "app/bim_ai/commands.py:1422",
         "category": "promote-first-class",
         "promotionPriority": "P1",
         "m3Workstream": "M3-A sketch-to-BIM productization",
@@ -3499,30 +3354,6 @@
         "rationale": "Specialized authoring surface outside the M3 first-class product packs; keep reachable for expert bundles and revisit with workflow evidence."
       },
       {
-        "id": "createBeam",
-        "domain": "general",
-        "uiCompletionKind": "interactive-gesture",
-        "status": "Usable",
-        "source": "app/bim_ai/commands.py:2204",
-        "category": "expert-raw",
-        "promotionPriority": "P2",
-        "m3Workstream": "post-M3 expert/raw backlog",
-        "gateDisposition": "intentional-raw",
-        "rationale": "Specialized authoring surface outside the M3 first-class product packs; keep reachable for expert bundles and revisit with workflow evidence."
-      },
-      {
-        "id": "createCableTray",
-        "domain": "general",
-        "uiCompletionKind": "interactive-gesture",
-        "status": "Usable",
-        "source": "app/bim_ai/commands.py:3589",
-        "category": "expert-raw",
-        "promotionPriority": "P2",
-        "m3Workstream": "post-M3 expert/raw backlog",
-        "gateDisposition": "intentional-raw",
-        "rationale": "Specialized authoring surface outside the M3 first-class product packs; keep reachable for expert bundles and revisit with workflow evidence."
-      },
-      {
         "id": "createCallout",
         "domain": "general",
         "uiCompletionKind": "none",
@@ -3564,18 +3395,6 @@
         "uiCompletionKind": "none",
         "status": "Agent-only",
         "source": "app/bim_ai/commands.py:559",
-        "category": "expert-raw",
-        "promotionPriority": "P2",
-        "m3Workstream": "post-M3 expert/raw backlog",
-        "gateDisposition": "intentional-raw",
-        "rationale": "Specialized authoring surface outside the M3 first-class product packs; keep reachable for expert bundles and revisit with workflow evidence."
-      },
-      {
-        "id": "createColumn",
-        "domain": "general",
-        "uiCompletionKind": "interactive-gesture",
-        "status": "Usable",
-        "source": "app/bim_ai/commands.py:2188",
         "category": "expert-raw",
         "promotionPriority": "P2",
         "m3Workstream": "post-M3 expert/raw backlog",
@@ -3763,18 +3582,6 @@
         "rationale": "Specialized authoring surface outside the M3 first-class product packs; keep reachable for expert bundles and revisit with workflow evidence."
       },
       {
-        "id": "createPropertyLine",
-        "domain": "general",
-        "uiCompletionKind": "interactive-gesture",
-        "status": "Usable",
-        "source": "app/bim_ai/commands.py:1901",
-        "category": "expert-raw",
-        "promotionPriority": "P2",
-        "m3Workstream": "M3-D transaction/audit hardening",
-        "gateDisposition": "intentional-raw",
-        "rationale": "Low-level edit/control primitive; leave raw for expert bundles while transaction, undo, and audit semantics are hardened."
-      },
-      {
         "id": "createReferencePlane",
         "domain": "general",
         "uiCompletionKind": "interactive-gesture",
@@ -3845,30 +3652,6 @@
         "m3Workstream": "post-M3 expert/raw backlog",
         "gateDisposition": "intentional-raw",
         "rationale": "Specialized authoring surface outside the M3 first-class product packs; keep reachable for expert bundles and revisit with workflow evidence."
-      },
-      {
-        "id": "createSunSettings",
-        "domain": "general",
-        "uiCompletionKind": "none",
-        "status": "Agent-only",
-        "source": "app/bim_ai/commands.py:1543",
-        "category": "expert-raw",
-        "promotionPriority": "P2",
-        "m3Workstream": "M3-D transaction/audit hardening",
-        "gateDisposition": "intentional-raw",
-        "rationale": "Low-level edit/control primitive; leave raw for expert bundles while transaction, undo, and audit semantics are hardened."
-      },
-      {
-        "id": "createSurveyPoint",
-        "domain": "general",
-        "uiCompletionKind": "none",
-        "status": "Agent-only",
-        "source": "app/bim_ai/commands.py:1520",
-        "category": "expert-raw",
-        "promotionPriority": "P2",
-        "m3Workstream": "M3-D transaction/audit hardening",
-        "gateDisposition": "intentional-raw",
-        "rationale": "Low-level edit/control primitive; leave raw for expert bundles while transaction, undo, and audit semantics are hardened."
       },
       {
         "id": "createSweep",
@@ -4284,18 +4067,6 @@
         "uiCompletionKind": "interactive-gesture",
         "status": "Usable",
         "source": "app/bim_ai/commands.py:3193",
-        "category": "expert-raw",
-        "promotionPriority": "P2",
-        "m3Workstream": "M3-D transaction/audit hardening",
-        "gateDisposition": "intentional-raw",
-        "rationale": "Low-level edit/control primitive; leave raw for expert bundles while transaction, undo, and audit semantics are hardened."
-      },
-      {
-        "id": "updateColumn",
-        "domain": "general",
-        "uiCompletionKind": "interactive-gesture",
-        "status": "Usable",
-        "source": "app/bim_ai/commands.py:3063",
         "category": "expert-raw",
         "promotionPriority": "P2",
         "m3Workstream": "M3-D transaction/audit hardening",
@@ -4775,6 +4546,48 @@
         "unknownKernelCommands": []
       },
       {
+        "id": "construction.logistics",
+        "stableId": "construction.logistics",
+        "category": "kernel-backed-tool",
+        "toolKind": "typed-kernel-tool",
+        "method": "POST",
+        "path": "/api/semantic-authoring/{surface_id}",
+        "routeImplemented": true,
+        "kernelCommands": ["createConstructionLogistics"],
+        "matchedBackendCommands": ["createConstructionLogistics"],
+        "disposition": "tracked",
+        "detail": "Descriptor maps to documented backend command metadata or a matched command heuristic.",
+        "unknownKernelCommands": []
+      },
+      {
+        "id": "construction.package",
+        "stableId": "construction.package",
+        "category": "kernel-backed-tool",
+        "toolKind": "typed-kernel-tool",
+        "method": "POST",
+        "path": "/api/semantic-authoring/{surface_id}",
+        "routeImplemented": true,
+        "kernelCommands": ["createConstructionPackage"],
+        "matchedBackendCommands": ["createConstructionPackage"],
+        "disposition": "tracked",
+        "detail": "Descriptor maps to documented backend command metadata or a matched command heuristic.",
+        "unknownKernelCommands": []
+      },
+      {
+        "id": "construction.qa_checklist",
+        "stableId": "construction.qa_checklist",
+        "category": "kernel-backed-tool",
+        "toolKind": "typed-kernel-tool",
+        "method": "POST",
+        "path": "/api/semantic-authoring/{surface_id}",
+        "routeImplemented": true,
+        "kernelCommands": ["upsertConstructionQaChecklist"],
+        "matchedBackendCommands": ["upsertConstructionQaChecklist"],
+        "disposition": "tracked",
+        "detail": "Descriptor maps to documented backend command metadata or a matched command heuristic.",
+        "unknownKernelCommands": []
+      },
+      {
         "id": "cost-quantity-lens-review-status",
         "stableId": "cost-quantity-lens-review-status",
         "category": "read-only-resource",
@@ -5197,6 +5010,104 @@
         "unknownKernelCommands": []
       },
       {
+        "id": "mep.cable_tray",
+        "stableId": "mep.cable_tray",
+        "category": "kernel-backed-tool",
+        "toolKind": "typed-kernel-tool",
+        "method": "POST",
+        "path": "/api/semantic-authoring/{surface_id}",
+        "routeImplemented": true,
+        "kernelCommands": ["createCableTray"],
+        "matchedBackendCommands": ["createCableTray"],
+        "disposition": "tracked",
+        "detail": "Descriptor maps to documented backend command metadata or a matched command heuristic.",
+        "unknownKernelCommands": []
+      },
+      {
+        "id": "mep.duct_route",
+        "stableId": "mep.duct_route",
+        "category": "kernel-backed-tool",
+        "toolKind": "typed-kernel-tool",
+        "method": "POST",
+        "path": "/api/semantic-authoring/{surface_id}",
+        "routeImplemented": true,
+        "kernelCommands": ["createDuct"],
+        "matchedBackendCommands": ["createDuct"],
+        "disposition": "tracked",
+        "detail": "Descriptor maps to documented backend command metadata or a matched command heuristic.",
+        "unknownKernelCommands": []
+      },
+      {
+        "id": "mep.equipment",
+        "stableId": "mep.equipment",
+        "category": "kernel-backed-tool",
+        "toolKind": "typed-kernel-tool",
+        "method": "POST",
+        "path": "/api/semantic-authoring/{surface_id}",
+        "routeImplemented": true,
+        "kernelCommands": ["createMepEquipment"],
+        "matchedBackendCommands": ["createMepEquipment"],
+        "disposition": "tracked",
+        "detail": "Descriptor maps to documented backend command metadata or a matched command heuristic.",
+        "unknownKernelCommands": []
+      },
+      {
+        "id": "mep.fixture",
+        "stableId": "mep.fixture",
+        "category": "kernel-backed-tool",
+        "toolKind": "typed-kernel-tool",
+        "method": "POST",
+        "path": "/api/semantic-authoring/{surface_id}",
+        "routeImplemented": true,
+        "kernelCommands": ["createFixture"],
+        "matchedBackendCommands": ["createFixture"],
+        "disposition": "tracked",
+        "detail": "Descriptor maps to documented backend command metadata or a matched command heuristic.",
+        "unknownKernelCommands": []
+      },
+      {
+        "id": "mep.opening_request",
+        "stableId": "mep.opening_request",
+        "category": "kernel-backed-tool",
+        "toolKind": "typed-kernel-tool",
+        "method": "POST",
+        "path": "/api/semantic-authoring/{surface_id}",
+        "routeImplemented": true,
+        "kernelCommands": ["createMepOpeningRequest"],
+        "matchedBackendCommands": ["createMepOpeningRequest"],
+        "disposition": "tracked",
+        "detail": "Descriptor maps to documented backend command metadata or a matched command heuristic.",
+        "unknownKernelCommands": []
+      },
+      {
+        "id": "mep.pipe_route",
+        "stableId": "mep.pipe_route",
+        "category": "kernel-backed-tool",
+        "toolKind": "typed-kernel-tool",
+        "method": "POST",
+        "path": "/api/semantic-authoring/{surface_id}",
+        "routeImplemented": true,
+        "kernelCommands": ["createPipe"],
+        "matchedBackendCommands": ["createPipe"],
+        "disposition": "tracked",
+        "detail": "Descriptor maps to documented backend command metadata or a matched command heuristic.",
+        "unknownKernelCommands": []
+      },
+      {
+        "id": "mep.terminal",
+        "stableId": "mep.terminal",
+        "category": "kernel-backed-tool",
+        "toolKind": "typed-kernel-tool",
+        "method": "POST",
+        "path": "/api/semantic-authoring/{surface_id}",
+        "routeImplemented": true,
+        "kernelCommands": ["createMepTerminal"],
+        "matchedBackendCommands": ["createMepTerminal"],
+        "disposition": "tracked",
+        "detail": "Descriptor maps to documented backend command metadata or a matched command heuristic.",
+        "unknownKernelCommands": []
+      },
+      {
         "id": "model-show",
         "stableId": "model-show",
         "category": "read-only-resource",
@@ -5477,6 +5388,130 @@
         "unknownKernelCommands": []
       },
       {
+        "id": "site.graded-region-update",
+        "stableId": "site.graded-region-update",
+        "category": "kernel-backed-tool",
+        "toolKind": "typed-kernel-tool",
+        "method": "POST",
+        "path": "/api/models/{model_id}/bundles",
+        "routeImplemented": true,
+        "kernelCommands": ["UpdateGradedRegion"],
+        "matchedBackendCommands": ["UpdateGradedRegion"],
+        "disposition": "tracked",
+        "detail": "Descriptor maps to documented backend command metadata or a matched command heuristic.",
+        "unknownKernelCommands": []
+      },
+      {
+        "id": "site.project-base-point-create",
+        "stableId": "site.project-base-point-create",
+        "category": "kernel-backed-tool",
+        "toolKind": "typed-kernel-tool",
+        "method": "POST",
+        "path": "/api/models/{model_id}/bundles",
+        "routeImplemented": true,
+        "kernelCommands": ["createProjectBasePoint"],
+        "matchedBackendCommands": ["createProjectBasePoint"],
+        "disposition": "tracked",
+        "detail": "Descriptor maps to documented backend command metadata or a matched command heuristic.",
+        "unknownKernelCommands": []
+      },
+      {
+        "id": "site.property-line-create",
+        "stableId": "site.property-line-create",
+        "category": "kernel-backed-tool",
+        "toolKind": "typed-kernel-tool",
+        "method": "POST",
+        "path": "/api/models/{model_id}/bundles",
+        "routeImplemented": true,
+        "kernelCommands": ["createPropertyLine"],
+        "matchedBackendCommands": ["createPropertyLine"],
+        "disposition": "tracked",
+        "detail": "Descriptor maps to documented backend command metadata or a matched command heuristic.",
+        "unknownKernelCommands": []
+      },
+      {
+        "id": "site.setup-georeference",
+        "stableId": "site.setup-georeference",
+        "category": "kernel-backed-tool",
+        "toolKind": "typed-kernel-tool",
+        "method": "POST",
+        "path": "/api/models/{model_id}/bundles",
+        "routeImplemented": true,
+        "kernelCommands": [
+          "createProjectBasePoint",
+          "createSurveyPoint",
+          "createSunSettings",
+          "upsertSite",
+          "CreateToposolid"
+        ],
+        "matchedBackendCommands": [
+          "createProjectBasePoint",
+          "createSunSettings",
+          "createSurveyPoint",
+          "CreateToposolid",
+          "upsertSite"
+        ],
+        "disposition": "tracked",
+        "detail": "Descriptor maps to documented backend command metadata or a matched command heuristic.",
+        "unknownKernelCommands": []
+      },
+      {
+        "id": "site.sun-settings-create",
+        "stableId": "site.sun-settings-create",
+        "category": "kernel-backed-tool",
+        "toolKind": "typed-kernel-tool",
+        "method": "POST",
+        "path": "/api/models/{model_id}/bundles",
+        "routeImplemented": true,
+        "kernelCommands": ["createSunSettings"],
+        "matchedBackendCommands": ["createSunSettings"],
+        "disposition": "tracked",
+        "detail": "Descriptor maps to documented backend command metadata or a matched command heuristic.",
+        "unknownKernelCommands": []
+      },
+      {
+        "id": "site.survey-point-create",
+        "stableId": "site.survey-point-create",
+        "category": "kernel-backed-tool",
+        "toolKind": "typed-kernel-tool",
+        "method": "POST",
+        "path": "/api/models/{model_id}/bundles",
+        "routeImplemented": true,
+        "kernelCommands": ["createSurveyPoint"],
+        "matchedBackendCommands": ["createSurveyPoint"],
+        "disposition": "tracked",
+        "detail": "Descriptor maps to documented backend command metadata or a matched command heuristic.",
+        "unknownKernelCommands": []
+      },
+      {
+        "id": "site.toposolid-excavation-create",
+        "stableId": "site.toposolid-excavation-create",
+        "category": "kernel-backed-tool",
+        "toolKind": "typed-kernel-tool",
+        "method": "POST",
+        "path": "/api/models/{model_id}/bundles",
+        "routeImplemented": true,
+        "kernelCommands": ["CreateToposolidExcavation"],
+        "matchedBackendCommands": ["CreateToposolidExcavation"],
+        "disposition": "tracked",
+        "detail": "Descriptor maps to documented backend command metadata or a matched command heuristic.",
+        "unknownKernelCommands": []
+      },
+      {
+        "id": "site.toposolid-subdivision-update",
+        "stableId": "site.toposolid-subdivision-update",
+        "category": "kernel-backed-tool",
+        "toolKind": "typed-kernel-tool",
+        "method": "POST",
+        "path": "/api/models/{model_id}/bundles",
+        "routeImplemented": true,
+        "kernelCommands": ["update_toposolid_subdivision"],
+        "matchedBackendCommands": ["update_toposolid_subdivision"],
+        "disposition": "tracked",
+        "detail": "Descriptor maps to documented backend command metadata or a matched command heuristic.",
+        "unknownKernelCommands": []
+      },
+      {
         "id": "sketch.ir.validate",
         "stableId": "sketch.ir.validate",
         "category": "typed-non-kernel-tool",
@@ -5533,6 +5568,48 @@
         "unknownKernelCommands": []
       },
       {
+        "id": "structure.beam",
+        "stableId": "structure.beam",
+        "category": "kernel-backed-tool",
+        "toolKind": "typed-kernel-tool",
+        "method": "POST",
+        "path": "/api/semantic-authoring/{surface_id}",
+        "routeImplemented": true,
+        "kernelCommands": ["createBeam"],
+        "matchedBackendCommands": ["createBeam"],
+        "disposition": "tracked",
+        "detail": "Descriptor maps to documented backend command metadata or a matched command heuristic.",
+        "unknownKernelCommands": []
+      },
+      {
+        "id": "structure.column",
+        "stableId": "structure.column",
+        "category": "kernel-backed-tool",
+        "toolKind": "typed-kernel-tool",
+        "method": "POST",
+        "path": "/api/semantic-authoring/{surface_id}",
+        "routeImplemented": true,
+        "kernelCommands": ["createColumn"],
+        "matchedBackendCommands": ["createColumn"],
+        "disposition": "tracked",
+        "detail": "Descriptor maps to documented backend command metadata or a matched command heuristic.",
+        "unknownKernelCommands": []
+      },
+      {
+        "id": "structure.column_update",
+        "stableId": "structure.column_update",
+        "category": "kernel-backed-tool",
+        "toolKind": "typed-kernel-tool",
+        "method": "POST",
+        "path": "/api/semantic-authoring/{surface_id}",
+        "routeImplemented": true,
+        "kernelCommands": ["updateColumn"],
+        "matchedBackendCommands": ["updateColumn"],
+        "disposition": "tracked",
+        "detail": "Descriptor maps to documented backend command metadata or a matched command heuristic.",
+        "unknownKernelCommands": []
+      },
+      {
         "id": "toposolid-create",
         "stableId": "toposolid-create",
         "category": "kernel-backed-tool",
@@ -5572,34 +5649,6 @@
         "matchedBackendCommands": ["UpdateToposolid"],
         "disposition": "tracked",
         "detail": "Descriptor maps to documented backend command metadata or a matched command heuristic.",
-        "unknownKernelCommands": []
-      },
-      {
-        "id": "unknown",
-        "stableId": "unknown",
-        "category": "parser-placeholder",
-        "toolKind": "semantic-authoring",
-        "method": "POST",
-        "path": "/api/semantic-authoring/{surface_id}",
-        "routeImplemented": true,
-        "kernelCommands": [],
-        "matchedBackendCommands": [],
-        "disposition": "tracked",
-        "detail": "Static descriptor parser emitted an unknown placeholder; excluded from public surface governance until it has a stable id.",
-        "unknownKernelCommands": []
-      },
-      {
-        "id": "unknown",
-        "stableId": "unknown",
-        "category": "parser-placeholder",
-        "toolKind": "typed-tool",
-        "method": "POST",
-        "path": "/api/semantic-authoring/{surface_id}",
-        "routeImplemented": true,
-        "kernelCommands": [],
-        "matchedBackendCommands": [],
-        "disposition": "tracked",
-        "detail": "Static descriptor parser emitted an unknown placeholder; excluded from public surface governance until it has a stable id.",
         "unknownKernelCommands": []
       },
       {
@@ -9687,7 +9736,7 @@
                 {
                   "type": "api-descriptor",
                   "status": "implemented",
-                  "source": "app/bim_ai/api/registry.py:4283",
+                  "source": "app/bim_ai/api/registry.py:4591",
                   "detail": "sketch.ir.validate -> POST /api/v3/sketch/ir/validate",
                   "passes": true
                 }
@@ -9703,7 +9752,7 @@
                 {
                   "type": "api-descriptor",
                   "status": "implemented",
-                  "source": "app/bim_ai/api/registry.py:4349",
+                  "source": "app/bim_ai/api/registry.py:4657",
                   "detail": "sketch.seed.compile -> POST /api/v3/sketch/seed/compile",
                   "passes": true
                 }
@@ -9719,7 +9768,7 @@
                 {
                   "type": "api-descriptor",
                   "status": "implemented",
-                  "source": "app/bim_ai/api/registry.py:4395",
+                  "source": "app/bim_ai/api/registry.py:4703",
                   "detail": "sketch.phase.apply -> POST /api/v3/sketch/phase/apply",
                   "passes": true
                 }
@@ -9735,7 +9784,7 @@
                 {
                   "type": "api-descriptor",
                   "status": "implemented",
-                  "source": "app/bim_ai/api/registry.py:4452",
+                  "source": "app/bim_ai/api/registry.py:4760",
                   "detail": "sketch.phase.accept -> POST /api/v3/sketch/phase/accept",
                   "passes": true
                 }
@@ -10128,7 +10177,7 @@
             {
               "type": "api-descriptor",
               "status": "implemented",
-              "source": "app/bim_ai/api/registry.py:4283",
+              "source": "app/bim_ai/api/registry.py:4591",
               "detail": "sketch.ir.validate -> POST /api/v3/sketch/ir/validate",
               "passes": true
             }
@@ -10146,7 +10195,7 @@
             {
               "type": "api-descriptor",
               "status": "implemented",
-              "source": "app/bim_ai/api/registry.py:4349",
+              "source": "app/bim_ai/api/registry.py:4657",
               "detail": "sketch.seed.compile -> POST /api/v3/sketch/seed/compile",
               "passes": true
             }
@@ -10164,7 +10213,7 @@
             {
               "type": "api-descriptor",
               "status": "implemented",
-              "source": "app/bim_ai/api/registry.py:4395",
+              "source": "app/bim_ai/api/registry.py:4703",
               "detail": "sketch.phase.apply -> POST /api/v3/sketch/phase/apply",
               "passes": true
             }
@@ -10182,7 +10231,7 @@
             {
               "type": "api-descriptor",
               "status": "implemented",
-              "source": "app/bim_ai/api/registry.py:4452",
+              "source": "app/bim_ai/api/registry.py:4760",
               "detail": "sketch.phase.accept -> POST /api/v3/sketch/phase/accept",
               "passes": true
             }
@@ -11370,80 +11419,115 @@
           "domain": "site-context",
           "scenarioIds": ["site-and-context-house"],
           "status": "Partial",
-          "gatesPassed": 1,
+          "gatesPassed": 3,
           "gatesExpected": 6,
           "gates": [
             {
               "id": "toposolid-authoring",
               "label": "Toposolid create/update authoring",
-              "status": "blocked",
-              "passed": false,
-              "blocker": "Toposolid create/update authoring lacks an implemented first-class API/MCP descriptor; raw apply-bundle reachability does not count for M4.",
+              "status": "passed",
+              "passed": true,
+              "blocker": "",
               "evidence": [
                 {
                   "type": "api-descriptor",
-                  "status": "missing",
-                  "source": "app/bim_ai/api/registry.py",
-                  "detail": "missing stable id: site.toposolid.upsert",
-                  "passes": false
+                  "status": "implemented",
+                  "source": "app/bim_ai/api/registry.py:2123",
+                  "detail": "toposolid-create -> POST /api/models/{model_id}/bundles",
+                  "passes": true
                 },
                 {
                   "type": "api-descriptor",
-                  "status": "missing",
-                  "source": "app/bim_ai/api/registry.py",
-                  "detail": "missing stable id: site.create_toposolid",
-                  "passes": false
+                  "status": "implemented",
+                  "source": "app/bim_ai/api/registry.py:2189",
+                  "detail": "toposolid-update -> POST /api/models/{model_id}/bundles",
+                  "passes": true
                 },
                 {
                   "type": "api-descriptor",
-                  "status": "missing",
-                  "source": "app/bim_ai/api/registry.py",
-                  "detail": "missing stable id: create_toposolid",
-                  "passes": false
+                  "status": "implemented",
+                  "source": "app/bim_ai/api/registry.py:3708",
+                  "detail": "create-toposolid-subdivision -> POST /api/v3/models/{modelId}/bundles",
+                  "passes": true
+                },
+                {
+                  "type": "api-descriptor",
+                  "status": "implemented",
+                  "source": "app/bim_ai/api/registry.py:dynamic-default:site.toposolid-subdivision-update",
+                  "detail": "site.toposolid-subdivision-update -> POST /api/models/{model_id}/bundles",
+                  "passes": true
+                },
+                {
+                  "type": "api-descriptor",
+                  "status": "implemented",
+                  "source": "app/bim_ai/api/registry.py:dynamic-default:site.toposolid-excavation-create",
+                  "detail": "site.toposolid-excavation-create -> POST /api/models/{model_id}/bundles",
+                  "passes": true
                 }
               ]
             },
             {
               "id": "grading-property-line-georeference",
               "label": "Grading, property line, and georeference tools",
-              "status": "blocked",
-              "passed": false,
-              "blocker": "Grading, property line, and georeference tools lacks an implemented first-class API/MCP descriptor; raw apply-bundle reachability does not count for M4.",
+              "status": "passed",
+              "passed": true,
+              "blocker": "",
               "evidence": [
                 {
                   "type": "api-descriptor",
-                  "status": "missing",
-                  "source": "app/bim_ai/api/registry.py",
-                  "detail": "missing stable id: site.graded_region",
-                  "passes": false
+                  "status": "implemented",
+                  "source": "app/bim_ai/api/registry.py:2816",
+                  "detail": "create-graded-region -> POST /api/models/{model_id}/bundles",
+                  "passes": true
                 },
                 {
                   "type": "api-descriptor",
-                  "status": "missing",
-                  "source": "app/bim_ai/api/registry.py",
-                  "detail": "missing stable id: site.property_line",
-                  "passes": false
+                  "status": "implemented",
+                  "source": "app/bim_ai/api/registry.py:dynamic-default:site.setup-georeference",
+                  "detail": "site.setup-georeference -> POST /api/models/{model_id}/bundles",
+                  "passes": true
                 },
                 {
                   "type": "api-descriptor",
-                  "status": "missing",
-                  "source": "app/bim_ai/api/registry.py",
-                  "detail": "missing stable id: site.base_survey_point",
-                  "passes": false
+                  "status": "implemented",
+                  "source": "app/bim_ai/api/registry.py:dynamic-default:site.graded-region-update",
+                  "detail": "site.graded-region-update -> POST /api/models/{model_id}/bundles",
+                  "passes": true
                 },
                 {
                   "type": "api-descriptor",
-                  "status": "missing",
-                  "source": "app/bim_ai/api/registry.py",
-                  "detail": "missing stable id: site.sun_settings",
-                  "passes": false
+                  "status": "implemented",
+                  "source": "app/bim_ai/api/registry.py:dynamic-default:site.property-line-create",
+                  "detail": "site.property-line-create -> POST /api/models/{model_id}/bundles",
+                  "passes": true
                 },
                 {
                   "type": "api-descriptor",
-                  "status": "missing",
-                  "source": "app/bim_ai/api/registry.py",
-                  "detail": "missing stable id: site.context_import",
-                  "passes": false
+                  "status": "implemented",
+                  "source": "app/bim_ai/api/registry.py:dynamic-default:site.project-base-point-create",
+                  "detail": "site.project-base-point-create -> POST /api/models/{model_id}/bundles",
+                  "passes": true
+                },
+                {
+                  "type": "api-descriptor",
+                  "status": "implemented",
+                  "source": "app/bim_ai/api/registry.py:dynamic-default:site.survey-point-create",
+                  "detail": "site.survey-point-create -> POST /api/models/{model_id}/bundles",
+                  "passes": true
+                },
+                {
+                  "type": "api-descriptor",
+                  "status": "implemented",
+                  "source": "app/bim_ai/api/registry.py:dynamic-default:site.sun-settings-create",
+                  "detail": "site.sun-settings-create -> POST /api/models/{model_id}/bundles",
+                  "passes": true
+                },
+                {
+                  "type": "api-descriptor",
+                  "status": "implemented",
+                  "source": "app/bim_ai/api/registry.py:3656",
+                  "detail": "import-neighborhood -> POST /api/v3/models/{modelId}/neighborhood-import",
+                  "passes": true
                 }
               ]
             },
@@ -11555,73 +11639,66 @@
           "domain": "structure-construction",
           "scenarioIds": ["structure-and-mep-lite"],
           "status": "Partial",
-          "gatesPassed": 1,
+          "gatesPassed": 3,
           "gatesExpected": 6,
           "gates": [
             {
               "id": "structural-authoring",
               "label": "Structural column and beam authoring",
-              "status": "blocked",
-              "passed": false,
-              "blocker": "Structural column and beam authoring lacks an implemented first-class API/MCP descriptor; raw apply-bundle reachability does not count for M4.",
+              "status": "passed",
+              "passed": true,
+              "blocker": "",
               "evidence": [
                 {
                   "type": "api-descriptor",
-                  "status": "missing",
-                  "source": "app/bim_ai/api/registry.py",
-                  "detail": "missing stable id: structure.column.place",
-                  "passes": false
+                  "status": "implemented",
+                  "source": "app/bim_ai/api/registry.py:dynamic-default:structure.column",
+                  "detail": "structure.column -> POST /api/semantic-authoring/{surface_id}",
+                  "passes": true
                 },
                 {
                   "type": "api-descriptor",
-                  "status": "missing",
-                  "source": "app/bim_ai/api/registry.py",
-                  "detail": "missing stable id: structure.beam.place",
-                  "passes": false
+                  "status": "implemented",
+                  "source": "app/bim_ai/api/registry.py:dynamic-default:structure.beam",
+                  "detail": "structure.beam -> POST /api/semantic-authoring/{surface_id}",
+                  "passes": true
                 },
                 {
                   "type": "api-descriptor",
-                  "status": "missing",
-                  "source": "app/bim_ai/api/registry.py",
-                  "detail": "missing stable id: author.column",
-                  "passes": false
-                },
-                {
-                  "type": "api-descriptor",
-                  "status": "missing",
-                  "source": "app/bim_ai/api/registry.py",
-                  "detail": "missing stable id: author.beam",
-                  "passes": false
+                  "status": "implemented",
+                  "source": "app/bim_ai/api/registry.py:dynamic-default:structure.column_update",
+                  "detail": "structure.column_update -> POST /api/semantic-authoring/{surface_id}",
+                  "passes": true
                 }
               ]
             },
             {
               "id": "construction-lite",
               "label": "Construction package, logistics, and checklist tools",
-              "status": "blocked",
-              "passed": false,
-              "blocker": "Construction package, logistics, and checklist tools lacks an implemented first-class API/MCP descriptor; raw apply-bundle reachability does not count for M4.",
+              "status": "passed",
+              "passed": true,
+              "blocker": "",
               "evidence": [
                 {
                   "type": "api-descriptor",
-                  "status": "missing",
-                  "source": "app/bim_ai/api/registry.py",
-                  "detail": "missing stable id: construction.package.create",
-                  "passes": false
+                  "status": "implemented",
+                  "source": "app/bim_ai/api/registry.py:dynamic-default:construction.package",
+                  "detail": "construction.package -> POST /api/semantic-authoring/{surface_id}",
+                  "passes": true
                 },
                 {
                   "type": "api-descriptor",
-                  "status": "missing",
-                  "source": "app/bim_ai/api/registry.py",
-                  "detail": "missing stable id: construction.logistics.create",
-                  "passes": false
+                  "status": "implemented",
+                  "source": "app/bim_ai/api/registry.py:dynamic-default:construction.logistics",
+                  "detail": "construction.logistics -> POST /api/semantic-authoring/{surface_id}",
+                  "passes": true
                 },
                 {
                   "type": "api-descriptor",
-                  "status": "missing",
-                  "source": "app/bim_ai/api/registry.py",
-                  "detail": "missing stable id: construction.qa_checklist.upsert",
-                  "passes": false
+                  "status": "implemented",
+                  "source": "app/bim_ai/api/registry.py:dynamic-default:construction.qa_checklist",
+                  "detail": "construction.qa_checklist -> POST /api/semantic-authoring/{surface_id}",
+                  "passes": true
                 }
               ]
             },
@@ -11733,73 +11810,73 @@
           "domain": "mep-lite",
           "scenarioIds": ["structure-and-mep-lite"],
           "status": "Partial",
-          "gatesPassed": 1,
+          "gatesPassed": 3,
           "gatesExpected": 6,
           "gates": [
             {
               "id": "mep-route-authoring",
               "label": "Pipe, duct, and cable route authoring",
-              "status": "blocked",
-              "passed": false,
-              "blocker": "Pipe, duct, and cable route authoring lacks an implemented first-class API/MCP descriptor; raw apply-bundle reachability does not count for M4.",
+              "status": "passed",
+              "passed": true,
+              "blocker": "",
               "evidence": [
                 {
                   "type": "api-descriptor",
-                  "status": "missing",
-                  "source": "app/bim_ai/api/registry.py",
-                  "detail": "missing stable id: mep.pipe_route.create",
-                  "passes": false
+                  "status": "implemented",
+                  "source": "app/bim_ai/api/registry.py:dynamic-default:mep.pipe_route",
+                  "detail": "mep.pipe_route -> POST /api/semantic-authoring/{surface_id}",
+                  "passes": true
                 },
                 {
                   "type": "api-descriptor",
-                  "status": "missing",
-                  "source": "app/bim_ai/api/registry.py",
-                  "detail": "missing stable id: mep.duct_route.create",
-                  "passes": false
+                  "status": "implemented",
+                  "source": "app/bim_ai/api/registry.py:dynamic-default:mep.duct_route",
+                  "detail": "mep.duct_route -> POST /api/semantic-authoring/{surface_id}",
+                  "passes": true
                 },
                 {
                   "type": "api-descriptor",
-                  "status": "missing",
-                  "source": "app/bim_ai/api/registry.py",
-                  "detail": "missing stable id: mep.cable_route.create",
-                  "passes": false
+                  "status": "implemented",
+                  "source": "app/bim_ai/api/registry.py:dynamic-default:mep.cable_tray",
+                  "detail": "mep.cable_tray -> POST /api/semantic-authoring/{surface_id}",
+                  "passes": true
                 }
               ]
             },
             {
               "id": "mep-equipment-fixtures-openings",
               "label": "MEP equipment, fixtures, terminals, and opening requests",
-              "status": "blocked",
-              "passed": false,
-              "blocker": "MEP equipment, fixtures, terminals, and opening requests lacks an implemented first-class API/MCP descriptor; raw apply-bundle reachability does not count for M4.",
+              "status": "passed",
+              "passed": true,
+              "blocker": "",
               "evidence": [
                 {
                   "type": "api-descriptor",
-                  "status": "missing",
-                  "source": "app/bim_ai/api/registry.py",
-                  "detail": "missing stable id: mep.equipment.place",
-                  "passes": false
+                  "status": "implemented",
+                  "source": "app/bim_ai/api/registry.py:dynamic-default:mep.equipment",
+                  "detail": "mep.equipment -> POST /api/semantic-authoring/{surface_id}",
+                  "passes": true
                 },
                 {
                   "type": "api-descriptor",
-                  "status": "missing",
-                  "source": "app/bim_ai/api/registry.py",
-                  "detail": "missing stable id: mep.fixture.place",
-                  "passes": false
+                  "status": "implemented",
+                  "source": "app/bim_ai/api/registry.py:dynamic-default:mep.fixture",
+                  "detail": "mep.fixture -> POST /api/semantic-authoring/{surface_id}",
+                  "passes": true
                 },
                 {
                   "type": "api-descriptor",
-                  "status": "missing",
-                  "source": "app/bim_ai/api/registry.py",
-                  "detail": "missing stable id: mep.terminal.place",
-                  "passes": false
+                  "status": "implemented",
+                  "source": "app/bim_ai/api/registry.py:dynamic-default:mep.terminal",
+                  "detail": "mep.terminal -> POST /api/semantic-authoring/{surface_id}",
+                  "passes": true
                 },
                 {
                   "type": "api-descriptor",
-                  "status": "missing",
-                  "source": "app/bim_ai/api/registry.py",
-                  "detail": "missing stable id: mep.opening_request.create",
-                  "passes": false
+                  "status": "implemented",
+                  "source": "app/bim_ai/api/registry.py:dynamic-default:mep.opening_request",
+                  "detail": "mep.opening_request -> POST /api/semantic-authoring/{surface_id}",
+                  "passes": true
                 }
               ]
             },
@@ -11923,31 +12000,38 @@
               "evidence": [
                 {
                   "type": "api-descriptor",
-                  "status": "missing",
-                  "source": "app/bim_ai/api/registry.py",
-                  "detail": "missing stable id: family.type.upsert",
-                  "passes": false
-                },
-                {
-                  "type": "api-descriptor",
-                  "status": "missing",
-                  "source": "app/bim_ai/api/registry.py",
-                  "detail": "missing stable id: family.catalog.query",
-                  "passes": false
+                  "status": "implemented",
+                  "source": "app/bim_ai/api/registry.py:3371",
+                  "detail": "family.upsert_type -> POST /api/models/{model_id}/bundles",
+                  "passes": true
                 },
                 {
                   "type": "api-descriptor",
                   "status": "implemented",
-                  "source": "app/bim_ai/api/registry.py:3169",
+                  "source": "app/bim_ai/api/registry.py:3412",
+                  "detail": "family.place_instance -> POST /api/models/{model_id}/bundles",
+                  "passes": true
+                },
+                {
+                  "type": "api-descriptor",
+                  "status": "implemented",
+                  "source": "app/bim_ai/api/registry.py:3453",
+                  "detail": "asset.query -> GET /api/v3/catalog",
+                  "passes": true
+                },
+                {
+                  "type": "api-descriptor",
+                  "status": "implemented",
+                  "source": "app/bim_ai/api/registry.py:3477",
                   "detail": "asset.place -> POST /api/models/{model_id}/bundles",
                   "passes": true
                 },
                 {
                   "type": "api-descriptor",
-                  "status": "missing",
-                  "source": "app/bim_ai/api/registry.py",
-                  "detail": "missing stable id: asset.kit.place",
-                  "passes": false
+                  "status": "implemented",
+                  "source": "app/bim_ai/api/registry.py:3324",
+                  "detail": "place-kitchen-kit -> POST /api/v3/models/{modelId}/bundles",
+                  "passes": true
                 }
               ]
             },
@@ -11960,31 +12044,31 @@
               "evidence": [
                 {
                   "type": "api-descriptor",
-                  "status": "missing",
-                  "source": "app/bim_ai/api/registry.py",
-                  "detail": "missing stable id: material.pbr.upsert",
-                  "passes": false
+                  "status": "implemented",
+                  "source": "app/bim_ai/api/registry.py:3534",
+                  "detail": "material.upsert_pbr -> POST /api/models/{model_id}/bundles",
+                  "passes": true
                 },
                 {
                   "type": "api-descriptor",
                   "status": "implemented",
-                  "source": "app/bim_ai/api/registry.py:3261",
+                  "source": "app/bim_ai/api/registry.py:3569",
                   "detail": "material.assign -> POST /api/models/{model_id}/bundles",
                   "passes": true
                 },
                 {
                   "type": "api-descriptor",
                   "status": "implemented",
-                  "source": "app/bim_ai/api/registry.py:3284",
+                  "source": "app/bim_ai/api/registry.py:3592",
                   "detail": "material.paint_face -> POST /api/models/{model_id}/bundles",
                   "passes": true
                 },
                 {
                   "type": "api-descriptor",
-                  "status": "missing",
-                  "source": "app/bim_ai/api/registry.py",
-                  "detail": "missing stable id: decal.place",
-                  "passes": false
+                  "status": "implemented",
+                  "source": "app/bim_ai/api/registry.py:3622",
+                  "detail": "decal.create -> POST /api/models/{model_id}/bundles",
+                  "passes": true
                 }
               ]
             },
@@ -12096,80 +12180,94 @@
           "domain": "presentation-advanced-docs",
           "scenarioIds": ["documentation-pack", "presentation-pack"],
           "status": "Partial",
-          "gatesPassed": 1,
+          "gatesPassed": 3,
           "gatesExpected": 6,
           "gates": [
             {
               "id": "presentation-pack",
               "label": "Presentation frames, branded templates, render bundle, and share/export",
-              "status": "blocked",
-              "passed": false,
-              "blocker": "Presentation frames, branded templates, render bundle, and share/export lacks an implemented first-class API/MCP descriptor; raw apply-bundle reachability does not count for M4.",
+              "status": "passed",
+              "passed": true,
+              "blocker": "",
               "evidence": [
                 {
                   "type": "api-descriptor",
-                  "status": "missing",
-                  "source": "app/bim_ai/api/registry.py",
-                  "detail": "missing stable id: presentation.frame.create",
-                  "passes": false
+                  "status": "implemented",
+                  "source": "app/bim_ai/api/registry.py:1633",
+                  "detail": "presentation-documentation-pack -> POST /api/models/{model_id}/bundles",
+                  "passes": true
                 },
                 {
                   "type": "api-descriptor",
-                  "status": "missing",
-                  "source": "app/bim_ai/api/registry.py",
-                  "detail": "missing stable id: presentation.template.apply",
-                  "passes": false
+                  "status": "implemented",
+                  "source": "app/bim_ai/api/registry.py:4139",
+                  "detail": "create-frame -> POST /api/v3/models/{modelId}/bundles",
+                  "passes": true
                 },
                 {
                   "type": "api-descriptor",
-                  "status": "missing",
-                  "source": "app/bim_ai/api/registry.py",
-                  "detail": "missing stable id: presentation.render_bundle.create",
-                  "passes": false
+                  "status": "implemented",
+                  "source": "app/bim_ai/api/registry.py:4263",
+                  "detail": "create-brand-template -> POST /api/models/{modelId}/bundles",
+                  "passes": true
                 },
                 {
                   "type": "api-descriptor",
-                  "status": "missing",
-                  "source": "app/bim_ai/api/registry.py",
-                  "detail": "missing stable id: presentation.share",
-                  "passes": false
+                  "status": "implemented",
+                  "source": "app/bim_ai/api/registry.py:4387",
+                  "detail": "export-render-bundle -> GET /api/v3/models/{modelId}/export",
+                  "passes": true
+                },
+                {
+                  "type": "api-descriptor",
+                  "status": "implemented",
+                  "source": "app/bim_ai/api/registry.py:2523",
+                  "detail": "presentation-create -> POST /api/models/{model_id}/presentations",
+                  "passes": true
+                },
+                {
+                  "type": "api-descriptor",
+                  "status": "implemented",
+                  "source": "app/bim_ai/api/registry.py:4199",
+                  "detail": "export-presentation -> GET /api/v3/models/{modelId}/presentation-canvases/{canvasId}/export",
+                  "passes": true
                 }
               ]
             },
             {
               "id": "advanced-documentation",
               "label": "Advanced sheets, schedules, revisions, and documentation exports",
-              "status": "blocked",
-              "passed": false,
-              "blocker": "Advanced sheets, schedules, revisions, and documentation exports lacks an implemented first-class API/MCP descriptor; raw apply-bundle reachability does not count for M4.",
+              "status": "passed",
+              "passed": true,
+              "blocker": "",
               "evidence": [
                 {
                   "type": "api-descriptor",
-                  "status": "missing",
-                  "source": "app/bim_ai/api/registry.py",
-                  "detail": "missing stable id: document.advanced_sheet.create",
-                  "passes": false
+                  "status": "implemented",
+                  "source": "app/bim_ai/api/registry.py:1477",
+                  "detail": "document.create_drawing_set -> POST /api/models/{model_id}/bundles",
+                  "passes": true
                 },
                 {
                   "type": "api-descriptor",
-                  "status": "missing",
-                  "source": "app/bim_ai/api/registry.py",
-                  "detail": "missing stable id: document.schedule.advanced",
-                  "passes": false
+                  "status": "implemented",
+                  "source": "app/bim_ai/api/registry.py:2746",
+                  "detail": "create-schedule-view -> POST /api/v3/models/{modelId}/bundles",
+                  "passes": true
                 },
                 {
                   "type": "api-descriptor",
-                  "status": "missing",
-                  "source": "app/bim_ai/api/registry.py",
-                  "detail": "missing stable id: document.revision.create",
-                  "passes": false
+                  "status": "implemented",
+                  "source": "app/bim_ai/api/registry.py:1633",
+                  "detail": "presentation-documentation-pack -> POST /api/models/{model_id}/bundles",
+                  "passes": true
                 },
                 {
                   "type": "api-descriptor",
-                  "status": "missing",
-                  "source": "app/bim_ai/api/registry.py",
-                  "detail": "missing stable id: export.branded_pack",
-                  "passes": false
+                  "status": "implemented",
+                  "source": "app/bim_ai/api/registry.py:4322",
+                  "detail": "export-branded-pdf -> GET /api/v3/models/{modelId}/export/pdf",
+                  "passes": true
                 }
               ]
             },
@@ -12432,30 +12530,44 @@
           "workstreamLabel": "Site/context first-class MCP pack",
           "id": "toposolid-authoring",
           "label": "Toposolid create/update authoring",
-          "status": "blocked",
-          "passed": false,
-          "blocker": "Toposolid create/update authoring lacks an implemented first-class API/MCP descriptor; raw apply-bundle reachability does not count for M4.",
+          "status": "passed",
+          "passed": true,
+          "blocker": "",
           "evidence": [
             {
               "type": "api-descriptor",
-              "status": "missing",
-              "source": "app/bim_ai/api/registry.py",
-              "detail": "missing stable id: site.toposolid.upsert",
-              "passes": false
+              "status": "implemented",
+              "source": "app/bim_ai/api/registry.py:2123",
+              "detail": "toposolid-create -> POST /api/models/{model_id}/bundles",
+              "passes": true
             },
             {
               "type": "api-descriptor",
-              "status": "missing",
-              "source": "app/bim_ai/api/registry.py",
-              "detail": "missing stable id: site.create_toposolid",
-              "passes": false
+              "status": "implemented",
+              "source": "app/bim_ai/api/registry.py:2189",
+              "detail": "toposolid-update -> POST /api/models/{model_id}/bundles",
+              "passes": true
             },
             {
               "type": "api-descriptor",
-              "status": "missing",
-              "source": "app/bim_ai/api/registry.py",
-              "detail": "missing stable id: create_toposolid",
-              "passes": false
+              "status": "implemented",
+              "source": "app/bim_ai/api/registry.py:3708",
+              "detail": "create-toposolid-subdivision -> POST /api/v3/models/{modelId}/bundles",
+              "passes": true
+            },
+            {
+              "type": "api-descriptor",
+              "status": "implemented",
+              "source": "app/bim_ai/api/registry.py:dynamic-default:site.toposolid-subdivision-update",
+              "detail": "site.toposolid-subdivision-update -> POST /api/models/{model_id}/bundles",
+              "passes": true
+            },
+            {
+              "type": "api-descriptor",
+              "status": "implemented",
+              "source": "app/bim_ai/api/registry.py:dynamic-default:site.toposolid-excavation-create",
+              "detail": "site.toposolid-excavation-create -> POST /api/models/{model_id}/bundles",
+              "passes": true
             }
           ]
         },
@@ -12464,44 +12576,65 @@
           "workstreamLabel": "Site/context first-class MCP pack",
           "id": "grading-property-line-georeference",
           "label": "Grading, property line, and georeference tools",
-          "status": "blocked",
-          "passed": false,
-          "blocker": "Grading, property line, and georeference tools lacks an implemented first-class API/MCP descriptor; raw apply-bundle reachability does not count for M4.",
+          "status": "passed",
+          "passed": true,
+          "blocker": "",
           "evidence": [
             {
               "type": "api-descriptor",
-              "status": "missing",
-              "source": "app/bim_ai/api/registry.py",
-              "detail": "missing stable id: site.graded_region",
-              "passes": false
+              "status": "implemented",
+              "source": "app/bim_ai/api/registry.py:2816",
+              "detail": "create-graded-region -> POST /api/models/{model_id}/bundles",
+              "passes": true
             },
             {
               "type": "api-descriptor",
-              "status": "missing",
-              "source": "app/bim_ai/api/registry.py",
-              "detail": "missing stable id: site.property_line",
-              "passes": false
+              "status": "implemented",
+              "source": "app/bim_ai/api/registry.py:dynamic-default:site.setup-georeference",
+              "detail": "site.setup-georeference -> POST /api/models/{model_id}/bundles",
+              "passes": true
             },
             {
               "type": "api-descriptor",
-              "status": "missing",
-              "source": "app/bim_ai/api/registry.py",
-              "detail": "missing stable id: site.base_survey_point",
-              "passes": false
+              "status": "implemented",
+              "source": "app/bim_ai/api/registry.py:dynamic-default:site.graded-region-update",
+              "detail": "site.graded-region-update -> POST /api/models/{model_id}/bundles",
+              "passes": true
             },
             {
               "type": "api-descriptor",
-              "status": "missing",
-              "source": "app/bim_ai/api/registry.py",
-              "detail": "missing stable id: site.sun_settings",
-              "passes": false
+              "status": "implemented",
+              "source": "app/bim_ai/api/registry.py:dynamic-default:site.property-line-create",
+              "detail": "site.property-line-create -> POST /api/models/{model_id}/bundles",
+              "passes": true
             },
             {
               "type": "api-descriptor",
-              "status": "missing",
-              "source": "app/bim_ai/api/registry.py",
-              "detail": "missing stable id: site.context_import",
-              "passes": false
+              "status": "implemented",
+              "source": "app/bim_ai/api/registry.py:dynamic-default:site.project-base-point-create",
+              "detail": "site.project-base-point-create -> POST /api/models/{model_id}/bundles",
+              "passes": true
+            },
+            {
+              "type": "api-descriptor",
+              "status": "implemented",
+              "source": "app/bim_ai/api/registry.py:dynamic-default:site.survey-point-create",
+              "detail": "site.survey-point-create -> POST /api/models/{model_id}/bundles",
+              "passes": true
+            },
+            {
+              "type": "api-descriptor",
+              "status": "implemented",
+              "source": "app/bim_ai/api/registry.py:dynamic-default:site.sun-settings-create",
+              "detail": "site.sun-settings-create -> POST /api/models/{model_id}/bundles",
+              "passes": true
+            },
+            {
+              "type": "api-descriptor",
+              "status": "implemented",
+              "source": "app/bim_ai/api/registry.py:3656",
+              "detail": "import-neighborhood -> POST /api/v3/models/{modelId}/neighborhood-import",
+              "passes": true
             }
           ]
         },
@@ -12618,37 +12751,30 @@
           "workstreamLabel": "Structure and construction-lite MCP pack",
           "id": "structural-authoring",
           "label": "Structural column and beam authoring",
-          "status": "blocked",
-          "passed": false,
-          "blocker": "Structural column and beam authoring lacks an implemented first-class API/MCP descriptor; raw apply-bundle reachability does not count for M4.",
+          "status": "passed",
+          "passed": true,
+          "blocker": "",
           "evidence": [
             {
               "type": "api-descriptor",
-              "status": "missing",
-              "source": "app/bim_ai/api/registry.py",
-              "detail": "missing stable id: structure.column.place",
-              "passes": false
+              "status": "implemented",
+              "source": "app/bim_ai/api/registry.py:dynamic-default:structure.column",
+              "detail": "structure.column -> POST /api/semantic-authoring/{surface_id}",
+              "passes": true
             },
             {
               "type": "api-descriptor",
-              "status": "missing",
-              "source": "app/bim_ai/api/registry.py",
-              "detail": "missing stable id: structure.beam.place",
-              "passes": false
+              "status": "implemented",
+              "source": "app/bim_ai/api/registry.py:dynamic-default:structure.beam",
+              "detail": "structure.beam -> POST /api/semantic-authoring/{surface_id}",
+              "passes": true
             },
             {
               "type": "api-descriptor",
-              "status": "missing",
-              "source": "app/bim_ai/api/registry.py",
-              "detail": "missing stable id: author.column",
-              "passes": false
-            },
-            {
-              "type": "api-descriptor",
-              "status": "missing",
-              "source": "app/bim_ai/api/registry.py",
-              "detail": "missing stable id: author.beam",
-              "passes": false
+              "status": "implemented",
+              "source": "app/bim_ai/api/registry.py:dynamic-default:structure.column_update",
+              "detail": "structure.column_update -> POST /api/semantic-authoring/{surface_id}",
+              "passes": true
             }
           ]
         },
@@ -12657,30 +12783,30 @@
           "workstreamLabel": "Structure and construction-lite MCP pack",
           "id": "construction-lite",
           "label": "Construction package, logistics, and checklist tools",
-          "status": "blocked",
-          "passed": false,
-          "blocker": "Construction package, logistics, and checklist tools lacks an implemented first-class API/MCP descriptor; raw apply-bundle reachability does not count for M4.",
+          "status": "passed",
+          "passed": true,
+          "blocker": "",
           "evidence": [
             {
               "type": "api-descriptor",
-              "status": "missing",
-              "source": "app/bim_ai/api/registry.py",
-              "detail": "missing stable id: construction.package.create",
-              "passes": false
+              "status": "implemented",
+              "source": "app/bim_ai/api/registry.py:dynamic-default:construction.package",
+              "detail": "construction.package -> POST /api/semantic-authoring/{surface_id}",
+              "passes": true
             },
             {
               "type": "api-descriptor",
-              "status": "missing",
-              "source": "app/bim_ai/api/registry.py",
-              "detail": "missing stable id: construction.logistics.create",
-              "passes": false
+              "status": "implemented",
+              "source": "app/bim_ai/api/registry.py:dynamic-default:construction.logistics",
+              "detail": "construction.logistics -> POST /api/semantic-authoring/{surface_id}",
+              "passes": true
             },
             {
               "type": "api-descriptor",
-              "status": "missing",
-              "source": "app/bim_ai/api/registry.py",
-              "detail": "missing stable id: construction.qa_checklist.upsert",
-              "passes": false
+              "status": "implemented",
+              "source": "app/bim_ai/api/registry.py:dynamic-default:construction.qa_checklist",
+              "detail": "construction.qa_checklist -> POST /api/semantic-authoring/{surface_id}",
+              "passes": true
             }
           ]
         },
@@ -12797,30 +12923,30 @@
           "workstreamLabel": "MEP-lite MCP pack",
           "id": "mep-route-authoring",
           "label": "Pipe, duct, and cable route authoring",
-          "status": "blocked",
-          "passed": false,
-          "blocker": "Pipe, duct, and cable route authoring lacks an implemented first-class API/MCP descriptor; raw apply-bundle reachability does not count for M4.",
+          "status": "passed",
+          "passed": true,
+          "blocker": "",
           "evidence": [
             {
               "type": "api-descriptor",
-              "status": "missing",
-              "source": "app/bim_ai/api/registry.py",
-              "detail": "missing stable id: mep.pipe_route.create",
-              "passes": false
+              "status": "implemented",
+              "source": "app/bim_ai/api/registry.py:dynamic-default:mep.pipe_route",
+              "detail": "mep.pipe_route -> POST /api/semantic-authoring/{surface_id}",
+              "passes": true
             },
             {
               "type": "api-descriptor",
-              "status": "missing",
-              "source": "app/bim_ai/api/registry.py",
-              "detail": "missing stable id: mep.duct_route.create",
-              "passes": false
+              "status": "implemented",
+              "source": "app/bim_ai/api/registry.py:dynamic-default:mep.duct_route",
+              "detail": "mep.duct_route -> POST /api/semantic-authoring/{surface_id}",
+              "passes": true
             },
             {
               "type": "api-descriptor",
-              "status": "missing",
-              "source": "app/bim_ai/api/registry.py",
-              "detail": "missing stable id: mep.cable_route.create",
-              "passes": false
+              "status": "implemented",
+              "source": "app/bim_ai/api/registry.py:dynamic-default:mep.cable_tray",
+              "detail": "mep.cable_tray -> POST /api/semantic-authoring/{surface_id}",
+              "passes": true
             }
           ]
         },
@@ -12829,37 +12955,37 @@
           "workstreamLabel": "MEP-lite MCP pack",
           "id": "mep-equipment-fixtures-openings",
           "label": "MEP equipment, fixtures, terminals, and opening requests",
-          "status": "blocked",
-          "passed": false,
-          "blocker": "MEP equipment, fixtures, terminals, and opening requests lacks an implemented first-class API/MCP descriptor; raw apply-bundle reachability does not count for M4.",
+          "status": "passed",
+          "passed": true,
+          "blocker": "",
           "evidence": [
             {
               "type": "api-descriptor",
-              "status": "missing",
-              "source": "app/bim_ai/api/registry.py",
-              "detail": "missing stable id: mep.equipment.place",
-              "passes": false
+              "status": "implemented",
+              "source": "app/bim_ai/api/registry.py:dynamic-default:mep.equipment",
+              "detail": "mep.equipment -> POST /api/semantic-authoring/{surface_id}",
+              "passes": true
             },
             {
               "type": "api-descriptor",
-              "status": "missing",
-              "source": "app/bim_ai/api/registry.py",
-              "detail": "missing stable id: mep.fixture.place",
-              "passes": false
+              "status": "implemented",
+              "source": "app/bim_ai/api/registry.py:dynamic-default:mep.fixture",
+              "detail": "mep.fixture -> POST /api/semantic-authoring/{surface_id}",
+              "passes": true
             },
             {
               "type": "api-descriptor",
-              "status": "missing",
-              "source": "app/bim_ai/api/registry.py",
-              "detail": "missing stable id: mep.terminal.place",
-              "passes": false
+              "status": "implemented",
+              "source": "app/bim_ai/api/registry.py:dynamic-default:mep.terminal",
+              "detail": "mep.terminal -> POST /api/semantic-authoring/{surface_id}",
+              "passes": true
             },
             {
               "type": "api-descriptor",
-              "status": "missing",
-              "source": "app/bim_ai/api/registry.py",
-              "detail": "missing stable id: mep.opening_request.create",
-              "passes": false
+              "status": "implemented",
+              "source": "app/bim_ai/api/registry.py:dynamic-default:mep.opening_request",
+              "detail": "mep.opening_request -> POST /api/semantic-authoring/{surface_id}",
+              "passes": true
             }
           ]
         },
@@ -12982,31 +13108,38 @@
           "evidence": [
             {
               "type": "api-descriptor",
-              "status": "missing",
-              "source": "app/bim_ai/api/registry.py",
-              "detail": "missing stable id: family.type.upsert",
-              "passes": false
-            },
-            {
-              "type": "api-descriptor",
-              "status": "missing",
-              "source": "app/bim_ai/api/registry.py",
-              "detail": "missing stable id: family.catalog.query",
-              "passes": false
+              "status": "implemented",
+              "source": "app/bim_ai/api/registry.py:3371",
+              "detail": "family.upsert_type -> POST /api/models/{model_id}/bundles",
+              "passes": true
             },
             {
               "type": "api-descriptor",
               "status": "implemented",
-              "source": "app/bim_ai/api/registry.py:3169",
+              "source": "app/bim_ai/api/registry.py:3412",
+              "detail": "family.place_instance -> POST /api/models/{model_id}/bundles",
+              "passes": true
+            },
+            {
+              "type": "api-descriptor",
+              "status": "implemented",
+              "source": "app/bim_ai/api/registry.py:3453",
+              "detail": "asset.query -> GET /api/v3/catalog",
+              "passes": true
+            },
+            {
+              "type": "api-descriptor",
+              "status": "implemented",
+              "source": "app/bim_ai/api/registry.py:3477",
               "detail": "asset.place -> POST /api/models/{model_id}/bundles",
               "passes": true
             },
             {
               "type": "api-descriptor",
-              "status": "missing",
-              "source": "app/bim_ai/api/registry.py",
-              "detail": "missing stable id: asset.kit.place",
-              "passes": false
+              "status": "implemented",
+              "source": "app/bim_ai/api/registry.py:3324",
+              "detail": "place-kitchen-kit -> POST /api/v3/models/{modelId}/bundles",
+              "passes": true
             }
           ]
         },
@@ -13021,31 +13154,31 @@
           "evidence": [
             {
               "type": "api-descriptor",
-              "status": "missing",
-              "source": "app/bim_ai/api/registry.py",
-              "detail": "missing stable id: material.pbr.upsert",
-              "passes": false
+              "status": "implemented",
+              "source": "app/bim_ai/api/registry.py:3534",
+              "detail": "material.upsert_pbr -> POST /api/models/{model_id}/bundles",
+              "passes": true
             },
             {
               "type": "api-descriptor",
               "status": "implemented",
-              "source": "app/bim_ai/api/registry.py:3261",
+              "source": "app/bim_ai/api/registry.py:3569",
               "detail": "material.assign -> POST /api/models/{model_id}/bundles",
               "passes": true
             },
             {
               "type": "api-descriptor",
               "status": "implemented",
-              "source": "app/bim_ai/api/registry.py:3284",
+              "source": "app/bim_ai/api/registry.py:3592",
               "detail": "material.paint_face -> POST /api/models/{model_id}/bundles",
               "passes": true
             },
             {
               "type": "api-descriptor",
-              "status": "missing",
-              "source": "app/bim_ai/api/registry.py",
-              "detail": "missing stable id: decal.place",
-              "passes": false
+              "status": "implemented",
+              "source": "app/bim_ai/api/registry.py:3622",
+              "detail": "decal.create -> POST /api/models/{model_id}/bundles",
+              "passes": true
             }
           ]
         },
@@ -13162,37 +13295,51 @@
           "workstreamLabel": "Presentation, branded export, and advanced docs",
           "id": "presentation-pack",
           "label": "Presentation frames, branded templates, render bundle, and share/export",
-          "status": "blocked",
-          "passed": false,
-          "blocker": "Presentation frames, branded templates, render bundle, and share/export lacks an implemented first-class API/MCP descriptor; raw apply-bundle reachability does not count for M4.",
+          "status": "passed",
+          "passed": true,
+          "blocker": "",
           "evidence": [
             {
               "type": "api-descriptor",
-              "status": "missing",
-              "source": "app/bim_ai/api/registry.py",
-              "detail": "missing stable id: presentation.frame.create",
-              "passes": false
+              "status": "implemented",
+              "source": "app/bim_ai/api/registry.py:1633",
+              "detail": "presentation-documentation-pack -> POST /api/models/{model_id}/bundles",
+              "passes": true
             },
             {
               "type": "api-descriptor",
-              "status": "missing",
-              "source": "app/bim_ai/api/registry.py",
-              "detail": "missing stable id: presentation.template.apply",
-              "passes": false
+              "status": "implemented",
+              "source": "app/bim_ai/api/registry.py:4139",
+              "detail": "create-frame -> POST /api/v3/models/{modelId}/bundles",
+              "passes": true
             },
             {
               "type": "api-descriptor",
-              "status": "missing",
-              "source": "app/bim_ai/api/registry.py",
-              "detail": "missing stable id: presentation.render_bundle.create",
-              "passes": false
+              "status": "implemented",
+              "source": "app/bim_ai/api/registry.py:4263",
+              "detail": "create-brand-template -> POST /api/models/{modelId}/bundles",
+              "passes": true
             },
             {
               "type": "api-descriptor",
-              "status": "missing",
-              "source": "app/bim_ai/api/registry.py",
-              "detail": "missing stable id: presentation.share",
-              "passes": false
+              "status": "implemented",
+              "source": "app/bim_ai/api/registry.py:4387",
+              "detail": "export-render-bundle -> GET /api/v3/models/{modelId}/export",
+              "passes": true
+            },
+            {
+              "type": "api-descriptor",
+              "status": "implemented",
+              "source": "app/bim_ai/api/registry.py:2523",
+              "detail": "presentation-create -> POST /api/models/{model_id}/presentations",
+              "passes": true
+            },
+            {
+              "type": "api-descriptor",
+              "status": "implemented",
+              "source": "app/bim_ai/api/registry.py:4199",
+              "detail": "export-presentation -> GET /api/v3/models/{modelId}/presentation-canvases/{canvasId}/export",
+              "passes": true
             }
           ]
         },
@@ -13201,37 +13348,37 @@
           "workstreamLabel": "Presentation, branded export, and advanced docs",
           "id": "advanced-documentation",
           "label": "Advanced sheets, schedules, revisions, and documentation exports",
-          "status": "blocked",
-          "passed": false,
-          "blocker": "Advanced sheets, schedules, revisions, and documentation exports lacks an implemented first-class API/MCP descriptor; raw apply-bundle reachability does not count for M4.",
+          "status": "passed",
+          "passed": true,
+          "blocker": "",
           "evidence": [
             {
               "type": "api-descriptor",
-              "status": "missing",
-              "source": "app/bim_ai/api/registry.py",
-              "detail": "missing stable id: document.advanced_sheet.create",
-              "passes": false
+              "status": "implemented",
+              "source": "app/bim_ai/api/registry.py:1477",
+              "detail": "document.create_drawing_set -> POST /api/models/{model_id}/bundles",
+              "passes": true
             },
             {
               "type": "api-descriptor",
-              "status": "missing",
-              "source": "app/bim_ai/api/registry.py",
-              "detail": "missing stable id: document.schedule.advanced",
-              "passes": false
+              "status": "implemented",
+              "source": "app/bim_ai/api/registry.py:2746",
+              "detail": "create-schedule-view -> POST /api/v3/models/{modelId}/bundles",
+              "passes": true
             },
             {
               "type": "api-descriptor",
-              "status": "missing",
-              "source": "app/bim_ai/api/registry.py",
-              "detail": "missing stable id: document.revision.create",
-              "passes": false
+              "status": "implemented",
+              "source": "app/bim_ai/api/registry.py:1633",
+              "detail": "presentation-documentation-pack -> POST /api/models/{model_id}/bundles",
+              "passes": true
             },
             {
               "type": "api-descriptor",
-              "status": "missing",
-              "source": "app/bim_ai/api/registry.py",
-              "detail": "missing stable id: export.branded_pack",
-              "passes": false
+              "status": "implemented",
+              "source": "app/bim_ai/api/registry.py:4322",
+              "detail": "export-branded-pdf -> GET /api/v3/models/{modelId}/export/pdf",
+              "passes": true
             }
           ]
         },
@@ -13492,14 +13639,6 @@
       ],
       "blockers": [
         {
-          "id": "M4-A:toposolid-authoring",
-          "blocker": "Toposolid create/update authoring lacks an implemented first-class API/MCP descriptor; raw apply-bundle reachability does not count for M4."
-        },
-        {
-          "id": "M4-A:grading-property-line-georeference",
-          "blocker": "Grading, property line, and georeference tools lacks an implemented first-class API/MCP descriptor; raw apply-bundle reachability does not count for M4."
-        },
-        {
           "id": "M4-A:mcp-cli-benchmark-evidence",
           "blocker": "Site/context first-class MCP pack lacks executable MCP/CLI benchmark evidence."
         },
@@ -13512,14 +13651,6 @@
           "blocker": "Site/context first-class MCP pack lacks accepted advisor, visual, export, or semantic-diff evidence."
         },
         {
-          "id": "M4-B:structural-authoring",
-          "blocker": "Structural column and beam authoring lacks an implemented first-class API/MCP descriptor; raw apply-bundle reachability does not count for M4."
-        },
-        {
-          "id": "M4-B:construction-lite",
-          "blocker": "Construction package, logistics, and checklist tools lacks an implemented first-class API/MCP descriptor; raw apply-bundle reachability does not count for M4."
-        },
-        {
           "id": "M4-B:mcp-cli-benchmark-evidence",
           "blocker": "Structure and construction-lite MCP pack lacks executable MCP/CLI benchmark evidence."
         },
@@ -13530,14 +13661,6 @@
         {
           "id": "M4-B:quality-export-semantic-evidence",
           "blocker": "Structure and construction-lite MCP pack lacks accepted advisor, visual, export, or semantic-diff evidence."
-        },
-        {
-          "id": "M4-C:mep-route-authoring",
-          "blocker": "Pipe, duct, and cable route authoring lacks an implemented first-class API/MCP descriptor; raw apply-bundle reachability does not count for M4."
-        },
-        {
-          "id": "M4-C:mep-equipment-fixtures-openings",
-          "blocker": "MEP equipment, fixtures, terminals, and opening requests lacks an implemented first-class API/MCP descriptor; raw apply-bundle reachability does not count for M4."
         },
         {
           "id": "M4-C:mcp-cli-benchmark-evidence",
@@ -13564,14 +13687,6 @@
           "blocker": "Families, assets, materials, decals pack lacks accepted advisor, visual, export, or semantic-diff evidence."
         },
         {
-          "id": "M4-E:presentation-pack",
-          "blocker": "Presentation frames, branded templates, render bundle, and share/export lacks an implemented first-class API/MCP descriptor; raw apply-bundle reachability does not count for M4."
-        },
-        {
-          "id": "M4-E:advanced-documentation",
-          "blocker": "Advanced sheets, schedules, revisions, and documentation exports lacks an implemented first-class API/MCP descriptor; raw apply-bundle reachability does not count for M4."
-        },
-        {
           "id": "M4-E:mcp-cli-benchmark-evidence",
           "blocker": "Presentation, branded export, and advanced docs lacks executable MCP/CLI benchmark evidence."
         },
@@ -13587,116 +13702,76 @@
       "nextWaveSchedule": [
         {
           "order": 1,
-          "sourceBlocker": "M4-A:toposolid-authoring",
-          "recommendedFocus": "Toposolid create/update authoring lacks an implemented first-class API/MCP descriptor; raw apply-bundle reachability does not count for M4."
-        },
-        {
-          "order": 2,
-          "sourceBlocker": "M4-A:grading-property-line-georeference",
-          "recommendedFocus": "Grading, property line, and georeference tools lacks an implemented first-class API/MCP descriptor; raw apply-bundle reachability does not count for M4."
-        },
-        {
-          "order": 3,
           "sourceBlocker": "M4-A:mcp-cli-benchmark-evidence",
           "recommendedFocus": "Site/context first-class MCP pack lacks executable MCP/CLI benchmark evidence."
         },
         {
-          "order": 4,
+          "order": 2,
           "sourceBlocker": "M4-A:ui-cmdk-equivalence-evidence",
           "recommendedFocus": "Site/context first-class MCP pack lacks UI/Cmd+K executable or validated replay evidence; activator-only mappings are excluded."
         },
         {
-          "order": 5,
+          "order": 3,
           "sourceBlocker": "M4-A:quality-export-semantic-evidence",
           "recommendedFocus": "Site/context first-class MCP pack lacks accepted advisor, visual, export, or semantic-diff evidence."
         },
         {
-          "order": 6,
-          "sourceBlocker": "M4-B:structural-authoring",
-          "recommendedFocus": "Structural column and beam authoring lacks an implemented first-class API/MCP descriptor; raw apply-bundle reachability does not count for M4."
-        },
-        {
-          "order": 7,
-          "sourceBlocker": "M4-B:construction-lite",
-          "recommendedFocus": "Construction package, logistics, and checklist tools lacks an implemented first-class API/MCP descriptor; raw apply-bundle reachability does not count for M4."
-        },
-        {
-          "order": 8,
+          "order": 4,
           "sourceBlocker": "M4-B:mcp-cli-benchmark-evidence",
           "recommendedFocus": "Structure and construction-lite MCP pack lacks executable MCP/CLI benchmark evidence."
         },
         {
-          "order": 9,
+          "order": 5,
           "sourceBlocker": "M4-B:ui-cmdk-equivalence-evidence",
           "recommendedFocus": "Structure and construction-lite MCP pack lacks UI/Cmd+K executable or validated replay evidence; activator-only mappings are excluded."
         },
         {
-          "order": 10,
+          "order": 6,
           "sourceBlocker": "M4-B:quality-export-semantic-evidence",
           "recommendedFocus": "Structure and construction-lite MCP pack lacks accepted advisor, visual, export, or semantic-diff evidence."
         },
         {
-          "order": 11,
-          "sourceBlocker": "M4-C:mep-route-authoring",
-          "recommendedFocus": "Pipe, duct, and cable route authoring lacks an implemented first-class API/MCP descriptor; raw apply-bundle reachability does not count for M4."
-        },
-        {
-          "order": 12,
-          "sourceBlocker": "M4-C:mep-equipment-fixtures-openings",
-          "recommendedFocus": "MEP equipment, fixtures, terminals, and opening requests lacks an implemented first-class API/MCP descriptor; raw apply-bundle reachability does not count for M4."
-        },
-        {
-          "order": 13,
+          "order": 7,
           "sourceBlocker": "M4-C:mcp-cli-benchmark-evidence",
           "recommendedFocus": "MEP-lite MCP pack lacks executable MCP/CLI benchmark evidence."
         },
         {
-          "order": 14,
+          "order": 8,
           "sourceBlocker": "M4-C:ui-cmdk-equivalence-evidence",
           "recommendedFocus": "MEP-lite MCP pack lacks UI/Cmd+K executable or validated replay evidence; activator-only mappings are excluded."
         },
         {
-          "order": 15,
+          "order": 9,
           "sourceBlocker": "M4-C:quality-export-semantic-evidence",
           "recommendedFocus": "MEP-lite MCP pack lacks accepted advisor, visual, export, or semantic-diff evidence."
         },
         {
-          "order": 16,
+          "order": 10,
           "sourceBlocker": "M4-D:mcp-cli-benchmark-evidence",
           "recommendedFocus": "Families, assets, materials, decals pack lacks executable MCP/CLI benchmark evidence."
         },
         {
-          "order": 17,
+          "order": 11,
           "sourceBlocker": "M4-D:ui-cmdk-equivalence-evidence",
           "recommendedFocus": "Families, assets, materials, decals pack lacks UI/Cmd+K executable or validated replay evidence; activator-only mappings are excluded."
         },
         {
-          "order": 18,
+          "order": 12,
           "sourceBlocker": "M4-D:quality-export-semantic-evidence",
           "recommendedFocus": "Families, assets, materials, decals pack lacks accepted advisor, visual, export, or semantic-diff evidence."
         },
         {
-          "order": 19,
-          "sourceBlocker": "M4-E:presentation-pack",
-          "recommendedFocus": "Presentation frames, branded templates, render bundle, and share/export lacks an implemented first-class API/MCP descriptor; raw apply-bundle reachability does not count for M4."
-        },
-        {
-          "order": 20,
-          "sourceBlocker": "M4-E:advanced-documentation",
-          "recommendedFocus": "Advanced sheets, schedules, revisions, and documentation exports lacks an implemented first-class API/MCP descriptor; raw apply-bundle reachability does not count for M4."
-        },
-        {
-          "order": 21,
+          "order": 13,
           "sourceBlocker": "M4-E:mcp-cli-benchmark-evidence",
           "recommendedFocus": "Presentation, branded export, and advanced docs lacks executable MCP/CLI benchmark evidence."
         },
         {
-          "order": 22,
+          "order": 14,
           "sourceBlocker": "M4-E:ui-cmdk-equivalence-evidence",
           "recommendedFocus": "Presentation, branded export, and advanced docs lacks UI/Cmd+K executable or validated replay evidence; activator-only mappings are excluded."
         },
         {
-          "order": 23,
+          "order": 15,
           "sourceBlocker": "M4-E:quality-export-semantic-evidence",
           "recommendedFocus": "Presentation, branded export, and advanced docs lacks accepted advisor, visual, export, or semantic-diff evidence."
         }
@@ -13708,9 +13783,9 @@
           "Done": 1
         },
         "gatesExpected": 33,
-        "gatesPassed": 10,
-        "blockerCount": 23,
-        "nextWaveItemCount": 23
+        "gatesPassed": 18,
+        "blockerCount": 15,
+        "nextWaveItemCount": 15
       }
     }
   },
@@ -13739,6 +13814,29 @@
       "evidenceExpectations": [],
       "evidenceArtifactPaths": [],
       "commandTypes": [],
+      "toolMarkers": [],
+      "evidenceSignals": [],
+      "uiEquivalentStatus": "unknown",
+      "uiEquivalentTodo": "",
+      "liveEvidence": false
+    },
+    {
+      "id": "mep-lite",
+      "dir": "spec/benchmarks/mep-lite",
+      "expectedSemantics": "spec/benchmarks/mep-lite/expected-semantics.json",
+      "commandBundle": "spec/benchmarks/mep-lite/mcp-cli-command-bundle.json",
+      "pathStatus": [],
+      "evidenceExpectations": [],
+      "evidenceArtifactPaths": [],
+      "commandTypes": [
+        "createCableTray",
+        "createDuct",
+        "createFixture",
+        "createMepEquipment",
+        "createMepOpeningRequest",
+        "createMepTerminal",
+        "createPipe"
+      ],
       "toolMarkers": [],
       "evidenceSignals": [],
       "uiEquivalentStatus": "unknown",
@@ -16140,10 +16238,10 @@
       "uiCompletionKind": "interactive-gesture",
       "cmdkEntries": ["tool.beam", "tool.beam-system"],
       "cmdkExecutionKind": ["activates-tool"],
-      "agentSurface": ["apply-bundle"],
-      "agentCompletionKind": "raw-command",
+      "agentSurface": ["structure.beam"],
+      "agentCompletionKind": "typed-tool",
       "contextRequirements": ["level", "material"],
-      "agentContextSubstitute": "explicit raw command payload",
+      "agentContextSubstitute": "descriptor input schema",
       "readQuerySupport": "partial",
       "dryRunSupport": "raw-command dry-run",
       "commitSupport": "commands/bundle",
@@ -16153,14 +16251,8 @@
       "status": "Usable",
       "ownerSpecLink": "spec/ui-mcp-parity-tracker.md#milestone-1-workstreams",
       "source": "app/bim_ai/commands.py:2204",
-      "parserNotes": ["No first-class descriptor matched by registry metadata or heuristic."],
-      "m3Promotion": {
-        "category": "expert-raw",
-        "promotionPriority": "P2",
-        "m3Workstream": "post-M3 expert/raw backlog",
-        "gateDisposition": "intentional-raw",
-        "rationale": "Specialized authoring surface outside the M3 first-class product packs; keep reachable for expert bundles and revisit with workflow evidence."
-      }
+      "parserNotes": [],
+      "m3Promotion": null
     },
     {
       "capabilityId": "kernel.general.createCableTray",
@@ -16171,10 +16263,10 @@
       "uiCompletionKind": "interactive-gesture",
       "cmdkEntries": ["tool.cable-tray"],
       "cmdkExecutionKind": ["activates-tool"],
-      "agentSurface": ["apply-bundle"],
-      "agentCompletionKind": "raw-command",
+      "agentSurface": ["mep.cable_tray"],
+      "agentCompletionKind": "typed-tool",
       "contextRequirements": ["level"],
-      "agentContextSubstitute": "explicit raw command payload",
+      "agentContextSubstitute": "descriptor input schema",
       "readQuerySupport": "partial",
       "dryRunSupport": "raw-command dry-run",
       "commitSupport": "commands/bundle",
@@ -16184,14 +16276,8 @@
       "status": "Usable",
       "ownerSpecLink": "spec/ui-mcp-parity-tracker.md#milestone-1-workstreams",
       "source": "app/bim_ai/commands.py:3589",
-      "parserNotes": ["No first-class descriptor matched by registry metadata or heuristic."],
-      "m3Promotion": {
-        "category": "expert-raw",
-        "promotionPriority": "P2",
-        "m3Workstream": "post-M3 expert/raw backlog",
-        "gateDisposition": "intentional-raw",
-        "rationale": "Specialized authoring surface outside the M3 first-class product packs; keep reachable for expert bundles and revisit with workflow evidence."
-      }
+      "parserNotes": [],
+      "m3Promotion": null
     },
     {
       "capabilityId": "kernel.general.createCallout",
@@ -16335,10 +16421,10 @@
       "uiCompletionKind": "interactive-gesture",
       "cmdkEntries": ["tool.column", "tool.column-at-grids"],
       "cmdkExecutionKind": ["activates-tool"],
-      "agentSurface": ["apply-bundle"],
-      "agentCompletionKind": "raw-command",
+      "agentSurface": ["structure.column"],
+      "agentCompletionKind": "typed-tool",
       "contextRequirements": ["level", "material"],
-      "agentContextSubstitute": "explicit raw command payload",
+      "agentContextSubstitute": "descriptor input schema",
       "readQuerySupport": "partial",
       "dryRunSupport": "raw-command dry-run",
       "commitSupport": "commands/bundle",
@@ -16348,14 +16434,8 @@
       "status": "Usable",
       "ownerSpecLink": "spec/ui-mcp-parity-tracker.md#milestone-1-workstreams",
       "source": "app/bim_ai/commands.py:2188",
-      "parserNotes": ["No first-class descriptor matched by registry metadata or heuristic."],
-      "m3Promotion": {
-        "category": "expert-raw",
-        "promotionPriority": "P2",
-        "m3Workstream": "post-M3 expert/raw backlog",
-        "gateDisposition": "intentional-raw",
-        "rationale": "Specialized authoring surface outside the M3 first-class product packs; keep reachable for expert bundles and revisit with workflow evidence."
-      }
+      "parserNotes": [],
+      "m3Promotion": null
     },
     {
       "capabilityId": "kernel.general.createConstraint",
@@ -16936,10 +17016,10 @@
       "uiCompletionKind": "interactive-gesture",
       "cmdkEntries": ["tool.project-base-point"],
       "cmdkExecutionKind": ["activates-tool"],
-      "agentSurface": ["seed-dsl"],
-      "agentCompletionKind": "semantic-macro",
+      "agentSurface": ["site.project-base-point-create", "site.setup-georeference"],
+      "agentCompletionKind": "typed-tool",
       "contextRequirements": ["unknown"],
-      "agentContextSubstitute": "seed recipe inputs",
+      "agentContextSubstitute": "descriptor input schema",
       "readQuerySupport": "partial",
       "dryRunSupport": "raw-command dry-run",
       "commitSupport": "commands/bundle",
@@ -16949,7 +17029,7 @@
       "status": "Usable",
       "ownerSpecLink": "spec/ui-mcp-parity-tracker.md#milestone-1-workstreams",
       "source": "app/bim_ai/commands.py:1493",
-      "parserNotes": ["No first-class descriptor matched by registry metadata or heuristic."],
+      "parserNotes": [],
       "m3Promotion": null
     },
     {
@@ -16961,10 +17041,10 @@
       "uiCompletionKind": "interactive-gesture",
       "cmdkEntries": ["tool.model-line", "tool.property-line"],
       "cmdkExecutionKind": ["activates-tool"],
-      "agentSurface": ["apply-bundle"],
-      "agentCompletionKind": "raw-command",
+      "agentSurface": ["site.property-line-create"],
+      "agentCompletionKind": "typed-tool",
       "contextRequirements": ["unknown"],
-      "agentContextSubstitute": "explicit raw command payload",
+      "agentContextSubstitute": "descriptor input schema",
       "readQuerySupport": "partial",
       "dryRunSupport": "raw-command dry-run",
       "commitSupport": "commands/bundle",
@@ -16974,14 +17054,8 @@
       "status": "Usable",
       "ownerSpecLink": "spec/ui-mcp-parity-tracker.md#milestone-1-workstreams",
       "source": "app/bim_ai/commands.py:1901",
-      "parserNotes": ["No first-class descriptor matched by registry metadata or heuristic."],
-      "m3Promotion": {
-        "category": "expert-raw",
-        "promotionPriority": "P2",
-        "m3Workstream": "M3-D transaction/audit hardening",
-        "gateDisposition": "intentional-raw",
-        "rationale": "Low-level edit/control primitive; leave raw for expert bundles while transaction, undo, and audit semantics are hardened."
-      }
+      "parserNotes": [],
+      "m3Promotion": null
     },
     {
       "capabilityId": "kernel.general.createReferencePlane",
@@ -17215,10 +17289,10 @@
       "uiCompletionKind": "none",
       "cmdkEntries": [],
       "cmdkExecutionKind": ["none"],
-      "agentSurface": ["apply-bundle"],
-      "agentCompletionKind": "raw-command",
+      "agentSurface": ["site.setup-georeference", "site.sun-settings-create"],
+      "agentCompletionKind": "typed-tool",
       "contextRequirements": ["unknown"],
-      "agentContextSubstitute": "explicit raw command payload",
+      "agentContextSubstitute": "descriptor input schema",
       "readQuerySupport": "partial",
       "dryRunSupport": "raw-command dry-run",
       "commitSupport": "commands/bundle",
@@ -17228,17 +17302,8 @@
       "status": "Agent-only",
       "ownerSpecLink": "spec/ui-mcp-parity-tracker.md#milestone-1-workstreams",
       "source": "app/bim_ai/commands.py:1543",
-      "parserNotes": [
-        "No first-class descriptor matched by registry metadata or heuristic.",
-        "No Cmd+K entry matched by direct command type or tool-name heuristic."
-      ],
-      "m3Promotion": {
-        "category": "expert-raw",
-        "promotionPriority": "P2",
-        "m3Workstream": "M3-D transaction/audit hardening",
-        "gateDisposition": "intentional-raw",
-        "rationale": "Low-level edit/control primitive; leave raw for expert bundles while transaction, undo, and audit semantics are hardened."
-      }
+      "parserNotes": ["No Cmd+K entry matched by direct command type or tool-name heuristic."],
+      "m3Promotion": null
     },
     {
       "capabilityId": "kernel.general.createSurveyPoint",
@@ -17249,10 +17314,10 @@
       "uiCompletionKind": "none",
       "cmdkEntries": [],
       "cmdkExecutionKind": ["none"],
-      "agentSurface": ["apply-bundle"],
-      "agentCompletionKind": "raw-command",
+      "agentSurface": ["site.setup-georeference", "site.survey-point-create"],
+      "agentCompletionKind": "typed-tool",
       "contextRequirements": ["unknown"],
-      "agentContextSubstitute": "explicit raw command payload",
+      "agentContextSubstitute": "descriptor input schema",
       "readQuerySupport": "partial",
       "dryRunSupport": "raw-command dry-run",
       "commitSupport": "commands/bundle",
@@ -17262,17 +17327,8 @@
       "status": "Agent-only",
       "ownerSpecLink": "spec/ui-mcp-parity-tracker.md#milestone-1-workstreams",
       "source": "app/bim_ai/commands.py:1520",
-      "parserNotes": [
-        "No first-class descriptor matched by registry metadata or heuristic.",
-        "No Cmd+K entry matched by direct command type or tool-name heuristic."
-      ],
-      "m3Promotion": {
-        "category": "expert-raw",
-        "promotionPriority": "P2",
-        "m3Workstream": "M3-D transaction/audit hardening",
-        "gateDisposition": "intentional-raw",
-        "rationale": "Low-level edit/control primitive; leave raw for expert bundles while transaction, undo, and audit semantics are hardened."
-      }
+      "parserNotes": ["No Cmd+K entry matched by direct command type or tool-name heuristic."],
+      "m3Promotion": null
     },
     {
       "capabilityId": "kernel.general.createSweep",
@@ -18876,10 +18932,10 @@
       "uiCompletionKind": "interactive-gesture",
       "cmdkEntries": ["tool.column", "tool.column-at-grids"],
       "cmdkExecutionKind": ["activates-tool"],
-      "agentSurface": ["apply-bundle"],
-      "agentCompletionKind": "raw-command",
+      "agentSurface": ["structure.column_update"],
+      "agentCompletionKind": "typed-tool",
       "contextRequirements": ["unknown"],
-      "agentContextSubstitute": "explicit raw command payload",
+      "agentContextSubstitute": "descriptor input schema",
       "readQuerySupport": "partial",
       "dryRunSupport": "raw-command dry-run",
       "commitSupport": "commands/bundle",
@@ -18889,14 +18945,8 @@
       "status": "Usable",
       "ownerSpecLink": "spec/ui-mcp-parity-tracker.md#milestone-1-workstreams",
       "source": "app/bim_ai/commands.py:3063",
-      "parserNotes": ["No first-class descriptor matched by registry metadata or heuristic."],
-      "m3Promotion": {
-        "category": "expert-raw",
-        "promotionPriority": "P2",
-        "m3Workstream": "M3-D transaction/audit hardening",
-        "gateDisposition": "intentional-raw",
-        "rationale": "Low-level edit/control primitive; leave raw for expert bundles while transaction, undo, and audit semantics are hardened."
-      }
+      "parserNotes": [],
+      "m3Promotion": null
     },
     {
       "capabilityId": "kernel.general.updateElementProperty",
@@ -18936,10 +18986,10 @@
       "uiCompletionKind": "interactive-gesture",
       "cmdkEntries": ["tool.graded-region"],
       "cmdkExecutionKind": ["activates-tool"],
-      "agentSurface": ["apply-bundle"],
-      "agentCompletionKind": "raw-command",
+      "agentSurface": ["site.graded-region-update"],
+      "agentCompletionKind": "typed-tool",
       "contextRequirements": ["unknown"],
-      "agentContextSubstitute": "explicit raw command payload",
+      "agentContextSubstitute": "descriptor input schema",
       "readQuerySupport": "partial",
       "dryRunSupport": "raw-command dry-run",
       "commitSupport": "commands/bundle",
@@ -18949,14 +18999,8 @@
       "status": "Usable",
       "ownerSpecLink": "spec/ui-mcp-parity-tracker.md#milestone-1-workstreams",
       "source": "app/bim_ai/commands.py:2802",
-      "parserNotes": ["No first-class descriptor matched by registry metadata or heuristic."],
-      "m3Promotion": {
-        "category": "promote-first-class",
-        "promotionPriority": "P1",
-        "m3Workstream": "M3-A sketch-to-BIM productization",
-        "gateDisposition": "tracked-promotion",
-        "rationale": "Sketch/site workflow command with user-visible lifecycle semantics that should not rely on opaque bundle payloads."
-      }
+      "parserNotes": [],
+      "m3Promotion": null
     },
     {
       "capabilityId": "kernel.general.updateMaskingRegion",
@@ -19472,10 +19516,10 @@
       "uiCompletionKind": "interactive-gesture",
       "cmdkEntries": ["tool.duct"],
       "cmdkExecutionKind": ["activates-tool"],
-      "agentSurface": ["apply-bundle"],
-      "agentCompletionKind": "raw-command",
+      "agentSurface": ["mep.duct_route"],
+      "agentCompletionKind": "typed-tool",
       "contextRequirements": ["level"],
-      "agentContextSubstitute": "explicit raw command payload",
+      "agentContextSubstitute": "descriptor input schema",
       "readQuerySupport": "partial",
       "dryRunSupport": "raw-command dry-run",
       "commitSupport": "commands/bundle",
@@ -19485,14 +19529,8 @@
       "status": "Usable",
       "ownerSpecLink": "spec/ui-mcp-parity-tracker.md#milestone-1-workstreams",
       "source": "app/bim_ai/commands.py:3537",
-      "parserNotes": ["No first-class descriptor matched by registry metadata or heuristic."],
-      "m3Promotion": {
-        "category": "promote-first-class",
-        "promotionPriority": "P1",
-        "m3Workstream": "M3-C benchmark parity expansion",
-        "gateDisposition": "tracked-promotion",
-        "rationale": "Domain authoring command is user-visible and should be promoted when its workflow enters the product pack."
-      }
+      "parserNotes": [],
+      "m3Promotion": null
     },
     {
       "capabilityId": "kernel.mep.createDuctLegend",
@@ -19534,10 +19572,10 @@
       "uiCompletionKind": "interactive-gesture",
       "cmdkEntries": ["tool.fixture"],
       "cmdkExecutionKind": ["activates-tool"],
-      "agentSurface": ["apply-bundle"],
-      "agentCompletionKind": "raw-command",
+      "agentSurface": ["mep.fixture"],
+      "agentCompletionKind": "typed-tool",
       "contextRequirements": ["level"],
-      "agentContextSubstitute": "explicit raw command payload",
+      "agentContextSubstitute": "descriptor input schema",
       "readQuerySupport": "partial",
       "dryRunSupport": "raw-command dry-run",
       "commitSupport": "commands/bundle",
@@ -19547,14 +19585,8 @@
       "status": "Usable",
       "ownerSpecLink": "spec/ui-mcp-parity-tracker.md#milestone-1-workstreams",
       "source": "app/bim_ai/commands.py:3628",
-      "parserNotes": ["No first-class descriptor matched by registry metadata or heuristic."],
-      "m3Promotion": {
-        "category": "promote-first-class",
-        "promotionPriority": "P1",
-        "m3Workstream": "M3-C benchmark parity expansion",
-        "gateDisposition": "tracked-promotion",
-        "rationale": "Domain authoring command is user-visible and should be promoted when its workflow enters the product pack."
-      }
+      "parserNotes": [],
+      "m3Promotion": null
     },
     {
       "capabilityId": "kernel.mep.createMepEquipment",
@@ -19565,10 +19597,10 @@
       "uiCompletionKind": "interactive-gesture",
       "cmdkEntries": ["tool.mep-equipment"],
       "cmdkExecutionKind": ["activates-tool"],
-      "agentSurface": ["apply-bundle"],
-      "agentCompletionKind": "raw-command",
+      "agentSurface": ["mep.equipment"],
+      "agentCompletionKind": "typed-tool",
       "contextRequirements": ["level", "family type"],
-      "agentContextSubstitute": "explicit raw command payload",
+      "agentContextSubstitute": "descriptor input schema",
       "readQuerySupport": "partial",
       "dryRunSupport": "raw-command dry-run",
       "commitSupport": "commands/bundle",
@@ -19578,14 +19610,8 @@
       "status": "Usable",
       "ownerSpecLink": "spec/ui-mcp-parity-tracker.md#milestone-1-workstreams",
       "source": "app/bim_ai/commands.py:3609",
-      "parserNotes": ["No first-class descriptor matched by registry metadata or heuristic."],
-      "m3Promotion": {
-        "category": "promote-first-class",
-        "promotionPriority": "P1",
-        "m3Workstream": "M3-C benchmark parity expansion",
-        "gateDisposition": "tracked-promotion",
-        "rationale": "Domain authoring command is user-visible and should be promoted when its workflow enters the product pack."
-      }
+      "parserNotes": [],
+      "m3Promotion": null
     },
     {
       "capabilityId": "kernel.mep.createMepTerminal",
@@ -19596,10 +19622,10 @@
       "uiCompletionKind": "interactive-gesture",
       "cmdkEntries": ["tool.mep-terminal"],
       "cmdkExecutionKind": ["activates-tool"],
-      "agentSurface": ["apply-bundle"],
-      "agentCompletionKind": "raw-command",
+      "agentSurface": ["mep.terminal"],
+      "agentCompletionKind": "typed-tool",
       "contextRequirements": ["level"],
-      "agentContextSubstitute": "explicit raw command payload",
+      "agentContextSubstitute": "descriptor input schema",
       "readQuerySupport": "partial",
       "dryRunSupport": "raw-command dry-run",
       "commitSupport": "commands/bundle",
@@ -19609,14 +19635,8 @@
       "status": "Usable",
       "ownerSpecLink": "spec/ui-mcp-parity-tracker.md#milestone-1-workstreams",
       "source": "app/bim_ai/commands.py:3643",
-      "parserNotes": ["No first-class descriptor matched by registry metadata or heuristic."],
-      "m3Promotion": {
-        "category": "promote-first-class",
-        "promotionPriority": "P1",
-        "m3Workstream": "M3-C benchmark parity expansion",
-        "gateDisposition": "tracked-promotion",
-        "rationale": "Domain authoring command is user-visible and should be promoted when its workflow enters the product pack."
-      }
+      "parserNotes": [],
+      "m3Promotion": null
     },
     {
       "capabilityId": "kernel.mep.createPipe",
@@ -19627,10 +19647,10 @@
       "uiCompletionKind": "interactive-gesture",
       "cmdkEntries": ["tool.pipe"],
       "cmdkExecutionKind": ["activates-tool"],
-      "agentSurface": ["apply-bundle"],
-      "agentCompletionKind": "raw-command",
+      "agentSurface": ["mep.pipe_route"],
+      "agentCompletionKind": "typed-tool",
       "contextRequirements": ["level", "material"],
-      "agentContextSubstitute": "explicit raw command payload",
+      "agentContextSubstitute": "descriptor input schema",
       "readQuerySupport": "partial",
       "dryRunSupport": "raw-command dry-run",
       "commitSupport": "commands/bundle",
@@ -19640,14 +19660,8 @@
       "status": "Usable",
       "ownerSpecLink": "spec/ui-mcp-parity-tracker.md#milestone-1-workstreams",
       "source": "app/bim_ai/commands.py:3494",
-      "parserNotes": ["No first-class descriptor matched by registry metadata or heuristic."],
-      "m3Promotion": {
-        "category": "promote-first-class",
-        "promotionPriority": "P1",
-        "m3Workstream": "M3-C benchmark parity expansion",
-        "gateDisposition": "tracked-promotion",
-        "rationale": "Domain authoring command is user-visible and should be promoted when its workflow enters the product pack."
-      }
+      "parserNotes": [],
+      "m3Promotion": null
     },
     {
       "capabilityId": "kernel.mep.createPipeLegend",
@@ -19757,10 +19771,10 @@
       "uiCompletionKind": "interactive-gesture",
       "cmdkEntries": ["tool.mep-opening-request"],
       "cmdkExecutionKind": ["activates-tool"],
-      "agentSurface": ["apply-bundle"],
-      "agentCompletionKind": "raw-command",
+      "agentSurface": ["mep.opening_request"],
+      "agentCompletionKind": "typed-tool",
       "contextRequirements": ["level", "element id"],
-      "agentContextSubstitute": "explicit raw command payload",
+      "agentContextSubstitute": "descriptor input schema",
       "readQuerySupport": "partial",
       "dryRunSupport": "raw-command dry-run",
       "commitSupport": "commands/bundle",
@@ -19770,14 +19784,8 @@
       "status": "Usable",
       "ownerSpecLink": "spec/ui-mcp-parity-tracker.md#milestone-1-workstreams",
       "source": "app/bim_ai/commands.py:3663",
-      "parserNotes": ["No first-class descriptor matched by registry metadata or heuristic."],
-      "m3Promotion": {
-        "category": "promote-first-class",
-        "promotionPriority": "P0",
-        "m3Workstream": "M3-E parity governance",
-        "gateDisposition": "tracked-promotion",
-        "rationale": "High-value authoring, documentation, review, or benchmark workflow command; agents need semantic inputs and stable typed descriptors."
-      }
+      "parserNotes": [],
+      "m3Promotion": null
     },
     {
       "capabilityId": "kernel.opening.createRoofOpening",
@@ -20115,10 +20123,10 @@
       "uiCompletionKind": "none",
       "cmdkEntries": [],
       "cmdkExecutionKind": ["none"],
-      "agentSurface": ["apply-bundle"],
-      "agentCompletionKind": "raw-command",
+      "agentSurface": ["construction.logistics"],
+      "agentCompletionKind": "typed-tool",
       "contextRequirements": ["unknown"],
-      "agentContextSubstitute": "explicit raw command payload",
+      "agentContextSubstitute": "descriptor input schema",
       "readQuerySupport": "partial",
       "dryRunSupport": "raw-command dry-run",
       "commitSupport": "commands/bundle",
@@ -20128,17 +20136,8 @@
       "status": "Agent-only",
       "ownerSpecLink": "spec/ui-mcp-parity-tracker.md#milestone-1-workstreams",
       "source": "app/bim_ai/commands.py:2435",
-      "parserNotes": [
-        "No first-class descriptor matched by registry metadata or heuristic.",
-        "No Cmd+K entry matched by direct command type or tool-name heuristic."
-      ],
-      "m3Promotion": {
-        "category": "promote-first-class",
-        "promotionPriority": "P1",
-        "m3Workstream": "M3-C benchmark parity expansion",
-        "gateDisposition": "tracked-promotion",
-        "rationale": "High-value authoring, documentation, review, or benchmark workflow command; agents need semantic inputs and stable typed descriptors."
-      }
+      "parserNotes": ["No Cmd+K entry matched by direct command type or tool-name heuristic."],
+      "m3Promotion": null
     },
     {
       "capabilityId": "kernel.qa-review.createConstructionPackage",
@@ -20149,10 +20148,10 @@
       "uiCompletionKind": "none",
       "cmdkEntries": [],
       "cmdkExecutionKind": ["none"],
-      "agentSurface": ["apply-bundle"],
-      "agentCompletionKind": "raw-command",
+      "agentSurface": ["construction.package"],
+      "agentCompletionKind": "typed-tool",
       "contextRequirements": ["unknown"],
-      "agentContextSubstitute": "explicit raw command payload",
+      "agentContextSubstitute": "descriptor input schema",
       "readQuerySupport": "partial",
       "dryRunSupport": "raw-command dry-run",
       "commitSupport": "commands/bundle",
@@ -20162,17 +20161,8 @@
       "status": "Agent-only",
       "ownerSpecLink": "spec/ui-mcp-parity-tracker.md#milestone-1-workstreams",
       "source": "app/bim_ai/commands.py:2420",
-      "parserNotes": [
-        "No first-class descriptor matched by registry metadata or heuristic.",
-        "No Cmd+K entry matched by direct command type or tool-name heuristic."
-      ],
-      "m3Promotion": {
-        "category": "promote-first-class",
-        "promotionPriority": "P1",
-        "m3Workstream": "M3-C benchmark parity expansion",
-        "gateDisposition": "tracked-promotion",
-        "rationale": "High-value authoring, documentation, review, or benchmark workflow command; agents need semantic inputs and stable typed descriptors."
-      }
+      "parserNotes": ["No Cmd+K entry matched by direct command type or tool-name heuristic."],
+      "m3Promotion": null
     },
     {
       "capabilityId": "kernel.qa-review.createIssueFromViolation",
@@ -20344,10 +20334,10 @@
       "uiCompletionKind": "none",
       "cmdkEntries": [],
       "cmdkExecutionKind": ["none"],
-      "agentSurface": ["apply-bundle"],
-      "agentCompletionKind": "raw-command",
+      "agentSurface": ["construction.qa_checklist"],
+      "agentCompletionKind": "typed-tool",
       "contextRequirements": ["element id"],
-      "agentContextSubstitute": "explicit raw command payload",
+      "agentContextSubstitute": "descriptor input schema",
       "readQuerySupport": "partial",
       "dryRunSupport": "raw-command dry-run",
       "commitSupport": "commands/bundle",
@@ -20357,17 +20347,8 @@
       "status": "Agent-only",
       "ownerSpecLink": "spec/ui-mcp-parity-tracker.md#milestone-1-workstreams",
       "source": "app/bim_ai/commands.py:2451",
-      "parserNotes": [
-        "No first-class descriptor matched by registry metadata or heuristic.",
-        "No Cmd+K entry matched by direct command type or tool-name heuristic."
-      ],
-      "m3Promotion": {
-        "category": "promote-first-class",
-        "promotionPriority": "P1",
-        "m3Workstream": "M3-C benchmark parity expansion",
-        "gateDisposition": "tracked-promotion",
-        "rationale": "High-value authoring, documentation, review, or benchmark workflow command; agents need semantic inputs and stable typed descriptors."
-      }
+      "parserNotes": ["No Cmd+K entry matched by direct command type or tool-name heuristic."],
+      "m3Promotion": null
     },
     {
       "capabilityId": "kernel.qa-review.upsertValidationRule",
@@ -21255,7 +21236,7 @@
       "uiCompletionKind": "interactive-gesture",
       "cmdkEntries": ["tool.toposolid_subdivision"],
       "cmdkExecutionKind": ["activates-tool"],
-      "agentSurface": ["toposolid-create"],
+      "agentSurface": ["site.setup-georeference", "toposolid-create"],
       "agentCompletionKind": "typed-tool",
       "contextRequirements": ["material"],
       "agentContextSubstitute": "descriptor input schema",
@@ -21280,10 +21261,10 @@
       "uiCompletionKind": "interactive-gesture",
       "cmdkEntries": ["tool.excavation"],
       "cmdkExecutionKind": ["activates-tool"],
-      "agentSurface": ["seed-dsl"],
-      "agentCompletionKind": "semantic-macro",
+      "agentSurface": ["site.toposolid-excavation-create"],
+      "agentCompletionKind": "typed-tool",
       "contextRequirements": ["element id"],
-      "agentContextSubstitute": "seed recipe inputs",
+      "agentContextSubstitute": "descriptor input schema",
       "readQuerySupport": "partial",
       "dryRunSupport": "raw-command dry-run",
       "commitSupport": "commands/bundle",
@@ -21293,7 +21274,7 @@
       "status": "Usable",
       "ownerSpecLink": "spec/ui-mcp-parity-tracker.md#milestone-1-workstreams",
       "source": "app/bim_ai/commands.py:2831",
-      "parserNotes": ["No first-class descriptor matched by registry metadata or heuristic."],
+      "parserNotes": [],
       "m3Promotion": null
     },
     {
@@ -21392,10 +21373,10 @@
       "uiCompletionKind": "interactive-gesture",
       "cmdkEntries": ["tool.toposolid_subdivision"],
       "cmdkExecutionKind": ["activates-tool"],
-      "agentSurface": ["apply-bundle"],
-      "agentCompletionKind": "raw-command",
+      "agentSurface": ["site.toposolid-subdivision-update"],
+      "agentCompletionKind": "typed-tool",
       "contextRequirements": ["material"],
-      "agentContextSubstitute": "explicit raw command payload",
+      "agentContextSubstitute": "descriptor input schema",
       "readQuerySupport": "partial",
       "dryRunSupport": "raw-command dry-run",
       "commitSupport": "commands/bundle",
@@ -21405,14 +21386,8 @@
       "status": "Usable",
       "ownerSpecLink": "spec/ui-mcp-parity-tracker.md#milestone-1-workstreams",
       "source": "app/bim_ai/commands.py:2759",
-      "parserNotes": ["No first-class descriptor matched by registry metadata or heuristic."],
-      "m3Promotion": {
-        "category": "promote-first-class",
-        "promotionPriority": "P1",
-        "m3Workstream": "M3-A sketch-to-BIM productization",
-        "gateDisposition": "tracked-promotion",
-        "rationale": "Sketch/site workflow command with user-visible lifecycle semantics that should not rely on opaque bundle payloads."
-      }
+      "parserNotes": [],
+      "m3Promotion": null
     },
     {
       "capabilityId": "kernel.site.UpdateToposolid",
@@ -21479,10 +21454,10 @@
       "uiCompletionKind": "none",
       "cmdkEntries": [],
       "cmdkExecutionKind": ["none"],
-      "agentSurface": ["apply-bundle"],
-      "agentCompletionKind": "raw-command",
+      "agentSurface": ["site.setup-georeference"],
+      "agentCompletionKind": "typed-tool",
       "contextRequirements": ["level"],
-      "agentContextSubstitute": "explicit raw command payload",
+      "agentContextSubstitute": "descriptor input schema",
       "readQuerySupport": "partial",
       "dryRunSupport": "raw-command dry-run",
       "commitSupport": "commands/bundle",
@@ -21492,17 +21467,8 @@
       "status": "Agent-only",
       "ownerSpecLink": "spec/ui-mcp-parity-tracker.md#milestone-1-workstreams",
       "source": "app/bim_ai/commands.py:1422",
-      "parserNotes": [
-        "No first-class descriptor matched by registry metadata or heuristic.",
-        "No Cmd+K entry matched by direct command type or tool-name heuristic."
-      ],
-      "m3Promotion": {
-        "category": "promote-first-class",
-        "promotionPriority": "P1",
-        "m3Workstream": "M3-A sketch-to-BIM productization",
-        "gateDisposition": "tracked-promotion",
-        "rationale": "Sketch/site workflow command with user-visible lifecycle semantics that should not rely on opaque bundle payloads."
-      }
+      "parserNotes": ["No Cmd+K entry matched by direct command type or tool-name heuristic."],
+      "m3Promotion": null
     },
     {
       "capabilityId": "kernel.stair.createStair",
@@ -31122,7 +31088,7 @@
       "resourceGroups": ["asset", "asset-library", "kernel-command"],
       "uiFeatures": ["group:asset", "group:asset-library", "group:kernel-command"],
       "agentSafetyNotes": "Places an existing AssetLibraryEntry as a PlacedAssetElem.",
-      "source": "app/bim_ai/api/registry.py:3169",
+      "source": "app/bim_ai/api/registry.py:3477",
       "routeImplemented": true,
       "routeSource": "app/bim_ai/routes_api.py:2193",
       "toolKind": "typed-kernel-tool",
@@ -31150,7 +31116,7 @@
       "resourceGroups": ["asset-catalog", "asset-library"],
       "uiFeatures": ["group:asset-catalog", "group:asset-library"],
       "agentSafetyNotes": "Read-only catalog/library query. Empty result sets are valid evidence.",
-      "source": "app/bim_ai/api/registry.py:3145",
+      "source": "app/bim_ai/api/registry.py:3453",
       "routeImplemented": true,
       "routeSource": "app/bim_ai/routes_api.py:3763",
       "toolKind": "query",
@@ -31234,7 +31200,7 @@
       "resourceGroups": ["asset-catalog"],
       "uiFeatures": ["group:asset-catalog"],
       "agentSafetyNotes": "",
-      "source": "app/bim_ai/api/registry.py:2934",
+      "source": "app/bim_ai/api/registry.py:3242",
       "routeImplemented": true,
       "routeSource": "app/bim_ai/routes_api.py:3763",
       "toolKind": "query",
@@ -31290,7 +31256,7 @@
       "resourceGroups": ["kernel-command"],
       "uiFeatures": ["group:kernel-command"],
       "agentSafetyNotes": "",
-      "source": "app/bim_ai/api/registry.py:3716",
+      "source": "app/bim_ai/api/registry.py:4024",
       "routeImplemented": true,
       "routeSource": "app/bim_ai/routes_api.py:2193",
       "toolKind": "typed-kernel-tool",
@@ -31318,7 +31284,7 @@
       "resourceGroups": [],
       "uiFeatures": [],
       "agentSafetyNotes": "Safe to call any number of times. Same inputs → byte-identical output.",
-      "source": "app/bim_ai/api/registry.py:2890",
+      "source": "app/bim_ai/api/registry.py:3198",
       "routeImplemented": true,
       "routeSource": "app/bim_ai/routes_api.py:3065",
       "toolKind": "query",
@@ -31351,6 +31317,90 @@
       "routeSource": "app/bim_ai/routes_api.py:803",
       "toolKind": "query",
       "matchedBackendCommands": [],
+      "parserNotes": []
+    },
+    {
+      "id": "construction.logistics",
+      "stableId": "construction.logistics",
+      "category": "mutation",
+      "sideEffects": "mutates-kernel",
+      "mutability": "write",
+      "implementationStatus": "implemented",
+      "transport": "http",
+      "requiresBrowser": false,
+      "createsExternalAssets": false,
+      "exportsData": false,
+      "method": "POST",
+      "path": "/api/semantic-authoring/{surface_id}",
+      "inputSchema": "unknown",
+      "outputSchema": "unknown",
+      "cliExample": "unknown",
+      "exitCodes": [],
+      "kernelCommands": ["createConstructionLogistics"],
+      "resourceGroups": ["kernel-command"],
+      "uiFeatures": [],
+      "agentSafetyNotes": "Statically expanded from registry defaults for dynamic M4 registration.",
+      "source": "app/bim_ai/api/registry.py:dynamic-default:construction.logistics",
+      "routeImplemented": true,
+      "routeSource": "app/bim_ai/routes_api.py:1449",
+      "toolKind": "typed-kernel-tool",
+      "matchedBackendCommands": ["createConstructionLogistics"],
+      "parserNotes": []
+    },
+    {
+      "id": "construction.package",
+      "stableId": "construction.package",
+      "category": "mutation",
+      "sideEffects": "mutates-kernel",
+      "mutability": "write",
+      "implementationStatus": "implemented",
+      "transport": "http",
+      "requiresBrowser": false,
+      "createsExternalAssets": false,
+      "exportsData": false,
+      "method": "POST",
+      "path": "/api/semantic-authoring/{surface_id}",
+      "inputSchema": "unknown",
+      "outputSchema": "unknown",
+      "cliExample": "unknown",
+      "exitCodes": [],
+      "kernelCommands": ["createConstructionPackage"],
+      "resourceGroups": ["kernel-command"],
+      "uiFeatures": [],
+      "agentSafetyNotes": "Statically expanded from registry defaults for dynamic M4 registration.",
+      "source": "app/bim_ai/api/registry.py:dynamic-default:construction.package",
+      "routeImplemented": true,
+      "routeSource": "app/bim_ai/routes_api.py:1449",
+      "toolKind": "typed-kernel-tool",
+      "matchedBackendCommands": ["createConstructionPackage"],
+      "parserNotes": []
+    },
+    {
+      "id": "construction.qa_checklist",
+      "stableId": "construction.qa_checklist",
+      "category": "mutation",
+      "sideEffects": "mutates-kernel",
+      "mutability": "write",
+      "implementationStatus": "implemented",
+      "transport": "http",
+      "requiresBrowser": false,
+      "createsExternalAssets": false,
+      "exportsData": false,
+      "method": "POST",
+      "path": "/api/semantic-authoring/{surface_id}",
+      "inputSchema": "unknown",
+      "outputSchema": "unknown",
+      "cliExample": "unknown",
+      "exitCodes": [],
+      "kernelCommands": ["upsertConstructionQaChecklist"],
+      "resourceGroups": ["kernel-command"],
+      "uiFeatures": [],
+      "agentSafetyNotes": "Statically expanded from registry defaults for dynamic M4 registration.",
+      "source": "app/bim_ai/api/registry.py:dynamic-default:construction.qa_checklist",
+      "routeImplemented": true,
+      "routeSource": "app/bim_ai/routes_api.py:1449",
+      "toolKind": "typed-kernel-tool",
+      "matchedBackendCommands": ["upsertConstructionQaChecklist"],
       "parserNotes": []
     },
     {
@@ -31402,7 +31452,7 @@
       "resourceGroups": ["kernel-command"],
       "uiFeatures": ["group:kernel-command"],
       "agentSafetyNotes": "Wrap in a CommandBundle with type=",
-      "source": "app/bim_ai/api/registry.py:3955",
+      "source": "app/bim_ai/api/registry.py:4263",
       "routeImplemented": true,
       "routeSource": "app/bim_ai/routes_api.py:2193",
       "toolKind": "typed-kernel-tool",
@@ -31430,7 +31480,7 @@
       "resourceGroups": ["kernel-command"],
       "uiFeatures": ["group:kernel-command"],
       "agentSafetyNotes": "Requires a valid presentationCanvasId; canvas must exist before adding frames.",
-      "source": "app/bim_ai/api/registry.py:3831",
+      "source": "app/bim_ai/api/registry.py:4139",
       "routeImplemented": true,
       "routeSource": "app/bim_ai/routes_api.py:2193",
       "toolKind": "typed-kernel-tool",
@@ -31514,7 +31564,7 @@
       "resourceGroups": ["kernel-command"],
       "uiFeatures": ["group:kernel-command"],
       "agentSafetyNotes": "",
-      "source": "app/bim_ai/api/registry.py:3400",
+      "source": "app/bim_ai/api/registry.py:3708",
       "routeImplemented": true,
       "routeSource": "app/bim_ai/routes_api.py:2193",
       "toolKind": "typed-kernel-tool",
@@ -31542,7 +31592,7 @@
       "resourceGroups": ["decal", "material", "kernel-command"],
       "uiFeatures": ["group:decal", "group:material", "group:kernel-command"],
       "agentSafetyNotes": "Creates a DecalElem hosted on an existing parent element surface.",
-      "source": "app/bim_ai/api/registry.py:3314",
+      "source": "app/bim_ai/api/registry.py:3622",
       "routeImplemented": true,
       "routeSource": "app/bim_ai/routes_api.py:2193",
       "toolKind": "typed-kernel-tool",
@@ -31570,7 +31620,7 @@
       "resourceGroups": ["image-underlay", "sketch-to-bim", "kernel-command"],
       "uiFeatures": ["group:image-underlay", "group:sketch-to-bim", "group:kernel-command"],
       "agentSafetyNotes": "",
-      "source": "app/bim_ai/api/registry.py:3673",
+      "source": "app/bim_ai/api/registry.py:3981",
       "routeImplemented": true,
       "routeSource": "app/bim_ai/routes_api.py:2193",
       "toolKind": "typed-kernel-tool",
@@ -31638,7 +31688,7 @@
       "resourceGroups": ["kernel-command"],
       "uiFeatures": ["group:kernel-command"],
       "agentSafetyNotes": "",
-      "source": "app/bim_ai/api/registry.py:4154",
+      "source": "app/bim_ai/api/registry.py:4462",
       "routeImplemented": true,
       "routeSource": "app/bim_ai/routes_api.py:2193",
       "toolKind": "typed-kernel-tool",
@@ -31666,7 +31716,7 @@
       "resourceGroups": ["presentation", "export"],
       "uiFeatures": ["group:presentation", "group:export"],
       "agentSafetyNotes": "Read-only; safe to call freely.",
-      "source": "app/bim_ai/api/registry.py:4014",
+      "source": "app/bim_ai/api/registry.py:4322",
       "routeImplemented": true,
       "routeSource": "app/bim_ai/routes_exports.py:586",
       "toolKind": "query",
@@ -31698,7 +31748,7 @@
       "resourceGroups": ["presentation", "export"],
       "uiFeatures": ["group:presentation", "group:export"],
       "agentSafetyNotes": "Read-only export; safe to call at any time. Returns JSON bundle, not a binary .pptx file.",
-      "source": "app/bim_ai/api/registry.py:3891",
+      "source": "app/bim_ai/api/registry.py:4199",
       "routeImplemented": true,
       "routeSource": "app/bim_ai/routes_api.py:3868",
       "toolKind": "query",
@@ -31726,7 +31776,7 @@
       "resourceGroups": ["render", "export"],
       "uiFeatures": ["group:render", "group:export"],
       "agentSafetyNotes": "",
-      "source": "app/bim_ai/api/registry.py:4079",
+      "source": "app/bim_ai/api/registry.py:4387",
       "routeImplemented": true,
       "routeSource": "app/bim_ai/routes_api.py:3923",
       "toolKind": "typed-tool",
@@ -31866,7 +31916,7 @@
       "resourceGroups": ["audit"],
       "uiFeatures": ["group:audit"],
       "agentSafetyNotes": "",
-      "source": "app/bim_ai/api/registry.py:4512",
+      "source": "app/bim_ai/api/registry.py:4820",
       "routeImplemented": true,
       "routeSource": "app/bim_ai/routes_api.py:338",
       "toolKind": "query",
@@ -31894,7 +31944,7 @@
       "resourceGroups": ["family", "family-instance", "kernel-command"],
       "uiFeatures": ["group:family", "group:family-instance", "group:kernel-command"],
       "agentSafetyNotes": "",
-      "source": "app/bim_ai/api/registry.py:3104",
+      "source": "app/bim_ai/api/registry.py:3412",
       "routeImplemented": true,
       "routeSource": "app/bim_ai/routes_api.py:2193",
       "toolKind": "typed-kernel-tool",
@@ -31922,7 +31972,7 @@
       "resourceGroups": ["family", "family-type", "kernel-command"],
       "uiFeatures": ["group:family", "group:family-type", "group:kernel-command"],
       "agentSafetyNotes": "",
-      "source": "app/bim_ai/api/registry.py:3063",
+      "source": "app/bim_ai/api/registry.py:3371",
       "routeImplemented": true,
       "routeSource": "app/bim_ai/routes_api.py:2193",
       "toolKind": "typed-kernel-tool",
@@ -32006,7 +32056,7 @@
       "resourceGroups": ["image-underlay", "sketch-to-bim", "kernel-command"],
       "uiFeatures": ["group:image-underlay", "group:sketch-to-bim", "group:kernel-command"],
       "agentSafetyNotes": "",
-      "source": "app/bim_ai/api/registry.py:3472",
+      "source": "app/bim_ai/api/registry.py:3780",
       "routeImplemented": true,
       "routeSource": "app/bim_ai/routes_api.py:2193",
       "toolKind": "typed-kernel-tool",
@@ -32034,7 +32084,7 @@
       "resourceGroups": ["site", "context"],
       "uiFeatures": ["group:site", "group:context"],
       "agentSafetyNotes": "",
-      "source": "app/bim_ai/api/registry.py:3348",
+      "source": "app/bim_ai/api/registry.py:3656",
       "routeImplemented": true,
       "routeSource": "app/bim_ai/routes_api.py:3791",
       "toolKind": "typed-tool",
@@ -32062,7 +32112,7 @@
       "resourceGroups": ["concept-seed"],
       "uiFeatures": ["group:concept-seed"],
       "agentSafetyNotes": "Safe read-only query. T9 polls this endpoint to discover seeds ready for ingestion.",
-      "source": "app/bim_ai/api/registry.py:3794",
+      "source": "app/bim_ai/api/registry.py:4102",
       "routeImplemented": true,
       "routeSource": "app/bim_ai/routes_api.py:3837",
       "toolKind": "query",
@@ -32090,7 +32140,7 @@
       "resourceGroups": ["material", "kernel-command"],
       "uiFeatures": ["group:material", "group:kernel-command"],
       "agentSafetyNotes": "Sets materialKey on element kinds that support the property, currently including walls.",
-      "source": "app/bim_ai/api/registry.py:3261",
+      "source": "app/bim_ai/api/registry.py:3569",
       "routeImplemented": true,
       "routeSource": "app/bim_ai/routes_api.py:2193",
       "toolKind": "typed-kernel-tool",
@@ -32118,7 +32168,7 @@
       "resourceGroups": ["material", "paint", "kernel-command"],
       "uiFeatures": ["group:material", "group:paint", "group:kernel-command"],
       "agentSafetyNotes": "",
-      "source": "app/bim_ai/api/registry.py:3284",
+      "source": "app/bim_ai/api/registry.py:3592",
       "routeImplemented": true,
       "routeSource": "app/bim_ai/routes_api.py:2193",
       "toolKind": "typed-kernel-tool",
@@ -32146,7 +32196,7 @@
       "resourceGroups": ["material", "material-catalog"],
       "uiFeatures": ["group:material", "group:material-catalog"],
       "agentSafetyNotes": "",
-      "source": "app/bim_ai/api/registry.py:3201",
+      "source": "app/bim_ai/api/registry.py:3509",
       "routeImplemented": true,
       "routeSource": "app/bim_ai/routes_api.py:1113",
       "toolKind": "query",
@@ -32174,11 +32224,207 @@
       "resourceGroups": ["material", "pbr", "kernel-command"],
       "uiFeatures": ["group:material", "group:pbr", "group:kernel-command"],
       "agentSafetyNotes": "",
-      "source": "app/bim_ai/api/registry.py:3226",
+      "source": "app/bim_ai/api/registry.py:3534",
       "routeImplemented": true,
       "routeSource": "app/bim_ai/routes_api.py:2193",
       "toolKind": "typed-kernel-tool",
       "matchedBackendCommands": ["update_material_pbr"],
+      "parserNotes": []
+    },
+    {
+      "id": "mep.cable_tray",
+      "stableId": "mep.cable_tray",
+      "category": "mutation",
+      "sideEffects": "mutates-kernel",
+      "mutability": "write",
+      "implementationStatus": "implemented",
+      "transport": "http",
+      "requiresBrowser": false,
+      "createsExternalAssets": false,
+      "exportsData": false,
+      "method": "POST",
+      "path": "/api/semantic-authoring/{surface_id}",
+      "inputSchema": "unknown",
+      "outputSchema": "unknown",
+      "cliExample": "unknown",
+      "exitCodes": [],
+      "kernelCommands": ["createCableTray"],
+      "resourceGroups": ["kernel-command"],
+      "uiFeatures": [],
+      "agentSafetyNotes": "Statically expanded from registry defaults for dynamic M4 registration.",
+      "source": "app/bim_ai/api/registry.py:dynamic-default:mep.cable_tray",
+      "routeImplemented": true,
+      "routeSource": "app/bim_ai/routes_api.py:1449",
+      "toolKind": "typed-kernel-tool",
+      "matchedBackendCommands": ["createCableTray"],
+      "parserNotes": []
+    },
+    {
+      "id": "mep.duct_route",
+      "stableId": "mep.duct_route",
+      "category": "mutation",
+      "sideEffects": "mutates-kernel",
+      "mutability": "write",
+      "implementationStatus": "implemented",
+      "transport": "http",
+      "requiresBrowser": false,
+      "createsExternalAssets": false,
+      "exportsData": false,
+      "method": "POST",
+      "path": "/api/semantic-authoring/{surface_id}",
+      "inputSchema": "unknown",
+      "outputSchema": "unknown",
+      "cliExample": "unknown",
+      "exitCodes": [],
+      "kernelCommands": ["createDuct"],
+      "resourceGroups": ["kernel-command"],
+      "uiFeatures": [],
+      "agentSafetyNotes": "Statically expanded from registry defaults for dynamic M4 registration.",
+      "source": "app/bim_ai/api/registry.py:dynamic-default:mep.duct_route",
+      "routeImplemented": true,
+      "routeSource": "app/bim_ai/routes_api.py:1449",
+      "toolKind": "typed-kernel-tool",
+      "matchedBackendCommands": ["createDuct"],
+      "parserNotes": []
+    },
+    {
+      "id": "mep.equipment",
+      "stableId": "mep.equipment",
+      "category": "mutation",
+      "sideEffects": "mutates-kernel",
+      "mutability": "write",
+      "implementationStatus": "implemented",
+      "transport": "http",
+      "requiresBrowser": false,
+      "createsExternalAssets": false,
+      "exportsData": false,
+      "method": "POST",
+      "path": "/api/semantic-authoring/{surface_id}",
+      "inputSchema": "unknown",
+      "outputSchema": "unknown",
+      "cliExample": "unknown",
+      "exitCodes": [],
+      "kernelCommands": ["createMepEquipment"],
+      "resourceGroups": ["kernel-command"],
+      "uiFeatures": [],
+      "agentSafetyNotes": "Statically expanded from registry defaults for dynamic M4 registration.",
+      "source": "app/bim_ai/api/registry.py:dynamic-default:mep.equipment",
+      "routeImplemented": true,
+      "routeSource": "app/bim_ai/routes_api.py:1449",
+      "toolKind": "typed-kernel-tool",
+      "matchedBackendCommands": ["createMepEquipment"],
+      "parserNotes": []
+    },
+    {
+      "id": "mep.fixture",
+      "stableId": "mep.fixture",
+      "category": "mutation",
+      "sideEffects": "mutates-kernel",
+      "mutability": "write",
+      "implementationStatus": "implemented",
+      "transport": "http",
+      "requiresBrowser": false,
+      "createsExternalAssets": false,
+      "exportsData": false,
+      "method": "POST",
+      "path": "/api/semantic-authoring/{surface_id}",
+      "inputSchema": "unknown",
+      "outputSchema": "unknown",
+      "cliExample": "unknown",
+      "exitCodes": [],
+      "kernelCommands": ["createFixture"],
+      "resourceGroups": ["kernel-command"],
+      "uiFeatures": [],
+      "agentSafetyNotes": "Statically expanded from registry defaults for dynamic M4 registration.",
+      "source": "app/bim_ai/api/registry.py:dynamic-default:mep.fixture",
+      "routeImplemented": true,
+      "routeSource": "app/bim_ai/routes_api.py:1449",
+      "toolKind": "typed-kernel-tool",
+      "matchedBackendCommands": ["createFixture"],
+      "parserNotes": []
+    },
+    {
+      "id": "mep.opening_request",
+      "stableId": "mep.opening_request",
+      "category": "mutation",
+      "sideEffects": "mutates-kernel",
+      "mutability": "write",
+      "implementationStatus": "implemented",
+      "transport": "http",
+      "requiresBrowser": false,
+      "createsExternalAssets": false,
+      "exportsData": false,
+      "method": "POST",
+      "path": "/api/semantic-authoring/{surface_id}",
+      "inputSchema": "unknown",
+      "outputSchema": "unknown",
+      "cliExample": "unknown",
+      "exitCodes": [],
+      "kernelCommands": ["createMepOpeningRequest"],
+      "resourceGroups": ["kernel-command"],
+      "uiFeatures": [],
+      "agentSafetyNotes": "Statically expanded from registry defaults for dynamic M4 registration.",
+      "source": "app/bim_ai/api/registry.py:dynamic-default:mep.opening_request",
+      "routeImplemented": true,
+      "routeSource": "app/bim_ai/routes_api.py:1449",
+      "toolKind": "typed-kernel-tool",
+      "matchedBackendCommands": ["createMepOpeningRequest"],
+      "parserNotes": []
+    },
+    {
+      "id": "mep.pipe_route",
+      "stableId": "mep.pipe_route",
+      "category": "mutation",
+      "sideEffects": "mutates-kernel",
+      "mutability": "write",
+      "implementationStatus": "implemented",
+      "transport": "http",
+      "requiresBrowser": false,
+      "createsExternalAssets": false,
+      "exportsData": false,
+      "method": "POST",
+      "path": "/api/semantic-authoring/{surface_id}",
+      "inputSchema": "unknown",
+      "outputSchema": "unknown",
+      "cliExample": "unknown",
+      "exitCodes": [],
+      "kernelCommands": ["createPipe"],
+      "resourceGroups": ["kernel-command"],
+      "uiFeatures": [],
+      "agentSafetyNotes": "Statically expanded from registry defaults for dynamic M4 registration.",
+      "source": "app/bim_ai/api/registry.py:dynamic-default:mep.pipe_route",
+      "routeImplemented": true,
+      "routeSource": "app/bim_ai/routes_api.py:1449",
+      "toolKind": "typed-kernel-tool",
+      "matchedBackendCommands": ["createPipe"],
+      "parserNotes": []
+    },
+    {
+      "id": "mep.terminal",
+      "stableId": "mep.terminal",
+      "category": "mutation",
+      "sideEffects": "mutates-kernel",
+      "mutability": "write",
+      "implementationStatus": "implemented",
+      "transport": "http",
+      "requiresBrowser": false,
+      "createsExternalAssets": false,
+      "exportsData": false,
+      "method": "POST",
+      "path": "/api/semantic-authoring/{surface_id}",
+      "inputSchema": "unknown",
+      "outputSchema": "unknown",
+      "cliExample": "unknown",
+      "exitCodes": [],
+      "kernelCommands": ["createMepTerminal"],
+      "resourceGroups": ["kernel-command"],
+      "uiFeatures": [],
+      "agentSafetyNotes": "Statically expanded from registry defaults for dynamic M4 registration.",
+      "source": "app/bim_ai/api/registry.py:dynamic-default:mep.terminal",
+      "routeImplemented": true,
+      "routeSource": "app/bim_ai/routes_api.py:1449",
+      "toolKind": "typed-kernel-tool",
+      "matchedBackendCommands": ["createMepTerminal"],
       "parserNotes": []
     },
     {
@@ -32292,7 +32538,7 @@
       "resourceGroups": ["image-underlay", "sketch-to-bim", "kernel-command"],
       "uiFeatures": ["group:image-underlay", "group:sketch-to-bim", "group:kernel-command"],
       "agentSafetyNotes": "",
-      "source": "app/bim_ai/api/registry.py:3539",
+      "source": "app/bim_ai/api/registry.py:3847",
       "routeImplemented": true,
       "routeSource": "app/bim_ai/routes_api.py:2193",
       "toolKind": "typed-kernel-tool",
@@ -32382,7 +32628,7 @@
       "resourceGroups": ["kernel-command"],
       "uiFeatures": ["group:kernel-command"],
       "agentSafetyNotes": "",
-      "source": "app/bim_ai/api/registry.py:3016",
+      "source": "app/bim_ai/api/registry.py:3324",
       "routeImplemented": true,
       "routeSource": "app/bim_ai/routes_api.py:2193",
       "toolKind": "typed-kernel-tool",
@@ -32564,7 +32810,7 @@
       "resourceGroups": ["image-underlay", "sketch-to-bim", "kernel-command"],
       "uiFeatures": ["group:image-underlay", "group:sketch-to-bim", "group:kernel-command"],
       "agentSafetyNotes": "Use the standard bundle dry-run path first. Rotation is stored in degrees.",
-      "source": "app/bim_ai/api/registry.py:3636",
+      "source": "app/bim_ai/api/registry.py:3944",
       "routeImplemented": true,
       "routeSource": "app/bim_ai/routes_api.py:2193",
       "toolKind": "typed-kernel-tool",
@@ -32592,7 +32838,7 @@
       "resourceGroups": ["image-underlay", "sketch-to-bim", "kernel-command"],
       "uiFeatures": ["group:image-underlay", "group:sketch-to-bim", "group:kernel-command"],
       "agentSafetyNotes": "",
-      "source": "app/bim_ai/api/registry.py:3595",
+      "source": "app/bim_ai/api/registry.py:3903",
       "routeImplemented": true,
       "routeSource": "app/bim_ai/routes_api.py:2193",
       "toolKind": "typed-kernel-tool",
@@ -32740,6 +32986,242 @@
       "parserNotes": []
     },
     {
+      "id": "site.graded-region-update",
+      "stableId": "site.graded-region-update",
+      "category": "mutation",
+      "sideEffects": "mutates-kernel",
+      "mutability": "write",
+      "implementationStatus": "implemented",
+      "transport": "http",
+      "requiresBrowser": false,
+      "createsExternalAssets": false,
+      "exportsData": false,
+      "method": "POST",
+      "path": "/api/models/{model_id}/bundles",
+      "inputSchema": "unknown",
+      "outputSchema": "unknown",
+      "cliExample": "unknown",
+      "exitCodes": [],
+      "kernelCommands": ["UpdateGradedRegion"],
+      "resourceGroups": ["site", "toposolid", "kernel-command"],
+      "uiFeatures": ["group:site", "group:toposolid", "group:kernel-command"],
+      "agentSafetyNotes": "Statically expanded from registry defaults for dynamic M4 registration.",
+      "source": "app/bim_ai/api/registry.py:dynamic-default:site.graded-region-update",
+      "routeImplemented": true,
+      "routeSource": "app/bim_ai/routes_api.py:2193",
+      "toolKind": "typed-kernel-tool",
+      "matchedBackendCommands": ["UpdateGradedRegion"],
+      "parserNotes": []
+    },
+    {
+      "id": "site.project-base-point-create",
+      "stableId": "site.project-base-point-create",
+      "category": "mutation",
+      "sideEffects": "mutates-kernel",
+      "mutability": "write",
+      "implementationStatus": "implemented",
+      "transport": "http",
+      "requiresBrowser": false,
+      "createsExternalAssets": false,
+      "exportsData": false,
+      "method": "POST",
+      "path": "/api/models/{model_id}/bundles",
+      "inputSchema": "unknown",
+      "outputSchema": "unknown",
+      "cliExample": "unknown",
+      "exitCodes": [],
+      "kernelCommands": ["createProjectBasePoint"],
+      "resourceGroups": ["site", "georeference", "kernel-command"],
+      "uiFeatures": ["group:site", "group:georeference", "group:kernel-command"],
+      "agentSafetyNotes": "Statically expanded from registry defaults for dynamic M4 registration.",
+      "source": "app/bim_ai/api/registry.py:dynamic-default:site.project-base-point-create",
+      "routeImplemented": true,
+      "routeSource": "app/bim_ai/routes_api.py:2193",
+      "toolKind": "typed-kernel-tool",
+      "matchedBackendCommands": ["createProjectBasePoint"],
+      "parserNotes": []
+    },
+    {
+      "id": "site.property-line-create",
+      "stableId": "site.property-line-create",
+      "category": "mutation",
+      "sideEffects": "mutates-kernel",
+      "mutability": "write",
+      "implementationStatus": "implemented",
+      "transport": "http",
+      "requiresBrowser": false,
+      "createsExternalAssets": false,
+      "exportsData": false,
+      "method": "POST",
+      "path": "/api/models/{model_id}/bundles",
+      "inputSchema": "unknown",
+      "outputSchema": "unknown",
+      "cliExample": "unknown",
+      "exitCodes": [],
+      "kernelCommands": ["createPropertyLine"],
+      "resourceGroups": ["site", "property-line", "kernel-command"],
+      "uiFeatures": ["group:site", "group:property-line", "group:kernel-command"],
+      "agentSafetyNotes": "Statically expanded from registry defaults for dynamic M4 registration.",
+      "source": "app/bim_ai/api/registry.py:dynamic-default:site.property-line-create",
+      "routeImplemented": true,
+      "routeSource": "app/bim_ai/routes_api.py:2193",
+      "toolKind": "typed-kernel-tool",
+      "matchedBackendCommands": ["createPropertyLine"],
+      "parserNotes": []
+    },
+    {
+      "id": "site.setup-georeference",
+      "stableId": "site.setup-georeference",
+      "category": "mutation",
+      "sideEffects": "mutates-kernel",
+      "mutability": "write",
+      "implementationStatus": "implemented",
+      "transport": "http",
+      "requiresBrowser": false,
+      "createsExternalAssets": false,
+      "exportsData": false,
+      "method": "POST",
+      "path": "/api/models/{model_id}/bundles",
+      "inputSchema": "unknown",
+      "outputSchema": "unknown",
+      "cliExample": "unknown",
+      "exitCodes": [],
+      "kernelCommands": [
+        "createProjectBasePoint",
+        "createSurveyPoint",
+        "createSunSettings",
+        "upsertSite",
+        "CreateToposolid"
+      ],
+      "resourceGroups": ["site", "context", "kernel-command"],
+      "uiFeatures": ["group:site", "group:context", "group:kernel-command"],
+      "agentSafetyNotes": "Statically expanded from registry defaults for dynamic M4 registration.",
+      "source": "app/bim_ai/api/registry.py:dynamic-default:site.setup-georeference",
+      "routeImplemented": true,
+      "routeSource": "app/bim_ai/routes_api.py:2193",
+      "toolKind": "typed-kernel-tool",
+      "matchedBackendCommands": [
+        "createProjectBasePoint",
+        "createSunSettings",
+        "createSurveyPoint",
+        "CreateToposolid",
+        "upsertSite"
+      ],
+      "parserNotes": []
+    },
+    {
+      "id": "site.sun-settings-create",
+      "stableId": "site.sun-settings-create",
+      "category": "mutation",
+      "sideEffects": "mutates-kernel",
+      "mutability": "write",
+      "implementationStatus": "implemented",
+      "transport": "http",
+      "requiresBrowser": false,
+      "createsExternalAssets": false,
+      "exportsData": false,
+      "method": "POST",
+      "path": "/api/models/{model_id}/bundles",
+      "inputSchema": "unknown",
+      "outputSchema": "unknown",
+      "cliExample": "unknown",
+      "exitCodes": [],
+      "kernelCommands": ["createSunSettings"],
+      "resourceGroups": ["site", "sun-settings", "kernel-command"],
+      "uiFeatures": ["group:site", "group:sun-settings", "group:kernel-command"],
+      "agentSafetyNotes": "Statically expanded from registry defaults for dynamic M4 registration.",
+      "source": "app/bim_ai/api/registry.py:dynamic-default:site.sun-settings-create",
+      "routeImplemented": true,
+      "routeSource": "app/bim_ai/routes_api.py:2193",
+      "toolKind": "typed-kernel-tool",
+      "matchedBackendCommands": ["createSunSettings"],
+      "parserNotes": []
+    },
+    {
+      "id": "site.survey-point-create",
+      "stableId": "site.survey-point-create",
+      "category": "mutation",
+      "sideEffects": "mutates-kernel",
+      "mutability": "write",
+      "implementationStatus": "implemented",
+      "transport": "http",
+      "requiresBrowser": false,
+      "createsExternalAssets": false,
+      "exportsData": false,
+      "method": "POST",
+      "path": "/api/models/{model_id}/bundles",
+      "inputSchema": "unknown",
+      "outputSchema": "unknown",
+      "cliExample": "unknown",
+      "exitCodes": [],
+      "kernelCommands": ["createSurveyPoint"],
+      "resourceGroups": ["site", "georeference", "kernel-command"],
+      "uiFeatures": ["group:site", "group:georeference", "group:kernel-command"],
+      "agentSafetyNotes": "Statically expanded from registry defaults for dynamic M4 registration.",
+      "source": "app/bim_ai/api/registry.py:dynamic-default:site.survey-point-create",
+      "routeImplemented": true,
+      "routeSource": "app/bim_ai/routes_api.py:2193",
+      "toolKind": "typed-kernel-tool",
+      "matchedBackendCommands": ["createSurveyPoint"],
+      "parserNotes": []
+    },
+    {
+      "id": "site.toposolid-excavation-create",
+      "stableId": "site.toposolid-excavation-create",
+      "category": "mutation",
+      "sideEffects": "mutates-kernel",
+      "mutability": "write",
+      "implementationStatus": "implemented",
+      "transport": "http",
+      "requiresBrowser": false,
+      "createsExternalAssets": false,
+      "exportsData": false,
+      "method": "POST",
+      "path": "/api/models/{model_id}/bundles",
+      "inputSchema": "unknown",
+      "outputSchema": "unknown",
+      "cliExample": "unknown",
+      "exitCodes": [],
+      "kernelCommands": ["CreateToposolidExcavation"],
+      "resourceGroups": ["site", "toposolid", "kernel-command"],
+      "uiFeatures": ["group:site", "group:toposolid", "group:kernel-command"],
+      "agentSafetyNotes": "Statically expanded from registry defaults for dynamic M4 registration.",
+      "source": "app/bim_ai/api/registry.py:dynamic-default:site.toposolid-excavation-create",
+      "routeImplemented": true,
+      "routeSource": "app/bim_ai/routes_api.py:2193",
+      "toolKind": "typed-kernel-tool",
+      "matchedBackendCommands": ["CreateToposolidExcavation"],
+      "parserNotes": []
+    },
+    {
+      "id": "site.toposolid-subdivision-update",
+      "stableId": "site.toposolid-subdivision-update",
+      "category": "mutation",
+      "sideEffects": "mutates-kernel",
+      "mutability": "write",
+      "implementationStatus": "implemented",
+      "transport": "http",
+      "requiresBrowser": false,
+      "createsExternalAssets": false,
+      "exportsData": false,
+      "method": "POST",
+      "path": "/api/models/{model_id}/bundles",
+      "inputSchema": "unknown",
+      "outputSchema": "unknown",
+      "cliExample": "unknown",
+      "exitCodes": [],
+      "kernelCommands": ["update_toposolid_subdivision"],
+      "resourceGroups": ["site", "toposolid", "kernel-command"],
+      "uiFeatures": ["group:site", "group:toposolid", "group:kernel-command"],
+      "agentSafetyNotes": "Statically expanded from registry defaults for dynamic M4 registration.",
+      "source": "app/bim_ai/api/registry.py:dynamic-default:site.toposolid-subdivision-update",
+      "routeImplemented": true,
+      "routeSource": "app/bim_ai/routes_api.py:2193",
+      "toolKind": "typed-kernel-tool",
+      "matchedBackendCommands": ["update_toposolid_subdivision"],
+      "parserNotes": []
+    },
+    {
       "id": "sketch.ir.validate",
       "stableId": "sketch.ir.validate",
       "category": "transform",
@@ -32760,7 +33242,7 @@
       "resourceGroups": ["sketch-to-bim", "sketch-ir", "initiation"],
       "uiFeatures": ["group:sketch-to-bim", "group:sketch-ir", "group:initiation"],
       "agentSafetyNotes": "",
-      "source": "app/bim_ai/api/registry.py:4283",
+      "source": "app/bim_ai/api/registry.py:4591",
       "routeImplemented": true,
       "routeSource": "app/bim_ai/routes_sketch_product.py:115",
       "toolKind": "typed-tool",
@@ -32788,7 +33270,7 @@
       "resourceGroups": ["sketch-to-bim", "phase", "acceptance", "evidence"],
       "uiFeatures": ["group:sketch-to-bim", "group:phase", "group:acceptance", "group:evidence"],
       "agentSafetyNotes": "",
-      "source": "app/bim_ai/api/registry.py:4452",
+      "source": "app/bim_ai/api/registry.py:4760",
       "routeImplemented": true,
       "routeSource": "app/bim_ai/routes_sketch_product.py:190",
       "toolKind": "typed-tool",
@@ -32821,7 +33303,7 @@
         "group:kernel-command"
       ],
       "agentSafetyNotes": "Default to dry_run. A commit must include parentRevision and preserve bundle assumptions.",
-      "source": "app/bim_ai/api/registry.py:4395",
+      "source": "app/bim_ai/api/registry.py:4703",
       "routeImplemented": true,
       "routeSource": "app/bim_ai/routes_sketch_product.py:159",
       "toolKind": "raw-apply-bundle",
@@ -32849,11 +33331,95 @@
       "resourceGroups": ["sketch-to-bim", "seed-dsl", "command-bundle"],
       "uiFeatures": ["group:sketch-to-bim", "group:seed-dsl", "group:command-bundle"],
       "agentSafetyNotes": "Compiled output must be submitted through model.dry_run before commit.",
-      "source": "app/bim_ai/api/registry.py:4349",
+      "source": "app/bim_ai/api/registry.py:4657",
       "routeImplemented": true,
       "routeSource": "app/bim_ai/routes_sketch_product.py:140",
       "toolKind": "typed-tool",
       "matchedBackendCommands": [],
+      "parserNotes": []
+    },
+    {
+      "id": "structure.beam",
+      "stableId": "structure.beam",
+      "category": "mutation",
+      "sideEffects": "mutates-kernel",
+      "mutability": "write",
+      "implementationStatus": "implemented",
+      "transport": "http",
+      "requiresBrowser": false,
+      "createsExternalAssets": false,
+      "exportsData": false,
+      "method": "POST",
+      "path": "/api/semantic-authoring/{surface_id}",
+      "inputSchema": "unknown",
+      "outputSchema": "unknown",
+      "cliExample": "unknown",
+      "exitCodes": [],
+      "kernelCommands": ["createBeam"],
+      "resourceGroups": ["kernel-command"],
+      "uiFeatures": [],
+      "agentSafetyNotes": "Statically expanded from registry defaults for dynamic M4 registration.",
+      "source": "app/bim_ai/api/registry.py:dynamic-default:structure.beam",
+      "routeImplemented": true,
+      "routeSource": "app/bim_ai/routes_api.py:1449",
+      "toolKind": "typed-kernel-tool",
+      "matchedBackendCommands": ["createBeam"],
+      "parserNotes": []
+    },
+    {
+      "id": "structure.column",
+      "stableId": "structure.column",
+      "category": "mutation",
+      "sideEffects": "mutates-kernel",
+      "mutability": "write",
+      "implementationStatus": "implemented",
+      "transport": "http",
+      "requiresBrowser": false,
+      "createsExternalAssets": false,
+      "exportsData": false,
+      "method": "POST",
+      "path": "/api/semantic-authoring/{surface_id}",
+      "inputSchema": "unknown",
+      "outputSchema": "unknown",
+      "cliExample": "unknown",
+      "exitCodes": [],
+      "kernelCommands": ["createColumn"],
+      "resourceGroups": ["kernel-command"],
+      "uiFeatures": [],
+      "agentSafetyNotes": "Statically expanded from registry defaults for dynamic M4 registration.",
+      "source": "app/bim_ai/api/registry.py:dynamic-default:structure.column",
+      "routeImplemented": true,
+      "routeSource": "app/bim_ai/routes_api.py:1449",
+      "toolKind": "typed-kernel-tool",
+      "matchedBackendCommands": ["createColumn"],
+      "parserNotes": []
+    },
+    {
+      "id": "structure.column_update",
+      "stableId": "structure.column_update",
+      "category": "mutation",
+      "sideEffects": "mutates-kernel",
+      "mutability": "write",
+      "implementationStatus": "implemented",
+      "transport": "http",
+      "requiresBrowser": false,
+      "createsExternalAssets": false,
+      "exportsData": false,
+      "method": "POST",
+      "path": "/api/semantic-authoring/{surface_id}",
+      "inputSchema": "unknown",
+      "outputSchema": "unknown",
+      "cliExample": "unknown",
+      "exitCodes": [],
+      "kernelCommands": ["updateColumn"],
+      "resourceGroups": ["kernel-command"],
+      "uiFeatures": [],
+      "agentSafetyNotes": "Statically expanded from registry defaults for dynamic M4 registration.",
+      "source": "app/bim_ai/api/registry.py:dynamic-default:structure.column_update",
+      "routeImplemented": true,
+      "routeSource": "app/bim_ai/routes_api.py:1449",
+      "toolKind": "typed-kernel-tool",
+      "matchedBackendCommands": ["updateColumn"],
       "parserNotes": []
     },
     {
@@ -32941,68 +33507,6 @@
       "parserNotes": []
     },
     {
-      "id": "unknown",
-      "stableId": "unknown",
-      "category": "mutation",
-      "sideEffects": "mutates-kernel",
-      "mutability": "write",
-      "implementationStatus": "implemented",
-      "transport": "http",
-      "requiresBrowser": false,
-      "createsExternalAssets": false,
-      "exportsData": false,
-      "method": "POST",
-      "path": "/api/semantic-authoring/{surface_id}",
-      "inputSchema": "unknown",
-      "outputSchema": "unknown",
-      "cliExample": "unknown",
-      "exitCodes": ["ok", "invalid"],
-      "kernelCommands": [],
-      "resourceGroups": ["semantic-authoring", "kernel-command"],
-      "uiFeatures": [
-        "tool:structure",
-        "cmd-k:structure-lens",
-        "structure",
-        "lens:construction",
-        "cmd-k:construction-lens"
-      ],
-      "agentSafetyNotes": "",
-      "source": "app/bim_ai/api/registry.py:1110",
-      "routeImplemented": true,
-      "routeSource": "app/bim_ai/routes_api.py:1449",
-      "toolKind": "semantic-authoring",
-      "matchedBackendCommands": [],
-      "parserNotes": []
-    },
-    {
-      "id": "unknown",
-      "stableId": "unknown",
-      "category": "mutation",
-      "sideEffects": "mutates-kernel",
-      "mutability": "write",
-      "implementationStatus": "implemented",
-      "transport": "http",
-      "requiresBrowser": false,
-      "createsExternalAssets": false,
-      "exportsData": false,
-      "method": "POST",
-      "path": "/api/semantic-authoring/{surface_id}",
-      "inputSchema": "unknown",
-      "outputSchema": "unknown",
-      "cliExample": "unknown",
-      "exitCodes": ["ok", "invalid"],
-      "kernelCommands": [],
-      "resourceGroups": [],
-      "uiFeatures": [],
-      "agentSafetyNotes": "",
-      "source": "app/bim_ai/api/registry.py:1453",
-      "routeImplemented": true,
-      "routeSource": "app/bim_ai/routes_api.py:1449",
-      "toolKind": "typed-tool",
-      "matchedBackendCommands": [],
-      "parserNotes": []
-    },
-    {
       "id": "update-material-pbr",
       "stableId": "update-material-pbr",
       "category": "mutation",
@@ -33023,7 +33527,7 @@
       "resourceGroups": ["kernel-command"],
       "uiFeatures": ["group:kernel-command"],
       "agentSafetyNotes": "",
-      "source": "app/bim_ai/api/registry.py:4214",
+      "source": "app/bim_ai/api/registry.py:4522",
       "routeImplemented": true,
       "routeSource": "app/bim_ai/routes_api.py:2193",
       "toolKind": "typed-kernel-tool",
@@ -33051,7 +33555,7 @@
       "resourceGroups": ["kernel-command"],
       "uiFeatures": ["group:kernel-command"],
       "agentSafetyNotes": "",
-      "source": "app/bim_ai/api/registry.py:2978",
+      "source": "app/bim_ai/api/registry.py:3286",
       "routeImplemented": true,
       "routeSource": "app/bim_ai/routes_api.py:2193",
       "toolKind": "typed-kernel-tool",
@@ -33088,14 +33592,6 @@
       "priority": "P0",
       "domain": "m4-wave1",
       "kind": "m4-wave1-gate-blocked",
-      "id": "M4-A:grading-property-line-georeference",
-      "status": "Gap",
-      "detail": "Grading, property line, and georeference tools lacks an implemented first-class API/MCP descriptor; raw apply-bundle reachability does not count for M4."
-    },
-    {
-      "priority": "P0",
-      "domain": "m4-wave1",
-      "kind": "m4-wave1-gate-blocked",
       "id": "M4-A:mcp-cli-benchmark-evidence",
       "status": "Gap",
       "detail": "Site/context first-class MCP pack lacks executable MCP/CLI benchmark evidence."
@@ -33112,25 +33608,9 @@
       "priority": "P0",
       "domain": "m4-wave1",
       "kind": "m4-wave1-gate-blocked",
-      "id": "M4-A:toposolid-authoring",
-      "status": "Gap",
-      "detail": "Toposolid create/update authoring lacks an implemented first-class API/MCP descriptor; raw apply-bundle reachability does not count for M4."
-    },
-    {
-      "priority": "P0",
-      "domain": "m4-wave1",
-      "kind": "m4-wave1-gate-blocked",
       "id": "M4-A:ui-cmdk-equivalence-evidence",
       "status": "Gap",
       "detail": "Site/context first-class MCP pack lacks UI/Cmd+K executable or validated replay evidence; activator-only mappings are excluded."
-    },
-    {
-      "priority": "P0",
-      "domain": "m4-wave1",
-      "kind": "m4-wave1-gate-blocked",
-      "id": "M4-B:construction-lite",
-      "status": "Gap",
-      "detail": "Construction package, logistics, and checklist tools lacks an implemented first-class API/MCP descriptor; raw apply-bundle reachability does not count for M4."
     },
     {
       "priority": "P0",
@@ -33152,14 +33632,6 @@
       "priority": "P0",
       "domain": "m4-wave1",
       "kind": "m4-wave1-gate-blocked",
-      "id": "M4-B:structural-authoring",
-      "status": "Gap",
-      "detail": "Structural column and beam authoring lacks an implemented first-class API/MCP descriptor; raw apply-bundle reachability does not count for M4."
-    },
-    {
-      "priority": "P0",
-      "domain": "m4-wave1",
-      "kind": "m4-wave1-gate-blocked",
       "id": "M4-B:ui-cmdk-equivalence-evidence",
       "status": "Gap",
       "detail": "Structure and construction-lite MCP pack lacks UI/Cmd+K executable or validated replay evidence; activator-only mappings are excluded."
@@ -33171,22 +33643,6 @@
       "id": "M4-C:mcp-cli-benchmark-evidence",
       "status": "Gap",
       "detail": "MEP-lite MCP pack lacks executable MCP/CLI benchmark evidence."
-    },
-    {
-      "priority": "P0",
-      "domain": "m4-wave1",
-      "kind": "m4-wave1-gate-blocked",
-      "id": "M4-C:mep-equipment-fixtures-openings",
-      "status": "Gap",
-      "detail": "MEP equipment, fixtures, terminals, and opening requests lacks an implemented first-class API/MCP descriptor; raw apply-bundle reachability does not count for M4."
-    },
-    {
-      "priority": "P0",
-      "domain": "m4-wave1",
-      "kind": "m4-wave1-gate-blocked",
-      "id": "M4-C:mep-route-authoring",
-      "status": "Gap",
-      "detail": "Pipe, duct, and cable route authoring lacks an implemented first-class API/MCP descriptor; raw apply-bundle reachability does not count for M4."
     },
     {
       "priority": "P0",
@@ -33232,25 +33688,9 @@
       "priority": "P0",
       "domain": "m4-wave1",
       "kind": "m4-wave1-gate-blocked",
-      "id": "M4-E:advanced-documentation",
-      "status": "Gap",
-      "detail": "Advanced sheets, schedules, revisions, and documentation exports lacks an implemented first-class API/MCP descriptor; raw apply-bundle reachability does not count for M4."
-    },
-    {
-      "priority": "P0",
-      "domain": "m4-wave1",
-      "kind": "m4-wave1-gate-blocked",
       "id": "M4-E:mcp-cli-benchmark-evidence",
       "status": "Gap",
       "detail": "Presentation, branded export, and advanced docs lacks executable MCP/CLI benchmark evidence."
-    },
-    {
-      "priority": "P0",
-      "domain": "m4-wave1",
-      "kind": "m4-wave1-gate-blocked",
-      "id": "M4-E:presentation-pack",
-      "status": "Gap",
-      "detail": "Presentation frames, branded templates, render bundle, and share/export lacks an implemented first-class API/MCP descriptor; raw apply-bundle reachability does not count for M4."
     },
     {
       "priority": "P0",
@@ -33275,14 +33715,6 @@
       "id": "assignOpeningFamily",
       "status": "Agent-only",
       "detail": "Backend command has no matched Cmd+K/UI surface."
-    },
-    {
-      "priority": "P0",
-      "domain": "opening",
-      "kind": "raw-agent-only",
-      "id": "createMepOpeningRequest",
-      "status": "Usable",
-      "detail": "Backend command is agent-reachable only through raw apply-bundle; M3 disposition: promote-first-class (High-value authoring, documentation, review, or benchmark workflow command; agents need semantic inputs and stable typed descriptors.)."
     },
     {
       "priority": "P0",
@@ -34528,14 +34960,6 @@
       "priority": "P1",
       "domain": "site",
       "kind": "raw-agent-only",
-      "id": "update_toposolid_subdivision",
-      "status": "Usable",
-      "detail": "Backend command is agent-reachable only through raw apply-bundle; M3 disposition: promote-first-class (Sketch/site workflow command with user-visible lifecycle semantics that should not rely on opaque bundle payloads.)."
-    },
-    {
-      "priority": "P1",
-      "domain": "site",
-      "kind": "raw-agent-only",
       "id": "UpdateToposolidExcavation",
       "status": "Usable",
       "detail": "Backend command is agent-reachable only through raw apply-bundle; M3 disposition: promote-first-class (Sketch/site workflow command with user-visible lifecycle semantics that should not rely on opaque bundle payloads.)."
@@ -34703,22 +35127,6 @@
     {
       "priority": "P2",
       "domain": "general",
-      "kind": "raw-agent-only",
-      "id": "createBeam",
-      "status": "Usable",
-      "detail": "Backend command is agent-reachable only through raw apply-bundle; M3 disposition: expert-raw (Specialized authoring surface outside the M3 first-class product packs; keep reachable for expert bundles and revisit with workflow evidence.)."
-    },
-    {
-      "priority": "P2",
-      "domain": "general",
-      "kind": "raw-agent-only",
-      "id": "createCableTray",
-      "status": "Usable",
-      "detail": "Backend command is agent-reachable only through raw apply-bundle; M3 disposition: expert-raw (Specialized authoring surface outside the M3 first-class product packs; keep reachable for expert bundles and revisit with workflow evidence.)."
-    },
-    {
-      "priority": "P2",
-      "domain": "general",
       "kind": "backend-without-ui",
       "id": "createCallout",
       "status": "Agent-only",
@@ -34747,14 +35155,6 @@
       "id": "createColorFillLegend",
       "status": "Agent-only",
       "detail": "Backend command has no matched Cmd+K/UI surface."
-    },
-    {
-      "priority": "P2",
-      "domain": "general",
-      "kind": "raw-agent-only",
-      "id": "createColumn",
-      "status": "Usable",
-      "detail": "Backend command is agent-reachable only through raw apply-bundle; M3 disposition: expert-raw (Specialized authoring surface outside the M3 first-class product packs; keep reachable for expert bundles and revisit with workflow evidence.)."
     },
     {
       "priority": "P2",
@@ -34883,14 +35283,6 @@
       "id": "createPlanRegion",
       "status": "Usable",
       "detail": "Backend command is agent-reachable only through raw apply-bundle; M3 disposition: expert-raw (Specialized authoring surface outside the M3 first-class product packs; keep reachable for expert bundles and revisit with workflow evidence.)."
-    },
-    {
-      "priority": "P2",
-      "domain": "general",
-      "kind": "raw-agent-only",
-      "id": "createPropertyLine",
-      "status": "Usable",
-      "detail": "Backend command is agent-reachable only through raw apply-bundle; M3 disposition: expert-raw (Low-level edit/control primitive; leave raw for expert bundles while transaction, undo, and audit semantics are hardened.)."
     },
     {
       "priority": "P2",
@@ -35800,22 +36192,6 @@
       "priority": "P2",
       "domain": "general",
       "kind": "raw-agent-only",
-      "id": "updateColumn",
-      "status": "Usable",
-      "detail": "Backend command is agent-reachable only through raw apply-bundle; M3 disposition: expert-raw (Low-level edit/control primitive; leave raw for expert bundles while transaction, undo, and audit semantics are hardened.)."
-    },
-    {
-      "priority": "P2",
-      "domain": "general",
-      "kind": "raw-agent-only",
-      "id": "UpdateGradedRegion",
-      "status": "Usable",
-      "detail": "Backend command is agent-reachable only through raw apply-bundle; M3 disposition: promote-first-class (Sketch/site workflow command with user-visible lifecycle semantics that should not rely on opaque bundle payloads.)."
-    },
-    {
-      "priority": "P2",
-      "domain": "general",
-      "kind": "raw-agent-only",
       "id": "updateMaskingRegion",
       "status": "Usable",
       "detail": "Backend command is agent-reachable only through raw apply-bundle; M3 disposition: expert-raw (Low-level edit/control primitive; leave raw for expert bundles while transaction, undo, and audit semantics are hardened.)."
@@ -35872,47 +36248,7 @@
       "priority": "P2",
       "domain": "mep",
       "kind": "raw-agent-only",
-      "id": "createDuct",
-      "status": "Usable",
-      "detail": "Backend command is agent-reachable only through raw apply-bundle; M3 disposition: promote-first-class (Domain authoring command is user-visible and should be promoted when its workflow enters the product pack.)."
-    },
-    {
-      "priority": "P2",
-      "domain": "mep",
-      "kind": "raw-agent-only",
       "id": "createDuctLegend",
-      "status": "Usable",
-      "detail": "Backend command is agent-reachable only through raw apply-bundle; M3 disposition: promote-first-class (Domain authoring command is user-visible and should be promoted when its workflow enters the product pack.)."
-    },
-    {
-      "priority": "P2",
-      "domain": "mep",
-      "kind": "raw-agent-only",
-      "id": "createFixture",
-      "status": "Usable",
-      "detail": "Backend command is agent-reachable only through raw apply-bundle; M3 disposition: promote-first-class (Domain authoring command is user-visible and should be promoted when its workflow enters the product pack.)."
-    },
-    {
-      "priority": "P2",
-      "domain": "mep",
-      "kind": "raw-agent-only",
-      "id": "createMepEquipment",
-      "status": "Usable",
-      "detail": "Backend command is agent-reachable only through raw apply-bundle; M3 disposition: promote-first-class (Domain authoring command is user-visible and should be promoted when its workflow enters the product pack.)."
-    },
-    {
-      "priority": "P2",
-      "domain": "mep",
-      "kind": "raw-agent-only",
-      "id": "createMepTerminal",
-      "status": "Usable",
-      "detail": "Backend command is agent-reachable only through raw apply-bundle; M3 disposition: promote-first-class (Domain authoring command is user-visible and should be promoted when its workflow enters the product pack.)."
-    },
-    {
-      "priority": "P2",
-      "domain": "mep",
-      "kind": "raw-agent-only",
-      "id": "createPipe",
       "status": "Usable",
       "detail": "Backend command is agent-reachable only through raw apply-bundle; M3 disposition: promote-first-class (Domain authoring command is user-visible and should be promoted when its workflow enters the product pack.)."
     },

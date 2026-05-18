@@ -230,17 +230,26 @@ const M4_WAVE1_WORKSTREAMS = [
       {
         id: 'toposolid-authoring',
         label: 'Toposolid create/update authoring',
-        acceptedStableIds: ['site.toposolid.upsert', 'site.create_toposolid', 'create_toposolid'],
+        acceptedStableIds: [
+          'toposolid-create',
+          'toposolid-update',
+          'create-toposolid-subdivision',
+          'site.toposolid-subdivision-update',
+          'site.toposolid-excavation-create',
+        ],
       },
       {
         id: 'grading-property-line-georeference',
         label: 'Grading, property line, and georeference tools',
         acceptedStableIds: [
-          'site.graded_region',
-          'site.property_line',
-          'site.base_survey_point',
-          'site.sun_settings',
-          'site.context_import',
+          'create-graded-region',
+          'site.setup-georeference',
+          'site.graded-region-update',
+          'site.property-line-create',
+          'site.project-base-point-create',
+          'site.survey-point-create',
+          'site.sun-settings-create',
+          'import-neighborhood',
         ],
       },
     ],
@@ -254,20 +263,15 @@ const M4_WAVE1_WORKSTREAMS = [
       {
         id: 'structural-authoring',
         label: 'Structural column and beam authoring',
-        acceptedStableIds: [
-          'structure.column.place',
-          'structure.beam.place',
-          'author.column',
-          'author.beam',
-        ],
+        acceptedStableIds: ['structure.column', 'structure.beam', 'structure.column_update'],
       },
       {
         id: 'construction-lite',
         label: 'Construction package, logistics, and checklist tools',
         acceptedStableIds: [
-          'construction.package.create',
-          'construction.logistics.create',
-          'construction.qa_checklist.upsert',
+          'construction.package',
+          'construction.logistics',
+          'construction.qa_checklist',
         ],
       },
     ],
@@ -281,21 +285,12 @@ const M4_WAVE1_WORKSTREAMS = [
       {
         id: 'mep-route-authoring',
         label: 'Pipe, duct, and cable route authoring',
-        acceptedStableIds: [
-          'mep.pipe_route.create',
-          'mep.duct_route.create',
-          'mep.cable_route.create',
-        ],
+        acceptedStableIds: ['mep.pipe_route', 'mep.duct_route', 'mep.cable_tray'],
       },
       {
         id: 'mep-equipment-fixtures-openings',
         label: 'MEP equipment, fixtures, terminals, and opening requests',
-        acceptedStableIds: [
-          'mep.equipment.place',
-          'mep.fixture.place',
-          'mep.terminal.place',
-          'mep.opening_request.create',
-        ],
+        acceptedStableIds: ['mep.equipment', 'mep.fixture', 'mep.terminal', 'mep.opening_request'],
       },
     ],
   },
@@ -309,20 +304,21 @@ const M4_WAVE1_WORKSTREAMS = [
         id: 'family-asset-catalog',
         label: 'Family type upsert, catalog query, and asset placement',
         acceptedStableIds: [
-          'family.type.upsert',
-          'family.catalog.query',
+          'family.upsert_type',
+          'family.place_instance',
+          'asset.query',
           'asset.place',
-          'asset.kit.place',
+          'place-kitchen-kit',
         ],
       },
       {
         id: 'material-decal-authoring',
         label: 'PBR material update, assignment, paint, and decals',
         acceptedStableIds: [
-          'material.pbr.upsert',
+          'material.upsert_pbr',
           'material.assign',
           'material.paint_face',
-          'decal.place',
+          'decal.create',
         ],
       },
     ],
@@ -337,25 +333,33 @@ const M4_WAVE1_WORKSTREAMS = [
         id: 'presentation-pack',
         label: 'Presentation frames, branded templates, render bundle, and share/export',
         acceptedStableIds: [
-          'presentation.frame.create',
-          'presentation.template.apply',
-          'presentation.render_bundle.create',
-          'presentation.share',
+          'presentation-documentation-pack',
+          'create-frame',
+          'create-brand-template',
+          'export-render-bundle',
+          'presentation-create',
+          'export-presentation',
         ],
       },
       {
         id: 'advanced-documentation',
         label: 'Advanced sheets, schedules, revisions, and documentation exports',
         acceptedStableIds: [
-          'document.advanced_sheet.create',
-          'document.schedule.advanced',
-          'document.revision.create',
-          'export.branded_pack',
+          'document.create_drawing_set',
+          'create-schedule-view',
+          'presentation-documentation-pack',
+          'export-branded-pdf',
         ],
       },
     ],
   },
 ];
+
+const M4_DYNAMIC_DESCRIPTOR_IDS = new Set(
+  M4_WAVE1_WORKSTREAMS.flatMap((workstream) =>
+    workstream.requiredSurfaceGroups.flatMap((group) => group.acceptedStableIds),
+  ),
+);
 
 function read(relPath) {
   try {
@@ -842,7 +846,7 @@ function inferCmdkExecutionKind(id, block, dispatchTypes, startedTools, invokes)
 function parseApiDescriptors() {
   const source = read(SOURCES.apiRegistry);
   const registryDefaults = parseRegistryDefaults();
-  return collectCallBlocks(source, 'ToolDescriptor')
+  const parsed = collectCallBlocks(source, 'ToolDescriptor')
     .map(({ block, line }) => {
       const id = extractStringProp(block, 'name') ?? UNKNOWN;
       const restMatch = block.match(
@@ -904,7 +908,52 @@ function parseApiDescriptors() {
         source: `${SOURCES.apiRegistry}:${line}`,
       };
     })
-    .sort((a, b) => a.id.localeCompare(b.id));
+    .filter((descriptor) => descriptor.id !== UNKNOWN);
+  const parsedIds = new Set(parsed.map((descriptor) => descriptor.id));
+  const dynamicFallbacks = [...M4_DYNAMIC_DESCRIPTOR_IDS]
+    .filter((id) => !parsedIds.has(id))
+    .filter(
+      (id) =>
+        registryDefaults.kernelCommandsByTool.has(id) ||
+        registryDefaults.resourceGroupsByTool.has(id),
+    )
+    .map((id) => {
+      const semanticSurface =
+        id.startsWith('structure.') || id.startsWith('construction.') || id.startsWith('mep.');
+      const querySurface = id.endsWith('.query') || id === 'asset.query';
+      return {
+        id,
+        stableId: id,
+        category: querySurface ? 'query' : 'mutation',
+        sideEffects: querySurface ? 'none' : 'mutates-kernel',
+        mutability: querySurface ? 'read' : 'write',
+        implementationStatus: 'implemented',
+        transport: 'http',
+        requiresBrowser: false,
+        createsExternalAssets: id.includes('export'),
+        exportsData: id.includes('export'),
+        method: querySurface ? 'GET' : 'POST',
+        path: querySurface
+          ? '/api/v3/catalog'
+          : semanticSurface
+            ? '/api/semantic-authoring/{surface_id}'
+            : '/api/models/{model_id}/bundles',
+        inputSchema: UNKNOWN,
+        outputSchema: UNKNOWN,
+        cliExample: UNKNOWN,
+        exitCodes: [],
+        kernelCommands: registryDefaults.kernelCommandsByTool.get(id) ?? [],
+        resourceGroups:
+          registryDefaults.resourceGroupsByTool.get(id) ??
+          (registryDefaults.kernelCommandsByTool.has(id) ? ['kernel-command'] : []),
+        uiFeatures: (registryDefaults.resourceGroupsByTool.get(id) ?? []).map(
+          (group) => `group:${group}`,
+        ),
+        agentSafetyNotes: 'Statically expanded from registry defaults for dynamic M4 registration.',
+        source: `${SOURCES.apiRegistry}:dynamic-default:${id}`,
+      };
+    });
+  return [...parsed, ...dynamicFallbacks].sort((a, b) => a.id.localeCompare(b.id));
 }
 
 function parseImplementedRoutes() {
