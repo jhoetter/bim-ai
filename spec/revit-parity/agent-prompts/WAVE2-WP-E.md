@@ -72,6 +72,7 @@ Update tracker §12.4.3 IFC export: "Done — Export → IFC 2x3… menu item wi
 ### E2 — DXF/DWG export menu item
 
 Add "Export → DXF/DWG…" menu item in `ProjectMenu.tsx`:
+
 - Opens a small inline options panel (like the existing DXF import options) with:
   - Level selector (dropdown from project levels)
   - Units dropdown: "mm" / "m"
@@ -92,6 +93,7 @@ Update tracker §12.4.3 DXF export: "Done — level-scoped DXF export with units
 **E3a. ToolId**: Add `'revision-cloud'` to `toolRegistry.ts` (hotkey `RC`, plan mode).
 
 **E3b. Grammar**: Add `RevisionCloudState` / `reduceRevisionCloud` to `toolGrammar.ts`:
+
 ```
 idle
   → click → first-point recorded (points = [p0])
@@ -111,6 +113,7 @@ draw the polygon as a dashed polyline with slightly rounded corners. A proper cl
 at each segment) is a bonus.
 
 Tests:
+
 - Grammar: 3 clicks + Enter emits createRevisionCloud with 3 points
 - Grammar: Escape in first-point+ state returns to idle with no effect
 - Plan renderer: revision_cloud with 4 points produces a closed polygon geometry

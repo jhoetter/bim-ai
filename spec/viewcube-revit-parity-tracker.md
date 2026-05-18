@@ -60,20 +60,20 @@ The finished ViewCube must satisfy these invariants:
 
 ## Current Gap Inventory
 
-| ID | Gap | Impact | Priority | Status |
-| --- | --- | --- | --- | --- |
-| VC-GAP-001 | ViewCube is currently a handcrafted SVG projection, not a real 3D widget. | Visuals and interaction drift from Revit quickly. | P0 | Open |
-| VC-GAP-002 | Labels are unstable because they are simulated with transformed SVG text. | Label size/orientation can look wrong while rotating. | P0 | Open |
-| VC-GAP-003 | Hit testing was historically separate from the visual highlight. | Blue hover areas can fail to click or click wrong targets. | P0 | In Progress |
-| VC-GAP-004 | Dragging lacks true ArcBall/snap-and-go behavior. | It feels rough and not Revit-like. | P0 | Open |
-| VC-GAP-005 | Click transitions are not a dedicated animated camera path. | View changes can feel like jumps or inconsistent state changes. | P0 | Open |
-| VC-GAP-006 | 26-view mapping exists only as math, not as a first-class rendered control model. | Face/edge/corner semantics are fragile. | P0 | Open |
-| VC-GAP-007 | The widget does not expose exact-view feedback. | User cannot tell when they are at a fixed viewpoint. | P1 | Open |
-| VC-GAP-008 | Roll arrows / adjacent face affordances are absent or incomplete. | Revit-like face-view manipulation is missing. | P1 | Open |
-| VC-GAP-009 | Compass is visually confusing and not functionally complete. | It competes with cube instead of acting like optional North control. | P1 | Open |
-| VC-GAP-010 | Context menu parity is missing. | Revit workflows such as Orient to View are absent. | P1 | Open |
-| VC-GAP-011 | No ViewCube options/preferences model. | Cannot control size, position, opacity, compass, projection behavior. | P2 | Open |
-| VC-GAP-012 | Visual QA is ad hoc. | Regressions recur because screenshots do not encode pass/fail criteria. | P0 | Open |
+| ID         | Gap                                                                               | Impact                                                                  | Priority | Status      |
+| ---------- | --------------------------------------------------------------------------------- | ----------------------------------------------------------------------- | -------- | ----------- |
+| VC-GAP-001 | ViewCube is currently a handcrafted SVG projection, not a real 3D widget.         | Visuals and interaction drift from Revit quickly.                       | P0       | Open        |
+| VC-GAP-002 | Labels are unstable because they are simulated with transformed SVG text.         | Label size/orientation can look wrong while rotating.                   | P0       | Open        |
+| VC-GAP-003 | Hit testing was historically separate from the visual highlight.                  | Blue hover areas can fail to click or click wrong targets.              | P0       | In Progress |
+| VC-GAP-004 | Dragging lacks true ArcBall/snap-and-go behavior.                                 | It feels rough and not Revit-like.                                      | P0       | Open        |
+| VC-GAP-005 | Click transitions are not a dedicated animated camera path.                       | View changes can feel like jumps or inconsistent state changes.         | P0       | Open        |
+| VC-GAP-006 | 26-view mapping exists only as math, not as a first-class rendered control model. | Face/edge/corner semantics are fragile.                                 | P0       | Open        |
+| VC-GAP-007 | The widget does not expose exact-view feedback.                                   | User cannot tell when they are at a fixed viewpoint.                    | P1       | Open        |
+| VC-GAP-008 | Roll arrows / adjacent face affordances are absent or incomplete.                 | Revit-like face-view manipulation is missing.                           | P1       | Open        |
+| VC-GAP-009 | Compass is visually confusing and not functionally complete.                      | It competes with cube instead of acting like optional North control.    | P1       | Open        |
+| VC-GAP-010 | Context menu parity is missing.                                                   | Revit workflows such as Orient to View are absent.                      | P1       | Open        |
+| VC-GAP-011 | No ViewCube options/preferences model.                                            | Cannot control size, position, opacity, compass, projection behavior.   | P2       | Open        |
+| VC-GAP-012 | Visual QA is ad hoc.                                                              | Regressions recur because screenshots do not encode pass/fail criteria. | P0       | Open        |
 
 ## Architecture Decision
 
@@ -97,11 +97,11 @@ Target architecture:
 
 Implementation options:
 
-| Option | Description | Pros | Cons | Decision |
-| --- | --- | --- | --- | --- |
-| A | Three.js mini renderer/canvas for ViewCube | Closest to real 3D, native raycasting, texture labels, lighting, smooth animation | Additional renderer lifecycle and pixel QA | Preferred |
-| B | Use main Three.js renderer with viewport/scissor overlay | One renderer, true 3D, can share render loop | More integration with `Viewport.tsx` and layering | Acceptable |
-| C | Retained SVG projection with robust math | Easier DOM testing | Still fights label perspective and hit parity | Reject for final parity |
+| Option | Description                                              | Pros                                                                              | Cons                                              | Decision                |
+| ------ | -------------------------------------------------------- | --------------------------------------------------------------------------------- | ------------------------------------------------- | ----------------------- |
+| A      | Three.js mini renderer/canvas for ViewCube               | Closest to real 3D, native raycasting, texture labels, lighting, smooth animation | Additional renderer lifecycle and pixel QA        | Preferred               |
+| B      | Use main Three.js renderer with viewport/scissor overlay | One renderer, true 3D, can share render loop                                      | More integration with `Viewport.tsx` and layering | Acceptable              |
+| C      | Retained SVG projection with robust math                 | Easier DOM testing                                                                | Still fights label perspective and hit parity     | Reject for final parity |
 
 ## Workpackages
 
@@ -480,4 +480,3 @@ Concrete first PR:
 3. Add tests proving `CameraRig.orbit` and ViewCube drag use the same sign/sensitivity.
 4. Add `scripts/viewcube-qa.mjs` to capture canonical screenshots and JSON state.
 5. Leave the existing visual implementation in place until the QA harness is green.
-

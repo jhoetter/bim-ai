@@ -22,6 +22,7 @@ packages/web/src/meshBuilders/                        — find floor mesh builde
 ```
 
 Run:
+
 - `grep -n "subFloor\|structureThickness\|finishThickness\|slopePoints" packages/core/src/index.ts | head -10`
 - `find packages/web/src/meshBuilders -name "*floor*" -o -name "*Floor*"` to find floor mesh builder
 
@@ -74,11 +75,12 @@ if (cmd.type === 'setSubFloorThickness') {
 
 ### D — Floor mesh builder update
 
-Find the floor mesh builder file (probably `meshBuilders/meshBuilders.floor.ts` or similar — run `find packages/web/src/meshBuilders -name "*loor*"`). 
+Find the floor mesh builder file (probably `meshBuilders/meshBuilders.floor.ts` or similar — run `find packages/web/src/meshBuilders -name "*loor*"`).
 
 In the function that builds the floor geometry, find where `thicknessMm` is used to set the floor's vertical extent. After the existing thickness, add the sub-floor pad as a second box below:
 
 If the file uses THREE.BoxGeometry or ExtrudeGeometry for the floor, add logic like:
+
 ```ts
 const subThick = (el as any).subFloorThicknessMm ?? 0;
 if (subThick > 0) {
@@ -129,7 +131,7 @@ registerCommand({
   label: 'Set Sub-floor Thickness',
   keywords: ['sub floor', 'basement', 'slab', 'pad', 'thickening', 'Bodenplatte', 'Keller'],
   category: 'command',
-  isAvailable: (ctx) => ctx.selectedElements?.some(e => e.kind === 'floor') ?? false,
+  isAvailable: (ctx) => ctx.selectedElements?.some((e) => e.kind === 'floor') ?? false,
   invoke: (_ctx) => {
     // Opens inspector — handled via inspector input
   },

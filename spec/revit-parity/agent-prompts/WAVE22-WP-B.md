@@ -9,6 +9,7 @@ This prompt is self-contained — start here.
 ## Context
 
 §3.3.4 "Gruppe Geometrie" is Partial — "Cut Geometry: Partial (shaft openings, wall voids via CSG)". Revit's Cut Geometry command lets you pick a cutter solid (e.g. a column void family) and a host element (e.g. a wall) to remove the cutter's volume from the host. This task adds:
+
 - `cutBy?: string[]` field on wall/floor/column elements to track what has been cut from them
 - `cut-geometry` tool (hotkey CG) with 2-step grammar: pick cutter → pick host
 - `modify.cut-geometry` and `modify.uncut-geometry` palette commands
@@ -29,6 +30,7 @@ packages/web/src/workspace/commandCapabilities.ts — capability entries
 ```
 
 Run:
+
 - `grep -n "kind: 'wall'" packages/core/src/index.ts | head -5` to find wall type
 - `grep -n "ToolId\|'join-geometry'" packages/web/src/tools/toolRegistry.ts | head -10`
 - `grep -n "reduceJoin\|JoinState" packages/web/src/tools/toolGrammar.ts | head -10`
@@ -45,6 +47,7 @@ Prettier runs automatically. **Always `git pull --rebase origin main` before pus
 ### A — `cutBy` field on host elements in packages/core/src/index.ts
 
 Find the wall element type (search for `WallElem` or `kind: 'wall'`). Add:
+
 ```ts
 cutBy?: string[]; // IDs of elements that cut voids into this element
 ```
@@ -52,6 +55,7 @@ cutBy?: string[]; // IDs of elements that cut voids into this element
 Add the same optional `cutBy?: string[]` field to the `FloorElem` and the column element types.
 
 Add command types:
+
 ```ts
 | { type: 'applyCutGeometry'; cutterId: string; hostId: string }
 | { type: 'removeCutGeometry'; cutterId: string; hostId: string }
@@ -62,9 +66,7 @@ Add command types:
 Find where `JoinGeometryState` or similar 2-pick grammar is defined. Add after it:
 
 ```ts
-export type CutGeometryState =
-  | { phase: 'idle' }
-  | { phase: 'picking-host'; cutterId: string };
+export type CutGeometryState = { phase: 'idle' } | { phase: 'picking-host'; cutterId: string };
 
 export type CutGeometryEvent =
   | { kind: 'activate' }
@@ -72,8 +74,7 @@ export type CutGeometryEvent =
   | { kind: 'pick'; elementId: string }
   | { kind: 'cancel' };
 
-export type CutGeometryEffect =
-  | { kind: 'commitCutGeometry'; cutterId: string; hostId: string };
+export type CutGeometryEffect = { kind: 'commitCutGeometry'; cutterId: string; hostId: string };
 
 export function reduceCutGeometry(
   state: CutGeometryState,
@@ -103,6 +104,7 @@ export function reduceCutGeometry(
 Add `'cut-geometry'` to the `ToolId` type union (find where other tool IDs are defined).
 
 Register in the tools array:
+
 ```ts
 {
   id: 'cut-geometry',
@@ -161,7 +163,9 @@ registerCommand({
   keywords: ['cut', 'void', 'subtract', 'geometry', 'csg'],
   category: 'command',
   isAvailable: (ctx) => (ctx.selectedElements?.length ?? 0) >= 1,
-  invoke: (ctx) => { ctx.activateTool?.('cut-geometry'); },
+  invoke: (ctx) => {
+    ctx.activateTool?.('cut-geometry');
+  },
 });
 
 registerCommand({
@@ -184,27 +188,39 @@ registerCommand({
 In the `case 'wall':` (and similar for floor/column) inspector section, add after existing fields:
 
 ```tsx
-{/* Cut geometry readout */}
-{(el as any).cutBy?.length > 0 && (
-  <details style={{ marginTop: 8 }}>
-    <summary data-testid="inspector-cut-by-summary" style={{ cursor: 'pointer', fontSize: 12 }}>
-      Cut By ({(el as any).cutBy.length})
-    </summary>
-    <div style={{ marginTop: 4 }}>
-      {(el as any).cutBy.map((cutterId: string, i: number) => (
-        <div key={cutterId} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 11, marginBottom: 2 }}>
-          <span data-testid={`inspector-cut-by-id-${i}`} style={{ color: '#aaa' }}>{cutterId.slice(-8)}</span>
-          <button
-            data-testid={`inspector-cut-by-remove-${i}`}
-            onClick={() => onSemanticCommand?.({ type: 'removeCutGeometry', cutterId, hostId: el.id })}
-            style={{ color: '#f87171', fontSize: 11 }}>
-            Remove Cut
-          </button>
-        </div>
-      ))}
-    </div>
-  </details>
-)}
+{
+  /* Cut geometry readout */
+}
+{
+  (el as any).cutBy?.length > 0 && (
+    <details style={{ marginTop: 8 }}>
+      <summary data-testid="inspector-cut-by-summary" style={{ cursor: 'pointer', fontSize: 12 }}>
+        Cut By ({(el as any).cutBy.length})
+      </summary>
+      <div style={{ marginTop: 4 }}>
+        {(el as any).cutBy.map((cutterId: string, i: number) => (
+          <div
+            key={cutterId}
+            style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 11, marginBottom: 2 }}
+          >
+            <span data-testid={`inspector-cut-by-id-${i}`} style={{ color: '#aaa' }}>
+              {cutterId.slice(-8)}
+            </span>
+            <button
+              data-testid={`inspector-cut-by-remove-${i}`}
+              onClick={() =>
+                onSemanticCommand?.({ type: 'removeCutGeometry', cutterId, hostId: el.id })
+              }
+              style={{ color: '#f87171', fontSize: 11 }}
+            >
+              Remove Cut
+            </button>
+          </div>
+        ))}
+      </div>
+    </details>
+  );
+}
 ```
 
 Add this block inside the `case 'wall':` JSX (near other optional sections). Also add the same inside `case 'floor':` and `case 'column':`.
@@ -274,7 +290,10 @@ describe('reduceCutGeometry — §3.3.4', () => {
   });
 
   it('cancels back to idle on cancel', () => {
-    const { next } = reduceCutGeometry({ phase: 'picking-host', cutterId: 'col1' }, { kind: 'cancel' });
+    const { next } = reduceCutGeometry(
+      { phase: 'picking-host', cutterId: 'col1' },
+      { kind: 'cancel' },
+    );
     expect(next.phase).toBe('idle');
   });
 });
@@ -289,28 +308,47 @@ import { useBimStore } from '../state/store';
 beforeEach(() => {
   useBimStore.setState({
     elementsById: {
-      'w1': { id: 'w1', kind: 'wall', levelId: 'L1', startMm: { xMm: 0, yMm: 0 }, endMm: { xMm: 5000, yMm: 0 }, thicknessMm: 200 },
+      w1: {
+        id: 'w1',
+        kind: 'wall',
+        levelId: 'L1',
+        startMm: { xMm: 0, yMm: 0 },
+        endMm: { xMm: 5000, yMm: 0 },
+        thicknessMm: 200,
+      },
     },
   });
 });
 
 describe('cut geometry commands — §3.3.4', () => {
   it('applyCutGeometry adds cutterId to host cutBy', () => {
-    useBimStore.getState().onSemanticCommand?.({ type: 'applyCutGeometry', cutterId: 'col1', hostId: 'w1' });
+    useBimStore
+      .getState()
+      .onSemanticCommand?.({ type: 'applyCutGeometry', cutterId: 'col1', hostId: 'w1' });
     const wall = useBimStore.getState().elementsById['w1'] as any;
     expect(wall.cutBy).toContain('col1');
   });
 
   it('applyCutGeometry deduplicates cutter IDs', () => {
-    useBimStore.getState().onSemanticCommand?.({ type: 'applyCutGeometry', cutterId: 'col1', hostId: 'w1' });
-    useBimStore.getState().onSemanticCommand?.({ type: 'applyCutGeometry', cutterId: 'col1', hostId: 'w1' });
+    useBimStore
+      .getState()
+      .onSemanticCommand?.({ type: 'applyCutGeometry', cutterId: 'col1', hostId: 'w1' });
+    useBimStore
+      .getState()
+      .onSemanticCommand?.({ type: 'applyCutGeometry', cutterId: 'col1', hostId: 'w1' });
     const wall = useBimStore.getState().elementsById['w1'] as any;
     expect(wall.cutBy.filter((id: string) => id === 'col1')).toHaveLength(1);
   });
 
   it('removeCutGeometry removes cutterId from host', () => {
-    useBimStore.setState({ elementsById: { 'w1': { ...useBimStore.getState().elementsById['w1'], cutBy: ['col1'] } as any } });
-    useBimStore.getState().onSemanticCommand?.({ type: 'removeCutGeometry', cutterId: 'col1', hostId: 'w1' });
+    useBimStore.setState({
+      elementsById: {
+        w1: { ...useBimStore.getState().elementsById['w1'], cutBy: ['col1'] } as any,
+      },
+    });
+    useBimStore
+      .getState()
+      .onSemanticCommand?.({ type: 'removeCutGeometry', cutterId: 'col1', hostId: 'w1' });
     const wall = useBimStore.getState().elementsById['w1'] as any;
     expect(wall.cutBy ?? []).not.toContain('col1');
   });

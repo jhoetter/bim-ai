@@ -39,7 +39,7 @@ Add a new exported function:
 ```ts
 export function generateCurtainWallsFromMass(
   mass: Extract<Element, { kind: 'mass_box' | 'mass_extrusion' | 'mass_revolution' }>,
-  elementsById: Record<string, Element | undefined>
+  elementsById: Record<string, Element | undefined>,
 ): Element[] {
   // 1. Get all vertical faces of the mass using massByFace.ts utilities
   // 2. For each vertical face, create a wall element with curtainWallData:
@@ -60,6 +60,7 @@ Use the same pattern as `generateWallsFromMass` but set `curtainWallData` on eac
 ### B — Palette command
 
 In `defaultCommands.ts`:
+
 ```ts
 {
   id: 'mass.generate-curtain-walls',
@@ -75,6 +76,7 @@ In `defaultCommands.ts`:
 ### C — Workspace handler
 
 In `Workspace.tsx`, add handler (alongside existing `mass.generate-walls`):
+
 ```ts
 massGenerateCurtainWalls: () => {
   const selected = /* get selected mass element */;
@@ -89,6 +91,7 @@ massGenerateCurtainWalls: () => {
 ### D — Register in capability graph
 
 In `commandCapabilities.ts` (wherever `MASS_CAPABILITIES` is defined), add:
+
 ```ts
 { id: 'mass.generate-curtain-walls', scope: 'selection', intendedModes: ['plan', '3d'], precondition: 'selected-mass' }
 ```
@@ -98,6 +101,7 @@ In `commandCapabilities.ts` (wherever `MASS_CAPABILITIES` is defined), add:
 ### E — Tests
 
 `packages/web/src/tools/massGenerateCurtainWalls.test.ts`:
+
 ```ts
 describe('generateCurtainWallsFromMass — §11.5', () => {
   it('returns walls for each vertical face of a mass_box', () => { ... });

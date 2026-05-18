@@ -45,23 +45,24 @@ vgFilters?: VGFilter[];
 ```
 
 Define:
+
 ```ts
 export type VGFilterRule = {
-  field: string;        // e.g. 'kind', 'levelId', 'materialId', 'thicknessMm'
+  field: string; // e.g. 'kind', 'levelId', 'materialId', 'thicknessMm'
   operator: 'equals' | 'not_equals' | 'greater_than' | 'less_than' | 'contains';
-  value: string;        // always string — coerce numerics
+  value: string; // always string — coerce numerics
 };
 
 export type VGFilter = {
   id: string;
   name: string;
-  categories: string[];           // element kind strings this filter applies to
-  rules: VGFilterRule[];          // all rules must match (AND)
+  categories: string[]; // element kind strings this filter applies to
+  rules: VGFilterRule[]; // all rules must match (AND)
   override: {
     visible?: boolean;
-    color?: string;               // CSS hex
+    color?: string; // CSS hex
     lineWeightFactor?: number;
-    transparencyPct?: number;     // 0–90
+    transparencyPct?: number; // 0–90
   };
 };
 ```
@@ -73,11 +74,13 @@ export type VGFilter = {
 Replace the stub content of the `'filters'` tab with:
 
 **Filter list** (left column, ~40% width):
+
 - Rows: filter name + enabled checkbox
 - "New filter" button (data-testid: `"vv-new-filter"`)
 - "Delete" button on each row (data-testid: `"vv-delete-filter-${id}"`)
 
 **Filter editor** (right column, ~60% width — shown when a filter is selected):
+
 - **Name** text input
 - **Categories** — multi-checkbox list of element kind strings (wall, floor, door, window, column,
   beam, room, etc.)
@@ -97,13 +100,14 @@ Study how the model tab dispatches `categoryOverrides` changes and follow the sa
 In `planProjection.ts`, after applying `categoryOverrides`, apply `vgFilters`:
 
 ```ts
-for (const filter of (planView.vgFilters ?? [])) {
+for (const filter of planView.vgFilters ?? []) {
   if (!elementMatchesFilter(el, filter)) continue;
   // apply filter.override the same way categoryOverrides overrides are applied
 }
 ```
 
 Implement `elementMatchesFilter(el: Element, filter: VGFilter): boolean`:
+
 - Element `kind` must be in `filter.categories` (if categories is non-empty)
 - All rules must match:
   - `'equals'`: `String(el[field]) === rule.value`
@@ -126,16 +130,13 @@ applied to 3D meshes and follow the same pattern.
 ## Tests
 
 Add to `packages/web/src/workspace/project/VVDialog.filters.test.tsx` (new file):
+
 1. "New filter" button adds a row to the filter list
 2. Deleting a filter removes it from the list and dispatches updateElement
 3. Selecting a filter shows its name/categories/rules in the editor
 4. Changing filter name dispatches updated vgFilters array
 
-Add to `packages/web/src/plan/planProjection.vgFilters.test.ts` (new file):
-5. `elementMatchesFilter` — `equals` rule matches exact string
-6. `elementMatchesFilter` — `greater_than` rule filters by numeric threshold
-7. `elementMatchesFilter` — empty categories array matches all element kinds
-8. Element with `visible: false` override excluded from plan render output
+Add to `packages/web/src/plan/planProjection.vgFilters.test.ts` (new file): 5. `elementMatchesFilter` — `equals` rule matches exact string 6. `elementMatchesFilter` — `greater_than` rule filters by numeric threshold 7. `elementMatchesFilter` — empty categories array matches all element kinds 8. Element with `visible: false` override excluded from plan render output
 
 ---
 
@@ -144,12 +145,14 @@ Add to `packages/web/src/plan/planProjection.vgFilters.test.ts` (new file):
 Edit `spec/revit-parity/revit2026-parity-tracker.md`:
 
 Update §2.1.4 description — append:
+
 ```
 VGFilter data model (`vgFilters` on plan_view): filter rules (field/operator/value, AND logic),
 per-category scope, graphic override (visible/color/lineWeight/transparency). VVDialog filters tab:
 filter list, editor (categories + rules + override), dispatches updateElement. planProjection.ts
 applies filters after categoryOverrides. 8 tests.
 ```
+
 Change status to `Done — P1`.
 
 Update summary table row for Chapter 2.

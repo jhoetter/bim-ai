@@ -26,7 +26,9 @@ async function shot(page, name, label) {
 }
 
 async function waitForCanvas(page) {
-  await page.waitForSelector('[data-testid="plan-canvas"], canvas', { timeout: 15000 }).catch(() => {});
+  await page
+    .waitForSelector('[data-testid="plan-canvas"], canvas', { timeout: 15000 })
+    .catch(() => {});
   await page.waitForTimeout(1500);
 }
 
@@ -41,18 +43,22 @@ async function waitForCanvas(page) {
     }
   });
   page.on('pageerror', (err) => errors.push({ type: 'pageerror', text: err.message }));
-  page.on('framenavigated', (f) => { if (f === page.mainFrame()) navs.push(f.url()); });
+  page.on('framenavigated', (f) => {
+    if (f === page.mainFrame()) navs.push(f.url());
+  });
 
   // ── Load app ─────────────────────────────────────────────────────────────
   console.log('Loading app…');
-  await page.goto(BASE_URL, { waitUntil: 'networkidle', timeout: 30000 }).catch(() =>
-    page.goto(BASE_URL, { waitUntil: 'domcontentloaded', timeout: 30000 })
-  );
+  await page
+    .goto(BASE_URL, { waitUntil: 'networkidle', timeout: 30000 })
+    .catch(() => page.goto(BASE_URL, { waitUntil: 'domcontentloaded', timeout: 30000 }));
   await waitForCanvas(page);
 
   // ── 20: WP-47 mirror overlay ─────────────────────────────────────────────
   // Click mirror tool if present
-  const mirrorBtn = page.locator('[data-testid="tool-mirror"], [aria-label="Mirror"], button:has-text("Mirror")').first();
+  const mirrorBtn = page
+    .locator('[data-testid="tool-mirror"], [aria-label="Mirror"], button:has-text("Mirror")')
+    .first();
   const mirrorExists = await mirrorBtn.isVisible().catch(() => false);
   if (mirrorExists) {
     await mirrorBtn.click();
@@ -64,7 +70,7 @@ async function waitForCanvas(page) {
       await page.mouse.click(box.x + box.width / 3, box.y + box.height / 2);
       await page.waitForTimeout(400);
       // Move to show dashed line
-      await page.mouse.move(box.x + box.width * 2 / 3, box.y + box.height / 2);
+      await page.mouse.move(box.x + (box.width * 2) / 3, box.y + box.height / 2);
       await page.waitForTimeout(400);
     }
   }
@@ -87,20 +93,28 @@ async function waitForCanvas(page) {
       await page.waitForTimeout(600);
     }
   }
-  await shot(page, '21-wp47-inspector-roof-boundary.png', 'WP-47 inspector with Edit Boundary card');
+  await shot(
+    page,
+    '21-wp47-inspector-roof-boundary.png',
+    'WP-47 inspector with Edit Boundary card',
+  );
 
   // ── 22: WP-46 3D wall tool active state ──────────────────────────────────
   await page.keyboard.press('Escape');
   await page.waitForTimeout(300);
   // Switch to 3D view if possible
-  const threeDBtn = page.locator('[data-testid="view-3d"], button:has-text("3D"), [aria-label="3D View"]').first();
+  const threeDBtn = page
+    .locator('[data-testid="view-3d"], button:has-text("3D"), [aria-label="3D View"]')
+    .first();
   const has3D = await threeDBtn.isVisible().catch(() => false);
   if (has3D) {
     await threeDBtn.click();
     await page.waitForTimeout(1000);
   }
   // Click wall tool
-  const wallBtn3d = page.locator('[data-testid="tool-wall"], [aria-label="Wall"], button:has-text("Wall")').first();
+  const wallBtn3d = page
+    .locator('[data-testid="tool-wall"], [aria-label="Wall"], button:has-text("Wall")')
+    .first();
   const hasWall3d = await wallBtn3d.isVisible().catch(() => false);
   if (hasWall3d) {
     await wallBtn3d.click();
@@ -112,19 +126,27 @@ async function waitForCanvas(page) {
   await page.keyboard.press('Escape');
   await page.waitForTimeout(300);
   // Try to open concept view
-  const conceptBtn = page.locator('[data-testid="view-concept"], button:has-text("Concept"), [aria-label="Concept"]').first();
+  const conceptBtn = page
+    .locator('[data-testid="view-concept"], button:has-text("Concept"), [aria-label="Concept"]')
+    .first();
   const hasConcept = await conceptBtn.isVisible().catch(() => false);
   if (hasConcept) {
     await conceptBtn.click();
     await page.waitForTimeout(1000);
   }
-  await shot(page, '23-wp48-concept-ribbon.png', 'WP-48 concept view ribbon (or current ribbon fallback)');
+  await shot(
+    page,
+    '23-wp48-concept-ribbon.png',
+    'WP-48 concept view ribbon (or current ribbon fallback)',
+  );
 
   // ── 24: WP-49 boundary error banner (SketchCanvas) ───────────────────────
   await page.keyboard.press('Escape');
   await page.waitForTimeout(300);
   // Navigate back to plan view
-  const planBtn = page.locator('[data-testid="view-plan"], button:has-text("Plan"), [aria-label="Plan"]').first();
+  const planBtn = page
+    .locator('[data-testid="view-plan"], button:has-text("Plan"), [aria-label="Plan"]')
+    .first();
   const hasPlan = await planBtn.isVisible().catch(() => false);
   if (hasPlan) {
     await planBtn.click();
@@ -133,23 +155,35 @@ async function waitForCanvas(page) {
   // Check for boundary-validation-error testid (may already be visible if a bad sketch was committed)
   const errorBanner = page.locator('[data-testid="boundary-validation-error"]').first();
   const hasBanner = await errorBanner.isVisible().catch(() => false);
-  await shot(page, '24-wp49-boundary-validation-banner.png', 'WP-49 boundary validation error banner state');
+  await shot(
+    page,
+    '24-wp49-boundary-validation-banner.png',
+    'WP-49 boundary validation error banner state',
+  );
 
   // ── 25: WP-49 repair panel (Modify tab) ──────────────────────────────────
   // Click the Modify tab in the ribbon
-  const modifyTab = page.locator('[data-testid="ribbon-tab-modify"], button:has-text("Modify")').first();
+  const modifyTab = page
+    .locator('[data-testid="ribbon-tab-modify"], button:has-text("Modify")')
+    .first();
   const hasModify = await modifyTab.isVisible().catch(() => false);
   if (hasModify) {
     await modifyTab.click();
     await page.waitForTimeout(500);
   }
-  await shot(page, '25-wp49-repair-panel-modify-tab.png', 'WP-49 Modify tab with Repair panel (Delete Duplicate + Detach Orphan)');
+  await shot(
+    page,
+    '25-wp49-repair-panel-modify-tab.png',
+    'WP-49 Modify tab with Repair panel (Delete Duplicate + Detach Orphan)',
+  );
 
   // ── 26: WP-50 split-pane plan + 3D ──────────────────────────────────────
   await page.keyboard.press('Escape');
   await page.waitForTimeout(300);
   // Try to open split pane
-  const splitBtn = page.locator('[data-testid="split-pane"], button:has-text("Split"), [aria-label="Split View"]').first();
+  const splitBtn = page
+    .locator('[data-testid="split-pane"], button:has-text("Split"), [aria-label="Split View"]')
+    .first();
   const hasSplit = await splitBtn.isVisible().catch(() => false);
   if (hasSplit) {
     await splitBtn.click();
@@ -170,7 +204,11 @@ async function waitForCanvas(page) {
     await page.keyboard.type('roof');
     await page.waitForTimeout(400);
   }
-  await shot(page, '27-wp50-cmdk-structural-commands.png', 'WP-50 Cmd+K showing structural commands (roof)');
+  await shot(
+    page,
+    '27-wp50-cmdk-structural-commands.png',
+    'WP-50 Cmd+K showing structural commands (roof)',
+  );
 
   await page.keyboard.press('Escape');
   await page.waitForTimeout(300);
@@ -182,10 +220,18 @@ async function waitForCanvas(page) {
     await planBtn2.click().catch(() => {});
     await page.waitForTimeout(800);
   }
-  await shot(page, '28-wp45-plan-full-model-clean.png', 'WP-45 plan view full structural model (clean, no orphaned constraints)');
+  await shot(
+    page,
+    '28-wp45-plan-full-model-clean.png',
+    'WP-45 plan view full structural model (clean, no orphaned constraints)',
+  );
 
   // ── 29: WP-50 full-page final state ─────────────────────────────────────
-  await shot(page, '29-wp50-final-state.png', 'WP-50 final app state — clean structural authoring session');
+  await shot(
+    page,
+    '29-wp50-final-state.png',
+    'WP-50 final app state — clean structural authoring session',
+  );
 
   await browser.close();
 

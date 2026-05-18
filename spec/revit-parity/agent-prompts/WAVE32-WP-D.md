@@ -11,6 +11,7 @@ This prompt is self-contained — start here.
 §2.4.3 "Pin vs Join" is Partial P1. Element pinning is done. Join Geometry palette commands exist (`modify.join-geometry` / `modify.unjoin-geometry`). What's missing: when two elements are joined, the visual should reflect it — in Revit, joined walls/floors suppress the interior line at their intersection and merge material boundaries. True CSG boolean geometry is complex; instead implement a **visual join flag**: store joined element pairs in the store, and render joined elements without the separator line in the plan view (suppressed interior edge).
 
 This task adds:
+
 1. `joinedPairs: string[][]` field in the Zustand store (each inner array is a sorted pair of element IDs)
 2. `JoinGeometryCmd` / `UnjoinGeometryCmd` in core (they may already exist — check first)
 3. Workspace handlers that update `joinedPairs`
@@ -30,6 +31,7 @@ packages/web/src/plan/symbology.ts             — find where wall plan lines ar
 ```
 
 Run before editing:
+
 - `grep -n "JoinGeometry\|joinGeometry\|join-geometry\|unjoin\|joinedPairs\|joinOverrides" packages/core/src/index.ts | head -15`
 - `grep -n "join.*geometry\|joinGeometry\|joinedPairs" packages/web/src/workspace/Workspace.tsx | head -10`
 - `grep -n "joinedPairs\|joinedWith\|join" packages/web/src/state/storeViewportRuntimeSlice.ts | head -10`
@@ -93,7 +95,9 @@ if (cmd.type === 'joinGeometry') {
 if (cmd.type === 'unjoinGeometry') {
   const pair = [cmd.elementIdA, cmd.elementIdB].sort();
   useBimStore.setState((s: any) => ({
-    joinedPairs: (s.joinedPairs ?? []).filter(([a, b]: [string, string]) => !(a === pair[0] && b === pair[1])),
+    joinedPairs: (s.joinedPairs ?? []).filter(
+      ([a, b]: [string, string]) => !(a === pair[0] && b === pair[1]),
+    ),
   }));
   return;
 }
@@ -182,7 +186,10 @@ describe('Join geometry visual merge — §2.4.3', () => {
   });
 
   it('unjoining removes the pair', () => {
-    const existing: [string, string][] = [['w1', 'w2'], ['w3', 'w4']];
+    const existing: [string, string][] = [
+      ['w1', 'w2'],
+      ['w3', 'w4'],
+    ];
     const pair = ['w1', 'w2'];
     const result = existing.filter(([a, b]) => !(a === pair[0] && b === pair[1]));
     expect(result).toEqual([['w3', 'w4']]);

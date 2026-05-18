@@ -11,6 +11,7 @@ This prompt is self-contained — start here.
 §12.1.1 "Verknüpfungen" is Partial P1. Already done: link_model, link_ifc, link_pdf. Still missing: **point cloud** support. In Revit, you can link a point cloud (.rcp/.rcs file) and it appears as a colored point set in the 3D view.
 
 This task adds basic point cloud linking:
+
 1. `link_pointcloud` element type in core (with `name`, optional `color`, `visible`)
 2. `AddPointCloudCmd` / `RemovePointCloudCmd` in core
 3. Workspace handlers
@@ -31,6 +32,7 @@ packages/web/src/workspace/Workspace.tsx               — find addPdfLink / rem
 ```
 
 Run before editing:
+
 - `grep -n "link_pdf\|link_ifc\|link_model\|link_pointcloud" packages/core/src/index.ts | head -15`
 - `grep -n "AddPdfLinkCmd\|RemovePdfLinkCmd\|TogglePdfLinkCmd\|AddPointCloud" packages/core/src/index.ts | head -10`
 - `grep -n "kind.*link_pdf\|PdfLinkRow\|pdfLinks\|addPdfLink\|pointCloud" packages/web/src/workspace/project/ManageLinksDialog.tsx | head -15`
@@ -98,7 +100,13 @@ if (cmd.type === 'addPointCloud') {
   useBimStore.setState({
     elementsById: {
       ...cur,
-      [id]: { kind: 'link_pointcloud', id, name: cmd.name as string, color: (cmd.color as number | undefined) ?? 0xffa500, visible: true },
+      [id]: {
+        kind: 'link_pointcloud',
+        id,
+        name: cmd.name as string,
+        color: (cmd.color as number | undefined) ?? 0xffa500,
+        visible: true,
+      },
     },
   });
   return;
@@ -143,15 +151,20 @@ const pointClouds: PointCloudRow[] = useMemo(
 Add the Point Clouds section in the dialog JSX (follow the PDF section's collapsible pattern):
 
 ```tsx
-{/* §12.1.1: Point Clouds */}
+{
+  /* §12.1.1: Point Clouds */
+}
 <details data-testid="manage-links-pointcloud-section" style={{ marginTop: 8 }}>
   <summary style={{ fontSize: 12, fontWeight: 600, cursor: 'pointer', userSelect: 'none' }}>
     Point Clouds ({pointClouds.length})
   </summary>
   <div style={{ paddingLeft: 8, marginTop: 6, display: 'flex', flexDirection: 'column', gap: 4 }}>
     {pointClouds.map((pc) => (
-      <div key={pc.id} data-testid={`pc-link-row-${pc.id}`}
-           style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12 }}>
+      <div
+        key={pc.id}
+        data-testid={`pc-link-row-${pc.id}`}
+        style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12 }}
+      >
         <input
           type="checkbox"
           data-testid={`pc-link-visible-${pc.id}`}
@@ -159,21 +172,39 @@ Add the Point Clouds section in the dialog JSX (follow the PDF section's collaps
           onChange={() => void onSemanticCommand?.({ type: 'togglePointCloud', linkId: pc.id })}
         />
         <span style={{ flex: 1 }}>{pc.name}</span>
-        {pc.pointCount && <span style={{ fontSize: 10, color: '#888' }}>{pc.pointCount.toLocaleString()} pts</span>}
+        {pc.pointCount && (
+          <span style={{ fontSize: 10, color: '#888' }}>{pc.pointCount.toLocaleString()} pts</span>
+        )}
         <button
           data-testid={`pc-link-remove-${pc.id}`}
           onClick={() => void onSemanticCommand?.({ type: 'removePointCloud', linkId: pc.id })}
           style={{ fontSize: 10, padding: '1px 6px', cursor: 'pointer' }}
-        >Remove</button>
+        >
+          Remove
+        </button>
       </div>
     ))}
     <button
       data-testid="pc-link-add"
-      onClick={() => void onSemanticCommand?.({ type: 'addPointCloud', name: `Point Cloud ${pointClouds.length + 1}`, color: 0xffa500 })}
-      style={{ fontSize: 11, marginTop: 4, padding: '3px 8px', cursor: 'pointer', alignSelf: 'flex-start' }}
-    >+ Add Point Cloud</button>
+      onClick={() =>
+        void onSemanticCommand?.({
+          type: 'addPointCloud',
+          name: `Point Cloud ${pointClouds.length + 1}`,
+          color: 0xffa500,
+        })
+      }
+      style={{
+        fontSize: 11,
+        marginTop: 4,
+        padding: '3px 8px',
+        cursor: 'pointer',
+        alignSelf: 'flex-start',
+      }}
+    >
+      + Add Point Cloud
+    </button>
   </div>
-</details>
+</details>;
 ```
 
 **Important**: Read the actual ManageLinksDialog file. Find the exact `onSemanticCommand` prop name. Find where `elementsById` comes from (it may be from props). Adapt the JSX to match the actual structure.

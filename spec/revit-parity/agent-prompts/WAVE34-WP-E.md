@@ -12,6 +12,7 @@ This is the QA pass for the tracker finalization wave. Focus on consistency chec
 ## Ownership
 
 Primary write scope:
+
 - `spec/revit-parity/revit2026-parity-tracker.md` only for small consistency fixes.
 
 Do not edit product code.
@@ -42,4 +43,3 @@ git diff --check -- spec/revit-parity/revit2026-parity-tracker.md
 
 - Final report lists remaining non-final statuses, if any.
 - `git diff --check` passes for the tracker.
-

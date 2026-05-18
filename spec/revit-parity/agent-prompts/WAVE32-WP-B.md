@@ -15,6 +15,7 @@ This prompt is self-contained — start here.
 2. **App Settings panel** — Revit has an Options dialog (units, file locations, keyboard shortcuts, UI themes). bim-ai needs a settings panel for: default length units (mm / cm / m), UI density (compact / normal), and a keyboard shortcut reference.
 
 This task adds:
+
 1. `SaveFamilyToLibraryCmd` command type in core
 2. "Save to Library" button in the inspector (for element types: wall_type, floor_type, roof_type)
 3. `AppSettingsPanel.tsx` — units + density toggles
@@ -35,6 +36,7 @@ packages/web/src/workspace/inspector/InspectorContent.tsx — find wall_type / f
 ```
 
 Run before editing:
+
 - `grep -n "wall_type\|floor_type\|roof_type\|SaveFamily\|familyLibrary" packages/web/src/workspace/inspector/InspectorContent.tsx | head -15`
 - `grep -n "appSettings\|defaultUnits\|uiDensity\|AppSettings" packages/web/src/state/storeViewportRuntimeSlice.ts | head -10`
 - `grep -n "Settings\|settings" packages/web/src/workspace/project/ProjectMenu.tsx | head -10`
@@ -68,7 +70,7 @@ In `packages/web/src/state/storeViewportRuntimeSlice.ts`, add:
 appSettings: {
   defaultUnits: 'mm' | 'cm' | 'm';
   uiDensity: 'compact' | 'normal';
-};
+}
 ```
 
 Initial value: `{ defaultUnits: 'mm', uiDensity: 'normal' }`.
@@ -135,7 +137,9 @@ interface AppSettingsPanelProps {
 }
 
 export function AppSettingsPanel({ onClose }: AppSettingsPanelProps): JSX.Element {
-  const appSettings = useBimStore((s: any) => s.appSettings ?? { defaultUnits: 'mm', uiDensity: 'normal' });
+  const appSettings = useBimStore(
+    (s: any) => s.appSettings ?? { defaultUnits: 'mm', uiDensity: 'normal' },
+  );
 
   return (
     <div
@@ -155,10 +159,28 @@ export function AppSettingsPanel({ onClose }: AppSettingsPanelProps): JSX.Elemen
         flexDirection: 'column',
       }}
     >
-      <div style={{ display: 'flex', alignItems: 'center', padding: '10px 14px', borderBottom: '1px solid var(--border)' }}>
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          padding: '10px 14px',
+          borderBottom: '1px solid var(--border)',
+        }}
+      >
         <span style={{ fontSize: 13, fontWeight: 600, flex: 1 }}>Settings</span>
-        <button data-testid="app-settings-close" onClick={onClose}
-          style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 16, color: 'inherit' }}>✕</button>
+        <button
+          data-testid="app-settings-close"
+          onClick={onClose}
+          style={{
+            background: 'none',
+            border: 'none',
+            cursor: 'pointer',
+            fontSize: 16,
+            color: 'inherit',
+          }}
+        >
+          ✕
+        </button>
       </div>
       <div style={{ padding: 16, display: 'flex', flexDirection: 'column', gap: 16 }}>
         <label style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
@@ -166,8 +188,17 @@ export function AppSettingsPanel({ onClose }: AppSettingsPanelProps): JSX.Elemen
           <select
             data-testid="app-settings-units"
             value={appSettings.defaultUnits}
-            onChange={(e) => useBimStore.setState((s: any) => ({ appSettings: { ...s.appSettings, defaultUnits: e.target.value } }))}
-            style={{ fontSize: 12, padding: '4px 6px', borderRadius: 4, border: '1px solid var(--border)' }}
+            onChange={(e) =>
+              useBimStore.setState((s: any) => ({
+                appSettings: { ...s.appSettings, defaultUnits: e.target.value },
+              }))
+            }
+            style={{
+              fontSize: 12,
+              padding: '4px 6px',
+              borderRadius: 4,
+              border: '1px solid var(--border)',
+            }}
           >
             <option value="mm">Millimeters (mm)</option>
             <option value="cm">Centimeters (cm)</option>
@@ -179,8 +210,17 @@ export function AppSettingsPanel({ onClose }: AppSettingsPanelProps): JSX.Elemen
           <select
             data-testid="app-settings-density"
             value={appSettings.uiDensity}
-            onChange={(e) => useBimStore.setState((s: any) => ({ appSettings: { ...s.appSettings, uiDensity: e.target.value } }))}
-            style={{ fontSize: 12, padding: '4px 6px', borderRadius: 4, border: '1px solid var(--border)' }}
+            onChange={(e) =>
+              useBimStore.setState((s: any) => ({
+                appSettings: { ...s.appSettings, uiDensity: e.target.value },
+              }))
+            }
+            style={{
+              fontSize: 12,
+              padding: '4px 6px',
+              borderRadius: 4,
+              border: '1px solid var(--border)',
+            }}
           >
             <option value="normal">Normal</option>
             <option value="compact">Compact</option>
@@ -245,10 +285,13 @@ registerCommand({
   label: 'Save to Family Library',
   keywords: ['save family', 'library', 'family library', 'reuse', 'element type'],
   category: 'file',
-  isAvailable: (ctx) => (ctx.selectedElements ?? []).some((e) =>
-    ['wall_type', 'floor_type', 'roof_type', 'family_definition'].includes(e.kind)
-  ),
-  invoke: () => { /* triggered from inspector */ },
+  isAvailable: (ctx) =>
+    (ctx.selectedElements ?? []).some((e) =>
+      ['wall_type', 'floor_type', 'roof_type', 'family_definition'].includes(e.kind),
+    ),
+  invoke: () => {
+    /* triggered from inspector */
+  },
 });
 
 registerCommand({
@@ -257,7 +300,9 @@ registerCommand({
   keywords: ['settings', 'preferences', 'units', 'density', 'options', 'configure'],
   category: 'view',
   isAvailable: () => true,
-  invoke: () => { /* opened via ProjectMenu > Settings… */ },
+  invoke: () => {
+    /* opened via ProjectMenu > Settings… */
+  },
 });
 ```
 
@@ -270,7 +315,11 @@ import { describe, expect, it } from 'vitest';
 
 describe('App settings + family library (§1.6.2)', () => {
   it('SaveFamilyToLibraryCmd has correct shape', () => {
-    const cmd = { type: 'saveFamilyToLibrary' as const, elementId: 'wt-1', familyName: 'My Wall Type' };
+    const cmd = {
+      type: 'saveFamilyToLibrary' as const,
+      elementId: 'wt-1',
+      familyName: 'My Wall Type',
+    };
     expect(cmd.type).toBe('saveFamilyToLibrary');
     expect(cmd.elementId).toBe('wt-1');
   });

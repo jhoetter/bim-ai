@@ -41,11 +41,13 @@ Read ALL of these before writing anything:
 ### A — Core type: room area in placed_tag fields
 
 In `core/index.ts`, add to `placed_tag.fields` if NOT already present:
+
 ```ts
 roomArea?: number | null; // area in mm²
 ```
 
 Also add display control fields to the `placed_tag` type itself if not present:
+
 ```ts
 /** Which fields are shown in the tag label. */
 showRoomName?: boolean | null;      // default true
@@ -58,6 +60,7 @@ showRoomArea?: boolean | null;      // default false
 In `planElementMeshBuilders.ts`, in the `placed_tag` renderer:
 
 When `el.categoryKind === 'room'`:
+
 - Compose the tag text from the enabled fields:
   - If `showRoomNumber !== false`: first line = `el.fields?.roomNumber ?? ''`
   - If `showRoomName !== false`: second line = `el.fields?.roomName ?? ''`
@@ -71,6 +74,7 @@ Tag the group with `userData.placedTagKind = 'room'` and `userData.elementId = e
 ### C — Auto-populate room area when placing/updating tag
 
 In `Workspace.tsx` (or wherever the `placed_tag` update logic runs), when a `placed_tag` with `categoryKind === 'room'` is created or the host room changes:
+
 - Resolve the host room element from `elementsById` by `hostElementId`
 - Copy `room.areaMm2` → `tag.fields.roomArea`
 - Copy `room.name` → `tag.fields.roomName`
@@ -112,7 +116,10 @@ In `InspectorContent.tsx`, for `el.kind === 'placed_tag'` and `el.categoryKind =
     />
     Show Area (m²)
   </label>
-  <FieldRow label="Area" value={el.fields?.roomArea != null ? `${(el.fields.roomArea / 1e6).toFixed(2)} m²` : '—'} />
+  <FieldRow
+    label="Area"
+    value={el.fields?.roomArea != null ? `${(el.fields.roomArea / 1e6).toFixed(2)} m²` : '—'}
+  />
 </div>
 ```
 
@@ -121,6 +128,7 @@ If the `placed_tag` inspector case does not exist yet, add the full case for `'p
 ### E — Tests
 
 Write `packages/web/src/workspace/inspector/roomTagInspector.test.tsx`:
+
 ```ts
 describe('room tag inspector — §13.1.2', () => {
   it('renders inspector-tag-show-number checkbox checked by default', () => { ... });
@@ -131,6 +139,7 @@ describe('room tag inspector — §13.1.2', () => {
 ```
 
 Write `packages/web/src/plan/roomTagRenderer.test.ts`:
+
 ```ts
 describe('room tag plan renderer — §13.1.2', () => {
   it('composes tag text with room number and name by default', () => { ... });
@@ -144,6 +153,7 @@ describe('room tag plan renderer — §13.1.2', () => {
 ## Commit and push
 
 After tests pass (`pnpm test --filter @bim-ai/web`):
+
 ```
 git add -p
 git commit -m "feat(wave13/E): room tags — name/number/area display + inspector (§13.1.2)"

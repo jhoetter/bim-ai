@@ -22,6 +22,7 @@ packages/web/src/tools/modifierBar.ts. The review agent confirmed these represen
 route work that has not yet been pushed.
 
 Commit and push those changes before applying the fixes below:
+
 ```bash
 git add app/bim_ai/activity.py app/bim_ai/comments.py app/bim_ai/elements.py app/bim_ai/engine.py
 # Review carefully — do NOT add modifierBar.ts (that belongs to WP-047) or anything in img/ unless
@@ -41,9 +42,11 @@ WP-045 branch. Do NOT leave them here; they will cause merge conflicts.
 ### 2. Pixel-map endpoint missing from production routes
 
 Task 3 of the WP requires:
+
 ```
 GET /api/v3/models/{modelId}/sheets/{sheetId}/pixel-map
 ```
+
 Register this in `routes_api.py` (the real FastAPI router, not the test stub). The handler should
 call the same pixel-map logic already implemented in the test stub. Return a 2D array of element
 IDs (or nulls) as JSON.
@@ -77,6 +80,7 @@ only appear when the current view is a sheet view.
 ### 7. Extend test_comments_route.py
 
 The WP acceptance requires extending `app/tests/api/test_comments_route.py` with:
+
 - A test that POSTs a sheet comment (anchor.kind == "sheet") and asserts a `sheet_comment_chip`
   activity entry was emitted.
 - A test that resolves a sheet comment and asserts the `sheet_comment_resolved` activity entry
@@ -95,6 +99,7 @@ make verify
 ## Commit and push
 
 After STEP 0, make fixes and push one or more additional commits:
+
 ```bash
 git add <specific files only>
 git commit -m "fix(mrk): production routes, remove OUT scope creep, WS chip, TopBar wiring, route tests"

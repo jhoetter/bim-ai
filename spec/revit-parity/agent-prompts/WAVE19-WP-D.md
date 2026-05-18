@@ -9,9 +9,11 @@ This prompt is self-contained — start here.
 ## Context — what Wave 18 already delivered
 
 Wave 18 WP-E created:
+
 - `packages/web/src/plan/detectFloorBoundaryFromWalls.ts` — `detectFloorBoundaryFromWalls()` + convex hull
 
 **Still missing:**
+
 - `edgeProfileMm` + `autoDetectedBoundary` fields on `floor` element in `core/index.ts`
 - Tool wiring: shift-click in floor tool triggers `detectFloorBoundaryFromWalls` and auto-creates a floor
 - Inspector edge profile section (collapsible, point list with add/clear)
@@ -43,6 +45,7 @@ Prettier runs automatically. **Always `git pull --rebase origin main` before pus
 ### A — Floor element additional fields in `core/index.ts`
 
 Add if not present:
+
 ```ts
 // On the floor element:
 edgeProfileMm?: { xMm: number; yMm: number }[];
@@ -102,38 +105,52 @@ In `InspectorContent.tsx`, `case 'floor':`, add an edge profile collapsible sect
     ) : (
       (el.edgeProfileMm ?? []).map((pt, i) => (
         <div key={i} style={{ display: 'flex', gap: 4 }}>
-          <input type="number" data-testid={`inspector-floor-edge-pt-x-${i}`}
+          <input
+            type="number"
+            data-testid={`inspector-floor-edge-pt-x-${i}`}
             value={pt.xMm}
-            onChange={e => {
+            onChange={(e) => {
               const updated = [...(el.edgeProfileMm ?? [])];
               updated[i] = { ...updated[i], xMm: +e.target.value };
               onPropertyChange('edgeProfileMm', updated);
-            }} />
-          <input type="number" data-testid={`inspector-floor-edge-pt-y-${i}`}
+            }}
+          />
+          <input
+            type="number"
+            data-testid={`inspector-floor-edge-pt-y-${i}`}
             value={pt.yMm}
-            onChange={e => {
+            onChange={(e) => {
               const updated = [...(el.edgeProfileMm ?? [])];
               updated[i] = { ...updated[i], yMm: +e.target.value };
               onPropertyChange('edgeProfileMm', updated);
-            }} />
+            }}
+          />
         </div>
       ))
     )}
-    <button data-testid="inspector-floor-edge-add-pt"
-      onClick={() => onPropertyChange('edgeProfileMm', [...(el.edgeProfileMm ?? []), { xMm: 0, yMm: 0 }])}>
+    <button
+      data-testid="inspector-floor-edge-add-pt"
+      onClick={() =>
+        onPropertyChange('edgeProfileMm', [...(el.edgeProfileMm ?? []), { xMm: 0, yMm: 0 }])
+      }
+    >
       + Point
     </button>
     {(el.edgeProfileMm ?? []).length > 0 && (
-      <button data-testid="inspector-floor-edge-clear"
-        onClick={() => onPropertyChange('edgeProfileMm', [])}>
+      <button
+        data-testid="inspector-floor-edge-clear"
+        onClick={() => onPropertyChange('edgeProfileMm', [])}
+      >
         Clear
       </button>
     )}
   </div>
-</details>
-{el.autoDetectedBoundary && (
-  <span data-testid="inspector-floor-auto-boundary">Auto-detected boundary</span>
-)}
+</details>;
+{
+  el.autoDetectedBoundary && (
+    <span data-testid="inspector-floor-auto-boundary">Auto-detected boundary</span>
+  );
+}
 ```
 
 ---
@@ -141,6 +158,7 @@ In `InspectorContent.tsx`, `case 'floor':`, add an edge profile collapsible sect
 ### D — Palette command + capability graph
 
 In `defaultCommands.ts`:
+
 ```ts
 { id: 'tool.floor-auto-detect', label: 'Auto-Detect Floor Boundary',
   keywords: ['floor', 'auto', 'detect', 'boundary', 'wall', 'slab'],
@@ -148,6 +166,7 @@ In `defaultCommands.ts`:
 ```
 
 In `commandCapabilities.ts`:
+
 ```ts
 { id: 'tool.floor-auto-detect', scope: 'document', intendedModes: ['plan'], precondition: null },
 ```
@@ -169,10 +188,30 @@ describe('detectFloorBoundaryFromWalls wiring — §2.4.2', () => {
 
   it('returns polygon from four wall endpoints', () => {
     const elements: Record<string, any> = {
-      w1: { kind: 'wall', levelId: 'L1', startMm: { xMm: 0, yMm: 0 }, endMm: { xMm: 5000, yMm: 0 } },
-      w2: { kind: 'wall', levelId: 'L1', startMm: { xMm: 5000, yMm: 0 }, endMm: { xMm: 5000, yMm: 4000 } },
-      w3: { kind: 'wall', levelId: 'L1', startMm: { xMm: 5000, yMm: 4000 }, endMm: { xMm: 0, yMm: 4000 } },
-      w4: { kind: 'wall', levelId: 'L1', startMm: { xMm: 0, yMm: 4000 }, endMm: { xMm: 0, yMm: 0 } },
+      w1: {
+        kind: 'wall',
+        levelId: 'L1',
+        startMm: { xMm: 0, yMm: 0 },
+        endMm: { xMm: 5000, yMm: 0 },
+      },
+      w2: {
+        kind: 'wall',
+        levelId: 'L1',
+        startMm: { xMm: 5000, yMm: 0 },
+        endMm: { xMm: 5000, yMm: 4000 },
+      },
+      w3: {
+        kind: 'wall',
+        levelId: 'L1',
+        startMm: { xMm: 5000, yMm: 4000 },
+        endMm: { xMm: 0, yMm: 4000 },
+      },
+      w4: {
+        kind: 'wall',
+        levelId: 'L1',
+        startMm: { xMm: 0, yMm: 4000 },
+        endMm: { xMm: 0, yMm: 0 },
+      },
     };
     const result = detectFloorBoundaryFromWalls({ xMm: 2500, yMm: 2000 }, elements, 'L1');
     expect(result).not.toBeNull();
@@ -181,7 +220,12 @@ describe('detectFloorBoundaryFromWalls wiring — §2.4.2', () => {
 
   it('filters walls by levelId', () => {
     const elements: Record<string, any> = {
-      w1: { kind: 'wall', levelId: 'L2', startMm: { xMm: 0, yMm: 0 }, endMm: { xMm: 5000, yMm: 0 } },
+      w1: {
+        kind: 'wall',
+        levelId: 'L2',
+        startMm: { xMm: 0, yMm: 0 },
+        endMm: { xMm: 5000, yMm: 0 },
+      },
     };
     const result = detectFloorBoundaryFromWalls({ xMm: 0, yMm: 0 }, elements, 'L1');
     expect(result).toBeNull();

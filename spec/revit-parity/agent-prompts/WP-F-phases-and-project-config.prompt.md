@@ -6,6 +6,7 @@ You are an orchestrating engineer on the bim-ai repository (`/Users/jhoetter/rep
 bim-ai is a browser-based BIM authoring tool (React + TypeScript + Three.js, Vite, Vitest).
 
 Repo layout (critical paths):
+
 - `packages/web/src/viewport/phaseFilter.ts` — existing phase filter logic (start here)
 - `packages/web/src/plan/PhaseDropdown.tsx` — existing phase selector in plan header
 - `packages/web/src/plan/PlanViewHeader.tsx` — plan header (add view range, phase graphic buttons)
@@ -18,6 +19,7 @@ Repo layout (critical paths):
 - `packages/core/src/` — shared types
 
 Architecture patterns:
+
 - Project-level settings (like units, project info) live as special model elements or in a project settings object. Study how `osm/project.ts` stores georef data to understand the pattern.
 - Phase filter: `phaseFilter.ts` defines `PhaseFilter` type. Elements have `phaseId?: string`. The filter controls what renders.
 - Semantic commands: `{ type: 'createPhase', name }`, `{ type: 'setElementPhase', elementId, phaseId }`, etc.
@@ -42,11 +44,13 @@ Implement full phase management, project information dialog, project units, and 
 Currently phases can filter what renders, but phases cannot be created, deleted, or renamed by the user. Implement a complete phase management system.
 
 Data model additions:
+
 - `phase` model element: `{ id, name, sequenceNumber, description }`
 - Default project phases: `[{ id: 'existing', name: 'Bestand', sequenceNumber: 1 }, { id: 'demo', name: 'Abriss', sequenceNumber: 2 }, { id: 'new', name: 'Neubau', sequenceNumber: 3 }]`
 - Each element already has `phaseId?: string` — elements without a phaseId are treated as `'new'`.
 
 New semantic commands:
+
 - `{ type: 'createPhase', name, sequenceNumber }` — adds a new phase
 - `{ type: 'deletePhase', phaseId }` — removes a phase; elements of that phase are re-assigned to the adjacent phase
 - `{ type: 'renamePhase', phaseId, name }` — renames
@@ -54,22 +58,26 @@ New semantic commands:
 - `{ type: 'setElementPhase', elementId, phaseId }` — assign element to phase
 
 UI — "Manage Phases" dialog (`packages/web/src/phases/PhaseManagerDialog.tsx`):
+
 - Opened from: workspace settings menu or "Verwalten → Phasen" equivalent.
 - Shows a table of phases with columns: Sequence, Name, Description.
 - Rows can be added, deleted, renamed, reordered via drag-and-drop.
 - Warning when deleting a phase that has elements: "N elements will be moved to [previous phase]".
 
 Phase assignment in inspector:
+
 - When any element is selected, the inspector shows a "Phase" dropdown (all available phases).
 - Changing it dispatches `setElementPhase`.
 
 Phase assignment in plan view:
+
 - The existing `PhaseDropdown.tsx` controls which phase is "active" (new elements placed go into this phase).
 - The active phase is shown in the plan header.
 
 ### Sub-task F2: Phase Graphic Overrides
 
 Revit shows elements from different phases in different graphic styles in the same view:
+
 - **Existing** (Bestand): shown in grey halftone lines, no fill
 - **Demolished** (Abriss): shown as dashed, with a cross-hatch fill in demolition views
 - **New Construction** (Neubau): shown in normal black lines with material fills
@@ -79,6 +87,7 @@ This is controlled by the active "phase filter" on the view (e.g. "New Construct
 Implementation:
 
 Per-view phase filter settings (add to `plan_view` element):
+
 ```ts
 phaseFilterMode: 'new_construction' | 'demolition' | 'existing' | 'all'
 phaseGraphicOverrides: {
@@ -93,6 +102,7 @@ Plan projection: pass `phaseGraphicOverrides` to `planProjection.ts`. When rende
 3D viewport: pass phase overrides to the material system. Existing elements get a grey material override; demolished elements get a semi-transparent dashed material (use a custom `proceduralMaterials.ts` variant).
 
 Preset phase filter modes:
+
 - "New Construction": Bestand=grey/thin, Abriss=not shown, Neubau=normal
 - "Demolition Plan": Bestand=grey, Abriss=dashed+crosshatch, Neubau=not shown
 - "As Built": all phases shown in their normal graphic
@@ -101,6 +111,7 @@ Preset phase filter modes:
 UI: add "Phase Filter" dropdown to `PlanViewHeader.tsx` (next to the existing phase selector). Each view can have its own phase filter mode.
 
 Tests:
+
 - `phaseFilter.graphicOverrides.test.ts`: apply "Demolition Plan" filter, verify a demo-phase wall gets dashed line style
 - `planProjection.phaseFilter.test.ts`: verify existing-phase walls render with reduced opacity
 
@@ -111,6 +122,7 @@ Revit's Projektinformationen dialog stores metadata: project number, project nam
 This data feeds title blocks on sheets.
 
 Data model — project settings object (extend what `osm/project.ts` already stores):
+
 ```ts
 projectInfo: {
   projectNumber: string,
@@ -128,17 +140,20 @@ projectInfo: {
 Semantic command: `{ type: 'updateProjectInfo', patch: Partial<ProjectInfo> }`
 
 UI — `packages/web/src/workspace/project/ProjectInfoDialog.tsx`:
+
 - Opened from workspace settings or a "Project Info…" menu item.
 - Form with all fields above (text inputs + date pickers for dates).
 - Save button dispatches `updateProjectInfo`.
 
 Sheet title block integration:
+
 - The sheet canvas's title block area (bottom right of each sheet) renders project info fields.
 - Specifically: project name, project number, client, author, issue date, sheet number, sheet name, revision info.
 - Update `workspace/sheets/SheetCanvas.tsx` to read from the project info store and render these fields.
 - If a field is empty, show a greyed-out placeholder text.
 
 Tests:
+
 - `projectInfoDialog.test.tsx`: fill in project name + number, verify the store updates
 - `sheetTitleBlock.test.tsx`: verify project name appears in the sheet footer area
 
@@ -147,6 +162,7 @@ Tests:
 Currently bim-ai uses a default unit system. Implement user-configurable units.
 
 Data model — `projectUnits` in project settings:
+
 ```ts
 projectUnits: {
   lengthUnit: 'mm' | 'm' | 'cm' | 'ft' | 'in' | 'ft-in',
@@ -159,17 +175,20 @@ projectUnits: {
 ```
 
 UI — `packages/web/src/workspace/project/ProjectUnitsDialog.tsx`:
+
 - Dropdown for each unit category.
 - Live preview showing how a sample value (e.g. 3500mm) would display in the selected format.
 - On Save: dispatches `{ type: 'updateProjectUnits', units: ProjectUnits }`.
 
 Apply units everywhere:
+
 - All dimension text values: reformat from internal mm storage to the display unit.
 - Property inspector numeric values: display in project units.
 - Temp dimension tooltips: display in project units.
 - Create `packages/web/src/lib/formatUnit.ts`: a pure function `formatLength(valueInMm: number, units: ProjectUnits): string` — use this everywhere. Tests required.
 
 Tests:
+
 - `formatUnit.test.ts`: 3500mm → "3500 mm" (metric), "3.500 m" (meters), "11'-5 13/16\"" (ft-in)
 - `projectUnitsDialog.test.tsx`: switch to feet, verify inspector shows ft values
 
@@ -178,6 +197,7 @@ Tests:
 When creating a new project, Revit asks for a template: None / BIM Architektur und Ingenieurbau (vereinfacht) / BIM Architektur und Ingenieurbau / BIM Gebäudetechnik.
 
 Templates pre-populate the project with:
+
 - Level structure (EG, OG1, OG2, Dach for residential)
 - View structure (plan views per level, 3D view, 4 elevation views)
 - Phase structure (Bestand, Abriss, Neubau)
@@ -185,12 +205,14 @@ Templates pre-populate the project with:
 - Default dimension styles
 
 Implement:
+
 - `packages/web/src/onboarding/projectTemplates.ts`: define template definitions as static data objects.
 - Template: `'minimal'` (1 level, basic views), `'residential'` (4 levels, full view set, 3 phases), `'commercial'` (multi-level, MEP-ready).
 - Project creation dialog: add a template picker (step 1 of the new project wizard).
 - On project creation with a template: dispatch a batch of `createLevel`, `createView`, `createPhase`, `createWallType` commands from the template definition.
 
 Tests:
+
 - `projectTemplates.test.ts`: apply "residential" template, verify 4 levels + plan views + phases are created
 
 ### Sub-task F6: Project Position / True North
@@ -211,6 +233,7 @@ Revit's "Visibility/Graphics Overrides" (keyboard shortcut VV or VG) is the prim
 Create a simplified version:
 
 UI — `packages/web/src/workspace/visibilityGraphicsDialog/VisibilityGraphicsDialog.tsx`:
+
 - Shortcut `VV` opens it from any plan/section view.
 - Shows a table of model categories (Walls, Doors, Windows, Floors, Roofs, Stairs, Columns, Grids, Reference Planes, Rooms, etc.).
 - Each row: category name, checkbox (Visible), Line Colour button, Line Weight dropdown, Fill Pattern dropdown, Halftone checkbox.
@@ -221,6 +244,7 @@ Plan projection: thread `visibilityOverrides` through `planProjection.ts`. For e
 Start with just: Visible toggle (most important), Line Colour, Halftone. Pattern and weight overrides are bonus.
 
 Tests:
+
 - `visibilityGraphicsDialog.test.tsx`: hide the "Grids" category, verify grid elements are not rendered
 - `planProjection.visibilityOverrides.test.ts`: apply halftone override to walls, verify opacity
 
@@ -229,6 +253,7 @@ Tests:
 ## Definition of Done
 
 For each sub-task:
+
 - TypeScript compiles without errors
 - ≥2 unit tests per new module
 - Feature is accessible from the workspace UI

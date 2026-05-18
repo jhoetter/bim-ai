@@ -68,6 +68,7 @@ Add a toggle button in the roof sketch toolbar or OptionsBar: **"Slope Arrow"** 
 In `planElementMeshBuilders.ts` (or the appropriate plan renderer for roofs), when `roof.useSlopeArrow && roof.slopeArrow`:
 
 Draw:
+
 - A solid arrow line from `tailMm` to `headMm` with an arrowhead at `headMm`.
 - A text label at the midpoint showing the slope as percentage: `"${(slopeRatio * 100).toFixed(0)}%"`.
 - Tag with `userData.roofSlopeArrow = true`.
@@ -80,13 +81,17 @@ In `InspectorContent.tsx`, in `case 'roof':`, add a **"Slope Arrow"** collapsibl
 
 ```tsx
 <label data-testid="inspector-roof-use-slope-arrow">
-  <input type="checkbox" checked={el.useSlopeArrow ?? false}
-    onChange={(e) => onPropertyChange?.('useSlopeArrow', e.currentTarget.checked)} />
+  <input
+    type="checkbox"
+    checked={el.useSlopeArrow ?? false}
+    onChange={(e) => onPropertyChange?.('useSlopeArrow', e.currentTarget.checked)}
+  />
   Use Slope Arrow
 </label>
 ```
 
 When `useSlopeArrow` is true and `slopeArrow` exists, show:
+
 - Slope %: `data-testid="inspector-roof-slope-pct"` — editable number input (slopeRatio × 100)
 - On blur: `onPropertyChange?.('slopeArrow', { ...el.slopeArrow, slopeRatio: pct / 100 })`
 
@@ -95,6 +100,7 @@ When `useSlopeArrow` is true and `slopeArrow` exists, show:
 In `meshBuilders.ts`, when building a roof mesh and `useSlopeArrow` is true:
 
 Compute the roof slope from the `slopeArrow.slopeRatio` and `tailMm`/`headMm` direction vector:
+
 - Project the roof boundary onto a tilted plane using the arrow direction and ratio.
 - The tail edge of the roof is at the base elevation; the head edge is elevated by `distance × slopeRatio`.
 
@@ -103,6 +109,7 @@ This is a simplified linear slope applied to the entire roof. If the current mes
 ### F — Tests
 
 `packages/web/src/plan/roofSlopeArrow.test.ts`:
+
 ```ts
 describe('roof slope arrow — §10.1.3', () => {
   it('renders slope arrow plan symbol when useSlopeArrow is true', () => { ... });
@@ -113,6 +120,7 @@ describe('roof slope arrow — §10.1.3', () => {
 ```
 
 `packages/web/src/workspace/inspector/roofSlopeArrowInspector.test.tsx`:
+
 ```ts
 describe('roof slope arrow inspector — §10.1.3', () => {
   it('renders use-slope-arrow checkbox', () => { ... });
@@ -126,6 +134,7 @@ describe('roof slope arrow inspector — §10.1.3', () => {
 ## Commit and push
 
 After tests pass (`pnpm test --filter @bim-ai/web`):
+
 ```
 git add -p
 git commit -m "feat(wave14/C): roof slope arrow — plan symbol + inspector + 3D mesh (§10.1.3)"

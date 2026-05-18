@@ -9,6 +9,7 @@ This prompt is self-contained — start here.
 ## Context
 
 §4.1 "Die Bemaßungsbefehle" is Partial. Permanent aligned dimensions exist (wave 8 WP-A, §4.2.1). What's missing is the ability to snap the dimension witness points to specific BIM element references (wall faces, column edges) rather than only to free-click positions. This task adds:
+
 - `referencedElementId?: string` to each witness point in `permanent_dimension`
 - A `dim-reference` snap mode in the dimension tool that highlights snappable element edges
 - An inspector readout showing which elements each witness point references
@@ -26,6 +27,7 @@ packages/web/src/workspace/inspector/InspectorContent.tsx — find case 'permane
 ```
 
 Run:
+
 - `grep -n "PermanentDim\|permanent_dimension\|witnessPoints" packages/core/src/index.ts | head -20`
 - `grep -n "PermanentDim\|witnessPoints" packages/web/src/tools/toolGrammar.ts | head -20`
 - `grep -n "case 'permanent_dimension'" packages/web/src/workspace/inspector/InspectorContent.tsx`
@@ -99,23 +101,35 @@ export function resolveDimReferences(
 In `InspectorContent.tsx`, find `case 'permanent_dimension':`. After the existing witness-point count or EQ toggle, add a "References" readout:
 
 ```tsx
-{/* Dimension element references */}
-{(el as any).witnessPointsMm?.some((pt: any) => pt.referencedElementId) && (
-  <details style={{ marginTop: 8 }}>
-    <summary data-testid="inspector-dim-references-summary" style={{ cursor: 'pointer', fontSize: 12 }}>
-      Element References ({(el as any).witnessPointsMm.filter((pt: any) => pt.referencedElementId).length})
-    </summary>
-    <div style={{ marginTop: 4 }}>
-      {(el as any).witnessPointsMm
-        .filter((pt: any) => pt.referencedElementId)
-        .map((pt: any, i: number) => (
-          <div key={i} data-testid={`inspector-dim-ref-${i}`} style={{ fontSize: 11, color: '#aaa', padding: '2px 0' }}>
-            Pt {i + 1}: {pt.referencedElementId?.slice(-8)} ({pt.referenceEdge ?? 'auto'})
-          </div>
-        ))}
-    </div>
-  </details>
-)}
+{
+  /* Dimension element references */
+}
+{
+  (el as any).witnessPointsMm?.some((pt: any) => pt.referencedElementId) && (
+    <details style={{ marginTop: 8 }}>
+      <summary
+        data-testid="inspector-dim-references-summary"
+        style={{ cursor: 'pointer', fontSize: 12 }}
+      >
+        Element References (
+        {(el as any).witnessPointsMm.filter((pt: any) => pt.referencedElementId).length})
+      </summary>
+      <div style={{ marginTop: 4 }}>
+        {(el as any).witnessPointsMm
+          .filter((pt: any) => pt.referencedElementId)
+          .map((pt: any, i: number) => (
+            <div
+              key={i}
+              data-testid={`inspector-dim-ref-${i}`}
+              style={{ fontSize: 11, color: '#aaa', padding: '2px 0' }}
+            >
+              Pt {i + 1}: {pt.referencedElementId?.slice(-8)} ({pt.referenceEdge ?? 'auto'})
+            </div>
+          ))}
+      </div>
+    </details>
+  );
+}
 ```
 
 ### D — Tests
@@ -128,12 +142,14 @@ import { resolveDimReferences } from './resolveDimReferences';
 import type { DimWitnessPoint } from '@bim-ai/core';
 
 const wallElem: any = {
-  id: 'w1', kind: 'wall',
+  id: 'w1',
+  kind: 'wall',
   startMm: { xMm: 0, yMm: 0 },
   endMm: { xMm: 5000, yMm: 0 },
 };
 const colElem: any = {
-  id: 'c1', kind: 'column',
+  id: 'c1',
+  kind: 'column',
   positionMm: { xMm: 2500, yMm: 1000 },
 };
 
@@ -146,41 +162,53 @@ describe('resolveDimReferences — §4.1', () => {
   });
 
   it('snaps to wall start when referenceEdge is start', () => {
-    const pts: DimWitnessPoint[] = [{
-      xMm: 100, yMm: 100,
-      referencedElementId: 'w1',
-      referenceEdge: 'start',
-    }];
+    const pts: DimWitnessPoint[] = [
+      {
+        xMm: 100,
+        yMm: 100,
+        referencedElementId: 'w1',
+        referenceEdge: 'start',
+      },
+    ];
     const result = resolveDimReferences(pts, elementsById);
     expect(result[0].xMm).toBe(0);
     expect(result[0].yMm).toBe(0);
   });
 
   it('snaps to wall end when referenceEdge is end', () => {
-    const pts: DimWitnessPoint[] = [{
-      xMm: 100, yMm: 100,
-      referencedElementId: 'w1',
-      referenceEdge: 'end',
-    }];
+    const pts: DimWitnessPoint[] = [
+      {
+        xMm: 100,
+        yMm: 100,
+        referencedElementId: 'w1',
+        referenceEdge: 'end',
+      },
+    ];
     const result = resolveDimReferences(pts, elementsById);
     expect(result[0].xMm).toBe(5000);
   });
 
   it('snaps to column position', () => {
-    const pts: DimWitnessPoint[] = [{
-      xMm: 0, yMm: 0,
-      referencedElementId: 'c1',
-    }];
+    const pts: DimWitnessPoint[] = [
+      {
+        xMm: 0,
+        yMm: 0,
+        referencedElementId: 'c1',
+      },
+    ];
     const result = resolveDimReferences(pts, elementsById);
     expect(result[0].xMm).toBe(2500);
     expect(result[0].yMm).toBe(1000);
   });
 
   it('returns original coords when referenced element not found', () => {
-    const pts: DimWitnessPoint[] = [{
-      xMm: 999, yMm: 888,
-      referencedElementId: 'nonexistent',
-    }];
+    const pts: DimWitnessPoint[] = [
+      {
+        xMm: 999,
+        yMm: 888,
+        referencedElementId: 'nonexistent',
+      },
+    ];
     const result = resolveDimReferences(pts, elementsById);
     expect(result[0].xMm).toBe(999);
     expect(result[0].yMm).toBe(888);
@@ -202,7 +230,8 @@ describe('DimWitnessPoint type — §4.1', () => {
 
   it('accepts point with referencedElementId', () => {
     const pt: DimWitnessPoint = {
-      xMm: 100, yMm: 200,
+      xMm: 100,
+      yMm: 200,
       referencedElementId: 'w1',
       referenceEdge: 'start',
     };

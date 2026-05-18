@@ -23,6 +23,7 @@ packages/web/src/viewport/meshBuilders.test.ts      — existing tests for mesh 
 ```
 
 Run before editing:
+
 - `grep -n "edgeProfileMm" packages/core/src/index.ts | head -5`
 - `grep -n "edgeProfileMm" packages/web/src/viewport/meshBuilders.ts | head -5`
 - Read `makeFloorSlabMesh` in `meshBuilders.ts` from its start to its end — understand how the floor slab ExtrudeGeometry is built
@@ -37,6 +38,7 @@ Prettier runs automatically. **Always `git pull --rebase origin main` before pus
 ### A — Understand the edge profile structure
 
 Run:
+
 ```
 grep -n "edgeProfileMm" packages/core/src/index.ts
 ```
@@ -73,9 +75,7 @@ export function buildFloorEdgeProfileMesh(
   if (boundary.length < 3) return null;
 
   // Build the 2D cross-section shape in (outward, downward) coordinates
-  const shape = new THREE.Shape(
-    profile.map((p) => new THREE.Vector2(p.xMm / 1000, -p.yMm / 1000)),
-  );
+  const shape = new THREE.Shape(profile.map((p) => new THREE.Vector2(p.xMm / 1000, -p.yMm / 1000)));
 
   // Walk the floor perimeter boundary (closed polygon) and extrude the profile along each edge
   const group = new THREE.Group();
@@ -165,7 +165,9 @@ import { describe, expect, it } from 'vitest';
 import { buildFloorEdgeProfileMesh } from './buildFloorEdgeProfile';
 import type { Element } from '@bim-ai/core';
 
-function makeFloor(edgeProfileMm?: { xMm: number; yMm: number }[]): Extract<Element, { kind: 'floor' }> {
+function makeFloor(
+  edgeProfileMm?: { xMm: number; yMm: number }[],
+): Extract<Element, { kind: 'floor' }> {
   return {
     kind: 'floor',
     id: 'f1',
@@ -209,8 +211,14 @@ describe('buildFloorEdgeProfileMesh — §2.4.2', () => {
       id: 'f1',
       levelId: 'l1',
       thicknessMm: 250,
-      boundaryMm: [{ xMm: 0, yMm: 0 }, { xMm: 5000, yMm: 0 }],
-      edgeProfileMm: [{ xMm: 0, yMm: 0 }, { xMm: 100, yMm: 250 }],
+      boundaryMm: [
+        { xMm: 0, yMm: 0 },
+        { xMm: 5000, yMm: 0 },
+      ],
+      edgeProfileMm: [
+        { xMm: 0, yMm: 0 },
+        { xMm: 100, yMm: 250 },
+      ],
     } as unknown as Extract<Element, { kind: 'floor' }>;
     expect(buildFloorEdgeProfileMesh(floor, 250, 0)).toBeNull();
   });

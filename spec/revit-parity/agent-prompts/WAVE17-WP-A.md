@@ -49,6 +49,7 @@ faceMaterialOverrides?: Record<string, string | null>;
 ```
 
 Add command type:
+
 ```ts
 | { type: 'paintFace'; elementId: string; faceKey: string; materialId: string | null }
 ```
@@ -58,6 +59,7 @@ Add command type:
 ### B — Tool registration
 
 In `toolRegistry.ts`:
+
 - Add `'paint'` to ToolId union (if not present).
 - Register: `{ id: 'paint', hotkey: 'PT', label: 'Paint', mode: '3d' }`
 - Add to `PALETTE_ORDER` near other modify tools.
@@ -69,9 +71,7 @@ In `toolRegistry.ts`:
 Add `PaintState`, `PaintEvent`, `PaintEffect`, `initialPaintState`, `reducePaint`:
 
 ```ts
-type PaintState =
-  | { phase: 'idle' }
-  | { phase: 'painting'; materialId: string };
+type PaintState = { phase: 'idle' } | { phase: 'painting'; materialId: string };
 
 type PaintEffect = {
   kind: 'paintFace';
@@ -82,6 +82,7 @@ type PaintEffect = {
 ```
 
 Flow:
+
 1. **idle → painting**: tool is activated; user selects a material from the OptionsBar material picker (materialId stored in state)
 2. **painting**: user clicks a face in the 3D viewport → emit `paintFace` effect with `elementId` (from `bimPickId` on clicked mesh) and `faceKey` (from `userData.faceKey` or derived from face normal)
 3. Escape → idle
@@ -91,10 +92,12 @@ Flow:
 ### D — PlanCanvas / Viewport wiring
 
 In `PlanCanvas.tsx` (or `Viewport.tsx` — whichever handles 3D click events):
+
 - Wire `reducePaint` for tool `'paint'`
 - On face click → emit `paintFace` → `onSemanticCommand({ type: 'paintFace', ... })`
 
 In `Workspace.tsx`, handle `type: 'paintFace'`:
+
 ```ts
 if (cmd.type === 'paintFace') {
   void onSemanticCommand({
@@ -131,19 +134,29 @@ if (el.faceMaterialOverrides) {
 In `InspectorContent.tsx`, for elements that support `faceMaterialOverrides`, add a "Face Materials" section:
 
 ```tsx
-{el.faceMaterialOverrides && Object.keys(el.faceMaterialOverrides).length > 0 && (
-  <div data-testid="inspector-face-material-overrides">
-    {Object.entries(el.faceMaterialOverrides).map(([face, matId]) => (
-      <div key={face}>
-        <span data-testid={`inspector-face-${face}-label`}>{face}</span>
-        <span data-testid={`inspector-face-${face}-material`}>{matId ?? '—'}</span>
-        <button data-testid={`inspector-face-${face}-clear`}
-          onClick={() => onPropertyChange('faceMaterialOverrides',
-            { ...el.faceMaterialOverrides, [face]: null })}>×</button>
-      </div>
-    ))}
-  </div>
-)}
+{
+  el.faceMaterialOverrides && Object.keys(el.faceMaterialOverrides).length > 0 && (
+    <div data-testid="inspector-face-material-overrides">
+      {Object.entries(el.faceMaterialOverrides).map(([face, matId]) => (
+        <div key={face}>
+          <span data-testid={`inspector-face-${face}-label`}>{face}</span>
+          <span data-testid={`inspector-face-${face}-material`}>{matId ?? '—'}</span>
+          <button
+            data-testid={`inspector-face-${face}-clear`}
+            onClick={() =>
+              onPropertyChange('faceMaterialOverrides', {
+                ...el.faceMaterialOverrides,
+                [face]: null,
+              })
+            }
+          >
+            ×
+          </button>
+        </div>
+      ))}
+    </div>
+  );
+}
 ```
 
 ---
@@ -151,12 +164,14 @@ In `InspectorContent.tsx`, for elements that support `faceMaterialOverrides`, ad
 ### G — Palette command + capability graph
 
 In `defaultCommands.ts`:
+
 ```ts
 { id: 'tool.paint', label: 'Paint', keywords: ['paint', 'material', 'face', 'color'],
   category: 'tool', invoke: (ctx) => startPlanTool(ctx, 'paint') }
 ```
 
 In `commandCapabilities.ts`:
+
 ```ts
 { id: 'tool.paint', scope: 'document', intendedModes: ['3d'], precondition: null },
 ```
@@ -166,6 +181,7 @@ In `commandCapabilities.ts`:
 ### H — Tests
 
 `packages/web/src/plan/paintTool.test.ts`:
+
 ```ts
 describe('paint tool grammar — §3.3.4', () => {
   it('starts in idle state', () => { ... });
@@ -176,6 +192,7 @@ describe('paint tool grammar — §3.3.4', () => {
 ```
 
 `packages/web/src/plan/paintFace.test.ts`:
+
 ```ts
 describe('paintFace command — §3.3.4', () => {
   it('sets faceMaterialOverrides on element', () => { ... });

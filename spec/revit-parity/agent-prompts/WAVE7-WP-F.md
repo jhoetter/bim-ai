@@ -40,6 +40,7 @@ Read ALL of these before writing anything:
 ### A — Data model: contourIntervalMm
 
 Add `contourIntervalMm?: number | null` to the `toposolid` element in `core/index.ts`:
+
 ```ts
 /** Contour line interval in mm for plan view display. 0 or null = no contours. */
 contourIntervalMm?: number | null;
@@ -54,10 +55,11 @@ export function terrainContourLinesMm(
   heightSamples: Array<{ xMm: number; yMm: number; zMm: number }>,
   boundary: Array<{ xMm: number; yMm: number }>,
   contourIntervalMm: number,
-): Array<Array<{ xMm: number; yMm: number }>>
+): Array<Array<{ xMm: number; yMm: number }>>;
 ```
 
 Algorithm (marching squares approximation over the sample grid):
+
 1. Compute AABB of `boundary`
 2. Build a regular sampling grid: step = `Math.max(500, contourIntervalMm / 2)` mm across the AABB
 3. For each grid cell (4 corners): sample the height at each corner using the nearest-neighbour interpolation from `heightSamples` (same logic as `toposolidHeightMmAtPoint`)
@@ -72,9 +74,7 @@ Keep it simple: if `heightSamples` is empty or fewer than 3, return `[]`.
 Create `packages/web/src/plan/terrainContourPlanThree.ts`:
 
 ```ts
-export function terrainContourPlanThree(
-  topo: Extract<Element, { kind: 'toposolid' }>,
-): THREE.Group
+export function terrainContourPlanThree(topo: Extract<Element, { kind: 'toposolid' }>): THREE.Group;
 ```
 
 - Return empty Group if `!topo.contourIntervalMm || topo.contourIntervalMm <= 0`
@@ -89,11 +89,13 @@ Wire into `symbology.ts` toposolid loop: after existing toposolid boundary outli
 ### D — Inspector input
 
 In `InspectorContent.tsx`, for `el.kind === 'toposolid'`, add:
+
 - `data-testid="inspector-topo-contour-interval"` — number input (mm), step 250, min 0, max 10000. Label: "Contour interval (mm)". Value = `el.contourIntervalMm ?? 0`. On change dispatch `update_element_property` for `contourIntervalMm`.
 
 ### E — Tests
 
 Write `packages/web/src/plan/terrainContourLines.test.ts`:
+
 ```ts
 describe('terrainContourLinesMm — §5.1.3', () => {
   it('returns empty array when no height samples', () => { ... });
@@ -105,6 +107,7 @@ describe('terrainContourLinesMm — §5.1.3', () => {
 ```
 
 Write `packages/web/src/plan/terrainContourPlanThree.test.ts`:
+
 ```ts
 describe('terrainContourPlanThree — §5.1.3', () => {
   it('returns empty Group when contourIntervalMm=0', () => { ... });

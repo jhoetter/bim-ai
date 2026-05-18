@@ -25,6 +25,7 @@ git pull origin feat/v3-ast-v3-01-asset-library
 ### 1. TypeScript core exports missing (build-breaking)
 
 `packages/core/src/index.ts` is missing these exports that frontend files import:
+
 - `AssetLibraryEntry` (type/interface)
 - `AssetKind` (union or enum)
 - `AssetCategory` (union or enum)
@@ -40,6 +41,7 @@ Do NOT add `ToposolidElem` or `PresentationLinkElem` here — those belong to WP
 ### 2. CLI surface missing (API-V3-01 §A requirement)
 
 `packages/cli/cli.mjs` must expose:
+
 - `bim-ai asset index <file>` → calls `IndexAssetCmd`
 - `bim-ai asset place <asset-id> --model <model-id> --pos x,y,z` → calls `PlaceAssetCmd`
 
@@ -56,6 +58,7 @@ The spec requires a "subscribed libraries" list alongside category facets and di
 ### 5. Scope creep — remove non-AST commands
 
 The following commands were added to `commands.py` / `engine.py` but are NOT part of WP-042:
+
 - `TraceImageCmd` (belongs to WP-043)
 - `CreateToposolidCmd`, `UpdateToposolidCmd`, `DeleteToposolidCmd` (belong to WP-041)
 - `PresentationLinkElem` (belongs to WP-045)

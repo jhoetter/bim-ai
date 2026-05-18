@@ -39,6 +39,7 @@ to elements.py, remove them — they belong on the AST branch only.
 ### 1. TypeScript core exports missing
 
 Add to `packages/core/src/index.ts`:
+
 - `BoundaryPoint: { x: number; y: number }`
 - `HeightSample: { point: BoundaryPoint; elevation: number }`
 - `HeightmapGrid: { cols: number; rows: number; cellSizeM: number; elevations: number[] }`
@@ -49,6 +50,7 @@ Add to `packages/core/src/index.ts`:
 ### 2. CLI exposure missing (API-V3-01 §A requirement)
 
 Add to `packages/cli/cli.mjs`:
+
 - `bim-ai toposolid create --model <id> --boundary <json-file> --thickness <m>` → CreateToposolidCmd
 - `bim-ai toposolid update --id <id> --boundary <json-file>` → UpdateToposolidCmd
 - `bim-ai toposolid delete --id <id>` → DeleteToposolidCmd

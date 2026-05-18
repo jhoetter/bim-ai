@@ -66,8 +66,11 @@ export type WallProfileState =
   | { phase: 'idle' }
   | { phase: 'editing'; wallId: string; points: { xPct: number; yPct: number }[] };
 
-export type WallProfileEffect =
-  | { kind: 'commitWallProfile'; wallId: string; points: { xPct: number; yPct: number }[] };
+export type WallProfileEffect = {
+  kind: 'commitWallProfile';
+  wallId: string;
+  points: { xPct: number; yPct: number }[];
+};
 
 export function initialWallProfileState(): WallProfileState {
   return { phase: 'idle' };
@@ -137,9 +140,12 @@ export function buildProfiledWallMesh(
 
   const shape = new THREE.Shape();
   const first = profilePoints[0];
-  shape.moveTo(first.xPct * lengthMm / 1000, first.yPct * heightMm / 1000);
+  shape.moveTo((first.xPct * lengthMm) / 1000, (first.yPct * heightMm) / 1000);
   for (let i = 1; i < profilePoints.length; i++) {
-    shape.lineTo(profilePoints[i].xPct * lengthMm / 1000, profilePoints[i].yPct * heightMm / 1000);
+    shape.lineTo(
+      (profilePoints[i].xPct * lengthMm) / 1000,
+      (profilePoints[i].yPct * heightMm) / 1000,
+    );
   }
   shape.closePath();
 
@@ -173,21 +179,29 @@ if (wall.profilePoints && wall.profilePoints.length >= 3) {
 In `InspectorContent.tsx`, `case 'wall':`, add an "Edit Profile" button and a "Reset Profile" button:
 
 ```tsx
-<button data-testid="inspector-wall-edit-profile"
-  onClick={() => onPropertyChange('editProfileActive', true)}>
+<button
+  data-testid="inspector-wall-edit-profile"
+  onClick={() => onPropertyChange('editProfileActive', true)}
+>
   Edit Profile
-</button>
-{el.profilePoints && el.profilePoints.length > 0 && (
-  <button data-testid="inspector-wall-reset-profile"
-    onClick={() => onPropertyChange('profilePoints', [])}>
-    Reset to Rectangular
-  </button>
-)}
-{el.profilePoints && (
-  <span data-testid="inspector-wall-profile-point-count">
-    {el.profilePoints.length} profile points
-  </span>
-)}
+</button>;
+{
+  el.profilePoints && el.profilePoints.length > 0 && (
+    <button
+      data-testid="inspector-wall-reset-profile"
+      onClick={() => onPropertyChange('profilePoints', [])}
+    >
+      Reset to Rectangular
+    </button>
+  );
+}
+{
+  el.profilePoints && (
+    <span data-testid="inspector-wall-profile-point-count">
+      {el.profilePoints.length} profile points
+    </span>
+  );
+}
 ```
 
 ---
@@ -208,6 +222,7 @@ case 'commitWallProfile': {
 ```
 
 Add command type in `core/index.ts`:
+
 ```ts
 | { type: 'commitWallProfile'; wallId: string; points: { xPct: number; yPct: number }[] }
 ```
@@ -217,6 +232,7 @@ Add command type in `core/index.ts`:
 ### G — Palette command + capability graph
 
 In `defaultCommands.ts`:
+
 ```ts
 { id: 'modify.edit-wall-profile', label: 'Edit Wall Profile',
   keywords: ['wall', 'profile', 'edit', 'shape', 'non-rectangular'],
@@ -224,6 +240,7 @@ In `defaultCommands.ts`:
 ```
 
 In `commandCapabilities.ts`:
+
 ```ts
 { id: 'modify.edit-wall-profile', scope: 'selection', intendedModes: ['plan'], precondition: 'selected-wall' },
 ```

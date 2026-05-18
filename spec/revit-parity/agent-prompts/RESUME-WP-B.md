@@ -26,6 +26,7 @@ packages/web/src/state/                    — Zustand store slices
 ```
 
 Architecture patterns:
+
 - **Semantic commands**: `onSemanticCommand({ type: 'moveElement', elementId, deltaXMm, deltaYMm })`.
   Study `moveTool.ts` for exact shape.
 - **Store**: access project model via `useBimStore`. State mutations go through
@@ -37,13 +38,13 @@ Architecture patterns:
 
 ## What was done before the crash
 
-| Sub-task | Status | Files |
-|---|---|---|
-| B4 Create Similar | **Done** | `plan/createSimilar.ts` + tests |
-| B5 Array math | **Partial** | `plan/arrayTool.ts` + tests — math done, PlanCanvas wiring pending |
-| B7 Join/Unjoin helpers | **Partial** | `plan/joinGeometry.ts` + tests — helpers done, toolbar UI pending |
+| Sub-task                  | Status      | Files                                                                                                        |
+| ------------------------- | ----------- | ------------------------------------------------------------------------------------------------------------ |
+| B4 Create Similar         | **Done**    | `plan/createSimilar.ts` + tests                                                                              |
+| B5 Array math             | **Partial** | `plan/arrayTool.ts` + tests — math done, PlanCanvas wiring pending                                           |
+| B7 Join/Unjoin helpers    | **Partial** | `plan/joinGeometry.ts` + tests — helpers done, toolbar UI pending                                            |
 | B2 Group types + commands | **Partial** | `groups/groupTypes.ts`, `groups/groupCommands.ts`, `groups/groupCommands.test.ts` — pure logic done, zero UI |
-| B3 copyToLevels command | **Partial** | `clipboard/copyToLevels.ts` + `copyToLevels.test.ts` — command done, dialog UI pending |
+| B3 copyToLevels command   | **Partial** | `clipboard/copyToLevels.ts` + `copyToLevels.test.ts` — command done, dialog UI pending                       |
 
 ToolId scaffold committed: `'scale'`, `'array'`, `'place-group'` are already
 in the `ToolId` union in `toolRegistry.ts`. Verify their registry entries
@@ -101,6 +102,7 @@ ungroup one, verify elements are independent.
 ### B3 — Paste to Levels dialog
 
 `copyToLevels.ts` command exists. Wire the UI:
+
 - "Copy to Levels…" button in the selection toolbar
 - Opens a level picker dialog (list all project levels with checkboxes)
 - On confirm, dispatches `copyToLevels` command
@@ -110,6 +112,7 @@ ungroup one, verify elements are independent.
 ### B5 — Array tool PlanCanvas wiring
 
 `arrayTool.ts` math helpers exist. Still needed:
+
 - Full grammar in `tools/array.ts` (if not yet there — check first):
   - Linear: select → activate → pick start → pick end → type count → Enter
   - Radial: options bar toggle → pick centre → type angle + count → Enter
@@ -120,6 +123,7 @@ ungroup one, verify elements are independent.
 ### B6 — Selection Filter Dialog
 
 Not started. Implement:
+
 - `plan/selectionFilter.tsx`: modal listing category counts (Walls 6, Doors 3…),
   each row with a checkbox. Unchecking deselects those elements.
 - "Filter" chip in the selection toolbar showing "N elements selected"
@@ -130,6 +134,7 @@ Not started. Implement:
 ### B7 — Join/Unjoin toolbar UI
 
 `joinGeometry.ts` helpers exist. Still needed:
+
 - "Join" selection action (appears when ≥2 solid elements selected):
   dispatches `{ type: 'joinGeometry', elementId1, elementId2 }`
 - "Unjoin" selection action: clears the join
@@ -139,6 +144,7 @@ Not started. Implement:
 
 `pinUnpin.ts` command helpers + `PN` cheatsheet shortcut already exist.
 Still needed:
+
 - `PN` keyboard shortcut → pins all selected elements (currently in
   cheatsheet but not wired to an action)
 - "Unpin All" button in selection toolbar

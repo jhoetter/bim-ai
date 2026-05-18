@@ -44,20 +44,22 @@ tracker suggests. Only build what is genuinely missing.
 ### A — Phase element type in core/index.ts
 
 If a `phase` (or `project_phase`) element type does not exist in the Element union, add:
+
 ```ts
 {
   kind: 'phase';
   id: string;
-  name: string;          // e.g. 'Existing', 'Demolition', 'New Construction'
+  name: string; // e.g. 'Existing', 'Demolition', 'New Construction'
   sequenceIndex: number; // 0 = earliest, higher = later
 }
 ```
 
 Also add commands:
+
 ```ts
-type CreatePhaseCmd  = { type: 'create_phase';  name: string; sequenceIndex: number };
-type UpdatePhaseCmd  = { type: 'update_phase';  id: string; name?: string; sequenceIndex?: number };
-type DeletePhaseCmd  = { type: 'delete_phase';  id: string };
+type CreatePhaseCmd = { type: 'create_phase'; name: string; sequenceIndex: number };
+type UpdatePhaseCmd = { type: 'update_phase'; id: string; name?: string; sequenceIndex?: number };
+type DeletePhaseCmd = { type: 'delete_phase'; id: string };
 ```
 
 If phase types already exist with different names, do NOT add duplicates — use the existing types.
@@ -69,6 +71,7 @@ If phase types already exist with different names, do NOT add duplicates — use
 Create `packages/web/src/workspace/phases/ManagePhasesDialog.tsx`:
 
 A modal dialog (study `ManageRevisionsDialog.tsx` for the pattern):
+
 - Title: "Project Phases"
 - Table: rows of `phase` elements sorted by `sequenceIndex`, columns: Name (editable) + Sequence
 - **Add Phase** button → dispatches `{ type: 'create_phase', name: 'New Phase', sequenceIndex: maxIndex + 1 }`
@@ -76,6 +79,7 @@ A modal dialog (study `ManageRevisionsDialog.tsx` for the pattern):
 - Name cells: inline text input, dispatches `{ type: 'update_phase', id, name }` on blur
 
 data-testid values:
+
 - Dialog: `"manage-phases-dialog"`
 - Add button: `"manage-phases-add"`
 - Row: `"manage-phases-row-${id}"`
@@ -86,6 +90,7 @@ data-testid values:
 ### C — Wire ManagePhasesDialog into Workspace
 
 In `Workspace.tsx`:
+
 1. Add `phaseDialogOpen` / `openPhaseDialog` / `closePhaseDialog` to the store (follow the
    `manageRevisionsOpen` pattern).
 2. Mount `<ManagePhasesDialog>` in Workspace similarly to other dialogs.
@@ -117,15 +122,13 @@ geometry fields).
 ## Tests
 
 Add to `packages/web/src/workspace/phases/ManagePhasesDialog.test.tsx` (new file):
+
 1. Dialog renders existing phase rows (name + delete button)
 2. "Add Phase" dispatches create_phase command with next sequenceIndex
 3. Editing a phase name input dispatches update_phase on blur
 4. Delete button dispatches delete_phase with correct id
 
-Add to inspector tests:
-5. Wall inspector shows "Phase Created" select (data-testid inspector-phase-created)
-6. Selecting a phase dispatches updateElement patch with phaseCreated
-7. "Phase Demolished" select defaults to "—" when phaseDemolished is null
+Add to inspector tests: 5. Wall inspector shows "Phase Created" select (data-testid inspector-phase-created) 6. Selecting a phase dispatches updateElement patch with phaseCreated 7. "Phase Demolished" select defaults to "—" when phaseDemolished is null
 
 ---
 
@@ -134,12 +137,14 @@ Add to inspector tests:
 Edit `spec/revit-parity/revit2026-parity-tracker.md`:
 
 Update §2.8 description — append:
+
 ```
 `phase` element type added to core/index.ts with create/update/delete commands.
 `ManagePhasesDialog.tsx` (pattern: ManageRevisionsDialog): table of phases, add/delete/rename,
 wired in Workspace.tsx via store. Per-element Phase Created / Phase Demolished dropdowns in
 InspectorContent.tsx for all structural and architectural elements. 7 tests.
 ```
+
 Change status to `Done — P1`.
 
 Update summary table row for Chapter 2.

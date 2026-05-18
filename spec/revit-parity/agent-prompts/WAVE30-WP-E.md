@@ -9,11 +9,13 @@ This prompt is self-contained — start here.
 ## Context
 
 §3.5.5 "Wände fixieren, Profil anpassen und Verbinden-Werkzeug" is Partial P1. Pin is Done. Join is Done. Edit Profile is partial:
+
 - `profilePoints?: {xMm: number; yMm: number}[]` field exists on wall elements
 - When `profilePoints` is set with >= 3 points, `makeWallMesh` uses `THREE.Shape` + `ExtrudeGeometry`
 - BUT: there is no UI to actually edit/create the profile points interactively
 
 This task adds an **inspector panel section** for editing wall profile points:
+
 1. A mini SVG preview of the profile outline
 2. A list of editable profile points (xMm / yMm inputs per point)
 3. "+ Add Point", "Remove Last", "Reset to Rectangle" buttons
@@ -33,6 +35,7 @@ packages/web/src/workspace/inspector/                   — find inspector compo
 ```
 
 Run before editing:
+
 - `grep -n "profilePoints\|editWallProfile\|UpdateWallProfile" packages/core/src/index.ts | head -10`
 - `grep -n "profilePoints\|editWallProfile\|profile.*points" packages/web/src/workspace/WorkspaceRightRail.tsx | head -10`
 - `grep -rn "profilePoints\|editWallProfile" packages/web/src/workspace/Workspace.tsx | head -10`
@@ -76,9 +79,10 @@ if (cmd.type === 'updateWallProfile') {
       ...cur,
       [wall.id]: {
         ...wall,
-        profilePoints: (cmd.profilePoints as any[] | null) && (cmd.profilePoints as any[]).length >= 3
-          ? cmd.profilePoints
-          : undefined,
+        profilePoints:
+          (cmd.profilePoints as any[] | null) && (cmd.profilePoints as any[]).length >= 3
+            ? cmd.profilePoints
+            : undefined,
       },
     },
   });
@@ -91,91 +95,157 @@ if (cmd.type === 'updateWallProfile') {
 In the wall inspector (find by searching `WorkspaceRightRail.tsx` or `InspectorContent.tsx` for `case 'wall':`), add a "Profile Points" collapsible section:
 
 ```tsx
-{/* §3.5.5: wall profile editor */}
-{element.kind === 'wall' && (
-  <details style={{ marginTop: 8 }}>
-    <summary style={{ fontSize: 11, cursor: 'pointer', userSelect: 'none', fontWeight: 600 }}>
-      Profile Points ({((element as any).profilePoints ?? []).length})
-    </summary>
-    <div style={{ marginTop: 6, display: 'flex', flexDirection: 'column', gap: 4 }}>
-      {/* Mini SVG preview */}
-      {((element as any).profilePoints ?? []).length >= 3 && (
-        <svg
-          data-testid="wall-profile-preview"
-          width={120}
-          height={60}
-          style={{ border: '1px solid var(--border, #444)', borderRadius: 3, background: '#111' }}
-        >
-          {/* Draw outline from profilePoints normalized to SVG space */}
-          {(() => {
-            const pts: { xMm: number; yMm: number }[] = (element as any).profilePoints;
-            const xs = pts.map((p) => p.xMm), ys = pts.map((p) => p.yMm);
-            const minX = Math.min(...xs), maxX = Math.max(...xs);
-            const minY = Math.min(...ys), maxY = Math.max(...ys);
-            const scaleX = 110 / (maxX - minX || 1), scaleY = 50 / (maxY - minY || 1);
-            const pathD = pts.map((p, i) =>
-              `${i === 0 ? 'M' : 'L'} ${5 + (p.xMm - minX) * scaleX} ${55 - (p.yMm - minY) * scaleY}`
-            ).join(' ') + ' Z';
-            return <path d={pathD} stroke="#a78bfa" strokeWidth={1.5} fill="rgba(167,139,250,0.1)" />;
-          })()}
-        </svg>
-      )}
-      {/* Point list */}
-      {((element as any).profilePoints ?? []).map((pt: { xMm: number; yMm: number }, i: number) => (
-        <div key={i} style={{ display: 'grid', gridTemplateColumns: '20px 1fr 1fr', gap: 4, alignItems: 'center' }}>
-          <span style={{ fontSize: 10, color: '#888' }}>{i + 1}</span>
-          <input
-            data-testid={`wall-profile-pt-x-${i}`}
-            type="number"
-            value={pt.xMm}
-            onChange={(e) => {
+{
+  /* §3.5.5: wall profile editor */
+}
+{
+  element.kind === 'wall' && (
+    <details style={{ marginTop: 8 }}>
+      <summary style={{ fontSize: 11, cursor: 'pointer', userSelect: 'none', fontWeight: 600 }}>
+        Profile Points ({((element as any).profilePoints ?? []).length})
+      </summary>
+      <div style={{ marginTop: 6, display: 'flex', flexDirection: 'column', gap: 4 }}>
+        {/* Mini SVG preview */}
+        {((element as any).profilePoints ?? []).length >= 3 && (
+          <svg
+            data-testid="wall-profile-preview"
+            width={120}
+            height={60}
+            style={{ border: '1px solid var(--border, #444)', borderRadius: 3, background: '#111' }}
+          >
+            {/* Draw outline from profilePoints normalized to SVG space */}
+            {(() => {
+              const pts: { xMm: number; yMm: number }[] = (element as any).profilePoints;
+              const xs = pts.map((p) => p.xMm),
+                ys = pts.map((p) => p.yMm);
+              const minX = Math.min(...xs),
+                maxX = Math.max(...xs);
+              const minY = Math.min(...ys),
+                maxY = Math.max(...ys);
+              const scaleX = 110 / (maxX - minX || 1),
+                scaleY = 50 / (maxY - minY || 1);
+              const pathD =
+                pts
+                  .map(
+                    (p, i) =>
+                      `${i === 0 ? 'M' : 'L'} ${5 + (p.xMm - minX) * scaleX} ${55 - (p.yMm - minY) * scaleY}`,
+                  )
+                  .join(' ') + ' Z';
+              return (
+                <path d={pathD} stroke="#a78bfa" strokeWidth={1.5} fill="rgba(167,139,250,0.1)" />
+              );
+            })()}
+          </svg>
+        )}
+        {/* Point list */}
+        {((element as any).profilePoints ?? []).map(
+          (pt: { xMm: number; yMm: number }, i: number) => (
+            <div
+              key={i}
+              style={{
+                display: 'grid',
+                gridTemplateColumns: '20px 1fr 1fr',
+                gap: 4,
+                alignItems: 'center',
+              }}
+            >
+              <span style={{ fontSize: 10, color: '#888' }}>{i + 1}</span>
+              <input
+                data-testid={`wall-profile-pt-x-${i}`}
+                type="number"
+                value={pt.xMm}
+                onChange={(e) => {
+                  const pts = [...((element as any).profilePoints ?? [])];
+                  pts[i] = { ...pts[i], xMm: Number(e.target.value) };
+                  onSemanticCommand?.({
+                    type: 'updateWallProfile',
+                    wallId: element.id,
+                    profilePoints: pts,
+                  });
+                }}
+                style={{
+                  fontSize: 11,
+                  padding: '1px 4px',
+                  border: '1px solid var(--border)',
+                  borderRadius: 2,
+                  background: 'transparent',
+                  color: 'inherit',
+                }}
+              />
+              <input
+                data-testid={`wall-profile-pt-y-${i}`}
+                type="number"
+                value={pt.yMm}
+                onChange={(e) => {
+                  const pts = [...((element as any).profilePoints ?? [])];
+                  pts[i] = { ...pts[i], yMm: Number(e.target.value) };
+                  onSemanticCommand?.({
+                    type: 'updateWallProfile',
+                    wallId: element.id,
+                    profilePoints: pts,
+                  });
+                }}
+                style={{
+                  fontSize: 11,
+                  padding: '1px 4px',
+                  border: '1px solid var(--border)',
+                  borderRadius: 2,
+                  background: 'transparent',
+                  color: 'inherit',
+                }}
+              />
+            </div>
+          ),
+        )}
+        {/* Buttons */}
+        <div style={{ display: 'flex', gap: 4, marginTop: 4 }}>
+          <button
+            data-testid="wall-profile-add-point"
+            onClick={() => {
               const pts = [...((element as any).profilePoints ?? [])];
-              pts[i] = { ...pts[i], xMm: Number(e.target.value) };
-              onSemanticCommand?.({ type: 'updateWallProfile', wallId: element.id, profilePoints: pts });
+              pts.push({ xMm: 0, yMm: 0 });
+              onSemanticCommand?.({
+                type: 'updateWallProfile',
+                wallId: element.id,
+                profilePoints: pts,
+              });
             }}
-            style={{ fontSize: 11, padding: '1px 4px', border: '1px solid var(--border)', borderRadius: 2, background: 'transparent', color: 'inherit' }}
-          />
-          <input
-            data-testid={`wall-profile-pt-y-${i}`}
-            type="number"
-            value={pt.yMm}
-            onChange={(e) => {
-              const pts = [...((element as any).profilePoints ?? [])];
-              pts[i] = { ...pts[i], yMm: Number(e.target.value) };
-              onSemanticCommand?.({ type: 'updateWallProfile', wallId: element.id, profilePoints: pts });
+            style={{ fontSize: 10, padding: '2px 6px', cursor: 'pointer' }}
+          >
+            + Point
+          </button>
+          <button
+            data-testid="wall-profile-remove-last"
+            onClick={() => {
+              const pts = [...((element as any).profilePoints ?? [])].slice(0, -1);
+              onSemanticCommand?.({
+                type: 'updateWallProfile',
+                wallId: element.id,
+                profilePoints: pts.length >= 3 ? pts : null,
+              });
             }}
-            style={{ fontSize: 11, padding: '1px 4px', border: '1px solid var(--border)', borderRadius: 2, background: 'transparent', color: 'inherit' }}
-          />
+            style={{ fontSize: 10, padding: '2px 6px', cursor: 'pointer' }}
+          >
+            - Last
+          </button>
+          <button
+            data-testid="wall-profile-reset"
+            onClick={() =>
+              onSemanticCommand?.({
+                type: 'updateWallProfile',
+                wallId: element.id,
+                profilePoints: null,
+              })
+            }
+            style={{ fontSize: 10, padding: '2px 6px', cursor: 'pointer' }}
+          >
+            Reset
+          </button>
         </div>
-      ))}
-      {/* Buttons */}
-      <div style={{ display: 'flex', gap: 4, marginTop: 4 }}>
-        <button
-          data-testid="wall-profile-add-point"
-          onClick={() => {
-            const pts = [...((element as any).profilePoints ?? [])];
-            pts.push({ xMm: 0, yMm: 0 });
-            onSemanticCommand?.({ type: 'updateWallProfile', wallId: element.id, profilePoints: pts });
-          }}
-          style={{ fontSize: 10, padding: '2px 6px', cursor: 'pointer' }}
-        >+ Point</button>
-        <button
-          data-testid="wall-profile-remove-last"
-          onClick={() => {
-            const pts = [...((element as any).profilePoints ?? [])].slice(0, -1);
-            onSemanticCommand?.({ type: 'updateWallProfile', wallId: element.id, profilePoints: pts.length >= 3 ? pts : null });
-          }}
-          style={{ fontSize: 10, padding: '2px 6px', cursor: 'pointer' }}
-        >- Last</button>
-        <button
-          data-testid="wall-profile-reset"
-          onClick={() => onSemanticCommand?.({ type: 'updateWallProfile', wallId: element.id, profilePoints: null })}
-          style={{ fontSize: 10, padding: '2px 6px', cursor: 'pointer' }}
-        >Reset</button>
       </div>
-    </div>
-  </details>
-)}
+    </details>
+  );
+}
 ```
 
 **Important**: Read the actual wall inspector code carefully. Find where the `case 'wall':` section is in the inspector component. Add the profile section in the appropriate location. Adapt `onSemanticCommand` to the actual callback name used in the inspector.
@@ -226,14 +296,21 @@ describe('Wall profile inspector editor — §3.5.5', () => {
     const cmd = {
       type: 'updateWallProfile' as const,
       wallId: 'w1',
-      profilePoints: [{ xMm: 0, yMm: 0 }, { xMm: 200, yMm: 0 }, { xMm: 200, yMm: 300 }],
+      profilePoints: [
+        { xMm: 0, yMm: 0 },
+        { xMm: 200, yMm: 0 },
+        { xMm: 200, yMm: 300 },
+      ],
     };
     expect(cmd.type).toBe('updateWallProfile');
     expect(cmd.profilePoints.length).toBe(3);
   });
 
   it('profile requires at least 3 points to activate custom mesh', () => {
-    const twoPoints = [{ xMm: 0, yMm: 0 }, { xMm: 200, yMm: 0 }];
+    const twoPoints = [
+      { xMm: 0, yMm: 0 },
+      { xMm: 200, yMm: 0 },
+    ];
     const valid = twoPoints.length >= 3;
     expect(valid).toBe(false);
   });

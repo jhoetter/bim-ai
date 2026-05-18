@@ -11,6 +11,7 @@ This prompt is self-contained — start here.
 §1.6.4 "Die Info-Leiste" is Partial P2. In Revit the info bar has an integrated help search that queries Revit's help documentation. bim-ai has no in-product help search beyond the command palette. This task adds a floating help search panel accessible via `F1` or `?` keyboard shortcut, with 25 indexed help topics covering the most common tools and workflows.
 
 This task adds:
+
 1. `helpTopics.ts` — 25 indexed help topics with keywords and content
 2. `HelpSearchPanel.tsx` — floating panel with search input + topic results
 3. `?` keyboard shortcut (or `F1`) wired in `PlanCanvas.tsx` / `Workspace.tsx`
@@ -28,6 +29,7 @@ packages/web/src/cmdPalette/defaultCommands.ts — find registerCommand pattern
 ```
 
 Run before editing:
+
 - `grep -n "helpSearch\|showHelp\|HelpSearch\|F1\|onKeyDown.*Help" packages/web/src/workspace/Workspace.tsx | head -10`
 - `grep -n "keydown\|onKeyDown\|shortcut.*\?" packages/web/src/plan/PlanCanvas.tsx | head -10`
 - `ls packages/web/src/workspace/` | head -20
@@ -57,31 +59,184 @@ export interface HelpTopic {
 }
 
 export const HELP_TOPICS: HelpTopic[] = [
-  { id: 'wall', title: 'Draw Walls', summary: 'Press W to activate the Wall tool. Click-click to draw each segment. Press Esc to finish.', keywords: ['wall', 'draw', 'segment', 'WA'], shortcut: 'W' },
-  { id: 'door', title: 'Place Doors', summary: 'Press D to activate the Door tool. Click on a wall to insert a door.', keywords: ['door', 'insert', 'opening'], shortcut: 'D' },
-  { id: 'window', title: 'Place Windows', summary: 'Press N to activate the Window tool. Click on a wall to insert a window.', keywords: ['window', 'insert', 'opening', 'glazing'], shortcut: 'N' },
-  { id: 'floor', title: 'Draw Floors', summary: 'Press F to activate the Floor tool. Click to define boundary points, then press Enter to create.', keywords: ['floor', 'slab', 'boundary'], shortcut: 'F' },
-  { id: 'room', title: 'Place Rooms', summary: 'Press R to activate the Room tool. Click inside a closed wall boundary to create a room.', keywords: ['room', 'space', 'area'], shortcut: 'R' },
-  { id: 'column', title: 'Place Columns', summary: 'Press CO to activate the Column tool. Click to place a structural column.', keywords: ['column', 'structural', 'pillar', 'CO'], shortcut: 'CO' },
-  { id: 'beam', title: 'Place Beams', summary: 'Press BM to activate the Beam tool. Click-click to define a beam span.', keywords: ['beam', 'structural', 'span', 'framing', 'BM'], shortcut: 'BM' },
-  { id: 'stair', title: 'Draw Stairs', summary: 'Press ST to activate the Stair tool. Click-click to define the run direction and length.', keywords: ['stair', 'steps', 'riser', 'run', 'ST'], shortcut: 'ST' },
-  { id: 'roof', title: 'Draw Roofs', summary: 'Press RP to activate the Roof tool. Sketch the roof boundary, set the slope angle.', keywords: ['roof', 'slope', 'eave', 'ridge', 'RP'], shortcut: 'RP' },
-  { id: 'dimension', title: 'Add Dimensions', summary: 'Press DI to activate the Dimension tool. Click two reference points, then place the dimension line.', keywords: ['dimension', 'annotation', 'measure', 'DI'], shortcut: 'DI' },
-  { id: 'tag', title: 'Tag Elements', summary: 'Press TG to add a tag to a selected element (room, door, window).', keywords: ['tag', 'label', 'annotation', 'TG'], shortcut: 'TG' },
-  { id: 'undo', title: 'Undo / Redo', summary: 'Ctrl+Z to undo the last action. Ctrl+Y or Ctrl+Shift+Z to redo.', keywords: ['undo', 'redo', 'ctrl z', 'ctrl y'], shortcut: 'Ctrl+Z' },
-  { id: 'select', title: 'Select Elements', summary: 'Click to select a single element. Box select (left→right: crossing) selects all enclosed elements.', keywords: ['select', 'pick', 'box select', 'crossing'] },
-  { id: 'move', title: 'Move Elements', summary: 'Select an element, then press M or drag a grip handle to move it.', keywords: ['move', 'drag', 'grip', 'reposition'], shortcut: 'M' },
-  { id: 'copy', title: 'Copy Elements', summary: 'Select elements, press Ctrl+C to copy, Ctrl+V to paste at a new location.', keywords: ['copy', 'paste', 'duplicate', 'ctrl c'] },
-  { id: 'mirror', title: 'Mirror Elements', summary: 'Select an element, then use Modify > Mirror or the context menu Mirror option.', keywords: ['mirror', 'flip', 'symmetric', 'MR'] },
-  { id: 'rotate', title: 'Rotate Elements', summary: 'Select an element, use the rotate grip (orange dot) or press RO and pick the center.', keywords: ['rotate', 'spin', 'angle', 'RO'], shortcut: 'RO' },
-  { id: 'level', title: 'Manage Levels', summary: 'Levels define floor heights. Add levels in the Project Browser or via the Level tool.', keywords: ['level', 'storey', 'floor height', 'elevation'] },
-  { id: '3d', title: '3D View', summary: 'Click the 3D icon or press VV to switch to 3D orbit view. Scroll to zoom, right-drag to orbit.', keywords: ['3d', 'orbit', 'view', 'VV'], shortcut: 'VV' },
-  { id: 'section', title: 'Create Sections', summary: 'Press SE to place a section marker. The section view appears in the Project Browser.', keywords: ['section', 'cut', 'section view', 'SE'], shortcut: 'SE' },
-  { id: 'grid', title: 'Draw Grids', summary: 'Press GR to activate the Grid tool. Draw horizontal and vertical grid lines.', keywords: ['grid', 'column grid', 'GR'], shortcut: 'GR' },
-  { id: 'material', title: 'Assign Materials', summary: 'Select an element, click the Material field in the inspector to open the Material Browser.', keywords: ['material', 'texture', 'finish', 'paint'] },
-  { id: 'export', title: 'Export DXF / IFC', summary: 'Use Project Menu > Export DXF for CAD export, or Export IFC for BIM interoperability.', keywords: ['export', 'dxf', 'ifc', 'dwg', 'cad'] },
-  { id: 'pdf', title: 'Export to PDF', summary: 'Use Project Menu > Export PDF to generate a multi-sheet PDF from your sheets.', keywords: ['pdf', 'print', 'plot', 'export'] },
-  { id: 'family', title: 'Family Editor', summary: 'Double-click a family_definition element or open from the Family Library to enter the family editor.', keywords: ['family', 'parametric', 'family editor', 'FE'] },
+  {
+    id: 'wall',
+    title: 'Draw Walls',
+    summary:
+      'Press W to activate the Wall tool. Click-click to draw each segment. Press Esc to finish.',
+    keywords: ['wall', 'draw', 'segment', 'WA'],
+    shortcut: 'W',
+  },
+  {
+    id: 'door',
+    title: 'Place Doors',
+    summary: 'Press D to activate the Door tool. Click on a wall to insert a door.',
+    keywords: ['door', 'insert', 'opening'],
+    shortcut: 'D',
+  },
+  {
+    id: 'window',
+    title: 'Place Windows',
+    summary: 'Press N to activate the Window tool. Click on a wall to insert a window.',
+    keywords: ['window', 'insert', 'opening', 'glazing'],
+    shortcut: 'N',
+  },
+  {
+    id: 'floor',
+    title: 'Draw Floors',
+    summary:
+      'Press F to activate the Floor tool. Click to define boundary points, then press Enter to create.',
+    keywords: ['floor', 'slab', 'boundary'],
+    shortcut: 'F',
+  },
+  {
+    id: 'room',
+    title: 'Place Rooms',
+    summary:
+      'Press R to activate the Room tool. Click inside a closed wall boundary to create a room.',
+    keywords: ['room', 'space', 'area'],
+    shortcut: 'R',
+  },
+  {
+    id: 'column',
+    title: 'Place Columns',
+    summary: 'Press CO to activate the Column tool. Click to place a structural column.',
+    keywords: ['column', 'structural', 'pillar', 'CO'],
+    shortcut: 'CO',
+  },
+  {
+    id: 'beam',
+    title: 'Place Beams',
+    summary: 'Press BM to activate the Beam tool. Click-click to define a beam span.',
+    keywords: ['beam', 'structural', 'span', 'framing', 'BM'],
+    shortcut: 'BM',
+  },
+  {
+    id: 'stair',
+    title: 'Draw Stairs',
+    summary:
+      'Press ST to activate the Stair tool. Click-click to define the run direction and length.',
+    keywords: ['stair', 'steps', 'riser', 'run', 'ST'],
+    shortcut: 'ST',
+  },
+  {
+    id: 'roof',
+    title: 'Draw Roofs',
+    summary: 'Press RP to activate the Roof tool. Sketch the roof boundary, set the slope angle.',
+    keywords: ['roof', 'slope', 'eave', 'ridge', 'RP'],
+    shortcut: 'RP',
+  },
+  {
+    id: 'dimension',
+    title: 'Add Dimensions',
+    summary:
+      'Press DI to activate the Dimension tool. Click two reference points, then place the dimension line.',
+    keywords: ['dimension', 'annotation', 'measure', 'DI'],
+    shortcut: 'DI',
+  },
+  {
+    id: 'tag',
+    title: 'Tag Elements',
+    summary: 'Press TG to add a tag to a selected element (room, door, window).',
+    keywords: ['tag', 'label', 'annotation', 'TG'],
+    shortcut: 'TG',
+  },
+  {
+    id: 'undo',
+    title: 'Undo / Redo',
+    summary: 'Ctrl+Z to undo the last action. Ctrl+Y or Ctrl+Shift+Z to redo.',
+    keywords: ['undo', 'redo', 'ctrl z', 'ctrl y'],
+    shortcut: 'Ctrl+Z',
+  },
+  {
+    id: 'select',
+    title: 'Select Elements',
+    summary:
+      'Click to select a single element. Box select (left→right: crossing) selects all enclosed elements.',
+    keywords: ['select', 'pick', 'box select', 'crossing'],
+  },
+  {
+    id: 'move',
+    title: 'Move Elements',
+    summary: 'Select an element, then press M or drag a grip handle to move it.',
+    keywords: ['move', 'drag', 'grip', 'reposition'],
+    shortcut: 'M',
+  },
+  {
+    id: 'copy',
+    title: 'Copy Elements',
+    summary: 'Select elements, press Ctrl+C to copy, Ctrl+V to paste at a new location.',
+    keywords: ['copy', 'paste', 'duplicate', 'ctrl c'],
+  },
+  {
+    id: 'mirror',
+    title: 'Mirror Elements',
+    summary: 'Select an element, then use Modify > Mirror or the context menu Mirror option.',
+    keywords: ['mirror', 'flip', 'symmetric', 'MR'],
+  },
+  {
+    id: 'rotate',
+    title: 'Rotate Elements',
+    summary: 'Select an element, use the rotate grip (orange dot) or press RO and pick the center.',
+    keywords: ['rotate', 'spin', 'angle', 'RO'],
+    shortcut: 'RO',
+  },
+  {
+    id: 'level',
+    title: 'Manage Levels',
+    summary:
+      'Levels define floor heights. Add levels in the Project Browser or via the Level tool.',
+    keywords: ['level', 'storey', 'floor height', 'elevation'],
+  },
+  {
+    id: '3d',
+    title: '3D View',
+    summary:
+      'Click the 3D icon or press VV to switch to 3D orbit view. Scroll to zoom, right-drag to orbit.',
+    keywords: ['3d', 'orbit', 'view', 'VV'],
+    shortcut: 'VV',
+  },
+  {
+    id: 'section',
+    title: 'Create Sections',
+    summary: 'Press SE to place a section marker. The section view appears in the Project Browser.',
+    keywords: ['section', 'cut', 'section view', 'SE'],
+    shortcut: 'SE',
+  },
+  {
+    id: 'grid',
+    title: 'Draw Grids',
+    summary: 'Press GR to activate the Grid tool. Draw horizontal and vertical grid lines.',
+    keywords: ['grid', 'column grid', 'GR'],
+    shortcut: 'GR',
+  },
+  {
+    id: 'material',
+    title: 'Assign Materials',
+    summary:
+      'Select an element, click the Material field in the inspector to open the Material Browser.',
+    keywords: ['material', 'texture', 'finish', 'paint'],
+  },
+  {
+    id: 'export',
+    title: 'Export DXF / IFC',
+    summary:
+      'Use Project Menu > Export DXF for CAD export, or Export IFC for BIM interoperability.',
+    keywords: ['export', 'dxf', 'ifc', 'dwg', 'cad'],
+  },
+  {
+    id: 'pdf',
+    title: 'Export to PDF',
+    summary: 'Use Project Menu > Export PDF to generate a multi-sheet PDF from your sheets.',
+    keywords: ['pdf', 'print', 'plot', 'export'],
+  },
+  {
+    id: 'family',
+    title: 'Family Editor',
+    summary:
+      'Double-click a family_definition element or open from the Family Library to enter the family editor.',
+    keywords: ['family', 'parametric', 'family editor', 'FE'],
+  },
 ];
 
 export function searchHelpTopics(query: string): HelpTopic[] {
@@ -132,9 +287,28 @@ export function HelpSearchPanel({ onClose }: HelpSearchPanelProps): JSX.Element 
       }}
     >
       {/* Header */}
-      <div style={{ display: 'flex', alignItems: 'center', padding: '10px 12px', borderBottom: '1px solid var(--border, #444)' }}>
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          padding: '10px 12px',
+          borderBottom: '1px solid var(--border, #444)',
+        }}
+      >
         <span style={{ fontSize: 13, fontWeight: 600, flex: 1 }}>Help Search</span>
-        <button data-testid="help-search-close" onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 16, color: 'inherit' }}>✕</button>
+        <button
+          data-testid="help-search-close"
+          onClick={onClose}
+          style={{
+            background: 'none',
+            border: 'none',
+            cursor: 'pointer',
+            fontSize: 16,
+            color: 'inherit',
+          }}
+        >
+          ✕
+        </button>
       </div>
       {/* Search input */}
       <div style={{ padding: '8px 12px' }}>
@@ -145,8 +319,19 @@ export function HelpSearchPanel({ onClose }: HelpSearchPanelProps): JSX.Element 
           placeholder="Search help topics..."
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          onKeyDown={(e) => { if (e.key === 'Escape') onClose(); }}
-          style={{ width: '100%', fontSize: 13, padding: '6px 10px', borderRadius: 4, border: '1px solid var(--border, #555)', background: 'var(--input-bg, #2a2a3e)', color: 'inherit', boxSizing: 'border-box' }}
+          onKeyDown={(e) => {
+            if (e.key === 'Escape') onClose();
+          }}
+          style={{
+            width: '100%',
+            fontSize: 13,
+            padding: '6px 10px',
+            borderRadius: 4,
+            border: '1px solid var(--border, #555)',
+            background: 'var(--input-bg, #2a2a3e)',
+            color: 'inherit',
+            boxSizing: 'border-box',
+          }}
         />
       </div>
       {/* Results */}
@@ -155,15 +340,30 @@ export function HelpSearchPanel({ onClose }: HelpSearchPanelProps): JSX.Element 
           <p style={{ fontSize: 12, color: '#888', margin: 8 }}>No results for "{query}"</p>
         ) : (
           results.map((topic) => (
-            <div key={topic.id} data-testid={`help-topic-${topic.id}`}
-                 style={{ padding: '8px 0', borderBottom: '1px solid var(--border, #333)' }}>
+            <div
+              key={topic.id}
+              data-testid={`help-topic-${topic.id}`}
+              style={{ padding: '8px 0', borderBottom: '1px solid var(--border, #333)' }}
+            >
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                 <span style={{ fontSize: 12, fontWeight: 600 }}>{topic.title}</span>
                 {topic.shortcut && (
-                  <kbd style={{ fontSize: 10, padding: '1px 5px', borderRadius: 3, background: '#333', border: '1px solid #555' }}>{topic.shortcut}</kbd>
+                  <kbd
+                    style={{
+                      fontSize: 10,
+                      padding: '1px 5px',
+                      borderRadius: 3,
+                      background: '#333',
+                      border: '1px solid #555',
+                    }}
+                  >
+                    {topic.shortcut}
+                  </kbd>
                 )}
               </div>
-              <p style={{ fontSize: 11, color: '#aaa', margin: '3px 0 0', lineHeight: 1.4 }}>{topic.summary}</p>
+              <p style={{ fontSize: 11, color: '#aaa', margin: '3px 0 0', lineHeight: 1.4 }}>
+                {topic.summary}
+              </p>
             </div>
           ))
         )}
@@ -191,9 +391,9 @@ if (e.key === '?' && !e.ctrlKey && !e.metaKey) {
 And in the JSX render, add the panel:
 
 ```tsx
-{showHelpSearch && (
-  <HelpSearchPanel onClose={() => setShowHelpSearch(false)} />
-)}
+{
+  showHelpSearch && <HelpSearchPanel onClose={() => setShowHelpSearch(false)} />;
+}
 ```
 
 **Important**: Read `Workspace.tsx` to find where keydown handlers and floating panels are wired. Follow the existing pattern (e.g., how `CanvasContextMenu` or `SetWorkPlaneDialog` is shown/hidden).

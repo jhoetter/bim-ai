@@ -9,6 +9,7 @@ This prompt is self-contained — start here.
 ## Context
 
 §1.6.6 "Benutzung der Werkzeuge" is Partial P1. The options bar in `packages/web/src/workspace/authoring/OptionsBar.tsx` (1112 lines) already has sections for:
+
 - wall (location line, chain, offset, radius)
 - floor (type, level, offset)
 - column (level, height, width, depth)
@@ -21,6 +22,7 @@ This prompt is self-contained — start here.
 Missing: door and window tools have NO options bar sections. In Revit, when you place a door/window, the options bar shows: tag on placement toggle + door/window type selector. Grid tool shows: spacing input + name input.
 
 This task adds:
+
 1. Module-level vars for door/window/grid options bar state
 2. `planTool === 'door'` section (tag-on-place toggle + host-wall hint)
 3. `planTool === 'window'` section (sill height input + tag-on-place toggle)
@@ -39,6 +41,7 @@ packages/web/src/workspace/authoring/optionsBarRoofRampRailing.test.tsx — patt
 ```
 
 Run before editing:
+
 - `grep -n "planTool === 'roof'\|planTool === 'ramp'\|planTool === 'railing'\|planTool === 'door'\|planTool === 'window'\|planTool === 'grid'" packages/web/src/workspace/authoring/OptionsBar.tsx | head -20`
 - `grep -n "export let\|export function set" packages/web/src/workspace/authoring/OptionsBar.tsx | head -20`
 - `grep -n "data-testid.*options-roo\|data-testid.*options-ramp\|data-testid.*options-rail" packages/web/src/workspace/authoring/OptionsBar.tsx | head -15`
@@ -56,19 +59,29 @@ Find the section with `export let roofBaseOffsetMm` and similar exports. After t
 ```ts
 // §1.6.6: door options bar state
 export let doorTagOnPlace = false;
-export function setDoorTagOnPlace(v: boolean) { doorTagOnPlace = v; }
+export function setDoorTagOnPlace(v: boolean) {
+  doorTagOnPlace = v;
+}
 
 // §1.6.6: window options bar state
 export let windowSillHeightMm = 900;
-export function setWindowSillHeightMm(v: number) { windowSillHeightMm = v; }
+export function setWindowSillHeightMm(v: number) {
+  windowSillHeightMm = v;
+}
 export let windowTagOnPlace = false;
-export function setWindowTagOnPlace(v: boolean) { windowTagOnPlace = v; }
+export function setWindowTagOnPlace(v: boolean) {
+  windowTagOnPlace = v;
+}
 
 // §1.6.6: grid options bar state
 export let gridSpacingMm = 6000;
-export function setGridSpacingMm(v: number) { gridSpacingMm = v; }
+export function setGridSpacingMm(v: number) {
+  gridSpacingMm = v;
+}
 export let gridNamePrefix = 'A';
-export function setGridNamePrefix(v: string) { gridNamePrefix = v; }
+export function setGridNamePrefix(v: string) {
+  gridNamePrefix = v;
+}
 ```
 
 **Important**: Read the actual file before editing to find the exact location where roof/ramp/railing vars are defined. Insert these immediately after.
@@ -78,20 +91,24 @@ export function setGridNamePrefix(v: string) { gridNamePrefix = v; }
 Find where the railing section ends in the OptionsBar JSX render (search for `planTool === 'railing'` JSX). After the railing block, add a door section:
 
 ```tsx
-{/* §1.6.6: door options bar */}
-{(planTool === 'door') && (
-  <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
-    <label style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
-      <input
-        type="checkbox"
-        data-testid="options-door-tag-on-place"
-        defaultChecked={doorTagOnPlace}
-        onChange={(ev) => setDoorTagOnPlace(ev.currentTarget.checked)}
-      />
-      <span>Tag on Placement</span>
-    </label>
-  </div>
-)}
+{
+  /* §1.6.6: door options bar */
+}
+{
+  planTool === 'door' && (
+    <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+      <label style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
+        <input
+          type="checkbox"
+          data-testid="options-door-tag-on-place"
+          defaultChecked={doorTagOnPlace}
+          onChange={(ev) => setDoorTagOnPlace(ev.currentTarget.checked)}
+        />
+        <span>Tag on Placement</span>
+      </label>
+    </div>
+  );
+}
 ```
 
 ### C — Window section JSX
@@ -99,32 +116,36 @@ Find where the railing section ends in the OptionsBar JSX render (search for `pl
 After the door block, add:
 
 ```tsx
-{/* §1.6.6: window options bar */}
-{(planTool === 'window') && (
-  <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
-    <label style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
-      <span>Sill Height (mm):</span>
-      <input
-        type="number"
-        data-testid="options-window-sill-height"
-        defaultValue={windowSillHeightMm}
-        step={50}
-        min={0}
-        onChange={(ev) => setWindowSillHeightMm(Number(ev.currentTarget.value))}
-        style={{ width: 72 }}
-      />
-    </label>
-    <label style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
-      <input
-        type="checkbox"
-        data-testid="options-window-tag-on-place"
-        defaultChecked={windowTagOnPlace}
-        onChange={(ev) => setWindowTagOnPlace(ev.currentTarget.checked)}
-      />
-      <span>Tag on Placement</span>
-    </label>
-  </div>
-)}
+{
+  /* §1.6.6: window options bar */
+}
+{
+  planTool === 'window' && (
+    <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+      <label style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
+        <span>Sill Height (mm):</span>
+        <input
+          type="number"
+          data-testid="options-window-sill-height"
+          defaultValue={windowSillHeightMm}
+          step={50}
+          min={0}
+          onChange={(ev) => setWindowSillHeightMm(Number(ev.currentTarget.value))}
+          style={{ width: 72 }}
+        />
+      </label>
+      <label style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
+        <input
+          type="checkbox"
+          data-testid="options-window-tag-on-place"
+          defaultChecked={windowTagOnPlace}
+          onChange={(ev) => setWindowTagOnPlace(ev.currentTarget.checked)}
+        />
+        <span>Tag on Placement</span>
+      </label>
+    </div>
+  );
+}
 ```
 
 ### D — Grid section JSX
@@ -132,34 +153,38 @@ After the door block, add:
 After the window block, add:
 
 ```tsx
-{/* §1.6.6: grid options bar */}
-{(planTool === 'grid') && (
-  <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
-    <label style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
-      <span>Spacing (mm):</span>
-      <input
-        type="number"
-        data-testid="options-grid-spacing"
-        defaultValue={gridSpacingMm}
-        step={500}
-        min={100}
-        onChange={(ev) => setGridSpacingMm(Number(ev.currentTarget.value))}
-        style={{ width: 80 }}
-      />
-    </label>
-    <label style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
-      <span>Prefix:</span>
-      <input
-        type="text"
-        data-testid="options-grid-name-prefix"
-        defaultValue={gridNamePrefix}
-        maxLength={4}
-        onChange={(ev) => setGridNamePrefix(ev.currentTarget.value)}
-        style={{ width: 48 }}
-      />
-    </label>
-  </div>
-)}
+{
+  /* §1.6.6: grid options bar */
+}
+{
+  planTool === 'grid' && (
+    <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+      <label style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
+        <span>Spacing (mm):</span>
+        <input
+          type="number"
+          data-testid="options-grid-spacing"
+          defaultValue={gridSpacingMm}
+          step={500}
+          min={100}
+          onChange={(ev) => setGridSpacingMm(Number(ev.currentTarget.value))}
+          style={{ width: 80 }}
+        />
+      </label>
+      <label style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
+        <span>Prefix:</span>
+        <input
+          type="text"
+          data-testid="options-grid-name-prefix"
+          defaultValue={gridNamePrefix}
+          maxLength={4}
+          onChange={(ev) => setGridNamePrefix(ev.currentTarget.value)}
+          style={{ width: 48 }}
+        />
+      </label>
+    </div>
+  );
+}
 ```
 
 ### E — commandCapabilities.ts entry
@@ -205,11 +230,16 @@ Create `packages/web/src/workspace/authoring/optionsBarDoorWindowGrid.test.ts`:
 ```ts
 import { describe, expect, it } from 'vitest';
 import {
-  doorTagOnPlace, setDoorTagOnPlace,
-  windowSillHeightMm, setWindowSillHeightMm,
-  windowTagOnPlace, setWindowTagOnPlace,
-  gridSpacingMm, setGridSpacingMm,
-  gridNamePrefix, setGridNamePrefix,
+  doorTagOnPlace,
+  setDoorTagOnPlace,
+  windowSillHeightMm,
+  setWindowSillHeightMm,
+  windowTagOnPlace,
+  setWindowTagOnPlace,
+  gridSpacingMm,
+  setGridSpacingMm,
+  gridNamePrefix,
+  setGridNamePrefix,
 } from './OptionsBar';
 
 describe('Options bar door/window/grid — §1.6.6', () => {

@@ -89,6 +89,7 @@ Add if not present:
 ### B — Tool registration in `toolRegistry.ts`
 
 Add:
+
 ```ts
 { id: 'detail-line', hotkey: 'DL', label: 'Detail Line', mode: 'plan' }
 { id: 'detail-arc', hotkey: 'DA', label: 'Detail Arc', mode: 'plan' }
@@ -108,12 +109,20 @@ export type DetailLineState =
   | { phase: 'idle' }
   | { phase: 'drawing'; points: { xMm: number; yMm: number }[] };
 
-export type DetailLineEffect =
-  | { kind: 'createDetailLine'; pointsMm: { xMm: number; yMm: number }[]; lineStyle: 'solid' };
+export type DetailLineEffect = {
+  kind: 'createDetailLine';
+  pointsMm: { xMm: number; yMm: number }[];
+  lineStyle: 'solid';
+};
 
-export function initialDetailLineState(): DetailLineState { return { phase: 'idle' }; }
+export function initialDetailLineState(): DetailLineState {
+  return { phase: 'idle' };
+}
 
-export function reduceDetailLine(state: DetailLineState, event: ToolEvent): { state: DetailLineState; effect?: DetailLineEffect } {
+export function reduceDetailLine(
+  state: DetailLineState,
+  event: ToolEvent,
+): { state: DetailLineState; effect?: DetailLineEffect } {
   // activate → drawing (empty points)
   // click → append point to drawing
   // Enter or double-click with ≥2 points → emit createDetailLine
@@ -128,8 +137,11 @@ export type DetailFilledRegionState =
   | { phase: 'idle' }
   | { phase: 'sketching'; points: { xMm: number; yMm: number }[] };
 
-export type DetailFilledRegionEffect =
-  | { kind: 'createDetailFilledRegion'; perimeterMm: { xMm: number; yMm: number }[]; fillPattern: 'solid' };
+export type DetailFilledRegionEffect = {
+  kind: 'createDetailFilledRegion';
+  perimeterMm: { xMm: number; yMm: number }[];
+  fillPattern: 'solid';
+};
 ```
 
 Export all state/reducer/initial functions.
@@ -141,6 +153,7 @@ Export all state/reducer/initial functions.
 Add rendering for all three new element kinds in `rebuildPlanMeshes`:
 
 **Detail lines**:
+
 ```ts
 case 'detail_line': {
   const el = element as Extract<Element, { kind: 'detail_line' }>;
@@ -163,6 +176,7 @@ case 'detail_line': {
 Build an arc curve and render as `THREE.Line`.
 
 **Detail filled regions**:
+
 ```ts
 case 'detail_filled_region': {
   const el = element as Extract<Element, { kind: 'detail_filled_region' }>;
@@ -184,22 +198,34 @@ case 'detail_filled_region': {
 ### E — Inspector panels
 
 `case 'detail_line':`:
+
 ```tsx
 <div>
-  <label>Line Weight (px)
-    <input type="number" data-testid="inspector-detail-line-weight"
+  <label>
+    Line Weight (px)
+    <input
+      type="number"
+      data-testid="inspector-detail-line-weight"
       value={el.lineWeightPx ?? 1}
-      onChange={e => onPropertyChange('lineWeightPx', +e.target.value)} />
+      onChange={(e) => onPropertyChange('lineWeightPx', +e.target.value)}
+    />
   </label>
-  <label>Color
-    <input type="color" data-testid="inspector-detail-line-color"
+  <label>
+    Color
+    <input
+      type="color"
+      data-testid="inspector-detail-line-color"
       value={el.colorHex ?? '#000000'}
-      onChange={e => onPropertyChange('colorHex', e.target.value)} />
+      onChange={(e) => onPropertyChange('colorHex', e.target.value)}
+    />
   </label>
-  <label>Style
-    <select data-testid="inspector-detail-line-style"
+  <label>
+    Style
+    <select
+      data-testid="inspector-detail-line-style"
       value={el.lineStyle ?? 'solid'}
-      onChange={e => onPropertyChange('lineStyle', e.target.value)}>
+      onChange={(e) => onPropertyChange('lineStyle', e.target.value)}
+    >
       <option value="solid">Solid</option>
       <option value="dashed">Dashed</option>
       <option value="dotted">Dotted</option>
@@ -210,24 +236,34 @@ case 'detail_filled_region': {
 ```
 
 `case 'detail_filled_region':`:
+
 ```tsx
 <div>
-  <label>Fill Pattern
-    <select data-testid="inspector-detail-filled-region-pattern"
+  <label>
+    Fill Pattern
+    <select
+      data-testid="inspector-detail-filled-region-pattern"
       value={el.fillPattern ?? 'solid'}
-      onChange={e => onPropertyChange('fillPattern', e.target.value)}>
+      onChange={(e) => onPropertyChange('fillPattern', e.target.value)}
+    >
       <option value="solid">Solid</option>
       <option value="hatch-45">Hatch 45°</option>
       <option value="hatch-90">Hatch 90°</option>
       <option value="cross">Cross</option>
     </select>
   </label>
-  <label>Color
-    <input type="color" data-testid="inspector-detail-filled-region-color"
+  <label>
+    Color
+    <input
+      type="color"
+      data-testid="inspector-detail-filled-region-color"
       value={el.colorHex ?? '#cccccc'}
-      onChange={e => onPropertyChange('colorHex', e.target.value)} />
+      onChange={(e) => onPropertyChange('colorHex', e.target.value)}
+    />
   </label>
-  <span data-testid="inspector-detail-filled-region-points">{(el.perimeterMm ?? []).length} points</span>
+  <span data-testid="inspector-detail-filled-region-points">
+    {(el.perimeterMm ?? []).length} points
+  </span>
 </div>
 ```
 
@@ -236,6 +272,7 @@ case 'detail_filled_region': {
 ### F — Palette commands + capability graph
 
 In `defaultCommands.ts`:
+
 ```ts
 { id: 'tool.detail-line', label: 'Detail Line', keywords: ['detail', 'line', 'draft'], category: 'tool', invoke: (ctx) => startPlanTool(ctx, 'detail-line') }
 { id: 'tool.detail-arc', label: 'Detail Arc', keywords: ['detail', 'arc', 'draft'], category: 'tool', invoke: (ctx) => startPlanTool(ctx, 'detail-arc') }
@@ -243,6 +280,7 @@ In `defaultCommands.ts`:
 ```
 
 In `commandCapabilities.ts`:
+
 ```ts
 { id: 'tool.detail-line', scope: 'document', intendedModes: ['plan'], precondition: null },
 { id: 'tool.detail-arc', scope: 'document', intendedModes: ['plan'], precondition: null },

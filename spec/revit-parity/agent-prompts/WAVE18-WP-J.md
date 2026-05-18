@@ -41,6 +41,7 @@ Prettier runs automatically. **Always `git pull --rebase origin main` before pus
 ## Tasks
 
 The goal is to improve the shaft opening workflow:
+
 1. Add multi-level shaft support (shaft cuts through multiple floors between two levels)
 2. Add shaft auto-sizing button in inspector
 3. Add visual indicator showing which levels the shaft cuts through
@@ -61,6 +62,7 @@ cutFloorIds?: string[];
 ```
 
 Add command type if not present:
+
 ```ts
 | { type: 'updateShaftLevels'; shaftId: string; baseLevelId: string | null; topLevelId: string | null }
 | { type: 'recomputeShaftCuts'; shaftId: string }
@@ -86,9 +88,9 @@ export function computeShaftCutFloors(
   shaft: ShaftEl,
   elementsById: Record<string, Element | undefined>,
 ): string[] {
-  const levels = Object.values(elementsById).filter(e => e?.kind === 'level') as any[];
-  const baseLevel = levels.find(l => l.id === shaft.baseLevelId);
-  const topLevel = levels.find(l => l.id === shaft.topLevelId);
+  const levels = Object.values(elementsById).filter((e) => e?.kind === 'level') as any[];
+  const baseLevel = levels.find((l) => l.id === shaft.baseLevelId);
+  const topLevel = levels.find((l) => l.id === shaft.topLevelId);
 
   const baseElev = baseLevel?.elevationMm ?? 0;
   const topElev = topLevel?.elevationMm ?? Infinity;
@@ -97,10 +99,10 @@ export function computeShaftCutFloors(
   if (shaftPerim.length < 3) return [];
 
   return Object.values(elementsById)
-    .filter(el => {
+    .filter((el) => {
       if (!el || el.kind !== 'floor') return false;
       const floor = el as any;
-      const floorLevel = levels.find(l => l.id === floor.levelId);
+      const floorLevel = levels.find((l) => l.id === floor.levelId);
       const floorElev = floorLevel?.elevationMm ?? 0;
       // Floor must be within the shaft's vertical extent
       if (floorElev < baseElev || floorElev > topElev) return false;
@@ -111,16 +113,18 @@ export function computeShaftCutFloors(
       const cy = floorPerim.reduce((s, p) => s + p.yMm, 0) / floorPerim.length;
       return pointInPolygon({ xMm: cx, yMm: cy }, shaftPerim);
     })
-    .map(el => el!.id);
+    .map((el) => el!.id);
 }
 
 function pointInPolygon(pt: PointMm, polygon: PointMm[]): boolean {
   let inside = false;
   for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
-    const xi = polygon[i].xMm, yi = polygon[i].yMm;
-    const xj = polygon[j].xMm, yj = polygon[j].yMm;
-    const intersect = ((yi > pt.yMm) !== (yj > pt.yMm)) &&
-      (pt.xMm < (xj - xi) * (pt.yMm - yi) / (yj - yi) + xi);
+    const xi = polygon[i].xMm,
+      yi = polygon[i].yMm;
+    const xj = polygon[j].xMm,
+      yj = polygon[j].yMm;
+    const intersect =
+      yi > pt.yMm !== yj > pt.yMm && pt.xMm < ((xj - xi) * (pt.yMm - yi)) / (yj - yi) + xi;
     if (intersect) inside = !inside;
   }
   return inside;
@@ -132,6 +136,7 @@ function pointInPolygon(pt: PointMm, polygon: PointMm[]): boolean {
 ### C — `Workspace.tsx` handler updates
 
 Handle `recomputeShaftCuts`:
+
 ```ts
 case 'recomputeShaftCuts': {
   const shaft = elementsById[cmd.shaftId];
@@ -143,6 +148,7 @@ case 'recomputeShaftCuts': {
 ```
 
 Handle `updateShaftLevels`:
+
 ```ts
 case 'updateShaftLevels': {
   const shaft = elementsById[cmd.shaftId];
@@ -203,7 +209,7 @@ Add a simple dashed outline at z = 0.005 inside the shaft polygon:
 // In the shaft rendering block:
 if (shaft.showCutLevels && shaft.cutFloorIds?.length > 0) {
   // Draw a dashed inner line offset from the perimeter
-  const innerPts = shaftPerimPts.map(p => p.clone().multiplyScalar(0.97)); // 3% inward
+  const innerPts = shaftPerimPts.map((p) => p.clone().multiplyScalar(0.97)); // 3% inward
   const geo = new THREE.BufferGeometry().setFromPoints([...innerPts, innerPts[0]]);
   const mat = new THREE.LineDashedMaterial({ color: '#ff6600', dashSize: 0.1, gapSize: 0.05 });
   const line = new THREE.Line(geo, mat);
@@ -219,6 +225,7 @@ if (shaft.showCutLevels && shaft.cutFloorIds?.length > 0) {
 ### F — Palette command + capability graph
 
 In `defaultCommands.ts`:
+
 ```ts
 { id: 'modify.recompute-shaft-cuts', label: 'Recompute Shaft Floor Cuts',
   keywords: ['shaft', 'cut', 'floor', 'opening'],
@@ -229,6 +236,7 @@ In `defaultCommands.ts`:
 ```
 
 In `commandCapabilities.ts`:
+
 ```ts
 { id: 'modify.recompute-shaft-cuts', scope: 'selection', intendedModes: ['plan'], precondition: 'selected-shaft' },
 ```

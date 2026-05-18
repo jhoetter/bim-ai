@@ -37,6 +37,7 @@ Prettier runs automatically after every Edit/Write.
 ### A — Sloped columns: data model (§9.1.4)
 
 Add to `ColumnElem` in `core/index.ts`:
+
 ```ts
 /** Top of column offset in mm — creates a sloped/inclined column */
 topOffsetXMm?: number;
@@ -46,6 +47,7 @@ topOffsetYMm?: number;  // Y here is the plan north-south axis (world Z)
 ### B — Sloped columns: 3D mesh
 
 In `makeColumnMesh`, when `col.topOffsetXMm || col.topOffsetYMm`:
+
 - Build a custom `BufferGeometry` trapezoidal prism instead of BoxGeometry:
   - Bottom 4 corners at `(±bMm/2, 0, ±hMm/2)` in local space
   - Top 4 corners at `(±bMm/2 + topOffsetXMm, heightMm, ±hMm/2 + topOffsetYMm)`
@@ -56,6 +58,7 @@ In `makeColumnMesh`, when `col.topOffsetXMm || col.topOffsetYMm`:
 ### C — Sloped columns: plan symbol
 
 In `planColumnMesh`, when column is sloped (has non-zero top offset):
+
 - Add a dashed rectangle overlay showing the projected top footprint
   (`data-testid` pattern: `userData.columnTopFootprint = true`)
 - The dashed rect dimensions same as column base but offset in plan by
@@ -64,13 +67,15 @@ In `planColumnMesh`, when column is sloped (has non-zero top offset):
 ### D — Inspector: sloped column inputs
 
 In `InspectorContent.tsx`, for `el.kind === 'column'`, add:
+
 - `data-testid="inspector-column-top-offset-x"` — number input for `topOffsetXMm`
 - `data-testid="inspector-column-top-offset-y"` — number input for `topOffsetYMm`
-On change dispatch `update_element_property` for each field.
+  On change dispatch `update_element_property` for each field.
 
 ### E — Family editor: void cut (§15.1.x)
 
 Add a `FamilyVoid` type to `core/index.ts`:
+
 ```ts
 export type FamilyVoid = {
   kind: 'family_void';
@@ -81,12 +86,14 @@ export type FamilyVoid = {
 ```
 
 Add `buildFamilyVoidMesh(form: FamilyVoid): THREE.Mesh` to `meshBuilders.ts`:
+
 - Same as `buildFamilyExtrusionMesh` but return a mesh with wireframe material
   (`wireframe: true`, color `#ff4444`) to indicate a void/cut
 
 ### F — Tests
 
 Write `packages/web/src/viewport/slopedColumn.test.ts`:
+
 ```ts
 describe('sloped column mesh — §9.1.4', () => {
   it('vertical column (no offset): top vertices align with bottom X extent', () => { ... });
@@ -97,6 +104,7 @@ describe('sloped column mesh — §9.1.4', () => {
 ```
 
 Write `packages/web/src/familyEditor/familyVoidMesh.test.ts`:
+
 ```ts
 describe('buildFamilyVoidMesh — §15.1.x', () => {
   it('returns a THREE.Mesh instance', () => { ... });

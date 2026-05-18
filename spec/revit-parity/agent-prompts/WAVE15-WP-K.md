@@ -19,6 +19,7 @@ packages/web/src/cmdPalette/defaultCommands.ts          — palette commands
 ```
 
 Also look for:
+
 - `north-arrow` tool — it already exists as a ToolId. Find its grammar and plan renderer.
 - `annotation_symbol` with `symbolType: 'north_arrow'` in core/index.ts.
 - `SheetCanvas.tsx` — north arrow rendering on sheets.
@@ -79,12 +80,23 @@ function basePointPlanSymbol(el: ProjectBasePointEl): THREE.Group {
     const a = (i / 32) * Math.PI * 2;
     circlePts.push(new THREE.Vector3(cx + Math.cos(a) * r, Y, cz + Math.sin(a) * r));
   }
-  grp.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(circlePts), new THREE.LineBasicMaterial({ color: '#2563eb' })));
+  grp.add(
+    new THREE.Line(
+      new THREE.BufferGeometry().setFromPoints(circlePts),
+      new THREE.LineBasicMaterial({ color: '#2563eb' }),
+    ),
+  );
 
   // Cross hair
   const crossMat = new THREE.LineBasicMaterial({ color: '#2563eb' });
-  const hLine = new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(cx - r, Y, cz), new THREE.Vector3(cx + r, Y, cz)]);
-  const vLine = new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(cx, Y, cz - r), new THREE.Vector3(cx, Y, cz + r)]);
+  const hLine = new THREE.BufferGeometry().setFromPoints([
+    new THREE.Vector3(cx - r, Y, cz),
+    new THREE.Vector3(cx + r, Y, cz),
+  ]);
+  const vLine = new THREE.BufferGeometry().setFromPoints([
+    new THREE.Vector3(cx, Y, cz - r),
+    new THREE.Vector3(cx, Y, cz + r),
+  ]);
   grp.add(new THREE.Line(hLine, crossMat));
   grp.add(new THREE.Line(vLine, crossMat));
   return grp;
@@ -98,6 +110,7 @@ Register `'project-base-point'` tool (hotkey `BP`, plan mode). Grammar: single-c
 ### D — Inspector for project base point
 
 In `InspectorContent.tsx`, add a section for `kind === 'project_base_point'`:
+
 - Position X (mm), Position Y (mm), Elevation (mm) — number inputs
 - Name text input
 - `isShared` checkbox
@@ -112,15 +125,26 @@ In `InspectorContent.tsx`, add a section for `kind === 'project_base_point'`:
 Find the `north-arrow` grammar in `toolGrammar.ts`. If the grammar's single-click does NOT actually commit (`createNorthArrow` effect), fix it:
 
 The complete grammar should be:
+
 - activate → listening
 - click → emit `{ kind: 'createNorthArrow', positionMm, rotationDeg }` where `rotationDeg` defaults to `project_settings.projectNorthAngleDeg`
 - escape → idle
 
 If the `createNorthArrow` effect is not handled in `Workspace.tsx`, add the handler:
+
 ```ts
 if (cmd.type === 'create_north_arrow') {
   const id = crypto.randomUUID();
-  void onSemanticCommand({ type: 'createElement', element: { kind: 'annotation_symbol', id, symbolType: 'north_arrow', positionMm: cmd.positionMm, rotationDeg: cmd.rotationDeg ?? 0 } });
+  void onSemanticCommand({
+    type: 'createElement',
+    element: {
+      kind: 'annotation_symbol',
+      id,
+      symbolType: 'north_arrow',
+      positionMm: cmd.positionMm,
+      rotationDeg: cmd.rotationDeg ?? 0,
+    },
+  });
 }
 ```
 
@@ -148,12 +172,14 @@ function northArrowPlanSymbol(el: AnnotationSymbolEl): THREE.Group {
   const headLen = 0.1;
   const headAngle = Math.PI / 6;
   const leftHead = new THREE.Vector3(
-    tip.x - Math.sin(rot + headAngle) * headLen, Y,
-    tip.z + Math.cos(rot + headAngle) * headLen
+    tip.x - Math.sin(rot + headAngle) * headLen,
+    Y,
+    tip.z + Math.cos(rot + headAngle) * headLen,
   );
   const rightHead = new THREE.Vector3(
-    tip.x - Math.sin(rot - headAngle) * headLen, Y,
-    tip.z + Math.cos(rot - headAngle) * headLen
+    tip.x - Math.sin(rot - headAngle) * headLen,
+    Y,
+    tip.z + Math.cos(rot - headAngle) * headLen,
   );
   const headGeo = new THREE.BufferGeometry().setFromPoints([leftHead, tip, rightHead]);
   grp.add(new THREE.Line(headGeo, new THREE.LineBasicMaterial({ color: '#000' })));
@@ -167,6 +193,7 @@ function northArrowPlanSymbol(el: AnnotationSymbolEl): THREE.Group {
 ## Tests
 
 `packages/web/src/plan/projectBasePoint.test.ts`:
+
 ```ts
 describe('project base point — §2.1.3', () => {
   it('grammar single click emits createProjectBasePoint effect', () => { ... });
@@ -176,6 +203,7 @@ describe('project base point — §2.1.3', () => {
 ```
 
 `packages/web/src/plan/northArrow.test.ts`:
+
 ```ts
 describe('north arrow — §5.4.1', () => {
   it('grammar click emits createNorthArrow with positionMm', () => { ... });

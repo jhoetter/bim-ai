@@ -33,6 +33,7 @@ Prettier runs automatically. **Always `git pull --rebase origin main` before pus
 ### A — Add `viewCategoryOverrides` to `plan_view` in `core/index.ts`
 
 Find the `plan_view` kind in `core/index.ts`. If it doesn't already have `viewCategoryOverrides`, add:
+
 ```ts
 viewCategoryOverrides?: CategoryVisualOverride[] | null;
 ```
@@ -56,6 +57,7 @@ interface Props {
 ```
 
 The dialog should:
+
 1. Read the active plan view's `viewCategoryOverrides` (or default to all visible).
 2. Show the same per-category table (wall/floor/roof/ceiling/door/window/column/stair/room/dimension/text).
 3. On apply, call `onApply(viewId, overrides)`.
@@ -67,19 +69,35 @@ The same categories and UI as the global dialog suffice — no need to build any
 ### C — Wire into `PlanViewHeader.tsx`
 
 Add props:
+
 ```ts
 onPerViewVGOpen?: () => void;
 ```
 
 Add a "VG" (per-view visibility) button in the toolbar:
+
 ```tsx
-{onPerViewVGOpen ? (
-  <button type="button" data-testid="plan-view-per-view-vg-btn" onClick={onPerViewVGOpen}
-    title="Per-View Visibility/Graphics Override"
-    style={{ padding: '2px 8px', fontSize: 11, border: '1px solid var(--color-border)', borderRadius: 4, cursor: 'pointer', background: 'transparent', color: 'var(--color-foreground)' }}>
-    VG
-  </button>
-) : null}
+{
+  onPerViewVGOpen ? (
+    <button
+      type="button"
+      data-testid="plan-view-per-view-vg-btn"
+      onClick={onPerViewVGOpen}
+      title="Per-View Visibility/Graphics Override"
+      style={{
+        padding: '2px 8px',
+        fontSize: 11,
+        border: '1px solid var(--color-border)',
+        borderRadius: 4,
+        cursor: 'pointer',
+        background: 'transparent',
+        color: 'var(--color-foreground)',
+      }}
+    >
+      VG
+    </button>
+  ) : null;
+}
 ```
 
 ---
@@ -114,6 +132,7 @@ Pass `viewCategoryOverrides` into `rebuildPlanMeshes` opts from `PlanCanvas.tsx`
 ### F — Tests
 
 `packages/web/src/workspace/perViewVGDialog.test.tsx`:
+
 ```ts
 describe('per-view visibility/graphics dialog — §1.6.10', () => {
   it('renders per-view-vg-btn in plan view header when prop provided', () => { ... });
@@ -124,6 +143,7 @@ describe('per-view visibility/graphics dialog — §1.6.10', () => {
 ```
 
 `packages/web/src/plan/perViewVGMerge.test.ts`:
+
 ```ts
 describe('mergeOverrides — §1.6.10', () => {
   it('view override shadows global for same category', () => { ... });

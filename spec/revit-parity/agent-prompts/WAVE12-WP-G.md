@@ -58,14 +58,18 @@ export interface Saved3dViewElement {
   locked?: boolean | null;
   /** Section box extent when this view was saved. */
   sectionBox?: {
-    minX: number; maxX: number;
-    minY: number; maxY: number;
-    minZ: number; maxZ: number;
+    minX: number;
+    maxX: number;
+    minY: number;
+    maxY: number;
+    minZ: number;
+    maxZ: number;
   } | null;
 }
 ```
 
 Add command types:
+
 ```ts
 export type SaveCurrentViewCmd = { type: 'save_3d_view'; name: string };
 export type DeleteSavedViewCmd = { type: 'delete_3d_view'; viewId: string };
@@ -87,6 +91,7 @@ Expose camera position to Workspace via a ref or callback — read how `Viewport
 ### C — Project browser: 3D Views group
 
 In `ProjectBrowser.tsx`, in the "3D Views" (or equivalent) group:
+
 - List all `saved_3d_view` elements sorted by name
 - Each row: view name, lock icon (if locked), double-click → restore view
 - Right-click context menu (use the `ElementContextMenu` from wave 10): "Restore", "Rename" (inline), "Delete", "Lock/Unlock"
@@ -97,11 +102,13 @@ In `ProjectBrowser.tsx`, in the "3D Views" (or equivalent) group:
 In `Workspace.tsx` or `Viewport3D.tsx`, add a **"Section Box from Plan"** command:
 
 When the active plan view has a `cropRegion` or bounding box:
+
 - Compute the section box extent from the plan view's crop region (xMin, xMax in plan coords → world coords)
 - Set `viewerSectionBoxExtent` to those bounds
 - Switch to 3D tab to show the result
 
 Palette command:
+
 ```ts
 registerCommand({
   id: 'view.section-box-from-plan',
@@ -117,6 +124,7 @@ Add `sectionBoxFromPlan?: () => void` to `PaletteContext`.
 ### E — Locked view: prevent camera interaction
 
 In `store.ts`, add:
+
 ```ts
 viewLocked: boolean;
 setViewLocked: (v: boolean) => void;
@@ -129,6 +137,7 @@ A **"Unlock View"** button on the badge dispatches `setViewLocked(false)`.
 ### F — Tests
 
 Write `packages/web/src/workspace/saved3dViews.test.ts`:
+
 ```ts
 describe('saved 3D views — §6.1.3', () => {
   it('save_3d_view adds a saved_3d_view element to elementsById', () => { ... });
@@ -139,6 +148,7 @@ describe('saved 3D views — §6.1.3', () => {
 ```
 
 Write `packages/web/src/workspace/project/projectBrowserSaved3dViews.test.tsx`:
+
 ```ts
 describe('project browser 3D views — §6.1.3', () => {
   it('renders browser-save-3d-view button', () => { ... });
@@ -152,6 +162,7 @@ describe('project browser 3D views — §6.1.3', () => {
 ## Commit and push
 
 After tests pass (`pnpm test --filter @bim-ai/web`):
+
 ```
 git add -p
 git commit -m "feat(wave12/G): named/locked 3D views + section box from plan (§6.1.3)"

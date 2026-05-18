@@ -44,6 +44,7 @@ If `DecalElem` doesn't have `imageSrc?: string | null`, add it. This field holds
 ### B — Update `buildDecalMesh` to use `imageSrc`
 
 In `buildDecalMesh`, after reading `imageAssetsById[decal.imageAssetId]`:
+
 ```ts
 const url = (decal as { imageSrc?: string | null }).imageSrc ?? imageAssetsById[decal.imageAssetId];
 ```
@@ -57,6 +58,7 @@ If `url` is defined, load the texture with `new THREE.TextureLoader().load(url)`
 In `symbology.ts`, find where decal elements are handled (or add a case for `kind === 'decal'`).
 
 Draw a simple rectangle outline with diagonal lines (like a picture frame placeholder):
+
 ```ts
 function decalPlanSymbol(el: DecalElem): THREE.Group {
   const grp = new THREE.Group();
@@ -67,8 +69,12 @@ function decalPlanSymbol(el: DecalElem): THREE.Group {
   const cy = el.positionMm?.yMm ?? 0;
   // Rectangle + X diagonals in plan (XZ plane at PLAN_Y)
   const corners = [
-    [-wM/2, -hM/2], [wM/2, -hM/2], [wM/2, hM/2], [-wM/2, hM/2], [-wM/2, -hM/2]
-  ].map(([x, z]) => new THREE.Vector3(cx/1000+x, PLAN_Y+0.003, -cy/1000+z));
+    [-wM / 2, -hM / 2],
+    [wM / 2, -hM / 2],
+    [wM / 2, hM / 2],
+    [-wM / 2, hM / 2],
+    [-wM / 2, -hM / 2],
+  ].map(([x, z]) => new THREE.Vector3(cx / 1000 + x, PLAN_Y + 0.003, -cy / 1000 + z));
   // ... add outline + diagonals using THREE.Line
   return grp;
 }
@@ -86,11 +92,31 @@ In `InspectorContent.tsx`, find or add the `kind === 'decal'` inspector section 
   <label>Image</label>
   <div style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
     {el.imageSrc ? (
-      <img src={el.imageSrc} alt="decal preview"
+      <img
+        src={el.imageSrc}
+        alt="decal preview"
         data-testid="inspector-decal-preview"
-        style={{ width: 64, height: 64, objectFit: 'contain', border: '1px solid var(--color-border)' }} />
+        style={{
+          width: 64,
+          height: 64,
+          objectFit: 'contain',
+          border: '1px solid var(--color-border)',
+        }}
+      />
     ) : (
-      <div data-testid="inspector-decal-no-image" style={{ width: 64, height: 64, background: '#f0f0f0', border: '1px solid var(--color-border)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10 }}>
+      <div
+        data-testid="inspector-decal-no-image"
+        style={{
+          width: 64,
+          height: 64,
+          background: '#f0f0f0',
+          border: '1px solid var(--color-border)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          fontSize: 10,
+        }}
+      >
         No image
       </div>
     )}
@@ -114,20 +140,31 @@ In `InspectorContent.tsx`, find or add the `kind === 'decal'` inspector section 
 
   {/* Width / Height */}
   <label>Width (mm)</label>
-  <input type="number" data-testid="inspector-decal-width"
+  <input
+    type="number"
+    data-testid="inspector-decal-width"
     value={el.widthMm ?? 500}
-    onChange={(e) => onPropertyChange('widthMm', +e.currentTarget.value)} />
+    onChange={(e) => onPropertyChange('widthMm', +e.currentTarget.value)}
+  />
   <label>Height (mm)</label>
-  <input type="number" data-testid="inspector-decal-height"
+  <input
+    type="number"
+    data-testid="inspector-decal-height"
     value={el.heightMm ?? 500}
-    onChange={(e) => onPropertyChange('heightMm', +e.currentTarget.value)} />
+    onChange={(e) => onPropertyChange('heightMm', +e.currentTarget.value)}
+  />
 
   {/* Opacity */}
   <label>Opacity</label>
-  <input type="range" min={0} max={1} step={0.05}
+  <input
+    type="range"
+    min={0}
+    max={1}
+    step={0.05}
     data-testid="inspector-decal-opacity"
     value={el.opacity ?? 1}
-    onChange={(e) => onPropertyChange('opacity', +e.currentTarget.value)} />
+    onChange={(e) => onPropertyChange('opacity', +e.currentTarget.value)}
+  />
 </CollapsibleSection>
 ```
 
@@ -136,6 +173,7 @@ In `InspectorContent.tsx`, find or add the `kind === 'decal'` inspector section 
 ### E — Tests
 
 `packages/web/src/workspace/inspector/decalInspector.test.tsx`:
+
 ```ts
 describe('decal inspector — §8.1.5', () => {
   it('renders inspector-decal section', () => { ... });
@@ -148,6 +186,7 @@ describe('decal inspector — §8.1.5', () => {
 ```
 
 `packages/web/src/viewport/decalMesh.test.ts`:
+
 ```ts
 describe('buildDecalMesh — §8.1.5', () => {
   it('renders magenta fallback when no imageSrc or imageAssetsById entry', () => { ... });

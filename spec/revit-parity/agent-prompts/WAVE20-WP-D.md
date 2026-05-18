@@ -9,6 +9,7 @@ This prompt is self-contained — start here.
 ## Context
 
 `FamilyLibraryPanel.tsx` exists and shows families from internal + external catalogs. It is missing:
+
 - A search/filter input to narrow the displayed families
 - Category count badges (showing how many family types exist per category)
 - A "recently placed" section listing the last 5 family types used
@@ -47,16 +48,16 @@ const [searchQuery, setSearchQuery] = useState('');
   data-testid="family-library-search"
   placeholder="Search families…"
   value={searchQuery}
-  onChange={e => setSearchQuery(e.target.value)}
+  onChange={(e) => setSearchQuery(e.target.value)}
   style={{ width: '100%', marginBottom: 8, padding: '2px 6px' }}
-/>
+/>;
 ```
 
 Apply the filter to the displayed entries — hide any family or category whose name does not include `searchQuery` (case-insensitive). When `searchQuery` is empty, show all.
 
 ```ts
-const filteredEntries = entries.filter(entry =>
-  !searchQuery || entry.name.toLowerCase().includes(searchQuery.toLowerCase())
+const filteredEntries = entries.filter(
+  (entry) => !searchQuery || entry.name.toLowerCase().includes(searchQuery.toLowerCase()),
 );
 ```
 
@@ -67,8 +68,17 @@ const filteredEntries = entries.filter(entry =>
 Next to each category heading/button, render a badge with the count of family types in that category:
 
 ```tsx
-<span data-testid={`family-category-count-${categoryId}`}
-  style={{ fontSize: 10, background: '#888', color: '#fff', borderRadius: 8, padding: '1px 5px', marginLeft: 4 }}>
+<span
+  data-testid={`family-category-count-${categoryId}`}
+  style={{
+    fontSize: 10,
+    background: '#888',
+    color: '#fff',
+    borderRadius: 8,
+    padding: '1px 5px',
+    marginLeft: 4,
+  }}
+>
   {count}
 </span>
 ```
@@ -82,24 +92,29 @@ Add a `recentFamilyIds` array stored in component state (or a lightweight Zustan
 Render a "Recently Used" collapsible section at the top of the list:
 
 ```tsx
-{recentFamilyIds.length > 0 && (
-  <details open>
-    <summary data-testid="family-library-recent-header">Recently Used</summary>
-    <ul>
-      {recentFamilyIds.map(id => {
-        const entry = allEntries.find(e => e.id === id);
-        if (!entry) return null;
-        return (
-          <li key={id} data-testid={`family-library-recent-${id}`}
-            onClick={() => handlePlaceFamily(entry)}
-            style={{ cursor: 'pointer', padding: '2px 4px' }}>
-            {entry.name}
-          </li>
-        );
-      })}
-    </ul>
-  </details>
-)}
+{
+  recentFamilyIds.length > 0 && (
+    <details open>
+      <summary data-testid="family-library-recent-header">Recently Used</summary>
+      <ul>
+        {recentFamilyIds.map((id) => {
+          const entry = allEntries.find((e) => e.id === id);
+          if (!entry) return null;
+          return (
+            <li
+              key={id}
+              data-testid={`family-library-recent-${id}`}
+              onClick={() => handlePlaceFamily(entry)}
+              style={{ cursor: 'pointer', padding: '2px 4px' }}
+            >
+              {entry.name}
+            </li>
+          );
+        })}
+      </ul>
+    </details>
+  );
+}
 ```
 
 ### D — Tests

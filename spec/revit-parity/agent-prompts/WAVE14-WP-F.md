@@ -44,12 +44,14 @@ In `InspectorContent.tsx`, `case 'room':`:
 1. Check if "Net Area" is already shown. If not, add it.
 2. To compute net area, call `roomNetAreaM2(roomEl, wallElements, columnElements)` from `roomArea.ts`, where `wallElements` and `columnElements` are filtered from `elementsById` by kind.
 3. Render:
+
 ```tsx
 <div className="flex items-center gap-2 py-0.5" data-testid="inspector-room-net-area">
   <span className="text-xs text-muted w-28 shrink-0">Net Area</span>
   <span className="text-xs">{netAreaM2.toFixed(2)} m²</span>
 </div>
 ```
+
 4. Also display gross area if not already shown: `data-testid="inspector-room-gross-area"`.
 
 Note: `elementsById` must be accessible in InspectorContent. Read how other inspector cases access the full element map (e.g. for type selectors). Use the same pattern.
@@ -88,6 +90,7 @@ In `roomFinishScheduleEvidenceReadout.ts`, if the room finish schedule rows don'
 ### D — Tests
 
 `packages/web/src/workspace/inspector/roomNetAreaInspector.test.tsx`:
+
 ```ts
 describe('room net area inspector — §13.1.4', () => {
   it('renders inspector-room-net-area with computed value', () => { ... });
@@ -97,6 +100,7 @@ describe('room net area inspector — §13.1.4', () => {
 ```
 
 `packages/web/src/schedules/furnitureSchedulePreset.test.ts`:
+
 ```ts
 describe('furniture schedule preset — §13.3.1', () => {
   it('furniture preset exists in schedule definition presets', () => { ... });
@@ -110,6 +114,7 @@ describe('furniture schedule preset — §13.3.1', () => {
 ## Commit and push
 
 After tests pass (`pnpm test --filter @bim-ai/web`):
+
 ```
 git add -p
 git commit -m "feat(wave14/F): room net area inspector + furniture schedule preset (§13.1.4 + §13.3.1)"

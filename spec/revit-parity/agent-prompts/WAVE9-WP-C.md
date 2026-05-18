@@ -39,6 +39,7 @@ Read ALL of these before writing anything:
 ### A — Data model: priority on WallTypeLayer
 
 In `core/index.ts`, add to `WallTypeLayer`:
+
 ```ts
 /** Revit-style layer priority (1 = highest, 5 = lowest). Controls which layer dominates at wall joins. Default: 3. */
 priority?: number | null;
@@ -47,6 +48,7 @@ priority?: number | null;
 ### B — WallTypeLayerEditor: priority column
 
 In `WallTypeLayerEditor.tsx`, add a "Priority" column to the layer table:
+
 - `<select>` with options 1–5 (default 3 when null)
 - `data-testid="layer-priority-{i}"` for row i
 - On change: update the draft layer's `priority`
@@ -54,6 +56,7 @@ In `WallTypeLayerEditor.tsx`, add a "Priority" column to the layer table:
 ### C — Join resolution: sort by priority
 
 In `effectiveHostMaterials.ts`, when merging layers from two joining walls:
+
 - Read `layer.priority ?? 3` for each layer
 - Lower priority number = higher precedence (dominates at the join)
 - Sort the merged layer list by priority ascending before applying material decisions
@@ -68,6 +71,7 @@ If floor type layers are not yet displayed in the inspector (check first), skip 
 ### E — Tests
 
 Write `packages/web/src/families/wallTypeLayerPriority.test.ts`:
+
 ```ts
 describe('WallTypeLayer priority — §2.4.4', () => {
   it('priority defaults to 3 when null or undefined', () => { ... });
@@ -78,6 +82,7 @@ describe('WallTypeLayer priority — §2.4.4', () => {
 ```
 
 Write `packages/web/src/workspace/families/wallTypeLayerEditor.priority.test.tsx`:
+
 ```ts
 describe('WallTypeLayerEditor priority column — §2.4.4', () => {
   it('renders layer-priority-0 select for first layer', () => { ... });
@@ -91,6 +96,7 @@ describe('WallTypeLayerEditor priority column — §2.4.4', () => {
 ## Commit and push
 
 After all tasks are done and tests pass (`pnpm test --filter @bim-ai/web`), commit:
+
 ```
 git add -p
 git commit -m "feat(wave9/C): material layer priority (1-5) on WallTypeLayer + join resolution (§2.4.4)"

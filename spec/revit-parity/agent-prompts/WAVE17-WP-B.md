@@ -46,6 +46,7 @@ projectElevationMm?: number;    // real-world elevation of project base point (m
 ```
 
 Add command types:
+
 ```ts
 | { type: 'setAngleToTrueNorth'; angleDeg: number }
 | { type: 'setProjectElevation'; elevationMm: number }
@@ -152,15 +153,17 @@ planGroup.rotation.y = (angleDeg * Math.PI) / 180;
 In `PlanViewHeader.tsx`, add a north indicator when `planViewAngleDeg !== 0`:
 
 ```tsx
-{(activeView?.planViewAngleDeg ?? 0) !== 0 && (
-  <span
-    data-testid="plan-view-north-angle"
-    title="View rotated to true north"
-    style={{ fontSize: 11, color: '#666' }}
-  >
-    ↑{(activeView?.planViewAngleDeg ?? 0).toFixed(1)}°
-  </span>
-)}
+{
+  (activeView?.planViewAngleDeg ?? 0) !== 0 && (
+    <span
+      data-testid="plan-view-north-angle"
+      title="View rotated to true north"
+      style={{ fontSize: 11, color: '#666' }}
+    >
+      ↑{(activeView?.planViewAngleDeg ?? 0).toFixed(1)}°
+    </span>
+  );
+}
 ```
 
 ---
@@ -168,6 +171,7 @@ In `PlanViewHeader.tsx`, add a north indicator when `planViewAngleDeg !== 0`:
 ### F — Capability graph
 
 In `commandCapabilities.ts`:
+
 ```ts
 { id: 'view.rotate-to-true-north', scope: 'document', intendedModes: ['plan'], precondition: null },
 { id: 'project.set-true-north', scope: 'document', intendedModes: ['plan', '3d'], precondition: null },
@@ -179,6 +183,7 @@ In `commandCapabilities.ts`:
 ### G — Tests
 
 `packages/web/src/plan/trueNorth.test.ts`:
+
 ```ts
 describe('true north rotation — §5.4.2', () => {
   it('rotateToTrueNorth sets planViewAngleDeg to negative of angleToTrueNorthDeg', () => { ... });
@@ -192,6 +197,7 @@ describe('project elevation — §5.3', () => {
 ```
 
 `packages/web/src/plan/PlanViewHeader.trueNorth.test.tsx`:
+
 ```ts
 describe('PlanViewHeader north indicator — §5.4.2', () => {
   it('renders plan-view-north-angle when planViewAngleDeg is non-zero', () => { ... });

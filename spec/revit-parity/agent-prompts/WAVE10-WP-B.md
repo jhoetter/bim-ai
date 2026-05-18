@@ -46,9 +46,13 @@ interface ViewRangeDialogProps {
   onClose: () => void;
   planView: Extract<Element, { kind: 'plan_view' }>;
   levelElevationsMm: Record<string, number>; // levelId → elevationMm
-  onSave: (patch: { viewRangeTopMm: number; viewRangeBottomMm: number; cutPlaneOffsetMm: number }) => void;
+  onSave: (patch: {
+    viewRangeTopMm: number;
+    viewRangeBottomMm: number;
+    cutPlaneOffsetMm: number;
+  }) => void;
 }
-export function ViewRangeDialog(props: ViewRangeDialogProps): JSX.Element | null
+export function ViewRangeDialog(props: ViewRangeDialogProps): JSX.Element | null;
 ```
 
 - `data-testid="view-range-dialog"` on container; return `null` when `open === false`
@@ -69,6 +73,7 @@ export function ViewRangeDialog(props: ViewRangeDialogProps): JSX.Element | null
 ### B — Wire into Workspace
 
 In `Workspace.tsx`:
+
 - Add `viewRangeOpen` state and the active plan view id
 - Resolve `plan_view` element from `elementsById` using `activePlanViewId`
 - `onSave`: dispatch `update_element_property` for `viewRangeTopMm`, `viewRangeBottomMm`, `cutPlaneOffsetMm` in sequence (or use `update_element_property` with a patch object if the command supports it)
@@ -77,6 +82,7 @@ In `Workspace.tsx`:
 ### C — Palette command
 
 In `defaultCommands.ts`:
+
 ```ts
 registerCommand({
   id: 'view.view-range',
@@ -93,6 +99,7 @@ Add `openViewRange?: () => void` to `PaletteContext` in `registry.ts`.
 ### D — Tests
 
 Write `packages/web/src/workspace/ViewRangeDialog.test.tsx`:
+
 ```ts
 describe('ViewRangeDialog — §2.1.5', () => {
   it('renders view-range-dialog when open=true', () => { ... });
@@ -110,6 +117,7 @@ describe('ViewRangeDialog — §2.1.5', () => {
 ## Commit and push
 
 After tests pass (`pnpm test --filter @bim-ai/web`):
+
 ```
 git add -p
 git commit -m "feat(wave10/B): view range dialog with visual diagram (§2.1.5 + §3.5.1)"

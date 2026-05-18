@@ -41,6 +41,7 @@ Prettier runs automatically after every Edit/Write.
 
 **A1. Inspector panel**: When an `interior_elevation_marker` element is selected, the
 Inspector panel should render:
+
 - `radiusMm` — number input (mm), dispatches `{ type: 'updateElement', id, patch: { radiusMm } }`
 - `levelId` — dropdown from project levels (study how other element inspectors do this)
 
@@ -49,11 +50,13 @@ Inspector component for existing annotation inspectors added in wave 1).
 
 **A2. Drag grip**: In `gripProtocol.ts` (or the grip registration pattern used by wave-1
 A1/A2 grips), register a grip for `interior_elevation_marker` that:
+
 - Shows a centre-point drag handle at `positionMm` in plan
 - On drag-end dispatches `{ type: 'moveElement', id, positionMm: newPos }`
   (or whatever the canonical move command is — study `moveTool.ts`)
 
 Tests:
+
 - Inspector renders radiusMm input for interior_elevation_marker
 - Grip provider returns a centre handle at the correct position
 - Dragging the grip emits the correct move command
@@ -70,6 +73,7 @@ in `core/index.ts`.
 
 **B2. Plan rendering**: In the plan dimension renderer (find where `permanent_dimension`
 elements are drawn — search `planElementMeshBuilders.ts` or `planProjection.ts`):
+
 - When a selected `permanent_dimension` has ≥3 witness lines, render a small "EQ"
   button/label above the midpoint of the full dimension span
 - When `eqEnabled: true`, display "EQ" instead of individual segment values, and
@@ -80,6 +84,7 @@ elements are drawn — search `planElementMeshBuilders.ts` or `planProjection.ts
 `{ type: 'updateElement', id, patch: { eqEnabled: !current } }`.
 
 Tests:
+
 - EQ label appears on a permanent_dimension with 3 segments, not 2
 - When eqEnabled=true, rendered text shows "EQ" not individual values
 

@@ -42,6 +42,7 @@ Prettier runs automatically after every Edit/Write.
 Extend `SunOverlay.tsx` (or create a sibling `SunAnimationPanel.tsx`) with animation controls:
 
 **G1a. Controls**:
+
 - Date picker (input type="date") — sets the reference date for sun position calculation
 - Start time (HH:MM) / End time (HH:MM) inputs
 - Step dropdown: 15 min / 30 min / 1 hr
@@ -50,6 +51,7 @@ Extend `SunOverlay.tsx` (or create a sibling `SunAnimationPanel.tsx`) with anima
 - "Reset" button (returns to Start time)
 
 **G1b. Animation loop**: On "Play", use `requestAnimationFrame` to:
+
 - Increment `currentTimeSec` by `(step_seconds * speed) / frames_per_step`
 - Recalculate sun azimuth + altitude from date + time + latitude (use the same solar
   calculation formula already in `sunStore.ts` or `sunCalc.ts`)
@@ -63,6 +65,7 @@ The 3D scene already re-renders in response to sunStore changes — no mesh chan
 Show only when the 3D viewport is active.
 
 Tests:
+
 - Given fixed date + time, the solar angle calculation returns a known azimuth/altitude
   (use a reference value: 21 Jun, 12:00, lat=48°N → altitude ≈ 65°)
 - Animation increments time correctly across the step boundary
@@ -76,6 +79,7 @@ Update tracker §14.2.2: "Implemented — animated sun study with date/time rang
 **G2a. ToolId**: Add `'roof-by-extrusion'` to `toolRegistry.ts` (hotkey `RE`, plan mode).
 
 **G2b. Grammar**: Add `RoofByExtrusionState` / `reduceRoofByExtrusion` to `toolGrammar.ts`:
+
 ```
 idle
   → click → recording profile points
@@ -86,6 +90,7 @@ confirm-depth
   → type mm + Enter → done
   → Escape → idle
 ```
+
 Effect on done:
 `{ kind: 'createRoofByExtrusion', profilePoints, depthMm, levelId, slopeAngleDeg: 0 }`
 
@@ -99,6 +104,7 @@ builder can handle it without changes. Add `extrusionDepthMm?: number` to the ro
 `reduceRoofByExtrusion`. On effect, dispatch the command.
 
 Tests:
+
 - Grammar: 3 clicks + Enter → confirm-depth state; type 3000 + Enter → createRoofByExtrusion effect
 - createRoofByExtrusion command creates a roof element with correct profilePoints + depthMm
 
@@ -109,6 +115,7 @@ Update tracker §10.2: "Implemented — roof-by-extrusion tool + grammar + comma
 ### G3 — Wall parts / Create Parts (Ch. 8.1.3, P2)
 
 **G3a. Data model**: Add to wall element in `core/index.ts`:
+
 ```ts
 parts?: Array<{
   id: string;
@@ -132,6 +139,7 @@ clicking a part segment selects that part → inspector shows material dropdown 
 Dispatches `{ type: 'updateWallPart', wallId, partId, materialId }`.
 
 Tests:
+
 - createWallParts on a wall produces 3 parts with correct startT/endT values
 - Plan renderer: wall with parts renders 3 distinct segment meshes
 

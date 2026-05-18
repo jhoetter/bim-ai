@@ -44,6 +44,7 @@ Read `sheetTitleblockAuthoring.tsx` end-to-end. Understand how project_settings 
 are resolved and rendered in the title block SVG/canvas.
 
 Add a revision table section to the title block:
+
 - Positioned in the bottom-right corner of the title block (standard Revit convention)
 - Query all `sheet_revision` elements for the current sheet ID; join to `revision` elements
   to get description, sequence letter (A, B, C…), and date
@@ -55,6 +56,7 @@ Also add a `{{revisionTable}}` token resolution so the title block template can 
 the revision table at a configurable position.
 
 Tests:
+
 - sheetTitleblockAuthoring renders a revision row for each sheet_revision assigned to the sheet
 - No sheet_revisions → renders placeholder "—" row
 - Revisions are sorted by sequence number ascending
@@ -67,6 +69,7 @@ Update tracker §6.3: "Done — revision table rendered in title block"
 
 **D2a. Lock toggle**: Add `isLocked?: boolean` to the `saved_view` element type in
 `core/index.ts`. In the 3D viewport:
+
 - When the active view is a `saved_view` with `isLocked: true`, disable all camera
   manipulation (pan, orbit, zoom, scroll) — still allow selection
 - Show a padlock icon in the viewport header next to the view name
@@ -75,6 +78,7 @@ Update tracker §6.3: "Done — revision table rendered in title block"
 
 **D2b. Viewport placement on sheet**: In `SheetCanvas.tsx`, allow dragging a `saved_view`
 from the ProjectBrowser onto the sheet canvas:
+
 - On drop, create a `sheet_viewport` element:
   `{ kind: 'sheet_viewport', id, sheetId, viewId, xMm, yMm, widthMm, heightMm, scaleDenom }`
   Add this type to core/index.ts if it doesn't exist.
@@ -82,6 +86,7 @@ from the ProjectBrowser onto the sheet canvas:
 - Inspector for selected sheet_viewport: scale denominator input (e.g. 100 for 1:100)
 
 Tests:
+
 - isLocked=true on a saved_view disables camera controls
 - Creating a sheet_viewport with the correct fields works
 
@@ -92,6 +97,7 @@ Update tracker §6.1.3: "Partial — lock toggle done; sheet viewport placement 
 ### D3 — Walkthrough path animation (Ch. 14.6) — highest priority in this WP
 
 **D3a. Element type**: Add to `core/index.ts`:
+
 ```ts
 export type WalkthroughKeyframe = {
   positionMm: { x: number; y: number; z: number };
@@ -105,6 +111,7 @@ export interface CameraPathElem extends BaseElem {
   keyframes: WalkthroughKeyframe[];
 }
 ```
+
 Add `'camera_path'` to the ElemKind union.
 
 **D3b. Tool**: Add `'walkthrough'` ToolId to toolRegistry.ts (hotkey WT, 3D mode).
@@ -113,6 +120,7 @@ a keyframe. Double-click or Enter finalises.
 Dispatch `{ type: 'createCameraPath', name, keyframes }`.
 
 **D3c. Playback controls**: Add a "Walkthrough" panel (or extend the 3D toolbar) with:
+
 - "Play/Pause" button — animates camera through keyframes via `requestAnimationFrame`
   using linear interpolation of position + target between keyframes based on `timeSec`
 - "Speed" dropdown (0.5×, 1×, 2×)
@@ -125,6 +133,7 @@ Apply camera interpolation directly to the Three.js camera object. No video expo
 Double-clicking one activates it for playback.
 
 Tests:
+
 - Linear interpolation between 2 keyframes at t=0.5 gives correct midpoint position
 - Grammar: 2 clicks + Enter emits createCameraPath with 2 keyframes
 

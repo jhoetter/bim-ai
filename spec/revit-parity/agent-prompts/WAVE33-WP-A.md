@@ -14,6 +14,7 @@ Your task is to make the ribbon surface feel complete without inventing new engi
 ## Ownership
 
 Primary write scope:
+
 - `packages/web/src/workspace/shell/RibbonBar.tsx`
 - Add one focused test if needed under `packages/web/src/workspace/shell/`
 
@@ -22,6 +23,7 @@ Avoid editing command capability metadata unless a compile/test failure requires
 ## Orientation
 
 Run:
+
 - `rg -n "type RibbonTabId|type RibbonActionId|function buildPlanRibbonTabs|function build3dRibbonTabs|function build.*ModifyTab|function tool|function action" packages/web/src/workspace/shell/RibbonBar.tsx`
 - `rg -n "id: '(systems|insert|annotate|analyze|collaborate|view|manage|modify|review)'" packages/web/src/workspace/shell/RibbonBar.tsx`
 - `rg -n "export type ToolId|id: '(duct|pipe|cable-tray|mep-equipment|fixture|mep-terminal|dimension|tag|measure|section|elevation|grid|reference-plane|move|copy|rotate|array|align|trim|offset|mirror)'" packages/web/src/tools/toolRegistry.ts`
@@ -48,4 +50,3 @@ Run:
 - Existing `TopBar.test.tsx` still passes.
 - No invalid `ToolId`, `IconName`, `RibbonActionId`, or tab ID is introduced.
 - `pnpm --filter @bim-ai/web exec vitest run src/workspace/shell/TopBar.test.tsx` passes.
-

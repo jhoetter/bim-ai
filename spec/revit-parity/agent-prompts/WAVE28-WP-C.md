@@ -8,9 +8,10 @@ This prompt is self-contained — start here.
 
 ## Context
 
-§12.4.2 "Export mit deutschsprachigen Layern" is Not Started P2. The DXF exporter uses hard-coded English layer names (A-WALL, A-DOOR, A-GLAZ, etc.). Revit lets users customize layer naming (e.g. WAND, TÜR, FENSTER for German projects). 
+§12.4.2 "Export mit deutschsprachigen Layern" is Not Started P2. The DXF exporter uses hard-coded English layer names (A-WALL, A-DOOR, A-GLAZ, etc.). Revit lets users customize layer naming (e.g. WAND, TÜR, FENSTER for German projects).
 
 This task adds:
+
 1. `dxfLayerMapping?: Record<string, string>` field on `project_settings` element
 2. `SetDxfLayerMappingCmd` command
 3. Workspace handler
@@ -30,6 +31,7 @@ packages/web/src/workspace/sheets/PrintPlotDialog.tsx   — find DXF export dial
 ```
 
 Run before editing:
+
 - `grep -n "dxfLayerMapping\|A-WALL\|A-DOOR\|LAYER" packages/web/src/export/dxfExporter.ts | head -15`
 - `grep -n "project_settings\|dxfLayer" packages/core/src/index.ts | head -10`
 - `grep -n "handleExportDxf\|dxf\|DXF" packages/web/src/workspace/Workspace.tsx | head -10`
@@ -111,13 +113,31 @@ Then pass the `dxfLayerMapping` from `project_settings` to the export function a
 In `PrintPlotDialog.tsx` (or wherever the DXF export options are shown), add a collapsible "Layer Names" section:
 
 ```tsx
-{/* §12.4.2: Custom layer name mapping */}
+{
+  /* §12.4.2: Custom layer name mapping */
+}
 <details style={{ marginTop: 8 }}>
-  <summary style={{ fontSize: 11, cursor: 'pointer', userSelect: 'none' }}>
-    Layer Names
-  </summary>
-  <div style={{ paddingTop: 6, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '4px 8px', fontSize: 11 }}>
-    {['A-WALL', 'A-DOOR', 'A-GLAZ', 'A-AREA', 'S-GRID', 'A-ANNO-DIMS', 'A-REFP', 'S-COLS', 'S-BEAM'].map((layer) => (
+  <summary style={{ fontSize: 11, cursor: 'pointer', userSelect: 'none' }}>Layer Names</summary>
+  <div
+    style={{
+      paddingTop: 6,
+      display: 'grid',
+      gridTemplateColumns: '1fr 1fr',
+      gap: '4px 8px',
+      fontSize: 11,
+    }}
+  >
+    {[
+      'A-WALL',
+      'A-DOOR',
+      'A-GLAZ',
+      'A-AREA',
+      'S-GRID',
+      'A-ANNO-DIMS',
+      'A-REFP',
+      'S-COLS',
+      'S-BEAM',
+    ].map((layer) => (
       <React.Fragment key={layer}>
         <span style={{ alignSelf: 'center', color: 'var(--text-muted, #888)' }}>{layer}</span>
         <input
@@ -130,12 +150,19 @@ In `PrintPlotDialog.tsx` (or wherever the DXF export options are shown), add a c
               onSetDxfLayerMapping?.({ [layer]: val });
             }
           }}
-          style={{ fontSize: 11, padding: '1px 4px', border: '1px solid var(--border)', borderRadius: 2, background: 'transparent', color: 'inherit' }}
+          style={{
+            fontSize: 11,
+            padding: '1px 4px',
+            border: '1px solid var(--border)',
+            borderRadius: 2,
+            background: 'transparent',
+            color: 'inherit',
+          }}
         />
       </React.Fragment>
     ))}
   </div>
-</details>
+</details>;
 ```
 
 **Important**: Read `PrintPlotDialog.tsx` carefully before adding. Find the existing DXF export section. Pass `dxfLayerMapping` and `onSetDxfLayerMapping` as props or read from store. Adapt to the actual component structure.
@@ -186,7 +213,10 @@ describe('DXF layer name mapping — §12.4.2', () => {
   });
 
   it('SetDxfLayerMappingCmd has correct shape', () => {
-    const cmd = { type: 'setDxfLayerMapping' as const, mapping: { 'A-WALL': 'WAND', 'A-DOOR': 'TÜR' } };
+    const cmd = {
+      type: 'setDxfLayerMapping' as const,
+      mapping: { 'A-WALL': 'WAND', 'A-DOOR': 'TÜR' },
+    };
     expect(cmd.type).toBe('setDxfLayerMapping');
     expect(cmd.mapping['A-WALL']).toBe('WAND');
   });

@@ -23,6 +23,7 @@ packages/web/src/viewport/Viewport.tsx           — find 3D viewport context me
 ```
 
 Run before editing:
+
 - `grep -n "contextMenu\|onContextMenu\|radialMenu\|ContextMenu" packages/web/src/plan/PlanCanvas.tsx | head -15`
 - `grep -n "contextMenu\|ContextMenu\|onContextMenu" packages/web/src/workspace/contextMenuItems.ts | head -10`
 - `grep -n "contextMenu\|onContextMenu" packages/web/src/viewport/Viewport.tsx | head -10`
@@ -54,11 +55,25 @@ interface CanvasContextMenuProps {
   onProperties?: () => void;
 }
 
-export function CanvasContextMenu({ x, y, onClose, onZoomIn, onZoomOut, onZoomFit, onProperties }: CanvasContextMenuProps) {
+export function CanvasContextMenu({
+  x,
+  y,
+  onClose,
+  onZoomIn,
+  onZoomOut,
+  onZoomFit,
+  onProperties,
+}: CanvasContextMenuProps) {
   React.useEffect(() => {
     const handler = () => onClose();
     window.addEventListener('click', handler, { once: true });
-    window.addEventListener('keydown', (e) => { if (e.key === 'Escape') onClose(); }, { once: true });
+    window.addEventListener(
+      'keydown',
+      (e) => {
+        if (e.key === 'Escape') onClose();
+      },
+      { once: true },
+    );
     return () => window.removeEventListener('click', handler);
   }, [onClose]);
 
@@ -81,22 +96,61 @@ export function CanvasContextMenu({ x, y, onClose, onZoomIn, onZoomOut, onZoomFi
     >
       <button
         data-testid="canvas-ctx-zoom-in"
-        onClick={() => { onZoomIn(); onClose(); }}
-        style={{ display: 'block', width: '100%', textAlign: 'left', padding: '4px 12px', fontSize: 12, background: 'none', border: 'none', cursor: 'pointer', color: 'inherit' }}
+        onClick={() => {
+          onZoomIn();
+          onClose();
+        }}
+        style={{
+          display: 'block',
+          width: '100%',
+          textAlign: 'left',
+          padding: '4px 12px',
+          fontSize: 12,
+          background: 'none',
+          border: 'none',
+          cursor: 'pointer',
+          color: 'inherit',
+        }}
       >
         Zoom In
       </button>
       <button
         data-testid="canvas-ctx-zoom-out"
-        onClick={() => { onZoomOut(); onClose(); }}
-        style={{ display: 'block', width: '100%', textAlign: 'left', padding: '4px 12px', fontSize: 12, background: 'none', border: 'none', cursor: 'pointer', color: 'inherit' }}
+        onClick={() => {
+          onZoomOut();
+          onClose();
+        }}
+        style={{
+          display: 'block',
+          width: '100%',
+          textAlign: 'left',
+          padding: '4px 12px',
+          fontSize: 12,
+          background: 'none',
+          border: 'none',
+          cursor: 'pointer',
+          color: 'inherit',
+        }}
       >
         Zoom Out
       </button>
       <button
         data-testid="canvas-ctx-zoom-fit"
-        onClick={() => { onZoomFit(); onClose(); }}
-        style={{ display: 'block', width: '100%', textAlign: 'left', padding: '4px 12px', fontSize: 12, background: 'none', border: 'none', cursor: 'pointer', color: 'inherit' }}
+        onClick={() => {
+          onZoomFit();
+          onClose();
+        }}
+        style={{
+          display: 'block',
+          width: '100%',
+          textAlign: 'left',
+          padding: '4px 12px',
+          fontSize: 12,
+          background: 'none',
+          border: 'none',
+          cursor: 'pointer',
+          color: 'inherit',
+        }}
       >
         Zoom to Fit
       </button>
@@ -105,8 +159,21 @@ export function CanvasContextMenu({ x, y, onClose, onZoomIn, onZoomOut, onZoomFi
           <div style={{ borderTop: '1px solid var(--border, #444)', margin: '2px 0' }} />
           <button
             data-testid="canvas-ctx-properties"
-            onClick={() => { onProperties(); onClose(); }}
-            style={{ display: 'block', width: '100%', textAlign: 'left', padding: '4px 12px', fontSize: 12, background: 'none', border: 'none', cursor: 'pointer', color: 'inherit' }}
+            onClick={() => {
+              onProperties();
+              onClose();
+            }}
+            style={{
+              display: 'block',
+              width: '100%',
+              textAlign: 'left',
+              padding: '4px 12px',
+              fontSize: 12,
+              background: 'none',
+              border: 'none',
+              cursor: 'pointer',
+              color: 'inherit',
+            }}
           >
             View Properties
           </button>
@@ -122,11 +189,13 @@ export function CanvasContextMenu({ x, y, onClose, onZoomIn, onZoomOut, onZoomFi
 In `PlanCanvas.tsx`, find where the existing context menu / radial menu is handled. Add canvas-level right-click:
 
 1. Add state:
+
 ```tsx
 const [canvasCtxMenu, setCanvasCtxMenu] = React.useState<{ x: number; y: number } | null>(null);
 ```
 
 2. In the canvas `onContextMenu` handler — if no element was clicked (no `bimPickId`), show the canvas context menu:
+
 ```tsx
 // When right-clicking on empty canvas space (no element pick):
 if (!pickedId) {
@@ -136,17 +205,26 @@ if (!pickedId) {
 ```
 
 3. Render the context menu:
+
 ```tsx
-{canvasCtxMenu && (
-  <CanvasContextMenu
-    x={canvasCtxMenu.x}
-    y={canvasCtxMenu.y}
-    onClose={() => setCanvasCtxMenu(null)}
-    onZoomIn={() => { /* call existing zoom in handler */ }}
-    onZoomOut={() => { /* call existing zoom out handler */ }}
-    onZoomFit={() => { /* call existing zoom to fit handler */ }}
-  />
-)}
+{
+  canvasCtxMenu && (
+    <CanvasContextMenu
+      x={canvasCtxMenu.x}
+      y={canvasCtxMenu.y}
+      onClose={() => setCanvasCtxMenu(null)}
+      onZoomIn={() => {
+        /* call existing zoom in handler */
+      }}
+      onZoomOut={() => {
+        /* call existing zoom out handler */
+      }}
+      onZoomFit={() => {
+        /* call existing zoom to fit handler */
+      }}
+    />
+  );
+}
 ```
 
 **Important**: Read the actual PlanCanvas.tsx carefully to understand the existing context menu pattern and how zoom/pan are controlled. Adapt to the actual zoom handler names. If the canvas uses a ref-based camera or an explicit zoom function, wire those in. If there's no existing zoom API, dispatch a `zoomIn`/`zoomOut`/`zoomFit` command to the store.
@@ -181,25 +259,35 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, render, fireEvent } from '@testing-library/react';
 import { CanvasContextMenu } from './CanvasContextMenu';
 
-afterEach(() => { cleanup(); });
+afterEach(() => {
+  cleanup();
+});
 
 describe('CanvasContextMenu — §1.7.1', () => {
   it('renders the context menu at given position', () => {
     const { getByTestId } = render(
       <CanvasContextMenu
-        x={100} y={200}
+        x={100}
+        y={200}
         onClose={() => {}}
         onZoomIn={() => {}}
         onZoomOut={() => {}}
         onZoomFit={() => {}}
-      />
+      />,
     );
     expect(getByTestId('canvas-context-menu')).toBeTruthy();
   });
 
   it('renders zoom in, out, fit buttons', () => {
     const { getByTestId } = render(
-      <CanvasContextMenu x={0} y={0} onClose={() => {}} onZoomIn={() => {}} onZoomOut={() => {}} onZoomFit={() => {}} />
+      <CanvasContextMenu
+        x={0}
+        y={0}
+        onClose={() => {}}
+        onZoomIn={() => {}}
+        onZoomOut={() => {}}
+        onZoomFit={() => {}}
+      />,
     );
     expect(getByTestId('canvas-ctx-zoom-in')).toBeTruthy();
     expect(getByTestId('canvas-ctx-zoom-out')).toBeTruthy();
@@ -209,7 +297,14 @@ describe('CanvasContextMenu — §1.7.1', () => {
   it('clicking zoom in calls onZoomIn', () => {
     const onZoomIn = vi.fn();
     const { getByTestId } = render(
-      <CanvasContextMenu x={0} y={0} onClose={() => {}} onZoomIn={onZoomIn} onZoomOut={() => {}} onZoomFit={() => {}} />
+      <CanvasContextMenu
+        x={0}
+        y={0}
+        onClose={() => {}}
+        onZoomIn={onZoomIn}
+        onZoomOut={() => {}}
+        onZoomFit={() => {}}
+      />,
     );
     fireEvent.click(getByTestId('canvas-ctx-zoom-in'));
     expect(onZoomIn).toHaveBeenCalled();
@@ -217,7 +312,15 @@ describe('CanvasContextMenu — §1.7.1', () => {
 
   it('renders properties button when onProperties is provided', () => {
     const { getByTestId } = render(
-      <CanvasContextMenu x={0} y={0} onClose={() => {}} onZoomIn={() => {}} onZoomOut={() => {}} onZoomFit={() => {}} onProperties={() => {}} />
+      <CanvasContextMenu
+        x={0}
+        y={0}
+        onClose={() => {}}
+        onZoomIn={() => {}}
+        onZoomOut={() => {}}
+        onZoomFit={() => {}}
+        onProperties={() => {}}
+      />,
     );
     expect(getByTestId('canvas-ctx-properties')).toBeTruthy();
   });

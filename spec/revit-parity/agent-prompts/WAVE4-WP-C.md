@@ -43,13 +43,17 @@ Read `viewport/sectionBox.ts` in full. Add mutable extent state if not already p
 
 ```ts
 export type SectionBoxExtent = {
-  minX: number; maxX: number;
-  minY: number; maxY: number;   // Y = up axis in Three.js
-  minZ: number; maxZ: number;
+  minX: number;
+  maxX: number;
+  minY: number;
+  maxY: number; // Y = up axis in Three.js
+  minZ: number;
+  maxZ: number;
 };
 ```
 
 Add methods:
+
 ```ts
 setExtent(ext: Partial<SectionBoxExtent>): void   // merges into current extent
 getExtent(): SectionBoxExtent
@@ -82,9 +86,11 @@ In `Viewport.tsx`, in the `onDown` / `onMove` / `onUp` pointer handler chain:
 
 **onDown**: if a raycast hit has `userData.sectionBoxHandle` and `sectionBoxActive`, enter
 `sectionBoxDragMode`:
+
 ```ts
 const sectionBoxDragRef = useRef<{ face: string; startPt: THREE.Vector3 } | null>(null);
 ```
+
 Store the intersection point on a fixed axis-aligned plane through the handle centre.
 
 **onMove**: while `sectionBoxDragMode` is active, project the pointer ray onto the same plane to
@@ -101,6 +107,7 @@ the handle centre) for the drag math. Each frame during drag: `raycaster.ray.int
 ### D — Store: persist extent
 
 Add to `storeTypes.ts`:
+
 ```ts
 viewerSectionBoxExtent: SectionBoxExtent | null;
 setViewerSectionBoxExtent: (ext: SectionBoxExtent) => void;
@@ -115,6 +122,7 @@ otherwise initialise from the scene bounding box.
 ## Tests
 
 Add to `packages/web/src/viewport/sectionBox.test.ts` (new or extend):
+
 1. `getExtent()` returns the initial extent
 2. `setExtent({ maxX: 5 })` updates only maxX; other faces unchanged
 3. `clippingPlanes()` returns 6 planes matching current extent
@@ -127,11 +135,13 @@ Add to `packages/web/src/viewport/sectionBox.test.ts` (new or extend):
 Edit `spec/revit-parity/revit2026-parity-tracker.md`:
 
 Update §3.1 description — append:
+
 ```
 Section box drag handles: 6 orange disc meshes (userData.sectionBoxHandle face IDs) centred on
 box faces; pointer drag resizes via secondary raycast plane. `SectionBoxExtent` persisted to store
 (`viewerSectionBoxExtent`). 4 sectionBox tests.
 ```
+
 Change status to `Done — P1`.
 
 Update summary table row for Chapter 3.

@@ -9,10 +9,12 @@ This prompt is self-contained — start here.
 ## Context — what Wave 18 already delivered
 
 Wave 18 WP-J created:
+
 - `packages/web/src/plan/shaftCutFloors.ts` — `computeShaftCutFloors()`, `pointInPolygon()`
 - Test file `packages/web/src/plan/shaftCutFloors.test.ts` — 7 tests (all pass)
 
 **Still missing:**
+
 - Shaft inspector: base level / top level dropdowns (currently Partial)
 - Inspector readout showing how many floors the shaft cuts through
 - "Apply Shaft Cut" button in inspector that dispatches the shaft cut as floor void data
@@ -44,11 +46,13 @@ Prettier runs automatically. **Always `git pull --rebase origin main` before pus
 ### A — Shaft element additions in `core/index.ts`
 
 Add if not present on the `shaft` element:
+
 ```ts
 cutFloorIds?: string[];  // populated by Workspace after computeShaftCutFloors
 ```
 
 Add command type:
+
 ```ts
 | { type: 'applyShaftCut'; shaftId: string; cutFloorIds: string[] }
 ```
@@ -68,6 +72,7 @@ case 'applyShaftCut': {
 ```
 
 Also, after any `updateElementProperty` or `createElement` for a shaft element, recompute the shaft cut:
+
 ```ts
 // After element update, if it's a shaft, recompute cut floors:
 if (updatedElement?.kind === 'shaft') {
@@ -85,28 +90,40 @@ Import `computeShaftCutFloors` at the top of `Workspace.tsx`.
 In `case 'shaft':`, enhance the inspector with:
 
 1. **Base level dropdown** — if not already present:
+
 ```tsx
-<label>Base Level
-  <select data-testid="inspector-shaft-base-level"
+<label>
+  Base Level
+  <select
+    data-testid="inspector-shaft-base-level"
     value={(el as any).baseLevelId ?? ''}
-    onChange={e => onPropertyChange('baseLevelId', e.target.value || null)}>
+    onChange={(e) => onPropertyChange('baseLevelId', e.target.value || null)}
+  >
     <option value="">None</option>
-    {levels.map(lv => (
-      <option key={lv.id} value={lv.id}>{lv.name}</option>
+    {levels.map((lv) => (
+      <option key={lv.id} value={lv.id}>
+        {lv.name}
+      </option>
     ))}
   </select>
 </label>
 ```
 
 2. **Top level dropdown** — if not already present:
+
 ```tsx
-<label>Top Level
-  <select data-testid="inspector-shaft-top-level"
+<label>
+  Top Level
+  <select
+    data-testid="inspector-shaft-top-level"
     value={(el as any).topLevelId ?? ''}
-    onChange={e => onPropertyChange('topLevelId', e.target.value || null)}>
+    onChange={(e) => onPropertyChange('topLevelId', e.target.value || null)}
+  >
     <option value="">None</option>
-    {levels.map(lv => (
-      <option key={lv.id} value={lv.id}>{lv.name}</option>
+    {levels.map((lv) => (
+      <option key={lv.id} value={lv.id}>
+        {lv.name}
+      </option>
     ))}
   </select>
 </label>
@@ -115,6 +132,7 @@ In `case 'shaft':`, enhance the inspector with:
 Where `levels = Object.values(elementsById).filter(e => e?.kind === 'level')` — use the same pattern as other inspector dropdowns.
 
 3. **Cut floor count readout**:
+
 ```tsx
 <span data-testid="inspector-shaft-cut-floor-count">
   Cuts {((el as any).cutFloorIds ?? []).length} floor(s)
@@ -122,13 +140,18 @@ Where `levels = Object.values(elementsById).filter(e => e?.kind === 'level')` �
 ```
 
 4. **Apply Shaft Cut button**:
+
 ```tsx
-<button data-testid="inspector-shaft-apply-cut"
-  onClick={() => void onSemanticCommand?.({
-    type: 'applyShaftCut',
-    shaftId: el.id,
-    cutFloorIds: [], // will be recomputed by Workspace
-  })}>
+<button
+  data-testid="inspector-shaft-apply-cut"
+  onClick={() =>
+    void onSemanticCommand?.({
+      type: 'applyShaftCut',
+      shaftId: el.id,
+      cutFloorIds: [], // will be recomputed by Workspace
+    })
+  }
+>
   Apply Shaft Cut
 </button>
 ```
@@ -138,6 +161,7 @@ Where `levels = Object.values(elementsById).filter(e => e?.kind === 'level')` �
 ### D — Palette command + capability graph
 
 In `defaultCommands.ts`:
+
 ```ts
 { id: 'modify.shaft-apply-cut', label: 'Apply Shaft Cut',
   keywords: ['shaft', 'opening', 'void', 'floor', 'cut', 'stair'],
@@ -148,6 +172,7 @@ In `defaultCommands.ts`:
 ```
 
 In `commandCapabilities.ts`:
+
 ```ts
 { id: 'modify.shaft-apply-cut', scope: 'selection', intendedModes: ['plan', '3d'], precondition: 'selected-shaft' },
 ```

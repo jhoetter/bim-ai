@@ -5,7 +5,9 @@
  *         wall join types / disallow separation / join controls ribbon (42).
  * Run: node capture.cjs
  */
-const { chromium } = require('/Users/jhoetter/repos/bim-ai/node_modules/.pnpm/playwright@1.53.2/node_modules/playwright');
+const {
+  chromium,
+} = require('/Users/jhoetter/repos/bim-ai/node_modules/.pnpm/playwright@1.53.2/node_modules/playwright');
 const path = require('path');
 const { writeFileSync } = require('fs');
 
@@ -26,7 +28,9 @@ async function shot(page, name, label) {
 }
 
 async function waitApp(page) {
-  await page.waitForSelector('[data-testid="plan-canvas"], canvas', { timeout: 15000 }).catch(() => {});
+  await page
+    .waitForSelector('[data-testid="plan-canvas"], canvas', { timeout: 15000 })
+    .catch(() => {});
   await page.waitForTimeout(2000);
 }
 
@@ -35,14 +39,18 @@ async function waitApp(page) {
   const ctx = await browser.newContext({ viewport: VP });
   const page = await ctx.newPage();
 
-  page.on('console', (m) => { if (m.type() === 'error') errors.push(m.text()); });
+  page.on('console', (m) => {
+    if (m.type() === 'error') errors.push(m.text());
+  });
   page.on('pageerror', (e) => errors.push(e.message));
-  page.on('framenavigated', (f) => { if (f === page.mainFrame()) navs.push(f.url()); });
+  page.on('framenavigated', (f) => {
+    if (f === page.mainFrame()) navs.push(f.url());
+  });
 
   console.log('Loading', BASE);
-  await page.goto(BASE, { waitUntil: 'networkidle', timeout: 25000 }).catch(() =>
-    page.goto(BASE, { waitUntil: 'domcontentloaded', timeout: 25000 })
-  );
+  await page
+    .goto(BASE, { waitUntil: 'networkidle', timeout: 25000 })
+    .catch(() => page.goto(BASE, { waitUntil: 'domcontentloaded', timeout: 25000 }));
   await waitApp(page);
   console.log('App ready at', page.url());
 
@@ -50,7 +58,9 @@ async function waitApp(page) {
   const onboarding = page.locator('[data-testid="onboarding-tour"]').first();
   if (await onboarding.isVisible().catch(() => false)) {
     // Try "Skip tour" button first
-    const skipBtn = page.locator('[data-testid="onboarding-tour"] button:has-text("Skip tour")').first();
+    const skipBtn = page
+      .locator('[data-testid="onboarding-tour"] button:has-text("Skip tour")')
+      .first();
     if (await skipBtn.isVisible().catch(() => false)) {
       await skipBtn.click();
     } else {
@@ -69,7 +79,11 @@ async function waitApp(page) {
 
   // ── WP-NEXT-40: canonical lifecycle contract ─────────────────────────────
   // 01: Plan ribbon in default state (Select active, all model commands have metadata)
-  await shot(page, '01-wp40-plan-ribbon-lifecycle.png', 'WP-40 plan ribbon — canonical lifecycle contract');
+  await shot(
+    page,
+    '01-wp40-plan-ribbon-lifecycle.png',
+    'WP-40 plan ribbon — canonical lifecycle contract',
+  );
 
   // 02: Activate wall tool — shows active command state, Select is default after Esc
   const wallBtn = page.locator('[data-testid="ribbon-command-wall"]').first();
@@ -77,7 +91,11 @@ async function waitApp(page) {
     await wallBtn.click();
     await page.waitForTimeout(400);
   }
-  await shot(page, '02-wp40-wall-command-active.png', 'WP-40 wall command active — pane-local state');
+  await shot(
+    page,
+    '02-wp40-wall-command-active.png',
+    'WP-40 wall command active — pane-local state',
+  );
   await page.keyboard.press('Escape');
   await page.waitForTimeout(300);
 
@@ -97,7 +115,11 @@ async function waitApp(page) {
       await page.waitForTimeout(300);
     }
   }
-  await shot(page, '04-wp41-plan-workplane-badge.png', 'WP-41 plan view with work-plane level badge + snap engine active');
+  await shot(
+    page,
+    '04-wp41-plan-workplane-badge.png',
+    'WP-41 plan view with work-plane level badge + snap engine active',
+  );
   await page.keyboard.press('Escape');
   await page.waitForTimeout(300);
 
@@ -116,7 +138,11 @@ async function waitApp(page) {
       await page.waitForTimeout(300);
     }
   }
-  await shot(page, '05-wp41-floor-sketch-preview.png', 'WP-41 floor sketch mode — boundary preview segment visible');
+  await shot(
+    page,
+    '05-wp41-floor-sketch-preview.png',
+    'WP-41 floor sketch mode — boundary preview segment visible',
+  );
   await page.keyboard.press('Escape');
   await page.waitForTimeout(300);
 
@@ -134,13 +160,21 @@ async function waitApp(page) {
       await page.waitForTimeout(300);
     }
   }
-  await shot(page, '06-wp41-roof-sketch-preview.png', 'WP-41 roof sketch mode — footprint segment preview visible');
+  await shot(
+    page,
+    '06-wp41-roof-sketch-preview.png',
+    'WP-41 roof sketch mode — footprint segment preview visible',
+  );
   await page.keyboard.press('Escape');
   await page.waitForTimeout(300);
 
   // ── WP-NEXT-42: wall connectivity / joins ────────────────────────────────
   // 07: Plan canvas overview — wall joins visible in model
-  await shot(page, '07-wp42-plan-wall-joins.png', 'WP-42 plan view showing wall endpoint joins (L/T corners)');
+  await shot(
+    page,
+    '07-wp42-plan-wall-joins.png',
+    'WP-42 plan view showing wall endpoint joins (L/T corners)',
+  );
 
   // 08: Select a wall to expose join controls in the ribbon
   const canvas = page.locator('[data-testid="plan-canvas"]').first();
@@ -149,20 +183,32 @@ async function waitApp(page) {
     await page.mouse.click(box.x + box.width * 0.5, box.y + box.height * 0.5);
     await page.waitForTimeout(700);
   }
-  await shot(page, '08-wp42-wall-selected-join-controls.png', 'WP-42 wall selected — join controls visible in ribbon (Wall Join / Offset / Split / Trim)');
+  await shot(
+    page,
+    '08-wp42-wall-selected-join-controls.png',
+    'WP-42 wall selected — join controls visible in ribbon (Wall Join / Offset / Split / Trim)',
+  );
 
   // 09: Modify tab with join commands (Unjoin / Join / Align / Offset)
-  const modifyTab = page.locator('[data-testid="ribbon-tab-modify"], button:has-text("Modify")').first();
+  const modifyTab = page
+    .locator('[data-testid="ribbon-tab-modify"], button:has-text("Modify")')
+    .first();
   if (await modifyTab.isVisible().catch(() => false)) {
     await modifyTab.click();
     await page.waitForTimeout(400);
   }
-  await shot(page, '09-wp42-modify-tab-join-commands.png', 'WP-42 Modify tab — join/unjoin/attach/detach commands visible');
+  await shot(
+    page,
+    '09-wp42-modify-tab-join-commands.png',
+    'WP-42 Modify tab — join/unjoin/attach/detach commands visible',
+  );
 
   // 10: Wall join tool active
   await page.keyboard.press('Escape');
   await page.waitForTimeout(300);
-  const wallJoinBtn = page.locator('[data-testid="ribbon-command-wall-join"], button:has-text("Wall Join")').first();
+  const wallJoinBtn = page
+    .locator('[data-testid="ribbon-command-wall-join"], button:has-text("Wall Join")')
+    .first();
   if (await wallJoinBtn.isVisible().catch(() => false)) {
     await wallJoinBtn.click();
     await page.waitForTimeout(400);
@@ -175,32 +221,52 @@ async function waitApp(page) {
   await page.waitForTimeout(300);
 
   // 11: 3D view with wall joins
-  const threeDBtn = page.locator('[data-testid="view-3d"], button:has-text("3D"), [aria-label="3D"]').first();
+  const threeDBtn = page
+    .locator('[data-testid="view-3d"], button:has-text("3D"), [aria-label="3D"]')
+    .first();
   if (await threeDBtn.isVisible().catch(() => false)) {
     await threeDBtn.click();
     await page.waitForTimeout(1200);
   }
-  await shot(page, '11-wp42-3d-wall-join-render.png', 'WP-42 3D view — wall join mesh cleanup visible (L/T/X corners)');
+  await shot(
+    page,
+    '11-wp42-3d-wall-join-render.png',
+    'WP-42 3D view — wall join mesh cleanup visible (L/T/X corners)',
+  );
 
   // 12: Back to plan, Cmd+K for join commands
-  const planTab = page.locator('[data-testid="view-plan"], button:has-text("Plan"), [aria-label="Plan"]').first();
+  const planTab = page
+    .locator('[data-testid="view-plan"], button:has-text("Plan"), [aria-label="Plan"]')
+    .first();
   if (await planTab.isVisible().catch(() => false)) {
     await planTab.click();
     await page.waitForTimeout(800);
   }
   await page.keyboard.press('Meta+k');
   await page.waitForTimeout(600);
-  const palVisible = await page.locator('[role="dialog"], [data-testid="cmd-palette"]').first().isVisible().catch(() => false);
+  const palVisible = await page
+    .locator('[role="dialog"], [data-testid="cmd-palette"]')
+    .first()
+    .isVisible()
+    .catch(() => false);
   if (palVisible) {
     await page.keyboard.type('join');
     await page.waitForTimeout(400);
   }
-  await shot(page, '12-wp42-cmdk-join-commands.png', 'WP-42 Cmd+K showing join/unjoin/attach wall commands');
+  await shot(
+    page,
+    '12-wp42-cmdk-join-commands.png',
+    'WP-42 Cmd+K showing join/unjoin/attach wall commands',
+  );
   await page.keyboard.press('Escape');
   await page.waitForTimeout(300);
 
   // 13: Final clean plan state
-  await shot(page, '13-wp40-42-session-clean.png', 'WP-40/41/42 final session — canonical lifecycle + joins proven');
+  await shot(
+    page,
+    '13-wp40-42-session-clean.png',
+    'WP-40/41/42 final session — canonical lifecycle + joins proven',
+  );
 
   await browser.close();
 
@@ -219,4 +285,7 @@ async function waitApp(page) {
   console.log(`Console errors: ${errors.length}`);
   console.log(`Page errors: ${errors.filter(Boolean).length}`);
   console.log('Done.');
-})().catch((e) => { console.error('FATAL:', e); process.exit(1); });
+})().catch((e) => {
+  console.error('FATAL:', e);
+  process.exit(1);
+});

@@ -46,20 +46,23 @@ extruded by a depth parameter.
 
 **A1. Data model**: Add to the family element type in `core/index.ts` (find the family form union
 or add one if missing):
+
 ```ts
 type FamilyExtrusion = {
   kind: 'family_extrusion';
   id: string;
-  profilePoints: Array<{ x: number; y: number }>;  // closed 2D polygon in mm
-  depthMm: number;                                  // extrusion depth
+  profilePoints: Array<{ x: number; y: number }>; // closed 2D polygon in mm
+  depthMm: number; // extrusion depth
   materialId?: string;
 };
 ```
 
 **A2. Mesh builder**: In `meshBuilders.ts`, add:
+
 ```ts
-export function buildFamilyExtrusionMesh(form: FamilyExtrusion): THREE.Mesh
+export function buildFamilyExtrusionMesh(form: FamilyExtrusion): THREE.Mesh;
 ```
+
 Use `THREE.Shape` + `THREE.ExtrudeGeometry` with `depth: depthMm / 1000`.
 
 **A3. UI**: In `FamilyEditorWorkbench.tsx`, add an **"Extrusion"** button to the Create ribbon
@@ -77,21 +80,24 @@ show an `<input type="number">` for depth, confirm with Enter.
 Add a **Revolve** form type (profile revolved around an axis).
 
 **B1. Data model**:
+
 ```ts
 type FamilyRevolve = {
   kind: 'family_revolve';
   id: string;
-  profilePoints: Array<{ x: number; y: number }>;  // profile in mm, in XZ plane
-  axisMm: { x: number; z: number };                // axis line in plan (revolution axis)
-  angleDeg: number;                                 // sweep angle (default 360 = full cylinder)
+  profilePoints: Array<{ x: number; y: number }>; // profile in mm, in XZ plane
+  axisMm: { x: number; z: number }; // axis line in plan (revolution axis)
+  angleDeg: number; // sweep angle (default 360 = full cylinder)
   materialId?: string;
 };
 ```
 
 **B2. Mesh builder**:
+
 ```ts
-export function buildFamilyRevolveMesh(form: FamilyRevolve): THREE.Mesh
+export function buildFamilyRevolveMesh(form: FamilyRevolve): THREE.Mesh;
 ```
+
 Use `THREE.LatheGeometry` (if the profile is a simple radial cross-section) or
 `THREE.ExtrudeGeometry` with `{ steps: 32, bevelEnabled: false }` around a circular path.
 For this parity milestone a `LatheGeometry` from the profile radii is sufficient.
@@ -105,6 +111,7 @@ input + axis line input (two clicks define the axis) + angle input. Same minimal
 
 In `core/index.ts`, find the window family type (or the `window` element type). Add optional
 parametric frame fields if not already present:
+
 ```ts
 frameWidthMm?: number;    // default 50 mm
 sillDepthMm?: number;     // default 75 mm
@@ -117,6 +124,7 @@ frame has a visible thickness. If `sillDepthMm` is set, extrude the bottom frame
 `sillDepthMm`.
 
 In `InspectorContent.tsx`, in the `case 'window':` block, add:
+
 - **Frame width** — number input (mm); dispatches `{ type: 'updateElement', id, patch: { frameWidthMm } }`
 - **Sill depth** — number input (mm)
 
@@ -125,6 +133,7 @@ In `InspectorContent.tsx`, in the `case 'window':` block, add:
 ### D — Window family: glazing panel material
 
 In `core/index.ts`, add to the window element type (if not already):
+
 ```ts
 glazingMaterialId?: string;  // defaults to a built-in glass material
 ```
@@ -140,17 +149,14 @@ In the inspector, add a **Glazing material** dropdown (list available material i
 ## Tests
 
 Add to `packages/web/src/family/familyExtrusionMesh.test.ts` (new file):
+
 1. `buildFamilyExtrusionMesh()` returns a `THREE.Mesh` instance
 2. Extruded box (4-point square profile) has correct vertex count
 3. `depthMm: 0` returns empty geometry without crashing
 
-Add to `packages/web/src/family/familyRevolveMesh.test.ts` (new file):
-4. `buildFamilyRevolveMesh()` returns a `THREE.Mesh` instance
-5. Full 360° revolve produces a closed mesh (min/max Y within profile bounds)
+Add to `packages/web/src/family/familyRevolveMesh.test.ts` (new file): 4. `buildFamilyRevolveMesh()` returns a `THREE.Mesh` instance 5. Full 360° revolve produces a closed mesh (min/max Y within profile bounds)
 
-Add to window inspector tests (wherever `InspectorContent` is tested):
-6. Window with `frameWidthMm: 60` shows frame width input with value 60
-7. Glazing material dropdown dispatches `updateElement` patch on change
+Add to window inspector tests (wherever `InspectorContent` is tested): 6. Window with `frameWidthMm: 60` shows frame width input with value 60 7. Glazing material dropdown dispatches `updateElement` patch on change
 
 ---
 
@@ -159,19 +165,23 @@ Add to window inspector tests (wherever `InspectorContent` is tested):
 Edit `spec/revit-parity/revit2026-parity-tracker.md`:
 
 Update §15.1.2 description — append:
+
 ```
 Extrusion form type added: `FamilyExtrusion` data model, `buildFamilyExtrusionMesh()`, Create
 ribbon button. Revolve form type added: `FamilyRevolve` data model, `buildFamilyRevolveMesh()`
 (LatheGeometry), Create ribbon button. 5 mesh tests.
 ```
+
 Change §15.1.2 status to `Partial → Done — P1` (keep Partial if blend/sweep/void are still missing
 and note them explicitly).
 
 Update §15.1.3 + §15.1.4 + §15.1.5 descriptions — append:
+
 ```
 `frameWidthMm` + `sillDepthMm` added to window element; mesh builder offsets glazing inward.
 `glazingMaterialId` field + material dropdown in inspector. 2 inspector tests.
 ```
+
 Change §15.1.3–§15.1.5 status to `Done — P1`.
 
 Update summary table row for Chapter 15.

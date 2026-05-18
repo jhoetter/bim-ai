@@ -68,11 +68,12 @@ type BoundaryMm = { xMm: number; yMm: number; widthMm: number; heightMm: number 
 export function elementOverlapsBoundary(el: Element, boundary: BoundaryMm): boolean {
   const pts = getElementKeyPoints(el);
   if (pts.length === 0) return true; // include if no spatial info
-  return pts.some(p =>
-    p.xMm >= boundary.xMm &&
-    p.xMm <= boundary.xMm + boundary.widthMm &&
-    p.yMm >= boundary.yMm &&
-    p.yMm <= boundary.yMm + boundary.heightMm
+  return pts.some(
+    (p) =>
+      p.xMm >= boundary.xMm &&
+      p.xMm <= boundary.xMm + boundary.widthMm &&
+      p.yMm >= boundary.yMm &&
+      p.yMm <= boundary.yMm + boundary.heightMm,
   );
 }
 
@@ -97,7 +98,9 @@ export function computeCalloutScale(boundary: BoundaryMm, canvasWidthPx: number)
   const scale = boundary.widthMm / (canvasWidthPx * 0.264);
   // Round to nearest standard scale
   const standards = [5, 10, 20, 25, 50, 100, 200, 500, 1000];
-  return standards.reduce((prev, curr) => Math.abs(curr - scale) < Math.abs(prev - scale) ? curr : prev);
+  return standards.reduce((prev, curr) =>
+    Math.abs(curr - scale) < Math.abs(prev - scale) ? curr : prev,
+  );
 }
 ```
 
@@ -116,10 +119,12 @@ if (activePlanView?.planViewSubtype === 'callout' && activePlanView.calloutBound
   // Set orthographic camera to exactly frame the callout boundary
   const cx = (b.xMm + b.widthMm / 2) / 1000; // convert mm → metres (or whatever unit Three.js uses)
   const cy = (b.yMm + b.heightMm / 2) / 1000;
-  const hw = (b.widthMm / 1000) / 2 * 1.05; // 5% margin
-  const hh = (b.heightMm / 1000) / 2 * 1.05;
-  camera.left = cx - hw; camera.right = cx + hw;
-  camera.top = cy + hh; camera.bottom = cy - hh;
+  const hw = (b.widthMm / 1000 / 2) * 1.05; // 5% margin
+  const hh = (b.heightMm / 1000 / 2) * 1.05;
+  camera.left = cx - hw;
+  camera.right = cx + hw;
+  camera.top = cy + hh;
+  camera.bottom = cy - hh;
   camera.position.set(cx, cy, 50);
   camera.lookAt(cx, cy, 0);
   camera.updateProjectionMatrix();
@@ -150,11 +155,13 @@ if (view.planViewSubtype === 'callout' && view.calloutBoundaryMm) {
 When the active view is a callout view, show `computeCalloutScale(boundary, canvasWidth)` as `1:N` in the header:
 
 ```tsx
-{activeView?.planViewSubtype === 'callout' && activeView.calloutBoundaryMm && (
-  <span data-testid="callout-view-computed-scale">
-    1:{computeCalloutScale(activeView.calloutBoundaryMm, canvasWidthPx)}
-  </span>
-)}
+{
+  activeView?.planViewSubtype === 'callout' && activeView.calloutBoundaryMm && (
+    <span data-testid="callout-view-computed-scale">
+      1:{computeCalloutScale(activeView.calloutBoundaryMm, canvasWidthPx)}
+    </span>
+  );
+}
 ```
 
 ---

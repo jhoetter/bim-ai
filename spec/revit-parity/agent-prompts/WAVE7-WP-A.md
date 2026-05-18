@@ -41,6 +41,7 @@ Read ALL of these before writing anything:
 ### A — update_wall_type command
 
 Add to `core/index.ts` (if not present):
+
 ```ts
 export type UpdateWallTypeCmd = {
   type: 'update_wall_type';
@@ -48,7 +49,9 @@ export type UpdateWallTypeCmd = {
   patch: Partial<Omit<Extract<Element, { kind: 'wall_type' }>, 'kind' | 'id'>>;
 };
 ```
+
 Add `UpdateWallTypeCmd` to the `Command` union. Handle it in `Workspace.tsx`:
+
 ```ts
 case 'update_wall_type':
   setElementsById({ ...elementsById, [cmd.id]: { ...elementsById[cmd.id], ...cmd.patch } });
@@ -64,10 +67,14 @@ interface WallTypeLayerEditorProps {
   typeElement: Extract<Element, { kind: 'wall_type' | 'floor_type' | 'roof_type' }>;
   onUpdate: (patch: { name?: string; layers?: WallTypeLayer[]; basisLine?: string }) => void;
 }
-export function WallTypeLayerEditor({ typeElement, onUpdate }: WallTypeLayerEditorProps): JSX.Element
+export function WallTypeLayerEditor({
+  typeElement,
+  onUpdate,
+}: WallTypeLayerEditorProps): JSX.Element;
 ```
 
 The editor:
+
 - `data-testid="wall-type-layer-editor"` on container
 - Type name input at top (`data-testid="wall-type-name-input"`) — editable, calls `onUpdate({ name })`
 - Table of layers (`data-testid="wall-type-layers-table"`):
@@ -89,11 +96,13 @@ Also: for `kind === 'floor_type'` and `'roof_type'`, same approach — the data 
 ### D — basisLine selector for wall_type
 
 In `WallTypeLayerEditor`, when `el.kind === 'wall_type'`, show:
+
 - Basis line select `data-testid="wall-type-basis-line"` — center / face_interior / face_exterior
 
 ### E — Tests
 
 Write `packages/web/src/workspace/families/WallTypeLayerEditor.test.tsx`:
+
 ```ts
 describe('WallTypeLayerEditor — §1.6.7', () => {
   it('renders wall-type-layer-editor', () => { ... });
@@ -107,6 +116,7 @@ describe('WallTypeLayerEditor — §1.6.7', () => {
 ```
 
 Write `packages/web/src/workspace/families/wallTypeCommand.test.ts`:
+
 ```ts
 describe('update_wall_type command — §1.6.7', () => {
   it('patches name on wall_type element', () => { ... });

@@ -13,6 +13,7 @@ This prompt is self-contained — start here.
 What's still missing is a **search/filter input** and **sort controls** — in Revit's project browser, there's a filter box at the top that narrows which views appear, and you can sort views by name.
 
 This task adds:
+
 1. A search input at the top of `ProjectBrowserV3` that filters all views/sheets/families/groups by name
 2. A sort toggle button (A-Z / Z-A) for plan views within the "Floor Plans" section
 3. Matching text highlight (bold the matched substring) in view rows
@@ -27,6 +28,7 @@ packages/web/src/workspace/project/ProjectBrowser.tsx  — find ProjectBrowserV3
 ```
 
 Run before editing:
+
 - `grep -n "search\|filter\|sort\|browserSearch" packages/web/src/workspace/project/ProjectBrowser.tsx | head -15`
 - `grep -n "PbCollapsibleSection\|browserSearch\|viewFilter\|searchTerm" packages/web/src/workspace/project/ProjectBrowser.tsx | head -10`
 - `grep -n "plan_view\|Floor Plans\|Grundrisse\|planViews" packages/web/src/workspace/project/ProjectBrowser.tsx | head -10`
@@ -67,7 +69,7 @@ const [planViewSort, setPlanViewSort] = React.useState<'az' | 'za'>('az');
       boxSizing: 'border-box',
     }}
   />
-</div>
+</div>;
 ```
 
 ### B — Filter plan views by search term
@@ -76,8 +78,8 @@ Find where plan views are listed in the "Floor Plans" section. Before rendering,
 
 ```tsx
 const filteredPlanViews = React.useMemo(() => {
-  const planViews = elements.filter((el): el is Extract<typeof el, { kind: 'plan_view' }> =>
-    el.kind === 'plan_view',
+  const planViews = elements.filter(
+    (el): el is Extract<typeof el, { kind: 'plan_view' }> => el.kind === 'plan_view',
   );
   const term = browserSearch.trim().toLowerCase();
   const filtered = term
@@ -85,7 +87,9 @@ const filteredPlanViews = React.useMemo(() => {
     : planViews;
   return planViewSort === 'az'
     ? [...filtered].sort((a, b) => ((a as any).name ?? a.id).localeCompare((b as any).name ?? b.id))
-    : [...filtered].sort((a, b) => ((b as any).name ?? b.id).localeCompare((a as any).name ?? a.id));
+    : [...filtered].sort((a, b) =>
+        ((b as any).name ?? b.id).localeCompare((a as any).name ?? a.id),
+      );
 }, [elements, browserSearch, planViewSort]);
 ```
 
@@ -98,7 +102,10 @@ In the "Floor Plans" section header (where the section toggle chevron is), add a
 ```tsx
 <button
   data-testid="browser-plan-views-sort-btn"
-  onClick={(e) => { e.stopPropagation(); setPlanViewSort((s) => s === 'az' ? 'za' : 'az'); }}
+  onClick={(e) => {
+    e.stopPropagation();
+    setPlanViewSort((s) => (s === 'az' ? 'za' : 'az'));
+  }}
   title={planViewSort === 'az' ? 'Sort Z→A' : 'Sort A→Z'}
   style={{
     fontSize: 9,
@@ -164,7 +171,9 @@ import { afterEach, describe, expect, it } from 'vitest';
 import { cleanup, render, fireEvent } from '@testing-library/react';
 import { ProjectBrowserV3 } from './ProjectBrowser';
 
-afterEach(() => { cleanup(); });
+afterEach(() => {
+  cleanup();
+});
 
 function makeProps(elements: any[] = []) {
   return {
@@ -177,8 +186,22 @@ function makeProps(elements: any[] = []) {
   };
 }
 
-const pv1 = { kind: 'plan_view', id: 'pv1', name: 'Ground Floor Plan', levelId: 'l1', viewType: 'floor_plan', disciplineKey: 'architectural' };
-const pv2 = { kind: 'plan_view', id: 'pv2', name: 'Roof Plan', levelId: 'l2', viewType: 'floor_plan', disciplineKey: 'architectural' };
+const pv1 = {
+  kind: 'plan_view',
+  id: 'pv1',
+  name: 'Ground Floor Plan',
+  levelId: 'l1',
+  viewType: 'floor_plan',
+  disciplineKey: 'architectural',
+};
+const pv2 = {
+  kind: 'plan_view',
+  id: 'pv2',
+  name: 'Roof Plan',
+  levelId: 'l2',
+  viewType: 'floor_plan',
+  disciplineKey: 'architectural',
+};
 
 describe('ProjectBrowser search/filter — §1.6.11', () => {
   it('renders the browser search input', () => {

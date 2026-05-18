@@ -112,6 +112,7 @@ Read how the existing orthographic restore works and extend it to handle perspec
 ### E — Tests
 
 `packages/web/src/workspace/savedCameraViews.test.ts`:
+
 ```ts
 describe('named perspective camera views — §14.5', () => {
   it('save_camera_view creates saved_3d_view element with perspective=true', () => { ... });
@@ -122,6 +123,7 @@ describe('named perspective camera views — §14.5', () => {
 ```
 
 `packages/web/src/workspace/projectBrowserCameraViews.test.tsx`:
+
 ```ts
 describe('project browser camera views section — §14.5', () => {
   it('renders browser-camera-views-group', () => { ... });
@@ -135,6 +137,7 @@ describe('project browser camera views section — §14.5', () => {
 ## Commit and push
 
 After tests pass (`pnpm test --filter @bim-ai/web`):
+
 ```
 git add -p
 git commit -m "feat(wave14/G): named perspective camera views in project browser (§14.5)"

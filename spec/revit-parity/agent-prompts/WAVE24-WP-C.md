@@ -11,6 +11,7 @@ This prompt is self-contained — start here.
 §1.6.10 "Ansichtssteuerung" is Partial. The view controls (detail level, visual style, sun/shadow, thin-lines, per-view VG overrides, crop region enable/disable) are all done. What's missing is **interactive drag editing of the crop region boundary**. The crop region can be toggled on/off, but users can't drag its edges to resize it.
 
 The utility functions already exist:
+
 - `getCropRegionGrips(crop)` in `packages/web/src/plan/cropRegionGrips.ts` — returns 4 or 8 edge/corner grips
 - `applyCropGripDrag(crop, gripId, deltaMm)` in the same file — computes the new crop bounds after dragging a grip
 - `cropRegionDragHandles.ts` is imported in PlanCanvas (for `pointInsideCrop`), but `cropRegionGrips.ts` is NOT wired into PlanCanvas pointer events
@@ -28,6 +29,7 @@ packages/web/src/plan/cropRegionDragHandles.ts     — already imported in PlanC
 ```
 
 Run before editing:
+
 - `cat packages/web/src/plan/cropRegionGrips.ts` — read the full file to understand CropRegionGrip shape and function signatures
 - `grep -n "cropRegionGrips\|getCropRegionGrips\|applyCropGripDrag" packages/web/src/plan/PlanCanvas.tsx`
 - `grep -n "activeDrag\|gripDrag\|DRAG_STATE\|dragState\|mousedown\|pointerdown" packages/web/src/plan/PlanCanvas.tsx | head -20`
@@ -45,6 +47,7 @@ Prettier runs automatically. **Always `git pull --rebase origin main` before pus
 ### A — Understand the crop region type
 
 Run:
+
 ```
 grep -n "cropRegionMm\|CropRegionMm\|cropMin\|cropMax" packages/web/src/plan/cropRegionGrips.ts | head -15
 grep -n "updateCropRegion\|setCropBounds\|cropRegion" packages/core/src/index.ts | head -10
@@ -55,11 +58,13 @@ Find how the crop region bounds are stored on the plan_view element and how to d
 ### B — Add updateCropRegion command if missing
 
 Check if a `updateCropRegion` or `setCropRegion` command type exists in `packages/core/src/index.ts`:
+
 ```
 grep -n "updateCropRegion\|setCropBounds\|CropBounds" packages/core/src/index.ts | head -5
 ```
 
 If it doesn't exist, add:
+
 ```ts
 export type UpdateCropRegionCmd = {
   type: 'updateCropRegion';
@@ -67,9 +72,11 @@ export type UpdateCropRegionCmd = {
   cropRegionMm: { minXMm: number; minYMm: number; maxXMm: number; maxYMm: number };
 };
 ```
+
 Add to SemanticCommand union and export.
 
 Also add a Workspace handler in `Workspace.tsx`:
+
 ```ts
 if (cmd.type === 'updateCropRegion') {
   const { elementsById: cur } = useBimStore.getState();
@@ -96,7 +103,10 @@ In `packages/web/src/plan/PlanCanvas.tsx`:
 
 ```ts
 // §1.6.10: crop region grip hit-test
-if (activeCropState?.cropRegionMm && (activeCropState.cropRegionVisible || activeCropState.cropEnabled)) {
+if (
+  activeCropState?.cropRegionMm &&
+  (activeCropState.cropRegionVisible || activeCropState.cropEnabled)
+) {
   const cropGrips = getCropRegionGrips(activeCropState.cropRegionMm);
   const HIT_RADIUS_MM = 80 / zoom; // screen pixels → mm
   const hit = cropGrips.find(
@@ -104,7 +114,11 @@ if (activeCropState?.cropRegionMm && (activeCropState.cropRegionVisible || activ
   );
   if (hit) {
     // start crop grip drag
-    setCropGripDrag({ gripId: hit.id, startPlanPt: planPt, cropAtStart: activeCropState.cropRegionMm });
+    setCropGripDrag({
+      gripId: hit.id,
+      startPlanPt: planPt,
+      cropAtStart: activeCropState.cropRegionMm,
+    });
     e.stopPropagation();
     return;
   }
@@ -112,6 +126,7 @@ if (activeCropState?.cropRegionMm && (activeCropState.cropRegionVisible || activ
 ```
 
 3. Add `cropGripDrag` state variable:
+
 ```ts
 const [cropGripDrag, setCropGripDrag] = React.useState<{
   gripId: string;
@@ -121,6 +136,7 @@ const [cropGripDrag, setCropGripDrag] = React.useState<{
 ```
 
 4. In the pointer-move handler, when `cropGripDrag` is set:
+
 ```ts
 if (cropGripDrag) {
   const deltaMm = {
@@ -138,6 +154,7 @@ if (cropGripDrag) {
 ```
 
 5. In the pointer-up handler, clear `cropGripDrag`:
+
 ```ts
 if (cropGripDrag) {
   setCropGripDrag(null);

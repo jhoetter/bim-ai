@@ -144,17 +144,19 @@ async function ensureLiveEvidence(evidenceDir, bundlePath) {
   const bundleHash = await sha256File(bundlePath);
   const advisorRuleDigest = await digestFiles(summary.advisorRuleFiles || ADVISOR_RULE_FILES);
   const mismatches = {};
-  if (summary.gitHead !== currentHead) mismatches.gitHead = { recorded: summary.gitHead, current: currentHead };
+  if (summary.gitHead !== currentHead)
+    mismatches.gitHead = { recorded: summary.gitHead, current: currentHead };
   if (summary.bundleSha256 !== bundleHash) {
     mismatches.bundleSha256 = { recorded: summary.bundleSha256, current: bundleHash };
   }
   if (summary.advisorRuleDigest !== advisorRuleDigest) {
-    mismatches.advisorRuleDigest = { recorded: summary.advisorRuleDigest, current: advisorRuleDigest };
+    mismatches.advisorRuleDigest = {
+      recorded: summary.advisorRuleDigest,
+      current: advisorRuleDigest,
+    };
   }
   if (Object.keys(mismatches).length) {
-    throw new Error(
-      `Live evidence is stale for ${dir}: ${JSON.stringify(mismatches, null, 2)}`,
-    );
+    throw new Error(`Live evidence is stale for ${dir}: ${JSON.stringify(mismatches, null, 2)}`);
   }
   return {
     directory: dir,

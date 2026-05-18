@@ -58,7 +58,8 @@ export async function readPngRgba(filePath) {
   }
 
   if (!ihdr) throw new Error(`PNG is missing IHDR: ${filePath}`);
-  if (ihdr.bitDepth !== 8) throw new Error(`Unsupported PNG bit depth ${ihdr.bitDepth}: ${filePath}`);
+  if (ihdr.bitDepth !== 8)
+    throw new Error(`Unsupported PNG bit depth ${ihdr.bitDepth}: ${filePath}`);
   if (ihdr.compression !== 0 || ihdr.filter !== 0 || ihdr.interlace !== 0) {
     throw new Error(`Unsupported PNG encoding options: ${filePath}`);
   }
@@ -168,7 +169,9 @@ export async function analyzePng(filePath) {
       lumaSum += luma;
       lumaSqSum += luma * luma;
       if ((x + y) % 31 === 0) {
-        sampleColors.add(`${image.data[i] >> 4},${image.data[i + 1] >> 4},${image.data[i + 2] >> 4}`);
+        sampleColors.add(
+          `${image.data[i] >> 4},${image.data[i + 1] >> 4},${image.data[i + 2] >> 4}`,
+        );
       }
       if (image.data[i + 3] > 10 && colorDistance(image, i, bg) > 18) {
         contentPixels += 1;
@@ -306,7 +309,8 @@ export async function buildVisualGateReport({
     if (targetPath) {
       try {
         row.comparison = await comparePngFiles(row.screenshotPath, targetPath, { threshold });
-        if (!row.comparison.thresholdPassed) row.blockers.push('target_visual_similarity_below_threshold');
+        if (!row.comparison.thresholdPassed)
+          row.blockers.push('target_visual_similarity_below_threshold');
       } catch (err) {
         row.blockers.push('visual_compare_failed');
         row.notes.push(err instanceof Error ? err.message : String(err));
@@ -315,7 +319,8 @@ export async function buildVisualGateReport({
       row.notes.push('No target image supplied; automated gate covers screenshot quality only.');
     }
 
-    if (row.fallbackFit) row.blockers.push('fit_fallback_used_without_saved_or_synthetic_viewpoint');
+    if (row.fallbackFit)
+      row.blockers.push('fit_fallback_used_without_saved_or_synthetic_viewpoint');
     if (row.blockers.length) row.status = 'fail';
     else if (!row.comparison) row.status = 'needs_review';
     else row.status = 'pass';
@@ -341,7 +346,9 @@ export async function buildVisualGateReport({
 }
 
 export function applyVisualGateToChecklist(checklist, visualGateReport) {
-  const captures = new Map((visualGateReport?.captures ?? []).map((capture) => [capture.viewId, capture]));
+  const captures = new Map(
+    (visualGateReport?.captures ?? []).map((capture) => [capture.viewId, capture]),
+  );
   return {
     ...checklist,
     items: (checklist.items ?? []).map((item) => {
@@ -356,10 +363,9 @@ export function applyVisualGateToChecklist(checklist, visualGateReport) {
         ...item,
         status: capture.status,
         screenshotPath: item.screenshotPath ?? capture.screenshotPath,
-        notes: [
-          item.notes,
-          `Visual gate ${capture.status}.${similarity}${blockers}`.trim(),
-        ].filter(Boolean).join(' '),
+        notes: [item.notes, `Visual gate ${capture.status}.${similarity}${blockers}`.trim()]
+          .filter(Boolean)
+          .join(' '),
       };
     }),
   };

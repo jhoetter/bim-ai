@@ -58,8 +58,12 @@ Also add a command type if missing:
 export type UpdateBeamSystemCmd = {
   type: 'update_beam_system';
   id: string;
-  patch: Partial<Pick<Extract<Element, { kind: 'beam_system' }>,
-    'spacingMm' | 'directionDeg' | 'beamCount' | 'beamTypeId' | 'justification'>>;
+  patch: Partial<
+    Pick<
+      Extract<Element, { kind: 'beam_system' }>,
+      'spacingMm' | 'directionDeg' | 'beamCount' | 'beamTypeId' | 'justification'
+    >
+  >;
 };
 ```
 
@@ -83,6 +87,7 @@ Follow the exact pattern of the existing wall/column draw-state slices.
 Check `toolRegistry.ts`, `authoringCommandContract.ts`, and `defaultCommands.ts` — `'beam-system'` may already be registered from a prior wave. If any of the three places are missing, add them now:
 
 **toolRegistry.ts** (if missing):
+
 ```ts
 'beam-system': {
   hotkey: 'BS',
@@ -94,6 +99,7 @@ Check `toolRegistry.ts`, `authoringCommandContract.ts`, and `defaultCommands.ts`
 ```
 
 **authoringCommandContract.ts** (if missing):
+
 ```ts
 'beam-system': {
   kind: 'sketch',
@@ -102,6 +108,7 @@ Check `toolRegistry.ts`, `authoringCommandContract.ts`, and `defaultCommands.ts`
 ```
 
 **defaultCommands.ts** (if missing):
+
 ```ts
 registerCommand({
   id: 'tool.beam-system',
@@ -147,6 +154,7 @@ Read existing handlers (`update_toposolid`, `split_wall`) and follow the same pa
 ### G — Tests
 
 Write `packages/web/src/workspace/authoring/optionsBarBeamSystem.test.tsx`:
+
 ```ts
 describe('options bar — beam system tool (§9.3)', () => {
   it('renders options-bar-beam-spacing when planTool=beam-system', () => { ... });
@@ -156,6 +164,7 @@ describe('options bar — beam system tool (§9.3)', () => {
 ```
 
 Write `packages/web/src/workspace/inspector/beamSystemInspector.test.tsx`:
+
 ```ts
 describe('beam system inspector — §9.3', () => {
   it('renders inspector-beam-spacing input with element value', () => { ... });
@@ -170,6 +179,7 @@ describe('beam system inspector — §9.3', () => {
 ## Commit and push
 
 After tests pass (`pnpm test --filter @bim-ai/web`):
+
 ```
 git add -p
 git commit -m "feat(wave10/G): beam system inspector + options bar (§9.3)"

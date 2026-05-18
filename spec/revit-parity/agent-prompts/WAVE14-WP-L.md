@@ -96,11 +96,14 @@ In `PrintPlotDialog.tsx`, ensure A3 is selectable in the paper size dropdown. Ad
 In `PrintPlotDialog.tsx` (or `SheetCanvas.tsx` toolbar), add a **"Print All Sheets"** button that calls `exportSheetsToPdf` with all sheet elements:
 
 ```tsx
-<button data-testid="print-all-sheets-btn" onClick={async () => {
-  const allSheetEls = Object.values(elementsById).filter(e => e.kind === 'sheet');
-  // gather DOM elements for each sheet... or use existing exportSheetsToPdf logic
-  await exportSheetsToPdf(sheetRefs, { paperSize, filename: 'all-sheets.pdf' });
-}}>
+<button
+  data-testid="print-all-sheets-btn"
+  onClick={async () => {
+    const allSheetEls = Object.values(elementsById).filter((e) => e.kind === 'sheet');
+    // gather DOM elements for each sheet... or use existing exportSheetsToPdf logic
+    await exportSheetsToPdf(sheetRefs, { paperSize, filename: 'all-sheets.pdf' });
+  }}
+>
   Print All Sheets
 </button>
 ```
@@ -110,6 +113,7 @@ Read `exportSheetsToPdf` signature in `pdfExporter.ts` and wire correctly.
 ### F — Tests
 
 `packages/web/src/plan/calloutViewZoom.test.ts`:
+
 ```ts
 describe('detail callout enlarged view — §6.4.1', () => {
   it('callout view activates with plan_view subtype=callout', () => { ... });
@@ -119,6 +123,7 @@ describe('detail callout enlarged view — §6.4.1', () => {
 ```
 
 `packages/web/src/export/pdfExporterOptions.test.ts` (add to existing):
+
 ```ts
 describe('PDF exporter options — §12.4.5', () => {
   it('paperSizeMm includes A3', () => { ... });
@@ -127,6 +132,7 @@ describe('PDF exporter options — §12.4.5', () => {
 ```
 
 `packages/web/src/workspace/sheets/printPlotDialog.test.tsx`:
+
 ```ts
 describe('print/plot dialog — §12.4.5', () => {
   it('renders print-paper-size-select', () => { ... });
@@ -140,6 +146,7 @@ describe('print/plot dialog — §12.4.5', () => {
 ## Commit and push
 
 After tests pass (`pnpm test --filter @bim-ai/web`):
+
 ```
 git add -p
 git commit -m "feat(wave14/L): detail callout enlarged view + PDF/print polish (§6.4.1 + §12.4.5)"

@@ -58,8 +58,17 @@ export function ColorSchemeLegend({ rows, title, visible, onClose }: ColorScheme
       className="absolute bottom-12 right-2 z-10 rounded bg-surface/95 border border-border shadow-md p-2 min-w-[140px]"
     >
       <div className="flex items-center justify-between mb-1">
-        <span className="text-xs font-medium" data-testid="color-scheme-legend-title">{title}</span>
-        <button type="button" className="text-xs text-muted" onClick={onClose} data-testid="color-scheme-legend-close">✕</button>
+        <span className="text-xs font-medium" data-testid="color-scheme-legend-title">
+          {title}
+        </span>
+        <button
+          type="button"
+          className="text-xs text-muted"
+          onClick={onClose}
+          data-testid="color-scheme-legend-close"
+        >
+          ✕
+        </button>
       </div>
       {rows.map((row, i) => (
         <div key={i} className="flex items-center gap-1.5 py-0.5">
@@ -68,9 +77,13 @@ export function ColorSchemeLegend({ rows, title, visible, onClose }: ColorScheme
             style={{ background: row.colorHex }}
             data-testid={`legend-swatch-${i}`}
           />
-          <span className="text-xs truncate" data-testid={`legend-label-${i}`}>{row.label}</span>
+          <span className="text-xs truncate" data-testid={`legend-label-${i}`}>
+            {row.label}
+          </span>
           {row.count != null && (
-            <span className="text-xs text-muted ml-auto" data-testid={`legend-count-${i}`}>{row.count}</span>
+            <span className="text-xs text-muted ml-auto" data-testid={`legend-count-${i}`}>
+              {row.count}
+            </span>
           )}
         </div>
       ))}
@@ -99,6 +112,7 @@ In `PlanCanvas.tsx` (or in the plan view wrapper in `Workspace.tsx`), render the
 ### D — Tests
 
 `packages/web/src/plan/colorSchemeLegend.test.tsx`:
+
 ```ts
 describe('color fill legend — §13.1.3', () => {
   it('renders legend rows with swatches and labels', () => { ... });
@@ -114,6 +128,7 @@ describe('color fill legend — §13.1.3', () => {
 ## Commit and push
 
 After tests pass (`pnpm test --filter @bim-ai/web`):
+
 ```
 git add -p
 git commit -m "feat(wave14/E): color fill legend panel on plan canvas (§13.1.3)"

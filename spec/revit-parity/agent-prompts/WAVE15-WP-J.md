@@ -51,6 +51,7 @@ Add a second button "Print (Browser)…" next to the existing PDF buttons:
 ```
 
 Implement `handleBrowserPrint`:
+
 ```ts
 function handleBrowserPrint() {
   // Get the first non-null sheet canvas element.
@@ -58,13 +59,22 @@ function handleBrowserPrint() {
   if (!sheetEl) return;
 
   const win = window.open('', '_blank', 'width=800,height=600');
-  if (!win) { alert('Allow popups to use browser print.'); return; }
+  if (!win) {
+    alert('Allow popups to use browser print.');
+    return;
+  }
 
   // Clone the sheet HTML into the new window.
   const clone = sheetEl.cloneNode(true) as HTMLElement;
   const styles = Array.from(document.styleSheets)
     .map((ss) => {
-      try { return Array.from(ss.cssRules).map((r) => r.cssText).join('\n'); } catch { return ''; }
+      try {
+        return Array.from(ss.cssRules)
+          .map((r) => r.cssText)
+          .join('\n');
+      } catch {
+        return '';
+      }
     })
     .join('\n');
 
@@ -96,8 +106,8 @@ Find the global CSS file (likely `packages/web/src/index.css` or `global.css`). 
   .inspector-panel,
   .status-bar,
   .project-browser,
-  [data-testid="options-bar"],
-  [data-testid="print-plot-dialog"],
+  [data-testid='options-bar'],
+  [data-testid='print-plot-dialog'],
   nav,
   header {
     display: none !important;
@@ -105,7 +115,7 @@ Find the global CSS file (likely `packages/web/src/index.css` or `global.css`). 
 
   /* Show only the sheet canvas */
   .sheet-canvas-wrapper,
-  [data-testid="sheet-canvas"] {
+  [data-testid='sheet-canvas'] {
     display: block !important;
     page-break-inside: avoid;
   }
@@ -166,6 +176,7 @@ A simpler implementation: combine all sheets into one `window.open` popup with a
 ### E — Tests
 
 `packages/web/src/workspace/sheets/PrintPlotDialog.browser.test.tsx`:
+
 ```ts
 describe('PrintPlotDialog browser print — §6.5', () => {
   it('renders print-browser-btn', () => { ... });

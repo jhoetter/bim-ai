@@ -44,6 +44,7 @@ Read ALL of these before writing anything:
 ### A — Core type: ceiling fields
 
 In `core/index.ts`, add to `ceiling` element if missing:
+
 ```ts
 /** Grid pattern tile size. When set, plan view shows a hatch grid. */
 gridPatternMm?: number | null;    // e.g. 600 for 600×600mm ceiling tiles
@@ -61,10 +62,11 @@ export function detectCeilingBoundary(
   clickMm: { xMm: number; yMm: number },
   walls: Array<Extract<Element, { kind: 'wall' }>>,
   levelId: string,
-): { xMm: number; yMm: number }[] | null
+): { xMm: number; yMm: number }[] | null;
 ```
 
 Implementation:
+
 1. Filter `walls` by `levelId`
 2. Build a polygon set from wall center lines (treat each wall as a line segment from startMm to endMm)
 3. Find the smallest polygon that encloses `clickMm` using a simple flood-fill or polygon winding test
@@ -79,6 +81,7 @@ You may reuse `roomArea.ts` logic if it computes equivalent polygons — read it
 In `PlanCanvas.tsx`, in the ceiling tool click handler:
 
 When the user clicks with the ceiling tool active:
+
 1. Call `detectCeilingBoundary(clickPoint, walls, activeLevelId)`
 2. If a boundary is found: immediately create the ceiling with that boundary (single-click placement, like room tool)
 3. If no boundary found: fall back to sketch mode (existing multi-click polygon drawing)
@@ -90,6 +93,7 @@ Also support a **sketch mode fallback**: if the user holds Shift while clicking,
 In `planElementMeshBuilders.ts`, in the ceiling plan symbol renderer:
 
 When `ceiling.gridPatternMm != null`:
+
 - Draw a grid of thin lines (hatch pattern) within the ceiling boundary polygon
 - Line spacing = `gridPatternMm` (e.g. 600 mm → lines every 600 mm)
 - Line angle = `gridAngleDeg ?? 0`
@@ -111,6 +115,7 @@ In `InspectorContent.tsx`, for `el.kind === 'ceiling'`:
 ### F — Tests
 
 Write `packages/web/src/plan/ceilingAutoDetect.test.ts`:
+
 ```ts
 describe('ceilingAutoDetect — §8.2', () => {
   it('returns null when no walls enclose the click point', () => { ... });
@@ -120,6 +125,7 @@ describe('ceilingAutoDetect — §8.2', () => {
 ```
 
 Write `packages/web/src/workspace/inspector/ceilingInspector.test.tsx`:
+
 ```ts
 describe('ceiling inspector — §8.2', () => {
   it('renders inspector-ceiling-grid-size input', () => { ... });
@@ -133,6 +139,7 @@ describe('ceiling inspector — §8.2', () => {
 ## Commit and push
 
 After tests pass (`pnpm test --filter @bim-ai/web`):
+
 ```
 git add -p
 git commit -m "feat(wave12/E): ceiling auto-boundary from walls + grid hatch in plan (§8.2)"

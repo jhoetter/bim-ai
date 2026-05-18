@@ -9,6 +9,7 @@ This prompt is self-contained — start here.
 ## Context
 
 §6.4.1 "Detailausschnitt" is Partial D4. The callout view functionality is largely implemented:
+
 - `plan_view` with `planViewSubtype: 'callout'` + `calloutBoundaryMm` crop region
 - Camera zoom fits to callout boundary (wave 19 WP-B)
 - 1:N scale label in PlanViewHeader (wave 14 WP-L)
@@ -17,6 +18,7 @@ This prompt is self-contained — start here.
 What's still missing: in the **parent plan view**, a proper callout reference symbol should appear — in Revit this is a dashed rectangle with a reference bubble/tag showing the detail number and sheet reference. Currently the callout region appears as a plain crop region rectangle without the distinctive callout annotation.
 
 This task adds:
+
 1. A callout reference symbol rendered in the parent plan view (dashed rectangle outline + reference tag label)
 2. `calloutSymbolThree()` function in `symbology.ts` (or `planElementMeshBuilders.ts`)
 3. `view.callout-reference-symbol` commandCapabilities entry
@@ -34,6 +36,7 @@ packages/core/src/index.ts                              — find plan_view type,
 ```
 
 Run before editing:
+
 - `grep -n "callout\|calloutBoundary\|planViewSubtype" packages/web/src/plan/symbology.ts | head -15`
 - `grep -n "callout\|calloutBoundary\|calloutRef\|cropRegion" packages/web/src/plan/planElementMeshBuilders.ts | head -15`
 - `grep -n "calloutBoundaryMm\|calloutBoundary\|planViewSubtype.*callout" packages/core/src/index.ts | head -10`
@@ -58,7 +61,11 @@ In `packages/web/src/plan/planElementMeshBuilders.ts` (or wherever plan annotati
  * Returns a THREE.Group with a dashed rectangle outline and a reference tag label.
  */
 export function calloutSymbolThree(
-  calloutView: { id: string; name?: string; calloutBoundaryMm?: { minXMm: number; minYMm: number; maxXMm: number; maxYMm: number } },
+  calloutView: {
+    id: string;
+    name?: string;
+    calloutBoundaryMm?: { minXMm: number; minYMm: number; maxXMm: number; maxYMm: number };
+  },
   ux: (mm: number) => number,
   uz: (mm: number) => number,
   PLAN_Y: number,
@@ -67,8 +74,10 @@ export function calloutSymbolThree(
   const b = calloutView.calloutBoundaryMm;
   if (!b) return grp;
 
-  const x0 = ux(b.minXMm), x1 = ux(b.maxXMm);
-  const z0 = uz(b.minYMm), z1 = uz(b.maxYMm);
+  const x0 = ux(b.minXMm),
+    x1 = ux(b.maxXMm);
+  const z0 = uz(b.minYMm),
+    z1 = uz(b.maxYMm);
 
   // Dashed rectangle outline
   const pts = [
@@ -159,7 +168,11 @@ import { describe, expect, it } from 'vitest';
 
 describe('Callout reference symbol — §6.4.1', () => {
   it('callout view has planViewSubtype callout', () => {
-    const view: any = { kind: 'plan_view', planViewSubtype: 'callout', calloutBoundaryMm: { minXMm: 0, minYMm: 0, maxXMm: 1000, maxYMm: 1000 } };
+    const view: any = {
+      kind: 'plan_view',
+      planViewSubtype: 'callout',
+      calloutBoundaryMm: { minXMm: 0, minYMm: 0, maxXMm: 1000, maxYMm: 1000 },
+    };
     expect(view.planViewSubtype).toBe('callout');
   });
 

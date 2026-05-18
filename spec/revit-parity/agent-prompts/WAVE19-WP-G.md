@@ -9,11 +9,13 @@ This prompt is self-contained — start here.
 ## Context — what Wave 18 already delivered
 
 Wave 18 WP-I created grammar functions in `packages/web/src/tools/toolGrammar.ts`:
+
 - `DetailLineState`, `reduceDetailLine`, `initialDetailLineState`
 - `DetailFilledRegionState`, `reduceDetailFilledRegion`, `initialDetailFilledRegionState`
 - Test file `packages/web/src/plan/detailDraftingElements.test.ts` (11 tests — all pass)
 
 **Still missing:**
+
 - `detail_line` and `detail_filled_region` element types in `core/index.ts`
 - Command types: `addDetailLine`, `addDetailFilledRegion`, `removeDetailElement`
 - `Workspace.tsx` handlers
@@ -72,6 +74,7 @@ Add if not present:
 ```
 
 Add command types:
+
 ```ts
 | { type: 'addDetailLine'; element: Extract<Element, { kind: 'detail_line' }> }
 | { type: 'addDetailFilledRegion'; element: Extract<Element, { kind: 'detail_filled_region' }> }
@@ -101,6 +104,7 @@ case 'removeDetailElement':
 In `rebuildPlanMeshes`, add cases for `detail_line` and `detail_filled_region` in the main elements loop.
 
 For `detail_line`:
+
 ```ts
 case 'detail_line': {
   if ((el as any).pointsMm?.length < 2) break;
@@ -128,6 +132,7 @@ case 'detail_line': {
 ```
 
 For `detail_filled_region`:
+
 ```ts
 case 'detail_filled_region': {
   const boundary: { xMm: number; yMm: number }[] = (el as any).boundaryMm ?? [];
@@ -151,17 +156,25 @@ case 'detail_filled_region': {
 Follow the pattern of an existing multi-point tool (e.g. the floor sketch tool). Import the grammar functions:
 
 ```ts
-import { initialDetailLineState, reduceDetailLine,
-         initialDetailFilledRegionState, reduceDetailFilledRegion } from '../tools/toolGrammar';
+import {
+  initialDetailLineState,
+  reduceDetailLine,
+  initialDetailFilledRegionState,
+  reduceDetailFilledRegion,
+} from '../tools/toolGrammar';
 ```
 
 Add state:
+
 ```ts
 const [detailLineState, setDetailLineState] = useState(initialDetailLineState());
-const [detailFilledRegionState, setDetailFilledRegionState] = useState(initialDetailFilledRegionState());
+const [detailFilledRegionState, setDetailFilledRegionState] = useState(
+  initialDetailFilledRegionState(),
+);
 ```
 
 In the tool click handler:
+
 ```ts
 case 'detail-line': {
   const { state: next, effect } = reduceDetailLine(detailLineState, { kind: 'click', pointMm: planMm });
@@ -192,10 +205,12 @@ Wire `Escape` → `{ kind: 'cancel' }` for both.
 Wire `activate`/`deactivate` on tool change for both.
 
 Also register the tools in `toolRegistry.ts` if not already present:
+
 ```ts
 { id: 'detail-line', hotkey: 'DL2', label: 'Detail Line', mode: 'plan' }
 { id: 'detail-filled-region', hotkey: 'FR', label: 'Detail Filled Region', mode: 'plan' }
 ```
+
 (Use `DL2` to avoid collision with existing hotkeys.)
 
 ---
@@ -203,6 +218,7 @@ Also register the tools in `toolRegistry.ts` if not already present:
 ### E — Inspector panels in `InspectorContent.tsx`
 
 `case 'detail_line':`:
+
 ```tsx
 case 'detail_line': {
   const el = selectedElement as Extract<Element, { kind: 'detail_line' }>;
@@ -231,6 +247,7 @@ case 'detail_line': {
 ```
 
 `case 'detail_filled_region':`:
+
 ```tsx
 case 'detail_filled_region': {
   const el = selectedElement as Extract<Element, { kind: 'detail_filled_region' }>;
@@ -252,6 +269,7 @@ case 'detail_filled_region': {
 ### F — Palette commands + capability graph
 
 In `defaultCommands.ts`:
+
 ```ts
 { id: 'tool.detail-line', label: 'Detail Line',
   keywords: ['detail', 'line', '2d', 'draft', 'annotate'],
@@ -262,6 +280,7 @@ In `defaultCommands.ts`:
 ```
 
 In `commandCapabilities.ts`:
+
 ```ts
 { id: 'tool.detail-line', scope: 'document', intendedModes: ['plan'], precondition: null },
 { id: 'tool.detail-filled-region', scope: 'document', intendedModes: ['plan'], precondition: null },

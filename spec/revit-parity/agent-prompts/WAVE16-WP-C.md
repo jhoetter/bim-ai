@@ -36,11 +36,13 @@ Prettier runs automatically. **Always `git pull --rebase origin main` before pus
 Find the function that renders section markers in the plan view. Extend it to add a **head bubble** at each endpoint of the section line:
 
 A section head bubble consists of:
+
 - A filled circle (radius ~200mm) at the tail end and reference end of the section line
 - The section view name (short — first 6 chars) as a text label inside the circle (use CSS2DObject or a canvas-drawn label at fixed pixel size)
 - The bubble colour matches the section line colour
 
 Implementation:
+
 ```ts
 // At each endpoint, add a circle mesh
 const bubbleGeo = new THREE.CircleGeometry(0.2, 16); // 200mm radius
@@ -52,6 +54,7 @@ grp.add(bubble);
 ```
 
 Add `data-testid` markers via `userData`:
+
 - `bubble.userData.sectionBubble = true`
 - `bubble.userData.sectionViewId = el.id`
 
@@ -62,18 +65,32 @@ Add `data-testid` markers via `userData`:
 At the bottom of the section SVG, add a view title group:
 
 ```tsx
-{/* View title */}
+{
+  /* View title */
+}
 <g transform={`translate(0, ${viewHeight + 8})`}>
   <line x1="0" y1="0" x2={viewWidth * 0.5} y2="0" stroke="#222" strokeWidth="1" />
-  <text x="4" y="14" fontSize="10" fontFamily="sans-serif" fill="#222"
-    data-testid="section-view-title">
+  <text
+    x="4"
+    y="14"
+    fontSize="10"
+    fontFamily="sans-serif"
+    fill="#222"
+    data-testid="section-view-title"
+  >
     {view.name ?? 'Section'}
   </text>
-  <text x="4" y="26" fontSize="8" fontFamily="sans-serif" fill="#666"
-    data-testid="section-view-scale">
+  <text
+    x="4"
+    y="26"
+    fontSize="8"
+    fontFamily="sans-serif"
+    fill="#666"
+    data-testid="section-view-scale"
+  >
     1:{Math.round(1000 / (view.scale ?? 100))}
   </text>
-</g>
+</g>;
 ```
 
 Increase the SVG height by 36px to accommodate the title.
@@ -83,6 +100,7 @@ Increase the SVG height by 36px to accommodate the title.
 ### C — Section bubble symbol in plan at section marker
 
 If the section marker is represented differently (e.g. as a rectangle or line with arrows), also ensure that:
+
 1. The arrowhead end gets a filled bubble with the section number/name
 2. The reference (tail) end gets an open circle or half-bubble
 
@@ -94,6 +112,7 @@ For the tail bubble: unfilled circle with same colour border
 ### D — Tests
 
 `packages/web/src/plan/sectionBubble.test.ts`:
+
 ```ts
 describe('section view head bubble — §6.1.6', () => {
   it('section marker plan symbol includes bubble meshes', () => { ... });
@@ -103,6 +122,7 @@ describe('section view head bubble — §6.1.6', () => {
 ```
 
 `packages/web/src/workspace/sheets/sectionViewTitle.test.tsx`:
+
 ```ts
 describe('section view title — §6.1.6', () => {
   it('renders section-view-title element', () => { ... });

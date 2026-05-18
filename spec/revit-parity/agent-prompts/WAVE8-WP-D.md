@@ -39,6 +39,7 @@ Read ALL of these before writing anything:
 ### A — Data model
 
 Add to the `wall` element type in `core/index.ts`:
+
 ```ts
 /** Wall lean angle in degrees. Positive = top shifts in +X direction of wall local frame. Default 0 (plumb). */
 slopeAngleDeg?: number | null;
@@ -51,6 +52,7 @@ topThicknessMm?: number | null;
 In the wall mesh builder (find it in `meshBuilders.layeredWall.ts` or `csgWallBaseGeometry.ts`):
 
 When `wall.slopeAngleDeg` is set and non-zero:
+
 - The wall runs from `startMm` to `endMm` in plan
 - In the local wall frame (X = along length, Y = vertical, Z = thickness direction):
   - Top vertices shift in +X by `Math.tan(slopeAngleDeg * Math.PI/180) * heightMm`
@@ -58,6 +60,7 @@ When `wall.slopeAngleDeg` is set and non-zero:
 - Apply the shift to the 4 top vertices of the wall box before any CSG or layer processing
 
 When `wall.topThicknessMm` is set and > 0:
+
 - The wall box normally has uniform thickness `thicknessMm`
 - With taper: bottom face has full thickness, top face is narrower by `(thicknessMm - topThicknessMm) / 2` on each side
 - Move top vertices inward on both Z faces to create the taper
@@ -69,11 +72,13 @@ Only override geometry when these values differ from default. No-op if `slopeAng
 In `InspectorContent.tsx`, for `el.kind === 'wall'`, add:
 
 **Slope angle** (`data-testid="inspector-wall-slope-angle"`):
+
 - Number input, step 0.5, min -45, max 45, value = `el.slopeAngleDeg ?? 0`
 - Label: "Slope (°)"
 - On change: dispatch `update_element_property` for `slopeAngleDeg`
 
 **Top thickness** (`data-testid="inspector-wall-top-thickness"`):
+
 - Number input (mm), step 10, min 0, value = `el.topThicknessMm ?? ''`, placeholder = "Same as base"
 - Label: "Top thickness (mm)"
 - On change: dispatch `update_element_property` for `topThicknessMm`
@@ -83,6 +88,7 @@ Only show these inputs when the wall has no `typeId` set (freeform wall), or alw
 ### D — Tests
 
 Write `packages/web/src/viewport/slopedWall.test.ts`:
+
 ```ts
 describe('sloped wall geometry — §3.5.7', () => {
   it('plumb wall (slopeAngleDeg=0) top vertices are directly above base', () => { ... });
@@ -94,6 +100,7 @@ describe('sloped wall geometry — §3.5.7', () => {
 ```
 
 Write `packages/web/src/workspace/inspector/slopedWallInspector.test.tsx`:
+
 ```ts
 describe('sloped wall inspector — §3.5.7', () => {
   it('renders inspector-wall-slope-angle input', () => { ... });

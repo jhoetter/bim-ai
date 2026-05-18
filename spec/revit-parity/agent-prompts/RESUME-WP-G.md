@@ -34,6 +34,7 @@ packages/core/src/index.ts                            — Element union + ElemKi
 ```
 
 Architecture patterns:
+
 - All element types follow: define `kind` in core → implement 3D mesh builder
   in `viewport/meshBuilders.<type>.ts` → dispatch from `meshBuilders.ts` → add
   plan symbol in `plan/<type>PlanSymbol.ts` → call from `planProjection.ts`.
@@ -45,32 +46,35 @@ Architecture patterns:
 
 ## What was done before the crash
 
-| Sub-task | Status | Notes |
-|---|---|---|
-| G1 Brace | **Done** | `'brace'` ToolId in registry; `meshBuilders.brace.ts`; `bracePlanSymbol.ts`; tests. Tracker: "Implemented — G1". |
-| G2 Beam System | **Partial** | `meshBuilders.beamSystem.ts` + `beamSystemPlanSymbol.ts` + tests exist. `'beam-system'` ToolId NOT in `toolRegistry.ts`. `beam_system` kind IS in `core/index.ts`. Needs wiring. |
-| G3 Column at Grids | **Partial** | `plan/columnAtGrids.ts` + `plan/columnAtGrids.test.ts` exist as **untracked files** (not committed). Options-bar "At Grids" button not wired. |
-| G4 Sloped Columns | **Not Started** | Tracker: "Not Started — P2" |
-| G5 Mass Volumes | **Done** | `mass_box`, `mass_extrusion`, `mass_revolution` in core + mesh builders + plan symbol. ToolIds `mass-box`, `mass-extrusion`, `mass-revolution` in toolRegistry (staged, not committed). Tracker: "Implemented". |
-| G6 Roof by Face | **Done** | `massByFace.ts` utilities + `MassFaceRef` type. Tracker: "Implemented (G6)". |
-| G7 Wall by Face | **Done** | `massByFace.ts` side-face utilities. Tracker: "Implemented (G7)". |
-| G8 Floor by Level | **Done** | `massFloorsByLevel.ts` + tests. Tracker: "Implemented (G8)". |
-| G9 Curtain Wall | **Partial** | `curtainWallData` compound type in core; `curtainWallPlanSymbol.ts`. No interactive grid editing UI. |
+| Sub-task           | Status          | Notes                                                                                                                                                                                                           |
+| ------------------ | --------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| G1 Brace           | **Done**        | `'brace'` ToolId in registry; `meshBuilders.brace.ts`; `bracePlanSymbol.ts`; tests. Tracker: "Implemented — G1".                                                                                                |
+| G2 Beam System     | **Partial**     | `meshBuilders.beamSystem.ts` + `beamSystemPlanSymbol.ts` + tests exist. `'beam-system'` ToolId NOT in `toolRegistry.ts`. `beam_system` kind IS in `core/index.ts`. Needs wiring.                                |
+| G3 Column at Grids | **Partial**     | `plan/columnAtGrids.ts` + `plan/columnAtGrids.test.ts` exist as **untracked files** (not committed). Options-bar "At Grids" button not wired.                                                                   |
+| G4 Sloped Columns  | **Not Started** | Tracker: "Not Started — P2"                                                                                                                                                                                     |
+| G5 Mass Volumes    | **Done**        | `mass_box`, `mass_extrusion`, `mass_revolution` in core + mesh builders + plan symbol. ToolIds `mass-box`, `mass-extrusion`, `mass-revolution` in toolRegistry (staged, not committed). Tracker: "Implemented". |
+| G6 Roof by Face    | **Done**        | `massByFace.ts` utilities + `MassFaceRef` type. Tracker: "Implemented (G6)".                                                                                                                                    |
+| G7 Wall by Face    | **Done**        | `massByFace.ts` side-face utilities. Tracker: "Implemented (G7)".                                                                                                                                               |
+| G8 Floor by Level  | **Done**        | `massFloorsByLevel.ts` + tests. Tracker: "Implemented (G8)".                                                                                                                                                    |
+| G9 Curtain Wall    | **Partial**     | `curtainWallData` compound type in core; `curtainWallPlanSymbol.ts`. No interactive grid editing UI.                                                                                                            |
 
 ---
 
 ## Step 0 — commit staged + untracked work FIRST
 
 There are **staged changes** not yet committed:
+
 - `packages/core/src/index.ts` — `mass_box`, `mass_extrusion`, `mass_revolution` in ElemKind
 - `packages/web/src/tools/toolRegistry.ts` — `'brace'` tool entry
 - `spec/revit-parity/revit2026-parity-tracker.md` — tracker updates
 
 There are **untracked new files** to stage as well:
+
 - `packages/web/src/plan/columnAtGrids.ts`
 - `packages/web/src/plan/columnAtGrids.test.ts`
 
 Verify, test, then commit:
+
 ```bash
 git pull --rebase origin main
 pnpm test --filter @bim-ai/web -- columnAtGrids
@@ -172,6 +176,7 @@ correctly from base.
    `planProjection.ts`).
 
 Tests:
+
 - `meshBuilders.curtainWall.test.ts`: 4m × 3m curtain wall, 3 vertical + 2
   horizontal divisions → 6 glass panels rendered
 - `curtainWallPlanSymbol.test.ts`: verify plan projection shows grid tick marks

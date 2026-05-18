@@ -9,12 +9,14 @@ This prompt is self-contained — start here.
 ## Context — what Wave 18 already delivered
 
 Wave 18 WP-G created:
+
 - `packages/web/src/viewport/meshBuilders.wallProfile.ts` — `buildProfiledWallMesh()`
 - `packages/web/src/viewport/meshBuilders.wallProfile.test.ts` — 3 tests
 - Added to `toolGrammar.ts`: `WallProfileState`, `reduceWallProfile`, `initialWallProfileState`
 - Test file for grammar in `toolGrammar` (inline in the grammar additions)
 
 **Still missing:**
+
 - `profilePoints` + `editProfileActive` fields on `wall` element in `core/index.ts`
 - `commitWallProfile` command type in `core/index.ts`
 - `buildProfiledWallMesh` wired into `meshBuilders.ts` `case 'wall':` branch
@@ -49,12 +51,14 @@ Prettier runs automatically. **Always `git pull --rebase origin main` before pus
 ### A — Wall element additional fields in `core/index.ts`
 
 Add to the `wall` element (if not present):
+
 ```ts
 profilePoints?: { xPct: number; yPct: number }[];
 editProfileActive?: boolean;
 ```
 
 Add command type:
+
 ```ts
 | { type: 'commitWallProfile'; wallId: string; points: { xPct: number; yPct: number }[] }
 ```
@@ -106,10 +110,14 @@ case 'commitWallProfile': {
 In `InspectorContent.tsx`, `case 'wall':`, add after the existing wall inspector content:
 
 ```tsx
-{/* Edit Profile section */}
+{
+  /* Edit Profile section */
+}
 <div style={{ marginTop: 8 }}>
-  <button data-testid="inspector-wall-edit-profile"
-    onClick={() => onPropertyChange('editProfileActive', true)}>
+  <button
+    data-testid="inspector-wall-edit-profile"
+    onClick={() => onPropertyChange('editProfileActive', true)}
+  >
     Edit Profile
   </button>
   {(el as any).profilePoints && (el as any).profilePoints.length > 0 && (
@@ -117,13 +125,15 @@ In `InspectorContent.tsx`, `case 'wall':`, add after the existing wall inspector
       <span data-testid="inspector-wall-profile-point-count">
         {(el as any).profilePoints.length} profile points
       </span>
-      <button data-testid="inspector-wall-reset-profile"
-        onClick={() => onPropertyChange('profilePoints', [])}>
+      <button
+        data-testid="inspector-wall-reset-profile"
+        onClick={() => onPropertyChange('profilePoints', [])}
+      >
         Reset to Rectangular
       </button>
     </>
   )}
-</div>
+</div>;
 ```
 
 ---
@@ -131,6 +141,7 @@ In `InspectorContent.tsx`, `case 'wall':`, add after the existing wall inspector
 ### E — Palette command + capability graph
 
 In `defaultCommands.ts`:
+
 ```ts
 { id: 'modify.edit-wall-profile', label: 'Edit Wall Profile',
   keywords: ['wall', 'profile', 'edit', 'shape', 'non-rectangular', 'custom'],
@@ -141,6 +152,7 @@ In `defaultCommands.ts`:
 ```
 
 In `commandCapabilities.ts`:
+
 ```ts
 { id: 'modify.edit-wall-profile', scope: 'selection', intendedModes: ['plan'], precondition: 'selected-wall' },
 ```

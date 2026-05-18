@@ -44,7 +44,7 @@ Create `packages/web/src/tools/dxfContourImport.ts`:
  * Returns an array of polylines, each with elevation (Z) and a list of 2D points.
  */
 export type DxfPolyline = {
-  elevationMm: number;  // Z from the entity, scaled ×1000 if DXF is in metres
+  elevationMm: number; // Z from the entity, scaled ×1000 if DXF is in metres
   points: { xMm: number; yMm: number }[];
 };
 
@@ -65,10 +65,10 @@ export function parseDxfContours(dxfText: string): DxfPolyline[] {
  * Each polyline vertex becomes a height sample using its elevation.
  */
 export function dxfContoursToHeightSamples(
-  polylines: DxfPolyline[]
+  polylines: DxfPolyline[],
 ): { xMm: number; yMm: number; zMm: number }[] {
-  return polylines.flatMap(pl =>
-    pl.points.map(pt => ({ xMm: pt.xMm, yMm: pt.yMm, zMm: pl.elevationMm }))
+  return polylines.flatMap((pl) =>
+    pl.points.map((pt) => ({ xMm: pt.xMm, yMm: pt.yMm, zMm: pl.elevationMm })),
   );
 }
 
@@ -77,16 +77,18 @@ export function dxfContoursToHeightSamples(
  */
 export function createToposolidFromDxf(
   dxfText: string,
-  levelId: string | null
+  levelId: string | null,
 ): Extract<Element, { kind: 'toposolid' }> {
   const polylines = parseDxfContours(dxfText);
   const heightSamples = dxfContoursToHeightSamples(polylines);
 
   // Compute perimeter from the bounding box of all points
-  const xs = heightSamples.map(s => s.xMm);
-  const ys = heightSamples.map(s => s.yMm);
-  const minX = Math.min(...xs), maxX = Math.max(...xs);
-  const minY = Math.min(...ys), maxY = Math.max(...ys);
+  const xs = heightSamples.map((s) => s.xMm);
+  const ys = heightSamples.map((s) => s.yMm);
+  const minX = Math.min(...xs),
+    maxX = Math.max(...xs);
+  const minY = Math.min(...ys),
+    maxY = Math.max(...ys);
 
   return {
     kind: 'toposolid',
@@ -171,6 +173,7 @@ export function DxfImportDialog({ onImport, onClose }: Props) {
 ### C — Palette command + Workspace handler
 
 In `defaultCommands.ts`:
+
 ```ts
 {
   id: 'file.import-dxf-terrain',
@@ -182,22 +185,26 @@ In `defaultCommands.ts`:
 ```
 
 In `Workspace.tsx`, add handler (alongside existing `file.import-ifc` or similar):
+
 ```ts
 openDxfImport: () => setDxfImportOpen(true),
 ```
 
 Add state `const [dxfImportOpen, setDxfImportOpen] = useState(false)` and render:
+
 ```tsx
-{dxfImportOpen && (
-  <DxfImportDialog
-    onImport={(text) => {
-      const topo = createToposolidFromDxf(text, activeLevelId ?? null);
-      void onSemanticCommand({ type: 'createElement', element: topo });
-      setDxfImportOpen(false);
-    }}
-    onClose={() => setDxfImportOpen(false)}
-  />
-)}
+{
+  dxfImportOpen && (
+    <DxfImportDialog
+      onImport={(text) => {
+        const topo = createToposolidFromDxf(text, activeLevelId ?? null);
+        void onSemanticCommand({ type: 'createElement', element: topo });
+        setDxfImportOpen(false);
+      }}
+      onClose={() => setDxfImportOpen(false)}
+    />
+  );
+}
 ```
 
 ---
@@ -205,6 +212,7 @@ Add state `const [dxfImportOpen, setDxfImportOpen] = useState(false)` and render
 ### D — Capability graph
 
 In `commandCapabilities.ts`:
+
 ```ts
 { id: 'file.import-dxf-terrain', scope: 'document', intendedModes: ['plan', '3d'], precondition: null },
 ```
@@ -214,6 +222,7 @@ In `commandCapabilities.ts`:
 ### E — Tests
 
 `packages/web/src/tools/dxfContourImport.test.ts`:
+
 ```ts
 describe('parseDxfContours — §12.2.2', () => {
   it('returns empty array for empty DXF', () => { ... });

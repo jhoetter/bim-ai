@@ -20,14 +20,14 @@ The current plan view has **three root architectural flaws** that make it look u
    - Visible "step" artifacts at wall corners (where one box overlaps another)
    - Grey "gaps" at junction faces (the wall face is visible inside the corner)
    - No visual indication that walls are connected — they look like stacked Lego bricks
-   
+
    Professional BIM software (Revit, ArchiCAD, Vectorworks, Rayon) computes proper 2D miter geometry: at an L-junction, each wall is clipped to an angled miter point; at a T-junction, the butting wall is clipped at the face of the through-wall. This produces a single clean polygon for each connected wall group.
 
 3. **Wall rendering mode is wrong for plan views** — `BoxGeometry` (a 3D extruded solid) viewed from above is technically correct but gives:
    - No ability to separately control cut-outline vs projected lines
    - No hatching of the solid section region (Schraffierung requires a 2D polygon fill)
    - No proper line weight hierarchy (section-cut lines should be 2× heavier than projection lines)
-   
+
    The correct approach: compute the **2D section-cut polygon** for each wall group (with miter joins) and render it as `ShapeGeometry` fill + outline, exactly like how floors are already rendered.
 
 ### 3D View
@@ -53,6 +53,7 @@ The 3D view is "good but flat" — materials work, SSAO is present, edges exist.
 ### A1. Fix Wall Hatching Depth (1-hour fix, immediate)
 
 **Root cause**: `buildWallCutHatch()` in `planElementMeshBuilders.ts` line 201-205:
+
 ```typescript
 const mat = new THREE.LineBasicMaterial({
   color: new THREE.Color(hatchColor),
@@ -64,6 +65,7 @@ lines.position.set(..., PLAN_Y + 0.0001, ...);  // 0.1mm offset — below depth 
 ```
 
 **Fix required**:
+
 - Set `depthTest: false` on the hatch material (like all other plan overlay lines)
 - Increase Y-offset to `PLAN_Y + 0.003` (3mm — matches floor outline offset pattern)
 - Increase opacity from 0.22 to 0.35 (more visible against dark wall fill)
@@ -78,11 +80,13 @@ lines.position.set(..., PLAN_Y + 0.0001, ...);  // 0.1mm offset — below depth 
 ### A2. Wall Section-Cut Polygon Rendering (the core architecture fix)
 
 **Current architecture (wrong)**:
+
 ```
 Wall element → BoxGeometry(len, height, thick) → camera looks down → appears rectangular
 ```
 
 **Target architecture (correct)**:
+
 ```
 Wall element → 2D miter-joined polygon → ShapeGeometry fill + LineLoop outline
 ```
@@ -94,6 +98,7 @@ Wall element → 2D miter-joined polygon → ShapeGeometry fill + LineLoop outli
 Modify `app/bim_ai/plan_projection_wire.py` to include `outlineMm` in the wall wire payload.
 
 For each wall, the section-cut polygon is computed as:
+
 1. Start with the 4-corner rectangle: `[p0, p1, p2, p3]` (two corners per end)
 2. For each endpoint, look up connected walls from the `wallCornerJoinSummary_v1` join data
 3. Apply join transformation:
@@ -105,6 +110,7 @@ For each wall, the section-cut polygon is computed as:
 The `wallCornerJoinSummary_v1` already classifies each join as `butt`, `miter_candidate`, or `unsupported_skew` — use this classification to select the right algorithm.
 
 **Algorithm for butt join** (most common: T-junction):
+
 ```
 Wall A passes through (e.g., runs from x=0 to x=10, thickness=200mm)
 Wall B butts into it at x=5, perpendicular
@@ -120,6 +126,7 @@ Wall B's start corners should be clipped to:
 ```
 
 **Algorithm for miter join** (most common: L-junction):
+
 ```
 Wall A: runs west→east (angle=0°), thickness=200mm
 Wall B: runs south→north (angle=90°), thickness=200mm, ends at Wall A's start
@@ -132,6 +139,7 @@ Wall A's start polygon corners become:
 ```
 
 **Python implementation sketch**:
+
 ```python
 def _compute_wall_section_polygon(
     wall: WallElem,
@@ -144,6 +152,7 @@ def _compute_wall_section_polygon(
 #### A2b. Client-side: Render wall polygons via ShapeGeometry
 
 Add `planWallSectionMesh()` function to `planElementMeshBuilders.ts`:
+
 ```typescript
 export function planWallSectionMesh(
   wall: Extract<Element, { kind: 'wall' }>,
@@ -165,6 +174,7 @@ export function planWallSectionMesh(
 - Both paths coexist until server change is deployed everywhere
 
 **Files to change**:
+
 - `app/bim_ai/plan_projection_wire.py` — add polygon computation
 - `packages/web/src/plan/planElementMeshBuilders.ts` — new polygon render function
 - `packages/web/src/plan/symbology.ts` — choose polygon vs box path per wall
@@ -178,12 +188,14 @@ export function planWallSectionMesh(
 **Current state**: All wall outlines render at the same visual weight.
 
 **Target**: Architectural drafting line weights:
+
 - Section-cut boundary (outer wall edge where it's cut): `--draft-lw-cut` = 2px
-- Section-cut interior lines (layer boundaries): `--draft-lw-cut-minor` = 1.4px  
+- Section-cut interior lines (layer boundaries): `--draft-lw-cut-minor` = 1.4px
 - Projection lines (element edges below cut plane): `--draft-lw-projection` = 1px
 - Hidden lines: `--draft-lw-hidden` = 0.7px dashed
 
 **Implementation**: When rendering wall section polygon outline (A2b), separate into:
+
 - Outer boundary loop: thick `LineLoop` at `--draft-lw-cut` weight
 - Internal layer boundaries: thin `Line` segments at `--draft-lw-cut-minor`
 
@@ -204,12 +216,14 @@ Three.js `linewidth` only works in `WebGL2` with `WEBGL_multi_draw` extension �
 **Implementation options**:
 
 Option A — **Repeating canvas texture on ShapeGeometry**:
+
 1. Create a small `OffscreenCanvas` (or `canvas`) with the hatch pattern tile
 2. Use it as a `THREE.CanvasTexture` on a second `MeshBasicMaterial`
 3. Apply `texture.repeat = new THREE.Vector2(W, H)` scaled to current plot scale
 4. Set `texture.wrapS = texture.wrapT = THREE.RepeatWrapping`
 
 Option B — **Line segment grid inside polygon** (CPU-intensive but no texture):
+
 1. Compute the AABB of the floor polygon
 2. Generate diagonal line segments across the AABB
 3. Clip each line to the polygon using 2D line-polygon intersection
@@ -230,16 +244,19 @@ Option A (texture) is strongly preferred for performance. The texture scale need
 **Current state**: Walls render as 3D boxes. From above, the top face of the box is the "section cut" but there's no distinction between the top face boundary and the wall side faces.
 
 **Problem with BoxGeometry approach**:
+
 - The box renders SIX faces (top, bottom, 4 sides)
 - From above, you see the top face + the top edges of the side faces
 - This looks like a thick solid block, not a 2D plan section symbol
 
 **Architectural convention for plan symbols**:
+
 - Wall body: solid fill (black for cut, or material hatch)
 - Cut line: thick closed outline (2px minimum) around the entire section
 - NO visible "side faces" — the wall is a 2D polygon, not a 3D box
 
 **Fix**: Replace `BoxGeometry` with flat `PlaneGeometry` (zero thickness) + outline loop.
+
 - Section fill: `PlaneGeometry(len, thick)` → `MeshBasicMaterial({color: '#1c1917'})`
 - Section outline: `LineLoop(4-corner rectangle)` → thick line material
 
@@ -254,11 +271,13 @@ If combined with A2 (miter joins), the result would be perfect.
 **Current state**: Doors show a white gap in the wall + swing arc. Windows show a white gap + glass centerline. These are implemented but may have rendering artifacts.
 
 **Issues observed**:
+
 - Door swing arc may have z-fighting (multiple meshes at same Y)
 - Window glass line weight may be too thin/thick
 - Sill lines for windows not shown
 
 **Target**: Clean architectural symbols:
+
 - Door: 90° arc from door face, with door leaf (1px arc, 0.7px door leaf line)
 - Window: outer sill line + glass line + inner sill line (3 parallel lines of decreasing weight)
 - Opening: clean white gap through wall body (gap geometry cuts through fill)
@@ -274,6 +293,7 @@ If combined with A2 (miter joins), the result would be perfect.
 **Current state**: No explicit tone mapping. Three.js defaults to linear sRGB output.
 
 **Fix**: Add ACESFilmic tone mapping for warmer, more cinematic results:
+
 ```typescript
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
 renderer.toneMappingExposure = 1.1;
@@ -290,6 +310,7 @@ renderer.toneMappingExposure = 1.1;
 **Current state**: `addEdges()` in `sceneHelpers.ts` uses threshold 15° with foreground color lines at renderOrder=1.
 
 **Problems**:
+
 - `THREE.LineBasicMaterial` has linewidth=1 (hardware limit — can't be wider)
 - On Retina displays, 1px lines look too thin and "dotty"
 - Foreground color (dark) makes edges too harsh/heavy on light materials
@@ -305,6 +326,7 @@ Set edge line opacity to 0.35 instead of full foreground color — gives softer,
 Option C — **Threshold adjustment**: 20° threshold (less edges, cleaner look)
 
 **Recommended**: Combine B + C:
+
 - `new THREE.LineBasicMaterial({ color: edgeColor, opacity: 0.4, transparent: true })`
 - Threshold: 20°
 - Edge color: `--draft-cut` (#1d2330) not `--color-foreground`
@@ -318,6 +340,7 @@ Option C — **Threshold adjustment**: 20° threshold (less edges, cleaner look)
 **Current state**: All materials use `roughness: 0.82, metalness: 0.02` (from default material setup).
 
 **Target per-category roughness** (Rhino-like):
+
 - `--cat-wall` (plaster): roughness 0.92, metalness 0.0 — very matte
 - `--cat-floor` (concrete): roughness 0.88, metalness 0.0 — slightly smoother than plaster
 - `--cat-roof` (clay tile): roughness 0.85, metalness 0.0
@@ -339,6 +362,7 @@ Window transparency is especially important — currently windows appear as soli
 **Rhino AO characteristics**: Very subtle, soft. Not the heavy "cave corner" look of raw SSAO.
 
 **Improvements**:
+
 - `ssao.minDistance = 0.001` (very fine details)
 - `ssao.maxDistance = 0.12` (reduced from current)
 - `ssao.kernelRadius = 0.12` (smaller radius = more focused on surface details)
@@ -355,15 +379,17 @@ Consider adding a `UnrealBloomPass` at very low intensity (0.05, radius 0.4) for
 **Current state**: Three.js OrbitControls (or equivalent) with default parameters.
 
 **Rhino feel**:
+
 - Very smooth deceleration (high damping factor)
 - Orbit around geometry centroid, not world origin
 - Right-click = rotate, Middle-click = pan, Scroll = dolly
 - Smooth zoom with momentum
 
 **Target settings**:
+
 ```typescript
 controls.enableDamping = true;
-controls.dampingFactor = 0.08;  // High = more "float" on release
+controls.dampingFactor = 0.08; // High = more "float" on release
 controls.screenSpacePanning = true;
 controls.rotateSpeed = 0.6;
 controls.zoomSpeed = 0.8;
@@ -378,6 +404,7 @@ controls.zoomSpeed = 0.8;
 **Current state**: Just HemiLight + DirectionalLight. No environment map. Background = `--draft-paper` (off-white).
 
 **Rhino-like environment**:
+
 - Subtle gradient sky: warm white overhead, warm ochre ground (matches HemiLight colors)
 - Option: Three.js `PMREMGenerator` with a simple equirectangular sky texture
 - Option: `THREE.Sky` from addons (Rayleigh scattering sky shader)
@@ -393,6 +420,7 @@ controls.zoomSpeed = 0.8;
 **Current state**: `THREE.PCFSoftShadowMap` with existing settings.
 
 **Improvements**:
+
 - `shadow.mapSize = new THREE.Vector2(2048, 2048)` — higher resolution shadow map
 - `shadow.camera.near = 0.5, far = 200` — tighter frustum
 - `shadow.bias = -0.001` — reduce shadow acne
@@ -410,8 +438,9 @@ controls.zoomSpeed = 0.8;
 **Target**: When a plan view activates and elements are present, auto-fit the camera to show all elements at comfortable zoom level.
 
 **Implementation**:
+
 1. Compute AABB of all wall start/end points and floor boundaries
-2. Set `camRef.current.half = max(AABB.width, AABB.height) * 0.6 / 1000`  (in world units)
+2. Set `camRef.current.half = max(AABB.width, AABB.height) * 0.6 / 1000` (in world units)
 3. Center camera on AABB centroid
 4. Trigger `resizeCam()`
 
@@ -426,6 +455,7 @@ controls.zoomSpeed = 0.8;
 **Current state**: Left rail shows a list of chevron ">" arrows (collapsed category sections).
 
 **Target**: Rayon-like left rail with tabs:
+
 - **Layers** tab — element categories, visibility toggles, color overrides
 - **Elements** tab — project tree (levels → walls/floors/doors...)
 - **Styles** tab — wall types, materials, hatch patterns
@@ -442,6 +472,7 @@ controls.zoomSpeed = 0.8;
 **Current state**: Shortcuts are discoverable only via Cmd+K palette. ToolPalette buttons show a `ShortcutChip` but it's very small.
 
 **Target**: Rayon-style tooltip on hover showing both action name AND keyboard shortcut prominently:
+
 ```
 "Wall (W)" — shown on hover delay 400ms
 ```
@@ -457,11 +488,13 @@ controls.zoomSpeed = 0.8;
 **Current state**: Scroll wheel zooms by adjusting `camRef.current.half`. Space+drag pans.
 
 **Issues**:
+
 - Scroll zoom is not smooth (jumpy)
 - Space+drag is unintuitive (vs right-click drag or middle-click drag)
 - No zoom-to-pointer (zooms to canvas center, not cursor position)
 
 **Target**:
+
 - Smooth scroll zoom with lerp/easing
 - Middle mouse button (or scroll-click) drag = pan (standard CAD convention)
 - Zoom-to-pointer: translate camera so the point under cursor stays fixed during zoom
@@ -485,6 +518,7 @@ The model appears small because the canvas is very large (full workspace) and th
 **Current state**: Status bar shows coordinate HUD + snap status.
 
 **Target**:
+
 - Show current tool name in plain language: "Wall tool — click to set start point"
 - Show snap description: "Endpoint snap active"
 - Current level name visible
@@ -496,25 +530,27 @@ The model appears small because the canvas is very large (full workspace) and th
 
 ### D1. Rayon-Style Floor Hatch — What We See vs Target
 
-| Feature | Current | Target |
-|---------|---------|--------|
-| Floor fill | Solid color at 42% opacity | Solid color at 30% + hatch pattern overlay |
-| Floor hatch | SVG system not connected to Three.js | Herringbone lines rendered in Three.js at proper density |
-| Wall section | Solid black box | Solid fill + visible Schraffierung (diagonal lines) |
-| Wall outline | BoxGeometry face edges | Clean LineLoop at --draft-lw-cut weight |
-| Room fill | Sage green at 26% | Solid sage at 20% + subtle texture variation |
-| Door symbol | White gap + arc | Gap + arc + thin door leaf line |
-| Window symbol | White gap + glass line | Gap + triple sill lines (outer/glass/inner) |
+| Feature       | Current                              | Target                                                   |
+| ------------- | ------------------------------------ | -------------------------------------------------------- |
+| Floor fill    | Solid color at 42% opacity           | Solid color at 30% + hatch pattern overlay               |
+| Floor hatch   | SVG system not connected to Three.js | Herringbone lines rendered in Three.js at proper density |
+| Wall section  | Solid black box                      | Solid fill + visible Schraffierung (diagonal lines)      |
+| Wall outline  | BoxGeometry face edges               | Clean LineLoop at --draft-lw-cut weight                  |
+| Room fill     | Sage green at 26%                    | Solid sage at 20% + subtle texture variation             |
+| Door symbol   | White gap + arc                      | Gap + arc + thin door leaf line                          |
+| Window symbol | White gap + glass line               | Gap + triple sill lines (outer/glass/inner)              |
 
 ### D2. Section Hatch Patterns (Schraffierung)
 
 In architectural drawing, every element in a section cut shows a hatch pattern indicating material:
+
 - **Brick/masonry**: horizontal lines with vertical joints (stretcher bond)
 - **Concrete**: uniform diagonal at 45° (standard diagonal hatch)
 - **Timber frame**: diagonal lines with insulation fill (zig-zag between studs)
 - **Stone**: irregular horizontal lines (bedded stone)
 
 Current `CATEGORY_DEFAULT_HATCH` in `HatchRenderer.ts`:
+
 ```
 wall: 'brick'
 floor: 'herringbone' (was: concrete)
@@ -523,6 +559,7 @@ stair: 'concrete'
 ```
 
 The SVG hatch definitions exist but are not rendered in Three.js plan view. Need to:
+
 1. Generate hatch geometry from `BUILT_IN_HATCH_DEFS` into Three.js LineSegments
 2. Clip to element polygon boundaries
 3. Overlay at low opacity with depthTest:false
@@ -538,6 +575,7 @@ The SVG hatch definitions exist but are not rendered in Three.js plan view. Need
 Three.js can render at professional quality. The issues are in HOW we use it, not the renderer itself. Rayon (2D), Speckle (3D), Archicad cloud viewer, and Rhino Inside all use web-based 3D rendering and achieve professional results.
 
 The Three.js `WebGLRenderer` with EffectComposer post-processing pipeline is exactly right. We need to:
+
 1. Fix the plan view rendering architecture (geometry approach)
 2. Tune material + lighting parameters
 3. Add ACESFilmic tone mapping
@@ -547,12 +585,14 @@ No renderer change is needed or recommended.
 ### E2. Why BoxGeometry is Wrong for Plan Views
 
 BoxGeometry renders a 3D solid. When viewed orthographically from above:
+
 - You see the TOP face (the section cut surface) — correct
 - You see the TOP EDGES of the SIDE faces — artifacts
 - Two overlapping boxes show Z-fighting or visible "cracks"
 - No ability to apply 2D drafting conventions (thick outlines, section fill, line weights)
 
 `ShapeGeometry` from a 2D polygon outline is the correct approach:
+
 - Pure 2D — no Z-edge artifacts
 - Can apply fill color + overlay hatch + thick outline separately
 - Clean polygon intersection/miter possible
@@ -561,17 +601,20 @@ BoxGeometry renders a 3D solid. When viewed orthographically from above:
 ### E3. Wall Join Geometry — Client vs Server
 
 **Server-side (recommended)**:
+
 - Python has `shapely` or can compute intersections natively
 - Wall join topology is already available in server memory
 - Single source of truth — no duplication of wall geometry logic
 - Adds `outlineMm` field to existing wire payload
 
 **Client-side (fallback)**:
+
 - Works offline
 - Can use wall join metadata (`wallCornerJoinSummary_v1`) already in wire payload (currently unused)
 - Requires TypeScript implementation of 2D polygon intersection math
 
 **Decision**: Implement BOTH:
+
 1. Server: add `outlineMm` to wall wire payload (primary path)
 2. Client: when `outlineMm` absent, compute outline from start/end/thickness/joins (offline/fallback)
 
@@ -581,42 +624,42 @@ BoxGeometry renders a 3D solid. When viewed orthographically from above:
 
 ### Wave 1 — Immediate Fixes ✅ COMPLETE
 
-| ID | Fix | Status |
-|----|-----|--------|
-| W1-01 | Wall hatch `depthTest: false` + Y-offset 0.003 + opacity 0.35 | ✅ DONE |
-| W1-02 | ACESFilmic tone mapping + exposure 1.05 | ✅ DONE |
-| W1-03 | Edge line opacity 0.38, threshold 20°, `--draft-cut` color | ✅ DONE |
+| ID    | Fix                                                                     | Status  |
+| ----- | ----------------------------------------------------------------------- | ------- |
+| W1-01 | Wall hatch `depthTest: false` + Y-offset 0.003 + opacity 0.35           | ✅ DONE |
+| W1-02 | ACESFilmic tone mapping + exposure 1.05                                 | ✅ DONE |
+| W1-03 | Edge line opacity 0.38, threshold 20°, `--draft-cut` color              | ✅ DONE |
 | W1-04 | Per-category PBR calibration (glass roughness 0.05, matte plaster 0.92) | ✅ DONE |
-| W1-05 | Camera INERTIA_DECAY 0.92 (smoother Rhino-like glide) | ✅ DONE |
-| W1-06 | Auto-fit camera on level load/switch | ✅ DONE |
+| W1-05 | Camera INERTIA_DECAY 0.92 (smoother Rhino-like glide)                   | ✅ DONE |
+| W1-06 | Auto-fit camera on level load/switch                                    | ✅ DONE |
 
 ### Wave 2 — Plan View Architecture ✅ MOSTLY COMPLETE
 
-| ID | Fix | Status |
-|----|-----|--------|
-| W2-01 | Server polygon outlines (plan_projection_wire.py) | ⬜ Not needed — client fallback works, server already sends wallCornerJoinSummary_v1 |
-| W2-02 | `planWallSectionMesh()` — ShapeGeometry fill + polygon-clipped hatch | ✅ DONE |
-| W2-03 | Floor hatch — 45° diagonal via `hatchPolygon2D()` scanline | ✅ DONE |
-| W2-04 | Wall section outline LineLoop | ✅ DONE (in planWallSectionMesh) |
-| W2-05 | Client-side miter/butt polygon computation via wallCornerJoinSummary_v1 | ✅ DONE |
+| ID    | Fix                                                                     | Status                                                                               |
+| ----- | ----------------------------------------------------------------------- | ------------------------------------------------------------------------------------ |
+| W2-01 | Server polygon outlines (plan_projection_wire.py)                       | ⬜ Not needed — client fallback works, server already sends wallCornerJoinSummary_v1 |
+| W2-02 | `planWallSectionMesh()` — ShapeGeometry fill + polygon-clipped hatch    | ✅ DONE                                                                              |
+| W2-03 | Floor hatch — 45° diagonal via `hatchPolygon2D()` scanline              | ✅ DONE                                                                              |
+| W2-04 | Wall section outline LineLoop                                           | ✅ DONE (in planWallSectionMesh)                                                     |
+| W2-05 | Client-side miter/butt polygon computation via wallCornerJoinSummary_v1 | ✅ DONE                                                                              |
 
 ### Wave 3 — 3D Material & Lighting Polish ✅ DONE
 
-| ID | Fix | Status |
-|----|-----|--------|
-| W3-01 | Per-category roughness/metalness | ✅ DONE |
-| W3-02 | Shadow map 2048, bias -0.001 | ✅ DONE (was already 2048) |
-| W3-03 | SSAO kernel radius 0.12 | ✅ DONE |
-| W3-04 | Subtle environment gradient sky | ⬜ LOW — deferred |
+| ID    | Fix                              | Status                     |
+| ----- | -------------------------------- | -------------------------- |
+| W3-01 | Per-category roughness/metalness | ✅ DONE                    |
+| W3-02 | Shadow map 2048, bias -0.001     | ✅ DONE (was already 2048) |
+| W3-03 | SSAO kernel radius 0.12          | ✅ DONE                    |
+| W3-04 | Subtle environment gradient sky  | ⬜ LOW — deferred          |
 
 ### Wave 4 — UX & Navigation (partial)
 
-| ID | Fix | Status |
-|----|-----|--------|
-| W4-01 | Left rail tab structure | ⬜ MED — future sprint |
-| W4-02 | Radix Tooltip for tool shortcuts | ⬜ MED — needs dep install |
-| W4-03 | Zoom-to-pointer | ✅ DONE (already implemented) |
-| W4-04 | Status bar tool guidance text | ⬜ LOW — deferred |
+| ID    | Fix                              | Status                        |
+| ----- | -------------------------------- | ----------------------------- |
+| W4-01 | Left rail tab structure          | ⬜ MED — future sprint        |
+| W4-02 | Radix Tooltip for tool shortcuts | ⬜ MED — needs dep install    |
+| W4-03 | Zoom-to-pointer                  | ✅ DONE (already implemented) |
+| W4-04 | Status bar tool guidance text    | ⬜ LOW — deferred             |
 
 ---
 

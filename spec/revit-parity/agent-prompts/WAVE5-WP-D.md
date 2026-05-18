@@ -52,6 +52,7 @@ In `WalkthroughPlaybackPanel.tsx`, implement smooth camera animation between key
 ### B — Scrubber / progress indicator
 
 Add a `<input type="range">` scrubber (`data-testid="walkthrough-scrubber"`) that:
+
 - `min=0`, `max={lastKeyframe.timeSec}`, `step=0.1`
 - Shows current playback position
 - Allows manual seek (sets elapsed time offset, calls `setOrbitCameraFromViewpointMm` for that
@@ -60,6 +61,7 @@ Add a `<input type="range">` scrubber (`data-testid="walkthrough-scrubber"`) tha
 ### C — Export path as JSON
 
 Add an "Export Path" button (`data-testid="walkthrough-export-path"`) that triggers:
+
 ```ts
 const json = JSON.stringify(selectedPath, null, 2);
 // download as {selectedPath.name}.json

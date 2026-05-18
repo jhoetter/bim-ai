@@ -37,6 +37,7 @@ Prettier runs automatically. **Always `git pull --rebase origin main` before pus
 ## Tasks
 
 The goal is to promote stair-by-component from Partial to Done:
+
 - Users can add individual run segments and landings to an existing stair
 - Each run has independent start/end position, riser count, and run width
 - Landings connect runs
@@ -73,6 +74,7 @@ Add if not present:
 ```
 
 Add command types:
+
 ```ts
 | { type: 'addStairRun'; run: Extract<Element, { kind: 'stair_run' }> }
 | { type: 'addStairLanding'; landing: Extract<Element, { kind: 'stair_landing' }> }
@@ -84,10 +86,12 @@ Add command types:
 ### B — Tool registration
 
 In `toolRegistry.ts`, add:
+
 ```ts
 { id: 'stair-run', hotkey: 'SR', label: 'Add Stair Run', mode: 'plan' }
 { id: 'stair-landing', hotkey: 'SL', label: 'Add Stair Landing', mode: 'plan' }
 ```
+
 Add both to `PALETTE_ORDER` near the stair tool.
 
 ---
@@ -101,10 +105,21 @@ type StairRunState =
   | { phase: 'place-start'; stairId: string }
   | { phase: 'place-end'; stairId: string; startMm: { xMm: number; yMm: number } };
 
-type StairRunEffect =
-  | { kind: 'addStairRun'; run: { stairId: string; startMm: { xMm: number; yMm: number }; endMm: { xMm: number; yMm: number }; runWidthMm: number; riserCount: number; runIndex: number } };
+type StairRunEffect = {
+  kind: 'addStairRun';
+  run: {
+    stairId: string;
+    startMm: { xMm: number; yMm: number };
+    endMm: { xMm: number; yMm: number };
+    runWidthMm: number;
+    riserCount: number;
+    runIndex: number;
+  };
+};
 
-export function initialStairRunState(): StairRunState { return { phase: 'idle' }; }
+export function initialStairRunState(): StairRunState {
+  return { phase: 'idle' };
+}
 
 export function reduceStairRun(
   state: StairRunState,
@@ -130,8 +145,15 @@ type StairLandingState =
   | { phase: 'pick-stair' }
   | { phase: 'sketching'; stairId: string; points: { xMm: number; yMm: number }[] };
 
-type StairLandingEffect =
-  | { kind: 'addStairLanding'; landing: { stairId: string; perimeterMm: { xMm: number; yMm: number }[]; elevationMm: number; landingIndex: number } };
+type StairLandingEffect = {
+  kind: 'addStairLanding';
+  landing: {
+    stairId: string;
+    perimeterMm: { xMm: number; yMm: number }[];
+    elevationMm: number;
+    landingIndex: number;
+  };
+};
 ```
 
 - Click adds points to perimeter
@@ -151,6 +173,7 @@ Wire both grammars following existing tool patterns. On `addStairRun` effect, di
 ### F — `Workspace.tsx` handlers
 
 Handle `addStairRun` and `addStairLanding`:
+
 ```ts
 case 'addStairRun':
   elementsById[cmd.run.id] = cmd.run;
@@ -170,19 +193,27 @@ case 'removeStairComponent':
 In `InspectorContent.tsx`:
 
 `case 'stair_run':`:
+
 ```tsx
 <div>
   <span data-testid="inspector-stair-run-count">Risers: {el.riserCount}</span>
-  <input type="number" data-testid="inspector-stair-run-width"
+  <input
+    type="number"
+    data-testid="inspector-stair-run-width"
     value={el.runWidthMm}
-    onChange={e => onPropertyChange('runWidthMm', +e.target.value)} />
-  <input type="number" data-testid="inspector-stair-run-risers"
+    onChange={(e) => onPropertyChange('runWidthMm', +e.target.value)}
+  />
+  <input
+    type="number"
+    data-testid="inspector-stair-run-risers"
     value={el.riserCount}
-    onChange={e => onPropertyChange('riserCount', +e.target.value)} />
+    onChange={(e) => onPropertyChange('riserCount', +e.target.value)}
+  />
 </div>
 ```
 
 `case 'stair_landing':`:
+
 ```tsx
 <div>
   <span data-testid="inspector-stair-landing-elevation">Elevation: {el.elevationMm} mm</span>
@@ -195,12 +226,14 @@ In `InspectorContent.tsx`:
 ### H — Palette commands + capability graph
 
 In `defaultCommands.ts`:
+
 ```ts
 { id: 'tool.stair-run', label: 'Add Stair Run', keywords: ['stair', 'run', 'component'], category: 'tool', invoke: (ctx) => startPlanTool(ctx, 'stair-run') }
 { id: 'tool.stair-landing', label: 'Add Stair Landing', keywords: ['stair', 'landing', 'component'], category: 'tool', invoke: (ctx) => startPlanTool(ctx, 'stair-landing') }
 ```
 
 In `commandCapabilities.ts`:
+
 ```ts
 { id: 'tool.stair-run', scope: 'document', intendedModes: ['plan'], precondition: null },
 { id: 'tool.stair-landing', scope: 'document', intendedModes: ['plan'], precondition: null },

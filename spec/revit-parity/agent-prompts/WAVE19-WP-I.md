@@ -9,9 +9,11 @@ This prompt is self-contained — start here.
 ## Context — what Wave 18 already delivered
 
 Wave 18 WP-H created:
+
 - `packages/web/src/plan/autoDimensionWalls.ts` — `autoDimensionWalls()` — generates `permanent_dimension` elements from wall sets
 
 **Still missing:**
+
 - `autoDimension` command type in `core/index.ts`
 - `Workspace.tsx` handler that calls `autoDimensionWalls` and dispatches `createElement` for each returned dim
 - Palette command `annotate.auto-dimension-walls` properly dispatching the command
@@ -43,6 +45,7 @@ Prettier runs automatically. **Always `git pull --rebase origin main` before pus
 ### A — Command type in `core/index.ts`
 
 Add if not present:
+
 ```ts
 | { type: 'autoDimensionWalls'; levelId: string | null; offsetMm?: number }
 ```
@@ -52,11 +55,13 @@ Add if not present:
 ### B — `Workspace.tsx` handler
 
 Import `autoDimensionWalls`:
+
 ```ts
 import { autoDimensionWalls } from '../plan/autoDimensionWalls';
 ```
 
 In the semantic command handler switch:
+
 ```ts
 case 'autoDimensionWalls': {
   const walls = Object.values(elementsById).filter(
@@ -89,6 +94,7 @@ Find the existing `annotate.auto-dimension-walls` command (or `modify.auto-dimen
 If the command already exists with that ID, update the `invoke` to dispatch `{ type: 'autoDimensionWalls', levelId }`.
 
 In `commandCapabilities.ts`, add or confirm:
+
 ```ts
 { id: 'annotate.auto-dimension-walls', scope: 'document', intendedModes: ['plan'], precondition: null },
 ```

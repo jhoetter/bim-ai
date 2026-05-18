@@ -44,10 +44,10 @@ Create or extend `packages/web/src/plan/openingClearance.ts`:
 export type ClearanceViolation = {
   elementId: string;
   kind: 'door' | 'window' | 'stair';
-  clearanceMm: number;       // actual head height at this element
-  requiredMm: number;        // minimum required (default: 2100mm for doors/stairs)
+  clearanceMm: number; // actual head height at this element
+  requiredMm: number; // minimum required (default: 2100mm for doors/stairs)
   positionMm: { xMm: number; yMm: number };
-  message: string;           // e.g. "Door head height 1800mm < required 2100mm"
+  message: string; // e.g. "Door head height 1800mm < required 2100mm"
 };
 
 /**
@@ -58,7 +58,7 @@ export function checkHeadHeightClearances(
   levelId: string,
   elementsById: Record<string, Element | undefined>,
   requiredDoorMm = 2100,
-  requiredStairMm = 2000
+  requiredStairMm = 2000,
 ): ClearanceViolation[] {
   const violations: ClearanceViolation[] = [];
 
@@ -105,7 +105,7 @@ In `symbology.ts`, add a function to render clearance violation markers:
 ```ts
 export function buildClearanceViolationMarkers(
   violations: ClearanceViolation[],
-  scene: THREE.Scene | THREE.Group
+  scene: THREE.Scene | THREE.Group,
 ): void {
   for (const v of violations) {
     // Red circle at violation position
@@ -132,6 +132,7 @@ export function buildClearanceViolationMarkers(
 ### C — Palette command + Workspace handler
 
 In `defaultCommands.ts`:
+
 ```ts
 {
   id: 'analysis.check-clearances',
@@ -143,6 +144,7 @@ In `defaultCommands.ts`:
 ```
 
 In `Workspace.tsx`:
+
 ```ts
 checkClearances: () => {
   const activeLevelId = /* get active level ID */;
@@ -176,18 +178,33 @@ interface Props {
 export function ClearanceViolationPanel({ violations, onClose }: Props) {
   if (violations.length === 0) return null;
   return (
-    <div data-testid="clearance-violation-panel"
-      style={{ position: 'absolute', bottom: 8, left: 8, background: '#fff',
-        border: '2px solid #ef4444', borderRadius: 6, padding: 12, maxWidth: 300 }}>
+    <div
+      data-testid="clearance-violation-panel"
+      style={{
+        position: 'absolute',
+        bottom: 8,
+        left: 8,
+        background: '#fff',
+        border: '2px solid #ef4444',
+        borderRadius: 6,
+        padding: 12,
+        maxWidth: 300,
+      }}
+    >
       <div style={{ display: 'flex', justifyContent: 'space-between' }}>
         <strong data-testid="clearance-violation-count">
           {violations.length} clearance issue{violations.length !== 1 ? 's' : ''}
         </strong>
-        <button data-testid="clearance-violation-close" onClick={onClose}>×</button>
+        <button data-testid="clearance-violation-close" onClick={onClose}>
+          ×
+        </button>
       </div>
-      {violations.map(v => (
-        <div key={v.elementId} data-testid={`clearance-violation-${v.elementId}`}
-          style={{ fontSize: 11, color: '#ef4444', marginTop: 4 }}>
+      {violations.map((v) => (
+        <div
+          key={v.elementId}
+          data-testid={`clearance-violation-${v.elementId}`}
+          style={{ fontSize: 11, color: '#ef4444', marginTop: 4 }}
+        >
           {v.message}
         </div>
       ))}
@@ -201,6 +218,7 @@ export function ClearanceViolationPanel({ violations, onClose }: Props) {
 ### E — Capability graph
 
 In `commandCapabilities.ts`:
+
 ```ts
 { id: 'analysis.check-clearances', scope: 'document', intendedModes: ['plan'], precondition: null },
 ```
@@ -210,6 +228,7 @@ In `commandCapabilities.ts`:
 ### F — Tests
 
 `packages/web/src/plan/openingClearance.test.ts`:
+
 ```ts
 describe('checkHeadHeightClearances — §8.4', () => {
   it('returns empty array when no elements on level', () => { ... });
@@ -227,6 +246,7 @@ describe('checkHeadHeightClearances — §8.4', () => {
 ```
 
 `packages/web/src/workspace/ClearanceViolationPanel.test.tsx`:
+
 ```ts
 describe('ClearanceViolationPanel — §8.4', () => {
   it('renders null when violations is empty', () => { ... });

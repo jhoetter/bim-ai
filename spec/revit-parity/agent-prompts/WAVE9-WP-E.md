@@ -41,6 +41,7 @@ Read ALL of these before writing anything:
 Check `core/index.ts` for a `shaft` element kind. If it exists, skip to task B.
 
 If absent, add:
+
 ```ts
 export type ShaftElement = {
   kind: 'shaft';
@@ -67,11 +68,10 @@ Add to Element union and Command union. Handle `create_shaft` in `Workspace.tsx`
 ### B — Stair bounding box helper
 
 Create `packages/web/src/plan/stairBoundingBox.ts`:
+
 ```ts
 /** Returns the axis-aligned bounding polygon (4-corner rect) of a stair in plan (mm). */
-export function stairBoundaryMm(
-  stair: Extract<Element, { kind: 'stair' }>,
-): BoundaryPoint[]
+export function stairBoundaryMm(stair: Extract<Element, { kind: 'stair' }>): BoundaryPoint[];
 ```
 
 - The stair runs from `startMm` to `endMm` in plan; it has `widthMm`
@@ -83,6 +83,7 @@ export function stairBoundaryMm(
 In `InspectorContent.tsx`, for `el.kind === 'stair'`, add:
 
 **"Create Floor Opening" button** (`data-testid="inspector-stair-create-opening"`):
+
 - On click:
   1. Compute `stairBoundaryMm(el)` to get the shaft boundary
   2. The shaft base level = `el.baseLevelId`
@@ -96,10 +97,9 @@ Add a small helper text below the button: "Creates a shaft opening through the f
 Check if a shaft plan symbol exists in `planElementMeshBuilders.ts` or `symbology.ts`. If not:
 
 Create `packages/web/src/plan/shaftPlanThree.ts`:
+
 ```ts
-export function shaftPlanThree(
-  shaft: Extract<Element, { kind: 'shaft' }>,
-): THREE.Group
+export function shaftPlanThree(shaft: Extract<Element, { kind: 'shaft' }>): THREE.Group;
 ```
 
 - Draw the boundary as a dashed closed polygon at `PLAN_Y + 0.002`
@@ -112,6 +112,7 @@ Wire into `symbology.ts` if a shaft loop doesn't exist.
 ### E — Tests
 
 Write `packages/web/src/plan/stairBoundingBox.test.ts`:
+
 ```ts
 describe('stairBoundaryMm — §2.5.1 + §2.5.3', () => {
   it('returns 4 corners for a horizontal stair run', () => { ... });
@@ -122,6 +123,7 @@ describe('stairBoundaryMm — §2.5.1 + §2.5.3', () => {
 ```
 
 Write `packages/web/src/workspace/inspector/stairOpeningInspector.test.tsx`:
+
 ```ts
 describe('stair floor opening inspector — §2.5.3', () => {
   it('renders inspector-stair-create-opening button', () => { ... });
@@ -131,6 +133,7 @@ describe('stair floor opening inspector — §2.5.3', () => {
 ```
 
 Write `packages/web/src/plan/shaftPlan.test.ts`:
+
 ```ts
 describe('shaftPlanThree — §2.5.1', () => {
   it('returns Group with children for a valid shaft', () => { ... });
@@ -143,6 +146,7 @@ describe('shaftPlanThree — §2.5.1', () => {
 ## Commit and push
 
 After all tasks are done and tests pass (`pnpm test --filter @bim-ai/web`), commit:
+
 ```
 git add -p
 git commit -m "feat(wave9/E): stair floor opening auto-coordination + shaft plan symbol (§2.5.1 + §2.5.3)"

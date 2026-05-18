@@ -904,7 +904,13 @@ test('site setup --json generates deterministic georeference/site baseline bundl
     },
   ]);
   const contextObjects = JSON.stringify([
-    { id: 'ctx-tree', contextType: 'tree', label: 'Existing tree', positionMm: { xMm: 12000, yMm: 6000 }, scale: 1.2 },
+    {
+      id: 'ctx-tree',
+      contextType: 'tree',
+      label: 'Existing tree',
+      positionMm: { xMm: 12000, yMm: 6000 },
+      scale: 1.2,
+    },
   ]);
   const res = await runCli(
     [
@@ -976,7 +982,18 @@ test('site focused commands generate typed grading/property/origin/sun/excavatio
     env,
   );
   const propertyLine = await runCli(
-    ['site', 'property-line', 'create', '--line', '0,0;25000,0', '--classification', 'street', '--setback', '4500', '--json'],
+    [
+      'site',
+      'property-line',
+      'create',
+      '--line',
+      '0,0;25000,0',
+      '--classification',
+      'street',
+      '--setback',
+      '4500',
+      '--json',
+    ],
     env,
   );
   const basePoint = await runCli(
@@ -984,7 +1001,16 @@ test('site focused commands generate typed grading/property/origin/sun/excavatio
     env,
   );
   const surveyPoint = await runCli(
-    ['site', 'survey-point', 'move', '--position', '1000,2000,0', '--shared-elevation', '510000', '--json'],
+    [
+      'site',
+      'survey-point',
+      'move',
+      '--position',
+      '1000,2000,0',
+      '--shared-elevation',
+      '510000',
+      '--json',
+    ],
     env,
   );
   const sun = await runCli(
@@ -992,7 +1018,22 @@ test('site focused commands generate typed grading/property/origin/sun/excavatio
     env,
   );
   const excavation = await runCli(
-    ['site', 'excavation', 'create', '--id', 'ex-1', '--host-toposolid', 'topo-1', '--cutter', 'floor-1', '--cut-mode', 'custom_depth', '--custom-depth', '1200', '--json'],
+    [
+      'site',
+      'excavation',
+      'create',
+      '--id',
+      'ex-1',
+      '--host-toposolid',
+      'topo-1',
+      '--cutter',
+      'floor-1',
+      '--cut-mode',
+      'custom_depth',
+      '--custom-depth',
+      '1200',
+      '--json',
+    ],
     env,
   );
 
@@ -1004,7 +1045,10 @@ test('site focused commands generate typed grading/property/origin/sun/excavatio
   assert.equal(JSON.parse(basePoint.stdout).body.bundle.commands[0].type, 'rotateProjectBasePoint');
   assert.equal(JSON.parse(surveyPoint.stdout).body.bundle.commands[0].type, 'moveSurveyPoint');
   assert.equal(JSON.parse(sun.stdout).body.bundle.commands[0].type, 'updateSunSettings');
-  assert.equal(JSON.parse(excavation.stdout).body.bundle.commands[0].type, 'CreateToposolidExcavation');
+  assert.equal(
+    JSON.parse(excavation.stdout).body.bundle.commands[0].type,
+    'CreateToposolidExcavation',
+  );
 });
 
 test('view save-3d --json generates saveViewpoint payload with camera', async () => {

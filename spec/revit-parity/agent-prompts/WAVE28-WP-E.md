@@ -9,6 +9,7 @@ This prompt is self-contained — start here.
 ## Context
 
 §15.1.2 "Die Multifunktionsleiste »Erstellen«" is Partial P1. The family editor already has:
+
 - `family_parameter` element kind with name, paramType, defaultValue, isInstance, linkedDimensionId, linkedProperty
 - `FamilyParameterPanel.tsx` with add/delete/value-change UI
 - `familyParameterEval.ts` with `applyFamilyParameters()` and `validateFamilyParameters()`
@@ -16,6 +17,7 @@ This prompt is self-contained — start here.
 What's still missing: **formula evaluation** — in Revit, a parameter can have a formula like `= Width / 2` or `= IF(isDouble, 900, 600)`. This is a key differentiator for parametric families.
 
 This task adds:
+
 1. `formula?: string` field on `family_parameter` element
 2. `evaluateFamilyParameterFormula(formula, params)` utility function
 3. `applyFamilyParameters` updated to evaluate formulas
@@ -33,6 +35,7 @@ packages/web/src/familyEditor/FamilyParameterPanel.tsx  — find parameter panel
 ```
 
 Run before editing:
+
 - `grep -n "family_parameter\|formula\|defaultValue" packages/core/src/index.ts | head -10`
 - `grep -n "applyFamilyParameters\|evaluateFormula\|formula" packages/web/src/familyEditor/familyParameterEval.ts | head -10`
 - `grep -n "formula\|input\|onChange" packages/web/src/familyEditor/FamilyParameterPanel.tsx | head -15`

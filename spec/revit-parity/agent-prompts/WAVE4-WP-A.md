@@ -40,6 +40,7 @@ Prettier runs automatically after every Edit/Write.
 
 In `InspectorContent.tsx`, find the `case 'wall':` block. Replace the read-only slope `<FieldRow>`
 with an editable `<input type="number">`:
+
 - **Slope (°)** — dispatches `{ type: 'updateElement', id, patch: { slopeDeg: v } }` on blur;
   clamp to [−45, 45]; step 0.5; data-testid `"inspector-wall-slope-deg"`
 - **Taper ratio** — new input below slope; dispatches `{ type: 'updateElement', id, patch: { taperRatio: v } }`;
@@ -54,6 +55,7 @@ Show both inputs only for walls (not for curtain walls where `isCurtainWall === 
 In the wall mesh builder (whichever file handles wall 3D geometry — read it first):
 
 When `wall.slopeDeg` is set and non-zero:
+
 1. Compute `slopeRad = (slopeDeg * Math.PI) / 180`.
 2. After building the wall box/extrusion, apply a shear transform to the top face:
    `topXOffset = wallHeightM * Math.tan(slopeRad)` along the wall's X axis.
@@ -69,6 +71,7 @@ If shear logic already exists and is partially correct, fix rather than replace.
 ### C — 3D mesh: apply taperRatio
 
 When `wall.taperRatio` is set and !== 1:
+
 - Base thickness = `wall.thicknessMm / 1000` (in metres).
 - Top thickness = `baseThickness * taperRatio`.
 - Build the wall as a **trapezoid extrusion** (a `BufferGeometry` with a trapezoidal cross-section)
@@ -94,16 +97,14 @@ base outline.
 ## Tests
 
 Add to `packages/web/src/viewport/wallSlopeTaper.test.ts` (new file):
+
 1. `slopeDeg: 10` shifts top vertices: `topX ≠ baseX`, `bottomX === baseX`
 2. `slopeDeg: 0` produces same geometry as no-slope wall (regression)
 3. `taperRatio: 0.5` makes top thickness half of base thickness
 4. `taperRatio: 1` produces a box (within float epsilon)
 5. `taperRatio: 10` clamps to valid range without crash
 
-Add to inspector tests:
-6. Slope input present for a regular wall (not curtain wall)
-7. Slope input absent for curtain wall (isCurtainWall: true)
-8. Dispatches correct updateElement patch on blur
+Add to inspector tests: 6. Slope input present for a regular wall (not curtain wall) 7. Slope input absent for curtain wall (isCurtainWall: true) 8. Dispatches correct updateElement patch on blur
 
 ---
 
@@ -112,11 +113,13 @@ Add to inspector tests:
 Edit `spec/revit-parity/revit2026-parity-tracker.md`:
 
 Update §3.5.7 description — append:
+
 ```
 Inspector: editable slope (°) and taper ratio inputs (data-testids inspector-wall-slope-deg,
 inspector-wall-taper-ratio). Mesh builder: slopeDeg shears top face; taperRatio builds
 trapezoidal extrusion. Plan symbol: dashed top outline for sloped/tapered walls. 8 tests.
 ```
+
 Change status to `Done — P1`.
 
 Update summary table row for Chapter 3.

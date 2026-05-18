@@ -42,6 +42,7 @@ Read ALL of these before writing anything:
 ### A — Store: active group edit state
 
 In `store.ts`, add if not present:
+
 ```ts
 activeGroupEditId: string | null;
 setActiveGroupEditId: (id: string | null) => void;
@@ -54,6 +55,7 @@ Default: `null`.
 In `Workspace.tsx`, ensure the `editGroup` and `finishEditGroup` command handlers do:
 
 **`editGroup` handler**:
+
 ```ts
 case 'editGroup': {
   const groupId = cmd.groupId as string;
@@ -64,6 +66,7 @@ case 'editGroup': {
 ```
 
 **`finishEditGroup` handler**:
+
 ```ts
 case 'finishEditGroup': {
   store.setActiveGroupEditId(null);
@@ -99,6 +102,7 @@ Read how opacity/ghosting is currently done (phase overrides use a similar patte
 ### D — Selection restriction
 
 In `PlanCanvas.tsx`, in the click handler, when `activeGroupEditId` is set:
+
 - If the user clicks an element that is NOT in the active group's `memberIds`, do NOT select it
 - Show a brief status hint: "Click a group member to select · Press Esc or Finish to exit group editing"
 - Escape key should call `finishEditGroup`
@@ -133,6 +137,7 @@ Also add an **"Edit Group"** button in the group inspector panel in `InspectorCo
 ### F — Tests
 
 Write `packages/web/src/workspace/groupEditMode.test.ts`:
+
 ```ts
 describe('group edit mode — §8.9.3', () => {
   it('editGroup command sets activeGroupEditId', () => { ... });
@@ -147,6 +152,7 @@ describe('group edit mode — §8.9.3', () => {
 ## Commit and push
 
 After tests pass (`pnpm test --filter @bim-ai/web`):
+
 ```
 git add -p
 git commit -m "feat(wave12/A): group edit mode UI — ghost, selection restriction, finish button (§8.9.3)"

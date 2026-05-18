@@ -9,12 +9,14 @@ This prompt is self-contained — start here.
 ## Context
 
 §1.6.2 "Dateimenü" is Partial P1. bim-ai is **cloud-native** — state is persisted continuously to the DB; "Save" is a named milestone (version commit), not a file write. Milestones are already implemented:
+
 - `packages/web/src/collab/milestoneStore.ts` — Zustand store, fetches `/api/models/{id}/milestones`, create/delete API calls; `Milestone` type has `id`, `label`, `createdAt`
 - "Save Milestone" button in `ProjectMenu.tsx` (`data-testid="project-menu-save-milestone"`)
 
 What's missing: a **Version History panel** where users can browse named milestones, see their timestamps, and restore to a previous one. This is the cloud-native equivalent of Revit's "Recover backup" / version history.
 
 This task adds:
+
 1. `RestoreMilestoneCmd` in core (signals intent; actual restore is local store reset from snapshot)
 2. `ProjectVersionHistoryPanel.tsx` — lists all milestones with timestamp + label + Restore button
 3. A toggle button in `ProjectMenu.tsx` or `Workspace.tsx` to open the panel
@@ -33,6 +35,7 @@ packages/web/src/workspace/Workspace.tsx           — find where floating panel
 ```
 
 Run before editing:
+
 - `cat packages/web/src/collab/milestoneStore.ts`
 - `grep -n "save-milestone\|saveMilestone\|milestone" packages/web/src/workspace/project/ProjectMenu.tsx | head -15`
 - `grep -n "showHelpSearch\|HelpSearchPanel\|showVersion" packages/web/src/workspace/Workspace.tsx | head -10`
@@ -70,7 +73,11 @@ interface ProjectVersionHistoryPanelProps {
   onRestore?: (milestoneId: string) => void;
 }
 
-export function ProjectVersionHistoryPanel({ modelId, onClose, onRestore }: ProjectVersionHistoryPanelProps): JSX.Element {
+export function ProjectVersionHistoryPanel({
+  modelId,
+  onClose,
+  onRestore,
+}: ProjectVersionHistoryPanelProps): JSX.Element {
   const { milestones, loading, loadMilestones, deleteMilestone } = useMilestoneStore();
 
   useEffect(() => {
@@ -96,19 +103,48 @@ export function ProjectVersionHistoryPanel({ modelId, onClose, onRestore }: Proj
         zIndex: 10000,
       }}
     >
-      <div style={{ display: 'flex', alignItems: 'center', padding: '10px 14px', borderBottom: '1px solid var(--border, #444)' }}>
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          padding: '10px 14px',
+          borderBottom: '1px solid var(--border, #444)',
+        }}
+      >
         <span style={{ fontSize: 13, fontWeight: 600, flex: 1 }}>Version History</span>
-        <button data-testid="version-history-close" onClick={onClose}
-          style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 16, color: 'inherit' }}>✕</button>
+        <button
+          data-testid="version-history-close"
+          onClick={onClose}
+          style={{
+            background: 'none',
+            border: 'none',
+            cursor: 'pointer',
+            fontSize: 16,
+            color: 'inherit',
+          }}
+        >
+          ✕
+        </button>
       </div>
       <div style={{ flex: 1, overflowY: 'auto', padding: 12 }}>
         {loading && <p style={{ fontSize: 12, color: '#888' }}>Loading…</p>}
         {!loading && milestones.length === 0 && (
-          <p style={{ fontSize: 12, color: '#888' }}>No saved versions yet. Use "Save Milestone" to create one.</p>
+          <p style={{ fontSize: 12, color: '#888' }}>
+            No saved versions yet. Use "Save Milestone" to create one.
+          </p>
         )}
         {milestones.map((m) => (
-          <div key={m.id} data-testid={`version-history-row-${m.id}`}
-               style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 0', borderBottom: '1px solid var(--border, #2a2a3e)' }}>
+          <div
+            key={m.id}
+            data-testid={`version-history-row-${m.id}`}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 10,
+              padding: '8px 0',
+              borderBottom: '1px solid var(--border, #2a2a3e)',
+            }}
+          >
             <div style={{ flex: 1 }}>
               <div style={{ fontSize: 12, fontWeight: 600 }}>{m.label}</div>
               <div style={{ fontSize: 10, color: '#888', marginTop: 2 }}>
@@ -119,12 +155,22 @@ export function ProjectVersionHistoryPanel({ modelId, onClose, onRestore }: Proj
               data-testid={`version-history-restore-${m.id}`}
               onClick={() => onRestore?.(m.id)}
               style={{ fontSize: 10, padding: '2px 8px', cursor: 'pointer', borderRadius: 3 }}
-            >Restore</button>
+            >
+              Restore
+            </button>
             <button
               data-testid={`version-history-delete-${m.id}`}
               onClick={() => void deleteMilestone(modelId, m.id)}
-              style={{ fontSize: 10, padding: '2px 6px', cursor: 'pointer', borderRadius: 3, opacity: 0.6 }}
-            >✕</button>
+              style={{
+                fontSize: 10,
+                padding: '2px 6px',
+                cursor: 'pointer',
+                borderRadius: 3,
+                opacity: 0.6,
+              }}
+            >
+              ✕
+            </button>
           </div>
         ))}
       </div>
@@ -146,16 +192,18 @@ const [showVersionHistory, setShowVersionHistory] = useState(false);
 Add to the JSX render (find where HelpSearchPanel or similar panels are rendered):
 
 ```tsx
-{showVersionHistory && (
-  <ProjectVersionHistoryPanel
-    modelId={/* read from store or props */}
-    onClose={() => setShowVersionHistory(false)}
-    onRestore={(milestoneId) => {
-      void onSemanticCommand?.({ type: 'restoreMilestone', milestoneId });
-      setShowVersionHistory(false);
-    }}
-  />
-)}
+{
+  showVersionHistory && (
+    <ProjectVersionHistoryPanel
+      modelId={/* read from store or props */}
+      onClose={() => setShowVersionHistory(false)}
+      onRestore={(milestoneId) => {
+        void onSemanticCommand?.({ type: 'restoreMilestone', milestoneId });
+        setShowVersionHistory(false);
+      }}
+    />
+  );
+}
 ```
 
 Read the actual Workspace.tsx to find the correct `modelId` source and the semantic command dispatch mechanism. Also add a handler:

@@ -9,9 +9,11 @@ This prompt is self-contained — start here.
 ## Context — what Wave 18 already delivered
 
 Wave 18 WP-F created:
+
 - `packages/web/src/plan/cropRegionGrips.ts` — `getCropRegionGrips()`, `applyCropGripDrag()`, `CropRegionMm`, `CropEdge`, `CropRegionGrip` types
 
 **Still missing:**
+
 - `cropRegionMm` + `cropRegionEnabled` fields on `plan_view` element in `core/index.ts`
 - Three.js clipping planes applied in `Viewport.tsx` (or `symbology.ts`) based on the plan view's `cropRegionMm`
 - `PlanViewHeader.tsx` — crop region on/off toggle button
@@ -43,6 +45,7 @@ Prettier runs automatically. **Always `git pull --rebase origin main` before pus
 ### A — `plan_view` additional fields in `core/index.ts`
 
 Add if not present on the `plan_view` element:
+
 ```ts
 cropRegionMm?: { xMm: number; yMm: number; widthMm: number; heightMm: number } | null;
 cropRegionEnabled?: boolean;
@@ -59,7 +62,11 @@ import * as THREE from 'three';
 import { CropRegionMm } from '../plan/cropRegionGrips';
 
 // Inside the useEffect or render loop that runs when activePlanView changes:
-function applyPlanCropClipping(renderer: THREE.WebGLRenderer, crop: CropRegionMm | null | undefined, enabled: boolean) {
+function applyPlanCropClipping(
+  renderer: THREE.WebGLRenderer,
+  crop: CropRegionMm | null | undefined,
+  enabled: boolean,
+) {
   if (!enabled || !crop) {
     renderer.clippingPlanes = [];
     renderer.localClippingEnabled = false;
@@ -68,9 +75,9 @@ function applyPlanCropClipping(renderer: THREE.WebGLRenderer, crop: CropRegionMm
   const s = 1 / 1000; // mm → metres
   renderer.localClippingEnabled = true;
   renderer.clippingPlanes = [
-    new THREE.Plane(new THREE.Vector3(1, 0, 0), -crop.xMm * s),           // left
+    new THREE.Plane(new THREE.Vector3(1, 0, 0), -crop.xMm * s), // left
     new THREE.Plane(new THREE.Vector3(-1, 0, 0), (crop.xMm + crop.widthMm) * s), // right
-    new THREE.Plane(new THREE.Vector3(0, 1, 0), -crop.yMm * s),           // bottom
+    new THREE.Plane(new THREE.Vector3(0, 1, 0), -crop.yMm * s), // bottom
     new THREE.Plane(new THREE.Vector3(0, -1, 0), (crop.yMm + crop.heightMm) * s), // top
   ];
 }
@@ -81,6 +88,7 @@ Call `applyPlanCropClipping(renderer, activePlanView?.cropRegionMm, activePlanVi
 If the plan canvas uses a `<canvas>` ref and a Three.js `WebGLRenderer`, find it and apply clipping planes there. If the renderer is managed differently (e.g. in a separate hook), follow the same pattern adapted to that structure.
 
 Clean up clipping planes on unmount:
+
 ```ts
 return () => {
   renderer.clippingPlanes = [];
@@ -98,16 +106,22 @@ In `PlanViewHeader.tsx`, add a crop region toggle button alongside the existing 
 import { getCropRegionGrips } from '../plan/cropRegionGrips';
 
 // In the PlanViewHeader render:
-{activeView?.cropRegionMm && (
-  <button
-    data-testid="plan-header-crop-region-toggle"
-    style={{ fontSize: 11, padding: '1px 6px', opacity: activeView.cropRegionEnabled ? 1 : 0.5 }}
-    onClick={() => onPropertyChange?.('cropRegionEnabled', !activeView.cropRegionEnabled)}
-    title={activeView.cropRegionEnabled ? 'Crop region ON — click to disable' : 'Crop region OFF — click to enable'}
-  >
-    {activeView.cropRegionEnabled ? '⬜ Crop ON' : '⬜ Crop OFF'}
-  </button>
-)}
+{
+  activeView?.cropRegionMm && (
+    <button
+      data-testid="plan-header-crop-region-toggle"
+      style={{ fontSize: 11, padding: '1px 6px', opacity: activeView.cropRegionEnabled ? 1 : 0.5 }}
+      onClick={() => onPropertyChange?.('cropRegionEnabled', !activeView.cropRegionEnabled)}
+      title={
+        activeView.cropRegionEnabled
+          ? 'Crop region ON — click to disable'
+          : 'Crop region OFF — click to enable'
+      }
+    >
+      {activeView.cropRegionEnabled ? '⬜ Crop ON' : '⬜ Crop OFF'}
+    </button>
+  );
+}
 ```
 
 ---
@@ -115,6 +129,7 @@ import { getCropRegionGrips } from '../plan/cropRegionGrips';
 ### D — Palette command + capability graph
 
 In `defaultCommands.ts`:
+
 ```ts
 { id: 'view.toggle-crop-region', label: 'Toggle Crop Region',
   keywords: ['crop', 'region', 'boundary', 'clip', 'view', 'frame'],
@@ -125,6 +140,7 @@ In `defaultCommands.ts`:
 ```
 
 In `commandCapabilities.ts`:
+
 ```ts
 { id: 'view.toggle-crop-region', scope: 'document', intendedModes: ['plan'], precondition: null },
 ```
@@ -149,7 +165,7 @@ describe('crop region clipping — §1.6.10', () => {
 
   it('grip edges are left, right, top, bottom', () => {
     const grips = getCropRegionGrips(crop);
-    const edges = grips.map(g => g.edge).sort();
+    const edges = grips.map((g) => g.edge).sort();
     expect(edges).toEqual(['bottom', 'left', 'right', 'top']);
   });
 

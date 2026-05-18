@@ -11,6 +11,7 @@ This prompt is self-contained — start here.
 §15.1.3 "Fensterbearbeitung" is Partial P1. The family editor has extrusions, voids, sweeps, blends, parameters, constraints, opening cuts, and category assignment. What's still missing: **reference planes** — in Revit, reference planes are construction aids in the family editor that define parametric origins and axes (e.g., "Width = distance between ref planes 1 and 2"). They're the backbone of parametric family geometry.
 
 This task adds:
+
 1. `family_reference_plane` element type in `@bim-ai/core`
 2. `AddFamilyReferencePlaneCmd` command type
 3. Workspace handler
@@ -32,6 +33,7 @@ packages/web/src/workspace/WorkspaceRightRail.tsx       — find inspector cases
 ```
 
 Run before editing:
+
 - `grep -n "family_constraint\|family_opening_cut\|family_component" packages/core/src/index.ts | head -15`
 - `grep -n "family-editor-add\|Add Constraint\|Add Component" packages/web/src/families/FamilyEditorWorkbench.tsx | head -10`
 - `grep -n "addFamilyConstraint\|family_constraint\|family_opening" packages/web/src/workspace/Workspace.tsx | head -10`
@@ -112,7 +114,9 @@ if (cmd.type === 'addFamilyReferencePlane') {
 Find the section in `FamilyEditorWorkbench.tsx` where other "Add …" buttons are defined (e.g., "Add Constraint", "+ Component"). Add:
 
 ```tsx
-{/* §15.1.3: reference plane */}
+{
+  /* §15.1.3: reference plane */
+}
 <button
   data-testid="family-editor-add-ref-plane-btn"
   onClick={() =>
@@ -128,7 +132,7 @@ Find the section in `FamilyEditorWorkbench.tsx` where other "Add …" buttons ar
   style={{ fontSize: 11, padding: '2px 6px', cursor: 'pointer' }}
 >
   + Ref Plane
-</button>
+</button>;
 ```
 
 Where `refPlanesCount` = count of `family_reference_plane` elements for this family. Adapt to actual prop names.
@@ -215,7 +219,7 @@ registerCommand({
   label: 'Add Family Reference Plane',
   keywords: ['reference plane', 'family', 'parametric', 'axis', 'construction plane', 'ref plane'],
   category: 'family',
-  isAvailable: (ctx) => !!(ctx.activeFamilyId),
+  isAvailable: (ctx) => !!ctx.activeFamilyId,
   invoke: (ctx) => {
     if (ctx.activeFamilyId) {
       ctx.dispatchCommand?.({

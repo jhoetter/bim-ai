@@ -62,6 +62,7 @@ Add (if not present):
 ```
 
 Add command types:
+
 ```ts
 | { type: 'addFamilyParameter'; parameter: Extract<Element, { kind: 'family_parameter' }> }
 | { type: 'deleteFamilyParameter'; parameterId: string }
@@ -105,7 +106,7 @@ export function FamilyParameterPanel({ parameters, onAdd, onDelete, onValueChang
           </tr>
         </thead>
         <tbody>
-          {parameters.map(p => (
+          {parameters.map((p) => (
             <tr key={p.id} data-testid={`family-param-row-${p.id}`}>
               <td data-testid={`family-param-name-${p.id}`}>{p.name}</td>
               <td data-testid={`family-param-type-${p.id}`}>{p.paramType}</td>
@@ -115,19 +116,26 @@ export function FamilyParameterPanel({ parameters, onAdd, onDelete, onValueChang
                   type={p.paramType === 'boolean' ? 'checkbox' : 'number'}
                   value={p.paramType !== 'boolean' ? (p.defaultValue as number) : undefined}
                   checked={p.paramType === 'boolean' ? (p.defaultValue as boolean) : undefined}
-                  onChange={e => onValueChange(
-                    p.id,
-                    p.paramType === 'boolean' ? e.target.checked : +e.target.value
-                  )}
+                  onChange={(e) =>
+                    onValueChange(
+                      p.id,
+                      p.paramType === 'boolean' ? e.target.checked : +e.target.value,
+                    )
+                  }
                 />
               </td>
               <td>
-                <input type="checkbox" data-testid={`family-param-instance-${p.id}`}
-                  checked={p.isInstance} readOnly />
+                <input
+                  type="checkbox"
+                  data-testid={`family-param-instance-${p.id}`}
+                  checked={p.isInstance}
+                  readOnly
+                />
               </td>
               <td>
-                <button data-testid={`family-param-delete-${p.id}`}
-                  onClick={() => onDelete(p.id)}>×</button>
+                <button data-testid={`family-param-delete-${p.id}`} onClick={() => onDelete(p.id)}>
+                  ×
+                </button>
               </td>
             </tr>
           ))}
@@ -140,12 +148,12 @@ export function FamilyParameterPanel({ parameters, onAdd, onDelete, onValueChang
           data-testid="family-param-new-name"
           placeholder="Parameter name"
           value={newName}
-          onChange={e => setNewName(e.target.value)}
+          onChange={(e) => setNewName(e.target.value)}
         />
         <select
           data-testid="family-param-new-type"
           value={newType}
-          onChange={e => setNewType(e.target.value as FamilyParam['paramType'])}
+          onChange={(e) => setNewType(e.target.value as FamilyParam['paramType'])}
         >
           <option value="length">Length (mm)</option>
           <option value="angle">Angle (°)</option>
@@ -192,7 +200,7 @@ type FamilyParam = Extract<Element, { kind: 'family_parameter' }>;
  */
 export function applyFamilyParameters(
   parameters: FamilyParam[],
-  elementsById: Record<string, Element | undefined>
+  elementsById: Record<string, Element | undefined>,
 ): Record<string, Partial<Record<string, unknown>>> {
   const updates: Record<string, Partial<Record<string, unknown>>> = {};
 
@@ -238,14 +246,20 @@ If `FamilyEditorWorkbench.tsx` exists, integrate `FamilyParameterPanel`:
 // Add to the family editor UI:
 <FamilyParameterPanel
   parameters={familyParameters}
-  onAdd={(param) => void onSemanticCommand({
-    type: 'addFamilyParameter',
-    parameter: { ...param, id: crypto.randomUUID() },
-  })}
+  onAdd={(param) =>
+    void onSemanticCommand({
+      type: 'addFamilyParameter',
+      parameter: { ...param, id: crypto.randomUUID() },
+    })
+  }
   onDelete={(id) => void onSemanticCommand({ type: 'deleteFamilyParameter', parameterId: id })}
-  onValueChange={(id, value) => void onSemanticCommand({
-    type: 'setFamilyParameterValue', parameterId: id, value,
-  })}
+  onValueChange={(id, value) =>
+    void onSemanticCommand({
+      type: 'setFamilyParameterValue',
+      parameterId: id,
+      value,
+    })
+  }
 />
 ```
 
@@ -324,6 +338,7 @@ case 'family_parameter': {
 ### G — Palette command + capability graph
 
 In `defaultCommands.ts`:
+
 ```ts
 { id: 'family.add-parameter', label: 'Add Family Parameter…',
   keywords: ['family', 'parameter', 'dimension', 'constraint'],
@@ -331,6 +346,7 @@ In `defaultCommands.ts`:
 ```
 
 In `commandCapabilities.ts`:
+
 ```ts
 { id: 'family.add-parameter', scope: 'document', intendedModes: ['plan', '3d'], precondition: null },
 ```
@@ -340,6 +356,7 @@ In `commandCapabilities.ts`:
 ### H — Tests
 
 `packages/web/src/plan/familyParameterEval.test.ts`:
+
 ```ts
 describe('applyFamilyParameters — §15.1.3', () => {
   it('returns empty object when no parameters have links', () => { ... });
@@ -355,6 +372,7 @@ describe('validateFamilyParameters — §15.1.3', () => {
 ```
 
 `packages/web/src/workspace/FamilyParameterPanel.test.tsx`:
+
 ```ts
 describe('FamilyParameterPanel — §15.1.3', () => {
   it('renders family-parameter-panel', () => { ... });

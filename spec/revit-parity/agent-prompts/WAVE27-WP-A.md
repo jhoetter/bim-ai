@@ -13,6 +13,7 @@ This prompt is self-contained — start here.
 Still genuinely missing: **Link PDF as underlay** — placing a PDF page as a translucent visual underlay for tracing over (common in Revit for site plans, survey drawings).
 
 This task adds:
+
 1. `link_pdf` element type in core (url, pageIndex, opacity, positionMm, scaleMm, levelId)
 2. `AddPdfLinkCmd` / `RemovePdfLinkCmd` / `TogglePdfLinkCmd` commands
 3. Workspace handlers
@@ -34,6 +35,7 @@ packages/web/src/cmdPalette/defaultCommands.ts — find 'file.link-ifc' or simil
 ```
 
 Run before editing:
+
 - `grep -n "link_ifc\|link_pdf\|addIfcLink\|AddIfcLink" packages/core/src/index.ts | head -10`
 - `grep -n "link_ifc\|addIfcLink\|pdf" packages/web/src/workspace/Workspace.tsx | head -10`
 - `grep -n "link_ifc\|IFC\|pdf\|PDF" packages/web/src/workspace/ManageLinksDialog.tsx | head -15`
@@ -146,18 +148,28 @@ if (cmd.type === 'togglePdfLink') {
 In `ManageLinksDialog.tsx`, find the IFC section. Add a "PDF Underlays" section after it:
 
 ```tsx
-{/* PDF Underlays section */}
+{
+  /* PDF Underlays section */
+}
 <div style={{ marginTop: 16 }}>
   <div className="text-xs font-semibold mb-2">PDF Underlays</div>
   {pdfLinks.map((link) => (
     <div key={link.id} style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 4 }}>
       <span style={{ fontSize: 11, flex: 1 }}>PDF p.{(link as any).pageIndex + 1}</span>
       <input
-        type="range" min={0} max={1} step={0.05}
+        type="range"
+        min={0}
+        max={1}
+        step={0.05}
         value={(link as any).opacity}
         data-testid={`pdf-link-opacity-${link.id}`}
         onChange={(e) =>
-          onSemanticCommand?.({ type: 'updateElementProperty', elementId: link.id, property: 'opacity', value: parseFloat(e.target.value) })
+          onSemanticCommand?.({
+            type: 'updateElementProperty',
+            elementId: link.id,
+            property: 'opacity',
+            value: parseFloat(e.target.value),
+          })
         }
         style={{ width: 80 }}
       />
@@ -177,9 +189,19 @@ In `ManageLinksDialog.tsx`, find the IFC section. Add a "PDF Underlays" section 
       </button>
     </div>
   ))}
-  <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 11, cursor: 'pointer', marginTop: 4 }}>
+  <label
+    style={{
+      display: 'flex',
+      alignItems: 'center',
+      gap: 8,
+      fontSize: 11,
+      cursor: 'pointer',
+      marginTop: 4,
+    }}
+  >
     <input
-      type="file" accept="image/*,.pdf"
+      type="file"
+      accept="image/*,.pdf"
       data-testid="pdf-link-file-input"
       style={{ display: 'none' }}
       onChange={(e) => {
@@ -188,15 +210,21 @@ In `ManageLinksDialog.tsx`, find the IFC section. Add a "PDF Underlays" section 
         const reader = new FileReader();
         reader.onload = (ev) => {
           if (ev.target?.result) {
-            onSemanticCommand?.({ type: 'addPdfLink', url: ev.target.result as string, levelId: activeLevelId ?? '' });
+            onSemanticCommand?.({
+              type: 'addPdfLink',
+              url: ev.target.result as string,
+              levelId: activeLevelId ?? '',
+            });
           }
         };
         reader.readAsDataURL(file);
       }}
     />
-    <span style={{ padding: '2px 8px', border: '1px solid var(--border)', borderRadius: 4 }}>+ Add PDF Underlay</span>
+    <span style={{ padding: '2px 8px', border: '1px solid var(--border)', borderRadius: 4 }}>
+      + Add PDF Underlay
+    </span>
   </label>
-</div>
+</div>;
 ```
 
 Where `pdfLinks` is computed from `elements.filter((el) => el.kind === 'link_pdf')` and `activeLevelId` is available from props. Adapt to the actual component structure.

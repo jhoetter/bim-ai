@@ -9,11 +9,13 @@ This prompt is self-contained — start here.
 ## Context
 
 §6.1.5 "Innenansichten" is Partial P2. Interior elevation placement and projection are already implemented:
+
 - `interior_elevation_marker` element type in `@bim-ai/core`
 - `interiorElevationProjection.ts` builds 2D wall/floor/opening projections
 - `InteriorElevationViewport.tsx` renders as SVG
 
 What's still missing:
+
 1. Material hatch patterns in interior elevation SVG (walls show as blank fills, not hatched)
 2. A height dimension annotation showing storey height in the elevation
 3. Section bubble symbol at the marker reference
@@ -31,6 +33,7 @@ packages/web/src/plan/interiorElevationProjection.ts     — find buildElevation
 ```
 
 Run before editing:
+
 - `grep -n "hatchPatternForMaterial\|svgHatchDef\|materialKey" packages/web/src/viewport/InteriorElevationViewport.tsx | head -10`
 - `grep -n "export.*hatch\|svgHatchDef\|hatchPatternFor" packages/web/src/plan/materialHatchPatterns.ts | head -10`
 - `grep -rn "InteriorElevationViewport\|interior.*elevation.*svg" packages/web/src/ | head -10`
@@ -98,32 +101,36 @@ strokeWidth={1}
 At the right edge of the elevation SVG, add a vertical dimension line showing the storey height:
 
 ```tsx
-{/* §6.1.5: storey height ruler */}
-{storeyHeightMm > 0 && (
-  <g data-testid="iel-height-ruler">
-    {/* Vertical line */}
-    <line
-      x1={svgWidth - 20}
-      y1={svgHeight - margin}
-      x2={svgWidth - 20}
-      y2={margin}
-      stroke="#555"
-      strokeWidth={1}
-      strokeDasharray="4 2"
-    />
-    {/* Arrow heads and label */}
-    <text
-      x={svgWidth - 8}
-      y={svgHeight / 2}
-      fontSize={9}
-      fill="#555"
-      textAnchor="middle"
-      transform={`rotate(-90, ${svgWidth - 8}, ${svgHeight / 2})`}
-    >
-      {Math.round(storeyHeightMm)} mm
-    </text>
-  </g>
-)}
+{
+  /* §6.1.5: storey height ruler */
+}
+{
+  storeyHeightMm > 0 && (
+    <g data-testid="iel-height-ruler">
+      {/* Vertical line */}
+      <line
+        x1={svgWidth - 20}
+        y1={svgHeight - margin}
+        x2={svgWidth - 20}
+        y2={margin}
+        stroke="#555"
+        strokeWidth={1}
+        strokeDasharray="4 2"
+      />
+      {/* Arrow heads and label */}
+      <text
+        x={svgWidth - 8}
+        y={svgHeight / 2}
+        fontSize={9}
+        fill="#555"
+        textAnchor="middle"
+        transform={`rotate(-90, ${svgWidth - 8}, ${svgHeight / 2})`}
+      >
+        {Math.round(storeyHeightMm)} mm
+      </text>
+    </g>
+  );
+}
 ```
 
 **Important**: Read the component to understand `svgWidth`, `svgHeight`, `margin`, and `storeyHeightMm` (or their equivalents). Adapt to the actual dimensions.

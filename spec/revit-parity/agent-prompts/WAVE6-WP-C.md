@@ -35,6 +35,7 @@ Prettier runs automatically after every Edit/Write.
 ### A — Data model: gridPatternMm (§8.2)
 
 Add to the `ceiling` element type in `core/index.ts`:
+
 ```ts
 /** Grid tile size in mm — when set, draws a ceiling grid pattern in plan. 600 = 600×600 tile. */
 gridPatternMm?: number | null;
@@ -45,12 +46,11 @@ gridPatternMm?: number | null;
 Create `packages/web/src/plan/ceilingGridPlanThree.ts`:
 
 ```ts
-export function ceilingGridPlanThree(
-  ceiling: Extract<Element, { kind: 'ceiling' }>,
-): THREE.Group
+export function ceilingGridPlanThree(ceiling: Extract<Element, { kind: 'ceiling' }>): THREE.Group;
 ```
 
 Implementation:
+
 - Return an empty Group if `!ceiling.gridPatternMm` or `ceiling.gridPatternMm <= 0`
 - Compute AABB of `ceiling.boundaryMm` (minX, maxX, minY, maxY)
 - Draw vertical lines every `gridPatternMm` across the AABB, clipped to boundary polygon using
@@ -64,6 +64,7 @@ For the point-in-polygon clip: for each candidate grid line segment, test if its
 inside `ceiling.boundaryMm`. Use the ray-casting algorithm (count crossings).
 
 Wire into `symbology.ts` ceiling loop: after `holder.add(horizontalOutlineMesh(...))`, also do:
+
 ```ts
 holder.add(ceilingGridPlanThree(cl));
 ```
@@ -71,6 +72,7 @@ holder.add(ceilingGridPlanThree(cl));
 ### C — Inspector input
 
 In `InspectorContent.tsx`, detect `el.kind === 'ceiling'` and add:
+
 - `data-testid="inspector-ceiling-grid-size"` — number input (mm), step 100, min 0, max 3000.
   Label: "Grid tile (mm)". Value = `el.gridPatternMm ?? 0`. On change dispatch
   `update_element_property` for `gridPatternMm` (0 = no grid).
@@ -78,6 +80,7 @@ In `InspectorContent.tsx`, detect `el.kind === 'ceiling'` and add:
 ### D — Tests
 
 Write `packages/web/src/plan/ceilingGridPattern.test.ts`:
+
 ```ts
 describe('ceilingGridPlanThree — §8.2', () => {
   it('returns empty Group when gridPatternMm is undefined', () => { ... });
@@ -89,6 +92,7 @@ describe('ceilingGridPlanThree — §8.2', () => {
 ```
 
 Write `packages/web/src/workspace/inspector/ceilingInspector.test.tsx`:
+
 ```ts
 describe('ceiling inspector grid size — §8.2', () => {
   it('renders inspector-ceiling-grid-size input', () => { ... });

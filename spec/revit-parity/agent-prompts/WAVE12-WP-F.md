@@ -41,6 +41,7 @@ Read ALL of these before writing anything:
 ### A — Core type: spot elevation display fields
 
 In `core/index.ts`, add to `spot_elevation` if missing:
+
 ```ts
 /** Show this annotation in 3D viewport as a floating label. Default true. */
 showIn3D?: boolean | null;
@@ -56,11 +57,12 @@ In `meshBuilders.ts` (3D), add a builder for `spot_elevation`:
 ```ts
 export function spotElevationThree(
   el: Extract<Element, { kind: 'spot_elevation' }>,
-  levelElevationMm: number,   // base elevation of the element's level
-): THREE.Object3D
+  levelElevationMm: number, // base elevation of the element's level
+): THREE.Object3D;
 ```
 
 Build a `THREE.Group` containing:
+
 1. A small diamond marker: `THREE.Mesh` with a `PlaneGeometry(150, 150)` rotated 45° — or a simple sphere (`SphereGeometry(80)`)
 2. A `CSS2DObject` (or equivalent label sprite) showing the elevation text:
    - Format: `"${textPrefix ?? ''}${((elevationMm) / 1000).toFixed(3)} m${textSuffix ?? ''}"`
@@ -76,6 +78,7 @@ Register this builder in whichever switch/map dispatches 3D mesh building by ele
 ### C — 3D viewport integration
 
 In `Viewport3D.tsx` (or wherever 3D elements are built and added to the scene):
+
 - Find the element-kind dispatch for 3D mesh building
 - Add `spot_elevation` → `spotElevationThree(el, levelElevationMm)`
 - Ensure the `CSS2DRenderer` is present in the scene (it should already be if text_note labels work in 3D)
@@ -94,6 +97,7 @@ If any of these already exist, do NOT duplicate — just verify they work.
 ### E — Tests
 
 Write `packages/web/src/viewport/spotElevation3D.test.ts`:
+
 ```ts
 describe('spotElevationThree — §4.7', () => {
   it('returns a THREE.Group', () => { ... });
@@ -105,6 +109,7 @@ describe('spotElevationThree — §4.7', () => {
 ```
 
 Write `packages/web/src/workspace/inspector/spotElevationInspector.test.tsx`:
+
 ```ts
 describe('spot elevation inspector — §4.7', () => {
   it('renders inspector-spot-elevation-mm input with current value', () => { ... });
@@ -119,6 +124,7 @@ describe('spot elevation inspector — §4.7', () => {
 ## Commit and push
 
 After tests pass (`pnpm test --filter @bim-ai/web`):
+
 ```
 git add -p
 git commit -m "feat(wave12/F): spot elevation 3D viewport label + inspector (§4.7)"

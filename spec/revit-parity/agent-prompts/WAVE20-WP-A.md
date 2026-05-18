@@ -34,6 +34,7 @@ Prettier runs automatically. **Always `git pull --rebase origin main` before pus
 ### A — Add layers to the layer list
 
 In `dxfTablesSection()` (or wherever layers are declared), add:
+
 ```
 'S-COLS'       — structural columns
 'S-BEAM'       — beams
@@ -92,7 +93,7 @@ Read the `stair` element in `core/index.ts` to find footprint fields (`startMm`,
 if (el.kind === 'stair' && (el as any).levelId === level.id) {
   const sx = (el as any).startMm?.xMm ?? 0;
   const sy = (el as any).startMm?.yMm ?? 0;
-  const ex = (el as any).endMm?.xMm ?? (sx + 2000);
+  const ex = (el as any).endMm?.xMm ?? sx + 2000;
   const ey = (el as any).endMm?.yMm ?? sy;
   const w = (el as any).runWidthMm ?? (el as any).widthMm ?? 1200;
   const dx = ex - sx;
@@ -100,8 +101,8 @@ if (el.kind === 'stair' && (el as any).levelId === level.id) {
   const len = Math.sqrt(dx * dx + dy * dy) || 1;
   const ux = dx / len;
   const uy = dy / len;
-  const nx = -uy * w * scale / 2;
-  const ny = ux * w * scale / 2;
+  const nx = (-uy * w * scale) / 2;
+  const ny = (ux * w * scale) / 2;
   const sxS = sx * scale;
   const syS = sy * scale;
   const exS = ex * scale;
@@ -125,25 +126,55 @@ describe('DXF export structural elements — §12.4.3', () => {
   const level = { id: 'L1', kind: 'level', name: 'Ground', elevationMm: 0 };
 
   it('exports column as S-COLS rectangle', () => {
-    const col = { kind: 'column', id: 'c1', levelId: 'L1', positionMm: { xMm: 5000, yMm: 5000 }, widthMm: 400, depthMm: 400 };
+    const col = {
+      kind: 'column',
+      id: 'c1',
+      levelId: 'L1',
+      positionMm: { xMm: 5000, yMm: 5000 },
+      widthMm: 400,
+      depthMm: 400,
+    };
     const result = exportToDxf({ [col.id]: col as any, [level.id]: level as any }, {});
     expect(result[0]?.dxf).toContain('S-COLS');
   });
 
   it('exports beam as S-BEAM line', () => {
-    const beam = { kind: 'beam', id: 'b1', levelId: 'L1', startMm: { xMm: 0, yMm: 0 }, endMm: { xMm: 6000, yMm: 0 } };
+    const beam = {
+      kind: 'beam',
+      id: 'b1',
+      levelId: 'L1',
+      startMm: { xMm: 0, yMm: 0 },
+      endMm: { xMm: 6000, yMm: 0 },
+    };
     const result = exportToDxf({ [beam.id]: beam as any, [level.id]: level as any }, {});
     expect(result[0]?.dxf).toContain('S-BEAM');
   });
 
   it('exports floor as A-FLOR polyline', () => {
-    const floor = { kind: 'floor', id: 'f1', levelId: 'L1', perimeterMm: [{ xMm: 0, yMm: 0 }, { xMm: 5000, yMm: 0 }, { xMm: 5000, yMm: 4000 }, { xMm: 0, yMm: 4000 }] };
+    const floor = {
+      kind: 'floor',
+      id: 'f1',
+      levelId: 'L1',
+      perimeterMm: [
+        { xMm: 0, yMm: 0 },
+        { xMm: 5000, yMm: 0 },
+        { xMm: 5000, yMm: 4000 },
+        { xMm: 0, yMm: 4000 },
+      ],
+    };
     const result = exportToDxf({ [floor.id]: floor as any, [level.id]: level as any }, {});
     expect(result[0]?.dxf).toContain('A-FLOR');
   });
 
   it('exports stair as A-FLOR-STRS rectangle', () => {
-    const stair = { kind: 'stair', id: 's1', levelId: 'L1', startMm: { xMm: 0, yMm: 0 }, endMm: { xMm: 3000, yMm: 0 }, runWidthMm: 1200 };
+    const stair = {
+      kind: 'stair',
+      id: 's1',
+      levelId: 'L1',
+      startMm: { xMm: 0, yMm: 0 },
+      endMm: { xMm: 3000, yMm: 0 },
+      runWidthMm: 1200,
+    };
     const result = exportToDxf({ [stair.id]: stair as any, [level.id]: level as any }, {});
     expect(result[0]?.dxf).toContain('A-FLOR-STRS');
   });

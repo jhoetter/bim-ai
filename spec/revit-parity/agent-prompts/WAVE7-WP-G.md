@@ -41,12 +41,14 @@ Read ALL of these before writing anything:
 In `InspectorContent.tsx`, for `el.kind === 'floor'`, add:
 
 **Floor Type** (`data-testid="inspector-floor-type-select"`):
+
 - `<select>` listing all `floor_type` elements in `elementsById` (sorted by name)
 - Plus an "— None —" option (value `""` → dispatches `floorTypeId = null`)
 - Current value: `el.floorTypeId ?? ""`
 - On change: dispatch `update_element_property` for `floorTypeId`
 
 **Computed thickness** (`data-testid="inspector-floor-type-thickness"`):
+
 - Read-only text: when a `floorTypeId` is set and the floor_type element exists, show sum of all layer `thicknessMm` values: `"${totalMm} mm"`
 - When no floor type is set: `"—"`
 
@@ -57,7 +59,7 @@ Create `packages/web/src/tools/floorTypeThickness.ts`:
 ```ts
 export function computeFloorTypeThicknessMm(
   floorType: Extract<Element, { kind: 'floor_type' }> | undefined | null,
-): number
+): number;
 ```
 
 Returns sum of `layer.thicknessMm` across all layers, or 0 if undefined.
@@ -65,6 +67,7 @@ Returns sum of `layer.thicknessMm` across all layers, or 0 if undefined.
 ### C — Create floor_type command
 
 Add to `core/index.ts` (if not present):
+
 ```ts
 export type CreateFloorTypeCmd = {
   type: 'create_floor_type';
@@ -79,26 +82,35 @@ Add to Command union. Handle in `Workspace.tsx` (same pattern as other create co
 ### D — Floor type creation button in inspector
 
 In `InspectorContent.tsx`, below the floor type selector, add:
+
 - "New Floor Type…" button (`data-testid="inspector-floor-new-type"`)
 - On click: prompt via a small inline form (or just dispatch immediately with a generated ID and default name/layers):
   ```ts
-  dispatch({ type: 'create_floor_type', id: nanoid(), name: 'New Floor Type', layers: [{ thicknessMm: 200, function: 'structure', materialKey: null }] })
+  dispatch({
+    type: 'create_floor_type',
+    id: nanoid(),
+    name: 'New Floor Type',
+    layers: [{ thicknessMm: 200, function: 'structure', materialKey: null }],
+  });
   ```
   Then set `floorTypeId` on the floor to the new type's id.
 
 Keep the inline form minimal — just a text input for the type name with a "Create" confirm button:
+
 - `data-testid="inspector-floor-new-type-name"` — name input
 - `data-testid="inspector-floor-new-type-confirm"` — confirm button
 
 ### E — Floor mesh thickness update
 
 In the floor mesh builder (`meshBuilders.ts` — find the function that builds the floor 3D mesh), when `floor.floorTypeId` is set and the `floor_type` element exists in `elementsById`:
+
 - Use `computeFloorTypeThicknessMm(floorType)` as the effective thickness instead of the floor's own `thicknessMm` (or in addition to it — check current behaviour first to avoid breaking changes).
 - Only override if the result is > 0.
 
 ### F — Tests
 
 Write `packages/web/src/tools/floorTypeThickness.test.ts`:
+
 ```ts
 describe('computeFloorTypeThicknessMm — §8.3', () => {
   it('returns sum of all layer thicknesses', () => { ... });
@@ -109,6 +121,7 @@ describe('computeFloorTypeThicknessMm — §8.3', () => {
 ```
 
 Write `packages/web/src/workspace/inspector/floorTypeInspector.test.tsx`:
+
 ```ts
 describe('floor type inspector — §8.3', () => {
   it('renders inspector-floor-type-select', () => { ... });

@@ -28,6 +28,7 @@ packages/web/src/viewport/wallJoinDisplay.ts — find existing wall join display
 ```
 
 Run:
+
 - `grep -n "WallJoinState\|WallJoinVariant\|reduceWallJoin\|WallJoinEffect\|joinVariant" packages/web/src/tools/toolGrammar.ts | head -15`
 - `grep -n "kind: 'wall'\b" packages/core/src/index.ts | head -5` then read the wall type to understand its fields
 - `grep -n "joinOverride\|wall-join\|WJ\b" packages/web/src/workspace/Workspace.tsx | head -10`
@@ -72,7 +73,10 @@ Create `packages/web/src/plan/findWallsAtCorner.ts`:
 ```ts
 import type { Element } from '@bim-ai/core';
 
-interface PointMm { xMm: number; yMm: number }
+interface PointMm {
+  xMm: number;
+  yMm: number;
+}
 
 /**
  * Finds all wall element IDs whose endpoints are within `toleranceMm` of `cornerMm`.
@@ -140,7 +144,7 @@ registerCommand({
   keywords: ['wall', 'join', 'miter', 'butt', 'square', 'Wandverbindung'],
   category: 'command',
   isAvailable: (ctx) => {
-    const walls = ctx.selectedElements?.filter(e => e.kind === 'wall') ?? [];
+    const walls = ctx.selectedElements?.filter((e) => e.kind === 'wall') ?? [];
     return walls.length === 2;
   },
   invoke: (_ctx) => {
@@ -177,10 +181,10 @@ import { describe, expect, it } from 'vitest';
 import { findWallsAtCorner } from './findWallsAtCorner';
 
 const elementsById: any = {
-  'w1': { id: 'w1', kind: 'wall', startMm: { xMm: 0, yMm: 0 }, endMm: { xMm: 5000, yMm: 0 } },
-  'w2': { id: 'w2', kind: 'wall', startMm: { xMm: 5000, yMm: 0 }, endMm: { xMm: 5000, yMm: 3000 } },
-  'w3': { id: 'w3', kind: 'wall', startMm: { xMm: 0, yMm: 0 }, endMm: { xMm: 0, yMm: 3000 } },
-  'f1': { id: 'f1', kind: 'floor', boundaryMm: [] },
+  w1: { id: 'w1', kind: 'wall', startMm: { xMm: 0, yMm: 0 }, endMm: { xMm: 5000, yMm: 0 } },
+  w2: { id: 'w2', kind: 'wall', startMm: { xMm: 5000, yMm: 0 }, endMm: { xMm: 5000, yMm: 3000 } },
+  w3: { id: 'w3', kind: 'wall', startMm: { xMm: 0, yMm: 0 }, endMm: { xMm: 0, yMm: 3000 } },
+  f1: { id: 'f1', kind: 'floor', boundaryMm: [] },
 };
 
 describe('findWallsAtCorner — §3.5.5', () => {
@@ -238,12 +242,20 @@ describe('SetWallJoinCmd — §3.5.5', () => {
   });
 
   it('accepts butt variant', () => {
-    const cmd = { type: 'setWallJoin' as const, wallIds: ['w1', 'w2'] as [string, string], variant: 'butt' as const };
+    const cmd = {
+      type: 'setWallJoin' as const,
+      wallIds: ['w1', 'w2'] as [string, string],
+      variant: 'butt' as const,
+    };
     expect(cmd.variant).toBe('butt');
   });
 
   it('accepts square variant', () => {
-    const cmd = { type: 'setWallJoin' as const, wallIds: ['w1', 'w2'] as [string, string], variant: 'square' as const };
+    const cmd = {
+      type: 'setWallJoin' as const,
+      wallIds: ['w1', 'w2'] as [string, string],
+      variant: 'square' as const,
+    };
     expect(cmd.variant).toBe('square');
   });
 });

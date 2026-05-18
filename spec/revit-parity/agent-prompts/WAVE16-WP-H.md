@@ -41,7 +41,10 @@ Create or extend `packages/web/src/plan/elevationProjection.ts`:
 
 ```ts
 export type ElevationLine = {
-  x1: number; y1: number; x2: number; y2: number;
+  x1: number;
+  y1: number;
+  x2: number;
+  y2: number;
   strokeWidth: number;
   kind: 'wall' | 'floor' | 'opening' | 'silhouette';
 };
@@ -57,7 +60,7 @@ export function buildElevationLines(
   direction: 'N' | 'S' | 'E' | 'W',
   elementsById: Record<string, Element | undefined>,
   viewWidthMm?: number,
-  viewHeightMm?: number
+  viewHeightMm?: number,
 ): ElevationLine[] {
   // 1. Determine view frustum based on direction + marker position + radius
   //    - If direction='N': camera faces north (negative Y), view is centred at marker.positionMm
@@ -95,7 +98,13 @@ interface Props {
   heightPx?: number;
 }
 
-export function InteriorElevationViewport({ marker, direction, elementsById, widthPx = 400, heightPx = 300 }: Props) {
+export function InteriorElevationViewport({
+  marker,
+  direction,
+  elementsById,
+  widthPx = 400,
+  heightPx = 300,
+}: Props) {
   const viewWidthMm = (marker.radiusMm ?? 3000) * 2;
   const viewHeightMm = 3000;
   const lines = buildElevationLines(marker, direction, elementsById, viewWidthMm, viewHeightMm);
@@ -130,7 +139,8 @@ export function InteriorElevationViewport({ marker, direction, elementsById, wid
       <g transform={`translate(0, ${heightPx + 6})`}>
         <line x1="0" y1="0" x2={widthPx * 0.5} y2="0" stroke="#222" strokeWidth="1" />
         <text
-          x="4" y="14"
+          x="4"
+          y="14"
           fontSize="10"
           fontFamily="sans-serif"
           fill="#222"
@@ -151,6 +161,7 @@ export function InteriorElevationViewport({ marker, direction, elementsById, wid
 Find the interior elevation marker plan symbol in `symbology.ts`. If it just renders a circle, extend it to show direction arrows:
 
 For each direction in `el.viewDirections` (e.g. `['N', 'E']`):
+
 - Draw an arrow from the marker centre toward that direction (length = `el.radiusMm * 0.6`)
 - Arrow tip gets a small filled triangle
 
@@ -159,7 +170,7 @@ For each direction in `el.viewDirections` (e.g. `['N', 'E']`):
 const DIRS = { N: [0, -1], S: [0, 1], E: [1, 0], W: [-1, 0] };
 for (const dir of el.viewDirections ?? ['N']) {
   const [dx, dz] = DIRS[dir];
-  const arrowLen = (el.radiusMm ?? 1500) * 0.6 / 1000; // convert mm to metres
+  const arrowLen = ((el.radiusMm ?? 1500) * 0.6) / 1000; // convert mm to metres
   // draw line from centre to tip
   // draw small arrowhead at tip
 }
@@ -178,6 +189,7 @@ In the sheets panel or wherever `sectionViewportSvg` is rendered, also render `I
 ### E — Tests
 
 `packages/web/src/plan/interiorElevation.test.ts`:
+
 ```ts
 describe('buildElevationLines — §6.1.5', () => {
   it('returns empty array when no elements in view', () => { ... });
@@ -188,6 +200,7 @@ describe('buildElevationLines — §6.1.5', () => {
 ```
 
 `packages/web/src/plan/InteriorElevationViewport.test.tsx`:
+
 ```ts
 describe('InteriorElevationViewport — §6.1.5', () => {
   it('renders svg with data-testid interior-elevation-viewport-N', () => { ... });

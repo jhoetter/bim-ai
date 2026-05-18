@@ -32,6 +32,7 @@ Prettier runs automatically. **Always `git pull --rebase origin main` before pus
 ### A — Add `skyBackground` to the Zustand store
 
 In `store.ts` (or `storeTypes.ts`):
+
 ```ts
 skyBackground: 'default' | 'gradient-sky' | 'overcast' | 'solid';
 skyBackgroundColor: string;  // hex, used for 'solid' mode; default '#87ceeb'
@@ -99,31 +100,71 @@ export function SkyBackgroundPanel({ open, onClose }: { open: boolean; onClose: 
   if (!open) return null;
 
   return (
-    <div data-testid="sky-background-panel"
-      style={{ position: 'absolute', bottom: 48, right: 8, background: 'var(--color-surface)', border: '1px solid var(--color-border)', borderRadius: 6, padding: 12, zIndex: 100, minWidth: 180 }}>
+    <div
+      data-testid="sky-background-panel"
+      style={{
+        position: 'absolute',
+        bottom: 48,
+        right: 8,
+        background: 'var(--color-surface)',
+        border: '1px solid var(--color-border)',
+        borderRadius: 6,
+        padding: 12,
+        zIndex: 100,
+        minWidth: 180,
+      }}
+    >
       <div style={{ fontSize: 12, fontWeight: 600, marginBottom: 8 }}>Background</div>
 
       {(['default', 'gradient-sky', 'overcast', 'solid'] as const).map((mode) => (
-        <label key={mode} style={{ display: 'flex', gap: 6, alignItems: 'center', marginBottom: 4, fontSize: 12, cursor: 'pointer' }}>
-          <input type="radio" name="sky-mode" data-testid={`sky-mode-${mode}`}
+        <label
+          key={mode}
+          style={{
+            display: 'flex',
+            gap: 6,
+            alignItems: 'center',
+            marginBottom: 4,
+            fontSize: 12,
+            cursor: 'pointer',
+          }}
+        >
+          <input
+            type="radio"
+            name="sky-mode"
+            data-testid={`sky-mode-${mode}`}
             checked={skyBackground === mode}
-            onChange={() => setSkyBackground(mode)} />
-          {mode === 'default' ? 'Grey (Default)' : mode === 'gradient-sky' ? 'Sky Blue' : mode === 'overcast' ? 'Overcast' : 'Solid Color'}
+            onChange={() => setSkyBackground(mode)}
+          />
+          {mode === 'default'
+            ? 'Grey (Default)'
+            : mode === 'gradient-sky'
+              ? 'Sky Blue'
+              : mode === 'overcast'
+                ? 'Overcast'
+                : 'Solid Color'}
         </label>
       ))}
 
       {skyBackground === 'solid' && (
         <div style={{ marginTop: 4 }}>
           <label style={{ fontSize: 11, display: 'block', marginBottom: 2 }}>Color</label>
-          <input type="color" data-testid="sky-solid-color"
+          <input
+            type="color"
+            data-testid="sky-solid-color"
             value={skyBackgroundColor}
             onChange={(e) => setSkyBackgroundColor(e.currentTarget.value)}
-            style={{ width: '100%' }} />
+            style={{ width: '100%' }}
+          />
         </div>
       )}
 
-      <button data-testid="sky-panel-close" onClick={onClose}
-        style={{ marginTop: 8, fontSize: 11, width: '100%' }}>Close</button>
+      <button
+        data-testid="sky-panel-close"
+        onClick={onClose}
+        style={{ marginTop: 8, fontSize: 11, width: '100%' }}
+      >
+        Close
+      </button>
     </div>
   );
 }
@@ -152,6 +193,7 @@ const [skyPanelOpen, setSkyPanelOpen] = useState(false);
 ### E — Tests
 
 `packages/web/src/viewport/SkyBackgroundPanel.test.tsx`:
+
 ```ts
 describe('sky background panel — §14.4', () => {
   it('does not render when open=false', () => { ... });
@@ -163,6 +205,7 @@ describe('sky background panel — §14.4', () => {
 ```
 
 `packages/web/src/state/skyBackgroundStore.test.ts`:
+
 ```ts
 describe('sky background store — §14.4', () => {
   it('default skyBackground is "default"', () => { ... });

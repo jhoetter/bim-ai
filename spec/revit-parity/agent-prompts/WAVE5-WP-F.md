@@ -43,6 +43,7 @@ export function exportSceneToDwg(elementsById: Record<string, Element>): void;
 ```
 
 Implementation:
+
 - Build a minimal DXF string (same as DXF export but with `AC1015` (R2000) header to claim DWG
   compatibility — real DWG is binary-only, but for test purposes a text file with `.dwg` extension
   and correct HEADER section is sufficient)
@@ -57,10 +58,15 @@ wherever the export actions live (check `ModeShells.tsx` or the ribbon Annotate/
 Create `packages/web/src/schedules/FloorAreaReportPanel.tsx`:
 
 ```tsx
-export function FloorAreaReportPanel({ elementsById }: { elementsById: Record<string, Element> }): JSX.Element
+export function FloorAreaReportPanel({
+  elementsById,
+}: {
+  elementsById: Record<string, Element>;
+}): JSX.Element;
 ```
 
 The panel:
+
 - Calls `buildLevelAreaReport(elementsById)` to get rows
 - Renders a table with columns: Level, Gross Area (m²), Net Area (m²)
 - `data-testid="floor-area-report-panel"` on the container
@@ -74,6 +80,7 @@ Show it when `activeTab === 'floor-area'` (or similar). Add a "Floor Areas" tab/
 ### C — Tests
 
 Write `packages/web/src/viewport/dwgExport.test.ts`:
+
 ```ts
 describe('DWG export — §12.4.3', () => {
   it('exportSceneToDwg produces output without throwing', () => { ... });
@@ -82,6 +89,7 @@ describe('DWG export — §12.4.3', () => {
 ```
 
 Write `packages/web/src/schedules/FloorAreaReportPanel.test.tsx`:
+
 ```ts
 describe('FloorAreaReportPanel — §13.2', () => {
   it('renders floor-area-report-panel', () => { ... });

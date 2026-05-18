@@ -76,8 +76,11 @@ Keep changes minimal — only the cross-section shape changes; the beam axis lin
 In `InspectorContent.tsx`, find `case 'beam':` and add a new collapsible section **"Profile"**:
 
 ```tsx
-<select data-testid="inspector-beam-profile-type" value={el.beamProfileType ?? 'rectangular'}
-  onChange={(e) => onPropertyChange?.('beamProfileType', e.currentTarget.value)}>
+<select
+  data-testid="inspector-beam-profile-type"
+  value={el.beamProfileType ?? 'rectangular'}
+  onChange={(e) => onPropertyChange?.('beamProfileType', e.currentTarget.value)}
+>
   <option value="rectangular">Rectangular</option>
   <option value="I-beam">I-Beam</option>
   <option value="H-beam">H-Beam (Wide Flange)</option>
@@ -87,16 +90,19 @@ In `InspectorContent.tsx`, find `case 'beam':` and add a new collapsible section
 ```
 
 When `I-beam` or `H-beam` is selected, show:
+
 - Flange Width (mm): `data-testid="inspector-beam-flange-width"`
 - Flange Thickness (mm): `data-testid="inspector-beam-flange-thickness"`
 - Web Thickness (mm): `data-testid="inspector-beam-web-thickness"`
 
 When `HSS-round` or `HSS-square`:
+
 - Wall Thickness (mm): `data-testid="inspector-beam-wall-thickness"`
 
 ### E — Tests
 
 `packages/web/src/viewport/beamProfileMesh.test.ts`:
+
 ```ts
 describe('beam section profiles — §9.2', () => {
   it('rectangular beam builds BoxGeometry', () => { ... });
@@ -108,6 +114,7 @@ describe('beam section profiles — §9.2', () => {
 ```
 
 `packages/web/src/workspace/inspector/beamProfileInspector.test.tsx`:
+
 ```ts
 describe('beam profile inspector — §9.2', () => {
   it('renders profile type select with rectangular default', () => { ... });
@@ -121,6 +128,7 @@ describe('beam profile inspector — §9.2', () => {
 ## Commit and push
 
 After tests pass (`pnpm test --filter @bim-ai/web`):
+
 ```
 git add -p
 git commit -m "feat(wave14/B): beam section profiles — I/H/HSS + inspector (§9.2)"

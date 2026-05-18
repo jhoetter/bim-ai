@@ -13,6 +13,7 @@
 From the videos:
 
 **Canvas / Plan View**
+
 - White paper-like canvas as the drawing surface; dark chrome surrounds it
 - Walls: solid BLACK fill — architectural section-cut convention, no ambiguity
 - Floor zones: richly textured fills — chevron wood, terrazzo, beige carpet,
@@ -23,6 +24,7 @@ From the videos:
 - Grid: very subtle, almost invisible in light mode
 
 **Chrome (dark mode primary)**
+
 - Very dark navy/charcoal sidebar (#1a1d24 range)
 - Compact left rail: tabs for Layers / Blocks / Shapes / Pages / Tables / Comments
 - Bottom toolbar: primary drawing tools as icon strip
@@ -32,12 +34,14 @@ From the videos:
 - Clean Inter-family typography
 
 **Collaboration**
+
 - Named cursors (live presence) — subtle, non-intrusive
 - Comment pin system on drawings
 - Share modal with editor/admin/viewer roles
 - "Publish to web" one-click link sharing
 
 **Key UX patterns**
+
 - Bottom toolbar + keyboard shortcuts (W = wall, etc.)
 - Type-to-search command palette (similar to our Cmd+K)
 - Eyedropper to copy styles between zones
@@ -52,33 +56,33 @@ From the videos:
 
 ### Plan View Visual Quality
 
-| Item | Rayon | bim-ai | Priority |
-|------|-------|--------|----------|
-| Wall fill (plan) | Black solid | ✅ #1c1917 via --plan-wall (token split) | DONE |
-| Floor fill | Chevron/texture at ~50-70% opacity | ✅ Herringbone hatch at 42% opacity | DONE |
-| Room fills | Rich texture fills per room | ✅ Sage green at 26% opacity | DONE |
-| Annotation color | Company red | ✅ Warm red-ochre (--draft-anno) | DONE |
-| Dim line quality | Clean thin lines, red text | ✅ dimLine color fixed; witness → --draft-witness | DONE |
-| Hatch density | Dense, visible at 1:100 | ✅ paperMmRepeat 8→5, strokeWidth 0.12→0.18 | DONE |
-| Floor hatch opacity | 50-70% | ✅ 42% (up from 16%) | DONE |
-| Wall hatch inside cut | Brick/concrete hatching inside wall body | ✅ 45° diagonal hatch, paper-color at 22% opacity, via buildWallCutHatch() in planElementMeshBuilders.ts | DONE |
-| North point | Standard block always shown | ✅ Half-filled circle compass overlay, bottom-left of plan canvas | DONE |
-| Scale bar | Standard block always shown | ✅ Two-tone graphical scale bar in zoom control button (alternating segments + cm label) | DONE |
-| Zone area labels | Auto-calculated m² per room | ✅ Area appended to planTagLabel pill: "name · X.X m²" in symbology.ts | DONE |
-| Grid visibility | Near-invisible, just guides | ✅ #e4e6e8 / #f0f1f2 (near-invisible) | DONE |
+| Item                  | Rayon                                    | bim-ai                                                                                                   | Priority |
+| --------------------- | ---------------------------------------- | -------------------------------------------------------------------------------------------------------- | -------- |
+| Wall fill (plan)      | Black solid                              | ✅ #1c1917 via --plan-wall (token split)                                                                 | DONE     |
+| Floor fill            | Chevron/texture at ~50-70% opacity       | ✅ Herringbone hatch at 42% opacity                                                                      | DONE     |
+| Room fills            | Rich texture fills per room              | ✅ Sage green at 26% opacity                                                                             | DONE     |
+| Annotation color      | Company red                              | ✅ Warm red-ochre (--draft-anno)                                                                         | DONE     |
+| Dim line quality      | Clean thin lines, red text               | ✅ dimLine color fixed; witness → --draft-witness                                                        | DONE     |
+| Hatch density         | Dense, visible at 1:100                  | ✅ paperMmRepeat 8→5, strokeWidth 0.12→0.18                                                              | DONE     |
+| Floor hatch opacity   | 50-70%                                   | ✅ 42% (up from 16%)                                                                                     | DONE     |
+| Wall hatch inside cut | Brick/concrete hatching inside wall body | ✅ 45° diagonal hatch, paper-color at 22% opacity, via buildWallCutHatch() in planElementMeshBuilders.ts | DONE     |
+| North point           | Standard block always shown              | ✅ Half-filled circle compass overlay, bottom-left of plan canvas                                        | DONE     |
+| Scale bar             | Standard block always shown              | ✅ Two-tone graphical scale bar in zoom control button (alternating segments + cm label)                 | DONE     |
+| Zone area labels      | Auto-calculated m² per room              | ✅ Area appended to planTagLabel pill: "name · X.X m²" in symbology.ts                                   | DONE     |
+| Grid visibility       | Near-invisible, just guides              | ✅ #e4e6e8 / #f0f1f2 (near-invisible)                                                                    | DONE     |
 
 ### Chrome / UI Quality
 
-| Item | Rayon | bim-ai | Priority |
-|------|-------|--------|----------|
-| Left rail tabs | Layers / Blocks / Pages / Comments | Inspector + nav | MEDIUM |
-| Right properties | Fill, stroke, thickness inline | Right-rail inspector | DONE |
-| Bottom toolbar | Primary tools in strip | Present (Tool modifier bar) | DONE |
-| Theme toggle | Visible bottom-left | Hidden behind presence strip | FIXED |
-| Active tool highlight | Red accent on active tool | ✅ bg-accent (warm amber) — confirmed correct in ToolPalette.tsx:130 | DONE |
-| Presence avatars | Subtle named cursors | Fixed to 1 in dev | DONE |
-| Share button | Top-right, prominent | Present (share presentation) | DONE |
-| Keyboard shortcuts | W=wall shown in tooltip | Present via Cmd+K | DONE |
+| Item                  | Rayon                              | bim-ai                                                               | Priority |
+| --------------------- | ---------------------------------- | -------------------------------------------------------------------- | -------- |
+| Left rail tabs        | Layers / Blocks / Pages / Comments | Inspector + nav                                                      | MEDIUM   |
+| Right properties      | Fill, stroke, thickness inline     | Right-rail inspector                                                 | DONE     |
+| Bottom toolbar        | Primary tools in strip             | Present (Tool modifier bar)                                          | DONE     |
+| Theme toggle          | Visible bottom-left                | Hidden behind presence strip                                         | FIXED    |
+| Active tool highlight | Red accent on active tool          | ✅ bg-accent (warm amber) — confirmed correct in ToolPalette.tsx:130 | DONE     |
+| Presence avatars      | Subtle named cursors               | Fixed to 1 in dev                                                    | DONE     |
+| Share button          | Top-right, prominent               | Present (share presentation)                                         | DONE     |
+| Keyboard shortcuts    | W=wall shown in tooltip            | Present via Cmd+K                                                    | DONE     |
 
 ### Features bim-ai has beyond Rayon
 
@@ -95,19 +99,19 @@ From the videos:
 
 ### Features bim-ai is missing vs Rayon
 
-| Feature | Rayon | bim-ai | Notes |
-|---------|-------|--------|-------|
-| Room fill textures | Rich per-room material fills | Not implemented | High visual impact |
-| Block library | 4000+ furniture/fixture 2D blocks | Not implemented | Rayon's killer feature |
-| DWG/DXF import | First-class import + rescale | Not implemented | Major workflow |
-| Template library | Hundreds of starter layouts | Not implemented | Onboarding |
-| Zone tool | Click-once room area draw | Room tool exists | Needs area auto-label |
-| Eyedropper style copy | One-click copy fill between elements | Not implemented | Quick UX win |
-| Scale tool | Rescale selected elements to known dim | Not implemented | Import workflow |
-| AI block generator | Type → generate 2D block | Not implemented | AI feature |
-| Multi-view sections | Blocks with top/side/front views | Not implemented | 2D drawing |
-| North point block | Standard library block | Not implemented | Documentation |
-| Scale bar block | Standard library block | Not implemented | Documentation |
+| Feature               | Rayon                                  | bim-ai           | Notes                  |
+| --------------------- | -------------------------------------- | ---------------- | ---------------------- |
+| Room fill textures    | Rich per-room material fills           | Not implemented  | High visual impact     |
+| Block library         | 4000+ furniture/fixture 2D blocks      | Not implemented  | Rayon's killer feature |
+| DWG/DXF import        | First-class import + rescale           | Not implemented  | Major workflow         |
+| Template library      | Hundreds of starter layouts            | Not implemented  | Onboarding             |
+| Zone tool             | Click-once room area draw              | Room tool exists | Needs area auto-label  |
+| Eyedropper style copy | One-click copy fill between elements   | Not implemented  | Quick UX win           |
+| Scale tool            | Rescale selected elements to known dim | Not implemented  | Import workflow        |
+| AI block generator    | Type → generate 2D block               | Not implemented  | AI feature             |
+| Multi-view sections   | Blocks with top/side/front views       | Not implemented  | 2D drawing             |
+| North point block     | Standard library block                 | Not implemented  | Documentation          |
+| Scale bar block       | Standard library block                 | Not implemented  | Documentation          |
 
 ---
 
@@ -161,18 +165,21 @@ Color already set to --draft-anno (warm red-ochre). ✅
 Separate from plan view polish. What "Rayon-style 3D" would look like:
 
 **Material tone targets:**
+
 - Walls: warm cream/plaster (#e8e3db light mode) — now fixed via --cat-wall split
 - Floors: warm oak/concrete depending on material
 - Roof: warm terracotta clay
 - Glazing: very light blue-grey, high transparency
 
 **Lighting targets:**
+
 - Soft directional from SW at 35° elevation (golden hour feel)
 - Strong hemi ambient (sky: warm white, ground: warm ochre)
 - No harsh shadows in ambient viewport; shadows only in "render" mode
 - Mild SSAO for depth cues without looking dirty
 
 **UX targets for 3D:**
+
 - No visible grid plane (hide the horizontal grid in 3D mode)
 - Soft horizon fog
 - Smooth camera transitions
@@ -184,16 +191,16 @@ Separate from plan view polish. What "Rayon-style 3D" would look like:
 
 These require actual feature work — not in scope for visual polish sprint:
 
-| WP candidate | Feature | Rayon equivalent | Complexity |
-|---|---|---|---|
-| AST-V4-01 | 2D block/furniture library | Rayon 4000+ blocks | Large |
-| IMP-V4-01 | DWG/DXF import | Rayon import + rescale | Large |
-| TPL-V4-01 | Project template library | Rayon hundreds of templates | Medium |
-| ZNE-V4-01 | Zone tool with auto area | Rayon zone tool | Small |
-| STY-V4-01 | Eyedropper style copy | Rayon eyedropper | Small |
-| SCL-V4-01 | Scale selection tool | Rayon scale tool | Small |
-| ANN-V4-01 | North point + scale bar as blocks | Rayon standard blocks | Small |
-| AIG-V4-01 | AI block generator | Rayon AI panel | Large |
+| WP candidate | Feature                           | Rayon equivalent            | Complexity |
+| ------------ | --------------------------------- | --------------------------- | ---------- |
+| AST-V4-01    | 2D block/furniture library        | Rayon 4000+ blocks          | Large      |
+| IMP-V4-01    | DWG/DXF import                    | Rayon import + rescale      | Large      |
+| TPL-V4-01    | Project template library          | Rayon hundreds of templates | Medium     |
+| ZNE-V4-01    | Zone tool with auto area          | Rayon zone tool             | Small      |
+| STY-V4-01    | Eyedropper style copy             | Rayon eyedropper            | Small      |
+| SCL-V4-01    | Scale selection tool              | Rayon scale tool            | Small      |
+| ANN-V4-01    | North point + scale bar as blocks | Rayon standard blocks       | Small      |
+| AIG-V4-01    | AI block generator                | Rayon AI panel              | Large      |
 
 ---
 

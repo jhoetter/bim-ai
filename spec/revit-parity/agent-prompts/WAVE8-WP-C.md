@@ -42,13 +42,13 @@ Create `packages/web/src/plan/roomArea.ts`:
 
 ```ts
 /** Shoelace formula on room outlineMm (closed polygon). Returns m². */
-export function roomAreaM2(outlineMm: ReadonlyArray<{ xMm: number; yMm: number }>): number
+export function roomAreaM2(outlineMm: ReadonlyArray<{ xMm: number; yMm: number }>): number;
 
 /** Net room area: gross minus sum of column footprint areas inside the room. */
 export function roomNetAreaM2(
   outlineMm: ReadonlyArray<{ xMm: number; yMm: number }>,
   columns: ReadonlyArray<Extract<Element, { kind: 'column' }>>,
-): number
+): number;
 ```
 
 - Gross area: shoelace on `outlineMm`, convert mm² → m²
@@ -58,6 +58,7 @@ export function roomNetAreaM2(
 ### B — Room label: area in plan sprite
 
 In `planElementMeshBuilders.ts`, in the room label rendering, add the computed gross area (m²) below the name/number:
+
 - Format: `"${area.toFixed(1)} m²"`
 - Only show area when `outlineMm.length >= 3`
 - Append as a third line in the room label sprite (below name, below numberLabel if present)
@@ -68,15 +69,18 @@ In `planElementMeshBuilders.ts`, in the room label rendering, add the computed g
 In `InspectorContent.tsx`, for `el.kind === 'room'`, add after the existing inputs:
 
 **Room number** (`data-testid="inspector-room-number"`):
+
 - Text input, value = `el.numberLabel ?? ''`
 - On change: dispatch `update_element_property` for `numberLabel`
 - Label: "Room No."
 
 **Computed area** (`data-testid="inspector-room-area-gross"`):
+
 - Read-only: `"${roomAreaM2(el.outlineMm).toFixed(1)} m²"` or `"—"` if <3 points
 - Label: "Gross Area"
 
 **Target area** (`data-testid="inspector-room-target-area"`):
+
 - Number input (m²), value = `el.targetAreaM2 ?? ''`, step 0.1
 - On change: dispatch `update_element_property` for `targetAreaM2`
 - Label: "Target Area (m²)"
@@ -84,6 +88,7 @@ In `InspectorContent.tsx`, for `el.kind === 'room'`, add after the existing inpu
 ### D — Tests
 
 Write `packages/web/src/plan/roomArea.test.ts`:
+
 ```ts
 describe('roomAreaM2 — §13.1.4', () => {
   it('returns 0 for fewer than 3 points', () => { ... });
@@ -99,6 +104,7 @@ describe('roomNetAreaM2 — §13.1.4', () => {
 ```
 
 Write `packages/web/src/workspace/inspector/roomInspector.test.tsx`:
+
 ```ts
 describe('room inspector — §13.1.2 + §13.1.4', () => {
   it('renders inspector-room-number input', () => { ... });

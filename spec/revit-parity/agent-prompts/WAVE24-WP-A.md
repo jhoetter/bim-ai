@@ -25,6 +25,7 @@ packages/web/src/plan/detailComponentsRender.ts — angular/radial dim renderers
 ```
 
 Run before editing:
+
 - `grep -n "angular_dimension\|radial_dimension\|diameter_dimension" packages/core/src/index.ts | head -20`
 - `grep -n "createAngularDimension\|createRadialDimension\|createDiameterDimension" packages/web/src/plan/AnnotateRibbon.tsx`
 - `grep -n "createPermanentDimension\|permanent_dimension" packages/web/src/workspace/Workspace.tsx | head -10`
@@ -41,9 +42,11 @@ Prettier runs automatically. **Always `git pull --rebase origin main` before pus
 ### A — Read core types
 
 Run:
+
 ```
 grep -n "kind: 'angular_dimension'\|kind: 'radial_dimension'\|kind: 'diameter_dimension'" packages/core/src/index.ts
 ```
+
 Read the 3 union members to confirm all field names (vertexMm, rayAMm, rayBMm, arcRadiusMm for angular; centerMm, arcPointMm for radial; etc.).
 
 ### B — Workspace handlers in packages/web/src/workspace/Workspace.tsx
@@ -53,6 +56,7 @@ Find the `createPermanentDimension` handler. After it, add handlers for the 3 ne
 Pattern: each handler creates a new element in `elementsById` using `crypto.randomUUID()` as the id.
 
 For `createAngularDimension`:
+
 ```ts
 if (cmd.type === 'createAngularDimension') {
   const { elementsById: cur } = useBimStore.getState();
@@ -76,6 +80,7 @@ if (cmd.type === 'createAngularDimension') {
 ```
 
 For `createRadialDimension`:
+
 ```ts
 if (cmd.type === 'createRadialDimension') {
   const { elementsById: cur } = useBimStore.getState();
@@ -97,9 +102,11 @@ if (cmd.type === 'createRadialDimension') {
 ```
 
 For `createDiameterDimension` — check if `diameter_dimension` type exists in core:
+
 ```
 grep -n "kind: 'diameter_dimension'" packages/core/src/index.ts | head -5
 ```
+
 If it exists, add a similar handler. If not, skip it.
 
 **Important**: Read the actual type fields from core before writing. If a field name differs from what's shown above, use the correct one.
@@ -210,7 +217,9 @@ describe('Angular / Radial dimension command shapes — §4.1', () => {
   it('radial dimension computes radius correctly', () => {
     const centerMm = { xMm: 0, yMm: 0 };
     const arcPointMm = { xMm: 300, yMm: 400 };
-    const radius = Math.round(Math.hypot(arcPointMm.xMm - centerMm.xMm, arcPointMm.yMm - centerMm.yMm));
+    const radius = Math.round(
+      Math.hypot(arcPointMm.xMm - centerMm.xMm, arcPointMm.yMm - centerMm.yMm),
+    );
     expect(radius).toBe(500);
   });
 

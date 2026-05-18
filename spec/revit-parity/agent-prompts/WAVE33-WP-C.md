@@ -12,6 +12,7 @@ The ribbon is the last explicit P1 partial in the tracker. Wave 33 needs durable
 ## Ownership
 
 Primary write scope:
+
 - `packages/web/src/workspace/shell/ribbonCompleteTabs.test.tsx` (new)
 - `packages/web/src/workspace/shell/TopBar.test.tsx` only if extending existing tests is clearly cleaner.
 
@@ -20,6 +21,7 @@ Avoid changing production code unless a test exposes a small obvious bug and no 
 ## Orientation
 
 Run:
+
 - `sed -n '340,640p' packages/web/src/workspace/shell/TopBar.test.tsx`
 - `rg -n "ribbonCommandReachabilityForMode|ribbon-tab-|ribbon-command-" packages/web/src/workspace/shell`
 - `rg -n "function buildRibbonTabs|function buildPlanRibbonTabs|function build3dRibbonTabs" packages/web/src/workspace/shell/RibbonBar.tsx`
@@ -44,4 +46,3 @@ Add tests that render `RibbonBar` directly and verify:
 
 - `pnpm --filter @bim-ai/web exec vitest run src/workspace/shell/TopBar.test.tsx src/workspace/shell/ribbonCompleteTabs.test.tsx` passes.
 - Tests assert user-visible behavior, not implementation-private arrays.
-

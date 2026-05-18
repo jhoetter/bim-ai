@@ -11,6 +11,7 @@ This prompt is self-contained — start here.
 §15.1.2 "Die Multifunktionsleiste Erstellen" is Partial. The family editor has extrusions, voids, blends, sweeps, swept-blends, nested components, parameters, constraints, and opening cuts. What's still missing is **category assignment** — in Revit, every family is assigned to a category (Doors, Windows, Furniture, Structural Columns, etc.) which determines which schedule, visibility control, and object snap behaviours apply.
 
 This task adds:
+
 1. `categoryKey?: string` field on the `family_definition` element type in core
 2. `SetFamilyCategoryCmd` command type
 3. Workspace handler
@@ -30,6 +31,7 @@ packages/web/src/familyEditor/FamilyEditorWorkbench.tsx   — find existing tool
 ```
 
 Run before editing:
+
 - `grep -n "family_definition\|familyCategoryKey\|categoryKey" packages/core/src/index.ts | head -10`
 - `grep -n "family_definition\|SetFamilyCategory\|categoryKey" packages/web/src/familyEditor/FamilyEditorWorkbench.tsx | head -10`
 - `grep -n "case 'family_definition'" packages/web/src/workspace/inspector/InspectorContent.tsx | head -5`
@@ -143,19 +145,33 @@ In `FamilyEditorWorkbench.tsx`, find the top header section of the workbench. Ad
 
 ```tsx
 // Find where activeFamilyId / familyDef is resolved, then:
-<div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '4px 8px', borderBottom: '1px solid #444' }}>
+<div
+  style={{
+    display: 'flex',
+    alignItems: 'center',
+    gap: 8,
+    padding: '4px 8px',
+    borderBottom: '1px solid #444',
+  }}
+>
   <span style={{ fontSize: 11, color: '#aaa' }}>Category:</span>
   <select
     data-testid="family-editor-category-select"
     value={(familyDef as any)?.categoryKey ?? ''}
     onChange={(e) =>
-      onSemanticCommand?.({ type: 'setFamilyCategory', familyId: activeFamilyId, categoryKey: e.target.value })
+      onSemanticCommand?.({
+        type: 'setFamilyCategory',
+        familyId: activeFamilyId,
+        categoryKey: e.target.value,
+      })
     }
     style={{ fontSize: 11 }}
   >
     <option value="">-- Select Category --</option>
     {FAMILY_CATEGORIES.map((cat) => (
-      <option key={cat.key} value={cat.key}>{cat.label}</option>
+      <option key={cat.key} value={cat.key}>
+        {cat.label}
+      </option>
     ))}
   </select>
 </div>

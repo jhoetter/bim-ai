@@ -12,6 +12,7 @@ This prompt is self-contained — start here.
 §9.5.4 "Parametrische Schnitte" (parametric section cuts for steel profiles) is Not Started P2.
 
 **Good news**: `steel_connection` element type already exists in `packages/core/src/index.ts` with:
+
 - `connectionType: 'end_plate' | 'bolted_flange' | 'shear_tab'`
 - `boltRows?`, `boltCols?`, `boltDiameterMm?`
 - `CreateSteelConnectionCmd` already defined
@@ -19,11 +20,13 @@ This prompt is self-contained — start here.
 And `steel_connection` already has an inspector case in `InspectorContent.tsx`.
 
 What's missing for §9.5.3:
+
 - A tool to place `steel_connection` elements (tool registry entry)
 - A plan symbol for steel connections (small X or bolt pattern)
 - `modify.steel-connection` capability
 
 For §9.5.4 (parametric section cuts):
+
 - Beams already have `sectionProfileId?` referencing a `beam_section_profile` element (check core)
 - What's missing: a `beam_section_profile` element type (if not already there) + editor UI
 - `SetBeamSectionProfileCmd` for selecting/creating a custom cross-section
@@ -40,6 +43,7 @@ packages/web/src/plan/planElementMeshBuilders.ts             — find where beam
 ```
 
 Run before editing:
+
 - `grep -n "steel_connection\|CreateSteelConnection\|beam_section_profile\|sectionProfile" packages/core/src/index.ts | head -15`
 - `grep -n "steel.*connection\|steelConnection\|steel-connection" packages/web/src/tools/toolRegistry.ts | head -10`
 - `grep -n "steel_connection\|'steel_connection'" packages/web/src/workspace/inspector/InspectorContent.tsx | head -10`
@@ -98,19 +102,30 @@ In `packages/web/src/plan/planElementMeshBuilders.ts`, find where beam or column
 
 ```ts
 export function buildSteelConnectionPlanSymbol(
-  conn: { id: string; positionMm?: { xMm: number; yMm: number }; startMm?: { xMm: number; yMm: number } },
+  conn: {
+    id: string;
+    positionMm?: { xMm: number; yMm: number };
+    startMm?: { xMm: number; yMm: number };
+  },
   ux: (mm: number) => number,
   uz: (mm: number) => number,
   PLAN_Y: number,
 ): THREE.Group {
   const grp = new THREE.Group();
   const pos = (conn as any).positionMm ?? (conn as any).startMm ?? { xMm: 0, yMm: 0 };
-  const cx = ux(pos.xMm ?? 0), cz = uz(pos.yMm ?? 0);
+  const cx = ux(pos.xMm ?? 0),
+    cz = uz(pos.yMm ?? 0);
   const r = 0.08;
 
   // X symbol: two crossed lines
-  for (const [dx, dz] of [[-r, -r, r, r], [-r, r, r, -r]] as [number, number, number, number][]) {
-    const pts = [new THREE.Vector3(cx + dx, PLAN_Y + 0.003, cz + dz), new THREE.Vector3(cx + dx + (r * 2 * Math.sign(dx - r)), PLAN_Y + 0.003, cz)];
+  for (const [dx, dz] of [
+    [-r, -r, r, r],
+    [-r, r, r, -r],
+  ] as [number, number, number, number][]) {
+    const pts = [
+      new THREE.Vector3(cx + dx, PLAN_Y + 0.003, cz + dz),
+      new THREE.Vector3(cx + dx + r * 2 * Math.sign(dx - r), PLAN_Y + 0.003, cz),
+    ];
     // Simplified: just two diagonal segments
   }
 
@@ -192,7 +207,9 @@ registerCommand({
   keywords: ['steel', 'connection', 'bolt', 'weld', 'end plate', 'shear tab', 'fabrication'],
   category: 'modify',
   isAvailable: () => true,
-  invoke: () => { /* use steel-connection tool */ },
+  invoke: () => {
+    /* use steel-connection tool */
+  },
 });
 
 registerCommand({
@@ -201,7 +218,9 @@ registerCommand({
   keywords: ['beam', 'section', 'profile', 'cross-section', 'parametric', 'steel profile'],
   category: 'modify',
   isAvailable: (ctx) => (ctx.selectedElements ?? []).some((e) => e.kind === 'beam'),
-  invoke: () => { /* set via inspector */ },
+  invoke: () => {
+    /* set via inspector */
+  },
 });
 ```
 
@@ -220,7 +239,12 @@ describe('Steel fabrication + parametric sections — §9.5.3 + §9.5.4', () => 
   });
 
   it('CreateSteelConnectionCmd has correct type', () => {
-    const cmd = { type: 'create_steel_connection' as const, id: 'sc-1', hostBeamId: 'b1', connectionType: 'end_plate' as const };
+    const cmd = {
+      type: 'create_steel_connection' as const,
+      id: 'sc-1',
+      hostBeamId: 'b1',
+      connectionType: 'end_plate' as const,
+    };
     expect(cmd.type).toBe('create_steel_connection');
     expect(cmd.connectionType).toBe('end_plate');
   });
@@ -241,7 +265,12 @@ describe('Steel fabrication + parametric sections — §9.5.3 + §9.5.4', () => 
       kind: 'beam_section_profile',
       id: 'bsp-1',
       name: 'HEB 300',
-      profilePoints: [{ xMm: -150, yMm: 0 }, { xMm: 150, yMm: 0 }, { xMm: 150, yMm: 300 }, { xMm: -150, yMm: 300 }],
+      profilePoints: [
+        { xMm: -150, yMm: 0 },
+        { xMm: 150, yMm: 0 },
+        { xMm: 150, yMm: 300 },
+        { xMm: -150, yMm: 300 },
+      ],
     };
     expect(profile.profilePoints.length).toBe(4);
   });

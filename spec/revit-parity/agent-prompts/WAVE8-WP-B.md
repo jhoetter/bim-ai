@@ -41,6 +41,7 @@ Read ALL of these before writing anything:
 ### A — split_wall command
 
 In `core/index.ts`:
+
 ```ts
 export type SplitWallCmd = {
   type: 'split_wall';
@@ -51,6 +52,7 @@ export type SplitWallCmd = {
 ```
 
 Handle in `Workspace.tsx`:
+
 - Find the wall by `wallId` in `elementsById`
 - Project `splitPointMm` onto the wall centreline (startMm→endMm segment)
 - Create two new walls: wallA (startMm → splitPoint) and wallB (splitPoint → endMm)
@@ -61,6 +63,7 @@ Handle in `Workspace.tsx`:
 ### B — Tool registration
 
 In `toolRegistry.ts`, add:
+
 ```ts
 'split-wall': {
   id: 'split-wall',
@@ -78,6 +81,7 @@ Add `'split-wall'` to the `ToolId` union. Add authoring contract in `authoringCo
 ### C — Grammar state machine
 
 In `toolGrammar.ts`, add `SplitWallState` and `reduceSplitWall`:
+
 ```ts
 type SplitWallState =
   | { phase: 'idle' }
@@ -85,12 +89,14 @@ type SplitWallState =
 ```
 
 Events:
+
 - `activate` → `active` with null hover
 - `hoverWall(wallId, pointMm)` → updates hover state; emits `previewSplitPoint` effect
 - `click(wallId, pointMm)` in `active` → emits `splitWall` effect with `{ wallId, splitPointMm: pointMm }`; stays in active (tool stays on for repeated splits)
 - `cancel` / `deactivate` → idle
 
 Wire into `PlanCanvas.tsx`:
+
 - `case 'split-wall'`: on canvas mousemove, raycast to find the nearest wall under cursor → dispatch `hoverWall`; on canvas click dispatch `click`; Escape → `cancel`
 - On `splitWall` effect: dispatch `{ type: 'split_wall', wallId, splitPointMm }`
 - Draw a small cross/marker at `hoverPointMm` as preview
@@ -102,6 +108,7 @@ When `planTool === 'split-wall'` and `hoverWallId` is set, draw a small vertical
 ### E — Tests
 
 Write `packages/web/src/tools/splitWallTool.test.ts`:
+
 ```ts
 describe('split wall grammar — §3.3.6', () => {
   it('activate moves to active phase', () => { ... });
@@ -113,6 +120,7 @@ describe('split wall grammar — §3.3.6', () => {
 ```
 
 Write `packages/web/src/tools/splitWallLogic.test.ts`:
+
 ```ts
 describe('split_wall command logic — §3.3.6', () => {
   it('projects split point onto wall segment', () => { ... });

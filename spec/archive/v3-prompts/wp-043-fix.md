@@ -75,6 +75,7 @@ belong to IMG-V3-01, remove it too — it belongs to WP-040 (DSC-V3-01).
 ### 5. Add agent-callable layer tests
 
 Per §A Agent Instructions, add HTTP-layer tests to `app/tests/test_img_v3_01.py`:
+
 - `test_trace_image_small_file` — POSTs a <2 MB synthetic PNG to `POST /api/v3/trace`,
   asserts HTTP 200 and that the response body has `rooms` and `walls` arrays.
 - `test_trace_image_large_file` — POSTs a >2 MB stub image, asserts HTTP 202 and

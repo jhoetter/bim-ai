@@ -41,6 +41,7 @@ both), keep only DSC-relevant additions: `discipline` field on element types,
 ### 1. Missing ToolDescriptor for SetElementDiscipline (API-V3-01 violation)
 
 Add a `ToolDescriptor` entry to `app/bim_ai/api/registry.py` for `set-element-discipline`:
+
 - name: `"set-element-discipline"`
 - description: `"Set the discipline tag (arch / struct / mep / site / gen) on one or more elements"`
 - parameters JSON schema: `{ elementIds: string[], discipline: "arch"|"struct"|"mep"|"site"|"gen" }`
@@ -57,6 +58,7 @@ fourth option: "Default for kind" (value = `null`). When selected, the command s
 ### 3. No agent-callable layer tests
 
 Create `app/tests/api/test_discipline_tags.py` with:
+
 - `test_set_discipline_via_api` — POST a SetElementDisciplineCmd bundle to
   `POST /api/v3/models/{id}/apply`, assert the element's discipline is updated.
 - `test_reset_to_default` — POST with `discipline: null`, assert the element returns to
@@ -68,6 +70,7 @@ Use the real `routes_api` router and TestClient pattern.
 
 Per the spec table, add these stubs (the kinds don't exist in the kernel yet, but the lookup
 table should be complete so future kernel additions don't need to touch DSC-V3-01 code):
+
 ```python
 "brace":      "struct",
 "foundation": "struct",

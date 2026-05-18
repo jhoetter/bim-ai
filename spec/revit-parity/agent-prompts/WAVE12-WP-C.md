@@ -57,7 +57,7 @@ Also add the command type:
 export type AttachFloorToRoofCmd = {
   type: 'attach_floor_to_roof';
   floorId: string;
-  roofId: string;        // null = detach
+  roofId: string; // null = detach
 };
 ```
 
@@ -95,6 +95,7 @@ Also handle detach: if `roofId` is an empty string, clear both fields.
 ### C — 3D mesh: respect topFaceElevationMm
 
 In `meshBuilders.ts`, in the floor mesh builder:
+
 - If `floor.topFaceElevationMm != null`, set the slab top face to that elevation. The slab thickness then extends downward: `baseElevationMm = topFaceElevationMm - thicknessMm`.
 - Otherwise use the existing `baseElevationMm` logic.
 
@@ -105,6 +106,7 @@ Keep the change minimal — a single if-check before the geometry is built.
 In `InspectorContent.tsx`, for `el.kind === 'floor'`:
 
 **Attach to Roof** section:
+
 - If `el.attachedToRoofId` is set: show **"Detach from Roof"** button (`data-testid="inspector-floor-detach"`), which dispatches `attach_floor_to_roof` with `roofId: ''`.
 - If not attached: show **"Attach to Roof"** button (`data-testid="inspector-floor-attach"`). Clicking it:
   - Looks up all `roof` elements in `elementsById`
@@ -116,13 +118,15 @@ Show current attachment status: `"Attached to: {roof.name}"` or `"Not attached"`
 ### E — Palette command
 
 In `defaultCommands.ts`:
+
 ```ts
 registerCommand({
   id: 'modify.attach-floor-to-roof',
   label: 'Attach Floor to Roof',
   keywords: ['attach', 'floor', 'roof', 'top', 'snap'],
   category: 'command',
-  isAvailable: (ctx) => ctx.selectedElementIds?.some(id => ctx.elementsById?.[id]?.kind === 'floor') ?? false,
+  isAvailable: (ctx) =>
+    ctx.selectedElementIds?.some((id) => ctx.elementsById?.[id]?.kind === 'floor') ?? false,
   invoke: (ctx) => ctx.attachFloorToRoof?.(),
 });
 ```
@@ -132,6 +136,7 @@ Add `attachFloorToRoof?: () => void` to `PaletteContext` and wire it in `Workspa
 ### F — Tests
 
 Write `packages/web/src/workspace/inspector/floorAttachRoof.test.tsx`:
+
 ```ts
 describe('floor attach to roof — §3.4.1', () => {
   it('renders inspector-floor-attach button when not attached', () => { ... });
@@ -142,6 +147,7 @@ describe('floor attach to roof — §3.4.1', () => {
 ```
 
 Write `packages/web/src/plan/attachFloorToRoof.test.ts`:
+
 ```ts
 describe('attachFloorToRoof command handler — §3.4.1', () => {
   it('sets attachedToRoofId on floor element', () => { ... });
@@ -155,6 +161,7 @@ describe('attachFloorToRoof command handler — §3.4.1', () => {
 ## Commit and push
 
 After tests pass (`pnpm test --filter @bim-ai/web`):
+
 ```
 git add -p
 git commit -m "feat(wave12/C): floor attach to roof — Attach Top/Base command + inspector (§3.4.1)"

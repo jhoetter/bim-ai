@@ -9,6 +9,7 @@ This prompt is self-contained — start here.
 ## Context
 
 §1.6.5 "Multifunktionsleiste" is Partial P1. bim-ai has a full `RibbonBar.tsx` at `packages/web/src/workspace/shell/RibbonBar.tsx` with all the Revit tab IDs defined. The architecture, structure, annotate, view, manage, and modify tabs are populated. However the following tabs are defined as type IDs but have **no content built into any ribbon builder function**:
+
 - `steel` — no steel tools in any tab definition
 - `precast` — no precast content
 - `massing-site` — no massing/site content
@@ -24,6 +25,7 @@ packages/web/src/workspace/shell/RibbonBar.tsx   — the main file to edit
 ```
 
 Run before editing:
+
 - `grep -n "function build.*Ribbon\|function build.*Tabs\|buildPlanRibbonTabs\|build3dRibbonTabs" packages/web/src/workspace/shell/RibbonBar.tsx | head -15`
 - `grep -n "id: 'steel'\|id: 'precast'\|id: 'massing\|id: 'structure'" packages/web/src/workspace/shell/RibbonBar.tsx | head -10`
 - `grep -n "'steel-connection'\|'beam'\|'column'\|'brace'\|steel.*tool" packages/web/src/tools/toolRegistry.ts | head -15`

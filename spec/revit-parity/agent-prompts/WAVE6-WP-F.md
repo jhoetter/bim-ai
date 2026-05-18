@@ -27,6 +27,7 @@ Prettier runs automatically after every Edit/Write.
 ## What already exists — DO NOT rebuild
 
 Read ALL of these files before writing anything:
+
 - `tools/massByFace.ts` — `getMassFaceCount(mass)`, `getMassFaceCorners(mass, faceIndex)`,
   `isMassFaceVertical(corners)`, `getMassFloorBoundaryAtElevation(mass, elev, baseElev)`
   These work on the old `kind: 'mass'` type. The new types are `mass_box`, `mass_extrusion`,
@@ -60,10 +61,11 @@ export interface FloorCmd {
 export function massToFloorCmds(
   mass: MassNewElem,
   levels: Extract<Element, { kind: 'level' }>[],
-): FloorCmd[]
+): FloorCmd[];
 ```
 
 Implementation:
+
 - For `mass_box`: footprint = rectangle `[{xMm: insertionXMm, yMm: insertionYMm}, {xMm: insertionXMm + widthMm, ...}, ...]`; height range = `[baseElevationMm, baseElevationMm + heightMm]`
 - For `mass_extrusion`: footprint = `profilePoints`; height range = `[baseElevationMm, baseElevationMm + heightMm]`
 - For `mass_revolution`: footprint = bounding box of `profilePoints` revolved (approximate as circle with radius = max distance from axis); height range from `baseElevationMm` to max y in profilePoints
@@ -84,7 +86,7 @@ export interface CurtainWallCmd {
 export function massToCurtainWallCmds(
   mass: MassNewElem,
   baseLevel: Extract<Element, { kind: 'level' }>,
-): CurtainWallCmd[]
+): CurtainWallCmd[];
 ```
 
 - For `mass_box`: 4 vertical faces → 4 wall commands (each side of the rectangle)
@@ -134,6 +136,7 @@ Read the exact `create_floor` and `create_wall` command shapes from `core/index.
 ### E — Tests
 
 Write `packages/web/src/tools/massToFloors.test.ts`:
+
 ```ts
 describe('massToFloorCmds — §11.5', () => {
   it('mass_box with 2 levels in range returns 2 FloorCmds', () => { ... });
@@ -145,6 +148,7 @@ describe('massToFloorCmds — §11.5', () => {
 ```
 
 Write `packages/web/src/tools/massToCurtainWall.test.ts`:
+
 ```ts
 describe('massToCurtainWallCmds — §11.5', () => {
   it('mass_box returns 4 CurtainWallCmds', () => { ... });

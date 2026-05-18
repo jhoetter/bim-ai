@@ -65,10 +65,10 @@ export interface CropRegionGrip {
 
 export function getCropRegionGrips(crop: CropRegionMm): CropRegionGrip[] {
   return [
-    { edge: 'left',   gripMm: { xMm: crop.xMm,                   yMm: crop.yMm + crop.heightMm / 2 } },
-    { edge: 'right',  gripMm: { xMm: crop.xMm + crop.widthMm,    yMm: crop.yMm + crop.heightMm / 2 } },
+    { edge: 'left', gripMm: { xMm: crop.xMm, yMm: crop.yMm + crop.heightMm / 2 } },
+    { edge: 'right', gripMm: { xMm: crop.xMm + crop.widthMm, yMm: crop.yMm + crop.heightMm / 2 } },
     { edge: 'bottom', gripMm: { xMm: crop.xMm + crop.widthMm / 2, yMm: crop.yMm } },
-    { edge: 'top',    gripMm: { xMm: crop.xMm + crop.widthMm / 2, yMm: crop.yMm + crop.heightMm } },
+    { edge: 'top', gripMm: { xMm: crop.xMm + crop.widthMm / 2, yMm: crop.yMm + crop.heightMm } },
   ];
 }
 
@@ -86,17 +86,23 @@ export function applyCropGripDrag(
   switch (edge) {
     case 'left': {
       const newX = Math.min(c.xMm + deltaMm.xMm, c.xMm + c.widthMm - minSizeMm);
-      c.widthMm += c.xMm - newX; c.xMm = newX; break;
+      c.widthMm += c.xMm - newX;
+      c.xMm = newX;
+      break;
     }
     case 'right': {
-      c.widthMm = Math.max(minSizeMm, c.widthMm + deltaMm.xMm); break;
+      c.widthMm = Math.max(minSizeMm, c.widthMm + deltaMm.xMm);
+      break;
     }
     case 'bottom': {
       const newY = Math.min(c.yMm + deltaMm.yMm, c.yMm + c.heightMm - minSizeMm);
-      c.heightMm += c.yMm - newY; c.yMm = newY; break;
+      c.heightMm += c.yMm - newY;
+      c.yMm = newY;
+      break;
     }
     case 'top': {
-      c.heightMm = Math.max(minSizeMm, c.heightMm + deltaMm.yMm); break;
+      c.heightMm = Math.max(minSizeMm, c.heightMm + deltaMm.yMm);
+      break;
     }
   }
   return c;
@@ -108,6 +114,7 @@ export function applyCropGripDrag(
 ### C — Crop region overlay in `GripLayer.tsx` (or `PlanCanvas.tsx`)
 
 When the active plan view has `cropRegionEnabled: true` and `cropRegionMm` is set, render:
+
 1. A dashed blue rectangle SVG outline at the crop boundary
 2. Four square grip handles (10×10 px) at the midpoint of each edge
 3. Drag behaviour: on mousedown on a grip, track mouse delta in plan-space mm, call `applyCropGripDrag`, dispatch `updateElementProperty` to update `cropRegionMm` on the active plan_view
@@ -125,9 +132,9 @@ if (view.cropRegionEnabled && view.cropRegionMm) {
   const c = view.cropRegionMm;
   const s = 1 / 1000; // mm → units
   renderer.clippingPlanes = [
-    new THREE.Plane(new THREE.Vector3(1, 0, 0), -c.xMm * s),       // left
+    new THREE.Plane(new THREE.Vector3(1, 0, 0), -c.xMm * s), // left
     new THREE.Plane(new THREE.Vector3(-1, 0, 0), (c.xMm + c.widthMm) * s), // right
-    new THREE.Plane(new THREE.Vector3(0, 1, 0), -c.yMm * s),       // bottom
+    new THREE.Plane(new THREE.Vector3(0, 1, 0), -c.yMm * s), // bottom
     new THREE.Plane(new THREE.Vector3(0, -1, 0), (c.yMm + c.heightMm) * s), // top
   ];
   renderer.localClippingEnabled = true;
@@ -163,19 +170,25 @@ Also add a "Reset Crop" button that sets `cropRegionMm: null` (`data-testid="pla
 In `InspectorContent.tsx` `case 'plan_view':`, add a "Crop Region" section:
 
 ```tsx
-<label>Crop Enabled
-  <input type="checkbox" data-testid="inspector-crop-enabled"
+<label>
+  Crop Enabled
+  <input
+    type="checkbox"
+    data-testid="inspector-crop-enabled"
     checked={el.cropRegionEnabled ?? false}
-    onChange={e => onPropertyChange('cropRegionEnabled', e.target.checked)} />
-</label>
-{el.cropRegionMm && (
-  <div>
-    <span data-testid="inspector-crop-x">X: {el.cropRegionMm.xMm} mm</span>
-    <span data-testid="inspector-crop-y">Y: {el.cropRegionMm.yMm} mm</span>
-    <span data-testid="inspector-crop-w">W: {el.cropRegionMm.widthMm} mm</span>
-    <span data-testid="inspector-crop-h">H: {el.cropRegionMm.heightMm} mm</span>
-  </div>
-)}
+    onChange={(e) => onPropertyChange('cropRegionEnabled', e.target.checked)}
+  />
+</label>;
+{
+  el.cropRegionMm && (
+    <div>
+      <span data-testid="inspector-crop-x">X: {el.cropRegionMm.xMm} mm</span>
+      <span data-testid="inspector-crop-y">Y: {el.cropRegionMm.yMm} mm</span>
+      <span data-testid="inspector-crop-w">W: {el.cropRegionMm.widthMm} mm</span>
+      <span data-testid="inspector-crop-h">H: {el.cropRegionMm.heightMm} mm</span>
+    </div>
+  );
+}
 ```
 
 ---

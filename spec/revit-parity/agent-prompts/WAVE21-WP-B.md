@@ -46,11 +46,13 @@ export interface FloorSlopePoint {
 ```
 
 On the `FloorElem` type, add:
+
 ```ts
 slopePoints?: FloorSlopePoint[];
 ```
 
 Add command types to the command union (search for existing `create_floor` or `update_floor` to find the pattern):
+
 ```ts
 | { type: 'addFloorSlopePoint'; floorId: string; point: FloorSlopePoint }
 | { type: 'removeFloorSlopePoint'; floorId: string; pointId: string }
@@ -82,7 +84,10 @@ if (cmd.type === 'removeFloorSlopePoint') {
     useBimStore.setState({
       elementsById: {
         ...cur,
-        [floor.id]: { ...floor, slopePoints: (floor.slopePoints ?? []).filter(p => p.id !== cmd.pointId) },
+        [floor.id]: {
+          ...floor,
+          slopePoints: (floor.slopePoints ?? []).filter((p) => p.id !== cmd.pointId),
+        },
       },
     });
   }
@@ -97,7 +102,7 @@ if (cmd.type === 'updateFloorSlopePoint') {
         ...cur,
         [floor.id]: {
           ...floor,
-          slopePoints: (floor.slopePoints ?? []).map(p =>
+          slopePoints: (floor.slopePoints ?? []).map((p) =>
             p.id === cmd.pointId ? { ...p, elevationOffsetMm: cmd.elevationOffsetMm } : p,
           ),
         },
@@ -113,9 +118,14 @@ if (cmd.type === 'updateFloorSlopePoint') {
 Find `case 'floor':` in `InspectorContent.tsx`. Add a "Drainage Slope Points" collapsible section after the existing floor properties:
 
 ```tsx
-{/* Drainage Slope Points */}
+{
+  /* Drainage Slope Points */
+}
 <details style={{ marginTop: 8 }}>
-  <summary data-testid="inspector-floor-slope-points-summary" style={{ cursor: 'pointer', fontWeight: 600 }}>
+  <summary
+    data-testid="inspector-floor-slope-points-summary"
+    style={{ cursor: 'pointer', fontWeight: 600 }}
+  >
     Drainage Slope Points ({(el as any).slopePoints?.length ?? 0})
   </summary>
   <div style={{ marginTop: 6 }}>
@@ -129,39 +139,47 @@ Find `case 'floor':` in `InspectorContent.tsx`. Add a "Drainage Slope Points" co
           data-testid={`inspector-floor-slope-pt-elevation-${idx}`}
           value={pt.elevationOffsetMm}
           style={{ width: 70 }}
-          onChange={e => onSemanticCommand?.({
-            type: 'updateFloorSlopePoint',
-            floorId: el.id,
-            pointId: pt.id,
-            elevationOffsetMm: +e.target.value,
-          })}
+          onChange={(e) =>
+            onSemanticCommand?.({
+              type: 'updateFloorSlopePoint',
+              floorId: el.id,
+              pointId: pt.id,
+              elevationOffsetMm: +e.target.value,
+            })
+          }
         />
         <span style={{ fontSize: 11 }}>mm offset</span>
         <button
           data-testid={`inspector-floor-slope-pt-remove-${idx}`}
-          onClick={() => onSemanticCommand?.({ type: 'removeFloorSlopePoint', floorId: el.id, pointId: pt.id })}
-          style={{ color: '#f87171', fontSize: 11 }}>
+          onClick={() =>
+            onSemanticCommand?.({ type: 'removeFloorSlopePoint', floorId: el.id, pointId: pt.id })
+          }
+          style={{ color: '#f87171', fontSize: 11 }}
+        >
           ✕
         </button>
       </div>
     ))}
     <button
       data-testid="inspector-floor-add-slope-point"
-      onClick={() => onSemanticCommand?.({
-        type: 'addFloorSlopePoint',
-        floorId: el.id,
-        point: {
-          id: crypto.randomUUID(),
-          xMm: 0,
-          yMm: 0,
-          elevationOffsetMm: -50,
-        },
-      })}
-      style={{ fontSize: 12, marginTop: 4 }}>
+      onClick={() =>
+        onSemanticCommand?.({
+          type: 'addFloorSlopePoint',
+          floorId: el.id,
+          point: {
+            id: crypto.randomUUID(),
+            xMm: 0,
+            yMm: 0,
+            elevationOffsetMm: -50,
+          },
+        })
+      }
+      style={{ fontSize: 12, marginTop: 4 }}
+    >
       + Add Slope Point
     </button>
   </div>
-</details>
+</details>;
 ```
 
 ### D — Plan symbol in floorSlopePlanThree.ts
@@ -210,9 +228,12 @@ import { useBimStore } from '../state/store';
 beforeEach(() => {
   useBimStore.setState({
     elementsById: {
-      'f1': {
-        id: 'f1', kind: 'floor', levelId: 'L1',
-        boundaryMm: [], thicknessMm: 200,
+      f1: {
+        id: 'f1',
+        kind: 'floor',
+        levelId: 'L1',
+        boundaryMm: [],
+        thicknessMm: 200,
       },
     },
   });
@@ -233,15 +254,20 @@ describe('Floor slope points — §3.4.2', () => {
   it('removeFloorSlopePoint removes by id', () => {
     useBimStore.setState({
       elementsById: {
-        'f1': {
-          id: 'f1', kind: 'floor', levelId: 'L1',
-          boundaryMm: [], thicknessMm: 200,
+        f1: {
+          id: 'f1',
+          kind: 'floor',
+          levelId: 'L1',
+          boundaryMm: [],
+          thicknessMm: 200,
           slopePoints: [{ id: 'sp1', xMm: 0, yMm: 0, elevationOffsetMm: -50 }],
         },
       },
     });
     useBimStore.getState().onSemanticCommand?.({
-      type: 'removeFloorSlopePoint', floorId: 'f1', pointId: 'sp1',
+      type: 'removeFloorSlopePoint',
+      floorId: 'f1',
+      pointId: 'sp1',
     });
     const floor = useBimStore.getState().elementsById['f1'] as any;
     expect(floor.slopePoints).toHaveLength(0);
@@ -250,15 +276,21 @@ describe('Floor slope points — §3.4.2', () => {
   it('updateFloorSlopePoint changes elevationOffsetMm', () => {
     useBimStore.setState({
       elementsById: {
-        'f1': {
-          id: 'f1', kind: 'floor', levelId: 'L1',
-          boundaryMm: [], thicknessMm: 200,
+        f1: {
+          id: 'f1',
+          kind: 'floor',
+          levelId: 'L1',
+          boundaryMm: [],
+          thicknessMm: 200,
           slopePoints: [{ id: 'sp1', xMm: 0, yMm: 0, elevationOffsetMm: -50 }],
         },
       },
     });
     useBimStore.getState().onSemanticCommand?.({
-      type: 'updateFloorSlopePoint', floorId: 'f1', pointId: 'sp1', elevationOffsetMm: -100,
+      type: 'updateFloorSlopePoint',
+      floorId: 'f1',
+      pointId: 'sp1',
+      elevationOffsetMm: -100,
     });
     const floor = useBimStore.getState().elementsById['f1'] as any;
     expect(floor.slopePoints[0].elevationOffsetMm).toBe(-100);

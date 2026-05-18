@@ -40,17 +40,35 @@ Read ALL of these before writing anything:
 In `ViewCube.tsx`, add a right-click (`onContextMenu`) handler on the cube element. On right-click:
 
 1. Show a small dropdown menu anchored near the cube:
+
 ```tsx
-<div data-testid="viewcube-context-menu" className="absolute right-0 top-full mt-1 z-50 bg-surface border border-border rounded shadow-md py-1 min-w-[160px]">
+<div
+  data-testid="viewcube-context-menu"
+  className="absolute right-0 top-full mt-1 z-50 bg-surface border border-border rounded shadow-md py-1 min-w-[160px]"
+>
   <div className="px-2 py-1 text-xs text-muted font-medium">Orient to View</div>
-  <button data-testid="viewcube-orient-top" onClick={() => orientToTop()}>Top (Plan)</button>
-  <button data-testid="viewcube-orient-front" onClick={() => orientToFront()}>Front</button>
-  <button data-testid="viewcube-orient-back" onClick={() => orientToBack()}>Back</button>
-  <button data-testid="viewcube-orient-left" onClick={() => orientToLeft()}>Left</button>
-  <button data-testid="viewcube-orient-right" onClick={() => orientToRight()}>Right</button>
+  <button data-testid="viewcube-orient-top" onClick={() => orientToTop()}>
+    Top (Plan)
+  </button>
+  <button data-testid="viewcube-orient-front" onClick={() => orientToFront()}>
+    Front
+  </button>
+  <button data-testid="viewcube-orient-back" onClick={() => orientToBack()}>
+    Back
+  </button>
+  <button data-testid="viewcube-orient-left" onClick={() => orientToLeft()}>
+    Left
+  </button>
+  <button data-testid="viewcube-orient-right" onClick={() => orientToRight()}>
+    Right
+  </button>
   {savedViews.length > 0 && <hr className="my-1 border-border" />}
-  {savedViews.map(v => (
-    <button key={v.id} data-testid={`viewcube-orient-saved-${v.id}`} onClick={() => orientToSaved(v)}>
+  {savedViews.map((v) => (
+    <button
+      key={v.id}
+      data-testid={`viewcube-orient-saved-${v.id}`}
+      onClick={() => orientToSaved(v)}
+    >
       {v.name}
     </button>
   ))}
@@ -85,7 +103,9 @@ registerCommand({
   label: 'Orient 3D View to Top (Plan)',
   keywords: ['orient', 'top', 'plan', '3d', 'view'],
   category: 'command',
-  invoke: (ctx) => { ctx.dispatch?.({ type: 'orient_3d_view', orientation: 'top' }); },
+  invoke: (ctx) => {
+    ctx.dispatch?.({ type: 'orient_3d_view', orientation: 'top' });
+  },
 });
 ```
 
@@ -94,6 +114,7 @@ Handle `'orient_3d_view'` in `Viewport.tsx` or `Workspace.tsx`.
 ### E — Tests
 
 `packages/web/src/viewport/viewCubeOrient.test.tsx`:
+
 ```ts
 describe('ViewCube orient to view — §3.2', () => {
   it('renders viewcube-context-menu on right click', () => { ... });
@@ -109,6 +130,7 @@ describe('ViewCube orient to view — §3.2', () => {
 ## Commit and push
 
 After tests pass (`pnpm test --filter @bim-ai/web`):
+
 ```
 git add -p
 git commit -m "feat(wave14/H): ViewCube right-click orient to view (§3.2)"

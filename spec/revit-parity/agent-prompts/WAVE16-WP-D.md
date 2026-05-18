@@ -38,12 +38,15 @@ Prettier runs automatically. **Always `git pull --rebase origin main` before pus
 ### A — ToolId + command type
 
 In `toolRegistry.ts`, add `'scale'` to the ToolId union. Register:
+
 ```ts
 { id: 'scale', hotkey: 'SZ', label: 'Scale', mode: 'plan' }
 ```
+
 Add to `MODIFY_TOOL_IDS` set (or equivalent group) and `PALETTE_ORDER`.
 
 In `core/index.ts`, add (if not present):
+
 ```ts
 | { type: 'scaleElements'; elementIds: string[]; basePtMm: { xMm: number; yMm: number }; scaleFactor: number }
 ```
@@ -57,6 +60,7 @@ Add `ScaleState`, `ScaleEvent`, `ScaleEffect`, `initialScaleState`, `reduceScale
 States: `idle → picking-base → picking-reference → scaling`
 
 Flow:
+
 1. **idle**: tool is selected (selection must be non-empty)
 2. **picking-base**: user clicks to set the base point (`basePtMm`)
 3. **picking-reference**: user clicks to set the reference point (`refPtMm`); the reference distance = `dist(basePt, refPt)`
@@ -71,6 +75,7 @@ For the numeric-input shortcut: if in `picking-reference` state, allow user to t
 ### C — PlanCanvas wiring
 
 Wire `reduceScale` into `PlanCanvas.tsx`:
+
 - On tool activate → `scaleState = initialScaleState`
 - On click → `reduceScale(scaleState, { type: 'click', ptMm })` → update state
 - On Escape → reset
@@ -82,6 +87,7 @@ Wire `reduceScale` into `PlanCanvas.tsx`:
 ### D — Workspace handler
 
 In `Workspace.tsx`, handle `type: 'scaleElements'`:
+
 ```ts
 if (cmd.type === 'scaleElements') {
   const { elementIds, basePtMm, scaleFactor } = cmd;
@@ -104,7 +110,7 @@ if (cmd.type === 'scaleElements') {
           type: 'updateElementProperty',
           elementId: id,
           key: field,
-          value: (el as Record<string, unknown>)[field] as number * scaleFactor,
+          value: ((el as Record<string, unknown>)[field] as number) * scaleFactor,
         });
       }
     }
@@ -117,6 +123,7 @@ if (cmd.type === 'scaleElements') {
 ### E — Palette command
 
 In `defaultCommands.ts`:
+
 ```ts
 { id: 'tool.scale', label: 'Scale', keywords: ['scale', 'resize', 'transform'], category: 'tool',
   invoke: (ctx) => startPlanTool(ctx, 'scale') }
@@ -127,6 +134,7 @@ In `defaultCommands.ts`:
 ### F — Tests
 
 `packages/web/src/plan/scaleTool.test.ts`:
+
 ```ts
 describe('scale tool grammar — §3.3.6', () => {
   it('starts in idle state', () => { ... });
@@ -138,6 +146,7 @@ describe('scale tool grammar — §3.3.6', () => {
 ```
 
 `packages/web/src/plan/scaleElements.test.ts`:
+
 ```ts
 describe('scaleElements handler', () => {
   it('scales positionMm relative to basePt', () => {

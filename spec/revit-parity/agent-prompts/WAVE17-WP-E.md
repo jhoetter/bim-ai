@@ -50,7 +50,7 @@ export type RoomEdge = {
   fromId: string;
   toId: string;
   doorId: string;
-  distanceMm: number;   // Euclidean distance between room centroids
+  distanceMm: number; // Euclidean distance between room centroids
 };
 
 export type RoomGraph = {
@@ -65,7 +65,7 @@ export type RoomGraph = {
  */
 export function buildRoomGraph(
   levelId: string,
-  elementsById: Record<string, Element | undefined>
+  elementsById: Record<string, Element | undefined>,
 ): RoomGraph {
   const nodes = new Map<string, RoomNode>();
   const edges: RoomEdge[] = [];
@@ -83,8 +83,8 @@ export function buildRoomGraph(
     const doorPos = (el as any).positionMm ?? { xMm: 0, yMm: 0 };
 
     // Find two closest rooms by distance from door to room centroid
-    const sorted = [...nodes.values()].sort((a, b) =>
-      distMm(doorPos, a.positionMm) - distMm(doorPos, b.positionMm)
+    const sorted = [...nodes.values()].sort(
+      (a, b) => distMm(doorPos, a.positionMm) - distMm(doorPos, b.positionMm),
     );
 
     if (sorted.length >= 2) {
@@ -107,8 +107,8 @@ function distMm(a: { xMm: number; yMm: number }, b: { xMm: number; yMm: number }
 }
 
 export type EgressPath = {
-  roomIds: string[];       // sequence of rooms from start to exit
-  doorIds: string[];       // sequence of doors traversed
+  roomIds: string[]; // sequence of rooms from start to exit
+  doorIds: string[]; // sequence of doors traversed
   totalDistanceMm: number;
 };
 
@@ -120,7 +120,7 @@ export type EgressPath = {
 export function computeEgressPath(
   startRoomId: string,
   graph: RoomGraph,
-  exitRoomIds: string[]
+  exitRoomIds: string[],
 ): EgressPath | null {
   // Dijkstra implementation
   const dist = new Map<string, number>();
@@ -167,8 +167,13 @@ export function computeEgressPath(
     for (const edge of graph.edges) {
       let neighbor: string | null = null;
       let dId: string | null = null;
-      if (edge.fromId === u) { neighbor = edge.toId; dId = edge.doorId; }
-      else if (edge.toId === u) { neighbor = edge.fromId; dId = edge.doorId; }
+      if (edge.fromId === u) {
+        neighbor = edge.toId;
+        dId = edge.doorId;
+      } else if (edge.toId === u) {
+        neighbor = edge.fromId;
+        dId = edge.doorId;
+      }
       if (!neighbor || !dId || visited.has(neighbor)) continue;
 
       const alt = (dist.get(u) ?? Infinity) + edge.distanceMm;
@@ -192,13 +197,13 @@ Add a function to render an egress path overlay:
 export function buildEgressPathOverlay(
   path: EgressPath,
   graph: RoomGraph,
-  scene: THREE.Group
+  scene: THREE.Group,
 ): void {
   // Draw thick green line connecting room centroids in order
   const points = path.roomIds
-    .map(id => graph.nodes.get(id)?.positionMm)
+    .map((id) => graph.nodes.get(id)?.positionMm)
     .filter(Boolean)
-    .map(p => new THREE.Vector3(p!.xMm / 1000, PLAN_Y + 0.005, p!.yMm / 1000));
+    .map((p) => new THREE.Vector3(p!.xMm / 1000, PLAN_Y + 0.005, p!.yMm / 1000));
 
   if (points.length < 2) return;
 
@@ -212,7 +217,10 @@ export function buildEgressPathOverlay(
   for (const pt of points) {
     const cGeo = new THREE.CircleGeometry(0.12, 12);
     const cMat = new THREE.MeshBasicMaterial({
-      color: '#22c55e', transparent: true, opacity: 0.5, side: THREE.DoubleSide,
+      color: '#22c55e',
+      transparent: true,
+      opacity: 0.5,
+      side: THREE.DoubleSide,
     });
     const circle = new THREE.Mesh(cGeo, cMat);
     circle.position.copy(pt);
@@ -243,30 +251,50 @@ export function EgressAnalysisPanel({ rooms, onRun, onClose }: Props) {
   const [startId, setStartId] = useState(rooms[0]?.roomId ?? '');
   const [result, setResult] = useState<EgressPath | null | 'none'>(null);
 
-  const exitRooms = rooms.filter(r => /exit|exterior|ausgang/i.test(r.name));
+  const exitRooms = rooms.filter((r) => /exit|exterior|ausgang/i.test(r.name));
 
   const run = () => {
-    const path = onRun(startId, exitRooms.map(r => r.roomId));
+    const path = onRun(
+      startId,
+      exitRooms.map((r) => r.roomId),
+    );
     setResult(path ?? 'none');
   };
 
   return (
-    <div data-testid="egress-analysis-panel"
-      style={{ padding: 16, background: '#fff', border: '1px solid #ccc', borderRadius: 6 }}>
+    <div
+      data-testid="egress-analysis-panel"
+      style={{ padding: 16, background: '#fff', border: '1px solid #ccc', borderRadius: 6 }}
+    >
       <h4>Egress Analysis</h4>
-      <label>Start room:
-        <select data-testid="egress-start-room" value={startId}
-          onChange={e => setStartId(e.target.value)}>
-          {rooms.map(r => <option key={r.roomId} value={r.roomId}>{r.name}</option>)}
+      <label>
+        Start room:
+        <select
+          data-testid="egress-start-room"
+          value={startId}
+          onChange={(e) => setStartId(e.target.value)}
+        >
+          {rooms.map((r) => (
+            <option key={r.roomId} value={r.roomId}>
+              {r.name}
+            </option>
+          ))}
         </select>
       </label>
       <div style={{ fontSize: 11, color: '#666' }}>
-        Exit rooms: {exitRooms.map(r => r.name).join(', ') || '(none — label rooms "Exit" or "Ausgang")'}
+        Exit rooms:{' '}
+        {exitRooms.map((r) => r.name).join(', ') || '(none — label rooms "Exit" or "Ausgang")'}
       </div>
-      <button data-testid="egress-run-btn" onClick={run}>Run Analysis</button>
-      <button data-testid="egress-close-btn" onClick={onClose}>Close</button>
+      <button data-testid="egress-run-btn" onClick={run}>
+        Run Analysis
+      </button>
+      <button data-testid="egress-close-btn" onClick={onClose}>
+        Close
+      </button>
       {result === 'none' && (
-        <p data-testid="egress-no-path" style={{ color: '#ef4444' }}>No egress path found.</p>
+        <p data-testid="egress-no-path" style={{ color: '#ef4444' }}>
+          No egress path found.
+        </p>
       )}
       {result && result !== 'none' && (
         <p data-testid="egress-path-result" style={{ color: '#22c55e' }}>
@@ -283,6 +311,7 @@ export function EgressAnalysisPanel({ rooms, onRun, onClose }: Props) {
 ### D — Palette command + Workspace handler
 
 In `defaultCommands.ts`:
+
 ```ts
 {
   id: 'analysis.egress',
@@ -300,6 +329,7 @@ In `Workspace.tsx`, add handler and state for `egressAnalysisOpen`.
 ### E — Capability graph
 
 In `commandCapabilities.ts`:
+
 ```ts
 { id: 'analysis.egress', scope: 'document', intendedModes: ['plan'], precondition: null },
 ```
@@ -309,6 +339,7 @@ In `commandCapabilities.ts`:
 ### F — Tests
 
 `packages/web/src/plan/roomGraph.test.ts`:
+
 ```ts
 describe('buildRoomGraph — §13.4', () => {
   it('returns empty graph when no rooms', () => { ... });

@@ -51,11 +51,13 @@ If not present, add the field as shown above.
 ### B — Tool registration
 
 In `toolRegistry.ts` (or `defaultCommands.ts` equivalent), register:
+
 ```ts
 { id: 'linework', hotkey: 'LW', label: 'Linework Override', mode: 'plan' }
 ```
 
 In `defaultCommands.ts`:
+
 ```ts
 { id: 'tool.linework', label: 'Linework Override', category: 'tool',
   invoke: (ctx) => startPlanTool(ctx, 'linework') }
@@ -83,6 +85,7 @@ Wire into `PlanCanvas.tsx` just as the paint tool is wired (short section — ju
 ### D — Semantic command handler in `Workspace.tsx`
 
 Add handler for `type: 'apply_linework_override'`:
+
 ```ts
 if (cmd.type === 'apply_linework_override') {
   const { elementId, colorHex, lineWeightPx, lineDash, viewId } = cmd;
@@ -91,7 +94,12 @@ if (cmd.type === 'apply_linework_override') {
   const existing = view.lineworkOverrides ?? [];
   const filtered = existing.filter((o) => o.elementId !== elementId);
   const updated = [...filtered, { elementId, colorHex, lineWeightPx, lineDash }];
-  void onSemanticCommand({ type: 'updateElementProperty', elementId: view.id, key: 'lineworkOverrides', value: updated });
+  void onSemanticCommand({
+    type: 'updateElementProperty',
+    elementId: view.id,
+    key: 'lineworkOverrides',
+    value: updated,
+  });
   return;
 }
 ```
@@ -101,6 +109,7 @@ if (cmd.type === 'apply_linework_override') {
 ### E — OptionsBar for linework tool
 
 When the `linework` tool is active, show in the OptionsBar (find `OptionsBar.tsx` and add a section):
+
 - Color picker input: `data-testid="options-linework-color"` (default `#ff0000`)
 - Line weight select: `data-testid="options-linework-weight"` — options: 0.5, 1, 2, 3
 - Style select: `data-testid="options-linework-style"` — Solid, Dashed, Hidden
@@ -140,26 +149,49 @@ In `InspectorContent.tsx`, for `kind === 'plan_view'`, add a collapsible section
 ```tsx
 <CollapsibleSection title="Linework Overrides" data-testid="inspector-linework-overrides">
   {(el.lineworkOverrides ?? []).length === 0 ? (
-    <p style={{ fontSize: 11, color: 'var(--color-muted)' }}>None. Use the Linework tool (LW) to override edges.</p>
+    <p style={{ fontSize: 11, color: 'var(--color-muted)' }}>
+      None. Use the Linework tool (LW) to override edges.
+    </p>
   ) : (
     (el.lineworkOverrides ?? []).map((ov) => (
-      <div key={ov.elementId} data-testid={`inspector-linework-override-${ov.elementId}`}
-        style={{ display: 'flex', gap: 4, alignItems: 'center', marginBottom: 2 }}>
-        <span style={{ width: 12, height: 12, background: ov.colorHex, border: '1px solid #888', display: 'inline-block' }} />
-        <span style={{ fontSize: 11, flex: 1 }}>{ov.elementId.slice(0, 8)}… {ov.lineWeightPx}px</span>
-        <button data-testid={`inspector-linework-remove-${ov.elementId}`}
+      <div
+        key={ov.elementId}
+        data-testid={`inspector-linework-override-${ov.elementId}`}
+        style={{ display: 'flex', gap: 4, alignItems: 'center', marginBottom: 2 }}
+      >
+        <span
+          style={{
+            width: 12,
+            height: 12,
+            background: ov.colorHex,
+            border: '1px solid #888',
+            display: 'inline-block',
+          }}
+        />
+        <span style={{ fontSize: 11, flex: 1 }}>
+          {ov.elementId.slice(0, 8)}… {ov.lineWeightPx}px
+        </span>
+        <button
+          data-testid={`inspector-linework-remove-${ov.elementId}`}
           onClick={() => {
             const next = (el.lineworkOverrides ?? []).filter((o) => o.elementId !== ov.elementId);
             onPropertyChange('lineworkOverrides', next);
           }}
-          style={{ fontSize: 10 }}>×</button>
+          style={{ fontSize: 10 }}
+        >
+          ×
+        </button>
       </div>
     ))
   )}
   {(el.lineworkOverrides ?? []).length > 0 && (
-    <button data-testid="inspector-linework-clear-all"
+    <button
+      data-testid="inspector-linework-clear-all"
       onClick={() => onPropertyChange('lineworkOverrides', [])}
-      style={{ fontSize: 11 }}>Clear All</button>
+      style={{ fontSize: 11 }}
+    >
+      Clear All
+    </button>
   )}
 </CollapsibleSection>
 ```
@@ -169,6 +201,7 @@ In `InspectorContent.tsx`, for `kind === 'plan_view'`, add a collapsible section
 ### H — Tests
 
 `packages/web/src/plan/lineworkOverride.test.ts`:
+
 ```ts
 describe('linework override — §3.3.7', () => {
   it('grammar starts in idle state', () => { ... });
@@ -179,6 +212,7 @@ describe('linework override — §3.3.7', () => {
 ```
 
 `packages/web/src/plan/lineworkOverrideMerge.test.ts`:
+
 ```ts
 describe('linework override deduplication', () => {
   it('adding override for same elementId replaces the old one', () => {

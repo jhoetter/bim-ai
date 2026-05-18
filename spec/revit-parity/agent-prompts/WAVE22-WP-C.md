@@ -9,6 +9,7 @@ This prompt is self-contained — start here.
 ## Context
 
 §8.6.2 "Treppe nach Bauteil" is Partial — "Independent run/landing/railing assembly with granular control is Partial." Wave 19 WP-A added `stair_run` and `stair_landing` element types with `parentStairId` fields and basic inspector panels. What's missing is:
+
 - A way to see all components of a stair from the stair's own inspector panel
 - A "Stair Assembly" panel on the stair element listing all linked runs/landings
 - "Add Run" / "Add Landing" buttons directly from the stair inspector
@@ -25,6 +26,7 @@ packages/web/src/workspace/Workspace.tsx         — find addStairRun / addStair
 ```
 
 Run:
+
 - `grep -n "stair_run\|stair_landing\|parentStairId" packages/core/src/index.ts | head -15`
 - `grep -n "case 'stair':" packages/web/src/workspace/inspector/InspectorContent.tsx`
 - `grep -n "addStairRun\|addStairLanding" packages/web/src/workspace/Workspace.tsx | head -10`
@@ -78,8 +80,14 @@ export function getStairComponents(
 Find `case 'stair':` in `InspectorContent.tsx`. Read the existing section carefully. After the existing stair properties (riserCount, runWidthMm, etc.), add a "Stair Assembly" subsection:
 
 ```tsx
-{/* §8.6.2: Stair Assembly — list linked run/landing components */}
-<StairAssemblySection stairId={el.id} elementsById={elementsById} onSemanticCommand={onSemanticCommand} />
+{
+  /* §8.6.2: Stair Assembly — list linked run/landing components */
+}
+<StairAssemblySection
+  stairId={el.id}
+  elementsById={elementsById}
+  onSemanticCommand={onSemanticCommand}
+/>;
 ```
 
 Create a small inline component (can be defined at the top of InspectorContent.tsx or in a separate file `StairAssemblySection.tsx` in the inspector folder):
@@ -98,28 +106,52 @@ function StairAssemblySection({
 
   return (
     <details style={{ marginTop: 8 }}>
-      <summary data-testid="inspector-stair-assembly-summary" style={{ cursor: 'pointer', fontWeight: 600, fontSize: 12 }}>
+      <summary
+        data-testid="inspector-stair-assembly-summary"
+        style={{ cursor: 'pointer', fontWeight: 600, fontSize: 12 }}
+      >
         Assembly ({runs.length} runs, {landings.length} landings)
       </summary>
       <div style={{ marginTop: 6 }}>
         {runs.map((run, i) => (
-          <div key={run.id} data-testid={`inspector-stair-run-row-${i}`}
-            style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 11, marginBottom: 2 }}>
-            <span>Run {i + 1}: {(run as any).riserCount ?? '?'} risers, {(run as any).runWidthMm ?? '?'}mm wide</span>
+          <div
+            key={run.id}
+            data-testid={`inspector-stair-run-row-${i}`}
+            style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 11, marginBottom: 2 }}
+          >
+            <span>
+              Run {i + 1}: {(run as any).riserCount ?? '?'} risers, {(run as any).runWidthMm ?? '?'}
+              mm wide
+            </span>
             <button
               data-testid={`inspector-stair-run-remove-${i}`}
-              onClick={() => onSemanticCommand?.({ type: 'removeStairComponent', componentId: run.id })}
-              style={{ color: '#f87171', fontSize: 10 }}>✕</button>
+              onClick={() =>
+                onSemanticCommand?.({ type: 'removeStairComponent', componentId: run.id })
+              }
+              style={{ color: '#f87171', fontSize: 10 }}
+            >
+              ✕
+            </button>
           </div>
         ))}
         {landings.map((landing, i) => (
-          <div key={landing.id} data-testid={`inspector-stair-landing-row-${i}`}
-            style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 11, marginBottom: 2 }}>
-            <span>Landing {i + 1}: {(landing as any).depthMm ?? '?'}mm</span>
+          <div
+            key={landing.id}
+            data-testid={`inspector-stair-landing-row-${i}`}
+            style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 11, marginBottom: 2 }}
+          >
+            <span>
+              Landing {i + 1}: {(landing as any).depthMm ?? '?'}mm
+            </span>
             <button
               data-testid={`inspector-stair-landing-remove-${i}`}
-              onClick={() => onSemanticCommand?.({ type: 'removeStairComponent', componentId: landing.id })}
-              style={{ color: '#f87171', fontSize: 10 }}>✕</button>
+              onClick={() =>
+                onSemanticCommand?.({ type: 'removeStairComponent', componentId: landing.id })
+              }
+              style={{ color: '#f87171', fontSize: 10 }}
+            >
+              ✕
+            </button>
           </div>
         ))}
         {runs.length === 0 && landings.length === 0 && (
@@ -129,35 +161,41 @@ function StairAssemblySection({
         )}
         <button
           data-testid="inspector-stair-add-run-btn"
-          onClick={() => onSemanticCommand?.({
-            type: 'addStairRun',
-            run: {
-              id: crypto.randomUUID(),
-              kind: 'stair_run',
-              parentStairId: stairId,
-              riserCount: 10,
-              runWidthMm: 1200,
-              startMm: { xMm: 0, yMm: 0 },
-              endMm: { xMm: 0, yMm: 3000 },
-            },
-          })}
-          style={{ fontSize: 11, marginTop: 4, marginRight: 8 }}>
+          onClick={() =>
+            onSemanticCommand?.({
+              type: 'addStairRun',
+              run: {
+                id: crypto.randomUUID(),
+                kind: 'stair_run',
+                parentStairId: stairId,
+                riserCount: 10,
+                runWidthMm: 1200,
+                startMm: { xMm: 0, yMm: 0 },
+                endMm: { xMm: 0, yMm: 3000 },
+              },
+            })
+          }
+          style={{ fontSize: 11, marginTop: 4, marginRight: 8 }}
+        >
           + Add Run
         </button>
         <button
           data-testid="inspector-stair-add-landing-btn"
-          onClick={() => onSemanticCommand?.({
-            type: 'addStairLanding',
-            landing: {
-              id: crypto.randomUUID(),
-              kind: 'stair_landing',
-              parentStairId: stairId,
-              depthMm: 1200,
-              widthMm: 1200,
-              positionMm: { xMm: 0, yMm: 0 },
-            },
-          })}
-          style={{ fontSize: 11, marginTop: 4 }}>
+          onClick={() =>
+            onSemanticCommand?.({
+              type: 'addStairLanding',
+              landing: {
+                id: crypto.randomUUID(),
+                kind: 'stair_landing',
+                parentStairId: stairId,
+                depthMm: 1200,
+                widthMm: 1200,
+                positionMm: { xMm: 0, yMm: 0 },
+              },
+            })
+          }
+          style={{ fontSize: 11, marginTop: 4 }}
+        >
           + Add Landing
         </button>
       </div>
@@ -180,19 +218,50 @@ import { describe, expect, it } from 'vitest';
 import { getStairComponents } from './stairComponentList';
 
 const elementsById: any = {
-  's1': { id: 's1', kind: 'stair', levelId: 'L1' },
-  'sr1': { id: 'sr1', kind: 'stair_run', parentStairId: 's1', riserCount: 10, runWidthMm: 1200, startMm: { xMm: 0, yMm: 0 }, endMm: { xMm: 0, yMm: 3000 } },
-  'sr2': { id: 'sr2', kind: 'stair_run', parentStairId: 's1', riserCount: 8, runWidthMm: 1000, startMm: { xMm: 0, yMm: 3500 }, endMm: { xMm: 0, yMm: 6000 } },
-  'sl1': { id: 'sl1', kind: 'stair_landing', parentStairId: 's1', depthMm: 1200, widthMm: 1200, positionMm: { xMm: 0, yMm: 3000 } },
-  'sr3': { id: 'sr3', kind: 'stair_run', parentStairId: 's2', riserCount: 5, runWidthMm: 900, startMm: { xMm: 0, yMm: 0 }, endMm: { xMm: 0, yMm: 1500 } },
+  s1: { id: 's1', kind: 'stair', levelId: 'L1' },
+  sr1: {
+    id: 'sr1',
+    kind: 'stair_run',
+    parentStairId: 's1',
+    riserCount: 10,
+    runWidthMm: 1200,
+    startMm: { xMm: 0, yMm: 0 },
+    endMm: { xMm: 0, yMm: 3000 },
+  },
+  sr2: {
+    id: 'sr2',
+    kind: 'stair_run',
+    parentStairId: 's1',
+    riserCount: 8,
+    runWidthMm: 1000,
+    startMm: { xMm: 0, yMm: 3500 },
+    endMm: { xMm: 0, yMm: 6000 },
+  },
+  sl1: {
+    id: 'sl1',
+    kind: 'stair_landing',
+    parentStairId: 's1',
+    depthMm: 1200,
+    widthMm: 1200,
+    positionMm: { xMm: 0, yMm: 3000 },
+  },
+  sr3: {
+    id: 'sr3',
+    kind: 'stair_run',
+    parentStairId: 's2',
+    riserCount: 5,
+    runWidthMm: 900,
+    startMm: { xMm: 0, yMm: 0 },
+    endMm: { xMm: 0, yMm: 1500 },
+  },
 };
 
 describe('getStairComponents — §8.6.2', () => {
   it('returns runs belonging to stairId', () => {
     const { runs } = getStairComponents('s1', elementsById);
     expect(runs).toHaveLength(2);
-    expect(runs.map(r => r.id)).toContain('sr1');
-    expect(runs.map(r => r.id)).toContain('sr2');
+    expect(runs.map((r) => r.id)).toContain('sr1');
+    expect(runs.map((r) => r.id)).toContain('sr2');
   });
 
   it('returns landings belonging to stairId', () => {
@@ -203,7 +272,7 @@ describe('getStairComponents — §8.6.2', () => {
 
   it('excludes components from other stairs', () => {
     const { runs } = getStairComponents('s1', elementsById);
-    expect(runs.map(r => r.id)).not.toContain('sr3');
+    expect(runs.map((r) => r.id)).not.toContain('sr3');
   });
 
   it('returns empty arrays for stair with no components', () => {

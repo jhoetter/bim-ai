@@ -23,6 +23,7 @@ packages/web/src/workspace/inspector/InspectorContent.tsx — add inspector case
 ```
 
 Run:
+
 - `find packages/web/src -name "familyParameterEval*"` — locate the parameter evaluator
 - `find packages/web/src -name "FamilyEditorWorkbench*"` — locate the workbench
 - `grep -n "family_parameter\|FamilyParameter" packages/core/src/index.ts` — see the existing param type
@@ -46,17 +47,18 @@ After the existing `family_parameter` element definition, add:
 export interface FamilyConstraintElem {
   id: string;
   kind: 'family_constraint';
-  familyId: string;           // the family element this constraint belongs to
-  paramName: string;          // name of the family_parameter that drives this constraint
-  refPlaneId1: string;        // first reference plane element id
-  refPlaneId2: string;        // second reference plane element id (driven by distance)
-  axis: 'x' | 'y';           // which coordinate axis the constraint measures
+  familyId: string; // the family element this constraint belongs to
+  paramName: string; // name of the family_parameter that drives this constraint
+  refPlaneId1: string; // first reference plane element id
+  refPlaneId2: string; // second reference plane element id (driven by distance)
+  axis: 'x' | 'y'; // which coordinate axis the constraint measures
 }
 ```
 
 Add `FamilyConstraintElem` to the `Element` union type (search for `| FamilyParameterElem` and add `| FamilyConstraintElem` beside it).
 
 Add command types to the command union:
+
 ```ts
 | { type: 'addFamilyConstraint'; constraint: FamilyConstraintElem }
 | { type: 'removeFamilyConstraint'; constraintId: string }
@@ -184,16 +186,23 @@ In `packages/web/src/families/FamilyEditorWorkbench.tsx`, add a "Constraints" se
 2. Below the parameters section, add:
 
 ```tsx
-{/* Parametric Constraints */}
+{
+  /* Parametric Constraints */
+}
 <div style={{ marginTop: 12 }}>
   <strong style={{ fontSize: 12 }}>Parametric Constraints</strong>
-  {constraintElements.map(fc => (
-    <div key={fc.id} data-testid={`family-editor-constraint-${fc.id}`}
-      style={{ fontSize: 11, color: '#aaa', padding: '2px 0' }}>
-      {fc.paramName} → {fc.axis.toUpperCase()} between {fc.refPlaneId1.slice(-4)} / {fc.refPlaneId2.slice(-4)}
+  {constraintElements.map((fc) => (
+    <div
+      key={fc.id}
+      data-testid={`family-editor-constraint-${fc.id}`}
+      style={{ fontSize: 11, color: '#aaa', padding: '2px 0' }}
+    >
+      {fc.paramName} → {fc.axis.toUpperCase()} between {fc.refPlaneId1.slice(-4)} /{' '}
+      {fc.refPlaneId2.slice(-4)}
     </div>
   ))}
-  <button data-testid="family-editor-add-constraint-btn"
+  <button
+    data-testid="family-editor-add-constraint-btn"
     onClick={() => {
       const newConstraint: FamilyConstraintElem = {
         id: crypto.randomUUID(),
@@ -206,10 +215,11 @@ In `packages/web/src/families/FamilyEditorWorkbench.tsx`, add a "Constraints" se
       };
       onSemanticCommand?.({ type: 'addFamilyConstraint', constraint: newConstraint });
     }}
-    style={{ fontSize: 11, marginTop: 4 }}>
+    style={{ fontSize: 11, marginTop: 4 }}
+  >
     + Add Constraint
   </button>
-</div>
+</div>;
 ```
 
 Where `constraintElements` is derived from `elementsById` by filtering for `kind === 'family_constraint'` with the matching `familyId`. Use local variables to compute this. If the workbench doesn't already expose `elementsById` and `onSemanticCommand`, subscribe to the store directly using `useBimStore`.
@@ -231,7 +241,8 @@ const plane2: any = { id: 'rp2', kind: 'reference_plane', xMm: 500, yMm: 0 };
 const elementsById: Record<string, any> = { rp1: plane1, rp2: plane2 };
 
 const constraint: FamilyConstraintElem = {
-  id: 'c1', kind: 'family_constraint',
+  id: 'c1',
+  kind: 'family_constraint',
   familyId: 'fam1',
   paramName: 'Width',
   refPlaneId1: 'rp1',
@@ -251,7 +262,12 @@ describe('applyFamilyConstraints — §15.1.3', () => {
   });
 
   it('applies y-axis constraint correctly', () => {
-    const yConstraint: FamilyConstraintElem = { ...constraint, id: 'c2', axis: 'y', paramName: 'Height' };
+    const yConstraint: FamilyConstraintElem = {
+      ...constraint,
+      id: 'c2',
+      axis: 'y',
+      paramName: 'Height',
+    };
     const result = applyFamilyConstraints(elementsById, [yConstraint], { Height: 800 });
     expect((result['rp2'] as any).yMm).toBe(800);
   });
@@ -263,16 +279,18 @@ describe('applyFamilyConstraints — §15.1.3', () => {
 
   it('applies multiple constraints independently', () => {
     const c2: FamilyConstraintElem = {
-      id: 'c2', kind: 'family_constraint',
-      familyId: 'fam1', paramName: 'Height',
-      refPlaneId1: 'rp1', refPlaneId2: 'rp2',
+      id: 'c2',
+      kind: 'family_constraint',
+      familyId: 'fam1',
+      paramName: 'Height',
+      refPlaneId1: 'rp1',
+      refPlaneId2: 'rp2',
       axis: 'y',
     };
-    const result = applyFamilyConstraints(
-      elementsById,
-      [constraint, c2],
-      { Width: 1200, Height: 900 },
-    );
+    const result = applyFamilyConstraints(elementsById, [constraint, c2], {
+      Width: 1200,
+      Height: 900,
+    });
     expect((result['rp2'] as any).xMm).toBe(1200);
     expect((result['rp2'] as any).yMm).toBe(900);
   });

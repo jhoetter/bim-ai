@@ -30,7 +30,7 @@ the coercion has to be hand-updated. **There is no compile-time check
 that the coercion handles every field.** Engine tests pass; bundle
 tests pass; the only way to detect the gap is to look at the live
 render, which is exactly what the per-phase visual checkpoint is
-designed to catch — except we kept advancing because *most* of the
+designed to catch — except we kept advancing because _most_ of the
 shape rendered, just not these specific features.
 
 **Prevention — what to build.**
@@ -66,6 +66,7 @@ from the host roof in world Z, **completely invisible** from any
 sensible camera. The CSG subtraction ran but happened in dead space.
 
 **Root cause.** Two competing conventions live in the codebase:
+
 - `meshBuilders.ts` uses no negation (plan-y = world-z directly)
 - `sweepMesh.ts` uses negation (plan-y = -world-z)
 
@@ -113,8 +114,8 @@ was correct; I trusted the text.
   is for; my checkpoints worked but I kept advancing on "good
   enough" silhouettes that turned out to be wildly wrong on
   dimensions. The skill's anti-pattern list has this exact failure
-  mode — the fix is honesty: *if the apex isn't where the sketch
-  says it should be, stop advancing and tune the dimensions.*
+  mode — the fix is honesty: _if the apex isn't where the sketch
+  says it should be, stop advancing and tune the dimensions._
 
 - **C3. The skill should formalise**: "When the textual brief
   describes a feature dramatically (\"very low\", \"much higher\",
@@ -155,7 +156,7 @@ ran for many days without ever cutting anything.**
 **Symptom.** After landing renderer fixes, the user (and I) saw the
 old behaviour for several iterations because Vite preview's cached
 `dist/` directory was serving stale JS. The Playwright config does
-`rm -rf dist && vite build` per run, but `make dev` uses Vite *dev*
+`rm -rf dist && vite build` per run, but `make dev` uses Vite _dev_
 mode which is supposed to HMR-update — and did, but the user's browser
 cached the snapshot anyway.
 
@@ -209,7 +210,7 @@ half an hour minimum. Slow enough that I sometimes advanced on
 **Prevention — what to build.**
 
 - **G1. SKB-03 as a CLI: `bim-ai checkpoint --viewpoint vp-main-iso
-  --target spec/target-house-seed-vis.png`.** One command that
+--target spec/target-house-seed-vis.png`.** One command that
   rebuilds the snapshot, screenshots the viewport via headless
   three.js, and runs the comparison math from
   `app/bim_ai/skb/visual_checkpoint.py`. Today the visual checkpoint

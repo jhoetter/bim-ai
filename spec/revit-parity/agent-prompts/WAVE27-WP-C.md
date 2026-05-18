@@ -13,6 +13,7 @@ This prompt is self-contained — start here.
 **§4.2.7** is Partial P2. Reference planes exist. Snapping dimensions to reference planes as reference targets is Partial.
 
 This task adds:
+
 1. `stackDimensions` utility — takes N parallel `permanent_dimension` elements sharing the same axis and redistributes their `offsetMm` (perpendicular offset) so they are stacked at even 7mm spacing
 2. `StackDimensionsCmd` command type
 3. Workspace handler
@@ -31,6 +32,7 @@ packages/web/src/cmdPalette/defaultCommands.ts — find 'annotate.' commands as 
 ```
 
 Run before editing:
+
 - `grep -n "permanent_dimension\|offsetMm\|DimWitness\|witness" packages/core/src/index.ts | head -15`
 - `grep -n "permanent_dimension\|stackDim" packages/web/src/workspace/Workspace.tsx | head -10`
 - `grep -n "reference_plane\|referencedElement" packages/core/src/index.ts | head -10`
@@ -66,10 +68,7 @@ type PermanentDimension = Extract<Element, { kind: 'permanent_dimension' }>;
  * Two dims are "parallel" if they share the same axis (both vertical, or both
  * within 5° of each other). Returns a map of elementId → new offsetMm.
  */
-export function stackDimensions(
-  dims: PermanentDimension[],
-  spacingMm = 7,
-): Map<string, number> {
+export function stackDimensions(dims: PermanentDimension[], spacingMm = 7): Map<string, number> {
   const result = new Map<string, number>();
   if (dims.length === 0) return result;
 
@@ -199,11 +198,7 @@ describe('stackDimensions — §4.2.6', () => {
   });
 
   it('stacks vertical and horizontal dims independently', () => {
-    const dims = [
-      makeDim('v1', true, 5),
-      makeDim('v2', true, 10),
-      makeDim('h1', false, 5),
-    ];
+    const dims = [makeDim('v1', true, 5), makeDim('v2', true, 10), makeDim('h1', false, 5)];
     const result = stackDimensions(dims, 7);
     const vertOffsets = [result.get('v1'), result.get('v2')].sort((a, b) => a! - b!);
     expect(vertOffsets).toEqual([7, 14]);

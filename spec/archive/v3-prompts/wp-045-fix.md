@@ -32,6 +32,7 @@ only on making this branch correct. Merge conflicts will be resolved at merge ti
 ### 1. CLI `bim-ai publish --link` missing (API-V3-01 hard requirement)
 
 Add to `packages/cli/cli.mjs`:
+
 - `bim-ai publish --link --model <model-id> [--display-name <str>] [--allow-measurement] [--allow-comment]`
   → calls `POST /api/v3/models/{id}/presentations`, prints the returned URL
 - `bim-ai publish --revoke <link-id>` → calls `POST /api/v3/presentations/{id}/revoke`
@@ -45,6 +46,7 @@ live) per API-V3-01 contract.
 
 The `resolve_presentation_token` function in `routes_api.py` looks up only the `PublicLinkRecord`
 but not the extra flags. Fix this by:
+
 - Adding `allow_measurement: bool = True` and `allow_comment: bool = True` as columns to
   `PublicLinkRecord` (with Alembic migration or equivalent for the in-process DB).
 - Reading them from the record in `resolve_presentation_token` and including them in the

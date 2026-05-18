@@ -12,6 +12,7 @@ The Summary Dashboard still contains old `Partial` chapter rows even though the 
 ## Ownership
 
 Primary write scope:
+
 - `spec/revit-parity/revit2026-parity-tracker.md`, Summary Dashboard only, roughly lines 1125-end.
 
 Do not edit product code.
@@ -36,4 +37,3 @@ Do not edit product code.
 
 - Dashboard does not contradict canonical sections.
 - Top gaps list is generated from current tracker reality, not stale carryover.
-

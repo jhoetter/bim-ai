@@ -44,14 +44,17 @@ Read ALL of these before writing anything:
 In `scheduleDefinitionPresets.ts`, add or extend presets for:
 
 **Door schedule** (`id: 'doors'`):
+
 - Columns: Mark (sequential door number), Type (typeId or "Generic"), Width (widthMm in mm), Height (heightMm in mm), Level (levelId → level name), Count
 - Group by typeId, sort by mark
 
 **Window schedule** (`id: 'windows'`):
+
 - Columns: Mark, Type (typeId), Width (widthMm), Height (heightMm), Sill Height (sillHeightMm), Level, Count
 - Group by typeId
 
 **Column schedule** (`id: 'columns'`):
+
 - Columns: Mark, Type, Width (widthMm), Depth (depthMm), Height (heightMm), Level, Count
 - Group by levelId
 
@@ -60,6 +63,7 @@ Each preset must conform to the existing preset interface — read `scheduleDefi
 ### B — Schedule data builders
 
 Create `packages/web/src/schedules/doorSchedule.ts`:
+
 ```ts
 export interface DoorScheduleRow {
   mark: string;
@@ -70,9 +74,7 @@ export interface DoorScheduleRow {
   count: number;
 }
 
-export function buildDoorSchedule(
-  elementsById: Record<string, Element>,
-): DoorScheduleRow[]
+export function buildDoorSchedule(elementsById: Record<string, Element>): DoorScheduleRow[];
 ```
 
 - Collect all door elements from `elementsById`
@@ -86,12 +88,14 @@ Create similar `windowSchedule.ts` and `columnSchedule.ts`.
 ### C — Wire tabs into ScheduleModeShell
 
 In `ScheduleModeShell.tsx`, add tabs for "Doors", "Windows", "Columns":
+
 - `data-testid="schedule-tab-doors"`, `data-testid="schedule-tab-windows"`, `data-testid="schedule-tab-columns"`
 - Each tab renders its respective schedule table
 
 ### D — Schedule table component
 
 If a generic `ScheduleTable` component doesn't already exist, create `packages/web/src/schedules/ScheduleTable.tsx`:
+
 ```tsx
 interface ScheduleTableProps<T extends object> {
   rows: T[];
@@ -107,6 +111,7 @@ Use a plain `<table>` with thead/tbody. Row `data-testid="schedule-row-{i}"`.
 ### E — Tests
 
 Write `packages/web/src/schedules/doorSchedule.test.ts`:
+
 ```ts
 describe('buildDoorSchedule — §13.3.1', () => {
   it('returns empty array when no doors', () => { ... });
@@ -118,6 +123,7 @@ describe('buildDoorSchedule — §13.3.1', () => {
 ```
 
 Write `packages/web/src/schedules/schedulePanel.test.tsx`:
+
 ```ts
 describe('schedule panel — §13.3.1', () => {
   it('renders schedule-tab-doors', () => { ... });

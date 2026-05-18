@@ -11,6 +11,7 @@ This prompt is self-contained — start here.
 §6.1.6 "Schnittansicht" is Partial. Section views exist with material hatch patterns (wave 15) and section bubbles (wave 16). What's still missing is level datum lines — horizontal dashed lines at each floor level elevation shown inside the section SVG, with level name labels. In Revit, section views show dotted horizontal datum lines labeled with the level name (e.g., "EG +0.00", "OG1 +3.20") which help readers understand the vertical position of floors and ceilings.
 
 This task adds:
+
 - A `showLevelLines?: boolean` field on `section_cut` elements
 - `sectionViewportSvg.tsx` updated to draw horizontal dashed level lines + name labels
 - Inspector toggle
@@ -28,6 +29,7 @@ packages/web/src/workspace/inspector/InspectorContent.tsx — find case 'section
 ```
 
 Run:
+
 - `grep -n "section_cut\|cropDepthMm\|lineStartMm" packages/core/src/index.ts | head -10`
 - Read `packages/web/src/workspace/sheets/sectionViewportSvg.tsx` to understand the SVG rendering approach, particularly how walls and other elements are projected into the section plane.
 - `grep -n "level\|levelId\|elevationMm" packages/core/src/index.ts | grep "kind: 'level'" | head -5`
@@ -116,11 +118,13 @@ Look for the SVG construction pattern in the file — find where the function re
 The key challenge: you need to know the elevation range of the section view. The section_cut element has `lineStartMm` and `lineEndMm` in plan (XY), but the vertical range is defined by the levels in the project. Use all levels from `elementsById` to define the min/max elevation range for the section.
 
 Add:
+
 ```ts
 import { extractLevelData, buildLevelLineSvg } from './sectionLevelLines';
 ```
 
 In the SVG build, after the element outlines, add level lines when enabled:
+
 ```ts
 let levelLinesSvg = '';
 if ((sectionCut as any).showLevelLines !== false) {
@@ -165,10 +169,10 @@ import { describe, expect, it } from 'vitest';
 import { extractLevelData, buildLevelLineSvg } from './sectionLevelLines';
 
 const elementsById: any = {
-  'l1': { id: 'l1', kind: 'level', name: 'EG', elevationMm: 0 },
-  'l2': { id: 'l2', kind: 'level', name: 'OG1', elevationMm: 3200 },
-  'l3': { id: 'l3', kind: 'level', name: 'OG2', elevationMm: 6400 },
-  'w1': { id: 'w1', kind: 'wall', levelId: 'l1' },
+  l1: { id: 'l1', kind: 'level', name: 'EG', elevationMm: 0 },
+  l2: { id: 'l2', kind: 'level', name: 'OG1', elevationMm: 3200 },
+  l3: { id: 'l3', kind: 'level', name: 'OG2', elevationMm: 6400 },
+  w1: { id: 'w1', kind: 'wall', levelId: 'l1' },
 };
 
 describe('sectionLevelLines — §6.1.6', () => {
@@ -181,16 +185,19 @@ describe('sectionLevelLines — §6.1.6', () => {
 
   it('excludes non-level elements', () => {
     const levels = extractLevelData(elementsById);
-    expect(levels.every(l => typeof l.elevationMm === 'number')).toBe(true);
+    expect(levels.every((l) => typeof l.elevationMm === 'number')).toBe(true);
   });
 
   it('returns empty array for no levels', () => {
-    const levels = extractLevelData({ 'w1': { id: 'w1', kind: 'wall' } as any });
+    const levels = extractLevelData({ w1: { id: 'w1', kind: 'wall' } as any });
     expect(levels).toHaveLength(0);
   });
 
   it('buildLevelLineSvg produces line and text elements', () => {
-    const levels = [{ name: 'EG', elevationMm: 0 }, { name: 'OG1', elevationMm: 3200 }];
+    const levels = [
+      { name: 'EG', elevationMm: 0 },
+      { name: 'OG1', elevationMm: 3200 },
+    ];
     const svg = buildLevelLineSvg(levels, 800, 0, 600, 0.1);
     expect(svg).toContain('<line');
     expect(svg).toContain('<text');

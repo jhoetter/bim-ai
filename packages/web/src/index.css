@@ -13,8 +13,8 @@
   .inspector-panel,
   .status-bar,
   .project-browser,
-  [data-testid="options-bar"],
-  [data-testid="print-plot-dialog"],
+  [data-testid='options-bar'],
+  [data-testid='print-plot-dialog'],
   nav,
   header {
     display: none !important;
@@ -22,7 +22,7 @@
 
   /* Show only the sheet canvas */
   .sheet-canvas-wrapper,
-  [data-testid="sheet-canvas"] {
+  [data-testid='sheet-canvas'] {
     display: block !important;
     page-break-inside: avoid;
   }

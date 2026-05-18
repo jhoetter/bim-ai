@@ -39,7 +39,11 @@
   --hof-dt-frozen-edge: color-mix(in srgb, var(--color-foreground) 12%, var(--color-border));
   --hof-dt-checkbox-border: color-mix(in srgb, var(--color-foreground) 10%, var(--color-border));
   --hof-dt-checkbox-bg: var(--color-background);
-  --hof-dt-checkbox-hover-border: color-mix(in srgb, var(--color-foreground) 18%, var(--color-border));
+  --hof-dt-checkbox-hover-border: color-mix(
+    in srgb,
+    var(--color-foreground) 18%,
+    var(--color-border)
+  );
   --hof-app-footer-bar-height: 3.5rem;
   --hof-body-font-features: normal;
   --hof-radius-sm: 0px;
@@ -88,7 +92,11 @@
     --error: var(--color-destructive);
     --hof-dt-checkbox-border: color-mix(in srgb, var(--color-foreground) 22%, var(--color-border));
     --hof-dt-checkbox-bg: var(--color-input);
-    --hof-dt-checkbox-hover-border: color-mix(in srgb, var(--color-foreground) 36%, var(--color-border));
+    --hof-dt-checkbox-hover-border: color-mix(
+      in srgb,
+      var(--color-foreground) 36%,
+      var(--color-border)
+    );
   }
 }
 
@@ -121,5 +129,9 @@
   --error: var(--color-destructive);
   --hof-dt-checkbox-border: color-mix(in srgb, var(--color-foreground) 22%, var(--color-border));
   --hof-dt-checkbox-bg: var(--color-input);
-  --hof-dt-checkbox-hover-border: color-mix(in srgb, var(--color-foreground) 36%, var(--color-border));
+  --hof-dt-checkbox-hover-border: color-mix(
+    in srgb,
+    var(--color-foreground) 36%,
+    var(--color-border)
+  );
 }

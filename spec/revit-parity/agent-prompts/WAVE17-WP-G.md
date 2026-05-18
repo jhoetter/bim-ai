@@ -58,6 +58,7 @@ Add a new element kind (if not present):
 ```
 
 Add command type:
+
 ```ts
 | { type: 'createGradedRegion'; element: Extract<Element, { kind: 'graded_region' }> }
 ```
@@ -81,7 +82,7 @@ type PointMm = { xMm: number; yMm: number };
  */
 export function splitToposolid(
   topo: ToposolidEl,
-  splitLineMm: PointMm[]
+  splitLineMm: PointMm[],
 ): [ToposolidEl, ToposolidEl] {
   // Simplified: partition heightSamples into left/right of the split line.
   // Use cross product to determine side for each sample.
@@ -95,8 +96,8 @@ export function splitToposolid(
   }
 
   // Compute bounding boxes for perimeters
-  const leftPerim = boundingBoxPerimeter(left.map(s => ({ xMm: s.xMm, yMm: s.yMm })));
-  const rightPerim = boundingBoxPerimeter(right.map(s => ({ xMm: s.xMm, yMm: s.yMm })));
+  const leftPerim = boundingBoxPerimeter(left.map((s) => ({ xMm: s.xMm, yMm: s.yMm })));
+  const rightPerim = boundingBoxPerimeter(right.map((s) => ({ xMm: s.xMm, yMm: s.yMm })));
 
   return [
     { ...topo, id: crypto.randomUUID(), heightSamples: left, perimeterMm: leftPerim },
@@ -114,11 +115,19 @@ function sideOfPolyline(line: PointMm[], pt: PointMm): number {
 
 function boundingBoxPerimeter(pts: PointMm[]): PointMm[] {
   if (pts.length === 0) return [];
-  const xs = pts.map(p => p.xMm), ys = pts.map(p => p.yMm);
-  const [minX, maxX, minY, maxY] = [Math.min(...xs), Math.max(...xs), Math.min(...ys), Math.max(...ys)];
+  const xs = pts.map((p) => p.xMm),
+    ys = pts.map((p) => p.yMm);
+  const [minX, maxX, minY, maxY] = [
+    Math.min(...xs),
+    Math.max(...xs),
+    Math.min(...ys),
+    Math.max(...ys),
+  ];
   return [
-    { xMm: minX, yMm: minY }, { xMm: maxX, yMm: minY },
-    { xMm: maxX, yMm: maxY }, { xMm: minX, yMm: maxY },
+    { xMm: minX, yMm: minY },
+    { xMm: maxX, yMm: minY },
+    { xMm: maxX, yMm: maxY },
+    { xMm: minX, yMm: maxY },
   ];
 }
 ```
@@ -128,6 +137,7 @@ function boundingBoxPerimeter(pts: PointMm[]): PointMm[] {
 ### C — Tool registration
 
 In `toolRegistry.ts`:
+
 - Add `'graded-region'` to ToolId union: `{ id: 'graded-region', hotkey: 'GR', label: 'Graded Region', mode: 'plan' }`
 - Add `'terrain-split'` to ToolId union: `{ id: 'terrain-split', hotkey: 'TS', label: 'Split Terrain', mode: 'plan' }`
 - Add both to `PALETTE_ORDER` near other terrain tools.
@@ -137,6 +147,7 @@ In `toolRegistry.ts`:
 ### D — Grammars in `toolGrammar.ts`
 
 **GradedRegion grammar** (polygon sketch):
+
 - `idle → sketching (click adds points) → Enter (≥3 pts) → emit createGradedRegion`
 - Escape → idle
 
@@ -154,6 +165,7 @@ type GradedRegionEffect = {
 ```
 
 **TerrainSplit grammar** (polyline):
+
 - `idle → splitting (click adds points) → Enter (≥2 pts) → emit splitTerrain`
 
 ```ts
@@ -174,6 +186,7 @@ For `graded-region`: emit `createElement` for the `graded_region` element.
 For `terrain-split`: get the selected toposolid ID, emit a `splitTerrain` semantic command.
 
 In `Workspace.tsx`, handle `splitTerrain`:
+
 ```ts
 if (cmd.type === 'splitTerrain') {
   const topo = elementsById[cmd.toposolidId];
@@ -208,7 +221,11 @@ export function buildGradedRegionMesh(el: Extract<Element, { kind: 'graded_regio
   shape.closePath();
 
   const geo = new THREE.ShapeGeometry(shape);
-  const mat = new THREE.MeshStandardMaterial({ color: '#8fbc8f', side: THREE.DoubleSide, roughness: 0.9 });
+  const mat = new THREE.MeshStandardMaterial({
+    color: '#8fbc8f',
+    side: THREE.DoubleSide,
+    roughness: 0.9,
+  });
   const mesh = new THREE.Mesh(geo, mat);
   mesh.rotation.x = -Math.PI / 2;
   mesh.position.y = avgElev / 1000;
@@ -230,17 +247,26 @@ In `symbology.ts`, add a plan symbol for `graded_region`: hatched polygon with d
 ### H — Inspector panel
 
 In `InspectorContent.tsx`, add `case 'graded_region':`:
+
 ```tsx
 <div>
-  <label>Lower Elevation (mm)
-    <input type="number" data-testid="inspector-graded-region-lower"
+  <label>
+    Lower Elevation (mm)
+    <input
+      type="number"
+      data-testid="inspector-graded-region-lower"
       value={el.lowerElevationMm ?? 0}
-      onChange={e => onPropertyChange('lowerElevationMm', +e.target.value)} />
+      onChange={(e) => onPropertyChange('lowerElevationMm', +e.target.value)}
+    />
   </label>
-  <label>Upper Elevation (mm)
-    <input type="number" data-testid="inspector-graded-region-upper"
+  <label>
+    Upper Elevation (mm)
+    <input
+      type="number"
+      data-testid="inspector-graded-region-upper"
       value={el.upperElevationMm ?? 500}
-      onChange={e => onPropertyChange('upperElevationMm', +e.target.value)} />
+      onChange={(e) => onPropertyChange('upperElevationMm', +e.target.value)}
+    />
   </label>
 </div>
 ```
@@ -250,6 +276,7 @@ In `InspectorContent.tsx`, add `case 'graded_region':`:
 ### I — Palette commands + capability graph
 
 In `defaultCommands.ts`:
+
 ```ts
 { id: 'tool.graded-region', label: 'Graded Region', keywords: ['graded', 'terrain', 'slope', 'region'],
   category: 'tool', invoke: (ctx) => startPlanTool(ctx, 'graded-region') }
@@ -258,6 +285,7 @@ In `defaultCommands.ts`:
 ```
 
 In `commandCapabilities.ts`:
+
 ```ts
 { id: 'tool.graded-region', scope: 'document', intendedModes: ['plan'], precondition: null },
 { id: 'tool.terrain-split', scope: 'selection', intendedModes: ['plan'], precondition: 'selected-toposolid' },
@@ -268,6 +296,7 @@ In `commandCapabilities.ts`:
 ### J — Tests
 
 `packages/web/src/plan/terrainSplit.test.ts`:
+
 ```ts
 describe('splitToposolid — §5.1.6', () => {
   it('returns two toposolids', () => { ... });
@@ -278,6 +307,7 @@ describe('splitToposolid — §5.1.6', () => {
 ```
 
 `packages/web/src/plan/gradedRegion.test.ts`:
+
 ```ts
 describe('graded region grammar — §5.1.6', () => {
   it('starts in idle state', () => { ... });

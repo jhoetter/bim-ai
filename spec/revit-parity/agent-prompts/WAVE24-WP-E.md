@@ -28,6 +28,7 @@ packages/web/src/schedules/scheduleDefinitionPresets.ts — separate file; find 
 ```
 
 Run before editing:
+
 - `grep -n "window.*preset\|windowPreset\|WINDOW_TYPES\|windowType\|WindowType" packages/web/src/ -r | grep -v "test\|node_modules" | head -20`
 - `grep -n "door.*preset\|doorPreset\|DOOR_TYPES\|doorType\|DoorType" packages/web/src/ -r | grep -v "test\|node_modules" | head -20`
 - `grep -n "'window'\|'door'" packages/web/src/tools/ToolPalette.tsx | head -10`
@@ -45,18 +46,22 @@ Prettier runs automatically. **Always `git pull --rebase origin main` before pus
 ### A — Survey the current window/door type system
 
 Run:
+
 ```
 grep -n "kind: 'window'" packages/core/src/index.ts | head -5
 ```
+
 Read the `window` union member to understand fields available for style differentiation (look for `windowStyle`, `operationType`, `glazingType`, or similar optional fields).
 
 If no style/operation field exists on the window element, add:
+
 ```ts
 /** §3.6.2: visual/operation style of the window. */
 windowStyle?: 'casement' | 'double_hung' | 'awning' | 'fixed' | 'sliding' | null;
 ```
 
 Similarly for door:
+
 ```ts
 /** §3.6.2: operation style of the door. */
 doorStyle?: 'single' | 'sliding' | 'double_leaf' | 'pocket' | null;
@@ -187,6 +192,7 @@ The minimum requirement: a user can see "Single Casement 900×1200", "Sliding Do
 If the current `placeWindow` command already accepts widthMm/heightMm/sillHeightMm, you can wire presets to dispatch those commands directly. If not, add palette commands:
 
 In `defaultCommands.ts`, add commands like:
+
 ```ts
 registerCommand({
   id: 'tool.window-casement',

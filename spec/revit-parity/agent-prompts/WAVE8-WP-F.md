@@ -43,6 +43,7 @@ Read ALL of these before writing anything:
 ### A — toposolid_pad element type
 
 In `core/index.ts`, add:
+
 ```ts
 /** §5.1.4: a flattened sub-area of a toposolid surface, placed at a fixed elevation. */
 export type ToposolidPadElement = {
@@ -58,6 +59,7 @@ export type ToposolidPadElement = {
 ```
 
 Add `'toposolid_pad'` to `ElemKind` union and `Element` union. Add to `elemCategory`:
+
 ```ts
 toposolid_pad: 'site',
 ```
@@ -65,6 +67,7 @@ toposolid_pad: 'site',
 ### B — create_toposolid_pad command
 
 In `core/index.ts`:
+
 ```ts
 export type CreateToposolidPadCmd = {
   type: 'create_toposolid_pad';
@@ -80,6 +83,7 @@ Handle in `Workspace.tsx` — same pattern as other create commands (add to `ele
 ### C — Tool registration
 
 In `toolRegistry.ts`, add to ToolId union and registry:
+
 ```ts
 'terrain-pad': {
   id: 'terrain-pad',
@@ -98,6 +102,7 @@ Add authoring contract in `authoringCommandContract.ts` (kind: 'sketch', complet
 ### D — Grammar state machine
 
 In `toolGrammar.ts`, add `TerrainPadState` and `reduceTerrainPad`:
+
 ```ts
 type TerrainPadState =
   | { phase: 'idle' }
@@ -105,12 +110,14 @@ type TerrainPadState =
 ```
 
 Events:
+
 - `activate(toposolidId, elevationMm)` → sketching with empty points
 - `click(xMm, yMm)` → appends `{ xMm, yMm }` to points
 - `commit` (Enter or double-click with ≥3 points) → emits `createTerrainPad` effect; returns to idle
 - `cancel` (Escape) → idle
 
 Wire into `PlanCanvas.tsx`:
+
 - `case 'terrain-pad'`: on click dispatch `click`; Enter dispatches `commit`; Escape → `cancel`
 - On `createTerrainPad` effect: dispatch `create_toposolid_pad`
 - Draw preview polygon outline while sketching
@@ -118,6 +125,7 @@ Wire into `PlanCanvas.tsx`:
 ### E — 3D mesh: pad cap
 
 In `meshBuilders.ts`, after building the main toposolid mesh, check `elementsById` for any `toposolid_pad` elements whose `toposolidId` matches:
+
 - For each pad: build a flat `THREE.ShapeGeometry` from `boundaryMm` at Y = `elevationMm / 1000`
 - Material: `MeshStandardMaterial({ color: '#c8a882' })` (warm tan for gravel/concrete pad)
 - Add as a child of the toposolid mesh group with `userData.bimPickId = pad.id`
@@ -125,11 +133,11 @@ In `meshBuilders.ts`, after building the main toposolid mesh, check `elementsByI
 ### F — Plan symbol
 
 Create `packages/web/src/plan/terrainPadPlanThree.ts`:
+
 ```ts
-export function terrainPadPlanThree(
-  pad: Extract<Element, { kind: 'toposolid_pad' }>,
-): THREE.Group
+export function terrainPadPlanThree(pad: Extract<Element, { kind: 'toposolid_pad' }>): THREE.Group;
 ```
+
 - Draw the pad boundary as a dashed closed polygon at `PLAN_Y + 0.003`
 - Fill with a semi-transparent tan rectangle using ShapeGeometry
 - Label with elevation: `"${pad.elevationMm} mm"` as a sprite
@@ -139,12 +147,14 @@ Wire into `symbology.ts` toposolid loop: after toposolid boundary, add any pads 
 ### G — Inspector panel
 
 In `InspectorContent.tsx`, for `el.kind === 'toposolid_pad'`:
+
 - `data-testid="inspector-pad-elevation"` — number input (mm), value = `el.elevationMm`, on change dispatch `update_element_property` for `elevationMm`
 - `data-testid="inspector-pad-area"` — read-only shoelace area: `"${shoelaceM2.toFixed(1)} m²"`
 
 ### H — Tests
 
 Write `packages/web/src/tools/terrainPadTool.test.ts`:
+
 ```ts
 describe('terrain pad grammar — §5.1.4', () => {
   it('activate moves to sketching phase', () => { ... });
@@ -156,6 +166,7 @@ describe('terrain pad grammar — §5.1.4', () => {
 ```
 
 Write `packages/web/src/plan/terrainPadPlan.test.ts`:
+
 ```ts
 describe('terrainPadPlanThree — §5.1.4', () => {
   it('returns Group with children for a valid pad', () => { ... });

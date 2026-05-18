@@ -44,6 +44,7 @@ The goal is to push both annotation tools from "Partial" to "Done" by ensuring a
 ### A — Core types (if missing fields)
 
 Ensure `spot_coordinate` has:
+
 ```ts
 | {
     kind: 'spot_coordinate';
@@ -58,6 +59,7 @@ Ensure `spot_coordinate` has:
 ```
 
 Ensure `slope_annotation` has:
+
 ```ts
 | {
     kind: 'slope_annotation';
@@ -70,6 +72,7 @@ Ensure `slope_annotation` has:
 ```
 
 Add command types if not present:
+
 ```ts
 | { type: 'createSpotCoordinate'; element: Extract<Element, { kind: 'spot_coordinate' }> }
 | { type: 'createSlopeAnnotation'; element: Extract<Element, { kind: 'slope_annotation' }> }
@@ -80,11 +83,13 @@ Add command types if not present:
 ### B — Grammar completeness
 
 For `spot_coordinate`:
+
 - Grammar should be: idle → placing (single click → emit `createSpotCoordinate`, stay in placing for next click)
 - Each click creates a new spot coordinate annotation at the clicked point
 - Escape → idle
 
 For `slope_annotation`:
+
 - Grammar should be: idle → placing-start → placing-end (2 clicks → emit `createSlopeAnnotation` with slopePct computed from `deltaZ / dist(start, end)` — if terrain elevation data isn't available, default slopePct = 0 and make it editable in inspector)
 - Escape → idle
 
@@ -97,6 +102,7 @@ If the grammars already exist and are correct, just confirm they're right.
 In `PlanCanvas.tsx`, ensure these tools are wired (search for `case 'spot-coordinate':` and `case 'slope-annotation':`):
 
 For `spot-coordinate`:
+
 ```ts
 case 'spot-coordinate': {
   const result = reduceSpotCoordinate(spotCoordState, { type: 'click', ptMm });
@@ -122,6 +128,7 @@ For `slope-annotation`: similar 2-click pattern emitting `createElement` for `sl
 Ensure both plan symbols exist and render correctly:
 
 **Spot coordinate** plan symbol:
+
 - A small cross/plus at `positionMm`
 - Two text labels: N (northing) and E (easting), each with a short leader line
 - Use `CSS2DObject` or `userData` for the text (or render as a `THREE.Mesh` with fixed pixel text via the existing text rendering pattern)
@@ -142,6 +149,7 @@ grp.add(cross);
 ```
 
 **Slope annotation** plan symbol:
+
 - Arrow line from `startMm` to `endMm`
 - Arrowhead at `endMm` (direction of slope rise)
 - Text label showing `${el.slopePct.toFixed(1)}%` at midpoint
@@ -154,31 +162,47 @@ grp.add(cross);
 In `InspectorContent.tsx`:
 
 **spot_coordinate inspector** (`case 'spot_coordinate':`):
+
 ```tsx
 <div>
-  <label>N (Northing)
-    <input type="number" data-testid="inspector-spot-coord-n"
+  <label>
+    N (Northing)
+    <input
+      type="number"
+      data-testid="inspector-spot-coord-n"
       value={el.coordinateN ?? 0}
-      onChange={e => onPropertyChange('coordinateN', +e.target.value)} />
+      onChange={(e) => onPropertyChange('coordinateN', +e.target.value)}
+    />
   </label>
-  <label>E (Easting)
-    <input type="number" data-testid="inspector-spot-coord-e"
+  <label>
+    E (Easting)
+    <input
+      type="number"
+      data-testid="inspector-spot-coord-e"
       value={el.coordinateE ?? 0}
-      onChange={e => onPropertyChange('coordinateE', +e.target.value)} />
+      onChange={(e) => onPropertyChange('coordinateE', +e.target.value)}
+    />
   </label>
-  <label>Elevation (mm)
+  <label>
+    Elevation (mm)
     <span data-testid="inspector-spot-coord-elevation">{el.elevationMm ?? 0}</span>
   </label>
 </div>
 ```
 
 **slope_annotation inspector** (`case 'slope_annotation':`):
+
 ```tsx
 <div>
-  <label>Slope (%)
-    <input type="number" step="0.1" data-testid="inspector-slope-annotation-pct"
+  <label>
+    Slope (%)
+    <input
+      type="number"
+      step="0.1"
+      data-testid="inspector-slope-annotation-pct"
       value={el.slopePct}
-      onChange={e => onPropertyChange('slopePct', +e.target.value)} />
+      onChange={(e) => onPropertyChange('slopePct', +e.target.value)}
+    />
   </label>
   <span data-testid="inspector-slope-annotation-ratio">
     1:{(100 / Math.max(el.slopePct, 0.01)).toFixed(0)}
@@ -203,6 +227,7 @@ Wire both into `grip-providers/index.ts` `gripsFor()` dispatch.
 ### G — Tests
 
 `packages/web/src/plan/spotCoordAnnotation.test.ts`:
+
 ```ts
 describe('spot coordinate annotation — §4.8', () => {
   it('grammar: single click emits createSpotCoordinate', () => { ... });
@@ -214,6 +239,7 @@ describe('spot coordinate annotation — §4.8', () => {
 ```
 
 `packages/web/src/plan/slopeAnnotation.test.ts`:
+
 ```ts
 describe('slope annotation — §4.9', () => {
   it('grammar: two clicks emit createSlopeAnnotation', () => { ... });

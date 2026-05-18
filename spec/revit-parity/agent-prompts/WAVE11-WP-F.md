@@ -90,6 +90,7 @@ If either grip already exists, skip adding it and just write a test confirming i
 ### E — Tests
 
 Write `packages/web/src/workspace/inspector/textNoteInspector.test.tsx`:
+
 ```ts
 describe('text note inspector formatting — §4.10', () => {
   it('renders inspector-text-bold button', () => { ... });
@@ -102,6 +103,7 @@ describe('text note inspector formatting — §4.10', () => {
 ```
 
 Write `packages/web/src/plan/textNoteFormatting.test.ts`:
+
 ```ts
 describe('text note rich-text fields — §4.10', () => {
   it('text_note type accepts bold field', () => { ... });
@@ -116,6 +118,7 @@ describe('text note rich-text fields — §4.10', () => {
 ## Commit and push
 
 After tests pass (`pnpm test --filter @bim-ai/web`):
+
 ```
 git add -p
 git commit -m "feat(wave11/F): text annotation rich-text formatting (§4.10)"

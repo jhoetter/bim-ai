@@ -19,4 +19,3 @@ Current audit focus:
 
 Status is tracked in the readiness tracker. This file exists so operational
 preflight checks have a stable active audit entrypoint.
-

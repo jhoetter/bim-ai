@@ -47,7 +47,9 @@ registerCommand({
   label: 'Generate Walls from Mass',
   keywords: ['mass', 'wall', 'generate', 'face'],
   category: 'command',
-  invoke: (ctx) => { ctx.dispatch?.({ type: 'mass_generate_walls', massId: ctx.selectedElementIds?.[0] ?? '' }); },
+  invoke: (ctx) => {
+    ctx.dispatch?.({ type: 'mass_generate_walls', massId: ctx.selectedElementIds?.[0] ?? '' });
+  },
 });
 ```
 
@@ -62,13 +64,16 @@ In `Workspace.tsx`, handle `'mass_generate_walls'`:
 ### B — `mass.generate-floors` palette command
 
 Register:
+
 ```ts
 registerCommand({
   id: 'mass.generate-floors',
   label: 'Generate Floors from Mass',
   keywords: ['mass', 'floor', 'slab', 'level', 'generate'],
   category: 'command',
-  invoke: (ctx) => { ctx.dispatch?.({ type: 'mass_generate_floors', massId: ctx.selectedElementIds?.[0] ?? '' }); },
+  invoke: (ctx) => {
+    ctx.dispatch?.({ type: 'mass_generate_floors', massId: ctx.selectedElementIds?.[0] ?? '' });
+  },
 });
 ```
 
@@ -81,13 +86,16 @@ Handle `'mass_generate_floors'` in `Workspace.tsx`:
 ### C — `mass.generate-roof` palette command
 
 Register:
+
 ```ts
 registerCommand({
   id: 'mass.generate-roof',
   label: 'Generate Roof from Mass',
   keywords: ['mass', 'roof', 'generate', 'top'],
   category: 'command',
-  invoke: (ctx) => { ctx.dispatch?.({ type: 'mass_generate_roof', massId: ctx.selectedElementIds?.[0] ?? '' }); },
+  invoke: (ctx) => {
+    ctx.dispatch?.({ type: 'mass_generate_roof', massId: ctx.selectedElementIds?.[0] ?? '' });
+  },
 });
 ```
 
@@ -118,6 +126,7 @@ registerCommand({
 ### E — Tests
 
 `packages/web/src/tools/massGenerateBim.test.ts`:
+
 ```ts
 describe('massing → BIM workflow — §11.5', () => {
   it('generate walls dispatches createWall for each vertical face', () => { ... });
@@ -135,6 +144,7 @@ Extract the command handler logic into a pure helper file `packages/web/src/tool
 ## Commit and push
 
 After tests pass (`pnpm test --filter @bim-ai/web`):
+
 ```
 git add -p
 git commit -m "feat(wave14/D): massing→BIM — generate walls/floors/roof from mass (§11.5)"

@@ -9,6 +9,7 @@ This prompt is self-contained — start here.
 ## Context
 
 §1.6.11 "Projektbrowser" is Partial P1 (D7). The project browser already has extensive coverage:
+
 - Plan views, sections, elevations, 3D saved views, sheets
 - Groups subtree (wave 23)
 - "By Level" org preset (wave 25)
@@ -20,6 +21,7 @@ Still missing for full Revit parity: an explicit **View Templates** subtree show
 `view_template` elements already exist in the store (kind: `'view_template'`). The project browser file (`ProjectBrowserV3.tsx`) already imports `useViewTemplateStore`. There is already a `defaultViewTemplateForPlanSubtype()` helper in the file.
 
 This task adds:
+
 1. A collapsible "View Templates" section in `ProjectBrowserV3.tsx` listing all `view_template` elements
 2. Each row shows: template name + count of views using it
 3. An "Apply" button per template that sets `viewTemplateId` on the currently selected plan view
@@ -39,9 +41,10 @@ packages/web/src/workspace/Workspace.tsx                         — command han
 ```
 
 Run before editing:
+
 - `ls packages/web/src/workspace/project/ | grep -i "browser"`
 - `grep -n "view_template\|viewTemplate\|ViewTemplate\|viewTemplateId" packages/web/src/workspace/project/ProjectBrowser.tsx 2>/dev/null | head -20`
-- `grep -n "view_template\|viewTemplate\|ViewTemplate\|viewTemplateId" packages/web/src/workspace/project/ProjectBrowserV3.tsx 2>/dev/null | head -20` 
+- `grep -n "view_template\|viewTemplate\|ViewTemplate\|viewTemplateId" packages/web/src/workspace/project/ProjectBrowserV3.tsx 2>/dev/null | head -20`
 - `grep -n "PbCollapsibleSection\|browser-groups\|data-testid.*browser" packages/web/src/workspace/project/ProjectBrowser.tsx 2>/dev/null | head -20`
 - `grep -n "SelectGroupElementsCmd\|ApplyViewTemplate\|viewTemplateId" packages/core/src/index.ts | head -10`
 
@@ -91,54 +94,83 @@ if (cmd.type === 'applyViewTemplate') {
 Read the actual project browser component file. Find where the Groups section is rendered (look for `data-testid="browser-groups-section"` or similar). Add a new collapsible "View Templates" section using the same `PbCollapsibleSection` component (or whatever pattern is used):
 
 ```tsx
-{/* §1.6.11: View Templates subtree */}
-{viewTemplates.length > 0 && (
-  <details data-testid="browser-view-templates-section" open style={{ marginTop: 4 }}>
-    <summary style={{ fontSize: 11, fontWeight: 600, cursor: 'pointer', padding: '2px 4px', userSelect: 'none' }}>
-      View Templates ({viewTemplates.length})
-    </summary>
-    <div style={{ paddingLeft: 8 }}>
-      {viewTemplates.map((vt) => {
-        const usedCount = Object.values(elementsById).filter(
-          (e) => e.kind === 'plan_view' && (e as any).viewTemplateId === vt.id
-        ).length;
-        return (
-          <div
-            key={vt.id}
-            data-testid={`browser-view-template-row-${vt.id}`}
-            style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '2px 4px', fontSize: 11 }}
-          >
-            <span style={{ flex: 1 }}>{vt.name}</span>
-            {usedCount > 0 && (
-              <span data-testid={`browser-vt-use-count-${vt.id}`} style={{ fontSize: 10, color: '#888' }}>
-                {usedCount} view{usedCount !== 1 ? 's' : ''}
-              </span>
-            )}
-            <button
-              data-testid={`browser-vt-apply-${vt.id}`}
-              style={{ fontSize: 10, padding: '1px 6px', cursor: 'pointer' }}
-              onClick={() => {
-                // Apply to active plan view (if one is selected)
-                const activePvId = Object.values(elementsById).find(
-                  (e) => e.kind === 'plan_view' && (e as any).isActive
-                )?.id;
-                if (activePvId) {
-                  onSemanticCommand?.({ type: 'applyViewTemplate', planViewId: activePvId, templateId: vt.id });
-                }
+{
+  /* §1.6.11: View Templates subtree */
+}
+{
+  viewTemplates.length > 0 && (
+    <details data-testid="browser-view-templates-section" open style={{ marginTop: 4 }}>
+      <summary
+        style={{
+          fontSize: 11,
+          fontWeight: 600,
+          cursor: 'pointer',
+          padding: '2px 4px',
+          userSelect: 'none',
+        }}
+      >
+        View Templates ({viewTemplates.length})
+      </summary>
+      <div style={{ paddingLeft: 8 }}>
+        {viewTemplates.map((vt) => {
+          const usedCount = Object.values(elementsById).filter(
+            (e) => e.kind === 'plan_view' && (e as any).viewTemplateId === vt.id,
+          ).length;
+          return (
+            <div
+              key={vt.id}
+              data-testid={`browser-view-template-row-${vt.id}`}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 6,
+                padding: '2px 4px',
+                fontSize: 11,
               }}
-            >Apply</button>
-          </div>
-        );
-      })}
-    </div>
-  </details>
-)}
+            >
+              <span style={{ flex: 1 }}>{vt.name}</span>
+              {usedCount > 0 && (
+                <span
+                  data-testid={`browser-vt-use-count-${vt.id}`}
+                  style={{ fontSize: 10, color: '#888' }}
+                >
+                  {usedCount} view{usedCount !== 1 ? 's' : ''}
+                </span>
+              )}
+              <button
+                data-testid={`browser-vt-apply-${vt.id}`}
+                style={{ fontSize: 10, padding: '1px 6px', cursor: 'pointer' }}
+                onClick={() => {
+                  // Apply to active plan view (if one is selected)
+                  const activePvId = Object.values(elementsById).find(
+                    (e) => e.kind === 'plan_view' && (e as any).isActive,
+                  )?.id;
+                  if (activePvId) {
+                    onSemanticCommand?.({
+                      type: 'applyViewTemplate',
+                      planViewId: activePvId,
+                      templateId: vt.id,
+                    });
+                  }
+                }}
+              >
+                Apply
+              </button>
+            </div>
+          );
+        })}
+      </div>
+    </details>
+  );
+}
 ```
 
 **Important**: Read the actual browser file carefully to understand the exact props available (e.g., `elementsById`, `onSemanticCommand` or equivalent). Find where `viewTemplates` is derived — it may already exist in the file as:
+
 ```ts
 const viewTemplates = Object.values(props.elementsById).filter(...)
 ```
+
 If so, use that variable. If not, add it. Adapt `onSemanticCommand` to the actual callback prop name.
 
 ### D — commandCapabilities.ts entry
@@ -215,7 +247,9 @@ describe('Project browser view templates subtree — §1.6.11', () => {
       { kind: 'plan_view', id: 'pv2', viewTemplateId: 'vt1' },
       { kind: 'plan_view', id: 'pv3', viewTemplateId: 'vt2' },
     ];
-    const count = elements.filter((e) => e.kind === 'plan_view' && e.viewTemplateId === 'vt1').length;
+    const count = elements.filter(
+      (e) => e.kind === 'plan_view' && e.viewTemplateId === 'vt1',
+    ).length;
     expect(count).toBe(2);
   });
 });

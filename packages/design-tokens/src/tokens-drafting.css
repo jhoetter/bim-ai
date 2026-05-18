@@ -55,32 +55,32 @@
   --draft-selection: var(--color-accent);
   --draft-hover: #79b1f1;
   --draft-snap: #f59e0b;
-  --draft-anno: #b5451b;         /* warm red-ochre for dims, sections, tags */
+  --draft-anno: #b5451b; /* warm red-ochre for dims, sections, tags */
 
   /* §9.3 Color — element categories (3D fill), light */
-  --cat-wall: #ddd8d0;     /* warm light plaster — 3D surface color */
-  --cat-floor: #cfc9be;    /* warm stone — 3D floor surface */
-  --cat-roof: #6b4f3e;     /* dark clay */
-  --cat-door: #b8a898;     /* warm taupe — 3D door face */
+  --cat-wall: #ddd8d0; /* warm light plaster — 3D surface color */
+  --cat-floor: #cfc9be; /* warm stone — 3D floor surface */
+  --cat-roof: #6b4f3e; /* dark clay */
+  --cat-door: #b8a898; /* warm taupe — 3D door face */
   --cat-window: #8ab4c8;
-  --cat-stair: #c4bdb4;    /* warm grey — 3D stair */
-  --cat-railing: #a89e96;  /* medium warm — 3D railing */
+  --cat-stair: #c4bdb4; /* warm grey — 3D stair */
+  --cat-railing: #a89e96; /* medium warm — 3D railing */
 
   /* §9.3b Color — plan-view cut fill (2D only), light */
-  --plan-wall: #1c1917;    /* near-black — architectural section cut convention */
-  --plan-floor: #e8e2d8;   /* very light warm — floor fill behind hatch */
-  --plan-door: #2d2a27;    /* near-black door cut */
-  --plan-stair: #2a2825;   /* near-black stair cut */
+  --plan-wall: #1c1917; /* near-black — architectural section cut convention */
+  --plan-floor: #e8e2d8; /* very light warm — floor fill behind hatch */
+  --plan-door: #2d2a27; /* near-black door cut */
+  --plan-stair: #2a2825; /* near-black stair cut */
   --plan-railing: #3a3632; /* very dark warm railing */
   --cat-room: #c9dfd2;
   --cat-site: #cbd1bd;
   --cat-section: #d93d3d;
   --cat-sheet: #c9cbcf;
   /* Markup + review annotation colours (MRK wave) */
-  --cat-review: #f59e0b;         /* amber — review cloud outline */
-  --cat-edit: #e53e3e;           /* red — freehand / live stroke */
-  --draft-comment-pin: #3b82f6;  /* blue — comment pin bubble */
-  --cat-fixture: #8a9eb0;        /* muted steel-blue — generic fixture crosshair in asset cards */
+  --cat-review: #f59e0b; /* amber — review cloud outline */
+  --cat-edit: #e53e3e; /* red — freehand / live stroke */
+  --draft-comment-pin: #3b82f6; /* blue — comment pin bubble */
+  --cat-fixture: #8a9eb0; /* muted steel-blue — generic fixture crosshair in asset cards */
 
   /* §9.10 Drafting line weights at 1:50 plot scale (in px) */
   --draft-lw-cut-major: 2px;
@@ -185,32 +185,32 @@
   --draft-selection: var(--color-accent);
   --draft-hover: #2c4a78;
   --draft-snap: #f3b03d;
-  --draft-anno: #e8703a;         /* warm orange for dims on dark paper */
+  --draft-anno: #e8703a; /* warm orange for dims on dark paper */
 
   /* §9.3 Color — element categories (3D fill), dark */
-  --cat-wall: #6a6460;     /* mid warm grey — 3D surface on dark */
-  --cat-floor: #4a4540;    /* dark warm — 3D floor surface */
-  --cat-roof: #7a5c4a;     /* clay slate */
-  --cat-door: #7a7068;     /* warm grey — 3D door face */
+  --cat-wall: #6a6460; /* mid warm grey — 3D surface on dark */
+  --cat-floor: #4a4540; /* dark warm — 3D floor surface */
+  --cat-roof: #7a5c4a; /* clay slate */
+  --cat-door: #7a7068; /* warm grey — 3D door face */
   --cat-window: #6a94ab;
-  --cat-stair: #5e5a56;    /* warm grey — 3D stair */
-  --cat-railing: #4e4a46;  /* dark warm — 3D railing */
+  --cat-stair: #5e5a56; /* warm grey — 3D stair */
+  --cat-railing: #4e4a46; /* dark warm — 3D railing */
 
   /* §9.3b Color — plan-view cut fill (2D only), dark */
-  --plan-wall: #d8d2ca;    /* warm light — walls read bright on dark paper */
-  --plan-floor: #2e2a26;   /* dark warm — floor fill on dark paper */
-  --plan-door: #c8c0b8;    /* warm light door cut */
-  --plan-stair: #b8b4ae;   /* warm light stair cut */
+  --plan-wall: #d8d2ca; /* warm light — walls read bright on dark paper */
+  --plan-floor: #2e2a26; /* dark warm — floor fill on dark paper */
+  --plan-door: #c8c0b8; /* warm light door cut */
+  --plan-stair: #b8b4ae; /* warm light stair cut */
   --plan-railing: #9a948e; /* medium warm railing */
   --cat-room: #2e4439;
   --cat-site: #353d2e;
   --cat-section: #f15252;
   --cat-sheet: #4a4d52;
   /* Markup + review annotation colours (MRK wave) — dark */
-  --cat-review: #f3b03d;         /* warm amber on dark paper */
-  --cat-edit: #fc6868;           /* lighter red on dark paper */
-  --draft-comment-pin: #60a5fa;  /* lighter blue on dark paper */
-  --cat-fixture: #7a9db8;        /* slightly lighter on dark surface */
+  --cat-review: #f3b03d; /* warm amber on dark paper */
+  --cat-edit: #fc6868; /* lighter red on dark paper */
+  --draft-comment-pin: #60a5fa; /* lighter blue on dark paper */
+  --cat-fixture: #7a9db8; /* slightly lighter on dark surface */
   /* EDT-V3-11 — simplified phase line-weight aliases */
   --draft-lw-cut: var(--draft-lw-cut-major);
   --draft-lw-projection: var(--draft-lw-projection-major);

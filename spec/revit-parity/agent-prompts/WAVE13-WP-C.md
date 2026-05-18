@@ -71,6 +71,7 @@ Tag with `userData.columnAtGridsPreview = true`. Remove on deactivate/confirm.
 ### D — Tests
 
 Write `packages/web/src/plan/columnAtGridsHighlight.test.ts`:
+
 ```ts
 describe('column at grids — §9.1.2', () => {
   it('columnPositionsAtGridIntersections returns intersection for two perpendicular grids', () => { ... });
@@ -82,6 +83,7 @@ describe('column at grids — §9.1.2', () => {
 (These tests cover `columnAtGrids.ts` logic. If `columnAtGrids.test.ts` already has these cases, skip and note "covered".)
 
 Write `packages/web/src/workspace/optionsBarColumnAtGrids.test.tsx`:
+
 ```ts
 describe('options bar — column at grids — §9.1.2', () => {
   it('renders options-column-at-grids-type select with column types', () => { ... });
@@ -95,6 +97,7 @@ describe('options bar — column at grids — §9.1.2', () => {
 ## Commit and push
 
 After tests pass (`pnpm test --filter @bim-ai/web`):
+
 ```
 git add -p
 git commit -m "feat(wave13/C): column-at-grids options bar + visual highlight (§9.1.2)"

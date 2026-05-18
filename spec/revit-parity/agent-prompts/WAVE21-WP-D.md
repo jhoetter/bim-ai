@@ -9,6 +9,7 @@ This prompt is self-contained — start here.
 ## Context
 
 §2.9.1 "Terrasse" is Partial — bim-ai has floors and railings but lacks "terrace-specific templates or workflow shortcuts". Revit architects quickly model a terrace by selecting a floor boundary and auto-creating a perimeter railing. This task adds:
+
 - A `modify.create-terrace-from-floor` palette command that, when a floor is selected, auto-creates a perimeter railing along all floor boundary edges
 - A `TerracePresetDialog.tsx` to configure railing height before applying
 
@@ -47,10 +48,7 @@ import type { FloorElem, RailingElem } from '@bim-ai/core';
  * Builds a railing element that traces the perimeter of a floor boundary.
  * Returns null if the floor has no boundary.
  */
-export function buildTerraceRailing(
-  floor: FloorElem,
-  railingHeightMm: number,
-): RailingElem | null {
+export function buildTerraceRailing(floor: FloorElem, railingHeightMm: number): RailingElem | null {
   const pts = floor.boundaryMm;
   if (!pts || pts.length < 3) return null;
 
@@ -86,10 +84,21 @@ export function TerracePresetDialog({ floorId, onApply, onClose }: TerracePreset
   const [railingHeightMm, setRailingHeightMm] = useState(1100);
 
   return (
-    <div data-testid="terrace-preset-dialog"
-      style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)',
-        display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 200 }}>
-      <div style={{ background: '#1a1a2e', color: '#eee', padding: 24, borderRadius: 8, width: 320 }}>
+    <div
+      data-testid="terrace-preset-dialog"
+      style={{
+        position: 'fixed',
+        inset: 0,
+        background: 'rgba(0,0,0,0.5)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        zIndex: 200,
+      }}
+    >
+      <div
+        style={{ background: '#1a1a2e', color: '#eee', padding: 24, borderRadius: 8, width: 320 }}
+      >
         <h3 style={{ marginTop: 0 }}>Create Terrace</h3>
         <p style={{ fontSize: 13, color: '#aaa' }}>
           A perimeter railing will be added along all edges of the selected floor boundary.
@@ -103,7 +112,7 @@ export function TerracePresetDialog({ floorId, onApply, onClose }: TerracePreset
             min={800}
             max={2000}
             step={50}
-            onChange={e => setRailingHeightMm(+e.target.value)}
+            onChange={(e) => setRailingHeightMm(+e.target.value)}
             style={{ display: 'block', width: '100%', marginTop: 4, padding: '4px 8px' }}
           />
         </label>
@@ -111,8 +120,13 @@ export function TerracePresetDialog({ floorId, onApply, onClose }: TerracePreset
           <button data-testid="terrace-preset-cancel" onClick={onClose}>
             Cancel
           </button>
-          <button data-testid="terrace-preset-apply"
-            onClick={() => { onApply(railingHeightMm); onClose(); }}>
+          <button
+            data-testid="terrace-preset-apply"
+            onClick={() => {
+              onApply(railingHeightMm);
+              onClose();
+            }}
+          >
             Create Terrace
           </button>
         </div>
@@ -132,7 +146,7 @@ registerCommand({
   label: 'Create Terrace from Floor',
   keywords: ['terrace', 'balcony', 'railing', 'perimeter', 'floor', 'create terrace'],
   category: 'command',
-  isAvailable: (ctx) => ctx.selectedElements?.some(e => e.kind === 'floor') ?? false,
+  isAvailable: (ctx) => ctx.selectedElements?.some((e) => e.kind === 'floor') ?? false,
   invoke: (ctx) => {
     ctx.openTerracePreset?.();
   },
@@ -142,29 +156,33 @@ registerCommand({
 Add `openTerracePreset?: () => void` to the `PaletteContext` interface (grep for `PaletteContext` to find its definition).
 
 In `Workspace.tsx`:
+
 1. Import `TerracePresetDialog` and `buildTerraceRailing`
 2. Add `const [terraceFloorId, setTerraceFloorId] = useState<string | null>(null);`
 3. Wire `openTerracePreset: () => { const sel = selectedElements?.[0]; if (sel?.kind === 'floor') setTerraceFloorId(sel.id); }` into the palette context
 4. In JSX:
+
 ```tsx
-{terraceFloorId && (
-  <TerracePresetDialog
-    floorId={terraceFloorId}
-    onApply={(railingHeightMm) => {
-      const floor = elementsById[terraceFloorId];
-      if (floor?.kind === 'floor') {
-        const railing = buildTerraceRailing(floor, railingHeightMm);
-        if (railing) {
-          useBimStore.setState({
-            elementsById: { ...elementsById, [railing.id]: railing },
-          });
+{
+  terraceFloorId && (
+    <TerracePresetDialog
+      floorId={terraceFloorId}
+      onApply={(railingHeightMm) => {
+        const floor = elementsById[terraceFloorId];
+        if (floor?.kind === 'floor') {
+          const railing = buildTerraceRailing(floor, railingHeightMm);
+          if (railing) {
+            useBimStore.setState({
+              elementsById: { ...elementsById, [railing.id]: railing },
+            });
+          }
         }
-      }
-      setTerraceFloorId(null);
-    }}
-    onClose={() => setTerraceFloorId(null)}
-  />
-)}
+        setTerraceFloorId(null);
+      }}
+      onClose={() => setTerraceFloorId(null)}
+    />
+  );
+}
 ```
 
 ### D — commandCapabilities.ts
@@ -198,8 +216,15 @@ import { buildTerraceRailing } from './terraceFromFloor';
 
 describe('terraceFromFloor — §2.9.1', () => {
   const floor: any = {
-    id: 'f1', kind: 'floor', levelId: 'L1',
-    boundaryMm: [{ xMm: 0, yMm: 0 }, { xMm: 5000, yMm: 0 }, { xMm: 5000, yMm: 4000 }, { xMm: 0, yMm: 4000 }],
+    id: 'f1',
+    kind: 'floor',
+    levelId: 'L1',
+    boundaryMm: [
+      { xMm: 0, yMm: 0 },
+      { xMm: 5000, yMm: 0 },
+      { xMm: 5000, yMm: 4000 },
+      { xMm: 0, yMm: 4000 },
+    ],
     thicknessMm: 200,
   };
 
@@ -208,7 +233,18 @@ describe('terraceFromFloor — §2.9.1', () => {
   });
 
   it('returns null for floor with fewer than 3 boundary points', () => {
-    expect(buildTerraceRailing({ ...floor, boundaryMm: [{ xMm: 0, yMm: 0 }, { xMm: 5000, yMm: 0 }] }, 1100)).toBeNull();
+    expect(
+      buildTerraceRailing(
+        {
+          ...floor,
+          boundaryMm: [
+            { xMm: 0, yMm: 0 },
+            { xMm: 5000, yMm: 0 },
+          ],
+        },
+        1100,
+      ),
+    ).toBeNull();
   });
 
   it('returns a railing element for a valid floor', () => {
@@ -240,7 +276,9 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { TerracePresetDialog } from './TerracePresetDialog';
 
-afterEach(() => { cleanup(); });
+afterEach(() => {
+  cleanup();
+});
 
 describe('TerracePresetDialog — §2.9.1', () => {
   it('renders dialog', () => {
@@ -251,7 +289,9 @@ describe('TerracePresetDialog — §2.9.1', () => {
   it('calls onApply with railing height', () => {
     const onApply = vi.fn();
     render(<TerracePresetDialog floorId="f1" onApply={onApply} onClose={() => {}} />);
-    fireEvent.change(screen.getByTestId('terrace-railing-height-input'), { target: { value: '900' } });
+    fireEvent.change(screen.getByTestId('terrace-railing-height-input'), {
+      target: { value: '900' },
+    });
     fireEvent.click(screen.getByTestId('terrace-preset-apply'));
     expect(onApply).toHaveBeenCalledWith(900);
   });

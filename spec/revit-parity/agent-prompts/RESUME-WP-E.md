@@ -25,6 +25,7 @@ packages/core/src/index.ts                          — shared Element types
 ```
 
 Architecture:
+
 - Exports triggered from UI, processed in a Web Worker or directly, result
   in `URL.createObjectURL` → `<a download>` click.
 - Project model accessed via `useBimStore` (Zustand).
@@ -35,14 +36,14 @@ Architecture:
 
 ## What was done before the crash
 
-| Sub-task | Status | Notes |
-|---|---|---|
-| E1 IFC 2x3 | **Partial** | Pure-TypeScript STEP writer at `export/ifcExporter.ts`. Exports project hierarchy + walls/doors/windows/slabs/spaces. Missing: material layer sets, some Psets. 3 tests pass. |
-| E2 DXF Export | **Partial** | `export/dxfExporter.ts` (~297 lines) handles walls (A-WALL), doors, windows per level. May be missing rooms, annotations, grids. Check tests for what passes. |
-| E3 CSV | **Done** | `export/csvExporter.ts` + Copy button in SchedulePanel |
-| E4 PDF | **Done** | `export/pdfExporter.ts` — tracker marks §12.4.5 Done |
-| E5 Linked Model | **Done** | `ManageLinksDialog.tsx` has full UI (add/delete/align/pin); `linkedGhosting.ts` ghosts with blue tint at 0.6 opacity; wired into Workspace; tests pass |
-| E6 DXF Underlay | **Done** | Circle, text, hatch entities added to `dxfUnderlay.ts` |
+| Sub-task        | Status      | Notes                                                                                                                                                                         |
+| --------------- | ----------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| E1 IFC 2x3      | **Partial** | Pure-TypeScript STEP writer at `export/ifcExporter.ts`. Exports project hierarchy + walls/doors/windows/slabs/spaces. Missing: material layer sets, some Psets. 3 tests pass. |
+| E2 DXF Export   | **Partial** | `export/dxfExporter.ts` (~297 lines) handles walls (A-WALL), doors, windows per level. May be missing rooms, annotations, grids. Check tests for what passes.                 |
+| E3 CSV          | **Done**    | `export/csvExporter.ts` + Copy button in SchedulePanel                                                                                                                        |
+| E4 PDF          | **Done**    | `export/pdfExporter.ts` — tracker marks §12.4.5 Done                                                                                                                          |
+| E5 Linked Model | **Done**    | `ManageLinksDialog.tsx` has full UI (add/delete/align/pin); `linkedGhosting.ts` ghosts with blue tint at 0.6 opacity; wired into Workspace; tests pass                        |
+| E6 DXF Underlay | **Done**    | Circle, text, hatch entities added to `dxfUnderlay.ts`                                                                                                                        |
 
 There are **no uncommitted WP-E changes** — all prior work was committed.
 
@@ -53,6 +54,7 @@ There are **no uncommitted WP-E changes** — all prior work was committed.
 ### Step 0 — audit what E1 and E2 actually cover
 
 Before writing new code, run the tests and read the files:
+
 ```bash
 pnpm test --filter @bim-ai/web -- ifcExporter
 pnpm test --filter @bim-ai/web -- dxfExporter
@@ -64,6 +66,7 @@ understand what is and isn't exported. Then pick up from the gaps.
 ### E1 — complete IFC 2x3 gaps
 
 Read `ifcExporter.ts` and identify what's missing. Common gaps:
+
 1. **IfcMaterialLayerSetUsage** for layered walls — each layer in the wall
    type's layer stack should be an `IfcMaterialLayer` in the STEP file
 2. **Standard Psets** per element type: `Pset_WallCommon`, `Pset_DoorCommon`,
@@ -79,6 +82,7 @@ Update tests to cover these cases.
 ### E2 — complete DXF export gaps
 
 Read `dxfExporter.ts` to see which element kinds are handled. Add missing:
+
 1. **Rooms** — closed polyline on layer `A-AREA`
 2. **Grid lines** — `CIRCLE` + `LINE` entities on layer `S-GRID`
 3. **Reference planes** — `LINE` entities on layer `A-REFP`
@@ -97,6 +101,7 @@ new entity types.
 ### E5 — verify linked model is complete
 
 The tracker says E5 is Partial but the UI seems done. Verify:
+
 - Open `ManageLinksDialog.tsx` — does it have Insert, Unload, Remove, align?
 - Are linked model elements truly non-selectable/non-editable in plan + 3D?
 - Does the `link_model` element type have `isVisible` + `isGhosted` toggles?

@@ -11,6 +11,7 @@ This prompt is self-contained — start here.
 §2.9.4 "Obergeschoss" is Partial P2. In Revit, when drawing an upper-floor plan you can set a "Underlay" (Raster) that shows the floor below as semi-transparent ghost lines — helpful for aligning walls, doors, and stairs. bim-ai supports plan underlays structurally but there's no explicit PlanViewHeader toggle or UI to select the underlay level.
 
 This task adds:
+
 1. `underlayLevelId?: string` and `showUnderlay?: boolean` fields on `plan_view` (if not already present)
 2. A `SetPlanUnderlayCmd` command type
 3. PlanViewHeader: "Underlay" toggle button and a level selector dropdown
@@ -29,6 +30,7 @@ packages/web/src/workspace/Workspace.tsx                — find plan_view handl
 ```
 
 Run before editing:
+
 - `grep -n "underlayLevel\|showUnderlay\|underlay" packages/core/src/index.ts | head -10`
 - `grep -n "underlayLevel\|showUnderlay" packages/web/src/plan/PlanViewHeader.tsx | head -10`
 - `grep -n "underlayLevel\|underlay" packages/web/src/plan/symbology.ts | head -10`
@@ -100,12 +102,18 @@ if (cmd.type === 'setPlanUnderlay') {
 In `PlanViewHeader.tsx`, find existing toggle buttons (thin lines, crop region, show constraints). Add nearby:
 
 ```tsx
-{/* §2.9.4: Underlay toggle + level selector */}
+{
+  /* §2.9.4: Underlay toggle + level selector */
+}
 <button
   data-testid="plan-view-underlay-btn"
   title={showUnderlay ? 'Hide Underlay' : 'Show Underlay'}
   onClick={() =>
-    onSemanticCommand?.({ type: 'setPlanUnderlay', viewId: activePlanView.id, showUnderlay: !showUnderlay })
+    onSemanticCommand?.({
+      type: 'setPlanUnderlay',
+      viewId: activePlanView.id,
+      showUnderlay: !showUnderlay,
+    })
   }
   style={{
     fontSize: 10,
@@ -118,27 +126,37 @@ In `PlanViewHeader.tsx`, find existing toggle buttons (thin lines, crop region, 
   }}
 >
   UL
-</button>
-{showUnderlay && (
-  <select
-    data-testid="plan-view-underlay-level-select"
-    value={(activePlanView as any).underlayLevelId ?? ''}
-    onChange={(e) =>
-      onSemanticCommand?.({
-        type: 'setPlanUnderlay',
-        viewId: activePlanView.id,
-        underlayLevelId: e.target.value || null,
-        showUnderlay: true,
-      })
-    }
-    style={{ fontSize: 10, padding: '1px 4px', background: 'transparent', color: 'inherit', border: '1px solid var(--border)' }}
-  >
-    <option value="">-- No Underlay --</option>
-    {levels.map((lv) => (
-      <option key={lv.id} value={lv.id}>{(lv as any).name ?? lv.id}</option>
-    ))}
-  </select>
-)}
+</button>;
+{
+  showUnderlay && (
+    <select
+      data-testid="plan-view-underlay-level-select"
+      value={(activePlanView as any).underlayLevelId ?? ''}
+      onChange={(e) =>
+        onSemanticCommand?.({
+          type: 'setPlanUnderlay',
+          viewId: activePlanView.id,
+          underlayLevelId: e.target.value || null,
+          showUnderlay: true,
+        })
+      }
+      style={{
+        fontSize: 10,
+        padding: '1px 4px',
+        background: 'transparent',
+        color: 'inherit',
+        border: '1px solid var(--border)',
+      }}
+    >
+      <option value="">-- No Underlay --</option>
+      {levels.map((lv) => (
+        <option key={lv.id} value={lv.id}>
+          {(lv as any).name ?? lv.id}
+        </option>
+      ))}
+    </select>
+  );
+}
 ```
 
 Where `showUnderlay = (activePlanView as any).showUnderlay ?? false` and `levels` is the list of level elements from props or useBimStore.
@@ -165,7 +183,13 @@ if (showUnderlay && underlayLevelId) {
       new THREE.Vector3(ux(wall.endMm.xMm), PLAN_Y + 0.001, uz(wall.endMm.yMm)),
     ];
     const geo = new THREE.BufferGeometry().setFromPoints(pts);
-    const mat = new THREE.LineDashedMaterial({ color: 0x8b5cf6, dashSize: 0.05, gapSize: 0.03, opacity: 0.4, transparent: true });
+    const mat = new THREE.LineDashedMaterial({
+      color: 0x8b5cf6,
+      dashSize: 0.05,
+      gapSize: 0.03,
+      opacity: 0.4,
+      transparent: true,
+    });
     const line = new THREE.Line(geo, mat);
     line.computeLineDistances();
     holder.add(line);
@@ -205,14 +229,19 @@ import { describe, expect, it } from 'vitest';
 
 describe('Plan underlay — §2.9.4', () => {
   it('SetPlanUnderlayCmd has correct shape', () => {
-    const cmd = { type: 'setPlanUnderlay' as const, viewId: 'pv1', underlayLevelId: 'l0', showUnderlay: true };
+    const cmd = {
+      type: 'setPlanUnderlay' as const,
+      viewId: 'pv1',
+      underlayLevelId: 'l0',
+      showUnderlay: true,
+    };
     expect(cmd.type).toBe('setPlanUnderlay');
     expect(cmd.underlayLevelId).toBe('l0');
   });
 
   it('showUnderlay defaults to false when not set', () => {
     const view: any = { kind: 'plan_view', id: 'pv1' };
-    expect((view.showUnderlay ?? false)).toBe(false);
+    expect(view.showUnderlay ?? false).toBe(false);
   });
 
   it('toggle flips showUnderlay', () => {

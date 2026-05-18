@@ -57,6 +57,7 @@ onSort?: (key: string) => void;
 ### B — Sort in ScheduleModeShell / SchedulePanel
 
 For each schedule tab (doors, windows, columns, floor areas):
+
 - Add `useState<{ key: string; dir: 'asc' | 'desc' } | null>` sort state
 - Before rendering rows, sort by the active key
 - Pass `sortKey`, `sortDir`, `onSort` to `ScheduleTable`
@@ -64,6 +65,7 @@ For each schedule tab (doors, windows, columns, floor areas):
 ### C — Text filter bar
 
 Add a search/filter input above each schedule table:
+
 - `data-testid="schedule-filter-{tabId}"` (e.g. `schedule-filter-doors`)
 - Filters rows where ANY string column contains the filter text (case-insensitive)
 - Show a row count: `data-testid="schedule-row-count-{tabId}"` — `"Showing N of M rows"`
@@ -73,11 +75,12 @@ Add a search/filter input above each schedule table:
 Add a "Export CSV" button (`data-testid="schedule-export-csv-{tabId}"`) to each tab:
 
 Create `packages/web/src/schedules/scheduleCsvExport.ts`:
+
 ```ts
 export function rowsToCsv<T extends object>(
   rows: T[],
   columns: { key: keyof T; label: string; format?: (v: unknown) => string }[],
-): string
+): string;
 ```
 
 - Header row: column labels separated by commas
@@ -85,18 +88,22 @@ export function rowsToCsv<T extends object>(
 - Return the CSV string
 
 In the button handler:
+
 ```ts
 const csv = rowsToCsv(rows, columns);
 const blob = new Blob([csv], { type: 'text/csv' });
 const url = URL.createObjectURL(blob);
 const a = document.createElement('a');
-a.href = url; a.download = `${tabId}-schedule.csv`; a.click();
+a.href = url;
+a.download = `${tabId}-schedule.csv`;
+a.click();
 URL.revokeObjectURL(url);
 ```
 
 ### E — Floor area schedule: add sort + filter + export
 
 Apply the same sort/filter/export to the `FloorAreaReportPanel` tab:
+
 - Sort by level name or area (m²)
 - Filter by level name
 - `data-testid="floor-area-export-csv"` already exists — wire the CSV logic to it
@@ -104,6 +111,7 @@ Apply the same sort/filter/export to the `FloorAreaReportPanel` tab:
 ### F — Tests
 
 Write `packages/web/src/schedules/scheduleCsvExport.test.ts`:
+
 ```ts
 describe('rowsToCsv — §13.3.1', () => {
   it('produces correct header row', () => { ... });
@@ -115,6 +123,7 @@ describe('rowsToCsv — §13.3.1', () => {
 ```
 
 Write `packages/web/src/schedules/scheduleSort.test.ts`:
+
 ```ts
 describe('schedule sort and filter — §13.3.1', () => {
   it('sorts rows ascending by string key', () => { ... });
@@ -129,6 +138,7 @@ describe('schedule sort and filter — §13.3.1', () => {
 ## Commit and push
 
 After all tasks are done and tests pass (`pnpm test --filter @bim-ai/web`), commit:
+
 ```
 git add -p
 git commit -m "feat(wave9/G): schedule sort, filter + CSV export (§13.3.1)"

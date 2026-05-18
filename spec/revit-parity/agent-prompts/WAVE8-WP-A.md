@@ -40,6 +40,7 @@ Read ALL of these before writing anything:
 ### A — create_permanent_dimension command
 
 In `core/index.ts`, add if not present:
+
 ```ts
 export type CreatePermanentDimensionCmd = {
   type: 'create_permanent_dimension';
@@ -63,6 +64,7 @@ type PermanentDimState =
 ```
 
 Events:
+
 - `activate(levelId)` → `picking` with empty points
 - `moveMouse(xMm, yMm)` → updates `cursorMm` (for preview line); emits `previewDim` effect
 - `click(xMm, yMm)` → appends point to `points`; requires ≥1 existing points to form segments
@@ -70,12 +72,14 @@ Events:
 - `cancel` (Escape) → idle
 
 Wire into `PlanCanvas.tsx`:
+
 - `case 'dimension'`: click dispatches `click`; mousemove dispatches `moveMouse`; Enter dispatches `commit`; double-click dispatches `commit`; Escape dispatches `cancel`
 - On `createPermanentDim` effect: dispatch `{ type: 'create_permanent_dimension', id: nanoid(), levelId, witnessPointsMm, offsetMm }`
 
 ### C — Preview rendering
 
 In `PlanCanvas.tsx`, when `phase === 'picking'` and `points.length >= 1`:
+
 - Draw a temporary dashed polyline through `points` + `cursorMm` using `THREE.Line` with dashed material
 - Show a small snap circle at each picked point (radius 100 mm)
 - Name the preview object `userData.preview = 'dim-chain'` so it's cleaned up on re-render
@@ -87,6 +91,7 @@ In `planElementMeshBuilders.ts`, add `data-testid`-friendly `userData.bimPickId 
 ### E — Tests
 
 Write `packages/web/src/tools/permanentDimGrammar.test.ts`:
+
 ```ts
 describe('permanent dimension chain grammar — §4.2.1', () => {
   it('activate moves to picking phase', () => { ... });

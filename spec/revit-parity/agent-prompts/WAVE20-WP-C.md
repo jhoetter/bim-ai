@@ -23,6 +23,7 @@ packages/web/src/plan/PlanCanvas.tsx                  — reads module-level var
 ```
 
 Read `OptionsBar.tsx` fully. Understand the pattern:
+
 - `activeTool` from `useBimStore`
 - Module-level `export let` variables (e.g. `mirrorCopyEnabled`, `pendingComponentRotationDeg`)
 - `<div className={BAR_CLASS}>` sections gated on `activeTool === 'wall'` etc.
@@ -42,24 +43,36 @@ Add at module level (near other `export let` declarations):
 ```ts
 /** Roof options */
 export let roofBaseOffsetMm = 0;
-export function setRoofBaseOffsetMm(v: number): void { roofBaseOffsetMm = v; }
+export function setRoofBaseOffsetMm(v: number): void {
+  roofBaseOffsetMm = v;
+}
 
 export let roofSlopeAngleDeg = 30;
-export function setRoofSlopeAngleDeg(v: number): void { roofSlopeAngleDeg = v; }
+export function setRoofSlopeAngleDeg(v: number): void {
+  roofSlopeAngleDeg = v;
+}
 
 /** Ramp options */
 export let rampWidthMm = 1200;
-export function setRampWidthMm(v: number): void { rampWidthMm = v; }
+export function setRampWidthMm(v: number): void {
+  rampWidthMm = v;
+}
 
 export let rampSlopePercent = 8.33;
-export function setRampSlopePercent(v: number): void { rampSlopePercent = v; }
+export function setRampSlopePercent(v: number): void {
+  rampSlopePercent = v;
+}
 
 /** Railing options */
 export let railingHeightMm = 900;
-export function setRailingHeightMm(v: number): void { railingHeightMm = v; }
+export function setRailingHeightMm(v: number): void {
+  railingHeightMm = v;
+}
 
 export let railingFollowSlope = true;
-export function setRailingFollowSlope(v: boolean): void { railingFollowSlope = v; }
+export function setRailingFollowSlope(v: boolean): void {
+  railingFollowSlope = v;
+}
 ```
 
 ### B — Roof options bar section
@@ -67,80 +80,103 @@ export function setRailingFollowSlope(v: boolean): void { railingFollowSlope = v
 In the `OptionsBar` component render, add a section gated on `activeTool === 'roof'` or `activeTool === 'roof-footprint'` or `activeTool === 'roof-extrusion'` (check which ToolIds exist in toolRegistry.ts):
 
 ```tsx
-{(activeTool === 'roof' || activeTool === 'roof-footprint' || activeTool === 'roof-by-footprint') && (
-  <div className={BAR_CLASS}>
-    <label>Base Offset (mm)
-      <input type="number"
-        data-testid="options-roof-base-offset"
-        defaultValue={roofBaseOffsetMm}
-        onChange={e => setRoofBaseOffsetMm(+e.target.value)}
-        style={{ width: 70 }}
-      />
-    </label>
-    <label>Slope (°)
-      <input type="number"
-        data-testid="options-roof-slope"
-        defaultValue={roofSlopeAngleDeg}
-        min={0} max={89}
-        onChange={e => setRoofSlopeAngleDeg(+e.target.value)}
-        style={{ width: 60 }}
-      />
-    </label>
-  </div>
-)}
+{
+  (activeTool === 'roof' ||
+    activeTool === 'roof-footprint' ||
+    activeTool === 'roof-by-footprint') && (
+    <div className={BAR_CLASS}>
+      <label>
+        Base Offset (mm)
+        <input
+          type="number"
+          data-testid="options-roof-base-offset"
+          defaultValue={roofBaseOffsetMm}
+          onChange={(e) => setRoofBaseOffsetMm(+e.target.value)}
+          style={{ width: 70 }}
+        />
+      </label>
+      <label>
+        Slope (°)
+        <input
+          type="number"
+          data-testid="options-roof-slope"
+          defaultValue={roofSlopeAngleDeg}
+          min={0}
+          max={89}
+          onChange={(e) => setRoofSlopeAngleDeg(+e.target.value)}
+          style={{ width: 60 }}
+        />
+      </label>
+    </div>
+  );
+}
 ```
 
 ### C — Ramp options bar section
 
 ```tsx
-{activeTool === 'ramp' && (
-  <div className={BAR_CLASS}>
-    <label>Width (mm)
-      <input type="number"
-        data-testid="options-ramp-width"
-        defaultValue={rampWidthMm}
-        min={600}
-        onChange={e => setRampWidthMm(+e.target.value)}
-        style={{ width: 70 }}
-      />
-    </label>
-    <label>Slope (%)
-      <input type="number"
-        data-testid="options-ramp-slope"
-        defaultValue={rampSlopePercent}
-        min={0} max={50} step={0.01}
-        onChange={e => setRampSlopePercent(+e.target.value)}
-        style={{ width: 60 }}
-      />
-    </label>
-  </div>
-)}
+{
+  activeTool === 'ramp' && (
+    <div className={BAR_CLASS}>
+      <label>
+        Width (mm)
+        <input
+          type="number"
+          data-testid="options-ramp-width"
+          defaultValue={rampWidthMm}
+          min={600}
+          onChange={(e) => setRampWidthMm(+e.target.value)}
+          style={{ width: 70 }}
+        />
+      </label>
+      <label>
+        Slope (%)
+        <input
+          type="number"
+          data-testid="options-ramp-slope"
+          defaultValue={rampSlopePercent}
+          min={0}
+          max={50}
+          step={0.01}
+          onChange={(e) => setRampSlopePercent(+e.target.value)}
+          style={{ width: 60 }}
+        />
+      </label>
+    </div>
+  );
+}
 ```
 
 ### D — Railing options bar section
 
 ```tsx
-{activeTool === 'railing' && (
-  <div className={BAR_CLASS}>
-    <label>Height (mm)
-      <input type="number"
-        data-testid="options-railing-height"
-        defaultValue={railingHeightMm}
-        min={600} max={1200}
-        onChange={e => setRailingHeightMm(+e.target.value)}
-        style={{ width: 70 }}
-      />
-    </label>
-    <label>
-      <input type="checkbox"
-        data-testid="options-railing-follow-slope"
-        defaultChecked={railingFollowSlope}
-        onChange={e => setRailingFollowSlope(e.target.checked)}
-      />
-      Follow Slope
-    </label>
-  </div>
-)}
+{
+  activeTool === 'railing' && (
+    <div className={BAR_CLASS}>
+      <label>
+        Height (mm)
+        <input
+          type="number"
+          data-testid="options-railing-height"
+          defaultValue={railingHeightMm}
+          min={600}
+          max={1200}
+          onChange={(e) => setRailingHeightMm(+e.target.value)}
+          style={{ width: 70 }}
+        />
+      </label>
+      <label>
+        <input
+          type="checkbox"
+          data-testid="options-railing-follow-slope"
+          defaultChecked={railingFollowSlope}
+          onChange={(e) => setRailingFollowSlope(e.target.checked)}
+        />
+        Follow Slope
+      </label>
+    </div>
+  );
+}
 ```
 
 ### E — Tests

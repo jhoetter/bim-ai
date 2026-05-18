@@ -69,6 +69,7 @@ A drag grip at the top-centre of the stair that, when dragged up/down, adjusts `
 ```
 
 Also add a **run width grip** on the right side of the stair:
+
 ```ts
 {
   id: `${el.id}-width-grip`,
@@ -88,10 +89,12 @@ Also add a **run width grip** on the right side of the stair:
 Find `StairBySketchCanvas.tsx` or the stair sketch grammar in `toolGrammar.ts`. Currently it may only handle straight single-run stairs.
 
 Add support for **L-shape stair** (2 runs with 90° turn):
+
 - When user places 3 points (start, corner, end), detect that the angle between segments is ~90° and create a 2-run stair with a landing at the corner.
 - Set `runs: [{ direction: 'north', riserCount: n1 }, { direction: 'east', riserCount: n2 }]` (or similar based on what the stair type supports).
 
 Add support for **U-shape stair** (3 points in a U pattern):
+
 - When the 3rd point returns roughly parallel to the 1st segment, create a U-shape stair.
 
 If the stair element type already has `runs[]` support, use it. If not, just ensure the grammar handles multi-run correctly.
@@ -101,6 +104,7 @@ If the stair element type already has `runs[]` support, use it. If not, just ens
 ### D — Tests
 
 `packages/web/src/plan/stairInspector.test.tsx`:
+
 ```ts
 describe('stair inspector — §8.6.4', () => {
   it('renders inspector-stair-riser-count input', () => { ... });
@@ -111,6 +115,7 @@ describe('stair inspector — §8.6.4', () => {
 ```
 
 `packages/web/src/plan/stairGrips.test.ts`:
+
 ```ts
 describe('stair grip provider — §8.6.4', () => {
   it('provides a riser-count grip at top of stair', () => { ... });

@@ -12,6 +12,7 @@ Wave 32 added `view.ribbon-steel-precast-tabs`. Wave 33 is completing the remain
 ## Ownership
 
 Primary write scope:
+
 - `packages/web/src/workspace/commandCapabilities.ts`
 - `packages/web/src/cmdPalette/defaultCommands.ts`
 - `packages/web/src/workspace/commandCapabilities.test.ts` or `packages/web/src/cmdPalette/defaultCommands.test.ts` only if tests need new expectations.
@@ -21,6 +22,7 @@ Avoid editing `RibbonBar.tsx`; WP-A owns it.
 ## Orientation
 
 Run:
+
 - `rg -n "view\\.ribbon|ribbon.*tabs|CommandSurface|CapabilityId|surfaces:" packages/web/src/workspace/commandCapabilities.ts`
 - `rg -n "view\\.ribbon|registerCommand\\(|category:" packages/web/src/cmdPalette/defaultCommands.ts`
 - `pnpm --filter @bim-ai/web exec vitest run src/workspace/commandCapabilities.test.ts src/cmdPalette/defaultCommands.test.ts`
@@ -49,4 +51,3 @@ Run:
 
 - `pnpm --filter @bim-ai/web exec vitest run src/workspace/commandCapabilities.test.ts src/cmdPalette/defaultCommands.test.ts` passes.
 - Metadata truthfully reflects implemented ribbon surfaces, not aspirational work.
-

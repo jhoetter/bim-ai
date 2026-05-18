@@ -65,21 +65,21 @@ The material assignment model should support:
 
 ## Gap Inventory
 
-| ID          | Gap                                                                           | Impact                                                         | Priority | Status      |
-| ----------- | ----------------------------------------------------------------------------- | -------------------------------------------------------------- | -------- | ----------- |
-| MAT-GAP-001 | Registry and first-class `material` elements are not unified.                 | Project-authored materials cannot fully behave like built-ins. | P0       | Done        |
-| MAT-GAP-002 | General texture map loading is missing.                                       | Materials look like flat colors.                               | P0       | Done        |
-| MAT-GAP-003 | UV scale/rotation/offset is not applied consistently.                         | Brick/tile/wood textures cannot be dimensionally credible.     | P0       | Done        |
-| MAT-GAP-004 | Normal/bump/height relief is metadata only.                                   | Brick, stone, concrete, wood grain lack surface relief.        | P0       | Done        |
-| MAT-GAP-005 | Plan/section surface and cut patterns are not material-driven.                | Architectural drafting views do not match material identity.   | P0       | Done        |
-| MAT-GAP-006 | Material browser edits assignment, but not appearance/graphics assets.        | Users cannot tune material behavior after assignment.          | P1       | Done        |
-| MAT-GAP-007 | Layered assemblies do not expose exterior/interior finish appearance clearly. | Revit-like wall/floor/roof types are underpowered.             | P1       | Done        |
-| MAT-GAP-008 | Per-face paint/finish overrides are not modeled.                              | Users cannot paint one wall face or one floor zone.            | P1       | Done        |
-| MAT-GAP-009 | Material previews are not representative.                                     | Browser choice is guesswork.                                   | P1       | Done        |
-| MAT-GAP-010 | Exports/schedules do not preserve the full material asset contract.           | IFC/GLTF/readback can diverge from viewport behavior.          | P1       | Done        |
-| MAT-GAP-011 | Texture performance and caching strategy is undefined.                        | Real textures could degrade 3D interaction.                    | P1       | Done        |
-| MAT-GAP-012 | Visual QA does not catch material regressions.                                | Textures/bump/patterns can silently disappear.                 | P1       | Done        |
-| MAT-GAP-013 | Assets and licensing/provenance are not tracked.                              | Curated texture libraries can create legal/product risk.       | P2       | Done        |
+| ID          | Gap                                                                           | Impact                                                         | Priority | Status |
+| ----------- | ----------------------------------------------------------------------------- | -------------------------------------------------------------- | -------- | ------ |
+| MAT-GAP-001 | Registry and first-class `material` elements are not unified.                 | Project-authored materials cannot fully behave like built-ins. | P0       | Done   |
+| MAT-GAP-002 | General texture map loading is missing.                                       | Materials look like flat colors.                               | P0       | Done   |
+| MAT-GAP-003 | UV scale/rotation/offset is not applied consistently.                         | Brick/tile/wood textures cannot be dimensionally credible.     | P0       | Done   |
+| MAT-GAP-004 | Normal/bump/height relief is metadata only.                                   | Brick, stone, concrete, wood grain lack surface relief.        | P0       | Done   |
+| MAT-GAP-005 | Plan/section surface and cut patterns are not material-driven.                | Architectural drafting views do not match material identity.   | P0       | Done   |
+| MAT-GAP-006 | Material browser edits assignment, but not appearance/graphics assets.        | Users cannot tune material behavior after assignment.          | P1       | Done   |
+| MAT-GAP-007 | Layered assemblies do not expose exterior/interior finish appearance clearly. | Revit-like wall/floor/roof types are underpowered.             | P1       | Done   |
+| MAT-GAP-008 | Per-face paint/finish overrides are not modeled.                              | Users cannot paint one wall face or one floor zone.            | P1       | Done   |
+| MAT-GAP-009 | Material previews are not representative.                                     | Browser choice is guesswork.                                   | P1       | Done   |
+| MAT-GAP-010 | Exports/schedules do not preserve the full material asset contract.           | IFC/GLTF/readback can diverge from viewport behavior.          | P1       | Done   |
+| MAT-GAP-011 | Texture performance and caching strategy is undefined.                        | Real textures could degrade 3D interaction.                    | P1       | Done   |
+| MAT-GAP-012 | Visual QA does not catch material regressions.                                | Textures/bump/patterns can silently disappear.                 | P1       | Done   |
+| MAT-GAP-013 | Assets and licensing/provenance are not tracked.                              | Curated texture libraries can create legal/product risk.       | P2       | Done   |
 
 ## Workpackages
 

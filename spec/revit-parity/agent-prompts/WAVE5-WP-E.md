@@ -40,6 +40,7 @@ Add `eqEnabled?: boolean` to the `permanent_dimension` type in `core/index.ts`.
 ### B — EQ dimension: plan symbol
 
 In `planElementMeshBuilders.ts`, where the permanent dimension is rendered:
+
 - When `dim.eqEnabled === true`, replace each segment label with "EQ" text (use the same text
   rendering approach as other labels)
 - Add an "EQ" toggle button rendered at the midpoint of the dimension string — a small circle with
@@ -53,6 +54,7 @@ Handle it in `Workspace.tsx`.
 ### C — Global parameters: data model (§3.8)
 
 Add to `project_settings` element in `core/index.ts`:
+
 ```ts
 globalParams?: Array<{
   id: string;
@@ -68,6 +70,7 @@ Add command: `{ type: 'upsert_global_param'; param: GlobalParam }` and
 ### D — Global parameters: dialog
 
 Create `packages/web/src/workspace/ManageGlobalParamsDialog.tsx`:
+
 - `data-testid="global-params-dialog"`
 - A table of global parameters with columns: Name, Value, Unit
 - "Add Parameter" button (`data-testid="global-params-add"`) → appends a row with a generated id
@@ -81,6 +84,7 @@ Add a "Global Parameters" entry to the Manage tab in the ribbon (alongside "Phas
 ### E — Tests
 
 Write `packages/web/src/plan/eqDimension.test.ts`:
+
 ```ts
 describe('EQ dimension symbol — §4.2.2', () => {
   it('eqEnabled=true replaces segment labels with "EQ" text userData', () => { ... });
@@ -90,6 +94,7 @@ describe('EQ dimension symbol — §4.2.2', () => {
 ```
 
 Write `packages/web/src/workspace/globalParams.test.ts`:
+
 ```ts
 describe('global parameters — §3.8', () => {
   it('upsert_global_param adds new param to project_settings', () => { ... });

@@ -10,6 +10,7 @@ You cannot watch videos yourself. This skill delegates that to Gemini via a one-
 ## When to use
 
 Trigger phrases:
+
 - "watch this video": `https://www.youtube.com/watch?v=…`
 - "what happens in this YT link"
 - "describe the video at [URL]"
@@ -30,6 +31,7 @@ Run from the repo root (`/Users/jhoetter/repos/bim-ai`). The script reads
 `GEMINI_API_KEY` from `.env` automatically.
 
 Optional flags:
+
 - `--model gemini-2.5-pro` — higher quality analysis on complex videos
 - `--screenshots <dir>` — also download the video (via yt-dlp) and extract a
   PNG frame at every timestamp with ffmpeg; writes `log.txt` + numbered PNGs

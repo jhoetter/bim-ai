@@ -60,6 +60,7 @@ export function downloadDataUrl(dataUrl: string, filename: string): void {
 ```
 
 Wire into `Viewport.tsx`:
+
 - Export a `captureRef = useImperativeHandle / useRef` handle that callers can invoke, OR
 - Read `renderer` from a ref already on `Viewport.tsx` (study the existing renderer ref pattern)
 
@@ -99,12 +100,14 @@ access pattern already in the codebase.
 ### D — Sheet PDF export polish
 
 Read `pdfExporter.ts` in full. If sheet PDF export already works:
+
 - Ensure the export correctly embeds revision table (SheetRevisionTableSvg) in the PDF output
 - Ensure the sheet title block renders at the correct paper size (A1/A0 — check `paperSizeMm`)
 - Add a "Print sheet as PDF" action to the sheet context menu or the Sheets ribbon tab
   (data-testid: `"sheet-export-pdf"`)
 
 If `pdfExporter.ts` is a stub, implement minimal sheet export:
+
 1. Collect the SheetCanvas SVG DOM node (`svgRef.current`)
 2. Convert to a Blob: `new Blob([new XMLSerializer().serializeToString(svg)], { type: 'image/svg+xml' })`
 3. Download as `.svg` (data-testid: `"sheet-export-svg"`). True PDF conversion via headless browser
@@ -115,14 +118,13 @@ If `pdfExporter.ts` is a stub, implement minimal sheet export:
 ## Tests
 
 Add to `packages/web/src/export/viewportCapture.test.ts` (new file):
+
 1. `captureViewport3D` with a mock canvas whose `toDataURL` returns a string → function returns
    that string
 2. `downloadDataUrl` creates an `<a>` element with correct `href` and `download` attributes
 3. JPEG quality parameter is forwarded to `toDataURL`
 
-Add to export menu tests (new or extend `pdfExporter.test.ts`):
-4. Export 3D PNG menu item is present (data-testid `menu-export-3d-png`)
-5. Sheet export PDF/SVG button is present (data-testid `sheet-export-pdf` or `sheet-export-svg`)
+Add to export menu tests (new or extend `pdfExporter.test.ts`): 4. Export 3D PNG menu item is present (data-testid `menu-export-3d-png`) 5. Sheet export PDF/SVG button is present (data-testid `sheet-export-pdf` or `sheet-export-svg`)
 
 ---
 
@@ -131,12 +133,14 @@ Add to export menu tests (new or extend `pdfExporter.test.ts`):
 Edit `spec/revit-parity/revit2026-parity-tracker.md`:
 
 Update §6.5 description — append:
+
 ```
 `captureViewport3D()` in `viewportCapture.ts` captures Three.js canvas as PNG/JPEG via
 `toDataURL`. Export 3D PNG/JPEG and Plan PNG actions wired in export menu
 (data-testids: menu-export-3d-png, menu-export-3d-jpeg, menu-export-plan-png). Sheet PDF/SVG
 export action added (data-testid: sheet-export-pdf). 5 tests.
 ```
+
 Change status to `Done — P1`.
 
 Also update §12.4.5 (PDF export) status to reflect sheet SVG/PDF export is now wired.

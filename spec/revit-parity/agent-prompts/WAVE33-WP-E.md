@@ -12,6 +12,7 @@ Wave 33 completes the remaining ribbon coverage. Your role is the QA/fix pass: c
 ## Ownership
 
 Primary write scope:
+
 - Minimal fixes wherever QA finds a Wave 33 issue.
 - Prefer targeted changes in `RibbonBar.tsx`, `commandCapabilities.ts`, `defaultCommands.ts`, or ribbon tests.
 
@@ -20,6 +21,7 @@ Do not perform broad refactors.
 ## Orientation
 
 Run after WP-A/WP-B/WP-C have produced changes if possible:
+
 - `pnpm --filter @bim-ai/web exec vitest run src/workspace/shell/TopBar.test.tsx src/workspace/shell/ribbonCompleteTabs.test.tsx src/workspace/commandCapabilities.test.ts src/cmdPalette/defaultCommands.test.ts`
 - `pnpm --filter @bim-ai/web exec tsc --noEmit --pretty false` only if the repo has a working typecheck baseline; otherwise report baseline failures separately from Wave 33 issues.
 - `rg -n "view\\.ribbon|ribbon-tab-|ribbon-command-|behavior === 'disabled'|missing-metadata" packages/web/src/workspace packages/web/src/cmdPalette`
@@ -42,4 +44,3 @@ Run after WP-A/WP-B/WP-C have produced changes if possible:
 
 - Targeted ribbon/command metadata tests pass.
 - Any remaining failure has a concrete file/test/error summary.
-

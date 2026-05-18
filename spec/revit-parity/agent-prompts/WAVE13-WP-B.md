@@ -43,21 +43,22 @@ Create `packages/web/src/workspace/ProjectInfoDialog.tsx`:
 
 A modal dialog with a two-column form layout. Fields (all dispatch `update_element_property` for the `project_settings` element when blurred):
 
-| Field | data-testid | Type |
-|-------|-------------|------|
-| Project name | `project-info-name` | text input |
-| Project number | `project-info-number` | text input |
-| Client name | `project-info-client` | text input |
-| Project address | `project-info-address` | textarea (3 rows) |
-| Project status | `project-info-status` | text input |
-| Author name | `project-info-author` | text input |
-| Issue date | `project-info-issue-date` | date input |
-| Check date | `project-info-check-date` | date input |
-| Description | `project-info-description` | textarea (3 rows) |
+| Field           | data-testid                | Type              |
+| --------------- | -------------------------- | ----------------- |
+| Project name    | `project-info-name`        | text input        |
+| Project number  | `project-info-number`      | text input        |
+| Client name     | `project-info-client`      | text input        |
+| Project address | `project-info-address`     | textarea (3 rows) |
+| Project status  | `project-info-status`      | text input        |
+| Author name     | `project-info-author`      | text input        |
+| Issue date      | `project-info-issue-date`  | date input        |
+| Check date      | `project-info-check-date`  | date input        |
+| Description     | `project-info-description` | textarea (3 rows) |
 
 Use the same modal wrapper pattern as `DimensionStyleDialog.tsx` or `VisibilityGraphicsDialog.tsx` — read those first, copy their shell exactly.
 
 Props:
+
 ```ts
 interface ProjectInfoDialogProps {
   projectSettings: Extract<Element, { kind: 'project_settings' }>;
@@ -71,6 +72,7 @@ Close button (`data-testid="project-info-close"`) fires `onClose`.
 ### B — Wire into Workspace
 
 In `Workspace.tsx`:
+
 - Add `const [showProjectInfo, setShowProjectInfo] = useState(false)`
 - In the JSX, render `<ProjectInfoDialog>` when `showProjectInfo` is true, using `onClose={() => setShowProjectInfo(false)}`
 - Add a ribbon button or menu item with `data-testid="ribbon-project-info"` that sets `showProjectInfo(true)`
@@ -78,6 +80,7 @@ In `Workspace.tsx`:
 ### C — Palette command
 
 In `defaultCommands.ts`, register (only if not already present):
+
 ```ts
 registerCommand({
   id: 'manage.project-information',
@@ -93,6 +96,7 @@ Add `openProjectInfo?: () => void` to `PaletteContext` if not already present.
 ### D — Title block wiring
 
 In `SheetCanvas.tsx`, find where the title block fields are rendered (look for project name, client name, etc. being drawn as SVG text or similar). Update them to read from the `project_settings` element fields:
+
 - `titleBlockProjectName` → `projectSettings.name`
 - `titleBlockProjectNumber` → `projectSettings.projectNumber`
 - `titleBlockClient` → `projectSettings.clientName`
@@ -104,6 +108,7 @@ If the sheet already reads these fields, verify the mapping is correct and do NO
 ### E — Tests
 
 Write `packages/web/src/workspace/projectInfoDialog.test.tsx`:
+
 ```ts
 describe('project information dialog — §2.1.1', () => {
   it('renders project-info-name input with current project name', () => { ... });
@@ -119,6 +124,7 @@ describe('project information dialog — §2.1.1', () => {
 ## Commit and push
 
 After tests pass (`pnpm test --filter @bim-ai/web`):
+
 ```
 git add -p
 git commit -m "feat(wave13/B): project information dialog (§2.1.1)"

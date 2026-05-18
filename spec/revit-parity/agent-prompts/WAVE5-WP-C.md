@@ -37,6 +37,7 @@ Prettier runs automatically after every Edit/Write.
 ### A — Interior elevation marker inspector (§6.1.5)
 
 In `InspectorContent.tsx`, detect `el.kind === 'interior_elevation_marker'` and render:
+
 - `data-testid="inspector-iel-radius"` — numeric input for sweep radius (mm). Read the element's
   `radiusMm` field; on change dispatch `update_element_property` with key `radiusMm`.
 - `data-testid="inspector-iel-level"` — `<select>` listing all level elements in `elementsById`.
@@ -52,6 +53,7 @@ if not already present.
 
 In `SheetCanvas.tsx` (or `sheetTitleblockAuthoring.tsx`), render a revision table in the title
 block area of each sheet. The table should:
+
 - Query all `sheet_revision` elements whose `sheetId === sheet.id`
 - Render rows with columns: **Rev** (sequence number), **Date**, **Description**, **By**
 - Use `data-testid="sheet-revision-table"` on the table container
@@ -63,6 +65,7 @@ corner of the title block area (the same region used by the existing title block
 ### C — Tests
 
 Write `packages/web/src/workspace/inspector/interiorElevationInspector.test.tsx`:
+
 ```ts
 describe('interior elevation marker inspector — §6.1.5', () => {
   it('renders radius input with current radiusMm value', () => { ... });
@@ -73,6 +76,7 @@ describe('interior elevation marker inspector — §6.1.5', () => {
 ```
 
 Write `packages/web/src/workspace/sheets/sheetRevisionTable.test.tsx`:
+
 ```ts
 describe('sheet revision table — §6.3', () => {
   it('renders sheet-revision-table when revisions exist for sheet', () => { ... });

@@ -18,9 +18,9 @@ try {
   await page.waitForSelector('[data-testid="workspace-header"]', { timeout: 30000 });
   await page.waitForSelector('[data-tab-id]', { timeout: 30000 });
 
-  const tabIds = await page.locator('[data-tab-id]').evaluateAll((els) =>
-    els.map((el) => el.getAttribute('data-tab-id')).filter(Boolean),
-  );
+  const tabIds = await page
+    .locator('[data-tab-id]')
+    .evaluateAll((els) => els.map((el) => el.getAttribute('data-tab-id')).filter(Boolean));
   const modeByTabId = [];
   for (const tabId of tabIds) {
     await page.locator(`[data-testid="tab-activate-${tabId}"]`).click();
@@ -36,7 +36,10 @@ try {
   }
   summary.tabModeSwitchChecks = modeByTabId;
   summary.allTabClicksLoadMode = modeByTabId.every((row) => row.modeVisible);
-  await page.screenshot({ path: new URL('01-tab-click-mode-switch.png', outDir).pathname, fullPage: true });
+  await page.screenshot({
+    path: new URL('01-tab-click-mode-switch.png', outDir).pathname,
+    fullPage: true,
+  });
 
   const tabCountBefore = await page.locator('[data-tab-id]').count();
   await page.locator('[data-testid="primary-create-floor-plan"]').click();
@@ -47,11 +50,15 @@ try {
   await page.waitForTimeout(700);
   const tabCountAfterSheet = await page.locator('[data-tab-id]').count();
 
-  summary.newViewCreatesTabs = tabCountAfterFloor > tabCountBefore && tabCountAfterSheet > tabCountAfterFloor;
+  summary.newViewCreatesTabs =
+    tabCountAfterFloor > tabCountBefore && tabCountAfterSheet > tabCountAfterFloor;
   summary.tabCountBefore = tabCountBefore;
   summary.tabCountAfterFloor = tabCountAfterFloor;
   summary.tabCountAfterSheet = tabCountAfterSheet;
-  await page.screenshot({ path: new URL('02-create-views-new-tabs.png', outDir).pathname, fullPage: true });
+  await page.screenshot({
+    path: new URL('02-create-views-new-tabs.png', outDir).pathname,
+    fullPage: true,
+  });
 
   await page.close();
 
@@ -65,7 +72,12 @@ try {
         v: 1,
         tabs: [
           { id: 'plan:demo-pane-a', kind: 'plan', label: 'Demo plan A', targetId: 'hf-pv-ground' },
-          { id: 'sheet:demo-pane-b', kind: 'sheet', label: 'Demo sheet B', targetId: 'hf-sheet-ga01' },
+          {
+            id: 'sheet:demo-pane-b',
+            kind: 'sheet',
+            label: 'Demo sheet B',
+            targetId: 'hf-sheet-ga01',
+          },
         ],
         activeId: 'sheet:demo-pane-b',
       }),
@@ -96,7 +108,9 @@ try {
     timeout: 30000,
   });
 
-  const paneTabStripCount = await splitPage.locator('[data-testid^="canvas-pane-tabstrip-"]').count();
+  const paneTabStripCount = await splitPage
+    .locator('[data-testid^="canvas-pane-tabstrip-"]')
+    .count();
   const paneCloseCount = await splitPage.locator('[data-testid^="canvas-pane-close-tab-"]').count();
   summary.paneTabStripCount = paneTabStripCount;
   summary.paneLocalTabChromeVisible = paneTabStripCount >= 2 && paneCloseCount >= 2;

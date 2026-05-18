@@ -49,7 +49,7 @@ import type { Element } from '@bim-ai/core';
  */
 export function autoDimensionWalls(
   levelId: string,
-  elementsById: Record<string, Element | undefined>
+  elementsById: Record<string, Element | undefined>,
 ): Extract<Element, { kind: 'dimension' }>[] {
   // 1. Collect all walls on the level (el.kind === 'wall' && el.levelId === levelId)
   // 2. Group walls by orientation (horizontal vs vertical, based on angleDeg or startMm/endMm)
@@ -74,7 +74,7 @@ If the `dimension` element kind doesn't have the fields you need (startMm, endMm
  */
 export function tagAllRooms(
   levelId: string,
-  elementsById: Record<string, Element | undefined>
+  elementsById: Record<string, Element | undefined>,
 ): Element[] {
   // 1. Collect all rooms on the level (el.kind === 'room' && el.levelId === levelId)
   // 2. For each room, compute centroid: average of el.perimeterMm points (or el.positionMm)
@@ -86,6 +86,7 @@ export function tagAllRooms(
 ```
 
 If `room_tag` or `text_tag` element kinds don't exist in `core/index.ts`, add:
+
 ```ts
 | {
     kind: 'text_tag';
@@ -155,6 +156,7 @@ In `commandCapabilities.ts`, add (if not already present):
 ### F — Tests
 
 `packages/web/src/plan/autoDimension.test.ts`:
+
 ```ts
 describe('autoDimensionWalls — §4.1', () => {
   it('returns empty array when no walls on level', () => { ... });

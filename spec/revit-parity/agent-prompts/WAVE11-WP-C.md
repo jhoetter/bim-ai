@@ -44,6 +44,7 @@ Read ALL of these before writing anything:
 Check `toolRegistry.ts` — `'measure-angle'` and `'measure-arc'` may not exist yet.
 
 **toolRegistry.ts** — add if missing:
+
 ```ts
 'measure-angle': {
   hotkey: 'MA',
@@ -62,15 +63,29 @@ Check `toolRegistry.ts` — `'measure-angle'` and `'measure-arc'` may not exist 
 ```
 
 **authoringCommandContract.ts** — add both:
+
 ```ts
 'measure-angle': { kind: 'sketch', completionBehavior: 'explicit-finish' },
 'measure-arc':   { kind: 'sketch', completionBehavior: 'explicit-finish' },
 ```
 
 **defaultCommands.ts** — add both:
+
 ```ts
-registerCommand({ id: 'tool.measure-angle', label: 'Measure Angle', keywords: ['angle', 'measure', 'degrees'], category: 'tool', invoke: (ctx) => startPlanTool(ctx, 'measure-angle') });
-registerCommand({ id: 'tool.measure-arc',   label: 'Measure Arc',   keywords: ['arc', 'measure', 'radius', 'arc length'], category: 'tool', invoke: (ctx) => startPlanTool(ctx, 'measure-arc') });
+registerCommand({
+  id: 'tool.measure-angle',
+  label: 'Measure Angle',
+  keywords: ['angle', 'measure', 'degrees'],
+  category: 'tool',
+  invoke: (ctx) => startPlanTool(ctx, 'measure-angle'),
+});
+registerCommand({
+  id: 'tool.measure-arc',
+  label: 'Measure Arc',
+  keywords: ['arc', 'measure', 'radius', 'arc length'],
+  category: 'tool',
+  invoke: (ctx) => startPlanTool(ctx, 'measure-arc'),
+});
 ```
 
 **toolGrammar.ts** — add two state machines:
@@ -109,6 +124,7 @@ In `PlanCanvas.tsx` (or wherever the measure tool distance is shown), extend the
 - **Measure Arc**: when `status === 'complete'`, show `"Arc: {(arcLengthMm/1000).toFixed(3)} m  R: {(radiusMm/1000).toFixed(3)} m"` (`data-testid="measure-arc-readout"`)
 
 For intermediate states, show a preview:
+
 - Angle tool after second click: draw a preview arc between the two rays using `THREE.Line` (thin dashed arc)
 - Arc tool after second click: draw a line between start and end
 
@@ -135,18 +151,23 @@ Create `packages/web/src/plan/measureGeometry.ts`:
 
 ```ts
 /** Angle in degrees between two vectors from origin. Always 0–180. */
-export function angleBetweenVectors(a: XY, b: XY): number
+export function angleBetweenVectors(a: XY, b: XY): number;
 
 /** Fit a circle through three points; returns { centerMm, radiusMm } or null if collinear. */
-export function fitCircleThrough3(p1: XY, p2: XY, p3: XY): { centerMm: XY; radiusMm: number } | null
+export function fitCircleThrough3(
+  p1: XY,
+  p2: XY,
+  p3: XY,
+): { centerMm: XY; radiusMm: number } | null;
 
 /** Arc length along the fitted circle from p1 to p2 passing through p3. */
-export function arcLengthThrough3(p1: XY, p2: XY, p3: XY): number | null
+export function arcLengthThrough3(p1: XY, p2: XY, p3: XY): number | null;
 ```
 
 ### E — Tests
 
 Write `packages/web/src/plan/measureGeometry.test.ts`:
+
 ```ts
 describe('measureGeometry — §3.3.8', () => {
   it('angleBetweenVectors returns 90° for perpendicular vectors', () => { ... });
@@ -159,6 +180,7 @@ describe('measureGeometry — §3.3.8', () => {
 ```
 
 Write `packages/web/src/tools/measureAngle.test.ts`:
+
 ```ts
 describe('measure angle grammar — §3.3.8', () => {
   it('activate transitions to idle', () => { ... });
@@ -174,6 +196,7 @@ describe('measure angle grammar — §3.3.8', () => {
 ## Commit and push
 
 After tests pass (`pnpm test --filter @bim-ai/web`):
+
 ```
 git add -p
 git commit -m "feat(wave11/C): measure angle + arc tools with geometry helpers (§3.3.8)"

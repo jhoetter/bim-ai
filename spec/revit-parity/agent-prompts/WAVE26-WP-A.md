@@ -11,6 +11,7 @@ This prompt is self-contained — start here.
 §3.3.7 "Gruppe Ansicht" is Partial. Linework override is already done (wave 15). What's missing is **Paint surface** — assigning a material to an individual element face, which is a core Revit Modify → View workflow.
 
 This task adds:
+
 1. `PaintFaceCmd` / `UnpaintFaceCmd` in core
 2. `faceOverrides?: Record<string, string>` on wall/floor elements (keyed by faceKey, value = materialKey)
 3. `'paint'` tool (hotkey `PA`) — click a wall to set its face material
@@ -31,6 +32,7 @@ packages/web/src/workspace/commandCapabilities.ts — find 'modify.linework-over
 ```
 
 Run before editing:
+
 - `grep -n "lineworkOverrides\|applyLineworkOverride\|linework" packages/core/src/index.ts | head -10`
 - `grep -n "applyLineworkOverride\|handleLinework" packages/web/src/workspace/Workspace.tsx | head -10`
 - `grep -n "case 'linework'" packages/web/src/plan/PlanCanvas.tsx | head -5`
@@ -46,6 +48,7 @@ Prettier runs automatically. **Always `git pull --rebase origin main` before pus
 ### A — Add faceOverrides to wall and floor elements in packages/core/src/index.ts
 
 Find the wall element (kind: 'wall'). Add:
+
 ```ts
 /** Per-face material override. Key: face identifier (e.g. 'front', 'back', 'top', 'bottom'). Value: materialKey string. */
 faceOverrides?: Record<string, string>;
@@ -84,7 +87,10 @@ if (cmd.type === 'paintFace') {
   const { elementsById: cur } = useBimStore.getState();
   const el = cur[cmd.elementId as string];
   if (!el) return;
-  const overrides = { ...((el as any).faceOverrides ?? {}), [cmd.faceKey as string]: cmd.materialKey as string };
+  const overrides = {
+    ...((el as any).faceOverrides ?? {}),
+    [cmd.faceKey as string]: cmd.materialKey as string,
+  };
   useBimStore.setState({
     elementsById: { ...cur, [el.id]: { ...el, faceOverrides: overrides } as any },
   });
@@ -183,7 +189,12 @@ import { describe, expect, it } from 'vitest';
 
 describe('PaintFace / UnpaintFace — §3.3.7', () => {
   it('PaintFaceCmd has correct shape', () => {
-    const cmd = { type: 'paintFace' as const, elementId: 'w1', faceKey: 'front', materialKey: 'brick' };
+    const cmd = {
+      type: 'paintFace' as const,
+      elementId: 'w1',
+      faceKey: 'front',
+      materialKey: 'brick',
+    };
     expect(cmd.type).toBe('paintFace');
     expect(cmd.faceKey).toBe('front');
     expect(cmd.materialKey).toBe('brick');
@@ -209,7 +220,7 @@ describe('PaintFace / UnpaintFace — §3.3.7', () => {
 
   it('faceOverrides is optional — undefined means no overrides', () => {
     const el: any = { kind: 'wall', id: 'w1' };
-    expect((el.faceOverrides ?? {})).toEqual({});
+    expect(el.faceOverrides ?? {}).toEqual({});
   });
 });
 ```

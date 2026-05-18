@@ -65,10 +65,7 @@
       "classification": "executable",
       "status": "passed",
       "ok": true,
-      "artifacts": [
-        "live-evidence/semantic-diff.json",
-        "live-evidence/semantic-summary.json"
-      ],
+      "artifacts": ["live-evidence/semantic-diff.json", "live-evidence/semantic-summary.json"],
       "command": "node scripts/benchmarks/site-context-house.mjs --mode offline --json"
     }
   },

@@ -52,6 +52,7 @@ Wire these values into the `commit` effect dispatch: the created columns should 
 ### B — Grid highlight in plan
 
 In `PlanCanvas.tsx`, when `planTool === 'column-at-grids'`:
+
 - Track which grid elements are in `selectedGridIds` from the grammar state
 - For each selected grid: render a highlight overlay — thicker line (linewidth 3), color `#0055cc` (blue)
 - For hovered grid (under cursor but not yet selected): render a lighter preview highlight (`#88aaff`)
@@ -62,6 +63,7 @@ Implementation: add a `THREE.Group` named `columnAtGridsHighlight` that is rebui
 ### C — Intersection preview dots
 
 When ≥2 grids are selected, show small filled circles at each computed intersection point:
+
 - Circle radius: 200 mm
 - Color: `#0055cc`
 - Update on each grid toggle
@@ -71,17 +73,21 @@ This gives the architect visual feedback of where columns will be placed before 
 ### D — "Select All Grids" button
 
 In `OptionsBar.tsx` (column-at-grids section), add:
+
 - **"Select All"** button (`data-testid="options-bar-cat-select-all"`): dispatches a `selectAllGrids` event to the grammar, which adds all grid ids in `elementsById` to `selectedGridIds`
 
 Add the `selectAllGrids` event to `ColumnAtGridsState` / `reduceColumnAtGrids` in `toolGrammar.ts`:
+
 ```ts
 | { kind: 'selectAllGrids'; gridIds: string[] }
 ```
+
 → sets `selectedGridIds` to all provided ids.
 
 ### E — Tests
 
 Write `packages/web/src/tools/columnAtGridsTool.test.ts` (or extend existing):
+
 ```ts
 describe('column-at-grids grammar — §9.1.2', () => {
   it('toggleGrid adds a new grid to selectedGridIds', () => { ... });
@@ -93,6 +99,7 @@ describe('column-at-grids grammar — §9.1.2', () => {
 ```
 
 Write `packages/web/src/plan/columnAtGrids.optionsbar.test.tsx`:
+
 ```ts
 describe('column-at-grids options bar — §9.1.2', () => {
   it('renders options-bar-cat-column-type select', () => { ... });
@@ -107,6 +114,7 @@ describe('column-at-grids options bar — §9.1.2', () => {
 ## Commit and push
 
 After all tasks are done and tests pass (`pnpm test --filter @bim-ai/web`), commit:
+
 ```
 git add -p
 git commit -m "feat(wave9/F): column-at-grids options bar + grid highlight + intersection preview (§9.1.2)"

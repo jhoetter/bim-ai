@@ -53,31 +53,59 @@ In `InspectorContent.tsx`, find or create the section for `kind === 'steel_conne
 
   {/* Plate dimensions */}
   <label>Plate Width (mm)</label>
-  <input type="number" data-testid="inspector-steel-conn-plate-w"
+  <input
+    type="number"
+    data-testid="inspector-steel-conn-plate-w"
     value={el.plateSizeMm?.width ?? 150}
-    onChange={(e) => onPropertyChange('plateSizeMm', { ...el.plateSizeMm, width: +e.currentTarget.value })} />
+    onChange={(e) =>
+      onPropertyChange('plateSizeMm', { ...el.plateSizeMm, width: +e.currentTarget.value })
+    }
+  />
   <label>Plate Height (mm)</label>
-  <input type="number" data-testid="inspector-steel-conn-plate-h"
+  <input
+    type="number"
+    data-testid="inspector-steel-conn-plate-h"
     value={el.plateSizeMm?.height ?? 200}
-    onChange={(e) => onPropertyChange('plateSizeMm', { ...el.plateSizeMm, height: +e.currentTarget.value })} />
+    onChange={(e) =>
+      onPropertyChange('plateSizeMm', { ...el.plateSizeMm, height: +e.currentTarget.value })
+    }
+  />
   <label>Plate Thickness (mm)</label>
-  <input type="number" data-testid="inspector-steel-conn-plate-t"
+  <input
+    type="number"
+    data-testid="inspector-steel-conn-plate-t"
     value={el.plateSizeMm?.thickness ?? 10}
-    onChange={(e) => onPropertyChange('plateSizeMm', { ...el.plateSizeMm, thickness: +e.currentTarget.value })} />
+    onChange={(e) =>
+      onPropertyChange('plateSizeMm', { ...el.plateSizeMm, thickness: +e.currentTarget.value })
+    }
+  />
 
   {/* Bolt grid */}
   <label>Bolt Rows</label>
-  <input type="number" min={1} max={10} data-testid="inspector-steel-conn-bolt-rows"
+  <input
+    type="number"
+    min={1}
+    max={10}
+    data-testid="inspector-steel-conn-bolt-rows"
     value={el.boltRows ?? 2}
-    onChange={(e) => onPropertyChange('boltRows', +e.currentTarget.value)} />
+    onChange={(e) => onPropertyChange('boltRows', +e.currentTarget.value)}
+  />
   <label>Bolt Columns</label>
-  <input type="number" min={1} max={10} data-testid="inspector-steel-conn-bolt-cols"
+  <input
+    type="number"
+    min={1}
+    max={10}
+    data-testid="inspector-steel-conn-bolt-cols"
     value={el.boltCols ?? 2}
-    onChange={(e) => onPropertyChange('boltCols', +e.currentTarget.value)} />
+    onChange={(e) => onPropertyChange('boltCols', +e.currentTarget.value)}
+  />
   <label>Bolt Diameter (mm)</label>
-  <input type="number" data-testid="inspector-steel-conn-bolt-diam"
+  <input
+    type="number"
+    data-testid="inspector-steel-conn-bolt-diam"
     value={el.boltDiameterMm ?? 20}
-    onChange={(e) => onPropertyChange('boltDiameterMm', +e.currentTarget.value)} />
+    onChange={(e) => onPropertyChange('boltDiameterMm', +e.currentTarget.value)}
+  />
 
   {/* Host element read-only */}
   <label>Host Element</label>

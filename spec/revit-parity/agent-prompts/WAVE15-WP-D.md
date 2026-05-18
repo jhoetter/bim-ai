@@ -34,6 +34,7 @@ Prettier runs automatically. **Always `git pull --rebase origin main` before pus
 ### A — Complete sort wiring in SchedulePanel.tsx
 
 For every `<ScheduleTable>` or equivalent table component that does NOT yet have sort wired:
+
 1. Add `const [xSort, setXSort] = useState<{key:string; dir:'asc'|'desc'} | null>(null)` for each table type.
 2. Pass `sortKey={xSort?.key}`, `sortDir={xSort?.dir}`, and `onSort={(key) => setXSort(s => s?.key === key && s.dir === 'asc' ? {key, dir:'desc'} : {key, dir:'asc'})}` to each `<ScheduleTable>`.
 3. Apply `sortRows(rows, xSort.key, xSort.dir)` before rendering.
@@ -53,7 +54,14 @@ At the top of each schedule section (or a single shared one at the top of the pa
   data-testid="schedule-filter-input"
   value={filterText}
   onChange={(e) => setFilterText(e.currentTarget.value)}
-  style={{ fontSize: 11, padding: '2px 6px', border: '1px solid var(--color-border)', borderRadius: 3, width: '100%', marginBottom: 4 }}
+  style={{
+    fontSize: 11,
+    padding: '2px 6px',
+    border: '1px solid var(--color-border)',
+    borderRadius: 3,
+    width: '100%',
+    marginBottom: 4,
+  }}
 />
 ```
 
@@ -66,6 +74,7 @@ Apply `filterRows(rows, filterText)` before sort. A single `filterText` state ca
 Add a "Group by" dropdown to the schedule toolbar (near the sort). It should show the available field keys for the current preset (read them from `scheduleDefinitionPresets.ts`).
 
 When a `groupByKey` is set:
+
 1. Group the rows by unique values of `row[groupByKey]`.
 2. Render each group with a subheading `<tr>` spanning all columns showing the group value and row count.
 3. Within each group, apply normal sort/filter.
@@ -87,6 +96,7 @@ A "Clear Group" option (empty `<option>`) resets groupByKey to null.
 ### D — "Clear Sort" button
 
 Add a small `× Clear` button (shown only when sort is active) next to the sort indicator in the schedule toolbar:
+
 ```tsx
 {sortKey && (
   <button data-testid="schedule-clear-sort" onClick={() => setSort(null)} style={...}>× Clear</button>
@@ -98,6 +108,7 @@ Add a small `× Clear` button (shown only when sort is active) next to the sort 
 ### E — Tests
 
 `packages/web/src/schedules/scheduleFilterGroup.test.ts`:
+
 ```ts
 import { sortRows, filterRows } from './scheduleSortFilter';
 
@@ -119,6 +130,7 @@ describe('schedule sort/filter/group — §13.3', () => {
 Also add a `groupByKey<T>(rows: T[], key: keyof T): Record<string, T[]>` pure helper to `scheduleSortFilter.ts` (export it) and test it.
 
 `packages/web/src/schedules/SchedulePanel.filterInput.test.tsx`:
+
 ```ts
 describe('SchedulePanel filter input', () => {
   it('renders schedule-filter-input', () => { ... });

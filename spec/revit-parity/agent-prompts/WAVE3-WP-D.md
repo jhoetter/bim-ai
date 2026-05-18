@@ -89,10 +89,11 @@ In `roomFinishScheduleEvidenceReadout.ts` (or add a new `roomNetArea.ts` helper)
 export function computeRoomNetAreaMm2(
   room: RoomElem,
   elementsById: Record<string, Element>,
-): number
+): number;
 ```
 
 Algorithm:
+
 1. Start with `room.areaMm2` (gross area).
 2. Iterate all `column` elements in `elementsById`. For each column whose centre point falls
    inside `room.boundary`, subtract `column.widthMm * column.depthMm` (the column footprint).
@@ -118,18 +119,13 @@ If `areaMm2` is already there, do NOT add a duplicate — just confirm it exists
 ## Tests
 
 Add to `packages/web/src/plan/planRoomLabelLayout.test.ts` (extend existing file):
+
 1. `formatRoomAreaM2(1234567)` → `"1.2 m²"` (rounds to 1 decimal)
 2. `formatRoomAreaM2(0)` → `"0.0 m²"`
 
-Add to `packages/web/src/schedules/roomNetArea.test.ts` (new file):
-3. Room with no columns/walls → net area equals gross area
-4. Room with one column inside boundary → net area = gross − column footprint
-5. Room with a wall midpoint outside boundary → wall not subtracted
-6. Net area never goes below 0
+Add to `packages/web/src/schedules/roomNetArea.test.ts` (new file): 3. Room with no columns/walls → net area equals gross area 4. Room with one column inside boundary → net area = gross − column footprint 5. Room with a wall midpoint outside boundary → wall not subtracted 6. Net area never goes below 0
 
-Add to inspector tests (wherever `InspectorContent` is tested):
-7. `case 'room'` renders name + number + area fields
-8. Editing name input dispatches updateElement patch
+Add to inspector tests (wherever `InspectorContent` is tested): 7. `case 'room'` renders name + number + area fields 8. Editing name input dispatches updateElement patch
 
 ---
 
@@ -138,17 +134,21 @@ Add to inspector tests (wherever `InspectorContent` is tested):
 Edit `spec/revit-parity/revit2026-parity-tracker.md`:
 
 Update §13.1.2 description — append:
+
 ```
 Room tag updated to render 3-line label (name, number, area) via updated CanvasTexture in
 symbology.ts. `formatRoomAreaM2` helper exported from `planRoomLabelLayout.ts`. 2 tests.
 ```
+
 Change §13.1.2 status to `Done — P1`.
 
 Update §13.1.4 description — append:
+
 ```
 `computeRoomNetAreaMm2()` helper subtracts column and wall footprints inside the room boundary
 (geometric approximation). Exposed in room inspector as "Net area" read-only field. 4 tests.
 ```
+
 Change §13.1.4 status to `Done — P1`.
 
 Update the summary table row for Chapter 13.

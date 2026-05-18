@@ -50,19 +50,19 @@ Sources:
 
 Important concepts to adopt:
 
-| Navisworks concept | Meaning | bim-ai implication |
-| --- | --- | --- |
-| Clash test | A reusable pairwise check between selection A and selection B. | Keep and expand `selection_set` + `clash_test`, but make it geometry-complete and optionally automatic. |
-| Search/selection sets | Property-based object groups used to configure repeatable tests. | Promote selection sets from coordination-only UI to validation profiles: category, discipline, level, room, phase, system, type, material, load-bearing. |
-| Hard clash | Actual geometry intersection. | Required first-class rule: solid-vs-solid intersections across all physical elements. |
-| Hard conservative | Safer method that may produce false positives. | Add exact and conservative modes; use conservative in authoring preview, exact for final advisor evidence. |
-| Clearance clash | Geometry within a required distance. | Needed for access, tolerances, installation space, insulation, maintenance clearances, doors, stairs, cabinets, MEP. |
-| Duplicate clash | Detect duplicate/coincident geometry. | Needed for duplicate walls, repeated floors, copied furniture, imported overlaps. |
-| Tolerance | Filters negligible interferences and changes severity. | Every rule needs explicit tolerance, source, default, and profile override. |
-| Ignore rules | Suppress expected or irrelevant geometry. | Need persistent suppression rules with reason, expiration, affected elements, and audit trail. |
-| Result lifecycle | New, Active, Reviewed, Approved, Resolved style statuses. | Need issue status independent from transient validator output. |
-| Viewpoint per clash | Result stores camera/isolation/markup context. | Existing viewpoints/BCF surfaces should become mandatory for serious findings. |
-| Assignment | Results can be assigned to a person/trade and integrated with coordination issues. | Need owner, discipline, due state, and resolution comments. |
+| Navisworks concept    | Meaning                                                                            | bim-ai implication                                                                                                                                       |
+| --------------------- | ---------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Clash test            | A reusable pairwise check between selection A and selection B.                     | Keep and expand `selection_set` + `clash_test`, but make it geometry-complete and optionally automatic.                                                  |
+| Search/selection sets | Property-based object groups used to configure repeatable tests.                   | Promote selection sets from coordination-only UI to validation profiles: category, discipline, level, room, phase, system, type, material, load-bearing. |
+| Hard clash            | Actual geometry intersection.                                                      | Required first-class rule: solid-vs-solid intersections across all physical elements.                                                                    |
+| Hard conservative     | Safer method that may produce false positives.                                     | Add exact and conservative modes; use conservative in authoring preview, exact for final advisor evidence.                                               |
+| Clearance clash       | Geometry within a required distance.                                               | Needed for access, tolerances, installation space, insulation, maintenance clearances, doors, stairs, cabinets, MEP.                                     |
+| Duplicate clash       | Detect duplicate/coincident geometry.                                              | Needed for duplicate walls, repeated floors, copied furniture, imported overlaps.                                                                        |
+| Tolerance             | Filters negligible interferences and changes severity.                             | Every rule needs explicit tolerance, source, default, and profile override.                                                                              |
+| Ignore rules          | Suppress expected or irrelevant geometry.                                          | Need persistent suppression rules with reason, expiration, affected elements, and audit trail.                                                           |
+| Result lifecycle      | New, Active, Reviewed, Approved, Resolved style statuses.                          | Need issue status independent from transient validator output.                                                                                           |
+| Viewpoint per clash   | Result stores camera/isolation/markup context.                                     | Existing viewpoints/BCF surfaces should become mandatory for serious findings.                                                                           |
+| Assignment            | Results can be assigned to a person/trade and integrated with coordination issues. | Need owner, discipline, due state, and resolution comments.                                                                                              |
 
 Navisworks has four default clash test types: Hard, Hard Conservative, Clearance, and Duplicates. Autodesk distinguishes static clearance checks from soft clashes, where soft clashes involve moving components linked to animation. It also documents tolerance as a central filter/severity concept for hard, clearance, and duplicate clash tests.
 
@@ -203,17 +203,17 @@ The primary backend evaluator is `app/bim_ai/constraints_evaluation.py:evaluate(
 
 Observed coverage:
 
-| Area | Current rule examples | Severity posture | Current limitation |
-| --- | --- | --- | --- |
-| Levels/datum | Missing parent, duplicate elevation, offset mismatch | Mixed error/warning | Coordinate discipline only; not constructability. |
-| Walls | Missing level, zero length, material wall overlap | Error for serious invalidity | No wall-vs-nonwall collision. No load-bearing semantics. |
-| Openings | Door/window off wall, outside wall extents, overlapping hosted openings | Error/warning/info | Does not validate structural header/lintel, egress, sill/head, code. |
-| Rooms | Degenerate outline, overlap, unenclosed, no access heuristic | Warning/error mixed | Enclosure is topological/plan-based; not code or usability complete. |
-| Floors | Missing level, degenerate floor, overlap | Error/warning | Floor overlap is warning, no slab-wall/shaft/stair completeness. |
-| Slab openings | Missing host floor, degenerate opening | Error/warning | Does not require stair shaft where stairs cross floors. |
-| Stairs | Missing levels, riser/tread sanity, schedule derivation sanity | Error/warning/info | No full landing, headroom, wall/furniture collision, guardrail, egress. |
-| Materials/exchange | Catalog and export advisories | Info/warning | Metadata fidelity, not buildability. |
-| Schedules/sheets | Placement/staleness/readout advisories | Info/warning/error | Documentation consistency, not physical constructability. |
+| Area               | Current rule examples                                                   | Severity posture             | Current limitation                                                      |
+| ------------------ | ----------------------------------------------------------------------- | ---------------------------- | ----------------------------------------------------------------------- |
+| Levels/datum       | Missing parent, duplicate elevation, offset mismatch                    | Mixed error/warning          | Coordinate discipline only; not constructability.                       |
+| Walls              | Missing level, zero length, material wall overlap                       | Error for serious invalidity | No wall-vs-nonwall collision. No load-bearing semantics.                |
+| Openings           | Door/window off wall, outside wall extents, overlapping hosted openings | Error/warning/info           | Does not validate structural header/lintel, egress, sill/head, code.    |
+| Rooms              | Degenerate outline, overlap, unenclosed, no access heuristic            | Warning/error mixed          | Enclosure is topological/plan-based; not code or usability complete.    |
+| Floors             | Missing level, degenerate floor, overlap                                | Error/warning                | Floor overlap is warning, no slab-wall/shaft/stair completeness.        |
+| Slab openings      | Missing host floor, degenerate opening                                  | Error/warning                | Does not require stair shaft where stairs cross floors.                 |
+| Stairs             | Missing levels, riser/tread sanity, schedule derivation sanity          | Error/warning/info           | No full landing, headroom, wall/furniture collision, guardrail, egress. |
+| Materials/exchange | Catalog and export advisories                                           | Info/warning                 | Metadata fidelity, not buildability.                                    |
+| Schedules/sheets   | Placement/staleness/readout advisories                                  | Info/warning/error           | Documentation consistency, not physical constructability.               |
 
 Key file references:
 
@@ -367,14 +367,14 @@ PhysicalParticipant {
 
 Collision proxies should support progressive fidelity:
 
-| Proxy | Use |
-| --- | --- |
-| AABB | Fast broad phase. |
-| OBB | Rotated furniture, walls, beams, cabinets. |
-| Extruded 2D polygon | Floors, roofs, rooms, wall solids, slabs. |
-| Capsule/cylinder | Pipes, ducts, rails, round columns. |
-| Mesh/triangle soup | Imported IFC/NWC-like geometry and generated family solids. |
-| Void proxy | Doors, windows, slab openings, wall openings, sleeves. |
+| Proxy               | Use                                                         |
+| ------------------- | ----------------------------------------------------------- |
+| AABB                | Fast broad phase.                                           |
+| OBB                 | Rotated furniture, walls, beams, cabinets.                  |
+| Extruded 2D polygon | Floors, roofs, rooms, wall solids, slabs.                   |
+| Capsule/cylinder    | Pipes, ducts, rails, round columns.                         |
+| Mesh/triangle soup  | Imported IFC/NWC-like geometry and generated family solids. |
+| Void proxy          | Doors, windows, slab openings, wall openings, sleeves.      |
 
 Acceptance criteria:
 
@@ -431,17 +431,17 @@ CandidatePair {
 
 Required narrow-phase checks:
 
-| Check | Required for |
-| --- | --- |
-| Solid intersection depth/volume | Hard clash. |
-| Minimum distance | Clearance clash. |
-| Duplicate/coincident geometry | Duplicate clash. |
-| Host void subtraction | Doors/windows/openings should not clash with their host wall where a void exists. |
-| Penetration-without-opening | Pipe/duct/beam/shelf through wall/floor/roof unless opening/sleeve/host relation exists. |
-| Containment | Wall centerline inside roof, furniture inside room, stair inside shaft. |
-| Headroom clearance volume | Stairs, doors, circulation paths. |
-| Swing/operation envelope | Doors, appliances, cabinets, windows where applicable. |
-| Maintenance/access zone | Equipment, cabinets, windows, fixtures. |
+| Check                           | Required for                                                                             |
+| ------------------------------- | ---------------------------------------------------------------------------------------- |
+| Solid intersection depth/volume | Hard clash.                                                                              |
+| Minimum distance                | Clearance clash.                                                                         |
+| Duplicate/coincident geometry   | Duplicate clash.                                                                         |
+| Host void subtraction           | Doors/windows/openings should not clash with their host wall where a void exists.        |
+| Penetration-without-opening     | Pipe/duct/beam/shelf through wall/floor/roof unless opening/sleeve/host relation exists. |
+| Containment                     | Wall centerline inside roof, furniture inside room, stair inside shaft.                  |
+| Headroom clearance volume       | Stairs, doors, circulation paths.                                                        |
+| Swing/operation envelope        | Doors, appliances, cabinets, windows where applicable.                                   |
+| Maintenance/access zone         | Equipment, cabinets, windows, fixtures.                                                  |
 
 Severity should depend on:
 
@@ -459,21 +459,21 @@ Introduce a checked-in/default Constructability Matrix. This should be equivalen
 
 Example matrix rows:
 
-| A | B | Check | Default severity | Tolerance | Notes |
-| --- | --- | --- | --- | --- | --- |
-| furniture | wall | hard | error | 0 mm | Catches shelf through wall. |
-| furniture | door_swing | clearance | warning/error | 0 mm | Prevent blocked doors. |
-| fixture | wall | hard | error unless hosted | 0 mm | Wall-hosted exceptions allowed. |
-| pipe/duct | wall | penetration | warning/error | 0 mm | Must have opening/sleeve or approved suppression. |
-| stair | wall | hard | error | 0 mm | Stair cannot run through wall. |
-| stair | headroom_volume | clearance | error | profile-defined | Requires story/headroom model. |
-| floor | floor | duplicate/overlap | warning/error | area threshold | Same-level duplicates are suspect. |
-| wall | wall | hard | error | 0 mm | Existing rule, extend to exact/3D. |
-| wall | roof | containment/alignment | warning/error | profile-defined | Roof/wall mismatch. |
-| load_bearing_wall | opening | structural_opening_metadata | warning/error | n/a | Requires lintel/header/approval metadata. |
-| room | boundary | enclosure | warning/error | gap threshold | Existing check, improve. |
-| room | door | access | warning/error | profile-defined | Real door access, not centroid heuristic. |
-| site | building | embed/slope/drainage | warning | profile-defined | Later-stage site constructability. |
+| A                 | B               | Check                       | Default severity    | Tolerance       | Notes                                             |
+| ----------------- | --------------- | --------------------------- | ------------------- | --------------- | ------------------------------------------------- |
+| furniture         | wall            | hard                        | error               | 0 mm            | Catches shelf through wall.                       |
+| furniture         | door_swing      | clearance                   | warning/error       | 0 mm            | Prevent blocked doors.                            |
+| fixture           | wall            | hard                        | error unless hosted | 0 mm            | Wall-hosted exceptions allowed.                   |
+| pipe/duct         | wall            | penetration                 | warning/error       | 0 mm            | Must have opening/sleeve or approved suppression. |
+| stair             | wall            | hard                        | error               | 0 mm            | Stair cannot run through wall.                    |
+| stair             | headroom_volume | clearance                   | error               | profile-defined | Requires story/headroom model.                    |
+| floor             | floor           | duplicate/overlap           | warning/error       | area threshold  | Same-level duplicates are suspect.                |
+| wall              | wall            | hard                        | error               | 0 mm            | Existing rule, extend to exact/3D.                |
+| wall              | roof            | containment/alignment       | warning/error       | profile-defined | Roof/wall mismatch.                               |
+| load_bearing_wall | opening         | structural_opening_metadata | warning/error       | n/a             | Requires lintel/header/approval metadata.         |
+| room              | boundary        | enclosure                   | warning/error       | gap threshold   | Existing check, improve.                          |
+| room              | door            | access                      | warning/error       | profile-defined | Real door access, not centroid heuristic.         |
+| site              | building        | embed/slope/drainage        | warning             | profile-defined | Later-stage site constructability.                |
 
 Matrix cells need:
 
@@ -525,15 +525,15 @@ Do not infer load-bearing as truth from thickness alone. Thickness, exterior sta
 
 Initial structural advisory rules:
 
-| Rule ID | Purpose |
-| --- | --- |
-| `wall_load_bearing_unknown_primary_envelope` | Primary exterior/envelope walls lack structural role. |
-| `load_bearing_wall_removed_without_transfer` | A load-bearing wall is demolished or interrupted without beam/column/transfer metadata. |
-| `stacked_load_path_discontinuity` | Load-bearing wall above has no support below within tolerance. |
-| `large_opening_in_load_bearing_wall_unresolved` | Opening exceeds threshold and lacks lintel/header/engineer approval metadata. |
-| `beam_without_support` | Beam endpoints are not supported by wall/column/bearing element. |
-| `column_without_foundation_or_support` | Column load path terminates without lower support/foundation. |
-| `floor_span_without_support_metadata` | Floor/roof span exceeds profile threshold without structural system metadata. |
+| Rule ID                                         | Purpose                                                                                 |
+| ----------------------------------------------- | --------------------------------------------------------------------------------------- |
+| `wall_load_bearing_unknown_primary_envelope`    | Primary exterior/envelope walls lack structural role.                                   |
+| `load_bearing_wall_removed_without_transfer`    | A load-bearing wall is demolished or interrupted without beam/column/transfer metadata. |
+| `stacked_load_path_discontinuity`               | Load-bearing wall above has no support below within tolerance.                          |
+| `large_opening_in_load_bearing_wall_unresolved` | Opening exceeds threshold and lacks lintel/header/engineer approval metadata.           |
+| `beam_without_support`                          | Beam endpoints are not supported by wall/column/bearing element.                        |
+| `column_without_foundation_or_support`          | Column load path terminates without lower support/foundation.                           |
+| `floor_span_without_support_metadata`           | Floor/roof span exceeds profile threshold without structural system metadata.           |
 
 These should initially be warnings unless a strict profile is enabled. They are not structural calculations; they are missing-intent and load-path sanity advisories.
 
@@ -617,31 +617,31 @@ Status vocabulary:
 - `blocked` - cannot be implemented cleanly until prerequisite schema/engine work exists.
 - `done` - accepted with tests and evidence.
 
-| ID | Status | Severity | Gap | Current evidence | Target |
-| --- | --- | --- | --- | --- | --- |
-| CW-001 | done | Critical | Universal physical element collision contract missing. | `constructability_geometry.py` collects proxies for walls, floors, roofs, ceilings, stairs, railings, columns, beams, pipe, duct, placed assets, family instances, and family kit instances; remaining physical-like kinds emit explicit unsupported diagnostics, and `physical_collision_contract_summary_v1` makes supported/unsupported coverage auditable. | Every physical element exposes deterministic collision proxies or explicit unsupported diagnostics. |
-| CW-002 | done | Critical | Furniture/fixture/family-vs-wall hard clash missing. | Shelf/family-through-wall emits `furniture_wall_hard_clash`, appears in constructability reports, fixture corpus, and BCF-style export viewpoints. | `furniture_wall_hard_clash` warning/error with viewpoint and affected ids. |
-| CW-003 | done | High | Clash engine is AABB-only and category-limited. | Clash engine delegates coverage to constructability physical participants, prunes broad-phase pairs with deterministic AABB sweep-and-prune, and confirms hard clashes with `participants_overlap_narrow_phase`, which uses footprint SAT for polygon-backed participants and AABB fallback for remaining proxy categories. | AABB broad phase plus narrow phase across all physical categories. |
-| CW-004 | done | High | Constructability matrix missing. | Default versioned matrix and matrix-backed hard/duplicate checks exist in app code and `spec/schemas/constructability-matrix-default.json`; `matrix_for_profile` applies profile-specific severity/tolerance overrides used by constructability reports. | Versioned matrix with pair rules, tolerance, severity, and profile overrides. |
-| CW-005 | done | High | Persistent issue lifecycle missing. | `constructability_issue` elements persist fingerprints, affected elements, status, revisions, review comments, assignees, and evidence refs; reports reconcile new/active/reviewed/approved/not-issue/resolved/suppressed snapshots from those model records. | Stable issues with new/active/reviewed/approved/not-issue/resolved/suppressed states. |
-| CW-006 | done | High | Load-bearing wall semantics missing. | `WallElem` carries `loadBearing`, structural role/material/analytical fields, constructability rules consume them, and IFC metadata roundtrip tests cover `Pset_WallCommon.LoadBearing`. | IFC-aligned load-bearing intent and structural role metadata. |
-| CW-007 | done | High | Structural load-path sanity missing. | Rules cover unknown load-bearing intent, large openings in load-bearing walls, removed load-bearing walls without transfer, stacked wall discontinuity, transfer-beam support under upper bearing walls, unsupported beams, unsupported columns, and long floor spans without structural metadata. | Warnings for unsupported beams/columns, load-bearing wall discontinuity, large openings. |
-| CW-008 | done | High | Stairs are not constructability-complete. | Riser/tread diagnostics, stair-wall clashes, stair slab-opening checks, `stair_headroom_clearance_conflict`, `stair_landing_missing`, `stair_guardrail_missing`, and `stair_guardrail_height_insufficient` now cover the stair constructability checklist; room access rules provide the connected-door egress handoff. | Headroom, landing, shaft/opening, guardrail, wall/furniture clash checks. |
-| CW-009 | done | High | Room access/enclosure is heuristic. | Boundary edge coverage exists, `room_without_door_access` verifies that a door midpoint connects to each room boundary, and `room_without_egress_path` builds a same-level room-door graph from exit doors to warn on rooms with doors but no traversable egress path. | Door-connected access graph, egress hints, realistic room boundary model. |
-| CW-010 | done | High | Door/window operation envelopes missing. | `door_operation_clearance_conflict` and `window_operation_clearance_conflict` check operation/maintenance envelopes against placed assets, family instances, and walls. | Door swing/window operation clearances collide with furniture/walls/fixtures. |
-| CW-011 | done | High | MEP penetration logic missing. | Pipe/duct proxies check wall/floor/ceiling crossings; modeled wall/slab openings and explicit pipe/duct approval/sleeve metadata suppress valid penetrations. | Pipes/ducts through walls/floors/ceilings require sleeve/opening/approval. |
-| CW-012 | done | Medium | Roof-specific constructability rules deferred. | Primary advisor checks roof-wall footprint coverage, low-slope drainage metadata, missing roof-opening hosts, roof openings outside host footprints, and oversized roof voids without curb/framing review metadata. | Roof slope/footprint/wall attachment/void checks in primary advisor. |
-| CW-013 | done | Medium | Floor/slab checks are warning-level and narrow. | Floors have overlap/duplicate coverage, stair and MEP slab-opening checks, long-span structural metadata checks, and `floor_boundary_without_wall_support` for floors that require perimeter support. | Floor duplicate, shaft, stair opening, support, and boundary-vs-wall checks. |
-| CW-014 | done | Medium | Clearance checks missing. | Door operation clearance, window operation/maintenance clearance, stair headroom clearance, profile-gated furniture-wall clearance, and element-authored `maintenance_clearance_conflict` checks now cover clearance volumes and readiness-profile min-distance requirements. | Clearance volumes and min-distance checks by matrix/profile. |
-| CW-015 | done | Medium | Duplicate geometry detection missing outside floor overlap. | Matrix-backed `physical_duplicate_geometry` detects duplicate physical proxies for walls, floors, placed assets, family instances/imported family content, and other participant categories covered by the constructability matrix. | Duplicate wall/floor/asset/import detection. |
-| CW-016 | done | Medium | Suppression/ignore rules missing. | `constructability_suppression` elements carry rule, scoped element ids, reason, active flag, and expiry revision; reports audit suppressed findings/issues. | Audited suppressions with reason, scope, expiry. |
-| CW-017 | done | Medium | BCF linkage incomplete for constructability. | Constructability BCF export creates topics/viewpoints for active findings, skips suppressed/resolved issues, and `constructability_issue_elements_from_bcf_topics` imports BCF topics back into persisted `constructability_issue` records. | Every serious finding can become BCF-like issue with viewpoint. |
-| CW-018 | done | Medium | IDS/data-requirement validation not first-class. | `app/bim_ai/constructability_metadata.py` adds profile-specific IDS-like metadata checks for primary envelope/load-bearing walls, fire/egress doors, emergency egress windows, structural floors, and low-slope/primary roofs, emitting `constructability_metadata_requirement_missing` through constructability reports. | IDS-like model metadata requirements for constructability profiles. |
-| CW-019 | done | Medium | Active design options/phasing not integrated into constructability. | `constructability_report`, `constructabilitySummary_v1`, and direct `evaluate()` constructability advisories now scope findings by `phaseFilter`, explicit option locks, and primary design options via `app/bim_ai/constructability_scope.py`. | Validation profiles respect phase and design option contexts. |
-| CW-020 | done | Medium | Performance plan missing. | `candidate_pairs_by_aabb` provides deterministic sweep-and-prune pruning, `constructability_broad_phase_stats_v1` reports candidate/pruned pair counts, and `impacted_constructability_pairs_v1` scopes rechecks to changed-element candidate pairs. | Benchmarked broad phase and incremental invalidation. |
-| CW-021 | done | Medium | User-facing constructability report missing. | `/api/models/{model_id}/constructability-report`, web report client helpers, summary formatter, and `ConstructabilityReportPanel` exist; strict constructability report findings are also merged into the single right-rail/Agent Review Advisor issue list via `useUnifiedAdvisorViolations`, so model violations/errors/warnings appear in one place with refresh, grouping, isolation, JSON export, and BCF export actions available. | Unified report with refresh, grouping, isolation, export. |
-| CW-022 | done | Medium | Test corpus missing. | `app/tests/fixtures/constructability_cases.json` plus `app/tests/test_constructability_fixture_corpus.py` cover positive/negative golden cases for wall/furniture, MEP sleeve, stair slab opening, duplicates, load-bearing openings, roof coverage, and beam support. | Golden constructability fixtures with positive/negative cases. |
-| CW-023 | done | Medium | Coordination lens review surface missing. | `spec/lenses/coordination-lens.md` tracks the completed Coordination Lens workpackages. `GET /api/models/{model_id}/coordination-lens` returns model health, clashes, issues, links, schedules, review snapshots, and optional revision diff data; the web lens cycle, Cmd+K commands, command capability gating, and right-rail readout expose the same review ownership while disabling geometry authoring commands in the coordination lens. | Dedicated Coordination Lens for model-health, clash, linked-model, issue, BCF/review artifact, and change-impact review. |
+| ID     | Status | Severity | Gap                                                                 | Current evidence                                                                                                                                                                                                                                                                                                                                                                                                                                | Target                                                                                                                   |
+| ------ | ------ | -------- | ------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
+| CW-001 | done   | Critical | Universal physical element collision contract missing.              | `constructability_geometry.py` collects proxies for walls, floors, roofs, ceilings, stairs, railings, columns, beams, pipe, duct, placed assets, family instances, and family kit instances; remaining physical-like kinds emit explicit unsupported diagnostics, and `physical_collision_contract_summary_v1` makes supported/unsupported coverage auditable.                                                                                  | Every physical element exposes deterministic collision proxies or explicit unsupported diagnostics.                      |
+| CW-002 | done   | Critical | Furniture/fixture/family-vs-wall hard clash missing.                | Shelf/family-through-wall emits `furniture_wall_hard_clash`, appears in constructability reports, fixture corpus, and BCF-style export viewpoints.                                                                                                                                                                                                                                                                                              | `furniture_wall_hard_clash` warning/error with viewpoint and affected ids.                                               |
+| CW-003 | done   | High     | Clash engine is AABB-only and category-limited.                     | Clash engine delegates coverage to constructability physical participants, prunes broad-phase pairs with deterministic AABB sweep-and-prune, and confirms hard clashes with `participants_overlap_narrow_phase`, which uses footprint SAT for polygon-backed participants and AABB fallback for remaining proxy categories.                                                                                                                     | AABB broad phase plus narrow phase across all physical categories.                                                       |
+| CW-004 | done   | High     | Constructability matrix missing.                                    | Default versioned matrix and matrix-backed hard/duplicate checks exist in app code and `spec/schemas/constructability-matrix-default.json`; `matrix_for_profile` applies profile-specific severity/tolerance overrides used by constructability reports.                                                                                                                                                                                        | Versioned matrix with pair rules, tolerance, severity, and profile overrides.                                            |
+| CW-005 | done   | High     | Persistent issue lifecycle missing.                                 | `constructability_issue` elements persist fingerprints, affected elements, status, revisions, review comments, assignees, and evidence refs; reports reconcile new/active/reviewed/approved/not-issue/resolved/suppressed snapshots from those model records.                                                                                                                                                                                   | Stable issues with new/active/reviewed/approved/not-issue/resolved/suppressed states.                                    |
+| CW-006 | done   | High     | Load-bearing wall semantics missing.                                | `WallElem` carries `loadBearing`, structural role/material/analytical fields, constructability rules consume them, and IFC metadata roundtrip tests cover `Pset_WallCommon.LoadBearing`.                                                                                                                                                                                                                                                        | IFC-aligned load-bearing intent and structural role metadata.                                                            |
+| CW-007 | done   | High     | Structural load-path sanity missing.                                | Rules cover unknown load-bearing intent, large openings in load-bearing walls, removed load-bearing walls without transfer, stacked wall discontinuity, transfer-beam support under upper bearing walls, unsupported beams, unsupported columns, and long floor spans without structural metadata.                                                                                                                                              | Warnings for unsupported beams/columns, load-bearing wall discontinuity, large openings.                                 |
+| CW-008 | done   | High     | Stairs are not constructability-complete.                           | Riser/tread diagnostics, stair-wall clashes, stair slab-opening checks, `stair_headroom_clearance_conflict`, `stair_landing_missing`, `stair_guardrail_missing`, and `stair_guardrail_height_insufficient` now cover the stair constructability checklist; room access rules provide the connected-door egress handoff.                                                                                                                         | Headroom, landing, shaft/opening, guardrail, wall/furniture clash checks.                                                |
+| CW-009 | done   | High     | Room access/enclosure is heuristic.                                 | Boundary edge coverage exists, `room_without_door_access` verifies that a door midpoint connects to each room boundary, and `room_without_egress_path` builds a same-level room-door graph from exit doors to warn on rooms with doors but no traversable egress path.                                                                                                                                                                          | Door-connected access graph, egress hints, realistic room boundary model.                                                |
+| CW-010 | done   | High     | Door/window operation envelopes missing.                            | `door_operation_clearance_conflict` and `window_operation_clearance_conflict` check operation/maintenance envelopes against placed assets, family instances, and walls.                                                                                                                                                                                                                                                                         | Door swing/window operation clearances collide with furniture/walls/fixtures.                                            |
+| CW-011 | done   | High     | MEP penetration logic missing.                                      | Pipe/duct proxies check wall/floor/ceiling crossings; modeled wall/slab openings and explicit pipe/duct approval/sleeve metadata suppress valid penetrations.                                                                                                                                                                                                                                                                                   | Pipes/ducts through walls/floors/ceilings require sleeve/opening/approval.                                               |
+| CW-012 | done   | Medium   | Roof-specific constructability rules deferred.                      | Primary advisor checks roof-wall footprint coverage, low-slope drainage metadata, missing roof-opening hosts, roof openings outside host footprints, and oversized roof voids without curb/framing review metadata.                                                                                                                                                                                                                             | Roof slope/footprint/wall attachment/void checks in primary advisor.                                                     |
+| CW-013 | done   | Medium   | Floor/slab checks are warning-level and narrow.                     | Floors have overlap/duplicate coverage, stair and MEP slab-opening checks, long-span structural metadata checks, and `floor_boundary_without_wall_support` for floors that require perimeter support.                                                                                                                                                                                                                                           | Floor duplicate, shaft, stair opening, support, and boundary-vs-wall checks.                                             |
+| CW-014 | done   | Medium   | Clearance checks missing.                                           | Door operation clearance, window operation/maintenance clearance, stair headroom clearance, profile-gated furniture-wall clearance, and element-authored `maintenance_clearance_conflict` checks now cover clearance volumes and readiness-profile min-distance requirements.                                                                                                                                                                   | Clearance volumes and min-distance checks by matrix/profile.                                                             |
+| CW-015 | done   | Medium   | Duplicate geometry detection missing outside floor overlap.         | Matrix-backed `physical_duplicate_geometry` detects duplicate physical proxies for walls, floors, placed assets, family instances/imported family content, and other participant categories covered by the constructability matrix.                                                                                                                                                                                                             | Duplicate wall/floor/asset/import detection.                                                                             |
+| CW-016 | done   | Medium   | Suppression/ignore rules missing.                                   | `constructability_suppression` elements carry rule, scoped element ids, reason, active flag, and expiry revision; reports audit suppressed findings/issues.                                                                                                                                                                                                                                                                                     | Audited suppressions with reason, scope, expiry.                                                                         |
+| CW-017 | done   | Medium   | BCF linkage incomplete for constructability.                        | Constructability BCF export creates topics/viewpoints for active findings, skips suppressed/resolved issues, and `constructability_issue_elements_from_bcf_topics` imports BCF topics back into persisted `constructability_issue` records.                                                                                                                                                                                                     | Every serious finding can become BCF-like issue with viewpoint.                                                          |
+| CW-018 | done   | Medium   | IDS/data-requirement validation not first-class.                    | `app/bim_ai/constructability_metadata.py` adds profile-specific IDS-like metadata checks for primary envelope/load-bearing walls, fire/egress doors, emergency egress windows, structural floors, and low-slope/primary roofs, emitting `constructability_metadata_requirement_missing` through constructability reports.                                                                                                                       | IDS-like model metadata requirements for constructability profiles.                                                      |
+| CW-019 | done   | Medium   | Active design options/phasing not integrated into constructability. | `constructability_report`, `constructabilitySummary_v1`, and direct `evaluate()` constructability advisories now scope findings by `phaseFilter`, explicit option locks, and primary design options via `app/bim_ai/constructability_scope.py`.                                                                                                                                                                                                 | Validation profiles respect phase and design option contexts.                                                            |
+| CW-020 | done   | Medium   | Performance plan missing.                                           | `candidate_pairs_by_aabb` provides deterministic sweep-and-prune pruning, `constructability_broad_phase_stats_v1` reports candidate/pruned pair counts, and `impacted_constructability_pairs_v1` scopes rechecks to changed-element candidate pairs.                                                                                                                                                                                            | Benchmarked broad phase and incremental invalidation.                                                                    |
+| CW-021 | done   | Medium   | User-facing constructability report missing.                        | `/api/models/{model_id}/constructability-report`, web report client helpers, summary formatter, and `ConstructabilityReportPanel` exist; strict constructability report findings are also merged into the single right-rail/Agent Review Advisor issue list via `useUnifiedAdvisorViolations`, so model violations/errors/warnings appear in one place with refresh, grouping, isolation, JSON export, and BCF export actions available.        | Unified report with refresh, grouping, isolation, export.                                                                |
+| CW-022 | done   | Medium   | Test corpus missing.                                                | `app/tests/fixtures/constructability_cases.json` plus `app/tests/test_constructability_fixture_corpus.py` cover positive/negative golden cases for wall/furniture, MEP sleeve, stair slab opening, duplicates, load-bearing openings, roof coverage, and beam support.                                                                                                                                                                          | Golden constructability fixtures with positive/negative cases.                                                           |
+| CW-023 | done   | Medium   | Coordination lens review surface missing.                           | `spec/lenses/coordination-lens.md` tracks the completed Coordination Lens workpackages. `GET /api/models/{model_id}/coordination-lens` returns model health, clashes, issues, links, schedules, review snapshots, and optional revision diff data; the web lens cycle, Cmd+K commands, command capability gating, and right-rail readout expose the same review ownership while disabling geometry authoring commands in the coordination lens. | Dedicated Coordination Lens for model-health, clash, linked-model, issue, BCF/review artifact, and change-impact review. |
 
 ## Roadmap
 
@@ -812,12 +812,12 @@ Acceptance:
 
 Default severity should be conservative but not paralyzing.
 
-| Severity | Meaning | Commit behavior |
-| --- | --- | --- |
-| info | Missing metadata, advisory hint, or non-blocking quality signal. | Never blocks. |
-| warning | Likely problem requiring review. | Does not block by default, but blocks `--fail-on-warning` workflows. |
-| error | Invalid model or physically impossible condition in active profile. | Blocks commit or strict constructability gate depending mode. |
-| blocker | Cannot claim project/phase readiness. | Blocks readiness/evidence gates. |
+| Severity | Meaning                                                             | Commit behavior                                                      |
+| -------- | ------------------------------------------------------------------- | -------------------------------------------------------------------- |
+| info     | Missing metadata, advisory hint, or non-blocking quality signal.    | Never blocks.                                                        |
+| warning  | Likely problem requiring review.                                    | Does not block by default, but blocks `--fail-on-warning` workflows. |
+| error    | Invalid model or physically impossible condition in active profile. | Blocks commit or strict constructability gate depending mode.        |
+| blocker  | Cannot claim project/phase readiness.                               | Blocks readiness/evidence gates.                                     |
 
 Important policy:
 
@@ -828,36 +828,36 @@ Important policy:
 
 ## Validation Profiles
 
-| Profile | Intended use | Behavior |
-| --- | --- | --- |
-| `authoring_fast` | Live editing feedback. | Conservative broad checks, low latency, preview warnings. |
-| `design_review` | User-initiated model review. | Full current-model hard/clearance checks, warnings allowed. |
-| `coordination` | Multi-discipline / linked model review. | Matrix-based checks, issue lifecycle, BCF export. |
-| `permit_readiness` | Documentation-quality gate. | Adds metadata, rooms, access, stairs, openings, load-bearing intent. |
-| `construction_readiness` | Strongest internal gate. | Blocks unresolved geometry/structure/access errors unless approved. |
+| Profile                  | Intended use                            | Behavior                                                             |
+| ------------------------ | --------------------------------------- | -------------------------------------------------------------------- |
+| `authoring_fast`         | Live editing feedback.                  | Conservative broad checks, low latency, preview warnings.            |
+| `design_review`          | User-initiated model review.            | Full current-model hard/clearance checks, warnings allowed.          |
+| `coordination`           | Multi-discipline / linked model review. | Matrix-based checks, issue lifecycle, BCF export.                    |
+| `permit_readiness`       | Documentation-quality gate.             | Adds metadata, rooms, access, stairs, openings, load-bearing intent. |
+| `construction_readiness` | Strongest internal gate.                | Blocks unresolved geometry/structure/access errors unless approved.  |
 
 ## Testing Strategy
 
 Create a constructability fixture corpus:
 
-| Fixture | Expected finding |
-| --- | --- |
-| Shelf through wall | `furniture_wall_hard_clash` |
-| Shelf near wall but not intersecting | No hard clash |
+| Fixture                              | Expected finding                     |
+| ------------------------------------ | ------------------------------------ |
+| Shelf through wall                   | `furniture_wall_hard_clash`          |
+| Shelf near wall but not intersecting | No hard clash                        |
 | Shelf within required clearance zone | Clearance warning if profile enabled |
-| Door hosted in wall | No host wall hard clash |
-| Window outside wall extents | Existing window host error |
-| Stair run through wall | `stair_wall_hard_clash` |
-| Stair missing slab opening | Shaft/slab opening warning |
-| Stair under low roof | Headroom error |
-| Pipe through wall without sleeve | Penetration warning/error |
-| Pipe through wall with sleeve | No warning |
-| Duplicate floor copied in place | Duplicate/overlap warning/error |
-| Load-bearing wall with large opening | Structural metadata warning |
-| Beam endpoint unsupported | Structural support warning |
-| Column floating above floor | Structural support warning |
-| Roof too small for attached walls | Roof-wall alignment warning/error |
-| Furniture outside room/envelope | Placement warning |
+| Door hosted in wall                  | No host wall hard clash              |
+| Window outside wall extents          | Existing window host error           |
+| Stair run through wall               | `stair_wall_hard_clash`              |
+| Stair missing slab opening           | Shaft/slab opening warning           |
+| Stair under low roof                 | Headroom error                       |
+| Pipe through wall without sleeve     | Penetration warning/error            |
+| Pipe through wall with sleeve        | No warning                           |
+| Duplicate floor copied in place      | Duplicate/overlap warning/error      |
+| Load-bearing wall with large opening | Structural metadata warning          |
+| Beam endpoint unsupported            | Structural support warning           |
+| Column floating above floor          | Structural support warning           |
+| Roof too small for attached walls    | Roof-wall alignment warning/error    |
+| Furniture outside room/envelope      | Placement warning                    |
 
 Every fixture should have:
 
@@ -892,13 +892,13 @@ Implementation tactics:
 
 Proposed new element/config kinds:
 
-| Kind | Purpose |
-| --- | --- |
-| `constructability_profile` | Active profile, severity/tolerance overrides. |
-| `constructability_matrix` | Versioned pairwise rule matrix. |
-| `constructability_issue` | Persistent finding lifecycle. |
-| `constructability_suppression` | Audited ignore/suppression rule. |
-| `collision_proxy_cache` | Optional derived/cache evidence, not source of truth. |
+| Kind                           | Purpose                                               |
+| ------------------------------ | ----------------------------------------------------- |
+| `constructability_profile`     | Active profile, severity/tolerance overrides.         |
+| `constructability_matrix`      | Versioned pairwise rule matrix.                       |
+| `constructability_issue`       | Persistent finding lifecycle.                         |
+| `constructability_suppression` | Audited ignore/suppression rule.                      |
+| `collision_proxy_cache`        | Optional derived/cache evidence, not source of truth. |
 
 Proposed new fields:
 
@@ -966,18 +966,18 @@ Readiness gates:
 
 ## Immediate Next Work Packages
 
-| WP | Title | Depends on | Done when |
-| --- | --- | --- | --- |
-| CW-WP-001 | Collision proxy foundation | none | Wall, floor, roof conservative, stair, placed_asset, family_instance proxies with tests. |
-| CW-WP-002 | Shelf-through-wall hard clash | CW-WP-001 | Minimal fixture emits `furniture_wall_hard_clash`; no false positive for adjacent shelf. |
-| CW-WP-003 | Constructability matrix v0 | CW-WP-001 | Matrix drives furniture/wall, wall/wall, stair/wall checks with tolerances. |
-| CW-WP-004 | Advisor integration | CW-WP-002 | Constructability findings appear in Advisor with isolate/show evidence. |
-| CW-WP-005 | Persistent issue lifecycle | CW-WP-004 | New/active/resolved/reviewed/suppressed behavior across reruns. |
-| CW-WP-006 | Load-bearing wall semantics | none | Wall schema and IFC mapping support declared/unknown load-bearing state. |
-| CW-WP-007 | Structural sanity v0 | CW-WP-006 | Large opening in load-bearing wall and unsupported beam/column warnings. |
-| CW-WP-008 | Stair constructability v0 | CW-WP-001 | Stair-wall clash, shaft/slab opening, and headroom checks. |
-| CW-WP-009 | Door operation clearance | CW-WP-001 | Door swing envelope collides with furniture/walls. |
-| CW-WP-010 | BCF constructability export | CW-WP-005 | Serious findings export/import with viewpoint and comments. |
+| WP        | Title                            | Depends on           | Done when                                                                                                                                                                   |
+| --------- | -------------------------------- | -------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| CW-WP-001 | Collision proxy foundation       | none                 | Wall, floor, roof conservative, stair, placed_asset, family_instance proxies with tests.                                                                                    |
+| CW-WP-002 | Shelf-through-wall hard clash    | CW-WP-001            | Minimal fixture emits `furniture_wall_hard_clash`; no false positive for adjacent shelf.                                                                                    |
+| CW-WP-003 | Constructability matrix v0       | CW-WP-001            | Matrix drives furniture/wall, wall/wall, stair/wall checks with tolerances.                                                                                                 |
+| CW-WP-004 | Advisor integration              | CW-WP-002            | Constructability findings appear in Advisor with isolate/show evidence.                                                                                                     |
+| CW-WP-005 | Persistent issue lifecycle       | CW-WP-004            | New/active/resolved/reviewed/suppressed behavior across reruns.                                                                                                             |
+| CW-WP-006 | Load-bearing wall semantics      | none                 | Wall schema and IFC mapping support declared/unknown load-bearing state.                                                                                                    |
+| CW-WP-007 | Structural sanity v0             | CW-WP-006            | Large opening in load-bearing wall and unsupported beam/column warnings.                                                                                                    |
+| CW-WP-008 | Stair constructability v0        | CW-WP-001            | Stair-wall clash, shaft/slab opening, and headroom checks.                                                                                                                  |
+| CW-WP-009 | Door operation clearance         | CW-WP-001            | Door swing envelope collides with furniture/walls.                                                                                                                          |
+| CW-WP-010 | BCF constructability export      | CW-WP-005            | Serious findings export/import with viewpoint and comments.                                                                                                                 |
 | CW-WP-011 | Coordination lens review surface | CW-WP-005, CW-WP-010 | Coordination lens exposes model health, clashes, issues, linked-model drift, BCF/review artifacts, required schedules, and change review without owning geometry authoring. |
 
 ## References

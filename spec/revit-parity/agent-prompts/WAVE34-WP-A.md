@@ -12,6 +12,7 @@ Wave 33 completed §1.6.5 ribbon coverage by building on the existing `RibbonBar
 ## Ownership
 
 Primary write scope:
+
 - `spec/revit-parity/revit2026-parity-tracker.md`, Chapter 1 only, roughly lines 1-180.
 
 Do not edit product code.
@@ -33,4 +34,3 @@ Do not edit product code.
 
 - Chapter 1 has no stale Partial/Not Started status unless explicitly justified as non-blocking and canonical.
 - The ribbon note says Wave 33 built on the existing ribbon surface.
-

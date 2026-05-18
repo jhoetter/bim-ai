@@ -111,21 +111,25 @@ Wire both into `meshBuilders.ts` in the element switch (follow the same pattern 
 ### C — Tool registration
 
 In `toolRegistry.ts`, add `'family-blend'` and `'family-sweep'` to ToolId union. Register:
+
 - `{ id: 'family-blend', hotkey: 'FB', label: 'Family Blend', mode: 'plan' }`
 - `{ id: 'family-sweep', hotkey: 'FS', label: 'Family Sweep', mode: 'plan' }`
 
 In `toolGrammar.ts`:
 
 **FamilyBlend grammar** (polygon sketch × 2):
+
 - idle → sketching-bottom (click to add bottom profile points) → Enter → sketching-top (click to add top profile points) → Enter → emit `createFamilyBlend`
 - Minimum 3 points per profile before Enter is accepted
 - Escape returns to idle from any state
 
 **FamilySweep grammar** (profile points then path points):
+
 - idle → sketching-profile (click to add 2D profile points) → Enter → sketching-path (click 3D path points) → Enter → emit `createFamilySweep`
 - Minimum 3 profile points, minimum 2 path points
 
 In `defaultCommands.ts`:
+
 ```ts
 { id: 'tool.family-blend', label: 'Family Blend', category: 'tool', invoke: (ctx) => startPlanTool(ctx, 'family-blend') }
 { id: 'tool.family-sweep', label: 'Family Sweep', category: 'tool', invoke: (ctx) => startPlanTool(ctx, 'family-sweep') }
@@ -138,12 +142,14 @@ In `defaultCommands.ts`:
 In `InspectorContent.tsx`, add cases for `kind === 'family_blend'` and `kind === 'family_sweep'`:
 
 Family blend:
+
 - Height input: `data-testid="inspector-family-blend-height"`
 - Base elevation input: `data-testid="inspector-family-blend-base-elevation"`
 - Bottom profile point count (read-only): `data-testid="inspector-family-blend-bottom-pts"`
 - Top profile point count (read-only): `data-testid="inspector-family-blend-top-pts"`
 
 Family sweep:
+
 - Profile point count (read-only): `data-testid="inspector-family-sweep-profile-pts"`
 - Path point count (read-only): `data-testid="inspector-family-sweep-path-pts"`
 - Total path length (read-only, mm): `data-testid="inspector-family-sweep-path-length"`
@@ -153,6 +159,7 @@ Family sweep:
 ### E — Tests
 
 `packages/web/src/viewport/meshBuilders.familyBlend.test.ts`:
+
 ```ts
 describe('family blend mesh — §15.1.2', () => {
   it('returns a Mesh with bimPickId userData', () => { ... });
@@ -162,6 +169,7 @@ describe('family blend mesh — §15.1.2', () => {
 ```
 
 `packages/web/src/viewport/meshBuilders.familySweep.test.ts`:
+
 ```ts
 describe('family sweep mesh — §15.1.2', () => {
   it('returns a Mesh with bimPickId userData', () => { ... });
@@ -170,6 +178,7 @@ describe('family sweep mesh — §15.1.2', () => {
 ```
 
 `packages/web/src/plan/familyBlendGrammar.test.ts`:
+
 ```ts
 describe('family blend grammar — §15.1.2', () => {
   it('starts in idle state', () => { ... });

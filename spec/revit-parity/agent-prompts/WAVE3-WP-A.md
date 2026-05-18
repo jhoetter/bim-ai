@@ -65,6 +65,7 @@ matching `CameraPathElem` from `cameraPaths`. When a path is selected, render
 `<WalkthroughPlaybackPanel>` as an absolutely-positioned overlay inside the viewport div.
 
 Wire `onFrame`:
+
 ```ts
 onFrame={(pos, target) => {
   setOrbitCameraFromViewpointMm({
@@ -89,6 +90,7 @@ inspector panel in `InspectorContent.tsx`.
 
 Add a `case 'camera_path':` block (study how `saved_view` or `interior_elevation_marker` inspector
 panels are structured). Show:
+
 - **Name** — editable text input; dispatches a local rename action (store: add
   `renameCameraPath(id, name)` that patches the name field on the matching `CameraPathElem`)
 - **Keyframes** — read-only count (e.g. "5 keyframes")
@@ -104,6 +106,7 @@ Add `renameCameraPath(id: string, name: string)` and `removeCameraPath(id: strin
 ### C — Store: selectedCameraPathId
 
 In `storeTypes.ts` add:
+
 ```ts
 selectedCameraPathId: string | null;
 setSelectedCameraPathId: (id: string | null) => void;
@@ -115,6 +118,7 @@ Implement all four in `storeViewportRuntimeSlice.ts`.
 
 In `WorkspaceLeftRail.tsx`, replace the step-playback code in `activateRow` (the `cameraPaths`
 branch) with:
+
 ```ts
 useBimStore.getState().setSelectedCameraPathId(id);
 ```
@@ -131,6 +135,7 @@ The RAF panel now handles playback. Keep the row click wiring — it just sets t
 ## Tests
 
 Add to a new file `packages/web/src/viewport/walkthroughPanelWiring.test.tsx`:
+
 1. Store initialises with `selectedCameraPathId: null`
 2. `setSelectedCameraPathId('cp-1')` sets the field; calling with null clears it
 3. `renameCameraPath` patches the name on the matching path; no-op for unknown id
@@ -143,6 +148,7 @@ Add to a new file `packages/web/src/viewport/walkthroughPanelWiring.test.tsx`:
 Edit `spec/revit-parity/revit2026-parity-tracker.md`:
 
 Update §14.6 status block:
+
 ```
 **Status: Done — P1**
 [keep existing description, append:]
@@ -154,6 +160,7 @@ in `InspectorContent.tsx` shows name (editable), keyframe count, duration, delet
 ```
 
 Remove this line from the P1 gap list (around line 1147):
+
 ```
 - **Walkthrough smooth RAF playback** (Ch. 14.6) — ...
 ```

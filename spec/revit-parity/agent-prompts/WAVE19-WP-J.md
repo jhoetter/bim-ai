@@ -11,6 +11,7 @@ This prompt is self-contained — start here.
 Wave 16 WP-F added stair grips (`stairGripProvider.ts`) for riser-count and run-width drag editing. Inspector inputs for `riserCount`, `runWidthMm`, `landingDepthMm`, `totalHeightMm`, `riserHeightMm`, `multiStorey` exist. But there is no dedicated "Edit Stair" mode analogous to Revit's component-level stair editor.
 
 **This wave adds:**
+
 - `editStairActive` field on `stair` element in `core/index.ts`
 - `enterStairEditMode` + `exitStairEditMode` command types
 - `Workspace.tsx` handlers
@@ -42,12 +43,14 @@ Prettier runs automatically. **Always `git pull --rebase origin main` before pus
 ### A — Stair element additions in `core/index.ts`
 
 Add if not present on the `stair` element:
+
 ```ts
 editStairActive?: boolean;
 runs?: { runIndex: number; riserCount: number; runWidthMm: number; startMm?: { xMm: number; yMm: number }; endMm?: { xMm: number; yMm: number } }[];
 ```
 
 Add command types:
+
 ```ts
 | { type: 'enterStairEditMode'; stairId: string }
 | { type: 'exitStairEditMode'; stairId: string }
@@ -95,47 +98,82 @@ case 'updateStairRun': {
 In `case 'stair':`, add after the existing stair property inputs:
 
 ```tsx
-{/* Edit Stair Mode */}
+{
+  /* Edit Stair Mode */
+}
 <div style={{ marginTop: 8, borderTop: '1px solid #ddd', paddingTop: 8 }}>
   {!(el as any).editStairActive ? (
-    <button data-testid="inspector-stair-edit-btn"
-      onClick={() => void onSemanticCommand?.({ type: 'enterStairEditMode', stairId: el.id })}>
+    <button
+      data-testid="inspector-stair-edit-btn"
+      onClick={() => void onSemanticCommand?.({ type: 'enterStairEditMode', stairId: el.id })}
+    >
       Edit Stair
     </button>
   ) : (
     <>
       <strong data-testid="inspector-stair-edit-mode-active">Edit Mode</strong>
       {/* Per-run editors */}
-      {((el as any).runs ?? [{ runIndex: 0, riserCount: (el as any).riserCount ?? 10, runWidthMm: (el as any).runWidthMm ?? 1200 }]).map((run: any) => (
-        <div key={run.runIndex} data-testid={`inspector-stair-run-${run.runIndex}`}
-          style={{ display: 'flex', gap: 8, alignItems: 'center', marginTop: 4 }}>
+      {(
+        (el as any).runs ?? [
+          {
+            runIndex: 0,
+            riserCount: (el as any).riserCount ?? 10,
+            runWidthMm: (el as any).runWidthMm ?? 1200,
+          },
+        ]
+      ).map((run: any) => (
+        <div
+          key={run.runIndex}
+          data-testid={`inspector-stair-run-${run.runIndex}`}
+          style={{ display: 'flex', gap: 8, alignItems: 'center', marginTop: 4 }}
+        >
           <span>Run {run.runIndex + 1}</span>
-          <label>Risers
-            <input type="number" data-testid={`inspector-stair-run-risers-${run.runIndex}`}
+          <label>
+            Risers
+            <input
+              type="number"
+              data-testid={`inspector-stair-run-risers-${run.runIndex}`}
               value={run.riserCount}
               min={1}
-              onChange={e => void onSemanticCommand?.({
-                type: 'updateStairRun', stairId: el.id, runIndex: run.runIndex, riserCount: +e.target.value,
-              })} />
+              onChange={(e) =>
+                void onSemanticCommand?.({
+                  type: 'updateStairRun',
+                  stairId: el.id,
+                  runIndex: run.runIndex,
+                  riserCount: +e.target.value,
+                })
+              }
+            />
           </label>
-          <label>Width (mm)
-            <input type="number" data-testid={`inspector-stair-run-width-${run.runIndex}`}
+          <label>
+            Width (mm)
+            <input
+              type="number"
+              data-testid={`inspector-stair-run-width-${run.runIndex}`}
               value={run.runWidthMm}
               min={600}
-              onChange={e => void onSemanticCommand?.({
-                type: 'updateStairRun', stairId: el.id, runIndex: run.runIndex, runWidthMm: +e.target.value,
-              })} />
+              onChange={(e) =>
+                void onSemanticCommand?.({
+                  type: 'updateStairRun',
+                  stairId: el.id,
+                  runIndex: run.runIndex,
+                  runWidthMm: +e.target.value,
+                })
+              }
+            />
           </label>
         </div>
       ))}
-      <button data-testid="inspector-stair-finish-edit-btn"
+      <button
+        data-testid="inspector-stair-finish-edit-btn"
         style={{ marginTop: 8 }}
-        onClick={() => void onSemanticCommand?.({ type: 'exitStairEditMode', stairId: el.id })}>
+        onClick={() => void onSemanticCommand?.({ type: 'exitStairEditMode', stairId: el.id })}
+      >
         Finish Editing
       </button>
     </>
   )}
-</div>
+</div>;
 ```
 
 ---
@@ -143,6 +181,7 @@ In `case 'stair':`, add after the existing stair property inputs:
 ### D — Palette command + capability graph
 
 In `defaultCommands.ts`:
+
 ```ts
 { id: 'modify.edit-stair', label: 'Edit Stair',
   keywords: ['stair', 'edit', 'component', 'run', 'landing', 'modify'],
@@ -153,6 +192,7 @@ In `defaultCommands.ts`:
 ```
 
 In `commandCapabilities.ts`:
+
 ```ts
 { id: 'modify.edit-stair', scope: 'selection', intendedModes: ['plan', '3d'], precondition: 'selected-stair' },
 ```

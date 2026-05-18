@@ -683,22 +683,22 @@ A button is dead if any of these is true:
 
 Previously dead/confusing buttons and current status:
 
-| Surface | Button/command | Previous behavior | Current status | Guard |
-| --- | --- | --- | --- | --- |
-| Ribbon | Wall in 3D | Set `planTool='wall'` | Disabled/bridged by capability graph | `uxAudit.test.ts`, `TopBar.test.tsx` |
-| Ribbon | Door/Window in 3D | Set plan tool | Disabled as plan tools; 3D wall-face insertion exposed as explicit selected-wall commands | `uxAudit.test.ts`, `defaultCommands.test.ts` |
-| Ribbon | Move/Copy/Rotate in 3D | Set plan tool | Disabled until true 3D gizmo workflow exists | `uxAudit.test.ts` |
-| Ribbon | VV/VG in 3D | Opened plan `VVDialog` | Disabled with 3D View Controls guidance | `TopBar.test.tsx` |
-| Topbar QAT | Section/Measure/Dimension/Tag outside plan | Set plan tool directly | Explicit Workspace callbacks with bridge labels | `TopBar.test.tsx` |
-| Topbar QAT | Thin Lines | State could display stale | Workspace passes `thinLinesEnabled` and toggle callback | `TopBar.test.tsx` |
-| Topbar QAT | Redo | Always enabled | Disabled from `redoDepth` | `TopBar.test.tsx`, `StatusBar.test.tsx` |
-| Cmd+K | Go to 3D view | Set `viewerMode` only | Uses `navigateTo` mode/tab transaction | `defaultCommands.test.ts`, `uxAudit.test.ts` |
-| Cmd+K | Go to plan view | Set `viewerMode` only | Uses `navigateTo` mode/tab transaction | `defaultCommands.test.ts`, `uxAudit.test.ts` |
-| Cmd+K | Place Wall from sheet/schedule/3D | Could set plan tool over invalid canvas | Capability graph labels bridge/unavailable routes | `registry.test.ts`, `uxAudit.test.ts` |
-| Cmd+K | Switch theme | Not mounted | Theme commands mounted and universal | `defaultCommands.test.ts` |
-| Status bar | Grid toggle | Visible without handler | Wired to drafting-grid visibility in plan-like views | `StatusBar.test.tsx` |
-| Status bar | Active level in sheet/schedule | Changed global active level outside plan | Non-plan modes show scoped view label/detail chips | `StatusBar.test.tsx` |
-| 3D layers | Hide all model categories | Category list generated from renderable coverage | Implemented | `originMarkers.test.ts`, `Viewport3DLayersPanel.test.tsx` |
+| Surface    | Button/command                             | Previous behavior                                | Current status                                                                            | Guard                                                     |
+| ---------- | ------------------------------------------ | ------------------------------------------------ | ----------------------------------------------------------------------------------------- | --------------------------------------------------------- |
+| Ribbon     | Wall in 3D                                 | Set `planTool='wall'`                            | Disabled/bridged by capability graph                                                      | `uxAudit.test.ts`, `TopBar.test.tsx`                      |
+| Ribbon     | Door/Window in 3D                          | Set plan tool                                    | Disabled as plan tools; 3D wall-face insertion exposed as explicit selected-wall commands | `uxAudit.test.ts`, `defaultCommands.test.ts`              |
+| Ribbon     | Move/Copy/Rotate in 3D                     | Set plan tool                                    | Disabled until true 3D gizmo workflow exists                                              | `uxAudit.test.ts`                                         |
+| Ribbon     | VV/VG in 3D                                | Opened plan `VVDialog`                           | Disabled with 3D View Controls guidance                                                   | `TopBar.test.tsx`                                         |
+| Topbar QAT | Section/Measure/Dimension/Tag outside plan | Set plan tool directly                           | Explicit Workspace callbacks with bridge labels                                           | `TopBar.test.tsx`                                         |
+| Topbar QAT | Thin Lines                                 | State could display stale                        | Workspace passes `thinLinesEnabled` and toggle callback                                   | `TopBar.test.tsx`                                         |
+| Topbar QAT | Redo                                       | Always enabled                                   | Disabled from `redoDepth`                                                                 | `TopBar.test.tsx`, `StatusBar.test.tsx`                   |
+| Cmd+K      | Go to 3D view                              | Set `viewerMode` only                            | Uses `navigateTo` mode/tab transaction                                                    | `defaultCommands.test.ts`, `uxAudit.test.ts`              |
+| Cmd+K      | Go to plan view                            | Set `viewerMode` only                            | Uses `navigateTo` mode/tab transaction                                                    | `defaultCommands.test.ts`, `uxAudit.test.ts`              |
+| Cmd+K      | Place Wall from sheet/schedule/3D          | Could set plan tool over invalid canvas          | Capability graph labels bridge/unavailable routes                                         | `registry.test.ts`, `uxAudit.test.ts`                     |
+| Cmd+K      | Switch theme                               | Not mounted                                      | Theme commands mounted and universal                                                      | `defaultCommands.test.ts`                                 |
+| Status bar | Grid toggle                                | Visible without handler                          | Wired to drafting-grid visibility in plan-like views                                      | `StatusBar.test.tsx`                                      |
+| Status bar | Active level in sheet/schedule             | Changed global active level outside plan         | Non-plan modes show scoped view label/detail chips                                        | `StatusBar.test.tsx`                                      |
+| 3D layers  | Hide all model categories                  | Category list generated from renderable coverage | Implemented                                                                               | `originMarkers.test.ts`, `Viewport3DLayersPanel.test.tsx` |
 
 ## Reachability Matrix
 
@@ -709,23 +709,23 @@ Legend:
 - `No`: should not be offered as executable there.
 - `Bridge`: can be offered if it switches to a valid view or invokes a view-specific equivalent.
 
-| Capability | Plan | 3D | Plan+3D | Section | Sheet | Schedule | Agent |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| Select model element | Yes | Yes | Yes | Yes | Sheet item | Row-based | Evidence/action |
-| Draw wall | Yes | No/Bridge | Plan side only | No | No | No | No |
-| Insert door/window | Yes | Yes via selected wall / wall face | Yes via selected wall / wall face | No | No | No | No |
-| Wall opening | Yes | Yes via selected wall / wall face | Yes via selected wall / wall face | No | No | No | No |
-| Move/copy/rotate | Yes | No until 3D gizmo | Plan side only | No | Sheet viewport only | No | No |
-| 3D grips | No | Yes where providers exist | Yes where providers exist | No | No | No | No |
-| Measure | Yes | No until 3D measure | Plan side only | Maybe | Sheet measure maybe | No | No |
-| Dimension/tag | Yes | No | Plan side only | Yes for section dimension | Sheet annotations future | No | No |
-| Visibility/Graphics | Plan VG | 3D controls | Both, scoped | Section VG needed | Sheet viewport VG needed | Schedule columns | Review filters |
-| Fit/reset camera | No | Yes | 3D side | No | No | No | No |
-| Walk mode | No | Yes | 3D side | No | No | No | No |
-| Place view on sheet | Bridge | Bridge | Bridge | Yes via action | Yes | Yes | Maybe |
-| Open source element/view | Yes | Yes | Yes | Yes | Yes | Yes | Yes |
-| Switch theme | Yes | Yes | Yes | Yes | Yes | Yes | Yes |
-| Go to view | Yes | Yes | Yes | Yes | Yes | Yes | Yes |
+| Capability               | Plan    | 3D                                | Plan+3D                           | Section                   | Sheet                    | Schedule         | Agent           |
+| ------------------------ | ------- | --------------------------------- | --------------------------------- | ------------------------- | ------------------------ | ---------------- | --------------- |
+| Select model element     | Yes     | Yes                               | Yes                               | Yes                       | Sheet item               | Row-based        | Evidence/action |
+| Draw wall                | Yes     | No/Bridge                         | Plan side only                    | No                        | No                       | No               | No              |
+| Insert door/window       | Yes     | Yes via selected wall / wall face | Yes via selected wall / wall face | No                        | No                       | No               | No              |
+| Wall opening             | Yes     | Yes via selected wall / wall face | Yes via selected wall / wall face | No                        | No                       | No               | No              |
+| Move/copy/rotate         | Yes     | No until 3D gizmo                 | Plan side only                    | No                        | Sheet viewport only      | No               | No              |
+| 3D grips                 | No      | Yes where providers exist         | Yes where providers exist         | No                        | No                       | No               | No              |
+| Measure                  | Yes     | No until 3D measure               | Plan side only                    | Maybe                     | Sheet measure maybe      | No               | No              |
+| Dimension/tag            | Yes     | No                                | Plan side only                    | Yes for section dimension | Sheet annotations future | No               | No              |
+| Visibility/Graphics      | Plan VG | 3D controls                       | Both, scoped                      | Section VG needed         | Sheet viewport VG needed | Schedule columns | Review filters  |
+| Fit/reset camera         | No      | Yes                               | 3D side                           | No                        | No                       | No               | No              |
+| Walk mode                | No      | Yes                               | 3D side                           | No                        | No                       | No               | No              |
+| Place view on sheet      | Bridge  | Bridge                            | Bridge                            | Yes via action            | Yes                      | Yes              | Maybe           |
+| Open source element/view | Yes     | Yes                               | Yes                               | Yes                       | Yes                      | Yes              | Yes             |
+| Switch theme             | Yes     | Yes                               | Yes                               | Yes                       | Yes                      | Yes              | Yes             |
+| Go to view               | Yes     | Yes                               | Yes                               | Yes                       | Yes                      | Yes              | Yes             |
 
 ## Capability Graph Proposal
 
@@ -737,11 +737,34 @@ Each command should be a node:
 type CommandCapability = {
   id: string;
   label: string;
-  group: 'author' | 'modify' | 'view' | 'navigate' | 'visibility' | 'document' | 'review' | 'system';
+  group:
+    | 'author'
+    | 'modify'
+    | 'view'
+    | 'navigate'
+    | 'visibility'
+    | 'document'
+    | 'review'
+    | 'system';
   scope: 'universal' | 'view' | 'selection' | 'model';
   targetViews: Array<'plan' | '3d' | 'plan-3d' | 'section' | 'sheet' | 'schedule' | 'agent'>;
-  executionSurface: 'plan-canvas' | 'viewport-3d' | 'sheet-canvas' | 'schedule-grid' | 'right-rail' | 'modal' | 'global';
-  preconditions: Array<'has-model' | 'has-wall' | 'has-selection' | 'selected-wall' | 'has-sheet' | 'active-plan-view' | 'active-viewpoint'>;
+  executionSurface:
+    | 'plan-canvas'
+    | 'viewport-3d'
+    | 'sheet-canvas'
+    | 'schedule-grid'
+    | 'right-rail'
+    | 'modal'
+    | 'global';
+  preconditions: Array<
+    | 'has-model'
+    | 'has-wall'
+    | 'has-selection'
+    | 'selected-wall'
+    | 'has-sheet'
+    | 'active-plan-view'
+    | 'active-viewpoint'
+  >;
   invokes: (context: CommandContext) => void | Promise<void>;
   availability: (context: CommandContext) => {
     state: 'available' | 'disabled' | 'bridge' | 'hidden';
@@ -808,35 +831,35 @@ Score every feature from 0 to 10:
 
 Current estimated scores:
 
-| Area | Score | Reason |
-| --- | ---: | --- |
-| Plan authoring core | 8 | Rich PlanCanvas workflows with bridged command-surface routing |
-| 3D navigation/display | 8 | View controls, saved-view Cmd+K support, and tested pure-3D dispatch |
-| 3D editing | 8 | Selected-wall/host/category operations exposed through explicit 3D commands |
-| Ribbon clarity | 8 | Capability-driven availability and disabled reasons |
-| Topbar/QAT | 8 | Context-aware pinned commands and correct undo/redo/thin-lines state |
-| Cmd+K | 8 | View-aware navigation, context badges, scoped recency, and sheet/schedule/section/3D commands |
-| Project browser navigation | 8 | Shared activation behavior reused by Cmd+K element navigation |
-| Visibility UX | 8 | Scoped plan/3D controls and complete 3D model category coverage |
-| Right rail | 8 | Stable tabs and view/selection-specific actions |
-| Status bar | 8 | Plan controls are wired; non-plan modes show scoped view context |
-| Overall | 8 | No known enabled dead commands in tracked command surfaces |
+| Area                       | Score | Reason                                                                                        |
+| -------------------------- | ----: | --------------------------------------------------------------------------------------------- |
+| Plan authoring core        |     8 | Rich PlanCanvas workflows with bridged command-surface routing                                |
+| 3D navigation/display      |     8 | View controls, saved-view Cmd+K support, and tested pure-3D dispatch                          |
+| 3D editing                 |     8 | Selected-wall/host/category operations exposed through explicit 3D commands                   |
+| Ribbon clarity             |     8 | Capability-driven availability and disabled reasons                                           |
+| Topbar/QAT                 |     8 | Context-aware pinned commands and correct undo/redo/thin-lines state                          |
+| Cmd+K                      |     8 | View-aware navigation, context badges, scoped recency, and sheet/schedule/section/3D commands |
+| Project browser navigation |     8 | Shared activation behavior reused by Cmd+K element navigation                                 |
+| Visibility UX              |     8 | Scoped plan/3D controls and complete 3D model category coverage                               |
+| Right rail                 |     8 | Stable tabs and view/selection-specific actions                                               |
+| Status bar                 |     8 | Plan controls are wired; non-plan modes show scoped view context                              |
+| Overall                    |     8 | No known enabled dead commands in tracked command surfaces                                    |
 
 Target:
 
-| Area | Target | Required change |
-| --- | ---: | --- |
-| Plan authoring core | 9 | Keep, align all command surfaces to it |
-| 3D navigation/display | 9 | Promote controls, Cmd+K support, saved view clarity |
-| 3D editing | 8 | Pass dispatch, define 3D-specific edit commands |
-| Ribbon clarity | 9 | Capability-driven availability |
-| Topbar/QAT | 8 | Context-aware pinned commands and correct state |
-| Cmd+K | 9 | Unified command registry and view-aware navigation |
-| Project browser navigation | 9 | Shared navigation transaction |
-| Visibility UX | 9 | Unified scoped visibility model |
-| Right rail | 8 | Stable tabs and view-specific ordering |
-| Status bar | 8 | Per-view status model |
-| Overall | 9 | No dead enabled commands, all features reachable |
+| Area                       | Target | Required change                                     |
+| -------------------------- | -----: | --------------------------------------------------- |
+| Plan authoring core        |      9 | Keep, align all command surfaces to it              |
+| 3D navigation/display      |      9 | Promote controls, Cmd+K support, saved view clarity |
+| 3D editing                 |      8 | Pass dispatch, define 3D-specific edit commands     |
+| Ribbon clarity             |      9 | Capability-driven availability                      |
+| Topbar/QAT                 |      8 | Context-aware pinned commands and correct state     |
+| Cmd+K                      |      9 | Unified command registry and view-aware navigation  |
+| Project browser navigation |      9 | Shared navigation transaction                       |
+| Visibility UX              |      9 | Unified scoped visibility model                     |
+| Right rail                 |      8 | Stable tabs and view-specific ordering              |
+| Status bar                 |      8 | Per-view status model                               |
+| Overall                    |      9 | No dead enabled commands, all features reachable    |
 
 ## Redesign Principles
 

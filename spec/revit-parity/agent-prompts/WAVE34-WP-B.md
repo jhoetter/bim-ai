@@ -12,6 +12,7 @@ After Wave 33, the tracker still contains many old `Implemented` statuses and pr
 ## Ownership
 
 Primary write scope:
+
 - `spec/revit-parity/revit2026-parity-tracker.md`, roughly Chapters 2-11 / lines 180-930.
 
 Do not edit product code.
@@ -35,4 +36,3 @@ Do not edit product code.
 
 - No misleading `Implemented` status remains in the assigned range when `Done` is more accurate.
 - No stale `Not Started` prose contradicts an implemented feature note.
-

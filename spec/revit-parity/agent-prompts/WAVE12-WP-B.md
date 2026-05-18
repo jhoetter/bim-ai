@@ -41,11 +41,12 @@ Read ALL of these before writing anything:
 ### A — Core type: WallPart (verify + extend if needed)
 
 In `core/index.ts`, verify the `WallPart` type has at minimum:
+
 ```ts
 interface WallPart {
   id: string;
-  startT: number;        // 0–1 parametric start along wall length
-  endT: number;          // 0–1 parametric end
+  startT: number; // 0–1 parametric start along wall length
+  endT: number; // 0–1 parametric end
   materialId?: string | null;
   label?: string | null; // user-set part label (e.g. "Left panel")
 }
@@ -58,12 +59,14 @@ Add `label` if it is missing. Do NOT re-add fields that already exist.
 In `InspectorContent.tsx`, in the wall inspector section, add a **"Parts"** sub-panel that appears when `wall.parts && wall.parts.length > 0`:
 
 For each part, show a row:
+
 - **Part label** (`data-testid="inspector-part-label-{i}"`): editable text input showing `part.label ?? 'Part ${i+1}'`. On change: dispatch `update_element_property` for `parts` array with updated label.
 - **Material** (`data-testid="inspector-part-material-{i}"`): `<select>` listing all `material` elements sorted by name + "— (none) —". Current value = `part.materialId`. On change: dispatch `update_element_property` for `parts` array with updated materialId.
 - **Length** (`data-testid="inspector-part-length-{i}"`): read-only display of `((endT - startT) * wall.lengthMm).toFixed(0) mm`.
 - **Remove part** button (`data-testid="inspector-part-remove-{i}"`): removes this part from the array (merges it back into unsplit wall — simplest: set `parts: parts.filter(p => p.id !== part.id)`; if parts becomes empty, set `parts: null`).
 
 At the bottom of the Parts panel:
+
 - **"Create N Equal Parts"** (`data-testid="inspector-parts-create"`): number input + button. Clicking calls `buildEqualParts(n)` from the existing helper and dispatches `update_element_property` for `parts`.
 
 Read how the wall inspector currently handles complex nested fields (e.g. curtain wall grid or top constraint) and use the same dispatch pattern.
@@ -71,6 +74,7 @@ Read how the wall inspector currently handles complex nested fields (e.g. curtai
 ### C — 3D: per-part material
 
 In `meshBuilders.ts`, in `makeWallMesh` (or wherever the wall-part children are built), when a part has `materialId` set:
+
 - Resolve the material from `elementsById[part.materialId]`
 - Apply `part.materialId`'s color (if available) as the part child's `MeshStandardMaterial` color
 - Fall back to the wall type's layer material if `materialId` is null
@@ -84,6 +88,7 @@ In `planElementMeshBuilders.ts`, in the plan wall part overlay renderer, apply t
 ### E — Tests
 
 Write `packages/web/src/workspace/inspector/wallPartsInspector.test.tsx`:
+
 ```ts
 describe('wall parts inspector — §8.1.3', () => {
   it('renders inspector-part-label-0 for first part', () => { ... });
@@ -100,6 +105,7 @@ describe('wall parts inspector — §8.1.3', () => {
 ## Commit and push
 
 After tests pass (`pnpm test --filter @bim-ai/web`):
+
 ```
 git add -p
 git commit -m "feat(wave12/B): wall parts inspector with per-part material picker (§8.1.3)"

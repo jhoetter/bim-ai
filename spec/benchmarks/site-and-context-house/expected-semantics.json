@@ -77,9 +77,7 @@
     "advisor": {
       "ok": true,
       "blockingFindingCount": 0,
-      "warningsAccepted": [
-        "No building envelope is required for this site/context-only fixture."
-      ]
+      "warningsAccepted": ["No building envelope is required for this site/context-only fixture."]
     },
     "visual": {
       "requiredViews": ["site-plan", "terrain-3d", "solar-context"],

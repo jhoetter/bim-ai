@@ -39,6 +39,7 @@ Read ALL of these before writing anything:
 ### A — Data model: slope arrow fields
 
 In `core/index.ts`, add to the `floor` element (only if not already present):
+
 ```ts
 /** Slope arrow start point in plan (mm). The low end of the slope. */
 slopeArrowTailMm?: { xMm: number; yMm: number } | null;
@@ -53,6 +54,7 @@ slopePercent?: number | null;
 In `makeFloorMesh` (find the floor mesh builder):
 
 When `floor.slopeArrowTailMm` and `floor.slopeArrowHeadMm` and `floor.slopePercent` are all set:
+
 - Compute the slope direction vector (head − tail), normalised
 - Compute the elevation rise per mm along this direction: `risePerMm = slopePercent / 100`
 - For each vertex of the floor boundary polygon, compute elevation offset:
@@ -65,10 +67,11 @@ Return the sloped mesh. No-op if slope fields are null.
 ### C — Slope arrow plan annotation
 
 In `planElementMeshBuilders.ts` (or a new file `floorSlopePlanThree.ts`), add:
+
 ```ts
 export function floorSlopeArrowPlanThree(
   floor: Extract<Element, { kind: 'floor' }>,
-): THREE.Group | null
+): THREE.Group | null;
 ```
 
 - Return null if no slope arrow is defined
@@ -92,6 +95,7 @@ In `InspectorContent.tsx`, for `el.kind === 'floor'`, ensure these inputs exist 
 ### E — Tests
 
 Write `packages/web/src/viewport/floorSlopeMesh.test.ts`:
+
 ```ts
 describe('sloped floor mesh — §3.4.1', () => {
   it('flat floor (no slope) has uniform top face elevation', () => { ... });
@@ -102,6 +106,7 @@ describe('sloped floor mesh — §3.4.1', () => {
 ```
 
 Write `packages/web/src/plan/floorSlopePlan.test.ts`:
+
 ```ts
 describe('floorSlopeArrowPlanThree — §3.4.1', () => {
   it('returns null when no slope arrow is set', () => { ... });
@@ -115,6 +120,7 @@ describe('floorSlopeArrowPlanThree — §3.4.1', () => {
 ## Commit and push
 
 After all tasks are done and tests pass (`pnpm test --filter @bim-ai/web`), commit:
+
 ```
 git add -p
 git commit -m "feat(wave9/D): floor slope arrow — data model + 3D mesh + plan annotation (§3.4.1)"

@@ -39,6 +39,7 @@ Read ALL of these before writing anything:
 Read `toolRegistry.ts` and collect every `{ id, hotkey, label }` triple. The ones currently missing from the cheatsheet include (but may not be limited to):
 
 Tools that are missing from the current cheatsheet tools section:
+
 - Column: CL or similar
 - Beam: BM or similar
 - Grid: GR
@@ -77,6 +78,7 @@ Read the registry to get the exact hotkeys. Do not guess — use only what `tool
 In `cheatsheetData.ts`, expand the `'tools'` section to include ALL tools from the registry (sorted alphabetically by action name). Replace the current sparse list with the complete list.
 
 Add a new section `'modify'`:
+
 ```ts
 {
   id: 'modify',
@@ -98,6 +100,7 @@ Add a new section `'modify'`:
 ```
 
 Add a new section `'annotate'`:
+
 ```ts
 {
   id: 'annotate',
@@ -127,6 +130,7 @@ If the translation file uses a nested object structure, add the keys at the corr
 ### D — Tests
 
 `packages/web/src/cmd/cheatsheetData.test.ts` (add to existing tests or create if absent):
+
 ```ts
 describe('cheatsheet data — §Appendix A', () => {
   it('tools section has more than 15 entries', () => { ... }); // was ~9
@@ -142,6 +146,7 @@ describe('cheatsheet data — §Appendix A', () => {
 ## Commit and push
 
 After tests pass (`pnpm test --filter @bim-ai/web`):
+
 ```
 git add -p
 git commit -m "feat(wave14/I): complete keyboard shortcut cheatsheet — modify + annotate sections (§Appendix A)"

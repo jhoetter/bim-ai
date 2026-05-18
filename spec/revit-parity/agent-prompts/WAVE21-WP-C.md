@@ -51,8 +51,9 @@ setSelectLinkedEnabled: (enabled) => set({ selectLinkedEnabled: enabled }),
 In `packages/web/src/plan/PlanCanvas.tsx`:
 
 1. Subscribe to `selectLinkedEnabled`:
+
 ```ts
-const selectLinkedEnabled = useBimStore(s => s.selectLinkedEnabled);
+const selectLinkedEnabled = useBimStore((s) => s.selectLinkedEnabled);
 ```
 
 2. Find the click / selection handling path (search for `bimPickId` or `setSelectedElementIds`) where element IDs are resolved from picks. Where the selected element is looked up in `elementsById`, add a filter:
@@ -63,8 +64,9 @@ if (!selectLinkedEnabled && el?.kind === 'link_model') return;
 ```
 
 Also apply to box selection (search for `crossingSelection` or `boxSelectIds`):
+
 ```ts
-const ids = rawIds.filter(id => {
+const ids = rawIds.filter((id) => {
   const el = elementsById[id];
   return selectLinkedEnabled || el?.kind !== 'link_model';
 });
@@ -77,12 +79,14 @@ You may need to adapt the exact code path. Read the existing click and box-selec
 In `packages/web/src/plan/PlanViewHeader.tsx`:
 
 1. Accept new props (or subscribe to store directly — follow the existing pattern for `thinLinesEnabled`):
+
 ```ts
-const selectLinkedEnabled = useBimStore(s => s.selectLinkedEnabled);
-const setSelectLinkedEnabled = useBimStore(s => s.setSelectLinkedEnabled);
+const selectLinkedEnabled = useBimStore((s) => s.selectLinkedEnabled);
+const setSelectLinkedEnabled = useBimStore((s) => s.setSelectLinkedEnabled);
 ```
 
 2. Add a toggle button near other view control buttons (near TL / legend buttons):
+
 ```tsx
 <button
   data-testid="plan-view-select-linked-toggle"
@@ -96,7 +100,8 @@ const setSelectLinkedEnabled = useBimStore(s => s.setSelectLinkedEnabled);
     border: '1px solid #555',
     fontSize: 11,
     cursor: 'pointer',
-  }}>
+  }}
+>
   LK
 </button>
 ```
@@ -173,7 +178,9 @@ import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { useBimStore } from '../state/store';
 import { PlanViewHeader } from './PlanViewHeader';
 
-afterEach(() => { cleanup(); });
+afterEach(() => {
+  cleanup();
+});
 
 beforeEach(() => {
   useBimStore.setState({ selectLinkedEnabled: false });
@@ -202,7 +209,7 @@ describe('PlanViewHeader select-linked toggle — §3.3.1', () => {
         activeWorkPlaneId={undefined}
         onClearWorkPlane={() => {}}
         planViewAngleDeg={0}
-      />
+      />,
     );
     expect(screen.getByTestId('plan-view-select-linked-toggle')).toBeTruthy();
   });
@@ -229,7 +236,7 @@ describe('PlanViewHeader select-linked toggle — §3.3.1', () => {
         activeWorkPlaneId={undefined}
         onClearWorkPlane={() => {}}
         planViewAngleDeg={0}
-      />
+      />,
     );
     fireEvent.click(screen.getByTestId('plan-view-select-linked-toggle'));
     expect(useBimStore.getState().selectLinkedEnabled).toBe(true);

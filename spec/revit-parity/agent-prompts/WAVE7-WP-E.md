@@ -39,6 +39,7 @@ Read ALL of these before writing anything:
 ### A — DimensionStyle data model
 
 Add to `project_settings` element type in `core/index.ts`:
+
 ```ts
 dimensionStyle?: {
   textHeightMm?: number;        // default: 2.5
@@ -57,13 +58,21 @@ Create `packages/web/src/workspace/DimensionStyleDialog.tsx`:
 interface DimensionStyleDialogProps {
   open: boolean;
   onClose: () => void;
-  currentStyle: NonNullable<Extract<Element, {kind:'project_settings'}>['dimensionStyle']>;
-  onSave: (style: NonNullable<Extract<Element, {kind:'project_settings'}>['dimensionStyle']>) => void;
+  currentStyle: NonNullable<Extract<Element, { kind: 'project_settings' }>['dimensionStyle']>;
+  onSave: (
+    style: NonNullable<Extract<Element, { kind: 'project_settings' }>['dimensionStyle']>,
+  ) => void;
 }
-export function DimensionStyleDialog({ open, onClose, currentStyle, onSave }: DimensionStyleDialogProps): JSX.Element
+export function DimensionStyleDialog({
+  open,
+  onClose,
+  currentStyle,
+  onSave,
+}: DimensionStyleDialogProps): JSX.Element;
 ```
 
 The dialog:
+
 - `data-testid="dimension-style-dialog"` on container; returns `null` when `open === false`
 - Text height input (mm) `data-testid="dim-style-text-height"` — number, step 0.5, range 1–10
 - Witness line extension (mm) `data-testid="dim-style-witness-extension"` — number, step 0.5
@@ -74,6 +83,7 @@ The dialog:
 - "Cancel" button `data-testid="dim-style-cancel"` → `onClose()`
 
 Wire into `Workspace.tsx`:
+
 - Add `dimStyleOpen` state
 - When `dimStyleOpen`: resolve `project_settings` from `elementsById` (find element with `kind === 'project_settings'`)
 - `onSave`: dispatch `update_element_property` on the project_settings element for key `dimensionStyle`
@@ -82,6 +92,7 @@ Wire into `Workspace.tsx`:
 ### C — Apply style in permanentDimensionThree
 
 In `planElementMeshBuilders.ts`, `permanentDimensionThree()` (or wherever permanent dims are rendered), accept an optional `dimStyle` parameter and use it:
+
 - Text height: `dimStyle?.textHeightMm ?? 2.5` mm (convert to world units: / 1000)
 - Witness extension: `dimStyle?.witnessLineExtensionMm ?? 2` mm
 - Arrow style: `dimStyle?.arrowStyle ?? 'arrow'`
@@ -92,6 +103,7 @@ Pass `dimStyle` from `symbology.ts` → resolve from `project_settings` element 
 ### D — Palette command
 
 In `defaultCommands.ts`:
+
 ```ts
 registerCommand({
   id: 'annotate.dimension-style',
@@ -108,6 +120,7 @@ Add `annotate.dimension-style` to `commandCapabilities.ts` with `surfaces: ['cmd
 ### E — Tests
 
 Write `packages/web/src/workspace/DimensionStyleDialog.test.tsx`:
+
 ```ts
 describe('DimensionStyleDialog — §4.2.4', () => {
   it('renders dimension-style-dialog when open=true', () => { ... });
@@ -120,6 +133,7 @@ describe('DimensionStyleDialog — §4.2.4', () => {
 ```
 
 Write `packages/web/src/plan/dimensionStyleRender.test.ts`:
+
 ```ts
 describe('permanentDimensionThree with dimStyle — §4.2.4', () => {
   it('uses default textHeightMm=2.5 when no style set', () => { ... });

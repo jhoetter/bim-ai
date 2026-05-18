@@ -46,7 +46,10 @@ import type { Element } from '@bim-ai/core';
 type ElevationViewEl = Extract<Element, { kind: 'elevation_view' }>;
 
 interface ElevationLine {
-  x1: number; y1: number; x2: number; y2: number;
+  x1: number;
+  y1: number;
+  x2: number;
+  y2: number;
   lineWeight?: number;
   dash?: boolean;
 }
@@ -74,10 +77,14 @@ export function buildElevationLines(
 
   const project = (xMm: number, yMm: number): { x: number; y: number } => {
     switch (dir) {
-      case 'N': return { x: xMm, y: yMm };
-      case 'S': return { x: -xMm, y: yMm };
-      case 'E': return { x: yMm, y: yMm };
-      case 'W': return { x: -yMm, y: yMm };
+      case 'N':
+        return { x: xMm, y: yMm };
+      case 'S':
+        return { x: -xMm, y: yMm };
+      case 'E':
+        return { x: yMm, y: yMm };
+      case 'W':
+        return { x: -yMm, y: yMm };
     }
   };
 
@@ -92,7 +99,7 @@ export function buildElevationLines(
       const topElev = baseElev + (el.heightMm ?? 3000);
       // Horizontal line at top + bottom, vertical lines at ends
       lines.push({ x1: s.x, y1: baseElev, x2: e.x, y2: baseElev });
-      lines.push({ x1: s.x, y1: topElev,  x2: e.x, y2: topElev });
+      lines.push({ x1: s.x, y1: topElev, x2: e.x, y2: topElev });
       lines.push({ x1: s.x, y1: baseElev, x2: s.x, y2: topElev });
       lines.push({ x1: e.x, y1: baseElev, x2: e.x, y2: topElev });
     }
@@ -136,7 +143,18 @@ export function ElevationViewport({ view, elementsById, widthPx, heightPx }: Pro
 
   if (lines.length === 0) {
     return (
-      <div data-testid="elevation-viewport-empty" style={{ width: widthPx, height: heightPx, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--color-muted)', fontSize: 12 }}>
+      <div
+        data-testid="elevation-viewport-empty"
+        style={{
+          width: widthPx,
+          height: heightPx,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          color: 'var(--color-muted)',
+          fontSize: 12,
+        }}
+      >
         No geometry to display
       </div>
     );
@@ -158,12 +176,15 @@ export function ElevationViewport({ view, elementsById, widthPx, heightPx }: Pro
       width={widthPx}
       height={heightPx}
       viewBox={`${minX} ${minY} ${vbW} ${vbH}`}
-      style={{ transform: 'scaleY(-1)' }}  /* flip Y so elevation 0 is at bottom */
+      style={{ transform: 'scaleY(-1)' }} /* flip Y so elevation 0 is at bottom */
     >
       {lines.map((l, i) => (
         <line
           key={i}
-          x1={l.x1} y1={l.y1} x2={l.x2} y2={l.y2}
+          x1={l.x1}
+          y1={l.y1}
+          x2={l.x2}
+          y2={l.y2}
           stroke="#222"
           strokeWidth={l.lineWeight ?? 300}
           strokeDasharray={l.dash ? '500 300' : undefined}
@@ -185,6 +206,7 @@ Find where elevation view tabs are rendered (search for `elevation_view` in `Wor
 ### D — Tests
 
 `packages/web/src/plan/elevationProjection.test.ts`:
+
 ```ts
 describe('elevation projection — §6.1.4', () => {
   it('builds lines for a single wall in N direction', () => { ... });
@@ -196,6 +218,7 @@ describe('elevation projection — §6.1.4', () => {
 ```
 
 `packages/web/src/plan/ElevationViewport.test.tsx`:
+
 ```ts
 describe('ElevationViewport — §6.1.4', () => {
   it('renders elevation-viewport-empty when no lines', () => { ... });

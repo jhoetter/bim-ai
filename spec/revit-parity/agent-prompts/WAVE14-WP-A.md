@@ -69,6 +69,7 @@ Add a menu item "Select All Instances" visible when exactly one element is selec
 ### D — Tests
 
 `packages/web/src/plan/tabCycleSelection.test.ts`:
+
 ```ts
 describe('TAB cycle selection — §1.8.1', () => {
   it('returns first candidate when nothing selected', () => { ... });
@@ -79,6 +80,7 @@ describe('TAB cycle selection — §1.8.1', () => {
 ```
 
 `packages/web/src/plan/crossingSelection.test.ts`:
+
 ```ts
 describe('crossing window selection — §1.8.1', () => {
   it('window select returns only fully contained elements', () => { ... });
@@ -93,6 +95,7 @@ describe('crossing window selection — §1.8.1', () => {
 ## Commit and push
 
 After tests pass (`pnpm test --filter @bim-ai/web`):
+
 ```
 git add -p
 git commit -m "feat(wave14/A): TAB cycle + crossing window selection (§1.8.1)"

@@ -11,6 +11,7 @@ This prompt is self-contained — start here.
 §12.3 "Internet-Bibliotheken nutzen: BIMobject" is Not Started P2. Revit lets users browse and download manufacturer-specific BIM families from BIMobject.com. bim-ai has an existing `FamilyLibraryPanel.tsx` with internal and external catalogs, but no BIMobject-specific section.
 
 This task adds a BIMobject catalog section to the family library panel with:
+
 1. `bimobjectCatalog.ts` — curated catalog of 12 BIMobject-style items mapped to existing family types
 2. `FamilyLibraryPanel.tsx` — "BIMobject" collapsible section with search + item cards
 3. `file.bimobject-catalog` capability entry
@@ -28,6 +29,7 @@ packages/web/src/cmdPalette/defaultCommands.ts          — find registerCommand
 ```
 
 Run before editing:
+
 - `grep -n "BIMobject\|bimobject\|externalCatalog\|section\|collapsible" packages/web/src/families/FamilyLibraryPanel.tsx | head -15`
 - `grep -n "FamilyCatalogItem\|CatalogItem\|familyCatalog\|export.*type\|interface" packages/web/src/families/familyCatalog.ts | head -15`
 - `grep -n "onPlace\|placeFamilyInstance\|onSelectFamily\|dispatchCommand" packages/web/src/families/FamilyLibraryPanel.tsx | head -10`
@@ -60,18 +62,126 @@ export interface BimobjectItem {
 }
 
 export const BIMOBJECT_CATALOG: BimobjectItem[] = [
-  { id: 'bo-chair-01', name: 'Bürostuhl Vitra', manufacturer: 'Vitra', category: 'Seating', familyTypeId: 'chair', thumbnailEmoji: '🪑', description: 'Ergonomischer Bürodrehstuhl', tags: ['chair', 'office', 'seating'] },
-  { id: 'bo-table-01', name: 'Konferenztisch Wilkhahn', manufacturer: 'Wilkhahn', category: 'Tables', familyTypeId: 'table', thumbnailEmoji: '🪞', description: 'Konferenztisch 2400x1200mm', tags: ['table', 'conference'] },
-  { id: 'bo-sofa-01', name: 'Sofa USM', manufacturer: 'USM', category: 'Seating', familyTypeId: 'sofa', thumbnailEmoji: '🛋️', description: 'Modulares Sitzsystem', tags: ['sofa', 'seating', 'lounge'] },
-  { id: 'bo-desk-01', name: 'Schreibtisch Steelcase', manufacturer: 'Steelcase', category: 'Desks', familyTypeId: 'desk', thumbnailEmoji: '🖥️', description: 'Elektrisch höhenverstellbar 1600x800mm', tags: ['desk', 'office', 'adjustable'] },
-  { id: 'bo-sink-01', name: 'Waschbecken Grohe', manufacturer: 'Grohe', category: 'Sanitary', familyTypeId: 'sink', thumbnailEmoji: '🚿', description: 'Aufsatzwaschbecken 600x450mm', tags: ['sink', 'bathroom', 'sanitary'] },
-  { id: 'bo-toilet-01', name: 'WC Geberit', manufacturer: 'Geberit', category: 'Sanitary', familyTypeId: 'toilet', thumbnailEmoji: '🚽', description: 'Wand-WC mit Unterputzspülkasten', tags: ['toilet', 'bathroom', 'sanitary'] },
-  { id: 'bo-door-01', name: 'Tür Jeld-Wen', manufacturer: 'Jeld-Wen', category: 'Doors', familyTypeId: 'door-single', thumbnailEmoji: '🚪', description: 'Einflügelige Innentür 875x2010mm', tags: ['door', 'interior'] },
-  { id: 'bo-window-01', name: 'Fenster Schüco', manufacturer: 'Schüco', category: 'Windows', familyTypeId: 'window-fixed', thumbnailEmoji: '🪟', description: 'Festverglasung AWS 75.SI+', tags: ['window', 'glazing', 'facade'] },
-  { id: 'bo-lamp-01', name: 'Pendelleuchte Louis Poulsen', manufacturer: 'Louis Poulsen', category: 'Lighting', familyTypeId: 'pendant-light', thumbnailEmoji: '💡', description: 'PH 5 Pendelleuchte Ø500mm', tags: ['light', 'pendant', 'ceiling'] },
-  { id: 'bo-radiator-01', name: 'Heizkörper Zehnder', manufacturer: 'Zehnder', category: 'HVAC', familyTypeId: 'radiator', thumbnailEmoji: '🌡️', description: 'Plattenheizkörper 600x1000mm', tags: ['radiator', 'heating', 'hvac'] },
-  { id: 'bo-shelf-01', name: 'Regal String', manufacturer: 'String Furniture', category: 'Storage', familyTypeId: 'bookshelf', thumbnailEmoji: '📚', description: 'Wandregal 78x58cm modular', tags: ['shelf', 'storage', 'wall'] },
-  { id: 'bo-kitchen-01', name: 'Küchenzeile Bulthaup', manufacturer: 'Bulthaup', category: 'Kitchen', familyTypeId: 'kitchen-unit', thumbnailEmoji: '🍳', description: 'b3 Küchenzeile 3600mm', tags: ['kitchen', 'cabinet', 'cooking'] },
+  {
+    id: 'bo-chair-01',
+    name: 'Bürostuhl Vitra',
+    manufacturer: 'Vitra',
+    category: 'Seating',
+    familyTypeId: 'chair',
+    thumbnailEmoji: '🪑',
+    description: 'Ergonomischer Bürodrehstuhl',
+    tags: ['chair', 'office', 'seating'],
+  },
+  {
+    id: 'bo-table-01',
+    name: 'Konferenztisch Wilkhahn',
+    manufacturer: 'Wilkhahn',
+    category: 'Tables',
+    familyTypeId: 'table',
+    thumbnailEmoji: '🪞',
+    description: 'Konferenztisch 2400x1200mm',
+    tags: ['table', 'conference'],
+  },
+  {
+    id: 'bo-sofa-01',
+    name: 'Sofa USM',
+    manufacturer: 'USM',
+    category: 'Seating',
+    familyTypeId: 'sofa',
+    thumbnailEmoji: '🛋️',
+    description: 'Modulares Sitzsystem',
+    tags: ['sofa', 'seating', 'lounge'],
+  },
+  {
+    id: 'bo-desk-01',
+    name: 'Schreibtisch Steelcase',
+    manufacturer: 'Steelcase',
+    category: 'Desks',
+    familyTypeId: 'desk',
+    thumbnailEmoji: '🖥️',
+    description: 'Elektrisch höhenverstellbar 1600x800mm',
+    tags: ['desk', 'office', 'adjustable'],
+  },
+  {
+    id: 'bo-sink-01',
+    name: 'Waschbecken Grohe',
+    manufacturer: 'Grohe',
+    category: 'Sanitary',
+    familyTypeId: 'sink',
+    thumbnailEmoji: '🚿',
+    description: 'Aufsatzwaschbecken 600x450mm',
+    tags: ['sink', 'bathroom', 'sanitary'],
+  },
+  {
+    id: 'bo-toilet-01',
+    name: 'WC Geberit',
+    manufacturer: 'Geberit',
+    category: 'Sanitary',
+    familyTypeId: 'toilet',
+    thumbnailEmoji: '🚽',
+    description: 'Wand-WC mit Unterputzspülkasten',
+    tags: ['toilet', 'bathroom', 'sanitary'],
+  },
+  {
+    id: 'bo-door-01',
+    name: 'Tür Jeld-Wen',
+    manufacturer: 'Jeld-Wen',
+    category: 'Doors',
+    familyTypeId: 'door-single',
+    thumbnailEmoji: '🚪',
+    description: 'Einflügelige Innentür 875x2010mm',
+    tags: ['door', 'interior'],
+  },
+  {
+    id: 'bo-window-01',
+    name: 'Fenster Schüco',
+    manufacturer: 'Schüco',
+    category: 'Windows',
+    familyTypeId: 'window-fixed',
+    thumbnailEmoji: '🪟',
+    description: 'Festverglasung AWS 75.SI+',
+    tags: ['window', 'glazing', 'facade'],
+  },
+  {
+    id: 'bo-lamp-01',
+    name: 'Pendelleuchte Louis Poulsen',
+    manufacturer: 'Louis Poulsen',
+    category: 'Lighting',
+    familyTypeId: 'pendant-light',
+    thumbnailEmoji: '💡',
+    description: 'PH 5 Pendelleuchte Ø500mm',
+    tags: ['light', 'pendant', 'ceiling'],
+  },
+  {
+    id: 'bo-radiator-01',
+    name: 'Heizkörper Zehnder',
+    manufacturer: 'Zehnder',
+    category: 'HVAC',
+    familyTypeId: 'radiator',
+    thumbnailEmoji: '🌡️',
+    description: 'Plattenheizkörper 600x1000mm',
+    tags: ['radiator', 'heating', 'hvac'],
+  },
+  {
+    id: 'bo-shelf-01',
+    name: 'Regal String',
+    manufacturer: 'String Furniture',
+    category: 'Storage',
+    familyTypeId: 'bookshelf',
+    thumbnailEmoji: '📚',
+    description: 'Wandregal 78x58cm modular',
+    tags: ['shelf', 'storage', 'wall'],
+  },
+  {
+    id: 'bo-kitchen-01',
+    name: 'Küchenzeile Bulthaup',
+    manufacturer: 'Bulthaup',
+    category: 'Kitchen',
+    familyTypeId: 'kitchen-unit',
+    thumbnailEmoji: '🍳',
+    description: 'b3 Küchenzeile 3600mm',
+    tags: ['kitchen', 'cabinet', 'cooking'],
+  },
 ];
 
 export function searchBimobjectCatalog(query: string): BimobjectItem[] {
@@ -90,6 +200,7 @@ export function searchBimobjectCatalog(query: string): BimobjectItem[] {
 ### B — Add BIMobject section to FamilyLibraryPanel.tsx
 
 Read `FamilyLibraryPanel.tsx` carefully to understand:
+
 - How the panel is structured (collapsible sections, search, item cards)
 - What props/callbacks handle item placement (`onPlace`, `onSelectFamily`, or `dispatchCommand`)
 - How to add a new collapsible section
@@ -97,6 +208,7 @@ Read `FamilyLibraryPanel.tsx` carefully to understand:
 Add a "BIMobject" collapsible section in the panel. Import `BIMOBJECT_CATALOG`, `searchBimobjectCatalog`, and `BimobjectItem` from `'./bimobjectCatalog'`.
 
 The section should show:
+
 1. A search input (`data-testid="bimobject-search-input"`)
 2. Item cards showing `thumbnailEmoji`, `name`, `manufacturer`, `description`
 3. A "Use" / "Place" button per item (`data-testid="bimobject-item-{id}"`) that places the family

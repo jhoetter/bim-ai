@@ -64,6 +64,7 @@ In `InspectorContent.tsx`, for `el.kind === 'radial_dimension'` and `'diameter_d
 ### C — Angular dimension renderer: arc label
 
 In `planElementMeshBuilders.ts`, in the angular dimension renderer, verify that:
+
 - The angle label (text sprite or CSS2D) correctly shows the angle value (respects `textOverride`, `textPrefix`, `textSuffix`)
 - The arc indicator between the two rays is drawn at `offsetMm` distance from the vertex
 - If any of these is broken/missing, fix it
@@ -75,10 +76,11 @@ In `grip-providers/` (find the angular dim grip provider, or create `angularDimG
 ```ts
 export function angularDimGripProvider(
   dim: Extract<Element, { kind: 'angular_dimension' }>,
-): GripProvider
+): GripProvider;
 ```
 
 Grips:
+
 1. **Arc offset grip** (`id: 'arc-offset'`): at `vertex + normalize(bisector) * offsetMm`. Dragging updates `offsetMm`. On commit: dispatch `update_element_property` for `offsetMm`.
 2. **Vertex grip** (`id: 'vertex'`): at `vertexMm`. Dragging updates `vertexMm`.
 
@@ -87,6 +89,7 @@ Register in `gripProviderForElement.ts` (or equivalent) if not already registere
 ### E — Tests
 
 Write `packages/web/src/workspace/inspector/angularDimInspector.test.tsx`:
+
 ```ts
 describe('angular dimension inspector — §4.4', () => {
   it('renders inspector-angular-dim-angle with computed degrees', () => { ... });
@@ -97,6 +100,7 @@ describe('angular dimension inspector — §4.4', () => {
 ```
 
 Write `packages/web/src/workspace/inspector/radialDimInspector.test.tsx`:
+
 ```ts
 describe('radial dimension inspector — §4.5', () => {
   it('renders inspector-radial-dim-value with radius in mm', () => { ... });
@@ -111,6 +115,7 @@ describe('radial dimension inspector — §4.5', () => {
 ## Commit and push
 
 After tests pass (`pnpm test --filter @bim-ai/web`):
+
 ```
 git add -p
 git commit -m "feat(wave12/D): angular + radial/diameter dimension inspector polish (§4.4 + §4.5)"

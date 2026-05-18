@@ -47,6 +47,7 @@ export interface IfcRef { ref: number }  // #123 reference
 ```
 
 Tokenise line-by-line. Each DATA line looks like:
+
 ```
 #12= IFCWALL('guid','owner',name,description,type,#placement,#shape,tag,elem_type);
 ```
@@ -60,10 +61,11 @@ Parse `#N= TYPENAME(attr1, attr2, ...)` where attrs can be strings (`'...'`), nu
 Convert parsed entities to bim-ai `Element[]`:
 
 ```ts
-export function convertIfcToElements(entities: Map<number, IfcEntity>): Element[]
+export function convertIfcToElements(entities: Map<number, IfcEntity>): Element[];
 ```
 
 Handle:
+
 - `IFCWALLSTANDARDCASE` / `IFCWALL` → `wall` element. Extract length from `IFCEXTRUDEDAREASOLID` shape → `lengthMm`. Default `thicknessMm: 200`, `heightMm: 3000`.
 - `IFCSLAB` (PredefinedType=FLOOR) → `floor` element.
 - `IFCSPACE` → `room` element with `name` from Name attribute.
@@ -97,12 +99,14 @@ export function IfcImportDialog({ open, onClose, onImport }: {
 ### D — Wire into Workspace.tsx and palette
 
 In `defaultCommands.ts`:
+
 ```ts
 { id: 'file.import-ifc', label: 'Import IFC…', keywords: ['ifc', 'import', 'bim'], category: 'command',
   invoke: (ctx) => ctx.openIfcImport?.() }
 ```
 
 In `Workspace.tsx`:
+
 - Add `ifcImportOpen` state.
 - Render `<IfcImportDialog open={ifcImportOpen} onClose={...} onImport={(els) => { els.forEach(el => void onSemanticCommand({ type: 'createElement', element: el })); }} />`
 - Wire `openIfcImport: () => setIfcImportOpen(true)` into palette context.
@@ -112,6 +116,7 @@ In `Workspace.tsx`:
 ### E — Tests
 
 `packages/web/src/import/ifcParser.test.ts`:
+
 ```ts
 describe('IFC STEP parser — §12.1.2', () => {
   it('parses a minimal STEP string into entity map', () => { ... });
@@ -122,6 +127,7 @@ describe('IFC STEP parser — §12.1.2', () => {
 ```
 
 `packages/web/src/import/ifcImportConverter.test.ts`:
+
 ```ts
 describe('IFC import converter — §12.1.2', () => {
   it('converts IFCWALL to wall element', () => { ... });

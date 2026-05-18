@@ -57,25 +57,44 @@ interface Props {
   onApply: (refPlaneId: string | null) => void;
 }
 
-export function SetWorkPlaneDialog({ open, onClose, referencePlanes, currentWorkPlaneId, onApply }: Props) {
+export function SetWorkPlaneDialog({
+  open,
+  onClose,
+  referencePlanes,
+  currentWorkPlaneId,
+  onApply,
+}: Props) {
   if (!open) return null;
   return (
     <dialog open data-testid="set-work-plane-dialog" className="modal-base">
       <h2 className="text-sm font-medium mb-3">Set Work Plane</h2>
       <div className="mb-3">
         <label className="text-xs text-muted block mb-1">Reference Plane</label>
-        <select data-testid="set-work-plane-select" defaultValue={currentWorkPlaneId ?? ''}
+        <select
+          data-testid="set-work-plane-select"
+          defaultValue={currentWorkPlaneId ?? ''}
           className="w-full text-xs border border-border rounded px-2 py-1"
-          onChange={(e) => onApply(e.currentTarget.value || null)}>
+          onChange={(e) => onApply(e.currentTarget.value || null)}
+        >
           <option value="">None</option>
-          {referencePlanes.map(rp => (
-            <option key={rp.id} value={rp.id}>{rp.name || `Ref Plane ${rp.id.slice(0,6)}`}</option>
+          {referencePlanes.map((rp) => (
+            <option key={rp.id} value={rp.id}>
+              {rp.name || `Ref Plane ${rp.id.slice(0, 6)}`}
+            </option>
           ))}
         </select>
       </div>
       <div className="flex justify-end gap-2">
-        <button className="btn-secondary text-xs" onClick={onClose} data-testid="set-work-plane-cancel">Cancel</button>
-        <button className="btn-primary text-xs" onClick={onClose} data-testid="set-work-plane-ok">OK</button>
+        <button
+          className="btn-secondary text-xs"
+          onClick={onClose}
+          data-testid="set-work-plane-cancel"
+        >
+          Cancel
+        </button>
+        <button className="btn-primary text-xs" onClick={onClose} data-testid="set-work-plane-ok">
+          OK
+        </button>
       </div>
     </dialog>
   );
@@ -87,13 +106,16 @@ export function SetWorkPlaneDialog({ open, onClose, referencePlanes, currentWork
 1. In `Workspace.tsx`, add state `setWorkPlaneOpen: boolean` and handler that dispatches `set_work_plane { viewId, refPlaneId }` command which patches `activeWorkPlaneId` on the active plan_view element.
 
 2. In `defaultCommands.ts`, register:
+
 ```ts
 registerCommand({
   id: 'view.set-work-plane',
   label: 'Set Work Plane',
   keywords: ['work plane', 'reference plane', 'set plane'],
   category: 'command',
-  invoke: (ctx) => { ctx.setWorkPlaneOpen?.(true); },
+  invoke: (ctx) => {
+    ctx.setWorkPlaneOpen?.(true);
+  },
 });
 ```
 
@@ -118,7 +140,13 @@ Add a button `"TL"` (or a thin-line icon) to the plan view toolbar:
   data-testid="plan-view-thin-lines-toggle"
   title="Thin Lines"
   className={cn('toolbar-btn', activePlanView?.thinLines && 'toolbar-btn-active')}
-  onClick={() => dispatch({ type: 'update_plan_view', id: activePlanViewId, patch: { thinLines: !activePlanView?.thinLines } })}
+  onClick={() =>
+    dispatch({
+      type: 'update_plan_view',
+      id: activePlanViewId,
+      patch: { thinLines: !activePlanView?.thinLines },
+    })
+  }
 >
   TL
 </button>
@@ -135,6 +163,7 @@ Tag all plan mesh materials with `userData.thinLines = true` when in thin-lines 
 ### G — Tests
 
 `packages/web/src/workspace/setWorkPlaneDialog.test.tsx`:
+
 ```ts
 describe('set work plane dialog — §7.3.1', () => {
   it('renders set-work-plane-dialog when open=true', () => { ... });
@@ -146,6 +175,7 @@ describe('set work plane dialog — §7.3.1', () => {
 ```
 
 `packages/web/src/plan/thinLinesToggle.test.ts`:
+
 ```ts
 describe('thin lines toggle — §1.6.10', () => {
   it('thinLines=true on plan_view renders with linewidth=1', () => { ... });
@@ -158,6 +188,7 @@ describe('thin lines toggle — §1.6.10', () => {
 ## Commit and push
 
 After tests pass (`pnpm test --filter @bim-ai/web`):
+
 ```
 git add -p
 git commit -m "feat(wave14/J): set work plane dialog + thin lines toggle (§7.3.1 + §1.6.10)"

@@ -38,6 +38,7 @@ Read ALL of these before writing anything:
 ### A — FamilySweep data type
 
 Add to `core/index.ts`:
+
 ```ts
 /** §15.1.3: family sweep — profile extruded along a path curve. */
 export type FamilySweep = {
@@ -53,6 +54,7 @@ export type FamilySweep = {
 ### B — FamilyBlend data type
 
 Add to `core/index.ts`:
+
 ```ts
 /** §15.1.4: family blend — transition between two 2D profiles at different elevations. */
 export type FamilyBlend = {
@@ -74,7 +76,7 @@ Include both in the family workbench element union if one exists in core (search
 Create `packages/web/src/familyEditor/meshBuilders.familySweep.ts`:
 
 ```ts
-export function familySweepMesh(form: FamilySweep): THREE.Mesh
+export function familySweepMesh(form: FamilySweep): THREE.Mesh;
 ```
 
 - Build a `THREE.TubeGeometry` along `pathPoints` (convert mm → world units by /1000)
@@ -88,7 +90,7 @@ export function familySweepMesh(form: FamilySweep): THREE.Mesh
 Create `packages/web/src/familyEditor/meshBuilders.familyBlend.ts`:
 
 ```ts
-export function familyBlendMesh(form: FamilyBlend): THREE.Mesh
+export function familyBlendMesh(form: FamilyBlend): THREE.Mesh;
 ```
 
 - Bottom and top profiles may have different vertex counts — interpolate by mapping each bottom vertex to the corresponding top vertex using index modulo
@@ -100,12 +102,14 @@ export function familyBlendMesh(form: FamilyBlend): THREE.Mesh
 ### E — Wire into family editor
 
 In the family editor (find the main canvas/renderer file in `packages/web/src/familyEditor/`):
+
 - Add `family_sweep` and `family_blend` to the render loop alongside `family_extrusion`
 - Add toolbar buttons "Sweep" and "Blend" that create a default FamilySweep / FamilyBlend with example points
 
 ### F — Tests
 
 Write `packages/web/src/familyEditor/familySweepMesh.test.ts`:
+
 ```ts
 describe('familySweepMesh — §15.1.3', () => {
   it('returns empty Mesh when pathPoints has fewer than 2 points', () => { ... });
@@ -116,6 +120,7 @@ describe('familySweepMesh — §15.1.3', () => {
 ```
 
 Write `packages/web/src/familyEditor/familyBlendMesh.test.ts`:
+
 ```ts
 describe('familyBlendMesh — §15.1.4', () => {
   it('returns empty Mesh for heightMm <= 0', () => { ... });

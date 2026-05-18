@@ -6,6 +6,7 @@ You are an orchestrating engineer on the bim-ai repository (`/Users/jhoetter/rep
 bim-ai is a browser-based BIM authoring tool (React + TypeScript + Three.js, Vite, Vitest).
 
 Repo layout (critical paths):
+
 - `packages/web/src/tools/toolRegistry.ts` — ToolId union + TOOL_REGISTRY array
 - `packages/web/src/tools/toolGrammar.ts` — per-tool grammar logic
 - `packages/web/src/plan/moveTool.ts` — existing Move tool (use as reference pattern)
@@ -20,8 +21,9 @@ Repo layout (critical paths):
 - `packages/web/src/clipboard/` — existing clipboard directory (check what exists)
 
 Architecture patterns:
+
 - Semantic commands: `{ type: 'moveElement', elementId, deltaXMm, deltaYMm }` dispatched via `onSemanticCommand`. Study moveTool.ts for exact shape.
-- All tools: add ToolId → toolRegistry.ts, grammar in tools/<name>.ts, renderers in plan/<name>*.ts.
+- All tools: add ToolId → toolRegistry.ts, grammar in tools/<name>.ts, renderers in plan/<name>\*.ts.
 - Tests co-located as `*.test.ts`, run with `pnpm test --filter @bim-ai/web`.
 - Prettier runs automatically after every Edit/Write.
 
@@ -57,11 +59,13 @@ Revit's Scale command resizes one or more selected elements about a defined orig
 Model groups are named collections of elements that can be instanced multiple times (like AutoCAD blocks or Revit groups). This is a substantial feature.
 
 Data model:
+
 - New element type `group_definition`: `{ id, name, elementIds: string[], originXMm, originYMm }` — defines the group geometry relative to its local origin.
 - New element type `group_instance`: `{ id, groupDefinitionId, insertionXMm, insertionYMm, rotationDeg }` — a placed reference to a definition.
 - Store group definitions in the project model alongside regular elements.
 
 Commands needed (implement handlers for all):
+
 - `{ type: 'createGroup', name, elementIds, originXMm, originYMm }` → creates a `group_definition` and converts the source elements into the first `group_instance` at origin offset 0,0.
 - `{ type: 'placeGroup', groupDefinitionId, insertionXMm, insertionYMm, rotationDeg }` → creates a new `group_instance`.
 - `{ type: 'ungroupElements', groupInstanceId }` → explodes the instance into individual unlinked elements at the current insertion position/rotation.
@@ -72,6 +76,7 @@ Commands needed (implement handlers for all):
 Group edit mode: when active, only the elements of the currently edited group definition are shown and editable. All other elements are ghosted. Moving/deleting elements in edit mode modifies the `group_definition.elementIds` and the relative positions of those elements. On `finishEditGroup`, all other instances update to reflect the changes.
 
 UI:
+
 - "Create Group" appears in the selection context when ≥2 elements are selected (toolbar button or right-click menu). Prompts for a group name.
 - Tool `'place-group'` in toolRegistry — activates a picker mode where the user clicks to place group instances. The options bar shows a dropdown of available group definitions.
 - When a `group_instance` is selected: inspector shows group name, rotation, a "Edit Group" button, an "Ungroup" button, and a "Select All Instances" button.
@@ -105,15 +110,18 @@ The ArrayTool already exists in `familyEditor/ArrayTool.test.tsx` context. Bring
 New ToolId: `'array'` (hotkey `AR`)
 
 Linear array:
+
 - Grammar: select elements → activate array → pick start point → pick end point (defines array direction + spacing from element-to-element) → type number of copies → Enter.
 - Emits N copies of each selected element offset by the vector × index.
 - Options bar: "Number" field, "Move To: 2nd / Last" toggle (whether the distance is to the 2nd copy or the last).
 
 Radial array:
+
 - Grammar: select elements → array → switch to Radial in options bar → pick rotation centre → type angle and count → Enter.
 - Emits N copies rotated around the centre.
 
 Both modes:
+
 - Live preview on canvas during input.
 - Result elements are independent (not grouped unless the user also groups).
 - Tests: linear array of 3 columns at 5000mm spacing, verify positions; radial array of 6 windows around a centre.
@@ -149,6 +157,7 @@ Pinning already exists in the inspector. Also expose it as a toolbar shortcut `P
 ## Definition of Done
 
 For each sub-task:
+
 - TypeScript compiles without errors
 - ≥2 unit tests per new module
 - Feature visible and functional in the plan view

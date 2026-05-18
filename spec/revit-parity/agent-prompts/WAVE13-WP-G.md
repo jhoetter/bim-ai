@@ -64,6 +64,7 @@ export type ModelLineElement = {
 Add `'model_line'` to the `Element` union and to `ElemKind`.
 
 Add command type:
+
 ```ts
 export type CreateModelLineCmd = {
   type: 'create_model_line';
@@ -78,6 +79,7 @@ export type CreateModelLineCmd = {
 ### B — Tool registration (4 places)
 
 **`toolRegistry.ts`** — add `'model-line'` to `ToolId` union and to the registry object:
+
 ```ts
 'model-line': {
   id: 'model-line',
@@ -89,11 +91,13 @@ export type CreateModelLineCmd = {
 ```
 
 **`authoringCommandContract.ts`** — add:
+
 ```ts
 'model-line': { kind: 'create', completionBehavior: 'stay-active' },
 ```
 
 **`defaultCommands.ts`** — add:
+
 ```ts
 registerCommand({
   id: 'tool.model-line',
@@ -123,7 +127,7 @@ Read the `detail-line` wiring in `PlanCanvas.tsx` carefully and copy the exact s
 In `planElementMeshBuilders.ts`, add a renderer for `model_line`:
 
 ```ts
-export function modelLinePlanThree(el: Extract<Element, { kind: 'model_line' }>): THREE.Object3D
+export function modelLinePlanThree(el: Extract<Element, { kind: 'model_line' }>): THREE.Object3D;
 ```
 
 - Build a `THREE.LineSegments` from consecutive pairs of `pointsMm` (or a `THREE.Line` from the full array)
@@ -141,7 +145,7 @@ In `meshBuilders.ts` (3D), add a builder for `model_line`:
 export function modelLineThree(
   el: Extract<Element, { kind: 'model_line' }>,
   levelElevationMm: number,
-): THREE.Object3D
+): THREE.Object3D;
 ```
 
 Build a `THREE.LineSegments` placed at Y = `levelElevationMm / PLAN_SCALE` (the level elevation in 3D world space). Each point: `{ x: xMm / PLAN_SCALE, y: levelElevationMm / PLAN_SCALE, z: -yMm / PLAN_SCALE }` (standard bim-ai coordinate transform — verify against how other 3D elements are positioned).
@@ -149,6 +153,7 @@ Build a `THREE.LineSegments` placed at Y = `levelElevationMm / PLAN_SCALE` (the 
 ### F — Tests
 
 Write `packages/web/src/tools/modelLine.test.ts`:
+
 ```ts
 describe('model line grammar — §7.1.1', () => {
   it('idle state, click starts line at first point', () => { ... });
@@ -160,6 +165,7 @@ describe('model line grammar — §7.1.1', () => {
 ```
 
 Write `packages/web/src/plan/modelLinePlan.test.ts`:
+
 ```ts
 describe('modelLinePlanThree — §7.1.1', () => {
   it('returns a THREE.Object3D', () => { ... });
@@ -173,6 +179,7 @@ describe('modelLinePlanThree — §7.1.1', () => {
 ## Commit and push
 
 After tests pass (`pnpm test --filter @bim-ai/web`):
+
 ```
 git add -p
 git commit -m "feat(wave13/G): model lines tool in project environment (§7.1.1)"

@@ -11,6 +11,7 @@ This prompt is self-contained — start here.
 §4.11.3 "Material-Bauelement" (material tag) is Partial P2. A `material-tag` ToolId (hotkey `MT`) is registered with a single-click grammar. The plan renderer draws a material name label. Live layer lookup resolves `wallTypeId → layer[layerIndex].materialKey` when `textOverride` is absent.
 
 What's missing to make this section Done:
+
 - Leader line from tag to target element (like the other element tags)
 - Support for tagging non-wall elements (floor material, ceiling/roof material)
 - Inspector for material_tag element: textOverride input, leader target display, material readout
@@ -30,6 +31,7 @@ packages/web/src/viewport/symbology.ts               — find material tag rende
 ```
 
 Run before editing:
+
 - `grep -n "material_tag\|material-tag\|materialTag" packages/core/src/index.ts | head -10`
 - `grep -n "material_tag\|material-tag" packages/web/src/viewport/symbology.ts | head -10`
 - `grep -n "case 'material_tag'\|case 'placed_tag'" packages/web/src/workspace/inspector/InspectorContent.tsx | head -5`
@@ -47,6 +49,7 @@ Prettier runs automatically. **Always `git pull --rebase origin main` before pus
 ### A — Audit the current material_tag element type
 
 Read the `material_tag` type in `packages/core/src/index.ts`. Confirm it has:
+
 - `id: string`
 - `targetElementId: string`
 - `positionMm: { xMm: number; yMm: number }`
@@ -154,6 +157,7 @@ case 'material_tag': {
 ### E — PlanCanvas placement: set leaderEndMm on click position
 
 In `PlanCanvas.tsx`, find `case 'material-tag':`. Ensure that when a wall/floor element is clicked:
+
 1. The element ID is stored as `targetElementId`
 2. The click world position is stored as `leaderEndMm` (the tag is offset slightly from the click)
 3. The tag `positionMm` is the click point offset by ~500mm diagonally
@@ -187,12 +191,24 @@ describe('Material tag completion — §4.11.3', () => {
   });
 
   it('leaderEndMm is optional', () => {
-    const tag: any = { kind: 'material_tag', id: 'mt1', targetElementId: 'w1', positionMm: { xMm: 0, yMm: 0 }, levelId: 'l1' };
+    const tag: any = {
+      kind: 'material_tag',
+      id: 'mt1',
+      targetElementId: 'w1',
+      positionMm: { xMm: 0, yMm: 0 },
+      levelId: 'l1',
+    };
     expect(tag.leaderEndMm).toBeUndefined();
   });
 
   it('layerIndex defaults to 0', () => {
-    const tag: any = { kind: 'material_tag', id: 'mt1', targetElementId: 'w1', positionMm: { xMm: 0, yMm: 0 }, levelId: 'l1' };
+    const tag: any = {
+      kind: 'material_tag',
+      id: 'mt1',
+      targetElementId: 'w1',
+      positionMm: { xMm: 0, yMm: 0 },
+      levelId: 'l1',
+    };
     expect(tag.layerIndex ?? 0).toBe(0);
   });
 

@@ -38,10 +38,12 @@ Prettier runs automatically after every Edit/Write.
 ### A — Inspector: H/V grid count controls
 
 In the `InspectorContent.tsx` curtain wall section, add editable number inputs:
+
 - `data-testid="inspector-curtain-h-grid-count"` — horizontal grid divisions (integer ≥ 1)
 - `data-testid="inspector-curtain-v-grid-count"` — vertical grid divisions (integer ≥ 1)
 
 On change, dispatch an `update_curtain_grid` command:
+
 ```ts
 { type: 'update_curtain_grid'; wallId: string; hGridCount?: number; vGridCount?: number; }
 ```
@@ -52,6 +54,7 @@ by patching `curtainWallData` on the wall.
 ### B — Inspector: panel type + mullion type dropdowns
 
 Add two `<select>` elements to the curtain wall inspector section:
+
 - `data-testid="inspector-curtain-panel-type"` — options: `'glass'`, `'solid'`, `'empty'`
 - `data-testid="inspector-curtain-mullion-type"` — options: `'rectangular'`, `'circular'`, `'none'`
 

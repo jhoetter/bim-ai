@@ -11,6 +11,7 @@ This prompt is self-contained — start here.
 §9.1.3 "Nichttragende Stützen" is Partial P2. Non-structural decorative columns (pilasters, column casings) can be placed in bim-ai but there is no separate family type or `isStructural` flag to distinguish them from load-bearing columns. In Revit, non-structural columns have a dashed plan symbol and a different category (Architectural Columns vs Structural Columns).
 
 This task adds:
+
 1. `isNonStructural?: boolean` field on the `column` element type
 2. `ToggleColumnStructuralCmd` command type
 3. Workspace handler
@@ -31,6 +32,7 @@ packages/web/src/cmdPalette/defaultCommands.ts          — find modify.* comman
 ```
 
 Run before editing:
+
 - `grep -n "column\|isNonStructural\|isStructural" packages/core/src/index.ts | head -15`
 - `grep -n "columnPlanThree\|column.*plan\|kind.*column" packages/web/src/plan/symbology.ts | head -10`
 - `grep -n "column\|ToggleColumn" packages/web/src/workspace/Workspace.tsx | head -10`
@@ -95,8 +97,8 @@ Find the `columnPlanThree` function (or wherever the column plan symbol is built
 const isNonStruct = (col as any).isNonStructural ?? false;
 if (isNonStruct) {
   // Replace solid fill with dashed rectangle outline
-  const w = ux(widthMm);  // adapt to actual width field name
-  const d = uz(depthMm);  // adapt to actual depth field name
+  const w = ux(widthMm); // adapt to actual width field name
+  const d = uz(depthMm); // adapt to actual depth field name
   const rectPts = [
     new THREE.Vector3(-w / 2, PLAN_Y + 0.001, -d / 2),
     new THREE.Vector3(w / 2, PLAN_Y + 0.001, -d / 2),
@@ -121,19 +123,21 @@ if (isNonStruct) {
 Find where the `column` element inspector is rendered (likely in `InspectorContent.tsx` or similar). Add a checkbox:
 
 ```tsx
-{element.kind === 'column' && (
-  <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11 }}>
-    <input
-      data-testid="inspector-column-non-structural"
-      type="checkbox"
-      checked={(element as any).isNonStructural ?? false}
-      onChange={() =>
-        onSemanticCommand?.({ type: 'toggleColumnStructural', columnId: element.id })
-      }
-    />
-    Non-structural (architectural)
-  </label>
-)}
+{
+  element.kind === 'column' && (
+    <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11 }}>
+      <input
+        data-testid="inspector-column-non-structural"
+        type="checkbox"
+        checked={(element as any).isNonStructural ?? false}
+        onChange={() =>
+          onSemanticCommand?.({ type: 'toggleColumnStructural', columnId: element.id })
+        }
+      />
+      Non-structural (architectural)
+    </label>
+  );
+}
 ```
 
 **Important**: Read the actual inspector code for columns to find the right location. Adapt to the actual prop names.
@@ -191,7 +195,7 @@ describe('Non-structural column — §9.1.3', () => {
 
   it('isNonStructural defaults to false when not set', () => {
     const col: any = { kind: 'column', id: 'col1' };
-    expect((col.isNonStructural ?? false)).toBe(false);
+    expect(col.isNonStructural ?? false).toBe(false);
   });
 
   it('toggle flips isNonStructural', () => {

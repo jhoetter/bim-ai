@@ -43,16 +43,19 @@ The goal is to push stair-by-sketch from "Partial" to "Done" by covering the 3 m
 Ensure the stair-by-sketch grammar supports all 3 sketch modes:
 
 **Straight stair (2-point: start + end)**:
+
 - User clicks start point, then end point
 - Direction = angle from start to end
 - `riserCount` = auto-computed from `totalHeightMm` / `riserHeightMm` (default: level height / 175)
 
 **L-shape stair (3-point: start, corner, end)**:
+
 - User clicks start, then an intermediate corner, then end
 - Angle between segments ≈ 90° → creates `runs: [run1, run2]` with a landing at the corner
 - If angle < 45° or > 135°, treat as straight (connect collinearly)
 
 **U-shape stair (3-point: start, midpoint, end)**:
+
 - User clicks start, mid, end where mid is ~perpendicular to the start-end axis
 - The two runs are parallel, with a landing connecting them at the top of the first run
 
@@ -63,16 +66,17 @@ type StairSketchState =
   | { phase: 'idle' }
   | { phase: 'placing-start' }
   | { phase: 'placing-corner'; startMm: { xMm: number; yMm: number } }
-  | { phase: 'placing-end';
+  | {
+      phase: 'placing-end';
       startMm: { xMm: number; yMm: number };
-      cornerMm: { xMm: number; yMm: number } };
+      cornerMm: { xMm: number; yMm: number };
+    };
 
 // On second click (cornerMm): determine if this is 2-point-done or 3-point mode
 // by checking if user pressed Shift (L-shape intent) or we wait for a 3rd click.
 // Default: wait for 3rd click with a 5s timeout, then commit as straight on timeout.
 
-type StairSketchEffect =
-  | { kind: 'createStair'; stair: Extract<Element, { kind: 'stair' }> }
+type StairSketchEffect = { kind: 'createStair'; stair: Extract<Element, { kind: 'stair' }> };
 ```
 
 ---
@@ -87,7 +91,7 @@ export type StairShape = 'straight' | 'l_shape' | 'u_shape';
 export function classifyStairShape(
   startMm: { xMm: number; yMm: number },
   cornerMm: { xMm: number; yMm: number },
-  endMm: { xMm: number; yMm: number }
+  endMm: { xMm: number; yMm: number },
 ): StairShape {
   // Angle at the corner between the two segments
   const v1 = { xMm: startMm.xMm - cornerMm.xMm, yMm: startMm.yMm - cornerMm.yMm };
@@ -106,7 +110,11 @@ export function classifyStairShape(
 
 export type MultiRunStairConfig = {
   shape: StairShape;
-  runs: { startMm: { xMm: number; yMm: number }; endMm: { xMm: number; yMm: number }; riserCount: number }[];
+  runs: {
+    startMm: { xMm: number; yMm: number };
+    endMm: { xMm: number; yMm: number };
+    riserCount: number;
+  }[];
   landingMm?: { xMm: number; yMm: number }[];
 };
 
@@ -114,7 +122,7 @@ export function buildMultiRunStairConfig(
   startMm: { xMm: number; yMm: number },
   cornerMm: { xMm: number; yMm: number },
   endMm: { xMm: number; yMm: number },
-  totalRiserCount: number
+  totalRiserCount: number,
 ): MultiRunStairConfig {
   const shape = classifyStairShape(startMm, cornerMm, endMm);
   const half = Math.floor(totalRiserCount / 2);
@@ -156,6 +164,7 @@ runs?: Array<{
 If `StairBySketchCanvas.tsx` exists, update it to use `buildMultiRunStairConfig` when 3 points are placed.
 
 If it doesn't exist, or if stair sketch is handled in `toolGrammar.ts` + `PlanCanvas.tsx`, ensure the 3-point sketch path is wired:
+
 - 1st click: `startMm`
 - 2nd click: `cornerMm` (show a preview run to corner)
 - 3rd click: `endMm` → call `buildMultiRunStairConfig`, emit `createStair` with `runs` field set
@@ -165,6 +174,7 @@ If it doesn't exist, or if stair sketch is handled in `toolGrammar.ts` + `PlanCa
 ### E — Preview rendering
 
 In the plan canvas, while in `placing-end` phase, draw a preview:
+
 - Dashed line from `startMm` to `cornerMm` to current cursor
 - Small rectangle at `cornerMm` to indicate landing
 
@@ -175,14 +185,20 @@ In the plan canvas, while in `placing-end` phase, draw a preview:
 Ensure the stair inspector (in `InspectorContent.tsx`, `case 'stair':`) shows:
 
 ```tsx
-{/* Show multi-run shape if runs are defined */}
-{el.runs && el.runs.length > 1 && (
-  <div data-testid="inspector-stair-shape">
-    {el.runs.length === 2 ? 'L-shape / U-shape' : `${el.runs.length}-run`} stair
-  </div>
-)}
-{/* Show run count */}
-<span data-testid="inspector-stair-run-count">{el.runs?.length ?? 1} run(s)</span>
+{
+  /* Show multi-run shape if runs are defined */
+}
+{
+  el.runs && el.runs.length > 1 && (
+    <div data-testid="inspector-stair-shape">
+      {el.runs.length === 2 ? 'L-shape / U-shape' : `${el.runs.length}-run`} stair
+    </div>
+  );
+}
+{
+  /* Show run count */
+}
+<span data-testid="inspector-stair-run-count">{el.runs?.length ?? 1} run(s)</span>;
 ```
 
 ---
@@ -190,6 +206,7 @@ Ensure the stair inspector (in `InspectorContent.tsx`, `case 'stair':`) shows:
 ### G — Tests
 
 `packages/web/src/plan/stairMultiRunDetector.test.ts` (create or extend):
+
 ```ts
 describe('classifyStairShape — §8.6.3', () => {
   it('classifies collinear 3 points as straight', () => { ... });
@@ -206,6 +223,7 @@ describe('buildMultiRunStairConfig — §8.6.3', () => {
 ```
 
 `packages/web/src/plan/stairBySketch.test.ts`:
+
 ```ts
 describe('stair by sketch grammar — §8.6.3', () => {
   it('two clicks creates straight stair', () => { ... });

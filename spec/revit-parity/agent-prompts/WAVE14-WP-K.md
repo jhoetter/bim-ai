@@ -56,6 +56,7 @@ if ((key === 'c' || key === 'C') && (e.metaKey || e.ctrlKey) && e.shiftKey) {
 Wait — the actual pattern is a two-key chord `CS` (press C then S). Read how other chords are handled in `PlanCanvas.tsx` (e.g. `PN` for pin). Use the same chord mechanism.
 
 The chord `CS` should:
+
 1. Read the first selected element ID.
 2. Call `createSimilarPayload(element)` from `createSimilar.ts`.
 3. Dispatch the resulting command to add a new element of the same kind.
@@ -108,6 +109,7 @@ export function equalizeWitnessSpacing(
 In `Workspace.tsx`, in the `toggle_dim_eq` handler:
 
 When toggling `eqEnabled` to `true`:
+
 1. Get the current `witnessPointsMm` from the dimension element.
 2. Call `equalizeWitnessSpacing(witnessPointsMm)`.
 3. Update the dimension element with the new `witnessPointsMm` (in addition to setting `eqEnabled: true`).
@@ -117,6 +119,7 @@ This ensures the dimension markers are visually equalized when EQ is activated. 
 ### E — Tests
 
 `packages/web/src/plan/createSimilarShortcut.test.ts`:
+
 ```ts
 describe('create similar shortcut — §3.3.9', () => {
   it('createSimilarPayload returns command for wall element', () => { ... });
@@ -126,6 +129,7 @@ describe('create similar shortcut — §3.3.9', () => {
 ```
 
 `packages/web/src/plan/equalizeWitnessSpacing.test.ts`:
+
 ```ts
 describe('EQ dimension enforcement — §4.2.3', () => {
   it('equalizes 3 points to equal spacing', () => { ... });
@@ -141,6 +145,7 @@ describe('EQ dimension enforcement — §4.2.3', () => {
 ## Commit and push
 
 After tests pass (`pnpm test --filter @bim-ai/web`):
+
 ```
 git add -p
 git commit -m "feat(wave14/K): create similar CS chord + EQ dimension spacing enforcement (§3.3.9 + §4.2.3)"

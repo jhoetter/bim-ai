@@ -40,6 +40,7 @@ Read these before writing anything:
 In `InspectorContent.tsx`, in the wall inspector section (`el.kind === 'wall'`), add:
 
 **Top Constraint Level** (`data-testid="inspector-wall-top-level"`):
+
 - `<select>` with options:
   - "Unconnected" (value `""`) → dispatches `topConstraintLevelId = null`
   - One `<option>` per level element in `elementsById`, sorted by `elevationMm` ascending, showing level name
@@ -47,6 +48,7 @@ In `InspectorContent.tsx`, in the wall inspector section (`el.kind === 'wall'`),
 - On change: dispatch `update_element_property` with key `topConstraintLevelId`, value = selected level id or null
 
 **Top Offset** (`data-testid="inspector-wall-top-offset"`):
+
 - Number input (mm), step 1, range -10000 to 10000
 - Current value: `el.topConstraintOffsetMm ?? 0`
 - On change: dispatch `update_element_property` with key `topConstraintOffsetMm`
@@ -55,6 +57,7 @@ In `InspectorContent.tsx`, in the wall inspector section (`el.kind === 'wall'`),
 ### B — Column top constraint inspector inputs
 
 In `InspectorContent.tsx`, in the column inspector section (`el.kind === 'column'`), add the same two inputs:
+
 - `data-testid="inspector-column-top-level"` — level select
 - `data-testid="inspector-column-top-offset"` — offset number input
 
@@ -63,6 +66,7 @@ Check the column element's exact field names in `core/index.ts` first — they m
 ### C — 3D visual effect
 
 In `Workspace.tsx` (or wherever wall height is computed for the mesh builder), when `topConstraintLevelId` is set:
+
 - Resolve the target level elevation: `elementsById[topConstraintLevelId]?.elevationMm ?? null`
 - If resolved: pass the effective top elevation to `makeWallMesh` as `heightM` override:
   `(targetElevMm + (topConstraintOffsetMm ?? 0) - wall.baseMm) / 1000`
@@ -74,6 +78,7 @@ This is a read-path change — it should not require new commands.
 ### D — Tests
 
 Write `packages/web/src/workspace/inspector/topConstraintInspector.test.tsx`:
+
 ```ts
 describe('top constraint level inspector — §2.6.2', () => {
   it('renders inspector-wall-top-level select for wall elements', () => { ... });
@@ -87,6 +92,7 @@ describe('top constraint level inspector — §2.6.2', () => {
 ```
 
 Write `packages/web/src/viewport/topConstraintMesh.test.ts`:
+
 ```ts
 describe('top constraint height resolution — §2.6.2', () => {
   it('wall with topConstraintLevelId uses level elevation as mesh height', () => { ... });

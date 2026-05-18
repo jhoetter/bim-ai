@@ -32,6 +32,7 @@ Prettier runs automatically. **Always `git pull --rebase origin main` before pus
 4. The `tool.terrain-pad` ToolId may or may not be in `toolRegistry.ts` — check.
 
 **What is MISSING:**
+
 - A polygon-sketch grammar in `toolGrammar.ts` for placing `terrain-pad`.
 - PlanCanvas.tsx wiring for the `'terrain-pad'` tool.
 - A 3D mesh builder for the terrain pad (flattened surface in 3D).
@@ -120,13 +121,16 @@ In `InspectorContent.tsx`, find or add the case for `kind === 'toposolid_pad'`. 
 ```tsx
 <CollapsibleSection title="Terrain Pad" data-testid="inspector-terrain-pad">
   <label>Elevation (mm)</label>
-  <input type="number" data-testid="inspector-terrain-pad-elevation"
+  <input
+    type="number"
+    data-testid="inspector-terrain-pad-elevation"
     value={el.elevationMm}
-    onChange={(e) => onPropertyChange('elevationMm', +e.currentTarget.value)} />
+    onChange={(e) => onPropertyChange('elevationMm', +e.currentTarget.value)}
+  />
   <label>Boundary Points</label>
   <span data-testid="inspector-terrain-pad-point-count">{el.boundaryMm.length} pts</span>
   <label>Parent Toposolid</label>
-  <span data-testid="inspector-terrain-pad-toposolid">{el.toposolidId?.slice(0,8) ?? '—'}</span>
+  <span data-testid="inspector-terrain-pad-toposolid">{el.toposolidId?.slice(0, 8) ?? '—'}</span>
 </CollapsibleSection>
 ```
 
@@ -135,6 +139,7 @@ In `InspectorContent.tsx`, find or add the case for `kind === 'toposolid_pad'`. 
 ### F — Tests
 
 `packages/web/src/plan/terrainPad.test.ts`:
+
 ```ts
 describe('terrain pad — §5.1.4', () => {
   it('grammar starts in idle state', () => { ... });
@@ -146,6 +151,7 @@ describe('terrain pad — §5.1.4', () => {
 ```
 
 `packages/web/src/viewport/meshBuilders.terrainPad.test.ts`:
+
 ```ts
 describe('buildTerrainPadMesh — §5.1.4', () => {
   it('returns empty Mesh when fewer than 3 boundary points', () => { ... });

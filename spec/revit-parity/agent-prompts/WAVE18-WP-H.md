@@ -62,12 +62,12 @@ export function autoDimensionWalls(
   const dims: PermanentDim[] = [];
 
   // Group walls by rough angle (horizontal vs vertical)
-  const horizontal = walls.filter(w => {
+  const horizontal = walls.filter((w) => {
     const dx = (w as any).endMm?.xMm - (w as any).startMm?.xMm ?? 0;
     const dy = (w as any).endMm?.yMm - (w as any).startMm?.yMm ?? 0;
     return Math.abs(dx) > Math.abs(dy);
   });
-  const vertical = walls.filter(w => !horizontal.includes(w));
+  const vertical = walls.filter((w) => !horizontal.includes(w));
 
   // Horizontal walls → dimension from leftmost to rightmost endpoint
   if (horizontal.length >= 1) {
@@ -84,7 +84,7 @@ export function autoDimensionWalls(
       dims.push({
         kind: 'permanent_dimension',
         id: crypto.randomUUID(),
-        witnessPointsMm: sorted.map(p => ({ xMm: p.xMm, yMm: avgY })),
+        witnessPointsMm: sorted.map((p) => ({ xMm: p.xMm, yMm: avgY })),
         offsetMm: { xMm: 0, yMm: -offsetMm },
         eqEnabled: false,
       } as PermanentDim);
@@ -106,7 +106,7 @@ export function autoDimensionWalls(
       dims.push({
         kind: 'permanent_dimension',
         id: crypto.randomUUID(),
-        witnessPointsMm: sorted.map(p => ({ xMm: avgX, yMm: p.yMm })),
+        witnessPointsMm: sorted.map((p) => ({ xMm: avgX, yMm: p.yMm })),
         offsetMm: { xMm: -offsetMm, yMm: 0 },
         eqEnabled: false,
       } as PermanentDim);
@@ -120,10 +120,7 @@ export function autoDimensionWalls(
  * Auto-dimensions selected elements: walls, columns, openings.
  * Returns new permanent_dimension elements to add to the model.
  */
-export function autoDimensionElements(
-  elements: Element[],
-  offsetMm = 1000,
-): PermanentDim[] {
+export function autoDimensionElements(elements: Element[], offsetMm = 1000): PermanentDim[] {
   const walls = elements.filter((e): e is Extract<Element, { kind: 'wall' }> => e.kind === 'wall');
   return autoDimensionWalls(walls, offsetMm);
 }
@@ -134,6 +131,7 @@ export function autoDimensionElements(
 ### B — Palette command + `Workspace.tsx` handler
 
 In `defaultCommands.ts`, add (or update if exists):
+
 ```ts
 { id: 'annotate.auto-dimension', label: 'Auto-Dimension Walls',
   keywords: ['auto', 'dimension', 'walls', 'annotate'],
@@ -151,6 +149,7 @@ In `defaultCommands.ts`, add (or update if exists):
 ```
 
 In `commandCapabilities.ts`:
+
 ```ts
 { id: 'annotate.auto-dimension', scope: 'document', intendedModes: ['plan'], precondition: null },
 ```

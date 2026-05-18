@@ -42,15 +42,18 @@ Read ALL of these before writing anything:
 In `Workspace.tsx`, add handlers for three new commands:
 
 **`hide_in_view`** `{ type: 'hide_in_view'; viewId: string; elementIds: string[] }`:
+
 - Find the `plan_view` element with `id === viewId`
 - Set `hiddenElementIds` to `[...(existing ?? []), ...elementIds]` (deduplicated with `Set`)
 - Write the updated element back to `elementsById`
 
 **`isolate_in_view`** `{ type: 'isolate_in_view'; viewId: string; elementIds: string[] }`:
+
 - Set `hiddenElementIds` on the plan_view to all element IDs currently in elementsById that are NOT in `elementIds` and are not `plan_view`/`level`/`grid` kind
 - This means everything else is hidden; the given elements are visible
 
 **`reset_hidden_in_view`** `{ type: 'reset_hidden_in_view'; viewId: string }`:
+
 - Set `hiddenElementIds` to `[]` on the matching plan_view
 
 ### B — Palette commands
@@ -135,6 +138,7 @@ Use existing Tailwind colour tokens (`warning`, `warning-foreground`) or `bg-amb
 ### E — Tests
 
 Write `packages/web/src/workspace/hideInView.test.ts`:
+
 ```ts
 describe('hide / isolate / reset in view — §1.6.10', () => {
   it('hide_in_view appends element IDs to hiddenElementIds', () => { ... });
@@ -151,6 +155,7 @@ Test the pure command handler logic (not the React component). Extract the handl
 ## Commit and push
 
 After tests pass (`pnpm test --filter @bim-ai/web`):
+
 ```
 git add -p
 git commit -m "feat(wave13/A): hide/isolate elements in plan view (§1.6.10)"

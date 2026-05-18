@@ -57,7 +57,7 @@ interface ElementContextMenuProps {
   'data-testid'?: string;
 }
 
-export function ElementContextMenu(props: ElementContextMenuProps): JSX.Element | null
+export function ElementContextMenu(props: ElementContextMenuProps): JSX.Element | null;
 ```
 
 - Renders a positioned `<ul>` at `anchorX, anchorY` with each item as `<li>`
@@ -75,7 +75,7 @@ export function contextMenuItemsForElement(
   el: Element,
   dispatch: (cmd: Record<string, unknown>) => void,
   extras: { activeLevelId: string; planTool: string },
-): ContextMenuItem[]
+): ContextMenuItem[];
 ```
 
 Per element kind:
@@ -99,12 +99,14 @@ Per element kind:
 ### C — Wire into PlanCanvas
 
 In `PlanCanvas.tsx`, in the `onContextMenu` handler:
+
 - Raycast to find the hit element
 - Build `items = contextMenuItemsForElement(el, dispatch, extras)`
 - Render `<ElementContextMenu open anchorX anchorY items onClose />`
 - Replace the existing `WallContextMenu` with this unified system (or keep both if refactoring is risky — read what exists first)
 
 The context menu should close when:
+
 - An item is clicked
 - Escape is pressed
 - The user clicks elsewhere on the canvas
@@ -112,6 +114,7 @@ The context menu should close when:
 ### D — Tests
 
 Write `packages/web/src/workspace/contextMenuItems.test.ts`:
+
 ```ts
 describe('contextMenuItemsForElement — §1.7.2', () => {
   it('wall returns items including Flip and Split Element', () => { ... });
@@ -124,6 +127,7 @@ describe('contextMenuItemsForElement — §1.7.2', () => {
 ```
 
 Write `packages/web/src/workspace/ElementContextMenu.test.tsx`:
+
 ```ts
 describe('ElementContextMenu — §1.7.2', () => {
   it('renders items with data-testid ctx-item-{label}', () => { ... });
@@ -138,6 +142,7 @@ describe('ElementContextMenu — §1.7.2', () => {
 ## Commit and push
 
 After tests pass (`pnpm test --filter @bim-ai/web`):
+
 ```
 git add -p
 git commit -m "feat(wave10/D): right-click context menu for all element types (§1.7.2)"

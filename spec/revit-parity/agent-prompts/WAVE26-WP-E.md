@@ -23,6 +23,7 @@ packages/web/src/viewport/meshBuilders.ts           — find makeWallMesh / buil
 ```
 
 Run before editing:
+
 - `grep -n "arc_length\|arcLength\|ALD" packages/core/src/index.ts | head -10`
 - `grep -n "arc_length\|arcLength" packages/web/src/viewport/symbology.ts | head -15`
 - `grep -n "profilePoints\|commitWallProfile\|buildProfiledWall" packages/web/src/viewport/meshBuilders.ts | head -10`
@@ -40,6 +41,7 @@ Prettier runs automatically. **Always `git pull --rebase origin main` before pus
 ### A — Read arc_length_dimension element shape
 
 Check `packages/core/src/index.ts` for the `arc_length_dimension` element. It should have:
+
 - `centerMm: { xMm: number; yMm: number }` — center of the arc being dimensioned
 - `radiusMm: number` — radius of the arc
 - `startAngleDeg: number` — start angle
@@ -61,16 +63,21 @@ const dimRadius = (dim.radiusMm + (dim.offsetMm ?? 200)) / 1000;
 const points: THREE.Vector3[] = [];
 for (let i = 0; i <= N; i++) {
   const angle = THREE.MathUtils.degToRad(
-    dim.startAngleDeg + ((dim.endAngleDeg - dim.startAngleDeg) * i) / N
+    dim.startAngleDeg + ((dim.endAngleDeg - dim.startAngleDeg) * i) / N,
   );
-  points.push(new THREE.Vector3(
-    dim.centerMm.xMm / 1000 + Math.cos(angle) * dimRadius,
-    0,
-    dim.centerMm.yMm / 1000 + Math.sin(angle) * dimRadius
-  ));
+  points.push(
+    new THREE.Vector3(
+      dim.centerMm.xMm / 1000 + Math.cos(angle) * dimRadius,
+      0,
+      dim.centerMm.yMm / 1000 + Math.sin(angle) * dimRadius,
+    ),
+  );
 }
 const arcGeom = new THREE.BufferGeometry().setFromPoints(points);
-const arcLine = new THREE.Line(arcGeom, new THREE.LineBasicMaterial({ color: '#0055ff', linewidth: 1 }));
+const arcLine = new THREE.Line(
+  arcGeom,
+  new THREE.LineBasicMaterial({ color: '#0055ff', linewidth: 1 }),
+);
 group.add(arcLine);
 ```
 
@@ -82,8 +89,16 @@ const startAngleRad = THREE.MathUtils.degToRad(dim.startAngleDeg);
 const innerRadius = dim.radiusMm / 1000;
 const outerRadius = dimRadius + 50 / 1000; // 50mm beyond dim arc
 const extStart = new THREE.BufferGeometry().setFromPoints([
-  new THREE.Vector3(dim.centerMm.xMm / 1000 + Math.cos(startAngleRad) * innerRadius, 0, dim.centerMm.yMm / 1000 + Math.sin(startAngleRad) * innerRadius),
-  new THREE.Vector3(dim.centerMm.xMm / 1000 + Math.cos(startAngleRad) * outerRadius, 0, dim.centerMm.yMm / 1000 + Math.sin(startAngleRad) * outerRadius),
+  new THREE.Vector3(
+    dim.centerMm.xMm / 1000 + Math.cos(startAngleRad) * innerRadius,
+    0,
+    dim.centerMm.yMm / 1000 + Math.sin(startAngleRad) * innerRadius,
+  ),
+  new THREE.Vector3(
+    dim.centerMm.xMm / 1000 + Math.cos(startAngleRad) * outerRadius,
+    0,
+    dim.centerMm.yMm / 1000 + Math.sin(startAngleRad) * outerRadius,
+  ),
 ]);
 group.add(new THREE.Line(extStart, new THREE.LineBasicMaterial({ color: '#0055ff' })));
 // Same for end angle
@@ -105,10 +120,13 @@ const profilePoints = (wall as any).profilePoints as { xMm: number; yMm: number 
 if (profilePoints && profilePoints.length >= 3) {
   // Use the profile polygon as the extrude shape instead of the default rect
   const profileShape = new THREE.Shape(
-    profilePoints.map((p) => new THREE.Vector2(p.xMm / 1000, p.yMm / 1000))
+    profilePoints.map((p) => new THREE.Vector2(p.xMm / 1000, p.yMm / 1000)),
   );
   // Replace the default wall extrude with a profiled one
-  const profileGeom = new THREE.ExtrudeGeometry(profileShape, { depth: wallLenM, bevelEnabled: false });
+  const profileGeom = new THREE.ExtrudeGeometry(profileShape, {
+    depth: wallLenM,
+    bevelEnabled: false,
+  });
   profileGeom.rotateX(-Math.PI / 2);
   profileGeom.rotateZ(-angleRad);
   profileGeom.translate(wall.start.xMm / 1000, baseY, wall.start.yMm / 1000);
@@ -121,11 +139,13 @@ if (profilePoints && profilePoints.length >= 3) {
 ### D — commandCapabilities.ts entry for arc-length dimension improvement
 
 Check if `annotate.arc-length-dimension` already exists in commandCapabilities.ts:
+
 ```
 grep -n "arc-length\|arcLength" packages/web/src/workspace/commandCapabilities.ts | head -5
 ```
 
 If not present, add:
+
 ```ts
 {
   id: 'annotate.arc-length-dimension',
@@ -158,7 +178,7 @@ describe('Arc length dimension curved renderer — §4.6', () => {
     const startAngleDeg = 0;
     const endAngleDeg = 90;
     const arcLengthMm = (Math.PI * radiusMm * Math.abs(endAngleDeg - startAngleDeg)) / 180;
-    expect(arcLengthMm).toBeCloseTo(Math.PI * 3000 / 2, 0);
+    expect(arcLengthMm).toBeCloseTo((Math.PI * 3000) / 2, 0);
   });
 
   it('dimension arc radius = element radius + offsetMm', () => {
@@ -178,8 +198,8 @@ describe('Arc length dimension curved renderer — §4.6', () => {
     const centerY = 0;
     const radius = 1;
     const angleDeg = 90;
-    const x = centerX + Math.cos(angleDeg * Math.PI / 180) * radius;
-    const y = centerY + Math.sin(angleDeg * Math.PI / 180) * radius;
+    const x = centerX + Math.cos((angleDeg * Math.PI) / 180) * radius;
+    const y = centerY + Math.sin((angleDeg * Math.PI) / 180) * radius;
     expect(x).toBeCloseTo(0, 5);
     expect(y).toBeCloseTo(1, 5);
   });
@@ -190,7 +210,12 @@ describe('Wall edit profile 3D — §3.5.5', () => {
     const wall: any = {
       kind: 'wall',
       id: 'w1',
-      profilePoints: [{ xMm: 0, yMm: 0 }, { xMm: 200, yMm: 0 }, { xMm: 200, yMm: 2800 }, { xMm: 0, yMm: 2800 }],
+      profilePoints: [
+        { xMm: 0, yMm: 0 },
+        { xMm: 200, yMm: 0 },
+        { xMm: 200, yMm: 2800 },
+        { xMm: 0, yMm: 2800 },
+      ],
     };
     expect(wall.profilePoints).toHaveLength(4);
   });

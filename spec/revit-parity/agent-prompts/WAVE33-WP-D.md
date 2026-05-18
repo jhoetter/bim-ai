@@ -14,6 +14,7 @@ Your job is documentation/tracker hygiene for Wave 33. Do not claim implementati
 ## Ownership
 
 Primary write scope:
+
 - `spec/revit-parity/revit2026-parity-tracker.md`
 - Optionally `spec/revit-parity/agent-prompts/WAVE33-README.md` if useful.
 
@@ -22,6 +23,7 @@ Do not edit product code.
 ## Orientation
 
 Run:
+
 - `perl -ne 'if(/^#{3,4} (.*)/){$h=$1;$l=$.;} if(/\\*\\*Status: (Partial|Not Started|N\\/A \\/ Partial)/){print "$l:$h => $&\\n"}' spec/revit-parity/revit2026-parity-tracker.md`
 - `sed -n '70,95p' spec/revit-parity/revit2026-parity-tracker.md`
 - `sed -n '1120,1230p' spec/revit-parity/revit2026-parity-tracker.md`
@@ -44,4 +46,3 @@ Run:
 
 - The tracker has no stale top-gap bullet contradicting a canonical Done/N/A section.
 - §1.6.5 remains truthful: scheduled/in progress if code is not merged, Done only after verified completion.
-

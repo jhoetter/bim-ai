@@ -46,7 +46,8 @@ In `SheetCanvas.tsx`, where each `SheetViewportMmDraft` is rendered, add a scale
   - `data-testid="sheet-viewport-scale-{vp.viewportId}"`
 
 If `vp.label` is non-empty, also render the label text centered above the scale:
-  - `data-testid="sheet-viewport-label-{vp.viewportId}"`
+
+- `data-testid="sheet-viewport-label-{vp.viewportId}"`
 
 ### B — Title block: checkedBy and issuedBy fields
 
@@ -61,6 +62,7 @@ export type SheetTitleblockDraft = {
 ```
 
 Add them to `MANAGED_TB_KEYS`. Wire their display in the title block SVG/HTML template — add two rows in the title block rendering area:
+
 - "Checked by: {checkedBy}" — `data-testid="sheet-tb-checked-by"`
 - "Issued by: {issuedBy}" — `data-testid="sheet-tb-issued-by"`
 
@@ -69,6 +71,7 @@ Also resolve these from `project_settings` when not overridden on the sheet: map
 ### C — Scale input in SheetViewportEditor
 
 In `sheetViewportAuthoring.tsx`, in the `SheetViewportEditor` component (read it first), add a scale input field:
+
 - `data-testid="sheet-viewport-scale-input-{viewportId}"` — text input, value = `vp.scale ?? ''`
 - On change: call the existing `onPatchDraft({ scale: value })` or equivalent patch function
 - Placeholder: `"1:100"`
@@ -76,6 +79,7 @@ In `sheetViewportAuthoring.tsx`, in the `SheetViewportEditor` component (read it
 ### D — Tests
 
 Write `packages/web/src/workspace/sheets/sheetViewportScale.test.tsx`:
+
 ```ts
 describe('sheet viewport scale label — §6.2', () => {
   it('renders sheet-viewport-scale-{id} for each viewport', () => { ... });
@@ -86,6 +90,7 @@ describe('sheet viewport scale label — §6.2', () => {
 ```
 
 Write `packages/web/src/workspace/sheets/sheetTitleblockFields.test.tsx`:
+
 ```ts
 describe('title block checkedBy + issuedBy — §6.2', () => {
   it('renders sheet-tb-checked-by element', () => { ... });

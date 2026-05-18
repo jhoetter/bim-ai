@@ -13,6 +13,7 @@ This prompt is self-contained — start here.
 §7.3.3 "Arbeitsebenenraster" is Partial P2. Grid display on the active work plane for snap reference is Not Started. In Revit, a work plane grid (dotted lines at regular intervals) is shown when a non-horizontal work plane is active.
 
 This task adds:
+
 1. `workPlaneNormalDeg?: number` field on the active plan view or a new `work_plane` element type
 2. `setWorkPlaneFace` command — picks a wall/floor face and stores its normal as the active work plane
 3. A "Set Work Plane" dialog / button in the inspector for wall elements
@@ -31,6 +32,7 @@ packages/web/src/workspace/Workspace.tsx                — find setWorkPlane ha
 ```
 
 Run before editing:
+
 - `grep -n "workPlane\|work_plane\|SetWorkPlane\|WorkPlane" packages/core/src/index.ts | head -10`
 - `grep -rn "workPlane\|work_plane\|SetWorkPlane" packages/web/src/workspace/ | head -15`
 - `grep -rn "SetWorkPlane\|workPlane" packages/web/src/ | head -10`
@@ -166,12 +168,16 @@ export function SetWorkPlaneDialog({ elements, onSetWorkPlane, onClose }: Props)
           <option value="">-- Level (horizontal) --</option>
           <optgroup label="Walls">
             {walls.map((w) => (
-              <option key={w.id} value={w.id}>Wall {w.id.slice(0, 8)}</option>
+              <option key={w.id} value={w.id}>
+                Wall {w.id.slice(0, 8)}
+              </option>
             ))}
           </optgroup>
           <optgroup label="Floors">
             {floors.map((f) => (
-              <option key={f.id} value={f.id}>Floor {f.id.slice(0, 8)}</option>
+              <option key={f.id} value={f.id}>
+                Floor {f.id.slice(0, 8)}
+              </option>
             ))}
           </optgroup>
         </select>
@@ -179,12 +185,17 @@ export function SetWorkPlaneDialog({ elements, onSetWorkPlane, onClose }: Props)
       <div style={{ display: 'flex', gap: 8 }}>
         <button
           data-testid="work-plane-confirm-btn"
-          onClick={() => { if (selectedId) onSetWorkPlane(selectedId, name); onClose(); }}
+          onClick={() => {
+            if (selectedId) onSetWorkPlane(selectedId, name);
+            onClose();
+          }}
           style={{ fontSize: 12, padding: '3px 12px' }}
         >
           OK
         </button>
-        <button onClick={onClose} style={{ fontSize: 12, padding: '3px 12px' }}>Cancel</button>
+        <button onClick={onClose} style={{ fontSize: 12, padding: '3px 12px' }}>
+          Cancel
+        </button>
       </div>
     </div>
   );

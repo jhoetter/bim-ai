@@ -13,6 +13,7 @@ This prompt is self-contained — start here.
 In Revit this is "Component" in the Create ribbon of the family editor.
 
 This task adds:
+
 1. `family_component` element type in core
 2. `addFamilyComponent` command
 3. Workspace handler
@@ -32,6 +33,7 @@ packages/web/src/workspace/Workspace.tsx            — find addFamilySweep or a
 ```
 
 Run before editing:
+
 - `grep -n "kind: 'family_" packages/core/src/index.ts | head -20` — see all existing family element kinds
 - `grep -n "addFamily\|family.*Add\|family_swept_blend" packages/web/src/workspace/Workspace.tsx | head -10`
 - `grep -n "family-editor-add\|Add.*Blend\|Add.*Sweep" packages/web/src/familyEditor/FamilyEditorWorkbench.tsx | head -10`

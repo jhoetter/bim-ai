@@ -24,6 +24,7 @@ packages/web/src/export/pdfExporterOptions.test.ts   — existing tests
 ```
 
 Read both files fully before editing. Understand:
+
 - `PaperSize` type in `pdfExporter.ts`
 - `exportSheetsToPdf(sheets, { paperSize, orientation })` signature
 - How `@page { size: ... }` CSS is generated for each paper size
@@ -64,6 +65,7 @@ Use `PAPER_CSS[paperSize]` when building the `@page` rule. If orientation is `'l
 ### C — Add `marginMm` option
 
 In `pdfExporter.ts`, extend the options type to include:
+
 ```ts
 marginMm?: number; // default 10
 ```
@@ -75,6 +77,7 @@ Pass it through from `PrintPlotDialog.tsx` → `exportSheetsToPdf`.
 ### D — Update `PrintPlotDialog.tsx`
 
 1. Add the new sizes to the paper size dropdown:
+
 ```tsx
 <option value="A0">A0 (841×1189mm)</option>
 <option value="A1">A1 (594×841mm)</option>
@@ -86,6 +89,7 @@ Pass it through from `PrintPlotDialog.tsx` → `exportSheetsToPdf`.
 ```
 
 2. Add a margin input (after orientation selector):
+
 ```tsx
 const [marginMm, setMarginMm] = useState(10);
 
@@ -97,9 +101,9 @@ const [marginMm, setMarginMm] = useState(10);
     value={marginMm}
     min={0}
     max={50}
-    onChange={e => setMarginMm(+e.target.value)}
+    onChange={(e) => setMarginMm(+e.target.value)}
   />
-</label>
+</label>;
 ```
 
 3. Pass `marginMm` to all `exportSheetsToPdf` calls.

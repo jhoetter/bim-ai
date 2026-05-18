@@ -72,7 +72,7 @@ export function detectFloorBoundaryFromWalls(
   activeLevelId: string | null,
 ): PointMm[] | null {
   const walls = Object.values(elementsById).filter(
-    el => el?.kind === 'wall' && (activeLevelId == null || (el as any).levelId === activeLevelId)
+    (el) => el?.kind === 'wall' && (activeLevelId == null || (el as any).levelId === activeLevelId),
   );
 
   if (walls.length === 0) return null;
@@ -99,16 +99,19 @@ function convexHull(pts: PointMm[]): PointMm[] {
 
   const lower: PointMm[] = [];
   for (const p of sorted) {
-    while (lower.length >= 2 && cross(lower[lower.length - 2], lower[lower.length - 1], p) <= 0) lower.pop();
+    while (lower.length >= 2 && cross(lower[lower.length - 2], lower[lower.length - 1], p) <= 0)
+      lower.pop();
     lower.push(p);
   }
   const upper: PointMm[] = [];
   for (const p of [...sorted].reverse()) {
-    while (upper.length >= 2 && cross(upper[upper.length - 2], upper[upper.length - 1], p) <= 0) upper.pop();
+    while (upper.length >= 2 && cross(upper[upper.length - 2], upper[upper.length - 1], p) <= 0)
+      upper.pop();
     upper.push(p);
   }
   // Remove last point of each half (it's repeated at the start of the other)
-  lower.pop(); upper.pop();
+  lower.pop();
+  upper.pop();
   return [...lower, ...upper];
 }
 ```
@@ -154,6 +157,7 @@ In `InspectorContent.tsx`, in `case 'floor':`, add an "Edge Profile" collapsible
 ### E — Palette command + capability graph
 
 In `defaultCommands.ts`:
+
 ```ts
 { id: 'tool.floor-auto-detect', label: 'Auto-Detect Floor Boundary',
   keywords: ['floor', 'auto', 'detect', 'boundary', 'wall'],
@@ -161,6 +165,7 @@ In `defaultCommands.ts`:
 ```
 
 In `commandCapabilities.ts`:
+
 ```ts
 { id: 'tool.floor-auto-detect', scope: 'document', intendedModes: ['plan'], precondition: null },
 ```

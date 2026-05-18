@@ -70,6 +70,7 @@ In `meshBuilders.layeredWall.ts` (or equivalent wall mesh builder), update the w
 **Tapered wall** (`topThicknessMm !== baseThicknessMm`): Build a trapezoidal cross-section instead of rectangular. The base thickness = sum of layer thicknesses; the top thickness = `topThicknessMm`. Interpolate layer proportions proportionally.
 
 Implementation hints:
+
 - If the geometry is built as a `THREE.ExtrudeGeometry` or `THREE.BufferGeometry` with explicit vertices, adjust the top vertices after extrusion.
 - Keep the existing rectangular path for the 99% case — only branch when `slopeAngleDeg != null && slopeAngleDeg !== 0` or `topThicknessMm != null`.
 - Do NOT change the plan symbol (plan view always shows base footprint for sloped/tapered walls — same as Revit).
@@ -79,6 +80,7 @@ Implementation hints:
 In the plan symbol renderer (find the wall plan symbol in `planElementMeshBuilders.ts` or `symbology.ts`):
 
 When `wall.slopeAngleDeg != null && wall.slopeAngleDeg !== 0`:
+
 - Draw a small slope-direction arrow on the wall centerline in plan
 - Arrow direction: toward the thinner end (for tapered) or toward the lean direction (for sloped)
 - `userData.slopeIndicator = true` on the arrow mesh so tests can query it
@@ -88,6 +90,7 @@ This is a small enhancement — a single `THREE.ArrowHelper` or simple line is s
 ### E — Tests
 
 Write `packages/web/src/workspace/inspector/slopedWallInspector.test.tsx`:
+
 ```ts
 describe('sloped wall inspector — §3.5.7', () => {
   it('renders inspector-wall-slope-angle input', () => { ... });
@@ -99,6 +102,7 @@ describe('sloped wall inspector — §3.5.7', () => {
 ```
 
 Write `packages/web/src/plan/meshBuilders/slopedWall.test.ts`:
+
 ```ts
 describe('sloped wall mesh — §3.5.7', () => {
   it('plumb wall (slopeAngleDeg=0) produces rectangular cross-section', () => { ... });
@@ -112,6 +116,7 @@ describe('sloped wall mesh — §3.5.7', () => {
 ## Commit and push
 
 After tests pass (`pnpm test --filter @bim-ai/web`):
+
 ```
 git add -p
 git commit -m "feat(wave11/D): sloped + tapered wall inspector + 3D mesh (§3.5.7)"

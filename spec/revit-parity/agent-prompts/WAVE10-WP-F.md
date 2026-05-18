@@ -32,7 +32,7 @@ Read ALL of these before writing anything:
 - `toolRegistry.ts` — find the full `ToolId` union and registry object. Read the pattern: each tool needs an entry in the union AND in the registry object (hotkey, mode, category, surfaces). The `'split-wall'` entry is a good template for a single-click modify tool.
 - `authoringCommandContract.ts` — every ToolId needs an entry here (`kind: 'sketch' | 'place'`, `completionBehavior`). Read 2–3 existing entries to understand the shape.
 - `defaultCommands.ts` — every tool needs a palette entry. Find `tool.split-wall` or similar single-click modify tools and use the same pattern.
-- `core/index.ts` — find `wall`, `floor`, `roof`, `ceiling` element types. Look for any existing `faceMaterialOverrides` or `materialOverride` field. Also read how `WallType` layers reference materials — the paint tool writes to the *element instance* level, not the type.
+- `core/index.ts` — find `wall`, `floor`, `roof`, `ceiling` element types. Look for any existing `faceMaterialOverrides` or `materialOverride` field. Also read how `WallType` layers reference materials — the paint tool writes to the _element instance_ level, not the type.
 - `InspectorContent.tsx` — read an element section (e.g. wall) to understand the dispatch/update_element_property pattern.
 
 ---
@@ -54,7 +54,7 @@ Also add the command type:
 export type PaintFaceCmd = {
   type: 'paint_face';
   elementId: string;
-  faceId: string;        // e.g. 'front' | 'back' | 'top' | 'bottom' | 'left-{i}' etc.
+  faceId: string; // e.g. 'front' | 'back' | 'top' | 'bottom' | 'left-{i}' etc.
   materialId: string | null; // null = remove override (restore to type default)
 };
 ```
@@ -64,6 +64,7 @@ Export `PaintFaceCmd` from the index.
 ### B — Tool registration (4-place rule)
 
 **Place 1 — `toolRegistry.ts`**: Add `'paint'` to the `ToolId` union AND to the registry object:
+
 ```ts
 paint: {
   hotkey: 'PT',
@@ -75,6 +76,7 @@ paint: {
 ```
 
 **Place 2 — `authoringCommandContract.ts`**: Add:
+
 ```ts
 paint: {
   kind: 'sketch',
@@ -83,6 +85,7 @@ paint: {
 ```
 
 **Place 3 — `defaultCommands.ts`**: Add:
+
 ```ts
 registerCommand({
   id: 'tool.paint',
@@ -94,11 +97,13 @@ registerCommand({
 ```
 
 **Place 4 — `toolGrammar.ts`** (if the file has a grammar switch/map): add a `PaintState` with:
+
 - `status: 'idle' | 'active'`
 - `hoveredFaceId: string | null`
 - `hoveredElementId: string | null`
 
 `reducePaint(state, event)`:
+
 - `'activate'` → `{ status: 'active', hoveredFaceId: null, hoveredElementId: null }`
 - `'hover'` with `faceId` + `elementId` → update hovered fields
 - `'click'` with `faceId` + `elementId` + `materialId` → emit `PaintFaceCmd`; stay active
@@ -129,6 +134,7 @@ Read the existing command dispatch pattern in Workspace.tsx before writing — u
 ### D — Active material state
 
 In `store.ts`, add:
+
 ```ts
 activePaintMaterialId: string | null;
 setActivePaintMaterialId: (id: string | null) => void;
@@ -163,6 +169,7 @@ Face Material Overrides
 ### G — Tests
 
 Write `packages/web/src/tools/paintTool.test.ts`:
+
 ```ts
 describe('paint tool grammar — §3.3.4', () => {
   it('activate transitions to active status', () => { ... });
@@ -174,6 +181,7 @@ describe('paint tool grammar — §3.3.4', () => {
 ```
 
 Write `packages/web/src/workspace/inspector/paintFaceInspector.test.tsx`:
+
 ```ts
 describe('face material overrides inspector — §3.3.4', () => {
   it('renders inspector-face-overrides section when overrides exist', () => { ... });
@@ -187,6 +195,7 @@ describe('face material overrides inspector — §3.3.4', () => {
 ## Commit and push
 
 After tests pass (`pnpm test --filter @bim-ai/web`):
+
 ```
 git add -p
 git commit -m "feat(wave10/F): paint tool — face material override (§3.3.4)"

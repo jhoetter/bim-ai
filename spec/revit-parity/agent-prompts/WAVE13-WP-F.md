@@ -41,6 +41,7 @@ Read ALL of these before writing anything:
 ### A — Core type: stair auto-shaft flag
 
 In `core/index.ts`, add to the `stair` element type if NOT already present:
+
 ```ts
 /** When true, a shaft void was auto-created at stair placement time. */
 linkedShaftId?: string | null;
@@ -51,6 +52,7 @@ linkedShaftId?: string | null;
 In `PlanCanvas.tsx`, in the `commitStair` handler (the place where `createStair` is dispatched):
 
 After dispatching `createStair`, compute the stair's bounding box in plan:
+
 ```ts
 // stairBoundaryMm is the polygon boundary from the commit payload
 const xs = stairBoundaryMm.map((p) => p.xMm);
@@ -66,6 +68,7 @@ const shaftBoundary = [
 **Only do this if the user did NOT hold `Shift` during the final stair click** (check `shiftKey` on the triggering event).
 
 Dispatch `create_shaft`:
+
 ```ts
 const shaftId = crypto.randomUUID();
 dispatch({
@@ -121,7 +124,7 @@ import type { Element } from '@bim-ai/core';
 /** Compute the bounding-box shaft boundary from a stair's footprint boundary. */
 export function shaftBoundaryFromStair(
   stair: Extract<Element, { kind: 'stair' }>,
-): { xMm: number; yMm: number }[] | null
+): { xMm: number; yMm: number }[] | null;
 ```
 
 Implementation: find the stair's boundary polygon (look at what fields the stair element has for its footprint), compute min/max X and Y, return a 4-point rectangle. Return null if no boundary data is available.
@@ -129,6 +132,7 @@ Implementation: find the stair's boundary polygon (look at what fields the stair
 ### E — Tests
 
 Write `packages/web/src/plan/stairShaft.test.ts`:
+
 ```ts
 describe('stairShaft — §2.5.3', () => {
   it('shaftBoundaryFromStair returns a 4-point rectangle', () => { ... });
@@ -138,6 +142,7 @@ describe('stairShaft — §2.5.3', () => {
 ```
 
 Write `packages/web/src/workspace/inspector/stairShaftInspector.test.tsx`:
+
 ```ts
 describe('stair shaft inspector — §2.5.3', () => {
   it('renders inspector-stair-create-shaft button when linkedShaftId is null', () => { ... });
@@ -151,6 +156,7 @@ describe('stair shaft inspector — §2.5.3', () => {
 ## Commit and push
 
 After tests pass (`pnpm test --filter @bim-ai/web`):
+
 ```
 git add -p
 git commit -m "feat(wave13/F): auto-create shaft void when placing stair (§2.5.3)"

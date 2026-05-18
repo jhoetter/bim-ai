@@ -85,6 +85,7 @@ Apply the dominant layer's material to the junction fill region.
 ### E — Inspector: priority summary read-out
 
 In `InspectorContent.tsx`, in the `wall_type` inspector section, after the layer list:
+
 - Add a read-only **"Layer Priorities"** summary line: e.g. `"Structure (1) · Substrate (2) · Finish (5)"` — just the sorted unique priorities of all layers.
 - `data-testid="inspector-wall-type-priority-summary"`
 - Only show if any layer has a non-null priority.
@@ -92,6 +93,7 @@ In `InspectorContent.tsx`, in the `wall_type` inspector section, after the layer
 ### F — Tests
 
 Write `packages/web/src/workspace/authoring/wallTypeLayerPriority.test.tsx`:
+
 ```ts
 describe('WallTypeLayerEditor priority column — §2.4.4', () => {
   it('renders layer-priority-0 select for first layer', () => { ... });
@@ -102,6 +104,7 @@ describe('WallTypeLayerEditor priority column — §2.4.4', () => {
 ```
 
 Write `packages/web/src/plan/layerJoinPriority.test.ts`:
+
 ```ts
 describe('material layer join priority — §2.4.4', () => {
   it('priority 1 layer dominates priority 5 layer at junction', () => { ... });
@@ -115,6 +118,7 @@ describe('material layer join priority — §2.4.4', () => {
 ## Commit and push
 
 After tests pass (`pnpm test --filter @bim-ai/web`):
+
 ```
 git add -p
 git commit -m "feat(wave11/E): material layer priority column + join resolution (§2.4.4)"

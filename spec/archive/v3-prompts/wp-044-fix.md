@@ -8,7 +8,7 @@
 
 - spec/v3-prompts/wp-044.md (original spec — re-read end-to-end)
 - packages/web/src/plan/ (plan canvas renderer, especially the wire-mesh rebuild path)
-- packages/web/src/__tests__/brandSwap.test.ts (brand-swap invariant test)
+- packages/web/src/**tests**/brandSwap.test.ts (brand-swap invariant test)
 - packages/web/src/plan/lineWeights.ts (or wherever the weight computation lives)
 
 ## Setup
@@ -33,6 +33,7 @@ Scale 1:500 (plotScale=500):  cutMajor=0.40, cutMinor=0.20, projMajor=null, proj
 ```
 
 Key rules from the spec:
+
 - `witness` is always 0.50 px regardless of scale (hairline, does not scale).
 - At 1:500, `projMajor` and `projMinor` are null (suppressed) — only cut lines show.
 - At 1:500, `cutMajor` is 0.40 (not 0.20 from the continuous formula).
@@ -62,6 +63,7 @@ byte-identical when only `--brand-accent` changes."
 
 In `packages/web/src/__tests__/brandSwap.test.ts`, in the `LAYER_A_REQUIRED` or equivalent
 list, add the line-weight CSS custom properties:
+
 ```
 '--draft-lw-cut-major'
 '--draft-lw-cut-minor'

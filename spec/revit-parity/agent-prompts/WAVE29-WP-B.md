@@ -11,6 +11,7 @@ This prompt is self-contained — start here.
 §6.4.2 "Detailansicht" is Partial P2. bim-ai has `detail_line`, `detail_region`, `detail_component` element types and `detailComponentsRender.ts` renders them into a plan view. What's missing is a dedicated "Detail View" (Drafting View in Revit) — a plan view subtype that contains ONLY 2D detail drafting elements (no 3D model geometry), used for isolated construction details.
 
 This task adds:
+
 1. `planViewSubtype: 'drafting'` value (detail views use `planViewSubtype: 'drafting'`)
 2. `CreateDraftingViewCmd` command type
 3. Workspace handler that creates a `plan_view` with `planViewSubtype: 'drafting'`
@@ -31,6 +32,7 @@ packages/web/src/workspace/project/ProjectBrowser.tsx   — find browser section
 ```
 
 Run before editing:
+
 - `grep -n "planViewSubtype\|callout\|drafting\|detail.*view" packages/core/src/index.ts | head -15`
 - `grep -n "planViewSubtype\|callout\|drafting" packages/web/src/plan/symbology.ts | head -10`
 - `grep -n "planViewSubtype\|createPlanView\|addPlanView" packages/web/src/workspace/Workspace.tsx | head -15`
@@ -105,8 +107,16 @@ const activePlanView = opts.activeViewId ? elementsById[opts.activeViewId] : und
 const isDraftingView = (activePlanView as any)?.planViewSubtype === 'drafting';
 
 // Inside the element loop, wrap 3D model elements:
-if (isDraftingView && (el.kind === 'wall' || el.kind === 'floor' || el.kind === 'room' ||
-    el.kind === 'column' || el.kind === 'stair' || el.kind === 'beam' || el.kind === 'roof')) {
+if (
+  isDraftingView &&
+  (el.kind === 'wall' ||
+    el.kind === 'floor' ||
+    el.kind === 'room' ||
+    el.kind === 'column' ||
+    el.kind === 'stair' ||
+    el.kind === 'beam' ||
+    el.kind === 'roof')
+) {
   continue; // skip 3D model geometry in drafting views
 }
 ```
@@ -118,18 +128,25 @@ if (isDraftingView && (el.kind === 'wall' || el.kind === 'floor' || el.kind === 
 In `ProjectBrowser.tsx`, find where section groups like "Floor Plans", "Sheets", "Sections" are listed. Add a "Drafting Views" section:
 
 ```tsx
-{/* §6.4.2: Drafting Views section */}
-{draftingViews.length > 0 && (
-  <PbCollapsibleSection label="Drafting Views" data-testid="browser-drafting-views-section">
-    {draftingViews.map((pv) => (
-      <div key={pv.id} data-testid={`browser-drafting-view-${pv.id}`}
-           style={{ ...rowStyle, paddingLeft: 24 }}
-           onClick={() => onOpenView?.(pv.id)}>
-        {(pv as any).name ?? pv.id}
-      </div>
-    ))}
-  </PbCollapsibleSection>
-)}
+{
+  /* §6.4.2: Drafting Views section */
+}
+{
+  draftingViews.length > 0 && (
+    <PbCollapsibleSection label="Drafting Views" data-testid="browser-drafting-views-section">
+      {draftingViews.map((pv) => (
+        <div
+          key={pv.id}
+          data-testid={`browser-drafting-view-${pv.id}`}
+          style={{ ...rowStyle, paddingLeft: 24 }}
+          onClick={() => onOpenView?.(pv.id)}
+        >
+          {(pv as any).name ?? pv.id}
+        </div>
+      ))}
+    </PbCollapsibleSection>
+  );
+}
 ```
 
 Where `draftingViews = Object.values(elementsById).filter(e => e.kind === 'plan_view' && (e as any).planViewSubtype === 'drafting')`.
@@ -139,7 +156,9 @@ Also add a "New Drafting View" button somewhere accessible (e.g. in the project 
 ```tsx
 <button
   data-testid="browser-new-drafting-view-btn"
-  onClick={() => onSemanticCommand?.({ type: 'createDraftingView', name: `Detail ${draftingViews.length + 1}` })}
+  onClick={() =>
+    onSemanticCommand?.({ type: 'createDraftingView', name: `Detail ${draftingViews.length + 1}` })
+  }
   style={{ fontSize: 10, padding: '2px 6px', marginLeft: 4 }}
 >
   + Draft

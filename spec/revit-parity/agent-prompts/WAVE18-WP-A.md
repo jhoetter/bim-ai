@@ -158,6 +158,7 @@ In `InspectorContent.tsx`, in `case 'family_extrusion':`, add:
 ### E — `FamilyEditorWorkbench.tsx` additions
 
 Add two buttons to the family editor create panel (if the workbench exists):
+
 - "Add Window Frame" — creates a `family_extrusion` with `frameInnerWidthMm: 50`, `widthMm: 900`, `heightMm: 1200`, `depthMm: 100`
 - "Add Glazing Panel" — creates a `family_extrusion` with `isGlazing: true`, `widthMm: 800`, `heightMm: 1100`
 

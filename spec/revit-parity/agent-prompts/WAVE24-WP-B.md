@@ -21,6 +21,7 @@ packages/web/src/workspace/inspector/InspectorContent.tsx — find case 'stair':
 ```
 
 Run before editing:
+
 - `grep -n "kind: 'stair'" packages/core/src/index.ts | head -5`
 - Read the stair type carefully to understand the `runs` field structure (startMm, endMm, etc.)
 - `grep -n "stair\|Stair" packages/web/src/workspace/Workspace.tsx | grep "if.*cmd.type\|enterStair\|exitStair" | head -10`
@@ -53,6 +54,7 @@ Add `| FlipStairCmd` to the `SemanticCommand` union and export it.
 Find stair-related command handlers. Add a handler for `'flipStair'`:
 
 The handler should:
+
 1. Get the stair element from `elementsById`
 2. Compute the bounding box of all run start/end points
 3. Mirror each run's `startMm`/`endMm` about the bounding box center
@@ -103,27 +105,25 @@ if (cmd.type === 'flipStair') {
 Find `case 'stair':` in the inspector. Add "Flip H" and "Flip V" buttons near the existing stair inspector controls:
 
 ```tsx
-{/* §8.6.4: flip stair buttons */}
+{
+  /* §8.6.4: flip stair buttons */
+}
 <div style={{ display: 'flex', gap: 4, marginTop: 8 }}>
   <button
     data-testid="inspector-stair-flip-h"
     style={{ fontSize: 12 }}
-    onClick={() =>
-      onDispatchCommand?.({ type: 'flipStair', stairId: el.id, axis: 'horizontal' })
-    }
+    onClick={() => onDispatchCommand?.({ type: 'flipStair', stairId: el.id, axis: 'horizontal' })}
   >
     ⇔ Flip H
   </button>
   <button
     data-testid="inspector-stair-flip-v"
     style={{ fontSize: 12 }}
-    onClick={() =>
-      onDispatchCommand?.({ type: 'flipStair', stairId: el.id, axis: 'vertical' })
-    }
+    onClick={() => onDispatchCommand?.({ type: 'flipStair', stairId: el.id, axis: 'vertical' })}
   >
     ⇕ Flip V
   </button>
-</div>
+</div>;
 ```
 
 ### D — commandCapabilities.ts entry

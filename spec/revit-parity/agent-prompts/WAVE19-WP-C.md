@@ -9,10 +9,12 @@ This prompt is self-contained — start here.
 ## Context — what Wave 18 already delivered
 
 Wave 18 WP-D created:
+
 - `packages/web/src/import/ifcLinkImporter.ts` — `createIfcLink()`, `applyIfcLinkOffset()`
 - `packages/web/src/import/ifcLinkImporter.test.ts` — 6 tests (all pass)
 
 **Still missing:**
+
 - `link_ifc` element type in `core/index.ts`
 - Command types: `addIfcLink`, `removeIfcLink`, `toggleIfcLinkVisibility`
 - `ManageLinksDialog.tsx` — IFC Links section with file picker + list
@@ -63,6 +65,7 @@ Add if not present:
 ```
 
 Add command types:
+
 ```ts
 | { type: 'addIfcLink'; element: Extract<Element, { kind: 'link_ifc' }> }
 | { type: 'removeIfcLink'; linkId: string }
@@ -76,7 +79,9 @@ Add command types:
 Add an "IFC Links" section. Read the existing file to understand the layout pattern, then add below the existing bim-ai model links section:
 
 ```tsx
-{/* IFC Links section */}
+{
+  /* IFC Links section */
+}
 <section>
   <h4>IFC Links</h4>
   <input
@@ -85,7 +90,7 @@ Add an "IFC Links" section. Read the existing file to understand the layout patt
     data-testid="link-ifc-file-input"
     style={{ display: 'none' }}
     ref={ifcFileInputRef}
-    onChange={async e => {
+    onChange={async (e) => {
       const file = e.target.files?.[0];
       if (!file) return;
       const content = await file.text();
@@ -93,26 +98,31 @@ Add an "IFC Links" section. Read the existing file to understand the layout patt
       void onSemanticCommand({ type: 'addIfcLink', element: link });
     }}
   />
-  <button data-testid="link-ifc-btn"
-    onClick={() => ifcFileInputRef.current?.click()}>
+  <button data-testid="link-ifc-btn" onClick={() => ifcFileInputRef.current?.click()}>
     Link IFC…
   </button>
   <ul>
-    {ifcLinks.map(link => (
+    {ifcLinks.map((link) => (
       <li key={link.id} data-testid={`link-ifc-row-${link.id}`}>
         <span>{link.name}</span>
-        <input type="checkbox"
+        <input
+          type="checkbox"
           data-testid={`link-ifc-visible-${link.id}`}
           checked={link.visible}
-          onChange={() => void onSemanticCommand({ type: 'toggleIfcLinkVisibility', linkId: link.id })} />
-        <button data-testid={`link-ifc-remove-${link.id}`}
-          onClick={() => void onSemanticCommand({ type: 'removeIfcLink', linkId: link.id })}>
+          onChange={() =>
+            void onSemanticCommand({ type: 'toggleIfcLinkVisibility', linkId: link.id })
+          }
+        />
+        <button
+          data-testid={`link-ifc-remove-${link.id}`}
+          onClick={() => void onSemanticCommand({ type: 'removeIfcLink', linkId: link.id })}
+        >
           Remove
         </button>
       </li>
     ))}
   </ul>
-</section>
+</section>;
 ```
 
 Where `ifcLinks = Object.values(elementsById).filter(e => e?.kind === 'link_ifc')` passed in as prop.
@@ -152,6 +162,7 @@ If `linkedGhosting.ts` exports a function that takes a list of elements, call it
 ### E — `ProjectBrowser.tsx` — Linked IFC subtree
 
 Add a "Linked IFC" group below "Links". The group lists each `link_ifc` element with:
+
 - File name
 - Visibility eye icon
 - Right-click context menu: Remove
@@ -163,6 +174,7 @@ Use `data-testid="browser-linked-ifc-tree"` for the container and `data-testid="
 ### F — Palette command + capability graph
 
 In `defaultCommands.ts`:
+
 ```ts
 { id: 'file.link-ifc', label: 'Link IFC File…',
   keywords: ['link', 'ifc', 'federated', 'import'],
@@ -170,6 +182,7 @@ In `defaultCommands.ts`:
 ```
 
 In `commandCapabilities.ts`:
+
 ```ts
 { id: 'file.link-ifc', scope: 'document', intendedModes: ['plan', '3d'], precondition: null },
 ```

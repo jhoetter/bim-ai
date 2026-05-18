@@ -9,10 +9,12 @@ This prompt is self-contained — start here.
 ## Context
 
 §1.5 "Revit starten" is Partial P2. Templates are already implemented (minimal, residential, commercial) in `packages/web/src/onboarding/projectTemplates.ts`. Still missing:
+
 - No "BIM Architektur vereinfacht" template equivalent (simplified architectural template)
 - No recently-used projects list on the start screen / project chooser
 
 This task adds:
+
 1. A 4th `vereinfacht` template in `projectTemplates.ts` (simplified architectural: 2 levels, EG+OG, standard phases)
 2. `recentProjectIds: string[]` field in the Zustand store (append-on-open, max 10 items)
 3. `OpenRecentProjectCmd` command type
@@ -33,6 +35,7 @@ packages/web/src/workspace/Workspace.tsx               — find command handlers
 ```
 
 Run before editing:
+
 - `grep -n "PROJECT_TEMPLATES\|ProjectTemplate\|vereinfacht\|minimal\|residential\|commercial" packages/web/src/onboarding/projectTemplates.ts | head -20`
 - `grep -n "recentProjectIds\|recentProjects\|quickAccessItems" packages/web/src/state/storeViewportRuntimeSlice.ts | head -10`
 - `grep -n "template-option\|Templates\|PROJECT_TEMPLATES" packages/web/src/workspace/project/ProjectSetupDialog.tsx | head -15`
@@ -108,7 +111,10 @@ In `packages/web/src/workspace/Workspace.tsx`, add:
 ```ts
 if (cmd.type === 'openRecentProject') {
   useBimStore.setState((s: any) => ({
-    recentProjectIds: [cmd.projectId as string, ...(s.recentProjectIds ?? []).filter((x: string) => x !== cmd.projectId)].slice(0, 10),
+    recentProjectIds: [
+      cmd.projectId as string,
+      ...(s.recentProjectIds ?? []).filter((x: string) => x !== cmd.projectId),
+    ].slice(0, 10),
   }));
   return;
 }
@@ -121,20 +127,52 @@ Read the workspace to find where other similar handlers live and insert it there
 In `packages/web/src/workspace/project/ProjectSetupDialog.tsx`, find the Templates section. Add a "Recently Opened" section that reads `recentProjectIds` from the store and renders a small list:
 
 ```tsx
-{/* §1.5: recently opened projects */}
-{recentProjectIds.length > 0 && (
-  <div style={{ marginTop: 16 }}>
-    <h4 style={{ fontSize: 11, fontWeight: 600, marginBottom: 6, color: '#888', textTransform: 'uppercase' }}>Recently Opened</h4>
-    <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: 4 }}>
-      {recentProjectIds.slice(0, 5).map((id: string) => (
-        <li key={id} data-testid={`recent-project-${id}`}
-            style={{ fontSize: 12, padding: '4px 8px', borderRadius: 4, border: '1px solid var(--border, #444)', cursor: 'pointer' }}>
-          {id}
-        </li>
-      ))}
-    </ul>
-  </div>
-)}
+{
+  /* §1.5: recently opened projects */
+}
+{
+  recentProjectIds.length > 0 && (
+    <div style={{ marginTop: 16 }}>
+      <h4
+        style={{
+          fontSize: 11,
+          fontWeight: 600,
+          marginBottom: 6,
+          color: '#888',
+          textTransform: 'uppercase',
+        }}
+      >
+        Recently Opened
+      </h4>
+      <ul
+        style={{
+          listStyle: 'none',
+          padding: 0,
+          margin: 0,
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 4,
+        }}
+      >
+        {recentProjectIds.slice(0, 5).map((id: string) => (
+          <li
+            key={id}
+            data-testid={`recent-project-${id}`}
+            style={{
+              fontSize: 12,
+              padding: '4px 8px',
+              borderRadius: 4,
+              border: '1px solid var(--border, #444)',
+              cursor: 'pointer',
+            }}
+          >
+            {id}
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
 ```
 
 Read the file carefully. Import `useBimStore` if not already present, and read `recentProjectIds` from the store. Adapt to the component's actual pattern (hooks, state, etc.).

@@ -16,9 +16,7 @@ import { fileURLToPath } from 'node:url';
 const MODEL_ID = '9bb9a145-d9ce-5a2f-a748-bb5be3301b30';
 const BASE = 'http://127.0.0.1:2000';
 const DATE_STAMP = new Date().toISOString().slice(0, 10).replace(/-/g, '');
-const OUT_DIR = fileURLToPath(
-  new URL(`../tmp/ux-next-wp45-50-${DATE_STAMP}/`, import.meta.url),
-);
+const OUT_DIR = fileURLToPath(new URL(`../tmp/ux-next-wp45-50-${DATE_STAMP}/`, import.meta.url));
 
 async function shot(page, name, label) {
   const file = `${name}.png`;
@@ -85,7 +83,9 @@ async function goModel(page, hash = '') {
 
   // 01: Plan view — select roof tool (roof-sketch)
   // Click the Roof tool button in the ribbon
-  const roofBtn = page.locator('button[data-command-id="tool.roof"], [data-tool-id="roof"]').first();
+  const roofBtn = page
+    .locator('button[data-command-id="tool.roof"], [data-tool-id="roof"]')
+    .first();
   if (await roofBtn.isVisible({ timeout: 3000 }).catch(() => false)) {
     await roofBtn.click();
     await page.waitForTimeout(600);
@@ -95,7 +95,13 @@ async function goModel(page, hash = '') {
   // 02: Plan view — floor boundary selected (click on a floor element)
   await page.keyboard.press('Escape');
   await page.waitForTimeout(300);
-  screenshots.push(await shot(page, '02-wp45-plan-view-with-model', 'WP-NEXT-45: plan view with floor/wall/roof model'));
+  screenshots.push(
+    await shot(
+      page,
+      '02-wp45-plan-view-with-model',
+      'WP-NEXT-45: plan view with floor/wall/roof model',
+    ),
+  );
 
   // ─── WP-NEXT-46: 3D Direct Authoring Parity ──────────────────────────────
 
@@ -109,12 +115,16 @@ async function goModel(page, hash = '') {
     await threeDBtn.click();
     await page.waitForTimeout(1500);
   }
-  screenshots.push(await shot(page, '03-wp46-3d-view-default', 'WP-NEXT-46: 3D view default state'));
+  screenshots.push(
+    await shot(page, '03-wp46-3d-view-default', 'WP-NEXT-46: 3D view default state'),
+  );
 
   // 3D ribbon with tool commands visible
   const ribbonBar = page.locator('[data-testid="ribbon-bar"], [role="toolbar"]').first();
   if (await ribbonBar.isVisible({ timeout: 3000 }).catch(() => false)) {
-    screenshots.push(await shot(page, '04-wp46-3d-ribbon', 'WP-NEXT-46: 3D ribbon with all model commands'));
+    screenshots.push(
+      await shot(page, '04-wp46-3d-ribbon', 'WP-NEXT-46: 3D ribbon with all model commands'),
+    );
   }
 
   // Try activating wall tool in 3D
@@ -131,7 +141,9 @@ async function goModel(page, hash = '') {
   if (await massBtn.isVisible({ timeout: 2000 }).catch(() => false)) {
     await massBtn.click();
     await page.waitForTimeout(600);
-    screenshots.push(await shot(page, '06-wp46-3d-mass-box-tool', 'WP-NEXT-46: 3D mass-box tool active'));
+    screenshots.push(
+      await shot(page, '06-wp46-3d-mass-box-tool', 'WP-NEXT-46: 3D mass-box tool active'),
+    );
     await page.keyboard.press('Escape');
   }
 
@@ -158,14 +170,26 @@ async function goModel(page, hash = '') {
       await page.waitForTimeout(800);
     }
   }
-  screenshots.push(await shot(page, '07-wp47-plan-selection-modify', 'WP-NEXT-47: plan element selected — modify tab visible'));
+  screenshots.push(
+    await shot(
+      page,
+      '07-wp47-plan-selection-modify',
+      'WP-NEXT-47: plan element selected — modify tab visible',
+    ),
+  );
 
   // Check if contextual Modify tab is visible
   const modifyTab = page.locator('[data-tab-id="modify"], [aria-label*="Modify"]').first();
   if (await modifyTab.isVisible({ timeout: 2000 }).catch(() => false)) {
     await modifyTab.click();
     await page.waitForTimeout(500);
-    screenshots.push(await shot(page, '08-wp47-modify-tab-commands', 'WP-NEXT-47: modify tab with move/copy/rotate/unjoin/attach/detach commands'));
+    screenshots.push(
+      await shot(
+        page,
+        '08-wp47-modify-tab-commands',
+        'WP-NEXT-47: modify tab with move/copy/rotate/unjoin/attach/detach commands',
+      ),
+    );
   }
 
   // ─── WP-NEXT-48: Ribbon Command Matrix ───────────────────────────────────
@@ -175,7 +199,13 @@ async function goModel(page, hash = '') {
   // Deselect and show full plan ribbon
   await page.keyboard.press('Escape');
   await page.waitForTimeout(400);
-  screenshots.push(await shot(page, '09-wp48-plan-ribbon-full', 'WP-NEXT-48: plan view full ribbon — all commands present'));
+  screenshots.push(
+    await shot(
+      page,
+      '09-wp48-plan-ribbon-full',
+      'WP-NEXT-48: plan view full ribbon — all commands present',
+    ),
+  );
 
   // Switch to sheet view
   const sheetTabBtn = page
@@ -199,12 +229,20 @@ async function goModel(page, hash = '') {
 
   // Open Advisor panel to show validation issues
   const advisorBtn = page
-    .locator('[data-command-id="advisor.open"], [aria-label*="Advisor"], [data-testid="advisor-btn"]')
+    .locator(
+      '[data-command-id="advisor.open"], [aria-label*="Advisor"], [data-testid="advisor-btn"]',
+    )
     .first();
   if (await advisorBtn.isVisible({ timeout: 3000 }).catch(() => false)) {
     await advisorBtn.click();
     await page.waitForTimeout(800);
-    screenshots.push(await shot(page, '11-wp49-advisor-panel', 'WP-NEXT-49: advisor panel — structural validation violations channel'));
+    screenshots.push(
+      await shot(
+        page,
+        '11-wp49-advisor-panel',
+        'WP-NEXT-49: advisor panel — structural validation violations channel',
+      ),
+    );
     await page.keyboard.press('Escape');
     await page.waitForTimeout(400);
     // Dismiss advisor backdrop if still visible
@@ -214,7 +252,13 @@ async function goModel(page, hash = '') {
       await page.waitForTimeout(400);
     }
   } else {
-    screenshots.push(await shot(page, '11-wp49-plan-state', 'WP-NEXT-49: plan view — structural validation wired to advisor'));
+    screenshots.push(
+      await shot(
+        page,
+        '11-wp49-plan-state',
+        'WP-NEXT-49: plan view — structural validation wired to advisor',
+      ),
+    );
   }
 
   // ─── WP-NEXT-50: End-to-End Proof ────────────────────────────────────────
@@ -226,30 +270,58 @@ async function goModel(page, hash = '') {
   await page.waitForTimeout(300);
 
   // Full plan screenshot showing the complete model
-  screenshots.push(await shot(page, '12-wp50-plan-full-model', 'WP-NEXT-50: plan view — full structural model (wall/floor/roof/door/window)'));
+  screenshots.push(
+    await shot(
+      page,
+      '12-wp50-plan-full-model',
+      'WP-NEXT-50: plan view — full structural model (wall/floor/roof/door/window)',
+    ),
+  );
 
   // Open Cmd+K and type "roof" to show command availability
   await page.keyboard.press('Meta+k');
   await page.waitForTimeout(600);
-  const cmdkInput = page.locator('input[placeholder*="command"], [data-testid="cmd-k-input"]').first();
+  const cmdkInput = page
+    .locator('input[placeholder*="command"], [data-testid="cmd-k-input"]')
+    .first();
   if (await cmdkInput.isVisible({ timeout: 2000 }).catch(() => false)) {
     await cmdkInput.type('roof');
     await page.waitForTimeout(500);
-    screenshots.push(await shot(page, '13-wp50-cmdk-roof-command', 'WP-NEXT-50: Cmd+K roof command — enabled with Cmd+K parity'));
+    screenshots.push(
+      await shot(
+        page,
+        '13-wp50-cmdk-roof-command',
+        'WP-NEXT-50: Cmd+K roof command — enabled with Cmd+K parity',
+      ),
+    );
     await page.keyboard.press('Escape');
     await page.waitForTimeout(300);
   }
 
   // Final 3D view with model
   const threeDCreateBtn = page
-    .locator('[data-testid="primary-create-3d-view"], [data-mode="3d"], button[aria-label*="3D"]:not([data-testid="primary-create-3d-view"])')
+    .locator(
+      '[data-testid="primary-create-3d-view"], [data-mode="3d"], button[aria-label*="3D"]:not([data-testid="primary-create-3d-view"])',
+    )
     .first();
   if (await threeDCreateBtn.isVisible({ timeout: 2000 }).catch(() => false)) {
     await threeDCreateBtn.click({ timeout: 5000 }).catch(() => {});
     await page.waitForTimeout(2000);
-    screenshots.push(await shot(page, '14-wp50-3d-full-model', 'WP-NEXT-50: 3D view — full structural model rendered'));
+    screenshots.push(
+      await shot(
+        page,
+        '14-wp50-3d-full-model',
+        'WP-NEXT-50: 3D view — full structural model rendered',
+      ),
+    );
   } else {
-    screenshots.push(await shot(page, '14-wp50-plan-final', 'WP-NEXT-50: final plan state — full structural model'));
+    screenshots.push(
+      await shot(
+        page,
+        '14-wp50-plan-final',
+        'WP-NEXT-50: final plan state — full structural model',
+      ),
+    );
   }
 
   // ─── WP-NEXT-48: Section / Sheet / Schedule ribbons ─────────────────────
@@ -285,9 +357,21 @@ async function goModel(page, hash = '') {
   if (await sectionBtn.isVisible({ timeout: 3000 }).catch(() => false)) {
     await sectionBtn.click();
     await page.waitForTimeout(1200);
-    screenshots.push(await shot(page, '15-wp48-section-ribbon', 'WP-NEXT-48: section view ribbon — command matrix complete'));
+    screenshots.push(
+      await shot(
+        page,
+        '15-wp48-section-ribbon',
+        'WP-NEXT-48: section view ribbon — command matrix complete',
+      ),
+    );
   } else {
-    screenshots.push(await shot(page, '15-wp48-section-ribbon-fallback', 'WP-NEXT-48: section view not found — plan ribbon fallback'));
+    screenshots.push(
+      await shot(
+        page,
+        '15-wp48-section-ribbon-fallback',
+        'WP-NEXT-48: section view not found — plan ribbon fallback',
+      ),
+    );
   }
 
   // Sheet view
@@ -299,9 +383,21 @@ async function goModel(page, hash = '') {
   if (await sheetTabBtn48.isVisible({ timeout: 3000 }).catch(() => false)) {
     await sheetTabBtn48.click();
     await page.waitForTimeout(1200);
-    screenshots.push(await shot(page, '16-wp48-sheet-ribbon', 'WP-NEXT-48: sheet view ribbon — command matrix complete'));
+    screenshots.push(
+      await shot(
+        page,
+        '16-wp48-sheet-ribbon',
+        'WP-NEXT-48: sheet view ribbon — command matrix complete',
+      ),
+    );
   } else {
-    screenshots.push(await shot(page, '16-wp48-sheet-ribbon-fallback', 'WP-NEXT-48: sheet tab not found — current ribbon fallback'));
+    screenshots.push(
+      await shot(
+        page,
+        '16-wp48-sheet-ribbon-fallback',
+        'WP-NEXT-48: sheet tab not found — current ribbon fallback',
+      ),
+    );
   }
 
   // Schedule view
@@ -313,9 +409,21 @@ async function goModel(page, hash = '') {
   if (await scheduleTabBtn.isVisible({ timeout: 3000 }).catch(() => false)) {
     await scheduleTabBtn.click();
     await page.waitForTimeout(1200);
-    screenshots.push(await shot(page, '17-wp48-schedule-ribbon', 'WP-NEXT-48: schedule view ribbon — command matrix complete'));
+    screenshots.push(
+      await shot(
+        page,
+        '17-wp48-schedule-ribbon',
+        'WP-NEXT-48: schedule view ribbon — command matrix complete',
+      ),
+    );
   } else {
-    screenshots.push(await shot(page, '17-wp48-schedule-ribbon-fallback', 'WP-NEXT-48: schedule tab not found — current ribbon fallback'));
+    screenshots.push(
+      await shot(
+        page,
+        '17-wp48-schedule-ribbon-fallback',
+        'WP-NEXT-48: schedule tab not found — current ribbon fallback',
+      ),
+    );
   }
 
   // ─── WP-NEXT-50: Invalid workflow / Advisor violations ───────────────────
@@ -344,12 +452,20 @@ async function goModel(page, hash = '') {
 
   // Open Advisor to show structural violations
   const advisorBtn50 = page
-    .locator('[data-command-id="advisor.open"], [aria-label*="Advisor"], [data-testid="advisor-btn"]')
+    .locator(
+      '[data-command-id="advisor.open"], [aria-label*="Advisor"], [data-testid="advisor-btn"]',
+    )
     .first();
   if (await advisorBtn50.isVisible({ timeout: 3000 }).catch(() => false)) {
     await advisorBtn50.click();
     await page.waitForTimeout(800);
-    screenshots.push(await shot(page, '18-wp50-advisor-violations', 'WP-NEXT-50: advisor open — structural violation state'));
+    screenshots.push(
+      await shot(
+        page,
+        '18-wp50-advisor-violations',
+        'WP-NEXT-50: advisor open — structural violation state',
+      ),
+    );
     await page.keyboard.press('Escape');
     await page.waitForTimeout(400);
     // Dismiss any remaining backdrop
@@ -359,7 +475,13 @@ async function goModel(page, hash = '') {
       await page.waitForTimeout(400);
     }
   } else {
-    screenshots.push(await shot(page, '18-wp50-plan-state-final', 'WP-NEXT-50: plan state — advisor not found, fallback plan capture'));
+    screenshots.push(
+      await shot(
+        page,
+        '18-wp50-plan-state-final',
+        'WP-NEXT-50: plan state — advisor not found, fallback plan capture',
+      ),
+    );
   }
 
   await browser.close();
@@ -369,7 +491,14 @@ async function goModel(page, hash = '') {
     capturedAt: new Date().toISOString(),
     url: BASE,
     model: `target-house-3:${MODEL_ID}`,
-    workpackages: ['WP-NEXT-45', 'WP-NEXT-46', 'WP-NEXT-47', 'WP-NEXT-48', 'WP-NEXT-49', 'WP-NEXT-50'],
+    workpackages: [
+      'WP-NEXT-45',
+      'WP-NEXT-46',
+      'WP-NEXT-47',
+      'WP-NEXT-48',
+      'WP-NEXT-49',
+      'WP-NEXT-50',
+    ],
     screenshots,
     mainFrameNavigationsAfterGoto: navigations,
     consoleWarningsAndErrors: consoleMessages,

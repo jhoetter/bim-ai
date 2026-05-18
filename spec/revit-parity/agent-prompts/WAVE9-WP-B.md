@@ -39,6 +39,7 @@ Read ALL of these before writing anything:
 ### A — graphicsOverride field
 
 Add to `wall`, `floor`, `column`, `beam`, `ceiling`, `roof` element types in `core/index.ts`:
+
 ```ts
 graphicsOverride?: {
   /** Override fill color in plan view (hex string, e.g. '#FF0000'). Null = use category default. */
@@ -53,6 +54,7 @@ graphicsOverride?: {
 ### B — Apply override in plan renderer
 
 In `symbology.ts`, for each element type that renders with a fill or line color:
+
 - After computing the default color, check `el.graphicsOverride?.fillColorHex` — if set, use it instead
 - Check `el.graphicsOverride?.lineColorHex` for line/outline materials
 - Pattern: find how `roomFillOverrideHex` is applied and do the same
@@ -60,6 +62,7 @@ In `symbology.ts`, for each element type that renders with a fill or line color:
 ### C — Apply override in 3D renderer
 
 In `meshBuilders.ts` (or whichever mesh builder handles wall/floor/column materials):
+
 - After computing the default material color, check `el.graphicsOverride?.surfaceColorHex`
 - If set: override the `MeshStandardMaterial` color
 
@@ -70,12 +73,14 @@ In `InspectorContent.tsx`, for `el.kind === 'wall'` (and similarly for floor, co
 Add a collapsible "Override Graphics" section below existing properties:
 
 **Fill color** (`data-testid="inspector-override-fill-color"`):
+
 - `<input type="color">` + a "Clear" button
 - Value = `el.graphicsOverride?.fillColorHex ?? '#000000'`
 - On change: dispatch `update_element_property` for `graphicsOverride` (merge with existing override)
 - On clear: dispatch `update_element_property` for `graphicsOverride` with `fillColorHex: null`
 
 **Surface color** (`data-testid="inspector-override-surface-color"`):
+
 - Same pattern for `surfaceColorHex`
 
 Keep the UI minimal: two color pickers + two clear buttons, under a "Graphics Override" label.
@@ -83,16 +88,17 @@ Keep the UI minimal: two color pickers + two clear buttons, under a "Graphics Ov
 ### E — Override utility helper
 
 Create `packages/web/src/plan/graphicsOverride.ts`:
+
 ```ts
 export function resolveElementFillColor(
   defaultHex: string,
   override: { fillColorHex?: string | null } | null | undefined,
-): string
+): string;
 
 export function resolveElementSurfaceColor(
   defaultHex: string,
   override: { surfaceColorHex?: string | null } | null | undefined,
-): string
+): string;
 ```
 
 Both return the override if non-null/non-undefined, else the default.
@@ -100,6 +106,7 @@ Both return the override if non-null/non-undefined, else the default.
 ### F — Tests
 
 Write `packages/web/src/plan/graphicsOverride.test.ts`:
+
 ```ts
 describe('resolveElementFillColor — §2.1.4', () => {
   it('returns default when no override', () => { ... });
@@ -111,6 +118,7 @@ describe('resolveElementFillColor — §2.1.4', () => {
 ```
 
 Write `packages/web/src/workspace/inspector/graphicsOverrideInspector.test.tsx`:
+
 ```ts
 describe('graphics override inspector — §2.1.4', () => {
   it('renders inspector-override-fill-color for wall', () => { ... });
@@ -124,6 +132,7 @@ describe('graphics override inspector — §2.1.4', () => {
 ## Commit and push
 
 After all tasks are done and tests pass (`pnpm test --filter @bim-ai/web`), commit:
+
 ```
 git add -p
 git commit -m "feat(wave9/B): per-element graphics override (color) in plan + 3D (§2.1.4)"

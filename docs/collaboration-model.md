@@ -18,16 +18,16 @@ This is true for every command, including the ones an agent issues over the same
 
 In Revit the central file is the authoritative copy and each contributor edits a local copy that is reconciled at sync time. Several rituals exist to manage that gap: Synchronize with Central, Reload Latest, Save to Central, Relinquish, workset checkout. They all exist because the local copy can drift from the central copy between syncs.
 
-In BIM AI there is no local copy. The canonical state *is* the server's command log, and clients receive every commit as it happens. The gap that those rituals close does not exist:
+In BIM AI there is no local copy. The canonical state _is_ the server's command log, and clients receive every commit as it happens. The gap that those rituals close does not exist:
 
-| Revit ritual                   | BIM AI equivalent                                                                                                     |
-| ------------------------------ | --------------------------------------------------------------------------------------------------------------------- |
-| Synchronize with Central       | No-op. Every command is already on the server before any client sees it.                                              |
-| Reload Latest                  | No-op. Websocket pushes every commit on receipt; latest is always live.                                               |
-| Save to Central                | Implicit. `POST /commands` is the save.                                                                               |
-| Workset checkout / Editable    | Per-command constraint check. The server rejects an edit if it would conflict with model state at commit time.        |
-| Relinquish all mine            | No-op. There is nothing held to relinquish.                                                                           |
-| Detach from central            | `POST /api/projects/:projectId/models` with the existing snapshot — produces a new model with its own command log.    |
+| Revit ritual                | BIM AI equivalent                                                                                                  |
+| --------------------------- | ------------------------------------------------------------------------------------------------------------------ |
+| Synchronize with Central    | No-op. Every command is already on the server before any client sees it.                                           |
+| Reload Latest               | No-op. Websocket pushes every commit on receipt; latest is always live.                                            |
+| Save to Central             | Implicit. `POST /commands` is the save.                                                                            |
+| Workset checkout / Editable | Per-command constraint check. The server rejects an edit if it would conflict with model state at commit time.     |
+| Relinquish all mine         | No-op. There is nothing held to relinquish.                                                                        |
+| Detach from central         | `POST /api/projects/:projectId/models` with the existing snapshot — produces a new model with its own command log. |
 
 ## Conflict resolution happens at commit time
 
@@ -41,9 +41,9 @@ This is strictly stronger than Revit's central-file model:
 
 ## Per-user undo coexists with the shared model
 
-Each user has their own undo stack. `Undo` issues a compensating command on the user's most recent commit that no other user has built on; if a later user has built on it, the undo either rebases (when safe) or is rejected with `undo_blocked_by_dependency`. The shared model state is always the linear command log; per-user undo is a view onto "the most recent thing *I* did that's still safe to reverse", not a parallel branch.
+Each user has their own undo stack. `Undo` issues a compensating command on the user's most recent commit that no other user has built on; if a later user has built on it, the undo either rebases (when safe) or is rejected with `undo_blocked_by_dependency`. The shared model state is always the linear command log; per-user undo is a view onto "the most recent thing _I_ did that's still safe to reverse", not a parallel branch.
 
-## What this does *not* solve
+## What this does _not_ solve
 
 - **Offline editing.** A client without a websocket connection cannot author commands; the model is collaborative-online-only.
 - **Long-running detached work.** If a user wants to spike on a variant without affecting peers, they create a separate model from a snapshot and merge later via a bundle export. There is no built-in "branch" within a single model.
@@ -52,7 +52,7 @@ Each user has their own undo stack. `Undo` issues a compensating command on the 
 ## What a Revit user should know on day one
 
 - There is no Synchronize button. Hitting `Ctrl-S` does nothing; there is nothing to save.
-- There is no central file. The server *is* the central file, and every command is the sync.
+- There is no central file. The server _is_ the central file, and every command is the sync.
 - There are no worksets. If two of you edit the same wall, one of the edits will commit and the other will be rejected; you'll see the conflict immediately, not at sync time.
 - Undo is yours alone. Undoing your own work won't reverse anyone else's.
 

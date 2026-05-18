@@ -23,11 +23,7 @@
       "status": "passed",
       "artifact": "site-context-house.ifc.manifest.json",
       "summary": {
-        "entityKinds": [
-          "IfcSite",
-          "IfcGeographicElement",
-          "IfcBuildingElementProxy"
-        ],
+        "entityKinds": ["IfcSite", "IfcGeographicElement", "IfcBuildingElementProxy"],
         "georeferenceIncluded": true
       }
     },

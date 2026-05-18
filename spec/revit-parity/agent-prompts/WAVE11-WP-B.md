@@ -89,6 +89,7 @@ registerCommand({
 ```
 
 In `Workspace.tsx` (or wherever element dispatch lives):
+
 - Add `tagAllByCategory` to `PaletteContext`
 - When invoked: call `autoTagElements(Object.values(elementsById), activeLevelId)` and dispatch `create_element` (or `batch_create_elements`) for each tag not already present
 - Check by `id` — existing `'auto-tag-${id}'` tags are updated, not duplicated
@@ -96,6 +97,7 @@ In `Workspace.tsx` (or wherever element dispatch lives):
 ### D — Tag rendering: leader line
 
 In `planElementMeshBuilders.ts`, in the tag renderer:
+
 - If `tag.leaderEndMm` is set, draw a thin line from `leaderEndMm` to `positionMm` (leader line)
 - Use `THREE.Line` with a 0.5 px linewidth material (same pattern as dimension lines)
 - Tag text box background: small white rectangle behind the label text sprite
@@ -105,6 +107,7 @@ If a leader line renderer already exists, verify it correctly uses `leaderEndMm`
 ### E — Inspector: tag fields
 
 In `InspectorContent.tsx`, for `el.kind === 'tag'`:
+
 - Show `data-testid="inspector-tag-mark"`: editable text input for `fields.mark`
 - Show `data-testid="inspector-tag-type"`: read-only display of `fields.typeName`
 - Show `data-testid="inspector-tag-target"`: read-only display of `targetElementId` (or the target element's name)
@@ -113,6 +116,7 @@ In `InspectorContent.tsx`, for `el.kind === 'tag'`:
 ### F — Tests
 
 Write `packages/web/src/plan/autoTagElements.test.ts`:
+
 ```ts
 describe('autoTagElements — §4.11.1', () => {
   it('generates a door tag with mark and typeName', () => { ... });
@@ -124,6 +128,7 @@ describe('autoTagElements — §4.11.1', () => {
 ```
 
 Write `packages/web/src/workspace/inspector/tagInspector.test.tsx`:
+
 ```ts
 describe('tag inspector — §4.11.2', () => {
   it('renders inspector-tag-mark input with current mark value', () => { ... });
@@ -137,6 +142,7 @@ describe('tag inspector — §4.11.2', () => {
 ## Commit and push
 
 After tests pass (`pnpm test --filter @bim-ai/web`):
+
 ```
 git add -p
 git commit -m "feat(wave11/B): element auto-tag by category + tag inspector (§4.11.1 + §4.11.2)"

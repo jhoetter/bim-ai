@@ -1,4 +1,5 @@
 # Energy Lens for Cloud-Native BIM Platform
+
 ## Requirements and Implementation Prompt
 
 ## Context
@@ -54,18 +55,18 @@ References checked on 2026-05-14:
 
 The Energy Lens is not a bolt-on. It extends existing platform concepts so Architecture-Lens users and Energy-Lens users work on the same model, same elements, same wall types, and same rooms while seeing different overlays, properties, schedules, and tools.
 
-| Existing concept | Energy Lens extension |
-|---|---|
-| Wall types with layers | Layers gain thermal properties: lambda, rho, c, mu, source reference. U-values become computed type readouts. |
-| Building elements | Elements gain optional thermal classification: exterior wall against outside air, floor against ground, roof against outside air, partition to unheated space, etc. |
-| Rooms/zones | Rooms gain heating status, usage profile, setpoint, ventilation assumptions, and zone membership. |
-| Schedules | New schedule types: Envelope Surfaces, Thermal Materials, U-Value Summary, Windows and Solar Gains, Building Services Handoff. |
-| Sheets | Energy-relevant viewports can be placed on sheets: envelope overview, U-value heatmap, renovation scenario, shading analysis. |
-| Sections | Sections overlay layer thicknesses, lambda values, U-values, thermal bridges, and renovation layer proposals. |
-| 3D Views | Existing saved views remain valid; add color by U-value, color by thermal classification, highlight thermal envelope, and shading-factor overlays. |
-| Sun Studies | Extend existing sun workflows with annual shading-factor data per opening/window for handoff, not final DIN calculation. |
-| Cloud collaboration | Architect and energy consultant work simultaneously. Architectural changes update envelope areas and trigger energy review warnings. |
-| API | Energy data is queryable and exportable for third-party calculation and reporting tools. |
+| Existing concept       | Energy Lens extension                                                                                                                                               |
+| ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Wall types with layers | Layers gain thermal properties: lambda, rho, c, mu, source reference. U-values become computed type readouts.                                                       |
+| Building elements      | Elements gain optional thermal classification: exterior wall against outside air, floor against ground, roof against outside air, partition to unheated space, etc. |
+| Rooms/zones            | Rooms gain heating status, usage profile, setpoint, ventilation assumptions, and zone membership.                                                                   |
+| Schedules              | New schedule types: Envelope Surfaces, Thermal Materials, U-Value Summary, Windows and Solar Gains, Building Services Handoff.                                      |
+| Sheets                 | Energy-relevant viewports can be placed on sheets: envelope overview, U-value heatmap, renovation scenario, shading analysis.                                       |
+| Sections               | Sections overlay layer thicknesses, lambda values, U-values, thermal bridges, and renovation layer proposals.                                                       |
+| 3D Views               | Existing saved views remain valid; add color by U-value, color by thermal classification, highlight thermal envelope, and shading-factor overlays.                  |
+| Sun Studies            | Extend existing sun workflows with annual shading-factor data per opening/window for handoff, not final DIN calculation.                                            |
+| Cloud collaboration    | Architect and energy consultant work simultaneously. Architectural changes update envelope areas and trigger energy review warnings.                                |
+| API                    | Energy data is queryable and exportable for third-party calculation and reporting tools.                                                                            |
 
 ## What This Rules Out
 
@@ -81,9 +82,9 @@ The Energy Lens is not a bolt-on. It extends existing platform concepts so Archi
 
 Extend the existing material concept with optional thermal properties:
 
-- `lambdaWPerMK`: thermal conductivity, W/(m*K)
+- `lambdaWPerMK`: thermal conductivity, W/(m\*K)
 - `rhoKgPerM3`: bulk density, kg/m3
-- `specificHeatJPerKgK`: specific heat capacity, J/(kg*K)
+- `specificHeatJPerKgK`: specific heat capacity, J/(kg\*K)
 - `mu`: water vapor diffusion resistance factor
 - `sourceReference`: DIN 4108-4, DIN EN ISO 10456, manufacturer datasheet, or user-entered reference
 

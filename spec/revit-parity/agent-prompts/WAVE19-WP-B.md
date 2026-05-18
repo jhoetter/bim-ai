@@ -9,10 +9,12 @@ This prompt is self-contained — start here.
 ## Context — what Wave 18 already delivered
 
 Wave 18 WP-C created:
+
 - `packages/web/src/plan/calloutViewGeometryFilter.ts` — `elementOverlapsBoundary()` + `computeCalloutScale()`
 - `packages/web/src/plan/calloutViewGeometryFilter.test.ts` — 6 tests (all pass)
 
 **Still missing:**
+
 - Camera zoom in `PlanCanvas.tsx` to fit `calloutBoundaryMm` on mount
 - Geometry filtering in `symbology.ts` / `rebuildPlanMeshes` to only render elements within boundary
 - Scale label in `PlanViewHeader.tsx` using `computeCalloutScale`
@@ -41,6 +43,7 @@ Prettier runs automatically. **Always `git pull --rebase origin main` before pus
 ### A — Ensure `calloutBoundaryMm` exists on `plan_view` in `core/index.ts`
 
 Add if not present:
+
 ```ts
 calloutBoundaryMm?: { xMm: number; yMm: number; widthMm: number; heightMm: number } | null;
 calloutScaleOverride?: number | null;
@@ -102,11 +105,13 @@ Import `computeCalloutScale` from `calloutViewGeometryFilter`. Add a scale displ
 import { computeCalloutScale } from '../plan/calloutViewGeometryFilter';
 
 // In the PlanViewHeader render, alongside existing badges:
-{activeView?.planViewSubtype === 'callout' && activeView.calloutBoundaryMm && (
-  <span data-testid="callout-computed-scale" style={{ fontSize: 11, opacity: 0.7 }}>
-    1:{computeCalloutScale(activeView.calloutBoundaryMm, 800)}
-  </span>
-)}
+{
+  activeView?.planViewSubtype === 'callout' && activeView.calloutBoundaryMm && (
+    <span data-testid="callout-computed-scale" style={{ fontSize: 11, opacity: 0.7 }}>
+      1:{computeCalloutScale(activeView.calloutBoundaryMm, 800)}
+    </span>
+  );
+}
 ```
 
 (Use a fixed `canvasWidthPx = 800` as a reasonable default since exact canvas width isn't readily available in the header.)

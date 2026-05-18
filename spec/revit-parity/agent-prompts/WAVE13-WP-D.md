@@ -41,6 +41,7 @@ Read ALL of these before writing anything:
 ### A — Core type: columnUsage field
 
 In `core/index.ts`, add to the `column` element type if NOT already present:
+
 ```ts
 /** §9.1.1: whether this column is architectural (decorative) or structural (load-bearing). */
 columnUsage?: 'architectural' | 'structural' | null;
@@ -109,6 +110,7 @@ If the current plan symbol already draws an X for all columns, add a `userData.c
 ### F — Tests
 
 Write `packages/web/src/workspace/inspector/columnUsageInspector.test.tsx`:
+
 ```ts
 describe('column usage inspector — §9.1.1', () => {
   it('renders inspector-column-usage select defaulting to architectural', () => { ... });
@@ -117,6 +119,7 @@ describe('column usage inspector — §9.1.1', () => {
 ```
 
 Write `packages/web/src/viewport/columnMesh.test.ts` (or add to existing column mesh test file if one exists):
+
 ```ts
 describe('makeColumnMesh — columnUsage — §9.1.1', () => {
   it('structural column mesh has userData.columnUsage = structural', () => { ... });
@@ -129,6 +132,7 @@ describe('makeColumnMesh — columnUsage — §9.1.1', () => {
 ## Commit and push
 
 After tests pass (`pnpm test --filter @bim-ai/web`):
+
 ```
 git add -p
 git commit -m "feat(wave13/D): architectural vs structural column distinction (§9.1.1)"

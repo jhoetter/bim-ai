@@ -46,6 +46,7 @@ attach_wall_selected → Escape → IDLE
 The emitted command type is `attach_wall_top` with `{ wallId, hostId }`.
 
 Similarly add `reduceDetach` for the `'detach'` tool:
+
 ```
 IDLE → user clicks a wall → emit DetachWallTopCmd({ wallId }) → IDLE
 ```
@@ -53,17 +54,20 @@ IDLE → user clicks a wall → emit DetachWallTopCmd({ wallId }) → IDLE
 ### B — core/index.ts: command types
 
 Add to the Command union:
+
 ```ts
-type AttachWallTopCmd = { type: 'attach_wall_top'; wallId: string; hostId: string; };
-type DetachWallTopCmd = { type: 'detach_wall_top'; wallId: string; };
+type AttachWallTopCmd = { type: 'attach_wall_top'; wallId: string; hostId: string };
+type DetachWallTopCmd = { type: 'detach_wall_top'; wallId: string };
 ```
 
 ### C — Workspace.tsx: command handlers
 
 In the command switch in `Workspace.tsx`, handle `attach_wall_top`:
+
 - Set `roofAttachmentId: cmd.hostId` on the wall element (via `elementsById` patch)
 
 Handle `detach_wall_top`:
+
 - Set `roofAttachmentId: null` on the wall element
 
 ### D — Tests

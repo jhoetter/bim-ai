@@ -9,11 +9,13 @@ This prompt is self-contained — start here.
 ## Context — what Wave 18 already delivered
 
 Wave 18 WP-B added grammar functions to `toolGrammar.ts`:
+
 - `StairRunState`, `reduceStairRun`, `initialStairRunState`
 - `StairLandingState`, `reduceStairLanding`, `initialStairLandingState`
 - Test file `packages/web/src/plan/stairByComponent.test.ts` (8 tests — all pass)
 
 **Still missing:**
+
 - `stair_run` and `stair_landing` element types in `core/index.ts`
 - Command types for `addStairRun`, `addStairLanding`, `removeStairComponent`
 - `Workspace.tsx` handlers for these commands
@@ -73,6 +75,7 @@ Add if not present:
 ```
 
 Add command types:
+
 ```ts
 | { type: 'addStairRun'; run: Extract<Element, { kind: 'stair_run' }> }
 | { type: 'addStairLanding'; landing: Extract<Element, { kind: 'stair_landing' }> }
@@ -84,10 +87,12 @@ Add command types:
 ### B — Tool registration in `toolRegistry.ts`
 
 Add if not present:
+
 ```ts
 { id: 'stair-run', hotkey: 'SR', label: 'Add Stair Run', mode: 'plan' }
 { id: 'stair-landing', hotkey: 'SL2', label: 'Add Stair Landing', mode: 'plan' }
 ```
+
 (Use `SL2` to avoid collision with existing `SL` hotkey if needed.)
 Add both to `PALETTE_ORDER` near the stair tool.
 
@@ -110,6 +115,7 @@ case 'stair-run': {
 ```
 
 For `stair-landing` (polygon sketch):
+
 ```ts
 case 'stair-landing': {
   const { state: next, effect } = reduceStairLanding(stairLandingState, { kind: 'click', pointMm: planMm, elementId: hoveredId });
@@ -146,6 +152,7 @@ case 'removeStairComponent':
 ### E — Inspector panels in `InspectorContent.tsx`
 
 `case 'stair_run':`:
+
 ```tsx
 case 'stair_run': {
   const el = selectedElement as Extract<Element, { kind: 'stair_run' }>;
@@ -168,6 +175,7 @@ case 'stair_run': {
 ```
 
 `case 'stair_landing':`:
+
 ```tsx
 case 'stair_landing': {
   const el = selectedElement as Extract<Element, { kind: 'stair_landing' }>;
@@ -189,6 +197,7 @@ case 'stair_landing': {
 ### F — Palette commands + capability graph
 
 In `defaultCommands.ts`:
+
 ```ts
 { id: 'tool.stair-run', label: 'Add Stair Run',
   keywords: ['stair', 'run', 'component', 'step'],
@@ -199,6 +208,7 @@ In `defaultCommands.ts`:
 ```
 
 In `commandCapabilities.ts`:
+
 ```ts
 { id: 'tool.stair-run', scope: 'document', intendedModes: ['plan'], precondition: null },
 { id: 'tool.stair-landing', scope: 'document', intendedModes: ['plan'], precondition: null },

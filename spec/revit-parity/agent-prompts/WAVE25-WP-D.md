@@ -9,6 +9,7 @@ This prompt is self-contained — start here.
 ## Context
 
 §1.6.2 "Dateimenü" is Partial. New, Open, Save, Export, Print, and Save As Template all work. What's missing:
+
 - **Save As** — duplicate the current project with a new name
 - **Revert** — discard unsaved changes and reload the last saved state
 
@@ -25,6 +26,7 @@ packages/web/src/cmdPalette/defaultCommands.ts   — find 'file.' commands as pa
 ```
 
 Run before editing:
+
 - `grep -n "file\.save\|file\.open\|saveProject\|revertProject\|duplicateProject\|SaveAs" packages/web/src/workspace/Workspace.tsx | head -15`
 - `grep -n "save\|Save\|Speichern\|revert\|Revert" packages/web/src/workspace/project/ProjectMenu.tsx | head -20`
 - `grep -n "'file\." packages/web/src/cmdPalette/defaultCommands.ts | head -20`
@@ -84,6 +86,7 @@ if (cmd.type === 'duplicateProject') {
 ```
 
 For `revertProject` — reload the last saved state from storage:
+
 ```ts
 if (cmd.type === 'revertProject') {
   const state = useBimStore.getState();

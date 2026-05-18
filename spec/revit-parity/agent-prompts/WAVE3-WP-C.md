@@ -61,6 +61,7 @@ If `wall.parts` is undefined or empty, render the wall normally (no change to ex
 
 In `meshBuilders.ts`, in `buildLayeredWallMesh()` (or whichever function builds the wall solid):
 When `wall.parts` is defined and non-empty, instead of a single mesh for the full wall:
+
 1. Compute `wallLengthM` as the distance between the two wall endpoints in metres.
 2. For each part, build a **BoxGeometry** (or slice of the existing layered geometry) spanning
    `startT * wallLengthM` → `endT * wallLengthM` along the wall's local X axis, with full wall
@@ -106,6 +107,7 @@ store changes — skip if risky; just ensure part selection doesn't break existi
 ## Tests
 
 Add to `packages/web/src/plan/wallPartsRendering.test.ts`:
+
 1. `wallPlanThree()` with 2-part wall returns 2 filled rects with correct x extents (startT/endT)
 2. Part fill colour matches materialId lookup; falls back to `#cccccc` for unknown materialId
 3. Zero-part wall renders exactly as before (regression)
@@ -118,6 +120,7 @@ Add to `packages/web/src/plan/wallPartsRendering.test.ts`:
 Edit `spec/revit-parity/revit2026-parity-tracker.md`:
 
 Update §8.1.3 description — append:
+
 ```
 Per-part plan rendering: each part shaded with `materialId` colour at 40 % opacity.
 Per-part 3D rendering: wall with parts returns a `Group` of BoxGeometry meshes, one per segment.
@@ -127,6 +130,7 @@ Inspector: Parts section shows segment list with material picker and delete. 4 n
 Change status from `Partial — P1` to `Done — P1`.
 
 Remove this line from the P1 gap list (~line 1152):
+
 ```
 - Wall parts / Create Parts (Ch. 8.1.3) — ...
 ```

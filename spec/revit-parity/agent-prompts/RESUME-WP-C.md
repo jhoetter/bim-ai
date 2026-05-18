@@ -24,6 +24,7 @@ packages/core/src/index.ts                            — shared Element types
 ```
 
 Architecture patterns:
+
 - Elements stored as plain objects with a `kind` discriminator (`'stair'`,
   `'ramp'`, `'level'`).
 - Semantic commands dispatched via `onSemanticCommand`: `{ type: 'createRamp', ... }`.
@@ -37,11 +38,11 @@ Architecture patterns:
 
 ## What was done before the crash
 
-| Sub-task | Status | Files |
-|---|---|---|
+| Sub-task                                    | Status      | Files                                                                                                                                                                                      |
+| ------------------------------------------- | ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | C1 Ramp — core type + 3D mesh + plan symbol | **Partial** | `core/index.ts` has ramp kind; `meshBuilders.ramp.ts` + `rampPlanSymbol.ts` + tests exist; `'ramp'` ToolId is in toolRegistry. Grammar/wiring completeness unknown — verify before adding. |
-| C6 copyToLevels command | **Done** | `clipboard/copyToLevels.ts` + tests |
-| C2 Multi-storey stair | **Partial** | `meshBuilders.multiRunStair.ts` has multiStorey support; `meshBuilders.multiStoreyStair.test.ts` exists |
+| C6 copyToLevels command                     | **Done**    | `clipboard/copyToLevels.ts` + tests                                                                                                                                                        |
+| C2 Multi-storey stair                       | **Partial** | `meshBuilders.multiRunStair.ts` has multiStorey support; `meshBuilders.multiStoreyStair.test.ts` exists                                                                                    |
 
 C3, C4, C5, C7 have no visible committed work — assume not started.
 
@@ -50,6 +51,7 @@ C3, C4, C5, C7 have no visible committed work — assume not started.
 ## How to start
 
 **Before writing any code**, run:
+
 ```bash
 git pull --rebase origin main
 pnpm test --filter @bim-ai/web -- ramp
@@ -57,6 +59,7 @@ pnpm test --filter @bim-ai/web -- multiStorey
 ```
 
 Read these files to understand the current state:
+
 - `plan/rampPlanSymbol.ts` — check what plan symbol geometry it produces
 - `viewport/meshBuilders.ramp.ts` — check if the mesh is complete
 - `tools/toolGrammar.ts` — search for `'ramp'` to see if grammar exists
@@ -71,6 +74,7 @@ Then start with the sub-tasks that have the most partial work.
 ### C1 — Ramp Tool: complete the grammar + inspector
 
 Files exist. Verify and complete:
+
 1. Does `tools/toolGrammar.ts` have a ramp grammar? If not, add it:
    - Mode "By Length": click insertion point → click endpoint. Rise = topLevel.elevationMm − baseLevel.elevationMm.
    - Mode "By Sketch": boundary polygon + run line inside it.
@@ -83,6 +87,7 @@ Files exist. Verify and complete:
 ### C2 — Multi-Storey Stair: complete and test
 
 `meshBuilders.multiRunStair.ts` has the logic. Verify and complete:
+
 1. `stair` element has `topLevelId` and `multiStorey: true` fields in `core/index.ts`
 2. Grammar: after first-floor stair is sketched, an "Extend to level?" option
    appears in the options bar. User picks a top level.
@@ -96,6 +101,7 @@ Files exist. Verify and complete:
 ### C3 — Complex Stair Configurations
 
 Audit `StairBySketchCanvas.tsx` and `stairAutobalance.ts`:
+
 1. **L-shape** (2 runs + 90° landing): verify the sketch editor accepts an
    L-shaped boundary and generates correct 3D geometry. The mesh builder must
    handle non-rectangular landings.
@@ -113,6 +119,7 @@ Tests for each: verify no geometry gaps (correct normals, no open mesh edges).
 ### C4 — Attach Top/Base of Walls to Roof or Floor
 
 Not started. Implement:
+
 1. Selection action "Attach Top" (shown when ≥1 wall is selected):
    Step 1 = walls selected; Step 2 = click the roof or floor to attach to.
 2. Semantic command: `{ type: 'attachWallTop', wallId, hostId }`. Handler
@@ -128,6 +135,7 @@ the roof surface.
 ### C5 — Add Multiple Levels
 
 Not started. In `levels/LevelStack.tsx` add:
+
 - "Add Multiple…" button (or right-click context on a level: "Add N Levels Above")
 - Small dialog: count (default 3), spacing (default 3000mm), name prefix (default "Ebene")
 - Dispatches N `createLevel` commands sequentially
@@ -137,6 +145,7 @@ Tests: add 4 levels at 2800mm spacing, verify all 4 created at correct elevation
 ### C6 — Clipboard UI (complete)
 
 `copyToLevels.ts` command is done. Wire the UI:
+
 - `Ctrl+C` on a selection stores element IDs + current level in `clipboardStore`
 - `Ctrl+V` pastes at cursor — check `clipboard/copyPaste.ts` for existing logic
 - "Paste Aligned to Selected Levels" button in the selection toolbar → level
@@ -145,6 +154,7 @@ Tests: add 4 levels at 2800mm spacing, verify all 4 created at correct elevation
 ### C7 — Stair Railing Completeness Pass
 
 Verify and complete:
+
 1. When a stair is created, auto-create `railing` elements for each open side
    with `hostStairId` set to the stair's ID
 2. Stair move → railings move with it; stair delete → railings are also deleted

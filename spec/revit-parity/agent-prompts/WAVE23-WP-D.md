@@ -21,6 +21,7 @@ packages/web/src/workspace/project/projectBrowserCameraViews.test.tsx — existi
 ```
 
 Run:
+
 - `cat packages/web/src/groups/groupTypes.ts` — read GroupDefinition/GroupInstance/GroupRegistry types
 - `grep -n "groupRegistry\|Groups\|groupDef" packages/web/src/workspace/project/ProjectBrowser.tsx | head -20`
 - `grep -n "ProjectBrowserV3\|export function" packages/web/src/workspace/project/ProjectBrowser.tsx | head -10`
@@ -47,8 +48,11 @@ Add a "Groups" section after the existing "Families" or "Links" section (read th
 The section header should use a `data-testid="browser-groups-section"` attribute.
 
 Pattern to follow (adapt to the actual JSX pattern in the file):
+
 ```tsx
-{/* Groups subtree */}
+{
+  /* Groups subtree */
+}
 <div data-testid="browser-groups-section">
   <div
     className="flex items-center gap-1 px-2 py-1 cursor-pointer hover:bg-muted/30 select-none"
@@ -78,16 +82,13 @@ Pattern to follow (adapt to the actual JSX pattern in the file):
         );
       })}
       {Object.keys(groupRegistry.definitions).length === 0 && (
-        <div
-          data-testid="browser-groups-empty"
-          className="px-4 py-1 text-xs text-muted italic"
-        >
+        <div data-testid="browser-groups-empty" className="px-4 py-1 text-xs text-muted italic">
           No groups defined
         </div>
       )}
     </div>
   )}
-</div>
+</div>;
 ```
 
 Add a `const [groupsOpen, setGroupsOpen] = useState(true);` state variable near the other section open states.
@@ -158,13 +159,25 @@ import { ProjectBrowserV3 } from './ProjectBrowser';
 
 const mockGroupRegistry = {
   definitions: {
-    'gd1': { id: 'gd1', name: 'Furniture Group', elementIds: ['e1', 'e2'], originXMm: 0, originYMm: 0 },
-    'gd2': { id: 'gd2', name: 'Structural Frame', elementIds: ['e3'], originXMm: 0, originYMm: 0 },
+    gd1: {
+      id: 'gd1',
+      name: 'Furniture Group',
+      elementIds: ['e1', 'e2'],
+      originXMm: 0,
+      originYMm: 0,
+    },
+    gd2: { id: 'gd2', name: 'Structural Frame', elementIds: ['e3'], originXMm: 0, originYMm: 0 },
   },
   instances: {
-    'gi1': { id: 'gi1', groupDefinitionId: 'gd1', insertionXMm: 0, insertionYMm: 0, rotationDeg: 0 },
-    'gi2': { id: 'gi2', groupDefinitionId: 'gd1', insertionXMm: 1000, insertionYMm: 0, rotationDeg: 0 },
-    'gi3': { id: 'gi3', groupDefinitionId: 'gd2', insertionXMm: 0, insertionYMm: 0, rotationDeg: 0 },
+    gi1: { id: 'gi1', groupDefinitionId: 'gd1', insertionXMm: 0, insertionYMm: 0, rotationDeg: 0 },
+    gi2: {
+      id: 'gi2',
+      groupDefinitionId: 'gd1',
+      insertionXMm: 1000,
+      insertionYMm: 0,
+      rotationDeg: 0,
+    },
+    gi3: { id: 'gi3', groupDefinitionId: 'gd2', insertionXMm: 0, insertionYMm: 0, rotationDeg: 0 },
   },
 };
 

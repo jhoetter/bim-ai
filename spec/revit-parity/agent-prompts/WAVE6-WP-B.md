@@ -40,6 +40,7 @@ Read these files before writing anything:
 ### A — Tool registration (§9.5.1)
 
 In `toolRegistry.ts`, add:
+
 ```ts
 'steel-connection': {
   id: 'steel-connection',
@@ -64,6 +65,7 @@ type SteelConnectionState =
 ```
 
 Events:
+
 - `activate` with `connectionType` optional (default `'end_plate'`) → moves to `pick-host`
 - `click` with `pickedElementId` in `pick-host` → moves to `pick-target` with `hostElementId`
 - `click` with `pickedElementId` in `pick-target` → emits `createSteelConnection` effect,
@@ -78,6 +80,7 @@ Wire into `PlanCanvas.tsx` (follow the same pattern as other structural tools �
 
 In `planElementMeshBuilders.ts` (or `symbology.ts`, whichever has the structural loop), add
 `steelConnectionPlanThree(conn)`:
+
 - A small filled circle (radius ~100 mm = 0.1 m) at the connection point
 - Color: `#cc3333` (red)
 - `userData.bimPickId = conn.id`
@@ -91,6 +94,7 @@ Wire into `symbology.ts` `rebuildPlanMeshes` loop (after braces).
 ### D — Inspector panel
 
 In `InspectorContent.tsx`, detect `el.kind === 'steel_connection'` and render:
+
 - `data-testid="inspector-steel-connection-type"` — `<select>` with `end_plate`, `bolted_flange`, `shear_tab`; on change dispatch `update_element_property` for `connectionType`
 - `data-testid="inspector-steel-plate-width"` — number input for `plateSizeMm.width` (mm), default 150
 - `data-testid="inspector-steel-plate-height"` — number input for `plateSizeMm.height` (mm), default 200
@@ -103,6 +107,7 @@ On change dispatch `update_element_property` for each field.
 ### E — Tests
 
 Write `packages/web/src/viewport/steelConnectionTool.test.ts`:
+
 ```ts
 describe('steel connection grammar — §9.5.1', () => {
   it('activate transitions from idle to pick-host', () => { ... });
@@ -114,6 +119,7 @@ describe('steel connection grammar — §9.5.1', () => {
 ```
 
 Write `packages/web/src/workspace/inspector/steelConnectionInspector.test.tsx`:
+
 ```ts
 describe('steel connection inspector — §9.5.1', () => {
   it('renders connection type select', () => { ... });

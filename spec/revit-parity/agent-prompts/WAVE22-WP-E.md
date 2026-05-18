@@ -25,6 +25,7 @@ packages/web/src/workspace/inspector/InspectorContent.tsx — add inspector case
 ```
 
 Run:
+
 - `grep -n "family_blend\|family_sweep\|FamilyBlend\|FamilySweep" packages/core/src/index.ts | head -15`
 - `find packages/web/src -name "familyBlend*" -o -name "familySweep*"` to find mesh builder files
 - `grep -n "family-blend\|family-sweep" packages/web/src/tools/toolRegistry.ts | head -10`
@@ -109,8 +110,8 @@ export function buildFamilySweptBlendMesh(form: FamilySweptBlend): THREE.Mesh | 
   for (let si = 0; si < N - 1; si++) {
     for (let vi = 0; vi < vCount; vi++) {
       const a = si * vCount + vi;
-      const b = si * vCount + (vi + 1) % vCount;
-      const c = (si + 1) * vCount + (vi + 1) % vCount;
+      const b = si * vCount + ((vi + 1) % vCount);
+      const c = (si + 1) * vCount + ((vi + 1) % vCount);
       const d = (si + 1) * vCount + vi;
       indices.push(a, b, d, b, c, d);
     }
@@ -173,7 +174,9 @@ export function reduceFamilySweptBlend(
     case 'recording-path':
       if (event.kind === 'cancel') return { next: { phase: 'idle' } };
       if (event.kind === 'click')
-        return { next: { ...state, points: [...state.points, { xMm: event.xMm, yMm: event.yMm }] } };
+        return {
+          next: { ...state, points: [...state.points, { xMm: event.xMm, yMm: event.yMm }] },
+        };
       if (event.kind === 'confirm' && state.points.length >= 2)
         return {
           next: { phase: 'idle' },
@@ -268,41 +271,61 @@ const path = [
 
 describe('buildFamilySweptBlendMesh — §15.1.2', () => {
   it('returns null for path with fewer than 2 points', () => {
-    expect(buildFamilySweptBlendMesh({
-      id: 'f1', kind: 'family_swept_blend',
-      startProfileMm: squareProfile, endProfileMm: smallSquare,
-      pathMm: [{ xMm: 0, yMm: 0 }],
-    })).toBeNull();
+    expect(
+      buildFamilySweptBlendMesh({
+        id: 'f1',
+        kind: 'family_swept_blend',
+        startProfileMm: squareProfile,
+        endProfileMm: smallSquare,
+        pathMm: [{ xMm: 0, yMm: 0 }],
+      }),
+    ).toBeNull();
   });
 
   it('returns null for start profile with fewer than 3 points', () => {
-    expect(buildFamilySweptBlendMesh({
-      id: 'f1', kind: 'family_swept_blend',
-      startProfileMm: [{ xMm: 0, yMm: 0 }, { xMm: 100, yMm: 0 }],
-      endProfileMm: smallSquare, pathMm: path,
-    })).toBeNull();
+    expect(
+      buildFamilySweptBlendMesh({
+        id: 'f1',
+        kind: 'family_swept_blend',
+        startProfileMm: [
+          { xMm: 0, yMm: 0 },
+          { xMm: 100, yMm: 0 },
+        ],
+        endProfileMm: smallSquare,
+        pathMm: path,
+      }),
+    ).toBeNull();
   });
 
   it('returns a THREE.Mesh for valid input', () => {
     const mesh = buildFamilySweptBlendMesh({
-      id: 'f1', kind: 'family_swept_blend',
-      startProfileMm: squareProfile, endProfileMm: smallSquare, pathMm: path,
+      id: 'f1',
+      kind: 'family_swept_blend',
+      startProfileMm: squareProfile,
+      endProfileMm: smallSquare,
+      pathMm: path,
     });
     expect(mesh).toBeInstanceOf(THREE.Mesh);
   });
 
   it('mesh has geometry with vertices', () => {
     const mesh = buildFamilySweptBlendMesh({
-      id: 'f1', kind: 'family_swept_blend',
-      startProfileMm: squareProfile, endProfileMm: smallSquare, pathMm: path,
+      id: 'f1',
+      kind: 'family_swept_blend',
+      startProfileMm: squareProfile,
+      endProfileMm: smallSquare,
+      pathMm: path,
     });
     expect(mesh?.geometry.attributes.position.count).toBeGreaterThan(0);
   });
 
   it('mesh has indices', () => {
     const mesh = buildFamilySweptBlendMesh({
-      id: 'f1', kind: 'family_swept_blend',
-      startProfileMm: squareProfile, endProfileMm: smallSquare, pathMm: path,
+      id: 'f1',
+      kind: 'family_swept_blend',
+      startProfileMm: squareProfile,
+      endProfileMm: smallSquare,
+      pathMm: path,
     });
     expect(mesh?.geometry.index?.count).toBeGreaterThan(0);
   });
@@ -333,7 +356,13 @@ describe('reduceFamilySweptBlend grammar — §15.1.2', () => {
   });
 
   it('emits effect on confirm with 2+ points', () => {
-    const state: any = { phase: 'recording-path', points: [{ xMm: 0, yMm: 0 }, { xMm: 100, yMm: 0 }] };
+    const state: any = {
+      phase: 'recording-path',
+      points: [
+        { xMm: 0, yMm: 0 },
+        { xMm: 100, yMm: 0 },
+      ],
+    };
     const { effect } = reduceFamilySweptBlend(state, { kind: 'confirm' });
     expect(effect?.kind).toBe('createFamilySweptBlend');
   });

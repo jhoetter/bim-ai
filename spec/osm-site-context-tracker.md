@@ -53,6 +53,7 @@ At residential scales (< 1 km) the equirectangular approximation is accurate to 
 well within neighbourhood context tolerance.
 
 Building extrusion height (zMm):
+
 - `height` OSM tag (metres) × 1000 → mm
 - else `building:levels` × 3000 mm per floor
 - else default 9000 mm (3-storey fallback)
@@ -87,18 +88,18 @@ Missing for this feature:
 
 ## Workpackages
 
-| ID         | Status  | Goal                                                                                                      | Primary files                                                    | Required verification                                                    |
-| ---------- | ------- | --------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------- | ------------------------------------------------------------------------ |
-| OSM-WP-001 | Done    | Create this tracker.                                                                                      | `spec/osm-site-context-tracker.md`                               | Markdown review, `git diff --check`                                      |
-| OSM-WP-002 | Done    | Extend `project_settings` schema with optional lat/lon anchor and context radius.                         | `packages/core/src/index.ts`, `app/bim_ai/elements.py`, `engine_dispatch_properties.py` | TypeScript compile clean; Python tests pass                |
-| OSM-WP-003 | Done    | Add Overpass API fetch utility and caching layer (browser-side).                                          | `packages/web/src/osm/fetchOverpass.ts`                          | TypeScript compile clean                                                 |
-| OSM-WP-004 | Done    | Add WGS84 → local mm projection utility and inverse (mm → lat/lon).                                      | `packages/web/src/osm/project.ts`                                | TypeScript compile clean                                                 |
-| OSM-WP-005 | Done    | Build Three.js geometry for each OSM layer (buildings, roads, trees, water, green).                       | `packages/web/src/viewport/meshBuilders.osmContext.ts`           | TypeScript compile clean; MAX_FACES guard integrated (WP-010)            |
-| OSM-WP-006 | Done    | Add Viewport effect: fetch context on anchor change, build meshes, add to scene as `osmContextGroup`.     | `packages/web/src/Viewport.tsx`                                  | TypeScript compile clean                                                 |
-| OSM-WP-007 | Done    | Add UI to set/edit project georeference anchor (address search or lat/lon fields) in project settings.   | `packages/web/src/workspace/inspector/InspectorContent.tsx`      | TypeScript compile clean                                                 |
-| OSM-WP-008 | Done    | Add per-layer visibility toggles (Buildings / Roads / Trees / Water / Green) to the context panel.        | `packages/web/src/Viewport.tsx` HUD overlay                      | TypeScript compile clean                                                 |
-| OSM-WP-009 | Done    | Seed DSL support: add `georeference` field so automated seeds can bake in a known anchor.                 | `packages/cli/lib/seed-dsl.mjs`                                  | Compiles; validation raises on bad coords                                |
-| OSM-WP-010 | Done    | Performance guard: cap context geometry at 5 000 faces per layer.                                         | `packages/web/src/viewport/meshBuilders.osmContext.ts`           | `MAX_FACES = 5_000` constant enforced in all five builders               |
+| ID         | Status | Goal                                                                                                   | Primary files                                                                           | Required verification                                         |
+| ---------- | ------ | ------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------- | ------------------------------------------------------------- |
+| OSM-WP-001 | Done   | Create this tracker.                                                                                   | `spec/osm-site-context-tracker.md`                                                      | Markdown review, `git diff --check`                           |
+| OSM-WP-002 | Done   | Extend `project_settings` schema with optional lat/lon anchor and context radius.                      | `packages/core/src/index.ts`, `app/bim_ai/elements.py`, `engine_dispatch_properties.py` | TypeScript compile clean; Python tests pass                   |
+| OSM-WP-003 | Done   | Add Overpass API fetch utility and caching layer (browser-side).                                       | `packages/web/src/osm/fetchOverpass.ts`                                                 | TypeScript compile clean                                      |
+| OSM-WP-004 | Done   | Add WGS84 → local mm projection utility and inverse (mm → lat/lon).                                    | `packages/web/src/osm/project.ts`                                                       | TypeScript compile clean                                      |
+| OSM-WP-005 | Done   | Build Three.js geometry for each OSM layer (buildings, roads, trees, water, green).                    | `packages/web/src/viewport/meshBuilders.osmContext.ts`                                  | TypeScript compile clean; MAX_FACES guard integrated (WP-010) |
+| OSM-WP-006 | Done   | Add Viewport effect: fetch context on anchor change, build meshes, add to scene as `osmContextGroup`.  | `packages/web/src/Viewport.tsx`                                                         | TypeScript compile clean                                      |
+| OSM-WP-007 | Done   | Add UI to set/edit project georeference anchor (address search or lat/lon fields) in project settings. | `packages/web/src/workspace/inspector/InspectorContent.tsx`                             | TypeScript compile clean                                      |
+| OSM-WP-008 | Done   | Add per-layer visibility toggles (Buildings / Roads / Trees / Water / Green) to the context panel.     | `packages/web/src/Viewport.tsx` HUD overlay                                             | TypeScript compile clean                                      |
+| OSM-WP-009 | Done   | Seed DSL support: add `georeference` field so automated seeds can bake in a known anchor.              | `packages/cli/lib/seed-dsl.mjs`                                                         | Compiles; validation raises on bad coords                     |
+| OSM-WP-010 | Done   | Performance guard: cap context geometry at 5 000 faces per layer.                                      | `packages/web/src/viewport/meshBuilders.osmContext.ts`                                  | `MAX_FACES = 5_000` constant enforced in all five builders    |
 
 ## OSM-WP-002 Detail: Schema Extension
 
@@ -109,7 +110,7 @@ optional fields:
 export type ProjectSettingsElem = {
   // ... existing fields ...
   georeference?: {
-    anchorLat: number;   // WGS84 decimal degrees
+    anchorLat: number; // WGS84 decimal degrees
     anchorLon: number;
     contextRadiusM: number; // metres; default 300; max 1000
   };
@@ -117,6 +118,7 @@ export type ProjectSettingsElem = {
 ```
 
 Add a kernel command `UpdateGeoreference` that validates:
+
 - `anchorLat` in [-90, 90]
 - `anchorLon` in [-180, 180]
 - `contextRadiusM` in [50, 1000]
@@ -128,6 +130,7 @@ No migration needed (field is optional; existing projects simply have no anchor)
 File: `packages/web/src/osm/fetchOverpass.ts`
 
 Responsibilities:
+
 - Construct the Overpass QL query from anchor + radius
 - Fetch from `https://overpass-api.de/api/interpreter` (POST with body)
 - Cache result in `sessionStorage` keyed by `osm:{lat4dp}:{lon4dp}:{radius}` (4 decimal
@@ -138,11 +141,11 @@ Responsibilities:
 Typed response shape:
 
 ```typescript
-type OsmBuilding = { type: "building"; footprintMm: XY[]; heightMm: number };
-type OsmRoad    = { type: "road"; centreline: XY[]; widthMm: number };
-type OsmTree    = { type: "tree"; positionMm: XY };
-type OsmWater   = { type: "water"; footprintMm: XY[] };
-type OsmGreen   = { type: "green"; footprintMm: XY[] };
+type OsmBuilding = { type: 'building'; footprintMm: XY[]; heightMm: number };
+type OsmRoad = { type: 'road'; centreline: XY[]; widthMm: number };
+type OsmTree = { type: 'tree'; positionMm: XY };
+type OsmWater = { type: 'water'; footprintMm: XY[] };
+type OsmGreen = { type: 'green'; footprintMm: XY[] };
 type OsmFeature = OsmBuilding | OsmRoad | OsmTree | OsmWater | OsmGreen;
 ```
 
@@ -153,23 +156,28 @@ File: `packages/web/src/viewport/meshBuilders/osmContext.ts`
 One builder per layer, all returning `THREE.Group`:
 
 **Buildings** — `makeOsmBuildingsGroup(buildings: OsmBuilding[]): THREE.Group`
+
 - Extrude each footprint polygon to `heightMm` using `THREE.ExtrudeGeometry`
 - Single merged `BufferGeometry` per call (merge all buildings into one draw call)
 - Material: flat grey (`#9ca3af`), no shadows cast, `depthWrite: true`
 - Mark group with `userData.osmLayer = "buildings"` for layer toggle
 
 **Roads** — `makeOsmRoadsGroup(roads: OsmRoad[]): THREE.Group`
+
 - Build quad strip along centreline at specified width, zMm = 0
 - Material: dark grey (`#4b5563`), `polygonOffset` to avoid z-fighting with toposolid
 
 **Trees** — `makeOsmTreesGroup(trees: OsmTree[]): THREE.Group`
+
 - `THREE.Points` with `THREE.PointsMaterial` in green (`#86efac`), size 2500 mm (≈ 2.5 m canopy)
 - Optionally a small cylinder trunk if count < 200
 
 **Water** — `makeOsmWaterGroup(water: OsmWater[]): THREE.Group`
+
 - Flat polygon mesh at zMm = -10 (just below grade), blue (`#93c5fd`), 40 % opacity
 
 **Green** — `makeOsmGreenGroup(green: OsmGreen[]): THREE.Group`
+
 - Flat polygon mesh at zMm = -5, muted green (`#bbf7d0`), 30 % opacity
 
 All geometry must be positioned in local mm space (origin = project anchor point = 0,0,0).

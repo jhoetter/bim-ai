@@ -61,6 +61,7 @@ Add if not present:
 ```
 
 Add command types:
+
 ```ts
 | { type: 'addIfcLink'; element: Extract<Element, { kind: 'link_ifc' }> }
 | { type: 'removeIfcLink'; linkId: string }
@@ -83,10 +84,7 @@ type LinkIfcEl = Extract<Element, { kind: 'link_ifc' }>;
 /**
  * Parses an IFC STEP string and creates a link_ifc element.
  */
-export function createIfcLink(
-  name: string,
-  ifcContent: string,
-): LinkIfcEl {
+export function createIfcLink(name: string, ifcContent: string): LinkIfcEl {
   const entities = parseIfc(ifcContent);
   const linkedElements = convertIfcToElements(entities);
   return {
@@ -118,6 +116,7 @@ export function applyIfcLinkOffset(
 Add an "IFC Links" section below the existing bim-ai model links section.
 
 The IFC Links section should have:
+
 - A file input `<input type="file" accept=".ifc" data-testid="link-ifc-file-input">` that reads the file content
 - On file load: call `createIfcLink(file.name, content)`, dispatch `addIfcLink` command
 - A list of current IFC links (from `elementsById` filtered by `kind === 'link_ifc'`)
@@ -167,6 +166,7 @@ Use `data-testid="browser-linked-ifc-tree"` for the subtree container.
 ### G — Palette command + capability graph
 
 In `defaultCommands.ts`:
+
 ```ts
 { id: 'file.link-ifc', label: 'Link IFC File…',
   keywords: ['link', 'ifc', 'import', 'federated'],
@@ -174,6 +174,7 @@ In `defaultCommands.ts`:
 ```
 
 In `commandCapabilities.ts`:
+
 ```ts
 { id: 'file.link-ifc', scope: 'document', intendedModes: ['plan', '3d'], precondition: null },
 ```

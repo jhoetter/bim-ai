@@ -47,6 +47,7 @@ Add `SetToolPrefCmd` to the `Command` union.
 ### 2. Engine dispatch
 
 In `app/bim_ai/engine.py`, add a case for `SetToolPrefCmd`:
+
 - Store the pref in the document's session metadata (or a `tool_prefs` dict on the document)
 - Emit a `tool_pref_changed` activity log entry with `{tool, pref_key, pref_value}`
 
@@ -64,6 +65,7 @@ Register the tool descriptor in the Python tool list per API-V3-01.
 ### 4. Agent-callable tests
 
 Create `app/tests/api/test_tool_pref.py` with:
+
 - `test_set_tool_pref_stores_value` — POST a SetToolPrefCmd, assert the pref is persisted.
 - `test_set_tool_pref_emits_activity` — POST a SetToolPrefCmd, assert a `tool_pref_changed`
   activity entry is present in the activity log.

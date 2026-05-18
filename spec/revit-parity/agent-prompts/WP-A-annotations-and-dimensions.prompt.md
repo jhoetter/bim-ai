@@ -6,6 +6,7 @@ You are an orchestrating engineer on the bim-ai repository (`/Users/jhoetter/rep
 bim-ai is a browser-based BIM authoring tool (React + TypeScript + Three.js, Vite, Vitest).
 
 Repo layout (critical paths):
+
 - `packages/web/src/plan/` — 2D plan canvas (React + Canvas 2D), all annotation rendering
 - `packages/web/src/viewport/` — Three.js 3D scene
 - `packages/web/src/tools/toolRegistry.ts` — defines `ToolId` union + TOOL_REGISTRY array
@@ -20,6 +21,7 @@ Repo layout (critical paths):
 - `packages/core/src/` — shared TypeScript types (Element, XY, etc.)
 
 Architecture patterns:
+
 - Semantic commands: actions are objects `{ type: 'createDimension', ... }` dispatched via `onSemanticCommand` callback. Study autoDimension.ts for the exact command shape.
 - Plan rendering: geometry is drawn on a Canvas 2D context in `PlanCanvas.tsx`. New annotation renderers should be added as separate render passes called from there.
 - Tools follow the pattern in `toolRegistry.ts`: add a `ToolId`, add a `ToolDefinition` to `TOOL_REGISTRY`, implement grammar in `tools/<toolId>.ts`, add rendering in `plan/<toolId>PlanRendering.ts`.
@@ -47,6 +49,7 @@ Implement a free-standing text annotation tool for plan views.
 New ToolId: `'text'`
 
 Deliverables:
+
 - Add `'text'` to the `ToolId` union in `toolRegistry.ts`
 - Add a `ToolDefinition` for `text` with hotkey `TX` and icon `text`
 - Grammar in `tools/text.ts`: click to place, type text content, Enter to confirm, Escape to cancel. Text size comes from the active text style. Optional leader line: if user clicks a second point before typing, draw a leader from that point to the text box.
@@ -152,6 +155,7 @@ North arrow is a placeable annotation symbol on sheets.
 ## Definition of Done
 
 For each sub-task:
+
 - TypeScript compiles without errors (`pnpm tsc --noEmit --filter @bim-ai/web`)
 - At least 2 unit tests per new module
 - The new tool appears in the tool palette in plan mode

@@ -79,6 +79,7 @@ Wire into room placement in `PlanCanvas.tsx`.
 ### E — Tests
 
 Write `packages/web/src/workspace/authoring/optionsBarFloor.test.tsx`:
+
 ```ts
 describe('options bar — floor tool (§1.6.8)', () => {
   it('renders options-bar-floor-type select when planTool=floor', () => { ... });
@@ -88,6 +89,7 @@ describe('options bar — floor tool (§1.6.8)', () => {
 ```
 
 Write `packages/web/src/workspace/authoring/optionsBarColumn.test.tsx`:
+
 ```ts
 describe('options bar — column tool (§1.6.8)', () => {
   it('renders options-bar-column-height when planTool=column', () => { ... });
@@ -97,6 +99,7 @@ describe('options bar — column tool (§1.6.8)', () => {
 ```
 
 Write `packages/web/src/workspace/authoring/optionsBarStair.test.tsx`:
+
 ```ts
 describe('options bar — stair tool (§1.6.8)', () => {
   it('renders options-bar-stair-base-level when planTool=stair', () => { ... });
@@ -110,6 +113,7 @@ describe('options bar — stair tool (§1.6.8)', () => {
 ## Commit and push
 
 After tests pass (`pnpm test --filter @bim-ai/web`):
+
 ```
 git add -p
 git commit -m "feat(wave10/E): options bar — floor/column/stair/room tool sections (§1.6.8)"

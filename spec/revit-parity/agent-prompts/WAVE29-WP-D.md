@@ -11,6 +11,7 @@ This prompt is self-contained — start here.
 §1.6.12 "Zeichenfläche" is Partial P2. bim-ai shows one active view at a time with tabbed switching between plan, 3D, section, and sheet views. Revit supports multiple simultaneously tiled view windows. This task implements the most useful variant: a split-pane mode where the plan view appears on the left and the 3D view on the right simultaneously.
 
 This task adds:
+
 1. `splitViewEnabled` boolean in the Zustand store
 2. A `ToggleSplitViewCmd` command type
 3. Workspace handler that toggles `splitViewEnabled`
@@ -31,6 +32,7 @@ packages/web/src/cmdPalette/defaultCommands.ts — find registerCommand pattern
 ```
 
 Run before editing:
+
 - `grep -n "splitView\|split.*view\|CanvasMount\|planMode\|viewportMode" packages/web/src/workspace/Workspace.tsx | head -15`
 - `grep -n "splitView\|planMode\|mode.*plan\|mode.*3d\|PlanCanvas\|Viewport" packages/web/src/workspace/CanvasMount.tsx | head -15`
 - `grep -n "splitView\|skyBackground\|thinLines\|viewportRuntime" packages/web/src/state/storeViewportRuntimeSlice.ts | head -15`
@@ -55,6 +57,7 @@ splitViewEnabled: boolean;
 ```
 
 And in the initial state:
+
 ```ts
 splitViewEnabled: false,
 ```
@@ -93,20 +96,31 @@ Find where the plan canvas and 3D viewport are rendered. When `splitViewEnabled=
 const splitViewEnabled = useBimStore((s: any) => s.splitViewEnabled ?? false);
 
 // In the JSX render:
-{splitViewEnabled ? (
-  <div style={{ display: 'flex', width: '100%', height: '100%' }}>
-    <div style={{ width: '50%', height: '100%', position: 'relative' }}>
-      {/* Plan canvas — left pane */}
-      {planCanvasJsx}
+{
+  splitViewEnabled ? (
+    <div style={{ display: 'flex', width: '100%', height: '100%' }}>
+      <div style={{ width: '50%', height: '100%', position: 'relative' }}>
+        {/* Plan canvas — left pane */}
+        {planCanvasJsx}
+      </div>
+      <div
+        style={{
+          width: '50%',
+          height: '100%',
+          position: 'relative',
+          borderLeft: '1px solid var(--border, #444)',
+        }}
+      >
+        {/* 3D viewport — right pane */}
+        {viewportJsx}
+      </div>
     </div>
-    <div style={{ width: '50%', height: '100%', position: 'relative', borderLeft: '1px solid var(--border, #444)' }}>
-      {/* 3D viewport — right pane */}
-      {viewportJsx}
-    </div>
-  </div>
-) : (
-  {/* existing single-pane rendering */}
-)}
+  ) : (
+    {
+      /* existing single-pane rendering */
+    }
+  );
+}
 ```
 
 **Important**: Read `CanvasMount.tsx` and `Workspace.tsx` carefully. The plan canvas and 3D viewport may be in different places. Find the actual JSX structure and adapt the split-pane logic to the real component tree. The key is to render both `PlanCanvas` and the 3D `Viewport` simultaneously when split is enabled, rather than switching between them.

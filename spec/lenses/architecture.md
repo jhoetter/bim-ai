@@ -1,4 +1,5 @@
 # Architecture Lens for Cloud-Native BIM Platform
+
 ## Requirements and Implementation Prompt
 
 ## Context
@@ -119,13 +120,13 @@ Implement the Architecture Lens as the default authoring and documentation lens.
 
 Last updated: 2026-05-15
 
-| Workpackage | Scope | Status | Evidence |
-| --- | --- | --- | --- |
-| ARCH-01 | Default Architecture lens identity for authoring workspace, workspace switcher, and runtime store defaults. | Done | `71f952f9b feat: default to architecture lens`; merged via `b42cbed24` and retained on `origin/main`. |
-| ARCH-02 | Standard architecture schedule defaults: room, door, window, finish, sheet list, and view list with server and web presets. | Done | `520dfe7a8 feat: add architecture schedule defaults`; tests: `app/tests/test_architecture_schedule_defaults.py`, schedule utility and plans/sheets UI vitest coverage. |
-| ARCH-03 | Third-party API query surface for architectural geometry, types, rooms, views, sheets, and schedules without UI-state coupling. | Done | `b8a3101cf feat: expose architecture lens query api`; route `GET /api/models/{model_id}/architecture/query`; test `app/tests/test_architecture_lens_query.py`. |
-| ARCH-04 | Architecture-first room/spatial inspector metadata using generic room `props`, plus compact read-only consultant badges. | Done | `ac6d9b83c feat: surface architecture room metadata`; tests in `app/tests/test_room_target_area.py` and `packages/web/src/workspace/inspector/InspectorContent.test.tsx`. |
-| ARCH-MERGE | Integration with current `main`, including conflict resolution with concurrent lens work. | Done | `b42cbed24 Merge latest main into architecture integration`; final branch later remained ancestor of `origin/main`. |
+| Workpackage | Scope                                                                                                                           | Status | Evidence                                                                                                                                                                  |
+| ----------- | ------------------------------------------------------------------------------------------------------------------------------- | ------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| ARCH-01     | Default Architecture lens identity for authoring workspace, workspace switcher, and runtime store defaults.                     | Done   | `71f952f9b feat: default to architecture lens`; merged via `b42cbed24` and retained on `origin/main`.                                                                     |
+| ARCH-02     | Standard architecture schedule defaults: room, door, window, finish, sheet list, and view list with server and web presets.     | Done   | `520dfe7a8 feat: add architecture schedule defaults`; tests: `app/tests/test_architecture_schedule_defaults.py`, schedule utility and plans/sheets UI vitest coverage.    |
+| ARCH-03     | Third-party API query surface for architectural geometry, types, rooms, views, sheets, and schedules without UI-state coupling. | Done   | `b8a3101cf feat: expose architecture lens query api`; route `GET /api/models/{model_id}/architecture/query`; test `app/tests/test_architecture_lens_query.py`.            |
+| ARCH-04     | Architecture-first room/spatial inspector metadata using generic room `props`, plus compact read-only consultant badges.        | Done   | `ac6d9b83c feat: surface architecture room metadata`; tests in `app/tests/test_room_target_area.py` and `packages/web/src/workspace/inspector/InspectorContent.test.tsx`. |
+| ARCH-MERGE  | Integration with current `main`, including conflict resolution with concurrent lens work.                                       | Done   | `b42cbed24 Merge latest main into architecture integration`; final branch later remained ancestor of `origin/main`.                                                       |
 
 Final verification on the integration head before merge:
 

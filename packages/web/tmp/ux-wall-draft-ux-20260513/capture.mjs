@@ -35,7 +35,7 @@ if (!box) throw new Error('no viewport');
 
 await page.click('[data-testid="ribbon-command-wall"]');
 const sx = box.x + box.width * 0.36;
-const sy = box.y + box.height * 0.60;
+const sy = box.y + box.height * 0.6;
 const ex = box.x + box.width * 0.52;
 const ey = box.y + box.height * 0.58;
 await page.mouse.click(sx, sy);

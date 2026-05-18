@@ -6,6 +6,7 @@ You are an orchestrating engineer on the bim-ai repository (`/Users/jhoetter/rep
 bim-ai is a browser-based BIM authoring tool (React + TypeScript + Three.js, Vite, Vitest).
 
 Repo layout (critical paths):
+
 - `packages/web/src/tools/toolRegistry.ts` — ToolId union + TOOL_REGISTRY (add: brace, beam-system, column-at-grids, mass tools)
 - `packages/web/src/viewport/meshBuilders.ts` — 3D mesh dispatcher (add entries for new element types)
 - `packages/web/src/viewport/meshBuilders.mass.ts` — EXISTING mass mesh builder (study this first)
@@ -15,6 +16,7 @@ Repo layout (critical paths):
 - `packages/core/src/` — shared types (Element, XY, etc.)
 
 Architecture patterns:
+
 - All new elements follow the same pattern: define element shape in core types, implement 3D mesh builder in `viewport/meshBuilders.<type>.ts`, implement 2D plan symbol in `plan/<type>PlanSymbol.ts`, add to `meshBuilders.ts` dispatcher and `planProjection.ts`.
 - Semantic commands: study `{ type: 'createWall', ... }` and `{ type: 'createRoof', ... }` for command shape conventions.
 - Structural elements have `structuralRole: 'structural' | 'non-structural'` on their data.
@@ -41,6 +43,7 @@ New ToolId: `'brace'` (hotkey: `BR`)
 Braces are diagonal members between a column/wall base point and a column/beam somewhere above.
 
 Data model:
+
 ```ts
 {
   type: 'brace',
@@ -54,14 +57,17 @@ Data model:
 ```
 
 Grammar:
+
 - Click base point (snaps to column base, floor, or arbitrary point at the active level elevation).
 - Click top point (snaps to column top, beam, or arbitrary point — the elevation is the next level up by default, overridable in options bar).
 - Optionally type an explicit angle.
 
 3D mesh (`viewport/meshBuilders.brace.ts`):
+
 - A swept rectangular/circular cross-section along the diagonal line — reuse the beam sweep logic from the existing beam element mesh, since braces are geometrically similar.
 
 Plan symbol (`plan/bracePlanSymbol.ts`):
+
 - A dashed diagonal line with a small "X" symbol mid-span (standard structural bracing symbol in plan).
 
 Inspector: profile, material, start/end anchor levels.
@@ -74,6 +80,7 @@ A beam system fills a rectangular or polygonal bay with evenly spaced beams of t
 New ToolId: `'beam-system'` (hotkey: `BS`)
 
 Data model:
+
 ```ts
 {
   type: 'beam_system',
@@ -89,6 +96,7 @@ Data model:
 ```
 
 Grammar:
+
 - Draw a closed boundary polygon (click points, close with double-click or Enter).
 - Options bar: spacing (default 1200mm), direction (default: longest boundary edge), profile.
 - On completion: auto-compute the set of beams that fill the boundary at the given spacing.
@@ -96,6 +104,7 @@ Grammar:
 The element is stored as one `beam_system` entity. The individual beams it generates are computed at render time (not stored separately), based on the spacing and direction.
 
 3D mesh (`viewport/meshBuilders.beamSystem.ts`):
+
 - Compute intersection of each beam line with the boundary polygon to get start/end points.
 - Reuse beam profile sweep for each individual beam.
 
@@ -122,6 +131,7 @@ Tests: 3 horizontal grids × 3 vertical grids → 9 columns placed at correct in
 Currently columns are always vertical. Add support for inclined columns.
 
 Data model addition:
+
 ```ts
 // existing column fields +
 topOffsetXMm: number,   // horizontal offset of the column top from its base plan position
@@ -147,28 +157,44 @@ Revit's in-place mass lets you model building volumes from primitive shapes and 
 New element type family: `mass_*`. Implement these primitive mass forms:
 
 #### G5a: Box Mass
+
 ```ts
-{ type: 'mass_box', widthMm, depthMm, heightMm, insertionXMm, insertionYMm, baseElevationMm, rotationDeg }
+{
+  type: ('mass_box',
+    widthMm,
+    depthMm,
+    heightMm,
+    insertionXMm,
+    insertionYMm,
+    baseElevationMm,
+    rotationDeg);
+}
 ```
+
 - 3D: simple box geometry
 - Plan: rectangle footprint + diagonal cross (standard mass convention)
 - Grammar: click centre, drag to set width/depth (or type values in options bar)
 
 #### G5b: Extruded Mass
+
 ```ts
 { type: 'mass_extrusion', profilePoints: XY[], heightMm, baseElevationMm }
 ```
+
 - 3D: prism shape (polygon base extruded to height)
 - Grammar: sketch a closed polygon on the active work plane, type height in options bar
 
 #### G5c: Revolved Mass
+
 ```ts
 { type: 'mass_revolution', profilePoints: XY[], axisPt1: XY, axisPt2: XY, startAngleDeg, endAngleDeg, baseElevationMm }
 ```
+
 - 3D: surface of revolution around the axis — use THREE.LatheGeometry
 - Grammar: draw profile, pick axis line, set angle range
 
 #### G5d: Mass Tool in ToolRegistry
+
 New ToolIds: `'mass-box'`, `'mass-extrusion'`, `'mass-revolution'`
 
 Implement all three in toolRegistry + grammar + meshBuilders.
@@ -208,11 +234,13 @@ Revit's "Floor by Face" creates floor slabs from mass faces at each level inters
 The mesh builder for curtain panels exists but there is no user-facing curtain wall authoring workflow. Implement it.
 
 Curtain wall is a special wall type with:
+
 - Grid: horizontal and vertical division lines dividing the wall face into panels
 - Panels: infill elements (glass, solid, door) in each grid cell
 - Mullions: profile elements at each grid line intersection and border
 
 Data model (extend existing wall):
+
 ```ts
 // when wall.curtainWall is set:
 curtainWall: {
@@ -225,6 +253,7 @@ curtainWall: {
 ```
 
 UI:
+
 - In the wall type picker, add a "Curtain Wall" category with preset types: "Storefront", "Curtain Wall", "Exterior Glazing".
 - When a curtain wall is selected, the inspector shows: H grid (count/spacing), V grid (count/spacing), panel type, mullion type.
 - "Edit Grid": in plan view, clicking a curtain wall enters a grid-edit mode where the user can click to add/remove grid lines at exact positions.
@@ -235,6 +264,7 @@ UI:
 Plan rendering: curtain walls show as a thin line with short perpendicular tick marks for each grid division.
 
 Tests:
+
 - `meshBuilders.curtainWall.test.ts`: 4m × 3m curtain wall, 3 vertical divisions, 2 horizontal → 6 glass panels rendered
 - `curtainWallPlanSymbol.test.ts`: verify plan projection shows the grid tick marks
 
@@ -243,6 +273,7 @@ Tests:
 ## Definition of Done
 
 For each sub-task:
+
 - TypeScript compiles without errors
 - ≥2 unit tests per new module
 - 3D mesh visible in viewport, plan symbol visible in plan

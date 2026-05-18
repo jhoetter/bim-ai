@@ -11,6 +11,7 @@ This prompt is self-contained — start here.
 §1.10 "Revit zurücksetzen" is Partial P2. Revit has a "Reset to Factory Settings" command that restores the entire UI layout (ribbon customizations, QAT, panel positions, keyboard shortcuts) to defaults. bim-ai has persistent UI state in Zustand + localStorage but no explicit reset-to-defaults command.
 
 This task adds:
+
 1. `ResetWorkspaceCmd` command type
 2. Workspace handler that resets key store fields to their initial defaults
 3. "Reset Workspace" menu item in the ProjectMenu
@@ -29,6 +30,7 @@ packages/web/src/state/storeViewportRuntimeSlice.ts     — find store fields wi
 ```
 
 Run before editing:
+
 - `grep -n "splitViewEnabled\|skyBackground\|thinLinesEnabled\|renderQuality\|sidebarWidth" packages/web/src/state/storeViewportRuntimeSlice.ts | head -20`
 - `grep -n "ResetWorkspace\|reset.*workspace\|resetUI" packages/core/src/index.ts | head -5`
 - `grep -n "project-menu\|ProjectMenu\|menuItem\|data-testid.*menu" packages/web/src/workspace/project/ProjectMenu.tsx | head -15`
@@ -79,17 +81,23 @@ if (cmd.type === 'resetWorkspace') {
 In `ProjectMenu.tsx`, find where other menu items are listed (e.g., Save As, Revert). Add:
 
 ```tsx
-{/* §1.10: reset workspace */}
+{
+  /* §1.10: reset workspace */
+}
 <button
   data-testid="project-menu-reset-workspace"
   onClick={() => {
     onSemanticCommand?.({ type: 'resetWorkspace' });
     onClose?.();
   }}
-  style={{ /* follow existing menu item style */ }}
+  style={
+    {
+      /* follow existing menu item style */
+    }
+  }
 >
   Reset Workspace
-</button>
+</button>;
 ```
 
 **Important**: Read `ProjectMenu.tsx` to understand the existing menu item JSX pattern. Match the styling and event handling.

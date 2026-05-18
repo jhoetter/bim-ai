@@ -11,6 +11,7 @@ This prompt is self-contained — start here.
 §1.6.3 "Schnellzugriff-Werkzeugkasten" is Partial P2. Revit has a fully user-customizable Quick Access Toolbar (QAT) that shows pinned commands above the ribbon. bim-ai has a fixed top bar with undo/redo/save. This task adds a real QAT: users can pin any command palette command by ID, and the QAT shows icon buttons for those commands.
 
 This task adds:
+
 1. `quickAccessItems: string[]` in the Zustand store (array of command IDs)
 2. `AddToQuickAccessCmd` / `RemoveFromQuickAccessCmd` command types
 3. Workspace handlers
@@ -30,6 +31,7 @@ packages/web/src/cmdPalette/registry.ts                 — find CommandDef type
 ```
 
 Run before editing:
+
 - `grep -n "quickAccess\|QuickAccess\|pinnedCommands" packages/web/src/state/storeViewportRuntimeSlice.ts | head -5`
 - `grep -n "CommandDef\|getCommand\|getAllCommands\|commandRegistry" packages/web/src/cmdPalette/registry.ts | head -15`
 - `grep -n "toolbar\|topBar\|header.*flex\|flex.*header" packages/web/src/workspace/Workspace.tsx | head -10`
@@ -110,7 +112,10 @@ interface QuickAccessToolbarProps {
   onRemoveFromQAT?: (commandId: string) => void;
 }
 
-export function QuickAccessToolbar({ onInvokeCommand, onRemoveFromQAT }: QuickAccessToolbarProps): JSX.Element | null {
+export function QuickAccessToolbar({
+  onInvokeCommand,
+  onRemoveFromQAT,
+}: QuickAccessToolbarProps): JSX.Element | null {
   const quickAccessItems = useBimStore((s: any) => s.quickAccessItems ?? []);
 
   if (quickAccessItems.length === 0) return null;
@@ -118,7 +123,13 @@ export function QuickAccessToolbar({ onInvokeCommand, onRemoveFromQAT }: QuickAc
   return (
     <div
       data-testid="quick-access-toolbar"
-      style={{ display: 'flex', alignItems: 'center', gap: 2, padding: '2px 8px', borderBottom: '1px solid var(--border, #333)' }}
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: 2,
+        padding: '2px 8px',
+        borderBottom: '1px solid var(--border, #333)',
+      }}
     >
       {quickAccessItems.map((cmdId: string) => (
         <button

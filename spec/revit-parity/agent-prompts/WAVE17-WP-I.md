@@ -34,6 +34,7 @@ Prettier runs automatically. **Always `git pull --rebase origin main` before pus
 ## Tasks
 
 The current DXF exporter produces a minimal DXF string. The goal is to extend it with:
+
 1. Proper named layers per element category (German layer names as used in German practice)
 2. Correct DXF entity types per element (LWPOLYLINE for walls/floors, INSERT for doors/windows as blocks, LINE for annotations)
 3. Dimension entities for permanent dimensions
@@ -44,20 +45,20 @@ Add a layer-name map (and ensure layers are declared in the DXF TABLES section):
 
 ```ts
 const LAYER_MAP: Record<string, { name: string; color: number }> = {
-  wall:      { name: 'A-WAND',      color: 7  },  // white
-  floor:     { name: 'A-DECKE',     color: 3  },  // green
-  door:      { name: 'A-TUERE',     color: 4  },  // cyan
-  window:    { name: 'A-FENSTER',   color: 4  },
-  room:      { name: 'A-RAUM',      color: 2  },  // yellow
-  column:    { name: 'A-STUETZE',   color: 1  },  // red
-  beam:      { name: 'A-BALKEN',    color: 1  },
-  stair:     { name: 'A-TREPPE',    color: 5  },  // blue
-  ramp:      { name: 'A-RAMPE',     color: 5  },
-  roof:      { name: 'A-DACH',      color: 6  },  // magenta
-  grid:      { name: 'A-RASTER',    color: 8  },  // grey
-  dimension: { name: 'A-BEMASSUNG', color: 3  },
-  text_tag:  { name: 'A-BESCHRIFT', color: 7  },
-  default:   { name: '0',           color: 7  },
+  wall: { name: 'A-WAND', color: 7 }, // white
+  floor: { name: 'A-DECKE', color: 3 }, // green
+  door: { name: 'A-TUERE', color: 4 }, // cyan
+  window: { name: 'A-FENSTER', color: 4 },
+  room: { name: 'A-RAUM', color: 2 }, // yellow
+  column: { name: 'A-STUETZE', color: 1 }, // red
+  beam: { name: 'A-BALKEN', color: 1 },
+  stair: { name: 'A-TREPPE', color: 5 }, // blue
+  ramp: { name: 'A-RAMPE', color: 5 },
+  roof: { name: 'A-DACH', color: 6 }, // magenta
+  grid: { name: 'A-RASTER', color: 8 }, // grey
+  dimension: { name: 'A-BEMASSUNG', color: 3 },
+  text_tag: { name: 'A-BESCHRIFT', color: 7 },
+  default: { name: '0', color: 7 },
 };
 
 function layerFor(kind: string): { name: string; color: number } {
@@ -66,10 +67,17 @@ function layerFor(kind: string): { name: string; color: number } {
 ```
 
 In the DXF TABLES section, declare all layers:
+
 ```ts
 function dxfLayerTable(layers: typeof LAYER_MAP): string {
-  const entries = Object.values(layers).map(l => `
-  0\nLAYER\n5\n${Math.floor(Math.random() * 0xFFFF).toString(16).toUpperCase()}\n100\nAcDbSymbolTableRecord\n100\nAcDbLayerTableRecord\n2\n${l.name}\n70\n0\n62\n${l.color}\n6\nContinuous`).join('');
+  const entries = Object.values(layers)
+    .map(
+      (l) => `
+  0\nLAYER\n5\n${Math.floor(Math.random() * 0xffff)
+    .toString(16)
+    .toUpperCase()}\n100\nAcDbSymbolTableRecord\n100\nAcDbLayerTableRecord\n2\n${l.name}\n70\n0\n62\n${l.color}\n6\nContinuous`,
+    )
+    .join('');
   return `0\nTABLE\n2\nLAYER\n5\n2\n100\nAcDbSymbolTableRecord\n100\nAcDbLayerTable\n70\n${Object.keys(layers).length}${entries}\n0\nENDTAB\n`;
 }
 ```
@@ -88,7 +96,8 @@ function wallToLwPolyline(el: Extract<Element, { kind: 'wall' }>, scale = 1): st
   const dx = ((el as any).endMm?.xMm ?? 0) - ((el as any).startMm?.xMm ?? 0);
   const dy = ((el as any).endMm?.yMm ?? 0) - ((el as any).startMm?.yMm ?? 0);
   const len = Math.hypot(dx, dy) || 1;
-  const nx = -dy / len, ny = dx / len; // normal
+  const nx = -dy / len,
+    ny = dx / len; // normal
 
   const s = (el as any).startMm ?? { xMm: 0, yMm: 0 };
   const e = (el as any).endMm ?? { xMm: 1000, yMm: 0 };
@@ -101,7 +110,7 @@ function wallToLwPolyline(el: Extract<Element, { kind: 'wall' }>, scale = 1): st
   ];
 
   const layer = layerFor('wall').name;
-  const verts = corners.map(c => `10\n${c.x.toFixed(1)}\n20\n${c.y.toFixed(1)}`).join('\n');
+  const verts = corners.map((c) => `10\n${c.x.toFixed(1)}\n20\n${c.y.toFixed(1)}`).join('\n');
   return `0\nLWPOLYLINE\n8\n${layer}\n70\n1\n90\n${corners.length}\n${verts}\n`;
 }
 ```
@@ -118,10 +127,12 @@ function doorToLines(el: Extract<Element, { kind: 'door' }>, scale = 1): string 
   const w = ((el as any).widthMm ?? 900) / 2;
   const layer = layerFor('door').name;
   // Draw a simple 2-line symbol (two lines forming a door arc approximation)
-  return [
-    `0\nLINE\n8\n${layer}\n10\n${((pos.xMm - w) * scale).toFixed(1)}\n20\n${(pos.yMm * scale).toFixed(1)}\n11\n${((pos.xMm + w) * scale).toFixed(1)}\n21\n${(pos.yMm * scale).toFixed(1)}`,
-    `0\nLINE\n8\n${layer}\n10\n${(pos.xMm * scale).toFixed(1)}\n20\n${((pos.yMm - w) * scale).toFixed(1)}\n11\n${(pos.xMm * scale).toFixed(1)}\n21\n${((pos.yMm + w) * scale).toFixed(1)}`,
-  ].join('\n') + '\n';
+  return (
+    [
+      `0\nLINE\n8\n${layer}\n10\n${((pos.xMm - w) * scale).toFixed(1)}\n20\n${(pos.yMm * scale).toFixed(1)}\n11\n${((pos.xMm + w) * scale).toFixed(1)}\n21\n${(pos.yMm * scale).toFixed(1)}`,
+      `0\nLINE\n8\n${layer}\n10\n${(pos.xMm * scale).toFixed(1)}\n20\n${((pos.yMm - w) * scale).toFixed(1)}\n11\n${(pos.xMm * scale).toFixed(1)}\n21\n${((pos.yMm + w) * scale).toFixed(1)}`,
+    ].join('\n') + '\n'
+  );
 }
 ```
 
@@ -136,7 +147,9 @@ function floorToLwPolyline(el: Extract<Element, { kind: 'floor' }>, scale = 1): 
   const pts = (el as any).perimeterMm ?? [];
   if (pts.length < 3) return '';
   const layer = layerFor('floor').name;
-  const verts = pts.map((p: any) => `10\n${(p.xMm * scale).toFixed(1)}\n20\n${(p.yMm * scale).toFixed(1)}`).join('\n');
+  const verts = pts
+    .map((p: any) => `10\n${(p.xMm * scale).toFixed(1)}\n20\n${(p.yMm * scale).toFixed(1)}`)
+    .join('\n');
   return `0\nLWPOLYLINE\n8\n${layer}\n70\n1\n90\n${pts.length}\n${verts}\n`;
 }
 ```
@@ -170,11 +183,21 @@ export function exportSceneToDwg(elementsById: Record<string, Element | undefine
   for (const el of Object.values(elementsById)) {
     if (!el) continue;
     switch (el.kind) {
-      case 'wall': entities.push(wallToLwPolyline(el as any, scale)); break;
-      case 'door': entities.push(doorToLines(el as any, scale)); break;
-      case 'window': entities.push(doorToLines(el as any, scale)); break;  // same symbol
-      case 'floor': entities.push(floorToLwPolyline(el as any, scale)); break;
-      case 'room': entities.push(roomToText(el as any, scale)); break;
+      case 'wall':
+        entities.push(wallToLwPolyline(el as any, scale));
+        break;
+      case 'door':
+        entities.push(doorToLines(el as any, scale));
+        break;
+      case 'window':
+        entities.push(doorToLines(el as any, scale));
+        break; // same symbol
+      case 'floor':
+        entities.push(floorToLwPolyline(el as any, scale));
+        break;
+      case 'room':
+        entities.push(roomToText(el as any, scale));
+        break;
       // TODO: column, beam, stair, dimension
     }
   }

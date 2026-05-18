@@ -15,11 +15,11 @@ Facility Operations / Facility Management is intentionally excluded from impleme
 
 ## Product Model
 
-| Concept | Meaning | UX consequence |
-|---|---|---|
-| Lens | How the user sees, enriches, checks, and exports the same model for a professional workflow. | View/tab-scoped selector, lens-specific overlays, inspector groups, ribbon tools, schedule suggestions. |
-| View type | Plan, 3D, section, schedule, or sheet. | Determines whether the lens affects geometry, data tables, or placed viewports. |
-| Perspective / workspace | Broader panel layout for a job. | May complement a lens, but should not replace the lens selector. |
+| Concept                 | Meaning                                                                                      | UX consequence                                                                                          |
+| ----------------------- | -------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------- |
+| Lens                    | How the user sees, enriches, checks, and exports the same model for a professional workflow. | View/tab-scoped selector, lens-specific overlays, inspector groups, ribbon tools, schedule suggestions. |
+| View type               | Plan, 3D, section, schedule, or sheet.                                                       | Determines whether the lens affects geometry, data tables, or placed viewports.                         |
+| Perspective / workspace | Broader panel layout for a job.                                                              | May complement a lens, but should not replace the lens selector.                                        |
 
 The primary lens switch belongs in the **view header** because a lens is view/tab-scoped. Secondary entry points are Cmd+K, pane-local secondary sidebar guidance, and selected sheet-viewport settings. The primary project browser must stay lens-neutral because it represents project structure, not the active tab's lens state.
 
@@ -35,13 +35,13 @@ The primary lens switch belongs in the **view header** because a lens is view/ta
 
 ## View-Type Matrix
 
-| View type | Lens selector? | Expected behavior |
-|---|---:|---|
-| Plan | Yes | Strongest 2D overlays: ghosting, color by classification/status, tags, warnings, missing data. |
-| Section / elevation | Yes | Same lens overlay logic as plans, plus cut-surface readouts where useful. |
-| 3D | Yes | Ghosting, heatmaps, semantic coloring, issue markers, section boxes, saved lens views. |
-| Schedule | Yes, but as a family filter | Show lens-relevant schedules, presets, fields, and creation shortcuts. Existing schedule definitions remain stable. |
-| Sheet | Yes for selected viewport; optional sheet filter | Sheets group lens-specific deliverables. Placed viewports own their own lens/display state. |
+| View type           |                                   Lens selector? | Expected behavior                                                                                                   |
+| ------------------- | -----------------------------------------------: | ------------------------------------------------------------------------------------------------------------------- |
+| Plan                |                                              Yes | Strongest 2D overlays: ghosting, color by classification/status, tags, warnings, missing data.                      |
+| Section / elevation |                                              Yes | Same lens overlay logic as plans, plus cut-surface readouts where useful.                                           |
+| 3D                  |                                              Yes | Ghosting, heatmaps, semantic coloring, issue markers, section boxes, saved lens views.                              |
+| Schedule            |                      Yes, but as a family filter | Show lens-relevant schedules, presets, fields, and creation shortcuts. Existing schedule definitions remain stable. |
+| Sheet               | Yes for selected viewport; optional sheet filter | Sheets group lens-specific deliverables. Placed viewports own their own lens/display state.                         |
 
 ## Ribbon Rules
 

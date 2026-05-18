@@ -31,6 +31,7 @@ packages/core/src/index.ts                                    — Element types
 ```
 
 Architecture patterns:
+
 - Views are model elements with a `kind` discriminator (`'plan_view'`,
   `'section_view'`, etc.) stored in the project model.
 - The workspace `tabsModel.ts` controls which views are open/active.
@@ -44,11 +45,11 @@ Architecture patterns:
 
 ## What was done before the crash
 
-| Sub-task | Status | Files |
-|---|---|---|
-| D3 View Range Dialog | **Done** | `plan/ViewRangeDialog.tsx` + `viewRange.test.ts`, `resolveViewRange` helper, `isAboveCutPlane`, `viewDepth` field |
-| D7 Project Browser (partial) | **Partial — unstaged** | `ProjectBrowser.tsx` + `ProjectBrowser.test.tsx` have ceiling plan section added but NOT committed |
-| D8 Color Fill Scheme | **Partial** | `plan/ColorSchemeDialog.tsx` + `colorFillLegend.ts` exist — verify completeness |
+| Sub-task                     | Status                 | Files                                                                                                             |
+| ---------------------------- | ---------------------- | ----------------------------------------------------------------------------------------------------------------- |
+| D3 View Range Dialog         | **Done**               | `plan/ViewRangeDialog.tsx` + `viewRange.test.ts`, `resolveViewRange` helper, `isAboveCutPlane`, `viewDepth` field |
+| D7 Project Browser (partial) | **Partial — unstaged** | `ProjectBrowser.tsx` + `ProjectBrowser.test.tsx` have ceiling plan section added but NOT committed                |
+| D8 Color Fill Scheme         | **Partial**            | `plan/ColorSchemeDialog.tsx` + `colorFillLegend.ts` exist — verify completeness                                   |
 
 Test stubs created but not yet integrated: `plan/ceilingPlanViewHeader.test.tsx`,
 `plan/planProjection.ceilingPlan.test.ts`, `plan/detailCallout.test.ts`.
@@ -76,6 +77,7 @@ to understand their state before starting work.
 ### D7 — Finish Project Browser tree enhancements
 
 The ceiling plan section was added in the unstaged changes. Complete the rest:
+
 - **Renaming**: double-click a view name in the browser to edit it inline.
   Dispatch `{ type: 'renameView', viewId, newName }`.
 - **Context menu** on each view: Duplicate, Delete, Properties. The
@@ -161,6 +163,7 @@ Tests: create revision, apply to sheet, verify revision table renders.
 ### D8 — Verify / complete Color Fill Scheme Dialog
 
 `plan/ColorSchemeDialog.tsx` and `plan/colorFillLegend.ts` exist. Read them:
+
 - If fully wired (dispatch `applyColorScheme`, rooms filled at 30% opacity,
   legend element renders), mark as Done in the tracker.
 - If there are missing pieces (e.g. the dialog exists but doesn't dispatch the

@@ -41,6 +41,7 @@ Prettier runs automatically after every Edit/Write.
 ### F1 — Global parameters dialog (Ch. 3.8)
 
 **F1a. Data model**: Add to `project_settings` in `core/index.ts`:
+
 ```ts
 globalParams?: Array<{
   id: string;
@@ -51,17 +52,19 @@ globalParams?: Array<{
 ```
 
 **F1b. Commands**:
+
 - `{ type: 'addGlobalParam', name: string, formula: string }`
 - `{ type: 'updateGlobalParam', id: string, formula: string, valueMm: number }`
 - `{ type: 'deleteGlobalParam', id: string }`
 
 **F1c. Dialog**: Create `packages/web/src/workspace/project/GlobalParamsDialog.tsx`:
+
 - Renders a table: columns "Name", "Formula", "Value (mm)"
 - Each row is editable inline; formula field validates as a numeric expression
 - "Add Parameter" button appends a new row
 - "Delete" button on each row
 - Simple formula evaluator: use `Function('return ' + formula)()` or a safe expression
-  parser (avoid arbitrary code exec — strip non-numeric chars except +−*/() and spaces)
+  parser (avoid arbitrary code exec — strip non-numeric chars except +−\*/() and spaces)
 - On any change, dispatch the appropriate command + recompute `valueMm`
 
 **F1d. Workspace wiring**: In `Workspace.tsx`, add `globalParamsOpen` state + menu entry
@@ -69,6 +72,7 @@ the same way `phaseManagerOpen` and `PhaseManagerDialog` are wired. Study lines 
 and ~4148–4194 in Workspace.tsx for the exact pattern.
 
 Tests:
+
 - addGlobalParam command stores the param in project_settings
 - Formula "3000 + 500" evaluates to valueMm=3500
 - Dialog renders a row for each globalParam
@@ -82,6 +86,7 @@ Update tracker §3.8: "Implemented — global params table + dialog + commands"
 **F2a. ToolId**: Add `'decal'` to `toolRegistry.ts` (hotkey `DC`, 3D mode only).
 
 **F2b. Grammar**: Add `DecalState` / `reduceDecal` to `toolGrammar.ts`:
+
 ```
 idle
   → 3D click on a face → picking-image (store position + face normal)
@@ -89,6 +94,7 @@ picking-image
   → image chosen (via file picker or URL input in options bar) → done
   → Escape → idle
 ```
+
 Effect on done: `{ kind: 'createDecal', positionMm, normalVec, imageSrc, widthMm: 1000, heightMm: 1000 }`
 
 **F2c. PlanCanvas / viewport wiring**: Wire `case 'decal':` in PlanCanvas.tsx (or in the
@@ -102,6 +108,7 @@ The 3D mesh builder (`buildDecalMesh`) already exists — just ensure it's dispa
 `meshBuilders.ts` for `kind === 'decal'`.
 
 Tests:
+
 - Grammar: 3D face click produces createDecal effect with correct normalVec
 - Inspector renders imageSrc, widthMm, heightMm fields
 
@@ -112,6 +119,7 @@ Update tracker §8.1.5: "Implemented — 'decal' ToolId + grammar + inspector"
 ### F3 — Sloped / inclined columns (Ch. 9.1.4)
 
 **F3a. Data model**: Add to the column element type in `core/index.ts`:
+
 ```ts
 topOffsetXMm?: number;   // horizontal X shift of column top from base (default 0)
 topOffsetYMm?: number;   // horizontal Y shift of column top from base (default 0)
@@ -119,12 +127,14 @@ topOffsetYMm?: number;   // horizontal Y shift of column top from base (default 
 
 **F3b. 3D mesh**: In `meshBuilders.ts` (column case), when `topOffsetXMm` or `topOffsetYMm`
 is non-zero:
+
 - Compute the inclined axis vector: `(topOffsetXMm, topOffsetYMm, heightMm)` — normalized
 - Extrude the column profile along this axis instead of straight up
 - The base profile stays at `positionMm` (XY); the top profile is offset by
   `(topOffsetXMm, topOffsetYMm)` at height `heightMm`
 
 **F3c. Plan symbol**: In the column plan symbol renderer, when column has non-zero offsets:
+
 - Draw the base footprint solid (existing)
 - Draw the top footprint dashed, shifted by `(topOffsetXMm, topOffsetYMm)` in plan space
 - Draw a diagonal line connecting the two footprint centres
@@ -134,6 +144,7 @@ column inspector panel. Add a read-only "Inclination angle" field computed as:
 `Math.atan2(Math.hypot(topOffsetXMm, topOffsetYMm), heightMm) * (180 / Math.PI)`.
 
 Tests:
+
 - Column with `topOffsetXMm: 500, heightMm: 3000`: verify top vertices in 3D mesh
   are shifted by 500mm in X relative to base vertices
 - Zero offsets produces same output as before (no regression)

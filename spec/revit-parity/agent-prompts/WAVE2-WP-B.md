@@ -43,6 +43,7 @@ Prettier runs automatically after every Edit/Write.
 
 The grammar (`ArrayState`/`reduceArray`) is complete but not dispatched from PlanCanvas.
 Find `case 'scale':` in PlanCanvas.tsx and add a parallel `case 'array':` block that:
+
 - Routes mousedown/mouseup/mousemove/keydown events through `reduceArray`
 - Passes `activeTool === 'array'` to the relevant sections (copy exactly how scale does it)
 - On the grammar's `effect.kind === 'createLinearArray'` or `'createRadialArray'`, dispatch
@@ -60,6 +61,7 @@ Update tracker §3.3.6 Array: "Implemented (WP-B wave 2)"
 ### B2 — Group plan renderer
 
 Create `packages/web/src/plan/groupInstanceRender.ts`:
+
 - For each `group_instance` element in the current view, compute the bounding rectangle
   of all definition-member elements at their transformed positions
 - Render a dashed rectangle in plan at the group instance position
@@ -70,6 +72,7 @@ Create `packages/web/src/plan/groupInstanceRender.ts`:
 Call this from `planElementMeshBuilders.ts` for elements with `kind === 'group_instance'`.
 
 Tests:
+
 - Given a GroupInstance and a GroupDefinition with two walls, buildGroupInstancePlanMesh
   returns a dashed rectangle geometry at the correct position
 
@@ -78,6 +81,7 @@ Tests:
 ### B3 — Group 3D renderer
 
 Create `packages/web/src/viewport/groupInstance3d.ts`:
+
 - For each `group_instance` element, retrieve its `GroupDefinition` from the registry
 - Apply the instance's insertion point + rotation as a Three.js Matrix4
 - For each element in the definition, call the existing mesh builder for that element type
@@ -91,6 +95,7 @@ Dispatch this from `meshBuilders.ts` for `kind === 'group_instance'`.
 ### B4 — Place-group grammar
 
 Add `PlaceGroupState` / `reducePlaceGroup` to `toolGrammar.ts`:
+
 - `idle` → user clicks in plan → `{ type: 'placeGroup', definitionId, positionMm }`
 - The options bar shows a dropdown of available group definitions from `groupRegistry`
   (pass registry into the grammar or read from store in PlanCanvas handler)
@@ -101,6 +106,7 @@ Add `PlaceGroupState` / `reducePlaceGroup` to `toolGrammar.ts`:
 ### B5 — Groups subtree in ProjectBrowser
 
 In `ProjectBrowser.tsx` (or `ProjectBrowserV3.tsx`), add a "Groups" tree node:
+
 - Lists all `GroupDefinition` entries from `groupRegistry` by name
 - Shows instance count as a badge: "Wall Cluster (3)"
 - Right-click context menu: "Rename", "Select All Instances", "Delete"

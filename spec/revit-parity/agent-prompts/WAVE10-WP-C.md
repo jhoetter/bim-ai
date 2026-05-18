@@ -49,6 +49,7 @@ group element     → enter group edit mode (dispatch 'editGroup' command)
 ```
 
 Implementation steps:
+
 1. In the dblclick handler, raycast to find the hit element (or use `selectedElementIds[0]` if already selected)
 2. Switch on `el.kind` and dispatch the appropriate action
 3. For floor: dispatch the same command that "Edit Boundary" button fires — find it in `InspectorContent.tsx` and replicate
@@ -58,6 +59,7 @@ Implementation steps:
 ### B — Double-click on wall: edit profile hint
 
 For walls, double-click should:
+
 - Select the wall (if not already selected)
 - Show a toast/status hint: "Double-clicked wall — use Edit Profile in the inspector to modify the cross-section shape"
 - OR: if the wall has a custom `profilePoints` field, enter profile sketch mode (check if this exists)
@@ -67,6 +69,7 @@ Keep it simple: if full profile editing is not yet implemented, just select + sh
 ### C — Visual feedback: double-click pulse
 
 When a double-click triggers an edit mode switch, briefly highlight the element with a flash:
+
 - Set `userData.editFlash = true` on the element's plan mesh
 - In the render loop: if `editFlash`, animate opacity 1→0.3→1 over 300 ms, then clear the flag
 
@@ -75,6 +78,7 @@ This is optional — skip if it significantly complicates the implementation.
 ### D — Tests
 
 Write `packages/web/src/plan/doubleClickEdit.test.ts`:
+
 ```ts
 describe('double-click to edit — §1.8.3', () => {
   it('double-click on floor element triggers floor boundary edit mode', () => { ... });
@@ -90,6 +94,7 @@ describe('double-click to edit — §1.8.3', () => {
 ## Commit and push
 
 After tests pass (`pnpm test --filter @bim-ai/web`):
+
 ```
 git add -p
 git commit -m "feat(wave10/C): double-click to edit in context for floor/roof/group/room (§1.8.3)"

@@ -38,18 +38,16 @@ In `ProjectBrowser.tsx` (or whichever is the active one), add a "Families" colla
 
 ```tsx
 // After the existing "Views" or "Sheets" section:
-<ProjectBrowserSection
-  label="Families"
-  data-testid="pb-section-families"
-  defaultCollapsed={true}
->
-  {familyTypes.map(ft => (
+<ProjectBrowserSection label="Families" data-testid="pb-section-families" defaultCollapsed={true}>
+  {familyTypes.map((ft) => (
     <ProjectBrowserLeaf
       key={ft.id}
       label={ft.name ?? ft.kind}
       icon="🧩"
       data-testid={`pb-family-${ft.id}`}
-      onDoubleClick={() => { /* open family editor for this type */ }}
+      onDoubleClick={() => {
+        /* open family editor for this type */
+      }}
     />
   ))}
 </ProjectBrowserSection>
@@ -58,6 +56,7 @@ In `ProjectBrowser.tsx` (or whichever is the active one), add a "Families" colla
 `familyTypes` = all elements with `kind` in `['family_extrusion', 'family_revolve', 'family_void', 'family_blend', 'family_sweep']` collected from `elementsById`.
 
 Group by kind category:
+
 - "Structural" — `family_extrusion`, `family_blend`, `family_sweep`
 - "Voids" — `family_void`
 - "Revolves" — `family_revolve`
@@ -69,12 +68,8 @@ Group by kind category:
 Add a "Groups" collapsible section:
 
 ```tsx
-<ProjectBrowserSection
-  label="Groups"
-  data-testid="pb-section-groups"
-  defaultCollapsed={true}
->
-  {groupDefinitions.map(gd => (
+<ProjectBrowserSection label="Groups" data-testid="pb-section-groups" defaultCollapsed={true}>
+  {groupDefinitions.map((gd) => (
     <ProjectBrowserLeaf
       key={gd.id}
       label={gd.name ?? 'Group'}
@@ -139,20 +134,22 @@ onContextMenu={(e) => {
 When rename is triggered, replace the leaf label with an `<input>`:
 
 ```tsx
-{renamingId === view.id ? (
-  <input
-    data-testid={`pb-rename-input-${view.id}`}
-    defaultValue={view.name ?? ''}
-    autoFocus
-    onBlur={e => commitRename(view.id, e.target.value)}
-    onKeyDown={e => {
-      if (e.key === 'Enter') commitRename(view.id, e.currentTarget.value);
-      if (e.key === 'Escape') setRenamingId(null);
-    }}
-  />
-) : (
-  <span>{view.name}</span>
-)}
+{
+  renamingId === view.id ? (
+    <input
+      data-testid={`pb-rename-input-${view.id}`}
+      defaultValue={view.name ?? ''}
+      autoFocus
+      onBlur={(e) => commitRename(view.id, e.target.value)}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter') commitRename(view.id, e.currentTarget.value);
+        if (e.key === 'Escape') setRenamingId(null);
+      }}
+    />
+  ) : (
+    <span>{view.name}</span>
+  );
+}
 ```
 
 ---
@@ -166,6 +163,7 @@ If there is no "Camera Views" or "3D Views" section, add one listing all element
 ### F — Tests
 
 `packages/web/src/workspace/project/projectBrowserFamilies.test.tsx`:
+
 ```ts
 describe('ProjectBrowser families section — §1.6.11', () => {
   it('renders pb-section-families', () => { ... });
@@ -175,6 +173,7 @@ describe('ProjectBrowser families section — §1.6.11', () => {
 ```
 
 `packages/web/src/workspace/project/projectBrowserGroups.test.tsx`:
+
 ```ts
 describe('ProjectBrowser groups section — §1.6.11', () => {
   it('renders pb-section-groups', () => { ... });
@@ -184,6 +183,7 @@ describe('ProjectBrowser groups section — §1.6.11', () => {
 ```
 
 `packages/web/src/workspace/project/projectBrowserContextMenu.test.tsx`:
+
 ```ts
 describe('ProjectBrowser context menu — §1.6.11', () => {
   it('right-click on view shows pb-context-menu', () => { ... });

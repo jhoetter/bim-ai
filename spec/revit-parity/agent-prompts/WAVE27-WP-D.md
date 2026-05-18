@@ -11,6 +11,7 @@ This prompt is self-contained — start here.
 §3.3.5 "Gruppe Steuerelemente" is Partial P2. Pin element is available. "Show/hide dimension constraints on canvas is Partial." In Revit, clicking "Show Constraints" in the ribbon shows EQ (equality) constraint markers and lock symbols on constrained dimensions directly on the canvas.
 
 This task adds:
+
 1. A `showConstraints` boolean field on `plan_view` (or a viewport store slice)
 2. A "Show Constraints" toggle button in `PlanViewHeader.tsx`
 3. `ToggleShowConstraintsCmd` command
@@ -29,6 +30,7 @@ packages/web/src/workspace/Workspace.tsx                — find toggleCropRegio
 ```
 
 Run before editing:
+
 - `grep -n "showConstraints\|isLocked\|isEqualityDim\|ToggleConstraints" packages/core/src/index.ts | head -10`
 - `grep -n "showConstraints\|thin.*lines\|toggleThinLines" packages/web/src/plan/PlanViewHeader.tsx | head -10`
 - `grep -n "permanent_dimension\|isLocked\|isEquality" packages/web/src/viewport/symbology.ts | head -10`
@@ -121,6 +123,7 @@ In `symbology.ts` (or wherever `permanent_dimension` elements are rendered), aft
 Find the rendering logic for `permanent_dimension`. When `showConstraints` is true AND `isEqualityDimension` is true, replace the numeric text with "EQ". When `isLocked` is true, append a 🔒 symbol to the label (or render a separate CSS2DObject with the padlock character).
 
 If the rendering uses `CSS2DObject` for the label, you can do:
+
 ```ts
 const label = showConstraints && dim.isEqualityDimension ? 'EQ' : formatDimLabel(dim);
 const lockSuffix = showConstraints && dim.isLocked ? ' 🔒' : '';
@@ -166,7 +169,7 @@ describe('Show constraints toggle — §3.3.5', () => {
 
   it('showConstraints defaults to false when not set', () => {
     const view: any = { kind: 'plan_view', id: 'pv1' };
-    expect((view.showConstraints ?? false)).toBe(false);
+    expect(view.showConstraints ?? false).toBe(false);
   });
 
   it('toggle flips showConstraints', () => {

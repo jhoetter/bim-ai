@@ -128,7 +128,11 @@ export function buildSpireRoofMesh(el: SpireRoofEl): THREE.Mesh {
   const rM = el.baseRadiusMm / 1000;
   const hM = el.heightMm / 1000;
   const baseM = el.baseElevationMm / 1000;
-  const points = [new THREE.Vector2(rM, 0), new THREE.Vector2(0.01, hM * 0.85), new THREE.Vector2(0, hM)];
+  const points = [
+    new THREE.Vector2(rM, 0),
+    new THREE.Vector2(0.01, hM * 0.85),
+    new THREE.Vector2(0, hM),
+  ];
   const geo = new THREE.LatheGeometry(points, 16);
   const mat = new THREE.MeshStandardMaterial({ color: '#555', roughness: 0.5, metalness: 0.4 });
   const mesh = new THREE.Mesh(geo, mat);
@@ -148,23 +152,35 @@ In the plan mesh builder loop, add cases for the three new kinds. Draw a **circl
 
 ```ts
 // conical_roof / dome_roof / spire_roof — plan: filled circle outline
-function specialRoofPlanSymbol(el: { centerMm: {xMm:number;yMm:number}; baseRadiusMm: number; id: string }): THREE.Group {
+function specialRoofPlanSymbol(el: {
+  centerMm: { xMm: number; yMm: number };
+  baseRadiusMm: number;
+  id: string;
+}): THREE.Group {
   const grp = new THREE.Group();
   grp.userData.bimPickId = el.id;
   const r = el.baseRadiusMm / 1000;
   const pts: THREE.Vector3[] = [];
   for (let i = 0; i <= 64; i++) {
     const a = (i / 64) * Math.PI * 2;
-    pts.push(new THREE.Vector3(el.centerMm.xMm / 1000 + Math.cos(a) * r, PLAN_Y + 0.002, -el.centerMm.yMm / 1000 + Math.sin(a) * r));
+    pts.push(
+      new THREE.Vector3(
+        el.centerMm.xMm / 1000 + Math.cos(a) * r,
+        PLAN_Y + 0.002,
+        -el.centerMm.yMm / 1000 + Math.sin(a) * r,
+      ),
+    );
   }
   const geo = new THREE.BufferGeometry().setFromPoints(pts);
   grp.add(new THREE.Line(geo, new THREE.LineBasicMaterial({ color: '#7a5a3a' })));
   // Cross-hair lines
-  grp.add(makeLineSegment(
-    new THREE.Vector3(el.centerMm.xMm/1000 - r*0.15, PLAN_Y+0.002, -el.centerMm.yMm/1000),
-    new THREE.Vector3(el.centerMm.xMm/1000 + r*0.15, PLAN_Y+0.002, -el.centerMm.yMm/1000),
-    '#7a5a3a',
-  ));
+  grp.add(
+    makeLineSegment(
+      new THREE.Vector3(el.centerMm.xMm / 1000 - r * 0.15, PLAN_Y + 0.002, -el.centerMm.yMm / 1000),
+      new THREE.Vector3(el.centerMm.xMm / 1000 + r * 0.15, PLAN_Y + 0.002, -el.centerMm.yMm / 1000),
+      '#7a5a3a',
+    ),
+  );
   return grp;
 }
 ```
@@ -176,10 +192,11 @@ Use a helper `makeLineSegment` already present in symbology.ts (search for it) o
 ### D — Tool registration + grammar
 
 In `toolRegistry.ts`, add three new tool IDs:
+
 ```ts
-'conical-roof'   // hotkey 'CR', plan mode
-'dome-roof'      // hotkey 'DM', plan mode
-'spire-roof'     // hotkey 'SP', plan mode — note: 'SP' may conflict; use 'SI' if so
+'conical-roof'; // hotkey 'CR', plan mode
+'dome-roof'; // hotkey 'DM', plan mode
+'spire-roof'; // hotkey 'SP', plan mode — note: 'SP' may conflict; use 'SI' if so
 ```
 
 In `toolGrammar.ts`, add a shared 2-click grammar for all three (center point → radius drag):
@@ -192,6 +209,7 @@ In `toolGrammar.ts`, add a shared 2-click grammar for all three (center point �
 Wire into `PlanCanvas.tsx` just as the excavation or ramp tool is wired.
 
 In `defaultCommands.ts`, register palette commands:
+
 ```ts
 { id: 'tool.conical-roof', label: 'Conical Roof', ... }
 { id: 'tool.dome-roof', label: 'Dome Roof', ... }
@@ -213,6 +231,7 @@ In `InspectorContent.tsx`, add sections for each new kind (search for `kind === 
 ### F — Tests
 
 `packages/web/src/viewport/meshBuilders.coneRoof.test.ts`:
+
 ```ts
 describe('conical/dome/spire roof mesh builders', () => {
   it('buildConicalRoofMesh returns a Mesh', ...);

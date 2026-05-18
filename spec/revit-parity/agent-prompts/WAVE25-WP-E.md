@@ -9,12 +9,14 @@ This prompt is self-contained — start here.
 ## Context
 
 **§12.4.5 PDF Export** is Partial. Single-sheet and multi-sheet PDF export both work. What's missing:
+
 - Per-sheet page orientation override (portrait vs landscape per individual sheet)
 - Page number injection in the PDF header/footer area
 
 **§12.4.3 DXF/IFC Export** — the DXF exporter has good layer coverage (walls, doors, windows, rooms, grid lines, dims). What's still missing are **custom layer color assignments** so DXF layers get proper ACI color numbers (Revit exports colored layers: A-WALL=7/white, A-DOOR=1/red, A-GLAZ=3/green, etc.).
 
 This task adds:
+
 1. Per-sheet orientation override to PrintPlotDialog
 2. Page number header in exported sheets
 3. ACI layer color assignments to the DXF exporter
@@ -33,6 +35,7 @@ packages/web/src/export/dxfExporter.test.ts            — existing DXF export t
 ```
 
 Run before editing:
+
 - `grep -n "orientation\|portrait\|landscape\|Orientation" packages/web/src/workspace/sheets/PrintPlotDialog.tsx | head -10`
 - `grep -n "pageNumber\|headerMm\|footerMm\|page.*number" packages/web/src/export/pdfExporter.ts | head -10`
 - `grep -n "A-WALL\|A-DOOR\|A-GLAZ\|layer.*color\|ACI\|color.*0\|LTYPE" packages/web/src/export/dxfExporter.ts | head -20`
@@ -52,20 +55,25 @@ In `PrintPlotDialog.tsx`, find the global orientation selector (portrait/landsca
 Minimum implementation: add a `useSheetOrientation` state that stores `Record<string, 'portrait' | 'landscape'>` (keyed by sheet id). For each sheet in the sheet list, show a small dropdown next to the sheet name:
 
 ```tsx
-const [sheetOrientations, setSheetOrientations] = React.useState<Record<string, 'portrait' | 'landscape'>>({});
+const [sheetOrientations, setSheetOrientations] = React.useState<
+  Record<string, 'portrait' | 'landscape'>
+>({});
 
 // In the sheet list rendering:
 <select
   data-testid={`sheet-orientation-${sheet.id}`}
   value={sheetOrientations[sheet.id] ?? orientation}
   onChange={(e) =>
-    setSheetOrientations((prev) => ({ ...prev, [sheet.id]: e.target.value as 'portrait' | 'landscape' }))
+    setSheetOrientations((prev) => ({
+      ...prev,
+      [sheet.id]: e.target.value as 'portrait' | 'landscape',
+    }))
   }
   className="text-xs border border-border/30 rounded px-1"
 >
   <option value="portrait">Portrait</option>
   <option value="landscape">Landscape</option>
-</select>
+</select>;
 ```
 
 Pass the per-sheet orientations to the export function.
@@ -77,6 +85,7 @@ If the sheet list UI is complex to modify, add a simpler approach: add a "Defaul
 In `packages/web/src/export/dxfExporter.ts`, find where layers are defined in the DXF LAYER TABLE. Add ACI color numbers (AutoCAD Color Index) to each layer:
 
 Standard ACI colors:
+
 - 7 = white/black (plan default)
 - 1 = red (doors)
 - 3 = green (windows/glazing)
@@ -119,11 +128,13 @@ Adapt to the actual SVG rendering approach in pdfExporter.ts.
 ### D — commandCapabilities.ts entries (if not already present)
 
 Check if `view.print-pdf` capability exists:
+
 ```
 grep -n "print-pdf\|exportPdf\|12\.4\.5" packages/web/src/workspace/commandCapabilities.ts | head -5
 ```
 
 If not present, add:
+
 ```ts
 {
   id: 'file.export-pdf',

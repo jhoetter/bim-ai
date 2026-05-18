@@ -40,14 +40,22 @@ Read ALL of these before writing anything:
 ### A — update_toposolid command
 
 Add to `core/index.ts` (if not already present):
+
 ```ts
 export type UpdateToposolidCmd = {
   type: 'update_toposolid';
   id: string;
-  patch: Partial<Pick<Extract<Element, { kind: 'toposolid' }>, 'heightSamples' | 'thicknessMm' | 'baseElevationMm'>>;
+  patch: Partial<
+    Pick<
+      Extract<Element, { kind: 'toposolid' }>,
+      'heightSamples' | 'thicknessMm' | 'baseElevationMm'
+    >
+  >;
 };
 ```
+
 Add to Command union. Handle in `Workspace.tsx`:
+
 ```ts
 case 'update_toposolid':
   setElementsById({ ...elementsById, [cmd.id]: { ...elementsById[cmd.id], ...cmd.patch } });
@@ -57,6 +65,7 @@ case 'update_toposolid':
 ### B — Tool registration
 
 In `toolRegistry.ts`, add:
+
 ```ts
 'terrain-point': {
   id: 'terrain-point',
@@ -79,12 +88,14 @@ type TerrainPointState =
 ```
 
 Events:
+
 - `activate` with `toposolidId: string` → moves to `active` with empty pendingSamples
 - `click` with `xMm, yMm` in `active` → appends `{ xMm, yMm, zMm: 0 }` to pendingSamples; emits `previewTerrainPoints` effect (for plan display)
 - `commit` (Enter) in `active` → emits `addTerrainPoints` effect with `toposolidId` + `pendingSamples`; returns to `idle`
 - `cancel` / `deactivate` → idle
 
 Wire into `PlanCanvas.tsx` (follow the same pattern as other site tools):
+
 - `case 'terrain-point'`: dispatch `click` with world coordinates on canvas click; Enter dispatches `commit`; Escape dispatches `cancel`
 - On `addTerrainPoints` effect: dispatch `{ type: 'update_toposolid', id, patch: { heightSamples: [...existingSamples, ...newSamples] } }`
 
@@ -95,7 +106,7 @@ Create `packages/web/src/plan/terrainPointSymbol.ts`:
 ```ts
 export function terrainControlPointsPlanThree(
   topo: Extract<Element, { kind: 'toposolid' }>,
-): THREE.Group
+): THREE.Group;
 ```
 
 - Return empty Group if no heightSamples
@@ -108,6 +119,7 @@ Wire into `symbology.ts` toposolid loop.
 ### E — Inspector panel
 
 In `InspectorContent.tsx` for `el.kind === 'toposolid'`, add a "Control Points" section:
+
 - `data-testid="inspector-topo-point-count"` — read-only: `"${el.heightSamples?.length ?? 0} control points"`
 - `data-testid="inspector-topo-clear-points"` button — dispatches `update_toposolid` with `patch: { heightSamples: [] }`
 - List of height samples with `data-testid="inspector-topo-point-{i}-z"` — number input (mm) for each sample's `zMm`; on change dispatch `update_toposolid` with updated heightSamples array
@@ -115,6 +127,7 @@ In `InspectorContent.tsx` for `el.kind === 'toposolid'`, add a "Control Points" 
 ### F — Tests
 
 Write `packages/web/src/tools/terrainPointTool.test.ts`:
+
 ```ts
 describe('terrain point grammar — §5.1.1 + §5.1.2', () => {
   it('activate transitions from idle to active', () => { ... });
@@ -126,6 +139,7 @@ describe('terrain point grammar — §5.1.1 + §5.1.2', () => {
 ```
 
 Write `packages/web/src/plan/terrainPointSymbol.test.ts`:
+
 ```ts
 describe('terrainControlPointsPlanThree — §5.1.1', () => {
   it('returns empty Group when no heightSamples', () => { ... });

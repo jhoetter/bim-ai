@@ -14,13 +14,13 @@ This tracker is for the code-quality items only:
 
 ## Current Snapshot
 
-| ID    | Status    | Current state                                                                                                                                                                                                                                    |
-| ----- | --------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| CQ-01 | `done`    | Sequenced WebSocket publish path, bounded replay buffer, resume/RESYNC flow, client reconnect/backoff, and regression coverage are merged and green.                                                                                             |
-| CQ-02 | `done`    | `uv.lock`, bounded Python deps, frozen installs, and lockfile CI checks are merged and green.                                                                                                                                                    |
-| CQ-03 | `done`    | Feature clusters now own their files under `workspace/agent/`, `bcf/`, `evidence/`, `inspector/`, `comments/`, `shell/`, `readouts/`, `sheets/`, `project/`, `authoring/`, `library/`, and `viewport/`; only 17 cross-feature shell/shared files remain at root. |
-| CQ-04 | `done`    | The legacy Python entrypoints are compatibility facades: `constraints.py` is 106 LOC, `export_ifc.py` is 449 LOC, and `engine.py` is 559 LOC; evaluation, IFC building, engine helpers, commit orchestration, dispatch, replay, geometry, and advisory bodies live in focused modules. |
-| CQ-05 | `done`    | The stable `useBimStore` facade is a 110-LOC composition layer over extracted model, viewport, plan authoring, collaboration, workspace UI, and coercion modules with slice regression tests.                                                    |
+| ID    | Status | Current state                                                                                                                                                                                                                                                                          |
+| ----- | ------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| CQ-01 | `done` | Sequenced WebSocket publish path, bounded replay buffer, resume/RESYNC flow, client reconnect/backoff, and regression coverage are merged and green.                                                                                                                                   |
+| CQ-02 | `done` | `uv.lock`, bounded Python deps, frozen installs, and lockfile CI checks are merged and green.                                                                                                                                                                                          |
+| CQ-03 | `done` | Feature clusters now own their files under `workspace/agent/`, `bcf/`, `evidence/`, `inspector/`, `comments/`, `shell/`, `readouts/`, `sheets/`, `project/`, `authoring/`, `library/`, and `viewport/`; only 17 cross-feature shell/shared files remain at root.                       |
+| CQ-04 | `done` | The legacy Python entrypoints are compatibility facades: `constraints.py` is 106 LOC, `export_ifc.py` is 449 LOC, and `engine.py` is 559 LOC; evaluation, IFC building, engine helpers, commit orchestration, dispatch, replay, geometry, and advisory bodies live in focused modules. |
+| CQ-05 | `done` | The stable `useBimStore` facade is a 110-LOC composition layer over extracted model, viewport, plan authoring, collaboration, workspace UI, and coercion modules with slice regression tests.                                                                                          |
 
 ## Status Legend
 

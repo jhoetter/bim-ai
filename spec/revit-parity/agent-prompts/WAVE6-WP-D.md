@@ -28,6 +28,7 @@ Prettier runs automatically after every Edit/Write.
 ## What already exists — DO NOT rebuild
 
 Read ALL of these files before writing anything:
+
 - `groups/groupCommands.ts` — `EditGroupCommand { type: 'editGroup'; groupDefinitionId }` and
   `FinishEditGroupCommand { type: 'finishEditGroup' }` command interfaces exist. Read what logic
   functions exist (e.g. `applyCreateGroup`, `applyPlaceGroup`, `applyRenameGroup`).
@@ -45,12 +46,14 @@ Read ALL of these files before writing anything:
 ### A — Store state
 
 In `state/storeTypes.ts`, add (if not present):
+
 ```ts
 groupEditModeDefinitionId: string | null;
 setGroupEditModeDefinitionId: (id: string | null) => void;
 ```
 
 In the store slice that handles `groupRegistry`, implement:
+
 ```ts
 groupEditModeDefinitionId: null,
 setGroupEditModeDefinitionId: (id) => set({ groupEditModeDefinitionId: id }),
@@ -60,6 +63,7 @@ setGroupEditModeDefinitionId: (id) => set({ groupEditModeDefinitionId: id }),
 
 In `Workspace.tsx`, handle an `'editGroup'` semantic command (dispatched via the palette or
 context menu):
+
 ```ts
 case 'editGroup':
   useBimStore.getState().setGroupEditModeDefinitionId(cmd.groupDefinitionId);
@@ -81,9 +85,14 @@ In `Workspace.tsx` (or a new component `GroupEditModeBar.tsx`), when
 `groupEditModeDefinitionId !== null`, render a floating bar at the bottom of the canvas:
 
 ```tsx
-<div data-testid="group-edit-mode-bar" style={{ position: 'fixed', bottom: 16, left: '50%', transform: 'translateX(-50%)' }}>
+<div
+  data-testid="group-edit-mode-bar"
+  style={{ position: 'fixed', bottom: 16, left: '50%', transform: 'translateX(-50%)' }}
+>
   <span>Editing group: {groupName}</span>
-  <button data-testid="finish-edit-group-btn" onClick={finishEditing}>Finish Editing Group</button>
+  <button data-testid="finish-edit-group-btn" onClick={finishEditing}>
+    Finish Editing Group
+  </button>
 </div>
 ```
 
@@ -92,6 +101,7 @@ In `Workspace.tsx` (or a new component `GroupEditModeBar.tsx`), when
 ### E — Selection restriction
 
 In `Workspace.tsx` (or wherever `selectedIds` is managed), when `groupEditModeDefinitionId !== null`:
+
 - Filter the selectable elements so only those in `groupRegistry.definitions[groupEditModeDefinitionId].elementIds` can be selected.
 - If a click tries to select an element NOT in the group, do NOT add it to `selectedIds`.
 - Implement this by wrapping the `setSelectedIds` call: check membership in `groupEditModeDefinitionId`'s `elementIds`.
@@ -101,6 +111,7 @@ This is the key behaviour: during group edit mode, clicking non-group elements d
 ### F — Tests
 
 Write `packages/web/src/groups/groupEditMode.test.ts`:
+
 ```ts
 describe('group edit mode — §8.9.3', () => {
   it('setGroupEditModeDefinitionId sets groupEditModeDefinitionId in store', () => { ... });
@@ -111,6 +122,7 @@ describe('group edit mode — §8.9.3', () => {
 ```
 
 Write `packages/web/src/groups/groupEditModeBar.test.tsx`:
+
 ```ts
 describe('GroupEditModeBar — §8.9.3', () => {
   it('renders group-edit-mode-bar when groupEditModeDefinitionId is set', () => { ... });

@@ -80,7 +80,7 @@ interface VisibilityGraphicsDialogProps {
   planView: Extract<Element, { kind: 'plan_view' }>;
   onOverrideChange: (category: string, patch: CategoryVisualOverride | null) => void;
 }
-export function VisibilityGraphicsDialog(props): JSX.Element | null
+export function VisibilityGraphicsDialog(props): JSX.Element | null;
 ```
 
 - `data-testid="vg-dialog"` on container; return `null` when `open === false`
@@ -103,9 +103,15 @@ In `symbology.ts` / `rebuildPlanMeshes`, after existing lens/filter logic, apply
 
 ```ts
 const override = planView.categoryOverrides?.[el.kind];
-if (override?.hidden) { /* skip or hide mesh */ }
-if (override?.colorHex) { /* apply color to mesh material */ }
-if (override?.lineWeightPx) { /* apply line weight */ }
+if (override?.hidden) {
+  /* skip or hide mesh */
+}
+if (override?.colorHex) {
+  /* apply color to mesh material */
+}
+if (override?.lineWeightPx) {
+  /* apply line weight */
+}
 ```
 
 Read the existing lens/phase-style application code and extend it — do not rewrite it.
@@ -122,6 +128,7 @@ In `Workspace.tsx`:
 ### E — Palette command
 
 In `defaultCommands.ts`:
+
 ```ts
 registerCommand({
   id: 'view.visibility-graphics',
@@ -138,6 +145,7 @@ Add `openVisibilityGraphics?: () => void` to `PaletteContext`.
 ### F — Tests
 
 Write `packages/web/src/workspace/VisibilityGraphicsDialog.test.tsx`:
+
 ```ts
 describe('VisibilityGraphicsDialog — §2.1.4', () => {
   it('renders vg-dialog when open=true', () => { ... });
@@ -154,6 +162,7 @@ describe('VisibilityGraphicsDialog — §2.1.4', () => {
 ## Commit and push
 
 After tests pass (`pnpm test --filter @bim-ai/web`):
+
 ```
 git add -p
 git commit -m "feat(wave11/A): visibility/graphics override dialog (§2.1.4)"

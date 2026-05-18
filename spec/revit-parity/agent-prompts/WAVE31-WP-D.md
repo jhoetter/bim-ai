@@ -9,6 +9,7 @@ This prompt is self-contained — start here.
 ## Context
 
 §12.4.3 "Exportieren nach CAD" is Partial P1. Already implemented:
+
 - DXF export: `dxfExporter.ts` — full multi-layer export with walls/doors/windows/rooms/grids/dims
 - DWG export: `dwgExporter.ts` — text DXF with DWG-compatible header + `.dwg` extension
 - IFC export: `ifcExporter.ts` — IFCWALL, IFCBEAM, IFCCOLUMN, IFCSTAIR, IFCRAILING entities
@@ -16,6 +17,7 @@ This prompt is self-contained — start here.
 Missing: **DGN export** (MicroStation DGN format). True binary DGN v8 requires a complex proprietary format; instead, add a DGN text-cell export that produces a MicroStation-compatible seed file. For practical parity, the export can generate a DGN file as a text-based "DGN seed" (MicroStation's format subset) or simply re-use the DXF content with a `.dgn` extension and `DGNSEED` header comment — which many DGN viewers accept via the DGN/DXF bridge.
 
 This task adds:
+
 1. `packages/web/src/export/dgnExporter.ts` — `exportSceneToDgn(elementsById, levels)` returning a string with minimal DGN-compatible content
 2. "Export DGN" menu item in `ProjectMenu.tsx`
 3. Handler in `Workspace.tsx`
@@ -34,6 +36,7 @@ packages/web/src/workspace/Workspace.tsx    — find handleExportDxf as pattern 
 ```
 
 Run before editing:
+
 - `grep -n "exportSceneToDwg\|handleExportDwg\|export-dwg\|data-testid.*dwg" packages/web/src/workspace/project/ProjectMenu.tsx | head -10`
 - `grep -n "exportSceneToDwg\|handleExportDwg\|ExportDwg" packages/web/src/workspace/Workspace.tsx | head -10`
 - `grep -n "export.*function\|buildPlanView\|export type" packages/web/src/export/dwgExporter.ts | head -10`
@@ -75,9 +78,7 @@ export function exportSceneToDgn(
   options: DgnExportOptions = {},
 ): string {
   const { units = 'mm', levelIds } = options;
-  const targetLevels = levelIds
-    ? levels.filter((l) => levelIds.includes(l.id))
-    : levels;
+  const targetLevels = levelIds ? levels.filter((l) => levelIds.includes(l.id)) : levels;
 
   if (targetLevels.length === 0) {
     return '; DGN SEED — no levels to export\n';
@@ -147,7 +148,11 @@ In `packages/web/src/workspace/project/ProjectMenu.tsx`, find where the DWG expo
 <button
   data-testid="export-dgn-button"
   onClick={onExportDgn}
-  style={{ /* follow existing button style */ }}
+  style={
+    {
+      /* follow existing button style */
+    }
+  }
 >
   Export DGN
 </button>

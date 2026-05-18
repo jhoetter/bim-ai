@@ -20,7 +20,7 @@ packages/web/src/cmdPalette/defaultCommands.ts      — palette commands
 packages/web/src/workspace/commandCapabilities.ts   — capability graph
 ```
 
-Read the stair tool (search for `stair` in toolGrammar.ts and meshBuilders*.ts) as a pattern for a 2-point placement tool.
+Read the stair tool (search for `stair` in toolGrammar.ts and meshBuilders\*.ts) as a pattern for a 2-point placement tool.
 
 Tests: run `pnpm test --filter @bim-ai/web`.
 Prettier runs automatically. **Always `git pull --rebase origin main` before pushing.**
@@ -63,6 +63,7 @@ If `ramp` element kind does not exist, add it:
 ```
 
 Add command type:
+
 ```ts
 | { type: 'createRamp'; ramp: Extract<Element, { kind: 'ramp' }> }
 ```
@@ -72,6 +73,7 @@ Add command type:
 ### B — ToolId + registration
 
 In `toolRegistry.ts`:
+
 - Add `'ramp'` to the ToolId union.
 - Register: `{ id: 'ramp', hotkey: 'RM', label: 'Ramp', mode: 'plan' }`
 - Add to `MODIFY_TOOL_IDS` (or whatever group floor/stair tools are in) and `PALETTE_ORDER`.
@@ -100,6 +102,7 @@ type RampEffect = {
 ```
 
 Flow:
+
 1. **idle → placing-start**: tool is activated
 2. **placing-start → placing-end**: first click sets `startMm`
 3. **placing-end → idle**: second click sets `endMm`, emits `createRamp` effect with default `widthMm: 1200` and `slopeRatio: 1/12`
@@ -110,6 +113,7 @@ Flow:
 ### D — PlanCanvas wiring
 
 Wire `reduceRamp` into `PlanCanvas.tsx` following the same pattern as the stair tool:
+
 - On tool activate → `rampState = initialRampState`
 - On click → `reduceRamp(rampState, { type: 'click', ptMm })` → update state
 - On Escape → reset to idle
@@ -122,6 +126,7 @@ Wire `reduceRamp` into `PlanCanvas.tsx` following the same pattern as the stair 
 Add a plan symbol for `ramp` elements:
 
 The ramp plan symbol is:
+
 - A filled rectangle from `startMm` to `endMm` (accounting for `widthMm`)
 - Diagonal lines across the rectangle (indicating slope) — 3-4 evenly-spaced parallel lines
 - An arrow at the `endMm` end pointing in the direction of travel (up the ramp)
@@ -178,6 +183,7 @@ export function buildRampMesh(el: RampEl): THREE.Mesh {
 ```
 
 Wire into `meshBuilders.ts`:
+
 ```ts
 case 'ramp':
   return buildRampMesh(el as Extract<Element, { kind: 'ramp' }>);
@@ -223,12 +229,14 @@ case 'ramp': {
 ### H — Palette command + capability graph
 
 In `defaultCommands.ts`:
+
 ```ts
 { id: 'tool.ramp', label: 'Ramp', keywords: ['ramp', 'slope', 'accessibility'],
   category: 'tool', invoke: (ctx) => startPlanTool(ctx, 'ramp') }
 ```
 
 In `commandCapabilities.ts`:
+
 ```ts
 { id: 'tool.ramp', scope: 'document', intendedModes: ['plan'], precondition: null },
 ```
@@ -238,6 +246,7 @@ In `commandCapabilities.ts`:
 ### I — Tests
 
 `packages/web/src/plan/rampTool.test.ts`:
+
 ```ts
 describe('ramp tool grammar — §8.7', () => {
   it('starts in idle state', () => { ... });
@@ -249,6 +258,7 @@ describe('ramp tool grammar — §8.7', () => {
 ```
 
 `packages/web/src/viewport/meshBuilders.ramp.test.ts`:
+
 ```ts
 describe('buildRampMesh — §8.7', () => {
   it('returns a THREE.Mesh', () => { ... });

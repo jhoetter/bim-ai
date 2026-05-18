@@ -6,6 +6,7 @@ You are an orchestrating engineer on the bim-ai repository (`/Users/jhoetter/rep
 bim-ai is a browser-based BIM authoring tool (React + TypeScript + Three.js, Vite, Vitest).
 
 Repo layout (critical paths):
+
 - `packages/web/src/plan/StairBySketchCanvas.tsx` — existing stair-by-sketch UI
 - `packages/web/src/plan/StairSketchEditor.tsx` — stair sketch editor
 - `packages/web/src/plan/stairAutobalance.ts` — auto-balance stair run widths
@@ -18,6 +19,7 @@ Repo layout (critical paths):
 - `packages/core/src/` — shared Element types
 
 Architecture patterns:
+
 - Element data: elements stored as plain objects in the project model with a `type` discriminator (e.g. `'stair'`, `'wall'`, `'level'`).
 - Semantic commands dispatch mutations: `{ type: 'createStair', ... }`, `{ type: 'createLevel', ... }`, etc.
 - 3D meshes: `viewport/meshBuilders.ts` dispatches to sub-builders by element type. Study `meshBuilders.multiRunStair.ts` and `meshBuilders.hipRoof.ts` for the builder interface.
@@ -46,6 +48,7 @@ This is a P0 gap. Ramps are sloped floor surfaces with an automatic railing on e
 New ToolId: `'ramp'` (hotkey: `RA`)
 
 Data model:
+
 ```
 {
   type: 'ramp',
@@ -65,16 +68,19 @@ Data model:
 ```
 
 Grammar (two modes, switch via options bar):
+
 - "By Length": click insertion point, click endpoint. Ramp runs between those two points horizontally. Rise = topLevel.elevationMm - baseLevel.elevationMm.
 - "By Sketch": draw a boundary (closed polygon) and a run line inside it (like the sketch-based stair).
 
 3D mesh (`viewport/meshBuilders.ramp.ts`):
+
 - A sloped flat surface (quad mesh) connecting base to top elevation over the run length.
 - Side faces (vertical walls on the sides of the ramp surface).
 - Railing along each open edge: reuse the existing railing mesh builder logic from `viewport/meshBuilders.ts` (railings are already implemented for stairs).
 - Apply the ramp material to the top surface.
 
 Plan symbol (`plan/rampPlanSymbol.ts`):
+
 - Rectangle showing the plan footprint.
 - Diagonal arrow lines pointing uphill (same convention as stair arrow).
 - Text label showing slope percentage.
@@ -84,6 +90,7 @@ Inspector: widthMm, runMm, slopePercent (read-only computed), material, hasRaili
 Advisor integration: if slopePercent > 8.33 (1:12 accessibility max), emit a warning advisory.
 
 Tests:
+
 - `rampPlanSymbol.test.ts` — verify plan symbol geometry for a standard ramp
 - `meshBuilders.ramp.test.ts` — verify 3D vertices include correct Z at top and bottom
 
@@ -92,6 +99,7 @@ Tests:
 Currently stairs are placed per-floor. Revit supports a stair that spans N levels as a single connected element.
 
 Changes:
+
 - Add `topLevelId: string` and `multiStorey: true` fields to the stair element.
 - When `multiStorey` is true, the stair element is visually repeated on every intermediate level (run + landing) up to `topLevelId`.
 - Grammar: after completing the first-floor stair sketch, prompt "Extend to level?" in the options bar. The user can pick a top level.
@@ -111,6 +119,7 @@ The existing `StairBySketchCanvas.tsx` and `stairAutobalance.ts` handle some con
 - Spiral stair (circular plan, constant rotation per tread): new stair type `'stair_spiral'` with `centrePtXMm, centrePtYMm, innerRadiusMm, outerRadiusMm, totalAngleDeg, treadCount`.
 
 For the spiral stair:
+
 - Plan symbol: concentric arcs + radial lines for each tread.
 - 3D mesh: `meshBuilders.spiralStair.ts` — rotate each tread platform by `totalAngleDeg / treadCount` around the centre, with appropriate Z increment.
 
@@ -161,6 +170,7 @@ Ensure railings always auto-generate on stair sides and are correctly parented:
 ## Definition of Done
 
 For each sub-task:
+
 - TypeScript compiles without errors
 - ≥2 unit tests per new module
 - Feature visible in plan view and 3D view

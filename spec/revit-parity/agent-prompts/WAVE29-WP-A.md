@@ -11,6 +11,7 @@ This prompt is self-contained — start here.
 §1.6.1 "Programmleiste" is Partial P2. In Revit the title bar always shows "ProjectName — ViewName" (e.g. "Projekt1 — Grundriss: Ebene 0"). bim-ai shows neither the project name nor view name in the browser tab title (`document.title`), and there is no persistent breadcrumb in the workspace chrome showing the active view.
 
 This task adds:
+
 1. `document.title` update whenever the active view or project name changes
 2. A small breadcrumb/subtitle line in the workspace header (below the main toolbar)
 3. A `view.dynamic-title` commandCapabilities entry
@@ -29,6 +30,7 @@ packages/web/src/workspace/commandCapabilities.ts — find existing view.* entri
 ```
 
 Run before editing:
+
 - `grep -n "document.title\|activeSeedLabel\|viewLabel\|paneLabel" packages/web/src/workspace/Workspace.tsx | head -20`
 - `grep -n "activeSeedLabel\|projectName\|activeViewId\|plan_view" packages/web/src/workspace/Workspace.tsx | head -15`
 - `grep -n "useEffect\|document.title" packages/web/src/App.tsx | head -10`
@@ -63,24 +65,28 @@ useEffect(() => {
 Find the workspace header/toolbar area in `Workspace.tsx` (or the relevant layout component). Add a small breadcrumb line below the main toolbar:
 
 ```tsx
-{/* §1.6.1: breadcrumb subtitle showing active view */}
-{activePlanViewName && (
-  <div
-    data-testid="workspace-view-breadcrumb"
-    style={{
-      fontSize: 10,
-      color: 'var(--text-muted, #888)',
-      padding: '0 12px 2px',
-      lineHeight: 1,
-      userSelect: 'none',
-      overflow: 'hidden',
-      textOverflow: 'ellipsis',
-      whiteSpace: 'nowrap',
-    }}
-  >
-    {activeSeedLabel ?? 'bim-ai'} / {activePlanViewName}
-  </div>
-)}
+{
+  /* §1.6.1: breadcrumb subtitle showing active view */
+}
+{
+  activePlanViewName && (
+    <div
+      data-testid="workspace-view-breadcrumb"
+      style={{
+        fontSize: 10,
+        color: 'var(--text-muted, #888)',
+        padding: '0 12px 2px',
+        lineHeight: 1,
+        userSelect: 'none',
+        overflow: 'hidden',
+        textOverflow: 'ellipsis',
+        whiteSpace: 'nowrap',
+      }}
+    >
+      {activeSeedLabel ?? 'bim-ai'} / {activePlanViewName}
+    </div>
+  );
+}
 ```
 
 **Important**: Read the actual layout in `Workspace.tsx` carefully. Find the header area with the project name and other toolbar buttons. Add the breadcrumb near that area. Adapt to the actual JSX structure.

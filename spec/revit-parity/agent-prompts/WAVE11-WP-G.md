@@ -43,12 +43,12 @@ Create `packages/web/src/workspace/StatusBar.tsx`:
 ```tsx
 interface StatusBarProps {
   planTool: string | null;
-  toolPhase: string | null;         // the grammar 'status' field for the current tool
+  toolPhase: string | null; // the grammar 'status' field for the current tool
   selectedCount: number;
   hoveredElementKind: string | null;
 }
 
-export function StatusBar(props: StatusBarProps): JSX.Element
+export function StatusBar(props: StatusBarProps): JSX.Element;
 ```
 
 - `data-testid="status-bar"` on container
@@ -63,34 +63,34 @@ export function StatusBar(props: StatusBarProps): JSX.Element
 In `StatusBar.tsx` (or a co-located `statusBarHints.ts`), define a pure function:
 
 ```ts
-export function getStatusHint(planTool: string | null, toolPhase: string | null): string
+export function getStatusHint(planTool: string | null, toolPhase: string | null): string;
 ```
 
 Hint strings per tool + phase:
 
-| Tool | Phase | Hint |
-|------|-------|------|
-| `null` (select) | — | `"Click to select · Drag to pan · Scroll to zoom"` |
-| `wall` | `idle` | `"Click to start wall"` |
-| `wall` | `drawing` | `"Click next point · Double-click or Enter to finish · Esc to cancel"` |
-| `floor` | `idle` | `"Click points to define floor boundary"` |
-| `floor` | `drawing` | `"Click to add point · Enter to finish · Esc to cancel"` |
-| `column` | `idle` | `"Click to place column"` |
-| `stair` | `idle` | `"Click to place stair run start"` |
-| `stair` | `drawing` | `"Click to set stair end point"` |
-| `room` | `idle` | `"Click inside a bounded area to place room"` |
-| `door` | `idle` | `"Click on a wall to place door"` |
-| `window` | `idle` | `"Click on a wall to place window"` |
-| `measure` | `idle` | `"Click first point to measure"` |
-| `measure` | `picking` | `"Click second point · Esc to cancel"` |
-| `measure-angle` | `idle` | `"Click vertex point"` |
-| `measure-angle` | `picked-vertex` | `"Click first ray point"` |
-| `measure-angle` | `picked-first-ray` | `"Click second ray point"` |
-| `paint` | `idle` | `"Click a face to apply material"` |
-| `permanent-dimension` | `idle` | `"Click first witness point"` |
-| `permanent-dimension` | `picking` | `"Click next point · Enter to finish"` |
-| `split-wall` | `idle` | `"Hover a wall and click to split"` |
-| Any tool | any phase | `"Press Esc to cancel · Press Enter to finish"` (fallback) |
+| Tool                  | Phase              | Hint                                                                   |
+| --------------------- | ------------------ | ---------------------------------------------------------------------- |
+| `null` (select)       | —                  | `"Click to select · Drag to pan · Scroll to zoom"`                     |
+| `wall`                | `idle`             | `"Click to start wall"`                                                |
+| `wall`                | `drawing`          | `"Click next point · Double-click or Enter to finish · Esc to cancel"` |
+| `floor`               | `idle`             | `"Click points to define floor boundary"`                              |
+| `floor`               | `drawing`          | `"Click to add point · Enter to finish · Esc to cancel"`               |
+| `column`              | `idle`             | `"Click to place column"`                                              |
+| `stair`               | `idle`             | `"Click to place stair run start"`                                     |
+| `stair`               | `drawing`          | `"Click to set stair end point"`                                       |
+| `room`                | `idle`             | `"Click inside a bounded area to place room"`                          |
+| `door`                | `idle`             | `"Click on a wall to place door"`                                      |
+| `window`              | `idle`             | `"Click on a wall to place window"`                                    |
+| `measure`             | `idle`             | `"Click first point to measure"`                                       |
+| `measure`             | `picking`          | `"Click second point · Esc to cancel"`                                 |
+| `measure-angle`       | `idle`             | `"Click vertex point"`                                                 |
+| `measure-angle`       | `picked-vertex`    | `"Click first ray point"`                                              |
+| `measure-angle`       | `picked-first-ray` | `"Click second ray point"`                                             |
+| `paint`               | `idle`             | `"Click a face to apply material"`                                     |
+| `permanent-dimension` | `idle`             | `"Click first witness point"`                                          |
+| `permanent-dimension` | `picking`          | `"Click next point · Enter to finish"`                                 |
+| `split-wall`          | `idle`             | `"Hover a wall and click to split"`                                    |
+| Any tool              | any phase          | `"Press Esc to cancel · Press Enter to finish"` (fallback)             |
 
 Implement `getStatusHint` as a plain `switch`/`if` chain — no dynamic lookup needed.
 
@@ -107,6 +107,7 @@ In `Workspace.tsx`:
 ### D — Hovered element kind
 
 In `store.ts`, add if not already present:
+
 ```ts
 hoveredElementKind: string | null;
 setHoveredElementKind: (kind: string | null) => void;
@@ -119,6 +120,7 @@ When `hoveredElementKind` is set and no tool is active, the StatusBar left secti
 ### E — Tests
 
 Write `packages/web/src/workspace/StatusBar.test.tsx`:
+
 ```ts
 describe('StatusBar — §1.6.9', () => {
   it('renders status-bar element', () => { ... });
@@ -130,6 +132,7 @@ describe('StatusBar — §1.6.9', () => {
 ```
 
 Write `packages/web/src/workspace/statusBarHints.test.ts`:
+
 ```ts
 describe('getStatusHint — §1.6.9', () => {
   it('returns select hint when tool is null', () => { ... });
@@ -146,6 +149,7 @@ describe('getStatusHint — §1.6.9', () => {
 ## Commit and push
 
 After tests pass (`pnpm test --filter @bim-ai/web`):
+
 ```
 git add -p
 git commit -m "feat(wave11/G): status bar with per-tool instruction hints (§1.6.9)"

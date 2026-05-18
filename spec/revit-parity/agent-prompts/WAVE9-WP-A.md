@@ -47,7 +47,7 @@ export function elementInSelectionBoxMm(
   boxMinMm: { xMm: number; yMm: number },
   boxMaxMm: { xMm: number; yMm: number },
   mode: 'window' | 'crossing',
-): boolean
+): boolean;
 ```
 
 - `window` (left-to-right drag): only elements **fully inside** the box
@@ -64,6 +64,7 @@ In `PlanCanvas.tsx`, in the `select` tool branch:
 **Pointer down**: record `dragStartMm` (convert canvas event to plan mm using existing coordinate helper)
 
 **Pointer move** (while button held): if dragged more than ~5 px from start, enter box-select mode:
+
 - Track `dragCurrentMm`
 - Render a selection rectangle overlay:
   - Left-to-right drag (dragCurrentMm.x > dragStartMm.x): solid blue border, semi-transparent blue fill — "window" mode
@@ -71,6 +72,7 @@ In `PlanCanvas.tsx`, in the `select` tool branch:
 - Render as an SVG `<rect>` overlay on the canvas div, or as a `THREE.Mesh` plane, whichever is simpler given the existing canvas structure
 
 **Pointer up** (after drag):
+
 - Compute `boxMin`/`boxMax` from start and current mm
 - Determine mode (window vs crossing based on drag direction)
 - Call `elementInSelectionBoxMm` for every element in `elementsById`
@@ -82,12 +84,14 @@ In `PlanCanvas.tsx`, in the `select` tool branch:
 ### C — Keyboard shortcut: Select All
 
 In `PlanCanvas.tsx`, add keyboard handler: when `planTool === 'select'` and `Ctrl+A` is pressed:
+
 - Select all elements in the active level (elements whose `levelId` matches `activeLevelId`)
 - Dispatch `setSelectedElementIds(matchingIds)`
 
 ### D — Tests
 
 Create `packages/web/src/plan/boxSelection.test.ts`:
+
 ```ts
 describe('elementInSelectionBoxMm — §1.8.1', () => {
   it('wall fully inside box: window mode returns true', () => { ... });
@@ -104,6 +108,7 @@ describe('elementInSelectionBoxMm — §1.8.1', () => {
 ## Commit and push
 
 After all tasks are done and tests pass (`pnpm test --filter @bim-ai/web`), commit:
+
 ```
 git add -p   # stage only your changes
 git commit -m "feat(wave9/A): box/crossing selection in plan (§1.8.1)"

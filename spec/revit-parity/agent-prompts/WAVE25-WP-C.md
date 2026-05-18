@@ -22,6 +22,7 @@ packages/web/src/workspace/project/projectBrowserCameraViews.test.tsx — existi
 ```
 
 Run before editing:
+
 - `grep -n "viewOrgPreset\|By Discipline\|By Level\|discipline\|levelId" packages/web/src/workspace/project/ProjectBrowser.tsx | head -20`
 - `grep -n "plan_view\|planViews\|groupBy\|discipline" packages/web/src/workspace/project/ProjectBrowser.tsx | head -20`
 - `grep -n "PbCollapsibleSection\|browser-floor-plans\|Floor Plans\|Grundrisse" packages/web/src/workspace/project/ProjectBrowser.tsx | head -10`
@@ -38,6 +39,7 @@ Prettier runs automatically. **Always `git pull --rebase origin main` before pus
 ### A — Understand current plan view grouping
 
 Read `ProjectBrowserV3` and find:
+
 1. Where plan views are filtered from `elements` (search for `plan_view`)
 2. How they're currently grouped by discipline
 3. The level name resolution (how levelId maps to a level name)
@@ -47,11 +49,13 @@ Read `ProjectBrowserV3` and find:
 In the floor plans section of `ProjectBrowserV3`, find where plan views are listed. Near the section header, add:
 
 1. State variable:
+
 ```tsx
 const [viewOrgPreset, setViewOrgPreset] = React.useState<'discipline' | 'level'>('discipline');
 ```
 
 2. Dropdown in the section header (alongside the chevron toggle and section title):
+
 ```tsx
 <select
   data-testid="browser-view-org-preset"
@@ -73,8 +77,8 @@ When `viewOrgPreset === 'level'`, instead of grouping plan views by discipline, 
 // Compute level-grouped plan views when preset is 'level'
 const levelGroupedViews = React.useMemo(() => {
   if (viewOrgPreset !== 'level') return null;
-  const planViews = elements.filter((el): el is Extract<Element, { kind: 'plan_view' }> =>
-    el.kind === 'plan_view',
+  const planViews = elements.filter(
+    (el): el is Extract<Element, { kind: 'plan_view' }> => el.kind === 'plan_view',
   );
   const byLevel: Record<string, typeof planViews> = {};
   for (const pv of planViews) {
@@ -87,16 +91,18 @@ const levelGroupedViews = React.useMemo(() => {
 ```
 
 Then resolve level names:
+
 ```tsx
 // Helper to get level name from levelId
 const getLevelName = (levelId: string): string => {
   if (levelId === 'unassigned') return 'Unassigned';
   const lvl = elements.find((el) => el.id === levelId && el.kind === 'level');
-  return lvl ? (lvl as any).name ?? levelId : levelId;
+  return lvl ? ((lvl as any).name ?? levelId) : levelId;
 };
 ```
 
 Render when `viewOrgPreset === 'level'`:
+
 ```tsx
 {viewOrgPreset === 'level' && levelGroupedViews
   ? Object.entries(levelGroupedViews)
@@ -153,7 +159,9 @@ import { afterEach, describe, expect, it } from 'vitest';
 import { cleanup, render, fireEvent } from '@testing-library/react';
 import { ProjectBrowserV3 } from './ProjectBrowser';
 
-afterEach(() => { cleanup(); });
+afterEach(() => {
+  cleanup();
+});
 
 function makeProps(elements: any[] = []) {
   return {
@@ -168,8 +176,22 @@ function makeProps(elements: any[] = []) {
 
 const level1 = { kind: 'level', id: 'l1', name: 'Ground Floor', elevationMm: 0 };
 const level2 = { kind: 'level', id: 'l2', name: 'First Floor', elevationMm: 3000 };
-const pv1 = { kind: 'plan_view', id: 'pv1', name: 'Ground Floor Plan', levelId: 'l1', viewType: 'floor_plan', disciplineKey: 'architectural' };
-const pv2 = { kind: 'plan_view', id: 'pv2', name: 'First Floor Plan', levelId: 'l2', viewType: 'floor_plan', disciplineKey: 'architectural' };
+const pv1 = {
+  kind: 'plan_view',
+  id: 'pv1',
+  name: 'Ground Floor Plan',
+  levelId: 'l1',
+  viewType: 'floor_plan',
+  disciplineKey: 'architectural',
+};
+const pv2 = {
+  kind: 'plan_view',
+  id: 'pv2',
+  name: 'First Floor Plan',
+  levelId: 'l2',
+  viewType: 'floor_plan',
+  disciplineKey: 'architectural',
+};
 
 describe('ProjectBrowser org preset — §1.6.11', () => {
   it('renders the view org preset select', () => {

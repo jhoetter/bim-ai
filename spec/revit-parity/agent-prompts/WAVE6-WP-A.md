@@ -46,10 +46,11 @@ interface PrintPlotDialogProps {
   onClose: () => void;
   sheets: Array<{ id: string; name: string; element: HTMLElement | HTMLCanvasElement | null }>;
 }
-export function PrintPlotDialog({ open, onClose, sheets }: PrintPlotDialogProps): JSX.Element
+export function PrintPlotDialog({ open, onClose, sheets }: PrintPlotDialogProps): JSX.Element;
 ```
 
 The dialog:
+
 - `data-testid="print-plot-dialog"` on the container
 - Paper size select (`data-testid="print-paper-size"`): A4, A3, A2, A1, A0
 - Orientation radio/select (`data-testid="print-orientation"`): Portrait / Landscape (default Landscape)
@@ -61,6 +62,7 @@ The dialog:
 ### B — Wire into Workspace.tsx + ProjectMenu.tsx
 
 In `Workspace.tsx`:
+
 - Add `printPlotOpen` state boolean
 - Pass open/onClose + the list of rendered sheet elements to `PrintPlotDialog`
 - Sheet canvas elements must come from refs — add a ref-collection pattern similar to how
@@ -68,6 +70,7 @@ In `Workspace.tsx`:
   `sheets` array built from the current `elementsById` sheet elements filtered to kind==='sheet'.
 
 In `ProjectMenu.tsx`, add a "Print / Plot…" item:
+
 - `data-testid="project-menu-print-plot"`
 - Calls `onPrintPlot?.()` prop (add prop to ProjectMenu)
 - Wire `onPrintPlot` from Workspace.tsx → `() => setPrintPlotOpen(true)`
@@ -75,6 +78,7 @@ In `ProjectMenu.tsx`, add a "Print / Plot…" item:
 ### C — Palette command
 
 In `defaultCommands.ts`, register:
+
 ```ts
 registerCommand({
   id: 'file.print-plot',
@@ -92,6 +96,7 @@ Add `file.print-plot` to `commandCapabilities.ts` with `surfaces: ['cmd-k', 'rib
 ### D — Tests
 
 Write `packages/web/src/workspace/sheets/PrintPlotDialog.test.tsx`:
+
 ```ts
 describe('PrintPlotDialog — §6.5 + §12.4.5', () => {
   it('renders print-plot-dialog when open=true', () => { ... });
@@ -104,6 +109,7 @@ describe('PrintPlotDialog — §6.5 + §12.4.5', () => {
 
 Write `packages/web/src/export/pdfExporter.test.ts` additions (or new file
 `packages/web/src/export/pdfExporterOptions.test.ts`):
+
 ```ts
 describe('paperSizeMm — §12.4.5', () => {
   it('A4 returns 210x297', () => { ... });

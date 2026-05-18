@@ -26,6 +26,7 @@ packages/core/src/index.ts                            — shared types
 ```
 
 Architecture patterns:
+
 - Project-level settings are stored in a dedicated settings object accessible
   via `useBimStore`. Study `osm/project.ts` to see how georef is stored — use
   the same pattern for new settings.
@@ -39,11 +40,11 @@ Architecture patterns:
 
 ## What was done before the crash
 
-| Sub-task | Status | Notes |
-|---|---|---|
-| F5 Project Templates | **Done** | `onboarding/projectTemplates.ts` + picker in project creation flow |
-| F7 V/G Overrides Dialog | **Done** | `workspace/project/VVDialog.tsx` (~1400 lines) — full implementation with category visibility, line colour, halftone. Shortcut VV is wired. |
-| F3 Project Info (partial) | **Partial** | `ProjectSetupDialog.tsx` has some `projectInfo` fields; `sheetTitleblockAuthoring.tsx` renders title block data — verify how much is done |
+| Sub-task                  | Status      | Notes                                                                                                                                       |
+| ------------------------- | ----------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| F5 Project Templates      | **Done**    | `onboarding/projectTemplates.ts` + picker in project creation flow                                                                          |
+| F7 V/G Overrides Dialog   | **Done**    | `workspace/project/VVDialog.tsx` (~1400 lines) — full implementation with category visibility, line colour, halftone. Shortcut VV is wired. |
+| F3 Project Info (partial) | **Partial** | `ProjectSetupDialog.tsx` has some `projectInfo` fields; `sheetTitleblockAuthoring.tsx` renders title block data — verify how much is done   |
 
 No committed work found for F1, F2, F4, F6.
 
@@ -52,6 +53,7 @@ No committed work found for F1, F2, F4, F6.
 ## Step 0 — audit what F3 actually covers
 
 Before writing new code:
+
 ```bash
 pnpm test --filter @bim-ai/web -- sheetTitleblock
 ```
@@ -97,6 +99,7 @@ Tests: create/rename/delete phase; verify element phase changes via inspector.
 Add per-view graphic styles for each phase:
 
 1. Add to `plan_view` element in `core/index.ts`:
+
 ```ts
 phaseFilterMode: 'new_construction' | 'demolition' | 'existing' | 'all'
 phaseGraphicOverrides: {
@@ -141,6 +144,7 @@ show greyed-out placeholder text.
 ### F4 — Project Units Dialog
 
 Not started. Add `projectUnits` to the project settings:
+
 ```ts
 projectUnits: {
   lengthUnit: 'mm' | 'm' | 'cm' | 'ft' | 'ft-in',
@@ -165,6 +169,7 @@ projectUnits: {
 ### F6 — Project Position / True North
 
 Not started:
+
 1. Add `projectNorthAngleDeg: number` to project settings (angle clockwise
    from project north to true north).
 2. "True North" toggle in plan view header (`PlanViewHeader.tsx`) rotates the

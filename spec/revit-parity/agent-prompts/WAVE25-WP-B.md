@@ -13,6 +13,7 @@ This prompt is self-contained — start here.
 In Revit, window and door families automatically cut openings in their host walls. In bim-ai, windows/doors have a host wall and the wall gets a `windowId`/`doorId` reference, but there's no explicit opening cut element type from family authoring.
 
 This task adds:
+
 1. `FamilyOpeningCutElem` type — defines the cut profile within a family
 2. `setFamilyOpeningCut` command to add/update the opening cut on a family
 3. Workspace handler
@@ -31,6 +32,7 @@ packages/web/src/familyEditor/FamilyEditorWorkbench.tsx   — find "Add Glazing 
 ```
 
 Run before editing:
+
 - `grep -n "kind: 'family_" packages/core/src/index.ts | head -15`
 - `grep -n "family_void\|FamilyVoid" packages/core/src/index.ts | head -10`
 - `grep -n "case 'family_extrusion'" packages/web/src/workspace/inspector/InspectorContent.tsx | head -5`

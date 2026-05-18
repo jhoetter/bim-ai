@@ -46,10 +46,16 @@ interface ViewRangeDialogProps {
   view: Extract<Element, { kind: 'plan_view' }>;
   onPropertyChange: (key: string, value: number) => void;
 }
-export function ViewRangeDialog({ open, onClose, view, onPropertyChange }: ViewRangeDialogProps): JSX.Element
+export function ViewRangeDialog({
+  open,
+  onClose,
+  view,
+  onPropertyChange,
+}: ViewRangeDialogProps): JSX.Element;
 ```
 
 The dialog:
+
 - `data-testid="view-range-dialog"` on container
 - Four labeled number inputs (all in mm):
   - **Top** (`data-testid="vr-top"`) — `viewRangeTopMm`, default 3000
@@ -61,6 +67,7 @@ The dialog:
 - Validation: Top > Cut > Bottom (show a warning string `data-testid="vr-warning"` if violated, but don't block)
 
 Wire into `Workspace.tsx`:
+
 - Add `viewRangeDialogOpen` state and the active `plan_view` element
 - Add a "View Range…" button to the plan view header controls (`data-testid="open-view-range-dialog"`)
   — add this to `PlanViewHeader.tsx` or wherever the plan view toolbar controls live
@@ -69,12 +76,14 @@ Wire into `Workspace.tsx`:
 ### B — Room tag: number + area display (§13.1.2 + §13.1.4)
 
 Add `numberLabel?: string | null` to the `room` element type in `core/index.ts`:
+
 ```ts
 /** User-assigned room number (e.g. "101", "K1"). Displayed in plan tag alongside name. */
 numberLabel?: string | null;
 ```
 
 In `planElementMeshBuilders.ts` `roomMesh()`, update `userData.roomLabel`:
+
 ```ts
 mesh.userData.roomLabel = {
   cx: ux(c.xMm),
@@ -87,16 +96,19 @@ mesh.userData.roomLabel = {
 
 In `symbology.ts` (the room label rendering loop — search for where `roomLabel` userData is read),
 update the label sprite text to include number and area:
+
 - Format: `"{numberLabel}\n{name}\n{area} m²"` — show numberLabel row only when non-null/non-empty
 - Area formatted to 2 decimal places in m²: `(areaMm2 / 1e6).toFixed(2)`
 
 In `InspectorContent.tsx` for `el.kind === 'room'`, add:
+
 - `data-testid="inspector-room-number"` — text input for `numberLabel`; dispatch `update_element_property` for `numberLabel`
 - `data-testid="inspector-room-gross-area"` — read-only display: `(polygonAreaMm2(el.outlineMm) / 1e6).toFixed(2) + ' m²'`
 
 ### C — Tests
 
 Write `packages/web/src/workspace/ViewRangeDialog.test.tsx`:
+
 ```ts
 describe('ViewRangeDialog — §2.1.5', () => {
   it('renders view-range-dialog when open=true', () => { ... });
@@ -108,6 +120,7 @@ describe('ViewRangeDialog — §2.1.5', () => {
 ```
 
 Write `packages/web/src/plan/roomTagDetail.test.ts`:
+
 ```ts
 describe('room tag detail — §13.1.2 + §13.1.4', () => {
   it('roomMesh sets userData.roomLabel.areaMm2', () => { ... });

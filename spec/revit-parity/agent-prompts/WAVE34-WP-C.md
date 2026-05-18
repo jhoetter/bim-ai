@@ -12,6 +12,7 @@ The user explicitly called out tracker correctness for decisions like ray tracin
 ## Ownership
 
 Primary write scope:
+
 - `spec/revit-parity/revit2026-parity-tracker.md`, roughly Chapters 12-15 / lines 930-1125.
 
 Do not edit product code.
@@ -39,4 +40,3 @@ Do not edit product code.
 - Ray tracing is unambiguously out of scope.
 - Cloud/web-native import/export boundaries are clear.
 - Later tracker sections have no stale status wording that conflicts with the implementation notes.
-

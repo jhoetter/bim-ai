@@ -94,7 +94,15 @@ test('bim-ai link posts createLinkModel with align mode + position', async () =>
 
 test('bim-ai link rejects an invalid --align value', async () => {
   const res = await runCli(
-    ['link', '--source', '11111111-1111-1111-1111-111111111111', '--pos', '0,0,0', '--align', 'bad'],
+    [
+      'link',
+      '--source',
+      '11111111-1111-1111-1111-111111111111',
+      '--pos',
+      '0,0,0',
+      '--align',
+      'bad',
+    ],
     { BIM_AI_BASE_URL: 'http://127.0.0.1:1', BIM_AI_MODEL_ID: 'host-uuid' },
   );
   assert.notEqual(res.code, 0);
