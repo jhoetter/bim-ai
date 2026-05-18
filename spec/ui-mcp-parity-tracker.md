@@ -1063,6 +1063,36 @@ Wave 2 result:
   advisor/visual/export evidence, and the UI-equivalent simple-house benchmark
   path are still open.
 
+### Milestone 2 Wave 3 Workstreams
+
+Milestone 2 Wave 3 is the M2 closure wave. It should not add broad new product
+surface area. It should prove that the first-pack surfaces can build and review
+the simple house through live typed execution, and that the UI-equivalent path
+is tracked honestly.
+
+| Workstream                                           | Status  | Owner scope                                                                                                                                             | Tracker items                                              | Done when                                                                                                                                                                                                  |
+| ---------------------------------------------------- | ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| M2-K. Live commit benchmark path                     | Partial | Benchmark harness, test fixtures, and only minimal backend/CLI glue needed to create/use a disposable model.                                            | WP-008, Same-house benchmark `simple-single-storey-house`. | Simple-house benchmark can run dry-run and commit against a live model, capture revision/changed ids/command log/snapshot summary, and leave deterministic evidence artifacts without requiring manual UI. |
+| M2-L. Committed advisor, visual, and export evidence | Partial | Evidence collection scripts/tests for committed model advisor, validation, screenshots or render proxies, IFC/glTF/PDF/export manifests where feasible. | WP-008, WP-006, M2 evidence closure.                       | Live benchmark evidence includes committed-model advisor/validation JSON, nonblank visual/render proof or explicit server-side substitute, and at least one export artifact/manifest check.                |
+| M2-M. UI-equivalent simple-house path                | Partial | Web/UI test or traceability harness for the human/Cmd+K path; avoid backend/CLI internals.                                                              | Same-house benchmark UI path, Cmd+K bridge.                | A UI/Cmd+K path exists as an executable test or explicit traceable script that produces or verifies a semantically equivalent simple-house result, without claiming full parity prematurely.               |
+| M2-N. M2 closure audit gates                         | Partial | Audit script, generated ledgers, and benchmark traceability docs only.                                                                                  | WP-004, WP-012, M2 progress reporting.                     | `pnpm audit:ui-mcp-parity` reports first-pack surfaces, live dry-run, live commit, committed evidence, and UI-equivalent path separately, and can mark M2 closure blockers precisely.                      |
+| M2-O. M2 hardening and smoke checks                  | Partial | Focused cross-surface smoke tests and docs; may touch tests/scripts but should not own feature implementation.                                          | WP-009, M2 release readiness.                              | A small repeatable verification command set exists for M2 with backend, CLI, benchmark, audit, and formatting checks; known residual risks are documented in the tracker.                                  |
+
+### Milestone 2 Wave 3 Scheduling Notes
+
+- M2-K owns live benchmark execution and should coordinate with M2-L on the
+  evidence artifact format.
+- M2-L owns evidence quality, not new authoring semantics.
+- M2-M owns the UI/Cmd+K equivalence path and should not block CLI/MCP evidence
+  work if the UI path must initially be traceability-only.
+- M2-N must not mark M2 `Done` unless live commit evidence and UI-equivalent
+  path evidence are both present.
+- M2-O should keep verification narrow enough to run routinely in CI/local
+  development.
+- M2 can move to `Done` only if the audit and benchmark evidence prove both:
+  an agent can build the simple house through typed CLI/MCP surfaces, and the UI
+  path can produce or verify an equivalent result.
+
 ## Next Work Packages
 
 ### WP-001: Command Schema Export
