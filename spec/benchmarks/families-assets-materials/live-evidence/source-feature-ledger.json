@@ -1,0 +1,54 @@
+{
+  "format": "professionalBenchmarkSourceFeatureLedger_v1",
+  "generatedAtIso": "2026-05-19T00:00:00.000Z",
+  "scenarioId": "families-assets-materials",
+  "sourceOfIntent": "spec/ui-mcp-parity-tracker.md#same-house-parity-benchmarks",
+  "trackerRefs": ["BIR-O05"],
+  "features": [
+    {
+      "id": "family.upsert_type",
+      "source": "plannedPublicSurfaces",
+      "evidenceKinds": ["ui", "cmdK", "mcpCli", "semanticDiff"]
+    },
+    {
+      "id": "family.place_instance",
+      "source": "plannedPublicSurfaces",
+      "evidenceKinds": ["ui", "cmdK", "mcpCli", "semanticDiff"]
+    },
+    {
+      "id": "catalog-query",
+      "source": "plannedPublicSurfaces",
+      "evidenceKinds": ["ui", "cmdK", "mcpCli", "semanticDiff"]
+    },
+    {
+      "id": "asset.place",
+      "source": "plannedPublicSurfaces",
+      "evidenceKinds": ["ui", "cmdK", "mcpCli", "semanticDiff"]
+    },
+    {
+      "id": "place-kitchen-kit",
+      "source": "plannedPublicSurfaces",
+      "evidenceKinds": ["ui", "cmdK", "mcpCli", "semanticDiff"]
+    },
+    {
+      "id": "material.upsert_pbr",
+      "source": "plannedPublicSurfaces",
+      "evidenceKinds": ["ui", "cmdK", "mcpCli", "semanticDiff"]
+    },
+    {
+      "id": "material.assign",
+      "source": "plannedPublicSurfaces",
+      "evidenceKinds": ["ui", "cmdK", "mcpCli", "semanticDiff"]
+    },
+    {
+      "id": "material.paint_face",
+      "source": "plannedPublicSurfaces",
+      "evidenceKinds": ["ui", "cmdK", "mcpCli", "semanticDiff"]
+    },
+    {
+      "id": "decal.create",
+      "source": "plannedPublicSurfaces",
+      "evidenceKinds": ["ui", "cmdK", "mcpCli", "semanticDiff"]
+    }
+  ]
+}

@@ -3,7 +3,26 @@
   "suiteId": "m4-professional-domain-packs",
   "sourceOfIntent": "spec/ui-mcp-parity-tracker.md#milestone-4-wave-1-workstreams",
   "milestone": "M4-F",
-  "requiredEvidenceKinds": ["ui", "cmdK", "mcpCli", "advisor", "visual", "export", "semanticDiff"],
+  "requiredEvidenceKinds": [
+    "ui",
+    "cmdK",
+    "mcpCli",
+    "integrity",
+    "advisor",
+    "rendererDiagnostics",
+    "visual",
+    "export",
+    "performance",
+    "acceptance",
+    "methodology",
+    "semanticDiff"
+  ],
+  "uiEvidenceClassifications": {
+    "executable": "A browser/UI path creates or verifies the scenario model through public UI interactions and emits comparable artifacts.",
+    "validated-replay": "A deterministic replay or bridge test validates UI/Cmd+K mapping against the scenario fixture, but does not prove browser-authored exact input.",
+    "traceability-only": "The scenario maps intended UI/Cmd+K affordances to semantic outputs without executing or replaying them.",
+    "missing": "No UI evidence exists yet for this scenario."
+  },
   "scenarios": [
     {
       "scenarioId": "site-and-context-house",

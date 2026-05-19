@@ -59,12 +59,32 @@
       "command": "node scripts/benchmarks/structure-and-mep-lite.mjs --mode offline --json",
       "claim": "Offline runner deterministically validates typed command coverage and semantic counts for M4-B and M4-C."
     },
+    "integrity": {
+      "classification": "executable",
+      "status": "passed",
+      "pass": true,
+      "artifacts": [
+        "live-evidence/professional-suite-diagnostics.json",
+        "live-evidence/advisor-validation.json"
+      ],
+      "claim": "Professional-suite diagnostics bind Advisor validation, semantic diff, and integrity acceptance into a scenario-scoped evidence row."
+    },
     "advisor": {
       "classification": "executable",
       "status": "passed",
       "pass": true,
       "artifacts": ["live-evidence/advisor-validation.json"],
       "claim": "Advisor validation contract accepts structural metadata, construction QA targeting, and MEP opening coordination with zero blocking findings."
+    },
+    "rendererDiagnostics": {
+      "classification": "executable",
+      "status": "passed",
+      "pass": true,
+      "artifacts": [
+        "live-evidence/professional-suite-diagnostics.json",
+        "live-evidence/visual-evidence.json"
+      ],
+      "claim": "Renderer diagnostic evidence is linked to visual proof and the background/deferred scheduling plan."
     },
     "visual": {
       "classification": "executable",
@@ -79,6 +99,31 @@
       "pass": true,
       "artifacts": ["live-evidence/export-evidence.json"],
       "claim": "Export manifests include structural framing, MEP route/device/opening counts, and a coordination sheet artifact."
+    },
+    "performance": {
+      "classification": "executable",
+      "status": "profiled",
+      "pass": true,
+      "artifacts": ["live-evidence/professional-suite-diagnostics.json"],
+      "claim": "Advisor profiling, renderer update-cost profiling, incremental scope, and deferred diagnostic scheduling are recorded for this benchmark."
+    },
+    "acceptance": {
+      "classification": "executable",
+      "status": "passed",
+      "pass": true,
+      "artifacts": ["live-evidence/professional-suite-diagnostics.json"],
+      "claim": "Expanded professional-suite evidence rows are present and backed by existing executable artifacts."
+    },
+    "methodology": {
+      "classification": "executable",
+      "status": "ledger-linked",
+      "pass": true,
+      "artifacts": [
+        "live-evidence/assumption-ledger.json",
+        "live-evidence/source-feature-ledger.json",
+        "live-evidence/methodology-ledger.json"
+      ],
+      "claim": "Scenario-specific assumption, source-feature, and methodology ledgers are committed."
     },
     "semanticDiff": {
       "classification": "executable",

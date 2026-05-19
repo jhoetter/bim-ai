@@ -1,0 +1,87 @@
+{
+  "format": "professionalBenchmarkMethodologyLedger_v1",
+  "generatedAtIso": "2026-05-19T00:00:00.000Z",
+  "scenarioId": "presentation-pack",
+  "trackerRefs": ["BIR-L01", "BIR-L02", "BIR-L04", "BIR-L05", "BIR-L06", "BIR-O05"],
+  "sourceOfIntent": "spec/ui-mcp-parity-tracker.md#same-house-parity-benchmarks",
+  "fixtures": {
+    "expectedSemantics": "expected-semantics.json",
+    "mcpCliCommandBundle": "mcp-cli-command-bundle.json",
+    "uiCmdKTraceability": "ui-validated-replay.json",
+    "uiEquivalence": "ui-equivalence.json",
+    "liveEvidenceDirectory": "live-evidence"
+  },
+  "proofRows": [
+    {
+      "kind": "ui",
+      "classification": "validated-replay",
+      "artifacts": ["ui-validated-replay.json", "ui-equivalence.json"]
+    },
+    {
+      "kind": "cmdK",
+      "classification": "validated-replay",
+      "artifacts": ["ui-validated-replay.json", "ui-equivalence.json"]
+    },
+    {
+      "kind": "mcpCli",
+      "classification": "executable",
+      "artifacts": ["mcp-cli-command-bundle.json", "expected-semantics.json"]
+    },
+    {
+      "kind": "integrity",
+      "classification": "executable",
+      "artifacts": [
+        "live-evidence/professional-suite-diagnostics.json",
+        "live-evidence/advisor-validation.json"
+      ]
+    },
+    {
+      "kind": "advisor",
+      "classification": "executable",
+      "artifacts": ["live-evidence/advisor-validation.json"]
+    },
+    {
+      "kind": "rendererDiagnostics",
+      "classification": "executable",
+      "artifacts": [
+        "live-evidence/professional-suite-diagnostics.json",
+        "live-evidence/visual-evidence.json",
+        "live-evidence/render-bundle.json"
+      ]
+    },
+    {
+      "kind": "visual",
+      "classification": "executable",
+      "artifacts": ["live-evidence/visual-evidence.json", "live-evidence/render-bundle.json"]
+    },
+    {
+      "kind": "export",
+      "classification": "executable",
+      "artifacts": ["live-evidence/export-evidence.json"]
+    },
+    {
+      "kind": "performance",
+      "classification": "executable",
+      "artifacts": ["live-evidence/professional-suite-diagnostics.json"]
+    },
+    {
+      "kind": "acceptance",
+      "classification": "executable",
+      "artifacts": ["live-evidence/professional-suite-diagnostics.json"]
+    },
+    {
+      "kind": "methodology",
+      "classification": "executable",
+      "artifacts": [
+        "live-evidence/assumption-ledger.json",
+        "live-evidence/source-feature-ledger.json",
+        "live-evidence/methodology-ledger.json"
+      ]
+    },
+    {
+      "kind": "semanticDiff",
+      "classification": "executable",
+      "artifacts": ["live-evidence/semantic-diff.json", "expected-semantics.json"]
+    }
+  ]
+}

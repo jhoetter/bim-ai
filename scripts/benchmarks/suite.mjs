@@ -6,6 +6,14 @@ import { fileURLToPath } from 'node:url';
 
 const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
 const DEFAULT_SUITE = path.join(REPO_ROOT, 'spec', 'benchmarks', 'suite.json');
+const SUITE_SCHEMA_VERSIONS = new Set([
+  'bim-ai.benchmark.suite.v1',
+  'bim-ai.professional-benchmark.suite.v1',
+]);
+const SCENARIO_SCHEMA_BY_SUITE_SCHEMA = new Map([
+  ['bim-ai.benchmark.suite.v1', 'bim-ai.benchmark.scenario.v1'],
+  ['bim-ai.professional-benchmark.suite.v1', 'bim-ai.professional-benchmark.scenario.v1'],
+]);
 const REQUIRED_EVIDENCE_KINDS = [
   'ui',
   'cmdK',
@@ -104,8 +112,10 @@ function validateEvidence(scenario, requiredEvidenceKinds, errors) {
 
 function validateScenario(scenario, suiteEntry, suite, errors) {
   if (!assertObject(scenario, suiteEntry.scenarioId, errors)) return;
-  if (scenario.schemaVersion !== 'bim-ai.benchmark.scenario.v1') {
-    errors.push(`${suiteEntry.scenarioId}.schemaVersion must be bim-ai.benchmark.scenario.v1`);
+  const expectedScenarioSchema =
+    SCENARIO_SCHEMA_BY_SUITE_SCHEMA.get(suite.schemaVersion) ?? 'bim-ai.benchmark.scenario.v1';
+  if (scenario.schemaVersion !== expectedScenarioSchema) {
+    errors.push(`${suiteEntry.scenarioId}.schemaVersion must be ${expectedScenarioSchema}`);
   }
   if (scenario.scenarioId !== suiteEntry.scenarioId) {
     errors.push(`${suiteEntry.scenarioId}.scenarioId mismatch: ${scenario.scenarioId}`);
@@ -139,8 +149,8 @@ export function validateBenchmarkSuite(loadedSuite) {
   const { suite, scenarios } = loadedSuite;
   const errors = [];
 
-  if (suite.schemaVersion !== 'bim-ai.benchmark.suite.v1') {
-    errors.push('suite.schemaVersion must be bim-ai.benchmark.suite.v1');
+  if (!SUITE_SCHEMA_VERSIONS.has(suite.schemaVersion)) {
+    errors.push(`suite.schemaVersion must be one of ${[...SUITE_SCHEMA_VERSIONS].join(', ')}`);
   }
   if (!Array.isArray(suite.requiredEvidenceKinds)) {
     errors.push('suite.requiredEvidenceKinds must be an array');
@@ -185,9 +195,9 @@ export function summarizeBenchmarkSuite(loadedSuite) {
       REQUIRED_EVIDENCE_KINDS.map((kind) => [
         kind,
         {
-          classification: scenario.evidence[kind].classification,
-          status: scenario.evidence[kind].status,
-          artifactCount: scenario.evidence[kind].artifacts.length,
+          classification: scenario.evidence?.[kind]?.classification ?? 'missing',
+          status: scenario.evidence?.[kind]?.status ?? 'missing',
+          artifactCount: scenario.evidence?.[kind]?.artifacts?.length ?? 0,
         },
       ]),
     ),

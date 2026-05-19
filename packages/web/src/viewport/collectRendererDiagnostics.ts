@@ -5,6 +5,12 @@ import {
   type ElementRenderFeatureStatus,
 } from './elementRenderFeatureStatus';
 import {
+  buildDiagnosticUiSchedulingPolicy,
+  type DiagnosticBudgetState,
+  type DiagnosticInteractionState,
+  type DiagnosticUiSchedulingPolicy,
+} from './diagnosticSchedulingPolicy';
+import {
   type RendererDiagnostic,
   type RendererDiagnosticEvidence,
   createRendererDiagnostic,
@@ -55,6 +61,9 @@ export type CollectRendererDiagnosticsPacketInput = CollectRendererDiagnosticsIn
   gitHead?: string | null;
   rendererBuild?: string | null;
   supportMatrixDigest?: string | null;
+  diagnosticInteraction?: DiagnosticInteractionState;
+  diagnosticBudgetState?: DiagnosticBudgetState | null;
+  diagnosticSchedulingPolicy?: DiagnosticUiSchedulingPolicy;
 };
 
 export function collectRendererDiagnostics(
@@ -249,6 +258,7 @@ export function collectRendererDiagnosticPacket(
   input: CollectRendererDiagnosticsPacketInput,
 ): RendererDiagnosticPacket {
   const elementsById = normalizeElementsById(input.elementsById ?? input.elements);
+  const diagnostics = collectRendererDiagnostics({ ...input, elementsById });
   const elementRenderStatuses =
     input.includeElementRenderStatuses === false
       ? undefined
@@ -258,7 +268,7 @@ export function collectRendererDiagnosticPacket(
           viewLensMode: input.viewLensMode,
         });
   return createRendererDiagnosticPacket({
-    diagnostics: collectRendererDiagnostics({ ...input, elementsById }),
+    diagnostics,
     elementRenderStatuses,
     generatedAtIso: input.generatedAtIso,
     modelRevision: input.modelRevision,
@@ -266,6 +276,17 @@ export function collectRendererDiagnosticPacket(
     gitHead: input.gitHead,
     rendererBuild: input.rendererBuild,
     supportMatrixDigest: input.supportMatrixDigest,
+    diagnosticSchedulingPolicy:
+      input.diagnosticSchedulingPolicy ??
+      buildDiagnosticUiSchedulingPolicy({
+        interaction: input.diagnosticInteraction,
+        model: {
+          elementCount: Object.keys(compactElementsById(elementsById)).length,
+          visibleElementCount: input.visibleElementIds?.length ?? null,
+          diagnosticCount: diagnostics.length,
+          budgetState: input.diagnosticBudgetState ?? rendererBudgetState(diagnostics),
+        },
+      }),
   });
 }
 
@@ -357,6 +378,26 @@ function compactElementsById(
   return Object.fromEntries(
     Object.entries(elementsById).filter((entry): entry is [string, Element] => !!entry[1]),
   );
+}
+
+function rendererBudgetState(diagnostics: readonly RendererDiagnostic[]): DiagnosticBudgetState {
+  if (
+    diagnostics.some(
+      (diagnostic) =>
+        diagnostic.feature === 'renderer-performance' && diagnostic.severity === 'error',
+    )
+  ) {
+    return 'over_budget';
+  }
+  if (
+    diagnostics.some(
+      (diagnostic) =>
+        diagnostic.feature === 'renderer-performance' && diagnostic.severity === 'warning',
+    )
+  ) {
+    return 'deferred';
+  }
+  return 'in_budget';
 }
 
 function fromRoofOpeningDiagnostic(

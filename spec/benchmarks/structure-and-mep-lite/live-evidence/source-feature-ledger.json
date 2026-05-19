@@ -1,0 +1,79 @@
+{
+  "format": "professionalBenchmarkSourceFeatureLedger_v1",
+  "generatedAtIso": "2026-05-19T00:00:00.000Z",
+  "scenarioId": "structure-and-mep-lite",
+  "sourceOfIntent": "spec/ui-mcp-parity-tracker.md#same-house-parity-benchmarks",
+  "trackerRefs": ["BIR-O05"],
+  "features": [
+    {
+      "id": "structure.column",
+      "source": "plannedPublicSurfaces",
+      "evidenceKinds": ["ui", "cmdK", "mcpCli", "semanticDiff"]
+    },
+    {
+      "id": "structure.beam",
+      "source": "plannedPublicSurfaces",
+      "evidenceKinds": ["ui", "cmdK", "mcpCli", "semanticDiff"]
+    },
+    {
+      "id": "structure.column_update",
+      "source": "plannedPublicSurfaces",
+      "evidenceKinds": ["ui", "cmdK", "mcpCli", "semanticDiff"]
+    },
+    {
+      "id": "structure.constraint",
+      "source": "plannedPublicSurfaces",
+      "evidenceKinds": ["ui", "cmdK", "mcpCli", "semanticDiff"]
+    },
+    {
+      "id": "construction.package",
+      "source": "plannedPublicSurfaces",
+      "evidenceKinds": ["ui", "cmdK", "mcpCli", "semanticDiff"]
+    },
+    {
+      "id": "construction.logistics",
+      "source": "plannedPublicSurfaces",
+      "evidenceKinds": ["ui", "cmdK", "mcpCli", "semanticDiff"]
+    },
+    {
+      "id": "construction.qa_checklist",
+      "source": "plannedPublicSurfaces",
+      "evidenceKinds": ["ui", "cmdK", "mcpCli", "semanticDiff"]
+    },
+    {
+      "id": "mep.pipe_route",
+      "source": "plannedPublicSurfaces",
+      "evidenceKinds": ["ui", "cmdK", "mcpCli", "semanticDiff"]
+    },
+    {
+      "id": "mep.duct_route",
+      "source": "plannedPublicSurfaces",
+      "evidenceKinds": ["ui", "cmdK", "mcpCli", "semanticDiff"]
+    },
+    {
+      "id": "mep.cable_tray",
+      "source": "plannedPublicSurfaces",
+      "evidenceKinds": ["ui", "cmdK", "mcpCli", "semanticDiff"]
+    },
+    {
+      "id": "mep.equipment",
+      "source": "plannedPublicSurfaces",
+      "evidenceKinds": ["ui", "cmdK", "mcpCli", "semanticDiff"]
+    },
+    {
+      "id": "mep.fixture",
+      "source": "plannedPublicSurfaces",
+      "evidenceKinds": ["ui", "cmdK", "mcpCli", "semanticDiff"]
+    },
+    {
+      "id": "mep.terminal",
+      "source": "plannedPublicSurfaces",
+      "evidenceKinds": ["ui", "cmdK", "mcpCli", "semanticDiff"]
+    },
+    {
+      "id": "mep.opening_request",
+      "source": "plannedPublicSurfaces",
+      "evidenceKinds": ["ui", "cmdK", "mcpCli", "semanticDiff"]
+    }
+  ]
+}

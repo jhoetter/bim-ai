@@ -58,12 +58,32 @@
       "command": "node --test scripts/benchmarks/families-assets-materials.test.mjs",
       "claim": "The deterministic bundle covers first-class family, asset, kit, material, paint, and decal command payloads plus catalog and material-quality fixtures."
     },
+    "integrity": {
+      "classification": "executable",
+      "status": "passed",
+      "pass": true,
+      "artifacts": [
+        "live-evidence/professional-suite-diagnostics.json",
+        "live-evidence/advisor-validation.json"
+      ],
+      "claim": "Professional-suite diagnostics bind Advisor validation, semantic diff, and integrity acceptance into a scenario-scoped evidence row."
+    },
     "advisor": {
       "classification": "executable",
       "status": "clean",
       "pass": true,
       "artifacts": ["live-evidence/advisor-validation.json"],
       "claim": "Advisor evidence accepts the authored catalog references, host references, material UV metadata, and decal placement."
+    },
+    "rendererDiagnostics": {
+      "classification": "executable",
+      "status": "passed",
+      "pass": true,
+      "artifacts": [
+        "live-evidence/professional-suite-diagnostics.json",
+        "live-evidence/visual-evidence.json"
+      ],
+      "claim": "Renderer diagnostic evidence is linked to visual proof and the background/deferred scheduling plan."
     },
     "visual": {
       "classification": "executable",
@@ -78,6 +98,31 @@
       "pass": true,
       "artifacts": ["live-evidence/export-evidence.json"],
       "claim": "Export manifest evidence includes family instances, asset placements, material PBR slots, face overrides, and decals."
+    },
+    "performance": {
+      "classification": "executable",
+      "status": "profiled",
+      "pass": true,
+      "artifacts": ["live-evidence/professional-suite-diagnostics.json"],
+      "claim": "Advisor profiling, renderer update-cost profiling, incremental scope, and deferred diagnostic scheduling are recorded for this benchmark."
+    },
+    "acceptance": {
+      "classification": "executable",
+      "status": "passed",
+      "pass": true,
+      "artifacts": ["live-evidence/professional-suite-diagnostics.json"],
+      "claim": "Expanded professional-suite evidence rows are present and backed by existing executable artifacts."
+    },
+    "methodology": {
+      "classification": "executable",
+      "status": "ledger-linked",
+      "pass": true,
+      "artifacts": [
+        "live-evidence/assumption-ledger.json",
+        "live-evidence/source-feature-ledger.json",
+        "live-evidence/methodology-ledger.json"
+      ],
+      "claim": "Scenario-specific assumption, source-feature, and methodology ledgers are committed."
     },
     "semanticDiff": {
       "classification": "executable",

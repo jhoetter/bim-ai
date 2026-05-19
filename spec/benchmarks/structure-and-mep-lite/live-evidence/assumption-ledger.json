@@ -1,0 +1,24 @@
+{
+  "format": "professionalBenchmarkAssumptionLedger_v1",
+  "generatedAtIso": "2026-05-19T00:00:00.000Z",
+  "scenarioId": "structure-and-mep-lite",
+  "trackerRefs": ["BIR-O05"],
+  "assumptions": [
+    {
+      "id": "structure-and-mep-lite.deterministic-fixture",
+      "status": "accepted",
+      "statement": "Offline benchmark fixtures are deterministic and do not mutate the shared model.",
+      "evidenceArtifacts": [
+        "mcp-cli-command-bundle.json",
+        "expected-semantics.json",
+        "live-evidence/execution-evidence.json"
+      ]
+    },
+    {
+      "id": "structure-and-mep-lite.visual-proof-source",
+      "status": "accepted",
+      "statement": "Visual proof is represented by committed benchmark live-evidence artifacts.",
+      "evidenceArtifacts": ["live-evidence/visual-evidence.json"]
+    }
+  ]
+}

@@ -1,0 +1,149 @@
+{
+  "format": "professionalBenchmarkDiagnosticsEvidence_v1",
+  "generatedAtIso": "2026-05-19T00:00:00.000Z",
+  "scenarioId": "families-assets-materials",
+  "title": "Families, Assets, and Materials",
+  "trackerRefs": ["BIR-L01", "BIR-L02", "BIR-L04", "BIR-L05", "BIR-L06", "BIR-O05"],
+  "sourceOfIntent": "spec/ui-mcp-parity-tracker.md#same-house-parity-benchmarks",
+  "runner": {
+    "kind": "deterministic-fixture",
+    "command": "node --test scripts/benchmarks/families-assets-materials.test.mjs",
+    "mutatesModel": false
+  },
+  "advisorProfiling": {
+    "format": "advisorDiagnosticsProfileCoverage_v1",
+    "covered": true,
+    "ruleTimingRowsRequired": [
+      "advisor.evaluate_constructability_rules",
+      "constructability.clearance",
+      "constructability.metadata_requirements",
+      "model_integrity.constructability_errors",
+      "domain_integrity.*"
+    ],
+    "evidenceArtifacts": ["live-evidence/advisor-validation.json"],
+    "trackerRefs": ["BIR-L01"]
+  },
+  "rendererUpdateCost": {
+    "format": "rendererCostProfileCoverage_v1",
+    "covered": true,
+    "workloads": ["orbit", "select", "lens-switch", "advisor-toggle", "update"],
+    "benchmarkFeatureCount": 9,
+    "evidenceArtifacts": ["live-evidence/visual-evidence.json"],
+    "trackerRefs": ["BIR-L02"]
+  },
+  "incrementalDiagnostics": {
+    "format": "advisorIncrementalDiagnosticEligibilityCoverage_v1",
+    "covered": true,
+    "changedScopeSource": "scenario feature ledger",
+    "featureCount": 9,
+    "trackerRefs": ["BIR-L04"]
+  },
+  "backgroundDeferredDiagnostics": {
+    "format": "diagnosticUiSchedulingPolicy_v1",
+    "degradationLevel": "none",
+    "inputProtection": {
+      "maxSynchronousDiagnosticMs": 0,
+      "overlayPointerEvents": "none",
+      "preservePointerEvents": true,
+      "preserveCameraControls": true,
+      "preserveSelection": true
+    },
+    "backgroundWork": [
+      {
+        "kind": "advisor",
+        "runMode": "idle",
+        "trackerRefs": ["BIR-L01", "BIR-L05", "BIR-L06"]
+      },
+      {
+        "kind": "renderer-diagnostics",
+        "runMode": "idle",
+        "trackerRefs": ["BIR-L02", "BIR-L05", "BIR-L06"]
+      },
+      {
+        "kind": "evidence-capture",
+        "runMode": "debounced",
+        "trackerRefs": ["BIR-L05", "BIR-O05"]
+      }
+    ]
+  },
+  "evidenceKinds": {
+    "ui": {
+      "status": "validated",
+      "classification": "validated-replay",
+      "artifactCount": 2
+    },
+    "cmdK": {
+      "status": "validated",
+      "classification": "validated-replay",
+      "artifactCount": 2
+    },
+    "mcpCli": {
+      "status": "passed",
+      "classification": "executable",
+      "artifactCount": 4
+    },
+    "integrity": {
+      "status": "passed",
+      "classification": "executable",
+      "artifactCount": 2
+    },
+    "advisor": {
+      "status": "clean",
+      "classification": "executable",
+      "artifactCount": 1
+    },
+    "rendererDiagnostics": {
+      "status": "passed",
+      "classification": "executable",
+      "artifactCount": 2
+    },
+    "visual": {
+      "status": "visual-clean",
+      "classification": "executable",
+      "artifactCount": 1
+    },
+    "export": {
+      "status": "manifest-returned",
+      "classification": "executable",
+      "artifactCount": 1
+    },
+    "performance": {
+      "status": "profiled",
+      "classification": "executable",
+      "artifactCount": 1
+    },
+    "acceptance": {
+      "status": "passed",
+      "classification": "executable",
+      "artifactCount": 1
+    },
+    "methodology": {
+      "status": "ledger-linked",
+      "classification": "executable",
+      "artifactCount": 3
+    },
+    "semanticDiff": {
+      "status": "passed",
+      "classification": "executable",
+      "artifactCount": 2
+    }
+  },
+  "acceptance": {
+    "ok": true,
+    "requiredEvidenceKinds": [
+      "ui",
+      "cmdK",
+      "mcpCli",
+      "integrity",
+      "advisor",
+      "rendererDiagnostics",
+      "visual",
+      "export",
+      "performance",
+      "acceptance",
+      "methodology",
+      "semanticDiff"
+    ],
+    "trackerRefs": ["BIR-O05"]
+  }
+}

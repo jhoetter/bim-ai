@@ -1,0 +1,25 @@
+{
+  "format": "professionalBenchmarkAssumptionLedger_v1",
+  "generatedAtIso": "2026-05-19T00:00:00.000Z",
+  "scenarioId": "families-assets-materials",
+  "trackerRefs": ["BIR-O05"],
+  "assumptions": [
+    {
+      "id": "families-assets-materials.deterministic-fixture",
+      "status": "accepted",
+      "statement": "Offline benchmark fixtures are deterministic and do not mutate the shared model.",
+      "evidenceArtifacts": [
+        "mcp-cli-command-bundle.json",
+        "catalog-evidence.json",
+        "material-quality.json",
+        "expected-semantics.json"
+      ]
+    },
+    {
+      "id": "families-assets-materials.visual-proof-source",
+      "status": "accepted",
+      "statement": "Visual proof is represented by committed benchmark live-evidence artifacts.",
+      "evidenceArtifacts": ["live-evidence/visual-evidence.json"]
+    }
+  ]
+}

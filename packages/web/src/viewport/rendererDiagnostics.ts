@@ -1,5 +1,6 @@
 import type { Element } from '@bim-ai/core';
 
+import type { DiagnosticUiSchedulingPolicy } from './diagnosticSchedulingPolicy';
 import type { ElementRenderFeatureStatus } from './elementRenderFeatureStatus';
 
 export type RendererDiagnosticSeverity = 'error' | 'warning' | 'info';
@@ -87,6 +88,7 @@ export type RendererDiagnosticPacket = {
   supportMatrixDigest: string;
   diagnostics: RendererDiagnostic[];
   elementRenderStatuses?: ElementRenderFeatureStatus[];
+  diagnosticSchedulingPolicy?: DiagnosticUiSchedulingPolicy;
 };
 
 export type RendererSurfaceSupport = 'supported' | 'partial' | 'unsupported' | 'not_applicable';
@@ -225,6 +227,7 @@ export function createRendererDiagnosticPacket(input: {
   gitHead?: string | null;
   rendererBuild?: string | null;
   supportMatrixDigest?: string | null;
+  diagnosticSchedulingPolicy?: DiagnosticUiSchedulingPolicy;
 }): RendererDiagnosticPacket {
   return {
     format: 'rendererDiagnosticPacket_v1',
@@ -236,6 +239,7 @@ export function createRendererDiagnosticPacket(input: {
     supportMatrixDigest: input.supportMatrixDigest ?? rendererSupportMatrixDigest(),
     diagnostics: input.diagnostics,
     elementRenderStatuses: input.elementRenderStatuses,
+    diagnosticSchedulingPolicy: input.diagnosticSchedulingPolicy,
   };
 }
 

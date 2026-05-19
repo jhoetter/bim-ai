@@ -167,6 +167,21 @@ describe('collectRendererDiagnostics', () => {
       viewId: 'hosted-opening-evidence',
     });
     expect(packet.supportMatrixDigest).toMatch(/^rsm-[0-9a-f]{8}$/);
+    expect(packet.diagnosticSchedulingPolicy).toMatchObject({
+      format: 'diagnosticUiSchedulingPolicy_v1',
+      degradationLevel: 'none',
+      inputProtection: {
+        maxSynchronousDiagnosticMs: 0,
+        overlayPointerEvents: 'none',
+        preservePointerEvents: true,
+        preserveCameraControls: true,
+        preserveSelection: true,
+      },
+    });
+    expect(packet.diagnosticSchedulingPolicy?.workPlans.advisor.runMode).toBe('idle');
+    expect(packet.diagnosticSchedulingPolicy?.workPlans['renderer-diagnostics'].runMode).toBe(
+      'idle',
+    );
     expect(packet.elementRenderStatuses).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
@@ -194,6 +209,37 @@ describe('collectRendererDiagnostics', () => {
         }),
       ]),
     );
+  });
+
+  it('wires background/deferred diagnostic scheduling into renderer packets', () => {
+    const packet = collectRendererDiagnosticPacket({
+      elements: [wall({ id: 'wall-1' }), door({ id: 'door-1', wallId: 'wall-1' })],
+      generatedAtIso: '2026-05-19T00:00:00.000Z',
+      viewId: 'diagnostic-scheduling-proof',
+      diagnosticBudgetState: 'over_budget',
+      diagnosticInteraction: {
+        pointerActive: true,
+        cameraActive: true,
+        msSinceLastInput: 16,
+        pageVisible: true,
+      },
+    });
+
+    expect(packet.diagnosticSchedulingPolicy?.degradationLevel).toBe('suspended');
+    expect(packet.diagnosticSchedulingPolicy?.reasonCodes).toEqual([
+      'camera_interaction_active',
+      'model_over_budget_auto_diagnostics_suspended',
+      'pointer_interaction_active',
+      'recent_input_grace_period',
+    ]);
+    expect(packet.diagnosticSchedulingPolicy?.workPlans.advisor.runMode).toBe('manual_only');
+    expect(packet.diagnosticSchedulingPolicy?.workPlans['renderer-diagnostics'].runMode).toBe(
+      'manual_only',
+    );
+    expect(packet.diagnosticSchedulingPolicy?.workPlans['diagnostic-overlay'].runMode).toBe(
+      'render_stale',
+    );
+    expect(packet.diagnosticSchedulingPolicy?.overlay.pointerEvents).toBe('none');
   });
 
   it('persists lens-context status and renderer-performance diagnostics with hosted-cut evidence', () => {

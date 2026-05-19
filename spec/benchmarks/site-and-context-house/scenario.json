@@ -43,11 +43,31 @@
       ],
       "command": "node scripts/benchmarks/site-context-house.mjs --mode offline --json"
     },
+    "integrity": {
+      "classification": "executable",
+      "status": "passed",
+      "ok": true,
+      "artifacts": [
+        "live-evidence/professional-suite-diagnostics.json",
+        "live-evidence/advisor-validation.json"
+      ],
+      "claim": "Professional-suite diagnostics bind Advisor validation, semantic diff, and integrity acceptance into a scenario-scoped evidence row."
+    },
     "advisor": {
       "classification": "executable",
       "status": "passed",
       "ok": true,
       "artifacts": ["live-evidence/advisor-validation.json"]
+    },
+    "rendererDiagnostics": {
+      "classification": "executable",
+      "status": "passed",
+      "ok": true,
+      "artifacts": [
+        "live-evidence/professional-suite-diagnostics.json",
+        "live-evidence/visual-evidence.json"
+      ],
+      "claim": "Renderer diagnostic evidence is linked to visual proof and the background/deferred scheduling plan."
     },
     "visual": {
       "classification": "executable",
@@ -60,6 +80,31 @@
       "status": "passed",
       "ok": true,
       "artifacts": ["live-evidence/export-evidence.json"]
+    },
+    "performance": {
+      "classification": "executable",
+      "status": "profiled",
+      "ok": true,
+      "artifacts": ["live-evidence/professional-suite-diagnostics.json"],
+      "claim": "Advisor profiling, renderer update-cost profiling, incremental scope, and deferred diagnostic scheduling are recorded for this benchmark."
+    },
+    "acceptance": {
+      "classification": "executable",
+      "status": "passed",
+      "ok": true,
+      "artifacts": ["live-evidence/professional-suite-diagnostics.json"],
+      "claim": "Expanded professional-suite evidence rows are present and backed by existing executable artifacts."
+    },
+    "methodology": {
+      "classification": "executable",
+      "status": "ledger-linked",
+      "ok": true,
+      "artifacts": [
+        "live-evidence/assumption-ledger.json",
+        "live-evidence/source-feature-ledger.json",
+        "live-evidence/methodology-ledger.json"
+      ],
+      "claim": "Scenario-specific assumption, source-feature, and methodology ledgers are committed."
     },
     "semanticDiff": {
       "classification": "executable",

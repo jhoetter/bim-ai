@@ -39,11 +39,32 @@
       "command": "node --test scripts/benchmarks/m4-presentation-documentation.test.mjs",
       "pass": true
     },
+    "integrity": {
+      "classification": "executable",
+      "status": "passed-clean",
+      "artifacts": [
+        "live-evidence/professional-suite-diagnostics.json",
+        "live-evidence/advisor-validation.json"
+      ],
+      "pass": true,
+      "claim": "Professional-suite diagnostics bind Advisor validation, semantic diff, and integrity acceptance into a scenario-scoped evidence row."
+    },
     "advisor": {
       "classification": "executable",
       "status": "passed-clean",
       "artifacts": ["live-evidence/advisor-validation.json"],
       "pass": true
+    },
+    "rendererDiagnostics": {
+      "classification": "executable",
+      "status": "passed-clean",
+      "artifacts": [
+        "live-evidence/professional-suite-diagnostics.json",
+        "live-evidence/visual-evidence.json",
+        "live-evidence/render-bundle.json"
+      ],
+      "pass": true,
+      "claim": "Renderer diagnostic evidence is linked to visual/render proof and the background/deferred scheduling plan."
     },
     "visual": {
       "classification": "executable",
@@ -56,6 +77,31 @@
       "status": "passed-clean",
       "artifacts": ["live-evidence/export-evidence.json"],
       "pass": true
+    },
+    "performance": {
+      "classification": "executable",
+      "status": "profiled",
+      "artifacts": ["live-evidence/professional-suite-diagnostics.json"],
+      "pass": true,
+      "claim": "Advisor profiling, renderer update-cost profiling, incremental scope, and deferred diagnostic scheduling are recorded for this benchmark."
+    },
+    "acceptance": {
+      "classification": "executable",
+      "status": "passed-clean",
+      "artifacts": ["live-evidence/professional-suite-diagnostics.json"],
+      "pass": true,
+      "claim": "Expanded professional-suite evidence rows are present and backed by existing executable artifacts."
+    },
+    "methodology": {
+      "classification": "executable",
+      "status": "ledger-linked",
+      "artifacts": [
+        "live-evidence/assumption-ledger.json",
+        "live-evidence/source-feature-ledger.json",
+        "live-evidence/methodology-ledger.json"
+      ],
+      "pass": true,
+      "claim": "Scenario-specific assumption, source-feature, and methodology ledgers are committed."
     },
     "semanticDiff": {
       "classification": "executable",
