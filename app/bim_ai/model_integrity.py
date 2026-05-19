@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+import hashlib
+import json
+import math
 from collections.abc import Mapping
 from dataclasses import asdict, dataclass
 from typing import Any, Literal
@@ -258,6 +261,56 @@ VIEW_KINDS: frozenset[str] = frozenset(
     }
 )
 
+CANONICAL_LENGTH_UNIT = "millimeter"
+SUPPORTED_LENGTH_UNITS: frozenset[str] = frozenset({"millimeter", "millimetre", "mm"})
+SUPPORTED_SCHEMA_VERSIONS: frozenset[str] = frozenset(
+    {
+        "cmd-v3.0",
+        "bim-ai.seed-artifact.v1",
+        "sketch-understanding-ir.v0",
+        "seed-dsl.v0",
+        "tkn-v3.0",
+    }
+)
+
+POINT_COORDINATE_FIELDS: tuple[str, ...] = (
+    "start",
+    "end",
+    "positionMm",
+    "originMm",
+    "center",
+    "basePointMm",
+    "surveyPointMm",
+)
+POINT_LIST_COORDINATE_FIELDS: tuple[str, ...] = (
+    "boundaryMm",
+    "footprintMm",
+    "points",
+    "polylineMm",
+    "outlineMm",
+)
+FINITE_LENGTH_FIELDS: tuple[str, ...] = (
+    "elevationMm",
+    "offsetFromParentMm",
+    "thicknessMm",
+    "structureThicknessMm",
+    "finishThicknessMm",
+    "heightMm",
+    "widthMm",
+    "sillHeightMm",
+    "overhangMm",
+    "unitScaleToMm",
+)
+
+TYPE_INSTANCE_SPECS: dict[str, tuple[str, str, bool]] = {
+    "wall": ("wallTypeId", "wall_type", False),
+    "floor": ("floorTypeId", "floor_type", False),
+    "roof": ("roofTypeId", "roof_type", False),
+    "door": ("familyTypeId", "family_type", False),
+    "window": ("familyTypeId", "family_type", False),
+    "family_instance": ("familyTypeId", "family_type", True),
+}
+
 REFERENCE_SPECS: tuple[ReferenceSpec, ...] = (
     ReferenceSpec("levelId", frozenset({"level"})),
     ReferenceSpec("referenceLevelId", frozenset({"level"})),
@@ -312,6 +365,26 @@ def model_integrity_invariant_contract_v1() -> dict[str, Any]:
         "roles": sorted(VALID_MODEL_ROLES),
         "roleByKind": dict(sorted(ROLE_BY_KIND.items())),
         "physicalKinds": sorted(PHYSICAL_KINDS),
+        "unitContracts": {
+            "canonicalLengthUnit": CANONICAL_LENGTH_UNIT,
+            "acceptedLengthUnitAliases": sorted(SUPPORTED_LENGTH_UNITS),
+            "pointCoordinateFields": sorted(POINT_COORDINATE_FIELDS),
+            "pointListCoordinateFields": sorted(POINT_LIST_COORDINATE_FIELDS),
+            "finiteLengthFields": sorted(FINITE_LENGTH_FIELDS),
+        },
+        "typeInstanceRelations": [
+            {
+                "instanceKind": instance_kind,
+                "field": spec[0],
+                "typeKind": spec[1],
+                "required": spec[2],
+            }
+            for instance_kind, spec in sorted(TYPE_INSTANCE_SPECS.items())
+        ],
+        "schemaMigrationCompatibility": {
+            "supportedSchemaVersions": sorted(SUPPORTED_SCHEMA_VERSIONS),
+            "missingSchemaVersionPolicy": "model snapshots without schemaVersion are accepted as current in-memory snapshots",
+        },
         "referenceFields": [
             {
                 "field": spec.field,
@@ -322,7 +395,16 @@ def model_integrity_invariant_contract_v1() -> dict[str, Any]:
             }
             for spec in REFERENCE_SPECS
         ],
-        "trackedItems": ["BIR-P01", "BIR-P02", "BIR-P04", "BIR-P05", "BIR-P08"],
+        "trackedItems": [
+            "BIR-P01",
+            "BIR-P02",
+            "BIR-P03",
+            "BIR-P04",
+            "BIR-P05",
+            "BIR-P06",
+            "BIR-P07",
+            "BIR-P08",
+        ],
     }
 
 
@@ -400,7 +482,10 @@ def check_model_integrity_invariants(
         findings.extend(_role_findings(element, element_id, kind, require_explicit_roles))
         findings.extend(_reference_findings(element, elements, element_kinds, design_option_sets))
         findings.extend(_level_semantic_findings(element, elements))
+        findings.extend(_unit_coordinate_findings(element))
+        findings.extend(_type_instance_findings(element, elements))
 
+    findings.extend(_schema_compatibility_findings(subject))
     return findings
 
 
@@ -413,7 +498,16 @@ def model_integrity_smoke_v1(subject: Any, *, require_explicit_roles: bool = Fal
         counts[finding.severity] = counts.get(finding.severity, 0) + 1
     return {
         "format": "modelIntegritySmoke_v1",
-        "trackedItems": ["BIR-P01", "BIR-P02", "BIR-P04", "BIR-P05", "BIR-P08"],
+        "trackedItems": [
+            "BIR-P01",
+            "BIR-P02",
+            "BIR-P03",
+            "BIR-P04",
+            "BIR-P05",
+            "BIR-P06",
+            "BIR-P07",
+            "BIR-P08",
+        ],
         "ok": counts.get("error", 0) == 0,
         "findingCount": len(findings),
         "countsBySeverity": dict(sorted(counts.items())),
@@ -421,9 +515,112 @@ def model_integrity_smoke_v1(subject: Any, *, require_explicit_roles: bool = Fal
     }
 
 
+def model_integrity_units_coordinate_normalization_v1(subject: Any) -> dict[str, Any]:
+    elements = _elements_mapping(subject) or {}
+    findings: list[ModelIntegrityFinding] = []
+    for element in elements.values():
+        findings.extend(_unit_coordinate_findings(element))
+    counts = _counts_by_severity(findings)
+    return {
+        "format": "modelIntegrityUnitsCoordinateNormalization_v1",
+        "trackedItems": ["BIR-P03"],
+        "canonicalLengthUnit": CANONICAL_LENGTH_UNIT,
+        "ok": counts.get("error", 0) == 0,
+        "findingCount": len(findings),
+        "countsBySeverity": counts,
+        "findings": [finding.to_dict() for finding in findings],
+    }
+
+
+def resolve_type_instance_inheritance_v1(subject: Any) -> dict[str, Any]:
+    elements = _elements_mapping(subject) or {}
+    rows: list[dict[str, Any]] = []
+    for element_id, element in sorted(elements.items(), key=lambda item: str(item[0])):
+        kind = str(_read(element, "kind", default=""))
+        spec = TYPE_INSTANCE_SPECS.get(kind)
+        if spec is None:
+            continue
+        field, type_kind, _required = spec
+        type_id = _read(element, field)
+        if type_id in (None, ""):
+            continue
+        type_id = str(type_id)
+        type_element = elements.get(type_id)
+        if type_element is None or str(_read(type_element, "kind", default="")) != type_kind:
+            continue
+        resolved = _resolved_type_values(element, type_element, kind)
+        rows.append(
+            {
+                "elementId": str(_read(element, "id", default=element_id)),
+                "kind": kind,
+                "typeField": field,
+                "typeId": type_id,
+                "typeKind": type_kind,
+                "overrideKeys": _type_override_keys(element, type_element, kind),
+                "resolved": resolved,
+            }
+        )
+    return {
+        "format": "modelIntegrityTypeInstanceInheritance_v1",
+        "trackedItems": ["BIR-P06"],
+        "ok": True,
+        "resolvedCount": len(rows),
+        "rows": rows,
+        "digestSha256": _stable_digest({"rows": rows}),
+    }
+
+
+def schema_migration_compatibility_v1(subject: Any) -> dict[str, Any]:
+    findings = _schema_compatibility_findings(subject)
+    counts = _counts_by_severity(findings)
+    schema_version = _read(subject, "schemaVersion") if isinstance(subject, Mapping) else None
+    return {
+        "format": "modelIntegritySchemaMigrationCompatibility_v1",
+        "trackedItems": ["BIR-P07"],
+        "schemaVersion": schema_version,
+        "supportedSchemaVersions": sorted(SUPPORTED_SCHEMA_VERSIONS),
+        "ok": counts.get("error", 0) == 0,
+        "findingCount": len(findings),
+        "countsBySeverity": counts,
+        "findings": [finding.to_dict() for finding in findings],
+    }
+
+
+def model_integrity_smoke_command_evidence_v1(subject: Any) -> dict[str, Any]:
+    smoke = model_integrity_smoke_v1(subject)
+    units = model_integrity_units_coordinate_normalization_v1(subject)
+    inheritance = resolve_type_instance_inheritance_v1(subject)
+    schema = schema_migration_compatibility_v1(subject)
+    evidence = {
+        "format": "modelIntegritySmokeCommandEvidence_v1",
+        "trackedItems": [
+            "BIR-P01",
+            "BIR-P02",
+            "BIR-P03",
+            "BIR-P04",
+            "BIR-P05",
+            "BIR-P06",
+            "BIR-P07",
+            "BIR-P08",
+        ],
+        "command": {
+            "cli": "bim-ai invariant smoke --input <snapshot.json> --format json",
+            "api": "POST /api/v3/invariants/smoke",
+        },
+        "artifacts": {
+            "smoke": smoke,
+            "unitsCoordinateNormalization": units,
+            "typeInstanceInheritance": inheritance,
+            "schemaMigrationCompatibility": schema,
+        },
+    }
+    evidence["digestSha256"] = _stable_digest(evidence)
+    return evidence
+
+
 def _elements_mapping(subject: Any) -> Mapping[str, Any] | None:
     if hasattr(subject, "elements"):
-        elements = getattr(subject, "elements")
+        elements = subject.elements
         return elements if isinstance(elements, Mapping) else None
     if isinstance(subject, Mapping):
         if "elements" in subject:
@@ -435,7 +632,7 @@ def _elements_mapping(subject: Any) -> Mapping[str, Any] | None:
 
 def _design_option_sets(subject: Any) -> list[Any]:
     if hasattr(subject, "design_option_sets"):
-        raw = getattr(subject, "design_option_sets")
+        raw = subject.design_option_sets
         return list(raw or [])
     if isinstance(subject, Mapping):
         raw = subject.get("designOptionSets") or subject.get("design_option_sets") or []
@@ -565,6 +762,281 @@ def _reference_findings(
     return findings
 
 
+def _unit_coordinate_findings(element: Any) -> list[ModelIntegrityFinding]:
+    element_id = str(_read(element, "id", default=""))
+    kind = str(_read(element, "kind", default=""))
+    findings: list[ModelIntegrityFinding] = []
+
+    if kind == "project_settings":
+        length_unit = _read(element, "lengthUnit", default=CANONICAL_LENGTH_UNIT)
+        if str(length_unit) not in SUPPORTED_LENGTH_UNITS:
+            findings.append(
+                ModelIntegrityFinding(
+                    rule_id="model_integrity_unsupported_length_unit",
+                    severity="error",
+                    message=(
+                        f"Project settings '{element_id}' declare lengthUnit '{length_unit}', "
+                        "but model snapshots must normalize geometry to millimeters."
+                    ),
+                    element_ids=(element_id,),
+                    field="lengthUnit",
+                    expected=" | ".join(sorted(SUPPORTED_LENGTH_UNITS)),
+                    actual=str(length_unit),
+                )
+            )
+
+    for field in POINT_COORDINATE_FIELDS:
+        if _field_present(element, field):
+            findings.extend(_coordinate_point_findings(element, element_id, field, _read(element, field)))
+
+    for field in POINT_LIST_COORDINATE_FIELDS:
+        if not _field_present(element, field):
+            continue
+        value = _read(element, field)
+        if not isinstance(value, list | tuple):
+            findings.append(
+                ModelIntegrityFinding(
+                    rule_id="model_integrity_coordinate_list_invalid",
+                    severity="error",
+                    message=f"Element '{element_id}' field '{field}' must be a coordinate list.",
+                    element_ids=(element_id,),
+                    field=field,
+                    expected="list of {xMm, yMm}",
+                    actual=type(value).__name__,
+                )
+            )
+            continue
+        for index, point in enumerate(value):
+            findings.extend(
+                _coordinate_point_findings(element, element_id, f"{field}[{index}]", point)
+            )
+
+    for field in FINITE_LENGTH_FIELDS:
+        if _field_present(element, field):
+            value = _read(element, field)
+            if not _is_finite_number(value):
+                findings.append(
+                    ModelIntegrityFinding(
+                        rule_id="model_integrity_unit_value_non_finite",
+                        severity="error",
+                        message=f"Element '{element_id}' field '{field}' must be a finite millimeter value.",
+                        element_ids=(element_id,),
+                        field=field,
+                        expected="finite number",
+                        actual=str(value),
+                    )
+                )
+    return findings
+
+
+def _coordinate_point_findings(
+    element: Any, element_id: str, field: str, point: Any
+) -> list[ModelIntegrityFinding]:
+    findings: list[ModelIntegrityFinding] = []
+    coordinates = _coordinate_components(point)
+    if coordinates == "legacy_xy":
+        findings.append(
+            ModelIntegrityFinding(
+                rule_id="model_integrity_coordinate_not_normalized",
+                severity="error",
+                message=(
+                    f"Element '{element_id}' field '{field}' uses legacy x/y coordinates; "
+                    "canonical snapshots must use xMm/yMm."
+                ),
+                element_ids=(element_id,),
+                field=field,
+                expected="{xMm, yMm}",
+                actual="{x, y}",
+            )
+        )
+        return findings
+    if coordinates is None:
+        findings.append(
+            ModelIntegrityFinding(
+                rule_id="model_integrity_coordinate_invalid_shape",
+                severity="error",
+                message=f"Element '{element_id}' field '{field}' is not a normalized coordinate.",
+                element_ids=(element_id,),
+                field=field,
+                expected="{xMm, yMm}",
+                actual=type(point).__name__,
+            )
+        )
+        return findings
+    bad_values = [value for value in coordinates if not _is_finite_number(value)]
+    if bad_values:
+        findings.append(
+            ModelIntegrityFinding(
+                rule_id="model_integrity_coordinate_non_finite",
+                severity="error",
+                message=f"Element '{element_id}' field '{field}' contains non-finite coordinate values.",
+                element_ids=(element_id,),
+                field=field,
+                expected="finite millimeter coordinates",
+                actual=", ".join(str(value) for value in bad_values),
+            )
+        )
+    return findings
+
+
+def _coordinate_components(point: Any) -> tuple[Any, ...] | Literal["legacy_xy"] | None:
+    if isinstance(point, Mapping):
+        if "xMm" in point and ("yMm" in point or "zMm" in point):
+            values = [point.get("xMm")]
+            values.append(point.get("yMm") if "yMm" in point else point.get("zMm"))
+            if "zMm" in point and "yMm" in point:
+                values.append(point.get("zMm"))
+            return tuple(values)
+        if "x_mm" in point and ("y_mm" in point or "z_mm" in point):
+            values = [point.get("x_mm")]
+            values.append(point.get("y_mm") if "y_mm" in point else point.get("z_mm"))
+            if "z_mm" in point and "y_mm" in point:
+                values.append(point.get("z_mm"))
+            return tuple(values)
+        if "x" in point and "y" in point:
+            return "legacy_xy"
+        return None
+    x_value = _read(point, "xMm")
+    y_value = _read(point, "yMm")
+    z_value = _read(point, "zMm")
+    if x_value is not None and (y_value is not None or z_value is not None):
+        return (x_value, y_value if y_value is not None else z_value)
+    return None
+
+
+def _type_instance_findings(
+    element: Any, elements: Mapping[str, Any]
+) -> list[ModelIntegrityFinding]:
+    element_id = str(_read(element, "id", default=""))
+    kind = str(_read(element, "kind", default=""))
+    findings: list[ModelIntegrityFinding] = []
+
+    if kind in {"wall_type", "floor_type", "roof_type"}:
+        findings.extend(_type_layer_findings(element, element_id))
+
+    spec = TYPE_INSTANCE_SPECS.get(kind)
+    if spec is None:
+        return findings
+    field, expected_kind, required = spec
+    type_id = _read(element, field)
+    if type_id in (None, ""):
+        if required:
+            findings.append(
+                ModelIntegrityFinding(
+                    rule_id="model_integrity_type_reference_missing",
+                    severity="error",
+                    message=f"Element '{element_id}' is missing required type field '{field}'.",
+                    element_ids=(element_id,),
+                    field=field,
+                    expected=expected_kind,
+                )
+            )
+        return findings
+    type_id = str(type_id)
+    target = elements.get(type_id)
+    if target is None:
+        findings.append(
+            ModelIntegrityFinding(
+                rule_id="model_integrity_type_reference_unresolved",
+                severity="error",
+                message=f"Element '{element_id}' field '{field}' references missing type '{type_id}'.",
+                element_ids=(element_id,),
+                field=field,
+                expected=expected_kind,
+                actual=type_id,
+            )
+        )
+        return findings
+    target_kind = str(_read(target, "kind", default=""))
+    if target_kind != expected_kind:
+        findings.append(
+            ModelIntegrityFinding(
+                rule_id="model_integrity_type_reference_wrong_kind",
+                severity="error",
+                message=(
+                    f"Element '{element_id}' field '{field}' references '{type_id}' "
+                    f"of kind '{target_kind}', expected '{expected_kind}'."
+                ),
+                element_ids=(element_id, type_id),
+                field=field,
+                expected=expected_kind,
+                actual=target_kind,
+            )
+        )
+    return findings
+
+
+def _type_layer_findings(element: Any, element_id: str) -> list[ModelIntegrityFinding]:
+    layers = _read(element, "layers", default=[])
+    if not isinstance(layers, list | tuple):
+        return [
+            ModelIntegrityFinding(
+                rule_id="model_integrity_type_layers_invalid",
+                severity="error",
+                message=f"Type element '{element_id}' has non-list layers.",
+                element_ids=(element_id,),
+                field="layers",
+                expected="list",
+                actual=type(layers).__name__,
+            )
+        ]
+    findings: list[ModelIntegrityFinding] = []
+    for index, layer in enumerate(layers):
+        thickness = _read(layer, "thicknessMm")
+        function = _read(layer, "function")
+        if function in (None, ""):
+            function = _read(layer, "layerFunction")
+        if not _is_finite_number(thickness) or float(thickness) <= 0:
+            findings.append(
+                ModelIntegrityFinding(
+                    rule_id="model_integrity_type_layer_thickness_invalid",
+                    severity="error",
+                    message=(
+                        f"Type element '{element_id}' layer {index} has invalid thicknessMm."
+                    ),
+                    element_ids=(element_id,),
+                    field=f"layers[{index}].thicknessMm",
+                    expected="positive finite millimeter value",
+                    actual=str(thickness),
+                )
+            )
+        if function in (None, ""):
+            findings.append(
+                ModelIntegrityFinding(
+                    rule_id="model_integrity_type_layer_function_missing",
+                    severity="error",
+                    message=f"Type element '{element_id}' layer {index} is missing function.",
+                    element_ids=(element_id,),
+                    field=f"layers[{index}].function",
+                    expected="layer function",
+                )
+            )
+    return findings
+
+
+def _schema_compatibility_findings(subject: Any) -> list[ModelIntegrityFinding]:
+    if not isinstance(subject, Mapping):
+        return []
+    schema_version = subject.get("schemaVersion") or subject.get("schema_version")
+    if schema_version in (None, ""):
+        return []
+    if str(schema_version) in SUPPORTED_SCHEMA_VERSIONS:
+        return []
+    return [
+        ModelIntegrityFinding(
+            rule_id="model_integrity_schema_version_unsupported",
+            severity="error",
+            message=(
+                f"Schema version '{schema_version}' is not supported by model integrity checks; "
+                "migrate to a supported schema before applying commands or accepting artifacts."
+            ),
+            field="schemaVersion",
+            expected=" | ".join(sorted(SUPPORTED_SCHEMA_VERSIONS)),
+            actual=str(schema_version),
+        )
+    ]
+
+
 def _level_semantic_findings(element: Any, elements: Mapping[str, Any]) -> list[ModelIntegrityFinding]:
     kind = str(_read(element, "kind", default=""))
     element_id = str(_read(element, "id", default=""))
@@ -631,6 +1103,78 @@ def _declared_model_role(element: Any) -> str | None:
             if value not in (None, ""):
                 return str(value)
     return None
+
+
+def _resolved_type_values(element: Any, type_element: Any, kind: str) -> dict[str, Any]:
+    if kind in {"wall", "floor", "roof"}:
+        layers = _read(type_element, "layers", default=[]) or []
+        layer_thicknesses = [
+            float(_read(layer, "thicknessMm"))
+            for layer in layers
+            if _is_finite_number(_read(layer, "thicknessMm"))
+        ]
+        resolved: dict[str, Any] = {
+            "typeName": _read(type_element, "name", default=""),
+            "assemblyThicknessMm": round(sum(layer_thicknesses), 6),
+            "layerCount": len(layers),
+        }
+        instance_thickness = _read(element, "thicknessMm")
+        if _is_finite_number(instance_thickness):
+            resolved["instanceThicknessMm"] = float(instance_thickness)
+        return resolved
+
+    type_parameters = _read(type_element, "parameters", default={}) or {}
+    instance_parameters = _read(element, "paramValues", default={}) or {}
+    resolved_parameters: dict[str, Any] = {}
+    if isinstance(type_parameters, Mapping):
+        resolved_parameters.update(dict(type_parameters))
+    if isinstance(instance_parameters, Mapping):
+        resolved_parameters.update(dict(instance_parameters))
+    return {
+        "typeName": _read(type_element, "name", default=""),
+        "parameters": dict(sorted(resolved_parameters.items())),
+    }
+
+
+def _type_override_keys(element: Any, type_element: Any, kind: str) -> list[str]:
+    if kind in {"wall", "floor", "roof"}:
+        overrides: list[str] = []
+        layers = _read(type_element, "layers", default=[]) or []
+        layer_thickness = sum(
+            float(_read(layer, "thicknessMm"))
+            for layer in layers
+            if _is_finite_number(_read(layer, "thicknessMm"))
+        )
+        instance_thickness = _read(element, "thicknessMm")
+        if _is_finite_number(instance_thickness) and not math.isclose(
+            float(instance_thickness), layer_thickness, rel_tol=0.0, abs_tol=1e-6
+        ):
+            overrides.append("thicknessMm")
+        return overrides
+    param_values = _read(element, "paramValues", default={}) or {}
+    if isinstance(param_values, Mapping):
+        return sorted(str(key) for key in param_values)
+    return []
+
+
+def _counts_by_severity(findings: list[ModelIntegrityFinding]) -> dict[str, int]:
+    counts: dict[str, int] = {}
+    for finding in findings:
+        counts[finding.severity] = counts.get(finding.severity, 0) + 1
+    return dict(sorted(counts.items()))
+
+
+def _stable_digest(payload: Any) -> str:
+    encoded = json.dumps(payload, sort_keys=True, separators=(",", ":"), default=str).encode(
+        "utf-8"
+    )
+    return hashlib.sha256(encoded).hexdigest()
+
+
+def _is_finite_number(value: Any) -> bool:
+    if isinstance(value, bool) or not isinstance(value, int | float):
+        return False
+    return math.isfinite(float(value))
 
 
 def _missing_required_ref(element_id: str, spec: ReferenceSpec) -> ModelIntegrityFinding:
