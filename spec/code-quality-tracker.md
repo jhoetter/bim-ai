@@ -13,14 +13,16 @@ and sketch-to-BIM readiness remain in their dedicated trackers.
 
 ## Current Rating
 
-Current assessment: **6/10**.
+Current assessment: **7/10 (B-)**.
 
-The project has strong ingredients: a real monorepo structure, strict TypeScript
-configuration, many frontend tests, Python ruff/pytest coverage gates, lockfiles,
-architecture checks, and good evidence of domain-level test coverage. The score
-is held down by a failing frontend typecheck, very large central modules, noisy
-test output, a few broken or inconsistent local verification commands, and
-tracked generated/local artifacts.
+The project is now in B territory: strict TypeScript is green, the canonical
+verification gates are aligned, frontend test noise is materially quieter,
+backend focused/full test paths are explicit, quality waivers are
+machine-readable and expiring, and the largest frontend monoliths have extraction
+maps with first slices landed. The score is still held down by large remaining
+source files, the active JavaScript lint waiver, missing contract-parity budgets,
+limited real deployed-path integration coverage, and the absence of a generated
+release-readiness scorecard.
 
 The practical target is:
 
@@ -155,7 +157,7 @@ Observed results:
 | Quality waivers           | Pass                                   | `pnpm quality:waivers` validates `spec/quality-waivers.json` and fails expired P0/P1 exceptions.               |
 | Python ruff via `uv run`  | Pass                                   | `uv run ruff check bim_ai tests scripts` is green.                                                             |
 | Frontend lint             | Fail                                   | `pnpm lint` reports the existing `@bim-ai/web` lint backlog; tracked by `CQW-2026-001` while outside the B gate. |
-| Frontend unit tests       | Pass                                   | `669` test files / `5462` tests pass with test i18n, fetch, canvas, and React key warnings quieted.            |
+| Frontend unit tests       | Pass                                   | `671` test files / `5466` tests pass with test i18n, fetch, canvas, and React key warnings quieted.            |
 | Frontend typecheck        | Pass                                   | Restored on 2026-05-19; `@bim-ai/web` compiles under the strict project config.                                |
 | Narrow backend test       | Pass                                   | `make test-py-focused PYTEST_ARGS="tests/api/test_activity_route.py"` runs the focused route test with `--no-cov`. |
 | Makefile Python ruff path | Pass                                   | Makefile Python lint/format targets use `uv run`, so they do not depend on hardcoded `.venv/bin/ruff` paths.   |
@@ -166,18 +168,18 @@ Code scale snapshot:
 | ------------------------ | ---------------------------------------- |
 | Backend source           | `app/bim_ai`: about 92k Python LOC.      |
 | Frontend/packages source | `packages`: about 280k TS/TSX LOC.       |
-| Frontend tests           | 669 Vitest files in `packages/web/src`.  |
+| Frontend tests           | 671 Vitest files in `packages/web/src`.  |
 | Backend tests            | 285 Python test files under `app/tests`. |
 
 Largest current source files observed:
 
 | File                                                        | Approx LOC | Concern                                    |
 | ----------------------------------------------------------- | ---------- | ------------------------------------------ |
-| `packages/web/src/plan/PlanCanvas.tsx`                      | 9.4k       | High-churn plan interaction monolith.      |
+| `packages/web/src/plan/PlanCanvas.tsx`                      | 9.3k       | High-churn plan interaction monolith.      |
 | `packages/web/src/workspace/Workspace.tsx`                  | 6.7k       | Shell/workflow orchestration monolith.     |
 | `packages/core/src/index.ts`                                | 6.0k       | Central type and command registry surface. |
 | `app/bim_ai/api/registry.py`                                | 5.9k       | Central API descriptor registry.           |
-| `packages/web/src/workspace/inspector/InspectorContent.tsx` | 7.8k       | Inspector rendering and editing monolith.  |
+| `packages/web/src/workspace/inspector/InspectorContent.tsx` | 7.6k       | Inspector rendering and editing monolith.  |
 | `packages/web/src/Viewport.tsx`                             | 6.1k       | 3D viewport orchestration monolith.        |
 
 ## Status Model
@@ -203,7 +205,7 @@ Largest current source files observed:
 | CQ-2026-01 | P0       | Done    | Frontend typecheck                        | `pnpm --filter @bim-ai/web typecheck` passes.                                            |
 | CQ-2026-02 | P0       | Done    | Verification command consistency          | `make verify` and `pnpm verify:strict` are both reliable or clearly documented.          |
 | CQ-2026-03 | P0       | Done    | Test noise and hidden warnings            | Default test runs do not emit repeated React/jsdom/fetch warnings.                       |
-| CQ-2026-04 | P1       | Open    | Source monolith reduction                 | Active extraction plans and first slices landed for the top churn files.                 |
+| CQ-2026-04 | P1       | Done    | Source monolith reduction                 | Extraction map exists; first PlanCanvas and InspectorContent slices have landed.         |
 | CQ-2026-05 | P1       | Open    | Core type model hygiene                   | Shared element/command types compile without stale aliases or unreachable discriminants. |
 | CQ-2026-06 | P1       | Open    | Runtime data coercion boundary            | Backend-to-frontend coercion is localized, typed, and tested.                            |
 | CQ-2026-07 | P1       | Open    | Python route and registry maintainability | Route/registry surfaces split into generated or thematic modules.                        |
@@ -391,7 +393,7 @@ component`.
 ## CQ-2026-04 - Split Current Frontend Monoliths
 
 Priority: P1
-Status: Open
+Status: Done
 Owner area: frontend architecture
 
 ### Problem
@@ -451,6 +453,22 @@ impact of small changes.
 - selection/picking hook
 - render policy module
 - overlay/HUD modules
+
+### Completion Evidence
+
+- 2026-05-19: `spec/frontend-monolith-extraction-map.md` documents extraction
+  maps for `PlanCanvas.tsx`, `InspectorContent.tsx`, `Workspace.tsx`, and
+  `Viewport.tsx`.
+- 2026-05-19: `PlanCanvas.tsx` no longer owns plan camera constants, plan
+  pointer projection, orthographic spacing, or nearest-wall hit projection;
+  these moved to `plan/interaction/planCameraMath.ts` and
+  `plan/selection/nearestWall.ts`.
+- 2026-05-19: `InspectorContent.tsx` no longer owns material slot rows, face
+  material override rows, generic material assignment rows, or type-derived
+  material helpers; these moved to
+  `workspace/inspector/materialInspectorSections.tsx`.
+- 2026-05-19: focused tests cover the extracted plan camera and nearest-wall
+  helpers.
 
 ---
 

@@ -170,6 +170,14 @@ import {
 import { type DraftMutation, type GripDescriptor } from './gripProtocol';
 import { gripsFor } from './grip-providers';
 import { dimensionTextOffsetResetCommand } from './grip-providers/dimensionGripProvider';
+import {
+  HALF_MAX,
+  HALF_MIN,
+  SLICE_Y,
+  orthoExtents,
+  rayToPlanMm,
+} from './interaction/planCameraMath';
+import { nearestWallAt } from './selection/nearestWall';
 import { tempDimensionsFor, type TempDimTarget } from './tempDimensions';
 import { findLockedConstraintFor } from './tempDimensionLockState';
 import { GripLayer, TempDimLayer } from './GripLayer';
@@ -299,8 +307,6 @@ function readPlanToken(name: string, fallback: string): string {
   return v && v.trim().length > 0 ? v : fallback;
 }
 
-const SLICE_Y = 0.02;
-
 function ComponentPlacementPreviewGlyph({ symbolKind }: { symbolKind?: string }) {
   if (symbolKind === 'toilet') {
     return (
@@ -336,35 +342,6 @@ function ComponentPlacementPreviewGlyph({ symbolKind }: { symbolKind?: string })
       <path d="M14 18 L50 46 M50 18 L14 46" stroke="#2563eb" strokeWidth="2.5" />
     </svg>
   );
-}
-
-// B03 — spec 1:5–1:5000 plan scale bounds  half = plotScale * 500mm / 1000
-const HALF_MIN = 2.5; // 1:5 (very close)
-const HALF_MAX = 2500; // 1:5000 (very far)
-
-function orthoExtents(halfWorldM: number) {
-  const stepMm = halfWorldM < 5 ? 250 : halfWorldM < 12 ? 500 : halfWorldM < 24 ? 1000 : 2000;
-  const snapMm = Math.max(stepMm * 3, 300);
-  return { stepMm, snapMm };
-}
-
-function rayToPlanMm(
-  renderer: THREE.WebGLRenderer,
-  camera: THREE.Camera,
-  clientX: number,
-  clientY: number,
-) {
-  const rect = renderer.domElement.getBoundingClientRect();
-  const ndc = new THREE.Vector2(
-    ((clientX - rect.left) / rect.width) * 2 - 1,
-    -(((clientY - rect.top) / rect.height) * 2 - 1),
-  );
-  const raycaster = new THREE.Raycaster();
-  raycaster.setFromCamera(ndc, camera);
-  const plane = new THREE.Plane(new THREE.Vector3(0, 1, 0), -SLICE_Y);
-  const pt = new THREE.Vector3();
-  if (!raycaster.ray.intersectPlane(plane, pt)) return null;
-  return { xMm: pt.x * 1000, yMm: pt.z * 1000 };
 }
 
 type Draft =
@@ -404,39 +381,6 @@ type Draft =
   | { kind: 'slope-annotation'; sx: number; sy: number }
   | { kind: 'revision-cloud'; points: Array<{ xMm: number; yMm: number }> }
   | { kind: 'model-line'; points: Array<{ xMm: number; yMm: number }> };
-
-function nearestWallAt(
-  elementsById: Record<string, Element>,
-  activeLevelId: string | undefined,
-  xMm: number,
-  yMm: number,
-): { wall: Extract<Element, { kind: 'wall' }>; alongT: number; distMm: number } | undefined {
-  const px = xMm / 1000;
-  const pz = yMm / 1000;
-  let best:
-    | { wall: Extract<Element, { kind: 'wall' }>; alongT: number; distMm: number }
-    | undefined;
-  for (const el of Object.values(elementsById)) {
-    if (el.kind !== 'wall') continue;
-    if (activeLevelId && el.levelId !== activeLevelId) continue;
-    const ax = el.start.xMm / 1000;
-    const az = el.start.yMm / 1000;
-    const bx = el.end.xMm / 1000;
-    const bz = el.end.yMm / 1000;
-    const abx = bx - ax;
-    const abz = bz - az;
-    const len2 = abx * abx + abz * abz;
-    const rawT = Math.max(
-      0,
-      Math.min(1, ((px - ax) * abx + (pz - az) * abz) / Math.max(len2, 1e-9)),
-    );
-    const fx = ax + abx * rawT;
-    const fz = az + abz * rawT;
-    const distMm = Math.hypot((px - fx) * 1000, (pz - fz) * 1000);
-    if (!best || distMm < best.distMm) best = { wall: el, alongT: rawT, distMm };
-  }
-  return best;
-}
 
 function guessGridLabel(sxMm: number, syMm: number, exMm: number, eyMm: number) {
   const horizontal = Math.abs(eyMm - syMm) < Math.abs(exMm - sxMm);
