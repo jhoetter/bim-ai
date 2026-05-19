@@ -1,10 +1,10 @@
 {
   "schemaVersion": "sketch-to-bim.tool-run.v1",
-  "generatedAt": "2026-05-19T18:24:41.563761Z",
+  "generatedAt": "2026-05-19T18:55:39.832856Z",
   "seed": "target-house-1",
   "modelId": "target-house-1-offline-regenerated",
   "modelRevision": 2,
-  "gitHead": "dd06a2913c1bea05502853714b745840724d0b60",
+  "gitHead": "a58ae4c792c04ed21ddbba3e7bd1668bb9985c3d",
   "bundlePath": "seed-artifacts/target-house-1/bundle.json",
   "bundleSha256": "2f2c1a220f13a1c07b0d0b1d08ab601d6c79b775ea8838f574060b5ce25d7f6c",
   "commandCount": 245,
@@ -12,7 +12,7 @@
   "irSha256": "34757eba0ab4784e91a66232205294ac7cf1c7504bc3701c42b76ed3ffb7bf8e",
   "capabilitiesPath": "spec/sketch-to-bim-capability-matrix.json",
   "capabilitiesSha256": "e3faa00d4724d5e375ee853d5e3d56b21254a969a84e702d67013a8bb0125dbb",
-  "advisorRuleDigest": "7039ff7a78edfaf3f595539470db39aabed7769451aab6a14349b418ba32f301",
+  "advisorRuleDigest": "38f65397a71b48380496ffca6df72c5ac9c0aac470d086f28afc46559e602b8c",
   "advisorRuleFiles": [
     "app/bim_ai/constructability_advisories.py",
     "app/bim_ai/constructability_report.py",
@@ -23,6 +23,6 @@
     "packages/web/src/advisor/perspectiveFilter.ts"
   ],
   "mode": "project_initiation_bim",
-  "generatedAtEpochMs": 1779215081563,
+  "generatedAtEpochMs": 1779216939832,
   "executionMode": "offline_bundle_replay"
 }

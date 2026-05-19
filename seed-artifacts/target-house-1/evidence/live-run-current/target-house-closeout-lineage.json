@@ -3,8 +3,8 @@
   "seed": "target-house-1",
   "generatedAt": "1970-01-01T00:00:00.000Z",
   "git": {
-    "currentHead": "dd06a2913c1bea05502853714b745840724d0b60",
-    "evidenceHead": "dd06a2913c1bea05502853714b745840724d0b60",
+    "currentHead": "a58ae4c792c04ed21ddbba3e7bd1668bb9985c3d",
+    "evidenceHead": "a58ae4c792c04ed21ddbba3e7bd1668bb9985c3d",
     "dirtyCheckPolicy": "Report records source/evidence digests and git heads; concurrent dirty files are not normalized."
   },
   "paths": {
@@ -26,10 +26,10 @@
     "spec/target-house/target-house-1-phase-plan.md": "sha256:a9f6b7d533e0434655c49d88a69299e90aeef9e120fb6f410b88fc007eba372a",
     "bundle": "sha256:2f2c1a220f13a1c07b0d0b1d08ab601d6c79b775ea8838f574060b5ce25d7f6c",
     "snapshot": "sha256:d6657c17c5a85adcf052d004b923041eedf62ca33d6f4ffb9988017786aebf02",
-    "advisorRuleDigest": "sha256:7039ff7a78edfaf3f595539470db39aabed7769451aab6a14349b418ba32f301",
+    "advisorRuleDigest": "sha256:38f65397a71b48380496ffca6df72c5ac9c0aac470d086f28afc46559e602b8c",
     "capabilities": "sha256:e3faa00d4724d5e375ee853d5e3d56b21254a969a84e702d67013a8bb0125dbb",
     "rendererSupportMatrix": "sha256:acf4cc7457a60f8f7e6b899d79e980335b4bd8382e98d54412a83077eb3c962d",
-    "finalManifest": "sha256:56e7d1089e0688fbc7d868e1d4ea53bdf3ed456d5d13488ef33a60bb4eca4e60",
+    "finalManifest": "sha256:e232aa13406a692dbe6b00cd82f875913087652f2f55c60076420496e9980ee2",
     "performanceEvidence": "sha256:61cb87c5b987fb939975ce20f0dfdd989ae155183eb5d1c4e7bce020ad9a6af7"
   },
   "evidenceFiles": [
@@ -37,7 +37,7 @@
       "key": "tool_run_summary",
       "path": "seed-artifacts/target-house-1/evidence/live-run-current/tool-run-summary.json",
       "present": true,
-      "sha256": "sha256:bba8dedfc10a388b9248624bbe806bf7b6cf39f2f78b0ac3bf077261aa5bef3f",
+      "sha256": "sha256:97a632d596f1ca06aecaa67782f97150b76b737041f382543a6bde60656863a1",
       "schemaVersion": "sketch-to-bim.tool-run.v1",
       "status": "present",
       "summary": null
@@ -46,7 +46,7 @@
       "key": "evidence_manifest",
       "path": "seed-artifacts/target-house-1/evidence/live-run-current/evidence-manifest.json",
       "present": true,
-      "sha256": "sha256:a4f5abc042ddb510db193dee00133d878e4e1f09d66ba87a5394130519972132",
+      "sha256": "sha256:f4a6b61da7e19a67685d7668ea1ce49c3943eecfab5afcacb16ab854dec76c47",
       "schemaVersion": "sketch.evidence.collection.v1",
       "status": "present",
       "summary": {
@@ -121,7 +121,7 @@
       "key": "constructability_report",
       "path": "seed-artifacts/target-house-1/evidence/live-run-current/constructability-report.json",
       "present": true,
-      "sha256": "sha256:3359818891a6d10b5bc2908d5307d6977a41d271557521e6b57f49c91d734f45",
+      "sha256": "sha256:0258beeec6e6be1122709fc5a7306718ef99e2c679d9c2ffa5e81f8ee20e3ced",
       "schemaVersion": "constructabilityReport_v1",
       "status": "pass",
       "summary": {
@@ -161,7 +161,7 @@
       "key": "visual_evidence_contract",
       "path": "seed-artifacts/target-house-1/evidence/live-run-current/visual-evidence-contract.json",
       "present": true,
-      "sha256": "sha256:6a445e6e1419ecf8ee744bc71ba123b5f3e48238ea6336a97127f2a923cf8688",
+      "sha256": "sha256:49544d28f87f5ccc7832c7090caba4bac70d7fb44d502d7095628b4669eaa64e",
       "schemaVersion": "sketch.visual-evidence-contract.v1",
       "status": "present",
       "summary": null
@@ -170,7 +170,7 @@
       "key": "bim_data_quality",
       "path": "seed-artifacts/target-house-1/evidence/live-run-current/bim-data-quality.json",
       "present": true,
-      "sha256": "sha256:045391911f0cbfe3493f161d2020d081c3d3c62ada89270c6e0f76b82c607aca",
+      "sha256": "sha256:355deb8e66fe523e38a706f91e8b7bf56bd92db14d5332845e5937315ce9a023",
       "schemaVersion": "sketch.bim-data-quality.v1",
       "status": "pass",
       "summary": {
@@ -184,7 +184,7 @@
       "key": "export_validation",
       "path": "seed-artifacts/target-house-1/evidence/live-run-current/export-validation.json",
       "present": true,
-      "sha256": "sha256:8b803eb580f1f3e87d27625ef15567237684ad7cb7c81d8cdb66800cc48e1b4a",
+      "sha256": "sha256:22b3e74f690833bd94655c1940a385103771c23b1ec77a30f8cc5d213f87ecc4",
       "schemaVersion": "sketch.exchange-validation.v1",
       "status": "pass",
       "summary": {
@@ -198,7 +198,7 @@
       "key": "tolerance_ledger",
       "path": "seed-artifacts/target-house-1/evidence/live-run-current/tolerance-ledger.json",
       "present": true,
-      "sha256": "sha256:bcc56a1aa38750499e2712bdcb412fc0425705470dabf453e58b84d72aeede66",
+      "sha256": "sha256:f7082ee0ac4db391b5e3a45dd7f4f6bb6d506cbea84de0a8dbbfc78ef0d5c597",
       "schemaVersion": "sketch.tolerance-ledger.v1",
       "status": "pass",
       "summary": {
@@ -221,7 +221,7 @@
       "key": "clean_pass_gate",
       "path": "seed-artifacts/target-house-1/evidence/live-run-current/clean-pass-gate.json",
       "present": true,
-      "sha256": "sha256:b896c7fda7a650ec809ec04b223c15e1a84a8c27fa74459bac04061fdc077f87",
+      "sha256": "sha256:dca993c59c1cda330002507e47e00f6dee77785e80394cead74395bb675c6eae",
       "schemaVersion": "target-house.clean-pass-gate.v1",
       "status": "pass",
       "summary": {
@@ -397,12 +397,12 @@
         {
           "code": "tracker_incomplete",
           "category": "tracker",
-          "count": 141,
+          "count": 115,
           "total": 165,
-          "done": 24,
+          "done": 50,
           "byStatus": {
-            "Done": 24,
-            "Partial": 141
+            "Done": 50,
+            "Partial": 115
           },
           "sampleIncompleteRows": [
             {
@@ -422,18 +422,6 @@
               "priority": "P0",
               "status": "Partial",
               "item": "Add severity policy."
-            },
-            {
-              "id": "BIR-A06",
-              "priority": "P1",
-              "status": "Partial",
-              "item": "Add suppression/tolerance policy per rule."
-            },
-            {
-              "id": "BIR-A07",
-              "priority": "P1",
-              "status": "Partial",
-              "item": "Add rule documentation generator."
             },
             {
               "id": "BIR-B01",
@@ -524,6 +512,18 @@
               "priority": "P1",
               "status": "Partial",
               "item": "Validate egress graph."
+            },
+            {
+              "id": "BIR-D05",
+              "priority": "P1",
+              "status": "Partial",
+              "item": "Validate room/wall topology consistency."
+            },
+            {
+              "id": "BIR-D06",
+              "priority": "P1",
+              "status": "Partial",
+              "item": "Add room schedule integrity."
             }
           ]
         }
@@ -1145,5 +1145,5 @@
     }
   ],
   "ready": false,
-  "lineageDigestSha256": "6a8834fe7d0a2df31eda41a9b2e3be80d4554c2a08aa4fc9d991b03e60040f02"
+  "lineageDigestSha256": "d5cbe432c8ce8c166fd0d861e375576875bdd6f6308c8fd9880d4a5fd347b582"
 }
