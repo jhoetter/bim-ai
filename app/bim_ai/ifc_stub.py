@@ -7,6 +7,7 @@ import json
 from typing import Any
 
 from bim_ai.document import Document
+from bim_ai.export_feature_contract import build_export_manifest_feature_diagnostics_v1
 from bim_ai.export_gltf import (
     exchange_parity_manifest_fields,
     exchange_parity_manifest_fields_from_document,
@@ -381,6 +382,7 @@ def build_ifc_exchange_manifest_payload(doc: Document) -> dict[str, Any]:
         "revision": doc.revision,
         **parity,
         **hints,
+        **build_export_manifest_feature_diagnostics_v1(doc, export_format="ifc"),
         "ifcEncoding": enc,
         "artifactHasGeometryEntities": bool(emitting),
         "plannedIfcEntitiesHints": planned,
@@ -445,6 +447,7 @@ def ifc_exchange_manifest_payload(
         "revision": revision,
         **parity,
         **hints,
+        **build_export_manifest_feature_diagnostics_v1(zero_doc, export_format="ifc"),
         "ifcEncoding": IFC_ENCODING_EMPTY_SHELL,
         "artifactHasGeometryEntities": False,
         "plannedIfcEntitiesHints": planned,

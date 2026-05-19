@@ -28,6 +28,7 @@ from bim_ai.elements import (
     WallElem,
     WindowElem,
 )
+from bim_ai.export_feature_contract import build_export_manifest_feature_diagnostics_v1
 from bim_ai.material_assembly_resolve import (
     collect_layered_assembly_cut_alignment_evidence_v0,
     collect_layered_assembly_witness_v0,
@@ -538,6 +539,7 @@ def export_manifest_extension_payload(doc: Document) -> dict[str, Any]:
         mesh_enc += "+bim_ai_saved_3d_view_clip_v1"
     base: dict[str, Any] = {
         **parity,
+        **build_export_manifest_feature_diagnostics_v1(doc, export_format="gltf"),
         "meshEncoding": mesh_enc,
         "hint": "Meshes: GET /api/models/{id}/exports/model.gltf",
     }

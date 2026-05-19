@@ -250,9 +250,9 @@ This tracker is complete only when all of these are true:
 
 | ID | Priority | Status | Item | Acceptance |
 | -- | -------- | ------ | ---- | ---------- |
-| `BIR-K01` | P0 | Partial | Export manifests must reveal unsupported geometry. | IFC/glTF/PDF/schedule export evidence includes unsupported/skipped element kinds and geometry features, not only success/failure. |
+| `BIR-K01` | P0 | Partial | Export manifests must reveal unsupported geometry. | IFC/glTF manifests embed `exportGeometryUnsupportedSkipped_v1` with unsupported/skipped geometry feature rows, reason codes, counts, and affected ids via `app/bim_ai/export_feature_contract.py`; PDF/schedule evidence still needs the same treatment. |
 | `BIR-K02` | P0 | Not started | Add export-readback geometry checks. | For supported elements, exported geometry can be read back or summarized and compared to model snapshot/topology. |
-| `BIR-K03` | P0 | Not started | Align renderer and export feature contracts. | If viewport renders a feature but IFC cannot export it, or vice versa, diagnostics and evidence identify the drift. |
+| `BIR-K03` | P0 | Partial | Align renderer and export feature contracts. | IFC/glTF manifests embed `exportFeatureSupportMatrix_v1` and `rendererExportContractDrift_v1`, identifying viewport-vs-export support drift such as roof openings, railings, placed assets, and family instances. |
 | `BIR-K04` | P1 | Partial | IFC semantic mapping completeness. | Walls, floors, roofs, doors, windows, stairs, rails, rooms/spaces, types, materials, classifications, quantities, and property sets have manifest coverage. |
 | `BIR-K05` | P1 | Partial | Schedule integrity. | Room, door/window, material/quantity, and documentation schedules match model elements and export evidence. |
 | `BIR-K06` | P1 | Partial | Sheet/view evidence. | Saved views, sheets, viewports, scales, render bundles, and PDF-like exports are linked to model/evidence packets. |
