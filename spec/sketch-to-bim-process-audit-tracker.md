@@ -8,6 +8,7 @@ This active audit tracker supersedes the archived audit file at
 Current audit source of truth:
 
 - `spec/sketch-to-bim-readiness-tracker.md`
+- `spec/bim-integrity-rendering-sketch-methodology-tracker.md`
 
 Current audit focus:
 
@@ -16,6 +17,9 @@ Current audit focus:
 3. Real BIM information requirements from the BIM-book methodology.
 4. Evidence, Advisor, constructability, visual gates, and stale-checks.
 5. Target-house-1 readiness before any seed artifact is regenerated.
+6. BIM integrity, renderer fidelity, and sketch-specific acceptance gates after
+   the target-house dry run exposed Advisor-clean but physically/visually wrong
+   states.
 
 Status is tracked in the readiness tracker. This file exists so operational
 preflight checks have a stable active audit entrypoint.
