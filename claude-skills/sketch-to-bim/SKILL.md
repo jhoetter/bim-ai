@@ -9,7 +9,7 @@ You are the AI architect. The customer hands you a sketch (line drawing, render,
 
 This skill is the methodology a world-class architect would use, encoded as a deterministic process. Software stays deterministic; you provide the intelligence — interpreting the sketch with your own multimodal vision, judging silhouette match, picking materials, authoring corrective commands.
 
-Before any substantial sketch-to-BIM run, read `spec/sketch-to-bim-methodology.md` and `spec/sketch-to-bim-readiness-tracker.md`. Treat them as the product/engineering source for this workflow: they define the user input contract, Sketch Understanding IR, BIM information requirements, capability matrix, acceptance gates, scoring rubric, product surface policy, and implementation backlog. This skill is the operational checklist; the specs are the durable methodology source.
+Before any substantial sketch-to-BIM run, read `spec/sketch-to-bim-methodology.md`, `spec/sketch-to-bim-failure-taxonomy.md`, and `spec/sketch-to-bim-readiness-tracker.md`. Treat them as the product/engineering source for this workflow: they define the user input contract, Sketch Understanding IR, BIM information requirements, capability matrix, sketch acceptance, brief acceptance, failure taxonomy, product surface policy, and implementation backlog. This skill is the operational checklist; the specs are the durable methodology source.
 
 ## Tooling contract
 
@@ -113,7 +113,7 @@ The right mental model is **iterative convergence through 5–7 phased passes**,
 
 For seed work, the loop is not optional: keep the dev app running while authoring, reseed after each meaningful bundle edit, inspect the same UI Advisor panel the user sees, capture/check screenshots from saved viewpoints, and revise the source bundle until visible geometry and advisor findings converge. Do not rely only on offline snapshot generation, unit tests, or successful command replay.
 
-The UI Advisor footer is backed by profile-specific server reports. For project-initiation seeds, the default CLI Advisor payload is not enough: query `/api/models/<model-id>/constructability-report?profile=construction_readiness` directly, or run `python3 claude-skills/sketch-to-bim/sketch_bim.py constructability-report --model <model-id> --profile construction_readiness`. Treat any UI footer error or construction-readiness error as blocking until the server report confirms it is gone.
+The UI Advisor footer is backed by profile-specific server reports. For project-initiation seeds, the default CLI Advisor payload is not enough: query `/api/models/<model-id>/constructability-report?profile=construction_readiness` directly, or run `python3 claude-skills/sketch-to-bim/sketch_bim.py constructability-report --model <model-id> --profile construction_readiness`. Treat any UI footer error or construction-readiness error as blocking until the server report confirms it is gone. Keep that separate from sketch acceptance and brief acceptance: the normal Advisor is deterministic BIM/code/physics/coordination evidence, while sketch/brief gates judge this project's source image and programme contract.
 
 Seed evidence is valid only for the app/Advisor build that produced it. If
 Advisor rules, constructability checks, renderer behavior, or seed commands
@@ -131,7 +131,7 @@ This skill is for project initiation, not for producing a decorative massing pre
 The agent must satisfy all of these before calling the initiation successful:
 
 1. **The local app is part of the workflow.** The model must be inspected through the same software the user sees, normally `http://localhost:2000` from `make dev`, plus the CLI/API advisor payload. Offline bundle replay is only a syntax/snapshot check.
-2. **Advisor findings are hard evidence.** Every advisor item with severity `warning` or `error` must be either fixed or listed in an explicit tolerance table with rationale. Do not mentally discount a warning because the 3D view "looks okay".
+2. **Advisor findings are hard evidence.** Every advisor item with severity `warning` or `error` must be either fixed or listed in an explicit tolerance table with rationale. Do not mentally discount a warning because the 3D view looks acceptable.
 3. **No architectural warning may be hidden by a workaround.** A fake closure such as drawing room-separation rectangles around every authored room is a failure if it creates `room_derived_interior_separation_ambiguous`, unreadable wire views, or a plan that no architect would accept.
 4. **Screenshots are required evidence.** The agent must inspect rendered screenshots from multiple saved viewpoints and at least one plan/wire-style diagnostic view. A single attractive perspective is not enough.
 5. **The model must be usable after initiation.** Stairs cannot run into walls, rooms cannot be inaccessible, slabs/openings cannot overlap incoherently, roofs cannot merely carry metadata for a void that does not render, and schedules/sheets must not contain obvious unresolved references.
@@ -145,11 +145,12 @@ zero-warning project-initiation seed with evidence.
 Use these exact status meanings:
 
 - `accepted`: strict final acceptance passed at current `HEAD`; CLI Advisor has
-  zero `warning`/`error` findings; required screenshots/semantic checks passed;
-  `sketch_bim.py accept --seed <seed-name> --clear` passed.
+  zero `warning`/`error` findings; sketch acceptance and brief acceptance pass
+  with current screenshots/semantic checks; `sketch_bim.py accept --seed
+  <seed-name> --clear` passed.
 - `draft`: the artifact compiles or loads, but any Advisor warning/error,
-  semantic visual failure, missing browser evidence, stale evidence, or
-  unresolved phase packet remains.
+  sketch acceptance failure, brief acceptance failure, missing browser evidence,
+  stale evidence, or unresolved phase packet remains.
 - `blocked`: the agent cannot continue because of an external/tooling blocker,
   such as API/web server unavailable, missing dependency, or a software defect
   in the verifier. The blocker must be concrete and reproducible.
@@ -256,7 +257,7 @@ These findings block phase advancement unless the user explicitly accepts them w
      --fail-on-acceptance
    ```
 
-   After a live model exists, add `--model "$BIM_AI_MODEL_ID" --live` so the packet also captures advisor warning/info groups. Critical `capability_missing`, `critical_capability_gap`, or missing-view errors block authoring; partial capabilities require screenshot and advisor proof before acceptance.
+   After a live model exists, add `--model "$BIM_AI_MODEL_ID" --live` so the packet also captures Advisor warning/info groups. Critical `capability_missing`, `critical_capability_gap`, or missing-view errors block authoring; partial capabilities require screenshot and Advisor proof before sketch acceptance or brief acceptance.
 
    For the actual live evidence loop, prefer the stricter runner:
 
@@ -272,7 +273,7 @@ These findings block phase advancement unless the user explicitly accepts them w
      --fail-on-acceptance
    ```
 
-   Use `--seed-command "make seed name=<seed-name>"` or `--apply-bundle <path> --commit` when the runner should reseed/apply before capturing evidence. The runner captures snapshot, validate, evidence-package, advisor warning/info, screenshots, screenshot manifest, `visual-gate.json`, `acceptance-gates.json`, visual checklist, and status markdown. `--target-image` expects a PNG reference; if the user supplied a JPG sketch, create/record a PNG reference crop for the checkpoint view or use `--target-map` with per-view PNG references. If a required view has no saved viewpoint, the runner synthesizes a deterministic checkpoint viewpoint instead of relying on the current UI zoom. `--no-screenshots` is only for tests or explicitly documented headless limitations.
+   Use `--seed-command "make seed name=<seed-name>"` or `--apply-bundle <path> --commit` when the runner should reseed/apply before capturing evidence. The runner captures snapshot, validate, evidence-package, Advisor warning/info, screenshots, screenshot manifest, `visual-gate.json`, `acceptance-gates.json`, sketch acceptance checklist, brief acceptance rows, and status markdown. The `visual-gate.json` and `acceptance-gates.json` filenames are evidence artifacts for the sketch/brief methodology gates, not normal Advisor acceptance. `--target-image` expects a PNG reference; if the user supplied a JPG sketch, create/record a PNG reference crop for the checkpoint view or use `--target-map` with per-view PNG references. If a required view has no saved viewpoint, the runner synthesizes a deterministic checkpoint viewpoint instead of relying on the current UI zoom. `--no-screenshots` is only for tests or explicitly documented headless limitations.
 
    Use explicit quality modes:
 
@@ -280,7 +281,7 @@ These findings block phase advancement unless the user explicitly accepts them w
    node packages/cli/cli.mjs initiation-modes
    ```
 
-   Available modes are `massing_only`, `concept_bim`, `project_initiation_bim`, and `documentation_ready`. The mode changes required views, programme expectations, and acceptance strictness.
+   Available modes are `massing_only`, `concept_bim`, `project_initiation_bim`, and `documentation_ready`. The mode changes required views, programme expectations, and sketch/brief acceptance strictness.
 
    When authoring from intent rather than a hand-coordinate JS file, compile the seed DSL first:
 
@@ -314,8 +315,10 @@ Before authoring the first serious bundle, start and wire the feedback loop:
    - `commands.json` or source bundle pointer;
    - `advisor-warning.json`;
    - `advisor-info.json`;
+   - `renderer-diagnostics.json`;
    - `screenshot-<viewpoint>.png`;
    - `visual-readout.md`;
+   - `failure-taxonomy.md` or `failure-taxonomy.json`;
    - `tolerances.md` if anything remains unresolved.
 4. **After every meaningful edit, run all four checks in order:**
    - replay/dry-run: apply the artifact `bundle.json` to an empty document or use `bim-ai apply-bundle --dry-run --in <commands.json>` for project work;
@@ -326,7 +329,8 @@ Before authoring the first serious bundle, start and wire the feedback loop:
 6. **Read the Advisor panel like a punch list.** For each finding capture `ruleId`, severity, message, recommendation text, perspective/codePreset, and `elementIds`. Corrections must target the named elements unless the rule itself is wrong.
 7. **Patch the source of truth, not the symptoms.** If `room_derived_interior_separation_ambiguous` appears, redesign room boundaries; do not hide room lines. If a stair warning appears, alter the stair footprint/riser/tread/shaft; do not move furniture around it.
 8. **Verify capability, not just intent.** If the sketch needs a gable-cut wall, folded shell, roof void, dormer, or non-rectangular opening, confirm the command/API/render path actually expresses that geometry. A valid command that still renders as a rectangle, box, or uncut surface is a failed phase.
-9. **Repeat until both views and advisor pass the phase gate.**
+9. **Repeat until the normal Advisor, renderer diagnostics, sketch acceptance,
+   and brief acceptance all pass the phase gate or have explicit tolerances.**
 
 Final seed packaging must use a fresh current-HEAD live run, normally:
 
@@ -344,7 +348,7 @@ BIM_AI_MODEL_ID=<id> node packages/cli/cli.mjs initiation-run \
 If the live UI right rail shows warnings that the checked-in evidence does not
 show, treat the checked-in evidence as stale and fix the seed source.
 
-The agent should keep the browser open while authoring. If screenshots and advisor output disagree, both are evidence: a visually good but advisor-broken model is not accepted; an advisor-clean but visually wrong model is not accepted.
+The agent should keep the browser open while authoring. If screenshots and advisor output disagree, both are evidence: a visually good but Advisor-broken model is not accepted; an Advisor-clean but visually wrong model fails sketch acceptance.
 
 ### Minimum checkpoint view set
 
@@ -368,8 +372,10 @@ At the end of each phase, produce a short packet:
 | ---------------- | -------------------------------------------------------------------------------------- |
 | Phase            | phase id/name and source bundle revision                                               |
 | Screenshots      | paths to actual rendered PNGs                                                          |
-| Visual verdict   | pass/fail for silhouette, scale, roof, openings, interior, documentation as applicable |
-| Advisor verdict  | zero blocking warnings, or explicit tolerance rows                                     |
+| Sketch acceptance | pass/fail for silhouette, scale, roof, openings, interior, documentation as applicable |
+| Brief acceptance | pass/fail for programme, target areas, dimensions, material intent, and required outputs |
+| Advisor verdict  | normal deterministic Advisor/constructability result: zero blocking warnings, or explicit tolerance rows |
+| Failure taxonomy | every unresolved issue classified as model-integrity, renderer, sketch-fidelity, command-surface, evidence-staleness, or user-tolerance |
 | Corrections made | list of element ids changed in the phase                                               |
 | Remaining risk   | concrete gaps, not vague optimism                                                      |
 
@@ -379,7 +385,7 @@ If the packet cannot be filled honestly, do not advance.
 
 ## The 7 phases
 
-Author **only** the elements listed for the current phase; do not skip ahead. Each phase ends with: commit → checkpoint → advisor pass → validate → refine → advance.
+Author **only** the elements listed for the current phase; do not skip ahead. Each phase ends with: commit -> checkpoint -> normal Advisor pass -> renderer diagnostics -> sketch acceptance / brief acceptance -> refine -> advance.
 
 ### Phase 1 — Massing
 
@@ -405,7 +411,7 @@ Author **only** the elements listed for the current phase; do not skip ahead. Ea
 - SKB-19 wall-graph closure: every floor's perimeter is a closed wall ring.
 - SKB-22 auto-join: walls at coincident endpoints are joined.
 
-Today, the existing `constraints.evaluate` runs at commit; check the violations list and resolve any blocking-severity items. Also read the Advisor panel for the active `codePreset` / perspective and treat its non-blocking findings as phase evidence, not UI noise.
+Today, the existing `constraints.evaluate` runs at commit; check the violations list and resolve any blocking-severity items. Also read the Advisor panel for the active `codePreset` / perspective and treat its non-blocking findings as deterministic phase evidence, not UI noise.
 
 **Checkpoint:** floor plan view + 3D iso. Floor plan should show closed rooms; iso should still match the silhouette.
 
@@ -484,12 +490,13 @@ After every commit:
 1. **Render** the phase-relevant viewpoint(s). Use the dev server + Playwright e2e harness today; when SKB-03 lands, use `bim-ai checkpoint`.
 2. **Look** at the rendered PNG with your own multimodal vision. Compare to the sketch.
 3. **Read the Advisor panel / violation payload.** Capture each finding's `code` or `advisoryClass`, severity, message, recommendation, perspective / `codePreset`, and `elementIds`. Use the same filter the user would use in the UI, e.g. residential + Architektur for architectural sketch-to-BIM work.
-4. **Classify every advisor finding:** blocker, phase-local fix, later-phase fix, or tolerated. A warning cannot be ignored; it must be in one of those buckets.
-5. **Score** the match qualitatively: silhouette ✓/✗, proportions ✓/✗, materials ✓/✗, advisor ✓/✗.
-6. If mismatch: **identify the largest visible or advisor-reported delta** — typically one of: wrong dimension, wrong slope, missing element, wrong material, target-area mismatch, unbounded room, ambiguous room derivation, bad stair comfort, unresolved opening / host issue.
-7. **Author 1–2 corrective commands/source edits** (`updateElementProperty`, `moveWallEndpoints`, room outline edits, stair tread / riser edits, etc.).
-8. **Re-render. Re-read advisor. Re-look.**
-9. Cap at 5 iterations per phase. If still mismatched, log an assumption and escalate to the user with screenshots and advisor JSON. Do not silently accept a bad model.
+4. **Classify every Advisor finding:** blocker, phase-local fix, later-phase fix, or tolerated. A warning cannot be ignored; it must be in one of those buckets.
+5. **Classify every unresolved phase issue with the failure taxonomy:** `model-integrity`, `renderer`, `sketch-fidelity`, `command-surface`, `evidence-staleness`, or `user-tolerance`, with `blocker`, `tolerance`, or `resolved` status.
+6. **Score** the match qualitatively for sketch acceptance and brief acceptance: silhouette pass/fail, proportions pass/fail, materials pass/fail, programme pass/fail, deterministic Advisor pass/fail.
+7. If mismatch: **identify the largest visible, brief, renderer, or Advisor-reported delta** — typically one of: wrong dimension, wrong slope, missing element, wrong material, target-area mismatch, unbounded room, ambiguous room derivation, bad stair comfort, unresolved opening / host issue.
+8. **Author 1–2 corrective commands/source edits** (`updateElementProperty`, `moveWallEndpoints`, room outline edits, stair tread / riser edits, etc.).
+9. **Re-render. Re-read Advisor. Re-look.**
+10. Cap at 5 iterations per phase. If still mismatched, log an assumption and escalate to the user with screenshots, Advisor JSON, renderer diagnostics, and taxonomy rows. Do not silently accept a bad model.
 
 Canonical reliability target: `app/tests/agent/refinement_reliability/12_step_refinement.yaml` is the TST-V3-01 fixture for deterministic 12-step agent refinement. When changing the command-bundle, token, visual-compare, or agent-callable API surfaces, run `make verify-refinement-reliability` and treat failures as blockers for sketch-to-BIM refinement work.
 
@@ -506,9 +513,9 @@ The software already identifies many issues the sketch-to-BIM agent tends to cre
 - schedule/sheet warnings: fix in Phase 7; they are not acceptable in the final initiation handoff.
 - Any host / opening / room-boundary / material-resolution advisory: fix the named `elementIds` before adding detail that would hide the underlying problem.
 
-Do not advance a phase just because the commit is accepted. If the Advisor panel shows findings tied to elements authored in the current phase, either resolve them, record a deliberate tolerance with rationale, or escalate. The status doc must list unresolved advisor findings next to unresolved visual-fidelity gaps.
+Do not advance a phase just because the commit is accepted. If the Advisor panel shows findings tied to elements authored in the current phase, either resolve them, record a deliberate tolerance with rationale, or escalate. The status doc must list unresolved Advisor findings next to unresolved sketch acceptance, brief acceptance, renderer, command-surface, evidence-staleness, and user-tolerance gaps.
 
-### Visual failure classes are also blockers
+### Sketch acceptance failure classes are also blockers
 
 The agent must explicitly inspect for these in screenshots:
 
@@ -523,7 +530,31 @@ The agent must explicitly inspect for these in screenshots:
 - facade opening rhythm differs materially from the sketch;
 - material contrast is missing or misleading.
 
-Any one of these resets the current phase to "failed" until fixed or escalated.
+Any one of these resets the current phase to `failed` until fixed or escalated.
+
+### Failure taxonomy for phase packets
+
+Use `spec/sketch-to-bim-failure-taxonomy.md` for every unresolved issue:
+
+- `model-integrity`: normal deterministic Advisor, constructability,
+  constraints, BIM semantics, code/physics/coordination, schedules, and export
+  health.
+- `renderer`: valid model intent that the viewport, screenshot, or export
+  renderer fails to display or diagnose faithfully.
+- `sketch-fidelity`: project-specific sketch acceptance failures such as
+  silhouette, roof form, facade rhythm, materials, and visible layout mismatch.
+- `command-surface`: missing or inadequate CLI/API/MCP/seed DSL surfaces for a
+  required feature.
+- `evidence-staleness`: evidence captured against an old git head, model
+  revision, ruleset, renderer build, IR hash, capability hash, or screenshot
+  manifest.
+- `user-tolerance`: explicit user/project acceptance of a scoped unresolved
+  issue; it does not erase the original category.
+
+Each taxonomy row must include blocker vs tolerance status, owner layer,
+affected ids/features, evidence paths, and the decision. A normal Advisor-clean
+model can still have `sketch-fidelity`, `renderer`, `command-surface`, or
+`evidence-staleness` blockers.
 
 ---
 
@@ -532,15 +563,15 @@ Any one of these resets the current phase to "failed" until fixed or escalated.
 These are the failure modes you must avoid; they are the observed behaviour from the 2026-05-07 attempt that produced a featureless box instead of a dramatic asymmetric gable house:
 
 - **Skipping phases.** Author all 87 commands at once → can't tell which phase broke fidelity. Don't.
-- **No visual verification.** Trusted "tests pass + bundle commits" as success. Tests verify code correctness, not silhouette match. Don't.
+- **No sketch acceptance.** Trusted "tests pass + bundle commits" as success. Tests verify code correctness, not silhouette match. Don't.
 - **Ignoring app-identified advisor issues.** The UI may already say `room_target_area_mismatch` for `hf-room-bath` or `stair_comfort_eu_proxy` for `hf-stair-main`. Don't keep refining by eyesight while leaving those named findings open.
 - **Counting warnings instead of reading them.** "Only one warning remains" is not success when that one warning is `room_derived_interior_separation_ambiguous` and the wire view is full of bad room boundaries. Read the rule and inspect the affected elements.
-- **Using advisor hacks that create worse architecture.** Do not satisfy `room_boundary_open` by flooding the model with room-separation rectangles that produce ambiguous derived rooms and unreadable plans.
+- **Using Advisor hacks that create worse architecture.** Do not satisfy `room_boundary_open` by flooding the model with room-separation rectangles that produce ambiguous derived rooms and unreadable plans.
 - **Eyeballing dimensions** without recording them as assumptions. The "ridge offset 1500 mm" was a guess, not a calibrated measurement. Don't.
 - **Declaring "partial" when the silhouette is wrong.** The honest call is "failed; here's the gap". The sprint prompt warned about this exact mistake and I made it anyway. Don't.
 - **Building geometry without checking the renderer can faithfully render it.** The asymmetric_gable mesh isn't watertight; the dormer CSG cut silently no-ops. The agent had no way to detect this from inside the engine — only the rendered output reveals it. **Look at the render.**
 - **Stopping at a cut without the positive geometry.** A roof opening that shows as a hole is not a dormer; the dormer body, cheeks, front window, and roof must sit visibly on the sampled roof plane in the screenshot.
-- **Trusting the default advisor when the UI footer shows errors.** The construction-readiness profile can add furniture clearance, metadata, and proxy findings that the authoring snapshot does not show. Query the server report directly and write down the named elements before declaring the model clean.
+- **Trusting the default Advisor when the UI footer shows errors.** The construction-readiness profile can add furniture clearance, metadata, and proxy findings that the authoring snapshot does not show. Query the server report directly and write down the named elements before declaring the model clean.
 - **Choosing dimensions where `eaveLeftMm + leftRunMm · tan(slope) < eaveRightMm`.** Produces an inverted "slope" that flattens the gable. Sanity-check before committing the roof.
 
 ---
@@ -561,7 +592,7 @@ These are the failure modes you must avoid; they are the observed behaviour from
 
 **Advisor surface:** the right rail Advisor panel, `bim-ai advisor --output json`, and the API violation/advisory payload expose issue code, recommendation text, perspective / `codePreset`, and `elementIds`. Feed these findings into SKB-15 refine-loop evidence so corrections can target the elements the app already identified.
 
-**Initiation evidence runner:** `node packages/cli/cli.mjs initiation-run ...` captures live snapshot, validate, evidence package, advisor warning/info, screenshots, visual-gate scoring, acceptance gates, and status. Use `--target-image` or `--target-map` for automated render/reference comparison, and `--fail-on-warning --fail-on-visual --fail-on-acceptance` for final acceptance.
+**Initiation evidence runner:** `node packages/cli/cli.mjs initiation-run ...` captures live snapshot, validate, evidence package, Advisor warning/info, screenshots, sketch acceptance visual scoring, brief acceptance gates, and status. Use `--target-image` or `--target-map` for automated render/reference comparison, and `--fail-on-warning --fail-on-visual --fail-on-acceptance` for final acceptance.
 
 **Golden suite:** `node packages/cli/cli.mjs initiation-golden --manifest spec/sketch-to-bim-golden-seeds.json --out <dir>` runs preflight packets for multiple sketch-to-BIM cases. Use this before changing methodology or capability-matrix behavior.
 
@@ -587,11 +618,11 @@ For example, the target-house roof cutout needs `createRoofOpening` **and** view
 
 All listed in `spec/workpackage-master-tracker.md` under "Sketch-to-BIM agent methodology (SKB)". Highest-leverage items, in priority order:
 
-- **SKB-03 / visual gate** — implemented in the initiation runner as screenshot analysis plus optional PNG target comparison (`visual-gate.json`). The agent still reads the PNG with vision, but nonblank/content/scored evidence is now structured.
+- **SKB-03 / sketch acceptance visual gate** — implemented in the initiation runner as screenshot analysis plus optional PNG target comparison (`visual-gate.json`). The agent still reads the PNG with vision, but nonblank/content/scored evidence is now structured.
 - **SKB-04** `bim-ai calibrate` — pixel-to-mm scale + proportional query API.
 - **SKB-05** architectural soundness validator pack.
 - **SKB-09** archetype starter library.
-- **SKB-10** mandatory per-phase visual gate.
+- **SKB-10** mandatory per-phase sketch acceptance gate.
 - **SKB-15** the refine loop, formalised.
 
 ---

@@ -14,6 +14,8 @@ For current work, use these sources together:
   exposed by the target-house dry run.
 - `spec/sketch-to-bim-product-surfaces.md` for the current product/agent
   surface inventory.
+- `spec/sketch-to-bim-failure-taxonomy.md` for blocker/tolerance categories,
+  owner layers, examples, and expected evidence.
 - `spec/sketch-to-bim-capability-matrix.json` for feature-to-capability
   readiness.
 - `spec/ui-mcp-parity-tracker.md` for the broader UI/Cmd+K/CLI/MCP parity
@@ -33,17 +35,24 @@ source sketch / floorplan / brief
   -> phase plan
   -> deterministic bundle / recipe
   -> dry-run and commit through product transaction surfaces
-  -> Advisor, constructability, screenshots, and evidence package
-  -> warning/error-led refinement against named model elements
-  -> phase acceptance or issue ledger
+  -> deterministic Advisor, constructability, renderer diagnostics,
+     screenshots, and evidence package
+  -> warning/error-led refinement against named model elements and required
+     visual features
+  -> sketch acceptance / brief acceptance or issue ledger
   -> final accepted seed artifact only after current-head evidence passes
 ```
 
-## Advisor-Driven Authoring
+## Deterministic Advisor-Driven Authoring
 
 The software's error detection is part of authoring, not a final audit step. An
 agent must use Advisor, constructability reports, validation payloads, dry-run
 warnings, and evidence-package findings after every meaningful phase change.
+The normal Advisor is deterministic and project-general: it reports BIM/code,
+physics, coordination, constructability, metadata, and export-readiness issues
+that can be derived from the model and selected profile. It does not make
+subjective aesthetic judgments, judge whether a model resembles a customer
+sketch, or decide whether it satisfies a project-specific design brief.
 
 Required behavior:
 
@@ -60,22 +69,45 @@ Required behavior:
   stair comfort, roof/opening hosts, clearance conflicts, material/type gaps,
   schedule/export gaps, and construction-readiness issues.
 
-An advisor-clean model that is visually wrong is not accepted. A visually correct
-model with unresolved Advisor/constructability warnings is also not accepted
-unless the tolerance is explicit, scoped, and visible in the final packet.
+An Advisor-clean model can still fail sketch acceptance or brief acceptance. A
+visually correct model with unresolved Advisor/constructability warnings is also
+not accepted unless the tolerance is explicit, scoped, and visible in the final
+packet.
+
+## Sketch And Brief Acceptance
+
+Sketch acceptance and brief acceptance are methodology gates layered on top of
+the normal deterministic product checks. They are run only for a sketch-to-BIM
+project or another project with an explicit source sketch/brief contract.
+
+- `sketch acceptance` checks current rendered evidence against required
+  sketch-derived features: silhouette, proportions, roof form, openings,
+  facade rhythm, material contrast, rooms, stairs, and named viewpoints.
+- `brief acceptance` checks the source brief and Sketch Understanding IR
+  against the model: programme, target areas, levels, room names, dimensions,
+  material intent, documentation requirements, and declared tolerances.
+- Neither gate creates generic Advisor findings for unrelated projects. A
+  normal architect-authored project must not receive product warnings such as
+  "does not match sketch" unless that project opted into sketch/brief evidence.
+- Phase packets must classify unresolved issues with the taxonomy in
+  `spec/sketch-to-bim-failure-taxonomy.md`, including blocker/tolerance status,
+  owner layer, example, and evidence path.
 
 ## Sketch Acceptance Provenance
 
-Sketch acceptance is a methodology gate, not the normal live Advisor. The
+Sketch acceptance is a methodology gate, not the normal live Advisor. Brief
+acceptance follows the same provenance rule when the project has a written
+programme or dimensional brief. The
 product-owned scaffold is
 `packages/cli/lib/sketch-acceptance-provenance.mjs`; phase acceptance should use
 it to record the current git head, model revision, Sketch Understanding IR hash,
 capability hash, Advisor/rule/integrity digests, renderer-diagnostics digest,
 required feature-to-element mappings, evidence paths, and stale reasons.
 
-This provenance manifest proves that a sketch-specific acceptance claim was made
-against current evidence. It must not create generic product findings such as
-"looks unlike the sketch" for unrelated architect-authored projects.
+This provenance manifest proves that a sketch-specific or brief-specific
+acceptance claim was made against current evidence. It must not create generic
+product findings such as "looks unlike the sketch" for unrelated
+architect-authored projects.
 
 ## Quality Targets
 

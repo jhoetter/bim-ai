@@ -280,7 +280,7 @@ This tracker is complete only when all of these are true:
 | `BIR-M05` | P0 | Partial | Add BIM integrity diagnostics to phase acceptance. | Phase/final acceptance blocks on P0 model-integrity errors even if normal constructability warnings are zero. |
 | `BIR-M06` | P0 | Not started | Add target-house-specific acceptance pack. | Target-house checklist compiles into machine-readable required features, views, tolerances, and evidence rows. |
 | `BIR-M07` | P1 | Not started | Add visual readout drift loop. | Agent must compare latest screenshots with previous phase and source sketch, record corrections, and cannot advance on unresolved drift. |
-| `BIR-M08` | P1 | Not started | Add methodology failure taxonomy. | Phase packets classify failures as model-integrity, renderer, sketch-fidelity, command-surface, evidence-staleness, or user-tolerance. |
+| `BIR-M08` | P1 | Partial | Add methodology failure taxonomy. | Initial taxonomy added in `spec/sketch-to-bim-failure-taxonomy.md`; phase packets classify failures as model-integrity, renderer, sketch-fidelity, command-surface, evidence-staleness, or user-tolerance. |
 | `BIR-M09` | P1 | Not started | Add seed artifact cleanliness gates. | Seed library contains only approved artifacts; disposable wave artifacts cannot leak into committed seed list. |
 | `BIR-M10` | P1 | Not started | Add agent prompt/workflow templates. | Wave prompts tell agents to use integrity, renderer, Advisor, evidence, and acceptance gates before reporting completion. |
 
