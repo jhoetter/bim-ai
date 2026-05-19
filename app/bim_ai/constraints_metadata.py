@@ -180,6 +180,13 @@ RULE_DISCIPLINE: dict[str, str] = {
     "hosted_family_unsupported_host_class": "architecture",
     "hosted_render_proxy_orphan": "coordination",
     "physical_access_proxy_leakage": "coordination",
+    "physical_floor_outside_support_context": "structure",
+    "physical_floor_invalid_support_context": "structure",
+    "physical_stair_without_floor_landings": "architecture",
+    "physical_railing_missing_host_context": "architecture",
+    "physical_railing_invalid_host_context": "architecture",
+    "model_integrity_asset_placement_floating": "architecture",
+    "model_integrity_asset_placement_circulation_overlap": "architecture",
 }
 
 RULE_BLOCKING_CLASS: dict[str, str] = {
@@ -257,6 +264,13 @@ RULE_BLOCKING_CLASS: dict[str, str] = {
     "hosted_family_unsupported_host_class": "geometry",
     "hosted_render_proxy_orphan": "geometry",
     "physical_access_proxy_leakage": "geometry",
+    "physical_floor_outside_support_context": "geometry",
+    "physical_floor_invalid_support_context": "geometry",
+    "physical_stair_without_floor_landings": "geometry",
+    "physical_railing_missing_host_context": "geometry",
+    "physical_railing_invalid_host_context": "geometry",
+    "model_integrity_asset_placement_floating": "geometry",
+    "model_integrity_asset_placement_circulation_overlap": "geometry",
     "level_duplicate_elevation": "documentation",
     "level_datum_parent_cycle": "documentation",
     "level_datum_parent_offset_mismatch": "documentation",

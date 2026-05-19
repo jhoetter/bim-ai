@@ -731,5 +731,142 @@
         }
       }
     }
+,
+    {
+      "id": "floating_asset_and_detached_stair",
+      "fixtureClass": "minimal_synthetic",
+      "description": "Freestanding asset and stair are authored away from any floor support context.",
+      "trackerItems": ["BIR-B02", "BIR-B04", "BIR-V04", "BIR-W01"],
+      "rulesUnderTest": [
+        "model_integrity_asset_placement_floating",
+        "physical_stair_without_floor_landings"
+      ],
+      "expectedFindings": [
+        {
+          "ruleId": "model_integrity_asset_placement_floating",
+          "elementIds": ["asset-chair", "chair-floating"]
+        },
+        {
+          "ruleId": "physical_stair_without_floor_landings",
+          "elementIds": ["lvl-1", "lvl-2", "stair-detached"]
+        }
+      ],
+      "absentRuleIds": [],
+      "elements": {
+        "lvl-1": { "kind": "level", "id": "lvl-1", "elevationMm": 0 },
+        "lvl-2": { "kind": "level", "id": "lvl-2", "elevationMm": 3000 },
+        "floor-1": {
+          "kind": "floor",
+          "id": "floor-1",
+          "levelId": "lvl-1",
+          "boundaryMm": [
+            { "xMm": 0, "yMm": 0 },
+            { "xMm": 5000, "yMm": 0 },
+            { "xMm": 5000, "yMm": 4000 },
+            { "xMm": 0, "yMm": 4000 }
+          ]
+        },
+        "floor-2": {
+          "kind": "floor",
+          "id": "floor-2",
+          "levelId": "lvl-2",
+          "boundaryMm": [
+            { "xMm": 0, "yMm": 0 },
+            { "xMm": 5000, "yMm": 0 },
+            { "xMm": 5000, "yMm": 4000 },
+            { "xMm": 0, "yMm": 4000 }
+          ],
+          "props": { "supportedByIds": ["wall-1"] }
+        },
+        "wall-1": {
+          "kind": "wall",
+          "id": "wall-1",
+          "levelId": "lvl-2",
+          "start": { "xMm": 0, "yMm": 0 },
+          "end": { "xMm": 5000, "yMm": 0 }
+        },
+        "asset-chair": {
+          "kind": "asset_library_entry",
+          "id": "asset-chair",
+          "name": "Chair",
+          "category": "furniture",
+          "widthMm": 500,
+          "depthMm": 500,
+          "placementSupport": "freestanding"
+        },
+        "chair-floating": {
+          "kind": "placed_asset",
+          "id": "chair-floating",
+          "name": "Floating chair",
+          "assetId": "asset-chair",
+          "levelId": "lvl-1",
+          "positionMm": { "xMm": 9000, "yMm": 9000 }
+        },
+        "stair-detached": {
+          "kind": "stair",
+          "id": "stair-detached",
+          "baseLevelId": "lvl-1",
+          "topLevelId": "lvl-2",
+          "runStartMm": { "xMm": 8000, "yMm": 8000 },
+          "runEndMm": { "xMm": 8500, "yMm": 8500 },
+          "widthMm": 1000
+        }
+      }
+    },
+    {
+      "id": "detached_floor_and_floating_railing",
+      "fixtureClass": "minimal_synthetic",
+      "description": "Detached slab fragment and railing without a host are deterministically flagged.",
+      "trackerItems": ["BIR-B02", "BIR-B04", "BIR-W01"],
+      "rulesUnderTest": [
+        "physical_floor_outside_support_context",
+        "physical_railing_missing_host_context"
+      ],
+      "expectedFindings": [
+        {
+          "ruleId": "physical_floor_outside_support_context",
+          "elementIds": ["floor-fragment"]
+        },
+        {
+          "ruleId": "physical_railing_missing_host_context",
+          "elementIds": ["rail-floating"]
+        }
+      ],
+      "absentRuleIds": [],
+      "elements": {
+        "lvl-1": { "kind": "level", "id": "lvl-1", "elevationMm": 0 },
+        "floor-1": {
+          "kind": "floor",
+          "id": "floor-1",
+          "levelId": "lvl-1",
+          "boundaryMm": [
+            { "xMm": 0, "yMm": 0 },
+            { "xMm": 5000, "yMm": 0 },
+            { "xMm": 5000, "yMm": 4000 },
+            { "xMm": 0, "yMm": 4000 }
+          ]
+        },
+        "floor-fragment": {
+          "kind": "floor",
+          "id": "floor-fragment",
+          "levelId": "lvl-1",
+          "boundaryMm": [
+            { "xMm": 9000, "yMm": 0 },
+            { "xMm": 10000, "yMm": 0 },
+            { "xMm": 10000, "yMm": 1000 },
+            { "xMm": 9000, "yMm": 1000 }
+          ]
+        },
+        "rail-floating": {
+          "kind": "railing",
+          "id": "rail-floating",
+          "pathMm": [
+            { "xMm": 0, "yMm": 0 },
+            { "xMm": 1000, "yMm": 0 }
+          ],
+          "guardHeightMm": 1040
+        }
+      }
+    }
   ]
 }

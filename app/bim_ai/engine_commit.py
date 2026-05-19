@@ -22,7 +22,10 @@ from bim_ai.engine import (
     ensure_sun_settings,
     evaluate,
 )
-from bim_ai.model_integrity_hosting import hosted_opening_integrity_violations
+from bim_ai.model_integrity_hosting import (
+    hosted_opening_integrity_violations,
+    physical_support_context_violations,
+)
 
 
 def diff_undo_cmds(prev_doc: Document, next_doc: Document) -> list[dict[str, Any]]:
@@ -182,7 +185,11 @@ def _has_blocking_violations(violations: list[Violation]) -> bool:
 def _commit_violations(doc: Document) -> list[Violation]:
     """Validation surface used by dry-run, commit, and commit deltas."""
 
-    return evaluate(doc.elements) + hosted_opening_integrity_violations(doc)
+    return (
+        evaluate(doc.elements)
+        + hosted_opening_integrity_violations(doc)
+        + physical_support_context_violations(doc)
+    )
 
 
 _AGENT_STRICT_COMMAND_TYPES: dict[str, tuple[str, ...]] = {
@@ -206,6 +213,7 @@ _AGENT_TYPE_ALTERNATIVES: dict[str, tuple[str, ...]] = {
     "createRoof": ("roofTypeId", "materialKey"),
     "createStair": ("materialSlots", "subKind"),
     "createRailing": ("hostedStairId", "hostFloorId", "hostWallId"),
+    "PlaceAsset": ("hostElementId", "placementSupport"),
 }
 
 _VALID_AGENT_ROLES = {"physical", "analysis"}

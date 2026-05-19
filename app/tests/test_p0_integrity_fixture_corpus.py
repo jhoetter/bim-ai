@@ -11,7 +11,10 @@ from pydantic import TypeAdapter
 from bim_ai.domain_integrity import check_domain_integrity
 from bim_ai.elements import Element
 from bim_ai.model_integrity import check_model_integrity_invariants
-from bim_ai.model_integrity_hosting import hosted_opening_integrity_violations
+from bim_ai.model_integrity_hosting import (
+    hosted_opening_integrity_violations,
+    physical_support_context_violations,
+)
 
 _FIXTURE_PATH = Path(__file__).parent / "fixtures" / "p0_integrity_cases.json"
 _ELEMENTS_ADAPTER = TypeAdapter(dict[str, Element])
@@ -39,6 +42,10 @@ def _integrity_findings(elements: dict[str, Element]) -> list[dict[str, Any]]:
     findings.extend(
         violation.model_dump(by_alias=True)
         for violation in hosted_opening_integrity_violations(elements)
+    )
+    findings.extend(
+        violation.model_dump(by_alias=True)
+        for violation in physical_support_context_violations(elements)
     )
     findings.extend(check_domain_integrity(elements, profile="construction_readiness"))
     return findings

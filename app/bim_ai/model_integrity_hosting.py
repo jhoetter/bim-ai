@@ -10,15 +10,19 @@ from bim_ai.constraints_wall_geometry import wall_length_mm
 from bim_ai.document import Document
 from bim_ai.elements import (
     AssetLibraryEntryElem,
+    BeamElem,
     CeilingElem,
+    ColumnElem,
     DoorElem,
     Element,
     FamilyInstanceElem,
     FamilyTypeElem,
     FloorElem,
     PlacedAssetElem,
+    RailingElem,
     ReferencePlaneElem,
     RoofElem,
+    StairElem,
     WallElem,
     WallOpeningElem,
     WindowElem,
@@ -29,6 +33,7 @@ Interval = tuple[float, float]
 
 DEFAULT_ENDPOINT_CLEARANCE_MM = 75.0
 DEFAULT_ENVELOPE_TOLERANCE_MM = 25.0
+DEFAULT_SUPPORT_TOLERANCE_MM = 75.0
 
 HOSTED_OPENING_RULE_IDS = {
     "physical_wall_outside_envelope",
@@ -43,6 +48,13 @@ HOSTED_OPENING_RULE_IDS = {
     "hosted_family_unsupported_host_class",
     "hosted_render_proxy_orphan",
     "physical_access_proxy_leakage",
+    "physical_floor_outside_support_context",
+    "physical_floor_invalid_support_context",
+    "physical_stair_without_floor_landings",
+    "physical_railing_missing_host_context",
+    "physical_railing_invalid_host_context",
+    "model_integrity_asset_placement_floating",
+    "model_integrity_asset_placement_circulation_overlap",
 }
 
 _ACCESS_PROXY_ID_RE = re.compile(r"(^|[-_])access[-_](wall|door|window|opening)([-_]|$)")
@@ -273,6 +285,53 @@ def hosted_opening_integrity_violations(
     return sorted(violations, key=lambda v: (v.rule_id, v.element_ids, v.message))
 
 
+def physical_support_context_violations(
+    doc_or_elements: Document | Mapping[str, Element],
+    *,
+    tolerance_mm: float = DEFAULT_SUPPORT_TOLERANCE_MM,
+) -> list[Violation]:
+    """Return deterministic support-context findings for non-wall physical elements."""
+
+    elements = doc_or_elements.elements if isinstance(doc_or_elements, Document) else doc_or_elements
+    violations: list[Violation] = []
+    floors = sorted(
+        (elem for elem in elements.values() if isinstance(elem, FloorElem)),
+        key=lambda elem: str(elem.id),
+    )
+    levels = {elem.id: elem for elem in elements.values() if hasattr(elem, "elevation_mm")}
+
+    for asset in sorted(
+        (elem for elem in elements.values() if isinstance(elem, PlacedAssetElem)),
+        key=lambda elem: str(elem.id),
+    ):
+        violations.extend(_placed_asset_support_context_violations(asset, elements, tolerance_mm))
+
+    for floor in floors:
+        violations.extend(
+            _floor_support_context_violations(
+                floor,
+                floors,
+                elements,
+                levels,
+                tolerance_mm=tolerance_mm,
+            )
+        )
+
+    for stair in sorted(
+        (elem for elem in elements.values() if isinstance(elem, StairElem)),
+        key=lambda elem: str(elem.id),
+    ):
+        violations.extend(_stair_support_context_violations(stair, floors, elements, tolerance_mm))
+
+    for railing in sorted(
+        (elem for elem in elements.values() if isinstance(elem, RailingElem)),
+        key=lambda elem: str(elem.id),
+    ):
+        violations.extend(_railing_support_context_violations(railing, elements, tolerance_mm))
+
+    return sorted(violations, key=lambda v: (v.rule_id, v.element_ids, v.message))
+
+
 def hosted_opening_conflict_graph(
     doc_or_elements: Document | Mapping[str, Element],
     *,
@@ -372,6 +431,259 @@ def hosted_opening_conflict_graph(
             ),
         ),
     }
+
+
+def _placed_asset_support_context_violations(
+    asset: PlacedAssetElem,
+    elements: Mapping[str, Element],
+    tolerance_mm: float,
+) -> list[Violation]:
+    if _has_detached_intent(asset):
+        return []
+    entry = elements.get(asset.asset_id)
+    support = _placed_asset_support_class(asset, entry)
+    if support not in {"freestanding", "floor_hosted", "level_hosted"}:
+        return []
+
+    violations: list[Violation] = []
+    point = (asset.position_mm.x_mm, asset.position_mm.y_mm)
+    if not _point_supported_by_level_floor(
+        point,
+        asset.level_id,
+        elements,
+        tolerance_mm=tolerance_mm,
+    ):
+        violations.append(
+            _violation(
+                "model_integrity_asset_placement_floating",
+                "error",
+                (
+                    f"Placed asset '{asset.id}' has no floor support at its position on "
+                    f"level '{asset.level_id}'. Move it onto a same-level floor footprint, "
+                    "set an explicit host, or record intentional detached placement."
+                ),
+                [asset.id, asset.asset_id],
+                quick_fix_command={
+                    "type": "resolveAssetPlacementSupport",
+                    "elementId": asset.id,
+                    "safeFixes": ["move_inside_floor", "set_hostElementId", "mark_intentional_detached"],
+                },
+            )
+        )
+
+    overlap_id = _circulation_overlap_at_point(
+        point,
+        asset.level_id,
+        elements,
+        tolerance_mm=tolerance_mm,
+    )
+    if overlap_id is not None and not _asset_allows_circulation_overlap(asset):
+        violations.append(
+            _violation(
+                "model_integrity_asset_placement_circulation_overlap",
+                "error",
+                (
+                    f"Placed asset '{asset.id}' overlaps vertical circulation '{overlap_id}'. "
+                    "Move it clear of stairs/ramps or set explicit circulation-overlap intent."
+                ),
+                [asset.id, asset.asset_id, overlap_id],
+                quick_fix_command={
+                    "type": "resolveAssetPlacementSupport",
+                    "elementId": asset.id,
+                    "conflictingElementId": overlap_id,
+                    "safeFixes": ["move_clear_of_circulation", "mark_allowCirculationOverlap"],
+                },
+            )
+        )
+    return violations
+
+
+def _floor_support_context_violations(
+    floor: FloorElem,
+    floors: list[FloorElem],
+    elements: Mapping[str, Element],
+    levels: Mapping[str, Element],
+    *,
+    tolerance_mm: float,
+) -> list[Violation]:
+    if _has_detached_intent(floor) or _floor_bool(floor, "isCantilever", "cantilever"):
+        return []
+    support_ids = _support_reference_ids(floor)
+    if support_ids:
+        missing = [element_id for element_id in support_ids if element_id not in elements]
+        if missing:
+            return [
+                _violation(
+                    "physical_floor_invalid_support_context",
+                    "error",
+                    (
+                        f"Floor/slab '{floor.id}' declares support references that do not "
+                        f"resolve: {', '.join(missing)}. Point support metadata at real walls, "
+                        "columns, beams, or slabs."
+                    ),
+                    [floor.id, *missing],
+                    quick_fix_command={
+                        "type": "resolveFloorSupportContext",
+                        "elementId": floor.id,
+                        "missingSupportIds": missing,
+                        "safeFixes": ["set_supportedByIds", "create_supports", "mark_allowDetached"],
+                    },
+                )
+            ]
+        return []
+
+    elevated = _level_elevation_mm(levels.get(floor.level_id)) > 1.0
+    detached_fragment = _is_smaller_same_level_slab_fragment(floor, floors) and not _floor_touches_context(
+        floor,
+        floors,
+        elements,
+        tolerance_mm=tolerance_mm,
+    )
+    if not elevated and not detached_fragment:
+        return []
+    if _floor_touches_context(floor, floors, elements, tolerance_mm=tolerance_mm):
+        return []
+    return [
+        _violation(
+            "physical_floor_outside_support_context",
+            "error",
+            (
+                f"Floor/slab '{floor.id}' is outside supported building context. Add "
+                "supportedByIds/supportIds, model bearing support, connect it to a same-level "
+                "slab, or mark explicit detached/cantilever intent."
+            ),
+            [floor.id],
+            quick_fix_command={
+                "type": "set_element_prop",
+                "elementId": floor.id,
+                "key": "allowDetached",
+                "value": True,
+            },
+        )
+    ]
+
+
+def _stair_support_context_violations(
+    stair: StairElem,
+    floors: list[FloorElem],
+    elements: Mapping[str, Element],
+    tolerance_mm: float,
+) -> list[Violation]:
+    if _has_detached_intent(stair):
+        return []
+    missing_landings: list[str] = []
+    base_floor = _floor_at_point(floors, stair.base_level_id, stair.run_start, tolerance_mm)
+    top_floor = _floor_at_point(floors, stair.top_level_id, stair.run_end, tolerance_mm)
+    if base_floor is None:
+        missing_landings.append("base")
+    if top_floor is None:
+        missing_landings.append("top")
+    if not missing_landings:
+        return []
+    element_ids = [stair.id]
+    if stair.base_level_id in elements:
+        element_ids.append(stair.base_level_id)
+    if stair.top_level_id in elements:
+        element_ids.append(stair.top_level_id)
+    return [
+        _violation(
+            "physical_stair_without_floor_landings",
+            "error",
+            (
+                f"Stair '{stair.id}' is detached from floor support at its "
+                f"{'/'.join(missing_landings)} landing. Move the endpoints onto floor "
+                "footprints or add landing slabs/openings for the connected levels."
+            ),
+            element_ids,
+            quick_fix_command={
+                "type": "resolveStairLandingSupport",
+                "elementId": stair.id,
+                "missingLandings": missing_landings,
+                "safeFixes": ["move_run_endpoint_to_floor", "create_landing_slab", "mark_allowDetached"],
+            },
+        )
+    ]
+
+
+def _railing_support_context_violations(
+    railing: RailingElem,
+    elements: Mapping[str, Element],
+    tolerance_mm: float,
+) -> list[Violation]:
+    if _has_detached_intent(railing):
+        return []
+    host_ids = _railing_host_ids(railing)
+    if not host_ids:
+        return [
+            _violation(
+                "physical_railing_missing_host_context",
+                "error",
+                (
+                    f"Railing '{railing.id}' has no explicit stair, floor, wall, or edge host. "
+                    "Attach it to a supported stair/floor edge/wall or mark detached intent."
+                ),
+                [railing.id],
+                quick_fix_command={
+                    "type": "resolveRailingSupportContext",
+                    "elementId": railing.id,
+                    "safeFixes": ["set_hostedStairId", "set_hostFloorId", "set_hostWallId"],
+                },
+            )
+        ]
+
+    invalid = _invalid_railing_host_ids(railing, elements)
+    if invalid:
+        return [
+            _violation(
+                "physical_railing_invalid_host_context",
+                "error",
+                (
+                    f"Railing '{railing.id}' references unsupported or missing host context "
+                    f"{', '.join(invalid)}. Use existing stair/floor/wall hosts or a documented floor edge id."
+                ),
+                [railing.id, *invalid],
+                quick_fix_command={
+                    "type": "resolveRailingSupportContext",
+                    "elementId": railing.id,
+                    "invalidHostIds": invalid,
+                    "safeFixes": ["set_valid_host", "delete_detached_railing", "mark_allowDetached"],
+                },
+            )
+        ]
+
+    if railing.host_floor_id:
+        host = elements.get(railing.host_floor_id)
+        if isinstance(host, FloorElem):
+            polygon = _floor_polygon(host)
+            off_floor = [
+                index
+                for index, point in enumerate(railing.path_mm)
+                if not _point_in_or_near_polygon(
+                    (point.x_mm, point.y_mm),
+                    polygon,
+                    tolerance_mm,
+                )
+            ]
+            if off_floor:
+                return [
+                    _violation(
+                        "physical_railing_invalid_host_context",
+                        "error",
+                        (
+                            f"Railing '{railing.id}' has path vertices outside host floor "
+                            f"'{host.id}'. Align the rail to the supported floor edge or rehost it."
+                        ),
+                        [railing.id, host.id],
+                        quick_fix_command={
+                            "type": "resolveRailingSupportContext",
+                            "elementId": railing.id,
+                            "hostFloorId": host.id,
+                            "offFloorPathVertexIndexes": off_floor,
+                            "safeFixes": ["align_path_to_floor_edge", "set_hostedStairId"],
+                        },
+                    )
+                ]
+    return []
 
 
 def _violation(
@@ -618,6 +930,7 @@ def _hosted_family_support_violations(elements: Mapping[str, Element]) -> list[V
     return violations
 
 
+
 def _declared_support_class(
     elem: DoorElem | WindowElem | WallOpeningElem | FamilyInstanceElem | PlacedAssetElem,
     elements: Mapping[str, Element],
@@ -686,6 +999,247 @@ def _host_kind_supported(support_class: str, host: Element) -> bool:
     if support_class == "workplane_hosted":
         return isinstance(host, ReferencePlaneElem)
     return support_class not in _HOST_CLASSES_REQUIRING_ELEMENT
+
+
+def _placed_asset_support_class(asset: PlacedAssetElem, entry: Element | None) -> str:
+    raw = _support_values_from_mapping(asset.param_values)
+    raw.extend(_support_values_from_mapping(getattr(entry, "param_values", None)))
+    placement_support = getattr(entry, "placement_support", None)
+    if placement_support:
+        raw.append(placement_support)
+    if isinstance(entry, AssetLibraryEntryElem) and entry.category in {"door", "window"}:
+        raw.append("wall_hosted")
+    for value in raw:
+        support = _normalize_support_class(value)
+        if support is not None:
+            return support
+    return "freestanding"
+
+
+def _point_supported_by_level_floor(
+    point: Point2,
+    level_id: str,
+    elements: Mapping[str, Element],
+    *,
+    tolerance_mm: float,
+) -> bool:
+    floors = [
+        elem
+        for elem in elements.values()
+        if isinstance(elem, FloorElem) and elem.level_id == level_id
+    ]
+    if not floors:
+        return False
+    return any(_point_in_or_near_polygon(point, _floor_polygon(floor), tolerance_mm) for floor in floors)
+
+
+def _circulation_overlap_at_point(
+    point: Point2,
+    level_id: str,
+    elements: Mapping[str, Element],
+    *,
+    tolerance_mm: float,
+) -> str | None:
+    for elem in sorted(elements.values(), key=lambda candidate: str(getattr(candidate, "id", ""))):
+        if not isinstance(elem, StairElem):
+            continue
+        if level_id not in {elem.base_level_id, elem.top_level_id}:
+            continue
+        polygon = _stair_polygon(elem)
+        if polygon and _point_in_or_near_polygon(point, polygon, tolerance_mm):
+            return elem.id
+    return None
+
+
+def _asset_allows_circulation_overlap(asset: PlacedAssetElem) -> bool:
+    values = [asset.param_values.get("allowCirculationOverlap"), asset.param_values.get("allowStairOverlap")]
+    return any(_truthy(value) for value in values)
+
+
+def _support_reference_ids(elem: Any) -> list[str]:
+    props = getattr(elem, "props", None) or {}
+    ids: list[str] = []
+    for key in ("supportedByIds", "supportIds", "hostIds", "bearingElementIds"):
+        value = props.get(key)
+        if isinstance(value, str):
+            ids.append(value)
+        elif isinstance(value, list | tuple | set):
+            ids.extend(str(item) for item in value if item)
+    return sorted(dict.fromkeys(ids))
+
+
+def _floor_bool(floor: FloorElem, *keys: str) -> bool:
+    props = getattr(floor, "props", None) or {}
+    return any(_truthy(props.get(key)) for key in keys)
+
+
+def _level_elevation_mm(level: Element | None) -> float:
+    elevation = getattr(level, "elevation_mm", 0.0)
+    try:
+        return float(elevation)
+    except (TypeError, ValueError):
+        return 0.0
+
+
+def _is_smaller_same_level_slab_fragment(floor: FloorElem, floors: list[FloorElem]) -> bool:
+    same_level = [other for other in floors if other.level_id == floor.level_id]
+    if len(same_level) < 2:
+        return False
+    largest_area = max(_polygon_area_abs(_floor_polygon(other)) for other in same_level)
+    return _polygon_area_abs(_floor_polygon(floor)) < largest_area - 1.0
+
+
+def _floor_touches_context(
+    floor: FloorElem,
+    floors: list[FloorElem],
+    elements: Mapping[str, Element],
+    *,
+    tolerance_mm: float,
+) -> bool:
+    polygon = _floor_polygon(floor)
+    for other in floors:
+        if other.id == floor.id or other.level_id != floor.level_id:
+            continue
+        if _polygons_touch_or_overlap(polygon, _floor_polygon(other), tolerance_mm):
+            return True
+    for elem in elements.values():
+        if isinstance(elem, WallElem) and elem.level_id == floor.level_id:
+            if _point_in_or_near_polygon((elem.start.x_mm, elem.start.y_mm), polygon, tolerance_mm):
+                return True
+            if _point_in_or_near_polygon((elem.end.x_mm, elem.end.y_mm), polygon, tolerance_mm):
+                return True
+        if isinstance(elem, ColumnElem) and elem.level_id == floor.level_id:
+            if _point_in_or_near_polygon(
+                (elem.position_mm.x_mm, elem.position_mm.y_mm),
+                polygon,
+                tolerance_mm,
+            ):
+                return True
+        if isinstance(elem, BeamElem) and getattr(elem, "level_id", None) == floor.level_id:
+            start = getattr(elem, "start_mm", None)
+            end = getattr(elem, "end_mm", None)
+            if start is not None and _point_in_or_near_polygon((start.x_mm, start.y_mm), polygon, tolerance_mm):
+                return True
+            if end is not None and _point_in_or_near_polygon((end.x_mm, end.y_mm), polygon, tolerance_mm):
+                return True
+    return False
+
+
+def _floor_at_point(
+    floors: list[FloorElem],
+    level_id: str,
+    point: Any,
+    tolerance_mm: float,
+) -> FloorElem | None:
+    for floor in sorted(floors, key=lambda candidate: candidate.id):
+        if floor.level_id != level_id:
+            continue
+        if _point_in_or_near_polygon((point.x_mm, point.y_mm), _floor_polygon(floor), tolerance_mm):
+            return floor
+    return None
+
+
+def _railing_host_ids(railing: RailingElem) -> list[str]:
+    ids: list[str] = []
+    for value in (
+        railing.hosted_stair_id,
+        railing.host_floor_id,
+        railing.host_wall_id,
+        railing.host_edge_id,
+    ):
+        if value:
+            ids.append(value)
+    props = getattr(railing, "props", None) or {}
+    for key in ("hostedStairId", "hostFloorId", "hostWallId", "hostEdgeId", "hostIds"):
+        value = props.get(key)
+        if isinstance(value, str):
+            ids.append(value)
+        elif isinstance(value, list | tuple | set):
+            ids.extend(str(item) for item in value if item)
+    return sorted(dict.fromkeys(ids))
+
+
+def _invalid_railing_host_ids(railing: RailingElem, elements: Mapping[str, Element]) -> list[str]:
+    invalid: list[str] = []
+    if railing.hosted_stair_id and not isinstance(elements.get(railing.hosted_stair_id), StairElem):
+        invalid.append(railing.hosted_stair_id)
+    if railing.host_floor_id and not isinstance(elements.get(railing.host_floor_id), FloorElem):
+        invalid.append(railing.host_floor_id)
+    if railing.host_wall_id and not isinstance(elements.get(railing.host_wall_id), WallElem):
+        invalid.append(railing.host_wall_id)
+    if railing.host_edge_id and not _railing_edge_host_resolves(railing.host_edge_id, elements):
+        invalid.append(railing.host_edge_id)
+    return sorted(dict.fromkeys(invalid))
+
+
+def _railing_edge_host_resolves(edge_id: str, elements: Mapping[str, Element]) -> bool:
+    if edge_id in elements:
+        return True
+    if ":edge:" not in edge_id:
+        return False
+    host_id = edge_id.split(":edge:", 1)[0]
+    return isinstance(elements.get(host_id), FloorElem | StairElem | WallElem)
+
+
+def _floor_polygon(floor: FloorElem) -> list[Point2]:
+    return [(point.x_mm, point.y_mm) for point in floor.boundary_mm]
+
+
+def _stair_polygon(stair: StairElem) -> list[Point2]:
+    if stair.boundary_mm and len(stair.boundary_mm) >= 3:
+        return [(point.x_mm, point.y_mm) for point in stair.boundary_mm]
+    sx, sy = stair.run_start.x_mm, stair.run_start.y_mm
+    ex, ey = stair.run_end.x_mm, stair.run_end.y_mm
+    dx = ex - sx
+    dy = ey - sy
+    length = math.hypot(dx, dy)
+    if length <= 1e-9:
+        half = max(250.0, stair.width_mm / 2.0)
+        return [(sx - half, sy - half), (sx + half, sy - half), (sx + half, sy + half), (sx - half, sy + half)]
+    nx = -dy / length
+    ny = dx / length
+    half = stair.width_mm / 2.0
+    return [
+        (sx + nx * half, sy + ny * half),
+        (ex + nx * half, ey + ny * half),
+        (ex - nx * half, ey - ny * half),
+        (sx - nx * half, sy - ny * half),
+    ]
+
+
+def _polygons_touch_or_overlap(a: list[Point2], b: list[Point2], tolerance_mm: float) -> bool:
+    if len(a) < 3 or len(b) < 3:
+        return False
+    if any(_point_in_or_near_polygon(point, b, tolerance_mm) for point in a):
+        return True
+    if any(_point_in_or_near_polygon(point, a, tolerance_mm) for point in b):
+        return True
+    for i in range(len(a)):
+        a0 = a[i]
+        a1 = a[(i + 1) % len(a)]
+        for j in range(len(b)):
+            b0 = b[j]
+            b1 = b[(j + 1) % len(b)]
+            if _segments_intersect(a0, a1, b0, b1):
+                return True
+            if (
+                _point_to_segment_distance_mm(a0, b0, b1) <= tolerance_mm
+                or _point_to_segment_distance_mm(a1, b0, b1) <= tolerance_mm
+                or _point_to_segment_distance_mm(b0, a0, a1) <= tolerance_mm
+                or _point_to_segment_distance_mm(b1, a0, a1) <= tolerance_mm
+            ):
+                return True
+    return False
+
+
+def _polygon_area_abs(polygon: list[Point2]) -> float:
+    if len(polygon) < 3:
+        return 0.0
+    area = 0.0
+    for index, (x0, y0) in enumerate(polygon):
+        x1, y1 = polygon[(index + 1) % len(polygon)]
+        area += x0 * y1 - x1 * y0
+    return abs(area) / 2.0
 
 
 def _orphan_render_proxy_violation(
@@ -775,12 +1329,22 @@ def _is_helper_or_nonphysical_wall(wall: WallElem) -> bool:
 
 def _has_detached_intent(elem: Any) -> bool:
     props = getattr(elem, "props", None) or {}
-    if _truthy(props.get("allowDetached")) or _truthy(props.get("allow_detached")):
+    param_values = getattr(elem, "param_values", None) or {}
+    if (
+        _truthy(props.get("allowDetached"))
+        or _truthy(props.get("allow_detached"))
+        or _truthy(param_values.get("allowDetached"))
+        or _truthy(param_values.get("allow_detached"))
+        or _truthy(getattr(elem, "allow_detached", False))
+    ):
         return True
     intent = str(
         props.get("authoringIntent")
         or props.get("authoring_intent")
         or props.get("intent")
+        or param_values.get("authoringIntent")
+        or param_values.get("authoring_intent")
+        or getattr(elem, "authoring_intent", "")
         or "",
     ).strip().lower()
     return intent in {"detached", "intentional_detached", "detached_study", "exterior_detached"}
@@ -810,6 +1374,40 @@ def _is_access_proxy(elem: Any) -> bool:
         or _truthy(props.get("helper"))
         or str(props.get("role", "")).lower() in {"access_proxy", "helper", "room_graph"}
     )
+
+
+
+def _has_physical_render_or_export_marker(elem: Any, elements: Mapping[str, Element]) -> bool:
+    props = getattr(elem, "props", None) or {}
+    params = getattr(elem, "param_values", None) or {}
+    marker_keys = {
+        "renderProxy",
+        "renderProxyKind",
+        "rendererProxy",
+        "proxyGeometry",
+        "visualGeometry",
+        "gltfMapping",
+        "ifcMapping",
+        "exportAsPhysical",
+        "scheduleAsPhysical",
+        "visibleIn3d",
+        "visibleIn3D",
+    }
+    if any(key in props or key in params for key in marker_keys):
+        return True
+    if isinstance(elem, FamilyInstanceElem):
+        family_type = elements.get(elem.family_type_id)
+        return any(
+            bool(getattr(family_type, attr, None))
+            for attr in ("render_support", "export_support", "visual_geometry", "gltf_mapping", "ifc_mapping")
+        )
+    if isinstance(elem, PlacedAssetElem):
+        asset = elements.get(elem.asset_id)
+        return any(
+            bool(getattr(asset, attr, None))
+            for attr in ("render_proxy_kind", "render_support", "export_metadata", "gltf_mapping", "ifc_mapping")
+        )
+    return False
 
 
 def _truthy(value: Any) -> bool:

@@ -2,12 +2,15 @@ from __future__ import annotations
 
 from bim_ai.document import Document
 from bim_ai.elements import (
+    AssetLibraryEntryElem,
     DoorElem,
     FamilyInstanceElem,
     FamilyTypeElem,
     FloorElem,
     LevelElem,
     PlacedAssetElem,
+    RailingElem,
+    StairElem,
     Vec2Mm,
     WallElem,
     WallOpeningElem,
@@ -16,6 +19,7 @@ from bim_ai.elements import (
 from bim_ai.model_integrity_hosting import (
     hosted_opening_conflict_graph,
     hosted_opening_integrity_violations,
+    physical_support_context_violations,
 )
 
 
@@ -285,3 +289,121 @@ def test_hosted_family_support_classification_flags_wrong_host_and_orphan_proxy(
     assert "hosted_family_unsupported_host_class" in rule_ids
     assert "hosted_family_missing_host" in rule_ids
     assert "hosted_render_proxy_orphan" in rule_ids
+
+def test_physical_support_context_flags_assets_floors_stairs_and_railings() -> None:
+    level_2 = LevelElem(id="lvl-2", name="Upper", elevationMm=3000)
+    upper_floor = FloorElem(
+        id="floor-2",
+        levelId="lvl-2",
+        boundaryMm=[_pt(0, 0), _pt(5000, 0), _pt(5000, 4000), _pt(0, 4000)],
+        props={"supportedByIds": ["wall-1"]},
+    )
+    asset_entry = AssetLibraryEntryElem(
+        id="asset-chair",
+        name="Chair",
+        category="furniture",
+        widthMm=500,
+        depthMm=500,
+        placementSupport="freestanding",
+    )
+    stair = StairElem(
+        id="stair-detached",
+        baseLevelId="lvl-1",
+        topLevelId="lvl-2",
+        runStartMm=_pt(7000, 7000),
+        runEndMm=_pt(7500, 7500),
+        widthMm=1000,
+        boundaryMm=[_pt(6500, 6500), _pt(8000, 6500), _pt(8000, 8000), _pt(6500, 8000)],
+        authoringMode="by_sketch",
+        treadLines=[{"fromMm": _pt(6600, 6600), "toMm": _pt(7900, 6600)}],
+        totalRiseMm=3000,
+    )
+    floating_asset = PlacedAssetElem(
+        id="asset-floating",
+        name="Floating chair",
+        assetId=asset_entry.id,
+        levelId="lvl-1",
+        positionMm=_pt(9000, 9000),
+    )
+    asset_on_stair = PlacedAssetElem(
+        id="asset-on-stair",
+        name="Chair on stair",
+        assetId=asset_entry.id,
+        levelId="lvl-1",
+        positionMm=_pt(7000, 7000),
+    )
+    detached_floor = FloorElem(
+        id="floor-fragment",
+        levelId="lvl-1",
+        boundaryMm=[_pt(9000, 0), _pt(10000, 0), _pt(10000, 1000), _pt(9000, 1000)],
+    )
+    rail = RailingElem(
+        id="rail-floating",
+        pathMm=[_pt(0, 0), _pt(1000, 0)],
+        guardHeightMm=1040,
+    )
+
+    doc = _doc(
+        _wall(),
+        level_2,
+        upper_floor,
+        asset_entry,
+        stair,
+        floating_asset,
+        asset_on_stair,
+        detached_floor,
+        rail,
+    )
+    violations = physical_support_context_violations(doc)
+    rule_ids = {violation.rule_id for violation in violations}
+
+    assert "model_integrity_asset_placement_floating" in rule_ids
+    assert "model_integrity_asset_placement_circulation_overlap" in rule_ids
+    assert "physical_floor_outside_support_context" in rule_ids
+    assert "physical_stair_without_floor_landings" in rule_ids
+    assert "physical_railing_missing_host_context" in rule_ids
+    assert all(violation.quick_fix_command for violation in violations)
+
+
+def test_valid_non_wall_support_contexts_pass() -> None:
+    level_2 = LevelElem(id="lvl-2", name="Upper", elevationMm=3000)
+    upper_floor = FloorElem(
+        id="floor-2",
+        levelId="lvl-2",
+        boundaryMm=[_pt(0, 0), _pt(5000, 0), _pt(5000, 4000), _pt(0, 4000)],
+        props={"supportedByIds": ["wall-1"]},
+    )
+    asset_entry = AssetLibraryEntryElem(
+        id="asset-chair",
+        name="Chair",
+        category="furniture",
+        widthMm=500,
+        depthMm=500,
+        placementSupport="freestanding",
+    )
+    asset = PlacedAssetElem(
+        id="asset-ok",
+        name="Chair",
+        assetId=asset_entry.id,
+        levelId="lvl-1",
+        positionMm=_pt(2500, 2500),
+    )
+    stair = StairElem(
+        id="stair-ok",
+        baseLevelId="lvl-1",
+        topLevelId="lvl-2",
+        runStartMm=_pt(1000, 1000),
+        runEndMm=_pt(1200, 1200),
+        widthMm=1000,
+    )
+    rail = RailingElem(
+        id="rail-ok",
+        hostedStairId=stair.id,
+        pathMm=[_pt(1000, 500), _pt(1200, 700)],
+        guardHeightMm=1040,
+    )
+
+    assert physical_support_context_violations(
+        _doc(_wall(), level_2, upper_floor, asset_entry, asset, stair, rail)
+    ) == []
+
