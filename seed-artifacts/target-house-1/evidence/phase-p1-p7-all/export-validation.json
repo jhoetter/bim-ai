@@ -1,0 +1,78 @@
+{
+  "schemaVersion": "sketch.exchange-validation.v1",
+  "generatedAt": "2026-05-19T19:28:21.005330Z",
+  "qualityTarget": "project_initiation_bim",
+  "source": "offline_snapshot",
+  "ok": true,
+  "summary": {
+    "passCount": 5,
+    "warningCount": 0,
+    "errorCount": 0,
+    "plannedCount": 2
+  },
+  "checks": [
+    {
+      "id": "ifc_manifest_available",
+      "status": 200,
+      "message": "Offline normalized IFC manifest synthesized from snapshot counts."
+    },
+    {
+      "id": "gltf_manifest_available",
+      "status": 200,
+      "message": "Offline normalized glTF manifest synthesized from snapshot counts."
+    },
+    {
+      "id": "project_hierarchy",
+      "status": "pass",
+      "message": "Project/model hierarchy is represented in offline evidence.",
+      "modelId": "target-house-1-offline-regenerated",
+      "revision": 2
+    },
+    {
+      "id": "entity_classes",
+      "status": "pass",
+      "message": "Expected IFC entity classes are present in offline normalized evidence.",
+      "countsByIfcEntity": {
+        "IfcSpace": 13,
+        "IfcWall": 16,
+        "IfcWallStandardCase": 16,
+        "IfcSlab": 4,
+        "IfcRoof": 1,
+        "IfcStair": 1,
+        "IfcDoor": 6,
+        "IfcWindow": 4,
+        "IfcRailing": 3,
+        "IfcFurnishingElement": 5
+      },
+      "source": "offline_snapshot"
+    },
+    {
+      "id": "spaces",
+      "status": "pass",
+      "message": "Snapshot has 13 room/space representation(s); IR requires 13.",
+      "actual": 13,
+      "expected": 13
+    },
+    {
+      "id": "material_layers",
+      "status": "pass",
+      "message": "Material layer-set intent is present for normalized exchange validation.",
+      "modelTypeCount": 4
+    },
+    {
+      "id": "classifications",
+      "status": "pass",
+      "message": "Classification placeholder requirements are present for exchange validation."
+    },
+    {
+      "id": "psets",
+      "status": "planned",
+      "message": "Property-set validation remains planned until explicit IFC Pset rows are exposed."
+    },
+    {
+      "id": "quantities",
+      "status": "planned",
+      "message": "Quantity validation remains planned from evidence-package/validate output."
+    }
+  ]
+}

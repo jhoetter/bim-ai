@@ -254,6 +254,7 @@ function featureCoverageDashboard({
   screenshots,
   blockers,
   rendererSupportMatrixDigest,
+  sourceFeatureMap,
 }) {
   const features = requiredFeatures?.requiredFeatures ?? [];
   const failuresByFeature = countBy(
@@ -261,6 +262,9 @@ function featureCoverageDashboard({
     (failure) => failure.featureId,
   );
   const screenshotByView = new Map(screenshots.map((row) => [row.viewId, row]));
+  const sourceFeatureRows = new Map(
+    (sourceFeatureMap?.features ?? []).map((row) => [row.featureId, row]),
+  );
   const rows = features.map((feature) => {
     const requiredViewIds = feature.requiredViewIds ?? [];
     const screenshotRowsForFeature = requiredViewIds
@@ -271,18 +275,25 @@ function featureCoverageDashboard({
       ['missing', 'fail', 'blocked'].includes(String(row.status)),
     ).length;
     const openFindingCount = failuresByFeature[feature.id] ?? 0;
+    const sourceFeatureRow = sourceFeatureRows.get(feature.id);
+    const resolvedElementIds = sourceFeatureRow?.resolvedElementIds ?? [];
+    const explicitElementIds = feature.requiredElementIds ?? [];
     return {
       featureId: feature.id,
       priority: feature.priority ?? '',
       phaseId: feature.phaseId ?? '',
-      requiredElementIds: feature.requiredElementIds ?? [],
+      requiredElementIds: explicitElementIds,
+      resolvedElementIds,
       semanticSelectors: feature.semanticSelectors ?? [],
       elementCoverageStatus:
-        (feature.requiredElementIds ?? []).length > 0
+        explicitElementIds.length > 0
           ? 'explicit_elements'
-          : (feature.semanticSelectors ?? []).length > 0
+          : resolvedElementIds.length > 0
+            ? 'resolved_elements'
+            : (feature.semanticSelectors ?? []).length > 0
             ? 'semantic_selectors_only'
             : 'missing_element_mapping',
+      sourceFeatureMapStatus: sourceFeatureRow?.status ?? 'missing',
       openFindingCount,
       rendererSupport: {
         matrixDigest: rendererSupportMatrixDigest,
@@ -310,6 +321,9 @@ function featureCoverageDashboard({
     requiredFeatureCount: rows.length,
     explicitElementCoverageCount: rows.filter(
       (row) => row.elementCoverageStatus === 'explicit_elements',
+    ).length,
+    resolvedElementCoverageCount: rows.filter(
+      (row) => row.elementCoverageStatus === 'resolved_elements',
     ).length,
     semanticSelectorCoverageCount: rows.filter(
       (row) => row.elementCoverageStatus === 'semantic_selectors_only',
@@ -538,6 +552,9 @@ export async function buildTargetHouseCloseoutReport({
   finalManifest = null,
 } = {}) {
   const requiredFeatures = await readJsonIfExists(requiredFeaturesPath);
+  const sourceFeatureMap = await readJsonIfExists(
+    path.join(repoRoot, 'seed-artifacts', seed, 'evidence', 'phase-p1-p7-all', 'source-feature-map.json'),
+  );
   const { entries: evidenceFiles, payloads } = await collectEvidenceFiles(evidenceDir, repoRoot);
   const performance = performanceEvidence
     ? { payload: performanceEvidence, path: null }
@@ -589,6 +606,7 @@ export async function buildTargetHouseCloseoutReport({
     screenshots,
     blockers,
     rendererSupportMatrixDigest,
+    sourceFeatureMap,
   });
 
   const lineageBody = {
@@ -784,6 +802,7 @@ function renderCloseoutMarkdown(lineage) {
     ...renderKeyValueRows([
       ['required features', lineage.featureCoverageDashboard.requiredFeatureCount],
       ['explicit element coverage', lineage.featureCoverageDashboard.explicitElementCoverageCount],
+      ['resolved element coverage', lineage.featureCoverageDashboard.resolvedElementCoverageCount],
       ['semantic selector coverage', lineage.featureCoverageDashboard.semanticSelectorCoverageCount],
       ['missing element coverage', lineage.featureCoverageDashboard.missingElementCoverageCount],
       ['open feature findings', lineage.featureCoverageDashboard.openFindingCount],
@@ -797,7 +816,7 @@ function renderCloseoutMarkdown(lineage) {
   );
   for (const row of lineage.featureCoverageDashboard.rows) {
     lines.push(
-      `| \`${row.featureId}\` | ${row.elementCoverageStatus} | ${row.openFindingCount} | ${row.rendererSupport.requiredFeature}:${row.rendererSupport.status} | ${row.screenshots.status} (${row.screenshots.linkedCount}/${row.screenshots.requiredViewCount}) | ${tableCell(row.blockers)} |`,
+      `| \`${row.featureId}\` | ${row.elementCoverageStatus} (${row.resolvedElementIds.length} resolved) | ${row.openFindingCount} | ${row.rendererSupport.requiredFeature}:${row.rendererSupport.status} | ${row.screenshots.status} (${row.screenshots.linkedCount}/${row.screenshots.requiredViewCount}) | ${tableCell(row.blockers)} |`,
     );
   }
 

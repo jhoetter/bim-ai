@@ -1,34 +1,45 @@
 {
-  "schemaVersion": "sketch.phase.packet.v1",
-  "ok": true,
-  "generatedAt": "2026-05-18T20:28:16.663Z",
-  "phaseId": "p1-p7-all",
-  "modelId": "a5c6d3f6-6a76-45f2-8017-b6fa78911955",
-  "revision": 2,
-  "featureIds": [
-    "primary_massing_envelope",
-    "folded_white_wrapper_shell",
-    "roof_terrace_cutout",
-    "front_deep_loggia",
-    "room_access_and_enclosure",
-    "documentation_evidence_set",
-    "room_space_coverage",
-    "ifc_furnishing_coverage"
-  ],
-  "evidence": {
-    "finalLiveEvidenceRoot": "../live-run-current",
-    "snapshot": "../live-run-current/snapshot.json",
-    "advisorWarning": "../live-run-current/advisor-warning.json",
-    "visualGate": "../live-run-current/visual-gate.json",
-    "exportValidation": "../live-run-current/export-validation.json",
-    "toleranceLedger": "../live-run-current/tolerance-ledger.json"
+  "advisorErrorTotal": 0,
+  "advisorInfoTotal": 0,
+  "advisorParityOk": true,
+  "advisorWarningTotal": 0,
+  "files": {
+    "advisor-error": "seed-artifacts/target-house-1/evidence/phase-p1-p7-all/advisor-error.json",
+    "advisor-info": "seed-artifacts/target-house-1/evidence/phase-p1-p7-all/advisor-info.json",
+    "advisor-warning": "seed-artifacts/target-house-1/evidence/phase-p1-p7-all/advisor-warning.json",
+    "agent-loop-packet": "seed-artifacts/target-house-1/evidence/phase-p1-p7-all/agent-loop-packet.json",
+    "assumption-ledger": "seed-artifacts/target-house-1/evidence/phase-p1-p7-all/assumption-ledger.json",
+    "constructability-report": "seed-artifacts/target-house-1/evidence/phase-p1-p7-all/constructability-report.json",
+    "corrections": "seed-artifacts/target-house-1/evidence/phase-p1-p7-all/corrections.md",
+    "evidence-manifest": "seed-artifacts/target-house-1/evidence/phase-p1-p7-all/evidence-manifest.json",
+    "export-validation": "seed-artifacts/target-house-1/evidence/phase-p1-p7-all/export-validation.json",
+    "finding-dispositions": "seed-artifacts/target-house-1/evidence/phase-p1-p7-all/finding-dispositions.json",
+    "integrity-diagnostics": "seed-artifacts/target-house-1/evidence/phase-p1-p7-all/integrity-diagnostics.json",
+    "issue-ledger": "seed-artifacts/target-house-1/evidence/phase-p1-p7-all/issue-ledger.json",
+    "renderer-diagnostics": "seed-artifacts/target-house-1/evidence/phase-p1-p7-all/renderer-diagnostics.json",
+    "screenshot-manifest": "seed-artifacts/target-house-1/evidence/phase-p1-p7-all/screenshot-manifest.json",
+    "semantic-checklist": "seed-artifacts/target-house-1/evidence/phase-p1-p7-all/semantic-checklist.json",
+    "source-feature-map": "seed-artifacts/target-house-1/evidence/phase-p1-p7-all/source-feature-map.json",
+    "tolerance-ledger": "seed-artifacts/target-house-1/evidence/phase-p1-p7-all/tolerance-ledger.json",
+    "visual-evidence-contract": "seed-artifacts/target-house-1/evidence/phase-p1-p7-all/visual-evidence-contract.json",
+    "visual-readout": "seed-artifacts/target-house-1/evidence/phase-p1-p7-all/visual-readout.md"
   },
-  "summary": {
-    "commandCount": 86,
-    "elementCount": 108,
-    "roomCount": 13,
-    "familyInstanceCount": 4,
-    "exportValidationOk": true,
-    "toleranceLedgerOk": true
-  }
+  "findingDispositions": {
+    "blocked": [],
+    "countsByDisposition": {},
+    "countsBySeverity": {},
+    "findingCount": 0,
+    "ok": true,
+    "unclassifiedBlocking": []
+  },
+  "generatedAtEpochMs": 1779220207702,
+  "gitHead": "f512daf3b4d90f0c537928983ab8adbfb3e2895c",
+  "methodologyFailures": [],
+  "missing": {},
+  "ok": true,
+  "pendingIssues": [],
+  "phase": "p1-p7-all",
+  "schemaVersion": "sketch-to-bim.phase-packet.v1",
+  "seed": "target-house-1",
+  "semanticFailures": []
 }

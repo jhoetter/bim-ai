@@ -1,0 +1,30 @@
+{
+  "findings": [],
+  "generatedAtEpochMs": 1779220207605,
+  "gitHead": "f512daf3b4d90f0c537928983ab8adbfb3e2895c",
+  "inputs": {
+    "bundle": "seed-artifacts/target-house-1/bundle.json",
+    "commandLog": null,
+    "constructabilityReport": "seed-artifacts/target-house-1/evidence/live-run-current/constructability-report.json",
+    "evidenceDir": "seed-artifacts/target-house-1/evidence/phase-p1-p7-all",
+    "phasePacket": "seed-artifacts/target-house-1/evidence/phase-p1-p7-all/phase-packet.json",
+    "recipe": "seed-artifacts/target-house-1/evidence/target-house-1.recipe.json"
+  },
+  "methodologyLoop": [
+    "Read each finding reason, recommendation, profile, and affected element ids.",
+    "Open the source command references before changing model state.",
+    "Edit recipe/bundle source, dry-run or phase-run the correction, then commit only after dry-run passes.",
+    "Recapture Advisor/constructability evidence and regenerate this packet before phase acceptance.",
+    "If a finding is tolerated or a rule defect, record owner, expiry, rationale, and evidence links in finding-dispositions/tolerance ledger."
+  ],
+  "phase": "p1-p7-all",
+  "schemaVersion": "sketch-to-bim.agent-loop-packet.v1",
+  "seed": "target-house-1",
+  "summary": {
+    "blockingFindingCount": 0,
+    "findingCount": 0,
+    "severityCounts": {},
+    "tracedFindingCount": 0,
+    "untracedFindingCount": 0
+  }
+}

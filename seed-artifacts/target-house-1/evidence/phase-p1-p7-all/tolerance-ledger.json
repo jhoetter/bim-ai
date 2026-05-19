@@ -1,0 +1,26 @@
+{
+  "schemaVersion": "sketch.tolerance-ledger.v1",
+  "generatedAt": "2026-05-19T19:28:21.005375Z",
+  "phaseId": null,
+  "modelId": "target-house-1-offline-regenerated",
+  "revision": 2,
+  "evidenceDir": "seed-artifacts/target-house-1/evidence/live-run-current",
+  "ok": true,
+  "summary": {
+    "findingCount": 0,
+    "toleranceCount": 0,
+    "blockingFindingCount": 0,
+    "incompleteToleranceCount": 0
+  },
+  "requiredFields": [
+    "severity",
+    "affectedFeatureIds",
+    "reason",
+    "owner",
+    "expiryCondition",
+    "evidenceLinks"
+  ],
+  "tolerances": [],
+  "blockingFindings": [],
+  "incompleteTolerances": []
+}

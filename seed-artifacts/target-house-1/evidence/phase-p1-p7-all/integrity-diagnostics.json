@@ -1,0 +1,11 @@
+{
+  "schemaVersion": "sketch-to-bim.integrity-diagnostics.v1",
+  "ok": true,
+  "source": "clean-pass-gate and acceptance-gates",
+  "summary": {
+    "p0ErrorCount": 0,
+    "bimIntegrityBlockingCount": 0,
+    "constructabilityWarningCount": 0
+  },
+  "diagnostics": []
+}

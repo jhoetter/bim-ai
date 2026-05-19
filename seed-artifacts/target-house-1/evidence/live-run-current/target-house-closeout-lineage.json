@@ -3,7 +3,7 @@
   "seed": "target-house-1",
   "generatedAt": "1970-01-01T00:00:00.000Z",
   "git": {
-    "currentHead": "ba06ccd1fd8d7903305b361b85853e375188103b",
+    "currentHead": "f512daf3b4d90f0c537928983ab8adbfb3e2895c",
     "evidenceHead": "ba06ccd1fd8d7903305b361b85853e375188103b",
     "dirtyCheckPolicy": "Report records source/evidence digests and git heads; concurrent dirty files are not normalized."
   },
@@ -25,12 +25,12 @@
     "spec/target-house/target-house-1-bim-information-requirements.md": "sha256:c32bc404b321d720fec7092b7877701279f02e1ccd336005b88e80ec4abae7dc",
     "spec/target-house/target-house-1-phase-plan.md": "sha256:a9f6b7d533e0434655c49d88a69299e90aeef9e120fb6f410b88fc007eba372a",
     "bundle": "sha256:2f2c1a220f13a1c07b0d0b1d08ab601d6c79b775ea8838f574060b5ce25d7f6c",
-    "snapshot": "sha256:d6657c17c5a85adcf052d004b923041eedf62ca33d6f4ffb9988017786aebf02",
+    "snapshot": "sha256:2ddcbc0bebe5a94124afbf417ae3dbf1e07bd9527ab056baea2e8f505697660c",
     "advisorRuleDigest": "sha256:4024259dec1c2e60c2df697ef7f22c7baa0fc6d1ec9e87e87d1312bf8db18fd9",
     "capabilities": "sha256:e3faa00d4724d5e375ee853d5e3d56b21254a969a84e702d67013a8bb0125dbb",
     "rendererSupportMatrix": "sha256:acf4cc7457a60f8f7e6b899d79e980335b4bd8382e98d54412a83077eb3c962d",
-    "finalManifest": "sha256:e9242467ee339c0c18d05924d18f261b269be7e38599a984247459442ee0b4b8",
-    "performanceEvidence": "sha256:61cb87c5b987fb939975ce20f0dfdd989ae155183eb5d1c4e7bce020ad9a6af7"
+    "finalManifest": "sha256:2ca47cc43b20fde30ee9585679c5727d49a69d552350c3b0da7b8cc5fd6221c1",
+    "performanceEvidence": "sha256:0b8e950aaabf4252f28a35014e3c2f192d82845babcaacbf2533c2f789ac81e4"
   },
   "evidenceFiles": [
     {
@@ -59,7 +59,7 @@
       "key": "snapshot",
       "path": "seed-artifacts/target-house-1/evidence/live-run-current/snapshot.json",
       "present": true,
-      "sha256": "sha256:d6657c17c5a85adcf052d004b923041eedf62ca33d6f4ffb9988017786aebf02",
+      "sha256": "sha256:2ddcbc0bebe5a94124afbf417ae3dbf1e07bd9527ab056baea2e8f505697660c",
       "schemaVersion": null,
       "status": "present",
       "summary": null
@@ -121,7 +121,7 @@
       "key": "constructability_report",
       "path": "seed-artifacts/target-house-1/evidence/live-run-current/constructability-report.json",
       "present": true,
-      "sha256": "sha256:f8b6be26b858e8bae9f66008714f4931ccb94cbe454427ea35956ad69905ec14",
+      "sha256": "sha256:6f42d8a2a384beb0706e5d0e9eb8bf5b0a74f11e5b70d192d4fce52d692fd5c0",
       "schemaVersion": "constructabilityReport_v1",
       "status": "pass",
       "summary": {
@@ -221,7 +221,7 @@
       "key": "clean_pass_gate",
       "path": "seed-artifacts/target-house-1/evidence/live-run-current/clean-pass-gate.json",
       "present": true,
-      "sha256": "sha256:de9330a1e5ae0ef966426b9555aa75cbd43fb552108690bc8ee6429f21df31fa",
+      "sha256": "sha256:4585cbd3926d2d3e6e798ad303d2fdb521f4290c5a227ff6dd67d90e486b9e51",
       "schemaVersion": "target-house.clean-pass-gate.v1",
       "status": "pass",
       "summary": {
@@ -286,7 +286,7 @@
     "performance": {
       "present": true,
       "ok": true,
-      "digestSha256": "61cb87c5b987fb939975ce20f0dfdd989ae155183eb5d1c4e7bce020ad9a6af7",
+      "digestSha256": "0b8e950aaabf4252f28a35014e3c2f192d82845babcaacbf2533c2f789ac81e4",
       "interactions": [
         {
           "interaction": "orbit",
@@ -296,7 +296,10 @@
           "budgetMs": 16.7,
           "budgetRatio": 0.75,
           "status": "within_budget",
-          "dominantFactors": ["rendered elements:44", "material overrides:9"]
+          "dominantFactors": [
+            "rendered elements:44",
+            "material overrides:9"
+          ]
         },
         {
           "interaction": "select",
@@ -306,7 +309,11 @@
           "budgetMs": 50,
           "budgetRatio": 0.18,
           "status": "within_budget",
-          "dominantFactors": ["pick candidates:157", "hosted openings:11", "selected elements:1"]
+          "dominantFactors": [
+            "pick candidates:157",
+            "hosted openings:11",
+            "selected elements:1"
+          ]
         },
         {
           "interaction": "lens-switch",
@@ -316,7 +323,10 @@
           "budgetMs": 100,
           "budgetRatio": 0.08,
           "status": "within_budget",
-          "dominantFactors": ["lens classifications:157", "material state changes:9"]
+          "dominantFactors": [
+            "lens classifications:157",
+            "material state changes:9"
+          ]
         },
         {
           "interaction": "advisor-open",
@@ -326,7 +336,10 @@
           "budgetMs": 80,
           "budgetRatio": 0.1,
           "status": "within_budget",
-          "dominantFactors": ["element references:157", "evidence views:11"]
+          "dominantFactors": [
+            "element references:157",
+            "evidence views:11"
+          ]
         }
       ],
       "maxBudgetRatio": 0.75,
@@ -342,18 +355,21 @@
     "finalPackageStatus": {
       "ready": false,
       "blockers": [
-        "live_responsiveness_missing",
+        "live_responsiveness_failed",
         "acceptance_rehearsal_gate",
         "tracker_not_done",
         "tracker_incomplete"
       ],
       "blockerDetails": [
         {
-          "code": "live_responsiveness_missing",
+          "code": "live_responsiveness_failed",
           "category": "performance",
-          "count": 1,
+          "count": 2,
           "path": "seed-artifacts/target-house-1/evidence/live-run-current/target-house-live-responsiveness.json",
-          "blockerCodes": ["live_responsiveness_missing"],
+          "blockerCodes": [
+            "live_responsiveness_failed",
+            "live_responsiveness_interactions_missing"
+          ],
           "missingInteractions": [
             "orbit",
             "select",
@@ -361,20 +377,44 @@
             "advisor-open",
             "advisor-close"
           ],
-          "failedInteractions": [],
-          "actionableChurnCount": null,
-          "liveBrowserProof": null
+          "failedInteractions": [
+            "orbit",
+            "select",
+            "lens-switch",
+            "advisor-open",
+            "advisor-close"
+          ],
+          "actionableChurnCount": 0,
+          "liveBrowserProof": {
+            "schemaVersion": "target-house-live-browser-proof.v1",
+            "ok": true,
+            "captureMode": "playwright-live-browser",
+            "capturedAtEpochMs": 1779219839821,
+            "browserEngine": "chromium",
+            "url": "http://127.0.0.1:2000",
+            "requiredHookIds": [
+              "appShell",
+              "orbitViewport",
+              "viewCube",
+              "inspector",
+              "advisorEntry"
+            ],
+            "missingHookIds": [],
+            "blockerCodes": []
+          }
         },
         {
           "code": "acceptance_rehearsal_gate",
           "category": "rehearsal",
           "count": 1,
-          "blockerCodes": ["live_responsiveness_missing"],
+          "blockerCodes": [
+            "live_responsiveness_failed"
+          ],
           "stages": [
             {
               "id": "live_responsiveness",
               "ok": false,
-              "blockerCode": "live_responsiveness_missing",
+              "blockerCode": "live_responsiveness_failed",
               "detail": "Archived live browser responsiveness evidence must cover orbit, select, lens switch, Advisor open/close, and WebSocket churn."
             }
           ]
@@ -397,13 +437,13 @@
         {
           "code": "tracker_incomplete",
           "category": "tracker",
-          "count": 82,
+          "count": 60,
           "total": 165,
-          "done": 83,
+          "done": 105,
           "byStatus": {
             "Blocked": 4,
-            "Done": 83,
-            "Partial": 78
+            "Done": 105,
+            "Partial": 56
           },
           "sampleIncompleteRows": [
             {
@@ -503,33 +543,33 @@
               "item": "Clarify constructability vs structural engineering."
             },
             {
-              "id": "BIR-H01",
-              "priority": "P0",
-              "status": "Partial",
-              "item": "Advisor findings must be actionable from UI."
-            },
-            {
-              "id": "BIR-H02",
-              "priority": "P0",
-              "status": "Partial",
-              "item": "Advisor findings must be actionable from CLI/MCP."
-            },
-            {
-              "id": "BIR-H04",
-              "priority": "P0",
-              "status": "Partial",
-              "item": "Add agent-friendly remediation loop."
-            },
-            {
-              "id": "BIR-H05",
+              "id": "BIR-I06",
               "priority": "P1",
               "status": "Partial",
-              "item": "Add findings-to-viewpoint bridge."
+              "item": "Add renderer diagnostic persistence."
+            },
+            {
+              "id": "BIR-J01",
+              "priority": "P0",
+              "status": "Partial",
+              "item": "Wall geometry and hosted wall cuts."
+            },
+            {
+              "id": "BIR-J02",
+              "priority": "P0",
+              "status": "Partial",
+              "item": "Roof geometry and roof openings."
+            },
+            {
+              "id": "BIR-J03",
+              "priority": "P0",
+              "status": "Partial",
+              "item": "Floor/slab geometry and openings."
             }
           ]
         }
       ],
-      "status": "blocked_live_responsiveness_missing"
+      "status": "blocked_live_responsiveness_failed"
     }
   },
   "features": [
@@ -544,9 +584,18 @@
         "floor:plinth",
         "volume:upper-wrapper"
       ],
-      "requiredViews": ["main_front_left", "front_elevation", "rear_right_axon"],
-      "evidenceTypes": ["screenshot", "advisor_payload"],
-      "sourceRefs": ["spec/target-house/target-house-1-sketch-ir.draft.json#features"],
+      "requiredViews": [
+        "main_front_left",
+        "front_elevation",
+        "rear_right_axon"
+      ],
+      "evidenceTypes": [
+        "screenshot",
+        "advisor_payload"
+      ],
+      "sourceRefs": [
+        "spec/target-house/target-house-1-sketch-ir.draft.json#features"
+      ],
       "status": "evidence_linked",
       "semanticVisualFailureCount": 0
     },
@@ -560,9 +609,19 @@
         "wall:upper-white-shell",
         "roof:white-folded-shell"
       ],
-      "requiredViews": ["main_front_left", "rear_right_axon", "wire_diagnostic"],
-      "evidenceTypes": ["screenshot", "advisor_payload", "wire_diagnostic"],
-      "sourceRefs": ["spec/target-house/target-house-1-sketch-ir.draft.json#features"],
+      "requiredViews": [
+        "main_front_left",
+        "rear_right_axon",
+        "wire_diagnostic"
+      ],
+      "evidenceTypes": [
+        "screenshot",
+        "advisor_payload",
+        "wire_diagnostic"
+      ],
+      "sourceRefs": [
+        "spec/target-house/target-house-1-sketch-ir.draft.json#features"
+      ],
       "status": "evidence_linked",
       "semanticVisualFailureCount": 0
     },
@@ -580,9 +639,19 @@
         "window:roof-court-glazing",
         "room:room_l1_roof_court"
       ],
-      "requiredViews": ["main_front_left", "roof_high", "rear_right_axon"],
-      "evidenceTypes": ["screenshot", "advisor_payload", "constructability_report"],
-      "sourceRefs": ["spec/target-house/target-house-1-sketch-ir.draft.json#features"],
+      "requiredViews": [
+        "main_front_left",
+        "roof_high",
+        "rear_right_axon"
+      ],
+      "evidenceTypes": [
+        "screenshot",
+        "advisor_payload",
+        "constructability_report"
+      ],
+      "sourceRefs": [
+        "spec/target-house/target-house-1-sketch-ir.draft.json#features"
+      ],
       "status": "evidence_linked",
       "semanticVisualFailureCount": 0
     },
@@ -599,9 +668,20 @@
         "window:three-bay-loggia-glazing",
         "door:loggia-access"
       ],
-      "requiredViews": ["main_front_left", "front_elevation", "front_loggia", "first_floor_plan"],
-      "evidenceTypes": ["screenshot", "advisor_payload", "constructability_report"],
-      "sourceRefs": ["spec/target-house/target-house-1-sketch-ir.draft.json#features"],
+      "requiredViews": [
+        "main_front_left",
+        "front_elevation",
+        "front_loggia",
+        "first_floor_plan"
+      ],
+      "evidenceTypes": [
+        "screenshot",
+        "advisor_payload",
+        "constructability_report"
+      ],
+      "sourceRefs": [
+        "spec/target-house/target-house-1-sketch-ir.draft.json#features"
+      ],
       "status": "evidence_linked",
       "semanticVisualFailureCount": 0
     },
@@ -615,9 +695,18 @@
         "wall:gable-profile",
         "roof:asymmetric-envelope"
       ],
-      "requiredViews": ["main_front_left", "front_elevation", "rear_right_axon"],
-      "evidenceTypes": ["screenshot", "advisor_payload"],
-      "sourceRefs": ["spec/target-house/target-house-1-sketch-ir.draft.json#features"],
+      "requiredViews": [
+        "main_front_left",
+        "front_elevation",
+        "rear_right_axon"
+      ],
+      "evidenceTypes": [
+        "screenshot",
+        "advisor_payload"
+      ],
+      "sourceRefs": [
+        "spec/target-house/target-house-1-sketch-ir.draft.json#features"
+      ],
       "status": "evidence_linked",
       "semanticVisualFailureCount": 0
     },
@@ -631,9 +720,19 @@
         "wall:ground-clad-base",
         "cladding:vertical-board-batten"
       ],
-      "requiredViews": ["main_front_left", "front_elevation", "rear_right_axon"],
-      "evidenceTypes": ["screenshot", "advisor_payload", "constructability_report"],
-      "sourceRefs": ["spec/target-house/target-house-1-sketch-ir.draft.json#features"],
+      "requiredViews": [
+        "main_front_left",
+        "front_elevation",
+        "rear_right_axon"
+      ],
+      "evidenceTypes": [
+        "screenshot",
+        "advisor_payload",
+        "constructability_report"
+      ],
+      "sourceRefs": [
+        "spec/target-house/target-house-1-sketch-ir.draft.json#features"
+      ],
       "status": "evidence_linked",
       "semanticVisualFailureCount": 0
     },
@@ -648,9 +747,19 @@
         "window:*",
         "opening:hosted-facade-bay"
       ],
-      "requiredViews": ["main_front_left", "front_elevation", "ground_floor_plan"],
-      "evidenceTypes": ["screenshot", "advisor_payload", "constructability_report"],
-      "sourceRefs": ["spec/target-house/target-house-1-sketch-ir.draft.json#features"],
+      "requiredViews": [
+        "main_front_left",
+        "front_elevation",
+        "ground_floor_plan"
+      ],
+      "evidenceTypes": [
+        "screenshot",
+        "advisor_payload",
+        "constructability_report"
+      ],
+      "sourceRefs": [
+        "spec/target-house/target-house-1-sketch-ir.draft.json#features"
+      ],
       "status": "evidence_linked",
       "semanticVisualFailureCount": 0
     },
@@ -679,7 +788,11 @@
         "room:room_l1_deep_loggia",
         "room:room_l1_roof_court"
       ],
-      "requiredViews": ["ground_floor_plan", "first_floor_plan", "wire_diagnostic"],
+      "requiredViews": [
+        "ground_floor_plan",
+        "first_floor_plan",
+        "wire_diagnostic"
+      ],
       "evidenceTypes": [
         "screenshot",
         "advisor_payload",
@@ -687,7 +800,9 @@
         "schedule",
         "constructability_report"
       ],
-      "sourceRefs": ["spec/target-house/target-house-1-sketch-ir.draft.json#features"],
+      "sourceRefs": [
+        "spec/target-house/target-house-1-sketch-ir.draft.json#features"
+      ],
       "status": "evidence_linked",
       "semanticVisualFailureCount": 0
     },
@@ -701,9 +816,16 @@
         "site:project-north-assumption",
         "floor:plinth"
       ],
-      "requiredViews": ["main_front_left"],
-      "evidenceTypes": ["screenshot", "advisor_payload"],
-      "sourceRefs": ["spec/target-house/target-house-1-sketch-ir.draft.json#features"],
+      "requiredViews": [
+        "main_front_left"
+      ],
+      "evidenceTypes": [
+        "screenshot",
+        "advisor_payload"
+      ],
+      "sourceRefs": [
+        "spec/target-house/target-house-1-sketch-ir.draft.json#features"
+      ],
       "status": "evidence_linked",
       "semanticVisualFailureCount": 0
     },
@@ -738,7 +860,9 @@
         "provenance_manifest",
         "tolerance_ledger"
       ],
-      "sourceRefs": ["spec/target-house/target-house-1-sketch-ir.draft.json#features"],
+      "sourceRefs": [
+        "spec/target-house/target-house-1-sketch-ir.draft.json#features"
+      ],
       "status": "evidence_linked",
       "semanticVisualFailureCount": 0
     }
@@ -821,7 +945,8 @@
     "schemaVersion": "target-house-feature-coverage-dashboard.v1",
     "requiredFeatureCount": 10,
     "explicitElementCoverageCount": 0,
-    "semanticSelectorCoverageCount": 10,
+    "resolvedElementCoverageCount": 6,
+    "semanticSelectorCoverageCount": 4,
     "missingElementCoverageCount": 0,
     "openFindingCount": 0,
     "rendererSupportMatrixDigest": "sha256:acf4cc7457a60f8f7e6b899d79e980335b4bd8382e98d54412a83077eb3c962d",
@@ -834,6 +959,15 @@
         "priority": "critical",
         "phaseId": "P1",
         "requiredElementIds": [],
+        "resolvedElementIds": [
+          "hf-upper-wrapper-shell-wall-01",
+          "hf-upper-wrapper-shell-wall-01-right",
+          "hf-upper-wrapper-shell-wall-02",
+          "hf-upper-wrapper-shell-wall-03",
+          "hf-upper-wrapper-shell-wall-04",
+          "upper-wrapper-floor",
+          "upper-wrapper-front-fascia"
+        ],
         "semanticSelectors": [
           "feature:primary_massing_envelope",
           "kind:basic_massing_envelope",
@@ -841,7 +975,8 @@
           "floor:plinth",
           "volume:upper-wrapper"
         ],
-        "elementCoverageStatus": "semantic_selectors_only",
+        "elementCoverageStatus": "resolved_elements",
+        "sourceFeatureMapStatus": "mapped",
         "openFindingCount": 0,
         "rendererSupport": {
           "matrixDigest": "sha256:acf4cc7457a60f8f7e6b899d79e980335b4bd8382e98d54412a83077eb3c962d",
@@ -862,6 +997,7 @@
         "priority": "critical",
         "phaseId": "P2",
         "requiredElementIds": [],
+        "resolvedElementIds": [],
         "semanticSelectors": [
           "feature:folded_white_wrapper_shell",
           "kind:folded_white_wrapper_shell",
@@ -869,6 +1005,7 @@
           "roof:white-folded-shell"
         ],
         "elementCoverageStatus": "semantic_selectors_only",
+        "sourceFeatureMapStatus": "mapped",
         "openFindingCount": 0,
         "rendererSupport": {
           "matrixDigest": "sha256:acf4cc7457a60f8f7e6b899d79e980335b4bd8382e98d54412a83077eb3c962d",
@@ -889,6 +1026,10 @@
         "priority": "critical",
         "phaseId": "P3",
         "requiredElementIds": [],
+        "resolvedElementIds": [
+          "hf-roof-court-floor",
+          "room_l1_roof_court"
+        ],
         "semanticSelectors": [
           "feature:roof_terrace_cutout",
           "kind:roof_opening_with_occupied_terrace",
@@ -899,7 +1040,8 @@
           "window:roof-court-glazing",
           "room:room_l1_roof_court"
         ],
-        "elementCoverageStatus": "semantic_selectors_only",
+        "elementCoverageStatus": "resolved_elements",
+        "sourceFeatureMapStatus": "mapped",
         "openFindingCount": 0,
         "rendererSupport": {
           "matrixDigest": "sha256:acf4cc7457a60f8f7e6b899d79e980335b4bd8382e98d54412a83077eb3c962d",
@@ -920,6 +1062,10 @@
         "priority": "critical",
         "phaseId": "P4",
         "requiredElementIds": [],
+        "resolvedElementIds": [
+          "front-loggia-recessed-glass",
+          "room_l1_deep_loggia"
+        ],
         "semanticSelectors": [
           "feature:front_deep_loggia",
           "kind:recessed_loggia",
@@ -929,7 +1075,8 @@
           "window:three-bay-loggia-glazing",
           "door:loggia-access"
         ],
-        "elementCoverageStatus": "semantic_selectors_only",
+        "elementCoverageStatus": "resolved_elements",
+        "sourceFeatureMapStatus": "mapped",
         "openFindingCount": 0,
         "rendererSupport": {
           "matrixDigest": "sha256:acf4cc7457a60f8f7e6b899d79e980335b4bd8382e98d54412a83077eb3c962d",
@@ -950,6 +1097,7 @@
         "priority": "critical",
         "phaseId": "P2",
         "requiredElementIds": [],
+        "resolvedElementIds": [],
         "semanticSelectors": [
           "feature:asymmetric_gable_envelope",
           "kind:roof_attached_wall_profile",
@@ -957,6 +1105,7 @@
           "roof:asymmetric-envelope"
         ],
         "elementCoverageStatus": "semantic_selectors_only",
+        "sourceFeatureMapStatus": "mapped",
         "openFindingCount": 0,
         "rendererSupport": {
           "matrixDigest": "sha256:acf4cc7457a60f8f7e6b899d79e980335b4bd8382e98d54412a83077eb3c962d",
@@ -977,6 +1126,7 @@
         "priority": "high",
         "phaseId": "P4",
         "requiredElementIds": [],
+        "resolvedElementIds": [],
         "semanticSelectors": [
           "feature:vertical_cladding_zones",
           "kind:vertical_cladding",
@@ -984,6 +1134,7 @@
           "cladding:vertical-board-batten"
         ],
         "elementCoverageStatus": "semantic_selectors_only",
+        "sourceFeatureMapStatus": "mapped",
         "openFindingCount": 0,
         "rendererSupport": {
           "matrixDigest": "sha256:acf4cc7457a60f8f7e6b899d79e980335b4bd8382e98d54412a83077eb3c962d",
@@ -1004,6 +1155,18 @@
         "priority": "high",
         "phaseId": "P4",
         "requiredElementIds": [],
+        "resolvedElementIds": [
+          "entry-door",
+          "front-loggia-center-door",
+          "front-loggia-left-center-window",
+          "front-loggia-left-window",
+          "front-loggia-right-center-window",
+          "front-loggia-right-window",
+          "hf-roof-court-door",
+          "target-house-door-gf-bath-laundry",
+          "target-house-door-hall-exterior",
+          "target-house-door-utility"
+        ],
         "semanticSelectors": [
           "feature:opening_and_glazing_rhythm",
           "kind:facade_bay_rhythm",
@@ -1011,7 +1174,8 @@
           "window:*",
           "opening:hosted-facade-bay"
         ],
-        "elementCoverageStatus": "semantic_selectors_only",
+        "elementCoverageStatus": "resolved_elements",
+        "sourceFeatureMapStatus": "mapped",
         "openFindingCount": 0,
         "rendererSupport": {
           "matrixDigest": "sha256:acf4cc7457a60f8f7e6b899d79e980335b4bd8382e98d54412a83077eb3c962d",
@@ -1032,6 +1196,23 @@
         "priority": "critical",
         "phaseId": "P5",
         "requiredElementIds": [],
+        "resolvedElementIds": [
+          "main-stair",
+          "main-stair-upper-opening",
+          "room_gf_bath_laundry",
+          "room_gf_carport",
+          "room_gf_entry",
+          "room_gf_kitchen_dining",
+          "room_gf_living",
+          "room_gf_utility",
+          "room_l1_bedroom_2",
+          "room_l1_deep_loggia",
+          "room_l1_ensuite",
+          "room_l1_hall_landing",
+          "room_l1_primary_bedroom",
+          "room_l1_roof_court",
+          "room_l1_walk_in_closet"
+        ],
         "semanticSelectors": [
           "feature:room_access_and_enclosure",
           "kind:room_access_and_enclosure",
@@ -1053,7 +1234,8 @@
           "room:room_l1_deep_loggia",
           "room:room_l1_roof_court"
         ],
-        "elementCoverageStatus": "semantic_selectors_only",
+        "elementCoverageStatus": "resolved_elements",
+        "sourceFeatureMapStatus": "mapped",
         "openFindingCount": 0,
         "rendererSupport": {
           "matrixDigest": "sha256:acf4cc7457a60f8f7e6b899d79e980335b4bd8382e98d54412a83077eb3c962d",
@@ -1074,6 +1256,7 @@
         "priority": "medium",
         "phaseId": "P0",
         "requiredElementIds": [],
+        "resolvedElementIds": [],
         "semanticSelectors": [
           "feature:site_orientation_and_plinth",
           "kind:site_orientation",
@@ -1081,6 +1264,7 @@
           "floor:plinth"
         ],
         "elementCoverageStatus": "semantic_selectors_only",
+        "sourceFeatureMapStatus": "mapped",
         "openFindingCount": 0,
         "rendererSupport": {
           "matrixDigest": "sha256:acf4cc7457a60f8f7e6b899d79e980335b4bd8382e98d54412a83077eb3c962d",
@@ -1101,6 +1285,24 @@
         "priority": "high",
         "phaseId": "P7",
         "requiredElementIds": [],
+        "resolvedElementIds": [
+          "elev-front",
+          "first_floor_plan",
+          "front_elevation",
+          "front_loggia",
+          "ground_floor_plan",
+          "hf-first-floor-plan",
+          "hf-ground-floor-plan",
+          "main_front_left",
+          "opening-schedule",
+          "rear_right_axon",
+          "roof_high",
+          "room-schedule",
+          "room-schedule-view",
+          "sec-stair",
+          "sheet-a101",
+          "wire_diagnostic"
+        ],
         "semanticSelectors": [
           "feature:documentation_evidence_set",
           "kind:documentation_views",
@@ -1109,7 +1311,8 @@
           "export:*",
           "evidence:*"
         ],
-        "elementCoverageStatus": "semantic_selectors_only",
+        "elementCoverageStatus": "resolved_elements",
+        "sourceFeatureMapStatus": "mapped",
         "openFindingCount": 0,
         "rendererSupport": {
           "matrixDigest": "sha256:acf4cc7457a60f8f7e6b899d79e980335b4bd8382e98d54412a83077eb3c962d",
@@ -1133,7 +1336,7 @@
       "summary": "Final package manifest reports this blocker."
     },
     {
-      "code": "live_responsiveness_missing",
+      "code": "live_responsiveness_failed",
       "summary": "Final package manifest reports this blocker."
     },
     {
@@ -1146,5 +1349,5 @@
     }
   ],
   "ready": false,
-  "lineageDigestSha256": "9312640775e8967f3aa438b423e4da4c040823bb45ba3cfa274dbf2fdb2a11f6"
+  "lineageDigestSha256": "23c30097a013087b2d89eeaf7ced4bb5bac909531ad30ccde35829c2ebfe853e"
 }

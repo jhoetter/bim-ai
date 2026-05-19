@@ -94,8 +94,15 @@ test('target-house final package manifest ties head, source, evidence, tracker, 
   assert.equal(manifest.tracker.generatedStatusIncludesTargetHouseSection, true);
   assert.equal(manifest.tracker.generatedStatusDigestSha256.length, 64);
   assert.equal(typeof manifest.acceptanceGates.ok, 'boolean');
-  assert.equal(manifest.liveResponsiveness.present, false);
-  assert.equal(manifest.status.blockers.includes('live_responsiveness_missing'), true);
+  assert.equal(manifest.methodologyGate.ok, true);
+  assert.ok(manifest.methodologyGate.sourceFeatureMap.resolvedElementCoverageCount > 0);
+  assert.equal(
+    manifest.rehearsalGate.stages.some((stage) => stage.id === 'methodology_phase_packet'),
+    true,
+  );
+  assert.equal(manifest.liveResponsiveness.present, true);
+  assert.equal(manifest.liveResponsiveness.ok, false);
+  assert.equal(manifest.status.blockers.includes('live_responsiveness_failed'), true);
   assert.equal(manifest.rehearsalGate.ok, false);
   assert.equal(manifest.status.blockers.includes('acceptance_rehearsal_gate'), true);
   assert.equal(manifest.status.blockers.includes('tracker_incomplete'), true);

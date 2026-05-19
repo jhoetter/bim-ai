@@ -1,0 +1,115 @@
+{
+  "schemaVersion": "sketch.visual-evidence-contract.v1",
+  "generatedAt": "2026-05-19T19:28:21.005027Z",
+  "browserAutomationRequired": false,
+  "note": "Offline refresh regenerated snapshot, validation, Advisor, constructability, model stats, exchange, and visual contract evidence from bundle.json. Screenshots are preserved from the latest browser evidence capture.",
+  "inputs": {
+    "modelId": "target-house-1-offline-regenerated",
+    "revision": 2,
+    "requiredViews": [
+      {
+        "id": "main_front_left",
+        "kind": "3d",
+        "purpose": "Primary sketch-matched view proving white folded wrapper, front loggia, cantilever, vertical cladding, and roof terrace cutout.",
+        "featureIds": [],
+        "viewpointId": "main_front_left",
+        "savedViewpointPresent": true,
+        "camera": null,
+        "requiredOutput": "screenshots/main_front_left.png"
+      },
+      {
+        "id": "roof_high",
+        "kind": "3d",
+        "purpose": "High right/roof view proving the roof terrace is a real open void with occupied floor and return faces.",
+        "featureIds": [],
+        "viewpointId": "roof_high",
+        "savedViewpointPresent": true,
+        "camera": null,
+        "requiredOutput": "screenshots/roof_high.png"
+      },
+      {
+        "id": "front_elevation",
+        "kind": "elevation",
+        "purpose": "Front view proving the three-bay upper loggia, rail, ground openings, and vertical cladding.",
+        "featureIds": [],
+        "viewpointId": "front_elevation",
+        "savedViewpointPresent": true,
+        "camera": null,
+        "requiredOutput": "screenshots/front_elevation.png"
+      },
+      {
+        "id": "front_loggia",
+        "kind": "3d",
+        "purpose": "Close oblique/detail view proving the recessed loggia depth, side returns, three-bay glazing, floor slab, and guard rail.",
+        "featureIds": [],
+        "viewpointId": "front_loggia",
+        "savedViewpointPresent": true,
+        "camera": null,
+        "requiredOutput": "screenshots/front_loggia.png"
+      },
+      {
+        "id": "rear_right_axon",
+        "kind": "3d",
+        "purpose": "Rear/right view proving the cutout, shell thickness, carport recess, and side envelope.",
+        "featureIds": [],
+        "viewpointId": "rear_right_axon",
+        "savedViewpointPresent": true,
+        "camera": null,
+        "requiredOutput": "screenshots/rear_right_axon.png"
+      },
+      {
+        "id": "ground_floor_plan",
+        "kind": "plan",
+        "purpose": "Ground-floor room, door, stair, wet-room, utility, and carport sanity check.",
+        "featureIds": [],
+        "viewpointId": "ground_floor_plan",
+        "savedViewpointPresent": true,
+        "camera": null,
+        "requiredOutput": "screenshots/ground_floor_plan.png"
+      },
+      {
+        "id": "first_floor_plan",
+        "kind": "plan",
+        "purpose": "First-floor rooms, landing, loggia, roof court, stair opening, and access sanity check.",
+        "featureIds": [],
+        "viewpointId": "first_floor_plan",
+        "savedViewpointPresent": true,
+        "camera": null,
+        "requiredOutput": "screenshots/first_floor_plan.png"
+      },
+      {
+        "id": "wire_diagnostic",
+        "kind": "diagnostic",
+        "purpose": "Transparent/wire evidence for roof-wall seams, slab openings, room boundaries, and hidden overlaps.",
+        "featureIds": [],
+        "viewpointId": "wire_diagnostic",
+        "savedViewpointPresent": true,
+        "camera": null,
+        "requiredOutput": "screenshots/wire_diagnostic.png"
+      }
+    ]
+  },
+  "outputs": {
+    "screenshotsDirectory": "seed-artifacts/target-house-1/evidence/live-run-current/screenshots",
+    "screenshotManifest": "seed-artifacts/target-house-1/evidence/live-run-current/screenshot-manifest.json",
+    "visualGateReport": "seed-artifacts/target-house-1/evidence/live-run-current/visual-gate.json",
+    "semanticChecklist": "seed-artifacts/target-house-1/evidence/live-run-current/semantic-checklist.json"
+  },
+  "captureMethods": [
+    {
+      "id": "browser_automation",
+      "role": "ui-equivalent screenshot capture",
+      "requiredForCoreValidation": false
+    },
+    {
+      "id": "offline_snapshot_refresh",
+      "role": "deterministic model/advisor evidence refresh from seed bundle",
+      "requiredForCoreValidation": true
+    }
+  ],
+  "validation": {
+    "nonBlankImageRequired": true,
+    "semanticChecklistRequired": true,
+    "staleModelRevisionMustMatchManifest": true
+  }
+}

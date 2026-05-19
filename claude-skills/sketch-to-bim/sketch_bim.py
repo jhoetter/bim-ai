@@ -471,6 +471,82 @@ def command_refs_for_elements(
     return refs
 
 
+def normalize_selector_token(value: Any) -> str:
+    return re.sub(r"[^a-z0-9]+", "", str(value or "").lower())
+
+
+def snapshot_elements_for_seed(seed: str | None) -> list[dict[str, Any]]:
+    if not seed:
+        return []
+    snapshot = ROOT / "seed-artifacts" / seed / "evidence" / "live-run-current" / "snapshot.json"
+    if not snapshot.is_file():
+        return []
+    payload = read_json(snapshot)
+    elements = payload.get("elements") if isinstance(payload, dict) else []
+    if isinstance(elements, dict):
+        values = elements.values()
+    elif isinstance(elements, list):
+        values = elements
+    else:
+        values = []
+    return [element for element in values if isinstance(element, dict) and element.get("id")]
+
+
+def selector_kind_candidates(kind: str) -> set[str]:
+    aliases = {
+        "opening": {"wall_opening", "roof_opening", "slab_opening", "door", "window"},
+        "view": {"view", "viewpoint", "plan_view", "elevation_view", "section_view", "section_cut"},
+        "export": {"sheet", "schedule", "viewpoint", "plan_view", "elevation_view", "section_cut"},
+        "evidence": {"viewpoint", "plan_view", "elevation_view", "section_cut", "sheet", "schedule"},
+        "cladding": {"wall", "sweep", "material", "material_def"},
+        "volume": {"wall", "floor", "roof", "mass", "sweep"},
+        "feature": set(),
+        "kind": set(),
+    }
+    return aliases.get(kind, {kind})
+
+
+def selector_matches_element(selector: str, element: dict[str, Any]) -> bool:
+    if ":" not in selector:
+        token = normalize_selector_token(selector)
+        haystack = normalize_selector_token(
+            " ".join(str(element.get(key) or "") for key in ("id", "name", "kind", "typeId"))
+        )
+        return bool(token and token in haystack)
+    prefix, raw_value = selector.split(":", 1)
+    prefix = prefix.strip().lower()
+    value = raw_value.strip().lower()
+    kinds = selector_kind_candidates(prefix)
+    if kinds and str(element.get("kind") or "").lower() not in kinds:
+        return False
+    if value in {"", "*"}:
+        return bool(kinds)
+    selector_token = normalize_selector_token(value)
+    if not selector_token:
+        return False
+    haystack = normalize_selector_token(
+        " ".join(
+            str(element.get(key) or "")
+            for key in ("id", "name", "kind", "typeId", "levelId", "hostId", "roomId")
+        )
+    )
+    return selector_token in haystack
+
+
+def resolve_feature_element_ids(feature: dict[str, Any], elements: list[dict[str, Any]]) -> list[str]:
+    explicit = as_str_list(
+        feature.get("requiredElementIds") or feature.get("elementIds") or feature.get("bimElementIds")
+    )
+    if explicit:
+        return sorted(set(explicit))
+    resolved: set[str] = set()
+    for selector in as_str_list(feature.get("semanticSelectors")):
+        for element in elements:
+            if selector_matches_element(selector, element):
+                resolved.add(str(element["id"]))
+    return sorted(resolved)
+
+
 def command_log_refs(path: Path | None, element_ids: list[str]) -> list[dict[str, Any]]:
     if not path or not path.is_file():
         return []
@@ -701,13 +777,27 @@ def phase_matches_feature(feature: dict[str, Any], phase: str | None) -> bool:
     if not phase:
         return True
     wanted = str(phase).lower().replace("phase-", "")
+    if wanted in {"all", "p-all", "p1-p7-all", "p1-p8-all"}:
+        return True
     values = [
         feature.get("phase"),
         feature.get("phaseId"),
         feature.get("phaseName"),
         feature.get("phaseGroup"),
     ]
-    return any(str(value).lower().replace("phase-", "") == wanted for value in values if value)
+    normalized_values = [str(value).lower().replace("phase-", "") for value in values if value]
+    if wanted in normalized_values:
+        return True
+    range_match = re.fullmatch(r"p?(\d+)-p?(\d+)(?:-all)?", wanted)
+    if range_match:
+        start, end = (int(range_match.group(1)), int(range_match.group(2)))
+        if start > end:
+            start, end = end, start
+        for value in normalized_values:
+            value_match = re.fullmatch(r"p?(\d+)", value)
+            if value_match and start <= int(value_match.group(1)) <= end:
+                return True
+    return False
 
 
 def normalize_assumption(row: Any, *, source: str, index: int, phase: str | None) -> dict[str, Any]:
@@ -722,6 +812,8 @@ def normalize_assumption(row: Any, *, source: str, index: int, phase: str | None
         or row.get("sketchRef")
         or row.get("sketchRefs")
     )
+    if not source_refs and source and source != "bundle":
+        source_refs = [source]
     feature_refs = as_str_list(
         row.get("featureIds")
         or row.get("featureId")
@@ -735,13 +827,20 @@ def normalize_assumption(row: Any, *, source: str, index: int, phase: str | None
         "source": source,
         "sourceIndex": index,
         "phase": row.get("phase") or row.get("phaseId") or phase,
-        "text": row.get("assumption") or row.get("text") or row.get("description") or "",
+        "text": (
+            row.get("assumption")
+            or row.get("text")
+            or row.get("description")
+            or row.get("statement")
+            or row.get("value")
+            or ""
+        ),
         "confidence": row.get("confidence"),
         "contestable": bool(row.get("contestable", True)),
         "sourceRefs": source_refs,
         "featureRefs": feature_refs,
         "status": status,
-        "resolution": row.get("resolution") or row.get("rationale") or "",
+        "resolution": row.get("resolution") or row.get("rationale") or row.get("validation") or "",
         "raw": row,
     }
 
@@ -1304,6 +1403,7 @@ def cmd_source_feature_map(args: argparse.Namespace) -> None:
 
     features_payload = read_json(features_path)
     bundle_commands = load_commands(bundle_path)
+    snapshot_elements = snapshot_elements_for_seed(args.seed)
     rows = []
     missing = []
     for feature in feature_rows_from_payload(features_payload):
@@ -1315,10 +1415,12 @@ def cmd_source_feature_map(args: argparse.Namespace) -> None:
             or feature.get("elementIds")
             or feature.get("bimElementIds")
         )
+        resolved_element_ids = resolve_feature_element_ids(feature, snapshot_elements)
+        command_element_ids = sorted(set([*element_ids, *resolved_element_ids]))
         source_refs = as_str_list(feature.get("sourceRefs") or feature.get("sourceReferences"))
         command_refs = command_refs_for_elements(
             bundle_commands,
-            element_ids,
+            command_element_ids,
             source="bundle",
             path=bundle_path,
         )
@@ -1339,6 +1441,7 @@ def cmd_source_feature_map(args: argparse.Namespace) -> None:
             "priority": feature.get("priority"),
             "sourceRefs": source_refs,
             "requiredElementIds": element_ids,
+            "resolvedElementIds": resolved_element_ids,
             "semanticSelectors": as_str_list(feature.get("semanticSelectors")),
             "requiredViewIds": as_str_list(feature.get("requiredViewIds")),
             "commandRefs": command_refs,
@@ -1370,6 +1473,7 @@ def cmd_source_feature_map(args: argparse.Namespace) -> None:
             "featureCount": len(rows),
             "mappedFeatureCount": sum(1 for row in rows if row["status"] == "mapped"),
             "incompleteFeatureCount": len(missing),
+            "resolvedElementCoverageCount": sum(1 for row in rows if row["resolvedElementIds"]),
         },
         "ok": bool(rows) and not missing,
         "features": rows,

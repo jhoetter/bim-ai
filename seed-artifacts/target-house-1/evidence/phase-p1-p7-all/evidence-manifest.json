@@ -1,0 +1,17 @@
+{
+  "schemaVersion": "sketch-to-bim.phase-evidence-manifest.v1",
+  "ok": true,
+  "seed": "target-house-1",
+  "phase": "p1-p7-all",
+  "currentHead": {
+    "gitHead": "f512daf3b4d90f0c537928983ab8adbfb3e2895c",
+    "modelRevision": 2,
+    "advisorRuleDigest": "4024259dec1c2e60c2df697ef7f22c7baa0fc6d1ec9e87e87d1312bf8db18fd9",
+    "irSha256": "34757eba0ab4784e91a66232205294ac7cf1c7504bc3701c42b76ed3ffb7bf8e",
+    "capabilitiesSha256": "e3faa00d4724d5e375ee853d5e3d56b21254a969a84e702d67013a8bb0125dbb"
+  },
+  "sourceArtifacts": {
+    "toolRunSummary": "seed-artifacts/target-house-1/evidence/live-run-current/tool-run-summary.json",
+    "finalEvidenceRoot": "seed-artifacts/target-house-1/evidence/live-run-current"
+  }
+}

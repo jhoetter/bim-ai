@@ -847,6 +847,76 @@ function evidenceFreshnessSummary(payload, evidencePath) {
   };
 }
 
+async function methodologyPhaseGateSummary(phaseDir) {
+  const phasePacketPath = path.join(phaseDir, 'phase-packet.json');
+  const assumptionLedgerPath = path.join(phaseDir, 'assumption-ledger.json');
+  const sourceFeatureMapPath = path.join(phaseDir, 'source-feature-map.json');
+  const agentLoopPacketPath = path.join(phaseDir, 'agent-loop-packet.json');
+  const rendererDiagnosticsPath = path.join(phaseDir, 'renderer-diagnostics.json');
+  const integrityDiagnosticsPath = path.join(phaseDir, 'integrity-diagnostics.json');
+  const semanticChecklistPath = path.join(phaseDir, 'semantic-checklist.json');
+  const required = [
+    phasePacketPath,
+    assumptionLedgerPath,
+    sourceFeatureMapPath,
+    agentLoopPacketPath,
+    rendererDiagnosticsPath,
+    integrityDiagnosticsPath,
+    semanticChecklistPath,
+  ];
+  const missing = [];
+  for (const file of required) {
+    if (!(await exists(file))) missing.push(portable(file));
+  }
+  const phasePacket = await readJsonIfExists(phasePacketPath);
+  const assumptions = await readJsonIfExists(assumptionLedgerPath);
+  const sourceFeatureMap = await readJsonIfExists(sourceFeatureMapPath);
+  const agentLoopPacket = await readJsonIfExists(agentLoopPacketPath);
+  const rendererDiagnostics = await readJsonIfExists(rendererDiagnosticsPath);
+  const integrityDiagnostics = await readJsonIfExists(integrityDiagnosticsPath);
+  const semanticChecklist = await readJsonIfExists(semanticChecklistPath);
+  const failed = [];
+  for (const [code, payload] of [
+    ['phase_packet_failed', phasePacket],
+    ['assumption_ledger_failed', assumptions],
+    ['source_feature_map_failed', sourceFeatureMap],
+    ['renderer_diagnostics_failed', rendererDiagnostics],
+    ['integrity_diagnostics_failed', integrityDiagnostics],
+  ]) {
+    if (payload && payload.ok !== true) failed.push(code);
+  }
+  const semanticFailures = (semanticChecklist?.checks ?? []).filter(
+    (row) => !['pass', 'accepted_tolerance'].includes(String(row?.verdict ?? 'pending')),
+  );
+  if (semanticFailures.length > 0) failed.push('semantic_checklist_failed');
+  const blockers = [...missing.map(() => 'methodology_artifact_missing'), ...failed];
+  return {
+    schemaVersion: 'target-house-methodology-phase-gate.v1',
+    ok: blockers.length === 0,
+    phaseDir: portable(phaseDir),
+    missing,
+    blockers: uniqueSorted(blockers),
+    phasePacket: phasePacket
+      ? {
+          ok: phasePacket.ok === true,
+          methodologyFailureCount: arraySize(phasePacket.methodologyFailures),
+          advisorWarningTotal: Number(phasePacket.advisorWarningTotal ?? 0),
+          advisorErrorTotal: Number(phasePacket.advisorErrorTotal ?? 0),
+          semanticFailureCount: arraySize(phasePacket.semanticFailures),
+        }
+      : null,
+    assumptions: assumptions?.summary ?? null,
+    sourceFeatureMap: sourceFeatureMap?.summary ?? null,
+    agentLoopPacket: agentLoopPacket?.summary ?? null,
+    rendererDiagnostics: rendererDiagnostics?.summary ?? null,
+    integrityDiagnostics: integrityDiagnostics?.summary ?? null,
+    semanticChecklist: {
+      checkCount: arraySize(semanticChecklist?.checks),
+      failureCount: semanticFailures.length,
+    },
+  };
+}
+
 function rehearsalGateSummary({
   requiredEvidence,
   liveEvidenceFresh,
@@ -856,8 +926,16 @@ function rehearsalGateSummary({
   acceptance,
   tolerance,
   liveResponsiveness,
+  methodologyGate,
 }) {
   const stages = [
+    {
+      id: 'methodology_phase_packet',
+      ok: methodologyGate?.ok === true,
+      blockerCode: 'methodology_phase_gate_failed',
+      detail:
+        'Methodology phase packet must link assumptions, source-feature map, traceability, renderer, integrity, export, tolerance, screenshots, and semantic checklist artifacts.',
+    },
     {
       id: 'freshness',
       ok: liveEvidenceFresh === true,
@@ -989,6 +1067,7 @@ export function closeoutStatus({
   liveResponsiveness = null,
   rehearsalGate = null,
   evidenceFreshness = null,
+  methodologyGate = null,
   liveEvidenceFresh,
 }) {
   const missingEvidence = requiredEvidence.filter((row) => !row.present).map((row) => row.path);
@@ -1026,6 +1105,7 @@ export function closeoutStatus({
     else if (!liveResponsiveness.ok) blockers.push('live_responsiveness_failed');
   }
   if (rehearsalGate && !rehearsalGate.ok) blockers.push('acceptance_rehearsal_gate');
+  if (methodologyGate && !methodologyGate.ok) blockers.push('methodology_phase_gate');
   if (trackerNotDone.length > 0) blockers.push('tracker_not_done');
   if (trackerCompletion && !trackerCompletion.ok) blockers.push('tracker_incomplete');
   if (missingEvidence.length > 0) {
@@ -1131,6 +1211,16 @@ export function closeoutStatus({
       stages: rehearsalGate.stages.filter((stage) => !stage.ok),
     });
   }
+  if (methodologyGate && !methodologyGate.ok) {
+    blockerDetails.push({
+      code: 'methodology_phase_gate',
+      category: 'methodology',
+      count: methodologyGate.blockers.length || methodologyGate.missing.length,
+      blockerCodes: methodologyGate.blockers,
+      missing: methodologyGate.missing,
+      phaseDir: methodologyGate.phaseDir,
+    });
+  }
   if (trackerNotDone.length > 0) {
     blockerDetails.push({
       code: 'tracker_not_done',
@@ -1203,6 +1293,9 @@ export async function buildTargetHouseFinalCloseoutManifest({
     await readJsonIfExists(evidenceFreshnessPath),
     evidenceFreshnessPath,
   );
+  const methodologyGate = await methodologyPhaseGateSummary(
+    path.join(artifactDir, 'evidence', 'phase-p1-p7-all'),
+  );
   const seedSource = {
     manifestPath: portable(manifestPath),
     sourceRoot: portable(sourceRoot),
@@ -1232,6 +1325,7 @@ export async function buildTargetHouseFinalCloseoutManifest({
     acceptance,
     tolerance,
     liveResponsiveness,
+    methodologyGate,
   });
   const status = closeoutStatus({
     requiredEvidence,
@@ -1245,6 +1339,7 @@ export async function buildTargetHouseFinalCloseoutManifest({
     liveResponsiveness,
     rehearsalGate,
     evidenceFreshness,
+    methodologyGate,
     liveEvidenceFresh: snapshotInput.snapshotSource.liveEvidenceFresh,
   });
   const body = {
@@ -1287,6 +1382,7 @@ export async function buildTargetHouseFinalCloseoutManifest({
     cleanPassGate,
     geometryDiagnostic,
     acceptanceGates: acceptance,
+    methodologyGate,
     liveResponsiveness,
     rehearsalGate,
     status,
