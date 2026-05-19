@@ -93,7 +93,11 @@ PHYSICAL_KINDS: frozenset[str] = frozenset(
     }
 )
 
-ANALYTICAL_KINDS: frozenset[str] = frozenset({"room"})
+ANALYTICAL_KINDS: frozenset[str] = frozenset(
+    {
+        "room",
+    }
+)
 
 HELPER_KINDS: frozenset[str] = frozenset(
     {
@@ -316,22 +320,81 @@ TYPE_INSTANCE_SPECS: dict[str, tuple[str, str, bool]] = {
     "family_instance": ("familyTypeId", "family_type", True),
 }
 
+FAMILY_CONTENT_TRACKED_ITEMS: tuple[str, ...] = (
+    "BIR-V01",
+    "BIR-V02",
+    "BIR-V03",
+    "BIR-V04",
+    "BIR-V05",
+)
+FAMILY_TYPE_SCHEMA_FIELDS: tuple[tuple[str, tuple[str, ...]], ...] = (
+    ("requiredDimensions", ("requiredDimensions", "dimensions")),
+    ("hostSupport", ("hostSupport", "hostingMode", "hostKind")),
+    ("materialSlots", ("materialSlots",)),
+    ("scheduleFields", ("scheduleFields", "scheduleMetadata")),
+    ("ifcMapping", ("ifcMapping",)),
+    ("renderSupport", ("renderSupport", "rendererSupport")),
+)
+FAMILY_PARITY_FIELDS: tuple[tuple[str, tuple[str, ...]], ...] = (
+    ("visualGeometry", ("visualGeometry", "renderGeometry", "renderSupport")),
+    ("materialSlots", ("materialSlots",)),
+    ("planSymbol", ("planSymbol", "planSymbolKind")),
+    ("scheduleFields", ("scheduleFields", "scheduleMetadata")),
+    ("ifcMapping", ("ifcMapping",)),
+    ("gltfMapping", ("gltfMapping", "exportSupport", "exportMetadata")),
+)
+ASSET_CATALOG_FIELDS: tuple[tuple[str, tuple[str, ...]], ...] = (
+    ("category", ("category",)),
+    ("dimensions", ("widthMm", "thumbnailWidthMm")),
+    ("clearance", ("clearanceMm", "clearanceZoneMm")),
+    ("maintenanceZones", ("maintenanceZoneMm", "mepZoneMm")),
+    ("materialSlots", ("materialSlots",)),
+    ("renderSupport", ("renderSupport", "renderProxyKind")),
+    ("scheduleFields", ("scheduleFields", "scheduleMetadata")),
+    ("exportMetadata", ("exportMetadata", "ifcMapping", "gltfMapping")),
+)
+FAMILY_OVERRIDE_SCHEDULED_KEYS: frozenset[str] = frozenset(
+    {
+        "widthMm",
+        "heightMm",
+        "depthMm",
+        "lengthMm",
+        "materialKey",
+        "operation",
+        "operationType",
+    }
+)
+HOST_SUPPORT_ALIASES: dict[str, str] = {
+    "wall": "wall_hosted",
+    "wall-hosted": "wall_hosted",
+    "wall_hosted": "wall_hosted",
+    "hosted": "wall_hosted",
+    "face": "face_hosted",
+    "face-hosted": "face_hosted",
+    "face_hosted": "face_hosted",
+    "level": "level_hosted",
+    "level-hosted": "level_hosted",
+    "level_hosted": "level_hosted",
+    "floor": "floor_hosted",
+    "floor-hosted": "floor_hosted",
+    "floor_hosted": "floor_hosted",
+    "ceiling": "ceiling_hosted",
+    "ceiling-hosted": "ceiling_hosted",
+    "ceiling_hosted": "ceiling_hosted",
+    "workplane": "workplane_hosted",
+    "workplane-hosted": "workplane_hosted",
+    "workplane_hosted": "workplane_hosted",
+    "free": "freestanding",
+    "freestanding": "freestanding",
+    "free-standing": "freestanding",
+}
+
 REFERENCE_SPECS: tuple[ReferenceSpec, ...] = (
     ReferenceSpec("levelId", frozenset({"level"})),
     ReferenceSpec("underlayLevelId", frozenset({"level"})),
     ReferenceSpec("referenceLevelId", frozenset({"level"})),
-    ReferenceSpec(
-        "baseLevelId",
-        frozenset({"level"}),
-        required=True,
-        source_kinds=frozenset({"stair"}),
-    ),
-    ReferenceSpec(
-        "topLevelId",
-        frozenset({"level"}),
-        required=True,
-        source_kinds=frozenset({"stair"}),
-    ),
+    ReferenceSpec("baseLevelId", frozenset({"level"}), required=True, source_kinds=frozenset({"stair"})),
+    ReferenceSpec("topLevelId", frozenset({"level"}), required=True, source_kinds=frozenset({"stair"})),
     ReferenceSpec("upperLimitLevelId", frozenset({"level"})),
     ReferenceSpec("parentLevelId", frozenset({"level"})),
     ReferenceSpec("baseConstraintLevelId", frozenset({"level"})),
@@ -365,71 +428,34 @@ REFERENCE_SPECS: tuple[ReferenceSpec, ...] = (
     ReferenceSpec("planOverlaySourcePlanViewId", frozenset({"plan_view"})),
     ReferenceSpec("sectionCutId", frozenset({"section_cut"})),
     ReferenceSpec("sheetId", frozenset({"sheet"})),
-    ReferenceSpec(
-        "parentSheetId",
-        frozenset({"sheet"}),
-        required=True,
-        source_kinds=frozenset({"callout"}),
-    ),
+    ReferenceSpec("parentSheetId", frozenset({"sheet"}), required=True, source_kinds=frozenset({"callout"})),
     ReferenceSpec("scheduleId", frozenset({"schedule"})),
     ReferenceSpec("tagDefinitionId", frozenset({"tag_definition"})),
     ReferenceSpec("planOpeningTagStyleId", frozenset({"plan_tag_style"})),
     ReferenceSpec("planRoomTagStyleId", frozenset({"plan_tag_style"})),
     ReferenceSpec("viewTemplateId", frozenset({"view_template"})),
     ReferenceSpec("templateId", frozenset({"view_template"})),
-    ReferenceSpec(
-        "titleblockTypeId",
-        frozenset({"titleblock_type"}),
-        validate_only_if_target_kind_exists="titleblock_type",
-    ),
-    ReferenceSpec(
-        "brandTemplateId",
-        frozenset({"brand_template"}),
-        validate_only_if_target_kind_exists="brand_template",
-    ),
+    ReferenceSpec("titleblockTypeId", frozenset({"titleblock_type"}), validate_only_if_target_kind_exists="titleblock_type"),
+    ReferenceSpec("brandTemplateId", frozenset({"brand_template"}), validate_only_if_target_kind_exists="brand_template"),
     ReferenceSpec("familyTypeId", frozenset({"family_type"})),
     ReferenceSpec("wallTypeId", frozenset({"wall_type"})),
     ReferenceSpec("floorTypeId", frozenset({"floor_type"})),
     ReferenceSpec("roofTypeId", frozenset({"roof_type"})),
     ReferenceSpec("assetId", frozenset({"asset_library_entry"}), required=True),
     ReferenceSpec("materialKey", frozenset({"material"}), validate_only_if_target_kind_exists="material"),
-    ReferenceSpec(
-        "defaultMaterialKey",
-        frozenset({"material"}),
-        validate_only_if_target_kind_exists="material",
-    ),
-    ReferenceSpec(
-        "structuralMaterialKey",
-        frozenset({"material"}),
-        validate_only_if_target_kind_exists="material",
-    ),
-    ReferenceSpec(
-        "wallMaterialKey",
-        frozenset({"material"}),
-        validate_only_if_target_kind_exists="material",
-    ),
-    ReferenceSpec(
-        "roofMaterialKey",
-        frozenset({"material"}),
-        validate_only_if_target_kind_exists="material",
-    ),
+    ReferenceSpec("defaultMaterialKey", frozenset({"material"}), validate_only_if_target_kind_exists="material"),
+    ReferenceSpec("structuralMaterialKey", frozenset({"material"}), validate_only_if_target_kind_exists="material"),
+    ReferenceSpec("wallMaterialKey", frozenset({"material"}), validate_only_if_target_kind_exists="material"),
+    ReferenceSpec("roofMaterialKey", frozenset({"material"}), validate_only_if_target_kind_exists="material"),
     ReferenceSpec("materialId", frozenset({"material"}), validate_only_if_target_kind_exists="material"),
-    ReferenceSpec(
-        "countertopMaterialId",
-        frozenset({"material"}),
-        validate_only_if_target_kind_exists="material",
-    ),
+    ReferenceSpec("countertopMaterialId", frozenset({"material"}), validate_only_if_target_kind_exists="material"),
     ReferenceSpec("phaseId", frozenset({"phase"}), validate_only_if_target_kind_exists="phase"),
     ReferenceSpec("phaseCreated", frozenset({"phase"}), validate_only_if_target_kind_exists="phase"),
     ReferenceSpec("phaseDemolished", frozenset({"phase"}), validate_only_if_target_kind_exists="phase"),
     ReferenceSpec("optionSetId"),
     ReferenceSpec("optionId"),
     ReferenceSpec("linkId", IMPORTED_PROXY_KINDS, validate_only_if_target_kind_exists="link_model"),
-    ReferenceSpec(
-        "_linkedFromLinkId",
-        IMPORTED_PROXY_KINDS,
-        validate_only_if_target_kind_exists="link_model",
-    ),
+    ReferenceSpec("_linkedFromLinkId", IMPORTED_PROXY_KINDS, validate_only_if_target_kind_exists="link_model"),
 )
 
 NESTED_REFERENCE_FIELDS: frozenset[str] = frozenset(spec.field for spec in REFERENCE_SPECS)
@@ -461,6 +487,22 @@ def model_integrity_invariant_contract_v1() -> dict[str, Any]:
             }
             for instance_kind, spec in sorted(TYPE_INSTANCE_SPECS.items())
         ],
+        "familyContentContracts": {
+            "familyTypeSchemaFields": [
+                {"field": field, "aliases": list(aliases)}
+                for field, aliases in FAMILY_TYPE_SCHEMA_FIELDS
+            ],
+            "familyRenderExportParityFields": [
+                {"field": field, "aliases": list(aliases)}
+                for field, aliases in FAMILY_PARITY_FIELDS
+            ],
+            "assetCatalogFields": [
+                {"field": field, "aliases": list(aliases)}
+                for field, aliases in ASSET_CATALOG_FIELDS
+            ],
+            "hostSupportTokens": sorted(set(HOST_SUPPORT_ALIASES.values())),
+            "scheduledOverrideKeys": sorted(FAMILY_OVERRIDE_SCHEDULED_KEYS),
+        },
         "schemaMigrationCompatibility": {
             "supportedSchemaVersions": sorted(SUPPORTED_SCHEMA_VERSIONS),
             "missingSchemaVersionPolicy": "model snapshots without schemaVersion are accepted as current in-memory snapshots",
@@ -499,6 +541,7 @@ def model_integrity_invariant_contract_v1() -> dict[str, Any]:
             "BIR-P06",
             "BIR-P07",
             "BIR-P08",
+            *FAMILY_CONTENT_TRACKED_ITEMS,
         ],
     }
 
@@ -582,6 +625,7 @@ def check_model_integrity_invariants(
         findings.extend(_level_semantic_findings(element, elements, level_elevations))
         findings.extend(_unit_coordinate_findings(element))
         findings.extend(_type_instance_findings(element, elements))
+        findings.extend(_family_content_findings(element, elements))
 
     findings.extend(_schema_compatibility_findings(subject))
     return findings
@@ -607,6 +651,7 @@ def model_integrity_smoke_v1(subject: Any, *, require_explicit_roles: bool = Fal
             "BIR-P06",
             "BIR-P07",
             "BIR-P08",
+            *FAMILY_CONTENT_TRACKED_ITEMS,
         ],
         "ok": counts.get("error", 0) == 0,
         "findingCount": len(findings),
@@ -695,12 +740,45 @@ def schema_migration_compatibility_v1(subject: Any) -> dict[str, Any]:
     }
 
 
+def family_type_content_integrity_v1(subject: Any) -> dict[str, Any]:
+    elements = _elements_mapping(subject) or {}
+    findings: list[ModelIntegrityFinding] = []
+    rows: list[dict[str, Any]] = []
+    for element_id, element in sorted(elements.items(), key=lambda item: str(item[0])):
+        kind = str(_read(element, "kind", default=""))
+        if kind not in {"family_type", "family_instance", "asset_library_entry", "placed_asset"}:
+            continue
+        element_findings = _family_content_findings(element, elements)
+        findings.extend(element_findings)
+        rows.append(
+            {
+                "elementId": str(_read(element, "id", default=element_id)),
+                "kind": kind,
+                "findingRuleIds": sorted({finding.rule_id for finding in element_findings}),
+                "trackedItems": _family_content_tracked_items(kind),
+            }
+        )
+    counts = _counts_by_severity(findings)
+    payload = {
+        "format": "familyTypeContentIntegrity_v1",
+        "trackedItems": list(FAMILY_CONTENT_TRACKED_ITEMS),
+        "ok": counts.get("error", 0) == 0,
+        "findingCount": len(findings),
+        "countsBySeverity": counts,
+        "rows": rows,
+        "findings": [finding.to_dict() for finding in sorted(findings, key=_finding_sort_key)],
+    }
+    payload["digestSha256"] = _stable_digest(payload)
+    return payload
+
+
 def model_integrity_smoke_command_evidence_v1(subject: Any) -> dict[str, Any]:
     smoke = model_integrity_smoke_v1(subject)
     strict_role_smoke = model_integrity_smoke_v1(subject, require_explicit_roles=True)
     units = model_integrity_units_coordinate_normalization_v1(subject)
     inheritance = resolve_type_instance_inheritance_v1(subject)
     schema = schema_migration_compatibility_v1(subject)
+    family_content = family_type_content_integrity_v1(subject)
     evidence = {
         "format": "modelIntegritySmokeCommandEvidence_v1",
         "trackedItems": [
@@ -712,6 +790,7 @@ def model_integrity_smoke_command_evidence_v1(subject: Any) -> dict[str, Any]:
             "BIR-P06",
             "BIR-P07",
             "BIR-P08",
+            *FAMILY_CONTENT_TRACKED_ITEMS,
         ],
         "command": {
             "cli": "bim-ai invariant smoke --input <snapshot.json> --format json",
@@ -723,10 +802,398 @@ def model_integrity_smoke_command_evidence_v1(subject: Any) -> dict[str, Any]:
             "unitsCoordinateNormalization": units,
             "typeInstanceInheritance": inheritance,
             "schemaMigrationCompatibility": schema,
+            "familyTypeContentIntegrity": family_content,
         },
     }
     evidence["digestSha256"] = _stable_digest(evidence)
     return evidence
+
+
+def _family_content_findings(
+    element: Any, elements: Mapping[str, Any]
+) -> list[ModelIntegrityFinding]:
+    kind = str(_read(element, "kind", default=""))
+    element_id = str(_read(element, "id", default=""))
+    if kind == "family_type":
+        return [
+            *_family_type_schema_findings(element, element_id),
+            *_family_type_render_export_parity_findings(element, element_id),
+        ]
+    if kind == "family_instance":
+        return _family_instance_override_findings(element, elements, element_id)
+    if kind == "asset_library_entry":
+        return _asset_catalog_metadata_findings(element, element_id)
+    if kind == "placed_asset":
+        return _placed_asset_findings(element, elements, element_id)
+    return []
+
+
+def _family_type_schema_findings(element: Any, element_id: str) -> list[ModelIntegrityFinding]:
+    findings: list[ModelIntegrityFinding] = []
+    missing = [
+        field
+        for field, aliases in FAMILY_TYPE_SCHEMA_FIELDS
+        if not _has_any_field_value(element, aliases)
+    ]
+    if missing:
+        severity: IntegritySeverity = "error" if _strict_family_schema(element) else "warning"
+        findings.append(
+            ModelIntegrityFinding(
+                rule_id="model_integrity_family_type_schema_incomplete",
+                severity=severity,
+                message=(
+                    f"Family type '{element_id}' is missing required schema metadata: "
+                    f"{', '.join(missing)}."
+                ),
+                element_ids=(element_id,),
+                field="familyTypeSchema",
+                expected=", ".join(field for field, _aliases in FAMILY_TYPE_SCHEMA_FIELDS),
+                actual=", ".join(missing),
+            )
+        )
+
+    params = _read(element, "parameters", default={}) or {}
+    schema = _parameter_schema_map(element)
+    for key, entry in sorted(schema.items()):
+        value = params.get(key) if isinstance(params, Mapping) else None
+        if value in (None, "") and _truthy(_read(entry, "required", default=False)):
+            findings.append(
+                ModelIntegrityFinding(
+                    rule_id="model_integrity_family_type_required_parameter_missing",
+                    severity="error",
+                    message=f"Family type '{element_id}' is missing required parameter '{key}'.",
+                    element_ids=(element_id,),
+                    field=f"parameters.{key}",
+                    expected="required parameter value",
+                )
+            )
+            continue
+        if value not in (None, ""):
+            findings.extend(
+                _parameter_value_findings(
+                    element_id=element_id,
+                    field=f"parameters.{key}",
+                    value=value,
+                    entry=entry,
+                    rule_id="model_integrity_family_type_parameter_constraint_violation",
+                )
+            )
+    return findings
+
+
+def _family_type_render_export_parity_findings(
+    element: Any, element_id: str
+) -> list[ModelIntegrityFinding]:
+    missing = [
+        field for field, aliases in FAMILY_PARITY_FIELDS if not _has_any_field_value(element, aliases)
+    ]
+    findings: list[ModelIntegrityFinding] = []
+    if missing:
+        severity: IntegritySeverity = "error" if _strict_family_schema(element) else "warning"
+        findings.append(
+            ModelIntegrityFinding(
+                rule_id="model_integrity_family_render_export_parity_gap",
+                severity=severity,
+                message=(
+                    f"Family type '{element_id}' lacks render/export parity evidence for "
+                    f"{', '.join(missing)}."
+                ),
+                element_ids=(element_id,),
+                field="renderExportParity",
+                expected=", ".join(field for field, _aliases in FAMILY_PARITY_FIELDS),
+                actual=", ".join(missing),
+            )
+        )
+    render_support = _read_any(element, ("renderSupport", "rendererSupport"))
+    export_support = _read_any(element, ("exportSupport", "exportMetadata"))
+    if isinstance(render_support, Mapping) and isinstance(export_support, Mapping):
+        if _truthy(render_support.get("geometry")) and not (
+            _truthy(export_support.get("ifc")) and _truthy(export_support.get("gltf"))
+        ):
+            findings.append(
+                ModelIntegrityFinding(
+                    rule_id="model_integrity_family_render_export_parity_gap",
+                    severity="error",
+                    message=(
+                        f"Family type '{element_id}' declares renderable visual geometry but "
+                        "does not declare both IFC and glTF export support."
+                    ),
+                    element_ids=(element_id,),
+                    field="exportSupport",
+                    expected="ifc=true and gltf=true when renderSupport.geometry=true",
+                    actual=json.dumps(export_support, sort_keys=True, default=str),
+                )
+            )
+    return findings
+
+
+def _family_instance_override_findings(
+    element: Any, elements: Mapping[str, Any], element_id: str
+) -> list[ModelIntegrityFinding]:
+    type_id = _read(element, "familyTypeId")
+    type_element = elements.get(str(type_id)) if type_id not in (None, "") else None
+    if type_element is None or str(_read(type_element, "kind", default="")) != "family_type":
+        return []
+
+    schema = _parameter_schema_map(type_element)
+    overrides = _read(element, "paramValues", default={}) or {}
+    if not isinstance(overrides, Mapping):
+        return [
+            ModelIntegrityFinding(
+                rule_id="model_integrity_family_instance_override_invalid",
+                severity="error",
+                message=f"Family instance '{element_id}' has non-object paramValues.",
+                element_ids=(element_id,),
+                field="paramValues",
+                expected="object",
+                actual=type(overrides).__name__,
+            )
+        ]
+
+    findings: list[ModelIntegrityFinding] = []
+    schedule_fields = set(_string_list(_read_any(type_element, ("scheduleFields",))))
+    for key, value in sorted(overrides.items(), key=lambda item: str(item[0])):
+        key = str(key)
+        entry = schema.get(key)
+        if schema and entry is None:
+            findings.append(
+                ModelIntegrityFinding(
+                    rule_id="model_integrity_family_instance_override_unknown",
+                    severity="error",
+                    message=(
+                        f"Family instance '{element_id}' overrides unknown type parameter '{key}'."
+                    ),
+                    element_ids=(element_id, str(type_id)),
+                    field=f"paramValues.{key}",
+                    expected="declared parameterSchema key",
+                    actual=key,
+                )
+            )
+            continue
+        if entry is not None and _read(entry, "instanceOverridable", default=True) is False:
+            findings.append(
+                ModelIntegrityFinding(
+                    rule_id="model_integrity_family_instance_override_not_allowed",
+                    severity="error",
+                    message=(
+                        f"Family instance '{element_id}' overrides non-instance parameter '{key}'."
+                    ),
+                    element_ids=(element_id, str(type_id)),
+                    field=f"paramValues.{key}",
+                    expected="instanceOverridable=true",
+                    actual="false",
+                )
+            )
+        if entry is not None:
+            findings.extend(
+                _parameter_value_findings(
+                    element_id=element_id,
+                    field=f"paramValues.{key}",
+                    value=value,
+                    entry=entry,
+                    rule_id="model_integrity_family_instance_override_invalid",
+                )
+            )
+        if key in FAMILY_OVERRIDE_SCHEDULED_KEYS and schedule_fields and key not in schedule_fields:
+            findings.append(
+                ModelIntegrityFinding(
+                    rule_id="model_integrity_family_instance_override_unscheduled",
+                    severity="warning",
+                    message=(
+                        f"Family instance '{element_id}' overrides '{key}' but its type schedule "
+                        "fields do not include that parameter."
+                    ),
+                    element_ids=(element_id, str(type_id)),
+                    field=f"paramValues.{key}",
+                    expected="override key included in scheduleFields",
+                    actual=", ".join(sorted(schedule_fields)),
+                )
+            )
+
+    findings.extend(_host_geometry_constraint_findings(element, type_element, elements, element_id))
+    return findings
+
+
+def _asset_catalog_metadata_findings(element: Any, element_id: str) -> list[ModelIntegrityFinding]:
+    findings: list[ModelIntegrityFinding] = []
+    missing = [
+        field for field, aliases in ASSET_CATALOG_FIELDS if not _has_any_field_value(element, aliases)
+    ]
+    if missing:
+        findings.append(
+            ModelIntegrityFinding(
+                rule_id="model_integrity_asset_catalog_metadata_incomplete",
+                severity="warning",
+                message=(
+                    f"Asset catalog entry '{element_id}' is missing metadata: "
+                    f"{', '.join(missing)}."
+                ),
+                element_ids=(element_id,),
+                field="assetCatalogMetadata",
+                expected=", ".join(field for field, _aliases in ASSET_CATALOG_FIELDS),
+                actual=", ".join(missing),
+            )
+        )
+    schema = _asset_parameter_schema_map(element)
+    for key, entry in sorted(schema.items()):
+        default = _read(entry, "default")
+        findings.extend(
+            _parameter_value_findings(
+                element_id=element_id,
+                field=f"paramSchema.{key}.default",
+                value=default,
+                entry=entry,
+                rule_id="model_integrity_asset_catalog_param_schema_invalid",
+            )
+        )
+    return findings
+
+
+def _placed_asset_findings(
+    element: Any, elements: Mapping[str, Any], element_id: str
+) -> list[ModelIntegrityFinding]:
+    asset_id = _read(element, "assetId")
+    entry = elements.get(str(asset_id)) if asset_id not in (None, "") else None
+    if entry is None or str(_read(entry, "kind", default="")) != "asset_library_entry":
+        return []
+    support = _placement_support_for_asset(element, entry)
+    findings: list[ModelIntegrityFinding] = []
+    host_id = _read(element, "hostElementId")
+    host = elements.get(str(host_id)) if host_id not in (None, "") else None
+    required_host_kind = {
+        "wall_hosted": "wall",
+        "ceiling_hosted": "ceiling",
+        "workplane_hosted": "reference_plane",
+    }.get(support)
+    if required_host_kind is not None:
+        if host is None:
+            findings.append(
+                ModelIntegrityFinding(
+                    rule_id="model_integrity_asset_placement_support_invalid",
+                    severity="error",
+                    message=(
+                        f"Placed asset '{element_id}' requires a {required_host_kind} host for "
+                        f"support '{support}'."
+                    ),
+                    element_ids=(element_id, str(asset_id)),
+                    field="hostElementId",
+                    expected=required_host_kind,
+                    actual=str(host_id or ""),
+                )
+            )
+        elif str(_read(host, "kind", default="")) != required_host_kind:
+            findings.append(
+                ModelIntegrityFinding(
+                    rule_id="model_integrity_asset_placement_support_invalid",
+                    severity="error",
+                    message=(
+                        f"Placed asset '{element_id}' support '{support}' is hosted by "
+                        f"'{host_id}' of kind '{_read(host, 'kind')}'."
+                    ),
+                    element_ids=(element_id, str(asset_id), str(host_id)),
+                    field="hostElementId",
+                    expected=required_host_kind,
+                    actual=str(_read(host, "kind", default="")),
+                )
+            )
+
+    if support in {"floor_hosted", "level_hosted", "freestanding"} and host_id in (None, ""):
+        if not _position_supported_by_floor(element, elements):
+            findings.append(
+                ModelIntegrityFinding(
+                    rule_id="model_integrity_asset_placement_floating",
+                    severity="error",
+                    message=(
+                        f"Placed asset '{element_id}' is not supported by a floor footprint on "
+                        f"level '{_read(element, 'levelId')}'."
+                    ),
+                    element_ids=(element_id, str(asset_id)),
+                    field="positionMm",
+                    expected="position inside a floor boundary on the same level",
+                )
+            )
+        embedded_wall = _embedded_wall_at_position(element, elements)
+        if embedded_wall is not None and not _truthy(_read_any(element, ("allowEmbedded",))):
+            findings.append(
+                ModelIntegrityFinding(
+                    rule_id="model_integrity_asset_placement_embedded_without_intent",
+                    severity="error",
+                    message=(
+                        f"Placed asset '{element_id}' intersects wall '{embedded_wall}' without "
+                        "an explicit recess/opening/embedded intent."
+                    ),
+                    element_ids=(element_id, str(asset_id), embedded_wall),
+                    field="positionMm",
+                    expected="clear of wall or allowEmbedded=true",
+                    actual=embedded_wall,
+                )
+            )
+    return findings
+
+
+def _host_geometry_constraint_findings(
+    element: Any, type_element: Any, elements: Mapping[str, Any], element_id: str
+) -> list[ModelIntegrityFinding]:
+    support = _normalize_host_support(_read_any(type_element, ("hostSupport", "hostingMode")))
+    host_id = _read(element, "hostElementId")
+    host = elements.get(str(host_id)) if host_id not in (None, "") else None
+    findings: list[ModelIntegrityFinding] = []
+    if support == "wall_hosted":
+        if host is None or str(_read(host, "kind", default="")) != "wall":
+            findings.append(
+                ModelIntegrityFinding(
+                    rule_id="model_integrity_family_instance_host_constraint_violation",
+                    severity="error",
+                    message=f"Family instance '{element_id}' requires a valid wall host.",
+                    element_ids=(element_id, str(_read(type_element, "id", default=""))),
+                    field="hostElementId",
+                    expected="wall",
+                    actual=str(_read(host, "kind", default="missing")),
+                )
+            )
+            return findings
+        resolved = _resolved_type_values(element, type_element, "family_instance").get(
+            "parameters", {}
+        )
+        width = _numeric_from_mapping(resolved, ("widthMm", "lengthMm"))
+        height = _numeric_from_mapping(resolved, ("heightMm", "headHeightMm"))
+        wall_len = _wall_length_mm(host)
+        wall_height = _read(host, "heightMm")
+        if width is not None and wall_len is not None and width > wall_len:
+            findings.append(
+                ModelIntegrityFinding(
+                    rule_id="model_integrity_family_instance_host_constraint_violation",
+                    severity="error",
+                    message=(
+                        f"Family instance '{element_id}' width {width:g} mm exceeds host wall "
+                        f"length {wall_len:g} mm."
+                    ),
+                    element_ids=(element_id, str(host_id)),
+                    field="paramValues.widthMm",
+                    expected=f"<= {wall_len:g}",
+                    actual=f"{width:g}",
+                )
+            )
+        if (
+            height is not None
+            and _is_finite_number(wall_height)
+            and height > float(wall_height)
+        ):
+            findings.append(
+                ModelIntegrityFinding(
+                    rule_id="model_integrity_family_instance_host_constraint_violation",
+                    severity="error",
+                    message=(
+                        f"Family instance '{element_id}' height {height:g} mm exceeds host wall "
+                        f"height {float(wall_height):g} mm."
+                    ),
+                    element_ids=(element_id, str(host_id)),
+                    field="paramValues.heightMm",
+                    expected=f"<= {float(wall_height):g}",
+                    actual=f"{height:g}",
+                )
+            )
+    return findings
 
 
 def _elements_mapping(subject: Any) -> Mapping[str, Any] | None:
@@ -1582,6 +2049,298 @@ def _type_override_keys(element: Any, type_element: Any, kind: str) -> list[str]
     if isinstance(param_values, Mapping):
         return sorted(str(key) for key in param_values)
     return []
+
+
+def _finding_sort_key(finding: ModelIntegrityFinding) -> tuple[str, tuple[str, ...], str]:
+    return (finding.rule_id, finding.element_ids, finding.message)
+
+
+def _family_content_tracked_items(kind: str) -> list[str]:
+    if kind == "family_type":
+        return ["BIR-V01", "BIR-V05"]
+    if kind == "family_instance":
+        return ["BIR-V02"]
+    if kind == "asset_library_entry":
+        return ["BIR-V03"]
+    if kind == "placed_asset":
+        return ["BIR-V04", "BIR-V05"]
+    return []
+
+
+def _read_any(element: Any, fields: tuple[str, ...], default: Any = None) -> Any:
+    for field in fields:
+        value = _read(element, field)
+        if value not in (None, "", [], {}):
+            return value
+    params = _read(element, "parameters", default={}) or {}
+    if isinstance(params, Mapping):
+        for field in fields:
+            value = _read(params, field)
+            if value not in (None, "", [], {}):
+                return value
+    props = _read(element, "props", default={}) or {}
+    if isinstance(props, Mapping):
+        for field in fields:
+            value = _read(props, field)
+            if value not in (None, "", [], {}):
+                return value
+    return default
+
+
+def _has_any_field_value(element: Any, fields: tuple[str, ...]) -> bool:
+    return _read_any(element, fields) not in (None, "", [], {})
+
+
+def _strict_family_schema(element: Any) -> bool:
+    return _truthy(_read(element, "strictFamilySchema")) or _read(
+        element, "familySchemaVersion"
+    ) not in (None, "")
+
+
+def _parameter_schema_map(element: Any) -> dict[str, Any]:
+    raw = _read_any(element, ("parameterSchema", "paramSchema"), default=[])
+    if not isinstance(raw, list | tuple):
+        return {}
+    out: dict[str, Any] = {}
+    for entry in raw:
+        key = _read(entry, "key")
+        if key not in (None, ""):
+            out[str(key)] = entry
+    return out
+
+
+def _asset_parameter_schema_map(element: Any) -> dict[str, Any]:
+    return _parameter_schema_map(element)
+
+
+def _parameter_value_findings(
+    *,
+    element_id: str,
+    field: str,
+    value: Any,
+    entry: Any,
+    rule_id: str,
+) -> list[ModelIntegrityFinding]:
+    findings: list[ModelIntegrityFinding] = []
+    value_kind = str(_read(entry, "kind", default=_read(entry, "type", default="")))
+    if value_kind in {"mm", "length_mm", "angle_deg"}:
+        if not _is_finite_number(value):
+            findings.append(
+                ModelIntegrityFinding(
+                    rule_id=rule_id,
+                    severity="error",
+                    message=f"Element '{element_id}' field '{field}' must be a finite number.",
+                    element_ids=(element_id,),
+                    field=field,
+                    expected="finite number",
+                    actual=str(value),
+                )
+            )
+            return findings
+        minimum = _read(entry, "min", default=_read_nested(entry, ("constraints", "min")))
+        maximum = _read(entry, "max", default=_read_nested(entry, ("constraints", "max")))
+        if _is_finite_number(minimum) and float(value) < float(minimum):
+            findings.append(
+                ModelIntegrityFinding(
+                    rule_id=rule_id,
+                    severity="error",
+                    message=f"Element '{element_id}' field '{field}' is below its minimum.",
+                    element_ids=(element_id,),
+                    field=field,
+                    expected=f">= {float(minimum):g}",
+                    actual=f"{float(value):g}",
+                )
+            )
+        if _is_finite_number(maximum) and float(value) > float(maximum):
+            findings.append(
+                ModelIntegrityFinding(
+                    rule_id=rule_id,
+                    severity="error",
+                    message=f"Element '{element_id}' field '{field}' exceeds its maximum.",
+                    element_ids=(element_id,),
+                    field=field,
+                    expected=f"<= {float(maximum):g}",
+                    actual=f"{float(value):g}",
+                )
+            )
+    elif value_kind in {"enum", "option"}:
+        options = _string_list(_read(entry, "options", default=[]))
+        if options and str(value) not in set(options):
+            findings.append(
+                ModelIntegrityFinding(
+                    rule_id=rule_id,
+                    severity="error",
+                    message=f"Element '{element_id}' field '{field}' is not one of the options.",
+                    element_ids=(element_id,),
+                    field=field,
+                    expected=", ".join(options),
+                    actual=str(value),
+                )
+            )
+    elif value_kind in {"bool", "boolean"} and not isinstance(value, bool):
+        findings.append(
+            ModelIntegrityFinding(
+                rule_id=rule_id,
+                severity="error",
+                message=f"Element '{element_id}' field '{field}' must be boolean.",
+                element_ids=(element_id,),
+                field=field,
+                expected="boolean",
+                actual=type(value).__name__,
+            )
+        )
+    return findings
+
+
+def _read_nested(element: Any, fields: tuple[str, ...], default: Any = None) -> Any:
+    current = element
+    for field in fields:
+        current = _read(current, field)
+        if current is None:
+            return default
+    return current
+
+
+def _string_list(value: Any) -> list[str]:
+    if isinstance(value, list | tuple | set):
+        return sorted(str(v) for v in value if v not in (None, ""))
+    if isinstance(value, Mapping):
+        return sorted(str(k) for k in value if k not in (None, ""))
+    return []
+
+
+def _truthy(value: Any) -> bool:
+    if isinstance(value, bool):
+        return value
+    if isinstance(value, str):
+        return value.strip().lower() in {"1", "true", "yes", "y", "on"}
+    return bool(value)
+
+
+def _normalize_host_support(value: Any) -> str:
+    token = str(value or "freestanding").strip().lower().replace(" ", "_")
+    return HOST_SUPPORT_ALIASES.get(token, token)
+
+
+def _placement_support_for_asset(element: Any, entry: Any) -> str:
+    support = _read_any(element, ("placementSupport", "hostSupport"))
+    if support in (None, ""):
+        support = _read_any(entry, ("placementSupport", "hostSupport"))
+    if support not in (None, ""):
+        return _normalize_host_support(support)
+    category = str(_read(entry, "category", default="")).lower()
+    if category in {"door", "window"}:
+        return "wall_hosted"
+    return "freestanding"
+
+
+def _position_supported_by_floor(element: Any, elements: Mapping[str, Any]) -> bool:
+    point = _point_xy(_read(element, "positionMm"))
+    if point is None:
+        return False
+    level_id = str(_read(element, "levelId", default=""))
+    floors = [
+        candidate
+        for candidate in elements.values()
+        if str(_read(candidate, "kind", default="")) == "floor"
+        and str(_read(candidate, "levelId", default="")) == level_id
+    ]
+    if not floors:
+        return True
+    return any(_point_in_polygon(point, _polygon_xy(_read(floor, "boundaryMm"))) for floor in floors)
+
+
+def _embedded_wall_at_position(element: Any, elements: Mapping[str, Any]) -> str | None:
+    point = _point_xy(_read(element, "positionMm"))
+    if point is None:
+        return None
+    level_id = str(_read(element, "levelId", default=""))
+    for wall in elements.values():
+        if str(_read(wall, "kind", default="")) != "wall":
+            continue
+        if str(_read(wall, "levelId", default="")) != level_id:
+            continue
+        start = _point_xy(_read(wall, "start"))
+        end = _point_xy(_read(wall, "end"))
+        if start is None or end is None:
+            continue
+        thickness = _read(wall, "thicknessMm")
+        tolerance = max(25.0, float(thickness) / 2.0 if _is_finite_number(thickness) else 100.0)
+        if _point_segment_distance_mm(point, start, end) <= tolerance:
+            wall_id = _read(wall, "id")
+            return str(wall_id) if wall_id not in (None, "") else None
+    return None
+
+
+def _point_xy(value: Any) -> tuple[float, float] | None:
+    x = _read(value, "xMm")
+    y = _read(value, "yMm")
+    if _is_finite_number(x) and _is_finite_number(y):
+        return (float(x), float(y))
+    return None
+
+
+def _polygon_xy(value: Any) -> list[tuple[float, float]]:
+    if not isinstance(value, list | tuple):
+        return []
+    pts: list[tuple[float, float]] = []
+    for point in value:
+        xy = _point_xy(point)
+        if xy is not None:
+            pts.append(xy)
+    return pts
+
+
+def _point_in_polygon(point: tuple[float, float], polygon: list[tuple[float, float]]) -> bool:
+    if len(polygon) < 3:
+        return False
+    x, y = point
+    inside = False
+    j = len(polygon) - 1
+    for i, (xi, yi) in enumerate(polygon):
+        xj, yj = polygon[j]
+        crosses = (yi > y) != (yj > y)
+        if crosses:
+            x_at_y = (xj - xi) * (y - yi) / ((yj - yi) or 1e-9) + xi
+            if x < x_at_y:
+                inside = not inside
+        j = i
+    return inside
+
+
+def _point_segment_distance_mm(
+    point: tuple[float, float],
+    start: tuple[float, float],
+    end: tuple[float, float],
+) -> float:
+    px, py = point
+    ax, ay = start
+    bx, by = end
+    dx = bx - ax
+    dy = by - ay
+    denom = dx * dx + dy * dy
+    if denom <= 1e-9:
+        return math.hypot(px - ax, py - ay)
+    t = max(0.0, min(1.0, ((px - ax) * dx + (py - ay) * dy) / denom))
+    return math.hypot(px - (ax + t * dx), py - (ay + t * dy))
+
+
+def _wall_length_mm(wall: Any) -> float | None:
+    start = _point_xy(_read(wall, "start"))
+    end = _point_xy(_read(wall, "end"))
+    if start is None or end is None:
+        return None
+    return math.hypot(end[0] - start[0], end[1] - start[1])
+
+
+def _numeric_from_mapping(mapping: Any, keys: tuple[str, ...]) -> float | None:
+    if not isinstance(mapping, Mapping):
+        return None
+    for key in keys:
+        value = mapping.get(key)
+        if _is_finite_number(value):
+            return float(value)
+    return None
 
 
 def _counts_by_severity(findings: list[ModelIntegrityFinding]) -> dict[str, int]:

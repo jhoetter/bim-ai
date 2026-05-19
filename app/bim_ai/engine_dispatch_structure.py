@@ -262,6 +262,19 @@ def try_apply_structure_command(doc, cmd, *, source_provider=None) -> bool:
                 "familyId": cmd.family_id or str(cmd.parameters.get("familyId") or ""),
                 "discipline": cmd.discipline,
                 "parameters": dict(cmd.parameters),
+                "parameterSchema": cmd.parameter_schema,
+                "requiredDimensions": cmd.required_dimensions,
+                "hostSupport": cmd.host_support,
+                "materialSlots": cmd.material_slots,
+                "scheduleFields": cmd.schedule_fields,
+                "ifcMapping": cmd.ifc_mapping,
+                "gltfMapping": cmd.gltf_mapping,
+                "renderSupport": cmd.render_support,
+                "exportSupport": cmd.export_support,
+                "planSymbol": cmd.plan_symbol,
+                "visualGeometry": cmd.visual_geometry,
+                "familySchemaVersion": cmd.family_schema_version,
+                "strictFamilySchema": cmd.strict_family_schema,
             }
             if cmd.catalog_source is not None:
                 kwargs["catalog_source"] = FamilyCatalogSource(

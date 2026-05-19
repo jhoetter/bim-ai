@@ -509,4 +509,3 @@ def test_smoke_payload_and_contract_are_machine_readable() -> None:
     assert "strictRoleSmoke" in evidence["artifacts"]
     assert evidence["artifacts"]["strictRoleSmoke"]["coverage"]["requireExplicitRoles"] is True
     assert len(evidence["digestSha256"]) == 64
-

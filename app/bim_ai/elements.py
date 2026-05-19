@@ -2017,6 +2017,21 @@ class FamilyTypeElem(BaseModel):
     family_id: str = Field(default="", alias="familyId")
     discipline: Literal["door", "window", "generic"] = "generic"
     parameters: dict[str, Any] = Field(default_factory=dict)
+    parameter_schema: list[dict[str, Any]] | None = Field(default=None, alias="parameterSchema")
+    required_dimensions: list[str] | None = Field(default=None, alias="requiredDimensions")
+    host_support: str | None = Field(default=None, alias="hostSupport")
+    material_slots: dict[str, str | None] | list[str] | None = Field(
+        default=None, alias="materialSlots"
+    )
+    schedule_fields: list[str] | None = Field(default=None, alias="scheduleFields")
+    ifc_mapping: dict[str, Any] | None = Field(default=None, alias="ifcMapping")
+    gltf_mapping: dict[str, Any] | None = Field(default=None, alias="gltfMapping")
+    render_support: dict[str, Any] | None = Field(default=None, alias="renderSupport")
+    export_support: dict[str, Any] | None = Field(default=None, alias="exportSupport")
+    plan_symbol: dict[str, Any] | str | None = Field(default=None, alias="planSymbol")
+    visual_geometry: dict[str, Any] | str | None = Field(default=None, alias="visualGeometry")
+    family_schema_version: str | None = Field(default=None, alias="familySchemaVersion")
+    strict_family_schema: bool = Field(default=False, alias="strictFamilySchema")
     catalog_source: FamilyCatalogSource | None = Field(default=None, alias="catalogSource")
 
 
@@ -3577,9 +3592,23 @@ class AssetLibraryEntryElem(BaseModel):
     )
     thumbnail_width_mm: float | None = Field(default=None, alias="thumbnailWidthMm")
     thumbnail_height_mm: float | None = Field(default=None, alias="thumbnailHeightMm")
+    width_mm: float | None = Field(default=None, alias="widthMm")
+    depth_mm: float | None = Field(default=None, alias="depthMm")
+    height_mm: float | None = Field(default=None, alias="heightMm")
+    clearance_mm: float | None = Field(default=None, alias="clearanceMm")
+    maintenance_zone_mm: dict[str, float] | None = Field(default=None, alias="maintenanceZoneMm")
+    placement_support: str | None = Field(default=None, alias="placementSupport")
     plan_symbol_kind: AssetSymbolKind | None = Field(default=None, alias="planSymbolKind")
     render_proxy_kind: AssetSymbolKind | None = Field(default=None, alias="renderProxyKind")
     param_schema: list[AssetParamEntry] | None = Field(default=None, alias="paramSchema")
+    material_slots: dict[str, str | None] | list[str] | None = Field(
+        default=None, alias="materialSlots"
+    )
+    render_support: dict[str, Any] | None = Field(default=None, alias="renderSupport")
+    schedule_fields: list[str] | None = Field(default=None, alias="scheduleFields")
+    export_metadata: dict[str, Any] | None = Field(default=None, alias="exportMetadata")
+    ifc_mapping: dict[str, Any] | None = Field(default=None, alias="ifcMapping")
+    gltf_mapping: dict[str, Any] | None = Field(default=None, alias="gltfMapping")
     published_from_org_id: str | None = Field(default=None, alias="publishedFromOrgId")
     description: str | None = None
 
