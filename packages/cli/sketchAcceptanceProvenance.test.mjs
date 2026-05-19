@@ -24,6 +24,8 @@ function validManifest(overrides = {}) {
     ruleDigest: 'sha256:rules-v1',
     integrityDigest: 'sha256:integrity-v1',
     rendererDiagnosticsDigest: 'sha256:renderer-v1',
+    supportMatrixDigest: 'sha256:support-matrix-v1',
+    screenshotManifestHash: 'sha256:screenshot-manifest-v1',
     requiredFeatures: [
       {
         featureId: 'roof_terrace_cutout',
@@ -61,6 +63,8 @@ test('sketch acceptance provenance manifest validates as separate from Advisor',
   assert.equal(manifest.context.ruleDigest, 'sha256:rules-v1');
   assert.equal(manifest.context.integrityDigest, 'sha256:integrity-v1');
   assert.equal(manifest.context.rendererDiagnosticsDigest, 'sha256:renderer-v1');
+  assert.equal(manifest.context.supportMatrixDigest, 'sha256:support-matrix-v1');
+  assert.equal(manifest.context.screenshotManifestHash, 'sha256:screenshot-manifest-v1');
 });
 
 test('validation rejects passing feature claims without element mapping or evidence', () => {
@@ -102,6 +106,8 @@ test('staleness detection compares current context digests and evidence paths', 
       ruleDigest: 'sha256:rules-v2',
       integrityDigest: 'sha256:integrity-v2',
       rendererDiagnosticsDigest: 'sha256:renderer-v2',
+      supportMatrixDigest: 'sha256:support-matrix-v2',
+      screenshotManifestHash: 'sha256:screenshot-manifest-v2',
     },
   });
 
@@ -113,6 +119,8 @@ test('staleness detection compares current context digests and evidence paths', 
   assert.ok(codes.includes('rule_digest_changed'));
   assert.ok(codes.includes('integrity_digest_changed'));
   assert.ok(codes.includes('renderer_diagnostics_digest_changed'));
+  assert.ok(codes.includes('support_matrix_digest_changed'));
+  assert.ok(codes.includes('screenshot_manifest_hash_changed'));
   assert.ok(codes.includes('evidence_path_missing'));
 });
 

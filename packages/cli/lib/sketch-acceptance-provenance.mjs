@@ -14,6 +14,8 @@ export const REQUIRED_CONTEXT_KEYS = [
   'ruleDigest',
   'integrityDigest',
   'rendererDiagnosticsDigest',
+  'supportMatrixDigest',
+  'screenshotManifestHash',
 ];
 
 const ID_RE = /^[A-Za-z0-9][A-Za-z0-9._:-]*$/;
@@ -81,6 +83,8 @@ function contextChangedReason(key, previous, current) {
     ruleDigest: 'rule_digest_changed',
     integrityDigest: 'integrity_digest_changed',
     rendererDiagnosticsDigest: 'renderer_diagnostics_digest_changed',
+    supportMatrixDigest: 'support_matrix_digest_changed',
+    screenshotManifestHash: 'screenshot_manifest_hash_changed',
   };
   return staleReason(
     codeByKey[key] ?? `${key}_changed`,
@@ -117,6 +121,8 @@ export function buildSketchAcceptanceProvenanceManifest({
   ruleDigest = 'pending',
   integrityDigest = 'pending',
   rendererDiagnosticsDigest = 'pending',
+  supportMatrixDigest = 'pending',
+  screenshotManifestHash = 'pending',
   requiredFeatures = [],
   evidence = {},
   staleReasons = [],
@@ -139,6 +145,10 @@ export function buildSketchAcceptanceProvenanceManifest({
       integrityDigest: integrityDigest == null ? null : asTrimmedString(integrityDigest),
       rendererDiagnosticsDigest:
         rendererDiagnosticsDigest == null ? null : asTrimmedString(rendererDiagnosticsDigest),
+      supportMatrixDigest:
+        supportMatrixDigest == null ? null : asTrimmedString(supportMatrixDigest),
+      screenshotManifestHash:
+        screenshotManifestHash == null ? null : asTrimmedString(screenshotManifestHash),
     },
     requiredFeatures: requiredFeatures.map((feature) => ({
       featureId: asTrimmedString(feature.featureId),
