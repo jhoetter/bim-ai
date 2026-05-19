@@ -506,7 +506,7 @@ def _elements_mapping(subject: Any) -> dict[str, Any] | None:
         if "elements" in subject:
             raw = subject.get("elements")
             return dict(raw) if isinstance(raw, Mapping) else None
-        if all(isinstance(item, Mapping) for item in subject.values()):
+        if all(_looks_like_element(item) for item in subject.values()):
             return dict(subject)
     if isinstance(subject, Iterable) and not isinstance(subject, (str, bytes, Mapping)):
         result: dict[str, Any] = {}
@@ -515,6 +515,14 @@ def _elements_mapping(subject: Any) -> dict[str, Any] | None:
             result[str(element_id)] = element
         return result
     return None
+
+
+def _looks_like_element(value: Any) -> bool:
+    return (
+        isinstance(value, Mapping)
+        or _read(value, "kind") is not None
+        or _read(value, "id") is not None
+    )
 
 
 def _by_kind(elements: Mapping[str, Any]) -> dict[str, dict[str, Any]]:

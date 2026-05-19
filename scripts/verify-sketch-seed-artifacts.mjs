@@ -12,6 +12,7 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import process from 'node:process';
 import { spawnSync } from 'node:child_process';
+import { pathToFileURL } from 'node:url';
 
 const REPO_ROOT = path.resolve(new URL('..', import.meta.url).pathname);
 const DEFAULT_ROOT = path.join(REPO_ROOT, 'seed-artifacts');
@@ -21,6 +22,8 @@ const ADVISOR_RULE_FILES = [
   'app/bim_ai/constructability_advisories.py',
   'app/bim_ai/constructability_report.py',
   'app/bim_ai/constraints_metadata.py',
+  'app/bim_ai/domain_integrity.py',
+  'app/bim_ai/room_access_integrity.py',
   'packages/web/src/advisor/advisorViolationContext.ts',
   'packages/web/src/advisor/perspectiveFilter.ts',
 ];
@@ -185,6 +188,67 @@ function gitHead() {
     encoding: 'utf8',
   });
   return proc.status === 0 ? proc.stdout.trim() : null;
+}
+
+function gitChangedFilesSince(baseHead, currentHead) {
+  if (!baseHead || !currentHead || baseHead === currentHead) return [];
+  const ancestor = spawnSync('git', ['merge-base', '--is-ancestor', baseHead, currentHead], {
+    cwd: REPO_ROOT,
+    encoding: 'utf8',
+  });
+  if (ancestor.status !== 0) return null;
+  const proc = spawnSync('git', ['diff', '--name-only', `${baseHead}..${currentHead}`], {
+    cwd: REPO_ROOT,
+    encoding: 'utf8',
+  });
+  if (proc.status !== 0) return null;
+  return proc.stdout
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter(Boolean);
+}
+
+export function isPostEvidenceOnlyPath(relPath, { artifactDir = '', summary = {} } = {}) {
+  const normalized = relPath.split(path.sep).join('/');
+  const artifactRel = artifactDir ? portable(path.resolve(artifactDir)) : '';
+  const digestSourceFiles = new Set(asArray(summary.advisorRuleFiles || ADVISOR_RULE_FILES));
+  const directDigestFiles = new Set(
+    asArray([
+      summary.capabilitiesPath || DEFAULT_CAPABILITIES,
+      summary.bundlePath,
+      summary.irPath,
+      ...digestSourceFiles,
+    ]).filter(Boolean),
+  );
+  if (directDigestFiles.has(normalized)) return true;
+  if (artifactRel && normalized.startsWith(`${artifactRel}/evidence/`)) return true;
+  if (artifactRel && normalized === `${artifactRel}/manifest.json`) return true;
+  if (/^app\/tests\//.test(normalized)) return true;
+  if (/^packages\/[^/]+\/.*\.(test|spec)\.[cm]?[jt]sx?$/.test(normalized)) return true;
+  if (/^scripts\/.*\.(test|spec)\.mjs$/.test(normalized)) return true;
+  return false;
+}
+
+export function gitHeadMismatchAllowance({
+  recordedHead,
+  currentHead,
+  changedFiles,
+  summary,
+  artifactDir,
+  contentChecksMatch,
+}) {
+  if (!recordedHead || !currentHead || recordedHead === currentHead) {
+    return { allowed: true, reason: 'current_head' };
+  }
+  if (!contentChecksMatch) return { allowed: false, reason: 'content_digest_mismatch' };
+  if (!Array.isArray(changedFiles)) return { allowed: false, reason: 'changed_files_unavailable' };
+  const disallowed = changedFiles.filter(
+    (file) => !isPostEvidenceOnlyPath(file, { artifactDir, summary }),
+  );
+  if (disallowed.length) {
+    return { allowed: false, reason: 'post_evidence_source_changes', disallowed };
+  }
+  return { allowed: true, reason: 'post_evidence_digest_or_test_only_changes' };
 }
 
 function portable(absPath) {
@@ -439,7 +503,21 @@ async function verifyArtifact(artifactDir, args, currentHead, goldenRequirements
       ).catch(() => null),
       advisorRuleDigest: await digestFiles(summary.advisorRuleFiles || ADVISOR_RULE_FILES),
     };
+    const contentChecksMatch = Object.entries(checks)
+      .filter(([key]) => key !== 'gitHead')
+      .every(([key, current]) => summary[key] === current);
     for (const [key, current] of Object.entries(checks)) {
+      if (key === 'gitHead' && summary[key] !== current) {
+        const allowance = gitHeadMismatchAllowance({
+          recordedHead: summary[key],
+          currentHead: current,
+          changedFiles: gitChangedFilesSince(summary[key], current),
+          summary,
+          artifactDir,
+          contentChecksMatch,
+        });
+        if (allowance.allowed) continue;
+      }
       if (summary[key] !== current) {
         addFinding(
           findings,
@@ -613,7 +691,10 @@ async function main() {
   if (!payload.ok) process.exit(1);
 }
 
-main().catch((err) => {
-  console.error(err instanceof Error ? err.message : String(err));
-  process.exit(1);
-});
+const isCli = process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href;
+if (isCli) {
+  main().catch((err) => {
+    console.error(err instanceof Error ? err.message : String(err));
+    process.exit(1);
+  });
+}

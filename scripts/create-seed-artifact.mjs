@@ -15,6 +15,8 @@ const ADVISOR_RULE_FILES = [
   'app/bim_ai/constructability_advisories.py',
   'app/bim_ai/constructability_report.py',
   'app/bim_ai/constraints_metadata.py',
+  'app/bim_ai/domain_integrity.py',
+  'app/bim_ai/room_access_integrity.py',
   'packages/web/src/advisor/advisorViolationContext.ts',
   'packages/web/src/advisor/perspectiveFilter.ts',
 ];

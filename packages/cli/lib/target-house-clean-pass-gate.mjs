@@ -243,6 +243,34 @@ function collectValidationRows(evidenceDir) {
   return findingRows(validation, '', 'validate');
 }
 
+function constructabilityReportBody(artifact) {
+  if (!isObject(artifact)) return null;
+  if (isObject(artifact.body)) return artifact.body;
+  if (artifact.format === 'constructabilityReport_v1') return artifact;
+  return null;
+}
+
+function collectConstructabilityRows(evidenceDir) {
+  const artifact = chooseArtifact(
+    readEvidenceJson(evidenceDir, 'constructability-report.json'),
+    readEvidenceJson(evidenceDir, 'live/constructability-report.json'),
+  );
+  const report = constructabilityReportBody(artifact);
+  if (!report) {
+    return [
+      {
+        source: 'constructability-report',
+        code: 'constructability_report_missing',
+        severity: 'error',
+        count: 1,
+        elementIds: [],
+        messages: ['constructability-report.json is missing or does not contain a report body.'],
+      },
+    ];
+  }
+  return findingRows(report, '', 'constructability-report');
+}
+
 function collectRecursiveDiagnostics(value, source, out = [], trail = []) {
   if (Array.isArray(value)) {
     value.forEach((item, index) =>
@@ -429,13 +457,7 @@ export function evaluateTargetHouseCleanPassGate({
   const rows = mergeDiagnosticRows([
     ...collectAdvisorRows(evidenceDir),
     ...collectValidationRows(evidenceDir),
-    ...collectRecursiveDiagnostics(
-      chooseArtifact(
-        readEvidenceJson(evidenceDir, 'constructability-report.json'),
-        readEvidenceJson(evidenceDir, 'live/constructability-report.json'),
-      ),
-      'constructability-report',
-    ),
+    ...collectConstructabilityRows(evidenceDir),
   ]);
   const rendererBlockers = collectRendererBlockers(evidenceDir);
   const errors = rows.filter((row) => ERROR_SEVERITIES.has(row.severity));

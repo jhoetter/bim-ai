@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from bim_ai.elements import DoorElem, FloorElem, LevelElem, RoomElem, Vec2Mm, WallElem
 from bim_ai.room_access_integrity import (
     check_room_access_integrity,
     room_access_integrity_smoke_v1,
@@ -91,6 +92,54 @@ def test_clean_small_house_room_graph_has_no_findings_and_stable_payload() -> No
     assert smoke["ok"] is True
     assert smoke["trackedItems"] == ["BIR-D04", "BIR-D05", "BIR-D06", "BIR-D07"]
     assert smoke["findings"] == []
+
+
+def test_element_object_mapping_is_valid_subject_shape() -> None:
+    elements = {
+        "lvl-1": LevelElem(id="lvl-1", elevationMm=0),
+        "floor-1": FloorElem(
+            id="floor-1",
+            levelId="lvl-1",
+            boundaryMm=[
+                Vec2Mm(xMm=0, yMm=0),
+                Vec2Mm(xMm=6000, yMm=0),
+                Vec2Mm(xMm=6000, yMm=3000),
+                Vec2Mm(xMm=0, yMm=3000),
+            ],
+        ),
+        "wall-s": WallElem(
+            id="wall-s",
+            levelId="lvl-1",
+            start=Vec2Mm(xMm=0, yMm=0),
+            end=Vec2Mm(xMm=6000, yMm=0),
+            props={"exterior": True},
+        ),
+        "room-a": RoomElem(
+            id="room-a",
+            levelId="lvl-1",
+            name="Room A",
+            outlineMm=[
+                Vec2Mm(xMm=0, yMm=0),
+                Vec2Mm(xMm=6000, yMm=0),
+                Vec2Mm(xMm=6000, yMm=3000),
+                Vec2Mm(xMm=0, yMm=3000),
+            ],
+            programmeCode="RES",
+            department="House",
+            functionLabel="Living",
+            finishSet="standard",
+        ),
+        "door-exit": DoorElem(
+            id="door-exit",
+            wallId="wall-s",
+            alongT=0.5,
+            props={"exitDoor": True},
+        ),
+    }
+
+    findings = check_room_access_integrity(elements)
+
+    assert "room_access_invalid_subject" not in _rule_ids(findings)
 
 
 def test_inaccessible_room_is_reported_without_db_or_api() -> None:

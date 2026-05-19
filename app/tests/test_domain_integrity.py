@@ -104,6 +104,7 @@ def test_constructability_report_exposes_domain_integrity_findings() -> None:
     report = build_constructability_report(elements, revision=1, profile="accessibility")
     rule_ids = {finding["ruleId"] for finding in report["findings"]}
 
+    assert "room_access_invalid_subject" not in rule_ids
     assert "code_profile_accessible_door_width_insufficient" in rule_ids
     assert "code_profile_accessible_threshold_too_high" in rule_ids
     assert report["summary"]["ruleCounts"]["code_profile_accessible_threshold_too_high"] >= 1

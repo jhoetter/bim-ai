@@ -37,6 +37,8 @@ ADVISOR_RULE_FILES = [
     "app/bim_ai/constructability_advisories.py",
     "app/bim_ai/constructability_report.py",
     "app/bim_ai/constraints_metadata.py",
+    "app/bim_ai/domain_integrity.py",
+    "app/bim_ai/room_access_integrity.py",
     "packages/web/src/advisor/advisorViolationContext.ts",
     "packages/web/src/advisor/perspectiveFilter.ts",
 ]
@@ -111,6 +113,7 @@ def portable(path: Path) -> str:
 
 def apply_bundle(bundle_path: Path, model_id: str) -> tuple[dict[str, Any], Document]:
     raw_bundle = read_json(bundle_path)
+    raw_bundle = normalize_legacy_bundle(raw_bundle)
     bundle_payload = {**raw_bundle, "parentRevision": 1}
     bundle = CommandBundle.model_validate(bundle_payload)
     doc = Document(revision=1, elements={})  # type: ignore[arg-type]
@@ -140,6 +143,36 @@ def apply_bundle(bundle_path: Path, model_id: str) -> tuple[dict[str, Any], Docu
         "modelId": model_id,
     }
     return result, new_doc
+
+
+def normalize_legacy_bundle(raw_bundle: dict[str, Any]) -> dict[str, Any]:
+    commands = []
+    for command in raw_bundle.get("commands") or []:
+        if not isinstance(command, dict):
+            commands.append(command)
+            continue
+        if command.get("type") != "upsertSite":
+            commands.append(command)
+            continue
+        context_objects = []
+        changed = False
+        for context in command.get("contextObjects") or []:
+            if not isinstance(context, dict):
+                context_objects.append(context)
+                continue
+            next_context = dict(context)
+            if "contextType" not in next_context and "type" in next_context:
+                next_context["contextType"] = next_context["type"]
+                changed = True
+            if "positionMm" not in next_context and {"xMm", "yMm"} <= set(next_context):
+                next_context["positionMm"] = {
+                    "xMm": next_context["xMm"],
+                    "yMm": next_context["yMm"],
+                }
+                changed = True
+            context_objects.append(next_context)
+        commands.append({**command, "contextObjects": context_objects} if changed else command)
+    return {**raw_bundle, "commands": commands}
 
 
 def snapshot_payload(model_id: str, doc: Document) -> dict[str, Any]:
@@ -605,6 +638,8 @@ def update_manifest(manifest_path: Path, summary: dict[str, Any]) -> None:
         ),
     }
     manifest["bundleSha256"] = summary["bundleSha256"]
+    if "commandCount" in summary:
+        manifest["commandCount"] = summary["commandCount"]
     write_json(manifest_path, manifest)
 
 
@@ -667,6 +702,7 @@ def main() -> None:
         "modelId": args.model_id,
         "modelRevision": doc.revision,
         "bundleSha256": sha256_file(bundle_path),
+        "commandCount": len((read_json(bundle_path).get("commands") or [])),
         "advisorRuleDigest": digest_files(ADVISOR_RULE_FILES),
         "advisorRuleFiles": ADVISOR_RULE_FILES,
         "irPath": portable(ir_path),
@@ -683,6 +719,7 @@ def main() -> None:
         "gitHead": current["gitHead"],
         "bundlePath": portable(bundle_path),
         "bundleSha256": current["bundleSha256"],
+        "commandCount": current["commandCount"],
         "irPath": portable(ir_path),
         "irSha256": current["irSha256"],
         "capabilitiesPath": args.capabilities,
@@ -752,6 +789,16 @@ def main() -> None:
 
     for name, payload in artifacts.items():
         write_json(evidence_dir / name, payload)
+    write_status(
+        evidence_dir / "status.md",
+        snapshot=snapshot,
+        stats=stats,
+        advisor=advisor,
+        constructability=constructability,
+        freshness=freshness,
+        acceptance=None,
+        clean_pass=None,
+    )
     mirror_live(evidence_dir)
     update_manifest(artifact_dir / "manifest.json", tool_summary)
     print(

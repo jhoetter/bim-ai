@@ -49,6 +49,28 @@ test('passes when Advisor, validation, constructability, and renderer evidence a
   assert.equal(result.summary.blockerCount, 0);
 });
 
+test('reads constructability findings from the report body, not response envelope metadata', () => {
+  const dir = tempEvidenceDir();
+  writeBaseEvidence(dir);
+  writeJson(dir, 'constructability-report.json', {
+    ok: true,
+    status: 200,
+    severity: 'error',
+    code: 'room_access_invalid_subject',
+    body: {
+      format: 'constructabilityReport_v1',
+      summary: { findingCount: 0 },
+      findings: [],
+      issues: [],
+    },
+  });
+
+  const result = evaluateTargetHouseCleanPassGate({ evidenceDir: dir, generatedAt: GENERATED_AT });
+
+  assert.equal(result.ok, true);
+  assert.equal(result.p0Errors.some((row) => row.code === 'room_access_invalid_subject'), false);
+});
+
 test('fails on validation error even when Advisor is clean', () => {
   const dir = tempEvidenceDir();
   writeBaseEvidence(dir);
