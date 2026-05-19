@@ -7,9 +7,14 @@
       "id": "asset-bath-fixture",
       "assetKind": "block_2d",
       "name": "Bathroom fixture marker",
-      "tags": ["bathroom", "mep"],
+      "tags": [
+        "bathroom",
+        "mep"
+      ],
       "category": "bathroom",
-      "disciplineTags": ["arch"],
+      "disciplineTags": [
+        "arch"
+      ],
       "thumbnailKind": "schematic_plan",
       "thumbnailWidthMm": 900.0,
       "thumbnailHeightMm": 600.0,
@@ -24,9 +29,14 @@
       "id": "asset-bed",
       "assetKind": "block_2d",
       "name": "Bed marker",
-      "tags": ["bedroom", "interior"],
+      "tags": [
+        "bedroom",
+        "interior"
+      ],
       "category": "furniture",
-      "disciplineTags": ["arch"],
+      "disciplineTags": [
+        "arch"
+      ],
       "thumbnailKind": "schematic_plan",
       "thumbnailWidthMm": 1600.0,
       "thumbnailHeightMm": 2100.0,
@@ -41,9 +51,13 @@
       "id": "asset-dining-table",
       "assetKind": "block_2d",
       "name": "Dining table marker",
-      "tags": ["dining"],
+      "tags": [
+        "dining"
+      ],
       "category": "furniture",
-      "disciplineTags": ["arch"],
+      "disciplineTags": [
+        "arch"
+      ],
       "thumbnailKind": "schematic_plan",
       "thumbnailWidthMm": 1800.0,
       "thumbnailHeightMm": 900.0,
@@ -58,9 +72,14 @@
       "id": "asset-outdoor-chair",
       "assetKind": "block_2d",
       "name": "Outdoor terrace chair marker",
-      "tags": ["terrace", "outdoor"],
+      "tags": [
+        "terrace",
+        "outdoor"
+      ],
       "category": "furniture",
-      "disciplineTags": ["arch"],
+      "disciplineTags": [
+        "arch"
+      ],
       "thumbnailKind": "schematic_plan",
       "thumbnailWidthMm": 650.0,
       "thumbnailHeightMm": 650.0,
@@ -75,9 +94,14 @@
       "id": "asset-sofa",
       "assetKind": "block_2d",
       "name": "Sofa marker",
-      "tags": ["living", "interior"],
+      "tags": [
+        "living",
+        "interior"
+      ],
       "category": "furniture",
-      "disciplineTags": ["arch"],
+      "disciplineTags": [
+        "arch"
+      ],
       "thumbnailKind": "schematic_plan",
       "thumbnailWidthMm": 2200.0,
       "thumbnailHeightMm": 900.0,
@@ -189,7 +213,9 @@
       "mode": "plan_2d",
       "viewerClipCapElevMm": null,
       "viewerClipFloorElevMm": null,
-      "hiddenSemanticKinds3d": ["roof"],
+      "hiddenSemanticKinds3d": [
+        "roof"
+      ],
       "cutawayStyle": null,
       "planOverlayEnabled": false,
       "planOverlaySourcePlanViewId": null,
@@ -1083,7 +1109,9 @@
       "mode": "plan_2d",
       "viewerClipCapElevMm": null,
       "viewerClipFloorElevMm": null,
-      "hiddenSemanticKinds3d": ["roof"],
+      "hiddenSemanticKinds3d": [
+        "roof"
+      ],
       "cutawayStyle": null,
       "planOverlayEnabled": false,
       "planOverlaySourcePlanViewId": null,
@@ -1239,11 +1267,15 @@
       "discipline": "arch",
       "circularity": null,
       "props": {
-        "supportedByIds": ["upper-wrapper-floor"],
+        "supportedByIds": [
+          "upper-wrapper-floor"
+        ],
         "exteriorSpaceType": "loggia",
         "guardIntent": "hf-front-loggia-railing protects the exposed south loggia edge.",
         "drainageIntent": "Covered exterior slab with waterproofing and drainage intent at recessed loggia.",
-        "accessElementIds": ["front-loggia-center-door"],
+        "accessElementIds": [
+          "front-loggia-center-door"
+        ],
         "accessIntent": "Occupied exterior loggia accessed through the center glazing door.",
         "boundaryIntent": "Loggia slab edge is bounded by side returns, recessed facade wall, and guard edge.",
         "scheduleIntent": "Exterior occupied floor schedule"
@@ -1457,11 +1489,15 @@
       "discipline": "arch",
       "circularity": null,
       "props": {
-        "supportedByIds": ["upper-wrapper-floor"],
+        "supportedByIds": [
+          "upper-wrapper-floor"
+        ],
         "exteriorSpaceType": "roof_terrace",
         "guardIntent": "hf-roof-court-railing protects the exposed east roof-court edge.",
         "drainageIntent": "Waterproofed walking slab with positive drainage toward the roof-court drain marker.",
-        "accessElementIds": ["hf-roof-court-door"],
+        "accessElementIds": [
+          "hf-roof-court-door"
+        ],
         "accessIntent": "Occupied exterior terrace accessed through hf-roof-court-door.",
         "boundaryIntent": "Roof-court floor edge is bounded by return walls, roof opening perimeter, and guard edge.",
         "scheduleIntent": "Exterior occupied floor schedule"
@@ -5444,7 +5480,10 @@
         ],
         "isCantilever": true,
         "cantileverSupportIntent": "Upper wrapper slab bears on the ground-floor wall box with explicit front/left cantilever intent for structural review.",
-        "cantileverAnchorIds": ["ground-base-wall-01", "ground-base-wall-04"],
+        "cantileverAnchorIds": [
+          "ground-base-wall-01",
+          "ground-base-wall-04"
+        ],
         "structuralSystem": "folded-wrapper concrete slab with ground-wall support lines and reviewed cantilever zones",
         "spanDirection": "east-west"
       },
@@ -5581,7 +5620,9 @@
       "ruleId": "room_target_area_mismatch",
       "severity": "info",
       "message": "Room outline area (3.520 m\u00b2) differs from targetAreaM2 (3.200 m\u00b2) beyond the advisory tolerance.",
-      "elementIds": ["hf-room-ensuite"],
+      "elementIds": [
+        "hf-room-ensuite"
+      ],
       "blocking": false,
       "quickFixCommand": null,
       "discipline": "architecture",
@@ -5591,7 +5632,9 @@
       "ruleId": "room_target_area_mismatch",
       "severity": "info",
       "message": "Room outline area (4.800 m\u00b2) differs from targetAreaM2 (4.400 m\u00b2) beyond the advisory tolerance.",
-      "elementIds": ["hf-room-landing"],
+      "elementIds": [
+        "hf-room-landing"
+      ],
       "blocking": false,
       "quickFixCommand": null,
       "discipline": "architecture",

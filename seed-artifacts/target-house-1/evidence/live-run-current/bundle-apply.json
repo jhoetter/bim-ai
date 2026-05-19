@@ -183,7 +183,9 @@
         "ruleId": "room_target_area_mismatch",
         "severity": "info",
         "message": "Room outline area (3.520 m\u00b2) differs from targetAreaM2 (3.200 m\u00b2) beyond the advisory tolerance.",
-        "elementIds": ["hf-room-ensuite"],
+        "elementIds": [
+          "hf-room-ensuite"
+        ],
         "blocking": false,
         "quickFixCommand": null,
         "discipline": "architecture",
@@ -193,7 +195,9 @@
         "ruleId": "room_target_area_mismatch",
         "severity": "info",
         "message": "Room outline area (4.800 m\u00b2) differs from targetAreaM2 (4.400 m\u00b2) beyond the advisory tolerance.",
-        "elementIds": ["hf-room-landing"],
+        "elementIds": [
+          "hf-room-landing"
+        ],
         "blocking": false,
         "quickFixCommand": null,
         "discipline": "architecture",

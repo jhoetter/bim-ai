@@ -1,12 +1,12 @@
 {
   "schemaVersion": "sketch.evidence.collection.v1",
-  "generatedAt": "2026-05-19T10:00:17.574925Z",
+  "generatedAt": "2026-05-19T10:03:19.104997Z",
   "modelId": "target-house-1-offline-regenerated",
   "revision": 2,
   "phaseId": null,
   "baseUrl": null,
   "currentHead": {
-    "gitHead": "077dff4436b65685eadbc306303f05c880a451dc",
+    "gitHead": "7ae95bebb8e0bc59752ce1600624f99d94a4f066",
     "modelId": "target-house-1-offline-regenerated",
     "modelRevision": 2,
     "bundleSha256": "903d560a8eb43116956cf4aa794e82b173b677b679a0e5d9fd354d34ab4e91ba",

@@ -1,6 +1,6 @@
 {
   "schemaVersion": "target-house.clean-pass-gate.v1",
-  "generatedAt": "2026-05-19T10:00:27.700Z",
+  "generatedAt": "2026-05-19T10:03:30.389Z",
   "targetId": "target-house-1",
   "evidenceDir": "/Users/jhoetter/repos/bim-ai/seed-artifacts/target-house-1/evidence/live-run-current",
   "ok": true,
@@ -22,6 +22,11 @@
   "toleranceLedger": {
     "ok": true,
     "toleranceCount": 0,
-    "requiredFields": ["reason", "owner", "expiryCondition", "evidenceLinks"]
+    "requiredFields": [
+      "reason",
+      "owner",
+      "expiryCondition",
+      "evidenceLinks"
+    ]
   }
 }

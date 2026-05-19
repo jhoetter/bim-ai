@@ -1,15 +1,15 @@
 {
   "schemaVersion": "sketch.evidence.freshness.v1",
-  "generatedAt": "2026-05-19T10:00:17.574869Z",
+  "generatedAt": "2026-05-19T10:03:19.104939Z",
   "ok": true,
   "sourcePath": "seed-artifacts/target-house-1/evidence/live-run-current/tool-run-summary.json",
   "recorded": {
     "schemaVersion": "sketch-to-bim.tool-run.v1",
-    "generatedAt": "2026-05-19T10:00:17.574767Z",
+    "generatedAt": "2026-05-19T10:03:19.104828Z",
     "seed": "target-house-1",
     "modelId": "target-house-1-offline-regenerated",
     "modelRevision": 2,
-    "gitHead": "077dff4436b65685eadbc306303f05c880a451dc",
+    "gitHead": "7ae95bebb8e0bc59752ce1600624f99d94a4f066",
     "bundlePath": "seed-artifacts/target-house-1/bundle.json",
     "bundleSha256": "903d560a8eb43116956cf4aa794e82b173b677b679a0e5d9fd354d34ab4e91ba",
     "commandCount": 263,
@@ -28,11 +28,11 @@
       "packages/web/src/advisor/perspectiveFilter.ts"
     ],
     "mode": "project_initiation_bim",
-    "generatedAtEpochMs": 1779184817574,
+    "generatedAtEpochMs": 1779184999104,
     "executionMode": "offline_bundle_replay"
   },
   "current": {
-    "gitHead": "077dff4436b65685eadbc306303f05c880a451dc",
+    "gitHead": "7ae95bebb8e0bc59752ce1600624f99d94a4f066",
     "modelId": "target-house-1-offline-regenerated",
     "modelRevision": 2,
     "bundleSha256": "903d560a8eb43116956cf4aa794e82b173b677b679a0e5d9fd354d34ab4e91ba",
@@ -64,8 +64,8 @@
       "status": "pass",
       "code": "git_head_current",
       "message": "Evidence gitHead matches current inputs.",
-      "recorded": "077dff4436b65685eadbc306303f05c880a451dc",
-      "current": "077dff4436b65685eadbc306303f05c880a451dc"
+      "recorded": "7ae95bebb8e0bc59752ce1600624f99d94a4f066",
+      "current": "7ae95bebb8e0bc59752ce1600624f99d94a4f066"
     },
     {
       "id": "model_revision",
