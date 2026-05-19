@@ -32,7 +32,6 @@ import { applyFamilyParameters } from '../plan/familyParameterEval';
 import { autoDimensionWalls, tagAllRooms as tagAllRoomsFn } from '../plan/autoDimension';
 import { autoDimensionWalls as autoDimensionWallsCmd } from '../plan/autoDimensionWalls';
 import { checkHeadHeightClearances, type ClearanceViolation } from '../plan/openingClearance';
-import { isPhysicalHostedOpeningWall } from '../viewport/directAuthoringGuards';
 import { ClearanceViolationPanel } from './ClearanceViolationPanel';
 import {
   applyCommand,
@@ -270,7 +269,7 @@ function materializeOptimisticHostedOpening(
     cmd.type === 'createWallOpening' ? optionalString(cmd.hostWallId) : optionalString(cmd.wallId);
   if (!hostWallId) return null;
   const host = elementsById[hostWallId];
-  if (!host || host.kind !== 'wall' || !isPhysicalHostedOpeningWall(host)) return null;
+  if (!host || host.kind !== 'wall') return null;
 
   const id = optionalString(cmd.id) ?? crypto.randomUUID();
   if (elementsById[id]) return null;

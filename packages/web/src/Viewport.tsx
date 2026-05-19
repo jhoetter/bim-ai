@@ -198,7 +198,6 @@ import {
   isBackfacingWallHit,
   isDuplicateHostedPlacement,
   isLinkedElementId,
-  isPhysicalHostedOpeningWall,
   isWallOnActiveAuthoringLevel,
   shouldBypassLevelDatumPickForDirectAuthoring,
   shouldCommitHostedPlacementOnPointerUp,
@@ -1652,7 +1651,6 @@ export function Viewport({
         if (isLinkedElementId(id)) continue;
         const el = elementsByIdRef.current[id];
         if (el?.kind !== 'wall') continue;
-        if (!isPhysicalHostedOpeningWall(el)) continue;
         if (isBackfacingWallHit(h.face?.normal, h.object.matrixWorld, raycaster.ray.direction))
           continue;
         const wall = el;
@@ -2091,7 +2089,6 @@ export function Viewport({
               previewOutline: overlay.previewOutlineScreen,
             }) &&
             overlayHost?.kind === 'wall' &&
-            isPhysicalHostedOpeningWall(overlayHost) &&
             isWallOnActiveAuthoringLevel(overlayHost, draftLevelInfo?.id) &&
             (!hostWall || hostWall.id !== overlayHost.id)
           ) {

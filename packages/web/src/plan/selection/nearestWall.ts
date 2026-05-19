@@ -1,5 +1,4 @@
 import type { Element } from '@bim-ai/core';
-import { isPhysicalHostedOpeningWall } from '../../viewport/directAuthoringGuards';
 
 export type NearestWallHit = {
   wall: Extract<Element, { kind: 'wall' }>;
@@ -18,7 +17,6 @@ export function nearestWallAt(
   let best: NearestWallHit | undefined;
   for (const el of Object.values(elementsById)) {
     if (el.kind !== 'wall') continue;
-    if (!isPhysicalHostedOpeningWall(el)) continue;
     if (activeLevelId && el.levelId !== activeLevelId) continue;
     const ax = el.start.xMm / 1000;
     const az = el.start.yMm / 1000;

@@ -8,7 +8,6 @@ function wall(
   levelId: string,
   start: { xMm: number; yMm: number },
   end: { xMm: number; yMm: number },
-  props?: Record<string, unknown>,
 ): Extract<Element, { kind: 'wall' }> {
   return {
     id,
@@ -21,7 +20,6 @@ function wall(
     heightMm: 3000,
     thicknessMm: 200,
     structural: false,
-    props,
   } as Extract<Element, { kind: 'wall' }>;
 }
 
@@ -48,16 +46,5 @@ describe('nearestWallAt', () => {
     const hit = nearestWallAt(elementsById, 'level-2', 2500, 0);
 
     expect(hit?.wall.id).toBe('level2');
-  });
-
-  it('does not select helper or nonphysical walls as opening hosts', () => {
-    const elementsById: Record<string, Element> = {
-      helper: wall('helper', 'level-1', { xMm: 0, yMm: 0 }, { xMm: 10000, yMm: 0 }, { helper: true }),
-      physical: wall('physical', 'level-1', { xMm: 0, yMm: 500 }, { xMm: 10000, yMm: 500 }),
-    };
-
-    const hit = nearestWallAt(elementsById, 'level-1', 2500, 0);
-
-    expect(hit?.wall.id).toBe('physical');
   });
 });

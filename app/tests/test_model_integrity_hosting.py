@@ -111,22 +111,6 @@ def test_host_wall_outside_level_floor_envelope_is_reported() -> None:
     violations = hosted_opening_integrity_violations(_doc(wall, window))
 
     assert any(v.rule_id == "hosted_opening_host_outside_floor_envelope" for v in violations)
-    assert any(v.rule_id == "physical_wall_outside_envelope" for v in violations)
-
-
-def test_detached_intent_allows_outside_support_context() -> None:
-    wall = _wall(
-        "detached-wall",
-        start=(6000, 1000),
-        end=(7000, 1000),
-        props={"allowDetached": True, "authoringIntent": "detached"},
-    )
-    window = WindowElem(id="window-detached", wallId=wall.id, alongT=0.5, widthMm=600)
-
-    rule_ids = _rule_ids(_doc(wall, window))
-
-    assert "physical_wall_outside_envelope" not in rule_ids
-    assert "hosted_opening_host_outside_floor_envelope" not in rule_ids
 
 
 def test_target_house_access_door_symptom_reports_error_even_when_host_resolves() -> None:

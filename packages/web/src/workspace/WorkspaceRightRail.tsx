@@ -5,7 +5,6 @@ import { useTranslation } from 'react-i18next';
 import type { Element, LensMode, ParamSchemaEntry } from '@bim-ai/core';
 
 import { buildPlanGridDatumInspectorLine } from './readouts';
-import { isPhysicalHostedOpeningWall } from '../viewport/directAuthoringGuards';
 import { useBimStore } from '../state/store';
 import type { OsmLayerName, ViewerRenderStyle } from '../state/storeTypes';
 import {
@@ -352,7 +351,7 @@ export function WorkspaceRightRail({
   surface: 'view-context' | 'element';
   onOpenMaterialBrowser?: (target?: MaterialBrowserTargetRequest) => void;
   onOpenAppearanceAssetBrowser?: (target?: MaterialBrowserTargetRequest) => void;
-}): JSX.Element | null {
+}): JSX.Element {
   const { t } = useTranslation();
   const selectedId = useBimStore((s) => s.selectedId);
   const selectedIds = useBimStore((s) => s.selectedIds);
@@ -2463,7 +2462,6 @@ function SelectedWall3dActions({
   const dispatch = (cmd: Record<string, unknown>): void => {
     void onSemanticCommand(cmd);
   };
-  if (!isPhysicalHostedOpeningWall(wall)) return null;
   return (
     <div className="border-b border-border p-3" data-testid="selected-wall-3d-actions">
       <div
@@ -2558,11 +2556,7 @@ function Selected3dElementActions({
   const categoryLabel = VIEWER_CATEGORY_LABEL[category] ?? category;
   const typeId = selected3dTypeId(element);
   const hostWallId = element.kind === 'door' || element.kind === 'window' ? element.wallId : null;
-  const canSelectHost = Boolean(
-    hostWallId &&
-      elementsById[hostWallId]?.kind === 'wall' &&
-      isPhysicalHostedOpeningWall(elementsById[hostWallId] as Extract<Element, { kind: 'wall' }>),
-  );
+  const canSelectHost = Boolean(hostWallId && elementsById[hostWallId]?.kind === 'wall');
   const canEditType = Boolean(typeId && elementsById[typeId]);
 
   return (

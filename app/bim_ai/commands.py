@@ -82,9 +82,6 @@ class CreateWallCmd(BaseModel):
     top_constraint_offset_mm: float = Field(default=0, alias="topConstraintOffsetMm")
     insulation_extension_mm: float = Field(default=0, alias="insulationExtensionMm")
     material_key: str | None = Field(default=None, alias="materialKey")
-    allow_detached: bool = Field(default=False, alias="allowDetached")
-    authoring_intent: str | None = Field(default=None, alias="authoringIntent")
-    physical_role: str | None = Field(default=None, alias="physicalRole")
     load_bearing: bool | None = Field(default=None, alias="loadBearing")
     structural_role: WallStructuralRole = Field(default="unknown", alias="structuralRole")
     analytical_participation: bool = Field(default=False, alias="analyticalParticipation")
@@ -853,9 +850,6 @@ class CreateFloorCmd(BaseModel):
     finish_thickness_mm: float = Field(alias="finishThicknessMm", default=0)
     floor_type_id: str | None = Field(default=None, alias="floorTypeId")
     room_bounded: bool = Field(default=False, alias="roomBounded")
-    allow_detached: bool = Field(default=False, alias="allowDetached")
-    authoring_intent: str | None = Field(default=None, alias="authoringIntent")
-    physical_role: str | None = Field(default=None, alias="physicalRole")
     props: dict[str, Any] | None = Field(default=None)
 
 

@@ -86,13 +86,7 @@ def try_apply_building_envelope_command(doc, cmd, *, source_provider=None) -> bo
                 floor_type_id=cmd.floor_type_id,
                 room_bounded=cmd.room_bounded,
                 toposolid_elevation_mm=topo_elev,
-                props={
-                    **(cmd.props or {}),
-                    **({"allowDetached": True} if cmd.allow_detached else {}),
-                    **({"authoringIntent": cmd.authoring_intent} if cmd.authoring_intent else {}),
-                    **({"physicalRole": cmd.physical_role} if cmd.physical_role else {}),
-                }
-                or None,
+                props=cmd.props,
                 discipline=DEFAULT_DISCIPLINE_BY_KIND.get("floor", "arch"),
             )
 

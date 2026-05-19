@@ -165,12 +165,6 @@ def try_apply_core_command(doc, cmd, *, source_provider=None) -> bool:
                 taper_ratio=cmd.taper_ratio,
                 discipline=DEFAULT_DISCIPLINE_BY_KIND.get("wall", "arch"),
                 site_host_id=cmd.site_host_id,
-                props={
-                    **({"allowDetached": True} if cmd.allow_detached else {}),
-                    **({"authoringIntent": cmd.authoring_intent} if cmd.authoring_intent else {}),
-                    **({"physicalRole": cmd.physical_role} if cmd.physical_role else {}),
-                }
-                or None,
             )
 
         case MoveWallDeltaCmd():
