@@ -1,7 +1,7 @@
 {
   "findings": [],
-  "generatedAtEpochMs": 1779220207605,
-  "gitHead": "f512daf3b4d90f0c537928983ab8adbfb3e2895c",
+  "generatedAtEpochMs": 1779225231992,
+  "gitHead": "ced10aac3da218983e300d9b6fecb6e3c1374950",
   "inputs": {
     "bundle": "seed-artifacts/target-house-1/bundle.json",
     "commandLog": null,

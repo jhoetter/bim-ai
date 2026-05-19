@@ -493,6 +493,45 @@ def test_derived_envelope_wall_loop_and_floor_boundary_accept_clean_geometry() -
     assert "derived_roof_wall_attachment_invalid" not in _codes(findings)
 
 
+def test_required_envelope_solid_proof_must_be_attached() -> None:
+    elements = _clean_elements()
+    elements["zone-1"]["props"] = {"derivedGeometryProof": {"envelopeClosure": {"required": True}}}
+
+    findings = check_envelope_integrity(elements)
+
+    assert "derived_envelope_solid_proof_missing" in _codes(findings)
+    finding = next(
+        finding for finding in findings if finding["code"] == "derived_envelope_solid_proof_missing"
+    )
+    assert finding["trackerItems"] == ["BIR-F03"]
+
+
+def test_envelope_solid_proof_reports_void_and_vertical_span_failures() -> None:
+    elements = _clean_elements()
+    elements["zone-1"]["props"] = {
+        "derivedGeometryProof": {
+            "envelopeClosure": {
+                "solidUnionClosed": False,
+                "voidCount": 2,
+                "verticalSpanClosed": False,
+                "boundaryLoopClosed": True,
+            }
+        }
+    }
+
+    findings = check_envelope_integrity(elements)
+
+    finding = next(
+        finding for finding in findings if finding["code"] == "derived_envelope_solid_proof_failed"
+    )
+    assert finding["trackerItems"] == ["BIR-F03"]
+    assert set(finding["failedProofChecks"]) == {
+        "solidUnionClosed",
+        "voidCount",
+        "verticalSpanClosed",
+    }
+
+
 def test_derived_loggia_recess_side_returns_must_touch_floor_boundary() -> None:
     elements = _clean_elements()
     elements["floor-1"]["boundaryMm"] = [
@@ -517,6 +556,29 @@ def test_derived_loggia_recess_side_returns_must_touch_floor_boundary() -> None:
     assert finding["trackerItems"] == ["BIR-F04"]
 
 
+def test_derived_loggia_recess_proof_reports_3d_adjacency_failures() -> None:
+    elements = _clean_elements()
+    elements["loggia-1"]["props"]["derivedGeometryProof"] = {
+        "loggiaRecess": {
+            "sideReturnsClosed": True,
+            "floorBoundaryClosed": True,
+            "ceilingReturnClosed": False,
+            "facadeAdjacencyClosed": False,
+        }
+    }
+
+    findings = check_envelope_integrity(elements)
+
+    finding = next(
+        finding for finding in findings if finding["code"] == "derived_loggia_recess_proof_failed"
+    )
+    assert finding["trackerItems"] == ["BIR-F04"]
+    assert set(finding["failedProofChecks"]) == {
+        "ceilingReturnClosed",
+        "facadeAdjacencyClosed",
+    }
+
+
 def test_derived_roof_attachment_flags_walls_outside_roof_overhang() -> None:
     elements = _clean_elements()
     elements["roof-1"]["footprintMm"] = [
@@ -538,3 +600,34 @@ def test_derived_roof_attachment_flags_walls_outside_roof_overhang() -> None:
     )
     assert finding["elementIds"] == ["roof-1", "wall-n"]
     assert finding["trackerItems"] == ["BIR-F06"]
+
+
+def test_derived_roof_attachment_proof_reports_intersection_failures() -> None:
+    elements = _clean_elements()
+    elements["roof-1"]["footprintMm"] = [
+        {"xMm": -450, "yMm": -450},
+        {"xMm": 4450, "yMm": -450},
+        {"xMm": 4450, "yMm": 450},
+        {"xMm": -450, "yMm": 450},
+    ]
+    elements["wall-n"]["start"] = {"xMm": 0, "yMm": 0}
+    elements["wall-n"]["end"] = {"xMm": 4000, "yMm": 0}
+    elements["roof-1"]["props"]["derivedGeometryProof"] = {
+        "roofWallAttachment": {
+            "wallIntersectionsClosed": False,
+            "eaveOffsetsVerified": True,
+            "ridgeAttachmentClosed": False,
+        }
+    }
+
+    findings = check_envelope_integrity(elements)
+
+    finding = next(
+        finding for finding in findings if finding["code"] == "derived_roof_attachment_proof_failed"
+    )
+    assert finding["elementIds"] == ["roof-1", "wall-n"]
+    assert finding["trackerItems"] == ["BIR-F06"]
+    assert set(finding["failedProofChecks"]) == {
+        "wallIntersectionsClosed",
+        "ridgeAttachmentClosed",
+    }

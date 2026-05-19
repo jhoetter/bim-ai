@@ -454,6 +454,59 @@ export function EvidenceArtifactCorrelationPanel({
           ) : null}
         </div>
       ) : null}
+      {evidenceArtifactSummary.methodologyDashboard ? (
+        <div
+          className="mt-2 rounded border border-border/60 bg-background/30 p-2"
+          data-testid="target-house-methodology-dashboard"
+        >
+          <div className="text-[10px] font-semibold text-muted">
+            Target-house methodology dashboard (target-house-methodology-dashboard.v1)
+          </div>
+          <ul className="mt-1 list-disc space-y-0.5 ps-4 text-[10px] text-muted">
+            <li>
+              passing:{' '}
+              <strong>{evidenceArtifactSummary.methodologyDashboard.passingRowCount}</strong>
+              {' / '}blocking:{' '}
+              <strong>{evidenceArtifactSummary.methodologyDashboard.blockingRowCount}</strong>
+              {' / '}total: <strong>{evidenceArtifactSummary.methodologyDashboard.rowCount}</strong>
+            </li>
+            {evidenceArtifactSummary.methodologyDashboard.acceptanceLayer ? (
+              <li>
+                layer:{' '}
+                <code className="font-mono text-[9px]">
+                  {evidenceArtifactSummary.methodologyDashboard.acceptanceLayer}
+                </code>
+              </li>
+            ) : null}
+            {evidenceArtifactSummary.methodologyDashboard.normalAdvisorBoundary ? (
+              <li>{evidenceArtifactSummary.methodologyDashboard.normalAdvisorBoundary}</li>
+            ) : null}
+          </ul>
+          {evidenceArtifactSummary.methodologyDashboard.rows.length > 0 ? (
+            <ul
+              className="mt-2 list-disc space-y-0.5 ps-4 text-[10px] text-muted"
+              data-testid="target-house-methodology-dashboard-rows"
+            >
+              {evidenceArtifactSummary.methodologyDashboard.rows.slice(0, 8).map((row) => (
+                <li key={row.trackerId}>
+                  <code className="font-mono text-[9px]">{row.trackerId}</code>
+                  {' — '}
+                  <span
+                    className={
+                      row.ok
+                        ? 'text-emerald-600 dark:text-emerald-400'
+                        : 'text-amber-700 dark:text-amber-300'
+                    }
+                  >
+                    {row.ok ? 'pass' : 'block'}
+                  </span>
+                  {row.title ? ` · ${row.title}` : ''}
+                </li>
+              ))}
+            </ul>
+          ) : null}
+        </div>
+      ) : null}
       {evidenceArtifactSummary.targetHouseFeatureCoverage ? (
         <div
           className="mt-2 rounded border border-border/60 bg-background/30 p-2"

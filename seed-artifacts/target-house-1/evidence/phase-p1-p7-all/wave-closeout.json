@@ -1,21 +1,55 @@
 {
-  "schemaVersion": "target-house-methodology-dashboard.v1",
+  "schemaVersion": "target-house-wave-closeout.v1",
+  "wave": "W24-E",
+  "ownership": "Methodology traceability, stale evidence UI, wave closeout automation, and remaining envelope proof blockers.",
   "seed": "target-house-1",
   "phase": "p1-p7-all",
-  "ok": false,
+  "generatedAtGitHead": "ced10aac3da218983e300d9b6fecb6e3c1374950",
+  "methodologyDashboard": "methodology-dashboard.json",
+  "trackerItems": [
+    "BIR-F03",
+    "BIR-F04",
+    "BIR-F06",
+    "BIR-M07",
+    "BIR-M08",
+    "BIR-M09",
+    "BIR-M10",
+    "BIR-N10",
+    "BIR-O04",
+    "BIR-T01",
+    "BIR-T04",
+    "BIR-T05",
+    "BIR-W04"
+  ],
+  "requiredFields": ["Wave", "Tracker changes", "Tests", "Evidence", "Blockers"],
   "acceptanceLayer": "sketch_methodology_not_normal_advisor",
   "normalAdvisorBoundary": "This dashboard can block sketch/brief acceptance; it does not create normal Advisor findings.",
-  "summary": {
-    "rowCount": 11,
-    "passingRowCount": 10,
-    "blockingRowCount": 1,
-    "unresolvedAssumptionCount": 20
-  },
   "rows": [
     {
+      "trackerId": "BIR-F03",
+      "status": "blocked_or_external",
+      "title": "",
+      "evidence": [],
+      "summary": {}
+    },
+    {
+      "trackerId": "BIR-F04",
+      "status": "blocked_or_external",
+      "title": "",
+      "evidence": [],
+      "summary": {}
+    },
+    {
+      "trackerId": "BIR-F06",
+      "status": "blocked_or_external",
+      "title": "",
+      "evidence": [],
+      "summary": {}
+    },
+    {
       "trackerId": "BIR-M07",
+      "status": "pass",
       "title": "visual readout drift loop",
-      "ok": true,
       "evidence": ["visual-readout.md", "corrections.md", "semantic-checklist.json"],
       "summary": {
         "semanticCheckCount": 305,
@@ -24,8 +58,8 @@
     },
     {
       "trackerId": "BIR-M08",
+      "status": "pass",
       "title": "methodology failure taxonomy",
-      "ok": true,
       "evidence": ["issue-ledger.json", "finding-dispositions.json"],
       "summary": {
         "taxonomyCounts": {}
@@ -33,8 +67,8 @@
     },
     {
       "trackerId": "BIR-M09",
+      "status": "pass",
       "title": "seed artifact cleanliness gates",
-      "ok": true,
       "evidence": ["phase-packet.json", "evidence-manifest.json"],
       "summary": {
         "artifactCount": 23
@@ -42,17 +76,36 @@
     },
     {
       "trackerId": "BIR-M10",
+      "status": "pass",
       "title": "agent prompt/workflow templates",
-      "ok": true,
       "evidence": ["spec/sketch-to-bim-agent-workflow-templates.md", "methodology-dashboard.json"],
       "summary": {
         "launchSurface": "target-house-methodology-artifacts"
       }
     },
     {
+      "trackerId": "BIR-N10",
+      "status": "blocked_or_external",
+      "title": "final package readiness",
+      "evidence": ["target-house-1-final-closeout-manifest.json"],
+      "summary": {
+        "ready": false,
+        "blockers": ["tracker_not_done", "tracker_incomplete"]
+      }
+    },
+    {
+      "trackerId": "BIR-O04",
+      "status": "pass",
+      "title": "end-to-end acceptance rehearsal",
+      "evidence": ["target-house-1-final-closeout-manifest.json"],
+      "summary": {
+        "rehearsalOk": true
+      }
+    },
+    {
       "trackerId": "BIR-T01",
+      "status": "pass",
       "title": "source feature to BIM element coverage",
-      "ok": true,
       "evidence": ["source-feature-map.json"],
       "summary": {
         "featureCount": 10,
@@ -61,8 +114,8 @@
     },
     {
       "trackerId": "BIR-T04",
+      "status": "pass",
       "title": "stale evidence invalidation",
-      "ok": true,
       "evidence": ["evidence-freshness.json"],
       "summary": {
         "staleCount": 0,
@@ -71,8 +124,8 @@
     },
     {
       "trackerId": "BIR-T05",
+      "status": "pass",
       "title": "feature coverage dashboard",
-      "ok": true,
       "evidence": ["methodology-dashboard.json", "target-house-closeout-lineage.json"],
       "summary": {
         "featureCount": 10,
@@ -80,43 +133,48 @@
       }
     },
     {
-      "trackerId": "BIR-U06",
-      "title": "Advisor learning corpus handoff",
-      "ok": true,
-      "evidence": ["constructability-report.json", "issue-ledger.json"],
-      "summary": {
-        "confirmedIssueCount": 0,
-        "labelContract": "advisor.learning-corpus-hook.v1"
-      }
-    },
-    {
       "trackerId": "BIR-W04",
+      "status": "pass",
       "title": "wave closeout template attachment",
-      "ok": true,
       "evidence": ["methodology-dashboard.json", "wave-closeout.json"],
       "summary": {
         "requiredFields": ["Wave", "Tracker changes", "Tests", "Evidence", "Blockers"],
         "attachedGeneratedArtifact": true
       }
+    }
+  ],
+  "blockerRows": [
+    {
+      "trackerId": "BIR-F03",
+      "status": "blocked_or_external",
+      "title": "",
+      "evidence": [],
+      "summary": {}
     },
     {
-      "trackerId": "BIR-O04",
-      "title": "end-to-end acceptance rehearsal",
-      "ok": true,
-      "evidence": ["target-house-1-final-closeout-manifest.json"],
-      "summary": {
-        "rehearsalOk": true
-      }
+      "trackerId": "BIR-F04",
+      "status": "blocked_or_external",
+      "title": "",
+      "evidence": [],
+      "summary": {}
+    },
+    {
+      "trackerId": "BIR-F06",
+      "status": "blocked_or_external",
+      "title": "",
+      "evidence": [],
+      "summary": {}
     },
     {
       "trackerId": "BIR-N10",
+      "status": "blocked_or_external",
       "title": "final package readiness",
-      "ok": false,
       "evidence": ["target-house-1-final-closeout-manifest.json"],
       "summary": {
         "ready": false,
         "blockers": ["tracker_not_done", "tracker_incomplete"]
       }
     }
-  ]
+  ],
+  "ok": true
 }

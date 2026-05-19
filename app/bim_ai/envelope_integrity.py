@@ -575,6 +575,7 @@ def _check_derived_envelope_zone_geometry(
 
     boundary_points = [point for _, start, end in wall_segments for point in (start, end)]
     if not boundary_points:
+        findings.extend(_check_derived_envelope_solid_proof(zone_id, zone, required_ids))
         return findings
 
     covering_ids: list[str] = []
@@ -600,6 +601,7 @@ def _check_derived_envelope_zone_geometry(
                 "Align the derived wall loop with at least one declared roof/floor/slab footprint.",
             )
         )
+    findings.extend(_check_derived_envelope_solid_proof(zone_id, zone, required_ids))
     return findings
 
 
@@ -620,7 +622,7 @@ def _check_derived_loggia_recess_geometry(
     ]
     has_any_geometry = len(floor_polygon) >= 3 or any(segment for _, segment in side_segments)
     if not has_any_geometry and not _derived_geometry_required(element, "loggiaRecess"):
-        return []
+        return _check_derived_loggia_proof(element_id, element, side_return_ids)
 
     if len(floor_polygon) < 3 or len([segment for _, segment in side_segments if segment]) < 2:
         return [
@@ -661,7 +663,7 @@ def _check_derived_loggia_recess_geometry(
                 "Model loggia side returns as parallel physical returns that meet the recessed floor boundary.",
             )
         ]
-    return []
+    return _check_derived_loggia_proof(element_id, element, side_return_ids)
 
 
 def _check_derived_roof_wall_attachment_geometry(
@@ -719,7 +721,175 @@ def _check_derived_roof_wall_attachment_geometry(
                 "Align attached exterior walls under the roof footprint and within the declared overhang/eave offset.",
             )
         ]
-    return []
+    return _check_derived_roof_attachment_proof(roof_id, roof, attached_wall_ids)
+
+
+def _check_derived_envelope_solid_proof(
+    zone_id: str,
+    zone: Any,
+    required_ids: list[str],
+) -> list[Finding]:
+    proof = _geometry_proof_mapping(zone, "envelopeClosure")
+    proof_required = _derived_geometry_required(zone, "envelopeClosure")
+    expected_keys = (
+        "solidUnionClosed",
+        "solid_union_closed",
+        "voidCount",
+        "void_count",
+        "verticalSpanClosed",
+        "vertical_span_closed",
+        "boundaryLoopClosed",
+        "boundary_loop_closed",
+    )
+    if not proof or (proof_required and not any(key in proof for key in expected_keys)):
+        if not proof_required:
+            return []
+        return [
+            _finding(
+                "bir_f03_derived_envelope_solid_proof_missing",
+                "derived_envelope_solid_proof_missing",
+                "error",
+                "high",
+                [zone_id, *required_ids],
+                "Attach derived envelope closure proof with solid union, void count, and vertical span results.",
+            )
+        ]
+
+    failed: list[str] = []
+    if _proof_bool(proof, "solidUnionClosed", "solid_union_closed") is False:
+        failed.append("solidUnionClosed")
+    void_count = _proof_number(proof, "voidCount", "void_count", "unclassifiedVoidCount")
+    if void_count is not None and void_count > 0:
+        failed.append("voidCount")
+    if _proof_bool(proof, "verticalSpanClosed", "vertical_span_closed") is False:
+        failed.append("verticalSpanClosed")
+    if _proof_bool(proof, "boundaryLoopClosed", "boundary_loop_closed") is False:
+        failed.append("boundaryLoopClosed")
+    if not failed:
+        return []
+    return [
+        _finding(
+            "bir_f03_derived_envelope_solid_proof_failed",
+            "derived_envelope_solid_proof_failed",
+            "error",
+            "high",
+            [zone_id, *required_ids],
+            "Regenerate the envelope proof after closing solid-union, void, boundary-loop, and vertical-span blockers.",
+            failedProofChecks=failed,
+        )
+    ]
+
+
+def _check_derived_loggia_proof(
+    element_id: str,
+    element: Any,
+    side_return_ids: list[str],
+) -> list[Finding]:
+    proof = _geometry_proof_mapping(element, "loggiaRecess")
+    proof_required = _derived_geometry_required(element, "loggiaRecess")
+    expected_keys = (
+        "sideReturnsClosed",
+        "side_returns_closed",
+        "floorBoundaryClosed",
+        "floor_boundary_closed",
+        "ceilingReturnClosed",
+        "ceiling_return_closed",
+        "facadeAdjacencyClosed",
+        "facade_adjacency_closed",
+    )
+    if not proof or (proof_required and not any(key in proof for key in expected_keys)):
+        if not proof_required:
+            return []
+        return [
+            _finding(
+                "bir_f04_derived_loggia_recess_proof_missing",
+                "derived_loggia_recess_proof_missing",
+                "error",
+                "high",
+                [element_id, *side_return_ids],
+                "Attach loggia recess proof for side returns, floor boundary, ceiling return, and facade adjacency.",
+            )
+        ]
+
+    failed = [
+        label
+        for label, value in [
+            ("sideReturnsClosed", _proof_bool(proof, "sideReturnsClosed", "side_returns_closed")),
+            ("floorBoundaryClosed", _proof_bool(proof, "floorBoundaryClosed", "floor_boundary_closed")),
+            ("ceilingReturnClosed", _proof_bool(proof, "ceilingReturnClosed", "ceiling_return_closed")),
+            ("facadeAdjacencyClosed", _proof_bool(proof, "facadeAdjacencyClosed", "facade_adjacency_closed")),
+        ]
+        if value is False
+    ]
+    if not failed:
+        return []
+    return [
+        _finding(
+            "bir_f04_derived_loggia_recess_proof_failed",
+            "derived_loggia_recess_proof_failed",
+            "error",
+            "high",
+            [element_id, *side_return_ids],
+            "Regenerate the loggia proof after closing return, floor, ceiling, and facade-adjacency blockers.",
+            failedProofChecks=failed,
+        )
+    ]
+
+
+def _check_derived_roof_attachment_proof(
+    roof_id: str,
+    roof: Any,
+    attached_wall_ids: list[str],
+) -> list[Finding]:
+    proof = _geometry_proof_mapping(roof, "roofWallAttachment")
+    proof_required = _derived_geometry_required(roof, "roofWallAttachment")
+    expected_keys = (
+        "wallIntersectionsClosed",
+        "wall_intersections_closed",
+        "eaveOffsetsVerified",
+        "eave_offsets_verified",
+        "ridgeAttachmentClosed",
+        "ridge_attachment_closed",
+    )
+    if not proof or (proof_required and not any(key in proof for key in expected_keys)):
+        if not proof_required:
+            return []
+        return [
+            _finding(
+                "bir_f06_derived_roof_attachment_proof_missing",
+                "derived_roof_attachment_proof_missing",
+                "error",
+                "high",
+                [roof_id, *attached_wall_ids],
+                "Attach roof/wall proof for intersections, eave offsets, and ridge/attachment semantics.",
+            )
+        ]
+
+    failed = [
+        label
+        for label, value in [
+            (
+                "wallIntersectionsClosed",
+                _proof_bool(proof, "wallIntersectionsClosed", "wall_intersections_closed"),
+            ),
+            ("eaveOffsetsVerified", _proof_bool(proof, "eaveOffsetsVerified", "eave_offsets_verified")),
+            ("ridgeAttachmentClosed", _proof_bool(proof, "ridgeAttachmentClosed", "ridge_attachment_closed")),
+        ]
+        if value is False
+    ]
+    if not failed:
+        return []
+    return [
+        _finding(
+            "bir_f06_derived_roof_attachment_proof_failed",
+            "derived_roof_attachment_proof_failed",
+            "error",
+            "high",
+            [roof_id, *attached_wall_ids],
+            "Regenerate the roof/wall attachment proof after closing intersection, eave-offset, and ridge blockers.",
+            failedProofChecks=failed,
+        )
+    ]
 
 
 def _check_performance_metadata(elements: Mapping[str, Any], *, profile: str) -> list[Finding]:
@@ -1187,8 +1357,52 @@ def _derived_geometry_required(element: Any, proof_key: str) -> bool:
         return True
     proof = _pick(props, "derivedGeometryProof", "geometryProof", "geometryProofs")
     if isinstance(proof, Mapping):
-        return bool(_pick(proof, proof_key, _snake(proof_key), "required"))
+        value = _pick(proof, proof_key, _snake(proof_key), "required")
+        if isinstance(value, Mapping):
+            return bool(_pick(value, "required"))
+        return bool(value)
     return False
+
+
+def _geometry_proof_mapping(element: Any, proof_key: str) -> Mapping[str, Any]:
+    props = _props(element)
+    proof = _pick(props, "derivedGeometryProof", "geometryProof", "geometryProofs")
+    if not isinstance(proof, Mapping):
+        return {}
+    nested = _pick(proof, proof_key, _snake(proof_key))
+    if isinstance(nested, Mapping):
+        return nested
+    if any(
+        key in proof
+        for key in (
+            "solidUnionClosed",
+            "solid_union_closed",
+            "sideReturnsClosed",
+            "side_returns_closed",
+            "wallIntersectionsClosed",
+            "wall_intersections_closed",
+        )
+    ):
+        return proof
+    return {}
+
+
+def _proof_bool(proof: Mapping[str, Any], *names: str) -> bool | None:
+    value = _pick(proof, *names)
+    if isinstance(value, bool):
+        return value
+    if isinstance(value, str):
+        normalized = value.strip().lower()
+        if normalized in {"true", "pass", "passed", "ok", "closed", "verified"}:
+            return True
+        if normalized in {"false", "fail", "failed", "open", "blocked", "invalid"}:
+            return False
+    return None
+
+
+def _proof_number(proof: Mapping[str, Any], *names: str) -> float | None:
+    value = _pick(proof, *names)
+    return _float_or_none(value)
 
 
 def _tracker_items_for_rule(rule_id: str) -> list[str]:

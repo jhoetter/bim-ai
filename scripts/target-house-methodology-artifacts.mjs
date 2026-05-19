@@ -8,6 +8,21 @@ import { spawnSync } from 'node:child_process';
 const REPO_ROOT = path.resolve(new URL('..', import.meta.url).pathname);
 const DEFAULT_SEED = 'target-house-1';
 const DEFAULT_PHASE = 'p1-p7-all';
+const WAVE_24E_TRACKER_ITEMS = [
+  'BIR-F03',
+  'BIR-F04',
+  'BIR-F06',
+  'BIR-M07',
+  'BIR-M08',
+  'BIR-M09',
+  'BIR-M10',
+  'BIR-N10',
+  'BIR-O04',
+  'BIR-T01',
+  'BIR-T04',
+  'BIR-T05',
+  'BIR-W04',
+];
 
 function usage() {
   console.error(`Usage:
@@ -212,6 +227,7 @@ function buildMethodologyDashboardPayload({
   evidenceFreshness,
   finalCloseoutManifest,
   artifactRows,
+  waveCloseoutAttached = false,
 }) {
   const featureRows = arrayValue(
     sourceFeatureMap?.features ??
@@ -319,10 +335,11 @@ function buildMethodologyDashboardPayload({
     {
       trackerId: 'BIR-W04',
       title: 'wave closeout template attachment',
-      ok: true,
-      evidence: ['methodology-dashboard.json'],
+      ok: waveCloseoutAttached === true,
+      evidence: ['methodology-dashboard.json', 'wave-closeout.json'],
       summary: {
         requiredFields: ['Wave', 'Tracker changes', 'Tests', 'Evidence', 'Blockers'],
+        attachedGeneratedArtifact: waveCloseoutAttached === true,
       },
     },
     {
@@ -360,6 +377,36 @@ function buildMethodologyDashboardPayload({
       unresolvedAssumptionCount: unresolvedAssumptions.length,
     },
     rows,
+  };
+}
+
+function buildWaveCloseoutPayload({ seed, phase, methodologyDashboard }) {
+  const rows = WAVE_24E_TRACKER_ITEMS.map((trackerId) => {
+    const dashboardRow = methodologyDashboard.rows.find((row) => row.trackerId === trackerId);
+    return {
+      trackerId,
+      status: dashboardRow?.ok === true ? 'pass' : 'blocked_or_external',
+      title: dashboardRow?.title ?? '',
+      evidence: dashboardRow?.evidence ?? [],
+      summary: dashboardRow?.summary ?? {},
+    };
+  });
+  return {
+    schemaVersion: 'target-house-wave-closeout.v1',
+    wave: 'W24-E',
+    ownership:
+      'Methodology traceability, stale evidence UI, wave closeout automation, and remaining envelope proof blockers.',
+    seed,
+    phase,
+    generatedAtGitHead: gitHead(),
+    methodologyDashboard: 'methodology-dashboard.json',
+    trackerItems: WAVE_24E_TRACKER_ITEMS,
+    requiredFields: ['Wave', 'Tracker changes', 'Tests', 'Evidence', 'Blockers'],
+    acceptanceLayer: methodologyDashboard.acceptanceLayer,
+    normalAdvisorBoundary: methodologyDashboard.normalAdvisorBoundary,
+    rows,
+    blockerRows: rows.filter((row) => row.status !== 'pass'),
+    ok: true,
   };
 }
 
@@ -514,8 +561,13 @@ async function buildMethodologyArtifacts({ seed, phase }) {
     evidenceFreshness: await readJsonIfExists(path.join(liveDir, 'evidence-freshness.json')),
     finalCloseoutManifest: await finalCloseoutManifestForDashboard(seed, liveDir),
     artifactRows,
+    waveCloseoutAttached: true,
   });
   await writeJson(path.join(phaseDir, 'methodology-dashboard.json'), methodologyDashboard);
+  await writeJson(
+    path.join(phaseDir, 'wave-closeout.json'),
+    buildWaveCloseoutPayload({ seed, phase, methodologyDashboard }),
+  );
   artifactRows = [];
   for (const fileName of (await fs.readdir(phaseDir)).sort()) {
     const abs = path.join(phaseDir, fileName);
@@ -547,7 +599,7 @@ async function main() {
   if (!result.ok) process.exit(1);
 }
 
-export { buildMethodologyArtifacts, buildMethodologyDashboardPayload };
+export { buildMethodologyArtifacts, buildMethodologyDashboardPayload, buildWaveCloseoutPayload };
 
 if (import.meta.url === `file://${process.argv[1]}`) {
   main().catch((error) => {

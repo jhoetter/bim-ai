@@ -31,7 +31,9 @@ def test_bim_integrity_tracker_audit_report_has_core_accounting_sections() -> No
     assert "## By Tracker Section" in report
     assert "## By Milestone / Wave Mapping" in report
     assert "## Wave 7 Feature Coverage Dashboard Data" in report
+    assert "## Wave Closeout Automation" in report
     assert "## Implementation Evidence Accounting" in report
+    assert "seed-artifacts/target-house-1/evidence/phase-p1-p7-all/wave-closeout.json" in report
     assert "Done quality gate passed" in report
     assert "| BIR-T through BIR-W |" in report
     assert "Duplicate ids: 0" in report

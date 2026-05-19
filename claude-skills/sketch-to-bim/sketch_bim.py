@@ -475,6 +475,46 @@ def normalize_selector_token(value: Any) -> str:
     return re.sub(r"[^a-z0-9]+", "", str(value or "").lower())
 
 
+def selector_words(value: Any) -> list[str]:
+    return re.findall(r"[a-z0-9]+", str(value or "").lower())
+
+
+def selector_word_matches(word: str, haystack: str) -> bool:
+    synonyms = {
+        "clad": ("clad", "cladded", "cladding"),
+        "cladding": ("clad", "cladded", "cladding"),
+        "envelope": ("envelope", "roof", "wall", "shell"),
+        "orientation": ("orientation", "north", "base", "point"),
+        "plinth": ("plinth", "base"),
+        "site": ("site", "project", "base", "point"),
+        "wrapper": ("wrapper", "shell"),
+    }
+    candidates = synonyms.get(word, (word,))
+    return any(normalize_selector_token(candidate) in haystack for candidate in candidates)
+
+
+def selector_token_matches(raw_value: str, element: dict[str, Any]) -> bool:
+    selector_token = normalize_selector_token(raw_value)
+    if not selector_token:
+        return False
+    haystack = normalize_selector_token(
+        " ".join(
+            str(element.get(key) or "")
+            for key in ("id", "name", "kind", "typeId", "levelId", "hostId", "roomId")
+        )
+    )
+    if selector_token in haystack:
+        return True
+    words = [
+        word
+        for word in selector_words(raw_value)
+        if word not in {"and", "the", "a", "an", "feature", "kind"}
+    ]
+    if len(words) < 2:
+        return False
+    return all(selector_word_matches(word, haystack) for word in words)
+
+
 def snapshot_elements_for_seed(seed: str | None) -> list[dict[str, Any]]:
     if not seed:
         return []
@@ -521,16 +561,7 @@ def selector_matches_element(selector: str, element: dict[str, Any]) -> bool:
         return False
     if value in {"", "*"}:
         return bool(kinds)
-    selector_token = normalize_selector_token(value)
-    if not selector_token:
-        return False
-    haystack = normalize_selector_token(
-        " ".join(
-            str(element.get(key) or "")
-            for key in ("id", "name", "kind", "typeId", "levelId", "hostId", "roomId")
-        )
-    )
-    return selector_token in haystack
+    return selector_token_matches(value, element)
 
 
 def resolve_feature_element_ids(feature: dict[str, Any], elements: list[dict[str, Any]]) -> list[str]:

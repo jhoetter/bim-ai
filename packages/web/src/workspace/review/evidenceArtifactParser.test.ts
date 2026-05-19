@@ -576,6 +576,53 @@ describe('parseEvidenceArtifact — target-house feature coverage dashboard', ()
   });
 });
 
+describe('parseEvidenceArtifact — target-house methodology dashboard', () => {
+  it('parses methodology rows while preserving sketch acceptance boundary', () => {
+    const payload = {
+      schemaVersion: 'target-house-methodology-dashboard.v1',
+      ok: false,
+      acceptanceLayer: 'sketch_methodology_not_normal_advisor',
+      normalAdvisorBoundary:
+        'This dashboard can block sketch/brief acceptance; it does not create normal Advisor findings.',
+      summary: { rowCount: 2, passingRowCount: 1, blockingRowCount: 1 },
+      rows: [
+        {
+          trackerId: 'BIR-T04',
+          title: 'stale evidence invalidation',
+          ok: false,
+          evidence: ['evidence-freshness.json'],
+          summary: { staleCount: 1 },
+        },
+        {
+          trackerId: 'BIR-O04',
+          title: 'end-to-end acceptance rehearsal',
+          ok: true,
+          evidence: ['target-house-1-final-closeout-manifest.json'],
+        },
+      ],
+    };
+
+    const r = parseEvidenceArtifact(JSON.stringify(payload), 1);
+
+    expect(r.methodologyDashboard).toMatchObject({
+      ok: false,
+      acceptanceLayer: 'sketch_methodology_not_normal_advisor',
+      blockingRowCount: 1,
+      passingRowCount: 1,
+      rowCount: 2,
+    });
+    expect(r.methodologyDashboard?.normalAdvisorBoundary).toContain(
+      'does not create normal Advisor findings',
+    );
+    expect(r.methodologyDashboard?.rows[0]).toMatchObject({
+      trackerId: 'BIR-T04',
+      ok: false,
+      evidence: ['evidence-freshness.json'],
+      summary: { staleCount: 1 },
+    });
+  });
+});
+
 describe('parseEvidenceArtifact — suggestedBasenameHint', () => {
   it('reads suggestedEvidenceArtifactBasename', () => {
     const payload = { suggestedEvidenceArtifactBasename: 'evidence-2026-05-06.json' };

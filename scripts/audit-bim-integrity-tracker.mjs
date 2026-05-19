@@ -28,6 +28,27 @@ const REQUIRED_DONE_EVIDENCE_FIELDS = [
   ['commit', 'commit/wave reference'],
   ['limitations', 'limitations'],
 ];
+const REQUIRED_WAVE_CLOSEOUTS = [
+  {
+    wave: 'W24-E',
+    path: 'seed-artifacts/target-house-1/evidence/phase-p1-p7-all/wave-closeout.json',
+    trackerItems: [
+      'BIR-F03',
+      'BIR-F04',
+      'BIR-F06',
+      'BIR-M07',
+      'BIR-M08',
+      'BIR-M09',
+      'BIR-M10',
+      'BIR-N10',
+      'BIR-O04',
+      'BIR-T01',
+      'BIR-T04',
+      'BIR-T05',
+      'BIR-W04',
+    ],
+  },
+];
 
 function parseArgs(argv) {
   const args = {
@@ -384,10 +405,55 @@ function buildWave7DashboardRows(parsed, evidenceAccounting) {
     });
 }
 
+function buildWaveCloseoutAccounting() {
+  const rows = [];
+  const validationErrors = [];
+  for (const requirement of REQUIRED_WAVE_CLOSEOUTS) {
+    const absPath = path.join(REPO_ROOT, requirement.path);
+    if (!fs.existsSync(absPath)) {
+      rows.push({ ...requirement, status: 'missing', blocker: 'missing_wave_closeout_artifact' });
+      validationErrors.push(`${requirement.wave}: missing generated closeout artifact ${requirement.path}`);
+      continue;
+    }
+    let payload;
+    try {
+      payload = JSON.parse(fs.readFileSync(absPath, 'utf8'));
+    } catch {
+      rows.push({ ...requirement, status: 'invalid', blocker: 'invalid_json' });
+      validationErrors.push(`${requirement.wave}: closeout artifact is not valid JSON`);
+      continue;
+    }
+    const artifactItems = Array.isArray(payload.trackerItems) ? payload.trackerItems : [];
+    const missingTrackerItems = requirement.trackerItems.filter((id) => !artifactItems.includes(id));
+    const schemaOk = payload.schemaVersion === 'target-house-wave-closeout.v1';
+    const waveOk = payload.wave === requirement.wave;
+    const ok = schemaOk && waveOk && missingTrackerItems.length === 0;
+    if (!ok) {
+      validationErrors.push(
+        `${requirement.wave}: closeout artifact incomplete (${[
+          schemaOk ? '' : 'schema',
+          waveOk ? '' : 'wave',
+          missingTrackerItems.length ? `missing ${missingTrackerItems.join(', ')}` : '',
+        ]
+          .filter(Boolean)
+          .join('; ')})`,
+      );
+    }
+    rows.push({
+      ...requirement,
+      status: ok ? 'attached' : 'invalid',
+      blocker: ok ? '' : 'invalid_wave_closeout_artifact',
+      missingTrackerItems,
+    });
+  }
+  return { rows, validationErrors };
+}
+
 function buildReport(parsed, trackerPath) {
   const counts = countItems(parsed.items);
   const milestoneRollups = buildMilestoneRollups(parsed);
   const evidenceAccounting = buildEvidenceAccounting(parsed);
+  const waveCloseoutAccounting = buildWaveCloseoutAccounting();
   const validationErrors = [
     ...parsed.invalidRows,
     ...parsed.duplicateIds.map((row) => `${row.id} line ${row.lineNumber}: duplicate id`),
@@ -401,6 +467,7 @@ function buildReport(parsed, trackerPath) {
         )})`,
     ),
     ...parsed.unknownWaveRefs,
+    ...waveCloseoutAccounting.validationErrors,
   ];
   const unmappedItems = parsed.items.filter((item) => !parsed.milestoneByItem.has(item.id));
   const wave7DashboardRows = buildWave7DashboardRows(parsed, evidenceAccounting);
@@ -431,6 +498,7 @@ function buildReport(parsed, trackerPath) {
       })),
       duplicateEvidenceRows: evidenceAccounting.duplicateEvidenceRows.map((row) => row.id),
     },
+    waveCloseoutAccounting,
     wave7DashboardRows,
   };
 }
@@ -515,6 +583,21 @@ function renderMarkdown(report) {
   for (const row of report.wave7DashboardRows) {
     lines.push(
       `| \`${row.id}\` | ${row.priority} | ${row.status} | ${row.evidenceState} | ${escapeCell(row.tests || 'None linked')} | ${escapeCell(row.item)} |`,
+    );
+  }
+
+  lines.push(
+    '',
+    '## Wave Closeout Automation',
+    '',
+    'Generated closeout artifacts are required for parent-wave rows before the wave can be called closed.',
+    '',
+    '| Wave | Status | Artifact | Required tracker items |',
+    '| ---- | ------ | -------- | ---------------------- |',
+  );
+  for (const row of report.waveCloseoutAccounting.rows) {
+    lines.push(
+      `| ${row.wave} | ${row.status} | \`${escapeCell(row.path)}\` | ${row.trackerItems.length} |`,
     );
   }
 

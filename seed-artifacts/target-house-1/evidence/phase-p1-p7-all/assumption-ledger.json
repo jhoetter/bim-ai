@@ -15,9 +15,7 @@
       "resolution": "Confirm before generation; record any uniform scaling in the phase packet.",
       "source": "seed-artifacts/target-house-1/evidence/sketch-ir.json",
       "sourceIndex": 0,
-      "sourceRefs": [
-        "seed-artifacts/target-house-1/evidence/sketch-ir.json"
-      ],
+      "sourceRefs": ["seed-artifacts/target-house-1/evidence/sketch-ir.json"],
       "status": "recorded",
       "text": "Use the dimensioned floorplan's 14.0 m by 10.0 m footprint as the first generation scale basis unless the user explicitly prefers the smaller visual proportion targets in target-house-seed.md."
     },
@@ -36,9 +34,7 @@
       "resolution": "Replace the concept site datums when a legal survey or north arrow is supplied; do not satisfy site checks with tolerance-only text.",
       "source": "seed-artifacts/target-house-1/evidence/sketch-ir.json",
       "sourceIndex": 1,
-      "sourceRefs": [
-        "seed-artifacts/target-house-1/evidence/sketch-ir.json"
-      ],
+      "sourceRefs": ["seed-artifacts/target-house-1/evidence/sketch-ir.json"],
       "status": "recorded",
       "text": "Plan north is unknown. Use plan-up as project north with explicit project base point, survey point, site boundary, property lines, and terrain toposolid in the seed model."
     },
@@ -57,9 +53,7 @@
       "resolution": "Main, front, roof-high, and wire diagnostic views must prove the shell reads as one thick object.",
       "source": "seed-artifacts/target-house-1/evidence/sketch-ir.json",
       "sourceIndex": 2,
-      "sourceRefs": [
-        "seed-artifacts/target-house-1/evidence/sketch-ir.json"
-      ],
+      "sourceRefs": ["seed-artifacts/target-house-1/evidence/sketch-ir.json"],
       "status": "recorded",
       "text": "The roof/wrapper should be authored as a white folded shell with asymmetric gable-like front profile and a roof court void, even if lower-level commands require walls, roof, fascia, and return elements rather than one macro."
     },
@@ -78,9 +72,7 @@
       "resolution": "Advisor must have no room_boundary_open, room_no_door, or room_derived_interior_separation_ambiguous blockers.",
       "source": "seed-artifacts/target-house-1/evidence/sketch-ir.json",
       "sourceIndex": 3,
-      "sourceRefs": [
-        "seed-artifacts/target-house-1/evidence/sketch-ir.json"
-      ],
+      "sourceRefs": ["seed-artifacts/target-house-1/evidence/sketch-ir.json"],
       "status": "recorded",
       "text": "Open-plan kitchen/dining/living can use real walls plus limited room separation only where the architectural condition is intentionally open."
     },
@@ -99,9 +91,7 @@
       "resolution": "",
       "source": "seed-artifacts/target-house-1/evidence/target-house-1.recipe.json",
       "sourceIndex": 0,
-      "sourceRefs": [
-        "spec/target-house/target-house-seed.md"
-      ],
+      "sourceRefs": ["spec/target-house/target-house-seed.md"],
       "status": "recorded",
       "text": "Image-locked target-house-1 source spec and floorplan used for generation."
     },
@@ -120,9 +110,7 @@
       "resolution": "",
       "source": "seed-artifacts/target-house-1/evidence/target-house-1.recipe.json",
       "sourceIndex": 1,
-      "sourceRefs": [
-        "spec/target-house/floorplan.png"
-      ],
+      "sourceRefs": ["spec/target-house/floorplan.png"],
       "status": "recorded",
       "text": "14 m x 10 m floorplan basis reconciled with compact reference proportions; visible shell proportions prioritized."
     },
@@ -141,9 +129,7 @@
       "resolution": "",
       "source": "seed-artifacts/target-house-1/evidence/target-house-1.recipe.json",
       "sourceIndex": 2,
-      "sourceRefs": [
-        "spec/target-house/target-house-1-bim-information-requirements.md"
-      ],
+      "sourceRefs": ["spec/target-house/target-house-1-bim-information-requirements.md"],
       "status": "recorded",
       "text": "Real BIM categories, rooms, types, schedules, export placeholders, structure-lite and MEP-lite markers included; final detailing remains later phase."
     },
@@ -162,9 +148,7 @@
       "resolution": "",
       "source": "seed-artifacts/target-house-1/evidence/target-house-1.recipe.json",
       "sourceIndex": 3,
-      "sourceRefs": [
-        "M5 acceptance remediation"
-      ],
+      "sourceRefs": ["M5 acceptance remediation"],
       "status": "recorded",
       "text": "Add explicit IR room/space coverage and IFC furnishing family instances for final acceptance."
     },
@@ -183,9 +167,7 @@
       "resolution": "",
       "source": "seed-artifacts/target-house-1/evidence/target-house-1.recipe.json",
       "sourceIndex": 4,
-      "sourceRefs": [
-        "BIR-N02 Wave 8 Worker B"
-      ],
+      "sourceRefs": ["BIR-N02 Wave 8 Worker B"],
       "status": "recorded",
       "text": "Removed physical access helper doors/walls, made the front loggia wrapper split explicit, and removed the overlapping full-width loggia void from the seed bundle."
     },
@@ -204,9 +186,7 @@
       "resolution": "",
       "source": "seed-artifacts/target-house-1/evidence/target-house-1.recipe.json",
       "sourceIndex": 5,
-      "sourceRefs": [
-        "Wave 9 Worker B"
-      ],
+      "sourceRefs": ["Wave 9 Worker B"],
       "status": "recorded",
       "text": "Added hosted sliding access doors on real internal/shell partitions so every target-house room has door access without helper stub geometry."
     },
@@ -225,9 +205,7 @@
       "resolution": "",
       "source": "seed-artifacts/target-house-1/evidence/target-house-1.recipe.json",
       "sourceIndex": 6,
-      "sourceRefs": [
-        "Wave 10 Worker D"
-      ],
+      "sourceRefs": ["Wave 10 Worker D"],
       "status": "recorded",
       "text": "Added explicit survey point, concept parcel/site boundary, property lines, and terrain toposolid so site georeferencing is model data rather than a tolerance."
     },
@@ -246,9 +224,7 @@
       "resolution": "",
       "source": "seed-artifacts/target-house-1/evidence/target-house-1.recipe.json",
       "sourceIndex": 7,
-      "sourceRefs": [
-        "Wave 10 Worker C"
-      ],
+      "sourceRefs": ["Wave 10 Worker C"],
       "status": "recorded",
       "text": "Added explicit railing host refs, edge refs, baluster/profile rules, handrail support patterns, and material slots for target-house guards."
     },
@@ -267,9 +243,7 @@
       "resolution": "",
       "source": "seed-artifacts/target-house-1/bundle.json",
       "sourceIndex": 0,
-      "sourceRefs": [
-        "bim-ai seed-dsl compile"
-      ],
+      "sourceRefs": ["bim-ai seed-dsl compile"],
       "status": "recorded",
       "text": "target-house-1-project-initiation-v1"
     },
@@ -288,9 +262,7 @@
       "resolution": "",
       "source": "seed-artifacts/target-house-1/bundle.json",
       "sourceIndex": 1,
-      "sourceRefs": [
-        "spec/target-house/target-house-seed.md"
-      ],
+      "sourceRefs": ["spec/target-house/target-house-seed.md"],
       "status": "recorded",
       "text": "Image-locked target-house-1 source spec and floorplan used for generation."
     },
@@ -309,9 +281,7 @@
       "resolution": "",
       "source": "seed-artifacts/target-house-1/bundle.json",
       "sourceIndex": 2,
-      "sourceRefs": [
-        "spec/target-house/floorplan.png"
-      ],
+      "sourceRefs": ["spec/target-house/floorplan.png"],
       "status": "recorded",
       "text": "14 m x 10 m floorplan basis reconciled with compact reference proportions; visible shell proportions prioritized."
     },
@@ -330,9 +300,7 @@
       "resolution": "",
       "source": "seed-artifacts/target-house-1/bundle.json",
       "sourceIndex": 3,
-      "sourceRefs": [
-        "spec/target-house/target-house-1-bim-information-requirements.md"
-      ],
+      "sourceRefs": ["spec/target-house/target-house-1-bim-information-requirements.md"],
       "status": "recorded",
       "text": "Real BIM categories, rooms, types, schedules, export placeholders, structure-lite and MEP-lite markers included; final detailing remains later phase."
     },
@@ -351,9 +319,7 @@
       "resolution": "",
       "source": "seed-artifacts/target-house-1/bundle.json",
       "sourceIndex": 4,
-      "sourceRefs": [
-        "M5 acceptance remediation"
-      ],
+      "sourceRefs": ["M5 acceptance remediation"],
       "status": "recorded",
       "text": "Add explicit IR room/space coverage and IFC furnishing family instances for final acceptance."
     },
@@ -372,9 +338,7 @@
       "resolution": "",
       "source": "seed-artifacts/target-house-1/bundle.json",
       "sourceIndex": 5,
-      "sourceRefs": [
-        "BIR-N02 Wave 8 Worker B"
-      ],
+      "sourceRefs": ["BIR-N02 Wave 8 Worker B"],
       "status": "recorded",
       "text": "Removed physical access helper doors/walls, made the front loggia wrapper split explicit, and removed the overlapping full-width loggia void from the seed bundle."
     },
@@ -393,9 +357,7 @@
       "resolution": "",
       "source": "seed-artifacts/target-house-1/bundle.json",
       "sourceIndex": 6,
-      "sourceRefs": [
-        "Wave 10 Worker D"
-      ],
+      "sourceRefs": ["Wave 10 Worker D"],
       "status": "recorded",
       "text": "Added explicit survey point, concept parcel/site boundary, property lines, and terrain toposolid so site georeferencing is model data rather than a tolerance."
     },
@@ -414,15 +376,13 @@
       "resolution": "",
       "source": "seed-artifacts/target-house-1/bundle.json",
       "sourceIndex": 7,
-      "sourceRefs": [
-        "BIR-N08 Wave 12-A"
-      ],
+      "sourceRefs": ["BIR-N08 Wave 12-A"],
       "status": "recorded",
       "text": "Scaled target-house geometry to the 14 m x 10 m source envelope, removed helper room-separation commands, removed synthetic access partitions and unsupported roof/slab cut commands from the physical bundle, closed detached wall loops, and rebound room ids to required target-house room ids."
     }
   ],
-  "generatedAtEpochMs": 1779220207220,
-  "gitHead": "f512daf3b4d90f0c537928983ab8adbfb3e2895c",
+  "generatedAtEpochMs": 1779225231481,
+  "gitHead": "ced10aac3da218983e300d9b6fecb6e3c1374950",
   "incomplete": [],
   "ok": true,
   "phase": "p1-p7-all",

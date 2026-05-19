@@ -136,6 +136,21 @@ export type EvidenceArtifactSummary = {
       screenshotMissingCount: number;
     }[];
   } | null;
+  methodologyDashboard: {
+    ok: boolean | null;
+    acceptanceLayer: string;
+    normalAdvisorBoundary: string;
+    blockingRowCount: number;
+    passingRowCount: number;
+    rowCount: number;
+    rows: {
+      trackerId: string;
+      title: string;
+      ok: boolean;
+      evidence: string[];
+      summary: Record<string, unknown>;
+    }[];
+  } | null;
   regenerationGuidance:
     | {
         priority: string;
@@ -190,6 +205,7 @@ export function parseEvidenceArtifact(
     prdCloseoutCrossCorrelation: null,
     evidenceFreshness: null,
     targetHouseFeatureCoverage: null,
+    methodologyDashboard: null,
     regenerationGuidance: null,
   });
 
@@ -887,6 +903,56 @@ export function parseEvidenceArtifact(
       }
     }
 
+    let methodologyDashboard: EvidenceArtifactSummary['methodologyDashboard'] = null;
+    const methodologyRaw =
+      payload.schemaVersion === 'target-house-methodology-dashboard.v1'
+        ? payload
+        : (payload.targetHouseMethodologyDashboard_v1 ??
+          payload.methodologyDashboard ??
+          payload.targetHouseMethodologyDashboard);
+    if (methodologyRaw && typeof methodologyRaw === 'object') {
+      const dashboard = methodologyRaw as Record<string, unknown>;
+      if (dashboard.schemaVersion === 'target-house-methodology-dashboard.v1') {
+        const summary =
+          dashboard.summary && typeof dashboard.summary === 'object'
+            ? (dashboard.summary as Record<string, unknown>)
+            : {};
+        const rowsRaw = Array.isArray(dashboard.rows) ? dashboard.rows : [];
+        const rows = rowsRaw
+          .filter((row): row is Record<string, unknown> => typeof row === 'object' && row !== null)
+          .map((row) => ({
+            trackerId: typeof row.trackerId === 'string' ? row.trackerId : '',
+            title: typeof row.title === 'string' ? row.title : '',
+            ok: row.ok === true,
+            evidence: Array.isArray(row.evidence)
+              ? row.evidence.filter((value): value is string => typeof value === 'string')
+              : [],
+            summary:
+              row.summary && typeof row.summary === 'object'
+                ? (row.summary as Record<string, unknown>)
+                : {},
+          }))
+          .filter((row) => row.trackerId);
+        methodologyDashboard = {
+          ok: typeof dashboard.ok === 'boolean' ? dashboard.ok : null,
+          acceptanceLayer:
+            typeof dashboard.acceptanceLayer === 'string' ? dashboard.acceptanceLayer : '',
+          normalAdvisorBoundary:
+            typeof dashboard.normalAdvisorBoundary === 'string'
+              ? dashboard.normalAdvisorBoundary
+              : '',
+          blockingRowCount:
+            typeof summary.blockingRowCount === 'number' ? summary.blockingRowCount : 0,
+          passingRowCount:
+            typeof summary.passingRowCount === 'number'
+              ? summary.passingRowCount
+              : rows.filter((row) => row.ok).length,
+          rowCount: typeof summary.rowCount === 'number' ? summary.rowCount : rows.length,
+          rows,
+        };
+      }
+    }
+
     let regenerationGuidance: EvidenceArtifactSummary['regenerationGuidance'] = null;
     const regenRaw =
       typeof evidenceTxt === 'string'
@@ -943,6 +1009,7 @@ export function parseEvidenceArtifact(
       prdCloseoutCrossCorrelation,
       evidenceFreshness,
       targetHouseFeatureCoverage,
+      methodologyDashboard,
       regenerationGuidance,
     };
   } catch {
@@ -971,6 +1038,7 @@ export function parseEvidenceArtifact(
       prdCloseoutCrossCorrelation: null,
       evidenceFreshness: null,
       targetHouseFeatureCoverage: null,
+      methodologyDashboard: null,
       regenerationGuidance: null,
     };
   }
