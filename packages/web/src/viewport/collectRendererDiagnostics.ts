@@ -144,7 +144,10 @@ function fromWallHostedCutDiagnostic(
     ].filter((id): id is string => typeof id === 'string' && id.length > 0),
     viewId,
     evidence: { ...evidence, details: serializableDetails(diagnostic.data ?? {}) },
-    trackerItems: ['BIR-I02', 'BIR-I03', 'BIR-J01'],
+    trackerItems:
+      diagnostic.code === 'detached_or_proxy_render_risk'
+        ? ['BIR-C08', 'BIR-I02', 'BIR-I03', 'BIR-J01']
+        : ['BIR-I02', 'BIR-I03', 'BIR-J01'],
   });
 }
 

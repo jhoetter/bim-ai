@@ -174,6 +174,12 @@ describe('collectRendererDiagnostics', () => {
           issueClass: 'model-invalid',
           elementIds: ['floating-door', 'missing-wall'],
         }),
+        expect.objectContaining({
+          code: 'renderer.wall_cut.detached_or_proxy_render_risk',
+          issueClass: 'renderer-degraded',
+          elementIds: ['floating-door', 'missing-wall'],
+          trackerItems: expect.arrayContaining(['BIR-C08']),
+        }),
       ]),
     );
   });

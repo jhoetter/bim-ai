@@ -1,8 +1,22 @@
 from __future__ import annotations
 
 from bim_ai.document import Document
-from bim_ai.elements import DoorElem, FloorElem, LevelElem, Vec2Mm, WallElem, WallOpeningElem, WindowElem
-from bim_ai.model_integrity_hosting import hosted_opening_integrity_violations
+from bim_ai.elements import (
+    DoorElem,
+    FamilyInstanceElem,
+    FamilyTypeElem,
+    FloorElem,
+    LevelElem,
+    PlacedAssetElem,
+    Vec2Mm,
+    WallElem,
+    WallOpeningElem,
+    WindowElem,
+)
+from bim_ai.model_integrity_hosting import (
+    hosted_opening_conflict_graph,
+    hosted_opening_integrity_violations,
+)
 
 
 def _pt(x: float, y: float) -> Vec2Mm:
@@ -66,16 +80,28 @@ def test_missing_and_wrong_kind_hosts_are_reported() -> None:
 
     assert "hosted_opening_missing_host" in rule_ids
     assert "hosted_opening_host_not_wall" in rule_ids
+    assert "hosted_render_proxy_orphan" in rule_ids
 
 
 def test_helper_or_nonphysical_host_wall_is_not_accepted_as_real_wall() -> None:
     wall = _wall("helper-wall", name="Room graph helper wall", props={"helper": True})
-    door = DoorElem(id="door-1", wallId=wall.id, alongT=0.5, widthMm=900)
+    door = DoorElem(
+        id="access-door-1",
+        wallId=wall.id,
+        alongT=0.5,
+        widthMm=900,
+        props={"repairSafeDelete": True},
+    )
 
     violations = hosted_opening_integrity_violations(_doc(wall, door))
 
     assert any(v.rule_id == "hosted_opening_helper_host" for v in violations)
     assert any(v.rule_id == "physical_access_proxy_leakage" for v in violations)
+    assert any(
+        v.rule_id == "hosted_opening_helper_host"
+        and v.quick_fix_command == {"type": "deleteElement", "elementId": door.id}
+        for v in violations
+    )
 
 
 def test_host_wall_outside_level_floor_envelope_is_reported() -> None:
@@ -130,7 +156,11 @@ def test_target_house_access_door_symptom_reports_error_even_when_host_resolves(
     assert "hosted_opening_helper_host" in rule_ids
     assert "hosted_opening_host_outside_floor_envelope" in rule_ids
     assert "physical_access_proxy_leakage" in rule_ids
-    assert all(violation.severity == "error" for violation in violations)
+    assert all(
+        violation.severity == "error"
+        for violation in violations
+        if violation.rule_id != "hosted_render_proxy_orphan"
+    )
 
 
 def test_opening_too_wide_or_near_endpoint_is_reported() -> None:
@@ -146,6 +176,11 @@ def test_opening_too_wide_or_near_endpoint_is_reported() -> None:
             by_id.setdefault(element_id, set()).add(violation.rule_id)
     assert "hosted_opening_outside_usable_span" in by_id["too-wide"]
     assert "hosted_opening_outside_usable_span" in by_id["near-end"]
+    assert any(
+        v.rule_id == "hosted_opening_outside_usable_span"
+        and v.quick_fix_command == {"type": "updateDoor", "id": "too-wide", "widthMm": 50}
+        for v in violations
+    )
 
 
 def test_wall_opening_head_height_and_overlap_are_reported() -> None:
@@ -164,3 +199,73 @@ def test_wall_opening_head_height_and_overlap_are_reported() -> None:
 
     assert "hosted_opening_missing_semantic_cut" in rule_ids
     assert "hosted_opening_overlap" in rule_ids
+
+
+def test_opening_conflict_graph_is_deterministic_for_overlap_and_clearance() -> None:
+    wall = _wall()
+    door = DoorElem(id="door-a", wallId=wall.id, alongT=0.5, widthMm=1200)
+    window = WindowElem(id="window-b", wallId=wall.id, alongT=0.58, widthMm=900)
+    near_end = WallOpeningElem(
+        id="opening-near-end",
+        hostWallId=wall.id,
+        alongTStart=0.01,
+        alongTEnd=0.04,
+        sillHeightMm=0,
+        headHeightMm=2100,
+    )
+
+    graph = hosted_opening_conflict_graph(_doc(wall, door, window, near_end))
+
+    assert graph["format"] == "hostedOpeningConflictGraph_v1"
+    assert [node["elementId"] for node in graph["nodes"]] == [
+        "door-a",
+        "opening-near-end",
+        "window-b",
+    ]
+    assert graph["edges"] == [
+        {
+            "kind": "endpoint_clearance",
+            "hostWallId": wall.id,
+            "elementIds": ["opening-near-end", wall.id],
+            "minimumClearanceMm": 75.0,
+        },
+        {
+            "kind": "overlap",
+            "hostWallId": wall.id,
+            "elementIds": ["door-a", "window-b", wall.id],
+            "overlapT": 0.27,
+        },
+    ]
+
+
+def test_hosted_family_support_classification_flags_wrong_host_and_orphan_proxy() -> None:
+    wall = _wall()
+    family_type = FamilyTypeElem(
+        id="ft-wall-hosted-sign",
+        familyId="fam-sign",
+        discipline="generic",
+        parameters={"hostSupport": "wall_hosted"},
+    )
+    instance = FamilyInstanceElem(
+        id="family-sign",
+        familyTypeId=family_type.id,
+        positionMm=_pt(1200, 1100),
+        hostElementId="floor-1",
+        paramValues={"renderProxyKind": "box"},
+    )
+    asset = PlacedAssetElem(
+        id="asset-door-proxy",
+        name="Door proxy asset",
+        assetId="missing-asset",
+        levelId="lvl-1",
+        positionMm=_pt(1000, 1000),
+        hostElementId="missing-wall",
+        paramValues={"hostSupport": "wall_hosted"},
+    )
+
+    violations = hosted_opening_integrity_violations(_doc(wall, family_type, instance, asset))
+    rule_ids = [v.rule_id for v in violations]
+
+    assert "hosted_family_unsupported_host_class" in rule_ids
+    assert "hosted_family_missing_host" in rule_ids
+    assert "hosted_render_proxy_orphan" in rule_ids

@@ -44,6 +44,24 @@ const RECOMMENDED_CONTEXT_BY_RULE_ID: Record<string, string> = {
     'Recommended: Stair coordination - add a stair shaft/slab opening or revise the stair and upper floor layout.',
   roof_wall_coverage_gap:
     'Recommended: Envelope coordination - revise roof overhang/footprint or align the primary wall under roof coverage.',
+  hosted_opening_missing_host:
+    'Recommended: Opening host repair - rehost the opening to a valid wall or remove the orphan hosted cut.',
+  hosted_opening_host_not_wall:
+    'Recommended: Opening host repair - wall-hosted doors/windows/openings must reference a wall host.',
+  hosted_opening_helper_host:
+    'Recommended: Opening host repair - replace helper/nonphysical host geometry with a real wall or remove the helper opening.',
+  hosted_opening_outside_usable_span:
+    'Recommended: Opening layout - resize or move the opening inside wall span and endpoint clearance.',
+  hosted_opening_overlap:
+    'Recommended: Opening conflict graph - move or resize overlapping cuts on the same host wall.',
+  hosted_family_missing_host:
+    'Recommended: Family hosting - assign a valid host for the declared support class or convert the family to freestanding.',
+  hosted_family_unsupported_host_class:
+    'Recommended: Family hosting - change the host to match wall/face/ceiling/workplane support semantics.',
+  hosted_render_proxy_orphan:
+    'Recommended: Renderer diagnostics - rehost or remove the proxy so it does not render detached from host geometry.',
+  physical_access_proxy_leakage:
+    'Recommended: Model cleanup - delete visible helper geometry or convert it to nonphysical analysis data.',
 };
 
 const READABLE_TITLE_BY_RULE_ID: Record<string, string> = {
@@ -68,6 +86,15 @@ const READABLE_TITLE_BY_RULE_ID: Record<string, string> = {
   duct_ceiling_penetration_without_opening: 'Duct Ceiling Penetration Without Opening',
   stair_floor_penetration_without_slab_opening: 'Stair Floor Penetration Without Slab Opening',
   roof_wall_coverage_gap: 'Roof Wall Coverage Gap',
+  hosted_opening_missing_host: 'Hosted Opening Missing Host',
+  hosted_opening_host_not_wall: 'Hosted Opening Host Not Wall',
+  hosted_opening_helper_host: 'Hosted Opening Helper Host',
+  hosted_opening_outside_usable_span: 'Hosted Opening Outside Usable Span',
+  hosted_opening_overlap: 'Hosted Opening Overlap',
+  hosted_family_missing_host: 'Hosted Family Missing Host',
+  hosted_family_unsupported_host_class: 'Hosted Family Unsupported Host Class',
+  hosted_render_proxy_orphan: 'Hosted Render Proxy Orphan',
+  physical_access_proxy_leakage: 'Physical Access Proxy Leakage',
 };
 
 /** Human-oriented hint for where to look in the authoring UI (no new server fields). */
@@ -165,6 +192,18 @@ export function summarizeQuickFixCommand(cmd: Record<string, unknown>): string[]
   }
   if (typeof cmd.elementId === 'string' && cmd.elementId.trim()) {
     lines.push(`elementId: ${cmd.elementId.trim()}`);
+  }
+  if (typeof cmd.id === 'string' && cmd.id.trim()) {
+    lines.push(`id: ${cmd.id.trim()}`);
+  }
+  if (typeof cmd.openingId === 'string' && cmd.openingId.trim()) {
+    lines.push(`openingId: ${cmd.openingId.trim()}`);
+  }
+  if (typeof cmd.name === 'string' && cmd.name.trim()) {
+    lines.push(`name: ${cmd.name.trim()}`);
+  }
+  if (typeof cmd.mode === 'string' && cmd.mode.trim()) {
+    lines.push(`mode: ${cmd.mode.trim()}`);
   }
   if (typeof cmd.scheduleId === 'string' && cmd.scheduleId.trim()) {
     lines.push(`scheduleId: ${cmd.scheduleId.trim()}`);

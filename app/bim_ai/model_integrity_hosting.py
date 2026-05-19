@@ -8,7 +8,21 @@ from typing import Any
 from bim_ai.constraints_core import Violation
 from bim_ai.constraints_wall_geometry import wall_length_mm
 from bim_ai.document import Document
-from bim_ai.elements import DoorElem, Element, FloorElem, WallElem, WallOpeningElem, WindowElem
+from bim_ai.elements import (
+    AssetLibraryEntryElem,
+    CeilingElem,
+    DoorElem,
+    Element,
+    FamilyInstanceElem,
+    FamilyTypeElem,
+    FloorElem,
+    PlacedAssetElem,
+    ReferencePlaneElem,
+    RoofElem,
+    WallElem,
+    WallOpeningElem,
+    WindowElem,
+)
 
 Point2 = tuple[float, float]
 Interval = tuple[float, float]
@@ -24,6 +38,9 @@ HOSTED_OPENING_RULE_IDS = {
     "hosted_opening_outside_usable_span",
     "hosted_opening_missing_semantic_cut",
     "hosted_opening_overlap",
+    "hosted_family_missing_host",
+    "hosted_family_unsupported_host_class",
+    "hosted_render_proxy_orphan",
     "physical_access_proxy_leakage",
 }
 
@@ -32,6 +49,50 @@ _HELPER_WORD_RE = re.compile(
     r"\b(access control|room graph|helper|synthetic|diagnostic|analysis[- ]?only|nonphysical)\b",
     re.IGNORECASE,
 )
+_HOST_SUPPORT_KEYS = (
+    "hostSupport",
+    "host_support",
+    "hosting",
+    "hostingMode",
+    "hosting_mode",
+    "hostKind",
+    "host_kind",
+)
+_HOST_SUPPORT_ALIASES = {
+    "wall": "wall_hosted",
+    "wall-hosted": "wall_hosted",
+    "wall_hosted": "wall_hosted",
+    "hosted": "wall_hosted",
+    "face": "face_hosted",
+    "face-hosted": "face_hosted",
+    "face_hosted": "face_hosted",
+    "level": "level_hosted",
+    "level-hosted": "level_hosted",
+    "level_hosted": "level_hosted",
+    "ceiling": "ceiling_hosted",
+    "ceiling-hosted": "ceiling_hosted",
+    "ceiling_hosted": "ceiling_hosted",
+    "workplane": "workplane_hosted",
+    "workplane-hosted": "workplane_hosted",
+    "workplane_hosted": "workplane_hosted",
+    "free": "freestanding",
+    "freestanding": "freestanding",
+    "free-standing": "freestanding",
+}
+_HOST_CLASSES_REQUIRING_ELEMENT = {
+    "wall_hosted",
+    "face_hosted",
+    "ceiling_hosted",
+    "workplane_hosted",
+}
+_HOST_CLASS_LABELS = {
+    "wall_hosted": "wall-hosted",
+    "face_hosted": "face-hosted",
+    "level_hosted": "level-hosted",
+    "ceiling_hosted": "ceiling-hosted",
+    "workplane_hosted": "workplane-hosted",
+    "freestanding": "freestanding",
+}
 
 
 def hosted_opening_integrity_violations(
@@ -80,8 +141,11 @@ def hosted_opening_integrity_violations(
                     "error",
                     f"{_kind_label(opening)} '{opening_id}' references missing host wall '{host_id}'.",
                     [opening_id],
+                    quick_fix_command=_safe_delete_command(opening),
                 )
             )
+            if _renders_as_hosted_proxy(opening, elements):
+                violations.append(_orphan_render_proxy_violation(opening, host_id))
             continue
 
         if not isinstance(host, WallElem):
@@ -94,8 +158,11 @@ def hosted_opening_integrity_violations(
                         f"which is a {getattr(host, 'kind', 'non-wall')} instead of a wall."
                     ),
                     [opening_id, host_id],
+                    quick_fix_command=_safe_delete_command(opening),
                 )
             )
+            if _renders_as_hosted_proxy(opening, elements):
+                violations.append(_orphan_render_proxy_violation(opening, host_id))
             continue
 
         if _is_helper_or_nonphysical_wall(host):
@@ -108,8 +175,11 @@ def hosted_opening_integrity_violations(
                         f"'{host.id}' instead of a real architectural wall."
                     ),
                     [opening_id, host.id],
+                    quick_fix_command=_safe_delete_command(opening),
                 )
             )
+            if _renders_as_hosted_proxy(opening, elements):
+                violations.append(_orphan_render_proxy_violation(opening, host.id))
 
         if _is_access_proxy(opening):
             violations.append(
@@ -121,6 +191,7 @@ def hosted_opening_integrity_violations(
                         "physical BIM geometry; keep access-graph helpers nonphysical."
                     ),
                     [opening_id, host.id],
+                    quick_fix_command=_safe_delete_command(opening),
                 )
             )
 
@@ -155,6 +226,11 @@ def hosted_opening_integrity_violations(
                     "error",
                     span_message,
                     [opening_id, host.id],
+                    quick_fix_command=_resize_to_usable_span_command(
+                        opening,
+                        host,
+                        endpoint_clearance_mm=endpoint_clearance_mm,
+                    ),
                 )
             )
 
@@ -170,16 +246,126 @@ def hosted_opening_integrity_violations(
             )
 
     violations.extend(_overlap_violations(hosted, elements))
+    violations.extend(_hosted_family_support_violations(elements))
     return sorted(violations, key=lambda v: (v.rule_id, v.element_ids, v.message))
 
 
-def _violation(rule_id: str, severity: str, message: str, element_ids: list[str]) -> Violation:
+def hosted_opening_conflict_graph(
+    doc_or_elements: Document | Mapping[str, Element],
+    *,
+    endpoint_clearance_mm: float = DEFAULT_ENDPOINT_CLEARANCE_MM,
+) -> dict[str, Any]:
+    """Return a deterministic graph of hosted opening nodes and wall-span conflicts."""
+
+    elements = doc_or_elements.elements if isinstance(doc_or_elements, Document) else doc_or_elements
+    nodes: list[dict[str, Any]] = []
+    edges: list[dict[str, Any]] = []
+    by_host: dict[str, list[dict[str, Any]]] = {}
+
+    for opening in _hosted_openings(elements):
+        host_id = _host_wall_id(opening)
+        host = elements.get(host_id)
+        node: dict[str, Any] = {
+            "elementId": str(opening.id),
+            "kind": str(opening.kind),
+            "hostWallId": host_id,
+            "supportClass": "wall_hosted",
+        }
+        if not isinstance(host, WallElem):
+            node["hostState"] = "missing" if host is None else "unsupported_host_class"
+            nodes.append(node)
+            continue
+
+        length = wall_length_mm(host)
+        node["hostState"] = "valid"
+        node["hostLengthMm"] = round(length, 3)
+        interval = _opening_interval(opening, host)
+        if interval is not None:
+            start_t, end_t = interval
+            node["interval"] = {
+                "startT": round(start_t, 6),
+                "endT": round(end_t, 6),
+                "widthMm": round(max(0.0, end_t - start_t) * length, 3),
+                "clearanceStartMm": round(start_t * length, 3),
+                "clearanceEndMm": round((1.0 - end_t) * length, 3),
+            }
+            by_host.setdefault(host.id, []).append(node)
+
+            if start_t < -1e-6 or end_t > 1.0 + 1e-6:
+                edges.append(
+                    {
+                        "kind": "outside_wall_span",
+                        "hostWallId": host.id,
+                        "elementIds": [str(opening.id), host.id],
+                    }
+                )
+            elif min(start_t * length, (1.0 - end_t) * length) < endpoint_clearance_mm:
+                edges.append(
+                    {
+                        "kind": "endpoint_clearance",
+                        "hostWallId": host.id,
+                        "elementIds": [str(opening.id), host.id],
+                        "minimumClearanceMm": endpoint_clearance_mm,
+                    }
+                )
+        nodes.append(node)
+
+    for host_id, host_nodes in sorted(by_host.items()):
+        ordered = sorted(
+            (node for node in host_nodes if isinstance(node.get("interval"), dict)),
+            key=lambda node: (
+                float(node["interval"]["startT"]),
+                str(node["elementId"]),
+            ),
+        )
+        for index, a_node in enumerate(ordered):
+            a_interval = a_node["interval"]
+            for b_node in ordered[index + 1 :]:
+                b_interval = b_node["interval"]
+                if float(b_interval["startT"]) >= float(a_interval["endT"]) - 1e-6:
+                    break
+                overlap_t = min(float(a_interval["endT"]), float(b_interval["endT"])) - max(
+                    float(a_interval["startT"]),
+                    float(b_interval["startT"]),
+                )
+                edges.append(
+                    {
+                        "kind": "overlap",
+                        "hostWallId": host_id,
+                        "elementIds": [str(a_node["elementId"]), str(b_node["elementId"]), host_id],
+                        "overlapT": round(max(0.0, overlap_t), 6),
+                    }
+                )
+
+    return {
+        "format": "hostedOpeningConflictGraph_v1",
+        "nodes": sorted(nodes, key=lambda node: str(node["elementId"])),
+        "edges": sorted(
+            edges,
+            key=lambda edge: (
+                str(edge.get("kind") or ""),
+                str(edge.get("hostWallId") or ""),
+                tuple(str(eid) for eid in edge.get("elementIds") or []),
+            ),
+        ),
+    }
+
+
+def _violation(
+    rule_id: str,
+    severity: str,
+    message: str,
+    element_ids: list[str],
+    *,
+    quick_fix_command: dict[str, Any] | None = None,
+) -> Violation:
     return Violation(
         rule_id=rule_id,
         severity=severity,
         message=message,
         element_ids=sorted(dict.fromkeys(element_ids)),
         blocking=severity == "error",
+        quick_fix_command=quick_fix_command,
         discipline="architecture",
         blocking_class="model_integrity",
     )
@@ -309,34 +495,24 @@ def _overlap_violations(
     hosted: list[DoorElem | WindowElem | WallOpeningElem],
     elements: Mapping[str, Element],
 ) -> list[Violation]:
-    by_host: dict[str, list[tuple[DoorElem | WindowElem | WallOpeningElem, Interval]]] = {}
-    for opening in hosted:
-        host = elements.get(_host_wall_id(opening))
-        if not isinstance(host, WallElem):
-            continue
-        interval = _opening_interval(opening, host)
-        if interval is None:
-            continue
-        by_host.setdefault(host.id, []).append((opening, interval))
-
+    del hosted
     violations: list[Violation] = []
-    for host_id, rows in sorted(by_host.items()):
-        ordered = sorted(rows, key=lambda row: (row[1][0], str(row[0].id)))
-        for index, (a_opening, a_interval) in enumerate(ordered):
-            for b_opening, b_interval in ordered[index + 1 :]:
-                if b_interval[0] >= a_interval[1] - 1e-6:
-                    break
-                violations.append(
-                    _violation(
-                        "hosted_opening_overlap",
-                        "error",
-                        (
-                            f"Hosted openings '{a_opening.id}' and '{b_opening.id}' overlap "
-                            f"on wall '{host_id}'."
-                        ),
-                        [str(a_opening.id), str(b_opening.id), host_id],
-                    )
-                )
+    graph = hosted_opening_conflict_graph(elements)
+    for edge in graph["edges"]:
+        if edge.get("kind") != "overlap":
+            continue
+        element_ids = [str(eid) for eid in edge.get("elementIds") or []]
+        if len(element_ids) < 3:
+            continue
+        a_id, b_id, host_id = element_ids[:3]
+        violations.append(
+            _violation(
+                "hosted_opening_overlap",
+                "error",
+                f"Hosted openings '{a_id}' and '{b_id}' overlap on wall '{host_id}'.",
+                [a_id, b_id, host_id],
+            )
+        )
     return violations
 
 
@@ -351,6 +527,219 @@ def _opening_interval(
         return None
     half_t = (opening.width_mm / 2.0) / length
     return opening.along_t - half_t, opening.along_t + half_t
+
+
+def _hosted_family_support_violations(elements: Mapping[str, Element]) -> list[Violation]:
+    violations: list[Violation] = []
+    for elem in sorted(elements.values(), key=lambda e: str(e.id)):
+        if not isinstance(elem, FamilyInstanceElem | PlacedAssetElem):
+            continue
+        support_class = _declared_support_class(elem, elements)
+        if support_class in (None, "freestanding", "level_hosted"):
+            continue
+        host_id = elem.host_element_id
+        if not host_id:
+            violations.append(
+                _violation(
+                    "hosted_family_missing_host",
+                    "error",
+                    (
+                        f"{_element_label(elem)} '{elem.id}' declares "
+                        f"{_HOST_CLASS_LABELS[support_class]} support but has no host element."
+                    ),
+                    [elem.id],
+                    quick_fix_command=_safe_delete_command(elem),
+                )
+            )
+            if _renders_as_hosted_proxy(elem, elements):
+                violations.append(_orphan_render_proxy_violation(elem, None))
+            continue
+
+        host = elements.get(host_id)
+        if host is None:
+            violations.append(
+                _violation(
+                    "hosted_family_missing_host",
+                    "error",
+                    (
+                        f"{_element_label(elem)} '{elem.id}' declares "
+                        f"{_HOST_CLASS_LABELS[support_class]} support but references missing host "
+                        f"'{host_id}'."
+                    ),
+                    [elem.id],
+                    quick_fix_command=_safe_delete_command(elem),
+                )
+            )
+            if _renders_as_hosted_proxy(elem, elements):
+                violations.append(_orphan_render_proxy_violation(elem, host_id))
+            continue
+
+        if not _host_kind_supported(support_class, host):
+            violations.append(
+                _violation(
+                    "hosted_family_unsupported_host_class",
+                    "error",
+                    (
+                        f"{_element_label(elem)} '{elem.id}' declares "
+                        f"{_HOST_CLASS_LABELS[support_class]} support but is hosted by "
+                        f"'{host_id}' ({getattr(host, 'kind', 'unknown')})."
+                    ),
+                    [elem.id, host_id],
+                    quick_fix_command=_safe_delete_command(elem),
+                )
+            )
+            if _renders_as_hosted_proxy(elem, elements):
+                violations.append(_orphan_render_proxy_violation(elem, host_id))
+    return violations
+
+
+def _declared_support_class(
+    elem: DoorElem | WindowElem | WallOpeningElem | FamilyInstanceElem | PlacedAssetElem,
+    elements: Mapping[str, Element],
+) -> str | None:
+    if isinstance(elem, DoorElem | WindowElem | WallOpeningElem):
+        return "wall_hosted"
+
+    raw_values: list[Any] = []
+    raw_values.extend(_support_values_from_mapping(getattr(elem, "param_values", None)))
+    if isinstance(elem, FamilyInstanceElem):
+        family_type = elements.get(elem.family_type_id)
+        if isinstance(family_type, FamilyTypeElem):
+            raw_values.extend(_support_values_from_mapping(family_type.parameters))
+            if family_type.discipline in {"door", "window"}:
+                raw_values.append("wall_hosted")
+    elif isinstance(elem, PlacedAssetElem):
+        asset = elements.get(elem.asset_id)
+        raw_values.extend(_support_values_from_mapping(getattr(asset, "param_values", None)))
+        if isinstance(asset, AssetLibraryEntryElem):
+            raw_values.extend(_support_values_from_param_schema(asset.param_schema))
+            if asset.category in {"door", "window"}:
+                raw_values.append("wall_hosted")
+
+    for raw in raw_values:
+        support = _normalize_support_class(raw)
+        if support is not None:
+            return support
+    return None
+
+
+def _support_values_from_mapping(raw: Any) -> list[Any]:
+    if not isinstance(raw, Mapping):
+        return []
+    return [raw[key] for key in _HOST_SUPPORT_KEYS if key in raw]
+
+
+def _support_values_from_param_schema(raw: Any) -> list[Any]:
+    if not isinstance(raw, list):
+        return []
+    values: list[Any] = []
+    for entry in raw:
+        if not isinstance(entry, Mapping):
+            continue
+        key = str(entry.get("key") or entry.get("id") or entry.get("name") or "")
+        if key in _HOST_SUPPORT_KEYS:
+            values.append(entry.get("value") or entry.get("default") or entry.get("defaultValue"))
+    return values
+
+
+def _normalize_support_class(raw: Any) -> str | None:
+    if raw is None:
+        return None
+    token = str(raw).strip().lower().replace(" ", "_")
+    if not token:
+        return None
+    return _HOST_SUPPORT_ALIASES.get(token, _HOST_SUPPORT_ALIASES.get(token.replace("_", "-")))
+
+
+def _host_kind_supported(support_class: str, host: Element) -> bool:
+    if support_class == "wall_hosted":
+        return isinstance(host, WallElem) and _is_physical_wall(host)
+    if support_class == "face_hosted":
+        return isinstance(host, WallElem | FloorElem | RoofElem | CeilingElem)
+    if support_class == "ceiling_hosted":
+        return isinstance(host, CeilingElem)
+    if support_class == "workplane_hosted":
+        return isinstance(host, ReferencePlaneElem)
+    return support_class not in _HOST_CLASSES_REQUIRING_ELEMENT
+
+
+def _orphan_render_proxy_violation(
+    elem: DoorElem | WindowElem | WallOpeningElem | FamilyInstanceElem | PlacedAssetElem,
+    host_id: str | None,
+) -> Violation:
+    element_id = str(elem.id)
+    ids = [element_id, host_id] if host_id else [element_id]
+    return _violation(
+        "hosted_render_proxy_orphan",
+        "warning",
+        (
+            f"{_element_label(elem)} '{element_id}' can render a hosted proxy, but its host "
+            "geometry is missing or unsupported."
+        ),
+        [eid for eid in ids if eid],
+        quick_fix_command=_safe_delete_command(elem),
+    )
+
+
+def _renders_as_hosted_proxy(
+    elem: DoorElem | WindowElem | WallOpeningElem | FamilyInstanceElem | PlacedAssetElem,
+    elements: Mapping[str, Element],
+) -> bool:
+    if isinstance(elem, DoorElem | WindowElem | WallOpeningElem):
+        return True
+    props = getattr(elem, "props", None) or {}
+    params = getattr(elem, "param_values", None) or {}
+    if any(
+        key in props or key in params
+        for key in ("renderProxy", "renderProxyKind", "rendererProxy", "proxyGeometry")
+    ):
+        return True
+    if _declared_support_class(elem, elements) in _HOST_CLASSES_REQUIRING_ELEMENT:
+        return True
+    if isinstance(elem, PlacedAssetElem):
+        asset = elements.get(elem.asset_id)
+        return bool(getattr(asset, "render_proxy_kind", None))
+    return False
+
+
+def _safe_delete_command(elem: Any) -> dict[str, Any] | None:
+    props = getattr(elem, "props", None) or {}
+    if _is_access_proxy(elem) or _truthy(props.get("repairSafeDelete")):
+        return {"type": "deleteElement", "elementId": str(elem.id)}
+    return None
+
+
+def _resize_to_usable_span_command(
+    opening: DoorElem | WindowElem | WallOpeningElem,
+    host: WallElem,
+    *,
+    endpoint_clearance_mm: float,
+) -> dict[str, Any] | None:
+    if isinstance(opening, WallOpeningElem):
+        length = wall_length_mm(host)
+        center_t = (opening.along_t_start + opening.along_t_end) / 2.0
+        half_t = min(center_t, 1.0 - center_t) - endpoint_clearance_mm / max(length, 1.0)
+        if half_t <= 0.005:
+            return None
+        return {
+            "type": "updateWallOpening",
+            "openingId": opening.id,
+            "alongTStart": round(max(0.0, center_t - half_t), 6),
+            "alongTEnd": round(min(1.0, center_t + half_t), 6),
+        }
+    length = wall_length_mm(host)
+    center_t = opening.along_t
+    half_t = min(center_t, 1.0 - center_t) - endpoint_clearance_mm / max(length, 1.0)
+    if half_t <= 0.005:
+        return None
+    safe_width = math.floor(max(1.0, 2.0 * half_t * length))
+    if safe_width >= opening.width_mm:
+        return None
+    return {"type": f"update{_kind_label(opening)}", "id": opening.id, "widthMm": safe_width}
+
+
+def _element_label(elem: Any) -> str:
+    return str(getattr(elem, "kind", "element")).replace("_", " ")
 
 
 def _is_helper_or_nonphysical_wall(wall: WallElem) -> bool:
