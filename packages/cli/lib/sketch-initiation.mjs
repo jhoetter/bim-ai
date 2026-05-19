@@ -1,6 +1,7 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
 
+import { buildBimRequirementValidationEvidence } from './bim-requirement-validation-pack.mjs';
 import { evaluateBimIntegrityDiagnosticsForPhaseAcceptance } from './phase-acceptance-evidence.mjs';
 import { applyVisualGateToChecklist } from './png-visual-gate.mjs';
 import {
@@ -1450,6 +1451,14 @@ export function buildExchangeValidationReport({
     errorCount: checks.filter((check) => check.status === 'error').length,
     plannedCount: checks.filter((check) => check.status === 'planned').length,
   };
+  const birValidationEvidence = buildBimRequirementValidationEvidence({
+    ir,
+    modelStats,
+    validate,
+    evidencePackage,
+    ifcManifest,
+    gltfManifest,
+  });
   return {
     schemaVersion: 'sketch.exchange-validation.v1',
     generatedAt: new Date().toISOString(),
@@ -1458,6 +1467,8 @@ export function buildExchangeValidationReport({
     ok: summary.errorCount === 0,
     summary,
     requiredOutputs: exportOutputs,
+    birValidationPack: birValidationEvidence.compiledPack,
+    birValidationReport: birValidationEvidence.report,
     checks,
   };
 }

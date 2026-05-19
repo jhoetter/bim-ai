@@ -256,7 +256,7 @@ This tracker is complete only when all of these are true:
 | `BIR-K04` | P1 | Partial | IFC semantic mapping completeness. | Walls, floors, roofs, doors, windows, stairs, rails, rooms/spaces, types, materials, classifications, quantities, and property sets have manifest coverage. |
 | `BIR-K05` | P1 | Partial | Schedule integrity. | Room, door/window, material/quantity, and documentation schedules match model elements and export evidence. |
 | `BIR-K06` | P1 | Partial | Sheet/view evidence. | Saved views, sheets, viewports, scales, render bundles, and PDF-like exports are linked to model/evidence packets. |
-| `BIR-K07` | P2 | Not started | IDS/BIR validation packs. | BIM information requirements can be compiled into machine-readable validation checks for selected delivery targets. |
+| `BIR-K07` | P2 | Partial | IDS/BIR validation packs. | `packages/cli/lib/bim-requirement-validation-pack.mjs` deterministically compiles simple sketch/BIR information requirements into delivery-target checks and evidence blockers, and `sketch.exchange-validation.v1` now carries the compiled pack/report. Tests: `packages/cli/bimRequirementValidationPack.test.mjs`. Remaining: broader IDS schema import and backend Advisor/API parity. |
 
 ### L. Performance, Responsiveness, And Live Stability
 
