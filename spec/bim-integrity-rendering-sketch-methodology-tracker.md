@@ -813,7 +813,11 @@ W11 integration status:
 
 ### Wave 12: Target-House Geometry, Semantic Visual, And Final Package
 
-Goal: close the remaining M8 blockers without weakening the layer contract.
+Goal: close `M8`.
+
+Scope: close the remaining target-house geometry, semantic visual, final-package,
+live-responsiveness, and closeout-report blockers without weakening the layer
+contract.
 
 | Agent | Ownership                                                 | Primary items                  |
 | ----- | --------------------------------------------------------- | ------------------------------ |
