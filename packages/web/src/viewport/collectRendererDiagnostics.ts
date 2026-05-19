@@ -11,6 +11,7 @@ import {
   diagnoseRoofOpeningRendering,
   type RoofOpeningRenderDiagnostic,
 } from './roofOpeningRenderDiagnostics';
+import { diagnoseRoomVisualizationRendering } from './roomVisualizationRenderDiagnostics';
 import {
   diagnoseWallHostedCutRenderRisks,
   type WallHostedCutRenderDiagnostic,
@@ -50,6 +51,10 @@ export function collectRendererDiagnostics(
       elementsById: compactElementsById(elementsById),
       csgEnabled: input.csgEnabled,
     }).map((diagnostic) => fromWallHostedCutDiagnostic(diagnostic, input.viewId, fullEvidence)),
+    ...diagnoseRoomVisualizationRendering(elementsById, {
+      viewId: input.viewId,
+      evidence: fullEvidence,
+    }),
     ...diagnoseVerticalCirculationRendering(elementsById, {
       viewId: input.viewId,
       evidence: fullEvidence,

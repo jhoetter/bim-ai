@@ -1,3 +1,6 @@
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
+
 import type { Element } from '@bim-ai/core';
 import { describe, expect, it } from 'vitest';
 
@@ -173,5 +176,140 @@ describe('collectRendererDiagnostics', () => {
         }),
       ]),
     );
+  });
+
+  it('reports room, space-overlay, and room-separation failures before screenshots hide them', () => {
+    const level = {
+      kind: 'level',
+      id: 'level-1',
+      name: 'Level 1',
+      elevationMm: 0,
+    } satisfies Extract<Element, { kind: 'level' }>;
+    const floor = {
+      kind: 'floor',
+      id: 'floor-1',
+      name: 'Floor 1',
+      levelId: level.id,
+      boundaryMm: [
+        { xMm: 0, yMm: 0 },
+        { xMm: 5000, yMm: 0 },
+        { xMm: 5000, yMm: 5000 },
+        { xMm: 0, yMm: 5000 },
+      ],
+      thicknessMm: 250,
+    } as Extract<Element, { kind: 'floor' }>;
+    const room = {
+      kind: 'room',
+      id: 'room-dropped',
+      name: '',
+      levelId: level.id,
+      outlineMm: [
+        { xMm: 1000, yMm: 1000 },
+        { xMm: 1000, yMm: 1000 },
+        { xMm: 1000, yMm: 1000 },
+      ],
+      props: { render3dVolume: true },
+    } as Extract<Element, { kind: 'room' }>;
+    const separation = {
+      kind: 'room_separation',
+      id: 'sep-dropped',
+      name: 'Dropped separation',
+      levelId: 'missing-level',
+      start: { xMm: 2000, yMm: 2000 },
+      end: { xMm: 2000, yMm: 2000 },
+    } satisfies Extract<Element, { kind: 'room_separation' }>;
+
+    const diagnostics = collectRendererDiagnostics({
+      elements: [level, floor, room, separation],
+      viewId: 'room-visualization-golden',
+      evidence: { source: 'test' },
+    });
+    const byCode = Object.fromEntries(
+      diagnostics.map((diagnostic) => [diagnostic.code, diagnostic]),
+    );
+
+    expect(byCode['renderer.room_visualization.degenerate_outline']).toMatchObject({
+      issueClass: 'model-invalid',
+      feature: 'room-visualization',
+      elementIds: ['room-dropped'],
+      trackerItems: ['BIR-I02', 'BIR-I03', 'BIR-I04', 'BIR-J06'],
+    });
+    expect(byCode['renderer.room_visualization.volume_unsupported']).toMatchObject({
+      issueClass: 'renderer-unsupported',
+      rendererArea: 'viewport-3d',
+      elementIds: ['room-dropped'],
+    });
+    expect(byCode['renderer.room_visualization.missing_name']).toMatchObject({
+      issueClass: 'renderer-degraded',
+      rendererArea: 'plan',
+      elementIds: ['room-dropped'],
+    });
+    expect(byCode['renderer.room_separation.missing_level']).toMatchObject({
+      issueClass: 'model-invalid',
+      elementIds: ['missing-level', 'sep-dropped'],
+    });
+    expect(byCode['renderer.room_separation.degenerate_segment']).toMatchObject({
+      issueClass: 'model-invalid',
+      elementIds: ['sep-dropped'],
+    });
+  });
+
+  it('goldens target-house rooms, room separations, slab openings, and hosted-cut fallback diagnostics', () => {
+    const snapshotPath = resolve(
+      process.cwd(),
+      '../../seed-artifacts/target-house-1/evidence/live-run-current/snapshot.json',
+    );
+    const snapshot = JSON.parse(readFileSync(snapshotPath, 'utf8')) as {
+      elements: Record<string, Element>;
+    };
+    const elements = Object.values(snapshot.elements);
+    const criticalKinds = new Set(['room', 'room_separation', 'slab_opening', 'door', 'window']);
+    const counts = elements.reduce<Record<string, number>>((acc, element) => {
+      if (criticalKinds.has(element.kind)) acc[element.kind] = (acc[element.kind] ?? 0) + 1;
+      return acc;
+    }, {});
+
+    expect(counts.room).toBeGreaterThanOrEqual(10);
+    expect(counts.room_separation).toBeGreaterThan(0);
+    expect(counts.slab_opening).toBeGreaterThan(0);
+    expect((counts.door ?? 0) + (counts.window ?? 0)).toBeGreaterThan(0);
+
+    const diagnostics = collectRendererDiagnostics({
+      elements,
+      viewId: 'target-house-renderer-golden',
+      evidence: { source: 'test', artifactPath: snapshotPath },
+      csgEnabled: true,
+    });
+    const roomAndSlabCodes = diagnostics
+      .filter(
+        (diagnostic) =>
+          diagnostic.code.startsWith('renderer.room') ||
+          diagnostic.code.startsWith('renderer.slab_opening'),
+      )
+      .map((diagnostic) => diagnostic.code);
+    const hostedCutDiagnostics = diagnostics.filter((diagnostic) =>
+      diagnostic.code.startsWith('renderer.wall_cut'),
+    );
+    const hostedCutCodeCounts = hostedCutDiagnostics.reduce<Record<string, number>>(
+      (acc, diagnostic) => {
+        acc[diagnostic.code] = (acc[diagnostic.code] ?? 0) + 1;
+        return acc;
+      },
+      {},
+    );
+
+    expect(roomAndSlabCodes).toEqual([]);
+    expect(hostedCutCodeCounts).toEqual({
+      'renderer.wall_cut.detached_or_proxy_render_risk': 6,
+      'renderer.wall_cut.wall.opening.csg.skipped.by.curtain.wall': 6,
+    });
+    expect(hostedCutDiagnostics.every((diagnostic) => diagnostic.severity === 'warning')).toBe(
+      true,
+    );
+    expect(
+      hostedCutDiagnostics.every((diagnostic) =>
+        ['renderer-degraded', 'renderer-unsupported'].includes(diagnostic.issueClass),
+      ),
+    ).toBe(true);
   });
 });

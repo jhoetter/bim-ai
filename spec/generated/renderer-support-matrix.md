@@ -1,6 +1,6 @@
 # Renderer Support Matrix
 
-Generated from `packages/web/src/viewport/rendererDiagnostics.ts`. Digest: `rsm-02b54383`.
+Generated from `packages/web/src/viewport/rendererDiagnostics.ts`. Digest: `rsm-b3250701`.
 
 This matrix is the initial BIR-I01 renderer contract. It states whether a semantic model feature is expected to render, export, or produce a structured renderer diagnostic instead of failing silently.
 
@@ -12,7 +12,7 @@ This matrix is the initial BIR-I01 renderer contract. It states whether a semant
 | `rsm-slab-openings` | `floor` | slab-opening | partial | partial | partial | partial | partial | `renderer.slab_opening.unsupported`<br>`renderer.slab_opening.failed_cut` | `BIR-I01`, `BIR-I02`, `BIR-I06`, `BIR-I07`, `BIR-J03` | Shafts, stair penetrations, balconies, terraces, and stacked floors need explicit support declarations.<br>Unsupported voids must be persisted with affected floor/opening ids. |
 | `rsm-stairs` | `stair` | stair-geometry | partial | partial | partial | partial | partial | `renderer.stair_geometry.degraded`<br>`renderer.stair_geometry.unsupported` | `BIR-I01`, `BIR-I02`, `BIR-I06`, `BIR-I07`, `BIR-J04` | Runs, landings, winding segments, shafts, handrails, and headroom evidence need separate coverage. |
 | `rsm-railings` | `railing` | railing-geometry | partial | partial | partial | partial | partial | `renderer.railing_geometry.degraded`<br>`renderer.railing_geometry.unsupported` | `BIR-I01`, `BIR-I02`, `BIR-I06`, `BIR-I07`, `BIR-J04` | Guard, handrail, baluster spacing, hosted edge, and material-slot fidelity need explicit diagnostics. |
-| `rsm-rooms-spaces` | `room` | room-visualization | partial | supported | partial | partial | partial | `renderer.room_visualization.degraded` | `BIR-I01`, `BIR-I06`, `BIR-I07`, `BIR-J06` | Room/space volumes and boundary overlays must remain diagnostic overlays, not physical clutter. |
+| `rsm-rooms-spaces` | `room` | room-visualization | partial | supported | partial | partial | partial | `renderer.room_visualization.degenerate_outline`<br>`renderer.room_visualization.volume_unsupported`<br>`renderer.room_separation.degenerate_segment` | `BIR-I01`, `BIR-I06`, `BIR-I07`, `BIR-J06` | Room/space volumes and boundary overlays must remain diagnostic overlays, not physical clutter.<br>Room separation lines are analytical boundary evidence and must diagnose missing levels or dropped segments. |
 | `rsm-families-assets` | `family_instance` | family-instance | partial | partial | partial | partial | partial | `renderer.family_instance.proxy_fallback`<br>`renderer.family_instance.unsupported` | `BIR-I01`, `BIR-I06`, `BIR-I07`, `BIR-J05` | Family geometry, nested components, visibility/detail levels, host offsets, and material slots need per-family diagnostics. |
 | `rsm-materials` | `material` | material-resolution | partial | partial | partial | partial | partial | `renderer.material.unresolved`<br>`renderer.material.fallback` | `BIR-I01`, `BIR-I06`, `BIR-I07`, `BIR-J07` | Type-layer, instance, face override, transparent, realistic, wire, cut face, and export material drift need explicit reporting. |
 | `rsm-plan-section-sheet` | `view` | sheet-viewport | not applicable | partial | partial | partial | partial | `renderer.view_projection.degraded`<br>`renderer.sheet_viewport.unsupported` | `BIR-I01`, `BIR-I06`, `BIR-I07`, `BIR-J08` | Plan, section, elevation, sheet viewport, hidden line, realistic, wire, and print/export parity need separate acceptance. |
@@ -24,4 +24,3 @@ Issue classes:
 - `renderer-unsupported`: the model can be valid, but the renderer has no supported path.
 - `renderer-failed`: a supported renderer path was attempted and failed.
 - `renderer-degraded`: the renderer produced an intentional approximation that must be recorded in evidence.
-

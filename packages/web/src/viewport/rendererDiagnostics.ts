@@ -356,9 +356,14 @@ export const RENDERER_SUPPORT_MATRIX: RendererSupportMatrixEntry[] = [
       export: 'partial',
     },
     rendererAreas: ['viewport-3d', 'plan', 'section', 'sheet', 'export'],
-    diagnosticCodes: ['renderer.room_visualization.degraded'],
+    diagnosticCodes: [
+      'renderer.room_visualization.degenerate_outline',
+      'renderer.room_visualization.volume_unsupported',
+      'renderer.room_separation.degenerate_segment',
+    ],
     limitations: [
       'Room/space volumes and boundary overlays must remain diagnostic overlays, not physical clutter.',
+      'Room separation lines are analytical boundary evidence and must diagnose missing levels or dropped segments.',
     ],
     trackerItems: ['BIR-I01', 'BIR-I06', 'BIR-I07', 'BIR-J06'],
   },
