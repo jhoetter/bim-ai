@@ -101,13 +101,13 @@ This tracker is complete only when all of these are true:
 | Milestone | Status        | Exit criteria |
 | --------- | ------------- | ------------- |
 | `M0` Tracker and rule taxonomy | Done | This tracker exists, defines layers, rule families, milestones, and wave plan. |
-| `M1` P0 BIM integrity foundation | Not started | Hosted openings, helper/nonphysical elements, floor/envelope containment, support/topology, and command validation gaps are covered by deterministic Advisor/validation rules with tests and UI/CLI/API parity. |
+| `M1` P0 BIM integrity foundation | Partial | Hosted openings, helper/nonphysical elements, floor/envelope containment, support/topology, and command validation gaps are covered by deterministic Advisor/validation rules with tests and UI/CLI/API parity. |
 | `M2` P0 renderer fidelity foundation | Not started | Renderer emits diagnostics for unsupported/failed cuts, roof/slab/wall openings have golden tests, and target-house-critical visual failures cannot be silent. |
-| `M3` P0 sketch-to-BIM methodology gate | Not started | Sketch-specific fidelity checks are separated from normal Advisor, phase packets fail on missing visual/spec evidence, and target-house acceptance cannot pass on Advisor-clean but visually wrong output. |
+| `M3` P0 sketch-to-BIM methodology gate | Partial | Sketch-specific fidelity checks are separated from normal Advisor, phase packets fail on missing visual/spec evidence, and target-house acceptance cannot pass on Advisor-clean but visually wrong output. |
 | `M4` P1 domain depth | Not started | Rooms/access/egress, stairs/railings, structure-lite, MEP-lite, fire/accessibility metadata, materials/types, and exchange checks have robust rule coverage. |
 | `M5` P1 rendering/exchange completeness | Not started | Supported viewport geometry, IFC/glTF export manifests, and readback/golden evidence agree for architecture, structure-lite, MEP-lite, sheets, and schedules. |
 | `M6` Performance and live UX quality | Not started | Advisor and renderer diagnostics are incremental, bounded, nonblocking, and do not cause sluggish orbit/selection/WebSocket behavior in ordinary projects. |
-| `M7` Platform-grade BIM guarantees | Not started | Kernel invariants, transaction safety, collaboration, provenance, fixture governance, and agent remediation safety are covered by tests and documented contracts. |
+| `M7` Platform-grade BIM guarantees | Partial | Kernel invariants, transaction safety, collaboration, provenance, fixture governance, and agent remediation safety are covered by tests and documented contracts. |
 | `M8` Target-house rerun readiness | Not started | `target-house-1` can be regenerated from methodology with zero unhandled warnings/errors, clean renderer diagnostics, current evidence, and explicit tolerances only where accepted by the user. |
 
 ## Layering Contract
@@ -127,12 +127,12 @@ This tracker is complete only when all of these are true:
 | ID | Priority | Status | Item | Acceptance |
 | -- | -------- | ------ | ---- | ---------- |
 | `BIR-A01` | P0 | Done | Create the tracker and layer contract. | This file exists and separates authoring validation, BIM integrity, constructability, renderer diagnostics, and sketch methodology gates. |
-| `BIR-A02` | P0 | Not started | Create canonical rule taxonomy. | Every rule has `ruleId`, title, severity, discipline, perspective, layer owner, affected ids, recommendation, fix command hints, suppressibility, and profile membership. |
-| `BIR-A03` | P0 | Not started | Add rule registry tests. | Tests fail if a new rule lacks metadata, UI display text, CLI/API serialization, severity mapping, or perspective classification. |
+| `BIR-A02` | P0 | Partial | Create canonical rule taxonomy. | Every rule has `ruleId`, title, severity, discipline, perspective, layer owner, affected ids, recommendation, fix command hints, suppressibility, and profile membership. |
+| `BIR-A03` | P0 | Done | Add rule registry tests. | Tests fail if a new rule lacks metadata, UI display text, CLI/API serialization, severity mapping, or perspective classification. |
 | `BIR-A04` | P0 | Partial | Establish UI/CLI/API Advisor parity. | Same model and profile yield equivalent grouped findings in right rail, CLI `advisor`, API snapshot violations, and constructability report. Existing parity helpers are extended to all new rules. |
-| `BIR-A05` | P0 | Not started | Add severity policy. | P0 integrity failures are `error`; current-phase sketch blockers cannot be hidden as `info`; metadata and profile completeness use predictable `warning`/`info` levels. |
+| `BIR-A05` | P0 | Partial | Add severity policy. | P0 integrity failures are `error`; current-phase sketch blockers cannot be hidden as `info`; metadata and profile completeness use predictable `warning`/`info` levels. |
 | `BIR-A06` | P1 | Not started | Add suppression/tolerance policy per rule. | Rule registry declares whether a finding can be ignored, temporarily tolerated, or requires a modeled fix; tolerances require owner, expiry, and evidence. |
-| `BIR-A07` | P1 | Not started | Add rule documentation generator. | A generated `spec/generated/advisor-rule-ledger.md` lists every rule, examples, surfaces, tests, and status. |
+| `BIR-A07` | P1 | Partial | Add rule documentation generator. | A generated `spec/generated/advisor-rule-ledger.md` lists every rule, examples, surfaces, tests, and status. |
 
 ### B. Authoring And Command Validation
 
@@ -150,11 +150,11 @@ This tracker is complete only when all of these are true:
 
 | ID | Priority | Status | Item | Acceptance |
 | -- | -------- | ------ | ---- | ---------- |
-| `BIR-C01` | P0 | Not started | Detect hosted door/window not embedded in a real wall. | Door/window findings fire when the host wall is nonphysical, analysis-only, hidden helper, too short, outside its level floor, or not part of a valid architectural boundary. |
-| `BIR-C02` | P0 | Not started | Detect host wall outside floor/building envelope. | A wall with physical role on a storey must intersect/align with a floor, room boundary, or explicit detached/exterior condition; otherwise report `physical_wall_outside_envelope`. |
-| `BIR-C03` | P0 | Not started | Detect door/window outside usable wall span. | Openings near endpoints, overlaps, or exceeding segment capacity report deterministic errors even if `alongT` is technically in range. |
-| `BIR-C04` | P0 | Not started | Detect door/window without rendered or semantic opening cut. | A hosted element must either create an explicit wall void/cut participant or declare a renderer-supported integrated cut; missing cut is a BIM integrity error. |
-| `BIR-C05` | P0 | Not started | Detect physical access-proxy leakage. | Synthetic access walls/doors used only for room graph logic are either nonphysical or flagged when visible/rendered/scheduled/exported as architectural elements. |
+| `BIR-C01` | P0 | Done | Detect hosted door/window not embedded in a real wall. | Door/window findings fire when the host wall is nonphysical, analysis-only, hidden helper, too short, outside its level floor, or not part of a valid architectural boundary. |
+| `BIR-C02` | P0 | Done | Detect host wall outside floor/building envelope. | A wall with physical role on a storey must intersect/align with a floor, room boundary, or explicit detached/exterior condition; otherwise report `physical_wall_outside_envelope`. |
+| `BIR-C03` | P0 | Done | Detect door/window outside usable wall span. | Openings near endpoints, overlaps, or exceeding segment capacity report deterministic errors even if `alongT` is technically in range. |
+| `BIR-C04` | P0 | Partial | Detect door/window without rendered or semantic opening cut. | A hosted element must either create an explicit wall void/cut participant or declare a renderer-supported integrated cut; missing cut is a BIM integrity error. |
+| `BIR-C05` | P0 | Done | Detect physical access-proxy leakage. | Synthetic access walls/doors used only for room graph logic are either nonphysical or flagged when visible/rendered/scheduled/exported as architectural elements. |
 | `BIR-C06` | P1 | Not started | Add opening conflict graph. | Multiple doors/windows/wall openings on one wall cannot overlap, exceed wall capacity, or violate endpoint/lintel spacing without a warning/error. |
 | `BIR-C07` | P1 | Not started | Add hosted family support classification. | Doors/windows/assets declare hosted, freestanding, face-hosted, level-hosted, ceiling-hosted, or workplane-hosted semantics; Advisor validates host kind and geometry. |
 | `BIR-C08` | P1 | Not started | Add orphan rendered-proxy detector. | Any mesh/proxy generated for a hosted element without valid host geometry emits a renderer diagnostic and Advisor integrity finding. |
@@ -273,11 +273,11 @@ This tracker is complete only when all of these are true:
 
 | ID | Priority | Status | Item | Acceptance |
 | -- | -------- | ------ | ---- | ---------- |
-| `BIR-M01` | P0 | Not started | Rename/specify sketch fidelity gate separately from Advisor. | Methodology docs and helper output call this `sketch acceptance`, `brief acceptance`, or equivalent, never normal Advisor. |
+| `BIR-M01` | P0 | Partial | Rename/specify sketch fidelity gate separately from Advisor. | Methodology docs and helper output call this `sketch acceptance`, `brief acceptance`, or equivalent, never normal Advisor. |
 | `BIR-M02` | P0 | Partial | Enforce current phase evidence. | Phase packet requires current git head, model revision, Advisor digest, renderer diagnostic digest, IR hash, capability hash, and screenshot manifest. |
 | `BIR-M03` | P0 | Partial | Require semantic visual checklist for critical features. | Agent must explicitly pass/fail feature-specific checks for silhouette, roof cutout, terrace/loggia, facade rhythm, cladding, rooms, stairs, and diagnostics. |
 | `BIR-M04` | P0 | Not started | Add renderer diagnostics to phase acceptance. | Phase/final acceptance blocks if required visual features have renderer unsupported/failed diagnostics. |
-| `BIR-M05` | P0 | Not started | Add BIM integrity diagnostics to phase acceptance. | Phase/final acceptance blocks on P0 model-integrity errors even if normal constructability warnings are zero. |
+| `BIR-M05` | P0 | Partial | Add BIM integrity diagnostics to phase acceptance. | Phase/final acceptance blocks on P0 model-integrity errors even if normal constructability warnings are zero. |
 | `BIR-M06` | P0 | Not started | Add target-house-specific acceptance pack. | Target-house checklist compiles into machine-readable required features, views, tolerances, and evidence rows. |
 | `BIR-M07` | P1 | Not started | Add visual readout drift loop. | Agent must compare latest screenshots with previous phase and source sketch, record corrections, and cannot advance on unresolved drift. |
 | `BIR-M08` | P1 | Not started | Add methodology failure taxonomy. | Phase packets classify failures as model-integrity, renderer, sketch-fidelity, command-surface, evidence-staleness, or user-tolerance. |
@@ -301,7 +301,7 @@ This tracker is complete only when all of these are true:
 | ID | Priority | Status | Item | Acceptance |
 | -- | -------- | ------ | ---- | ---------- |
 | `BIR-O01` | P0 | Not started | Add fixture corpus for model-integrity rules. | Positive and negative fixtures cover every P0 integrity rule with expected rule ids and affected elements. |
-| `BIR-O02` | P0 | Not started | Add target-house regression fixture. | The known detached-door/access-wall and roof-cut cases fail before fixes and pass after. |
+| `BIR-O02` | P0 | Partial | Add target-house regression fixture. | The known detached-door/access-wall and roof-cut cases fail before fixes and pass after. |
 | `BIR-O03` | P0 | Not started | Add renderer golden fixture corpus. | Minimal scenes for roof openings, wall cuts, slab openings, stairs/rails, loggia/terrace, and helper leakage are tested. |
 | `BIR-O04` | P1 | Not started | Add end-to-end acceptance rehearsal. | A no-seed or disposable seed run exercises integrity, renderer diagnostics, Advisor, evidence, and sketch acceptance without committing artifacts. |
 | `BIR-O05` | P1 | Not started | Add benchmark suite integration. | Existing benchmarks record integrity, renderer diagnostics, exchange, performance, and acceptance status in live evidence. |
@@ -311,14 +311,14 @@ This tracker is complete only when all of these are true:
 
 | ID | Priority | Status | Item | Acceptance |
 | -- | -------- | ------ | ---- | ---------- |
-| `BIR-P01` | P0 | Not started | Define document invariant contract. | A generated invariant ledger states required ids, kind discriminators, references, units, coordinates, level membership, type-instance relations, and deletion semantics. |
-| `BIR-P02` | P0 | Not started | Validate all element references. | Every `levelId`, host id, type id, material key, view id, schedule id, sheet id, phase id, design option id, and linked-model ref is either resolvable or explicitly nullable by schema. |
+| `BIR-P01` | P0 | Partial | Define document invariant contract. | A generated invariant ledger states required ids, kind discriminators, references, units, coordinates, level membership, type-instance relations, and deletion semantics. |
+| `BIR-P02` | P0 | Partial | Validate all element references. | Every `levelId`, host id, type id, material key, view id, schedule id, sheet id, phase id, design option id, and linked-model ref is either resolvable or explicitly nullable by schema. |
 | `BIR-P03` | P0 | Not started | Validate units and coordinate normalization. | All geometry commands and snapshots use explicit mm/m/unit contracts; imported/exported coordinates are normalized with documented transforms. |
-| `BIR-P04` | P0 | Not started | Validate level/storey semantics. | Physical elements have coherent level, base elevation, top constraint/height, storey membership, and cross-level intent. |
-| `BIR-P05` | P0 | Not started | Validate physical vs analytical roles. | Every element that can appear in Advisor/renderer/export declares whether it is physical, analytical, helper, annotation, documentation, or imported proxy. |
+| `BIR-P04` | P0 | Partial | Validate level/storey semantics. | Physical elements have coherent level, base elevation, top constraint/height, storey membership, and cross-level intent. |
+| `BIR-P05` | P0 | Partial | Validate physical vs analytical roles. | Every element that can appear in Advisor/renderer/export declares whether it is physical, analytical, helper, annotation, documentation, or imported proxy. |
 | `BIR-P06` | P1 | Not started | Validate type-instance inheritance. | Instance parameters, family/type parameters, material slots, dimensions, schedule fields, and overrides resolve predictably and are surfaced in diagnostics. |
 | `BIR-P07` | P1 | Not started | Validate schema migration compatibility. | Older seed artifacts and command bundles can be migrated or fail with actionable diagnostics rather than silently producing malformed models. |
-| `BIR-P08` | P1 | Not started | Add invariant smoke command. | CLI/API can run a fast invariant check that is independent of constructability and reports machine-readable findings. |
+| `BIR-P08` | P1 | Partial | Add invariant smoke command. | CLI/API can run a fast invariant check that is independent of constructability and reports machine-readable findings. |
 
 ### Q. Transactions, Collaboration, Undo/Redo, And Agent Safety
 
@@ -359,9 +359,9 @@ This tracker is complete only when all of these are true:
 
 | ID | Priority | Status | Item | Acceptance |
 | -- | -------- | ------ | ---- | ---------- |
-| `BIR-T01` | P0 | Not started | Map sketch features to BIM elements. | Every required sketch/brief feature has stable feature id, required element ids, source image references, phase, evidence views, and acceptance status. |
+| `BIR-T01` | P0 | Partial | Map sketch features to BIM elements. | Every required sketch/brief feature has stable feature id, required element ids, source image references, phase, evidence views, and acceptance status. |
 | `BIR-T02` | P0 | Not started | Map findings to source authoring commands. | Advisor/integrity/renderer findings can be traced to command ids, recipe rows, agent wave, commit, and phase packet where available. |
-| `BIR-T03` | P0 | Not started | Add evidence lineage manifest. | Final packets state which snapshots, screenshots, reports, exports, rule digests, renderer build, and git head produced each acceptance claim. |
+| `BIR-T03` | P0 | Partial | Add evidence lineage manifest. | Final packets state which snapshots, screenshots, reports, exports, rule digests, renderer build, and git head produced each acceptance claim. |
 | `BIR-T04` | P1 | Not started | Add stale evidence invalidation. | Evidence becomes stale when model revision, rule digest, renderer support matrix, seed source, target spec, or git head changes. |
 | `BIR-T05` | P1 | Not started | Add feature coverage dashboard. | Agents and users can see required features, current element coverage, open findings, renderer support, screenshots, and remaining blockers. |
 | `BIR-T06` | P1 | Not started | Add review narrative generator. | Phase/final reports summarize what changed, what evidence proves it, what remains tolerated, and what is blocked. |
@@ -391,8 +391,8 @@ This tracker is complete only when all of these are true:
 
 | ID | Priority | Status | Item | Acceptance |
 | -- | -------- | ------ | ---- | ---------- |
-| `BIR-W01` | P0 | Not started | Define fixture classes. | Fixture corpus distinguishes minimal synthetic, target-house regression, benchmark seed, import/export roundtrip, performance stress, and user-realistic sketch cases. |
-| `BIR-W02` | P0 | Not started | Add status accounting script. | A script computes milestone/tracker completion percentages from this file plus generated evidence and fails on stale status claims. |
+| `BIR-W01` | P0 | Partial | Define fixture classes. | Fixture corpus distinguishes minimal synthetic, target-house regression, benchmark seed, import/export roundtrip, performance stress, and user-realistic sketch cases. |
+| `BIR-W02` | P0 | Done | Add status accounting script. | A script computes milestone/tracker completion percentages from this file plus generated evidence and fails on stale status claims. |
 | `BIR-W03` | P0 | Not started | Add implementation evidence rows. | Each tracker item records code paths, tests, generated docs, evidence artifact, commit id, and known limitations before status becomes `Done`. |
 | `BIR-W04` | P1 | Not started | Add wave closeout template. | Each wave produces a closeout report with agents, commits, tests, tracker changes, unresolved blockers, and next-wave recommendations. |
 | `BIR-W05` | P1 | Not started | Add quality gate for "Done". | CI or review script rejects status changes to `Done` without linked evidence rows and tests. |

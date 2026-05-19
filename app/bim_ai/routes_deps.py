@@ -8,8 +8,11 @@ from sqlalchemy import delete, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from bim_ai.constraints import evaluate
+from bim_ai.constraints_core import Violation
 from bim_ai.document import Document
 from bim_ai.hub import Hub
+from bim_ai.model_integrity import ModelIntegrityFinding, check_model_integrity_invariants
+from bim_ai.model_integrity_hosting import hosted_opening_integrity_violations
 from bim_ai.tables import ModelRecord, RedoStackRecord
 
 
@@ -34,8 +37,34 @@ async def load_model_row(session: AsyncSession, model_id: UUID) -> ModelRecord |
 
 
 def violations_wire(elements: dict) -> list[dict[str, Any]]:
-    viols_list = evaluate(elements)  # type: ignore[arg-type]
+    viols_list = [
+        *evaluate(elements),  # type: ignore[arg-type]
+        *_model_integrity_violations(elements),
+    ]
+    viols_list.sort(key=lambda v: (v.rule_id, tuple(sorted(v.element_ids)), v.severity))
     return [v.model_dump(by_alias=True) for v in viols_list]
+
+
+def _model_integrity_violations(elements: dict) -> list[Violation]:
+    violations = [
+        _integrity_finding_to_violation(finding)
+        for finding in check_model_integrity_invariants(elements)
+        if finding.severity == "error"
+    ]
+    violations.extend(hosted_opening_integrity_violations(elements))  # type: ignore[arg-type]
+    return violations
+
+
+def _integrity_finding_to_violation(finding: ModelIntegrityFinding) -> Violation:
+    return Violation(
+        rule_id=finding.rule_id,
+        severity=finding.severity,
+        message=finding.message,
+        element_ids=list(finding.element_ids),
+        blocking=finding.severity == "error",
+        discipline="coordination",
+        blocking_class="model_integrity",
+    )
 
 
 async def delete_redos(session: AsyncSession, model_id: UUID, user_id: str) -> None:

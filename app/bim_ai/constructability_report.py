@@ -29,6 +29,8 @@ from bim_ai.constructability_scope import (
     scope_constructability_elements,
 )
 from bim_ai.elements import Element
+from bim_ai.model_integrity import ModelIntegrityFinding, check_model_integrity_invariants
+from bim_ai.model_integrity_hosting import hosted_opening_integrity_violations
 
 CONSTRUCTABILITY_RULE_IDS = frozenset(
     {
@@ -168,6 +170,7 @@ def build_constructability_report(
     violations.extend(
         constructability_metadata_requirement_violations(scoped_elements, profile=profile)
     )
+    violations.extend(_model_integrity_constructability_violations(scoped_elements))
     all_findings = [_finding_dict(v, profile=profile) for v in violations]
     suppressions = _suppression_records(scoped_elements, revision=revision)
     active_findings: list[dict[str, Any]] = []
@@ -231,6 +234,28 @@ def build_constructability_report(
             ),
         ),
     }
+
+
+def _model_integrity_constructability_violations(elements: dict[str, Element]) -> list[Violation]:
+    violations = [
+        _integrity_finding_to_violation(finding)
+        for finding in check_model_integrity_invariants(elements)
+        if finding.severity == "error"
+    ]
+    violations.extend(hosted_opening_integrity_violations(elements))
+    return violations
+
+
+def _integrity_finding_to_violation(finding: ModelIntegrityFinding) -> Violation:
+    return Violation(
+        rule_id=finding.rule_id,
+        severity=finding.severity,
+        message=finding.message,
+        element_ids=list(finding.element_ids),
+        blocking=finding.severity == "error",
+        discipline="coordination",
+        blocking_class="model_integrity",
+    )
 
 
 def build_constructability_summary_v1(
