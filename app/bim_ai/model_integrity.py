@@ -55,6 +55,7 @@ class ReferenceSpec:
     required: bool = False
     many: bool = False
     validate_only_if_target_kind_exists: str | None = None
+    source_kinds: frozenset[str] | None = None
 
 
 PHYSICAL_KINDS: frozenset[str] = frozenset(
@@ -91,6 +92,8 @@ PHYSICAL_KINDS: frozenset[str] = frozenset(
         "mep_opening_request",
     }
 )
+
+ANALYTICAL_KINDS: frozenset[str] = frozenset({"room"})
 
 HELPER_KINDS: frozenset[str] = frozenset(
     {
@@ -207,6 +210,7 @@ IMPORTED_PROXY_KINDS: frozenset[str] = frozenset(
     {
         "link_model",
         "link_dxf",
+        "link_external",
         "external_link",
         "image_underlay",
         "neighborhood_mass",
@@ -221,6 +225,7 @@ PRESENTATION_KINDS: frozenset[str] = frozenset({"image_asset", "decal"})
 
 ROLE_BY_KIND: dict[str, ModelRole] = {
     **{kind: "physical" for kind in PHYSICAL_KINDS},
+    **{kind: "analytical" for kind in ANALYTICAL_KINDS},
     **{kind: "helper" for kind in HELPER_KINDS},
     **{kind: "annotation" for kind in ANNOTATION_KINDS},
     **{kind: "documentation" for kind in DOCUMENTATION_KINDS},
@@ -313,9 +318,20 @@ TYPE_INSTANCE_SPECS: dict[str, tuple[str, str, bool]] = {
 
 REFERENCE_SPECS: tuple[ReferenceSpec, ...] = (
     ReferenceSpec("levelId", frozenset({"level"})),
+    ReferenceSpec("underlayLevelId", frozenset({"level"})),
     ReferenceSpec("referenceLevelId", frozenset({"level"})),
-    ReferenceSpec("baseLevelId", frozenset({"level"}), required=True),
-    ReferenceSpec("topLevelId", frozenset({"level"}), required=True),
+    ReferenceSpec(
+        "baseLevelId",
+        frozenset({"level"}),
+        required=True,
+        source_kinds=frozenset({"stair"}),
+    ),
+    ReferenceSpec(
+        "topLevelId",
+        frozenset({"level"}),
+        required=True,
+        source_kinds=frozenset({"stair"}),
+    ),
     ReferenceSpec("upperLimitLevelId", frozenset({"level"})),
     ReferenceSpec("parentLevelId", frozenset({"level"})),
     ReferenceSpec("baseConstraintLevelId", frozenset({"level"})),
@@ -336,27 +352,87 @@ REFERENCE_SPECS: tuple[ReferenceSpec, ...] = (
     ReferenceSpec("memberIds", many=True),
     ReferenceSpec("elementIds", many=True),
     ReferenceSpec("targetElementIds", many=True),
+    ReferenceSpec("hiddenElementIds", many=True),
     ReferenceSpec("stairElementId", frozenset({"stair"}), required=True),
     ReferenceSpec("roomId", frozenset({"room"})),
     ReferenceSpec("hostViewId", VIEW_KINDS),
     ReferenceSpec("viewId", VIEW_KINDS),
+    ReferenceSpec("viewIds", VIEW_KINDS, many=True),
     ReferenceSpec("baseViewId", VIEW_KINDS, required=True),
     ReferenceSpec("viewpointId", frozenset({"viewpoint"})),
+    ReferenceSpec("viewpointRef", frozenset({"viewpoint"})),
     ReferenceSpec("planViewId", frozenset({"plan_view"})),
     ReferenceSpec("planOverlaySourcePlanViewId", frozenset({"plan_view"})),
+    ReferenceSpec("sectionCutId", frozenset({"section_cut"})),
     ReferenceSpec("sheetId", frozenset({"sheet"})),
+    ReferenceSpec(
+        "parentSheetId",
+        frozenset({"sheet"}),
+        required=True,
+        source_kinds=frozenset({"callout"}),
+    ),
     ReferenceSpec("scheduleId", frozenset({"schedule"})),
     ReferenceSpec("tagDefinitionId", frozenset({"tag_definition"})),
+    ReferenceSpec("planOpeningTagStyleId", frozenset({"plan_tag_style"})),
+    ReferenceSpec("planRoomTagStyleId", frozenset({"plan_tag_style"})),
     ReferenceSpec("viewTemplateId", frozenset({"view_template"})),
+    ReferenceSpec("templateId", frozenset({"view_template"})),
+    ReferenceSpec(
+        "titleblockTypeId",
+        frozenset({"titleblock_type"}),
+        validate_only_if_target_kind_exists="titleblock_type",
+    ),
+    ReferenceSpec(
+        "brandTemplateId",
+        frozenset({"brand_template"}),
+        validate_only_if_target_kind_exists="brand_template",
+    ),
     ReferenceSpec("familyTypeId", frozenset({"family_type"})),
+    ReferenceSpec("wallTypeId", frozenset({"wall_type"})),
+    ReferenceSpec("floorTypeId", frozenset({"floor_type"})),
+    ReferenceSpec("roofTypeId", frozenset({"roof_type"})),
     ReferenceSpec("assetId", frozenset({"asset_library_entry"}), required=True),
     ReferenceSpec("materialKey", frozenset({"material"}), validate_only_if_target_kind_exists="material"),
+    ReferenceSpec(
+        "defaultMaterialKey",
+        frozenset({"material"}),
+        validate_only_if_target_kind_exists="material",
+    ),
+    ReferenceSpec(
+        "structuralMaterialKey",
+        frozenset({"material"}),
+        validate_only_if_target_kind_exists="material",
+    ),
+    ReferenceSpec(
+        "wallMaterialKey",
+        frozenset({"material"}),
+        validate_only_if_target_kind_exists="material",
+    ),
+    ReferenceSpec(
+        "roofMaterialKey",
+        frozenset({"material"}),
+        validate_only_if_target_kind_exists="material",
+    ),
+    ReferenceSpec("materialId", frozenset({"material"}), validate_only_if_target_kind_exists="material"),
+    ReferenceSpec(
+        "countertopMaterialId",
+        frozenset({"material"}),
+        validate_only_if_target_kind_exists="material",
+    ),
     ReferenceSpec("phaseId", frozenset({"phase"}), validate_only_if_target_kind_exists="phase"),
     ReferenceSpec("phaseCreated", frozenset({"phase"}), validate_only_if_target_kind_exists="phase"),
     ReferenceSpec("phaseDemolished", frozenset({"phase"}), validate_only_if_target_kind_exists="phase"),
     ReferenceSpec("optionSetId"),
     ReferenceSpec("optionId"),
+    ReferenceSpec("linkId", IMPORTED_PROXY_KINDS, validate_only_if_target_kind_exists="link_model"),
+    ReferenceSpec(
+        "_linkedFromLinkId",
+        IMPORTED_PROXY_KINDS,
+        validate_only_if_target_kind_exists="link_model",
+    ),
 )
+
+NESTED_REFERENCE_FIELDS: frozenset[str] = frozenset(spec.field for spec in REFERENCE_SPECS)
 
 
 def model_integrity_invariant_contract_v1() -> dict[str, Any]:
@@ -365,6 +441,10 @@ def model_integrity_invariant_contract_v1() -> dict[str, Any]:
         "roles": sorted(VALID_MODEL_ROLES),
         "roleByKind": dict(sorted(ROLE_BY_KIND.items())),
         "physicalKinds": sorted(PHYSICAL_KINDS),
+        "analyticalKinds": sorted(ANALYTICAL_KINDS),
+        "helperKinds": sorted(HELPER_KINDS),
+        "documentationKinds": sorted(DOCUMENTATION_KINDS),
+        "importedProxyKinds": sorted(IMPORTED_PROXY_KINDS),
         "unitContracts": {
             "canonicalLengthUnit": CANONICAL_LENGTH_UNIT,
             "acceptedLengthUnitAliases": sorted(SUPPORTED_LENGTH_UNITS),
@@ -392,9 +472,24 @@ def model_integrity_invariant_contract_v1() -> dict[str, Any]:
                 "required": spec.required,
                 "many": spec.many,
                 "conditionalOnTargetKind": spec.validate_only_if_target_kind_exists,
+                "sourceKinds": sorted(spec.source_kinds) if spec.source_kinds else None,
             }
             for spec in REFERENCE_SPECS
         ],
+        "nestedReferenceFieldPolicy": {
+            "checkedFields": sorted(NESTED_REFERENCE_FIELDS),
+            "scope": "root elements and nested dictionaries/lists such as type layers, material slots, sheet view placements, evidence refs, and option locks",
+        },
+        "levelStoreySemantics": {
+            "physicalLevelKinds": sorted(PHYSICAL_KINDS),
+            "rules": [
+                "physical elements requiring a level/storey reference must resolve to level",
+                "level parent elevation must match parent elevation plus offset",
+                "base/top level or constraint spans must have top elevation above base elevation",
+                "hosted openings with explicit levelId must match host wall levelId",
+                "height-bearing physical elements must have positive finite height",
+            ],
+        },
         "trackedItems": [
             "BIR-P01",
             "BIR-P02",
@@ -429,6 +524,7 @@ def check_model_integrity_invariants(
         ]
 
     element_kinds = _kind_index(elements)
+    level_elevations = _level_elevations(elements)
     for map_id, element in sorted(elements.items(), key=lambda item: str(item[0])):
         element_id = _read(element, "id")
         kind = _read(element, "kind")
@@ -481,7 +577,9 @@ def check_model_integrity_invariants(
             )
         findings.extend(_role_findings(element, element_id, kind, require_explicit_roles))
         findings.extend(_reference_findings(element, elements, element_kinds, design_option_sets))
-        findings.extend(_level_semantic_findings(element, elements))
+        if kind == "level":
+            findings.extend(_level_definition_findings(element, elements, level_elevations))
+        findings.extend(_level_semantic_findings(element, elements, level_elevations))
         findings.extend(_unit_coordinate_findings(element))
         findings.extend(_type_instance_findings(element, elements))
 
@@ -490,12 +588,14 @@ def check_model_integrity_invariants(
 
 
 def model_integrity_smoke_v1(subject: Any, *, require_explicit_roles: bool = False) -> dict[str, Any]:
+    elements = _elements_mapping(subject) or {}
     findings = check_model_integrity_invariants(
         subject, require_explicit_roles=require_explicit_roles
     )
     counts: dict[str, int] = {}
     for finding in findings:
         counts[finding.severity] = counts.get(finding.severity, 0) + 1
+    role_counts = _role_counts(elements)
     return {
         "format": "modelIntegritySmoke_v1",
         "trackedItems": [
@@ -511,6 +611,15 @@ def model_integrity_smoke_v1(subject: Any, *, require_explicit_roles: bool = Fal
         "ok": counts.get("error", 0) == 0,
         "findingCount": len(findings),
         "countsBySeverity": dict(sorted(counts.items())),
+        "roleCounts": role_counts,
+        "coverage": {
+            "checkedReferenceFields": sorted(NESTED_REFERENCE_FIELDS),
+            "checkedRoleKinds": sorted(ROLE_BY_KIND),
+            "checkedPhysicalKinds": sorted(PHYSICAL_KINDS),
+            "checkedAnalyticalKinds": sorted(ANALYTICAL_KINDS),
+            "checkedLevelSemanticKinds": sorted(PHYSICAL_KINDS | ANALYTICAL_KINDS),
+            "requireExplicitRoles": require_explicit_roles,
+        },
         "findings": [finding.to_dict() for finding in findings],
     }
 
@@ -588,6 +697,7 @@ def schema_migration_compatibility_v1(subject: Any) -> dict[str, Any]:
 
 def model_integrity_smoke_command_evidence_v1(subject: Any) -> dict[str, Any]:
     smoke = model_integrity_smoke_v1(subject)
+    strict_role_smoke = model_integrity_smoke_v1(subject, require_explicit_roles=True)
     units = model_integrity_units_coordinate_normalization_v1(subject)
     inheritance = resolve_type_instance_inheritance_v1(subject)
     schema = schema_migration_compatibility_v1(subject)
@@ -609,6 +719,7 @@ def model_integrity_smoke_command_evidence_v1(subject: Any) -> dict[str, Any]:
         },
         "artifacts": {
             "smoke": smoke,
+            "strictRoleSmoke": strict_role_smoke,
             "unitsCoordinateNormalization": units,
             "typeInstanceInheritance": inheritance,
             "schemaMigrationCompatibility": schema,
@@ -650,6 +761,27 @@ def _kind_index(elements: Mapping[str, Any]) -> dict[str, set[str]]:
     return by_kind
 
 
+def _level_elevations(elements: Mapping[str, Any]) -> dict[str, float]:
+    elevations: dict[str, float] = {}
+    for map_id, element in elements.items():
+        if str(_read(element, "kind", default="")) != "level":
+            continue
+        element_id = _read(element, "id", default=map_id)
+        elevation = _read(element, "elevationMm", default=0)
+        if element_id not in (None, "") and _is_finite_number(elevation):
+            elevations[str(element_id)] = float(elevation)
+    return elevations
+
+
+def _role_counts(elements: Mapping[str, Any]) -> dict[str, int]:
+    counts: dict[str, int] = {}
+    for element in elements.values():
+        kind = str(_read(element, "kind", default=""))
+        role = _declared_model_role(element) or ROLE_BY_KIND.get(kind) or "unclassified"
+        counts[role] = counts.get(role, 0) + 1
+    return dict(sorted(counts.items()))
+
+
 def _role_findings(
     element: Any,
     element_id: str,
@@ -660,15 +792,18 @@ def _role_findings(
     expected = ROLE_BY_KIND.get(kind)
     declared = _declared_model_role(element)
     if declared is None:
-        if require_explicit_roles and kind in PHYSICAL_KINDS:
+        if require_explicit_roles and kind in ROLE_BY_KIND and expected != "project_datum":
             findings.append(
                 ModelIntegrityFinding(
                     rule_id="model_integrity_missing_explicit_model_role",
                     severity="warning",
-                    message=f"Physical element '{element_id}' does not declare an explicit model role.",
+                    message=(
+                        f"Element '{element_id}' kind '{kind}' does not declare an explicit "
+                        f"model role; contract classifies it as '{expected}'."
+                    ),
                     element_ids=(element_id,),
                     field="modelRole",
-                    expected="physical",
+                    expected=expected,
                 )
             )
         return findings
@@ -688,6 +823,37 @@ def _role_findings(
         return findings
 
     if expected is not None and declared != expected:
+        if expected == "physical" and declared != "physical":
+            findings.append(
+                ModelIntegrityFinding(
+                    rule_id="model_integrity_physical_element_marked_nonphysical",
+                    severity="error",
+                    message=(
+                        f"Physical element '{element_id}' kind '{kind}' declares role "
+                        f"'{declared}', so it would leak physical BIM semantics into a "
+                        "nonphysical role."
+                    ),
+                    element_ids=(element_id,),
+                    field="modelRole",
+                    expected="physical",
+                    actual=declared,
+                )
+            )
+        elif expected != "physical" and declared == "physical":
+            findings.append(
+                ModelIntegrityFinding(
+                    rule_id="model_integrity_nonphysical_element_marked_physical",
+                    severity="error",
+                    message=(
+                        f"Nonphysical element '{element_id}' kind '{kind}' declares role "
+                        "'physical'."
+                    ),
+                    element_ids=(element_id,),
+                    field="modelRole",
+                    expected=expected,
+                    actual=declared,
+                )
+            )
         findings.append(
             ModelIntegrityFinding(
                 rule_id="model_integrity_role_kind_mismatch",
@@ -713,7 +879,10 @@ def _reference_findings(
 ) -> list[ModelIntegrityFinding]:
     findings: list[ModelIntegrityFinding] = []
     element_id = str(_read(element, "id", default=""))
+    kind = str(_read(element, "kind", default=""))
     for spec in REFERENCE_SPECS:
+        if spec.source_kinds and kind not in spec.source_kinds:
+            continue
         if spec.validate_only_if_target_kind_exists and not element_kinds.get(
             spec.validate_only_if_target_kind_exists
         ):
@@ -745,20 +914,125 @@ def _reference_findings(
                 continue
             target_kind = str(_read(target, "kind", default=""))
             if spec.allowed_kinds and target_kind not in spec.allowed_kinds:
-                findings.append(
-                    ModelIntegrityFinding(
-                        rule_id="model_integrity_reference_wrong_kind",
-                        severity="error",
-                        message=(
-                            f"Element '{element_id}' field '{spec.field}' references '{ref_id}' "
-                            f"of kind '{target_kind}', expected {sorted(spec.allowed_kinds)}."
-                        ),
-                        element_ids=(element_id, ref_id),
-                        field=spec.field,
-                        expected=" | ".join(sorted(spec.allowed_kinds)),
-                        actual=target_kind,
+                findings.append(_wrong_kind_ref(element_id, spec, ref_id, target_kind))
+    findings.extend(
+        _nested_reference_findings(element, elements, element_kinds, design_option_sets)
+    )
+    findings.extend(_option_lock_findings(element, design_option_sets))
+    return findings
+
+
+def _nested_reference_findings(
+    element: Any,
+    elements: Mapping[str, Any],
+    element_kinds: dict[str, set[str]],
+    design_option_sets: list[Any],
+) -> list[ModelIntegrityFinding]:
+    root = _plain_value(element)
+    if not isinstance(root, Mapping):
+        return []
+    element_id = str(root.get("id") or _read(element, "id", default=""))
+    findings: list[ModelIntegrityFinding] = []
+    specs = {spec.field: spec for spec in REFERENCE_SPECS}
+
+    def visit(value: Any, path: str, *, is_root: bool = False) -> None:
+        if isinstance(value, Mapping):
+            for key, child in value.items():
+                key_str = str(key)
+                child_path = key_str if not path else f"{path}.{key_str}"
+                if not is_root and key_str in specs:
+                    spec = specs[key_str]
+                    if spec.source_kinds:
+                        continue
+                    findings.extend(
+                        _reference_value_findings(
+                            element_id,
+                            spec,
+                            child,
+                            child_path,
+                            elements,
+                            element_kinds,
+                            design_option_sets,
+                        )
                     )
+                visit(child, child_path)
+            return
+        if isinstance(value, list | tuple):
+            for index, child in enumerate(value):
+                visit(child, f"{path}[{index}]")
+
+    visit(root, "", is_root=True)
+    return findings
+
+
+def _reference_value_findings(
+    element_id: str,
+    spec: ReferenceSpec,
+    value: Any,
+    field_path: str,
+    elements: Mapping[str, Any],
+    element_kinds: dict[str, set[str]],
+    design_option_sets: list[Any],
+) -> list[ModelIntegrityFinding]:
+    if spec.validate_only_if_target_kind_exists and not element_kinds.get(
+        spec.validate_only_if_target_kind_exists
+    ):
+        return []
+    if value in (None, ""):
+        return []
+    values = list(value) if spec.many and isinstance(value, list | tuple | set) else [value]
+    findings: list[ModelIntegrityFinding] = []
+    for raw_ref in values:
+        if raw_ref in (None, ""):
+            continue
+        ref_id = str(raw_ref)
+        if spec.field == "optionSetId":
+            if design_option_sets and ref_id not in _option_set_ids(design_option_sets):
+                findings.append(_unresolved_ref(element_id, spec, ref_id, field_path))
+            continue
+        if spec.field == "optionId":
+            continue
+        target = elements.get(ref_id)
+        if target is None:
+            findings.append(_unresolved_ref(element_id, spec, ref_id, field_path))
+            continue
+        target_kind = str(_read(target, "kind", default=""))
+        if spec.allowed_kinds and target_kind not in spec.allowed_kinds:
+            findings.append(_wrong_kind_ref(element_id, spec, ref_id, target_kind, field_path))
+    return findings
+
+
+def _option_lock_findings(element: Any, design_option_sets: list[Any]) -> list[ModelIntegrityFinding]:
+    if not design_option_sets:
+        return []
+    option_locks = _read(element, "optionLocks", default={}) or {}
+    if not isinstance(option_locks, Mapping):
+        return []
+    element_id = str(_read(element, "id", default=""))
+    findings: list[ModelIntegrityFinding] = []
+    option_set_ids = _option_set_ids(design_option_sets)
+    for option_set_id, option_id in sorted(option_locks.items(), key=lambda item: str(item[0])):
+        option_set_id = str(option_set_id)
+        if option_set_id not in option_set_ids:
+            findings.append(
+                _unresolved_ref(
+                    element_id,
+                    ReferenceSpec("optionLocks"),
+                    option_set_id,
+                    f"optionLocks.{option_set_id}",
                 )
+            )
+            continue
+        option_ids = _option_ids_for_set(design_option_sets, option_set_id)
+        if option_ids and str(option_id) not in option_ids:
+            findings.append(
+                _unresolved_ref(
+                    element_id,
+                    ReferenceSpec("optionLocks"),
+                    str(option_id),
+                    f"optionLocks.{option_set_id}",
+                )
+            )
     return findings
 
 
@@ -1037,10 +1311,51 @@ def _schema_compatibility_findings(subject: Any) -> list[ModelIntegrityFinding]:
     ]
 
 
-def _level_semantic_findings(element: Any, elements: Mapping[str, Any]) -> list[ModelIntegrityFinding]:
+def _level_definition_findings(
+    element: Any,
+    elements: Mapping[str, Any],
+    level_elevations: dict[str, float],
+) -> list[ModelIntegrityFinding]:
+    element_id = str(_read(element, "id", default=""))
+    parent_id = _read(element, "parentLevelId")
+    if parent_id in (None, ""):
+        return []
+    parent_id = str(parent_id)
+    parent = elements.get(parent_id)
+    if parent is None or str(_read(parent, "kind", default="")) != "level":
+        return []
+    elevation = level_elevations.get(element_id)
+    parent_elevation = level_elevations.get(parent_id)
+    offset = _read(element, "offsetFromParentMm", default=0)
+    if elevation is None or parent_elevation is None or not _is_finite_number(offset):
+        return []
+    expected = parent_elevation + float(offset)
+    if math.isclose(elevation, expected, rel_tol=0.0, abs_tol=1e-6):
+        return []
+    return [
+        ModelIntegrityFinding(
+            rule_id="model_integrity_level_parent_elevation_mismatch",
+            severity="error",
+            message=(
+                f"Level '{element_id}' elevation does not match parent level '{parent_id}' "
+                "plus offsetFromParentMm."
+            ),
+            element_ids=(element_id, parent_id),
+            field="elevationMm",
+            expected=str(expected),
+            actual=str(elevation),
+        )
+    ]
+
+
+def _level_semantic_findings(
+    element: Any,
+    elements: Mapping[str, Any],
+    level_elevations: dict[str, float],
+) -> list[ModelIntegrityFinding]:
     kind = str(_read(element, "kind", default=""))
     element_id = str(_read(element, "id", default=""))
-    if kind not in PHYSICAL_KINDS:
+    if kind not in PHYSICAL_KINDS and kind not in ANALYTICAL_KINDS:
         return []
 
     findings: list[ModelIntegrityFinding] = []
@@ -1076,10 +1391,15 @@ def _level_semantic_findings(element: Any, elements: Mapping[str, Any]) -> list[
                     actual=target_kind or "missing",
                 )
             )
+    findings.extend(_height_semantic_findings(element, element_id, kind))
+    findings.extend(_level_span_findings(element, elements, level_elevations))
+    findings.extend(_host_level_findings(element, elements))
     return findings
 
 
 def _required_level_fields_for_kind(kind: str) -> tuple[str, ...]:
+    if kind == "room":
+        return ("levelId",)
     if kind == "roof":
         return ("referenceLevelId",)
     if kind == "stair":
@@ -1089,6 +1409,113 @@ def _required_level_fields_for_kind(kind: str) -> tuple[str, ...]:
     if kind in {"railing", "balcony", "dormer", "soffit", "text_3d", "family_kit_instance"}:
         return ()
     return ("levelId",)
+
+
+def _height_semantic_findings(
+    element: Any,
+    element_id: str,
+    kind: str,
+) -> list[ModelIntegrityFinding]:
+    if kind not in {"wall", "window", "floor", "roof", "ceiling", "column", "beam", "mass"}:
+        return []
+    if not _field_present(element, "heightMm"):
+        return []
+    height = _read(element, "heightMm")
+    if _is_finite_number(height) and float(height) > 0:
+        return []
+    return [
+        ModelIntegrityFinding(
+            rule_id="model_integrity_physical_height_invalid",
+            severity="error",
+            message=f"Physical element '{element_id}' has non-positive or non-finite heightMm.",
+            element_ids=(element_id,),
+            field="heightMm",
+            expected="positive finite millimeter value",
+            actual=str(height),
+        )
+    ]
+
+
+def _level_span_findings(
+    element: Any,
+    elements: Mapping[str, Any],
+    level_elevations: dict[str, float],
+) -> list[ModelIntegrityFinding]:
+    element_id = str(_read(element, "id", default=""))
+    spans = (
+        ("baseLevelId", "topLevelId"),
+        ("baseConstraintLevelId", "topConstraintLevelId"),
+        ("levelId", "topConstraintLevelId"),
+        ("levelId", "upperLimitLevelId"),
+    )
+    findings: list[ModelIntegrityFinding] = []
+    for base_field, top_field in spans:
+        base_id = _read(element, base_field)
+        top_id = _read(element, top_field)
+        if base_id in (None, "") or top_id in (None, ""):
+            continue
+        base_id = str(base_id)
+        top_id = str(top_id)
+        if str(_read(elements.get(base_id), "kind", default="")) != "level":
+            continue
+        if str(_read(elements.get(top_id), "kind", default="")) != "level":
+            continue
+        base_elevation = level_elevations.get(base_id)
+        top_elevation = level_elevations.get(top_id)
+        if base_elevation is None or top_elevation is None:
+            continue
+        if top_elevation > base_elevation:
+            continue
+        findings.append(
+            ModelIntegrityFinding(
+                rule_id="model_integrity_level_span_order_invalid",
+                severity="error",
+                message=(
+                    f"Element '{element_id}' has top level '{top_id}' at or below "
+                    f"base level '{base_id}'."
+                ),
+                element_ids=(element_id, base_id, top_id),
+                field=top_field,
+                expected=f">{base_elevation}",
+                actual=str(top_elevation),
+            )
+        )
+    return findings
+
+
+def _host_level_findings(element: Any, elements: Mapping[str, Any]) -> list[ModelIntegrityFinding]:
+    element_id = str(_read(element, "id", default=""))
+    level_id = _read(element, "levelId")
+    if level_id in (None, ""):
+        return []
+    host_field = None
+    if _field_present(element, "wallId"):
+        host_field = "wallId"
+    elif _field_present(element, "hostWallId"):
+        host_field = "hostWallId"
+    if host_field is None:
+        return []
+    host_id = _read(element, host_field)
+    host = elements.get(str(host_id)) if host_id not in (None, "") else None
+    if host is None or str(_read(host, "kind", default="")) != "wall":
+        return []
+    host_level_id = _read(host, "levelId")
+    if host_level_id in (None, "") or str(host_level_id) == str(level_id):
+        return []
+    return [
+        ModelIntegrityFinding(
+            rule_id="model_integrity_host_level_mismatch",
+            severity="error",
+            message=(
+                f"Hosted element '{element_id}' levelId '{level_id}' does not match "
+                f"host wall '{host_id}' levelId '{host_level_id}'."
+            ),
+            element_ids=(element_id, str(host_id), str(level_id), str(host_level_id)),
+            field="levelId",
+            expected=str(host_level_id),
+            actual=str(level_id),
+        )
+    ]
 
 
 def _declared_model_role(element: Any) -> str | None:
@@ -1171,6 +1598,14 @@ def _stable_digest(payload: Any) -> str:
     return hashlib.sha256(encoded).hexdigest()
 
 
+def _plain_value(value: Any) -> Any:
+    if isinstance(value, BaseModel):
+        return value.model_dump(by_alias=True)
+    if isinstance(value, Mapping):
+        return value
+    return value
+
+
 def _is_finite_number(value: Any) -> bool:
     if isinstance(value, bool) or not isinstance(value, int | float):
         return False
@@ -1188,15 +1623,44 @@ def _missing_required_ref(element_id: str, spec: ReferenceSpec) -> ModelIntegrit
     )
 
 
-def _unresolved_ref(element_id: str, spec: ReferenceSpec, ref_id: str) -> ModelIntegrityFinding:
+def _unresolved_ref(
+    element_id: str,
+    spec: ReferenceSpec,
+    ref_id: str,
+    field_path: str | None = None,
+) -> ModelIntegrityFinding:
     return ModelIntegrityFinding(
         rule_id="model_integrity_unresolved_reference",
         severity="error",
-        message=f"Element '{element_id}' field '{spec.field}' references missing element '{ref_id}'.",
+        message=(
+            f"Element '{element_id}' field '{field_path or spec.field}' references "
+            f"missing element '{ref_id}'."
+        ),
         element_ids=(element_id,),
-        field=spec.field,
+        field=field_path or spec.field,
         expected="resolvable element id",
         actual=ref_id,
+    )
+
+
+def _wrong_kind_ref(
+    element_id: str,
+    spec: ReferenceSpec,
+    ref_id: str,
+    target_kind: str,
+    field_path: str | None = None,
+) -> ModelIntegrityFinding:
+    return ModelIntegrityFinding(
+        rule_id="model_integrity_reference_wrong_kind",
+        severity="error",
+        message=(
+            f"Element '{element_id}' field '{field_path or spec.field}' references "
+            f"'{ref_id}' of kind '{target_kind}', expected {sorted(spec.allowed_kinds or [])}."
+        ),
+        element_ids=(element_id, ref_id),
+        field=field_path or spec.field,
+        expected=" | ".join(sorted(spec.allowed_kinds or [])),
+        actual=target_kind,
     )
 
 

@@ -68,6 +68,109 @@ def test_unresolved_and_wrong_kind_references_are_reported() -> None:
     assert missing.element_ids == ("door-missing",)
 
 
+def test_broad_reference_fields_and_nested_refs_are_checked() -> None:
+    subject = {
+        "designOptionSets": [{"id": "set-a", "options": [{"id": "opt-a"}]}],
+        "elements": {
+            "lvl-1": {"kind": "level", "id": "lvl-1"},
+            "mat-1": {"kind": "material", "id": "mat-1"},
+            "phase-1": {"kind": "phase", "id": "phase-1"},
+            "link-real": {"kind": "link_model", "id": "link-real"},
+            "pv-1": {"kind": "plan_view", "id": "pv-1", "levelId": "lvl-1"},
+            "sheet-1": {
+                "kind": "sheet",
+                "id": "sheet-1",
+                "viewPlacements": [{"viewId": "missing-view"}],
+            },
+            "schedule-1": {"kind": "schedule", "id": "schedule-1", "sheetId": "pv-1"},
+            "wall-type-1": {
+                "kind": "wall_type",
+                "id": "wall-type-1",
+                "layers": [
+                    {
+                        "thicknessMm": 100,
+                        "function": "structure",
+                        "materialKey": "missing-layer-material",
+                    }
+                ],
+            },
+            "wall-1": {
+                "kind": "wall",
+                "id": "wall-1",
+                "levelId": "lvl-1",
+                "wallTypeId": "wall-type-1",
+                "materialKey": "missing-material",
+                "phaseCreated": "missing-phase",
+                "optionSetId": "set-a",
+                "optionId": "missing-option",
+                "linkId": "missing-link",
+                "start": {"xMm": 0, "yMm": 0},
+                "end": {"xMm": 1000, "yMm": 0},
+            },
+        },
+    }
+
+    findings = check_model_integrity_invariants(subject)
+    fields = {finding.field for finding in findings}
+
+    assert "model_integrity_unresolved_reference" in _rules(findings)
+    assert "model_integrity_reference_wrong_kind" in _rules(findings)
+    assert "materialKey" in fields
+    assert "phaseCreated" in fields
+    assert "optionId" in fields
+    assert "linkId" in fields
+    assert "viewPlacements[0].viewId" in fields
+    assert "layers[0].materialKey" in fields
+    assert "sheetId" in fields
+
+
+def test_valid_reference_surface_passes_with_materials_views_options_and_links() -> None:
+    subject = {
+        "designOptionSets": [{"id": "set-a", "options": [{"id": "opt-a"}]}],
+        "elements": {
+            "lvl-1": {"kind": "level", "id": "lvl-1", "elevationMm": 0},
+            "mat-1": {"kind": "material", "id": "mat-1"},
+            "phase-1": {"kind": "phase", "id": "phase-1"},
+            "link-1": {"kind": "link_model", "id": "link-1"},
+            "pv-1": {
+                "kind": "plan_view",
+                "id": "pv-1",
+                "levelId": "lvl-1",
+                "phaseId": "phase-1",
+                "optionLocks": {"set-a": "opt-a"},
+            },
+            "sheet-1": {
+                "kind": "sheet",
+                "id": "sheet-1",
+                "viewPlacements": [{"viewId": "pv-1"}],
+            },
+            "schedule-1": {"kind": "schedule", "id": "schedule-1", "sheetId": "sheet-1"},
+            "wall-type-1": {
+                "kind": "wall_type",
+                "id": "wall-type-1",
+                "layers": [
+                    {"thicknessMm": 100, "function": "structure", "materialKey": "mat-1"}
+                ],
+            },
+            "wall-1": {
+                "kind": "wall",
+                "id": "wall-1",
+                "levelId": "lvl-1",
+                "wallTypeId": "wall-type-1",
+                "materialKey": "mat-1",
+                "phaseCreated": "phase-1",
+                "optionSetId": "set-a",
+                "optionId": "opt-a",
+                "linkId": "link-1",
+                "start": {"xMm": 0, "yMm": 0},
+                "end": {"xMm": 1000, "yMm": 0},
+            },
+        },
+    }
+
+    assert check_model_integrity_invariants(subject) == []
+
+
 def test_physical_level_semantics_are_checked() -> None:
     findings = check_model_integrity_invariants(
         {
@@ -92,6 +195,91 @@ def test_physical_level_semantics_are_checked() -> None:
     assert "model_integrity_physical_level_missing" in _rules(findings)
     assert "model_integrity_reference_wrong_kind" in _rules(findings)
     assert "model_integrity_physical_level_invalid" in _rules(findings)
+
+
+def test_storey_spans_parent_levels_and_host_level_mismatch_are_checked() -> None:
+    findings = check_model_integrity_invariants(
+        {
+            "lvl-1": {"kind": "level", "id": "lvl-1", "elevationMm": 0},
+            "lvl-2": {"kind": "level", "id": "lvl-2", "elevationMm": 3000},
+            "lvl-child": {
+                "kind": "level",
+                "id": "lvl-child",
+                "parentLevelId": "lvl-1",
+                "offsetFromParentMm": 1500,
+                "elevationMm": 1200,
+            },
+            "wall-bad-span": {
+                "kind": "wall",
+                "id": "wall-bad-span",
+                "levelId": "lvl-2",
+                "topConstraintLevelId": "lvl-1",
+                "start": {"xMm": 0, "yMm": 0},
+                "end": {"xMm": 1000, "yMm": 0},
+                "heightMm": 0,
+            },
+            "stair-bad-span": {
+                "kind": "stair",
+                "id": "stair-bad-span",
+                "baseLevelId": "lvl-2",
+                "topLevelId": "lvl-1",
+            },
+            "wall-host": {
+                "kind": "wall",
+                "id": "wall-host",
+                "levelId": "lvl-1",
+                "start": {"xMm": 0, "yMm": 0},
+                "end": {"xMm": 1000, "yMm": 0},
+            },
+            "opening-mismatch": {
+                "kind": "wall_opening",
+                "id": "opening-mismatch",
+                "hostWallId": "wall-host",
+                "levelId": "lvl-2",
+            },
+        }
+    )
+
+    assert "model_integrity_level_parent_elevation_mismatch" in _rules(findings)
+    assert "model_integrity_level_span_order_invalid" in _rules(findings)
+    assert "model_integrity_physical_height_invalid" in _rules(findings)
+    assert "model_integrity_host_level_mismatch" in _rules(findings)
+
+
+def test_valid_storey_spans_and_analytical_room_level_pass() -> None:
+    subject = {
+        "lvl-1": {"kind": "level", "id": "lvl-1", "elevationMm": 0},
+        "lvl-2": {"kind": "level", "id": "lvl-2", "elevationMm": 3000},
+        "lvl-child": {
+            "kind": "level",
+            "id": "lvl-child",
+            "parentLevelId": "lvl-1",
+            "offsetFromParentMm": 1500,
+            "elevationMm": 1500,
+        },
+        "wall-1": {
+            "kind": "wall",
+            "id": "wall-1",
+            "levelId": "lvl-1",
+            "topConstraintLevelId": "lvl-2",
+            "start": {"xMm": 0, "yMm": 0},
+            "end": {"xMm": 1000, "yMm": 0},
+            "heightMm": 2800,
+        },
+        "room-1": {
+            "kind": "room",
+            "id": "room-1",
+            "levelId": "lvl-1",
+            "upperLimitLevelId": "lvl-2",
+            "outlineMm": [
+                {"xMm": 0, "yMm": 0},
+                {"xMm": 1000, "yMm": 0},
+                {"xMm": 1000, "yMm": 1000},
+            ],
+        },
+    }
+
+    assert check_model_integrity_invariants(subject) == []
 
 
 def test_physical_helper_role_mismatch_and_missing_explicit_role_are_reported() -> None:
@@ -308,8 +496,17 @@ def test_smoke_payload_and_contract_are_machine_readable() -> None:
     assert "BIR-P06" in contract["trackedItems"]
     assert "BIR-P07" in contract["trackedItems"]
     assert contract["roleByKind"]["wall"] == "physical"
+    assert contract["roleByKind"]["room"] == "analytical"
+    assert "link_external" in contract["importedProxyKinds"]
     assert contract["unitContracts"]["canonicalLengthUnit"] == "millimeter"
     assert contract["typeInstanceRelations"]
+    assert "materialKey" in contract["nestedReferenceFieldPolicy"]["checkedFields"]
+    assert "levelStoreySemantics" in contract
+    assert smoke["roleCounts"]["physical"] == 1
+    assert smoke["coverage"]["checkedReferenceFields"]
     assert evidence["format"] == "modelIntegritySmokeCommandEvidence_v1"
     assert evidence["command"]["cli"].startswith("bim-ai invariant smoke")
+    assert "strictRoleSmoke" in evidence["artifacts"]
+    assert evidence["artifacts"]["strictRoleSmoke"]["coverage"]["requireExplicitRoles"] is True
     assert len(evidence["digestSha256"]) == 64
+
