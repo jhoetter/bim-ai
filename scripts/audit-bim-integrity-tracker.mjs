@@ -20,6 +20,7 @@ const DEFAULT_OUT_PATH = path.join(
 const VALID_STATUSES = new Set(['Done', 'Partial', 'Not started', 'Blocked']);
 const VALID_PRIORITIES = new Set(['P0', 'P1', 'P2', 'P3']);
 const ITEM_ID_RE = /BIR-([A-Z])(\d{2})/g;
+const WAVE7_ACCOUNTING_SECTIONS = new Set(['T', 'U', 'V', 'W']);
 
 function parseArgs(argv) {
   const args = {
@@ -110,6 +111,7 @@ function extractItemIds(text) {
 function parseTracker(markdown) {
   const lines = markdown.split(/\r?\n/);
   const items = [];
+  const evidenceRows = [];
   const milestones = [];
   const duplicateIds = [];
   const invalidRows = [];
@@ -117,9 +119,20 @@ function parseTracker(markdown) {
   const waves = [];
   let section = null;
   let currentWave = null;
+  let implementationEvidenceTable = false;
 
   for (let lineNumber = 1; lineNumber <= lines.length; lineNumber += 1) {
     const line = lines[lineNumber - 1];
+    if (/^##\s+Implementation Evidence Rows\s*$/.test(line)) {
+      implementationEvidenceTable = true;
+      section = null;
+      currentWave = null;
+      continue;
+    }
+    if (implementationEvidenceTable && /^##\s+/.test(line)) {
+      implementationEvidenceTable = false;
+    }
+
     const itemSection = /^###\s+([A-Z])\.\s+(.+)$/.exec(line);
     if (itemSection) {
       section = {
@@ -151,6 +164,19 @@ function parseTracker(markdown) {
 
     const cells = parseMarkdownTableRow(line);
     if (!cells) continue;
+
+    if (implementationEvidenceTable && /^`BIR-[A-Z]\d{2}`$/.test(cells[0] ?? '')) {
+      evidenceRows.push({
+        id: cells[0].replaceAll('`', ''),
+        codePaths: cells[1] ?? '',
+        tests: cells[2] ?? '',
+        evidenceArtifacts: cells[3] ?? '',
+        commit: cells[4] ?? '',
+        limitations: cells[5] ?? '',
+        lineNumber,
+      });
+      continue;
+    }
 
     if (/^`BIR-[A-Z]\d{2}`$/.test(cells[0] ?? '')) {
       const id = cells[0].replaceAll('`', '');
@@ -216,6 +242,7 @@ function parseTracker(markdown) {
 
   return {
     items,
+    evidenceRows,
     milestones,
     waves: waves.map((wave) => ({ ...wave, ids: [...wave.ids].sort() })),
     duplicateIds,
@@ -288,15 +315,79 @@ function buildMilestoneRollups(parsed) {
   return rollups;
 }
 
+function hasMeaningfulCell(value) {
+  const normalized = String(value ?? '').trim();
+  return Boolean(normalized) && normalized !== '-' && normalized.toLowerCase() !== 'n/a';
+}
+
+function buildEvidenceAccounting(parsed) {
+  const evidenceById = new Map();
+  const duplicateEvidenceRows = [];
+  for (const row of parsed.evidenceRows) {
+    if (evidenceById.has(row.id)) duplicateEvidenceRows.push(row);
+    evidenceById.set(row.id, row);
+  }
+
+  const missingDoneEvidence = [];
+  for (const item of parsed.items) {
+    if (item.status !== 'Done') continue;
+    const evidence = evidenceById.get(item.id);
+    if (
+      !evidence ||
+      !hasMeaningfulCell(evidence.tests) ||
+      (!hasMeaningfulCell(evidence.codePaths) && !hasMeaningfulCell(evidence.evidenceArtifacts))
+    ) {
+      missingDoneEvidence.push(item);
+    }
+  }
+
+  return {
+    rows: parsed.evidenceRows,
+    evidenceById,
+    duplicateEvidenceRows,
+    missingDoneEvidence,
+  };
+}
+
+function buildWave7DashboardRows(parsed, evidenceAccounting) {
+  return parsed.items
+    .filter((item) => WAVE7_ACCOUNTING_SECTIONS.has(item.sectionKey))
+    .map((item) => {
+      const evidence = evidenceAccounting.evidenceById.get(item.id);
+      return {
+        id: item.id,
+        section: `${item.sectionKey}. ${item.sectionTitle}`,
+        priority: item.priority,
+        status: item.status,
+        item: item.item,
+        acceptance: item.acceptance,
+        evidenceState: evidence
+          ? hasMeaningfulCell(evidence.tests)
+            ? 'linked'
+            : 'missing tests'
+          : 'missing',
+        tests: evidence?.tests ?? '',
+      };
+    });
+}
+
 function buildReport(parsed, trackerPath) {
   const counts = countItems(parsed.items);
   const milestoneRollups = buildMilestoneRollups(parsed);
+  const evidenceAccounting = buildEvidenceAccounting(parsed);
   const validationErrors = [
     ...parsed.invalidRows,
     ...parsed.duplicateIds.map((row) => `${row.id} line ${row.lineNumber}: duplicate id`),
+    ...evidenceAccounting.duplicateEvidenceRows.map(
+      (row) => `${row.id} line ${row.lineNumber}: duplicate implementation evidence row`,
+    ),
+    ...evidenceAccounting.missingDoneEvidence.map(
+      (row) => `${row.id} line ${row.lineNumber}: Done item lacks implementation evidence row with tests`,
+    ),
     ...parsed.unknownWaveRefs,
   ];
   const unmappedItems = parsed.items.filter((item) => !parsed.milestoneByItem.has(item.id));
+  const wave7DashboardRows = buildWave7DashboardRows(parsed, evidenceAccounting);
 
   return {
     trackerPath,
@@ -313,6 +404,15 @@ function buildReport(parsed, trackerPath) {
     priorities: counts.statusByPriority,
     unmappedItems,
     validationErrors,
+    evidenceAccounting: {
+      totalRows: evidenceAccounting.rows.length,
+      doneItemsWithEvidence:
+        parsed.items.filter((item) => item.status === 'Done').length -
+        evidenceAccounting.missingDoneEvidence.length,
+      missingDoneEvidence: evidenceAccounting.missingDoneEvidence.map((row) => row.id),
+      duplicateEvidenceRows: evidenceAccounting.duplicateEvidenceRows.map((row) => row.id),
+    },
+    wave7DashboardRows,
   };
 }
 
@@ -379,6 +479,43 @@ function renderMarkdown(report) {
     );
   }
 
+  const wave7Counts = countItems(report.wave7DashboardRows);
+  lines.push(
+    '',
+    '## Wave 7 Feature Coverage Dashboard Data',
+    '',
+    'Rows in this section are generated from tracker sections T-W so agents can see provenance, UX/noise, family/content, fixture, and completion-accounting coverage without hand-counting the tracker.',
+    '',
+    '| Scope | Items | Done | Partial | Not started | Blocked | Complete |',
+    '| ----- | ----- | ---- | ------- | ----------- | ------- | -------- |',
+    renderCountRow('BIR-T through BIR-W', wave7Counts.statusCounts),
+    '',
+    '| ID | Priority | Status | Evidence | Tests / proof hook | Item |',
+    '| -- | -------- | ------ | -------- | ------------------ | ---- |',
+  );
+  for (const row of report.wave7DashboardRows) {
+    lines.push(
+      `| \`${row.id}\` | ${row.priority} | ${row.status} | ${row.evidenceState} | ${escapeCell(row.tests || 'None linked')} | ${escapeCell(row.item)} |`,
+    );
+  }
+
+  lines.push(
+    '',
+    '## Implementation Evidence Accounting',
+    '',
+    `Evidence rows: ${report.evidenceAccounting.totalRows}`,
+    `Done items with required evidence/tests: ${report.evidenceAccounting.doneItemsWithEvidence}`,
+    `Done items missing required evidence/tests: ${report.evidenceAccounting.missingDoneEvidence.length}`,
+    '',
+  );
+  if (report.evidenceAccounting.missingDoneEvidence.length) {
+    for (const id of report.evidenceAccounting.missingDoneEvidence) {
+      lines.push(`- \`${id}\` is Done but lacks a complete implementation evidence row.`);
+    }
+  } else {
+    lines.push('- Done quality gate passed: every Done item has linked implementation evidence and tests.');
+  }
+
   lines.push(
     '',
     '## Validation',
@@ -435,6 +572,7 @@ function main() {
   }
 
   if (report.validationErrors.length) {
+    for (const error of report.validationErrors) console.error(`- ${error}`);
     console.error(`Tracker audit found ${report.validationErrors.length} validation issue(s).`);
     process.exit(1);
   }

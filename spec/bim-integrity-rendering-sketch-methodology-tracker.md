@@ -360,30 +360,30 @@ This tracker is complete only when all of these are true:
 | ID | Priority | Status | Item | Acceptance |
 | -- | -------- | ------ | ---- | ---------- |
 | `BIR-T01` | P0 | Partial | Map sketch features to BIM elements. | Every required sketch/brief feature has stable feature id, required element ids, source image references, phase, evidence views, and acceptance status. |
-| `BIR-T02` | P0 | Not started | Map findings to source authoring commands. | Advisor/integrity/renderer findings can be traced to command ids, recipe rows, agent wave, commit, and phase packet where available. |
+| `BIR-T02` | P0 | Partial | Map findings to source authoring commands. | Advisor/integrity/renderer findings can be traced to command ids, recipe rows, agent wave, commit, and phase packet where available. |
 | `BIR-T03` | P0 | Partial | Add evidence lineage manifest. | Final packets state which snapshots, screenshots, reports, exports, rule digests, renderer build, and git head produced each acceptance claim. |
-| `BIR-T04` | P1 | Not started | Add stale evidence invalidation. | Evidence becomes stale when model revision, rule digest, renderer support matrix, seed source, target spec, or git head changes. |
-| `BIR-T05` | P1 | Not started | Add feature coverage dashboard. | Agents and users can see required features, current element coverage, open findings, renderer support, screenshots, and remaining blockers. |
-| `BIR-T06` | P1 | Not started | Add review narrative generator. | Phase/final reports summarize what changed, what evidence proves it, what remains tolerated, and what is blocked. |
+| `BIR-T04` | P1 | Partial | Add stale evidence invalidation. | Evidence becomes stale when model revision, rule digest, renderer support matrix, seed source, target spec, or git head changes. |
+| `BIR-T05` | P1 | Partial | Add feature coverage dashboard. | Agents and users can see required features, current element coverage, open findings, renderer support, screenshots, and remaining blockers. |
+| `BIR-T06` | P1 | Partial | Add review narrative generator. | Phase/final reports summarize what changed, what evidence proves it, what remains tolerated, and what is blocked. |
 
 ### U. Advisor Noise Control, Product UX, And Fix Prioritization
 
 | ID | Priority | Status | Item | Acceptance |
 | -- | -------- | ------ | ---- | ---------- |
-| `BIR-U01` | P0 | Not started | Add finding grouping/deduplication. | Repeated geometry symptoms collapse into clear root-cause groups while preserving affected element ids. |
-| `BIR-U02` | P0 | Not started | Add fix priority ordering. | Advisor sorts by severity, phase ownership, dependency/root cause, visible impact, and current lens/profile relevance. |
-| `BIR-U03` | P1 | Not started | Add profile presets. | Architecture, Structure, MEP, Fire, Accessibility, Construction Readiness, Exchange, and Sketch Acceptance profiles have explicit rule membership and defaults. |
-| `BIR-U04` | P1 | Not started | Add user-facing explanations by audience. | Same rule can expose concise UI text, agent technical detail, and documentation text without losing rule identity. |
-| `BIR-U05` | P1 | Not started | Add false-positive review workflow. | Users/agents can classify a finding as rule defect, accepted tolerance, profile mismatch, or model defect with evidence. |
+| `BIR-U01` | P0 | Partial | Add finding grouping/deduplication. | Repeated geometry symptoms collapse into clear root-cause groups while preserving affected element ids. |
+| `BIR-U02` | P0 | Partial | Add fix priority ordering. | Advisor sorts by severity, phase ownership, dependency/root cause, visible impact, and current lens/profile relevance. |
+| `BIR-U03` | P1 | Partial | Add profile presets. | Architecture, Structure, MEP, Fire, Accessibility, Construction Readiness, Exchange, and Sketch Acceptance profiles have explicit rule membership and defaults. |
+| `BIR-U04` | P1 | Partial | Add user-facing explanations by audience. | Same rule can expose concise UI text, agent technical detail, and documentation text without losing rule identity. |
+| `BIR-U05` | P1 | Partial | Add false-positive review workflow. | Users/agents can classify a finding as rule defect, accepted tolerance, profile mismatch, or model defect with evidence. |
 | `BIR-U06` | P2 | Not started | Add Advisor learning corpus. | Confirmed true/false findings become fixtures for rule tuning and regression prevention. |
 
 ### V. Families, Parameters, Assets, And Content Quality
 
 | ID | Priority | Status | Item | Acceptance |
 | -- | -------- | ------ | ---- | ---------- |
-| `BIR-V01` | P0 | Not started | Validate family/type parameter schemas. | Family types declare required dimensions, host behavior, material slots, schedule fields, IFC mapping, and render geometry support. |
+| `BIR-V01` | P0 | Partial | Validate family/type parameter schemas. | Family types declare required dimensions, host behavior, material slots, schedule fields, IFC mapping, and render geometry support. |
 | `BIR-V02` | P0 | Not started | Validate instance overrides. | Instance width/height/material/operation overrides stay compatible with type constraints, host geometry, and schedules. |
-| `BIR-V03` | P1 | Not started | Validate content library assets. | Catalog entries carry category, dimensions, clearance, MEP/maintenance zones, material slots, render support, and schedule/export metadata. |
+| `BIR-V03` | P1 | Partial | Validate content library assets. | Catalog entries carry category, dimensions, clearance, MEP/maintenance zones, material slots, render support, and schedule/export metadata. |
 | `BIR-V04` | P1 | Not started | Validate asset placement. | Placed assets are on floors/walls/ceilings/workplanes as appropriate, not floating or embedded in walls without intentional recess/opening. |
 | `BIR-V05` | P1 | Not started | Validate family render/export parity. | Family visual geometry, material slots, plan symbols, schedule rows, and IFC/glTF export manifests agree. |
 
@@ -393,9 +393,119 @@ This tracker is complete only when all of these are true:
 | -- | -------- | ------ | ---- | ---------- |
 | `BIR-W01` | P0 | Partial | Define fixture classes. | Fixture corpus distinguishes minimal synthetic, target-house regression, benchmark seed, import/export roundtrip, performance stress, and user-realistic sketch cases. |
 | `BIR-W02` | P0 | Done | Add status accounting script. | A script computes milestone/tracker completion percentages from this file plus generated evidence and fails on stale status claims. |
-| `BIR-W03` | P0 | Not started | Add implementation evidence rows. | Each tracker item records code paths, tests, generated docs, evidence artifact, commit id, and known limitations before status becomes `Done`. |
-| `BIR-W04` | P1 | Not started | Add wave closeout template. | Each wave produces a closeout report with agents, commits, tests, tracker changes, unresolved blockers, and next-wave recommendations. |
-| `BIR-W05` | P1 | Not started | Add quality gate for "Done". | CI or review script rejects status changes to `Done` without linked evidence rows and tests. |
+| `BIR-W03` | P0 | Partial | Add implementation evidence rows. | Each tracker item records code paths, tests, generated docs, evidence artifact, commit id, and known limitations before status becomes `Done`. |
+| `BIR-W04` | P1 | Partial | Add wave closeout template. | Each wave produces a closeout report with agents, commits, tests, tracker changes, unresolved blockers, and next-wave recommendations. |
+| `BIR-W05` | P1 | Done | Add quality gate for "Done". | CI or review script rejects status changes to `Done` without linked evidence rows and tests. |
+
+## Wave 7 Worker E Operational Contracts
+
+These rows define the first machine-checkable provenance and accounting shape
+for `BIR-T01` through `BIR-W05`. They are not a claim that every product
+surface is complete; they give agents and reviewers stable columns to preserve
+while implementation deepens.
+
+### Finding-To-Command Provenance
+
+| Field | Required value |
+| ----- | -------------- |
+| `findingId` | Stable rule finding id, not only display text. |
+| `sourceCommandId` | Original authoring command id when the finding can be traced to one. |
+| `sourceRecipeRow` | Seed/recipe row or bundle command index when available. |
+| `agentWave` | Wave/worker label for generated or remediated commands. |
+| `commit` | Git commit that introduced or remediated the command/evidence. |
+| `phasePacket` | Sketch-to-BIM phase packet or acceptance packet id. |
+
+### Stale Evidence Invalidators
+
+| Invalidator | Required digest / compare key | Applies to |
+| ----------- | ----------------------------- | ---------- |
+| Model revision | Workspace/model revision id | snapshots, screenshots, reports, exports |
+| Rule digest | Advisor/integrity/renderer rule registry digest | findings, acceptance claims, review narrative |
+| Renderer support matrix | Generated renderer-support-matrix digest | screenshots, visual/golden claims |
+| Seed source | seed recipe/bundle/source digest | target-house and benchmark acceptance |
+| Target spec | brief/BIR/checklist/capability-map digest | sketch feature acceptance |
+| Git head | source commit | all generated evidence packets |
+
+### Feature Coverage Dashboard Rows
+
+| Column | Source |
+| ------ | ------ |
+| Feature id | sketch capability map, benchmark fixture, or tracker item id |
+| Required elements | BIR/brief/fixture expected element ids or kinds |
+| Current coverage | live model/evidence element ids, counts, and acceptance state |
+| Open findings | grouped Advisor/integrity/renderer finding ids |
+| Renderer support | renderer support matrix row and unsupported feature list |
+| Screenshots | evidence artifact path and capture digest |
+| Remaining blockers | unresolved P0/P1 tracker rows, stale evidence, or missing tests |
+
+### Review Narrative Template
+
+| Section | Required content |
+| ------- | ---------------- |
+| Scope | target seed/fixture, phase, source spec, wave, agent list |
+| Changes | committed code/data/evidence changes with command provenance |
+| Proof | tests, generated reports, screenshots, exports, and digests |
+| Tolerances | accepted tolerances, false positives, owner, expiry, evidence |
+| Blockers | open errors/warnings, stale evidence, missing fixtures, limitations |
+| Next wave | prioritized follow-up rows and recommended owners |
+
+### Advisor Noise And Review Workflow
+
+| Contract | Required shape |
+| -------- | -------------- |
+| Grouping/dedup | `groupId`, root-cause rule, affected ids, representative finding, duplicate count |
+| Fix priority | severity, phase ownership, dependency/root-cause rank, visible impact, active profile/lens relevance |
+| Profile preset | architecture, structure, MEP, fire, accessibility, construction-readiness, exchange, sketch-acceptance |
+| Audience explanation | concise UI text, agent technical detail, documentation text, same stable `ruleId` |
+| False-positive review | classification: rule defect, accepted tolerance, profile mismatch, model defect; reviewer, evidence, expiry |
+
+### Family And Content Validation
+
+| Content class | Required validation keys |
+| ------------- | ------------------------ |
+| Family type | category, dimensions, host behavior, material slots, schedule fields, IFC mapping, render support |
+| Instance override | width/height/material/operation compatibility, host geometry compatibility, schedule compatibility |
+| Catalog asset | dimensions, clearance, MEP/maintenance zones, materials, render support, schedule/export metadata |
+| Placement | floor/wall/ceiling/workplane support, non-floating position, non-embedded geometry unless intentional |
+| Render/export parity | visual geometry, plan symbol, material slots, schedule rows, IFC/glTF manifest agreement |
+
+### Fixture Governance Classes
+
+| Class | Required use |
+| ----- | ------------ |
+| Minimal synthetic | One-rule fixtures that isolate a regression. |
+| Target-house regression | Known target-house failures and remediation evidence. |
+| Benchmark seed | Repeatable house/building benchmarks with expected summaries. |
+| Import/export roundtrip | IFC/glTF/readback drift and semantic preservation fixtures. |
+| Performance stress | Large or adversarial projects for bounded diagnostics. |
+| User-realistic sketch | Realistic sketch/brief/BIR cases with methodology evidence. |
+
+### Wave Closeout Template
+
+| Field | Required content |
+| ----- | ---------------- |
+| Wave | wave number, date, parent commit, local commits |
+| Agents | worker labels and ownership ranges |
+| Tracker changes | status changes, evidence rows added, generated status digest |
+| Tests | exact commands and pass/fail/skip result |
+| Evidence | generated docs, artifacts, screenshots, manifests, digests |
+| Blockers | unresolved defects, stale evidence, incomplete fixtures |
+| Recommendations | next-wave priorities and owners |
+
+## Implementation Evidence Rows
+
+| ID | Code paths | Tests | Evidence artifacts | Commit | Limitations |
+| -- | ---------- | ----- | ------------------ | ------ | ----------- |
+| `BIR-A01` | `spec/bim-integrity-rendering-sketch-methodology-tracker.md`; `scripts/audit-bim-integrity-tracker.mjs` | `app/tests/test_bim_integrity_tracker_audit.py` | `spec/generated/bim-integrity-tracker-status.md` | `25d7e1baf` parent includes tracker/accounting baseline | Tracker exists; product rule coverage remains tracked separately. |
+| `BIR-A03` | `app/bim_ai/constraints_metadata.py`; `app/bim_ai/constraints.py` | `app/tests/test_constraints_metadata.py`; `app/tests/test_constraints.py` | Constraint metadata registry and tests | `25d7e1baf` parent includes metadata baseline | Registry coverage is broad but not every future rule family is complete. |
+| `BIR-C01` | `app/bim_ai/constraints.py`; `app/bim_ai/constructability_advisories.py` | `app/tests/test_constraints_wall_geometry.py`; `app/tests/test_constructability_advisories.py` | Constraint/advisor finding serialization | `25d7e1baf` parent includes hosted-opening integrity baseline | Additional UI parity hardening remains in `BIR-A04`/`BIR-H*`. |
+| `BIR-C02` | `app/bim_ai/constraints.py`; `app/bim_ai/constructability_geometry.py` | `app/tests/test_constructability_geometry.py`; `app/tests/test_engine_constraints.py` | Constructability report findings | `25d7e1baf` parent includes envelope integrity baseline | More detached/exterior intent modeling remains open. |
+| `BIR-C03` | `app/bim_ai/constraints.py`; `packages/web/src/plan/structuralValidation.ts` | `app/tests/test_constraints_wall_geometry.py`; `packages/web/src/plan/structuralValidation.test.ts` | Hosted span diagnostics | `25d7e1baf` parent includes span validation baseline | Opening conflict graph remains `BIR-C06`. |
+| `BIR-C05` | `app/bim_ai/room_derivation.py`; `app/bim_ai/constraints.py` | `app/tests/test_constraints_room_unenclosed.py`; `app/tests/test_engine_constraints.py` | Access/helper leakage findings | `25d7e1baf` parent includes helper-leakage baseline | Helper visibility serialization policy remains broader `BIR-B03`. |
+| `BIR-I01` | `spec/generated/renderer-support-matrix.md`; `packages/web/src/viewport/rendererDiagnostics.ts` | `packages/web/src/viewport/rendererDiagnostics.test.ts`; `packages/web/src/plan/symbology.docs.test.ts` | `spec/generated/renderer-support-matrix.md` | `25d7e1baf` parent includes renderer matrix baseline | Matrix must keep expanding as fidelity rows close. |
+| `BIR-M06` | `spec/generated/target-house-1-required-features.json`; `scripts/audit-seed-artifacts.mjs` | `app/tests/test_seed_artifact_roundtrip.py`; `app/tests/test_evidence_manifest_closure.py` | `seed-artifacts/target-house-1/evidence/*`; generated required features | `25d7e1baf` parent includes target-house acceptance-pack baseline | Final clean acceptance remains `BIR-N04`/Wave 8. |
+| `BIR-W02` | `scripts/audit-bim-integrity-tracker.mjs` | `app/tests/test_bim_integrity_tracker_audit.py` | `spec/generated/bim-integrity-tracker-status.md` | `25d7e1baf` parent includes status script baseline | This wave extends accounting, but not every tracker row has full implementation evidence yet. |
+| `BIR-W05` | `scripts/audit-bim-integrity-tracker.mjs` | `app/tests/test_bim_integrity_tracker_audit.py` | `spec/generated/bim-integrity-tracker-status.md` | Wave 7 Worker E local commit | Gate covers `Done` tracker status; it does not certify `Partial` rows. |
 
 ## Proposed Work Waves
 
