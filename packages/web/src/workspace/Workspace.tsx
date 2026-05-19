@@ -6236,6 +6236,14 @@ export function Workspace(): JSX.Element {
                   openElementById(elementId);
                   setAdvisorOpen(false);
                 }}
+                onIsolateElements={(elementIds) => {
+                  useBimStore.getState().setTemporaryVisibility({
+                    viewId: activePlanViewId ?? 'advisor',
+                    mode: 'isolate',
+                    categories: [],
+                    elementIds,
+                  });
+                }}
               />
             </div>
           </div>

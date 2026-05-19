@@ -138,6 +138,56 @@ function toTestIdPart(value: string): string {
     .slice(0, 64);
 }
 
+function actionabilityFields(v: Violation): {
+  viewpointRef: string | null;
+  evidenceRefs: Array<Record<string, unknown>>;
+  diagnosticCodes: string[];
+  issueClasses: string[];
+} {
+  const row = v as Violation & {
+    diagnosticCode?: unknown;
+    diagnosticCodes?: unknown;
+    issueClass?: unknown;
+    issueClasses?: unknown;
+  };
+  const viewpointEvidence = v.viewpointEvidence ?? {};
+  const viewpointRef = firstString(
+    v.viewpointRef,
+    viewpointEvidence.viewpointId,
+    viewpointEvidence.viewId,
+  );
+  return {
+    viewpointRef,
+    evidenceRefs: v.evidenceRefs ?? [],
+    diagnosticCodes: uniqueStrings(
+      row.diagnosticCode,
+      row.diagnosticCodes,
+      viewpointEvidence.diagnosticCodes,
+    ),
+    issueClasses: uniqueStrings(row.issueClass, row.issueClasses),
+  };
+}
+
+function firstString(...values: unknown[]): string | null {
+  for (const value of values) {
+    if (typeof value === 'string' && value.trim()) return value.trim();
+  }
+  return null;
+}
+
+function uniqueStrings(...values: unknown[]): string[] {
+  const out: string[] = [];
+  for (const value of values) {
+    if (typeof value === 'string' && value.trim()) out.push(value.trim());
+    if (Array.isArray(value)) {
+      for (const item of value) {
+        if (typeof item === 'string' && item.trim()) out.push(item.trim());
+      }
+    }
+  }
+  return [...new Set(out)].sort((a, b) => a.localeCompare(b));
+}
+
 export function AdvisorPanel(props: {
   violations: Violation[];
   selectionId?: string;
@@ -148,6 +198,7 @@ export function AdvisorPanel(props: {
   perspective: PerspectiveId;
   showAllPerspectives?: boolean;
   onNavigateToElement?: (elementId: string) => void;
+  onIsolateElements?: (elementIds: string[]) => void;
 }) {
   const { t } = useTranslation();
   const [groupBy, setGroupBy] = useState<AdvisorGroupBy>('severity');
@@ -190,6 +241,7 @@ export function AdvisorPanel(props: {
     });
     const severityLabel = t(`violation.severity.${v.severity}`, { defaultValue: v.severity });
     const fingerprint = violationFingerprint(v);
+    const actionability = actionabilityFields(v);
 
     return (
       <li key={`${v.ruleId}-${i}-${v.message.slice(0, 24)}`} className="rounded border p-2">
@@ -230,6 +282,52 @@ export function AdvisorPanel(props: {
                     Open {elementId}
                   </Btn>
                 ))}
+                {props.onIsolateElements ? (
+                  <Btn
+                    type="button"
+                    className="px-2 py-0.5 text-[10px]"
+                    variant="quiet"
+                    data-testid={`advisor-isolate-${toTestIdPart(v.ruleId)}`}
+                    onClick={() => props.onIsolateElements?.(v.elementIds ?? [])}
+                  >
+                    Isolate
+                  </Btn>
+                ) : null}
+              </div>
+            ) : null}
+          </div>
+        ) : null}
+
+        {actionability.viewpointRef ||
+        actionability.evidenceRefs.length ||
+        actionability.diagnosticCodes.length ||
+        actionability.issueClasses.length ? (
+          <div
+            className="mt-2 rounded border border-border/50 bg-muted/5 p-2 text-[9px] text-muted"
+            data-testid={`advisor-actionability-${toTestIdPart(v.ruleId)}`}
+          >
+            {actionability.viewpointRef ? (
+              <div>
+                <span className="font-semibold">Context view: </span>
+                <code>{actionability.viewpointRef}</code>
+              </div>
+            ) : null}
+            {actionability.diagnosticCodes.length ? (
+              <div>
+                <span className="font-semibold">Diagnostics: </span>
+                <code>{actionability.diagnosticCodes.join(', ')}</code>
+              </div>
+            ) : null}
+            {actionability.issueClasses.length ? (
+              <div>
+                <span className="font-semibold">Issue class: </span>
+                <code>{actionability.issueClasses.join(', ')}</code>
+              </div>
+            ) : null}
+            {actionability.evidenceRefs.length ? (
+              <div>
+                <span className="font-semibold">Evidence: </span>
+                <code>{actionability.evidenceRefs.length} ref(s)</code>
               </div>
             ) : null}
           </div>

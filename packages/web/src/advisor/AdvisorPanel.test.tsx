@@ -21,6 +21,11 @@ const violations: Violation[] = [
     rootCauseGroup: { id: 'physical_coordination:wall-1', family: 'physical_coordination' },
     audienceText: { ui: 'Resolve the physical clash.' },
     quickFixCommand: { type: 'tag_element', elementId: 'wall-1', key: 'clashStatus', value: 'ok' },
+    viewpointRef: 'vp-clash-wall-1',
+    evidenceRefs: [{ kind: 'viewpoint', viewpointId: 'vp-clash-wall-1' }],
+    viewpointEvidence: {
+      diagnosticCodes: ['renderer.wall_cut.unsupported'],
+    },
   },
   {
     ruleId: 'schedule_sheet_viewport_missing',
@@ -56,6 +61,12 @@ describe('AdvisorPanel', () => {
     );
 
     expect(getByTestId('advisor-group-error').textContent).toContain('(1)');
+    expect(getByTestId('advisor-actionability-physical-hard-clash').textContent).toContain(
+      'vp-clash-wall-1',
+    );
+    expect(getByTestId('advisor-actionability-physical-hard-clash').textContent).toContain(
+      'renderer.wall_cut.unsupported',
+    );
     fireEvent.change(getByTestId('advisor-group-by'), { target: { value: 'category' } });
     expect(getByTestId('advisor-group-physical').textContent).toContain('Physical');
     expect(getByTestId('advisor-group-schedule').textContent).toContain('Schedule');
@@ -74,6 +85,7 @@ describe('AdvisorPanel', () => {
   it('supports ignore and restore workflow while preserving apply and navigate actions', () => {
     const onApplyQuickFix = vi.fn();
     const onNavigateToElement = vi.fn();
+    const onIsolateElements = vi.fn();
     const { getAllByRole, getByTestId, queryByText } = renderWithI18n(
       <AdvisorPanel
         violations={violations}
@@ -83,11 +95,14 @@ describe('AdvisorPanel', () => {
         perspective="architecture"
         showAllPerspectives
         onNavigateToElement={onNavigateToElement}
+        onIsolateElements={onIsolateElements}
       />,
     );
 
     fireEvent.click(getByTestId('advisor-navigate-wall-1'));
     expect(onNavigateToElement).toHaveBeenCalledWith('wall-1');
+    fireEvent.click(getByTestId('advisor-isolate-physical-hard-clash'));
+    expect(onIsolateElements).toHaveBeenCalledWith(['wall-1']);
     fireEvent.click(getAllByRole('button', { name: 'Ignore' })[0]!);
     expect(queryByText('Physical clash detected.')).toBeNull();
     expect(getByTestId('advisor-ignored-summary').textContent).toContain('Ignored 1');

@@ -101,6 +101,15 @@ const snapshotBody = {
       advisoryClass: 'opening_without_host',
       elementIds: ['opening-1'],
       message: 'Opening needs a host.',
+      discipline: 'architecture',
+      priority: 'P1',
+      priorityRank: 10,
+      recommendation: 'Rehost the opening.',
+      quickFixCommand: { type: 'rehostOpening', openingId: 'opening-1', wallId: 'wall-1' },
+      viewpointRef: 'vp-opening-1',
+      evidenceRefs: [{ kind: 'viewpoint', viewpointId: 'vp-opening-1' }],
+      diagnosticCodes: ['renderer.wall_cut.unsupported'],
+      issueClasses: ['renderer-unsupported'],
     },
   ],
 };
@@ -1280,6 +1289,13 @@ test('qa advisor aliases grouped advisor JSON evidence', async () => {
   assert.equal(out.total, 1);
   assert.equal(out.groups[0].code, 'opening_without_host');
   assert.deepEqual(out.groups[0].elementIds, ['opening-1']);
+  assert.deepEqual(out.groups[0].ruleMetadata.disciplines, ['architecture']);
+  assert.deepEqual(out.groups[0].actionability.affectedElementIds, ['opening-1']);
+  assert.equal(out.groups[0].actionability.contextViewSuggestion.viewpointRef, 'vp-opening-1');
+  assert.deepEqual(out.groups[0].actionability.recommendations, ['Rehost the opening.']);
+  assert.deepEqual(out.groups[0].actionability.diagnosticCodes, [
+    'renderer.wall_cut.unsupported',
+  ]);
 });
 
 test('qa rules lists canonical Advisor rule metadata from API registry route', async () => {

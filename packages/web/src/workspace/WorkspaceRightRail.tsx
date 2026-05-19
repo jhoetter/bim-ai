@@ -6,6 +6,7 @@ import type { Element, LensMode, ParamSchemaEntry } from '@bim-ai/core';
 
 import { buildPlanGridDatumInspectorLine } from './readouts';
 import { isPhysicalHostedOpeningWall } from '../viewport/directAuthoringGuards';
+import { ElementRenderStatusPanel } from '../viewport/ElementRenderStatusPanel';
 import { useBimStore } from '../state/store';
 import type { OsmLayerName, ViewerRenderStyle } from '../state/storeTypes';
 import {
@@ -1002,6 +1003,11 @@ export function WorkspaceRightRail({
                   {lensMode !== 'all' ? (
                     <LensElementFocusPanel lensMode={lensMode} element={el} />
                   ) : null}
+                  <ElementRenderStatusPanel
+                    element={el}
+                    elementsById={elementsById}
+                    viewId={activeViewTargetId ?? activePlanViewId ?? null}
+                  />
                   {el.kind === 'plan_view' ? (
                     <>
                       {planGridDatumLine ? (
@@ -2459,7 +2465,7 @@ function SelectedWall3dActions({
   onSemanticCommand: (cmd: Record<string, unknown>) => void | Promise<void>;
   onIsolateWalls: () => void;
   onHideWallCategory: () => void;
-}): JSX.Element {
+}): JSX.Element | null {
   const dispatch = (cmd: Record<string, unknown>): void => {
     void onSemanticCommand(cmd);
   };
