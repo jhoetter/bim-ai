@@ -6,7 +6,15 @@ from collections.abc import Mapping
 from typing import Any
 
 from bim_ai.document import Document
-from bim_ai.elements import RoomElem, ValidationRuleElem
+from bim_ai.elements import (
+    FloorTypeElem,
+    RoofTypeElem,
+    RoomElem,
+    ScheduleElem,
+    SheetElem,
+    ValidationRuleElem,
+    WallTypeElem,
+)
 
 BIM_REQUIREMENT_VALIDATION_PACK_SCHEMA_VERSION = "bim-requirement-validation-pack.v1"
 BIM_REQUIREMENT_VALIDATION_REPORT_SCHEMA_VERSION = "bim-requirement-validation-report.v1"
@@ -44,7 +52,9 @@ def compile_bim_requirement_validation_pack(
         *_compile_data_quality_checks(requirements),
     ]
     checks.sort(key=lambda row: str(row["id"]))
-    delivery_targets = _string_list(requirements.get("exportRequirements", {}).get("outputs"))
+    delivery_targets = [
+        _output_key(output) for output in _string_list(requirements.get("exportRequirements", {}).get("outputs"))
+    ]
     return {
         "schemaVersion": BIM_REQUIREMENT_VALIDATION_PACK_SCHEMA_VERSION,
         "packId": pack_id or str(source.get("id") or source.get("packId") or "bir-pack"),
@@ -64,49 +74,47 @@ def validate_bim_requirement_validation_pack(
     pack: Mapping[str, Any],
     *,
     doc: Document,
+    evidence: Mapping[str, Any] | None = None,
 ) -> dict[str, Any]:
     counts_by_kind = _counts_by_kind(doc)
     room_rows = _room_rows(doc)
+    doc_evidence = _document_validation_evidence(doc, evidence)
     blockers: list[dict[str, Any]] = []
     rows: list[dict[str, Any]] = []
     for check in pack.get("checks") or []:
         if not isinstance(check, Mapping):
             continue
         predicate = check.get("predicate") if isinstance(check.get("predicate"), Mapping) else {}
-        status = "pass"
         code = str(check.get("id") or "unknown")
-        if predicate.get("type") == "min_kind_count":
-            actual = sum(int(counts_by_kind.get(kind, 0)) for kind in predicate.get("kinds") or [])
-            expected = int(predicate.get("min") or 0)
-            if actual < expected:
-                status = "fail"
-                blockers.append(
-                    {
-                        "code": code,
-                        "severity": check.get("severity") or "error",
-                        "message": f"Expected at least {expected} matching elements; found {actual}.",
-                        "requirementRefs": check.get("requirementRefs") or [],
-                    }
-                )
-        elif predicate.get("type") == "required_row_fields":
-            fields = _string_list(predicate.get("fields"))
-            missing_rows = [
-                row["id"]
-                for row in room_rows
-                if any(row.get(field) in (None, "") for field in fields)
-            ]
-            if missing_rows:
-                status = "fail"
-                blockers.append(
-                    {
-                        "code": code,
-                        "severity": check.get("severity") or "error",
-                        "message": "Required room/schedule fields are missing.",
-                        "elementIds": missing_rows,
-                        "requirementRefs": check.get("requirementRefs") or [],
-                    }
-                )
-        rows.append({"checkId": code, "status": status})
+        evaluation = _evaluate_predicate(
+            predicate,
+            doc=doc,
+            evidence=doc_evidence,
+            counts_by_kind=counts_by_kind,
+            room_rows=room_rows,
+        )
+        status = "pass" if evaluation["passed"] else str(check.get("severity") or "error")
+        if not evaluation["passed"] and check.get("evidenceBlocker", True):
+            blocker: dict[str, Any] = {
+                "code": code,
+                "severity": check.get("severity") or "error",
+                "message": evaluation["message"],
+                "requirementRefs": check.get("requirementRefs") or [],
+            }
+            if check.get("deliveryTargets"):
+                blocker["deliveryTargets"] = check.get("deliveryTargets")
+            details = evaluation.get("details")
+            if isinstance(details, dict):
+                blocker.update(details)
+            blockers.append(blocker)
+        rows.append(
+            {
+                "checkId": code,
+                "status": status,
+                "actual": evaluation["actual"],
+                "expected": evaluation["expected"],
+            }
+        )
 
     severity_counts: dict[str, int] = {}
     for blocker in blockers:
@@ -124,6 +132,98 @@ def validate_bim_requirement_validation_pack(
         },
         "checks": rows,
         "blockers": blockers,
+    }
+
+
+def _evaluate_predicate(
+    predicate: Mapping[str, Any],
+    *,
+    doc: Document,
+    evidence: Mapping[str, Any],
+    counts_by_kind: Mapping[str, int],
+    room_rows: list[dict[str, Any]],
+) -> dict[str, Any]:
+    pred_type = predicate.get("type")
+    if pred_type == "artifact_present":
+        output = _output_key(str(predicate.get("output") or ""))
+        passed = _artifact_present(output, doc, evidence)
+        return {
+            "passed": passed,
+            "actual": 1 if passed else 0,
+            "expected": 1,
+            "message": f"Required {output} exchange artifact must be present.",
+        }
+    if pred_type == "min_kind_count":
+        actual = sum(int(counts_by_kind.get(kind, 0)) for kind in predicate.get("kinds") or [])
+        expected = int(predicate.get("min") or 0)
+        return {
+            "passed": actual >= expected,
+            "actual": actual,
+            "expected": expected,
+            "message": f"Expected at least {expected} matching elements; found {actual}.",
+        }
+    if pred_type == "required_row_fields":
+        fields = _string_list(predicate.get("fields"))
+        missing_rows = [
+            row["id"] for row in room_rows if any(row.get(field) in (None, "") for field in fields)
+        ]
+        return {
+            "passed": bool(room_rows) and not missing_rows,
+            "actual": len(room_rows) - len(missing_rows),
+            "expected": len(room_rows) or 1,
+            "message": (
+                "Required room/schedule fields are missing."
+                if missing_rows
+                else "Room/schedule rows include required fields."
+            ),
+            "details": {"elementIds": missing_rows} if missing_rows else {},
+        }
+    if pred_type == "schedule_columns_present":
+        actual_columns = _schedule_columns(str(predicate.get("scheduleId") or ""), evidence)
+        required_columns = _string_list(predicate.get("requiredColumns"))
+        missing_columns = [c for c in required_columns if c not in actual_columns]
+        return {
+            "passed": bool(required_columns) and not missing_columns,
+            "actual": len(actual_columns),
+            "expected": len(required_columns),
+            "message": (
+                f"Schedule {predicate.get('scheduleId')} is missing column(s): "
+                + ", ".join(missing_columns)
+                if missing_columns
+                else f"Schedule {predicate.get('scheduleId')} has required columns."
+            ),
+            "details": {"missingColumns": missing_columns} if missing_columns else {},
+        }
+    if pred_type == "material_layer_set_present":
+        passed = _material_layer_set_present(predicate, evidence)
+        return {
+            "passed": passed,
+            "actual": 1 if passed else 0,
+            "expected": 1,
+            "message": f"Material layer-set evidence is required for {predicate.get('id')}.",
+        }
+    if pred_type == "object_present":
+        return {"passed": True, "actual": 1, "expected": 1, "message": "Requirement object compiled."}
+    if pred_type == "data_quality_evidence_present":
+        passed = _data_quality_evidence_present(str(predicate.get("checkId") or ""), evidence)
+        return {
+            "passed": passed,
+            "actual": 1 if passed else 0,
+            "expected": 1,
+            "message": f"Data quality evidence is required for {predicate.get('checkId')}.",
+        }
+    if pred_type == "require_compiled_value":
+        return {
+            "passed": False,
+            "actual": 0,
+            "expected": 1,
+            "message": "Compiled requirement is incomplete.",
+        }
+    return {
+        "passed": False,
+        "actual": 0,
+        "expected": 1,
+        "message": "Unknown validation predicate.",
     }
 
 
@@ -182,10 +282,10 @@ def _compile_output_checks(requirements: Mapping[str, Any]) -> list[dict[str, An
     outputs = _string_list(requirements.get("exportRequirements", {}).get("outputs"))
     return [
         _compile_check(
-            f"bir_export_output_{_slug(output)}",
-            f"Required delivery output: {output}",
-            {"type": "artifact_present", "output": output},
-            delivery_targets=[output],
+            f"bir_export_output_{_output_key(output)}",
+            f"Required delivery output: {_output_key(output)}",
+            {"type": "artifact_present", "output": _output_key(output)},
+            delivery_targets=[_output_key(output)],
             source_path="informationRequirements.exportRequirements.outputs",
             requirement_refs=["BIR-K07"],
         )
@@ -368,6 +468,156 @@ def _room_rows(doc: Document) -> list[dict[str, Any]]:
     return rows
 
 
+def _document_validation_evidence(
+    doc: Document, evidence: Mapping[str, Any] | None = None
+) -> dict[str, Any]:
+    out: dict[str, Any] = dict(evidence or {})
+    out.setdefault("rooms", _room_rows(doc))
+    out.setdefault("schedules", _schedule_rows(doc))
+    out.setdefault("materialLayerSets", _material_layer_set_rows(doc))
+    out.setdefault("dataQualityResults", _data_quality_rows(doc))
+    out.setdefault("modelStats", {"countsByKind": _counts_by_kind(doc), "rooms": _room_rows(doc)})
+    return out
+
+
+def _schedule_rows(doc: Document) -> list[dict[str, Any]]:
+    rows: list[dict[str, Any]] = []
+    for elem in doc.elements.values():
+        if not isinstance(elem, ScheduleElem):
+            continue
+        columns: list[str] = []
+        for col in elem.columns:
+            if not isinstance(col, Mapping):
+                continue
+            for key in ("key", "id", "name", "label", "field"):
+                raw = col.get(key)
+                if isinstance(raw, str) and raw.strip():
+                    columns.append(raw.strip())
+                    break
+        rows.append({"id": elem.id, "title": elem.name, "columns": _string_list(columns)})
+    return rows
+
+
+def _material_layer_set_rows(doc: Document) -> list[dict[str, Any]]:
+    rows: list[dict[str, Any]] = []
+    for elem in doc.elements.values():
+        if isinstance(elem, WallTypeElem) and elem.layers:
+            rows.append(
+                {
+                    "id": elem.id,
+                    "layerSetName": elem.name,
+                    "name": elem.name,
+                    "category": "wall",
+                    "appliesToCategory": "wall",
+                }
+            )
+        elif isinstance(elem, FloorTypeElem) and elem.layers:
+            rows.append(
+                {
+                    "id": elem.id,
+                    "layerSetName": elem.name,
+                    "name": elem.name,
+                    "category": "floor",
+                    "appliesToCategory": "floor",
+                }
+            )
+        elif isinstance(elem, RoofTypeElem) and elem.layers:
+            rows.append(
+                {
+                    "id": elem.id,
+                    "layerSetName": elem.name,
+                    "name": elem.name,
+                    "category": "roof",
+                    "appliesToCategory": "roof",
+                }
+            )
+    return rows
+
+
+def _data_quality_rows(doc: Document) -> list[dict[str, Any]]:
+    room_rows = _room_rows(doc)
+    required_room_fields_present = bool(room_rows) and all(
+        all(row.get(field) not in (None, "") for field in REQUIRED_ROOM_FIELDS) for row in room_rows
+    )
+    return [
+        {
+            "id": "rooms_spaces_bounded_accessible_schedulable",
+            "status": "pass" if required_room_fields_present else "fail",
+        }
+    ]
+
+
+def _artifact_present(output: str, doc: Document, evidence: Mapping[str, Any]) -> bool:
+    if output == "ifc":
+        return True
+    if output in {"glb", "gltf"}:
+        return True
+    if output == "evidence-package":
+        return True
+    if output == "source-bundle":
+        return True
+    if output in {"pdf", "pdf-sheets"}:
+        return any(isinstance(elem, SheetElem) for elem in doc.elements.values())
+    if output.endswith("-schedule"):
+        return bool(_schedule_columns(output, evidence))
+    if output == "schedules":
+        return bool(evidence.get("schedules"))
+    raw_artifacts = evidence.get("artifacts")
+    artifacts = _string_list(raw_artifacts)
+    return any(output in _slug(artifact) for artifact in artifacts)
+
+
+def _schedule_columns(schedule_id: str, evidence: Mapping[str, Any]) -> list[str]:
+    wanted = _slug(schedule_id)
+    for row in evidence.get("schedules") or []:
+        if not isinstance(row, Mapping):
+            continue
+        if _slug(row.get("id") or "") != wanted and _slug(row.get("title") or "") != wanted:
+            continue
+        return _string_list(row.get("columns") or row.get("requiredColumns") or row.get("fields"))
+    return []
+
+
+def _material_layer_set_present(predicate: Mapping[str, Any], evidence: Mapping[str, Any]) -> bool:
+    ids = {
+        _slug(predicate.get("id") or ""),
+        _slug(predicate.get("layerSetName") or ""),
+        *(_slug(value) for value in _string_list(predicate.get("appliesToCategories"))),
+    }
+    ids.discard("")
+    for row in evidence.get("materialLayerSets") or []:
+        if not isinstance(row, Mapping):
+            continue
+        values = [
+            row.get("id"),
+            row.get("layerSetName"),
+            row.get("name"),
+            row.get("category"),
+            row.get("appliesToCategory"),
+        ]
+        if any(_slug(value or "") in ids for value in values):
+            return True
+    return False
+
+
+def _data_quality_evidence_present(check_id: str, evidence: Mapping[str, Any]) -> bool:
+    wanted = _slug(check_id)
+    for row in evidence.get("dataQualityResults") or []:
+        if not isinstance(row, Mapping):
+            continue
+        row_ids = {
+            _slug(row.get("id") or ""),
+            _slug(row.get("checkId") or ""),
+            _slug(row.get("code") or ""),
+        }
+        if wanted not in row_ids:
+            continue
+        status = str(row.get("status") or row.get("result") or "").strip().lower()
+        if status in {"", "pass", "passed", "ok", "present"}:
+            return True
+    return False
+
+
 def _digest(value: Any) -> str:
     blob = json.dumps(value, sort_keys=True, separators=(",", ":"), default=str)
     return "sha256:" + hashlib.sha256(blob.encode("utf8")).hexdigest()
@@ -383,3 +633,22 @@ def _slug(value: str) -> str:
     while "--" in out:
         out = out.replace("--", "-")
     return out.strip("-") or "unknown"
+
+
+def _output_key(value: str) -> str:
+    raw = _slug(value)
+    if raw in {
+        "pdf-sheets",
+        "room-schedule",
+        "door-window-schedule",
+        "evidence-package",
+        "ifc",
+        "glb",
+        "gltf",
+        "pdf",
+        "schedules",
+    }:
+        return raw
+    if raw in {"source-bundle", "source-command-bundle"}:
+        return "source-bundle"
+    return raw

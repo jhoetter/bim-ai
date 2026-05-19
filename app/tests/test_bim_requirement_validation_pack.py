@@ -8,7 +8,15 @@ from bim_ai.bim_requirement_validation_pack import (
     validate_bim_requirement_validation_pack,
 )
 from bim_ai.document import Document
-from bim_ai.elements import LevelElem, RoomElem, ValidationRuleElem, WallElem
+from bim_ai.elements import (
+    LevelElem,
+    RoomElem,
+    ScheduleElem,
+    ValidationRuleElem,
+    WallElem,
+    WallTypeElem,
+    WallTypeLayer,
+)
 
 
 def _requirements() -> dict[str, object]:
@@ -90,6 +98,111 @@ def test_backend_requirement_pack_validates_against_document_counts() -> None:
 
     assert report["schemaVersion"] == BIM_REQUIREMENT_VALIDATION_REPORT_SCHEMA_VERSION
     assert report["summary"]["errorCount"] == 0
+
+
+def test_backend_requirement_pack_evaluates_cli_parity_predicates_from_document_evidence() -> None:
+    requirements = {
+        "qualityTarget": "project_initiation_bim",
+        "informationRequirements": {
+            "exportRequirements": {"outputs": ["IFC", "GLB", "room schedule"]},
+            "rooms": [
+                {
+                    "number": "G-101",
+                    "name": "Living",
+                    "level": "ground",
+                    "function": "living",
+                    "targetAreaM2": 20,
+                    "boundingStatus": "bounded",
+                }
+            ],
+            "elementSemanticRequirements": [
+                {
+                    "category": "wall",
+                    "expectedBimCategory": "wall",
+                    "ifcEntityIntent": "IfcWall",
+                }
+            ],
+            "materialLayerSetRequirements": [
+                {
+                    "id": "wall_type_shell",
+                    "layerSetName": "Partition shell",
+                    "appliesToCategories": ["wall"],
+                }
+            ],
+            "schedules": [
+                {
+                    "id": "room-schedule",
+                    "requiredColumns": ["number", "name", "level", "targetAreaM2", "function"],
+                }
+            ],
+            "classificationRequirements": {"system": "IDS placeholder"},
+            "dataQualityChecks": ["rooms_spaces_bounded_accessible_schedulable"],
+        },
+    }
+    pack = compile_bim_requirement_validation_pack(requirements)
+    doc = Document(
+        revision=5,
+        elements={
+            "lvl": LevelElem(kind="level", id="lvl", name="G", elevationMm=0),
+            "wt": WallTypeElem(
+                kind="wall_type",
+                id="wall_type_shell",
+                name="Partition shell",
+                layers=[WallTypeLayer(thicknessMm=200, function="structure")],
+            ),
+            "wall-1": WallElem(
+                kind="wall",
+                id="wall-1",
+                levelId="lvl",
+                start={"xMm": 0, "yMm": 0},
+                end={"xMm": 3000, "yMm": 0},
+                thicknessMm=200,
+                heightMm=2800,
+                wallTypeId="wall_type_shell",
+            ),
+            "room-1": RoomElem(
+                kind="room",
+                id="room-1",
+                name="Living",
+                levelId="lvl",
+                outlineMm=[
+                    {"xMm": 0, "yMm": 0},
+                    {"xMm": 3000, "yMm": 0},
+                    {"xMm": 3000, "yMm": 3000},
+                    {"xMm": 0, "yMm": 3000},
+                ],
+                targetAreaM2=20,
+                props={
+                    "number": "G-101",
+                    "function": "living",
+                    "boundingStatus": "bounded",
+                },
+            ),
+            "room-schedule": ScheduleElem(
+                kind="schedule",
+                id="room-schedule",
+                name="Room Schedule",
+                columns=[
+                    {"key": "number"},
+                    {"key": "name"},
+                    {"key": "level"},
+                    {"key": "targetAreaM2"},
+                    {"key": "function"},
+                ],
+            ),
+        },
+    )
+
+    report = validate_bim_requirement_validation_pack(pack, doc=doc)
+
+    assert report["ok"] is True, report["blockers"]
+    assert report["summary"]["errorCount"] == 0
+    statuses = {row["checkId"]: row["status"] for row in report["checks"]}
+    assert statuses["bir_export_output_room-schedule"] == "pass"
+    assert statuses["bir_layer_set_wall-type-shell"] == "pass"
+    assert statuses["bir_schedule_room-schedule_columns"] == "pass"
+    assert statuses["bir_classification_placeholders_present"] == "pass"
+    assert statuses["bir_data_quality_rooms-spaces-bounded-accessible-schedulable"] == "pass"
 
 
 def test_document_payload_exposes_validation_rule_pack_and_report_for_api_parity() -> None:

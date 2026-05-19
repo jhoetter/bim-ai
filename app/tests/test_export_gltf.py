@@ -24,6 +24,7 @@ from bim_ai.elements import (
 from bim_ai.engine import apply_inplace
 from bim_ai.export_gltf import (
     _collect_geom_boxes,
+    build_glb_binary_readback_fidelity_v1,
     build_gltf_json_readback_fidelity_v1,
     build_visual_export_manifest,
     document_to_glb_bytes,
@@ -599,6 +600,66 @@ def test_document_to_glb_contains_header_json_and_matching_bin_chunk():
     assert bindata[:declared_len] == expected_bin
 
     assert hdr2 + 8 + bin_chunk_len == len(raw)
+
+
+def test_glb_binary_readback_validates_container_and_embedded_gltf_contract() -> None:
+    doc = Document(
+        revision=1,
+        elements={
+            "lvl-g": LevelElem(kind="level", id="lvl-g", name="G", elevationMm=0),
+            "w-a": WallElem(
+                kind="wall",
+                id="w-a",
+                name="W",
+                levelId="lvl-g",
+                start={"xMm": 0, "yMm": 0},
+                end={"xMm": 5000, "yMm": 0},
+                thicknessMm=200,
+                heightMm=2800,
+            ),
+        },
+    )
+
+    readback = build_glb_binary_readback_fidelity_v1(document_to_glb_bytes(doc))
+
+    assert readback["format"] == "glbBinaryReadbackFidelity_v1"
+    assert readback["artifactKind"] == "glb-binary"
+    assert readback["readbackStatus"] == "aligned"
+    assert readback["header"]["magic"] == 0x46546C67
+    assert readback["header"]["version"] == 2
+    assert [chunk["type"] for chunk in readback["chunks"]] == ["JSON", "BIN"]
+    assert readback["declaredBufferByteLength"] > 0
+    assert readback["binChunkByteLength"] >= readback["declaredBufferByteLength"]
+    assert readback["embeddedGltfJsonReadback"]["readbackStatus"] == "aligned"
+    assert readback["embeddedGltfJsonReadback"]["geometryNodeCountsByKind"] == {"wall": 1}
+    assert readback["findings"] == []
+    assert len(readback["glbBinaryReadbackFidelityDigestSha256"]) == 64
+
+
+def test_glb_binary_readback_detects_header_length_drift() -> None:
+    doc = Document(
+        revision=1,
+        elements={
+            "lvl-g": LevelElem(kind="level", id="lvl-g", name="G", elevationMm=0),
+            "w-a": WallElem(
+                kind="wall",
+                id="w-a",
+                name="W",
+                levelId="lvl-g",
+                start={"xMm": 0, "yMm": 0},
+                end={"xMm": 5000, "yMm": 0},
+                thicknessMm=200,
+                heightMm=2800,
+            ),
+        },
+    )
+    broken = bytearray(document_to_glb_bytes(doc))
+    broken[8:12] = struct.pack("<I", len(broken) + 4)
+
+    readback = build_glb_binary_readback_fidelity_v1(bytes(broken))
+
+    assert readback["readbackStatus"] == "drift"
+    assert any(f["code"] == "glb_declared_length_mismatch" for f in readback["findings"])
 
 
 def test_document_to_gltf_slab_opening_has_node_and_manifest_count():

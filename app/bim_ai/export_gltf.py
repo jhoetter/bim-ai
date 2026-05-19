@@ -508,6 +508,219 @@ def build_gltf_json_readback_fidelity_v1(gltf: dict[str, Any]) -> dict[str, Any]
     }
 
 
+def build_glb_binary_readback_fidelity_v1(blob: bytes) -> dict[str, Any]:
+    """Read back a GLB binary artifact and validate its container + embedded glTF contract."""
+
+    findings: list[dict[str, Any]] = []
+    header: dict[str, Any] = {
+        "magic": None,
+        "version": None,
+        "declaredLength": None,
+        "actualLength": len(blob),
+    }
+    chunk_rows: list[dict[str, Any]] = []
+    parsed_gltf: dict[str, Any] | None = None
+    embedded_json_readback: dict[str, Any] | None = None
+    declared_buffer_byte_length: int | None = None
+    bin_chunk_length: int | None = None
+    bin_padding_byte_length: int | None = None
+
+    if len(blob) < 12:
+        findings.append({"code": "glb_header_too_short", "severity": "error"})
+    else:
+        magic, version, declared_len = struct.unpack_from("<III", blob, 0)
+        header.update(
+            {
+                "magic": magic,
+                "version": version,
+                "declaredLength": declared_len,
+            }
+        )
+        if magic != _GLTF_MAGIC:
+            findings.append({"code": "glb_invalid_magic", "severity": "error", "magic": magic})
+        if version != 2:
+            findings.append(
+                {"code": "glb_unsupported_version", "severity": "error", "version": version}
+            )
+        if declared_len != len(blob):
+            findings.append(
+                {
+                    "code": "glb_declared_length_mismatch",
+                    "severity": "error",
+                    "declaredLength": declared_len,
+                    "actualLength": len(blob),
+                }
+            )
+
+        offset = 12
+        chunk_index = 0
+        json_chunks = 0
+        bin_chunks = 0
+        while offset + 8 <= len(blob):
+            chunk_len, chunk_type = struct.unpack_from("<II", blob, offset)
+            chunk_start = offset + 8
+            chunk_end = chunk_start + chunk_len
+            type_label = (
+                "JSON"
+                if chunk_type == _GLB_JSON_CHUNK_TYPE
+                else "BIN"
+                if chunk_type == _GLB_BIN_CHUNK_TYPE
+                else f"0x{chunk_type:08x}"
+            )
+            row = {
+                "index": chunk_index,
+                "type": type_label,
+                "byteLength": chunk_len,
+                "byteOffset": chunk_start,
+            }
+            chunk_rows.append(row)
+            if chunk_end > len(blob):
+                findings.append(
+                    {
+                        "code": "glb_chunk_overruns_artifact",
+                        "severity": "error",
+                        "chunkIndex": chunk_index,
+                    }
+                )
+                break
+            chunk_payload = blob[chunk_start:chunk_end]
+            if chunk_type == _GLB_JSON_CHUNK_TYPE:
+                json_chunks += 1
+                if json_chunks == 1:
+                    try:
+                        parsed = json.loads(chunk_payload.decode("utf-8").rstrip(" \t\r\n\0"))
+                    except (UnicodeDecodeError, json.JSONDecodeError) as exc:
+                        findings.append(
+                            {
+                                "code": "glb_json_chunk_invalid",
+                                "severity": "error",
+                                "message": str(exc),
+                            }
+                        )
+                    else:
+                        if isinstance(parsed, dict):
+                            parsed_gltf = parsed
+                        else:
+                            findings.append(
+                                {"code": "glb_json_root_not_object", "severity": "error"}
+                            )
+                else:
+                    findings.append(
+                        {
+                            "code": "glb_multiple_json_chunks",
+                            "severity": "error",
+                            "chunkIndex": chunk_index,
+                        }
+                    )
+            elif chunk_type == _GLB_BIN_CHUNK_TYPE:
+                bin_chunks += 1
+                if bin_chunks == 1:
+                    bin_chunk_length = chunk_len
+                    if parsed_gltf is not None:
+                        buffers = (
+                            parsed_gltf.get("buffers")
+                            if isinstance(parsed_gltf.get("buffers"), list)
+                            else []
+                        )
+                        if buffers and isinstance(buffers[0], dict):
+                            try:
+                                declared_buffer_byte_length = int(
+                                    buffers[0].get("byteLength") or 0
+                                )
+                            except (TypeError, ValueError):
+                                declared_buffer_byte_length = None
+                        if declared_buffer_byte_length is not None:
+                            bin_padding_byte_length = chunk_len - declared_buffer_byte_length
+                            if declared_buffer_byte_length > chunk_len:
+                                findings.append(
+                                    {
+                                        "code": "glb_bin_chunk_shorter_than_declared_buffer",
+                                        "severity": "error",
+                                        "declaredBufferByteLength": declared_buffer_byte_length,
+                                        "binChunkByteLength": chunk_len,
+                                    }
+                                )
+                            elif chunk_payload[declared_buffer_byte_length:].strip(b"\x00"):
+                                findings.append(
+                                    {
+                                        "code": "glb_bin_padding_nonzero",
+                                        "severity": "error",
+                                        "paddingByteLength": bin_padding_byte_length,
+                                    }
+                                )
+                else:
+                    findings.append(
+                        {
+                            "code": "glb_multiple_bin_chunks",
+                            "severity": "error",
+                            "chunkIndex": chunk_index,
+                        }
+                    )
+            else:
+                findings.append(
+                    {
+                        "code": "glb_unknown_chunk_type",
+                        "severity": "warning",
+                        "chunkIndex": chunk_index,
+                        "chunkType": type_label,
+                    }
+                )
+            offset = chunk_end
+            chunk_index += 1
+
+        if offset != len(blob):
+            findings.append(
+                {
+                    "code": "glb_truncated_chunk_header_or_trailing_bytes",
+                    "severity": "error",
+                    "lastOffset": offset,
+                    "actualLength": len(blob),
+                }
+            )
+        if json_chunks == 0:
+            findings.append({"code": "glb_json_chunk_missing", "severity": "error"})
+        if bin_chunks == 0:
+            findings.append({"code": "glb_bin_chunk_missing", "severity": "error"})
+
+    if parsed_gltf is not None:
+        embedded_json_readback = build_gltf_json_readback_fidelity_v1(parsed_gltf)
+        if embedded_json_readback["readbackStatus"] != "aligned":
+            findings.append(
+                {
+                    "code": "glb_embedded_gltf_readback_drift",
+                    "severity": "error",
+                    "findingCodes": [
+                        row.get("code") for row in embedded_json_readback.get("findings") or []
+                    ],
+                }
+            )
+
+    digest_source = {
+        "header": header,
+        "chunks": chunk_rows,
+        "declaredBufferByteLength": declared_buffer_byte_length,
+        "binChunkByteLength": bin_chunk_length,
+        "binPaddingByteLength": bin_padding_byte_length,
+        "embeddedJsonDigest": (
+            embedded_json_readback or {}
+        ).get("gltfJsonReadbackFidelityDigestSha256"),
+        "findingCodes": [f["code"] for f in findings],
+    }
+    return {
+        "format": "glbBinaryReadbackFidelity_v1",
+        "artifactKind": "glb-binary",
+        "readbackStatus": "aligned" if not findings else "drift",
+        "header": header,
+        "chunks": chunk_rows,
+        "declaredBufferByteLength": declared_buffer_byte_length,
+        "binChunkByteLength": bin_chunk_length,
+        "binPaddingByteLength": bin_padding_byte_length,
+        "embeddedGltfJsonReadback": embedded_json_readback,
+        "findings": findings,
+        "glbBinaryReadbackFidelityDigestSha256": _sha256_hex(digest_source),
+    }
+
+
 def _kind_counts(doc: Document) -> dict[str, int]:
     kinds: dict[str, int] = {}
     for e in doc.elements.values():
