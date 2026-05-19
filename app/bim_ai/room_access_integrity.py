@@ -47,6 +47,7 @@ DEFAULT_REQUIRED_ROOM_SCHEDULE_FIELDS: tuple[str, ...] = (
 
 ACCESS_TOLERANCE_MM = 400.0
 TOPOLOGY_TOLERANCE_MM = 400.0
+TOPOLOGY_GAP_TOLERANCE_MM = 100.0
 
 
 def check_room_access_integrity(
@@ -151,13 +152,18 @@ def _door_room_evidence(
             continue
         midpoint = _door_midpoint(door, wall)
         level_id = _string(_read(wall, "levelId", "level_id"))
-        geometric_rooms = tuple(
+        candidate_room_ids = tuple(
             sorted(
                 room_id
-                for room_id, polygon in room_polygons.items()
+                for room_id in room_polygons
                 if _string(_read(rooms[room_id], "levelId", "level_id")) == level_id
-                and _point_in_or_near_polygon(midpoint, polygon, ACCESS_TOLERANCE_MM)
             )
+        )
+        geometric_rooms = _door_boundary_room_ids(
+            wall,
+            midpoint,
+            candidate_room_ids,
+            room_polygons,
         )
         declared_rooms = tuple(sorted(_declared_door_rooms(door)))
         if declared_rooms and set(declared_rooms) - set(geometric_rooms):
@@ -173,6 +179,22 @@ def _door_room_evidence(
                     evidence={
                         "declaredRoomIds": list(declared_rooms),
                         "geometricRoomIds": list(geometric_rooms),
+                    },
+                )
+            )
+        if candidate_room_ids and not geometric_rooms:
+            findings.append(
+                _finding(
+                    "room_access_door_not_on_room_boundary",
+                    "BIR-D04-DOOR",
+                    "error",
+                    "P1",
+                    "Door host wall is not evidenced on any room boundary at the opening location.",
+                    (door_id, wall.id if hasattr(wall, "id") else wall_id or ""),
+                    "Move the door to a wall segment that bounds the intended room path, or revise room outlines/walls so the opening is on the boundary.",
+                    evidence={
+                        "candidateRoomIds": list(candidate_room_ids),
+                        "midpoint": {"xMm": round(midpoint[0], 3), "yMm": round(midpoint[1], 3)},
                     },
                 )
             )
@@ -197,7 +219,21 @@ def _room_access_findings(
 
     findings: list[RoomAccessFinding] = []
     for room_id in sorted(rooms):
-        if room_to_doors.get(room_id) or open_adjacency.get(room_id):
+        if room_to_doors.get(room_id):
+            continue
+        if open_adjacency.get(room_id):
+            findings.append(
+                _finding(
+                    "room_access_open_separator_only_access",
+                    "BIR-D04-SEPARATION",
+                    "warning",
+                    "P2",
+                    "Room has no door on its boundary and is only connected through analytical room-separation adjacency.",
+                    (room_id, *sorted(open_adjacency.get(room_id, set()))),
+                    "Keep this only for intentional open-plan space; otherwise add a physical door/opening on a valid room boundary.",
+                    evidence={"adjacentRoomIds": sorted(open_adjacency.get(room_id, set()))},
+                )
+            )
             continue
         findings.append(
             _finding(
@@ -300,7 +336,9 @@ def _egress_findings(
     for room_id in sorted(rooms):
         if room_id in reachable:
             continue
-        if not any(room_id in evidence["roomIds"] for evidence in door_evidence.values()) and not open_adjacency.get(room_id):
+        if not any(
+            room_id in evidence["roomIds"] for evidence in door_evidence.values()
+        ) and not open_adjacency.get(room_id):
             continue
         findings.append(
             _finding(
@@ -321,7 +359,9 @@ def _room_separation_open_adjacency(
     room_polygons: Mapping[str, list[tuple[float, float]]],
     room_separations: Mapping[str, Any],
 ) -> dict[str, set[str]]:
-    separations_by_level: dict[str, list[tuple[tuple[float, float], tuple[float, float]]]] = defaultdict(list)
+    separations_by_level: dict[str, list[tuple[tuple[float, float], tuple[float, float]]]] = (
+        defaultdict(list)
+    )
     for separation in room_separations.values():
         start = _point(_read(separation, "start"))
         end = _point(_read(separation, "end"))
@@ -500,9 +540,7 @@ def _room_wall_topology_findings(
         if start and end:
             boundary_segments_by_level[
                 _string(_read(separation, "levelId", "level_id")) or ""
-            ].append(
-                (separation_id, "room_separation", start, end)
-            )
+            ].append((separation_id, "room_separation", start, end))
 
     findings: list[RoomAccessFinding] = []
     for room_id, room in sorted(rooms.items()):
@@ -524,12 +562,7 @@ def _room_wall_topology_findings(
         segments = boundary_segments_by_level.get(level_id, [])
         unsupported_edges = 0
         for edge_start, edge_end in zip(polygon, polygon[1:] + polygon[:1], strict=False):
-            midpoint = ((edge_start[0] + edge_end[0]) / 2.0, (edge_start[1] + edge_end[1]) / 2.0)
-            if not any(
-                _point_segment_distance_mm(midpoint, segment_start, segment_end)
-                <= TOPOLOGY_TOLERANCE_MM
-                for _segment_id, _segment_kind, segment_start, segment_end in segments
-            ):
+            if _edge_uncovered_intervals(edge_start, edge_end, segments):
                 unsupported_edges += 1
         if unsupported_edges:
             findings.append(
@@ -545,6 +578,45 @@ def _room_wall_topology_findings(
                 )
             )
     return findings
+
+
+def _door_boundary_room_ids(
+    host_wall: Any,
+    midpoint: tuple[float, float],
+    candidate_room_ids: tuple[str, ...],
+    room_polygons: Mapping[str, list[tuple[float, float]]],
+) -> tuple[str, ...]:
+    host_start = _point(_read(host_wall, "start"))
+    host_end = _point(_read(host_wall, "end"))
+    if host_start is None or host_end is None:
+        return ()
+
+    room_ids: list[str] = []
+    for room_id in candidate_room_ids:
+        polygon = room_polygons.get(room_id) or []
+        for edge_start, edge_end in _polygon_segments(polygon):
+            if _point_segment_distance_mm(midpoint, edge_start, edge_end) > ACCESS_TOLERANCE_MM:
+                continue
+            coverage = _segment_axis_coverage(
+                edge_start,
+                edge_end,
+                host_start,
+                host_end,
+                TOPOLOGY_TOLERANCE_MM,
+            )
+            if coverage is None:
+                continue
+            projected_midpoint = _project_point_onto_segment_axis(midpoint, edge_start, edge_end)
+            if projected_midpoint is None:
+                continue
+            if (
+                coverage[0] - ACCESS_TOLERANCE_MM
+                <= projected_midpoint
+                <= coverage[1] + ACCESS_TOLERANCE_MM
+            ):
+                room_ids.append(room_id)
+                break
+    return tuple(sorted(dict.fromkeys(room_ids)))
 
 
 def _room_schedule_findings(
@@ -609,7 +681,9 @@ def _profile_placeholder_findings(
     accessibility_fields = tuple(profile.get("requiredAccessibilityFields", ()))
     for room_id, room in sorted(rooms.items()):
         if profile.get("requireOccupancy"):
-            missing = tuple(field for field in occupancy_fields if _blank(_read(room, field, _snake(field))))
+            missing = tuple(
+                field for field in occupancy_fields if _blank(_read(room, field, _snake(field)))
+            )
             if missing:
                 findings.append(
                     _finding(
@@ -624,7 +698,9 @@ def _profile_placeholder_findings(
                     )
                 )
         if profile.get("requireAccessibility"):
-            missing = tuple(field for field in accessibility_fields if _blank(_read(room, field, _snake(field))))
+            missing = tuple(
+                field for field in accessibility_fields if _blank(_read(room, field, _snake(field)))
+            )
             if missing:
                 findings.append(
                     _finding(
@@ -879,6 +955,116 @@ def _point_segment_distance_mm(
         return math.hypot(px - ax, py - ay)
     t = max(0.0, min(1.0, ((px - ax) * dx + (py - ay) * dy) / length_sq))
     return math.hypot(px - (ax + t * dx), py - (ay + t * dy))
+
+
+def _edge_uncovered_intervals(
+    edge_start: tuple[float, float],
+    edge_end: tuple[float, float],
+    segments: list[tuple[str, str, tuple[float, float], tuple[float, float]]],
+) -> list[tuple[float, float]]:
+    edge_length = math.hypot(edge_end[0] - edge_start[0], edge_end[1] - edge_start[1])
+    if edge_length < 1.0:
+        return []
+
+    intervals: list[tuple[float, float]] = []
+    for _segment_id, _segment_kind, segment_start, segment_end in segments:
+        coverage = _segment_axis_coverage(
+            edge_start,
+            edge_end,
+            segment_start,
+            segment_end,
+            TOPOLOGY_TOLERANCE_MM,
+        )
+        if coverage is not None:
+            intervals.append(coverage)
+    return _interval_union_uncovered(intervals, edge_length)
+
+
+def _segment_axis_coverage(
+    edge_start: tuple[float, float],
+    edge_end: tuple[float, float],
+    segment_start: tuple[float, float],
+    segment_end: tuple[float, float],
+    perpendicular_tolerance_mm: float,
+) -> tuple[float, float] | None:
+    edge_length = math.hypot(edge_end[0] - edge_start[0], edge_end[1] - edge_start[1])
+    if edge_length < 1.0:
+        return None
+
+    if (
+        _point_to_infinite_line_distance_mm(segment_start, edge_start, edge_end)
+        > perpendicular_tolerance_mm
+        or _point_to_infinite_line_distance_mm(segment_end, edge_start, edge_end)
+        > perpendicular_tolerance_mm
+    ):
+        return None
+
+    a = _project_point_onto_segment_axis(segment_start, edge_start, edge_end)
+    b = _project_point_onto_segment_axis(segment_end, edge_start, edge_end)
+    if a is None or b is None:
+        return None
+    start = max(0.0, min(a, b))
+    end = min(edge_length, max(a, b))
+    if end - start < 1.0:
+        return None
+    return (start, end)
+
+
+def _project_point_onto_segment_axis(
+    point: tuple[float, float],
+    segment_start: tuple[float, float],
+    segment_end: tuple[float, float],
+) -> float | None:
+    ax, ay = segment_start
+    bx, by = segment_end
+    length = math.hypot(bx - ax, by - ay)
+    if length < 1.0:
+        return None
+    ux = (bx - ax) / length
+    uy = (by - ay) / length
+    return (point[0] - ax) * ux + (point[1] - ay) * uy
+
+
+def _point_to_infinite_line_distance_mm(
+    point: tuple[float, float],
+    line_start: tuple[float, float],
+    line_end: tuple[float, float],
+) -> float:
+    ax, ay = line_start
+    bx, by = line_end
+    length = math.hypot(bx - ax, by - ay)
+    if length < 1.0:
+        return math.hypot(point[0] - ax, point[1] - ay)
+    return abs((point[0] - ax) * (by - ay) - (point[1] - ay) * (bx - ax)) / length
+
+
+def _interval_union_uncovered(
+    intervals: list[tuple[float, float]],
+    length: float,
+) -> list[tuple[float, float]]:
+    if length <= 0:
+        return []
+    if not intervals:
+        return [(0.0, length)]
+
+    merged: list[tuple[float, float]] = []
+    for start, end in sorted((max(0.0, a), min(length, b)) for a, b in intervals):
+        if end - start < 1.0:
+            continue
+        if not merged or start > merged[-1][1] + TOPOLOGY_GAP_TOLERANCE_MM:
+            merged.append((start, end))
+            continue
+        merged[-1] = (merged[-1][0], max(merged[-1][1], end))
+
+    uncovered: list[tuple[float, float]] = []
+    cursor = 0.0
+    for start, end in merged:
+        if start > cursor + TOPOLOGY_GAP_TOLERANCE_MM:
+            uncovered.append((cursor, start))
+        cursor = max(cursor, end)
+    if cursor < length - TOPOLOGY_GAP_TOLERANCE_MM:
+        uncovered.append((cursor, length))
+    return uncovered
 
 
 def _centroid(polygon: list[tuple[float, float]]) -> tuple[float, float]:

@@ -241,6 +241,27 @@ def test_inaccessible_room_is_reported_without_db_or_api() -> None:
     assert inaccessible.to_dict()["recommendation"]
 
 
+def test_door_inside_room_but_not_on_boundary_does_not_create_access_path() -> None:
+    elements = _small_house()
+    elements.pop("door-between")
+    elements["wall-floating"] = _wall("wall-floating", (3600, 1000), (5400, 1000))
+    elements["door-floating"] = _door("door-floating", "wall-floating", 0.5)
+
+    findings = check_room_access_integrity(elements)
+
+    invalid = next(
+        finding
+        for finding in findings
+        if finding.rule_id == "room_access_door_not_on_room_boundary"
+    )
+    assert invalid.code == "BIR-D04-DOOR"
+    assert invalid.element_ids == ("door-floating", "wall-floating")
+    assert any(
+        finding.rule_id == "room_access_inaccessible_room" and finding.element_ids == ("room-b",)
+        for finding in findings
+    )
+
+
 def test_fake_helper_access_is_rejected_when_not_geometrically_evidenced() -> None:
     elements = _small_house()
     elements["door-exit"]["props"]["roomIds"] = ["room-a", "room-b"]
@@ -255,6 +276,28 @@ def test_fake_helper_access_is_rejected_when_not_geometrically_evidenced() -> No
         "declaredRoomIds": ["room-a", "room-b"],
         "geometricRoomIds": ["room-a"],
     }
+
+
+def test_open_room_separation_only_access_is_reported_without_blocking_open_plan() -> None:
+    elements = _small_house()
+    elements.pop("door-between")
+    elements["sep-open-plan"] = _room_sep("sep-open-plan", (3000, 0), (3000, 3000))
+
+    findings = check_room_access_integrity(elements)
+
+    separator_only = next(
+        finding
+        for finding in findings
+        if finding.rule_id == "room_access_open_separator_only_access"
+        and finding.element_ids == ("room-b", "room-a")
+    )
+    assert separator_only.code == "BIR-D04-SEPARATION"
+    assert separator_only.severity == "warning"
+    assert not [
+        finding
+        for finding in findings
+        if finding.rule_id == "room_access_inaccessible_room" and finding.element_ids == ("room-b",)
+    ]
 
 
 def test_room_outside_floor_is_reported() -> None:
@@ -323,6 +366,31 @@ def test_room_wall_topology_gap_requires_wall_or_explicit_separator() -> None:
     )
     assert gap.code == "BIR-D06-WALL"
     assert gap.evidence == {"unsupportedEdgeCount": 4}
+
+
+def test_room_wall_topology_gap_detects_partial_edge_coverage() -> None:
+    elements = {
+        "lvl-1": {"kind": "level", "id": "lvl-1", "name": "Level 1"},
+        "room-partial": _room(
+            "room-partial",
+            "lvl-1",
+            [(0, 0), (3000, 0), (3000, 3000), (0, 3000)],
+        ),
+        "wall-s": _wall("wall-s", (0, 0), (3000, 0)),
+        "wall-e": _wall("wall-e", (3000, 0), (3000, 3000)),
+        "wall-w": _wall("wall-w", (0, 3000), (0, 0)),
+        "wall-n-short": _wall("wall-n-short", (1300, 3000), (1700, 3000)),
+    }
+
+    findings = check_room_access_integrity(elements)
+
+    gap = next(
+        finding
+        for finding in findings
+        if finding.rule_id == "room_access_room_wall_topology_gap"
+        and finding.element_ids == ("room-partial",)
+    )
+    assert gap.evidence == {"unsupportedEdgeCount": 1}
 
 
 def test_missing_room_schedule_fields_are_reported() -> None:
