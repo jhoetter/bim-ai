@@ -1,0 +1,27 @@
+# Renderer Support Matrix
+
+Generated from `packages/web/src/viewport/rendererDiagnostics.ts`. Digest: `rsm-02b54383`.
+
+This matrix is the initial BIR-I01 renderer contract. It states whether a semantic model feature is expected to render, export, or produce a structured renderer diagnostic instead of failing silently.
+
+| ID | Element kind | Feature | 3D viewport | Plan | Section | Sheet | Export | Diagnostic codes | Tracker items | Known limitations |
+| -- | ------------ | ------- | ----------- | ---- | ------- | ----- | ------ | ---------------- | ------------- | ----------------- |
+| `rsm-wall-base` | `wall` | wall-cut | partial | supported | partial | partial | partial | `renderer.wall_cut.unsupported`<br>`renderer.wall_cut.failed` | `BIR-I01`, `BIR-I02`, `BIR-I07`, `BIR-J01` | Hosted door/window/opening cuts must report diagnostics when CSG or fallback paths cannot cut the wall.<br>Joined, sloped, profiled, and very short walls need explicit per-case coverage. |
+| `rsm-door-window-hosted` | `door/window` | wall-cut | partial | supported | partial | partial | partial | `renderer.hosted_opening.detached_proxy`<br>`renderer.hosted_opening.no_cut` | `BIR-I01`, `BIR-I02`, `BIR-I07`, `BIR-J01`, `BIR-J05` | A visible family proxy is not enough; the host cut must also be rendered or diagnosed.<br>Model-invalid hosting belongs to Advisor/model integrity; renderer-invalid cut failure belongs here. |
+| `rsm-roof-openings` | `roof` | roof-opening | partial | partial | partial | partial | partial | `renderer.roof_opening.unsupported`<br>`renderer.roof_opening.failed_cut` | `BIR-I01`, `BIR-I02`, `BIR-I06`, `BIR-I07`, `BIR-J02` | Flat, gable, asymmetric gable, hip-like, terrace/court, dormer, fascia, and return cases need separate golden coverage.<br>Fallback CSG failure must not silently render an uncut roof for sketch acceptance evidence. |
+| `rsm-slab-openings` | `floor` | slab-opening | partial | partial | partial | partial | partial | `renderer.slab_opening.unsupported`<br>`renderer.slab_opening.failed_cut` | `BIR-I01`, `BIR-I02`, `BIR-I06`, `BIR-I07`, `BIR-J03` | Shafts, stair penetrations, balconies, terraces, and stacked floors need explicit support declarations.<br>Unsupported voids must be persisted with affected floor/opening ids. |
+| `rsm-stairs` | `stair` | stair-geometry | partial | partial | partial | partial | partial | `renderer.stair_geometry.degraded`<br>`renderer.stair_geometry.unsupported` | `BIR-I01`, `BIR-I02`, `BIR-I06`, `BIR-I07`, `BIR-J04` | Runs, landings, winding segments, shafts, handrails, and headroom evidence need separate coverage. |
+| `rsm-railings` | `railing` | railing-geometry | partial | partial | partial | partial | partial | `renderer.railing_geometry.degraded`<br>`renderer.railing_geometry.unsupported` | `BIR-I01`, `BIR-I02`, `BIR-I06`, `BIR-I07`, `BIR-J04` | Guard, handrail, baluster spacing, hosted edge, and material-slot fidelity need explicit diagnostics. |
+| `rsm-rooms-spaces` | `room` | room-visualization | partial | supported | partial | partial | partial | `renderer.room_visualization.degraded` | `BIR-I01`, `BIR-I06`, `BIR-I07`, `BIR-J06` | Room/space volumes and boundary overlays must remain diagnostic overlays, not physical clutter. |
+| `rsm-families-assets` | `family_instance` | family-instance | partial | partial | partial | partial | partial | `renderer.family_instance.proxy_fallback`<br>`renderer.family_instance.unsupported` | `BIR-I01`, `BIR-I06`, `BIR-I07`, `BIR-J05` | Family geometry, nested components, visibility/detail levels, host offsets, and material slots need per-family diagnostics. |
+| `rsm-materials` | `material` | material-resolution | partial | partial | partial | partial | partial | `renderer.material.unresolved`<br>`renderer.material.fallback` | `BIR-I01`, `BIR-I06`, `BIR-I07`, `BIR-J07` | Type-layer, instance, face override, transparent, realistic, wire, cut face, and export material drift need explicit reporting. |
+| `rsm-plan-section-sheet` | `view` | sheet-viewport | not applicable | partial | partial | partial | partial | `renderer.view_projection.degraded`<br>`renderer.sheet_viewport.unsupported` | `BIR-I01`, `BIR-I06`, `BIR-I07`, `BIR-J08` | Plan, section, elevation, sheet viewport, hidden line, realistic, wire, and print/export parity need separate acceptance. |
+| `rsm-export-preview` | `export_artifact` | export-preview | not applicable | not applicable | not applicable | partial | partial | `renderer.export_preview.drift`<br>`renderer.export_preview.unsupported` | `BIR-I01`, `BIR-I06`, `BIR-I07` | Viewport support does not prove IFC/glTF/DXF/DWG fidelity; export/readback must record drift separately. |
+
+Issue classes:
+
+- `model-invalid`: the semantic model is bad and belongs to Advisor/model integrity.
+- `renderer-unsupported`: the model can be valid, but the renderer has no supported path.
+- `renderer-failed`: a supported renderer path was attempted and failed.
+- `renderer-degraded`: the renderer produced an intentional approximation that must be recorded in evidence.
+
