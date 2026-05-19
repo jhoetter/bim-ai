@@ -1,0 +1,704 @@
+{
+  "schemaVersion": "target-house-closeout-report.v1.lineage",
+  "seed": "target-house-1",
+  "generatedAt": "1970-01-01T00:00:00.000Z",
+  "git": {
+    "currentHead": "1b4aefe949c51fe212965cf3bbe301d9e94a0fc1",
+    "evidenceHead": "af19d681dc60ee7438434d5c6202f1bd623000d5",
+    "dirtyCheckPolicy": "Report records source/evidence digests and git heads; concurrent dirty files are not normalized."
+  },
+  "paths": {
+    "repoRoot": "/Users/jhoetter/repos/bim-ai",
+    "evidenceDir": "seed-artifacts/target-house-1/evidence/live-run-current",
+    "requiredFeatures": "spec/generated/target-house-1-required-features.json",
+    "performanceEvidence": "scripts/target-house-final-package.mjs#buildTargetHousePerformanceEvidence",
+    "finalManifest": "scripts/target-house-final-package.mjs#buildTargetHouseFinalCloseoutManifest"
+  },
+  "loadErrors": {
+    "performanceEvidence": null,
+    "finalManifest": null
+  },
+  "sourceDigests": {
+    "requiredFeatures": "sha256:bc336b696cd98071971dded6b31272c401305aba210054984199bcc2a1662607",
+    "spec/target-house/target-house-1-acceptance-checklist.md": "sha256:5392a55357565d9223e20ce091069f6f048490dc436b405e9eb4bd0e56caa298",
+    "spec/target-house/target-house-1-sketch-ir.draft.json": "sha256:a90e27df1c146b6fb3c9ae18402d3c8662a3ee0cdb0f70c360ccc213ad669261",
+    "spec/target-house/target-house-1-bim-information-requirements.md": "sha256:c32bc404b321d720fec7092b7877701279f02e1ccd336005b88e80ec4abae7dc",
+    "spec/target-house/target-house-1-phase-plan.md": "sha256:a9f6b7d533e0434655c49d88a69299e90aeef9e120fb6f410b88fc007eba372a",
+    "bundle": "sha256:903d560a8eb43116956cf4aa794e82b173b677b679a0e5d9fd354d34ab4e91ba",
+    "snapshot": "sha256:94948476935cc7d7b6c9e46a166d69a7f946126c558e5df59a369ce9a94b0352",
+    "advisorRuleDigest": "sha256:d2d938dde4832ef91d26c33fd8f83a1c0dda738806560ea29bbee5a7a75d1f7c",
+    "capabilities": "sha256:e3faa00d4724d5e375ee853d5e3d56b21254a969a84e702d67013a8bb0125dbb",
+    "finalManifest": "sha256:3de44b71a5c8b46a0affdac5a3869e5cbe7415762207f5059e53a002e6330e7d",
+    "performanceEvidence": "sha256:6fd9a9db63c77087288bb81b7feda9544091a5eaec33b8d5c41c6caf2ec54f71"
+  },
+  "evidenceFiles": [
+    {
+      "key": "tool_run_summary",
+      "path": "seed-artifacts/target-house-1/evidence/live-run-current/tool-run-summary.json",
+      "present": true,
+      "sha256": "sha256:e47291db653aa08f0afd38500a2bf382ad88dce5410e1af03cc5936cb70d2d5f",
+      "schemaVersion": "sketch-to-bim.tool-run.v1",
+      "status": "present",
+      "summary": null
+    },
+    {
+      "key": "evidence_manifest",
+      "path": "seed-artifacts/target-house-1/evidence/live-run-current/evidence-manifest.json",
+      "present": true,
+      "sha256": "sha256:2b2f41b0b5d0551246c517564b8354dade3de430398524f3389618e6601c0316",
+      "schemaVersion": "sketch.evidence.collection.v1",
+      "status": "present",
+      "summary": {
+        "requiredVisualViewCount": 8,
+        "findingDispositionCount": 1,
+        "unclassifiedBlockingFindingCount": 0
+      }
+    },
+    {
+      "key": "snapshot",
+      "path": "seed-artifacts/target-house-1/evidence/live-run-current/snapshot.json",
+      "present": true,
+      "sha256": "sha256:94948476935cc7d7b6c9e46a166d69a7f946126c558e5df59a369ce9a94b0352",
+      "schemaVersion": null,
+      "status": "present",
+      "summary": null
+    },
+    {
+      "key": "target_house_evidence_acceptance",
+      "path": "seed-artifacts/target-house-1/evidence/live-run-current/target-house-evidence-acceptance.json",
+      "present": true,
+      "sha256": "sha256:4d49c831d83406e0724908df8cd7961f0851957d2d4b932063d3f07bcaeaa97d",
+      "schemaVersion": "target-house-evidence-acceptance.v1",
+      "status": "pass",
+      "summary": {
+        "requiredViewCount": 8,
+        "visualPassCount": 8,
+        "visualFailCount": 0,
+        "dataQualityPassCount": 7,
+        "dataQualityFailCount": 0,
+        "visualOk": true,
+        "dataQualityOk": true
+      }
+    },
+    {
+      "key": "acceptance_gates",
+      "path": "seed-artifacts/target-house-1/evidence/live-run-current/acceptance-gates.json",
+      "present": true,
+      "sha256": "sha256:ac236f6f29111cf05092c56cc53c1079fd1627e9db8d8c599a41e2d825a2f294",
+      "schemaVersion": "sketch-to-bim-acceptance-gates.v0",
+      "status": "blocked",
+      "summary": {
+        "blockerCount": 2,
+        "toleranceCount": 1,
+        "advisorWarningCount": 49,
+        "visualFailCount": 0,
+        "visualNeedsReviewCount": 7,
+        "semanticVisualRequiredCount": 291,
+        "semanticVisualFailureCount": 291,
+        "bimDataQualityErrorCount": 0,
+        "bimDataQualityPlannedCount": 0,
+        "exchangeValidationErrorCount": 0,
+        "exchangeValidationWarningCount": 0,
+        "evidenceFreshnessOk": true,
+        "staleEvidenceCount": 0,
+        "missingEvidenceFreshnessCount": 0
+      }
+    },
+    {
+      "key": "advisor_all",
+      "path": "seed-artifacts/target-house-1/evidence/live-run-current/advisor-all.json",
+      "present": true,
+      "sha256": "sha256:48080b164cd232ed7ae0b4dd9ee49ae7923a111d1998b5069de513e72aea03a6",
+      "schemaVersion": null,
+      "status": "present",
+      "summary": null
+    },
+    {
+      "key": "constructability_report",
+      "path": "seed-artifacts/target-house-1/evidence/live-run-current/constructability-report.json",
+      "present": true,
+      "sha256": "sha256:b4d04e89091776fa4256cb923a61331f6e0d4d22cfbdf73470385e7e3993108b",
+      "schemaVersion": "constructabilityReport_v1",
+      "status": "pass",
+      "summary": {
+        "findingCount": 0,
+        "issueCount": 0,
+        "suppressedFindingCount": 0
+      }
+    },
+    {
+      "key": "geometry_diagnostic",
+      "path": "seed-artifacts/target-house-1/evidence/live-run-current/target-house-geometry-diagnostic.json",
+      "present": true,
+      "sha256": "sha256:8cc8aec0393daf862614ecf6ff4babd7ba0d968175fcdd279a1f2d3f2e32ccd2",
+      "schemaVersion": "target-house-current-geometry-diagnostic.v1",
+      "status": "present",
+      "summary": {
+        "total": 0
+      }
+    },
+    {
+      "key": "visual_gate",
+      "path": "seed-artifacts/target-house-1/evidence/live-run-current/visual-gate.json",
+      "present": true,
+      "sha256": "sha256:98c8a2771df3c720e407cba4312cb26df3b6e789400a2de48a4d36d937fb930d",
+      "schemaVersion": "sketch-to-bim-visual-gate.v0",
+      "status": "present",
+      "summary": {
+        "captureCount": 7,
+        "passCount": 0,
+        "needsReviewCount": 7,
+        "failCount": 0,
+        "blockingFailureCount": 0
+      }
+    },
+    {
+      "key": "visual_evidence_contract",
+      "path": "seed-artifacts/target-house-1/evidence/live-run-current/visual-evidence-contract.json",
+      "present": true,
+      "sha256": "sha256:9fcba02f16c5c3864ca946b66754ada49d2b3c123735620cf891ceaeec8934c5",
+      "schemaVersion": "sketch.visual-evidence-contract.v1",
+      "status": "present",
+      "summary": null
+    },
+    {
+      "key": "bim_data_quality",
+      "path": "seed-artifacts/target-house-1/evidence/live-run-current/bim-data-quality.json",
+      "present": true,
+      "sha256": "sha256:fbe267378c12eb9f24579ea9505781fa68ed549b17e0ff455d0864c10428385f",
+      "schemaVersion": "sketch.bim-data-quality.v1",
+      "status": "pass",
+      "summary": {
+        "passCount": 10,
+        "warningCount": 0,
+        "errorCount": 0,
+        "plannedCount": 0
+      }
+    },
+    {
+      "key": "export_validation",
+      "path": "seed-artifacts/target-house-1/evidence/live-run-current/export-validation.json",
+      "present": true,
+      "sha256": "sha256:6f905e69fcbce190fe49f0c14ccc20cb88ecd5c63af07d97960ea934443d787f",
+      "schemaVersion": "sketch.exchange-validation.v1",
+      "status": "pass",
+      "summary": {
+        "passCount": 5,
+        "warningCount": 0,
+        "errorCount": 0,
+        "plannedCount": 2
+      }
+    },
+    {
+      "key": "tolerance_ledger",
+      "path": "seed-artifacts/target-house-1/evidence/live-run-current/tolerance-ledger.json",
+      "present": true,
+      "sha256": "sha256:24d47a50f77e97557b93b87640011e5ac300b2906cf581e8103ecd40781e7a91",
+      "schemaVersion": "sketch.tolerance-ledger.v1",
+      "status": "pass",
+      "summary": {
+        "findingCount": 1,
+        "toleranceCount": 0,
+        "blockingFindingCount": 0,
+        "incompleteToleranceCount": 0
+      }
+    },
+    {
+      "key": "screenshot_manifest",
+      "path": "seed-artifacts/target-house-1/evidence/live-run-current/screenshot-manifest.json",
+      "present": true,
+      "sha256": "sha256:75872ca1eb58256fc65b7a4fbb6c570988801bb748d231481256e8dd105fa765",
+      "schemaVersion": "sketch-to-bim-screenshot-manifest.v0",
+      "status": "present",
+      "summary": null
+    },
+    {
+      "key": "clean_pass_gate",
+      "path": "seed-artifacts/target-house-1/evidence/live-run-current/clean-pass-gate.json",
+      "present": true,
+      "sha256": "sha256:23cd56800253c363be78f4d6349426b60b0d815c622788014e55d6a05ef48c78",
+      "schemaVersion": "target-house.clean-pass-gate.v1",
+      "status": "pass",
+      "summary": {
+        "p0ErrorCount": 0,
+        "rendererBlockerCount": 0,
+        "warningCount": 0,
+        "toleratedWarningGroupCount": 0,
+        "unresolvedWarningGroupCount": 0,
+        "toleranceCount": 0,
+        "blockerCount": 0
+      }
+    }
+  ],
+  "summaries": {
+    "advisor": {
+      "advisorTotal": 2,
+      "advisorSeverityCounts": {
+        "info": 1
+      },
+      "constructabilityFindingCount": 0,
+      "constructabilityIssueCount": 0,
+      "constructabilitySeverityCounts": {},
+      "advisoryClear": false,
+      "acceptanceMeaning": "Advisor and constructability findings are only one evidence family; target-house acceptance also requires source-feature semantic visual disposition, zero geometry-diagnostic errors, required screenshots/views, exchange/data-quality checks, performance evidence, tolerance closure, and freshness."
+    },
+    "geometry": {
+      "total": 0,
+      "bySeverity": {
+        "error": 0,
+        "warning": 0,
+        "info": 0
+      },
+      "byCategory": {},
+      "firstBlockers": []
+    },
+    "visual": {
+      "evidenceAcceptanceOk": true,
+      "requiredViewCount": 8,
+      "visualPassCount": 8,
+      "visualFailCount": 0,
+      "screenshotQualityStatus": "needs_review",
+      "screenshotNeedsReviewCount": 7,
+      "semanticVisualRequiredCount": 291,
+      "semanticVisualFailureCount": 291,
+      "semanticVisualSummary": {
+        "requiredCount": 291,
+        "passCount": 0,
+        "failureCount": 291,
+        "missingCount": 0,
+        "failedCount": 0,
+        "unverifiedCount": 291
+      }
+    },
+    "dataExchange": {
+      "dataQualityOk": true,
+      "dataQualityErrors": 0,
+      "dataQualityWarnings": 0,
+      "exchangeOk": true,
+      "exchangeErrors": 0,
+      "exchangeWarnings": 0,
+      "exchangePlanned": 2
+    },
+    "performance": {
+      "present": true,
+      "ok": true,
+      "digestSha256": "6fd9a9db63c77087288bb81b7feda9544091a5eaec33b8d5c41c6caf2ec54f71",
+      "interactions": [
+        {
+          "interaction": "orbit",
+          "workload": "orbit",
+          "accepted": true,
+          "estimatedMs": 12.31,
+          "budgetMs": 16.7,
+          "budgetRatio": 0.74,
+          "status": "within_budget",
+          "dominantFactors": ["rendered elements:43", "material overrides:9"]
+        },
+        {
+          "interaction": "select",
+          "workload": "select",
+          "accepted": true,
+          "estimatedMs": 8.21,
+          "budgetMs": 50,
+          "budgetRatio": 0.16,
+          "status": "within_budget",
+          "dominantFactors": ["pick candidates:97", "hosted openings:10", "selected elements:1"]
+        },
+        {
+          "interaction": "lens-switch",
+          "workload": "lens-switch",
+          "accepted": true,
+          "estimatedMs": 6.47,
+          "budgetMs": 100,
+          "budgetRatio": 0.06,
+          "status": "within_budget",
+          "dominantFactors": ["lens classifications:97", "material state changes:9"]
+        },
+        {
+          "interaction": "advisor-open",
+          "workload": "advisor-toggle",
+          "accepted": true,
+          "estimatedMs": 7.36,
+          "budgetMs": 80,
+          "budgetRatio": 0.09,
+          "status": "within_budget",
+          "dominantFactors": ["element references:97", "evidence views:11"]
+        }
+      ],
+      "maxBudgetRatio": 0.74,
+      "overBudgetInteractions": []
+    },
+    "tolerances": {
+      "ok": true,
+      "findingCount": 1,
+      "toleranceCount": 0,
+      "blockingFindingCount": 0,
+      "incompleteToleranceCount": 0
+    },
+    "finalPackageStatus": {
+      "ready": false,
+      "blockers": [
+        "live_evidence_freshness",
+        "semantic_visual",
+        "acceptance_gate_blockers",
+        "tracker_not_done"
+      ],
+      "blockerDetails": [
+        {
+          "code": "live_evidence_freshness",
+          "category": "evidence",
+          "count": 1
+        },
+        {
+          "code": "semantic_visual",
+          "category": "semantic_visual",
+          "count": 291,
+          "requiredCount": 291
+        },
+        {
+          "code": "acceptance_gate_blockers",
+          "category": "acceptance_gates",
+          "count": 1,
+          "blockerCodes": ["advisor_warning_findings"]
+        },
+        {
+          "code": "tracker_not_done",
+          "category": "tracker",
+          "count": 4,
+          "rows": [
+            {
+              "id": "BIR-N04",
+              "status": "Partial"
+            },
+            {
+              "id": "BIR-N07",
+              "status": "Partial"
+            },
+            {
+              "id": "BIR-N08",
+              "status": "Partial"
+            },
+            {
+              "id": "BIR-N10",
+              "status": "Partial"
+            }
+          ]
+        }
+      ],
+      "status": "blocked_live_evidence_freshness"
+    }
+  },
+  "features": [
+    {
+      "id": "primary_massing_envelope",
+      "phaseId": "P1",
+      "priority": "critical",
+      "requiredBimTargets": [
+        "feature:primary_massing_envelope",
+        "kind:basic_massing_envelope",
+        "wall:exterior",
+        "floor:plinth",
+        "volume:upper-wrapper"
+      ],
+      "requiredViews": ["main_front_left", "front_elevation", "rear_right_axon"],
+      "evidenceTypes": ["screenshot", "advisor_payload"],
+      "sourceRefs": ["spec/target-house/target-house-1-sketch-ir.draft.json#features"],
+      "status": "blocked_semantic_visual",
+      "semanticVisualFailureCount": 22
+    },
+    {
+      "id": "folded_white_wrapper_shell",
+      "phaseId": "P2",
+      "priority": "critical",
+      "requiredBimTargets": [
+        "feature:folded_white_wrapper_shell",
+        "kind:folded_white_wrapper_shell",
+        "wall:upper-white-shell",
+        "roof:white-folded-shell"
+      ],
+      "requiredViews": ["main_front_left", "rear_right_axon", "wire_diagnostic"],
+      "evidenceTypes": ["screenshot", "advisor_payload", "wire_diagnostic"],
+      "sourceRefs": ["spec/target-house/target-house-1-sketch-ir.draft.json#features"],
+      "status": "blocked_semantic_visual",
+      "semanticVisualFailureCount": 32
+    },
+    {
+      "id": "roof_terrace_cutout",
+      "phaseId": "P3",
+      "priority": "critical",
+      "requiredBimTargets": [
+        "feature:roof_terrace_cutout",
+        "kind:roof_opening_with_occupied_terrace",
+        "roof:opening",
+        "floor:terrace",
+        "railing:roof-court-guard",
+        "door:terrace-access",
+        "window:roof-court-glazing",
+        "room:room_l1_roof_court"
+      ],
+      "requiredViews": ["main_front_left", "roof_high", "rear_right_axon"],
+      "evidenceTypes": ["screenshot", "advisor_payload", "constructability_report"],
+      "sourceRefs": ["spec/target-house/target-house-1-sketch-ir.draft.json#features"],
+      "status": "blocked_semantic_visual",
+      "semanticVisualFailureCount": 32
+    },
+    {
+      "id": "front_deep_loggia",
+      "phaseId": "P4",
+      "priority": "critical",
+      "requiredBimTargets": [
+        "feature:front_deep_loggia",
+        "kind:recessed_loggia",
+        "room:room_l1_deep_loggia",
+        "floor:loggia-slab",
+        "railing:front-loggia-guard",
+        "window:three-bay-loggia-glazing",
+        "door:loggia-access"
+      ],
+      "requiredViews": ["main_front_left", "front_elevation", "front_loggia", "first_floor_plan"],
+      "evidenceTypes": ["screenshot", "advisor_payload", "constructability_report"],
+      "sourceRefs": ["spec/target-house/target-house-1-sketch-ir.draft.json#features"],
+      "status": "blocked_semantic_visual",
+      "semanticVisualFailureCount": 33
+    },
+    {
+      "id": "asymmetric_gable_envelope",
+      "phaseId": "P2",
+      "priority": "critical",
+      "requiredBimTargets": [
+        "feature:asymmetric_gable_envelope",
+        "kind:roof_attached_wall_profile",
+        "wall:gable-profile",
+        "roof:asymmetric-envelope"
+      ],
+      "requiredViews": ["main_front_left", "front_elevation", "rear_right_axon"],
+      "evidenceTypes": ["screenshot", "advisor_payload"],
+      "sourceRefs": ["spec/target-house/target-house-1-sketch-ir.draft.json#features"],
+      "status": "blocked_semantic_visual",
+      "semanticVisualFailureCount": 34
+    },
+    {
+      "id": "vertical_cladding_zones",
+      "phaseId": "P4",
+      "priority": "high",
+      "requiredBimTargets": [
+        "feature:vertical_cladding_zones",
+        "kind:vertical_cladding",
+        "wall:ground-clad-base",
+        "cladding:vertical-board-batten"
+      ],
+      "requiredViews": ["main_front_left", "front_elevation", "rear_right_axon"],
+      "evidenceTypes": ["screenshot", "advisor_payload", "constructability_report"],
+      "sourceRefs": ["spec/target-house/target-house-1-sketch-ir.draft.json#features"],
+      "status": "blocked_semantic_visual",
+      "semanticVisualFailureCount": 24
+    },
+    {
+      "id": "opening_and_glazing_rhythm",
+      "phaseId": "P4",
+      "priority": "high",
+      "requiredBimTargets": [
+        "feature:opening_and_glazing_rhythm",
+        "kind:facade_bay_rhythm",
+        "door:*",
+        "window:*",
+        "opening:hosted-facade-bay"
+      ],
+      "requiredViews": ["main_front_left", "front_elevation", "ground_floor_plan"],
+      "evidenceTypes": ["screenshot", "advisor_payload", "constructability_report"],
+      "sourceRefs": ["spec/target-house/target-house-1-sketch-ir.draft.json#features"],
+      "status": "blocked_semantic_visual",
+      "semanticVisualFailureCount": 21
+    },
+    {
+      "id": "room_access_and_enclosure",
+      "phaseId": "P5",
+      "priority": "critical",
+      "requiredBimTargets": [
+        "feature:room_access_and_enclosure",
+        "kind:room_access_and_enclosure",
+        "room:*",
+        "door:room-access",
+        "stair:*",
+        "opening:slab-stair",
+        "room:room_gf_kitchen_dining",
+        "room:room_gf_living",
+        "room:room_gf_entry",
+        "room:room_gf_bath_laundry",
+        "room:room_gf_utility",
+        "room:room_gf_carport",
+        "room:room_l1_primary_bedroom",
+        "room:room_l1_walk_in_closet",
+        "room:room_l1_ensuite",
+        "room:room_l1_hall_landing",
+        "room:room_l1_bedroom_2",
+        "room:room_l1_deep_loggia",
+        "room:room_l1_roof_court"
+      ],
+      "requiredViews": ["ground_floor_plan", "first_floor_plan", "wire_diagnostic"],
+      "evidenceTypes": [
+        "screenshot",
+        "advisor_payload",
+        "wire_diagnostic",
+        "schedule",
+        "constructability_report"
+      ],
+      "sourceRefs": ["spec/target-house/target-house-1-sketch-ir.draft.json#features"],
+      "status": "blocked_semantic_visual",
+      "semanticVisualFailureCount": 20
+    },
+    {
+      "id": "site_orientation_and_plinth",
+      "phaseId": "P0",
+      "priority": "medium",
+      "requiredBimTargets": [
+        "feature:site_orientation_and_plinth",
+        "kind:site_orientation",
+        "site:project-north-assumption",
+        "floor:plinth"
+      ],
+      "requiredViews": ["main_front_left"],
+      "evidenceTypes": ["screenshot", "advisor_payload"],
+      "sourceRefs": ["spec/target-house/target-house-1-sketch-ir.draft.json#features"],
+      "status": "blocked_semantic_visual",
+      "semanticVisualFailureCount": 11
+    },
+    {
+      "id": "documentation_evidence_set",
+      "phaseId": "P7",
+      "priority": "high",
+      "requiredBimTargets": [
+        "feature:documentation_evidence_set",
+        "kind:documentation_views",
+        "view:*",
+        "schedule:*",
+        "export:*",
+        "evidence:*"
+      ],
+      "requiredViews": [
+        "main_front_left",
+        "roof_high",
+        "front_elevation",
+        "front_loggia",
+        "ground_floor_plan",
+        "first_floor_plan",
+        "wire_diagnostic"
+      ],
+      "evidenceTypes": [
+        "screenshot",
+        "advisor_payload",
+        "wire_diagnostic",
+        "schedule",
+        "constructability_report",
+        "export_manifest",
+        "provenance_manifest",
+        "tolerance_ledger"
+      ],
+      "sourceRefs": ["spec/target-house/target-house-1-sketch-ir.draft.json#features"],
+      "status": "blocked_semantic_visual",
+      "semanticVisualFailureCount": 58
+    }
+  ],
+  "screenshots": [
+    {
+      "viewId": "main_front_left",
+      "kind": "3d",
+      "purpose": "Primary sketch-matched view proving white folded wrapper, front loggia, cantilever, vertical cladding, and roof terrace cutout.",
+      "requiredOutput": "seed-artifacts/target-house-1/evidence/live-run-current/screenshots/main_front_left.png",
+      "screenshotSha256": "sha256:79d871b7b5a70c11a8669ecaa4aecef1b779498ee14633140b59595bed5aa390",
+      "status": "pass",
+      "savedViewpointPresent": true
+    },
+    {
+      "viewId": "roof_high",
+      "kind": "3d",
+      "purpose": "High right/roof view proving the roof terrace is a real open void with occupied floor and return faces.",
+      "requiredOutput": "seed-artifacts/target-house-1/evidence/live-run-current/screenshots/roof_high.png",
+      "screenshotSha256": "sha256:1e13259d6d4718826d7defe9ac91d37336824f87f2ce9176423ae5b1070b692c",
+      "status": "pass",
+      "savedViewpointPresent": true
+    },
+    {
+      "viewId": "front_elevation",
+      "kind": "elevation",
+      "purpose": "Front view proving the three-bay upper loggia, rail, ground openings, and vertical cladding.",
+      "requiredOutput": "seed-artifacts/target-house-1/evidence/live-run-current/screenshots/front_elevation.png",
+      "screenshotSha256": "sha256:91837508414d730f0e4589b6daffddb695ba01b7efcfb071ff2a1a2250df84f5",
+      "status": "pass",
+      "savedViewpointPresent": true
+    },
+    {
+      "viewId": "front_loggia",
+      "kind": "3d",
+      "purpose": "Close oblique/detail view proving the recessed loggia depth, side returns, three-bay glazing, floor slab, and guard rail.",
+      "requiredOutput": "seed-artifacts/target-house-1/evidence/live-run-current/screenshots/front_loggia.png",
+      "screenshotSha256": "sha256:0091b31810a6e388abd3012257c0e15a6de828bc68d38bcf04ddc2ef19a0b1a2",
+      "status": "pass",
+      "savedViewpointPresent": true
+    },
+    {
+      "viewId": "rear_right_axon",
+      "kind": "3d",
+      "purpose": "Rear/right view proving the cutout, shell thickness, carport recess, and side envelope.",
+      "requiredOutput": "seed-artifacts/target-house-1/evidence/live-run-current/screenshots/rear_right_axon.png",
+      "screenshotSha256": "sha256:8f19fb0ec88272d28cf184f4ff3a0222e4024c18323cbf0f96fc41f2a86fd19c",
+      "status": "pass",
+      "savedViewpointPresent": true
+    },
+    {
+      "viewId": "ground_floor_plan",
+      "kind": "plan",
+      "purpose": "Ground-floor room, door, stair, wet-room, utility, and carport sanity check.",
+      "requiredOutput": "seed-artifacts/target-house-1/evidence/live-run-current/screenshots/ground_floor_plan.png",
+      "screenshotSha256": "sha256:d4a56538711060354e74d6d6ce3598c8d9072ba63d4fcd5a59d5aaa26ceb33d8",
+      "status": "pass",
+      "savedViewpointPresent": true
+    },
+    {
+      "viewId": "first_floor_plan",
+      "kind": "plan",
+      "purpose": "First-floor rooms, landing, loggia, roof court, stair opening, and access sanity check.",
+      "requiredOutput": "seed-artifacts/target-house-1/evidence/live-run-current/screenshots/first_floor_plan.png",
+      "screenshotSha256": "sha256:80e4adae12bb75360befb25b685e1435080163a0e700d75fa994e4b471862275",
+      "status": "pass",
+      "savedViewpointPresent": true
+    },
+    {
+      "viewId": "wire_diagnostic",
+      "kind": "diagnostic",
+      "purpose": "Transparent/wire evidence for roof-wall seams, slab openings, room boundaries, and hidden overlaps.",
+      "requiredOutput": "seed-artifacts/target-house-1/evidence/live-run-current/screenshots/wire_diagnostic.png",
+      "screenshotSha256": "sha256:e7f0483228baea1d4baddc1454c9be3da99bc984fc576531b2d350afbb6f4515",
+      "status": "pass",
+      "savedViewpointPresent": true
+    }
+  ],
+  "blockers": [
+    {
+      "code": "acceptance_gate_blockers",
+      "summary": "Final package manifest reports this blocker."
+    },
+    {
+      "code": "acceptance_gates",
+      "summary": "2 gate blocker(s); semantic visual failures: 291."
+    },
+    {
+      "code": "live_evidence_freshness",
+      "summary": "Final package manifest reports this blocker."
+    },
+    {
+      "code": "semantic_visual",
+      "summary": "Final package manifest reports this blocker."
+    },
+    {
+      "code": "semantic_visual_unverified",
+      "summary": "291 required semantic visual row(s) remain unchecked or failed."
+    },
+    {
+      "code": "tracker_not_done",
+      "summary": "Final package manifest reports this blocker."
+    }
+  ],
+  "ready": false,
+  "lineageDigestSha256": "7427d1d2fbf82d33bb7739a71dc13baea62dbced3cc606b8d8dbeeae84b137d6"
+}
