@@ -29,6 +29,7 @@ export type CollectRendererDiagnosticsInput = {
   evidence?: RendererDiagnosticEvidence;
   csgEnabled?: boolean;
   includeElementRenderStatusDiagnostics?: boolean;
+  includeElementRenderStatuses?: boolean;
 };
 
 export type CollectRendererDiagnosticsPacketInput = CollectRendererDiagnosticsInput & {
@@ -52,7 +53,7 @@ export function collectRendererDiagnostics(
       ? []
       : collectElementRenderFeatureStatuses({ elementsById });
 
-  return [
+  return dedupeDiagnostics([
     ...elementStatuses.flatMap((status) =>
       fromElementRenderFeatureStatus(status, input.viewId, fullEvidence),
     ),
@@ -71,7 +72,7 @@ export function collectRendererDiagnostics(
       viewId: input.viewId,
       evidence: fullEvidence,
     }),
-  ].sort((a, b) => {
+  ]).sort((a, b) => {
     const severityOrder = severityRank(a.severity) - severityRank(b.severity);
     if (severityOrder !== 0) return severityOrder;
     return `${a.code}:${a.elementIds.join(',')}`.localeCompare(
@@ -86,19 +87,16 @@ function fromElementRenderFeatureStatus(
   evidence: RendererDiagnosticEvidence,
 ): RendererDiagnostic[] {
   return status.diagnosticCodes.map((code) => {
-    const feature = code.startsWith('renderer.material')
-      ? 'material-resolution'
-      : code.startsWith('renderer.asset_instance')
-        ? 'asset-instance'
-        : 'family-instance';
-    const unsupported = code.endsWith('.unsupported') || code.endsWith('.unresolved');
+    const feature = elementStatusFeature(code);
+    const issueClass = elementStatusIssueClass(code, status);
+    const unsupported = issueClass === 'renderer-unsupported';
     const fallback = code.endsWith('.fallback') || code.endsWith('_fallback');
     return createRendererDiagnostic({
       ruleId: code.replaceAll('.', '_'),
       code,
-      severity: unsupported ? 'error' : 'warning',
-      issueClass: unsupported ? 'renderer-unsupported' : 'renderer-degraded',
-      rendererArea: feature === 'material-resolution' ? 'materials' : 'viewport-3d',
+      severity: elementStatusSeverity(code, issueClass),
+      issueClass,
+      rendererArea: elementStatusRendererArea(code),
       feature,
       message: elementRenderStatusMessage(status, code),
       elementIds: [status.elementId],
@@ -107,6 +105,9 @@ function fromElementRenderFeatureStatus(
         ...evidence,
         details: {
           kind: status.kind,
+          geometryFeature: status.geometry.feature,
+          geometryState: status.geometry.state,
+          geometryImplementation: status.geometry.implementation,
           implementation: status.implementation.geometryImplementation,
           materialState: status.material.state,
           familyState: status.family.state,
@@ -122,6 +123,45 @@ function fromElementRenderFeatureStatus(
 }
 
 function elementRenderStatusMessage(status: ElementRenderFeatureStatus, code: string): string {
+  if (code === 'renderer.wall_geometry.degenerate') {
+    return `Wall "${status.elementId}" has degenerate geometry and cannot render a faithful wall body.`;
+  }
+  if (code === 'renderer.wall_geometry.unsupported') {
+    return `Wall "${status.elementId}" declares unsupported renderer geometry.`;
+  }
+  if (code === 'renderer.wall_cut.unsupported') {
+    return `Hosted opening "${status.elementId}" declares an unsupported wall-cut renderer feature.`;
+  }
+  if (code === 'renderer.roof_geometry.unsupported') {
+    return `Roof "${status.elementId}" declares unsupported renderer geometry.`;
+  }
+  if (code === 'renderer.roof_opening.unsupported') {
+    return `Roof opening "${status.elementId}" declares an unsupported roof-cut renderer feature.`;
+  }
+  if (code === 'renderer.slab_opening.unsupported') {
+    return `Slab opening "${status.elementId}" declares an unsupported slab-cut renderer feature.`;
+  }
+  if (code === 'renderer.stair_geometry.unsupported') {
+    return `Stair "${status.elementId}" declares unsupported renderer geometry.`;
+  }
+  if (code === 'renderer.stair_geometry.unsupported_shape') {
+    return `Stair "${status.elementId}" uses a shape outside the renderer support contract.`;
+  }
+  if (code === 'renderer.railing_geometry.unsupported') {
+    return `Railing "${status.elementId}" declares unsupported renderer geometry.`;
+  }
+  if (code === 'renderer.railing_geometry.unsupported_baluster_pattern') {
+    return `Railing "${status.elementId}" uses a baluster pattern outside the renderer support contract.`;
+  }
+  if (code === 'renderer.railing_geometry.missing_host_edge') {
+    return `Railing "${status.elementId}" requires hosted edge evidence that the renderer status cannot resolve.`;
+  }
+  if (code === 'renderer.room_visualization.volume_unsupported') {
+    return `Room "${status.elementId}" requests 3D volume rendering, but only diagnostic overlays are supported.`;
+  }
+  if (code === 'renderer.room_visualization.unsupported') {
+    return `Room visualization "${status.elementId}" declares an unsupported renderer feature.`;
+  }
   if (code === 'renderer.material.unresolved') {
     return `Element "${status.elementId}" references material data the renderer cannot resolve.`;
   }
@@ -141,6 +181,24 @@ function elementRenderStatusMessage(status: ElementRenderFeatureStatus, code: st
 }
 
 function elementStatusTrackerItems(code: string): string[] {
+  if (code.startsWith('renderer.wall_geometry') || code.startsWith('renderer.wall_cut')) {
+    return ['BIR-I02', 'BIR-I03', 'BIR-I05', 'BIR-J01'];
+  }
+  if (code.startsWith('renderer.roof_geometry') || code.startsWith('renderer.roof_opening')) {
+    return ['BIR-I02', 'BIR-I03', 'BIR-I05', 'BIR-J02'];
+  }
+  if (code.startsWith('renderer.slab_opening')) {
+    return ['BIR-I02', 'BIR-I03', 'BIR-I05', 'BIR-J03'];
+  }
+  if (code.startsWith('renderer.stair_geometry')) {
+    return ['BIR-I02', 'BIR-I03', 'BIR-I05', 'BIR-J04'];
+  }
+  if (code.startsWith('renderer.railing_geometry')) {
+    return ['BIR-I02', 'BIR-I03', 'BIR-I05', 'BIR-J04'];
+  }
+  if (code.startsWith('renderer.room_visualization')) {
+    return ['BIR-I02', 'BIR-I03', 'BIR-I04', 'BIR-I05', 'BIR-J06'];
+  }
   if (code.startsWith('renderer.material')) return ['BIR-I02', 'BIR-I03', 'BIR-I05', 'BIR-J07'];
   if (code.startsWith('renderer.asset_instance')) {
     return ['BIR-I02', 'BIR-I03', 'BIR-I05', 'BIR-J05'];
@@ -151,8 +209,14 @@ function elementStatusTrackerItems(code: string): string[] {
 export function collectRendererDiagnosticPacket(
   input: CollectRendererDiagnosticsPacketInput,
 ): RendererDiagnosticPacket {
+  const elementsById = normalizeElementsById(input.elementsById ?? input.elements);
+  const elementRenderStatuses =
+    input.includeElementRenderStatuses === false
+      ? undefined
+      : collectElementRenderFeatureStatuses({ elementsById });
   return createRendererDiagnosticPacket({
-    diagnostics: collectRendererDiagnostics(input),
+    diagnostics: collectRendererDiagnostics({ ...input, elementsById }),
+    elementRenderStatuses,
     generatedAtIso: input.generatedAtIso,
     modelRevision: input.modelRevision,
     viewId: input.viewId,
@@ -160,6 +224,78 @@ export function collectRendererDiagnosticPacket(
     rendererBuild: input.rendererBuild,
     supportMatrixDigest: input.supportMatrixDigest,
   });
+}
+
+function elementStatusFeature(code: string): RendererDiagnostic['feature'] {
+  if (code.startsWith('renderer.material')) return 'material-resolution';
+  if (code.startsWith('renderer.asset_instance')) return 'asset-instance';
+  if (code.startsWith('renderer.family_instance')) return 'family-instance';
+  if (code.startsWith('renderer.wall_geometry') || code.startsWith('renderer.wall_cut')) {
+    return 'wall-cut';
+  }
+  if (code.startsWith('renderer.roof_geometry') || code.startsWith('renderer.roof_opening')) {
+    return 'roof-opening';
+  }
+  if (code.startsWith('renderer.slab_opening')) return 'slab-opening';
+  if (code.startsWith('renderer.stair_geometry')) return 'stair-geometry';
+  if (code.startsWith('renderer.railing_geometry')) return 'railing-geometry';
+  if (code.startsWith('renderer.room_visualization')) return 'room-visualization';
+  return 'family-instance';
+}
+
+function elementStatusRendererArea(code: string): RendererDiagnostic['rendererArea'] {
+  if (code.startsWith('renderer.material')) return 'materials';
+  if (
+    code.startsWith('renderer.wall_cut') ||
+    code.startsWith('renderer.roof_opening') ||
+    code.startsWith('renderer.slab_opening')
+  ) {
+    return 'boolean-cut';
+  }
+  if (code === 'renderer.room_visualization.volume_unsupported') return 'viewport-3d';
+  if (code.startsWith('renderer.room_visualization')) return 'plan';
+  return 'viewport-3d';
+}
+
+function elementStatusIssueClass(
+  code: string,
+  status: ElementRenderFeatureStatus,
+): RendererDiagnostic['issueClass'] {
+  if (code.endsWith('.degenerate')) return 'model-invalid';
+  if (code.includes('.missing_host_edge')) return 'model-invalid';
+  if (code.endsWith('.unresolved')) return 'renderer-unsupported';
+  if (code === 'renderer.room_visualization.volume_unsupported') return 'renderer-unsupported';
+  if (
+    code.endsWith('.unsupported') ||
+    code.endsWith('_unsupported') ||
+    code.endsWith('.unsupported_shape')
+  ) {
+    return status.blocking ? 'renderer-unsupported' : 'renderer-degraded';
+  }
+  if (code.endsWith('.unsupported_baluster_pattern')) return 'renderer-unsupported';
+  return 'renderer-degraded';
+}
+
+function elementStatusSeverity(
+  code: string,
+  issueClass: RendererDiagnostic['issueClass'],
+): RendererDiagnostic['severity'] {
+  if (issueClass === 'model-invalid') return 'error';
+  if (issueClass === 'renderer-unsupported')
+    return code.includes('volume_unsupported') ? 'warning' : 'error';
+  return 'warning';
+}
+
+function dedupeDiagnostics(diagnostics: RendererDiagnostic[]): RendererDiagnostic[] {
+  const byKey = new Map<string, RendererDiagnostic>();
+  for (const diagnostic of diagnostics) {
+    const key = `${diagnostic.code}:${diagnostic.elementIds.join(',')}`;
+    const existing = byKey.get(key);
+    if (!existing || severityRank(diagnostic.severity) < severityRank(existing.severity)) {
+      byKey.set(key, diagnostic);
+    }
+  }
+  return [...byKey.values()];
 }
 
 function normalizeElementsById(

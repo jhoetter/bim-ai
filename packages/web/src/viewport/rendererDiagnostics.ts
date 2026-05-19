@@ -1,5 +1,7 @@
 import type { Element } from '@bim-ai/core';
 
+import type { ElementRenderFeatureStatus } from './elementRenderFeatureStatus';
+
 export type RendererDiagnosticSeverity = 'error' | 'warning' | 'info';
 
 export type RendererDiagnosticIssueClass =
@@ -79,6 +81,7 @@ export type RendererDiagnosticPacket = {
   rendererBuild?: string | null;
   supportMatrixDigest: string;
   diagnostics: RendererDiagnostic[];
+  elementRenderStatuses?: ElementRenderFeatureStatus[];
 };
 
 export type RendererSurfaceSupport = 'supported' | 'partial' | 'unsupported' | 'not_applicable';
@@ -210,6 +213,7 @@ export function rendererSupportMatrixDigest(
 
 export function createRendererDiagnosticPacket(input: {
   diagnostics: RendererDiagnostic[];
+  elementRenderStatuses?: ElementRenderFeatureStatus[];
   generatedAtIso: string;
   modelRevision?: number | string | null;
   viewId?: string | null;
@@ -226,6 +230,7 @@ export function createRendererDiagnosticPacket(input: {
     rendererBuild: input.rendererBuild,
     supportMatrixDigest: input.supportMatrixDigest ?? rendererSupportMatrixDigest(),
     diagnostics: input.diagnostics,
+    elementRenderStatuses: input.elementRenderStatuses,
   };
 }
 
@@ -242,7 +247,12 @@ export const RENDERER_SUPPORT_MATRIX: RendererSupportMatrixEntry[] = [
       export: 'partial',
     },
     rendererAreas: ['viewport-3d', 'boolean-cut', 'plan', 'section', 'sheet', 'export'],
-    diagnosticCodes: ['renderer.wall_cut.unsupported', 'renderer.wall_cut.failed'],
+    diagnosticCodes: [
+      'renderer.wall_geometry.degenerate',
+      'renderer.wall_geometry.unsupported',
+      'renderer.wall_cut.unsupported',
+      'renderer.wall_cut.failed',
+    ],
     limitations: [
       'Hosted door/window/opening cuts must report diagnostics when CSG or fallback paths cannot cut the wall.',
       'Joined, sloped, profiled, and very short walls need explicit per-case coverage.',
@@ -261,7 +271,11 @@ export const RENDERER_SUPPORT_MATRIX: RendererSupportMatrixEntry[] = [
       export: 'partial',
     },
     rendererAreas: ['viewport-3d', 'boolean-cut', 'plan', 'section', 'sheet', 'export'],
-    diagnosticCodes: ['renderer.hosted_opening.detached_proxy', 'renderer.hosted_opening.no_cut'],
+    diagnosticCodes: [
+      'renderer.hosted_opening.detached_proxy',
+      'renderer.hosted_opening.no_cut',
+      'renderer.wall_cut.unsupported',
+    ],
     limitations: [
       'A visible family proxy is not enough; the host cut must also be rendered or diagnosed.',
       'Model-invalid hosting belongs to Advisor/model integrity; renderer-invalid cut failure belongs here.',
@@ -280,7 +294,11 @@ export const RENDERER_SUPPORT_MATRIX: RendererSupportMatrixEntry[] = [
       export: 'partial',
     },
     rendererAreas: ['viewport-3d', 'boolean-cut', 'plan', 'section', 'sheet', 'export'],
-    diagnosticCodes: ['renderer.roof_opening.unsupported', 'renderer.roof_opening.failed_cut'],
+    diagnosticCodes: [
+      'renderer.roof_geometry.unsupported',
+      'renderer.roof_opening.unsupported',
+      'renderer.roof_opening.failed_cut',
+    ],
     limitations: [
       'Flat, gable, asymmetric gable, hip-like, terrace/court, dormer, fascia, and return cases need separate golden coverage.',
       'Fallback CSG failure must not silently render an uncut roof for sketch acceptance evidence.',
@@ -318,7 +336,11 @@ export const RENDERER_SUPPORT_MATRIX: RendererSupportMatrixEntry[] = [
       export: 'partial',
     },
     rendererAreas: ['viewport-3d', 'plan', 'section', 'sheet', 'export'],
-    diagnosticCodes: ['renderer.stair_geometry.degraded', 'renderer.stair_geometry.unsupported'],
+    diagnosticCodes: [
+      'renderer.stair_geometry.degraded',
+      'renderer.stair_geometry.unsupported',
+      'renderer.stair_geometry.unsupported_shape',
+    ],
     limitations: [
       'Runs, landings, winding segments, shafts, handrails, and headroom evidence need separate coverage.',
     ],
@@ -339,6 +361,8 @@ export const RENDERER_SUPPORT_MATRIX: RendererSupportMatrixEntry[] = [
     diagnosticCodes: [
       'renderer.railing_geometry.degraded',
       'renderer.railing_geometry.unsupported',
+      'renderer.railing_geometry.unsupported_baluster_pattern',
+      'renderer.railing_geometry.missing_host_edge',
     ],
     limitations: [
       'Guard, handrail, baluster spacing, hosted edge, and material-slot fidelity need explicit diagnostics.',
@@ -360,6 +384,7 @@ export const RENDERER_SUPPORT_MATRIX: RendererSupportMatrixEntry[] = [
     diagnosticCodes: [
       'renderer.room_visualization.degenerate_outline',
       'renderer.room_visualization.volume_unsupported',
+      'renderer.room_visualization.unsupported',
       'renderer.room_separation.degenerate_segment',
     ],
     limitations: [

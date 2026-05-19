@@ -397,6 +397,41 @@ function normalizedRendererDiagnosticRows(artifact, source) {
   });
 }
 
+function normalizedElementRenderStatusRows(artifact, source) {
+  if (!isObject(artifact)) return [];
+  const statuses = Array.isArray(artifact.elementRenderStatuses)
+    ? artifact.elementRenderStatuses
+    : Array.isArray(artifact.rendererElementStatuses)
+      ? artifact.rendererElementStatuses
+      : [];
+  return statuses.filter(isObject).flatMap((status, index) => {
+    const geometryState = normalize(status.geometry?.state);
+    const implementationState = normalize(status.implementation?.state);
+    const exportState = normalize(status.exportSupport?.state);
+    const blocking = status.blocking === true;
+    const unsupported =
+      blocking ||
+      geometryState === 'unsupported' ||
+      implementationState === 'unsupported' ||
+      exportState === 'unsupported';
+    if (!unsupported) return [];
+    const codes = uniqueStrings(status.diagnosticCodes);
+    return [
+      {
+        source,
+        code: firstString(codes[0], 'renderer.element_render_status.unsupported'),
+        severity: 'error',
+        count: 1,
+        elementIds: uniqueStrings(status.elementIds, status.elementId),
+        messages: [
+          `${firstString(status.kind, 'element')} render status is unsupported or blocking.`,
+        ],
+        path: `elementRenderStatuses.${index}`,
+      },
+    ];
+  });
+}
+
 function collectRendererDiagnosticArtifactBlockers(evidenceDir) {
   const artifacts = [
     [
@@ -418,9 +453,10 @@ function collectRendererDiagnosticArtifactBlockers(evidenceDir) {
     ['renderer-diagnostics', readEvidenceJson(evidenceDir, 'renderer-diagnostics.json')],
     ['renderer-diagnostics', readEvidenceJson(evidenceDir, 'live/renderer-diagnostics.json')],
   ];
-  return artifacts.flatMap(([source, artifact]) =>
-    normalizedRendererDiagnosticRows(artifact, source),
-  );
+  return artifacts.flatMap(([source, artifact]) => [
+    ...normalizedRendererDiagnosticRows(artifact, source),
+    ...normalizedElementRenderStatusRows(artifact, source),
+  ]);
 }
 
 function mergeDiagnosticRows(rows) {

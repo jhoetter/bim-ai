@@ -272,4 +272,131 @@ describe('element render feature status', () => {
       blocking: true,
     });
   });
+
+  it('reports geometry render status across wall, opening, roof, stair, railing, and room classes', () => {
+    const wall: Extract<Element, { kind: 'wall' }> = {
+      kind: 'wall',
+      id: 'wall-degenerate',
+      name: 'Degenerate wall',
+      levelId: 'level-1',
+      start: { xMm: 0, yMm: 0 },
+      end: { xMm: 0, yMm: 0 },
+      thicknessMm: 200,
+      heightMm: 3000,
+    };
+    const opening: Extract<Element, { kind: 'wall_opening' }> = {
+      kind: 'wall_opening',
+      id: 'opening-status',
+      name: 'Opening',
+      hostWallId: wall.id,
+      alongTStart: 0.4,
+      alongTEnd: 0.55,
+      sillHeightMm: 0,
+      headHeightMm: 2100,
+    };
+    const roof = {
+      kind: 'roof',
+      id: 'roof-unsupported',
+      name: 'Unsupported roof',
+      referenceLevelId: 'level-1',
+      roofGeometryMode: 'folded_shell',
+      footprintMm: [
+        { xMm: 0, yMm: 0 },
+        { xMm: 5000, yMm: 0 },
+        { xMm: 5000, yMm: 3000 },
+        { xMm: 0, yMm: 3000 },
+      ],
+    } as unknown as Extract<Element, { kind: 'roof' }>;
+    const stair = {
+      kind: 'stair',
+      id: 'stair-unsupported-shape',
+      name: 'Unsupported stair',
+      baseLevelId: 'level-1',
+      topLevelId: 'level-2',
+      shape: 'winder',
+      runStartMm: { xMm: 0, yMm: 0 },
+      runEndMm: { xMm: 2000, yMm: 0 },
+      widthMm: 900,
+      riserMm: 175,
+      treadMm: 280,
+    } as unknown as Extract<Element, { kind: 'stair' }>;
+    const railing = {
+      kind: 'railing',
+      id: 'rail-missing-edge',
+      name: 'Guard',
+      levelId: 'level-2',
+      pathMm: [
+        { xMm: 0, yMm: 0 },
+        { xMm: 2000, yMm: 0 },
+      ],
+      props: { requiresHostedEdge: true },
+    } as Extract<Element, { kind: 'railing' }>;
+    const room = {
+      kind: 'room',
+      id: 'room-volume',
+      name: 'Room',
+      levelId: 'level-1',
+      outlineMm: [
+        { xMm: 0, yMm: 0 },
+        { xMm: 3000, yMm: 0 },
+        { xMm: 3000, yMm: 3000 },
+        { xMm: 0, yMm: 3000 },
+      ],
+      props: { render3dVolume: true },
+    } as Extract<Element, { kind: 'room' }>;
+
+    const statuses = byId(
+      collectElementRenderFeatureStatuses({
+        elements: [wall, opening, roof, stair, railing, room],
+      }),
+    );
+
+    expect(statuses['wall-degenerate']).toMatchObject({
+      geometry: {
+        state: 'unsupported',
+        feature: 'wall-geometry',
+        diagnosticCodes: ['renderer.wall_geometry.degenerate'],
+        blocking: true,
+      },
+      diagnosticCodes: expect.arrayContaining(['renderer.wall_geometry.degenerate']),
+    });
+    expect(statuses['opening-status']).toMatchObject({
+      geometry: {
+        state: 'partial',
+        feature: 'hosted-opening-cut',
+        implementation: 'analytic-cut',
+      },
+      exportSupport: { state: 'partial' },
+    });
+    expect(statuses['roof-unsupported']).toMatchObject({
+      geometry: {
+        state: 'unsupported',
+        diagnosticCodes: ['renderer.roof_geometry.unsupported'],
+        blocking: true,
+      },
+    });
+    expect(statuses['stair-unsupported-shape']).toMatchObject({
+      geometry: {
+        state: 'unsupported',
+        diagnosticCodes: ['renderer.stair_geometry.unsupported_shape'],
+      },
+    });
+    expect(statuses['rail-missing-edge']).toMatchObject({
+      geometry: {
+        state: 'unsupported',
+        diagnosticCodes: ['renderer.railing_geometry.missing_host_edge'],
+      },
+    });
+    expect(statuses['room-volume']).toMatchObject({
+      geometry: {
+        state: 'partial',
+        implementation: 'diagnostic-overlay',
+        diagnosticCodes: ['renderer.room_visualization.volume_unsupported'],
+        blocking: false,
+      },
+      implementation: {
+        geometryImplementation: 'diagnostic-overlay',
+      },
+    });
+  });
 });

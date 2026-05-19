@@ -68,11 +68,39 @@ export type ElementAssetRenderStatus = {
   skippedSubfeatures: string[];
 };
 
+export type ElementGeometryRenderStatus = {
+  state: RenderFeatureState;
+  feature:
+    | 'native-geometry'
+    | 'wall-geometry'
+    | 'hosted-opening-cut'
+    | 'roof-geometry'
+    | 'roof-opening-cut'
+    | 'slab-opening-cut'
+    | 'stair-geometry'
+    | 'railing-geometry'
+    | 'room-visualization'
+    | 'diagnostic-helper'
+    | 'not_applicable';
+  implementation:
+    | 'native'
+    | 'analytic-cut'
+    | 'diagnostic-overlay'
+    | 'procedural-proxy'
+    | 'proxy-fallback'
+    | 'not_rendered'
+    | 'unknown';
+  diagnosticCodes: string[];
+  blocking: boolean;
+  skippedSubfeatures: string[];
+};
+
 export type ElementRenderImplementationStatus = {
   state: RenderFeatureState;
   geometryImplementation:
     | 'native'
     | 'analytic-cut'
+    | 'diagnostic-overlay'
     | 'procedural-proxy'
     | 'proxy-fallback'
     | 'not_rendered'
@@ -95,6 +123,7 @@ export type ElementRenderFeatureStatus = {
   elementId: string;
   kind: Element['kind'];
   material: ElementMaterialRenderStatus;
+  geometry: ElementGeometryRenderStatus;
   family: ElementFamilyRenderStatus;
   asset: ElementAssetRenderStatus;
   lens: ElementLensRenderStatus;
@@ -180,24 +209,33 @@ export function elementRenderFeatureStatus(
   options: { lensMode?: LensMode | null; viewLensMode?: ViewLensMode | null } = {},
 ): ElementRenderFeatureStatus {
   const material = materialStatus(materialEntry);
+  const geometry = geometryStatus(element);
   const family = familyStatus(element, elementsById, materialEntry);
   const asset = assetStatus(element, elementsById);
   const lens = lensStatus(element, options);
   const skippedSubfeatures = uniqueSorted([
+    ...geometry.skippedSubfeatures,
     ...material.flags.map((flag) => `material.${flag}`),
     ...family.skippedSubfeatures,
     ...asset.skippedSubfeatures,
     ...lens.skippedSubfeatures,
   ]);
-  const implementation = implementationStatus(material, family, asset, skippedSubfeatures);
-  const exportSupport = exportStatus(element, implementation);
-  const diagnosticCodes = diagnosticCodesFor(material, family, asset);
+  const implementation = implementationStatus(
+    material,
+    geometry,
+    family,
+    asset,
+    skippedSubfeatures,
+  );
+  const exportSupport = exportStatus(element, geometry, implementation);
+  const diagnosticCodes = diagnosticCodesFor(material, geometry, family, asset);
 
   return {
     format: 'elementRenderFeatureStatus_v1',
     elementId: element.id,
     kind: element.kind,
     material,
+    geometry,
     family,
     asset,
     lens,
@@ -205,6 +243,7 @@ export function elementRenderFeatureStatus(
     exportSupport,
     diagnosticCodes,
     blocking:
+      geometry.blocking ||
       material.state === 'unresolved' ||
       family.state === 'unsupported' ||
       asset.state === 'unsupported',
@@ -431,16 +470,214 @@ function assetStatus(
   };
 }
 
+function geometryStatus(element: Element): ElementGeometryRenderStatus {
+  const markers = unsupportedRenderFeatureMarkers(element);
+  const markerDiagnostics = markers.length ? [geometryUnsupportedCode(element)] : [];
+  const markerSkipped = markers.map((marker) => `geometry.unsupported.${marker}`);
+  const props = (element as { props?: Record<string, unknown> }).props ?? {};
+
+  switch (element.kind) {
+    case 'wall': {
+      const length = distance(element.start, element.end);
+      const invalid =
+        length < 1 || !positiveNumber(element.thicknessMm) || !positiveNumber(element.heightMm);
+      return geometryResult({
+        state: invalid || markers.length ? 'unsupported' : 'supported',
+        feature: 'wall-geometry',
+        implementation: 'native',
+        diagnosticCodes: [
+          ...(invalid ? ['renderer.wall_geometry.degenerate'] : []),
+          ...markerDiagnostics,
+        ],
+        blocking: invalid || markers.length > 0,
+        skippedSubfeatures: [...(invalid ? ['geometry.wall_degenerate'] : []), ...markerSkipped],
+      });
+    }
+
+    case 'door':
+    case 'window':
+    case 'wall_opening':
+      return geometryResult({
+        state: markers.length ? 'unsupported' : 'partial',
+        feature: 'hosted-opening-cut',
+        implementation: 'analytic-cut',
+        diagnosticCodes: markerDiagnostics,
+        blocking: markers.length > 0,
+        skippedSubfeatures: ['geometry.hosted_opening_cut_parity_partial', ...markerSkipped],
+      });
+
+    case 'roof': {
+      const mode = String(
+        (element as { roofGeometryMode?: unknown; shape?: unknown }).roofGeometryMode ??
+          (element as { shape?: unknown }).shape ??
+          'flat',
+      );
+      const unsupportedMode = !knownRoofGeometryMode(mode);
+      const partialMode = mode !== 'flat';
+      return geometryResult({
+        state:
+          unsupportedMode || markers.length ? 'unsupported' : partialMode ? 'partial' : 'supported',
+        feature: 'roof-geometry',
+        implementation: 'native',
+        diagnosticCodes: [
+          ...(unsupportedMode ? ['renderer.roof_geometry.unsupported'] : []),
+          ...markerDiagnostics,
+        ],
+        blocking: unsupportedMode || markers.length > 0,
+        skippedSubfeatures: [
+          ...(partialMode && !unsupportedMode ? [`geometry.roof_${mode}_parity_partial`] : []),
+          ...(unsupportedMode ? [`geometry.roof_${mode}_unsupported`] : []),
+          ...markerSkipped,
+        ],
+      });
+    }
+
+    case 'roof_opening':
+      return geometryResult({
+        state: markers.length ? 'unsupported' : 'partial',
+        feature: 'roof-opening-cut',
+        implementation: 'analytic-cut',
+        diagnosticCodes: markerDiagnostics,
+        blocking: markers.length > 0,
+        skippedSubfeatures: ['geometry.roof_opening_cut_parity_partial', ...markerSkipped],
+      });
+
+    case 'slab_opening':
+      return geometryResult({
+        state: markers.length ? 'unsupported' : 'partial',
+        feature: 'slab-opening-cut',
+        implementation: 'analytic-cut',
+        diagnosticCodes: markerDiagnostics,
+        blocking: markers.length > 0,
+        skippedSubfeatures: ['geometry.slab_opening_cut_parity_partial', ...markerSkipped],
+      });
+
+    case 'stair': {
+      const shape = (element as { shape?: string }).shape;
+      const unsupportedShape = !knownStairShape(shape);
+      return geometryResult({
+        state: unsupportedShape || markers.length ? 'unsupported' : 'partial',
+        feature: 'stair-geometry',
+        implementation: 'native',
+        diagnosticCodes: [
+          ...(unsupportedShape ? ['renderer.stair_geometry.unsupported_shape'] : []),
+          ...markerDiagnostics,
+        ],
+        blocking: unsupportedShape || markers.length > 0,
+        skippedSubfeatures: [
+          'geometry.stair_export_parity_partial',
+          ...(unsupportedShape ? [`geometry.stair_shape_${shape ?? 'unknown'}_unsupported`] : []),
+          ...markerSkipped,
+        ],
+      });
+    }
+
+    case 'railing': {
+      const balusterRule = (element as { balusterPattern?: { rule?: string } }).balusterPattern
+        ?.rule;
+      const unsupportedBaluster = !knownBalusterRule(balusterRule);
+      const requiresHostedEdge =
+        props.requiresHostedEdge === true ||
+        (element as { requiresHostedEdge?: boolean }).requiresHostedEdge === true;
+      const missingHostEdge = requiresHostedEdge && !hasRailingHostEdgeEvidence(element);
+      return geometryResult({
+        state: unsupportedBaluster || missingHostEdge || markers.length ? 'unsupported' : 'partial',
+        feature: 'railing-geometry',
+        implementation: 'native',
+        diagnosticCodes: [
+          ...(unsupportedBaluster
+            ? ['renderer.railing_geometry.unsupported_baluster_pattern']
+            : []),
+          ...(missingHostEdge ? ['renderer.railing_geometry.missing_host_edge'] : []),
+          ...markerDiagnostics,
+        ],
+        blocking: unsupportedBaluster || missingHostEdge || markers.length > 0,
+        skippedSubfeatures: [
+          'geometry.railing_export_parity_partial',
+          ...(unsupportedBaluster
+            ? [`geometry.railing_baluster_${balusterRule ?? 'unknown'}_unsupported`]
+            : []),
+          ...(missingHostEdge ? ['geometry.railing_host_edge_missing'] : []),
+          ...markerSkipped,
+        ],
+      });
+    }
+
+    case 'room': {
+      const unsupportedVolume = props.render3dVolume === true || props.showRoomVolume === true;
+      return geometryResult({
+        state: unsupportedVolume || markers.length ? 'partial' : 'supported',
+        feature: 'room-visualization',
+        implementation: 'diagnostic-overlay',
+        diagnosticCodes: [
+          ...(unsupportedVolume ? ['renderer.room_visualization.volume_unsupported'] : []),
+          ...markerDiagnostics,
+        ],
+        blocking: markers.length > 0,
+        skippedSubfeatures: [
+          ...(unsupportedVolume ? ['geometry.room_3d_volume_unsupported'] : []),
+          ...markerSkipped,
+        ],
+      });
+    }
+
+    case 'room_separation':
+      return geometryResult({
+        state: markers.length ? 'unsupported' : 'supported',
+        feature: 'diagnostic-helper',
+        implementation: 'diagnostic-overlay',
+        diagnosticCodes: markerDiagnostics,
+        blocking: markers.length > 0,
+        skippedSubfeatures: markerSkipped,
+      });
+
+    case 'family_instance':
+    case 'placed_asset':
+      return geometryResult({
+        state: 'not_applicable',
+        feature: 'not_applicable',
+        implementation: 'not_rendered',
+        diagnosticCodes: [],
+        blocking: false,
+        skippedSubfeatures: [],
+      });
+
+    default:
+      return geometryResult({
+        state: markers.length ? 'unsupported' : 'supported',
+        feature: 'native-geometry',
+        implementation: 'native',
+        diagnosticCodes: markerDiagnostics,
+        blocking: markers.length > 0,
+        skippedSubfeatures: markerSkipped,
+      });
+  }
+}
+
+function geometryResult(status: ElementGeometryRenderStatus): ElementGeometryRenderStatus {
+  return {
+    ...status,
+    diagnosticCodes: uniqueSorted(status.diagnosticCodes),
+    skippedSubfeatures: uniqueSorted(status.skippedSubfeatures),
+  };
+}
+
 function implementationStatus(
   material: ElementMaterialRenderStatus,
+  geometry: ElementGeometryRenderStatus,
   family: ElementFamilyRenderStatus,
   asset: ElementAssetRenderStatus,
   skippedSubfeatures: string[],
 ): ElementRenderImplementationStatus {
-  const state = strongestFeatureState([materialFeatureState(material), family.state, asset.state]);
+  const state = strongestFeatureState([
+    geometry.state,
+    materialFeatureState(material),
+    family.state,
+    asset.state,
+  ]);
   return {
     state,
-    geometryImplementation: geometryImplementationFor(family, asset),
+    geometryImplementation: geometryImplementationFor(geometry, family, asset),
     materialImplementation: material.source,
     skippedSubfeatures,
   };
@@ -448,6 +685,7 @@ function implementationStatus(
 
 function exportStatus(
   element: Element,
+  geometry: ElementGeometryRenderStatus,
   implementation: ElementRenderImplementationStatus,
 ): ElementExportRenderStatus {
   const booleanCutKinds = new Set([
@@ -463,7 +701,9 @@ function exportStatus(
       ? 'unsupported'
       : booleanCutKinds.has(element.kind) || partialKinds.has(element.kind)
         ? 'partial'
-        : 'supported';
+        : geometry.state === 'partial'
+          ? 'partial'
+          : 'supported';
   const skippedSubfeatures = state === 'partial' ? [`export.${element.kind}_parity_partial`] : [];
   return {
     state,
@@ -477,10 +717,11 @@ function exportStatus(
 
 function diagnosticCodesFor(
   material: ElementMaterialRenderStatus,
+  geometry: ElementGeometryRenderStatus,
   family: ElementFamilyRenderStatus,
   asset: ElementAssetRenderStatus,
 ): string[] {
-  const codes: string[] = [];
+  const codes: string[] = [...geometry.diagnosticCodes];
   if (material.state === 'fallback') codes.push('renderer.material.fallback');
   if (material.state === 'unresolved') codes.push('renderer.material.unresolved');
   if (family.state === 'unsupported') codes.push('renderer.family_instance.unsupported');
@@ -508,14 +749,17 @@ function strongestFeatureState(states: RenderFeatureState[]): RenderFeatureState
 }
 
 function geometryImplementationFor(
+  geometry: ElementGeometryRenderStatus,
   family: ElementFamilyRenderStatus,
   asset: ElementAssetRenderStatus,
 ): ElementRenderImplementationStatus['geometryImplementation'] {
   if (asset.state !== 'not_applicable') {
     return asset.proxyFallback ? 'proxy-fallback' : 'procedural-proxy';
   }
-  if (family.state === 'not_applicable') return 'native';
-  if (family.proxyFallback) return 'proxy-fallback';
+  if (family.state !== 'not_applicable') {
+    return family.proxyFallback ? 'proxy-fallback' : 'native';
+  }
+  if (geometry.state !== 'not_applicable') return geometry.implementation;
   return 'native';
 }
 
@@ -723,6 +967,96 @@ function strongerDimensionSource(...sources: DimensionSource[]): DimensionSource
     not_applicable: 5,
   };
   return [...sources].sort((a, b) => rank[a] - rank[b])[0] ?? 'not_applicable';
+}
+
+function unsupportedRenderFeatureMarkers(element: Element): string[] {
+  const record = element as Element & {
+    props?: Record<string, unknown>;
+    unsupportedRenderFeatures?: unknown;
+    rendererUnsupportedFeatures?: unknown;
+  };
+  const values = [
+    record.unsupportedRenderFeatures,
+    record.rendererUnsupportedFeatures,
+    record.props?.unsupportedRenderFeatures,
+    record.props?.rendererUnsupportedFeatures,
+    nestedRecordValue(record.props?.renderDiagnostics, 'unsupportedFeatures'),
+  ];
+  return uniqueSorted(values.flatMap(normalizeMarkerList));
+}
+
+function geometryUnsupportedCode(element: Element): string {
+  if (element.kind === 'wall') return 'renderer.wall_geometry.unsupported';
+  if (element.kind === 'door' || element.kind === 'window' || element.kind === 'wall_opening') {
+    return 'renderer.wall_cut.unsupported';
+  }
+  if (element.kind === 'roof') return 'renderer.roof_geometry.unsupported';
+  if (element.kind === 'roof_opening') return 'renderer.roof_opening.unsupported';
+  if (element.kind === 'slab_opening') return 'renderer.slab_opening.unsupported';
+  if (element.kind === 'stair') return 'renderer.stair_geometry.unsupported';
+  if (element.kind === 'railing') return 'renderer.railing_geometry.unsupported';
+  if (element.kind === 'room' || element.kind === 'room_separation') {
+    return 'renderer.room_visualization.unsupported';
+  }
+  return 'renderer.element_geometry.unsupported';
+}
+
+function nestedRecordValue(value: unknown, key: string): unknown {
+  if (!value || typeof value !== 'object') return undefined;
+  return (value as Record<string, unknown>)[key];
+}
+
+function normalizeMarkerList(value: unknown): string[] {
+  if (Array.isArray(value)) {
+    return value.filter((entry): entry is string => typeof entry === 'string' && entry.length > 0);
+  }
+  if (typeof value === 'string' && value.length > 0) return [value];
+  return [];
+}
+
+function knownRoofGeometryMode(mode: string): boolean {
+  return [
+    'flat',
+    'shed',
+    'gable',
+    'asymmetric_gable',
+    'hip',
+    'hip_like',
+    'mono_slope',
+    'terrace',
+    'sketch',
+  ].includes(mode);
+}
+
+function knownStairShape(shape: string | undefined): boolean {
+  return (
+    shape === undefined ||
+    shape === 'straight' ||
+    shape === 'l_shape' ||
+    shape === 'u_shape' ||
+    shape === 'spiral' ||
+    shape === 'sketch'
+  );
+}
+
+function knownBalusterRule(rule: string | undefined): boolean {
+  return rule === undefined || rule === 'glass_panel' || rule === 'cable' || rule === 'vertical';
+}
+
+function hasRailingHostEdgeEvidence(railing: Extract<Element, { kind: 'railing' }>): boolean {
+  if (railing.hostedStairId) return true;
+  const props = (railing as { props?: Record<string, unknown> }).props ?? {};
+  return ['hostEdgeId', 'hostedEdgeId', 'floorEdgeId', 'hostFloorId', 'edgeRef'].some(
+    (key) => typeof props[key] === 'string' && String(props[key]).length > 0,
+  );
+}
+
+function positiveNumber(value: unknown): boolean {
+  return typeof value === 'number' && Number.isFinite(value) && value > 0;
+}
+
+function distance(left: { xMm: number; yMm: number }, right: { xMm: number; yMm: number }): number {
+  return Math.hypot(left.xMm - right.xMm, left.yMm - right.yMm);
 }
 
 function lensStatus(

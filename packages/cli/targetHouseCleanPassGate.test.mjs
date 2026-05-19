@@ -158,6 +158,48 @@ test('fails on target-house-critical renderer diagnostics evidence blockers', ()
   ]);
 });
 
+test('fails on unsupported per-element renderer status in diagnostic packets', () => {
+  const dir = tempEvidenceDir();
+  writeBaseEvidence(dir);
+  writeJson(dir, 'renderer-diagnostic-packet.json', {
+    format: 'rendererDiagnosticPacket_v1',
+    generatedAtIso: GENERATED_AT,
+    supportMatrixDigest: 'rsm-00000001',
+    diagnostics: [],
+    elementRenderStatuses: [
+      {
+        format: 'elementRenderFeatureStatus_v1',
+        elementId: 'roof-folded-shell',
+        kind: 'roof',
+        geometry: {
+          state: 'unsupported',
+          feature: 'roof-geometry',
+          implementation: 'native',
+          diagnosticCodes: ['renderer.roof_geometry.unsupported'],
+          blocking: true,
+          skippedSubfeatures: ['geometry.roof_folded_shell_unsupported'],
+        },
+        implementation: {
+          state: 'unsupported',
+          geometryImplementation: 'native',
+        },
+        exportSupport: {
+          state: 'unsupported',
+        },
+        diagnosticCodes: ['renderer.roof_geometry.unsupported'],
+        blocking: true,
+      },
+    ],
+  });
+
+  const result = evaluateTargetHouseCleanPassGate({ evidenceDir: dir, generatedAt: GENERATED_AT });
+
+  assert.equal(result.ok, false);
+  assert.equal(result.summary.rendererBlockerCount, 1);
+  assert.equal(result.rendererBlockers[0].code, 'renderer.roof_geometry.unsupported');
+  assert.deepEqual(result.rendererBlockers[0].elementIds, ['roof-folded-shell']);
+});
+
 test('does not block optional full raster unavailable when deterministic sheet surrogate evidence is complete', () => {
   const dir = tempEvidenceDir();
   writeBaseEvidence(dir);

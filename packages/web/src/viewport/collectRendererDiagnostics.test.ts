@@ -167,6 +167,18 @@ describe('collectRendererDiagnostics', () => {
       viewId: 'hosted-opening-evidence',
     });
     expect(packet.supportMatrixDigest).toMatch(/^rsm-[0-9a-f]{8}$/);
+    expect(packet.elementRenderStatuses).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          format: 'elementRenderFeatureStatus_v1',
+          elementId: 'floating-door',
+          geometry: expect.objectContaining({
+            feature: 'hosted-opening-cut',
+            implementation: 'analytic-cut',
+          }),
+        }),
+      ]),
+    );
     expect(packet.diagnostics).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
@@ -182,6 +194,85 @@ describe('collectRendererDiagnostics', () => {
         }),
       ]),
     );
+  });
+
+  it('normalizes status-derived geometry blockers for wall, roof, stair, and railing classes', () => {
+    const elements = [
+      wall({
+        id: 'wall-degenerate',
+        start: { xMm: 0, yMm: 0 },
+        end: { xMm: 0, yMm: 0 },
+      }),
+      {
+        kind: 'roof',
+        id: 'roof-folded-shell',
+        name: 'Folded shell',
+        referenceLevelId: 'level-1',
+        roofGeometryMode: 'folded_shell',
+        footprintMm: [
+          { xMm: 0, yMm: 0 },
+          { xMm: 5000, yMm: 0 },
+          { xMm: 5000, yMm: 3000 },
+          { xMm: 0, yMm: 3000 },
+        ],
+      } as unknown as Extract<Element, { kind: 'roof' }>,
+      {
+        kind: 'stair',
+        id: 'stair-winder',
+        name: 'Winder',
+        baseLevelId: 'level-1',
+        topLevelId: 'level-2',
+        shape: 'winder',
+        runStartMm: { xMm: 0, yMm: 0 },
+        runEndMm: { xMm: 2000, yMm: 0 },
+        widthMm: 900,
+        riserMm: 175,
+        treadMm: 280,
+      } as unknown as Extract<Element, { kind: 'stair' }>,
+      {
+        kind: 'railing',
+        id: 'rail-edge-missing',
+        name: 'Guard',
+        levelId: 'level-2',
+        pathMm: [
+          { xMm: 0, yMm: 0 },
+          { xMm: 2000, yMm: 0 },
+        ],
+        props: { requiresHostedEdge: true },
+      } as Extract<Element, { kind: 'railing' }>,
+    ];
+
+    const diagnostics = collectRendererDiagnostics({
+      elements,
+      viewId: 'geometry-status-golden',
+      evidence: { source: 'test' },
+    });
+    const byCode = Object.fromEntries(
+      diagnostics.map((diagnostic) => [diagnostic.code, diagnostic]),
+    );
+
+    expect(byCode['renderer.wall_geometry.degenerate']).toMatchObject({
+      issueClass: 'model-invalid',
+      feature: 'wall-cut',
+      elementIds: ['wall-degenerate'],
+      trackerItems: ['BIR-I02', 'BIR-I03', 'BIR-I05', 'BIR-J01'],
+    });
+    expect(byCode['renderer.roof_geometry.unsupported']).toMatchObject({
+      issueClass: 'renderer-unsupported',
+      feature: 'roof-opening',
+      elementIds: ['roof-folded-shell'],
+      trackerItems: ['BIR-I02', 'BIR-I03', 'BIR-I05', 'BIR-J02'],
+    });
+    expect(byCode['renderer.stair_geometry.unsupported_shape']).toMatchObject({
+      issueClass: 'renderer-unsupported',
+      feature: 'stair-geometry',
+      elementIds: ['stair-winder'],
+    });
+    expect(byCode['renderer.railing_geometry.missing_host_edge']).toMatchObject({
+      issueClass: 'model-invalid',
+      feature: 'railing-geometry',
+      elementIds: ['rail-edge-missing'],
+    });
   });
 
   it('surfaces per-element material, family, and asset render-status blockers as diagnostics', () => {
