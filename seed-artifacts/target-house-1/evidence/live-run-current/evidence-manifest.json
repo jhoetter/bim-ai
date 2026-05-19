@@ -1,17 +1,17 @@
 {
   "schemaVersion": "sketch.evidence.collection.v1",
-  "generatedAt": "2026-05-19T18:55:39.833045Z",
+  "generatedAt": "2026-05-19T19:28:21.020126Z",
   "modelId": "target-house-1-offline-regenerated",
   "revision": 2,
   "phaseId": null,
   "baseUrl": null,
   "currentHead": {
-    "gitHead": "a58ae4c792c04ed21ddbba3e7bd1668bb9985c3d",
+    "gitHead": "ba06ccd1fd8d7903305b361b85853e375188103b",
     "modelId": "target-house-1-offline-regenerated",
     "modelRevision": 2,
     "bundleSha256": "2f2c1a220f13a1c07b0d0b1d08ab601d6c79b775ea8838f574060b5ce25d7f6c",
     "commandCount": 245,
-    "advisorRuleDigest": "38f65397a71b48380496ffca6df72c5ac9c0aac470d086f28afc46559e602b8c",
+    "advisorRuleDigest": "4024259dec1c2e60c2df697ef7f22c7baa0fc6d1ec9e87e87d1312bf8db18fd9",
     "advisorRuleFiles": [
       "app/bim_ai/constructability_advisories.py",
       "app/bim_ai/constructability_report.py",

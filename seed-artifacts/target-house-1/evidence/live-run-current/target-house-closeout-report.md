@@ -5,7 +5,7 @@
 Target: `target-house-1`
 Schema: `target-house-closeout-report.v1`
 Generated at: `1970-01-01T00:00:00.000Z`
-Lineage digest: `sha256:d5cbe432c8ce8c166fd0d861e375576875bdd6f6308c8fd9880d4a5fd347b582`
+Lineage digest: `sha256:9312640775e8967f3aa438b423e4da4c040823bb45ba3cfa274dbf2fdb2a11f6`
 
 ## Review Status
 
@@ -35,8 +35,8 @@ No Advisor findings is not target-house acceptance. It only means the normal Adv
 
 | Field | Value |
 | ----- | ----- |
-| current git head | a58ae4c792c04ed21ddbba3e7bd1668bb9985c3d |
-| evidence git head | a58ae4c792c04ed21ddbba3e7bd1668bb9985c3d |
+| current git head | ba06ccd1fd8d7903305b361b85853e375188103b |
+| evidence git head | ba06ccd1fd8d7903305b361b85853e375188103b |
 | evidence dir | seed-artifacts/target-house-1/evidence/live-run-current |
 | required features | spec/generated/target-house-1-required-features.json |
 | performance evidence | tmp/target-house-final-package/target-house-1/target-house-1-performance-evidence.json |
@@ -46,30 +46,30 @@ No Advisor findings is not target-house acceptance. It only means the normal Adv
 | required features digest | sha256:bc336b696cd98071971dded6b31272c401305aba210054984199bcc2a1662607 |
 | bundle digest | sha256:2f2c1a220f13a1c07b0d0b1d08ab601d6c79b775ea8838f574060b5ce25d7f6c |
 | snapshot digest | sha256:d6657c17c5a85adcf052d004b923041eedf62ca33d6f4ffb9988017786aebf02 |
-| Advisor rule digest | sha256:38f65397a71b48380496ffca6df72c5ac9c0aac470d086f28afc46559e602b8c |
+| Advisor rule digest | sha256:4024259dec1c2e60c2df697ef7f22c7baa0fc6d1ec9e87e87d1312bf8db18fd9 |
 | renderer support matrix digest | sha256:acf4cc7457a60f8f7e6b899d79e980335b4bd8382e98d54412a83077eb3c962d |
 | performance digest | sha256:61cb87c5b987fb939975ce20f0dfdd989ae155183eb5d1c4e7bce020ad9a6af7 |
-| final manifest digest | sha256:e232aa13406a692dbe6b00cd82f875913087652f2f55c60076420496e9980ee2 |
+| final manifest digest | sha256:e9242467ee339c0c18d05924d18f261b269be7e38599a984247459442ee0b4b8 |
 
 ## Evidence Files
 
 | Artifact | Path | Status | Digest | Summary |
 | -------- | ---- | ------ | ------ | ------- |
-| `tool_run_summary` | `seed-artifacts/target-house-1/evidence/live-run-current/tool-run-summary.json` | present | `sha256:97a632d596f1ca06aecaa67782f97150b76b737041f382543a6bde60656863a1` |  |
-| `evidence_manifest` | `seed-artifacts/target-house-1/evidence/live-run-current/evidence-manifest.json` | present | `sha256:f4a6b61da7e19a67685d7668ea1ce49c3943eecfab5afcacb16ab854dec76c47` | {"requiredVisualViewCount":8,"findingDispositionCount":0,"unclassifiedBlockingFindingCount":0} |
+| `tool_run_summary` | `seed-artifacts/target-house-1/evidence/live-run-current/tool-run-summary.json` | present | `sha256:80e5da20c108798260ac6e45d8c4aeb977b6e0093c77540cfcfc484cac167d6f` |  |
+| `evidence_manifest` | `seed-artifacts/target-house-1/evidence/live-run-current/evidence-manifest.json` | present | `sha256:be2e8c593aa6dff399ee570a6df4bec9bdceb78cbd98bd9c7a4281731b6eb617` | {"requiredVisualViewCount":8,"findingDispositionCount":0,"unclassifiedBlockingFindingCount":0} |
 | `snapshot` | `seed-artifacts/target-house-1/evidence/live-run-current/snapshot.json` | present | `sha256:d6657c17c5a85adcf052d004b923041eedf62ca33d6f4ffb9988017786aebf02` |  |
 | `target_house_evidence_acceptance` | `seed-artifacts/target-house-1/evidence/live-run-current/target-house-evidence-acceptance.json` | pass | `sha256:4d49c831d83406e0724908df8cd7961f0851957d2d4b932063d3f07bcaeaa97d` | {"requiredViewCount":8,"visualPassCount":8,"visualFailCount":0,"dataQualityPassCount":7,"dataQualityFailCount":0,"visualOk":true,"dataQualityOk":true} |
 | `acceptance_gates` | `seed-artifacts/target-house-1/evidence/live-run-current/acceptance-gates.json` | pass | `sha256:0569877d4fa28cca63f800d48790ff8a984c7d73cfdb1828b216bab73d5ac08f` | {"blockerCount":0,"toleranceCount":1,"advisorWarningCount":0,"visualFailCount":0,"visualNeedsReviewCount":7,"semanticVisualRequiredCount":305,"semanticVisualFailureCount":0,"semanticVisualGateBlockerCount":0,"rendererDiagnosticsBlockingCount":0,"bimIntegrityBlockingCount":0,"bimDataQualityErrorCount":0,"bimDataQualityPlannedCount":0,"exchangeValidationErrorCount":0,"exchangeValidationWarningCount":0,"evidenceFreshnessOk":true,"staleEvidenceCount":0,"missingEvidenceFreshnessCount":0} |
 | `advisor_all` | `seed-artifacts/target-house-1/evidence/live-run-current/advisor-all.json` | present | `sha256:998310c6b742474220a84dd231896f36d40bb0e5d271a1b8f4883b4d3e9a151b` |  |
-| `constructability_report` | `seed-artifacts/target-house-1/evidence/live-run-current/constructability-report.json` | pass | `sha256:0258beeec6e6be1122709fc5a7306718ef99e2c679d9c2ffa5e81f8ee20e3ced` | {"findingCount":0,"issueCount":0,"suppressedFindingCount":0,"rootCauseGroupCount":0} |
+| `constructability_report` | `seed-artifacts/target-house-1/evidence/live-run-current/constructability-report.json` | pass | `sha256:f8b6be26b858e8bae9f66008714f4931ccb94cbe454427ea35956ad69905ec14` | {"findingCount":0,"issueCount":0,"suppressedFindingCount":0,"rootCauseGroupCount":0} |
 | `geometry_diagnostic` | `seed-artifacts/target-house-1/evidence/live-run-current/target-house-geometry-diagnostic.json` | present | `sha256:0304af64b0a3b2a7bb08c30a5bf24ba804d72bd612d27534208ccb8bdfde1ab2` | {"total":0} |
 | `visual_gate` | `seed-artifacts/target-house-1/evidence/live-run-current/visual-gate.json` | present | `sha256:98c8a2771df3c720e407cba4312cb26df3b6e789400a2de48a4d36d937fb930d` | {"captureCount":7,"passCount":0,"needsReviewCount":7,"failCount":0,"blockingFailureCount":0} |
-| `visual_evidence_contract` | `seed-artifacts/target-house-1/evidence/live-run-current/visual-evidence-contract.json` | present | `sha256:49544d28f87f5ccc7832c7090caba4bac70d7fb44d502d7095628b4669eaa64e` |  |
-| `bim_data_quality` | `seed-artifacts/target-house-1/evidence/live-run-current/bim-data-quality.json` | pass | `sha256:355deb8e66fe523e38a706f91e8b7bf56bd92db14d5332845e5937315ce9a023` | {"passCount":10,"warningCount":0,"errorCount":0,"plannedCount":0} |
-| `export_validation` | `seed-artifacts/target-house-1/evidence/live-run-current/export-validation.json` | pass | `sha256:22b3e74f690833bd94655c1940a385103771c23b1ec77a30f8cc5d213f87ecc4` | {"passCount":5,"warningCount":0,"errorCount":0,"plannedCount":2} |
-| `tolerance_ledger` | `seed-artifacts/target-house-1/evidence/live-run-current/tolerance-ledger.json` | pass | `sha256:f7082ee0ac4db391b5e3a45dd7f4f6bb6d506cbea84de0a8dbbfc78ef0d5c597` | {"findingCount":0,"toleranceCount":0,"blockingFindingCount":0,"incompleteToleranceCount":0} |
+| `visual_evidence_contract` | `seed-artifacts/target-house-1/evidence/live-run-current/visual-evidence-contract.json` | present | `sha256:0dfcf8ad9d4d2b74ca2fb504d35f21299a9b40182fde3b6ab3d588ba98498665` |  |
+| `bim_data_quality` | `seed-artifacts/target-house-1/evidence/live-run-current/bim-data-quality.json` | pass | `sha256:b9cc1c62c57417cc97d80691725cd78b825c3cfbb4a668abda7b47d1bf19db73` | {"passCount":10,"warningCount":0,"errorCount":0,"plannedCount":0} |
+| `export_validation` | `seed-artifacts/target-house-1/evidence/live-run-current/export-validation.json` | pass | `sha256:d7dcbc769e2a81a6bda46e5fc3e2c0a70acdaf6aa42a1f92a2ab78568b54aad6` | {"passCount":5,"warningCount":0,"errorCount":0,"plannedCount":2} |
+| `tolerance_ledger` | `seed-artifacts/target-house-1/evidence/live-run-current/tolerance-ledger.json` | pass | `sha256:0fff7bda5d546a5f5b607eb34a6f1359f6266aa90bb2a313f22163e726720970` | {"findingCount":0,"toleranceCount":0,"blockingFindingCount":0,"incompleteToleranceCount":0} |
 | `screenshot_manifest` | `seed-artifacts/target-house-1/evidence/live-run-current/screenshot-manifest.json` | present | `sha256:75872ca1eb58256fc65b7a4fbb6c570988801bb748d231481256e8dd105fa765` |  |
-| `clean_pass_gate` | `seed-artifacts/target-house-1/evidence/live-run-current/clean-pass-gate.json` | pass | `sha256:dca993c59c1cda330002507e47e00f6dee77785e80394cead74395bb675c6eae` | {"p0ErrorCount":0,"rendererBlockerCount":0,"warningCount":0,"toleratedWarningGroupCount":0,"unresolvedWarningGroupCount":0,"toleranceCount":0,"blockerCount":0} |
+| `clean_pass_gate` | `seed-artifacts/target-house-1/evidence/live-run-current/clean-pass-gate.json` | pass | `sha256:de9330a1e5ae0ef966426b9555aa75cbd43fb552108690bc8ee6429f21df31fa` | {"p0ErrorCount":0,"rendererBlockerCount":0,"warningCount":0,"toleratedWarningGroupCount":0,"unresolvedWarningGroupCount":0,"toleranceCount":0,"blockerCount":0} |
 
 ## Source Features And Required BIM Targets
 
