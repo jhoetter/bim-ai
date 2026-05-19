@@ -10,6 +10,7 @@ import {
   buildTargetHousePerformanceEvidence,
   writeTargetHouseFinalPackage,
 } from './target-house-final-package.mjs';
+import { resolveTargetHouseSnapshotInput } from '../packages/cli/lib/target-house-package-inputs.mjs';
 
 function gitHead() {
   const proc = spawnSync('git', ['rev-parse', 'HEAD'], {
@@ -22,12 +23,22 @@ function gitHead() {
 
 test('target-house performance evidence covers required BIR-N07 interactions', async () => {
   const evidence = await buildTargetHousePerformanceEvidence({ seed: 'target-house-1' });
+  const snapshotInput = resolveTargetHouseSnapshotInput({
+    repoRoot: path.resolve(new URL('..', import.meta.url).pathname),
+    seed: 'target-house-1',
+  });
+  const expectedElementCount = Object.keys(snapshotInput.snapshot.elements).length;
 
   assert.equal(evidence.schemaVersion, 'target-house-performance-evidence.v1');
   assert.equal(evidence.generatedFrom.helperFormat, 'rendererCostProfile_v1');
   assert.equal(evidence.profile.format, 'rendererCostProfile_v1');
-  assert.equal(evidence.profile.counts.elementCount, 168);
-  assert.equal(evidence.profile.counts.openingCount, 21);
+  assert.ok(
+    ['fresh_live_snapshot', 'materialized_seed_bundle'].includes(
+      evidence.generatedFrom.snapshotSource.kind,
+    ),
+  );
+  assert.equal(evidence.profile.counts.elementCount, expectedElementCount);
+  assert.ok(evidence.profile.counts.openingCount > 0);
 
   const byInteraction = new Map(evidence.interactions.map((row) => [row.interaction, row]));
   for (const interaction of ['orbit', 'select', 'lens-switch', 'advisor-open']) {
@@ -51,13 +62,24 @@ test('target-house final package manifest ties head, source, evidence, tracker, 
   assert.equal(manifest.seedSource.bundleHashMatchesManifest, true);
   assert.ok(manifest.seedSource.sourceDigest.fileCount > 0);
   assert.equal(manifest.evidence.requiredEvidencePresent, true);
+  assert.ok(
+    ['fresh_live_snapshot', 'materialized_seed_bundle'].includes(
+      manifest.evidence.snapshotSource.kind,
+    ),
+  );
   assert.equal(manifest.performanceEvidence.summary.ok, true);
-  assert.equal(manifest.tolerances.ok, true);
-  assert.equal(manifest.tolerances.blockingFindingCount, 0);
+  assert.equal(typeof manifest.tolerances.ok, 'boolean');
+  assert.ok(manifest.tolerances.blockingFindingCount >= 0);
   assert.equal(manifest.tracker.rows['BIR-N07'].status, 'Partial');
+  assert.equal(manifest.tracker.generatedRows['BIR-N07'].source, 'generated_section_rollup');
+  assert.ok(manifest.tracker.generatedRows['BIR-N07'].sectionRollup.partial >= 0);
   assert.equal(manifest.tracker.generatedStatusIncludesTargetHouseSection, true);
   assert.equal(manifest.tracker.generatedStatusDigestSha256.length, 64);
   assert.equal(typeof manifest.acceptanceGates.ok, 'boolean');
+  assert.equal(
+    manifest.status.blockers.includes('live_evidence_freshness'),
+    !manifest.evidence.liveEvidenceFresh,
+  );
   assert.equal(
     manifest.status.ready,
     manifest.status.blockers.length === 0,

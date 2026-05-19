@@ -6,15 +6,13 @@ import {
   buildTargetHouseGeometryDiagnostic,
   readJson,
   renderTargetHouseGeometryDiagnosticMarkdown,
-  sha256File,
 } from './lib/target-house-geometry-diagnostics.mjs';
+import { resolveTargetHouseSnapshotInput } from './lib/target-house-package-inputs.mjs';
 
 const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
-const snapshotPath = resolve(
-  repoRoot,
-  'seed-artifacts/target-house-1/evidence/live-run-current/snapshot.json',
-);
-const requiredFeaturesPath = resolve(repoRoot, 'spec/generated/target-house-1-required-features.json');
+const seed = 'target-house-1';
+const snapshotInput = resolveTargetHouseSnapshotInput({ repoRoot, seed });
+const requiredFeaturesPath = snapshotInput.context.requiredFeaturesPath;
 const jsonReportPath = resolve(
   repoRoot,
   'seed-artifacts/target-house-1/evidence/live-run-current/target-house-geometry-diagnostic.json',
@@ -25,12 +23,10 @@ const markdownReportPath = resolve(
 );
 
 const report = buildTargetHouseGeometryDiagnostic({
-  snapshot: readJson(snapshotPath),
+  snapshot: snapshotInput.snapshot,
   requiredFeatures: readJson(requiredFeaturesPath),
-  sourceDigests: {
-    [snapshotPath.replace(`${repoRoot}/`, '')]: sha256File(snapshotPath),
-    [requiredFeaturesPath.replace(`${repoRoot}/`, '')]: sha256File(requiredFeaturesPath),
-  },
+  sourceDigests: snapshotInput.sourceDigests,
+  snapshotSource: snapshotInput.snapshotSource,
 });
 
 mkdirSync(dirname(jsonReportPath), { recursive: true });
@@ -39,3 +35,6 @@ writeFileSync(markdownReportPath, renderTargetHouseGeometryDiagnosticMarkdown(re
 
 console.log(`Wrote ${jsonReportPath.replace(`${repoRoot}/`, '')}`);
 console.log(`Wrote ${markdownReportPath.replace(`${repoRoot}/`, '')}`);
+if (!snapshotInput.snapshotSource.liveEvidenceFresh) {
+  console.log('Used materialized seed-bundle snapshot because live-run-current evidence is stale.');
+}

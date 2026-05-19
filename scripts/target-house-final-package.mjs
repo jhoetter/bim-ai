@@ -5,6 +5,11 @@ import path from 'node:path';
 import process from 'node:process';
 import { spawnSync } from 'node:child_process';
 
+import {
+  resolveTargetHouseSnapshotInput,
+  sha256Json,
+} from '../packages/cli/lib/target-house-package-inputs.mjs';
+
 const REPO_ROOT = path.resolve(new URL('..', import.meta.url).pathname);
 const DEFAULT_SEED = 'target-house-1';
 const DEFAULT_OUT_ROOT = path.join(REPO_ROOT, 'tmp', 'target-house-final-package');
@@ -440,13 +445,19 @@ function advisorFindingCount(advisorAll) {
   return 0;
 }
 
-export async function buildTargetHousePerformanceEvidence({ seed = DEFAULT_SEED } = {}) {
+export async function buildTargetHousePerformanceEvidence({
+  seed = DEFAULT_SEED,
+  snapshotInput = null,
+} = {}) {
   const artifactDir = path.join(REPO_ROOT, 'seed-artifacts', seed);
   const liveDir = path.join(artifactDir, 'evidence', 'live-run-current');
-  const snapshotPath = path.join(liveDir, 'snapshot.json');
   const advisorPath = path.join(liveDir, 'advisor-all.json');
-  const snapshot = await readJson(snapshotPath);
-  const advisorAll = (await exists(advisorPath)) ? await readJson(advisorPath) : null;
+  snapshotInput ??= resolveTargetHouseSnapshotInput({ repoRoot: REPO_ROOT, seed });
+  const snapshot = snapshotInput.snapshot;
+  const advisorAll =
+    snapshotInput.snapshotSource.liveEvidenceFresh && (await exists(advisorPath))
+      ? await readJson(advisorPath)
+      : null;
   const elements = normalizeElements(snapshot.elements);
   const selectedElementId =
     elements.find((element) => element.kind === 'door')?.id ?? elements.find(Boolean)?.id ?? null;
@@ -488,9 +499,14 @@ export async function buildTargetHousePerformanceEvidence({ seed = DEFAULT_SEED 
     schemaVersion: 'target-house-performance-evidence.v1',
     seed,
     generatedFrom: {
-      snapshotPath: portable(snapshotPath),
-      snapshotSha256: await sha256File(snapshotPath),
+      snapshotPath: snapshotInput.snapshotSource.path,
+      snapshotSource: snapshotInput.snapshotSource,
+      snapshotSha256: snapshotInput.snapshotSource.snapshotSha256 ?? sha256Json(snapshot),
+      sourceDigests: snapshotInput.sourceDigests,
       advisorPath: portable(advisorPath),
+      advisorFreshnessPolicy: snapshotInput.snapshotSource.liveEvidenceFresh
+        ? 'advisor-all.json consumed with fresh live snapshot'
+        : 'advisor-all.json ignored because live evidence is stale for the authoritative seed/source',
       rendererProfileHelper: 'packages/web/src/viewport/rendererCostProfile.ts',
       helperFormat: 'rendererCostProfile_v1',
       deterministicPackageMirror: portable(
@@ -586,16 +602,60 @@ function toleranceSummary(toleranceLedger) {
   };
 }
 
+function parseGeneratedSectionRollups(markdown) {
+  const rows = {};
+  const lines = markdown.split(/\r?\n/);
+  let inSection = false;
+  for (const line of lines) {
+    if (line.startsWith('## ')) {
+      inSection = line.trim() === '## By Tracker Section';
+      continue;
+    }
+    if (!inSection || !line.trim().startsWith('|')) continue;
+    const cells = line
+      .trim()
+      .slice(1, -1)
+      .split('|')
+      .map((cell) => cell.trim());
+    if (cells.length < 7 || cells[0] === 'Section' || cells[0].startsWith('---')) continue;
+    rows[cells[0]] = {
+      section: cells[0],
+      itemCount: Number(cells[1]),
+      done: Number(cells[2]),
+      partial: Number(cells[3]),
+      notStarted: Number(cells[4]),
+      blocked: Number(cells[5]),
+      complete: cells[6],
+    };
+  }
+  return rows;
+}
+
+function generatedRowsForFinalPackage(generatedStatusMarkdown, trackerRows) {
+  const generatedItemRows = parseTrackerRows(generatedStatusMarkdown, ['BIR-N07']);
+  if (generatedItemRows['BIR-N07']) return generatedItemRows;
+  const sectionRows = parseGeneratedSectionRollups(generatedStatusMarkdown);
+  return {
+    'BIR-N07': {
+      source: 'generated_section_rollup',
+      trackerRow: trackerRows['BIR-N07'] ?? null,
+      sectionRollup: sectionRows['N. Target-House-1 Specific Closure'] ?? null,
+    },
+  };
+}
+
 function closeoutStatus({
   requiredEvidence,
   performanceEvidence,
   acceptance,
   tolerance,
   trackerRows,
+  liveEvidenceFresh,
 }) {
   const missingEvidence = requiredEvidence.filter((row) => !row.present).map((row) => row.path);
   const blockers = [];
   if (missingEvidence.length > 0) blockers.push('missing_required_evidence');
+  if (!liveEvidenceFresh) blockers.push('live_evidence_freshness');
   if (!performanceEvidence.summary.ok) blockers.push('performance_budget');
   if (
     !tolerance.ok ||
@@ -613,7 +673,11 @@ function closeoutStatus({
   };
 }
 
-export async function buildTargetHouseFinalCloseoutManifest({ seed = DEFAULT_SEED } = {}) {
+export async function buildTargetHouseFinalCloseoutManifest({
+  seed = DEFAULT_SEED,
+  snapshotInput = null,
+  performanceEvidence = null,
+} = {}) {
   const artifactDir = path.join(REPO_ROOT, 'seed-artifacts', seed);
   const manifestPath = path.join(artifactDir, 'manifest.json');
   const manifest = await readJson(manifestPath);
@@ -633,7 +697,8 @@ export async function buildTargetHouseFinalCloseoutManifest({ seed = DEFAULT_SEE
   );
   const trackerMarkdown = await fs.readFile(trackerPath, 'utf8');
   const generatedStatusMarkdown = await fs.readFile(generatedStatusPath, 'utf8').catch(() => '');
-  const performanceEvidence = await buildTargetHousePerformanceEvidence({ seed });
+  snapshotInput ??= resolveTargetHouseSnapshotInput({ repoRoot: REPO_ROOT, seed });
+  performanceEvidence ??= await buildTargetHousePerformanceEvidence({ seed, snapshotInput });
   const requiredEvidence = await requiredEvidenceRows(liveDir);
   const acceptance = acceptanceSummary(await readJson(path.join(liveDir, 'acceptance-gates.json')));
   const tolerance = toleranceSummary(await readJson(path.join(liveDir, 'tolerance-ledger.json')));
@@ -653,13 +718,14 @@ export async function buildTargetHouseFinalCloseoutManifest({ seed = DEFAULT_SEE
     'BIR-N06',
     'BIR-N07',
   ]);
-  const generatedTrackerRows = parseTrackerRows(generatedStatusMarkdown, ['BIR-N07']);
+  const generatedTrackerRows = generatedRowsForFinalPackage(generatedStatusMarkdown, trackerRows);
   const status = closeoutStatus({
     requiredEvidence,
     performanceEvidence,
     acceptance,
     tolerance,
     trackerRows,
+    liveEvidenceFresh: snapshotInput.snapshotSource.liveEvidenceFresh,
   });
   const body = {
     schemaVersion: 'target-house-final-closeout-manifest.v1',
@@ -673,6 +739,8 @@ export async function buildTargetHouseFinalCloseoutManifest({ seed = DEFAULT_SEE
     seedSource,
     evidence: {
       liveEvidenceRoot: portable(liveDir),
+      liveEvidenceFresh: snapshotInput.snapshotSource.liveEvidenceFresh,
+      snapshotSource: snapshotInput.snapshotSource,
       requiredEvidence,
       requiredEvidencePresent: requiredEvidence.every((row) => row.present),
     },
@@ -706,8 +774,13 @@ export async function buildTargetHouseFinalCloseoutManifest({ seed = DEFAULT_SEE
 export async function writeTargetHouseFinalPackage({ seed = DEFAULT_SEED, outDir } = {}) {
   const resolvedOutDir = path.resolve(outDir ?? path.join(DEFAULT_OUT_ROOT, seed));
   await fs.mkdir(resolvedOutDir, { recursive: true });
-  const performanceEvidence = await buildTargetHousePerformanceEvidence({ seed });
-  const manifest = await buildTargetHouseFinalCloseoutManifest({ seed });
+  const snapshotInput = resolveTargetHouseSnapshotInput({ repoRoot: REPO_ROOT, seed });
+  const performanceEvidence = await buildTargetHousePerformanceEvidence({ seed, snapshotInput });
+  const manifest = await buildTargetHouseFinalCloseoutManifest({
+    seed,
+    snapshotInput,
+    performanceEvidence,
+  });
   const performancePath = path.join(resolvedOutDir, `${seed}-performance-evidence.json`);
   const manifestPath = path.join(resolvedOutDir, `${seed}-final-closeout-manifest.json`);
   await fs.writeFile(performancePath, `${JSON.stringify(performanceEvidence, null, 2)}\n`, 'utf8');

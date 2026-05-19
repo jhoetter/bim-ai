@@ -804,6 +804,7 @@ export function buildTargetHouseGeometryDiagnostic({
   requiredFeatures,
   targetId = DEFAULT_TARGET_ID,
   sourceDigests = {},
+  snapshotSource = null,
 } = {}) {
   const findings = [
     ...detachedOrFlyingFindings(snapshot),
@@ -824,6 +825,7 @@ export function buildTargetHouseGeometryDiagnostic({
     generatedFrom: {
       snapshotModelId: snapshot?.modelId ?? null,
       snapshotRevision: snapshot?.revision ?? null,
+      snapshotSource,
       sourceDigests,
     },
     targetEnvelopeMm: targetEnvelope(requiredFeatures),

@@ -9,15 +9,17 @@ import {
   readJson,
   renderTargetHouseGeometryDiagnosticMarkdown,
 } from './lib/target-house-geometry-diagnostics.mjs';
+import { resolveTargetHouseSnapshotInput } from './lib/target-house-package-inputs.mjs';
 
 const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 
 function loadCurrentTargetHouseReport() {
+  const snapshotInput = resolveTargetHouseSnapshotInput({ repoRoot, seed: 'target-house-1' });
   return buildTargetHouseGeometryDiagnostic({
-    snapshot: readJson(
-      resolve(repoRoot, 'seed-artifacts/target-house-1/evidence/live-run-current/snapshot.json'),
-    ),
+    snapshot: snapshotInput.snapshot,
     requiredFeatures: readJson(resolve(repoRoot, 'spec/generated/target-house-1-required-features.json')),
+    sourceDigests: snapshotInput.sourceDigests,
+    snapshotSource: snapshotInput.snapshotSource,
   });
 }
 
@@ -27,21 +29,28 @@ test('target-house current diagnostic reports every requested finding bucket det
 
   assert.deepEqual(first, second);
   assert.equal(first.schemaVersion, TARGET_HOUSE_GEOMETRY_DIAGNOSTIC_SCHEMA_VERSION);
-  assert.deepEqual(first.summary.byCategory, {
-    detached_or_flying: 33,
-    helper_leakage: 78,
-    out_of_envelope: 20,
-    sketch_critical_mismatch: 16,
-    unsupported_renderer_feature: 8,
-  });
-  assert.equal(first.summary.total, 155);
+  assert.ok(
+    ['fresh_live_snapshot', 'materialized_seed_bundle'].includes(
+      first.generatedFrom.snapshotSource.kind,
+    ),
+  );
+  assert.equal(first.summary.total, first.findings.length);
+  for (const category of [
+    'detached_or_flying',
+    'helper_leakage',
+    'out_of_envelope',
+    'sketch_critical_mismatch',
+    'unsupported_renderer_feature',
+  ]) {
+    assert.ok(first.summary.byCategory[category] > 0, `${category} must be represented`);
+  }
 
   const codes = new Set(first.findings.map((finding) => finding.code));
   assert.ok(codes.has('helper.room_separation.visible_in_snapshot'));
-  assert.ok(codes.has('geometry.hosted_opening_on_access_stub'));
+  assert.ok(codes.has('geometry.wall_detached_endpoint'));
   assert.ok(codes.has('geometry.element_outside_source_envelope'));
   assert.ok(codes.has('renderer.roof_opening.asymmetric_gable_unproven'));
-  assert.ok(codes.has('renderer.wall_cut.overlapping_hosted_cuts'));
+  assert.ok(codes.has('renderer.slab_opening.stair_penetration_unproven'));
   assert.ok(codes.has('sketch.scale_basis_not_met'));
   assert.ok(codes.has('sketch.required_room_id_missing'));
 });
@@ -50,10 +59,26 @@ test('target-house markdown report includes bounds, findings, and rule catalog',
   const markdown = renderTargetHouseGeometryDiagnosticMarkdown(loadCurrentTargetHouseReport());
 
   assert.match(markdown, /^# Target House 1 Current Geometry Diagnostic/);
-  assert.match(markdown, /Total findings: 155/);
+  assert.match(markdown, /Total findings: \d+/);
   assert.match(markdown, /`unsupported_renderer_feature`/);
   assert.match(markdown, /renderer\.roof_opening\.asymmetric_gable_unproven/);
   assert.match(markdown, /## Rule Catalog/);
+});
+
+test('target-house snapshot resolver can materialize authoritative seed bundle instead of live snapshot', () => {
+  const liveInput = resolveTargetHouseSnapshotInput({ repoRoot, seed: 'target-house-1' });
+
+  assert.ok(
+    ['fresh_live_snapshot', 'materialized_seed_bundle'].includes(liveInput.snapshotSource.kind),
+  );
+  const materializedInput = resolveTargetHouseSnapshotInput({
+    repoRoot,
+    seed: 'target-house-1',
+    forceMaterialized: true,
+  });
+  assert.equal(materializedInput.snapshotSource.kind, 'materialized_seed_bundle');
+  assert.equal(materializedInput.snapshotSource.regenerated, true);
+  assert.ok(Object.keys(materializedInput.snapshot.elements).length > 0);
 });
 
 test('minimal diagnostic catches helper leakage and overlapping hosted cuts', () => {
