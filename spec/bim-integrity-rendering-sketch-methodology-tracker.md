@@ -104,7 +104,7 @@ This tracker is complete only when all of these are true:
 | `M1` P0 BIM integrity foundation | Partial | Hosted openings, helper/nonphysical elements, floor/envelope containment, support/topology, and command validation gaps are covered by deterministic Advisor/validation rules with tests and UI/CLI/API parity. |
 | `M2` P0 renderer fidelity foundation | Partial | Renderer emits diagnostics for unsupported/failed cuts, roof/slab/wall openings have golden tests, and target-house-critical visual failures cannot be silent. |
 | `M3` P0 sketch-to-BIM methodology gate | Partial | Sketch-specific fidelity checks are separated from normal Advisor, phase packets fail on missing visual/spec evidence, and target-house acceptance cannot pass on Advisor-clean but visually wrong output. |
-| `M4` P1 domain depth | Not started | Rooms/access/egress, stairs/railings, structure-lite, MEP-lite, fire/accessibility metadata, materials/types, and exchange checks have robust rule coverage. |
+| `M4` P1 domain depth | Partial | Rooms/access/egress, stairs/railings, structure-lite, MEP-lite, fire/accessibility metadata, materials/types, and exchange checks have robust rule coverage. |
 | `M5` P1 rendering/exchange completeness | Not started | Supported viewport geometry, IFC/glTF export manifests, and readback/golden evidence agree for architecture, structure-lite, MEP-lite, sheets, and schedules. |
 | `M6` Performance and live UX quality | Not started | Advisor and renderer diagnostics are incremental, bounded, nonblocking, and do not cause sluggish orbit/selection/WebSocket behavior in ordinary projects. |
 | `M7` Platform-grade BIM guarantees | Partial | Kernel invariants, transaction safety, collaboration, provenance, fixture governance, and agent remediation safety are covered by tests and documented contracts. |
@@ -167,21 +167,21 @@ This tracker is complete only when all of these are true:
 | `BIR-D02` | P0 | Partial | Validate room-door access through real doors. | A room is accessible only through physical hosted doors/openings on valid room boundaries; synthetic off-envelope access doors do not satisfy access. |
 | `BIR-D03` | P0 | Not started | Validate room containment within floor/storey. | Room polygons must lie within or intentionally extend from the level floor/envelope; detached room islands and overlap outside slabs are errors. |
 | `BIR-D04` | P1 | Partial | Validate egress graph. | Existing egress rules are extended with exterior exit classification, stair/level transitions, and multiple-room traversal evidence. |
-| `BIR-D05` | P1 | Not started | Validate room/wall topology consistency. | Walls that bound rooms are classified interior/exterior/corridor/shaft; conflicting classification produces findings. |
-| `BIR-D06` | P1 | Not started | Add room schedule integrity. | Room schedule rows match physical rooms, have area/source, level, function, occupancy/use, and classification placeholders. |
-| `BIR-D07` | P2 | Not started | Add occupancy and accessibility profiles. | Profile-specific minimum access width, bathroom clearance, circulation, and accessible route checks can be enabled without hardcoding them into all projects. |
+| `BIR-D05` | P1 | Partial | Validate room/wall topology consistency. | Walls that bound rooms are classified interior/exterior/corridor/shaft; conflicting classification produces findings. |
+| `BIR-D06` | P1 | Partial | Add room schedule integrity. | Room schedule rows match physical rooms, have area/source, level, function, occupancy/use, and classification placeholders. |
+| `BIR-D07` | P2 | Partial | Add occupancy and accessibility profiles. | Profile-specific minimum access width, bathroom clearance, circulation, and accessible route checks can be enabled without hardcoding them into all projects. |
 
 ### E. Floors, Slabs, Stairs, Railings, And Vertical Circulation
 
 | ID | Priority | Status | Item | Acceptance |
 | -- | -------- | ------ | ---- | ---------- |
 | `BIR-E01` | P0 | Partial | Validate slab openings and stair penetration. | Stairs crossing floors require explicit slab/shaft openings; openings must be inside host slabs, not degenerate, and visible/renderable. |
-| `BIR-E02` | P0 | Not started | Validate floor support and detached slab fragments. | Floors/slabs outside supported wall/beam/perimeter assumptions report support warnings or require explicit cantilever/terrace metadata. |
+| `BIR-E02` | P0 | Partial | Validate floor support and detached slab fragments. | Floors/slabs outside supported wall/beam/perimeter assumptions report support warnings or require explicit cantilever/terrace metadata. |
 | `BIR-E03` | P0 | Partial | Validate railings/guards on terraces, stairs, and balconies. | Exposed edges above threshold height require guardrail/railing or explicit approved exception; rails must align to supported edges. |
 | `BIR-E04` | P1 | Partial | Validate stair comfort and headroom. | Existing stair checks are wired into Advisor parity and phase acceptance; by-sketch stairs include riser/tread/headroom/landing checks. |
-| `BIR-E05` | P1 | Not started | Validate vertical circulation graph. | Multi-level models know which stairs connect which levels, which rooms are reachable, and which slab openings/guards belong to that circulation path. |
-| `BIR-E06` | P1 | Not started | Validate terrace/loggia floors as occupied exterior spaces. | A terrace/loggia is a real floor/space with guard, drainage/slope metadata, access, boundary, and schedule/area intent. |
-| `BIR-E07` | P2 | Not started | Add railing family/profile integrity. | Railing posts, handrails, balusters, height, spacing, material, and host references are validated and renderable. |
+| `BIR-E05` | P1 | Partial | Validate vertical circulation graph. | Multi-level models know which stairs connect which levels, which rooms are reachable, and which slab openings/guards belong to that circulation path. |
+| `BIR-E06` | P1 | Partial | Validate terrace/loggia floors as occupied exterior spaces. | A terrace/loggia is a real floor/space with guard, drainage/slope metadata, access, boundary, and schedule/area intent. |
+| `BIR-E07` | P2 | Partial | Add railing family/profile integrity. | Railing posts, handrails, balusters, height, spacing, material, and host references are validated and renderable. |
 
 ### F. Roofs, Envelope, Terraces, Loggias, And Facades
 
@@ -189,11 +189,11 @@ This tracker is complete only when all of these are true:
 | -- | -------- | ------ | ---- | ---------- |
 | `BIR-F01` | P0 | Partial | Validate roof openings against host footprint. | Existing roof-opening host/footprint checks remain, with stricter hole-inside-host and large-void metadata requirements for occupied terraces. |
 | `BIR-F02` | P0 | Partial | Validate roof opening has real occupied void geometry. | Roof terrace/court openings require rendered cut, floor surface, return/curb/parapet faces, drainage/guard/support metadata, and evidence viewpoint. |
-| `BIR-F03` | P0 | Not started | Validate envelope closure. | Exterior walls, roofs, floors, and major openings form a coherent envelope per level; unresolved holes/gaps are reported. |
-| `BIR-F04` | P1 | Not started | Validate loggia/recessed facade topology. | Recessed loggias have side returns, top/bottom returns, railing/guard, access opening, and physical floor/ceiling relationships. |
-| `BIR-F05` | P1 | Not started | Validate facade opening rhythm without treating it as subjective. | When a model declares facade rhythm metadata, openings must map to declared bays/counts; absent metadata avoids normal-Advisor aesthetic judgments. |
-| `BIR-F06` | P1 | Not started | Validate wall/roof attachment and overhang semantics. | Wall tops and roof eaves/ridges have explicit relation where required; floating roof/wrapper slabs or walls are errors unless declared as detached study mass. |
-| `BIR-F07` | P2 | Not started | Add thermal/fire/acoustic envelope metadata checks. | Profiles can require wall/roof/slab type layers and performance placeholders appropriate to project phase. |
+| `BIR-F03` | P0 | Partial | Validate envelope closure. | Exterior walls, roofs, floors, and major openings form a coherent envelope per level; unresolved holes/gaps are reported. |
+| `BIR-F04` | P1 | Partial | Validate loggia/recessed facade topology. | Recessed loggias have side returns, top/bottom returns, railing/guard, access opening, and physical floor/ceiling relationships. |
+| `BIR-F05` | P1 | Partial | Validate facade opening rhythm without treating it as subjective. | When a model declares facade rhythm metadata, openings must map to declared bays/counts; absent metadata avoids normal-Advisor aesthetic judgments. |
+| `BIR-F06` | P1 | Partial | Validate wall/roof attachment and overhang semantics. | Wall tops and roof eaves/ridges have explicit relation where required; floating roof/wrapper slabs or walls are errors unless declared as detached study mass. |
+| `BIR-F07` | P2 | Partial | Add thermal/fire/acoustic envelope metadata checks. | Profiles can require wall/roof/slab type layers and performance placeholders appropriate to project phase. |
 
 ### G. Structure-Lite, MEP-Lite, Fire, Accessibility, And Code Profiles
 
@@ -202,10 +202,10 @@ This tracker is complete only when all of these are true:
 | `BIR-G01` | P0 | Partial | Clarify constructability vs structural engineering. | Docs and UI state that current checks are deterministic structure-lite/constructability, not certified structural engineering. |
 | `BIR-G02` | P1 | Partial | Expand load path checks. | Load-bearing walls, beams, columns, stacked supports, transfer assumptions, and large openings have profile-specific findings and metadata resolutions. |
 | `BIR-G03` | P1 | Partial | Expand MEP penetration checks. | Pipe/duct/shaft/slab/wall/ceiling penetrations require openings or approved coordination metadata. |
-| `BIR-G04` | P1 | Not started | Add wet-room and service-zone coordination. | Wet rooms, risers, shafts, equipment zones, and MEP route placeholders can be checked for stacking and reasonable access. |
-| `BIR-G05` | P1 | Not started | Add fire-safety profile gates. | Fire ratings, exit doors, protected stairs, compartment placeholder metadata, and door swing/clearance rules are profile-controlled. |
-| `BIR-G06` | P1 | Not started | Add accessibility profile gates. | Profile-controlled thresholds, door widths, circulation clearances, sanitary turning zones, and accessible route checks are deterministic. |
-| `BIR-G07` | P2 | Not started | Add regional code package metadata. | Rules declare locale/profile, source basis, severity, and whether they are advisory placeholders or enforced checks. |
+| `BIR-G04` | P1 | Partial | Add wet-room and service-zone coordination. | Wet rooms, risers, shafts, equipment zones, and MEP route placeholders can be checked for stacking and reasonable access. |
+| `BIR-G05` | P1 | Partial | Add fire-safety profile gates. | Fire ratings, exit doors, protected stairs, compartment placeholder metadata, and door swing/clearance rules are profile-controlled. |
+| `BIR-G06` | P1 | Partial | Add accessibility profile gates. | Profile-controlled thresholds, door widths, circulation clearances, sanitary turning zones, and accessible route checks are deterministic. |
+| `BIR-G07` | P2 | Partial | Add regional code package metadata. | Rules declare locale/profile, source basis, severity, and whether they are advisory placeholders or enforced checks. |
 
 ### H. Advisor UX, CLI, MCP/API, And Agent Usability
 

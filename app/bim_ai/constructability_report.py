@@ -28,6 +28,7 @@ from bim_ai.constructability_scope import (
     constructability_scope_descriptor,
     scope_constructability_elements,
 )
+from bim_ai.domain_integrity import check_domain_integrity
 from bim_ai.elements import Element
 from bim_ai.model_integrity import ModelIntegrityFinding, check_model_integrity_invariants
 from bim_ai.model_integrity_hosting import hosted_opening_integrity_violations
@@ -171,7 +172,10 @@ def build_constructability_report(
         constructability_metadata_requirement_violations(scoped_elements, profile=profile)
     )
     violations.extend(_model_integrity_constructability_violations(scoped_elements))
-    all_findings = [_finding_dict(v, profile=profile) for v in violations]
+    all_findings = [
+        *[_finding_dict(v, profile=profile) for v in violations],
+        *check_domain_integrity(scoped_elements, profile=profile),
+    ]
     suppressions = _suppression_records(scoped_elements, revision=revision)
     active_findings: list[dict[str, Any]] = []
     suppressed_by_fingerprint: dict[str, dict[str, Any]] = {}
