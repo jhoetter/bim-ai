@@ -13,21 +13,22 @@
     "version": 1
   },
   "acceptance": {
-    "status": "source-corrected-needs-live-evidence-refresh",
+    "status": "offline-refreshed-needs-clean-pass",
     "evidenceRoot": "evidence/live-run-current",
-    "gitHead": "db78505123d0d471257479335091b0f9dfc71d3b",
-    "bundleSha256": "e2438f28d7e03bd7f03d81c47c2bf1d224cf0707ac7d084fd5ed081810589307",
-    "irSha256": "cd64c22345865b1a7e0b674ebc0c15ec38433f4e561d485b4b91008b2d6f369e",
+    "gitHead": "ca735fdabefdeccda4c423c69248188c4f772884",
+    "bundleSha256": "d9c5459907252d8b14357e80a06390eead8a762627bd9c2cfcf3095caf024ec3",
+    "irSha256": "17a24cb6b3691448bda747403a542513951fb21633e62e991711f28e2591f521",
     "capabilitiesSha256": "e3faa00d4724d5e375ee853d5e3d56b21254a969a84e702d67013a8bb0125dbb",
-    "advisorRuleDigest": "e2c9ee443c19b318c07e585ba6a2005f900c1931c1009eeb8031978471d2f5a5",
-    "notes": "Wave 8 Worker B corrected the authoritative seed bundle/source; prior live evidence is stale until rerun."
+    "advisorRuleDigest": "4795c8d864a33e47c8cbe34ece2e1361c453b117bc2ee0db61365d9992b788aa",
+    "generatedAtEpochMs": 1779181625657,
+    "notes": "Wave 9 Worker A regenerated deterministic offline evidence from seed-artifacts/target-house-1/bundle.json. Live/browser acceptance and clean-pass findings are tracked in evidence/live-run-current."
   },
   "inputPaths": {
     "source": "spec/target-house",
     "bundle": "target-house-1.bundle.v2.json"
   },
-  "bundleSha256": "e2438f28d7e03bd7f03d81c47c2bf1d224cf0707ac7d084fd5ed081810589307",
-  "commandCount": 210,
+  "bundleSha256": "d9c5459907252d8b14357e80a06390eead8a762627bd9c2cfcf3095caf024ec3",
+  "commandCount": 228,
   "commandSchemaVersion": "cmd-v3.0",
   "entryComment": {
     "body": "Image-locked Target House 1 BIM seed generated from the sketch-to-BIM methodology with final live evidence."

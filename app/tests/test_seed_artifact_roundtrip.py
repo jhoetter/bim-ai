@@ -8,6 +8,7 @@ import json
 from pathlib import Path
 from uuid import UUID
 
+from bim_ai.constraints_evaluation import evaluate
 from bim_ai.elements import LevelElem, ProjectBasePointElem
 from scripts import seed
 from scripts.seed import SEED_PROJECT_ID, _load_artifact, _materialize, seed_async
@@ -202,3 +203,21 @@ def test_checked_in_target_house_seed_artifact_is_portable_and_loadable() -> Non
     assert isinstance(doc.elements.get("hf-lvl-ground"), LevelElem)
     assert "hf-roof-main" in wire["elements"]
     assert "hf-roof-court-opening" in wire["elements"]
+
+    target_warning_rules = {
+        "constructability_proxy_unsupported",
+        "door_operation_clearance_conflict",
+        "floor_overlap",
+        "room_boundary_open",
+        "room_unenclosed",
+        "room_without_door_access",
+        "schedule_not_placed_on_sheet",
+        "schedule_opening_family_type_incomplete",
+        "schedule_opening_host_wall_type_incomplete",
+    }
+    target_warnings = [
+        violation.rule_id
+        for violation in evaluate(doc.elements, constructability_profile="residential")
+        if violation.severity == "warning" and violation.rule_id in target_warning_rules
+    ]
+    assert target_warnings == []

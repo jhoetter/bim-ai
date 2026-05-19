@@ -1270,6 +1270,185 @@
       }
     }
   ],
+  "commands": [
+    {
+      "type": "createWall",
+      "id": "target-house-gf-living-access-partition",
+      "name": "Ground floor living access partition",
+      "levelId": "hf-lvl-ground",
+      "start": {
+        "xMm": 3400,
+        "yMm": 700
+      },
+      "end": {
+        "xMm": 3400,
+        "yMm": 5200
+      },
+      "thicknessMm": 120,
+      "heightMm": 2700,
+      "wallTypeId": "wt-internal",
+      "materialKey": "gypsum_board"
+    },
+    {
+      "type": "insertDoorOnWall",
+      "id": "target-house-door-living-hall",
+      "name": "Living to hall sliding door",
+      "wallId": "target-house-gf-living-access-partition",
+      "alongT": 0.4,
+      "widthMm": 900,
+      "familyTypeId": "ft-pocket-door-standard"
+    },
+    {
+      "type": "updateElementProperty",
+      "elementId": "target-house-door-living-hall",
+      "key": "operationType",
+      "value": "sliding_single"
+    },
+    {
+      "type": "insertDoorOnWall",
+      "id": "target-house-door-gf-bath-laundry",
+      "name": "Bath laundry access sliding door",
+      "wallId": "ground-base-wall-02",
+      "alongT": 0.23170731707317074,
+      "widthMm": 760,
+      "familyTypeId": "ft-pocket-door-standard"
+    },
+    {
+      "type": "updateElementProperty",
+      "elementId": "target-house-door-gf-bath-laundry",
+      "key": "operationType",
+      "value": "sliding_single"
+    },
+    {
+      "type": "insertDoorOnWall",
+      "id": "target-house-door-utility",
+      "name": "Utility access sliding door",
+      "wallId": "ground-base-wall-02",
+      "alongT": 0.5,
+      "widthMm": 760,
+      "familyTypeId": "ft-pocket-door-standard"
+    },
+    {
+      "type": "updateElementProperty",
+      "elementId": "target-house-door-utility",
+      "key": "operationType",
+      "value": "sliding_single"
+    },
+    {
+      "type": "createWall",
+      "id": "target-house-l1-bedroom-bath-access-partition",
+      "name": "First floor bedroom bath access partition",
+      "levelId": "hf-lvl-upper",
+      "start": {
+        "xMm": 3450,
+        "yMm": 1600
+      },
+      "end": {
+        "xMm": 3450,
+        "yMm": 6500
+      },
+      "thicknessMm": 120,
+      "heightMm": 2700,
+      "wallTypeId": "wt-internal",
+      "materialKey": "gypsum_board"
+    },
+    {
+      "type": "insertDoorOnWall",
+      "id": "target-house-door-bedroom-bath",
+      "name": "Bedroom bathroom sliding door",
+      "wallId": "target-house-l1-bedroom-bath-access-partition",
+      "alongT": 0.24489795918367346,
+      "widthMm": 760,
+      "familyTypeId": "ft-pocket-door-standard"
+    },
+    {
+      "type": "updateElementProperty",
+      "elementId": "target-house-door-bedroom-bath",
+      "key": "operationType",
+      "value": "sliding_single"
+    },
+    {
+      "type": "insertDoorOnWall",
+      "id": "target-house-door-ensuite-primary",
+      "name": "Ensuite sliding door",
+      "wallId": "target-house-l1-bedroom-bath-access-partition",
+      "alongT": 0.7959183673469388,
+      "widthMm": 760,
+      "familyTypeId": "ft-pocket-door-standard"
+    },
+    {
+      "type": "updateElementProperty",
+      "elementId": "target-house-door-ensuite-primary",
+      "key": "operationType",
+      "value": "sliding_single"
+    },
+    {
+      "type": "createWall",
+      "id": "target-house-l1-closet-access-partition",
+      "name": "Walk-in closet access partition",
+      "levelId": "hf-lvl-upper",
+      "start": {
+        "xMm": 2600,
+        "yMm": 4500
+      },
+      "end": {
+        "xMm": 2600,
+        "yMm": 6500
+      },
+      "thicknessMm": 120,
+      "heightMm": 2700,
+      "wallTypeId": "wt-internal",
+      "materialKey": "gypsum_board"
+    },
+    {
+      "type": "insertDoorOnWall",
+      "id": "target-house-door-walk-in-closet",
+      "name": "Walk-in closet sliding door",
+      "wallId": "target-house-l1-closet-access-partition",
+      "alongT": 0.5,
+      "widthMm": 760,
+      "familyTypeId": "ft-pocket-door-standard"
+    },
+    {
+      "type": "updateElementProperty",
+      "elementId": "target-house-door-walk-in-closet",
+      "key": "operationType",
+      "value": "sliding_single"
+    },
+    {
+      "type": "createWall",
+      "id": "target-house-l1-landing-access-partition",
+      "name": "Hall landing access partition",
+      "levelId": "hf-lvl-upper",
+      "start": {
+        "xMm": 5400,
+        "yMm": 1000
+      },
+      "end": {
+        "xMm": 7600,
+        "yMm": 1000
+      },
+      "thicknessMm": 120,
+      "heightMm": 2700,
+      "wallTypeId": "wt-internal",
+      "materialKey": "gypsum_board"
+    },
+    {
+      "type": "insertDoorOnWall",
+      "id": "target-house-door-landing",
+      "name": "Landing sliding door",
+      "wallId": "target-house-l1-landing-access-partition",
+      "alongT": 0.5,
+      "widthMm": 760,
+      "familyTypeId": "ft-pocket-door-standard"
+    },
+    {
+      "type": "updateElementProperty",
+      "elementId": "target-house-door-landing",
+      "key": "operationType",
+      "value": "sliding_single"
+    }
+  ],
   "assumptions": [
     {
       "key": "source_reference",
@@ -1288,6 +1467,24 @@
       "value": "Real BIM categories, rooms, types, schedules, export placeholders, structure-lite and MEP-lite markers included; final detailing remains later phase.",
       "confidence": 0.85,
       "source": "spec/target-house/target-house-1-bim-information-requirements.md"
+    },
+    {
+      "key": "target-house-1-m5-delta",
+      "value": "Add explicit IR room/space coverage and IFC furnishing family instances for final acceptance.",
+      "confidence": 0.9,
+      "source": "M5 acceptance remediation"
+    },
+    {
+      "key": "wave8-worker-b-seed-source-correction",
+      "value": "Removed physical access helper doors/walls, made the front loggia wrapper split explicit, and removed the overlapping full-width loggia void from the seed bundle.",
+      "confidence": 0.95,
+      "source": "BIR-N02 Wave 8 Worker B"
+    },
+    {
+      "key": "wave9-worker-b-room-access-source-correction",
+      "value": "Added hosted sliding access doors on real internal/shell partitions so every target-house room has door access without helper stub geometry.",
+      "confidence": 0.95,
+      "source": "Wave 9 Worker B"
     }
   ],
   "projectBasePoint": {
