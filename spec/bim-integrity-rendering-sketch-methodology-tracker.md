@@ -1067,6 +1067,33 @@ general coordinate setup placeholders or every domain-integrity row into the
 normal Advisor surface. Target-house evidence was refreshed after the
 stair/asset overlap guard and constructability boundary fix.
 
+### Wave 17 - Visual/Physical BIM Integrity Hardening
+
+Goal: turn the current "clean but visually suspicious" target-house state into
+a product-grade integrity problem: detached/floating elements, stair/furniture
+overlap, roof/floor/envelope mismatches, topology placement, and renderer
+fallbacks must be either impossible to author, deterministically reported, or
+covered by evidence gates.
+
+Scope: dispatch five independent workers. Each worker must commit locally,
+avoid unrelated dirty files, update tracker/evidence rows conservatively, and
+prove the work with deterministic fixtures. Normal Advisor rules must remain
+deterministic and building-code/model-integrity oriented; sketch-specific
+visual likeness belongs in methodology acceptance gates.
+
+| Agent | Ownership | Primary items |
+| ----- | --------- | ------------- |
+| W17-A | Physical support-context guards for non-wall elements and asset placement preflight. | `BIR-B02`, `BIR-B04`, `BIR-B06`, `BIR-V04`, `BIR-W01` |
+| W17-B | Stairs, railings, floor penetrations, vertical circulation topology, and bedroom/stair overlap regressions. | `BIR-E01`, `BIR-E02`, `BIR-E03`, `BIR-E04`, `BIR-E05`, `BIR-E06`, `BIR-E07` |
+| W17-C | Roof/envelope/loggia/facade integrity, roof openings, terraces, and visual helper leakage prevention. | `BIR-F01`, `BIR-F02`, `BIR-F03`, `BIR-F04`, `BIR-F05`, `BIR-F06`, `BIR-C08` |
+| W17-D | Renderer diagnostic contract, element render status, unsupported feature surfacing, and golden-view coverage. | `BIR-I01`, `BIR-I02`, `BIR-I03`, `BIR-I04`, `BIR-I05`, `BIR-J01`, `BIR-J02` |
+| W17-E | Target-house live performance/evidence proof, final-package readiness blockers, topology placement, and rehearsal gates. | `BIR-L01`, `BIR-L02`, `BIR-L03`, `BIR-N07`, `BIR-N10`, `BIR-O02`, `BIR-O04`, `BIR-S05` |
+
+Exit: target-house clean-pass evidence remains green, but also has fixtures or
+golden evidence proving the previously observed suspicious states are covered:
+asset-on-stair, floating/detached physical objects, building/toposolid
+misplacement, and renderer unsupported/fallback elements.
+
 ## Non-Negotiable Acceptance Rules
 
 - Do not mark a seed `accepted` while any P0 integrity or renderer diagnostic is
