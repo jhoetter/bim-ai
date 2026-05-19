@@ -1,12 +1,33 @@
 {
   "modelId": "target-house-1-offline-regenerated",
   "revision": 2,
-  "violations": [],
+  "violations": [
+    {
+      "ruleId": "room_target_area_mismatch",
+      "severity": "info",
+      "message": "Room outline area (3.520 m\u00b2) differs from targetAreaM2 (3.200 m\u00b2) beyond the advisory tolerance.",
+      "elementIds": ["hf-room-ensuite"],
+      "blocking": false,
+      "quickFixCommand": null,
+      "discipline": "architecture",
+      "blockingClass": "documentation"
+    },
+    {
+      "ruleId": "room_target_area_mismatch",
+      "severity": "info",
+      "message": "Room outline area (4.800 m\u00b2) differs from targetAreaM2 (4.400 m\u00b2) beyond the advisory tolerance.",
+      "elementIds": ["hf-room-landing"],
+      "blocking": false,
+      "quickFixCommand": null,
+      "discipline": "architecture",
+      "blockingClass": "documentation"
+    }
+  ],
   "summary": {
     "revision": 2,
-    "elementTotal": 163,
+    "elementTotal": 168,
     "scaleWorkload": {
-      "wallCount": 19,
+      "wallCount": 21,
       "roomCount": 13,
       "scheduleElementCount": 3
     },
@@ -25,10 +46,10 @@
       "site": 1,
       "property_line": 4,
       "floor": 4,
-      "wall": 19,
+      "wall": 21,
       "roof": 1,
       "room": 13,
-      "door": 10,
+      "door": 13,
       "stair": 1,
       "railing": 3,
       "slab_opening": 1,
@@ -59,17 +80,17 @@
         "elevationMm": 3000.0
       }
     ],
-    "wallCount": 19,
+    "wallCount": 21,
     "wallsByLevelId": {
       "hf-lvl-ground": 5,
-      "hf-lvl-upper": 14
+      "hf-lvl-upper": 16
     },
     "roomCount": 13,
     "roomsByLevelId": {
       "hf-lvl-ground": 6,
       "hf-lvl-upper": 7
     },
-    "doorCount": 10,
+    "doorCount": 13,
     "windowCount": 2,
     "gridLineCount": 0,
     "openIssueCount": 0,
@@ -420,7 +441,7 @@
           "bboxMm": {
             "min": {
               "x": 2700.0,
-              "y": 4500.0
+              "y": 4300.0
             },
             "max": {
               "x": 4300.0,
@@ -441,13 +462,13 @@
             "sep-hf-room-ensuite-4"
           ],
           "boundarySegmentEncoding": "boundary_segment_v1",
-          "approxAreaM2": 3.2,
+          "approxAreaM2": 3.52,
           "note": "Axis-aligned orthogonal loop from wall and/or axis-aligned room separation segments; authoritative derivation when interior is unambiguous and does not intersect authored outlines.",
           "levelId": "hf-lvl-upper",
           "levelName": "First Floor",
           "volumeComputedAt": "finish_faces",
           "volumeAreaInsetMm": 0.0,
-          "approxVolumeM3": 8.96,
+          "approxVolumeM3": 9.856,
           "derivationAuthority": "preview_heuristic",
           "authorityReasonCodes": ["overlaps_authored_room_bbox"]
         },
@@ -456,7 +477,7 @@
           "levelPlane": "bim_xy_mm",
           "bboxMm": {
             "min": {
-              "x": 5400.0,
+              "x": 5200.0,
               "y": 1000.0
             },
             "max": {
@@ -478,13 +499,13 @@
             "sep-hf-room-landing-4"
           ],
           "boundarySegmentEncoding": "boundary_segment_v1",
-          "approxAreaM2": 4.4,
+          "approxAreaM2": 4.8,
           "note": "Axis-aligned orthogonal loop from wall and/or axis-aligned room separation segments; authoritative derivation when interior is unambiguous and does not intersect authored outlines.",
           "levelId": "hf-lvl-upper",
           "levelName": "First Floor",
           "volumeComputedAt": "finish_faces",
           "volumeAreaInsetMm": 0.0,
-          "approxVolumeM3": 12.32,
+          "approxVolumeM3": 13.44,
           "derivationAuthority": "preview_heuristic",
           "authorityReasonCodes": [
             "overlapping_derived_candidate_footprint",
@@ -838,7 +859,7 @@
           "levelPlane": "bim_xy_mm",
           "bboxMm": {
             "min": {
-              "x": 5400.0,
+              "x": 5200.0,
               "y": 1000.0
             },
             "max": {
@@ -859,13 +880,13 @@
             "target-house-l1-landing-access-partition"
           ],
           "boundarySegmentEncoding": "boundary_segment_v1",
-          "approxAreaM2": 4.4,
+          "approxAreaM2": 4.8,
           "note": "Axis-aligned orthogonal loop from wall and/or axis-aligned room separation segments; authoritative derivation when interior is unambiguous and does not intersect authored outlines.",
           "levelId": "hf-lvl-upper",
           "levelName": "First Floor",
           "volumeComputedAt": "finish_faces",
           "volumeAreaInsetMm": 0.0,
-          "approxVolumeM3": 12.32,
+          "approxVolumeM3": 13.44,
           "derivationAuthority": "preview_heuristic",
           "authorityReasonCodes": [
             "overlapping_derived_candidate_footprint",
@@ -877,7 +898,7 @@
           "levelPlane": "bim_xy_mm",
           "bboxMm": {
             "min": {
-              "x": 5400.0,
+              "x": 5200.0,
               "y": 1000.0
             },
             "max": {
@@ -898,13 +919,13 @@
             "target-house-l1-landing-access-partition"
           ],
           "boundarySegmentEncoding": "boundary_segment_v1",
-          "approxAreaM2": 4.4,
+          "approxAreaM2": 4.8,
           "note": "Axis-aligned orthogonal loop from wall and/or axis-aligned room separation segments; authoritative derivation when interior is unambiguous and does not intersect authored outlines.",
           "levelId": "hf-lvl-upper",
           "levelName": "First Floor",
           "volumeComputedAt": "finish_faces",
           "volumeAreaInsetMm": 0.0,
-          "approxVolumeM3": 12.32,
+          "approxVolumeM3": 13.44,
           "derivationAuthority": "preview_heuristic",
           "authorityReasonCodes": [
             "overlapping_derived_candidate_footprint",
@@ -1000,7 +1021,7 @@
       "levelsWithRoomsSorted": ["hf-lvl-ground", "hf-lvl-upper"],
       "levelsWithWallsSorted": ["hf-lvl-ground", "hf-lvl-upper"],
       "maxRoomsOnSingleLevel": 7,
-      "maxWallsOnSingleLevel": 14
+      "maxWallsOnSingleLevel": 16
     }
   },
   "checks": {

@@ -409,8 +409,16 @@
           "yMm": 0
         },
         {
-          "xMm": 7000,
+          "xMm": 8300,
           "yMm": 0
+        },
+        {
+          "xMm": 8300,
+          "yMm": 5200
+        },
+        {
+          "xMm": 7000,
+          "yMm": 5200
         },
         {
           "xMm": 7000,
@@ -617,7 +625,31 @@
       "programmeCode": "living",
       "functionLabel": "residential living",
       "finishSet": "residential-standard",
-      "targetAreaM2": 13.05
+      "targetAreaM2": 13.05,
+      "department": "Residential"
+    },
+    {
+      "type": "updateElementProperty",
+      "elementId": "room-living",
+      "key": "roomBimIntent",
+      "value": {
+        "number": "G-102",
+        "department": "Residential",
+        "occupancyUse": "residential living",
+        "use": "residential_living",
+        "areaSource": "authored_outline_area_m2",
+        "boundingStatus": "bounded_with_open_plan_edge",
+        "schedule": {
+          "include": true,
+          "scheduleName": "Room Schedule"
+        },
+        "classification": {
+          "din277Use": "living/use area",
+          "din277AreaType": "NUF",
+          "ifcEntityIntent": "IfcSpace"
+        },
+        "ifcEntityIntent": "IfcSpace"
+      }
     },
     {
       "type": "createRoomOutline",
@@ -645,7 +677,31 @@
       "programmeCode": "bed",
       "functionLabel": "residential sleeping",
       "finishSet": "residential-standard",
-      "targetAreaM2": 7.29
+      "targetAreaM2": 7.29,
+      "department": "Residential"
+    },
+    {
+      "type": "updateElementProperty",
+      "elementId": "room-bedroom",
+      "key": "roomBimIntent",
+      "value": {
+        "number": "1-201",
+        "department": "Residential",
+        "occupancyUse": "residential bedroom",
+        "use": "residential_bedroom",
+        "areaSource": "authored_outline_area_m2",
+        "boundingStatus": "bounded",
+        "schedule": {
+          "include": true,
+          "scheduleName": "Room Schedule"
+        },
+        "classification": {
+          "din277Use": "living/use area",
+          "din277AreaType": "NUF",
+          "ifcEntityIntent": "IfcSpace"
+        },
+        "ifcEntityIntent": "IfcSpace"
+      }
     },
     {
       "type": "createRoomOutline",
@@ -673,7 +729,31 @@
       "programmeCode": "entrance_hall",
       "functionLabel": "circulation",
       "finishSet": "residential-standard",
-      "targetAreaM2": 6.38
+      "targetAreaM2": 6.38,
+      "department": "Residential"
+    },
+    {
+      "type": "updateElementProperty",
+      "elementId": "room-hall",
+      "key": "roomBimIntent",
+      "value": {
+        "number": "G-103",
+        "department": "Residential",
+        "occupancyUse": "residential circulation",
+        "use": "residential_circulation",
+        "areaSource": "authored_outline_area_m2",
+        "boundingStatus": "bounded",
+        "schedule": {
+          "include": true,
+          "scheduleName": "Room Schedule"
+        },
+        "classification": {
+          "din277Use": "circulation area",
+          "din277AreaType": "VF",
+          "ifcEntityIntent": "IfcSpace"
+        },
+        "ifcEntityIntent": "IfcSpace"
+      }
     },
     {
       "type": "createRoomOutline",
@@ -699,10 +779,33 @@
         }
       ],
       "programmeCode": "terrace",
-      "department": null,
+      "department": "Exterior",
       "functionLabel": "outdoor living",
       "finishSet": "exterior-hardwearing",
       "targetAreaM2": 8.32
+    },
+    {
+      "type": "updateElementProperty",
+      "elementId": "room-terrace",
+      "key": "roomBimIntent",
+      "value": {
+        "number": "1-207",
+        "department": "Exterior",
+        "occupancyUse": "open exterior living",
+        "use": "open_exterior_living",
+        "areaSource": "authored_outline_area_m2",
+        "boundingStatus": "open_to_sky_external_space",
+        "schedule": {
+          "include": true,
+          "scheduleName": "Room Schedule"
+        },
+        "classification": {
+          "din277Use": "open external area",
+          "din277AreaType": "NUF",
+          "ifcEntityIntent": "IfcSpace"
+        },
+        "ifcEntityIntent": "IfcSpace"
+      }
     },
     {
       "type": "createRoomOutline",
@@ -730,7 +833,31 @@
       "programmeCode": "kitchen",
       "functionLabel": "residential kitchen",
       "finishSet": "residential-standard",
-      "targetAreaM2": 6.16
+      "targetAreaM2": 6.16,
+      "department": "Residential"
+    },
+    {
+      "type": "updateElementProperty",
+      "elementId": "hf-room-kitchen",
+      "key": "roomBimIntent",
+      "value": {
+        "number": "G-101",
+        "department": "Residential",
+        "occupancyUse": "residential kitchen/dining",
+        "use": "residential_kitchen_dining",
+        "areaSource": "authored_outline_area_m2",
+        "boundingStatus": "bounded",
+        "schedule": {
+          "include": true,
+          "scheduleName": "Room Schedule"
+        },
+        "classification": {
+          "din277Use": "living/use area",
+          "din277AreaType": "NUF",
+          "ifcEntityIntent": "IfcSpace"
+        },
+        "ifcEntityIntent": "IfcSpace"
+      }
     },
     {
       "type": "createRoomOutline",
@@ -758,7 +885,31 @@
       "programmeCode": "bath",
       "functionLabel": "residential bathroom",
       "finishSet": "wet-room-tile",
-      "targetAreaM2": 4.32
+      "targetAreaM2": 4.32,
+      "department": "Residential"
+    },
+    {
+      "type": "updateElementProperty",
+      "elementId": "hf-room-bath",
+      "key": "roomBimIntent",
+      "value": {
+        "number": "1-203A",
+        "department": "Residential",
+        "occupancyUse": "residential wet room",
+        "use": "residential_wet_room",
+        "areaSource": "authored_outline_area_m2",
+        "boundingStatus": "bounded",
+        "schedule": {
+          "include": true,
+          "scheduleName": "Room Schedule"
+        },
+        "classification": {
+          "din277Use": "service/use area",
+          "din277AreaType": "NUF",
+          "ifcEntityIntent": "IfcSpace"
+        },
+        "ifcEntityIntent": "IfcSpace"
+      }
     },
     {
       "type": "insertDoorOnWall",
@@ -768,6 +919,27 @@
       "alongT": 0.2,
       "widthMm": 1000,
       "familyTypeId": "ft-door-standard"
+    },
+    {
+      "type": "set_element_prop",
+      "elementId": "entry-door",
+      "key": "exteriorDoor",
+      "value": true
+    },
+    {
+      "type": "insertDoorOnWall",
+      "id": "target-house-door-hall-exterior",
+      "name": "Hall exterior egress door",
+      "wallId": "ground-base-wall-04",
+      "alongT": 0.7195121951219512,
+      "widthMm": 900,
+      "familyTypeId": "ft-door-standard"
+    },
+    {
+      "type": "set_element_prop",
+      "elementId": "target-house-door-hall-exterior",
+      "key": "exteriorDoor",
+      "value": true
     },
     {
       "type": "createStair",
@@ -780,8 +952,8 @@
         "yMm": 1100
       },
       "runEndMm": {
-        "xMm": 1800,
-        "yMm": 3200
+        "xMm": 6500,
+        "yMm": 2000
       },
       "widthMm": 1000,
       "riserMm": 175,
@@ -2006,8 +2178,36 @@
           "label": "Level"
         },
         {
+          "key": "programmeCode",
+          "label": "Use"
+        },
+        {
+          "key": "functionLabel",
+          "label": "Function"
+        },
+        {
+          "key": "occupancyUse",
+          "label": "Occupancy / Use"
+        },
+        {
           "key": "targetAreaM2",
           "label": "Target Area"
+        },
+        {
+          "key": "areaSource",
+          "label": "Area Source"
+        },
+        {
+          "key": "boundingStatus",
+          "label": "Bounding"
+        },
+        {
+          "key": "classification",
+          "label": "Classification"
+        },
+        {
+          "key": "finishSet",
+          "label": "Finish Set"
         }
       ],
       "filterExpr": "category == \"room\"",
@@ -2127,7 +2327,31 @@
       "programmeCode": "bath_laundry",
       "functionLabel": "residential wet room",
       "finishSet": "wet-room-tile",
-      "targetAreaM2": 3.6
+      "targetAreaM2": 3.6,
+      "department": "Residential"
+    },
+    {
+      "type": "updateElementProperty",
+      "elementId": "hf-room-gf-bath-laundry",
+      "key": "roomBimIntent",
+      "value": {
+        "number": "G-104",
+        "department": "Residential",
+        "occupancyUse": "residential wet room",
+        "use": "residential_wet_room",
+        "areaSource": "authored_outline_area_m2",
+        "boundingStatus": "bounded",
+        "schedule": {
+          "include": true,
+          "scheduleName": "Room Schedule"
+        },
+        "classification": {
+          "din277Use": "service/use area",
+          "din277AreaType": "NUF",
+          "ifcEntityIntent": "IfcSpace"
+        },
+        "ifcEntityIntent": "IfcSpace"
+      }
     },
     {
       "type": "createRoomOutline",
@@ -2155,7 +2379,31 @@
       "programmeCode": "utility",
       "functionLabel": "storage and services",
       "finishSet": "service-standard",
-      "targetAreaM2": 2.55
+      "targetAreaM2": 2.55,
+      "department": "Residential"
+    },
+    {
+      "type": "updateElementProperty",
+      "elementId": "hf-room-utility",
+      "key": "roomBimIntent",
+      "value": {
+        "number": "G-105",
+        "department": "Residential",
+        "occupancyUse": "residential utility",
+        "use": "residential_utility",
+        "areaSource": "authored_outline_area_m2",
+        "boundingStatus": "bounded",
+        "schedule": {
+          "include": true,
+          "scheduleName": "Room Schedule"
+        },
+        "classification": {
+          "din277Use": "service/use area",
+          "din277AreaType": "NUF",
+          "ifcEntityIntent": "IfcSpace"
+        },
+        "ifcEntityIntent": "IfcSpace"
+      }
     },
     {
       "type": "createRoomOutline",
@@ -2183,7 +2431,31 @@
       "programmeCode": "carport",
       "functionLabel": "covered parking",
       "finishSet": "exterior-hardwearing",
-      "targetAreaM2": 2.9
+      "targetAreaM2": 2.9,
+      "department": "Exterior"
+    },
+    {
+      "type": "updateElementProperty",
+      "elementId": "hf-room-carport",
+      "key": "roomBimIntent",
+      "value": {
+        "number": "G-106",
+        "department": "Exterior",
+        "occupancyUse": "covered exterior parking",
+        "use": "covered_exterior_parking",
+        "areaSource": "authored_outline_area_m2",
+        "boundingStatus": "covered_external_space",
+        "schedule": {
+          "include": true,
+          "scheduleName": "Room Schedule"
+        },
+        "classification": {
+          "din277Use": "covered external area",
+          "din277AreaType": "NUF",
+          "ifcEntityIntent": "IfcSpace"
+        },
+        "ifcEntityIntent": "IfcSpace"
+      }
     },
     {
       "type": "createRoomOutline",
@@ -2211,7 +2483,31 @@
       "programmeCode": "closet",
       "functionLabel": "wardrobe storage",
       "finishSet": "service-standard",
-      "targetAreaM2": 3.8
+      "targetAreaM2": 3.8,
+      "department": "Residential"
+    },
+    {
+      "type": "updateElementProperty",
+      "elementId": "hf-room-walk-in-closet",
+      "key": "roomBimIntent",
+      "value": {
+        "number": "1-202",
+        "department": "Residential",
+        "occupancyUse": "residential storage",
+        "use": "residential_storage",
+        "areaSource": "authored_outline_area_m2",
+        "boundingStatus": "bounded",
+        "schedule": {
+          "include": true,
+          "scheduleName": "Room Schedule"
+        },
+        "classification": {
+          "din277Use": "storage/use area",
+          "din277AreaType": "NUF",
+          "ifcEntityIntent": "IfcSpace"
+        },
+        "ifcEntityIntent": "IfcSpace"
+      }
     },
     {
       "type": "createRoomOutline",
@@ -2221,11 +2517,11 @@
       "outlineMm": [
         {
           "xMm": 2700,
-          "yMm": 4500
+          "yMm": 4300
         },
         {
           "xMm": 4300,
-          "yMm": 4500
+          "yMm": 4300
         },
         {
           "xMm": 4300,
@@ -2239,7 +2535,31 @@
       "programmeCode": "ensuite",
       "functionLabel": "residential wet room",
       "finishSet": "wet-room-tile",
-      "targetAreaM2": 3.2
+      "targetAreaM2": 3.2,
+      "department": "Residential"
+    },
+    {
+      "type": "updateElementProperty",
+      "elementId": "hf-room-ensuite",
+      "key": "roomBimIntent",
+      "value": {
+        "number": "1-203",
+        "department": "Residential",
+        "occupancyUse": "residential wet room",
+        "use": "residential_wet_room",
+        "areaSource": "authored_outline_area_m2",
+        "boundingStatus": "bounded",
+        "schedule": {
+          "include": true,
+          "scheduleName": "Room Schedule"
+        },
+        "classification": {
+          "din277Use": "service/use area",
+          "din277AreaType": "NUF",
+          "ifcEntityIntent": "IfcSpace"
+        },
+        "ifcEntityIntent": "IfcSpace"
+      }
     },
     {
       "type": "createRoomOutline",
@@ -2248,7 +2568,7 @@
       "levelId": "hf-lvl-upper",
       "outlineMm": [
         {
-          "xMm": 5400,
+          "xMm": 5200,
           "yMm": 1000
         },
         {
@@ -2260,14 +2580,38 @@
           "yMm": 3000
         },
         {
-          "xMm": 5400,
+          "xMm": 5200,
           "yMm": 3000
         }
       ],
       "programmeCode": "landing",
       "functionLabel": "upper circulation",
       "finishSet": "residential-standard",
-      "targetAreaM2": 4.4
+      "targetAreaM2": 4.4,
+      "department": "Residential"
+    },
+    {
+      "type": "updateElementProperty",
+      "elementId": "hf-room-landing",
+      "key": "roomBimIntent",
+      "value": {
+        "number": "1-204",
+        "department": "Residential",
+        "occupancyUse": "residential circulation",
+        "use": "residential_circulation",
+        "areaSource": "authored_outline_area_m2",
+        "boundingStatus": "bounded",
+        "schedule": {
+          "include": true,
+          "scheduleName": "Room Schedule"
+        },
+        "classification": {
+          "din277Use": "circulation area",
+          "din277AreaType": "VF",
+          "ifcEntityIntent": "IfcSpace"
+        },
+        "ifcEntityIntent": "IfcSpace"
+      }
     },
     {
       "type": "createRoomOutline",
@@ -2295,7 +2639,31 @@
       "programmeCode": "loggia",
       "functionLabel": "covered outdoor space",
       "finishSet": "exterior-hardwearing",
-      "targetAreaM2": 8.64
+      "targetAreaM2": 8.64,
+      "department": "Exterior"
+    },
+    {
+      "type": "updateElementProperty",
+      "elementId": "hf-room-loggia",
+      "key": "roomBimIntent",
+      "value": {
+        "number": "1-206",
+        "department": "Exterior",
+        "occupancyUse": "covered exterior living",
+        "use": "covered_exterior_living",
+        "areaSource": "authored_outline_area_m2",
+        "boundingStatus": "covered_external_space",
+        "schedule": {
+          "include": true,
+          "scheduleName": "Room Schedule"
+        },
+        "classification": {
+          "din277Use": "covered external area",
+          "din277AreaType": "NUF",
+          "ifcEntityIntent": "IfcSpace"
+        },
+        "ifcEntityIntent": "IfcSpace"
+      }
     },
     {
       "type": "createRoomSeparation",
@@ -2416,11 +2784,11 @@
       "levelId": "hf-lvl-upper",
       "start": {
         "xMm": 2700,
-        "yMm": 4500
+        "yMm": 4300
       },
       "end": {
         "xMm": 4300,
-        "yMm": 4500
+        "yMm": 4300
       }
     },
     {
@@ -2430,7 +2798,7 @@
       "levelId": "hf-lvl-upper",
       "start": {
         "xMm": 4300,
-        "yMm": 4500
+        "yMm": 4300
       },
       "end": {
         "xMm": 4300,
@@ -2462,7 +2830,7 @@
       },
       "end": {
         "xMm": 2700,
-        "yMm": 4500
+        "yMm": 4300
       }
     },
     {
@@ -2583,7 +2951,7 @@
       "name": "Hall / Landing boundary 1",
       "levelId": "hf-lvl-upper",
       "start": {
-        "xMm": 5400,
+        "xMm": 5200,
         "yMm": 1000
       },
       "end": {
@@ -2615,7 +2983,7 @@
         "yMm": 3000
       },
       "end": {
-        "xMm": 5400,
+        "xMm": 5200,
         "yMm": 3000
       }
     },
@@ -2625,11 +2993,11 @@
       "name": "Hall / Landing boundary 4",
       "levelId": "hf-lvl-upper",
       "start": {
-        "xMm": 5400,
+        "xMm": 5200,
         "yMm": 3000
       },
       "end": {
-        "xMm": 5400,
+        "xMm": 5200,
         "yMm": 1000
       }
     },
@@ -3559,7 +3927,7 @@
       "name": "Hall landing access partition",
       "levelId": "hf-lvl-upper",
       "start": {
-        "xMm": 5400,
+        "xMm": 5200,
         "yMm": 1000
       },
       "end": {
@@ -3585,6 +3953,96 @@
       "elementId": "target-house-door-landing",
       "key": "operationType",
       "value": "sliding_single"
+    },
+    {
+      "type": "createWall",
+      "id": "target-house-l1-ensuite-bath-access-partition",
+      "name": "Ensuite to bathroom access partition",
+      "levelId": "hf-lvl-upper",
+      "start": {
+        "xMm": 3600,
+        "yMm": 4300
+      },
+      "end": {
+        "xMm": 4300,
+        "yMm": 4300
+      },
+      "thicknessMm": 120,
+      "heightMm": 2700,
+      "wallTypeId": "wt-internal",
+      "materialKey": "gypsum_board"
+    },
+    {
+      "type": "insertDoorOnWall",
+      "id": "target-house-door-ensuite-bath",
+      "name": "Ensuite to bathroom sliding door",
+      "wallId": "target-house-l1-ensuite-bath-access-partition",
+      "alongT": 0.5,
+      "widthMm": 500,
+      "familyTypeId": "ft-pocket-door-standard"
+    },
+    {
+      "type": "updateElementProperty",
+      "elementId": "target-house-door-ensuite-bath",
+      "key": "operationType",
+      "value": "sliding_single"
+    },
+    {
+      "type": "createWall",
+      "id": "target-house-l1-bath-landing-access-partition",
+      "name": "Bathroom to landing access partition",
+      "levelId": "hf-lvl-upper",
+      "start": {
+        "xMm": 5200,
+        "yMm": 1600
+      },
+      "end": {
+        "xMm": 5200,
+        "yMm": 3000
+      },
+      "thicknessMm": 120,
+      "heightMm": 2700,
+      "wallTypeId": "wt-internal",
+      "materialKey": "gypsum_board"
+    },
+    {
+      "type": "insertDoorOnWall",
+      "id": "target-house-door-bath-landing",
+      "name": "Bathroom to landing sliding door",
+      "wallId": "target-house-l1-bath-landing-access-partition",
+      "alongT": 0.5,
+      "widthMm": 760,
+      "familyTypeId": "ft-pocket-door-standard"
+    },
+    {
+      "type": "updateElementProperty",
+      "elementId": "target-house-door-bath-landing",
+      "key": "operationType",
+      "value": "sliding_single"
+    },
+    {
+      "type": "set_element_prop",
+      "elementId": "target-house-door-gf-bath-laundry",
+      "key": "exteriorDoor",
+      "value": true
+    },
+    {
+      "type": "set_element_prop",
+      "elementId": "target-house-door-utility",
+      "key": "exteriorDoor",
+      "value": true
+    },
+    {
+      "type": "set_element_prop",
+      "elementId": "hf-roof-court-door",
+      "key": "exteriorDoor",
+      "value": true
+    },
+    {
+      "type": "set_element_prop",
+      "elementId": "front-loggia-center-door",
+      "key": "exteriorDoor",
+      "value": true
     }
   ],
   "meta": {

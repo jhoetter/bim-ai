@@ -1,11 +1,10 @@
 from __future__ import annotations
 
+import math
 from collections import defaultdict, deque
 from collections.abc import Iterable, Mapping
 from dataclasses import asdict, dataclass
-import math
 from typing import Any, Literal
-
 
 RoomAccessSeverity = Literal["error", "warning", "info"]
 RoomAccessPriority = Literal["P0", "P1", "P2", "P3"]
@@ -38,6 +37,12 @@ DEFAULT_REQUIRED_ROOM_SCHEDULE_FIELDS: tuple[str, ...] = (
     "department",
     "functionLabel",
     "finishSet",
+    "targetAreaM2",
+    "number",
+    "occupancyUse",
+    "areaSource",
+    "boundingStatus",
+    "classification",
 )
 
 ACCESS_TOLERANCE_MM = 250.0
@@ -75,6 +80,7 @@ def check_room_access_integrity(
     levels = by_kind.get("level", {})
     doors = by_kind.get("door", {})
     stairs = by_kind.get("stair", {})
+    room_separations = by_kind.get("room_separation", {})
 
     findings: list[RoomAccessFinding] = []
     room_polygons = {
@@ -94,7 +100,7 @@ def check_room_access_integrity(
     findings.extend(_egress_findings(rooms, doors, walls, door_evidence, stairs))
     findings.extend(_stair_transition_findings(stairs, levels))
     findings.extend(_room_floor_topology_findings(rooms, room_polygons, floors, floor_polygons))
-    findings.extend(_room_wall_topology_findings(rooms, room_polygons, walls))
+    findings.extend(_room_wall_topology_findings(rooms, room_polygons, walls, room_separations))
     findings.extend(_room_schedule_findings(rooms, profile))
     findings.extend(_profile_placeholder_findings(rooms, profile))
 
@@ -252,8 +258,20 @@ def _egress_findings(
     for stair_id, stair in sorted(stairs.items()):
         base_level = _string(_read(stair, "baseLevelId", "base_level_id"))
         top_level = _string(_read(stair, "topLevelId", "top_level_id"))
-        base_rooms = _rooms_near_point(rooms, by_level.get(base_level or "", set()), stair, "runStartMm")
-        top_rooms = _rooms_near_point(rooms, by_level.get(top_level or "", set()), stair, "runEndMm")
+        base_rooms = _rooms_near_point(
+            rooms,
+            by_level.get(base_level or "", set()),
+            stair,
+            "runStartMm",
+            "runStart",
+        )
+        top_rooms = _rooms_near_point(
+            rooms,
+            by_level.get(top_level or "", set()),
+            stair,
+            "runEndMm",
+            "runEnd",
+        )
         for base_room in base_rooms:
             for top_room in top_rooms:
                 graph[base_room].add(top_room)
@@ -372,16 +390,26 @@ def _room_wall_topology_findings(
     rooms: Mapping[str, Any],
     room_polygons: Mapping[str, list[tuple[float, float]]],
     walls: Mapping[str, Any],
+    room_separations: Mapping[str, Any],
 ) -> list[RoomAccessFinding]:
-    wall_segments_by_level: dict[str, list[tuple[str, tuple[float, float], tuple[float, float]]]] = (
-        defaultdict(list)
-    )
+    boundary_segments_by_level: dict[
+        str, list[tuple[str, str, tuple[float, float], tuple[float, float]]]
+    ] = defaultdict(list)
     for wall_id, wall in walls.items():
         start = _point(_read(wall, "start"))
         end = _point(_read(wall, "end"))
         if start and end:
-            wall_segments_by_level[_string(_read(wall, "levelId", "level_id")) or ""].append(
-                (wall_id, start, end)
+            boundary_segments_by_level[_string(_read(wall, "levelId", "level_id")) or ""].append(
+                (wall_id, "wall", start, end)
+            )
+    for separation_id, separation in room_separations.items():
+        start = _point(_read(separation, "start"))
+        end = _point(_read(separation, "end"))
+        if start and end:
+            boundary_segments_by_level[
+                _string(_read(separation, "levelId", "level_id")) or ""
+            ].append(
+                (separation_id, "room_separation", start, end)
             )
 
     findings: list[RoomAccessFinding] = []
@@ -401,13 +429,14 @@ def _room_wall_topology_findings(
             )
             continue
         level_id = _string(_read(room, "levelId", "level_id")) or ""
-        segments = wall_segments_by_level.get(level_id, [])
+        segments = boundary_segments_by_level.get(level_id, [])
         unsupported_edges = 0
         for edge_start, edge_end in zip(polygon, polygon[1:] + polygon[:1], strict=False):
             midpoint = ((edge_start[0] + edge_end[0]) / 2.0, (edge_start[1] + edge_end[1]) / 2.0)
             if not any(
-                _point_segment_distance_mm(midpoint, wall_start, wall_end) <= TOPOLOGY_TOLERANCE_MM
-                for _wall_id, wall_start, wall_end in segments
+                _point_segment_distance_mm(midpoint, segment_start, segment_end)
+                <= TOPOLOGY_TOLERANCE_MM
+                for _segment_id, _segment_kind, segment_start, segment_end in segments
             ):
                 unsupported_edges += 1
         if unsupported_edges:
@@ -417,9 +446,9 @@ def _room_wall_topology_findings(
                     "BIR-D06-WALL",
                     "warning",
                     "P2",
-                    "Room boundary has edges without nearby wall topology on the same level.",
+                    "Room boundary has edges without nearby wall or room-separation topology on the same level.",
                     (room_id,),
-                    "Add bounding walls/room-separation evidence or revise the room outline to match built topology.",
+                    "Add bounding walls or explicit room-separation lines, or revise the room outline to match built topology.",
                     evidence={"unsupportedEdgeCount": unsupported_edges},
                 )
             )
@@ -437,7 +466,7 @@ def _room_schedule_findings(
     )
     findings: list[RoomAccessFinding] = []
     for room_id, room in sorted(rooms.items()):
-        missing = tuple(field for field in required if _blank(_read(room, field, _snake(field))))
+        missing = tuple(field for field in required if _blank(_read_schedule_field(room, field)))
         if not missing:
             continue
         findings.append(
@@ -453,6 +482,28 @@ def _room_schedule_findings(
             )
         )
     return findings
+
+
+def _read_schedule_field(room: Any, field: str) -> Any:
+    candidates = (field, _snake(field))
+    props = _props(room)
+    room_bim_intent = props.get("roomBimIntent")
+    sources: list[Mapping[str, Any]] = []
+    if isinstance(room, Mapping):
+        sources.append(room)
+    sources.append(props)
+    if isinstance(room_bim_intent, Mapping):
+        sources.append(room_bim_intent)
+
+    for name in candidates:
+        for source in sources:
+            if name in source and not _blank(source[name]):
+                return source[name]
+        if hasattr(room, name):
+            value = getattr(room, name)
+            if not _blank(value):
+                return value
+    return None
 
 
 def _profile_placeholder_findings(
@@ -500,7 +551,7 @@ def _profile_placeholder_findings(
 
 def _elements_mapping(subject: Any) -> dict[str, Any] | None:
     if hasattr(subject, "elements"):
-        raw = getattr(subject, "elements")
+        raw = subject.elements
         return dict(raw) if isinstance(raw, Mapping) else None
     if isinstance(subject, Mapping):
         if "elements" in subject:
@@ -569,6 +620,11 @@ def _read(element: Any, *names: str, default: Any = None) -> Any:
     for name in names:
         if name in props:
             return props[name]
+    room_bim_intent = props.get("roomBimIntent")
+    if isinstance(room_bim_intent, Mapping):
+        for name in names:
+            if name in room_bim_intent:
+                return room_bim_intent[name]
     return default
 
 
@@ -577,7 +633,7 @@ def _props(element: Any) -> dict[str, Any]:
     if isinstance(element, Mapping):
         raw = element.get("props")
     elif hasattr(element, "props"):
-        raw = getattr(element, "props")
+        raw = element.props
     return dict(raw) if isinstance(raw, Mapping) else {}
 
 
@@ -759,9 +815,13 @@ def _rooms_near_point(
     rooms: Mapping[str, Any],
     candidate_room_ids: set[str],
     element: Any,
-    field: str,
+    *fields: str,
 ) -> set[str]:
-    point = _point(_read(element, field, _snake(field)))
+    point = None
+    for field in fields:
+        point = _point(_read(element, field, _snake(field)))
+        if point is not None:
+            break
     if point is None:
         return set()
     matches: set[str] = set()

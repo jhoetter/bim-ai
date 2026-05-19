@@ -147,16 +147,21 @@
       "sheet-a101",
       "stone",
       "sun_settings",
+      "target-house-door-bath-landing",
       "target-house-door-bedroom-bath",
+      "target-house-door-ensuite-bath",
       "target-house-door-ensuite-primary",
       "target-house-door-gf-bath-laundry",
+      "target-house-door-hall-exterior",
       "target-house-door-landing",
       "target-house-door-living-hall",
       "target-house-door-utility",
       "target-house-door-walk-in-closet",
       "target-house-gf-living-access-partition",
+      "target-house-l1-bath-landing-access-partition",
       "target-house-l1-bedroom-bath-access-partition",
       "target-house-l1-closet-access-partition",
+      "target-house-l1-ensuite-bath-access-partition",
       "target-house-l1-landing-access-partition",
       "target-house-property-east",
       "target-house-property-front",
@@ -173,7 +178,28 @@
       "wt-white-wrapper"
     ],
     "optionId": null,
-    "violations": [],
+    "violations": [
+      {
+        "ruleId": "room_target_area_mismatch",
+        "severity": "info",
+        "message": "Room outline area (3.520 m\u00b2) differs from targetAreaM2 (3.200 m\u00b2) beyond the advisory tolerance.",
+        "elementIds": ["hf-room-ensuite"],
+        "blocking": false,
+        "quickFixCommand": null,
+        "discipline": "architecture",
+        "blockingClass": "documentation"
+      },
+      {
+        "ruleId": "room_target_area_mismatch",
+        "severity": "info",
+        "message": "Room outline area (4.800 m\u00b2) differs from targetAreaM2 (4.400 m\u00b2) beyond the advisory tolerance.",
+        "elementIds": ["hf-room-landing"],
+        "blocking": false,
+        "quickFixCommand": null,
+        "discipline": "architecture",
+        "blockingClass": "documentation"
+      }
+    ],
     "offlineEngine": "bim_ai.engine.try_commit_bundle"
   },
   "modelId": "target-house-1-offline-regenerated"

@@ -8,8 +8,19 @@
   "info": {
     "modelId": "target-house-1-offline-regenerated",
     "revision": 2,
-    "total": 0,
-    "groups": []
+    "total": 2,
+    "groups": [
+      {
+        "severity": "info",
+        "code": "room_target_area_mismatch",
+        "count": 2,
+        "elementIds": ["hf-room-ensuite", "hf-room-landing"],
+        "messages": [
+          "Room outline area (3.520 m\u00b2) differs from targetAreaM2 (3.200 m\u00b2) beyond the advisory tolerance.",
+          "Room outline area (4.800 m\u00b2) differs from targetAreaM2 (4.400 m\u00b2) beyond the advisory tolerance."
+        ]
+      }
+    ]
   },
   "error": {
     "modelId": "target-house-1-offline-regenerated",

@@ -1,10 +1,10 @@
 {
   "modelId": "target-house-1-offline-regenerated",
   "revision": 2,
-  "elementCount": 163,
+  "elementCount": 168,
   "countsByKind": {
     "asset_library_entry": 5,
-    "door": 10,
+    "door": 13,
     "elevation_view": 1,
     "family_type": 3,
     "floor": 4,
@@ -34,7 +34,7 @@
     "sweep": 3,
     "toposolid": 1,
     "viewpoint": 8,
-    "wall": 19,
+    "wall": 21,
     "wall_type": 2,
     "window": 2
   }

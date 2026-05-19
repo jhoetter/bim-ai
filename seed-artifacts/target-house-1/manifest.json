@@ -15,20 +15,20 @@
   "acceptance": {
     "status": "offline-refreshed-needs-clean-pass",
     "evidenceRoot": "evidence/live-run-current",
-    "gitHead": "adc345a727778df07f5c00de5fe217820f5b290c",
-    "bundleSha256": "ac8b853d3733be44f24f6635fb72989ddfdfc5fa057d58a04465cf472523577b",
-    "irSha256": "a90e27df1c146b6fb3c9ae18402d3c8662a3ee0cdb0f70c360ccc213ad669261",
+    "gitHead": "982e3c190b631d22bd27fe1d5961f2ec0c6cb96b",
+    "bundleSha256": "139b3a1b6f0f393c5c29925df9f9096560c8c0e95adefc1986d4e20071d3e102",
+    "irSha256": "34757eba0ab4784e91a66232205294ac7cf1c7504bc3701c42b76ed3ffb7bf8e",
     "capabilitiesSha256": "e3faa00d4724d5e375ee853d5e3d56b21254a969a84e702d67013a8bb0125dbb",
-    "advisorRuleDigest": "2098a368361a11b5d342a2380c4920bf9b1718c60883801128546c103e6b8766",
-    "generatedAtEpochMs": 1779183502603,
+    "advisorRuleDigest": "d2d938dde4832ef91d26c33fd8f83a1c0dda738806560ea29bbee5a7a75d1f7c",
+    "generatedAtEpochMs": 1779184646915,
     "notes": "Wave 9 Worker A regenerated deterministic offline evidence from seed-artifacts/target-house-1/bundle.json. Live/browser acceptance and clean-pass findings are tracked in evidence/live-run-current."
   },
   "inputPaths": {
     "source": "spec/target-house",
     "bundle": "target-house-1.bundle.v2.json"
   },
-  "bundleSha256": "a87ec0d47e4030e840c414a8b7adc2d48d2c5d705f667612cbc27fe96ba26cc7",
-  "commandCount": 237,
+  "bundleSha256": "139b3a1b6f0f393c5c29925df9f9096560c8c0e95adefc1986d4e20071d3e102",
+  "commandCount": 263,
   "commandSchemaVersion": "cmd-v3.0",
   "entryComment": {
     "body": "Image-locked Target House 1 BIM seed generated from the sketch-to-BIM methodology with final live evidence."

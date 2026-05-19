@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from bim_ai.elements import DoorElem, FloorElem, LevelElem, RoomElem, Vec2Mm, WallElem
+from bim_ai.elements import DoorElem, FloorElem, LevelElem, RoomElem, StairElem, Vec2Mm, WallElem
 from bim_ai.room_access_integrity import (
     check_room_access_integrity,
     room_access_integrity_smoke_v1,
@@ -18,6 +18,20 @@ def _room(room_id: str, level_id: str, outline: list[tuple[float, float]]) -> di
         "department": "House",
         "functionLabel": "Living",
         "finishSet": "standard",
+        "targetAreaM2": 9.0,
+        "props": {
+            "roomBimIntent": {
+                "number": f"N-{room_id}",
+                "occupancyUse": "residential living",
+                "areaSource": "authored_outline_area",
+                "boundingStatus": "bounded",
+                "classification": {
+                    "din277Use": "living/use area",
+                    "din277AreaType": "NUF",
+                    "ifcEntityIntent": "IfcSpace",
+                },
+            }
+        },
     }
 
 
@@ -46,6 +60,22 @@ def _door(door_id: str, wall_id: str, along_t: float = 0.5, props: dict | None =
         "wallId": wall_id,
         "alongT": along_t,
         "props": props or {},
+    }
+
+
+def _room_sep(
+    separation_id: str,
+    start: tuple[float, float],
+    end: tuple[float, float],
+    *,
+    level_id: str = "lvl-1",
+) -> dict:
+    return {
+        "kind": "room_separation",
+        "id": separation_id,
+        "levelId": level_id,
+        "start": {"xMm": start[0], "yMm": start[1]},
+        "end": {"xMm": end[0], "yMm": end[1]},
     }
 
 
@@ -142,6 +172,55 @@ def test_element_object_mapping_is_valid_subject_shape() -> None:
     assert "room_access_invalid_subject" not in _rule_ids(findings)
 
 
+def test_stair_transition_uses_persisted_object_run_points() -> None:
+    elements = {
+        "lvl-1": LevelElem(id="lvl-1", elevationMm=0),
+        "lvl-2": LevelElem(id="lvl-2", elevationMm=3000),
+        "room-base": RoomElem(
+            id="room-base",
+            levelId="lvl-1",
+            name="Base Hall",
+            outlineMm=[
+                Vec2Mm(xMm=0, yMm=0),
+                Vec2Mm(xMm=3000, yMm=0),
+                Vec2Mm(xMm=3000, yMm=3000),
+                Vec2Mm(xMm=0, yMm=3000),
+            ],
+            programmeCode="hall",
+            department="House",
+            functionLabel="Circulation",
+            finishSet="standard",
+        ),
+        "room-top": RoomElem(
+            id="room-top",
+            levelId="lvl-2",
+            name="Upper Hall",
+            outlineMm=[
+                Vec2Mm(xMm=0, yMm=0),
+                Vec2Mm(xMm=3000, yMm=0),
+                Vec2Mm(xMm=3000, yMm=3000),
+                Vec2Mm(xMm=0, yMm=3000),
+            ],
+            programmeCode="landing",
+            department="House",
+            functionLabel="Circulation",
+            finishSet="standard",
+        ),
+        "stair": StairElem(
+            id="stair",
+            baseLevelId="lvl-1",
+            topLevelId="lvl-2",
+            runStartMm=Vec2Mm(xMm=1000, yMm=1000),
+            runEndMm=Vec2Mm(xMm=2000, yMm=2000),
+            widthMm=1000,
+        ),
+    }
+
+    findings = check_room_access_integrity(elements)
+
+    assert "room_access_stair_room_transition_unresolved" not in _rule_ids(findings)
+
+
 def test_inaccessible_room_is_reported_without_db_or_api() -> None:
     elements = _small_house()
     elements.pop("door-between")
@@ -193,6 +272,57 @@ def test_room_outside_floor_is_reported() -> None:
     assert outside.code == "BIR-D06-FLOOR"
 
 
+def test_room_separations_are_explicit_room_wall_topology() -> None:
+    elements = _small_house()
+    elements["open-room"] = _room(
+        "open-room",
+        "lvl-1",
+        [(1000, 500), (2500, 500), (2500, 2200), (1000, 2200)],
+    )
+    for wall_id in ("wall-mid",):
+        elements.pop(wall_id)
+    for index, (start, end) in enumerate(
+        [
+            ((1000, 500), (2500, 500)),
+            ((2500, 500), (2500, 2200)),
+            ((2500, 2200), (1000, 2200)),
+            ((1000, 2200), (1000, 500)),
+        ],
+        start=1,
+    ):
+        elements[f"sep-open-room-{index}"] = _room_sep(f"sep-open-room-{index}", start, end)
+
+    findings = check_room_access_integrity(elements)
+
+    topology_gaps = [
+        finding
+        for finding in findings
+        if finding.rule_id == "room_access_room_wall_topology_gap"
+        and finding.element_ids == ("open-room",)
+    ]
+    assert topology_gaps == []
+
+
+def test_room_wall_topology_gap_requires_wall_or_explicit_separator() -> None:
+    elements = _small_house()
+    elements["open-room"] = _room(
+        "open-room",
+        "lvl-1",
+        [(1000, 500), (2500, 500), (2500, 2200), (1000, 2200)],
+    )
+
+    findings = check_room_access_integrity(elements)
+
+    gap = next(
+        finding
+        for finding in findings
+        if finding.rule_id == "room_access_room_wall_topology_gap"
+        and finding.element_ids == ("open-room",)
+    )
+    assert gap.code == "BIR-D06-WALL"
+    assert gap.evidence == {"unsupportedEdgeCount": 4}
+
+
 def test_missing_room_schedule_fields_are_reported() -> None:
     elements = _small_house()
     elements["room-b"]["programmeCode"] = ""
@@ -207,6 +337,19 @@ def test_missing_room_schedule_fields_are_reported() -> None:
     )
     assert schedule.element_ids == ("room-b",)
     assert schedule.evidence == {"missingFields": ["programmeCode", "finishSet"]}
+
+
+def test_room_schedule_fields_read_structured_bim_intent() -> None:
+    elements = _small_house()
+    elements["room-b"]["props"]["roomBimIntent"]["classification"] = {
+        "din277Use": "living/use area",
+        "din277AreaType": "NUF",
+        "ifcEntityIntent": "IfcSpace",
+    }
+
+    findings = check_room_access_integrity(elements)
+
+    assert "room_access_missing_room_schedule_fields" not in _rule_ids(findings)
 
 
 def test_unresolved_egress_path_is_reported_for_isolated_accessible_room() -> None:

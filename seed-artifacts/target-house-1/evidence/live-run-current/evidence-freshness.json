@@ -1,23 +1,23 @@
 {
   "schemaVersion": "sketch.evidence.freshness.v1",
-  "generatedAt": "2026-05-19T09:38:22.603488Z",
+  "generatedAt": "2026-05-19T09:57:26.915195Z",
   "ok": true,
   "sourcePath": "seed-artifacts/target-house-1/evidence/live-run-current/tool-run-summary.json",
   "recorded": {
     "schemaVersion": "sketch-to-bim.tool-run.v1",
-    "generatedAt": "2026-05-19T09:38:22.603384Z",
+    "generatedAt": "2026-05-19T09:57:26.915015Z",
     "seed": "target-house-1",
     "modelId": "target-house-1-offline-regenerated",
     "modelRevision": 2,
-    "gitHead": "adc345a727778df07f5c00de5fe217820f5b290c",
+    "gitHead": "982e3c190b631d22bd27fe1d5961f2ec0c6cb96b",
     "bundlePath": "seed-artifacts/target-house-1/bundle.json",
-    "bundleSha256": "ac8b853d3733be44f24f6635fb72989ddfdfc5fa057d58a04465cf472523577b",
-    "commandCount": 237,
+    "bundleSha256": "139b3a1b6f0f393c5c29925df9f9096560c8c0e95adefc1986d4e20071d3e102",
+    "commandCount": 263,
     "irPath": "seed-artifacts/target-house-1/evidence/sketch-ir.json",
-    "irSha256": "a90e27df1c146b6fb3c9ae18402d3c8662a3ee0cdb0f70c360ccc213ad669261",
+    "irSha256": "34757eba0ab4784e91a66232205294ac7cf1c7504bc3701c42b76ed3ffb7bf8e",
     "capabilitiesPath": "spec/sketch-to-bim-capability-matrix.json",
     "capabilitiesSha256": "e3faa00d4724d5e375ee853d5e3d56b21254a969a84e702d67013a8bb0125dbb",
-    "advisorRuleDigest": "2098a368361a11b5d342a2380c4920bf9b1718c60883801128546c103e6b8766",
+    "advisorRuleDigest": "d2d938dde4832ef91d26c33fd8f83a1c0dda738806560ea29bbee5a7a75d1f7c",
     "advisorRuleFiles": [
       "app/bim_ai/constructability_advisories.py",
       "app/bim_ai/constructability_report.py",
@@ -28,16 +28,16 @@
       "packages/web/src/advisor/perspectiveFilter.ts"
     ],
     "mode": "project_initiation_bim",
-    "generatedAtEpochMs": 1779183502603,
+    "generatedAtEpochMs": 1779184646915,
     "executionMode": "offline_bundle_replay"
   },
   "current": {
-    "gitHead": "adc345a727778df07f5c00de5fe217820f5b290c",
+    "gitHead": "982e3c190b631d22bd27fe1d5961f2ec0c6cb96b",
     "modelId": "target-house-1-offline-regenerated",
     "modelRevision": 2,
-    "bundleSha256": "ac8b853d3733be44f24f6635fb72989ddfdfc5fa057d58a04465cf472523577b",
-    "commandCount": 237,
-    "advisorRuleDigest": "2098a368361a11b5d342a2380c4920bf9b1718c60883801128546c103e6b8766",
+    "bundleSha256": "139b3a1b6f0f393c5c29925df9f9096560c8c0e95adefc1986d4e20071d3e102",
+    "commandCount": 263,
+    "advisorRuleDigest": "d2d938dde4832ef91d26c33fd8f83a1c0dda738806560ea29bbee5a7a75d1f7c",
     "advisorRuleFiles": [
       "app/bim_ai/constructability_advisories.py",
       "app/bim_ai/constructability_report.py",
@@ -48,7 +48,7 @@
       "packages/web/src/advisor/perspectiveFilter.ts"
     ],
     "irPath": "seed-artifacts/target-house-1/evidence/sketch-ir.json",
-    "irSha256": "a90e27df1c146b6fb3c9ae18402d3c8662a3ee0cdb0f70c360ccc213ad669261",
+    "irSha256": "34757eba0ab4784e91a66232205294ac7cf1c7504bc3701c42b76ed3ffb7bf8e",
     "capabilitiesPath": "spec/sketch-to-bim-capability-matrix.json",
     "capabilitiesSha256": "e3faa00d4724d5e375ee853d5e3d56b21254a969a84e702d67013a8bb0125dbb"
   },
@@ -64,8 +64,8 @@
       "status": "pass",
       "code": "git_head_current",
       "message": "Evidence gitHead matches current inputs.",
-      "recorded": "adc345a727778df07f5c00de5fe217820f5b290c",
-      "current": "adc345a727778df07f5c00de5fe217820f5b290c"
+      "recorded": "982e3c190b631d22bd27fe1d5961f2ec0c6cb96b",
+      "current": "982e3c190b631d22bd27fe1d5961f2ec0c6cb96b"
     },
     {
       "id": "model_revision",
@@ -80,24 +80,24 @@
       "status": "pass",
       "code": "bundle_sha256_current",
       "message": "Evidence bundleSha256 matches current inputs.",
-      "recorded": "ac8b853d3733be44f24f6635fb72989ddfdfc5fa057d58a04465cf472523577b",
-      "current": "ac8b853d3733be44f24f6635fb72989ddfdfc5fa057d58a04465cf472523577b"
+      "recorded": "139b3a1b6f0f393c5c29925df9f9096560c8c0e95adefc1986d4e20071d3e102",
+      "current": "139b3a1b6f0f393c5c29925df9f9096560c8c0e95adefc1986d4e20071d3e102"
     },
     {
       "id": "advisor_rule_digest",
       "status": "pass",
       "code": "advisor_rule_digest_current",
       "message": "Evidence advisorRuleDigest matches current inputs.",
-      "recorded": "2098a368361a11b5d342a2380c4920bf9b1718c60883801128546c103e6b8766",
-      "current": "2098a368361a11b5d342a2380c4920bf9b1718c60883801128546c103e6b8766"
+      "recorded": "d2d938dde4832ef91d26c33fd8f83a1c0dda738806560ea29bbee5a7a75d1f7c",
+      "current": "d2d938dde4832ef91d26c33fd8f83a1c0dda738806560ea29bbee5a7a75d1f7c"
     },
     {
       "id": "ir_sha256",
       "status": "pass",
       "code": "ir_sha256_current",
       "message": "Evidence irSha256 matches current inputs.",
-      "recorded": "a90e27df1c146b6fb3c9ae18402d3c8662a3ee0cdb0f70c360ccc213ad669261",
-      "current": "a90e27df1c146b6fb3c9ae18402d3c8662a3ee0cdb0f70c360ccc213ad669261"
+      "recorded": "34757eba0ab4784e91a66232205294ac7cf1c7504bc3701c42b76ed3ffb7bf8e",
+      "current": "34757eba0ab4784e91a66232205294ac7cf1c7504bc3701c42b76ed3ffb7bf8e"
     },
     {
       "id": "capabilities_sha256",

@@ -1,281 +1,51 @@
 {
   "schemaVersion": "target-house.clean-pass-gate.v1",
-  "generatedAt": "2026-05-19T09:38:32.465Z",
+  "generatedAt": "2026-05-19T09:57:36.737Z",
   "targetId": "target-house-1",
   "evidenceDir": "/Users/jhoetter/repos/bim-ai/seed-artifacts/target-house-1/evidence/live-run-current",
   "ok": false,
   "summary": {
-    "p0ErrorCount": 15,
+    "p0ErrorCount": 1,
     "rendererBlockerCount": 0,
-    "warningCount": 27,
+    "warningCount": 0,
     "toleratedWarningGroupCount": 0,
-    "unresolvedWarningGroupCount": 3,
+    "unresolvedWarningGroupCount": 0,
     "toleranceCount": 0,
-    "blockerCount": 5
+    "blockerCount": 1
   },
   "blockers": [
     {
       "source": "constructability-report",
-      "code": "BIR-D06-FLOOR",
+      "code": "furniture_wall_clearance_conflict",
       "severity": "error",
-      "count": 2,
-      "elementIds": ["ground-base-floor", "hf-room-gf-bath-laundry", "hf-room-utility"],
-      "messages": ["Room centroid is outside all floor boundaries on its level."],
-      "sources": ["constructability-report"],
-      "path": "",
-      "blockerKind": "p0_error"
-    },
-    {
-      "source": "constructability-report",
-      "code": "BIR-D05-EGRESS",
-      "severity": "error",
-      "count": 13,
-      "elementIds": [
-        "hf-room-bath",
-        "hf-room-carport",
-        "hf-room-ensuite",
-        "hf-room-gf-bath-laundry",
-        "hf-room-kitchen",
-        "hf-room-landing",
-        "hf-room-loggia",
-        "hf-room-utility",
-        "hf-room-walk-in-closet",
-        "room-bedroom",
-        "room-hall",
-        "room-living",
-        "room-terrace"
-      ],
-      "messages": ["Room has door access but no traversable path to an exterior exit."],
-      "sources": ["constructability-report"],
-      "path": "",
-      "blockerKind": "p0_error"
-    },
-    {
-      "source": "constructability-report",
-      "code": "BIR-D07-SCHEDULE",
-      "severity": "warning",
-      "count": 13,
-      "elementIds": [
-        "hf-room-bath",
-        "hf-room-carport",
-        "hf-room-ensuite",
-        "hf-room-gf-bath-laundry",
-        "hf-room-kitchen",
-        "hf-room-landing",
-        "hf-room-loggia",
-        "hf-room-utility",
-        "hf-room-walk-in-closet",
-        "room-bedroom",
-        "room-hall",
-        "room-living",
-        "room-terrace"
-      ],
-      "messages": ["Room is missing fields required for deterministic room schedule integrity."],
-      "sources": ["constructability-report"],
-      "path": "",
-      "missingTolerance": ["ledgerRow"],
-      "blockerKind": "warning_without_tolerance"
-    },
-    {
-      "source": "constructability-report",
-      "code": "BIR-D06-WALL",
-      "severity": "warning",
-      "count": 13,
-      "elementIds": [
-        "hf-room-bath",
-        "hf-room-carport",
-        "hf-room-ensuite",
-        "hf-room-gf-bath-laundry",
-        "hf-room-kitchen",
-        "hf-room-landing",
-        "hf-room-loggia",
-        "hf-room-utility",
-        "hf-room-walk-in-closet",
-        "room-bedroom",
-        "room-hall",
-        "room-living",
-        "room-terrace"
-      ],
-      "messages": ["Room boundary has edges without nearby wall topology on the same level."],
-      "sources": ["constructability-report"],
-      "path": "",
-      "missingTolerance": ["ledgerRow"],
-      "blockerKind": "warning_without_tolerance"
-    },
-    {
-      "source": "constructability-report",
-      "code": "BIR-D05-STAIR",
-      "severity": "warning",
       "count": 1,
-      "elementIds": ["main-stair"],
-      "messages": ["Stair changes levels but is not geometrically tied to rooms at both ends."],
+      "elementIds": ["hf-bath-fixture", "target-house-l1-ensuite-bath-access-partition"],
+      "messages": [
+        "Furniture or family collision proxy is 190 mm from a wall; profile 'construction_readiness' requires 300 mm clearance."
+      ],
       "sources": ["constructability-report"],
       "path": "",
-      "missingTolerance": ["ledgerRow"],
-      "blockerKind": "warning_without_tolerance"
+      "blockerKind": "p0_error"
     }
   ],
   "p0Errors": [
     {
       "source": "constructability-report",
-      "code": "BIR-D06-FLOOR",
+      "code": "furniture_wall_clearance_conflict",
       "severity": "error",
-      "count": 2,
-      "elementIds": ["ground-base-floor", "hf-room-gf-bath-laundry", "hf-room-utility"],
-      "messages": ["Room centroid is outside all floor boundaries on its level."],
-      "sources": ["constructability-report"],
-      "path": ""
-    },
-    {
-      "source": "constructability-report",
-      "code": "BIR-D05-EGRESS",
-      "severity": "error",
-      "count": 13,
-      "elementIds": [
-        "hf-room-bath",
-        "hf-room-carport",
-        "hf-room-ensuite",
-        "hf-room-gf-bath-laundry",
-        "hf-room-kitchen",
-        "hf-room-landing",
-        "hf-room-loggia",
-        "hf-room-utility",
-        "hf-room-walk-in-closet",
-        "room-bedroom",
-        "room-hall",
-        "room-living",
-        "room-terrace"
+      "count": 1,
+      "elementIds": ["hf-bath-fixture", "target-house-l1-ensuite-bath-access-partition"],
+      "messages": [
+        "Furniture or family collision proxy is 190 mm from a wall; profile 'construction_readiness' requires 300 mm clearance."
       ],
-      "messages": ["Room has door access but no traversable path to an exterior exit."],
       "sources": ["constructability-report"],
       "path": ""
     }
   ],
   "rendererBlockers": [],
-  "warnings": [
-    {
-      "source": "constructability-report",
-      "code": "BIR-D07-SCHEDULE",
-      "severity": "warning",
-      "count": 13,
-      "elementIds": [
-        "hf-room-bath",
-        "hf-room-carport",
-        "hf-room-ensuite",
-        "hf-room-gf-bath-laundry",
-        "hf-room-kitchen",
-        "hf-room-landing",
-        "hf-room-loggia",
-        "hf-room-utility",
-        "hf-room-walk-in-closet",
-        "room-bedroom",
-        "room-hall",
-        "room-living",
-        "room-terrace"
-      ],
-      "messages": ["Room is missing fields required for deterministic room schedule integrity."],
-      "sources": ["constructability-report"],
-      "path": ""
-    },
-    {
-      "source": "constructability-report",
-      "code": "BIR-D06-WALL",
-      "severity": "warning",
-      "count": 13,
-      "elementIds": [
-        "hf-room-bath",
-        "hf-room-carport",
-        "hf-room-ensuite",
-        "hf-room-gf-bath-laundry",
-        "hf-room-kitchen",
-        "hf-room-landing",
-        "hf-room-loggia",
-        "hf-room-utility",
-        "hf-room-walk-in-closet",
-        "room-bedroom",
-        "room-hall",
-        "room-living",
-        "room-terrace"
-      ],
-      "messages": ["Room boundary has edges without nearby wall topology on the same level."],
-      "sources": ["constructability-report"],
-      "path": ""
-    },
-    {
-      "source": "constructability-report",
-      "code": "BIR-D05-STAIR",
-      "severity": "warning",
-      "count": 1,
-      "elementIds": ["main-stair"],
-      "messages": ["Stair changes levels but is not geometrically tied to rooms at both ends."],
-      "sources": ["constructability-report"],
-      "path": ""
-    }
-  ],
+  "warnings": [],
   "toleratedWarnings": [],
-  "unresolvedWarnings": [
-    {
-      "source": "constructability-report",
-      "code": "BIR-D07-SCHEDULE",
-      "severity": "warning",
-      "count": 13,
-      "elementIds": [
-        "hf-room-bath",
-        "hf-room-carport",
-        "hf-room-ensuite",
-        "hf-room-gf-bath-laundry",
-        "hf-room-kitchen",
-        "hf-room-landing",
-        "hf-room-loggia",
-        "hf-room-utility",
-        "hf-room-walk-in-closet",
-        "room-bedroom",
-        "room-hall",
-        "room-living",
-        "room-terrace"
-      ],
-      "messages": ["Room is missing fields required for deterministic room schedule integrity."],
-      "sources": ["constructability-report"],
-      "path": "",
-      "missingTolerance": ["ledgerRow"]
-    },
-    {
-      "source": "constructability-report",
-      "code": "BIR-D06-WALL",
-      "severity": "warning",
-      "count": 13,
-      "elementIds": [
-        "hf-room-bath",
-        "hf-room-carport",
-        "hf-room-ensuite",
-        "hf-room-gf-bath-laundry",
-        "hf-room-kitchen",
-        "hf-room-landing",
-        "hf-room-loggia",
-        "hf-room-utility",
-        "hf-room-walk-in-closet",
-        "room-bedroom",
-        "room-hall",
-        "room-living",
-        "room-terrace"
-      ],
-      "messages": ["Room boundary has edges without nearby wall topology on the same level."],
-      "sources": ["constructability-report"],
-      "path": "",
-      "missingTolerance": ["ledgerRow"]
-    },
-    {
-      "source": "constructability-report",
-      "code": "BIR-D05-STAIR",
-      "severity": "warning",
-      "count": 1,
-      "elementIds": ["main-stair"],
-      "messages": ["Stair changes levels but is not geometrically tied to rooms at both ends."],
-      "sources": ["constructability-report"],
-      "path": "",
-      "missingTolerance": ["ledgerRow"]
-    }
-  ],
+  "unresolvedWarnings": [],
   "toleranceLedger": {
     "ok": false,
     "toleranceCount": 0,
