@@ -267,7 +267,9 @@ def test_room_outside_floor_is_reported() -> None:
 
     findings = check_room_access_integrity(elements)
 
-    outside = next(finding for finding in findings if finding.rule_id == "room_access_room_outside_floor")
+    outside = next(
+        finding for finding in findings if finding.rule_id == "room_access_room_outside_floor"
+    )
     assert outside.element_ids == ("room-b", "floor-1")
     assert outside.code == "BIR-D06-FLOOR"
 
@@ -372,11 +374,68 @@ def test_unresolved_egress_path_is_reported_for_isolated_accessible_room() -> No
     findings = check_room_access_integrity(elements)
 
     egress = [
-        finding
-        for finding in findings
-        if finding.rule_id == "room_access_unresolved_egress_path"
+        finding for finding in findings if finding.rule_id == "room_access_unresolved_egress_path"
     ]
     assert [finding.element_ids for finding in egress] == [("room-c",)]
+
+
+def test_multilevel_room_graph_reaches_exterior_through_stair_and_landing_doors() -> None:
+    elements = {
+        "lvl-1": {"kind": "level", "id": "lvl-1", "name": "Level 1"},
+        "lvl-2": {"kind": "level", "id": "lvl-2", "name": "Level 2"},
+        "floor-1": {
+            "kind": "floor",
+            "id": "floor-1",
+            "levelId": "lvl-1",
+            "boundaryMm": [
+                {"xMm": 0, "yMm": 0},
+                {"xMm": 4000, "yMm": 0},
+                {"xMm": 4000, "yMm": 3000},
+                {"xMm": 0, "yMm": 3000},
+            ],
+        },
+        "floor-2": {
+            "kind": "floor",
+            "id": "floor-2",
+            "levelId": "lvl-2",
+            "boundaryMm": [
+                {"xMm": 0, "yMm": 0},
+                {"xMm": 4000, "yMm": 0},
+                {"xMm": 4000, "yMm": 3000},
+                {"xMm": 0, "yMm": 3000},
+            ],
+        },
+        "wall-exit": _wall("wall-exit", (0, 0), (0, 3000), props={"exterior": True}),
+        "wall-ground-room": _wall("wall-ground-room", (2000, 0), (2000, 3000)),
+        "wall-upper-room": _wall("wall-upper-room", (2000, 0), (2000, 3000), level_id="lvl-2"),
+        "room-ground": _room("room-ground", "lvl-1", [(0, 0), (2000, 0), (2000, 3000), (0, 3000)]),
+        "room-upper-landing": _room(
+            "room-upper-landing",
+            "lvl-2",
+            [(0, 0), (2000, 0), (2000, 3000), (0, 3000)],
+        ),
+        "room-upper-bed": _room(
+            "room-upper-bed",
+            "lvl-2",
+            [(2000, 0), (4000, 0), (4000, 3000), (2000, 3000)],
+        ),
+        "door-exit": _door("door-exit", "wall-exit", 0.5, {"exteriorDoor": True}),
+        "door-upper": _door("door-upper", "wall-upper-room", 0.5),
+        "stair-main": {
+            "kind": "stair",
+            "id": "stair-main",
+            "baseLevelId": "lvl-1",
+            "topLevelId": "lvl-2",
+            "runStartMm": {"xMm": 1000, "yMm": 1000},
+            "runEndMm": {"xMm": 1000, "yMm": 1000},
+        },
+    }
+
+    findings = check_room_access_integrity(elements)
+
+    assert not [
+        finding for finding in findings if finding.rule_id == "room_access_unresolved_egress_path"
+    ]
 
 
 def test_profile_controlled_occupancy_and_accessibility_placeholders() -> None:

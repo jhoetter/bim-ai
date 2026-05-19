@@ -10,6 +10,7 @@ from uuid import UUID
 
 from bim_ai.constraints_evaluation import evaluate
 from bim_ai.elements import LevelElem, ProjectBasePointElem
+from bim_ai.room_access_integrity import check_room_access_integrity
 from scripts import seed
 from scripts.seed import SEED_PROJECT_ID, _load_artifact, _materialize, seed_async
 
@@ -183,6 +184,7 @@ def test_checked_in_target_house_seed_artifact_is_portable_and_loadable() -> Non
         for command in commands
         if command.get("type") == "createStair" and command.get("id") == "main-stair"
     )
+    assert main_stair["runEndMm"] == {"xMm": 6500, "yMm": 2000}
     assert main_stair["boundaryMm"] == [
         {"xMm": 1300, "yMm": 1100},
         {"xMm": 2300, "yMm": 1100},
@@ -214,6 +216,9 @@ def test_checked_in_target_house_seed_artifact_is_portable_and_loadable() -> Non
     assert isinstance(doc.elements.get("hf-lvl-ground"), LevelElem)
     assert "hf-roof-main" in wire["elements"]
     assert "hf-roof-court-opening" in wire["elements"]
+    assert not [
+        finding for finding in check_room_access_integrity(wire) if finding.code == "BIR-D05-EGRESS"
+    ]
 
     target_warning_rules = {
         "constructability_proxy_unsupported",
