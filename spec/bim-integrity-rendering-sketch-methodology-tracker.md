@@ -907,6 +907,27 @@ Exit: `target-house-final-package.mjs --require-ready` either passes or is
 blocked only by tracker rows outside target-house/live-readiness scope; no worker
 may mark a row Done without linked implementation evidence and tests/proof hooks.
 
+### Wave 14: P0 Authoring, Envelope, Exchange, And Advisor UX
+
+Goal: close more P0 platform gaps that let invalid BIM be authored, hidden,
+rendered silently, or handed to agents without actionable repair commands.
+
+Scope: dispatch five independent workers. Each worker must commit locally, avoid
+unrelated dirty files, update tracker evidence rows, and keep status changes
+conservative.
+
+| Agent | Ownership                                             | Primary items                              |
+| ----- | ----------------------------------------------------- | ------------------------------------------ |
+| W14-A | Authoring command validation and helper/analysis isolation | `BIR-B01`, `BIR-B02`, `BIR-B03`, `BIR-B04` |
+| W14-B | Hosted opening conflict graph and repair hints        | `BIR-B07`, `BIR-C06`, `BIR-C07`, `BIR-C08` |
+| W14-C | Roof, envelope, terrace, loggia, and facade integrity | `BIR-F01`, `BIR-F02`, `BIR-F03`, `BIR-F04`, `BIR-F05` |
+| W14-D | Exchange/readback fidelity and schedule/sheet export parity | `BIR-K01`, `BIR-K02`, `BIR-K03`, `BIR-K04` |
+| W14-E | Advisor UX/API actionability and batch diagnostics    | `BIR-H03`, `BIR-H04`, `BIR-H05`, `BIR-H06`, `BIR-U02` |
+
+Exit: new rules are deterministic, covered by focused fixtures, surfaced through
+CLI/API/MCP-consumable data where relevant, and do not add sketch-specific
+subjective checks to the normal Advisor.
+
 ## Non-Negotiable Acceptance Rules
 
 - Do not mark a seed `accepted` while any P0 integrity or renderer diagnostic is
