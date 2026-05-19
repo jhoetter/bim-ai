@@ -3,8 +3,8 @@
   "seed": "target-house-1",
   "generatedAt": "1970-01-01T00:00:00.000Z",
   "git": {
-    "currentHead": "1090e1729eb7187f7106f1e2f75cebe175f9f71a",
-    "evidenceHead": "1090e1729eb7187f7106f1e2f75cebe175f9f71a",
+    "currentHead": "dd06a2913c1bea05502853714b745840724d0b60",
+    "evidenceHead": "dd06a2913c1bea05502853714b745840724d0b60",
     "dirtyCheckPolicy": "Report records source/evidence digests and git heads; concurrent dirty files are not normalized."
   },
   "paths": {
@@ -26,10 +26,10 @@
     "spec/target-house/target-house-1-phase-plan.md": "sha256:a9f6b7d533e0434655c49d88a69299e90aeef9e120fb6f410b88fc007eba372a",
     "bundle": "sha256:2f2c1a220f13a1c07b0d0b1d08ab601d6c79b775ea8838f574060b5ce25d7f6c",
     "snapshot": "sha256:d6657c17c5a85adcf052d004b923041eedf62ca33d6f4ffb9988017786aebf02",
-    "advisorRuleDigest": "sha256:a0fc72d6d26e6f6f8b0e492cd24c14ef3891ed50cc8fe5cbb3bc9317facc9c3b",
+    "advisorRuleDigest": "sha256:7039ff7a78edfaf3f595539470db39aabed7769451aab6a14349b418ba32f301",
     "capabilities": "sha256:e3faa00d4724d5e375ee853d5e3d56b21254a969a84e702d67013a8bb0125dbb",
-    "rendererSupportMatrix": "sha256:d977b9e06401080c0edf5860ce06bd4da63236829750eef33c20424dbb98395d",
-    "finalManifest": "sha256:7045267d699e86f26be78d1534d19cdc3f684ce9a6ff68b002622b49318bda28",
+    "rendererSupportMatrix": "sha256:acf4cc7457a60f8f7e6b899d79e980335b4bd8382e98d54412a83077eb3c962d",
+    "finalManifest": "sha256:56e7d1089e0688fbc7d868e1d4ea53bdf3ed456d5d13488ef33a60bb4eca4e60",
     "performanceEvidence": "sha256:61cb87c5b987fb939975ce20f0dfdd989ae155183eb5d1c4e7bce020ad9a6af7"
   },
   "evidenceFiles": [
@@ -37,7 +37,7 @@
       "key": "tool_run_summary",
       "path": "seed-artifacts/target-house-1/evidence/live-run-current/tool-run-summary.json",
       "present": true,
-      "sha256": "sha256:8e8b664db98171ccbd2c66aace38a9cb83e569b8ddb65d029c41fa065f38194f",
+      "sha256": "sha256:bba8dedfc10a388b9248624bbe806bf7b6cf39f2f78b0ac3bf077261aa5bef3f",
       "schemaVersion": "sketch-to-bim.tool-run.v1",
       "status": "present",
       "summary": null
@@ -46,7 +46,7 @@
       "key": "evidence_manifest",
       "path": "seed-artifacts/target-house-1/evidence/live-run-current/evidence-manifest.json",
       "present": true,
-      "sha256": "sha256:005e4cb8b37df0894bd715ed5647d51fe7820baffbb86243085e3d4576ec17e5",
+      "sha256": "sha256:a4f5abc042ddb510db193dee00133d878e4e1f09d66ba87a5394130519972132",
       "schemaVersion": "sketch.evidence.collection.v1",
       "status": "present",
       "summary": {
@@ -121,7 +121,7 @@
       "key": "constructability_report",
       "path": "seed-artifacts/target-house-1/evidence/live-run-current/constructability-report.json",
       "present": true,
-      "sha256": "sha256:c473d20a0dc93e89cba462c9b80823e49182f79ff36cc8023376a30e4f721fca",
+      "sha256": "sha256:3359818891a6d10b5bc2908d5307d6977a41d271557521e6b57f49c91d734f45",
       "schemaVersion": "constructabilityReport_v1",
       "status": "pass",
       "summary": {
@@ -161,7 +161,7 @@
       "key": "visual_evidence_contract",
       "path": "seed-artifacts/target-house-1/evidence/live-run-current/visual-evidence-contract.json",
       "present": true,
-      "sha256": "sha256:6c45f51faacb8dbb3131c1b0af596b5e1d66dff15bc06da1ce0d5d094e63433a",
+      "sha256": "sha256:6a445e6e1419ecf8ee744bc71ba123b5f3e48238ea6336a97127f2a923cf8688",
       "schemaVersion": "sketch.visual-evidence-contract.v1",
       "status": "present",
       "summary": null
@@ -170,7 +170,7 @@
       "key": "bim_data_quality",
       "path": "seed-artifacts/target-house-1/evidence/live-run-current/bim-data-quality.json",
       "present": true,
-      "sha256": "sha256:dc8778237612371ec2ec7122809f9a447fba491957589ac44bb615a3b68b051d",
+      "sha256": "sha256:045391911f0cbfe3493f161d2020d081c3d3c62ada89270c6e0f76b82c607aca",
       "schemaVersion": "sketch.bim-data-quality.v1",
       "status": "pass",
       "summary": {
@@ -184,7 +184,7 @@
       "key": "export_validation",
       "path": "seed-artifacts/target-house-1/evidence/live-run-current/export-validation.json",
       "present": true,
-      "sha256": "sha256:b067dbe6bb29fae7a82636573c13bb1cee342c2a2299e9646ee4ee1d15f45e2d",
+      "sha256": "sha256:8b803eb580f1f3e87d27625ef15567237684ad7cb7c81d8cdb66800cc48e1b4a",
       "schemaVersion": "sketch.exchange-validation.v1",
       "status": "pass",
       "summary": {
@@ -198,7 +198,7 @@
       "key": "tolerance_ledger",
       "path": "seed-artifacts/target-house-1/evidence/live-run-current/tolerance-ledger.json",
       "present": true,
-      "sha256": "sha256:b574d4b0bb5dc3170e7a9e93b989e4164410e0b60f9c3225306ed68bc90167e2",
+      "sha256": "sha256:bcc56a1aa38750499e2712bdcb412fc0425705470dabf453e58b84d72aeede66",
       "schemaVersion": "sketch.tolerance-ledger.v1",
       "status": "pass",
       "summary": {
@@ -221,7 +221,7 @@
       "key": "clean_pass_gate",
       "path": "seed-artifacts/target-house-1/evidence/live-run-current/clean-pass-gate.json",
       "present": true,
-      "sha256": "sha256:466136b04b0919fd153e132864143422b3e861b1351574f8eaac99d3b98ca4d9",
+      "sha256": "sha256:b896c7fda7a650ec809ec04b223c15e1a84a8c27fa74459bac04061fdc077f87",
       "schemaVersion": "target-house.clean-pass-gate.v1",
       "status": "pass",
       "summary": {
@@ -362,7 +362,8 @@
             "advisor-close"
           ],
           "failedInteractions": [],
-          "actionableChurnCount": null
+          "actionableChurnCount": null,
+          "liveBrowserProof": null
         },
         {
           "code": "acceptance_rehearsal_gate",
@@ -822,7 +823,7 @@
     "semanticSelectorCoverageCount": 10,
     "missingElementCoverageCount": 0,
     "openFindingCount": 0,
-    "rendererSupportMatrixDigest": "sha256:d977b9e06401080c0edf5860ce06bd4da63236829750eef33c20424dbb98395d",
+    "rendererSupportMatrixDigest": "sha256:acf4cc7457a60f8f7e6b899d79e980335b4bd8382e98d54412a83077eb3c962d",
     "screenshotMissingCount": 0,
     "blockerCount": 4,
     "evidenceAcceptanceOk": true,
@@ -842,7 +843,7 @@
         "elementCoverageStatus": "semantic_selectors_only",
         "openFindingCount": 0,
         "rendererSupport": {
-          "matrixDigest": "sha256:d977b9e06401080c0edf5860ce06bd4da63236829750eef33c20424dbb98395d",
+          "matrixDigest": "sha256:acf4cc7457a60f8f7e6b899d79e980335b4bd8382e98d54412a83077eb3c962d",
           "requiredFeature": "viewport-3d",
           "status": "matrix_linked"
         },
@@ -869,7 +870,7 @@
         "elementCoverageStatus": "semantic_selectors_only",
         "openFindingCount": 0,
         "rendererSupport": {
-          "matrixDigest": "sha256:d977b9e06401080c0edf5860ce06bd4da63236829750eef33c20424dbb98395d",
+          "matrixDigest": "sha256:acf4cc7457a60f8f7e6b899d79e980335b4bd8382e98d54412a83077eb3c962d",
           "requiredFeature": "viewport-3d",
           "status": "matrix_linked"
         },
@@ -900,7 +901,7 @@
         "elementCoverageStatus": "semantic_selectors_only",
         "openFindingCount": 0,
         "rendererSupport": {
-          "matrixDigest": "sha256:d977b9e06401080c0edf5860ce06bd4da63236829750eef33c20424dbb98395d",
+          "matrixDigest": "sha256:acf4cc7457a60f8f7e6b899d79e980335b4bd8382e98d54412a83077eb3c962d",
           "requiredFeature": "roof-opening",
           "status": "matrix_linked"
         },
@@ -930,7 +931,7 @@
         "elementCoverageStatus": "semantic_selectors_only",
         "openFindingCount": 0,
         "rendererSupport": {
-          "matrixDigest": "sha256:d977b9e06401080c0edf5860ce06bd4da63236829750eef33c20424dbb98395d",
+          "matrixDigest": "sha256:acf4cc7457a60f8f7e6b899d79e980335b4bd8382e98d54412a83077eb3c962d",
           "requiredFeature": "slab-opening",
           "status": "matrix_linked"
         },
@@ -957,7 +958,7 @@
         "elementCoverageStatus": "semantic_selectors_only",
         "openFindingCount": 0,
         "rendererSupport": {
-          "matrixDigest": "sha256:d977b9e06401080c0edf5860ce06bd4da63236829750eef33c20424dbb98395d",
+          "matrixDigest": "sha256:acf4cc7457a60f8f7e6b899d79e980335b4bd8382e98d54412a83077eb3c962d",
           "requiredFeature": "viewport-3d",
           "status": "matrix_linked"
         },
@@ -984,7 +985,7 @@
         "elementCoverageStatus": "semantic_selectors_only",
         "openFindingCount": 0,
         "rendererSupport": {
-          "matrixDigest": "sha256:d977b9e06401080c0edf5860ce06bd4da63236829750eef33c20424dbb98395d",
+          "matrixDigest": "sha256:acf4cc7457a60f8f7e6b899d79e980335b4bd8382e98d54412a83077eb3c962d",
           "requiredFeature": "material-resolution",
           "status": "matrix_linked"
         },
@@ -1012,7 +1013,7 @@
         "elementCoverageStatus": "semantic_selectors_only",
         "openFindingCount": 0,
         "rendererSupport": {
-          "matrixDigest": "sha256:d977b9e06401080c0edf5860ce06bd4da63236829750eef33c20424dbb98395d",
+          "matrixDigest": "sha256:acf4cc7457a60f8f7e6b899d79e980335b4bd8382e98d54412a83077eb3c962d",
           "requiredFeature": "stair-geometry",
           "status": "matrix_linked"
         },
@@ -1054,7 +1055,7 @@
         "elementCoverageStatus": "semantic_selectors_only",
         "openFindingCount": 0,
         "rendererSupport": {
-          "matrixDigest": "sha256:d977b9e06401080c0edf5860ce06bd4da63236829750eef33c20424dbb98395d",
+          "matrixDigest": "sha256:acf4cc7457a60f8f7e6b899d79e980335b4bd8382e98d54412a83077eb3c962d",
           "requiredFeature": "roof-opening",
           "status": "matrix_linked"
         },
@@ -1081,7 +1082,7 @@
         "elementCoverageStatus": "semantic_selectors_only",
         "openFindingCount": 0,
         "rendererSupport": {
-          "matrixDigest": "sha256:d977b9e06401080c0edf5860ce06bd4da63236829750eef33c20424dbb98395d",
+          "matrixDigest": "sha256:acf4cc7457a60f8f7e6b899d79e980335b4bd8382e98d54412a83077eb3c962d",
           "requiredFeature": "viewport-3d",
           "status": "matrix_linked"
         },
@@ -1110,7 +1111,7 @@
         "elementCoverageStatus": "semantic_selectors_only",
         "openFindingCount": 0,
         "rendererSupport": {
-          "matrixDigest": "sha256:d977b9e06401080c0edf5860ce06bd4da63236829750eef33c20424dbb98395d",
+          "matrixDigest": "sha256:acf4cc7457a60f8f7e6b899d79e980335b4bd8382e98d54412a83077eb3c962d",
           "requiredFeature": "room-visualization",
           "status": "matrix_linked"
         },
@@ -1144,5 +1145,5 @@
     }
   ],
   "ready": false,
-  "lineageDigestSha256": "0ea9e68f84dd99765cbb40c50b3728a160e1aac89ab31429217b33e483160618"
+  "lineageDigestSha256": "6a8834fe7d0a2df31eda41a9b2e3be80d4554c2a08aa4fc9d991b03e60040f02"
 }
