@@ -215,7 +215,7 @@ This tracker is complete only when all of these are true:
 | `BIR-H02` | P0       | Partial     | Advisor findings must be actionable from CLI/MCP. | CLI/API payloads include same ids, rule metadata, severity, recommendation, fix hints, and profile/perspective filters.                          |
 | `BIR-H03` | P0       | Not started | Add integrity preflight command.                  | `qa integrity` or equivalent reports P0 model-integrity checks independent of constructability profile.                                          |
 | `BIR-H04` | P0       | Not started | Add agent-friendly remediation loop.              | CLI/MCP can list findings, propose safe correction bundles, dry-run fixes, commit accepted fixes, and recapture evidence.                        |
-| `BIR-H05` | P1       | Not started | Add findings-to-viewpoint bridge.                 | Findings include or can resolve saved camera/plan/context views focused on affected elements.                                                    |
+| `BIR-H05` | P1       | Partial     | Add findings-to-viewpoint bridge.                 | Findings include or can resolve saved camera/plan/context views focused on affected elements.                                                    |
 | `BIR-H06` | P1       | Not started | Add batch/performance diagnostics.                | Advisor reports rule timing, affected-element count, skipped/unsupported checks, and incremental eligibility.                                    |
 | `BIR-H07` | P1       | Not started | Add multi-profile comparison.                     | Agents can compare default, construction_readiness, fire, accessibility, structure, MEP, and exchange profiles without manually merging outputs. |
 
@@ -928,6 +928,20 @@ conservative.
 | W14-C | Roof, envelope, terrace, loggia, and facade integrity | `BIR-F01`, `BIR-F02`, `BIR-F03`, `BIR-F04`, `BIR-F05` |
 | W14-D | Exchange/readback fidelity and schedule/sheet export parity | `BIR-K01`, `BIR-K02`, `BIR-K03`, `BIR-K04` |
 | W14-E | Advisor UX/API actionability and batch diagnostics    | `BIR-H03`, `BIR-H04`, `BIR-H05`, `BIR-H06`, `BIR-U02` |
+
+W14-E evidence, 2026-05-19: constructability report findings now include
+deterministic `priority` / `priorityRank` ordering plus context-only
+`saveViewpoint` command hints (`viewpointRef`, `evidenceRefs`, and
+`safeCommandHints`) for findings with physical element bounds. The web Advisor
+merge maps those context-only hints into the existing quick-fix command display
+so UI, CLI, and MCP/agent consumers can save a focused review view without
+mutating model geometry. Frontend coverage:
+`pnpm --filter @bim-ai/web exec vitest run
+src/advisor/unifiedAdvisorViolations.test.ts
+src/advisor/advisorViolationContext.test.ts`. Backend constructability report
+coverage was added in `tests/test_constructability_report.py`; the targeted
+fixture passes locally while broader file execution still reflects unrelated
+dirty constructability/domain-integrity changes in the shared workspace.
 
 Exit: new rules are deterministic, covered by focused fixtures, surfaced through
 CLI/API/MCP-consumable data where relevant, and do not add sketch-specific

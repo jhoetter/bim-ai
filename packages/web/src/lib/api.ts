@@ -274,7 +274,28 @@ export type ConstructabilityFinding = {
   elementIds: string[];
   discipline?: string;
   blockingClass?: string;
+  priority?: string;
+  priorityRank?: number;
   recommendation?: string;
+  viewpointRef?: string;
+  evidenceRefs?: Array<Record<string, unknown>>;
+  safeCommandHints?: Array<{
+    label?: string;
+    safety?: 'context_only' | 'dry_run_required' | 'destructive' | string;
+    command?: Record<string, unknown>;
+  }>;
+  actionability?: {
+    priority?: string;
+    priorityRank?: number;
+    primaryAction?: string;
+    viewpointRef?: string;
+    evidenceRefs?: Array<Record<string, unknown>>;
+    safeCommandHints?: Array<{
+      label?: string;
+      safety?: 'context_only' | 'dry_run_required' | 'destructive' | string;
+      command?: Record<string, unknown>;
+    }>;
+  };
 };
 
 export type ConstructabilityIssue = {
@@ -310,6 +331,7 @@ export type ConstructabilityReport = {
     issueCount: number;
     suppressedFindingCount?: number;
     severityCounts: Record<string, number>;
+    priorityCounts?: Record<string, number>;
     ruleCounts: Record<string, number>;
     statusCounts: Record<string, number>;
   };

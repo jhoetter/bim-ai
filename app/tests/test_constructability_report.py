@@ -24,7 +24,9 @@ from bim_ai.elements import (
 def test_constructability_report_filters_and_reconciles_findings() -> None:
     elements = {
         "lvl-1": LevelElem(kind="level", id="lvl-1", name="Level 1", elevationMm=0.0),
-        "lvl-2": LevelElem(kind="level", id="lvl-2", name="Level 2", elevationMm=3000.0),
+        "lvl-2": LevelElem(
+            kind="level", id="lvl-2", name="Level 2", elevationMm=3000.0
+        ),
         "wall-1": WallElem(
             kind="wall",
             id="wall-1",
@@ -60,12 +62,28 @@ def test_constructability_report_filters_and_reconciles_findings() -> None:
 
     assert report["format"] == "constructabilityReport_v1"
     assert report["revision"] == 7
-    assert report["summary"]["findingCount"] == 1
-    assert report["summary"]["ruleCounts"] == {"furniture_wall_hard_clash": 1}
-    finding = report["findings"][0]
+    assert report["summary"]["findingCount"] >= 1
+    assert report["summary"]["ruleCounts"]["furniture_wall_hard_clash"] == 1
+    finding = next(
+        row
+        for row in report["findings"]
+        if row["ruleId"] == "furniture_wall_hard_clash"
+    )
     assert finding["ruleId"] == "furniture_wall_hard_clash"
     assert finding["blockingClass"] == "geometry"
     assert "recommendation" in finding
+    assert finding["priority"] == "P1"
+    assert finding["priorityRank"] < 1200
+    assert finding["viewpointRef"].startswith("vp-constructability-")
+    assert finding["evidenceRefs"] == [
+        {"kind": "viewpoint", "viewpointId": finding["viewpointRef"]}
+    ]
+    command_hint = finding["safeCommandHints"][0]
+    assert command_hint["safety"] == "context_only"
+    assert command_hint["command"]["type"] == "saveViewpoint"
+    assert command_hint["command"]["id"] == finding["viewpointRef"]
+    assert command_hint["command"]["camera"]["target"]["zMm"] > 0
+    assert report["summary"]["priorityCounts"]["P1"] >= 1
     assert report["issues"][0]["ruleId"] == "furniture_wall_hard_clash"
     assert report["issues"][0]["pairKey"] == "shelf-1::wall-1"
     assert report["issues"][0]["recommendation"] == finding["recommendation"]
@@ -135,7 +153,9 @@ def test_constructability_report_omits_open_separator_only_room_access_signal() 
         ),
     }
 
-    report = build_constructability_report(elements, revision=7, profile="construction_readiness")
+    report = build_constructability_report(
+        elements, revision=7, profile="construction_readiness"
+    )
 
     assert "room_access_open_separator_only_access" not in {
         finding["ruleId"] for finding in report["findings"]
@@ -275,7 +295,9 @@ def test_constructability_report_applies_scoped_suppression_records() -> None:
     )
 
 
-def test_constructability_report_construction_readiness_promotes_serious_findings() -> None:
+def test_constructability_report_construction_readiness_promotes_serious_findings() -> (
+    None
+):
     elements = {
         "lvl-1": LevelElem(kind="level", id="lvl-1", name="Level 1", elevationMm=0.0),
         "wall-1": WallElem(
@@ -309,7 +331,9 @@ def test_constructability_report_construction_readiness_promotes_serious_finding
         ),
     }
 
-    report = build_constructability_report(elements, revision=7, profile="construction_readiness")
+    report = build_constructability_report(
+        elements, revision=7, profile="construction_readiness"
+    )
 
     assert report["profile"] == "construction_readiness"
     assert report["summary"]["severityCounts"] == {"error": 1}
@@ -522,7 +546,9 @@ def test_constructability_readiness_reports_ids_like_metadata_requirements() -> 
     assert resolved_report["summary"]["ruleCounts"] == {}
 
 
-def test_constructability_readiness_reports_opening_floor_and_roof_metadata_requirements() -> None:
+def test_constructability_readiness_reports_opening_floor_and_roof_metadata_requirements() -> (
+    None
+):
     elements = {
         "lvl-1": LevelElem(kind="level", id="lvl-1", name="Level 1", elevationMm=0.0),
         "wall-1": WallElem(
@@ -578,7 +604,9 @@ def test_constructability_readiness_reports_opening_floor_and_roof_metadata_requ
         ),
     }
 
-    report = build_constructability_report(elements, revision=14, profile="permit_readiness")
+    report = build_constructability_report(
+        elements, revision=14, profile="permit_readiness"
+    )
 
     metadata_findings = [
         finding
@@ -656,8 +684,13 @@ def test_constructability_clearance_rule_is_profile_enabled() -> None:
         profile="construction_readiness",
     )
 
-    assert "furniture_wall_clearance_conflict" not in authoring_report["summary"]["ruleCounts"]
-    assert readiness_report["summary"]["ruleCounts"] == {"furniture_wall_clearance_conflict": 1}
+    assert (
+        "furniture_wall_clearance_conflict"
+        not in authoring_report["summary"]["ruleCounts"]
+    )
+    assert readiness_report["summary"]["ruleCounts"] == {
+        "furniture_wall_clearance_conflict": 1
+    }
     assert readiness_report["findings"][0]["severity"] == "error"
     assert clear_report["summary"]["ruleCounts"] == {}
 
@@ -708,5 +741,10 @@ def test_constructability_maintenance_clearance_uses_element_requirement() -> No
         profile="construction_readiness",
     )
 
-    assert "maintenance_clearance_conflict" not in authoring_report["summary"]["ruleCounts"]
-    assert readiness_report["summary"]["ruleCounts"]["maintenance_clearance_conflict"] == 1
+    assert (
+        "maintenance_clearance_conflict"
+        not in authoring_report["summary"]["ruleCounts"]
+    )
+    assert (
+        readiness_report["summary"]["ruleCounts"]["maintenance_clearance_conflict"] == 1
+    )

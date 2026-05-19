@@ -17,6 +17,17 @@ describe('unifiedAdvisorViolations', () => {
       elementIds: ['wall-1'],
       discipline: 'structure',
       recommendation: 'Add transfer beam metadata.',
+      safeCommandHints: [
+        {
+          label: 'Save focused review viewpoint',
+          safety: 'context_only',
+          command: {
+            type: 'saveViewpoint',
+            id: 'vp-constructability-abc',
+            mode: 'orbit_3d',
+          },
+        },
+      ],
     });
 
     expect(violation).toEqual({
@@ -26,6 +37,11 @@ describe('unifiedAdvisorViolations', () => {
       elementIds: ['wall-1'],
       discipline: 'structure',
       blocking: true,
+      quickFixCommand: {
+        type: 'saveViewpoint',
+        id: 'vp-constructability-abc',
+        mode: 'orbit_3d',
+      },
     });
   });
 

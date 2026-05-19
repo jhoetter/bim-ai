@@ -15,6 +15,7 @@ const SEVERITY_RANK: Record<Violation['severity'], number> = {
 export function constructabilityFindingToViolation(finding: ConstructabilityFinding): Violation {
   const severity = normalizeSeverity(finding.severity);
   const recommendation = finding.recommendation?.trim();
+  const quickFixCommand = firstContextOnlyCommandHint(finding);
   return {
     ruleId: finding.ruleId,
     severity,
@@ -24,6 +25,7 @@ export function constructabilityFindingToViolation(finding: ConstructabilityFind
     elementIds: [...(finding.elementIds ?? [])],
     discipline: finding.discipline ?? 'coordination',
     blocking: severity === 'error',
+    ...(quickFixCommand ? { quickFixCommand } : {}),
   };
 }
 
@@ -91,4 +93,15 @@ function normalizeSeverity(value: string): Violation['severity'] {
 
 function violationKey(violation: Violation): string {
   return [violation.ruleId, [...(violation.elementIds ?? [])].sort().join(',')].join('|');
+}
+
+function firstContextOnlyCommandHint(
+  finding: ConstructabilityFinding,
+): Record<string, unknown> | null {
+  const hints = finding.safeCommandHints ?? finding.actionability?.safeCommandHints ?? [];
+  for (const hint of hints) {
+    if (hint?.safety !== 'context_only') continue;
+    if (hint.command && typeof hint.command === 'object') return hint.command;
+  }
+  return null;
 }

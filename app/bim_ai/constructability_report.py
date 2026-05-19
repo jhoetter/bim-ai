@@ -13,8 +13,10 @@ from bim_ai.constructability_clearance import (
     constructability_clearance_violations,
 )
 from bim_ai.constructability_geometry import (
+    AABB,
     collect_physical_participants,
     collect_unsupported_physical_diagnostics,
+    physical_participant_for_element,
 )
 from bim_ai.constructability_issues import (
     ConstructabilityIssue,
@@ -25,14 +27,19 @@ from bim_ai.constructability_metadata import (
     METADATA_REQUIREMENT_RULE_ID,
     constructability_metadata_requirement_violations,
 )
-from bim_ai.constructability_performance import advisor_incremental_diagnostic_eligibility_v1
+from bim_ai.constructability_performance import (
+    advisor_incremental_diagnostic_eligibility_v1,
+)
 from bim_ai.constructability_scope import (
     constructability_scope_descriptor,
     scope_constructability_elements,
 )
 from bim_ai.domain_integrity import check_domain_integrity_profiled
 from bim_ai.elements import Element
-from bim_ai.model_integrity import ModelIntegrityFinding, check_model_integrity_invariants
+from bim_ai.model_integrity import (
+    ModelIntegrityFinding,
+    check_model_integrity_invariants,
+)
 from bim_ai.model_integrity_hosting import hosted_opening_integrity_violations
 
 CONSTRUCTABILITY_RULE_IDS = frozenset(
@@ -112,6 +119,19 @@ NON_CONSTRUCTABILITY_DOMAIN_RULE_IDS = frozenset(
     }
 )
 
+PRIORITY_RANK_BY_TOKEN = {
+    "P0": 0,
+    "P1": 10,
+    "P2": 20,
+    "P3": 30,
+}
+
+PRIORITY_BY_SEVERITY = {
+    "error": "P0",
+    "warning": "P1",
+    "info": "P2",
+}
+
 RECOMMENDATION_BY_RULE_ID = {
     "physical_hard_clash": "Inspect the affected elements in 3D and move, trim, reroute, or add an intentional opening/support condition.",
     "physical_duplicate_geometry": "Delete the duplicate element or offset intentionally repeated instances so they no longer share the same physical proxy.",
@@ -171,7 +191,9 @@ def build_constructability_report(
         option_locks=option_locks,
         design_option_sets=design_option_sets,
     )
-    changed_ids = tuple(str(element_id) for element_id in changed_element_ids if element_id)
+    changed_ids = tuple(
+        str(element_id) for element_id in changed_element_ids if element_id
+    )
     incremental_eligibility = advisor_incremental_diagnostic_eligibility_v1(
         scoped_elements,
         changed_element_ids=changed_ids,
@@ -198,7 +220,9 @@ def build_constructability_report(
         profiler.measure(
             check_id="constructability.clearance",
             layer="constructability",
-            run=lambda: constructability_clearance_violations(scoped_elements, profile=profile),
+            run=lambda: constructability_clearance_violations(
+                scoped_elements, profile=profile
+            ),
             impacted_element_count=impacted_count,
             incremental_eligible=incremental_eligible,
         )
@@ -237,6 +261,11 @@ def build_constructability_report(
         *[_finding_dict(v, profile=profile) for v in violations],
         *domain_findings,
     ]
+    participant_bboxes = _participant_bboxes(scoped_elements)
+    all_findings = [
+        _finding_with_actionability(finding, participant_bboxes=participant_bboxes)
+        for finding in all_findings
+    ]
     suppressions = _suppression_records(scoped_elements, revision=revision)
     active_findings: list[dict[str, Any]] = []
     suppressed_by_fingerprint: dict[str, dict[str, Any]] = {}
@@ -260,7 +289,9 @@ def build_constructability_report(
         issue["status"] = "suppressed"
         issue["suppression"] = suppression
 
-    severity_counts = Counter(str(f.get("severity") or "unknown") for f in active_findings)
+    severity_counts = Counter(
+        str(f.get("severity") or "unknown") for f in active_findings
+    )
     rule_counts = Counter(str(f.get("ruleId") or "unknown") for f in active_findings)
     status_counts = Counter(str(i.get("status") or "unknown") for i in issues)
 
@@ -278,15 +309,23 @@ def build_constructability_report(
             "issueCount": len(issues),
             "suppressedFindingCount": len(suppressed_by_fingerprint),
             "severityCounts": dict(sorted(severity_counts.items())),
+            "priorityCounts": dict(
+                sorted(
+                    Counter(
+                        str(f.get("priority") or "unknown") for f in active_findings
+                    ).items()
+                )
+            ),
             "ruleCounts": dict(sorted(rule_counts.items())),
             "statusCounts": dict(sorted(status_counts.items())),
         },
         "findings": sorted(
             active_findings,
             key=lambda f: (
+                int(f.get("priorityRank") or 99),
+                _severity_sort_rank(str(f.get("severity") or "")),
                 str(f.get("ruleId") or ""),
                 tuple(str(eid) for eid in f.get("elementIds") or []),
-                str(f.get("severity") or ""),
             ),
         ),
         "issues": sorted(
@@ -302,7 +341,9 @@ def build_constructability_report(
     }
 
 
-def _model_integrity_constructability_violations(elements: dict[str, Element]) -> list[Violation]:
+def _model_integrity_constructability_violations(
+    elements: dict[str, Element]
+) -> list[Violation]:
     violations = [
         _integrity_finding_to_violation(finding)
         for finding in check_model_integrity_invariants(elements)
@@ -378,7 +419,9 @@ def build_constructability_summary_v1(
             "proxyUnsupported": len(unsupported),
         },
         "openIssueIds": [str(issue.get("fingerprint")) for issue in open_issues],
-        "openErrorIssueIds": [str(issue.get("fingerprint")) for issue in open_error_issues],
+        "openErrorIssueIds": [
+            str(issue.get("fingerprint")) for issue in open_error_issues
+        ],
     }
 
 
@@ -395,6 +438,142 @@ def _finding_dict(violation: Violation, *, profile: str) -> dict[str, Any]:
         "Inspect the affected elements and resolve the constructability condition.",
     )
     return data
+
+
+def _participant_bboxes(elements: dict[str, Element]) -> dict[str, AABB]:
+    bboxes: dict[str, AABB] = {}
+    for element_id, element in elements.items():
+        participant = physical_participant_for_element(element, elements)
+        if participant is not None:
+            bboxes[str(element_id)] = participant.aabb
+    return bboxes
+
+
+def _finding_with_actionability(
+    finding: Mapping[str, Any],
+    *,
+    participant_bboxes: Mapping[str, AABB],
+) -> dict[str, Any]:
+    data = dict(finding)
+    priority = _priority_for_finding(data)
+    priority_rank = _priority_rank(priority, data)
+    data["priority"] = priority
+    data["priorityRank"] = priority_rank
+
+    viewpoint = _viewpoint_action_for_finding(data, participant_bboxes)
+    if viewpoint is None:
+        data["actionability"] = {
+            "priority": priority,
+            "priorityRank": priority_rank,
+            "primaryAction": "inspect_elements",
+            "safeCommandHints": [],
+        }
+        return data
+
+    safe_command_hint = {
+        "label": "Save focused review viewpoint",
+        "safety": "context_only",
+        "command": viewpoint["command"],
+    }
+    data["viewpointRef"] = viewpoint["viewpointId"]
+    data["evidenceRefs"] = [
+        {"kind": "viewpoint", "viewpointId": viewpoint["viewpointId"]}
+    ]
+    data["safeCommandHints"] = [safe_command_hint]
+    data["actionability"] = {
+        "priority": priority,
+        "priorityRank": priority_rank,
+        "primaryAction": "save_review_viewpoint",
+        "viewpointRef": viewpoint["viewpointId"],
+        "evidenceRefs": data["evidenceRefs"],
+        "safeCommandHints": [safe_command_hint],
+    }
+    return data
+
+
+def _priority_for_finding(finding: Mapping[str, Any]) -> str:
+    explicit = str(finding.get("priority") or "").strip().upper()
+    if explicit in PRIORITY_RANK_BY_TOKEN:
+        return explicit
+    severity = str(finding.get("severity") or "warning")
+    return PRIORITY_BY_SEVERITY.get(severity, "P1")
+
+
+def _priority_rank(priority: str, finding: Mapping[str, Any]) -> int:
+    base = PRIORITY_RANK_BY_TOKEN.get(priority, PRIORITY_RANK_BY_TOKEN["P1"])
+    severity_rank = _severity_sort_rank(str(finding.get("severity") or ""))
+    blocking_class = str(finding.get("blockingClass") or "")
+    blocking_class_bias = {
+        "model_integrity": 0,
+        "geometry": 1,
+        "domain_integrity": 2,
+        "metadata": 3,
+    }.get(blocking_class, 4)
+    return base * 100 + severity_rank * 10 + blocking_class_bias
+
+
+def _severity_sort_rank(severity: str) -> int:
+    return {"error": 0, "warning": 1, "info": 2}.get(severity, 9)
+
+
+def _viewpoint_action_for_finding(
+    finding: Mapping[str, Any],
+    participant_bboxes: Mapping[str, AABB],
+) -> dict[str, Any] | None:
+    element_ids = [str(eid) for eid in finding.get("elementIds") or []]
+    bbox = _union_bbox(
+        [participant_bboxes[eid] for eid in element_ids if eid in participant_bboxes]
+    )
+    if bbox is None:
+        return None
+
+    fingerprint = fingerprint_violation(finding)
+    viewpoint_id = f"vp-constructability-{fingerprint[:16]}"
+    title = _title_for_finding(finding)
+    center = {
+        "xMm": (bbox.min_x + bbox.max_x) / 2.0,
+        "yMm": (bbox.min_y + bbox.max_y) / 2.0,
+        "zMm": (bbox.min_z + bbox.max_z) / 2.0,
+    }
+    span = max(bbox.width_mm, bbox.depth_mm, bbox.height_mm, 1000.0)
+    camera = {
+        "position": {
+            "xMm": center["xMm"] + span,
+            "yMm": center["yMm"] - span,
+            "zMm": center["zMm"] + span * 0.75,
+        },
+        "target": center,
+        "up": {"xMm": 0.0, "yMm": 0.0, "zMm": 1.0},
+    }
+    return {
+        "viewpointId": viewpoint_id,
+        "command": {
+            "type": "saveViewpoint",
+            "id": viewpoint_id,
+            "name": title,
+            "mode": "orbit_3d",
+            "camera": camera,
+            "cutawayStyle": "box",
+        },
+    }
+
+
+def _union_bbox(boxes: list[AABB]) -> AABB | None:
+    if not boxes:
+        return None
+    return AABB(
+        min(box.min_x for box in boxes),
+        min(box.min_y for box in boxes),
+        min(box.min_z for box in boxes),
+        max(box.max_x for box in boxes),
+        max(box.max_y for box in boxes),
+        max(box.max_z for box in boxes),
+    )
+
+
+def _title_for_finding(finding: Mapping[str, Any]) -> str:
+    rule_id = str(finding.get("ruleId") or "constructability_issue")
+    return f"Review: {rule_id.replace('_', ' ').title()}"
 
 
 def _suppression_records(
@@ -416,7 +595,9 @@ def _suppression_records(
             {
                 "id": str(element.id),
                 "ruleId": getattr(element, "rule_id", None),
-                "elementIds": sorted(str(eid) for eid in getattr(element, "element_ids", [])),
+                "elementIds": sorted(
+                    str(eid) for eid in getattr(element, "element_ids", [])
+                ),
                 "reason": str(element.reason),
                 "expiresRevision": expires_revision,
             }

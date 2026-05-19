@@ -36,6 +36,21 @@ describe('advisorViolationContext', () => {
     expect(lines).toContain('elementId: sh1');
   });
 
+  it('summarizes saveViewpoint action hints', () => {
+    const lines = summarizeQuickFixCommand({
+      type: 'saveViewpoint',
+      id: 'vp-constructability-abc',
+      name: 'Review: Wall Clash',
+      mode: 'orbit_3d',
+    });
+    expect(lines).toEqual([
+      'type: saveViewpoint',
+      'id: vp-constructability-abc',
+      'name: Review: Wall Clash',
+      'mode: orbit_3d',
+    ]);
+  });
+
   it('recommends schedule opening QA context for new rules', () => {
     expect(recommendedContextForRuleId('schedule_opening_identifier_missing')).toMatch(
       /mark|name/i,
