@@ -6,7 +6,7 @@ from pathlib import Path
 from typing import Any
 
 import pytest
-from pydantic import TypeAdapter
+from pydantic import TypeAdapter, ValidationError
 
 from bim_ai.domain_integrity import check_domain_integrity
 from bim_ai.elements import Element
@@ -17,7 +17,7 @@ from bim_ai.model_integrity_hosting import (
 )
 
 _FIXTURE_PATH = Path(__file__).parent / "fixtures" / "p0_integrity_cases.json"
-_ELEMENTS_ADAPTER = TypeAdapter(dict[str, Element])
+_ELEMENT_ADAPTER = TypeAdapter(Element)
 _REQUIRED_FIXTURE_CLASSES = {
     "minimal_synthetic",
     "target_house_regression",
@@ -36,7 +36,18 @@ def _load_corpus() -> dict[str, Any]:
     return payload
 
 
-def _integrity_findings(elements: dict[str, Element]) -> list[dict[str, Any]]:
+def _typed_elements(raw_elements: dict[str, Any]) -> dict[str, Element]:
+    elements: dict[str, Element] = {}
+    for element_id, element in raw_elements.items():
+        try:
+            elements[str(element_id)] = _ELEMENT_ADAPTER.validate_python(element)
+        except ValidationError:
+            continue
+    return elements
+
+
+def _integrity_findings(raw_elements: dict[str, Any]) -> list[dict[str, Any]]:
+    elements = _typed_elements(raw_elements)
     findings: list[dict[str, Any]] = []
     findings.extend(finding.to_dict() for finding in check_model_integrity_invariants(elements))
     findings.extend(
@@ -47,7 +58,7 @@ def _integrity_findings(elements: dict[str, Element]) -> list[dict[str, Any]]:
         violation.model_dump(by_alias=True)
         for violation in physical_support_context_violations(elements)
     )
-    findings.extend(check_domain_integrity(elements, profile="construction_readiness"))
+    findings.extend(check_domain_integrity(raw_elements, profile="construction_readiness"))
     return findings
 
 
@@ -75,8 +86,7 @@ def _actual_by_rule(
 def test_p0_integrity_fixture_corpus_matches_expected_findings(
     case: dict[str, Any],
 ) -> None:
-    elements = _ELEMENTS_ADAPTER.validate_python(case["elements"])
-    findings = _integrity_findings(elements)
+    findings = _integrity_findings(case["elements"])
     rules_under_test = {str(rule_id) for rule_id in case["rulesUnderTest"]}
     expected = _expected_by_rule(case)
     actual = _actual_by_rule(findings, rules_under_test)

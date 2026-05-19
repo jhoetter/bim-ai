@@ -8,6 +8,7 @@ Finding = dict[str, Any]
 _ENVELOPE_ZONE_KINDS = {"envelope_zone", "envelopeZone"}
 _OPENING_KINDS = {"door", "window", "wall_opening", "opening"}
 _OCCUPIED_EXTERIOR_SPACE_TYPES = {"terrace", "roof_terrace", "loggia", "balcony"}
+_LARGE_ROOF_VOID_AREA_RATIO = 0.25
 _PROFILE_REQUIREMENTS: dict[str, tuple[str, ...]] = {
     "strict": ("thermal", "fire", "acoustic"),
     "permit_readiness": ("thermal", "fire"),
@@ -179,6 +180,31 @@ def _check_roof_openings(elements: Mapping[str, Any]) -> list[Finding]:
                     "Move the roof opening fully inside the host roof footprint.",
                 )
             )
+        else:
+            opening_area = abs(_polygon_area(boundary))
+            host_area = abs(_polygon_area(footprint))
+            if (
+                host_area > 1.0
+                and opening_area / host_area >= _LARGE_ROOF_VOID_AREA_RATIO
+                and not _truthy_field(
+                    opening,
+                    "largeVoidIntent",
+                    "largeVoidMetadata",
+                    "largeVoidSupportIntent",
+                    "structuralTrimIntent",
+                )
+            ):
+                findings.append(
+                    _finding(
+                        "bir_f01_large_roof_opening_metadata_missing",
+                        "large_roof_opening_metadata_missing",
+                        "error",
+                        "critical",
+                        [element_id, host_id],
+                        "Large roof openings require explicit void/support intent before acceptance.",
+                        openingAreaRatio=round(opening_area / host_area, 6),
+                    )
+                )
 
         if not _is_occupied_roof_void(opening):
             continue
@@ -235,6 +261,34 @@ def _check_occupied_exterior_spaces(elements: Mapping[str, Any]) -> list[Finding
                     missing=missing,
                 )
             )
+
+        contained_by = _pick(props, "containedByFloorId", "contained_by_floor_id")
+        if contained_by:
+            host = elements.get(str(contained_by))
+            boundary = _polygon_from(_value(floor, "boundaryMm", "boundary_mm"))
+            host_boundary = _polygon_from(_value(host, "boundaryMm", "boundary_mm"))
+            if _kind(host) != "floor" or len(boundary) < 3 or len(host_boundary) < 3:
+                findings.append(
+                    _finding(
+                        "bir_f04_occupied_exterior_space_containment_invalid",
+                        "occupied_exterior_space_containment_invalid",
+                        "error",
+                        "high",
+                        [element_id, str(contained_by)],
+                        "Reference a real host floor boundary for contained terrace/loggia space metadata.",
+                    )
+                )
+            elif any(not _point_in_polygon_or_on_edge(point, host_boundary) for point in boundary):
+                findings.append(
+                    _finding(
+                        "bir_f04_occupied_exterior_space_containment_invalid",
+                        "occupied_exterior_space_containment_invalid",
+                        "error",
+                        "high",
+                        [element_id, str(contained_by)],
+                        "Keep contained terrace/loggia floor geometry inside the declared host floor boundary, or model it as an explicit exterior extension with support.",
+                    )
+                )
     return findings
 
 
@@ -245,7 +299,11 @@ def _check_loggias(elements: Mapping[str, Any]) -> list[Finding]:
             continue
         props = _props(element)
         missing: list[str] = []
-        if len(_as_str_list(_pick(props, "sideReturnIds", "side_return_ids"))) < 2:
+        side_return_ids = _as_str_list(_pick(props, "sideReturnIds", "side_return_ids"))
+        existing_side_return_ids = [
+            side_return_id for side_return_id in side_return_ids if side_return_id in elements
+        ]
+        if len(existing_side_return_ids) < 2:
             missing.append("sideReturnIds")
         for field in (
             "topReturnId",
@@ -314,6 +372,22 @@ def _check_facade_rhythm(elements: Mapping[str, Any]) -> list[Finding]:
                     "Point declared facade rhythm openingIds at real door/window/opening elements.",
                 )
             )
+        attachment_mismatches = [
+            opening_id
+            for opening_id in opening_ids
+            if opening_id in elements and _host_wall_id(elements[opening_id]) != element_id
+        ]
+        if attachment_mismatches:
+            findings.append(
+                _finding(
+                    "bir_f05_facade_opening_attachment_mismatch",
+                    "facade_opening_attachment_mismatch",
+                    "error",
+                    "high",
+                    [element_id, *attachment_mismatches],
+                    "Attach declared facade rhythm openings to the facade wall they are mapped under.",
+                )
+            )
         requires_glazing_support = bool(
             _pick(rhythm, "requiresGlazingSupport", "requires_glazing_support")
         )
@@ -377,6 +451,18 @@ def _check_roof_wall_relationships(elements: Mapping[str, Any]) -> list[Finding]
                     "Declare which exterior walls the roof wraps or bears on.",
                 )
             )
+        missing_wall_ids = [wall_id for wall_id in attached_wall_ids if wall_id not in elements]
+        if missing_wall_ids:
+            findings.append(
+                _finding(
+                    "bir_f06_roof_attached_wall_reference_missing",
+                    "roof_attached_wall_reference_missing",
+                    "error",
+                    "high",
+                    [element_id, *missing_wall_ids],
+                    "Point roof attachedWallIds at existing exterior wall elements.",
+                )
+            )
         overhang = _value(element, "overhangMm", "overhang_mm")
         semantics = _pick(props, "overhangSemantics", "overhang_semantics")
         if overhang and float(overhang) > 0 and not semantics:
@@ -437,6 +523,7 @@ def _finding(
         "perspective": "envelope",
         "elementIds": [str(element_id) for element_id in element_ids if element_id],
         "recommendation": recommendation,
+        "trackerItems": _tracker_items_for_rule(rule_id),
     }
     payload.update({key: value for key, value in extra.items() if value not in (None, [], "")})
     return payload
@@ -701,6 +788,16 @@ def _distance_point_to_segment(
     return ((px - x) ** 2 + (py - y) ** 2) ** 0.5
 
 
+def _polygon_area(polygon: list[tuple[float, float]]) -> float:
+    if len(polygon) < 3:
+        return 0.0
+    total = 0.0
+    for index, (x1, y1) in enumerate(polygon):
+        x2, y2 = polygon[(index + 1) % len(polygon)]
+        total += x1 * y2 - x2 * y1
+    return total / 2.0
+
+
 def _has_performance_metadata(element: Any, name: str) -> bool:
     props = _props(element)
     if name == "thermal":
@@ -735,3 +832,11 @@ def _snake(camel: str) -> str:
             out.append("_")
         out.append(char.lower())
     return "".join(out)
+
+
+def _tracker_items_for_rule(rule_id: str) -> list[str]:
+    normalized = rule_id.lower()
+    for token in ("f01", "f02", "f03", "f04", "f05", "f06", "f07"):
+        if f"bir_{token}" in normalized:
+            return [f"BIR-{token.upper()}"]
+    return []

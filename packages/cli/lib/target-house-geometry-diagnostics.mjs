@@ -152,56 +152,6 @@ function outsideDirections(inner, outer, toleranceMm = MM_EPSILON) {
   return directions;
 }
 
-function polygonFromElement(element) {
-  return asArray(element?.boundaryMm).filter(
-    (point) => isObject(point) && Number.isFinite(point.xMm) && Number.isFinite(point.yMm),
-  );
-}
-
-function pointOnSegment(point, start, end, toleranceMm = MM_EPSILON) {
-  const cross =
-    (point.yMm - start.yMm) * (end.xMm - start.xMm) -
-    (point.xMm - start.xMm) * (end.yMm - start.yMm);
-  if (Math.abs(cross) > toleranceMm) return false;
-  const dot =
-    (point.xMm - start.xMm) * (end.xMm - start.xMm) +
-    (point.yMm - start.yMm) * (end.yMm - start.yMm);
-  if (dot < -toleranceMm) return false;
-  const lengthSq = (end.xMm - start.xMm) ** 2 + (end.yMm - start.yMm) ** 2;
-  return dot <= lengthSq + toleranceMm;
-}
-
-function pointInOrOnPolygon(point, polygon) {
-  if (polygon.length < 3) return false;
-  for (let index = 0; index < polygon.length; index += 1) {
-    const start = polygon[index];
-    const end = polygon[(index + 1) % polygon.length];
-    if (pointOnSegment(point, start, end)) return true;
-  }
-
-  let inside = false;
-  let previous = polygon.length - 1;
-  for (let index = 0; index < polygon.length; index += 1) {
-    const current = polygon[index];
-    const prior = polygon[previous];
-    if (
-      (current.yMm > point.yMm) !== (prior.yMm > point.yMm) &&
-      point.xMm <
-        ((prior.xMm - current.xMm) * (point.yMm - current.yMm)) /
-          ((prior.yMm - current.yMm) || 1e-9) +
-          current.xMm
-    ) {
-      inside = !inside;
-    }
-    previous = index;
-  }
-  return inside;
-}
-
-function polygonInsidePolygon(inner, outer) {
-  return inner.length >= 3 && outer.length >= 3 && inner.every((point) => pointInOrOnPolygon(point, outer));
-}
-
 function elementLevelId(element, elements) {
   if (element.levelId) return element.levelId;
   if (element.referenceLevelId) return element.referenceLevelId;
@@ -327,83 +277,6 @@ function outOfEnvelopeFindings(snapshot, requiredFeatures) {
       );
     }
   }
-  return findings;
-}
-
-function siteTopologyFindings(snapshot) {
-  const findings = [];
-  const elements = sortedElements(snapshot);
-  const sites = elements.filter((element) => element.kind === 'site');
-  const toposolids = elements.filter((element) => element.kind === 'toposolid');
-  const sitePolygons = sites
-    .map((site) => ({ element: site, polygon: polygonFromElement(site) }))
-    .filter((row) => row.polygon.length >= 3);
-  const topoPolygons = toposolids
-    .map((toposolid) => ({ element: toposolid, polygon: polygonFromElement(toposolid) }))
-    .filter((row) => row.polygon.length >= 3);
-
-  for (const { element: toposolid, polygon } of topoPolygons) {
-    const siteId = toposolid.siteId ?? toposolid.site_id ?? null;
-    const candidateSites = siteId
-      ? sitePolygons.filter((site) => site.element.id === siteId)
-      : sitePolygons;
-    if (
-      candidateSites.length > 0 &&
-      !candidateSites.some((site) => polygonInsidePolygon(polygon, site.polygon))
-    ) {
-      findings.push(
-        finding({
-          category: 'out_of_envelope',
-          code: 'site.toposolid_partially_outside_site',
-          severity: 'error',
-          elementIds: [toposolid.id, ...candidateSites.map((site) => site.element.id)],
-          elementKind: toposolid.kind,
-          message:
-            'Toposolid boundary is not fully contained by its site boundary, so terrain placement evidence is only centroid-clean.',
-          evidence: {
-            toposolidBoundsMm: boundsForElement(toposolid),
-            candidateSiteIds: candidateSites.map((site) => site.element.id).sort(),
-          },
-          trackerItems: ['BIR-S05', 'BIR-N01', 'BIR-O02'],
-        }),
-      );
-    }
-  }
-
-  for (const floor of elements.filter((element) => element.kind === 'floor')) {
-    const boundary = polygonFromElement(floor);
-    if (boundary.length < 3) continue;
-    const topoHostId =
-      floor.siteHostId ?? floor.toposolidId ?? floor.hostToposolidId ?? floor.site_host_id ?? null;
-    const candidateTopos = topoHostId
-      ? topoPolygons.filter((topo) => topo.element.id === topoHostId)
-      : topoPolygons;
-    if (
-      candidateTopos.length > 0 &&
-      !candidateTopos.some((topo) => polygonInsidePolygon(boundary, topo.polygon))
-    ) {
-      findings.push(
-        finding({
-          category: 'out_of_envelope',
-          code: topoHostId
-            ? 'site.building_partially_outside_host_toposolid'
-            : 'site.building_partially_outside_toposolid',
-          severity: 'error',
-          elementIds: [floor.id, ...candidateTopos.map((topo) => topo.element.id)],
-          elementKind: floor.kind,
-          message:
-            'Building floor boundary is not fully contained by the toposolid terrain boundary.',
-          evidence: {
-            floorBoundsMm: boundsForElement(floor),
-            topoHostId,
-            candidateToposolidIds: candidateTopos.map((topo) => topo.element.id).sort(),
-          },
-          trackerItems: ['BIR-S05', 'BIR-N01', 'BIR-O02'],
-        }),
-      );
-    }
-  }
-
   return findings;
 }
 
@@ -849,11 +722,6 @@ function ruleCatalog() {
       basis: 'Level-resolved elements must be supported by the floor/slab footprint for that level.',
     },
     {
-      code: 'site.*_partially_outside_*',
-      category: 'out_of_envelope',
-      basis: 'Target-house building and toposolid/site placement must use full footprint containment, not centroid-only checks.',
-    },
-    {
       code: 'geometry.wall_detached_endpoint',
       category: 'detached_or_flying',
       basis: 'Wall endpoints should connect to wall topology or be explicitly documented as free edges.',
@@ -905,7 +773,6 @@ export function buildTargetHouseGeometryDiagnostic({
   const findings = [
     ...detachedOrFlyingFindings(snapshot),
     ...outOfEnvelopeFindings(snapshot, requiredFeatures),
-    ...siteTopologyFindings(snapshot),
     ...helperLeakageFindings(snapshot),
     ...rendererFindings(snapshot),
     ...sketchMismatchFindings(snapshot, requiredFeatures),

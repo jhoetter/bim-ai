@@ -364,6 +364,341 @@
       }
     },
     {
+      "id": "envelope_zone_unresolved_gap",
+      "fixtureClass": "minimal_synthetic",
+      "description": "Declared envelope zone carries an unresolved physical closure gap.",
+      "trackerItems": ["BIR-F03", "BIR-O01"],
+      "rulesUnderTest": ["bir_f03_unresolved_envelope_gap"],
+      "expectedFindings": [
+        {
+          "ruleId": "bir_f03_unresolved_envelope_gap",
+          "elementIds": ["zone-1", "gap-east"]
+        }
+      ],
+      "absentRuleIds": [],
+      "elements": {
+        "lvl-1": { "kind": "level", "id": "lvl-1", "elevationMm": 0 },
+        "zone-1": {
+          "kind": "envelope_zone",
+          "id": "zone-1",
+          "levelId": "lvl-1",
+          "unresolvedGapIds": ["gap-east"]
+        }
+      }
+    },
+    {
+      "id": "occupied_roof_void_missing_physical_evidence",
+      "fixtureClass": "minimal_synthetic",
+      "description": "Occupied roof terrace void has a valid host footprint but no real cut/floor/return/guard/access/drainage/support evidence.",
+      "trackerItems": ["BIR-F02", "BIR-O01"],
+      "rulesUnderTest": ["bir_f02_occupied_roof_void_evidence_missing"],
+      "expectedFindings": [
+        {
+          "ruleId": "bir_f02_occupied_roof_void_evidence_missing",
+          "elementIds": ["roof-1", "roof-terrace-cut"]
+        }
+      ],
+      "absentRuleIds": ["bir_f01_roof_opening_outside_host_footprint"],
+      "elements": {
+        "lvl-2": { "kind": "level", "id": "lvl-2", "name": "Upper", "elevationMm": 3000 },
+        "roof-1": {
+          "kind": "roof",
+          "id": "roof-1",
+          "referenceLevelId": "lvl-2",
+          "footprintMm": [
+            { "xMm": 0, "yMm": 0 },
+            { "xMm": 7000, "yMm": 0 },
+            { "xMm": 7000, "yMm": 5000 },
+            { "xMm": 0, "yMm": 5000 }
+          ],
+          "overhangMm": 0
+        },
+        "roof-terrace-cut": {
+          "kind": "roof_opening",
+          "id": "roof-terrace-cut",
+          "hostRoofId": "roof-1",
+          "boundaryMm": [
+            { "xMm": 1000, "yMm": 1000 },
+            { "xMm": 3000, "yMm": 1000 },
+            { "xMm": 3000, "yMm": 2500 },
+            { "xMm": 1000, "yMm": 2500 }
+          ],
+          "props": { "occupiedRoofVoid": true }
+        }
+      }
+    },
+    {
+      "id": "terrace_floor_missing_support_contract",
+      "fixtureClass": "minimal_synthetic",
+      "description": "Terrace/loggia floor is declared as occupied exterior space but lacks guard, access, drainage, and support evidence.",
+      "trackerItems": ["BIR-F04", "BIR-O01"],
+      "rulesUnderTest": ["bir_f04_occupied_exterior_space_relation_incomplete"],
+      "expectedFindings": [
+        {
+          "ruleId": "bir_f04_occupied_exterior_space_relation_incomplete",
+          "elementIds": ["terrace-floor"]
+        }
+      ],
+      "absentRuleIds": [],
+      "elements": {
+        "lvl-1": { "kind": "level", "id": "lvl-1", "elevationMm": 0 },
+        "terrace-floor": {
+          "kind": "floor",
+          "id": "terrace-floor",
+          "levelId": "lvl-1",
+          "boundaryMm": [
+            { "xMm": 0, "yMm": 0 },
+            { "xMm": 2500, "yMm": 0 },
+            { "xMm": 2500, "yMm": 1800 },
+            { "xMm": 0, "yMm": 1800 }
+          ],
+          "props": { "exteriorSpaceType": "terrace" }
+        }
+      }
+    },
+    {
+      "id": "facade_rhythm_opening_attached_to_wrong_wall",
+      "fixtureClass": "minimal_synthetic",
+      "description": "Declared facade rhythm references an opening hosted on a different wall.",
+      "trackerItems": ["BIR-F05", "BIR-O01"],
+      "rulesUnderTest": ["bir_f05_facade_opening_attachment_mismatch"],
+      "expectedFindings": [
+        {
+          "ruleId": "bir_f05_facade_opening_attachment_mismatch",
+          "elementIds": ["facade-n", "window-south"]
+        }
+      ],
+      "absentRuleIds": [],
+      "elements": {
+        "facade-n": {
+          "kind": "wall",
+          "id": "facade-n",
+          "levelId": "lvl-1",
+          "start": { "xMm": 0, "yMm": 0 },
+          "end": { "xMm": 5000, "yMm": 0 },
+          "props": {
+            "facadeRhythm": {
+              "bayCount": 1,
+              "openingIds": ["window-south"]
+            }
+          }
+        },
+        "wall-south": {
+          "kind": "wall",
+          "id": "wall-south",
+          "levelId": "lvl-1",
+          "start": { "xMm": 0, "yMm": 3000 },
+          "end": { "xMm": 5000, "yMm": 3000 }
+        },
+        "window-south": {
+          "kind": "window",
+          "id": "window-south",
+          "wallId": "wall-south"
+        }
+      }
+    },
+    {
+      "id": "roof_attached_wall_reference_missing",
+      "fixtureClass": "minimal_synthetic",
+      "description": "Roof wrapper metadata references a missing exterior wall support.",
+      "trackerItems": ["BIR-F06", "BIR-O01"],
+      "rulesUnderTest": ["bir_f06_roof_attached_wall_reference_missing"],
+      "expectedFindings": [
+        {
+          "ruleId": "bir_f06_roof_attached_wall_reference_missing",
+          "elementIds": ["roof-1", "missing-wall"]
+        }
+      ],
+      "absentRuleIds": [],
+      "elements": {
+        "lvl-2": { "kind": "level", "id": "lvl-2", "name": "Upper", "elevationMm": 3000 },
+        "roof-1": {
+          "kind": "roof",
+          "id": "roof-1",
+          "referenceLevelId": "lvl-2",
+          "footprintMm": [
+            { "xMm": 0, "yMm": 0 },
+            { "xMm": 7000, "yMm": 0 },
+            { "xMm": 7000, "yMm": 5000 },
+            { "xMm": 0, "yMm": 5000 }
+          ],
+          "props": {
+            "requiresWrapperRelationship": true,
+            "attachedWallIds": ["missing-wall"]
+          }
+        }
+      }
+    },
+    {
+      "id": "helper_family_render_export_leakage",
+      "fixtureClass": "minimal_synthetic",
+      "description": "Analysis/helper family instance carries physical render/export metadata.",
+      "trackerItems": ["BIR-C08", "BIR-O01"],
+      "rulesUnderTest": ["physical_access_proxy_leakage"],
+      "expectedFindings": [
+        {
+          "ruleId": "physical_access_proxy_leakage",
+          "elementIds": ["room-graph-helper-instance"]
+        }
+      ],
+      "absentRuleIds": [],
+      "elements": {
+        "lvl-1": { "kind": "level", "id": "lvl-1", "elevationMm": 0 },
+        "ft-room-graph-helper": {
+          "kind": "family_type",
+          "id": "ft-room-graph-helper",
+          "familyId": "fam-helper",
+          "discipline": "generic",
+          "renderSupport": { "mode": "box" },
+          "gltfMapping": { "category": "GenericModel" }
+        },
+        "room-graph-helper-instance": {
+          "kind": "family_instance",
+          "id": "room-graph-helper-instance",
+          "name": "Room graph helper",
+          "familyTypeId": "ft-room-graph-helper",
+          "positionMm": { "xMm": 1000, "yMm": 1000 },
+          "paramValues": { "helper": true }
+        }
+      }
+    },
+    {
+      "id": "floating_asset_and_detached_stair",
+      "fixtureClass": "minimal_synthetic",
+      "description": "Freestanding asset and stair are authored away from any floor support context.",
+      "trackerItems": ["BIR-B02", "BIR-B04", "BIR-V04", "BIR-W01"],
+      "rulesUnderTest": [
+        "model_integrity_asset_placement_floating",
+        "physical_stair_without_floor_landings"
+      ],
+      "expectedFindings": [
+        {
+          "ruleId": "model_integrity_asset_placement_floating",
+          "elementIds": ["asset-chair", "chair-floating"]
+        },
+        {
+          "ruleId": "physical_stair_without_floor_landings",
+          "elementIds": ["lvl-1", "lvl-2", "stair-detached"]
+        }
+      ],
+      "absentRuleIds": [],
+      "elements": {
+        "lvl-1": { "kind": "level", "id": "lvl-1", "elevationMm": 0 },
+        "lvl-2": { "kind": "level", "id": "lvl-2", "elevationMm": 3000 },
+        "floor-1": {
+          "kind": "floor",
+          "id": "floor-1",
+          "levelId": "lvl-1",
+          "boundaryMm": [
+            { "xMm": 0, "yMm": 0 },
+            { "xMm": 5000, "yMm": 0 },
+            { "xMm": 5000, "yMm": 4000 },
+            { "xMm": 0, "yMm": 4000 }
+          ]
+        },
+        "floor-2": {
+          "kind": "floor",
+          "id": "floor-2",
+          "levelId": "lvl-2",
+          "boundaryMm": [
+            { "xMm": 0, "yMm": 0 },
+            { "xMm": 5000, "yMm": 0 },
+            { "xMm": 5000, "yMm": 4000 },
+            { "xMm": 0, "yMm": 4000 }
+          ],
+          "props": { "supportedByIds": ["wall-1"] }
+        },
+        "wall-1": {
+          "kind": "wall",
+          "id": "wall-1",
+          "levelId": "lvl-2",
+          "start": { "xMm": 0, "yMm": 0 },
+          "end": { "xMm": 5000, "yMm": 0 }
+        },
+        "asset-chair": {
+          "kind": "asset_library_entry",
+          "id": "asset-chair",
+          "name": "Chair",
+          "category": "furniture",
+          "widthMm": 500,
+          "depthMm": 500,
+          "placementSupport": "freestanding"
+        },
+        "chair-floating": {
+          "kind": "placed_asset",
+          "id": "chair-floating",
+          "name": "Floating chair",
+          "assetId": "asset-chair",
+          "levelId": "lvl-1",
+          "positionMm": { "xMm": 9000, "yMm": 9000 }
+        },
+        "stair-detached": {
+          "kind": "stair",
+          "id": "stair-detached",
+          "baseLevelId": "lvl-1",
+          "topLevelId": "lvl-2",
+          "runStartMm": { "xMm": 8000, "yMm": 8000 },
+          "runEndMm": { "xMm": 8500, "yMm": 8500 },
+          "widthMm": 1000
+        }
+      }
+    },
+    {
+      "id": "detached_floor_and_floating_railing",
+      "fixtureClass": "minimal_synthetic",
+      "description": "Detached slab fragment and railing without a host are deterministically flagged.",
+      "trackerItems": ["BIR-B02", "BIR-B04", "BIR-W01"],
+      "rulesUnderTest": [
+        "physical_floor_outside_support_context",
+        "physical_railing_missing_host_context"
+      ],
+      "expectedFindings": [
+        {
+          "ruleId": "physical_floor_outside_support_context",
+          "elementIds": ["floor-fragment"]
+        },
+        {
+          "ruleId": "physical_railing_missing_host_context",
+          "elementIds": ["rail-floating"]
+        }
+      ],
+      "absentRuleIds": [],
+      "elements": {
+        "lvl-1": { "kind": "level", "id": "lvl-1", "elevationMm": 0 },
+        "floor-1": {
+          "kind": "floor",
+          "id": "floor-1",
+          "levelId": "lvl-1",
+          "boundaryMm": [
+            { "xMm": 0, "yMm": 0 },
+            { "xMm": 5000, "yMm": 0 },
+            { "xMm": 5000, "yMm": 4000 },
+            { "xMm": 0, "yMm": 4000 }
+          ]
+        },
+        "floor-fragment": {
+          "kind": "floor",
+          "id": "floor-fragment",
+          "levelId": "lvl-1",
+          "boundaryMm": [
+            { "xMm": 9000, "yMm": 0 },
+            { "xMm": 10000, "yMm": 0 },
+            { "xMm": 10000, "yMm": 1000 },
+            { "xMm": 9000, "yMm": 1000 }
+          ]
+        },
+        "rail-floating": {
+          "kind": "railing",
+          "id": "rail-floating",
+          "pathMm": [
+            { "xMm": 0, "yMm": 0 },
+            { "xMm": 1000, "yMm": 0 }
+          ],
+          "guardHeightMm": 1040
+        }
+      }
+    },
+    {
       "id": "vertical_stair_missing_upper_slab_opening",
       "fixtureClass": "minimal_synthetic",
       "description": "Two-level stair lands on the upper floor without a corresponding slab or shaft opening.",
@@ -728,143 +1063,6 @@
           "assetId": "chair-type",
           "levelId": "lvl-1",
           "positionMm": { "xMm": 950, "yMm": 900 }
-        }
-      }
-    }
-,
-    {
-      "id": "floating_asset_and_detached_stair",
-      "fixtureClass": "minimal_synthetic",
-      "description": "Freestanding asset and stair are authored away from any floor support context.",
-      "trackerItems": ["BIR-B02", "BIR-B04", "BIR-V04", "BIR-W01"],
-      "rulesUnderTest": [
-        "model_integrity_asset_placement_floating",
-        "physical_stair_without_floor_landings"
-      ],
-      "expectedFindings": [
-        {
-          "ruleId": "model_integrity_asset_placement_floating",
-          "elementIds": ["asset-chair", "chair-floating"]
-        },
-        {
-          "ruleId": "physical_stair_without_floor_landings",
-          "elementIds": ["lvl-1", "lvl-2", "stair-detached"]
-        }
-      ],
-      "absentRuleIds": [],
-      "elements": {
-        "lvl-1": { "kind": "level", "id": "lvl-1", "elevationMm": 0 },
-        "lvl-2": { "kind": "level", "id": "lvl-2", "elevationMm": 3000 },
-        "floor-1": {
-          "kind": "floor",
-          "id": "floor-1",
-          "levelId": "lvl-1",
-          "boundaryMm": [
-            { "xMm": 0, "yMm": 0 },
-            { "xMm": 5000, "yMm": 0 },
-            { "xMm": 5000, "yMm": 4000 },
-            { "xMm": 0, "yMm": 4000 }
-          ]
-        },
-        "floor-2": {
-          "kind": "floor",
-          "id": "floor-2",
-          "levelId": "lvl-2",
-          "boundaryMm": [
-            { "xMm": 0, "yMm": 0 },
-            { "xMm": 5000, "yMm": 0 },
-            { "xMm": 5000, "yMm": 4000 },
-            { "xMm": 0, "yMm": 4000 }
-          ],
-          "props": { "supportedByIds": ["wall-1"] }
-        },
-        "wall-1": {
-          "kind": "wall",
-          "id": "wall-1",
-          "levelId": "lvl-2",
-          "start": { "xMm": 0, "yMm": 0 },
-          "end": { "xMm": 5000, "yMm": 0 }
-        },
-        "asset-chair": {
-          "kind": "asset_library_entry",
-          "id": "asset-chair",
-          "name": "Chair",
-          "category": "furniture",
-          "widthMm": 500,
-          "depthMm": 500,
-          "placementSupport": "freestanding"
-        },
-        "chair-floating": {
-          "kind": "placed_asset",
-          "id": "chair-floating",
-          "name": "Floating chair",
-          "assetId": "asset-chair",
-          "levelId": "lvl-1",
-          "positionMm": { "xMm": 9000, "yMm": 9000 }
-        },
-        "stair-detached": {
-          "kind": "stair",
-          "id": "stair-detached",
-          "baseLevelId": "lvl-1",
-          "topLevelId": "lvl-2",
-          "runStartMm": { "xMm": 8000, "yMm": 8000 },
-          "runEndMm": { "xMm": 8500, "yMm": 8500 },
-          "widthMm": 1000
-        }
-      }
-    },
-    {
-      "id": "detached_floor_and_floating_railing",
-      "fixtureClass": "minimal_synthetic",
-      "description": "Detached slab fragment and railing without a host are deterministically flagged.",
-      "trackerItems": ["BIR-B02", "BIR-B04", "BIR-W01"],
-      "rulesUnderTest": [
-        "physical_floor_outside_support_context",
-        "physical_railing_missing_host_context"
-      ],
-      "expectedFindings": [
-        {
-          "ruleId": "physical_floor_outside_support_context",
-          "elementIds": ["floor-fragment"]
-        },
-        {
-          "ruleId": "physical_railing_missing_host_context",
-          "elementIds": ["rail-floating"]
-        }
-      ],
-      "absentRuleIds": [],
-      "elements": {
-        "lvl-1": { "kind": "level", "id": "lvl-1", "elevationMm": 0 },
-        "floor-1": {
-          "kind": "floor",
-          "id": "floor-1",
-          "levelId": "lvl-1",
-          "boundaryMm": [
-            { "xMm": 0, "yMm": 0 },
-            { "xMm": 5000, "yMm": 0 },
-            { "xMm": 5000, "yMm": 4000 },
-            { "xMm": 0, "yMm": 4000 }
-          ]
-        },
-        "floor-fragment": {
-          "kind": "floor",
-          "id": "floor-fragment",
-          "levelId": "lvl-1",
-          "boundaryMm": [
-            { "xMm": 9000, "yMm": 0 },
-            { "xMm": 10000, "yMm": 0 },
-            { "xMm": 10000, "yMm": 1000 },
-            { "xMm": 9000, "yMm": 1000 }
-          ]
-        },
-        "rail-floating": {
-          "kind": "railing",
-          "id": "rail-floating",
-          "pathMm": [
-            { "xMm": 0, "yMm": 0 },
-            { "xMm": 1000, "yMm": 0 }
-          ],
-          "guardHeightMm": 1040
         }
       }
     }

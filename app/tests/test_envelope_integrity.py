@@ -66,7 +66,7 @@ def _clean_elements() -> dict[str, dict]:
             "id": "loggia-1",
             "props": {
                 "isLoggia": True,
-                "sideReturnIds": ["wall-n", "wall-n"],
+                "sideReturnIds": ["loggia-return-a", "loggia-return-b"],
                 "topReturnId": "roof-1",
                 "bottomReturnId": "floor-1",
                 "guardId": "guard-1",
@@ -75,6 +75,8 @@ def _clean_elements() -> dict[str, dict]:
                 "ceilingId": "ceiling-1",
             },
         },
+        "loggia-return-a": {"kind": "wall", "id": "loggia-return-a"},
+        "loggia-return-b": {"kind": "wall", "id": "loggia-return-b"},
         "guard-1": {"kind": "railing", "id": "guard-1"},
         "ceiling-1": {"kind": "ceiling", "id": "ceiling-1"},
         "facade-n": {
@@ -110,6 +112,7 @@ def test_unresolved_declared_envelope_gap_is_reported() -> None:
     assert finding["discipline"] == "architecture"
     assert finding["perspective"] == "envelope"
     assert finding["elementIds"] == ["zone-1", "gap-east"]
+    assert finding["trackerItems"] == ["BIR-F03"]
     assert "recommendation" in finding
 
 
@@ -234,11 +237,12 @@ def test_occupied_roof_void_contract_accepts_physical_evidence_refs() -> None:
                         "guardId": "guard-1",
                         "accessOpeningId": "door-1",
                         "drainage": "slope to scupper",
-                        "support": "bearing curb and trimmed roof framing",
-                        "evidenceView": "roof-court-high",
-                    },
+                    "support": "bearing curb and trimmed roof framing",
+                    "evidenceView": "roof-court-high",
                 },
+                "largeVoidIntent": "trimmed roof court with occupied terrace support",
             },
+        },
             "return-a": {"kind": "wall", "id": "return-a"},
             "return-b": {"kind": "wall", "id": "return-b"},
         }
@@ -256,6 +260,33 @@ def test_occupied_roof_void_contract_accepts_physical_evidence_refs() -> None:
     assert "roof_opening_outside_host_footprint" not in _codes(findings)
 
 
+def test_large_roof_opening_requires_explicit_void_support_metadata() -> None:
+    elements = _clean_elements()
+    elements["large-roof-cut"] = {
+        "kind": "roof_opening",
+        "id": "large-roof-cut",
+        "hostRoofId": "roof-1",
+        "boundaryMm": [
+            {"xMm": 500, "yMm": 500},
+            {"xMm": 3500, "yMm": 500},
+            {"xMm": 3500, "yMm": 3500},
+            {"xMm": 500, "yMm": 3500},
+        ],
+    }
+    elements["roof-1"]["footprintMm"] = [
+        {"xMm": 0, "yMm": 0},
+        {"xMm": 4000, "yMm": 0},
+        {"xMm": 4000, "yMm": 4000},
+        {"xMm": 0, "yMm": 4000},
+    ]
+
+    findings = check_envelope_integrity(elements)
+
+    assert _codes(findings) == {"large_roof_opening_metadata_missing"}
+    assert findings[0]["elementIds"] == ["large-roof-cut", "roof-1"]
+    assert findings[0]["trackerItems"] == ["BIR-F01"]
+
+
 def test_terrace_floor_requires_guard_access_drainage_and_support_refs() -> None:
     elements = _clean_elements()
     elements["terrace-floor"] = {
@@ -269,6 +300,34 @@ def test_terrace_floor_requires_guard_access_drainage_and_support_refs() -> None
 
     assert _codes(findings) == {"occupied_exterior_space_relation_incomplete"}
     assert set(findings[0]["missing"]) == {"guard", "access", "drainage", "support"}
+
+
+def test_contained_loggia_or_terrace_floor_must_stay_inside_declared_host_boundary() -> None:
+    elements = _clean_elements()
+    elements["contained-loggia-floor"] = {
+        "kind": "floor",
+        "id": "contained-loggia-floor",
+        "levelId": "level-1",
+        "boundaryMm": [
+            {"xMm": 1000, "yMm": 1000},
+            {"xMm": 4500, "yMm": 1000},
+            {"xMm": 4500, "yMm": 3000},
+            {"xMm": 1000, "yMm": 3000},
+        ],
+        "props": {
+            "exteriorSpaceType": "loggia",
+            "guardId": "guard-1",
+            "accessOpeningId": "door-1",
+            "drainageIntent": "internal trench drain",
+            "supportedByIds": ["wall-n"],
+            "containedByFloorId": "floor-1",
+        },
+    }
+
+    findings = check_envelope_integrity(elements)
+
+    assert _codes(findings) == {"occupied_exterior_space_containment_invalid"}
+    assert findings[0]["trackerItems"] == ["BIR-F04"]
 
 
 def test_declared_facade_opening_and_glazing_support_refs_are_validated() -> None:
@@ -290,3 +349,29 @@ def test_declared_facade_opening_and_glazing_support_refs_are_validated() -> Non
         finding for finding in findings if finding["code"] == "facade_glazing_support_missing"
     )
     assert support["elementIds"] == ["facade-n", "missing-mullion"]
+
+
+def test_declared_facade_rhythm_openings_must_attach_to_declared_facade_wall() -> None:
+    elements = _clean_elements()
+    elements["wall-south"] = {"kind": "wall", "id": "wall-south"}
+    elements["window-south"] = {"kind": "window", "id": "window-south", "wallId": "wall-south"}
+    elements["facade-n"]["props"]["facadeRhythm"] = {
+        "bayCount": 1,
+        "openingIds": ["window-south"],
+    }
+
+    findings = check_envelope_integrity(elements)
+
+    assert _codes(findings) == {"facade_opening_attachment_mismatch"}
+    assert findings[0]["elementIds"] == ["facade-n", "window-south"]
+    assert findings[0]["trackerItems"] == ["BIR-F05"]
+
+
+def test_roof_attached_wall_ids_must_resolve() -> None:
+    elements = _clean_elements()
+    elements["roof-1"]["props"]["attachedWallIds"] = ["missing-wall"]
+
+    findings = check_envelope_integrity(elements)
+
+    assert _codes(findings) == {"roof_attached_wall_reference_missing"}
+    assert findings[0]["trackerItems"] == ["BIR-F06"]

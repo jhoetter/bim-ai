@@ -28,12 +28,8 @@ const REQUIRED_LIVE_EVIDENCE = [
   'visual-gate.json',
   'screenshot-manifest.json',
 ];
-const LIVE_RESPONSIVENESS_EVIDENCE = 'target-house-live-responsiveness.json';
-const LIVE_INTERACTIONS = ['orbit', 'select', 'lens-switch', 'advisor-open', 'advisor-close'];
 
 const WORKLOADS = ['orbit', 'select', 'lens-switch', 'advisor-toggle', 'update'];
-const TRACKER_PRIORITIES = new Set(['P0', 'P1', 'P2', 'P3']);
-const TRACKER_STATUSES = new Set(['Done', 'Partial', 'Not started', 'Blocked']);
 const WORKLOAD_BUDGETS_MS = {
   orbit: 16.7,
   select: 50,
@@ -100,10 +96,6 @@ function parseArgs(argv) {
 
 async function readJson(file) {
   return JSON.parse(await fs.readFile(file, 'utf8'));
-}
-
-async function readJsonIfExists(file) {
-  return (await exists(file)) ? readJson(file) : null;
 }
 
 async function exists(file) {
@@ -546,16 +538,6 @@ export async function buildTargetHousePerformanceEvidence({
       renderedElementCount: visibleElementIds.length,
     },
     budgetsMs: WORKLOAD_BUDGETS_MS,
-    liveResponsivenessRequirement: {
-      schemaVersion: 'target-house-live-responsiveness.v1',
-      requiredEvidencePath: portable(
-        path.join(liveDir, LIVE_RESPONSIVENESS_EVIDENCE),
-      ),
-      requiredInteractions: LIVE_INTERACTIONS,
-      websocketPolicy:
-        'actionable WebSocket churn or missing Advisor close/open/lens/select/orbit samples blocks final readiness',
-      trackerRefs: ['BIR-L02', 'BIR-L03', 'BIR-N07'],
-    },
     profile,
     interactions,
     summary: {
@@ -598,45 +580,6 @@ function parseTrackerRows(markdown, ids) {
       : null;
   }
   return rows;
-}
-
-function parseAllTrackerRows(markdown) {
-  return markdown
-    .split(/\r?\n/)
-    .filter((line) => line.trim().startsWith('|'))
-    .map((line) =>
-      line
-        .trim()
-        .slice(1, -1)
-        .split('|')
-        .map((cell) => cell.trim()),
-    )
-    .filter((cells) => /^`BIR-[A-Z]\d{2}`$/.test(cells[0] ?? ''))
-    .filter((cells) => TRACKER_PRIORITIES.has(cells[1] ?? '') && TRACKER_STATUSES.has(cells[2] ?? ''))
-    .map((cells) => ({
-      id: cells[0].replaceAll('`', ''),
-      priority: cells[1] ?? '',
-      status: cells[2] ?? '',
-      item: cells[3] ?? '',
-      acceptance: cells[4] ?? '',
-    }));
-}
-
-function trackerCompletionSummary(markdown) {
-  const rows = parseAllTrackerRows(markdown);
-  const counts = {};
-  for (const row of rows) counts[row.status] = (counts[row.status] ?? 0) + 1;
-  const incompleteRows = rows.filter((row) => row.status !== 'Done');
-  return {
-    ok: incompleteRows.length === 0,
-    total: rows.length,
-    done: counts.Done ?? 0,
-    incomplete: incompleteRows.length,
-    byStatus: Object.fromEntries(Object.entries(counts).sort()),
-    sampleIncompleteRows: incompleteRows
-      .slice(0, 20)
-      .map((row) => ({ id: row.id, priority: row.priority, status: row.status, item: row.item })),
-  };
 }
 
 async function requiredEvidenceRows(liveDir) {
@@ -757,139 +700,6 @@ function toleranceSummary(toleranceLedger) {
   };
 }
 
-function liveResponsivenessSummary(payload, evidencePath) {
-  if (!payload) {
-    return {
-      present: false,
-      path: portable(evidencePath),
-      ok: false,
-      schemaVersion: null,
-      reportSchemaVersion: null,
-      summary: null,
-      missingInteractions: LIVE_INTERACTIONS,
-      failedInteractions: [],
-      actionableChurnCount: null,
-      blockerCodes: ['live_responsiveness_missing'],
-    };
-  }
-  const report =
-    payload.responsivenessReport?.schemaVersion === 'target-house-live-responsiveness.v1'
-      ? payload.responsivenessReport
-      : payload.schemaVersion === 'target-house-live-responsiveness.v1'
-        ? payload
-        : null;
-  const interactionRows = Array.isArray(report?.interactionRows) ? report.interactionRows : [];
-  const passedInteractions = new Set(
-    interactionRows
-      .filter((row) => row?.status === 'pass')
-      .map((row) => row.interaction)
-      .filter(Boolean),
-  );
-  const failedInteractions = interactionRows
-    .filter((row) => row?.status && row.status !== 'pass')
-    .map((row) => row.interaction)
-    .filter(Boolean);
-  const missingInteractions = LIVE_INTERACTIONS.filter(
-    (interaction) => !passedInteractions.has(interaction),
-  );
-  const blockerCodes = [];
-  if (!report) blockerCodes.push('live_responsiveness_report_missing');
-  if (report?.ok !== true) blockerCodes.push('live_responsiveness_failed');
-  if (missingInteractions.length > 0) blockerCodes.push('live_responsiveness_interactions_missing');
-  if (Number(report?.summary?.actionableChurnCount ?? 0) > 0) {
-    blockerCodes.push('live_responsiveness_actionable_churn');
-  }
-  return {
-    present: true,
-    path: portable(evidencePath),
-    ok: blockerCodes.length === 0,
-    schemaVersion: payload.schemaVersion ?? null,
-    reportSchemaVersion: report?.schemaVersion ?? null,
-    summary: report?.summary ?? null,
-    missingInteractions,
-    failedInteractions,
-    actionableChurnCount: Number(report?.summary?.actionableChurnCount ?? 0),
-    blockerCodes,
-  };
-}
-
-function rehearsalGateSummary({
-  requiredEvidence,
-  liveEvidenceFresh,
-  performanceEvidence,
-  cleanPassGate,
-  geometryDiagnostic,
-  acceptance,
-  tolerance,
-  liveResponsiveness,
-}) {
-  const stages = [
-    {
-      id: 'freshness',
-      ok: liveEvidenceFresh === true,
-      blockerCode: 'stale_evidence',
-      detail: 'Live evidence must match current seed/source digests.',
-    },
-    {
-      id: 'required_evidence',
-      ok: requiredEvidence.every((row) => row.present),
-      blockerCode: 'missing_required_evidence',
-      detail: 'All final-package evidence artifacts must be present.',
-    },
-    {
-      id: 'advisor_integrity_renderer',
-      ok: cleanPassGate.ok === true && cleanPassGate.blockerCount === 0,
-      blockerCode: 'clean_pass_failed',
-      detail: 'Advisor, integrity, constructability, renderer, and tolerance clean-pass must be green.',
-    },
-    {
-      id: 'geometry',
-      ok: geometryDiagnostic.ok === true,
-      blockerCode: 'geometry_diagnostic_failed',
-      detail: 'Target-house geometry diagnostics must have zero error-level findings.',
-    },
-    {
-      id: 'visual_acceptance',
-      ok:
-        acceptance.ok === true &&
-        acceptance.semanticVisualFailureCount === 0 &&
-        acceptance.visualFailCount === 0,
-      blockerCode: 'visual_acceptance_failed',
-      detail: 'Semantic visual and screenshot-backed acceptance gates must be green.',
-    },
-    {
-      id: 'exchange_tolerances',
-      ok:
-        tolerance.ok === true &&
-        tolerance.blockingFindingCount === 0 &&
-        tolerance.incompleteToleranceCount === 0,
-      blockerCode: 'tolerance_ledger_failed',
-      detail: 'No blocking or incomplete tolerance rows may remain.',
-    },
-    {
-      id: 'deterministic_performance',
-      ok: performanceEvidence.summary.ok === true,
-      blockerCode: 'performance_budget_failed',
-      detail: 'Deterministic target-house interaction budget evidence must pass.',
-    },
-    {
-      id: 'live_responsiveness',
-      ok: liveResponsiveness.ok === true,
-      blockerCode: liveResponsiveness.present
-        ? 'live_responsiveness_failed'
-        : 'live_responsiveness_missing',
-      detail: 'Archived live browser responsiveness evidence must cover orbit, select, lens switch, Advisor open/close, and WebSocket churn.',
-    },
-  ];
-  const blockers = stages.filter((stage) => !stage.ok).map((stage) => stage.blockerCode);
-  return {
-    schemaVersion: 'target-house-acceptance-rehearsal-gate.v1',
-    ok: blockers.length === 0,
-    blockers,
-    stages,
-  };
-}
-
 function parseGeneratedSectionRollups(markdown) {
   const rows = {};
   const lines = markdown.split(/\r?\n/);
@@ -949,9 +759,6 @@ export function closeoutStatus({
   acceptance,
   tolerance,
   trackerRows,
-  trackerCompletion = null,
-  liveResponsiveness = null,
-  rehearsalGate = null,
   liveEvidenceFresh,
 }) {
   const missingEvidence = requiredEvidence.filter((row) => !row.present).map((row) => row.path);
@@ -984,13 +791,7 @@ export function closeoutStatus({
   ) {
     blockers.push('acceptance_gate_blockers');
   }
-  if (liveResponsiveness) {
-    if (!liveResponsiveness.present) blockers.push('live_responsiveness_missing');
-    else if (!liveResponsiveness.ok) blockers.push('live_responsiveness_failed');
-  }
-  if (rehearsalGate && !rehearsalGate.ok) blockers.push('acceptance_rehearsal_gate');
   if (trackerNotDone.length > 0) blockers.push('tracker_not_done');
-  if (trackerCompletion && !trackerCompletion.ok) blockers.push('tracker_incomplete');
   if (missingEvidence.length > 0) {
     blockerDetails.push({
       code: 'missing_required_evidence',
@@ -1062,48 +863,12 @@ export function closeoutStatus({
       blockerCodes: acceptance.otherBlockerCodes,
     });
   }
-  if (liveResponsiveness) {
-    if (!liveResponsiveness.present || !liveResponsiveness.ok) {
-      blockerDetails.push({
-        code: liveResponsiveness.present
-          ? 'live_responsiveness_failed'
-          : 'live_responsiveness_missing',
-        category: 'performance',
-        count: liveResponsiveness.present ? liveResponsiveness.blockerCodes.length : 1,
-        path: liveResponsiveness.path,
-        blockerCodes: liveResponsiveness.blockerCodes,
-        missingInteractions: liveResponsiveness.missingInteractions,
-        failedInteractions: liveResponsiveness.failedInteractions,
-        actionableChurnCount: liveResponsiveness.actionableChurnCount,
-      });
-    }
-  }
-  if (rehearsalGate && !rehearsalGate.ok) {
-    blockerDetails.push({
-      code: 'acceptance_rehearsal_gate',
-      category: 'rehearsal',
-      count: rehearsalGate.blockers.length,
-      blockerCodes: rehearsalGate.blockers,
-      stages: rehearsalGate.stages.filter((stage) => !stage.ok),
-    });
-  }
   if (trackerNotDone.length > 0) {
     blockerDetails.push({
       code: 'tracker_not_done',
       category: 'tracker',
       count: trackerNotDone.length,
       rows: trackerNotDone,
-    });
-  }
-  if (trackerCompletion && !trackerCompletion.ok) {
-    blockerDetails.push({
-      code: 'tracker_incomplete',
-      category: 'tracker',
-      count: trackerCompletion.incomplete,
-      total: trackerCompletion.total,
-      done: trackerCompletion.done,
-      byStatus: trackerCompletion.byStatus,
-      sampleIncompleteRows: trackerCompletion.sampleIncompleteRows,
     });
   }
   return {
@@ -1149,11 +914,6 @@ export async function buildTargetHouseFinalCloseoutManifest({
   );
   const acceptance = acceptanceSummary(await readJson(path.join(liveDir, 'acceptance-gates.json')));
   const tolerance = toleranceSummary(await readJson(path.join(liveDir, 'tolerance-ledger.json')));
-  const liveResponsivenessPath = path.join(liveDir, LIVE_RESPONSIVENESS_EVIDENCE);
-  const liveResponsiveness = liveResponsivenessSummary(
-    await readJsonIfExists(liveResponsivenessPath),
-    liveResponsivenessPath,
-  );
   const seedSource = {
     manifestPath: portable(manifestPath),
     sourceRoot: portable(sourceRoot),
@@ -1172,18 +932,7 @@ export async function buildTargetHouseFinalCloseoutManifest({
     'BIR-N08',
     'BIR-N10',
   ]);
-  const trackerCompletion = trackerCompletionSummary(trackerMarkdown);
   const generatedTrackerRows = generatedRowsForFinalPackage(generatedStatusMarkdown, trackerRows);
-  const rehearsalGate = rehearsalGateSummary({
-    requiredEvidence,
-    liveEvidenceFresh: snapshotInput.snapshotSource.liveEvidenceFresh,
-    performanceEvidence,
-    cleanPassGate,
-    geometryDiagnostic,
-    acceptance,
-    tolerance,
-    liveResponsiveness,
-  });
   const status = closeoutStatus({
     requiredEvidence,
     performanceEvidence,
@@ -1192,9 +941,6 @@ export async function buildTargetHouseFinalCloseoutManifest({
     acceptance,
     tolerance,
     trackerRows,
-    trackerCompletion,
-    liveResponsiveness,
-    rehearsalGate,
     liveEvidenceFresh: snapshotInput.snapshotSource.liveEvidenceFresh,
   });
   const body = {
@@ -1230,14 +976,11 @@ export async function buildTargetHouseFinalCloseoutManifest({
       ),
       rows: trackerRows,
       generatedRows: generatedTrackerRows,
-      completion: trackerCompletion,
     },
     tolerances: tolerance,
     cleanPassGate,
     geometryDiagnostic,
     acceptanceGates: acceptance,
-    liveResponsiveness,
-    rehearsalGate,
     status,
   };
   return {

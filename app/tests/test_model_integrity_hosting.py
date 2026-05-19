@@ -290,6 +290,7 @@ def test_hosted_family_support_classification_flags_wrong_host_and_orphan_proxy(
     assert "hosted_family_missing_host" in rule_ids
     assert "hosted_render_proxy_orphan" in rule_ids
 
+
 def test_physical_support_context_flags_assets_floors_stairs_and_railings() -> None:
     level_2 = LevelElem(id="lvl-2", name="Upper", elevationMm=3000)
     upper_floor = FloorElem(
@@ -407,3 +408,39 @@ def test_valid_non_wall_support_contexts_pass() -> None:
         _doc(_wall(), level_2, upper_floor, asset_entry, asset, stair, rail)
     ) == []
 
+
+def test_helper_family_or_asset_cannot_leak_into_physical_render_export_paths() -> None:
+    helper_type = FamilyTypeElem(
+        id="ft-room-graph-helper",
+        familyId="fam-helper",
+        discipline="generic",
+        renderSupport={"mode": "box"},
+        gltfMapping={"category": "GenericModel"},
+    )
+    helper_instance = FamilyInstanceElem(
+        id="room-graph-helper-instance",
+        name="Room graph helper",
+        familyTypeId=helper_type.id,
+        positionMm=_pt(1000, 1000),
+        paramValues={"helper": True, "repairSafeDelete": True},
+    )
+    asset = PlacedAssetElem(
+        id="diagnostic-export-proxy",
+        name="Diagnostic export proxy",
+        assetId="missing-asset",
+        levelId="lvl-1",
+        positionMm=_pt(1000, 1200),
+        paramValues={"role": "diagnostic", "exportAsPhysical": True},
+    )
+
+    violations = hosted_opening_integrity_violations(_doc(helper_type, helper_instance, asset))
+    leakage = [v for v in violations if v.rule_id == "physical_access_proxy_leakage"]
+
+    assert [v.element_ids for v in leakage] == [
+        ["diagnostic-export-proxy"],
+        ["room-graph-helper-instance"],
+    ]
+    assert leakage[1].quick_fix_command == {
+        "type": "deleteElement",
+        "elementId": "room-graph-helper-instance",
+    }

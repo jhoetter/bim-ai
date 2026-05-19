@@ -282,6 +282,7 @@ def hosted_opening_integrity_violations(
 
     violations.extend(_overlap_violations(hosted, elements))
     violations.extend(_hosted_family_support_violations(elements))
+    violations.extend(_helper_visual_leakage_violations(elements))
     return sorted(violations, key=lambda v: (v.rule_id, v.element_ids, v.message))
 
 
@@ -930,6 +931,30 @@ def _hosted_family_support_violations(elements: Mapping[str, Element]) -> list[V
     return violations
 
 
+def _helper_visual_leakage_violations(elements: Mapping[str, Element]) -> list[Violation]:
+    violations: list[Violation] = []
+    for elem in sorted(elements.values(), key=lambda e: str(e.id)):
+        if isinstance(elem, WallElem | DoorElem | WindowElem | WallOpeningElem):
+            continue
+        if not _is_visual_helper(elem):
+            continue
+        if not _has_physical_render_or_export_marker(elem, elements):
+            continue
+        violations.append(
+            _violation(
+                "physical_access_proxy_leakage",
+                "error",
+                (
+                    f"Helper/analysis element '{elem.id}' declares physical render/export "
+                    "geometry; keep diagnostic helpers out of physical view, schedule, and "
+                    "export paths."
+                ),
+                [str(elem.id)],
+                quick_fix_command=_safe_delete_command(elem),
+            )
+        )
+    return violations
+
 
 def _declared_support_class(
     elem: DoorElem | WindowElem | WallOpeningElem | FamilyInstanceElem | PlacedAssetElem,
@@ -1283,7 +1308,12 @@ def _renders_as_hosted_proxy(
 
 def _safe_delete_command(elem: Any) -> dict[str, Any] | None:
     props = getattr(elem, "props", None) or {}
-    if _is_access_proxy(elem) or _truthy(props.get("repairSafeDelete")):
+    params = getattr(elem, "param_values", None) or {}
+    if (
+        _is_access_proxy(elem)
+        or _truthy(props.get("repairSafeDelete"))
+        or _truthy(params.get("repairSafeDelete"))
+    ):
         return {"type": "deleteElement", "elementId": str(elem.id)}
     return None
 
@@ -1375,6 +1405,19 @@ def _is_access_proxy(elem: Any) -> bool:
         or str(props.get("role", "")).lower() in {"access_proxy", "helper", "room_graph"}
     )
 
+
+def _is_visual_helper(elem: Any) -> bool:
+    if _is_access_proxy(elem):
+        return True
+    params = getattr(elem, "param_values", None) or {}
+    return (
+        _truthy(params.get("accessProxy"))
+        or _truthy(params.get("helper"))
+        or _truthy(params.get("analysisOnly"))
+        or _truthy(params.get("nonPhysical"))
+        or str(params.get("role", "")).lower()
+        in {"access_proxy", "helper", "room_graph", "analysis", "diagnostic"}
+    )
 
 
 def _has_physical_render_or_export_marker(elem: Any, elements: Mapping[str, Element]) -> bool:

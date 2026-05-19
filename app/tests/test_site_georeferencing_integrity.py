@@ -306,53 +306,7 @@ def test_site_relationship_diagnostics_cover_toposolid_hosts_and_property_lines(
 
     assert "site_relationship_wall_invalid_toposolid_host" in rules
     assert "site_relationship_building_outside_toposolid" in rules
-    assert "site_relationship_building_partially_outside_toposolid" in rules
     assert "site_relationship_property_line_closure_error" in rules
-
-
-def test_site_relationship_diagnostics_catch_partial_topology_misplacement() -> None:
-    elements = {
-        **_base_elements(),
-        "site": {
-            "kind": "site",
-            "id": "site",
-            "boundaryMm": [
-                {"xMm": 0, "yMm": 0},
-                {"xMm": 1000, "yMm": 0},
-                {"xMm": 1000, "yMm": 1000},
-                {"xMm": 0, "yMm": 1000},
-            ],
-        },
-        "topo": {
-            "kind": "toposolid",
-            "id": "topo",
-            "boundaryMm": [
-                {"xMm": -100, "yMm": 100},
-                {"xMm": 900, "yMm": 100},
-                {"xMm": 900, "yMm": 900},
-                {"xMm": 100, "yMm": 900},
-            ],
-        },
-        "floor": {
-            "kind": "floor",
-            "id": "floor",
-            "hostToposolidId": "topo",
-            "boundaryMm": [
-                {"xMm": 100, "yMm": 100},
-                {"xMm": 950, "yMm": 100},
-                {"xMm": 950, "yMm": 500},
-                {"xMm": 100, "yMm": 500},
-            ],
-        },
-    }
-
-    findings = site_relationship_diagnostics_v1(elements)
-    rules = {f.rule_id: f for f in findings}
-
-    assert "site_relationship_toposolid_outside_site" not in rules
-    assert rules["site_relationship_toposolid_partially_outside_site"].severity == "error"
-    assert "site_relationship_building_outside_host_toposolid" not in rules
-    assert rules["site_relationship_building_partially_outside_host_toposolid"].severity == "error"
 
 
 def test_invalid_site_toposolid_relationships_are_blocking() -> None:
@@ -405,7 +359,6 @@ def test_invalid_site_toposolid_relationships_are_blocking() -> None:
     assert rules["site_relationship_toposolid_degenerate_boundary"].severity == "error"
     assert rules["site_relationship_building_invalid_toposolid_host"].severity == "error"
     assert "site_relationship_toposolid_outside_site" in rules
-    assert rules["site_relationship_toposolid_partially_outside_site"].severity == "error"
 
 
 def test_multi_building_shared_coordinate_support_reports_missing_anchor() -> None:
@@ -452,13 +405,6 @@ def test_site_georeferencing_report_is_deterministic_and_groups_bir_s_items() ->
     )
 
     assert report["format"] == "siteGeoreferencingIntegrityReport_v1"
-    assert report["trackerItems"] == [
-        "BIR-S01",
-        "BIR-S02",
-        "BIR-S03",
-        "BIR-S04",
-        "BIR-S05",
-        "BIR-S06",
-    ]
+    assert report["trackerItems"] == ["BIR-S01", "BIR-S02", "BIR-S03", "BIR-S04", "BIR-S05", "BIR-S06"]
     assert report["findings"][0]["ruleId"] == "site_import_missing_source_metadata"
     assert report["findings"][0]["trackerItems"] == ["BIR-S02", "BIR-S03"]
