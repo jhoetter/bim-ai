@@ -170,6 +170,10 @@ PRIORITY_BY_SEVERITY = {
     "info": "P2",
 }
 
+PROFILE_SEVERITY_POLICY_BY_RULE_ID = {
+    METADATA_REQUIREMENT_RULE_ID: "profile_metadata_warning",
+}
+
 RECOMMENDATION_BY_RULE_ID = {
     "physical_hard_clash": "Inspect the affected elements in 3D and move, trim, reroute, or add an intentional opening/support condition.",
     "physical_duplicate_geometry": "Delete the duplicate element or offset intentionally repeated instances so they no longer share the same physical proxy.",
@@ -509,6 +513,11 @@ def _finding_dict(violation: Violation, *, profile: str) -> dict[str, Any]:
         violation.rule_id,
         "Inspect the affected elements and resolve the constructability condition.",
     )
+    data["severityPolicy"] = _severity_policy_for_finding(
+        rule_id=violation.rule_id,
+        severity=str(data.get("severity") or violation.severity),
+        profile=profile,
+    )
     data["profile"] = profile
     policy = rule_policy_payload(violation.rule_id)
     data.update(
@@ -595,6 +604,26 @@ def _apply_rule_policy_fields(data: dict[str, Any]) -> None:
     data.setdefault("profileMembership", policy["profileMembership"])
     data.setdefault("audienceText", policy["audienceText"])
     data.setdefault("rulePolicy", policy)
+    data.setdefault(
+        "severityPolicy",
+        _severity_policy_for_finding(
+            rule_id=rule_id,
+            severity=str(data.get("severity") or "warning"),
+            profile=str(data.get("profile") or ""),
+        ),
+    )
+
+
+def _severity_policy_for_finding(*, rule_id: str, severity: str, profile: str) -> str:
+    if rule_id in PROFILE_SEVERITY_POLICY_BY_RULE_ID:
+        return PROFILE_SEVERITY_POLICY_BY_RULE_ID[rule_id]
+    if severity == "info":
+        return "informational_evidence"
+    if profile == "construction_readiness" and rule_id in CONSTRUCTION_READINESS_ERROR_RULE_IDS:
+        return "construction_readiness_error"
+    if severity == "warning":
+        return "profile_domain_warning"
+    return "constructability_policy"
 
 
 def _priority_for_finding(finding: Mapping[str, Any]) -> str:

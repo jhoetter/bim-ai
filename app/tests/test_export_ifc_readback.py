@@ -343,3 +343,34 @@ def test_geometry_readback_summary_compares_identity_body_qto_and_topology():
     assert summary["openingTopology"]["readbackByHostKind"]["wall"] == 1
     assert summary["semanticReadback"]["materials"]["IfcMaterial"] == 1
     assert summary["semanticReadback"]["classifications"]["IfcClassificationReference"] == 1
+    assert summary["driftTolerancePolicy"]["countTolerance"] == 0
+    assert summary["driftFindings"] == []
+
+
+def test_geometry_readback_summary_reports_toleranced_drift_findings():
+    wall = _body_product("IfcWall", "wrong-wall", "Pset_WallCommon", None)
+    model = _Model(by_type={"IfcWall": [wall]})
+    doc = Document(
+        revision=1,
+        elements={
+            "l0": LevelElem(kind="level", id="l0", name="G", elevationMm=0),
+            "w1": WallElem(
+                kind="wall",
+                id="w1",
+                levelId="l0",
+                start={"xMm": 0, "yMm": 0},
+                end={"xMm": 5000, "yMm": 0},
+                thicknessMm=200,
+                heightMm=2800,
+            ),
+        },
+    )
+
+    summary = build_kernel_ifc_geometry_readback_summary_v0(model, doc)
+
+    assert summary["allMatched"] is False
+    codes = {finding["code"] for finding in summary["driftFindings"]}
+    assert "ifc_readback_missing_reference" in codes
+    assert "ifc_readback_unexpected_reference" in codes
+    assert "ifc_readback_qto_gap" in codes
+    assert all("BIR-K02" in finding["trackerItems"] for finding in summary["driftFindings"])

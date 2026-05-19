@@ -581,6 +581,16 @@ register(
                     "type": "string",
                     "description": "User identity for undo-stack attribution.",
                 },
+                "actorKind": {
+                    "type": "string",
+                    "enum": ["human", "agent", "mcp-client", "ci"],
+                    "default": "human",
+                    "description": "Transaction safety actor class; agent/MCP commits require matching dry-run evidence.",
+                },
+                "dryRunEvidence": {
+                    "type": "object",
+                    "description": "dryRunEvidence_v1 replay proof required for agent/MCP commit mode.",
+                },
             },
             "additionalProperties": False,
         },
@@ -716,6 +726,12 @@ register(
                     "type": "string",
                     "description": "Optional idempotency/correlation id supplied by the caller.",
                 },
+                "actorKind": {
+                    "type": "string",
+                    "enum": ["human", "agent", "mcp-client", "ci"],
+                    "default": "human",
+                    "description": "Actor class recorded in transaction safety/audit evidence.",
+                },
             },
             "additionalProperties": False,
         },
@@ -807,6 +823,16 @@ register(
                 },
                 "userId": {"type": "string", "default": "local-dev"},
                 "submitter": {"type": "string", "default": "agent"},
+                "actorKind": {
+                    "type": "string",
+                    "enum": ["human", "agent", "mcp-client", "ci"],
+                    "default": "agent",
+                    "description": "Transaction safety actor class; agent/MCP commits require dryRunEvidence.",
+                },
+                "dryRunEvidence": {
+                    "type": "object",
+                    "description": "dryRunEvidence_v1 produced by model.dry_run for the same parentRevision and command digest.",
+                },
             },
             "additionalProperties": False,
         },
@@ -2220,6 +2246,92 @@ register(
         exampleRefs=["route:constructability-report"],
         resourceGroups=["qa", "constructability", "profile", "sketch-to-bim"],
         uiFeatures=["advisor-panel", "construction-lens", "group:constructability"],
+    )
+)
+
+register(
+    ToolDescriptor(
+        name="qa.bim_requirement_validation",
+        category="query",
+        inputSchema={
+            "$schema": "http://json-schema.org/draft-07/schema#",
+            "title": "QaBimRequirementValidationInput",
+            "type": "object",
+            "required": ["modelId"],
+            "properties": {
+                "modelId": {"type": "string", "format": "uuid"},
+            },
+            "additionalProperties": False,
+        },
+        outputSchema={
+            "$schema": "http://json-schema.org/draft-07/schema#",
+            "title": "QaBimRequirementValidationResult",
+            "type": "object",
+            "required": ["format", "modelId", "revision", "packs", "reports", "summary"],
+            "properties": {
+                "format": {"const": "bimRequirementValidationApiParity_v1"},
+                "modelId": {"type": "string"},
+                "revision": {"type": ["integer", "string"]},
+                "validationRuleCount": {"type": "integer"},
+                "packs": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "required": ["schemaVersion", "packId", "summary", "checks"],
+                        "properties": {
+                            "schemaVersion": {
+                                "const": "bim-requirement-validation-pack.v1"
+                            },
+                            "packId": {"type": "string"},
+                            "summary": {"type": "object"},
+                            "checks": {"type": "array", "items": {"type": "object"}},
+                        },
+                        "additionalProperties": True,
+                    },
+                },
+                "reports": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "required": ["schemaVersion", "ok", "summary", "blockers"],
+                        "properties": {
+                            "schemaVersion": {
+                                "const": "bim-requirement-validation-report.v1"
+                            },
+                            "ok": {"type": "boolean"},
+                            "summary": {"type": "object"},
+                            "blockers": {"type": "array", "items": {"type": "object"}},
+                        },
+                        "additionalProperties": True,
+                    },
+                },
+                "summary": {"type": "object"},
+            },
+            "additionalProperties": True,
+        },
+        exitCodes={
+            "ok": ExitCode(code=0, meaning="BIR/IDS-style validation packs returned"),
+            "not_found": ExitCode(code=1, meaning="Model not found"),
+        },
+        cliExample=(
+            "curl /api/models/$BIM_AI_MODEL_ID/qa/bim-requirement-validation"
+        ),
+        restEndpoint=RestEndpoint(
+            method="GET", path="/api/models/{model_id}/qa/bim-requirement-validation"
+        ),
+        sideEffects="none",
+        agentSafetyNotes=(
+            "Read-only backend parity for BIR/IDS-style information requirement packs "
+            "stored as validation_rule elements."
+        ),
+        requiredPermissions=["model:read"],
+        schemaRefs=[
+            "input:QaBimRequirementValidationInput",
+            "output:QaBimRequirementValidationResult",
+        ],
+        exampleRefs=["route:qa:bim-requirement-validation"],
+        resourceGroups=["qa", "advisor", "ids", "bir", "mcp"],
+        uiFeatures=["agent-review", "advisor-panel", "group:exchange-validation"],
     )
 )
 

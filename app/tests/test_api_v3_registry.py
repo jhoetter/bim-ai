@@ -28,6 +28,7 @@ EXPECTED_SEED_TOOLS = {
     "model.dry_run",
     "model-show",
     "qa.advisor_rules",
+    "qa.bim_requirement_validation",
 }
 
 EXPECTED_M2_TRANSACTION_TOOLS = {
@@ -258,6 +259,7 @@ class TestToolRegistry:
         assert dry_run.sideEffects == "none"
         assert dry_run.restEndpoint.method == "POST"
         assert dry_run.restEndpoint.path == "/api/models/{model_id}/commands/bundle/dry-run"
+        assert "actorKind" in dry_run.inputSchema["properties"]
         assert dry_run.kernelCommands == ["*"]
         assert {"model", "transaction", "kernel-command"} <= set(dry_run.resourceGroups)
         assert "input:BundleEnvelope" in dry_run.schemaRefs
@@ -273,11 +275,30 @@ class TestToolRegistry:
         assert commit.restEndpoint.method == "POST"
         assert commit.restEndpoint.path == "/api/models/{model_id}/bundles"
         assert commit.inputSchema["properties"]["mode"]["const"] == "commit"
+        assert "actorKind" in commit.inputSchema["properties"]
+        assert "dryRunEvidence" in commit.inputSchema["properties"]
         assert commit.kernelCommands == ["*"]
         assert {"model", "transaction", "kernel-command"} <= set(commit.resourceGroups)
         assert "input:CommandBundleRequest" in commit.schemaRefs
         assert "output:BundleResult" in commit.schemaRefs
         assert "cli:apply-bundle:commit" in commit.exampleRefs
+
+    def test_apply_bundle_descriptor_exposes_agent_mcp_safety_fields(self):
+        descriptor = get_descriptor("apply-bundle")
+        assert descriptor is not None
+        properties = descriptor.inputSchema["properties"]
+        assert properties["actorKind"]["enum"] == ["human", "agent", "mcp-client", "ci"]
+        assert "dryRunEvidence" in properties
+
+    def test_bim_requirement_validation_descriptor_is_backend_ids_api_parity_surface(self):
+        descriptor = get_descriptor("qa.bim_requirement_validation")
+        assert descriptor is not None
+        assert descriptor.restEndpoint.method == "GET"
+        assert descriptor.restEndpoint.path == "/api/models/{model_id}/qa/bim-requirement-validation"
+        assert {"ids", "bir", "mcp"} <= set(descriptor.resourceGroups)
+        assert descriptor.outputSchema["properties"]["format"]["const"] == (
+            "bimRequirementValidationApiParity_v1"
+        )
 
     def test_m3k_vertical_circulation_tools_are_first_class_descriptors(self):
         names = {tool.name for tool in get_catalog().tools}

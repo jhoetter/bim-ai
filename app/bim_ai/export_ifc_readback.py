@@ -386,6 +386,11 @@ def build_kernel_ifc_geometry_readback_summary_v0(model: Any, doc: Document | No
             "templates": quantity_templates,
         },
     }
+    drift_findings = _ifc_readback_drift_findings_v0(
+        rows=rows,
+        opening_delta=opening_delta,
+        opening_counts=opening_counts,
+    )
 
     return {
         "schemaVersion": 0,
@@ -400,7 +405,98 @@ def build_kernel_ifc_geometry_readback_summary_v0(model: Any, doc: Document | No
             "deltaByHostKind": opening_delta,
         },
         "semanticReadback": semantic_readback,
+        "driftTolerancePolicy": {
+            "schemaVersion": 0,
+            "identityTolerance": "exact_reference_id_match",
+            "countTolerance": 0,
+            "bodyTolerance": "every_expected_product_has_body",
+            "qtoTolerance": "every_expected_product_has_quantity_template_when_applicable",
+            "openingTopologyTolerance": "exact_by_host_kind",
+        },
+        "driftFindings": drift_findings,
     }
+
+
+def _ifc_readback_drift_findings_v0(
+    *,
+    rows: dict[str, Any],
+    opening_delta: dict[str, int],
+    opening_counts: dict[str, int],
+) -> list[dict[str, Any]]:
+    findings: list[dict[str, Any]] = []
+    for kind, row in sorted(rows.items()):
+        expected = int(row.get("expected") or 0)
+        if row.get("missingReferenceIds"):
+            findings.append(
+                {
+                    "code": "ifc_readback_missing_reference",
+                    "severity": "error",
+                    "kind": kind,
+                    "expected": expected,
+                    "actual": int(row.get("productsWithReference") or 0),
+                    "elementIds": row.get("missingReferenceIds"),
+                    "tolerance": 0,
+                    "trackerItems": ["BIR-K02", "BIR-K04"],
+                }
+            )
+        if row.get("unexpectedReferenceIds"):
+            findings.append(
+                {
+                    "code": "ifc_readback_unexpected_reference",
+                    "severity": "warning",
+                    "kind": kind,
+                    "elementIds": row.get("unexpectedReferenceIds"),
+                    "tolerance": 0,
+                    "trackerItems": ["BIR-K02", "BIR-K04"],
+                }
+            )
+        if int(row.get("productsWithBody") or 0) < expected:
+            findings.append(
+                {
+                    "code": "ifc_readback_body_gap",
+                    "severity": "error",
+                    "kind": kind,
+                    "expected": expected,
+                    "actual": int(row.get("productsWithBody") or 0),
+                    "tolerance": 0,
+                    "trackerItems": ["BIR-K02"],
+                }
+            )
+        if row.get("productsWithQto") is not None and int(row.get("productsWithQto") or 0) < expected:
+            findings.append(
+                {
+                    "code": "ifc_readback_qto_gap",
+                    "severity": "warning",
+                    "kind": kind,
+                    "expected": expected,
+                    "actual": int(row.get("productsWithQto") or 0),
+                    "tolerance": 0,
+                    "trackerItems": ["BIR-K02", "BIR-K04"],
+                }
+            )
+    for host_kind, delta in sorted(opening_delta.items()):
+        if delta != 0:
+            findings.append(
+                {
+                    "code": "ifc_opening_topology_count_drift",
+                    "severity": "error",
+                    "hostKind": host_kind,
+                    "delta": delta,
+                    "tolerance": 0,
+                    "trackerItems": ["BIR-K02"],
+                }
+            )
+    if opening_counts.get("other"):
+        findings.append(
+            {
+                "code": "ifc_opening_topology_unresolved_host",
+                "severity": "error",
+                "count": opening_counts["other"],
+                "tolerance": 0,
+                "trackerItems": ["BIR-K02"],
+            }
+        )
+    return findings
 
 
 def _ifc_product_defines_qto_template(product: Any, qto_template_name: str) -> bool:

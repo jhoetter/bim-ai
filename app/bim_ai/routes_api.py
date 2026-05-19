@@ -42,6 +42,9 @@ from bim_ai.ai_boundary import empty_external_model_call_audit_csv, load_bill_of
 from bim_ai.codes import BUILDING_PRESETS
 from bim_ai.command_schemas import export_command_schemas, get_command_schema
 from bim_ai.commands import Command
+from bim_ai.bim_requirement_validation_pack import (
+    build_document_bim_requirement_validation_payload,
+)
 from bim_ai.constructability_bcf import build_constructability_bcf_export
 from bim_ai.constructability_report import (
     build_constructability_report,
@@ -1520,6 +1523,18 @@ async def qa_advisor_route(
         return loaded
     mid, doc = loaded
     return _query_resolve_response(qa_advisor(mid, doc, body))
+
+
+@api_router.get("/models/{model_id}/qa/bim-requirement-validation")
+async def qa_bim_requirement_validation_route(
+    model_id: UUID,
+    session: AsyncSession = Depends(get_session),
+) -> Any:
+    loaded = await _load_query_resolve_doc(model_id, session)
+    if isinstance(loaded, JSONResponse):
+        return loaded
+    mid, doc = loaded
+    return build_document_bim_requirement_validation_payload(mid, doc)
 
 
 _SEMANTIC_SURFACE_ALIASES = {

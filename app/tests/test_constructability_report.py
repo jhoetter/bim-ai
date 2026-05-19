@@ -747,6 +747,8 @@ def test_constructability_readiness_reports_ids_like_metadata_requirements() -> 
     }
     finding = readiness_report["findings"][0]
     assert finding["blockingClass"] == "metadata"
+    assert finding["severity"] == "warning"
+    assert finding["severityPolicy"] == "profile_metadata_warning"
     assert "Pset_WallCommon.FireRating" in finding["message"]
     assert "structuralMaterialKey" in finding["message"]
     assert resolved_report["summary"]["ruleCounts"] == {}
