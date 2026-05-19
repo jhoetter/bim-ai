@@ -62,9 +62,45 @@ def test_incremental_diagnostic_eligibility_scopes_reference_and_pair_impact() -
     assert "door-1" in eligibility["impactedElementIds"]
     assert "shelf-1" in eligibility["impactedElementIds"]
     assert "wall-far" not in eligibility["impactedElementIds"]
-    assert eligibility["constructabilityPairImpact"]["impactedPairs"] == [
-        ["shelf-1", "wall-1"]
-    ]
+    assert eligibility["constructabilityPairImpact"]["impactedPairs"] == [["shelf-1", "wall-1"]]
+    assert eligibility["diagnosticSchedulingPolicy"]["format"] == "diagnosticUiSchedulingPolicy_v1"
+    assert eligibility["diagnosticSchedulingPolicy"]["inputProtection"] == {
+        "maxSynchronousDiagnosticMs": 0,
+        "overlayPointerEvents": "none",
+        "preservePointerEvents": True,
+        "preserveCameraControls": True,
+        "preserveSelection": True,
+    }
+    assert (
+        eligibility["backgroundExecutionPlan"]["format"] == "backgroundDiagnosticExecutionPlan_v1"
+    )
+    assert (
+        eligibility["backgroundExecutionPlan"]["cachePolicy"]["reuseCleanRowsOutsideImpactedScope"]
+        is True
+    )
+    task_modes = {row["runMode"] for row in eligibility["backgroundExecutionPlan"]["tasks"]}
+    assert "incremental_background" in task_modes
+    assert "deferred_full_scan" in task_modes
+
+
+def test_incremental_diagnostic_full_scan_is_deferred_background_work() -> None:
+    elements = _elements()
+    eligibility = advisor_incremental_diagnostic_eligibility_v1(
+        elements,
+        changed_element_ids=set(elements),
+    )
+
+    assert eligibility["incrementalEligible"] is False
+    assert eligibility["fullScanRequiredReason"] == "impacted_scope_covers_full_model"
+    assert eligibility["diagnosticSchedulingPolicy"]["degradationLevel"] == "deferred"
+    assert eligibility["diagnosticSchedulingPolicy"]["workPlans"]["advisor"]["runMode"] == (
+        "defer_until_idle"
+    )
+    assert eligibility["backgroundExecutionPlan"]["cancellation"] == {
+        "cancelOnNewRevision": True,
+        "cancelOnChangedScopeSuperseded": True,
+        "preserveLastGoodResults": True,
+    }
 
 
 def test_constructability_report_includes_rule_timing_and_incremental_metadata() -> None:

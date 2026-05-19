@@ -99,9 +99,7 @@ class TransactionConflict(BaseModel):
 class TransactionSafetyDecision(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
 
-    schema_version: str = Field(
-        default=TRANSACTION_SAFETY_SCHEMA_VERSION, alias="schemaVersion"
-    )
+    schema_version: str = Field(default=TRANSACTION_SAFETY_SCHEMA_VERSION, alias="schemaVersion")
     ok: bool
     reason_code: str = Field(alias="reasonCode")
     current_revision: int = Field(alias="currentRevision")
@@ -536,6 +534,7 @@ def build_agent_remediation_proposal(
         actor_kind=actor.actor_kind,
         commands=commands,
     )
+    provenance_rows = [record.model_dump(by_alias=True) for record in provenance]
     return {
         "schemaVersion": REMEDIATION_PROPOSAL_SCHEMA_VERSION,
         "parentRevision": current_revision,
@@ -551,8 +550,14 @@ def build_agent_remediation_proposal(
             for finding_id, classification in zip(finding_ids, classifications, strict=True)
         ],
         "requiredPermissionScopes": safety.required_permission_scopes,
-        "provenance": [record.model_dump(by_alias=True) for record in provenance],
+        "provenance": provenance_rows,
+        "provenanceDigestSha256": canonical_payload_digest({"provenance": provenance_rows}),
         "provenanceValidation": validate_fix_provenance(provenance),
+        "provenanceStorage": {
+            "transactionMetadataKey": "remediation.provenance",
+            "evidencePathRequired": True,
+            "sourceCommandLinksPreservedByUndoRedo": True,
+        },
         "rollbackGuidance": "Dry-run and failed commit paths leave the source model unchanged.",
         "retryGuidance": "Refresh revision, regenerate commands, dry-run, then commit matching digest.",
     }

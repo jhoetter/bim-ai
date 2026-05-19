@@ -1040,13 +1040,36 @@ function knownStairShape(shape: string | undefined): boolean {
 }
 
 function knownBalusterRule(rule: string | undefined): boolean {
-  return rule === undefined || rule === 'glass_panel' || rule === 'cable' || rule === 'vertical';
+  return (
+    rule === undefined ||
+    rule === 'regular' ||
+    rule === 'glass_panel' ||
+    rule === 'cable' ||
+    rule === 'vertical'
+  );
 }
 
 function hasRailingHostEdgeEvidence(railing: Extract<Element, { kind: 'railing' }>): boolean {
   if (railing.hostedStairId) return true;
+  const direct = railing as {
+    hostEdgeId?: string | null;
+    hostedEdgeId?: string | null;
+    floorEdgeId?: string | null;
+    hostFloorId?: string | null;
+    edgeRef?: string | null;
+  };
+  const hostEvidenceKeys = [
+    'hostEdgeId',
+    'hostedEdgeId',
+    'floorEdgeId',
+    'hostFloorId',
+    'edgeRef',
+  ] as const;
+  if (hostEvidenceKeys.some((key) => typeof direct[key] === 'string' && direct[key]!.length > 0)) {
+    return true;
+  }
   const props = (railing as { props?: Record<string, unknown> }).props ?? {};
-  return ['hostEdgeId', 'hostedEdgeId', 'floorEdgeId', 'hostFloorId', 'edgeRef'].some(
+  return hostEvidenceKeys.some(
     (key) => typeof props[key] === 'string' && String(props[key]).length > 0,
   );
 }

@@ -142,6 +142,117 @@ describe('element render feature status', () => {
     expect(status?.family.missingSlots).toEqual(['shading']);
   });
 
+  it('proves W25-A material, family, and lens status closure in one packet shape', () => {
+    const wall: Extract<Element, { kind: 'wall' }> = {
+      kind: 'wall',
+      id: 'wall-w25-a',
+      name: 'Wall',
+      levelId: 'level-1',
+      start: { xMm: 0, yMm: 0 },
+      end: { xMm: 6000, yMm: 0 },
+      thicknessMm: 200,
+      heightMm: 3000,
+      discipline: 'arch',
+    };
+    const doorType: Extract<Element, { kind: 'family_type' }> = {
+      kind: 'family_type',
+      id: 'door-type-w25-a',
+      name: 'Pivot door',
+      familyId: 'builtin:door:single',
+      discipline: 'door',
+      parameters: { leafWidthMm: 1000, leafHeightMm: 2400 },
+    };
+    const door: Extract<Element, { kind: 'door' }> = {
+      kind: 'door',
+      id: 'door-w25-a',
+      name: 'Door',
+      wallId: wall.id,
+      alongT: 0.5,
+      widthMm: 900,
+      familyTypeId: doorType.id,
+      operationType: 'pivot',
+      materialKey: 'aluminium_black',
+      materialSlots: {
+        frame: 'aluminium_black',
+        panel: 'cladding_warm_wood',
+        threshold: 'concrete_smooth',
+        hardware: 'asset_stainless_brushed',
+        glass: 'asset_clear_glass_double',
+      },
+      discipline: 'arch',
+    };
+    const familyType: Extract<Element, { kind: 'family_type' }> = {
+      kind: 'family_type',
+      id: 'proxy-family-type',
+      name: 'Proxy family',
+      familyId: 'catalog:unloaded',
+      discipline: 'generic',
+      parameters: { widthMm: 500, heightMm: 700 },
+    };
+    const instance: Extract<Element, { kind: 'family_instance' }> = {
+      kind: 'family_instance',
+      id: 'family-proxy-w25-a',
+      name: 'Proxy family',
+      familyTypeId: familyType.id,
+      positionMm: { xMm: 1000, yMm: 1000 },
+      paramValues: { widthMm: 650 },
+      discipline: 'mep',
+    };
+
+    const statuses = byId(
+      collectElementRenderFeatureStatuses({
+        elements: [wall, doorType, door, familyType, instance],
+        elementIds: [door.id, instance.id],
+        lensMode: 'mep',
+      }),
+    );
+
+    expect(statuses['door-w25-a']).toMatchObject({
+      material: {
+        state: 'resolved',
+        fallback: false,
+        slots: expect.arrayContaining([
+          expect.objectContaining({ slot: 'frame', resolved: true }),
+          expect.objectContaining({ slot: 'glass', resolved: true }),
+        ]),
+      },
+      family: {
+        state: 'supported',
+        dimensionSource: 'family-type',
+        dimensionsMm: { widthMm: 1000, heightMm: 2400 },
+        supportedSlots: ['frame', 'panel', 'threshold', 'hardware', 'glass'],
+        missingSlots: [],
+        proxyFallback: false,
+      },
+      lens: {
+        mode: 'mep',
+        source: 'ui-lens',
+        visibility: 'ghost',
+        ghostOpacity: 0.25,
+      },
+      blocking: false,
+    });
+    expect(statuses['door-w25-a']?.family.supportedOperations).toContain('pivot');
+    expect(statuses['family-proxy-w25-a']).toMatchObject({
+      family: {
+        state: 'unsupported',
+        dimensionSource: 'override',
+        dimensionsMm: { heightMm: 700, widthMm: 650 },
+        proxyFallback: true,
+      },
+      lens: {
+        mode: 'mep',
+        visibility: 'foreground',
+      },
+      implementation: {
+        state: 'unsupported',
+        geometryImplementation: 'proxy-fallback',
+      },
+      diagnosticCodes: expect.arrayContaining(['renderer.family_instance.unsupported']),
+      blocking: true,
+    });
+  });
+
   it('reports loaded family proxy fallback and missing family type without UI dependencies', () => {
     const familyType: Extract<Element, { kind: 'family_type' }> = {
       kind: 'family_type',
@@ -331,6 +442,20 @@ describe('element render feature status', () => {
       ],
       props: { requiresHostedEdge: true },
     } as Extract<Element, { kind: 'railing' }>;
+    const regularRailing = {
+      kind: 'railing',
+      id: 'rail-regular-edge',
+      name: 'Regular edge guard',
+      levelId: 'level-2',
+      hostFloorId: 'floor-upper',
+      hostEdgeId: 'floor-upper:edge:south',
+      pathMm: [
+        { xMm: 0, yMm: 0 },
+        { xMm: 2000, yMm: 0 },
+      ],
+      balusterPattern: { rule: 'regular', spacingMm: 100 },
+      props: { requiresHostedEdge: true },
+    } as unknown as Extract<Element, { kind: 'railing' }>;
     const room = {
       kind: 'room',
       id: 'room-volume',
@@ -347,7 +472,7 @@ describe('element render feature status', () => {
 
     const statuses = byId(
       collectElementRenderFeatureStatuses({
-        elements: [wall, opening, roof, stair, railing, room],
+        elements: [wall, opening, roof, stair, railing, regularRailing, room],
       }),
     );
 
@@ -385,6 +510,13 @@ describe('element render feature status', () => {
       geometry: {
         state: 'unsupported',
         diagnosticCodes: ['renderer.railing_geometry.missing_host_edge'],
+      },
+    });
+    expect(statuses['rail-regular-edge']).toMatchObject({
+      geometry: {
+        state: 'partial',
+        diagnosticCodes: [],
+        blocking: false,
       },
     });
     expect(statuses['room-volume']).toMatchObject({

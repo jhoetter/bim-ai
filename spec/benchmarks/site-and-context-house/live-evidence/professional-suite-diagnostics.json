@@ -40,7 +40,9 @@
   },
   "backgroundDeferredDiagnostics": {
     "format": "diagnosticUiSchedulingPolicy_v1",
+    "producerScope": "professional-benchmark-live-evidence",
     "degradationLevel": "none",
+    "reasonCodes": ["committed_live_evidence_idle_background"],
     "inputProtection": {
       "maxSynchronousDiagnosticMs": 0,
       "overlayPointerEvents": "none",
@@ -48,23 +50,118 @@
       "preserveCameraControls": true,
       "preserveSelection": true
     },
-    "backgroundWork": [
-      {
+    "overlay": {
+      "pointerEvents": "none",
+      "maxRows": 96,
+      "maxMarkers": 192,
+      "allowStaleDuringInteraction": true
+    },
+    "workPlans": {
+      "advisor": {
         "kind": "advisor",
         "runMode": "idle",
+        "minDelayMs": 0,
+        "maxWorkSliceMs": 6,
         "trackerRefs": ["BIR-L01", "BIR-L05", "BIR-L06"]
       },
-      {
+      "renderer-diagnostics": {
         "kind": "renderer-diagnostics",
         "runMode": "idle",
+        "minDelayMs": 0,
+        "maxWorkSliceMs": 6,
         "trackerRefs": ["BIR-L02", "BIR-L05", "BIR-L06"]
       },
-      {
+      "diagnostic-overlay": {
+        "kind": "diagnostic-overlay",
+        "runMode": "idle",
+        "minDelayMs": 0,
+        "maxWorkSliceMs": 4,
+        "trackerRefs": ["BIR-L06"]
+      },
+      "evidence-capture": {
         "kind": "evidence-capture",
         "runMode": "debounced",
+        "minDelayMs": 120,
+        "maxWorkSliceMs": 6,
         "trackerRefs": ["BIR-L05", "BIR-O05"]
       }
-    ]
+    },
+    "modelLoad": {
+      "benchmarkFeatureCount": 5
+    }
+  },
+  "professionalLiveEvidence": {
+    "format": "professionalBenchmarkLiveEvidence_v1",
+    "captureMode": "committed-live-evidence-artifacts",
+    "browserAuthoredUiClaimed": false,
+    "covered": true,
+    "benchmarkFeatureCount": 5,
+    "executableEvidenceKindCount": 10,
+    "liveArtifactCount": 15,
+    "liveArtifacts": [
+      {
+        "kind": "mcpCli",
+        "artifact": "live-evidence/execution-evidence.json"
+      },
+      {
+        "kind": "integrity",
+        "artifact": "live-evidence/professional-suite-diagnostics.json"
+      },
+      {
+        "kind": "integrity",
+        "artifact": "live-evidence/advisor-validation.json"
+      },
+      {
+        "kind": "advisor",
+        "artifact": "live-evidence/advisor-validation.json"
+      },
+      {
+        "kind": "rendererDiagnostics",
+        "artifact": "live-evidence/professional-suite-diagnostics.json"
+      },
+      {
+        "kind": "rendererDiagnostics",
+        "artifact": "live-evidence/visual-evidence.json"
+      },
+      {
+        "kind": "visual",
+        "artifact": "live-evidence/visual-evidence.json"
+      },
+      {
+        "kind": "export",
+        "artifact": "live-evidence/export-evidence.json"
+      },
+      {
+        "kind": "performance",
+        "artifact": "live-evidence/professional-suite-diagnostics.json"
+      },
+      {
+        "kind": "acceptance",
+        "artifact": "live-evidence/professional-suite-diagnostics.json"
+      },
+      {
+        "kind": "methodology",
+        "artifact": "live-evidence/assumption-ledger.json"
+      },
+      {
+        "kind": "methodology",
+        "artifact": "live-evidence/source-feature-ledger.json"
+      },
+      {
+        "kind": "methodology",
+        "artifact": "live-evidence/methodology-ledger.json"
+      },
+      {
+        "kind": "semanticDiff",
+        "artifact": "live-evidence/semantic-diff.json"
+      },
+      {
+        "kind": "semanticDiff",
+        "artifact": "live-evidence/semantic-summary.json"
+      }
+    ],
+    "acceptanceNote": "Professional benchmark live evidence is accepted from committed scenario live-evidence artifacts; browser-authored exact UI input remains governed by each scenario UI classification.",
+    "trackerRefs": ["BIR-L02", "BIR-L04", "BIR-L05", "BIR-L06", "BIR-O05"]
   },
   "evidenceKinds": {
     "ui": {

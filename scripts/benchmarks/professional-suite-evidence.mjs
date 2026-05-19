@@ -84,10 +84,12 @@ function referencedArtifacts(scenario, kind) {
   return scenario.evidence?.[kind]?.artifacts ?? [];
 }
 
-function buildSchedulingPlan() {
+function buildSchedulingPlan(featureCount) {
   return {
     format: 'diagnosticUiSchedulingPolicy_v1',
+    producerScope: 'professional-benchmark-live-evidence',
     degradationLevel: 'none',
+    reasonCodes: ['committed_live_evidence_idle_background'],
     inputProtection: {
       maxSynchronousDiagnosticMs: 0,
       overlayPointerEvents: 'none',
@@ -95,23 +97,69 @@ function buildSchedulingPlan() {
       preserveCameraControls: true,
       preserveSelection: true,
     },
-    backgroundWork: [
-      {
+    overlay: {
+      pointerEvents: 'none',
+      maxRows: 96,
+      maxMarkers: 192,
+      allowStaleDuringInteraction: true,
+    },
+    workPlans: {
+      advisor: {
         kind: 'advisor',
         runMode: 'idle',
+        minDelayMs: 0,
+        maxWorkSliceMs: 6,
         trackerRefs: ['BIR-L01', 'BIR-L05', 'BIR-L06'],
       },
-      {
+      'renderer-diagnostics': {
         kind: 'renderer-diagnostics',
         runMode: 'idle',
+        minDelayMs: 0,
+        maxWorkSliceMs: 6,
         trackerRefs: ['BIR-L02', 'BIR-L05', 'BIR-L06'],
       },
-      {
+      'diagnostic-overlay': {
+        kind: 'diagnostic-overlay',
+        runMode: 'idle',
+        minDelayMs: 0,
+        maxWorkSliceMs: 4,
+        trackerRefs: ['BIR-L06'],
+      },
+      'evidence-capture': {
         kind: 'evidence-capture',
         runMode: 'debounced',
+        minDelayMs: 120,
+        maxWorkSliceMs: 6,
         trackerRefs: ['BIR-L05', 'BIR-O05'],
       },
-    ],
+    },
+    modelLoad: {
+      benchmarkFeatureCount: featureCount,
+    },
+  };
+}
+
+function buildProfessionalLiveEvidence(scenario, featureCount) {
+  const liveArtifacts = EXPANDED_EVIDENCE_KINDS.flatMap((kind) =>
+    referencedArtifacts(scenario, kind)
+      .filter((artifact) => artifact.startsWith('live-evidence/'))
+      .map((artifact) => ({ kind, artifact })),
+  );
+  const executableKinds = EXPANDED_EVIDENCE_KINDS.filter(
+    (kind) => scenario.evidence?.[kind]?.classification === 'executable',
+  );
+  return {
+    format: 'professionalBenchmarkLiveEvidence_v1',
+    captureMode: 'committed-live-evidence-artifacts',
+    browserAuthoredUiClaimed: false,
+    covered: liveArtifacts.length > 0 && (scenario.remainingBlockers?.length ?? 0) === 0,
+    benchmarkFeatureCount: featureCount,
+    executableEvidenceKindCount: executableKinds.length,
+    liveArtifactCount: liveArtifacts.length,
+    liveArtifacts,
+    acceptanceNote:
+      'Professional benchmark live evidence is accepted from committed scenario live-evidence artifacts; browser-authored exact UI input remains governed by each scenario UI classification.',
+    trackerRefs: ['BIR-L02', 'BIR-L04', 'BIR-L05', 'BIR-L06', 'BIR-O05'],
   };
 }
 
@@ -154,7 +202,8 @@ function buildDiagnosticsEvidence(scenario) {
       featureCount,
       trackerRefs: ['BIR-L04'],
     },
-    backgroundDeferredDiagnostics: buildSchedulingPlan(),
+    backgroundDeferredDiagnostics: buildSchedulingPlan(featureCount),
+    professionalLiveEvidence: buildProfessionalLiveEvidence(scenario, featureCount),
     evidenceKinds: Object.fromEntries(
       EXPANDED_EVIDENCE_KINDS.map((kind) => [
         kind,
@@ -168,7 +217,7 @@ function buildDiagnosticsEvidence(scenario) {
     acceptance: {
       ok: EXPANDED_EVIDENCE_KINDS.every(
         (kind) => scenario.evidence?.[kind]?.classification !== 'missing',
-      ),
+      ) && (scenario.remainingBlockers?.length ?? 0) === 0,
       requiredEvidenceKinds: EXPANDED_EVIDENCE_KINDS,
       trackerRefs: ['BIR-O05'],
     },

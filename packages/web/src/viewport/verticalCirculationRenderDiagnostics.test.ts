@@ -187,6 +187,34 @@ describe('diagnoseVerticalCirculationRendering', () => {
     expect(codes(diagnostics)).toContain('renderer.railing_geometry.missing_host_edge');
   });
 
+  it('accepts regular balusters and direct hosted-edge evidence for railings', () => {
+    const railing = {
+      kind: 'railing',
+      id: 'rail-regular-edge',
+      name: 'Regular edge rail',
+      hostFloorId: upperFloor.id,
+      hostEdgeId: 'floor-upper:edge:south',
+      pathMm: [
+        { xMm: 0, yMm: 0 },
+        { xMm: 2000, yMm: 0 },
+      ],
+      balusterPattern: { rule: 'regular', spacingMm: 100 },
+    } as unknown as RailingElem;
+
+    const diagnostics = diagnoseVerticalCirculationRendering(
+      {
+        [upperFloor.id]: upperFloor,
+        [railing.id]: railing,
+      },
+      { requireRailingHostedEdges: true },
+    );
+
+    expect(codes(diagnostics)).not.toContain(
+      'renderer.railing_geometry.unsupported_baluster_pattern',
+    );
+    expect(codes(diagnostics)).not.toContain('renderer.railing_geometry.missing_host_edge');
+  });
+
   it('flags target-house terrace and loggia floors without enough guardrail evidence', () => {
     const terrace: FloorElem = {
       ...upperFloor,
@@ -215,6 +243,40 @@ describe('diagnoseVerticalCirculationRendering', () => {
 
     expect(codes(missing)).toContain('renderer.railing_geometry.target_house_guardrail_missing');
     expect(codes(partial)).toContain('renderer.railing_geometry.target_house_guardrail_partial');
+  });
+
+  it('accepts target-house terrace guardIds with hosted-edge railing evidence', () => {
+    const terrace: FloorElem = {
+      ...upperFloor,
+      id: 'hf-roof-court-floor',
+      name: 'Target-house roof court terrace',
+      props: { guardIds: ['rail-roof-court'] },
+    };
+    const guard: RailingElem = {
+      kind: 'railing',
+      id: 'rail-roof-court',
+      name: 'Roof court guard',
+      hostFloorId: terrace.id,
+      hostEdgeId: 'hf-roof-court-floor:edge:east-open-guard',
+      pathMm: [
+        { xMm: 6000, yMm: 0 },
+        { xMm: 6000, yMm: 3000 },
+      ],
+      balusterPattern: { rule: 'regular', spacingMm: 100 },
+    } as unknown as RailingElem;
+
+    const diagnostics = diagnoseVerticalCirculationRendering({
+      [upper.id]: upper,
+      [terrace.id]: terrace,
+      [guard.id]: guard,
+    });
+
+    expect(codes(diagnostics)).not.toContain(
+      'renderer.railing_geometry.target_house_guardrail_partial',
+    );
+    expect(codes(diagnostics)).not.toContain(
+      'renderer.railing_geometry.target_house_guardrail_missing',
+    );
   });
 });
 

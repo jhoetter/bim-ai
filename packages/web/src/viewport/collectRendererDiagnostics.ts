@@ -444,10 +444,7 @@ function fromWallHostedCutDiagnostic(
     ].filter((id): id is string => typeof id === 'string' && id.length > 0),
     viewId,
     evidence: { ...evidence, details: serializableDetails(diagnostic.data ?? {}) },
-    trackerItems:
-      diagnostic.code === 'detached_or_proxy_render_risk'
-        ? ['BIR-C08', 'BIR-I02', 'BIR-I03', 'BIR-J01']
-        : ['BIR-I02', 'BIR-I03', 'BIR-J01'],
+    trackerItems: wallHostedCutTrackerItems(diagnostic),
   });
 }
 
@@ -466,8 +463,8 @@ function wallHostedCutIssueClass(
   diagnostic: WallHostedCutRenderDiagnostic,
 ): RendererDiagnostic['issueClass'] {
   if (diagnostic.code === 'detached_or_proxy_render_risk') return 'renderer-degraded';
+  if (diagnostic.code === 'host_cut_disabled_by_element') return 'model-invalid';
   if (
-    diagnostic.code === 'host_cut_disabled_by_element' ||
     diagnostic.code === 'wall_opening_csg_disabled' ||
     diagnostic.code === 'wall_opening_csg_skipped_by_curtain_wall' ||
     diagnostic.code.startsWith('unsupported_')
@@ -476,6 +473,21 @@ function wallHostedCutIssueClass(
   }
   if (diagnostic.severity === 'error') return 'model-invalid';
   return 'renderer-degraded';
+}
+
+function wallHostedCutTrackerItems(diagnostic: WallHostedCutRenderDiagnostic): string[] {
+  const base = ['BIR-I02', 'BIR-I03', 'BIR-J01'];
+  if (diagnostic.code === 'detached_or_proxy_render_risk') {
+    return ['BIR-C08', ...base, ...(diagnostic.elementKind === 'wall_opening' ? [] : ['BIR-J05'])];
+  }
+  if (
+    diagnostic.code === 'host_cut_disabled_by_element' ||
+    diagnostic.code === 'wall_opening_csg_disabled' ||
+    diagnostic.code === 'wall_opening_csg_skipped_by_curtain_wall'
+  ) {
+    return ['BIR-C04', ...base];
+  }
+  return base;
 }
 
 function serializableDetails(

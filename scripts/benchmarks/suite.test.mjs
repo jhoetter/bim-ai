@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import fs from 'node:fs/promises';
 import path from 'node:path';
 import test from 'node:test';
 
@@ -127,4 +128,21 @@ test('professional benchmark suite uses expanded evidence kinds and committed di
     evidence.scenarios.every((scenario) => scenario.acceptanceOk),
     true,
   );
+
+  const siteDiagnostics = JSON.parse(
+    await fs.readFile(
+      path.resolve(
+        'spec/benchmarks/site-and-context-house/live-evidence/professional-suite-diagnostics.json',
+      ),
+      'utf8',
+    ),
+  );
+  assert.equal(siteDiagnostics.professionalLiveEvidence.format, 'professionalBenchmarkLiveEvidence_v1');
+  assert.equal(siteDiagnostics.professionalLiveEvidence.covered, true);
+  assert.equal(siteDiagnostics.professionalLiveEvidence.browserAuthoredUiClaimed, false);
+  assert.equal(
+    siteDiagnostics.backgroundDeferredDiagnostics.workPlans.advisor.runMode,
+    'idle',
+  );
+  assert.equal(siteDiagnostics.backgroundDeferredDiagnostics.overlay.pointerEvents, 'none');
 });

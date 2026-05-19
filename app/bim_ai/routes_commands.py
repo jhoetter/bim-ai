@@ -361,6 +361,7 @@ class UndoRedoEnvelope(BaseModel):
     model_config = {"populate_by_name": True}
 
     user_id: str | None = Field(default="local-dev", alias="userId")
+    parent_revision: int | None = Field(default=None, alias="parentRevision")
 
 
 async def _commit_doc_and_broadcast(
@@ -1036,13 +1037,24 @@ async def undo_model(
     current = Document.model_validate(row.document)
 
     baseline = clone_document(current)
+    parent_revision = (
+        body.parent_revision if body.parent_revision is not None else undo_row.revision_after
+    )
     transaction_safety, transaction_preflight_audit = _preflight_or_409(
         current_revision=baseline.revision,
-        parent_revision=baseline.revision,
+        parent_revision=parent_revision,
         mode="undo",
         surface="undo",
         commands=list(undo_row.undo_commands),
     )
+    if undo_row.revision_after != baseline.revision:
+        _preflight_or_409(
+            current_revision=baseline.revision,
+            parent_revision=undo_row.revision_after,
+            mode="undo",
+            surface="undo",
+            commands=list(undo_row.undo_commands),
+        )
 
     ok, new_doc, _cmds, violations, code = try_commit_bundle(current, list(undo_row.undo_commands))
 
@@ -1110,6 +1122,7 @@ async def undo_model(
     out["transactionMetadata"] = transaction_metadata
     out["transactionSafety"] = transaction_safety
     out["transactionPreflightAudit"] = transaction_preflight_audit
+    out["undoRedoIntegrityMetadata"] = transaction_metadata["undoRedoIntegrityMetadata"]
     return out
 
 
@@ -1137,13 +1150,24 @@ async def redo_model(
 
     current = Document.model_validate(row.document)
     baseline = clone_document(current)
+    parent_revision = (
+        body.parent_revision if body.parent_revision is not None else redo_row.revision_after
+    )
     transaction_safety, transaction_preflight_audit = _preflight_or_409(
         current_revision=baseline.revision,
-        parent_revision=baseline.revision,
+        parent_revision=parent_revision,
         mode="redo",
         surface="redo",
         commands=list(redo_row.forward_commands),
     )
+    if redo_row.revision_after != baseline.revision:
+        _preflight_or_409(
+            current_revision=baseline.revision,
+            parent_revision=redo_row.revision_after,
+            mode="redo",
+            surface="redo",
+            commands=list(redo_row.forward_commands),
+        )
 
     ok, new_doc, _cmds, violations, code = try_commit_bundle(
         current,
@@ -1218,4 +1242,5 @@ async def redo_model(
     out["transactionMetadata"] = transaction_metadata
     out["transactionSafety"] = transaction_safety
     out["transactionPreflightAudit"] = transaction_preflight_audit
+    out["undoRedoIntegrityMetadata"] = transaction_metadata["undoRedoIntegrityMetadata"]
     return out

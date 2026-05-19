@@ -211,6 +211,97 @@ describe('collectRendererDiagnostics', () => {
     );
   });
 
+  it('separates semantic model-invalid cuts from renderer-invalid hosted cut fallbacks', () => {
+    const elements = [
+      wall({ id: 'cuttable-wall' }),
+      door({
+        id: 'semantic-cut-disabled',
+        wallId: 'cuttable-wall',
+        props: { disableHostCut: true },
+      }),
+      door({
+        id: 'renderer-csg-disabled',
+        wallId: 'cuttable-wall',
+        alongT: 0.75,
+      }),
+      door({
+        id: 'missing-host-proxy',
+        wallId: 'missing-wall',
+      }),
+      wall({
+        id: 'non-prismatic-wall',
+        start: { xMm: 0, yMm: 2000 },
+        end: { xMm: 6000, yMm: 2000 },
+        leanMm: { xMm: 150, yMm: 0 },
+      }),
+      door({
+        id: 'non-prismatic-hosted',
+        wallId: 'non-prismatic-wall',
+      }),
+    ];
+
+    const diagnostics = collectRendererDiagnostics({
+      elements,
+      csgEnabled: false,
+      viewId: 'w25-a-hosted-cut-closure',
+      evidence: { source: 'test', agentWave: 'W25-A' },
+    });
+    const findDiagnostic = (code: string, elementId: string) =>
+      diagnostics.find(
+        (diagnostic) => diagnostic.code === code && diagnostic.elementIds.includes(elementId),
+      );
+
+    expect(
+      findDiagnostic('renderer.wall_cut.host.cut.disabled.by.element', 'semantic-cut-disabled'),
+    ).toMatchObject({
+      severity: 'error',
+      issueClass: 'model-invalid',
+      trackerItems: ['BIR-C04', 'BIR-I02', 'BIR-I03', 'BIR-J01'],
+      evidence: expect.objectContaining({
+        agentWave: 'W25-A',
+      }),
+    });
+    expect(
+      findDiagnostic('renderer.wall_cut.wall.opening.csg.disabled', 'renderer-csg-disabled'),
+    ).toMatchObject({
+      severity: 'error',
+      issueClass: 'renderer-unsupported',
+      trackerItems: ['BIR-C04', 'BIR-I02', 'BIR-I03', 'BIR-J01'],
+    });
+    expect(
+      findDiagnostic('renderer.wall_cut.wall.host.not.found', 'missing-host-proxy'),
+    ).toMatchObject({
+      issueClass: 'model-invalid',
+      elementIds: ['missing-host-proxy', 'missing-wall'],
+    });
+    expect(
+      findDiagnostic('renderer.wall_cut.detached_or_proxy_render_risk', 'missing-host-proxy'),
+    ).toMatchObject({
+      issueClass: 'renderer-degraded',
+      trackerItems: ['BIR-C08', 'BIR-I02', 'BIR-I03', 'BIR-J01', 'BIR-J05'],
+    });
+    expect(
+      findDiagnostic(
+        'renderer.wall_cut.unsupported.non.prismatic.host.geometry',
+        'non-prismatic-hosted',
+      ),
+    ).toMatchObject({
+      issueClass: 'renderer-unsupported',
+      elementIds: ['non-prismatic-hosted', 'non-prismatic-wall'],
+    });
+    expect(
+      findDiagnostic('renderer.wall_cut.detached_or_proxy_render_risk', 'non-prismatic-hosted'),
+    ).toMatchObject({
+      issueClass: 'renderer-degraded',
+      evidence: expect.objectContaining({
+        details: expect.objectContaining({
+          reason: 'unsupported_non_prismatic_host_geometry',
+        }),
+      }),
+      trackerItems: ['BIR-C08', 'BIR-I02', 'BIR-I03', 'BIR-J01', 'BIR-J05'],
+    });
+  });
+
   it('wires background/deferred diagnostic scheduling into renderer packets', () => {
     const packet = collectRendererDiagnosticPacket({
       elements: [wall({ id: 'wall-1' }), door({ id: 'door-1', wallId: 'wall-1' })],
@@ -615,5 +706,152 @@ describe('collectRendererDiagnostics', () => {
         ['renderer-degraded', 'renderer-unsupported'].includes(diagnostic.issueClass),
       ),
     ).toBe(true);
+  });
+
+  it('goldens W25-B roof/floor/stair/room render statuses and stress packet proof', () => {
+    const snapshotPath = resolve(
+      process.cwd(),
+      '../../seed-artifacts/target-house-1/evidence/live-run-current/snapshot.json',
+    );
+    const snapshot = JSON.parse(readFileSync(snapshotPath, 'utf8')) as {
+      elements: Record<string, Element>;
+    };
+    const elements = Object.values(snapshot.elements);
+    const kindCounts = elements.reduce<Record<string, number>>((acc, element) => {
+      acc[element.kind] = (acc[element.kind] ?? 0) + 1;
+      return acc;
+    }, {});
+
+    expect(kindCounts).toMatchObject({
+      roof: 1,
+      floor: 4,
+      slab_opening: 1,
+      stair: 1,
+      railing: 3,
+      room: 13,
+      room_separation: 52,
+    });
+
+    const packet = collectRendererDiagnosticPacket({
+      elements,
+      generatedAtIso: '2026-05-19T00:00:00.000Z',
+      modelRevision: 'target-house-w25-b',
+      gitHead: 'wave-25-b',
+      rendererBuild: 'viewport-test',
+      viewId: 'w25-b-renderer-element-stress-golden',
+      evidence: { source: 'test', agentWave: 'W25-B', artifactPath: snapshotPath },
+      csgEnabled: true,
+      lensMode: 'architecture',
+      previousLensMode: 'structure',
+      selectedElementIds: ['main-stair'],
+      changedElementIds: ['main-stair', 'main-stair-upper-opening'],
+      budgetsMs: { orbit: 1, update: 1 },
+      stressBudgets: {
+        warningElementCount: 100,
+        errorElementCount: 1000,
+        warningOpeningCount: 20,
+        errorOpeningCount: 1000,
+        warningEvidenceViewCount: 8,
+        errorEvidenceViewCount: 100,
+        workloadWarningBudgetRatio: 0.1,
+      },
+    });
+    const statusById = Object.fromEntries(
+      (packet.elementRenderStatuses ?? []).map((status) => [status.elementId, status]),
+    );
+
+    expect(statusById['hf-roof-main']).toMatchObject({
+      geometry: {
+        feature: 'roof-geometry',
+        state: 'partial',
+        implementation: 'native',
+        diagnosticCodes: [],
+        blocking: false,
+      },
+    });
+    expect(statusById['upper-wrapper-floor']).toMatchObject({
+      geometry: {
+        feature: 'native-geometry',
+        state: 'supported',
+        implementation: 'native',
+        diagnosticCodes: [],
+      },
+    });
+    expect(statusById['main-stair-upper-opening']).toMatchObject({
+      geometry: {
+        feature: 'slab-opening-cut',
+        state: 'partial',
+        implementation: 'analytic-cut',
+        diagnosticCodes: [],
+      },
+    });
+    expect(statusById['main-stair']).toMatchObject({
+      geometry: {
+        feature: 'stair-geometry',
+        state: 'partial',
+        implementation: 'native',
+        diagnosticCodes: [],
+      },
+    });
+    expect(statusById['hf-roof-court-railing']).toMatchObject({
+      geometry: {
+        feature: 'railing-geometry',
+        state: 'partial',
+        diagnosticCodes: [],
+        blocking: false,
+      },
+    });
+    expect(statusById['room_gf_living']).toMatchObject({
+      geometry: {
+        feature: 'room-visualization',
+        state: 'supported',
+        implementation: 'diagnostic-overlay',
+        diagnosticCodes: [],
+      },
+    });
+    expect(statusById['sep-room-living-1']).toMatchObject({
+      geometry: {
+        feature: 'diagnostic-helper',
+        state: 'supported',
+        implementation: 'diagnostic-overlay',
+      },
+    });
+
+    const w25BlockingCodes = packet.diagnostics
+      .filter((diagnostic) =>
+        [
+          'renderer.roof_geometry.',
+          'renderer.roof_opening.',
+          'renderer.slab_opening.',
+          'renderer.stair_geometry.',
+          'renderer.railing_geometry.',
+          'renderer.room_visualization.',
+          'renderer.room_separation.',
+        ].some((prefix) => diagnostic.code.startsWith(prefix)),
+      )
+      .map((diagnostic) => diagnostic.code);
+    expect(w25BlockingCodes).toEqual([]);
+    expect(packet.diagnostics).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          code: 'renderer.stress.element_count.near_limit',
+          feature: 'renderer-performance',
+          trackerItems: ['BIR-J10', 'BIR-L02'],
+          evidence: expect.objectContaining({
+            source: 'test',
+            agentWave: 'W25-B',
+            details: expect.objectContaining({
+              count: elements.length,
+              warningThreshold: 100,
+            }),
+          }),
+        }),
+        expect.objectContaining({
+          code: 'renderer.profile.orbit.budget_exceeded',
+          feature: 'renderer-performance',
+          viewId: 'w25-b-renderer-element-stress-golden',
+        }),
+      ]),
+    );
   });
 });

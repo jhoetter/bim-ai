@@ -10,6 +10,129 @@ from bim_ai.constructability_geometry import (
 from bim_ai.elements import Element
 
 
+def diagnostic_ui_scheduling_policy_v1(
+    *,
+    total_element_count: int,
+    diagnostic_count: int,
+    incremental_eligible: bool,
+    full_scan_required_reason: str | None = None,
+) -> dict[str, Any]:
+    """Return non-renderer diagnostic scheduling evidence for Advisor/integrity work."""
+
+    deferred = bool(full_scan_required_reason) or not incremental_eligible
+    degradation_level = "deferred" if deferred else "none"
+    advisor_run_mode = "defer_until_idle" if deferred else "idle"
+    overlay_max_rows = 48 if deferred else 96
+    reason_codes = (
+        ["full_scan_deferred", str(full_scan_required_reason or "incremental_not_available")]
+        if deferred
+        else ["incremental_background_eligible"]
+    )
+    return {
+        "format": "diagnosticUiSchedulingPolicy_v1",
+        "producerScope": "advisor_integrity_domain",
+        "degradationLevel": degradation_level,
+        "reasonCodes": reason_codes,
+        "inputProtection": {
+            "maxSynchronousDiagnosticMs": 0,
+            "overlayPointerEvents": "none",
+            "preservePointerEvents": True,
+            "preserveCameraControls": True,
+            "preserveSelection": True,
+        },
+        "overlay": {
+            "pointerEvents": "none",
+            "maxRows": overlay_max_rows,
+            "maxMarkers": overlay_max_rows * 2,
+            "allowStaleDuringInteraction": True,
+        },
+        "workPlans": {
+            "advisor": {
+                "kind": "advisor",
+                "runMode": advisor_run_mode,
+                "minDelayMs": 120 if deferred else 0,
+                "maxWorkSliceMs": 6,
+                "trackerRefs": ["BIR-L01", "BIR-L04", "BIR-L05", "BIR-L06"],
+            },
+            "model-integrity": {
+                "kind": "model-integrity",
+                "runMode": advisor_run_mode,
+                "minDelayMs": 120 if deferred else 0,
+                "maxWorkSliceMs": 6,
+                "trackerRefs": ["BIR-L04", "BIR-L05", "BIR-L06"],
+            },
+            "domain-integrity": {
+                "kind": "domain-integrity",
+                "runMode": advisor_run_mode,
+                "minDelayMs": 120 if deferred else 0,
+                "maxWorkSliceMs": 6,
+                "trackerRefs": ["BIR-L04", "BIR-L05", "BIR-L06"],
+            },
+            "diagnostic-overlay": {
+                "kind": "diagnostic-overlay",
+                "runMode": "render_stale" if deferred else "idle",
+                "minDelayMs": 0,
+                "maxWorkSliceMs": 4,
+                "trackerRefs": ["BIR-L06"],
+            },
+            "evidence-capture": {
+                "kind": "evidence-capture",
+                "runMode": "defer_until_idle" if deferred else "debounced",
+                "minDelayMs": 250 if deferred else 120,
+                "maxWorkSliceMs": 6,
+                "trackerRefs": ["BIR-L05"],
+            },
+        },
+        "modelLoad": {
+            "totalElementCount": max(0, int(total_element_count)),
+            "diagnosticCount": max(0, int(diagnostic_count)),
+        },
+    }
+
+
+def background_diagnostic_execution_plan_v1(
+    *,
+    changed: list[str],
+    impacted: list[str],
+    checks: list[dict[str, Any]],
+    incremental_eligible: bool,
+    full_scan_required_reason: str | None,
+) -> dict[str, Any]:
+    """Describe how heavy diagnostics are sliced/cancelled for incremental work."""
+
+    return {
+        "format": "backgroundDiagnosticExecutionPlan_v1",
+        "incrementalEligible": incremental_eligible,
+        "changedElementIds": changed,
+        "impactedElementIds": impacted,
+        "fullScanRequiredReason": full_scan_required_reason,
+        "cancellation": {
+            "cancelOnNewRevision": True,
+            "cancelOnChangedScopeSuperseded": True,
+            "preserveLastGoodResults": True,
+        },
+        "cachePolicy": {
+            "cacheByRevisionAndImpactedIds": True,
+            "reuseCleanRowsOutsideImpactedScope": incremental_eligible,
+        },
+        "tasks": [
+            {
+                "checkId": str(check["checkId"]),
+                "layer": str(check["layer"]),
+                "runMode": (
+                    "incremental_background"
+                    if check.get("incrementalEligible") is True
+                    else "deferred_full_scan"
+                ),
+                "impactedElementCount": int(check.get("impactedElementCount") or 0),
+                "impactedPairCount": int(check.get("impactedPairCount") or 0),
+            }
+            for check in checks
+        ],
+        "trackerRefs": ["BIR-L04", "BIR-L05", "BIR-L06"],
+    }
+
+
 def constructability_broad_phase_stats_v1(
     elements: dict[str, Element],
     *,
@@ -163,6 +286,13 @@ def _incremental_eligibility_payload(
         },
     ]
 
+    scheduling_policy = diagnostic_ui_scheduling_policy_v1(
+        total_element_count=total_element_count,
+        diagnostic_count=len(checks),
+        incremental_eligible=eligible,
+        full_scan_required_reason=reason,
+    )
+
     return {
         "format": "advisorIncrementalDiagnosticEligibility_v1",
         "changedElementIds": changed,
@@ -174,6 +304,14 @@ def _incremental_eligibility_payload(
         "fullScanRequiredReason": reason,
         "checks": checks,
         "constructabilityPairImpact": pair_impact,
+        "diagnosticSchedulingPolicy": scheduling_policy,
+        "backgroundExecutionPlan": background_diagnostic_execution_plan_v1(
+            changed=changed,
+            impacted=impacted,
+            checks=checks,
+            incremental_eligible=eligible,
+            full_scan_required_reason=reason,
+        ),
     }
 
 

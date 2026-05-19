@@ -43,7 +43,10 @@ def test_q01_all_mutating_surfaces_require_parent_revision() -> None:
 
         assert decision.ok is False
         assert decision.reason_code == "missing_parent_revision"
-        assert decision.rollback_guidance == "Model remains unchanged; do not append undo or redo rows."
+        assert (
+            decision.rollback_guidance
+            == "Model remains unchanged; do not append undo or redo rows."
+        )
 
 
 def test_q01_transaction_preflight_audit_is_deterministic_and_pre_mutation() -> None:
@@ -72,15 +75,18 @@ def test_q01_transaction_preflight_audit_is_deterministic_and_pre_mutation() -> 
     assert audit["decisionReasonCode"] == "ok"
     assert audit["commandDigestSha256"] == canonical_command_digest(commands)
     assert audit["mutationPolicy"] == "candidate_document_only_until_safety_gate_passes"
-    assert build_transaction_preflight_audit(
-        current_revision=7,
-        parent_revision=7,
-        mode="commit",
-        surface="bundle-commit",
-        actor_kind="human",
-        commands=commands,
-        decision=decision,
-    ) == audit
+    assert (
+        build_transaction_preflight_audit(
+            current_revision=7,
+            parent_revision=7,
+            mode="commit",
+            surface="bundle-commit",
+            actor_kind="human",
+            commands=commands,
+            decision=decision,
+        )
+        == audit
+    )
 
 
 def test_q03_stale_revision_reports_explicit_retry_safe_conflict() -> None:
@@ -100,6 +106,25 @@ def test_q03_stale_revision_reports_explicit_retry_safe_conflict() -> None:
     assert decision.conflict.parent_revision == 8
     assert decision.conflict.retry_safe is True
     assert "rebase" in decision.retry_guidance
+
+
+def test_q03_stale_undo_redo_stack_revision_is_a_collaboration_conflict() -> None:
+    decision = assess_transaction_safety(
+        current_revision=12,
+        parent_revision=10,
+        mode="undo",
+        surface="undo",
+        actor_kind="human",
+        commands=[{"type": "deleteElement", "elementId": "w-1"}],
+    )
+
+    assert decision.ok is False
+    assert decision.reason_code == "revision_conflict"
+    assert decision.conflict is not None
+    assert decision.conflict.current_revision == 12
+    assert decision.conflict.parent_revision == 10
+    assert decision.undoable is False
+    assert decision.inspectable is False
 
 
 def test_q05_agent_commit_requires_matching_successful_dry_run_evidence() -> None:
@@ -275,6 +300,9 @@ def test_q02_undo_redo_contract_preserves_integrity_metadata() -> None:
     )
 
     assert preserved["schemaVersion"] == "undoRedoIntegrityMetadata_v1"
+    assert preserved["action"] == "undo"
+    assert preserved["sourceAction"] == "commit"
+    assert preserved["sourceRevisionAfter"] == 4
     assert preserved["preservedKeys"] == [
         "dryRunEvidence",
         "sourceCommandLinks",
@@ -286,8 +314,7 @@ def test_q02_undo_redo_contract_preserves_integrity_metadata() -> None:
 
 def test_q04_fix_safety_distinguishes_safe_review_destructive_and_user_intent() -> None:
     assert (
-        classify_fix_safety({"ruleId": "tag_missing"}, [{"type": "placeTag"}])
-        == "safe_automatic"
+        classify_fix_safety({"ruleId": "tag_missing"}, [{"type": "placeTag"}]) == "safe_automatic"
     )
     assert classify_fix_safety({"ruleId": "wall_missing"}, [_wall_command()]) == "review_required"
     assert (
@@ -329,6 +356,12 @@ def test_q06_agent_remediation_proposal_records_audit_provenance() -> None:
     assert proposal["findingIds"] == ["finding-1"]
     assert proposal["affectedElementIds"] == ["w-1"]
     assert proposal["provenanceValidation"]["ok"] is True
+    assert proposal["provenanceDigestSha256"]
+    assert proposal["provenanceStorage"] == {
+        "transactionMetadataKey": "remediation.provenance",
+        "evidencePathRequired": True,
+        "sourceCommandLinksPreservedByUndoRedo": True,
+    }
     record = proposal["provenance"][0]
     assert record["sourceFindingId"] == "finding-1"
     assert record["actorIdentity"] == {

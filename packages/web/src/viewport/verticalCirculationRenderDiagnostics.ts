@@ -310,6 +310,8 @@ function diagnoseTargetHouseGuardrailRisks(
       /terrace|loggia/i.test(floor.name);
     if (!requiresGuard) continue;
 
+    if (hasExplicitGuardrailEvidence(floor, railings)) continue;
+
     const guardCoverage = railingCoverageForFloorBoundary(floor, railings);
     if (guardCoverage <= 0) {
       diagnostics.push(
@@ -341,6 +343,19 @@ function diagnoseTargetHouseGuardrailRisks(
   }
 
   return diagnostics;
+}
+
+function hasExplicitGuardrailEvidence(floor: FloorElement, railings: RailingElement[]): boolean {
+  const declaredGuardIds = normalizeMarkerList(
+    (floor.props as Record<string, unknown> | null)?.guardIds,
+  );
+  const candidates = declaredGuardIds.length
+    ? railings.filter((railing) => declaredGuardIds.includes(railing.id))
+    : railings.filter((railing) => railing.hostFloorId === floor.id);
+  return candidates.some((railing) => {
+    const path = railing.pathMm ?? [];
+    return path.length >= 2 && hasRailingHostEdgeEvidence(railing);
+  });
 }
 
 function diagnostic(input: {
@@ -472,13 +487,36 @@ function isKnownStairShape(shape: string | undefined): boolean {
 }
 
 function isKnownBalusterRule(rule: string | undefined): boolean {
-  return rule === undefined || rule === 'glass_panel' || rule === 'cable' || rule === 'vertical';
+  return (
+    rule === undefined ||
+    rule === 'regular' ||
+    rule === 'glass_panel' ||
+    rule === 'cable' ||
+    rule === 'vertical'
+  );
 }
 
 function hasRailingHostEdgeEvidence(railing: RailingElement): boolean {
   if (railing.hostedStairId) return true;
+  const direct = railing as {
+    hostEdgeId?: string | null;
+    hostedEdgeId?: string | null;
+    floorEdgeId?: string | null;
+    hostFloorId?: string | null;
+    edgeRef?: string | null;
+  };
+  const hostEvidenceKeys = [
+    'hostEdgeId',
+    'hostedEdgeId',
+    'floorEdgeId',
+    'hostFloorId',
+    'edgeRef',
+  ] as const;
+  if (hostEvidenceKeys.some((key) => typeof direct[key] === 'string' && direct[key]!.length > 0)) {
+    return true;
+  }
   const props = (railing as { props?: Record<string, unknown> }).props ?? {};
-  return ['hostEdgeId', 'hostedEdgeId', 'floorEdgeId', 'hostFloorId', 'edgeRef'].some(
+  return hostEvidenceKeys.some(
     (key) => typeof props[key] === 'string' && String(props[key]).length > 0,
   );
 }
