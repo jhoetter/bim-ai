@@ -2,6 +2,21 @@ import { beforeEach, vi } from 'vitest';
 
 import '../i18n';
 
+const originalConsoleLog = console.log.bind(console);
+const originalConsoleDebug = console.debug.bind(console);
+
+console.log = (...args: unknown[]) => {
+  const first = String(args[0] ?? '');
+  if (first === '[bim] rendering budget:' || first.startsWith('[bim] rendering budget:')) return;
+  originalConsoleLog(...args);
+};
+
+console.debug = (...args: unknown[]) => {
+  const first = String(args[0] ?? '');
+  if (first === '[bim] selected element:' || first.startsWith('[bim] selected element:')) return;
+  originalConsoleDebug(...args);
+};
+
 function jsonResponse(body: unknown): Response {
   return new Response(JSON.stringify(body), {
     status: 200,

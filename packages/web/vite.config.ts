@@ -48,6 +48,7 @@ export default defineConfig(({ mode }) => {
           '/api': apiTarget,
           '/ws': { target: `ws://127.0.0.1:${apiPort}`, ws: true },
         };
+  const ciWorkerLimits = process.env.CI ? { maxWorkers: 2, minWorkers: 1 } : {};
 
   return {
     plugins: [react()],
@@ -71,6 +72,7 @@ export default defineConfig(({ mode }) => {
       proxy: previewProxy,
     },
     test: {
+      ...ciWorkerLimits,
       environment: 'jsdom',
       setupFiles: ['./src/test/setup.ts'],
       coverage: {
