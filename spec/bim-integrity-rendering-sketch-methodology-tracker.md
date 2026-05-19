@@ -105,7 +105,7 @@ This tracker is complete only when all of these are true:
 | `M2` P0 renderer fidelity foundation | Partial | Renderer emits diagnostics for unsupported/failed cuts, roof/slab/wall openings have golden tests, and target-house-critical visual failures cannot be silent. |
 | `M3` P0 sketch-to-BIM methodology gate | Partial | Sketch-specific fidelity checks are separated from normal Advisor, phase packets fail on missing visual/spec evidence, and target-house acceptance cannot pass on Advisor-clean but visually wrong output. |
 | `M4` P1 domain depth | Partial | Rooms/access/egress, stairs/railings, structure-lite, MEP-lite, fire/accessibility metadata, materials/types, and exchange checks have robust rule coverage. |
-| `M5` P1 rendering/exchange completeness | Not started | Supported viewport geometry, IFC/glTF export manifests, and readback/golden evidence agree for architecture, structure-lite, MEP-lite, sheets, and schedules. |
+| `M5` P1 rendering/exchange completeness | Partial | Supported viewport geometry, IFC/glTF export manifests, and readback/golden evidence agree for architecture, structure-lite, MEP-lite, sheets, and schedules. |
 | `M6` Performance and live UX quality | Not started | Advisor and renderer diagnostics are incremental, bounded, nonblocking, and do not cause sluggish orbit/selection/WebSocket behavior in ordinary projects. |
 | `M7` Platform-grade BIM guarantees | Partial | Kernel invariants, transaction safety, collaboration, provenance, fixture governance, and agent remediation safety are covered by tests and documented contracts. |
 | `M8` Target-house rerun readiness | Not started | `target-house-1` can be regenerated from methodology with zero unhandled warnings/errors, clean renderer diagnostics, current evidence, and explicit tolerances only where accepted by the user. |
@@ -227,7 +227,7 @@ This tracker is complete only when all of these are true:
 | `BIR-I02` | P0 | Partial | Emit renderer diagnostics for unsupported cuts. | Failed/unsupported roof, wall, slab, dormer, stair, railing, or boolean/cut paths create structured diagnostics visible to UI and CLI evidence. |
 | `BIR-I03` | P0 | Partial | No silent fallback for target-house-critical features. | Roof terrace cutout, wall door/window cuts, slab openings, loggia recesses, rails, stairs, and floors either render or produce blocking diagnostics. |
 | `BIR-I04` | P0 | Partial | Connect renderer diagnostics to sketch acceptance. | Sketch-to-BIM phase/final packets fail when renderer diagnostics affect required visual features. |
-| `BIR-I05` | P1 | Not started | Add per-element render status. | Selecting an element can show render implementation, skipped subfeatures, material fallback, proxy fallback, and export support. |
+| `BIR-I05` | P1 | Partial | Add per-element render status. | Selecting an element can show render implementation, skipped subfeatures, material fallback, proxy fallback, and export support. |
 | `BIR-I06` | P1 | Partial | Add renderer diagnostic persistence. | Diagnostics are captured in evidence packages with git head, model revision, view id, renderer build, and affected element ids. |
 | `BIR-I07` | P1 | Partial | Separate renderer issue from model issue. | UI distinguishes "model invalid" from "model valid but viewport unsupported/failed to render this feature." |
 
@@ -242,7 +242,7 @@ This tracker is complete only when all of these are true:
 | `BIR-J05` | P1 | Partial | Doors/windows/families. | Families render with actual dimensions, operation/swing/sliding direction where meaningful, frame/panel/material slots, and correct host offsets. |
 | `BIR-J06` | P1 | Not started | Rooms/spaces visual diagnostics. | Room volumes/areas, boundaries, names, and diagnostic overlays render coherently without becoming physical clutter. |
 | `BIR-J07` | P1 | Partial | Materials and appearances. | Material assignments, type layer intent, transparent/realistic/wire modes, cut/finish faces, and high-fidelity mode are consistent. |
-| `BIR-J08` | P1 | Not started | Lens/filter rendering parity. | Architecture, Structure, Systems, MEP, Massing/Site, and Documentation lenses show/hide/ghost categories predictably and preserve diagnostics. |
+| `BIR-J08` | P1 | Partial | Lens/filter rendering parity. | Architecture, Structure, Systems, MEP, Massing/Site, and Documentation lenses show/hide/ghost categories predictably and preserve diagnostics. |
 | `BIR-J09` | P1 | Partial | Visual golden harness. | Playwright/canvas pixel tests cover nonblank, framing, critical feature presence, and no flying/unsupported proxies for representative seeds. |
 | `BIR-J10` | P2 | Not started | Stress and large-model rendering. | Renderer remains responsive and bounded with many rooms, many openings, linked models, and large evidence views. |
 
@@ -477,6 +477,15 @@ Goal: close `M5`.
 
 Exit: viewport and exchange artifacts agree for all supported target-house and
 benchmark features, or unsupported gaps are explicit.
+
+W5-D evidence, 2026-05-19:
+
+- Added `packages/web/src/viewport/elementRenderFeatureStatus.ts` as a pure
+  per-element status helper for material fallback/slots, hosted-family
+  dimensions, loaded-family proxy fallback, and UI/saved-view lens ghosting.
+- Added `packages/web/src/viewport/elementRenderFeatureStatus.test.ts` covering
+  `BIR-I05`, `BIR-J05`, `BIR-J07`, and `BIR-J08`.
+- Focused test: `pnpm --filter @bim-ai/web exec vitest run src/viewport/elementRenderFeatureStatus.test.ts`.
 
 W5-C evidence update:
 - Added `app/bim_ai/schedule_sheet_exchange_evidence.py` with deterministic
