@@ -148,6 +148,12 @@ export function diagnosticPolicyPreservesInteraction(
   );
 }
 
+export function automaticDiagnosticWorkKinds(
+  policy: DiagnosticUiSchedulingPolicy,
+): DiagnosticWorkKind[] {
+  return WORK_KINDS.filter((kind) => policy.workPlans[kind].runMode !== 'manual_only');
+}
+
 function interactionReasons(
   interaction: DiagnosticInteractionState | undefined,
 ): DiagnosticSchedulingReasonCode[] {

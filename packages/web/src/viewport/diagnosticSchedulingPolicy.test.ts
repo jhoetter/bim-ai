@@ -6,6 +6,7 @@ import {
   DIAGNOSTIC_OVER_BUDGET_MODEL_ELEMENT_LIMIT,
   DIAGNOSTIC_VOLUME_SUSPEND_LIMIT,
   DIAGNOSTIC_VOLUME_THROTTLE_LIMIT,
+  automaticDiagnosticWorkKinds,
   buildDiagnosticUiSchedulingPolicy,
   diagnosticPolicyPreservesInteraction,
 } from './diagnosticSchedulingPolicy';
@@ -40,6 +41,12 @@ describe('diagnostic UI scheduling policy - BIR-L06', () => {
     expect(policy.workPlans.advisor.maxWorkSliceMs).toBeLessThanOrEqual(6);
     expect(policy.workPlans['renderer-diagnostics'].maxWorkSliceMs).toBeLessThanOrEqual(6);
     expect(diagnosticPolicyPreservesInteraction(policy)).toBe(true);
+    expect(automaticDiagnosticWorkKinds(policy)).toEqual([
+      'advisor',
+      'renderer-diagnostics',
+      'diagnostic-overlay',
+      'evidence-capture',
+    ]);
   });
 
   it('defers automatic diagnostics while pointer, camera, or selection interaction is active', () => {
@@ -150,6 +157,7 @@ describe('diagnostic UI scheduling policy - BIR-L06', () => {
     expect(policy.overlay.maxRows).toBe(16);
     expect(policy.overlay.maxMarkers).toBe(64);
     expect(diagnosticPolicyPreservesInteraction(policy)).toBe(true);
+    expect(automaticDiagnosticWorkKinds(policy)).toEqual(['diagnostic-overlay']);
   });
 
   it('suspends diagnostics when the page is hidden', () => {

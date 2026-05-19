@@ -13,8 +13,8 @@ function wall(id: string): Element {
     id,
     name: id,
     levelId: 'level-1',
-    start: { x: 0, y: 0 },
-    end: { x: 5000, y: 0 },
+    start: { xMm: 0, yMm: 0 },
+    end: { xMm: 5000, yMm: 0 },
     thicknessMm: 200,
     heightMm: 3000,
   };
@@ -27,10 +27,10 @@ function room(id: string): Element {
     name: id,
     levelId: 'level-1',
     outlineMm: [
-      { x: 0, y: 0 },
-      { x: 1000, y: 0 },
-      { x: 1000, y: 1000 },
-      { x: 0, y: 1000 },
+      { xMm: 0, yMm: 0 },
+      { xMm: 1000, yMm: 0 },
+      { xMm: 1000, yMm: 1000 },
+      { xMm: 0, yMm: 1000 },
     ],
   };
 }
@@ -114,7 +114,7 @@ describe('renderer cost profile — BIR-L02/BIR-J10', () => {
         id: 'model-link-1',
         name: 'Core link',
         sourceModelId: 'source-1',
-        positionMm: { x: 0, y: 0, z: 0 },
+        positionMm: { xMm: 0, yMm: 0, zMm: 0 },
         rotationDeg: 0,
         originAlignmentMode: 'origin_to_origin',
       },
