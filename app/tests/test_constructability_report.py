@@ -1,5 +1,11 @@
 from __future__ import annotations
 
+from bim_ai.advisor_policy_registry import (
+    learning_corpus_contract_payload,
+    profile_presets_payload,
+    review_workflow_payload,
+    rule_policy_payload,
+)
 from bim_ai.constructability_report import (
     build_constructability_report,
     build_constructability_summary_v1,
@@ -109,6 +115,114 @@ def test_constructability_report_filters_and_reconciles_findings() -> None:
     assert report["issues"][0]["ruleId"] == "furniture_wall_hard_clash"
     assert report["issues"][0]["pairKey"] == "shelf-1::wall-1"
     assert report["issues"][0]["recommendation"] == finding["recommendation"]
+
+
+def test_constructability_report_groups_by_root_cause_and_sorts_by_phase_priority() -> None:
+    elements = {
+        "lvl-1": LevelElem(kind="level", id="lvl-1", name="Level 1", elevationMm=0.0),
+        "wall-existing": WallElem(
+            kind="wall",
+            id="wall-existing",
+            levelId="lvl-1",
+            start={"xMm": 0, "yMm": 0},
+            end={"xMm": 4000, "yMm": 0},
+            thicknessMm=200,
+            heightMm=3000,
+        ),
+        "wall-new": WallElem(
+            kind="wall",
+            id="wall-new",
+            levelId="lvl-1",
+            start={"xMm": 0, "yMm": 2000},
+            end={"xMm": 4000, "yMm": 2000},
+            thicknessMm=200,
+            heightMm=3000,
+            phaseCreated="new",
+        ),
+        "asset-shelf": AssetLibraryEntryElem(
+            kind="asset_library_entry",
+            id="asset-shelf",
+            assetKind="block_2d",
+            name="Shelf",
+            category="casework",
+            tags=[],
+            thumbnailKind="schematic_plan",
+            thumbnailWidthMm=600,
+            thumbnailHeightMm=300,
+        ),
+        "shelf-existing": PlacedAssetElem(
+            kind="placed_asset",
+            id="shelf-existing",
+            name="Shelf Existing",
+            assetId="asset-shelf",
+            levelId="lvl-1",
+            positionMm={"xMm": 1200, "yMm": 0},
+            paramValues={"widthMm": 600, "depthMm": 300, "proxyHeightMm": 900},
+        ),
+        "shelf-new": PlacedAssetElem(
+            kind="placed_asset",
+            id="shelf-new",
+            name="Shelf New",
+            assetId="asset-shelf",
+            levelId="lvl-1",
+            positionMm={"xMm": 1200, "yMm": 2000},
+            paramValues={"widthMm": 600, "depthMm": 300, "proxyHeightMm": 900},
+            phaseCreated="new",
+        ),
+    }
+
+    report = build_constructability_report(elements, revision=8)
+
+    assert report["summary"]["ruleCounts"] == {"furniture_wall_hard_clash": 2}
+    assert report["summary"]["rootCauseGroupCount"] == 2
+    assert report["rootCauseGroups"][0]["family"] == "physical_coordination"
+    assert report["rootCauseGroups"][0]["elementIds"] == ["shelf-new", "wall-new"]
+    assert report["rootCauseGroups"][0]["findingCount"] == 1
+    assert report["findings"][0]["elementIds"] == ["shelf-new", "wall-new"]
+    assert report["findings"][0]["priorityPolicy"]["phaseOwnershipRank"] == 0
+    assert report["findings"][1]["priorityPolicy"]["phaseOwnershipRank"] == 1
+
+
+def test_advisor_policy_contracts_cover_profiles_audience_review_and_learning() -> None:
+    presets = {preset["id"]: preset for preset in profile_presets_payload()}
+
+    assert set(presets) == {
+        "accessibility",
+        "architecture",
+        "construction_readiness",
+        "exchange",
+        "fire",
+        "mep",
+        "sketch_acceptance",
+        "structure",
+    }
+    for preset in presets.values():
+        assert preset["defaultSeverityFloor"]
+        assert preset["disciplineFocus"]
+        assert preset["ruleMembership"]
+
+    policy = rule_policy_payload("physical_duplicate_geometry")
+    assert policy["suppressibility"] == "review_required"
+    assert policy["tolerancePolicy"] == {
+        "requiresOwner": True,
+        "requiresExpiry": True,
+        "requiresEvidence": True,
+    }
+    assert set(policy["audienceText"]) == {"ui", "agent", "docs"}
+    assert all(policy["audienceText"][key] for key in ("ui", "agent", "docs"))
+
+    workflow = review_workflow_payload()
+    assert workflow["requiredFieldsByClassification"]["accepted_tolerance"] == [
+        "owner",
+        "expiresRevision",
+        "evidenceRefs",
+        "reviewNote",
+    ]
+
+    corpus = learning_corpus_contract_payload()
+    assert corpus["schemaVersion"] == "advisor.learning-corpus-hook.v1"
+    assert "false_positive" in corpus["allowedLabels"]
+    assert {"ruleId", "classification", "evidenceRefs"} <= set(corpus["fixtureKeyFields"])
 
 
 def test_constructability_report_omits_open_separator_only_room_access_signal() -> None:

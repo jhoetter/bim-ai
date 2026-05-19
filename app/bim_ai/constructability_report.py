@@ -298,7 +298,13 @@ def build_constructability_report(
     ]
     participant_bboxes = _participant_bboxes(scoped_elements)
     all_findings = [
-        _finding_with_actionability(finding, participant_bboxes=participant_bboxes, profile=profile)
+        _finding_with_actionability(
+            finding,
+            participant_bboxes=participant_bboxes,
+            elements=scoped_elements,
+            profile=profile,
+            phase_filter=phase_filter,
+        )
         for finding in all_findings
     ]
     suppressions = _suppression_records(scoped_elements, revision=revision)
@@ -531,11 +537,14 @@ def _finding_with_actionability(
     finding: Mapping[str, Any],
     *,
     participant_bboxes: Mapping[str, AABB],
+    elements: Mapping[str, Element],
     profile: str,
+    phase_filter: str,
 ) -> dict[str, Any]:
     data = dict(finding)
     data.setdefault("profile", profile)
     _apply_rule_policy_fields(data)
+    data["phaseOwnershipRank"] = _phase_ownership_rank(data, elements, phase_filter=phase_filter)
     priority = _priority_for_finding(data)
     priority_policy = _priority_policy(priority, data)
     priority_rank = int(priority_policy["rank"])
@@ -612,9 +621,11 @@ def _priority_policy(priority: str, finding: Mapping[str, Any]) -> dict[str, Any
     policy = rule_policy(str(finding.get("ruleId") or ""))
     active_profile = str(finding.get("profile") or "")
     profile_relevance_rank = 0 if active_profile in policy.profile_membership else 4
+    phase_ownership_rank = int(finding.get("phaseOwnershipRank") or 0)
     rank = (
         base * 100
         + severity_rank * 20
+        + phase_ownership_rank * 5
         + policy.dependency_rank * 3
         + policy.visible_impact_rank * 2
         + profile_relevance_rank
@@ -626,9 +637,37 @@ def _priority_policy(priority: str, finding: Mapping[str, Any]) -> dict[str, Any
         "blockingClassRank": blocking_class_bias,
         "dependencyRank": policy.dependency_rank,
         "visibleImpactRank": policy.visible_impact_rank,
+        "phaseOwnershipRank": phase_ownership_rank,
         "profileRelevanceRank": profile_relevance_rank,
         "profileId": active_profile or None,
     }
+
+
+def _phase_ownership_rank(
+    finding: Mapping[str, Any],
+    elements: Mapping[str, Element],
+    *,
+    phase_filter: str,
+) -> int:
+    element_ids = [str(element_id) for element_id in finding.get("elementIds") or []]
+    targeted = [elements[element_id] for element_id in element_ids if element_id in elements]
+    if not targeted:
+        return 3
+    if phase_filter in {"existing", "new", "demolition"}:
+        return 0
+    return min(_element_phase_rank(element) for element in targeted)
+
+
+def _element_phase_rank(element: Element) -> int:
+    phase_created = str(getattr(element, "phase_created", None) or "existing")
+    phase_demolished = getattr(element, "phase_demolished", None)
+    if phase_created == "new":
+        return 0
+    if phase_demolished is None and phase_created == "existing":
+        return 1
+    if phase_demolished is not None:
+        return 2
+    return 3
 
 
 def _severity_sort_rank(severity: str) -> int:

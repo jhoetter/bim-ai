@@ -57,6 +57,20 @@ SeverityPolicy = Literal[
     "informational_evidence",
 ]
 
+
+@dataclass(frozen=True, slots=True)
+class TolerancePolicy:
+    requires_owner: bool
+    requires_expiry: bool
+    requires_evidence: bool
+
+    def to_dict(self) -> dict[str, bool]:
+        data = asdict(self)
+        data["requiresOwner"] = data.pop("requires_owner")
+        data["requiresExpiry"] = data.pop("requires_expiry")
+        data["requiresEvidence"] = data.pop("requires_evidence")
+        return data
+
 ALLOWED_SEVERITIES: frozenset[str] = frozenset({"error", "warning", "info"})
 ALLOWED_LAYER_OWNERS: frozenset[str] = frozenset(
     {
@@ -110,6 +124,8 @@ DEFAULT_RULE_TEST_REFS: tuple[str, ...] = (
     "app/tests/test_api_v3_registry.py",
     "packages/cli/cli.mcpParity.test.mjs",
 )
+NO_TOLERANCE_POLICY = TolerancePolicy(False, False, False)
+EVIDENCE_TOLERANCE_POLICY = TolerancePolicy(True, True, True)
 
 
 @dataclass(frozen=True, slots=True)
@@ -124,6 +140,7 @@ class AdvisorRule:
     source_layer: LayerOwner
     severity_policy: SeverityPolicy
     suppressibility: Suppressibility
+    tolerance_policy: TolerancePolicy
     actionability: Actionability
     recommendation: str
     documentation: str
@@ -136,6 +153,7 @@ class AdvisorRule:
     test_refs: tuple[str, ...]
     tracker_items: tuple[str, ...]
     priority: Priority
+    examples: tuple[str, ...]
     status: RuleStatus = "planned"
 
     def to_dict(self) -> dict[str, object]:
@@ -144,6 +162,8 @@ class AdvisorRule:
         data["layerOwner"] = data.pop("layer_owner")
         data["sourceLayer"] = data.pop("source_layer")
         data["severityPolicy"] = data.pop("severity_policy")
+        data.pop("tolerance_policy")
+        data["tolerancePolicy"] = self.tolerance_policy.to_dict()
         data["uiSummary"] = data.pop("ui_summary")
         data["cliCode"] = data.pop("cli_code")
         data["apiField"] = data.pop("api_field")
@@ -166,6 +186,7 @@ ADVISOR_RULES: tuple[AdvisorRule, ...] = (
         source_layer="model_integrity",
         severity_policy="p0_integrity_error",
         suppressibility="not_suppressible",
+        tolerance_policy=NO_TOLERANCE_POLICY,
         actionability="modeled_fix_required",
         recommendation=(
             "Repair the invalid document state before continuing; rerun the command bundle "
@@ -185,6 +206,7 @@ ADVISOR_RULES: tuple[AdvisorRule, ...] = (
         test_refs=DEFAULT_RULE_TEST_REFS,
         tracker_items=("BIR-A02", "BIR-A03", "BIR-A05", "BIR-P01"),
         priority="P0",
+        examples=("Duplicate ids, stale references, or invalid physical-role declarations.",),
     ),
     AdvisorRule(
         rule_id="host_wall_outside_envelope",
@@ -197,6 +219,7 @@ ADVISOR_RULES: tuple[AdvisorRule, ...] = (
         source_layer="model_integrity",
         severity_policy="p0_integrity_error",
         suppressibility="tolerable_with_evidence",
+        tolerance_policy=EVIDENCE_TOLERANCE_POLICY,
         actionability="modeled_fix_required",
         recommendation=(
             "Move the wall into the level floor/building envelope, attach it to an explicit "
@@ -216,6 +239,7 @@ ADVISOR_RULES: tuple[AdvisorRule, ...] = (
         test_refs=DEFAULT_RULE_TEST_REFS,
         tracker_items=("BIR-A02", "BIR-A03", "BIR-A05", "BIR-C02"),
         priority="P0",
+        examples=("A wall and its hosted openings sit outside the active floor/envelope.",),
     ),
     AdvisorRule(
         rule_id="hosted_door_not_embedded",
@@ -228,6 +252,7 @@ ADVISOR_RULES: tuple[AdvisorRule, ...] = (
         source_layer="model_integrity",
         severity_policy="p0_integrity_error",
         suppressibility="not_suppressible",
+        tolerance_policy=NO_TOLERANCE_POLICY,
         actionability="quick_fix_available",
         recommendation=(
             "Rehost the door to a physical architectural wall inside the building envelope, "
@@ -247,6 +272,7 @@ ADVISOR_RULES: tuple[AdvisorRule, ...] = (
         test_refs=DEFAULT_RULE_TEST_REFS,
         tracker_items=("BIR-A02", "BIR-A03", "BIR-A05", "BIR-C01"),
         priority="P0",
+        examples=("A door references a wall that is analysis-only, outside context, or too short.",),
     ),
     AdvisorRule(
         rule_id="physical_helper_leakage",
@@ -259,6 +285,7 @@ ADVISOR_RULES: tuple[AdvisorRule, ...] = (
         source_layer="model_integrity",
         severity_policy="p0_integrity_error",
         suppressibility="not_suppressible",
+        tolerance_policy=NO_TOLERANCE_POLICY,
         actionability="quick_fix_available",
         recommendation=(
             "Mark helper/access/diagnostic geometry as nonphysical and hidden from normal "
@@ -278,6 +305,7 @@ ADVISOR_RULES: tuple[AdvisorRule, ...] = (
         test_refs=DEFAULT_RULE_TEST_REFS,
         tracker_items=("BIR-A02", "BIR-A03", "BIR-A05", "BIR-B03"),
         priority="P0",
+        examples=("Room-closure or access-graph helper geometry appears as physical BIM.",),
     ),
     AdvisorRule(
         rule_id="renderer_unsupported_cut",
@@ -290,6 +318,7 @@ ADVISOR_RULES: tuple[AdvisorRule, ...] = (
         source_layer="renderer_diagnostics",
         severity_policy="p0_renderer_fidelity_error",
         suppressibility="tolerable_with_evidence",
+        tolerance_policy=EVIDENCE_TOLERANCE_POLICY,
         actionability="implementation_or_view_change_required",
         recommendation=(
             "Add renderer support or fallback diagnostics for the requested cut before using "
@@ -309,6 +338,7 @@ ADVISOR_RULES: tuple[AdvisorRule, ...] = (
         test_refs=DEFAULT_RULE_TEST_REFS,
         tracker_items=("BIR-A02", "BIR-A03", "BIR-A05", "BIR-I01", "BIR-M04"),
         priority="P0",
+        examples=("A slab, roof, wall, or host cut is required but not faithfully rendered.",),
     ),
     AdvisorRule(
         rule_id="sketch_evidence_stale",
@@ -321,6 +351,7 @@ ADVISOR_RULES: tuple[AdvisorRule, ...] = (
         source_layer="sketch_acceptance",
         severity_policy="p0_sketch_acceptance_error",
         suppressibility="not_suppressible",
+        tolerance_policy=NO_TOLERANCE_POLICY,
         actionability="evidence_regeneration_required",
         recommendation=(
             "Regenerate the evidence packet after the current model revision, rule digest, "
@@ -340,6 +371,7 @@ ADVISOR_RULES: tuple[AdvisorRule, ...] = (
         test_refs=DEFAULT_RULE_TEST_REFS,
         tracker_items=("BIR-A02", "BIR-A03", "BIR-A05", "BIR-T04"),
         priority="P0",
+        examples=("Evidence was captured before the current git head or Advisor rule digest.",),
     ),
 )
 
@@ -441,6 +473,8 @@ def validate_advisor_rule_registry(rules: tuple[AdvisorRule, ...] = ADVISOR_RULE
             errors.append(f"{prefix}: missing affected_id_kinds")
         if not rule.fix_command_hints:
             errors.append(f"{prefix}: missing fix_command_hints")
+        if not rule.examples:
+            errors.append(f"{prefix}: missing examples")
         if not rule.surfaces:
             errors.append(f"{prefix}: missing surfaces")
         for surface in rule.surfaces:
@@ -463,6 +497,17 @@ def validate_advisor_rule_registry(rules: tuple[AdvisorRule, ...] = ADVISOR_RULE
             errors.append(f"{prefix}: sketch acceptance blocker cannot be info severity")
         if rule.severity_policy.startswith("p0_") and rule.severity != "error":
             errors.append(f"{prefix}: {rule.severity_policy} must be error severity")
+        policy = rule.tolerance_policy
+        if rule.suppressibility == "tolerable_with_evidence" and not (
+            policy.requires_owner and policy.requires_expiry and policy.requires_evidence
+        ):
+            errors.append(
+                f"{prefix}: tolerable_with_evidence requires owner, expiry, and evidence"
+            )
+        if rule.suppressibility == "not_suppressible" and (
+            policy.requires_owner or policy.requires_expiry or policy.requires_evidence
+        ):
+            errors.append(f"{prefix}: not_suppressible cannot declare tolerance requirements")
     return sorted(errors)
 
 
@@ -516,6 +561,8 @@ def render_advisor_rule_ledger(rules: tuple[AdvisorRule, ...] = ADVISOR_RULES) -
                 f"**Recommendation:** {rule.recommendation}",
                 "",
                 f"**Documentation:** {rule.documentation}",
+                "",
+                f"**Examples:** {'; '.join(rule.examples)}",
                 "",
                 f"**Affected ids:** {', '.join(rule.affected_id_kinds)}",
                 "",

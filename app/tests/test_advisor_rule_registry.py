@@ -49,8 +49,10 @@ def test_every_rule_has_ui_cli_api_and_profile_metadata() -> None:
         assert rule.severity_policy
         assert set(rule.surfaces) == set(CANONICAL_RULE_SURFACES)
         assert rule.actionability
+        assert rule.tolerance_policy
         assert rule.affected_id_kinds
         assert rule.fix_command_hints
+        assert rule.examples
         assert rule.test_refs
         assert rule.recommendation
         assert rule.documentation
@@ -71,11 +73,12 @@ def test_p0_registry_severity_policy() -> None:
 
 
 def test_registry_validation_rejects_missing_required_fields() -> None:
-    bad_rule = replace(ADVISOR_RULES[0], title="", profiles=(), fix_command_hints=())
+    bad_rule = replace(ADVISOR_RULES[0], title="", profiles=(), fix_command_hints=(), examples=())
     errors = validate_advisor_rule_registry((bad_rule,))
     assert any("missing title" in error for error in errors)
     assert any("missing profiles" in error for error in errors)
     assert any("missing fix_command_hints" in error for error in errors)
+    assert any("missing examples" in error for error in errors)
 
 
 def test_registry_validation_rejects_duplicate_rule_ids() -> None:
@@ -87,6 +90,24 @@ def test_registry_validation_enforces_p0_severity() -> None:
     bad_rule = replace(ADVISOR_RULES[0], severity="warning")
     errors = validate_advisor_rule_registry((bad_rule,))
     assert any("must be error severity" in error for error in errors)
+
+
+def test_registry_tolerable_rules_require_audited_tolerance_fields() -> None:
+    tolerable_rule = advisor_rule_by_id("host_wall_outside_envelope")
+    payload = tolerable_rule.to_dict()
+    assert payload["suppressibility"] == "tolerable_with_evidence"
+    assert payload["tolerancePolicy"] == {
+        "requiresOwner": True,
+        "requiresExpiry": True,
+        "requiresEvidence": True,
+    }
+
+    non_suppressible_rule = advisor_rule_by_id("bim_invariant_failure")
+    assert non_suppressible_rule.to_dict()["tolerancePolicy"] == {
+        "requiresOwner": False,
+        "requiresExpiry": False,
+        "requiresEvidence": False,
+    }
 
 
 def test_profile_filter_returns_matching_rules_only() -> None:
@@ -108,11 +129,13 @@ def test_payloads_use_external_camel_case_contract() -> None:
     assert "layerOwner" in payload
     assert "sourceLayer" in payload
     assert "severityPolicy" in payload
+    assert "tolerancePolicy" in payload
     assert "affectedIdKinds" in payload
     assert "fixCommandHints" in payload
     assert "testRefs" in payload
     assert "rule_id" not in payload
     assert "layer_owner" not in payload
+    assert "tolerance_policy" not in payload
 
 
 def test_catalog_payload_is_canonical_rule_contract_for_all_surfaces() -> None:
@@ -147,6 +170,9 @@ def test_rendered_ledger_mentions_all_rules_and_tracker_items() -> None:
         assert rule.severity_policy in ledger
         assert rule.actionability in ledger
         assert f"**Status:** {rule.status}" in ledger
+        assert "**Examples:**" in ledger
+        for example in rule.examples:
+            assert example in ledger
         for tracker_item in rule.tracker_items:
             assert f"`{tracker_item}`" in ledger
         for test_ref in rule.test_refs:

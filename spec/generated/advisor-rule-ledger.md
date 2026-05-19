@@ -31,6 +31,8 @@ Generated from `app/bim_ai/advisor_rule_registry.py`.
 
 **Documentation:** Generic guardrail for always-true document invariants such as unique ids, valid level/type references, valid units, valid physical-role declarations, and no stale references to deleted elements.
 
+**Examples:** Duplicate ids, stale references, or invalid physical-role declarations.
+
 **Affected ids:** element, level, type, document
 
 **Fix command hints:** repairReferences, normalizeDocument, rollbackTransaction
@@ -54,6 +56,8 @@ Generated from `app/bim_ai/advisor_rule_registry.py`.
 **Recommendation:** Move the wall into the level floor/building envelope, attach it to an explicit exterior support condition, or mark it as a documented detached condition.
 
 **Documentation:** Physical walls on a storey must align with a floor, room boundary, envelope, or explicit detached/exterior condition. Hosted children inherit this error when their host wall is out of context.
+
+**Examples:** A wall and its hosted openings sit outside the active floor/envelope.
 
 **Affected ids:** wall, door, window, floor, level
 
@@ -79,6 +83,8 @@ Generated from `app/bim_ai/advisor_rule_registry.py`.
 
 **Documentation:** A door may have a syntactically valid wall reference while still being invalid because the host is nonphysical, analysis-only, outside the level floor, too short, or not part of a room/building boundary.
 
+**Examples:** A door references a wall that is analysis-only, outside context, or too short.
+
 **Affected ids:** door, wall, level, floor
 
 **Fix command hints:** rehostDoor, moveWallIntoEnvelope, convertToAnalysis
@@ -102,6 +108,8 @@ Generated from `app/bim_ai/advisor_rule_registry.py`.
 **Recommendation:** Mark helper/access/diagnostic geometry as nonphysical and hidden from normal BIM surfaces, or replace it with authored physical building elements.
 
 **Documentation:** Access-graph, room-closure, diagnostic, sketch, and other helper entities must not appear as visible physical BIM, schedules, exports, or valid hosts unless they have been explicitly promoted to a real element category.
+
+**Examples:** Room-closure or access-graph helper geometry appears as physical BIM.
 
 **Affected ids:** element, wall, door, room, analysis_object
 
@@ -127,6 +135,8 @@ Generated from `app/bim_ai/advisor_rule_registry.py`.
 
 **Documentation:** The semantic model may request a roof, slab, wall, or host cut that the current renderer cannot display faithfully. Renderer diagnostics must surface this as a fidelity error instead of silently showing uncut or proxy geometry.
 
+**Examples:** A slab, roof, wall, or host cut is required but not faithfully rendered.
+
 **Affected ids:** element, roof, floor, wall, opening, view
 
 **Fix command hints:** addRendererFallback, switchEvidenceView, markRendererUnsupported
@@ -150,6 +160,8 @@ Generated from `app/bim_ai/advisor_rule_registry.py`.
 **Recommendation:** Regenerate the evidence packet after the current model revision, rule digest, renderer support matrix, target spec, and git head are all recorded.
 
 **Documentation:** Sketch-to-BIM acceptance evidence becomes stale when the model revision, Advisor rule digest, renderer support matrix, seed source, target spec, or git head changes after the evidence was captured.
+
+**Examples:** Evidence was captured before the current git head or Advisor rule digest.
 
 **Affected ids:** evidence, snapshot, view, document
 
