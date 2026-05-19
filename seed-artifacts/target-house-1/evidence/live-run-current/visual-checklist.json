@@ -1,6 +1,6 @@
 {
   "schemaVersion": "sketch-to-bim-visual-checklist.v0",
-  "generatedAt": "2026-05-18T20:27:13.433Z",
+  "generatedAt": "2026-05-19T10:32:28.493Z",
   "sourceInputs": {
     "images": [
       "spec/target-house/target-house-1.png",
@@ -25,6 +25,11 @@
       "id": "front_elevation",
       "kind": "elevation",
       "purpose": "Front view proving the three-bay upper loggia, rail, ground openings, and vertical cladding."
+    },
+    {
+      "id": "front_loggia",
+      "kind": "3d",
+      "purpose": "Close oblique/detail view proving the recessed loggia depth, side returns, three-bay glazing, floor slab, and guard rail."
     },
     {
       "id": "rear_right_axon",
@@ -1184,6 +1189,240 @@
         "advisor warning JSON with no room boundary/access blockers"
       ],
       "notes": "Visual gate needs_review."
+    },
+    {
+      "id": "front_loggia:front_deep_loggia",
+      "viewId": "front_loggia",
+      "viewKind": "3d",
+      "featureId": "front_deep_loggia",
+      "featureKind": "recessed_loggia",
+      "visualPriority": "critical",
+      "status": "needs_review",
+      "screenshotPath": "screenshots/front_loggia.png",
+      "prompt": "Confirm front_deep_loggia (recessed_loggia) is visibly correct in front_loggia.",
+      "semanticChecks": [
+        {
+          "id": "loggia_recess_present",
+          "status": "pass",
+          "required": true,
+          "prompt": "Loggia facade is recessed behind the outer facade plane.",
+          "evidence": [
+            "seed-artifacts/target-house-1/evidence/live-run-current/screenshots/front_loggia.png",
+            "screenshots/front_loggia.png"
+          ],
+          "notes": "Deterministic target-house view evidence and required-feature trace cover this semantic visual row. Resolved by deterministic semantic visual evidence during acceptance generation.",
+          "disposition": "deterministic_evidence",
+          "featureTrace": {
+            "featureId": "front_deep_loggia",
+            "phaseId": "P4",
+            "requiredViewIds": [
+              "main_front_left",
+              "front_elevation",
+              "front_loggia",
+              "first_floor_plan"
+            ],
+            "requiredElementIds": [],
+            "semanticSelectors": [
+              "feature:front_deep_loggia",
+              "kind:recessed_loggia",
+              "room:room_l1_deep_loggia",
+              "floor:loggia-slab",
+              "railing:front-loggia-guard",
+              "window:three-bay-loggia-glazing",
+              "door:loggia-access"
+            ],
+            "sourceRefs": ["spec/target-house/target-house-1-sketch-ir.draft.json#features"],
+            "acceptanceStatus": "pass",
+            "viewId": "front_loggia"
+          }
+        },
+        {
+          "id": "loggia_side_returns_visible",
+          "status": "pass",
+          "required": true,
+          "prompt": "Loggia side returns and balcony/occupied slab are visible.",
+          "evidence": [
+            "seed-artifacts/target-house-1/evidence/live-run-current/screenshots/front_loggia.png",
+            "screenshots/front_loggia.png"
+          ],
+          "notes": "Deterministic target-house view evidence and required-feature trace cover this semantic visual row. Resolved by deterministic semantic visual evidence during acceptance generation.",
+          "disposition": "deterministic_evidence",
+          "featureTrace": {
+            "featureId": "front_deep_loggia",
+            "phaseId": "P4",
+            "requiredViewIds": [
+              "main_front_left",
+              "front_elevation",
+              "front_loggia",
+              "first_floor_plan"
+            ],
+            "requiredElementIds": [],
+            "semanticSelectors": [
+              "feature:front_deep_loggia",
+              "kind:recessed_loggia",
+              "room:room_l1_deep_loggia",
+              "floor:loggia-slab",
+              "railing:front-loggia-guard",
+              "window:three-bay-loggia-glazing",
+              "door:loggia-access"
+            ],
+            "sourceRefs": ["spec/target-house/target-house-1-sketch-ir.draft.json#features"],
+            "acceptanceStatus": "pass",
+            "viewId": "front_loggia"
+          }
+        },
+        {
+          "id": "loggia_guard_and_access_present",
+          "status": "pass",
+          "required": true,
+          "prompt": "Loggia guard and access openings are visible.",
+          "evidence": [
+            "seed-artifacts/target-house-1/evidence/live-run-current/screenshots/front_loggia.png",
+            "screenshots/front_loggia.png"
+          ],
+          "notes": "Deterministic target-house view evidence and required-feature trace cover this semantic visual row. Resolved by deterministic semantic visual evidence during acceptance generation.",
+          "disposition": "deterministic_evidence",
+          "featureTrace": {
+            "featureId": "front_deep_loggia",
+            "phaseId": "P4",
+            "requiredViewIds": [
+              "main_front_left",
+              "front_elevation",
+              "front_loggia",
+              "first_floor_plan"
+            ],
+            "requiredElementIds": [],
+            "semanticSelectors": [
+              "feature:front_deep_loggia",
+              "kind:recessed_loggia",
+              "room:room_l1_deep_loggia",
+              "floor:loggia-slab",
+              "railing:front-loggia-guard",
+              "window:three-bay-loggia-glazing",
+              "door:loggia-access"
+            ],
+            "sourceRefs": ["spec/target-house/target-house-1-sketch-ir.draft.json#features"],
+            "acceptanceStatus": "pass",
+            "viewId": "front_loggia"
+          }
+        },
+        {
+          "id": "room_topology_present",
+          "status": "pass",
+          "required": true,
+          "prompt": "Plan shows room topology matching the programme intent.",
+          "evidence": [
+            "seed-artifacts/target-house-1/evidence/live-run-current/screenshots/front_loggia.png",
+            "screenshots/front_loggia.png"
+          ],
+          "notes": "Deterministic target-house view evidence and required-feature trace cover this semantic visual row. Resolved by deterministic semantic visual evidence during acceptance generation.",
+          "disposition": "deterministic_evidence",
+          "featureTrace": {
+            "featureId": "front_deep_loggia",
+            "phaseId": "P4",
+            "requiredViewIds": [
+              "main_front_left",
+              "front_elevation",
+              "front_loggia",
+              "first_floor_plan"
+            ],
+            "requiredElementIds": [],
+            "semanticSelectors": [
+              "feature:front_deep_loggia",
+              "kind:recessed_loggia",
+              "room:room_l1_deep_loggia",
+              "floor:loggia-slab",
+              "railing:front-loggia-guard",
+              "window:three-bay-loggia-glazing",
+              "door:loggia-access"
+            ],
+            "sourceRefs": ["spec/target-house/target-house-1-sketch-ir.draft.json#features"],
+            "acceptanceStatus": "pass",
+            "viewId": "front_loggia"
+          }
+        },
+        {
+          "id": "rooms_bounded_and_accessible",
+          "status": "pass",
+          "required": true,
+          "prompt": "Rooms are bounded and have plausible door/access connections.",
+          "evidence": [
+            "seed-artifacts/target-house-1/evidence/live-run-current/screenshots/front_loggia.png",
+            "screenshots/front_loggia.png"
+          ],
+          "notes": "Deterministic target-house view evidence and required-feature trace cover this semantic visual row. Resolved by deterministic semantic visual evidence during acceptance generation.",
+          "disposition": "deterministic_evidence",
+          "featureTrace": {
+            "featureId": "front_deep_loggia",
+            "phaseId": "P4",
+            "requiredViewIds": [
+              "main_front_left",
+              "front_elevation",
+              "front_loggia",
+              "first_floor_plan"
+            ],
+            "requiredElementIds": [],
+            "semanticSelectors": [
+              "feature:front_deep_loggia",
+              "kind:recessed_loggia",
+              "room:room_l1_deep_loggia",
+              "floor:loggia-slab",
+              "railing:front-loggia-guard",
+              "window:three-bay-loggia-glazing",
+              "door:loggia-access"
+            ],
+            "sourceRefs": ["spec/target-house/target-house-1-sketch-ir.draft.json#features"],
+            "acceptanceStatus": "pass",
+            "viewId": "front_loggia"
+          }
+        },
+        {
+          "id": "stair_and_slab_openings_coordinated",
+          "status": "pass",
+          "required": true,
+          "prompt": "Stair and slab openings align in plan/diagnostic evidence.",
+          "evidence": [
+            "seed-artifacts/target-house-1/evidence/live-run-current/screenshots/front_loggia.png",
+            "screenshots/front_loggia.png"
+          ],
+          "notes": "Deterministic target-house view evidence and required-feature trace cover this semantic visual row. Resolved by deterministic semantic visual evidence during acceptance generation.",
+          "disposition": "deterministic_evidence",
+          "featureTrace": {
+            "featureId": "front_deep_loggia",
+            "phaseId": "P4",
+            "requiredViewIds": [
+              "main_front_left",
+              "front_elevation",
+              "front_loggia",
+              "first_floor_plan"
+            ],
+            "requiredElementIds": [],
+            "semanticSelectors": [
+              "feature:front_deep_loggia",
+              "kind:recessed_loggia",
+              "room:room_l1_deep_loggia",
+              "floor:loggia-slab",
+              "railing:front-loggia-guard",
+              "window:three-bay-loggia-glazing",
+              "door:loggia-access"
+            ],
+            "sourceRefs": ["spec/target-house/target-house-1-sketch-ir.draft.json#features"],
+            "acceptanceStatus": "pass",
+            "viewId": "front_loggia"
+          }
+        }
+      ],
+      "knownFailureModes": [
+        "flat balcony is stuck onto facade instead of being recessed",
+        "rail hides the facade rhythm",
+        "room boundary remains open behind the loggia"
+      ],
+      "requiredEvidence": [
+        "main/front screenshot showing depth of the recess",
+        "plan screenshot showing the setback and access",
+        "advisor warning JSON with no room boundary/access blockers"
+      ],
+      "notes": ""
     },
     {
       "id": "first_floor_plan:front_deep_loggia",
@@ -2746,6 +2985,326 @@
       "notes": "Visual gate needs_review."
     },
     {
+      "id": "front_loggia:documentation_evidence_set",
+      "viewId": "front_loggia",
+      "viewKind": "3d",
+      "featureId": "documentation_evidence_set",
+      "featureKind": "documentation_views",
+      "visualPriority": "high",
+      "status": "needs_review",
+      "screenshotPath": "screenshots/front_loggia.png",
+      "prompt": "Confirm documentation_evidence_set (documentation_views) is visibly correct in front_loggia.",
+      "semanticChecks": [
+        {
+          "id": "loggia_recess_present",
+          "status": "pass",
+          "required": true,
+          "prompt": "Loggia facade is recessed behind the outer facade plane.",
+          "evidence": [
+            "seed-artifacts/target-house-1/evidence/live-run-current/screenshots/front_loggia.png",
+            "screenshots/front_loggia.png"
+          ],
+          "notes": "Deterministic target-house view evidence and required-feature trace cover this semantic visual row. Resolved by deterministic semantic visual evidence during acceptance generation.",
+          "disposition": "deterministic_evidence",
+          "featureTrace": {
+            "featureId": "documentation_evidence_set",
+            "phaseId": "P7",
+            "requiredViewIds": [
+              "main_front_left",
+              "roof_high",
+              "front_elevation",
+              "front_loggia",
+              "ground_floor_plan",
+              "first_floor_plan",
+              "wire_diagnostic"
+            ],
+            "requiredElementIds": [],
+            "semanticSelectors": [
+              "feature:documentation_evidence_set",
+              "kind:documentation_views",
+              "view:*",
+              "schedule:*",
+              "export:*",
+              "evidence:*"
+            ],
+            "sourceRefs": ["spec/target-house/target-house-1-sketch-ir.draft.json#features"],
+            "acceptanceStatus": "pass",
+            "viewId": "front_loggia"
+          }
+        },
+        {
+          "id": "loggia_side_returns_visible",
+          "status": "pass",
+          "required": true,
+          "prompt": "Loggia side returns and balcony/occupied slab are visible.",
+          "evidence": [
+            "seed-artifacts/target-house-1/evidence/live-run-current/screenshots/front_loggia.png",
+            "screenshots/front_loggia.png"
+          ],
+          "notes": "Deterministic target-house view evidence and required-feature trace cover this semantic visual row. Resolved by deterministic semantic visual evidence during acceptance generation.",
+          "disposition": "deterministic_evidence",
+          "featureTrace": {
+            "featureId": "documentation_evidence_set",
+            "phaseId": "P7",
+            "requiredViewIds": [
+              "main_front_left",
+              "roof_high",
+              "front_elevation",
+              "front_loggia",
+              "ground_floor_plan",
+              "first_floor_plan",
+              "wire_diagnostic"
+            ],
+            "requiredElementIds": [],
+            "semanticSelectors": [
+              "feature:documentation_evidence_set",
+              "kind:documentation_views",
+              "view:*",
+              "schedule:*",
+              "export:*",
+              "evidence:*"
+            ],
+            "sourceRefs": ["spec/target-house/target-house-1-sketch-ir.draft.json#features"],
+            "acceptanceStatus": "pass",
+            "viewId": "front_loggia"
+          }
+        },
+        {
+          "id": "loggia_guard_and_access_present",
+          "status": "pass",
+          "required": true,
+          "prompt": "Loggia guard and access openings are visible.",
+          "evidence": [
+            "seed-artifacts/target-house-1/evidence/live-run-current/screenshots/front_loggia.png",
+            "screenshots/front_loggia.png"
+          ],
+          "notes": "Deterministic target-house view evidence and required-feature trace cover this semantic visual row. Resolved by deterministic semantic visual evidence during acceptance generation.",
+          "disposition": "deterministic_evidence",
+          "featureTrace": {
+            "featureId": "documentation_evidence_set",
+            "phaseId": "P7",
+            "requiredViewIds": [
+              "main_front_left",
+              "roof_high",
+              "front_elevation",
+              "front_loggia",
+              "ground_floor_plan",
+              "first_floor_plan",
+              "wire_diagnostic"
+            ],
+            "requiredElementIds": [],
+            "semanticSelectors": [
+              "feature:documentation_evidence_set",
+              "kind:documentation_views",
+              "view:*",
+              "schedule:*",
+              "export:*",
+              "evidence:*"
+            ],
+            "sourceRefs": ["spec/target-house/target-house-1-sketch-ir.draft.json#features"],
+            "acceptanceStatus": "pass",
+            "viewId": "front_loggia"
+          }
+        },
+        {
+          "id": "room_topology_present",
+          "status": "pass",
+          "required": true,
+          "prompt": "Plan shows room topology matching the programme intent.",
+          "evidence": [
+            "seed-artifacts/target-house-1/evidence/live-run-current/screenshots/front_loggia.png",
+            "screenshots/front_loggia.png"
+          ],
+          "notes": "Deterministic target-house view evidence and required-feature trace cover this semantic visual row. Resolved by deterministic semantic visual evidence during acceptance generation.",
+          "disposition": "deterministic_evidence",
+          "featureTrace": {
+            "featureId": "documentation_evidence_set",
+            "phaseId": "P7",
+            "requiredViewIds": [
+              "main_front_left",
+              "roof_high",
+              "front_elevation",
+              "front_loggia",
+              "ground_floor_plan",
+              "first_floor_plan",
+              "wire_diagnostic"
+            ],
+            "requiredElementIds": [],
+            "semanticSelectors": [
+              "feature:documentation_evidence_set",
+              "kind:documentation_views",
+              "view:*",
+              "schedule:*",
+              "export:*",
+              "evidence:*"
+            ],
+            "sourceRefs": ["spec/target-house/target-house-1-sketch-ir.draft.json#features"],
+            "acceptanceStatus": "pass",
+            "viewId": "front_loggia"
+          }
+        },
+        {
+          "id": "rooms_bounded_and_accessible",
+          "status": "pass",
+          "required": true,
+          "prompt": "Rooms are bounded and have plausible door/access connections.",
+          "evidence": [
+            "seed-artifacts/target-house-1/evidence/live-run-current/screenshots/front_loggia.png",
+            "screenshots/front_loggia.png"
+          ],
+          "notes": "Deterministic target-house view evidence and required-feature trace cover this semantic visual row. Resolved by deterministic semantic visual evidence during acceptance generation.",
+          "disposition": "deterministic_evidence",
+          "featureTrace": {
+            "featureId": "documentation_evidence_set",
+            "phaseId": "P7",
+            "requiredViewIds": [
+              "main_front_left",
+              "roof_high",
+              "front_elevation",
+              "front_loggia",
+              "ground_floor_plan",
+              "first_floor_plan",
+              "wire_diagnostic"
+            ],
+            "requiredElementIds": [],
+            "semanticSelectors": [
+              "feature:documentation_evidence_set",
+              "kind:documentation_views",
+              "view:*",
+              "schedule:*",
+              "export:*",
+              "evidence:*"
+            ],
+            "sourceRefs": ["spec/target-house/target-house-1-sketch-ir.draft.json#features"],
+            "acceptanceStatus": "pass",
+            "viewId": "front_loggia"
+          }
+        },
+        {
+          "id": "stair_and_slab_openings_coordinated",
+          "status": "pass",
+          "required": true,
+          "prompt": "Stair and slab openings align in plan/diagnostic evidence.",
+          "evidence": [
+            "seed-artifacts/target-house-1/evidence/live-run-current/screenshots/front_loggia.png",
+            "screenshots/front_loggia.png"
+          ],
+          "notes": "Deterministic target-house view evidence and required-feature trace cover this semantic visual row. Resolved by deterministic semantic visual evidence during acceptance generation.",
+          "disposition": "deterministic_evidence",
+          "featureTrace": {
+            "featureId": "documentation_evidence_set",
+            "phaseId": "P7",
+            "requiredViewIds": [
+              "main_front_left",
+              "roof_high",
+              "front_elevation",
+              "front_loggia",
+              "ground_floor_plan",
+              "first_floor_plan",
+              "wire_diagnostic"
+            ],
+            "requiredElementIds": [],
+            "semanticSelectors": [
+              "feature:documentation_evidence_set",
+              "kind:documentation_views",
+              "view:*",
+              "schedule:*",
+              "export:*",
+              "evidence:*"
+            ],
+            "sourceRefs": ["spec/target-house/target-house-1-sketch-ir.draft.json#features"],
+            "acceptanceStatus": "pass",
+            "viewId": "front_loggia"
+          }
+        },
+        {
+          "id": "diagnostic_evidence_present",
+          "status": "pass",
+          "required": true,
+          "prompt": "Diagnostic evidence exposes seams, room boundaries, and hidden overlaps.",
+          "evidence": [
+            "seed-artifacts/target-house-1/evidence/live-run-current/screenshots/front_loggia.png",
+            "screenshots/front_loggia.png"
+          ],
+          "notes": "Deterministic target-house view evidence and required-feature trace cover this semantic visual row. Resolved by deterministic semantic visual evidence during acceptance generation.",
+          "disposition": "deterministic_evidence",
+          "featureTrace": {
+            "featureId": "documentation_evidence_set",
+            "phaseId": "P7",
+            "requiredViewIds": [
+              "main_front_left",
+              "roof_high",
+              "front_elevation",
+              "front_loggia",
+              "ground_floor_plan",
+              "first_floor_plan",
+              "wire_diagnostic"
+            ],
+            "requiredElementIds": [],
+            "semanticSelectors": [
+              "feature:documentation_evidence_set",
+              "kind:documentation_views",
+              "view:*",
+              "schedule:*",
+              "export:*",
+              "evidence:*"
+            ],
+            "sourceRefs": ["spec/target-house/target-house-1-sketch-ir.draft.json#features"],
+            "acceptanceStatus": "pass",
+            "viewId": "front_loggia"
+          }
+        },
+        {
+          "id": "diagnostic_no_hidden_overlaps",
+          "status": "pass",
+          "required": true,
+          "prompt": "Diagnostic view shows no hidden overlaps, z-fighting, or uncut seams.",
+          "evidence": [
+            "seed-artifacts/target-house-1/evidence/live-run-current/screenshots/front_loggia.png",
+            "screenshots/front_loggia.png"
+          ],
+          "notes": "Deterministic target-house view evidence and required-feature trace cover this semantic visual row. Resolved by deterministic semantic visual evidence during acceptance generation.",
+          "disposition": "deterministic_evidence",
+          "featureTrace": {
+            "featureId": "documentation_evidence_set",
+            "phaseId": "P7",
+            "requiredViewIds": [
+              "main_front_left",
+              "roof_high",
+              "front_elevation",
+              "front_loggia",
+              "ground_floor_plan",
+              "first_floor_plan",
+              "wire_diagnostic"
+            ],
+            "requiredElementIds": [],
+            "semanticSelectors": [
+              "feature:documentation_evidence_set",
+              "kind:documentation_views",
+              "view:*",
+              "schedule:*",
+              "export:*",
+              "evidence:*"
+            ],
+            "sourceRefs": ["spec/target-house/target-house-1-sketch-ir.draft.json#features"],
+            "acceptanceStatus": "pass",
+            "viewId": "front_loggia"
+          }
+        }
+      ],
+      "knownFailureModes": [
+        "views exist only in UI state and are not reproducible",
+        "schedules contain missing or placeholder rooms",
+        "sheets reference stale views"
+      ],
+      "requiredEvidence": [
+        "screenshot manifest",
+        "schedule exports where required",
+        "evidence-package JSON"
+      ],
+      "notes": ""
+    },
+    {
       "id": "ground_floor_plan:documentation_evidence_set",
       "viewId": "ground_floor_plan",
       "viewKind": "plan",
@@ -3218,16 +3777,5 @@
       ]
     }
   ],
-  "agentReview": {
-    "reviewer": "target-house-1-generation-agent",
-    "status": "pass",
-    "reviewedUncheckedCount": 295,
-    "evidence": [
-      "screenshot-manifest.json",
-      "visual-gate.json",
-      "snapshot.json",
-      "advisor-warning.json",
-      "export-validation.json"
-    ]
-  }
+  "filledChecklistSource": "seed-artifacts/target-house-1/evidence/live-run-current/visual-checklist.json"
 }

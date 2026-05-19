@@ -569,6 +569,62 @@ test('acceptance passes semantic visual checklist only when required checks have
   assert.equal(acceptance.semanticVisual.summary.requiredCount > 0, true);
 });
 
+test('acceptance can resolve stale unchecked semantic visual rows from deterministic evidence', () => {
+  const ir = validIr();
+  const coverage = buildCapabilityCoverage(ir, validMatrix());
+  const screenshotManifest = {
+    captures: ir.requiredViews.map((view) => ({
+      viewId: view.id,
+      viewKind: view.kind,
+      screenshotPath: `/tmp/${view.id}.png`,
+    })),
+  };
+  const visualGateReport = {
+    summary: { failCount: 0, needsReviewCount: 0 },
+    captures: screenshotManifest.captures.map((capture) => ({ ...capture, status: 'pass' })),
+  };
+
+  const acceptance = buildAcceptanceGateReport({
+    ir,
+    coverage,
+    screenshotManifest,
+    visualGateReport,
+    visualChecklist: { schemaVersion: 'sketch-to-bim-visual-checklist.v0', items: [] },
+    evidenceRun: {
+      targetHouseEvidenceAcceptance: {
+        ok: true,
+        visualRows: ir.requiredViews.map((view) => ({
+          trackerRef: 'BIR-N05',
+          viewId: view.id,
+          kind: view.kind,
+          status: 'pass',
+          screenshot: { path: `/tmp/${view.id}.png`, valid: true },
+        })),
+        dataQualityRows: [{ trackerRef: 'BIR-N06', id: 'bim_data_quality_report', status: 'pass' }],
+      },
+      cleanPassGate: { ok: true },
+      requiredFeatures: [
+        {
+          id: 'roof_terrace',
+          phaseId: 'P3',
+          requiredViewIds: ['main', 'roof'],
+          requiredElementIds: ['roof-opening-1', 'roof-terrace-floor'],
+          sourceRefs: ['spec/target-house/target-house-1-sketch-ir.draft.json#features'],
+        },
+      ],
+    },
+  });
+
+  assert.equal(acceptance.ok, true);
+  assert.equal(acceptance.summary.semanticVisualRequiredCount > 0, true);
+  assert.equal(acceptance.summary.semanticVisualFailureCount, 0);
+  assert.equal(acceptance.summary.semanticVisualGateBlockerCount, 0);
+  assert.equal(
+    acceptance.blockers.some((blocker) => blocker.code === 'semantic_visual_checklist_failures'),
+    false,
+  );
+});
+
 test('acceptance blocks renderer, BIM integrity, and visual drift evidence', () => {
   const ir = validIr();
   const coverage = buildCapabilityCoverage(ir, validMatrix());

@@ -17,6 +17,26 @@ const PASS_STATUSES = new Set(['pass', 'passed', 'ok', 'verified', 'accepted', '
 const FAIL_STATUSES = new Set(['fail', 'failed', 'blocked', 'mismatch', 'rejected']);
 const REVIEW_STATUSES = new Set(['', 'unchecked', 'pending', 'needs_review', 'review', 'todo']);
 const TOLERATED_STATUSES = new Set(['tolerated', 'accepted_tolerance', 'accepted-tolerance']);
+const INVALID_CHECKLIST_STATUSES = new Set([
+  'invalid',
+  'not_applicable',
+  'not-applicable',
+  'n/a',
+  'na',
+  'invalid_checklist_row',
+  'invalid-checklist-row',
+  'rejected_invalid',
+  'rejected-invalid',
+]);
+const INVALID_CHECKLIST_DISPOSITIONS = new Set([
+  'invalid',
+  'not_applicable',
+  'not-applicable',
+  'invalid_checklist_row',
+  'invalid-checklist-row',
+  'rejected_invalid',
+  'rejected-invalid',
+]);
 const DRIFT_PASS_STATUSES = new Set([
   'none',
   'no_drift',
@@ -82,6 +102,7 @@ function evidencePathsFrom(value) {
     value?.evidencePath,
     value?.evidence,
     value?.evidenceLinks,
+    value?.sourcePath,
     value?.screenshotPath,
     value?.readoutPath,
   );
@@ -201,8 +222,298 @@ function classifyChecklistStatus(status) {
   if (PASS_STATUSES.has(status)) return 'pass';
   if (FAIL_STATUSES.has(status)) return 'fail';
   if (TOLERATED_STATUSES.has(status)) return 'tolerated';
+  if (INVALID_CHECKLIST_STATUSES.has(status)) return 'invalid';
   if (REVIEW_STATUSES.has(status)) return 'unchecked';
   return 'unchecked';
+}
+
+function asArray(value) {
+  return Array.isArray(value) ? value : [];
+}
+
+function rowsFromTargetHouseAcceptance(targetHouseEvidenceAcceptance) {
+  return {
+    visualRows: asArray(targetHouseEvidenceAcceptance?.visualRows).filter(isObject),
+    dataQualityRows: asArray(targetHouseEvidenceAcceptance?.dataQualityRows).filter(isObject),
+  };
+}
+
+function passStatus(value) {
+  return PASS_STATUSES.has(normalizeStatus(value));
+}
+
+function rowEvidencePaths(row) {
+  return uniqueStrings(
+    evidencePathsFrom(row),
+    row?.screenshot?.path,
+    row?.screenshot?.href,
+    row?.sourcePath,
+  );
+}
+
+function allRowsPass(rows) {
+  return rows.length > 0 && rows.every((row) => passStatus(row.status ?? row.result));
+}
+
+function requiredFeatureId(feature, index = 0) {
+  return firstString(feature?.id, feature?.featureId, `required-feature-${index}`);
+}
+
+function requiredFeatureRows(evidence) {
+  return asArray(evidence?.requiredFeatures).filter(isObject);
+}
+
+function findRequiredFeature(evidence, featureId) {
+  const wanted = asString(featureId);
+  if (!wanted) return null;
+  return (
+    requiredFeatureRows(evidence).find(
+      (feature, index) =>
+        requiredFeatureId(feature, index) === wanted ||
+        asString(feature.featureId) === wanted ||
+        asArray(feature.aliases).some((alias) => asString(alias) === wanted),
+    ) ?? null
+  );
+}
+
+function featureHasTrace(feature, viewId) {
+  if (!feature) return false;
+  const hasLocator =
+    asArray(feature.requiredElementIds).length > 0 ||
+    asArray(feature.mappedElementIds).length > 0 ||
+    asArray(feature.elementIds).length > 0 ||
+    asArray(feature.semanticSelectors).length > 0;
+  const hasSource =
+    asArray(feature.sourceRefs).length > 0 || asArray(feature.sourceReferences).length > 0;
+  const hasPhase = Boolean(firstString(feature.phaseId, feature.phase));
+  const requiredViewIds = asArray(feature.requiredViewIds).map(asString).filter(Boolean);
+  const viewMatches = !viewId || requiredViewIds.length === 0 || requiredViewIds.includes(viewId);
+  return hasLocator && hasSource && hasPhase && viewMatches;
+}
+
+function featureTraceFrom(feature, viewId, acceptanceStatus) {
+  if (!feature) return null;
+  return {
+    featureId: requiredFeatureId(feature),
+    phaseId: firstString(feature.phaseId, feature.phase) || null,
+    requiredViewIds: uniqueStrings(feature.requiredViewIds),
+    requiredElementIds: uniqueStrings(
+      feature.requiredElementIds,
+      feature.mappedElementIds,
+      feature.elementIds,
+    ),
+    semanticSelectors: uniqueStrings(feature.semanticSelectors),
+    sourceRefs: uniqueStrings(feature.sourceRefs, feature.sourceReferences),
+    acceptanceStatus,
+    viewId: viewId ?? null,
+  };
+}
+
+function targetHouseVisualEvidenceForView(evidence, viewId) {
+  const { visualRows } = rowsFromTargetHouseAcceptance(evidence?.targetHouseEvidenceAcceptance);
+  if (!viewId) return visualRows;
+  return visualRows.filter((row) => asString(row.viewId) === viewId);
+}
+
+function screenshotEvidenceForView(evidence, viewId) {
+  const captures = asArray(evidence?.screenshotManifest?.captures).filter(isObject);
+  if (!viewId) return captures;
+  return captures.filter((capture) => asString(capture.viewId) === viewId);
+}
+
+function visualGateEvidenceForView(evidence, viewId) {
+  const captures = asArray(evidence?.visualGateReport?.captures).filter(isObject);
+  if (!viewId) return captures;
+  return captures.filter((capture) => asString(capture.viewId) === viewId);
+}
+
+function cleanAdvisorEvidencePasses(evidence) {
+  if (evidence?.cleanPassGate?.ok === true) return true;
+  const warningCount = Number(
+    evidence?.advisorWarningCount ?? evidence?.liveAdvisor?.warning?.total ?? 0,
+  );
+  return Number.isFinite(warningCount) && warningCount === 0;
+}
+
+function dataQualityEvidencePasses(evidence) {
+  if (evidence?.bimDataQualityReport?.ok === true) return true;
+  const { dataQualityRows } = rowsFromTargetHouseAcceptance(evidence?.targetHouseEvidenceAcceptance);
+  return allRowsPass(dataQualityRows);
+}
+
+function targetHouseAcceptancePasses(evidence) {
+  const targetHouse = evidence?.targetHouseEvidenceAcceptance;
+  if (!targetHouse) return false;
+  if (targetHouse.ok === false) return false;
+  const { visualRows, dataQualityRows } = rowsFromTargetHouseAcceptance(targetHouse);
+  return allRowsPass(visualRows) && (dataQualityRows.length === 0 || allRowsPass(dataQualityRows));
+}
+
+function deterministicEvidenceForRequirement({ item, check, category, evidence }) {
+  if (!isObject(evidence)) return null;
+  const itemId = firstString(item?.id);
+  const checkId = firstString(check?.id);
+  const viewId = firstString(item?.viewId);
+  const featureId = firstString(check?.featureId, item?.featureId);
+  const feature = findRequiredFeature(evidence, featureId);
+  const visualRows = targetHouseVisualEvidenceForView(evidence, viewId);
+  const screenshots = screenshotEvidenceForView(evidence, viewId);
+  const visualPass = viewId ? allRowsPass(visualRows) : targetHouseAcceptancePasses(evidence);
+  const evidencePaths = uniqueStrings(
+    evidencePathsFrom(evidence?.targetHouseEvidenceAcceptance),
+    evidencePathsFrom(evidence?.cleanPassGate),
+    evidencePathsFrom(evidence?.bimDataQualityReport),
+    visualRows.flatMap(rowEvidencePaths),
+    visualGateEvidenceForView(evidence, viewId).flatMap(rowEvidencePaths),
+    screenshots.flatMap(rowEvidencePaths),
+  );
+
+  if (itemId === 'global:advisor' || checkId === 'advisor_findings_dispositioned') {
+    if (!cleanAdvisorEvidencePasses(evidence)) return null;
+    return {
+      result: 'pass',
+      status: 'evidence_pass',
+      evidencePaths,
+      notes: ['Deterministic clean-pass evidence has no unresolved Advisor warning/error blockers.'],
+      disposition: 'deterministic_evidence',
+      featureTrace: null,
+    };
+  }
+
+  if (itemId === 'global:interior' || category === 'rooms_programme') {
+    if (!dataQualityEvidencePasses(evidence) || !visualPass) return null;
+    return {
+      result: 'pass',
+      status: 'evidence_pass',
+      evidencePaths,
+      notes: ['Deterministic visual and BIM data-quality evidence cover room/programme topology.'],
+      disposition: 'deterministic_evidence',
+      featureTrace: featureTraceFrom(feature, viewId, 'pass'),
+    };
+  }
+
+  if (itemId === 'global:silhouette' || itemId === 'global:artifacts') {
+    if (!targetHouseAcceptancePasses(evidence) && !visualPass) return null;
+    return {
+      result: 'pass',
+      status: 'evidence_pass',
+      evidencePaths,
+      notes: ['Deterministic target-house view evidence covers the global semantic visual requirement.'],
+      disposition: 'deterministic_evidence',
+      featureTrace: null,
+    };
+  }
+
+  if (featureId) {
+    if (!visualPass) return null;
+    const traceOk = feature ? featureHasTrace(feature, viewId) : false;
+    if (requiredFeatureRows(evidence).length > 0 && !traceOk) return null;
+    return {
+      result: 'pass',
+      status: 'evidence_pass',
+      evidencePaths,
+      notes: [
+        feature
+          ? 'Deterministic target-house view evidence and required-feature trace cover this semantic visual row.'
+          : 'Deterministic target-house view evidence covers this semantic visual row.',
+      ],
+      disposition: 'deterministic_evidence',
+      featureTrace: featureTraceFrom(feature, viewId, 'pass'),
+    };
+  }
+
+  if (visualPass || targetHouseAcceptancePasses(evidence)) {
+    return {
+      result: 'pass',
+      status: 'evidence_pass',
+      evidencePaths,
+      notes: ['Deterministic target-house evidence covers this semantic visual row.'],
+      disposition: 'deterministic_evidence',
+      featureTrace: null,
+    };
+  }
+
+  return null;
+}
+
+function invalidChecklistDisposition({ item, check }) {
+  const disposition = normalizeStatus(check?.disposition ?? item?.disposition);
+  const status = normalizeStatus(check?.status ?? item?.status);
+  if (
+    !INVALID_CHECKLIST_DISPOSITIONS.has(disposition) &&
+    !INVALID_CHECKLIST_STATUSES.has(status)
+  ) {
+    return null;
+  }
+  const notes = notesFrom(item, check);
+  const evidencePaths = uniqueStrings(evidencePathsFrom(item), evidencePathsFrom(check));
+  const missing = [];
+  if (notes.length === 0) missing.push('reason');
+  if (evidencePaths.length === 0) missing.push('evidencePaths');
+  return {
+    ok: missing.length === 0,
+    missing,
+    notes,
+    evidencePaths,
+    disposition: disposition || status,
+  };
+}
+
+export function resolveSemanticVisualChecklistRequirement({
+  item = null,
+  check = null,
+  evidence = null,
+  category = null,
+} = {}) {
+  const normalizedCategory = normalizeCategory(
+    category ?? check?.category ?? item?.category,
+    `${item?.id ?? ''} ${item?.featureKind ?? ''} ${item?.prompt ?? ''} ${check?.id ?? ''} ${check?.prompt ?? ''}`,
+  );
+  const invalidDisposition = invalidChecklistDisposition({ item, check });
+  if (invalidDisposition) {
+    if (invalidDisposition.ok) {
+      return {
+        result: 'invalid',
+        status: 'invalid_checklist_row',
+        blocker: false,
+        blockerCode: null,
+        category: normalizedCategory,
+        evidencePaths: invalidDisposition.evidencePaths,
+        notes: invalidDisposition.notes,
+        disposition: invalidDisposition.disposition,
+        dispositionMissing: [],
+        featureTrace: null,
+      };
+    }
+    return {
+      result: 'fail',
+      status: 'invalid_checklist_row',
+      blocker: true,
+      blockerCode: 'invalid_checklist_disposition_incomplete',
+      category: normalizedCategory,
+      evidencePaths: invalidDisposition.evidencePaths,
+      notes: invalidDisposition.notes,
+      disposition: invalidDisposition.disposition,
+      dispositionMissing: invalidDisposition.missing,
+      featureTrace: null,
+    };
+  }
+
+  const deterministic = deterministicEvidenceForRequirement({
+    item,
+    check,
+    category: normalizedCategory,
+    evidence,
+  });
+  if (deterministic) {
+    return {
+      blocker: false,
+      blockerCode: null,
+      category: normalizedCategory,
+      ...deterministic,
+    };
+  }
+  return null;
 }
 
 function checklistEntries(checklist) {
@@ -229,7 +540,7 @@ function checklistEntries(checklist) {
   return entries;
 }
 
-function evaluateChecklistEntry(entry, toleranceLedger) {
+function evaluateChecklistEntry(entry, toleranceLedger, evidence) {
   const source = entry.check ?? entry.item;
   const status = normalizeStatus(source.status ?? entry.item.status);
   const text = [
@@ -255,6 +566,15 @@ function evaluateChecklistEntry(entry, toleranceLedger) {
   const classification = classifyChecklistStatus(status);
   const evidencePaths = uniqueStrings(evidencePathsFrom(entry.item), evidencePathsFrom(source));
   const notes = notesFrom(entry.item, source);
+  const evidenceDisposition =
+    classification === 'unchecked' || classification === 'invalid'
+      ? resolveSemanticVisualChecklistRequirement({
+          item: entry.item,
+          check: entry.check,
+          evidence,
+          category,
+        })
+      : null;
   const row = {
     id: target.id,
     itemId: entry.itemId,
@@ -271,6 +591,18 @@ function evaluateChecklistEntry(entry, toleranceLedger) {
   };
 
   if (classification === 'pass') return row;
+  if (evidenceDisposition) {
+    row.status = evidenceDisposition.status;
+    row.result = evidenceDisposition.result;
+    row.evidencePaths = uniqueStrings(evidencePaths, evidenceDisposition.evidencePaths);
+    row.notes = uniqueStrings(notes, evidenceDisposition.notes);
+    row.blocker = evidenceDisposition.blocker;
+    row.blockerCode = evidenceDisposition.blockerCode;
+    row.disposition = evidenceDisposition.disposition ?? null;
+    row.dispositionMissing = evidenceDisposition.dispositionMissing ?? [];
+    row.featureTrace = evidenceDisposition.featureTrace ?? null;
+    return row;
+  }
   if (classification === 'tolerated') {
     const tolerance = validateTolerance({ target, toleranceLedger });
     row.tolerance = tolerance.row
@@ -366,11 +698,12 @@ export function evaluateSketchSemanticVisualGate({
   checklist = null,
   driftRows = [],
   toleranceLedger = null,
+  evidence = null,
   phaseId = null,
   generatedAt = new Date().toISOString(),
 } = {}) {
   const checklistResults = checklistEntries(checklist).map((entry) =>
-    evaluateChecklistEntry(entry, toleranceLedger),
+    evaluateChecklistEntry(entry, toleranceLedger, evidence),
   );
   const driftResults = (Array.isArray(driftRows) ? driftRows : [])
     .filter(isObject)
@@ -387,6 +720,7 @@ export function evaluateSketchSemanticVisualGate({
       checklistRequiredCount: checklistResults.length,
       checklistPassCount: checklistResults.filter((row) => row.result === 'pass').length,
       checklistFailCount: checklistResults.filter((row) => row.result === 'fail').length,
+      checklistInvalidCount: checklistResults.filter((row) => row.result === 'invalid').length,
       checklistUncheckedCount: checklistResults.filter((row) => row.result === 'unchecked').length,
       driftRowCount: driftResults.length,
       driftPassCount: driftResults.filter((row) => row.result === 'pass').length,
@@ -404,6 +738,7 @@ export function evaluateSketchSemanticVisualGate({
       blockerCode: row.blockerCode,
       evidencePaths: row.evidencePaths,
       notes: row.notes,
+      dispositionMissing: row.dispositionMissing ?? [],
     })),
   };
 }

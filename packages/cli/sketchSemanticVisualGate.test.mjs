@@ -123,6 +123,75 @@ test('tolerated checklist item passes only with matching complete ledger row', (
   assert.deepEqual(result.checklist[0].tolerance.missing, []);
 });
 
+test('unchecked checklist item can pass from deterministic target-house evidence and feature trace', () => {
+  const result = evaluateSketchSemanticVisualGate({
+    checklist: checklistWithCheck({ status: 'unchecked' }),
+    evidence: {
+      targetHouseEvidenceAcceptance: {
+        ok: true,
+        visualRows: [
+          {
+            viewId: 'front',
+            status: 'pass',
+            screenshot: { path: 'evidence/screenshots/front.png' },
+          },
+        ],
+        dataQualityRows: [{ id: 'bim_data_quality_report', status: 'pass' }],
+      },
+      requiredFeatures: [
+        {
+          id: 'facade_rhythm',
+          phaseId: 'P4',
+          requiredViewIds: ['front'],
+          requiredElementIds: ['front-window-1'],
+          sourceRefs: ['spec/target-house/target-house-1-sketch-ir.draft.json#features'],
+        },
+      ],
+    },
+    generatedAt: GENERATED_AT,
+  });
+
+  assert.equal(result.ok, true);
+  assert.equal(result.summary.checklistPassCount, 1);
+  assert.equal(result.summary.checklistUncheckedCount, 0);
+  assert.equal(result.checklist[0].status, 'evidence_pass');
+  assert.equal(result.checklist[0].featureTrace.featureId, 'facade_rhythm');
+});
+
+test('invalid checklist row disposition passes only with reason and evidence', () => {
+  const result = evaluateSketchSemanticVisualGate({
+    checklist: checklistWithCheck({
+      status: 'invalid_checklist_row',
+      notes: 'Generated row is stale for this target-house feature/view contract.',
+      evidencePath: 'evidence/semantic-disposition.json',
+    }),
+    generatedAt: GENERATED_AT,
+  });
+
+  assert.equal(result.ok, true);
+  assert.equal(result.summary.checklistInvalidCount, 1);
+  assert.equal(result.summary.blockerCount, 0);
+  assert.equal(result.checklist[0].result, 'invalid');
+});
+
+test('invalid checklist row disposition blocks when incomplete', () => {
+  const result = evaluateSketchSemanticVisualGate({
+    checklist: checklistWithCheck(
+      {
+        status: 'invalid_checklist_row',
+        notes: 'Generated row is stale for this target-house feature/view contract.',
+      },
+      { evidencePaths: [] },
+    ),
+    generatedAt: GENERATED_AT,
+  });
+
+  assert.equal(result.ok, false);
+  assert.equal(result.summary.checklistFailCount, 1);
+  assert.equal(result.blockers[0].blockerCode, 'invalid_checklist_disposition_incomplete');
+  assert.deepEqual(result.blockers[0].dispositionMissing, ['evidencePaths']);
+});
+
 test('unresolved drift blocks when current phase differs from source reference', () => {
   const result = evaluateSketchSemanticVisualGate({
     checklist: { items: [] },

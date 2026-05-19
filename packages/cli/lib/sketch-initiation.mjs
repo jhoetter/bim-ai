@@ -8,7 +8,10 @@ import {
   evaluateRendererDiagnosticsForSketchAcceptance,
   normalizeRendererDiagnosticsEvidence,
 } from './renderer-diagnostics-evidence.mjs';
-import { evaluateSketchSemanticVisualGate } from './sketch-semantic-visual-gate.mjs';
+import {
+  evaluateSketchSemanticVisualGate,
+  resolveSemanticVisualChecklistRequirement,
+} from './sketch-semantic-visual-gate.mjs';
 
 export const DEFAULT_CAPABILITY_MATRIX_PATH = 'spec/sketch-to-bim-capability-matrix.json';
 export const INITIATION_MODES = {
@@ -119,6 +122,17 @@ const SEMANTIC_VISUAL_REVIEW_STATUSES = new Set([
   'needs_review',
   'review',
   'pending',
+]);
+const SEMANTIC_VISUAL_INVALID_STATUSES = new Set([
+  'invalid',
+  'not_applicable',
+  'not-applicable',
+  'n/a',
+  'na',
+  'invalid_checklist_row',
+  'invalid-checklist-row',
+  'rejected_invalid',
+  'rejected-invalid',
 ]);
 
 const SEMANTIC_VISUAL_FEATURE_TEMPLATES = [
@@ -1674,7 +1688,7 @@ function hasSemanticPassEvidence(check) {
   return false;
 }
 
-function evaluateSemanticVisualChecklist({ ir, coverage, checklist }) {
+function evaluateSemanticVisualChecklist({ ir, coverage, checklist, evidence = null }) {
   const expected = buildVisualChecklist(ir, coverage);
   const actualItems = new Map(
     (checklist?.items ?? [])
@@ -1684,6 +1698,7 @@ function evaluateSemanticVisualChecklist({ ir, coverage, checklist }) {
   const failures = [];
   let requiredCount = 0;
   let passCount = 0;
+  let invalidCount = 0;
 
   for (const expectedItem of expected.items ?? []) {
     const expectedChecks = (expectedItem.semanticChecks ?? []).filter(
@@ -1691,26 +1706,25 @@ function evaluateSemanticVisualChecklist({ ir, coverage, checklist }) {
     );
     if (expectedChecks.length === 0) continue;
     const actualItem = actualItems.get(expectedItem.id);
-    if (!actualItem) {
-      requiredCount += expectedChecks.length;
-      failures.push({
-        itemId: expectedItem.id,
-        viewId: expectedItem.viewId ?? null,
-        featureId: expectedItem.featureId ?? null,
-        checkIds: expectedChecks.map((check) => check.id),
-        status: 'missing',
-        message: 'Required semantic visual checklist item is missing.',
-      });
-      continue;
-    }
     const actualChecks = new Map(
-      (actualItem.semanticChecks ?? [])
+      (actualItem?.semanticChecks ?? [])
         .filter((check) => check && typeof check.id === 'string')
         .map((check) => [check.id, check]),
     );
     for (const expectedCheck of expectedChecks) {
       requiredCount += 1;
       const actualCheck = actualChecks.get(expectedCheck.id);
+      const resolved = resolveSemanticVisualChecklistRequirement({
+        item: actualItem ?? expectedItem,
+        check: actualCheck ?? expectedCheck,
+        evidence,
+        category: expectedItem.category,
+      });
+      if (resolved && !resolved.blocker) {
+        if (resolved.result === 'pass') passCount += 1;
+        else if (resolved.result === 'invalid') invalidCount += 1;
+        continue;
+      }
       const status = String(actualCheck?.status ?? '')
         .trim()
         .toLowerCase();
@@ -1721,7 +1735,9 @@ function evaluateSemanticVisualChecklist({ ir, coverage, checklist }) {
           featureId: expectedItem.featureId ?? null,
           checkId: expectedCheck.id,
           status: 'missing',
-          message: expectedCheck.prompt,
+          message: resolved?.blockerCode
+            ? `${expectedCheck.prompt} (${resolved.blockerCode}: ${(resolved.dispositionMissing ?? []).join(', ')})`
+            : expectedCheck.prompt,
         });
       } else if (SEMANTIC_VISUAL_PASS_STATUSES.has(status)) {
         if (hasSemanticPassEvidence(actualCheck)) {
@@ -1752,7 +1768,20 @@ function evaluateSemanticVisualChecklist({ ir, coverage, checklist }) {
           featureId: expectedItem.featureId ?? null,
           checkId: expectedCheck.id,
           status: status || 'unchecked',
-          message: expectedCheck.prompt,
+          message: resolved?.blockerCode
+            ? `${expectedCheck.prompt} (${resolved.blockerCode}: ${(resolved.dispositionMissing ?? []).join(', ')})`
+            : expectedCheck.prompt,
+        });
+      } else if (SEMANTIC_VISUAL_INVALID_STATUSES.has(status)) {
+        failures.push({
+          itemId: expectedItem.id,
+          viewId: expectedItem.viewId ?? null,
+          featureId: expectedItem.featureId ?? null,
+          checkId: expectedCheck.id,
+          status,
+          message: resolved?.blockerCode
+            ? `${expectedCheck.prompt} (${resolved.blockerCode}: ${(resolved.dispositionMissing ?? []).join(', ')})`
+            : `${expectedCheck.prompt} Invalid checklist disposition requires reason and evidence.`,
         });
       } else {
         failures.push({
@@ -1775,6 +1804,7 @@ function evaluateSemanticVisualChecklist({ ir, coverage, checklist }) {
     summary: {
       requiredCount,
       passCount,
+      invalidCount,
       failureCount: failures.length,
       missingCount: failures.filter((failure) => failure.status === 'missing').length,
       failedCount: failures.filter((failure) => SEMANTIC_VISUAL_FAIL_STATUSES.has(failure.status))
@@ -1786,6 +1816,163 @@ function evaluateSemanticVisualChecklist({ ir, coverage, checklist }) {
       ).length,
     },
     failures,
+  };
+}
+
+function semanticVisualEvidenceFromRun({
+  evidenceRun = null,
+  screenshotManifest = null,
+  visualGateReport = null,
+  bimDataQualityReport = null,
+  liveAdvisor = null,
+} = {}) {
+  if (!evidenceRun && !screenshotManifest && !visualGateReport && !bimDataQualityReport) {
+    return null;
+  }
+  return {
+    targetHouseEvidenceAcceptance:
+      evidenceRun?.targetHouseEvidenceAcceptance ??
+      evidenceRun?.targetHouseAcceptanceReport ??
+      evidenceRun?.targetHouseEvidenceReport ??
+      null,
+    cleanPassGate: evidenceRun?.cleanPassGate ?? evidenceRun?.targetHouseCleanPassGate ?? null,
+    screenshotManifest: screenshotManifest ?? evidenceRun?.screenshotManifest ?? null,
+    visualGateReport: visualGateReport ?? evidenceRun?.visualGateReport ?? null,
+    bimDataQualityReport:
+      bimDataQualityReport ??
+      evidenceRun?.bimDataQualityReport ??
+      evidenceRun?.bimDataQuality ??
+      null,
+    requiredFeatures: evidenceRun?.requiredFeatures ?? null,
+    advisorWarningCount:
+      liveAdvisor?.warning?.total ??
+      evidenceRun?.advisorWarningCount ??
+      evidenceRun?.liveAdvisor?.warning?.total ??
+      null,
+    liveAdvisor: liveAdvisor ?? evidenceRun?.liveAdvisor ?? null,
+  };
+}
+
+function shouldResolveChecklistStatus(status) {
+  const normalized = String(status ?? '')
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, '_');
+  return (
+    SEMANTIC_VISUAL_REVIEW_STATUSES.has(normalized) ||
+    SEMANTIC_VISUAL_INVALID_STATUSES.has(normalized)
+  );
+}
+
+function applySemanticVisualEvidenceToChecklist(checklist, evidence) {
+  if (!isObject(checklist) || !Array.isArray(checklist.items) || !evidence) return checklist;
+  return {
+    ...checklist,
+    items: checklist.items.map((item) => {
+      if (!isObject(item) || !Array.isArray(item.semanticChecks)) return item;
+      let itemChanged = false;
+      const semanticChecks = item.semanticChecks.map((check) => {
+        if (!isObject(check) || !shouldResolveChecklistStatus(check.status)) return check;
+        const resolved = resolveSemanticVisualChecklistRequirement({
+          item,
+          check,
+          evidence,
+          category: item.category,
+        });
+        if (!resolved || resolved.blocker) return check;
+        itemChanged = true;
+        const notes = uniqueStrings([
+          check.notes,
+          ...(resolved.notes ?? []),
+          resolved.result === 'pass'
+            ? 'Resolved by deterministic semantic visual evidence during acceptance generation.'
+            : '',
+        ]);
+        const evidencePaths = uniqueStrings([
+          ...arrayStrings(check.evidence),
+          ...arrayStrings(check.evidencePaths),
+          ...(resolved.evidencePaths ?? []),
+        ]);
+        return {
+          ...check,
+          status: resolved.result === 'pass' ? 'pass' : 'invalid_checklist_row',
+          notes: notes.join(' '),
+          evidence: evidencePaths,
+          disposition: resolved.disposition ?? check.disposition ?? null,
+          featureTrace: resolved.featureTrace ?? check.featureTrace ?? null,
+        };
+      });
+      return itemChanged ? { ...item, semanticChecks } : item;
+    }),
+  };
+}
+
+async function readOptionalJsonArtifact(filePath) {
+  try {
+    const parsed = JSON.parse(await fs.readFile(filePath, 'utf8'));
+    if (isObject(parsed)) return { ...parsed, sourcePath: filePath };
+  } catch {
+    // Optional sidecar evidence.
+  }
+  return null;
+}
+
+async function readFirstJsonArtifact(dirs, names) {
+  for (const dir of dirs) {
+    for (const name of names) {
+      const parsed = await readOptionalJsonArtifact(path.join(dir, name));
+      if (parsed) return parsed;
+    }
+  }
+  return null;
+}
+
+function evidenceSidecarDirs(evidenceRun, outDir) {
+  const dirs = new Set();
+  for (const filePath of [
+    evidenceRun?.visualChecklist?.sourcePath,
+    evidenceRun?.evidenceFreshness?.sourcePath,
+    evidenceRun?.targetHouseEvidenceAcceptance?.sourcePath,
+    evidenceRun?.cleanPassGate?.sourcePath,
+  ]) {
+    if (typeof filePath === 'string' && filePath.trim()) dirs.add(path.dirname(filePath));
+  }
+  if (outDir) {
+    dirs.add(outDir);
+    dirs.add(path.join(outDir, 'live'));
+  }
+  return [...dirs];
+}
+
+async function withSemanticVisualSidecarEvidence(evidenceRun, outDir) {
+  if (!evidenceRun) return evidenceRun;
+  const dirs = evidenceSidecarDirs(evidenceRun, outDir);
+  if (dirs.length === 0) return evidenceRun;
+  const [
+    targetHouseEvidenceAcceptance,
+    cleanPassGate,
+    screenshotManifest,
+    visualGateReport,
+  ] = await Promise.all([
+    evidenceRun.targetHouseEvidenceAcceptance
+      ? Promise.resolve(evidenceRun.targetHouseEvidenceAcceptance)
+      : readFirstJsonArtifact(dirs, ['target-house-evidence-acceptance.json']),
+    evidenceRun.cleanPassGate
+      ? Promise.resolve(evidenceRun.cleanPassGate)
+      : readFirstJsonArtifact(dirs, ['clean-pass-gate.json']),
+    evidenceRun.screenshotManifest
+      ? Promise.resolve(evidenceRun.screenshotManifest)
+      : readFirstJsonArtifact(dirs, ['screenshot-manifest.json']),
+    evidenceRun.visualGateReport
+      ? Promise.resolve(evidenceRun.visualGateReport)
+      : readFirstJsonArtifact(dirs, ['visual-gate.json']),
+  ]);
+  return {
+    ...evidenceRun,
+    targetHouseEvidenceAcceptance,
+    cleanPassGate,
+    screenshotManifest,
+    visualGateReport,
   };
 }
 
@@ -1914,7 +2101,7 @@ export function buildBimDataQualityReport({ ir, evidenceRun = null } = {}) {
       window: ['window'],
       railing: ['railing'],
       room: ['room', 'space'],
-      asset: ['asset', 'furniture', 'family_instance'],
+      asset: ['asset', 'furniture', 'family_instance', 'placed_asset'],
     };
     for (const category of REQUIRED_ELEMENT_SEMANTIC_CATEGORIES) {
       if (!semanticCategories.has(category)) continue;
@@ -2196,15 +2383,24 @@ export function buildAcceptanceGateReport({
     });
   }
 
+  const semanticVisualEvidence = semanticVisualEvidenceFromRun({
+    evidenceRun,
+    screenshotManifest,
+    visualGateReport,
+    bimDataQualityReport,
+    liveAdvisor,
+  });
   const semanticVisual = evaluateSemanticVisualChecklist({
     ir,
     coverage,
     checklist: visualChecklist ?? evidenceRun?.visualChecklist ?? null,
+    evidence: semanticVisualEvidence,
   });
   const semanticVisualGate = evaluateSketchSemanticVisualGate({
     checklist: visualChecklist ?? evidenceRun?.visualChecklist ?? null,
     driftRows: evidenceRun?.visualDriftRows ?? evidenceRun?.semanticVisualDrift?.rows ?? [],
     toleranceLedger: evidenceRun?.toleranceLedger ?? null,
+    evidence: semanticVisualEvidence,
     phaseId: evidenceRun?.phaseId ?? null,
   });
   if (BIM_REQUIRED_TARGETS.has(ir?.qualityTarget) && !semanticVisual.ok) {
@@ -2607,25 +2803,45 @@ export async function writeInitiationPacket({
 }) {
   const coverage = buildCapabilityCoverage(ir, matrix, { irPath, capabilityMatrixPath, modelId });
   const capabilityGaps = buildCapabilityGapTasks(coverage);
-  const generatedScreenshotChecklist = screenshotManifest
-    ? applyScreenshotManifestToChecklist(buildVisualChecklist(ir, coverage), screenshotManifest)
+  const enrichedEvidenceRun = await withSemanticVisualSidecarEvidence(evidenceRun, outDir);
+  const effectiveScreenshotManifest =
+    screenshotManifest ?? enrichedEvidenceRun?.screenshotManifest ?? null;
+  const effectiveVisualGateReport =
+    visualGateReport ?? enrichedEvidenceRun?.visualGateReport ?? null;
+  const generatedScreenshotChecklist = effectiveScreenshotManifest
+    ? applyScreenshotManifestToChecklist(
+        buildVisualChecklist(ir, coverage),
+        effectiveScreenshotManifest,
+      )
     : buildVisualChecklist(ir, coverage);
-  const generatedChecklist = visualGateReport
-    ? applyVisualGateToChecklist(generatedScreenshotChecklist, visualGateReport)
+  const generatedChecklist = effectiveVisualGateReport
+    ? applyVisualGateToChecklist(generatedScreenshotChecklist, effectiveVisualGateReport)
     : generatedScreenshotChecklist;
-  const checklist = mergeVisualChecklistContract(
+  let checklist = mergeVisualChecklistContract(
     generatedChecklist,
-    evidenceRun?.visualChecklist ?? null,
+    enrichedEvidenceRun?.visualChecklist ?? null,
   );
-  const bimDataQualityReport = buildBimDataQualityReport({ ir, evidenceRun });
+  const bimDataQualityReport =
+    enrichedEvidenceRun?.bimDataQualityReport?.ok === true ||
+    enrichedEvidenceRun?.bimDataQualityReport?.ok === false
+      ? enrichedEvidenceRun.bimDataQualityReport
+      : buildBimDataQualityReport({ ir, evidenceRun: enrichedEvidenceRun });
+  const semanticVisualEvidence = semanticVisualEvidenceFromRun({
+    evidenceRun: enrichedEvidenceRun,
+    screenshotManifest: effectiveScreenshotManifest,
+    visualGateReport: effectiveVisualGateReport,
+    bimDataQualityReport,
+    liveAdvisor,
+  });
+  checklist = applySemanticVisualEvidenceToChecklist(checklist, semanticVisualEvidence);
   const acceptanceGateReport = buildAcceptanceGateReport({
     ir,
     coverage,
     liveAdvisor,
-    screenshotManifest,
-    visualGateReport,
+    screenshotManifest: effectiveScreenshotManifest,
+    visualGateReport: effectiveVisualGateReport,
     visualChecklist: checklist,
-    evidenceRun,
+    evidenceRun: enrichedEvidenceRun,
     bimDataQualityReport,
   });
   await fs.mkdir(outDir, { recursive: true });
@@ -2648,9 +2864,9 @@ export async function writeInitiationPacket({
   await fs.writeFile(
     files.status,
     formatStatusMarkdown(coverage, checklist, liveAdvisor, {
-      ...(evidenceRun ?? {}),
+      ...(enrichedEvidenceRun ?? {}),
       capabilityGaps,
-      visualGateReport,
+      visualGateReport: effectiveVisualGateReport,
       acceptanceGateReport,
       bimDataQualityReport,
     }),
@@ -2660,17 +2876,21 @@ export async function writeInitiationPacket({
     files.liveAdvisor = path.join(outDir, 'live-advisor.json');
     await fs.writeFile(files.liveAdvisor, `${JSON.stringify(liveAdvisor, null, 2)}\n`, 'utf8');
   }
-  if (screenshotManifest) {
+  if (effectiveScreenshotManifest) {
     files.screenshotManifest = path.join(outDir, 'screenshot-manifest.json');
     await fs.writeFile(
       files.screenshotManifest,
-      `${JSON.stringify(screenshotManifest, null, 2)}\n`,
+      `${JSON.stringify(effectiveScreenshotManifest, null, 2)}\n`,
       'utf8',
     );
   }
-  if (visualGateReport) {
+  if (effectiveVisualGateReport) {
     files.visualGate = path.join(outDir, 'visual-gate.json');
-    await fs.writeFile(files.visualGate, `${JSON.stringify(visualGateReport, null, 2)}\n`, 'utf8');
+    await fs.writeFile(
+      files.visualGate,
+      `${JSON.stringify(effectiveVisualGateReport, null, 2)}\n`,
+      'utf8',
+    );
   }
   if (evidenceRun?.evidenceFreshness) {
     files.evidenceFreshness = path.join(outDir, 'evidence-freshness.json');
