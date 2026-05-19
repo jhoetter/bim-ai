@@ -1411,6 +1411,32 @@ Exit: either target-house live responsiveness passes with archived Playwright
 proof and final-package readiness advances, or the tracker clearly identifies
 the exact interaction/rendering/modeling classes that still need a final wave.
 
+### Wave 24 - Remaining Partial Row Closure
+
+Goal: close the remaining Partial rows that are no longer blocked by
+target-house live responsiveness. This wave is explicitly about reducing the
+tracker tail: renderer golden proof, authoring/content strictness, parity and
+transaction surface completion, broader benchmarks/background checks, and
+methodology/envelope closeout.
+
+Scope: dispatch five independent workers. Each worker must commit locally,
+avoid unrelated dirty files, update tracker/evidence rows conservatively, and
+run the tracker audit. Rows must not be marked `Done` from documentation alone;
+each closure needs executable proof or an attached generated evidence artifact.
+
+| Agent | Ownership | Primary items |
+| ----- | --------- | ------------- |
+| W24-A | Renderer golden proof and remaining 3D visual fidelity. | `BIR-C04`, `BIR-C08`, `BIR-J01`, `BIR-J02`, `BIR-J03`, `BIR-J04`, `BIR-J05`, `BIR-J06`, `BIR-J07`, `BIR-J08`, `BIR-J09`, `BIR-J10` |
+| W24-B | Authoring guards, family/content strictness, hosted support, and P0 fixture corpus. | `BIR-B01`, `BIR-B02`, `BIR-B03`, `BIR-B05`, `BIR-B06`, `BIR-C07`, `BIR-V01`, `BIR-V02`, `BIR-V03`, `BIR-V04`, `BIR-V05`, `BIR-O01` |
+| W24-C | Rule taxonomy/parity/severity, transaction safety, exchange readback, and IDS/API parity. | `BIR-A02`, `BIR-A04`, `BIR-A05`, `BIR-K02`, `BIR-K04`, `BIR-K07`, `BIR-Q01`, `BIR-Q02`, `BIR-Q03`, `BIR-Q05`, `BIR-Q06` |
+| W24-D | Performance expansion beyond target-house and background/deferred diagnostics. | `BIR-L01`, `BIR-L02`, `BIR-L04`, `BIR-L05`, `BIR-L06`, `BIR-O05` |
+| W24-E | Methodology traceability, stale evidence UI, wave closeout automation, and remaining envelope proof blockers. | `BIR-F03`, `BIR-F04`, `BIR-F06`, `BIR-M07`, `BIR-M08`, `BIR-M09`, `BIR-M10`, `BIR-N10`, `BIR-O04`, `BIR-T01`, `BIR-T04`, `BIR-T05`, `BIR-W04` |
+
+Exit: the tracker should be near final closeout. Any rows that remain Partial
+after Wave 24 must be either clearly final-wave implementation work or explicit
+product-scope decisions that cannot be closed without a larger geometry/export
+kernel.
+
 ## Non-Negotiable Acceptance Rules
 
 - Do not mark a seed `accepted` while any P0 integrity or renderer diagnostic is
