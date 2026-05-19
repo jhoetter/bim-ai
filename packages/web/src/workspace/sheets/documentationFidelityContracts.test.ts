@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 
 import {
   DOCUMENTATION_FIDELITY_CONTRACTS,
+  TWO_D_DOCUMENTATION_GOLDEN_FIXTURES,
   evaluateAnnotationDimensionIntegrityContract,
   evaluateDocumentationExportParityContract,
   evaluatePlanViewFidelityContract,
@@ -67,7 +68,7 @@ describe('DOCUMENTATION_FIDELITY_CONTRACTS', () => {
 });
 
 describe('evaluatePlanViewFidelityContract', () => {
-  it('passes model-backed plan primitives and accepts diagnostics for unsupported cuts', () => {
+  it('passes model-backed plan primitives and distinguishes unsupported cut diagnostics', () => {
     const result = evaluatePlanViewFidelityContract({
       elementsById: {
         'lvl-1': level,
@@ -82,11 +83,20 @@ describe('evaluatePlanViewFidelityContract', () => {
         } as Element,
       },
       primitiveCounts: { wall: 1, door: 1, level: 1, tag: 1 },
-      diagnostics: ['hidden_cut_graphics intentionally omitted for coarse projection'],
+      diagnostics: [
+        {
+          code: 'renderer.wall_cut.plan.hidden_cut.unsupported',
+          issueClass: 'renderer-unsupported',
+          rendererArea: 'plan',
+          feature: 'wall-cut',
+          elementIds: ['w-1', 'd-1'],
+          trackerItems: ['BIR-R01'],
+        },
+      ],
       requiredFeatures: ['wall', 'door', 'level', 'annotation', 'hidden_cut_graphics'],
     });
 
-    expect(result.status).toBe('pass');
+    expect(result.status).toBe('warn');
     expect(result.rows.map((row) => row.scopeId)).toEqual([
       'annotation',
       'door',
@@ -94,6 +104,18 @@ describe('evaluatePlanViewFidelityContract', () => {
       'level',
       'wall',
     ]);
+    expect(result.rows.find((row) => row.scopeId === 'hidden_cut_graphics')?.checks).toMatchObject({
+      diagnosticCause: 'renderer_unsupported',
+      diagnosticCodes: 'renderer.wall_cut.plan.hidden_cut.unsupported',
+    });
+    expect(result.issues[0]).toMatchObject({
+      id: 'plan_hidden_cut_graphics_covered_by_diagnostic',
+      cause: 'renderer_unsupported',
+      evidence: {
+        diagnosticCodes: ['renderer.wall_cut.plan.hidden_cut.unsupported'],
+        elementIds: ['d-1', 'w-1'],
+      },
+    });
   });
 
   it('fails when a covered plan feature has neither primitive nor diagnostic evidence', () => {
@@ -107,6 +129,37 @@ describe('evaluatePlanViewFidelityContract', () => {
 
     expect(result.status).toBe('fail');
     expect(result.issues[0].id).toBe('plan_door_missing_render_or_diagnostic');
+    expect(result.issues[0].cause).toBe('evidence_missing');
+  });
+
+  it('does not count model invalidity as renderer support evidence', () => {
+    const result = evaluatePlanViewFidelityContract({
+      elementsById: {
+        'door-1': {
+          kind: 'door',
+          id: 'door-1',
+          wallId: 'missing-wall',
+          t: 0.5,
+        } as unknown as Element,
+      },
+      primitiveCounts: {},
+      diagnostics: [
+        {
+          code: 'renderer.wall_cut.wall.host.not.found',
+          issueClass: 'model-invalid',
+          rendererArea: 'plan',
+          feature: 'wall-cut',
+          elementIds: ['door-1', 'missing-wall'],
+        },
+      ],
+      requiredFeatures: ['door'],
+    });
+
+    expect(result.status).toBe('fail');
+    expect(result.issues[0]).toMatchObject({
+      id: 'plan_door_blocked_by_model_invalidity',
+      cause: 'model_invalidity',
+    });
   });
 });
 
@@ -160,12 +213,32 @@ describe('evaluateSectionElevationFidelityContract', () => {
   it('reports the exact failed section/elevation check', () => {
     const result = evaluateSectionElevationFidelityContract({
       elementsById: { 'sec-a': sectionView, 'w-1': wall },
-      evidenceRows: [{ viewId: 'sec-a', viewKind: 'section', viewDepthMm: 1000 }],
+      evidenceRows: [
+        {
+          viewId: 'sec-a',
+          viewKind: 'section',
+          viewDepthMm: 1000,
+          diagnostics: [
+            {
+              code: 'renderer.section_projection.material.model_invalid',
+              issueClass: 'model-invalid',
+              rendererArea: 'section',
+              feature: 'section-projection',
+              elementIds: ['w-1'],
+            },
+          ],
+        },
+      ],
     });
 
     expect(result.status).toBe('fail');
     expect(result.issues.map((issue) => issue.id)).toContain('section_elevation_cutPlanePresent');
-    expect(result.issues.map((issue) => issue.id)).toContain('section_elevation_materialsHandled');
+    expect(result.issues.map((issue) => issue.id)).toContain(
+      'section_elevation_materialsHandled_model_invalidity',
+    );
+    expect(result.issues.find((issue) => issue.id.includes('materialsHandled'))?.cause).toBe(
+      'model_invalidity',
+    );
   });
 });
 
@@ -339,11 +412,26 @@ describe('evaluateDocumentationExportParityContract', () => {
           unsupportedFeatures: ['gradient-fill'],
           listedUnsupportedFeatures: ['gradient-fill'],
         },
+        {
+          scopeId: 'sheet-a101:png',
+          exportType: 'sheet_png',
+          savedViewDigest: 'a',
+          exportDigest: 'c',
+          droppedVisualGeometry: ['roof-cut-outline'],
+          listedDroppedVisualGeometry: ['roof-cut-outline'],
+        },
       ],
     });
 
     expect(result.status).toBe('warn');
-    expect(result.issues[0].id).toBe('documentation_export_digest_mismatch_supported_by_evidence');
+    expect(result.issues.map((issue) => issue.id)).toEqual([
+      'documentation_export_digest_mismatch_supported_by_evidence',
+      'documentation_export_digest_mismatch_supported_by_evidence',
+    ]);
+    expect(result.issues.map((issue) => issue.cause)).toEqual([
+      'export_dropped_visual_geometry',
+      'export_unsupported',
+    ]);
   });
 
   it('fails digest divergence without unsupported-feature evidence', () => {
@@ -361,6 +449,33 @@ describe('evaluateDocumentationExportParityContract', () => {
     expect(result.status).toBe('fail');
     expect(result.issues[0].id).toBe('documentation_export_digest_mismatch');
   });
+
+  it('fails unlisted dropped geometry and separates model-invalid exports', () => {
+    const result = evaluateDocumentationExportParityContract({
+      rows: [
+        {
+          scopeId: 'sheet-a101:pdf',
+          exportType: 'pdf',
+          savedViewDigest: 'a',
+          exportDigest: 'b',
+          droppedVisualGeometry: ['dimension-witness-line'],
+        },
+        {
+          scopeId: 'sheet-a101:bundle',
+          exportType: 'render_bundle',
+          savedViewDigest: 'a',
+          exportDigest: 'b',
+          modelInvalidFeatures: ['orphan-tag'],
+        },
+      ],
+    });
+
+    expect(result.status).toBe('fail');
+    expect(result.issues.map((issue) => [issue.id, issue.cause])).toEqual([
+      ['documentation_export_blocked_by_model_invalidity', 'model_invalidity'],
+      ['documentation_export_dropped_geometry_unlisted', 'export_dropped_visual_geometry'],
+    ]);
+  });
 });
 
 describe('evaluateTwoDGoldenFixtureReadinessContract', () => {
@@ -374,11 +489,40 @@ describe('evaluateTwoDGoldenFixtureReadinessContract', () => {
       'lens_modes',
     ] as const;
     const result = evaluateTwoDGoldenFixtureReadinessContract({
-      fixtures: [
-        { id: 'golden-plan', surface: 'plan', features: [...allFeatures] },
-        { id: 'golden-section', surface: 'section', features: [...allFeatures] },
-        { id: 'golden-elevation', surface: 'elevation', features: [...allFeatures] },
-        { id: 'golden-sheet', surface: 'sheet', features: [...allFeatures] },
+      fixtures: (
+        [
+          { id: 'golden-plan', surface: 'plan', features: [...allFeatures] },
+          { id: 'golden-section', surface: 'section', features: [...allFeatures] },
+          { id: 'golden-elevation', surface: 'elevation', features: [...allFeatures] },
+          { id: 'golden-sheet', surface: 'sheet', features: [...allFeatures] },
+        ] as const
+      ).map((fixture) => ({
+        ...fixture,
+        features: [...fixture.features],
+        evidencePath: `fixtures/${fixture.id}.png`,
+        diagnosticEvidenceKey: 'twoDGoldenFixtureReadiness_v1',
+      })),
+    });
+
+    expect(result.status).toBe('pass');
+    expect(result.rows.map((row) => row.scopeId)).toEqual([
+      'elevation',
+      'plan',
+      'section',
+      'sheet',
+    ]);
+  });
+
+  it('declares a focused reusable 2D fixture corpus for documentation surfaces', () => {
+    const result = evaluateTwoDGoldenFixtureReadinessContract({
+      fixtures: TWO_D_DOCUMENTATION_GOLDEN_FIXTURES,
+      requiredFeatures: [
+        'hosted_openings',
+        'roof_cuts',
+        'stairs',
+        'rooms',
+        'annotations',
+        'lens_modes',
       ],
     });
 
@@ -399,6 +543,7 @@ describe('evaluateTwoDGoldenFixtureReadinessContract', () => {
     expect(result.status).toBe('fail');
     expect(result.issues.map((issue) => issue.id)).toEqual([
       'golden_fixture_elevation_missing_features',
+      'golden_fixture_plan_missing_evidence',
       'golden_fixture_plan_missing_features',
       'golden_fixture_section_missing_features',
       'golden_fixture_sheet_missing_features',

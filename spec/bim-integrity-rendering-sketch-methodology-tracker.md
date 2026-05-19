@@ -349,6 +349,21 @@ This tracker is complete only when all of these are true:
 | `BIR-R05` | P1       | Partial | Add documentation export parity.         | PDF/render bundles/sheets match the corresponding saved views, with unsupported features listed in export evidence.                                          |
 | `BIR-R06` | P1       | Partial | Add 2D golden fixtures.                  | Plan, section, elevation, and sheet goldens cover hosted openings, roof cuts, stairs, rooms, annotations, and lens modes.                                    |
 
+W15-C evidence, 2026-05-19: `packages/web/src/workspace/sheets/documentationFidelityContracts.ts`
+now accepts structured machine-readable diagnostics across `BIR-R01` through
+`BIR-R06`, preserving legacy string diagnostics while separating
+`model_invalidity` from renderer unsupported geometry, renderer dropped visual
+geometry, export unsupported features, export dropped visual geometry, and
+missing evidence. Focused coverage in
+`packages/web/src/workspace/sheets/documentationFidelityContracts.test.ts`
+exercises hosted-opening plan diagnostics, section/elevation model-invalid
+evidence, sheet viewport metadata/evidence links, stale annotation/dimension
+references, export digest parity with unsupported vs dropped-geometry causes,
+and reusable 2D golden fixture readiness for plan/section/elevation/sheet
+surfaces. Status remains `Partial`: these contracts are deterministic and
+barrel-exported for agents, but full product UI/CLI/API parity wiring and
+fresh end-to-end screenshot regeneration are still outside this worker slice.
+
 ### S. Site, Georeferencing, Links, Imports, And Roundtrip
 
 | ID        | Priority | Status  | Item                                           | Acceptance                                                                                                                                                                                                                                                                                                                                                                                                                      |

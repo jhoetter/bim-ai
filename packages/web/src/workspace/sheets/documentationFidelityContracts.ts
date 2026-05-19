@@ -12,12 +12,36 @@ export type DocumentationFidelityRequirementId =
 
 export type DocumentationFidelityStatus = 'pass' | 'warn' | 'fail';
 export type DocumentationFidelitySeverity = 'warning' | 'error';
+export type DocumentationFidelityDiagnosticCause =
+  | 'model_invalidity'
+  | 'renderer_unsupported'
+  | 'renderer_dropped_visual_geometry'
+  | 'export_unsupported'
+  | 'export_dropped_visual_geometry'
+  | 'evidence_missing';
+
+export type DocumentationFidelityDiagnosticInput =
+  | string
+  | {
+      code?: string;
+      message?: string;
+      cause?: DocumentationFidelityDiagnosticCause;
+      issueClass?: string;
+      rendererArea?: string;
+      feature?: string;
+      elementIds?: string[];
+      viewId?: string | null;
+      evidence?: Record<string, unknown>;
+      trackerItems?: string[];
+    };
 
 export type DocumentationFidelityIssue = {
   id: string;
   requirementId: DocumentationFidelityRequirementId;
   severity: DocumentationFidelitySeverity;
   elementId?: string;
+  cause?: DocumentationFidelityDiagnosticCause;
+  evidence?: Record<string, unknown>;
   message: string;
 };
 
@@ -80,7 +104,7 @@ export type PlanFidelityFeature =
 export type PlanViewFidelityInput = {
   elementsById: Record<string, Element>;
   primitiveCounts?: Record<string, number>;
-  diagnostics?: string[];
+  diagnostics?: DocumentationFidelityDiagnosticInput[];
   requiredFeatures?: PlanFidelityFeature[];
 };
 
@@ -133,26 +157,63 @@ export function evaluatePlanViewFidelityContract(
   for (const feature of required) {
     const modelCount = countKinds(input.elementsById, PLAN_FEATURE_KIND_MAP[feature]);
     const renderedCount = planPrimitiveCount(input.primitiveCounts ?? {}, feature);
-    const hasDiagnostic = diagnosticsCover(diagnostics, feature);
+    const matchingDiagnostics = diagnosticsForToken(diagnostics, feature);
+    const hasDiagnostic = matchingDiagnostics.length > 0;
     const applicable = modelCount > 0 || feature === 'hidden_cut_graphics';
-    const satisfied = !applicable || renderedCount > 0 || hasDiagnostic;
+    const cause = strongestDiagnosticCause(matchingDiagnostics);
+    const renderedOrDiagnosed =
+      renderedCount > 0 || (hasDiagnostic && cause !== 'model_invalidity');
+    const satisfied = !applicable || renderedOrDiagnosed;
+    const status: DocumentationFidelityStatus =
+      !applicable || renderedCount > 0 ? 'pass' : satisfied ? 'warn' : 'fail';
     rows.push({
       requirementId: 'BIR-R01',
       scopeId: feature,
-      status: satisfied ? 'pass' : 'fail',
+      status,
       checks: {
         modelCount,
         renderedCount,
         diagnosticPresent: hasDiagnostic,
+        diagnosticCause: cause ?? null,
+        diagnosticCodes: diagnosticCodes(matchingDiagnostics).join(','),
       },
     });
-    if (!satisfied) {
+    if (!applicable || renderedCount > 0) {
+      continue;
+    }
+    if (hasDiagnostic && cause !== 'model_invalidity') {
+      issues.push(
+        issue(
+          'BIR-R01',
+          'warning',
+          `plan_${feature}_covered_by_diagnostic`,
+          `Plan feature "${feature}" is not rendered but has explicit renderer/export diagnostic evidence.`,
+          undefined,
+          cause,
+          diagnosticEvidence(matchingDiagnostics),
+        ),
+      );
+    } else if (cause === 'model_invalidity') {
+      issues.push(
+        issue(
+          'BIR-R01',
+          'error',
+          `plan_${feature}_blocked_by_model_invalidity`,
+          `Plan feature "${feature}" cannot be evaluated as renderer fidelity because model invalidity was reported.`,
+          undefined,
+          cause,
+          diagnosticEvidence(matchingDiagnostics),
+        ),
+      );
+    } else {
       issues.push(
         issue(
           'BIR-R01',
           'error',
           `plan_${feature}_missing_render_or_diagnostic`,
           `Plan feature "${feature}" has model coverage but no rendered primitive or diagnostic.`,
+          undefined,
+          'evidence_missing',
         ),
       );
     }
@@ -173,7 +234,7 @@ export type SectionElevationEvidenceRow = {
   roofProjectionCount?: number;
   floorProjectionCount?: number;
   materialHatchCount?: number;
-  diagnostics?: string[];
+  diagnostics?: DocumentationFidelityDiagnosticInput[];
 };
 
 export type SectionElevationFidelityInput = {
@@ -236,17 +297,32 @@ export function evaluateSectionElevationFidelityContract(
       requirementId: 'BIR-R02',
       scopeId: view.id,
       status: failed ? 'fail' : 'pass',
-      checks,
+      checks: {
+        ...checks,
+        diagnosticCauses: diagnosticCauses(diagnostics).join(','),
+        diagnosticCodes: diagnosticCodes(diagnostics).join(','),
+      },
     });
     for (const [check, ok] of Object.entries(checks)) {
       if (ok !== false) continue;
+      const relatedDiagnostics = diagnosticsForToken(
+        diagnostics,
+        sectionElevationCheckToken(check),
+      );
+      const cause = strongestDiagnosticCause(relatedDiagnostics);
       issues.push(
         issue(
           'BIR-R02',
           'error',
-          `section_elevation_${check}`,
-          `Section/elevation view "${view.id}" failed ${check}.`,
+          cause === 'model_invalidity'
+            ? `section_elevation_${check}_model_invalidity`
+            : `section_elevation_${check}`,
+          cause === 'model_invalidity'
+            ? `Section/elevation view "${view.id}" failed ${check} because related model invalidity was reported.`
+            : `Section/elevation view "${view.id}" failed ${check}.`,
           view.id,
+          cause ?? 'evidence_missing',
+          diagnosticEvidence(relatedDiagnostics),
         ),
       );
     }
@@ -278,6 +354,7 @@ export type SheetViewportFidelityInput = {
   elementsById: Record<string, Element>;
   sheetId: string;
   evidenceHints?: SheetViewportEvidenceHint[];
+  diagnostics?: DocumentationFidelityDiagnosticInput[];
 };
 
 export function evaluateSheetViewportFidelityContract(
@@ -285,10 +362,18 @@ export function evaluateSheetViewportFidelityContract(
 ): DocumentationFidelityContractResult {
   const rows: DocumentationFidelityRow[] = [];
   const issues: DocumentationFidelityIssue[] = [];
+  const diagnostics = normalizedDiagnostics(input.diagnostics);
   const sheet = input.elementsById[input.sheetId];
   if (!sheet || sheet.kind !== 'sheet') {
     return result('BIR-R03', rows, [
-      issue('BIR-R03', 'error', 'sheet_missing', `Sheet "${input.sheetId}" is missing.`),
+      issue(
+        'BIR-R03',
+        'error',
+        'sheet_missing',
+        `Sheet "${input.sheetId}" is missing.`,
+        input.sheetId,
+        'model_invalidity',
+      ),
     ]);
   }
 
@@ -348,10 +433,19 @@ export function evaluateSheetViewportFidelityContract(
       checks: {
         ...checks,
         normalizedRef: parsed?.normalizedRef ?? '',
+        diagnosticCauses: diagnosticCauses(diagnosticsForToken(diagnostics, viewportId)).join(','),
+        diagnosticCodes: diagnosticCodes(diagnosticsForToken(diagnostics, viewportId)).join(','),
       },
     });
     for (const [check, ok] of Object.entries(checks)) {
       if (ok !== false) continue;
+      const relatedDiagnostics = [
+        ...diagnosticsForToken(diagnostics, viewportId),
+        ...diagnosticsForToken(diagnostics, 'sheet-viewport'),
+      ];
+      const cause =
+        strongestDiagnosticCause(relatedDiagnostics) ??
+        (check === 'evidenceLinked' ? 'evidence_missing' : 'model_invalidity');
       issues.push(
         issue(
           'BIR-R03',
@@ -359,6 +453,8 @@ export function evaluateSheetViewportFidelityContract(
           `sheet_viewport_${check}`,
           `Sheet viewport "${viewportId}" failed ${check}.`,
           viewportId,
+          cause,
+          diagnosticEvidence(relatedDiagnostics),
         ),
       );
     }
@@ -366,7 +462,14 @@ export function evaluateSheetViewportFidelityContract(
 
   if (!viewports.length) {
     issues.push(
-      issue('BIR-R03', 'warning', 'sheet_viewport_none', `Sheet "${sheet.id}" has no viewports.`),
+      issue(
+        'BIR-R03',
+        'warning',
+        'sheet_viewport_none',
+        `Sheet "${sheet.id}" has no viewports.`,
+        sheet.id,
+        'evidence_missing',
+      ),
     );
   }
 
@@ -425,6 +528,13 @@ export function evaluateAnnotationDimensionIntegrityContract(
           `annotation_dimension_${check}`,
           `Annotation/dimension "${el.id}" failed ${check}.`,
           el.id,
+          'model_invalidity',
+          {
+            kind: el.kind,
+            referencedElementIds: refIds,
+            hostElementId: hostElementId || null,
+            hostViewId: viewId || null,
+          },
         ),
       );
     }
@@ -440,6 +550,9 @@ export type DocumentationExportParityRow = {
   exportDigest: string;
   unsupportedFeatures?: string[];
   listedUnsupportedFeatures?: string[];
+  droppedVisualGeometry?: string[];
+  listedDroppedVisualGeometry?: string[];
+  modelInvalidFeatures?: string[];
 };
 
 export type DocumentationExportParityInput = {
@@ -454,21 +567,33 @@ export function evaluateDocumentationExportParityContract(
 
   for (const row of [...input.rows].sort((a, b) => a.scopeId.localeCompare(b.scopeId))) {
     const unsupported = [...(row.unsupportedFeatures ?? [])].sort();
+    const dropped = [...(row.droppedVisualGeometry ?? [])].sort();
+    const modelInvalid = [...(row.modelInvalidFeatures ?? [])].sort();
     const listed = new Set(row.listedUnsupportedFeatures ?? []);
+    const listedDropped = new Set(row.listedDroppedVisualGeometry ?? []);
     const unlistedUnsupported = unsupported.filter((feature) => !listed.has(feature));
+    const unlistedDropped = dropped.filter((feature) => !listedDropped.has(feature));
     const digestsMatch = row.savedViewDigest === row.exportDigest;
     const unsupportedListed = unlistedUnsupported.length === 0;
+    const droppedListed = unlistedDropped.length === 0;
+    const explicitDivergenceEvidence =
+      unsupported.length > 0 || dropped.length > 0 || modelInvalid.length > 0;
     const checks = {
       digestsMatch,
       unsupportedFeaturesListed: unsupportedListed,
+      droppedVisualGeometryListed: droppedListed,
       unsupportedFeatureCount: unsupported.length,
+      droppedVisualGeometryCount: dropped.length,
+      modelInvalidFeatureCount: modelInvalid.length,
       exportType: row.exportType,
     };
-    const status: DocumentationFidelityStatus = digestsMatch
-      ? 'pass'
-      : unsupported.length > 0 && unsupportedListed
-        ? 'warn'
-        : 'fail';
+    const status: DocumentationFidelityStatus = modelInvalid.length
+      ? 'fail'
+      : digestsMatch
+        ? 'pass'
+        : explicitDivergenceEvidence && unsupportedListed && droppedListed
+          ? 'warn'
+          : 'fail';
     rows.push({
       requirementId: 'BIR-R05',
       scopeId: row.scopeId,
@@ -483,10 +608,38 @@ export function evaluateDocumentationExportParityContract(
           'documentation_export_unsupported_unlisted',
           `Export "${row.scopeId}" has unsupported features not listed in evidence: ${unlistedUnsupported.join(', ')}.`,
           row.scopeId,
+          'export_unsupported',
+          { unlistedUnsupported },
         ),
       );
     }
-    if (!digestsMatch && unsupported.length === 0) {
+    if (!droppedListed) {
+      issues.push(
+        issue(
+          'BIR-R05',
+          'error',
+          'documentation_export_dropped_geometry_unlisted',
+          `Export "${row.scopeId}" dropped visual geometry not listed in evidence: ${unlistedDropped.join(', ')}.`,
+          row.scopeId,
+          'export_dropped_visual_geometry',
+          { unlistedDropped },
+        ),
+      );
+    }
+    if (modelInvalid.length) {
+      issues.push(
+        issue(
+          'BIR-R05',
+          'error',
+          'documentation_export_blocked_by_model_invalidity',
+          `Export "${row.scopeId}" includes model-invalid features: ${modelInvalid.join(', ')}.`,
+          row.scopeId,
+          'model_invalidity',
+          { modelInvalidFeatures: modelInvalid },
+        ),
+      );
+    }
+    if (!digestsMatch && !explicitDivergenceEvidence) {
       issues.push(
         issue(
           'BIR-R05',
@@ -494,16 +647,25 @@ export function evaluateDocumentationExportParityContract(
           'documentation_export_digest_mismatch',
           `Export "${row.scopeId}" diverges from the saved view without an unsupported-feature explanation.`,
           row.scopeId,
+          'evidence_missing',
         ),
       );
-    } else if (!digestsMatch && unsupported.length > 0 && unsupportedListed) {
+    } else if (
+      !digestsMatch &&
+      explicitDivergenceEvidence &&
+      unsupportedListed &&
+      droppedListed &&
+      !modelInvalid.length
+    ) {
       issues.push(
         issue(
           'BIR-R05',
           'warning',
           'documentation_export_digest_mismatch_supported_by_evidence',
-          `Export "${row.scopeId}" diverges only through listed unsupported features.`,
+          `Export "${row.scopeId}" diverges only through listed unsupported or dropped visual geometry evidence.`,
           row.scopeId,
+          dropped.length > 0 ? 'export_dropped_visual_geometry' : 'export_unsupported',
+          { unsupportedFeatures: unsupported, droppedVisualGeometry: dropped },
         ),
       );
     }
@@ -526,12 +688,14 @@ export type TwoDGoldenFixture = {
   surface: TwoDGoldenSurface;
   features: TwoDGoldenFeature[];
   evidencePath?: string;
+  diagnosticEvidenceKey?: string;
 };
 
 export type TwoDGoldenFixtureReadinessInput = {
   fixtures: TwoDGoldenFixture[];
   requiredSurfaces?: TwoDGoldenSurface[];
   requiredFeatures?: TwoDGoldenFeature[];
+  requireEvidencePaths?: boolean;
 };
 
 const DEFAULT_GOLDEN_SURFACES: TwoDGoldenSurface[] = ['plan', 'section', 'elevation', 'sheet'];
@@ -544,6 +708,37 @@ const DEFAULT_GOLDEN_FEATURES: TwoDGoldenFeature[] = [
   'lens_modes',
 ];
 
+export const TWO_D_DOCUMENTATION_GOLDEN_FIXTURES: TwoDGoldenFixture[] = [
+  {
+    id: 'e2e-plan-hosted-openings-rooms',
+    surface: 'plan',
+    features: ['hosted_openings', 'roof_cuts', 'stairs', 'rooms', 'annotations', 'lens_modes'],
+    evidencePath: 'packages/web/e2e/evidence-baselines.spec.ts#plan-eg-openings',
+    diagnosticEvidenceKey: 'planProjectionPrimitives_v1',
+  },
+  {
+    id: 'e2e-section-stairs-roof-cuts',
+    surface: 'section',
+    features: ['hosted_openings', 'roof_cuts', 'stairs', 'rooms', 'annotations', 'lens_modes'],
+    evidencePath: 'packages/web/e2e/evidence-baselines.spec.ts#sectionProjectionWire_v1',
+    diagnosticEvidenceKey: 'sectionElevationFidelityEvidence_v1',
+  },
+  {
+    id: 'unit-elevation-projection-openings',
+    surface: 'elevation',
+    features: ['hosted_openings', 'roof_cuts', 'stairs', 'rooms', 'annotations', 'lens_modes'],
+    evidencePath: 'packages/web/src/plan/elevationProjection.test.ts',
+    diagnosticEvidenceKey: 'sectionElevationFidelityEvidence_v1',
+  },
+  {
+    id: 'e2e-sheet-documentation-viewport',
+    surface: 'sheet',
+    features: ['hosted_openings', 'roof_cuts', 'stairs', 'rooms', 'annotations', 'lens_modes'],
+    evidencePath: 'packages/web/e2e/evidence-baselines.spec.ts#coordination-sheet',
+    diagnosticEvidenceKey: 'sheetViewportDocumentationFidelity_v1',
+  },
+];
+
 export function evaluateTwoDGoldenFixtureReadinessContract(
   input: TwoDGoldenFixtureReadinessInput,
 ): DocumentationFidelityContractResult {
@@ -551,24 +746,34 @@ export function evaluateTwoDGoldenFixtureReadinessContract(
   const issues: DocumentationFidelityIssue[] = [];
   const requiredSurfaces = input.requiredSurfaces ?? DEFAULT_GOLDEN_SURFACES;
   const requiredFeatures = input.requiredFeatures ?? DEFAULT_GOLDEN_FEATURES;
+  const requireEvidencePaths = input.requireEvidencePaths ?? true;
   const featuresBySurface = new Map<TwoDGoldenSurface, Set<TwoDGoldenFeature>>();
+  const fixturesBySurface = new Map<TwoDGoldenSurface, TwoDGoldenFixture[]>();
   for (const fixture of input.fixtures) {
     const set = featuresBySurface.get(fixture.surface) ?? new Set<TwoDGoldenFeature>();
     fixture.features.forEach((feature) => set.add(feature));
     featuresBySurface.set(fixture.surface, set);
+    const fixtures = fixturesBySurface.get(fixture.surface) ?? [];
+    fixtures.push(fixture);
+    fixturesBySurface.set(fixture.surface, fixtures);
   }
 
   for (const surface of requiredSurfaces) {
     const covered = featuresBySurface.get(surface) ?? new Set<TwoDGoldenFeature>();
+    const fixtures = fixturesBySurface.get(surface) ?? [];
     const missing = requiredFeatures.filter((feature) => !covered.has(feature));
+    const missingEvidence = requireEvidencePaths
+      ? fixtures.filter((fixture) => !String(fixture.evidencePath ?? '').trim())
+      : [];
     rows.push({
       requirementId: 'BIR-R06',
       scopeId: surface,
-      status: missing.length ? 'fail' : 'pass',
+      status: missing.length || missingEvidence.length ? 'fail' : 'pass',
       checks: {
-        fixtureCount: input.fixtures.filter((fixture) => fixture.surface === surface).length,
+        fixtureCount: fixtures.length,
         coveredFeatureCount: covered.size,
         missingFeatures: missing.join(','),
+        missingEvidenceFixtureIds: missingEvidence.map((fixture) => fixture.id).join(','),
       },
     });
     if (missing.length) {
@@ -579,6 +784,21 @@ export function evaluateTwoDGoldenFixtureReadinessContract(
           `golden_fixture_${surface}_missing_features`,
           `2D golden surface "${surface}" is missing features: ${missing.join(', ')}.`,
           surface,
+          'evidence_missing',
+          { missingFeatures: missing },
+        ),
+      );
+    }
+    if (missingEvidence.length) {
+      issues.push(
+        issue(
+          'BIR-R06',
+          'error',
+          `golden_fixture_${surface}_missing_evidence`,
+          `2D golden surface "${surface}" has fixtures without evidence paths: ${missingEvidence.map((fixture) => fixture.id).join(', ')}.`,
+          surface,
+          'evidence_missing',
+          { fixtureIds: missingEvidence.map((fixture) => fixture.id) },
         ),
       );
     }
@@ -617,8 +837,18 @@ function issue(
   id: string,
   message: string,
   elementId?: string,
+  cause?: DocumentationFidelityDiagnosticCause,
+  evidence?: Record<string, unknown>,
 ): DocumentationFidelityIssue {
-  return { requirementId, severity, id, message, ...(elementId ? { elementId } : {}) };
+  return {
+    requirementId,
+    severity,
+    id,
+    message,
+    ...(elementId ? { elementId } : {}),
+    ...(cause ? { cause } : {}),
+    ...(evidence && Object.keys(evidence).length ? { evidence } : {}),
+  };
 }
 
 function severityRank(severity: DocumentationFidelitySeverity): number {
@@ -650,13 +880,147 @@ function planPrimitiveCount(counts: Record<string, number>, feature: PlanFidelit
   return total;
 }
 
-function normalizedDiagnostics(diagnostics: string[] | undefined): string[] {
-  return (diagnostics ?? []).map((item) => item.trim().toLowerCase()).filter(Boolean);
+type NormalizedDocumentationDiagnostic = {
+  text: string;
+  code: string;
+  feature: string;
+  cause?: DocumentationFidelityDiagnosticCause;
+  elementIds: string[];
+  viewId?: string;
+  evidence?: Record<string, unknown>;
+  trackerItems: string[];
+};
+
+function normalizedDiagnostics(
+  diagnostics: DocumentationFidelityDiagnosticInput[] | undefined,
+): NormalizedDocumentationDiagnostic[] {
+  return (diagnostics ?? [])
+    .map((item): NormalizedDocumentationDiagnostic | null => {
+      if (typeof item === 'string') {
+        const text = item.trim().toLowerCase();
+        return text ? { text, code: text, feature: text, elementIds: [], trackerItems: [] } : null;
+      }
+      const cause = item.cause ?? causeFromIssueClass(item.issueClass, item.rendererArea);
+      const code = String(item.code ?? '').trim();
+      const feature = String(item.feature ?? '').trim();
+      const message = String(item.message ?? '').trim();
+      const rendererArea = String(item.rendererArea ?? '').trim();
+      const text = [code, feature, message, rendererArea, ...(item.trackerItems ?? [])]
+        .join(' ')
+        .trim()
+        .toLowerCase();
+      if (!text) return null;
+      return {
+        text,
+        code: code || text,
+        feature,
+        cause,
+        elementIds: [...new Set(item.elementIds ?? [])].sort(),
+        viewId: item.viewId ?? undefined,
+        evidence: item.evidence,
+        trackerItems: [...new Set(item.trackerItems ?? [])].sort(),
+      };
+    })
+    .filter((item): item is NormalizedDocumentationDiagnostic => Boolean(item));
 }
 
-function diagnosticsCover(diagnostics: string[], token: string): boolean {
+function diagnosticsCover(
+  diagnostics: NormalizedDocumentationDiagnostic[],
+  token: string,
+): boolean {
   const needle = token.toLowerCase();
-  return diagnostics.some((diag) => diag.includes(needle));
+  return diagnostics.some(
+    (diag) => diag.text.includes(needle) && diag.cause !== 'model_invalidity',
+  );
+}
+
+function diagnosticsForToken(
+  diagnostics: NormalizedDocumentationDiagnostic[],
+  token: string,
+): NormalizedDocumentationDiagnostic[] {
+  const needles = diagnosticTokenAliases(token);
+  return diagnostics.filter((diag) => needles.some((needle) => diag.text.includes(needle)));
+}
+
+function diagnosticTokenAliases(token: string): string[] {
+  const base = token.toLowerCase().replace(/_/g, '-');
+  const aliases = new Set([base, base.replace(/-/g, '_')]);
+  if (token === 'door' || token === 'window' || token === 'hidden_cut_graphics') {
+    aliases.add('wall-cut');
+    aliases.add('hosted-opening');
+  }
+  if (token === 'slab_opening') aliases.add('slab-opening');
+  if (token === 'annotation') aliases.add('tag');
+  if (token === 'sheet-viewport') aliases.add('sheet_viewport');
+  return [...aliases];
+}
+
+function causeFromIssueClass(
+  issueClass: string | undefined,
+  rendererArea: string | undefined,
+): DocumentationFidelityDiagnosticCause | undefined {
+  if (issueClass === 'model-invalid') return 'model_invalidity';
+  if (issueClass === 'renderer-unsupported') {
+    return rendererArea === 'export' ? 'export_unsupported' : 'renderer_unsupported';
+  }
+  if (issueClass === 'renderer-failed' || issueClass === 'renderer-degraded') {
+    return rendererArea === 'export'
+      ? 'export_dropped_visual_geometry'
+      : 'renderer_dropped_visual_geometry';
+  }
+  return undefined;
+}
+
+function strongestDiagnosticCause(
+  diagnostics: NormalizedDocumentationDiagnostic[],
+): DocumentationFidelityDiagnosticCause | undefined {
+  const causes = new Set(diagnostics.map((diag) => diag.cause).filter(Boolean));
+  if (causes.has('model_invalidity')) return 'model_invalidity';
+  if (causes.has('renderer_dropped_visual_geometry')) return 'renderer_dropped_visual_geometry';
+  if (causes.has('export_dropped_visual_geometry')) return 'export_dropped_visual_geometry';
+  if (causes.has('renderer_unsupported')) return 'renderer_unsupported';
+  if (causes.has('export_unsupported')) return 'export_unsupported';
+  return diagnostics.length ? 'renderer_unsupported' : undefined;
+}
+
+function diagnosticCodes(diagnostics: NormalizedDocumentationDiagnostic[]): string[] {
+  return [...new Set(diagnostics.map((diag) => diag.code).filter(Boolean))].sort();
+}
+
+function diagnosticCauses(diagnostics: NormalizedDocumentationDiagnostic[]): string[] {
+  return [
+    ...new Set(
+      diagnostics
+        .map((diag) => diag.cause)
+        .filter((cause): cause is DocumentationFidelityDiagnosticCause => Boolean(cause)),
+    ),
+  ].sort();
+}
+
+function diagnosticEvidence(
+  diagnostics: NormalizedDocumentationDiagnostic[],
+): Record<string, unknown> {
+  if (!diagnostics.length) return {};
+  return {
+    diagnosticCodes: diagnosticCodes(diagnostics),
+    diagnosticCauses: diagnosticCauses(diagnostics),
+    elementIds: [...new Set(diagnostics.flatMap((diag) => diag.elementIds))].sort(),
+    viewIds: [...new Set(diagnostics.map((diag) => diag.viewId).filter(Boolean))].sort(),
+    trackerItems: [...new Set(diagnostics.flatMap((diag) => diag.trackerItems))].sort(),
+  };
+}
+
+function sectionElevationCheckToken(check: string): string {
+  if (check.includes('opening')) return 'opening';
+  if (check.includes('stair')) return 'stair';
+  if (check.includes('roof')) return 'roof';
+  if (check.includes('floor')) return 'floor';
+  if (check.includes('material')) return 'material';
+  if (check.includes('hidden')) return 'hidden';
+  if (check.includes('cut')) return 'cut';
+  if (check.includes('depth')) return 'depth';
+  if (check.includes('sectionBox')) return 'section';
+  return check;
 }
 
 function positiveNumber(value: unknown): boolean {
