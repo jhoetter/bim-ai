@@ -35,6 +35,156 @@ def _base_elements() -> dict[str, dict]:
     }
 
 
+def _clean_site_exchange_elements() -> dict[str, dict]:
+    return {
+        **_base_elements(),
+        "site": {
+            "kind": "site",
+            "id": "site",
+            "boundaryMm": [
+                {"xMm": -10000, "yMm": -10000},
+                {"xMm": 10000, "yMm": -10000},
+                {"xMm": 10000, "yMm": 10000},
+                {"xMm": -10000, "yMm": 10000},
+            ],
+        },
+        "topo": {
+            "kind": "toposolid",
+            "id": "topo",
+            "siteId": "site",
+            "boundaryMm": [
+                {"xMm": -5000, "yMm": -5000},
+                {"xMm": 5000, "yMm": -5000},
+                {"xMm": 5000, "yMm": 5000},
+                {"xMm": -5000, "yMm": 5000},
+            ],
+        },
+        "floor-a": {
+            "kind": "floor",
+            "id": "floor-a",
+            "levelId": "lvl-0",
+            "hostToposolidId": "topo",
+            "props": {"buildingId": "A"},
+            "boundaryMm": [
+                {"xMm": -2000, "yMm": -1000},
+                {"xMm": -500, "yMm": -1000},
+                {"xMm": -500, "yMm": 1000},
+                {"xMm": -2000, "yMm": 1000},
+            ],
+        },
+        "floor-b": {
+            "kind": "floor",
+            "id": "floor-b",
+            "levelId": "lvl-0",
+            "hostToposolidId": "topo",
+            "props": {"buildingId": "B"},
+            "boundaryMm": [
+                {"xMm": 500, "yMm": -1000},
+                {"xMm": 2000, "yMm": -1000},
+                {"xMm": 2000, "yMm": 1000},
+                {"xMm": 500, "yMm": 1000},
+            ],
+        },
+        "link-campus": {
+            "kind": "link_model",
+            "id": "link-campus",
+            "sourceModelId": "campus-b",
+            "positionMm": {"xMm": 0, "yMm": 0, "zMm": 0},
+            "originAlignmentMode": "shared_coords",
+            "rotationDeg": 0,
+            "loaded": True,
+            "reloadStatus": "ok",
+            "expectedTransform": {
+                "translationMm": {"xMm": 0, "yMm": 0, "zMm": 0},
+                "rotationDeg": 0,
+            },
+            "actualTransform": {
+                "translationMm": {"xMm": 0, "yMm": 0, "zMm": 0},
+                "rotationDeg": 0,
+            },
+        },
+    }
+
+
+def test_site_georeferencing_report_acceptance_clean_case_has_no_findings() -> None:
+    report = site_georeferencing_report_v1(_clean_site_exchange_elements())
+    import_report = import_diagnostic_report_v1(
+        [],
+        operation_id="import-clean",
+        source_name="clean.ifc",
+    )
+    roundtrip_report = roundtrip_drift_report_v1(
+        {"floor-a": _clean_site_exchange_elements()["floor-a"]},
+        {"floor-a": _clean_site_exchange_elements()["floor-a"]},
+    )
+
+    assert report["ok"] is True
+    assert report["findings"] == []
+    assert report["trackerItems"] == ["BIR-S01", "BIR-S02", "BIR-S03", "BIR-S04", "BIR-S05", "BIR-S06"]
+    assert report["coordinateSystems"]["exportable"] is True
+    assert report["linkTransforms"]["linkIds"] == ["link-campus"]
+    assert report["siteRelationships"]["siteIds"] == ["site"]
+    assert report["multiBuilding"]["hasSharedCoordinateAnchor"] is True
+    assert report["multiBuilding"]["sharedCoordinateRows"][0]["id"] == "link-campus"
+    assert import_report["ok"] is True
+    assert import_report["mappingEvidence"] == []
+    assert import_report["trackerItems"] == ["BIR-S03"]
+    assert roundtrip_report["ok"] is True
+    assert roundtrip_report["drifts"] == []
+
+
+def test_site_georeferencing_report_acceptance_failing_case_has_tracker_metadata() -> None:
+    report = site_georeferencing_report_v1(
+        {
+            "floor-a": {
+                "kind": "floor",
+                "id": "floor-a",
+                "props": {"buildingId": "A"},
+                "boundaryMm": [
+                    {"xMm": 0, "yMm": 0},
+                    {"xMm": 1000, "yMm": 0},
+                    {"xMm": 1000, "yMm": 1000},
+                ],
+            },
+            "floor-b": {
+                "kind": "floor",
+                "id": "floor-b",
+                "props": {"buildingId": "B"},
+                "boundaryMm": [
+                    {"xMm": 2000, "yMm": 0},
+                    {"xMm": 3000, "yMm": 0},
+                    {"xMm": 3000, "yMm": 1000},
+                ],
+            },
+            "topo": {"kind": "toposolid", "id": "topo", "boundaryMm": []},
+            "link-dxf": {
+                "kind": "link_dxf",
+                "id": "link-dxf",
+                "originAlignmentMode": "shared_coords",
+                "expectedTransform": {
+                    "translationMm": {"xMm": 0, "yMm": 0, "zMm": 0},
+                    "rotationDeg": 0,
+                },
+                "actualTransform": {
+                    "translationMm": {"xMm": 0, "yMm": 20, "zMm": 0},
+                    "rotationDeg": 0.1,
+                },
+            },
+        }
+    )
+
+    assert report["ok"] is False
+    assert {"BIR-S01", "BIR-S02", "BIR-S03", "BIR-S04", "BIR-S05", "BIR-S06"}.issubset(
+        report["summary"]["trackerItemCounts"]
+    )
+    assert report["summary"]["severityCounts"]["error"] > 0
+    assert report["summary"]["severityCounts"]["warning"] > 0
+    assert all(row["trackerItems"] for row in report["findings"])
+    assert all(row["severity"] in {"error", "warning", "info"} for row in report["findings"])
+    assert all(row["discipline"] == "site" for row in report["findings"])
+    assert all(row["perspective"] == "coordination" for row in report["findings"])
+
+
 def test_project_coordinate_system_summary_is_exportable_when_datums_are_explicit() -> None:
     summary = project_coordinate_system_summary_v1(_base_elements())
     findings = project_coordinate_system_diagnostics_v1(_base_elements())
@@ -205,6 +355,25 @@ def test_import_diagnostic_contract_preserves_unsupported_mapping_evidence() -> 
         "mappingSupported": False,
         "fallbackCategory": "unsupported_product",
     }
+    assert report["mappingEvidence"] == [
+        {
+            "operationId": "import-unsupported-mapping",
+            "sourceName": "coordination.ifc",
+            "code": "ifc.mapping.unsupported",
+            "category": "category_mapping_fallback",
+            "severity": "error",
+            "elementIds": ["ifc-13"],
+            "trackerItems": ["BIR-S03"],
+            "discipline": "site",
+            "perspective": "coordination",
+            "mapping": {
+                "sourceCategory": "IfcVirtualElement",
+                "mappedCategory": "import_proxy",
+                "mappingSupported": False,
+                "fallbackCategory": "unsupported_product",
+            },
+        }
+    ]
     assert diagnostic["trackerItems"] == ["BIR-S03"]
 
 

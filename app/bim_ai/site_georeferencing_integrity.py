@@ -445,18 +445,36 @@ def import_diagnostic_report_v1(
     rows.sort(key=lambda row: (row["severity"], row["category"], row["code"], row["elementIds"]))
     category_counts = Counter(row["category"] for row in rows)
     severity_counts = Counter(row["severity"] for row in rows)
+    tracker_counts = Counter(item for row in rows for item in row["trackerItems"])
     return {
         "format": "importDiagnosticContract_v1",
         "operationId": operation_id,
         "sourceName": source_name,
         "deterministic": True,
-        "trackerItems": ["BIR-S03"],
+        "trackerItems": sorted(tracker_counts) or ["BIR-S03"],
         "ok": not any(row["severity"] == "error" for row in rows),
         "summary": {
             "diagnosticCount": len(rows),
             "categoryCounts": dict(sorted(category_counts.items())),
             "severityCounts": dict(sorted(severity_counts.items())),
+            "trackerItemCounts": dict(sorted(tracker_counts.items())),
         },
+        "mappingEvidence": [
+            {
+                "operationId": row["operationId"],
+                "sourceName": row.get("sourceName"),
+                "code": row["code"],
+                "category": row["category"],
+                "severity": row["severity"],
+                "elementIds": row["elementIds"],
+                "trackerItems": row["trackerItems"],
+                "discipline": row["discipline"],
+                "perspective": row["perspective"],
+                "mapping": row["mapping"],
+            }
+            for row in rows
+            if row.get("mapping")
+        ],
         "diagnostics": rows,
     }
 
@@ -784,12 +802,27 @@ def multi_building_shared_coordinate_summary_v1(subject: Any) -> dict[str, Any]:
         for link in _link_rows(elements)
         if str(_get(link, "origin_alignment_mode", "originAlignmentMode") or "") == "shared_coords"
     ]
+    shared_rows = [
+        {
+            "id": _id(link),
+            "kind": _kind(link),
+            "sourceModelId": _get(link, "source_model_id", "sourceModelId"),
+            "sourceName": _get(link, "source_name", "sourceName"),
+            "transform": _link_transform_row(link),
+        }
+        for link in _link_rows(elements)
+        if str(_get(link, "origin_alignment_mode", "originAlignmentMode") or "") == "shared_coords"
+    ]
+    survey_point_count = len(_by_kind(elements, "survey_point"))
     return {
         "schemaVersion": 1,
         "buildingCount": len(buildings),
+        "buildingIds": [row["buildingId"] for row in buildings],
         "buildings": buildings,
         "sharedCoordinateLinkIds": sorted(shared_links),
-        "surveyPointCount": len(_by_kind(elements, "survey_point")),
+        "sharedCoordinateRows": sorted(shared_rows, key=lambda row: row["id"]),
+        "surveyPointCount": survey_point_count,
+        "hasSharedCoordinateAnchor": survey_point_count > 0 and bool(shared_links),
     }
 
 
