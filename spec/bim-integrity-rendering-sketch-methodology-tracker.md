@@ -1273,6 +1273,30 @@ Exit: renderer/export/documentation/methodology/live evidence all have
 machine-readable failure modes, and target-house final-package blockers remain
 truthful rather than bypassed.
 
+### Wave 20 - Closure Accounting And Remaining Platform Gaps
+
+Goal: stop accumulating Partial evidence without closure. This wave audits the
+strongest implemented areas, upgrades rows to `Done` only when the acceptance
+text is genuinely met, fills missing implementation-evidence links, and closes
+the remaining unmapped platform gaps that are small enough to finish now.
+
+Scope: dispatch five independent workers. Each worker must commit locally,
+avoid unrelated dirty files, update tracker/evidence rows conservatively, and
+run the tracker audit. A row may become `Done` only if the implementation
+evidence table lists files, tests/proof hooks, product evidence, commit/wave
+reference, and no important remaining gap.
+
+| Agent | Ownership | Primary items |
+| ----- | --------- | ------------- |
+| W20-A | Advisor noise control/product UX closure: grouping, priority, profiles, audience text, suppression workflow, learning corpus, and rule docs. | `BIR-U01`, `BIR-U02`, `BIR-U03`, `BIR-U04`, `BIR-U05`, `BIR-U06`, `BIR-A06`, `BIR-A07` |
+| W20-B | Family/content closure: type schemas, instance overrides, content library assets, asset placement, and render/export parity. | `BIR-V01`, `BIR-V02`, `BIR-V03`, `BIR-V04`, `BIR-V05`, `BIR-C07` |
+| W20-C | Kernel/document semantics closure: units, ids, levels, type/instance semantics, links, phases/options, groups/assemblies, and schema migrations. | `BIR-P01`, `BIR-P02`, `BIR-P03`, `BIR-P04`, `BIR-P05`, `BIR-P06`, `BIR-P07`, `BIR-P08` |
+| W20-D | Site/georeferencing closure: project coordinates, links/imports, unsupported import mapping, roundtrip drift, site/toposolid relationships, and shared-coordinate support. | `BIR-S01`, `BIR-S02`, `BIR-S03`, `BIR-S04`, `BIR-S05`, `BIR-S06` |
+| W20-E | Fixture/governance/CI closure: fixture class completeness, implementation evidence rows, wave closeout template, benchmark/CI drift gates, and closure-status quality gates. | `BIR-W01`, `BIR-W03`, `BIR-W04`, `BIR-O01`, `BIR-O02`, `BIR-O03`, `BIR-O05`, `BIR-O06` |
+
+Exit: tracker status should move materially, not just gain more Partial notes;
+any still-Partial row must state the exact remaining blocker.
+
 ## Non-Negotiable Acceptance Rules
 
 - Do not mark a seed `accepted` while any P0 integrity or renderer diagnostic is
