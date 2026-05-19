@@ -1,0 +1,195 @@
+import type { Element } from '@bim-ai/core';
+
+import {
+  type RendererDiagnostic,
+  type RendererDiagnosticEvidence,
+  createRendererDiagnostic,
+  createRendererDiagnosticPacket,
+  type RendererDiagnosticPacket,
+} from './rendererDiagnostics';
+import {
+  diagnoseRoofOpeningRendering,
+  type RoofOpeningRenderDiagnostic,
+} from './roofOpeningRenderDiagnostics';
+import {
+  diagnoseWallHostedCutRenderRisks,
+  type WallHostedCutRenderDiagnostic,
+} from './wallHostedCutRenderDiagnostics';
+import { diagnoseVerticalCirculationRendering } from './verticalCirculationRenderDiagnostics';
+
+export type CollectRendererDiagnosticsInput = {
+  elements?: readonly Element[] | Record<string, Element | undefined> | null;
+  elementsById?: Record<string, Element | undefined> | null;
+  viewId?: string | null;
+  evidence?: RendererDiagnosticEvidence;
+  csgEnabled?: boolean;
+};
+
+export type CollectRendererDiagnosticsPacketInput = CollectRendererDiagnosticsInput & {
+  generatedAtIso: string;
+  modelRevision?: number | string | null;
+  gitHead?: string | null;
+  rendererBuild?: string | null;
+  supportMatrixDigest?: string | null;
+};
+
+export function collectRendererDiagnostics(
+  input: CollectRendererDiagnosticsInput,
+): RendererDiagnostic[] {
+  const elementsById = normalizeElementsById(input.elementsById ?? input.elements);
+  const fullEvidence = {
+    ...input.evidence,
+    source: input.evidence?.source ?? 'viewport',
+  } satisfies RendererDiagnosticEvidence;
+
+  return [
+    ...diagnoseRoofOpeningRendering(compactElementsById(elementsById)).map((diagnostic) =>
+      fromRoofOpeningDiagnostic(diagnostic, input.viewId, fullEvidence),
+    ),
+    ...diagnoseWallHostedCutRenderRisks({
+      elementsById: compactElementsById(elementsById),
+      csgEnabled: input.csgEnabled,
+    }).map((diagnostic) => fromWallHostedCutDiagnostic(diagnostic, input.viewId, fullEvidence)),
+    ...diagnoseVerticalCirculationRendering(elementsById, {
+      viewId: input.viewId,
+      evidence: fullEvidence,
+    }),
+  ].sort((a, b) => {
+    const severityOrder = severityRank(a.severity) - severityRank(b.severity);
+    if (severityOrder !== 0) return severityOrder;
+    return `${a.code}:${a.elementIds.join(',')}`.localeCompare(
+      `${b.code}:${b.elementIds.join(',')}`,
+    );
+  });
+}
+
+export function collectRendererDiagnosticPacket(
+  input: CollectRendererDiagnosticsPacketInput,
+): RendererDiagnosticPacket {
+  return createRendererDiagnosticPacket({
+    diagnostics: collectRendererDiagnostics(input),
+    generatedAtIso: input.generatedAtIso,
+    modelRevision: input.modelRevision,
+    viewId: input.viewId,
+    gitHead: input.gitHead,
+    rendererBuild: input.rendererBuild,
+    supportMatrixDigest: input.supportMatrixDigest,
+  });
+}
+
+function normalizeElementsById(
+  input: readonly Element[] | Record<string, Element | undefined> | null | undefined,
+): Record<string, Element | undefined> {
+  if (!input) return {};
+  if (Array.isArray(input)) {
+    return Object.fromEntries(input.map((element) => [element.id, element]));
+  }
+  return input as Record<string, Element | undefined>;
+}
+
+function compactElementsById(
+  elementsById: Record<string, Element | undefined>,
+): Record<string, Element> {
+  return Object.fromEntries(
+    Object.entries(elementsById).filter((entry): entry is [string, Element] => !!entry[1]),
+  );
+}
+
+function fromRoofOpeningDiagnostic(
+  diagnostic: RoofOpeningRenderDiagnostic,
+  viewId: string | null | undefined,
+  evidence: RendererDiagnosticEvidence,
+): RendererDiagnostic {
+  const modelInvalidRules = new Set([
+    'roof_opening_render_missing_host',
+    'roof_opening_render_outside_host_footprint',
+  ]);
+  return createRendererDiagnostic({
+    ruleId: diagnostic.ruleId,
+    code: roofOpeningCode(diagnostic.ruleId),
+    severity: diagnostic.severity,
+    issueClass: modelInvalidRules.has(diagnostic.ruleId) ? 'model-invalid' : 'renderer-unsupported',
+    rendererArea: 'boolean-cut',
+    feature: 'roof-opening',
+    message: diagnostic.message,
+    elementIds: diagnostic.elementIds,
+    viewId,
+    evidence: { ...evidence, details: serializableDetails(diagnostic.details) },
+    trackerItems: ['BIR-I02', 'BIR-I03', 'BIR-J02'],
+  });
+}
+
+function fromWallHostedCutDiagnostic(
+  diagnostic: WallHostedCutRenderDiagnostic,
+  viewId: string | null | undefined,
+  evidence: RendererDiagnosticEvidence,
+): RendererDiagnostic {
+  return createRendererDiagnostic({
+    ruleId: `renderer_wall_cut_${diagnostic.code}`,
+    code: wallHostedCutCode(diagnostic.code),
+    severity: diagnostic.severity,
+    issueClass: wallHostedCutIssueClass(diagnostic),
+    rendererArea: 'boolean-cut',
+    feature: 'wall-cut',
+    message: diagnostic.message,
+    elementIds: [
+      diagnostic.elementId,
+      diagnostic.hostWallId,
+      ...(diagnostic.relatedElementIds ?? []),
+    ].filter((id): id is string => typeof id === 'string' && id.length > 0),
+    viewId,
+    evidence: { ...evidence, details: serializableDetails(diagnostic.data ?? {}) },
+    trackerItems: ['BIR-I02', 'BIR-I03', 'BIR-J01'],
+  });
+}
+
+function roofOpeningCode(ruleId: RoofOpeningRenderDiagnostic['ruleId']): string {
+  const suffix = ruleId.replace(/^roof_opening_render_/, '').replaceAll('_', '.');
+  return `renderer.roof_opening.${suffix}`;
+}
+
+function wallHostedCutCode(code: WallHostedCutRenderDiagnostic['code']): string {
+  return code === 'detached_or_proxy_render_risk'
+    ? 'renderer.wall_cut.detached_or_proxy_render_risk'
+    : `renderer.wall_cut.${code.replaceAll('_', '.')}`;
+}
+
+function wallHostedCutIssueClass(
+  diagnostic: WallHostedCutRenderDiagnostic,
+): RendererDiagnostic['issueClass'] {
+  if (diagnostic.code === 'detached_or_proxy_render_risk') return 'renderer-degraded';
+  if (
+    diagnostic.code === 'host_cut_disabled_by_element' ||
+    diagnostic.code === 'wall_opening_csg_disabled' ||
+    diagnostic.code === 'wall_opening_csg_skipped_by_curtain_wall' ||
+    diagnostic.code.startsWith('unsupported_')
+  ) {
+    return 'renderer-unsupported';
+  }
+  if (diagnostic.severity === 'error') return 'model-invalid';
+  return 'renderer-degraded';
+}
+
+function serializableDetails(
+  details: Record<string, unknown>,
+): Record<string, string | number | boolean | null> {
+  return Object.fromEntries(
+    Object.entries(details).map(([key, value]) => {
+      if (
+        typeof value === 'string' ||
+        typeof value === 'number' ||
+        typeof value === 'boolean' ||
+        value === null
+      ) {
+        return [key, value];
+      }
+      return [key, JSON.stringify(value)];
+    }),
+  );
+}
+
+function severityRank(severity: RendererDiagnostic['severity']): number {
+  if (severity === 'error') return 0;
+  if (severity === 'warning') return 1;
+  return 2;
+}

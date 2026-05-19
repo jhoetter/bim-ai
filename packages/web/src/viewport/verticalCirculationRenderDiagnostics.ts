@@ -352,7 +352,7 @@ function diagnostic(input: {
   trackerItems: string[];
   options: VerticalCirculationRenderDiagnosticsOptions;
 }): RendererDiagnostic {
-  const feature = input.code.includes('slab_opening')
+  const feature = input.code.startsWith('renderer.slab_opening')
     ? 'slab-opening'
     : input.code.includes('railing')
       ? 'railing-geometry'

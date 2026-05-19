@@ -102,7 +102,7 @@ This tracker is complete only when all of these are true:
 | --------- | ------------- | ------------- |
 | `M0` Tracker and rule taxonomy | Done | This tracker exists, defines layers, rule families, milestones, and wave plan. |
 | `M1` P0 BIM integrity foundation | Partial | Hosted openings, helper/nonphysical elements, floor/envelope containment, support/topology, and command validation gaps are covered by deterministic Advisor/validation rules with tests and UI/CLI/API parity. |
-| `M2` P0 renderer fidelity foundation | Not started | Renderer emits diagnostics for unsupported/failed cuts, roof/slab/wall openings have golden tests, and target-house-critical visual failures cannot be silent. |
+| `M2` P0 renderer fidelity foundation | Partial | Renderer emits diagnostics for unsupported/failed cuts, roof/slab/wall openings have golden tests, and target-house-critical visual failures cannot be silent. |
 | `M3` P0 sketch-to-BIM methodology gate | Partial | Sketch-specific fidelity checks are separated from normal Advisor, phase packets fail on missing visual/spec evidence, and target-house acceptance cannot pass on Advisor-clean but visually wrong output. |
 | `M4` P1 domain depth | Not started | Rooms/access/egress, stairs/railings, structure-lite, MEP-lite, fire/accessibility metadata, materials/types, and exchange checks have robust rule coverage. |
 | `M5` P1 rendering/exchange completeness | Not started | Supported viewport geometry, IFC/glTF export manifests, and readback/golden evidence agree for architecture, structure-lite, MEP-lite, sheets, and schedules. |
@@ -177,7 +177,7 @@ This tracker is complete only when all of these are true:
 | -- | -------- | ------ | ---- | ---------- |
 | `BIR-E01` | P0 | Partial | Validate slab openings and stair penetration. | Stairs crossing floors require explicit slab/shaft openings; openings must be inside host slabs, not degenerate, and visible/renderable. |
 | `BIR-E02` | P0 | Not started | Validate floor support and detached slab fragments. | Floors/slabs outside supported wall/beam/perimeter assumptions report support warnings or require explicit cantilever/terrace metadata. |
-| `BIR-E03` | P0 | Not started | Validate railings/guards on terraces, stairs, and balconies. | Exposed edges above threshold height require guardrail/railing or explicit approved exception; rails must align to supported edges. |
+| `BIR-E03` | P0 | Partial | Validate railings/guards on terraces, stairs, and balconies. | Exposed edges above threshold height require guardrail/railing or explicit approved exception; rails must align to supported edges. |
 | `BIR-E04` | P1 | Partial | Validate stair comfort and headroom. | Existing stair checks are wired into Advisor parity and phase acceptance; by-sketch stairs include riser/tread/headroom/landing checks. |
 | `BIR-E05` | P1 | Not started | Validate vertical circulation graph. | Multi-level models know which stairs connect which levels, which rooms are reachable, and which slab openings/guards belong to that circulation path. |
 | `BIR-E06` | P1 | Not started | Validate terrace/loggia floors as occupied exterior spaces. | A terrace/loggia is a real floor/space with guard, drainage/slope metadata, access, boundary, and schedule/area intent. |
@@ -188,7 +188,7 @@ This tracker is complete only when all of these are true:
 | ID | Priority | Status | Item | Acceptance |
 | -- | -------- | ------ | ---- | ---------- |
 | `BIR-F01` | P0 | Partial | Validate roof openings against host footprint. | Existing roof-opening host/footprint checks remain, with stricter hole-inside-host and large-void metadata requirements for occupied terraces. |
-| `BIR-F02` | P0 | Not started | Validate roof opening has real occupied void geometry. | Roof terrace/court openings require rendered cut, floor surface, return/curb/parapet faces, drainage/guard/support metadata, and evidence viewpoint. |
+| `BIR-F02` | P0 | Partial | Validate roof opening has real occupied void geometry. | Roof terrace/court openings require rendered cut, floor surface, return/curb/parapet faces, drainage/guard/support metadata, and evidence viewpoint. |
 | `BIR-F03` | P0 | Not started | Validate envelope closure. | Exterior walls, roofs, floors, and major openings form a coherent envelope per level; unresolved holes/gaps are reported. |
 | `BIR-F04` | P1 | Not started | Validate loggia/recessed facade topology. | Recessed loggias have side returns, top/bottom returns, railing/guard, access opening, and physical floor/ceiling relationships. |
 | `BIR-F05` | P1 | Not started | Validate facade opening rhythm without treating it as subjective. | When a model declares facade rhythm metadata, openings must map to declared bays/counts; absent metadata avoids normal-Advisor aesthetic judgments. |
@@ -223,13 +223,13 @@ This tracker is complete only when all of these are true:
 
 | ID | Priority | Status | Item | Acceptance |
 | -- | -------- | ------ | ---- | ---------- |
-| `BIR-I01` | P0 | Not started | Create renderer support matrix. | `spec/generated/renderer-support-matrix.md` lists every element kind and feature against 3D viewport, plan, sheet, export, and known limitations. |
-| `BIR-I02` | P0 | Not started | Emit renderer diagnostics for unsupported cuts. | Failed/unsupported roof, wall, slab, dormer, stair, railing, or boolean/cut paths create structured diagnostics visible to UI and CLI evidence. |
-| `BIR-I03` | P0 | Not started | No silent fallback for target-house-critical features. | Roof terrace cutout, wall door/window cuts, slab openings, loggia recesses, rails, stairs, and floors either render or produce blocking diagnostics. |
-| `BIR-I04` | P0 | Not started | Connect renderer diagnostics to sketch acceptance. | Sketch-to-BIM phase/final packets fail when renderer diagnostics affect required visual features. |
+| `BIR-I01` | P0 | Done | Create renderer support matrix. | `spec/generated/renderer-support-matrix.md` lists every element kind and feature against 3D viewport, plan, sheet, export, and known limitations. |
+| `BIR-I02` | P0 | Partial | Emit renderer diagnostics for unsupported cuts. | Failed/unsupported roof, wall, slab, dormer, stair, railing, or boolean/cut paths create structured diagnostics visible to UI and CLI evidence. |
+| `BIR-I03` | P0 | Partial | No silent fallback for target-house-critical features. | Roof terrace cutout, wall door/window cuts, slab openings, loggia recesses, rails, stairs, and floors either render or produce blocking diagnostics. |
+| `BIR-I04` | P0 | Partial | Connect renderer diagnostics to sketch acceptance. | Sketch-to-BIM phase/final packets fail when renderer diagnostics affect required visual features. |
 | `BIR-I05` | P1 | Not started | Add per-element render status. | Selecting an element can show render implementation, skipped subfeatures, material fallback, proxy fallback, and export support. |
-| `BIR-I06` | P1 | Not started | Add renderer diagnostic persistence. | Diagnostics are captured in evidence packages with git head, model revision, view id, renderer build, and affected element ids. |
-| `BIR-I07` | P1 | Not started | Separate renderer issue from model issue. | UI distinguishes "model invalid" from "model valid but viewport unsupported/failed to render this feature." |
+| `BIR-I06` | P1 | Partial | Add renderer diagnostic persistence. | Diagnostics are captured in evidence packages with git head, model revision, view id, renderer build, and affected element ids. |
+| `BIR-I07` | P1 | Partial | Separate renderer issue from model issue. | UI distinguishes "model invalid" from "model valid but viewport unsupported/failed to render this feature." |
 
 ### J. Renderer Element Fidelity And Golden Tests
 
@@ -243,7 +243,7 @@ This tracker is complete only when all of these are true:
 | `BIR-J06` | P1 | Not started | Rooms/spaces visual diagnostics. | Room volumes/areas, boundaries, names, and diagnostic overlays render coherently without becoming physical clutter. |
 | `BIR-J07` | P1 | Partial | Materials and appearances. | Material assignments, type layer intent, transparent/realistic/wire modes, cut/finish faces, and high-fidelity mode are consistent. |
 | `BIR-J08` | P1 | Not started | Lens/filter rendering parity. | Architecture, Structure, Systems, MEP, Massing/Site, and Documentation lenses show/hide/ghost categories predictably and preserve diagnostics. |
-| `BIR-J09` | P1 | Not started | Visual golden harness. | Playwright/canvas pixel tests cover nonblank, framing, critical feature presence, and no flying/unsupported proxies for representative seeds. |
+| `BIR-J09` | P1 | Partial | Visual golden harness. | Playwright/canvas pixel tests cover nonblank, framing, critical feature presence, and no flying/unsupported proxies for representative seeds. |
 | `BIR-J10` | P2 | Not started | Stress and large-model rendering. | Renderer remains responsive and bounded with many rooms, many openings, linked models, and large evidence views. |
 
 ### K. IFC, glTF, Schedules, Sheets, And Exchange Fidelity
@@ -276,7 +276,7 @@ This tracker is complete only when all of these are true:
 | `BIR-M01` | P0 | Partial | Rename/specify sketch fidelity gate separately from Advisor. | Methodology docs and helper output call this `sketch acceptance`, `brief acceptance`, or equivalent, never normal Advisor. |
 | `BIR-M02` | P0 | Partial | Enforce current phase evidence. | Phase packet requires current git head, model revision, Advisor digest, renderer diagnostic digest, IR hash, capability hash, and screenshot manifest. |
 | `BIR-M03` | P0 | Partial | Require semantic visual checklist for critical features. | Agent must explicitly pass/fail feature-specific checks for silhouette, roof cutout, terrace/loggia, facade rhythm, cladding, rooms, stairs, and diagnostics. |
-| `BIR-M04` | P0 | Not started | Add renderer diagnostics to phase acceptance. | Phase/final acceptance blocks if required visual features have renderer unsupported/failed diagnostics. |
+| `BIR-M04` | P0 | Partial | Add renderer diagnostics to phase acceptance. | Phase/final acceptance blocks if required visual features have renderer unsupported/failed diagnostics. |
 | `BIR-M05` | P0 | Partial | Add BIM integrity diagnostics to phase acceptance. | Phase/final acceptance blocks on P0 model-integrity errors even if normal constructability warnings are zero. |
 | `BIR-M06` | P0 | Not started | Add target-house-specific acceptance pack. | Target-house checklist compiles into machine-readable required features, views, tolerances, and evidence rows. |
 | `BIR-M07` | P1 | Not started | Add visual readout drift loop. | Agent must compare latest screenshots with previous phase and source sketch, record corrections, and cannot advance on unresolved drift. |
@@ -302,7 +302,7 @@ This tracker is complete only when all of these are true:
 | -- | -------- | ------ | ---- | ---------- |
 | `BIR-O01` | P0 | Not started | Add fixture corpus for model-integrity rules. | Positive and negative fixtures cover every P0 integrity rule with expected rule ids and affected elements. |
 | `BIR-O02` | P0 | Partial | Add target-house regression fixture. | The known detached-door/access-wall and roof-cut cases fail before fixes and pass after. |
-| `BIR-O03` | P0 | Not started | Add renderer golden fixture corpus. | Minimal scenes for roof openings, wall cuts, slab openings, stairs/rails, loggia/terrace, and helper leakage are tested. |
+| `BIR-O03` | P0 | Partial | Add renderer golden fixture corpus. | Minimal scenes for roof openings, wall cuts, slab openings, stairs/rails, loggia/terrace, and helper leakage are tested. |
 | `BIR-O04` | P1 | Not started | Add end-to-end acceptance rehearsal. | A no-seed or disposable seed run exercises integrity, renderer diagnostics, Advisor, evidence, and sketch acceptance without committing artifacts. |
 | `BIR-O05` | P1 | Not started | Add benchmark suite integration. | Existing benchmarks record integrity, renderer diagnostics, exchange, performance, and acceptance status in live evidence. |
 | `BIR-O06` | P1 | Not started | Add CI gates for rule/render docs drift. | CI fails if rule registry, renderer support matrix, generated docs, and tests diverge. |
