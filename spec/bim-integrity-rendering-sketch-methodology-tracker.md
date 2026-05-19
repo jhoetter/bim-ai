@@ -1466,6 +1466,29 @@ Exit: final-package readiness should be blocked only by any rows that are truly
 too large for this tracker cycle, ideally none. The preferred outcome is a
 fully closed tracker and `target-house-final-package --require-ready` passing.
 
+### Wave 26 - Exchange Tail And Final Readiness
+
+Goal: close the final four rows: exchange readback geometry, exchange semantic
+mapping, IDS/BIR validation packs, and final-package readiness. Workers must not
+ask the user about removals while unattended; any cleanup candidate goes into
+`spec/bim-integrity-removal-followups.md`.
+
+Scope: dispatch four focused workers plus one integration aide. Each worker must
+commit locally, avoid unrelated dirty files, update tracker/evidence rows, run
+the tracker audit, and only mark `Done` with executable proof.
+
+| Agent | Ownership | Primary items |
+| ----- | --------- | ------------- |
+| W26-A | Third-party/importer readback parity for glTF/GLB/IFC geometry. | `BIR-K02` |
+| W26-B | External/non-kernel IFC and product-schema semantic mapping closure. | `BIR-K04` |
+| W26-C | buildingSMART IDS XML/schema import and full facet matrix for validation packs. | `BIR-K07` |
+| W26-D | Final-package readiness, evidence refresh, and target-house `--require-ready`. | `BIR-N10` |
+| W26-E | Integration aide: removal ledger, closeout evidence, and final audit/push support. | `BIR-K02`, `BIR-K04`, `BIR-K07`, `BIR-N10` |
+
+Exit: `node scripts/audit-bim-integrity-tracker.mjs --check` reports 165/165
+Done, and `node scripts/target-house-final-package.mjs --seed target-house-1
+--require-ready` passes from committed evidence.
+
 ## Non-Negotiable Acceptance Rules
 
 - Do not mark a seed `accepted` while any P0 integrity or renderer diagnostic is
