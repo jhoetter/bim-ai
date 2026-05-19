@@ -3,31 +3,81 @@
   "fixtureClasses": {
     "minimal_synthetic": {
       "description": "Small hand-authored models that isolate one deterministic integrity rule family.",
-      "auditable": true
+      "auditable": true,
+      "ownerTrackerItems": ["BIR-O01", "BIR-W01"],
+      "canonicalEvidencePaths": [
+        "app/tests/fixtures/p0_integrity_cases.json",
+        "app/tests/test_p0_integrity_fixture_corpus.py"
+      ],
+      "proofHooks": [
+        "PYTEST_ADDOPTS=--no-cov python -m pytest app/tests/test_p0_integrity_fixture_corpus.py -q"
+      ]
     },
     "target_house_regression": {
       "description": "Reduced target-house-1 symptoms that must continue to fail until the modeled defect is fixed.",
-      "auditable": true
+      "auditable": true,
+      "ownerTrackerItems": ["BIR-O02", "BIR-W01"],
+      "canonicalEvidencePaths": [
+        "app/tests/fixtures/p0_integrity_cases.json",
+        "packages/cli/targetHouseGeometryDiagnostics.test.mjs",
+        "seed-artifacts/target-house-1/evidence/live-run-current/target-house-geometry-diagnostic.json"
+      ],
+      "proofHooks": [
+        "PYTEST_ADDOPTS=--no-cov python -m pytest app/tests/test_p0_integrity_fixture_corpus.py -q",
+        "node --test packages/cli/targetHouseGeometryDiagnostics.test.mjs"
+      ]
     },
     "benchmark_seed": {
       "description": "Larger deterministic benchmark seeds used for acceptance and performance-neutral regression checks.",
-      "auditable": true
+      "auditable": true,
+      "ownerTrackerItems": ["BIR-O05", "BIR-W01"],
+      "canonicalEvidencePaths": ["spec/benchmarks/suite.json", "scripts/benchmarks/suite.test.mjs"],
+      "proofHooks": ["node --test scripts/benchmarks/suite.test.mjs"]
     },
     "import_export_roundtrip": {
       "description": "Fixtures that compare source model topology with exported/imported evidence.",
-      "auditable": true
+      "auditable": true,
+      "ownerTrackerItems": ["BIR-K04", "BIR-W01"],
+      "canonicalEvidencePaths": [
+        "app/tests/fixtures/golden_exchange_snapshot.json",
+        "app/tests/test_golden_exchange_fixture.py"
+      ],
+      "proofHooks": [
+        "PYTEST_ADDOPTS=--no-cov python -m pytest app/tests/test_golden_exchange_fixture.py -q"
+      ]
     },
     "performance_stress": {
       "description": "Large bounded cases used only for runtime and incremental-diagnostics behavior.",
-      "auditable": true
+      "auditable": true,
+      "ownerTrackerItems": ["BIR-L01", "BIR-O05", "BIR-W01"],
+      "canonicalEvidencePaths": [
+        "packages/web/src/viewport/rendererCostProfile.test.ts",
+        "scripts/benchmarks/simple-house-live-evidence.test.mjs"
+      ],
+      "proofHooks": [
+        "pnpm --filter @bim-ai/web exec vitest run src/viewport/rendererCostProfile.test.ts",
+        "node --test scripts/benchmarks/simple-house-live-evidence.test.mjs"
+      ]
     },
     "disposable_local_evidence_rehearsal": {
       "description": "Local throwaway seed/evidence rehearsal data that must not become canonical fixture evidence.",
-      "auditable": true
+      "auditable": true,
+      "ownerTrackerItems": ["BIR-O04", "BIR-W01"],
+      "canonicalEvidencePaths": [
+        "spec/sketch-to-bim-agent-workflow-templates.md",
+        "scripts/target-house-final-package.test.mjs"
+      ],
+      "proofHooks": ["node --test scripts/target-house-final-package.test.mjs"]
     },
     "user_realistic_sketch": {
       "description": "Sketch-derived cases that preserve realistic customer ambiguity while declaring expected rule outcomes.",
-      "auditable": true
+      "auditable": true,
+      "ownerTrackerItems": ["BIR-M06", "BIR-W01"],
+      "canonicalEvidencePaths": [
+        "spec/target-house/target-house-1-acceptance-checklist.md",
+        "scripts/target-house-closeout-report.test.mjs"
+      ],
+      "proofHooks": ["node --test scripts/target-house-closeout-report.test.mjs"]
     }
   },
   "cases": [
@@ -472,6 +522,66 @@
           "id": "access-door-hf-room-gf-bath-laundry",
           "name": "Bath / Laundry access door",
           "wallId": "access-wall-hf-room-gf-bath-laundry",
+          "alongT": 0.5,
+          "widthMm": 500,
+          "familyTypeId": "ft-pocket-door-standard"
+        }
+      }
+    },
+    {
+      "id": "target_house_valid_real_access_door",
+      "fixtureClass": "target_house_regression",
+      "description": "Reduced target-house remediation case: access door is hosted by a real wall inside the level floor envelope.",
+      "trackerItems": ["BIR-C01", "BIR-C02", "BIR-C05", "BIR-O02"],
+      "rulesUnderTest": [
+        "hosted_opening_helper_host",
+        "hosted_opening_host_outside_floor_envelope",
+        "physical_access_proxy_leakage"
+      ],
+      "expectedFindings": [],
+      "absentRuleIds": [
+        "hosted_opening_helper_host",
+        "hosted_opening_host_outside_floor_envelope",
+        "physical_access_proxy_leakage"
+      ],
+      "elements": {
+        "hf-lvl-ground": {
+          "kind": "level",
+          "id": "hf-lvl-ground",
+          "name": "Ground",
+          "elevationMm": 0
+        },
+        "ground-base-floor": {
+          "kind": "floor",
+          "id": "ground-base-floor",
+          "levelId": "hf-lvl-ground",
+          "boundaryMm": [
+            { "xMm": 1000, "yMm": 0 },
+            { "xMm": 7000, "yMm": 0 },
+            { "xMm": 7000, "yMm": 7000 },
+            { "xMm": 1000, "yMm": 7000 }
+          ]
+        },
+        "real-wall-hf-room-gf-bath-laundry": {
+          "kind": "wall",
+          "id": "real-wall-hf-room-gf-bath-laundry",
+          "name": "Bath / Laundry partition wall",
+          "levelId": "hf-lvl-ground",
+          "start": { "xMm": 3000, "yMm": 1300 },
+          "end": { "xMm": 3000, "yMm": 2500 },
+          "thicknessMm": 90,
+          "heightMm": 2400,
+          "wallTypeId": "wt-internal",
+          "materialKey": "gypsum_board",
+          "loadBearing": false,
+          "structuralRole": "non_load_bearing",
+          "analyticalParticipation": false
+        },
+        "real-door-hf-room-gf-bath-laundry": {
+          "kind": "door",
+          "id": "real-door-hf-room-gf-bath-laundry",
+          "name": "Bath / Laundry door",
+          "wallId": "real-wall-hf-room-gf-bath-laundry",
           "alongT": 0.5,
           "widthMm": 500,
           "familyTypeId": "ft-pocket-door-standard"

@@ -73,4 +73,41 @@ def test_done_quality_gate_rejects_missing_implementation_evidence(tmp_path: Pat
 
     assert result.returncode == 1
     assert "BIR-W05" in result.stderr
-    assert "Done item lacks implementation evidence row with tests" in result.stderr
+    assert "Done item lacks complete implementation evidence row" in result.stderr
+    assert "code paths" in result.stderr
+    assert "tests" in result.stderr
+
+
+def test_done_quality_gate_rejects_incomplete_implementation_evidence_cells(
+    tmp_path: Path,
+) -> None:
+    tracker = REPO_ROOT / "spec" / "bim-integrity-rendering-sketch-methodology-tracker.md"
+    broken_tracker = tmp_path / "tracker.md"
+    generated = tmp_path / "generated.md"
+    source = tracker.read_text(encoding="utf8")
+    source = re.sub(
+        r"(\|\s*`BIR-W05`\s*\|[^|\n]*\|[^|\n]*\|[^|\n]*\|)\s*[^|\n]+(\|[^|\n]*\|)",
+        r"\1 - \2",
+        source,
+        count=1,
+    )
+    broken_tracker.write_text(source, encoding="utf8")
+
+    result = subprocess.run(
+        [
+            "node",
+            str(SCRIPT),
+            "--tracker",
+            str(broken_tracker),
+            "--out",
+            str(generated),
+        ],
+        cwd=REPO_ROOT,
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+
+    assert result.returncode == 1
+    assert "BIR-W05" in result.stderr
+    assert "commit/wave reference" in result.stderr

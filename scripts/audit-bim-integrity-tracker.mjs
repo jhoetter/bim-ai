@@ -21,6 +21,13 @@ const VALID_STATUSES = new Set(['Done', 'Partial', 'Not started', 'Blocked']);
 const VALID_PRIORITIES = new Set(['P0', 'P1', 'P2', 'P3']);
 const ITEM_ID_RE = /BIR-([A-Z])(\d{2})/g;
 const WAVE7_ACCOUNTING_SECTIONS = new Set(['T', 'U', 'V', 'W']);
+const REQUIRED_DONE_EVIDENCE_FIELDS = [
+  ['codePaths', 'code paths'],
+  ['tests', 'tests'],
+  ['evidenceArtifacts', 'evidence artifacts'],
+  ['commit', 'commit/wave reference'],
+  ['limitations', 'limitations'],
+];
 
 function parseArgs(argv) {
   const args = {
@@ -56,7 +63,9 @@ function percent(done, total) {
 }
 
 function escapeCell(value) {
-  return String(value ?? '').replaceAll('|', '\\|').trim();
+  return String(value ?? '')
+    .replaceAll('|', '\\|')
+    .trim();
 }
 
 function increment(map, key) {
@@ -332,12 +341,16 @@ function buildEvidenceAccounting(parsed) {
   for (const item of parsed.items) {
     if (item.status !== 'Done') continue;
     const evidence = evidenceById.get(item.id);
-    if (
-      !evidence ||
-      !hasMeaningfulCell(evidence.tests) ||
-      (!hasMeaningfulCell(evidence.codePaths) && !hasMeaningfulCell(evidence.evidenceArtifacts))
-    ) {
-      missingDoneEvidence.push(item);
+    const missingFields = [];
+    if (!evidence) {
+      missingFields.push(...REQUIRED_DONE_EVIDENCE_FIELDS.map(([, label]) => label));
+    } else {
+      for (const [field, label] of REQUIRED_DONE_EVIDENCE_FIELDS) {
+        if (!hasMeaningfulCell(evidence[field])) missingFields.push(label);
+      }
+    }
+    if (missingFields.length) {
+      missingDoneEvidence.push({ ...item, missingFields });
     }
   }
 
@@ -382,7 +395,10 @@ function buildReport(parsed, trackerPath) {
       (row) => `${row.id} line ${row.lineNumber}: duplicate implementation evidence row`,
     ),
     ...evidenceAccounting.missingDoneEvidence.map(
-      (row) => `${row.id} line ${row.lineNumber}: Done item lacks implementation evidence row with tests`,
+      (row) =>
+        `${row.id} line ${row.lineNumber}: Done item lacks complete implementation evidence row (${row.missingFields.join(
+          ', ',
+        )})`,
     ),
     ...parsed.unknownWaveRefs,
   ];
@@ -409,7 +425,10 @@ function buildReport(parsed, trackerPath) {
       doneItemsWithEvidence:
         parsed.items.filter((item) => item.status === 'Done').length -
         evidenceAccounting.missingDoneEvidence.length,
-      missingDoneEvidence: evidenceAccounting.missingDoneEvidence.map((row) => row.id),
+      missingDoneEvidence: evidenceAccounting.missingDoneEvidence.map((row) => ({
+        id: row.id,
+        missingFields: row.missingFields,
+      })),
       duplicateEvidenceRows: evidenceAccounting.duplicateEvidenceRows.map((row) => row.id),
     },
     wave7DashboardRows,
@@ -509,11 +528,13 @@ function renderMarkdown(report) {
     '',
   );
   if (report.evidenceAccounting.missingDoneEvidence.length) {
-    for (const id of report.evidenceAccounting.missingDoneEvidence) {
-      lines.push(`- \`${id}\` is Done but lacks a complete implementation evidence row.`);
+    for (const row of report.evidenceAccounting.missingDoneEvidence) {
+      lines.push(`- \`${row.id}\` is Done but lacks: ${escapeCell(row.missingFields.join(', '))}.`);
     }
   } else {
-    lines.push('- Done quality gate passed: every Done item has linked implementation evidence and tests.');
+    lines.push(
+      '- Done quality gate passed: every Done item has complete implementation evidence columns.',
+    );
   }
 
   lines.push(
@@ -527,7 +548,9 @@ function renderMarkdown(report) {
   if (report.validationErrors.length) {
     for (const error of report.validationErrors) lines.push(`- ${error}`);
   } else {
-    lines.push('- No duplicate ids, invalid statuses, invalid priorities, or missing wave references found.');
+    lines.push(
+      '- No duplicate ids, invalid statuses, invalid priorities, or missing wave references found.',
+    );
   }
 
   lines.push(
@@ -563,7 +586,9 @@ function main() {
   if (args.check) {
     const existing = fs.existsSync(args.outPath) ? fs.readFileSync(args.outPath, 'utf8') : '';
     if (existing !== rendered) {
-      console.error(`${path.relative(REPO_ROOT, args.outPath)} is stale. Run this script without --check.`);
+      console.error(
+        `${path.relative(REPO_ROOT, args.outPath)} is stale. Run this script without --check.`,
+      );
       process.exit(1);
     }
   } else {

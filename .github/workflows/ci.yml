@@ -10,6 +10,34 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  governance:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v6.0.2
+
+      - uses: pnpm/action-setup@v6.0.6
+
+      - uses: actions/setup-node@v6.4.0
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - uses: actions/setup-python@v6.2.0
+        with:
+          python-version: '3.12'
+
+      - name: Install uv
+        run: pip install uv
+
+      - run: pnpm install
+
+      - name: Install Python deps from lockfile
+        run: cd app && uv sync --frozen --extra dev --extra ifc
+
+      - name: Governance drift gates
+        run: node scripts/governance-drift-gates.mjs
+
   js:
     # Keep Playwright screenshot tests off `ubuntu-latest`, whose image churn
     # can shift flex layout/heights against committed Linux baselines.
@@ -30,12 +58,6 @@ jobs:
       - run: pnpm install
 
       - run: pnpm verify:strict
-
-      - name: Governance drift gates
-        run: |
-          node scripts/audit-bim-integrity-tracker.mjs --check
-          node scripts/benchmarks/suite.mjs --json > /tmp/bim-ai-benchmark-suite-summary.json
-          pnpm --filter @bim-ai/web exec vitest run src/viewport/rendererDiagnostics.test.ts
 
       - run: cd packages/web && pnpm exec playwright install chromium --with-deps
 

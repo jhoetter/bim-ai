@@ -17,6 +17,7 @@ from bim_ai.model_integrity_hosting import (
 )
 
 _FIXTURE_PATH = Path(__file__).parent / "fixtures" / "p0_integrity_cases.json"
+_REPO_ROOT = Path(__file__).resolve().parents[2]
 _ELEMENT_ADAPTER = TypeAdapter(Element)
 _REQUIRED_FIXTURE_CLASSES = {
     "minimal_synthetic",
@@ -105,6 +106,13 @@ def test_p0_integrity_fixture_corpus_classes_are_explicit_and_auditable() -> Non
 
     assert _REQUIRED_FIXTURE_CLASSES <= set(fixture_classes)
     assert all(fixture_classes[name]["auditable"] is True for name in _REQUIRED_FIXTURE_CLASSES)
+    for name in _REQUIRED_FIXTURE_CLASSES:
+        fixture_class = fixture_classes[name]
+        assert fixture_class["ownerTrackerItems"], name
+        assert fixture_class["canonicalEvidencePaths"], name
+        assert fixture_class["proofHooks"], name
+        for relative_path in fixture_class["canonicalEvidencePaths"]:
+            assert (_REPO_ROOT / relative_path).exists(), f"{name}: {relative_path}"
     assert {case["fixtureClass"] for case in corpus["cases"]} <= set(fixture_classes)
     assert {"minimal_synthetic", "target_house_regression"} <= {
         case["fixtureClass"] for case in corpus["cases"]
@@ -124,6 +132,7 @@ def test_p0_integrity_fixture_corpus_covers_room_and_target_house_regressions() 
         "room_wall_topology_gap",
         "room_schedule_metadata_missing",
         "target_house_detached_access_wall",
+        "target_house_valid_real_access_door",
         "target_house_roof_cut_outside_host",
         "target_house_roof_cut_inside_host",
     } <= set(cases_by_id)
@@ -133,3 +142,9 @@ def test_p0_integrity_fixture_corpus_covers_room_and_target_house_regressions() 
     assert cases_by_id["target_house_detached_access_wall"]["fixtureClass"] == (
         "target_house_regression"
     )
+    assert cases_by_id["target_house_valid_real_access_door"]["expectedFindings"] == []
+    assert {
+        "hosted_opening_helper_host",
+        "hosted_opening_host_outside_floor_envelope",
+        "physical_access_proxy_leakage",
+    } <= set(cases_by_id["target_house_valid_real_access_door"]["absentRuleIds"])
