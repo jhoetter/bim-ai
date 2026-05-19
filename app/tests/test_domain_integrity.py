@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from bim_ai.constructability_report import build_constructability_report
 from bim_ai.domain_integrity import check_domain_integrity, domain_integrity_report
-from bim_ai.elements import DoorElem, LevelElem, Vec2Mm, WallElem
+from bim_ai.elements import DoorElem, FloorElem, LevelElem, StairElem, Vec2Mm, WallElem
 
 
 def _elements() -> dict[str, dict]:
@@ -69,6 +69,58 @@ def test_domain_integrity_normalizes_checker_findings() -> None:
             "source",
             "blockingClass",
         } <= set(finding)
+
+
+def test_domain_integrity_preserves_vertical_circulation_tracker_metadata() -> None:
+    elements = {
+        "lvl-1": LevelElem(id="lvl-1", elevationMm=0),
+        "lvl-2": LevelElem(id="lvl-2", elevationMm=3000),
+        "wall-1": WallElem(
+            id="wall-1",
+            levelId="lvl-2",
+            start=Vec2Mm(xMm=0, yMm=0),
+            end=Vec2Mm(xMm=3000, yMm=0),
+        ),
+        "floor-1": FloorElem(
+            id="floor-1",
+            levelId="lvl-1",
+            boundaryMm=[
+                Vec2Mm(xMm=0, yMm=0),
+                Vec2Mm(xMm=4000, yMm=0),
+                Vec2Mm(xMm=4000, yMm=3000),
+                Vec2Mm(xMm=0, yMm=3000),
+            ],
+        ),
+        "floor-2": FloorElem(
+            id="floor-2",
+            levelId="lvl-2",
+            boundaryMm=[
+                Vec2Mm(xMm=0, yMm=0),
+                Vec2Mm(xMm=4000, yMm=0),
+                Vec2Mm(xMm=4000, yMm=3000),
+                Vec2Mm(xMm=0, yMm=3000),
+            ],
+            props={"supportedByIds": ["wall-1"]},
+        ),
+        "stair-1": StairElem(
+            id="stair-1",
+            baseLevelId="lvl-1",
+            topLevelId="lvl-2",
+            runStartMm=Vec2Mm(xMm=800, yMm=800),
+            runEndMm=Vec2Mm(xMm=1800, yMm=800),
+            widthMm=1000,
+        ),
+    }
+
+    findings = check_domain_integrity(elements)
+    opening = next(finding for finding in findings if finding["ruleId"] == "BIR-E01")
+
+    assert opening["code"] == "stair_missing_slab_opening"
+    assert opening["severity"] == "error"
+    assert opening["priority"] == "P0"
+    assert opening["source"] == "vertical_circulation"
+    assert opening["trackerItems"] == ["BIR-E01"]
+    assert opening["recommendation"]
 
 
 def test_domain_integrity_report_summarizes_sources_and_profile() -> None:

@@ -20,6 +20,7 @@ DOMAIN_INTEGRITY_TRACKER_ITEMS = (
     "BIR-D05",
     "BIR-D06",
     "BIR-D07",
+    "BIR-E01",
     "BIR-E02",
     "BIR-E03",
     "BIR-E04",

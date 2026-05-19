@@ -362,6 +362,374 @@
           ]
         }
       }
+    },
+    {
+      "id": "vertical_stair_missing_upper_slab_opening",
+      "fixtureClass": "minimal_synthetic",
+      "description": "Two-level stair lands on the upper floor without a corresponding slab or shaft opening.",
+      "trackerItems": ["BIR-E01", "BIR-E05", "BIR-O01"],
+      "rulesUnderTest": ["BIR-E01"],
+      "expectedFindings": [
+        {
+          "ruleId": "BIR-E01",
+          "elementIds": ["floor-2", "stair-1"]
+        }
+      ],
+      "absentRuleIds": [],
+      "elements": {
+        "lvl-1": { "kind": "level", "id": "lvl-1", "elevationMm": 0 },
+        "lvl-2": { "kind": "level", "id": "lvl-2", "elevationMm": 3000 },
+        "wall-support": {
+          "kind": "wall",
+          "id": "wall-support",
+          "levelId": "lvl-2",
+          "start": { "xMm": 0, "yMm": 0 },
+          "end": { "xMm": 4000, "yMm": 0 }
+        },
+        "floor-1": {
+          "kind": "floor",
+          "id": "floor-1",
+          "levelId": "lvl-1",
+          "boundaryMm": [
+            { "xMm": 0, "yMm": 0 },
+            { "xMm": 5000, "yMm": 0 },
+            { "xMm": 5000, "yMm": 4000 },
+            { "xMm": 0, "yMm": 4000 }
+          ]
+        },
+        "floor-2": {
+          "kind": "floor",
+          "id": "floor-2",
+          "levelId": "lvl-2",
+          "boundaryMm": [
+            { "xMm": 0, "yMm": 0 },
+            { "xMm": 5000, "yMm": 0 },
+            { "xMm": 5000, "yMm": 4000 },
+            { "xMm": 0, "yMm": 4000 }
+          ],
+          "props": { "supportedByIds": ["wall-support"] }
+        },
+        "stair-1": {
+          "kind": "stair",
+          "id": "stair-1",
+          "baseLevelId": "lvl-1",
+          "topLevelId": "lvl-2",
+          "runStartMm": { "xMm": 900, "yMm": 900 },
+          "runEndMm": { "xMm": 1800, "yMm": 900 },
+          "widthMm": 1000
+        }
+      }
+    },
+    {
+      "id": "vertical_stair_with_valid_slab_opening",
+      "fixtureClass": "minimal_synthetic",
+      "description": "Two-level stair has an upper-floor shaft opening overlapping the stair penetration.",
+      "trackerItems": ["BIR-E01", "BIR-E05", "BIR-O01"],
+      "rulesUnderTest": ["BIR-E01"],
+      "expectedFindings": [],
+      "absentRuleIds": ["BIR-E01"],
+      "elements": {
+        "lvl-1": { "kind": "level", "id": "lvl-1", "elevationMm": 0 },
+        "lvl-2": { "kind": "level", "id": "lvl-2", "elevationMm": 3000 },
+        "wall-support": {
+          "kind": "wall",
+          "id": "wall-support",
+          "levelId": "lvl-2",
+          "start": { "xMm": 0, "yMm": 0 },
+          "end": { "xMm": 4000, "yMm": 0 }
+        },
+        "floor-1": {
+          "kind": "floor",
+          "id": "floor-1",
+          "levelId": "lvl-1",
+          "boundaryMm": [
+            { "xMm": 0, "yMm": 0 },
+            { "xMm": 5000, "yMm": 0 },
+            { "xMm": 5000, "yMm": 4000 },
+            { "xMm": 0, "yMm": 4000 }
+          ]
+        },
+        "floor-2": {
+          "kind": "floor",
+          "id": "floor-2",
+          "levelId": "lvl-2",
+          "boundaryMm": [
+            { "xMm": 0, "yMm": 0 },
+            { "xMm": 5000, "yMm": 0 },
+            { "xMm": 5000, "yMm": 4000 },
+            { "xMm": 0, "yMm": 4000 }
+          ],
+          "props": { "supportedByIds": ["wall-support"] }
+        },
+        "stair-1": {
+          "kind": "stair",
+          "id": "stair-1",
+          "baseLevelId": "lvl-1",
+          "topLevelId": "lvl-2",
+          "runStartMm": { "xMm": 900, "yMm": 900 },
+          "runEndMm": { "xMm": 1800, "yMm": 900 },
+          "widthMm": 1000
+        },
+        "opening-1": {
+          "kind": "slab_opening",
+          "id": "opening-1",
+          "hostFloorId": "floor-2",
+          "boundaryMm": [
+            { "xMm": 700, "yMm": 300 },
+            { "xMm": 2200, "yMm": 300 },
+            { "xMm": 2200, "yMm": 1500 },
+            { "xMm": 700, "yMm": 1500 }
+          ],
+          "isShaft": true
+        }
+      }
+    },
+    {
+      "id": "vertical_stair_invalid_level_transition",
+      "fixtureClass": "minimal_synthetic",
+      "description": "Stair connects the same authored endpoints but has an inverted level transition.",
+      "trackerItems": ["BIR-E05", "BIR-O01"],
+      "rulesUnderTest": ["BIR-E05"],
+      "expectedFindings": [
+        {
+          "ruleId": "BIR-E05",
+          "elementIds": ["lvl-1", "lvl-2", "stair-1"]
+        }
+      ],
+      "absentRuleIds": [],
+      "elements": {
+        "lvl-1": { "kind": "level", "id": "lvl-1", "elevationMm": 0 },
+        "lvl-2": { "kind": "level", "id": "lvl-2", "elevationMm": 3000 },
+        "wall-support": {
+          "kind": "wall",
+          "id": "wall-support",
+          "levelId": "lvl-2",
+          "start": { "xMm": 0, "yMm": 0 },
+          "end": { "xMm": 4000, "yMm": 0 }
+        },
+        "floor-1": {
+          "kind": "floor",
+          "id": "floor-1",
+          "levelId": "lvl-1",
+          "boundaryMm": [
+            { "xMm": 0, "yMm": 0 },
+            { "xMm": 5000, "yMm": 0 },
+            { "xMm": 5000, "yMm": 4000 },
+            { "xMm": 0, "yMm": 4000 }
+          ]
+        },
+        "floor-2": {
+          "kind": "floor",
+          "id": "floor-2",
+          "levelId": "lvl-2",
+          "boundaryMm": [
+            { "xMm": 0, "yMm": 0 },
+            { "xMm": 5000, "yMm": 0 },
+            { "xMm": 5000, "yMm": 4000 },
+            { "xMm": 0, "yMm": 4000 }
+          ],
+          "props": { "supportedByIds": ["wall-support"] }
+        },
+        "stair-1": {
+          "kind": "stair",
+          "id": "stair-1",
+          "baseLevelId": "lvl-2",
+          "topLevelId": "lvl-1",
+          "runStartMm": { "xMm": 900, "yMm": 900 },
+          "runEndMm": { "xMm": 1800, "yMm": 900 },
+          "widthMm": 1000
+        }
+      }
+    },
+    {
+      "id": "vertical_railing_guard_height_invalid",
+      "fixtureClass": "minimal_synthetic",
+      "description": "Hosted stair guard has valid host/profile metadata but an insufficient guard height.",
+      "trackerItems": ["BIR-E03", "BIR-E07", "BIR-O01"],
+      "rulesUnderTest": ["BIR-E03"],
+      "expectedFindings": [
+        {
+          "ruleId": "BIR-E03",
+          "elementIds": ["railing-1"]
+        }
+      ],
+      "absentRuleIds": [],
+      "elements": {
+        "lvl-1": { "kind": "level", "id": "lvl-1", "elevationMm": 0 },
+        "lvl-2": { "kind": "level", "id": "lvl-2", "elevationMm": 3000 },
+        "wall-support": {
+          "kind": "wall",
+          "id": "wall-support",
+          "levelId": "lvl-2",
+          "start": { "xMm": 0, "yMm": 0 },
+          "end": { "xMm": 4000, "yMm": 0 }
+        },
+        "floor-1": {
+          "kind": "floor",
+          "id": "floor-1",
+          "levelId": "lvl-1",
+          "boundaryMm": [
+            { "xMm": 0, "yMm": 0 },
+            { "xMm": 5000, "yMm": 0 },
+            { "xMm": 5000, "yMm": 4000 },
+            { "xMm": 0, "yMm": 4000 }
+          ]
+        },
+        "floor-2": {
+          "kind": "floor",
+          "id": "floor-2",
+          "levelId": "lvl-2",
+          "boundaryMm": [
+            { "xMm": 0, "yMm": 0 },
+            { "xMm": 5000, "yMm": 0 },
+            { "xMm": 5000, "yMm": 4000 },
+            { "xMm": 0, "yMm": 4000 }
+          ],
+          "props": { "supportedByIds": ["wall-support"] }
+        },
+        "stair-1": {
+          "kind": "stair",
+          "id": "stair-1",
+          "baseLevelId": "lvl-1",
+          "topLevelId": "lvl-2",
+          "runStartMm": { "xMm": 900, "yMm": 900 },
+          "runEndMm": { "xMm": 1800, "yMm": 900 },
+          "widthMm": 1000
+        },
+        "opening-1": {
+          "kind": "slab_opening",
+          "id": "opening-1",
+          "hostFloorId": "floor-2",
+          "boundaryMm": [
+            { "xMm": 700, "yMm": 300 },
+            { "xMm": 2200, "yMm": 300 },
+            { "xMm": 2200, "yMm": 1500 },
+            { "xMm": 700, "yMm": 1500 }
+          ],
+          "isShaft": true
+        },
+        "railing-1": {
+          "kind": "railing",
+          "id": "railing-1",
+          "hostedStairId": "stair-1",
+          "pathMm": [
+            { "xMm": 900, "yMm": 300 },
+            { "xMm": 1800, "yMm": 300 }
+          ],
+          "guardHeightMm": 820,
+          "balusterPattern": {
+            "rule": "regular",
+            "spacingMm": 100,
+            "profileFamilyId": "baluster-round-25"
+          },
+          "handrailSupports": [
+            {
+              "intervalMm": 1200,
+              "bracketFamilyId": "bracket-wall-01",
+              "hostWallId": "wall-support"
+            }
+          ],
+          "materialSlots": {
+            "handrail": "steel",
+            "post": "steel",
+            "baluster": "steel"
+          }
+        }
+      }
+    },
+    {
+      "id": "vertical_stair_bedroom_and_furniture_overlap",
+      "fixtureClass": "target_house_regression",
+      "description": "Reduced bedroom/stair regression with a sleeping room and placed furniture occupying stair footprint.",
+      "trackerItems": ["BIR-E05", "BIR-O02"],
+      "rulesUnderTest": ["BIR-E05"],
+      "expectedFindings": [
+        {
+          "ruleId": "BIR-E05",
+          "elementIds": ["bedroom-1", "stair-1"]
+        },
+        {
+          "ruleId": "BIR-E05",
+          "elementIds": ["chair-1", "stair-1"]
+        }
+      ],
+      "absentRuleIds": [],
+      "elements": {
+        "lvl-1": { "kind": "level", "id": "lvl-1", "elevationMm": 0 },
+        "lvl-2": { "kind": "level", "id": "lvl-2", "elevationMm": 3000 },
+        "wall-support": {
+          "kind": "wall",
+          "id": "wall-support",
+          "levelId": "lvl-2",
+          "start": { "xMm": 0, "yMm": 0 },
+          "end": { "xMm": 4000, "yMm": 0 }
+        },
+        "floor-1": {
+          "kind": "floor",
+          "id": "floor-1",
+          "levelId": "lvl-1",
+          "boundaryMm": [
+            { "xMm": 0, "yMm": 0 },
+            { "xMm": 5000, "yMm": 0 },
+            { "xMm": 5000, "yMm": 4000 },
+            { "xMm": 0, "yMm": 4000 }
+          ]
+        },
+        "floor-2": {
+          "kind": "floor",
+          "id": "floor-2",
+          "levelId": "lvl-2",
+          "boundaryMm": [
+            { "xMm": 0, "yMm": 0 },
+            { "xMm": 5000, "yMm": 0 },
+            { "xMm": 5000, "yMm": 4000 },
+            { "xMm": 0, "yMm": 4000 }
+          ],
+          "props": { "supportedByIds": ["wall-support"] }
+        },
+        "stair-1": {
+          "kind": "stair",
+          "id": "stair-1",
+          "baseLevelId": "lvl-1",
+          "topLevelId": "lvl-2",
+          "runStartMm": { "xMm": 900, "yMm": 900 },
+          "runEndMm": { "xMm": 1800, "yMm": 900 },
+          "widthMm": 1000
+        },
+        "opening-1": {
+          "kind": "slab_opening",
+          "id": "opening-1",
+          "hostFloorId": "floor-2",
+          "boundaryMm": [
+            { "xMm": 700, "yMm": 300 },
+            { "xMm": 2200, "yMm": 300 },
+            { "xMm": 2200, "yMm": 1500 },
+            { "xMm": 700, "yMm": 1500 }
+          ],
+          "isShaft": true
+        },
+        "bedroom-1": {
+          "kind": "room",
+          "id": "bedroom-1",
+          "name": "Bedroom 1",
+          "levelId": "lvl-1",
+          "outlineMm": [
+            { "xMm": 500, "yMm": 200 },
+            { "xMm": 2200, "yMm": 200 },
+            { "xMm": 2200, "yMm": 1800 },
+            { "xMm": 500, "yMm": 1800 }
+          ],
+          "functionLabel": "Sleeping"
+        },
+        "chair-1": {
+          "kind": "placed_asset",
+          "id": "chair-1",
+          "name": "Chair",
+          "assetId": "chair-type",
+          "levelId": "lvl-1",
+          "positionMm": { "xMm": 950, "yMm": 900 }
+        }
+      }
     }
   ]
 }

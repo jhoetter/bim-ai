@@ -6,10 +6,14 @@ from typing import Any, Literal
 
 from bim_ai.elements import (
     ColumnElem,
+    FamilyInstanceElem,
     FloorElem,
     HandrailSupport,
     LevelElem,
+    PlacedAssetElem,
     RailingElem,
+    RoomElem,
+    SlabOpeningElem,
     StairElem,
     Vec2Mm,
     WallElem,
@@ -28,6 +32,7 @@ DEFAULT_TOLERANCE_MM = 75.0
 DEFAULT_MAX_BALUSTER_SPACING_MM = 125.0
 DEFAULT_MIN_GUARD_HEIGHT_MM = 900.0
 DEFAULT_MIN_EXTERIOR_GUARD_HEIGHT_MM = 1000.0
+DEFAULT_MIN_RAILING_COVERAGE_RATIO = 0.75
 
 
 @dataclass(frozen=True)
@@ -69,36 +74,74 @@ def check_vertical_circulation_integrity(
             "check_vertical_circulation_integrity expects a Document or element mapping"
         )
 
+    typed_elements = _typed_elements(elements)
     floors = sorted(
-        [elem for elem in elements.values() if isinstance(elem, FloorElem)],
+        [elem for elem in typed_elements.values() if isinstance(elem, FloorElem)],
         key=lambda elem: elem.id,
     )
     stairs = sorted(
-        [elem for elem in elements.values() if isinstance(elem, StairElem)],
+        [elem for elem in typed_elements.values() if isinstance(elem, StairElem)],
         key=lambda elem: elem.id,
     )
     railings = sorted(
-        [elem for elem in elements.values() if isinstance(elem, RailingElem)],
+        [elem for elem in typed_elements.values() if isinstance(elem, RailingElem)],
+        key=lambda elem: elem.id,
+    )
+    slab_openings = sorted(
+        [elem for elem in typed_elements.values() if isinstance(elem, SlabOpeningElem)],
+        key=lambda elem: elem.id,
+    )
+    rooms = sorted(
+        [elem for elem in typed_elements.values() if isinstance(elem, RoomElem)],
+        key=lambda elem: elem.id,
+    )
+    placed_content = sorted(
+        [
+            elem
+            for elem in typed_elements.values()
+            if isinstance(elem, PlacedAssetElem | FamilyInstanceElem)
+        ],
         key=lambda elem: elem.id,
     )
 
     findings: list[VerticalCirculationFinding] = []
-    findings.extend(_detached_slab_findings(floors, stairs, elements, tolerance_mm=tolerance_mm))
-    findings.extend(_unsupported_slab_findings(floors, elements))
-    findings.extend(_stair_graph_findings(stairs, floors, elements, tolerance_mm=tolerance_mm))
+    findings.extend(
+        _detached_slab_findings(floors, stairs, typed_elements, tolerance_mm=tolerance_mm)
+    )
+    findings.extend(_unsupported_slab_findings(floors, typed_elements))
+    findings.extend(
+        _slab_opening_findings(
+            slab_openings,
+            floors,
+            stairs,
+            typed_elements,
+            tolerance_mm=tolerance_mm,
+        )
+    )
+    findings.extend(
+        _stair_graph_findings(stairs, floors, typed_elements, tolerance_mm=tolerance_mm)
+    )
+    findings.extend(
+        _stair_overlap_findings(
+            stairs,
+            rooms,
+            placed_content,
+            tolerance_mm=tolerance_mm,
+        )
+    )
     findings.extend(
         _occupied_exterior_space_findings(
             floors,
             stairs,
             railings,
-            elements,
+            typed_elements,
             tolerance_mm=tolerance_mm,
         )
     )
     findings.extend(
         _railing_findings(
             railings,
-            elements,
+            typed_elements,
             max_baluster_spacing_mm=max_baluster_spacing_mm,
             min_guard_height_mm=min_guard_height_mm,
             min_exterior_guard_height_mm=min_exterior_guard_height_mm,
@@ -157,7 +200,7 @@ def _unsupported_slab_findings(
         if support_ids:
             findings.append(
                 _finding(
-                    "BIR-E03",
+                    "BIR-E02",
                     "slab_support_reference_missing",
                     "error",
                     "P1",
@@ -174,13 +217,99 @@ def _unsupported_slab_findings(
             continue
         findings.append(
             _finding(
-                "BIR-E03",
+                "BIR-E02",
                 "unsupported_slab",
                 "error",
                 "P1",
                 f"Elevated floor '{floor.id}' has no support or cantilever intent metadata.",
                 [floor.id],
                 "Add supportedByIds/supportIds, model bearing walls or columns below it, or record cantilever support intent.",
+            )
+        )
+    return findings
+
+
+def _slab_opening_findings(
+    slab_openings: list[SlabOpeningElem],
+    floors: list[FloorElem],
+    stairs: list[StairElem],
+    elements: Mapping[str, Any],
+    *,
+    tolerance_mm: float,
+) -> list[VerticalCirculationFinding]:
+    findings: list[VerticalCirculationFinding] = []
+    floors_by_id = {floor.id: floor for floor in floors}
+    openings_by_floor: dict[str, list[SlabOpeningElem]] = {}
+    for opening in slab_openings:
+        openings_by_floor.setdefault(opening.host_floor_id, []).append(opening)
+        host = floors_by_id.get(opening.host_floor_id)
+        if host is None:
+            findings.append(
+                _finding(
+                    "BIR-E01",
+                    "slab_opening_host_missing",
+                    "error",
+                    "P0",
+                    f"Slab opening '{opening.id}' references a missing host floor.",
+                    [opening.id, opening.host_floor_id],
+                    "Host the slab opening to an existing floor or delete the orphan opening.",
+                )
+            )
+            continue
+        opening_polygon = _opening_polygon(opening)
+        if _polygon_area_abs(opening_polygon) < 2500.0:
+            findings.append(
+                _finding(
+                    "BIR-E01",
+                    "slab_opening_degenerate",
+                    "error",
+                    "P0",
+                    f"Slab opening '{opening.id}' has a degenerate boundary.",
+                    [opening.id, host.id],
+                    "Provide a non-degenerate polygonal slab/shaft opening boundary.",
+                )
+            )
+        host_polygon = _polygon(host)
+        if not opening_polygon or not all(
+            _point_tuple_in_polygon_or_on_edge(point, host_polygon, tolerance_mm)
+            for point in opening_polygon
+        ):
+            findings.append(
+                _finding(
+                    "BIR-E01",
+                    "slab_opening_outside_host",
+                    "error",
+                    "P0",
+                    f"Slab opening '{opening.id}' is not fully inside host floor '{host.id}'.",
+                    [opening.id, host.id],
+                    "Move or resize the opening so every boundary vertex lies within the host slab.",
+                )
+            )
+
+    for stair in stairs:
+        top_floor = _floor_at_point(floors, stair.top_level_id, stair.run_end, tolerance_mm)
+        if top_floor is None:
+            continue
+        stair_polygon = _stair_footprint(stair)
+        if any(
+            _polygons_touch_or_overlap(
+                stair_polygon,
+                _opening_polygon(opening),
+                tolerance_mm,
+            )
+            or _point_in_polygon_or_on_edge(stair.run_end, _opening_polygon(opening), tolerance_mm)
+            for opening in openings_by_floor.get(top_floor.id, [])
+        ):
+            continue
+        findings.append(
+            _finding(
+                "BIR-E01",
+                "stair_missing_slab_opening",
+                "error",
+                "P0",
+                f"Stair '{stair.id}' reaches floor '{top_floor.id}' without a matching slab/shaft opening.",
+                [stair.id, top_floor.id],
+                "Add a slab/shaft opening on the upper floor that overlaps the stair penetration.",
             )
         )
     return findings
@@ -203,7 +332,7 @@ def _stair_graph_findings(
         if missing_levels:
             findings.append(
                 _finding(
-                    "BIR-E04",
+                    "BIR-E05",
                     "stair_level_reference_missing",
                     "error",
                     "P1",
@@ -213,6 +342,24 @@ def _stair_graph_findings(
                 )
             )
             continue
+
+        base_level = elements.get(stair.base_level_id)
+        top_level = elements.get(stair.top_level_id)
+        if isinstance(base_level, LevelElem) and isinstance(top_level, LevelElem):
+            if stair.base_level_id == stair.top_level_id or (
+                top_level.elevation_mm <= base_level.elevation_mm
+            ):
+                findings.append(
+                    _finding(
+                        "BIR-E05",
+                        "stair_level_transition_invalid",
+                        "error",
+                        "P1",
+                        f"Stair '{stair.id}' does not connect an upward pair of levels.",
+                        [stair.id, stair.base_level_id, stair.top_level_id],
+                        "Set distinct base/top levels with the top level above the base level.",
+                    )
+                )
 
         base_floor = _floor_at_point(floors, stair.base_level_id, stair.run_start, tolerance_mm)
         top_floor = _floor_at_point(floors, stair.top_level_id, stair.run_end, tolerance_mm)
@@ -224,13 +371,65 @@ def _stair_graph_findings(
                 element_ids.append(top_floor.id)
             findings.append(
                 _finding(
-                    "BIR-E04",
+                    "BIR-E05",
                     "stair_graph_connection_missing",
                     "error",
                     "P1",
                     f"Stair '{stair.id}' does not land on connected floor footprints at both levels.",
                     element_ids,
                     "Move stair endpoints onto base/top floor footprints or add landing slabs at the connected levels.",
+                )
+            )
+    return findings
+
+
+def _stair_overlap_findings(
+    stairs: list[StairElem],
+    rooms: list[RoomElem],
+    placed_content: list[PlacedAssetElem | FamilyInstanceElem],
+    *,
+    tolerance_mm: float,
+) -> list[VerticalCirculationFinding]:
+    findings: list[VerticalCirculationFinding] = []
+    for stair in stairs:
+        stair_polygon = _stair_footprint(stair)
+        for room in rooms:
+            if room.level_id not in {stair.base_level_id, stair.top_level_id}:
+                continue
+            if not _is_sleeping_room(room):
+                continue
+            room_polygon = _room_polygon(room)
+            if not _polygons_touch_or_overlap(stair_polygon, room_polygon, tolerance_mm):
+                continue
+            findings.append(
+                _finding(
+                    "BIR-E05",
+                    "stair_sleeping_room_overlap",
+                    "error",
+                    "P1",
+                    f"Stair '{stair.id}' overlaps sleeping-room footprint '{room.id}'.",
+                    [stair.id, room.id],
+                    "Move the stair into a circulation/landing zone or revise the room boundary so the bedroom is not occupied by vertical circulation.",
+                )
+            )
+        for content in placed_content:
+            content_level = getattr(content, "level_id", None)
+            if content_level not in {stair.base_level_id, stair.top_level_id}:
+                continue
+            position = getattr(content, "position_mm", None)
+            if not isinstance(position, Vec2Mm):
+                continue
+            if not _point_in_polygon_or_on_edge(position, stair_polygon, tolerance_mm):
+                continue
+            findings.append(
+                _finding(
+                    "BIR-E05",
+                    "stair_furniture_overlap",
+                    "error",
+                    "P1",
+                    f"Placed content '{content.id}' occupies stair footprint '{stair.id}'.",
+                    [stair.id, content.id],
+                    "Move furniture/family content clear of stair runs and landings.",
                 )
             )
     return findings
@@ -271,7 +470,7 @@ def _occupied_exterior_space_findings(
             continue
         findings.append(
             _finding(
-                "BIR-E05",
+                "BIR-E06",
                 "occupied_exterior_space_metadata_missing",
                 "error",
                 "P1",
@@ -297,7 +496,7 @@ def _railing_findings(
         if not host_ids:
             findings.append(
                 _finding(
-                    "BIR-E06",
+                    "BIR-E03",
                     "railing_host_reference_missing",
                     "error",
                     "P1",
@@ -309,7 +508,7 @@ def _railing_findings(
         elif not _all_refs_exist(host_ids, elements, allow_edge_refs=True):
             findings.append(
                 _finding(
-                    "BIR-E06",
+                    "BIR-E03",
                     "railing_host_reference_unresolved",
                     "error",
                     "P1",
@@ -324,7 +523,7 @@ def _railing_findings(
         if railing.guard_height_mm < min_height:
             findings.append(
                 _finding(
-                    "BIR-E07",
+                    "BIR-E03",
                     "railing_guard_height_too_low",
                     "error",
                     "P1",
@@ -333,6 +532,10 @@ def _railing_findings(
                     "Increase guardHeightMm or mark the railing as non-guard decorative geometry.",
                 )
             )
+
+        continuity = _railing_continuity_finding(railing, elements)
+        if continuity is not None:
+            findings.append(continuity)
 
         if railing.baluster_pattern is None:
             findings.append(
@@ -406,6 +609,42 @@ def _railing_findings(
     return findings
 
 
+def _railing_continuity_finding(
+    railing: RailingElem,
+    elements: Mapping[str, Any],
+) -> VerticalCirculationFinding | None:
+    path_length = _polyline_length(railing.path_mm)
+    if len(railing.path_mm) < 2 or path_length < 600.0:
+        return _finding(
+            "BIR-E03",
+            "railing_path_discontinuous",
+            "error",
+            "P1",
+            f"Railing '{railing.id}' path is too short or discontinuous for guard intent.",
+            [railing.id],
+            "Author a continuous railing/guard path with at least two usable points.",
+        )
+    if not railing.hosted_stair_id:
+        return None
+    stair = elements.get(railing.hosted_stair_id)
+    if not isinstance(stair, StairElem):
+        return None
+    stair_length = _point_distance(stair.run_start, stair.run_end)
+    if stair_length <= 1.0:
+        return None
+    if path_length >= stair_length * DEFAULT_MIN_RAILING_COVERAGE_RATIO:
+        return None
+    return _finding(
+        "BIR-E03",
+        "railing_stair_continuity_gap",
+        "error",
+        "P1",
+        f"Railing '{railing.id}' covers less than {DEFAULT_MIN_RAILING_COVERAGE_RATIO:.0%} of hosted stair '{stair.id}'.",
+        [railing.id, stair.id],
+        "Extend the hosted railing path so it continuously protects the stair run and landing context.",
+    )
+
+
 def _handrail_support_findings(
     railing: RailingElem,
     supports: list[HandrailSupport],
@@ -470,6 +709,42 @@ def _finding(
 def _props(element: Any) -> Mapping[str, Any]:
     props = getattr(element, "props", None)
     return props if isinstance(props, Mapping) else {}
+
+
+def _typed_elements(elements: Mapping[str, Any]) -> dict[str, Any]:
+    typed: dict[str, Any] = {}
+    for fallback_id, element in elements.items():
+        typed_element = _typed_element(element)
+        element_id = getattr(typed_element, "id", None) or getattr(element, "id", None)
+        if isinstance(element, Mapping):
+            element_id = element.get("id", element_id)
+        typed[str(element_id or fallback_id)] = typed_element
+    return typed
+
+
+def _typed_element(element: Any) -> Any:
+    if not isinstance(element, Mapping):
+        return element
+    kind = str(element.get("kind") or "")
+    model_by_kind = {
+        "column": ColumnElem,
+        "family_instance": FamilyInstanceElem,
+        "floor": FloorElem,
+        "level": LevelElem,
+        "placed_asset": PlacedAssetElem,
+        "railing": RailingElem,
+        "room": RoomElem,
+        "slab_opening": SlabOpeningElem,
+        "stair": StairElem,
+        "wall": WallElem,
+    }
+    model = model_by_kind.get(kind)
+    if model is None:
+        return element
+    try:
+        return model.model_validate(element)
+    except Exception:
+        return element
 
 
 def _has_truthy(props: Mapping[str, Any], *keys: str) -> bool:
@@ -635,6 +910,82 @@ def _missing_material_slots(railing: RailingElem) -> list[str]:
 
 def _polygon(floor: FloorElem) -> list[tuple[float, float]]:
     return [(point.x_mm, point.y_mm) for point in floor.boundary_mm]
+
+
+def _opening_polygon(opening: SlabOpeningElem) -> list[tuple[float, float]]:
+    return [(point.x_mm, point.y_mm) for point in opening.boundary_mm]
+
+
+def _room_polygon(room: RoomElem) -> list[tuple[float, float]]:
+    return [(point.x_mm, point.y_mm) for point in room.outline_mm]
+
+
+def _stair_footprint(stair: StairElem) -> list[tuple[float, float]]:
+    if stair.boundary_mm and len(stair.boundary_mm) >= 3:
+        return [(point.x_mm, point.y_mm) for point in stair.boundary_mm]
+    start = stair.run_start
+    end = stair.run_end
+    dx = end.x_mm - start.x_mm
+    dy = end.y_mm - start.y_mm
+    length = (dx * dx + dy * dy) ** 0.5
+    if length <= 1.0:
+        half = max(stair.width_mm * 0.5, 1.0)
+        return [
+            (start.x_mm - half, start.y_mm - half),
+            (start.x_mm + half, start.y_mm - half),
+            (start.x_mm + half, start.y_mm + half),
+            (start.x_mm - half, start.y_mm + half),
+        ]
+    nx = -dy / length
+    ny = dx / length
+    half_width = stair.width_mm * 0.5
+    return [
+        (start.x_mm + nx * half_width, start.y_mm + ny * half_width),
+        (end.x_mm + nx * half_width, end.y_mm + ny * half_width),
+        (end.x_mm - nx * half_width, end.y_mm - ny * half_width),
+        (start.x_mm - nx * half_width, start.y_mm - ny * half_width),
+    ]
+
+
+def _is_sleeping_room(room: RoomElem) -> bool:
+    props = _props(room)
+    tokens = " ".join(
+        str(value or "")
+        for value in (
+            room.id,
+            room.name,
+            room.programme_code,
+            room.department,
+            room.function_label,
+            props.get("roomType"),
+            props.get("spaceType"),
+            props.get("programme"),
+        )
+    ).lower()
+    return any(token in tokens for token in ("bedroom", "bed room", "sleep", "schlaf"))
+
+
+def _polygon_area_abs(polygon: list[tuple[float, float]]) -> float:
+    if len(polygon) < 3:
+        return 0.0
+    area = 0.0
+    for idx, (x0, y0) in enumerate(polygon):
+        x1, y1 = polygon[(idx + 1) % len(polygon)]
+        area += x0 * y1 - x1 * y0
+    return abs(area) * 0.5
+
+
+def _polyline_length(points: list[Vec2Mm]) -> float:
+    if len(points) < 2:
+        return 0.0
+    return sum(
+        _point_distance(start, end)
+        for start, end in zip(points, points[1:], strict=False)
+    )
+
+
+def _point_distance(start: Vec2Mm, end: Vec2Mm) -> float:
+    return ((end.x_mm - start.x_mm) ** 2 + (end.y_mm - start.y_mm) ** 2) ** 0.5
 
 
 def _point_in_polygon_or_on_edge(
