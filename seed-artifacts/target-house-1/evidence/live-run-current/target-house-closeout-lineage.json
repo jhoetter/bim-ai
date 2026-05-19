@@ -3,7 +3,7 @@
   "seed": "target-house-1",
   "generatedAt": "1970-01-01T00:00:00.000Z",
   "git": {
-    "currentHead": "f512daf3b4d90f0c537928983ab8adbfb3e2895c",
+    "currentHead": "f93de3181a32da1b8a28a24493a8e5942f13703c",
     "evidenceHead": "ba06ccd1fd8d7903305b361b85853e375188103b",
     "dirtyCheckPolicy": "Report records source/evidence digests and git heads; concurrent dirty files are not normalized."
   },
@@ -29,7 +29,7 @@
     "advisorRuleDigest": "sha256:4024259dec1c2e60c2df697ef7f22c7baa0fc6d1ec9e87e87d1312bf8db18fd9",
     "capabilities": "sha256:e3faa00d4724d5e375ee853d5e3d56b21254a969a84e702d67013a8bb0125dbb",
     "rendererSupportMatrix": "sha256:acf4cc7457a60f8f7e6b899d79e980335b4bd8382e98d54412a83077eb3c962d",
-    "finalManifest": "sha256:2ca47cc43b20fde30ee9585679c5727d49a69d552350c3b0da7b8cc5fd6221c1",
+    "finalManifest": "sha256:9cdb2aa1a23b8ff0214f6b7f10355deec4bf126aefa9ff76e1255695a20d601e",
     "performanceEvidence": "sha256:0b8e950aaabf4252f28a35014e3c2f192d82845babcaacbf2533c2f789ac81e4"
   },
   "evidenceFiles": [
@@ -296,10 +296,7 @@
           "budgetMs": 16.7,
           "budgetRatio": 0.75,
           "status": "within_budget",
-          "dominantFactors": [
-            "rendered elements:44",
-            "material overrides:9"
-          ]
+          "dominantFactors": ["rendered elements:44", "material overrides:9"]
         },
         {
           "interaction": "select",
@@ -309,11 +306,7 @@
           "budgetMs": 50,
           "budgetRatio": 0.18,
           "status": "within_budget",
-          "dominantFactors": [
-            "pick candidates:157",
-            "hosted openings:11",
-            "selected elements:1"
-          ]
+          "dominantFactors": ["pick candidates:157", "hosted openings:11", "selected elements:1"]
         },
         {
           "interaction": "lens-switch",
@@ -323,10 +316,7 @@
           "budgetMs": 100,
           "budgetRatio": 0.08,
           "status": "within_budget",
-          "dominantFactors": [
-            "lens classifications:157",
-            "material state changes:9"
-          ]
+          "dominantFactors": ["lens classifications:157", "material state changes:9"]
         },
         {
           "interaction": "advisor-open",
@@ -336,10 +326,7 @@
           "budgetMs": 80,
           "budgetRatio": 0.1,
           "status": "within_budget",
-          "dominantFactors": [
-            "element references:157",
-            "evidence views:11"
-          ]
+          "dominantFactors": ["element references:157", "evidence views:11"]
         }
       ],
       "maxBudgetRatio": 0.75,
@@ -377,13 +364,7 @@
             "advisor-open",
             "advisor-close"
           ],
-          "failedInteractions": [
-            "orbit",
-            "select",
-            "lens-switch",
-            "advisor-open",
-            "advisor-close"
-          ],
+          "failedInteractions": ["orbit", "select", "lens-switch", "advisor-open", "advisor-close"],
           "actionableChurnCount": 0,
           "liveBrowserProof": {
             "schemaVersion": "target-house-live-browser-proof.v1",
@@ -407,9 +388,7 @@
           "code": "acceptance_rehearsal_gate",
           "category": "rehearsal",
           "count": 1,
-          "blockerCodes": [
-            "live_responsiveness_failed"
-          ],
+          "blockerCodes": ["live_responsiveness_failed"],
           "stages": [
             {
               "id": "live_responsiveness",
@@ -584,18 +563,9 @@
         "floor:plinth",
         "volume:upper-wrapper"
       ],
-      "requiredViews": [
-        "main_front_left",
-        "front_elevation",
-        "rear_right_axon"
-      ],
-      "evidenceTypes": [
-        "screenshot",
-        "advisor_payload"
-      ],
-      "sourceRefs": [
-        "spec/target-house/target-house-1-sketch-ir.draft.json#features"
-      ],
+      "requiredViews": ["main_front_left", "front_elevation", "rear_right_axon"],
+      "evidenceTypes": ["screenshot", "advisor_payload"],
+      "sourceRefs": ["spec/target-house/target-house-1-sketch-ir.draft.json#features"],
       "status": "evidence_linked",
       "semanticVisualFailureCount": 0
     },
@@ -609,19 +579,9 @@
         "wall:upper-white-shell",
         "roof:white-folded-shell"
       ],
-      "requiredViews": [
-        "main_front_left",
-        "rear_right_axon",
-        "wire_diagnostic"
-      ],
-      "evidenceTypes": [
-        "screenshot",
-        "advisor_payload",
-        "wire_diagnostic"
-      ],
-      "sourceRefs": [
-        "spec/target-house/target-house-1-sketch-ir.draft.json#features"
-      ],
+      "requiredViews": ["main_front_left", "rear_right_axon", "wire_diagnostic"],
+      "evidenceTypes": ["screenshot", "advisor_payload", "wire_diagnostic"],
+      "sourceRefs": ["spec/target-house/target-house-1-sketch-ir.draft.json#features"],
       "status": "evidence_linked",
       "semanticVisualFailureCount": 0
     },
@@ -639,19 +599,9 @@
         "window:roof-court-glazing",
         "room:room_l1_roof_court"
       ],
-      "requiredViews": [
-        "main_front_left",
-        "roof_high",
-        "rear_right_axon"
-      ],
-      "evidenceTypes": [
-        "screenshot",
-        "advisor_payload",
-        "constructability_report"
-      ],
-      "sourceRefs": [
-        "spec/target-house/target-house-1-sketch-ir.draft.json#features"
-      ],
+      "requiredViews": ["main_front_left", "roof_high", "rear_right_axon"],
+      "evidenceTypes": ["screenshot", "advisor_payload", "constructability_report"],
+      "sourceRefs": ["spec/target-house/target-house-1-sketch-ir.draft.json#features"],
       "status": "evidence_linked",
       "semanticVisualFailureCount": 0
     },
@@ -668,20 +618,9 @@
         "window:three-bay-loggia-glazing",
         "door:loggia-access"
       ],
-      "requiredViews": [
-        "main_front_left",
-        "front_elevation",
-        "front_loggia",
-        "first_floor_plan"
-      ],
-      "evidenceTypes": [
-        "screenshot",
-        "advisor_payload",
-        "constructability_report"
-      ],
-      "sourceRefs": [
-        "spec/target-house/target-house-1-sketch-ir.draft.json#features"
-      ],
+      "requiredViews": ["main_front_left", "front_elevation", "front_loggia", "first_floor_plan"],
+      "evidenceTypes": ["screenshot", "advisor_payload", "constructability_report"],
+      "sourceRefs": ["spec/target-house/target-house-1-sketch-ir.draft.json#features"],
       "status": "evidence_linked",
       "semanticVisualFailureCount": 0
     },
@@ -695,18 +634,9 @@
         "wall:gable-profile",
         "roof:asymmetric-envelope"
       ],
-      "requiredViews": [
-        "main_front_left",
-        "front_elevation",
-        "rear_right_axon"
-      ],
-      "evidenceTypes": [
-        "screenshot",
-        "advisor_payload"
-      ],
-      "sourceRefs": [
-        "spec/target-house/target-house-1-sketch-ir.draft.json#features"
-      ],
+      "requiredViews": ["main_front_left", "front_elevation", "rear_right_axon"],
+      "evidenceTypes": ["screenshot", "advisor_payload"],
+      "sourceRefs": ["spec/target-house/target-house-1-sketch-ir.draft.json#features"],
       "status": "evidence_linked",
       "semanticVisualFailureCount": 0
     },
@@ -720,19 +650,9 @@
         "wall:ground-clad-base",
         "cladding:vertical-board-batten"
       ],
-      "requiredViews": [
-        "main_front_left",
-        "front_elevation",
-        "rear_right_axon"
-      ],
-      "evidenceTypes": [
-        "screenshot",
-        "advisor_payload",
-        "constructability_report"
-      ],
-      "sourceRefs": [
-        "spec/target-house/target-house-1-sketch-ir.draft.json#features"
-      ],
+      "requiredViews": ["main_front_left", "front_elevation", "rear_right_axon"],
+      "evidenceTypes": ["screenshot", "advisor_payload", "constructability_report"],
+      "sourceRefs": ["spec/target-house/target-house-1-sketch-ir.draft.json#features"],
       "status": "evidence_linked",
       "semanticVisualFailureCount": 0
     },
@@ -747,19 +667,9 @@
         "window:*",
         "opening:hosted-facade-bay"
       ],
-      "requiredViews": [
-        "main_front_left",
-        "front_elevation",
-        "ground_floor_plan"
-      ],
-      "evidenceTypes": [
-        "screenshot",
-        "advisor_payload",
-        "constructability_report"
-      ],
-      "sourceRefs": [
-        "spec/target-house/target-house-1-sketch-ir.draft.json#features"
-      ],
+      "requiredViews": ["main_front_left", "front_elevation", "ground_floor_plan"],
+      "evidenceTypes": ["screenshot", "advisor_payload", "constructability_report"],
+      "sourceRefs": ["spec/target-house/target-house-1-sketch-ir.draft.json#features"],
       "status": "evidence_linked",
       "semanticVisualFailureCount": 0
     },
@@ -788,11 +698,7 @@
         "room:room_l1_deep_loggia",
         "room:room_l1_roof_court"
       ],
-      "requiredViews": [
-        "ground_floor_plan",
-        "first_floor_plan",
-        "wire_diagnostic"
-      ],
+      "requiredViews": ["ground_floor_plan", "first_floor_plan", "wire_diagnostic"],
       "evidenceTypes": [
         "screenshot",
         "advisor_payload",
@@ -800,9 +706,7 @@
         "schedule",
         "constructability_report"
       ],
-      "sourceRefs": [
-        "spec/target-house/target-house-1-sketch-ir.draft.json#features"
-      ],
+      "sourceRefs": ["spec/target-house/target-house-1-sketch-ir.draft.json#features"],
       "status": "evidence_linked",
       "semanticVisualFailureCount": 0
     },
@@ -816,16 +720,9 @@
         "site:project-north-assumption",
         "floor:plinth"
       ],
-      "requiredViews": [
-        "main_front_left"
-      ],
-      "evidenceTypes": [
-        "screenshot",
-        "advisor_payload"
-      ],
-      "sourceRefs": [
-        "spec/target-house/target-house-1-sketch-ir.draft.json#features"
-      ],
+      "requiredViews": ["main_front_left"],
+      "evidenceTypes": ["screenshot", "advisor_payload"],
+      "sourceRefs": ["spec/target-house/target-house-1-sketch-ir.draft.json#features"],
       "status": "evidence_linked",
       "semanticVisualFailureCount": 0
     },
@@ -860,9 +757,7 @@
         "provenance_manifest",
         "tolerance_ledger"
       ],
-      "sourceRefs": [
-        "spec/target-house/target-house-1-sketch-ir.draft.json#features"
-      ],
+      "sourceRefs": ["spec/target-house/target-house-1-sketch-ir.draft.json#features"],
       "status": "evidence_linked",
       "semanticVisualFailureCount": 0
     }
@@ -1026,10 +921,7 @@
         "priority": "critical",
         "phaseId": "P3",
         "requiredElementIds": [],
-        "resolvedElementIds": [
-          "hf-roof-court-floor",
-          "room_l1_roof_court"
-        ],
+        "resolvedElementIds": ["hf-roof-court-floor", "room_l1_roof_court"],
         "semanticSelectors": [
           "feature:roof_terrace_cutout",
           "kind:roof_opening_with_occupied_terrace",
@@ -1062,10 +954,7 @@
         "priority": "critical",
         "phaseId": "P4",
         "requiredElementIds": [],
-        "resolvedElementIds": [
-          "front-loggia-recessed-glass",
-          "room_l1_deep_loggia"
-        ],
+        "resolvedElementIds": ["front-loggia-recessed-glass", "room_l1_deep_loggia"],
         "semanticSelectors": [
           "feature:front_deep_loggia",
           "kind:recessed_loggia",
@@ -1349,5 +1238,5 @@
     }
   ],
   "ready": false,
-  "lineageDigestSha256": "23c30097a013087b2d89eeaf7ced4bb5bac909531ad30ccde35829c2ebfe853e"
+  "lineageDigestSha256": "bb4e641efb6dc184a9716020e55592a7d6681ca2f3980bf855e362da28f34d92"
 }
