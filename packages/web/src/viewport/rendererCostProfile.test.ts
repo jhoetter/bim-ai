@@ -1,4 +1,6 @@
 import type { Element } from '@bim-ai/core';
+import fs from 'node:fs';
+import path from 'node:path';
 import { describe, expect, it } from 'vitest';
 
 import {
@@ -180,5 +182,56 @@ describe('renderer cost profile — BIR-L02/BIR-J10', () => {
     );
     expect(focused.workloads.update.dominantFactors).toContain('changed elements:1');
     expect(fullScene.workloads.update.dominantFactors).toContain('full-scene elements:81');
+  });
+
+  it('accepts target-house orbit/select/lens-switch/advisor-open budgets deterministically — BIR-N07', () => {
+    const repoRoot = path.resolve(__dirname, '../../../..');
+    const snapshotPath = path.join(
+      repoRoot,
+      'seed-artifacts/target-house-1/evidence/live-run-current/snapshot.json',
+    );
+    const snapshot = JSON.parse(fs.readFileSync(snapshotPath, 'utf8')) as {
+      elements: Record<string, Element>;
+    };
+    const elements = Object.values(snapshot.elements);
+    const rendered3dKinds = new Set([
+      'wall',
+      'floor',
+      'roof',
+      'door',
+      'window',
+      'wall_opening',
+      'roof_opening',
+      'slab_opening',
+      'stair',
+      'railing',
+      'placed_asset',
+      'family_instance',
+      'sweep',
+    ]);
+
+    const profile = profileRendererCost({
+      elements,
+      visibleElementIds: elements
+        .filter((element) => rendered3dKinds.has(element.kind))
+        .map((element) => element.id),
+      selectedElementIds: ['entry-door'],
+      changedElementIds: ['entry-door'],
+      previousLensMode: 'architecture',
+      lensMode: 'coordination',
+      advisorOpen: true,
+      advisorFindingCount: 0,
+      viewId: 'main_front_left',
+    });
+
+    expect(profile.counts.elementCount).toBe(168);
+    expect(profile.counts.renderedElementCount).toBe(63);
+    expect(profile.counts.openingCount).toBe(21);
+    expect(profile.counts.evidenceViewCount).toBe(10);
+    expect(profile.workloads.orbit.status).not.toBe('over_budget');
+    expect(profile.workloads.select.status).toBe('within_budget');
+    expect(profile.workloads['lens-switch'].status).toBe('within_budget');
+    expect(profile.workloads['advisor-toggle'].status).toBe('within_budget');
+    expect(profile.summary.overBudgetWorkloads).toEqual([]);
   });
 });
