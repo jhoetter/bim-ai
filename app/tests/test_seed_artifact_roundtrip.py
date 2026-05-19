@@ -178,6 +178,17 @@ def test_checked_in_target_house_seed_artifact_is_portable_and_loadable() -> Non
         manifest["bundleSha256"]
         == hashlib.sha256((artifact_dir / "bundle.json").read_bytes()).hexdigest()
     )
+    main_stair = next(
+        command
+        for command in commands
+        if command.get("type") == "createStair" and command.get("id") == "main-stair"
+    )
+    assert main_stair["boundaryMm"] == [
+        {"xMm": 1300, "yMm": 1100},
+        {"xMm": 2300, "yMm": 1100},
+        {"xMm": 2300, "yMm": 3200},
+        {"xMm": 1300, "yMm": 3200},
+    ]
     assert "front-loggia-wide-opening" not in command_ids
     assert not any(
         command_id.startswith(("access-wall-", "access-door-")) for command_id in command_ids

@@ -27,7 +27,7 @@
     "source": "spec/target-house",
     "bundle": "target-house-1.bundle.v2.json"
   },
-  "bundleSha256": "ac8b853d3733be44f24f6635fb72989ddfdfc5fa057d58a04465cf472523577b",
+  "bundleSha256": "a87ec0d47e4030e840c414a8b7adc2d48d2c5d705f667612cbc27fe96ba26cc7",
   "commandCount": 237,
   "commandSchemaVersion": "cmd-v3.0",
   "entryComment": {
