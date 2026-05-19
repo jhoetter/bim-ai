@@ -240,3 +240,56 @@ test('minimal diagnostic catches detached access stubs and unsupported target-ho
   assert.ok(codes.includes('renderer.roof_opening.asymmetric_gable_unproven'));
   assert.ok(!codes.includes('renderer.slab_opening.stair_penetration_unproven'));
 });
+
+test('minimal diagnostic catches building and toposolid footprints partially off site terrain', () => {
+  const snapshot = {
+    modelId: 'mini-site-regression',
+    revision: 1,
+    elements: {
+      site: {
+        id: 'site',
+        kind: 'site',
+        boundaryMm: [
+          { xMm: 0, yMm: 0 },
+          { xMm: 10000, yMm: 0 },
+          { xMm: 10000, yMm: 10000 },
+          { xMm: 0, yMm: 10000 },
+        ],
+      },
+      topo: {
+        id: 'topo',
+        kind: 'toposolid',
+        boundaryMm: [
+          { xMm: -100, yMm: 0 },
+          { xMm: 9000, yMm: 0 },
+          { xMm: 9000, yMm: 9000 },
+          { xMm: 0, yMm: 9000 },
+        ],
+      },
+      floor: {
+        id: 'floor',
+        kind: 'floor',
+        hostToposolidId: 'topo',
+        boundaryMm: [
+          { xMm: 1000, yMm: 1000 },
+          { xMm: 9500, yMm: 1000 },
+          { xMm: 9500, yMm: 5000 },
+          { xMm: 1000, yMm: 5000 },
+        ],
+      },
+    },
+  };
+  const report = buildTargetHouseGeometryDiagnostic({
+    snapshot,
+    requiredFeatures: { scaleBasis: { overallWidthMm: 10000, overallDepthMm: 10000 } },
+  });
+
+  const codes = report.findings.map((finding) => finding.code);
+  assert.ok(codes.includes('site.toposolid_partially_outside_site'));
+  assert.ok(codes.includes('site.building_partially_outside_host_toposolid'));
+  assert.ok(
+    report.findings
+      .filter((finding) => finding.code.startsWith('site.'))
+      .every((finding) => finding.trackerItems.includes('BIR-S05')),
+  );
+});

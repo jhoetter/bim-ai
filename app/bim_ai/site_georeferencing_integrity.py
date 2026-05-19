@@ -637,6 +637,19 @@ def site_relationship_diagnostics_v1(subject: Any) -> list[SiteGeoreferencingFin
                     field="boundaryMm",
                 )
             )
+        if topo_polys and not any(
+            _polygon_inside_polygon(boundary, poly) for _, poly in topo_polys if poly
+        ):
+            findings.append(
+                SiteGeoreferencingFinding(
+                    rule_id="site_relationship_building_partially_outside_toposolid",
+                    severity="error",
+                    message="Building footprint is not fully contained by any toposolid boundary.",
+                    element_ids=(_id(floor),),
+                    tracker_items=("BIR-S05",),
+                    field="boundaryMm",
+                )
+            )
 
     site_polys = [(site, _polygon(site, "boundary_mm", "boundaryMm")) for site in sites]
     site_ids = {_id(site) for site in sites}
@@ -680,6 +693,19 @@ def site_relationship_diagnostics_v1(subject: Any) -> list[SiteGeoreferencingFin
                     field="boundaryMm",
                 )
             )
+        if site_polys and not any(
+            _polygon_inside_polygon(topo_poly, poly) for _, poly in site_polys if poly
+        ):
+            findings.append(
+                SiteGeoreferencingFinding(
+                    rule_id="site_relationship_toposolid_partially_outside_site",
+                    severity="error",
+                    message="Toposolid boundary is not fully contained by any site boundary.",
+                    element_ids=(topo_id,),
+                    tracker_items=("BIR-S05",),
+                    field="boundaryMm",
+                )
+            )
 
     for floor in floors:
         topo_host_id = _get(floor, "site_host_id", "siteHostId", "toposolid_id", "toposolidId", "hostToposolidId")
@@ -706,6 +732,17 @@ def site_relationship_diagnostics_v1(subject: Any) -> list[SiteGeoreferencingFin
                     rule_id="site_relationship_building_outside_host_toposolid",
                     severity="error",
                     message="Building footprint centroid is outside its referenced toposolid host.",
+                    element_ids=(floor_id, str(topo_host_id)),
+                    tracker_items=("BIR-S05",),
+                    field="siteHostId",
+                )
+            )
+        if len(boundary) >= 3 and not _polygon_inside_polygon(boundary, host_poly):
+            findings.append(
+                SiteGeoreferencingFinding(
+                    rule_id="site_relationship_building_partially_outside_host_toposolid",
+                    severity="error",
+                    message="Building footprint is not fully contained by its referenced toposolid host.",
                     element_ids=(floor_id, str(topo_host_id)),
                     tracker_items=("BIR-S05",),
                     field="siteHostId",
@@ -897,6 +934,44 @@ def _point_in_polygon(point: tuple[float, float], polygon: list[tuple[float, flo
             inside = not inside
         j = i
     return inside
+
+
+def _point_on_segment(
+    point: tuple[float, float],
+    start: tuple[float, float],
+    end: tuple[float, float],
+    tolerance: float = 1e-6,
+) -> bool:
+    px, py = point
+    sx, sy = start
+    ex, ey = end
+    cross = (py - sy) * (ex - sx) - (px - sx) * (ey - sy)
+    if abs(cross) > tolerance:
+        return False
+    dot = (px - sx) * (ex - sx) + (py - sy) * (ey - sy)
+    if dot < -tolerance:
+        return False
+    length_sq = (ex - sx) ** 2 + (ey - sy) ** 2
+    return dot <= length_sq + tolerance
+
+
+def _point_in_or_on_polygon(point: tuple[float, float], polygon: list[tuple[float, float]]) -> bool:
+    if len(polygon) < 3:
+        return False
+    for idx, start in enumerate(polygon):
+        if _point_on_segment(point, start, polygon[(idx + 1) % len(polygon)]):
+            return True
+    return _point_in_polygon(point, polygon)
+
+
+def _polygon_inside_polygon(
+    inner: list[tuple[float, float]], outer: list[tuple[float, float]]
+) -> bool:
+    return (
+        len(inner) >= 3
+        and len(outer) >= 3
+        and all(_point_in_or_on_polygon(point, outer) for point in inner)
+    )
 
 
 def _polygon_area(points: list[tuple[float, float]]) -> float:
