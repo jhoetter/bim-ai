@@ -29,6 +29,11 @@ SITE_GEO_IMPORT_DIAGNOSTIC_CODES = frozenset(
     }
 )
 
+SITE_GEO_DISCIPLINE = "site"
+SITE_GEO_PERSPECTIVE = "coordination"
+LINK_TRANSLATION_TOLERANCE_MM = 1.0
+LINK_ROTATION_TOLERANCE_DEG = 0.001
+
 Severity = Literal["error", "warning", "info"]
 
 
@@ -43,12 +48,18 @@ class SiteGeoreferencingFinding:
     expected: str | None = None
     actual: str | None = None
     recommendation: str | None = None
+    code: str | None = None
+    discipline: str = SITE_GEO_DISCIPLINE
+    perspective: str = SITE_GEO_PERSPECTIVE
+    layer: str = "domain_integrity"
 
     def to_dict(self) -> dict[str, Any]:
         payload = asdict(self)
         payload["ruleId"] = payload.pop("rule_id")
         payload["elementIds"] = list(payload.pop("element_ids"))
         payload["trackerItems"] = list(payload.pop("tracker_items"))
+        if payload.get("code") is None:
+            payload["code"] = payload["ruleId"]
         return {key: value for key, value in payload.items() if value not in (None, [], ())}
 
 
@@ -265,6 +276,7 @@ def linked_model_transform_diagnostics_v1(subject: Any) -> list[SiteGeoreferenci
         link_id = _id(link)
         kind = _kind(link)
         mode = str(_get(link, "origin_alignment_mode", "originAlignmentMode") or "origin_to_origin")
+        transform = _link_transform_row(link)
         if kind == "link_model" and not _get(link, "source_model_id", "sourceModelId"):
             findings.append(
                 SiteGeoreferencingFinding(
@@ -274,6 +286,45 @@ def linked_model_transform_diagnostics_v1(subject: Any) -> list[SiteGeoreferenci
                     element_ids=(link_id,),
                     tracker_items=("BIR-S02",),
                     field="sourceModelId",
+                )
+            )
+        if not _link_has_explicit_transform(link):
+            findings.append(
+                SiteGeoreferencingFinding(
+                    rule_id="site_link_transform_not_recorded",
+                    severity="warning",
+                    message="Link/import row has no explicit translation/origin transform.",
+                    element_ids=(link_id,),
+                    tracker_items=("BIR-S02", "BIR-S03"),
+                    field="translationMm",
+                    recommendation="Record the import/link transform so placement can be audited.",
+                )
+            )
+        if not _transform_row_is_finite(transform):
+            findings.append(
+                SiteGeoreferencingFinding(
+                    rule_id="site_link_transform_non_finite",
+                    severity="error",
+                    message="Link/import transform contains missing or non-finite values.",
+                    element_ids=(link_id,),
+                    tracker_items=("BIR-S02",),
+                    field="translationMm",
+                    expected="finite translation, rotation, and unit scale values",
+                    actual=str(transform),
+                )
+            )
+        rotation = _num(_get(link, "rotation_deg", "rotationDeg"))
+        if rotation is not None and abs(rotation) > 360:
+            findings.append(
+                SiteGeoreferencingFinding(
+                    rule_id="site_link_rotation_out_of_range",
+                    severity="warning",
+                    message="Link/import rotation is outside +/-360 degrees.",
+                    element_ids=(link_id,),
+                    tracker_items=("BIR-S02",),
+                    field="rotationDeg",
+                    expected="-360..360",
+                    actual=str(rotation),
                 )
             )
         if kind in {"link_dxf", "link_external"} and not (
@@ -337,6 +388,7 @@ def linked_model_transform_diagnostics_v1(subject: Any) -> list[SiteGeoreferenci
                     actual=str(_get(link, "reload_status", "reloadStatus")),
                 )
             )
+        findings.extend(_link_transform_drift_findings(link))
 
     return _sort_findings(findings)
 
@@ -372,9 +424,12 @@ def normalize_import_diagnostic_v1(
         "message": str(diagnostic.get("message") or category.replace("_", " ")),
         "elementIds": element_ids,
         "trackerItems": tracker_items,
+        "discipline": SITE_GEO_DISCIPLINE,
+        "perspective": SITE_GEO_PERSPECTIVE,
+        "mapping": _mapping_diagnostic_payload(diagnostic),
         "expected": diagnostic.get("expected"),
         "actual": diagnostic.get("actual"),
-    }
+    } | ({"blocking": True} if severity == "error" else {})
 
 
 def import_diagnostic_report_v1(
@@ -396,6 +451,7 @@ def import_diagnostic_report_v1(
         "sourceName": source_name,
         "deterministic": True,
         "trackerItems": ["BIR-S03"],
+        "ok": not any(row["severity"] == "error" for row in rows),
         "summary": {
             "diagnosticCount": len(rows),
             "categoryCounts": dict(sorted(category_counts.items())),
@@ -422,47 +478,47 @@ def roundtrip_drift_report_v1(
         src = source_elements.get(eid)
         rb = readback_elements.get(eid)
         if src is None:
-            rows.append({"id": eid, "status": "unexpected_in_readback", "field": "id"})
+            rows.append(_roundtrip_row(eid, "unexpected_in_readback", "id"))
             continue
         if rb is None:
-            rows.append({"id": eid, "status": "missing_in_readback", "field": "id"})
+            rows.append(_roundtrip_row(eid, "missing_in_readback", "id"))
             continue
         src_fp = _element_fingerprint(src)
         rb_fp = _element_fingerprint(rb)
         if src_fp["kind"] != rb_fp["kind"]:
             rows.append(
-                {
-                    "id": eid,
-                    "status": "category_drift",
-                    "field": "kind",
-                    "expected": src_fp["kind"],
-                    "actual": rb_fp["kind"],
-                }
+                _roundtrip_row(
+                    eid,
+                    "category_drift",
+                    "kind",
+                    expected=src_fp["kind"],
+                    actual=rb_fp["kind"],
+                )
             )
         for field in ("typeId", "materialKey"):
             if src_fp.get(field) != rb_fp.get(field):
                 rows.append(
-                    {
-                        "id": eid,
-                        "status": f"{field}_drift",
-                        "field": field,
-                        "expected": src_fp.get(field),
-                        "actual": rb_fp.get(field),
-                    }
+                    _roundtrip_row(
+                        eid,
+                        f"{field}_drift",
+                        field,
+                        expected=src_fp.get(field),
+                        actual=rb_fp.get(field),
+                    )
                 )
         placement_delta = _max_point_delta(src_fp["points"], rb_fp["points"])
         if placement_delta is None:
             if src_fp["points"] or rb_fp["points"]:
-                rows.append({"id": eid, "status": "geometry_point_count_drift", "field": "points"})
+                rows.append(_roundtrip_row(eid, "geometry_point_count_drift", "points"))
         elif placement_delta > placement_tolerance_mm:
             rows.append(
-                {
-                    "id": eid,
-                    "status": "placement_drift",
-                    "field": "points",
-                    "deltaMm": round(placement_delta, 6),
-                    "toleranceMm": placement_tolerance_mm,
-                }
+                _roundtrip_row(
+                    eid,
+                    "placement_drift",
+                    "points",
+                    deltaMm=round(placement_delta, 6),
+                    toleranceMm=placement_tolerance_mm,
+                )
             )
 
     count_rows = _kind_count_drift_rows(source_elements, readback_elements)
@@ -559,6 +615,80 @@ def site_relationship_diagnostics_v1(subject: Any) -> list[SiteGeoreferencingFin
                     element_ids=(_id(floor),),
                     tracker_items=("BIR-S05",),
                     field="boundaryMm",
+                )
+            )
+
+    site_polys = [(site, _polygon(site, "boundary_mm", "boundaryMm")) for site in sites]
+    site_ids = {_id(site) for site in sites}
+    for topo, topo_poly in topo_polys:
+        topo_id = _id(topo)
+        if len(topo_poly) < 3 or abs(_polygon_area(topo_poly)) < 1e-6:
+            findings.append(
+                SiteGeoreferencingFinding(
+                    rule_id="site_relationship_toposolid_degenerate_boundary",
+                    severity="error",
+                    message="Toposolid boundary is missing, degenerate, or has fewer than three points.",
+                    element_ids=(topo_id,),
+                    tracker_items=("BIR-S05",),
+                    field="boundaryMm",
+                    expected="non-degenerate polygon with at least three points",
+                    actual=str(len(topo_poly)),
+                )
+            )
+            continue
+        site_host_id = _get(topo, "site_id", "siteId")
+        if site_host_id and site_host_id not in site_ids:
+            findings.append(
+                SiteGeoreferencingFinding(
+                    rule_id="site_relationship_toposolid_invalid_site_host",
+                    severity="error",
+                    message="Toposolid siteId does not reference an existing site.",
+                    element_ids=(topo_id, str(site_host_id)),
+                    tracker_items=("BIR-S05",),
+                    field="siteId",
+                )
+            )
+        topo_centroid = _centroid(topo_poly)
+        if site_polys and not any(_point_in_polygon(topo_centroid, poly) for _, poly in site_polys if poly):
+            findings.append(
+                SiteGeoreferencingFinding(
+                    rule_id="site_relationship_toposolid_outside_site",
+                    severity="warning",
+                    message="Toposolid centroid is outside all site boundaries.",
+                    element_ids=(topo_id,),
+                    tracker_items=("BIR-S05",),
+                    field="boundaryMm",
+                )
+            )
+
+    for floor in floors:
+        topo_host_id = _get(floor, "site_host_id", "siteHostId", "toposolid_id", "toposolidId", "hostToposolidId")
+        if not topo_host_id:
+            continue
+        floor_id = _id(floor)
+        host_poly = next((poly for topo, poly in topo_polys if _id(topo) == str(topo_host_id)), None)
+        if host_poly is None:
+            findings.append(
+                SiteGeoreferencingFinding(
+                    rule_id="site_relationship_building_invalid_toposolid_host",
+                    severity="error",
+                    message="Building footprint references a missing toposolid host.",
+                    element_ids=(floor_id, str(topo_host_id)),
+                    tracker_items=("BIR-S05",),
+                    field="siteHostId",
+                )
+            )
+            continue
+        boundary = _polygon(floor, "boundary_mm", "boundaryMm")
+        if len(boundary) >= 3 and not _point_in_polygon(_centroid(boundary), host_poly):
+            findings.append(
+                SiteGeoreferencingFinding(
+                    rule_id="site_relationship_building_outside_host_toposolid",
+                    severity="error",
+                    message="Building footprint centroid is outside its referenced toposolid host.",
+                    element_ids=(floor_id, str(topo_host_id)),
+                    tracker_items=("BIR-S05",),
+                    field="siteHostId",
                 )
             )
 
@@ -749,6 +879,16 @@ def _point_in_polygon(point: tuple[float, float], polygon: list[tuple[float, flo
     return inside
 
 
+def _polygon_area(points: list[tuple[float, float]]) -> float:
+    if len(points) < 3:
+        return 0.0
+    area = 0.0
+    for idx, (x1, y1) in enumerate(points):
+        x2, y2 = points[(idx + 1) % len(points)]
+        area += x1 * y2 - x2 * y1
+    return area / 2.0
+
+
 def _link_rows(elements: Mapping[str, Any]) -> list[Any]:
     return [
         elem
@@ -760,6 +900,14 @@ def _link_rows(elements: Mapping[str, Any]) -> list[Any]:
 def _link_transform_row(link: Any) -> dict[str, Any]:
     pos3 = _point3(_get(link, "position_mm", "positionMm"))
     origin2 = _point2(_get(link, "origin_mm", "originMm"))
+    translation3 = _point3(_get(link, "translation_mm", "translationMm"))
+    translation = translation3 or pos3
+    if translation is not None:
+        x_mm, y_mm, z_mm = translation
+    elif origin2 is not None:
+        x_mm, y_mm, z_mm = origin2[0], origin2[1], 0.0
+    else:
+        x_mm, y_mm, z_mm = 0.0, 0.0, 0.0
     return {
         "id": _id(link),
         "kind": _kind(link),
@@ -767,9 +915,9 @@ def _link_transform_row(link: Any) -> dict[str, Any]:
             _get(link, "origin_alignment_mode", "originAlignmentMode") or "origin_to_origin"
         ),
         "translationMm": {
-            "xMm": (pos3[0] if pos3 else origin2[0] if origin2 else 0.0),
-            "yMm": (pos3[1] if pos3 else origin2[1] if origin2 else 0.0),
-            "zMm": (pos3[2] if pos3 else 0.0),
+            "xMm": x_mm,
+            "yMm": y_mm,
+            "zMm": z_mm,
         },
         "rotationDeg": _num(_get(link, "rotation_deg", "rotationDeg"), 0.0),
         "unitScaleToMm": _num(_get(link, "unit_scale_to_mm", "unitScaleToMm")),
@@ -781,11 +929,109 @@ def _link_transform_row(link: Any) -> dict[str, Any]:
     }
 
 
+def _link_has_explicit_transform(link: Any) -> bool:
+    return any(
+        _get(link, *names) is not None
+        for names in (
+            ("position_mm", "positionMm"),
+            ("origin_mm", "originMm"),
+            ("translation_mm", "translationMm"),
+        )
+    )
+
+
+def _transform_row_is_finite(row: Mapping[str, Any]) -> bool:
+    translation = row.get("translationMm")
+    if not isinstance(translation, Mapping):
+        return False
+    if any(_num(translation.get(axis)) is None for axis in ("xMm", "yMm", "zMm")):
+        return False
+    if _num(row.get("rotationDeg")) is None:
+        return False
+    unit = row.get("unitScaleToMm")
+    return unit is None or _num(unit) is not None
+
+
 def _link_is_stale(link: Any) -> bool:
     if _get(link, "loaded") is False:
         return True
+    if _get(link, "stale", "isStale") is True:
+        return True
     status = str(_get(link, "reload_status", "reloadStatus") or "")
-    return status in {"source_missing", "parse_error"}
+    return status in {"source_missing", "parse_error", "unloaded", "stale", "out_of_date", "needs_reload"}
+
+
+def _link_transform_drift_findings(link: Any) -> list[SiteGeoreferencingFinding]:
+    expected = _transform_payload(
+        _get(link, "expected_transform", "expectedTransform", "sourceTransform")
+    )
+    actual = _transform_payload(
+        _get(link, "actual_transform", "actualTransform", "readbackTransform")
+    )
+    if expected is None or actual is None:
+        return []
+
+    findings: list[SiteGeoreferencingFinding] = []
+    link_id = _id(link)
+    for axis in ("xMm", "yMm", "zMm"):
+        exp = _num(expected["translationMm"].get(axis))
+        act = _num(actual["translationMm"].get(axis))
+        if exp is None or act is None:
+            continue
+        delta = abs(act - exp)
+        if delta > LINK_TRANSLATION_TOLERANCE_MM:
+            findings.append(
+                SiteGeoreferencingFinding(
+                    rule_id="site_link_transform_drift",
+                    severity="error",
+                    message="Link/import readback transform drift exceeds placement tolerance.",
+                    element_ids=(link_id,),
+                    tracker_items=("BIR-S02", "BIR-S04"),
+                    field=f"translationMm.{axis}",
+                    expected=str(exp),
+                    actual=str(act),
+                    recommendation="Re-acquire coordinates or reject the import/readback as placement drift.",
+                )
+            )
+    exp_rot = _num(expected.get("rotationDeg"))
+    act_rot = _num(actual.get("rotationDeg"))
+    if exp_rot is not None and act_rot is not None and abs(act_rot - exp_rot) > LINK_ROTATION_TOLERANCE_DEG:
+        findings.append(
+            SiteGeoreferencingFinding(
+                rule_id="site_link_transform_drift",
+                severity="error",
+                message="Link/import readback rotation drift exceeds tolerance.",
+                element_ids=(link_id,),
+                tracker_items=("BIR-S02", "BIR-S04"),
+                field="rotationDeg",
+                expected=str(exp_rot),
+                actual=str(act_rot),
+                recommendation="Re-acquire coordinates or reject the import/readback as rotation drift.",
+            )
+        )
+    return findings
+
+
+def _transform_payload(value: Any) -> dict[str, Any] | None:
+    if not isinstance(value, Mapping):
+        return None
+    translation = value.get("translationMm") or value.get("positionMm") or value.get("originMm")
+    if not isinstance(translation, Mapping):
+        return None
+    return {
+        "translationMm": {
+            "xMm": _num(translation.get("xMm"), 0.0),
+            "yMm": _num(translation.get("yMm"), 0.0),
+            "zMm": _num(translation.get("zMm"), 0.0),
+        },
+        "rotationDeg": _num(value.get("rotationDeg"), 0.0),
+    }
+
+
+def _mapping_diagnostic_payload(diagnostic: Mapping[str, Any]) -> dict[str, Any] | None:
+    keys = ("sourceCategory", "mappedCategory", "mappingSupported", "fallbackCategory")
+    payload = {key: diagnostic.get(key) for key in keys if key in diagnostic}
+    return payload or None
 
 
 def _element_fingerprint(elem: Any) -> dict[str, Any]:
@@ -843,15 +1089,30 @@ def _kind_count_drift_rows(
     for kind in sorted(set(src_counts) | set(rb_counts)):
         if src_counts[kind] != rb_counts[kind]:
             rows.append(
-                {
-                    "id": f"kind:{kind}",
-                    "status": "element_count_drift",
-                    "field": "kindCount",
-                    "expected": src_counts[kind],
-                    "actual": rb_counts[kind],
-                }
+                _roundtrip_row(
+                    f"kind:{kind}",
+                    "element_count_drift",
+                    "kindCount",
+                    expected=src_counts[kind],
+                    actual=rb_counts[kind],
+                )
             )
     return rows
+
+
+def _roundtrip_row(eid: str, status: str, field: str, **extra: Any) -> dict[str, Any]:
+    severity = "error" if status in {"missing_in_readback", "category_drift", "placement_drift"} else "warning"
+    return {
+        "schemaVersion": 1,
+        "id": eid,
+        "status": status,
+        "field": field,
+        "severity": severity,
+        "trackerItems": ["BIR-S04"],
+        "discipline": SITE_GEO_DISCIPLINE,
+        "perspective": SITE_GEO_PERSPECTIVE,
+        **{key: value for key, value in extra.items() if value is not None},
+    }
 
 
 def _building_id(elem: Any) -> str:

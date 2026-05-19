@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+from bim_ai.domain_integrity import check_domain_integrity
 from bim_ai.site_georeferencing_integrity import (
+    check_site_georeferencing_integrity,
     import_diagnostic_report_v1,
     linked_model_transform_diagnostics_v1,
     multi_building_shared_coordinate_diagnostics_v1,
@@ -63,6 +65,75 @@ def test_missing_coordinate_datums_and_shared_coord_link_are_reported() -> None:
     assert "site_link_shared_coords_missing_survey_point" in link_rules
 
 
+def test_missing_level_datum_is_blocking_domain_finding() -> None:
+    elements = {
+        "internal_origin": {"kind": "internal_origin", "id": "internal_origin"},
+        "pbp": {
+            "kind": "project_base_point",
+            "id": "pbp",
+            "positionMm": {"xMm": 0, "yMm": 0, "zMm": 0},
+            "angleToTrueNorthDeg": 0,
+        },
+        "survey": {
+            "kind": "survey_point",
+            "id": "survey",
+            "positionMm": {"xMm": 0, "yMm": 0, "zMm": 0},
+        },
+    }
+
+    findings = check_site_georeferencing_integrity(elements)
+    row = next(f for f in findings if f["ruleId"] == "site_coordinate_system_missing_level_datum")
+
+    assert row["severity"] == "error"
+    assert row["blocking"] is True
+    assert row["code"] == "site_coordinate_system_missing_level_datum"
+    assert row["discipline"] == "site"
+    assert row["perspective"] == "coordination"
+    assert row["trackerItems"] == ["BIR-S01"]
+
+
+def test_domain_integrity_preserves_site_georeferencing_tracker_items() -> None:
+    findings = check_domain_integrity({"lvl-1": {"kind": "level", "id": "lvl-1"}})
+    site_rows = [f for f in findings if f["source"] == "site_georeferencing"]
+
+    assert site_rows
+    assert any("BIR-S01" in row["trackerItems"] for row in site_rows)
+    assert any("BIR-S05" in row["trackerItems"] for row in site_rows)
+    assert all(row["code"] == row["ruleId"] for row in site_rows)
+
+
+def test_stale_unloaded_links_and_transform_drift_are_reported() -> None:
+    elements = {
+        **_base_elements(),
+        "link-struct": {
+            "kind": "link_model",
+            "id": "link-struct",
+            "sourceModelId": "struct-v12",
+            "positionMm": {"xMm": 100, "yMm": 200, "zMm": 0},
+            "originAlignmentMode": "shared_coords",
+            "loaded": False,
+            "reloadStatus": "unloaded",
+            "expectedTransform": {
+                "translationMm": {"xMm": 100, "yMm": 200, "zMm": 0},
+                "rotationDeg": 0,
+            },
+            "actualTransform": {
+                "translationMm": {"xMm": 100, "yMm": 206, "zMm": 0},
+                "rotationDeg": 0.01,
+            },
+        },
+    }
+
+    findings = linked_model_transform_diagnostics_v1(elements)
+    rules = [f.rule_id for f in findings]
+    drift_rows = [f for f in findings if f.rule_id == "site_link_transform_drift"]
+
+    assert "site_link_source_stale_or_unloaded" in rules
+    assert len(drift_rows) == 2
+    assert {f.field for f in drift_rows} == {"translationMm.yMm", "rotationDeg"}
+    assert all(f.severity == "error" for f in drift_rows)
+
+
 def test_import_diagnostic_contract_normalizes_categories_and_tracker_items() -> None:
     report = import_diagnostic_report_v1(
         [
@@ -88,6 +159,39 @@ def test_import_diagnostic_contract_normalizes_categories_and_tracker_items() ->
     fallback = report["diagnostics"][1]
     assert fallback["category"] == "unsupported_product"
     assert fallback["severity"] == "warning"
+
+
+def test_import_diagnostic_contract_preserves_unsupported_mapping_evidence() -> None:
+    report = import_diagnostic_report_v1(
+        [
+            {
+                "code": "ifc.mapping.unsupported",
+                "category": "category_mapping_fallback",
+                "severity": "error",
+                "message": "IfcVirtualElement mapped to generic import proxy.",
+                "sourceCategory": "IfcVirtualElement",
+                "mappedCategory": "import_proxy",
+                "mappingSupported": False,
+                "fallbackCategory": "unsupported_product",
+                "elementIds": ["ifc-13"],
+            }
+        ],
+        operation_id="import-unsupported-mapping",
+        source_name="coordination.ifc",
+    )
+
+    diagnostic = report["diagnostics"][0]
+
+    assert report["ok"] is False
+    assert diagnostic["category"] == "category_mapping_fallback"
+    assert diagnostic["blocking"] is True
+    assert diagnostic["mapping"] == {
+        "sourceCategory": "IfcVirtualElement",
+        "mappedCategory": "import_proxy",
+        "mappingSupported": False,
+        "fallbackCategory": "unsupported_product",
+    }
+    assert diagnostic["trackerItems"] == ["BIR-S03"]
 
 
 def test_roundtrip_drift_report_detects_counts_placement_category_and_material() -> None:
@@ -130,6 +234,8 @@ def test_roundtrip_drift_report_detects_counts_placement_category_and_material()
     assert "category_drift" in statuses
     assert "unexpected_in_readback" in statuses
     assert "element_count_drift" in statuses
+    assert all(row["trackerItems"] == ["BIR-S04"] for row in report["drifts"])
+    assert all(row["discipline"] == "site" for row in report["drifts"])
 
 
 def test_site_relationship_diagnostics_cover_toposolid_hosts_and_property_lines() -> None:
@@ -187,6 +293,58 @@ def test_site_relationship_diagnostics_cover_toposolid_hosts_and_property_lines(
     assert "site_relationship_wall_invalid_toposolid_host" in rules
     assert "site_relationship_building_outside_toposolid" in rules
     assert "site_relationship_property_line_closure_error" in rules
+
+
+def test_invalid_site_toposolid_relationships_are_blocking() -> None:
+    elements = {
+        **_base_elements(),
+        "site": {
+            "kind": "site",
+            "id": "site",
+            "boundaryMm": [
+                {"xMm": 0, "yMm": 0},
+                {"xMm": 1000, "yMm": 0},
+                {"xMm": 1000, "yMm": 1000},
+                {"xMm": 0, "yMm": 1000},
+            ],
+        },
+        "topo-bad-host": {
+            "kind": "toposolid",
+            "id": "topo-bad-host",
+            "siteId": "missing-site",
+            "boundaryMm": [
+                {"xMm": 2000, "yMm": 2000},
+                {"xMm": 3000, "yMm": 2000},
+                {"xMm": 3000, "yMm": 3000},
+            ],
+        },
+        "topo-degenerate": {
+            "kind": "toposolid",
+            "id": "topo-degenerate",
+            "boundaryMm": [
+                {"xMm": 0, "yMm": 0},
+                {"xMm": 100, "yMm": 0},
+            ],
+        },
+        "floor-bad-host": {
+            "kind": "floor",
+            "id": "floor-bad-host",
+            "siteHostId": "missing-topo",
+            "boundaryMm": [
+                {"xMm": 100, "yMm": 100},
+                {"xMm": 200, "yMm": 100},
+                {"xMm": 200, "yMm": 200},
+            ],
+        },
+    }
+
+    findings = site_relationship_diagnostics_v1(elements)
+    rules = {f.rule_id: f for f in findings}
+
+    assert rules["site_relationship_toposolid_invalid_site_host"].severity == "error"
+    assert rules["site_relationship_toposolid_degenerate_boundary"].severity == "error"
+    assert rules["site_relationship_building_invalid_toposolid_host"].severity == "error"
+    assert "site_relationship_toposolid_outside_site" in rules
 
 
 def test_multi_building_shared_coordinate_support_reports_missing_anchor() -> None:
