@@ -3,6 +3,7 @@ from __future__ import annotations
 from bim_ai.document import Document
 from bim_ai.elements import (
     AssetLibraryEntryElem,
+    CeilingElem,
     DoorElem,
     FamilyInstanceElem,
     FamilyTypeElem,
@@ -10,6 +11,8 @@ from bim_ai.elements import (
     LevelElem,
     PlacedAssetElem,
     RailingElem,
+    ReferencePlaneElem,
+    RoofElem,
     StairElem,
     Vec2Mm,
     VoidCutElem,
@@ -330,6 +333,149 @@ def test_direct_family_host_support_field_is_classified() -> None:
 
     assert unsupported.element_ids == ["family-detector", "wall-1"]
     assert unsupported.model_dump(by_alias=True)["hostIds"] == ["wall-1"]
+
+
+def test_hosted_family_support_classes_accept_declared_host_kinds() -> None:
+    wall = _wall()
+    floor_host = _floor("floor-host")
+    ceiling = CeilingElem(
+        id="ceiling-1",
+        levelId="lvl-1",
+        boundaryMm=[_pt(0, 0), _pt(5000, 0), _pt(5000, 4000), _pt(0, 4000)],
+    )
+    roof = RoofElem(
+        id="roof-1",
+        referenceLevelId="lvl-1",
+        footprintMm=[_pt(0, 0), _pt(5000, 0), _pt(5000, 4000), _pt(0, 4000)],
+    )
+    workplane = ReferencePlaneElem(
+        id="ref-plane-1",
+        levelId="lvl-1",
+        startMm=_pt(0, 0),
+        endMm=_pt(5000, 0),
+        isWorkPlane=True,
+    )
+    wall_type = FamilyTypeElem(
+        id="ft-wall-hosted",
+        familyId="fam-wall",
+        discipline="generic",
+        hostSupport="wall_hosted",
+    )
+    ceiling_type = FamilyTypeElem(
+        id="ft-ceiling-hosted",
+        familyId="fam-ceiling",
+        discipline="generic",
+        hostSupport="ceiling_hosted",
+    )
+    workplane_type = FamilyTypeElem(
+        id="ft-workplane-hosted",
+        familyId="fam-workplane",
+        discipline="generic",
+        hostSupport="workplane_hosted",
+    )
+    face_asset = AssetLibraryEntryElem(
+        id="asset-face-hosted",
+        name="Face asset",
+        category="furniture",
+        placementSupport="face_hosted",
+    )
+    door_asset = AssetLibraryEntryElem(
+        id="asset-window-category",
+        name="Window category asset",
+        category="window",
+    )
+    instances = [
+        FamilyInstanceElem(
+            id="family-wall-ok",
+            familyTypeId=wall_type.id,
+            positionMm=_pt(1200, 1000),
+            hostElementId=wall.id,
+        ),
+        FamilyInstanceElem(
+            id="family-ceiling-ok",
+            familyTypeId=ceiling_type.id,
+            positionMm=_pt(1200, 1200),
+            hostElementId=ceiling.id,
+        ),
+        FamilyInstanceElem(
+            id="family-workplane-ok",
+            familyTypeId=workplane_type.id,
+            positionMm=_pt(1200, 1200),
+            hostElementId=workplane.id,
+        ),
+        PlacedAssetElem(
+            id="asset-face-floor-ok",
+            name="Face asset on floor",
+            assetId=face_asset.id,
+            levelId="lvl-1",
+            positionMm=_pt(1500, 1500),
+            hostElementId=floor_host.id,
+        ),
+        PlacedAssetElem(
+            id="asset-face-roof-ok",
+            name="Face asset on roof",
+            assetId=face_asset.id,
+            levelId="lvl-1",
+            positionMm=_pt(1500, 1500),
+            hostElementId=roof.id,
+        ),
+        PlacedAssetElem(
+            id="asset-window-wall-ok",
+            name="Window asset on wall",
+            assetId=door_asset.id,
+            levelId="lvl-1",
+            positionMm=_pt(1500, 1000),
+            hostElementId=wall.id,
+        ),
+    ]
+
+    violations = hosted_opening_integrity_violations(
+        _doc(
+            wall,
+            floor_host,
+            ceiling,
+            roof,
+            workplane,
+            wall_type,
+            ceiling_type,
+            workplane_type,
+            face_asset,
+            door_asset,
+            *instances,
+        )
+    )
+
+    assert {
+        violation.rule_id
+        for violation in violations
+        if violation.rule_id.startswith("hosted_family_")
+    } == set()
+
+
+def test_asset_catalog_placement_support_field_is_classified() -> None:
+    asset_entry = AssetLibraryEntryElem(
+        id="asset-face-hosted",
+        name="Face hosted panel",
+        category="furniture",
+        placementSupport="face_hosted",
+    )
+    asset = PlacedAssetElem(
+        id="asset-face-wrong-host",
+        name="Face hosted panel",
+        assetId=asset_entry.id,
+        levelId="lvl-1",
+        positionMm=_pt(1000, 1000),
+        hostElementId="lvl-1",
+    )
+
+    unsupported = next(
+        v
+        for v in hosted_opening_integrity_violations(_doc(asset_entry, asset))
+        if v.rule_id == "hosted_family_unsupported_host_class"
+    )
+
+    assert unsupported.element_ids == ["asset-face-wrong-host", "lvl-1"]
+    assert unsupported.model_dump(by_alias=True)["trackerItems"] == ["BIR-C07", "BIR-C08"]
 
 
 def test_orphan_void_cut_leakage_is_blocking_and_actionable() -> None:

@@ -374,6 +374,7 @@ FAMILY_OVERRIDE_SCHEDULED_KEYS: frozenset[str] = frozenset(
 )
 FAMILY_CONTENT_RULE_TRACKER_ITEMS: dict[str, list[str]] = {
     "model_integrity_family_type_schema_incomplete": ["BIR-V01"],
+    "model_integrity_family_type_host_support_invalid": ["BIR-V01", "BIR-C07"],
     "model_integrity_family_type_required_parameter_missing": ["BIR-V01"],
     "model_integrity_family_type_parameter_constraint_violation": ["BIR-V01"],
     "model_integrity_family_type_required_dimension_undeclared": ["BIR-V01"],
@@ -384,6 +385,7 @@ FAMILY_CONTENT_RULE_TRACKER_ITEMS: dict[str, list[str]] = {
     "model_integrity_family_instance_material_override_inconsistent": ["BIR-V02"],
     "model_integrity_family_instance_host_constraint_violation": ["BIR-V02"],
     "model_integrity_asset_catalog_metadata_incomplete": ["BIR-V03"],
+    "model_integrity_asset_catalog_host_support_invalid": ["BIR-V03", "BIR-C07"],
     "model_integrity_asset_catalog_param_schema_invalid": ["BIR-V03"],
     "model_integrity_asset_placement_support_invalid": ["BIR-V04"],
     "model_integrity_asset_placement_floating": ["BIR-V04"],
@@ -393,6 +395,7 @@ FAMILY_CONTENT_RULE_TRACKER_ITEMS: dict[str, list[str]] = {
 }
 FAMILY_CONTENT_RULE_RECOMMENDATIONS: dict[str, str] = {
     "model_integrity_family_type_schema_incomplete": "Complete the family type schema before treating the content as strict production content.",
+    "model_integrity_family_type_host_support_invalid": "Use a supported hostSupport value: wall_hosted, face_hosted, level_hosted, floor_hosted, ceiling_hosted, workplane_hosted, or freestanding.",
     "model_integrity_family_type_required_parameter_missing": "Add the required type parameter value or mark it optional in the parameter schema.",
     "model_integrity_family_type_parameter_constraint_violation": "Update the family type parameter value to satisfy its declared schema constraints.",
     "model_integrity_family_type_required_dimension_undeclared": "Declare every required dimension in parameters and parameterSchema.",
@@ -402,6 +405,7 @@ FAMILY_CONTENT_RULE_RECOMMENDATIONS: dict[str, str] = {
     "model_integrity_family_instance_override_unscheduled": "Add the overridden parameter to scheduleFields or remove it from instance override scope.",
     "model_integrity_family_instance_material_override_inconsistent": "Use a material declared by the family type material slots or explicitly allow the material override.",
     "model_integrity_family_instance_host_constraint_violation": "Resize, rehost, or move the family instance so it fits its declared host constraints.",
+    "model_integrity_asset_catalog_host_support_invalid": "Use a supported placementSupport/hostSupport value before publishing the asset catalog entry.",
 }
 KERNEL_RULE_TRACKER_ITEMS: dict[str, list[str]] = {
     "model_integrity_missing_element_id": ["BIR-P01"],
@@ -466,6 +470,23 @@ HOST_SUPPORT_ALIASES: dict[str, str] = {
     "free": "freestanding",
     "freestanding": "freestanding",
     "free-standing": "freestanding",
+}
+VALID_HOST_SUPPORT_CLASSES: frozenset[str] = frozenset(
+    {
+        "wall_hosted",
+        "face_hosted",
+        "level_hosted",
+        "floor_hosted",
+        "ceiling_hosted",
+        "workplane_hosted",
+        "freestanding",
+    }
+)
+PLACED_ASSET_HOST_KIND_REQUIREMENTS: dict[str, frozenset[str]] = {
+    "wall_hosted": frozenset({"wall"}),
+    "face_hosted": frozenset({"wall", "floor", "roof", "ceiling"}),
+    "ceiling_hosted": frozenset({"ceiling"}),
+    "workplane_hosted": frozenset({"reference_plane"}),
 }
 
 REFERENCE_SPECS: tuple[ReferenceSpec, ...] = (
@@ -944,6 +965,24 @@ def _family_type_schema_findings(element: Any, element_id: str) -> list[ModelInt
             )
         )
 
+    host_support = _read_any(element, ("hostSupport", "hostingMode", "hostKind"))
+    normalized_host_support = _normalize_host_support(host_support)
+    if host_support not in (None, "") and normalized_host_support not in VALID_HOST_SUPPORT_CLASSES:
+        findings.append(
+            ModelIntegrityFinding(
+                rule_id="model_integrity_family_type_host_support_invalid",
+                severity="error" if _strict_family_schema(element) else "warning",
+                message=(
+                    f"Family type '{element_id}' declares unsupported hostSupport "
+                    f"'{host_support}'."
+                ),
+                element_ids=(element_id,),
+                field="hostSupport",
+                expected=", ".join(sorted(VALID_HOST_SUPPORT_CLASSES)),
+                actual=str(host_support),
+            )
+        )
+
     params = _read(element, "parameters", default={}) or {}
     schema = _parameter_schema_map(element)
     required_dimensions = _string_list(_read_any(element, ("requiredDimensions", "dimensions")))
@@ -1177,6 +1216,23 @@ def _asset_catalog_metadata_findings(element: Any, element_id: str) -> list[Mode
                 actual=", ".join(missing),
             )
         )
+    placement_support = _read_any(element, ("placementSupport", "hostSupport"))
+    normalized_support = _normalize_host_support(placement_support)
+    if placement_support not in (None, "") and normalized_support not in VALID_HOST_SUPPORT_CLASSES:
+        findings.append(
+            ModelIntegrityFinding(
+                rule_id="model_integrity_asset_catalog_host_support_invalid",
+                severity="error",
+                message=(
+                    f"Asset catalog entry '{element_id}' declares unsupported placementSupport "
+                    f"'{placement_support}'."
+                ),
+                element_ids=(element_id,),
+                field="placementSupport",
+                expected=", ".join(sorted(VALID_HOST_SUPPORT_CLASSES)),
+                actual=str(placement_support),
+            )
+        )
     schema = _asset_parameter_schema_map(element)
     for key, entry in sorted(schema.items()):
         default = _read(entry, "default")
@@ -1203,28 +1259,37 @@ def _placed_asset_findings(
     findings: list[ModelIntegrityFinding] = []
     host_id = _read(element, "hostElementId")
     host = elements.get(str(host_id)) if host_id not in (None, "") else None
-    required_host_kind = {
-        "wall_hosted": "wall",
-        "ceiling_hosted": "ceiling",
-        "workplane_hosted": "reference_plane",
-    }.get(support)
-    if required_host_kind is not None:
+    required_host_kinds = PLACED_ASSET_HOST_KIND_REQUIREMENTS.get(support)
+    if support not in VALID_HOST_SUPPORT_CLASSES:
+        findings.append(
+            ModelIntegrityFinding(
+                rule_id="model_integrity_asset_placement_support_invalid",
+                severity="error",
+                message=f"Placed asset '{element_id}' declares unsupported support '{support}'.",
+                element_ids=(element_id, str(asset_id)),
+                field="placementSupport",
+                expected=", ".join(sorted(VALID_HOST_SUPPORT_CLASSES)),
+                actual=support,
+            )
+        )
+    if required_host_kinds is not None:
         if host is None:
             findings.append(
                 ModelIntegrityFinding(
                     rule_id="model_integrity_asset_placement_support_invalid",
                     severity="error",
                     message=(
-                        f"Placed asset '{element_id}' requires a {required_host_kind} host for "
+                        f"Placed asset '{element_id}' requires a host of kind "
+                        f"{', '.join(sorted(required_host_kinds))} for "
                         f"support '{support}'."
                     ),
                     element_ids=(element_id, str(asset_id)),
                     field="hostElementId",
-                    expected=required_host_kind,
+                    expected=", ".join(sorted(required_host_kinds)),
                     actual=str(host_id or ""),
                 )
             )
-        elif str(_read(host, "kind", default="")) != required_host_kind:
+        elif str(_read(host, "kind", default="")) not in required_host_kinds:
             findings.append(
                 ModelIntegrityFinding(
                     rule_id="model_integrity_asset_placement_support_invalid",
@@ -1235,7 +1300,7 @@ def _placed_asset_findings(
                     ),
                     element_ids=(element_id, str(asset_id), str(host_id)),
                     field="hostElementId",
-                    expected=required_host_kind,
+                    expected=", ".join(sorted(required_host_kinds)),
                     actual=str(_read(host, "kind", default="")),
                 )
             )

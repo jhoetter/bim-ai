@@ -96,6 +96,24 @@ def test_family_type_content_integrity_accepts_complete_schema_and_placements() 
                 "placementSupport": "freestanding",
                 "paramSchema": [{"key": "widthMm", "kind": "mm", "default": 500, "min": 300}],
             },
+            "asset-face-sign": {
+                "kind": "asset_library_entry",
+                "id": "asset-face-sign",
+                "assetKind": "block_2d",
+                "name": "Face hosted sign",
+                "category": "furniture",
+                "widthMm": 300,
+                "depthMm": 20,
+                "heightMm": 200,
+                "clearanceMm": 50,
+                "maintenanceZoneMm": {"front": 50},
+                "materialSlots": ["panel"],
+                "renderSupport": {"proxy": "box"},
+                "scheduleFields": ["widthMm", "heightMm"],
+                "exportMetadata": {"ifcClass": "IfcFurniture"},
+                "placementSupport": "face_hosted",
+                "paramSchema": [{"key": "widthMm", "kind": "mm", "default": 300, "min": 100}],
+            },
             "chair-1": {
                 "kind": "placed_asset",
                 "id": "chair-1",
@@ -103,6 +121,15 @@ def test_family_type_content_integrity_accepts_complete_schema_and_placements() 
                 "assetId": "asset-chair",
                 "levelId": "lvl-1",
                 "positionMm": {"xMm": 2500, "yMm": 2500},
+            },
+            "sign-1": {
+                "kind": "placed_asset",
+                "id": "sign-1",
+                "name": "Face hosted sign",
+                "assetId": "asset-face-sign",
+                "levelId": "lvl-1",
+                "hostElementId": "wall-1",
+                "positionMm": {"xMm": 1500, "yMm": 1000},
             },
         }
     }
@@ -166,6 +193,26 @@ def test_family_type_content_integrity_reports_invalid_overrides_assets_and_pari
                 "renderSupport": {"geometry": True},
                 "exportSupport": {"ifc": True, "gltf": False},
             },
+            "ft-bad-host-support": {
+                "kind": "family_type",
+                "id": "ft-bad-host-support",
+                "strictFamilySchema": True,
+                "parameters": {"widthMm": 600, "heightMm": 700},
+                "parameterSchema": [
+                    {"key": "widthMm", "kind": "mm", "required": True},
+                    {"key": "heightMm", "kind": "mm", "required": True},
+                ],
+                "requiredDimensions": ["widthMm", "heightMm"],
+                "hostSupport": "sideways_hosted",
+                "materialSlots": {"case": "oak"},
+                "scheduleFields": ["widthMm", "heightMm"],
+                "ifcMapping": {"class": "IfcFurnishingElement"},
+                "gltfMapping": {"nodeKind": "family_instance"},
+                "renderSupport": {"geometry": False},
+                "exportSupport": {"ifc": False, "gltf": False},
+                "planSymbol": {"kind": "box"},
+                "visualGeometry": {"kind": "box"},
+            },
             "family-1": {
                 "kind": "family_instance",
                 "id": "family-1",
@@ -188,6 +235,42 @@ def test_family_type_content_integrity_reports_invalid_overrides_assets_and_pari
                 "category": "furniture",
                 "paramSchema": [{"key": "widthMm", "kind": "mm", "default": -1, "min": 1}],
             },
+            "asset-bad-support": {
+                "kind": "asset_library_entry",
+                "id": "asset-bad-support",
+                "assetKind": "block_2d",
+                "name": "Bad support asset",
+                "category": "furniture",
+                "widthMm": 200,
+                "depthMm": 20,
+                "heightMm": 200,
+                "clearanceMm": 50,
+                "maintenanceZoneMm": {"front": 50},
+                "materialSlots": ["panel"],
+                "renderSupport": {"proxy": "box"},
+                "scheduleFields": ["widthMm"],
+                "exportMetadata": {"ifcClass": "IfcFurniture"},
+                "placementSupport": "sideways_hosted",
+                "paramSchema": [{"key": "widthMm", "kind": "mm", "default": 200, "min": 100}],
+            },
+            "asset-face": {
+                "kind": "asset_library_entry",
+                "id": "asset-face",
+                "assetKind": "block_2d",
+                "name": "Face hosted panel",
+                "category": "furniture",
+                "widthMm": 200,
+                "depthMm": 20,
+                "heightMm": 200,
+                "clearanceMm": 50,
+                "maintenanceZoneMm": {"front": 50},
+                "materialSlots": ["panel"],
+                "renderSupport": {"proxy": "box"},
+                "scheduleFields": ["widthMm"],
+                "exportMetadata": {"ifcClass": "IfcFurniture"},
+                "placementSupport": "face_hosted",
+                "paramSchema": [{"key": "widthMm", "kind": "mm", "default": 200, "min": 100}],
+            },
             "asset-floating": {
                 "kind": "placed_asset",
                 "id": "asset-floating",
@@ -195,6 +278,14 @@ def test_family_type_content_integrity_reports_invalid_overrides_assets_and_pari
                 "assetId": "asset-bad",
                 "levelId": "lvl-1",
                 "positionMm": {"xMm": 5000, "yMm": 5000},
+            },
+            "asset-face-orphan": {
+                "kind": "placed_asset",
+                "id": "asset-face-orphan",
+                "name": "Face hosted panel",
+                "assetId": "asset-face",
+                "levelId": "lvl-1",
+                "positionMm": {"xMm": 1000, "yMm": 1000},
             },
             "asset-embedded": {
                 "kind": "placed_asset",
@@ -233,6 +324,7 @@ def test_family_type_content_integrity_reports_invalid_overrides_assets_and_pari
     report_rule_ids = {finding["ruleId"] for finding in report["findings"]}
 
     assert "model_integrity_family_type_schema_incomplete" in rule_ids
+    assert "model_integrity_family_type_host_support_invalid" in rule_ids
     assert "model_integrity_family_type_required_dimension_undeclared" in rule_ids
     assert "model_integrity_family_render_export_parity_gap" in rule_ids
     assert "model_integrity_family_instance_override_unknown" in rule_ids
@@ -242,7 +334,9 @@ def test_family_type_content_integrity_reports_invalid_overrides_assets_and_pari
     assert "model_integrity_family_instance_material_override_inconsistent" in rule_ids
     assert "model_integrity_family_instance_host_constraint_violation" in rule_ids
     assert "model_integrity_asset_catalog_metadata_incomplete" in rule_ids
+    assert "model_integrity_asset_catalog_host_support_invalid" in rule_ids
     assert "model_integrity_asset_catalog_param_schema_invalid" in rule_ids
+    assert "model_integrity_asset_placement_support_invalid" in rule_ids
     assert "model_integrity_asset_placement_floating" in rule_ids
     assert "model_integrity_asset_placement_embedded_without_intent" in rule_ids
     assert "model_integrity_asset_placement_circulation_overlap" in rule_ids

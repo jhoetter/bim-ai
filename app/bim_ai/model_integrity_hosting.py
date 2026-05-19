@@ -84,6 +84,9 @@ _HOST_SUPPORT_ALIASES = {
     "level": "level_hosted",
     "level-hosted": "level_hosted",
     "level_hosted": "level_hosted",
+    "floor": "floor_hosted",
+    "floor-hosted": "floor_hosted",
+    "floor_hosted": "floor_hosted",
     "ceiling": "ceiling_hosted",
     "ceiling-hosted": "ceiling_hosted",
     "ceiling_hosted": "ceiling_hosted",
@@ -104,6 +107,7 @@ _HOST_CLASS_LABELS = {
     "wall_hosted": "wall-hosted",
     "face_hosted": "face-hosted",
     "level_hosted": "level-hosted",
+    "floor_hosted": "floor-hosted",
     "ceiling_hosted": "ceiling-hosted",
     "workplane_hosted": "workplane-hosted",
     "freestanding": "freestanding",
@@ -1156,6 +1160,7 @@ def _declared_support_class(
         asset = elements.get(elem.asset_id)
         raw_values.extend(_support_values_from_mapping(getattr(asset, "param_values", None)))
         if isinstance(asset, AssetLibraryEntryElem):
+            raw_values.append(asset.placement_support)
             raw_values.extend(_support_values_from_param_schema(asset.param_schema))
             if asset.category in {"door", "window"}:
                 raw_values.append("wall_hosted")
