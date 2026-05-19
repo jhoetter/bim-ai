@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING, Any
 from bim_ai.code_profile_integrity import check_code_profile_integrity
 from bim_ai.envelope_integrity import check_envelope_integrity
 from bim_ai.room_access_integrity import check_room_access_integrity
+from bim_ai.site_georeferencing_integrity import check_site_georeferencing_integrity
 from bim_ai.structure_mep_lite_integrity import check_structure_mep_lite_integrity
 from bim_ai.vertical_circulation_integrity import check_vertical_circulation_integrity
 
@@ -36,6 +37,12 @@ DOMAIN_INTEGRITY_TRACKER_ITEMS = (
     "BIR-G05",
     "BIR-G06",
     "BIR-G07",
+    "BIR-S01",
+    "BIR-S02",
+    "BIR-S03",
+    "BIR-S04",
+    "BIR-S05",
+    "BIR-S06",
 )
 
 _PRIORITY_BY_TOKEN = {
@@ -83,6 +90,7 @@ def check_domain_integrity_profiled(
         ("envelope", lambda: check_envelope_integrity(subject, profile=_profile_id(profile))),
         ("structure_mep_lite", lambda: check_structure_mep_lite_integrity(subject)),
         ("code_profile", lambda: check_code_profile_integrity(subject, profile=profile)),
+        ("site_georeferencing", lambda: check_site_georeferencing_integrity(subject)),
     ):
         findings.extend(_run_source_check(source, producer, profile=profile, profiler=profiler))
 
