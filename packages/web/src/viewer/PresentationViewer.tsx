@@ -4,6 +4,7 @@ import type { Snapshot } from '@bim-ai/core';
 
 import { Viewport } from '../Viewport';
 import { MAX_WS_RECONNECT_ATTEMPTS, reconnectDelayMs } from '../lib/wsReconnect';
+import { apiWsUrl } from '../lib/wsUrl';
 import { useBimStore } from '../state/store';
 
 interface PresentationMeta {
@@ -72,8 +73,7 @@ export function PresentationViewer({ token }: Props) {
   useEffect(() => {
     if (!data?.wsUrl) return;
 
-    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    const wsUrl = `${protocol}//${window.location.host}${data.wsUrl}`;
+    const wsUrl = apiWsUrl(data.wsUrl);
     let cancelled = false;
 
     const connect = () => {

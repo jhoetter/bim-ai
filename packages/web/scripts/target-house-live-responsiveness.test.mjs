@@ -9,6 +9,7 @@ import {
   TARGET_HOUSE_LIVE_INTERACTION_CONTRACT,
   classifyTargetHouseLiveResponsiveness,
   extractWebsocketChurnFromText,
+  stateHasSelectedElement,
   targetHouseLiveResponsivenessContract,
   validateTargetHouseLiveResponsivenessEvidence,
   validateLiveBrowserProof,
@@ -121,6 +122,15 @@ test('live browser proof requires Playwright capture hooks, browser metadata, an
   assert.ok(importedMetrics.blockerCodes.includes('live_browser_proof_hooks_missing'));
 });
 
+test('selection helper accepts primary selectedId and multi-selected ids', () => {
+  assert.equal(stateHasSelectedElement({ selectedId: 'door-1', selectedIds: [] }, 'door-1'), true);
+  assert.equal(
+    stateHasSelectedElement({ selectedId: 'wall-1', selectedIds: ['door-1'] }, 'door-1'),
+    true,
+  );
+  assert.equal(stateHasSelectedElement({ selectedId: 'wall-1', selectedIds: [] }, 'door-1'), false);
+});
+
 test('validator blocks missing metrics and actionable websocket churn', () => {
   const report = classifyTargetHouseLiveResponsiveness({
     targetId: 'target-house-1',
@@ -138,6 +148,21 @@ test('validator blocks missing metrics and actionable websocket churn', () => {
   assert.deepEqual(
     report.interactionRows.filter((row) => row.status === 'missing').map((row) => row.interaction),
     ['select', 'lens-switch', 'advisor-open', 'advisor-close'],
+  );
+});
+
+test('intentional browser websocket cleanup errors are benign', () => {
+  const report = classifyTargetHouseLiveResponsiveness({
+    targetId: 'target-house-1',
+    interactions: TARGET_HOUSE_LIVE_INTERACTION_CONTRACT.map((row) => passingInteraction(row.id)),
+    websocketChurn: [{ kind: 'browser-ws-error', endpoint: 'workspace', intentional: true }],
+  });
+
+  assert.equal(report.ok, true);
+  assert.equal(report.summary.actionableChurnCount, 0);
+  assert.deepEqual(
+    report.websocketChurnRows.map((row) => row.classification),
+    ['benign'],
   );
 });
 

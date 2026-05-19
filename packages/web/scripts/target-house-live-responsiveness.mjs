@@ -297,6 +297,26 @@ export function classifyLiveResponsivenessChurnEvent(event) {
     };
   }
 
+  if (event?.kind === 'browser-ws-error') {
+    const endpoint =
+      event.endpoint === 'jobs' || event.endpoint === 'presentation' ? event.endpoint : 'workspace';
+    const intentional = event.intentional === true;
+    return {
+      trackerRefs: ['BIR-L03', 'BIR-N11'],
+      classification: intentional ? 'benign' : 'actionable',
+      kind: event.kind,
+      count,
+      code: null,
+      closeCode: null,
+      endpoint,
+      action: intentional ? 'ignore' : null,
+      shouldLog: !intentional,
+      reason: intentional
+        ? 'browser websocket error was paired with an intentional component cleanup close'
+        : 'browser websocket error was not paired with an intentional close and must be reviewed',
+    };
+  }
+
   return {
     trackerRefs: ['BIR-L03', 'BIR-N11'],
     classification: 'actionable',
@@ -334,6 +354,13 @@ export function mergeChurnEvents(events) {
     else keyed.set(key, { ...event, count: positiveInteger(event.count) });
   }
   return [...keyed.values()];
+}
+
+export function stateHasSelectedElement(state, id) {
+  return (
+    state?.selectedId === id ||
+    (Array.isArray(state?.selectedIds) && state.selectedIds.includes(id))
+  );
 }
 
 async function readJson(file) {
@@ -527,6 +554,7 @@ async function installBrowserProbe(page) {
             win.__targetHouseLiveProbe.wsEvents.push({
               kind: 'browser-ws-error',
               endpoint,
+              intentional: this.__targetHouseEvidenceIntentionalClose === true,
             });
           });
         }
@@ -661,21 +689,27 @@ async function selectTargetElement(page) {
   });
   await page.waitForFunction((id) => {
     const state = window.__bimStore?.getState?.();
-    return Array.isArray(state?.selectedIds) && state.selectedIds.includes(id);
+    return (
+      state?.selectedId === id ||
+      (Array.isArray(state?.selectedIds) && state.selectedIds.includes(id))
+    );
   }, selectedId);
-  await page.getByTestId('app-shell-element-sidebar').waitFor({ state: 'visible', timeout: 5000 });
+  await page.getByTestId('inspector').waitFor({ state: 'visible', timeout: 5000 });
   const t1 = await page.evaluate(() => performance.now());
   return [t1 - t0];
 }
 
 async function switchLensToCoordination(page) {
   const t0 = await page.evaluate(() => performance.now());
-  await page.getByTestId('lens-dropdown-trigger').first().click();
+  const trigger = page.getByTestId('lens-dropdown-trigger').first();
+  await trigger.click();
   await page.getByTestId('lens-option-coordination').click();
-  await page.waitForFunction(() => {
-    const state = window.__bimStore?.getState?.();
-    return state?.lensMode === 'coordination';
-  });
+  await page.waitForFunction(
+    () =>
+      document
+        .querySelector('[data-testid="lens-dropdown-trigger"]')
+        ?.textContent?.includes('Coordination') === true,
+  );
   const t1 = await page.evaluate(() => performance.now());
   return [t1 - t0];
 }

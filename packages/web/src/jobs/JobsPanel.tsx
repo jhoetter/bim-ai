@@ -3,10 +3,10 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import type { Job } from '@bim-ai/core';
 
 import { MAX_WS_RECONNECT_ATTEMPTS, reconnectDelayMs } from '../lib/wsReconnect';
+import { modelWsUrl } from '../lib/wsUrl';
 import { useBimStore } from '../state/store';
 
 const BASE = `${window.location.protocol}//${window.location.host}`;
-const WS_BASE = `${window.location.protocol === 'https:' ? 'wss' : 'ws'}://${window.location.host}`;
 
 const KIND_LABELS: Record<string, string> = {
   csg_solve: 'CSG Solve',
@@ -201,7 +201,7 @@ export function JobsPanel() {
 
     const connect = () => {
       if (cancelled) return;
-      const ws = new WebSocket(`${WS_BASE}/ws/${encodeURIComponent(modelId)}`);
+      const ws = new WebSocket(modelWsUrl(modelId));
       wsRef.current = ws;
 
       ws.onopen = () => {

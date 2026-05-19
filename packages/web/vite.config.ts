@@ -2,6 +2,7 @@ import react from '@vitejs/plugin-react';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { defineConfig, loadEnv } from 'vite';
+import type { ProxyOptions } from 'vite';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -25,6 +26,15 @@ function resolveDesignSystemId(env: Record<string, string>): DesignSystemId {
   return 'v3';
 }
 
+function quietBenignProxySocketErrors(
+  proxy: Parameters<NonNullable<ProxyOptions['configure']>>[0],
+): void {
+  proxy.on('error', (err: Error & { code?: string }) => {
+    if (err.code === 'EPIPE' || err.code === 'ECONNRESET') return;
+    console.error(`[bim-ai/vite-proxy] ${err.message}`);
+  });
+}
+
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '');
   const ds = resolveDesignSystemId(env);
@@ -41,13 +51,21 @@ export default defineConfig(({ mode }) => {
   const skipPreviewApiProxy =
     process.env.PREVIEW_NO_PROXY === '1' || process.env.E2E_NO_API_PROXY === '1';
 
-  const previewProxy: Record<string, string | { target: string; ws?: boolean }> =
-    skipPreviewApiProxy
-      ? {}
-      : {
-          '/api': apiTarget,
-          '/ws': { target: `ws://127.0.0.1:${apiPort}`, ws: true },
-        };
+  const apiProxy: ProxyOptions = {
+    target: apiTarget,
+    configure: quietBenignProxySocketErrors,
+  };
+  const wsProxy: ProxyOptions = {
+    target: `ws://127.0.0.1:${apiPort}`,
+    ws: true,
+    configure: quietBenignProxySocketErrors,
+  };
+  const previewProxy: Record<string, ProxyOptions> = skipPreviewApiProxy
+    ? {}
+    : {
+        '/api': apiProxy,
+        '/ws': wsProxy,
+      };
   const ciWorkerLimits = process.env.CI ? { maxWorkers: 2, minWorkers: 1 } : {};
 
   return {
@@ -62,8 +80,8 @@ export default defineConfig(({ mode }) => {
       port: Number(env.WEB_PORT ?? process.env.WEB_PORT ?? 2000),
       strictPort: true,
       proxy: {
-        '/api': apiTarget,
-        '/ws': { target: `ws://127.0.0.1:${apiPort}`, ws: true },
+        '/api': apiProxy,
+        '/ws': wsProxy,
       },
     },
     preview: {

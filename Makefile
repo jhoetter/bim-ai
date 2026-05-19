@@ -98,7 +98,7 @@ dev-api:
 	cd $(APP_DIR) && PYTHONPATH=. $(UV) run python -m uvicorn bim_ai.main:app --host 127.0.0.1 --port $(API_PORT) --reload
 
 dev-web:
-	API_PORT=$(API_PORT) VITE_DESIGN_SYSTEM=$(design) $(PNPM) --filter @bim-ai/web dev --port $(WEB_PORT) --host 127.0.0.1 --strictPort
+	API_PORT=$(API_PORT) VITE_API_PORT=$(API_PORT) VITE_DESIGN_SYSTEM=$(design) $(PNPM) --filter @bim-ai/web dev --port $(WEB_PORT) --host 127.0.0.1 --strictPort
 
 seed:
 	cd $(APP_DIR) && PYTHONPATH=. $(UV) run python scripts/seed.py $(SEED_ARGS)

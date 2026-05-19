@@ -12,6 +12,9 @@ import asyncio
 from typing import Any
 from uuid import uuid4
 
+from starlette.websockets import WebSocketDisconnect
+
+from bim_ai import routes_api
 from bim_ai.hub import Hub
 
 
@@ -39,6 +42,25 @@ class _SlowWS(_MockWS):
     async def send_json(self, data: dict[str, Any]) -> None:
         await asyncio.sleep(self._delay)
         self.sent.append(data)
+
+
+class _DisconnectOnSendWS(_MockWS):
+    async def accept(self) -> None:
+        pass
+
+    async def send_json(self, data: dict[str, Any]) -> None:
+        raise WebSocketDisconnect(code=1006)
+
+    async def receive_json(self) -> dict[str, Any]:
+        raise AssertionError("receive_json should not run after bootstrap disconnect")
+
+
+class _SessionContext:
+    async def __aenter__(self) -> object:
+        return object()
+
+    async def __aexit__(self, *args: object) -> None:
+        return None
 
 
 async def test_replay_window_hit() -> None:
@@ -107,6 +129,24 @@ async def test_replay_window_miss_forces_resync() -> None:
     # Any non-None resume_from should now be a window miss
     result = hub.resume(model_id, from_seq=0)
     assert result is None, "Expected None (RESYNC) after clearing buffer"
+
+
+async def test_websocket_loop_unregisters_when_initial_send_disconnects(monkeypatch: Any) -> None:
+    hub = Hub()
+    model_id = uuid4()
+    ws: Any = _DisconnectOnSendWS()
+
+    async def fake_load_model_row(session: object, row_model_id: object) -> object:
+        assert row_model_id == model_id
+        return object()
+
+    monkeypatch.setattr(routes_api, "SessionMaker", lambda: _SessionContext())
+    monkeypatch.setattr(routes_api, "load_model_row", fake_load_model_row)
+
+    await routes_api.websocket_loop(ws, model_id, hub, resume_from=0)
+
+    assert str(model_id) not in hub._rooms
+    assert id(ws) not in hub._socket_meta
 
 
 async def test_backpressure_disconnect() -> None:

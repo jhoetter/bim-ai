@@ -2957,33 +2957,35 @@ async def websocket_loop(
 
     hub.subscribe(sid, websocket)
 
-    if resume_from is None:
-        doc = Document.model_validate(row.document)
-        await websocket.send_json(
-            {
-                "type": "snapshot",
-                "modelId": sid,
-                "revision": doc.revision,
-                "elements": {k: el.model_dump(by_alias=True) for k, el in doc.elements.items()},
-                "violations": violations_wire(doc.elements),
-            },
-        )
-    else:
-        replayed = hub.resume(sid, resume_from)
-        if replayed is None:
-            await websocket.send_json({"type": "RESYNC", "modelId": sid})
-        else:
-            for payload in replayed:
-                await websocket.send_json(payload)
+    try:
+        if resume_from is None:
+            doc = Document.model_validate(row.document)
             await websocket.send_json(
                 {
-                    "type": "replay_done",
+                    "type": "snapshot",
                     "modelId": sid,
-                    "resumedFrom": resume_from,
-                }
+                    "revision": doc.revision,
+                    "elements": {
+                        k: el.model_dump(by_alias=True) for k, el in doc.elements.items()
+                    },
+                    "violations": violations_wire(doc.elements),
+                },
             )
+        else:
+            replayed = hub.resume(sid, resume_from)
+            if replayed is None:
+                await websocket.send_json({"type": "RESYNC", "modelId": sid})
+            else:
+                for payload in replayed:
+                    await websocket.send_json(payload)
+                await websocket.send_json(
+                    {
+                        "type": "replay_done",
+                        "modelId": sid,
+                        "resumedFrom": resume_from,
+                    }
+                )
 
-    try:
         while True:
             msg = await websocket.receive_json()
 
@@ -3248,7 +3250,6 @@ async def v3_advisor_rules(
     surface: str | None = Query(default=None),
 ) -> dict[str, object]:
     return advisor_rule_catalog_payload(profile=profile, surface=surface)
-
 
 
 @api_router.get("/v3/commands")
