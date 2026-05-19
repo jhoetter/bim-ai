@@ -1,10 +1,10 @@
 {
   "modelId": "target-house-1-offline-regenerated",
   "revision": 2,
-  "elementCount": 168,
+  "elementCount": 157,
   "countsByKind": {
     "asset_library_entry": 5,
-    "door": 13,
+    "door": 6,
     "elevation_view": 1,
     "family_type": 3,
     "floor": 4,
@@ -18,7 +18,6 @@
     "property_line": 4,
     "railing": 3,
     "roof": 1,
-    "roof_opening": 1,
     "roof_type": 1,
     "room": 13,
     "room_color_scheme": 1,
@@ -34,8 +33,8 @@
     "sweep": 3,
     "toposolid": 1,
     "viewpoint": 8,
-    "wall": 21,
+    "wall": 16,
     "wall_type": 2,
-    "window": 2
+    "window": 4
   }
 }

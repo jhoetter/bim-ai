@@ -34,6 +34,7 @@ from bim_ai.elements import (
     RoofElem,
     RoofOpeningElem,
     RoomElem,
+    RoomSeparationElem,
     SlabOpeningElem,
     StairElem,
     WallElem,
@@ -46,6 +47,7 @@ _SUPPORT_TOLERANCE_MM = 300.0
 _LARGE_OPENING_MIN_WIDTH_MM = 1800.0
 _LARGE_OPENING_WALL_RATIO = 0.4
 _FLOOR_SPAN_METADATA_THRESHOLD_MM = 9000.0
+_ROOM_ACCESS_TOLERANCE_MM = 400.0
 _STAIR_HEADROOM_CLEARANCE_MM = 2050.0
 _LOW_ROOF_SLOPE_DEG = 2.0
 
@@ -495,6 +497,7 @@ def _room_door_access_violations(
     violations: list[Violation] = []
     rooms_by_level: dict[str, list[RoomElem]] = defaultdict(list)
     door_rooms: dict[str, list[str]] = defaultdict(list)
+    open_adjacency = _room_separation_open_adjacency(elements)
     for element in elements.values():
         if not isinstance(element, RoomElem):
             continue
@@ -505,11 +508,11 @@ def _room_door_access_violations(
         accessible_doors = [
             door
             for door, midpoint in doors_by_level.get(element.level_id, [])
-            if _point_in_or_near_polygon(midpoint, outline, tolerance_mm=250.0)
+            if _point_in_or_near_polygon(midpoint, outline, tolerance_mm=_ROOM_ACCESS_TOLERANCE_MM)
         ]
         for door in accessible_doors:
             door_rooms[door.id].append(element.id)
-        if accessible_doors:
+        if accessible_doors or open_adjacency.get(element.id):
             continue
         violations.append(
             Violation(
@@ -528,6 +531,7 @@ def _room_door_access_violations(
             doors_by_level,
             door_rooms,
             walls_by_id,
+            open_adjacency,
         )
     )
     return violations
@@ -538,6 +542,7 @@ def _room_egress_graph_violations(
     doors_by_level: dict[str, list[tuple[DoorElem, tuple[float, float]]]],
     door_rooms: dict[str, list[str]],
     walls_by_id: dict[str, WallElem],
+    open_adjacency: dict[str, set[str]],
 ) -> list[Violation]:
     violations: list[Violation] = []
     for level_id, rooms in rooms_by_level.items():
@@ -557,11 +562,14 @@ def _room_egress_graph_violations(
                 for b in room_ids:
                     if a != b:
                         connected[a].add(b)
+        for left, right_rooms in open_adjacency.items():
+            for right in right_rooms:
+                connected[left].add(right)
         reachable = _reachable_rooms(exit_rooms, connected)
         for room in rooms:
             if room.id in reachable:
                 continue
-            if not _door_rooms_for_room(room.id, door_rooms):
+            if not _door_rooms_for_room(room.id, door_rooms) and not open_adjacency.get(room.id):
                 continue
             violations.append(
                 Violation(
@@ -592,6 +600,90 @@ def _reachable_rooms(start: set[str], connected: dict[str, set[str]]) -> set[str
 
 def _door_rooms_for_room(room_id: str, door_rooms: dict[str, list[str]]) -> list[str]:
     return [door_id for door_id, room_ids in door_rooms.items() if room_id in room_ids]
+
+
+def _room_separation_open_adjacency(elements: dict[str, Element]) -> dict[str, set[str]]:
+    rooms = [element for element in elements.values() if isinstance(element, RoomElem)]
+    separations_by_level: dict[str, list[tuple[tuple[float, float], tuple[float, float]]]] = defaultdict(list)
+    for element in elements.values():
+        if not isinstance(element, RoomSeparationElem):
+            continue
+        separations_by_level[element.level_id].append(
+            (
+                (float(element.start.x_mm), float(element.start.y_mm)),
+                (float(element.end.x_mm), float(element.end.y_mm)),
+            )
+        )
+
+    adjacency: dict[str, set[str]] = defaultdict(set)
+    for index, left in enumerate(sorted(rooms, key=lambda room: room.id)):
+        left_outline = [(float(p.x_mm), float(p.y_mm)) for p in left.outline_mm]
+        for right in sorted(rooms, key=lambda room: room.id)[index + 1 :]:
+            if right.level_id != left.level_id:
+                continue
+            right_outline = [(float(p.x_mm), float(p.y_mm)) for p in right.outline_mm]
+            if not _rooms_share_open_separator(
+                left_outline,
+                right_outline,
+                separations_by_level.get(left.level_id, []),
+            ):
+                continue
+            adjacency[left.id].add(right.id)
+            adjacency[right.id].add(left.id)
+    return adjacency
+
+
+def _rooms_share_open_separator(
+    left: list[tuple[float, float]],
+    right: list[tuple[float, float]],
+    separations: list[tuple[tuple[float, float], tuple[float, float]]],
+) -> bool:
+    for left_segment in _polygon_segments(left):
+        for right_segment in _polygon_segments(right):
+            overlap = _axis_aligned_overlap_segment(left_segment, right_segment)
+            if overlap is None:
+                continue
+            midpoint = (
+                (overlap[0][0] + overlap[1][0]) / 2.0,
+                (overlap[0][1] + overlap[1][1]) / 2.0,
+            )
+            if any(
+                _point_segment_distance_mm(midpoint, sep_start, sep_end) <= _ROOM_ACCESS_TOLERANCE_MM
+                for sep_start, sep_end in separations
+            ):
+                return True
+    return False
+
+
+def _polygon_segments(
+    polygon: list[tuple[float, float]],
+) -> list[tuple[tuple[float, float], tuple[float, float]]]:
+    return list(zip(polygon, polygon[1:] + polygon[:1], strict=False))
+
+
+def _axis_aligned_overlap_segment(
+    left: tuple[tuple[float, float], tuple[float, float]],
+    right: tuple[tuple[float, float], tuple[float, float]],
+) -> tuple[tuple[float, float], tuple[float, float]] | None:
+    (ax, ay), (bx, by) = left
+    (cx, cy), (dx, dy) = right
+    left_vertical = abs(ax - bx) <= _ROOM_ACCESS_TOLERANCE_MM
+    right_vertical = abs(cx - dx) <= _ROOM_ACCESS_TOLERANCE_MM
+    left_horizontal = abs(ay - by) <= _ROOM_ACCESS_TOLERANCE_MM
+    right_horizontal = abs(cy - dy) <= _ROOM_ACCESS_TOLERANCE_MM
+    if left_vertical and right_vertical and abs(ax - cx) <= _ROOM_ACCESS_TOLERANCE_MM:
+        start = max(min(ay, by), min(cy, dy))
+        end = min(max(ay, by), max(cy, dy))
+        if end - start >= _ROOM_ACCESS_TOLERANCE_MM:
+            x = (ax + cx) / 2.0
+            return ((x, start), (x, end))
+    if left_horizontal and right_horizontal and abs(ay - cy) <= _ROOM_ACCESS_TOLERANCE_MM:
+        start = max(min(ax, bx), min(cx, dx))
+        end = min(max(ax, bx), max(cx, dx))
+        if end - start >= _ROOM_ACCESS_TOLERANCE_MM:
+            y = (ay + cy) / 2.0
+            return ((start, y), (end, y))
+    return None
 
 
 def _is_exit_door(door: DoorElem, walls_by_id: dict[str, WallElem]) -> bool:

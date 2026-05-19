@@ -1,13 +1,13 @@
 {
   "schemaVersion": "sketch.tolerance-ledger.v1",
-  "generatedAt": "2026-05-19T10:13:23.305767Z",
+  "generatedAt": "2026-05-19T11:32:59.767576Z",
   "phaseId": null,
   "modelId": "target-house-1-offline-regenerated",
   "revision": 2,
   "evidenceDir": "seed-artifacts/target-house-1/evidence/live-run-current",
   "ok": true,
   "summary": {
-    "findingCount": 1,
+    "findingCount": 0,
     "toleranceCount": 0,
     "blockingFindingCount": 0,
     "incompleteToleranceCount": 0

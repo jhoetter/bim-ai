@@ -1,6 +1,6 @@
 {
   "schemaVersion": "sketch.exchange-validation.v1",
-  "generatedAt": "2026-05-19T10:13:23.305718Z",
+  "generatedAt": "2026-05-19T11:32:59.767525Z",
   "qualityTarget": "project_initiation_bim",
   "source": "offline_snapshot",
   "ok": true,
@@ -34,13 +34,13 @@
       "message": "Expected IFC entity classes are present in offline normalized evidence.",
       "countsByIfcEntity": {
         "IfcSpace": 13,
-        "IfcWall": 21,
-        "IfcWallStandardCase": 21,
+        "IfcWall": 16,
+        "IfcWallStandardCase": 16,
         "IfcSlab": 4,
         "IfcRoof": 1,
         "IfcStair": 1,
-        "IfcDoor": 13,
-        "IfcWindow": 2,
+        "IfcDoor": 6,
+        "IfcWindow": 4,
         "IfcRailing": 3,
         "IfcFurnishingElement": 5
       },

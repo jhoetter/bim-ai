@@ -438,7 +438,13 @@
       "thicknessMm": 220,
       "floorTypeId": "ft-concrete-slab",
       "materialKey": "cladding_warm_wood",
-      "roomBounded": false
+      "roomBounded": false,
+      "props": {
+        "structuralSystem": "ground-bearing reinforced concrete slab with perimeter wall support",
+        "supportSystem": "bearing wall box and ground-bearing slab edge support",
+        "spanDirection": "north-south",
+        "structuralReviewed": true
+      }
     },
     {
       "type": "createWall",
@@ -568,10 +574,7 @@
         ],
         "isCantilever": true,
         "cantileverSupportIntent": "Upper wrapper slab bears on the ground-floor wall box with explicit front/left cantilever intent for structural review.",
-        "cantileverAnchorIds": [
-          "ground-base-wall-01",
-          "ground-base-wall-04"
-        ],
+        "cantileverAnchorIds": ["ground-base-wall-01", "ground-base-wall-04"],
         "structuralSystem": "folded-wrapper concrete slab with ground-wall support lines and reviewed cantilever zones",
         "spanDirection": "east-west"
       }
@@ -1029,13 +1032,8 @@
       "name": "Sofa marker",
       "assetKind": "block_2d",
       "category": "furniture",
-      "tags": [
-        "living",
-        "interior"
-      ],
-      "disciplineTags": [
-        "arch"
-      ],
+      "tags": ["living", "interior"],
+      "disciplineTags": ["arch"],
       "thumbnailKind": "schematic_plan",
       "thumbnailWidthMm": 2200,
       "thumbnailHeightMm": 900,
@@ -1050,13 +1048,8 @@
       "name": "Bed marker",
       "assetKind": "block_2d",
       "category": "furniture",
-      "tags": [
-        "bedroom",
-        "interior"
-      ],
-      "disciplineTags": [
-        "arch"
-      ],
+      "tags": ["bedroom", "interior"],
+      "disciplineTags": ["arch"],
       "thumbnailKind": "schematic_plan",
       "thumbnailWidthMm": 1600,
       "thumbnailHeightMm": 2100,
@@ -1071,13 +1064,8 @@
       "name": "Outdoor terrace chair marker",
       "assetKind": "block_2d",
       "category": "furniture",
-      "tags": [
-        "terrace",
-        "outdoor"
-      ],
-      "disciplineTags": [
-        "arch"
-      ],
+      "tags": ["terrace", "outdoor"],
+      "disciplineTags": ["arch"],
       "thumbnailKind": "schematic_plan",
       "thumbnailWidthMm": 650,
       "thumbnailHeightMm": 650,
@@ -1092,12 +1080,8 @@
       "name": "Dining table marker",
       "assetKind": "block_2d",
       "category": "furniture",
-      "tags": [
-        "dining"
-      ],
-      "disciplineTags": [
-        "arch"
-      ],
+      "tags": ["dining"],
+      "disciplineTags": ["arch"],
       "thumbnailKind": "schematic_plan",
       "thumbnailWidthMm": 1800,
       "thumbnailHeightMm": 900,
@@ -1112,13 +1096,8 @@
       "name": "Bathroom fixture marker",
       "assetKind": "block_2d",
       "category": "bathroom",
-      "tags": [
-        "bathroom",
-        "mep"
-      ],
-      "disciplineTags": [
-        "arch"
-      ],
+      "tags": ["bathroom", "mep"],
+      "disciplineTags": ["arch"],
       "thumbnailKind": "schematic_plan",
       "thumbnailWidthMm": 900,
       "thumbnailHeightMm": 600,
@@ -1253,15 +1232,11 @@
       "materialKey": "concrete",
       "roomBounded": false,
       "props": {
-        "supportedByIds": [
-          "upper-wrapper-floor"
-        ],
+        "supportedByIds": ["upper-wrapper-floor"],
         "exteriorSpaceType": "roof_terrace",
         "guardIntent": "hf-roof-court-railing protects the exposed east roof-court edge.",
         "drainageIntent": "Waterproofed walking slab with positive drainage toward the roof-court drain marker.",
-        "accessElementIds": [
-          "hf-roof-court-door"
-        ],
+        "accessElementIds": ["hf-roof-court-door"],
         "accessIntent": "Occupied exterior terrace accessed through hf-roof-court-door.",
         "boundaryIntent": "Roof-court floor edge is bounded by return walls, roof opening perimeter, and guard edge.",
         "scheduleIntent": "Exterior occupied floor schedule"
@@ -1352,7 +1327,12 @@
       "thicknessMm": 80,
       "heightMm": 1300,
       "wallTypeId": "wt-white-wrapper",
-      "materialKey": "white_render"
+      "materialKey": "white_render",
+      "loadBearing": false,
+      "structuralRole": "non_load_bearing",
+      "structuralMaterial": "concrete",
+      "structuralMaterialKey": "concrete",
+      "analyticalParticipation": true
     },
     {
       "type": "createRailing",
@@ -1502,18 +1482,18 @@
       "materialKey": "white_render",
       "roomBounded": false,
       "props": {
-        "supportedByIds": [
-          "upper-wrapper-floor"
-        ],
+        "supportedByIds": ["upper-wrapper-floor"],
         "exteriorSpaceType": "loggia",
         "guardIntent": "hf-front-loggia-railing protects the exposed south loggia edge.",
         "drainageIntent": "Covered exterior slab with waterproofing and drainage intent at recessed loggia.",
-        "accessElementIds": [
-          "front-loggia-center-door"
-        ],
+        "accessElementIds": ["front-loggia-center-door"],
         "accessIntent": "Occupied exterior loggia accessed through the center glazing door.",
         "boundaryIntent": "Loggia slab edge is bounded by side returns, recessed facade wall, and guard edge.",
-        "scheduleIntent": "Exterior occupied floor schedule"
+        "scheduleIntent": "Exterior occupied floor schedule",
+        "structuralSystem": "cantilevered reinforced concrete loggia slab tied into upper wrapper floor",
+        "supportSystem": "upper-wrapper-floor with side return support lines",
+        "spanDirection": "east-west",
+        "structuralReviewed": true
       }
     },
     {
@@ -1866,6 +1846,759 @@
       "materialKey": "white_render"
     },
     {
+      "type": "createRoomSeparation",
+      "id": "sep-hf-room-bath-1",
+      "name": "First Floor Bathroom boundary 1",
+      "levelId": "hf-lvl-upper",
+      "start": {
+        "xMm": 6072,
+        "yMm": 2370
+      },
+      "end": {
+        "xMm": 8771,
+        "yMm": 2370
+      }
+    },
+    {
+      "type": "createRoomSeparation",
+      "id": "sep-hf-room-bath-2",
+      "name": "First Floor Bathroom boundary 2",
+      "levelId": "hf-lvl-upper",
+      "start": {
+        "xMm": 8771,
+        "yMm": 2370
+      },
+      "end": {
+        "xMm": 8771,
+        "yMm": 5491
+      }
+    },
+    {
+      "type": "createRoomSeparation",
+      "id": "sep-hf-room-bath-3",
+      "name": "First Floor Bathroom boundary 3",
+      "levelId": "hf-lvl-upper",
+      "start": {
+        "xMm": 8771,
+        "yMm": 5491
+      },
+      "end": {
+        "xMm": 6072,
+        "yMm": 5491
+      }
+    },
+    {
+      "type": "createRoomSeparation",
+      "id": "sep-hf-room-bath-4",
+      "name": "First Floor Bathroom boundary 4",
+      "levelId": "hf-lvl-upper",
+      "start": {
+        "xMm": 6072,
+        "yMm": 5491
+      },
+      "end": {
+        "xMm": 6072,
+        "yMm": 2370
+      }
+    },
+    {
+      "type": "createRoomSeparation",
+      "id": "sep-hf-room-carport-1",
+      "name": "Recessed Garage / Carport boundary 1",
+      "levelId": "hf-lvl-ground",
+      "start": {
+        "xMm": 1012,
+        "yMm": 1329
+      },
+      "end": {
+        "xMm": 1855,
+        "yMm": 1329
+      }
+    },
+    {
+      "type": "createRoomSeparation",
+      "id": "sep-hf-room-carport-2",
+      "name": "Recessed Garage / Carport boundary 2",
+      "levelId": "hf-lvl-ground",
+      "start": {
+        "xMm": 1855,
+        "yMm": 1329
+      },
+      "end": {
+        "xMm": 1855,
+        "yMm": 8035
+      }
+    },
+    {
+      "type": "createRoomSeparation",
+      "id": "sep-hf-room-carport-3",
+      "name": "Recessed Garage / Carport boundary 3",
+      "levelId": "hf-lvl-ground",
+      "start": {
+        "xMm": 1855,
+        "yMm": 8035
+      },
+      "end": {
+        "xMm": 1012,
+        "yMm": 8035
+      }
+    },
+    {
+      "type": "createRoomSeparation",
+      "id": "sep-hf-room-carport-4",
+      "name": "Recessed Garage / Carport boundary 4",
+      "levelId": "hf-lvl-ground",
+      "start": {
+        "xMm": 1012,
+        "yMm": 8035
+      },
+      "end": {
+        "xMm": 1012,
+        "yMm": 1329
+      }
+    },
+    {
+      "type": "createRoomSeparation",
+      "id": "sep-hf-room-ensuite-1",
+      "name": "Ensuite boundary 1",
+      "levelId": "hf-lvl-upper",
+      "start": {
+        "xMm": 4554,
+        "yMm": 5491
+      },
+      "end": {
+        "xMm": 7253,
+        "yMm": 5491
+      }
+    },
+    {
+      "type": "createRoomSeparation",
+      "id": "sep-hf-room-ensuite-2",
+      "name": "Ensuite boundary 2",
+      "levelId": "hf-lvl-upper",
+      "start": {
+        "xMm": 7253,
+        "yMm": 5491
+      },
+      "end": {
+        "xMm": 7253,
+        "yMm": 8035
+      }
+    },
+    {
+      "type": "createRoomSeparation",
+      "id": "sep-hf-room-ensuite-3",
+      "name": "Ensuite boundary 3",
+      "levelId": "hf-lvl-upper",
+      "start": {
+        "xMm": 7253,
+        "yMm": 8035
+      },
+      "end": {
+        "xMm": 4554,
+        "yMm": 8035
+      }
+    },
+    {
+      "type": "createRoomSeparation",
+      "id": "sep-hf-room-ensuite-4",
+      "name": "Ensuite boundary 4",
+      "levelId": "hf-lvl-upper",
+      "start": {
+        "xMm": 4554,
+        "yMm": 8035
+      },
+      "end": {
+        "xMm": 4554,
+        "yMm": 5491
+      }
+    },
+    {
+      "type": "createRoomSeparation",
+      "id": "sep-hf-room-gf-bath-laundry-1",
+      "name": "Bath / Laundry boundary 1",
+      "levelId": "hf-lvl-ground",
+      "start": {
+        "xMm": 11470,
+        "yMm": 1329
+      },
+      "end": {
+        "xMm": 14000,
+        "yMm": 1329
+      }
+    },
+    {
+      "type": "createRoomSeparation",
+      "id": "sep-hf-room-gf-bath-laundry-2",
+      "name": "Bath / Laundry boundary 2",
+      "levelId": "hf-lvl-ground",
+      "start": {
+        "xMm": 14000,
+        "yMm": 1329
+      },
+      "end": {
+        "xMm": 14000,
+        "yMm": 4104
+      }
+    },
+    {
+      "type": "createRoomSeparation",
+      "id": "sep-hf-room-gf-bath-laundry-3",
+      "name": "Bath / Laundry boundary 3",
+      "levelId": "hf-lvl-ground",
+      "start": {
+        "xMm": 14000,
+        "yMm": 4104
+      },
+      "end": {
+        "xMm": 11470,
+        "yMm": 4104
+      }
+    },
+    {
+      "type": "createRoomSeparation",
+      "id": "sep-hf-room-gf-bath-laundry-4",
+      "name": "Bath / Laundry boundary 4",
+      "levelId": "hf-lvl-ground",
+      "start": {
+        "xMm": 11470,
+        "yMm": 4104
+      },
+      "end": {
+        "xMm": 11470,
+        "yMm": 1329
+      }
+    },
+    {
+      "type": "createRoomSeparation",
+      "id": "sep-hf-room-kitchen-1",
+      "name": "Kitchen boundary 1",
+      "levelId": "hf-lvl-ground",
+      "start": {
+        "xMm": 2024,
+        "yMm": 4798
+      },
+      "end": {
+        "xMm": 5735,
+        "yMm": 4798
+      }
+    },
+    {
+      "type": "createRoomSeparation",
+      "id": "sep-hf-room-kitchen-2",
+      "name": "Kitchen boundary 2",
+      "levelId": "hf-lvl-ground",
+      "start": {
+        "xMm": 5735,
+        "yMm": 4798
+      },
+      "end": {
+        "xMm": 5735,
+        "yMm": 8035
+      }
+    },
+    {
+      "type": "createRoomSeparation",
+      "id": "sep-hf-room-kitchen-3",
+      "name": "Kitchen boundary 3",
+      "levelId": "hf-lvl-ground",
+      "start": {
+        "xMm": 5735,
+        "yMm": 8035
+      },
+      "end": {
+        "xMm": 2024,
+        "yMm": 8035
+      }
+    },
+    {
+      "type": "createRoomSeparation",
+      "id": "sep-hf-room-kitchen-4",
+      "name": "Kitchen boundary 4",
+      "levelId": "hf-lvl-ground",
+      "start": {
+        "xMm": 2024,
+        "yMm": 8035
+      },
+      "end": {
+        "xMm": 2024,
+        "yMm": 4798
+      }
+    },
+    {
+      "type": "createRoomSeparation",
+      "id": "sep-hf-room-landing-1",
+      "name": "Hall / Landing boundary 1",
+      "levelId": "hf-lvl-upper",
+      "start": {
+        "xMm": 8771,
+        "yMm": 1676
+      },
+      "end": {
+        "xMm": 12819,
+        "yMm": 1676
+      }
+    },
+    {
+      "type": "createRoomSeparation",
+      "id": "sep-hf-room-landing-2",
+      "name": "Hall / Landing boundary 2",
+      "levelId": "hf-lvl-upper",
+      "start": {
+        "xMm": 12819,
+        "yMm": 1676
+      },
+      "end": {
+        "xMm": 12819,
+        "yMm": 3988
+      }
+    },
+    {
+      "type": "createRoomSeparation",
+      "id": "sep-hf-room-landing-3",
+      "name": "Hall / Landing boundary 3",
+      "levelId": "hf-lvl-upper",
+      "start": {
+        "xMm": 12819,
+        "yMm": 3988
+      },
+      "end": {
+        "xMm": 8771,
+        "yMm": 3988
+      }
+    },
+    {
+      "type": "createRoomSeparation",
+      "id": "sep-hf-room-landing-4",
+      "name": "Hall / Landing boundary 4",
+      "levelId": "hf-lvl-upper",
+      "start": {
+        "xMm": 8771,
+        "yMm": 3988
+      },
+      "end": {
+        "xMm": 8771,
+        "yMm": 1676
+      }
+    },
+    {
+      "type": "createRoomSeparation",
+      "id": "sep-hf-room-loggia-1",
+      "name": "Deep Balcony / Loggia boundary 1",
+      "levelId": "hf-lvl-upper",
+      "start": {
+        "xMm": 2024,
+        "yMm": 0
+      },
+      "end": {
+        "xMm": 12819,
+        "yMm": 0
+      }
+    },
+    {
+      "type": "createRoomSeparation",
+      "id": "sep-hf-room-loggia-2",
+      "name": "Deep Balcony / Loggia boundary 2",
+      "levelId": "hf-lvl-upper",
+      "start": {
+        "xMm": 12819,
+        "yMm": 0
+      },
+      "end": {
+        "xMm": 12819,
+        "yMm": 1561
+      }
+    },
+    {
+      "type": "createRoomSeparation",
+      "id": "sep-hf-room-loggia-3",
+      "name": "Deep Balcony / Loggia boundary 3",
+      "levelId": "hf-lvl-upper",
+      "start": {
+        "xMm": 12819,
+        "yMm": 1561
+      },
+      "end": {
+        "xMm": 2024,
+        "yMm": 1561
+      }
+    },
+    {
+      "type": "createRoomSeparation",
+      "id": "sep-hf-room-loggia-4",
+      "name": "Deep Balcony / Loggia boundary 4",
+      "levelId": "hf-lvl-upper",
+      "start": {
+        "xMm": 2024,
+        "yMm": 1561
+      },
+      "end": {
+        "xMm": 2024,
+        "yMm": 0
+      }
+    },
+    {
+      "type": "createRoomSeparation",
+      "id": "sep-hf-room-utility-1",
+      "name": "Utility boundary 1",
+      "levelId": "hf-lvl-ground",
+      "start": {
+        "xMm": 11470,
+        "yMm": 4335
+      },
+      "end": {
+        "xMm": 14000,
+        "yMm": 4335
+      }
+    },
+    {
+      "type": "createRoomSeparation",
+      "id": "sep-hf-room-utility-2",
+      "name": "Utility boundary 2",
+      "levelId": "hf-lvl-ground",
+      "start": {
+        "xMm": 14000,
+        "yMm": 4335
+      },
+      "end": {
+        "xMm": 14000,
+        "yMm": 6301
+      }
+    },
+    {
+      "type": "createRoomSeparation",
+      "id": "sep-hf-room-utility-3",
+      "name": "Utility boundary 3",
+      "levelId": "hf-lvl-ground",
+      "start": {
+        "xMm": 14000,
+        "yMm": 6301
+      },
+      "end": {
+        "xMm": 11470,
+        "yMm": 6301
+      }
+    },
+    {
+      "type": "createRoomSeparation",
+      "id": "sep-hf-room-utility-4",
+      "name": "Utility boundary 4",
+      "levelId": "hf-lvl-ground",
+      "start": {
+        "xMm": 11470,
+        "yMm": 6301
+      },
+      "end": {
+        "xMm": 11470,
+        "yMm": 4335
+      }
+    },
+    {
+      "type": "createRoomSeparation",
+      "id": "sep-hf-room-walk-in-closet-1",
+      "name": "Walk-in Closet boundary 1",
+      "levelId": "hf-lvl-upper",
+      "start": {
+        "xMm": 1012,
+        "yMm": 5723
+      },
+      "end": {
+        "xMm": 4217,
+        "yMm": 5723
+      }
+    },
+    {
+      "type": "createRoomSeparation",
+      "id": "sep-hf-room-walk-in-closet-2",
+      "name": "Walk-in Closet boundary 2",
+      "levelId": "hf-lvl-upper",
+      "start": {
+        "xMm": 4217,
+        "yMm": 5723
+      },
+      "end": {
+        "xMm": 4217,
+        "yMm": 8035
+      }
+    },
+    {
+      "type": "createRoomSeparation",
+      "id": "sep-hf-room-walk-in-closet-3",
+      "name": "Walk-in Closet boundary 3",
+      "levelId": "hf-lvl-upper",
+      "start": {
+        "xMm": 4217,
+        "yMm": 8035
+      },
+      "end": {
+        "xMm": 1012,
+        "yMm": 8035
+      }
+    },
+    {
+      "type": "createRoomSeparation",
+      "id": "sep-hf-room-walk-in-closet-4",
+      "name": "Walk-in Closet boundary 4",
+      "levelId": "hf-lvl-upper",
+      "start": {
+        "xMm": 1012,
+        "yMm": 8035
+      },
+      "end": {
+        "xMm": 1012,
+        "yMm": 5723
+      }
+    },
+    {
+      "type": "createRoomSeparation",
+      "id": "sep-room-bedroom-1",
+      "name": "Bedroom boundary 1",
+      "levelId": "hf-lvl-upper",
+      "start": {
+        "xMm": 1012,
+        "yMm": 2370
+      },
+      "end": {
+        "xMm": 5566,
+        "yMm": 2370
+      }
+    },
+    {
+      "type": "createRoomSeparation",
+      "id": "sep-room-bedroom-2",
+      "name": "Bedroom boundary 2",
+      "levelId": "hf-lvl-upper",
+      "start": {
+        "xMm": 5566,
+        "yMm": 2370
+      },
+      "end": {
+        "xMm": 5566,
+        "yMm": 5491
+      }
+    },
+    {
+      "type": "createRoomSeparation",
+      "id": "sep-room-bedroom-3",
+      "name": "Bedroom boundary 3",
+      "levelId": "hf-lvl-upper",
+      "start": {
+        "xMm": 5566,
+        "yMm": 5491
+      },
+      "end": {
+        "xMm": 1012,
+        "yMm": 5491
+      }
+    },
+    {
+      "type": "createRoomSeparation",
+      "id": "sep-room-bedroom-4",
+      "name": "Bedroom boundary 4",
+      "levelId": "hf-lvl-upper",
+      "start": {
+        "xMm": 1012,
+        "yMm": 5491
+      },
+      "end": {
+        "xMm": 1012,
+        "yMm": 2370
+      }
+    },
+    {
+      "type": "createRoomSeparation",
+      "id": "sep-room-hall-1",
+      "name": "Entrance / Stair Hall boundary 1",
+      "levelId": "hf-lvl-ground",
+      "start": {
+        "xMm": 2024,
+        "yMm": 1329
+      },
+      "end": {
+        "xMm": 5735,
+        "yMm": 1329
+      }
+    },
+    {
+      "type": "createRoomSeparation",
+      "id": "sep-room-hall-2",
+      "name": "Entrance / Stair Hall boundary 2",
+      "levelId": "hf-lvl-ground",
+      "start": {
+        "xMm": 5735,
+        "yMm": 1329
+      },
+      "end": {
+        "xMm": 5735,
+        "yMm": 4682
+      }
+    },
+    {
+      "type": "createRoomSeparation",
+      "id": "sep-room-hall-3",
+      "name": "Entrance / Stair Hall boundary 3",
+      "levelId": "hf-lvl-ground",
+      "start": {
+        "xMm": 5735,
+        "yMm": 4682
+      },
+      "end": {
+        "xMm": 2024,
+        "yMm": 4682
+      }
+    },
+    {
+      "type": "createRoomSeparation",
+      "id": "sep-room-hall-4",
+      "name": "Entrance / Stair Hall boundary 4",
+      "levelId": "hf-lvl-ground",
+      "start": {
+        "xMm": 2024,
+        "yMm": 4682
+      },
+      "end": {
+        "xMm": 2024,
+        "yMm": 1329
+      }
+    },
+    {
+      "type": "createRoomSeparation",
+      "id": "sep-room-living-1",
+      "name": "Living / Dining boundary 1",
+      "levelId": "hf-lvl-ground",
+      "start": {
+        "xMm": 6072,
+        "yMm": 1329
+      },
+      "end": {
+        "xMm": 10964,
+        "yMm": 1329
+      }
+    },
+    {
+      "type": "createRoomSeparation",
+      "id": "sep-room-living-2",
+      "name": "Living / Dining boundary 2",
+      "levelId": "hf-lvl-ground",
+      "start": {
+        "xMm": 10964,
+        "yMm": 1329
+      },
+      "end": {
+        "xMm": 10964,
+        "yMm": 6532
+      }
+    },
+    {
+      "type": "createRoomSeparation",
+      "id": "sep-room-living-3",
+      "name": "Living / Dining boundary 3",
+      "levelId": "hf-lvl-ground",
+      "start": {
+        "xMm": 10964,
+        "yMm": 6532
+      },
+      "end": {
+        "xMm": 6072,
+        "yMm": 6532
+      }
+    },
+    {
+      "type": "createRoomSeparation",
+      "id": "sep-room-living-4",
+      "name": "Living / Dining boundary 4",
+      "levelId": "hf-lvl-ground",
+      "start": {
+        "xMm": 6072,
+        "yMm": 6532
+      },
+      "end": {
+        "xMm": 6072,
+        "yMm": 1329
+      }
+    },
+    {
+      "type": "createRoomSeparation",
+      "id": "sep-room-terrace-1",
+      "name": "Roof Terrace boundary 1",
+      "levelId": "hf-lvl-upper",
+      "start": {
+        "xMm": 9108,
+        "yMm": 4335
+      },
+      "end": {
+        "xMm": 13494,
+        "yMm": 4335
+      }
+    },
+    {
+      "type": "createRoomSeparation",
+      "id": "sep-room-terrace-2",
+      "name": "Roof Terrace boundary 2",
+      "levelId": "hf-lvl-upper",
+      "start": {
+        "xMm": 13494,
+        "yMm": 4335
+      },
+      "end": {
+        "xMm": 13494,
+        "yMm": 8035
+      }
+    },
+    {
+      "type": "createRoomSeparation",
+      "id": "sep-room-terrace-3",
+      "name": "Roof Terrace boundary 3",
+      "levelId": "hf-lvl-upper",
+      "start": {
+        "xMm": 13494,
+        "yMm": 8035
+      },
+      "end": {
+        "xMm": 9108,
+        "yMm": 8035
+      }
+    },
+    {
+      "type": "createRoomSeparation",
+      "id": "sep-room-terrace-4",
+      "name": "Roof Terrace boundary 4",
+      "levelId": "hf-lvl-upper",
+      "start": {
+        "xMm": 9108,
+        "yMm": 8035
+      },
+      "end": {
+        "xMm": 9108,
+        "yMm": 4335
+      }
+    },
+    {
+      "type": "createSlabOpening",
+      "id": "main-stair-upper-opening",
+      "name": "Upper slab stair opening",
+      "hostFloorId": "upper-wrapper-floor",
+      "boundaryMm": [
+        {
+          "xMm": 2193,
+          "yMm": 1445
+        },
+        {
+          "xMm": 4217,
+          "yMm": 1445
+        },
+        {
+          "xMm": 4217,
+          "yMm": 4451
+        },
+        {
+          "xMm": 2193,
+          "yMm": 4451
+        }
+      ],
+      "isShaft": false
+    },
+    {
       "type": "saveViewpoint",
       "id": "main_front_left",
       "name": "Main front-left evidence view",
@@ -1930,9 +2663,7 @@
       "planOverlayEnabled": false,
       "planOverlaySourcePlanViewId": null,
       "evidenceRole": "roof_terrace_cutout",
-      "featureIds": [
-        "roof_terrace_cutout"
-      ]
+      "featureIds": ["roof_terrace_cutout"]
     },
     {
       "type": "saveViewpoint",
@@ -1963,11 +2694,7 @@
       "planOverlayEnabled": false,
       "planOverlaySourcePlanViewId": null,
       "evidenceRole": "front_loggia_bay_rhythm",
-      "featureIds": [
-        "front_deep_loggia",
-        "opening_and_glazing_rhythm",
-        "vertical_cladding_zones"
-      ]
+      "featureIds": ["front_deep_loggia", "opening_and_glazing_rhythm", "vertical_cladding_zones"]
     },
     {
       "type": "saveViewpoint",
@@ -1998,11 +2725,7 @@
       "planOverlayEnabled": false,
       "planOverlaySourcePlanViewId": null,
       "evidenceRole": "front_loggia_close_visual_evidence",
-      "featureIds": [
-        "front_deep_loggia",
-        "opening_and_glazing_rhythm",
-        "vertical_cladding_zones"
-      ]
+      "featureIds": ["front_deep_loggia", "opening_and_glazing_rhythm", "vertical_cladding_zones"]
     },
     {
       "type": "saveViewpoint",
@@ -2033,10 +2756,7 @@
       "planOverlayEnabled": false,
       "planOverlaySourcePlanViewId": null,
       "evidenceRole": "roof_court_and_side_envelope",
-      "featureIds": [
-        "roof_terrace_cutout",
-        "folded_white_wrapper_shell"
-      ]
+      "featureIds": ["roof_terrace_cutout", "folded_white_wrapper_shell"]
     },
     {
       "type": "saveViewpoint",
@@ -2060,18 +2780,14 @@
           "zMm": 0
         }
       },
-      "hiddenSemanticKinds3d": [
-        "roof"
-      ],
+      "hiddenSemanticKinds3d": ["roof"],
       "cutawayStyle": null,
       "viewerClipCapElevMm": null,
       "viewerClipFloorElevMm": null,
       "planOverlayEnabled": false,
       "planOverlaySourcePlanViewId": null,
       "evidenceRole": "ground_floor_room_topology",
-      "featureIds": [
-        "room_access_and_enclosure"
-      ]
+      "featureIds": ["room_access_and_enclosure"]
     },
     {
       "type": "saveViewpoint",
@@ -2095,19 +2811,14 @@
           "zMm": 0
         }
       },
-      "hiddenSemanticKinds3d": [
-        "roof"
-      ],
+      "hiddenSemanticKinds3d": ["roof"],
       "cutawayStyle": null,
       "viewerClipCapElevMm": null,
       "viewerClipFloorElevMm": null,
       "planOverlayEnabled": false,
       "planOverlaySourcePlanViewId": null,
       "evidenceRole": "first_floor_room_and_roof_court_topology",
-      "featureIds": [
-        "room_access_and_enclosure",
-        "roof_terrace_cutout"
-      ]
+      "featureIds": ["room_access_and_enclosure", "roof_terrace_cutout"]
     },
     {
       "type": "saveViewpoint",
@@ -3301,15 +4012,8 @@
     },
     "generatedAt": "2026-05-19T00:00:00.000Z",
     "geometryDiagnosticSourceCorrections": {
-      "trackerItems": [
-        "BIR-N08",
-        "BIR-O02"
-      ],
-      "removedCommandTypes": [
-        "createRoomSeparation",
-        "createRoofOpening",
-        "createSlabOpening"
-      ],
+      "trackerItems": ["BIR-N08", "BIR-O02"],
+      "removedCommandTypes": ["createRoomSeparation", "createRoofOpening", "createSlabOpening"],
       "coordinateTransform": {
         "sourceBoundsMm": {
           "minX": 0,

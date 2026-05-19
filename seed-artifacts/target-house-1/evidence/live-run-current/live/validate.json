@@ -1,37 +1,12 @@
 {
   "modelId": "target-house-1-offline-regenerated",
   "revision": 2,
-  "violations": [
-    {
-      "ruleId": "room_target_area_mismatch",
-      "severity": "info",
-      "message": "Room outline area (3.520 m\u00b2) differs from targetAreaM2 (3.200 m\u00b2) beyond the advisory tolerance.",
-      "elementIds": [
-        "hf-room-ensuite"
-      ],
-      "blocking": false,
-      "quickFixCommand": null,
-      "discipline": "architecture",
-      "blockingClass": "documentation"
-    },
-    {
-      "ruleId": "room_target_area_mismatch",
-      "severity": "info",
-      "message": "Room outline area (4.800 m\u00b2) differs from targetAreaM2 (4.400 m\u00b2) beyond the advisory tolerance.",
-      "elementIds": [
-        "hf-room-landing"
-      ],
-      "blocking": false,
-      "quickFixCommand": null,
-      "discipline": "architecture",
-      "blockingClass": "documentation"
-    }
-  ],
+  "violations": [],
   "summary": {
     "revision": 2,
-    "elementTotal": 168,
+    "elementTotal": 157,
     "scaleWorkload": {
-      "wallCount": 21,
+      "wallCount": 16,
       "roomCount": 13,
       "scheduleElementCount": 3
     },
@@ -50,24 +25,23 @@
       "site": 1,
       "property_line": 4,
       "floor": 4,
-      "wall": 21,
+      "wall": 16,
       "roof": 1,
       "room": 13,
-      "door": 13,
+      "door": 6,
       "stair": 1,
       "railing": 3,
-      "slab_opening": 1,
       "asset_library_entry": 5,
       "placed_asset": 5,
-      "roof_opening": 1,
-      "window": 2,
+      "window": 4,
       "sweep": 3,
+      "room_separation": 52,
+      "slab_opening": 1,
       "viewpoint": 8,
       "elevation_view": 1,
       "section_cut": 1,
       "sheet": 1,
       "schedule": 3,
-      "room_separation": 52,
       "sun_settings": 1,
       "hatch_pattern_def": 7
     },
@@ -84,18 +58,18 @@
         "elevationMm": 3000.0
       }
     ],
-    "wallCount": 21,
+    "wallCount": 16,
     "wallsByLevelId": {
-      "hf-lvl-ground": 5,
-      "hf-lvl-upper": 16
+      "hf-lvl-ground": 4,
+      "hf-lvl-upper": 12
     },
     "roomCount": 13,
     "roomsByLevelId": {
       "hf-lvl-ground": 6,
       "hf-lvl-upper": 7
     },
-    "doorCount": 13,
-    "windowCount": 2,
+    "doorCount": 6,
+    "windowCount": 4,
     "gridLineCount": 0,
     "openIssueCount": 0,
     "floorCount": 4,
@@ -126,252 +100,252 @@
           "levelPlane": "bim_xy_mm",
           "bboxMm": {
             "min": {
-              "x": 600.0,
-              "y": 700.0
-            },
-            "max": {
-              "x": 1100.0,
-              "y": 6500.0
-            }
-          },
-          "wallIds": [],
-          "boundarySeparationIds": [
-            "sep-hf-room-carport-1",
-            "sep-hf-room-carport-2",
-            "sep-hf-room-carport-3",
-            "sep-hf-room-carport-4"
-          ],
-          "perimeterSegmentIdsSorted": [
-            "sep-hf-room-carport-1",
-            "sep-hf-room-carport-2",
-            "sep-hf-room-carport-3",
-            "sep-hf-room-carport-4"
-          ],
-          "boundarySegmentEncoding": "boundary_segment_v1",
-          "approxAreaM2": 2.9,
-          "note": "Axis-aligned orthogonal loop from wall and/or axis-aligned room separation segments; authoritative derivation when interior is unambiguous and does not intersect authored outlines.",
-          "levelId": "hf-lvl-ground",
-          "levelName": "Ground Floor",
-          "volumeComputedAt": "finish_faces",
-          "volumeAreaInsetMm": 0.0,
-          "approxVolumeM3": 8.7,
-          "derivationAuthority": "preview_heuristic",
-          "authorityReasonCodes": [
-            "overlapping_derived_candidate_footprint",
-            "overlaps_authored_room_bbox"
-          ]
-        },
-        {
-          "kind": "axis_aligned_rectangle",
-          "levelPlane": "bim_xy_mm",
-          "bboxMm": {
-            "min": {
-              "x": 6800.0,
-              "y": 700.0
-            },
-            "max": {
-              "x": 8300.0,
-              "y": 3100.0
-            }
-          },
-          "wallIds": [],
-          "boundarySeparationIds": [
-            "sep-hf-room-gf-bath-laundry-1",
-            "sep-hf-room-gf-bath-laundry-2",
-            "sep-hf-room-gf-bath-laundry-3",
-            "sep-hf-room-gf-bath-laundry-4"
-          ],
-          "perimeterSegmentIdsSorted": [
-            "sep-hf-room-gf-bath-laundry-1",
-            "sep-hf-room-gf-bath-laundry-2",
-            "sep-hf-room-gf-bath-laundry-3",
-            "sep-hf-room-gf-bath-laundry-4"
-          ],
-          "boundarySegmentEncoding": "boundary_segment_v1",
-          "approxAreaM2": 3.6,
-          "note": "Axis-aligned orthogonal loop from wall and/or axis-aligned room separation segments; authoritative derivation when interior is unambiguous and does not intersect authored outlines.",
-          "levelId": "hf-lvl-ground",
-          "levelName": "Ground Floor",
-          "volumeComputedAt": "finish_faces",
-          "volumeAreaInsetMm": 0.0,
-          "approxVolumeM3": 10.8,
-          "derivationAuthority": "preview_heuristic",
-          "authorityReasonCodes": [
-            "overlapping_derived_candidate_footprint",
-            "overlaps_authored_room_bbox"
-          ]
-        },
-        {
-          "kind": "axis_aligned_rectangle",
-          "levelPlane": "bim_xy_mm",
-          "bboxMm": {
-            "min": {
-              "x": 1200.0,
-              "y": 3700.0
-            },
-            "max": {
-              "x": 3400.0,
-              "y": 6500.0
-            }
-          },
-          "wallIds": [],
-          "boundarySeparationIds": [
-            "sep-hf-room-kitchen-1",
-            "sep-hf-room-kitchen-2",
-            "sep-hf-room-kitchen-3",
-            "sep-hf-room-kitchen-4"
-          ],
-          "perimeterSegmentIdsSorted": [
-            "sep-hf-room-kitchen-1",
-            "sep-hf-room-kitchen-2",
-            "sep-hf-room-kitchen-3",
-            "sep-hf-room-kitchen-4"
-          ],
-          "boundarySegmentEncoding": "boundary_segment_v1",
-          "approxAreaM2": 6.16,
-          "note": "Axis-aligned orthogonal loop from wall and/or axis-aligned room separation segments; authoritative derivation when interior is unambiguous and does not intersect authored outlines.",
-          "levelId": "hf-lvl-ground",
-          "levelName": "Ground Floor",
-          "volumeComputedAt": "finish_faces",
-          "volumeAreaInsetMm": 0.0,
-          "approxVolumeM3": 18.48,
-          "derivationAuthority": "preview_heuristic",
-          "authorityReasonCodes": [
-            "overlapping_derived_candidate_footprint",
-            "overlaps_authored_room_bbox"
-          ]
-        },
-        {
-          "kind": "axis_aligned_rectangle",
-          "levelPlane": "bim_xy_mm",
-          "bboxMm": {
-            "min": {
-              "x": 6800.0,
-              "y": 3300.0
-            },
-            "max": {
-              "x": 8300.0,
-              "y": 5000.0
-            }
-          },
-          "wallIds": [],
-          "boundarySeparationIds": [
-            "sep-hf-room-utility-1",
-            "sep-hf-room-utility-2",
-            "sep-hf-room-utility-3",
-            "sep-hf-room-utility-4"
-          ],
-          "perimeterSegmentIdsSorted": [
-            "sep-hf-room-utility-1",
-            "sep-hf-room-utility-2",
-            "sep-hf-room-utility-3",
-            "sep-hf-room-utility-4"
-          ],
-          "boundarySegmentEncoding": "boundary_segment_v1",
-          "approxAreaM2": 2.55,
-          "note": "Axis-aligned orthogonal loop from wall and/or axis-aligned room separation segments; authoritative derivation when interior is unambiguous and does not intersect authored outlines.",
-          "levelId": "hf-lvl-ground",
-          "levelName": "Ground Floor",
-          "volumeComputedAt": "finish_faces",
-          "volumeAreaInsetMm": 0.0,
-          "approxVolumeM3": 7.65,
-          "derivationAuthority": "preview_heuristic",
-          "authorityReasonCodes": [
-            "overlapping_derived_candidate_footprint",
-            "overlaps_authored_room_bbox"
-          ]
-        },
-        {
-          "kind": "axis_aligned_rectangle",
-          "levelPlane": "bim_xy_mm",
-          "bboxMm": {
-            "min": {
-              "x": 1200.0,
-              "y": 700.0
-            },
-            "max": {
-              "x": 3400.0,
-              "y": 3600.0
-            }
-          },
-          "wallIds": [],
-          "boundarySeparationIds": [
-            "sep-room-hall-1",
-            "sep-room-hall-2",
-            "sep-room-hall-3",
-            "sep-room-hall-4"
-          ],
-          "perimeterSegmentIdsSorted": [
-            "sep-room-hall-1",
-            "sep-room-hall-2",
-            "sep-room-hall-3",
-            "sep-room-hall-4"
-          ],
-          "boundarySegmentEncoding": "boundary_segment_v1",
-          "approxAreaM2": 6.38,
-          "note": "Axis-aligned orthogonal loop from wall and/or axis-aligned room separation segments; authoritative derivation when interior is unambiguous and does not intersect authored outlines.",
-          "levelId": "hf-lvl-ground",
-          "levelName": "Ground Floor",
-          "volumeComputedAt": "finish_faces",
-          "volumeAreaInsetMm": 0.0,
-          "approxVolumeM3": 19.14,
-          "derivationAuthority": "preview_heuristic",
-          "authorityReasonCodes": [
-            "overlapping_derived_candidate_footprint",
-            "overlaps_authored_room_bbox"
-          ]
-        },
-        {
-          "kind": "axis_aligned_rectangle",
-          "levelPlane": "bim_xy_mm",
-          "bboxMm": {
-            "min": {
-              "x": 3600.0,
-              "y": 700.0
-            },
-            "max": {
-              "x": 6500.0,
-              "y": 5200.0
-            }
-          },
-          "wallIds": [],
-          "boundarySeparationIds": [
-            "sep-room-living-1",
-            "sep-room-living-2",
-            "sep-room-living-3",
-            "sep-room-living-4"
-          ],
-          "perimeterSegmentIdsSorted": [
-            "sep-room-living-1",
-            "sep-room-living-2",
-            "sep-room-living-3",
-            "sep-room-living-4"
-          ],
-          "boundarySegmentEncoding": "boundary_segment_v1",
-          "approxAreaM2": 13.05,
-          "note": "Axis-aligned orthogonal loop from wall and/or axis-aligned room separation segments; authoritative derivation when interior is unambiguous and does not intersect authored outlines.",
-          "levelId": "hf-lvl-ground",
-          "levelName": "Ground Floor",
-          "volumeComputedAt": "finish_faces",
-          "volumeAreaInsetMm": 0.0,
-          "approxVolumeM3": 39.15,
-          "derivationAuthority": "preview_heuristic",
-          "authorityReasonCodes": [
-            "overlapping_derived_candidate_footprint",
-            "overlaps_authored_room_bbox"
-          ]
-        },
-        {
-          "kind": "axis_aligned_rectangle",
-          "levelPlane": "bim_xy_mm",
-          "bboxMm": {
-            "min": {
               "x": 1000.0,
-              "y": 0.0
+              "y": 1350.0
             },
             "max": {
-              "x": 7000.0,
-              "y": 8200.0
+              "x": 1850.0,
+              "y": 8050.0
+            }
+          },
+          "wallIds": [],
+          "boundarySeparationIds": [
+            "sep-hf-room-carport-1",
+            "sep-hf-room-carport-2",
+            "sep-hf-room-carport-3",
+            "sep-hf-room-carport-4"
+          ],
+          "perimeterSegmentIdsSorted": [
+            "sep-hf-room-carport-1",
+            "sep-hf-room-carport-2",
+            "sep-hf-room-carport-3",
+            "sep-hf-room-carport-4"
+          ],
+          "boundarySegmentEncoding": "boundary_segment_v1",
+          "approxAreaM2": 5.695,
+          "note": "Axis-aligned orthogonal loop from wall and/or axis-aligned room separation segments; authoritative derivation when interior is unambiguous and does not intersect authored outlines.",
+          "levelId": "hf-lvl-ground",
+          "levelName": "Ground Floor",
+          "volumeComputedAt": "finish_faces",
+          "volumeAreaInsetMm": 0.0,
+          "approxVolumeM3": 17.085,
+          "derivationAuthority": "preview_heuristic",
+          "authorityReasonCodes": [
+            "overlapping_derived_candidate_footprint",
+            "overlaps_authored_room_bbox"
+          ]
+        },
+        {
+          "kind": "axis_aligned_rectangle",
+          "levelPlane": "bim_xy_mm",
+          "bboxMm": {
+            "min": {
+              "x": 11450.0,
+              "y": 1350.0
+            },
+            "max": {
+              "x": 14000.0,
+              "y": 4100.0
+            }
+          },
+          "wallIds": [],
+          "boundarySeparationIds": [
+            "sep-hf-room-gf-bath-laundry-1",
+            "sep-hf-room-gf-bath-laundry-2",
+            "sep-hf-room-gf-bath-laundry-3",
+            "sep-hf-room-gf-bath-laundry-4"
+          ],
+          "perimeterSegmentIdsSorted": [
+            "sep-hf-room-gf-bath-laundry-1",
+            "sep-hf-room-gf-bath-laundry-2",
+            "sep-hf-room-gf-bath-laundry-3",
+            "sep-hf-room-gf-bath-laundry-4"
+          ],
+          "boundarySegmentEncoding": "boundary_segment_v1",
+          "approxAreaM2": 7.0125,
+          "note": "Axis-aligned orthogonal loop from wall and/or axis-aligned room separation segments; authoritative derivation when interior is unambiguous and does not intersect authored outlines.",
+          "levelId": "hf-lvl-ground",
+          "levelName": "Ground Floor",
+          "volumeComputedAt": "finish_faces",
+          "volumeAreaInsetMm": 0.0,
+          "approxVolumeM3": 21.0375,
+          "derivationAuthority": "preview_heuristic",
+          "authorityReasonCodes": [
+            "overlapping_derived_candidate_footprint",
+            "overlaps_authored_room_bbox"
+          ]
+        },
+        {
+          "kind": "axis_aligned_rectangle",
+          "levelPlane": "bim_xy_mm",
+          "bboxMm": {
+            "min": {
+              "x": 2000.0,
+              "y": 4800.0
+            },
+            "max": {
+              "x": 5750.0,
+              "y": 8050.0
+            }
+          },
+          "wallIds": [],
+          "boundarySeparationIds": [
+            "sep-hf-room-kitchen-1",
+            "sep-hf-room-kitchen-2",
+            "sep-hf-room-kitchen-3",
+            "sep-hf-room-kitchen-4"
+          ],
+          "perimeterSegmentIdsSorted": [
+            "sep-hf-room-kitchen-1",
+            "sep-hf-room-kitchen-2",
+            "sep-hf-room-kitchen-3",
+            "sep-hf-room-kitchen-4"
+          ],
+          "boundarySegmentEncoding": "boundary_segment_v1",
+          "approxAreaM2": 12.1875,
+          "note": "Axis-aligned orthogonal loop from wall and/or axis-aligned room separation segments; authoritative derivation when interior is unambiguous and does not intersect authored outlines.",
+          "levelId": "hf-lvl-ground",
+          "levelName": "Ground Floor",
+          "volumeComputedAt": "finish_faces",
+          "volumeAreaInsetMm": 0.0,
+          "approxVolumeM3": 36.5625,
+          "derivationAuthority": "preview_heuristic",
+          "authorityReasonCodes": [
+            "overlapping_derived_candidate_footprint",
+            "overlaps_authored_room_bbox"
+          ]
+        },
+        {
+          "kind": "axis_aligned_rectangle",
+          "levelPlane": "bim_xy_mm",
+          "bboxMm": {
+            "min": {
+              "x": 11450.0,
+              "y": 4350.0
+            },
+            "max": {
+              "x": 14000.0,
+              "y": 6300.0
+            }
+          },
+          "wallIds": [],
+          "boundarySeparationIds": [
+            "sep-hf-room-utility-1",
+            "sep-hf-room-utility-2",
+            "sep-hf-room-utility-3",
+            "sep-hf-room-utility-4"
+          ],
+          "perimeterSegmentIdsSorted": [
+            "sep-hf-room-utility-1",
+            "sep-hf-room-utility-2",
+            "sep-hf-room-utility-3",
+            "sep-hf-room-utility-4"
+          ],
+          "boundarySegmentEncoding": "boundary_segment_v1",
+          "approxAreaM2": 4.9725,
+          "note": "Axis-aligned orthogonal loop from wall and/or axis-aligned room separation segments; authoritative derivation when interior is unambiguous and does not intersect authored outlines.",
+          "levelId": "hf-lvl-ground",
+          "levelName": "Ground Floor",
+          "volumeComputedAt": "finish_faces",
+          "volumeAreaInsetMm": 0.0,
+          "approxVolumeM3": 14.9175,
+          "derivationAuthority": "preview_heuristic",
+          "authorityReasonCodes": [
+            "overlapping_derived_candidate_footprint",
+            "overlaps_authored_room_bbox"
+          ]
+        },
+        {
+          "kind": "axis_aligned_rectangle",
+          "levelPlane": "bim_xy_mm",
+          "bboxMm": {
+            "min": {
+              "x": 2000.0,
+              "y": 1350.0
+            },
+            "max": {
+              "x": 5750.0,
+              "y": 4700.0
+            }
+          },
+          "wallIds": [],
+          "boundarySeparationIds": [
+            "sep-room-hall-1",
+            "sep-room-hall-2",
+            "sep-room-hall-3",
+            "sep-room-hall-4"
+          ],
+          "perimeterSegmentIdsSorted": [
+            "sep-room-hall-1",
+            "sep-room-hall-2",
+            "sep-room-hall-3",
+            "sep-room-hall-4"
+          ],
+          "boundarySegmentEncoding": "boundary_segment_v1",
+          "approxAreaM2": 12.5625,
+          "note": "Axis-aligned orthogonal loop from wall and/or axis-aligned room separation segments; authoritative derivation when interior is unambiguous and does not intersect authored outlines.",
+          "levelId": "hf-lvl-ground",
+          "levelName": "Ground Floor",
+          "volumeComputedAt": "finish_faces",
+          "volumeAreaInsetMm": 0.0,
+          "approxVolumeM3": 37.6875,
+          "derivationAuthority": "preview_heuristic",
+          "authorityReasonCodes": [
+            "overlapping_derived_candidate_footprint",
+            "overlaps_authored_room_bbox"
+          ]
+        },
+        {
+          "kind": "axis_aligned_rectangle",
+          "levelPlane": "bim_xy_mm",
+          "bboxMm": {
+            "min": {
+              "x": 6050.0,
+              "y": 1350.0
+            },
+            "max": {
+              "x": 10950.0,
+              "y": 6550.0
+            }
+          },
+          "wallIds": [],
+          "boundarySeparationIds": [
+            "sep-room-living-1",
+            "sep-room-living-2",
+            "sep-room-living-3",
+            "sep-room-living-4"
+          ],
+          "perimeterSegmentIdsSorted": [
+            "sep-room-living-1",
+            "sep-room-living-2",
+            "sep-room-living-3",
+            "sep-room-living-4"
+          ],
+          "boundarySegmentEncoding": "boundary_segment_v1",
+          "approxAreaM2": 25.48,
+          "note": "Axis-aligned orthogonal loop from wall and/or axis-aligned room separation segments; authoritative derivation when interior is unambiguous and does not intersect authored outlines.",
+          "levelId": "hf-lvl-ground",
+          "levelName": "Ground Floor",
+          "volumeComputedAt": "finish_faces",
+          "volumeAreaInsetMm": 0.0,
+          "approxVolumeM3": 76.44,
+          "derivationAuthority": "preview_heuristic",
+          "authorityReasonCodes": [
+            "overlapping_derived_candidate_footprint",
+            "overlaps_authored_room_bbox"
+          ]
+        },
+        {
+          "kind": "axis_aligned_rectangle",
+          "levelPlane": "bim_xy_mm",
+          "bboxMm": {
+            "min": {
+              "x": 1700.0,
+              "y": 500.0
+            },
+            "max": {
+              "x": 11800.0,
+              "y": 10000.0
             }
           },
           "wallIds": [
@@ -388,13 +362,13 @@
             "ground-base-wall-04"
           ],
           "boundarySegmentEncoding": "boundary_segment_v1",
-          "approxAreaM2": 49.2,
+          "approxAreaM2": 95.95,
           "note": "Axis-aligned orthogonal loop from wall and/or axis-aligned room separation segments; authoritative derivation when interior is unambiguous and does not intersect authored outlines.",
           "levelId": "hf-lvl-ground",
           "levelName": "Ground Floor",
           "volumeComputedAt": "finish_faces",
           "volumeAreaInsetMm": 0.0,
-          "approxVolumeM3": 147.6,
+          "approxVolumeM3": 287.85,
           "derivationAuthority": "preview_heuristic",
           "authorityReasonCodes": [
             "ambiguous_interior_separation",
@@ -407,12 +381,12 @@
           "levelPlane": "bim_xy_mm",
           "bboxMm": {
             "min": {
-              "x": 3600.0,
-              "y": 1600.0
+              "x": 6050.0,
+              "y": 2350.0
             },
             "max": {
-              "x": 5200.0,
-              "y": 4300.0
+              "x": 8750.0,
+              "y": 5500.0
             }
           },
           "wallIds": [],
@@ -429,29 +403,27 @@
             "sep-hf-room-bath-4"
           ],
           "boundarySegmentEncoding": "boundary_segment_v1",
-          "approxAreaM2": 4.32,
+          "approxAreaM2": 8.505,
           "note": "Axis-aligned orthogonal loop from wall and/or axis-aligned room separation segments; authoritative derivation when interior is unambiguous and does not intersect authored outlines.",
           "levelId": "hf-lvl-upper",
           "levelName": "First Floor",
           "volumeComputedAt": "finish_faces",
           "volumeAreaInsetMm": 0.0,
-          "approxVolumeM3": 12.096,
+          "approxVolumeM3": 23.814,
           "derivationAuthority": "preview_heuristic",
-          "authorityReasonCodes": [
-            "overlaps_authored_room_bbox"
-          ]
+          "authorityReasonCodes": ["overlaps_authored_room_bbox"]
         },
         {
           "kind": "axis_aligned_rectangle",
           "levelPlane": "bim_xy_mm",
           "bboxMm": {
             "min": {
-              "x": 2700.0,
-              "y": 4300.0
+              "x": 4550.0,
+              "y": 5500.0
             },
             "max": {
-              "x": 4300.0,
-              "y": 6500.0
+              "x": 7250.0,
+              "y": 8050.0
             }
           },
           "wallIds": [],
@@ -468,29 +440,27 @@
             "sep-hf-room-ensuite-4"
           ],
           "boundarySegmentEncoding": "boundary_segment_v1",
-          "approxAreaM2": 3.52,
+          "approxAreaM2": 6.885,
           "note": "Axis-aligned orthogonal loop from wall and/or axis-aligned room separation segments; authoritative derivation when interior is unambiguous and does not intersect authored outlines.",
           "levelId": "hf-lvl-upper",
           "levelName": "First Floor",
           "volumeComputedAt": "finish_faces",
           "volumeAreaInsetMm": 0.0,
-          "approxVolumeM3": 9.856,
+          "approxVolumeM3": 19.278,
           "derivationAuthority": "preview_heuristic",
-          "authorityReasonCodes": [
-            "overlaps_authored_room_bbox"
-          ]
+          "authorityReasonCodes": ["overlaps_authored_room_bbox"]
         },
         {
           "kind": "axis_aligned_rectangle",
           "levelPlane": "bim_xy_mm",
           "bboxMm": {
             "min": {
-              "x": 5200.0,
-              "y": 1000.0
+              "x": 8750.0,
+              "y": 1700.0
             },
             "max": {
-              "x": 7600.0,
-              "y": 3000.0
+              "x": 12800.0,
+              "y": 4000.0
             }
           },
           "wallIds": [],
@@ -507,30 +477,27 @@
             "sep-hf-room-landing-4"
           ],
           "boundarySegmentEncoding": "boundary_segment_v1",
-          "approxAreaM2": 4.8,
+          "approxAreaM2": 9.315,
           "note": "Axis-aligned orthogonal loop from wall and/or axis-aligned room separation segments; authoritative derivation when interior is unambiguous and does not intersect authored outlines.",
           "levelId": "hf-lvl-upper",
           "levelName": "First Floor",
           "volumeComputedAt": "finish_faces",
           "volumeAreaInsetMm": 0.0,
-          "approxVolumeM3": 13.44,
+          "approxVolumeM3": 26.082,
           "derivationAuthority": "preview_heuristic",
-          "authorityReasonCodes": [
-            "overlapping_derived_candidate_footprint",
-            "overlaps_authored_room_bbox"
-          ]
+          "authorityReasonCodes": ["overlaps_authored_room_bbox"]
         },
         {
           "kind": "axis_aligned_rectangle",
           "levelPlane": "bim_xy_mm",
           "bboxMm": {
             "min": {
-              "x": 1200.0,
-              "y": -450.0
+              "x": 2000.0,
+              "y": 0.0
             },
             "max": {
-              "x": 7600.0,
-              "y": 900.0
+              "x": 12800.0,
+              "y": 1550.0
             }
           },
           "wallIds": [],
@@ -547,13 +514,13 @@
             "sep-hf-room-loggia-4"
           ],
           "boundarySegmentEncoding": "boundary_segment_v1",
-          "approxAreaM2": 8.64,
+          "approxAreaM2": 16.74,
           "note": "Axis-aligned orthogonal loop from wall and/or axis-aligned room separation segments; authoritative derivation when interior is unambiguous and does not intersect authored outlines.",
           "levelId": "hf-lvl-upper",
           "levelName": "First Floor",
           "volumeComputedAt": "finish_faces",
           "volumeAreaInsetMm": 0.0,
-          "approxVolumeM3": 24.192,
+          "approxVolumeM3": 46.872,
           "derivationAuthority": "preview_heuristic",
           "authorityReasonCodes": [
             "overlapping_derived_candidate_footprint",
@@ -565,12 +532,12 @@
           "levelPlane": "bim_xy_mm",
           "bboxMm": {
             "min": {
-              "x": 600.0,
-              "y": 4500.0
+              "x": 1000.0,
+              "y": 5700.0
             },
             "max": {
-              "x": 2500.0,
-              "y": 6500.0
+              "x": 4200.0,
+              "y": 8050.0
             }
           },
           "wallIds": [],
@@ -587,29 +554,27 @@
             "sep-hf-room-walk-in-closet-4"
           ],
           "boundarySegmentEncoding": "boundary_segment_v1",
-          "approxAreaM2": 3.8,
+          "approxAreaM2": 7.52,
           "note": "Axis-aligned orthogonal loop from wall and/or axis-aligned room separation segments; authoritative derivation when interior is unambiguous and does not intersect authored outlines.",
           "levelId": "hf-lvl-upper",
           "levelName": "First Floor",
           "volumeComputedAt": "finish_faces",
           "volumeAreaInsetMm": 0.0,
-          "approxVolumeM3": 10.64,
+          "approxVolumeM3": 21.056,
           "derivationAuthority": "preview_heuristic",
-          "authorityReasonCodes": [
-            "overlaps_authored_room_bbox"
-          ]
+          "authorityReasonCodes": ["overlaps_authored_room_bbox"]
         },
         {
           "kind": "axis_aligned_rectangle",
           "levelPlane": "bim_xy_mm",
           "bboxMm": {
             "min": {
-              "x": 600.0,
-              "y": 1600.0
+              "x": 1000.0,
+              "y": 2350.0
             },
             "max": {
-              "x": 3300.0,
-              "y": 4300.0
+              "x": 5550.0,
+              "y": 5500.0
             }
           },
           "wallIds": [],
@@ -626,29 +591,27 @@
             "sep-room-bedroom-4"
           ],
           "boundarySegmentEncoding": "boundary_segment_v1",
-          "approxAreaM2": 7.29,
+          "approxAreaM2": 14.3325,
           "note": "Axis-aligned orthogonal loop from wall and/or axis-aligned room separation segments; authoritative derivation when interior is unambiguous and does not intersect authored outlines.",
           "levelId": "hf-lvl-upper",
           "levelName": "First Floor",
           "volumeComputedAt": "finish_faces",
           "volumeAreaInsetMm": 0.0,
-          "approxVolumeM3": 20.412,
+          "approxVolumeM3": 40.131,
           "derivationAuthority": "preview_heuristic",
-          "authorityReasonCodes": [
-            "overlaps_authored_room_bbox"
-          ]
+          "authorityReasonCodes": ["overlaps_authored_room_bbox"]
         },
         {
           "kind": "axis_aligned_rectangle",
           "levelPlane": "bim_xy_mm",
           "bboxMm": {
             "min": {
-              "x": 5400.0,
-              "y": 3300.0
+              "x": 9100.0,
+              "y": 4350.0
             },
             "max": {
-              "x": 8000.0,
-              "y": 6500.0
+              "x": 13500.0,
+              "y": 8050.0
             }
           },
           "wallIds": [],
@@ -665,15 +628,16 @@
             "sep-room-terrace-4"
           ],
           "boundarySegmentEncoding": "boundary_segment_v1",
-          "approxAreaM2": 8.32,
+          "approxAreaM2": 16.28,
           "note": "Axis-aligned orthogonal loop from wall and/or axis-aligned room separation segments; authoritative derivation when interior is unambiguous and does not intersect authored outlines.",
           "levelId": "hf-lvl-upper",
           "levelName": "First Floor",
           "volumeComputedAt": "finish_faces",
           "volumeAreaInsetMm": 0.0,
-          "approxVolumeM3": 23.296,
+          "approxVolumeM3": 45.584,
           "derivationAuthority": "preview_heuristic",
           "authorityReasonCodes": [
+            "overlapping_derived_candidate_footprint",
             "overlaps_authored_room_bbox"
           ]
         },
@@ -682,17 +646,15 @@
           "levelPlane": "bim_xy_mm",
           "bboxMm": {
             "min": {
-              "x": 1200.0,
-              "y": -450.0
+              "x": 2000.0,
+              "y": 0.0
             },
             "max": {
-              "x": 7600.0,
-              "y": 900.0
+              "x": 12800.0,
+              "y": 1550.0
             }
           },
-          "wallIds": [
-            "front-loggia-left-return"
-          ],
+          "wallIds": ["front-loggia-left-return"],
           "boundarySeparationIds": [
             "sep-hf-room-loggia-1",
             "sep-hf-room-loggia-2",
@@ -705,13 +667,13 @@
             "sep-hf-room-loggia-3"
           ],
           "boundarySegmentEncoding": "boundary_segment_v1",
-          "approxAreaM2": 8.64,
+          "approxAreaM2": 16.74,
           "note": "Axis-aligned orthogonal loop from wall and/or axis-aligned room separation segments; authoritative derivation when interior is unambiguous and does not intersect authored outlines.",
           "levelId": "hf-lvl-upper",
           "levelName": "First Floor",
           "volumeComputedAt": "finish_faces",
           "volumeAreaInsetMm": 0.0,
-          "approxVolumeM3": 24.192,
+          "approxVolumeM3": 46.872,
           "derivationAuthority": "preview_heuristic",
           "authorityReasonCodes": [
             "overlapping_derived_candidate_footprint",
@@ -723,17 +685,15 @@
           "levelPlane": "bim_xy_mm",
           "bboxMm": {
             "min": {
-              "x": 1200.0,
-              "y": -450.0
+              "x": 2000.0,
+              "y": 0.0
             },
             "max": {
-              "x": 7600.0,
-              "y": 900.0
+              "x": 12800.0,
+              "y": 1550.0
             }
           },
-          "wallIds": [
-            "front-loggia-left-return"
-          ],
+          "wallIds": ["front-loggia-left-return"],
           "boundarySeparationIds": [
             "sep-hf-room-loggia-1",
             "sep-hf-room-loggia-3",
@@ -746,13 +706,13 @@
             "sep-hf-room-loggia-4"
           ],
           "boundarySegmentEncoding": "boundary_segment_v1",
-          "approxAreaM2": 8.64,
+          "approxAreaM2": 16.74,
           "note": "Axis-aligned orthogonal loop from wall and/or axis-aligned room separation segments; authoritative derivation when interior is unambiguous and does not intersect authored outlines.",
           "levelId": "hf-lvl-upper",
           "levelName": "First Floor",
           "volumeComputedAt": "finish_faces",
           "volumeAreaInsetMm": 0.0,
-          "approxVolumeM3": 24.192,
+          "approxVolumeM3": 46.872,
           "derivationAuthority": "preview_heuristic",
           "authorityReasonCodes": [
             "overlapping_derived_candidate_footprint",
@@ -764,22 +724,199 @@
           "levelPlane": "bim_xy_mm",
           "bboxMm": {
             "min": {
-              "x": 1200.0,
-              "y": -450.0
+              "x": 2000.0,
+              "y": 0.0
             },
             "max": {
-              "x": 7600.0,
-              "y": 900.0
+              "x": 12800.0,
+              "y": 1550.0
+            }
+          },
+          "wallIds": ["front-loggia-left-return", "front-loggia-recessed-glass"],
+          "boundarySeparationIds": ["sep-hf-room-loggia-1", "sep-hf-room-loggia-2"],
+          "perimeterSegmentIdsSorted": [
+            "front-loggia-left-return",
+            "front-loggia-recessed-glass",
+            "sep-hf-room-loggia-1",
+            "sep-hf-room-loggia-2"
+          ],
+          "boundarySegmentEncoding": "boundary_segment_v1",
+          "approxAreaM2": 16.74,
+          "note": "Axis-aligned orthogonal loop from wall and/or axis-aligned room separation segments; authoritative derivation when interior is unambiguous and does not intersect authored outlines.",
+          "levelId": "hf-lvl-upper",
+          "levelName": "First Floor",
+          "volumeComputedAt": "finish_faces",
+          "volumeAreaInsetMm": 0.0,
+          "approxVolumeM3": 46.872,
+          "derivationAuthority": "preview_heuristic",
+          "authorityReasonCodes": [
+            "overlapping_derived_candidate_footprint",
+            "overlaps_authored_room_bbox"
+          ]
+        },
+        {
+          "kind": "axis_aligned_rectangle",
+          "levelPlane": "bim_xy_mm",
+          "bboxMm": {
+            "min": {
+              "x": 2000.0,
+              "y": 0.0
+            },
+            "max": {
+              "x": 12800.0,
+              "y": 1550.0
+            }
+          },
+          "wallIds": ["front-loggia-left-return", "front-loggia-recessed-glass"],
+          "boundarySeparationIds": ["sep-hf-room-loggia-1", "sep-hf-room-loggia-4"],
+          "perimeterSegmentIdsSorted": [
+            "front-loggia-left-return",
+            "front-loggia-recessed-glass",
+            "sep-hf-room-loggia-1",
+            "sep-hf-room-loggia-4"
+          ],
+          "boundarySegmentEncoding": "boundary_segment_v1",
+          "approxAreaM2": 16.74,
+          "note": "Axis-aligned orthogonal loop from wall and/or axis-aligned room separation segments; authoritative derivation when interior is unambiguous and does not intersect authored outlines.",
+          "levelId": "hf-lvl-upper",
+          "levelName": "First Floor",
+          "volumeComputedAt": "finish_faces",
+          "volumeAreaInsetMm": 0.0,
+          "approxVolumeM3": 46.872,
+          "derivationAuthority": "preview_heuristic",
+          "authorityReasonCodes": [
+            "overlapping_derived_candidate_footprint",
+            "overlaps_authored_room_bbox"
+          ]
+        },
+        {
+          "kind": "axis_aligned_rectangle",
+          "levelPlane": "bim_xy_mm",
+          "bboxMm": {
+            "min": {
+              "x": 2000.0,
+              "y": 0.0
+            },
+            "max": {
+              "x": 12800.0,
+              "y": 1550.0
+            }
+          },
+          "wallIds": ["front-loggia-left-return", "front-loggia-recessed-glass"],
+          "boundarySeparationIds": ["sep-hf-room-loggia-2", "sep-hf-room-loggia-3"],
+          "perimeterSegmentIdsSorted": [
+            "front-loggia-left-return",
+            "front-loggia-recessed-glass",
+            "sep-hf-room-loggia-2",
+            "sep-hf-room-loggia-3"
+          ],
+          "boundarySegmentEncoding": "boundary_segment_v1",
+          "approxAreaM2": 16.74,
+          "note": "Axis-aligned orthogonal loop from wall and/or axis-aligned room separation segments; authoritative derivation when interior is unambiguous and does not intersect authored outlines.",
+          "levelId": "hf-lvl-upper",
+          "levelName": "First Floor",
+          "volumeComputedAt": "finish_faces",
+          "volumeAreaInsetMm": 0.0,
+          "approxVolumeM3": 46.872,
+          "derivationAuthority": "preview_heuristic",
+          "authorityReasonCodes": [
+            "overlapping_derived_candidate_footprint",
+            "overlaps_authored_room_bbox"
+          ]
+        },
+        {
+          "kind": "axis_aligned_rectangle",
+          "levelPlane": "bim_xy_mm",
+          "bboxMm": {
+            "min": {
+              "x": 2000.0,
+              "y": 0.0
+            },
+            "max": {
+              "x": 12800.0,
+              "y": 1550.0
             }
           },
           "wallIds": [
             "front-loggia-left-return",
+            "front-loggia-recessed-glass",
             "front-loggia-right-return"
           ],
-          "boundarySeparationIds": [
-            "sep-hf-room-loggia-1",
+          "boundarySeparationIds": ["sep-hf-room-loggia-1"],
+          "perimeterSegmentIdsSorted": [
+            "front-loggia-left-return",
+            "front-loggia-recessed-glass",
+            "front-loggia-right-return",
+            "sep-hf-room-loggia-1"
+          ],
+          "boundarySegmentEncoding": "boundary_segment_v1",
+          "approxAreaM2": 16.74,
+          "note": "Axis-aligned orthogonal loop from wall and/or axis-aligned room separation segments; authoritative derivation when interior is unambiguous and does not intersect authored outlines.",
+          "levelId": "hf-lvl-upper",
+          "levelName": "First Floor",
+          "volumeComputedAt": "finish_faces",
+          "volumeAreaInsetMm": 0.0,
+          "approxVolumeM3": 46.872,
+          "derivationAuthority": "preview_heuristic",
+          "authorityReasonCodes": [
+            "overlapping_derived_candidate_footprint",
+            "overlaps_authored_room_bbox"
+          ]
+        },
+        {
+          "kind": "axis_aligned_rectangle",
+          "levelPlane": "bim_xy_mm",
+          "bboxMm": {
+            "min": {
+              "x": 2000.0,
+              "y": 0.0
+            },
+            "max": {
+              "x": 12800.0,
+              "y": 1550.0
+            }
+          },
+          "wallIds": [
+            "front-loggia-left-return",
+            "front-loggia-recessed-glass",
+            "front-loggia-right-return"
+          ],
+          "boundarySeparationIds": ["sep-hf-room-loggia-3"],
+          "perimeterSegmentIdsSorted": [
+            "front-loggia-left-return",
+            "front-loggia-recessed-glass",
+            "front-loggia-right-return",
             "sep-hf-room-loggia-3"
           ],
+          "boundarySegmentEncoding": "boundary_segment_v1",
+          "approxAreaM2": 16.74,
+          "note": "Axis-aligned orthogonal loop from wall and/or axis-aligned room separation segments; authoritative derivation when interior is unambiguous and does not intersect authored outlines.",
+          "levelId": "hf-lvl-upper",
+          "levelName": "First Floor",
+          "volumeComputedAt": "finish_faces",
+          "volumeAreaInsetMm": 0.0,
+          "approxVolumeM3": 46.872,
+          "derivationAuthority": "preview_heuristic",
+          "authorityReasonCodes": [
+            "overlapping_derived_candidate_footprint",
+            "overlaps_authored_room_bbox"
+          ]
+        },
+        {
+          "kind": "axis_aligned_rectangle",
+          "levelPlane": "bim_xy_mm",
+          "bboxMm": {
+            "min": {
+              "x": 2000.0,
+              "y": 0.0
+            },
+            "max": {
+              "x": 12800.0,
+              "y": 1550.0
+            }
+          },
+          "wallIds": ["front-loggia-left-return", "front-loggia-right-return"],
+          "boundarySeparationIds": ["sep-hf-room-loggia-1", "sep-hf-room-loggia-3"],
           "perimeterSegmentIdsSorted": [
             "front-loggia-left-return",
             "front-loggia-right-return",
@@ -787,13 +924,13 @@
             "sep-hf-room-loggia-3"
           ],
           "boundarySegmentEncoding": "boundary_segment_v1",
-          "approxAreaM2": 8.64,
+          "approxAreaM2": 16.74,
           "note": "Axis-aligned orthogonal loop from wall and/or axis-aligned room separation segments; authoritative derivation when interior is unambiguous and does not intersect authored outlines.",
           "levelId": "hf-lvl-upper",
           "levelName": "First Floor",
           "volumeComputedAt": "finish_faces",
           "volumeAreaInsetMm": 0.0,
-          "approxVolumeM3": 24.192,
+          "approxVolumeM3": 46.872,
           "derivationAuthority": "preview_heuristic",
           "authorityReasonCodes": [
             "overlapping_derived_candidate_footprint",
@@ -805,17 +942,198 @@
           "levelPlane": "bim_xy_mm",
           "bboxMm": {
             "min": {
-              "x": 1200.0,
-              "y": -450.0
+              "x": 2000.0,
+              "y": 0.0
             },
             "max": {
-              "x": 7600.0,
-              "y": 900.0
+              "x": 12800.0,
+              "y": 1550.0
             }
           },
-          "wallIds": [
-            "front-loggia-right-return"
+          "wallIds": ["front-loggia-recessed-glass"],
+          "boundarySeparationIds": [
+            "sep-hf-room-loggia-1",
+            "sep-hf-room-loggia-2",
+            "sep-hf-room-loggia-4"
           ],
+          "perimeterSegmentIdsSorted": [
+            "front-loggia-recessed-glass",
+            "sep-hf-room-loggia-1",
+            "sep-hf-room-loggia-2",
+            "sep-hf-room-loggia-4"
+          ],
+          "boundarySegmentEncoding": "boundary_segment_v1",
+          "approxAreaM2": 16.74,
+          "note": "Axis-aligned orthogonal loop from wall and/or axis-aligned room separation segments; authoritative derivation when interior is unambiguous and does not intersect authored outlines.",
+          "levelId": "hf-lvl-upper",
+          "levelName": "First Floor",
+          "volumeComputedAt": "finish_faces",
+          "volumeAreaInsetMm": 0.0,
+          "approxVolumeM3": 46.872,
+          "derivationAuthority": "preview_heuristic",
+          "authorityReasonCodes": [
+            "overlapping_derived_candidate_footprint",
+            "overlaps_authored_room_bbox"
+          ]
+        },
+        {
+          "kind": "axis_aligned_rectangle",
+          "levelPlane": "bim_xy_mm",
+          "bboxMm": {
+            "min": {
+              "x": 2000.0,
+              "y": 0.0
+            },
+            "max": {
+              "x": 12800.0,
+              "y": 1550.0
+            }
+          },
+          "wallIds": ["front-loggia-recessed-glass"],
+          "boundarySeparationIds": [
+            "sep-hf-room-loggia-2",
+            "sep-hf-room-loggia-3",
+            "sep-hf-room-loggia-4"
+          ],
+          "perimeterSegmentIdsSorted": [
+            "front-loggia-recessed-glass",
+            "sep-hf-room-loggia-2",
+            "sep-hf-room-loggia-3",
+            "sep-hf-room-loggia-4"
+          ],
+          "boundarySegmentEncoding": "boundary_segment_v1",
+          "approxAreaM2": 16.74,
+          "note": "Axis-aligned orthogonal loop from wall and/or axis-aligned room separation segments; authoritative derivation when interior is unambiguous and does not intersect authored outlines.",
+          "levelId": "hf-lvl-upper",
+          "levelName": "First Floor",
+          "volumeComputedAt": "finish_faces",
+          "volumeAreaInsetMm": 0.0,
+          "approxVolumeM3": 46.872,
+          "derivationAuthority": "preview_heuristic",
+          "authorityReasonCodes": [
+            "overlapping_derived_candidate_footprint",
+            "overlaps_authored_room_bbox"
+          ]
+        },
+        {
+          "kind": "axis_aligned_rectangle",
+          "levelPlane": "bim_xy_mm",
+          "bboxMm": {
+            "min": {
+              "x": 2000.0,
+              "y": 0.0
+            },
+            "max": {
+              "x": 12800.0,
+              "y": 1550.0
+            }
+          },
+          "wallIds": ["front-loggia-recessed-glass", "front-loggia-right-return"],
+          "boundarySeparationIds": ["sep-hf-room-loggia-1", "sep-hf-room-loggia-2"],
+          "perimeterSegmentIdsSorted": [
+            "front-loggia-recessed-glass",
+            "front-loggia-right-return",
+            "sep-hf-room-loggia-1",
+            "sep-hf-room-loggia-2"
+          ],
+          "boundarySegmentEncoding": "boundary_segment_v1",
+          "approxAreaM2": 16.74,
+          "note": "Axis-aligned orthogonal loop from wall and/or axis-aligned room separation segments; authoritative derivation when interior is unambiguous and does not intersect authored outlines.",
+          "levelId": "hf-lvl-upper",
+          "levelName": "First Floor",
+          "volumeComputedAt": "finish_faces",
+          "volumeAreaInsetMm": 0.0,
+          "approxVolumeM3": 46.872,
+          "derivationAuthority": "preview_heuristic",
+          "authorityReasonCodes": [
+            "overlapping_derived_candidate_footprint",
+            "overlaps_authored_room_bbox"
+          ]
+        },
+        {
+          "kind": "axis_aligned_rectangle",
+          "levelPlane": "bim_xy_mm",
+          "bboxMm": {
+            "min": {
+              "x": 2000.0,
+              "y": 0.0
+            },
+            "max": {
+              "x": 12800.0,
+              "y": 1550.0
+            }
+          },
+          "wallIds": ["front-loggia-recessed-glass", "front-loggia-right-return"],
+          "boundarySeparationIds": ["sep-hf-room-loggia-1", "sep-hf-room-loggia-4"],
+          "perimeterSegmentIdsSorted": [
+            "front-loggia-recessed-glass",
+            "front-loggia-right-return",
+            "sep-hf-room-loggia-1",
+            "sep-hf-room-loggia-4"
+          ],
+          "boundarySegmentEncoding": "boundary_segment_v1",
+          "approxAreaM2": 16.74,
+          "note": "Axis-aligned orthogonal loop from wall and/or axis-aligned room separation segments; authoritative derivation when interior is unambiguous and does not intersect authored outlines.",
+          "levelId": "hf-lvl-upper",
+          "levelName": "First Floor",
+          "volumeComputedAt": "finish_faces",
+          "volumeAreaInsetMm": 0.0,
+          "approxVolumeM3": 46.872,
+          "derivationAuthority": "preview_heuristic",
+          "authorityReasonCodes": [
+            "overlapping_derived_candidate_footprint",
+            "overlaps_authored_room_bbox"
+          ]
+        },
+        {
+          "kind": "axis_aligned_rectangle",
+          "levelPlane": "bim_xy_mm",
+          "bboxMm": {
+            "min": {
+              "x": 2000.0,
+              "y": 0.0
+            },
+            "max": {
+              "x": 12800.0,
+              "y": 1550.0
+            }
+          },
+          "wallIds": ["front-loggia-recessed-glass", "front-loggia-right-return"],
+          "boundarySeparationIds": ["sep-hf-room-loggia-3", "sep-hf-room-loggia-4"],
+          "perimeterSegmentIdsSorted": [
+            "front-loggia-recessed-glass",
+            "front-loggia-right-return",
+            "sep-hf-room-loggia-3",
+            "sep-hf-room-loggia-4"
+          ],
+          "boundarySegmentEncoding": "boundary_segment_v1",
+          "approxAreaM2": 16.74,
+          "note": "Axis-aligned orthogonal loop from wall and/or axis-aligned room separation segments; authoritative derivation when interior is unambiguous and does not intersect authored outlines.",
+          "levelId": "hf-lvl-upper",
+          "levelName": "First Floor",
+          "volumeComputedAt": "finish_faces",
+          "volumeAreaInsetMm": 0.0,
+          "approxVolumeM3": 46.872,
+          "derivationAuthority": "preview_heuristic",
+          "authorityReasonCodes": [
+            "overlapping_derived_candidate_footprint",
+            "overlaps_authored_room_bbox"
+          ]
+        },
+        {
+          "kind": "axis_aligned_rectangle",
+          "levelPlane": "bim_xy_mm",
+          "bboxMm": {
+            "min": {
+              "x": 2000.0,
+              "y": 0.0
+            },
+            "max": {
+              "x": 12800.0,
+              "y": 1550.0
+            }
+          },
+          "wallIds": ["front-loggia-right-return"],
           "boundarySeparationIds": [
             "sep-hf-room-loggia-1",
             "sep-hf-room-loggia-2",
@@ -828,13 +1146,13 @@
             "sep-hf-room-loggia-3"
           ],
           "boundarySegmentEncoding": "boundary_segment_v1",
-          "approxAreaM2": 8.64,
+          "approxAreaM2": 16.74,
           "note": "Axis-aligned orthogonal loop from wall and/or axis-aligned room separation segments; authoritative derivation when interior is unambiguous and does not intersect authored outlines.",
           "levelId": "hf-lvl-upper",
           "levelName": "First Floor",
           "volumeComputedAt": "finish_faces",
           "volumeAreaInsetMm": 0.0,
-          "approxVolumeM3": 24.192,
+          "approxVolumeM3": 46.872,
           "derivationAuthority": "preview_heuristic",
           "authorityReasonCodes": [
             "overlapping_derived_candidate_footprint",
@@ -846,17 +1164,15 @@
           "levelPlane": "bim_xy_mm",
           "bboxMm": {
             "min": {
-              "x": 1200.0,
-              "y": -450.0
+              "x": 2000.0,
+              "y": 0.0
             },
             "max": {
-              "x": 7600.0,
-              "y": 900.0
+              "x": 12800.0,
+              "y": 1550.0
             }
           },
-          "wallIds": [
-            "front-loggia-right-return"
-          ],
+          "wallIds": ["front-loggia-right-return"],
           "boundarySeparationIds": [
             "sep-hf-room-loggia-1",
             "sep-hf-room-loggia-3",
@@ -869,13 +1185,13 @@
             "sep-hf-room-loggia-4"
           ],
           "boundarySegmentEncoding": "boundary_segment_v1",
-          "approxAreaM2": 8.64,
+          "approxAreaM2": 16.74,
           "note": "Axis-aligned orthogonal loop from wall and/or axis-aligned room separation segments; authoritative derivation when interior is unambiguous and does not intersect authored outlines.",
           "levelId": "hf-lvl-upper",
           "levelName": "First Floor",
           "volumeComputedAt": "finish_faces",
           "volumeAreaInsetMm": 0.0,
-          "approxVolumeM3": 24.192,
+          "approxVolumeM3": 46.872,
           "derivationAuthority": "preview_heuristic",
           "authorityReasonCodes": [
             "overlapping_derived_candidate_footprint",
@@ -887,85 +1203,44 @@
           "levelPlane": "bim_xy_mm",
           "bboxMm": {
             "min": {
-              "x": 5200.0,
-              "y": 1000.0
+              "x": 8950.0,
+              "y": 4000.0
             },
             "max": {
-              "x": 7600.0,
-              "y": 3000.0
+              "x": 12650.0,
+              "y": 8150.0
             }
           },
           "wallIds": [
-            "target-house-l1-landing-access-partition"
+            "hf-roof-court-front-return",
+            "hf-roof-court-glass-back",
+            "hf-roof-court-left-return",
+            "hf-roof-court-right-return"
           ],
-          "boundarySeparationIds": [
-            "sep-hf-room-landing-1",
-            "sep-hf-room-landing-2",
-            "sep-hf-room-landing-4"
-          ],
+          "boundarySeparationIds": [],
           "perimeterSegmentIdsSorted": [
-            "sep-hf-room-landing-1",
-            "sep-hf-room-landing-2",
-            "sep-hf-room-landing-4",
-            "target-house-l1-landing-access-partition"
+            "hf-roof-court-front-return",
+            "hf-roof-court-glass-back",
+            "hf-roof-court-left-return",
+            "hf-roof-court-right-return"
           ],
           "boundarySegmentEncoding": "boundary_segment_v1",
-          "approxAreaM2": 4.8,
+          "approxAreaM2": 15.355,
           "note": "Axis-aligned orthogonal loop from wall and/or axis-aligned room separation segments; authoritative derivation when interior is unambiguous and does not intersect authored outlines.",
           "levelId": "hf-lvl-upper",
           "levelName": "First Floor",
           "volumeComputedAt": "finish_faces",
           "volumeAreaInsetMm": 0.0,
-          "approxVolumeM3": 13.44,
+          "approxVolumeM3": 42.994,
           "derivationAuthority": "preview_heuristic",
           "authorityReasonCodes": [
-            "overlapping_derived_candidate_footprint",
-            "overlaps_authored_room_bbox"
-          ]
-        },
-        {
-          "kind": "axis_aligned_rectangle",
-          "levelPlane": "bim_xy_mm",
-          "bboxMm": {
-            "min": {
-              "x": 5200.0,
-              "y": 1000.0
-            },
-            "max": {
-              "x": 7600.0,
-              "y": 3000.0
-            }
-          },
-          "wallIds": [
-            "target-house-l1-landing-access-partition"
-          ],
-          "boundarySeparationIds": [
-            "sep-hf-room-landing-2",
-            "sep-hf-room-landing-3",
-            "sep-hf-room-landing-4"
-          ],
-          "perimeterSegmentIdsSorted": [
-            "sep-hf-room-landing-2",
-            "sep-hf-room-landing-3",
-            "sep-hf-room-landing-4",
-            "target-house-l1-landing-access-partition"
-          ],
-          "boundarySegmentEncoding": "boundary_segment_v1",
-          "approxAreaM2": 4.8,
-          "note": "Axis-aligned orthogonal loop from wall and/or axis-aligned room separation segments; authoritative derivation when interior is unambiguous and does not intersect authored outlines.",
-          "levelId": "hf-lvl-upper",
-          "levelName": "First Floor",
-          "volumeComputedAt": "finish_faces",
-          "volumeAreaInsetMm": 0.0,
-          "approxVolumeM3": 13.44,
-          "derivationAuthority": "preview_heuristic",
-          "authorityReasonCodes": [
+            "ambiguous_interior_separation",
             "overlapping_derived_candidate_footprint",
             "overlaps_authored_room_bbox"
           ]
         }
       ],
-      "candidateCount": 21,
+      "candidateCount": 30,
       "authoritativeCandidateCount": 0,
       "unboundedRoomIds": [],
       "diagnostics": [
@@ -973,9 +1248,11 @@
           "code": "ambiguous_interior_separation",
           "severity": "warning",
           "levelId": "hf-lvl-ground",
-          "diagnosticId": "3ac23932220128c0",
+          "diagnosticId": "5bf631eeab478cce",
           "separationIds": [
+            "sep-hf-room-carport-1",
             "sep-hf-room-carport-2",
+            "sep-hf-room-carport-3",
             "sep-hf-room-gf-bath-laundry-1",
             "sep-hf-room-gf-bath-laundry-3",
             "sep-hf-room-gf-bath-laundry-4",
@@ -1003,6 +1280,21 @@
           ],
           "boundarySeparationIds": [],
           "message": "An axis-aligned room separation pierces this derived rectangle interior; footprint is ambiguous for a single authoritative cell."
+        },
+        {
+          "code": "ambiguous_interior_separation",
+          "severity": "warning",
+          "levelId": "hf-lvl-upper",
+          "diagnosticId": "090d663b921384a8",
+          "separationIds": ["sep-room-terrace-1", "sep-room-terrace-3", "sep-room-terrace-4"],
+          "wallIds": [
+            "hf-roof-court-front-return",
+            "hf-roof-court-glass-back",
+            "hf-roof-court-left-return",
+            "hf-roof-court-right-return"
+          ],
+          "boundarySeparationIds": [],
+          "message": "An axis-aligned room separation pierces this derived rectangle interior; footprint is ambiguous for a single authoritative cell."
         }
       ],
       "warnings": [
@@ -1017,7 +1309,9 @@
             "ground-base-wall-04"
           ],
           "separationIds": [
+            "sep-hf-room-carport-1",
             "sep-hf-room-carport-2",
+            "sep-hf-room-carport-3",
             "sep-hf-room-gf-bath-laundry-1",
             "sep-hf-room-gf-bath-laundry-3",
             "sep-hf-room-gf-bath-laundry-4",
@@ -1038,28 +1332,35 @@
             "sep-room-living-4"
           ],
           "message": "An axis-aligned room separation pierces this derived rectangle bbox interior; expect multiple rooms or adjust separators before trusting a single createRoomOutline."
+        },
+        {
+          "code": "derivedRectangleInteriorRoomSeparation",
+          "severity": "warning",
+          "levelId": "hf-lvl-upper",
+          "wallIds": [
+            "hf-roof-court-front-return",
+            "hf-roof-court-glass-back",
+            "hf-roof-court-left-return",
+            "hf-roof-court-right-return"
+          ],
+          "separationIds": ["sep-room-terrace-1", "sep-room-terrace-3", "sep-room-terrace-4"],
+          "message": "An axis-aligned room separation pierces this derived rectangle bbox interior; expect multiple rooms or adjust separators before trusting a single createRoomOutline."
         }
       ],
-      "diagnosticCount": 1,
+      "diagnosticCount": 2,
       "authorityVersion": "axis_aa_authoritative_v2"
     },
     "regenerationDiagnostics": {
       "documentRevision": 2,
       "roomDerivationHeuristicVersion": "room_deriv_preview_v4",
-      "roomDerivationCandidateCount": 21,
+      "roomDerivationCandidateCount": 30,
       "roomDerivationAuthoritativeCount": 0,
-      "roomDerivationDiagnosticCount": 1,
-      "roomDerivationWarningCount": 1,
-      "levelsWithRoomsSorted": [
-        "hf-lvl-ground",
-        "hf-lvl-upper"
-      ],
-      "levelsWithWallsSorted": [
-        "hf-lvl-ground",
-        "hf-lvl-upper"
-      ],
+      "roomDerivationDiagnosticCount": 2,
+      "roomDerivationWarningCount": 2,
+      "levelsWithRoomsSorted": ["hf-lvl-ground", "hf-lvl-upper"],
+      "levelsWithWallsSorted": ["hf-lvl-ground", "hf-lvl-upper"],
       "maxRoomsOnSingleLevel": 7,
-      "maxWallsOnSingleLevel": 16
+      "maxWallsOnSingleLevel": 12
     }
   },
   "checks": {

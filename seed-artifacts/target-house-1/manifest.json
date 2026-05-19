@@ -13,22 +13,22 @@
     "version": 1
   },
   "acceptance": {
-    "status": "offline-refreshed-clean-advisor-geometry-and-sketch-acceptance-blocked",
+    "status": "offline-refreshed-current-evidence",
     "evidenceRoot": "evidence/live-run-current",
-    "gitHead": "af19d681dc60ee7438434d5c6202f1bd623000d5",
-    "bundleSha256": "903d560a8eb43116956cf4aa794e82b173b677b679a0e5d9fd354d34ab4e91ba",
+    "gitHead": "10120e48a44ed5be4f860be1e816619b8421fb74",
+    "bundleSha256": "2f1ba728875d22abe1cd4111642a5b058a111e478cf051436f69b78f845e5caf",
     "irSha256": "34757eba0ab4784e91a66232205294ac7cf1c7504bc3701c42b76ed3ffb7bf8e",
     "capabilitiesSha256": "e3faa00d4724d5e375ee853d5e3d56b21254a969a84e702d67013a8bb0125dbb",
-    "advisorRuleDigest": "d2d938dde4832ef91d26c33fd8f83a1c0dda738806560ea29bbee5a7a75d1f7c",
-    "generatedAtEpochMs": 1779185603322,
-    "notes": "Wave 11 integration refreshed deterministic offline evidence from seed-artifacts/target-house-1/bundle.json at current head. Core Advisor/constructability clean-pass passes, but final acceptance remains blocked by target-house geometry diagnostic errors and unchecked semantic visual checklist rows in evidence/live-run-current."
+    "advisorRuleDigest": "594fc7b78853d533530b0a83a33825a865abc5412fa72a13143b15d018466167",
+    "generatedAtEpochMs": 1779190379791,
+    "notes": "Deterministic offline evidence was regenerated from seed-artifacts/target-house-1/bundle.json. Clean-pass, geometry, semantic visual, final-package, and live/browser acceptance are tracked in evidence/live-run-current."
   },
   "inputPaths": {
     "source": "spec/target-house",
     "bundle": "target-house-1.bundle.v2.json"
   },
-  "bundleSha256": "903d560a8eb43116956cf4aa794e82b173b677b679a0e5d9fd354d34ab4e91ba",
-  "commandCount": 263,
+  "bundleSha256": "2f1ba728875d22abe1cd4111642a5b058a111e478cf051436f69b78f845e5caf",
+  "commandCount": 245,
   "commandSchemaVersion": "cmd-v3.0",
   "entryComment": {
     "body": "Image-locked Target House 1 BIM seed generated from the sketch-to-BIM methodology with final live evidence."

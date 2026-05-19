@@ -623,7 +623,7 @@ def mirror_live(evidence_dir: Path) -> None:
 def update_manifest(manifest_path: Path, summary: dict[str, Any]) -> None:
     manifest = read_json(manifest_path)
     manifest["acceptance"] = {
-        "status": "offline-refreshed-needs-clean-pass",
+        "status": "offline-refreshed-current-evidence",
         "evidenceRoot": "evidence/live-run-current",
         "gitHead": summary["gitHead"],
         "bundleSha256": summary["bundleSha256"],
@@ -632,9 +632,10 @@ def update_manifest(manifest_path: Path, summary: dict[str, Any]) -> None:
         "advisorRuleDigest": summary["advisorRuleDigest"],
         "generatedAtEpochMs": summary["generatedAtEpochMs"],
         "notes": (
-            "Wave 9 Worker A regenerated deterministic offline evidence from "
-            "seed-artifacts/target-house-1/bundle.json. Live/browser acceptance "
-            "and clean-pass findings are tracked in evidence/live-run-current."
+            "Deterministic offline evidence was regenerated from "
+            "seed-artifacts/target-house-1/bundle.json. Clean-pass, geometry, "
+            "semantic visual, final-package, and live/browser acceptance are "
+            "tracked in evidence/live-run-current."
         ),
     }
     manifest["bundleSha256"] = summary["bundleSha256"]

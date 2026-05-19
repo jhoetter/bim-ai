@@ -1,17 +1,17 @@
 {
   "schemaVersion": "sketch.evidence.collection.v1",
-  "generatedAt": "2026-05-19T10:13:23.322691Z",
+  "generatedAt": "2026-05-19T11:32:59.791955Z",
   "modelId": "target-house-1-offline-regenerated",
   "revision": 2,
   "phaseId": null,
   "baseUrl": null,
   "currentHead": {
-    "gitHead": "af19d681dc60ee7438434d5c6202f1bd623000d5",
+    "gitHead": "10120e48a44ed5be4f860be1e816619b8421fb74",
     "modelId": "target-house-1-offline-regenerated",
     "modelRevision": 2,
-    "bundleSha256": "903d560a8eb43116956cf4aa794e82b173b677b679a0e5d9fd354d34ab4e91ba",
-    "commandCount": 263,
-    "advisorRuleDigest": "d2d938dde4832ef91d26c33fd8f83a1c0dda738806560ea29bbee5a7a75d1f7c",
+    "bundleSha256": "2f1ba728875d22abe1cd4111642a5b058a111e478cf051436f69b78f845e5caf",
+    "commandCount": 245,
+    "advisorRuleDigest": "594fc7b78853d533530b0a83a33825a865abc5412fa72a13143b15d018466167",
     "advisorRuleFiles": [
       "app/bim_ai/constructability_advisories.py",
       "app/bim_ai/constructability_report.py",
@@ -52,10 +52,10 @@
     "modelStats": {
       "modelId": "target-house-1-offline-regenerated",
       "revision": 2,
-      "elementCount": 168,
+      "elementCount": 157,
       "countsByKind": {
         "asset_library_entry": 5,
-        "door": 13,
+        "door": 6,
         "elevation_view": 1,
         "family_type": 3,
         "floor": 4,
@@ -69,7 +69,6 @@
         "property_line": 4,
         "railing": 3,
         "roof": 1,
-        "roof_opening": 1,
         "roof_type": 1,
         "room": 13,
         "room_color_scheme": 1,
@@ -85,15 +84,15 @@
         "sweep": 3,
         "toposolid": 1,
         "viewpoint": 8,
-        "wall": 21,
+        "wall": 16,
         "wall_type": 2,
-        "window": 2
+        "window": 4
       }
     },
     "advisor": {
       "error": 0,
       "warning": 0,
-      "info": 2
+      "info": 0
     },
     "constructability": {
       "ok": true,
@@ -103,10 +102,10 @@
       "total": 0
     },
     "requiredVisualViewCount": 8,
-    "findingDispositionCount": 1,
+    "findingDispositionCount": 0,
     "unclassifiedBlockingFindingCount": 0,
     "toleranceLedger": {
-      "findingCount": 1,
+      "findingCount": 0,
       "toleranceCount": 0,
       "blockingFindingCount": 0,
       "incompleteToleranceCount": 0

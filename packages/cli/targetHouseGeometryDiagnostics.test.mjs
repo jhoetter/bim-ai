@@ -52,9 +52,9 @@ test('target-house authoritative bundle excludes corrected diagnostic root cause
   const ids = new Set(elements.map((element) => element.id));
 
   assert.equal(snapshotInput.snapshotSource.kind, 'materialized_seed_bundle');
-  assert.equal(elements.some((element) => element.kind === 'room_separation'), false);
+  assert.ok(elements.some((element) => element.kind === 'room_separation'));
   assert.equal(elements.some((element) => element.kind === 'roof_opening'), false);
-  assert.equal(elements.some((element) => element.kind === 'slab_opening'), false);
+  assert.ok(elements.some((element) => element.kind === 'slab_opening'));
   assert.equal(
     elements.some((element) => /^access-(wall|door)-/.test(element.id)),
     false,
@@ -108,7 +108,7 @@ test('target-house snapshot resolver can materialize authoritative seed bundle i
   assert.ok(Object.keys(materializedInput.snapshot.elements).length > 0);
 });
 
-test('minimal diagnostic catches helper leakage and overlapping hosted cuts', () => {
+test('minimal diagnostic allows analytical room separators and catches overlapping hosted cuts', () => {
   const snapshot = {
     modelId: 'mini',
     revision: 1,
@@ -157,7 +157,7 @@ test('minimal diagnostic catches helper leakage and overlapping hosted cuts', ()
   });
 
   const codes = report.findings.map((finding) => finding.code);
-  assert.ok(codes.includes('helper.room_separation.visible_in_snapshot'));
+  assert.ok(!codes.includes('helper.room_separation.visible_in_snapshot'));
   assert.ok(codes.includes('renderer.wall_cut.overlapping_hosted_cuts'));
 });
 
@@ -238,5 +238,5 @@ test('minimal diagnostic catches detached access stubs and unsupported target-ho
   assert.ok(codes.includes('helper.door.access_stub_visible_in_snapshot'));
   assert.ok(codes.includes('geometry.hosted_opening_on_access_stub'));
   assert.ok(codes.includes('renderer.roof_opening.asymmetric_gable_unproven'));
-  assert.ok(codes.includes('renderer.slab_opening.stair_penetration_unproven'));
+  assert.ok(!codes.includes('renderer.slab_opening.stair_penetration_unproven'));
 });

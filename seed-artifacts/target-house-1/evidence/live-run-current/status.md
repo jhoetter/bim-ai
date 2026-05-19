@@ -1,13 +1,13 @@
 # Target House 1 Offline Evidence Refresh
 
-Generated: 2026-05-19T10:13:23.330874Z
+Generated: 2026-05-19T11:32:59.801500Z
 Model: target-house-1-offline-regenerated
 Revision: 2
 Source: `seed-artifacts/target-house-1/bundle.json`
 
 ## Summary
 
-- Element count: 168
+- Element count: 157
 - Advisor errors: 0
 - Advisor warnings: 0
 - Constructability findings: 0

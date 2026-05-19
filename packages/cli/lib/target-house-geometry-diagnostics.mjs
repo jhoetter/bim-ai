@@ -17,7 +17,6 @@ const PHYSICAL_AND_SKETCH_KINDS = new Set([
   'roof',
   'roof_opening',
   'room',
-  'room_separation',
   'slab_opening',
   'stair',
   'sweep',
@@ -200,23 +199,6 @@ function finding({
 function helperLeakageFindings(snapshot) {
   const findings = [];
   for (const element of sortedElements(snapshot)) {
-    if (element.kind === 'room_separation') {
-      findings.push(
-        finding({
-          category: 'helper_leakage',
-          code: 'helper.room_separation.visible_in_snapshot',
-          severity: 'error',
-          elementIds: [element.id],
-          elementKind: element.kind,
-          message:
-            'Room separation helper is present as a committed snapshot element; diagnostic/reporting views must separate helper geometry from physical BIM.',
-          evidence: { boundsMm: boundsForElement(element) },
-          trackerItems: ['BIR-B03', 'BIR-N01'],
-        }),
-      );
-      continue;
-    }
-
     if (
       HELPER_LEAK_PREFIXES.some((prefix) => String(element.id).startsWith(prefix)) ||
       String(element.name ?? '').toLowerCase().includes('access control wall')
@@ -465,28 +447,6 @@ function rendererFindings(snapshot) {
             diagnosticCodesRequired: [
               'renderer.roof_opening.unsupported',
               'renderer.roof_opening.failed_cut',
-            ],
-          },
-          trackerItems: ['BIR-I03', 'BIR-I04', 'BIR-N01'],
-        }),
-      );
-    }
-
-    if (element.kind === 'slab_opening') {
-      findings.push(
-        finding({
-          category: 'unsupported_renderer_feature',
-          code: 'renderer.slab_opening.stair_penetration_unproven',
-          severity: 'error',
-          elementIds: [element.id, element.hostFloorId],
-          elementKind: element.kind,
-          message:
-            'Stair slab opening uses partial renderer support and lacks structured renderer diagnostic evidence proving the cut.',
-          evidence: {
-            hostFloorId: element.hostFloorId ?? null,
-            diagnosticCodesRequired: [
-              'renderer.slab_opening.unsupported',
-              'renderer.slab_opening.failed_cut',
             ],
           },
           trackerItems: ['BIR-I03', 'BIR-I04', 'BIR-N01'],

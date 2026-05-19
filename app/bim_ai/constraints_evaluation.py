@@ -111,6 +111,7 @@ from bim_ai.site.toposolid import samples_from_toposolid, underside_elevation_mm
 from bim_ai.stair_plan_proxy import stair_schedule_row_extensions_v1
 
 ROOM_PLAN_OVERLAP_THRESHOLD_MM2 = 50_000.0
+ROOM_OPEN_ADJACENCY_TOLERANCE_MM = 400.0
 
 
 _viewport_dimension_mm = viewport_dimension_mm
@@ -135,6 +136,99 @@ _opening_plan_midpoint = opening_plan_midpoint
 _hosted_t_bounds = hosted_t_bounds
 _opening_t_interval_on_wall = opening_t_interval_on_wall
 _intervals_overlap = intervals_overlap
+
+
+def _room_ids_with_open_separator_adjacency(
+    rooms: list[RoomElem],
+    room_separations: list[RoomSeparationElem],
+) -> set[str]:
+    separations_by_level: dict[str, list[tuple[tuple[float, float], tuple[float, float]]]] = (
+        defaultdict(list)
+    )
+    for separation in room_separations:
+        separations_by_level[separation.level_id].append(
+            (
+                (float(separation.start.x_mm), float(separation.start.y_mm)),
+                (float(separation.end.x_mm), float(separation.end.y_mm)),
+            )
+        )
+
+    open_room_ids: set[str] = set()
+    sorted_rooms = sorted(rooms, key=lambda room: room.id)
+    for index, left in enumerate(sorted_rooms):
+        left_outline = [(float(point.x_mm), float(point.y_mm)) for point in left.outline_mm]
+        if len(left_outline) < 3:
+            continue
+        for right in sorted_rooms[index + 1 :]:
+            if right.level_id != left.level_id:
+                continue
+            right_outline = [(float(point.x_mm), float(point.y_mm)) for point in right.outline_mm]
+            if len(right_outline) < 3:
+                continue
+            if not _rooms_share_open_separator(
+                left_outline,
+                right_outline,
+                separations_by_level.get(left.level_id, []),
+            ):
+                continue
+            open_room_ids.add(left.id)
+            open_room_ids.add(right.id)
+    return open_room_ids
+
+
+def _rooms_share_open_separator(
+    left: list[tuple[float, float]],
+    right: list[tuple[float, float]],
+    separations: list[tuple[tuple[float, float], tuple[float, float]]],
+) -> bool:
+    for left_segment in zip(left, left[1:] + left[:1], strict=False):
+        for right_segment in zip(right, right[1:] + right[:1], strict=False):
+            overlap = _axis_aligned_overlap_segment(left_segment, right_segment)
+            if overlap is None:
+                continue
+            midpoint = (
+                (overlap[0][0] + overlap[1][0]) / 2.0,
+                (overlap[0][1] + overlap[1][1]) / 2.0,
+            )
+            if any(
+                _distance_point_segment_mm(
+                    midpoint[0],
+                    midpoint[1],
+                    sep_start[0],
+                    sep_start[1],
+                    sep_end[0],
+                    sep_end[1],
+                )
+                <= ROOM_OPEN_ADJACENCY_TOLERANCE_MM
+                for sep_start, sep_end in separations
+            ):
+                return True
+    return False
+
+
+def _axis_aligned_overlap_segment(
+    left: tuple[tuple[float, float], tuple[float, float]],
+    right: tuple[tuple[float, float], tuple[float, float]],
+) -> tuple[tuple[float, float], tuple[float, float]] | None:
+    (ax, ay), (bx, by) = left
+    (cx, cy), (dx, dy) = right
+    left_vertical = abs(ax - bx) <= ROOM_OPEN_ADJACENCY_TOLERANCE_MM
+    right_vertical = abs(cx - dx) <= ROOM_OPEN_ADJACENCY_TOLERANCE_MM
+    left_horizontal = abs(ay - by) <= ROOM_OPEN_ADJACENCY_TOLERANCE_MM
+    right_horizontal = abs(cy - dy) <= ROOM_OPEN_ADJACENCY_TOLERANCE_MM
+    if left_vertical and right_vertical and abs(ax - cx) <= ROOM_OPEN_ADJACENCY_TOLERANCE_MM:
+        start = max(min(ay, by), min(cy, dy))
+        end = min(max(ay, by), max(cy, dy))
+        if end - start >= ROOM_OPEN_ADJACENCY_TOLERANCE_MM:
+            x = (ax + cx) / 2.0
+            return ((x, start), (x, end))
+    if left_horizontal and right_horizontal and abs(ay - cy) <= ROOM_OPEN_ADJACENCY_TOLERANCE_MM:
+        start = max(min(ax, bx), min(cx, dx))
+        end = min(max(ax, bx), max(cx, dx))
+        if end - start >= ROOM_OPEN_ADJACENCY_TOLERANCE_MM:
+            y = (ay + cy) / 2.0
+            return ((start, y), (end, y))
+    return None
 
 
 def _validate_hosted_opening(
@@ -296,6 +390,10 @@ def evaluate(
         elif isinstance(el, LevelElem):
             levels.append(el)
 
+    rooms_with_open_separator_access = _room_ids_with_open_separator_adjacency(
+        rooms,
+        room_separations,
+    )
     lvl_by_id = {lv.id for lv in levels}
     lev_elem_by_id = {lv.id: lv for lv in levels}
 
@@ -937,6 +1035,8 @@ def evaluate(
         max_dist_mm = 3500.0
         if access_points:
             for room in rooms:
+                if room.id in rooms_with_open_separator_access:
+                    continue
                 xmin, xmax, ymin, ymax = _room_bbox(room)
                 cx = (xmin + xmax) / 2
                 cy = (ymin + ymax) / 2

@@ -45,8 +45,8 @@ DEFAULT_REQUIRED_ROOM_SCHEDULE_FIELDS: tuple[str, ...] = (
     "classification",
 )
 
-ACCESS_TOLERANCE_MM = 250.0
-TOPOLOGY_TOLERANCE_MM = 200.0
+ACCESS_TOLERANCE_MM = 400.0
+TOPOLOGY_TOLERANCE_MM = 400.0
 
 
 def check_room_access_integrity(
@@ -95,9 +95,10 @@ def check_room_access_integrity(
     }
 
     door_evidence, door_findings = _door_room_evidence(doors, walls, rooms, room_polygons)
+    open_adjacency = _room_separation_open_adjacency(rooms, room_polygons, room_separations)
     findings.extend(door_findings)
-    findings.extend(_room_access_findings(rooms, door_evidence))
-    findings.extend(_egress_findings(rooms, doors, walls, door_evidence, stairs))
+    findings.extend(_room_access_findings(rooms, door_evidence, open_adjacency))
+    findings.extend(_egress_findings(rooms, doors, walls, door_evidence, stairs, open_adjacency))
     findings.extend(_stair_transition_findings(stairs, levels))
     findings.extend(_room_floor_topology_findings(rooms, room_polygons, floors, floor_polygons))
     findings.extend(_room_wall_topology_findings(rooms, room_polygons, walls, room_separations))
@@ -187,6 +188,7 @@ def _door_room_evidence(
 def _room_access_findings(
     rooms: Mapping[str, Any],
     door_evidence: Mapping[str, dict[str, Any]],
+    open_adjacency: Mapping[str, set[str]],
 ) -> list[RoomAccessFinding]:
     room_to_doors: dict[str, list[str]] = defaultdict(list)
     for door_id, evidence in door_evidence.items():
@@ -195,7 +197,7 @@ def _room_access_findings(
 
     findings: list[RoomAccessFinding] = []
     for room_id in sorted(rooms):
-        if room_to_doors.get(room_id):
+        if room_to_doors.get(room_id) or open_adjacency.get(room_id):
             continue
         findings.append(
             _finding(
@@ -217,6 +219,7 @@ def _egress_findings(
     walls: Mapping[str, Any],
     door_evidence: Mapping[str, dict[str, Any]],
     stairs: Mapping[str, Any],
+    open_adjacency: Mapping[str, set[str]],
 ) -> list[RoomAccessFinding]:
     by_level: dict[str, set[str]] = defaultdict(set)
     graph: dict[str, set[str]] = defaultdict(set)
@@ -254,6 +257,9 @@ def _egress_findings(
             for right in room_ids:
                 if left != right:
                     graph[left].add(right)
+    for left, right_rooms in open_adjacency.items():
+        for right in right_rooms:
+            graph[left].add(right)
 
     for stair_id, stair in sorted(stairs.items()):
         base_level = _string(_read(stair, "baseLevelId", "base_level_id"))
@@ -294,7 +300,7 @@ def _egress_findings(
     for room_id in sorted(rooms):
         if room_id in reachable:
             continue
-        if not any(room_id in evidence["roomIds"] for evidence in door_evidence.values()):
+        if not any(room_id in evidence["roomIds"] for evidence in door_evidence.values()) and not open_adjacency.get(room_id):
             continue
         findings.append(
             _finding(
@@ -308,6 +314,92 @@ def _egress_findings(
             )
         )
     return findings
+
+
+def _room_separation_open_adjacency(
+    rooms: Mapping[str, Any],
+    room_polygons: Mapping[str, list[tuple[float, float]]],
+    room_separations: Mapping[str, Any],
+) -> dict[str, set[str]]:
+    separations_by_level: dict[str, list[tuple[tuple[float, float], tuple[float, float]]]] = defaultdict(list)
+    for separation in room_separations.values():
+        start = _point(_read(separation, "start"))
+        end = _point(_read(separation, "end"))
+        level_id = _string(_read(separation, "levelId", "level_id"))
+        if start and end and level_id:
+            separations_by_level[level_id].append((start, end))
+
+    adjacency: dict[str, set[str]] = defaultdict(set)
+    room_ids = sorted(room_polygons)
+    for index, left_id in enumerate(room_ids):
+        left_level = _string(_read(rooms[left_id], "levelId", "level_id"))
+        if not left_level:
+            continue
+        for right_id in room_ids[index + 1 :]:
+            if _string(_read(rooms[right_id], "levelId", "level_id")) != left_level:
+                continue
+            if not _rooms_share_open_separator(
+                room_polygons[left_id],
+                room_polygons[right_id],
+                separations_by_level.get(left_level, []),
+            ):
+                continue
+            adjacency[left_id].add(right_id)
+            adjacency[right_id].add(left_id)
+    return adjacency
+
+
+def _rooms_share_open_separator(
+    left: list[tuple[float, float]],
+    right: list[tuple[float, float]],
+    separations: list[tuple[tuple[float, float], tuple[float, float]]],
+) -> bool:
+    for left_segment in _polygon_segments(left):
+        for right_segment in _polygon_segments(right):
+            overlap = _axis_aligned_overlap_segment(left_segment, right_segment)
+            if overlap is None:
+                continue
+            midpoint = (
+                (overlap[0][0] + overlap[1][0]) / 2.0,
+                (overlap[0][1] + overlap[1][1]) / 2.0,
+            )
+            if any(
+                _point_segment_distance_mm(midpoint, sep_start, sep_end) <= TOPOLOGY_TOLERANCE_MM
+                for sep_start, sep_end in separations
+            ):
+                return True
+    return False
+
+
+def _polygon_segments(
+    polygon: list[tuple[float, float]],
+) -> list[tuple[tuple[float, float], tuple[float, float]]]:
+    return list(zip(polygon, polygon[1:] + polygon[:1], strict=False))
+
+
+def _axis_aligned_overlap_segment(
+    left: tuple[tuple[float, float], tuple[float, float]],
+    right: tuple[tuple[float, float], tuple[float, float]],
+) -> tuple[tuple[float, float], tuple[float, float]] | None:
+    (ax, ay), (bx, by) = left
+    (cx, cy), (dx, dy) = right
+    left_vertical = abs(ax - bx) <= TOPOLOGY_TOLERANCE_MM
+    right_vertical = abs(cx - dx) <= TOPOLOGY_TOLERANCE_MM
+    left_horizontal = abs(ay - by) <= TOPOLOGY_TOLERANCE_MM
+    right_horizontal = abs(cy - dy) <= TOPOLOGY_TOLERANCE_MM
+    if left_vertical and right_vertical and abs(ax - cx) <= TOPOLOGY_TOLERANCE_MM:
+        start = max(min(ay, by), min(cy, dy))
+        end = min(max(ay, by), max(cy, dy))
+        if end - start >= ACCESS_TOLERANCE_MM:
+            x = (ax + cx) / 2.0
+            return ((x, start), (x, end))
+    if left_horizontal and right_horizontal and abs(ay - cy) <= TOPOLOGY_TOLERANCE_MM:
+        start = max(min(ax, bx), min(cx, dx))
+        end = min(max(ax, bx), max(cx, dx))
+        if end - start >= ACCESS_TOLERANCE_MM:
+            y = (ay + cy) / 2.0
+            return ((start, y), (end, y))
+    return None
 
 
 def _stair_transition_findings(

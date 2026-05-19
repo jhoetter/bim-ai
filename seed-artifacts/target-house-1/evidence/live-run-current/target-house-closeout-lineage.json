@@ -3,8 +3,8 @@
   "seed": "target-house-1",
   "generatedAt": "1970-01-01T00:00:00.000Z",
   "git": {
-    "currentHead": "1b4aefe949c51fe212965cf3bbe301d9e94a0fc1",
-    "evidenceHead": "af19d681dc60ee7438434d5c6202f1bd623000d5",
+    "currentHead": "10120e48a44ed5be4f860be1e816619b8421fb74",
+    "evidenceHead": "10120e48a44ed5be4f860be1e816619b8421fb74",
     "dirtyCheckPolicy": "Report records source/evidence digests and git heads; concurrent dirty files are not normalized."
   },
   "paths": {
@@ -24,19 +24,19 @@
     "spec/target-house/target-house-1-sketch-ir.draft.json": "sha256:a90e27df1c146b6fb3c9ae18402d3c8662a3ee0cdb0f70c360ccc213ad669261",
     "spec/target-house/target-house-1-bim-information-requirements.md": "sha256:c32bc404b321d720fec7092b7877701279f02e1ccd336005b88e80ec4abae7dc",
     "spec/target-house/target-house-1-phase-plan.md": "sha256:a9f6b7d533e0434655c49d88a69299e90aeef9e120fb6f410b88fc007eba372a",
-    "bundle": "sha256:903d560a8eb43116956cf4aa794e82b173b677b679a0e5d9fd354d34ab4e91ba",
-    "snapshot": "sha256:94948476935cc7d7b6c9e46a166d69a7f946126c558e5df59a369ce9a94b0352",
-    "advisorRuleDigest": "sha256:d2d938dde4832ef91d26c33fd8f83a1c0dda738806560ea29bbee5a7a75d1f7c",
+    "bundle": "sha256:2f1ba728875d22abe1cd4111642a5b058a111e478cf051436f69b78f845e5caf",
+    "snapshot": "sha256:7204176dfc5531f3a9f13d5b5d9bda5c65b666f31f413f2c1075b44d48ebdba1",
+    "advisorRuleDigest": "sha256:594fc7b78853d533530b0a83a33825a865abc5412fa72a13143b15d018466167",
     "capabilities": "sha256:e3faa00d4724d5e375ee853d5e3d56b21254a969a84e702d67013a8bb0125dbb",
-    "finalManifest": "sha256:3de44b71a5c8b46a0affdac5a3869e5cbe7415762207f5059e53a002e6330e7d",
-    "performanceEvidence": "sha256:6fd9a9db63c77087288bb81b7feda9544091a5eaec33b8d5c41c6caf2ec54f71"
+    "finalManifest": "sha256:c98005c2f1abf7aa76997964cb197c767cf95d8c37e1b42257d853456aaf810e",
+    "performanceEvidence": "sha256:a11b92774627a7f28515567068516829ac1497200705ff235bc16228a7ddafea"
   },
   "evidenceFiles": [
     {
       "key": "tool_run_summary",
       "path": "seed-artifacts/target-house-1/evidence/live-run-current/tool-run-summary.json",
       "present": true,
-      "sha256": "sha256:e47291db653aa08f0afd38500a2bf382ad88dce5410e1af03cc5936cb70d2d5f",
+      "sha256": "sha256:4802c22e3b69c90716d6a7a18697be8669c54f7cf378ab5aa86149269f7ebf86",
       "schemaVersion": "sketch-to-bim.tool-run.v1",
       "status": "present",
       "summary": null
@@ -45,12 +45,12 @@
       "key": "evidence_manifest",
       "path": "seed-artifacts/target-house-1/evidence/live-run-current/evidence-manifest.json",
       "present": true,
-      "sha256": "sha256:2b2f41b0b5d0551246c517564b8354dade3de430398524f3389618e6601c0316",
+      "sha256": "sha256:49c3ff6eff9840e2b09d394b9bf3923be40631c2f459cfd2340e474836d8f805",
       "schemaVersion": "sketch.evidence.collection.v1",
       "status": "present",
       "summary": {
         "requiredVisualViewCount": 8,
-        "findingDispositionCount": 1,
+        "findingDispositionCount": 0,
         "unclassifiedBlockingFindingCount": 0
       }
     },
@@ -58,7 +58,7 @@
       "key": "snapshot",
       "path": "seed-artifacts/target-house-1/evidence/live-run-current/snapshot.json",
       "present": true,
-      "sha256": "sha256:94948476935cc7d7b6c9e46a166d69a7f946126c558e5df59a369ce9a94b0352",
+      "sha256": "sha256:7204176dfc5531f3a9f13d5b5d9bda5c65b666f31f413f2c1075b44d48ebdba1",
       "schemaVersion": null,
       "status": "present",
       "summary": null
@@ -84,17 +84,20 @@
       "key": "acceptance_gates",
       "path": "seed-artifacts/target-house-1/evidence/live-run-current/acceptance-gates.json",
       "present": true,
-      "sha256": "sha256:ac236f6f29111cf05092c56cc53c1079fd1627e9db8d8c599a41e2d825a2f294",
+      "sha256": "sha256:0569877d4fa28cca63f800d48790ff8a984c7d73cfdb1828b216bab73d5ac08f",
       "schemaVersion": "sketch-to-bim-acceptance-gates.v0",
-      "status": "blocked",
+      "status": "pass",
       "summary": {
-        "blockerCount": 2,
+        "blockerCount": 0,
         "toleranceCount": 1,
-        "advisorWarningCount": 49,
+        "advisorWarningCount": 0,
         "visualFailCount": 0,
         "visualNeedsReviewCount": 7,
-        "semanticVisualRequiredCount": 291,
-        "semanticVisualFailureCount": 291,
+        "semanticVisualRequiredCount": 305,
+        "semanticVisualFailureCount": 0,
+        "semanticVisualGateBlockerCount": 0,
+        "rendererDiagnosticsBlockingCount": 0,
+        "bimIntegrityBlockingCount": 0,
         "bimDataQualityErrorCount": 0,
         "bimDataQualityPlannedCount": 0,
         "exchangeValidationErrorCount": 0,
@@ -108,7 +111,7 @@
       "key": "advisor_all",
       "path": "seed-artifacts/target-house-1/evidence/live-run-current/advisor-all.json",
       "present": true,
-      "sha256": "sha256:48080b164cd232ed7ae0b4dd9ee49ae7923a111d1998b5069de513e72aea03a6",
+      "sha256": "sha256:998310c6b742474220a84dd231896f36d40bb0e5d271a1b8f4883b4d3e9a151b",
       "schemaVersion": null,
       "status": "present",
       "summary": null
@@ -117,7 +120,7 @@
       "key": "constructability_report",
       "path": "seed-artifacts/target-house-1/evidence/live-run-current/constructability-report.json",
       "present": true,
-      "sha256": "sha256:b4d04e89091776fa4256cb923a61331f6e0d4d22cfbdf73470385e7e3993108b",
+      "sha256": "sha256:b87cb11f2b0dd64588df780e165e972028394de68508e4c4d1432945377592ee",
       "schemaVersion": "constructabilityReport_v1",
       "status": "pass",
       "summary": {
@@ -130,7 +133,7 @@
       "key": "geometry_diagnostic",
       "path": "seed-artifacts/target-house-1/evidence/live-run-current/target-house-geometry-diagnostic.json",
       "present": true,
-      "sha256": "sha256:8cc8aec0393daf862614ecf6ff4babd7ba0d968175fcdd279a1f2d3f2e32ccd2",
+      "sha256": "sha256:a5e25c276647164b05bc5ddc86bb1585726ecbc2175360e153dbe363885ed50b",
       "schemaVersion": "target-house-current-geometry-diagnostic.v1",
       "status": "present",
       "summary": {
@@ -156,7 +159,7 @@
       "key": "visual_evidence_contract",
       "path": "seed-artifacts/target-house-1/evidence/live-run-current/visual-evidence-contract.json",
       "present": true,
-      "sha256": "sha256:9fcba02f16c5c3864ca946b66754ada49d2b3c123735620cf891ceaeec8934c5",
+      "sha256": "sha256:14124eb47a00a6770a1a453e0f2fdb60f3df4f70438ba6d106bc38b0598a08c8",
       "schemaVersion": "sketch.visual-evidence-contract.v1",
       "status": "present",
       "summary": null
@@ -165,7 +168,7 @@
       "key": "bim_data_quality",
       "path": "seed-artifacts/target-house-1/evidence/live-run-current/bim-data-quality.json",
       "present": true,
-      "sha256": "sha256:fbe267378c12eb9f24579ea9505781fa68ed549b17e0ff455d0864c10428385f",
+      "sha256": "sha256:614250a6b17fa2faf69e434c1aed7d60570187dc1cc04a692ea830c4a0e723bd",
       "schemaVersion": "sketch.bim-data-quality.v1",
       "status": "pass",
       "summary": {
@@ -179,7 +182,7 @@
       "key": "export_validation",
       "path": "seed-artifacts/target-house-1/evidence/live-run-current/export-validation.json",
       "present": true,
-      "sha256": "sha256:6f905e69fcbce190fe49f0c14ccc20cb88ecd5c63af07d97960ea934443d787f",
+      "sha256": "sha256:a2dc68fff77cde3b25067cce9433df2a4db356dac770f1522c8fa227fe01ed51",
       "schemaVersion": "sketch.exchange-validation.v1",
       "status": "pass",
       "summary": {
@@ -193,11 +196,11 @@
       "key": "tolerance_ledger",
       "path": "seed-artifacts/target-house-1/evidence/live-run-current/tolerance-ledger.json",
       "present": true,
-      "sha256": "sha256:24d47a50f77e97557b93b87640011e5ac300b2906cf581e8103ecd40781e7a91",
+      "sha256": "sha256:f6ff183d3aae7b6f98adb26f3a1ee4619f3e4d6784d59df7e71d66c1704162d8",
       "schemaVersion": "sketch.tolerance-ledger.v1",
       "status": "pass",
       "summary": {
-        "findingCount": 1,
+        "findingCount": 0,
         "toleranceCount": 0,
         "blockingFindingCount": 0,
         "incompleteToleranceCount": 0
@@ -216,7 +219,7 @@
       "key": "clean_pass_gate",
       "path": "seed-artifacts/target-house-1/evidence/live-run-current/clean-pass-gate.json",
       "present": true,
-      "sha256": "sha256:23cd56800253c363be78f4d6349426b60b0d815c622788014e55d6a05ef48c78",
+      "sha256": "sha256:8a2eb5df6f384c316c22f7d353a77c45d5f77b971dfbafe4825c8b0f971c5d72",
       "schemaVersion": "target-house.clean-pass-gate.v1",
       "status": "pass",
       "summary": {
@@ -232,14 +235,12 @@
   ],
   "summaries": {
     "advisor": {
-      "advisorTotal": 2,
-      "advisorSeverityCounts": {
-        "info": 1
-      },
+      "advisorTotal": 0,
+      "advisorSeverityCounts": {},
       "constructabilityFindingCount": 0,
       "constructabilityIssueCount": 0,
       "constructabilitySeverityCounts": {},
-      "advisoryClear": false,
+      "advisoryClear": true,
       "acceptanceMeaning": "Advisor and constructability findings are only one evidence family; target-house acceptance also requires source-feature semantic visual disposition, zero geometry-diagnostic errors, required screenshots/views, exchange/data-quality checks, performance evidence, tolerance closure, and freshness."
     },
     "geometry": {
@@ -259,15 +260,16 @@
       "visualFailCount": 0,
       "screenshotQualityStatus": "needs_review",
       "screenshotNeedsReviewCount": 7,
-      "semanticVisualRequiredCount": 291,
-      "semanticVisualFailureCount": 291,
+      "semanticVisualRequiredCount": 305,
+      "semanticVisualFailureCount": 0,
       "semanticVisualSummary": {
-        "requiredCount": 291,
-        "passCount": 0,
-        "failureCount": 291,
+        "requiredCount": 305,
+        "passCount": 305,
+        "invalidCount": 0,
+        "failureCount": 0,
         "missingCount": 0,
         "failedCount": 0,
-        "unverifiedCount": 291
+        "unverifiedCount": 0
       }
     },
     "dataExchange": {
@@ -282,100 +284,70 @@
     "performance": {
       "present": true,
       "ok": true,
-      "digestSha256": "6fd9a9db63c77087288bb81b7feda9544091a5eaec33b8d5c41c6caf2ec54f71",
+      "digestSha256": "a11b92774627a7f28515567068516829ac1497200705ff235bc16228a7ddafea",
       "interactions": [
         {
           "interaction": "orbit",
           "workload": "orbit",
           "accepted": true,
-          "estimatedMs": 12.31,
+          "estimatedMs": 12.48,
           "budgetMs": 16.7,
-          "budgetRatio": 0.74,
+          "budgetRatio": 0.75,
           "status": "within_budget",
-          "dominantFactors": ["rendered elements:43", "material overrides:9"]
+          "dominantFactors": ["rendered elements:44", "material overrides:9"]
         },
         {
           "interaction": "select",
           "workload": "select",
           "accepted": true,
-          "estimatedMs": 8.21,
+          "estimatedMs": 8.76,
           "budgetMs": 50,
-          "budgetRatio": 0.16,
+          "budgetRatio": 0.18,
           "status": "within_budget",
-          "dominantFactors": ["pick candidates:97", "hosted openings:10", "selected elements:1"]
+          "dominantFactors": ["pick candidates:157", "hosted openings:11", "selected elements:1"]
         },
         {
           "interaction": "lens-switch",
           "workload": "lens-switch",
           "accepted": true,
-          "estimatedMs": 6.47,
+          "estimatedMs": 7.55,
           "budgetMs": 100,
-          "budgetRatio": 0.06,
+          "budgetRatio": 0.08,
           "status": "within_budget",
-          "dominantFactors": ["lens classifications:97", "material state changes:9"]
+          "dominantFactors": ["lens classifications:157", "material state changes:9"]
         },
         {
           "interaction": "advisor-open",
           "workload": "advisor-toggle",
           "accepted": true,
-          "estimatedMs": 7.36,
+          "estimatedMs": 8.08,
           "budgetMs": 80,
-          "budgetRatio": 0.09,
+          "budgetRatio": 0.1,
           "status": "within_budget",
-          "dominantFactors": ["element references:97", "evidence views:11"]
+          "dominantFactors": ["element references:157", "evidence views:11"]
         }
       ],
-      "maxBudgetRatio": 0.74,
+      "maxBudgetRatio": 0.75,
       "overBudgetInteractions": []
     },
     "tolerances": {
       "ok": true,
-      "findingCount": 1,
+      "findingCount": 0,
       "toleranceCount": 0,
       "blockingFindingCount": 0,
       "incompleteToleranceCount": 0
     },
     "finalPackageStatus": {
       "ready": false,
-      "blockers": [
-        "live_evidence_freshness",
-        "semantic_visual",
-        "acceptance_gate_blockers",
-        "tracker_not_done"
-      ],
+      "blockers": ["tracker_not_done"],
       "blockerDetails": [
-        {
-          "code": "live_evidence_freshness",
-          "category": "evidence",
-          "count": 1
-        },
-        {
-          "code": "semantic_visual",
-          "category": "semantic_visual",
-          "count": 291,
-          "requiredCount": 291
-        },
-        {
-          "code": "acceptance_gate_blockers",
-          "category": "acceptance_gates",
-          "count": 1,
-          "blockerCodes": ["advisor_warning_findings"]
-        },
         {
           "code": "tracker_not_done",
           "category": "tracker",
-          "count": 4,
+          "count": 2,
           "rows": [
             {
-              "id": "BIR-N04",
-              "status": "Partial"
-            },
-            {
               "id": "BIR-N07",
-              "status": "Partial"
-            },
-            {
-              "id": "BIR-N08",
               "status": "Partial"
             },
             {
@@ -385,7 +357,7 @@
           ]
         }
       ],
-      "status": "blocked_live_evidence_freshness"
+      "status": "blocked_tracker_not_done"
     }
   },
   "features": [
@@ -403,8 +375,8 @@
       "requiredViews": ["main_front_left", "front_elevation", "rear_right_axon"],
       "evidenceTypes": ["screenshot", "advisor_payload"],
       "sourceRefs": ["spec/target-house/target-house-1-sketch-ir.draft.json#features"],
-      "status": "blocked_semantic_visual",
-      "semanticVisualFailureCount": 22
+      "status": "evidence_linked",
+      "semanticVisualFailureCount": 0
     },
     {
       "id": "folded_white_wrapper_shell",
@@ -419,8 +391,8 @@
       "requiredViews": ["main_front_left", "rear_right_axon", "wire_diagnostic"],
       "evidenceTypes": ["screenshot", "advisor_payload", "wire_diagnostic"],
       "sourceRefs": ["spec/target-house/target-house-1-sketch-ir.draft.json#features"],
-      "status": "blocked_semantic_visual",
-      "semanticVisualFailureCount": 32
+      "status": "evidence_linked",
+      "semanticVisualFailureCount": 0
     },
     {
       "id": "roof_terrace_cutout",
@@ -439,8 +411,8 @@
       "requiredViews": ["main_front_left", "roof_high", "rear_right_axon"],
       "evidenceTypes": ["screenshot", "advisor_payload", "constructability_report"],
       "sourceRefs": ["spec/target-house/target-house-1-sketch-ir.draft.json#features"],
-      "status": "blocked_semantic_visual",
-      "semanticVisualFailureCount": 32
+      "status": "evidence_linked",
+      "semanticVisualFailureCount": 0
     },
     {
       "id": "front_deep_loggia",
@@ -458,8 +430,8 @@
       "requiredViews": ["main_front_left", "front_elevation", "front_loggia", "first_floor_plan"],
       "evidenceTypes": ["screenshot", "advisor_payload", "constructability_report"],
       "sourceRefs": ["spec/target-house/target-house-1-sketch-ir.draft.json#features"],
-      "status": "blocked_semantic_visual",
-      "semanticVisualFailureCount": 33
+      "status": "evidence_linked",
+      "semanticVisualFailureCount": 0
     },
     {
       "id": "asymmetric_gable_envelope",
@@ -474,8 +446,8 @@
       "requiredViews": ["main_front_left", "front_elevation", "rear_right_axon"],
       "evidenceTypes": ["screenshot", "advisor_payload"],
       "sourceRefs": ["spec/target-house/target-house-1-sketch-ir.draft.json#features"],
-      "status": "blocked_semantic_visual",
-      "semanticVisualFailureCount": 34
+      "status": "evidence_linked",
+      "semanticVisualFailureCount": 0
     },
     {
       "id": "vertical_cladding_zones",
@@ -490,8 +462,8 @@
       "requiredViews": ["main_front_left", "front_elevation", "rear_right_axon"],
       "evidenceTypes": ["screenshot", "advisor_payload", "constructability_report"],
       "sourceRefs": ["spec/target-house/target-house-1-sketch-ir.draft.json#features"],
-      "status": "blocked_semantic_visual",
-      "semanticVisualFailureCount": 24
+      "status": "evidence_linked",
+      "semanticVisualFailureCount": 0
     },
     {
       "id": "opening_and_glazing_rhythm",
@@ -507,8 +479,8 @@
       "requiredViews": ["main_front_left", "front_elevation", "ground_floor_plan"],
       "evidenceTypes": ["screenshot", "advisor_payload", "constructability_report"],
       "sourceRefs": ["spec/target-house/target-house-1-sketch-ir.draft.json#features"],
-      "status": "blocked_semantic_visual",
-      "semanticVisualFailureCount": 21
+      "status": "evidence_linked",
+      "semanticVisualFailureCount": 0
     },
     {
       "id": "room_access_and_enclosure",
@@ -544,8 +516,8 @@
         "constructability_report"
       ],
       "sourceRefs": ["spec/target-house/target-house-1-sketch-ir.draft.json#features"],
-      "status": "blocked_semantic_visual",
-      "semanticVisualFailureCount": 20
+      "status": "evidence_linked",
+      "semanticVisualFailureCount": 0
     },
     {
       "id": "site_orientation_and_plinth",
@@ -560,8 +532,8 @@
       "requiredViews": ["main_front_left"],
       "evidenceTypes": ["screenshot", "advisor_payload"],
       "sourceRefs": ["spec/target-house/target-house-1-sketch-ir.draft.json#features"],
-      "status": "blocked_semantic_visual",
-      "semanticVisualFailureCount": 11
+      "status": "evidence_linked",
+      "semanticVisualFailureCount": 0
     },
     {
       "id": "documentation_evidence_set",
@@ -595,8 +567,8 @@
         "tolerance_ledger"
       ],
       "sourceRefs": ["spec/target-house/target-house-1-sketch-ir.draft.json#features"],
-      "status": "blocked_semantic_visual",
-      "semanticVisualFailureCount": 58
+      "status": "evidence_linked",
+      "semanticVisualFailureCount": 0
     }
   ],
   "screenshots": [
@@ -675,30 +647,10 @@
   ],
   "blockers": [
     {
-      "code": "acceptance_gate_blockers",
-      "summary": "Final package manifest reports this blocker."
-    },
-    {
-      "code": "acceptance_gates",
-      "summary": "2 gate blocker(s); semantic visual failures: 291."
-    },
-    {
-      "code": "live_evidence_freshness",
-      "summary": "Final package manifest reports this blocker."
-    },
-    {
-      "code": "semantic_visual",
-      "summary": "Final package manifest reports this blocker."
-    },
-    {
-      "code": "semantic_visual_unverified",
-      "summary": "291 required semantic visual row(s) remain unchecked or failed."
-    },
-    {
       "code": "tracker_not_done",
       "summary": "Final package manifest reports this blocker."
     }
   ],
   "ready": false,
-  "lineageDigestSha256": "7427d1d2fbf82d33bb7739a71dc13baea62dbced3cc606b8d8dbeeae84b137d6"
+  "lineageDigestSha256": "0ce84e1aef66060ed450f1d1c8ab2002e10cf6bd88348bd51b99334b3e35e07f"
 }

@@ -25,98 +25,98 @@
       "format": "advisorDiagnosticsProfile_v1",
       "clock": "perf_counter_ns",
       "deterministicOrder": true,
-      "elementCount": 168,
+      "elementCount": 157,
       "changedElementIds": [],
       "summary": {
         "checkCount": 10,
         "totalFindingCount": 0,
-        "totalElapsedMs": 195.411
+        "totalElapsedMs": 149.975
       },
       "ruleTimings": [
         {
           "checkId": "advisor.evaluate_constructability_rules",
           "layer": "advisor",
-          "elapsedMs": 161.796,
+          "elapsedMs": 115.377,
           "findingCount": 0,
-          "candidateElementCount": 168,
+          "candidateElementCount": 157,
           "impactedElementCount": 0,
           "incrementalEligible": false
         },
         {
           "checkId": "constructability.clearance",
           "layer": "constructability",
-          "elapsedMs": 2.624,
+          "elapsedMs": 2.559,
           "findingCount": 0,
-          "candidateElementCount": 168,
+          "candidateElementCount": 157,
           "impactedElementCount": 0,
           "incrementalEligible": false
         },
         {
           "checkId": "constructability.metadata_requirements",
           "layer": "constructability",
-          "elapsedMs": 0.17,
+          "elapsedMs": 0.169,
           "findingCount": 0,
-          "candidateElementCount": 168,
+          "candidateElementCount": 157,
           "impactedElementCount": 0,
           "incrementalEligible": false
         },
         {
           "checkId": "model_integrity.constructability_errors",
           "layer": "model_integrity",
-          "elapsedMs": 23.076,
+          "elapsedMs": 23.395,
           "findingCount": 0,
-          "candidateElementCount": 168,
+          "candidateElementCount": 157,
           "impactedElementCount": 0,
           "incrementalEligible": false
         },
         {
           "checkId": "domain_integrity.room_access",
           "layer": "domain_integrity",
-          "elapsedMs": 2.29,
+          "elapsedMs": 2.992,
           "findingCount": 0,
-          "candidateElementCount": 168
+          "candidateElementCount": 157
         },
         {
           "checkId": "domain_integrity.vertical_circulation",
           "layer": "domain_integrity",
-          "elapsedMs": 0.241,
+          "elapsedMs": 0.326,
           "findingCount": 0,
-          "candidateElementCount": 168
+          "candidateElementCount": 157
         },
         {
           "checkId": "domain_integrity.envelope",
           "layer": "domain_integrity",
-          "elapsedMs": 1.185,
+          "elapsedMs": 1.153,
           "findingCount": 0,
-          "candidateElementCount": 168
+          "candidateElementCount": 157
         },
         {
           "checkId": "domain_integrity.structure_mep_lite",
           "layer": "domain_integrity",
-          "elapsedMs": 1.734,
+          "elapsedMs": 1.623,
           "findingCount": 0,
-          "candidateElementCount": 168
+          "candidateElementCount": 157
         },
         {
           "checkId": "domain_integrity.code_profile",
           "layer": "domain_integrity",
-          "elapsedMs": 0.475,
+          "elapsedMs": 0.546,
           "findingCount": 0,
-          "candidateElementCount": 168
+          "candidateElementCount": 157
         },
         {
           "checkId": "domain_integrity.site_georeferencing",
           "layer": "domain_integrity",
-          "elapsedMs": 1.764,
+          "elapsedMs": 1.721,
           "findingCount": 0,
-          "candidateElementCount": 168
+          "candidateElementCount": 157
         }
       ],
       "incrementalEligibility": {
         "format": "advisorIncrementalDiagnosticEligibility_v1",
         "changedElementIds": [],
         "unknownChangedElementIds": [],
-        "totalElementCount": 168,
+        "totalElementCount": 157,
         "impactedElementCount": 0,
         "impactedElementIds": [],
         "incrementalEligible": false,

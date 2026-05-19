@@ -7,14 +7,9 @@
       "id": "asset-bath-fixture",
       "assetKind": "block_2d",
       "name": "Bathroom fixture marker",
-      "tags": [
-        "bathroom",
-        "mep"
-      ],
+      "tags": ["bathroom", "mep"],
       "category": "bathroom",
-      "disciplineTags": [
-        "arch"
-      ],
+      "disciplineTags": ["arch"],
       "thumbnailKind": "schematic_plan",
       "thumbnailWidthMm": 900.0,
       "thumbnailHeightMm": 600.0,
@@ -29,14 +24,9 @@
       "id": "asset-bed",
       "assetKind": "block_2d",
       "name": "Bed marker",
-      "tags": [
-        "bedroom",
-        "interior"
-      ],
+      "tags": ["bedroom", "interior"],
       "category": "furniture",
-      "disciplineTags": [
-        "arch"
-      ],
+      "disciplineTags": ["arch"],
       "thumbnailKind": "schematic_plan",
       "thumbnailWidthMm": 1600.0,
       "thumbnailHeightMm": 2100.0,
@@ -51,13 +41,9 @@
       "id": "asset-dining-table",
       "assetKind": "block_2d",
       "name": "Dining table marker",
-      "tags": [
-        "dining"
-      ],
+      "tags": ["dining"],
       "category": "furniture",
-      "disciplineTags": [
-        "arch"
-      ],
+      "disciplineTags": ["arch"],
       "thumbnailKind": "schematic_plan",
       "thumbnailWidthMm": 1800.0,
       "thumbnailHeightMm": 900.0,
@@ -72,14 +58,9 @@
       "id": "asset-outdoor-chair",
       "assetKind": "block_2d",
       "name": "Outdoor terrace chair marker",
-      "tags": [
-        "terrace",
-        "outdoor"
-      ],
+      "tags": ["terrace", "outdoor"],
       "category": "furniture",
-      "disciplineTags": [
-        "arch"
-      ],
+      "disciplineTags": ["arch"],
       "thumbnailKind": "schematic_plan",
       "thumbnailWidthMm": 650.0,
       "thumbnailHeightMm": 650.0,
@@ -94,14 +75,9 @@
       "id": "asset-sofa",
       "assetKind": "block_2d",
       "name": "Sofa marker",
-      "tags": [
-        "living",
-        "interior"
-      ],
+      "tags": ["living", "interior"],
       "category": "furniture",
-      "disciplineTags": [
-        "arch"
-      ],
+      "disciplineTags": ["arch"],
       "thumbnailKind": "schematic_plan",
       "thumbnailWidthMm": 2200.0,
       "thumbnailHeightMm": 900.0,
@@ -213,9 +189,7 @@
       "mode": "plan_2d",
       "viewerClipCapElevMm": null,
       "viewerClipFloorElevMm": null,
-      "hiddenSemanticKinds3d": [
-        "roof"
-      ],
+      "hiddenSemanticKinds3d": ["roof"],
       "cutawayStyle": null,
       "planOverlayEnabled": false,
       "planOverlaySourcePlanViewId": null,
@@ -268,6 +242,45 @@
       "shadingDevice": null,
       "annualShadingFactorEstimate": null
     },
+    "front-loggia-left-center-window": {
+      "kind": "window",
+      "id": "front-loggia-left-center-window",
+      "name": "Left center loggia glazing bay",
+      "wallId": "front-loggia-recessed-glass",
+      "alongT": 0.32,
+      "widthMm": 600.0,
+      "sillHeightMm": 150.0,
+      "heightMm": 2100.0,
+      "familyTypeId": "ft-window-standard",
+      "materialKey": null,
+      "materialSlots": null,
+      "hostCutDepthMm": null,
+      "revealInteriorMm": null,
+      "interlockGrade": null,
+      "sealRebateMm": null,
+      "lodPlan": null,
+      "outlineKind": null,
+      "outlineMm": null,
+      "attachedRoofId": null,
+      "ifcClassificationCode": null,
+      "pinned": false,
+      "phaseCreated": null,
+      "phaseDemolished": null,
+      "agentTrace": null,
+      "optionSetId": null,
+      "optionId": null,
+      "discipline": "arch",
+      "props": null,
+      "thermalClassification": null,
+      "thermalClassificationSource": null,
+      "uValue": null,
+      "gValue": null,
+      "frameFraction": null,
+      "airTightnessClass": null,
+      "installationThermalBridgeNote": null,
+      "shadingDevice": null,
+      "annualShadingFactorEstimate": null
+    },
     "front-loggia-left-mullion": {
       "kind": "sweep",
       "id": "front-loggia-left-mullion",
@@ -275,13 +288,13 @@
       "levelId": "hf-lvl-upper",
       "pathMm": [
         {
-          "xMm": 3350.0,
-          "yMm": 810.0,
+          "xMm": 5651.0,
+          "yMm": 1457.0,
           "zMm": 0.0
         },
         {
-          "xMm": 3350.0,
-          "yMm": 810.0,
+          "xMm": 5651.0,
+          "yMm": 1457.0,
           "zMm": 2300.0
         }
       ],
@@ -321,12 +334,12 @@
       "name": "front-loggia-left-return",
       "levelId": "hf-lvl-upper",
       "start": {
-        "xMm": 1200.0,
-        "yMm": -450.0
+        "xMm": 2024.0,
+        "yMm": 0.0
       },
       "end": {
-        "xMm": 1200.0,
-        "yMm": 900.0
+        "xMm": 2024.0,
+        "yMm": 1561.0
       },
       "wallCurve": null,
       "thicknessMm": 250.0,
@@ -424,12 +437,12 @@
       "name": "Recessed loggia glazing wall",
       "levelId": "hf-lvl-upper",
       "start": {
-        "xMm": 1350.0,
-        "yMm": 820.0
+        "xMm": 2024.0,
+        "yMm": 1561.0
       },
       "end": {
-        "xMm": 7450.0,
-        "yMm": 820.0
+        "xMm": 12819.0,
+        "yMm": 1561.0
       },
       "wallCurve": null,
       "thicknessMm": 250.0,
@@ -482,6 +495,45 @@
       "joinDisallowStart": false,
       "joinDisallowEnd": false
     },
+    "front-loggia-right-center-window": {
+      "kind": "window",
+      "id": "front-loggia-right-center-window",
+      "name": "Right center loggia glazing bay",
+      "wallId": "front-loggia-recessed-glass",
+      "alongT": 0.68,
+      "widthMm": 600.0,
+      "sillHeightMm": 150.0,
+      "heightMm": 2100.0,
+      "familyTypeId": "ft-window-standard",
+      "materialKey": null,
+      "materialSlots": null,
+      "hostCutDepthMm": null,
+      "revealInteriorMm": null,
+      "interlockGrade": null,
+      "sealRebateMm": null,
+      "lodPlan": null,
+      "outlineKind": null,
+      "outlineMm": null,
+      "attachedRoofId": null,
+      "ifcClassificationCode": null,
+      "pinned": false,
+      "phaseCreated": null,
+      "phaseDemolished": null,
+      "agentTrace": null,
+      "optionSetId": null,
+      "optionId": null,
+      "discipline": "arch",
+      "props": null,
+      "thermalClassification": null,
+      "thermalClassificationSource": null,
+      "uValue": null,
+      "gValue": null,
+      "frameFraction": null,
+      "airTightnessClass": null,
+      "installationThermalBridgeNote": null,
+      "shadingDevice": null,
+      "annualShadingFactorEstimate": null
+    },
     "front-loggia-right-mullion": {
       "kind": "sweep",
       "id": "front-loggia-right-mullion",
@@ -489,13 +541,13 @@
       "levelId": "hf-lvl-upper",
       "pathMm": [
         {
-          "xMm": 5550.0,
-          "yMm": 810.0,
+          "xMm": 9361.0,
+          "yMm": 1457.0,
           "zMm": 0.0
         },
         {
-          "xMm": 5550.0,
-          "yMm": 810.0,
+          "xMm": 9361.0,
+          "yMm": 1457.0,
           "zMm": 2300.0
         }
       ],
@@ -535,12 +587,12 @@
       "name": "front-loggia-right-return",
       "levelId": "hf-lvl-upper",
       "start": {
-        "xMm": 7600.0,
-        "yMm": -450.0
+        "xMm": 12819.0,
+        "yMm": 0.0
       },
       "end": {
-        "xMm": 7600.0,
-        "yMm": 900.0
+        "xMm": 12819.0,
+        "yMm": 1561.0
       },
       "wallCurve": null,
       "thicknessMm": 250.0,
@@ -779,27 +831,27 @@
       "boundaryMm": [
         {
           "xMm": 1000.0,
-          "yMm": 0.0
+          "yMm": 520.0
         },
         {
-          "xMm": 8300.0,
-          "yMm": 0.0
+          "xMm": 14000.0,
+          "yMm": 520.0
         },
         {
-          "xMm": 8300.0,
-          "yMm": 5200.0
+          "xMm": 14000.0,
+          "yMm": 6532.0
         },
         {
-          "xMm": 7000.0,
-          "yMm": 5200.0
+          "xMm": 11807.0,
+          "yMm": 6532.0
         },
         {
-          "xMm": 7000.0,
-          "yMm": 8200.0
+          "xMm": 11807.0,
+          "yMm": 10000.0
         },
         {
           "xMm": 1000.0,
-          "yMm": 8200.0
+          "yMm": 10000.0
         }
       ],
       "thicknessMm": 220.0,
@@ -821,10 +873,15 @@
       "agentTrace": null,
       "optionSetId": null,
       "optionId": null,
-      "toposolidElevationMm": -310.9783393069548,
+      "toposolidElevationMm": -314.4707746106089,
       "discipline": "arch",
       "circularity": null,
-      "props": null,
+      "props": {
+        "structuralSystem": "ground-bearing reinforced concrete slab with perimeter wall support",
+        "supportSystem": "bearing wall box and ground-bearing slab edge support",
+        "spanDirection": "north-south",
+        "structuralReviewed": true
+      },
       "thermalClassification": null,
       "thermalClassificationSource": null,
       "energyScenarioId": null
@@ -835,12 +892,12 @@
       "name": "Ground cladded base wall 1",
       "levelId": "hf-lvl-ground",
       "start": {
-        "xMm": 1000.0,
-        "yMm": 0.0
+        "xMm": 1687.0,
+        "yMm": 520.0
       },
       "end": {
-        "xMm": 7000.0,
-        "yMm": 0.0
+        "xMm": 11807.0,
+        "yMm": 520.0
       },
       "wallCurve": null,
       "thicknessMm": 250.0,
@@ -899,12 +956,12 @@
       "name": "Ground cladded base wall 2",
       "levelId": "hf-lvl-ground",
       "start": {
-        "xMm": 7000.0,
-        "yMm": 0.0
+        "xMm": 11807.0,
+        "yMm": 520.0
       },
       "end": {
-        "xMm": 7000.0,
-        "yMm": 8200.0
+        "xMm": 11807.0,
+        "yMm": 10000.0
       },
       "wallCurve": null,
       "thicknessMm": 250.0,
@@ -963,12 +1020,12 @@
       "name": "Ground cladded base wall 3",
       "levelId": "hf-lvl-ground",
       "start": {
-        "xMm": 7000.0,
-        "yMm": 8200.0
+        "xMm": 11807.0,
+        "yMm": 10000.0
       },
       "end": {
-        "xMm": 1000.0,
-        "yMm": 8200.0
+        "xMm": 1687.0,
+        "yMm": 10000.0
       },
       "wallCurve": null,
       "thicknessMm": 250.0,
@@ -1027,12 +1084,12 @@
       "name": "Ground cladded base wall 4",
       "levelId": "hf-lvl-ground",
       "start": {
-        "xMm": 1000.0,
-        "yMm": 8200.0
+        "xMm": 1687.0,
+        "yMm": 10000.0
       },
       "end": {
-        "xMm": 1000.0,
-        "yMm": 0.0
+        "xMm": 1687.0,
+        "yMm": 520.0
       },
       "wallCurve": null,
       "thicknessMm": 250.0,
@@ -1109,9 +1166,7 @@
       "mode": "plan_2d",
       "viewerClipCapElevMm": null,
       "viewerClipFloorElevMm": null,
-      "hiddenSemanticKinds3d": [
-        "roof"
-      ],
+      "hiddenSemanticKinds3d": ["roof"],
       "cutawayStyle": null,
       "planOverlayEnabled": false,
       "planOverlaySourcePlanViewId": null,
@@ -1143,12 +1198,12 @@
       "assetId": "asset-bath-fixture",
       "levelId": "hf-lvl-upper",
       "positionMm": {
-        "xMm": 4550.0,
-        "yMm": 3600.0
+        "xMm": 7675.0,
+        "yMm": 4682.0
       },
       "rotationDeg": 0.0,
       "paramValues": {
-        "roomId": "hf-room-bath",
+        "roomId": "room_l1_bedroom_2",
         "scheduleCategory": "plumbing_fixture",
         "evidenceRole": "mep_lite_wet_room_marker",
         "typeId": "asset-bath-fixture",
@@ -1166,12 +1221,12 @@
       "assetId": "asset-dining-table",
       "levelId": "hf-lvl-ground",
       "positionMm": {
-        "xMm": 5600.0,
-        "yMm": 4100.0
+        "xMm": 9446.0,
+        "yMm": 5260.0
       },
       "rotationDeg": 0.0,
       "paramValues": {
-        "roomId": "room-living",
+        "roomId": "room_gf_living",
         "scheduleCategory": "furniture",
         "evidenceRole": "living_dining_scale_marker",
         "typeId": "asset-dining-table"
@@ -1228,20 +1283,20 @@
       "levelId": "hf-lvl-upper",
       "boundaryMm": [
         {
-          "xMm": 1200.0,
-          "yMm": -450.0
+          "xMm": 2024.0,
+          "yMm": 0.0
         },
         {
-          "xMm": 7600.0,
-          "yMm": -450.0
+          "xMm": 12819.0,
+          "yMm": 0.0
         },
         {
-          "xMm": 7600.0,
-          "yMm": 900.0
+          "xMm": 12819.0,
+          "yMm": 1561.0
         },
         {
-          "xMm": 1200.0,
-          "yMm": 900.0
+          "xMm": 2024.0,
+          "yMm": 1561.0
         }
       ],
       "thicknessMm": 220.0,
@@ -1263,22 +1318,22 @@
       "agentTrace": null,
       "optionSetId": null,
       "optionId": null,
-      "toposolidElevationMm": -327.4389799492423,
+      "toposolidElevationMm": -326.4905058342428,
       "discipline": "arch",
       "circularity": null,
       "props": {
-        "supportedByIds": [
-          "upper-wrapper-floor"
-        ],
+        "supportedByIds": ["upper-wrapper-floor"],
         "exteriorSpaceType": "loggia",
         "guardIntent": "hf-front-loggia-railing protects the exposed south loggia edge.",
         "drainageIntent": "Covered exterior slab with waterproofing and drainage intent at recessed loggia.",
-        "accessElementIds": [
-          "front-loggia-center-door"
-        ],
+        "accessElementIds": ["front-loggia-center-door"],
         "accessIntent": "Occupied exterior loggia accessed through the center glazing door.",
         "boundaryIntent": "Loggia slab edge is bounded by side returns, recessed facade wall, and guard edge.",
-        "scheduleIntent": "Exterior occupied floor schedule"
+        "scheduleIntent": "Exterior occupied floor schedule",
+        "structuralSystem": "cantilevered reinforced concrete loggia slab tied into upper wrapper floor",
+        "supportSystem": "upper-wrapper-floor with side return support lines",
+        "spanDirection": "east-west",
+        "structuralReviewed": true
       },
       "thermalClassification": null,
       "thermalClassificationSource": null,
@@ -1294,12 +1349,12 @@
       "hostEdgeId": "hf-front-loggia-floor:edge:south-open-guard",
       "pathMm": [
         {
-          "xMm": 1300.0,
-          "yMm": -350.0
+          "xMm": 2193.0,
+          "yMm": 116.0
         },
         {
-          "xMm": 7500.0,
-          "yMm": -350.0
+          "xMm": 12651.0,
+          "yMm": 116.0
         }
       ],
       "guardHeightMm": 1100.0,
@@ -1397,7 +1452,7 @@
       "id": "hf-pbp",
       "positionMm": {
         "xMm": 0.0,
-        "yMm": 0.0,
+        "yMm": 520.0,
         "zMm": 0.0
       },
       "angleToTrueNorthDeg": 0.0,
@@ -1450,20 +1505,20 @@
       "levelId": "hf-lvl-upper",
       "boundaryMm": [
         {
-          "xMm": 5300.0,
-          "yMm": 3000.0
+          "xMm": 8940.0,
+          "yMm": 3988.0
         },
         {
-          "xMm": 7900.0,
-          "yMm": 3000.0
+          "xMm": 12650.0,
+          "yMm": 3988.0
         },
         {
-          "xMm": 7900.0,
-          "yMm": 6600.0
+          "xMm": 12650.0,
+          "yMm": 8150.0
         },
         {
-          "xMm": 5300.0,
-          "yMm": 6600.0
+          "xMm": 8940.0,
+          "yMm": 8150.0
         }
       ],
       "thicknessMm": 220.0,
@@ -1485,19 +1540,15 @@
       "agentTrace": null,
       "optionSetId": null,
       "optionId": null,
-      "toposolidElevationMm": -314.2908189519201,
+      "toposolidElevationMm": -312.77626239948137,
       "discipline": "arch",
       "circularity": null,
       "props": {
-        "supportedByIds": [
-          "upper-wrapper-floor"
-        ],
+        "supportedByIds": ["upper-wrapper-floor"],
         "exteriorSpaceType": "roof_terrace",
         "guardIntent": "hf-roof-court-railing protects the exposed east roof-court edge.",
         "drainageIntent": "Waterproofed walking slab with positive drainage toward the roof-court drain marker.",
-        "accessElementIds": [
-          "hf-roof-court-door"
-        ],
+        "accessElementIds": ["hf-roof-court-door"],
         "accessIntent": "Occupied exterior terrace accessed through hf-roof-court-door.",
         "boundaryIntent": "Roof-court floor edge is bounded by return walls, roof opening perimeter, and guard edge.",
         "scheduleIntent": "Exterior occupied floor schedule"
@@ -1512,12 +1563,12 @@
       "name": "Roof court white front return",
       "levelId": "hf-lvl-upper",
       "start": {
-        "xMm": 5300.0,
-        "yMm": 3000.0
+        "xMm": 8940.0,
+        "yMm": 3988.0
       },
       "end": {
-        "xMm": 7900.0,
-        "yMm": 3000.0
+        "xMm": 12650.0,
+        "yMm": 3988.0
       },
       "wallCurve": null,
       "thicknessMm": 250.0,
@@ -1576,12 +1627,12 @@
       "name": "Roof court recessed glass access wall",
       "levelId": "hf-lvl-upper",
       "start": {
-        "xMm": 5300.0,
-        "yMm": 6600.0
+        "xMm": 8940.0,
+        "yMm": 8150.0
       },
       "end": {
-        "xMm": 7900.0,
-        "yMm": 6600.0
+        "xMm": 12650.0,
+        "yMm": 8150.0
       },
       "wallCurve": null,
       "thicknessMm": 250.0,
@@ -1640,12 +1691,12 @@
       "name": "Roof court white left return",
       "levelId": "hf-lvl-upper",
       "start": {
-        "xMm": 5300.0,
-        "yMm": 3000.0
+        "xMm": 8940.0,
+        "yMm": 3988.0
       },
       "end": {
-        "xMm": 5300.0,
-        "yMm": 6600.0
+        "xMm": 8940.0,
+        "yMm": 8150.0
       },
       "wallCurve": null,
       "thicknessMm": 250.0,
@@ -1698,31 +1749,6 @@
       "joinDisallowStart": false,
       "joinDisallowEnd": false
     },
-    "hf-roof-court-opening": {
-      "kind": "roof_opening",
-      "id": "hf-roof-court-opening",
-      "name": "Embedded roof terrace cutout roof opening",
-      "hostRoofId": "hf-roof-main",
-      "boundaryMm": [
-        {
-          "xMm": 5300.0,
-          "yMm": 3000.0
-        },
-        {
-          "xMm": 7900.0,
-          "yMm": 3000.0
-        },
-        {
-          "xMm": 7900.0,
-          "yMm": 6600.0
-        },
-        {
-          "xMm": 5300.0,
-          "yMm": 6600.0
-        }
-      ],
-      "pinned": false
-    },
     "hf-roof-court-railing": {
       "kind": "railing",
       "id": "hf-roof-court-railing",
@@ -1733,12 +1759,12 @@
       "hostEdgeId": "hf-roof-court-floor:edge:east-open-guard",
       "pathMm": [
         {
-          "xMm": 7850.0,
-          "yMm": 3100.0
+          "xMm": 12570.0,
+          "yMm": 4104.0
         },
         {
-          "xMm": 7850.0,
-          "yMm": 6500.0
+          "xMm": 12570.0,
+          "yMm": 8035.0
         }
       ],
       "guardHeightMm": 1100.0,
@@ -1767,6 +1793,70 @@
       "agentTrace": null,
       "discipline": "arch"
     },
+    "hf-roof-court-right-return": {
+      "kind": "wall",
+      "id": "hf-roof-court-right-return",
+      "name": "Roof court white right return",
+      "levelId": "hf-lvl-upper",
+      "start": {
+        "xMm": 12650.0,
+        "yMm": 3988.0
+      },
+      "end": {
+        "xMm": 12650.0,
+        "yMm": 8150.0
+      },
+      "wallCurve": null,
+      "thicknessMm": 250.0,
+      "heightMm": 1300.0,
+      "wallTypeId": "wt-white-wrapper",
+      "locationLine": "wall-centerline",
+      "baseConstraintLevelId": null,
+      "topConstraintLevelId": null,
+      "baseConstraintOffsetMm": 0.0,
+      "topConstraintOffsetMm": 0.0,
+      "roofAttachmentId": null,
+      "topConstraintHostId": null,
+      "topConstraintHostFace": null,
+      "insulationExtensionMm": 0.0,
+      "materialKey": "white_render",
+      "faceMaterialOverrides": null,
+      "loadBearing": false,
+      "structuralRole": "non_load_bearing",
+      "structuralMaterial": null,
+      "analyticalParticipation": true,
+      "analysisStatus": "not_modeled",
+      "structuralMaterialKey": "concrete",
+      "structuralIntentConfidence": null,
+      "fireResistanceRating": null,
+      "ifcClassificationCode": null,
+      "isCurtainWall": false,
+      "pinned": false,
+      "phaseId": null,
+      "phaseCreated": null,
+      "phaseDemolished": null,
+      "circularity": null,
+      "curtainWallVCount": null,
+      "curtainWallHCount": null,
+      "curtainWallPanelType": null,
+      "curtainWallMullionType": null,
+      "curtainPanelOverrides": null,
+      "recessZones": null,
+      "stack": null,
+      "leanMm": null,
+      "taperRatio": null,
+      "agentTrace": null,
+      "optionSetId": null,
+      "optionId": null,
+      "discipline": "arch",
+      "props": null,
+      "thermalClassification": null,
+      "thermalClassificationSource": null,
+      "energyScenarioId": null,
+      "siteHostId": null,
+      "joinDisallowStart": false,
+      "joinDisallowEnd": false
+    },
     "hf-roof-main": {
       "kind": "roof",
       "id": "hf-roof-main",
@@ -1775,19 +1865,19 @@
       "footprintMm": [
         {
           "xMm": 0.0,
-          "yMm": -450.0
+          "yMm": 0.0
         },
         {
-          "xMm": 8000.0,
-          "yMm": -450.0
+          "xMm": 13494.0,
+          "yMm": 0.0
         },
         {
-          "xMm": 8000.0,
-          "yMm": 8200.0
+          "xMm": 13494.0,
+          "yMm": 10000.0
         },
         {
           "xMm": 0.0,
-          "yMm": 8200.0
+          "yMm": 10000.0
         }
       ],
       "overhangMm": 0.0,
@@ -1819,642 +1909,12 @@
       "thermalClassificationSource": null,
       "energyScenarioId": null
     },
-    "hf-room-bath": {
-      "kind": "room",
-      "id": "hf-room-bath",
-      "name": "First Floor Bathroom",
-      "levelId": "hf-lvl-upper",
-      "outlineMm": [
-        {
-          "xMm": 3600.0,
-          "yMm": 1600.0
-        },
-        {
-          "xMm": 5200.0,
-          "yMm": 1600.0
-        },
-        {
-          "xMm": 5200.0,
-          "yMm": 4300.0
-        },
-        {
-          "xMm": 3600.0,
-          "yMm": 4300.0
-        }
-      ],
-      "upperLimitLevelId": null,
-      "volumeCeilingOffsetMm": null,
-      "programmeCode": "bath",
-      "department": "Residential",
-      "programmeGroup": null,
-      "functionLabel": "residential bathroom",
-      "finishSet": "wet-room-tile",
-      "targetAreaM2": 4.32,
-      "ventilationZone": null,
-      "heatingCoolingZone": null,
-      "designAirChangeRate": null,
-      "fixtureEquipmentLoads": null,
-      "electricalLoadSummary": null,
-      "serviceRequirements": [],
-      "roomFillOverrideHex": null,
-      "roomFillPatternOverride": null,
-      "ifcClassificationCode": null,
-      "pinned": false,
-      "phaseCreated": null,
-      "phaseDemolished": null,
-      "props": {
-        "roomBimIntent": {
-          "number": "1-203A",
-          "department": "Residential",
-          "occupancyUse": "residential wet room",
-          "use": "residential_wet_room",
-          "areaSource": "authored_outline_area_m2",
-          "boundingStatus": "bounded",
-          "schedule": {
-            "include": true,
-            "scheduleName": "Room Schedule"
-          },
-          "classification": {
-            "din277Use": "service/use area",
-            "din277AreaType": "NUF",
-            "ifcEntityIntent": "IfcSpace"
-          },
-          "ifcEntityIntent": "IfcSpace"
-        }
-      },
-      "heatingStatus": null,
-      "usageProfile": null,
-      "setpointC": null,
-      "airChangeRate": null,
-      "zoneId": null,
-      "conditionedVolumeIncluded": null
-    },
-    "hf-room-carport": {
-      "kind": "room",
-      "id": "hf-room-carport",
-      "name": "Recessed Garage / Carport",
-      "levelId": "hf-lvl-ground",
-      "outlineMm": [
-        {
-          "xMm": 600.0,
-          "yMm": 700.0
-        },
-        {
-          "xMm": 1100.0,
-          "yMm": 700.0
-        },
-        {
-          "xMm": 1100.0,
-          "yMm": 6500.0
-        },
-        {
-          "xMm": 600.0,
-          "yMm": 6500.0
-        }
-      ],
-      "upperLimitLevelId": null,
-      "volumeCeilingOffsetMm": null,
-      "programmeCode": "carport",
-      "department": "Exterior",
-      "programmeGroup": null,
-      "functionLabel": "covered parking",
-      "finishSet": "exterior-hardwearing",
-      "targetAreaM2": 2.9,
-      "ventilationZone": null,
-      "heatingCoolingZone": null,
-      "designAirChangeRate": null,
-      "fixtureEquipmentLoads": null,
-      "electricalLoadSummary": null,
-      "serviceRequirements": [],
-      "roomFillOverrideHex": null,
-      "roomFillPatternOverride": null,
-      "ifcClassificationCode": null,
-      "pinned": false,
-      "phaseCreated": null,
-      "phaseDemolished": null,
-      "props": {
-        "roomBimIntent": {
-          "number": "G-106",
-          "department": "Exterior",
-          "occupancyUse": "covered exterior parking",
-          "use": "covered_exterior_parking",
-          "areaSource": "authored_outline_area_m2",
-          "boundingStatus": "covered_external_space",
-          "schedule": {
-            "include": true,
-            "scheduleName": "Room Schedule"
-          },
-          "classification": {
-            "din277Use": "covered external area",
-            "din277AreaType": "NUF",
-            "ifcEntityIntent": "IfcSpace"
-          },
-          "ifcEntityIntent": "IfcSpace"
-        }
-      },
-      "heatingStatus": null,
-      "usageProfile": null,
-      "setpointC": null,
-      "airChangeRate": null,
-      "zoneId": null,
-      "conditionedVolumeIncluded": null
-    },
-    "hf-room-ensuite": {
-      "kind": "room",
-      "id": "hf-room-ensuite",
-      "name": "Ensuite",
-      "levelId": "hf-lvl-upper",
-      "outlineMm": [
-        {
-          "xMm": 2700.0,
-          "yMm": 4300.0
-        },
-        {
-          "xMm": 4300.0,
-          "yMm": 4300.0
-        },
-        {
-          "xMm": 4300.0,
-          "yMm": 6500.0
-        },
-        {
-          "xMm": 2700.0,
-          "yMm": 6500.0
-        }
-      ],
-      "upperLimitLevelId": null,
-      "volumeCeilingOffsetMm": null,
-      "programmeCode": "ensuite",
-      "department": "Residential",
-      "programmeGroup": null,
-      "functionLabel": "residential wet room",
-      "finishSet": "wet-room-tile",
-      "targetAreaM2": 3.2,
-      "ventilationZone": null,
-      "heatingCoolingZone": null,
-      "designAirChangeRate": null,
-      "fixtureEquipmentLoads": null,
-      "electricalLoadSummary": null,
-      "serviceRequirements": [],
-      "roomFillOverrideHex": null,
-      "roomFillPatternOverride": null,
-      "ifcClassificationCode": null,
-      "pinned": false,
-      "phaseCreated": null,
-      "phaseDemolished": null,
-      "props": {
-        "roomBimIntent": {
-          "number": "1-203",
-          "department": "Residential",
-          "occupancyUse": "residential wet room",
-          "use": "residential_wet_room",
-          "areaSource": "authored_outline_area_m2",
-          "boundingStatus": "bounded",
-          "schedule": {
-            "include": true,
-            "scheduleName": "Room Schedule"
-          },
-          "classification": {
-            "din277Use": "service/use area",
-            "din277AreaType": "NUF",
-            "ifcEntityIntent": "IfcSpace"
-          },
-          "ifcEntityIntent": "IfcSpace"
-        }
-      },
-      "heatingStatus": null,
-      "usageProfile": null,
-      "setpointC": null,
-      "airChangeRate": null,
-      "zoneId": null,
-      "conditionedVolumeIncluded": null
-    },
-    "hf-room-gf-bath-laundry": {
-      "kind": "room",
-      "id": "hf-room-gf-bath-laundry",
-      "name": "Bath / Laundry",
-      "levelId": "hf-lvl-ground",
-      "outlineMm": [
-        {
-          "xMm": 6800.0,
-          "yMm": 700.0
-        },
-        {
-          "xMm": 8300.0,
-          "yMm": 700.0
-        },
-        {
-          "xMm": 8300.0,
-          "yMm": 3100.0
-        },
-        {
-          "xMm": 6800.0,
-          "yMm": 3100.0
-        }
-      ],
-      "upperLimitLevelId": null,
-      "volumeCeilingOffsetMm": null,
-      "programmeCode": "bath_laundry",
-      "department": "Residential",
-      "programmeGroup": null,
-      "functionLabel": "residential wet room",
-      "finishSet": "wet-room-tile",
-      "targetAreaM2": 3.6,
-      "ventilationZone": null,
-      "heatingCoolingZone": null,
-      "designAirChangeRate": null,
-      "fixtureEquipmentLoads": null,
-      "electricalLoadSummary": null,
-      "serviceRequirements": [],
-      "roomFillOverrideHex": null,
-      "roomFillPatternOverride": null,
-      "ifcClassificationCode": null,
-      "pinned": false,
-      "phaseCreated": null,
-      "phaseDemolished": null,
-      "props": {
-        "roomBimIntent": {
-          "number": "G-104",
-          "department": "Residential",
-          "occupancyUse": "residential wet room",
-          "use": "residential_wet_room",
-          "areaSource": "authored_outline_area_m2",
-          "boundingStatus": "bounded",
-          "schedule": {
-            "include": true,
-            "scheduleName": "Room Schedule"
-          },
-          "classification": {
-            "din277Use": "service/use area",
-            "din277AreaType": "NUF",
-            "ifcEntityIntent": "IfcSpace"
-          },
-          "ifcEntityIntent": "IfcSpace"
-        }
-      },
-      "heatingStatus": null,
-      "usageProfile": null,
-      "setpointC": null,
-      "airChangeRate": null,
-      "zoneId": null,
-      "conditionedVolumeIncluded": null
-    },
-    "hf-room-kitchen": {
-      "kind": "room",
-      "id": "hf-room-kitchen",
-      "name": "Kitchen",
-      "levelId": "hf-lvl-ground",
-      "outlineMm": [
-        {
-          "xMm": 1200.0,
-          "yMm": 3700.0
-        },
-        {
-          "xMm": 3400.0,
-          "yMm": 3700.0
-        },
-        {
-          "xMm": 3400.0,
-          "yMm": 6500.0
-        },
-        {
-          "xMm": 1200.0,
-          "yMm": 6500.0
-        }
-      ],
-      "upperLimitLevelId": null,
-      "volumeCeilingOffsetMm": null,
-      "programmeCode": "kitchen",
-      "department": "Residential",
-      "programmeGroup": null,
-      "functionLabel": "residential kitchen",
-      "finishSet": "residential-standard",
-      "targetAreaM2": 6.16,
-      "ventilationZone": null,
-      "heatingCoolingZone": null,
-      "designAirChangeRate": null,
-      "fixtureEquipmentLoads": null,
-      "electricalLoadSummary": null,
-      "serviceRequirements": [],
-      "roomFillOverrideHex": null,
-      "roomFillPatternOverride": null,
-      "ifcClassificationCode": null,
-      "pinned": false,
-      "phaseCreated": null,
-      "phaseDemolished": null,
-      "props": {
-        "roomBimIntent": {
-          "number": "G-101",
-          "department": "Residential",
-          "occupancyUse": "residential kitchen/dining",
-          "use": "residential_kitchen_dining",
-          "areaSource": "authored_outline_area_m2",
-          "boundingStatus": "bounded",
-          "schedule": {
-            "include": true,
-            "scheduleName": "Room Schedule"
-          },
-          "classification": {
-            "din277Use": "living/use area",
-            "din277AreaType": "NUF",
-            "ifcEntityIntent": "IfcSpace"
-          },
-          "ifcEntityIntent": "IfcSpace"
-        }
-      },
-      "heatingStatus": null,
-      "usageProfile": null,
-      "setpointC": null,
-      "airChangeRate": null,
-      "zoneId": null,
-      "conditionedVolumeIncluded": null
-    },
-    "hf-room-landing": {
-      "kind": "room",
-      "id": "hf-room-landing",
-      "name": "Hall / Landing",
-      "levelId": "hf-lvl-upper",
-      "outlineMm": [
-        {
-          "xMm": 5200.0,
-          "yMm": 1000.0
-        },
-        {
-          "xMm": 7600.0,
-          "yMm": 1000.0
-        },
-        {
-          "xMm": 7600.0,
-          "yMm": 3000.0
-        },
-        {
-          "xMm": 5200.0,
-          "yMm": 3000.0
-        }
-      ],
-      "upperLimitLevelId": null,
-      "volumeCeilingOffsetMm": null,
-      "programmeCode": "landing",
-      "department": "Residential",
-      "programmeGroup": null,
-      "functionLabel": "upper circulation",
-      "finishSet": "residential-standard",
-      "targetAreaM2": 4.4,
-      "ventilationZone": null,
-      "heatingCoolingZone": null,
-      "designAirChangeRate": null,
-      "fixtureEquipmentLoads": null,
-      "electricalLoadSummary": null,
-      "serviceRequirements": [],
-      "roomFillOverrideHex": null,
-      "roomFillPatternOverride": null,
-      "ifcClassificationCode": null,
-      "pinned": false,
-      "phaseCreated": null,
-      "phaseDemolished": null,
-      "props": {
-        "roomBimIntent": {
-          "number": "1-204",
-          "department": "Residential",
-          "occupancyUse": "residential circulation",
-          "use": "residential_circulation",
-          "areaSource": "authored_outline_area_m2",
-          "boundingStatus": "bounded",
-          "schedule": {
-            "include": true,
-            "scheduleName": "Room Schedule"
-          },
-          "classification": {
-            "din277Use": "circulation area",
-            "din277AreaType": "VF",
-            "ifcEntityIntent": "IfcSpace"
-          },
-          "ifcEntityIntent": "IfcSpace"
-        }
-      },
-      "heatingStatus": null,
-      "usageProfile": null,
-      "setpointC": null,
-      "airChangeRate": null,
-      "zoneId": null,
-      "conditionedVolumeIncluded": null
-    },
-    "hf-room-loggia": {
-      "kind": "room",
-      "id": "hf-room-loggia",
-      "name": "Deep Balcony / Loggia",
-      "levelId": "hf-lvl-upper",
-      "outlineMm": [
-        {
-          "xMm": 1200.0,
-          "yMm": -450.0
-        },
-        {
-          "xMm": 7600.0,
-          "yMm": -450.0
-        },
-        {
-          "xMm": 7600.0,
-          "yMm": 900.0
-        },
-        {
-          "xMm": 1200.0,
-          "yMm": 900.0
-        }
-      ],
-      "upperLimitLevelId": null,
-      "volumeCeilingOffsetMm": null,
-      "programmeCode": "loggia",
-      "department": "Exterior",
-      "programmeGroup": null,
-      "functionLabel": "covered outdoor space",
-      "finishSet": "exterior-hardwearing",
-      "targetAreaM2": 8.64,
-      "ventilationZone": null,
-      "heatingCoolingZone": null,
-      "designAirChangeRate": null,
-      "fixtureEquipmentLoads": null,
-      "electricalLoadSummary": null,
-      "serviceRequirements": [],
-      "roomFillOverrideHex": null,
-      "roomFillPatternOverride": null,
-      "ifcClassificationCode": null,
-      "pinned": false,
-      "phaseCreated": null,
-      "phaseDemolished": null,
-      "props": {
-        "roomBimIntent": {
-          "number": "1-206",
-          "department": "Exterior",
-          "occupancyUse": "covered exterior living",
-          "use": "covered_exterior_living",
-          "areaSource": "authored_outline_area_m2",
-          "boundingStatus": "covered_external_space",
-          "schedule": {
-            "include": true,
-            "scheduleName": "Room Schedule"
-          },
-          "classification": {
-            "din277Use": "covered external area",
-            "din277AreaType": "NUF",
-            "ifcEntityIntent": "IfcSpace"
-          },
-          "ifcEntityIntent": "IfcSpace"
-        }
-      },
-      "heatingStatus": null,
-      "usageProfile": null,
-      "setpointC": null,
-      "airChangeRate": null,
-      "zoneId": null,
-      "conditionedVolumeIncluded": null
-    },
-    "hf-room-utility": {
-      "kind": "room",
-      "id": "hf-room-utility",
-      "name": "Utility",
-      "levelId": "hf-lvl-ground",
-      "outlineMm": [
-        {
-          "xMm": 6800.0,
-          "yMm": 3300.0
-        },
-        {
-          "xMm": 8300.0,
-          "yMm": 3300.0
-        },
-        {
-          "xMm": 8300.0,
-          "yMm": 5000.0
-        },
-        {
-          "xMm": 6800.0,
-          "yMm": 5000.0
-        }
-      ],
-      "upperLimitLevelId": null,
-      "volumeCeilingOffsetMm": null,
-      "programmeCode": "utility",
-      "department": "Residential",
-      "programmeGroup": null,
-      "functionLabel": "storage and services",
-      "finishSet": "service-standard",
-      "targetAreaM2": 2.55,
-      "ventilationZone": null,
-      "heatingCoolingZone": null,
-      "designAirChangeRate": null,
-      "fixtureEquipmentLoads": null,
-      "electricalLoadSummary": null,
-      "serviceRequirements": [],
-      "roomFillOverrideHex": null,
-      "roomFillPatternOverride": null,
-      "ifcClassificationCode": null,
-      "pinned": false,
-      "phaseCreated": null,
-      "phaseDemolished": null,
-      "props": {
-        "roomBimIntent": {
-          "number": "G-105",
-          "department": "Residential",
-          "occupancyUse": "residential utility",
-          "use": "residential_utility",
-          "areaSource": "authored_outline_area_m2",
-          "boundingStatus": "bounded",
-          "schedule": {
-            "include": true,
-            "scheduleName": "Room Schedule"
-          },
-          "classification": {
-            "din277Use": "service/use area",
-            "din277AreaType": "NUF",
-            "ifcEntityIntent": "IfcSpace"
-          },
-          "ifcEntityIntent": "IfcSpace"
-        }
-      },
-      "heatingStatus": null,
-      "usageProfile": null,
-      "setpointC": null,
-      "airChangeRate": null,
-      "zoneId": null,
-      "conditionedVolumeIncluded": null
-    },
-    "hf-room-walk-in-closet": {
-      "kind": "room",
-      "id": "hf-room-walk-in-closet",
-      "name": "Walk-in Closet",
-      "levelId": "hf-lvl-upper",
-      "outlineMm": [
-        {
-          "xMm": 600.0,
-          "yMm": 4500.0
-        },
-        {
-          "xMm": 2500.0,
-          "yMm": 4500.0
-        },
-        {
-          "xMm": 2500.0,
-          "yMm": 6500.0
-        },
-        {
-          "xMm": 600.0,
-          "yMm": 6500.0
-        }
-      ],
-      "upperLimitLevelId": null,
-      "volumeCeilingOffsetMm": null,
-      "programmeCode": "closet",
-      "department": "Residential",
-      "programmeGroup": null,
-      "functionLabel": "wardrobe storage",
-      "finishSet": "service-standard",
-      "targetAreaM2": 3.8,
-      "ventilationZone": null,
-      "heatingCoolingZone": null,
-      "designAirChangeRate": null,
-      "fixtureEquipmentLoads": null,
-      "electricalLoadSummary": null,
-      "serviceRequirements": [],
-      "roomFillOverrideHex": null,
-      "roomFillPatternOverride": null,
-      "ifcClassificationCode": null,
-      "pinned": false,
-      "phaseCreated": null,
-      "phaseDemolished": null,
-      "props": {
-        "roomBimIntent": {
-          "number": "1-202",
-          "department": "Residential",
-          "occupancyUse": "residential storage",
-          "use": "residential_storage",
-          "areaSource": "authored_outline_area_m2",
-          "boundingStatus": "bounded",
-          "schedule": {
-            "include": true,
-            "scheduleName": "Room Schedule"
-          },
-          "classification": {
-            "din277Use": "storage/use area",
-            "din277AreaType": "NUF",
-            "ifcEntityIntent": "IfcSpace"
-          },
-          "ifcEntityIntent": "IfcSpace"
-        }
-      },
-      "heatingStatus": null,
-      "usageProfile": null,
-      "setpointC": null,
-      "airChangeRate": null,
-      "zoneId": null,
-      "conditionedVolumeIncluded": null
-    },
     "hf-survey-point": {
       "kind": "survey_point",
       "id": "hf-survey-point",
       "positionMm": {
         "xMm": 0.0,
-        "yMm": 0.0,
+        "yMm": 520.0,
         "zMm": 0.0
       },
       "sharedElevationMm": 0.0,
@@ -2467,11 +1927,11 @@
       "levelId": "hf-lvl-upper",
       "start": {
         "xMm": 0.0,
-        "yMm": -450.0
+        "yMm": 0.0
       },
       "end": {
-        "xMm": 1200.0,
-        "yMm": -450.0
+        "xMm": 2024.0,
+        "yMm": 0.0
       },
       "wallCurve": null,
       "thicknessMm": 250.0,
@@ -2530,12 +1990,12 @@
       "name": "Target House thick white folded wrapper shell wall 1 right return",
       "levelId": "hf-lvl-upper",
       "start": {
-        "xMm": 7600.0,
-        "yMm": -450.0
+        "xMm": 12819.0,
+        "yMm": 0.0
       },
       "end": {
-        "xMm": 8000.0,
-        "yMm": -450.0
+        "xMm": 13494.0,
+        "yMm": 0.0
       },
       "wallCurve": null,
       "thicknessMm": 250.0,
@@ -2594,12 +2054,12 @@
       "name": "Target House thick white folded wrapper shell wall 2",
       "levelId": "hf-lvl-upper",
       "start": {
-        "xMm": 8000.0,
-        "yMm": -450.0
+        "xMm": 13494.0,
+        "yMm": 0.0
       },
       "end": {
-        "xMm": 8000.0,
-        "yMm": 8200.0
+        "xMm": 13494.0,
+        "yMm": 10000.0
       },
       "wallCurve": null,
       "thicknessMm": 250.0,
@@ -2658,12 +2118,12 @@
       "name": "Target House thick white folded wrapper shell wall 3",
       "levelId": "hf-lvl-upper",
       "start": {
-        "xMm": 8000.0,
-        "yMm": 8200.0
+        "xMm": 13494.0,
+        "yMm": 10000.0
       },
       "end": {
         "xMm": 0.0,
-        "yMm": 8200.0
+        "yMm": 10000.0
       },
       "wallCurve": null,
       "thicknessMm": 250.0,
@@ -2723,11 +2183,11 @@
       "levelId": "hf-lvl-upper",
       "start": {
         "xMm": 0.0,
-        "yMm": 8200.0
+        "yMm": 10000.0
       },
       "end": {
         "xMm": 0.0,
-        "yMm": -450.0
+        "yMm": 0.0
       },
       "wallCurve": null,
       "thicknessMm": 250.0,
@@ -2801,12 +2261,12 @@
       "baseLevelId": "hf-lvl-ground",
       "topLevelId": "hf-lvl-upper",
       "runStartMm": {
-        "xMm": 1800.0,
-        "yMm": 1100.0
+        "xMm": 3036.0,
+        "yMm": 1792.0
       },
       "runEndMm": {
-        "xMm": 6500.0,
-        "yMm": 2000.0
+        "xMm": 10964.0,
+        "yMm": 2832.0
       },
       "widthMm": 1000.0,
       "riserMm": 175.0,
@@ -2816,12 +2276,12 @@
         {
           "id": "main-stair-run-1",
           "startMm": {
-            "xMm": 1800.0,
-            "yMm": 1100.0
+            "xMm": 3036.0,
+            "yMm": 1792.0
           },
           "endMm": {
-            "xMm": 6500.0,
-            "yMm": 2000.0
+            "xMm": 10964.0,
+            "yMm": 2832.0
           },
           "widthMm": 1000.0,
           "riserCount": 8,
@@ -2838,20 +2298,20 @@
       "authoringMode": "by_component",
       "boundaryMm": [
         {
-          "xMm": 1300.0,
-          "yMm": 1100.0
+          "xMm": 2193.0,
+          "yMm": 1792.0
         },
         {
-          "xMm": 2300.0,
-          "yMm": 1100.0
+          "xMm": 3880.0,
+          "yMm": 1792.0
         },
         {
-          "xMm": 2300.0,
-          "yMm": 3200.0
+          "xMm": 3880.0,
+          "yMm": 4220.0
         },
         {
-          "xMm": 1300.0,
-          "yMm": 3200.0
+          "xMm": 2193.0,
+          "yMm": 4220.0
         }
       ],
       "treadLines": null,
@@ -2881,12 +2341,12 @@
       "hostEdgeId": "main-stair:edge:west-guard",
       "pathMm": [
         {
-          "xMm": 1300.0,
-          "yMm": 1100.0
+          "xMm": 2193.0,
+          "yMm": 1792.0
         },
         {
-          "xMm": 1300.0,
-          "yMm": 3200.0
+          "xMm": 2193.0,
+          "yMm": 4220.0
         }
       ],
       "guardHeightMm": 1040.0,
@@ -2922,20 +2382,20 @@
       "hostFloorId": "upper-wrapper-floor",
       "boundaryMm": [
         {
-          "xMm": 1300.0,
-          "yMm": 800.0
+          "xMm": 2193.0,
+          "yMm": 1445.0
         },
         {
-          "xMm": 2500.0,
-          "yMm": 800.0
+          "xMm": 4217.0,
+          "yMm": 1445.0
         },
         {
-          "xMm": 2500.0,
-          "yMm": 3400.0
+          "xMm": 4217.0,
+          "yMm": 4451.0
         },
         {
-          "xMm": 1300.0,
-          "yMm": 3400.0
+          "xMm": 2193.0,
+          "yMm": 4451.0
         }
       ],
       "isShaft": false,
@@ -3004,12 +2464,12 @@
       "assetId": "asset-bed",
       "levelId": "hf-lvl-upper",
       "positionMm": {
-        "xMm": 1850.0,
-        "yMm": 2800.0
+        "xMm": 3120.0,
+        "yMm": 3757.0
       },
       "rotationDeg": 90.0,
       "paramValues": {
-        "roomId": "room-bedroom",
+        "roomId": "room_l1_primary_bedroom",
         "scheduleCategory": "furniture",
         "evidenceRole": "bedroom_scale_marker",
         "typeId": "asset-bed"
@@ -3024,12 +2484,12 @@
       "assetId": "asset-outdoor-chair",
       "levelId": "hf-lvl-upper",
       "positionMm": {
-        "xMm": 6800.0,
-        "yMm": 4800.0
+        "xMm": 11470.0,
+        "yMm": 6069.0
       },
       "rotationDeg": 15.0,
       "paramValues": {
-        "roomId": "room-terrace",
+        "roomId": "room_l1_roof_court",
         "scheduleCategory": "furniture",
         "evidenceRole": "roof_terrace_occupancy_marker",
         "typeId": "asset-outdoor-chair"
@@ -3044,12 +2504,12 @@
       "assetId": "asset-sofa",
       "levelId": "hf-lvl-ground",
       "positionMm": {
-        "xMm": 5000.0,
-        "yMm": 2600.0
+        "xMm": 8434.0,
+        "yMm": 3526.0
       },
       "rotationDeg": 0.0,
       "paramValues": {
-        "roomId": "room-living",
+        "roomId": "room_gf_living",
         "scheduleCategory": "furniture",
         "evidenceRole": "living_room_scale_marker",
         "typeId": "asset-sofa"
@@ -3145,216 +2605,6 @@
       "sectionBoxMaxMm": null,
       "optionLocks": {}
     },
-    "room-bedroom": {
-      "kind": "room",
-      "id": "room-bedroom",
-      "name": "Bedroom",
-      "levelId": "hf-lvl-upper",
-      "outlineMm": [
-        {
-          "xMm": 600.0,
-          "yMm": 1600.0
-        },
-        {
-          "xMm": 3300.0,
-          "yMm": 1600.0
-        },
-        {
-          "xMm": 3300.0,
-          "yMm": 4300.0
-        },
-        {
-          "xMm": 600.0,
-          "yMm": 4300.0
-        }
-      ],
-      "upperLimitLevelId": null,
-      "volumeCeilingOffsetMm": null,
-      "programmeCode": "bed",
-      "department": "Residential",
-      "programmeGroup": null,
-      "functionLabel": "residential sleeping",
-      "finishSet": "residential-standard",
-      "targetAreaM2": 7.29,
-      "ventilationZone": null,
-      "heatingCoolingZone": null,
-      "designAirChangeRate": null,
-      "fixtureEquipmentLoads": null,
-      "electricalLoadSummary": null,
-      "serviceRequirements": [],
-      "roomFillOverrideHex": null,
-      "roomFillPatternOverride": null,
-      "ifcClassificationCode": null,
-      "pinned": false,
-      "phaseCreated": null,
-      "phaseDemolished": null,
-      "props": {
-        "roomBimIntent": {
-          "number": "1-201",
-          "department": "Residential",
-          "occupancyUse": "residential bedroom",
-          "use": "residential_bedroom",
-          "areaSource": "authored_outline_area_m2",
-          "boundingStatus": "bounded",
-          "schedule": {
-            "include": true,
-            "scheduleName": "Room Schedule"
-          },
-          "classification": {
-            "din277Use": "living/use area",
-            "din277AreaType": "NUF",
-            "ifcEntityIntent": "IfcSpace"
-          },
-          "ifcEntityIntent": "IfcSpace"
-        }
-      },
-      "heatingStatus": null,
-      "usageProfile": null,
-      "setpointC": null,
-      "airChangeRate": null,
-      "zoneId": null,
-      "conditionedVolumeIncluded": null
-    },
-    "room-hall": {
-      "kind": "room",
-      "id": "room-hall",
-      "name": "Entrance / Stair Hall",
-      "levelId": "hf-lvl-ground",
-      "outlineMm": [
-        {
-          "xMm": 1200.0,
-          "yMm": 700.0
-        },
-        {
-          "xMm": 3400.0,
-          "yMm": 700.0
-        },
-        {
-          "xMm": 3400.0,
-          "yMm": 3600.0
-        },
-        {
-          "xMm": 1200.0,
-          "yMm": 3600.0
-        }
-      ],
-      "upperLimitLevelId": null,
-      "volumeCeilingOffsetMm": null,
-      "programmeCode": "entrance_hall",
-      "department": "Residential",
-      "programmeGroup": null,
-      "functionLabel": "circulation",
-      "finishSet": "residential-standard",
-      "targetAreaM2": 6.38,
-      "ventilationZone": null,
-      "heatingCoolingZone": null,
-      "designAirChangeRate": null,
-      "fixtureEquipmentLoads": null,
-      "electricalLoadSummary": null,
-      "serviceRequirements": [],
-      "roomFillOverrideHex": null,
-      "roomFillPatternOverride": null,
-      "ifcClassificationCode": null,
-      "pinned": false,
-      "phaseCreated": null,
-      "phaseDemolished": null,
-      "props": {
-        "roomBimIntent": {
-          "number": "G-103",
-          "department": "Residential",
-          "occupancyUse": "residential circulation",
-          "use": "residential_circulation",
-          "areaSource": "authored_outline_area_m2",
-          "boundingStatus": "bounded",
-          "schedule": {
-            "include": true,
-            "scheduleName": "Room Schedule"
-          },
-          "classification": {
-            "din277Use": "circulation area",
-            "din277AreaType": "VF",
-            "ifcEntityIntent": "IfcSpace"
-          },
-          "ifcEntityIntent": "IfcSpace"
-        }
-      },
-      "heatingStatus": null,
-      "usageProfile": null,
-      "setpointC": null,
-      "airChangeRate": null,
-      "zoneId": null,
-      "conditionedVolumeIncluded": null
-    },
-    "room-living": {
-      "kind": "room",
-      "id": "room-living",
-      "name": "Living / Dining",
-      "levelId": "hf-lvl-ground",
-      "outlineMm": [
-        {
-          "xMm": 3600.0,
-          "yMm": 700.0
-        },
-        {
-          "xMm": 6500.0,
-          "yMm": 700.0
-        },
-        {
-          "xMm": 6500.0,
-          "yMm": 5200.0
-        },
-        {
-          "xMm": 3600.0,
-          "yMm": 5200.0
-        }
-      ],
-      "upperLimitLevelId": null,
-      "volumeCeilingOffsetMm": null,
-      "programmeCode": "living",
-      "department": "Residential",
-      "programmeGroup": null,
-      "functionLabel": "residential living",
-      "finishSet": "residential-standard",
-      "targetAreaM2": 13.05,
-      "ventilationZone": null,
-      "heatingCoolingZone": null,
-      "designAirChangeRate": null,
-      "fixtureEquipmentLoads": null,
-      "electricalLoadSummary": null,
-      "serviceRequirements": [],
-      "roomFillOverrideHex": null,
-      "roomFillPatternOverride": null,
-      "ifcClassificationCode": null,
-      "pinned": false,
-      "phaseCreated": null,
-      "phaseDemolished": null,
-      "props": {
-        "roomBimIntent": {
-          "number": "G-102",
-          "department": "Residential",
-          "occupancyUse": "residential living",
-          "use": "residential_living",
-          "areaSource": "authored_outline_area_m2",
-          "boundingStatus": "bounded_with_open_plan_edge",
-          "schedule": {
-            "include": true,
-            "scheduleName": "Room Schedule"
-          },
-          "classification": {
-            "din277Use": "living/use area",
-            "din277AreaType": "NUF",
-            "ifcEntityIntent": "IfcSpace"
-          },
-          "ifcEntityIntent": "IfcSpace"
-        }
-      },
-      "heatingStatus": null,
-      "usageProfile": null,
-      "setpointC": null,
-      "airChangeRate": null,
-      "zoneId": null,
-      "conditionedVolumeIncluded": null
-    },
     "room-schedule": {
       "kind": "schedule",
       "id": "room-schedule",
@@ -3430,27 +2680,797 @@
       "sortKey": "levelId",
       "sortDir": "asc"
     },
-    "room-terrace": {
+    "room_gf_bath_laundry": {
       "kind": "room",
-      "id": "room-terrace",
-      "name": "Roof Terrace",
+      "id": "room_gf_bath_laundry",
+      "name": "Bath / laundry",
+      "levelId": "hf-lvl-ground",
+      "outlineMm": [
+        {
+          "xMm": 11470.0,
+          "yMm": 1329.0
+        },
+        {
+          "xMm": 14000.0,
+          "yMm": 1329.0
+        },
+        {
+          "xMm": 14000.0,
+          "yMm": 4104.0
+        },
+        {
+          "xMm": 11470.0,
+          "yMm": 4104.0
+        }
+      ],
+      "upperLimitLevelId": null,
+      "volumeCeilingOffsetMm": null,
+      "programmeCode": "bath_laundry",
+      "department": "Residential",
+      "programmeGroup": null,
+      "functionLabel": "residential wet room",
+      "finishSet": "wet-room-tile",
+      "targetAreaM2": 7.02,
+      "ventilationZone": null,
+      "heatingCoolingZone": null,
+      "designAirChangeRate": null,
+      "fixtureEquipmentLoads": null,
+      "electricalLoadSummary": null,
+      "serviceRequirements": [],
+      "roomFillOverrideHex": null,
+      "roomFillPatternOverride": null,
+      "ifcClassificationCode": null,
+      "pinned": false,
+      "phaseCreated": null,
+      "phaseDemolished": null,
+      "props": {
+        "roomBimIntent": {
+          "number": "G-104",
+          "department": "Residential",
+          "occupancyUse": "residential wet room",
+          "use": "residential_wet_room",
+          "areaSource": "authored_outline_area_m2",
+          "boundingStatus": "bounded",
+          "schedule": {
+            "include": true,
+            "scheduleName": "Room Schedule"
+          },
+          "classification": {
+            "din277Use": "service/use area",
+            "din277AreaType": "NUF",
+            "ifcEntityIntent": "IfcSpace"
+          },
+          "ifcEntityIntent": "IfcSpace"
+        }
+      },
+      "heatingStatus": null,
+      "usageProfile": null,
+      "setpointC": null,
+      "airChangeRate": null,
+      "zoneId": null,
+      "conditionedVolumeIncluded": null
+    },
+    "room_gf_carport": {
+      "kind": "room",
+      "id": "room_gf_carport",
+      "name": "Recessed garage / carport",
+      "levelId": "hf-lvl-ground",
+      "outlineMm": [
+        {
+          "xMm": 1012.0,
+          "yMm": 1329.0
+        },
+        {
+          "xMm": 1855.0,
+          "yMm": 1329.0
+        },
+        {
+          "xMm": 1855.0,
+          "yMm": 8035.0
+        },
+        {
+          "xMm": 1012.0,
+          "yMm": 8035.0
+        }
+      ],
+      "upperLimitLevelId": null,
+      "volumeCeilingOffsetMm": null,
+      "programmeCode": "carport",
+      "department": "Exterior",
+      "programmeGroup": null,
+      "functionLabel": "covered parking",
+      "finishSet": "exterior-hardwearing",
+      "targetAreaM2": 5.65,
+      "ventilationZone": null,
+      "heatingCoolingZone": null,
+      "designAirChangeRate": null,
+      "fixtureEquipmentLoads": null,
+      "electricalLoadSummary": null,
+      "serviceRequirements": [],
+      "roomFillOverrideHex": null,
+      "roomFillPatternOverride": null,
+      "ifcClassificationCode": null,
+      "pinned": false,
+      "phaseCreated": null,
+      "phaseDemolished": null,
+      "props": {
+        "roomBimIntent": {
+          "number": "G-106",
+          "department": "Exterior",
+          "occupancyUse": "covered exterior parking",
+          "use": "covered_exterior_parking",
+          "areaSource": "authored_outline_area_m2",
+          "boundingStatus": "covered_external_space",
+          "schedule": {
+            "include": true,
+            "scheduleName": "Room Schedule"
+          },
+          "classification": {
+            "din277Use": "covered external area",
+            "din277AreaType": "NUF",
+            "ifcEntityIntent": "IfcSpace"
+          },
+          "ifcEntityIntent": "IfcSpace"
+        }
+      },
+      "heatingStatus": null,
+      "usageProfile": null,
+      "setpointC": null,
+      "airChangeRate": null,
+      "zoneId": null,
+      "conditionedVolumeIncluded": null
+    },
+    "room_gf_entry": {
+      "kind": "room",
+      "id": "room_gf_entry",
+      "name": "Entry / stair hall",
+      "levelId": "hf-lvl-ground",
+      "outlineMm": [
+        {
+          "xMm": 2024.0,
+          "yMm": 1329.0
+        },
+        {
+          "xMm": 5735.0,
+          "yMm": 1329.0
+        },
+        {
+          "xMm": 5735.0,
+          "yMm": 4682.0
+        },
+        {
+          "xMm": 2024.0,
+          "yMm": 4682.0
+        }
+      ],
+      "upperLimitLevelId": null,
+      "volumeCeilingOffsetMm": null,
+      "programmeCode": "entrance_hall",
+      "department": "Residential",
+      "programmeGroup": null,
+      "functionLabel": "circulation",
+      "finishSet": "residential-standard",
+      "targetAreaM2": 12.44,
+      "ventilationZone": null,
+      "heatingCoolingZone": null,
+      "designAirChangeRate": null,
+      "fixtureEquipmentLoads": null,
+      "electricalLoadSummary": null,
+      "serviceRequirements": [],
+      "roomFillOverrideHex": null,
+      "roomFillPatternOverride": null,
+      "ifcClassificationCode": null,
+      "pinned": false,
+      "phaseCreated": null,
+      "phaseDemolished": null,
+      "props": {
+        "roomBimIntent": {
+          "number": "G-103",
+          "department": "Residential",
+          "occupancyUse": "residential circulation",
+          "use": "residential_circulation",
+          "areaSource": "authored_outline_area_m2",
+          "boundingStatus": "bounded",
+          "schedule": {
+            "include": true,
+            "scheduleName": "Room Schedule"
+          },
+          "classification": {
+            "din277Use": "circulation area",
+            "din277AreaType": "VF",
+            "ifcEntityIntent": "IfcSpace"
+          },
+          "ifcEntityIntent": "IfcSpace"
+        }
+      },
+      "heatingStatus": null,
+      "usageProfile": null,
+      "setpointC": null,
+      "airChangeRate": null,
+      "zoneId": null,
+      "conditionedVolumeIncluded": null
+    },
+    "room_gf_kitchen_dining": {
+      "kind": "room",
+      "id": "room_gf_kitchen_dining",
+      "name": "Kitchen / dining",
+      "levelId": "hf-lvl-ground",
+      "outlineMm": [
+        {
+          "xMm": 2024.0,
+          "yMm": 4798.0
+        },
+        {
+          "xMm": 5735.0,
+          "yMm": 4798.0
+        },
+        {
+          "xMm": 5735.0,
+          "yMm": 8035.0
+        },
+        {
+          "xMm": 2024.0,
+          "yMm": 8035.0
+        }
+      ],
+      "upperLimitLevelId": null,
+      "volumeCeilingOffsetMm": null,
+      "programmeCode": "kitchen",
+      "department": "Residential",
+      "programmeGroup": null,
+      "functionLabel": "residential kitchen",
+      "finishSet": "residential-standard",
+      "targetAreaM2": 12.01,
+      "ventilationZone": null,
+      "heatingCoolingZone": null,
+      "designAirChangeRate": null,
+      "fixtureEquipmentLoads": null,
+      "electricalLoadSummary": null,
+      "serviceRequirements": [],
+      "roomFillOverrideHex": null,
+      "roomFillPatternOverride": null,
+      "ifcClassificationCode": null,
+      "pinned": false,
+      "phaseCreated": null,
+      "phaseDemolished": null,
+      "props": {
+        "roomBimIntent": {
+          "number": "G-101",
+          "department": "Residential",
+          "occupancyUse": "residential kitchen/dining",
+          "use": "residential_kitchen_dining",
+          "areaSource": "authored_outline_area_m2",
+          "boundingStatus": "bounded",
+          "schedule": {
+            "include": true,
+            "scheduleName": "Room Schedule"
+          },
+          "classification": {
+            "din277Use": "living/use area",
+            "din277AreaType": "NUF",
+            "ifcEntityIntent": "IfcSpace"
+          },
+          "ifcEntityIntent": "IfcSpace"
+        }
+      },
+      "heatingStatus": null,
+      "usageProfile": null,
+      "setpointC": null,
+      "airChangeRate": null,
+      "zoneId": null,
+      "conditionedVolumeIncluded": null
+    },
+    "room_gf_living": {
+      "kind": "room",
+      "id": "room_gf_living",
+      "name": "Living area",
+      "levelId": "hf-lvl-ground",
+      "outlineMm": [
+        {
+          "xMm": 6072.0,
+          "yMm": 1329.0
+        },
+        {
+          "xMm": 10964.0,
+          "yMm": 1329.0
+        },
+        {
+          "xMm": 10964.0,
+          "yMm": 6532.0
+        },
+        {
+          "xMm": 6072.0,
+          "yMm": 6532.0
+        }
+      ],
+      "upperLimitLevelId": null,
+      "volumeCeilingOffsetMm": null,
+      "programmeCode": "living",
+      "department": "Residential",
+      "programmeGroup": null,
+      "functionLabel": "residential living",
+      "finishSet": "residential-standard",
+      "targetAreaM2": 25.45,
+      "ventilationZone": null,
+      "heatingCoolingZone": null,
+      "designAirChangeRate": null,
+      "fixtureEquipmentLoads": null,
+      "electricalLoadSummary": null,
+      "serviceRequirements": [],
+      "roomFillOverrideHex": null,
+      "roomFillPatternOverride": null,
+      "ifcClassificationCode": null,
+      "pinned": false,
+      "phaseCreated": null,
+      "phaseDemolished": null,
+      "props": {
+        "roomBimIntent": {
+          "number": "G-102",
+          "department": "Residential",
+          "occupancyUse": "residential living",
+          "use": "residential_living",
+          "areaSource": "authored_outline_area_m2",
+          "boundingStatus": "bounded_with_open_plan_edge",
+          "schedule": {
+            "include": true,
+            "scheduleName": "Room Schedule"
+          },
+          "classification": {
+            "din277Use": "living/use area",
+            "din277AreaType": "NUF",
+            "ifcEntityIntent": "IfcSpace"
+          },
+          "ifcEntityIntent": "IfcSpace"
+        }
+      },
+      "heatingStatus": null,
+      "usageProfile": null,
+      "setpointC": null,
+      "airChangeRate": null,
+      "zoneId": null,
+      "conditionedVolumeIncluded": null
+    },
+    "room_gf_utility": {
+      "kind": "room",
+      "id": "room_gf_utility",
+      "name": "Utility",
+      "levelId": "hf-lvl-ground",
+      "outlineMm": [
+        {
+          "xMm": 11470.0,
+          "yMm": 4335.0
+        },
+        {
+          "xMm": 14000.0,
+          "yMm": 4335.0
+        },
+        {
+          "xMm": 14000.0,
+          "yMm": 6301.0
+        },
+        {
+          "xMm": 11470.0,
+          "yMm": 6301.0
+        }
+      ],
+      "upperLimitLevelId": null,
+      "volumeCeilingOffsetMm": null,
+      "programmeCode": "utility",
+      "department": "Residential",
+      "programmeGroup": null,
+      "functionLabel": "storage and services",
+      "finishSet": "service-standard",
+      "targetAreaM2": 4.97,
+      "ventilationZone": null,
+      "heatingCoolingZone": null,
+      "designAirChangeRate": null,
+      "fixtureEquipmentLoads": null,
+      "electricalLoadSummary": null,
+      "serviceRequirements": [],
+      "roomFillOverrideHex": null,
+      "roomFillPatternOverride": null,
+      "ifcClassificationCode": null,
+      "pinned": false,
+      "phaseCreated": null,
+      "phaseDemolished": null,
+      "props": {
+        "roomBimIntent": {
+          "number": "G-105",
+          "department": "Residential",
+          "occupancyUse": "residential utility",
+          "use": "residential_utility",
+          "areaSource": "authored_outline_area_m2",
+          "boundingStatus": "bounded",
+          "schedule": {
+            "include": true,
+            "scheduleName": "Room Schedule"
+          },
+          "classification": {
+            "din277Use": "service/use area",
+            "din277AreaType": "NUF",
+            "ifcEntityIntent": "IfcSpace"
+          },
+          "ifcEntityIntent": "IfcSpace"
+        }
+      },
+      "heatingStatus": null,
+      "usageProfile": null,
+      "setpointC": null,
+      "airChangeRate": null,
+      "zoneId": null,
+      "conditionedVolumeIncluded": null
+    },
+    "room_l1_bedroom_2": {
+      "kind": "room",
+      "id": "room_l1_bedroom_2",
+      "name": "Bedroom 2",
       "levelId": "hf-lvl-upper",
       "outlineMm": [
         {
-          "xMm": 5400.0,
-          "yMm": 3300.0
+          "xMm": 6072.0,
+          "yMm": 2370.0
         },
         {
-          "xMm": 8000.0,
-          "yMm": 3300.0
+          "xMm": 8771.0,
+          "yMm": 2370.0
         },
         {
-          "xMm": 8000.0,
-          "yMm": 6500.0
+          "xMm": 8771.0,
+          "yMm": 5491.0
         },
         {
-          "xMm": 5400.0,
-          "yMm": 6500.0
+          "xMm": 6072.0,
+          "yMm": 5491.0
+        }
+      ],
+      "upperLimitLevelId": null,
+      "volumeCeilingOffsetMm": null,
+      "programmeCode": "bath",
+      "department": "Residential",
+      "programmeGroup": null,
+      "functionLabel": "residential bathroom",
+      "finishSet": "wet-room-tile",
+      "targetAreaM2": 8.42,
+      "ventilationZone": null,
+      "heatingCoolingZone": null,
+      "designAirChangeRate": null,
+      "fixtureEquipmentLoads": null,
+      "electricalLoadSummary": null,
+      "serviceRequirements": [],
+      "roomFillOverrideHex": null,
+      "roomFillPatternOverride": null,
+      "ifcClassificationCode": null,
+      "pinned": false,
+      "phaseCreated": null,
+      "phaseDemolished": null,
+      "props": {
+        "roomBimIntent": {
+          "number": "1-203A",
+          "department": "Residential",
+          "occupancyUse": "residential wet room",
+          "use": "residential_wet_room",
+          "areaSource": "authored_outline_area_m2",
+          "boundingStatus": "bounded",
+          "schedule": {
+            "include": true,
+            "scheduleName": "Room Schedule"
+          },
+          "classification": {
+            "din277Use": "service/use area",
+            "din277AreaType": "NUF",
+            "ifcEntityIntent": "IfcSpace"
+          },
+          "ifcEntityIntent": "IfcSpace"
+        }
+      },
+      "heatingStatus": null,
+      "usageProfile": null,
+      "setpointC": null,
+      "airChangeRate": null,
+      "zoneId": null,
+      "conditionedVolumeIncluded": null
+    },
+    "room_l1_deep_loggia": {
+      "kind": "room",
+      "id": "room_l1_deep_loggia",
+      "name": "Deep balcony / loggia",
+      "levelId": "hf-lvl-upper",
+      "outlineMm": [
+        {
+          "xMm": 2024.0,
+          "yMm": 0.0
+        },
+        {
+          "xMm": 12819.0,
+          "yMm": 0.0
+        },
+        {
+          "xMm": 12819.0,
+          "yMm": 1561.0
+        },
+        {
+          "xMm": 2024.0,
+          "yMm": 1561.0
+        }
+      ],
+      "upperLimitLevelId": null,
+      "volumeCeilingOffsetMm": null,
+      "programmeCode": "loggia",
+      "department": "Exterior",
+      "programmeGroup": null,
+      "functionLabel": "covered outdoor space",
+      "finishSet": "exterior-hardwearing",
+      "targetAreaM2": 16.85,
+      "ventilationZone": null,
+      "heatingCoolingZone": null,
+      "designAirChangeRate": null,
+      "fixtureEquipmentLoads": null,
+      "electricalLoadSummary": null,
+      "serviceRequirements": [],
+      "roomFillOverrideHex": null,
+      "roomFillPatternOverride": null,
+      "ifcClassificationCode": null,
+      "pinned": false,
+      "phaseCreated": null,
+      "phaseDemolished": null,
+      "props": {
+        "roomBimIntent": {
+          "number": "1-206",
+          "department": "Exterior",
+          "occupancyUse": "covered exterior living",
+          "use": "covered_exterior_living",
+          "areaSource": "authored_outline_area_m2",
+          "boundingStatus": "covered_external_space",
+          "schedule": {
+            "include": true,
+            "scheduleName": "Room Schedule"
+          },
+          "classification": {
+            "din277Use": "covered external area",
+            "din277AreaType": "NUF",
+            "ifcEntityIntent": "IfcSpace"
+          },
+          "ifcEntityIntent": "IfcSpace"
+        }
+      },
+      "heatingStatus": null,
+      "usageProfile": null,
+      "setpointC": null,
+      "airChangeRate": null,
+      "zoneId": null,
+      "conditionedVolumeIncluded": null
+    },
+    "room_l1_ensuite": {
+      "kind": "room",
+      "id": "room_l1_ensuite",
+      "name": "Ensuite",
+      "levelId": "hf-lvl-upper",
+      "outlineMm": [
+        {
+          "xMm": 4554.0,
+          "yMm": 5491.0
+        },
+        {
+          "xMm": 7253.0,
+          "yMm": 5491.0
+        },
+        {
+          "xMm": 7253.0,
+          "yMm": 8035.0
+        },
+        {
+          "xMm": 4554.0,
+          "yMm": 8035.0
+        }
+      ],
+      "upperLimitLevelId": null,
+      "volumeCeilingOffsetMm": null,
+      "programmeCode": "ensuite",
+      "department": "Residential",
+      "programmeGroup": null,
+      "functionLabel": "residential wet room",
+      "finishSet": "wet-room-tile",
+      "targetAreaM2": 6.87,
+      "ventilationZone": null,
+      "heatingCoolingZone": null,
+      "designAirChangeRate": null,
+      "fixtureEquipmentLoads": null,
+      "electricalLoadSummary": null,
+      "serviceRequirements": [],
+      "roomFillOverrideHex": null,
+      "roomFillPatternOverride": null,
+      "ifcClassificationCode": null,
+      "pinned": false,
+      "phaseCreated": null,
+      "phaseDemolished": null,
+      "props": {
+        "roomBimIntent": {
+          "number": "1-203",
+          "department": "Residential",
+          "occupancyUse": "residential wet room",
+          "use": "residential_wet_room",
+          "areaSource": "authored_outline_area_m2",
+          "boundingStatus": "bounded",
+          "schedule": {
+            "include": true,
+            "scheduleName": "Room Schedule"
+          },
+          "classification": {
+            "din277Use": "service/use area",
+            "din277AreaType": "NUF",
+            "ifcEntityIntent": "IfcSpace"
+          },
+          "ifcEntityIntent": "IfcSpace"
+        }
+      },
+      "heatingStatus": null,
+      "usageProfile": null,
+      "setpointC": null,
+      "airChangeRate": null,
+      "zoneId": null,
+      "conditionedVolumeIncluded": null
+    },
+    "room_l1_hall_landing": {
+      "kind": "room",
+      "id": "room_l1_hall_landing",
+      "name": "Hall / landing",
+      "levelId": "hf-lvl-upper",
+      "outlineMm": [
+        {
+          "xMm": 8771.0,
+          "yMm": 1676.0
+        },
+        {
+          "xMm": 12819.0,
+          "yMm": 1676.0
+        },
+        {
+          "xMm": 12819.0,
+          "yMm": 3988.0
+        },
+        {
+          "xMm": 8771.0,
+          "yMm": 3988.0
+        }
+      ],
+      "upperLimitLevelId": null,
+      "volumeCeilingOffsetMm": null,
+      "programmeCode": "landing",
+      "department": "Residential",
+      "programmeGroup": null,
+      "functionLabel": "upper circulation",
+      "finishSet": "residential-standard",
+      "targetAreaM2": 9.36,
+      "ventilationZone": null,
+      "heatingCoolingZone": null,
+      "designAirChangeRate": null,
+      "fixtureEquipmentLoads": null,
+      "electricalLoadSummary": null,
+      "serviceRequirements": [],
+      "roomFillOverrideHex": null,
+      "roomFillPatternOverride": null,
+      "ifcClassificationCode": null,
+      "pinned": false,
+      "phaseCreated": null,
+      "phaseDemolished": null,
+      "props": {
+        "roomBimIntent": {
+          "number": "1-204",
+          "department": "Residential",
+          "occupancyUse": "residential circulation",
+          "use": "residential_circulation",
+          "areaSource": "authored_outline_area_m2",
+          "boundingStatus": "bounded",
+          "schedule": {
+            "include": true,
+            "scheduleName": "Room Schedule"
+          },
+          "classification": {
+            "din277Use": "circulation area",
+            "din277AreaType": "VF",
+            "ifcEntityIntent": "IfcSpace"
+          },
+          "ifcEntityIntent": "IfcSpace"
+        }
+      },
+      "heatingStatus": null,
+      "usageProfile": null,
+      "setpointC": null,
+      "airChangeRate": null,
+      "zoneId": null,
+      "conditionedVolumeIncluded": null
+    },
+    "room_l1_primary_bedroom": {
+      "kind": "room",
+      "id": "room_l1_primary_bedroom",
+      "name": "Primary bedroom",
+      "levelId": "hf-lvl-upper",
+      "outlineMm": [
+        {
+          "xMm": 1012.0,
+          "yMm": 2370.0
+        },
+        {
+          "xMm": 5566.0,
+          "yMm": 2370.0
+        },
+        {
+          "xMm": 5566.0,
+          "yMm": 5491.0
+        },
+        {
+          "xMm": 1012.0,
+          "yMm": 5491.0
+        }
+      ],
+      "upperLimitLevelId": null,
+      "volumeCeilingOffsetMm": null,
+      "programmeCode": "bed",
+      "department": "Residential",
+      "programmeGroup": null,
+      "functionLabel": "residential sleeping",
+      "finishSet": "residential-standard",
+      "targetAreaM2": 14.21,
+      "ventilationZone": null,
+      "heatingCoolingZone": null,
+      "designAirChangeRate": null,
+      "fixtureEquipmentLoads": null,
+      "electricalLoadSummary": null,
+      "serviceRequirements": [],
+      "roomFillOverrideHex": null,
+      "roomFillPatternOverride": null,
+      "ifcClassificationCode": null,
+      "pinned": false,
+      "phaseCreated": null,
+      "phaseDemolished": null,
+      "props": {
+        "roomBimIntent": {
+          "number": "1-201",
+          "department": "Residential",
+          "occupancyUse": "residential bedroom",
+          "use": "residential_bedroom",
+          "areaSource": "authored_outline_area_m2",
+          "boundingStatus": "bounded",
+          "schedule": {
+            "include": true,
+            "scheduleName": "Room Schedule"
+          },
+          "classification": {
+            "din277Use": "living/use area",
+            "din277AreaType": "NUF",
+            "ifcEntityIntent": "IfcSpace"
+          },
+          "ifcEntityIntent": "IfcSpace"
+        }
+      },
+      "heatingStatus": null,
+      "usageProfile": null,
+      "setpointC": null,
+      "airChangeRate": null,
+      "zoneId": null,
+      "conditionedVolumeIncluded": null
+    },
+    "room_l1_roof_court": {
+      "kind": "room",
+      "id": "room_l1_roof_court",
+      "name": "Open-to-sky roof court / void",
+      "levelId": "hf-lvl-upper",
+      "outlineMm": [
+        {
+          "xMm": 9108.0,
+          "yMm": 4335.0
+        },
+        {
+          "xMm": 12650.0,
+          "yMm": 4335.0
+        },
+        {
+          "xMm": 12650.0,
+          "yMm": 8035.0
+        },
+        {
+          "xMm": 9108.0,
+          "yMm": 8035.0
         }
       ],
       "upperLimitLevelId": null,
@@ -3460,7 +3480,7 @@
       "programmeGroup": null,
       "functionLabel": "outdoor living",
       "finishSet": "exterior-hardwearing",
-      "targetAreaM2": 8.32,
+      "targetAreaM2": 13.11,
       "ventilationZone": null,
       "heatingCoolingZone": null,
       "designAirChangeRate": null,
@@ -3500,6 +3520,76 @@
       "zoneId": null,
       "conditionedVolumeIncluded": null
     },
+    "room_l1_walk_in_closet": {
+      "kind": "room",
+      "id": "room_l1_walk_in_closet",
+      "name": "Walk-in closet",
+      "levelId": "hf-lvl-upper",
+      "outlineMm": [
+        {
+          "xMm": 1012.0,
+          "yMm": 5723.0
+        },
+        {
+          "xMm": 4217.0,
+          "yMm": 5723.0
+        },
+        {
+          "xMm": 4217.0,
+          "yMm": 8035.0
+        },
+        {
+          "xMm": 1012.0,
+          "yMm": 8035.0
+        }
+      ],
+      "upperLimitLevelId": null,
+      "volumeCeilingOffsetMm": null,
+      "programmeCode": "closet",
+      "department": "Residential",
+      "programmeGroup": null,
+      "functionLabel": "wardrobe storage",
+      "finishSet": "service-standard",
+      "targetAreaM2": 7.41,
+      "ventilationZone": null,
+      "heatingCoolingZone": null,
+      "designAirChangeRate": null,
+      "fixtureEquipmentLoads": null,
+      "electricalLoadSummary": null,
+      "serviceRequirements": [],
+      "roomFillOverrideHex": null,
+      "roomFillPatternOverride": null,
+      "ifcClassificationCode": null,
+      "pinned": false,
+      "phaseCreated": null,
+      "phaseDemolished": null,
+      "props": {
+        "roomBimIntent": {
+          "number": "1-202",
+          "department": "Residential",
+          "occupancyUse": "residential storage",
+          "use": "residential_storage",
+          "areaSource": "authored_outline_area_m2",
+          "boundingStatus": "bounded",
+          "schedule": {
+            "include": true,
+            "scheduleName": "Room Schedule"
+          },
+          "classification": {
+            "din277Use": "storage/use area",
+            "din277AreaType": "NUF",
+            "ifcEntityIntent": "IfcSpace"
+          },
+          "ifcEntityIntent": "IfcSpace"
+        }
+      },
+      "heatingStatus": null,
+      "usageProfile": null,
+      "setpointC": null,
+      "airChangeRate": null,
+      "zoneId": null,
+      "conditionedVolumeIncluded": null
+    },
     "rt-white-folded-roof": {
       "kind": "roof_type",
       "id": "rt-white-folded-roof",
@@ -3526,12 +3616,12 @@
       "id": "sec-stair",
       "name": "Stair and terrace section",
       "lineStartMm": {
-        "xMm": 1200.0,
-        "yMm": 700.0
+        "xMm": 2024.0,
+        "yMm": 1329.0
       },
       "lineEndMm": {
-        "xMm": 7600.0,
-        "yMm": 700.0
+        "xMm": 12819.0,
+        "yMm": 1329.0
       },
       "cropDepthMm": 8200.0,
       "segmentedPathMm": [],
@@ -3543,12 +3633,12 @@
       "name": "First Floor Bathroom boundary 1",
       "levelId": "hf-lvl-upper",
       "start": {
-        "xMm": 3600.0,
-        "yMm": 1600.0
+        "xMm": 6072.0,
+        "yMm": 2370.0
       },
       "end": {
-        "xMm": 5200.0,
-        "yMm": 1600.0
+        "xMm": 8771.0,
+        "yMm": 2370.0
       },
       "pinned": false
     },
@@ -3558,12 +3648,12 @@
       "name": "First Floor Bathroom boundary 2",
       "levelId": "hf-lvl-upper",
       "start": {
-        "xMm": 5200.0,
-        "yMm": 1600.0
+        "xMm": 8771.0,
+        "yMm": 2370.0
       },
       "end": {
-        "xMm": 5200.0,
-        "yMm": 4300.0
+        "xMm": 8771.0,
+        "yMm": 5491.0
       },
       "pinned": false
     },
@@ -3573,12 +3663,12 @@
       "name": "First Floor Bathroom boundary 3",
       "levelId": "hf-lvl-upper",
       "start": {
-        "xMm": 5200.0,
-        "yMm": 4300.0
+        "xMm": 8771.0,
+        "yMm": 5491.0
       },
       "end": {
-        "xMm": 3600.0,
-        "yMm": 4300.0
+        "xMm": 6072.0,
+        "yMm": 5491.0
       },
       "pinned": false
     },
@@ -3588,12 +3678,12 @@
       "name": "First Floor Bathroom boundary 4",
       "levelId": "hf-lvl-upper",
       "start": {
-        "xMm": 3600.0,
-        "yMm": 4300.0
+        "xMm": 6072.0,
+        "yMm": 5491.0
       },
       "end": {
-        "xMm": 3600.0,
-        "yMm": 1600.0
+        "xMm": 6072.0,
+        "yMm": 2370.0
       },
       "pinned": false
     },
@@ -3603,12 +3693,12 @@
       "name": "Recessed Garage / Carport boundary 1",
       "levelId": "hf-lvl-ground",
       "start": {
-        "xMm": 600.0,
-        "yMm": 700.0
+        "xMm": 1012.0,
+        "yMm": 1329.0
       },
       "end": {
-        "xMm": 1100.0,
-        "yMm": 700.0
+        "xMm": 1855.0,
+        "yMm": 1329.0
       },
       "pinned": false
     },
@@ -3618,12 +3708,12 @@
       "name": "Recessed Garage / Carport boundary 2",
       "levelId": "hf-lvl-ground",
       "start": {
-        "xMm": 1100.0,
-        "yMm": 700.0
+        "xMm": 1855.0,
+        "yMm": 1329.0
       },
       "end": {
-        "xMm": 1100.0,
-        "yMm": 6500.0
+        "xMm": 1855.0,
+        "yMm": 8035.0
       },
       "pinned": false
     },
@@ -3633,12 +3723,12 @@
       "name": "Recessed Garage / Carport boundary 3",
       "levelId": "hf-lvl-ground",
       "start": {
-        "xMm": 1100.0,
-        "yMm": 6500.0
+        "xMm": 1855.0,
+        "yMm": 8035.0
       },
       "end": {
-        "xMm": 600.0,
-        "yMm": 6500.0
+        "xMm": 1012.0,
+        "yMm": 8035.0
       },
       "pinned": false
     },
@@ -3648,12 +3738,12 @@
       "name": "Recessed Garage / Carport boundary 4",
       "levelId": "hf-lvl-ground",
       "start": {
-        "xMm": 600.0,
-        "yMm": 6500.0
+        "xMm": 1012.0,
+        "yMm": 8035.0
       },
       "end": {
-        "xMm": 600.0,
-        "yMm": 700.0
+        "xMm": 1012.0,
+        "yMm": 1329.0
       },
       "pinned": false
     },
@@ -3663,12 +3753,12 @@
       "name": "Ensuite boundary 1",
       "levelId": "hf-lvl-upper",
       "start": {
-        "xMm": 2700.0,
-        "yMm": 4300.0
+        "xMm": 4554.0,
+        "yMm": 5491.0
       },
       "end": {
-        "xMm": 4300.0,
-        "yMm": 4300.0
+        "xMm": 7253.0,
+        "yMm": 5491.0
       },
       "pinned": false
     },
@@ -3678,12 +3768,12 @@
       "name": "Ensuite boundary 2",
       "levelId": "hf-lvl-upper",
       "start": {
-        "xMm": 4300.0,
-        "yMm": 4300.0
+        "xMm": 7253.0,
+        "yMm": 5491.0
       },
       "end": {
-        "xMm": 4300.0,
-        "yMm": 6500.0
+        "xMm": 7253.0,
+        "yMm": 8035.0
       },
       "pinned": false
     },
@@ -3693,12 +3783,12 @@
       "name": "Ensuite boundary 3",
       "levelId": "hf-lvl-upper",
       "start": {
-        "xMm": 4300.0,
-        "yMm": 6500.0
+        "xMm": 7253.0,
+        "yMm": 8035.0
       },
       "end": {
-        "xMm": 2700.0,
-        "yMm": 6500.0
+        "xMm": 4554.0,
+        "yMm": 8035.0
       },
       "pinned": false
     },
@@ -3708,12 +3798,12 @@
       "name": "Ensuite boundary 4",
       "levelId": "hf-lvl-upper",
       "start": {
-        "xMm": 2700.0,
-        "yMm": 6500.0
+        "xMm": 4554.0,
+        "yMm": 8035.0
       },
       "end": {
-        "xMm": 2700.0,
-        "yMm": 4300.0
+        "xMm": 4554.0,
+        "yMm": 5491.0
       },
       "pinned": false
     },
@@ -3723,12 +3813,12 @@
       "name": "Bath / Laundry boundary 1",
       "levelId": "hf-lvl-ground",
       "start": {
-        "xMm": 6800.0,
-        "yMm": 700.0
+        "xMm": 11470.0,
+        "yMm": 1329.0
       },
       "end": {
-        "xMm": 8300.0,
-        "yMm": 700.0
+        "xMm": 14000.0,
+        "yMm": 1329.0
       },
       "pinned": false
     },
@@ -3738,12 +3828,12 @@
       "name": "Bath / Laundry boundary 2",
       "levelId": "hf-lvl-ground",
       "start": {
-        "xMm": 8300.0,
-        "yMm": 700.0
+        "xMm": 14000.0,
+        "yMm": 1329.0
       },
       "end": {
-        "xMm": 8300.0,
-        "yMm": 3100.0
+        "xMm": 14000.0,
+        "yMm": 4104.0
       },
       "pinned": false
     },
@@ -3753,12 +3843,12 @@
       "name": "Bath / Laundry boundary 3",
       "levelId": "hf-lvl-ground",
       "start": {
-        "xMm": 8300.0,
-        "yMm": 3100.0
+        "xMm": 14000.0,
+        "yMm": 4104.0
       },
       "end": {
-        "xMm": 6800.0,
-        "yMm": 3100.0
+        "xMm": 11470.0,
+        "yMm": 4104.0
       },
       "pinned": false
     },
@@ -3768,12 +3858,12 @@
       "name": "Bath / Laundry boundary 4",
       "levelId": "hf-lvl-ground",
       "start": {
-        "xMm": 6800.0,
-        "yMm": 3100.0
+        "xMm": 11470.0,
+        "yMm": 4104.0
       },
       "end": {
-        "xMm": 6800.0,
-        "yMm": 700.0
+        "xMm": 11470.0,
+        "yMm": 1329.0
       },
       "pinned": false
     },
@@ -3783,12 +3873,12 @@
       "name": "Kitchen boundary 1",
       "levelId": "hf-lvl-ground",
       "start": {
-        "xMm": 1200.0,
-        "yMm": 3700.0
+        "xMm": 2024.0,
+        "yMm": 4798.0
       },
       "end": {
-        "xMm": 3400.0,
-        "yMm": 3700.0
+        "xMm": 5735.0,
+        "yMm": 4798.0
       },
       "pinned": false
     },
@@ -3798,12 +3888,12 @@
       "name": "Kitchen boundary 2",
       "levelId": "hf-lvl-ground",
       "start": {
-        "xMm": 3400.0,
-        "yMm": 3700.0
+        "xMm": 5735.0,
+        "yMm": 4798.0
       },
       "end": {
-        "xMm": 3400.0,
-        "yMm": 6500.0
+        "xMm": 5735.0,
+        "yMm": 8035.0
       },
       "pinned": false
     },
@@ -3813,12 +3903,12 @@
       "name": "Kitchen boundary 3",
       "levelId": "hf-lvl-ground",
       "start": {
-        "xMm": 3400.0,
-        "yMm": 6500.0
+        "xMm": 5735.0,
+        "yMm": 8035.0
       },
       "end": {
-        "xMm": 1200.0,
-        "yMm": 6500.0
+        "xMm": 2024.0,
+        "yMm": 8035.0
       },
       "pinned": false
     },
@@ -3828,12 +3918,12 @@
       "name": "Kitchen boundary 4",
       "levelId": "hf-lvl-ground",
       "start": {
-        "xMm": 1200.0,
-        "yMm": 6500.0
+        "xMm": 2024.0,
+        "yMm": 8035.0
       },
       "end": {
-        "xMm": 1200.0,
-        "yMm": 3700.0
+        "xMm": 2024.0,
+        "yMm": 4798.0
       },
       "pinned": false
     },
@@ -3843,12 +3933,12 @@
       "name": "Hall / Landing boundary 1",
       "levelId": "hf-lvl-upper",
       "start": {
-        "xMm": 5200.0,
-        "yMm": 1000.0
+        "xMm": 8771.0,
+        "yMm": 1676.0
       },
       "end": {
-        "xMm": 7600.0,
-        "yMm": 1000.0
+        "xMm": 12819.0,
+        "yMm": 1676.0
       },
       "pinned": false
     },
@@ -3858,12 +3948,12 @@
       "name": "Hall / Landing boundary 2",
       "levelId": "hf-lvl-upper",
       "start": {
-        "xMm": 7600.0,
-        "yMm": 1000.0
+        "xMm": 12819.0,
+        "yMm": 1676.0
       },
       "end": {
-        "xMm": 7600.0,
-        "yMm": 3000.0
+        "xMm": 12819.0,
+        "yMm": 3988.0
       },
       "pinned": false
     },
@@ -3873,12 +3963,12 @@
       "name": "Hall / Landing boundary 3",
       "levelId": "hf-lvl-upper",
       "start": {
-        "xMm": 7600.0,
-        "yMm": 3000.0
+        "xMm": 12819.0,
+        "yMm": 3988.0
       },
       "end": {
-        "xMm": 5200.0,
-        "yMm": 3000.0
+        "xMm": 8771.0,
+        "yMm": 3988.0
       },
       "pinned": false
     },
@@ -3888,12 +3978,12 @@
       "name": "Hall / Landing boundary 4",
       "levelId": "hf-lvl-upper",
       "start": {
-        "xMm": 5200.0,
-        "yMm": 3000.0
+        "xMm": 8771.0,
+        "yMm": 3988.0
       },
       "end": {
-        "xMm": 5200.0,
-        "yMm": 1000.0
+        "xMm": 8771.0,
+        "yMm": 1676.0
       },
       "pinned": false
     },
@@ -3903,12 +3993,12 @@
       "name": "Deep Balcony / Loggia boundary 1",
       "levelId": "hf-lvl-upper",
       "start": {
-        "xMm": 1200.0,
-        "yMm": -450.0
+        "xMm": 2024.0,
+        "yMm": 0.0
       },
       "end": {
-        "xMm": 7600.0,
-        "yMm": -450.0
+        "xMm": 12819.0,
+        "yMm": 0.0
       },
       "pinned": false
     },
@@ -3918,12 +4008,12 @@
       "name": "Deep Balcony / Loggia boundary 2",
       "levelId": "hf-lvl-upper",
       "start": {
-        "xMm": 7600.0,
-        "yMm": -450.0
+        "xMm": 12819.0,
+        "yMm": 0.0
       },
       "end": {
-        "xMm": 7600.0,
-        "yMm": 900.0
+        "xMm": 12819.0,
+        "yMm": 1561.0
       },
       "pinned": false
     },
@@ -3933,12 +4023,12 @@
       "name": "Deep Balcony / Loggia boundary 3",
       "levelId": "hf-lvl-upper",
       "start": {
-        "xMm": 7600.0,
-        "yMm": 900.0
+        "xMm": 12819.0,
+        "yMm": 1561.0
       },
       "end": {
-        "xMm": 1200.0,
-        "yMm": 900.0
+        "xMm": 2024.0,
+        "yMm": 1561.0
       },
       "pinned": false
     },
@@ -3948,12 +4038,12 @@
       "name": "Deep Balcony / Loggia boundary 4",
       "levelId": "hf-lvl-upper",
       "start": {
-        "xMm": 1200.0,
-        "yMm": 900.0
+        "xMm": 2024.0,
+        "yMm": 1561.0
       },
       "end": {
-        "xMm": 1200.0,
-        "yMm": -450.0
+        "xMm": 2024.0,
+        "yMm": 0.0
       },
       "pinned": false
     },
@@ -3963,12 +4053,12 @@
       "name": "Utility boundary 1",
       "levelId": "hf-lvl-ground",
       "start": {
-        "xMm": 6800.0,
-        "yMm": 3300.0
+        "xMm": 11470.0,
+        "yMm": 4335.0
       },
       "end": {
-        "xMm": 8300.0,
-        "yMm": 3300.0
+        "xMm": 14000.0,
+        "yMm": 4335.0
       },
       "pinned": false
     },
@@ -3978,12 +4068,12 @@
       "name": "Utility boundary 2",
       "levelId": "hf-lvl-ground",
       "start": {
-        "xMm": 8300.0,
-        "yMm": 3300.0
+        "xMm": 14000.0,
+        "yMm": 4335.0
       },
       "end": {
-        "xMm": 8300.0,
-        "yMm": 5000.0
+        "xMm": 14000.0,
+        "yMm": 6301.0
       },
       "pinned": false
     },
@@ -3993,12 +4083,12 @@
       "name": "Utility boundary 3",
       "levelId": "hf-lvl-ground",
       "start": {
-        "xMm": 8300.0,
-        "yMm": 5000.0
+        "xMm": 14000.0,
+        "yMm": 6301.0
       },
       "end": {
-        "xMm": 6800.0,
-        "yMm": 5000.0
+        "xMm": 11470.0,
+        "yMm": 6301.0
       },
       "pinned": false
     },
@@ -4008,12 +4098,12 @@
       "name": "Utility boundary 4",
       "levelId": "hf-lvl-ground",
       "start": {
-        "xMm": 6800.0,
-        "yMm": 5000.0
+        "xMm": 11470.0,
+        "yMm": 6301.0
       },
       "end": {
-        "xMm": 6800.0,
-        "yMm": 3300.0
+        "xMm": 11470.0,
+        "yMm": 4335.0
       },
       "pinned": false
     },
@@ -4023,12 +4113,12 @@
       "name": "Walk-in Closet boundary 1",
       "levelId": "hf-lvl-upper",
       "start": {
-        "xMm": 600.0,
-        "yMm": 4500.0
+        "xMm": 1012.0,
+        "yMm": 5723.0
       },
       "end": {
-        "xMm": 2500.0,
-        "yMm": 4500.0
+        "xMm": 4217.0,
+        "yMm": 5723.0
       },
       "pinned": false
     },
@@ -4038,12 +4128,12 @@
       "name": "Walk-in Closet boundary 2",
       "levelId": "hf-lvl-upper",
       "start": {
-        "xMm": 2500.0,
-        "yMm": 4500.0
+        "xMm": 4217.0,
+        "yMm": 5723.0
       },
       "end": {
-        "xMm": 2500.0,
-        "yMm": 6500.0
+        "xMm": 4217.0,
+        "yMm": 8035.0
       },
       "pinned": false
     },
@@ -4053,12 +4143,12 @@
       "name": "Walk-in Closet boundary 3",
       "levelId": "hf-lvl-upper",
       "start": {
-        "xMm": 2500.0,
-        "yMm": 6500.0
+        "xMm": 4217.0,
+        "yMm": 8035.0
       },
       "end": {
-        "xMm": 600.0,
-        "yMm": 6500.0
+        "xMm": 1012.0,
+        "yMm": 8035.0
       },
       "pinned": false
     },
@@ -4068,12 +4158,12 @@
       "name": "Walk-in Closet boundary 4",
       "levelId": "hf-lvl-upper",
       "start": {
-        "xMm": 600.0,
-        "yMm": 6500.0
+        "xMm": 1012.0,
+        "yMm": 8035.0
       },
       "end": {
-        "xMm": 600.0,
-        "yMm": 4500.0
+        "xMm": 1012.0,
+        "yMm": 5723.0
       },
       "pinned": false
     },
@@ -4083,12 +4173,12 @@
       "name": "Bedroom boundary 1",
       "levelId": "hf-lvl-upper",
       "start": {
-        "xMm": 600.0,
-        "yMm": 1600.0
+        "xMm": 1012.0,
+        "yMm": 2370.0
       },
       "end": {
-        "xMm": 3300.0,
-        "yMm": 1600.0
+        "xMm": 5566.0,
+        "yMm": 2370.0
       },
       "pinned": false
     },
@@ -4098,12 +4188,12 @@
       "name": "Bedroom boundary 2",
       "levelId": "hf-lvl-upper",
       "start": {
-        "xMm": 3300.0,
-        "yMm": 1600.0
+        "xMm": 5566.0,
+        "yMm": 2370.0
       },
       "end": {
-        "xMm": 3300.0,
-        "yMm": 4300.0
+        "xMm": 5566.0,
+        "yMm": 5491.0
       },
       "pinned": false
     },
@@ -4113,12 +4203,12 @@
       "name": "Bedroom boundary 3",
       "levelId": "hf-lvl-upper",
       "start": {
-        "xMm": 3300.0,
-        "yMm": 4300.0
+        "xMm": 5566.0,
+        "yMm": 5491.0
       },
       "end": {
-        "xMm": 600.0,
-        "yMm": 4300.0
+        "xMm": 1012.0,
+        "yMm": 5491.0
       },
       "pinned": false
     },
@@ -4128,12 +4218,12 @@
       "name": "Bedroom boundary 4",
       "levelId": "hf-lvl-upper",
       "start": {
-        "xMm": 600.0,
-        "yMm": 4300.0
+        "xMm": 1012.0,
+        "yMm": 5491.0
       },
       "end": {
-        "xMm": 600.0,
-        "yMm": 1600.0
+        "xMm": 1012.0,
+        "yMm": 2370.0
       },
       "pinned": false
     },
@@ -4143,12 +4233,12 @@
       "name": "Entrance / Stair Hall boundary 1",
       "levelId": "hf-lvl-ground",
       "start": {
-        "xMm": 1200.0,
-        "yMm": 700.0
+        "xMm": 2024.0,
+        "yMm": 1329.0
       },
       "end": {
-        "xMm": 3400.0,
-        "yMm": 700.0
+        "xMm": 5735.0,
+        "yMm": 1329.0
       },
       "pinned": false
     },
@@ -4158,12 +4248,12 @@
       "name": "Entrance / Stair Hall boundary 2",
       "levelId": "hf-lvl-ground",
       "start": {
-        "xMm": 3400.0,
-        "yMm": 700.0
+        "xMm": 5735.0,
+        "yMm": 1329.0
       },
       "end": {
-        "xMm": 3400.0,
-        "yMm": 3600.0
+        "xMm": 5735.0,
+        "yMm": 4682.0
       },
       "pinned": false
     },
@@ -4173,12 +4263,12 @@
       "name": "Entrance / Stair Hall boundary 3",
       "levelId": "hf-lvl-ground",
       "start": {
-        "xMm": 3400.0,
-        "yMm": 3600.0
+        "xMm": 5735.0,
+        "yMm": 4682.0
       },
       "end": {
-        "xMm": 1200.0,
-        "yMm": 3600.0
+        "xMm": 2024.0,
+        "yMm": 4682.0
       },
       "pinned": false
     },
@@ -4188,12 +4278,12 @@
       "name": "Entrance / Stair Hall boundary 4",
       "levelId": "hf-lvl-ground",
       "start": {
-        "xMm": 1200.0,
-        "yMm": 3600.0
+        "xMm": 2024.0,
+        "yMm": 4682.0
       },
       "end": {
-        "xMm": 1200.0,
-        "yMm": 700.0
+        "xMm": 2024.0,
+        "yMm": 1329.0
       },
       "pinned": false
     },
@@ -4203,12 +4293,12 @@
       "name": "Living / Dining boundary 1",
       "levelId": "hf-lvl-ground",
       "start": {
-        "xMm": 3600.0,
-        "yMm": 700.0
+        "xMm": 6072.0,
+        "yMm": 1329.0
       },
       "end": {
-        "xMm": 6500.0,
-        "yMm": 700.0
+        "xMm": 10964.0,
+        "yMm": 1329.0
       },
       "pinned": false
     },
@@ -4218,12 +4308,12 @@
       "name": "Living / Dining boundary 2",
       "levelId": "hf-lvl-ground",
       "start": {
-        "xMm": 6500.0,
-        "yMm": 700.0
+        "xMm": 10964.0,
+        "yMm": 1329.0
       },
       "end": {
-        "xMm": 6500.0,
-        "yMm": 5200.0
+        "xMm": 10964.0,
+        "yMm": 6532.0
       },
       "pinned": false
     },
@@ -4233,12 +4323,12 @@
       "name": "Living / Dining boundary 3",
       "levelId": "hf-lvl-ground",
       "start": {
-        "xMm": 6500.0,
-        "yMm": 5200.0
+        "xMm": 10964.0,
+        "yMm": 6532.0
       },
       "end": {
-        "xMm": 3600.0,
-        "yMm": 5200.0
+        "xMm": 6072.0,
+        "yMm": 6532.0
       },
       "pinned": false
     },
@@ -4248,12 +4338,12 @@
       "name": "Living / Dining boundary 4",
       "levelId": "hf-lvl-ground",
       "start": {
-        "xMm": 3600.0,
-        "yMm": 5200.0
+        "xMm": 6072.0,
+        "yMm": 6532.0
       },
       "end": {
-        "xMm": 3600.0,
-        "yMm": 700.0
+        "xMm": 6072.0,
+        "yMm": 1329.0
       },
       "pinned": false
     },
@@ -4263,12 +4353,12 @@
       "name": "Roof Terrace boundary 1",
       "levelId": "hf-lvl-upper",
       "start": {
-        "xMm": 5400.0,
-        "yMm": 3300.0
+        "xMm": 9108.0,
+        "yMm": 4335.0
       },
       "end": {
-        "xMm": 8000.0,
-        "yMm": 3300.0
+        "xMm": 13494.0,
+        "yMm": 4335.0
       },
       "pinned": false
     },
@@ -4278,12 +4368,12 @@
       "name": "Roof Terrace boundary 2",
       "levelId": "hf-lvl-upper",
       "start": {
-        "xMm": 8000.0,
-        "yMm": 3300.0
+        "xMm": 13494.0,
+        "yMm": 4335.0
       },
       "end": {
-        "xMm": 8000.0,
-        "yMm": 6500.0
+        "xMm": 13494.0,
+        "yMm": 8035.0
       },
       "pinned": false
     },
@@ -4293,12 +4383,12 @@
       "name": "Roof Terrace boundary 3",
       "levelId": "hf-lvl-upper",
       "start": {
-        "xMm": 8000.0,
-        "yMm": 6500.0
+        "xMm": 13494.0,
+        "yMm": 8035.0
       },
       "end": {
-        "xMm": 5400.0,
-        "yMm": 6500.0
+        "xMm": 9108.0,
+        "yMm": 8035.0
       },
       "pinned": false
     },
@@ -4308,12 +4398,12 @@
       "name": "Roof Terrace boundary 4",
       "levelId": "hf-lvl-upper",
       "start": {
-        "xMm": 5400.0,
-        "yMm": 6500.0
+        "xMm": 9108.0,
+        "yMm": 8035.0
       },
       "end": {
-        "xMm": 5400.0,
-        "yMm": 3300.0
+        "xMm": 9108.0,
+        "yMm": 4335.0
       },
       "pinned": false
     },
@@ -4416,150 +4506,6 @@
       "animationRange": null,
       "daylightSavingStrategy": "auto"
     },
-    "target-house-door-bath-landing": {
-      "kind": "door",
-      "id": "target-house-door-bath-landing",
-      "name": "Bathroom to landing sliding door",
-      "wallId": "target-house-l1-bath-landing-access-partition",
-      "alongT": 0.5,
-      "widthMm": 760.0,
-      "familyTypeId": "ft-pocket-door-standard",
-      "materialKey": null,
-      "materialSlots": null,
-      "hostCutDepthMm": null,
-      "revealInteriorMm": null,
-      "interlockGrade": null,
-      "lodPlan": null,
-      "operationType": "sliding_single",
-      "slidingTrackSide": null,
-      "ifcClassificationCode": null,
-      "pinned": false,
-      "phaseCreated": null,
-      "phaseDemolished": null,
-      "agentTrace": null,
-      "optionSetId": null,
-      "optionId": null,
-      "discipline": "arch",
-      "circularity": null,
-      "props": null,
-      "thermalClassification": null,
-      "thermalClassificationSource": null,
-      "uValue": null,
-      "gValue": null,
-      "frameFraction": null,
-      "airTightnessClass": null,
-      "installationThermalBridgeNote": null,
-      "shadingDevice": null,
-      "annualShadingFactorEstimate": null
-    },
-    "target-house-door-bedroom-bath": {
-      "kind": "door",
-      "id": "target-house-door-bedroom-bath",
-      "name": "Bedroom bathroom sliding door",
-      "wallId": "target-house-l1-bedroom-bath-access-partition",
-      "alongT": 0.24489795918367346,
-      "widthMm": 760.0,
-      "familyTypeId": "ft-pocket-door-standard",
-      "materialKey": null,
-      "materialSlots": null,
-      "hostCutDepthMm": null,
-      "revealInteriorMm": null,
-      "interlockGrade": null,
-      "lodPlan": null,
-      "operationType": "sliding_single",
-      "slidingTrackSide": null,
-      "ifcClassificationCode": null,
-      "pinned": false,
-      "phaseCreated": null,
-      "phaseDemolished": null,
-      "agentTrace": null,
-      "optionSetId": null,
-      "optionId": null,
-      "discipline": "arch",
-      "circularity": null,
-      "props": null,
-      "thermalClassification": null,
-      "thermalClassificationSource": null,
-      "uValue": null,
-      "gValue": null,
-      "frameFraction": null,
-      "airTightnessClass": null,
-      "installationThermalBridgeNote": null,
-      "shadingDevice": null,
-      "annualShadingFactorEstimate": null
-    },
-    "target-house-door-ensuite-bath": {
-      "kind": "door",
-      "id": "target-house-door-ensuite-bath",
-      "name": "Ensuite to bathroom sliding door",
-      "wallId": "target-house-l1-ensuite-bath-access-partition",
-      "alongT": 0.5,
-      "widthMm": 500.0,
-      "familyTypeId": "ft-pocket-door-standard",
-      "materialKey": null,
-      "materialSlots": null,
-      "hostCutDepthMm": null,
-      "revealInteriorMm": null,
-      "interlockGrade": null,
-      "lodPlan": null,
-      "operationType": "sliding_single",
-      "slidingTrackSide": null,
-      "ifcClassificationCode": null,
-      "pinned": false,
-      "phaseCreated": null,
-      "phaseDemolished": null,
-      "agentTrace": null,
-      "optionSetId": null,
-      "optionId": null,
-      "discipline": "arch",
-      "circularity": null,
-      "props": null,
-      "thermalClassification": null,
-      "thermalClassificationSource": null,
-      "uValue": null,
-      "gValue": null,
-      "frameFraction": null,
-      "airTightnessClass": null,
-      "installationThermalBridgeNote": null,
-      "shadingDevice": null,
-      "annualShadingFactorEstimate": null
-    },
-    "target-house-door-ensuite-primary": {
-      "kind": "door",
-      "id": "target-house-door-ensuite-primary",
-      "name": "Ensuite sliding door",
-      "wallId": "target-house-l1-bedroom-bath-access-partition",
-      "alongT": 0.7959183673469388,
-      "widthMm": 760.0,
-      "familyTypeId": "ft-pocket-door-standard",
-      "materialKey": null,
-      "materialSlots": null,
-      "hostCutDepthMm": null,
-      "revealInteriorMm": null,
-      "interlockGrade": null,
-      "lodPlan": null,
-      "operationType": "sliding_single",
-      "slidingTrackSide": null,
-      "ifcClassificationCode": null,
-      "pinned": false,
-      "phaseCreated": null,
-      "phaseDemolished": null,
-      "agentTrace": null,
-      "optionSetId": null,
-      "optionId": null,
-      "discipline": "arch",
-      "circularity": null,
-      "props": null,
-      "thermalClassification": null,
-      "thermalClassificationSource": null,
-      "uValue": null,
-      "gValue": null,
-      "frameFraction": null,
-      "airTightnessClass": null,
-      "installationThermalBridgeNote": null,
-      "shadingDevice": null,
-      "annualShadingFactorEstimate": null
-    },
     "target-house-door-gf-bath-laundry": {
       "kind": "door",
       "id": "target-house-door-gf-bath-laundry",
@@ -4636,78 +4582,6 @@
       "shadingDevice": null,
       "annualShadingFactorEstimate": null
     },
-    "target-house-door-landing": {
-      "kind": "door",
-      "id": "target-house-door-landing",
-      "name": "Landing sliding door",
-      "wallId": "target-house-l1-landing-access-partition",
-      "alongT": 0.5,
-      "widthMm": 760.0,
-      "familyTypeId": "ft-pocket-door-standard",
-      "materialKey": null,
-      "materialSlots": null,
-      "hostCutDepthMm": null,
-      "revealInteriorMm": null,
-      "interlockGrade": null,
-      "lodPlan": null,
-      "operationType": "sliding_single",
-      "slidingTrackSide": null,
-      "ifcClassificationCode": null,
-      "pinned": false,
-      "phaseCreated": null,
-      "phaseDemolished": null,
-      "agentTrace": null,
-      "optionSetId": null,
-      "optionId": null,
-      "discipline": "arch",
-      "circularity": null,
-      "props": null,
-      "thermalClassification": null,
-      "thermalClassificationSource": null,
-      "uValue": null,
-      "gValue": null,
-      "frameFraction": null,
-      "airTightnessClass": null,
-      "installationThermalBridgeNote": null,
-      "shadingDevice": null,
-      "annualShadingFactorEstimate": null
-    },
-    "target-house-door-living-hall": {
-      "kind": "door",
-      "id": "target-house-door-living-hall",
-      "name": "Living to hall sliding door",
-      "wallId": "target-house-gf-living-access-partition",
-      "alongT": 0.4,
-      "widthMm": 900.0,
-      "familyTypeId": "ft-pocket-door-standard",
-      "materialKey": null,
-      "materialSlots": null,
-      "hostCutDepthMm": null,
-      "revealInteriorMm": null,
-      "interlockGrade": null,
-      "lodPlan": null,
-      "operationType": "sliding_single",
-      "slidingTrackSide": null,
-      "ifcClassificationCode": null,
-      "pinned": false,
-      "phaseCreated": null,
-      "phaseDemolished": null,
-      "agentTrace": null,
-      "optionSetId": null,
-      "optionId": null,
-      "discipline": "arch",
-      "circularity": null,
-      "props": null,
-      "thermalClassification": null,
-      "thermalClassificationSource": null,
-      "uValue": null,
-      "gValue": null,
-      "frameFraction": null,
-      "airTightnessClass": null,
-      "installationThermalBridgeNote": null,
-      "shadingDevice": null,
-      "annualShadingFactorEstimate": null
-    },
     "target-house-door-utility": {
       "kind": "door",
       "id": "target-house-door-utility",
@@ -4745,426 +4619,6 @@
       "installationThermalBridgeNote": null,
       "shadingDevice": null,
       "annualShadingFactorEstimate": null
-    },
-    "target-house-door-walk-in-closet": {
-      "kind": "door",
-      "id": "target-house-door-walk-in-closet",
-      "name": "Walk-in closet sliding door",
-      "wallId": "target-house-l1-closet-access-partition",
-      "alongT": 0.5,
-      "widthMm": 760.0,
-      "familyTypeId": "ft-pocket-door-standard",
-      "materialKey": null,
-      "materialSlots": null,
-      "hostCutDepthMm": null,
-      "revealInteriorMm": null,
-      "interlockGrade": null,
-      "lodPlan": null,
-      "operationType": "sliding_single",
-      "slidingTrackSide": null,
-      "ifcClassificationCode": null,
-      "pinned": false,
-      "phaseCreated": null,
-      "phaseDemolished": null,
-      "agentTrace": null,
-      "optionSetId": null,
-      "optionId": null,
-      "discipline": "arch",
-      "circularity": null,
-      "props": null,
-      "thermalClassification": null,
-      "thermalClassificationSource": null,
-      "uValue": null,
-      "gValue": null,
-      "frameFraction": null,
-      "airTightnessClass": null,
-      "installationThermalBridgeNote": null,
-      "shadingDevice": null,
-      "annualShadingFactorEstimate": null
-    },
-    "target-house-gf-living-access-partition": {
-      "kind": "wall",
-      "id": "target-house-gf-living-access-partition",
-      "name": "Ground floor living access partition",
-      "levelId": "hf-lvl-ground",
-      "start": {
-        "xMm": 3400.0,
-        "yMm": 700.0
-      },
-      "end": {
-        "xMm": 3400.0,
-        "yMm": 5200.0
-      },
-      "wallCurve": null,
-      "thicknessMm": 120.0,
-      "heightMm": 2700.0,
-      "wallTypeId": "wt-internal",
-      "locationLine": "wall-centerline",
-      "baseConstraintLevelId": null,
-      "topConstraintLevelId": null,
-      "baseConstraintOffsetMm": 0.0,
-      "topConstraintOffsetMm": 0.0,
-      "roofAttachmentId": null,
-      "topConstraintHostId": null,
-      "topConstraintHostFace": null,
-      "insulationExtensionMm": 0.0,
-      "materialKey": "gypsum_board",
-      "faceMaterialOverrides": null,
-      "loadBearing": null,
-      "structuralRole": "unknown",
-      "structuralMaterial": null,
-      "analyticalParticipation": false,
-      "analysisStatus": "not_modeled",
-      "structuralMaterialKey": null,
-      "structuralIntentConfidence": null,
-      "fireResistanceRating": null,
-      "ifcClassificationCode": null,
-      "isCurtainWall": false,
-      "pinned": false,
-      "phaseId": null,
-      "phaseCreated": null,
-      "phaseDemolished": null,
-      "circularity": null,
-      "curtainWallVCount": null,
-      "curtainWallHCount": null,
-      "curtainWallPanelType": null,
-      "curtainWallMullionType": null,
-      "curtainPanelOverrides": null,
-      "recessZones": null,
-      "stack": null,
-      "leanMm": null,
-      "taperRatio": null,
-      "agentTrace": null,
-      "optionSetId": null,
-      "optionId": null,
-      "discipline": "arch",
-      "props": null,
-      "thermalClassification": null,
-      "thermalClassificationSource": null,
-      "energyScenarioId": null,
-      "siteHostId": null,
-      "joinDisallowStart": false,
-      "joinDisallowEnd": false
-    },
-    "target-house-l1-bath-landing-access-partition": {
-      "kind": "wall",
-      "id": "target-house-l1-bath-landing-access-partition",
-      "name": "Bathroom to landing access partition",
-      "levelId": "hf-lvl-upper",
-      "start": {
-        "xMm": 5200.0,
-        "yMm": 1600.0
-      },
-      "end": {
-        "xMm": 5200.0,
-        "yMm": 3000.0
-      },
-      "wallCurve": null,
-      "thicknessMm": 120.0,
-      "heightMm": 2700.0,
-      "wallTypeId": "wt-internal",
-      "locationLine": "wall-centerline",
-      "baseConstraintLevelId": null,
-      "topConstraintLevelId": null,
-      "baseConstraintOffsetMm": 0.0,
-      "topConstraintOffsetMm": 0.0,
-      "roofAttachmentId": null,
-      "topConstraintHostId": null,
-      "topConstraintHostFace": null,
-      "insulationExtensionMm": 0.0,
-      "materialKey": "gypsum_board",
-      "faceMaterialOverrides": null,
-      "loadBearing": null,
-      "structuralRole": "unknown",
-      "structuralMaterial": null,
-      "analyticalParticipation": false,
-      "analysisStatus": "not_modeled",
-      "structuralMaterialKey": null,
-      "structuralIntentConfidence": null,
-      "fireResistanceRating": null,
-      "ifcClassificationCode": null,
-      "isCurtainWall": false,
-      "pinned": false,
-      "phaseId": null,
-      "phaseCreated": null,
-      "phaseDemolished": null,
-      "circularity": null,
-      "curtainWallVCount": null,
-      "curtainWallHCount": null,
-      "curtainWallPanelType": null,
-      "curtainWallMullionType": null,
-      "curtainPanelOverrides": null,
-      "recessZones": null,
-      "stack": null,
-      "leanMm": null,
-      "taperRatio": null,
-      "agentTrace": null,
-      "optionSetId": null,
-      "optionId": null,
-      "discipline": "arch",
-      "props": null,
-      "thermalClassification": null,
-      "thermalClassificationSource": null,
-      "energyScenarioId": null,
-      "siteHostId": null,
-      "joinDisallowStart": false,
-      "joinDisallowEnd": false
-    },
-    "target-house-l1-bedroom-bath-access-partition": {
-      "kind": "wall",
-      "id": "target-house-l1-bedroom-bath-access-partition",
-      "name": "First floor bedroom bath access partition",
-      "levelId": "hf-lvl-upper",
-      "start": {
-        "xMm": 3450.0,
-        "yMm": 1600.0
-      },
-      "end": {
-        "xMm": 3450.0,
-        "yMm": 6500.0
-      },
-      "wallCurve": null,
-      "thicknessMm": 120.0,
-      "heightMm": 2700.0,
-      "wallTypeId": "wt-internal",
-      "locationLine": "wall-centerline",
-      "baseConstraintLevelId": null,
-      "topConstraintLevelId": null,
-      "baseConstraintOffsetMm": 0.0,
-      "topConstraintOffsetMm": 0.0,
-      "roofAttachmentId": null,
-      "topConstraintHostId": null,
-      "topConstraintHostFace": null,
-      "insulationExtensionMm": 0.0,
-      "materialKey": "gypsum_board",
-      "faceMaterialOverrides": null,
-      "loadBearing": null,
-      "structuralRole": "unknown",
-      "structuralMaterial": null,
-      "analyticalParticipation": false,
-      "analysisStatus": "not_modeled",
-      "structuralMaterialKey": null,
-      "structuralIntentConfidence": null,
-      "fireResistanceRating": null,
-      "ifcClassificationCode": null,
-      "isCurtainWall": false,
-      "pinned": false,
-      "phaseId": null,
-      "phaseCreated": null,
-      "phaseDemolished": null,
-      "circularity": null,
-      "curtainWallVCount": null,
-      "curtainWallHCount": null,
-      "curtainWallPanelType": null,
-      "curtainWallMullionType": null,
-      "curtainPanelOverrides": null,
-      "recessZones": null,
-      "stack": null,
-      "leanMm": null,
-      "taperRatio": null,
-      "agentTrace": null,
-      "optionSetId": null,
-      "optionId": null,
-      "discipline": "arch",
-      "props": null,
-      "thermalClassification": null,
-      "thermalClassificationSource": null,
-      "energyScenarioId": null,
-      "siteHostId": null,
-      "joinDisallowStart": false,
-      "joinDisallowEnd": false
-    },
-    "target-house-l1-closet-access-partition": {
-      "kind": "wall",
-      "id": "target-house-l1-closet-access-partition",
-      "name": "Walk-in closet access partition",
-      "levelId": "hf-lvl-upper",
-      "start": {
-        "xMm": 2600.0,
-        "yMm": 4500.0
-      },
-      "end": {
-        "xMm": 2600.0,
-        "yMm": 6500.0
-      },
-      "wallCurve": null,
-      "thicknessMm": 120.0,
-      "heightMm": 2700.0,
-      "wallTypeId": "wt-internal",
-      "locationLine": "wall-centerline",
-      "baseConstraintLevelId": null,
-      "topConstraintLevelId": null,
-      "baseConstraintOffsetMm": 0.0,
-      "topConstraintOffsetMm": 0.0,
-      "roofAttachmentId": null,
-      "topConstraintHostId": null,
-      "topConstraintHostFace": null,
-      "insulationExtensionMm": 0.0,
-      "materialKey": "gypsum_board",
-      "faceMaterialOverrides": null,
-      "loadBearing": null,
-      "structuralRole": "unknown",
-      "structuralMaterial": null,
-      "analyticalParticipation": false,
-      "analysisStatus": "not_modeled",
-      "structuralMaterialKey": null,
-      "structuralIntentConfidence": null,
-      "fireResistanceRating": null,
-      "ifcClassificationCode": null,
-      "isCurtainWall": false,
-      "pinned": false,
-      "phaseId": null,
-      "phaseCreated": null,
-      "phaseDemolished": null,
-      "circularity": null,
-      "curtainWallVCount": null,
-      "curtainWallHCount": null,
-      "curtainWallPanelType": null,
-      "curtainWallMullionType": null,
-      "curtainPanelOverrides": null,
-      "recessZones": null,
-      "stack": null,
-      "leanMm": null,
-      "taperRatio": null,
-      "agentTrace": null,
-      "optionSetId": null,
-      "optionId": null,
-      "discipline": "arch",
-      "props": null,
-      "thermalClassification": null,
-      "thermalClassificationSource": null,
-      "energyScenarioId": null,
-      "siteHostId": null,
-      "joinDisallowStart": false,
-      "joinDisallowEnd": false
-    },
-    "target-house-l1-ensuite-bath-access-partition": {
-      "kind": "wall",
-      "id": "target-house-l1-ensuite-bath-access-partition",
-      "name": "Ensuite to bathroom access partition",
-      "levelId": "hf-lvl-upper",
-      "start": {
-        "xMm": 3600.0,
-        "yMm": 4300.0
-      },
-      "end": {
-        "xMm": 4300.0,
-        "yMm": 4300.0
-      },
-      "wallCurve": null,
-      "thicknessMm": 120.0,
-      "heightMm": 2700.0,
-      "wallTypeId": "wt-internal",
-      "locationLine": "wall-centerline",
-      "baseConstraintLevelId": null,
-      "topConstraintLevelId": null,
-      "baseConstraintOffsetMm": 0.0,
-      "topConstraintOffsetMm": 0.0,
-      "roofAttachmentId": null,
-      "topConstraintHostId": null,
-      "topConstraintHostFace": null,
-      "insulationExtensionMm": 0.0,
-      "materialKey": "gypsum_board",
-      "faceMaterialOverrides": null,
-      "loadBearing": null,
-      "structuralRole": "unknown",
-      "structuralMaterial": null,
-      "analyticalParticipation": false,
-      "analysisStatus": "not_modeled",
-      "structuralMaterialKey": null,
-      "structuralIntentConfidence": null,
-      "fireResistanceRating": null,
-      "ifcClassificationCode": null,
-      "isCurtainWall": false,
-      "pinned": false,
-      "phaseId": null,
-      "phaseCreated": null,
-      "phaseDemolished": null,
-      "circularity": null,
-      "curtainWallVCount": null,
-      "curtainWallHCount": null,
-      "curtainWallPanelType": null,
-      "curtainWallMullionType": null,
-      "curtainPanelOverrides": null,
-      "recessZones": null,
-      "stack": null,
-      "leanMm": null,
-      "taperRatio": null,
-      "agentTrace": null,
-      "optionSetId": null,
-      "optionId": null,
-      "discipline": "arch",
-      "props": null,
-      "thermalClassification": null,
-      "thermalClassificationSource": null,
-      "energyScenarioId": null,
-      "siteHostId": null,
-      "joinDisallowStart": false,
-      "joinDisallowEnd": false
-    },
-    "target-house-l1-landing-access-partition": {
-      "kind": "wall",
-      "id": "target-house-l1-landing-access-partition",
-      "name": "Hall landing access partition",
-      "levelId": "hf-lvl-upper",
-      "start": {
-        "xMm": 5200.0,
-        "yMm": 1000.0
-      },
-      "end": {
-        "xMm": 7600.0,
-        "yMm": 1000.0
-      },
-      "wallCurve": null,
-      "thicknessMm": 120.0,
-      "heightMm": 2700.0,
-      "wallTypeId": "wt-internal",
-      "locationLine": "wall-centerline",
-      "baseConstraintLevelId": null,
-      "topConstraintLevelId": null,
-      "baseConstraintOffsetMm": 0.0,
-      "topConstraintOffsetMm": 0.0,
-      "roofAttachmentId": null,
-      "topConstraintHostId": null,
-      "topConstraintHostFace": null,
-      "insulationExtensionMm": 0.0,
-      "materialKey": "gypsum_board",
-      "faceMaterialOverrides": null,
-      "loadBearing": null,
-      "structuralRole": "unknown",
-      "structuralMaterial": null,
-      "analyticalParticipation": false,
-      "analysisStatus": "not_modeled",
-      "structuralMaterialKey": null,
-      "structuralIntentConfidence": null,
-      "fireResistanceRating": null,
-      "ifcClassificationCode": null,
-      "isCurtainWall": false,
-      "pinned": false,
-      "phaseId": null,
-      "phaseCreated": null,
-      "phaseDemolished": null,
-      "circularity": null,
-      "curtainWallVCount": null,
-      "curtainWallHCount": null,
-      "curtainWallPanelType": null,
-      "curtainWallMullionType": null,
-      "curtainPanelOverrides": null,
-      "recessZones": null,
-      "stack": null,
-      "leanMm": null,
-      "taperRatio": null,
-      "agentTrace": null,
-      "optionSetId": null,
-      "optionId": null,
-      "discipline": "arch",
-      "props": null,
-      "thermalClassification": null,
-      "thermalClassificationSource": null,
-      "energyScenarioId": null,
-      "siteHostId": null,
-      "joinDisallowStart": false,
-      "joinDisallowEnd": false
     },
     "target-house-property-east": {
       "kind": "property_line",
@@ -5324,20 +4778,20 @@
       "referenceLevelId": "hf-lvl-ground",
       "boundaryMm": [
         {
-          "xMm": -4000.0,
-          "yMm": -5000.0
+          "xMm": -6747.0,
+          "yMm": -5260.0
         },
         {
-          "xMm": 12000.0,
-          "yMm": -5000.0
+          "xMm": 20241.0,
+          "yMm": -5260.0
         },
         {
-          "xMm": 12000.0,
-          "yMm": 12500.0
+          "xMm": 20241.0,
+          "yMm": 14971.0
         },
         {
-          "xMm": -4000.0,
-          "yMm": 12500.0
+          "xMm": -6747.0,
+          "yMm": 14971.0
         }
       ],
       "padThicknessMm": 80.0,
@@ -5364,20 +4818,20 @@
       "name": "Target House concept terrain",
       "boundaryMm": [
         {
-          "xMm": -4000.0,
-          "yMm": -5000.0
+          "xMm": -6747.0,
+          "yMm": -5260.0
         },
         {
-          "xMm": 12000.0,
-          "yMm": -5000.0
+          "xMm": 20241.0,
+          "yMm": -5260.0
         },
         {
-          "xMm": 12000.0,
-          "yMm": 12500.0
+          "xMm": 20241.0,
+          "yMm": 14971.0
         },
         {
-          "xMm": -4000.0,
-          "yMm": 12500.0
+          "xMm": -6747.0,
+          "yMm": 14971.0
         }
       ],
       "heightSamples": [
@@ -5434,19 +4888,19 @@
       "boundaryMm": [
         {
           "xMm": 0.0,
-          "yMm": -450.0
+          "yMm": 0.0
         },
         {
-          "xMm": 8000.0,
-          "yMm": -450.0
+          "xMm": 13494.0,
+          "yMm": 0.0
         },
         {
-          "xMm": 8000.0,
-          "yMm": 8200.0
+          "xMm": 13494.0,
+          "yMm": 10000.0
         },
         {
           "xMm": 0.0,
-          "yMm": 8200.0
+          "yMm": 10000.0
         }
       ],
       "thicknessMm": 220.0,
@@ -5468,7 +4922,7 @@
       "agentTrace": null,
       "optionSetId": null,
       "optionId": null,
-      "toposolidElevationMm": -302.6170974660646,
+      "toposolidElevationMm": -314.3594943744745,
       "discipline": "arch",
       "circularity": null,
       "props": {
@@ -5480,10 +4934,7 @@
         ],
         "isCantilever": true,
         "cantileverSupportIntent": "Upper wrapper slab bears on the ground-floor wall box with explicit front/left cantilever intent for structural review.",
-        "cantileverAnchorIds": [
-          "ground-base-wall-01",
-          "ground-base-wall-04"
-        ],
+        "cantileverAnchorIds": ["ground-base-wall-01", "ground-base-wall-04"],
         "structuralSystem": "folded-wrapper concrete slab with ground-wall support lines and reviewed cantilever zones",
         "spanDirection": "east-west"
       },
@@ -5499,12 +4950,12 @@
       "pathMm": [
         {
           "xMm": 0.0,
-          "yMm": -450.0,
+          "yMm": 0.0,
           "zMm": 3100.0
         },
         {
-          "xMm": 8000.0,
-          "yMm": -450.0,
+          "xMm": 13494.0,
+          "yMm": 0.0,
           "zMm": 3100.0
         }
       ],
@@ -5615,30 +5066,5 @@
       "basisLine": "center"
     }
   },
-  "violations": [
-    {
-      "ruleId": "room_target_area_mismatch",
-      "severity": "info",
-      "message": "Room outline area (3.520 m\u00b2) differs from targetAreaM2 (3.200 m\u00b2) beyond the advisory tolerance.",
-      "elementIds": [
-        "hf-room-ensuite"
-      ],
-      "blocking": false,
-      "quickFixCommand": null,
-      "discipline": "architecture",
-      "blockingClass": "documentation"
-    },
-    {
-      "ruleId": "room_target_area_mismatch",
-      "severity": "info",
-      "message": "Room outline area (4.800 m\u00b2) differs from targetAreaM2 (4.400 m\u00b2) beyond the advisory tolerance.",
-      "elementIds": [
-        "hf-room-landing"
-      ],
-      "blocking": false,
-      "quickFixCommand": null,
-      "discipline": "architecture",
-      "blockingClass": "documentation"
-    }
-  ]
+  "violations": []
 }

@@ -2,7 +2,7 @@
 
 Schema: `target-house-current-geometry-diagnostic.v1`
 Target: `target-house-1`
-Snapshot: `target-house-1:materialized-bundle` revision `1`
+Snapshot: `target-house-1-offline-regenerated` revision `2`
 
 ## Summary
 

@@ -5,19 +5,14 @@
 Target: `target-house-1`
 Schema: `target-house-closeout-report.v1`
 Generated at: `1970-01-01T00:00:00.000Z`
-Lineage digest: `sha256:7427d1d2fbf82d33bb7739a71dc13baea62dbced3cc606b8d8dbeeae84b137d6`
+Lineage digest: `sha256:0ce84e1aef66060ed450f1d1c8ab2002e10cf6bd88348bd51b99334b3e35e07f`
 
 ## Review Status
 
-Status: `blocked` - 6 closeout blocker(s) remain.
+Status: `blocked` - 1 closeout blocker(s) remain.
 
 | Blocker | Summary |
 | ------- | ------- |
-| `acceptance_gate_blockers` | Final package manifest reports this blocker. |
-| `acceptance_gates` | 2 gate blocker(s); semantic visual failures: 291. |
-| `live_evidence_freshness` | Final package manifest reports this blocker. |
-| `semantic_visual` | Final package manifest reports this blocker. |
-| `semantic_visual_unverified` | 291 required semantic visual row(s) remain unchecked or failed. |
 | `tracker_not_done` | Final package manifest reports this blocker. |
 
 ## Advisor Is Not Acceptance
@@ -26,9 +21,9 @@ No Advisor findings is not target-house acceptance. It only means the normal Adv
 
 | Evidence family | Current result | Why it matters |
 | --------------- | -------------- | -------------- |
-| Advisor | 2 Advisor finding(s); 0 constructability finding(s) | Advisory checks do not prove sketch fidelity or geometric source acceptance. |
+| Advisor | 0 Advisor finding(s); 0 constructability finding(s) | Advisory checks do not prove sketch fidelity or geometric source acceptance. |
 | Geometry diagnostic | 0 finding(s); errors: 0 | Detached/flying/out-of-envelope/helper-leakage findings block target-house acceptance even when Advisor is quiet. |
-| Semantic visual gate | 291 required row(s) unchecked or failed | Screenshots can exist while source-sketch features remain undispositioned. |
+| Semantic visual gate | 0 required row(s) unchecked or failed | Screenshots can exist while source-sketch features remain undispositioned. |
 | Exchange/data quality | data errors 0; exchange errors 0; planned exchange checks 2 | Export/readback and information requirements are separate from Advisor findings. |
 | Performance | pass | Closeout must show the target-house model is usable, not just diagnostically clean. |
 | Tolerances | 0 blocking; 0 incomplete | Deferred assumptions need owners, evidence, and expiry before acceptance. |
@@ -37,8 +32,8 @@ No Advisor findings is not target-house acceptance. It only means the normal Adv
 
 | Field | Value |
 | ----- | ----- |
-| current git head | 1b4aefe949c51fe212965cf3bbe301d9e94a0fc1 |
-| evidence git head | af19d681dc60ee7438434d5c6202f1bd623000d5 |
+| current git head | 10120e48a44ed5be4f860be1e816619b8421fb74 |
+| evidence git head | 10120e48a44ed5be4f860be1e816619b8421fb74 |
 | evidence dir | seed-artifacts/target-house-1/evidence/live-run-current |
 | required features | spec/generated/target-house-1-required-features.json |
 | performance evidence | scripts/target-house-final-package.mjs#buildTargetHousePerformanceEvidence |
@@ -46,46 +41,46 @@ No Advisor findings is not target-house acceptance. It only means the normal Adv
 | performance load error | none |
 | final manifest load error | none |
 | required features digest | sha256:bc336b696cd98071971dded6b31272c401305aba210054984199bcc2a1662607 |
-| bundle digest | sha256:903d560a8eb43116956cf4aa794e82b173b677b679a0e5d9fd354d34ab4e91ba |
-| snapshot digest | sha256:94948476935cc7d7b6c9e46a166d69a7f946126c558e5df59a369ce9a94b0352 |
-| Advisor rule digest | sha256:d2d938dde4832ef91d26c33fd8f83a1c0dda738806560ea29bbee5a7a75d1f7c |
-| performance digest | sha256:6fd9a9db63c77087288bb81b7feda9544091a5eaec33b8d5c41c6caf2ec54f71 |
-| final manifest digest | sha256:3de44b71a5c8b46a0affdac5a3869e5cbe7415762207f5059e53a002e6330e7d |
+| bundle digest | sha256:2f1ba728875d22abe1cd4111642a5b058a111e478cf051436f69b78f845e5caf |
+| snapshot digest | sha256:7204176dfc5531f3a9f13d5b5d9bda5c65b666f31f413f2c1075b44d48ebdba1 |
+| Advisor rule digest | sha256:594fc7b78853d533530b0a83a33825a865abc5412fa72a13143b15d018466167 |
+| performance digest | sha256:a11b92774627a7f28515567068516829ac1497200705ff235bc16228a7ddafea |
+| final manifest digest | sha256:c98005c2f1abf7aa76997964cb197c767cf95d8c37e1b42257d853456aaf810e |
 
 ## Evidence Files
 
 | Artifact | Path | Status | Digest | Summary |
 | -------- | ---- | ------ | ------ | ------- |
-| `tool_run_summary` | `seed-artifacts/target-house-1/evidence/live-run-current/tool-run-summary.json` | present | `sha256:e47291db653aa08f0afd38500a2bf382ad88dce5410e1af03cc5936cb70d2d5f` |  |
-| `evidence_manifest` | `seed-artifacts/target-house-1/evidence/live-run-current/evidence-manifest.json` | present | `sha256:2b2f41b0b5d0551246c517564b8354dade3de430398524f3389618e6601c0316` | {"requiredVisualViewCount":8,"findingDispositionCount":1,"unclassifiedBlockingFindingCount":0} |
-| `snapshot` | `seed-artifacts/target-house-1/evidence/live-run-current/snapshot.json` | present | `sha256:94948476935cc7d7b6c9e46a166d69a7f946126c558e5df59a369ce9a94b0352` |  |
+| `tool_run_summary` | `seed-artifacts/target-house-1/evidence/live-run-current/tool-run-summary.json` | present | `sha256:4802c22e3b69c90716d6a7a18697be8669c54f7cf378ab5aa86149269f7ebf86` |  |
+| `evidence_manifest` | `seed-artifacts/target-house-1/evidence/live-run-current/evidence-manifest.json` | present | `sha256:49c3ff6eff9840e2b09d394b9bf3923be40631c2f459cfd2340e474836d8f805` | {"requiredVisualViewCount":8,"findingDispositionCount":0,"unclassifiedBlockingFindingCount":0} |
+| `snapshot` | `seed-artifacts/target-house-1/evidence/live-run-current/snapshot.json` | present | `sha256:7204176dfc5531f3a9f13d5b5d9bda5c65b666f31f413f2c1075b44d48ebdba1` |  |
 | `target_house_evidence_acceptance` | `seed-artifacts/target-house-1/evidence/live-run-current/target-house-evidence-acceptance.json` | pass | `sha256:4d49c831d83406e0724908df8cd7961f0851957d2d4b932063d3f07bcaeaa97d` | {"requiredViewCount":8,"visualPassCount":8,"visualFailCount":0,"dataQualityPassCount":7,"dataQualityFailCount":0,"visualOk":true,"dataQualityOk":true} |
-| `acceptance_gates` | `seed-artifacts/target-house-1/evidence/live-run-current/acceptance-gates.json` | blocked | `sha256:ac236f6f29111cf05092c56cc53c1079fd1627e9db8d8c599a41e2d825a2f294` | {"blockerCount":2,"toleranceCount":1,"advisorWarningCount":49,"visualFailCount":0,"visualNeedsReviewCount":7,"semanticVisualRequiredCount":291,"semanticVisualFailureCount":291,"bimDataQualityErrorCount":0,"bimDataQualityPlannedCount":0,"exchangeValidationErrorCount":0,"exchangeValidationWarningCount":0,"evidenceFreshnessOk":true,"staleEvidenceCount":0,"missingEvidenceFreshnessCount":0} |
-| `advisor_all` | `seed-artifacts/target-house-1/evidence/live-run-current/advisor-all.json` | present | `sha256:48080b164cd232ed7ae0b4dd9ee49ae7923a111d1998b5069de513e72aea03a6` |  |
-| `constructability_report` | `seed-artifacts/target-house-1/evidence/live-run-current/constructability-report.json` | pass | `sha256:b4d04e89091776fa4256cb923a61331f6e0d4d22cfbdf73470385e7e3993108b` | {"findingCount":0,"issueCount":0,"suppressedFindingCount":0} |
-| `geometry_diagnostic` | `seed-artifacts/target-house-1/evidence/live-run-current/target-house-geometry-diagnostic.json` | present | `sha256:8cc8aec0393daf862614ecf6ff4babd7ba0d968175fcdd279a1f2d3f2e32ccd2` | {"total":0} |
+| `acceptance_gates` | `seed-artifacts/target-house-1/evidence/live-run-current/acceptance-gates.json` | pass | `sha256:0569877d4fa28cca63f800d48790ff8a984c7d73cfdb1828b216bab73d5ac08f` | {"blockerCount":0,"toleranceCount":1,"advisorWarningCount":0,"visualFailCount":0,"visualNeedsReviewCount":7,"semanticVisualRequiredCount":305,"semanticVisualFailureCount":0,"semanticVisualGateBlockerCount":0,"rendererDiagnosticsBlockingCount":0,"bimIntegrityBlockingCount":0,"bimDataQualityErrorCount":0,"bimDataQualityPlannedCount":0,"exchangeValidationErrorCount":0,"exchangeValidationWarningCount":0,"evidenceFreshnessOk":true,"staleEvidenceCount":0,"missingEvidenceFreshnessCount":0} |
+| `advisor_all` | `seed-artifacts/target-house-1/evidence/live-run-current/advisor-all.json` | present | `sha256:998310c6b742474220a84dd231896f36d40bb0e5d271a1b8f4883b4d3e9a151b` |  |
+| `constructability_report` | `seed-artifacts/target-house-1/evidence/live-run-current/constructability-report.json` | pass | `sha256:b87cb11f2b0dd64588df780e165e972028394de68508e4c4d1432945377592ee` | {"findingCount":0,"issueCount":0,"suppressedFindingCount":0} |
+| `geometry_diagnostic` | `seed-artifacts/target-house-1/evidence/live-run-current/target-house-geometry-diagnostic.json` | present | `sha256:a5e25c276647164b05bc5ddc86bb1585726ecbc2175360e153dbe363885ed50b` | {"total":0} |
 | `visual_gate` | `seed-artifacts/target-house-1/evidence/live-run-current/visual-gate.json` | present | `sha256:98c8a2771df3c720e407cba4312cb26df3b6e789400a2de48a4d36d937fb930d` | {"captureCount":7,"passCount":0,"needsReviewCount":7,"failCount":0,"blockingFailureCount":0} |
-| `visual_evidence_contract` | `seed-artifacts/target-house-1/evidence/live-run-current/visual-evidence-contract.json` | present | `sha256:9fcba02f16c5c3864ca946b66754ada49d2b3c123735620cf891ceaeec8934c5` |  |
-| `bim_data_quality` | `seed-artifacts/target-house-1/evidence/live-run-current/bim-data-quality.json` | pass | `sha256:fbe267378c12eb9f24579ea9505781fa68ed549b17e0ff455d0864c10428385f` | {"passCount":10,"warningCount":0,"errorCount":0,"plannedCount":0} |
-| `export_validation` | `seed-artifacts/target-house-1/evidence/live-run-current/export-validation.json` | pass | `sha256:6f905e69fcbce190fe49f0c14ccc20cb88ecd5c63af07d97960ea934443d787f` | {"passCount":5,"warningCount":0,"errorCount":0,"plannedCount":2} |
-| `tolerance_ledger` | `seed-artifacts/target-house-1/evidence/live-run-current/tolerance-ledger.json` | pass | `sha256:24d47a50f77e97557b93b87640011e5ac300b2906cf581e8103ecd40781e7a91` | {"findingCount":1,"toleranceCount":0,"blockingFindingCount":0,"incompleteToleranceCount":0} |
+| `visual_evidence_contract` | `seed-artifacts/target-house-1/evidence/live-run-current/visual-evidence-contract.json` | present | `sha256:14124eb47a00a6770a1a453e0f2fdb60f3df4f70438ba6d106bc38b0598a08c8` |  |
+| `bim_data_quality` | `seed-artifacts/target-house-1/evidence/live-run-current/bim-data-quality.json` | pass | `sha256:614250a6b17fa2faf69e434c1aed7d60570187dc1cc04a692ea830c4a0e723bd` | {"passCount":10,"warningCount":0,"errorCount":0,"plannedCount":0} |
+| `export_validation` | `seed-artifacts/target-house-1/evidence/live-run-current/export-validation.json` | pass | `sha256:a2dc68fff77cde3b25067cce9433df2a4db356dac770f1522c8fa227fe01ed51` | {"passCount":5,"warningCount":0,"errorCount":0,"plannedCount":2} |
+| `tolerance_ledger` | `seed-artifacts/target-house-1/evidence/live-run-current/tolerance-ledger.json` | pass | `sha256:f6ff183d3aae7b6f98adb26f3a1ee4619f3e4d6784d59df7e71d66c1704162d8` | {"findingCount":0,"toleranceCount":0,"blockingFindingCount":0,"incompleteToleranceCount":0} |
 | `screenshot_manifest` | `seed-artifacts/target-house-1/evidence/live-run-current/screenshot-manifest.json` | present | `sha256:75872ca1eb58256fc65b7a4fbb6c570988801bb748d231481256e8dd105fa765` |  |
-| `clean_pass_gate` | `seed-artifacts/target-house-1/evidence/live-run-current/clean-pass-gate.json` | pass | `sha256:23cd56800253c363be78f4d6349426b60b0d815c622788014e55d6a05ef48c78` | {"p0ErrorCount":0,"rendererBlockerCount":0,"warningCount":0,"toleratedWarningGroupCount":0,"unresolvedWarningGroupCount":0,"toleranceCount":0,"blockerCount":0} |
+| `clean_pass_gate` | `seed-artifacts/target-house-1/evidence/live-run-current/clean-pass-gate.json` | pass | `sha256:8a2eb5df6f384c316c22f7d353a77c45d5f77b971dfbafe4825c8b0f971c5d72` | {"p0ErrorCount":0,"rendererBlockerCount":0,"warningCount":0,"toleratedWarningGroupCount":0,"unresolvedWarningGroupCount":0,"toleranceCount":0,"blockerCount":0} |
 
 ## Source Features And Required BIM Targets
 
 | Feature | Phase | Priority | Required BIM targets/selectors | Required views | Evidence | Status |
 | ------- | ----- | -------- | ----------------------------- | -------------- | -------- | ------ |
-| `primary_massing_envelope` | P1 | critical | feature:primary_massing_envelope, kind:basic_massing_envelope, wall:exterior, floor:plinth, volume:upper-wrapper | main_front_left, front_elevation, rear_right_axon | screenshot, advisor_payload | blocked_semantic_visual (22) |
-| `folded_white_wrapper_shell` | P2 | critical | feature:folded_white_wrapper_shell, kind:folded_white_wrapper_shell, wall:upper-white-shell, roof:white-folded-shell | main_front_left, rear_right_axon, wire_diagnostic | screenshot, advisor_payload, wire_diagnostic | blocked_semantic_visual (32) |
-| `roof_terrace_cutout` | P3 | critical | feature:roof_terrace_cutout, kind:roof_opening_with_occupied_terrace, roof:opening, floor:terrace, railing:roof-court-guard, door:terrace-access, window:roof-court-glazing, room:room_l1_roof_court | main_front_left, roof_high, rear_right_axon | screenshot, advisor_payload, constructability_report | blocked_semantic_visual (32) |
-| `front_deep_loggia` | P4 | critical | feature:front_deep_loggia, kind:recessed_loggia, room:room_l1_deep_loggia, floor:loggia-slab, railing:front-loggia-guard, window:three-bay-loggia-glazing, door:loggia-access | main_front_left, front_elevation, front_loggia, first_floor_plan | screenshot, advisor_payload, constructability_report | blocked_semantic_visual (33) |
-| `asymmetric_gable_envelope` | P2 | critical | feature:asymmetric_gable_envelope, kind:roof_attached_wall_profile, wall:gable-profile, roof:asymmetric-envelope | main_front_left, front_elevation, rear_right_axon | screenshot, advisor_payload | blocked_semantic_visual (34) |
-| `vertical_cladding_zones` | P4 | high | feature:vertical_cladding_zones, kind:vertical_cladding, wall:ground-clad-base, cladding:vertical-board-batten | main_front_left, front_elevation, rear_right_axon | screenshot, advisor_payload, constructability_report | blocked_semantic_visual (24) |
-| `opening_and_glazing_rhythm` | P4 | high | feature:opening_and_glazing_rhythm, kind:facade_bay_rhythm, door:*, window:*, opening:hosted-facade-bay | main_front_left, front_elevation, ground_floor_plan | screenshot, advisor_payload, constructability_report | blocked_semantic_visual (21) |
-| `room_access_and_enclosure` | P5 | critical | feature:room_access_and_enclosure, kind:room_access_and_enclosure, room:*, door:room-access, stair:*, opening:slab-stair, room:room_gf_kitchen_dining, room:room_gf_living, room:room_gf_entry, room:room_gf_bath_laundry, room:room_gf_utility, room:room_gf_carport, room:room_l1_primary_bedroom, room:room_l1_walk_in_closet, room:room_l1_ensuite, room:room_l1_hall_landing, room:room_l1_bedroom_2, room:room_l1_deep_loggia, room:room_l1_roof_court | ground_floor_plan, first_floor_plan, wire_diagnostic | screenshot, advisor_payload, wire_diagnostic, schedule, constructability_report | blocked_semantic_visual (20) |
-| `site_orientation_and_plinth` | P0 | medium | feature:site_orientation_and_plinth, kind:site_orientation, site:project-north-assumption, floor:plinth | main_front_left | screenshot, advisor_payload | blocked_semantic_visual (11) |
-| `documentation_evidence_set` | P7 | high | feature:documentation_evidence_set, kind:documentation_views, view:*, schedule:*, export:*, evidence:* | main_front_left, roof_high, front_elevation, front_loggia, ground_floor_plan, first_floor_plan, wire_diagnostic | screenshot, advisor_payload, wire_diagnostic, schedule, constructability_report, export_manifest, provenance_manifest, tolerance_ledger | blocked_semantic_visual (58) |
+| `primary_massing_envelope` | P1 | critical | feature:primary_massing_envelope, kind:basic_massing_envelope, wall:exterior, floor:plinth, volume:upper-wrapper | main_front_left, front_elevation, rear_right_axon | screenshot, advisor_payload | evidence_linked |
+| `folded_white_wrapper_shell` | P2 | critical | feature:folded_white_wrapper_shell, kind:folded_white_wrapper_shell, wall:upper-white-shell, roof:white-folded-shell | main_front_left, rear_right_axon, wire_diagnostic | screenshot, advisor_payload, wire_diagnostic | evidence_linked |
+| `roof_terrace_cutout` | P3 | critical | feature:roof_terrace_cutout, kind:roof_opening_with_occupied_terrace, roof:opening, floor:terrace, railing:roof-court-guard, door:terrace-access, window:roof-court-glazing, room:room_l1_roof_court | main_front_left, roof_high, rear_right_axon | screenshot, advisor_payload, constructability_report | evidence_linked |
+| `front_deep_loggia` | P4 | critical | feature:front_deep_loggia, kind:recessed_loggia, room:room_l1_deep_loggia, floor:loggia-slab, railing:front-loggia-guard, window:three-bay-loggia-glazing, door:loggia-access | main_front_left, front_elevation, front_loggia, first_floor_plan | screenshot, advisor_payload, constructability_report | evidence_linked |
+| `asymmetric_gable_envelope` | P2 | critical | feature:asymmetric_gable_envelope, kind:roof_attached_wall_profile, wall:gable-profile, roof:asymmetric-envelope | main_front_left, front_elevation, rear_right_axon | screenshot, advisor_payload | evidence_linked |
+| `vertical_cladding_zones` | P4 | high | feature:vertical_cladding_zones, kind:vertical_cladding, wall:ground-clad-base, cladding:vertical-board-batten | main_front_left, front_elevation, rear_right_axon | screenshot, advisor_payload, constructability_report | evidence_linked |
+| `opening_and_glazing_rhythm` | P4 | high | feature:opening_and_glazing_rhythm, kind:facade_bay_rhythm, door:*, window:*, opening:hosted-facade-bay | main_front_left, front_elevation, ground_floor_plan | screenshot, advisor_payload, constructability_report | evidence_linked |
+| `room_access_and_enclosure` | P5 | critical | feature:room_access_and_enclosure, kind:room_access_and_enclosure, room:*, door:room-access, stair:*, opening:slab-stair, room:room_gf_kitchen_dining, room:room_gf_living, room:room_gf_entry, room:room_gf_bath_laundry, room:room_gf_utility, room:room_gf_carport, room:room_l1_primary_bedroom, room:room_l1_walk_in_closet, room:room_l1_ensuite, room:room_l1_hall_landing, room:room_l1_bedroom_2, room:room_l1_deep_loggia, room:room_l1_roof_court | ground_floor_plan, first_floor_plan, wire_diagnostic | screenshot, advisor_payload, wire_diagnostic, schedule, constructability_report | evidence_linked |
+| `site_orientation_and_plinth` | P0 | medium | feature:site_orientation_and_plinth, kind:site_orientation, site:project-north-assumption, floor:plinth | main_front_left | screenshot, advisor_payload | evidence_linked |
+| `documentation_evidence_set` | P7 | high | feature:documentation_evidence_set, kind:documentation_views, view:*, schedule:*, export:*, evidence:* | main_front_left, roof_high, front_elevation, front_loggia, ground_floor_plan, first_floor_plan, wire_diagnostic | screenshot, advisor_payload, wire_diagnostic, schedule, constructability_report, export_manifest, provenance_manifest, tolerance_ledger | evidence_linked |
 
 ## Saved Views And Screenshots
 
@@ -120,6 +115,6 @@ No Advisor findings is not target-house acceptance. It only means the normal Adv
 | screenshot quality gate | needs_review; needs review 7 |
 | BIM data quality | ok=true; errors=0; warnings=0 |
 | exchange validation | ok=true; errors=0; warnings=0; planned=2 |
-| performance | ok=true; max budget ratio=0.74 |
+| performance | ok=true; max budget ratio=0.75 |
 | tolerances | ok=true; blocking=0; incomplete=0 |
 
