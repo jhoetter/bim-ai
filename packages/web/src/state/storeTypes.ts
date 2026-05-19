@@ -137,12 +137,14 @@ export type PlanTool =
   | 'project-base-point'
   | 'family-blend'
   | 'family-sweep'
+  | 'family-swept-blend'
   | 'graded-region'
   | 'terrain-split'
   | 'stair-run'
   | 'stair-landing'
   | 'detail-line'
-  | 'detail-filled-region';
+  | 'detail-filled-region'
+  | 'cut-geometry';
 
 export type PresencePeers = Record<
   string,

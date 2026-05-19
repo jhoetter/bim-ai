@@ -85,7 +85,7 @@ describe('stair edit mode inspector — §8.6.4', () => {
         { runIndex: 0, riserCount: 8, runWidthMm: 1100 },
         { runIndex: 1, riserCount: 9, runWidthMm: 1200 },
       ],
-    } as Extract<Element, { kind: 'stair' }>;
+    } as unknown as Extract<Element, { kind: 'stair' }>;
     const { getByTestId } = render(InspectorPropertiesFor(stairWithRuns, t));
     expect(getByTestId('inspector-stair-run-0')).toBeTruthy();
     expect(getByTestId('inspector-stair-run-1')).toBeTruthy();

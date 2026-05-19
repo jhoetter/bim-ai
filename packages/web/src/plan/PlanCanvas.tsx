@@ -5963,7 +5963,7 @@ export function PlanCanvas({
             boundaryMm: boundary.map((p) => ({ xMm: p.xMm, yMm: p.yMm })),
             autoDetectedBoundary: true,
           });
-          setPlanTool(null);
+          setPlanTool('select');
         }
         return; // Don't add as a normal sketch point
       }

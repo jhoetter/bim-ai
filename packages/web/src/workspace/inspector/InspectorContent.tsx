@@ -1046,6 +1046,7 @@ export function InspectorPropertiesFor(
   const onOpenAppearanceAssetBrowser = options?.onOpenAppearanceAssetBrowser;
   const onEditCurtainGrid = options?.onEditCurtainGrid;
   const onDispatchCommand = options?.onDispatchCommand;
+  const onSemanticCommand = onDispatchCommand;
   const f = (key: string) => t(`inspector.fields.${key}`);
   switch (el.kind) {
     case 'wall': {

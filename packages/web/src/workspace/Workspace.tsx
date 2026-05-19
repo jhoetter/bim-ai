@@ -2305,7 +2305,8 @@ export function Workspace(): JSX.Element {
       // §15.1.3: addFamilyConstraint — create a family_constraint element client-side.
       if (cmd.type === 'addFamilyConstraint') {
         const { elementsById: cur } = useBimStore.getState();
-        useBimStore.setState({ elementsById: { ...cur, [cmd.constraint.id]: cmd.constraint } });
+        const constraint = cmd.constraint as Element;
+        useBimStore.setState({ elementsById: { ...cur, [constraint.id]: constraint } });
         return;
       }
       // §15.1.3: addFamilyReferencePlane — create a family_reference_plane element client-side.
@@ -2331,7 +2332,7 @@ export function Workspace(): JSX.Element {
       if (cmd.type === 'removeFamilyConstraint') {
         const { elementsById: cur } = useBimStore.getState();
         const next = { ...cur };
-        delete next[cmd.constraintId];
+        delete next[cmd.constraintId as string];
         useBimStore.setState({ elementsById: next });
         return;
       }
@@ -2985,14 +2986,18 @@ export function Workspace(): JSX.Element {
         const { elementsById: cur } = useBimStore.getState();
         const wall = cur[cmd.wallId as string];
         if (!wall || wall.kind !== 'wall') return;
+        const profilePoints = cmd.profilePoints as
+          | Extract<Element, { kind: 'wall' }>['profilePoints']
+          | null
+          | undefined;
         useBimStore.setState({
           elementsById: {
             ...cur,
             [wall.id]: {
               ...wall,
               profilePoints:
-                (cmd.profilePoints as any[] | null) && (cmd.profilePoints as any[]).length >= 3
-                  ? cmd.profilePoints
+                Array.isArray(profilePoints) && profilePoints.length >= 3
+                  ? profilePoints
                   : undefined,
             },
           },
@@ -3009,7 +3014,7 @@ export function Workspace(): JSX.Element {
               ...cur,
               [wall.id]: {
                 ...wall,
-                profilePoints: cmd.points,
+                profilePoints: cmd.points as Extract<Element, { kind: 'wall' }>['profilePoints'],
                 editProfileActive: false,
               } as typeof wall,
             },
@@ -3163,10 +3168,13 @@ export function Workspace(): JSX.Element {
         const { elementsById: cur } = useBimStore.getState();
         const floor = cur[cmd.floorId as string];
         if (floor?.kind === 'floor') {
+          const point = cmd.point as NonNullable<
+            Extract<Element, { kind: 'floor' }>['slopePoints']
+          >[number];
           useBimStore.setState({
             elementsById: {
               ...cur,
-              [floor.id]: { ...floor, slopePoints: [...(floor.slopePoints ?? []), cmd.point] },
+              [floor.id]: { ...floor, slopePoints: [...(floor.slopePoints ?? []), point] },
             },
           });
         }
@@ -3176,12 +3184,13 @@ export function Workspace(): JSX.Element {
         const { elementsById: cur } = useBimStore.getState();
         const floor = cur[cmd.floorId as string];
         if (floor?.kind === 'floor') {
+          const pointId = cmd.pointId as string;
           useBimStore.setState({
             elementsById: {
               ...cur,
               [floor.id]: {
                 ...floor,
-                slopePoints: (floor.slopePoints ?? []).filter((p) => p.id !== cmd.pointId),
+                slopePoints: (floor.slopePoints ?? []).filter((p) => p.id !== pointId),
               },
             },
           });
@@ -3192,13 +3201,14 @@ export function Workspace(): JSX.Element {
         const { elementsById: cur } = useBimStore.getState();
         const floor = cur[cmd.floorId as string];
         if (floor?.kind === 'floor') {
+          const pointId = cmd.pointId as string;
           useBimStore.setState({
             elementsById: {
               ...cur,
               [floor.id]: {
                 ...floor,
                 slopePoints: (floor.slopePoints ?? []).map((p) =>
-                  p.id === cmd.pointId
+                  p.id === pointId
                     ? { ...p, elevationOffsetMm: cmd.elevationOffsetMm as number }
                     : p,
                 ),

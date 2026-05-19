@@ -36,7 +36,8 @@ describe('Angular / Radial dimension command shapes — §4.1', () => {
   });
 
   it('angular dimension arc radius defaults to 400 if omitted', () => {
-    const arcRadiusMm = undefined ?? 400;
+    const cmd: { arcRadiusMm?: number } = {};
+    const arcRadiusMm = cmd.arcRadiusMm ?? 400;
     expect(arcRadiusMm).toBe(400);
   });
 });

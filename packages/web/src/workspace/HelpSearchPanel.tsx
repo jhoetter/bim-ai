@@ -1,11 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, type ReactElement } from 'react';
 import { searchHelpTopics, HelpTopic } from './helpTopics';
 
 interface HelpSearchPanelProps {
   onClose: () => void;
 }
 
-export function HelpSearchPanel({ onClose }: HelpSearchPanelProps): JSX.Element {
+export function HelpSearchPanel({ onClose }: HelpSearchPanelProps): ReactElement {
   const [query, setQuery] = useState('');
   const results = searchHelpTopics(query);
 

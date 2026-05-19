@@ -1,7 +1,10 @@
 import * as THREE from 'three';
-import type { Element } from '@bim-ai/core';
+import type { FamilyExtrusion } from '@bim-ai/core';
 
-type FamilyExtrusionEl = Extract<Element, { kind: 'family_extrusion' }>;
+type FamilyExtrusionEl = FamilyExtrusion & {
+  widthMm?: number;
+  heightMm?: number;
+};
 
 /**
  * Builds a rectangular window frame mesh:

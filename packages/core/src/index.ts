@@ -3592,6 +3592,18 @@ export type Element =
       levelId?: string | null;
     }
   | {
+      kind: 'family_extrusion';
+      id: string;
+      name?: string | null;
+      profilePoints: { x: number; y: number }[];
+      depthMm: number;
+      frameInnerWidthMm?: number;
+      frameSillDepthMm?: number;
+      isGlazing?: boolean;
+      glazingMaterialKey?: string;
+      levelId?: string | null;
+    }
+  | {
       kind: 'family_blend';
       id: string;
       name?: string | null;
@@ -3978,6 +3990,9 @@ export type Element =
       normalDeg?: number;
       levelId: string;
     };
+
+export type FloorElem = Extract<Element, { kind: 'floor' }>;
+export type RailingElem = Extract<Element, { kind: 'railing' }>;
 
 export type Violation = {
   ruleId: string;

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { type ReactElement } from 'react';
 
 import { useBimStore } from '../state/store';
 
@@ -10,7 +10,7 @@ interface QuickAccessToolbarProps {
 export function QuickAccessToolbar({
   onInvokeCommand,
   onRemoveFromQAT,
-}: QuickAccessToolbarProps): JSX.Element | null {
+}: QuickAccessToolbarProps): ReactElement | null {
   const quickAccessItems = useBimStore((s: any) => s.quickAccessItems ?? []);
 
   if (quickAccessItems.length === 0) return null;

@@ -15,7 +15,8 @@ describe('FamilyOpeningCut — §15.1.3', () => {
   });
 
   it('sillOffsetMm defaults to 0 when omitted', () => {
-    const sillOffsetMm = undefined ?? 0;
+    const cmd: { sillOffsetMm?: number } = {};
+    const sillOffsetMm = cmd.sillOffsetMm ?? 0;
     expect(sillOffsetMm).toBe(0);
   });
 

@@ -153,7 +153,7 @@ Observed results:
 | Prettier check            | Pass                                   | Matched configured TS/JS/JSON/YAML set. Markdown is not included.                                              |
 | Python ruff via `uv run`  | Pass                                   | `uv run ruff check bim_ai tests scripts` is green.                                                             |
 | Frontend unit tests       | Pass                                   | `669` test files / `5462` tests passed in the sampled run, with noisy stderr warnings.                         |
-| Frontend typecheck        | Fail                                   | `@bim-ai/web` has real source type errors.                                                                     |
+| Frontend typecheck        | Pass                                   | Restored on 2026-05-19; `@bim-ai/web` compiles under the strict project config.                                |
 | Narrow backend test       | Assertions pass, command exits nonzero | Project-wide coverage gate applies to narrow test runs, so a focused route test exits with coverage below 65%. |
 | Makefile Python ruff path | Broken in this checkout                | `app/.venv/bin/ruff` is missing, while `uv run ruff` works.                                                    |
 
@@ -197,7 +197,7 @@ Largest current source files observed:
 
 | ID         | Priority | Status  | Theme                                     | Exit signal                                                                              |
 | ---------- | -------- | ------- | ----------------------------------------- | ---------------------------------------------------------------------------------------- |
-| CQ-2026-01 | P0       | Open    | Frontend typecheck                        | `pnpm --filter @bim-ai/web typecheck` passes.                                            |
+| CQ-2026-01 | P0       | Done    | Frontend typecheck                        | `pnpm --filter @bim-ai/web typecheck` passes.                                            |
 | CQ-2026-02 | P0       | Open    | Verification command consistency          | `make verify` and `pnpm verify:strict` are both reliable or clearly documented.          |
 | CQ-2026-03 | P0       | Open    | Test noise and hidden warnings            | Default test runs do not emit repeated React/jsdom/fetch warnings.                       |
 | CQ-2026-04 | P1       | Open    | Source monolith reduction                 | Active extraction plans and first slices landed for the top churn files.                 |
@@ -223,7 +223,7 @@ Largest current source files observed:
 ## CQ-2026-01 - Restore Frontend Typecheck
 
 Priority: P0
-Status: Open
+Status: Done
 Owner area: `packages/web`, `packages/core`
 
 ### Problem
@@ -264,6 +264,14 @@ Observed examples:
 2. Normalize `ToolId` versus `PlanTool` boundaries.
 3. Repair `InspectorContent` option typing and unreachable discriminants.
 4. Re-run `pnpm --filter @bim-ai/web typecheck`.
+
+### Completion Evidence
+
+- 2026-05-19: `pnpm --filter @bim-ai/web typecheck` passes.
+- 2026-05-19: `pnpm --filter @bim-ai/web test -- --run` passes
+  `669` files / `5462` tests, while still exposing the CQ-2026-03 warning-noise
+  backlog.
+- Remaining structural type-model cleanup is tracked under CQ-2026-05.
 
 ---
 

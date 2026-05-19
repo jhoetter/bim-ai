@@ -16,7 +16,13 @@ describe('FamilyComponent — §15.1.2', () => {
   });
 
   it('rotationDeg defaults to 0 when omitted', () => {
-    const cmd = {
+    const cmd: {
+      type: 'addFamilyComponent';
+      familyId: string;
+      componentTypeId: string;
+      originMm: { xMm: number; yMm: number; zMm: number };
+      rotationDeg?: number;
+    } = {
       type: 'addFamilyComponent' as const,
       familyId: 'fam-01',
       componentTypeId: 'hinge',
