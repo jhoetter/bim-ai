@@ -39,6 +39,51 @@ function normalizeStringArray(value) {
   );
 }
 
+function normalizeSourceCommandRefs(...values) {
+  const refs = [];
+  for (const value of values) {
+    const rows = Array.isArray(value) ? value : value == null ? [] : [value];
+    for (const row of rows) {
+      if (!isObject(row)) continue;
+      const sourceCommandId = pickFirstString(row.sourceCommandId, row.commandId, row.id);
+      if (!sourceCommandId) continue;
+      const ref = { sourceCommandId };
+      for (const key of [
+        'commandType',
+        'transactionId',
+        'revisionAfter',
+        'affectedElementId',
+        'sourceRecipeRow',
+        'agentWave',
+        'commit',
+        'phasePacketId',
+      ]) {
+        const normalized = asTrimmedString(row[key]);
+        if (normalized) ref[key] = normalized;
+      }
+      refs.push(ref);
+    }
+  }
+
+  const byKey = new Map();
+  for (const ref of refs) {
+    byKey.set(
+      [
+        ref.sourceCommandId,
+        ref.affectedElementId ?? '',
+        ref.transactionId ?? '',
+        ref.phasePacketId ?? '',
+      ].join('|'),
+      ref,
+    );
+  }
+  return [...byKey.values()].sort((a, b) =>
+    `${a.sourceCommandId}:${a.affectedElementId ?? ''}`.localeCompare(
+      `${b.sourceCommandId}:${b.affectedElementId ?? ''}`,
+    ),
+  );
+}
+
 function normalizeSeverity(value) {
   const severity = asTrimmedString(value).toLowerCase();
   return VALID_SEVERITIES.has(severity) ? severity : 'info';
@@ -101,6 +146,25 @@ function normalizeDiagnostic(rawDiagnostic, index, defaults = {}) {
     raw.elementId,
     raw.hostElementId,
   ]);
+  const directSourceCommandId = pickFirstString(
+    raw.sourceCommandId,
+    raw.commandId,
+    evidence.sourceCommandId,
+    evidence.commandId,
+  );
+  const sourceCommands = normalizeSourceCommandRefs(
+    raw.sourceCommands,
+    evidence.sourceCommands,
+    directSourceCommandId
+      ? {
+          sourceCommandId: directSourceCommandId,
+          sourceRecipeRow: raw.sourceRecipeRow ?? evidence.sourceRecipeRow,
+          agentWave: raw.agentWave ?? evidence.agentWave,
+          commit: raw.commit ?? evidence.commit,
+          phasePacketId: raw.phasePacketId ?? evidence.phasePacketId,
+        }
+      : null,
+  );
 
   return {
     diagnosticId: pickFirstString(raw.diagnosticId, raw.id, `${code}#${index}`),
@@ -116,6 +180,11 @@ function normalizeDiagnostic(rawDiagnostic, index, defaults = {}) {
     message: pickFirstString(raw.message, raw.summary, 'Renderer diagnostic reported.'),
     source: pickFirstString(raw.source, evidence.source, defaults.source, 'renderer'),
     trackerItems: normalizeStringArray(raw.trackerItems),
+    sourceCommandIds: normalizeStringArray([
+      ...normalizeStringArray(raw.sourceCommandIds),
+      ...sourceCommands.map((entry) => entry.sourceCommandId),
+    ]),
+    sourceCommands,
     staleReasons: Array.isArray(raw.staleReasons) ? raw.staleReasons : [],
     details: isObject(raw.details) ? raw.details : {},
   };
@@ -224,6 +293,9 @@ export function buildRendererDiagnosticsEvidenceManifest({
     viewIds: normalizeStringArray(normalizedDiagnostics.flatMap((entry) => entry.viewIds)),
     featureIds: normalizeStringArray(normalizedDiagnostics.flatMap((entry) => entry.featureIds)),
     elementIds: normalizeStringArray(normalizedDiagnostics.flatMap((entry) => entry.elementIds)),
+    sourceCommandIds: normalizeStringArray(
+      normalizedDiagnostics.flatMap((entry) => entry.sourceCommandIds),
+    ),
     diagnostics: normalizedDiagnostics,
     summary: summarizeRendererDiagnosticsEvidence(normalizedDiagnostics),
     staleReasons: Array.isArray(staleReasons) ? staleReasons : [],

@@ -45,6 +45,11 @@ export type RendererDiagnosticEvidence = {
   screenshotPath?: string | null;
   artifactPath?: string | null;
   commandId?: string | null;
+  sourceCommandId?: string | null;
+  sourceRecipeRow?: string | null;
+  agentWave?: string | null;
+  commit?: string | null;
+  phasePacketId?: string | null;
   source?: 'viewport' | 'plan' | 'sheet' | 'export' | 'sketch-acceptance' | 'test';
   details?: Record<string, string | number | boolean | null>;
 };

@@ -61,6 +61,44 @@ test('normalizes renderer diagnostics packets into evidence manifests', () => {
   assert.equal(manifest.summary.blockingCandidates, 1);
 });
 
+test('preserves renderer finding source command provenance', () => {
+  const manifest = normalizeRendererDiagnosticsEvidence({
+    gitHead: 'abc123',
+    modelRevision: 42,
+    rendererBuild: 'viewport-dev-20260519',
+    supportMatrixDigest: 'rsm-00000001',
+    diagnostics: [
+      {
+        ruleId: 'renderer_unsupported_cut',
+        code: 'renderer.wall_cut.failed',
+        severity: 'error',
+        issueClass: 'renderer-failed',
+        rendererArea: 'boolean-cut',
+        feature: 'wall-cut',
+        elementIds: ['door-orphan'],
+        sourceCommandId: 'sketch-door-42',
+        sourceRecipeRow: 'recipe.csv:12',
+        agentWave: 'wave-21-e',
+        commit: 'abc123',
+        phasePacketId: 'phase-packet-7',
+        message: 'Hosted wall cut could not be rendered.',
+      },
+    ],
+  });
+
+  assert.deepEqual(manifest.sourceCommandIds, ['sketch-door-42']);
+  assert.deepEqual(manifest.diagnostics[0].sourceCommandIds, ['sketch-door-42']);
+  assert.deepEqual(manifest.diagnostics[0].sourceCommands, [
+    {
+      sourceCommandId: 'sketch-door-42',
+      sourceRecipeRow: 'recipe.csv:12',
+      agentWave: 'wave-21-e',
+      commit: 'abc123',
+      phasePacketId: 'phase-packet-7',
+    },
+  ]);
+});
+
 test('blocks sketch acceptance when required feature has renderer unsupported diagnostic', () => {
   const manifest = buildRendererDiagnosticsEvidenceManifest({
     gitHead: 'abc123',
