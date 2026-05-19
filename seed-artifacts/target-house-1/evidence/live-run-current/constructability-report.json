@@ -31,13 +31,13 @@
       "summary": {
         "checkCount": 10,
         "totalFindingCount": 6,
-        "totalElapsedMs": 145.45
+        "totalElapsedMs": 151.038
       },
       "ruleTimings": [
         {
           "checkId": "advisor.evaluate_constructability_rules",
           "layer": "advisor",
-          "elapsedMs": 111.724,
+          "elapsedMs": 109.936,
           "findingCount": 0,
           "candidateElementCount": 157,
           "impactedElementCount": 0,
@@ -46,7 +46,7 @@
         {
           "checkId": "constructability.clearance",
           "layer": "constructability",
-          "elapsedMs": 2.543,
+          "elapsedMs": 2.4,
           "findingCount": 0,
           "candidateElementCount": 157,
           "impactedElementCount": 0,
@@ -55,7 +55,7 @@
         {
           "checkId": "constructability.metadata_requirements",
           "layer": "constructability",
-          "elapsedMs": 0.154,
+          "elapsedMs": 0.14,
           "findingCount": 0,
           "candidateElementCount": 157,
           "impactedElementCount": 0,
@@ -64,7 +64,7 @@
         {
           "checkId": "model_integrity.constructability_errors",
           "layer": "model_integrity",
-          "elapsedMs": 22.118,
+          "elapsedMs": 29.821,
           "findingCount": 0,
           "candidateElementCount": 157,
           "impactedElementCount": 0,
@@ -73,42 +73,42 @@
         {
           "checkId": "domain_integrity.room_access",
           "layer": "domain_integrity",
-          "elapsedMs": 3.03,
+          "elapsedMs": 2.952,
           "findingCount": 6,
           "candidateElementCount": 157
         },
         {
           "checkId": "domain_integrity.vertical_circulation",
           "layer": "domain_integrity",
-          "elapsedMs": 0.328,
+          "elapsedMs": 0.228,
           "findingCount": 0,
           "candidateElementCount": 157
         },
         {
           "checkId": "domain_integrity.envelope",
           "layer": "domain_integrity",
-          "elapsedMs": 1.404,
+          "elapsedMs": 1.272,
           "findingCount": 0,
           "candidateElementCount": 157
         },
         {
           "checkId": "domain_integrity.structure_mep_lite",
           "layer": "domain_integrity",
-          "elapsedMs": 1.575,
+          "elapsedMs": 1.395,
           "findingCount": 0,
           "candidateElementCount": 157
         },
         {
           "checkId": "domain_integrity.code_profile",
           "layer": "domain_integrity",
-          "elapsedMs": 0.448,
+          "elapsedMs": 0.627,
           "findingCount": 0,
           "candidateElementCount": 157
         },
         {
           "checkId": "domain_integrity.site_georeferencing",
           "layer": "domain_integrity",
-          "elapsedMs": 1.476,
+          "elapsedMs": 1.584,
           "findingCount": 0,
           "candidateElementCount": 157
         }

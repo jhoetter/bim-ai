@@ -1555,6 +1555,8 @@ def _unit_coordinate_findings(element: Any) -> list[ModelIntegrityFinding]:
     for field in FINITE_LENGTH_FIELDS:
         if _field_present(element, field):
             value = _read(element, field)
+            if value is None:
+                continue
             if not _is_finite_number(value):
                 findings.append(
                     ModelIntegrityFinding(

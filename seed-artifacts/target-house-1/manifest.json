@@ -15,12 +15,12 @@
   "acceptance": {
     "status": "offline-refreshed-current-evidence",
     "evidenceRoot": "evidence/live-run-current",
-    "gitHead": "dc579e467341a4b35dc1ad993731e722e077ff96",
+    "gitHead": "9746652589532345ee28c234d7418fcfa011042b",
     "bundleSha256": "006d07ef84f80a183ea2f028cbc6b9f16eda3cc24996e5cfc448dd1bf44a6956",
     "irSha256": "34757eba0ab4784e91a66232205294ac7cf1c7504bc3701c42b76ed3ffb7bf8e",
     "capabilitiesSha256": "e3faa00d4724d5e375ee853d5e3d56b21254a969a84e702d67013a8bb0125dbb",
-    "advisorRuleDigest": "1aa170dfb839085d66de9f2b64956e1e4348a11c2f809a5337dd22176ac343e5",
-    "generatedAtEpochMs": 1779195185994,
+    "advisorRuleDigest": "6d714bc94a3a04d8250d35e99bda9ccde010fa626fb69a2a7cfa98c26bbb7acd",
+    "generatedAtEpochMs": 1779197900890,
     "notes": "Deterministic offline evidence was regenerated from seed-artifacts/target-house-1/bundle.json. Clean-pass, geometry, semantic visual, final-package, and live/browser acceptance are tracked in evidence/live-run-current."
   },
   "inputPaths": {

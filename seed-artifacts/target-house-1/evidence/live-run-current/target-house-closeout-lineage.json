@@ -3,16 +3,16 @@
   "seed": "target-house-1",
   "generatedAt": "1970-01-01T00:00:00.000Z",
   "git": {
-    "currentHead": "dc579e467341a4b35dc1ad993731e722e077ff96",
-    "evidenceHead": "dc579e467341a4b35dc1ad993731e722e077ff96",
+    "currentHead": "9746652589532345ee28c234d7418fcfa011042b",
+    "evidenceHead": "9746652589532345ee28c234d7418fcfa011042b",
     "dirtyCheckPolicy": "Report records source/evidence digests and git heads; concurrent dirty files are not normalized."
   },
   "paths": {
     "repoRoot": "/Users/jhoetter/repos/bim-ai",
     "evidenceDir": "seed-artifacts/target-house-1/evidence/live-run-current",
     "requiredFeatures": "spec/generated/target-house-1-required-features.json",
-    "performanceEvidence": "scripts/target-house-final-package.mjs#buildTargetHousePerformanceEvidence",
-    "finalManifest": "scripts/target-house-final-package.mjs#buildTargetHouseFinalCloseoutManifest"
+    "performanceEvidence": "tmp/target-house-final-package/target-house-1/target-house-1-performance-evidence.json",
+    "finalManifest": "tmp/target-house-final-package/target-house-1/target-house-1-final-closeout-manifest.json"
   },
   "loadErrors": {
     "performanceEvidence": null,
@@ -25,18 +25,18 @@
     "spec/target-house/target-house-1-bim-information-requirements.md": "sha256:c32bc404b321d720fec7092b7877701279f02e1ccd336005b88e80ec4abae7dc",
     "spec/target-house/target-house-1-phase-plan.md": "sha256:a9f6b7d533e0434655c49d88a69299e90aeef9e120fb6f410b88fc007eba372a",
     "bundle": "sha256:006d07ef84f80a183ea2f028cbc6b9f16eda3cc24996e5cfc448dd1bf44a6956",
-    "snapshot": "sha256:0aee3b582c9a656a050b91210ccbf1dabf4deff56ed503f28336f38585ee3e29",
-    "advisorRuleDigest": "sha256:1aa170dfb839085d66de9f2b64956e1e4348a11c2f809a5337dd22176ac343e5",
+    "snapshot": "sha256:5011bd0c46e13973c136a9c9cfcab2c3539e9a23e0eb4a82b4a2665f9b460391",
+    "advisorRuleDigest": "sha256:6d714bc94a3a04d8250d35e99bda9ccde010fa626fb69a2a7cfa98c26bbb7acd",
     "capabilities": "sha256:e3faa00d4724d5e375ee853d5e3d56b21254a969a84e702d67013a8bb0125dbb",
-    "finalManifest": "sha256:cc812853081b36376a15fea93f80746439a1748f759888c9c4dfa55d42bcb3f5",
-    "performanceEvidence": "sha256:fa050aeeaa60bd6b6ce303bfabd2671806134ba59956ab7034e1b1600f941b27"
+    "finalManifest": "sha256:4cd618b5d65e18c66c15f562e62f0d02295ac01f936b33c2851fa3c017cd07f6",
+    "performanceEvidence": "sha256:2cf0772301bbf22b08e5ef4316ec80e389724e4f94164aa777cb5c8970006527"
   },
   "evidenceFiles": [
     {
       "key": "tool_run_summary",
       "path": "seed-artifacts/target-house-1/evidence/live-run-current/tool-run-summary.json",
       "present": true,
-      "sha256": "sha256:6719510d0ddd2abcac86a509d38d1054ac55de91e225cb339a911cf993169d21",
+      "sha256": "sha256:d4f6893a28e3f76317da7d3896b50864bc9bf03868174186ef97b4a4f4514d01",
       "schemaVersion": "sketch-to-bim.tool-run.v1",
       "status": "present",
       "summary": null
@@ -45,7 +45,7 @@
       "key": "evidence_manifest",
       "path": "seed-artifacts/target-house-1/evidence/live-run-current/evidence-manifest.json",
       "present": true,
-      "sha256": "sha256:db5929f3fc905be8c29c7f3dfe775c020e3a76c44996d5f4b87fbf4cd8d6c5d3",
+      "sha256": "sha256:96ea1e53c7a10dac061b23f68dab77833a2a9de2db361d20bebb145ba9cf0c5c",
       "schemaVersion": "sketch.evidence.collection.v1",
       "status": "present",
       "summary": {
@@ -58,7 +58,7 @@
       "key": "snapshot",
       "path": "seed-artifacts/target-house-1/evidence/live-run-current/snapshot.json",
       "present": true,
-      "sha256": "sha256:0aee3b582c9a656a050b91210ccbf1dabf4deff56ed503f28336f38585ee3e29",
+      "sha256": "sha256:5011bd0c46e13973c136a9c9cfcab2c3539e9a23e0eb4a82b4a2665f9b460391",
       "schemaVersion": null,
       "status": "present",
       "summary": null
@@ -120,7 +120,7 @@
       "key": "constructability_report",
       "path": "seed-artifacts/target-house-1/evidence/live-run-current/constructability-report.json",
       "present": true,
-      "sha256": "sha256:9035678c177fa1620acb1d529c48560563dbf297491fc835dbddb31e9eaf5493",
+      "sha256": "sha256:f7d698afeb9f247045192170e60fc159d30db921c15bfd7d1da9faa490343575",
       "schemaVersion": "constructabilityReport_v1",
       "status": "pass",
       "summary": {
@@ -133,7 +133,7 @@
       "key": "geometry_diagnostic",
       "path": "seed-artifacts/target-house-1/evidence/live-run-current/target-house-geometry-diagnostic.json",
       "present": true,
-      "sha256": "sha256:1f8c16e34fda3517a5683082d9b606e508fd6384d00e79359ee710aabd8c0ae7",
+      "sha256": "sha256:d0df768be9d2f14ff9595c8b823c2df94b1cebeac519432ab99f45238e53b71c",
       "schemaVersion": "target-house-current-geometry-diagnostic.v1",
       "status": "present",
       "summary": {
@@ -159,7 +159,7 @@
       "key": "visual_evidence_contract",
       "path": "seed-artifacts/target-house-1/evidence/live-run-current/visual-evidence-contract.json",
       "present": true,
-      "sha256": "sha256:1c6c2988605c13bda9efff1913607e5b5fe4c743ab035e99148824f73b1645c7",
+      "sha256": "sha256:2fe30e501ff22cbd34a2d64bfd37aeec83b9efe9ea4d10e839ce249db5a05aa6",
       "schemaVersion": "sketch.visual-evidence-contract.v1",
       "status": "present",
       "summary": null
@@ -168,7 +168,7 @@
       "key": "bim_data_quality",
       "path": "seed-artifacts/target-house-1/evidence/live-run-current/bim-data-quality.json",
       "present": true,
-      "sha256": "sha256:c76fade97a03af010684463e2b5bc19fa2046f2adc4a84852091296ac20a3ce8",
+      "sha256": "sha256:9ceaf6abb00bbd0ba44ee2c4cc926115a4af472cdacb8641d0956d2e1d164a9f",
       "schemaVersion": "sketch.bim-data-quality.v1",
       "status": "pass",
       "summary": {
@@ -182,7 +182,7 @@
       "key": "export_validation",
       "path": "seed-artifacts/target-house-1/evidence/live-run-current/export-validation.json",
       "present": true,
-      "sha256": "sha256:d52064cfcd34547bae70de78629b5da687dd38cd88af7bbf28edf24d82dd597a",
+      "sha256": "sha256:79ce28da1b0259866421bb4b467e0e273457d14a19130fb7f50a5c37735c1477",
       "schemaVersion": "sketch.exchange-validation.v1",
       "status": "pass",
       "summary": {
@@ -196,7 +196,7 @@
       "key": "tolerance_ledger",
       "path": "seed-artifacts/target-house-1/evidence/live-run-current/tolerance-ledger.json",
       "present": true,
-      "sha256": "sha256:ff8daa0785aca99f3d22e39d717e018ac137d40842aa591944e39177d9c4796e",
+      "sha256": "sha256:44913c0c87adf9532fe0b0b1746dafb0db998ace54b6a6168ea48a2e87ed9aa6",
       "schemaVersion": "sketch.tolerance-ledger.v1",
       "status": "pass",
       "summary": {
@@ -219,7 +219,7 @@
       "key": "clean_pass_gate",
       "path": "seed-artifacts/target-house-1/evidence/live-run-current/clean-pass-gate.json",
       "present": true,
-      "sha256": "sha256:8d72c5fc89b2af2ff76e399e7786125e14b505feebbfd07138969d5e42cfdd79",
+      "sha256": "sha256:4edeea312bf51e112a59817f9019ba6ec55c4d912b98550e82785e17b5386310",
       "schemaVersion": "target-house.clean-pass-gate.v1",
       "status": "pass",
       "summary": {
@@ -284,7 +284,7 @@
     "performance": {
       "present": true,
       "ok": true,
-      "digestSha256": "fa050aeeaa60bd6b6ce303bfabd2671806134ba59956ab7034e1b1600f941b27",
+      "digestSha256": "2cf0772301bbf22b08e5ef4316ec80e389724e4f94164aa777cb5c8970006527",
       "interactions": [
         {
           "interaction": "orbit",
@@ -652,5 +652,5 @@
     }
   ],
   "ready": false,
-  "lineageDigestSha256": "d2eeca03270f4466a1148ba21eb6b3681639e6b822b17c9a30234c8221d02d45"
+  "lineageDigestSha256": "0438a2d13477f758ffacef4a0ab1d9a3fb4974cd7be49f3beabbf73084e1be1a"
 }

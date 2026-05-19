@@ -370,6 +370,8 @@ def test_units_and_coordinate_normalization_findings_are_deterministic() -> None
                     "levelId": "lvl-1",
                     "start": {"xMm": 0, "yMm": 0},
                     "end": {"xMm": 1000, "yMm": 0},
+                    "widthMm": None,
+                    "heightMm": None,
                 },
             }
         }
