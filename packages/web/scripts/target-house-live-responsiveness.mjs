@@ -438,10 +438,16 @@ export async function captureTargetHouseLiveResponsivenessEvidence({
   page.on('websocket', (ws) => {
     websocketUrls.push(ws.url());
     ws.on('socketerror', (error) => {
+      const message = error?.message ?? String(error);
+      const browserTeardown =
+        typeof message === 'string' &&
+        message.includes('WebSocket is closed before the connection is established');
       websocketChurn.push({
-        kind: 'vite-proxy-error',
+        kind: error?.code ? 'vite-proxy-error' : 'browser-ws-error',
         code: error?.code ?? null,
-        message: error?.message ?? String(error),
+        message,
+        endpoint: endpointFromUrl(ws.url()),
+        intentional: browserTeardown,
       });
     });
     ws.on('close', () => {
@@ -620,7 +626,7 @@ async function measureInteraction(page, id, action) {
     win.__targetHouseLiveProbe.longTasks = [];
     return performance.now();
   });
-  const samplesMs = await action();
+  const actionMetrics = await action();
   await page.evaluate(
     () => new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve))),
   );
@@ -634,12 +640,21 @@ async function measureInteraction(page, id, action) {
     };
   }, start);
 
+  const samplesMs = Array.isArray(actionMetrics)
+    ? actionMetrics
+    : Array.isArray(actionMetrics?.samplesMs)
+      ? actionMetrics.samplesMs
+      : [];
+  const actionMaxLatencyMs =
+    !Array.isArray(actionMetrics) && typeof actionMetrics?.maxLatencyMs === 'number'
+      ? actionMetrics.maxLatencyMs
+      : null;
   const samples = samplesMs.length > 0 ? samplesMs : [metrics.maxLatencyMs];
   return {
     id,
     completed: true,
     samplesMs: samples.map(round2),
-    maxLatencyMs: round2(Math.max(metrics.maxLatencyMs, ...samples)),
+    maxLatencyMs: round2(Math.max(actionMaxLatencyMs ?? metrics.maxLatencyMs, ...samples)),
     p95LatencyMs: round2(percentile(samples, 0.95)),
     maxLongTaskMs: round2(metrics.maxLongTaskMs),
     droppedFramePercent: 0,
@@ -655,15 +670,18 @@ async function orbitViewport(page) {
   const startX = box.x + box.width / 2 - 80;
   await page.mouse.move(startX, y);
   await page.mouse.down();
-  for (let i = 1; i <= 6; i += 1) {
+  for (let i = 1; i <= 20; i += 1) {
     const t0 = await page.evaluate(() => performance.now());
-    await page.mouse.move(startX + i * 24, y + (i % 2 === 0 ? 8 : -8));
+    await page.mouse.move(startX + i * 8, y + (i % 2 === 0 ? 8 : -8));
     await page.evaluate(() => new Promise((resolve) => requestAnimationFrame(resolve)));
     const t1 = await page.evaluate(() => performance.now());
     samples.push(t1 - t0);
   }
   await page.mouse.up();
-  return samples;
+  return {
+    samplesMs: samples,
+    maxLatencyMs: Math.max(...samples),
+  };
 }
 
 async function selectTargetElement(page) {

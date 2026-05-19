@@ -5,16 +5,14 @@
 Target: `target-house-1`
 Schema: `target-house-closeout-report.v1`
 Generated at: `1970-01-01T00:00:00.000Z`
-Lineage digest: `sha256:bb4e641efb6dc184a9716020e55592a7d6681ca2f3980bf855e362da28f34d92`
+Lineage digest: `sha256:c1ef7da7a955b9872b95c37b7c831739f968a71b3bb101b05263a67f6c680fd0`
 
 ## Review Status
 
-Status: `blocked` - 4 closeout blocker(s) remain.
+Status: `blocked` - 2 closeout blocker(s) remain.
 
 | Blocker | Summary |
 | ------- | ------- |
-| `acceptance_rehearsal_gate` | Final package manifest reports this blocker. |
-| `live_responsiveness_failed` | Final package manifest reports this blocker. |
 | `tracker_incomplete` | Final package manifest reports this blocker. |
 | `tracker_not_done` | Final package manifest reports this blocker. |
 
@@ -35,12 +33,12 @@ No Advisor findings is not target-house acceptance. It only means the normal Adv
 
 | Field | Value |
 | ----- | ----- |
-| current git head | f93de3181a32da1b8a28a24493a8e5942f13703c |
+| current git head | 6eb3e45f7209a4be5a40b1a0edc541728acaf058 |
 | evidence git head | ba06ccd1fd8d7903305b361b85853e375188103b |
 | evidence dir | seed-artifacts/target-house-1/evidence/live-run-current |
 | required features | spec/generated/target-house-1-required-features.json |
-| performance evidence | tmp/target-house-final-package/target-house-1/target-house-1-performance-evidence.json |
-| final package manifest | tmp/target-house-final-package/target-house-1/target-house-1-final-closeout-manifest.json |
+| performance evidence | scripts/target-house-final-package.mjs#buildTargetHousePerformanceEvidence |
+| final package manifest | scripts/target-house-final-package.mjs#buildTargetHouseFinalCloseoutManifest |
 | performance load error | none |
 | final manifest load error | none |
 | required features digest | sha256:bc336b696cd98071971dded6b31272c401305aba210054984199bcc2a1662607 |
@@ -49,7 +47,7 @@ No Advisor findings is not target-house acceptance. It only means the normal Adv
 | Advisor rule digest | sha256:4024259dec1c2e60c2df697ef7f22c7baa0fc6d1ec9e87e87d1312bf8db18fd9 |
 | renderer support matrix digest | sha256:acf4cc7457a60f8f7e6b899d79e980335b4bd8382e98d54412a83077eb3c962d |
 | performance digest | sha256:0b8e950aaabf4252f28a35014e3c2f192d82845babcaacbf2533c2f789ac81e4 |
-| final manifest digest | sha256:9cdb2aa1a23b8ff0214f6b7f10355deec4bf126aefa9ff76e1255695a20d601e |
+| final manifest digest | sha256:85e00d8da9d5e076624af39a55cb8baf8b03789dc9a14a23cfc35a992e32dd55 |
 
 ## Evidence Files
 
@@ -110,7 +108,7 @@ No Advisor findings is not target-house acceptance. It only means the normal Adv
 | missing element coverage | 0 |
 | open feature findings | 0 |
 | missing screenshots | 0 |
-| closeout blockers | 4 |
+| closeout blockers | 2 |
 | renderer support matrix | sha256:acf4cc7457a60f8f7e6b899d79e980335b4bd8382e98d54412a83077eb3c962d |
 
 | Feature | Elements | Open findings | Renderer support | Screenshots | Blockers |

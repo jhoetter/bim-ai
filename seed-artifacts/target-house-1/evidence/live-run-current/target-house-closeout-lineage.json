@@ -3,7 +3,7 @@
   "seed": "target-house-1",
   "generatedAt": "1970-01-01T00:00:00.000Z",
   "git": {
-    "currentHead": "f93de3181a32da1b8a28a24493a8e5942f13703c",
+    "currentHead": "6eb3e45f7209a4be5a40b1a0edc541728acaf058",
     "evidenceHead": "ba06ccd1fd8d7903305b361b85853e375188103b",
     "dirtyCheckPolicy": "Report records source/evidence digests and git heads; concurrent dirty files are not normalized."
   },
@@ -11,8 +11,8 @@
     "repoRoot": "/Users/jhoetter/repos/bim-ai",
     "evidenceDir": "seed-artifacts/target-house-1/evidence/live-run-current",
     "requiredFeatures": "spec/generated/target-house-1-required-features.json",
-    "performanceEvidence": "tmp/target-house-final-package/target-house-1/target-house-1-performance-evidence.json",
-    "finalManifest": "tmp/target-house-final-package/target-house-1/target-house-1-final-closeout-manifest.json"
+    "performanceEvidence": "scripts/target-house-final-package.mjs#buildTargetHousePerformanceEvidence",
+    "finalManifest": "scripts/target-house-final-package.mjs#buildTargetHouseFinalCloseoutManifest"
   },
   "loadErrors": {
     "performanceEvidence": null,
@@ -29,7 +29,7 @@
     "advisorRuleDigest": "sha256:4024259dec1c2e60c2df697ef7f22c7baa0fc6d1ec9e87e87d1312bf8db18fd9",
     "capabilities": "sha256:e3faa00d4724d5e375ee853d5e3d56b21254a969a84e702d67013a8bb0125dbb",
     "rendererSupportMatrix": "sha256:acf4cc7457a60f8f7e6b899d79e980335b4bd8382e98d54412a83077eb3c962d",
-    "finalManifest": "sha256:9cdb2aa1a23b8ff0214f6b7f10355deec4bf126aefa9ff76e1255695a20d601e",
+    "finalManifest": "sha256:85e00d8da9d5e076624af39a55cb8baf8b03789dc9a14a23cfc35a992e32dd55",
     "performanceEvidence": "sha256:0b8e950aaabf4252f28a35014e3c2f192d82845babcaacbf2533c2f789ac81e4"
   },
   "evidenceFiles": [
@@ -341,72 +341,13 @@
     },
     "finalPackageStatus": {
       "ready": false,
-      "blockers": [
-        "live_responsiveness_failed",
-        "acceptance_rehearsal_gate",
-        "tracker_not_done",
-        "tracker_incomplete"
-      ],
+      "blockers": ["tracker_not_done", "tracker_incomplete"],
       "blockerDetails": [
-        {
-          "code": "live_responsiveness_failed",
-          "category": "performance",
-          "count": 2,
-          "path": "seed-artifacts/target-house-1/evidence/live-run-current/target-house-live-responsiveness.json",
-          "blockerCodes": [
-            "live_responsiveness_failed",
-            "live_responsiveness_interactions_missing"
-          ],
-          "missingInteractions": [
-            "orbit",
-            "select",
-            "lens-switch",
-            "advisor-open",
-            "advisor-close"
-          ],
-          "failedInteractions": ["orbit", "select", "lens-switch", "advisor-open", "advisor-close"],
-          "actionableChurnCount": 0,
-          "liveBrowserProof": {
-            "schemaVersion": "target-house-live-browser-proof.v1",
-            "ok": true,
-            "captureMode": "playwright-live-browser",
-            "capturedAtEpochMs": 1779219839821,
-            "browserEngine": "chromium",
-            "url": "http://127.0.0.1:2000",
-            "requiredHookIds": [
-              "appShell",
-              "orbitViewport",
-              "viewCube",
-              "inspector",
-              "advisorEntry"
-            ],
-            "missingHookIds": [],
-            "blockerCodes": []
-          }
-        },
-        {
-          "code": "acceptance_rehearsal_gate",
-          "category": "rehearsal",
-          "count": 1,
-          "blockerCodes": ["live_responsiveness_failed"],
-          "stages": [
-            {
-              "id": "live_responsiveness",
-              "ok": false,
-              "blockerCode": "live_responsiveness_failed",
-              "detail": "Archived live browser responsiveness evidence must cover orbit, select, lens switch, Advisor open/close, and WebSocket churn."
-            }
-          ]
-        },
         {
           "code": "tracker_not_done",
           "category": "tracker",
-          "count": 2,
+          "count": 1,
           "rows": [
-            {
-              "id": "BIR-N07",
-              "status": "Partial"
-            },
             {
               "id": "BIR-N10",
               "status": "Partial"
@@ -416,13 +357,12 @@
         {
           "code": "tracker_incomplete",
           "category": "tracker",
-          "count": 60,
+          "count": 52,
           "total": 165,
-          "done": 105,
+          "done": 113,
           "byStatus": {
-            "Blocked": 4,
-            "Done": 105,
-            "Partial": 56
+            "Done": 113,
+            "Partial": 52
           },
           "sampleIncompleteRows": [
             {
@@ -480,12 +420,6 @@
               "item": "Detect door/window without rendered or semantic opening cut."
             },
             {
-              "id": "BIR-C06",
-              "priority": "P1",
-              "status": "Partial",
-              "item": "Add opening conflict graph."
-            },
-            {
               "id": "BIR-C07",
               "priority": "P1",
               "status": "Partial",
@@ -500,32 +434,20 @@
             {
               "id": "BIR-F03",
               "priority": "P0",
-              "status": "Blocked",
+              "status": "Partial",
               "item": "Validate envelope closure."
             },
             {
               "id": "BIR-F04",
               "priority": "P1",
-              "status": "Blocked",
+              "status": "Partial",
               "item": "Validate loggia/recessed facade topology."
             },
             {
               "id": "BIR-F06",
               "priority": "P1",
-              "status": "Blocked",
-              "item": "Validate wall/roof attachment and overhang semantics."
-            },
-            {
-              "id": "BIR-G01",
-              "priority": "P0",
-              "status": "Blocked",
-              "item": "Clarify constructability vs structural engineering."
-            },
-            {
-              "id": "BIR-I06",
-              "priority": "P1",
               "status": "Partial",
-              "item": "Add renderer diagnostic persistence."
+              "item": "Validate wall/roof attachment and overhang semantics."
             },
             {
               "id": "BIR-J01",
@@ -544,11 +466,29 @@
               "priority": "P0",
               "status": "Partial",
               "item": "Floor/slab geometry and openings."
+            },
+            {
+              "id": "BIR-J04",
+              "priority": "P0",
+              "status": "Partial",
+              "item": "Stairs and railings."
+            },
+            {
+              "id": "BIR-J05",
+              "priority": "P1",
+              "status": "Partial",
+              "item": "Doors/windows/families."
+            },
+            {
+              "id": "BIR-J06",
+              "priority": "P1",
+              "status": "Partial",
+              "item": "Rooms/spaces visual diagnostics."
             }
           ]
         }
       ],
-      "status": "blocked_live_responsiveness_failed"
+      "status": "blocked_tracker_not_done"
     }
   },
   "features": [
@@ -846,7 +786,7 @@
     "openFindingCount": 0,
     "rendererSupportMatrixDigest": "sha256:acf4cc7457a60f8f7e6b899d79e980335b4bd8382e98d54412a83077eb3c962d",
     "screenshotMissingCount": 0,
-    "blockerCount": 4,
+    "blockerCount": 2,
     "evidenceAcceptanceOk": true,
     "rows": [
       {
@@ -1221,14 +1161,6 @@
   },
   "blockers": [
     {
-      "code": "acceptance_rehearsal_gate",
-      "summary": "Final package manifest reports this blocker."
-    },
-    {
-      "code": "live_responsiveness_failed",
-      "summary": "Final package manifest reports this blocker."
-    },
-    {
       "code": "tracker_incomplete",
       "summary": "Final package manifest reports this blocker."
     },
@@ -1238,5 +1170,5 @@
     }
   ],
   "ready": false,
-  "lineageDigestSha256": "bb4e641efb6dc184a9716020e55592a7d6681ca2f3980bf855e362da28f34d92"
+  "lineageDigestSha256": "c1ef7da7a955b9872b95c37b7c831739f968a71b3bb101b05263a67f6c680fd0"
 }

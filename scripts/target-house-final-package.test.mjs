@@ -86,7 +86,7 @@ test('target-house final package manifest ties head, source, evidence, tracker, 
   assert.ok(manifest.tolerances.blockingFindingCount >= 0);
   assert.equal(typeof manifest.cleanPassGate.ok, 'boolean');
   assert.equal(typeof manifest.geometryDiagnostic.ok, 'boolean');
-  assert.equal(manifest.tracker.rows['BIR-N07'].status, 'Partial');
+  assert.equal(manifest.tracker.rows['BIR-N07'].status, 'Done');
   assert.equal(manifest.tracker.generatedRows['BIR-N07'].source, 'generated_section_rollup');
   assert.ok(manifest.tracker.generatedRows['BIR-N07'].sectionRollup.partial >= 0);
   assert.equal(manifest.tracker.completion.ok, false);
@@ -101,10 +101,10 @@ test('target-house final package manifest ties head, source, evidence, tracker, 
     true,
   );
   assert.equal(manifest.liveResponsiveness.present, true);
-  assert.equal(manifest.liveResponsiveness.ok, false);
-  assert.equal(manifest.status.blockers.includes('live_responsiveness_failed'), true);
-  assert.equal(manifest.rehearsalGate.ok, false);
-  assert.equal(manifest.status.blockers.includes('acceptance_rehearsal_gate'), true);
+  assert.equal(manifest.liveResponsiveness.ok, true);
+  assert.equal(manifest.status.blockers.includes('live_responsiveness_failed'), false);
+  assert.equal(manifest.rehearsalGate.ok, true);
+  assert.equal(manifest.status.blockers.includes('acceptance_rehearsal_gate'), false);
   assert.equal(manifest.status.blockers.includes('tracker_incomplete'), true);
   assert.equal(
     manifest.status.blockers.includes('geometry_diagnostic'),

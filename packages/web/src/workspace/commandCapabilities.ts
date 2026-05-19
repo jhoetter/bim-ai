@@ -178,8 +178,12 @@ export interface CommandExposureViolation {
 
 const IDENTITY_T = ((key: string) => key) as unknown as TFunction;
 
+let commandCapabilitiesCache: CommandCapability[] | null = null;
+let commandCapabilityByIdCache: Map<string, CommandCapability> | null = null;
+
 export function getAllCommandCapabilities(): CommandCapability[] {
-  return [
+  if (commandCapabilitiesCache) return commandCapabilitiesCache;
+  commandCapabilitiesCache = [
     ...buildToolCapabilities(),
     ...NAVIGATION_CAPABILITIES,
     ...SYSTEM_CAPABILITIES,
@@ -191,10 +195,16 @@ export function getAllCommandCapabilities(): CommandCapability[] {
     ...VISIBILITY_CAPABILITIES,
     ...MASS_CAPABILITIES,
   ].map(withCommandCapabilityMetadata);
+  return commandCapabilitiesCache;
 }
 
 export function getCommandCapability(id: string): CommandCapability | undefined {
-  return getAllCommandCapabilities().find((capability) => capability.id === id);
+  if (!commandCapabilityByIdCache) {
+    commandCapabilityByIdCache = new Map(
+      getAllCommandCapabilities().map((capability) => [capability.id, capability]),
+    );
+  }
+  return commandCapabilityByIdCache.get(id);
 }
 
 export function capabilityIdForTool(toolId: ToolId): string {
