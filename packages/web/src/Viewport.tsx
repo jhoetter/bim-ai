@@ -153,7 +153,7 @@ import {
 } from './viewport/grip3dRenderer';
 import { makePlacedAssetMesh } from './viewport/placedAssetRendering';
 import { makeFamilyInstanceMesh } from './viewport/familyInstance3d';
-import { makeCsgWallMaterial } from './viewport/csgWallMaterial';
+import { applyCsgWallFaceMaterialGroups, makeCsgWallMaterial } from './viewport/csgWallMaterial';
 import { materialDependencyDirtyIds } from './viewport/materialDependencyInvalidation';
 import { applyTextureVisibilityToMesh } from './viewport/visualStyleMaterials';
 import {
@@ -605,6 +605,7 @@ export function Viewport({
         height: number;
         thick: number;
         materialKey?: string | null;
+        wall?: WallElem;
         retainExisting?: boolean;
       }
     >
@@ -1144,10 +1145,18 @@ export function Viewport({
       if (data.normal) geom.setAttribute('normal', new THREE.BufferAttribute(data.normal, 3));
       if (data.uv) geom.setAttribute('uv', new THREE.BufferAttribute(data.uv, 2));
       if (data.index) geom.setIndex(new THREE.BufferAttribute(data.index, 1));
+      if (csgMeta?.wall) {
+        applyCsgWallFaceMaterialGroups(geom, {
+          lenM: csgMeta.len,
+          heightM: csgMeta.height,
+          thickM: csgMeta.thick,
+        });
+      }
 
       const renderStyleNow = viewerRenderStyleRef.current;
       const { material: wallMat } = makeCsgWallMaterial({
         materialKey: csgMeta?.materialKey,
+        wall: csgMeta?.wall,
         paint: paintBundleRef.current,
         elementsById: elementsByIdRef.current,
         lenM: csgMeta?.len ?? 1,
@@ -4319,6 +4328,7 @@ export function Viewport({
               height,
               thick,
               materialKey: csgWallSurfaceMaterialKey(e, curr),
+              wall: e,
               retainExisting,
             });
             const job: CsgRequest = {
