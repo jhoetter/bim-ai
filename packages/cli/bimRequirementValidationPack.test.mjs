@@ -6,6 +6,7 @@ import {
   BIM_REQUIREMENT_VALIDATION_REPORT_SCHEMA_VERSION,
   buildBimRequirementValidationEvidence,
   compileBimRequirementValidationPack,
+  importBuildingSmartIdsXml,
   validateCompiledBimRequirementValidationPack,
 } from './lib/bim-requirement-validation-pack.mjs';
 import { buildExchangeValidationReport } from './lib/sketch-initiation.mjs';
@@ -67,6 +68,71 @@ function sampleIr(overrides = {}) {
       dataQualityChecks: ['rooms_spaces_bounded_accessible_schedulable'],
       ...overrides,
     },
+  };
+}
+
+function sampleIdsXml() {
+  return `<?xml version="1.0" encoding="UTF-8"?>
+<ids:ids xmlns:ids="http://standards.buildingsmart.org/IDS" xmlns:xs="http://www.w3.org/2001/XMLSchema">
+  <ids:info>
+    <ids:title>Wall Handover IDS</ids:title>
+  </ids:info>
+  <ids:specifications>
+    <ids:specification name="Wall fire handover" ifcVersion="IFC4" minOccurs="1">
+      <ids:applicability>
+        <ids:entity>
+          <ids:name><ids:simpleValue>IfcWall</ids:simpleValue></ids:name>
+        </ids:entity>
+      </ids:applicability>
+      <ids:requirements>
+        <ids:attribute>
+          <ids:name><ids:simpleValue>Name</ids:simpleValue></ids:name>
+        </ids:attribute>
+        <ids:classification>
+          <ids:system><ids:simpleValue>Uniclass</ids:simpleValue></ids:system>
+          <ids:value><ids:simpleValue>Ss_25_10_30</ids:simpleValue></ids:value>
+        </ids:classification>
+        <ids:property dataType="IFCLABEL">
+          <ids:propertySet><ids:simpleValue>Pset_WallCommon</ids:simpleValue></ids:propertySet>
+          <ids:baseName><ids:simpleValue>FireRating</ids:simpleValue></ids:baseName>
+          <ids:value>
+            <xs:restriction base="xs:string">
+              <xs:enumeration value="REI30"/>
+              <xs:enumeration value="REI60"/>
+            </xs:restriction>
+          </ids:value>
+        </ids:property>
+        <ids:material>
+          <ids:value><ids:simpleValue>Concrete</ids:simpleValue></ids:value>
+        </ids:material>
+        <ids:partOf>
+          <ids:entity>
+            <ids:name><ids:simpleValue>IfcBuildingStorey</ids:simpleValue></ids:name>
+          </ids:entity>
+          <ids:relation><ids:simpleValue>IFCRELCONTAINEDINSPATIALSTRUCTURE</ids:simpleValue></ids:relation>
+        </ids:partOf>
+      </ids:requirements>
+    </ids:specification>
+  </ids:specifications>
+</ids:ids>`;
+}
+
+function idsEvidenceRow(overrides = {}) {
+  return {
+    id: 'wall-1',
+    ifcEntity: 'IfcWall',
+    attributes: { Name: 'Rated wall' },
+    properties: { Pset_WallCommon: { FireRating: 'REI60' } },
+    classifications: [{ system: 'Uniclass', value: 'Ss_25_10_30' }],
+    materials: ['Concrete'],
+    partOf: [
+      {
+        entity: 'IfcBuildingStorey',
+        relation: 'IFCRELCONTAINEDINSPATIALSTRUCTURE',
+        name: 'Level 1',
+      },
+    ],
+    ...overrides,
   };
 }
 
@@ -169,6 +235,43 @@ test('methodology exchange validation carries compiled BIR pack evidence', () =>
   assert.ok(
     report.birValidationReport.blockers.some(
       (blocker) => blocker.code === 'bir_export_output_room-schedule',
+    ),
+  );
+});
+
+test('imports buildingSMART IDS XML into the full deterministic facet matrix', () => {
+  const imported = importBuildingSmartIdsXml(sampleIdsXml());
+  const pack = compileBimRequirementValidationPack({ idsXml: sampleIdsXml() });
+
+  assert.equal(imported.schemaVersion, 'buildingSMART-IDS-1.0');
+  assert.equal(pack.sourceFormat, 'buildingSMART_IDS_XML');
+  assert.equal(pack.packId, 'Wall Handover IDS');
+  assert.deepEqual(pack.summary.idsFacetTypes, [
+    'attribute',
+    'classification',
+    'entity',
+    'material',
+    'partOf',
+    'property',
+  ]);
+  assert.ok(pack.checks.some((check) => check.predicate.facet?.type === 'property'));
+  assert.ok(pack.checks.some((check) => check.predicate.facet?.type === 'partOf'));
+});
+
+test('validates positive and negative buildingSMART IDS facet evidence deterministically', () => {
+  const pack = compileBimRequirementValidationPack({ idsXml: sampleIdsXml() });
+  const passing = validateCompiledBimRequirementValidationPack(pack, {
+    idsFacetRows: [idsEvidenceRow()],
+  });
+  const failing = validateCompiledBimRequirementValidationPack(pack, {
+    idsFacetRows: [idsEvidenceRow({ properties: { Pset_WallCommon: { FireRating: 'EI15' } } })],
+  });
+
+  assert.equal(passing.ok, true, JSON.stringify(passing.blockers, null, 2));
+  assert.equal(failing.ok, false);
+  assert.ok(
+    failing.blockers.some((blocker) =>
+      blocker.code.startsWith('ids_wall-fire-handover_property_'),
     ),
   );
 });

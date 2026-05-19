@@ -40,6 +40,10 @@ const REQUIRED_ROOM_FIELDS = [
   'boundingStatus',
 ];
 
+const IDS_XML_SCHEMA_VERSION = 'buildingSMART-IDS-1.0';
+const IDS_FACET_TYPES = ['entity', 'attribute', 'classification', 'property', 'material', 'partOf'];
+const IDS_NAMESPACE = 'http://standards.buildingsmart.org/IDS';
+
 function isObject(value) {
   return value !== null && typeof value === 'object' && !Array.isArray(value);
 }
@@ -75,6 +79,217 @@ function canonicalize(value) {
     out[key] = canonicalize(value[key]);
   }
   return out;
+}
+
+function decodeXml(value) {
+  return asTrimmedString(value)
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"')
+    .replace(/&apos;/g, "'")
+    .replace(/&amp;/g, '&');
+}
+
+function parseXmlAttributes(raw) {
+  const attrs = {};
+  const attrRe = /([A-Za-z_][\w:.-]*)\s*=\s*("[^"]*"|'[^']*')/g;
+  for (const match of raw.matchAll(attrRe)) {
+    attrs[match[1]] = decodeXml(match[2].slice(1, -1));
+  }
+  return attrs;
+}
+
+function localXmlName(name) {
+  return asTrimmedString(name).split(':').pop();
+}
+
+function parseXmlDocument(xml) {
+  const root = { name: '#document', localName: '#document', attrs: {}, children: [], text: '' };
+  const stack = [root];
+  const cleaned = asTrimmedString(xml)
+    .replace(/<!--[\s\S]*?-->/g, '')
+    .replace(/<\?[\s\S]*?\?>/g, '')
+    .replace(/<!DOCTYPE[\s\S]*?>/gi, '');
+  const tokenRe = /<!\[CDATA\[([\s\S]*?)\]\]>|<([^>]+)>|([^<]+)/g;
+  for (const match of cleaned.matchAll(tokenRe)) {
+    if (match[1] != null || match[3] != null) {
+      const text = decodeXml(match[1] ?? match[3]);
+      if (text) stack.at(-1).text = `${stack.at(-1).text}${text}`;
+      continue;
+    }
+    const tag = asTrimmedString(match[2]);
+    if (!tag || tag.startsWith('!')) continue;
+    if (tag.startsWith('/')) {
+      const closeName = localXmlName(tag.slice(1));
+      while (stack.length > 1 && stack.at(-1).localName !== closeName) stack.pop();
+      if (stack.length > 1) stack.pop();
+      continue;
+    }
+    const selfClosing = tag.endsWith('/');
+    const body = selfClosing ? tag.slice(0, -1).trim() : tag;
+    const name = body.split(/\s+/, 1)[0];
+    const node = {
+      name,
+      localName: localXmlName(name),
+      attrs: parseXmlAttributes(body.slice(name.length)),
+      children: [],
+      text: '',
+    };
+    stack.at(-1).children.push(node);
+    if (!selfClosing) stack.push(node);
+  }
+  return root.children.find((child) => child.localName === 'ids') ?? root.children[0] ?? null;
+}
+
+function childElements(node, localName = null) {
+  if (!node) return [];
+  return node.children.filter((child) => localName == null || child.localName === localName);
+}
+
+function firstChild(node, localName) {
+  return childElements(node, localName)[0] ?? null;
+}
+
+function nodeText(node) {
+  return asTrimmedString(node?.text);
+}
+
+function valueSpecFromNode(node) {
+  if (!node) return null;
+  const simple = nodeText(firstChild(node, 'simpleValue'));
+  if (simple) return { simple };
+  const restriction = firstChild(node, 'restriction');
+  if (restriction) {
+    const spec = {};
+    const base = asTrimmedString(restriction.attrs.base);
+    if (base) spec.base = base;
+    const enumerations = childElements(restriction, 'enumeration')
+      .map((child) => asTrimmedString(child.attrs.value))
+      .filter(Boolean);
+    if (enumerations.length) spec.enumeration = enumerations;
+    const pattern = asTrimmedString(firstChild(restriction, 'pattern')?.attrs.value);
+    if (pattern) spec.pattern = pattern;
+    for (const key of ['minInclusive', 'maxInclusive', 'minExclusive', 'maxExclusive']) {
+      const value = asTrimmedString(firstChild(restriction, key)?.attrs.value);
+      if (value) spec[key] = value;
+    }
+    return Object.keys(spec).length ? spec : null;
+  }
+  const text = nodeText(node);
+  return text ? { simple: text } : null;
+}
+
+function valueSpecLabel(spec) {
+  if (!isObject(spec)) return 'present';
+  if (spec.simple != null) return asTrimmedString(spec.simple);
+  if (Array.isArray(spec.enumeration)) return spec.enumeration.join('|');
+  if (spec.pattern) return `pattern:${spec.pattern}`;
+  return Object.entries(spec)
+    .map(([key, value]) => `${key}:${value}`)
+    .join('|');
+}
+
+function parseIdsFacet(facetNode) {
+  if (!facetNode || !IDS_FACET_TYPES.includes(facetNode.localName)) return null;
+  const facet = {
+    type: facetNode.localName,
+    cardinality: asTrimmedString(facetNode.attrs.cardinality) || null,
+    instructions: asTrimmedString(facetNode.attrs.instructions) || null,
+  };
+  if (facet.type === 'entity') {
+    const name = valueSpecFromNode(firstChild(facetNode, 'name'));
+    const predefinedType = valueSpecFromNode(firstChild(facetNode, 'predefinedType'));
+    if (name) facet.name = name;
+    if (predefinedType) facet.predefinedType = predefinedType;
+  } else if (facet.type === 'attribute') {
+    const name = valueSpecFromNode(firstChild(facetNode, 'name'));
+    const value = valueSpecFromNode(firstChild(facetNode, 'value'));
+    if (name) facet.name = name;
+    if (value) facet.value = value;
+  } else if (facet.type === 'classification') {
+    const system = valueSpecFromNode(firstChild(facetNode, 'system'));
+    const value = valueSpecFromNode(firstChild(facetNode, 'value'));
+    const uri = valueSpecFromNode(firstChild(facetNode, 'uri'));
+    if (system) facet.system = system;
+    if (value) facet.value = value;
+    if (uri) facet.uri = uri;
+  } else if (facet.type === 'property') {
+    const propertySet = valueSpecFromNode(firstChild(facetNode, 'propertySet'));
+    const baseName = valueSpecFromNode(firstChild(facetNode, 'baseName'));
+    const value = valueSpecFromNode(firstChild(facetNode, 'value'));
+    if (propertySet) facet.propertySet = propertySet;
+    if (baseName) facet.baseName = baseName;
+    if (value) facet.value = value;
+    if (facetNode.attrs.dataType) facet.dataType = facetNode.attrs.dataType;
+  } else if (facet.type === 'material') {
+    const value = valueSpecFromNode(firstChild(facetNode, 'value'));
+    if (value) facet.value = value;
+  } else if (facet.type === 'partOf') {
+    const relation = valueSpecFromNode(firstChild(facetNode, 'relation'));
+    const entity = parseIdsFacet(firstChild(facetNode, 'entity'));
+    if (relation) facet.relation = relation;
+    if (entity) facet.entity = entity;
+  }
+  return facet;
+}
+
+function parseCardinality(value, fallback = null) {
+  const raw = asTrimmedString(value);
+  if (!raw) return fallback;
+  if (raw === 'unbounded') return null;
+  const parsed = Number(raw);
+  return Number.isFinite(parsed) ? parsed : fallback;
+}
+
+function parseBuildingSmartIdsXml(xml) {
+  const root = parseXmlDocument(xml);
+  if (!root || root.localName !== 'ids') {
+    throw new Error('Expected buildingSMART IDS XML root element <ids:ids>.');
+  }
+  const xmlns = asTrimmedString(root.attrs.xmlns ?? root.attrs['xmlns:ids']);
+  const info = firstChild(root, 'info');
+  const title = nodeText(firstChild(info, 'title')) || 'buildingSMART IDS';
+  const specificationsNode = firstChild(root, 'specifications');
+  const specifications = childElements(specificationsNode, 'specification').map((specNode, index) => {
+    const applicability = childElements(firstChild(specNode, 'applicability'))
+      .map(parseIdsFacet)
+      .filter(Boolean);
+    const requirements = childElements(firstChild(specNode, 'requirements'))
+      .map(parseIdsFacet)
+      .filter(Boolean);
+    return {
+      id: asTrimmedString(specNode.attrs.identifier) || slug(specNode.attrs.name) || `spec-${index + 1}`,
+      name: asTrimmedString(specNode.attrs.name) || `Specification ${index + 1}`,
+      ifcVersion: normalizeStringArray(specNode.attrs.ifcVersion),
+      minOccurs: parseCardinality(specNode.attrs.minOccurs, 0),
+      maxOccurs: parseCardinality(specNode.attrs.maxOccurs, null),
+      applicability,
+      requirements,
+    };
+  });
+  const facetTypes = normalizeStringArray(
+    specifications.flatMap((spec) => [
+      ...spec.applicability.map((facet) => facet.type),
+      ...spec.requirements.map((facet) => facet.type),
+    ]),
+  );
+  return {
+    schemaVersion: IDS_XML_SCHEMA_VERSION,
+    namespace: xmlns || IDS_NAMESPACE,
+    title,
+    specificationCount: specifications.length,
+    facetTypes,
+    specifications,
+  };
+}
+
+export function importBuildingSmartIdsXml(input) {
+  const xml =
+    typeof input === 'string'
+      ? input
+      : asTrimmedString(input?.idsXml ?? input?.xml ?? input?.buildingSmartIdsXml);
+  if (!xml) return null;
+  return parseBuildingSmartIdsXml(xml);
 }
 
 function digest(value) {
@@ -283,13 +498,81 @@ function compileDataQualityChecks(requirements) {
   );
 }
 
+function idsFacetCheckTitle(spec, facet, cardinality) {
+  const requirement = cardinality === 'prohibited' ? 'prohibits' : 'requires';
+  if (facet.type === 'property') {
+    return `IDS ${spec.name} ${requirement} property ${valueSpecLabel(facet.propertySet)}.${valueSpecLabel(facet.baseName)}`;
+  }
+  if (facet.type === 'attribute') {
+    return `IDS ${spec.name} ${requirement} attribute ${valueSpecLabel(facet.name)}`;
+  }
+  if (facet.type === 'classification') {
+    return `IDS ${spec.name} ${requirement} classification ${valueSpecLabel(facet.system)}:${valueSpecLabel(facet.value)}`;
+  }
+  if (facet.type === 'material') {
+    return `IDS ${spec.name} ${requirement} material ${valueSpecLabel(facet.value)}`;
+  }
+  if (facet.type === 'partOf') {
+    return `IDS ${spec.name} ${requirement} partOf relationship`;
+  }
+  return `IDS ${spec.name} ${requirement} entity ${valueSpecLabel(facet.name)}`;
+}
+
+function compileIdsSpecificationChecks(idsImport) {
+  if (!idsImport) return [];
+  const checks = [];
+  idsImport.specifications.forEach((spec, specIndex) => {
+    checks.push(
+      compileCheck(
+        `ids_${slug(spec.id)}_applicability`,
+        `IDS applicability cardinality: ${spec.name}`,
+        {
+          type: 'ids_applicability_cardinality',
+          specId: spec.id,
+          applicability: spec.applicability,
+          minOccurs: spec.minOccurs,
+          maxOccurs: spec.maxOccurs,
+        },
+        {
+          deliveryTargets: ['ifc'],
+          sourcePath: `ids.specifications.${specIndex}.applicability`,
+          requirementRefs: ['BIR-K07'],
+        },
+      ),
+    );
+    spec.requirements.forEach((facet, facetIndex) => {
+      const cardinality = facet.cardinality || 'required';
+      checks.push(
+        compileCheck(
+          `ids_${slug(spec.id)}_${slug(facet.type)}_${facetIndex + 1}_${slug(valueSpecLabel(facet.name ?? facet.baseName ?? facet.value ?? facet.system ?? facet.relation))}`,
+          idsFacetCheckTitle(spec, facet, cardinality),
+          {
+            type: 'ids_requirement_facet',
+            specId: spec.id,
+            facet,
+            cardinality,
+            applicability: spec.applicability,
+          },
+          {
+            deliveryTargets: ['ifc'],
+            sourcePath: `ids.specifications.${specIndex}.requirements.${facetIndex}`,
+            requirementRefs: ['BIR-K07'],
+          },
+        ),
+      );
+    });
+  });
+  return checks;
+}
+
 export function compileBimRequirementValidationPack(input, options = {}) {
+  const idsImport = importBuildingSmartIdsXml(input);
   const requirements = requirementsFrom(input);
   const qualityTarget = asTrimmedString(
     options.qualityTarget ?? input?.qualityTarget ?? requirements.qualityTarget,
   );
   const deliveryTargets = normalizeStringArray(
-    options.deliveryTargets ?? requirements.exportRequirements?.outputs,
+    options.deliveryTargets ?? (idsImport ? ['ifc'] : requirements.exportRequirements?.outputs),
   ).map(outputKey);
   const checks = [
     ...compileOutputChecks(requirements),
@@ -299,18 +582,38 @@ export function compileBimRequirementValidationPack(input, options = {}) {
     ...compileScheduleChecks(requirements),
     ...compileClassificationChecks(requirements),
     ...compileDataQualityChecks(requirements),
+    ...compileIdsSpecificationChecks(idsImport),
   ].sort((a, b) => a.id.localeCompare(b.id));
 
   return {
     schemaVersion: BIM_REQUIREMENT_VALIDATION_PACK_SCHEMA_VERSION,
-    packId: asTrimmedString(options.packId ?? input?.id ?? input?.packId) || 'bir-pack',
+    packId:
+      asTrimmedString(options.packId ?? input?.id ?? input?.packId ?? idsImport?.title) || 'bir-pack',
     qualityTarget: qualityTarget || null,
     deliveryTargets,
-    sourceDigestSha256: digest(requirements),
+    sourceDigestSha256: digest(idsImport ?? requirements),
+    ...(idsImport
+      ? {
+          sourceFormat: 'buildingSMART_IDS_XML',
+          idsImport: {
+            schemaVersion: idsImport.schemaVersion,
+            namespace: idsImport.namespace,
+            title: idsImport.title,
+            specificationCount: idsImport.specificationCount,
+            facetTypes: idsImport.facetTypes,
+          },
+        }
+      : {}),
     summary: {
       checkCount: checks.length,
       evidenceBlockerCount: checks.filter((check) => check.evidenceBlocker).length,
       deliveryTargetCount: deliveryTargets.length,
+      ...(idsImport
+        ? {
+            idsSpecificationCount: idsImport.specificationCount,
+            idsFacetTypes: idsImport.facetTypes,
+          }
+        : {}),
     },
     checks,
   };
@@ -447,6 +750,188 @@ function dataQualityEvidencePresent(checkId, evidence) {
   });
 }
 
+function idsEvidenceRows(evidence) {
+  const rows = [
+    ...(Array.isArray(evidence?.idsFacetRows) ? evidence.idsFacetRows : []),
+    ...(Array.isArray(evidence?.ifcManifest?.idsFacetRows) ? evidence.ifcManifest.idsFacetRows : []),
+    ...(Array.isArray(evidence?.evidencePackage?.idsFacetRows)
+      ? evidence.evidencePackage.idsFacetRows
+      : []),
+    ...(Array.isArray(evidence?.modelStats?.elements) ? evidence.modelStats.elements : []),
+  ];
+  return rows.filter(isObject).map((row) => ({
+    ...row,
+    ifcEntity: asTrimmedString(row.ifcEntity ?? row.entity ?? row.ifcKind ?? row.type),
+    attributes: isObject(row.attributes) ? row.attributes : {},
+    properties: isObject(row.properties) ? row.properties : {},
+    classifications: Array.isArray(row.classifications) ? row.classifications : [],
+    materials: Array.isArray(row.materials)
+      ? row.materials
+      : normalizeStringArray(row.material ?? row.materialName),
+    partOf: Array.isArray(row.partOf) ? row.partOf : [],
+  }));
+}
+
+function equalsFold(actual, expected) {
+  return asTrimmedString(actual).toLowerCase() === asTrimmedString(expected).toLowerCase();
+}
+
+function valueMatchesSpec(actual, spec) {
+  if (!isObject(spec)) return actual != null && asTrimmedString(actual) !== '';
+  const actualText = asTrimmedString(actual);
+  if (spec.simple != null) return equalsFold(actualText, spec.simple);
+  if (Array.isArray(spec.enumeration) && !spec.enumeration.some((value) => equalsFold(actualText, value))) {
+    return false;
+  }
+  if (spec.pattern) {
+    try {
+      if (!new RegExp(spec.pattern).test(actualText)) return false;
+    } catch {
+      return false;
+    }
+  }
+  const actualNumber = Number(actualText);
+  const numericRules = ['minInclusive', 'maxInclusive', 'minExclusive', 'maxExclusive'];
+  if (numericRules.some((key) => spec[key] != null)) {
+    if (!Number.isFinite(actualNumber)) return false;
+    if (spec.minInclusive != null && actualNumber < Number(spec.minInclusive)) return false;
+    if (spec.maxInclusive != null && actualNumber > Number(spec.maxInclusive)) return false;
+    if (spec.minExclusive != null && actualNumber <= Number(spec.minExclusive)) return false;
+    if (spec.maxExclusive != null && actualNumber >= Number(spec.maxExclusive)) return false;
+  }
+  return true;
+}
+
+function attributeValue(row, nameSpec) {
+  const wanted = asTrimmedString(nameSpec?.simple);
+  if (!wanted) return undefined;
+  const direct = row.attributes[wanted] ?? row.attributes[wanted.toLowerCase()];
+  if (direct != null) return direct;
+  const key = Object.keys(row.attributes).find((candidate) => equalsFold(candidate, wanted));
+  return key ? row.attributes[key] : row[wanted] ?? row[wanted.toLowerCase()];
+}
+
+function propertyValue(row, propertySetSpec, baseNameSpec) {
+  const psetName = asTrimmedString(propertySetSpec?.simple);
+  const baseName = asTrimmedString(baseNameSpec?.simple);
+  if (!baseName) return undefined;
+  const candidates = [];
+  if (psetName && isObject(row.properties?.[psetName])) candidates.push(row.properties[psetName]);
+  if (psetName) {
+    const psetKey = Object.keys(row.properties).find((candidate) => equalsFold(candidate, psetName));
+    if (psetKey && isObject(row.properties[psetKey])) candidates.push(row.properties[psetKey]);
+  }
+  candidates.push(row.properties);
+  for (const candidate of candidates) {
+    const key = Object.keys(candidate).find((name) => equalsFold(name, baseName));
+    if (key) return candidate[key];
+  }
+  return undefined;
+}
+
+function rowMatchesIdsFacet(row, facet) {
+  if (!isObject(facet)) return true;
+  if (facet.type === 'entity') {
+    if (facet.name && !valueMatchesSpec(row.ifcEntity, facet.name)) return false;
+    const predefined = attributeValue(row, { simple: 'PredefinedType' }) ?? row.predefinedType;
+    if (facet.predefinedType && !valueMatchesSpec(predefined, facet.predefinedType)) return false;
+    return true;
+  }
+  if (facet.type === 'attribute') {
+    return valueMatchesSpec(attributeValue(row, facet.name), facet.value ?? null);
+  }
+  if (facet.type === 'property') {
+    const value = propertyValue(row, facet.propertySet, facet.baseName);
+    return valueMatchesSpec(value, facet.value ?? null);
+  }
+  if (facet.type === 'classification') {
+    return row.classifications.some((classification) => {
+      if (typeof classification === 'string') return valueMatchesSpec(classification, facet.value ?? facet.system);
+      return (
+        (!facet.system || valueMatchesSpec(classification.system, facet.system)) &&
+        (!facet.value ||
+          valueMatchesSpec(
+            classification.value ?? classification.code ?? classification.identification,
+            facet.value,
+          )) &&
+        (!facet.uri || valueMatchesSpec(classification.uri ?? classification.location, facet.uri))
+      );
+    });
+  }
+  if (facet.type === 'material') {
+    return normalizeStringArray(row.materials).some((material) => valueMatchesSpec(material, facet.value));
+  }
+  if (facet.type === 'partOf') {
+    return row.partOf.some((part) => {
+      if (!isObject(part)) return false;
+      const relationOk = !facet.relation || valueMatchesSpec(part.relation ?? part.type, facet.relation);
+      const entityOk =
+        !facet.entity ||
+        rowMatchesIdsFacet(
+          {
+            ifcEntity: part.ifcEntity ?? part.entity,
+            attributes: {
+              Name: part.name,
+              PredefinedType: part.predefinedType,
+            },
+            properties: {},
+            classifications: [],
+            materials: [],
+            partOf: [],
+          },
+          facet.entity,
+        );
+      return relationOk && entityOk;
+    });
+  }
+  return false;
+}
+
+function applicableIdsRows(predicate, evidence) {
+  const rows = idsEvidenceRows(evidence);
+  const applicability = Array.isArray(predicate.applicability) ? predicate.applicability : [];
+  return rows.filter((row) => applicability.every((facet) => rowMatchesIdsFacet(row, facet)));
+}
+
+function evaluateIdsApplicability(predicate, evidence) {
+  const rows = applicableIdsRows(predicate, evidence);
+  const minOccurs = Number(predicate.minOccurs ?? 0);
+  const maxOccurs = predicate.maxOccurs == null ? null : Number(predicate.maxOccurs);
+  const actual = rows.length;
+  const minOk = actual >= minOccurs;
+  const maxOk = maxOccurs == null || actual <= maxOccurs;
+  return {
+    passed: minOk && maxOk,
+    actual,
+    expected: maxOccurs === 0 ? 0 : minOccurs,
+    message:
+      maxOccurs === 0
+        ? `IDS applicability for ${predicate.specId} must match no IFC rows; found ${actual}.`
+        : `IDS applicability for ${predicate.specId} expected at least ${minOccurs} IFC row(s); found ${actual}.`,
+  };
+}
+
+function evaluateIdsRequirementFacet(predicate, evidence) {
+  const rows = applicableIdsRows(predicate, evidence);
+  const matchingRows = rows.filter((row) => rowMatchesIdsFacet(row, predicate.facet));
+  const cardinality = predicate.cardinality || 'required';
+  const passed =
+    cardinality === 'optional'
+      ? true
+      : cardinality === 'prohibited'
+        ? matchingRows.length === 0
+        : rows.length > 0 && matchingRows.length === rows.length;
+  return {
+    passed,
+    actual: matchingRows.length,
+    expected: cardinality === 'prohibited' ? 0 : rows.length || 1,
+    message:
+      cardinality === 'prohibited'
+        ? `IDS ${predicate.specId} prohibits ${predicate.facet?.type} facet matches; found ${matchingRows.length}.`
+        : `IDS ${predicate.specId} requires ${predicate.facet?.type} facet on ${rows.length} applicable row(s); ${matchingRows.length} matched.`,
+  };
+}
+
 function evaluateCheck(check, evidence = {}) {
   const predicate = isObject(check?.predicate) ? check.predicate : {};
   if (predicate.type === 'artifact_present') {
@@ -528,6 +1013,12 @@ function evaluateCheck(check, evidence = {}) {
       message: `Data quality evidence is required for ${predicate.checkId}.`,
     };
   }
+  if (predicate.type === 'ids_applicability_cardinality') {
+    return evaluateIdsApplicability(predicate, evidence);
+  }
+  if (predicate.type === 'ids_requirement_facet') {
+    return evaluateIdsRequirementFacet(predicate, evidence);
+  }
   if (predicate.type === 'require_compiled_value') {
     return {
       passed: false,
@@ -604,6 +1095,7 @@ export function buildBimRequirementValidationEvidence({
   exports = [],
   materialLayerSets = [],
   dataQualityResults = [],
+  idsFacetRows = [],
 } = {}) {
   const compiledPack = compileBimRequirementValidationPack(pack ?? ir ?? {}, {
     packId: pack?.packId ?? ir?.id ?? 'methodology-bir-pack',
@@ -619,6 +1111,7 @@ export function buildBimRequirementValidationEvidence({
     exports,
     materialLayerSets,
     dataQualityResults,
+    idsFacetRows,
   });
   return {
     compiledPack,
