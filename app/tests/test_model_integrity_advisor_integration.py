@@ -1,8 +1,13 @@
 from __future__ import annotations
 
+import json
+from pathlib import Path
+
+from bim_ai.cmd.types import CommandBundle
 from bim_ai.constructability_report import build_constructability_report
 from bim_ai.document import Document
 from bim_ai.elements import DoorElem, FloorElem, LevelElem, Vec2Mm, WallElem
+from bim_ai.engine import try_commit_bundle
 from bim_ai.routes_deps import violations_wire
 
 
@@ -71,3 +76,33 @@ def test_constructability_report_includes_model_integrity_findings() -> None:
     assert "hosted_opening_helper_host" in rule_ids
     assert "hosted_opening_host_outside_floor_envelope" in rule_ids
     assert report["summary"]["severityCounts"]["error"] >= 1
+
+
+def test_target_house_ground_service_rooms_are_floor_contained() -> None:
+    repo_root = Path(__file__).resolve().parents[2]
+    bundle_path = repo_root / "seed-artifacts" / "target-house-1" / "bundle.json"
+    bundle_payload = json.loads(bundle_path.read_text(encoding="utf-8"))
+    bundle = CommandBundle.model_validate({**bundle_payload, "parentRevision": 1})
+
+    ok, doc, _commands, violations, code = try_commit_bundle(
+        Document(revision=1, elements={}),  # type: ignore[arg-type]
+        bundle.commands,
+    )
+
+    assert ok, f"target-house-1 bundle replay failed: {code} {violations}"
+    assert doc is not None
+
+    report = build_constructability_report(
+        doc.elements,
+        revision=doc.revision,
+        profile="construction_readiness",
+    )
+    target_room_ids = {"hf-room-gf-bath-laundry", "hf-room-utility"}
+    target_findings = [
+        finding
+        for finding in report["findings"]
+        if finding.get("code") == "BIR-D06-FLOOR"
+        and target_room_ids.intersection(finding.get("elementIds") or [])
+    ]
+
+    assert target_findings == []
