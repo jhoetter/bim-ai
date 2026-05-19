@@ -16,6 +16,7 @@ const VIEW_ALIASES = {
   main_front_left: ['main', 'front-left', 'front_left', 'main-front-left'],
   roof_high: ['roof-high', 'roof high', 'roof-court', 'roof_court', 'roof court'],
   front_elevation: ['front', 'front-elevation', 'front elevation'],
+  front_loggia: ['loggia', 'front-loggia', 'front loggia', 'loggia detail'],
   rear_right_axon: ['rear/right', 'rear-right', 'rear right', 'rear_right'],
   ground_floor_plan: ['ground plan', 'ground-plan', 'ground_floor', 'ground floor plan'],
   first_floor_plan: [
@@ -35,6 +36,10 @@ const CHECKLIST_VIEW_PHRASES = {
   'roof-court': 'roof_high',
   'roof court': 'roof_high',
   front: 'front_elevation',
+  loggia: 'front_loggia',
+  'front-loggia': 'front_loggia',
+  'front loggia': 'front_loggia',
+  'loggia detail': 'front_loggia',
   'rear/right': 'rear_right_axon',
   'rear-right': 'rear_right_axon',
   'rear right': 'rear_right_axon',
@@ -139,15 +144,20 @@ function parseSketchIr(source) {
     throw new Error(`Malformed sketch IR JSON in ${source.path}: ${error.message}`);
   }
 
-  if (!isObject(sketchIr)) throw new Error(`Malformed sketch IR in ${source.path}: root must be an object.`);
+  if (!isObject(sketchIr))
+    throw new Error(`Malformed sketch IR in ${source.path}: root must be an object.`);
   if (sketchIr.schemaVersion !== 'sketch-understanding-ir.v0') {
-    throw new Error(`Malformed sketch IR in ${source.path}: expected schemaVersion sketch-understanding-ir.v0.`);
+    throw new Error(
+      `Malformed sketch IR in ${source.path}: expected schemaVersion sketch-understanding-ir.v0.`,
+    );
   }
   if (!Array.isArray(sketchIr.features) || sketchIr.features.length === 0) {
     throw new Error(`Malformed sketch IR in ${source.path}: features must be a non-empty array.`);
   }
   if (!Array.isArray(sketchIr.requiredViews) || sketchIr.requiredViews.length === 0) {
-    throw new Error(`Malformed sketch IR in ${source.path}: requiredViews must be a non-empty array.`);
+    throw new Error(
+      `Malformed sketch IR in ${source.path}: requiredViews must be a non-empty array.`,
+    );
   }
   return sketchIr;
 }
@@ -262,7 +272,12 @@ function evidenceTypesForFeature(feature, phaseId) {
   if (needs.includes('schedule') || feature.id === 'documentation_evidence_set') {
     types.push('schedule');
   }
-  if (needs.includes('door') || needs.includes('stair') || needs.includes('opening') || phaseId === 'P6') {
+  if (
+    needs.includes('door') ||
+    needs.includes('stair') ||
+    needs.includes('opening') ||
+    phaseId === 'P6'
+  ) {
     types.push('constructability_report');
   }
   if (phaseId === 'P7' || feature.id === 'documentation_evidence_set') {
@@ -303,7 +318,11 @@ function buildRequiredFeatures(sketchIr, phases, requiredViews) {
       semanticSelectors: buildFeatureSelectors(feature, rooms),
       capabilityNeeds: uniqueInOrder(feature.capabilityNeeds ?? []),
       evidenceTypes: evidenceTypesForFeature(
-        { ...feature, capabilityNeeds: feature.capabilityNeeds ?? [], mustRenderInViews: requiredViewIds },
+        {
+          ...feature,
+          capabilityNeeds: feature.capabilityNeeds ?? [],
+          mustRenderInViews: requiredViewIds,
+        },
         phaseId,
       ),
       sourceRefs: ['spec/target-house/target-house-1-sketch-ir.draft.json#features'],
@@ -348,14 +367,17 @@ function buildToleranceRequirements(sketchIr) {
   tolerances.push(
     {
       id: 'tolerance_site_georeference_unavailable',
-      statement: 'Survey point, property lines, setbacks, B-plan constraints, and georeference are unavailable.',
+      statement:
+        'Survey point, property lines, setbacks, B-plan constraints, and georeference are unavailable.',
       confidence: 'low',
       requiredEvidence: 'Carry explicit site assumptions in the model and final tolerance ledger.',
-      expiryCondition: 'Expires when survey, north arrow, property, and setback inputs are supplied.',
+      expiryCondition:
+        'Expires when survey, north arrow, property, and setback inputs are supplied.',
     },
     {
       id: 'tolerance_structure_lite_unverified',
-      statement: 'Cantilever reactions, roof-court edge support, and shell-wall junctions are concept placeholders.',
+      statement:
+        'Cantilever reactions, roof-court edge support, and shell-wall junctions are concept placeholders.',
       confidence: 'medium',
       requiredEvidence: 'Load-path notes, support placeholders, and constructability evidence.',
       expiryCondition: 'Expires when structural design verifies the load path.',
@@ -376,6 +398,7 @@ function buildEvidenceRequirements(sketchIr, checklistMarkdown) {
       'main_front_left',
       'roof_high',
       'front_elevation',
+      'front_loggia',
       'rear_right_axon',
       'ground_floor_plan',
       'first_floor_plan',
@@ -400,10 +423,18 @@ export function validateTargetHouseAcceptancePack(pack) {
     };
   }
   if (pack.schemaVersion !== TARGET_HOUSE_ACCEPTANCE_SCHEMA_VERSION) {
-    add('invalid_schema_version', 'schemaVersion', `Expected ${TARGET_HOUSE_ACCEPTANCE_SCHEMA_VERSION}.`);
+    add(
+      'invalid_schema_version',
+      'schemaVersion',
+      `Expected ${TARGET_HOUSE_ACCEPTANCE_SCHEMA_VERSION}.`,
+    );
   }
   if (!Array.isArray(pack.requiredFeatures) || pack.requiredFeatures.length === 0) {
-    add('missing_required_features', 'requiredFeatures', 'At least one required feature is required.');
+    add(
+      'missing_required_features',
+      'requiredFeatures',
+      'At least one required feature is required.',
+    );
   }
   if (!Array.isArray(pack.requiredViews) || pack.requiredViews.length === 0) {
     add('missing_required_views', 'requiredViews', 'At least one required view is required.');
@@ -416,6 +447,7 @@ export function validateTargetHouseAcceptancePack(pack) {
   for (const requiredViewId of [
     'main_front_left',
     'front_elevation',
+    'front_loggia',
     'rear_right_axon',
     'roof_high',
     'ground_floor_plan',
@@ -429,9 +461,14 @@ export function validateTargetHouseAcceptancePack(pack) {
 
   const phaseIds = new Set((pack.phases ?? []).map((phase) => phase.id));
   for (const [index, feature] of (pack.requiredFeatures ?? []).entries()) {
-    if (!asString(feature.id)) add('missing_feature_id', `requiredFeatures[${index}].id`, 'Feature id is required.');
+    if (!asString(feature.id))
+      add('missing_feature_id', `requiredFeatures[${index}].id`, 'Feature id is required.');
     if (!phaseIds.has(feature.phaseId)) {
-      add('unknown_feature_phase', `requiredFeatures[${index}].phaseId`, `Unknown phase ${feature.phaseId}.`);
+      add(
+        'unknown_feature_phase',
+        `requiredFeatures[${index}].phaseId`,
+        `Unknown phase ${feature.phaseId}.`,
+      );
     }
     if (
       (!Array.isArray(feature.requiredElementIds) || feature.requiredElementIds.length === 0) &&
@@ -445,11 +482,19 @@ export function validateTargetHouseAcceptancePack(pack) {
     }
     for (const viewId of feature.requiredViewIds ?? []) {
       if (!viewIds.has(viewId)) {
-        add('feature_unknown_view', `requiredFeatures[${index}].requiredViewIds`, `Unknown view ${viewId}.`);
+        add(
+          'feature_unknown_view',
+          `requiredFeatures[${index}].requiredViewIds`,
+          `Unknown view ${viewId}.`,
+        );
       }
     }
     if (!Array.isArray(feature.evidenceTypes) || feature.evidenceTypes.length === 0) {
-      add('feature_without_evidence', `requiredFeatures[${index}].evidenceTypes`, 'Evidence types are required.');
+      add(
+        'feature_without_evidence',
+        `requiredFeatures[${index}].evidenceTypes`,
+        'Evidence types are required.',
+      );
     }
   }
 
@@ -467,11 +512,13 @@ export async function compileTargetHouseAcceptancePack({
     readSource(rootDir, sources.phasePlan),
   ]);
 
-  if (!checklist.text.trim()) throw new Error(`Malformed checklist in ${checklist.path}: source is empty.`);
+  if (!checklist.text.trim())
+    throw new Error(`Malformed checklist in ${checklist.path}: source is empty.`);
   if (!bimRequirements.text.trim()) {
     throw new Error(`Malformed BIM requirements in ${bimRequirements.path}: source is empty.`);
   }
-  if (!phasePlan.text.trim()) throw new Error(`Malformed phase plan in ${phasePlan.path}: source is empty.`);
+  if (!phasePlan.text.trim())
+    throw new Error(`Malformed phase plan in ${phasePlan.path}: source is empty.`);
 
   const sketchIr = parseSketchIr(sketchIrSource);
   const phases = parsePhasePlan(phasePlan.text);

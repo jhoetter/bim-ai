@@ -228,7 +228,12 @@
       "id": "front_deep_loggia",
       "kind": "recessed_loggia",
       "visualPriority": "critical",
-      "mustRenderInViews": ["main_front_left", "front_elevation", "first_floor_plan"],
+      "mustRenderInViews": [
+        "main_front_left",
+        "front_elevation",
+        "front_loggia",
+        "first_floor_plan"
+      ],
       "capabilityNeeds": [
         "recessed facade plane",
         "side returns",
@@ -297,6 +302,7 @@
       "mustRenderInViews": [
         "main_front_left",
         "front_elevation",
+        "front_loggia",
         "ground_floor_plan",
         "first_floor_plan",
         "roof_high",
@@ -325,6 +331,11 @@
       "id": "front_elevation",
       "kind": "elevation",
       "purpose": "Front view proving the three-bay upper loggia, rail, ground openings, and vertical cladding."
+    },
+    {
+      "id": "front_loggia",
+      "kind": "3d",
+      "purpose": "Close oblique/detail view proving the recessed loggia depth, side returns, three-bay glazing, floor slab, and guard rail."
     },
     {
       "id": "rear_right_axon",

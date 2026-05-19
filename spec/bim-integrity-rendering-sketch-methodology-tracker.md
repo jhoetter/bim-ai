@@ -292,8 +292,8 @@ This tracker is complete only when all of these are true:
 | `BIR-N02` | P0 | Not started | Fix seed source, not only live state. | Corrections are applied to the authoritative seed recipe/bundle/source artifact so `make seed name=target-house-1` reproduces the clean model. |
 | `BIR-N03` | P0 | Partial | Remove stale/disposable artifacts from seed library. | Seed dropdown contains only approved seed artifacts and no wave/disposable local evidence projects after clean seed. |
 | `BIR-N04` | P0 | Partial | Require no P0 Advisor/integrity/renderer findings. | Added deterministic clean-pass gate over target-house-1 live evidence: validation/Advisor/constructability errors and renderer blockers fail, and every warning group must have a complete tolerance-ledger row with owner, reason, expiry, and evidence. Final target-house cannot be accepted with errors or renderer blockers; warnings require written tolerance and user acceptance. |
-| `BIR-N05` | P0 | Partial | Verify model visual from required views. | Saved views for main, front, rear/right, roof court, loggia, ground plan, upper plan, and wire diagnostics show correct model with screenshots. |
-| `BIR-N06` | P1 | Not started | Verify BIM data quality. | Rooms, schedules, types, materials, classifications, levels, spaces, stairs, rails, doors/windows, and export manifests pass target checklist. |
+| `BIR-N05` | P0 | Partial | Verify model visual from required views. | Machine-readable validator now requires main, front, rear/right, roof court, loggia, ground plan, upper plan, and wire diagnostics saved-view/screenshot evidence. Current evidence passes 7/8 and blocks on missing `front_loggia`. |
+| `BIR-N06` | P1 | Partial | Verify BIM data quality. | Deterministic target-house evidence validator checks rooms, schedules, types/materials, classifications, levels, spaces, stairs, rails, doors/windows, and required export manifest rows; current data-quality rows pass. |
 | `BIR-N07` | P1 | Partial | Verify performance on target-house. | Deterministic target-house performance evidence now profiles orbit, selection, lens switching, and Advisor opening from the final seed snapshot with renderer-cost budgets; remaining closeout requires a live browser timing sample if final acceptance demands measured runtime traces. |
 
 ### O. Tests, Fixtures, CI, And Benchmarks
@@ -507,6 +507,8 @@ while implementation deepens.
 | `BIR-N01` | `packages/cli/lib/target-house-geometry-diagnostics.mjs`; `packages/cli/generate-target-house-geometry-diagnostic.mjs` | `packages/cli/targetHouseGeometryDiagnostics.test.mjs`; `pnpm --filter @bim-ai/cli test` | `seed-artifacts/target-house-1/evidence/live-run-current/target-house-geometry-diagnostic.json`; `seed-artifacts/target-house-1/evidence/live-run-current/target-house-geometry-diagnostic.md` | Wave 8 Worker A local commit | Current report is diagnostic-only and intentionally does not mutate seed source; it records 155 current findings for downstream correction workers. |
 | `BIR-N04` | `packages/cli/lib/target-house-clean-pass-gate.mjs`; `scripts/gate-target-house-clean-pass.mjs` | `packages/cli/targetHouseCleanPassGate.test.mjs`; `node scripts/gate-target-house-clean-pass.mjs --evidence-dir seed-artifacts/target-house-1/evidence/live-run-current --out /tmp/target-house-clean-pass-gate.json` | `/tmp/target-house-clean-pass-gate.json`; `seed-artifacts/target-house-1/evidence/live-run-current/{live/advisor-warning.json,live/validate.json,evidence-package.json,tolerance-ledger.json}` | Wave 8 Worker C local commit | Gate currently blocks acceptance on 13 untolerated warning groups and 3 renderer full-raster blocker statuses; no P0 validation/Advisor errors were found in the current evidence. |
 | `BIR-N07` | `scripts/target-house-final-package.mjs`; `packages/web/src/viewport/rendererCostProfile.ts` | `scripts/target-house-final-package.test.mjs`; `packages/web/src/viewport/rendererCostProfile.test.ts` | generated `target-house-1-performance-evidence.json` and final closeout manifest from `node scripts/target-house-final-package.mjs --seed target-house-1` | Wave 8 Worker E local commit | Deterministic profile evidence is accepted; live browser timing traces remain separate from this package check. |
+| `BIR-N05` | `packages/cli/lib/target-house-evidence-acceptance.mjs`; `spec/generated/target-house-1-required-features.json` | `packages/cli/targetHouseEvidenceAcceptance.test.mjs`; `packages/cli/targetHouseAcceptanceCompiler.test.mjs` | `seed-artifacts/target-house-1/evidence/live-run-current/target-house-evidence-acceptance.json`; required screenshots manifest | Wave 8 Worker D local commit | Current evidence passes 7/8 required views and explicitly blocks missing `front_loggia` capture. |
+| `BIR-N06` | `packages/cli/lib/target-house-evidence-acceptance.mjs` | `packages/cli/targetHouseEvidenceAcceptance.test.mjs` | `seed-artifacts/target-house-1/evidence/live-run-current/target-house-evidence-acceptance.json`; `bim-data-quality.json`; `export-validation.json` | Wave 8 Worker D local commit | Validator checks current target-house evidence files; future live reruns must refresh the report. |
 | `BIR-S01` | `app/bim_ai/site_georeferencing_integrity.py`; `app/bim_ai/domain_integrity.py` | `app/tests/test_site_georeferencing_integrity.py` | `siteGeoreferencingIntegrityReport_v1.coordinateSystems` | Wave 7 Worker D local commit | Pure diagnostics exist; full authoring-route enforcement remains future integration. |
 | `BIR-S02` | `app/bim_ai/site_georeferencing_integrity.py`; `app/bim_ai/domain_integrity.py` | `app/tests/test_site_georeferencing_integrity.py` | `siteGeoreferencingIntegrityReport_v1.linkTransforms` | Wave 7 Worker D local commit | Host-side link checks are deterministic; source-document transform readback remains a follow-up. |
 | `BIR-S03` | `app/bim_ai/site_georeferencing_integrity.py` | `app/tests/test_site_georeferencing_integrity.py` | `importDiagnosticContract_v1` | Wave 7 Worker D local commit | Importers still need to emit this contract at every live import boundary. |
@@ -752,6 +754,19 @@ W8-C evidence update:
 
 Exit: `target-house-1` is regenerated and accepted at current head with clean
 integrity, renderer, Advisor, evidence, export, and methodology gates.
+
+W8-D evidence update:
+- Added `target-house-evidence-acceptance.v1`, a deterministic validator for
+  target-house visual evidence and BIM data quality.
+- The compiled pack now requires a dedicated `front_loggia` evidence view in
+  addition to main, front, rear/right, roof court, ground plan, upper plan, and
+  wire diagnostics.
+- Current machine-readable report:
+  `seed-artifacts/target-house-1/evidence/live-run-current/target-house-evidence-acceptance.json`.
+  It passes `BIR-N06` data-quality rows and blocks `BIR-N05` on the missing
+  `front_loggia` saved-view/screenshot evidence.
+- Verification: `pnpm --filter @bim-ai/cli exec node --test
+  targetHouseAcceptanceCompiler.test.mjs targetHouseEvidenceAcceptance.test.mjs`.
 
 ## Non-Negotiable Acceptance Rules
 

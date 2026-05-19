@@ -29,8 +29,8 @@ evidence after approval.
 - [ ] Front loggia shows three-bay rhythm and thin black guard rail.
 - [ ] Vertical cladding is visible on ground base and central upper pier.
 - [ ] Roof material reads as matte white shell, not dark/brown roof.
-- [ ] Required screenshots exist for main, roof-high, front, rear/right, ground
-      plan, first-floor plan, and wire diagnostic views.
+- [ ] Required screenshots exist for main, front, rear/right, roof-court,
+      loggia, ground plan, first-floor plan, and wire diagnostic views.
 
 ## BIM Data Acceptance
 

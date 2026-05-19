@@ -18,13 +18,20 @@ test('compiles target-house sources into a stable required-feature pack', async 
   const second = await compileTargetHouseAcceptancePack({ rootDir: ROOT_DIR });
 
   assert.deepEqual(second, first);
-  assert.equal(stableStringifyTargetHouseAcceptancePack(first), stableStringifyTargetHouseAcceptancePack(second));
+  assert.equal(
+    stableStringifyTargetHouseAcceptancePack(first),
+    stableStringifyTargetHouseAcceptancePack(second),
+  );
   assert.equal(first.schemaVersion, TARGET_HOUSE_ACCEPTANCE_SCHEMA_VERSION);
   assert.equal(first.kind, 'target_house_required_feature_pack');
   assert.equal(first.targetId, 'target-house-1');
   assert.equal(first.requiredFeatures.length, 10);
   assert.equal(first.requiredRooms.length, 13);
-  assert.ok(Object.keys(first.sourceDigests).every((sourcePath) => sourcePath.startsWith('spec/target-house/')));
+  assert.ok(
+    Object.keys(first.sourceDigests).every((sourcePath) =>
+      sourcePath.startsWith('spec/target-house/'),
+    ),
+  );
 
   const validation = validateTargetHouseAcceptancePack(first);
   assert.equal(validation.valid, true, JSON.stringify(validation.issues, null, 2));
@@ -38,6 +45,7 @@ test('extracts required views with acceptance aliases', async () => {
     'main_front_left',
     'roof_high',
     'front_elevation',
+    'front_loggia',
     'rear_right_axon',
     'ground_floor_plan',
     'first_floor_plan',
@@ -45,10 +53,12 @@ test('extracts required views with acceptance aliases', async () => {
   ]);
 
   const roofView = pack.requiredViews.find((view) => view.id === 'roof_high');
+  const loggiaView = pack.requiredViews.find((view) => view.id === 'front_loggia');
   const upperPlan = pack.requiredViews.find((view) => view.id === 'first_floor_plan');
   const wireView = pack.requiredViews.find((view) => view.id === 'wire_diagnostic');
 
   assert.ok(roofView.aliases.includes('roof-court'));
+  assert.ok(loggiaView.aliases.includes('loggia'));
   assert.ok(upperPlan.aliases.includes('upper-plan'));
   assert.equal(wireView.evidenceType, 'diagnostic_screenshot');
 });
@@ -57,18 +67,21 @@ test('maps feature ids, semantic selectors, evidence, and phases', async () => {
   const pack = await compileTargetHouseAcceptancePack({ rootDir: ROOT_DIR });
   const features = new Map(pack.requiredFeatures.map((feature) => [feature.id, feature]));
 
-  assert.deepEqual([...features.keys()], [
-    'primary_massing_envelope',
-    'folded_white_wrapper_shell',
-    'roof_terrace_cutout',
-    'front_deep_loggia',
-    'asymmetric_gable_envelope',
-    'vertical_cladding_zones',
-    'opening_and_glazing_rhythm',
-    'room_access_and_enclosure',
-    'site_orientation_and_plinth',
-    'documentation_evidence_set',
-  ]);
+  assert.deepEqual(
+    [...features.keys()],
+    [
+      'primary_massing_envelope',
+      'folded_white_wrapper_shell',
+      'roof_terrace_cutout',
+      'front_deep_loggia',
+      'asymmetric_gable_envelope',
+      'vertical_cladding_zones',
+      'opening_and_glazing_rhythm',
+      'room_access_and_enclosure',
+      'site_orientation_and_plinth',
+      'documentation_evidence_set',
+    ],
+  );
 
   const roofCourt = features.get('roof_terrace_cutout');
   assert.equal(roofCourt.phaseId, 'P3');
@@ -78,6 +91,7 @@ test('maps feature ids, semantic selectors, evidence, and phases', async () => {
 
   const loggia = features.get('front_deep_loggia');
   assert.equal(loggia.phaseId, 'P4');
+  assert.ok(loggia.requiredViewIds.includes('front_loggia'));
   assert.ok(loggia.semanticSelectors.includes('room:room_l1_deep_loggia'));
 
   const rooms = features.get('room_access_and_enclosure');
@@ -95,13 +109,16 @@ test('carries evidence requirements and tolerance inputs for later acceptance', 
   const pack = await compileTargetHouseAcceptancePack({ rootDir: ROOT_DIR });
 
   assert.ok(pack.evidenceRequirements.screenshots.includes('main_front_left'));
+  assert.ok(pack.evidenceRequirements.screenshots.includes('front_loggia'));
   assert.ok(pack.evidenceRequirements.screenshots.includes('wire_diagnostic'));
   assert.ok(pack.evidenceRequirements.advisor.includes('construction_readiness_profile'));
   assert.ok(pack.evidenceRequirements.schedules.includes('room_schedule'));
   assert.ok(pack.evidenceRequirements.exports.includes('IFC'));
   assert.ok(pack.evidenceRequirements.manifests.includes('tolerance_ledger'));
   assert.ok(pack.tolerances.some((tolerance) => tolerance.id === 'tolerance_scale_basis'));
-  assert.ok(pack.tolerances.some((tolerance) => tolerance.id === 'tolerance_site_georeference_unavailable'));
+  assert.ok(
+    pack.tolerances.some((tolerance) => tolerance.id === 'tolerance_site_georeference_unavailable'),
+  );
 });
 
 test('fails on empty or malformed sources', async () => {
@@ -127,7 +144,11 @@ test('fails on empty or malformed sources', async () => {
 
   await fs.writeFile(
     path.join(dir, sources.sketchIr),
-    JSON.stringify({ schemaVersion: 'sketch-understanding-ir.v0', features: [], requiredViews: [] }),
+    JSON.stringify({
+      schemaVersion: 'sketch-understanding-ir.v0',
+      features: [],
+      requiredViews: [],
+    }),
   );
   await assert.rejects(
     () => compileTargetHouseAcceptancePack({ rootDir: dir, sources }),

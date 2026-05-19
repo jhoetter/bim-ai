@@ -183,8 +183,8 @@ The generation run must produce:
   digest;
 - Advisor warning/info payloads and constructability `construction_readiness`
   report;
-- screenshots for `main_front_left`, `roof_high`, `front_elevation`,
-  `rear_right_axon`, `ground_floor_plan`, `first_floor_plan`, and
+- screenshots for `main_front_left`, `front_elevation`, `rear_right_axon`,
+  `roof_high`, `front_loggia`, `ground_floor_plan`, `first_floor_plan`, and
   `wire_diagnostic`;
 - room schedule and door/window schedule;
 - export manifests for IFC, GLB, PDF/sheets, schedules, evidence package, and
