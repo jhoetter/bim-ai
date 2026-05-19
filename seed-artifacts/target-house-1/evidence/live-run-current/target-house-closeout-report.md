@@ -5,7 +5,7 @@
 Target: `target-house-1`
 Schema: `target-house-closeout-report.v1`
 Generated at: `1970-01-01T00:00:00.000Z`
-Lineage digest: `sha256:fa8e80c64fcd6acd714fd093f1050b9f6f09ed12b0163215f539e2d63843d5e1`
+Lineage digest: `sha256:de302b8a67cffa1c74aa3aafb09c7a12f8e096f17b85a8107e47fa0846f97a01`
 
 ## Review Status
 
@@ -33,7 +33,7 @@ No Advisor findings is not target-house acceptance. It only means the normal Adv
 
 | Field | Value |
 | ----- | ----- |
-| current git head | 8aa8f94228da5a10fbeb53b7e6c6c6dc04de9f9a |
+| current git head | 0f6c552a3fb49e7f45e9995891644cf40e60bc17 |
 | evidence git head | ba06ccd1fd8d7903305b361b85853e375188103b |
 | evidence dir | seed-artifacts/target-house-1/evidence/live-run-current |
 | required features | spec/generated/target-house-1-required-features.json |
@@ -47,7 +47,7 @@ No Advisor findings is not target-house acceptance. It only means the normal Adv
 | Advisor rule digest | sha256:4024259dec1c2e60c2df697ef7f22c7baa0fc6d1ec9e87e87d1312bf8db18fd9 |
 | renderer support matrix digest | sha256:acf4cc7457a60f8f7e6b899d79e980335b4bd8382e98d54412a83077eb3c962d |
 | performance digest | sha256:0b8e950aaabf4252f28a35014e3c2f192d82845babcaacbf2533c2f789ac81e4 |
-| final manifest digest | sha256:9cf0a63484dc10b70bc78fb64885c878a3a993548fc8e8b2a84a1673de18a6cc |
+| final manifest digest | sha256:d0074d9eaeeac3a7310d0119d21c824a00d02b1b5cc3ab8ba850dbf3763e8cd4 |
 
 ## Evidence Files
 
@@ -103,8 +103,8 @@ No Advisor findings is not target-house acceptance. It only means the normal Adv
 | ------ | ----- |
 | required features | 10 |
 | explicit element coverage | 0 |
-| resolved element coverage | 6 |
-| semantic selector coverage | 4 |
+| resolved element coverage | 10 |
+| semantic selector coverage | 0 |
 | missing element coverage | 0 |
 | open feature findings | 0 |
 | missing screenshots | 0 |
@@ -114,14 +114,14 @@ No Advisor findings is not target-house acceptance. It only means the normal Adv
 | Feature | Elements | Open findings | Renderer support | Screenshots | Blockers |
 | ------- | -------- | ------------- | ---------------- | ----------- | -------- |
 | `primary_massing_envelope` | resolved_elements (7 resolved) | 0 | viewport-3d:matrix_linked | linked (3/3) |  |
-| `folded_white_wrapper_shell` | semantic_selectors_only (0 resolved) | 0 | viewport-3d:matrix_linked | linked (3/3) |  |
-| `roof_terrace_cutout` | resolved_elements (2 resolved) | 0 | roof-opening:matrix_linked | linked (3/3) |  |
-| `front_deep_loggia` | resolved_elements (2 resolved) | 0 | slab-opening:matrix_linked | linked (4/4) |  |
-| `asymmetric_gable_envelope` | semantic_selectors_only (0 resolved) | 0 | viewport-3d:matrix_linked | linked (3/3) |  |
-| `vertical_cladding_zones` | semantic_selectors_only (0 resolved) | 0 | material-resolution:matrix_linked | linked (3/3) |  |
+| `folded_white_wrapper_shell` | resolved_elements (5 resolved) | 0 | viewport-3d:matrix_linked | linked (3/3) |  |
+| `roof_terrace_cutout` | resolved_elements (3 resolved) | 0 | roof-opening:matrix_linked | linked (3/3) |  |
+| `front_deep_loggia` | resolved_elements (3 resolved) | 0 | slab-opening:matrix_linked | linked (4/4) |  |
+| `asymmetric_gable_envelope` | resolved_elements (1 resolved) | 0 | viewport-3d:matrix_linked | linked (3/3) |  |
+| `vertical_cladding_zones` | resolved_elements (4 resolved) | 0 | material-resolution:matrix_linked | linked (3/3) |  |
 | `opening_and_glazing_rhythm` | resolved_elements (10 resolved) | 0 | stair-geometry:matrix_linked | linked (3/3) |  |
 | `room_access_and_enclosure` | resolved_elements (15 resolved) | 0 | roof-opening:matrix_linked | linked (3/3) |  |
-| `site_orientation_and_plinth` | semantic_selectors_only (0 resolved) | 0 | viewport-3d:matrix_linked | linked (1/1) |  |
+| `site_orientation_and_plinth` | resolved_elements (15 resolved) | 0 | viewport-3d:matrix_linked | linked (1/1) |  |
 | `documentation_evidence_set` | resolved_elements (16 resolved) | 0 | room-visualization:matrix_linked | linked (7/7) |  |
 
 ## Geometry Diagnostic

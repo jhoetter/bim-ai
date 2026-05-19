@@ -3,7 +3,7 @@
   "seed": "target-house-1",
   "generatedAt": "1970-01-01T00:00:00.000Z",
   "git": {
-    "currentHead": "8aa8f94228da5a10fbeb53b7e6c6c6dc04de9f9a",
+    "currentHead": "0f6c552a3fb49e7f45e9995891644cf40e60bc17",
     "evidenceHead": "ba06ccd1fd8d7903305b361b85853e375188103b",
     "dirtyCheckPolicy": "Report records source/evidence digests and git heads; concurrent dirty files are not normalized."
   },
@@ -29,7 +29,7 @@
     "advisorRuleDigest": "sha256:4024259dec1c2e60c2df697ef7f22c7baa0fc6d1ec9e87e87d1312bf8db18fd9",
     "capabilities": "sha256:e3faa00d4724d5e375ee853d5e3d56b21254a969a84e702d67013a8bb0125dbb",
     "rendererSupportMatrix": "sha256:acf4cc7457a60f8f7e6b899d79e980335b4bd8382e98d54412a83077eb3c962d",
-    "finalManifest": "sha256:9cf0a63484dc10b70bc78fb64885c878a3a993548fc8e8b2a84a1673de18a6cc",
+    "finalManifest": "sha256:d0074d9eaeeac3a7310d0119d21c824a00d02b1b5cc3ab8ba850dbf3763e8cd4",
     "performanceEvidence": "sha256:0b8e950aaabf4252f28a35014e3c2f192d82845babcaacbf2533c2f789ac81e4"
   },
   "evidenceFiles": [
@@ -357,12 +357,12 @@
         {
           "code": "tracker_incomplete",
           "category": "tracker",
-          "count": 52,
+          "count": 23,
           "total": 165,
-          "done": 113,
+          "done": 142,
           "byStatus": {
-            "Done": 113,
-            "Partial": 52
+            "Done": 142,
+            "Partial": 23
           },
           "sampleIncompleteRows": [
             {
@@ -372,82 +372,16 @@
               "item": "Create canonical rule taxonomy."
             },
             {
-              "id": "BIR-A04",
-              "priority": "P0",
-              "status": "Partial",
-              "item": "Establish UI/CLI/API Advisor parity."
-            },
-            {
-              "id": "BIR-A05",
-              "priority": "P0",
-              "status": "Partial",
-              "item": "Add severity policy."
-            },
-            {
-              "id": "BIR-B01",
-              "priority": "P0",
-              "status": "Partial",
-              "item": "Validate hosted door/window/opening placement before commit."
-            },
-            {
-              "id": "BIR-B02",
-              "priority": "P0",
-              "status": "Partial",
-              "item": "Reject or flag physical elements authored outside building support context."
-            },
-            {
-              "id": "BIR-B03",
-              "priority": "P0",
-              "status": "Partial",
-              "item": "Prevent analysis/helper elements from becoming visible physical BIM by accident."
-            },
-            {
-              "id": "BIR-B05",
-              "priority": "P0",
-              "status": "Partial",
-              "item": "Align UI tool guards with backend validation."
-            },
-            {
-              "id": "BIR-B06",
-              "priority": "P1",
-              "status": "Partial",
-              "item": "Add safe defaults for agent authoring."
-            },
-            {
               "id": "BIR-C04",
               "priority": "P0",
               "status": "Partial",
               "item": "Detect door/window without rendered or semantic opening cut."
             },
             {
-              "id": "BIR-C07",
-              "priority": "P1",
-              "status": "Partial",
-              "item": "Add hosted family support classification."
-            },
-            {
               "id": "BIR-C08",
               "priority": "P1",
               "status": "Partial",
               "item": "Add orphan rendered-proxy detector."
-            },
-            {
-              "id": "BIR-F03",
-              "priority": "P0",
-              "status": "Partial",
-              "item": "Validate envelope closure."
-            },
-            {
-              "id": "BIR-F04",
-              "priority": "P1",
-              "status": "Partial",
-              "item": "Validate loggia/recessed facade topology."
-            },
-            {
-              "id": "BIR-F06",
-              "priority": "P1",
-              "status": "Partial",
-              "item": "Validate wall/roof attachment and overhang semantics."
             },
             {
               "id": "BIR-J01",
@@ -484,6 +418,72 @@
               "priority": "P1",
               "status": "Partial",
               "item": "Rooms/spaces visual diagnostics."
+            },
+            {
+              "id": "BIR-J07",
+              "priority": "P1",
+              "status": "Partial",
+              "item": "Materials and appearances."
+            },
+            {
+              "id": "BIR-J08",
+              "priority": "P1",
+              "status": "Partial",
+              "item": "Lens/filter rendering parity."
+            },
+            {
+              "id": "BIR-J10",
+              "priority": "P2",
+              "status": "Partial",
+              "item": "Stress and large-model rendering."
+            },
+            {
+              "id": "BIR-K02",
+              "priority": "P0",
+              "status": "Partial",
+              "item": "Add export-readback geometry checks."
+            },
+            {
+              "id": "BIR-K04",
+              "priority": "P1",
+              "status": "Partial",
+              "item": "IFC semantic mapping completeness."
+            },
+            {
+              "id": "BIR-K07",
+              "priority": "P2",
+              "status": "Partial",
+              "item": "IDS/BIR validation packs."
+            },
+            {
+              "id": "BIR-L02",
+              "priority": "P0",
+              "status": "Partial",
+              "item": "Profile renderer update cost."
+            },
+            {
+              "id": "BIR-L04",
+              "priority": "P1",
+              "status": "Partial",
+              "item": "Incremental diagnostics."
+            },
+            {
+              "id": "BIR-L05",
+              "priority": "P1",
+              "status": "Partial",
+              "item": "Background heavy checks."
+            },
+            {
+              "id": "BIR-L06",
+              "priority": "P1",
+              "status": "Partial",
+              "item": "UI degradation safeguards."
+            },
+            {
+              "id": "BIR-N10",
+              "priority": "P0",
+              "status": "Partial",
+              "item": "Require final package readiness."
             }
           ]
         }
@@ -780,8 +780,8 @@
     "schemaVersion": "target-house-feature-coverage-dashboard.v1",
     "requiredFeatureCount": 10,
     "explicitElementCoverageCount": 0,
-    "resolvedElementCoverageCount": 6,
-    "semanticSelectorCoverageCount": 4,
+    "resolvedElementCoverageCount": 10,
+    "semanticSelectorCoverageCount": 0,
     "missingElementCoverageCount": 0,
     "openFindingCount": 0,
     "rendererSupportMatrixDigest": "sha256:acf4cc7457a60f8f7e6b899d79e980335b4bd8382e98d54412a83077eb3c962d",
@@ -832,14 +832,20 @@
         "priority": "critical",
         "phaseId": "P2",
         "requiredElementIds": [],
-        "resolvedElementIds": [],
+        "resolvedElementIds": [
+          "hf-upper-wrapper-shell-wall-01",
+          "hf-upper-wrapper-shell-wall-01-right",
+          "hf-upper-wrapper-shell-wall-02",
+          "hf-upper-wrapper-shell-wall-03",
+          "hf-upper-wrapper-shell-wall-04"
+        ],
         "semanticSelectors": [
           "feature:folded_white_wrapper_shell",
           "kind:folded_white_wrapper_shell",
           "wall:upper-white-shell",
           "roof:white-folded-shell"
         ],
-        "elementCoverageStatus": "semantic_selectors_only",
+        "elementCoverageStatus": "resolved_elements",
         "sourceFeatureMapStatus": "mapped",
         "openFindingCount": 0,
         "rendererSupport": {
@@ -861,7 +867,7 @@
         "priority": "critical",
         "phaseId": "P3",
         "requiredElementIds": [],
-        "resolvedElementIds": ["hf-roof-court-floor", "room_l1_roof_court"],
+        "resolvedElementIds": ["hf-roof-court-floor", "hf-roof-main", "room_l1_roof_court"],
         "semanticSelectors": [
           "feature:roof_terrace_cutout",
           "kind:roof_opening_with_occupied_terrace",
@@ -894,7 +900,11 @@
         "priority": "critical",
         "phaseId": "P4",
         "requiredElementIds": [],
-        "resolvedElementIds": ["front-loggia-recessed-glass", "room_l1_deep_loggia"],
+        "resolvedElementIds": [
+          "front-loggia-recessed-glass",
+          "hf-front-loggia-floor",
+          "room_l1_deep_loggia"
+        ],
         "semanticSelectors": [
           "feature:front_deep_loggia",
           "kind:recessed_loggia",
@@ -926,14 +936,14 @@
         "priority": "critical",
         "phaseId": "P2",
         "requiredElementIds": [],
-        "resolvedElementIds": [],
+        "resolvedElementIds": ["hf-roof-main"],
         "semanticSelectors": [
           "feature:asymmetric_gable_envelope",
           "kind:roof_attached_wall_profile",
           "wall:gable-profile",
           "roof:asymmetric-envelope"
         ],
-        "elementCoverageStatus": "semantic_selectors_only",
+        "elementCoverageStatus": "resolved_elements",
         "sourceFeatureMapStatus": "mapped",
         "openFindingCount": 0,
         "rendererSupport": {
@@ -955,14 +965,19 @@
         "priority": "high",
         "phaseId": "P4",
         "requiredElementIds": [],
-        "resolvedElementIds": [],
+        "resolvedElementIds": [
+          "ground-base-wall-01",
+          "ground-base-wall-02",
+          "ground-base-wall-03",
+          "ground-base-wall-04"
+        ],
         "semanticSelectors": [
           "feature:vertical_cladding_zones",
           "kind:vertical_cladding",
           "wall:ground-clad-base",
           "cladding:vertical-board-batten"
         ],
-        "elementCoverageStatus": "semantic_selectors_only",
+        "elementCoverageStatus": "resolved_elements",
         "sourceFeatureMapStatus": "mapped",
         "openFindingCount": 0,
         "rendererSupport": {
@@ -1085,14 +1100,30 @@
         "priority": "medium",
         "phaseId": "P0",
         "requiredElementIds": [],
-        "resolvedElementIds": [],
+        "resolvedElementIds": [
+          "first_floor_plan",
+          "front_elevation",
+          "front_loggia",
+          "ground-base-floor",
+          "ground-base-wall-01",
+          "ground-base-wall-02",
+          "ground-base-wall-03",
+          "ground-base-wall-04",
+          "ground_floor_plan",
+          "hf-pbp",
+          "hf-survey-point",
+          "main_front_left",
+          "rear_right_axon",
+          "roof_high",
+          "wire_diagnostic"
+        ],
         "semanticSelectors": [
           "feature:site_orientation_and_plinth",
           "kind:site_orientation",
           "site:project-north-assumption",
           "floor:plinth"
         ],
-        "elementCoverageStatus": "semantic_selectors_only",
+        "elementCoverageStatus": "resolved_elements",
         "sourceFeatureMapStatus": "mapped",
         "openFindingCount": 0,
         "rendererSupport": {
@@ -1170,5 +1201,5 @@
     }
   ],
   "ready": false,
-  "lineageDigestSha256": "fa8e80c64fcd6acd714fd093f1050b9f6f09ed12b0163215f539e2d63843d5e1"
+  "lineageDigestSha256": "de302b8a67cffa1c74aa3aafb09c7a12f8e096f17b85a8107e47fa0846f97a01"
 }
