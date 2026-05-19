@@ -20,6 +20,33 @@ JobKind = Literal[
 JobStatus = Literal["queued", "running", "done", "errored", "cancelled"]
 
 
+class JobProgress(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+    current: int = Field(default=0, ge=0)
+    total: int = Field(default=1, ge=1)
+    percent: float = Field(default=0.0, ge=0.0, le=100.0)
+    phase: str = "queued"
+    message: str | None = None
+
+
+class JobCancellation(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+    cancellable: bool = True
+    requested: bool = False
+    requested_at: str | None = Field(default=None, alias="requestedAt")
+    reason: str | None = None
+
+
+class JobCacheEvidence(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+    cache_key: str = Field(alias="cacheKey")
+    cache_scope: str = Field(alias="cacheScope")
+    cache_hit: bool = Field(default=False, alias="cacheHit")
+    source_digests: dict[str, str] = Field(default_factory=dict, alias="sourceDigests")
+    evidence_digest: str | None = Field(default=None, alias="evidenceDigest")
+    evidence_refs: list[str] = Field(default_factory=list, alias="evidenceRefs")
+
+
 class JobOutputs(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
     primary_asset_id: str | None = Field(default=None, alias="primaryAssetId")
@@ -45,6 +72,9 @@ class Job(BaseModel):
     error_message: str | None = Field(default=None, alias="errorMessage")
     cost_estimate: JobCostEstimate | None = Field(default=None, alias="costEstimate")
     parent_job_id: str | None = Field(default=None, alias="parentJobId")
+    progress: JobProgress | None = None
+    cancellation: JobCancellation = Field(default_factory=JobCancellation)
+    cache_evidence: JobCacheEvidence | None = Field(default=None, alias="cacheEvidence")
 
 
 class CreateJobRequest(BaseModel):

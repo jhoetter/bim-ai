@@ -266,7 +266,7 @@ This tracker is complete only when all of these are true:
 | `BIR-L02` | P0 | Not started | Profile renderer update cost. | Orbit, select, lens switch, and Advisor open/close remain responsive on target-house and benchmark models. |
 | `BIR-L03` | P0 | Partial | Investigate WebSocket proxy errors. | Reconnect/EPIPE/ECONNRESET during dev are classified as benign dev-server reconnects or fixed if they cause state churn/unresponsiveness. |
 | `BIR-L04` | P1 | Not started | Incremental diagnostics. | Editing one element recomputes only impacted integrity/render diagnostics where possible. |
-| `BIR-L05` | P1 | Not started | Background heavy checks. | Expensive geometry/export/render checks run as jobs with progress, cancellation, and cached evidence. |
+| `BIR-L05` | P1 | Partial | Background heavy checks. | Expensive geometry/export/render checks run as jobs with progress, cancellation, and cached evidence. |
 | `BIR-L06` | P1 | Not started | UI degradation safeguards. | Advisor and renderer diagnostics do not block pointer events, camera controls, or selection on ordinary models. |
 
 ### M. Sketch-to-BIM Methodology Gate
@@ -515,6 +515,23 @@ Goal: close `M6`.
 | W6-E | UI degradation safeguards | `BIR-L06`, smoke tests |
 
 Exit: the richer diagnostics do not make normal modeling sluggish.
+
+W6-D evidence update:
+- Added `app/bim_ai/jobs/heavy_diagnostics.py` with deterministic
+  `heavyDiagnosticMetadata_v1` and `heavyDiagnosticJobEvidence_v1` helpers for
+  geometry, IFC export, glTF export, and render jobs.
+- Heavy diagnostic cache keys include diagnostic kind, job kind, model id,
+  model revision, canonicalized inputs, sorted check ids, source digests, and
+  tool versions so repeated equivalent requests can reuse cached evidence.
+- Extended backend job types/queue with progress snapshots, cancellation
+  request metadata, and `cacheEvidence` attachment without touching routes or
+  jobs UI.
+- Verification: `PYTEST_ADDOPTS=--no-cov python -m pytest
+  tests/jobs/test_heavy_diagnostics.py tests/jobs/test_job_queue.py`;
+  `PYTEST_ADDOPTS=--no-cov python -m pytest tests/api/test_jobs_routes.py
+  tests/api/test_jobs_routes_api_router.py`; `python -m ruff check
+  bim_ai/jobs/heavy_diagnostics.py bim_ai/jobs/types.py bim_ai/jobs/queue.py
+  tests/jobs/test_heavy_diagnostics.py tests/jobs/test_job_queue.py`.
 
 ### Wave 7: Platform-Grade BIM Guarantees
 

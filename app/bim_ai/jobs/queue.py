@@ -5,7 +5,7 @@ from collections import defaultdict
 from collections.abc import Awaitable, Callable
 from datetime import UTC, datetime
 
-from .types import Job, JobOutputs, JobStatus
+from .types import Job, JobCacheEvidence, JobCancellation, JobOutputs, JobProgress, JobStatus
 
 
 class JobQueue:
@@ -35,6 +35,7 @@ class JobQueue:
         *,
         error_message: str | None = None,
         outputs: JobOutputs | None = None,
+        cache_evidence: JobCacheEvidence | None = None,
     ) -> Job:
         async with self._lock:
             job = self._jobs[job_id]
@@ -48,7 +49,53 @@ class JobQueue:
                 updates["error_message"] = error_message
             if outputs is not None:
                 updates["outputs"] = outputs
+            if cache_evidence is not None:
+                updates["cache_evidence"] = cache_evidence
             updated = job.model_copy(update=updates)
+            self._jobs[job_id] = updated
+        await self._notify(updated)
+        return updated
+
+    async def update_progress(
+        self,
+        job_id: str,
+        *,
+        current: int,
+        total: int,
+        phase: str,
+        message: str | None = None,
+    ) -> Job:
+        if total < 1:
+            raise ValueError("progress total must be >= 1")
+        if current < 0:
+            raise ValueError("progress current must be >= 0")
+        bounded_current = min(current, total)
+        progress = JobProgress(
+            current=bounded_current,
+            total=total,
+            percent=round((bounded_current / total) * 100.0, 3),
+            phase=phase,
+            message=message,
+        )
+        async with self._lock:
+            job = self._jobs[job_id]
+            updated = job.model_copy(update={"progress": progress})
+            self._jobs[job_id] = updated
+        await self._notify(updated)
+        return updated
+
+    async def request_cancel(self, job_id: str, *, reason: str | None = None) -> Job:
+        async with self._lock:
+            job = self._jobs[job_id]
+            if not job.cancellation.cancellable:
+                raise ValueError("job is not cancellable")
+            cancellation = JobCancellation(
+                cancellable=True,
+                requested=True,
+                requested_at=datetime.now(UTC).isoformat(),
+                reason=reason,
+            )
+            updated = job.model_copy(update={"cancellation": cancellation})
             self._jobs[job_id] = updated
         await self._notify(updated)
         return updated

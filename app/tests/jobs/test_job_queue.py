@@ -8,7 +8,7 @@ from datetime import UTC, datetime
 import pytest
 
 from bim_ai.jobs.queue import JobQueue
-from bim_ai.jobs.types import Job
+from bim_ai.jobs.types import Job, JobCacheEvidence
 
 
 def _make_job(model_id: str = "model-a", kind: str = "csg_solve") -> Job:
@@ -62,6 +62,21 @@ class TestUpdateStatus:
         assert updated.error_message == "boom"
         assert updated.completed_at is not None
 
+    def test_update_status_done_can_attach_cache_evidence(self, queue: JobQueue) -> None:
+        job = _make_job(kind="ifc_export")
+        asyncio.run(queue.submit(job))
+        cache = JobCacheEvidence(
+            cache_key="bir-l05:ifc_export:sha256:abc",
+            cache_scope="heavy-diagnostic-evidence-v1",
+            cache_hit=True,
+            evidence_digest="digest-1",
+            evidence_refs=["ifc-manifest.json"],
+        )
+        updated = asyncio.run(queue.update_status(job.id, "done", cache_evidence=cache))
+        assert updated.cache_evidence is not None
+        assert updated.cache_evidence.cache_key == "bir-l05:ifc_export:sha256:abc"
+        assert updated.cache_evidence.cache_hit is True
+
 
 class TestCancel:
     def test_cancel_queued_job(self, queue: JobQueue) -> None:
@@ -77,6 +92,34 @@ class TestCancel:
         done_job = queue.get(job.id)
         assert done_job is not None
         assert done_job.status == "done"
+
+    def test_request_cancel_records_deterministic_cancellation_state(
+        self, queue: JobQueue
+    ) -> None:
+        job = _make_job()
+        asyncio.run(queue.submit(job))
+
+        updated = asyncio.run(queue.request_cancel(job.id, reason="superseded by revision 42"))
+
+        assert updated.cancellation.requested is True
+        assert updated.cancellation.requested_at is not None
+        assert updated.cancellation.reason == "superseded by revision 42"
+
+
+class TestProgress:
+    def test_update_progress_clamps_current_and_reports_percent(self, queue: JobQueue) -> None:
+        job = _make_job(kind="render_still")
+        asyncio.run(queue.submit(job))
+
+        updated = asyncio.run(
+            queue.update_progress(job.id, current=7, total=5, phase="render_tiles")
+        )
+
+        assert updated.progress is not None
+        assert updated.progress.current == 5
+        assert updated.progress.total == 5
+        assert updated.progress.percent == 100.0
+        assert updated.progress.phase == "render_tiles"
 
 
 class TestRetry:
