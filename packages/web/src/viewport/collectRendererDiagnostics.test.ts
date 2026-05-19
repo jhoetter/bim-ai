@@ -196,6 +196,110 @@ describe('collectRendererDiagnostics', () => {
     );
   });
 
+  it('persists lens-context status and renderer-performance diagnostics with hosted-cut evidence', () => {
+    const elements = [
+      wall({ id: 'wall-arch', discipline: 'arch' }),
+      door({ id: 'door-arch', wallId: 'wall-arch', discipline: 'arch' }),
+      {
+        kind: 'floor',
+        id: 'structural-slab',
+        name: 'Structural slab',
+        levelId: 'level-1',
+        boundaryMm: [
+          { xMm: 0, yMm: 0 },
+          { xMm: 6000, yMm: 0 },
+          { xMm: 6000, yMm: 4000 },
+          { xMm: 0, yMm: 4000 },
+        ],
+        thicknessMm: 250,
+        structuralRole: 'slab',
+      } as Extract<Element, { kind: 'floor' }>,
+      {
+        kind: 'viewpoint',
+        id: 'renderer-evidence-view',
+        name: 'Renderer evidence',
+        mode: 'orbit_3d',
+      } as Element,
+    ];
+
+    const packet = collectRendererDiagnosticPacket({
+      elements,
+      generatedAtIso: '2026-05-19T00:00:00.000Z',
+      modelRevision: 'rev-22-a',
+      gitHead: 'wave-22-a',
+      rendererBuild: 'viewport-test',
+      viewId: 'structure-lens-renderer-golden',
+      evidence: { source: 'test', agentWave: 'W22-A' },
+      csgEnabled: false,
+      lensMode: 'structure',
+      previousLensMode: 'architecture',
+      selectedElementIds: ['door-arch'],
+      changedElementIds: ['door-arch'],
+      budgetsMs: { orbit: 1, update: 1 },
+      stressBudgets: {
+        warningElementCount: 3,
+        errorElementCount: 99,
+        warningOpeningCount: 1,
+        errorOpeningCount: 99,
+        workloadWarningBudgetRatio: 0.1,
+      },
+    });
+
+    expect(packet.elementRenderStatuses).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          elementId: 'wall-arch',
+          lens: expect.objectContaining({
+            mode: 'structure',
+            source: 'ui-lens',
+            visibility: 'ghost',
+            ghostingSupported: true,
+          }),
+        }),
+        expect.objectContaining({
+          elementId: 'structural-slab',
+          lens: expect.objectContaining({
+            mode: 'structure',
+            visibility: 'foreground',
+          }),
+        }),
+      ]),
+    );
+
+    expect(packet.diagnostics).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          code: 'renderer.wall_cut.wall.opening.csg.disabled',
+          feature: 'wall-cut',
+          elementIds: ['door-arch', 'wall-arch'],
+          viewId: 'structure-lens-renderer-golden',
+        }),
+        expect.objectContaining({
+          code: 'renderer.stress.element_count.near_limit',
+          feature: 'renderer-performance',
+          trackerItems: ['BIR-J10', 'BIR-L02'],
+          evidence: expect.objectContaining({
+            source: 'test',
+            agentWave: 'W22-A',
+            details: expect.objectContaining({
+              count: 4,
+              warningThreshold: 3,
+            }),
+          }),
+        }),
+        expect.objectContaining({
+          code: 'renderer.profile.orbit.budget_exceeded',
+          feature: 'renderer-performance',
+          evidence: expect.objectContaining({
+            details: expect.objectContaining({
+              workload: 'orbit',
+            }),
+          }),
+        }),
+      ]),
+    );
+  });
+
   it('normalizes status-derived geometry blockers for wall, roof, stair, and railing classes', () => {
     const elements = [
       wall({

@@ -1,4 +1,4 @@
-import type { Element } from '@bim-ai/core';
+import type { Element, LensMode, ViewLensMode } from '@bim-ai/core';
 
 import {
   collectElementRenderFeatureStatuses,
@@ -17,6 +17,12 @@ import {
 } from './roofOpeningRenderDiagnostics';
 import { diagnoseRoomVisualizationRendering } from './roomVisualizationRenderDiagnostics';
 import {
+  diagnoseRendererStressBudgets,
+  type RendererCostProfileInput,
+  type RendererStressBudgetThresholds,
+  type RendererWorkloadKind,
+} from './rendererCostProfile';
+import {
   diagnoseWallHostedCutRenderRisks,
   type WallHostedCutRenderDiagnostic,
 } from './wallHostedCutRenderDiagnostics';
@@ -30,6 +36,17 @@ export type CollectRendererDiagnosticsInput = {
   csgEnabled?: boolean;
   includeElementRenderStatusDiagnostics?: boolean;
   includeElementRenderStatuses?: boolean;
+  includeRendererPerformanceDiagnostics?: boolean;
+  visibleElementIds?: readonly string[] | null;
+  selectedElementIds?: readonly string[] | null;
+  changedElementIds?: readonly string[] | null;
+  lensMode?: LensMode | null;
+  viewLensMode?: ViewLensMode | null;
+  previousLensMode?: RendererCostProfileInput['previousLensMode'];
+  advisorOpen?: boolean | null;
+  advisorFindingCount?: number | null;
+  budgetsMs?: Partial<Record<RendererWorkloadKind, number>>;
+  stressBudgets?: Partial<RendererStressBudgetThresholds>;
 };
 
 export type CollectRendererDiagnosticsPacketInput = CollectRendererDiagnosticsInput & {
@@ -51,7 +68,11 @@ export function collectRendererDiagnostics(
   const elementStatuses =
     input.includeElementRenderStatusDiagnostics === false
       ? []
-      : collectElementRenderFeatureStatuses({ elementsById });
+      : collectElementRenderFeatureStatuses({
+          elementsById,
+          lensMode: input.lensMode,
+          viewLensMode: input.viewLensMode,
+        });
 
   return dedupeDiagnostics([
     ...elementStatuses.flatMap((status) =>
@@ -72,6 +93,24 @@ export function collectRendererDiagnostics(
       viewId: input.viewId,
       evidence: fullEvidence,
     }),
+    ...(input.includeRendererPerformanceDiagnostics === false
+      ? []
+      : diagnoseRendererStressBudgets(
+          {
+            elements: elementsById,
+            visibleElementIds: input.visibleElementIds,
+            selectedElementIds: input.selectedElementIds,
+            changedElementIds: input.changedElementIds,
+            lensMode: input.lensMode,
+            previousLensMode: input.previousLensMode,
+            advisorOpen: input.advisorOpen,
+            advisorFindingCount: input.advisorFindingCount,
+            budgetsMs: input.budgetsMs,
+            viewId: input.viewId,
+            evidence: fullEvidence,
+          },
+          { evidence: fullEvidence, stressBudgets: input.stressBudgets },
+        )),
   ]).sort((a, b) => {
     const severityOrder = severityRank(a.severity) - severityRank(b.severity);
     if (severityOrder !== 0) return severityOrder;
@@ -213,7 +252,11 @@ export function collectRendererDiagnosticPacket(
   const elementRenderStatuses =
     input.includeElementRenderStatuses === false
       ? undefined
-      : collectElementRenderFeatureStatuses({ elementsById });
+      : collectElementRenderFeatureStatuses({
+          elementsById,
+          lensMode: input.lensMode,
+          viewLensMode: input.viewLensMode,
+        });
   return createRendererDiagnosticPacket({
     diagnostics: collectRendererDiagnostics({ ...input, elementsById }),
     elementRenderStatuses,
