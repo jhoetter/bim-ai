@@ -22,11 +22,14 @@ class RoomAccessFinding:
     element_ids: tuple[str, ...]
     recommendation: str
     evidence: dict[str, Any] | None = None
+    tracker_items: tuple[str, ...] = ()
+    actionability: str = "review_required"
 
     def to_dict(self) -> dict[str, Any]:
         payload = asdict(self)
         payload["ruleId"] = payload.pop("rule_id")
         payload["elementIds"] = list(payload.pop("element_ids"))
+        payload["trackerItems"] = list(payload.pop("tracker_items"))
         return {key: value for key, value in payload.items() if value is not None}
 
 
@@ -67,6 +70,7 @@ def check_room_access_integrity(
                 "Model input must be a Document, element mapping, element list, or snapshot with elements.",
                 (),
                 "Pass an elements mapping/list or a snapshot with an elements field.",
+                tracker_items=("BIR-D04",),
             )
         ]
 
@@ -98,6 +102,7 @@ def check_room_access_integrity(
 
     door_evidence, door_findings = _door_room_evidence(doors, walls, rooms, room_polygons)
     open_adjacency = _room_separation_open_adjacency(rooms, room_polygons, room_separations)
+    findings.extend(_room_boundary_openness_findings(room_separations))
     findings.extend(door_findings)
     findings.extend(_room_access_findings(rooms, door_evidence, open_adjacency))
     findings.extend(_egress_findings(rooms, doors, walls, door_evidence, stairs, open_adjacency))
@@ -130,7 +135,15 @@ def room_access_integrity_smoke_v1(
         counts[finding.severity] = counts.get(finding.severity, 0) + 1
     return {
         "format": "roomAccessIntegritySmoke_v1",
-        "trackedItems": ["BIR-D03", "BIR-D04", "BIR-D05", "BIR-D06", "BIR-D07"],
+        "trackedItems": [
+            "BIR-D01",
+            "BIR-D02",
+            "BIR-D03",
+            "BIR-D04",
+            "BIR-D05",
+            "BIR-D06",
+            "BIR-D07",
+        ],
         "ok": counts.get("error", 0) == 0,
         "findingCount": len(findings),
         "countsBySeverity": dict(sorted(counts.items())),
@@ -150,6 +163,22 @@ def _door_room_evidence(
         wall_id = _string(_read(door, "wallId", "wall_id"))
         wall = walls.get(wall_id or "")
         if wall is None:
+            continue
+        if _is_helper_or_nonphysical(door) or _is_helper_or_nonphysical(wall):
+            findings.append(
+                _finding(
+                    "room_access_door_host_not_real_boundary",
+                    "BIR-D02-REAL-DOOR",
+                    "error",
+                    "P0",
+                    "Door is hosted by helper/nonphysical access topology and cannot satisfy room access.",
+                    (door_id, wall_id or ""),
+                    "Host access on a real physical wall/opening boundary, or keep this element analytical and add a separate physical door.",
+                    tracker_items=("BIR-D01", "BIR-D02"),
+                    actionability="fixable_by_rehost_or_physical_door",
+                    evidence={"hostPhysicalRole": _physical_role(wall), "doorPhysicalRole": _physical_role(door)},
+                )
+            )
             continue
         midpoint = _door_midpoint(door, wall)
         level_id = _string(_read(wall, "levelId", "level_id"))
@@ -177,6 +206,8 @@ def _door_room_evidence(
                     "Door declares room access that is not supported by its host-wall midpoint geometry.",
                     (door_id, *declared_rooms),
                     "Remove helper-only room links or move/create the door so its opening is evidenced by adjacent room geometry.",
+                    tracker_items=("BIR-D01", "BIR-D02"),
+                    actionability="fixable_by_rehost_or_remove_helper_link",
                     evidence={
                         "declaredRoomIds": list(declared_rooms),
                         "geometricRoomIds": list(geometric_rooms),
@@ -193,6 +224,8 @@ def _door_room_evidence(
                     "Door host wall is not evidenced on any room boundary at the opening location.",
                     (door_id, wall.id if hasattr(wall, "id") else wall_id or ""),
                     "Move the door to a wall segment that bounds the intended room path, or revise room outlines/walls so the opening is on the boundary.",
+                    tracker_items=("BIR-D02",),
+                    actionability="fixable_by_rehost_or_room_outline_revision",
                     evidence={
                         "candidateRoomIds": list(candidate_room_ids),
                         "midpoint": {"xMm": round(midpoint[0], 3), "yMm": round(midpoint[1], 3)},
@@ -206,6 +239,30 @@ def _door_room_evidence(
             "isExit": _is_exterior_exit_door(door, wall),
         }
     return evidence, findings
+
+
+def _room_boundary_openness_findings(
+    room_separations: Mapping[str, Any],
+) -> list[RoomAccessFinding]:
+    findings: list[RoomAccessFinding] = []
+    for separation_id, separation in sorted(room_separations.items()):
+        props = _props(separation)
+        if _is_helper_access_separator(separation):
+            findings.append(
+                _finding(
+                    "room_access_fake_room_separation_access",
+                    "BIR-D01-SEPARATION",
+                    "error",
+                    "P0",
+                    "Room-separation line is being used as a fake physical access/opening boundary.",
+                    (separation_id,),
+                    "Use room separations only as analytical boundary evidence; model access with real hosted doors/openings on physical walls.",
+                    tracker_items=("BIR-D01", "BIR-D02"),
+                    actionability="fixable_by_real_door_or_analytical_flag",
+                    evidence={"props": dict(sorted((str(key), value) for key, value in props.items()))},
+                )
+            )
+    return findings
 
 
 def _room_access_findings(
@@ -232,6 +289,8 @@ def _room_access_findings(
                     "Room has no door on its boundary and is only connected through analytical room-separation adjacency.",
                     (room_id, *sorted(open_adjacency.get(room_id, set()))),
                     "Keep this only for intentional open-plan space; otherwise add a physical door/opening on a valid room boundary.",
+                    tracker_items=("BIR-D01", "BIR-D02"),
+                    actionability="needs_author_intent_or_real_door",
                     evidence={"adjacentRoomIds": sorted(open_adjacency.get(room_id, set()))},
                 )
             )
@@ -245,6 +304,8 @@ def _room_access_findings(
                 "Room has no geometrically evidenced door access.",
                 (room_id,),
                 "Add a door on the room boundary or revise the room outline so an existing door is shared with the room.",
+                tracker_items=("BIR-D02",),
+                actionability="fixable_by_door_or_outline_revision",
             )
         )
     return findings
@@ -288,6 +349,8 @@ def _egress_findings(
                         "Exit door is marked as an exit but lacks explicit exterior/envelope classification.",
                         (door_id, _string(_read(door, "wallId", "wall_id")) or ""),
                         "Classify the exit door or its host wall as exterior/envelope so egress is not inferred from a bare exit flag.",
+                        tracker_items=("BIR-D04",),
+                        actionability="fixable_by_exit_classification",
                     )
                 )
         for left in room_ids:
@@ -330,6 +393,8 @@ def _egress_findings(
                 "Stair changes levels but is not geometrically tied to rooms at both ends.",
                 (stair_id,),
                 "Place the stair endpoints within accessible rooms or add landing/room relationship evidence.",
+                tracker_items=("BIR-D04",),
+                actionability="fixable_by_landing_or_room_endpoint",
             )
         )
 
@@ -350,6 +415,8 @@ def _egress_findings(
                 "Room has door access but no traversable path to an exterior exit.",
                 (room_id,),
                 "Connect this room through door or stair transitions to a classified exterior exit.",
+                tracker_items=("BIR-D04",),
+                actionability="fixable_by_egress_connection",
             )
         )
     return findings
@@ -462,6 +529,8 @@ def _stair_transition_findings(
                     "Stair references a missing base or top level.",
                     (stair_id, *missing),
                     "Create the referenced levels or update the stair base/top level ids.",
+                    tracker_items=("BIR-D04",),
+                    actionability="fixable_by_reference_update",
                 )
             )
         if base_level and top_level and base_level == top_level:
@@ -474,6 +543,8 @@ def _stair_transition_findings(
                     "Stair base and top levels are identical.",
                     (stair_id, base_level),
                     "Set distinct base/top levels or replace the stair with a same-level circulation element.",
+                    tracker_items=("BIR-D04",),
+                    actionability="fixable_by_level_transition_update",
                 )
             )
     return findings
@@ -497,6 +568,20 @@ def _room_floor_topology_findings(
         level_id = _string(_read(room, "levelId", "level_id")) or ""
         candidate_floor_ids = sorted(floor_ids_by_level.get(level_id, []))
         if not candidate_floor_ids:
+            if floor_polygons:
+                findings.append(
+                    _finding(
+                        "room_containment_missing_level_floor",
+                        "BIR-D03-FLOOR",
+                        "error",
+                        "P0",
+                        "Room has no floor boundary on its own level/storey.",
+                        (room_id,),
+                        "Create a floor/slab boundary on the room level or move the room to the correct level.",
+                        tracker_items=("BIR-D03",),
+                        actionability="fixable_by_level_floor_or_room_level",
+                    )
+                )
             continue
         containment_finding = _room_floor_containment_finding(
             room_id,
@@ -523,6 +608,8 @@ def _room_floor_topology_findings(
                 "Room centroid is outside all floor boundaries on its level.",
                 (room_id, *candidate_floor_ids),
                 "Move the room outline onto the level floor plate or create the missing floor boundary.",
+                tracker_items=("BIR-D03",),
+                actionability="fixable_by_room_or_floor_boundary",
             )
         )
     return findings
@@ -568,6 +655,8 @@ def _room_floor_containment_finding(
             "Room outline is detached from every floor boundary on its level.",
             (room_id, *candidate_floor_ids),
             "Move the room onto the level floor plate or create an explicit floor/envelope for the detached area.",
+            tracker_items=("BIR-D03",),
+            actionability="fixable_by_move_or_add_floor",
             evidence={
                 "sampleCount": len(samples),
                 "outsideSampleCount": len(outside_samples),
@@ -586,6 +675,8 @@ def _room_floor_containment_finding(
         "Room outline overlaps outside the level floor slab without explicit extension intent.",
         (room_id, *candidate_floor_ids),
         "Revise the room outline to stay within the floor plate, add the missing slab/envelope, or mark the exterior/loggia/terrace extension intent explicitly.",
+        tracker_items=("BIR-D03",),
+        actionability="fixable_by_outline_slab_or_extension_intent",
         evidence={
             "sampleCount": len(samples),
             "outsideSampleCount": len(outside_samples),
@@ -648,13 +739,14 @@ def _room_wall_topology_findings(
     boundary_segments_by_level: dict[
         str, list[tuple[str, str, tuple[float, float], tuple[float, float]]]
     ] = defaultdict(list)
+    walls_by_level: dict[str, dict[str, Any]] = defaultdict(dict)
     for wall_id, wall in walls.items():
         start = _point(_read(wall, "start"))
         end = _point(_read(wall, "end"))
         if start and end:
-            boundary_segments_by_level[_string(_read(wall, "levelId", "level_id")) or ""].append(
-                (wall_id, "wall", start, end)
-            )
+            level_id = _string(_read(wall, "levelId", "level_id")) or ""
+            boundary_segments_by_level[level_id].append((wall_id, "wall", start, end))
+            walls_by_level[level_id][wall_id] = wall
     for separation_id, separation in room_separations.items():
         start = _point(_read(separation, "start"))
         end = _point(_read(separation, "end"))
@@ -676,6 +768,8 @@ def _room_wall_topology_findings(
                     "Room does not have a valid closed outline.",
                     (room_id,),
                     "Provide at least three finite outline points for the room.",
+                    tracker_items=("BIR-D01", "BIR-D05"),
+                    actionability="fixable_by_room_outline",
                 )
             )
             continue
@@ -695,9 +789,54 @@ def _room_wall_topology_findings(
                     "Room boundary has edges without nearby wall or room-separation topology on the same level.",
                     (room_id,),
                     "Add bounding walls or explicit room-separation lines, or revise the room outline to match built topology.",
+                    tracker_items=("BIR-D01", "BIR-D05"),
+                    actionability="fixable_by_boundary_topology",
                     evidence={"unsupportedEdgeCount": unsupported_edges},
                 )
             )
+        findings.extend(
+            _wall_boundary_role_findings_for_room(
+                room_id,
+                polygon,
+                rooms,
+                room_polygons,
+                walls_by_level.get(level_id, {}),
+            )
+        )
+    return findings
+
+
+def _wall_boundary_role_findings_for_room(
+    room_id: str,
+    polygon: list[tuple[float, float]],
+    rooms: Mapping[str, Any],
+    room_polygons: Mapping[str, list[tuple[float, float]]],
+    walls: Mapping[str, Any],
+) -> list[RoomAccessFinding]:
+    findings: list[RoomAccessFinding] = []
+    room_level = _string(_read(rooms[room_id], "levelId", "level_id")) or ""
+    wall_roles = _boundary_wall_roles(room_id, polygon, room_level, rooms, room_polygons, walls)
+    for wall_id, expected_role in sorted(wall_roles.items()):
+        wall = walls[wall_id]
+        declared_role = _wall_boundary_role(wall)
+        if declared_role is None:
+            continue
+        if declared_role == expected_role:
+            continue
+        findings.append(
+            _finding(
+                "room_access_wall_boundary_role_conflict",
+                "BIR-D05-WALL-ROLE",
+                "warning",
+                "P1",
+                "Wall boundary role conflicts with deterministic room adjacency.",
+                (room_id, wall_id),
+                "Update the wall role/classification or revise room outlines so interior, exterior, corridor, and shaft boundaries are explicit.",
+                tracker_items=("BIR-D05",),
+                actionability="fixable_by_wall_role_or_room_topology",
+                evidence={"declaredRole": declared_role, "expectedRole": expected_role},
+            )
+        )
     return findings
 
 
@@ -740,6 +879,130 @@ def _door_boundary_room_ids(
     return tuple(sorted(dict.fromkeys(room_ids)))
 
 
+def _boundary_wall_roles(
+    room_id: str,
+    polygon: list[tuple[float, float]],
+    room_level: str,
+    rooms: Mapping[str, Any],
+    room_polygons: Mapping[str, list[tuple[float, float]]],
+    walls: Mapping[str, Any],
+) -> dict[str, str]:
+    roles: dict[str, str] = {}
+    peer_room_ids = tuple(
+        sorted(
+            peer_id
+            for peer_id in room_polygons
+            if peer_id != room_id
+            and _string(_read(rooms[peer_id], "levelId", "level_id")) == room_level
+        )
+    )
+    for wall_id, wall in walls.items():
+        start = _point(_read(wall, "start"))
+        end = _point(_read(wall, "end"))
+        if start is None or end is None:
+            continue
+        matching_edges = [
+            (edge_start, edge_end)
+            for edge_start, edge_end in _polygon_segments(polygon)
+            if _segment_axis_coverage(
+                edge_start,
+                edge_end,
+                start,
+                end,
+                TOPOLOGY_TOLERANCE_MM,
+            )
+            is not None
+        ]
+        if not matching_edges:
+            continue
+        if _wall_role_flag(wall, "corridor"):
+            roles[wall_id] = "corridor"
+            continue
+        if _wall_role_flag(wall, "shaft"):
+            roles[wall_id] = "shaft"
+            continue
+        adjacent_peer = any(
+            _rooms_share_wall_edge(matching_edges, room_polygons[peer_id])
+            for peer_id in peer_room_ids
+        )
+        roles[wall_id] = "interior" if adjacent_peer else "exterior"
+    return roles
+
+
+def _rooms_share_wall_edge(
+    matching_edges: list[tuple[tuple[float, float], tuple[float, float]]],
+    peer_polygon: list[tuple[float, float]],
+) -> bool:
+    for edge in matching_edges:
+        for peer_edge in _polygon_segments(peer_polygon):
+            overlap = _axis_aligned_overlap_segment(edge, peer_edge)
+            if overlap is None:
+                continue
+            if math.hypot(overlap[1][0] - overlap[0][0], overlap[1][1] - overlap[0][1]) >= ACCESS_TOLERANCE_MM:
+                return True
+    return False
+
+
+def _wall_bounds_polygon(wall: Any, polygon: list[tuple[float, float]]) -> bool:
+    start = _point(_read(wall, "start"))
+    end = _point(_read(wall, "end"))
+    if start is None or end is None:
+        return False
+    return any(
+        _segment_axis_coverage(
+            edge_start,
+            edge_end,
+            start,
+            end,
+            TOPOLOGY_TOLERANCE_MM,
+        )
+        is not None
+        for edge_start, edge_end in _polygon_segments(polygon)
+    )
+
+
+def _wall_role_flag(wall: Any, role: str) -> bool:
+    props = _props(wall)
+    normalized_role = role.lower()
+    for key in ("roomBoundaryRole", "boundaryRole", "wallRole", "role"):
+        value = _read(wall, key, _snake(key))
+        if isinstance(value, str) and value.strip().lower() == normalized_role:
+            return True
+    if _truthy_prop(props, f"{role}Wall", f"is{role.title()}"):
+        return True
+    return False
+
+
+def _wall_boundary_role(wall: Any) -> str | None:
+    role_aliases = {
+        "interior": "interior",
+        "internal": "interior",
+        "partition": "interior",
+        "exterior": "exterior",
+        "external": "exterior",
+        "envelope": "exterior",
+        "corridor": "corridor",
+        "circulation": "corridor",
+        "shaft": "shaft",
+        "riser": "shaft",
+    }
+    for key in ("roomBoundaryRole", "boundaryRole", "wallRole", "role"):
+        value = _read(wall, key, _snake(key))
+        if isinstance(value, str):
+            normalized = role_aliases.get(value.strip().lower())
+            if normalized:
+                return normalized
+    if _truthy_prop(_props(wall), "corridorWall"):
+        return "corridor"
+    if _truthy_prop(_props(wall), "shaftWall"):
+        return "shaft"
+    if _truthy_prop(_props(wall), "exterior", "isExternal", "primaryEnvelope"):
+        return "exterior"
+    if _truthy_prop(_props(wall), "interior", "internal", "partition"):
+        return "interior"
+    return None
+
+
 def _room_schedule_findings(
     rooms: Mapping[str, Any],
     profile: Mapping[str, Any] | None,
@@ -763,6 +1026,8 @@ def _room_schedule_findings(
                 "Room is missing fields required for deterministic room schedule integrity.",
                 (room_id,),
                 "Populate required room schedule fields or relax the active room access integrity profile.",
+                tracker_items=("BIR-D06",),
+                actionability="fixable_by_room_bim_metadata",
                 evidence={"missingFields": list(missing)},
             )
         )
@@ -815,6 +1080,8 @@ def _profile_placeholder_findings(
                         "Active profile requests occupancy checks, but required occupancy metadata is incomplete.",
                         (room_id,),
                         "Populate occupancy metadata; this placeholder does not assert code compliance.",
+                        tracker_items=("BIR-D07",),
+                        actionability="fixable_by_profile_metadata",
                         evidence={"missingFields": list(missing)},
                     )
                 )
@@ -832,6 +1099,8 @@ def _profile_placeholder_findings(
                         "Active profile requests accessibility checks, but required accessibility metadata is incomplete.",
                         (room_id,),
                         "Populate accessibility metadata; this placeholder does not assert code compliance.",
+                        tracker_items=("BIR-D07",),
+                        actionability="fixable_by_profile_metadata",
                         evidence={"missingFields": list(missing)},
                     )
                 )
@@ -884,6 +1153,8 @@ def _finding(
     recommendation: str,
     *,
     evidence: dict[str, Any] | None = None,
+    tracker_items: tuple[str, ...] = (),
+    actionability: str = "review_required",
 ) -> RoomAccessFinding:
     return RoomAccessFinding(
         rule_id=rule_id,
@@ -896,6 +1167,8 @@ def _finding(
         element_ids=tuple(element_id for element_id in element_ids if element_id),
         recommendation=recommendation,
         evidence=evidence,
+        tracker_items=tracker_items,
+        actionability=actionability,
     )
 
 
@@ -924,6 +1197,67 @@ def _props(element: Any) -> dict[str, Any]:
     elif hasattr(element, "props"):
         raw = element.props
     return dict(raw) if isinstance(raw, Mapping) else {}
+
+
+def _physical_role(element: Any) -> str | None:
+    value = _read(element, "physicalRole", "physical_role", "modelRole", "authoringRole")
+    return str(value).strip().lower() if value is not None and str(value).strip() else None
+
+
+def _is_helper_or_nonphysical(element: Any) -> bool:
+    role = _physical_role(element)
+    if role in {"helper", "analysis", "analytical", "nonphysical", "non_physical"}:
+        return True
+    props = _props(element)
+    if _truthy_prop(
+        props,
+        "accessProxy",
+        "helper",
+        "roomGraphHelper",
+        "analysisOnly",
+        "nonphysical",
+        "nonPhysical",
+    ):
+        return True
+    raw_role = _read(element, "role")
+    return isinstance(raw_role, str) and raw_role.strip().lower() in {
+        "access_proxy",
+        "helper",
+        "room_graph",
+        "analysis",
+        "analytical",
+        "nonphysical",
+    }
+
+
+def _is_helper_access_separator(separation: Any) -> bool:
+    props = _props(separation)
+    if _physical_role(separation) in {"physical", "architectural", "model"}:
+        return True
+    if _truthy_prop(
+        props,
+        "accessProxy",
+        "roomGraphHelper",
+        "doorProxy",
+        "fakeDoor",
+        "syntheticDoor",
+        "openingProxy",
+        "accessOpening",
+        "showInSchedule",
+        "visible",
+        "rendered",
+        "renderable",
+        "export",
+        "exported",
+    ):
+        return True
+    for key in ("connectsRoomIds", "connectedRoomIds", "roomIds"):
+        value = props.get(key)
+        if isinstance(value, str) and value.strip():
+            return True
+        if isinstance(value, Iterable) and not isinstance(value, (str, bytes, Mapping)):
+            return bool(list(value))
+    return False
 
 
 def _string(value: Any) -> str | None:

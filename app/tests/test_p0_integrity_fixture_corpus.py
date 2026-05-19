@@ -118,6 +118,11 @@ def test_p0_integrity_fixture_corpus_covers_room_and_target_house_regressions() 
     assert {
         "room_overlap_outside_slab",
         "room_detached_island",
+        "room_access_helper_host_not_real_boundary",
+        "room_boundary_fake_room_separation_access",
+        "room_egress_unresolved_path",
+        "room_wall_topology_gap",
+        "room_schedule_metadata_missing",
         "target_house_detached_access_wall",
         "target_house_roof_cut_outside_host",
         "target_house_roof_cut_inside_host",

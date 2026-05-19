@@ -123,6 +123,74 @@ def test_domain_integrity_preserves_vertical_circulation_tracker_metadata() -> N
     assert opening["recommendation"]
 
 
+def test_domain_integrity_preserves_room_access_tracker_and_actionability() -> None:
+    elements = {
+        "lvl-1": {"kind": "level", "id": "lvl-1", "elevationMm": 0},
+        "floor-1": {
+            "kind": "floor",
+            "id": "floor-1",
+            "levelId": "lvl-1",
+            "boundaryMm": [
+                {"xMm": 0, "yMm": 0},
+                {"xMm": 6000, "yMm": 0},
+                {"xMm": 6000, "yMm": 3000},
+                {"xMm": 0, "yMm": 3000},
+            ],
+        },
+        "room-a": {
+            "kind": "room",
+            "id": "room-a",
+            "name": "Room A",
+            "levelId": "lvl-1",
+            "outlineMm": [
+                {"xMm": 0, "yMm": 0},
+                {"xMm": 3000, "yMm": 0},
+                {"xMm": 3000, "yMm": 3000},
+                {"xMm": 0, "yMm": 3000},
+            ],
+        },
+        "room-b": {
+            "kind": "room",
+            "id": "room-b",
+            "name": "Room B",
+            "levelId": "lvl-1",
+            "outlineMm": [
+                {"xMm": 3000, "yMm": 0},
+                {"xMm": 6000, "yMm": 0},
+                {"xMm": 6000, "yMm": 3000},
+                {"xMm": 3000, "yMm": 3000},
+            ],
+        },
+        "wall-mid": {
+            "kind": "wall",
+            "id": "wall-mid",
+            "levelId": "lvl-1",
+            "start": {"xMm": 3000, "yMm": 0},
+            "end": {"xMm": 3000, "yMm": 3000},
+            "props": {"physicalRole": "analysis"},
+        },
+        "door-helper": {
+            "kind": "door",
+            "id": "door-helper",
+            "wallId": "wall-mid",
+            "alongT": 0.5,
+        },
+    }
+
+    findings = check_domain_integrity(elements)
+    helper = next(
+        finding
+        for finding in findings
+        if finding["ruleId"] == "room_access_door_host_not_real_boundary"
+    )
+
+    assert helper["trackerItems"] == ["BIR-D01", "BIR-D02"]
+    assert helper["severity"] == "error"
+    assert helper["priority"] == "P0"
+    assert helper["actionability"] == "fixable_by_rehost_or_physical_door"
+    assert helper["recommendation"]
+
+
 def test_domain_integrity_report_summarizes_sources_and_profile() -> None:
     report = domain_integrity_report(_elements(), profile="accessibility")
 

@@ -179,6 +179,196 @@
       }
     },
     {
+      "id": "room_access_helper_host_not_real_boundary",
+      "fixtureClass": "minimal_synthetic",
+      "description": "Door hosted on an analytical/helper wall cannot satisfy real room access.",
+      "trackerItems": ["BIR-D01", "BIR-D02", "BIR-O01"],
+      "rulesUnderTest": ["room_access_door_host_not_real_boundary"],
+      "expectedFindings": [
+        {
+          "ruleId": "room_access_door_host_not_real_boundary",
+          "elementIds": ["door-helper", "wall-mid"]
+        }
+      ],
+      "absentRuleIds": [],
+      "elements": {
+        "lvl-1": { "kind": "level", "id": "lvl-1", "elevationMm": 0 },
+        "floor-1": {
+          "kind": "floor",
+          "id": "floor-1",
+          "levelId": "lvl-1",
+          "boundaryMm": [
+            { "xMm": 0, "yMm": 0 },
+            { "xMm": 6000, "yMm": 0 },
+            { "xMm": 6000, "yMm": 3000 },
+            { "xMm": 0, "yMm": 3000 }
+          ]
+        },
+        "room-a": {
+          "kind": "room",
+          "id": "room-a",
+          "levelId": "lvl-1",
+          "outlineMm": [
+            { "xMm": 0, "yMm": 0 },
+            { "xMm": 3000, "yMm": 0 },
+            { "xMm": 3000, "yMm": 3000 },
+            { "xMm": 0, "yMm": 3000 }
+          ]
+        },
+        "room-b": {
+          "kind": "room",
+          "id": "room-b",
+          "levelId": "lvl-1",
+          "outlineMm": [
+            { "xMm": 3000, "yMm": 0 },
+            { "xMm": 6000, "yMm": 0 },
+            { "xMm": 6000, "yMm": 3000 },
+            { "xMm": 3000, "yMm": 3000 }
+          ]
+        },
+        "wall-mid": {
+          "kind": "wall",
+          "id": "wall-mid",
+          "levelId": "lvl-1",
+          "start": { "xMm": 3000, "yMm": 0 },
+          "end": { "xMm": 3000, "yMm": 3000 },
+          "props": { "physicalRole": "analysis" }
+        },
+        "door-helper": {
+          "kind": "door",
+          "id": "door-helper",
+          "wallId": "wall-mid",
+          "alongT": 0.5
+        }
+      }
+    },
+    {
+      "id": "room_boundary_fake_room_separation_access",
+      "fixtureClass": "minimal_synthetic",
+      "description": "Room-separation line is incorrectly promoted into a physical access proxy.",
+      "trackerItems": ["BIR-D01", "BIR-D02", "BIR-O01"],
+      "rulesUnderTest": ["room_access_fake_room_separation_access"],
+      "expectedFindings": [
+        {
+          "ruleId": "room_access_fake_room_separation_access",
+          "elementIds": ["sep-fake-door"]
+        }
+      ],
+      "absentRuleIds": [],
+      "elements": {
+        "lvl-1": { "kind": "level", "id": "lvl-1", "elevationMm": 0 },
+        "sep-fake-door": {
+          "kind": "room_separation",
+          "id": "sep-fake-door",
+          "levelId": "lvl-1",
+          "start": { "xMm": 3000, "yMm": 0 },
+          "end": { "xMm": 3000, "yMm": 3000 },
+          "props": {
+            "physicalRole": "physical",
+            "doorProxy": true,
+            "showInSchedule": true
+          }
+        }
+      }
+    },
+    {
+      "id": "room_egress_unresolved_path",
+      "fixtureClass": "minimal_synthetic",
+      "description": "Accessible room has a real door but no traversable path to an exterior exit.",
+      "trackerItems": ["BIR-D04", "BIR-O01"],
+      "rulesUnderTest": ["room_access_unresolved_egress_path"],
+      "expectedFindings": [
+        {
+          "ruleId": "room_access_unresolved_egress_path",
+          "elementIds": ["room-isolated"]
+        }
+      ],
+      "absentRuleIds": [],
+      "elements": {
+        "lvl-1": { "kind": "level", "id": "lvl-1", "elevationMm": 0 },
+        "room-isolated": {
+          "kind": "room",
+          "id": "room-isolated",
+          "levelId": "lvl-1",
+          "outlineMm": [
+            { "xMm": 0, "yMm": 0 },
+            { "xMm": 3000, "yMm": 0 },
+            { "xMm": 3000, "yMm": 3000 },
+            { "xMm": 0, "yMm": 3000 }
+          ]
+        },
+        "wall-s": {
+          "kind": "wall",
+          "id": "wall-s",
+          "levelId": "lvl-1",
+          "start": { "xMm": 0, "yMm": 0 },
+          "end": { "xMm": 3000, "yMm": 0 }
+        },
+        "door-room": {
+          "kind": "door",
+          "id": "door-room",
+          "wallId": "wall-s",
+          "alongT": 0.5
+        }
+      }
+    },
+    {
+      "id": "room_wall_topology_gap",
+      "fixtureClass": "minimal_synthetic",
+      "description": "Room outline has no same-level wall or explicit room-separation topology.",
+      "trackerItems": ["BIR-D01", "BIR-D05", "BIR-O01"],
+      "rulesUnderTest": ["room_access_room_wall_topology_gap"],
+      "expectedFindings": [
+        {
+          "ruleId": "room_access_room_wall_topology_gap",
+          "elementIds": ["room-open"]
+        }
+      ],
+      "absentRuleIds": [],
+      "elements": {
+        "lvl-1": { "kind": "level", "id": "lvl-1", "elevationMm": 0 },
+        "room-open": {
+          "kind": "room",
+          "id": "room-open",
+          "levelId": "lvl-1",
+          "outlineMm": [
+            { "xMm": 0, "yMm": 0 },
+            { "xMm": 3000, "yMm": 0 },
+            { "xMm": 3000, "yMm": 3000 },
+            { "xMm": 0, "yMm": 3000 }
+          ]
+        }
+      }
+    },
+    {
+      "id": "room_schedule_metadata_missing",
+      "fixtureClass": "minimal_synthetic",
+      "description": "Room lacks deterministic BIM/schedule metadata required for room schedules.",
+      "trackerItems": ["BIR-D06", "BIR-O01"],
+      "rulesUnderTest": ["room_access_missing_room_schedule_fields"],
+      "expectedFindings": [
+        {
+          "ruleId": "room_access_missing_room_schedule_fields",
+          "elementIds": ["room-unscheduled"]
+        }
+      ],
+      "absentRuleIds": [],
+      "elements": {
+        "lvl-1": { "kind": "level", "id": "lvl-1", "elevationMm": 0 },
+        "room-unscheduled": {
+          "kind": "room",
+          "id": "room-unscheduled",
+          "levelId": "lvl-1",
+          "outlineMm": [
+            { "xMm": 0, "yMm": 0 },
+            { "xMm": 3000, "yMm": 0 },
+            { "xMm": 3000, "yMm": 3000 },
+            { "xMm": 0, "yMm": 3000 }
+          ]
+        }
+      }
+    },
+    {
       "id": "missing_hosted_door",
       "fixtureClass": "minimal_synthetic",
       "description": "Wall-hosted door references a missing wall.",
@@ -285,6 +475,153 @@
           "alongT": 0.5,
           "widthMm": 500,
           "familyTypeId": "ft-pocket-door-standard"
+        }
+      }
+    },
+    {
+      "id": "hosted_door_missing_semantic_cut",
+      "fixtureClass": "minimal_synthetic",
+      "description": "Hosted door declares no wall cut participant and must fail before commit.",
+      "trackerItems": ["BIR-B01", "BIR-C04"],
+      "rulesUnderTest": ["hosted_opening_missing_semantic_cut"],
+      "expectedFindings": [
+        {
+          "ruleId": "hosted_opening_missing_semantic_cut",
+          "elementIds": ["door-no-cut", "wall-1"]
+        }
+      ],
+      "absentRuleIds": [],
+      "elements": {
+        "lvl-1": { "kind": "level", "id": "lvl-1", "elevationMm": 0 },
+        "wall-1": {
+          "kind": "wall",
+          "id": "wall-1",
+          "levelId": "lvl-1",
+          "start": { "xMm": 0, "yMm": 0 },
+          "end": { "xMm": 4000, "yMm": 0 },
+          "heightMm": 2800
+        },
+        "door-no-cut": {
+          "kind": "door",
+          "id": "door-no-cut",
+          "wallId": "wall-1",
+          "alongT": 0.5,
+          "widthMm": 900,
+          "props": { "disableHostCut": true }
+        }
+      }
+    },
+    {
+      "id": "overlapping_hosted_openings",
+      "fixtureClass": "minimal_synthetic",
+      "description": "Two hosted openings overlap on one wall interval.",
+      "trackerItems": ["BIR-B01", "BIR-C06"],
+      "rulesUnderTest": ["hosted_opening_overlap"],
+      "expectedFindings": [
+        {
+          "ruleId": "hosted_opening_overlap",
+          "elementIds": ["door-a", "wall-1", "window-b"]
+        }
+      ],
+      "absentRuleIds": [],
+      "elements": {
+        "lvl-1": { "kind": "level", "id": "lvl-1", "elevationMm": 0 },
+        "wall-1": {
+          "kind": "wall",
+          "id": "wall-1",
+          "levelId": "lvl-1",
+          "start": { "xMm": 0, "yMm": 0 },
+          "end": { "xMm": 4000, "yMm": 0 },
+          "heightMm": 2800
+        },
+        "door-a": {
+          "kind": "door",
+          "id": "door-a",
+          "wallId": "wall-1",
+          "alongT": 0.45,
+          "widthMm": 900
+        },
+        "window-b": {
+          "kind": "window",
+          "id": "window-b",
+          "wallId": "wall-1",
+          "alongT": 0.55,
+          "widthMm": 900,
+          "sillHeightMm": 900,
+          "heightMm": 1200
+        }
+      }
+    },
+    {
+      "id": "hosted_family_support_mismatch",
+      "fixtureClass": "minimal_synthetic",
+      "description": "Direct family_type hostSupport requires a ceiling but the instance is wall-hosted.",
+      "trackerItems": ["BIR-C07", "BIR-C08"],
+      "rulesUnderTest": ["hosted_family_unsupported_host_class", "hosted_render_proxy_orphan"],
+      "expectedFindings": [
+        {
+          "ruleId": "hosted_family_unsupported_host_class",
+          "elementIds": ["family-detector", "wall-1"]
+        },
+        {
+          "ruleId": "hosted_render_proxy_orphan",
+          "elementIds": ["family-detector", "wall-1"]
+        }
+      ],
+      "absentRuleIds": [],
+      "elements": {
+        "lvl-1": { "kind": "level", "id": "lvl-1", "elevationMm": 0 },
+        "wall-1": {
+          "kind": "wall",
+          "id": "wall-1",
+          "levelId": "lvl-1",
+          "start": { "xMm": 0, "yMm": 0 },
+          "end": { "xMm": 4000, "yMm": 0 },
+          "heightMm": 2800
+        },
+        "ft-ceiling-hosted": {
+          "kind": "family_type",
+          "id": "ft-ceiling-hosted",
+          "familyId": "fam-detector",
+          "discipline": "generic",
+          "hostSupport": "ceiling_hosted",
+          "renderSupport": { "mode": "box" }
+        },
+        "family-detector": {
+          "kind": "family_instance",
+          "id": "family-detector",
+          "familyTypeId": "ft-ceiling-hosted",
+          "positionMm": { "xMm": 1200, "yMm": 1100 },
+          "hostElementId": "wall-1",
+          "paramValues": { "renderProxyKind": "box" }
+        }
+      }
+    },
+    {
+      "id": "orphan_void_cut_leakage",
+      "fixtureClass": "minimal_synthetic",
+      "description": "Void cut references a missing host and must not leak into rendered cut geometry.",
+      "trackerItems": ["BIR-C04", "BIR-C08"],
+      "rulesUnderTest": ["hosted_void_cut_orphan"],
+      "expectedFindings": [
+        {
+          "ruleId": "hosted_void_cut_orphan",
+          "elementIds": ["cut-orphan", "missing-wall"]
+        }
+      ],
+      "absentRuleIds": [],
+      "elements": {
+        "cut-orphan": {
+          "kind": "void_cut",
+          "id": "cut-orphan",
+          "hostElementId": "missing-wall",
+          "profileMm": [
+            { "xMm": 0, "yMm": 0 },
+            { "xMm": 100, "yMm": 0 },
+            { "xMm": 100, "yMm": 100 },
+            { "xMm": 0, "yMm": 100 }
+          ],
+          "depthMm": 300
         }
       }
     },

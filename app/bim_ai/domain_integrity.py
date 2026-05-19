@@ -15,6 +15,8 @@ if TYPE_CHECKING:
     from bim_ai.advisor_profiling import AdvisorDiagnosticsProfiler
 
 DOMAIN_INTEGRITY_TRACKER_ITEMS = (
+    "BIR-D01",
+    "BIR-D02",
     "BIR-D03",
     "BIR-D04",
     "BIR-D05",

@@ -120,7 +120,15 @@ def test_clean_small_house_room_graph_has_no_findings_and_stable_payload() -> No
 
     smoke = room_access_integrity_smoke_v1(list(_small_house().values()))
     assert smoke["ok"] is True
-    assert smoke["trackedItems"] == ["BIR-D03", "BIR-D04", "BIR-D05", "BIR-D06", "BIR-D07"]
+    assert smoke["trackedItems"] == [
+        "BIR-D01",
+        "BIR-D02",
+        "BIR-D03",
+        "BIR-D04",
+        "BIR-D05",
+        "BIR-D06",
+        "BIR-D07",
+    ]
     assert smoke["findings"] == []
 
 
@@ -300,6 +308,49 @@ def test_open_room_separation_only_access_is_reported_without_blocking_open_plan
     ]
 
 
+def test_helper_hosted_door_does_not_create_real_room_access() -> None:
+    elements = _small_house()
+    elements["wall-mid"]["props"]["physicalRole"] = "analysis"
+
+    findings = check_room_access_integrity(elements)
+
+    helper = next(
+        finding
+        for finding in findings
+        if finding.rule_id == "room_access_door_host_not_real_boundary"
+    )
+    assert helper.code == "BIR-D02-REAL-DOOR"
+    assert helper.element_ids == ("door-between", "wall-mid")
+    assert helper.tracker_items == ("BIR-D01", "BIR-D02")
+    assert helper.actionability == "fixable_by_rehost_or_physical_door"
+    assert any(
+        finding.rule_id == "room_access_inaccessible_room" and finding.element_ids == ("room-b",)
+        for finding in findings
+    )
+
+
+def test_physical_room_separation_access_hack_is_reported() -> None:
+    elements = _small_house()
+    elements.pop("door-between")
+    elements["sep-fake-door"] = _room_sep("sep-fake-door", (3000, 0), (3000, 3000))
+    elements["sep-fake-door"]["props"] = {
+        "physicalRole": "physical",
+        "doorProxy": True,
+        "showInSchedule": True,
+    }
+
+    findings = check_room_access_integrity(elements)
+
+    fake = next(
+        finding
+        for finding in findings
+        if finding.rule_id == "room_access_fake_room_separation_access"
+    )
+    assert fake.tracker_items == ("BIR-D01", "BIR-D02")
+    assert fake.severity == "error"
+    assert fake.priority == "P0"
+
+
 def test_room_outside_floor_is_reported() -> None:
     elements = _small_house()
     elements["room-b"] = _room(
@@ -315,6 +366,27 @@ def test_room_outside_floor_is_reported() -> None:
     )
     assert outside.element_ids == ("room-b", "floor-1")
     assert outside.code == "BIR-D06-FLOOR"
+    assert outside.tracker_items == ("BIR-D03",)
+
+
+def test_room_on_level_without_floor_is_reported_against_storey() -> None:
+    elements = _small_house()
+    elements["lvl-2"] = {"kind": "level", "id": "lvl-2", "name": "Level 2"}
+    elements["room-b"] = _room(
+        "room-b",
+        "lvl-2",
+        [(3000, 0), (6000, 0), (6000, 3000), (3000, 3000)],
+    )
+
+    findings = check_room_access_integrity(elements)
+
+    missing_floor = next(
+        finding
+        for finding in findings
+        if finding.rule_id == "room_containment_missing_level_floor"
+    )
+    assert missing_floor.element_ids == ("room-b",)
+    assert missing_floor.tracker_items == ("BIR-D03",)
 
 
 def test_room_separations_are_explicit_room_wall_topology() -> None:
@@ -391,6 +463,24 @@ def test_room_wall_topology_gap_detects_partial_edge_coverage() -> None:
         and finding.element_ids == ("room-partial",)
     )
     assert gap.evidence == {"unsupportedEdgeCount": 1}
+
+
+def test_wall_boundary_role_conflict_is_reported_deterministically() -> None:
+    elements = _small_house()
+    elements["wall-mid"]["props"] = {"roomBoundaryRole": "exterior"}
+
+    findings = check_room_access_integrity(elements)
+
+    conflicts = [
+        finding
+        for finding in findings
+        if finding.rule_id == "room_access_wall_boundary_role_conflict"
+    ]
+    assert [finding.element_ids for finding in conflicts] == [
+        ("room-a", "wall-mid"),
+        ("room-b", "wall-mid"),
+    ]
+    assert all(finding.tracker_items == ("BIR-D05",) for finding in conflicts)
 
 
 def test_missing_room_schedule_fields_are_reported() -> None:
@@ -531,3 +621,15 @@ def test_profile_controlled_occupancy_and_accessibility_placeholders() -> None:
         "room_access_occupancy_profile_placeholder",
         "room_access_accessibility_profile_placeholder",
     }.issubset(_rule_ids(findings))
+    assert {
+        finding.rule_id: finding.tracker_items
+        for finding in findings
+        if finding.rule_id
+        in {
+            "room_access_occupancy_profile_placeholder",
+            "room_access_accessibility_profile_placeholder",
+        }
+    } == {
+        "room_access_occupancy_profile_placeholder": ("BIR-D07",),
+        "room_access_accessibility_profile_placeholder": ("BIR-D07",),
+    }
