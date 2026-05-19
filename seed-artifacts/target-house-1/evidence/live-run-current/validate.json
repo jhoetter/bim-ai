@@ -1,21 +1,10 @@
 {
   "modelId": "target-house-1-offline-regenerated",
   "revision": 2,
-  "violations": [
-    {
-      "ruleId": "model_integrity_coordinate_list_invalid",
-      "severity": "error",
-      "message": "Element 'main-stair' field 'boundaryMm' must be a coordinate list.",
-      "elementIds": ["main-stair"],
-      "blocking": true,
-      "quickFixCommand": null,
-      "discipline": "coordination",
-      "blockingClass": "model_integrity"
-    }
-  ],
+  "violations": [],
   "summary": {
     "revision": 2,
-    "elementTotal": 154,
+    "elementTotal": 163,
     "scaleWorkload": {
       "wallCount": 19,
       "roomCount": 13,
@@ -24,6 +13,7 @@
     "countsByKind": {
       "internal_origin": 1,
       "project_base_point": 1,
+      "survey_point": 1,
       "wall_type": 2,
       "floor_type": 1,
       "roof_type": 1,
@@ -31,7 +21,10 @@
       "room_color_scheme": 1,
       "level": 2,
       "plan_view": 2,
-      "floor": 2,
+      "toposolid": 1,
+      "site": 1,
+      "property_line": 4,
+      "floor": 4,
       "wall": 19,
       "roof": 1,
       "room": 13,
@@ -80,13 +73,13 @@
     "windowCount": 2,
     "gridLineCount": 0,
     "openIssueCount": 0,
-    "floorCount": 2,
+    "floorCount": 4,
     "roofCount": 1,
     "stairCount": 1,
     "sheetCount": 1,
     "railingCount": 3,
     "slabOpeningCount": 1,
-    "siteCount": 0,
+    "siteCount": 1,
     "familyTypeCount": 3,
     "sectionCutCount": 1,
     "planViewCount": 2,
@@ -1011,7 +1004,7 @@
     }
   },
   "checks": {
-    "errorViolationCount": 1,
-    "blockingViolationCount": 1
+    "errorViolationCount": 0,
+    "blockingViolationCount": 0
   }
 }

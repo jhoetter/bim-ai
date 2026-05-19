@@ -86,6 +86,7 @@ def try_apply_building_envelope_command(doc, cmd, *, source_provider=None) -> bo
                 floor_type_id=cmd.floor_type_id,
                 room_bounded=cmd.room_bounded,
                 toposolid_elevation_mm=topo_elev,
+                props=cmd.props,
                 discipline=DEFAULT_DISCIPLINE_BY_KIND.get("floor", "arch"),
             )
 

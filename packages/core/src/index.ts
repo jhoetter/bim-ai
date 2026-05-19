@@ -2079,6 +2079,9 @@ export type Element =
       id: string;
       name: string;
       hostedStairId?: string | null;
+      hostFloorId?: string | null;
+      hostWallId?: string | null;
+      hostEdgeId?: string | null;
       pathMm: XY[];
       guardHeightMm?: number;
       /** KRN-V3-11: parametric baluster spacing pattern. */
@@ -2103,6 +2106,8 @@ export type Element =
       agentTrace?: AgentTrace;
       /** DSC-V3-01: discipline tag. */
       discipline?: DisciplineTag | null;
+      /** SCH-V3-01: custom property values. */
+      props?: Record<string, unknown>;
     }
   | {
       kind: 'ramp';

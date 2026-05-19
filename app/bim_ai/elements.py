@@ -1535,6 +1535,9 @@ class RailingElem(BaseModel):
     id: str
     name: str = "Railing"
     hosted_stair_id: str | None = Field(default=None, alias="hostedStairId")
+    host_floor_id: str | None = Field(default=None, alias="hostFloorId")
+    host_wall_id: str | None = Field(default=None, alias="hostWallId")
+    host_edge_id: str | None = Field(default=None, alias="hostEdgeId")
     path_mm: list[Vec2Mm] = Field(alias="pathMm")
     guard_height_mm: float = Field(alias="guardHeightMm", default=1040)
     baluster_pattern: BalusterPattern | None = Field(default=None, alias="balusterPattern")

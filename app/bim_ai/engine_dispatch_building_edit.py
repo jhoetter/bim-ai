@@ -24,6 +24,7 @@ from bim_ai.engine import (
     DoorElem,
     DormerElem,
     Element,
+    FloorElem,
     JoinGeometryElem,
     LevelElem,
     MaskingRegionElem,
@@ -484,21 +485,37 @@ def try_apply_building_edit_command(doc, cmd, *, source_provider=None) -> bool:
                 raise ValueError(f"duplicate element id '{rid}'")
             if cmd.hosted_stair_id and cmd.hosted_stair_id not in els:
                 raise ValueError("createRailing.hostedStairId unknown")
+            if cmd.host_floor_id and not isinstance(els.get(cmd.host_floor_id), FloorElem):
+                raise ValueError("createRailing.hostFloorId must reference a Floor")
+            if cmd.host_wall_id and not isinstance(els.get(cmd.host_wall_id), WallElem):
+                raise ValueError("createRailing.hostWallId must reference a Wall")
             if len(cmd.path_mm) < 2:
                 raise ValueError("createRailing.pathMm requires ≥2 points")
             if cmd.baluster_pattern is not None:
                 _validate_baluster_pattern(cmd.baluster_pattern)
             if cmd.handrail_supports:
                 _validate_handrail_supports(cmd.handrail_supports, els)
+            railing_payload = {
+                "kind": "railing",
+                "id": rid,
+                "name": cmd.name,
+                "path_mm": cmd.path_mm,
+                "guard_height_mm": cmd.guard_height_mm,
+                "baluster_pattern": cmd.baluster_pattern,
+                "handrail_supports": cmd.handrail_supports or None,
+                "material_slots": cmd.material_slots,
+                "discipline": DEFAULT_DISCIPLINE_BY_KIND.get("railing", "arch"),
+            }
+            if cmd.hosted_stair_id:
+                railing_payload["hosted_stair_id"] = cmd.hosted_stair_id
+            if cmd.host_floor_id:
+                railing_payload["host_floor_id"] = cmd.host_floor_id
+            if cmd.host_wall_id:
+                railing_payload["host_wall_id"] = cmd.host_wall_id
+            if cmd.host_edge_id:
+                railing_payload["host_edge_id"] = cmd.host_edge_id
             els[rid] = RailingElem(
-                kind="railing",
-                id=rid,
-                name=cmd.name,
-                hosted_stair_id=cmd.hosted_stair_id,
-                path_mm=cmd.path_mm,
-                baluster_pattern=cmd.baluster_pattern,
-                handrail_supports=cmd.handrail_supports or None,
-                discipline=DEFAULT_DISCIPLINE_BY_KIND.get("railing", "arch"),
+                **railing_payload,
             )
 
         case SetRailingBalusterPatternCmd():

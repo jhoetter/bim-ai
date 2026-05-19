@@ -240,6 +240,25 @@ from bim_ai.constraints_advisories import (  # noqa: E402,F401
 )
 
 
+def _intentional_floor_overlay(a: FloorElem, b: FloorElem) -> bool:
+    return _floor_overlays_host(a, b) or _floor_overlays_host(b, a)
+
+
+def _floor_overlays_host(candidate: FloorElem, host: FloorElem) -> bool:
+    props = candidate.props or {}
+    exterior_type = str(props.get("exteriorSpaceType") or props.get("spaceType") or "").lower()
+    if exterior_type not in {"terrace", "roof_terrace", "loggia", "balcony"}:
+        return False
+    host_ids: set[str] = set()
+    for key in ("hostFloorId", "supportedByIds", "supportIds"):
+        value = props.get(key)
+        if isinstance(value, str):
+            host_ids.add(value)
+        elif isinstance(value, list | tuple | set):
+            host_ids.update(str(item) for item in value if item)
+    return host.id in host_ids
+
+
 def evaluate(
     elements: dict[str, Element],
     *,
@@ -966,6 +985,8 @@ def evaluate(
         for i in range(n):
             poly_a = [(p.x_mm, p.y_mm) for p in level_floors[i].boundary_mm]
             for j in range(i + 1, n):
+                if _intentional_floor_overlay(level_floors[i], level_floors[j]):
+                    continue
                 poly_b = [(p.x_mm, p.y_mm) for p in level_floors[j].boundary_mm]
                 area_mm2 = _polygon_overlap_area_mm2(poly_a, poly_b)
                 if area_mm2 > 1.0:

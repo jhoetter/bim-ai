@@ -1,15 +1,15 @@
 {
   "format": "evidencePackage_v1",
-  "generatedAt": "2026-05-19T09:14:32.477104Z",
+  "generatedAt": "2026-05-19T09:38:22.589795Z",
   "modelId": "target-house-1-offline-regenerated",
   "revision": 2,
-  "elementCount": 154,
+  "elementCount": 163,
   "countsByKind": {
     "asset_library_entry": 5,
     "door": 10,
     "elevation_view": 1,
     "family_type": 3,
-    "floor": 2,
+    "floor": 4,
     "floor_type": 1,
     "hatch_pattern_def": 7,
     "internal_origin": 1,
@@ -17,6 +17,7 @@
     "placed_asset": 5,
     "plan_view": 2,
     "project_base_point": 1,
+    "property_line": 4,
     "railing": 3,
     "roof": 1,
     "roof_opening": 1,
@@ -27,10 +28,13 @@
     "schedule": 3,
     "section_cut": 1,
     "sheet": 1,
+    "site": 1,
     "slab_opening": 1,
     "stair": 1,
     "sun_settings": 1,
+    "survey_point": 1,
     "sweep": 3,
+    "toposolid": 1,
     "viewpoint": 8,
     "wall": 19,
     "wall_type": 2,
@@ -38,7 +42,7 @@
   },
   "summary": {
     "revision": 2,
-    "elementTotal": 154,
+    "elementTotal": 163,
     "scaleWorkload": {
       "wallCount": 19,
       "roomCount": 13,
@@ -47,6 +51,7 @@
     "countsByKind": {
       "internal_origin": 1,
       "project_base_point": 1,
+      "survey_point": 1,
       "wall_type": 2,
       "floor_type": 1,
       "roof_type": 1,
@@ -54,7 +59,10 @@
       "room_color_scheme": 1,
       "level": 2,
       "plan_view": 2,
-      "floor": 2,
+      "toposolid": 1,
+      "site": 1,
+      "property_line": 4,
+      "floor": 4,
       "wall": 19,
       "roof": 1,
       "room": 13,
@@ -103,13 +111,13 @@
     "windowCount": 2,
     "gridLineCount": 0,
     "openIssueCount": 0,
-    "floorCount": 2,
+    "floorCount": 4,
     "roofCount": 1,
     "stairCount": 1,
     "sheetCount": 1,
     "railingCount": 3,
     "slabOpeningCount": 1,
-    "siteCount": 0,
+    "siteCount": 1,
     "familyTypeCount": 3,
     "sectionCutCount": 1,
     "planViewCount": 2,
@@ -1034,21 +1042,10 @@
     }
   },
   "validate": {
-    "violations": [
-      {
-        "ruleId": "model_integrity_coordinate_list_invalid",
-        "severity": "error",
-        "message": "Element 'main-stair' field 'boundaryMm' must be a coordinate list.",
-        "elementIds": ["main-stair"],
-        "blocking": true,
-        "quickFixCommand": null,
-        "discipline": "coordination",
-        "blockingClass": "model_integrity"
-      }
-    ],
+    "violations": [],
     "checks": {
-      "errorViolationCount": 1,
-      "blockingViolationCount": 1
+      "errorViolationCount": 0,
+      "blockingViolationCount": 0
     }
   },
   "exportLinks": {},

@@ -502,6 +502,9 @@ def _railing_host_ids(railing: RailingElem) -> list[str]:
     ids: list[str] = []
     if railing.hosted_stair_id:
         ids.append(railing.hosted_stair_id)
+    for value in (railing.host_floor_id, railing.host_wall_id, railing.host_edge_id):
+        if value:
+            ids.append(value)
     props = _props(railing)
     for key in ("hostFloorId", "hostWallId", "hostEdgeId", "hostIds"):
         value = props.get(key)

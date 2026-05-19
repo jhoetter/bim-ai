@@ -1,6 +1,6 @@
 {
   "schemaVersion": "sketch.exchange-validation.v1",
-  "generatedAt": "2026-05-19T09:14:32.477102Z",
+  "generatedAt": "2026-05-19T09:38:22.589793Z",
   "qualityTarget": "project_initiation_bim",
   "source": "offline_snapshot",
   "ok": true,
@@ -36,7 +36,7 @@
         "IfcSpace": 13,
         "IfcWall": 19,
         "IfcWallStandardCase": 19,
-        "IfcSlab": 2,
+        "IfcSlab": 4,
         "IfcRoof": 1,
         "IfcStair": 1,
         "IfcDoor": 10,

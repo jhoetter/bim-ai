@@ -5,6 +5,7 @@ from __future__ import annotations
 import pytest
 
 from bim_ai.commands import (
+    CreateFloorCmd,
     CreateLevelCmd,
     CreateRailingCmd,
     CreateWallCmd,
@@ -73,6 +74,42 @@ def test_create_railing_regular_pattern():
     assert railing.baluster_pattern is not None
     assert railing.baluster_pattern.rule == "regular"
     assert railing.baluster_pattern.spacing_mm == 120
+
+
+def test_create_railing_with_floor_edge_host_and_material_slots():
+    doc, level_id, wall_id = _base_doc()
+    apply_inplace(
+        doc,
+        CreateFloorCmd(
+            id="floor-1",
+            name="Guarded terrace",
+            levelId=level_id,
+            boundaryMm=[
+                Vec2Mm(xMm=0, yMm=0),
+                Vec2Mm(xMm=3000, yMm=0),
+                Vec2Mm(xMm=3000, yMm=2000),
+                Vec2Mm(xMm=0, yMm=2000),
+            ],
+        ),
+    )
+    apply_inplace(
+        doc,
+        _railing_cmd(
+            hostFloorId="floor-1",
+            hostWallId=wall_id,
+            hostEdgeId="floor-1:edge:south",
+            guardHeightMm=1100,
+            materialSlots={"handrail": "aluminium_black", "post": "aluminium_black"},
+        ),
+    )
+
+    railing = doc.elements["rail-1"]
+    assert isinstance(railing, RailingElem)
+    assert railing.host_floor_id == "floor-1"
+    assert railing.host_wall_id == wall_id
+    assert railing.host_edge_id == "floor-1:edge:south"
+    assert railing.guard_height_mm == 1100
+    assert railing.material_slots == {"handrail": "aluminium_black", "post": "aluminium_black"}
 
 
 def test_create_railing_glass_panel_no_spacing():

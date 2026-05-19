@@ -45,6 +45,43 @@ def test_evaluate_returns_list_for_minimal_wall_document() -> None:
     assert isinstance(viols, list)
 
 
+def test_floor_overlap_ignores_explicit_occupied_exterior_overlay() -> None:
+    elements = {
+        "lvl-1": LevelElem(kind="level", id="lvl-1", name="L1", elevationMm=3000),
+        "host-floor": FloorElem(
+            kind="floor",
+            id="host-floor",
+            name="Upper host slab",
+            levelId="lvl-1",
+            boundaryMm=[
+                {"xMm": 0, "yMm": 0},
+                {"xMm": 5000, "yMm": 0},
+                {"xMm": 5000, "yMm": 5000},
+                {"xMm": 0, "yMm": 5000},
+            ],
+            thicknessMm=220,
+        ),
+        "terrace-floor": FloorElem(
+            kind="floor",
+            id="terrace-floor",
+            name="Occupied roof terrace floor",
+            levelId="lvl-1",
+            boundaryMm=[
+                {"xMm": 1000, "yMm": 1000},
+                {"xMm": 3000, "yMm": 1000},
+                {"xMm": 3000, "yMm": 3000},
+                {"xMm": 1000, "yMm": 3000},
+            ],
+            thicknessMm=160,
+            props={"exteriorSpaceType": "roof_terrace", "supportedByIds": ["host-floor"]},
+        ),
+    }
+
+    viols = evaluate(elements)
+
+    assert "floor_overlap" not in {violation.rule_id for violation in viols}
+
+
 @pytest.mark.skipif(not IFC_AVAILABLE, reason="ifcopenshell not installed (pip install '.[ifc]')")
 def test_ifc_manifest_exports_property_coverage_slice_when_kernel_eligible() -> None:
     doc = Document(

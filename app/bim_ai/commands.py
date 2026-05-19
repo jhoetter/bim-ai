@@ -850,6 +850,7 @@ class CreateFloorCmd(BaseModel):
     finish_thickness_mm: float = Field(alias="finishThicknessMm", default=0)
     floor_type_id: str | None = Field(default=None, alias="floorTypeId")
     room_bounded: bool = Field(default=False, alias="roomBounded")
+    props: dict[str, Any] | None = Field(default=None)
 
 
 class CreateRoofCmd(BaseModel):
@@ -1065,9 +1066,14 @@ class CreateRailingCmd(BaseModel):
     id: str | None = None
     name: str = "Railing"
     hosted_stair_id: str | None = Field(default=None, alias="hostedStairId")
+    host_floor_id: str | None = Field(default=None, alias="hostFloorId")
+    host_wall_id: str | None = Field(default=None, alias="hostWallId")
+    host_edge_id: str | None = Field(default=None, alias="hostEdgeId")
     path_mm: list[Vec2Mm] = Field(alias="pathMm")
+    guard_height_mm: float = Field(default=1040, alias="guardHeightMm", gt=0)
     baluster_pattern: BalusterPattern | None = Field(default=None, alias="balusterPattern")
     handrail_supports: list[HandrailSupport] | None = Field(default=None, alias="handrailSupports")
+    material_slots: dict[str, str | None] | None = Field(default=None, alias="materialSlots")
 
 
 class SetRailingBalusterPatternCmd(BaseModel):

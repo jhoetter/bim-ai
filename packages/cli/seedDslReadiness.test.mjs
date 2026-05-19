@@ -83,6 +83,18 @@ test('target house recipe compiles front loggia wrapper without cleanup deletes'
   const frontLeft = bundle.commands.find(
     (command) => command.type === 'createWall' && command.id === 'hf-upper-wrapper-shell-wall-01',
   );
+  const mainStair = bundle.commands.find(
+    (command) => command.type === 'createStair' && command.id === 'main-stair',
+  );
+  const upperWrapperFloor = bundle.commands.find((command) => command.id === 'upper-wrapper-floor');
+  const roofCourtFloor = bundle.commands.find((command) => command.id === 'hf-roof-court-floor');
+  const roofCourtRailing = bundle.commands.find(
+    (command) => command.id === 'hf-roof-court-railing',
+  );
+  const frontLoggiaFloor = bundle.commands.find((command) => command.id === 'hf-front-loggia-floor');
+  const frontLoggiaRailing = bundle.commands.find(
+    (command) => command.id === 'hf-front-loggia-railing',
+  );
 
   assert.equal(
     bundle.commands.some((command) => command.type === 'deleteElement'),
@@ -98,4 +110,23 @@ test('target house recipe compiles front loggia wrapper without cleanup deletes'
     bundle.commands.some((command) => command.id === 'hf-upper-wrapper-shell-wall-01-right'),
     true,
   );
+  assert.deepEqual(mainStair?.boundaryMm, [
+    { xMm: 1300, yMm: 1100 },
+    { xMm: 2300, yMm: 1100 },
+    { xMm: 2300, yMm: 3200 },
+    { xMm: 1300, yMm: 3200 },
+  ]);
+  assert.deepEqual(upperWrapperFloor?.props?.supportedByIds, [
+    'ground-base-wall-01',
+    'ground-base-wall-02',
+    'ground-base-wall-03',
+    'ground-base-wall-04',
+  ]);
+  assert.equal(upperWrapperFloor?.props?.isCantilever, true);
+  assert.equal(roofCourtFloor?.props?.exteriorSpaceType, 'roof_terrace');
+  assert.deepEqual(roofCourtFloor?.props?.supportedByIds, ['upper-wrapper-floor']);
+  assert.equal(roofCourtRailing?.hostFloorId, 'hf-roof-court-floor');
+  assert.equal(frontLoggiaFloor?.props?.exteriorSpaceType, 'loggia');
+  assert.deepEqual(frontLoggiaFloor?.props?.supportedByIds, ['upper-wrapper-floor']);
+  assert.equal(frontLoggiaRailing?.hostFloorId, 'hf-front-loggia-floor');
 });
