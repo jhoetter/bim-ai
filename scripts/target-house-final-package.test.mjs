@@ -87,6 +87,10 @@ test('target-house final package manifest ties head, source, evidence, tracker, 
   assert.equal(typeof manifest.cleanPassGate.ok, 'boolean');
   assert.equal(typeof manifest.geometryDiagnostic.ok, 'boolean');
   assert.equal(manifest.tracker.rows['BIR-N07'].status, 'Done');
+  assert.deepEqual(manifest.tracker.finalPackageDependencyIds, ['BIR-K02', 'BIR-K04', 'BIR-K07']);
+  for (const dependencyId of manifest.tracker.finalPackageDependencyIds) {
+    assert.equal(typeof manifest.tracker.finalPackageDependencies[dependencyId].status, 'string');
+  }
   assert.equal(manifest.tracker.generatedRows['BIR-N07'].source, 'generated_section_rollup');
   assert.ok(manifest.tracker.generatedRows['BIR-N07'].sectionRollup.partial >= 0);
   assert.equal(manifest.tracker.completion.ok, false);
@@ -105,6 +109,7 @@ test('target-house final package manifest ties head, source, evidence, tracker, 
   assert.equal(manifest.status.blockers.includes('live_responsiveness_failed'), false);
   assert.equal(manifest.rehearsalGate.ok, true);
   assert.equal(manifest.status.blockers.includes('acceptance_rehearsal_gate'), false);
+  assert.equal(manifest.status.blockers.includes('upstream_exchange_dependencies'), true);
   assert.equal(manifest.status.blockers.includes('tracker_incomplete'), true);
   assert.equal(
     manifest.status.blockers.includes('geometry_diagnostic'),
@@ -199,6 +204,34 @@ function passingStatusInput(overrides = {}) {
     ...overrides,
   };
 }
+
+test('target-house final package reports upstream exchange dependency blockers explicitly', () => {
+  const status = closeoutStatus(
+    passingStatusInput({
+      trackerRows: {
+        'BIR-K02': { status: 'Partial' },
+        'BIR-K04': { status: 'Done' },
+        'BIR-K07': { status: 'Blocked' },
+        'BIR-N04': { status: 'Done' },
+        'BIR-N07': { status: 'Done' },
+        'BIR-N08': { status: 'Done' },
+        'BIR-N10': { status: 'Partial' },
+      },
+      finalPackageDependencyIds: ['BIR-K02', 'BIR-K04', 'BIR-K07'],
+    }),
+  );
+
+  assert.equal(status.ready, false);
+  assert.deepEqual(status.blockers, ['upstream_exchange_dependencies']);
+  const detail = status.blockerDetails.find(
+    (row) => row.code === 'upstream_exchange_dependencies',
+  );
+  assert.equal(detail.count, 2);
+  assert.deepEqual(
+    detail.rows.map((row) => row.id),
+    ['BIR-K02', 'BIR-K07'],
+  );
+});
 
 test('target-house final package blocks geometry diagnostic errors separately', () => {
   const geometryDiagnostic = geometryDiagnosticSummary({
@@ -386,6 +419,8 @@ test('target-house final package blocks whole-tracker incompleteness even if foc
   assert.deepEqual(status.blockers, ['tracker_incomplete']);
   const detail = status.blockerDetails.find((row) => row.code === 'tracker_incomplete');
   assert.equal(detail.count, 1);
+  assert.equal(detail.externalIncompleteCount, 1);
+  assert.equal(detail.selfIncompleteCount, 0);
   assert.deepEqual(detail.incompleteByPriority, { P0: 1 });
   assert.deepEqual(detail.incompleteRows, [
     {
@@ -404,6 +439,117 @@ test('target-house final package blocks whole-tracker incompleteness even if foc
       section: 'L. Performance, Responsiveness, And Live Stability',
       item: 'Profile renderer update cost.',
     },
+  ]);
+});
+
+test('target-house final package separates self readiness row from external tracker blockers', () => {
+  const externalRow = {
+    id: 'BIR-K02',
+    priority: 'P0',
+    status: 'Partial',
+    section: 'K. IFC, glTF, Schedules, Sheets, And Exchange Fidelity',
+    item: 'Add export-readback geometry checks.',
+  };
+  const selfRow = {
+    id: 'BIR-N10',
+    priority: 'P0',
+    status: 'Partial',
+    section: 'N. Target-House-1 Specific Closure',
+    item: 'Require final package readiness.',
+  };
+  const status = closeoutStatus(
+    passingStatusInput({
+      trackerRows: {
+        'BIR-N04': { status: 'Done' },
+        'BIR-N07': { status: 'Done' },
+        'BIR-N08': { status: 'Done' },
+        'BIR-N10': { status: 'Partial' },
+      },
+      trackerCompletion: {
+        ok: false,
+        total: 165,
+        done: 163,
+        incomplete: 2,
+        byStatus: { Done: 163, Partial: 2 },
+        incompleteByPriority: { P0: 2 },
+        incompleteBySection: {
+          'K. IFC, glTF, Schedules, Sheets, And Exchange Fidelity': 1,
+          'N. Target-House-1 Specific Closure': 1,
+        },
+        incompleteRows: [externalRow, selfRow],
+        sampleIncompleteRows: [externalRow, selfRow],
+      },
+    }),
+  );
+
+  assert.deepEqual(status.blockers, ['tracker_incomplete']);
+  const detail = status.blockerDetails.find((row) => row.code === 'tracker_incomplete');
+  assert.equal(detail.externalIncompleteCount, 1);
+  assert.equal(detail.selfIncompleteCount, 1);
+  assert.deepEqual(detail.externalIncompleteRows, [externalRow]);
+  assert.deepEqual(detail.selfIncompleteRows, [selfRow]);
+});
+
+test('target-house final package reports upstream exchange dependencies before tracker incompleteness', () => {
+  const status = closeoutStatus(
+    passingStatusInput({
+      trackerRows: {
+        'BIR-K02': { status: 'Partial' },
+        'BIR-K04': { status: 'Done' },
+        'BIR-K07': { status: 'Partial' },
+        'BIR-N04': { status: 'Done' },
+        'BIR-N07': { status: 'Done' },
+        'BIR-N08': { status: 'Done' },
+        'BIR-N10': { status: 'Partial' },
+      },
+      finalPackageDependencyIds: ['BIR-K02', 'BIR-K04', 'BIR-K07'],
+      trackerCompletion: {
+        ok: false,
+        total: 165,
+        done: 162,
+        incomplete: 3,
+        byStatus: { Done: 162, Partial: 3 },
+        incompleteByPriority: { P0: 2, P2: 1 },
+        incompleteBySection: {
+          'K. IFC, glTF, Schedules, Sheets, And Exchange Fidelity': 2,
+          'N. Target-House-1 Specific Closure': 1,
+        },
+        incompleteRows: [
+          {
+            id: 'BIR-K02',
+            priority: 'P0',
+            status: 'Partial',
+            section: 'K. IFC, glTF, Schedules, Sheets, And Exchange Fidelity',
+            item: 'Add export-readback geometry checks.',
+          },
+          {
+            id: 'BIR-K07',
+            priority: 'P2',
+            status: 'Partial',
+            section: 'K. IFC, glTF, Schedules, Sheets, And Exchange Fidelity',
+            item: 'IDS/BIR validation packs.',
+          },
+          {
+            id: 'BIR-N10',
+            priority: 'P0',
+            status: 'Partial',
+            section: 'N. Target-House-1 Specific Closure',
+            item: 'Require final package readiness.',
+          },
+        ],
+        sampleIncompleteRows: [],
+      },
+    }),
+  );
+
+  assert.deepEqual(status.blockers, ['upstream_exchange_dependencies', 'tracker_incomplete']);
+  const detail = status.blockerDetails.find(
+    (row) => row.code === 'upstream_exchange_dependencies',
+  );
+  assert.equal(detail.count, 2);
+  assert.deepEqual(detail.rows, [
+    { id: 'BIR-K02', status: 'Partial' },
+    { id: 'BIR-K07', status: 'Partial' },
   ]);
 });
 

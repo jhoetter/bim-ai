@@ -30,6 +30,7 @@ const REQUIRED_LIVE_EVIDENCE = [
 ];
 const LIVE_RESPONSIVENESS_EVIDENCE = 'target-house-live-responsiveness.json';
 const LIVE_INTERACTIONS = ['orbit', 'select', 'lens-switch', 'advisor-open', 'advisor-close'];
+const FINAL_PACKAGE_DEPENDENCY_IDS = ['BIR-K02', 'BIR-K04', 'BIR-K07'];
 
 const WORKLOADS = ['orbit', 'select', 'lens-switch', 'advisor-toggle', 'update'];
 const TRACKER_PRIORITIES = new Set(['P0', 'P1', 'P2', 'P3']);
@@ -1070,6 +1071,14 @@ function trackerNotDoneRows(trackerRows, ids) {
     }));
 }
 
+function splitFinalPackageIncompleteRows(trackerCompletion) {
+  const incompleteRows = trackerCompletion?.incompleteRows ?? [];
+  return {
+    externalIncompleteRows: incompleteRows.filter((row) => row.id !== 'BIR-N10'),
+    selfIncompleteRows: incompleteRows.filter((row) => row.id === 'BIR-N10'),
+  };
+}
+
 export function closeoutStatus({
   requiredEvidence,
   performanceEvidence,
@@ -1084,13 +1093,14 @@ export function closeoutStatus({
   evidenceFreshness = null,
   methodologyGate = null,
   liveEvidenceFresh,
+  finalPackageDependencyIds = [],
 }) {
   const missingEvidence = requiredEvidence.filter((row) => !row.present).map((row) => row.path);
+  const upstreamNotDone = trackerNotDoneRows(trackerRows, finalPackageDependencyIds);
   const trackerNotDone = trackerNotDoneRows(trackerRows, [
     'BIR-N04',
     'BIR-N07',
     'BIR-N08',
-    'BIR-N10',
   ]);
   const blockers = [];
   const blockerDetails = [];
@@ -1121,6 +1131,7 @@ export function closeoutStatus({
   }
   if (rehearsalGate && !rehearsalGate.ok) blockers.push('acceptance_rehearsal_gate');
   if (methodologyGate && !methodologyGate.ok) blockers.push('methodology_phase_gate');
+  if (upstreamNotDone.length > 0) blockers.push('upstream_exchange_dependencies');
   if (trackerNotDone.length > 0) blockers.push('tracker_not_done');
   if (trackerCompletion && !trackerCompletion.ok) blockers.push('tracker_incomplete');
   if (missingEvidence.length > 0) {
@@ -1236,6 +1247,15 @@ export function closeoutStatus({
       phaseDir: methodologyGate.phaseDir,
     });
   }
+  if (upstreamNotDone.length > 0) {
+    blockerDetails.push({
+      code: 'upstream_exchange_dependencies',
+      category: 'tracker',
+      count: upstreamNotDone.length,
+      dependencyIds: finalPackageDependencyIds,
+      rows: upstreamNotDone,
+    });
+  }
   if (trackerNotDone.length > 0) {
     blockerDetails.push({
       code: 'tracker_not_done',
@@ -1245,16 +1265,22 @@ export function closeoutStatus({
     });
   }
   if (trackerCompletion && !trackerCompletion.ok) {
+    const { externalIncompleteRows, selfIncompleteRows } =
+      splitFinalPackageIncompleteRows(trackerCompletion);
     blockerDetails.push({
       code: 'tracker_incomplete',
       category: 'tracker',
       count: trackerCompletion.incomplete,
+      externalIncompleteCount: externalIncompleteRows.length,
+      selfIncompleteCount: selfIncompleteRows.length,
       total: trackerCompletion.total,
       done: trackerCompletion.done,
       byStatus: trackerCompletion.byStatus,
       incompleteByPriority: trackerCompletion.incompleteByPriority,
       incompleteBySection: trackerCompletion.incompleteBySection,
       incompleteRows: trackerCompletion.incompleteRows,
+      externalIncompleteRows,
+      selfIncompleteRows,
       sampleIncompleteRows: trackerCompletion.sampleIncompleteRows,
     });
   }
@@ -1325,6 +1351,7 @@ export async function buildTargetHouseFinalCloseoutManifest({
     commandCount: manifest.commandCount ?? null,
   };
   const trackerRows = parseTrackerRows(trackerMarkdown, [
+    ...FINAL_PACKAGE_DEPENDENCY_IDS,
     'BIR-N04',
     'BIR-N05',
     'BIR-N06',
@@ -1359,6 +1386,7 @@ export async function buildTargetHouseFinalCloseoutManifest({
     evidenceFreshness,
     methodologyGate,
     liveEvidenceFresh: snapshotInput.snapshotSource.liveEvidenceFresh,
+    finalPackageDependencyIds: FINAL_PACKAGE_DEPENDENCY_IDS,
   });
   const body = {
     schemaVersion: 'target-house-final-closeout-manifest.v1',
@@ -1394,6 +1422,10 @@ export async function buildTargetHouseFinalCloseoutManifest({
       ),
       rows: trackerRows,
       generatedRows: generatedTrackerRows,
+      finalPackageDependencyIds: FINAL_PACKAGE_DEPENDENCY_IDS,
+      finalPackageDependencies: Object.fromEntries(
+        FINAL_PACKAGE_DEPENDENCY_IDS.map((id) => [id, trackerRows[id] ?? null]),
+      ),
       completion: trackerCompletion,
     },
     tolerances: tolerance,
