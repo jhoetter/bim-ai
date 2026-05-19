@@ -989,6 +989,7 @@ export function Viewport({
     renderer.setClearColor(0x000000, 0);
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
     renderer.toneMappingExposure = 1;
+    renderer.domElement.setAttribute('data-testid', 'orbit-3d-canvas');
     rendererRef.current = renderer;
     host.appendChild(renderer.domElement);
 
