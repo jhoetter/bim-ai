@@ -51,7 +51,12 @@ def diff_undo_cmds(prev_doc: Document, next_doc: Document) -> list[dict[str, Any
     return cmds
 
 
-def compute_delta_wire(prev_doc: Document, next_doc: Document) -> dict[str, Any]:
+def compute_delta_wire(
+    prev_doc: Document,
+    next_doc: Document,
+    *,
+    violations: list[Violation] | None = None,
+) -> dict[str, Any]:
     removed_ids = sorted(prev_doc.elements.keys() - next_doc.elements.keys())
     elements_patch: dict[str, Any] = {}
     next_ids_all = next_doc.elements.keys()
@@ -70,7 +75,8 @@ def compute_delta_wire(prev_doc: Document, next_doc: Document) -> dict[str, Any]
         "removedIds": removed_ids,
         "elements": elements_patch,
         "violations": [
-            v.model_dump(by_alias=True) for v in _commit_violations(next_doc)
+            v.model_dump(by_alias=True)
+            for v in (violations if violations is not None else _commit_violations(next_doc))
         ],
     }
 
@@ -169,10 +175,115 @@ def _new_blocking_violations(
     ]
 
 
+def _has_blocking_violations(violations: list[Violation]) -> bool:
+    return any(v.blocking or v.severity == "error" for v in violations)
+
+
 def _commit_violations(doc: Document) -> list[Violation]:
     """Validation surface used by dry-run, commit, and commit deltas."""
 
     return evaluate(doc.elements) + hosted_opening_integrity_violations(doc)
+
+
+_AGENT_STRICT_COMMAND_TYPES: dict[str, tuple[str, ...]] = {
+    "createWall": ("levelId", "physicalRole"),
+    "createFloor": ("levelId", "physicalRole"),
+    "createRoof": ("referenceLevelId", "physicalRole"),
+    "createStair": ("baseLevelId", "topLevelId", "physicalRole"),
+    "createRailing": ("physicalRole",),
+    "insertDoorOnWall": ("wallId", "familyTypeId", "physicalRole"),
+    "insertWindowOnWall": ("wallId", "familyTypeId", "physicalRole"),
+    "createWallOpening": ("hostWallId", "physicalRole"),
+    "createColumn": ("levelId", "materialKey", "physicalRole"),
+    "createBeam": ("levelId", "materialKey", "physicalRole"),
+    "PlaceAsset": ("levelId", "assetId", "physicalRole"),
+    "placeFamilyInstance": ("familyTypeId", "physicalRole"),
+}
+
+_AGENT_TYPE_ALTERNATIVES: dict[str, tuple[str, ...]] = {
+    "createWall": ("wallTypeId", "materialKey"),
+    "createFloor": ("floorTypeId", "materialKey"),
+    "createRoof": ("roofTypeId", "materialKey"),
+    "createStair": ("materialSlots", "subKind"),
+    "createRailing": ("hostedStairId", "hostFloorId", "hostWallId"),
+}
+
+_VALID_AGENT_ROLES = {"physical", "analysis"}
+
+
+def _agent_authoring_preflight_violations(cmds_raw: list[dict[str, Any]]) -> list[Violation]:
+    violations: list[Violation] = []
+    for index, command in enumerate(cmds_raw):
+        if not _is_agent_authored_command(command):
+            continue
+        command_type = str(command.get("type") or "")
+        required = _AGENT_STRICT_COMMAND_TYPES.get(command_type)
+        if required is None:
+            continue
+        missing = [field for field in required if not _has_explicit_value(command, field)]
+        alternative_fields = _AGENT_TYPE_ALTERNATIVES.get(command_type, ())
+        if alternative_fields and not any(_has_explicit_value(command, field) for field in alternative_fields):
+            missing.append("/".join(alternative_fields))
+        role = _explicit_model_role(command)
+        if role is not None and role not in _VALID_AGENT_ROLES:
+            missing.append("physicalRole=physical|analysis")
+        if missing:
+            element_id = str(command.get("id") or f"command[{index}]")
+            violations.append(
+                Violation(
+                    rule_id="agent_authoring_explicit_context_required",
+                    severity="error",
+                    message=(
+                        f"Agent-authored {command_type} must provide explicit "
+                        f"{', '.join(sorted(dict.fromkeys(missing)))}."
+                    ),
+                    element_ids=[element_id],
+                    blocking=True,
+                    quick_fix_command=_agent_context_hint(command, missing),
+                    discipline="coordination",
+                    blocking_class="authoring_validation",
+                )
+            )
+    return violations
+
+
+def _is_agent_authored_command(command: dict[str, Any]) -> bool:
+    actor = str(command.get("actor") or command.get("source") or "").strip().lower()
+    if actor == "agent":
+        return True
+    if command.get("agentAuthored") is True:
+        return True
+    trace = command.get("agentTrace")
+    return isinstance(trace, dict)
+
+
+def _has_explicit_value(command: dict[str, Any], field: str) -> bool:
+    value = command.get(field)
+    if value is None:
+        return False
+    if isinstance(value, str):
+        return bool(value.strip())
+    if isinstance(value, (list, dict, tuple, set)):
+        return bool(value)
+    return True
+
+
+def _explicit_model_role(command: dict[str, Any]) -> str | None:
+    value = command.get("physicalRole") or command.get("modelRole") or command.get("authoringRole")
+    if not isinstance(value, str):
+        return None
+    normalized = value.strip().lower()
+    return normalized or None
+
+
+def _agent_context_hint(command: dict[str, Any], missing: list[str]) -> dict[str, Any]:
+    return {
+        "type": "completeAgentAuthoringContext",
+        "commandType": command.get("type"),
+        "commandId": command.get("id"),
+        "required": sorted(dict.fromkeys(missing)),
+        "acceptedRoles": sorted(_VALID_AGENT_ROLES),
+    }
 
 
 def try_apply_kernel_ifc_authoritative_replay_v0(
@@ -298,6 +409,9 @@ def try_commit_bundle(
     *,
     source_provider: SourceDocProvider | None = None,
 ) -> tuple[bool, Document | None, list[Command], list[Violation], str]:
+    authoring_violations = _agent_authoring_preflight_violations(cmds_raw)
+    if authoring_violations:
+        return False, None, [], authoring_violations, "authoring_validation_error"
     try:
         cmds: list[Command] = [coerce_command(c) for c in cmds_raw]
     except Exception as exc:
@@ -313,7 +427,6 @@ def try_commit_bundle(
         return False, None, cmds, [], str(exc)
 
     ensure_sun_settings(cand)
-    before_violations = _commit_violations(doc)
     violations = _commit_violations(cand)
 
     # EDT-02 — reject bundles that break an error-severity locked constraint.
@@ -322,9 +435,11 @@ def try_commit_bundle(
     edt_violations = _evaluate_edt_constraint_violations(cand.elements)
     violations = violations + edt_violations
 
-    blocking = _new_blocking_violations(before_violations, violations)
-    if blocking:
-        return False, None, cmds, violations, "constraint_error"
+    if _has_blocking_violations(violations):
+        before_violations = _commit_violations(doc)
+        blocking = _new_blocking_violations(before_violations, violations)
+        if blocking:
+            return False, None, cmds, violations, "constraint_error"
 
     cand.revision = doc.revision + 1
 
@@ -354,6 +469,9 @@ def try_commit(
     *,
     source_provider: SourceDocProvider | None = None,
 ) -> tuple[bool, Document | None, Command, list[Violation], str]:
+    authoring_violations = _agent_authoring_preflight_violations([cmd_raw])
+    if authoring_violations:
+        return False, None, None, authoring_violations, "authoring_validation_error"  # type: ignore[return-value]
     cmds = coerce_command(cmd_raw)
     cand = clone_document(doc)
     # KRN-06: backfill the singleton on every commit so persisted state always has it.
@@ -361,12 +479,13 @@ def try_commit(
     apply_inplace(cand, cmds, source_provider=source_provider)
     ensure_sun_settings(cand)
 
-    before_violations = _commit_violations(doc)
     violations = _commit_violations(cand)
 
-    blocking = _new_blocking_violations(before_violations, violations)
-    if blocking:
-        return False, None, cmds, violations, "constraint_error"
+    if _has_blocking_violations(violations):
+        before_violations = _commit_violations(doc)
+        blocking = _new_blocking_violations(before_violations, violations)
+        if blocking:
+            return False, None, cmds, violations, "constraint_error"
 
     cand.revision = doc.revision + 1
 

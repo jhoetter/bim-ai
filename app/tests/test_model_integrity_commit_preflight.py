@@ -94,6 +94,104 @@ def test_bundle_commit_rejects_helper_hosted_physical_door() -> None:
     assert "hosted_opening_helper_host" in rule_ids
 
 
+def test_bundle_commit_rejects_physical_wall_outside_support_context() -> None:
+    commands = [
+        {"type": "createLevel", "id": "lvl-1", "name": "Ground", "elevationMm": 0},
+        {
+            "type": "createFloor",
+            "id": "floor-1",
+            "levelId": "lvl-1",
+            "boundaryMm": [
+                {"xMm": 0, "yMm": 0},
+                {"xMm": 5000, "yMm": 0},
+                {"xMm": 5000, "yMm": 4000},
+                {"xMm": 0, "yMm": 4000},
+            ],
+        },
+        {
+            "type": "createWall",
+            "id": "wall-outside",
+            "levelId": "lvl-1",
+            "start": {"xMm": 6000, "yMm": 1000},
+            "end": {"xMm": 7000, "yMm": 1000},
+        },
+    ]
+
+    ok, new_doc, _cmds, violations, code = try_commit_bundle(Document(elements={}), commands)
+
+    assert not ok
+    assert new_doc is None
+    assert code == "constraint_error"
+    violation = next(v for v in violations if v.rule_id == "physical_wall_outside_envelope")
+    assert violation.quick_fix_command == {
+        "type": "set_element_prop",
+        "elementId": "wall-outside",
+        "key": "allowDetached",
+        "value": True,
+    }
+
+
+def test_bundle_commit_allows_explicit_detached_intent() -> None:
+    commands = [
+        {"type": "createLevel", "id": "lvl-1", "name": "Ground", "elevationMm": 0},
+        {
+            "type": "createFloor",
+            "id": "floor-1",
+            "levelId": "lvl-1",
+            "boundaryMm": [
+                {"xMm": 0, "yMm": 0},
+                {"xMm": 5000, "yMm": 0},
+                {"xMm": 5000, "yMm": 4000},
+                {"xMm": 0, "yMm": 4000},
+            ],
+        },
+        {
+            "type": "createWall",
+            "id": "wall-detached",
+            "levelId": "lvl-1",
+            "start": {"xMm": 6000, "yMm": 1000},
+            "end": {"xMm": 7000, "yMm": 1000},
+            "allowDetached": True,
+            "authoringIntent": "detached",
+        },
+    ]
+
+    ok, new_doc, _cmds, violations, code = try_commit_bundle(Document(elements={}), commands)
+
+    assert ok
+    assert new_doc is not None
+    assert code == "ok"
+    assert "physical_wall_outside_envelope" not in _rule_ids(violations)
+
+
+def test_agent_authored_command_requires_explicit_context() -> None:
+    ok, new_doc, _cmds, violations, code = try_commit_bundle(
+        _base_doc(),
+        [
+            {
+                "type": "createWall",
+                "id": "agent-wall",
+                "agentAuthored": True,
+                "levelId": "lvl-1",
+                "start": {"xMm": 1200, "yMm": 1300},
+                "end": {"xMm": 2400, "yMm": 1300},
+            }
+        ],
+    )
+
+    assert not ok
+    assert new_doc is None
+    assert code == "authoring_validation_error"
+    violation = violations[0]
+    assert violation.rule_id == "agent_authoring_explicit_context_required"
+    assert violation.quick_fix_command is not None
+    assert violation.quick_fix_command["type"] == "completeAgentAuthoringContext"
+    assert set(violation.quick_fix_command["required"]) == {
+        "physicalRole",
+        "wallTypeId/materialKey",
+    }
+
+
 def test_delta_wire_default_includes_commit_integrity_findings() -> None:
     before = _base_doc()
     after = before.model_copy(deep=True)

@@ -43,6 +43,30 @@ export function isWallOnActiveAuthoringLevel(
   return Boolean(activeLevelId && wall.levelId === activeLevelId);
 }
 
+export function isPhysicalHostedOpeningWall(
+  wall: {
+    kind?: string;
+    name?: string | null;
+    props?: Record<string, unknown> | null;
+  },
+): boolean {
+  if (wall.kind !== 'wall') return false;
+  const props = wall.props ?? {};
+  if (truthy(props.nonPhysical) || truthy(props.analysisOnly)) return false;
+  if (props.physical === false) return false;
+  const physicalRole = String(props.physicalRole ?? '').trim().toLowerCase();
+  if (physicalRole === 'helper' || physicalRole === 'analysis' || physicalRole === 'nonphysical') {
+    return false;
+  }
+  const role = String(props.role ?? '').trim().toLowerCase();
+  if (role === 'access_proxy' || role === 'helper' || role === 'room_graph') return false;
+  if (truthy(props.accessProxy) || truthy(props.helper)) return false;
+  if (/(\baccess control\b|\broom graph\b|\bhelper\b|\bsynthetic\b|\bdiagnostic\b|\banalysis[- ]?only\b|\bnonphysical\b)/i.test(wall.name ?? '')) {
+    return false;
+  }
+  return true;
+}
+
 export function isLinkedElementId(id: string): boolean {
   return id.includes(LINKED_ID_SEPARATOR);
 }
@@ -124,6 +148,12 @@ export function shouldReuseHostedPreviewCommit(input: {
 
 function rangesOverlap(a: { startT: number; endT: number }, b: { startT: number; endT: number }) {
   return a.startT < b.endT && b.startT < a.endT;
+}
+
+function truthy(value: unknown): boolean {
+  if (typeof value === 'boolean') return value;
+  if (typeof value === 'string') return ['1', 'true', 'yes', 'y', 'on'].includes(value.trim().toLowerCase());
+  return Boolean(value);
 }
 
 export function findHostedOpeningConflict(input: {
