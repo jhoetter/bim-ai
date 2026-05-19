@@ -22,7 +22,7 @@ from bim_ai.constraints_sheet_viewports import (
 
 
 class Violation(BaseModel):
-    model_config = ConfigDict(populate_by_name=True)
+    model_config = ConfigDict(populate_by_name=True, extra="allow")
     rule_id: str = Field(alias="ruleId")
     severity: str
     message: str

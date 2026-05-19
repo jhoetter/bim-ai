@@ -23,6 +23,7 @@ from bim_ai.elements import (
     ReferencePlaneElem,
     RoofElem,
     StairElem,
+    VoidCutElem,
     WallElem,
     WallOpeningElem,
     WindowElem,
@@ -47,6 +48,7 @@ HOSTED_OPENING_RULE_IDS = {
     "hosted_family_missing_host",
     "hosted_family_unsupported_host_class",
     "hosted_render_proxy_orphan",
+    "hosted_void_cut_orphan",
     "physical_access_proxy_leakage",
     "physical_floor_outside_support_context",
     "physical_floor_invalid_support_context",
@@ -107,6 +109,39 @@ _HOST_CLASS_LABELS = {
     "freestanding": "freestanding",
 }
 
+_TRACKER_ITEMS_BY_RULE_ID = {
+    "physical_wall_outside_envelope": ["BIR-B02", "BIR-C02"],
+    "hosted_opening_missing_host": ["BIR-B01", "BIR-C01"],
+    "hosted_opening_host_not_wall": ["BIR-B01", "BIR-C01"],
+    "hosted_opening_helper_host": ["BIR-B01", "BIR-C01", "BIR-C05"],
+    "hosted_opening_host_outside_floor_envelope": ["BIR-B01", "BIR-C02"],
+    "hosted_opening_outside_usable_span": ["BIR-B01", "BIR-C03", "BIR-C06"],
+    "hosted_opening_missing_semantic_cut": ["BIR-B01", "BIR-C04"],
+    "hosted_opening_overlap": ["BIR-B01", "BIR-C06"],
+    "hosted_family_missing_host": ["BIR-C07", "BIR-C08"],
+    "hosted_family_unsupported_host_class": ["BIR-C07", "BIR-C08"],
+    "hosted_render_proxy_orphan": ["BIR-C08"],
+    "hosted_void_cut_orphan": ["BIR-C04", "BIR-C08"],
+    "physical_access_proxy_leakage": ["BIR-B03", "BIR-C05", "BIR-C08"],
+    "physical_floor_outside_support_context": ["BIR-B02"],
+    "physical_floor_invalid_support_context": ["BIR-B02"],
+    "physical_stair_without_floor_landings": ["BIR-B02"],
+    "physical_railing_missing_host_context": ["BIR-B02"],
+    "physical_railing_invalid_host_context": ["BIR-B02"],
+    "model_integrity_asset_placement_floating": ["BIR-B02", "BIR-V04"],
+    "model_integrity_asset_placement_circulation_overlap": ["BIR-B02", "BIR-V04"],
+}
+
+_RECOMMENDATION_BY_RULE_ID = {
+    "hosted_opening_missing_semantic_cut": "Create or restore a valid wall cut for the hosted opening, or mark the element nonphysical before commit.",
+    "hosted_opening_overlap": "Separate, resize, or merge the affected openings so their host-wall intervals no longer overlap.",
+    "hosted_family_missing_host": "Rehost the family/asset to a valid support element or delete the orphan rendered proxy.",
+    "hosted_family_unsupported_host_class": "Match the family support class to the host kind, or rehost the instance to a compatible wall, face, ceiling, or workplane.",
+    "hosted_render_proxy_orphan": "Delete the orphan proxy or recreate the missing host relationship before rendering/export.",
+    "hosted_void_cut_orphan": "Delete the orphan void cut or point it at an existing physical host before rendering/export.",
+    "physical_access_proxy_leakage": "Keep helper/access/diagnostic elements out of physical render, schedule, and export paths.",
+}
+
 
 def hosted_opening_integrity_violations(
     doc_or_elements: Document | Mapping[str, Element],
@@ -138,6 +173,7 @@ def hosted_opening_integrity_violations(
                         "convert it to nonphysical analysis data or replace it with a real wall."
                     ),
                     [wall.id],
+                    host_ids=[wall.id],
                 )
             )
         if _is_physical_wall(wall) and not _wall_supported_by_level_floor(
@@ -154,6 +190,7 @@ def hosted_opening_integrity_violations(
                         "support context and is not marked with explicit detached intent."
                     ),
                     [wall.id],
+                    host_ids=[wall.id],
                     quick_fix_command={
                         "type": "set_element_prop",
                         "elementId": wall.id,
@@ -176,6 +213,7 @@ def hosted_opening_integrity_violations(
                     "error",
                     f"{_kind_label(opening)} '{opening_id}' references missing host wall '{host_id}'.",
                     [opening_id],
+                    host_ids=[host_id],
                     quick_fix_command=_safe_delete_command(opening),
                 )
             )
@@ -193,6 +231,7 @@ def hosted_opening_integrity_violations(
                         f"which is a {getattr(host, 'kind', 'non-wall')} instead of a wall."
                     ),
                     [opening_id, host_id],
+                    host_ids=[host_id],
                     quick_fix_command=_safe_delete_command(opening),
                 )
             )
@@ -210,6 +249,7 @@ def hosted_opening_integrity_violations(
                         f"'{host.id}' instead of a real architectural wall."
                     ),
                     [opening_id, host.id],
+                    host_ids=[host.id],
                     quick_fix_command=_safe_delete_command(opening),
                 )
             )
@@ -226,6 +266,7 @@ def hosted_opening_integrity_violations(
                         "physical BIM geometry; keep access-graph helpers nonphysical."
                     ),
                     [opening_id, host.id],
+                    host_ids=[host.id],
                     quick_fix_command=_safe_delete_command(opening),
                 )
             )
@@ -246,6 +287,7 @@ def hosted_opening_integrity_violations(
                         "the building fabric."
                     ),
                     [opening_id, host.id],
+                    host_ids=[host.id],
                 )
             )
 
@@ -261,6 +303,7 @@ def hosted_opening_integrity_violations(
                     "error",
                     span_message,
                     [opening_id, host.id],
+                    host_ids=[host.id],
                     quick_fix_command=_resize_to_usable_span_command(
                         opening,
                         host,
@@ -277,11 +320,13 @@ def hosted_opening_integrity_violations(
                     "error",
                     cut_message,
                     [opening_id, host.id],
+                    host_ids=[host.id],
                 )
             )
 
     violations.extend(_overlap_violations(hosted, elements))
     violations.extend(_hosted_family_support_violations(elements))
+    violations.extend(_orphan_void_cut_violations(elements))
     violations.extend(_helper_visual_leakage_violations(elements))
     return sorted(violations, key=lambda v: (v.rule_id, v.element_ids, v.message))
 
@@ -352,7 +397,10 @@ def hosted_opening_conflict_graph(
             "elementId": str(opening.id),
             "kind": str(opening.kind),
             "hostWallId": host_id,
+            "hostIds": [host_id] if host_id else [],
             "supportClass": "wall_hosted",
+            "trackerItems": sorted({"BIR-B01", "BIR-C06"}),
+            "recommendation": "Keep hosted openings within a valid, non-overlapping host-wall interval and maintain a semantic/rendered wall cut.",
         }
         if not isinstance(host, WallElem):
             node["hostState"] = "missing" if host is None else "unsupported_host_class"
@@ -380,6 +428,19 @@ def hosted_opening_conflict_graph(
                         "kind": "outside_wall_span",
                         "hostWallId": host.id,
                         "elementIds": [str(opening.id), host.id],
+                        "hostIds": [host.id],
+                        "trackerItems": sorted({"BIR-B01", "BIR-C03", "BIR-C06"}),
+                        "recommendation": _recommendation_for_rule(
+                            "hosted_opening_outside_usable_span"
+                        ),
+                        "safeFixHints": _safe_fix_hints_for_rule(
+                            "hosted_opening_outside_usable_span",
+                            _resize_to_usable_span_command(
+                                opening,
+                                host,
+                                endpoint_clearance_mm=endpoint_clearance_mm,
+                            ),
+                        ),
                     }
                 )
             elif min(start_t * length, (1.0 - end_t) * length) < endpoint_clearance_mm:
@@ -388,7 +449,20 @@ def hosted_opening_conflict_graph(
                         "kind": "endpoint_clearance",
                         "hostWallId": host.id,
                         "elementIds": [str(opening.id), host.id],
+                        "hostIds": [host.id],
                         "minimumClearanceMm": endpoint_clearance_mm,
+                        "trackerItems": sorted({"BIR-B01", "BIR-C03", "BIR-C06"}),
+                        "recommendation": _recommendation_for_rule(
+                            "hosted_opening_outside_usable_span"
+                        ),
+                        "safeFixHints": _safe_fix_hints_for_rule(
+                            "hosted_opening_outside_usable_span",
+                            _resize_to_usable_span_command(
+                                opening,
+                                host,
+                                endpoint_clearance_mm=endpoint_clearance_mm,
+                            ),
+                        ),
                     }
                 )
         nodes.append(node)
@@ -416,7 +490,14 @@ def hosted_opening_conflict_graph(
                         "kind": "overlap",
                         "hostWallId": host_id,
                         "elementIds": [str(a_node["elementId"]), str(b_node["elementId"]), host_id],
+                        "hostIds": [host_id],
                         "overlapT": round(max(0.0, overlap_t), 6),
+                        "trackerItems": sorted({"BIR-B01", "BIR-C06"}),
+                        "recommendation": _recommendation_for_rule("hosted_opening_overlap"),
+                        "safeFixHints": _safe_fix_hints_for_rule(
+                            "hosted_opening_overlap",
+                            None,
+                        ),
                     }
                 )
 
@@ -694,16 +775,26 @@ def _violation(
     element_ids: list[str],
     *,
     quick_fix_command: dict[str, Any] | None = None,
+    host_ids: list[str] | None = None,
+    recommendation: str | None = None,
 ) -> Violation:
+    affected_ids = sorted(dict.fromkeys(str(eid) for eid in element_ids if eid))
+    normalized_host_ids = sorted(dict.fromkeys(str(eid) for eid in host_ids or [] if eid))
+    fix_hints = _safe_fix_hints_for_rule(rule_id, quick_fix_command)
     return Violation(
         rule_id=rule_id,
         severity=severity,
         message=message,
-        element_ids=sorted(dict.fromkeys(element_ids)),
+        element_ids=affected_ids,
         blocking=severity == "error",
         quick_fix_command=quick_fix_command,
         discipline="architecture",
         blocking_class="model_integrity",
+        trackerItems=list(_TRACKER_ITEMS_BY_RULE_ID.get(rule_id, ())),
+        recommendation=recommendation or _recommendation_for_rule(rule_id),
+        affectedElementIds=affected_ids,
+        hostIds=normalized_host_ids,
+        safeFixHints=fix_hints,
     )
 
 
@@ -714,6 +805,50 @@ def _hosted_openings(elements: Mapping[str, Element]) -> list[DoorElem | WindowE
         if isinstance(elem, DoorElem | WindowElem | WallOpeningElem)
     ]
     return sorted(hosted, key=lambda elem: str(elem.id))
+
+
+def _recommendation_for_rule(rule_id: str) -> str:
+    if rule_id in _RECOMMENDATION_BY_RULE_ID:
+        return _RECOMMENDATION_BY_RULE_ID[rule_id]
+    if rule_id.startswith("hosted_opening_"):
+        return "Resolve the hosted opening relationship, wall-span interval, or host geometry before commit."
+    if rule_id.startswith("physical_") or rule_id.startswith("model_integrity_"):
+        return "Resolve the physical support context or record explicit detached/nonphysical intent."
+    return "Inspect the affected BIM elements and resolve the deterministic integrity finding."
+
+
+def _safe_fix_hints_for_rule(
+    rule_id: str,
+    quick_fix_command: dict[str, Any] | None,
+) -> list[dict[str, Any]]:
+    hints: list[dict[str, Any]] = []
+    if quick_fix_command is not None:
+        hints.append(
+            {
+                "kind": "quick_fix_command",
+                "safety": "review_required",
+                "command": quick_fix_command,
+            }
+        )
+    if rule_id in {
+        "hosted_opening_missing_host",
+        "hosted_opening_host_not_wall",
+        "hosted_opening_helper_host",
+        "hosted_family_missing_host",
+        "hosted_family_unsupported_host_class",
+        "hosted_render_proxy_orphan",
+        "hosted_void_cut_orphan",
+    }:
+        hints.append({"kind": "rehost_or_delete", "safety": "needs_user_intent"})
+    elif rule_id == "hosted_opening_missing_semantic_cut":
+        hints.append({"kind": "restore_host_cut_or_mark_nonphysical", "safety": "review_required"})
+    elif rule_id == "hosted_opening_overlap":
+        hints.append({"kind": "resize_reposition_or_merge_openings", "safety": "review_required"})
+    elif rule_id == "hosted_opening_outside_usable_span":
+        hints.append({"kind": "resize_or_reposition_opening", "safety": "review_required"})
+    elif rule_id == "physical_access_proxy_leakage":
+        hints.append({"kind": "convert_to_analysis_or_delete_helper", "safety": "review_required"})
+    return hints
 
 
 def _host_wall_id(opening: DoorElem | WindowElem | WallOpeningElem) -> str:
@@ -849,6 +984,7 @@ def _overlap_violations(
                 "error",
                 f"Hosted openings '{a_id}' and '{b_id}' overlap on wall '{host_id}'.",
                 [a_id, b_id, host_id],
+                host_ids=[host_id],
             )
         )
     return violations
@@ -886,6 +1022,7 @@ def _hosted_family_support_violations(elements: Mapping[str, Element]) -> list[V
                         f"{_HOST_CLASS_LABELS[support_class]} support but has no host element."
                     ),
                     [elem.id],
+                    host_ids=[],
                     quick_fix_command=_safe_delete_command(elem),
                 )
             )
@@ -905,6 +1042,7 @@ def _hosted_family_support_violations(elements: Mapping[str, Element]) -> list[V
                         f"'{host_id}'."
                     ),
                     [elem.id],
+                    host_ids=[host_id],
                     quick_fix_command=_safe_delete_command(elem),
                 )
             )
@@ -923,11 +1061,53 @@ def _hosted_family_support_violations(elements: Mapping[str, Element]) -> list[V
                         f"'{host_id}' ({getattr(host, 'kind', 'unknown')})."
                     ),
                     [elem.id, host_id],
+                    host_ids=[host_id],
                     quick_fix_command=_safe_delete_command(elem),
                 )
             )
             if _renders_as_hosted_proxy(elem, elements):
                 violations.append(_orphan_render_proxy_violation(elem, host_id))
+    return violations
+
+
+def _orphan_void_cut_violations(elements: Mapping[str, Element]) -> list[Violation]:
+    violations: list[Violation] = []
+    for elem in sorted(elements.values(), key=lambda e: str(e.id)):
+        if not isinstance(elem, VoidCutElem):
+            continue
+        host_id = str(elem.host_element_id)
+        host = elements.get(host_id)
+        if host is None:
+            violations.append(
+                _violation(
+                    "hosted_void_cut_orphan",
+                    "error",
+                    (
+                        f"Void cut '{elem.id}' references missing host '{host_id}', so rendered "
+                        "cut geometry would leak without a physical host."
+                    ),
+                    [elem.id, host_id],
+                    host_ids=[host_id],
+                    quick_fix_command={"type": "deleteElement", "elementId": elem.id},
+                )
+            )
+            continue
+        if _is_visual_helper(host) or (
+            isinstance(host, WallElem) and _is_helper_or_nonphysical_wall(host)
+        ):
+            violations.append(
+                _violation(
+                    "hosted_void_cut_orphan",
+                    "error",
+                    (
+                        f"Void cut '{elem.id}' targets helper/nonphysical host '{host_id}'. "
+                        "Cuts must resolve to physical BIM host geometry."
+                    ),
+                    [elem.id, host_id],
+                    host_ids=[host_id],
+                    quick_fix_command={"type": "deleteElement", "elementId": elem.id},
+                )
+            )
     return violations
 
 
@@ -968,6 +1148,7 @@ def _declared_support_class(
     if isinstance(elem, FamilyInstanceElem):
         family_type = elements.get(elem.family_type_id)
         if isinstance(family_type, FamilyTypeElem):
+            raw_values.append(family_type.host_support)
             raw_values.extend(_support_values_from_mapping(family_type.parameters))
             if family_type.discipline in {"door", "window"}:
                 raw_values.append("wall_hosted")
@@ -1281,6 +1462,7 @@ def _orphan_render_proxy_violation(
             "geometry is missing or unsupported."
         ),
         [eid for eid in ids if eid],
+        host_ids=[host_id] if host_id else [],
         quick_fix_command=_safe_delete_command(elem),
     )
 

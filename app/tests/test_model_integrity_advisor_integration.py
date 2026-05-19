@@ -56,11 +56,17 @@ def _target_house_access_proxy_doc() -> Document:
 def test_snapshot_advisor_includes_hosted_opening_integrity_findings() -> None:
     doc = _target_house_access_proxy_doc()
 
-    rule_ids = {row["ruleId"] for row in violations_wire(doc.elements)}
+    rows = violations_wire(doc.elements)
+    rule_ids = {row["ruleId"] for row in rows}
 
     assert "hosted_opening_helper_host" in rule_ids
     assert "hosted_opening_host_outside_floor_envelope" in rule_ids
     assert "physical_access_proxy_leakage" in rule_ids
+    helper = next(row for row in rows if row["ruleId"] == "hosted_opening_helper_host")
+    assert helper["hostIds"] == ["access-wall-hf-room-gf-bath-laundry"]
+    assert "BIR-B01" in helper["trackerItems"]
+    assert helper["recommendation"]
+    assert helper["safeFixHints"]
 
 
 def test_constructability_report_includes_model_integrity_findings() -> None:

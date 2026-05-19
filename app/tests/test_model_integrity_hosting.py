@@ -12,6 +12,7 @@ from bim_ai.elements import (
     RailingElem,
     StairElem,
     Vec2Mm,
+    VoidCutElem,
     WallElem,
     WallOpeningElem,
     WindowElem,
@@ -247,15 +248,27 @@ def test_opening_conflict_graph_is_deterministic_for_overlap_and_clearance() -> 
             "kind": "endpoint_clearance",
             "hostWallId": wall.id,
             "elementIds": ["opening-near-end", wall.id],
+            "hostIds": [wall.id],
             "minimumClearanceMm": 75.0,
+            "recommendation": "Resolve the hosted opening relationship, wall-span interval, or host geometry before commit.",
+            "safeFixHints": [{"kind": "resize_or_reposition_opening", "safety": "review_required"}],
+            "trackerItems": ["BIR-B01", "BIR-C03", "BIR-C06"],
         },
         {
             "kind": "overlap",
             "hostWallId": wall.id,
             "elementIds": ["door-a", "window-b", wall.id],
+            "hostIds": [wall.id],
             "overlapT": 0.27,
+            "recommendation": "Separate, resize, or merge the affected openings so their host-wall intervals no longer overlap.",
+            "safeFixHints": [
+                {"kind": "resize_reposition_or_merge_openings", "safety": "review_required"}
+            ],
+            "trackerItems": ["BIR-B01", "BIR-C06"],
         },
     ]
+    assert graph["nodes"][0]["hostIds"] == [wall.id]
+    assert graph["nodes"][0]["trackerItems"] == ["BIR-B01", "BIR-C06"]
 
 
 def test_hosted_family_support_classification_flags_wrong_host_and_orphan_proxy() -> None:
@@ -289,6 +302,55 @@ def test_hosted_family_support_classification_flags_wrong_host_and_orphan_proxy(
     assert "hosted_family_unsupported_host_class" in rule_ids
     assert "hosted_family_missing_host" in rule_ids
     assert "hosted_render_proxy_orphan" in rule_ids
+    unsupported = next(v for v in violations if v.rule_id == "hosted_family_unsupported_host_class")
+    unsupported_payload = unsupported.model_dump(by_alias=True)
+    assert unsupported_payload["hostIds"] == ["floor-1"]
+    assert unsupported_payload["trackerItems"] == ["BIR-C07", "BIR-C08"]
+    assert unsupported_payload["recommendation"]
+    assert unsupported_payload["safeFixHints"]
+
+
+def test_direct_family_host_support_field_is_classified() -> None:
+    family_type = FamilyTypeElem(
+        id="ft-ceiling-hosted",
+        familyId="fam-detector",
+        discipline="generic",
+        hostSupport="ceiling_hosted",
+    )
+    instance = FamilyInstanceElem(
+        id="family-detector",
+        familyTypeId=family_type.id,
+        positionMm=_pt(1200, 1100),
+        hostElementId="wall-1",
+        paramValues={"renderProxyKind": "box"},
+    )
+
+    violations = hosted_opening_integrity_violations(_doc(_wall(), family_type, instance))
+    unsupported = next(v for v in violations if v.rule_id == "hosted_family_unsupported_host_class")
+
+    assert unsupported.element_ids == ["family-detector", "wall-1"]
+    assert unsupported.model_dump(by_alias=True)["hostIds"] == ["wall-1"]
+
+
+def test_orphan_void_cut_leakage_is_blocking_and_actionable() -> None:
+    cut = VoidCutElem(
+        id="cut-orphan",
+        hostElementId="missing-wall",
+        profileMm=[_pt(0, 0), _pt(100, 0), _pt(100, 100), _pt(0, 100)],
+        depthMm=300,
+    )
+
+    violation = next(
+        v
+        for v in hosted_opening_integrity_violations(_doc(cut))
+        if v.rule_id == "hosted_void_cut_orphan"
+    )
+
+    payload = violation.model_dump(by_alias=True)
+    assert violation.blocking is True
+    assert payload["hostIds"] == ["missing-wall"]
+    assert payload["trackerItems"] == ["BIR-C04", "BIR-C08"]
+    assert payload["quickFixCommand"] == {"type": "deleteElement", "elementId": "cut-orphan"}
 
 
 def test_physical_support_context_flags_assets_floors_stairs_and_railings() -> None:

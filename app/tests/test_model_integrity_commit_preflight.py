@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from bim_ai.constraints_core import Violation
 from bim_ai.document import Document
-from bim_ai.elements import AssetLibraryEntryElem, FloorElem, LevelElem, Vec2Mm, WallElem
+from bim_ai.elements import AssetLibraryEntryElem, DoorElem, FloorElem, LevelElem, Vec2Mm, WallElem
 from bim_ai.engine import compute_delta_wire, try_commit, try_commit_bundle
 
 
@@ -92,6 +92,100 @@ def test_bundle_commit_rejects_helper_hosted_physical_door() -> None:
     assert code == "constraint_error"
     assert "physical_access_proxy_leakage" in rule_ids
     assert "hosted_opening_helper_host" in rule_ids
+
+
+def test_bundle_commit_rejects_hosted_opening_missing_semantic_cut() -> None:
+    commands = [
+        {
+            "type": "insertDoorOnWall",
+            "id": "door-no-cut",
+            "wallId": "wall-1",
+            "alongT": 0.5,
+            "widthMm": 900,
+        },
+        {
+            "type": "set_element_prop",
+            "elementId": "door-no-cut",
+            "key": "disableHostCut",
+            "value": True,
+        },
+    ]
+
+    ok, new_doc, _cmds, violations, code = try_commit_bundle(_base_doc(), commands)
+    violation = next(v for v in violations if v.rule_id == "hosted_opening_missing_semantic_cut")
+    payload = violation.model_dump(by_alias=True)
+
+    assert not ok
+    assert new_doc is None
+    assert code == "constraint_error"
+    assert payload["hostIds"] == ["wall-1"]
+    assert payload["trackerItems"] == ["BIR-B01", "BIR-C04"]
+    assert payload["recommendation"]
+
+
+def test_bundle_commit_rejects_overlapping_hosted_openings_with_graph_metadata() -> None:
+    doc = _base_doc()
+    doc.elements["door-existing"] = DoorElem(
+        id="door-existing",
+        wallId="wall-1",
+        alongT=0.45,
+        widthMm=900,
+    )
+
+    ok, new_doc, _cmds, violations, code = try_commit_bundle(
+        doc,
+        [
+            {
+                "type": "insertWindowOnWall",
+                "id": "window-overlap",
+                "wallId": "wall-1",
+                "alongT": 0.55,
+                "widthMm": 900,
+            }
+        ],
+    )
+    violation = next(v for v in violations if v.rule_id == "hosted_opening_overlap")
+    payload = violation.model_dump(by_alias=True)
+
+    assert not ok
+    assert new_doc is None
+    assert code == "constraint_error"
+    assert payload["hostIds"] == ["wall-1"]
+    assert payload["trackerItems"] == ["BIR-B01", "BIR-C06"]
+    assert payload["safeFixHints"] == [
+        {"kind": "resize_reposition_or_merge_openings", "safety": "review_required"}
+    ]
+
+
+def test_bundle_commit_rejects_hosted_family_support_mismatch() -> None:
+    commands = [
+        {
+            "type": "upsertFamilyType",
+            "id": "ft-ceiling-hosted",
+            "familyId": "fam-detector",
+            "discipline": "generic",
+            "hostSupport": "ceiling_hosted",
+            "renderSupport": {"mode": "box"},
+        },
+        {
+            "type": "placeFamilyInstance",
+            "id": "family-detector",
+            "familyTypeId": "ft-ceiling-hosted",
+            "positionMm": {"xMm": 1200, "yMm": 1100},
+            "hostElementId": "wall-1",
+            "paramValues": {"renderProxyKind": "box"},
+        },
+    ]
+
+    ok, new_doc, _cmds, violations, code = try_commit_bundle(_base_doc(), commands)
+    violation = next(v for v in violations if v.rule_id == "hosted_family_unsupported_host_class")
+    payload = violation.model_dump(by_alias=True)
+
+    assert not ok
+    assert new_doc is None
+    assert code == "constraint_error"
+    assert payload["hostIds"] == ["wall-1"]
+    assert payload["trackerItems"] == ["BIR-C07", "BIR-C08"]
 
 
 def test_bundle_commit_rejects_physical_wall_outside_support_context() -> None:
