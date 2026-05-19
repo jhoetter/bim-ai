@@ -2,14 +2,14 @@
   "schemaVersion": "target-house-evidence-acceptance.v1",
   "targetId": "target-house-1",
   "evidenceDir": "seed-artifacts/target-house-1/evidence/live-run-current",
-  "ok": false,
+  "ok": true,
   "summary": {
     "requiredViewCount": 8,
-    "visualPassCount": 7,
-    "visualFailCount": 1,
+    "visualPassCount": 8,
+    "visualFailCount": 0,
     "dataQualityPassCount": 7,
     "dataQualityFailCount": 0,
-    "visualOk": false,
+    "visualOk": true,
     "dataQualityOk": true
   },
   "visualRows": [
@@ -68,15 +68,18 @@
       "trackerRef": "BIR-N05",
       "viewId": "front_loggia",
       "kind": "3d",
-      "status": "fail",
-      "issues": [
-        "missing_visual_contract_view",
-        "missing_snapshot_view",
-        "missing_screenshot_manifest_capture"
-      ],
-      "savedViewpointPresent": false,
-      "snapshotViewKind": null,
-      "screenshot": null
+      "status": "pass",
+      "issues": [],
+      "savedViewpointPresent": true,
+      "snapshotViewKind": "viewpoint",
+      "screenshot": {
+        "path": "seed-artifacts/target-house-1/evidence/live-run-current/screenshots/front_loggia.png",
+        "bytes": 55047,
+        "sha256": "sha256:0091b31810a6e388abd3012257c0e15a6de828bc68d38bcf04ddc2ef19a0b1a2",
+        "valid": true,
+        "width": 776,
+        "height": 563
+      }
     },
     {
       "trackerRef": "BIR-N05",

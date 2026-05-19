@@ -1420,6 +1420,37 @@
     },
     {
       "type": "saveViewpoint",
+      "id": "front_loggia",
+      "name": "Front loggia close evidence view",
+      "mode": "orbit_3d",
+      "camera": {
+        "position": {
+          "xMm": 4400,
+          "yMm": -7200,
+          "zMm": 4700
+        },
+        "target": {
+          "xMm": 4400,
+          "yMm": 450,
+          "zMm": 3900
+        },
+        "up": {
+          "xMm": 0,
+          "yMm": 0,
+          "zMm": 1
+        }
+      },
+      "hiddenSemanticKinds3d": [],
+      "cutawayStyle": null,
+      "viewerClipCapElevMm": null,
+      "viewerClipFloorElevMm": null,
+      "planOverlayEnabled": false,
+      "planOverlaySourcePlanViewId": null,
+      "evidenceRole": "front_loggia_close_visual_evidence",
+      "featureIds": ["front_deep_loggia", "opening_and_glazing_rhythm", "vertical_cladding_zones"]
+    },
+    {
+      "type": "saveViewpoint",
       "id": "rear_right_axon",
       "name": "Rear right roof court evidence view",
       "mode": "orbit_3d",

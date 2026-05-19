@@ -95,10 +95,20 @@ function passLike(status) {
   return status === 'pass' || status === 200 || status === true;
 }
 
-function localScreenshotPath({ evidenceDir, capture, viewId }) {
+function declaredScreenshotPath({ evidenceDir, capture }) {
   const capturePath = typeof capture?.screenshotPath === 'string' ? capture.screenshotPath : '';
-  if (capturePath && !path.isAbsolute(capturePath)) return path.resolve(evidenceDir, capturePath);
-  return path.join(evidenceDir, 'screenshots', `${viewId}.png`);
+  if (!capturePath.trim()) {
+    return { filePath: null, issue: 'missing_screenshot_path' };
+  }
+  if (path.isAbsolute(capturePath)) {
+    return { filePath: null, issue: 'absolute_screenshot_path' };
+  }
+  const filePath = path.resolve(evidenceDir, capturePath);
+  const rel = path.relative(evidenceDir, filePath);
+  if (rel.startsWith('..') || path.isAbsolute(rel)) {
+    return { filePath: null, issue: 'screenshot_path_outside_evidence_dir' };
+  }
+  return { filePath, issue: null };
 }
 
 async function buildVisualRows({
@@ -135,21 +145,25 @@ async function buildVisualRows({
 
     let image = null;
     if (capture) {
-      const screenshotPath = localScreenshotPath({ evidenceDir, capture, viewId: view.id });
-      try {
-        const stat = await fs.stat(screenshotPath);
-        image = {
-          path: normalizeRel(rootDir, screenshotPath),
-          bytes: stat.size,
-          sha256: await sha256File(screenshotPath),
-          ...(await pngInfo(screenshotPath)),
-        };
-        if (!image.valid) issues.push('screenshot_not_png');
-        if (image.width < 640 || image.height < 480) issues.push('screenshot_too_small');
-        if (image.bytes < 16 * 1024) issues.push('screenshot_suspiciously_small');
-      } catch (error) {
-        if (error?.code === 'ENOENT') issues.push('missing_screenshot_file');
-        else throw error;
+      const { filePath: screenshotPath, issue } = declaredScreenshotPath({ evidenceDir, capture });
+      if (issue) {
+        issues.push(issue);
+      } else {
+        try {
+          const stat = await fs.stat(screenshotPath);
+          image = {
+            path: normalizeRel(rootDir, screenshotPath),
+            bytes: stat.size,
+            sha256: await sha256File(screenshotPath),
+            ...(await pngInfo(screenshotPath)),
+          };
+          if (!image.valid) issues.push('screenshot_not_png');
+          if (image.width < 640 || image.height < 480) issues.push('screenshot_too_small');
+          if (image.bytes < 16 * 1024) issues.push('screenshot_suspiciously_small');
+        } catch (error) {
+          if (error?.code === 'ENOENT') issues.push('missing_screenshot_file');
+          else throw error;
+        }
       }
     }
 

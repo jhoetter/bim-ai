@@ -38,6 +38,20 @@
         "requiredOutput": "screenshots/front_elevation.png"
       },
       {
+        "id": "front_loggia",
+        "kind": "3d",
+        "purpose": "Close front-loggia view proving the recessed upper outdoor room, railing, return walls, mullions, and three-bay glazing rhythm.",
+        "featureIds": [
+          "front_deep_loggia",
+          "opening_and_glazing_rhythm",
+          "vertical_cladding_zones"
+        ],
+        "viewpointId": "front_loggia",
+        "savedViewpointPresent": true,
+        "camera": null,
+        "requiredOutput": "screenshots/front_loggia.png"
+      },
+      {
         "id": "rear_right_axon",
         "kind": "3d",
         "purpose": "Rear/right view proving the cutout, shell thickness, carport recess, and side envelope.",

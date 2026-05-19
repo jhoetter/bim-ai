@@ -4522,6 +4522,45 @@
       "siteHostId": null,
       "joinDisallowStart": false,
       "joinDisallowEnd": false
+    },
+    "front_loggia": {
+      "camera": {
+        "position": {
+          "xMm": 4400,
+          "yMm": -7200,
+          "zMm": 4700
+        },
+        "target": {
+          "xMm": 4400,
+          "yMm": 450,
+          "zMm": 3900
+        },
+        "up": {
+          "xMm": 0,
+          "yMm": 0,
+          "zMm": 1
+        }
+      },
+      "cutawayStyle": null,
+      "hiddenSemanticKinds3d": [],
+      "id": "front_loggia",
+      "kind": "viewpoint",
+      "mode": "orbit_3d",
+      "name": "Front loggia close evidence view",
+      "optionLocks": {},
+      "planOverlayAnnotationsVisible": null,
+      "planOverlayEnabled": false,
+      "planOverlayFillOpacity": null,
+      "planOverlayLineOpacity": null,
+      "planOverlayOffsetMm": null,
+      "planOverlayOpacity": null,
+      "planOverlaySourcePlanViewId": null,
+      "planOverlayWitnessLinesVisible": null,
+      "sectionBoxEnabled": null,
+      "sectionBoxMaxMm": null,
+      "sectionBoxMinMm": null,
+      "viewerClipCapElevMm": null,
+      "viewerClipFloorElevMm": null
     }
   },
   "violations": [

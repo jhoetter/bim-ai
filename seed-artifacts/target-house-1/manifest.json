@@ -16,7 +16,7 @@
     "status": "source-corrected-needs-live-evidence-refresh",
     "evidenceRoot": "evidence/live-run-current",
     "gitHead": "db78505123d0d471257479335091b0f9dfc71d3b",
-    "bundleSha256": "5b09fa662f1a20f68bfa5e462d56f915ca4c97856bab12a6031650e8ad541bb3",
+    "bundleSha256": "e2438f28d7e03bd7f03d81c47c2bf1d224cf0707ac7d084fd5ed081810589307",
     "irSha256": "cd64c22345865b1a7e0b674ebc0c15ec38433f4e561d485b4b91008b2d6f369e",
     "capabilitiesSha256": "e3faa00d4724d5e375ee853d5e3d56b21254a969a84e702d67013a8bb0125dbb",
     "advisorRuleDigest": "e2c9ee443c19b318c07e585ba6a2005f900c1931c1009eeb8031978471d2f5a5",
@@ -26,8 +26,8 @@
     "source": "spec/target-house",
     "bundle": "target-house-1.bundle.v2.json"
   },
-  "bundleSha256": "5b09fa662f1a20f68bfa5e462d56f915ca4c97856bab12a6031650e8ad541bb3",
-  "commandCount": 209,
+  "bundleSha256": "e2438f28d7e03bd7f03d81c47c2bf1d224cf0707ac7d084fd5ed081810589307",
+  "commandCount": 210,
   "commandSchemaVersion": "cmd-v3.0",
   "entryComment": {
     "body": "Image-locked Target House 1 BIM seed generated from the sketch-to-BIM methodology with final live evidence."

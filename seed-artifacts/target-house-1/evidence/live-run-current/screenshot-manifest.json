@@ -6,7 +6,7 @@
       "viewId": "main_front_left",
       "viewKind": "3d",
       "purpose": "Primary sketch-matched view proving white folded wrapper, front loggia, cantilever, vertical cladding, and roof terrace cutout.",
-      "screenshotPath": "/tmp/bim-ai-target-house-1-run/final-live-evidence/screenshots/main_front_left.png",
+      "screenshotPath": "screenshots/main_front_left.png",
       "usedViewpointId": "main_front_left",
       "syntheticViewpoint": false,
       "fallbackFit": false
@@ -15,7 +15,7 @@
       "viewId": "roof_high",
       "viewKind": "3d",
       "purpose": "High right/roof view proving the roof terrace is a real open void with occupied floor and return faces.",
-      "screenshotPath": "/tmp/bim-ai-target-house-1-run/final-live-evidence/screenshots/roof_high.png",
+      "screenshotPath": "screenshots/roof_high.png",
       "usedViewpointId": "roof_high",
       "syntheticViewpoint": false,
       "fallbackFit": false
@@ -24,8 +24,17 @@
       "viewId": "front_elevation",
       "viewKind": "elevation",
       "purpose": "Front view proving the three-bay upper loggia, rail, ground openings, and vertical cladding.",
-      "screenshotPath": "/tmp/bim-ai-target-house-1-run/final-live-evidence/screenshots/front_elevation.png",
+      "screenshotPath": "screenshots/front_elevation.png",
       "usedViewpointId": "front_elevation",
+      "syntheticViewpoint": false,
+      "fallbackFit": false
+    },
+    {
+      "viewId": "front_loggia",
+      "viewKind": "3d",
+      "purpose": "Close front-loggia view proving the recessed upper outdoor room, railing, return walls, mullions, and three-bay glazing rhythm.",
+      "screenshotPath": "screenshots/front_loggia.png",
+      "usedViewpointId": "front_loggia",
       "syntheticViewpoint": false,
       "fallbackFit": false
     },
@@ -33,7 +42,7 @@
       "viewId": "rear_right_axon",
       "viewKind": "3d",
       "purpose": "Rear/right view proving the cutout, shell thickness, carport recess, and side envelope.",
-      "screenshotPath": "/tmp/bim-ai-target-house-1-run/final-live-evidence/screenshots/rear_right_axon.png",
+      "screenshotPath": "screenshots/rear_right_axon.png",
       "usedViewpointId": "rear_right_axon",
       "syntheticViewpoint": false,
       "fallbackFit": false
@@ -42,7 +51,7 @@
       "viewId": "ground_floor_plan",
       "viewKind": "plan",
       "purpose": "Ground-floor room, door, stair, wet-room, utility, and carport sanity check.",
-      "screenshotPath": "/tmp/bim-ai-target-house-1-run/final-live-evidence/screenshots/ground_floor_plan.png",
+      "screenshotPath": "screenshots/ground_floor_plan.png",
       "usedViewpointId": "ground_floor_plan",
       "syntheticViewpoint": false,
       "fallbackFit": false
@@ -51,7 +60,7 @@
       "viewId": "first_floor_plan",
       "viewKind": "plan",
       "purpose": "First-floor rooms, landing, loggia, roof court, stair opening, and access sanity check.",
-      "screenshotPath": "/tmp/bim-ai-target-house-1-run/final-live-evidence/screenshots/first_floor_plan.png",
+      "screenshotPath": "screenshots/first_floor_plan.png",
       "usedViewpointId": "first_floor_plan",
       "syntheticViewpoint": false,
       "fallbackFit": false
@@ -60,7 +69,7 @@
       "viewId": "wire_diagnostic",
       "viewKind": "diagnostic",
       "purpose": "Transparent/wire evidence for roof-wall seams, slab openings, room boundaries, and hidden overlaps.",
-      "screenshotPath": "/tmp/bim-ai-target-house-1-run/final-live-evidence/screenshots/wire_diagnostic.png",
+      "screenshotPath": "screenshots/wire_diagnostic.png",
       "usedViewpointId": "wire_diagnostic",
       "syntheticViewpoint": false,
       "fallbackFit": false
