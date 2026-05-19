@@ -7,6 +7,7 @@ from bim_ai.elements import (
     FloorElem,
     LevelElem,
     PlacedAssetElem,
+    StairElem,
     Vec2Mm,
     WallElem,
 )
@@ -98,6 +99,45 @@ def test_integrity_preflight_payload_is_profile_independent_and_machine_readable
         "door-orphan"
     ]
     assert "digestSha256" in report
+
+
+def test_integrity_preflight_includes_vertical_circulation_and_support_context() -> None:
+    doc = Document(
+        revision=9,
+        elements={
+            "lvl-1": LevelElem(id="lvl-1", elevationMm=0),
+            "lvl-2": LevelElem(id="lvl-2", elevationMm=3000),
+            "floor-1": FloorElem(
+                id="floor-1",
+                levelId="lvl-1",
+                boundaryMm=[_pt(0, 0), _pt(5000, 0), _pt(5000, 4000), _pt(0, 4000)],
+            ),
+            "floor-2": FloorElem(
+                id="floor-2",
+                levelId="lvl-2",
+                boundaryMm=[_pt(0, 0), _pt(5000, 0), _pt(5000, 4000), _pt(0, 4000)],
+            ),
+            "stair-1": StairElem(
+                id="stair-1",
+                baseLevelId="lvl-1",
+                topLevelId="lvl-2",
+                runStartMm=_pt(900, 900),
+                runEndMm=_pt(1800, 900),
+                widthMm=1000,
+            ),
+        },
+    )
+
+    report = build_integrity_preflight_report(doc, revision=9, model_id="model-vertical")
+    rule_ids = {finding["ruleId"] for finding in report["findings"]}
+    timing_ids = {entry["checkId"] for entry in report["diagnostics"]["ruleTimings"]}
+
+    assert "BIR-E01" in rule_ids
+    assert "BIR-E03" in rule_ids
+    assert "physical_floor_outside_support_context" in rule_ids
+    assert report["layers"] == ["model_integrity", "domain_integrity"]
+    assert "model_integrity.physical_support_context" in timing_ids
+    assert "domain_integrity.vertical_circulation" in timing_ids
 
 
 def test_integrity_preflight_links_findings_to_source_authoring_commands() -> None:

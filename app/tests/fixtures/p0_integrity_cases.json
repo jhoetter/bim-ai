@@ -1094,12 +1094,17 @@
       "id": "detached_floor_and_floating_railing",
       "fixtureClass": "minimal_synthetic",
       "description": "Detached slab fragment and railing without a host are deterministically flagged.",
-      "trackerItems": ["BIR-B02", "BIR-B04", "BIR-W01"],
+      "trackerItems": ["BIR-B02", "BIR-B04", "BIR-E02", "BIR-E03", "BIR-W01"],
       "rulesUnderTest": [
+        "BIR-E02",
         "physical_floor_outside_support_context",
         "physical_railing_missing_host_context"
       ],
       "expectedFindings": [
+        {
+          "ruleId": "BIR-E02",
+          "elementIds": ["floor-fragment"]
+        },
         {
           "ruleId": "physical_floor_outside_support_context",
           "elementIds": ["floor-fragment"]
@@ -1122,6 +1127,13 @@
             { "xMm": 5000, "yMm": 4000 },
             { "xMm": 0, "yMm": 4000 }
           ]
+        },
+        "wall-main": {
+          "kind": "wall",
+          "id": "wall-main",
+          "levelId": "lvl-1",
+          "start": { "xMm": 0, "yMm": 0 },
+          "end": { "xMm": 4000, "yMm": 0 }
         },
         "floor-fragment": {
           "kind": "floor",
@@ -1510,6 +1522,174 @@
           "assetId": "chair-type",
           "levelId": "lvl-1",
           "positionMm": { "xMm": 950, "yMm": 900 }
+        }
+      }
+    },
+    {
+      "id": "vertical_stair_headroom_and_landing_blockers",
+      "fixtureClass": "minimal_synthetic",
+      "description": "By-sketch stair has insufficient headroom and missing landing/riser comfort metadata.",
+      "trackerItems": ["BIR-E04", "BIR-O01"],
+      "rulesUnderTest": ["BIR-E04"],
+      "expectedFindings": [
+        {
+          "ruleId": "BIR-E04",
+          "elementIds": ["ceiling-low", "stair-1"]
+        },
+        {
+          "ruleId": "BIR-E04",
+          "elementIds": ["stair-1"]
+        }
+      ],
+      "absentRuleIds": [],
+      "elements": {
+        "lvl-1": { "kind": "level", "id": "lvl-1", "elevationMm": 0 },
+        "lvl-2": { "kind": "level", "id": "lvl-2", "elevationMm": 3000 },
+        "wall-support": {
+          "kind": "wall",
+          "id": "wall-support",
+          "levelId": "lvl-2",
+          "start": { "xMm": 0, "yMm": 0 },
+          "end": { "xMm": 4000, "yMm": 0 }
+        },
+        "floor-1": {
+          "kind": "floor",
+          "id": "floor-1",
+          "levelId": "lvl-1",
+          "boundaryMm": [
+            { "xMm": 0, "yMm": 0 },
+            { "xMm": 5000, "yMm": 0 },
+            { "xMm": 5000, "yMm": 4000 },
+            { "xMm": 0, "yMm": 4000 }
+          ]
+        },
+        "floor-2": {
+          "kind": "floor",
+          "id": "floor-2",
+          "levelId": "lvl-2",
+          "boundaryMm": [
+            { "xMm": 0, "yMm": 0 },
+            { "xMm": 5000, "yMm": 0 },
+            { "xMm": 5000, "yMm": 4000 },
+            { "xMm": 0, "yMm": 4000 }
+          ],
+          "props": { "supportedByIds": ["wall-support"] }
+        },
+        "stair-1": {
+          "kind": "stair",
+          "id": "stair-1",
+          "baseLevelId": "lvl-1",
+          "topLevelId": "lvl-2",
+          "runStartMm": { "xMm": 900, "yMm": 900 },
+          "runEndMm": { "xMm": 3900, "yMm": 900 },
+          "widthMm": 1000,
+          "authoringMode": "by_sketch",
+          "boundaryMm": [
+            { "xMm": 700, "yMm": 300 },
+            { "xMm": 4100, "yMm": 300 },
+            { "xMm": 4100, "yMm": 1500 },
+            { "xMm": 700, "yMm": 1500 }
+          ],
+          "treadLines": [
+            {
+              "fromMm": { "xMm": 1200, "yMm": 300 },
+              "toMm": { "xMm": 1200, "yMm": 1500 },
+              "riserHeightMm": 220
+            }
+          ],
+          "totalRiseMm": 3000
+        },
+        "opening-1": {
+          "kind": "slab_opening",
+          "id": "opening-1",
+          "hostFloorId": "floor-2",
+          "boundaryMm": [
+            { "xMm": 700, "yMm": 300 },
+            { "xMm": 4100, "yMm": 300 },
+            { "xMm": 4100, "yMm": 1500 },
+            { "xMm": 700, "yMm": 1500 }
+          ],
+          "isShaft": true
+        },
+        "ceiling-low": {
+          "kind": "ceiling",
+          "id": "ceiling-low",
+          "levelId": "lvl-1",
+          "boundaryMm": [
+            { "xMm": 500, "yMm": 300 },
+            { "xMm": 1700, "yMm": 300 },
+            { "xMm": 1700, "yMm": 1500 },
+            { "xMm": 500, "yMm": 1500 }
+          ],
+          "heightOffsetMm": 1800,
+          "thicknessMm": 100
+        }
+      }
+    },
+    {
+      "id": "vertical_terrace_and_railing_profile_blockers",
+      "fixtureClass": "minimal_synthetic",
+      "description": "Occupied terrace lacks exterior-space intent and its hosted guard lacks railing profile metadata.",
+      "trackerItems": ["BIR-E06", "BIR-E07", "BIR-O01"],
+      "rulesUnderTest": ["BIR-E06", "BIR-E07"],
+      "expectedFindings": [
+        {
+          "ruleId": "BIR-E06",
+          "elementIds": ["terrace-1"]
+        },
+        {
+          "ruleId": "BIR-E07",
+          "elementIds": ["railing-1"]
+        }
+      ],
+      "absentRuleIds": [],
+      "elements": {
+        "lvl-1": { "kind": "level", "id": "lvl-1", "elevationMm": 0 },
+        "lvl-2": { "kind": "level", "id": "lvl-2", "elevationMm": 3000 },
+        "wall-support": {
+          "kind": "wall",
+          "id": "wall-support",
+          "levelId": "lvl-2",
+          "start": { "xMm": 5000, "yMm": 1000 },
+          "end": { "xMm": 5000, "yMm": 3000 }
+        },
+        "floor-2": {
+          "kind": "floor",
+          "id": "floor-2",
+          "levelId": "lvl-2",
+          "boundaryMm": [
+            { "xMm": 0, "yMm": 0 },
+            { "xMm": 5000, "yMm": 0 },
+            { "xMm": 5000, "yMm": 4000 },
+            { "xMm": 0, "yMm": 4000 }
+          ],
+          "props": { "supportedByIds": ["wall-support"] }
+        },
+        "terrace-1": {
+          "kind": "floor",
+          "id": "terrace-1",
+          "name": "Terrace",
+          "levelId": "lvl-2",
+          "boundaryMm": [
+            { "xMm": 5000, "yMm": 1000 },
+            { "xMm": 6500, "yMm": 1000 },
+            { "xMm": 6500, "yMm": 3000 },
+            { "xMm": 5000, "yMm": 3000 }
+          ],
+          "props": {
+            "exteriorSpaceType": "terrace",
+            "supportedByIds": ["wall-support"]
+          }
+        },
+        "railing-1": {
+          "kind": "railing",
+          "id": "railing-1",
+          "hostFloorId": "terrace-1",
+          "pathMm": [
+            { "xMm": 5000, "yMm": 1000 },
+            { "xMm": 6500, "yMm": 1000 }
+          ],
+          "guardHeightMm": 1050
         }
       }
     }

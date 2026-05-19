@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from bim_ai.elements import (
     BalusterPattern,
+    CeilingElem,
     FloorElem,
     HandrailSupport,
     LevelElem,
@@ -10,6 +11,7 @@ from bim_ai.elements import (
     RoomElem,
     SlabOpeningElem,
     StairElem,
+    StairTreadLine,
     Vec2Mm,
     WallElem,
 )
@@ -200,11 +202,61 @@ def test_missing_stair_graph_connection_reports_endpoint_failure() -> None:
     assert "stair_graph_connection_missing" in _codes(elements)
 
 
+def test_stair_without_hosted_guard_reports_stair_guardrail_gap() -> None:
+    elements = _clean_elements()
+    elements.pop("R1")
+
+    assert "stair_guardrail_missing" in _codes(elements)
+
+
 def test_missing_upper_slab_opening_reports_stair_penetration_failure() -> None:
     elements = _clean_elements()
     elements.pop("O1")
 
     assert "stair_missing_slab_opening" in _codes(elements)
+
+
+def test_low_ceiling_over_stair_reports_headroom_conflict() -> None:
+    elements = _clean_elements()
+    elements["ceiling-low"] = CeilingElem(
+        id="ceiling-low",
+        levelId="L1",
+        boundaryMm=[_pt(500, 300), _pt(1700, 300), _pt(1700, 1500), _pt(500, 1500)],
+        heightOffsetMm=1800,
+        thicknessMm=100,
+    )
+
+    assert "stair_headroom_clearance_conflict" in _codes(elements)
+
+
+def test_by_sketch_stair_reports_landing_and_riser_metadata_failures() -> None:
+    elements = _clean_elements()
+    elements["S1"] = StairElem(
+        id="S1",
+        baseLevelId="L1",
+        topLevelId="L2",
+        runStartMm=_pt(900, 900),
+        runEndMm=_pt(3900, 900),
+        widthMm=1000,
+        authoringMode="by_sketch",
+        boundaryMm=[_pt(700, 300), _pt(4100, 300), _pt(4100, 1500), _pt(700, 1500)],
+        treadLines=[
+            StairTreadLine(fromMm=_pt(1200, 300), toMm=_pt(1200, 1500), riserHeightMm=220)
+        ],
+        totalRiseMm=3000,
+    )
+    elements["O1"] = SlabOpeningElem(
+        id="O1",
+        hostFloorId="F2",
+        boundaryMm=[_pt(700, 300), _pt(4100, 300), _pt(4100, 1500), _pt(700, 1500)],
+        isShaft=True,
+    )
+    elements["R1"] = _railing("R1", hosted_stair_id="S1", props=None)
+
+    codes = _codes(elements)
+
+    assert "stair_landing_missing" in codes
+    assert "stair_by_sketch_riser_too_high" in codes
 
 
 def test_slab_opening_outside_host_and_degenerate_boundary_are_reported() -> None:

@@ -148,3 +148,27 @@ def test_p0_integrity_fixture_corpus_covers_room_and_target_house_regressions() 
         "hosted_opening_host_outside_floor_envelope",
         "physical_access_proxy_leakage",
     } <= set(cases_by_id["target_house_valid_real_access_door"]["absentRuleIds"])
+
+
+def test_p0_integrity_fixture_corpus_covers_vertical_circulation_closure() -> None:
+    corpus = _load_corpus()
+    cases_by_id = {case["id"]: case for case in corpus["cases"]}
+
+    assert {
+        "detached_floor_and_floating_railing",
+        "vertical_stair_missing_upper_slab_opening",
+        "vertical_stair_with_valid_slab_opening",
+        "vertical_stair_invalid_level_transition",
+        "vertical_railing_guard_height_invalid",
+        "vertical_stair_bedroom_and_furniture_overlap",
+        "vertical_stair_headroom_and_landing_blockers",
+        "vertical_terrace_and_railing_profile_blockers",
+    } <= set(cases_by_id)
+    covered = {
+        rule_id
+        for case in cases_by_id.values()
+        if any(str(item).startswith("BIR-E") for item in case.get("trackerItems", []))
+        for rule_id in case.get("rulesUnderTest", [])
+        if str(rule_id).startswith("BIR-E")
+    }
+    assert {"BIR-E01", "BIR-E02", "BIR-E03", "BIR-E04", "BIR-E05", "BIR-E06", "BIR-E07"} <= covered

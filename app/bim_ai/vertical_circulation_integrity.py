@@ -5,6 +5,7 @@ from dataclasses import asdict, dataclass
 from typing import Any, Literal
 
 from bim_ai.elements import (
+    CeilingElem,
     ColumnElem,
     FamilyInstanceElem,
     FloorElem,
@@ -33,6 +34,10 @@ DEFAULT_MAX_BALUSTER_SPACING_MM = 125.0
 DEFAULT_MIN_GUARD_HEIGHT_MM = 900.0
 DEFAULT_MIN_EXTERIOR_GUARD_HEIGHT_MM = 1000.0
 DEFAULT_MIN_RAILING_COVERAGE_RATIO = 0.75
+DEFAULT_MIN_STAIR_HEADROOM_MM = 2100.0
+DEFAULT_MAX_RISER_MM = 190.0
+DEFAULT_MIN_TREAD_MM = 260.0
+DEFAULT_MIN_LANDING_DEPTH_MM = 900.0
 
 
 @dataclass(frozen=True)
@@ -87,6 +92,10 @@ def check_vertical_circulation_integrity(
         [elem for elem in typed_elements.values() if isinstance(elem, RailingElem)],
         key=lambda elem: elem.id,
     )
+    ceilings = sorted(
+        [elem for elem in typed_elements.values() if isinstance(elem, CeilingElem)],
+        key=lambda elem: elem.id,
+    )
     slab_openings = sorted(
         [elem for elem in typed_elements.values() if isinstance(elem, SlabOpeningElem)],
         key=lambda elem: elem.id,
@@ -121,6 +130,7 @@ def check_vertical_circulation_integrity(
     findings.extend(
         _stair_graph_findings(stairs, floors, typed_elements, tolerance_mm=tolerance_mm)
     )
+    findings.extend(_stair_comfort_headroom_findings(stairs, ceilings, typed_elements))
     findings.extend(
         _stair_overlap_findings(
             stairs,
@@ -138,6 +148,7 @@ def check_vertical_circulation_integrity(
             tolerance_mm=tolerance_mm,
         )
     )
+    findings.extend(_stair_guard_findings(stairs, railings))
     findings.extend(
         _railing_findings(
             railings,
@@ -380,6 +391,169 @@ def _stair_graph_findings(
                     "Move stair endpoints onto base/top floor footprints or add landing slabs at the connected levels.",
                 )
             )
+    return findings
+
+
+def _stair_comfort_headroom_findings(
+    stairs: list[StairElem],
+    ceilings: list[CeilingElem],
+    elements: Mapping[str, Any],
+) -> list[VerticalCirculationFinding]:
+    findings: list[VerticalCirculationFinding] = []
+    for stair in stairs:
+        if stair.riser_mm > DEFAULT_MAX_RISER_MM or stair.tread_mm < DEFAULT_MIN_TREAD_MM:
+            findings.append(
+                _finding(
+                    "BIR-E04",
+                    "stair_riser_tread_comfort_failure",
+                    "error",
+                    "P1",
+                    f"Stair '{stair.id}' riser/tread does not meet the residential comfort proxy.",
+                    [stair.id],
+                    "Use riserMm <= 190 and treadMm >= 260, or route the stair through a profile-specific exception.",
+                )
+            )
+
+        if stair.authoring_mode == "by_sketch":
+            findings.extend(_by_sketch_stair_comfort_findings(stair))
+
+        findings.extend(_stair_headroom_findings(stair, ceilings, elements))
+    return findings
+
+
+def _by_sketch_stair_comfort_findings(stair: StairElem) -> list[VerticalCirculationFinding]:
+    findings: list[VerticalCirculationFinding] = []
+    if not stair.landings:
+        findings.append(
+            _finding(
+                "BIR-E04",
+                "stair_landing_missing",
+                "error",
+                "P1",
+                f"By-sketch stair '{stair.id}' has no modeled landing footprint.",
+                [stair.id],
+                "Add landing polygons for by-sketch stair runs or switch to a component stair with generated landings.",
+            )
+        )
+    else:
+        for landing in stair.landings:
+            landing_area = _polygon_area_abs(
+                [(point.x_mm, point.y_mm) for point in landing.boundary_mm]
+            )
+            min_area = max(stair.width_mm, DEFAULT_MIN_LANDING_DEPTH_MM) * stair.width_mm
+            if landing_area + 1e-6 < min_area:
+                findings.append(
+                    _finding(
+                        "BIR-E04",
+                        "stair_landing_too_small",
+                        "error",
+                        "P1",
+                        f"Stair landing '{landing.id}' is smaller than the stair width/depth proxy.",
+                        [stair.id, landing.id],
+                        "Resize the landing footprint so it is at least stair-width by landing-depth.",
+                    )
+                )
+
+    if not stair.tread_lines:
+        return findings
+
+    missing_or_invalid = [
+        index
+        for index, line in enumerate(stair.tread_lines)
+        if line.riser_height_mm is None or line.riser_height_mm <= 0
+    ]
+    if missing_or_invalid:
+        findings.append(
+            _finding(
+                "BIR-E04",
+                "stair_by_sketch_riser_metadata_missing",
+                "error",
+                "P1",
+                f"By-sketch stair '{stair.id}' has tread lines without usable riser heights.",
+                [stair.id],
+                "Balance by-sketch tread lines so every treadLine has a positive riserHeightMm.",
+            )
+        )
+        return findings
+
+    high_risers = [
+        index
+        for index, line in enumerate(stair.tread_lines)
+        if (line.riser_height_mm or 0.0) > DEFAULT_MAX_RISER_MM
+    ]
+    if high_risers:
+        findings.append(
+            _finding(
+                "BIR-E04",
+                "stair_by_sketch_riser_too_high",
+                "error",
+                "P1",
+                f"By-sketch stair '{stair.id}' has riser lines above {DEFAULT_MAX_RISER_MM:g} mm.",
+                [stair.id],
+                "Rebalance the by-sketch stair tread lines or increase the run count.",
+            )
+        )
+    return findings
+
+
+def _stair_headroom_findings(
+    stair: StairElem,
+    ceilings: list[CeilingElem],
+    elements: Mapping[str, Any],
+) -> list[VerticalCirculationFinding]:
+    findings: list[VerticalCirculationFinding] = []
+    base_level = elements.get(stair.base_level_id)
+    top_level = elements.get(stair.top_level_id)
+    total_rise = _stair_total_rise_mm(stair, base_level, top_level)
+    samples = _stair_headroom_sample_points(stair)
+    for ceiling in ceilings:
+        if ceiling.level_id != stair.base_level_id:
+            continue
+        ceiling_polygon = [(point.x_mm, point.y_mm) for point in ceiling.boundary_mm]
+        if len(ceiling_polygon) < 3:
+            continue
+        for t, point in samples:
+            if not _point_tuple_in_polygon_or_on_edge(point, ceiling_polygon, DEFAULT_TOLERANCE_MM):
+                continue
+            stair_z = total_rise * t
+            clearance = ceiling.height_offset_mm - stair_z
+            if clearance + 1e-6 >= DEFAULT_MIN_STAIR_HEADROOM_MM:
+                continue
+            findings.append(
+                _finding(
+                    "BIR-E04",
+                    "stair_headroom_clearance_conflict",
+                    "error",
+                    "P1",
+                    f"Stair '{stair.id}' has {clearance:.1f} mm clear headroom below ceiling '{ceiling.id}'.",
+                    [stair.id, ceiling.id],
+                    "Raise or cut the overhead ceiling/slab, move the stair, or document a profile-specific headroom exception.",
+                )
+            )
+            break
+    return findings
+
+
+def _stair_guard_findings(
+    stairs: list[StairElem],
+    railings: list[RailingElem],
+) -> list[VerticalCirculationFinding]:
+    findings: list[VerticalCirculationFinding] = []
+    guarded_stair_ids = {railing.hosted_stair_id for railing in railings if railing.hosted_stair_id}
+    for stair in stairs:
+        if stair.id in guarded_stair_ids:
+            continue
+        findings.append(
+            _finding(
+                "BIR-E03",
+                "stair_guardrail_missing",
+                "error",
+                "P0",
+                f"Stair '{stair.id}' has no hosted guardrail or railing.",
+                [stair.id],
+                "Add at least one railing hosted to the stair or document an approved unguarded-stair exception.",
+            )
+        )
     return findings
 
 
@@ -732,6 +906,7 @@ def _typed_element(element: Any) -> Any:
         "floor": FloorElem,
         "level": LevelElem,
         "placed_asset": PlacedAssetElem,
+        "ceiling": CeilingElem,
         "railing": RailingElem,
         "room": RoomElem,
         "slab_opening": SlabOpeningElem,
@@ -945,6 +1120,37 @@ def _stair_footprint(stair: StairElem) -> list[tuple[float, float]]:
         (end.x_mm - nx * half_width, end.y_mm - ny * half_width),
         (start.x_mm - nx * half_width, start.y_mm - ny * half_width),
     ]
+
+
+def _stair_headroom_sample_points(stair: StairElem) -> list[tuple[float, tuple[float, float]]]:
+    samples: list[tuple[float, tuple[float, float]]] = []
+    for t in (0.0, 0.5, 1.0):
+        x = stair.run_start.x_mm + (stair.run_end.x_mm - stair.run_start.x_mm) * t
+        y = stair.run_start.y_mm + (stair.run_end.y_mm - stair.run_start.y_mm) * t
+        samples.append((t, (x, y)))
+    if stair.boundary_mm:
+        cx = sum(point.x_mm for point in stair.boundary_mm) / len(stair.boundary_mm)
+        cy = sum(point.y_mm for point in stair.boundary_mm) / len(stair.boundary_mm)
+        samples.append((_projection_t_on_stair(stair, (cx, cy)), (cx, cy)))
+    return samples
+
+
+def _projection_t_on_stair(stair: StairElem, point: tuple[float, float]) -> float:
+    dx = stair.run_end.x_mm - stair.run_start.x_mm
+    dy = stair.run_end.y_mm - stair.run_start.y_mm
+    denom = dx * dx + dy * dy
+    if denom <= 1e-9:
+        return 0.0
+    raw = ((point[0] - stair.run_start.x_mm) * dx + (point[1] - stair.run_start.y_mm) * dy) / denom
+    return max(0.0, min(1.0, raw))
+
+
+def _stair_total_rise_mm(stair: StairElem, base_level: Any, top_level: Any) -> float:
+    if stair.total_rise_mm is not None:
+        return max(0.0, float(stair.total_rise_mm))
+    if isinstance(base_level, LevelElem) and isinstance(top_level, LevelElem):
+        return max(0.0, float(top_level.elevation_mm) - float(base_level.elevation_mm))
+    return max(0.0, float(stair.riser_mm) * 16.0)
 
 
 def _is_sleeping_room(room: RoomElem) -> bool:

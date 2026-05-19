@@ -11,8 +11,12 @@ from bim_ai.constructability_report import RECOMMENDATION_BY_RULE_ID, build_cons
 from bim_ai.document import Document
 from bim_ai.elements import Element
 from bim_ai.model_integrity import ModelIntegrityFinding, check_model_integrity_invariants
-from bim_ai.model_integrity_hosting import hosted_opening_integrity_violations
+from bim_ai.model_integrity_hosting import (
+    hosted_opening_integrity_violations,
+    physical_support_context_violations,
+)
 from bim_ai.transaction_safety import build_agent_remediation_proposal, canonical_payload_digest
+from bim_ai.vertical_circulation_integrity import check_vertical_circulation_integrity
 
 DEFAULT_PROFILE_COMPARISON_PROFILES = (
     "authoring_default",
@@ -63,6 +67,22 @@ def build_integrity_preflight_report(
         impacted_element_count=impacted_count,
         incremental_eligible=incremental_eligible,
     )
+    support_violations = profiler.measure(
+        check_id="model_integrity.physical_support_context",
+        layer="model_integrity",
+        run=lambda: physical_support_context_violations(dict(elements)),
+        finding_count=len,
+        impacted_element_count=impacted_count,
+        incremental_eligible=incremental_eligible,
+    )
+    vertical_findings = profiler.measure(
+        check_id="domain_integrity.vertical_circulation",
+        layer="domain_integrity",
+        run=lambda: check_vertical_circulation_integrity(dict(elements)),
+        finding_count=len,
+        impacted_element_count=impacted_count,
+        incremental_eligible=incremental_eligible,
+    )
     profiler.skip(
         check_id="constructability.profile_rules",
         layer="constructability",
@@ -79,6 +99,8 @@ def build_integrity_preflight_report(
     findings = [
         *[_finding_from_integrity(row) for row in invariant_findings],
         *[_finding_from_violation(row) for row in hosted_violations],
+        *[_finding_from_violation(row) for row in support_violations],
+        *[_finding_from_domain(row) for row in vertical_findings],
     ]
     if source_command_index:
         findings = [_attach_source_commands(row, source_command_index) for row in findings]
@@ -100,7 +122,7 @@ def build_integrity_preflight_report(
         "revision": revision,
         "profileIndependent": True,
         "profile": "model_integrity",
-        "layers": ["model_integrity"],
+        "layers": ["model_integrity", "domain_integrity"],
         "normalAdvisorSketchChecksIncluded": False,
         "summary": {
             "findingCount": len(findings),
@@ -309,6 +331,17 @@ def _finding_from_violation(violation: Violation) -> dict[str, Any]:
         violation.rule_id,
         _default_recommendation(violation.rule_id),
     )
+    data["fixHints"] = _fix_hints_for_rule(data)
+    return data
+
+
+def _finding_from_domain(finding: Mapping[str, Any]) -> dict[str, Any]:
+    data = dict(finding)
+    data["ruleId"] = str(data.get("ruleId") or data.get("rule_id") or "domain_integrity")
+    if "element_ids" in data and "elementIds" not in data:
+        data["elementIds"] = list(data.pop("element_ids"))
+    data["blocking"] = data.get("blocking") is True or str(data.get("severity") or "") == "error"
+    data["blockingClass"] = "domain_integrity"
     data["fixHints"] = _fix_hints_for_rule(data)
     return data
 
