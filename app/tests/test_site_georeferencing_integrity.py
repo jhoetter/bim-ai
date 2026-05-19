@@ -93,7 +93,21 @@ def test_missing_level_datum_is_blocking_domain_finding() -> None:
 
 
 def test_domain_integrity_preserves_site_georeferencing_tracker_items() -> None:
-    findings = check_domain_integrity({"lvl-1": {"kind": "level", "id": "lvl-1"}})
+    findings = check_domain_integrity(
+        {
+            "lvl-1": {"kind": "level", "id": "lvl-1"},
+            "topo": {
+                "kind": "toposolid",
+                "id": "topo",
+                "boundaryMm": [
+                    {"xMm": 0, "yMm": 0},
+                    {"xMm": 1000, "yMm": 0},
+                    {"xMm": 1000, "yMm": 1000},
+                    {"xMm": 0, "yMm": 1000},
+                ],
+            },
+        }
+    )
     site_rows = [f for f in findings if f["source"] == "site_georeferencing"]
 
     assert site_rows

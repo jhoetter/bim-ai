@@ -128,6 +128,35 @@ NON_CONSTRUCTABILITY_DOMAIN_RULE_IDS = frozenset(
     }
 )
 
+DOMAIN_INTEGRITY_CONSTRUCTABILITY_RULE_PREFIXES = (
+    "code_profile_",
+    "site_relationship_",
+    "bir_f03_",
+    "bir_f04_",
+    "bir_f05_",
+    "bir_f06_",
+)
+
+DOMAIN_INTEGRITY_CONSTRUCTABILITY_RULE_IDS = frozenset(
+    {
+        "room_access_fake_helper_access",
+        "room_access_door_not_on_room_boundary",
+        "room_access_room_outside_floor",
+        "room_access_room_wall_topology_gap",
+        "room_access_inaccessible_room",
+        "room_access_unresolved_egress_path",
+    }
+)
+
+MODEL_INTEGRITY_CONSTRUCTABILITY_RULE_IDS = frozenset(
+    {
+        "model_integrity_asset_placement_support_invalid",
+        "model_integrity_asset_placement_floating",
+        "model_integrity_asset_placement_circulation_overlap",
+        "model_integrity_family_instance_host_constraint_violation",
+    }
+)
+
 PRIORITY_RANK_BY_TOKEN = {
     "P0": 0,
     "P1": 10,
@@ -261,6 +290,7 @@ def build_constructability_report(
             profiler=profiler,
         )
         if str(finding.get("ruleId") or "") not in NON_CONSTRUCTABILITY_DOMAIN_RULE_IDS
+        and _is_constructability_domain_finding(finding)
     ]
     all_findings = [
         *[_finding_dict(v, profile=profile) for v in violations],
@@ -377,9 +407,17 @@ def _model_integrity_constructability_violations(elements: dict[str, Element]) -
         _integrity_finding_to_violation(finding)
         for finding in check_model_integrity_invariants(elements)
         if finding.severity == "error"
+        and finding.rule_id in MODEL_INTEGRITY_CONSTRUCTABILITY_RULE_IDS
     ]
     violations.extend(hosted_opening_integrity_violations(elements))
     return violations
+
+
+def _is_constructability_domain_finding(finding: Mapping[str, Any]) -> bool:
+    rule_id = str(finding.get("ruleId") or "")
+    if rule_id in DOMAIN_INTEGRITY_CONSTRUCTABILITY_RULE_IDS:
+        return True
+    return rule_id.startswith(DOMAIN_INTEGRITY_CONSTRUCTABILITY_RULE_PREFIXES)
 
 
 def _integrity_finding_to_violation(finding: ModelIntegrityFinding) -> Violation:

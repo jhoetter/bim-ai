@@ -565,9 +565,29 @@ def site_relationship_diagnostics_v1(subject: Any) -> list[SiteGeoreferencingFin
     sites = _by_kind(elements, "site")
     topos = _by_kind(elements, "toposolid")
     floors = _by_kind(elements, "floor")
+    property_lines = _by_kind(elements, "property_line")
     topo_polys = [(topo, _polygon(topo, "boundary_mm", "boundaryMm")) for topo in topos]
+    requires_site_context = bool(
+        sites
+        or topos
+        or property_lines
+        or any(
+            _get(
+                elem,
+                "site_host_id",
+                "siteHostId",
+                "site_id",
+                "siteId",
+                "toposolid_id",
+                "toposolidId",
+                "hostToposolidId",
+            )
+            not in (None, "")
+            for elem in elements.values()
+        )
+    )
 
-    if not sites:
+    if requires_site_context and not sites:
         findings.append(
             SiteGeoreferencingFinding(
                 rule_id="site_relationship_missing_site",
@@ -576,7 +596,7 @@ def site_relationship_diagnostics_v1(subject: Any) -> list[SiteGeoreferencingFin
                 tracker_items=("BIR-S05",),
             )
         )
-    if not topos:
+    if requires_site_context and not topos:
         findings.append(
             SiteGeoreferencingFinding(
                 rule_id="site_relationship_missing_toposolid",
@@ -692,7 +712,7 @@ def site_relationship_diagnostics_v1(subject: Any) -> list[SiteGeoreferencingFin
                 )
             )
 
-    for prop in _by_kind(elements, "property_line"):
+    for prop in property_lines:
         closure_error = _num(_get(prop, "closure_error_mm", "closureErrorMm"))
         if closure_error is not None and closure_error > 10:
             findings.append(

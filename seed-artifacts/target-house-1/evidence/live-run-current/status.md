@@ -1,6 +1,6 @@
 # Target House 1 Offline Evidence Refresh
 
-Generated: 2026-05-19T14:14:15.677837Z
+Generated: 2026-05-19T14:27:13.131657Z
 Model: target-house-1-offline-regenerated
 Revision: 2
 Source: `seed-artifacts/target-house-1/bundle.json`

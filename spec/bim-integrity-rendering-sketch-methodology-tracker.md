@@ -1060,6 +1060,13 @@ machine-readable for UI/API/CLI/MCP consumers where relevant, target-house
 evidence is refreshed after integration, and final-package status remains
 blocked only by legitimate incomplete tracker scope.
 
+Integration note, 2026-05-19: the constructability report now has an explicit
+domain-finding boundary. It includes actionable room access, code profile,
+site/toposolid relationship, and envelope topology issues, but no longer leaks
+general coordinate setup placeholders or every domain-integrity row into the
+normal Advisor surface. Target-house evidence was refreshed after the
+stair/asset overlap guard and constructability boundary fix.
+
 ## Non-Negotiable Acceptance Rules
 
 - Do not mark a seed `accepted` while any P0 integrity or renderer diagnostic is
