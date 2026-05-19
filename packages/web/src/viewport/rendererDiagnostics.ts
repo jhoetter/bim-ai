@@ -31,7 +31,8 @@ export type RendererDiagnosticFeature =
   | 'plan-projection'
   | 'section-projection'
   | 'sheet-viewport'
-  | 'export-preview';
+  | 'export-preview'
+  | 'renderer-performance';
 
 export type RendererDiagnosticEvidence = {
   modelRevision?: number | string | null;

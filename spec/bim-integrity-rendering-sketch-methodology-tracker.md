@@ -244,7 +244,7 @@ This tracker is complete only when all of these are true:
 | `BIR-J07` | P1 | Partial | Materials and appearances. | Material assignments, type layer intent, transparent/realistic/wire modes, cut/finish faces, and high-fidelity mode are consistent. |
 | `BIR-J08` | P1 | Partial | Lens/filter rendering parity. | Architecture, Structure, Systems, MEP, Massing/Site, and Documentation lenses show/hide/ghost categories predictably and preserve diagnostics. |
 | `BIR-J09` | P1 | Partial | Visual golden harness. | Playwright/canvas pixel tests cover nonblank, framing, critical feature presence, and no flying/unsupported proxies for representative seeds. |
-| `BIR-J10` | P2 | Not started | Stress and large-model rendering. | Renderer remains responsive and bounded with many rooms, many openings, linked models, and large evidence views. |
+| `BIR-J10` | P2 | Partial | Stress and large-model rendering. | Pure renderer stress-budget helpers now count large element sets, hosted openings, linked models/expanded linked elements, and evidence views, emitting structured `renderer-performance` diagnostics when thresholds are near or exceeded. Remaining: wire diagnostics into live viewport/evidence capture and broaden benchmark models. |
 
 ### K. IFC, glTF, Schedules, Sheets, And Exchange Fidelity
 
@@ -263,7 +263,7 @@ This tracker is complete only when all of these are true:
 | ID | Priority | Status | Item | Acceptance |
 | -- | -------- | ------ | ---- | ---------- |
 | `BIR-L01` | P0 | Partial | Profile Advisor performance. | Constructability reports now include `advisorDiagnosticsProfile_v1` with deterministic ordered timing rows for Advisor evaluate, constructability clearance/metadata, model-integrity, and domain-integrity checks. Evidence: `app/bim_ai/advisor_profiling.py`, `app/bim_ai/constructability_report.py`, `app/tests/test_advisor_profiling_incremental.py`. |
-| `BIR-L02` | P0 | Not started | Profile renderer update cost. | Orbit, select, lens switch, and Advisor open/close remain responsive on target-house and benchmark models. |
+| `BIR-L02` | P0 | Partial | Profile renderer update cost. | Pure renderer cost profiling now estimates orbit, select, lens-switch, Advisor toggle, and update workloads with budgets, dominant factors, and budget diagnostics. Remaining: collect real browser timing samples from target-house and benchmark models. |
 | `BIR-L03` | P0 | Partial | Investigate WebSocket proxy errors. | W6-C classifies Vite proxy `EPIPE`/`ECONNRESET` as benign dev reconnect/browser teardown noise, keeps unexpected proxy errors actionable, and covers app reconnect/backoff/state-churn decisions in `packages/web/src/lib/wsStability.test.ts`. Remaining: wire helper into dirty WebSocket consumers/proxy config once parallel edits settle and verify live dev-server behavior. |
 | `BIR-L04` | P1 | Partial | Incremental diagnostics. | Added pure `advisorIncrementalDiagnosticEligibility_v1` helper that derives changed ids, one-hop reference impact, constructability broad-phase pair impact, and per-layer incremental eligibility for Advisor/integrity/domain/render diagnostic consumers. Evidence: `app/bim_ai/constructability_performance.py`, `app/tests/test_advisor_profiling_incremental.py`. |
 | `BIR-L05` | P1 | Partial | Background heavy checks. | Expensive geometry/export/render checks run as jobs with progress, cancellation, and cached evidence. |
@@ -517,6 +517,21 @@ W6-C evidence update:
 ### Wave 6: Performance And UX Stability
 
 Goal: close `M6`.
+
+W6-B evidence, 2026-05-19:
+
+- Added `packages/web/src/viewport/rendererCostProfile.ts` as a pure renderer
+  profiling helper for `orbit`, `select`, `lens-switch`, `advisor-toggle`, and
+  `update` workloads, including budget ratios, status, dominant factors, and
+  `renderer-performance` diagnostics.
+- Added stress-budget diagnostics for large element counts, hosted openings,
+  linked models / expanded linked elements, evidence views, and over-budget
+  workload estimates.
+- Added `packages/web/src/viewport/rendererCostProfile.test.ts` covering
+  deterministic workload profiling, stress diagnostics, and changed-element
+  update scaling for `BIR-L02` and `BIR-J10`.
+- Focused test: `pnpm --filter @bim-ai/web exec vitest run
+  src/viewport/rendererCostProfile.test.ts src/viewport/rendererDiagnostics.test.ts`.
 
 | Agent | Ownership | Primary items |
 | ----- | --------- | ------------- |
