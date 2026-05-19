@@ -548,9 +548,7 @@ export async function buildTargetHousePerformanceEvidence({
     budgetsMs: WORKLOAD_BUDGETS_MS,
     liveResponsivenessRequirement: {
       schemaVersion: 'target-house-live-responsiveness.v1',
-      requiredEvidencePath: portable(
-        path.join(liveDir, LIVE_RESPONSIVENESS_EVIDENCE),
-      ),
+      requiredEvidencePath: portable(path.join(liveDir, LIVE_RESPONSIVENESS_EVIDENCE)),
       requiredInteractions: LIVE_INTERACTIONS,
       websocketPolicy:
         'actionable WebSocket churn or missing Advisor close/open/lens/select/orbit samples blocks final readiness',
@@ -612,7 +610,9 @@ function parseAllTrackerRows(markdown) {
         .map((cell) => cell.trim()),
     )
     .filter((cells) => /^`BIR-[A-Z]\d{2}`$/.test(cells[0] ?? ''))
-    .filter((cells) => TRACKER_PRIORITIES.has(cells[1] ?? '') && TRACKER_STATUSES.has(cells[2] ?? ''))
+    .filter(
+      (cells) => TRACKER_PRIORITIES.has(cells[1] ?? '') && TRACKER_STATUSES.has(cells[2] ?? ''),
+    )
     .map((cells) => ({
       id: cells[0].replaceAll('`', ''),
       priority: cells[1] ?? '',
@@ -769,6 +769,7 @@ function liveResponsivenessSummary(payload, evidencePath) {
       missingInteractions: LIVE_INTERACTIONS,
       failedInteractions: [],
       actionableChurnCount: null,
+      liveBrowserProof: null,
       blockerCodes: ['live_responsiveness_missing'],
     };
   }
@@ -799,6 +800,13 @@ function liveResponsivenessSummary(payload, evidencePath) {
   if (Number(report?.summary?.actionableChurnCount ?? 0) > 0) {
     blockerCodes.push('live_responsiveness_actionable_churn');
   }
+  const liveBrowserProof =
+    payload.liveBrowserProof?.schemaVersion === 'target-house-live-browser-proof.v1'
+      ? payload.liveBrowserProof
+      : null;
+  if (liveBrowserProof?.ok !== true) {
+    blockerCodes.push('live_responsiveness_not_live_browser');
+  }
   return {
     present: true,
     path: portable(evidencePath),
@@ -809,7 +817,33 @@ function liveResponsivenessSummary(payload, evidencePath) {
     missingInteractions,
     failedInteractions,
     actionableChurnCount: Number(report?.summary?.actionableChurnCount ?? 0),
+    liveBrowserProof,
     blockerCodes,
+  };
+}
+
+function evidenceFreshnessSummary(payload, evidencePath) {
+  const blockers = Array.isArray(payload?.blockers) ? payload.blockers : [];
+  const checks = Array.isArray(payload?.checks) ? payload.checks : [];
+  const staleRows = blockers
+    .map((row) => ({
+      id: row?.id ?? row?.checkId ?? null,
+      code: row?.code ?? null,
+      status: row?.status ?? null,
+      recorded: row?.recorded ?? null,
+      current: row?.current ?? null,
+    }))
+    .filter((row) => row.id || row.code);
+  return {
+    present: payload != null,
+    path: portable(evidencePath),
+    ok: payload?.ok === true,
+    schemaVersion: payload?.schemaVersion ?? null,
+    summary: payload?.summary ?? null,
+    checkCount: checks.length,
+    staleCount: Number(payload?.summary?.staleCount ?? staleRows.length),
+    blockerCount: Number(payload?.summary?.blockerCount ?? staleRows.length),
+    staleRows,
   };
 }
 
@@ -840,7 +874,8 @@ function rehearsalGateSummary({
       id: 'advisor_integrity_renderer',
       ok: cleanPassGate.ok === true && cleanPassGate.blockerCount === 0,
       blockerCode: 'clean_pass_failed',
-      detail: 'Advisor, integrity, constructability, renderer, and tolerance clean-pass must be green.',
+      detail:
+        'Advisor, integrity, constructability, renderer, and tolerance clean-pass must be green.',
     },
     {
       id: 'geometry',
@@ -878,7 +913,8 @@ function rehearsalGateSummary({
       blockerCode: liveResponsiveness.present
         ? 'live_responsiveness_failed'
         : 'live_responsiveness_missing',
-      detail: 'Archived live browser responsiveness evidence must cover orbit, select, lens switch, Advisor open/close, and WebSocket churn.',
+      detail:
+        'Archived live browser responsiveness evidence must cover orbit, select, lens switch, Advisor open/close, and WebSocket churn.',
     },
   ];
   const blockers = stages.filter((stage) => !stage.ok).map((stage) => stage.blockerCode);
@@ -952,6 +988,7 @@ export function closeoutStatus({
   trackerCompletion = null,
   liveResponsiveness = null,
   rehearsalGate = null,
+  evidenceFreshness = null,
   liveEvidenceFresh,
 }) {
   const missingEvidence = requiredEvidence.filter((row) => !row.present).map((row) => row.path);
@@ -1000,7 +1037,13 @@ export function closeoutStatus({
     });
   }
   if (!liveEvidenceFresh) {
-    blockerDetails.push({ code: 'live_evidence_freshness', category: 'evidence', count: 1 });
+    blockerDetails.push({
+      code: 'live_evidence_freshness',
+      category: 'evidence',
+      count: evidenceFreshness?.blockerCount ?? evidenceFreshness?.staleCount ?? 1,
+      path: evidenceFreshness?.path ?? null,
+      staleRows: evidenceFreshness?.staleRows ?? [],
+    });
   }
   if (!performanceEvidence.summary.ok) {
     blockerDetails.push({
@@ -1075,6 +1118,7 @@ export function closeoutStatus({
         missingInteractions: liveResponsiveness.missingInteractions,
         failedInteractions: liveResponsiveness.failedInteractions,
         actionableChurnCount: liveResponsiveness.actionableChurnCount,
+        liveBrowserProof: liveResponsiveness.liveBrowserProof,
       });
     }
   }
@@ -1154,6 +1198,11 @@ export async function buildTargetHouseFinalCloseoutManifest({
     await readJsonIfExists(liveResponsivenessPath),
     liveResponsivenessPath,
   );
+  const evidenceFreshnessPath = path.join(liveDir, 'evidence-freshness.json');
+  const evidenceFreshness = evidenceFreshnessSummary(
+    await readJsonIfExists(evidenceFreshnessPath),
+    evidenceFreshnessPath,
+  );
   const seedSource = {
     manifestPath: portable(manifestPath),
     sourceRoot: portable(sourceRoot),
@@ -1195,6 +1244,7 @@ export async function buildTargetHouseFinalCloseoutManifest({
     trackerCompletion,
     liveResponsiveness,
     rehearsalGate,
+    evidenceFreshness,
     liveEvidenceFresh: snapshotInput.snapshotSource.liveEvidenceFresh,
   });
   const body = {
@@ -1213,6 +1263,7 @@ export async function buildTargetHouseFinalCloseoutManifest({
       snapshotSource: snapshotInput.snapshotSource,
       requiredEvidence,
       requiredEvidencePresent: requiredEvidence.every((row) => row.present),
+      freshness: evidenceFreshness,
     },
     performanceEvidence: {
       summary: performanceEvidence.summary,

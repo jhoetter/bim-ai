@@ -272,10 +272,7 @@ test('target-house final package blocks missing live responsiveness and failed r
   );
 
   assert.equal(status.ready, false);
-  assert.deepEqual(status.blockers, [
-    'live_responsiveness_missing',
-    'acceptance_rehearsal_gate',
-  ]);
+  assert.deepEqual(status.blockers, ['live_responsiveness_missing', 'acceptance_rehearsal_gate']);
   assert.equal(
     status.blockerDetails.find((row) => row.code === 'live_responsiveness_missing').count,
     1,
@@ -283,6 +280,62 @@ test('target-house final package blocks missing live responsiveness and failed r
   assert.equal(
     status.blockerDetails.find((row) => row.code === 'acceptance_rehearsal_gate').count,
     1,
+  );
+});
+
+test('target-house final package blocks imported responsiveness metrics without live browser proof', () => {
+  const status = closeoutStatus(
+    passingStatusInput({
+      liveResponsiveness: {
+        present: true,
+        ok: false,
+        path: 'seed-artifacts/target-house-1/evidence/live-run-current/target-house-live-responsiveness.json',
+        blockerCodes: ['live_responsiveness_not_live_browser'],
+        missingInteractions: [],
+        failedInteractions: [],
+        actionableChurnCount: 0,
+        liveBrowserProof: {
+          schemaVersion: 'target-house-live-browser-proof.v1',
+          ok: false,
+          captureMode: 'validated-input',
+          blockerCodes: ['live_browser_capture_mode_missing'],
+        },
+      },
+    }),
+  );
+
+  assert.equal(status.ready, false);
+  assert.deepEqual(status.blockers, ['live_responsiveness_failed']);
+  const detail = status.blockerDetails.find((row) => row.code === 'live_responsiveness_failed');
+  assert.deepEqual(detail.blockerCodes, ['live_responsiveness_not_live_browser']);
+  assert.equal(detail.liveBrowserProof.captureMode, 'validated-input');
+});
+
+test('target-house final package exposes stale evidence rows in freshness blocker detail', () => {
+  const status = closeoutStatus(
+    passingStatusInput({
+      liveEvidenceFresh: false,
+      evidenceFreshness: {
+        present: true,
+        path: 'seed-artifacts/target-house-1/evidence/live-run-current/evidence-freshness.json',
+        ok: false,
+        staleCount: 2,
+        blockerCount: 2,
+        staleRows: [
+          { id: 'gitHead', code: 'gitHead_stale', recorded: 'old', current: 'new' },
+          { id: 'targetSpecDigest', code: 'targetSpecDigest_stale', recorded: 'a', current: 'b' },
+        ],
+      },
+    }),
+  );
+
+  assert.equal(status.ready, false);
+  assert.deepEqual(status.blockers, ['live_evidence_freshness']);
+  const detail = status.blockerDetails.find((row) => row.code === 'live_evidence_freshness');
+  assert.equal(detail.count, 2);
+  assert.deepEqual(
+    detail.staleRows.map((row) => row.code),
+    ['gitHead_stale', 'targetSpecDigest_stale'],
   );
 });
 

@@ -110,6 +110,12 @@ export type EvidenceArtifactSummary = {
     staleCount: number;
     missingCount: number;
     totalCount: number;
+    blockerCodes: string[];
+    staleRows: {
+      id: string;
+      code: string;
+      status: string;
+    }[];
   } | null;
   regenerationGuidance:
     | {
@@ -723,7 +729,60 @@ export function parseEvidenceArtifact(
       const missingCount = closureReview.missingDigestRowCount;
       const totalCount = closureReview.primaryCount;
       const freshCount = Math.max(0, totalCount - staleCount - missingCount);
-      evidenceFreshness = { freshCount, staleCount, missingCount, totalCount };
+      evidenceFreshness = {
+        freshCount,
+        staleCount,
+        missingCount,
+        totalCount,
+        blockerCodes: [],
+        staleRows: [],
+      };
+    }
+    if (payload.schemaVersion === 'sketch.evidence.freshness.v1') {
+      const summary =
+        payload.summary && typeof payload.summary === 'object'
+          ? (payload.summary as Record<string, unknown>)
+          : {};
+      const staleRows = Array.isArray(payload.blockers)
+        ? payload.blockers
+            .filter(
+              (row): row is Record<string, unknown> => typeof row === 'object' && row !== null,
+            )
+            .map((row) => ({
+              id:
+                typeof row.id === 'string'
+                  ? row.id
+                  : typeof row.checkId === 'string'
+                    ? row.checkId
+                    : '',
+              code: typeof row.code === 'string' ? row.code : '',
+              status: typeof row.status === 'string' ? row.status : '',
+            }))
+            .filter((row) => row.id || row.code)
+        : [];
+      const totalCount =
+        typeof summary.checkCount === 'number'
+          ? summary.checkCount
+          : typeof summary.totalCount === 'number'
+            ? summary.totalCount
+            : Array.isArray(payload.checks)
+              ? payload.checks.length
+              : staleRows.length;
+      const staleCount =
+        typeof summary.staleCount === 'number' ? summary.staleCount : staleRows.length;
+      const missingCount = typeof summary.missingCount === 'number' ? summary.missingCount : 0;
+      const freshCount =
+        typeof summary.passCount === 'number'
+          ? summary.passCount
+          : Math.max(0, totalCount - staleCount - missingCount);
+      evidenceFreshness = {
+        freshCount,
+        staleCount,
+        missingCount,
+        totalCount,
+        blockerCodes: staleRows.map((row) => row.code).filter(Boolean),
+        staleRows,
+      };
     }
 
     let regenerationGuidance: EvidenceArtifactSummary['regenerationGuidance'] = null;

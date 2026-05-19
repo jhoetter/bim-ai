@@ -11,6 +11,7 @@ import {
   extractWebsocketChurnFromText,
   targetHouseLiveResponsivenessContract,
   validateTargetHouseLiveResponsivenessEvidence,
+  validateLiveBrowserProof,
 } from './target-house-live-responsiveness.mjs';
 
 function passingInteraction(id) {
@@ -80,6 +81,44 @@ test('validator accepts complete interaction evidence and benign websocket churn
   const written = JSON.parse(await fs.readFile(result.evidencePath, 'utf8'));
   assert.equal(written.schemaVersion, TARGET_HOUSE_LIVE_BROWSER_EVIDENCE_SCHEMA_VERSION);
   assert.equal(written.responsivenessReport.schemaVersion, 'target-house-live-responsiveness.v1');
+  assert.equal(written.liveBrowserProof.ok, false);
+  assert.ok(written.liveBrowserProof.blockerCodes.includes('live_browser_capture_mode_missing'));
+});
+
+test('live browser proof requires Playwright capture hooks, browser metadata, and URL', () => {
+  const accepted = validateLiveBrowserProof({
+    schemaVersion: TARGET_HOUSE_LIVE_BROWSER_EVIDENCE_SCHEMA_VERSION,
+    captureMode: 'playwright-live-browser',
+    url: 'http://127.0.0.1:2000',
+    capturedAtEpochMs: 1_800_000_000_000,
+    browser: { engine: 'chromium' },
+    proofHooks: {
+      appShell: true,
+      orbitViewport: true,
+      viewCube: true,
+      inspector: true,
+      advisorEntry: true,
+    },
+  });
+
+  assert.equal(accepted.ok, true);
+  assert.deepEqual(accepted.blockerCodes, []);
+
+  const importedMetrics = validateLiveBrowserProof({
+    schemaVersion: TARGET_HOUSE_LIVE_BROWSER_EVIDENCE_SCHEMA_VERSION,
+    captureMode: 'validated-input',
+    proofHooks: { appShell: true },
+  });
+
+  assert.equal(importedMetrics.ok, false);
+  assert.deepEqual(importedMetrics.missingHookIds, [
+    'orbitViewport',
+    'viewCube',
+    'inspector',
+    'advisorEntry',
+  ]);
+  assert.ok(importedMetrics.blockerCodes.includes('live_browser_capture_mode_missing'));
+  assert.ok(importedMetrics.blockerCodes.includes('live_browser_proof_hooks_missing'));
 });
 
 test('validator blocks missing metrics and actionable websocket churn', () => {

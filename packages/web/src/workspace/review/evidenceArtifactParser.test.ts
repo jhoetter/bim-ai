@@ -433,6 +433,36 @@ describe('parseEvidenceArtifact — evidenceFreshness', () => {
     const r = parseEvidenceArtifact(JSON.stringify({}), 1);
     expect(r.evidenceFreshness).toBeNull();
   });
+
+  it('parses direct sketch evidence freshness reports for stale evidence UX', () => {
+    const payload = {
+      schemaVersion: 'sketch.evidence.freshness.v1',
+      ok: false,
+      summary: {
+        checkCount: 4,
+        passCount: 2,
+        staleCount: 2,
+        blockerCount: 2,
+      },
+      blockers: [
+        { id: 'gitHead', code: 'gitHead_stale', status: 'stale' },
+        { id: 'targetSpecDigest', code: 'targetSpecDigest_stale', status: 'stale' },
+      ],
+    };
+    const r = parseEvidenceArtifact(JSON.stringify(payload), 1);
+
+    expect(r.evidenceFreshness).toMatchObject({
+      totalCount: 4,
+      freshCount: 2,
+      staleCount: 2,
+      missingCount: 0,
+      blockerCodes: ['gitHead_stale', 'targetSpecDigest_stale'],
+      staleRows: [
+        { id: 'gitHead', code: 'gitHead_stale', status: 'stale' },
+        { id: 'targetSpecDigest', code: 'targetSpecDigest_stale', status: 'stale' },
+      ],
+    });
+  });
 });
 
 describe('parseEvidenceArtifact — regenerationGuidance', () => {

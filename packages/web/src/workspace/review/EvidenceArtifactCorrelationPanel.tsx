@@ -438,6 +438,20 @@ export function EvidenceArtifactCorrelationPanel({
               </ul>
             </div>
           ) : null}
+          {evidenceArtifactSummary.evidenceFreshness.staleRows.length > 0 ? (
+            <ul
+              className="mt-2 list-disc space-y-0.5 ps-4 text-[10px] text-amber-700 dark:text-amber-300"
+              data-testid="stale-evidence-invalidation-rows"
+            >
+              {evidenceArtifactSummary.evidenceFreshness.staleRows.slice(0, 6).map((row) => (
+                <li key={`${row.id}:${row.code}`}>
+                  <code className="font-mono text-[9px]">{row.id || 'evidence'}</code>
+                  {' — '}
+                  <code className="font-mono text-[9px]">{row.code || row.status}</code>
+                </li>
+              ))}
+            </ul>
+          ) : null}
         </div>
       ) : null}
       {evidenceArtifactSummary.diffFixLoop?.needsFixLoop ? (

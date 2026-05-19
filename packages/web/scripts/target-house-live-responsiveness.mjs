@@ -10,6 +10,7 @@ export const TARGET_HOUSE_LIVE_BROWSER_EVIDENCE_SCHEMA_VERSION =
   'target-house-live-browser-evidence.v1';
 export const TARGET_HOUSE_LIVE_RESPONSIVENESS_SCHEMA_VERSION =
   'target-house-live-responsiveness.v1';
+export const TARGET_HOUSE_LIVE_BROWSER_PROOF_SCHEMA_VERSION = 'target-house-live-browser-proof.v1';
 
 export const TARGET_HOUSE_LIVE_INTERACTION_CONTRACT = [
   {
@@ -165,6 +166,47 @@ export function classifyTargetHouseLiveResponsiveness(evidence) {
     contract: targetHouseLiveResponsivenessContract(),
     interactionRows,
     websocketChurnRows,
+  };
+}
+
+export function validateLiveBrowserProof(evidence) {
+  const proofHooks =
+    evidence?.proofHooks && typeof evidence.proofHooks === 'object' ? evidence.proofHooks : {};
+  const requiredHookIds = ['appShell', 'orbitViewport', 'viewCube', 'inspector', 'advisorEntry'];
+  const missingHookIds = requiredHookIds.filter((id) => proofHooks[id] !== true);
+  const captureMode = typeof evidence?.captureMode === 'string' ? evidence.captureMode : null;
+  const capturedAtEpochMs =
+    typeof evidence?.capturedAtEpochMs === 'number' && Number.isFinite(evidence.capturedAtEpochMs)
+      ? evidence.capturedAtEpochMs
+      : null;
+  const browserEngine =
+    typeof evidence?.browser?.engine === 'string' && evidence.browser.engine
+      ? evidence.browser.engine
+      : null;
+  const url = typeof evidence?.url === 'string' && evidence.url ? evidence.url : null;
+  const blockerCodes = [];
+
+  if (evidence?.schemaVersion !== TARGET_HOUSE_LIVE_BROWSER_EVIDENCE_SCHEMA_VERSION) {
+    blockerCodes.push('live_browser_schema_missing');
+  }
+  if (captureMode !== 'playwright-live-browser') {
+    blockerCodes.push('live_browser_capture_mode_missing');
+  }
+  if (!url) blockerCodes.push('live_browser_url_missing');
+  if (!browserEngine) blockerCodes.push('live_browser_engine_missing');
+  if (capturedAtEpochMs === null) blockerCodes.push('live_browser_capture_time_missing');
+  if (missingHookIds.length > 0) blockerCodes.push('live_browser_proof_hooks_missing');
+
+  return {
+    schemaVersion: TARGET_HOUSE_LIVE_BROWSER_PROOF_SCHEMA_VERSION,
+    ok: blockerCodes.length === 0,
+    captureMode,
+    capturedAtEpochMs,
+    browserEngine,
+    url,
+    requiredHookIds,
+    missingHookIds,
+    blockerCodes,
   };
 }
 
@@ -326,9 +368,10 @@ export async function validateTargetHouseLiveResponsivenessEvidence({
     websocketChurn: mergeChurnEvents([...(normalized.websocketChurn ?? []), ...proxyChurn]),
   };
   const responsivenessReport = classifyTargetHouseLiveResponsiveness(evidence);
+  const liveBrowserProof = validateLiveBrowserProof(evidence);
   const payload =
     input.schemaVersion === TARGET_HOUSE_LIVE_BROWSER_EVIDENCE_SCHEMA_VERSION
-      ? { ...evidence, responsivenessReport }
+      ? { ...evidence, responsivenessReport, liveBrowserProof }
       : {
           schemaVersion: TARGET_HOUSE_LIVE_BROWSER_EVIDENCE_SCHEMA_VERSION,
           targetId: evidence.targetId,
@@ -336,6 +379,7 @@ export async function validateTargetHouseLiveResponsivenessEvidence({
           interactions: evidence.interactions,
           websocketChurn: evidence.websocketChurn,
           responsivenessReport,
+          liveBrowserProof,
         };
   const evidencePath = await writeEvidence(outDir, payload);
   return { evidencePath, evidence: payload, responsivenessReport };
@@ -430,7 +474,8 @@ export async function captureTargetHouseLiveResponsivenessEvidence({
     console: consoleRows.slice(-50),
   };
   const responsivenessReport = classifyTargetHouseLiveResponsiveness(payload);
-  const evidence = { ...payload, responsivenessReport };
+  const liveBrowserProof = validateLiveBrowserProof(payload);
+  const evidence = { ...payload, responsivenessReport, liveBrowserProof };
   const evidencePath = await writeEvidence(outDir, evidence);
   await browser.close();
   return { evidencePath, evidence, responsivenessReport };
@@ -756,6 +801,7 @@ async function main() {
     ok: result.responsivenessReport.ok,
     evidence: path.relative(process.cwd(), result.evidencePath),
     summary: result.responsivenessReport.summary,
+    liveBrowserProof: result.evidence.liveBrowserProof,
   };
   if (args.json) console.log(JSON.stringify(summary, null, 2));
   else
