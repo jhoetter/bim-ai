@@ -60,12 +60,15 @@ def _missing_wall_requirements(wall: WallElem) -> list[str]:
     if _is_primary_envelope_wall(wall):
         if wall.load_bearing is None and wall.structural_role == "unknown":
             missing.append("Pset_WallCommon.LoadBearing")
-        if not _has_any_prop(
-            props,
-            "fireRating",
-            "FireRating",
-            "fire_rating",
-        ) and not str(wall.fire_resistance_rating or "").strip():
+        if (
+            not _has_any_prop(
+                props,
+                "fireRating",
+                "FireRating",
+                "fire_rating",
+            )
+            and not str(wall.fire_resistance_rating or "").strip()
+        ):
             missing.append("Pset_WallCommon.FireRating")
     if wall.load_bearing is True and not (
         wall.structural_material_key
@@ -135,7 +138,10 @@ def _missing_floor_requirements(floor: FloorElem) -> list[str]:
 
 def _missing_roof_requirements(roof: RoofElem) -> list[str]:
     props = roof.props or {}
-    if not (_has_truthy_prop(props, "primaryEnvelope", "requiresEnvelopeMetadata") or _is_low_slope(roof)):
+    if not (
+        _has_truthy_prop(props, "primaryEnvelope", "requiresEnvelopeMetadata")
+        or _is_low_slope(roof)
+    ):
         return []
 
     missing: list[str] = []

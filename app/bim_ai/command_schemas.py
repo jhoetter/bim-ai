@@ -217,9 +217,7 @@ def _command_metadata(name: str, model_cls: type[BaseModel]) -> dict[str, Any]:
         "exampleStatus": example_status,
         "exampleError": example_error,
         "rawSemanticMapping": mapping,
-        "mappingStatus": (
-            "mapped" if mapping["descriptorMappings"] else "explicit-raw-expert"
-        ),
+        "mappingStatus": ("mapped" if mapping["descriptorMappings"] else "explicit-raw-expert"),
     }
 
 
@@ -238,10 +236,7 @@ def export_command_schemas() -> dict[str, Any]:
         name: TypeAdapter(model_cls).json_schema(by_alias=True)
         for name, model_cls in model_map.items()
     }
-    metadata = {
-        name: _command_metadata(name, model_cls)
-        for name, model_cls in model_map.items()
-    }
+    metadata = {name: _command_metadata(name, model_cls) for name, model_cls in model_map.items()}
     return {
         "schemaVersion": COMMAND_SCHEMA_EXPORT_VERSION,
         "commandCount": len(command_names),

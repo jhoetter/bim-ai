@@ -17,9 +17,7 @@ from bim_ai.routes_api import get_family_catalog, list_family_catalogs
 def _build_test_app() -> FastAPI:
     app = FastAPI()
     app.add_api_route("/api/family-catalogs", list_family_catalogs, methods=["GET"])
-    app.add_api_route(
-        "/api/family-catalogs/{catalog_id}", get_family_catalog, methods=["GET"]
-    )
+    app.add_api_route("/api/family-catalogs/{catalog_id}", get_family_catalog, methods=["GET"])
     return app
 
 

@@ -31,12 +31,30 @@ Revit parity tracker: 120 ✅ fully available / 0 🟡 partial / 0 ❌ not avail
 
 ## Makefile
 
-| Target    | Meaning                              |
-| --------- | ------------------------------------ |
-| `install` | JS + Python venv + deps              |
-| `dev`     | compose up + API + web               |
-| `verify`  | Format, lint, arch, TC, tests, build |
-| `seed`    | Populate demo model idempotently     |
+| Target    | Meaning                                     |
+| --------- | ------------------------------------------- |
+| `install` | JS + Python venv + deps                     |
+| `dev`     | compose up + API + web                      |
+| `verify`  | Format, Python lint, arch, TC, tests, build |
+| `seed`    | Populate demo model idempotently            |
+
+## Quality Gates
+
+The canonical merge gate is automated and is the same gate used by CI:
+
+```bash
+pnpm verify:strict
+make verify
+```
+
+`pnpm verify` is the lighter JavaScript workspace check: formatting,
+architecture, and tests. `pnpm verify:strict` adds TypeScript typecheck and
+build. `make verify` is the full local monorepo gate and adds Python ruff,
+Python tests, and the Python lockfile check.
+
+JavaScript lint is intentionally exposed as `pnpm lint` / `make lint-js`, but
+is not yet part of the canonical merge gate because the existing frontend lint
+backlog is tracked separately in the code-quality tracker.
 
 ## V1 Release
 

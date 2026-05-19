@@ -79,7 +79,9 @@ def _build_test_app() -> FastAPI:
             _models[model_id] = {"revision": new_doc.revision, "doc": new_doc}
         return {
             "accepted": result.applied,
-            "revision": new_doc.revision if result.applied and new_doc is not None else doc.revision,
+            "revision": new_doc.revision
+            if result.applied and new_doc is not None
+            else doc.revision,
         }
 
     @app.get("/api/models/{model_id}/elements")

@@ -78,9 +78,7 @@ class FamilyDefinition(BaseModel):
     discipline: FamilyDiscipline
     thumbnail: str | None = None
     params: list[FamilyParamDef] = Field(default_factory=list)
-    default_types: list[FamilyDefaultType] = Field(
-        default_factory=list, alias="defaultTypes"
-    )
+    default_types: list[FamilyDefaultType] = Field(default_factory=list, alias="defaultTypes")
 
 
 class CatalogPayload(BaseModel):
@@ -164,9 +162,7 @@ def load_catalog_index(catalogs_dir: Path | None = None) -> list[CatalogIndexEnt
     return out
 
 
-def load_catalog_by_id(
-    catalog_id: str, catalogs_dir: Path | None = None
-) -> CatalogPayload | None:
+def load_catalog_by_id(catalog_id: str, catalogs_dir: Path | None = None) -> CatalogPayload | None:
     """Return the catalog with matching ``catalogId`` or ``None`` if absent."""
     base = catalogs_dir or CATALOGS_DIR
     candidate = base / f"{catalog_id}.json"
@@ -187,9 +183,7 @@ def load_catalog_by_id(
     return None
 
 
-def find_family_in_catalog(
-    catalog: CatalogPayload, family_id: str
-) -> FamilyDefinition | None:
+def find_family_in_catalog(catalog: CatalogPayload, family_id: str) -> FamilyDefinition | None:
     for fam in catalog.families:
         if fam.id == family_id:
             return fam

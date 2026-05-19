@@ -110,9 +110,7 @@ def test_reorder_phase() -> None:
         doc, [_create_phase("Existing", 0, "ph-ex"), _create_phase("New", 2, "ph-new")]
     )
     assert ok
-    ok2, nd2, *_ = try_commit_bundle(
-        nd, [{"type": "reorderPhase", "phaseId": "ph-new", "ord": 1}]
-    )
+    ok2, nd2, *_ = try_commit_bundle(nd, [{"type": "reorderPhase", "phaseId": "ph-new", "ord": 1}])
     assert ok2
     assert nd2.elements["ph-new"].ord == 1
 
@@ -123,9 +121,7 @@ def test_reorder_phase_ord_collision_rejected() -> None:
         doc, [_create_phase("Existing", 0, "ph-ex"), _create_phase("New", 1, "ph-new")]
     )
     assert ok
-    ok2, *_ = try_commit_bundle(
-        nd, [{"type": "reorderPhase", "phaseId": "ph-new", "ord": 0}]
-    )
+    ok2, *_ = try_commit_bundle(nd, [{"type": "reorderPhase", "phaseId": "ph-new", "ord": 0}])
     assert not ok2
 
 
@@ -255,9 +251,7 @@ def test_set_element_phase_clear_demolished() -> None:
 
 
 def test_set_element_phase_bad_element_rejected() -> None:
-    ok, *_ = try_commit_bundle(
-        _seed(), [{"type": "setElementPhase", "elementId": "nonexistent"}]
-    )
+    ok, *_ = try_commit_bundle(_seed(), [{"type": "setElementPhase", "elementId": "nonexistent"}])
     assert not ok
 
 

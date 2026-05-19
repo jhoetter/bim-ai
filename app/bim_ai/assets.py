@@ -192,9 +192,7 @@ def render_schematic_thumbnail_svg(entry: AssetLibraryEntryElem) -> str:
         return _furniture(w, h)
 
     def _bathroom(w: float, h: float) -> str:
-        if symbol_kind == "toilet" or any(
-            token in label_text for token in ("toilet", "wc")
-        ):
+        if symbol_kind == "toilet" or any(token in label_text for token in ("toilet", "wc")):
             r = min(w, h) * 0.22
             return (
                 f'<rect x="{w * 0.28:.1f}" y="4" width="{w * 0.44:.1f}" '
@@ -448,9 +446,7 @@ register(
             "not_found": ExitCode(code=1, meaning="Model not found"),
         },
         cliExample="bim-ai asset search --model <id> --query sink --category kitchen",
-        restEndpoint=RestEndpoint(
-            method="GET", path="/api/models/{model_id}/assets/search"
-        ),
+        restEndpoint=RestEndpoint(method="GET", path="/api/models/{model_id}/assets/search"),
         sideEffects="none",
         agentSafetyNotes="Read-only. Returns ranked asset entries. Empty query returns all entries up to limit.",
     )

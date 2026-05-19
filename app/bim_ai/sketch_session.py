@@ -284,9 +284,7 @@ def _emit_roof(session: SketchSession, opts: dict[str, Any]) -> list[dict[str, A
     ]
 
 
-def _emit_room_separation(
-    session: SketchSession, opts: dict[str, Any]
-) -> list[dict[str, Any]]:
+def _emit_room_separation(session: SketchSession, opts: dict[str, Any]) -> list[dict[str, Any]]:
     name = opts.get("name", "Separation")
     return [
         {
@@ -316,9 +314,7 @@ def _emit_ceiling(session: SketchSession, opts: dict[str, Any]) -> list[dict[str
     return [cmd]
 
 
-def _emit_in_place_mass(
-    session: SketchSession, opts: dict[str, Any]
-) -> list[dict[str, Any]]:
+def _emit_in_place_mass(session: SketchSession, opts: dict[str, Any]) -> list[dict[str, Any]]:
     cmd: dict[str, Any] = {
         "type": "createMass",
         "name": opts.get("name", "Mass"),
@@ -359,9 +355,7 @@ def _emit_void_cut(session: SketchSession, opts: dict[str, Any]) -> list[dict[st
     ]
 
 
-def _emit_detail_region(
-    session: SketchSession, opts: dict[str, Any]
-) -> list[dict[str, Any]]:
+def _emit_detail_region(session: SketchSession, opts: dict[str, Any]) -> list[dict[str, Any]]:
     from bim_ai.sketch_validation import SketchInvalidError
 
     host_view_id = opts.get("hostViewId")
@@ -391,9 +385,7 @@ def _emit_detail_region(
     return [cmd]
 
 
-def _emit_masking_region(
-    session: SketchSession, opts: dict[str, Any]
-) -> list[dict[str, Any]]:
+def _emit_masking_region(session: SketchSession, opts: dict[str, Any]) -> list[dict[str, Any]]:
     from bim_ai.sketch_validation import SketchInvalidError
 
     host_view_id = opts.get("hostViewId")

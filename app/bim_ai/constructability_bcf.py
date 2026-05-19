@@ -33,9 +33,7 @@ def build_constructability_bcf_export(
         viewpoint = _viewpoint_for_issue(issue, participant_bboxes)
         if viewpoint is not None:
             topic["viewpointRef"] = viewpoint["viewpointId"]
-            topic["evidenceRefs"] = [
-                {"kind": "viewpoint", "viewpointId": viewpoint["viewpointId"]}
-            ]
+            topic["evidenceRefs"] = [{"kind": "viewpoint", "viewpointId": viewpoint["viewpointId"]}]
             viewpoints.append(viewpoint)
         topics.append(topic)
 
@@ -128,7 +126,9 @@ def _viewpoint_for_issue(
     participant_bboxes: Mapping[str, AABB],
 ) -> dict[str, Any] | None:
     element_ids = [str(eid) for eid in issue.get("elementIds") or []]
-    bbox = _union_bbox([participant_bboxes[eid] for eid in element_ids if eid in participant_bboxes])
+    bbox = _union_bbox(
+        [participant_bboxes[eid] for eid in element_ids if eid in participant_bboxes]
+    )
     if bbox is None:
         return None
 

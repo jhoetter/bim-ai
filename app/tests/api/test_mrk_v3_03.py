@@ -171,7 +171,9 @@ def _build_test_app() -> FastAPI:
     ) -> Any:
         if not authorization:
             raise HTTPException(status_code=401, detail="Authentication required")
-        return {"map": {"1000,2000": {"sourceViewId": "plan-view-P1", "sourceElementId": "wall-001"}}}
+        return {
+            "map": {"1000,2000": {"sourceViewId": "plan-view-P1", "sourceElementId": "wall-001"}}
+        }
 
     @app.get("/models/{model_id}/activity/sheet-chips")
     async def list_chips(model_id: str, viewId: str | None = None) -> Any:
@@ -208,9 +210,7 @@ class TestSheetAnchorStorage:
         assert anchor["yPx"] == 300.0
         assert anchor.get("sourceViewId") is None
 
-    def test_sheet_anchor_with_pixel_map_binding_populates_source(
-        self, client: TestClient
-    ) -> None:
+    def test_sheet_anchor_with_pixel_map_binding_populates_source(self, client: TestClient) -> None:
         pixel_map = {"1000,2000": {"sourceViewId": "plan-view-P1", "sourceElementId": "wall-001"}}
         anchor = {"kind": "sheet", "sheetId": "sheet-A301", "xPx": 1000.0, "yPx": 2000.0}
         res = client.post(

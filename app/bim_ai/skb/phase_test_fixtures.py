@@ -29,7 +29,9 @@ class PhaseFixture:
 
     phase: SkbPhaseId
     name: str
-    bundle_so_far: list[dict[str, Any]] = field(default_factory=list)   # all commands UP TO + including this phase
+    bundle_so_far: list[dict[str, Any]] = field(
+        default_factory=list
+    )  # all commands UP TO + including this phase
     expected_kind_counts: dict[str, int | CountRange] = field(default_factory=dict)
     expected_advisory_rule_ids: list[str] = field(default_factory=list)
     forbidden_advisory_rule_ids: list[str] = field(default_factory=list)

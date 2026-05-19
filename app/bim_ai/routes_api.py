@@ -502,12 +502,7 @@ async def search_model_assets(
         discipline_tag=disciplineTag,
         limit=limit,
     )
-    return {
-        "results": [
-            entry.model_dump(by_alias=True, exclude_none=True)
-            for entry in results
-        ]
-    }
+    return {"results": [entry.model_dump(by_alias=True, exclude_none=True) for entry in results]}
 
 
 async def _resolve_link_source_revisions(

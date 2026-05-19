@@ -273,7 +273,9 @@ def _resolve_set(
         e for e in host_elements.values() if isinstance(e, LinkModelElem) and not e.hidden
     ]
 
-    def _walk_link(link: LinkModelElem) -> tuple[Document, float, float, float, float, float] | None:
+    def _walk_link(
+        link: LinkModelElem,
+    ) -> tuple[Document, float, float, float, float, float] | None:
         src = source_provider(link.source_model_id, link.source_model_revision)
         if src is None:
             return None

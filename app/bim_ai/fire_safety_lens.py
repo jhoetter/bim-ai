@@ -268,7 +268,9 @@ def _escape_route_rows(doc: Document) -> list[dict[str, Any]]:
 def _penetration_rows(doc: Document) -> list[dict[str, Any]]:
     rows: list[dict[str, Any]] = []
     for elem in sorted(doc.elements.values(), key=lambda e: e.id):
-        if not isinstance(elem, (WallOpeningElem, SlabOpeningElem, RoofOpeningElem, PipeElem, DuctElem)):
+        if not isinstance(
+            elem, (WallOpeningElem, SlabOpeningElem, RoofOpeningElem, PipeElem, DuctElem)
+        ):
             continue
         props = _props(elem)
         status = _str_prop(props, "firestopStatus", "penetrationStatus")
@@ -286,7 +288,9 @@ def _penetration_rows(doc: Document) -> list[dict[str, Any]]:
                 "firestopStatus": status,
                 "approvalStatus": _str_prop(props, "approvalStatus", "reviewStatus"),
                 "responsibleTrade": _str_prop(props, "responsibleTrade"),
-                "inspectionEvidence": _str_prop(props, "inspectionEvidence", "inspectionEvidenceRef"),
+                "inspectionEvidence": _str_prop(
+                    props, "inspectionEvidence", "inspectionEvidenceRef"
+                ),
             }
         )
     return rows
@@ -310,7 +314,9 @@ def _smoke_control_equipment_rows(doc: Document) -> list[dict[str, Any]]:
                 "controlZone": _str_prop(props, "controlZone", "smokeControlZone"),
                 "smokeControlRating": _str_prop(props, "smokeControlRating"),
                 "status": _str_prop(props, "smokeControlStatus", "reviewStatus"),
-                "inspectionEvidence": _str_prop(props, "inspectionEvidence", "inspectionEvidenceRef"),
+                "inspectionEvidence": _str_prop(
+                    props, "inspectionEvidence", "inspectionEvidenceRef"
+                ),
             }
         )
     return rows

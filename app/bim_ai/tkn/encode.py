@@ -76,16 +76,13 @@ def _encode_room(el: RoomElem, elements: dict[str, Any]) -> EnvelopeToken:
 
     level_id = el.level_id
     host_wall_ids: list[str] = sorted(
-        eid
-        for eid, e in elements.items()
-        if isinstance(e, WallElem) and e.level_id == level_id
+        eid for eid, e in elements.items() if isinstance(e, WallElem) and e.level_id == level_id
     )
     host_floor_id: str | None = next(
         (
             eid
             for eid in sorted(elements.keys())
-            if isinstance(elements[eid], FloorElem)
-            and elements[eid].level_id == level_id
+            if isinstance(elements[eid], FloorElem) and elements[eid].level_id == level_id
         ),
         None,
     )
@@ -93,14 +90,10 @@ def _encode_room(el: RoomElem, elements: dict[str, Any]) -> EnvelopeToken:
     # collect doors/windows whose host wall is in this room's level
     wall_id_set = set(host_wall_ids)
     door_ids: list[str] = sorted(
-        eid
-        for eid, e in elements.items()
-        if isinstance(e, DoorElem) and e.wall_id in wall_id_set
+        eid for eid, e in elements.items() if isinstance(e, DoorElem) and e.wall_id in wall_id_set
     )
     window_ids: list[str] = sorted(
-        eid
-        for eid, e in elements.items()
-        if isinstance(e, WindowElem) and e.wall_id in wall_id_set
+        eid for eid, e in elements.items() if isinstance(e, WindowElem) and e.wall_id in wall_id_set
     )
 
     return EnvelopeToken(

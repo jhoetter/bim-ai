@@ -107,7 +107,7 @@ class TestParallel:
     def test_parallel_ok_horizontal(self) -> None:
         """Two horizontal walls are parallel — no violation."""
         walls = [
-            _wall_dict("w1", 0, 0, 5000, 0),    # along +x
+            _wall_dict("w1", 0, 0, 5000, 0),  # along +x
             _wall_dict("w2", 0, 2000, 5000, 2000),  # also along +x
         ]
         c = _constraint("c1", "parallel", "w1", "w2")
@@ -125,8 +125,8 @@ class TestParallel:
     def test_parallel_violation_perpendicular_walls(self) -> None:
         """A horizontal and a vertical wall are not parallel — violation."""
         walls = [
-            _wall_dict("w1", 0, 0, 5000, 0),    # horizontal
-            _wall_dict("w2", 0, 0, 0, 4000),    # vertical
+            _wall_dict("w1", 0, 0, 5000, 0),  # horizontal
+            _wall_dict("w2", 0, 0, 0, 4000),  # vertical
         ]
         c = _constraint("c1", "parallel", "w1", "w2")
         violations = evaluate_all(walls + [c])
@@ -140,8 +140,8 @@ class TestParallel:
         """Wall at 45° to a horizontal wall violates parallel."""
 
         walls = [
-            _wall_dict("w1", 0, 0, 5000, 0),          # horizontal
-            _wall_dict("w2", 0, 0, 3536, 3536),        # 45° diagonal
+            _wall_dict("w1", 0, 0, 5000, 0),  # horizontal
+            _wall_dict("w2", 0, 0, 3536, 3536),  # 45° diagonal
         ]
         c = _constraint("c1", "parallel", "w1", "w2")
         violations = evaluate_all(walls + [c])
@@ -214,8 +214,8 @@ class TestPerpendicular:
     def test_perpendicular_violation_45deg(self) -> None:
         """Two walls at 45° to each other violate perpendicular."""
         walls = [
-            _wall_dict("w1", 0, 0, 5000, 0),     # horizontal
-            _wall_dict("w2", 0, 0, 3536, 3536),   # 45°
+            _wall_dict("w1", 0, 0, 5000, 0),  # horizontal
+            _wall_dict("w2", 0, 0, 3536, 3536),  # 45°
         ]
         c = _constraint("c1", "perpendicular", "w1", "w2")
         violations = evaluate_all(walls + [c])
@@ -267,7 +267,7 @@ class TestCollinear:
     def test_collinear_violation_parallel_offset(self) -> None:
         """Parallel walls offset by 500 mm on the normal violate collinear."""
         walls = [
-            _wall_dict("w1", 0, 0, 5000, 0),     # y = 0
+            _wall_dict("w1", 0, 0, 5000, 0),  # y = 0
             _wall_dict("w2", 0, 500, 5000, 500),  # y = 500 (parallel but offset)
         ]
         c = _constraint("c1", "collinear", "w1", "w2")
@@ -302,7 +302,7 @@ class TestCollinear:
         """Parallel walls 1 mm apart on the normal violate collinear."""
         walls = [
             _wall_dict("w1", 0, 0, 5000, 0),
-            _wall_dict("w2", 0, 1, 5000, 1),   # 1 mm offset on y
+            _wall_dict("w2", 0, 1, 5000, 1),  # 1 mm offset on y
         ]
         c = _constraint("c1", "collinear", "w1", "w2")
         violations = evaluate_all(walls + [c])
@@ -329,7 +329,7 @@ class TestEqualLength:
     def test_equal_length_ok(self) -> None:
         """Two walls of the same length satisfy equal_length."""
         walls = [
-            _wall_dict("w1", 0, 0, 4000, 0),   # 4000 mm
+            _wall_dict("w1", 0, 0, 4000, 0),  # 4000 mm
             _wall_dict("w2", 0, 500, 4000, 500),  # 4000 mm
         ]
         c = _constraint("c1", "equal_length", "w1", "w2")
@@ -338,8 +338,8 @@ class TestEqualLength:
     def test_equal_length_violation(self) -> None:
         """Walls of different lengths violate equal_length."""
         walls = [
-            _wall_dict("w1", 0, 0, 4000, 0),   # 4000 mm
-            _wall_dict("w2", 0, 0, 6000, 0),   # 6000 mm
+            _wall_dict("w1", 0, 0, 4000, 0),  # 4000 mm
+            _wall_dict("w2", 0, 0, 6000, 0),  # 6000 mm
         ]
         c = _constraint("c1", "equal_length", "w1", "w2")
         violations = evaluate_all(walls + [c])
@@ -360,8 +360,8 @@ class TestEqualLength:
     def test_equal_length_zero_vs_nonzero_violation(self) -> None:
         """A zero-length wall and a non-zero wall violate equal_length."""
         walls = [
-            _wall_dict("w1", 0, 0, 0, 0),      # 0 mm
-            _wall_dict("w2", 0, 0, 1000, 0),   # 1000 mm
+            _wall_dict("w1", 0, 0, 0, 0),  # 0 mm
+            _wall_dict("w2", 0, 0, 1000, 0),  # 1000 mm
         ]
         c = _constraint("c1", "equal_length", "w1", "w2")
         violations = evaluate_all(walls + [c])
@@ -401,7 +401,7 @@ class TestEngineIntegration:
         # Strategy: start with perpendicular walls, add constraint.
         # Then move w2 so it becomes parallel to w1 → dot = 1 → violation.
         # We test the rejection via try_commit_bundle.
-        w1 = _wall_elem("w1", 0, 0, 5000, 0)    # horizontal
+        w1 = _wall_elem("w1", 0, 0, 5000, 0)  # horizontal
         w2 = _wall_elem("w2", 2500, 0, 2500, 4000)  # vertical
         c_elem = ConstraintElem(
             kind="constraint",

@@ -31,9 +31,9 @@ from bim_ai.elements import SkbPhaseId
 class CheckpointResult:
     """One visual-checkpoint outcome (SKB-03 produces this shape)."""
 
-    delta: float                               # 0.0 = identical to target, higher = worse
-    threshold: float                           # acceptance threshold for this phase
-    note: str = ""                             # free-form commentary
+    delta: float  # 0.0 = identical to target, higher = worse
+    threshold: float  # acceptance threshold for this phase
+    note: str = ""  # free-form commentary
     advisor_findings: list[dict[str, Any]] = field(default_factory=list)
     # AdvisorPanel / constraints findings observed at the same checkpoint.
 
@@ -46,18 +46,18 @@ class CheckpointResult:
 class CorrectionProposal:
     """Agent's proposal to fix the worst delta region."""
 
-    commands: list[dict[str, Any]]             # 1-2 corrective commands
-    rationale: str                             # why the agent thinks these will reduce the delta
+    commands: list[dict[str, Any]]  # 1-2 corrective commands
+    rationale: str  # why the agent thinks these will reduce the delta
 
 
 @dataclass(frozen=True)
 class RefineIteration:
     """One step of the loop, suitable for evidence-log serialisation."""
 
-    iteration: int                             # 1-based
+    iteration: int  # 1-based
     checkpoint: CheckpointResult
-    correction: CorrectionProposal | None      # None on the final iteration if accepted
-    applied: bool = False                      # whether the correction was committed
+    correction: CorrectionProposal | None  # None on the final iteration if accepted
+    applied: bool = False  # whether the correction was committed
 
 
 @dataclass(frozen=True)
@@ -67,8 +67,8 @@ class RefineLoopOutcome:
     phase: SkbPhaseId
     iterations: list[RefineIteration] = field(default_factory=list)
     final_checkpoint: CheckpointResult | None = None
-    converged: bool = False                    # delta ≤ threshold at exit
-    escalated: bool = False                    # hit max iterations without converging
+    converged: bool = False  # delta ≤ threshold at exit
+    escalated: bool = False  # hit max iterations without converging
 
     def to_evidence_dict(self) -> dict:
         return {
@@ -142,9 +142,7 @@ def run_refine_loop(
     for i in range(1, max_iterations + 1):
         proposal = propose_correction(final)
         if proposal is None:
-            iterations.append(
-                RefineIteration(iteration=i, checkpoint=final, correction=None)
-            )
+            iterations.append(RefineIteration(iteration=i, checkpoint=final, correction=None))
             return RefineLoopOutcome(
                 phase=phase,
                 iterations=iterations,

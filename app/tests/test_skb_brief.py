@@ -43,23 +43,27 @@ def test_extra_fields_rejected_in_strict_mode() -> None:
 
 
 def test_key_dimension_confidence_enum() -> None:
-    brief = brief_from_dict({
-        "title": "x",
-        "keyDimensions": [
-            {"label": "width", "valueMm": 5000, "confidence": "explicit"},
-        ],
-    })
+    brief = brief_from_dict(
+        {
+            "title": "x",
+            "keyDimensions": [
+                {"label": "width", "valueMm": 5000, "confidence": "explicit"},
+            ],
+        }
+    )
     assert brief.key_dimensions[0].confidence == "explicit"
 
 
 def test_key_dimension_invalid_confidence_rejected() -> None:
     with pytest.raises(ValidationError):
-        brief_from_dict({
-            "title": "x",
-            "keyDimensions": [
-                {"label": "width", "valueMm": 5000, "confidence": "guessed"},
-            ],
-        })
+        brief_from_dict(
+            {
+                "title": "x",
+                "keyDimensions": [
+                    {"label": "width", "valueMm": 5000, "confidence": "guessed"},
+                ],
+            }
+        )
 
 
 def test_evidence_dict_uses_camelcase_aliases() -> None:

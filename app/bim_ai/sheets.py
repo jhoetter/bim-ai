@@ -29,8 +29,6 @@ def resolve_window_legend(doc: Document, legend: WindowLegendViewElem) -> list[d
             }
         )
 
-    sort_key = {"type": "label", "width": "widthMm", "count": "count"}.get(
-        legend.sort_by, "label"
-    )
+    sort_key = {"type": "label", "width": "widthMm", "count": "count"}.get(legend.sort_by, "label")
     entries.sort(key=lambda e: e[sort_key])
     return entries

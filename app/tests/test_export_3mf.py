@@ -75,7 +75,9 @@ def test_3mf_model_xml_is_deterministic() -> None:
 
 
 @pytest.mark.asyncio
-async def test_3mf_export_routes_return_manifest_and_package(monkeypatch: pytest.MonkeyPatch) -> None:
+async def test_3mf_export_routes_return_manifest_and_package(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     model_id = UUID("00000000-0000-4000-8000-0000000003a1")
     row = SimpleNamespace(revision=7, document=_wall_doc().model_dump(by_alias=True))
 

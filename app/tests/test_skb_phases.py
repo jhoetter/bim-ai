@@ -19,8 +19,13 @@ from bim_ai.skb.phases import (
 
 def test_phase_ordering_canonical() -> None:
     assert SKB_PHASES == (
-        "massing", "skeleton", "envelope", "openings",
-        "interior", "detail", "documentation",
+        "massing",
+        "skeleton",
+        "envelope",
+        "openings",
+        "interior",
+        "detail",
+        "documentation",
     )
 
 
@@ -40,11 +45,13 @@ def test_is_phase_known() -> None:
 
 
 def test_phased_bundle_groups_by_phase() -> None:
-    b = PhasedBundle(commands=[
-        PhasedCommand("massing", {"type": "createMass", "id": "m1"}),
-        PhasedCommand("skeleton", {"type": "createWall", "id": "w1"}),
-        PhasedCommand("massing", {"type": "createMass", "id": "m2"}),
-    ])
+    b = PhasedBundle(
+        commands=[
+            PhasedCommand("massing", {"type": "createMass", "id": "m1"}),
+            PhasedCommand("skeleton", {"type": "createWall", "id": "w1"}),
+            PhasedCommand("massing", {"type": "createMass", "id": "m2"}),
+        ]
+    )
     by = b.by_phase()
     assert list(by.keys()) == ["massing", "skeleton"]
     assert len(by["massing"]) == 2
@@ -52,11 +59,13 @@ def test_phased_bundle_groups_by_phase() -> None:
 
 
 def test_staged_subbundles_in_canonical_order() -> None:
-    b = PhasedBundle(commands=[
-        PhasedCommand("envelope", {"type": "x"}),
-        PhasedCommand("massing", {"type": "y"}),
-        PhasedCommand("skeleton", {"type": "z"}),
-    ])
+    b = PhasedBundle(
+        commands=[
+            PhasedCommand("envelope", {"type": "x"}),
+            PhasedCommand("massing", {"type": "y"}),
+            PhasedCommand("skeleton", {"type": "z"}),
+        ]
+    )
     out = b.staged_subbundles()
     phases = [p for p, _ in out]
     assert phases == ["massing", "skeleton", "envelope"]

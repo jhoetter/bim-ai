@@ -74,12 +74,14 @@ class TestCommit:
 class TestMissingAssumptions:
     def test_empty_assumptions_rejected(self):
         doc = _seed_doc()
-        bundle = CommandBundle.model_validate({
-            "schemaVersion": "cmd-v3.0",
-            "commands": [_CREATE_LEVEL],
-            "assumptions": [_VALID_ASSUMPTION],  # Pydantic requires min_length=1
-            "parentRevision": 1,
-        })
+        bundle = CommandBundle.model_validate(
+            {
+                "schemaVersion": "cmd-v3.0",
+                "commands": [_CREATE_LEVEL],
+                "assumptions": [_VALID_ASSUMPTION],  # Pydantic requires min_length=1
+                "parentRevision": 1,
+            }
+        )
         # Force empty by bypassing validation
         object.__setattr__(bundle, "assumptions", [])
         result, _ = apply_bundle(doc, bundle, "dry_run")

@@ -521,9 +521,7 @@ async def finish_sketch_session(
             raise HTTPException(status_code=400, detail=f"Invalid command: {exc}") from exc
         if not ok or candidate is None:
             viols_wire = [v.model_dump(by_alias=True) for v in violations]
-            raise HTTPException(
-                status_code=409, detail={"reason": code, "violations": viols_wire}
-            )
+            raise HTTPException(status_code=409, detail={"reason": code, "violations": viols_wire})
         current_doc = candidate
         last_cmd = cmd
         last_violations = violations

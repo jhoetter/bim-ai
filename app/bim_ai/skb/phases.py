@@ -96,9 +96,7 @@ def from_dict_list(rows: Sequence[dict[str, Any]]) -> PhasedBundle:
         phase = row.get("phase")
         cmd = row.get("command")
         if phase is None or not is_phase_known(phase):
-            raise ValueError(
-                f"row {i}: phase {phase!r} is not one of {SKB_PHASES}"
-            )
+            raise ValueError(f"row {i}: phase {phase!r} is not one of {SKB_PHASES}")
         if not isinstance(cmd, dict):
             raise ValueError(f"row {i}: command must be a dict, got {type(cmd).__name__}")
         out.append(PhasedCommand(phase=phase, command=cmd))

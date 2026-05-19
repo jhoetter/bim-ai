@@ -488,9 +488,7 @@ def build_kernel_ifc_authoritative_replay_sketch_v0_from_model(model: Any) -> di
                 height_mm=geo["height_mm"],
                 load_bearing=load_bearing,
                 structural_role=structural_role,
-                analytical_participation=_pset_bool(
-                    bucket.get("BimAiAnalyticalParticipation")
-                )
+                analytical_participation=_pset_bool(bucket.get("BimAiAnalyticalParticipation"))
                 is True,
                 structural_material_key=_pset_str(bucket.get("BimAiStructuralMaterialKey")),
                 structural_intent_confidence=_pset_float(

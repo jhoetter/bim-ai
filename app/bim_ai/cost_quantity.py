@@ -189,9 +189,7 @@ def _wall_opening_area_m2(doc: Document, wall: WallElem) -> tuple[float, float, 
 
 
 def _level_name_by_id(doc: Document) -> dict[str, str]:
-    return {
-        e.id: e.name or e.id for e in doc.elements.values() if isinstance(e, LevelElem)
-    }
+    return {e.id: e.name or e.id for e in doc.elements.values() if isinstance(e, LevelElem)}
 
 
 def _type_id(e: Any) -> str:

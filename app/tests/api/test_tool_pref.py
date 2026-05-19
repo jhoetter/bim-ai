@@ -204,9 +204,7 @@ def test_set_tool_pref_stores_multiple_tools(client: TestClient) -> None:
     assert prefs["toolPrefs"]["door"]["swingSide"] == "left"
 
 
-def test_set_tool_pref_emits_activity(
-    client: TestClient, rows: list[dict[str, Any]]
-) -> None:
+def test_set_tool_pref_emits_activity(client: TestClient, rows: list[dict[str, Any]]) -> None:
     """POST SetToolPrefCmd → tool_pref_changed activity row is emitted."""
     before_count = len(rows)
     res = client.post(
@@ -232,9 +230,7 @@ def test_set_tool_pref_emits_activity(
     assert emitted["payload"]["prefValue"] == "right"
 
 
-def test_set_tool_pref_activity_in_list(
-    client: TestClient, rows: list[dict[str, Any]]
-) -> None:
+def test_set_tool_pref_activity_in_list(client: TestClient, rows: list[dict[str, Any]]) -> None:
     """tool_pref_changed rows appear in GET /activity."""
     client.post(
         f"/api/models/{MODEL_ID}/commands",

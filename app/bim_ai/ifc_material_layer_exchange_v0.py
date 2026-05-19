@@ -94,6 +94,7 @@ def try_attach_kernel_ifc_single_material(
     except Exception:
         return
 
+
 try:
     import ifcopenshell.util.element as _ifc_elem_util
 except ImportError:

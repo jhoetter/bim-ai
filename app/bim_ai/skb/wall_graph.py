@@ -63,6 +63,7 @@ def _coincide(p: XY, q: XY, tol_mm: float) -> bool:
 def _wall_angle_deg(seg: WallSeg) -> float:
     """Returns 0..360. 0° = along +X (east), 90° = along +Y (north)."""
     import math
+
     dx, dy = seg.b[0] - seg.a[0], seg.b[1] - seg.a[1]
     if dx == 0 and dy == 0:
         return 0.0
@@ -77,8 +78,7 @@ def _angle_off_axis_deg(angle: float) -> float:
 
 
 def _point_on_segment_interior(point: XY, seg: WallSeg, tol_mm: float) -> bool:
-    """True iff `point` lies on the open interior of segment ab (not at endpoints).
-    """
+    """True iff `point` lies on the open interior of segment ab (not at endpoints)."""
     px, py = point
     ax, ay = seg.a
     bx, by = seg.b
@@ -210,5 +210,7 @@ def check_wall_graph(
     out: list[WallGraphAdvisory] = []
     out.extend(find_orphan_walls(walls, tol_mm=coincide_tol_mm))
     out.extend(find_non_orthogonal_walls(walls, tol_deg=angle_tol_deg))
-    out.extend(find_t_intersections_without_join(walls, joined_pairs=joined_pairs, tol_mm=coincide_tol_mm))
+    out.extend(
+        find_t_intersections_without_join(walls, joined_pairs=joined_pairs, tol_mm=coincide_tol_mm)
+    )
     return out

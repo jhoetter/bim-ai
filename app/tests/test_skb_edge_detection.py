@@ -13,6 +13,7 @@ def _make_test_png(path: Path, size: int = 64) -> None:
     """Make a simple test PNG: a black-bordered white square with a
     diagonal line — should produce non-zero edges."""
     from PIL import Image, ImageDraw
+
     img = Image.new("RGB", (size, size), color="white")
     draw = ImageDraw.Draw(img)
     draw.rectangle([4, 4, size - 5, size - 5], outline="black", width=2)
@@ -23,10 +24,12 @@ def _make_test_png(path: Path, size: int = 64) -> None:
 def _have_cv() -> bool:
     try:
         import cv2  # noqa: F401
+
         return True
     except ImportError:
         try:
             import skimage  # noqa: F401
+
             return True
         except ImportError:
             return False

@@ -52,12 +52,8 @@ def _join_disallowed_at_vertex(w: WallElem, vx: float, vy: float) -> bool:
     return False
 
 
-def _join_disallowed_between(
-    wall_a: WallElem, wall_b: WallElem, vx: float, vy: float
-) -> bool:
-    return _join_disallowed_at_vertex(wall_a, vx, vy) or _join_disallowed_at_vertex(
-        wall_b, vx, vy
-    )
+def _join_disallowed_between(wall_a: WallElem, wall_b: WallElem, vx: float, vy: float) -> bool:
+    return _join_disallowed_at_vertex(wall_a, vx, vy) or _join_disallowed_at_vertex(wall_b, vx, vy)
 
 
 def _wall_unit_xy(w: WallElem) -> tuple[float, float] | None:

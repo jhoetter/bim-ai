@@ -1,4 +1,5 @@
 """SHT-V3-01: Sheet + titleblock + cartouche + window-legend tests."""
+
 from __future__ import annotations
 
 from bim_ai.document import Document

@@ -59,9 +59,7 @@ class TestCreateViewTemplate:
         doc = _base_doc()
         apply_inplace(
             doc,
-            CreateViewTemplateCmd(
-                templateId="tpl2", name="Fine", scale=50, detailLevel="fine"
-            ),
+            CreateViewTemplateCmd(templateId="tpl2", name="Fine", scale=50, detailLevel="fine"),
         )
         tpl = doc.elements["tpl2"]
         assert isinstance(tpl, ViewTemplateElem)
@@ -71,9 +69,7 @@ class TestCreateViewTemplate:
         doc = _base_doc()
         apply_inplace(
             doc,
-            CreateViewTemplateCmd(
-                templateId="tpl3", name="Phase", phase="new", phaseFilter="new"
-            ),
+            CreateViewTemplateCmd(templateId="tpl3", name="Phase", phase="new", phaseFilter="new"),
         )
         tpl = doc.elements["tpl3"]
         assert isinstance(tpl, ViewTemplateElem)
@@ -150,7 +146,9 @@ class TestUpdateViewTemplate:
         apply_inplace(doc, ApplyViewTemplateCmd(viewId="pv2", templateId="tpl"))
         doc_before = clone_document(doc)
         apply_inplace(doc, UpdateViewTemplateCmd(templateId="tpl", scale=50))
-        prop = compute_view_template_propagation(doc_before, doc, UpdateViewTemplateCmd(templateId="tpl", scale=50))
+        prop = compute_view_template_propagation(
+            doc_before, doc, UpdateViewTemplateCmd(templateId="tpl", scale=50)
+        )
         assert prop is not None
         assert prop["event"] == "ViewTemplatePropagation"
         assert set(prop["affected"]) == {"pv1", "pv2"}
@@ -161,7 +159,9 @@ class TestUpdateViewTemplate:
         _add_template(doc, scale=100)
         doc_before = clone_document(doc)
         apply_inplace(doc, UpdateViewTemplateCmd(templateId="tpl", scale=50))
-        prop = compute_view_template_propagation(doc_before, doc, UpdateViewTemplateCmd(templateId="tpl", scale=50))
+        prop = compute_view_template_propagation(
+            doc_before, doc, UpdateViewTemplateCmd(templateId="tpl", scale=50)
+        )
         assert prop is not None
         assert prop["affected"] == []
 

@@ -76,7 +76,7 @@ def check_wall_corner_gaps(
                     if key in seen:
                         continue
                     seen.add(key)
-                    d = d2 ** 0.5
+                    d = d2**0.5
                     out.append(
                         SoundnessAdvisory(
                             rule_id="wall_corner_gap_or_overlap_v1",
@@ -126,7 +126,7 @@ def _hausdorff_polygon_to_walls(
             d2 = dx * dx + dy * dy
             if d2 < best:
                 best = d2
-        worst = max(worst, best ** 0.5)
+        worst = max(worst, best**0.5)
     return worst
 
 
@@ -238,9 +238,13 @@ class SoundnessInput:
     """Bundle of inputs for the full soundness pack."""
 
     walls: Sequence[WallSeg]
-    floors: Sequence[tuple[str, Sequence[XY], Sequence[WallSeg]]]   # (floor_id, boundary, level walls)
+    floors: Sequence[
+        tuple[str, Sequence[XY], Sequence[WallSeg]]
+    ]  # (floor_id, boundary, level walls)
     levels: Sequence[LevelInfo]
-    roofed_walls: Sequence[tuple[str, XY, XY, str, Sequence[XY]]]  # (wall_id, a, b, roof_id, footprint)
+    roofed_walls: Sequence[
+        tuple[str, XY, XY, str, Sequence[XY]]
+    ]  # (wall_id, a, b, roof_id, footprint)
 
 
 def run_pack(inp: SoundnessInput) -> list[SoundnessAdvisory]:

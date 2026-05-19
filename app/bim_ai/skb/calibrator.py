@@ -26,7 +26,7 @@ class Anchor:
     label: str
     pixels: float
     millimeters: float
-    axis: str = "any"   # 'x' | 'y' | 'any'
+    axis: str = "any"  # 'x' | 'y' | 'any'
 
 
 @dataclass(frozen=True)
@@ -34,9 +34,9 @@ class CalibrationResult:
     """The agreed scale with provenance."""
 
     scale_mm_per_px: float
-    axis: str               # 'x', 'y', or 'any' when isotropic
+    axis: str  # 'x', 'y', or 'any' when isotropic
     anchor_count: int
-    residual_pct: float     # max % disagreement between anchors at the chosen scale
+    residual_pct: float  # max % disagreement between anchors at the chosen scale
     notes: str = ""
 
     def pixels_to_mm(self, pixels: float) -> float:
@@ -109,7 +109,9 @@ class CalibratedSketch:
         d_px = (dx * dx + dy * dy) ** 0.5
         return self.measure_pixels(d_px)
 
-    def position_to_mm(self, p: tuple[float, float], origin_px: tuple[float, float] = (0, 0)) -> tuple[float, float]:
+    def position_to_mm(
+        self, p: tuple[float, float], origin_px: tuple[float, float] = (0, 0)
+    ) -> tuple[float, float]:
         """Convert a pixel position to a mm-space position relative to
         the given pixel origin (default = pixel (0, 0))."""
         return (

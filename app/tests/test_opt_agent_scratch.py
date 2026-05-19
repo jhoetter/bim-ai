@@ -93,9 +93,7 @@ class TestAutoRoute:
         assert result2.applied is True
         assert new_doc2 is not None
 
-        proposals_set = next(
-            s for s in new_doc2.design_option_sets if s.name == "Agent proposals"
-        )
+        proposals_set = next(s for s in new_doc2.design_option_sets if s.name == "Agent proposals")
         assert len(proposals_set.options) == 2
         option_ids = {o.id for o in proposals_set.options}
         assert result1.option_id in option_ids
@@ -191,9 +189,7 @@ class TestOptionDeletion:
 
         # Remove opt-b
         remove = _bundle(
-            commands=[
-                {"type": "removeOption", "optionSetId": "set-1", "optionId": "opt-b"}
-            ],
+            commands=[{"type": "removeOption", "optionSetId": "set-1", "optionId": "opt-b"}],
             parentRevision=r1.new_revision,
             targetOptionId="main",
         )
@@ -233,9 +229,7 @@ class TestOptionDeletion:
         assert doc1 is not None
 
         remove = _bundle(
-            commands=[
-                {"type": "removeOption", "optionSetId": "set-1", "optionId": "opt-b"}
-            ],
+            commands=[{"type": "removeOption", "optionSetId": "set-1", "optionId": "opt-b"}],
             parentRevision=r1.new_revision,
             targetOptionId="main",
         )

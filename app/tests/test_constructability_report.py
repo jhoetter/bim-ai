@@ -435,9 +435,10 @@ def test_constructability_readiness_reports_ids_like_metadata_requirements() -> 
         profile="construction_readiness",
     )
 
-    assert "constructability_metadata_requirement_missing" not in authoring_report[
-        "summary"
-    ]["ruleCounts"]
+    assert (
+        "constructability_metadata_requirement_missing"
+        not in authoring_report["summary"]["ruleCounts"]
+    )
     assert readiness_report["summary"]["ruleCounts"] == {
         "constructability_metadata_requirement_missing": 1
     }
@@ -582,12 +583,8 @@ def test_constructability_clearance_rule_is_profile_enabled() -> None:
         profile="construction_readiness",
     )
 
-    assert "furniture_wall_clearance_conflict" not in authoring_report["summary"][
-        "ruleCounts"
-    ]
-    assert readiness_report["summary"]["ruleCounts"] == {
-        "furniture_wall_clearance_conflict": 1
-    }
+    assert "furniture_wall_clearance_conflict" not in authoring_report["summary"]["ruleCounts"]
+    assert readiness_report["summary"]["ruleCounts"] == {"furniture_wall_clearance_conflict": 1}
     assert readiness_report["findings"][0]["severity"] == "error"
     assert clear_report["summary"]["ruleCounts"] == {}
 

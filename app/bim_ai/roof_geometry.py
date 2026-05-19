@@ -320,9 +320,7 @@ def _bisector_trim_length(
     profile_reach_mm: float = 0.0,
 ) -> float:
     """Miter trim length at an interior corner from the bisector angle."""
-    cos_half = (
-        in_dir[0] * out_dir[0] + in_dir[1] * out_dir[1]
-    ) / max(
+    cos_half = (in_dir[0] * out_dir[0] + in_dir[1] * out_dir[1]) / max(
         math.hypot(*in_dir) * math.hypot(*out_dir), 1e-9
     )
     cos_half = max(-1.0, min(1.0, cos_half))

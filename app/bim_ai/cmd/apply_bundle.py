@@ -26,36 +26,44 @@ def _validate_assumptions(assumptions: list[AssumptionEntry]) -> list[dict[str, 
     advisories: list[dict[str, Any]] = []
 
     if not assumptions:
-        advisories.append({
-            "advisoryClass": "assumption_log_required",
-            "message": "assumptions must be a non-empty array",
-            "blocking": True,
-        })
+        advisories.append(
+            {
+                "advisoryClass": "assumption_log_required",
+                "message": "assumptions must be a non-empty array",
+                "blocking": True,
+            }
+        )
         return advisories
 
     seen_keys: set[str] = set()
     for i, entry in enumerate(assumptions):
         if not entry.key:
-            advisories.append({
-                "advisoryClass": "assumption_log_malformed",
-                "message": f"assumptions[{i}].key must be a non-empty string",
-                "entryIndex": i,
-                "blocking": True,
-            })
+            advisories.append(
+                {
+                    "advisoryClass": "assumption_log_malformed",
+                    "message": f"assumptions[{i}].key must be a non-empty string",
+                    "entryIndex": i,
+                    "blocking": True,
+                }
+            )
         if not (0.0 <= entry.confidence <= 1.0):
-            advisories.append({
-                "advisoryClass": "assumption_log_malformed",
-                "message": f"assumptions[{i}].confidence must be in [0, 1], got {entry.confidence}",
-                "entryIndex": i,
-                "blocking": True,
-            })
+            advisories.append(
+                {
+                    "advisoryClass": "assumption_log_malformed",
+                    "message": f"assumptions[{i}].confidence must be in [0, 1], got {entry.confidence}",
+                    "entryIndex": i,
+                    "blocking": True,
+                }
+            )
         if entry.key in seen_keys:
-            advisories.append({
-                "advisoryClass": "assumption_log_duplicate_key",
-                "message": f"assumptions[{i}].key '{entry.key}' is duplicated",
-                "entryIndex": i,
-                "blocking": True,
-            })
+            advisories.append(
+                {
+                    "advisoryClass": "assumption_log_duplicate_key",
+                    "message": f"assumptions[{i}].key '{entry.key}' is duplicated",
+                    "entryIndex": i,
+                    "blocking": True,
+                }
+            )
         elif entry.key:
             seen_keys.add(entry.key)
 
@@ -250,14 +258,16 @@ def apply_bundle(
         return (
             BundleResult(
                 applied=False,
-                violations=[{
-                    "advisoryClass": "revision_conflict",
-                    "message": (
-                        f"parentRevision {bundle.parent_revision} != "
-                        f"current revision {doc.revision}"
-                    ),
-                    "blocking": True,
-                }],
+                violations=[
+                    {
+                        "advisoryClass": "revision_conflict",
+                        "message": (
+                            f"parentRevision {bundle.parent_revision} != "
+                            f"current revision {doc.revision}"
+                        ),
+                        "blocking": True,
+                    }
+                ],
             ),
             None,
         )
@@ -271,12 +281,14 @@ def apply_bundle(
             return (
                 BundleResult(
                     applied=False,
-                    violations=[{
-                        "advisoryClass": "direct_main_commit_forbidden",
-                        "message": "Bundles submitted by agents must target a DesignOption, not main.",
-                        "commandIndex": -1,
-                        "blocking": True,
-                    }],
+                    violations=[
+                        {
+                            "advisoryClass": "direct_main_commit_forbidden",
+                            "message": "Bundles submitted by agents must target a DesignOption, not main.",
+                            "commandIndex": -1,
+                            "blocking": True,
+                        }
+                    ],
                     checkpoint_snapshot_id=_checkpoint_id(doc.elements),
                 ),
                 None,
@@ -286,11 +298,13 @@ def apply_bundle(
             return (
                 BundleResult(
                     applied=False,
-                    violations=[{
-                        "advisoryClass": "option_not_found",
-                        "message": f"targetOptionId '{missing_id}' does not exist in this document.",
-                        "blocking": True,
-                    }],
+                    violations=[
+                        {
+                            "advisoryClass": "option_not_found",
+                            "message": f"targetOptionId '{missing_id}' does not exist in this document.",
+                            "blocking": True,
+                        }
+                    ],
                     checkpoint_snapshot_id=_checkpoint_id(doc.elements),
                 ),
                 None,

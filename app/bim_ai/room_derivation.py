@@ -462,11 +462,7 @@ def _room_area_inset_mm_for_level(doc: Document, level_id: str) -> float:
     basis = proj_settings.room_area_computation_basis if proj_settings else "wall_finish"
     if basis == "wall_finish":
         return 0.0
-    walls = [
-        e
-        for e in doc.elements.values()
-        if isinstance(e, WallElem) and e.level_id == level_id
-    ]
+    walls = [e for e in doc.elements.values() if isinstance(e, WallElem) and e.level_id == level_id]
     if not walls:
         return 0.0
     avg_thickness = sum(w.thickness_mm for w in walls) / len(walls)
@@ -476,11 +472,7 @@ def _room_area_inset_mm_for_level(doc: Document, level_id: str) -> float:
 
 
 def _avg_wall_half_thickness_mm_for_level(doc: Document, level_id: str) -> float:
-    walls = [
-        e
-        for e in doc.elements.values()
-        if isinstance(e, WallElem) and e.level_id == level_id
-    ]
+    walls = [e for e in doc.elements.values() if isinstance(e, WallElem) and e.level_id == level_id]
     if not walls:
         return 0.0
     return (sum(w.thickness_mm for w in walls) / len(walls)) / 2.0
@@ -518,9 +510,7 @@ def compute_room_boundary_derivation(doc: Document) -> dict[str, Any]:
         (e for e in doc.elements.values() if isinstance(e, ProjectSettingsElem)),
         None,
     )
-    _area_basis = (
-        _proj_settings.room_area_computation_basis if _proj_settings else "wall_finish"
-    )
+    _area_basis = _proj_settings.room_area_computation_basis if _proj_settings else "wall_finish"
     _volume_basis = _proj_settings.volume_computed_at if _proj_settings else "finish_faces"
 
     # Cache inset per level to avoid re-scanning elements for every quad combination.

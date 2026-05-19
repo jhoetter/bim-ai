@@ -131,9 +131,7 @@ def test_set_wall_lean_taper_clears_both_fields():
 
 def test_set_wall_lean_taper_preserves_existing_fields():
     doc = _base_doc()
-    ok, doc2, _, _, _ = try_commit_bundle(
-        doc, [_create_wall_cmd(height_mm=4000)]
-    )
+    ok, doc2, _, _, _ = try_commit_bundle(doc, [_create_wall_cmd(height_mm=4000)])
     assert ok
 
     ok, doc3, _, _, _ = try_commit_bundle(

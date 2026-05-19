@@ -65,9 +65,7 @@ GOAL_WITHOUT_JSON = "# Goal\n\nNo JSON here, just prose."
 
 
 def test_test_backend_extracts_first_command_block() -> None:
-    res = generate_patch(
-        AgentIterateRequest(goal=GOAL_WITH_JSON, backendOverride="test")
-    )
+    res = generate_patch(AgentIterateRequest(goal=GOAL_WITH_JSON, backendOverride="test"))
     assert isinstance(res, AgentIterateResponse)
     assert res.backend == "test"
     assert len(res.patch) == 1
@@ -78,25 +76,19 @@ def test_test_backend_extracts_first_command_block() -> None:
 
 
 def test_test_backend_accepts_patch_key() -> None:
-    res = generate_patch(
-        AgentIterateRequest(goal=GOAL_WITH_PATCH_KEY, backendOverride="test")
-    )
+    res = generate_patch(AgentIterateRequest(goal=GOAL_WITH_PATCH_KEY, backendOverride="test"))
     assert res.patch == [{"type": "noop"}]
     assert res.rationale == "patch alias"
 
 
 def test_test_backend_accepts_bare_command_list() -> None:
-    res = generate_patch(
-        AgentIterateRequest(goal=GOAL_WITH_BARE_LIST, backendOverride="test")
-    )
+    res = generate_patch(AgentIterateRequest(goal=GOAL_WITH_BARE_LIST, backendOverride="test"))
     assert len(res.patch) == 2
     assert {c["id"] for c in res.patch} == {"lvl-up", "lvl-roof"}
 
 
 def test_test_backend_returns_empty_patch_on_no_json() -> None:
-    res = generate_patch(
-        AgentIterateRequest(goal=GOAL_WITHOUT_JSON, backendOverride="test")
-    )
+    res = generate_patch(AgentIterateRequest(goal=GOAL_WITHOUT_JSON, backendOverride="test"))
     assert res.patch == []
     assert res.confidence == 0.0
 
@@ -164,9 +156,7 @@ def _build_endpoint_app() -> FastAPI:
     app = FastAPI()
 
     @app.post("/api/models/{model_id}/agent-iterate")
-    async def agent_iterate_route(
-        model_id: str, body: AgentIterateRequest
-    ) -> dict[str, object]:
+    async def agent_iterate_route(model_id: str, body: AgentIterateRequest) -> dict[str, object]:
         # Match the production handler shape: backend is honored, model id is
         # echoed back via the response payload (so the test can assert it
         # without a DB).

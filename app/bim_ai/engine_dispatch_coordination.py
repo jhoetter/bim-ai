@@ -746,7 +746,9 @@ def try_apply_coordination_command(doc, cmd, *, source_provider=None) -> bool:
                     "progressStatus must be not_started|in_progress|installed|inspected|accepted"
                 )
             if cmd.phase_id is not None and not isinstance(els.get(cmd.phase_id), PhaseElem):
-                raise ValueError("createConstructionLogistics.phaseId must reference a Phase element")
+                raise ValueError(
+                    "createConstructionLogistics.phaseId must reference a Phase element"
+                )
             if cmd.construction_package_id is not None and not isinstance(
                 els.get(cmd.construction_package_id), ConstructionPackageElem
             ):
@@ -775,7 +777,9 @@ def try_apply_coordination_command(doc, cmd, *, source_provider=None) -> bool:
                     "progressStatus must be not_started|in_progress|installed|inspected|accepted"
                 )
             if cmd.phase_id is not None and not isinstance(els.get(cmd.phase_id), PhaseElem):
-                raise ValueError("upsertConstructionQaChecklist.phaseId must reference a Phase element")
+                raise ValueError(
+                    "upsertConstructionQaChecklist.phaseId must reference a Phase element"
+                )
             if cmd.construction_package_id is not None and not isinstance(
                 els.get(cmd.construction_package_id), ConstructionPackageElem
             ):

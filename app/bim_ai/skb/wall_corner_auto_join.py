@@ -40,8 +40,8 @@ class WallJoinPair:
 
     wall_a_id: str
     wall_b_id: str
-    kind: str                          # 'corner' | 'abutment'
-    point_mm: XY                       # join location
+    kind: str  # 'corner' | 'abutment'
+    point_mm: XY  # join location
     notes: str = ""
 
     def to_element_dict(self, join_id: str) -> dict:
@@ -139,7 +139,10 @@ def detect_abutment_joins(walls: Sequence[WallSeg], tol_mm: float = 10.0) -> lis
 def detect_all_joins(walls: Sequence[WallSeg], tol_mm: float = 10.0) -> list[WallJoinPair]:
     """All joins: corners + abutments. Used by the engine to auto-emit
     `join_geometry` markers on first commit."""
-    return [*detect_corner_joins(walls, tol_mm=tol_mm), *detect_abutment_joins(walls, tol_mm=tol_mm)]
+    return [
+        *detect_corner_joins(walls, tol_mm=tol_mm),
+        *detect_abutment_joins(walls, tol_mm=tol_mm),
+    ]
 
 
 def existing_join_pairs(joined_groups: Iterable[Sequence[str]]) -> set[frozenset[str]]:

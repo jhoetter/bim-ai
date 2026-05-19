@@ -44,12 +44,14 @@ def _seed_doc(revision: int = 1) -> Document:
 def _seed_doc_with_level() -> Document:
     """Commit a level so walls can reference it (revision 2 on exit)."""
     doc = _seed_doc()
-    level_bundle = CommandBundle.model_validate({
-        "schemaVersion": "cmd-v3.0",
-        "commands": [_CREATE_LEVEL],
-        "assumptions": [_VALID_ASSUMPTION],
-        "parentRevision": 1,
-    })
+    level_bundle = CommandBundle.model_validate(
+        {
+            "schemaVersion": "cmd-v3.0",
+            "commands": [_CREATE_LEVEL],
+            "assumptions": [_VALID_ASSUMPTION],
+            "parentRevision": 1,
+        }
+    )
     result, new_doc = apply_bundle(doc, level_bundle, "commit")
     assert result.applied and new_doc is not None
     return new_doc
@@ -69,16 +71,20 @@ def _bundle(**kwargs) -> CommandBundle:
 class TestAgentTraceOnCommit:
     def test_agent_trace_attached_on_commit(self):
         doc = _seed_doc_with_level()
-        wall_bundle = CommandBundle.model_validate({
-            "schemaVersion": "cmd-v3.0",
-            "commands": [_CREATE_WALL],
-            "assumptions": [_VALID_ASSUMPTION],
-            "parentRevision": doc.revision,
-        })
+        wall_bundle = CommandBundle.model_validate(
+            {
+                "schemaVersion": "cmd-v3.0",
+                "commands": [_CREATE_WALL],
+                "assumptions": [_VALID_ASSUMPTION],
+                "parentRevision": doc.revision,
+            }
+        )
         result, new_doc = apply_bundle(doc, wall_bundle, "commit")
         assert result.applied is True
         assert new_doc is not None
-        traced = [e for e in new_doc.elements.values() if getattr(e, "agent_trace", None) is not None]
+        traced = [
+            e for e in new_doc.elements.values() if getattr(e, "agent_trace", None) is not None
+        ]
         assert len(traced) >= 1
 
     def test_agent_trace_not_attached_on_dry_run(self):
@@ -89,16 +95,20 @@ class TestAgentTraceOnCommit:
 
     def test_assumption_keys_match_bundle(self):
         doc = _seed_doc_with_level()
-        wall_bundle = CommandBundle.model_validate({
-            "schemaVersion": "cmd-v3.0",
-            "commands": [_CREATE_WALL],
-            "assumptions": [_VALID_ASSUMPTION, _SECOND_ASSUMPTION],
-            "parentRevision": doc.revision,
-        })
+        wall_bundle = CommandBundle.model_validate(
+            {
+                "schemaVersion": "cmd-v3.0",
+                "commands": [_CREATE_WALL],
+                "assumptions": [_VALID_ASSUMPTION, _SECOND_ASSUMPTION],
+                "parentRevision": doc.revision,
+            }
+        )
         result, new_doc = apply_bundle(doc, wall_bundle, "commit")
         assert result.applied is True
         assert new_doc is not None
-        traced = [e for e in new_doc.elements.values() if getattr(e, "agent_trace", None) is not None]
+        traced = [
+            e for e in new_doc.elements.values() if getattr(e, "agent_trace", None) is not None
+        ]
         assert traced, "expected at least one traced element"
         trace = traced[0].agent_trace
         assert set(trace.assumption_keys) == {"ground_level_mm", "floor_height_mm"}
@@ -149,12 +159,14 @@ class TestAgentTraceModel:
 class TestAssumptionValidation:
     def test_bundle_without_assumptions_rejected(self):
         doc = _seed_doc()
-        bundle = CommandBundle.model_validate({
-            "schemaVersion": "cmd-v3.0",
-            "commands": [_CREATE_LEVEL],
-            "assumptions": [_VALID_ASSUMPTION],
-            "parentRevision": 1,
-        })
+        bundle = CommandBundle.model_validate(
+            {
+                "schemaVersion": "cmd-v3.0",
+                "commands": [_CREATE_LEVEL],
+                "assumptions": [_VALID_ASSUMPTION],
+                "parentRevision": 1,
+            }
+        )
         object.__setattr__(bundle, "assumptions", [])
         result, new_doc = apply_bundle(doc, bundle, "dry_run")
         classes = {v.get("advisoryClass") for v in result.violations}
@@ -166,9 +178,7 @@ class TestAssumptionValidation:
         doc = _seed_doc()
         bundle = _bundle()
         # Bypass Pydantic validation to inject a malformed entry (confidence > 1)
-        bad_entry = AssumptionEntry.model_construct(
-            key="k", value=1, confidence=1.5, source="test"
-        )
+        bad_entry = AssumptionEntry.model_construct(key="k", value=1, confidence=1.5, source="test")
         object.__setattr__(bundle, "assumptions", [bad_entry])
         result, new_doc = apply_bundle(doc, bundle, "dry_run")
         classes = {v.get("advisoryClass") for v in result.violations}

@@ -80,7 +80,15 @@ class TestSeedHatchesInSnapshot:
         assert len(hatch_ids) == len(set(hatch_ids))
 
     def test_expected_hatch_ids_present(self, client: TestClient) -> None:
-        expected = {"brick_45", "concrete_dot", "insulation", "plaster", "timber_grain", "gypsum", "stone"}
+        expected = {
+            "brick_45",
+            "concrete_dot",
+            "insulation",
+            "plaster",
+            "timber_grain",
+            "gypsum",
+            "stone",
+        }
         resp = client.get(f"/api/models/{MODEL_ID}/snapshot")
         elements = resp.json()["elements"]
         found = {v["id"] for v in elements.values() if v.get("kind") == "hatch_pattern_def"}

@@ -1,4 +1,5 @@
 """OSM-V3-01 — fetch + parse Overpass-API building footprints into NeighborhoodMassElem."""
+
 from __future__ import annotations
 
 import math
@@ -59,9 +60,7 @@ def douglas_peucker(
     for i in range(1, len(pts) - 1):
         dx, dy = end[0] - start[0], end[1] - start[1]
         denom = math.hypot(dx, dy) or 1
-        dist = (
-            abs(dy * pts[i][0] - dx * pts[i][1] + end[0] * start[1] - end[1] * start[0]) / denom
-        )
+        dist = abs(dy * pts[i][0] - dx * pts[i][1] + end[0] * start[1] - end[1] * start[0]) / denom
         if dist > max_dist:
             max_dist, max_idx = dist, i
     if max_dist > epsilon:

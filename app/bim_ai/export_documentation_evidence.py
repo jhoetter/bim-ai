@@ -92,7 +92,9 @@ def _artifact_status(
     }
 
 
-def _export_href(model_id: UUID | str | None, path: str, *, sheet_id: str | None = None) -> str | None:
+def _export_href(
+    model_id: UUID | str | None, path: str, *, sheet_id: str | None = None
+) -> str | None:
     if model_id is None:
         return None
     href = f"/api/models/{model_id}/exports/{path}"
@@ -103,7 +105,9 @@ def _export_href(model_id: UUID | str | None, path: str, *, sheet_id: str | None
 
 def _sheet_rows(doc: Document, model_id: UUID | str | None) -> list[dict[str, Any]]:
     rows: list[dict[str, Any]] = []
-    for sh in sorted((e for e in doc.elements.values() if isinstance(e, SheetElem)), key=lambda s: s.id):
+    for sh in sorted(
+        (e for e in doc.elements.values() if isinstance(e, SheetElem)), key=lambda s: s.id
+    ):
         svg_text = sheet_elem_to_svg(doc, sh)
         pdf_bytes = sheet_elem_to_pdf_bytes(doc, sh)
         listing_lines = sheet_viewport_export_listing_lines(doc, sh)
@@ -150,7 +154,9 @@ def _sheet_rows(doc: Document, model_id: UUID | str | None) -> list[dict[str, An
 
 def _schedule_rows(doc: Document) -> list[dict[str, Any]]:
     rows: list[dict[str, Any]] = []
-    for sch in sorted((e for e in doc.elements.values() if isinstance(e, ScheduleElem)), key=lambda s: s.id):
+    for sch in sorted(
+        (e for e in doc.elements.values() if isinstance(e, ScheduleElem)), key=lambda s: s.id
+    ):
         payload = derive_schedule_table(doc, sch.id)
         data_rows = payload.get("rows") if isinstance(payload.get("rows"), list) else []
         columns = payload.get("columns") if isinstance(payload.get("columns"), list) else []
@@ -171,7 +177,9 @@ def _schedule_rows(doc: Document) -> list[dict[str, Any]]:
 def _tag_rows(doc: Document) -> list[dict[str, Any]]:
     tag_types = (PlacedTagElem, MaterialTagElem, MultiCategoryTagElem)
     rows: list[dict[str, Any]] = []
-    for tag in sorted((e for e in doc.elements.values() if isinstance(e, tag_types)), key=lambda t: t.id):
+    for tag in sorted(
+        (e for e in doc.elements.values() if isinstance(e, tag_types)), key=lambda t: t.id
+    ):
         row: dict[str, Any] = {
             "tagId": tag.id,
             "tagKind": tag.kind,
@@ -200,7 +208,9 @@ def _dimension_rows(doc: Document) -> list[dict[str, Any]]:
         ArcLengthDimensionElem,
     )
     rows: list[dict[str, Any]] = []
-    for dim in sorted((e for e in doc.elements.values() if isinstance(e, dim_types)), key=lambda d: d.id):
+    for dim in sorted(
+        (e for e in doc.elements.values() if isinstance(e, dim_types)), key=lambda d: d.id
+    ):
         row: dict[str, Any] = {
             "dimensionId": dim.id,
             "dimensionKind": dim.kind,
@@ -315,9 +325,7 @@ def _presentation_rows(doc: Document, model_id: UUID | str | None) -> list[dict[
         canvas_dict = canvas.model_dump(by_alias=True)
         bundle = build_pptx_bundle(canvas_dict, frames).to_dict()
         canvas_frames = [
-            frame
-            for frame in frames
-            if frame.get("presentationCanvasId") == canvas.id
+            frame for frame in frames if frame.get("presentationCanvasId") == canvas.id
         ]
         rows.append(
             {
@@ -559,7 +567,9 @@ def build_documentation_export_production_evidence_v1(
         "viewTemplateCount": advanced_documentation["viewTemplateCount"],
         "revisionCloudCount": advanced_documentation["revisionCloudCount"],
         "pdfArtifactCount": sum(
-            1 for artifact in all_artifacts if artifact.get("mimeType") == SHEET_EXPORT_PDF_MIME_TYPE
+            1
+            for artifact in all_artifacts
+            if artifact.get("mimeType") == SHEET_EXPORT_PDF_MIME_TYPE
         ),
         "ifcArtifactCount": sum(1 for artifact in all_artifacts if artifact.get("kind") == "ifc"),
         "gltfArtifactCount": sum(1 for artifact in all_artifacts if artifact.get("kind") == "gltf"),

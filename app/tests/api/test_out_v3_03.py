@@ -498,12 +498,14 @@ def test_logo_mark_svg_uri_stored_and_returned(client: TestClient) -> None:
     # use the main MODEL_ID with a unique bt id
     resp = fresh_client.post(
         f"/api/models/{MODEL_ID}/bundles",
-        json=_bundle([
-            _create_bt_cmd(
-                bt_id="bt-logo",
-                logo_uri=svg_uri,
-            )
-        ]),
+        json=_bundle(
+            [
+                _create_bt_cmd(
+                    bt_id="bt-logo",
+                    logo_uri=svg_uri,
+                )
+            ]
+        ),
     )
     assert resp.status_code == 200
 

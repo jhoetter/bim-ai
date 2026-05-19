@@ -39,51 +39,63 @@ class ProportionRange:
 # Logical-name → range. Add more as authoring patterns surface.
 PROPORTION_RANGES: dict[str, ProportionRange] = {
     "wall.height_mm": ProportionRange(
-        lo=2200, hi=4500,
+        lo=2200,
+        hi=4500,
         message="Residential wall height typically 2200-4500 mm",
     ),
     "wall.thickness_mm": ProportionRange(
-        lo=80, hi=600,
+        lo=80,
+        hi=600,
         message="Wall thickness typically 80-600 mm",
     ),
     "door.width_mm": ProportionRange(
-        lo=700, hi=2400,
+        lo=700,
+        hi=2400,
         message="Door width typically 700-2400 mm (singles 800-1000, doubles 1500-2000)",
     ),
     "door.height_mm": ProportionRange(
-        lo=1900, hi=3500,
+        lo=1900,
+        hi=3500,
         message="Door height typically 1900-3500 mm",
     ),
     "window.width_mm": ProportionRange(
-        lo=300, hi=4000,
+        lo=300,
+        hi=4000,
         message="Window width typically 300-4000 mm",
     ),
     "window.height_mm": ProportionRange(
-        lo=300, hi=3500,
+        lo=300,
+        hi=3500,
         message="Window height typically 300-3500 mm",
     ),
     "window.sill_mm": ProportionRange(
-        lo=80, hi=1500,
+        lo=80,
+        hi=1500,
         message="Window sill typically 80-1500 mm above the floor",
     ),
     "roof.slope_deg": ProportionRange(
-        lo=0, hi=70,
+        lo=0,
+        hi=70,
         message="Roof slope typically 0-70 degrees (≥45° often impractical for residential)",
     ),
     "roof.ridge_to_eave_ratio": ProportionRange(
-        lo=1.05, hi=2.5,
+        lo=1.05,
+        hi=2.5,
         message="Ridge height / eave height ratio typically 1.05-2.5 for residential gables",
     ),
     "room.aspect_ratio": ProportionRange(
-        lo=0.4, hi=3.0,
+        lo=0.4,
+        hi=3.0,
         message="Room aspect ratio (longer/shorter side) typically 0.4-3.0",
     ),
     "stair.tread_mm": ProportionRange(
-        lo=220, hi=320,
+        lo=220,
+        hi=320,
         message="Stair tread typically 220-320 mm (residential code minimums vary)",
     ),
     "stair.riser_mm": ProportionRange(
-        lo=120, hi=210,
+        lo=120,
+        hi=210,
         message="Stair riser typically 120-210 mm",
     ),
 }
@@ -93,7 +105,7 @@ PROPORTION_RANGES: dict[str, ProportionRange] = {
 class ProportionViolation:
     """One proportion-rule failure."""
 
-    field: str            # e.g. "wall.height_mm"
+    field: str  # e.g. "wall.height_mm"
     element_id: str
     actual: float
     message: str

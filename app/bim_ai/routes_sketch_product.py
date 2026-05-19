@@ -70,7 +70,9 @@ def _validate_ir(ir: dict[str, Any]) -> list[dict[str, str]]:
         for index, feature in enumerate(features):
             path = f"$.features[{index}]"
             if not isinstance(feature, dict):
-                issues.append(_issue("error", "invalid_feature", path, "Feature must be an object."))
+                issues.append(
+                    _issue("error", "invalid_feature", path, "Feature must be an object.")
+                )
                 continue
             _require_string(issues, feature, "id", path)
             _require_string(issues, feature, "kind", path)
@@ -83,9 +85,10 @@ def _validate_ir(ir: dict[str, Any]) -> list[dict[str, str]]:
                         "visualPriority must be critical, high, medium, or low.",
                     )
                 )
-            if not isinstance(feature.get("mustRenderInViews"), list) or not feature[
-                "mustRenderInViews"
-            ]:
+            if (
+                not isinstance(feature.get("mustRenderInViews"), list)
+                or not feature["mustRenderInViews"]
+            ):
                 issues.append(
                     _issue(
                         "error",

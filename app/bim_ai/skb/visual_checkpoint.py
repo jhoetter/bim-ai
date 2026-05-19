@@ -42,8 +42,8 @@ class CheckpointRegion:
 @dataclass(frozen=True)
 class RegionDelta:
     label: str
-    mean_abs_delta: float          # 0..255
-    pct_pixels_above_threshold: float   # 0..100
+    mean_abs_delta: float  # 0..255
+    pct_pixels_above_threshold: float  # 0..100
     weight: float
 
 
@@ -53,8 +53,8 @@ class CheckpointReport:
 
     actual_png: str
     target_png: str
-    overall_delta_normalised: float    # 0..1, weighted average across regions / 255
-    threshold: float                    # acceptance threshold used
+    overall_delta_normalised: float  # 0..1, weighted average across regions / 255
+    threshold: float  # acceptance threshold used
     region_deltas: list[RegionDelta] = field(default_factory=list)
     note: str = ""
 
@@ -86,6 +86,7 @@ def _load_rgb(path: str | Path):
     """Load PNG as a (H, W, 3) numpy uint8 array, RGB."""
     import numpy as np
     from PIL import Image
+
     img = Image.open(path).convert("RGB")
     return np.asarray(img, dtype=np.uint8)
 
@@ -106,6 +107,7 @@ def compare_pngs(
     target = _load_rgb(target_png)
     if actual.shape != target.shape:
         from PIL import Image
+
         # Resize actual to target's dimensions
         h, w, _ = target.shape
         actual_img = Image.fromarray(actual).resize((w, h))

@@ -152,7 +152,9 @@ StructuralRole = Literal[
 ]
 WallStructuralRole = StructuralRole
 StructuralMaterial = Literal["concrete", "steel", "timber", "masonry", "composite", "other"]
-StructuralAnalysisStatus = Literal["not_modelled", "not_modeled", "ready_for_export", "needs_review"]
+StructuralAnalysisStatus = Literal[
+    "not_modelled", "not_modeled", "ready_for_export", "needs_review"
+]
 ThermalEnvelopeClassification = Literal[
     "exterior_wall_outside_air",
     "wall_against_ground",
@@ -342,12 +344,15 @@ class MaterialImpactProperties(BaseModel):
     epd_reference: str | None = Field(default=None, alias="epdReference")
     epd_source_url: str | None = Field(default=None, alias="epdSourceUrl")
     gwp_per_unit: float | None = Field(default=None, alias="gwpPerUnit")
-    gwp_unit: Literal[
-        "kgco2e_per_m3",
-        "kgco2e_per_m2",
-        "kgco2e_per_kg",
-        "kgco2e_per_unit",
-    ] | None = Field(default=None, alias="gwpUnit")
+    gwp_unit: (
+        Literal[
+            "kgco2e_per_m3",
+            "kgco2e_per_m2",
+            "kgco2e_per_kg",
+            "kgco2e_per_unit",
+        ]
+        | None
+    ) = Field(default=None, alias="gwpUnit")
     biogenic_carbon_notes: str | None = Field(default=None, alias="biogenicCarbonNotes")
     recycled_content_percent: float | None = Field(
         default=None, ge=0, le=100, alias="recycledContentPercent"
@@ -525,9 +530,7 @@ class WallElem(BaseModel):
         default=None, alias="structuralMaterial"
     )
     analytical_participation: bool = Field(default=False, alias="analyticalParticipation")
-    analysis_status: StructuralAnalysisStatus = Field(
-        default="not_modeled", alias="analysisStatus"
-    )
+    analysis_status: StructuralAnalysisStatus = Field(default="not_modeled", alias="analysisStatus")
     structural_material_key: str | None = Field(default=None, alias="structuralMaterialKey")
     structural_intent_confidence: float | None = Field(
         default=None, alias="structuralIntentConfidence", ge=0, le=1
@@ -1272,9 +1275,7 @@ class FloorElem(BaseModel):
     structural_material: StructuralMaterial | str | None = Field(
         default=None, alias="structuralMaterial"
     )
-    analysis_status: StructuralAnalysisStatus = Field(
-        default="not_modeled", alias="analysisStatus"
-    )
+    analysis_status: StructuralAnalysisStatus = Field(default="not_modeled", alias="analysisStatus")
     fire_resistance_rating: str | None = Field(default=None, alias="fireResistanceRating")
     # IFC-04: optional classification code emitted as IfcClassificationReference.
     ifc_classification_code: str | None = Field(default=None, alias="ifcClassificationCode")
@@ -1324,9 +1325,7 @@ class RoofElem(BaseModel):
     structural_material: StructuralMaterial | str | None = Field(
         default=None, alias="structuralMaterial"
     )
-    analysis_status: StructuralAnalysisStatus = Field(
-        default="not_modeled", alias="analysisStatus"
-    )
+    analysis_status: StructuralAnalysisStatus = Field(default="not_modeled", alias="analysisStatus")
     fire_resistance_rating: str | None = Field(default=None, alias="fireResistanceRating")
     # IFC-04: optional classification code emitted as IfcClassificationReference.
     ifc_classification_code: str | None = Field(default=None, alias="ifcClassificationCode")
@@ -1429,9 +1428,7 @@ class StairElem(BaseModel):
     floating_host_wall_id: str | None = Field(default=None, alias="floatingHostWallId")
     material_slots: dict[str, str | None] | None = Field(default=None, alias="materialSlots")
     structural_role: StructuralRole = Field(default="unknown", alias="structuralRole")
-    analysis_status: StructuralAnalysisStatus = Field(
-        default="not_modeled", alias="analysisStatus"
-    )
+    analysis_status: StructuralAnalysisStatus = Field(default="not_modeled", alias="analysisStatus")
     pinned: bool = Field(default=False)
     phase_created: str | None = Field(default=None, alias="phaseCreated")
     phase_demolished: str | None = Field(default=None, alias="phaseDemolished")
@@ -1589,9 +1586,7 @@ class SweepElem(BaseModel):
     structural_material: StructuralMaterial | str | None = Field(
         default=None, alias="structuralMaterial"
     )
-    analysis_status: StructuralAnalysisStatus = Field(
-        default="not_modeled", alias="analysisStatus"
-    )
+    analysis_status: StructuralAnalysisStatus = Field(default="not_modeled", alias="analysisStatus")
     fire_resistance_rating: str | None = Field(default=None, alias="fireResistanceRating")
     pinned: bool = Field(default=False)
     phase_created: str | None = Field(default=None, alias="phaseCreated")
@@ -1769,9 +1764,7 @@ class Text3dElem(BaseModel):
     structural_material: StructuralMaterial | str | None = Field(
         default=None, alias="structuralMaterial"
     )
-    analysis_status: StructuralAnalysisStatus = Field(
-        default="not_modeled", alias="analysisStatus"
-    )
+    analysis_status: StructuralAnalysisStatus = Field(default="not_modeled", alias="analysisStatus")
     fire_resistance_rating: str | None = Field(default=None, alias="fireResistanceRating")
 
 
@@ -2864,6 +2857,7 @@ class MepOpeningRequestElem(BaseModel):
     discipline: DisciplineTag | None = Field(default="mep")
     props: dict[str, Any] | None = Field(default=None)
     pinned: bool = Field(default=False)
+
 
 class PipeLegendEntrySpec(BaseModel):
     model_config = ConfigDict(extra="ignore", populate_by_name=True)

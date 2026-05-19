@@ -124,7 +124,9 @@ class TestCreateMilestone:
         assert "createdAt" in body
 
     def test_create_emits_activity_row(self, client: TestClient) -> None:
-        res = client.post(f"/api/models/{MODEL_ID}/milestones", json=_create_body(name="Milestone A"))
+        res = client.post(
+            f"/api/models/{MODEL_ID}/milestones", json=_create_body(name="Milestone A")
+        )
         assert res.status_code == 200
         milestone_id = res.json()["id"]
 

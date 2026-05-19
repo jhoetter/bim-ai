@@ -17,6 +17,7 @@ from bim_ai.skb.colour_sampler import (
 
 def _make_solid_png(path: Path, rgb: tuple[int, int, int], size: int = 32) -> None:
     from PIL import Image
+
     Image.new("RGB", (size, size), color=rgb).save(path)
 
 

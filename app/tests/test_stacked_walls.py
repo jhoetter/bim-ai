@@ -111,11 +111,7 @@ def test_set_wall_stack_clears_stack():
     doc = _base_doc()
     ok, doc2, _, _, _ = try_commit_bundle(
         doc,
-        [
-            _create_wall_cmd(
-                stack_components=[{"wallTypeId": BRICK_TYPE, "heightMm": 3000}]
-            )
-        ],
+        [_create_wall_cmd(stack_components=[{"wallTypeId": BRICK_TYPE, "heightMm": 3000}])],
     )
     assert ok
 

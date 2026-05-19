@@ -229,9 +229,7 @@ class TestRevokePublicLink:
         create_res = client.post(f"/api/models/{MODEL_ID}/public-links", json={})
         link_id = create_res.json()["id"]
 
-        revoke_res = client.post(
-            f"/api/models/{MODEL_ID}/public-links/{link_id}/revoke"
-        )
+        revoke_res = client.post(f"/api/models/{MODEL_ID}/public-links/{link_id}/revoke")
         assert revoke_res.status_code == 200
         assert revoke_res.json()["revoked"] == link_id
         assert links[link_id]["isRevoked"] is True
@@ -317,9 +315,7 @@ class TestVerifyPassword:
         )
         token = create_res.json()["token"]
 
-        res = client.post(
-            f"/api/shared/{token}/verify-password", json={"password": "wrong"}
-        )
+        res = client.post(f"/api/shared/{token}/verify-password", json={"password": "wrong"})
         assert res.status_code == 200
         assert res.json()["ok"] is False
 
@@ -327,8 +323,6 @@ class TestVerifyPassword:
         create_res = client.post(f"/api/models/{MODEL_ID}/public-links", json={})
         token = create_res.json()["token"]
 
-        res = client.post(
-            f"/api/shared/{token}/verify-password", json={"password": "anything"}
-        )
+        res = client.post(f"/api/shared/{token}/verify-password", json={"password": "anything"})
         assert res.status_code == 200
         assert res.json()["ok"] is True

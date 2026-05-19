@@ -223,9 +223,7 @@ def test_list_model_includes_subdivision_elements() -> None:
             materialKey="mat:grass",
         ),
     )
-    sub_elems = [
-        e for e in doc.elements.values() if isinstance(e, ToposolidSubdivisionElem)
-    ]
+    sub_elems = [e for e in doc.elements.values() if isinstance(e, ToposolidSubdivisionElem)]
     assert len(sub_elems) == 2
     ids = {e.id for e in sub_elems}
     assert sid1 in ids

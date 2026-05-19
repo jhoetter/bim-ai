@@ -170,9 +170,7 @@ MepSystemType = Literal[
     "other",
 ]
 
-MepFlowDirection = Literal[
-    "supply", "return", "exhaust", "bidirectional", "none", "unknown"
-]
+MepFlowDirection = Literal["supply", "return", "exhaust", "bidirectional", "none", "unknown"]
 
 
 class WallSegmentInput(BaseModel):
@@ -796,9 +794,7 @@ def build_semantic_authoring_bundle(
     if operation == "construction_logistics":
         return construction_logistics_bundle(ConstructionLogisticsPayload.model_validate(data))
     if operation == "construction_qa_checklist":
-        return construction_qa_checklist_bundle(
-            ConstructionQaChecklistPayload.model_validate(data)
-        )
+        return construction_qa_checklist_bundle(ConstructionQaChecklistPayload.model_validate(data))
     if operation == "save_3d_view":
         return save_3d_view_bundle(Save3dViewPayload.model_validate(data))
     if operation == "plan_view":

@@ -84,9 +84,7 @@ def _area_inset_mm(area: AreaElem, elements: dict[str, Element]) -> float:
     if basis == "wall_finish":
         return 0.0
     walls = [
-        e
-        for e in elements.values()
-        if isinstance(e, WallElem) and e.level_id == area.level_id
+        e for e in elements.values() if isinstance(e, WallElem) and e.level_id == area.level_id
     ]
     if not walls:
         return 0.0
@@ -132,14 +130,18 @@ def compute_area_sq_mm(area: AreaElem, elements: dict[str, Element]) -> float:
     inside the area polygon. Subtraction is clamped to zero.
     """
     inset_mm = _area_inset_mm(area, elements)
-    effective_boundary = _inset_polygon(list(area.boundary_mm), inset_mm) if inset_mm > 0.0 else area.boundary_mm
+    effective_boundary = (
+        _inset_polygon(list(area.boundary_mm), inset_mm) if inset_mm > 0.0 else area.boundary_mm
+    )
     gross = _polygon_area_abs_mm2(effective_boundary)
     if area.rule_set in ("gross", "no_rules"):
         return gross
     if area.rule_set == "net":
         deduction = 0.0
         for el in elements.values():
-            if isinstance(el, SlabOpeningElem) and _polygon_inside(el.boundary_mm, list(area.boundary_mm)):
+            if isinstance(el, SlabOpeningElem) and _polygon_inside(
+                el.boundary_mm, list(area.boundary_mm)
+            ):
                 deduction += _polygon_area_abs_mm2(el.boundary_mm)
         return max(0.0, gross - deduction)
     return gross

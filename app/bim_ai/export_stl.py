@@ -412,7 +412,9 @@ def _append_extruded_polygon_mm(
     bottom = [(x / 1000.0, base_z_mm / 1000.0, y / 1000.0) for x, y in poly]
     top = [(x / 1000.0, top_z_mm / 1000.0, y / 1000.0) for x, y in poly]
     for i0, i1, i2 in _triangulate_poly_indices(poly):
-        _append_world_tri(triangles, kind=kind, element_id=element_id, a=top[i0], b=top[i1], c=top[i2])
+        _append_world_tri(
+            triangles, kind=kind, element_id=element_id, a=top[i0], b=top[i1], c=top[i2]
+        )
         _append_world_tri(
             triangles,
             kind=kind,
@@ -423,8 +425,12 @@ def _append_extruded_polygon_mm(
         )
     for i in range(len(poly)):
         j = (i + 1) % len(poly)
-        _append_world_tri(triangles, kind=kind, element_id=element_id, a=bottom[i], b=bottom[j], c=top[j])
-        _append_world_tri(triangles, kind=kind, element_id=element_id, a=bottom[i], b=top[j], c=top[i])
+        _append_world_tri(
+            triangles, kind=kind, element_id=element_id, a=bottom[i], b=bottom[j], c=top[j]
+        )
+        _append_world_tri(
+            triangles, kind=kind, element_id=element_id, a=bottom[i], b=top[j], c=top[i]
+        )
 
 
 def _level_elevation_mm(doc: Document, level_id: str | None) -> float:
@@ -459,7 +465,9 @@ def _wall_span_z_mm(doc: Document, wall: WallElem) -> tuple[float, float]:
         wall.base_constraint_offset_mm
     )
     if wall.top_constraint_level_id:
-        top = _level_elevation_mm(doc, wall.top_constraint_level_id) + float(wall.top_constraint_offset_mm)
+        top = _level_elevation_mm(doc, wall.top_constraint_level_id) + float(
+            wall.top_constraint_offset_mm
+        )
     else:
         top = base + float(wall.height_mm)
     if top <= base + 250.0:
@@ -482,7 +490,15 @@ def _wall_centerline_with_offset_mm(
     nx = -dy / length
     ny = dx / length
     off = loc_frac * thick
-    return sx + nx * off, sy + ny * off, ex + nx * off, ey + ny * off, dx / length, dy / length, length
+    return (
+        sx + nx * off,
+        sy + ny * off,
+        ex + nx * off,
+        ey + ny * off,
+        dx / length,
+        dy / length,
+        length,
+    )
 
 
 def _hosted_wall_cut_spans(doc: Document, wall: WallElem) -> list[tuple[float, float]]:
@@ -497,7 +513,9 @@ def _hosted_wall_cut_spans(doc: Document, wall: WallElem) -> list[tuple[float, f
     return merge_unit_spans(spans)
 
 
-def _blocked_vertical_spans_m(doc: Document, wall: WallElem, t0: float, t1: float) -> list[tuple[float, float]]:
+def _blocked_vertical_spans_m(
+    doc: Document, wall: WallElem, t0: float, t1: float
+) -> list[tuple[float, float]]:
     blocked: list[tuple[float, float]] = []
     for e in doc.elements.values():
         if isinstance(e, DoorElem) and e.wall_id == wall.id:
@@ -507,7 +525,12 @@ def _blocked_vertical_spans_m(doc: Document, wall: WallElem, t0: float, t1: floa
         elif isinstance(e, WindowElem) and e.wall_id == wall.id:
             ts = hosted_opening_t_span_normalized(e, wall)
             if ts and ts[0] < t1 - 1e-6 and ts[1] > t0 + 1e-6:
-                blocked.append((float(e.sill_height_mm) / 1000.0, (float(e.sill_height_mm) + float(e.height_mm)) / 1000.0))
+                blocked.append(
+                    (
+                        float(e.sill_height_mm) / 1000.0,
+                        (float(e.sill_height_mm) + float(e.height_mm)) / 1000.0,
+                    )
+                )
         elif isinstance(e, WallOpeningElem) and e.host_wall_id == wall.id:
             if float(e.along_t_start) < t1 - 1e-6 and float(e.along_t_end) > t0 + 1e-6:
                 blocked.append((float(e.sill_height_mm) / 1000.0, float(e.head_height_mm) / 1000.0))
@@ -526,7 +549,9 @@ def _append_wall_print_mesh(doc: Document, triangles: list[StlTriangle], wall: W
         seg_len = max((t1 - t0) * length, 1.0)
         cx = sx + ux * ((t0 + t1) * 0.5 * length)
         cy = sy + uy * ((t0 + t1) * 0.5 * length)
-        vertical_free = complement_vertical_spans_m(0.0, total_height_m, _blocked_vertical_spans_m(doc, wall, t0, t1))
+        vertical_free = complement_vertical_spans_m(
+            0.0, total_height_m, _blocked_vertical_spans_m(doc, wall, t0, t1)
+        )
         for y0_m, y1_m in vertical_free:
             if y1_m <= y0_m + 1e-6:
                 continue
@@ -623,7 +648,9 @@ def _append_rectangular_gable_roof(
     for face in faces:
         pts = [(x / 1000.0, z / 1000.0, y / 1000.0) for x, y, z in face]
         for i in range(1, len(pts) - 1):
-            _append_world_tri(triangles, kind="roof", element_id=roof.id, a=pts[0], b=pts[i], c=pts[i + 1])
+            _append_world_tri(
+                triangles, kind="roof", element_id=roof.id, a=pts[0], b=pts[i], c=pts[i + 1]
+            )
     return True
 
 
@@ -677,7 +704,9 @@ def _append_rectangular_hip_roof(
     for face in faces:
         pts = [(x / 1000.0, z / 1000.0, y / 1000.0) for x, y, z in face]
         for i in range(1, len(pts) - 1):
-            _append_world_tri(triangles, kind="roof", element_id=roof.id, a=pts[0], b=pts[i], c=pts[i + 1])
+            _append_world_tri(
+                triangles, kind="roof", element_id=roof.id, a=pts[0], b=pts[i], c=pts[i + 1]
+            )
     return True
 
 
@@ -699,13 +728,21 @@ def _append_asymmetric_gable_roof(
     if span_x <= 1e-6 or span_y <= 1e-6:
         return False
     ref = _level_elevation_mm(doc, roof.reference_level_id)
-    eave_left = ref + float(roof.eave_height_left_mm) if roof.eave_height_left_mm is not None else eave_z_mm
-    eave_right = ref + float(roof.eave_height_right_mm) if roof.eave_height_right_mm is not None else eave_z_mm
+    eave_left = (
+        ref + float(roof.eave_height_left_mm) if roof.eave_height_left_mm is not None else eave_z_mm
+    )
+    eave_right = (
+        ref + float(roof.eave_height_right_mm)
+        if roof.eave_height_right_mm is not None
+        else eave_z_mm
+    )
     slope = math.tan(math.radians(_clamp(slope_deg, 5.0, 70.0)))
     bottom_z = min(eave_left, eave_right)
     if ridge_along_x:
         half_span = span_y / 2.0
-        offset = _clamp(float(roof.ridge_offset_transverse_mm or 0.0), -half_span + 1e-6, half_span - 1e-6)
+        offset = _clamp(
+            float(roof.ridge_offset_transverse_mm or 0.0), -half_span + 1e-6, half_span - 1e-6
+        )
         ry = (y0 + y1) / 2.0 + offset
         ridge_z = eave_left + (half_span + offset) * slope
         faces = [
@@ -717,7 +754,9 @@ def _append_asymmetric_gable_roof(
         ]
     else:
         half_span = span_x / 2.0
-        offset = _clamp(float(roof.ridge_offset_transverse_mm or 0.0), -half_span + 1e-6, half_span - 1e-6)
+        offset = _clamp(
+            float(roof.ridge_offset_transverse_mm or 0.0), -half_span + 1e-6, half_span - 1e-6
+        )
         rx = (x0 + x1) / 2.0 + offset
         ridge_z = eave_left + (half_span + offset) * slope
         faces = [
@@ -730,7 +769,9 @@ def _append_asymmetric_gable_roof(
     for face in faces:
         pts = [(x / 1000.0, z / 1000.0, y / 1000.0) for x, y, z in face]
         for i in range(1, len(pts) - 1):
-            _append_world_tri(triangles, kind="roof", element_id=roof.id, a=pts[0], b=pts[i], c=pts[i + 1])
+            _append_world_tri(
+                triangles, kind="roof", element_id=roof.id, a=pts[0], b=pts[i], c=pts[i + 1]
+            )
     return True
 
 
@@ -743,15 +784,26 @@ def _append_sampled_roof_surface(
     if len(footprint_mm) < 3:
         return False
     eave = _roof_eave_z_mm(doc, roof)
-    top = [(x / 1000.0, _roof_height_at_point_mm(doc, roof, x, y) / 1000.0, y / 1000.0) for x, y in footprint_mm]
+    top = [
+        (x / 1000.0, _roof_height_at_point_mm(doc, roof, x, y) / 1000.0, y / 1000.0)
+        for x, y in footprint_mm
+    ]
     bottom = [(x / 1000.0, eave / 1000.0, y / 1000.0) for x, y in footprint_mm]
     for i0, i1, i2 in _triangulate_poly_indices(footprint_mm):
-        _append_world_tri(triangles, kind="roof", element_id=roof.id, a=top[i0], b=top[i1], c=top[i2])
-        _append_world_tri(triangles, kind="roof", element_id=roof.id, a=bottom[i0], b=bottom[i2], c=bottom[i1])
+        _append_world_tri(
+            triangles, kind="roof", element_id=roof.id, a=top[i0], b=top[i1], c=top[i2]
+        )
+        _append_world_tri(
+            triangles, kind="roof", element_id=roof.id, a=bottom[i0], b=bottom[i2], c=bottom[i1]
+        )
     for i in range(len(footprint_mm)):
         j = (i + 1) % len(footprint_mm)
-        _append_world_tri(triangles, kind="roof", element_id=roof.id, a=bottom[i], b=bottom[j], c=top[j])
-        _append_world_tri(triangles, kind="roof", element_id=roof.id, a=bottom[i], b=top[j], c=top[i])
+        _append_world_tri(
+            triangles, kind="roof", element_id=roof.id, a=bottom[i], b=bottom[j], c=top[j]
+        )
+        _append_world_tri(
+            triangles, kind="roof", element_id=roof.id, a=bottom[i], b=top[j], c=top[i]
+        )
     return True
 
 
@@ -798,16 +850,20 @@ def _roof_height_at_point_mm(doc: Document, roof: RoofElem, x_mm: float, y_mm: f
             dy = half_span_y - abs(y_mm - (y0 + y1) / 2.0)
             rx0 = x0 + half_span_y
             rx1 = x1 - half_span_y
-            dx = (x1 - x0) / 2.0 - abs(x_mm - (x0 + x1) / 2.0) if rx0 >= rx1 else (
-                x_mm - x0 if x_mm < rx0 else x1 - x_mm if x_mm > rx1 else half_span_y
+            dx = (
+                (x1 - x0) / 2.0 - abs(x_mm - (x0 + x1) / 2.0)
+                if rx0 >= rx1
+                else (x_mm - x0 if x_mm < rx0 else x1 - x_mm if x_mm > rx1 else half_span_y)
             )
             return eave + max(0.0, min(dx, dy)) * slope
         half_span_x = (x1 - x0) / 2.0
         dx = half_span_x - abs(x_mm - (x0 + x1) / 2.0)
         ry0 = y0 + half_span_x
         ry1 = y1 - half_span_x
-        dy = (y1 - y0) / 2.0 - abs(y_mm - (y0 + y1) / 2.0) if ry0 >= ry1 else (
-            y_mm - y0 if y_mm < ry0 else y1 - y_mm if y_mm > ry1 else half_span_x
+        dy = (
+            (y1 - y0) / 2.0 - abs(y_mm - (y0 + y1) / 2.0)
+            if ry0 >= ry1
+            else (y_mm - y0 if y_mm < ry0 else y1 - y_mm if y_mm > ry1 else half_span_x)
         )
         return eave + max(0.0, min(dx, dy)) * slope
     if ridge_along_x:
@@ -904,7 +960,9 @@ def _dormer_footprint_bounds_mm(
     return center_x - half_d, center_x + half_d, center_y - half_w, center_y + half_w, False
 
 
-def _append_dormer_print_mesh(doc: Document, triangles: list[StlTriangle], dormer: DormerElem) -> None:
+def _append_dormer_print_mesh(
+    doc: Document, triangles: list[StlTriangle], dormer: DormerElem
+) -> None:
     host = doc.elements.get(dormer.host_roof_id)
     if not isinstance(host, RoofElem):
         return
@@ -916,7 +974,9 @@ def _append_dormer_print_mesh(doc: Document, triangles: list[StlTriangle], dorme
     depth = max(y1 - y0, 50.0)
     center_x = (x0 + x1) / 2.0
     center_y = (y0 + y1) / 2.0
-    base = max(_roof_eave_z_mm(doc, host), _roof_height_at_point_mm(doc, host, center_x, center_y) - 50.0)
+    base = max(
+        _roof_eave_z_mm(doc, host), _roof_height_at_point_mm(doc, host, center_x, center_y) - 50.0
+    )
     wall_h = _clamp(float(dormer.wall_height_mm), 500.0, 8000.0)
     cheek = 180.0
     open_positive = float(dormer.position_on_roof.across_ridge_mm) >= 0.0
@@ -985,7 +1045,9 @@ def _append_dormer_print_mesh(doc: Document, triangles: list[StlTriangle], dorme
     )
 
 
-def _append_hosted_opening_family_mesh(doc: Document, triangles: list[StlTriangle], elem: DoorElem | WindowElem) -> None:
+def _append_hosted_opening_family_mesh(
+    doc: Document, triangles: list[StlTriangle], elem: DoorElem | WindowElem
+) -> None:
     wall = doc.elements.get(elem.wall_id)
     if not isinstance(wall, WallElem):
         return
@@ -1082,7 +1144,10 @@ def _append_railing_print_mesh(
     if isinstance(stair, StairElem):
         base = _level_elevation_mm(doc, stair.base_level_id)
         top = _level_elevation_mm(doc, stair.top_level_id)
-    lengths = [math.hypot(pts[i + 1][0] - pts[i][0], pts[i + 1][1] - pts[i][1]) for i in range(len(pts) - 1)]
+    lengths = [
+        math.hypot(pts[i + 1][0] - pts[i][0], pts[i + 1][1] - pts[i][1])
+        for i in range(len(pts) - 1)
+    ]
     total = max(sum(lengths), 1.0)
     cum = 0.0
     for i, (x, y) in enumerate(pts):
@@ -1125,8 +1190,14 @@ def _append_railing_print_mesh(
             size_z_mm=45.0,
             yaw_rad=yaw,
         )
-        spacing = float(railing.baluster_pattern.spacing_mm) if railing.baluster_pattern and railing.baluster_pattern.spacing_mm else 115.0
-        if not (railing.baluster_pattern and railing.baluster_pattern.rule in {"glass_panel", "cable"}):
+        spacing = (
+            float(railing.baluster_pattern.spacing_mm)
+            if railing.baluster_pattern and railing.baluster_pattern.spacing_mm
+            else 115.0
+        )
+        if not (
+            railing.baluster_pattern and railing.baluster_pattern.rule in {"glass_panel", "cable"}
+        ):
             for j in range(max(0, int(seg_len // spacing))):
                 if not _feature_enabled(options, 12.0):
                     continue
@@ -1162,7 +1233,9 @@ def _append_railing_print_mesh(
         cum += seg_len
 
 
-def _append_balcony_print_mesh(doc: Document, triangles: list[StlTriangle], balcony: BalconyElem) -> None:
+def _append_balcony_print_mesh(
+    doc: Document, triangles: list[StlTriangle], balcony: BalconyElem
+) -> None:
     wall = doc.elements.get(balcony.wall_id)
     if not isinstance(wall, WallElem):
         return
@@ -1263,7 +1336,11 @@ def document_to_stl_triangles(
         elif isinstance(elem, RailingElem):
             _append_railing_print_mesh(doc, triangles, elem, opts)
         elif isinstance(elem, SiteElem):
-            base = _level_elevation_mm(doc, elem.reference_level_id) + float(elem.base_offset_mm) - float(elem.pad_thickness_mm)
+            base = (
+                _level_elevation_mm(doc, elem.reference_level_id)
+                + float(elem.base_offset_mm)
+                - float(elem.pad_thickness_mm)
+            )
             _append_extruded_polygon_mm(
                 triangles,
                 kind="site",
@@ -1297,7 +1374,10 @@ def document_to_stl_triangles(
                 yaw_rad=math.radians(float(elem.rotation_deg)),
             )
         elif isinstance(elem, BeamElem):
-            elev = _level_elevation_mm(doc, elem.level_id) - _clamp(float(elem.height_mm), 50.0, 1000.0) / 2.0
+            elev = (
+                _level_elevation_mm(doc, elem.level_id)
+                - _clamp(float(elem.height_mm), 50.0, 1000.0) / 2.0
+            )
             _append_linear_box_between(
                 triangles,
                 kind="beam",
@@ -1336,7 +1416,9 @@ def document_to_stl_triangles(
                 thickness_mm=_clamp(float(elem.height_mm), 250.0, 40000.0),
             )
         elif isinstance(elem, ToposolidElem):
-            base = float(elem.base_elevation_mm or 0.0) - _clamp(float(elem.thickness_mm), 50.0, 5000.0)
+            base = float(elem.base_elevation_mm or 0.0) - _clamp(
+                float(elem.thickness_mm), 50.0, 5000.0
+            )
             _append_extruded_polygon_mm(
                 triangles,
                 kind="toposolid",

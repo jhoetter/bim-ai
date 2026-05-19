@@ -19,6 +19,7 @@ from bim_ai.sketch_validation import SketchInvalidError
 
 # ─────────────────────────── helpers ────────────────────────────────────────
 
+
 def _tl(from_x: float, to_x: float, y: float, riser: float | None = None) -> StairTreadLine:
     return StairTreadLine(
         from_mm=Vec2Mm(xMm=from_x, yMm=y),
@@ -299,9 +300,7 @@ def test_sketch_session_stair_by_sketch_emit() -> None:
                 {"xMm": 3000, "yMm": 0},
                 {"xMm": 3000, "yMm": 1200},
             ],
-            "treadLines": [
-                {"fromMm": {"xMm": 0, "yMm": 0}, "toMm": {"xMm": 3000, "yMm": 0}}
-            ],
+            "treadLines": [{"fromMm": {"xMm": 0, "yMm": 0}, "toMm": {"xMm": 3000, "yMm": 0}}],
             "totalRiseMm": 2800,
         },
     )
@@ -323,9 +322,7 @@ def test_sketch_session_stair_by_sketch_requires_boundary() -> None:
             {
                 "authoringMode": "by_sketch",
                 "topLevelId": "lvl-1",
-                "treadLines": [
-                    {"fromMm": {"xMm": 0, "yMm": 0}, "toMm": {"xMm": 3000, "yMm": 0}}
-                ],
+                "treadLines": [{"fromMm": {"xMm": 0, "yMm": 0}, "toMm": {"xMm": 3000, "yMm": 0}}],
                 "totalRiseMm": 2800,
             },
         )

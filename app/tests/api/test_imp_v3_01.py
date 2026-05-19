@@ -50,12 +50,12 @@ _BLOCKING_ADVISORY_CLASSES = {
 }
 
 # Minimal valid 1×1 PNG base64 — real PNG header + IHDR + IDAT + IEND
-_PNG_1X1_B64 = (
-    "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg=="
-)
+_PNG_1X1_B64 = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg=="
 _PNG_DATA_URI = f"data:image/png;base64,{_PNG_1X1_B64}"
 
-_JPEG_DATA_URI = "data:image/jpeg;base64," + base64.b64encode(b"\xff\xd8\xff\xe0" + b"\x00" * 10).decode()
+_JPEG_DATA_URI = (
+    "data:image/jpeg;base64," + base64.b64encode(b"\xff\xd8\xff\xe0" + b"\x00" * 10).decode()
+)
 
 _PDF_DATA_URI = "data:application/pdf;base64," + base64.b64encode(b"%PDF-1.4 test").decode()
 

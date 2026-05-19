@@ -1,4 +1,5 @@
 """TOP-V3-01 — Toposolid primitive tests."""
+
 from __future__ import annotations
 
 import pytest
@@ -211,9 +212,7 @@ def test_delete_toposolid_removes_element():
     assert ok
     assert "topo-1" in doc.elements
 
-    ok2, doc2, _, _, code = try_commit(
-        doc, {"type": "DeleteToposolid", "toposolidId": "topo-1"}
-    )
+    ok2, doc2, _, _, code = try_commit(doc, {"type": "DeleteToposolid", "toposolidId": "topo-1"})
     assert ok2, code
     assert "topo-1" not in doc2.elements
 

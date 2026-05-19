@@ -62,10 +62,7 @@ def _make_rectangle_png(width: int = 200, height: int = 150) -> bytes:
         row = [0]
         for x in range(width):
             on_border = (
-                x == border
-                or x == width - border - 1
-                or y == border
-                or y == height - border - 1
+                x == border or x == width - border - 1 or y == border or y == height - border - 1
             )
             if on_border:
                 row += [0, 0, 0]
@@ -123,9 +120,7 @@ class TestTracePipeline:
 
         layout = trace(str(grey_png))
         codes = {a.code for a in layout.advisories}
-        assert "low_contrast_image" in codes, (
-            f"Expected low_contrast_image advisory; got {codes}"
-        )
+        assert "low_contrast_image" in codes, f"Expected low_contrast_image advisory; got {codes}"
         assert len(layout.rooms) >= 1, (
             "Degraded-but-sane: rooms list must be non-empty even for low-contrast images"
         )
@@ -261,7 +256,9 @@ class TestHttpTrace:
             files={"image": ("test.png", self._small_png(), "image/png")},
         )
         # Accept 200 (success) or 422 (no_walls_detected advisory is valid)
-        assert resp.status_code in (200, 422), f"unexpected status {resp.status_code}: {resp.text[:200]}"
+        assert resp.status_code in (200, 422), (
+            f"unexpected status {resp.status_code}: {resp.text[:200]}"
+        )
         body = resp.json()
         if resp.status_code == 200:
             assert "rooms" in body, "response missing 'rooms' key"
@@ -272,9 +269,7 @@ class TestHttpTrace:
             advisories = detail.get("advisories", []) if isinstance(detail, dict) else []
             codes = {a.get("code") for a in advisories}
             no_walls_codes = {"no_walls_detected", "low_contrast_image"}
-            assert codes & no_walls_codes, (
-                f"unexpected 422 with advisory codes {codes}: {body}"
-            )
+            assert codes & no_walls_codes, f"unexpected 422 with advisory codes {codes}: {body}"
 
     def test_trace_image_large_file(self) -> None:
         """POST a >2 MB image → HTTP 202 with a jobId UUID."""

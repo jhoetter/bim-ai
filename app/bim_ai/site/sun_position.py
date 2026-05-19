@@ -112,18 +112,14 @@ def compute_sun_position(
     apparent_lon = sun_lon - 0.00569 - 0.00478 * math.sin(math.radians(omega))
 
     # Mean Obliquity of Ecliptic.
-    mean_obliq = 23 + (
-        26 + (21.448 - T * (46.8150 + T * (0.00059 - T * 0.001813))) / 60
-    ) / 60
+    mean_obliq = 23 + (26 + (21.448 - T * (46.8150 + T * (0.00059 - T * 0.001813))) / 60) / 60
 
     # Corrected Obliquity.
     obliq_corr = mean_obliq + 0.00256 * math.cos(math.radians(omega))
 
     # Sun's Declination.
     declination = math.degrees(
-        math.asin(
-            math.sin(math.radians(obliq_corr)) * math.sin(math.radians(apparent_lon))
-        )
+        math.asin(math.sin(math.radians(obliq_corr)) * math.sin(math.radians(apparent_lon)))
     )
 
     # Equation of Time (minutes).
@@ -172,8 +168,7 @@ def compute_sun_position(
     elif elevation > -0.575:
         refraction = (
             1735
-            + elevation
-            * (-518.2 + elevation * (103.4 + elevation * (-12.79 + elevation * 0.711)))
+            + elevation * (-518.2 + elevation * (103.4 + elevation * (-12.79 + elevation * 0.711)))
         ) / 3600
     else:
         refraction = -20.772 / math.tan(math.radians(elevation)) / 3600

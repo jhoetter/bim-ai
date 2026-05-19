@@ -25,7 +25,7 @@ class EdgeDetectionResult:
     canny_high: int
     blur_sigma: float
     edge_pixel_count: int
-    image_size: tuple[int, int]   # (width, height) in pixels
+    image_size: tuple[int, int]  # (width, height) in pixels
 
 
 def detect_edges(

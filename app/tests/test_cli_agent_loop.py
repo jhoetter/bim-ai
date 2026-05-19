@@ -142,9 +142,7 @@ def cli_server(request: pytest.FixtureRequest):
         server.server_close()
 
 
-def _run_cli(
-    args: list[str], base_url: str
-) -> subprocess.CompletedProcess[str]:
+def _run_cli(args: list[str], base_url: str) -> subprocess.CompletedProcess[str]:
     import os
 
     env = os.environ.copy()

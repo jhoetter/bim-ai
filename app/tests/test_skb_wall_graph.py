@@ -12,10 +12,10 @@ from bim_ai.skb.wall_graph import (
 
 # A clean rectangle: 4 walls, every endpoint shared at corners.
 RECT = [
-    WallSeg("w-s", (0.0, 0.0), (5000.0, 0.0)),     # south
+    WallSeg("w-s", (0.0, 0.0), (5000.0, 0.0)),  # south
     WallSeg("w-e", (5000.0, 0.0), (5000.0, 5000.0)),  # east
     WallSeg("w-n", (5000.0, 5000.0), (0.0, 5000.0)),  # north
-    WallSeg("w-w", (0.0, 5000.0), (0.0, 0.0)),     # west
+    WallSeg("w-w", (0.0, 5000.0), (0.0, 0.0)),  # west
 ]
 
 

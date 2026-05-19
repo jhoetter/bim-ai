@@ -1,4 +1,5 @@
 """AST-V3-01: Searchable asset library + schematic-2D thumbnails."""
+
 from __future__ import annotations
 
 import pytest
@@ -342,7 +343,12 @@ def test_place_asset_rotation():
 def _doc_with_assets() -> Document:
     doc = _empty_doc()
     entries = [
-        {"id": "s1", "name": "Kitchen Sink, Double Basin", "category": "kitchen", "tags": ["sink", "plumbing"]},
+        {
+            "id": "s1",
+            "name": "Kitchen Sink, Double Basin",
+            "category": "kitchen",
+            "tags": ["sink", "plumbing"],
+        },
         {"id": "s2", "name": "Kitchen Sink, Single", "category": "kitchen", "tags": ["sink"]},
         {"id": "s3", "name": "Bathroom Sink", "category": "bathroom", "tags": ["sink"]},
         {"id": "c1", "name": "Armchair", "category": "furniture", "tags": ["seating"]},
@@ -402,8 +408,26 @@ def test_search_assets_prefix_match():
 
 def test_search_assets_discipline_filter():
     doc = _empty_doc()
-    _apply(doc, {"type": "IndexAsset", "id": "m1", "name": "Fan Coil", "category": "furniture", "disciplineTags": ["mep"]})
-    _apply(doc, {"type": "IndexAsset", "id": "a1", "name": "Column", "category": "furniture", "disciplineTags": ["struct"]})
+    _apply(
+        doc,
+        {
+            "type": "IndexAsset",
+            "id": "m1",
+            "name": "Fan Coil",
+            "category": "furniture",
+            "disciplineTags": ["mep"],
+        },
+    )
+    _apply(
+        doc,
+        {
+            "type": "IndexAsset",
+            "id": "a1",
+            "name": "Column",
+            "category": "furniture",
+            "disciplineTags": ["struct"],
+        },
+    )
     results = search_assets("", doc.elements, discipline_tag="mep")
     assert len(results) == 1
     assert results[0].id == "m1"
@@ -435,7 +459,16 @@ def test_thumbnail_is_valid_svg():
 
 
 def test_thumbnail_uses_only_token_colors():
-    for cat in ["furniture", "kitchen", "bathroom", "door", "window", "casework", "decal", "profile"]:
+    for cat in [
+        "furniture",
+        "kitchen",
+        "bathroom",
+        "door",
+        "window",
+        "casework",
+        "decal",
+        "profile",
+    ]:
         svg = render_schematic_thumbnail_svg(_make_entry(cat))
         # No inline hex literals allowed — only var(--...) tokens
         assert "#" not in svg, f"category '{cat}' thumbnail contains a hex literal"
@@ -443,9 +476,19 @@ def test_thumbnail_uses_only_token_colors():
 
 
 def test_thumbnail_no_hex_literals_any_category():
-    for cat in ["furniture", "kitchen", "bathroom", "door", "window", "casework", "decal", "profile"]:
+    for cat in [
+        "furniture",
+        "kitchen",
+        "bathroom",
+        "door",
+        "window",
+        "casework",
+        "decal",
+        "profile",
+    ]:
         svg = render_schematic_thumbnail_svg(_make_entry(cat))
         import re
+
         assert not re.search(r"#[0-9a-fA-F]{3,6}\b", svg), f"hex literal in category '{cat}'"
 
 

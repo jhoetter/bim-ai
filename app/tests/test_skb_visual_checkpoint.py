@@ -13,6 +13,7 @@ from bim_ai.skb.visual_checkpoint import (
 
 def _solid_png(path: Path, color: tuple[int, int, int], size: int = 64) -> None:
     from PIL import Image
+
     Image.new("RGB", (size, size), color=color).save(path)
 
 
@@ -43,8 +44,10 @@ def test_partial_difference_in_region(tmp_path: Path) -> None:
     _solid_png(b, (255, 255, 255))
     # Now overlay a black square on `a` in the bottom-right
     from PIL import Image
+
     img_a = Image.open(a)
     from PIL import ImageDraw
+
     draw = ImageDraw.Draw(img_a)
     draw.rectangle([32, 32, 64, 64], fill="black")
     img_a.save(a)
@@ -105,6 +108,7 @@ def test_weighted_regions_dominate_overall(tmp_path: Path) -> None:
     _solid_png(a, (255, 255, 255))
     _solid_png(b, (255, 255, 255))
     from PIL import Image, ImageDraw
+
     img_a = Image.open(a)
     draw = ImageDraw.Draw(img_a)
     draw.rectangle([60, 60, 64, 64], fill="black")  # tiny corner difference
@@ -115,4 +119,4 @@ def test_weighted_regions_dominate_overall(tmp_path: Path) -> None:
         CheckpointRegion(label="corner", bounds=(60, 60, 64, 64), weight=1.0),
     ]
     rep = compare_pngs(a, b, regions=regions, threshold=0.05)
-    assert rep.passed   # bulk region dominates with 100:1 weight
+    assert rep.passed  # bulk region dominates with 100:1 weight

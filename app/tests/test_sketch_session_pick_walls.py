@@ -26,7 +26,9 @@ from bim_ai.sketch_session import (
 from bim_ai.sketch_validation import validate_session
 
 
-def _wall(wid: str, x0: float, y0: float, x1: float, y1: float, thickness_mm: float = 200) -> WallElem:
+def _wall(
+    wid: str, x0: float, y0: float, x1: float, y1: float, thickness_mm: float = 200
+) -> WallElem:
     return WallElem(
         kind="wall",
         id=wid,

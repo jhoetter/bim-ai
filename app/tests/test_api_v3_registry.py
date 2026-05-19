@@ -362,7 +362,6 @@ class TestToolRegistry:
         assert decal.kernelCommands == ["create_decal"]
         assert {"decal", "material", "kernel-command"} <= set(decal.resourceGroups)
 
-
     @pytest.mark.parametrize(
         ("name", "path"),
         [

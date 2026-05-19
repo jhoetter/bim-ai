@@ -508,7 +508,9 @@ def test_empty_document_exports_valid_empty_stl_and_empty_manifest() -> None:
 
 
 @pytest.mark.asyncio
-async def test_stl_export_routes_return_manifest_and_binary_stl(monkeypatch: pytest.MonkeyPatch) -> None:
+async def test_stl_export_routes_return_manifest_and_binary_stl(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     model_id = UUID("00000000-0000-4000-8000-0000000000a1")
     row = SimpleNamespace(revision=7, document=_wall_doc().model_dump(by_alias=True))
 
@@ -528,7 +530,9 @@ async def test_stl_export_routes_return_manifest_and_binary_stl(monkeypatch: pyt
 
 
 @pytest.mark.asyncio
-async def test_stl_export_route_returns_404_for_missing_model(monkeypatch: pytest.MonkeyPatch) -> None:
+async def test_stl_export_route_returns_404_for_missing_model(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     async def load_row(_session: object, _requested_id: UUID) -> None:
         return None
 

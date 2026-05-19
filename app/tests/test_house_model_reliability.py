@@ -47,17 +47,14 @@ def _blocking_wire(violations: list[Any]) -> list[dict[str, Any]]:
 
 
 def _wire_elements(doc: Document) -> dict[str, dict[str, Any]]:
-    return {
-        eid: elem.model_dump(mode="json", by_alias=True) for eid, elem in doc.elements.items()
-    }
+    return {eid: elem.model_dump(mode="json", by_alias=True) for eid, elem in doc.elements.items()}
 
 
 def _explicit_house_element_ids() -> set[str]:
     return {
         str(cmd["id"])
         for cmd in _house_commands()
-        if isinstance(cmd.get("id"), str)
-        and cmd["type"] not in {"saveViewpoint", "createLevel"}
+        if isinstance(cmd.get("id"), str) and cmd["type"] not in {"saveViewpoint", "createLevel"}
     }
 
 
@@ -86,9 +83,7 @@ def test_realistic_house_bundle_materializes_valid_building_elements() -> None:
     windows = [elem for elem in new_doc.elements.values() if isinstance(elem, WindowElem)]
 
     assert all(
-        wall.level_id in levels
-        for wall in new_doc.elements.values()
-        if isinstance(wall, WallElem)
+        wall.level_id in levels for wall in new_doc.elements.values() if isinstance(wall, WallElem)
     )
     assert all(floor.level_id in levels and len(floor.boundary_mm) >= 3 for floor in floors)
     assert all(roof.reference_level_id in levels and len(roof.footprint_mm) >= 3 for roof in roofs)
@@ -114,9 +109,7 @@ def test_house_bundle_apply_bundle_serializes_and_reloads() -> None:
     assert result.applied is True
     assert result.new_revision == 2
     assert new_doc is not None
-    assert not [
-        v for v in result.violations if v.get("blocking") or v.get("severity") == "error"
-    ]
+    assert not [v for v in result.violations if v.get("blocking") or v.get("severity") == "error"]
 
     wire = new_doc.model_dump(mode="json", by_alias=True)
     reloaded = Document.model_validate(json.loads(json.dumps(wire, sort_keys=True)))
@@ -138,10 +131,7 @@ def test_house_bundle_undo_and_replay_are_stable() -> None:
     assert new_doc is not None
 
     undo_cmds = diff_undo_cmds(baseline, new_doc)
-    assert any(
-        cmd["type"] == "deleteElement" and cmd["elementId"] == "w-gf-s"
-        for cmd in undo_cmds
-    )
+    assert any(cmd["type"] == "deleteElement" and cmd["elementId"] == "w-gf-s" for cmd in undo_cmds)
 
     ok_undo, rolled_back, _undo_cmds, undo_violations, undo_code = try_commit_bundle(
         new_doc, undo_cmds

@@ -91,9 +91,7 @@ def test_set_wall_recess_zones_setback_sanity_bound():
             {
                 "type": "setWallRecessZones",
                 "wallId": "w1",
-                "recessZones": [
-                    {"alongTStart": 0.1, "alongTEnd": 0.9, "setbackMm": 2000}
-                ],
+                "recessZones": [{"alongTStart": 0.1, "alongTEnd": 0.9, "setbackMm": 2000}],
             },
         )
 
@@ -105,9 +103,7 @@ def test_set_wall_recess_zones_unknown_wall_rejected():
             {
                 "type": "setWallRecessZones",
                 "wallId": "no-such-wall",
-                "recessZones": [
-                    {"alongTStart": 0.1, "alongTEnd": 0.9, "setbackMm": 500}
-                ],
+                "recessZones": [{"alongTStart": 0.1, "alongTEnd": 0.9, "setbackMm": 500}],
             },
         )
 

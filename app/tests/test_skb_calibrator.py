@@ -92,9 +92,9 @@ def test_calibrated_sketch_records_anchors() -> None:
 
 def test_three_anchors_median() -> None:
     anchors = [
-        Anchor("a", 100, 1000),   # 10.0
-        Anchor("b", 100, 1100),   # 11.0
-        Anchor("c", 100, 1200),   # 12.0
+        Anchor("a", 100, 1000),  # 10.0
+        Anchor("b", 100, 1100),  # 11.0
+        Anchor("c", 100, 1200),  # 12.0
     ]
     cal = calibrate(anchors)
     assert cal.scale_mm_per_px == pytest.approx(11.0)

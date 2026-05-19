@@ -258,7 +258,10 @@ class TestRdpSimplify:
     def test_reduces_20_point_zigzag(self) -> None:
         from bim_ai.markups import Vec2Px, _rdp_simplify
 
-        pts = [Vec2Px.model_validate({"xPx": float(i), "yPx": 0.0 if i % 2 == 0 else 10.0}) for i in range(20)]
+        pts = [
+            Vec2Px.model_validate({"xPx": float(i), "yPx": 0.0 if i % 2 == 0 else 10.0})
+            for i in range(20)
+        ]
         simplified = _rdp_simplify(pts, epsilon=2.0)
         assert len(simplified) < 20
 

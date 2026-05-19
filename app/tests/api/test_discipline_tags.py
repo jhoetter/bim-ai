@@ -115,9 +115,7 @@ def _build_test_app() -> FastAPI:
         if model_id not in _models:
             raise HTTPException(status_code=404, detail="Model not found")
         doc = _models[model_id]["doc"]
-        elements_out = {
-            eid: el.model_dump(by_alias=True) for eid, el in doc.elements.items()
-        }
+        elements_out = {eid: el.model_dump(by_alias=True) for eid, el in doc.elements.items()}
         return {"modelId": model_id, "revision": doc.revision, "elements": elements_out}
 
     return app
@@ -158,7 +156,13 @@ class TestSetDisciplineViaApi:
         r2 = client.post(
             f"/api/models/{MODEL_ID}/bundles",
             json=_bundle(
-                [{"type": "setElementDiscipline", "elementIds": ["wall-1"], "discipline": "struct"}],
+                [
+                    {
+                        "type": "setElementDiscipline",
+                        "elementIds": ["wall-1"],
+                        "discipline": "struct",
+                    }
+                ],
                 revision=rev2,
             ),
         )
@@ -201,8 +205,18 @@ class TestSetDisciplineViaApi:
             json=_bundle(
                 [
                     _CREATE_LEVEL,
-                    {**_CREATE_WALL, "id": "w-a", "start": {"xMm": 0, "yMm": 0}, "end": {"xMm": 5000, "yMm": 0}},
-                    {**_CREATE_WALL, "id": "w-b", "start": {"xMm": 0, "yMm": 6000}, "end": {"xMm": 5000, "yMm": 6000}},
+                    {
+                        **_CREATE_WALL,
+                        "id": "w-a",
+                        "start": {"xMm": 0, "yMm": 0},
+                        "end": {"xMm": 5000, "yMm": 0},
+                    },
+                    {
+                        **_CREATE_WALL,
+                        "id": "w-b",
+                        "start": {"xMm": 0, "yMm": 6000},
+                        "end": {"xMm": 5000, "yMm": 6000},
+                    },
                 ],
                 revision=1,
             ),
@@ -213,7 +227,13 @@ class TestSetDisciplineViaApi:
         r2 = client.post(
             f"/api/models/{MODEL_ID}/bundles",
             json=_bundle(
-                [{"type": "setElementDiscipline", "elementIds": ["w-a", "w-b"], "discipline": "mep"}],
+                [
+                    {
+                        "type": "setElementDiscipline",
+                        "elementIds": ["w-a", "w-b"],
+                        "discipline": "mep",
+                    }
+                ],
                 revision=rev2,
             ),
         )
@@ -242,7 +262,13 @@ class TestResetToDefault:
         r2 = client.post(
             f"/api/models/{MODEL_ID}/bundles",
             json=_bundle(
-                [{"type": "setElementDiscipline", "elementIds": ["wall-1"], "discipline": "struct"}],
+                [
+                    {
+                        "type": "setElementDiscipline",
+                        "elementIds": ["wall-1"],
+                        "discipline": "struct",
+                    }
+                ],
                 revision=rev2,
             ),
         )

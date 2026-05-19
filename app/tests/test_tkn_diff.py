@@ -66,16 +66,19 @@ def test_diff_detects_t_change_as_modified_entity() -> None:
 
 def test_diff_detects_added_entity() -> None:
     els_a = _elements_with_door()
-    els_b = {**els_a, "window-1": WindowElem(
-        kind="window",
-        id="window-1",
-        name="Window",
-        wallId="wall-1",
-        alongT=0.7,
-        widthMm=1200,
-        sillHeightMm=900,
-        heightMm=1500,
-    )}
+    els_b = {
+        **els_a,
+        "window-1": WindowElem(
+            kind="window",
+            id="window-1",
+            name="Window",
+            wallId="wall-1",
+            alongT=0.7,
+            widthMm=1200,
+            sillHeightMm=900,
+            heightMm=1500,
+        ),
+    }
     delta = diff(encode(els_a), encode(els_b))
 
     assert len(delta.added_entities) == 1

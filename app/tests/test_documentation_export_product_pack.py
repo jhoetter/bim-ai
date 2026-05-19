@@ -257,9 +257,7 @@ def test_documentation_pack_commands_produce_exportable_drawing_set() -> None:
         artifact["nonPlaceholderProof"]["pass"] is True for artifact in sheet_row["artifacts"]
     )
     assert all(
-        artifact["href"].startswith(
-            "/api/models/00000000-0000-0000-0000-000000000123/exports/"
-        )
+        artifact["href"].startswith("/api/models/00000000-0000-0000-0000-000000000123/exports/")
         for artifact in sheet_row["artifacts"]
     )
 
@@ -379,7 +377,11 @@ def test_documentation_export_ifc_optional_backend_manifest_is_stable(monkeypatc
     monkeypatch.setattr("bim_ai.export_documentation_evidence.IFC_AVAILABLE", False)
     monkeypatch.setattr(
         "bim_ai.export_documentation_evidence.serialize_ifc_artifact",
-        lambda _doc: ("ISO-10303-21;\nDATA;\nENDSEC;\nEND-ISO-10303-21;\n", "empty_ifc_skeleton_v0", False),
+        lambda _doc: (
+            "ISO-10303-21;\nDATA;\nENDSEC;\nEND-ISO-10303-21;\n",
+            "empty_ifc_skeleton_v0",
+            False,
+        ),
     )
 
     evidence_a = build_documentation_export_production_evidence_v1(doc)

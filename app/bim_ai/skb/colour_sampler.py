@@ -152,7 +152,9 @@ MAT01_COLOUR_CATALOG: list[CatalogColourEntry] = [
     CatalogColourEntry("stone_slate", "#3e3a35", "Slate"),
     CatalogColourEntry("stone_sandstone", "#b89968", "Sandstone"),
     CatalogColourEntry("concrete_smooth", "#9c9a94", "Smooth concrete"),
-    CatalogColourEntry("metal_standing_seam_dark_grey", "#3a3d3f", "Standing-seam metal — dark grey"),
+    CatalogColourEntry(
+        "metal_standing_seam_dark_grey", "#3a3d3f", "Standing-seam metal — dark grey"
+    ),
     CatalogColourEntry("metal_standing_seam_zinc", "#7a7d80", "Standing-seam metal — zinc"),
     CatalogColourEntry("metal_standing_seam_copper", "#b86b3c", "Standing-seam metal — copper"),
     CatalogColourEntry("glass_clear", "#e6efef", "Clear glass"),

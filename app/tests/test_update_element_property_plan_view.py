@@ -60,14 +60,10 @@ def test_plan_view_subtype_and_area_scheme_property_updates() -> None:
     apply_inplace(
         doc, UpdateElementPropertyCmd(elementId="pv", key="planViewSubtype", value="area_plan")
     )
-    apply_inplace(
-        doc, UpdateElementPropertyCmd(elementId="pv", key="areaScheme", value="rentable")
-    )
+    apply_inplace(doc, UpdateElementPropertyCmd(elementId="pv", key="areaScheme", value="rentable"))
     apply_inplace(
         doc,
-        UpdateElementPropertyCmd(
-            elementId="pv", key="viewSubdiscipline", value="Coordination"
-        ),
+        UpdateElementPropertyCmd(elementId="pv", key="viewSubdiscipline", value="Coordination"),
     )
     pv_out = doc.elements["pv"]
     assert isinstance(pv_out, PlanViewElem)
@@ -248,7 +244,9 @@ def test_viewpoint_plan_overlay_properties() -> None:
     els = {
         "lv": LevelElem(kind="level", id="lv", name="Level 1", elevationMm=0),
         "pv": PlanViewElem(kind="plan_view", id="pv", name="Level 1 Plan", levelId="lv"),
-        "vp": ViewpointElem(kind="viewpoint", id="vp", name="Overlay", camera=_CAM, mode="orbit_3d"),
+        "vp": ViewpointElem(
+            kind="viewpoint", id="vp", name="Overlay", camera=_CAM, mode="orbit_3d"
+        ),
     }
     doc = Document(revision=1, elements=els)
 
@@ -279,7 +277,9 @@ def test_viewpoint_plan_overlay_properties() -> None:
     assert vp.plan_overlay_annotations_visible is False
     assert vp.plan_overlay_witness_lines_visible is True
 
-    apply_inplace(doc, UpdateElementPropertyCmd(elementId="vp", key="planOverlayOffsetMm", value=""))
+    apply_inplace(
+        doc, UpdateElementPropertyCmd(elementId="vp", key="planOverlayOffsetMm", value="")
+    )
     apply_inplace(
         doc, UpdateElementPropertyCmd(elementId="vp", key="planOverlaySourcePlanViewId", value="")
     )

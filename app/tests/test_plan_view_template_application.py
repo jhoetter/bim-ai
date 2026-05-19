@@ -189,6 +189,7 @@ class TestApplyPlanViewTemplate:
         assert pv_final.crop_min_mm is None
         assert pv_final.crop_max_mm is None
 
+
 class TestViewTemplateControlMatrix:
     def test_create_view_template_persists_include_lock_matrix(self) -> None:
         doc = _base_doc()

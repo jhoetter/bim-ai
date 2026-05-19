@@ -51,9 +51,7 @@ def test_constructability_fixture_corpus_matches_expected_rules(
 
 def test_constructability_fixture_corpus_has_positive_and_negative_cases() -> None:
     cases = _load_cases()
-    positive_ids = {
-        case["id"] for case in cases if case["expectedRuleIds"]
-    }
+    positive_ids = {case["id"] for case in cases if case["expectedRuleIds"]}
     negative_absent_rules = {
         rule_id
         for case in cases

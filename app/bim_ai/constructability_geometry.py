@@ -563,7 +563,9 @@ def _aabb_for_roof(elem: Any, elements: dict[str, Element]) -> AABB | None:
 
 def _aabb_for_toposolid(elem: Any, elements: dict[str, Element]) -> AABB | None:
     del elements
-    footprint = [(float(point.x_mm), float(point.y_mm)) for point in getattr(elem, "boundary_mm", [])]
+    footprint = [
+        (float(point.x_mm), float(point.y_mm)) for point in getattr(elem, "boundary_mm", [])
+    ]
     if len(footprint) < 3:
         return None
 

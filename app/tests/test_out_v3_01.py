@@ -61,11 +61,7 @@ def _build_test_app() -> tuple[FastAPI, dict[str, Any]]:
 
     @app.get("/api/models/{model_id}/presentations")
     async def list_presentations(model_id: str) -> Any:
-        rows = [
-            p
-            for p in _presentations.values()
-            if p["modelId"] == model_id
-        ]
+        rows = [p for p in _presentations.values() if p["modelId"] == model_id]
         rows.sort(key=lambda p: (p["isRevoked"], -p["createdAt"]))
         return {"presentations": rows}
 
@@ -195,9 +191,7 @@ class TestCreatePresentation:
         assert res.status_code == 404
 
     def test_empty_page_scope_ids_accepted(self, client: TestClient) -> None:
-        res = client.post(
-            f"/api/models/{MODEL_ID}/presentations", json={"pageScopeIds": []}
-        )
+        res = client.post(f"/api/models/{MODEL_ID}/presentations", json={"pageScopeIds": []})
         assert res.status_code == 200
         assert res.json()["pageScopeIds"] == []
 
@@ -314,9 +308,7 @@ class TestPresentationWebSocket:
         with client.websocket_connect(f"/api/p/{token}/ws") as ws:
             ws.send_text("ping")
 
-    def test_ws_closes_with_revoked_message_for_revoked_token(
-        self, client: TestClient
-    ) -> None:
+    def test_ws_closes_with_revoked_message_for_revoked_token(self, client: TestClient) -> None:
         create = client.post(f"/api/models/{MODEL_ID}/presentations", json={})
         link_id = create.json()["id"]
         token = create.json()["token"]
@@ -325,6 +317,7 @@ class TestPresentationWebSocket:
         with client.websocket_connect(f"/api/p/{token}/ws") as ws:
             msg = ws.receive_json()
             assert msg["type"] == "revoked"
+
 
 class TestRevokeWsPush:
     def test_revoke_pushes_to_active_ws_session(self, client: TestClient) -> None:
@@ -347,9 +340,7 @@ class TestRevokeWsPush:
         # 2. Connect WS client (simulates an active viewer tab)
         with client.websocket_connect(f"/api/p/{token}/ws") as ws:
             # 3. Revoke while WS is connected — server must push "revoked" message
-            revoke = client.post(
-                f"/api/models/{MODEL_ID}/presentations/{link_id}/revoke"
-            )
+            revoke = client.post(f"/api/models/{MODEL_ID}/presentations/{link_id}/revoke")
             assert revoke.status_code == 200
             assert "revokedAt" in revoke.json()
 

@@ -157,7 +157,10 @@ def _build_test_app() -> FastAPI:
                 },
                 bundle_digest=bundle_digest,
             )
-            _models[model_id] = {"revision": new_doc_from_bundle.revision, "doc": new_doc_from_bundle}
+            _models[model_id] = {
+                "revision": new_doc_from_bundle.revision,
+                "doc": new_doc_from_bundle,
+            }
             _command_log.setdefault(model_id, []).insert(
                 0,
                 {
@@ -178,6 +181,7 @@ def _build_test_app() -> FastAPI:
     @app.get("/api/models/{model_id}/snapshot")
     async def snapshot(model_id: str) -> Any:
         from fastapi import HTTPException
+
         if model_id not in _models:
             raise HTTPException(status_code=404, detail="Model not found")
         doc = _models[model_id]["doc"]
@@ -192,6 +196,7 @@ def _build_test_app() -> FastAPI:
     @app.get("/api/models/{model_id}/command-log")
     async def command_log(model_id: str) -> Any:
         from fastapi import HTTPException
+
         if model_id not in _models:
             raise HTTPException(status_code=404, detail="Model not found")
         return {"modelId": model_id, "entries": _command_log.get(model_id, [])}
@@ -312,9 +317,7 @@ class TestCommitRoute:
         assert tx["audit"]["hasAssumptionAudit"] is True
         assert "ssh-wall-north" in tx["changedIds"]
         assert "ssh-wall-north" in tx["collaborationDelta"]["changedIds"]
-        assert {"ssh-roof-main", "ssh-floor-ground", "ssh-wall-north"} <= set(
-            body["changedIds"]
-        )
+        assert {"ssh-roof-main", "ssh-floor-ground", "ssh-wall-north"} <= set(body["changedIds"])
 
         after = client.get(f"/api/models/{MODEL_ID}/snapshot").json()
         after_counts = _kind_counts(after)
@@ -356,9 +359,7 @@ class TestCommitRoute:
         assert after["elements"] == before["elements"]
         assert client.get(f"/api/models/{MODEL_ID}/command-log").json()["entries"] == []
 
-    def test_commit_replay_with_same_client_op_id_is_idempotent(
-        self, client: TestClient
-    ) -> None:
+    def test_commit_replay_with_same_client_op_id_is_idempotent(self, client: TestClient) -> None:
         body = _bundle_body(
             mode="commit",
             clientOpId="stable-op-1",
@@ -395,8 +396,9 @@ class TestCommitRoute:
         replay_body = replay.json()
         assert replay_body["idempotentReplay"] is True
         assert replay_body["newRevision"] == first_body["newRevision"]
-        assert replay_body["idempotencyMatch"]["bundleDigestSha256"] == (
-            first_body["transactionMetadata"]["idempotency"]["bundleDigestSha256"]
+        assert (
+            replay_body["idempotencyMatch"]["bundleDigestSha256"]
+            == (first_body["transactionMetadata"]["idempotency"]["bundleDigestSha256"])
         )
         assert len(client.get(f"/api/models/{MODEL_ID}/command-log").json()["entries"]) == 1
 

@@ -416,7 +416,9 @@ def _linked_model_rows(doc: Document) -> list[dict[str, Any]]:
                     "pinned": elem.pinned,
                     "originAlignmentMode": elem.origin_alignment_mode,
                     "drifted": elem.reload_status not in {"ok", "embedded"},
-                    "driftedFields": ["sourcePath"] if elem.reload_status == "source_missing" else [],
+                    "driftedFields": ["sourcePath"]
+                    if elem.reload_status == "source_missing"
+                    else [],
                 }
             )
         elif isinstance(elem, ExternalLinkElem):
@@ -432,7 +434,9 @@ def _linked_model_rows(doc: Document) -> list[dict[str, Any]]:
                     "pinned": elem.pinned,
                     "originAlignmentMode": elem.origin_alignment_mode,
                     "drifted": elem.reload_status != "ok",
-                    "driftedFields": ["sourcePath"] if elem.reload_status == "source_missing" else [],
+                    "driftedFields": ["sourcePath"]
+                    if elem.reload_status == "source_missing"
+                    else [],
                 }
             )
     return sorted(rows, key=lambda row: str(row["id"]))

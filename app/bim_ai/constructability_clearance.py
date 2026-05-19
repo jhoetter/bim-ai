@@ -36,7 +36,11 @@ def constructability_clearance_violations(
     violations: list[Violation] = []
     for item in furniture:
         for wall in walls:
-            if item.level_id is not None and wall.level_id is not None and item.level_id != wall.level_id:
+            if (
+                item.level_id is not None
+                and wall.level_id is not None
+                and item.level_id != wall.level_id
+            ):
                 continue
             if _aabb_overlaps(item.aabb, wall.aabb):
                 continue
@@ -65,7 +69,11 @@ def constructability_clearance_violations(
         for obstruction in participants:
             if obstruction.element_id == item.element_id:
                 continue
-            if item.level_id is not None and obstruction.level_id is not None and item.level_id != obstruction.level_id:
+            if (
+                item.level_id is not None
+                and obstruction.level_id is not None
+                and item.level_id != obstruction.level_id
+            ):
                 continue
             if _aabb_overlaps(item.aabb, obstruction.aabb):
                 continue

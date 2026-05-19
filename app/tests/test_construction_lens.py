@@ -123,11 +123,21 @@ def test_construction_schedule_defaults_cover_package_phase_progress_logistics_a
     )
     doc.elements.update(
         {
-            "sch-pkg": ScheduleElem(kind="schedule", id="sch-pkg", name="Packages", category="construction_package"),
-            "sch-phase": ScheduleElem(kind="schedule", id="sch-phase", name="Phases", category="phase"),
-            "sch-progress": ScheduleElem(kind="schedule", id="sch-progress", name="Progress", category="progress"),
-            "sch-log": ScheduleElem(kind="schedule", id="sch-log", name="Site Logistics", category="site_logistics"),
-            "sch-qa": ScheduleElem(kind="schedule", id="sch-qa", name="QA Checklist", category="qa_checklist"),
+            "sch-pkg": ScheduleElem(
+                kind="schedule", id="sch-pkg", name="Packages", category="construction_package"
+            ),
+            "sch-phase": ScheduleElem(
+                kind="schedule", id="sch-phase", name="Phases", category="phase"
+            ),
+            "sch-progress": ScheduleElem(
+                kind="schedule", id="sch-progress", name="Progress", category="progress"
+            ),
+            "sch-log": ScheduleElem(
+                kind="schedule", id="sch-log", name="Site Logistics", category="site_logistics"
+            ),
+            "sch-qa": ScheduleElem(
+                kind="schedule", id="sch-qa", name="QA Checklist", category="qa_checklist"
+            ),
         }
     )
 

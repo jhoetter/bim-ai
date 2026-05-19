@@ -3522,9 +3522,9 @@ class CreatePipeCmd(BaseModel):
         "other",
     ] = Field(default="other", alias="systemType")
     system_name: str | None = Field(default=None, alias="systemName")
-    flow_direction: Literal[
-        "supply", "return", "exhaust", "bidirectional", "none", "unknown"
-    ] = Field(default="unknown", alias="flowDirection")
+    flow_direction: Literal["supply", "return", "exhaust", "bidirectional", "none", "unknown"] = (
+        Field(default="unknown", alias="flowDirection")
+    )
     insulation: str | None = Field(default=None)
     service_level: str | None = Field(default=None, alias="serviceLevel")
     clearance_zone: dict[str, Any] | None = Field(default=None, alias="clearanceZone")
@@ -3561,9 +3561,9 @@ class CreateDuctCmd(BaseModel):
         "other",
     ] = Field(default="other", alias="systemType")
     system_name: str | None = Field(default=None, alias="systemName")
-    flow_direction: Literal[
-        "supply", "return", "exhaust", "bidirectional", "none", "unknown"
-    ] = Field(default="unknown", alias="flowDirection")
+    flow_direction: Literal["supply", "return", "exhaust", "bidirectional", "none", "unknown"] = (
+        Field(default="unknown", alias="flowDirection")
+    )
     insulation: str | None = Field(default=None)
     service_level: str | None = Field(default=None, alias="serviceLevel")
     clearance_zone: dict[str, Any] | None = Field(default=None, alias="clearanceZone")
@@ -3653,9 +3653,9 @@ class CreateMepTerminalCmd(BaseModel):
     room_id: str | None = Field(default=None, alias="roomId")
     system_type: MepSystemCmdType = Field(default="hvac_supply", alias="systemType")
     system_name: str | None = Field(default=None, alias="systemName")
-    flow_direction: Literal[
-        "supply", "return", "exhaust", "bidirectional", "none", "unknown"
-    ] = Field(default="supply", alias="flowDirection")
+    flow_direction: Literal["supply", "return", "exhaust", "bidirectional", "none", "unknown"] = (
+        Field(default="supply", alias="flowDirection")
+    )
     service_level: str | None = Field(default=None, alias="serviceLevel")
     connectors: list[dict[str, Any]] = Field(default_factory=list)
 

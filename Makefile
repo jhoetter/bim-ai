@@ -11,6 +11,7 @@ endif
 PYTHON ?= python3.13
 APP_DIR := app
 PNPM := pnpm
+UV ?= uv
 
 # Local suite port allocation:
 #   2000 → bim-ai web (:8500 API)  <-- this repo (avoids 3xxx used by sister apps)
@@ -23,7 +24,7 @@ SEED_ARGS := $(if $(SEED_NAME),--name "$(SEED_NAME)",) $(if $(SEED_ROOT),--root 
 
 .PHONY: help install dev dev-api dev-web kill-ports seed seed-clear seed-artifact verify-sketch-seeds verify-sketch-seeds-live \
 	db-up db-down db-reset db-logs \
-	test test-py test-js format format-check python-format-check lint architecture \
+	test test-py test-js format format-check python-format-check lint lint-js lint-py architecture \
 	typecheck verify build clean lockfile-check verify-refinement-reliability
 
 help:
@@ -34,7 +35,7 @@ help:
 	@echo "  seed-clear — delete all seed-managed local models"
 	@echo "  verify-sketch-seeds — validate seed artifact manifests/hashes"
 	@echo "  verify-sketch-seeds-live — strict current-HEAD live sketch-to-BIM acceptance"
-	@echo "  verify    — format-check, lint, architecture, tc, pytest, vite build"
+	@echo "  verify    — format-check, Python lint/format, architecture, tc, tests, build"
 
 install:
 	$(PNPM) install
@@ -91,16 +92,16 @@ endif
 	  "$(MAKE) dev-web"
 
 dev-api:
-	cd $(APP_DIR) && PYTHONPATH=. .venv/bin/python -m uvicorn bim_ai.main:app --host 127.0.0.1 --port $(API_PORT) --reload
+	cd $(APP_DIR) && PYTHONPATH=. $(UV) run python -m uvicorn bim_ai.main:app --host 127.0.0.1 --port $(API_PORT) --reload
 
 dev-web:
 	API_PORT=$(API_PORT) VITE_DESIGN_SYSTEM=$(design) $(PNPM) --filter @bim-ai/web dev --port $(WEB_PORT) --host 127.0.0.1 --strictPort
 
 seed:
-	cd $(APP_DIR) && PYTHONPATH=. .venv/bin/python scripts/seed.py $(SEED_ARGS)
+	cd $(APP_DIR) && PYTHONPATH=. $(UV) run python scripts/seed.py $(SEED_ARGS)
 
 seed-clear:
-	cd $(APP_DIR) && PYTHONPATH=. .venv/bin/python scripts/seed.py --clear $(if $(SEED_ROOT),--root "$(SEED_ROOT)",)
+	cd $(APP_DIR) && PYTHONPATH=. $(UV) run python scripts/seed.py --clear $(if $(SEED_ROOT),--root "$(SEED_ROOT)",)
 
 seed-artifact:
 	node scripts/create-seed-artifact.mjs --name "$(NAME)" --source "$(SOURCE)" --bundle "$(BUNDLE)" $(if $(TITLE),--title "$(TITLE)",) $(if $(DESCRIPTION),--description "$(DESCRIPTION)",) $(if $(LIVE_EVIDENCE),--live-evidence "$(LIVE_EVIDENCE)",) $(if $(REQUIRE_LIVE_EVIDENCE),--require-live-evidence,) $(if $(OUT),--out "$(OUT)",) $(if $(FORCE),--force,)
@@ -114,24 +115,28 @@ verify-sketch-seeds-live:
 test: test-py test-js
 
 test-py:
-	cd $(APP_DIR) && PYTHONPATH=. .venv/bin/python -m pytest tests/ -q
+	cd $(APP_DIR) && PYTHONPATH=. $(UV) run python -m pytest tests/ -q
 
 test-js:
 	$(PNPM) -w turbo test
 
 format:
 	$(PNPM) -w prettier --write "**/*.{ts,tsx,js,jsx,json,yml,yaml}"
-	cd $(APP_DIR) && .venv/bin/ruff format bim_ai tests scripts
+	cd $(APP_DIR) && $(UV) run ruff format bim_ai tests scripts
 
 format-check:
 	$(PNPM) -w prettier --check "**/*.{ts,tsx,js,jsx,json,yml,yaml}"
 
 python-format-check:
-	cd $(APP_DIR) && .venv/bin/ruff format --check bim_ai tests scripts
+	cd $(APP_DIR) && $(UV) run ruff format --check bim_ai tests scripts
 
-lint:
+lint: lint-js lint-py
+
+lint-js:
 	$(PNPM) -w eslint "packages/**/*.{ts,tsx}"
-	cd $(APP_DIR) && .venv/bin/ruff check bim_ai tests scripts
+
+lint-py:
+	cd $(APP_DIR) && $(UV) run ruff check bim_ai tests scripts
 
 architecture:
 	node scripts/check-architecture.mjs
@@ -142,11 +147,11 @@ typecheck:
 build:
 	$(PNPM) -w turbo build
 
-verify: format-check python-format-check lint architecture typecheck test build lockfile-check
+verify: format-check python-format-check lint-py architecture typecheck test build lockfile-check
 	@echo "verify: PASS"
 
 verify-refinement-reliability:
-	cd app && .venv/bin/python -m pytest tests/agent/refinement_reliability/ -v --no-cov
+	cd $(APP_DIR) && PYTHONPATH=. $(UV) run python -m pytest tests/agent/refinement_reliability/ -v --no-cov
 
 clean:
 	$(PNPM) -w turbo clean || true

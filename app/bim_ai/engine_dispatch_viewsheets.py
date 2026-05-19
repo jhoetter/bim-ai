@@ -43,7 +43,11 @@ def _template_field_included(tpl: ViewTemplateElem, field: str) -> bool:
 
 def _view_template_plan_patch(tpl: ViewTemplateElem) -> dict[str, Any]:
     view_patch: dict[str, Any] = {}
-    if _template_field_included(tpl, "scale") and tpl.scale is not None and isinstance(tpl.scale, int):
+    if (
+        _template_field_included(tpl, "scale")
+        and tpl.scale is not None
+        and isinstance(tpl.scale, int)
+    ):
         view_patch["scale"] = tpl.scale
     if _template_field_included(tpl, "detailLevel") and tpl.detail_level is not None:
         view_patch["plan_detail_level"] = tpl.detail_level

@@ -47,9 +47,7 @@ def _doc_with_layered_wall_door_window_roof() -> Document:
                 id="wt-1",
                 name="WT",
                 layers=[
-                    WallTypeLayer(
-                        thicknessMm=140, function="structure", materialKey="timber_stud"
-                    ),
+                    WallTypeLayer(thicknessMm=140, function="structure", materialKey="timber_stud"),
                     WallTypeLayer(
                         thicknessMm=18, function="finish", materialKey="cladding_warm_wood"
                     ),

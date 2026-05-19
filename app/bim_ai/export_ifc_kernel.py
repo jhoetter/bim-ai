@@ -975,9 +975,7 @@ def try_build_kernel_ifc(doc: Document) -> tuple[str | None, int]:
         # Only use the layer-set path for genuine roof-type layers (non-zero
         # thickness). A roof with only material_key returns a synthetic 0-mm
         # layer that the layer-set builder skips; route that via single-material.
-        rf_typed_layers = [
-            lyr for lyr in rf_layers if float(lyr.get("thicknessMm", 0) or 0) > 1e-9
-        ]
+        rf_typed_layers = [lyr for lyr in rf_layers if float(lyr.get("thicknessMm", 0) or 0) > 1e-9]
         if rf_typed_layers:
             try_attach_kernel_ifc_material_layer_set(
                 f,

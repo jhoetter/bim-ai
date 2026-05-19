@@ -28,8 +28,15 @@ def _kind_counts(rows: list[dict[str, Any]]) -> dict[str, int]:
     interior room-separation walls.
     """
     counts: dict[str, int] = {
-        "level": 0, "wall": 0, "partition": 0, "floor": 0, "roof": 0,
-        "door": 0, "window": 0, "room": 0, "stair": 0,
+        "level": 0,
+        "wall": 0,
+        "partition": 0,
+        "floor": 0,
+        "roof": 0,
+        "door": 0,
+        "window": 0,
+        "room": 0,
+        "stair": 0,
     }
     type_to_kind = {
         "createLevel": "level",
@@ -149,22 +156,28 @@ def test_two_story_bundle_respects_param_overrides() -> None:
 # ── new archetypes: parses + phases + counts in priors ─────────────────
 
 
-@pytest.mark.parametrize("archetype_id", [
-    "l_shape_bungalow",
-    "cabin_a_frame",
-    "townhouse_three_story",
-])
+@pytest.mark.parametrize(
+    "archetype_id",
+    [
+        "l_shape_bungalow",
+        "cabin_a_frame",
+        "townhouse_three_story",
+    ],
+)
 def test_archetype_bundle_parses_as_phased(archetype_id: str) -> None:
     rows = bundle_for(archetype_id)
     bundle = from_dict_list(rows)
     assert bundle.size == len(rows)
 
 
-@pytest.mark.parametrize("archetype_id", [
-    "l_shape_bungalow",
-    "cabin_a_frame",
-    "townhouse_three_story",
-])
+@pytest.mark.parametrize(
+    "archetype_id",
+    [
+        "l_shape_bungalow",
+        "cabin_a_frame",
+        "townhouse_three_story",
+    ],
+)
 def test_archetype_bundle_uses_known_phases(archetype_id: str) -> None:
     rows = bundle_for(archetype_id)
     phases_used = {row["phase"] for row in rows}
@@ -172,12 +185,15 @@ def test_archetype_bundle_uses_known_phases(archetype_id: str) -> None:
         assert p in SKB_PHASES
 
 
-@pytest.mark.parametrize("archetype_id", [
-    "single_family_two_story_modest",
-    "l_shape_bungalow",
-    "cabin_a_frame",
-    "townhouse_three_story",
-])
+@pytest.mark.parametrize(
+    "archetype_id",
+    [
+        "single_family_two_story_modest",
+        "l_shape_bungalow",
+        "cabin_a_frame",
+        "townhouse_three_story",
+    ],
+)
 def test_archetype_bundle_kind_counts_in_priors(archetype_id: str) -> None:
     rows = bundle_for(archetype_id)
     counts = _kind_counts(rows)
@@ -186,12 +202,15 @@ def test_archetype_bundle_kind_counts_in_priors(archetype_id: str) -> None:
     assert flagged == [], f"{archetype_id}: out-of-range kinds: {flagged}"
 
 
-@pytest.mark.parametrize("archetype_id", [
-    "single_family_two_story_modest",
-    "l_shape_bungalow",
-    "cabin_a_frame",
-    "townhouse_three_story",
-])
+@pytest.mark.parametrize(
+    "archetype_id",
+    [
+        "single_family_two_story_modest",
+        "l_shape_bungalow",
+        "cabin_a_frame",
+        "townhouse_three_story",
+    ],
+)
 def test_archetype_bundle_emits_at_least_one_viewpoint(archetype_id: str) -> None:
     rows = bundle_for(archetype_id)
     vps = [r for r in rows if r["command"]["type"] == "saveViewpoint"]
@@ -208,8 +227,10 @@ def test_l_shape_bungalow_respects_dimension_overrides() -> None:
     rows = bundle_for(
         "l_shape_bungalow",
         ArchetypeParams(
-            width_mm=12000, depth_mm=12000,
-            floor_height_mm=3300, storey_count=1,
+            width_mm=12000,
+            depth_mm=12000,
+            floor_height_mm=3300,
+            storey_count=1,
         ),
     )
     walls = [r["command"] for r in rows if r["command"]["type"] == "createWall"]
@@ -223,8 +244,10 @@ def test_cabin_a_frame_respects_dimension_overrides() -> None:
     rows = bundle_for(
         "cabin_a_frame",
         ArchetypeParams(
-            width_mm=8000, depth_mm=10000,
-            floor_height_mm=3300, storey_count=2,
+            width_mm=8000,
+            depth_mm=10000,
+            floor_height_mm=3300,
+            storey_count=2,
         ),
     )
     walls = [r["command"] for r in rows if r["command"]["type"] == "createWall"]
@@ -241,8 +264,10 @@ def test_townhouse_three_story_respects_dimension_overrides() -> None:
     rows = bundle_for(
         "townhouse_three_story",
         ArchetypeParams(
-            width_mm=6000, depth_mm=14000,
-            floor_height_mm=3300, storey_count=3,
+            width_mm=6000,
+            depth_mm=14000,
+            floor_height_mm=3300,
+            storey_count=3,
         ),
     )
     walls = [r["command"] for r in rows if r["command"]["type"] == "createWall"]
@@ -256,20 +281,10 @@ def test_townhouse_three_story_respects_dimension_overrides() -> None:
 
 def test_townhouse_party_walls_are_pinned() -> None:
     rows = bundle_for("townhouse_three_story")
-    pin_targets = {
-        r["command"]["elementId"]
-        for r in rows
-        if r["command"]["type"] == "pinElement"
-    }
+    pin_targets = {r["command"]["elementId"] for r in rows if r["command"]["type"] == "pinElement"}
     # east + west walls on every level must be pinned
-    expected = {
-        f"w-{lvl}-{side}"
-        for lvl in ("l0", "l1", "l2")
-        for side in ("e", "w")
-    }
-    assert expected <= pin_targets, (
-        f"missing party-wall pins: {expected - pin_targets}"
-    )
+    expected = {f"w-{lvl}-{side}" for lvl in ("l0", "l1", "l2") for side in ("e", "w")}
+    assert expected <= pin_targets, f"missing party-wall pins: {expected - pin_targets}"
 
 
 # ── cabin-specific: mezzanine LevelElem hookup ─────────────────────────

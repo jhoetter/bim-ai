@@ -177,7 +177,9 @@ def rebuild_picked_walls_lines(
     freehand: list[SketchLine] = [
         ln for i, ln in enumerate(session.lines) if i not in picked_indices
     ]
-    picked_walls_existing = [walls_by_id[p.wall_id] for p in session.picked_walls if p.wall_id in walls_by_id]
+    picked_walls_existing = [
+        walls_by_id[p.wall_id] for p in session.picked_walls if p.wall_id in walls_by_id
+    ]
     anchor = _picked_walls_centroid(picked_walls_existing)
     new_picked_lines: list[SketchLine] = []
     new_picked: list[PickedWall] = []

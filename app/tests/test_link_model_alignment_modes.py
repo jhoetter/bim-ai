@@ -133,9 +133,7 @@ def test_shared_coords_alignment_offsets_by_survey_point_delta():
         originAlignmentMode="shared_coords",
     )
     src = _doc_with_wall()
-    src.elements["src-sp"] = SurveyPointElem(
-        id="src-sp", positionMm=Vec3Mm(xMm=10, yMm=10, zMm=0)
-    )
+    src.elements["src-sp"] = SurveyPointElem(id="src-sp", positionMm=Vec3Mm(xMm=10, yMm=10, zMm=0))
 
     host_wire = {k: v.model_dump(by_alias=True) for k, v in host.elements.items()}
     expanded = expand_links(host, host_wire, lambda _id, _rev: src)

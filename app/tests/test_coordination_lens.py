@@ -75,7 +75,9 @@ def test_coordination_lens_snapshot_surfaces_health_clash_issue_and_link_rows() 
     assert payload["summary"]["clashCount"] >= 1
     assert payload["summary"]["openIssueCount"] == 2
     assert any(row["id"] == "ct-1:result:0" for row in payload["clashes"])
-    assert any(row["id"] == "issue-1" and row["dueDate"] == "2026-05-20" for row in payload["issues"])
+    assert any(
+        row["id"] == "issue-1" and row["dueDate"] == "2026-05-20" for row in payload["issues"]
+    )
     assert any(row["id"] == "ifc-1" and row["drifted"] is True for row in payload["linkedElements"])
     assert any(row["type"] == "broken_reference" for row in payload["modelHealthWarnings"])
     assert {row["name"] for row in payload["schedules"]["requiredDefaults"]} >= {

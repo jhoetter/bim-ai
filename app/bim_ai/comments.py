@@ -70,7 +70,9 @@ def resolve_sheet_anchor_binding(
     key = (round(anchor.x_px), round(anchor.y_px))
     binding = sheet_pixel_map.get(key)
     if binding:
-        return anchor.model_copy(update={"source_view_id": binding[0], "source_element_id": binding[1]})
+        return anchor.model_copy(
+            update={"source_view_id": binding[0], "source_element_id": binding[1]}
+        )
     return anchor
 
 

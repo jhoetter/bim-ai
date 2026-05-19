@@ -29,9 +29,9 @@ GateOutcomeKind = Literal["pass", "advisory", "reject"]
 class PhaseGateConfig:
     """Per-phase configuration for the visual gate."""
 
-    threshold: float                     # SKB-03 normalised delta threshold for hard pass
-    slack: float = 0.05                  # additional tolerance before reject
-    block_on_fail: bool = False          # default: emit advisory rather than reject
+    threshold: float  # SKB-03 normalised delta threshold for hard pass
+    slack: float = 0.05  # additional tolerance before reject
+    block_on_fail: bool = False  # default: emit advisory rather than reject
 
     @property
     def reject_threshold(self) -> float:

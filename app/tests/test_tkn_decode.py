@@ -52,9 +52,7 @@ def test_decode_mutated_t_emits_move_element() -> None:
     mutated_entities = []
     for ent in seq.entities:
         if ent.element_id == "door-1":
-            mutated_entities.append(
-                ent.model_copy(update={"t_along_host": 0.5})
-            )
+            mutated_entities.append(ent.model_copy(update={"t_along_host": 0.5}))
         else:
             mutated_entities.append(ent)
 

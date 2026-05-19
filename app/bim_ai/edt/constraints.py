@@ -262,6 +262,7 @@ def evaluate_constraint(
             return None
         # Direction check: cross-product magnitude (angle residual).
         angle_residual = abs(da[0] * db[1] - da[1] * db[0])
+
         # Offset check: project vector between start points onto the shared normal.
         # Normal to direction da is (-da[1], da[0]).
         def _start_xy(e: dict[str, Any]) -> tuple[float, float]:
@@ -312,9 +313,7 @@ def evaluate_all(
     Returns the list of violations (empty if all constraints hold or
     there are no constraint elements).
     """
-    by_id: dict[str, dict[str, Any]] = {
-        e["id"]: e for e in elements if "id" in e
-    }
+    by_id: dict[str, dict[str, Any]] = {e["id"]: e for e in elements if "id" in e}
     constraints = [e for e in elements if e.get("kind") == "constraint"]
     out: list[ConstraintViolation] = []
     for c in constraints:

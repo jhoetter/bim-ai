@@ -24,8 +24,8 @@ class RoofWallAlignmentViolation:
 
     wall_id: str
     roof_id: str
-    sample_outside: XY                    # the worst offending point
-    distance_outside_mm: float            # how far outside the roof footprint
+    sample_outside: XY  # the worst offending point
+    distance_outside_mm: float  # how far outside the roof footprint
     message: str
 
     def to_advisory_dict(self) -> dict:

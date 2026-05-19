@@ -42,12 +42,8 @@ AGENT_BACKEND_ENV_VAR = "BIM_AI_AGENT_BACKEND"
 class AgentIterateRequest(BaseModel):
     model_config = ConfigDict(extra="ignore", populate_by_name=True)
     goal: str
-    current_snapshot: dict[str, Any] = Field(
-        default_factory=dict, alias="currentSnapshot"
-    )
-    current_validate: dict[str, Any] = Field(
-        default_factory=dict, alias="currentValidate"
-    )
+    current_snapshot: dict[str, Any] = Field(default_factory=dict, alias="currentSnapshot")
+    current_validate: dict[str, Any] = Field(default_factory=dict, alias="currentValidate")
     evidence: dict[str, Any] = Field(default_factory=dict)
     iteration: int = 0
     backend_override: str | None = Field(default=None, alias="backendOverride")
@@ -145,8 +141,8 @@ def _backend_claude(request: AgentIterateRequest) -> AgentIterateResponse:
     prompt = (
         "You are a BIM-AI design assistant. Given the goal, snapshot and current "
         "validation advisories, return ONE JSON object inside a ```json code "
-        "block with shape `{ \"commands\": [...], \"rationale\": \"...\", "
-        "\"confidence\": 0.0..1.0 }`. The commands array uses the bim-ai "
+        'block with shape `{ "commands": [...], "rationale": "...", '
+        '"confidence": 0.0..1.0 }`. The commands array uses the bim-ai '
         "command schema (see /api/schema).\n\n"
         f"## Goal\n{request.goal}\n\n"
         f"## Snapshot\n```json\n{json.dumps(request.current_snapshot)[:8000]}\n```\n\n"
@@ -193,9 +189,7 @@ def generate_patch(request: AgentIterateRequest) -> AgentIterateResponse:
     name = resolve_backend_name(request.backend_override)
     impl = _BACKENDS.get(name)
     if impl is None:
-        raise ValueError(
-            f"Unknown agent backend {name!r}; known: {sorted(_BACKENDS)}"
-        )
+        raise ValueError(f"Unknown agent backend {name!r}; known: {sorted(_BACKENDS)}")
     return impl(request)
 
 
@@ -225,9 +219,7 @@ def goal_keyword_overlap(goal: str, snapshot: dict[str, Any]) -> int:
     Used as a tie-breaker when blocking-advisory delta is zero.
     """
     keywords = {
-        w.lower()
-        for w in re.findall(r"[A-Za-z_][A-Za-z0-9_]{3,}", goal)
-        if not w.isnumeric()
+        w.lower() for w in re.findall(r"[A-Za-z_][A-Za-z0-9_]{3,}", goal) if not w.isnumeric()
     }
     if not keywords:
         return 0

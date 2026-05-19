@@ -1037,7 +1037,13 @@ _STRUCTURE_CONSTRUCTION_SCHEMAS: dict[str, dict[str, Any]] = {
             "name": {"type": "string"},
             "rule": {
                 "type": "string",
-                "enum": ["equal_distance", "equal_length", "parallel", "perpendicular", "collinear"],
+                "enum": [
+                    "equal_distance",
+                    "equal_length",
+                    "parallel",
+                    "perpendicular",
+                    "collinear",
+                ],
             },
             "refsA": {"type": "array", "minItems": 1, "items": {"type": "object"}},
             "refsB": {"type": "array", "minItems": 1, "items": {"type": "object"}},
@@ -1442,7 +1448,13 @@ _MEP_TYPED_SURFACES: tuple[dict[str, Any], ...] = (
             "--opening-kind wall --position 1500,800 --width 600 --height 320 --system hvac_supply --json"
         ),
         "schemaRef": "input:MepOpeningRequestInput",
-        "groups": ["semantic-authoring", "mep", "opening-request", "coordination", "kernel-command"],
+        "groups": [
+            "semantic-authoring",
+            "mep",
+            "opening-request",
+            "coordination",
+            "kernel-command",
+        ],
         "ui": ["tool:mep.opening-request", "cmd-k:mep.opening-request"],
         "notes": "Creates a traceable MEP penetration request against an explicit host and requester elements.",
     },
@@ -2590,7 +2602,10 @@ register(
                     "items": {"type": "string", "enum": ["wall", "floor", "roof", "slab"]},
                 },
                 "pointMm": {"type": "array", "items": {"type": "number"}, "minItems": 2},
-                "lineMm": {"type": "array", "items": {"type": "array", "items": {"type": "number"}}},
+                "lineMm": {
+                    "type": "array",
+                    "items": {"type": "array", "items": {"type": "number"}},
+                },
                 "include": {
                     "type": "array",
                     "items": {"type": "string", "enum": ["hostFaces", "normalizedPosition"]},
@@ -2862,7 +2877,9 @@ register(
             "bad_request": ExitCode(code=2, meaning="Invalid line/tolerance"),
         },
         cliExample="bim-ai resolve wall --line 0,0:6000,0 --tolerance-mm 50 --output json",
-        restEndpoint=RestEndpoint(method="POST", path="/api/models/{model_id}/resolve/wall-by-line"),
+        restEndpoint=RestEndpoint(
+            method="POST", path="/api/models/{model_id}/resolve/wall-by-line"
+        ),
         sideEffects="none",
         agentSafetyNotes="Read-only line-matched wall resolver for sketch wall/host equivalence.",
         requiredPermissions=["model:read"],
@@ -3003,7 +3020,9 @@ register(
             "bad_request": ExitCode(code=2, meaning="Invalid room-boundary request"),
         },
         cliExample="bim-ai resolve room-boundary --room room-1 --output json",
-        restEndpoint=RestEndpoint(method="POST", path="/api/models/{model_id}/resolve/room-boundary"),
+        restEndpoint=RestEndpoint(
+            method="POST", path="/api/models/{model_id}/resolve/room-boundary"
+        ),
         sideEffects="none",
         agentSafetyNotes="Read-only room/space boundary resolver for room-programme authoring.",
         requiredPermissions=["model:read"],
@@ -4212,7 +4231,10 @@ for _site_descriptor in [
         {
             "id": {"type": "string"},
             "boundaryMm": _TOPOSOLID_BOUNDARY_SCHEMA,
-            "finishCategory": {"type": "string", "enum": ["paving", "lawn", "road", "planting", "other"]},
+            "finishCategory": {
+                "type": "string",
+                "enum": ["paving", "lawn", "road", "planting", "other"],
+            },
             "materialKey": {"type": "string"},
             "name": {"type": "string"},
         },
@@ -4235,7 +4257,10 @@ for _site_descriptor in [
             "id": {"type": "string"},
             "hostToposolidId": {"type": "string"},
             "cutterElementId": {"type": "string"},
-            "cutMode": {"type": "string", "enum": ["to_top_of_cutter", "to_bottom_of_cutter", "custom_depth"]},
+            "cutMode": {
+                "type": "string",
+                "enum": ["to_top_of_cutter", "to_bottom_of_cutter", "custom_depth"],
+            },
             "offsetMm": {"type": "number"},
             "customDepthMm": {"type": "number"},
             "estimatedVolumeM3": {"type": "number"},
@@ -4249,7 +4274,10 @@ for _site_descriptor in [
         ["id"],
         {
             "id": {"type": "string"},
-            "cutMode": {"type": "string", "enum": ["to_top_of_cutter", "to_bottom_of_cutter", "custom_depth"]},
+            "cutMode": {
+                "type": "string",
+                "enum": ["to_top_of_cutter", "to_bottom_of_cutter", "custom_depth"],
+            },
             "offsetMm": {"type": "number"},
             "customDepthMm": {"type": "number"},
             "estimatedVolumeM3": {"type": "number"},
@@ -4595,7 +4623,9 @@ register(
         outputSchema={"type": "object", "properties": {"materials": {"type": "array"}}},
         exitCodes={"ok": ExitCode(code=0, meaning="Material catalog returned")},
         cliExample="bim-ai query types --category material --text brick",
-        restEndpoint=RestEndpoint(method="GET", path="/api/models/{model_id}/registry/type-material"),
+        restEndpoint=RestEndpoint(
+            method="GET", path="/api/models/{model_id}/registry/type-material"
+        ),
         sideEffects="none",
         agentSafetyNotes=(
             "Read-only access to builtin and document material/type registry evidence; "

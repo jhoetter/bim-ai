@@ -125,5 +125,12 @@ def test_l_shape_validates_and_derives_polygon():
     polygon = derive_closed_loop_polygon(lines)
     assert len(polygon) == 6
     # Polygon vertices should match the L corners (order may start anywhere).
-    expected = {(0.0, 0.0), (2000.0, 0.0), (2000.0, 1000.0), (1000.0, 1000.0), (1000.0, 2000.0), (0.0, 2000.0)}
+    expected = {
+        (0.0, 0.0),
+        (2000.0, 0.0),
+        (2000.0, 1000.0),
+        (1000.0, 1000.0),
+        (1000.0, 2000.0),
+        (0.0, 2000.0),
+    }
     assert {(round(x, 3), round(y, 3)) for (x, y) in polygon} == expected

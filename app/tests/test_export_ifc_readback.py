@@ -81,9 +81,7 @@ def test_qto_template_helpers_read_and_count_named_quantities():
 
     assert _ifc_product_defines_qto_template(product, "Qto_WallBaseQuantities") is True
     assert _ifc_product_defines_qto_template(product, "Qto_SlabBaseQuantities") is False
-    assert _count_ifc_products_with_qto_template(
-        [product, other], "Qto_WallBaseQuantities"
-    ) == 1
+    assert _count_ifc_products_with_qto_template([product, other], "Qto_WallBaseQuantities") == 1
     assert _read_named_qto_values(product, "Qto_WallBaseQuantities") == {
         "Length": 4.5,
         "GrossSideArea": 12.25,

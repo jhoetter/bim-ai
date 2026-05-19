@@ -140,7 +140,8 @@ def build_transaction_metadata(
             "clientOpId": client_op_id,
             "bundleDigestSha256": digest,
         },
-        "workflow": workflow or {
+        "workflow": workflow
+        or {
             "route": route or "unknown",
             "entryPoint": submitter or "unknown",
         },

@@ -66,9 +66,7 @@ def test_create_railing_regular_pattern():
     doc, *_ = _base_doc()
     apply_inplace(
         doc,
-        _railing_cmd(
-            balusterPattern={"rule": "regular", "spacingMm": 120}
-        ),
+        _railing_cmd(balusterPattern={"rule": "regular", "spacingMm": 120}),
     )
     railing = doc.elements["rail-1"]
     assert isinstance(railing, RailingElem)

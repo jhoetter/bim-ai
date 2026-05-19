@@ -71,12 +71,14 @@ class TestCommandBundle:
         assert bundle.tolerances is None
 
     def test_camel_case_alias_parentRevision(self):
-        bundle = CommandBundle.model_validate({
-            "schemaVersion": "cmd-v3.0",
-            "commands": [],
-            "assumptions": [_VALID_ASSUMPTION],
-            "parentRevision": 42,
-        })
+        bundle = CommandBundle.model_validate(
+            {
+                "schemaVersion": "cmd-v3.0",
+                "commands": [],
+                "assumptions": [_VALID_ASSUMPTION],
+                "parentRevision": 42,
+            }
+        )
         assert bundle.parent_revision == 42
 
     def test_empty_assumptions_rejected(self):

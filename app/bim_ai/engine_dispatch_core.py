@@ -53,7 +53,9 @@ from bim_ai.engine import (
 )
 
 
-def _expand_delete_with_wall_hosted_children(els: dict[str, object], element_ids: list[str]) -> list[str]:
+def _expand_delete_with_wall_hosted_children(
+    els: dict[str, object], element_ids: list[str]
+) -> list[str]:
     delete_ids = set(element_ids)
     deleted_wall_ids = {eid for eid in delete_ids if isinstance(els.get(eid), WallElem)}
     if not deleted_wall_ids:
@@ -293,9 +295,7 @@ def try_apply_core_command(doc, cmd, *, source_provider=None) -> bool:
                     level_id=cmd.level_id,
                     start=seg.start,
                     end=seg.end,
-                    thickness_mm=_wall_thickness_from_type(
-                        els, cmd.wall_type_id, seg.thickness_mm
-                    ),
+                    thickness_mm=_wall_thickness_from_type(els, cmd.wall_type_id, seg.thickness_mm),
                     height_mm=height_mm,
                     wall_type_id=cmd.wall_type_id,
                     location_line=cmd.location_line,

@@ -152,6 +152,7 @@ Observed results:
 | Package architecture      | Pass                                   | `scripts/check-architecture.mjs` reports `Architecture check OK`.                                              |
 | Prettier check            | Pass                                   | Matched configured TS/JS/JSON/YAML set. Markdown is not included.                                              |
 | Python ruff via `uv run`  | Pass                                   | `uv run ruff check bim_ai tests scripts` is green.                                                             |
+| Frontend lint             | Fail                                   | `pnpm lint` reports the existing `@bim-ai/web` lint backlog; tracked outside the B-grade verify gate.          |
 | Frontend unit tests       | Pass                                   | `669` test files / `5462` tests passed in the sampled run, with noisy stderr warnings.                         |
 | Frontend typecheck        | Pass                                   | Restored on 2026-05-19; `@bim-ai/web` compiles under the strict project config.                                |
 | Narrow backend test       | Assertions pass, command exits nonzero | Project-wide coverage gate applies to narrow test runs, so a focused route test exits with coverage below 65%. |
@@ -198,7 +199,7 @@ Largest current source files observed:
 | ID         | Priority | Status  | Theme                                     | Exit signal                                                                              |
 | ---------- | -------- | ------- | ----------------------------------------- | ---------------------------------------------------------------------------------------- |
 | CQ-2026-01 | P0       | Done    | Frontend typecheck                        | `pnpm --filter @bim-ai/web typecheck` passes.                                            |
-| CQ-2026-02 | P0       | Open    | Verification command consistency          | `make verify` and `pnpm verify:strict` are both reliable or clearly documented.          |
+| CQ-2026-02 | P0       | Done    | Verification command consistency          | `make verify` and `pnpm verify:strict` are both reliable or clearly documented.          |
 | CQ-2026-03 | P0       | Open    | Test noise and hidden warnings            | Default test runs do not emit repeated React/jsdom/fetch warnings.                       |
 | CQ-2026-04 | P1       | Open    | Source monolith reduction                 | Active extraction plans and first slices landed for the top churn files.                 |
 | CQ-2026-05 | P1       | Open    | Core type model hygiene                   | Shared element/command types compile without stale aliases or unreachable discriminants. |
@@ -278,7 +279,7 @@ Observed examples:
 ## CQ-2026-02 - Make Verification Commands Reliable
 
 Priority: P0
-Status: Open
+Status: Done
 Owner area: root scripts, Makefile, Python environment
 
 ### Problem
@@ -309,6 +310,20 @@ CI chooses one canonical quality gate.
 - `package.json`
 - `.github/workflows/*` if present or added
 - `README.md`
+
+### Completion Evidence
+
+- 2026-05-19: Makefile Python verification commands use `uv run` instead of
+  hardcoded `.venv/bin/ruff` or `.venv/bin/python` paths.
+- 2026-05-19: `make python-format-check` passes after applying Ruff's mechanical
+  formatting to the Python tree.
+- 2026-05-19: `pnpm verify:strict` is the CI JavaScript gate and covers
+  formatting, architecture, TypeScript, tests, and build.
+- 2026-05-19: `make verify` keeps Python ruff, Python tests, lockfile check, and
+  the JavaScript strict gate in the local monorepo gate.
+- JavaScript lint remains automated as `pnpm lint` / `make lint-js`, but is
+  intentionally tracked as a separate backlog instead of silently weakening or
+  blocking the B-grade gate.
 
 ---
 

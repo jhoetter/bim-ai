@@ -23,9 +23,9 @@ class StyleBias:
 
     style_id: str
     name: str
-    roof_bias: list[RoofBias]                # ordered preference
-    palette: dict[str, str]                   # logical surface → MAT-01 materialKey
-    glazing_ratio: float                      # facade glass area / facade area
+    roof_bias: list[RoofBias]  # ordered preference
+    palette: dict[str, str]  # logical surface → MAT-01 materialKey
+    glazing_ratio: float  # facade glass area / facade area
     typical_eave_overhang_mm: int
     typical_floor_height_mm: int
     typical_wall_thickness_mm: int

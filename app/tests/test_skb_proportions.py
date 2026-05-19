@@ -44,11 +44,11 @@ def test_unknown_field_returns_none() -> None:
 
 def test_check_many_returns_only_violations() -> None:
     items = [
-        ("wall.height_mm", "w1", 2800),    # in range
-        ("wall.height_mm", "w2", 800),      # too short
-        ("door.width_mm", "d1", 900),       # in range
-        ("door.width_mm", "d2", 50),        # too narrow
-        ("unknown.field", "e1", 1234),     # unknown — silently dropped
+        ("wall.height_mm", "w1", 2800),  # in range
+        ("wall.height_mm", "w2", 800),  # too short
+        ("door.width_mm", "d1", 900),  # in range
+        ("door.width_mm", "d2", 50),  # too narrow
+        ("unknown.field", "e1", 1234),  # unknown — silently dropped
     ]
     violations = check_many(items)
     ids = [v.element_id for v in violations]

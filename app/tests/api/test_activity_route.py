@@ -97,17 +97,22 @@ def _build_test_app() -> tuple[FastAPI, list[dict[str, Any]]]:
 
         if result.applied and result.new_revision is not None and new_doc_from_bundle is not None:
             old_rev = doc.revision
-            _models[model_id] = {"revision": new_doc_from_bundle.revision, "doc": new_doc_from_bundle}
-            _rows.append({
-                "id": str(uuid.uuid4()),
-                "modelId": model_id,
-                "authorId": uid,
-                "kind": "commit",
-                "payload": {"commandCount": len(bundle.commands)},
-                "ts": int(time.time() * 1000),
-                "parentSnapshotId": str(old_rev),
-                "resultSnapshotId": str(new_doc_from_bundle.revision),
-            })
+            _models[model_id] = {
+                "revision": new_doc_from_bundle.revision,
+                "doc": new_doc_from_bundle,
+            }
+            _rows.append(
+                {
+                    "id": str(uuid.uuid4()),
+                    "modelId": model_id,
+                    "authorId": uid,
+                    "kind": "commit",
+                    "payload": {"commandCount": len(bundle.commands)},
+                    "ts": int(time.time() * 1000),
+                    "parentSnapshotId": str(old_rev),
+                    "resultSnapshotId": str(new_doc_from_bundle.revision),
+                }
+            )
 
         return result.model_dump(by_alias=True)
 
@@ -153,16 +158,22 @@ def _build_test_app() -> tuple[FastAPI, list[dict[str, Any]]]:
         _models[model_id]["revision"] = new_rev
 
         restore_row_id = str(uuid.uuid4())
-        _rows.append({
-            "id": restore_row_id,
-            "modelId": model_id,
-            "authorId": "restore",
-            "kind": "commit",
-            "payload": {"restore": True, "fromRevision": int(act_row["parentSnapshotId"]), "toRevision": new_rev},
-            "ts": int(time.time() * 1000) + 1,
-            "parentSnapshotId": str(current_rev),
-            "resultSnapshotId": str(new_rev),
-        })
+        _rows.append(
+            {
+                "id": restore_row_id,
+                "modelId": model_id,
+                "authorId": "restore",
+                "kind": "commit",
+                "payload": {
+                    "restore": True,
+                    "fromRevision": int(act_row["parentSnapshotId"]),
+                    "toRevision": new_rev,
+                },
+                "ts": int(time.time() * 1000) + 1,
+                "parentSnapshotId": str(current_rev),
+                "resultSnapshotId": str(new_rev),
+            }
+        )
 
         return {"modelId": model_id, "restoredRevision": new_rev, "activityRowId": restore_row_id}
 
@@ -259,7 +270,14 @@ class TestListActivity:
             json={
                 "bundle": {
                     "schemaVersion": "cmd-v3.0",
-                    "commands": [{"type": "createLevel", "id": "lvl-2", "name": "Level 2", "elevationMm": 3000}],
+                    "commands": [
+                        {
+                            "type": "createLevel",
+                            "id": "lvl-2",
+                            "name": "Level 2",
+                            "elevationMm": 3000,
+                        }
+                    ],
                     "assumptions": [_VALID_ASSUMPTION],
                     "parentRevision": 2,
                 },
@@ -280,16 +298,18 @@ class TestListActivity:
 
     def test_filter_by_kind(self, client: TestClient, rows: list[dict]) -> None:
         client.post(f"/api/models/{MODEL_ID}/bundles", json=_commit_body())
-        rows.append({
-            "id": str(uuid.uuid4()),
-            "modelId": MODEL_ID,
-            "authorId": "user-2",
-            "kind": "comment_created",
-            "payload": {},
-            "ts": int(time.time() * 1000) + 100,
-            "parentSnapshotId": None,
-            "resultSnapshotId": None,
-        })
+        rows.append(
+            {
+                "id": str(uuid.uuid4()),
+                "modelId": MODEL_ID,
+                "authorId": "user-2",
+                "kind": "comment_created",
+                "payload": {},
+                "ts": int(time.time() * 1000) + 100,
+                "parentSnapshotId": None,
+                "resultSnapshotId": None,
+            }
+        )
         res = client.get(f"/api/models/{MODEL_ID}/activity?kind=commit")
         assert res.status_code == 200
         result_rows = res.json()["rows"]
@@ -297,16 +317,18 @@ class TestListActivity:
 
     def test_filter_by_author(self, client: TestClient, rows: list[dict]) -> None:
         client.post(f"/api/models/{MODEL_ID}/bundles", json=_commit_body(userId="author-x"))
-        rows.append({
-            "id": str(uuid.uuid4()),
-            "modelId": MODEL_ID,
-            "authorId": "author-y",
-            "kind": "commit",
-            "payload": {},
-            "ts": int(time.time() * 1000) + 10,
-            "parentSnapshotId": "2",
-            "resultSnapshotId": "3",
-        })
+        rows.append(
+            {
+                "id": str(uuid.uuid4()),
+                "modelId": MODEL_ID,
+                "authorId": "author-y",
+                "kind": "commit",
+                "payload": {},
+                "ts": int(time.time() * 1000) + 10,
+                "parentSnapshotId": "2",
+                "resultSnapshotId": "3",
+            }
+        )
         res = client.get(f"/api/models/{MODEL_ID}/activity?authorId=author-x")
         assert res.status_code == 200
         result_rows = res.json()["rows"]
@@ -315,16 +337,18 @@ class TestListActivity:
     def test_limit_respected(self, client: TestClient, rows: list[dict]) -> None:
         now = int(time.time() * 1000)
         for i in range(10):
-            rows.append({
-                "id": str(uuid.uuid4()),
-                "modelId": MODEL_ID,
-                "authorId": "bulk",
-                "kind": "commit",
-                "payload": {},
-                "ts": now + i,
-                "parentSnapshotId": str(i),
-                "resultSnapshotId": str(i + 1),
-            })
+            rows.append(
+                {
+                    "id": str(uuid.uuid4()),
+                    "modelId": MODEL_ID,
+                    "authorId": "bulk",
+                    "kind": "commit",
+                    "payload": {},
+                    "ts": now + i,
+                    "parentSnapshotId": str(i),
+                    "resultSnapshotId": str(i + 1),
+                }
+            )
         res = client.get(f"/api/models/{MODEL_ID}/activity?limit=5")
         assert res.status_code == 200
         assert len(res.json()["rows"]) <= 5
@@ -332,16 +356,18 @@ class TestListActivity:
     def test_before_cursor_pagination(self, client: TestClient, rows: list[dict]) -> None:
         now = int(time.time() * 1000)
         for i in range(5):
-            rows.append({
-                "id": str(uuid.uuid4()),
-                "modelId": MODEL_ID,
-                "authorId": "pager",
-                "kind": "commit",
-                "payload": {},
-                "ts": now + i * 1000,
-                "parentSnapshotId": str(i),
-                "resultSnapshotId": str(i + 1),
-            })
+            rows.append(
+                {
+                    "id": str(uuid.uuid4()),
+                    "modelId": MODEL_ID,
+                    "authorId": "pager",
+                    "kind": "commit",
+                    "payload": {},
+                    "ts": now + i * 1000,
+                    "parentSnapshotId": str(i),
+                    "resultSnapshotId": str(i + 1),
+                }
+            )
         cutoff = now + 2500
         res = client.get(f"/api/models/{MODEL_ID}/activity?before={cutoff}")
         assert res.status_code == 200

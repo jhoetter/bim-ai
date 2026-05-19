@@ -78,7 +78,11 @@ def test_duplicate_level_id_flagged() -> None:
 def test_wall_inside_roof_no_violation() -> None:
     fp = RECT_BOUNDARY
     adv = check_roof_contains_wall_midpoint(
-        "w1", (1000.0, 1000.0), (4000.0, 1000.0), "r1", fp,
+        "w1",
+        (1000.0, 1000.0),
+        (4000.0, 1000.0),
+        "r1",
+        fp,
     )
     assert adv is None
 
@@ -86,7 +90,11 @@ def test_wall_inside_roof_no_violation() -> None:
 def test_wall_outside_roof_flagged() -> None:
     fp = RECT_BOUNDARY
     adv = check_roof_contains_wall_midpoint(
-        "w1", (5000.0, 1000.0), (8000.0, 1000.0), "r1", fp,
+        "w1",
+        (5000.0, 1000.0),
+        (8000.0, 1000.0),
+        "r1",
+        fp,
     )
     assert adv is not None
     assert adv.rule_id == "roof_contains_upper_wall_centerlines_v1"
@@ -94,8 +102,8 @@ def test_wall_outside_roof_flagged() -> None:
 
 def test_run_pack_returns_union() -> None:
     inp = SoundnessInput(
-        walls=RECT[:3],   # missing west wall — but corner check tolerates that
-        floors=[("f1", RECT_BOUNDARY, RECT)],   # boundary matches
+        walls=RECT[:3],  # missing west wall — but corner check tolerates that
+        floors=[("f1", RECT_BOUNDARY, RECT)],  # boundary matches
         levels=[LevelInfo("L1", 0), LevelInfo("L2", 3000), LevelInfo("L2-bis", 3000)],  # collision
         roofed_walls=[
             ("w-out", (5000.0, 1000.0), (8000.0, 1000.0), "r1", RECT_BOUNDARY),  # midpoint outside

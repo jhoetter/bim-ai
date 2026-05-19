@@ -1,4 +1,5 @@
 """Toposolid geometry helpers — Delaunay triangulation + contour extraction."""
+
 from __future__ import annotations
 
 from bim_ai.elements import ToposolidElem

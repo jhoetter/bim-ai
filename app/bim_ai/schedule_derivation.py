@@ -1285,9 +1285,7 @@ def derive_schedule_table(doc: Document, schedule_id: str) -> dict[str, Any]:
                         "typeId": type_id,
                         "typeName": type_name,
                         "thermalClassification": thermal_classification(e),
-                        "classificationSource": getattr(
-                            e, "thermal_classification_source", None
-                        )
+                        "classificationSource": getattr(e, "thermal_classification_source", None)
                         or "",
                         "surfaceAreaM2": envelope_surface_area_m2(doc, e),
                         "uValueWPerM2K": uv["uValueWPerM2K"],
@@ -1318,9 +1316,7 @@ def derive_schedule_table(doc: Document, schedule_id: str) -> dict[str, Any]:
                         "level": lvl_lab.get(lid, lid),
                         "wallId": e.wall_id,
                         "thermalClassification": thermal_classification(e),
-                        "classificationSource": getattr(
-                            e, "thermal_classification_source", None
-                        )
+                        "classificationSource": getattr(e, "thermal_classification_source", None)
                         or "",
                         "surfaceAreaM2": round(area_m2, 6),
                         "uValueWPerM2K": opening_energy_value(e, "uValue"),
@@ -1347,13 +1343,17 @@ def derive_schedule_table(doc: Document, schedule_id: str) -> dict[str, Any]:
                 {
                     "elementId": key,
                     "materialKey": key,
-                    "materialDisplay": spec.display_name if spec else material_display_label(doc, key),
+                    "materialDisplay": spec.display_name
+                    if spec
+                    else material_display_label(doc, key),
                     "lambdaWPerMK": spec.lambda_w_per_mk if spec else "",
                     "rhoKgPerM3": spec.rho_kg_per_m3 if spec else "",
                     "specificHeatJPerKgK": spec.specific_heat_j_per_kgk if spec else "",
                     "mu": spec.mu if spec else "",
                     "sourceReference": spec.source_reference if spec else "",
-                    "thermalDataStatus": "complete" if spec and spec.lambda_w_per_mk else "missing_lambda",
+                    "thermalDataStatus": "complete"
+                    if spec and spec.lambda_w_per_mk
+                    else "missing_lambda",
                     "familyTypeId": "",
                 }
             )
@@ -1881,23 +1881,31 @@ def derive_schedule_table(doc: Document, schedule_id: str) -> dict[str, Any]:
             totals["surfaceAreaM2"] = round(
                 sum(float(r.get("surfaceAreaM2") or 0.0) for r in leaf_rows), 6
             )
-    elif cat in {
-        "construction_package",
-        "phase",
-        "progress",
-        "punch",
-        "site_logistics",
-        "qa_checklist",
-    } and leaf_rows:
+    elif (
+        cat
+        in {
+            "construction_package",
+            "phase",
+            "progress",
+            "punch",
+            "site_logistics",
+            "qa_checklist",
+        }
+        and leaf_rows
+    ):
         totals = {"kind": cat, "rowCount": len(leaf_rows)}
-    elif cat in {
-        "material_impact",
-        "element_carbon",
-        "assembly_carbon",
-        "circularity",
-        "scenario_impact_comparison",
-        "missing_sustainability_data",
-    } and leaf_rows:
+    elif (
+        cat
+        in {
+            "material_impact",
+            "element_carbon",
+            "assembly_carbon",
+            "circularity",
+            "scenario_impact_comparison",
+            "missing_sustainability_data",
+        }
+        and leaf_rows
+    ):
         totals = {
             "kind": cat,
             "rowCount": len(leaf_rows),

@@ -33,7 +33,14 @@ def test_style_for_brief_hint_unknown_returns_none() -> None:
 
 
 def test_each_style_has_complete_palette() -> None:
-    required = {"ground_cladding", "upper_cladding", "accent_cladding", "roof", "frames", "balustrade"}
+    required = {
+        "ground_cladding",
+        "upper_cladding",
+        "accent_cladding",
+        "roof",
+        "frames",
+        "balustrade",
+    }
     for s in STYLE_BIASES.values():
         missing = required - set(s.palette.keys())
         assert not missing, f"{s.style_id} missing palette keys: {missing}"

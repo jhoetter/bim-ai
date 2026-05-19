@@ -30,22 +30,26 @@ _CREATE_WALL = {
 def test_cmd_v3_commit_transaction_metadata_captures_revision_identity_audit_and_delta() -> None:
     doc = Document(revision=1, elements={})  # type: ignore[arg-type]
     ensure_internal_origin(doc)
-    level_bundle = CommandBundle.model_validate({
-        "schemaVersion": "cmd-v3.0",
-        "commands": [_CREATE_LEVEL],
-        "assumptions": [_ASSUMPTION],
-        "parentRevision": doc.revision,
-    })
+    level_bundle = CommandBundle.model_validate(
+        {
+            "schemaVersion": "cmd-v3.0",
+            "commands": [_CREATE_LEVEL],
+            "assumptions": [_ASSUMPTION],
+            "parentRevision": doc.revision,
+        }
+    )
     level_result, doc_with_level = apply_bundle(doc, level_bundle, "commit", submitter="agent")
     assert level_result.applied is True
     assert doc_with_level is not None
 
-    bundle = CommandBundle.model_validate({
-        "schemaVersion": "cmd-v3.0",
-        "commands": [_CREATE_WALL],
-        "assumptions": [_ASSUMPTION],
-        "parentRevision": doc_with_level.revision,
-    })
+    bundle = CommandBundle.model_validate(
+        {
+            "schemaVersion": "cmd-v3.0",
+            "commands": [_CREATE_WALL],
+            "assumptions": [_ASSUMPTION],
+            "parentRevision": doc_with_level.revision,
+        }
+    )
     result, new_doc = apply_bundle(doc_with_level, bundle, "commit", submitter="agent")
     assert result.applied is True
     assert new_doc is not None
@@ -92,12 +96,14 @@ def test_cmd_v3_commit_transaction_metadata_captures_revision_identity_audit_and
 def test_m3_workflow_transaction_metadata_preserves_entry_point_identity() -> None:
     doc = Document(revision=1, elements={})  # type: ignore[arg-type]
     ensure_internal_origin(doc)
-    bundle = CommandBundle.model_validate({
-        "schemaVersion": "cmd-v3.0",
-        "commands": [_CREATE_LEVEL],
-        "assumptions": [_ASSUMPTION],
-        "parentRevision": doc.revision,
-    })
+    bundle = CommandBundle.model_validate(
+        {
+            "schemaVersion": "cmd-v3.0",
+            "commands": [_CREATE_LEVEL],
+            "assumptions": [_ASSUMPTION],
+            "parentRevision": doc.revision,
+        }
+    )
     result, new_doc = apply_bundle(doc, bundle, "commit", submitter="agent")
     assert result.applied is True
     assert new_doc is not None

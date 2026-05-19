@@ -134,15 +134,11 @@ def _diff_fields(host_el: Element, src_el: Element, kind: str) -> list[str]:
     return out
 
 
-def _find_source_element(
-    src_doc: Document, source_element_id: str
-) -> Element | None:
+def _find_source_element(src_doc: Document, source_element_id: str) -> Element | None:
     return src_doc.elements.get(source_element_id)
 
 
-def bump_monitored_revisions(
-    host_doc: Document, source_provider: SourceDocProvider
-) -> None:
+def bump_monitored_revisions(host_doc: Document, source_provider: SourceDocProvider) -> None:
     """Walk every monitored element in ``host_doc`` and write fresh
     ``drifted`` / ``drifted_fields`` to its ``monitor_source``.
 
@@ -174,9 +170,7 @@ def bump_monitored_revisions(
         host_doc.elements[elem_id] = elem.model_copy(update={"monitor_source": new_ms})
 
 
-def _accept_source_updates_for_kind(
-    host_el: Element, src_el: Element, kind: str
-) -> dict[str, Any]:
+def _accept_source_updates_for_kind(host_el: Element, src_el: Element, kind: str) -> dict[str, Any]:
     """Return the field-name → value patch needed to make ``host_el`` match
     ``src_el`` on every monitored field. Vector fields are kept as the
     source's pydantic instance so model_copy preserves typing.
@@ -215,9 +209,7 @@ def reconcile_monitored_element(
         raise ValueError(f"reconcileMonitoredElement.elementId unknown: '{element_id}'")
     ms = getattr(elem, "monitor_source", None)
     if not isinstance(ms, MonitorSourceSpec):
-        raise ValueError(
-            f"reconcileMonitoredElement target '{element_id}' has no monitor_source"
-        )
+        raise ValueError(f"reconcileMonitoredElement target '{element_id}' has no monitor_source")
     src_doc = _resolve_source_doc(host_doc, ms, source_provider)
     if src_doc is None:
         raise ValueError(
@@ -226,9 +218,7 @@ def reconcile_monitored_element(
         )
     src_el = _find_source_element(src_doc, ms.element_id)
     if src_el is None:
-        raise ValueError(
-            f"reconcileMonitoredElement: source element '{ms.element_id}' not found"
-        )
+        raise ValueError(f"reconcileMonitoredElement: source element '{ms.element_id}' not found")
 
     new_revision = int(src_doc.revision)
     new_ms = ms.model_copy(

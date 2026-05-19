@@ -49,30 +49,52 @@ R_SI_M2K_PER_W = 0.13
 R_SE_M2K_PER_W = 0.04
 
 THERMAL_MATERIAL_LIBRARY: dict[str, ThermalMaterialSpec] = {
-    "mineral_wool_wlg_035": ThermalMaterialSpec("mineral_wool_wlg_035", "Mineral wool WLG 035", 0.035, 35, 1030, 1),
+    "mineral_wool_wlg_035": ThermalMaterialSpec(
+        "mineral_wool_wlg_035", "Mineral wool WLG 035", 0.035, 35, 1030, 1
+    ),
     "eps_wlg_032": ThermalMaterialSpec("eps_wlg_032", "EPS WLG 032", 0.032, 20, 1450, 40),
-    "sand_lime_brick": ThermalMaterialSpec("sand_lime_brick", "Sand-lime brick", 0.99, 1800, 1000, 15),
-    "reinforced_concrete": ThermalMaterialSpec("reinforced_concrete", "Reinforced concrete", 2.3, 2400, 1000, 80),
+    "sand_lime_brick": ThermalMaterialSpec(
+        "sand_lime_brick", "Sand-lime brick", 0.99, 1800, 1000, 15
+    ),
+    "reinforced_concrete": ThermalMaterialSpec(
+        "reinforced_concrete", "Reinforced concrete", 2.3, 2400, 1000, 80
+    ),
     "gypsum_board": ThermalMaterialSpec("gypsum_board", "Gypsum board", 0.25, 850, 1090, 10),
     "osb": ThermalMaterialSpec("osb", "OSB", 0.13, 650, 1700, 50),
     "timber": ThermalMaterialSpec("timber", "Timber", 0.13, 500, 1600, 50),
-    "aerated_concrete": ThermalMaterialSpec("aerated_concrete", "Aerated concrete", 0.16, 500, 1000, 5),
+    "aerated_concrete": ThermalMaterialSpec(
+        "aerated_concrete", "Aerated concrete", 0.16, 500, 1000, 5
+    ),
     "clay_brick": ThermalMaterialSpec("clay_brick", "Clay brick", 0.52, 1200, 1000, 10),
     "screed": ThermalMaterialSpec("screed", "Cement screed", 1.4, 2000, 1000, 30),
     "membrane": ThermalMaterialSpec("membrane", "Membrane", 0.17, 900, 1400, 10000),
-    "roof_insulation_pir": ThermalMaterialSpec("roof_insulation_pir", "PIR roof insulation", 0.026, 32, 1400, 60),
+    "roof_insulation_pir": ThermalMaterialSpec(
+        "roof_insulation_pir", "PIR roof insulation", 0.026, 32, 1400, 60
+    ),
     # Existing material keys used by the architecture/material catalogs.
-    "timber_frame_insulation": ThermalMaterialSpec("timber_frame_insulation", "Timber frame + insulation", 0.04, 80, 1200, 2),
+    "timber_frame_insulation": ThermalMaterialSpec(
+        "timber_frame_insulation", "Timber frame + insulation", 0.04, 80, 1200, 2
+    ),
     "timber_stud": ThermalMaterialSpec("timber_stud", "Timber stud", 0.13, 500, 1600, 50),
     "plasterboard": ThermalMaterialSpec("plasterboard", "Plasterboard", 0.25, 850, 1090, 10),
     "plaster": ThermalMaterialSpec("plaster", "Plaster", 0.7, 1400, 1000, 10),
     "masonry_brick": ThermalMaterialSpec("masonry_brick", "Masonry brick", 0.52, 1200, 1000, 10),
     "masonry_block": ThermalMaterialSpec("masonry_block", "Masonry block", 0.35, 900, 1000, 8),
-    "concrete_smooth": ThermalMaterialSpec("concrete_smooth", "Smooth concrete", 2.1, 2300, 1000, 80),
+    "concrete_smooth": ThermalMaterialSpec(
+        "concrete_smooth", "Smooth concrete", 2.1, 2300, 1000, 80
+    ),
     "concrete": ThermalMaterialSpec("concrete", "Concrete", 2.1, 2300, 1000, 80),
     "screed_cement": ThermalMaterialSpec("screed_cement", "Cement screed", 1.4, 2000, 1000, 30),
     "vcl_membrane": ThermalMaterialSpec("vcl_membrane", "VCL membrane", 0.17, 900, 1400, 10000),
-    "air": ThermalMaterialSpec("air", "Air layer", None, None, None, None, "Ventilated/unventilated air layer requires specialist handling"),
+    "air": ThermalMaterialSpec(
+        "air",
+        "Air layer",
+        None,
+        None,
+        None,
+        None,
+        "Ventilated/unventilated air layer requires specialist handling",
+    ),
 }
 
 
@@ -213,9 +235,7 @@ def _props(el: Any) -> dict[str, Any]:
 
 def thermal_classification(el: Any) -> str:
     return str(
-        getattr(el, "thermal_classification", None)
-        or _props(el).get("thermalClassification")
-        or ""
+        getattr(el, "thermal_classification", None) or _props(el).get("thermalClassification") or ""
     )
 
 
@@ -255,7 +275,9 @@ def energy_qa_rows(doc: Document) -> list[dict[str, Any]]:
                         "message": "Opening lacks thermal envelope classification.",
                     }
                 )
-            if opening_energy_value(el, "uValue") in ("", None) or opening_energy_value(el, "gValue") in ("", None):
+            if opening_energy_value(el, "uValue") in ("", None) or opening_energy_value(
+                el, "gValue"
+            ) in ("", None):
                 rows.append(
                     {
                         "elementId": el.id,
@@ -290,7 +312,9 @@ def energy_qa_rows(doc: Document) -> list[dict[str, Any]]:
     return rows
 
 
-def build_energy_handoff_payload(doc: Document, *, scenario_id: str | None = None) -> dict[str, Any]:
+def build_energy_handoff_payload(
+    doc: Document, *, scenario_id: str | None = None
+) -> dict[str, Any]:
     scenarios = [
         e.model_dump(by_alias=True, exclude_none=True)
         for e in doc.elements.values()
@@ -344,7 +368,9 @@ def _polygon_area_m2(points: list[Any]) -> float:
     return round(abs(acc) / 2_000_000.0, 6)
 
 
-def resolved_layers_for_envelope_element(doc: Document, el: WallElem | FloorElem | RoofElem) -> list[dict[str, Any]]:
+def resolved_layers_for_envelope_element(
+    doc: Document, el: WallElem | FloorElem | RoofElem
+) -> list[dict[str, Any]]:
     if isinstance(el, WallElem):
         return resolved_layers_for_wall(doc, el)
     if isinstance(el, FloorElem):

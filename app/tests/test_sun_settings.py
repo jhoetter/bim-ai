@@ -58,7 +58,9 @@ class TestCreateSunSettings:
         )
         assert ok
         with pytest.raises(ValueError, match="already exists"):
-            try_commit(doc, {"type": "createSunSettings", "latitudeDeg": 52.0, "longitudeDeg": 13.0})
+            try_commit(
+                doc, {"type": "createSunSettings", "latitudeDeg": 52.0, "longitudeDeg": 13.0}
+            )
 
     def test_wire_format_camelCase(self):
         """Verify camelCase wire format is accepted (populate_by_name=True)."""

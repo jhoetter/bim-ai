@@ -66,8 +66,8 @@ def test_unknown_rule_treated_as_pass() -> None:
 
 def test_locked_distance_pass_within_epsilon() -> None:
     walls = [
-        _wall("w1", 0, 0, 0, 0),       # centre at (0,0)
-        _wall("w2", 5000, 0, 5000, 0), # centre at (5000,0)
+        _wall("w1", 0, 0, 0, 0),  # centre at (0,0)
+        _wall("w2", 5000, 0, 5000, 0),  # centre at (5000,0)
     ]
     c = make_locked_distance_constraint(
         constraint_id="c1", wall_a_id="w1", wall_b_id="w2", locked_mm=5000.0

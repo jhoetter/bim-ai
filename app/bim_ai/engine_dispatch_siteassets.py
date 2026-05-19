@@ -380,7 +380,10 @@ def try_apply_siteassets_command(doc, cmd, *, source_provider=None) -> bool:
                     f"CreateToposolidExcavation.hostToposolidId '{cmd.host_toposolid_id}' does not reference an existing toposolid"
                 )
             cutter = els.get(cmd.cutter_element_id)
-            if not isinstance(cutter, (FloorElem, ToposolidElem)) and getattr(cutter, "kind", None) != "roof":
+            if (
+                not isinstance(cutter, (FloorElem, ToposolidElem))
+                and getattr(cutter, "kind", None) != "roof"
+            ):
                 raise ValueError(
                     f"CreateToposolidExcavation.cutterElementId '{cmd.cutter_element_id}' must reference a floor, roof, or toposolid"
                 )
@@ -390,7 +393,9 @@ def try_apply_siteassets_command(doc, cmd, *, source_provider=None) -> bool:
                     "CreateToposolidExcavation: cutter footprint must overlap hostToposolidId in plan"
                 )
             if cmd.cut_mode == "custom_depth" and cmd.custom_depth_mm is None:
-                raise ValueError("CreateToposolidExcavation.customDepthMm is required for custom_depth mode")
+                raise ValueError(
+                    "CreateToposolidExcavation.customDepthMm is required for custom_depth mode"
+                )
             estimated = cmd.estimated_volume_m3
             if estimated is None:
                 estimated = _estimate_excavation_volume_m3(
@@ -423,7 +428,9 @@ def try_apply_siteassets_command(doc, cmd, *, source_provider=None) -> bool:
                 cmd.custom_depth_mm if cmd.custom_depth_mm is not None else existing.custom_depth_mm
             )
             if next_cut_mode == "custom_depth" and next_custom_depth is None:
-                raise ValueError("UpdateToposolidExcavation.customDepthMm is required for custom_depth mode")
+                raise ValueError(
+                    "UpdateToposolidExcavation.customDepthMm is required for custom_depth mode"
+                )
             if cmd.cut_mode is not None:
                 patch["cut_mode"] = cmd.cut_mode
             if cmd.offset_mm is not None:

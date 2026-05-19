@@ -227,8 +227,7 @@ def _segment_rooms(
             RoomRegion(
                 id=_det_id("room", idx),
                 polygonMm=[
-                    PointMm(x=px * scale_mm_per_px, y=py * scale_mm_per_px)
-                    for px, py in pts
+                    PointMm(x=px * scale_mm_per_px, y=py * scale_mm_per_px) for px, py in pts
                 ],
                 detectedAreaMm2=area_px2 * scale_mm_per_px * scale_mm_per_px,
             )
@@ -258,9 +257,7 @@ def _detect_openings(walls: list[WallSegment]) -> list[OpeningHint]:
     def midpoint(w: WallSegment) -> tuple[float, float]:
         return ((w.a_mm.x + w.b_mm.x) / 2.0, (w.a_mm.y + w.b_mm.y) / 2.0)
 
-    def pt_to_seg_dist(
-        px: float, py: float, ax: float, ay: float, bx: float, by: float
-    ) -> float:
+    def pt_to_seg_dist(px: float, py: float, ax: float, ay: float, bx: float, by: float) -> float:
         dx, dy = bx - ax, by - ay
         length_sq = dx * dx + dy * dy
         if length_sq < 1e-9:
@@ -288,9 +285,7 @@ def _detect_openings(walls: list[WallSegment]) -> list[OpeningHint]:
                 long_len = math.sqrt(dx * dx + dy * dy)
                 if long_len < 1e-9:
                     continue
-                t = ((mx - long_w.a_mm.x) * dx + (my - long_w.a_mm.y) * dy) / (
-                    long_len * long_len
-                )
+                t = ((mx - long_w.a_mm.x) * dx + (my - long_w.a_mm.y) * dy) / (long_len * long_len)
                 t = max(0.0, min(1.0, t))
                 kind: str = "door" if short_len < 1000 else "window"
                 openings.append(

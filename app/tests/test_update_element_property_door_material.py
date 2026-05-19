@@ -190,7 +190,10 @@ def test_stair_railing_material_slot_updates() -> None:
     assert isinstance(stair, StairElem)
     assert isinstance(rail, RailingElem)
     assert stair.material_slots == {"tread": "timber_cladding", "stringer": "aluminium_black"}
-    assert rail.material_slots == {"topRail": "aluminium_black", "panel": "asset_clear_glass_double"}
+    assert rail.material_slots == {
+        "topRail": "aluminium_black",
+        "panel": "asset_clear_glass_double",
+    }
 
 
 def test_wall_face_material_overrides_update() -> None:

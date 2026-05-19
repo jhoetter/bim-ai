@@ -47,7 +47,9 @@ def decode(seq: TokenSequence, kernel_state: dict[str, Any]) -> list[dict[str, A
     return commands
 
 
-def _commands_for_new_entity(tok: EntityToken, kernel_state: dict[str, Any]) -> list[dict[str, Any]]:
+def _commands_for_new_entity(
+    tok: EntityToken, kernel_state: dict[str, Any]
+) -> list[dict[str, Any]]:
     if tok.class_key == "door":
         return [
             {

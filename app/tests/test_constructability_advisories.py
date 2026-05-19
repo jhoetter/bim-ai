@@ -95,9 +95,7 @@ def test_evaluate_scopes_constructability_by_phase_filter() -> None:
         "lvl-1": _level(),
         "wall-existing": _wall(id="wall-existing", phaseCreated="existing"),
         "asset-shelf": _asset_library(),
-        "shelf-new": _shelf(y_mm=0, id="shelf-new").model_copy(
-            update={"phase_created": "new"}
-        ),
+        "shelf-new": _shelf(y_mm=0, id="shelf-new").model_copy(update={"phase_created": "new"}),
     }
 
     all_rules = {violation.rule_id for violation in evaluate(elements)}  # type: ignore[arg-type]
