@@ -254,8 +254,8 @@ This tracker is complete only when all of these are true:
 | `BIR-K02` | P0 | Not started | Add export-readback geometry checks. | For supported elements, exported geometry can be read back or summarized and compared to model snapshot/topology. |
 | `BIR-K03` | P0 | Partial | Align renderer and export feature contracts. | IFC/glTF manifests embed `exportFeatureSupportMatrix_v1` and `rendererExportContractDrift_v1`, identifying viewport-vs-export support drift such as roof openings, railings, placed assets, and family instances. |
 | `BIR-K04` | P1 | Partial | IFC semantic mapping completeness. | Walls, floors, roofs, doors, windows, stairs, rails, rooms/spaces, types, materials, classifications, quantities, and property sets have manifest coverage. |
-| `BIR-K05` | P1 | Partial | Schedule integrity. | Room, door/window, material/quantity, and documentation schedules match model elements and export evidence. |
-| `BIR-K06` | P1 | Partial | Sheet/view evidence. | Saved views, sheets, viewports, scales, render bundles, and PDF-like exports are linked to model/evidence packets. |
+| `BIR-K05` | P1 | Partial | Schedule integrity. | Room, door/window, material/quantity, and documentation schedules match model elements and export evidence; `scheduleSheetExchangeEvidence_v1` now exposes missing model rows, unsupported schedule categories/rows, and stale schedule evidence digests. |
+| `BIR-K06` | P1 | Partial | Sheet/view evidence. | Saved views, sheets, viewports, scales, render bundles, and PDF-like exports are linked to model/evidence packets; `scheduleSheetExchangeEvidence_v1` now checks sheet evidence rows, viewport refs, viewport scales, render-bundle summaries, and stale revision/digest links. |
 | `BIR-K07` | P2 | Partial | IDS/BIR validation packs. | `packages/cli/lib/bim-requirement-validation-pack.mjs` deterministically compiles simple sketch/BIR information requirements into delivery-target checks and evidence blockers, and `sketch.exchange-validation.v1` now carries the compiled pack/report. Tests: `packages/cli/bimRequirementValidationPack.test.mjs`. Remaining: broader IDS schema import and backend Advisor/API parity. |
 
 ### L. Performance, Responsiveness, And Live Stability
@@ -477,6 +477,21 @@ Goal: close `M5`.
 
 Exit: viewport and exchange artifacts agree for all supported target-house and
 benchmark features, or unsupported gaps are explicit.
+
+W5-C evidence update:
+- Added `app/bim_ai/schedule_sheet_exchange_evidence.py` with deterministic
+  `scheduleSheetExchangeEvidence_v1` checks for room, door, window,
+  material-assembly, quantity-takeoff, sheet, and view schedules against live
+  model rows and documentation export schedule digests.
+- Added sheet/view evidence checks for deterministic sheet rows, viewport
+  `viewRef` resolution, plan/section viewport scale presence, sheet SVG digest
+  drift, model revision drift, render bundle camera/material summaries, and
+  missing render material texture assets.
+- Added `app/tests/test_schedule_sheet_exchange_evidence.py`.
+- Verification: `PYTEST_ADDOPTS=--no-cov python -m pytest
+  app/tests/test_schedule_sheet_exchange_evidence.py`; `python -m ruff check
+  app/bim_ai/schedule_sheet_exchange_evidence.py
+  app/tests/test_schedule_sheet_exchange_evidence.py`.
 
 ### Wave 6: Performance And UX Stability
 
