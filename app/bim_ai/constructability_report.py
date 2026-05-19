@@ -4,6 +4,7 @@ from collections import Counter
 from collections.abc import Iterable, Mapping
 from typing import Any
 
+from bim_ai.advisor_profiling import AdvisorDiagnosticsProfiler
 from bim_ai.constraints import evaluate
 from bim_ai.constraints_core import Violation
 from bim_ai.constructability_clearance import (
@@ -24,11 +25,12 @@ from bim_ai.constructability_metadata import (
     METADATA_REQUIREMENT_RULE_ID,
     constructability_metadata_requirement_violations,
 )
+from bim_ai.constructability_performance import advisor_incremental_diagnostic_eligibility_v1
 from bim_ai.constructability_scope import (
     constructability_scope_descriptor,
     scope_constructability_elements,
 )
-from bim_ai.domain_integrity import check_domain_integrity
+from bim_ai.domain_integrity import check_domain_integrity_profiled
 from bim_ai.elements import Element
 from bim_ai.model_integrity import ModelIntegrityFinding, check_model_integrity_invariants
 from bim_ai.model_integrity_hosting import hosted_opening_integrity_violations
@@ -155,6 +157,7 @@ def build_constructability_report(
     option_locks: Mapping[str, str] | None = None,
     design_option_sets: Iterable[Any] = (),
     previous_issues: Iterable[ConstructabilityIssue | Mapping[str, Any]] = (),
+    changed_element_ids: Iterable[str] = (),
 ) -> dict[str, Any]:
     scoped_elements = scope_constructability_elements(
         elements,
@@ -162,19 +165,62 @@ def build_constructability_report(
         option_locks=option_locks,
         design_option_sets=design_option_sets,
     )
-    violations = [
-        v
-        for v in evaluate(scoped_elements, constructability_profile=profile)
-        if v.rule_id in CONSTRUCTABILITY_RULE_IDS
-    ]
-    violations.extend(constructability_clearance_violations(scoped_elements, profile=profile))
-    violations.extend(
-        constructability_metadata_requirement_violations(scoped_elements, profile=profile)
+    changed_ids = tuple(str(element_id) for element_id in changed_element_ids if element_id)
+    incremental_eligibility = advisor_incremental_diagnostic_eligibility_v1(
+        scoped_elements,
+        changed_element_ids=changed_ids,
     )
-    violations.extend(_model_integrity_constructability_violations(scoped_elements))
+    impacted_count = int(incremental_eligibility["impactedElementCount"])
+    incremental_eligible = bool(incremental_eligibility["incrementalEligible"])
+    profiler = AdvisorDiagnosticsProfiler(
+        element_count=len(scoped_elements),
+        changed_element_ids=changed_ids,
+        incremental_eligibility=incremental_eligibility,
+    )
+    violations = profiler.measure(
+        check_id="advisor.evaluate_constructability_rules",
+        layer="advisor",
+        run=lambda: [
+            v
+            for v in evaluate(scoped_elements, constructability_profile=profile)
+            if v.rule_id in CONSTRUCTABILITY_RULE_IDS
+        ],
+        impacted_element_count=impacted_count,
+        incremental_eligible=incremental_eligible,
+    )
+    violations.extend(
+        profiler.measure(
+            check_id="constructability.clearance",
+            layer="constructability",
+            run=lambda: constructability_clearance_violations(scoped_elements, profile=profile),
+            impacted_element_count=impacted_count,
+            incremental_eligible=incremental_eligible,
+        )
+    )
+    violations.extend(
+        profiler.measure(
+            check_id="constructability.metadata_requirements",
+            layer="constructability",
+            run=lambda: constructability_metadata_requirement_violations(
+                scoped_elements,
+                profile=profile,
+            ),
+            impacted_element_count=impacted_count,
+            incremental_eligible=incremental_eligible,
+        )
+    )
+    violations.extend(
+        profiler.measure(
+            check_id="model_integrity.constructability_errors",
+            layer="model_integrity",
+            run=lambda: _model_integrity_constructability_violations(scoped_elements),
+            impacted_element_count=impacted_count,
+            incremental_eligible=incremental_eligible,
+        )
+    )
     all_findings = [
         *[_finding_dict(v, profile=profile) for v in violations],
-        *check_domain_integrity(scoped_elements, profile=profile),
+        *check_domain_integrity_profiled(scoped_elements, profile=profile, profiler=profiler),
     ]
     suppressions = _suppression_records(scoped_elements, revision=revision)
     active_findings: list[dict[str, Any]] = []
@@ -237,6 +283,7 @@ def build_constructability_report(
                 str(i.get("fingerprint") or ""),
             ),
         ),
+        "profiling": profiler.payload(),
     }
 
 

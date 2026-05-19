@@ -2,13 +2,16 @@ from __future__ import annotations
 
 from collections import Counter
 from collections.abc import Mapping
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from bim_ai.code_profile_integrity import check_code_profile_integrity
 from bim_ai.envelope_integrity import check_envelope_integrity
 from bim_ai.room_access_integrity import check_room_access_integrity
 from bim_ai.structure_mep_lite_integrity import check_structure_mep_lite_integrity
 from bim_ai.vertical_circulation_integrity import check_vertical_circulation_integrity
+
+if TYPE_CHECKING:
+    from bim_ai.advisor_profiling import AdvisorDiagnosticsProfiler
 
 DOMAIN_INTEGRITY_TRACKER_ITEMS = (
     "BIR-D04",
@@ -59,15 +62,29 @@ def check_domain_integrity(
     not score sketch likeness or subjective design quality.
     """
 
+    return check_domain_integrity_profiled(subject, profile=profile)
+
+
+def check_domain_integrity_profiled(
+    subject: Any,
+    *,
+    profile: str | Mapping[str, Any] | None = None,
+    profiler: AdvisorDiagnosticsProfiler | None = None,
+) -> list[dict[str, Any]]:
+    """Return domain findings while optionally recording per-source timings."""
+
     findings: list[dict[str, Any]] = []
-    for source, raw_findings in (
-        ("room_access", check_room_access_integrity(subject, profile=_profile_mapping(profile))),
-        ("vertical_circulation", check_vertical_circulation_integrity(subject)),
-        ("envelope", check_envelope_integrity(subject, profile=_profile_id(profile))),
-        ("structure_mep_lite", check_structure_mep_lite_integrity(subject)),
-        ("code_profile", check_code_profile_integrity(subject, profile=profile)),
+    for source, producer in (
+        (
+            "room_access",
+            lambda: check_room_access_integrity(subject, profile=_profile_mapping(profile)),
+        ),
+        ("vertical_circulation", lambda: check_vertical_circulation_integrity(subject)),
+        ("envelope", lambda: check_envelope_integrity(subject, profile=_profile_id(profile))),
+        ("structure_mep_lite", lambda: check_structure_mep_lite_integrity(subject)),
+        ("code_profile", lambda: check_code_profile_integrity(subject, profile=profile)),
     ):
-        findings.extend(_normalize_finding(source, finding, profile=profile) for finding in raw_findings)
+        findings.extend(_run_source_check(source, producer, profile=profile, profiler=profiler))
 
     return sorted(
         findings,
@@ -77,6 +94,25 @@ def check_domain_integrity(
             str(finding.get("ruleId") or ""),
             tuple(str(eid) for eid in finding.get("elementIds") or ()),
         ),
+    )
+
+
+def _run_source_check(
+    source: str,
+    producer: Any,
+    *,
+    profile: str | Mapping[str, Any] | None,
+    profiler: AdvisorDiagnosticsProfiler | None,
+) -> list[dict[str, Any]]:
+    def run() -> list[dict[str, Any]]:
+        return [_normalize_finding(source, finding, profile=profile) for finding in producer()]
+
+    if profiler is None:
+        return run()
+    return profiler.measure(
+        check_id=f"domain_integrity.{source}",
+        layer="domain_integrity",
+        run=run,
     )
 
 
