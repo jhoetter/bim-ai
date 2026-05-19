@@ -134,15 +134,16 @@ dependent on discipline.
 
 ## Baseline Snapshot
 
-Commands sampled on 2026-05-18:
+Commands sampled on 2026-05-19:
 
 ```sh
 pnpm architecture
 pnpm format:check
 pnpm --filter @bim-ai/web typecheck
+pnpm quality:waivers
 pnpm --filter @bim-ai/web test -- --run src/plan/terraceFromFloor.test.ts
 cd app && uv run ruff check bim_ai tests scripts
-cd app && uv run pytest tests/api/test_activity_route.py -q
+make test-py-focused PYTEST_ARGS="tests/api/test_activity_route.py"
 ```
 
 Observed results:
@@ -151,8 +152,9 @@ Observed results:
 | ------------------------- | -------------------------------------- | -------------------------------------------------------------------------------------------------------------- |
 | Package architecture      | Pass                                   | `scripts/check-architecture.mjs` reports `Architecture check OK`.                                              |
 | Prettier check            | Pass                                   | Matched configured TS/JS/JSON/YAML set. Markdown is not included.                                              |
+| Quality waivers           | Pass                                   | `pnpm quality:waivers` validates `spec/quality-waivers.json` and fails expired P0/P1 exceptions.               |
 | Python ruff via `uv run`  | Pass                                   | `uv run ruff check bim_ai tests scripts` is green.                                                             |
-| Frontend lint             | Fail                                   | `pnpm lint` reports the existing `@bim-ai/web` lint backlog; tracked outside the B-grade verify gate.          |
+| Frontend lint             | Fail                                   | `pnpm lint` reports the existing `@bim-ai/web` lint backlog; tracked by `CQW-2026-001` while outside the B gate. |
 | Frontend unit tests       | Pass                                   | `669` test files / `5462` tests pass with test i18n, fetch, canvas, and React key warnings quieted.            |
 | Frontend typecheck        | Pass                                   | Restored on 2026-05-19; `@bim-ai/web` compiles under the strict project config.                                |
 | Narrow backend test       | Pass                                   | `make test-py-focused PYTEST_ARGS="tests/api/test_activity_route.py"` runs the focused route test with `--no-cov`. |
@@ -217,7 +219,7 @@ Largest current source files observed:
 | CQ-2026-17 | P1       | Open    | Real-path integration coverage            | Route, DB, websocket, and rendering smoke tests exercise deployed paths.                 |
 | CQ-2026-18 | P2       | Open    | Security and dependency hygiene           | Dependency audit, secret scanning, and unsafe API checks run in the normal gate.         |
 | CQ-2026-19 | P2       | Open    | Release-readiness scorecard               | A single reproducible report explains whether the repo is C/B/A quality today.           |
-| CQ-2026-20 | P1       | Open    | Machine-readable waivers                  | Every exception is tracked, expiring, and consumed by CI/reporting.                      |
+| CQ-2026-20 | P1       | Done    | Machine-readable waivers                  | Expiring waivers are tracked in JSON and validated by strict verification gates.         |
 
 ---
 
@@ -1051,7 +1053,7 @@ Blocking to A-:
 ## CQ-2026-20 - Make Waivers Machine-Readable and Expiring
 
 Priority: P1
-Status: Open
+Status: Done
 Owner area: quality scripts, CI, tracker policy
 
 ### Problem
@@ -1103,6 +1105,21 @@ must be data, not memory.
   ]
 }
 ```
+
+### Completion Evidence
+
+- 2026-05-19: `spec/quality-waivers.json` tracks active exceptions with stable
+  IDs, affected checks, paths, owners, reasons, tracker IDs, created/expiry
+  dates, severity, and replacement plans.
+- 2026-05-19: `scripts/check-quality-waivers.mjs` validates the waiver schema,
+  duplicate IDs, date ordering, tracker ID format, severity, and required
+  fields.
+- 2026-05-19: expired P0/P1 waivers fail the quality gate; active, expired, and
+  soon-to-expire waivers are printed for CI logs and future scorecard ingestion.
+- 2026-05-19: `pnpm quality:waivers`, `pnpm verify:strict`,
+  `make quality-waivers`, and `make verify` consume the waiver validator.
+- 2026-05-19: `pnpm verify:strict` passes with the waiver validator included in
+  the strict gate.
 
 ---
 

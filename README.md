@@ -65,7 +65,12 @@ command answers whether the selected tests passed.
 
 JavaScript lint is intentionally exposed as `pnpm lint` / `make lint-js`, but
 is not yet part of the canonical merge gate because the existing frontend lint
-backlog is tracked separately in the code-quality tracker.
+backlog is tracked as an expiring machine-readable waiver in
+`spec/quality-waivers.json`.
+
+Quality waivers are validated by `pnpm quality:waivers` / `make quality-waivers`
+and are part of both `pnpm verify:strict` and `make verify`. Expired P0/P1
+waivers fail the quality gate.
 
 ## V1 Release
 

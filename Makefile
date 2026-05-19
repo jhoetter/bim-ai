@@ -26,7 +26,7 @@ SEED_ARGS := $(if $(SEED_NAME),--name "$(SEED_NAME)",) $(if $(SEED_ROOT),--root 
 .PHONY: help install dev dev-api dev-web kill-ports seed seed-clear seed-artifact verify-sketch-seeds verify-sketch-seeds-live \
 	db-up db-down db-reset db-logs \
 	test test-py test-py-full test-py-focused test-js format format-check python-format-check lint lint-js lint-py architecture \
-	typecheck verify build clean lockfile-check verify-refinement-reliability
+	quality-waivers typecheck verify build clean lockfile-check verify-refinement-reliability
 
 help:
 	@echo "bim-ai Makefile"
@@ -37,6 +37,7 @@ help:
 	@echo "  verify-sketch-seeds — validate seed artifact manifests/hashes"
 	@echo "  verify-sketch-seeds-live — strict current-HEAD live sketch-to-BIM acceptance"
 	@echo "  test-py-focused — focused backend tests without coverage; pass PYTEST_ARGS=tests/path.py"
+	@echo "  quality-waivers — validate expiring machine-readable quality waivers"
 	@echo "  verify    — format-check, Python lint/format, architecture, tc, tests, build"
 
 install:
@@ -148,13 +149,16 @@ lint-py:
 architecture:
 	node scripts/check-architecture.mjs
 
+quality-waivers:
+	node scripts/check-quality-waivers.mjs
+
 typecheck:
 	$(PNPM) -w turbo typecheck
 
 build:
 	$(PNPM) -w turbo build
 
-verify: format-check python-format-check lint-py architecture typecheck test build lockfile-check
+verify: format-check python-format-check lint-py quality-waivers architecture typecheck test build lockfile-check
 	@echo "verify: PASS"
 
 verify-refinement-reliability:
