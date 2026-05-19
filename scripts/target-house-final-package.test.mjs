@@ -34,6 +34,18 @@ test('target-house performance evidence covers required BIR-N07 interactions', a
   assert.equal(evidence.schemaVersion, 'target-house-performance-evidence.v1');
   assert.equal(evidence.generatedFrom.helperFormat, 'rendererCostProfile_v1');
   assert.equal(evidence.profile.format, 'rendererCostProfile_v1');
+  assert.deepEqual(evidence.liveResponsivenessRequirement.requiredInteractions, [
+    'orbit',
+    'select',
+    'lens-switch',
+    'advisor-open',
+    'advisor-close',
+  ]);
+  assert.ok(
+    evidence.liveResponsivenessRequirement.requiredEvidencePath.endsWith(
+      'target-house-live-responsiveness.json',
+    ),
+  );
   assert.ok(
     ['fresh_live_snapshot', 'materialized_seed_bundle'].includes(
       evidence.generatedFrom.snapshotSource.kind,
@@ -77,9 +89,16 @@ test('target-house final package manifest ties head, source, evidence, tracker, 
   assert.equal(manifest.tracker.rows['BIR-N07'].status, 'Partial');
   assert.equal(manifest.tracker.generatedRows['BIR-N07'].source, 'generated_section_rollup');
   assert.ok(manifest.tracker.generatedRows['BIR-N07'].sectionRollup.partial >= 0);
+  assert.equal(manifest.tracker.completion.ok, false);
+  assert.ok(manifest.tracker.completion.incomplete > 0);
   assert.equal(manifest.tracker.generatedStatusIncludesTargetHouseSection, true);
   assert.equal(manifest.tracker.generatedStatusDigestSha256.length, 64);
   assert.equal(typeof manifest.acceptanceGates.ok, 'boolean');
+  assert.equal(manifest.liveResponsiveness.present, false);
+  assert.equal(manifest.status.blockers.includes('live_responsiveness_missing'), true);
+  assert.equal(manifest.rehearsalGate.ok, false);
+  assert.equal(manifest.status.blockers.includes('acceptance_rehearsal_gate'), true);
+  assert.equal(manifest.status.blockers.includes('tracker_incomplete'), true);
   assert.equal(
     manifest.status.blockers.includes('geometry_diagnostic'),
     manifest.geometryDiagnostic.errorLevelFindingCount > 0,
@@ -138,11 +157,33 @@ function passingStatusInput(overrides = {}) {
       blockingFindingCount: 0,
       incompleteToleranceCount: 0,
     },
+    liveResponsiveness: {
+      present: true,
+      ok: true,
+      path: 'target-house-live-responsiveness.json',
+      blockerCodes: [],
+      missingInteractions: [],
+      failedInteractions: [],
+      actionableChurnCount: 0,
+    },
+    rehearsalGate: {
+      ok: true,
+      blockers: [],
+      stages: [],
+    },
     trackerRows: {
       'BIR-N04': { status: 'Done' },
       'BIR-N07': { status: 'Done' },
       'BIR-N08': { status: 'Done' },
       'BIR-N10': { status: 'Done' },
+    },
+    trackerCompletion: {
+      ok: true,
+      total: 4,
+      done: 4,
+      incomplete: 0,
+      byStatus: { Done: 4 },
+      sampleIncompleteRows: [],
     },
     liveEvidenceFresh: true,
     ...overrides,
@@ -202,6 +243,70 @@ test('target-house final package permits progress with zero geometry diagnostic 
   assert.deepEqual(status.blockers, []);
   assert.deepEqual(status.blockerDetails, []);
   assert.equal(status.status, 'ready');
+});
+
+test('target-house final package blocks missing live responsiveness and failed rehearsal separately', () => {
+  const status = closeoutStatus(
+    passingStatusInput({
+      liveResponsiveness: {
+        present: false,
+        ok: false,
+        path: 'seed-artifacts/target-house-1/evidence/live-run-current/target-house-live-responsiveness.json',
+        blockerCodes: ['live_responsiveness_missing'],
+        missingInteractions: ['orbit', 'select', 'lens-switch', 'advisor-open', 'advisor-close'],
+        failedInteractions: [],
+        actionableChurnCount: null,
+      },
+      rehearsalGate: {
+        ok: false,
+        blockers: ['live_responsiveness_missing'],
+        stages: [
+          {
+            id: 'live_responsiveness',
+            ok: false,
+            blockerCode: 'live_responsiveness_missing',
+          },
+        ],
+      },
+    }),
+  );
+
+  assert.equal(status.ready, false);
+  assert.deepEqual(status.blockers, [
+    'live_responsiveness_missing',
+    'acceptance_rehearsal_gate',
+  ]);
+  assert.equal(
+    status.blockerDetails.find((row) => row.code === 'live_responsiveness_missing').count,
+    1,
+  );
+  assert.equal(
+    status.blockerDetails.find((row) => row.code === 'acceptance_rehearsal_gate').count,
+    1,
+  );
+});
+
+test('target-house final package blocks whole-tracker incompleteness even if focus rows are done', () => {
+  const status = closeoutStatus(
+    passingStatusInput({
+      trackerCompletion: {
+        ok: false,
+        total: 2,
+        done: 1,
+        incomplete: 1,
+        byStatus: { Done: 1, Partial: 1 },
+        sampleIncompleteRows: [{ id: 'BIR-L02', priority: 'P0', status: 'Partial' }],
+      },
+    }),
+  );
+
+  assert.equal(status.ready, false);
+  assert.deepEqual(status.blockers, ['tracker_incomplete']);
+  const detail = status.blockerDetails.find((row) => row.code === 'tracker_incomplete');
+  assert.equal(detail.count, 1);
+  assert.deepEqual(detail.sampleIncompleteRows, [
+    { id: 'BIR-L02', priority: 'P0', status: 'Partial' },
+  ]);
 });
 
 test('target-house final package writes deterministic manifest and performance evidence', async () => {
