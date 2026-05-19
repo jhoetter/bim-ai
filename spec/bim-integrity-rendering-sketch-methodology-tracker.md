@@ -1385,6 +1385,31 @@ deeper product coverage. Screenshots alone are not enough; each closed renderer
 or documentation row needs structured diagnostics, golden/readback evidence, or
 live-browser proof.
 
+### Wave 23 - Hard Blocker Closure And Performance Remediation
+
+Goal: convert the remaining proof blockers into either passing product behavior
+or sharply isolated final blockers. Wave 23 focuses on the rows that still keep
+target-house final readiness and early P0 milestones Partial: live interaction
+budgets, actual 3D geometry fidelity, authoring/content guard closure, parity
+and transaction hardening, and geometry-derived envelope/methodology closure.
+
+Scope: dispatch five independent workers. Each worker must commit locally,
+avoid unrelated dirty files, update tracker/evidence rows conservatively, and
+run the tracker audit. If a worker cannot close a row, it must replace broad
+language with a precise blocker tied to an executable proof hook.
+
+| Agent | Ownership | Primary items |
+| ----- | --------- | ------------- |
+| W23-A | Live responsiveness performance remediation and benchmark integration. | `BIR-L01`, `BIR-L02`, `BIR-L03`, `BIR-L04`, `BIR-L05`, `BIR-L06`, `BIR-N07`, `BIR-N11`, `BIR-O05` |
+| W23-B | Actual 3D renderer mesh/CSG/material fidelity and visual golden closure. | `BIR-J01`, `BIR-J02`, `BIR-J03`, `BIR-J04`, `BIR-J05`, `BIR-J06`, `BIR-J07`, `BIR-J08`, `BIR-J09`, `BIR-J10`, `BIR-C04`, `BIR-C08` |
+| W23-C | Authoring, hosted-element, opening-conflict, and family/content strictness. | `BIR-B01`, `BIR-B02`, `BIR-B03`, `BIR-B05`, `BIR-B06`, `BIR-C06`, `BIR-C07`, `BIR-V01`, `BIR-V02`, `BIR-V03`, `BIR-V04`, `BIR-V05`, `BIR-O01` |
+| W23-D | UI/CLI/API parity, rule taxonomy/severity, renderer persistence, exchange readback, IDS, and transaction safety. | `BIR-A02`, `BIR-A04`, `BIR-A05`, `BIR-G01`, `BIR-I06`, `BIR-K02`, `BIR-K04`, `BIR-K07`, `BIR-Q01`, `BIR-Q02`, `BIR-Q03`, `BIR-Q05`, `BIR-Q06` |
+| W23-E | Derived envelope geometry blockers plus methodology/evidence dashboard closeout. | `BIR-F03`, `BIR-F04`, `BIR-F06`, `BIR-M07`, `BIR-M08`, `BIR-M09`, `BIR-M10`, `BIR-T01`, `BIR-T04`, `BIR-T05`, `BIR-U06`, `BIR-W04`, `BIR-O04`, `BIR-N10` |
+
+Exit: either target-house live responsiveness passes with archived Playwright
+proof and final-package readiness advances, or the tracker clearly identifies
+the exact interaction/rendering/modeling classes that still need a final wave.
+
 ## Non-Negotiable Acceptance Rules
 
 - Do not mark a seed `accepted` while any P0 integrity or renderer diagnostic is
