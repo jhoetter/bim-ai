@@ -1,4 +1,7 @@
-import { evaluateRendererDiagnosticsForSketchAcceptance } from './renderer-diagnostics-evidence.mjs';
+import {
+  evaluateRendererDiagnosticsForSketchAcceptance,
+  normalizeRendererDiagnosticsEvidence,
+} from './renderer-diagnostics-evidence.mjs';
 import { evaluateSketchAcceptanceStaleness } from './sketch-acceptance-provenance.mjs';
 
 const BIM_INTEGRITY_BLOCKING_PRIORITY = 'P0';
@@ -202,9 +205,12 @@ export async function evaluatePhaseAcceptanceEvidence(
   const rendererDiagnostics =
     rendererDiagnosticsEvidence == null
       ? null
-      : evaluateRendererDiagnosticsForSketchAcceptance(rendererDiagnosticsEvidence, {
-          requiredFeatures,
-        });
+      : evaluateRendererDiagnosticsForSketchAcceptance(
+          normalizeRendererDiagnosticsEvidence(rendererDiagnosticsEvidence),
+          {
+            requiredFeatures,
+          },
+        );
   const bimIntegrity =
     bimIntegrityEvidence == null
       ? null

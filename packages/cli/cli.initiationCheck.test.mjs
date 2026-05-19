@@ -569,6 +569,88 @@ test('acceptance passes semantic visual checklist only when required checks have
   assert.equal(acceptance.semanticVisual.summary.requiredCount > 0, true);
 });
 
+test('acceptance blocks renderer, BIM integrity, and visual drift evidence', () => {
+  const ir = validIr();
+  const coverage = buildCapabilityCoverage(ir, validMatrix());
+  const checklist = buildVisualChecklist(ir, coverage);
+  for (const item of checklist.items) {
+    for (const check of item.semanticChecks ?? []) {
+      check.status = 'pass';
+      check.notes = `Verified ${check.id}.`;
+    }
+  }
+  const screenshotManifest = {
+    captures: ir.requiredViews.map((view) => ({
+      viewId: view.id,
+      viewKind: view.kind,
+      screenshotPath: `/tmp/${view.id}.png`,
+    })),
+  };
+  const visualGateReport = {
+    summary: { failCount: 0, needsReviewCount: 0 },
+    captures: screenshotManifest.captures.map((capture) => ({ ...capture, status: 'pass' })),
+  };
+
+  const acceptance = buildAcceptanceGateReport({
+    ir,
+    coverage,
+    screenshotManifest,
+    visualGateReport,
+    visualChecklist: checklist,
+    evidenceRun: {
+      requiredFeatures: [
+        {
+          id: 'roof_terrace',
+          requiredElementIds: ['roof-opening-1', 'door-1'],
+        },
+      ],
+      rendererDiagnosticsEvidence: {
+        diagnostics: [
+          {
+            ruleId: 'renderer_unsupported_cut',
+            code: 'renderer.roof_opening.unsupported',
+            severity: 'error',
+            issueClass: 'renderer-unsupported',
+            feature: 'roof-opening',
+            elementIds: ['roof-opening-1'],
+            message: 'Roof opening did not cut in viewport evidence.',
+          },
+        ],
+      },
+      bimIntegrityEvidence: {
+        diagnostics: [
+          {
+            ruleId: 'hosted_opening_not_embedded',
+            code: 'model.hosted_opening.not_embedded',
+            severity: 'error',
+            priority: 'P0',
+            elementIds: ['door-1'],
+            message: 'Door is not embedded in its host wall.',
+          },
+        ],
+      },
+      visualDriftRows: [
+        {
+          id: 'front-loggia-drift',
+          category: 'terrace_loggia',
+          status: 'drift',
+          current: 'rail detached in latest screenshot',
+          previous: 'rail aligned in source sketch',
+        },
+      ],
+    },
+  });
+
+  const codes = new Set(acceptance.blockers.map((blocker) => blocker.code));
+  assert.equal(acceptance.ok, false);
+  assert.equal(codes.has('renderer_diagnostics_blocking'), true);
+  assert.equal(codes.has('bim_integrity_diagnostics_blocking'), true);
+  assert.equal(codes.has('semantic_visual_gate_failures'), true);
+  assert.equal(acceptance.summary.rendererDiagnosticsBlockingCount, 1);
+  assert.equal(acceptance.summary.bimIntegrityBlockingCount, 1);
+  assert.equal(acceptance.summary.semanticVisualGateBlockerCount, 1);
+});
+
 test('project initiation IR requires BIM information requirements', async () => {
   const dir = await fs.mkdtemp(path.join(os.tmpdir(), 'bim-ai-initiation-bim-ir-'));
   const irPath = path.join(dir, 'ir.json');

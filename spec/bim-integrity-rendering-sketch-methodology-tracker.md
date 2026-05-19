@@ -278,10 +278,10 @@ This tracker is complete only when all of these are true:
 | `BIR-M03` | P0 | Partial | Require semantic visual checklist for critical features. | Agent must explicitly pass/fail feature-specific checks for silhouette, roof cutout, terrace/loggia, facade rhythm, cladding, rooms, stairs, and diagnostics. |
 | `BIR-M04` | P0 | Partial | Add renderer diagnostics to phase acceptance. | Phase/final acceptance blocks if required visual features have renderer unsupported/failed diagnostics. |
 | `BIR-M05` | P0 | Partial | Add BIM integrity diagnostics to phase acceptance. | Phase/final acceptance blocks on P0 model-integrity errors even if normal constructability warnings are zero. |
-| `BIR-M06` | P0 | Not started | Add target-house-specific acceptance pack. | Target-house checklist compiles into machine-readable required features, views, tolerances, and evidence rows. |
-| `BIR-M07` | P1 | Not started | Add visual readout drift loop. | Agent must compare latest screenshots with previous phase and source sketch, record corrections, and cannot advance on unresolved drift. |
+| `BIR-M06` | P0 | Done | Add target-house-specific acceptance pack. | Target-house checklist compiles into machine-readable required features, views, tolerances, and evidence rows. |
+| `BIR-M07` | P1 | Partial | Add visual readout drift loop. | Agent must compare latest screenshots with previous phase and source sketch, record corrections, and cannot advance on unresolved drift. |
 | `BIR-M08` | P1 | Partial | Add methodology failure taxonomy. | Initial taxonomy added in `spec/sketch-to-bim-failure-taxonomy.md`; phase packets classify failures as model-integrity, renderer, sketch-fidelity, command-surface, evidence-staleness, or user-tolerance. |
-| `BIR-M09` | P1 | Not started | Add seed artifact cleanliness gates. | Seed library contains only approved artifacts; disposable wave artifacts cannot leak into committed seed list. |
+| `BIR-M09` | P1 | Partial | Add seed artifact cleanliness gates. | Seed library contains only approved artifacts; disposable wave artifacts cannot leak into committed seed list. |
 | `BIR-M10` | P1 | Not started | Add agent prompt/workflow templates. | Wave prompts tell agents to use integrity, renderer, Advisor, evidence, and acceptance gates before reporting completion. |
 
 ### N. Target-House-1 Specific Closure
@@ -290,9 +290,9 @@ This tracker is complete only when all of these are true:
 | -- | -------- | ------ | ---- | ---------- |
 | `BIR-N01` | P0 | Not started | Diagnose current target-house geometry objectively. | Produce a report of every detached/flying/out-of-envelope element, helper leakage, unsupported renderer feature, and sketch-critical mismatch. |
 | `BIR-N02` | P0 | Not started | Fix seed source, not only live state. | Corrections are applied to the authoritative seed recipe/bundle/source artifact so `make seed name=target-house-1` reproduces the clean model. |
-| `BIR-N03` | P0 | Not started | Remove stale/disposable artifacts from seed library. | Seed dropdown contains only approved seed artifacts and no wave/disposable local evidence projects after clean seed. |
+| `BIR-N03` | P0 | Partial | Remove stale/disposable artifacts from seed library. | Seed dropdown contains only approved seed artifacts and no wave/disposable local evidence projects after clean seed. |
 | `BIR-N04` | P0 | Not started | Require no P0 Advisor/integrity/renderer findings. | Final target-house cannot be accepted with errors or renderer blockers; warnings require written tolerance and user acceptance. |
-| `BIR-N05` | P0 | Not started | Verify model visual from required views. | Saved views for main, front, rear/right, roof court, loggia, ground plan, upper plan, and wire diagnostics show correct model with screenshots. |
+| `BIR-N05` | P0 | Partial | Verify model visual from required views. | Saved views for main, front, rear/right, roof court, loggia, ground plan, upper plan, and wire diagnostics show correct model with screenshots. |
 | `BIR-N06` | P1 | Not started | Verify BIM data quality. | Rooms, schedules, types, materials, classifications, levels, spaces, stairs, rails, doors/windows, and export manifests pass target checklist. |
 | `BIR-N07` | P1 | Not started | Verify performance on target-house. | Orbit/selection/lens switching/Advisor opening are measured and accepted on the final seed. |
 

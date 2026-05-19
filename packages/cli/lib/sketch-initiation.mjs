@@ -1,7 +1,13 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
 
+import { evaluateBimIntegrityDiagnosticsForPhaseAcceptance } from './phase-acceptance-evidence.mjs';
 import { applyVisualGateToChecklist } from './png-visual-gate.mjs';
+import {
+  evaluateRendererDiagnosticsForSketchAcceptance,
+  normalizeRendererDiagnosticsEvidence,
+} from './renderer-diagnostics-evidence.mjs';
+import { evaluateSketchSemanticVisualGate } from './sketch-semantic-visual-gate.mjs';
 
 export const DEFAULT_CAPABILITY_MATRIX_PATH = 'spec/sketch-to-bim-capability-matrix.json';
 export const INITIATION_MODES = {
@@ -2184,6 +2190,12 @@ export function buildAcceptanceGateReport({
     coverage,
     checklist: visualChecklist ?? evidenceRun?.visualChecklist ?? null,
   });
+  const semanticVisualGate = evaluateSketchSemanticVisualGate({
+    checklist: visualChecklist ?? evidenceRun?.visualChecklist ?? null,
+    driftRows: evidenceRun?.visualDriftRows ?? evidenceRun?.semanticVisualDrift?.rows ?? [],
+    toleranceLedger: evidenceRun?.toleranceLedger ?? null,
+    phaseId: evidenceRun?.phaseId ?? null,
+  });
   if (BIM_REQUIRED_TARGETS.has(ir?.qualityTarget) && !semanticVisual.ok) {
     blockers.push({
       code: 'semantic_visual_checklist_failures',
@@ -2196,6 +2208,70 @@ export function buildAcceptanceGateReport({
         checkId: failure.checkId ?? null,
         status: failure.status,
         message: failure.message,
+      })),
+    });
+  }
+  if (BIM_REQUIRED_TARGETS.has(ir?.qualityTarget) && !semanticVisualGate.ok) {
+    blockers.push({
+      code: 'semantic_visual_gate_failures',
+      severity: 'error',
+      message: `${semanticVisualGate.summary.blockerCount} semantic visual or drift gate item(s) block sketch acceptance.`,
+      blockers: semanticVisualGate.blockers,
+    });
+  }
+
+  const requiredFeatures =
+    evidenceRun?.requiredFeatures ??
+    (Array.isArray(ir?.features)
+      ? ir.features.map((feature) => ({
+          id: feature.id,
+          featureId: feature.id,
+          requiredElementIds: feature.requiredElementIds ?? [],
+          mappedElementIds: feature.mappedElementIds ?? [],
+          elementIds: feature.elementIds ?? [],
+        }))
+      : []);
+  const rendererDiagnostics = evidenceRun?.rendererDiagnosticsEvidence
+    ? evaluateRendererDiagnosticsForSketchAcceptance(
+        normalizeRendererDiagnosticsEvidence(evidenceRun.rendererDiagnosticsEvidence),
+        {
+          requiredFeatures,
+        },
+      )
+    : null;
+  if (rendererDiagnostics?.blocked) {
+    blockers.push({
+      code: 'renderer_diagnostics_blocking',
+      severity: 'error',
+      message: `${rendererDiagnostics.blockingDiagnostics.length} renderer diagnostic(s) block required sketch features.`,
+      diagnostics: rendererDiagnostics.blockingDiagnostics.map((diagnostic) => ({
+        code: diagnostic.code,
+        ruleId: diagnostic.ruleId,
+        severity: diagnostic.severity,
+        issueClass: diagnostic.issueClass,
+        elementIds: diagnostic.elementIds,
+        featureIds: diagnostic.featureIds,
+      })),
+    });
+  }
+
+  const bimIntegrity = evidenceRun?.bimIntegrityEvidence
+    ? evaluateBimIntegrityDiagnosticsForPhaseAcceptance(evidenceRun.bimIntegrityEvidence, {
+        requiredFeatures,
+      })
+    : null;
+  if (bimIntegrity?.blocked) {
+    blockers.push({
+      code: 'bim_integrity_diagnostics_blocking',
+      severity: 'error',
+      message: `${bimIntegrity.blockingDiagnostics.length} BIM integrity diagnostic(s) block sketch acceptance.`,
+      diagnostics: bimIntegrity.blockingDiagnostics.map((diagnostic) => ({
+        code: diagnostic.code,
+        ruleId: diagnostic.ruleId,
+        severity: diagnostic.severity,
+        priority: diagnostic.priority,
+        elementIds: diagnostic.elementIds,
+        featureIds: diagnostic.featureIds,
       })),
     });
   }
@@ -2274,6 +2350,9 @@ export function buildAcceptanceGateReport({
       visualNeedsReviewCount: visualGateReport?.summary?.needsReviewCount ?? 0,
       semanticVisualRequiredCount: semanticVisual.summary.requiredCount,
       semanticVisualFailureCount: semanticVisual.summary.failureCount,
+      semanticVisualGateBlockerCount: semanticVisualGate.summary.blockerCount,
+      rendererDiagnosticsBlockingCount: rendererDiagnostics?.blockingDiagnostics.length ?? 0,
+      bimIntegrityBlockingCount: bimIntegrity?.blockingDiagnostics.length ?? 0,
       bimDataQualityErrorCount: bimQuality?.summary?.errorCount ?? 0,
       bimDataQualityPlannedCount: bimQuality?.summary?.plannedCount ?? 0,
       exchangeValidationErrorCount: exchangeValidation?.summary?.errorCount ?? 0,
@@ -2283,6 +2362,9 @@ export function buildAcceptanceGateReport({
       missingEvidenceFreshnessCount: evidenceFreshness?.summary?.missingCount ?? 0,
     },
     semanticVisual,
+    semanticVisualGate,
+    rendererDiagnostics,
+    bimIntegrity,
     bimDataQuality: bimQuality,
     exchangeValidation,
     evidenceFreshness,

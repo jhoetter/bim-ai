@@ -3522,6 +3522,35 @@ async function loadVisualChecklistEvidence(evidenceDir) {
   return null;
 }
 
+async function loadJsonEvidenceFile(evidenceDir, names) {
+  if (!evidenceDir) return null;
+  for (const name of names) {
+    const filePath = path.join(evidenceDir, name);
+    try {
+      const parsed = await readJsonFile(filePath);
+      if (parsed && typeof parsed === 'object') return { ...parsed, sourcePath: filePath };
+    } catch {
+      // Optional evidence channel. Missing files leave the corresponding gate inactive.
+    }
+  }
+  return null;
+}
+
+async function loadJsonEvidenceFromDirs(evidenceDir, fallbackDir, names) {
+  return (
+    (await loadJsonEvidenceFile(evidenceDir, names)) ??
+    (await loadJsonEvidenceFile(fallbackDir, names))
+  );
+}
+
+function driftRowsFromEvidence(payload) {
+  if (Array.isArray(payload)) return payload;
+  if (Array.isArray(payload?.rows)) return payload.rows;
+  if (Array.isArray(payload?.driftRows)) return payload.driftRows;
+  if (Array.isArray(payload?.drift)) return payload.drift;
+  return [];
+}
+
 async function buildSketchPhaseAcceptance({
   irPath,
   capabilityMatrixPath,
@@ -3545,17 +3574,6 @@ async function buildSketchPhaseAcceptance({
   const visualChecklist =
     (await loadVisualChecklistEvidence(evidenceDir)) ??
     (await loadVisualChecklistEvidence(defaultEvidenceDir));
-  const evidenceRun =
-    evidenceFreshness || visualChecklist ? { evidenceFreshness, visualChecklist } : null;
-  const result = await writeInitiationPacket({
-    ir,
-    matrix,
-    outDir,
-    irPath,
-    capabilityMatrixPath,
-    modelId: modelId ?? null,
-    evidenceRun,
-  });
   let dispositionSummary = null;
   if (evidenceDir) {
     dispositionSummary = await loadPhaseFindingDispositions(evidenceDir);
@@ -3567,6 +3585,54 @@ async function buildSketchPhaseAcceptance({
       dispositionSummary = null;
     }
   }
+  const rendererDiagnosticsEvidence = await loadJsonEvidenceFromDirs(
+    evidenceDir,
+    defaultEvidenceDir,
+    ['renderer-diagnostics-evidence.json', 'renderer-diagnostics.json'],
+  );
+  const bimIntegrityEvidence = await loadJsonEvidenceFromDirs(evidenceDir, defaultEvidenceDir, [
+    'bim-integrity-evidence.json',
+    'model-integrity-evidence.json',
+    'integrity-diagnostics.json',
+  ]);
+  const requiredFeaturePack = await loadJsonEvidenceFromDirs(evidenceDir, defaultEvidenceDir, [
+    'required-features.json',
+    'target-house-required-features.json',
+    'target-house-1-required-features.json',
+  ]);
+  const visualDriftEvidence = await loadJsonEvidenceFromDirs(evidenceDir, defaultEvidenceDir, [
+    'visual-drift.json',
+    'semantic-visual-drift.json',
+    'readout-drift.json',
+  ]);
+  const evidenceRun =
+    evidenceFreshness ||
+    visualChecklist ||
+    rendererDiagnosticsEvidence ||
+    bimIntegrityEvidence ||
+    requiredFeaturePack ||
+    visualDriftEvidence ||
+    dispositionSummary?.toleranceLedger
+      ? {
+          evidenceFreshness,
+          visualChecklist,
+          rendererDiagnosticsEvidence,
+          bimIntegrityEvidence,
+          requiredFeatures: requiredFeaturePack?.requiredFeatures ?? null,
+          visualDriftRows: driftRowsFromEvidence(visualDriftEvidence),
+          toleranceLedger: dispositionSummary?.toleranceLedger ?? null,
+          phaseId: phaseId ?? null,
+        }
+      : null;
+  const result = await writeInitiationPacket({
+    ir,
+    matrix,
+    outDir,
+    irPath,
+    capabilityMatrixPath,
+    modelId: modelId ?? null,
+    evidenceRun,
+  });
   if (dispositionSummary) {
     await writeJsonArtifact(path.join(outDir, 'phase-finding-dispositions.json'), {
       schemaVersion: 'sketch.phase.finding-disposition-summary.v1',
