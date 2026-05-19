@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+from fastapi import FastAPI
+from fastapi.testclient import TestClient
+
 from bim_ai.document import Document
 from bim_ai.elements import DoorElem, LevelElem, WallElem
 from bim_ai.model_integrity import (
@@ -11,6 +14,7 @@ from bim_ai.model_integrity import (
     resolve_type_instance_inheritance_v1,
     schema_migration_compatibility_v1,
 )
+from bim_ai.routes_integrity import integrity_router
 
 
 def _rules(findings):
@@ -334,6 +338,100 @@ def test_generic_document_invariants_catch_bad_shape_and_key_mismatch() -> None:
     assert "model_integrity_unclassified_kind" in _rules(findings)
 
 
+def test_stable_element_ids_are_required_for_deterministic_references() -> None:
+    findings = check_model_integrity_invariants(
+        {
+            "lvl 1": {"kind": "level", "id": "lvl 1"},
+            "wall-1": {
+                "kind": "wall",
+                "id": "wall-1",
+                "levelId": "lvl 1",
+                "start": {"xMm": 0, "yMm": 0},
+                "end": {"xMm": 1000, "yMm": 0},
+            },
+        }
+    )
+
+    unstable = [
+        finding
+        for finding in findings
+        if finding.rule_id == "model_integrity_element_id_not_stable"
+    ]
+    assert len(unstable) == 2
+    assert {finding.field for finding in unstable} == {"id", "mapKey"}
+
+
+def test_nested_element_refs_linked_sources_and_group_members_are_checked() -> None:
+    subject = {
+        "elements": {
+            "lvl-1": {"kind": "level", "id": "lvl-1"},
+            "link-1": {"kind": "link_model", "id": "link-1"},
+            "pv-1": {"kind": "plan_view", "id": "pv-1", "levelId": "lvl-1"},
+            "wall-1": {
+                "kind": "wall",
+                "id": "wall-1",
+                "levelId": "lvl-1",
+                "start": {"xMm": 0, "yMm": 0},
+                "end": {"xMm": 1000, "yMm": 0},
+            },
+            "wall-copy": {
+                "kind": "wall",
+                "id": "wall-copy",
+                "levelId": "lvl-1",
+                "start": {"xMm": 0, "yMm": 1000},
+                "end": {"xMm": 1000, "yMm": 1000},
+                "monitorSource": {"linkId": "link-1", "elementId": "source-wall"},
+            },
+            "detail-1": {"kind": "detail_line", "id": "detail-1", "hostViewId": "pv-1"},
+            "group-1": {
+                "kind": "detail_group",
+                "id": "group-1",
+                "hostViewId": "pv-1",
+                "memberIds": ["detail-1", "wall-1", "missing-member", "group-1"],
+            },
+            "constraint-1": {
+                "kind": "constraint",
+                "id": "constraint-1",
+                "refsA": [{"elementId": "wall-1"}],
+                "refsB": [{"elementId": "missing-constraint-ref"}],
+            },
+        }
+    }
+
+    findings = check_model_integrity_invariants(subject)
+    fields = {finding.field for finding in findings}
+
+    assert "model_integrity_unresolved_reference" in _rules(findings)
+    assert "memberIds" in fields
+    assert "refsB[0].elementId" in fields
+    assert "monitorSource.elementId" not in fields
+    assert "model_integrity_group_member_role_invalid" in _rules(findings)
+    assert "model_integrity_group_self_reference" in _rules(findings)
+
+
+def test_nested_design_option_references_are_checked_against_option_set() -> None:
+    findings = check_model_integrity_invariants(
+        {
+            "designOptionSets": [{"id": "set-a", "options": [{"id": "opt-a"}]}],
+            "elements": {
+                "lvl-1": {"kind": "level", "id": "lvl-1"},
+                "pv-1": {
+                    "kind": "plan_view",
+                    "id": "pv-1",
+                    "levelId": "lvl-1",
+                    "filters": [{"optionSetId": "set-a", "optionId": "missing-opt"}],
+                },
+            },
+        }
+    )
+
+    assert any(
+        finding.rule_id == "model_integrity_unresolved_reference"
+        and finding.field == "filters[0].optionId"
+        for finding in findings
+    )
+
+
 def test_units_and_coordinate_normalization_findings_are_deterministic() -> None:
     findings = check_model_integrity_invariants(
         {
@@ -379,6 +477,29 @@ def test_units_and_coordinate_normalization_findings_are_deterministic() -> None
     assert units["format"] == "modelIntegrityUnitsCoordinateNormalization_v1"
     assert units["canonicalLengthUnit"] == "millimeter"
     assert units["ok"] is True
+
+
+def test_nested_mm_coordinate_and_scalar_fields_are_normalized() -> None:
+    findings = check_model_integrity_invariants(
+        {
+            "elements": {
+                "lvl-1": {"kind": "level", "id": "lvl-1", "elevationMm": 0},
+                "detail-1": {
+                    "kind": "detail_line",
+                    "id": "detail-1",
+                    "lineStartMm": {"x": 0, "y": 0},
+                    "lineEndMm": {"xMm": 100, "yMm": 0},
+                    "style": {"dashLengthMm": "not-a-number"},
+                },
+            }
+        }
+    )
+    fields = {finding.field for finding in findings}
+
+    assert "model_integrity_coordinate_not_normalized" in _rules(findings)
+    assert "model_integrity_unit_value_non_finite" in _rules(findings)
+    assert "lineStartMm" in fields
+    assert "style.dashLengthMm" in fields
 
 
 def test_type_instance_inheritance_helper_and_findings() -> None:
@@ -547,3 +668,20 @@ def test_smoke_payload_and_contract_are_machine_readable() -> None:
     assert "strictRoleSmoke" in evidence["artifacts"]
     assert evidence["artifacts"]["strictRoleSmoke"]["coverage"]["requireExplicitRoles"] is True
     assert len(evidence["digestSha256"]) == 64
+
+
+def test_v3_invariant_smoke_route_returns_command_evidence() -> None:
+    app = FastAPI()
+    app.include_router(integrity_router, prefix="/api")
+    client = TestClient(app)
+
+    response = client.post(
+        "/api/v3/invariants/smoke",
+        json={"elements": {"wall-1": {"kind": "wall", "id": "wall-1"}}},
+    )
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["format"] == "modelIntegritySmokeCommandEvidence_v1"
+    assert payload["artifacts"]["smoke"]["ok"] is False
+    assert payload["command"]["api"] == "POST /api/v3/invariants/smoke"

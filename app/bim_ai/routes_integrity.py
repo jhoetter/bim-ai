@@ -16,6 +16,7 @@ from bim_ai.integrity_preflight import (
     build_multi_profile_comparison,
     build_source_command_index_from_transactions,
 )
+from bim_ai.model_integrity import model_integrity_smoke_command_evidence_v1
 from bim_ai.routes_deps import load_model_row
 from bim_ai.tables import UndoStackRecord
 from bim_ai.transaction_safety import build_dry_run_evidence
@@ -23,6 +24,11 @@ from bim_ai.transaction_safety import build_dry_run_evidence
 integrity_router = APIRouter()
 _SESSION_DEPENDENCY = Depends(get_session)
 _EMPTY_BODY = Body(default_factory=dict)
+
+
+@integrity_router.post("/v3/invariants/smoke")
+async def invariant_smoke_route(body: dict[str, Any] = _EMPTY_BODY) -> dict[str, Any]:
+    return model_integrity_smoke_command_evidence_v1(body)
 
 
 @integrity_router.get("/models/{model_id}/qa/integrity-preflight")

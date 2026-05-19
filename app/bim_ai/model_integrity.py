@@ -3,6 +3,7 @@ from __future__ import annotations
 import hashlib
 import json
 import math
+import re
 from collections.abc import Mapping
 from dataclasses import asdict, dataclass
 from typing import Any, Literal
@@ -287,6 +288,7 @@ SUPPORTED_SCHEMA_VERSIONS: frozenset[str] = frozenset(
         "tkn-v3.0",
     }
 )
+STABLE_ELEMENT_ID_PATTERN = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_.:-]*$")
 
 POINT_COORDINATE_FIELDS: tuple[str, ...] = (
     "start",
@@ -401,6 +403,46 @@ FAMILY_CONTENT_RULE_RECOMMENDATIONS: dict[str, str] = {
     "model_integrity_family_instance_material_override_inconsistent": "Use a material declared by the family type material slots or explicitly allow the material override.",
     "model_integrity_family_instance_host_constraint_violation": "Resize, rehost, or move the family instance so it fits its declared host constraints.",
 }
+KERNEL_RULE_TRACKER_ITEMS: dict[str, list[str]] = {
+    "model_integrity_missing_element_id": ["BIR-P01"],
+    "model_integrity_element_key_mismatch": ["BIR-P01"],
+    "model_integrity_element_id_not_stable": ["BIR-P01"],
+    "model_integrity_missing_kind": ["BIR-P01"],
+    "model_integrity_unclassified_kind": ["BIR-P01", "BIR-P05"],
+    "model_integrity_unresolved_reference": ["BIR-P02"],
+    "model_integrity_reference_wrong_kind": ["BIR-P02"],
+    "model_integrity_required_reference_missing": ["BIR-P02"],
+    "model_integrity_unsupported_length_unit": ["BIR-P03"],
+    "model_integrity_coordinate_not_normalized": ["BIR-P03"],
+    "model_integrity_coordinate_invalid_shape": ["BIR-P03"],
+    "model_integrity_coordinate_non_finite": ["BIR-P03"],
+    "model_integrity_coordinate_list_invalid": ["BIR-P03"],
+    "model_integrity_unit_value_non_finite": ["BIR-P03"],
+    "model_integrity_physical_level_missing": ["BIR-P04"],
+    "model_integrity_physical_level_invalid": ["BIR-P04"],
+    "model_integrity_level_parent_elevation_mismatch": ["BIR-P04"],
+    "model_integrity_level_span_order_invalid": ["BIR-P04"],
+    "model_integrity_physical_height_invalid": ["BIR-P04"],
+    "model_integrity_host_level_mismatch": ["BIR-P04"],
+    "model_integrity_invalid_model_role": ["BIR-P05"],
+    "model_integrity_missing_explicit_model_role": ["BIR-P05"],
+    "model_integrity_physical_element_marked_nonphysical": ["BIR-P05"],
+    "model_integrity_nonphysical_element_marked_physical": ["BIR-P05"],
+    "model_integrity_role_kind_mismatch": ["BIR-P05"],
+    "model_integrity_type_reference_missing": ["BIR-P06"],
+    "model_integrity_type_reference_unresolved": ["BIR-P06"],
+    "model_integrity_type_reference_wrong_kind": ["BIR-P06"],
+    "model_integrity_type_layers_invalid": ["BIR-P06"],
+    "model_integrity_type_layer_thickness_invalid": ["BIR-P06"],
+    "model_integrity_type_layer_function_missing": ["BIR-P06"],
+    "model_integrity_type_layer_material_missing": ["BIR-P06"],
+    "model_integrity_instance_material_not_in_type": ["BIR-P06"],
+    "model_integrity_group_members_invalid": ["BIR-P02", "BIR-P06"],
+    "model_integrity_group_members_empty": ["BIR-P02", "BIR-P06"],
+    "model_integrity_group_self_reference": ["BIR-P02", "BIR-P06"],
+    "model_integrity_group_member_role_invalid": ["BIR-P02", "BIR-P06"],
+    "model_integrity_schema_version_unsupported": ["BIR-P07"],
+}
 HOST_SUPPORT_ALIASES: dict[str, str] = {
     "wall": "wall_hosted",
     "wall-hosted": "wall_hosted",
@@ -447,6 +489,7 @@ REFERENCE_SPECS: tuple[ReferenceSpec, ...] = (
     ReferenceSpec("startColumnId", frozenset({"column"})),
     ReferenceSpec("endColumnId", frozenset({"column"})),
     ReferenceSpec("hostElementId"),
+    ReferenceSpec("elementId"),
     ReferenceSpec("hostElementIds", many=True),
     ReferenceSpec("requesterElementIds", many=True),
     ReferenceSpec("memberIds", many=True),
@@ -544,6 +587,11 @@ def model_integrity_invariant_contract_v1() -> dict[str, Any]:
             "supportedSchemaVersions": sorted(SUPPORTED_SCHEMA_VERSIONS),
             "missingSchemaVersionPolicy": "model snapshots without schemaVersion are accepted as current in-memory snapshots",
         },
+        "stableIdentity": {
+            "elementIdPattern": STABLE_ELEMENT_ID_PATTERN.pattern,
+            "mapKeyPolicy": "element map keys must match element ids exactly",
+            "linkedSourcePolicy": "linked-source monitors resolve linkId in the host model and preserve source-side elementId as external identity",
+        },
         "referenceFields": [
             {
                 "field": spec.field,
@@ -568,6 +616,10 @@ def model_integrity_invariant_contract_v1() -> dict[str, Any]:
                 "hosted openings with explicit levelId must match host wall levelId",
                 "height-bearing physical elements must have positive finite height",
             ],
+        },
+        "groupAssemblySemantics": {
+            "detailGroupMembers": "detail_group memberIds must resolve to annotation or documentation elements and cannot include the group itself",
+            "typeAssemblies": "wall/floor/roof type layers require positive thickness and layer function; resolved assembly thickness is deterministic evidence",
         },
         "trackedItems": [
             "BIR-P01",
@@ -620,6 +672,7 @@ def check_model_integrity_invariants(
             )
             continue
         element_id = str(element_id)
+        findings.extend(_stable_id_findings(element_id, str(map_id)))
         if str(map_id) != element_id:
             findings.append(
                 ModelIntegrityFinding(
@@ -662,6 +715,7 @@ def check_model_integrity_invariants(
         findings.extend(_level_semantic_findings(element, elements, level_elevations))
         findings.extend(_unit_coordinate_findings(element))
         findings.extend(_type_instance_findings(element, elements))
+        findings.extend(_group_semantic_findings(element, elements))
         findings.extend(_family_content_findings(element, elements))
 
     findings.extend(_schema_compatibility_findings(subject))
@@ -700,6 +754,7 @@ def model_integrity_smoke_v1(subject: Any, *, require_explicit_roles: bool = Fal
             "checkedPhysicalKinds": sorted(PHYSICAL_KINDS),
             "checkedAnalyticalKinds": sorted(ANALYTICAL_KINDS),
             "checkedLevelSemanticKinds": sorted(PHYSICAL_KINDS | ANALYTICAL_KINDS),
+            "stableElementIdPattern": STABLE_ELEMENT_ID_PATTERN.pattern,
             "requireExplicitRoles": require_explicit_roles,
         },
         "findings": [finding.to_dict() for finding in findings],
@@ -1444,6 +1499,28 @@ def _role_findings(
     return findings
 
 
+def _stable_id_findings(element_id: str, map_id: str) -> list[ModelIntegrityFinding]:
+    findings: list[ModelIntegrityFinding] = []
+    for field, value in (("id", element_id), ("mapKey", map_id)):
+        if STABLE_ELEMENT_ID_PATTERN.fullmatch(value):
+            continue
+        findings.append(
+            ModelIntegrityFinding(
+                rule_id="model_integrity_element_id_not_stable",
+                severity="error",
+                message=(
+                    f"Element {field} '{value}' is not a stable ASCII token suitable for "
+                    "references, exports, and deterministic evidence."
+                ),
+                element_ids=(element_id,),
+                field=field,
+                expected=STABLE_ELEMENT_ID_PATTERN.pattern,
+                actual=value,
+            )
+        )
+    return findings
+
+
 def _reference_findings(
     element: Any,
     elements: Mapping[str, Any],
@@ -1508,7 +1585,13 @@ def _nested_reference_findings(
     findings: list[ModelIntegrityFinding] = []
     specs = {spec.field: spec for spec in REFERENCE_SPECS}
 
-    def visit(value: Any, path: str, *, is_root: bool = False) -> None:
+    def visit(
+        value: Any,
+        path: str,
+        *,
+        is_root: bool = False,
+        parent: Mapping[str, Any] | None = None,
+    ) -> None:
         if isinstance(value, Mapping):
             for key, child in value.items():
                 key_str = str(key)
@@ -1526,13 +1609,14 @@ def _nested_reference_findings(
                             elements,
                             element_kinds,
                             design_option_sets,
+                            value,
                         )
                     )
-                visit(child, child_path)
+                visit(child, child_path, parent=value)
             return
         if isinstance(value, list | tuple):
             for index, child in enumerate(value):
-                visit(child, f"{path}[{index}]")
+                visit(child, f"{path}[{index}]", parent=parent)
 
     visit(root, "", is_root=True)
     return findings
@@ -1546,6 +1630,7 @@ def _reference_value_findings(
     elements: Mapping[str, Any],
     element_kinds: dict[str, set[str]],
     design_option_sets: list[Any],
+    parent: Mapping[str, Any] | None = None,
 ) -> list[ModelIntegrityFinding]:
     if spec.validate_only_if_target_kind_exists and not element_kinds.get(
         spec.validate_only_if_target_kind_exists
@@ -1559,11 +1644,20 @@ def _reference_value_findings(
         if raw_ref in (None, ""):
             continue
         ref_id = str(raw_ref)
+        if spec.field == "elementId" and parent is not None:
+            sibling_link_id = _read(parent, "linkId")
+            if sibling_link_id not in (None, ""):
+                continue
         if spec.field == "optionSetId":
             if design_option_sets and ref_id not in _option_set_ids(design_option_sets):
                 findings.append(_unresolved_ref(element_id, spec, ref_id, field_path))
             continue
         if spec.field == "optionId":
+            option_set_id = _read(parent, "optionSetId") if parent is not None else None
+            if design_option_sets and option_set_id:
+                option_ids = _option_ids_for_set(design_option_sets, str(option_set_id))
+                if option_ids and ref_id not in option_ids:
+                    findings.append(_unresolved_ref(element_id, spec, ref_id, field_path))
             continue
         target = elements.get(ref_id)
         if target is None:
@@ -1604,6 +1698,79 @@ def _option_lock_findings(element: Any, design_option_sets: list[Any]) -> list[M
                     ReferenceSpec("optionLocks"),
                     str(option_id),
                     f"optionLocks.{option_set_id}",
+                )
+            )
+    return findings
+
+
+def _group_semantic_findings(
+    element: Any, elements: Mapping[str, Any]
+) -> list[ModelIntegrityFinding]:
+    kind = str(_read(element, "kind", default=""))
+    if kind != "detail_group":
+        return []
+    element_id = str(_read(element, "id", default=""))
+    members = _read(element, "memberIds", default=[]) or []
+    if not isinstance(members, list | tuple):
+        return [
+            ModelIntegrityFinding(
+                rule_id="model_integrity_group_members_invalid",
+                severity="error",
+                message=f"Detail group '{element_id}' memberIds must be a list.",
+                element_ids=(element_id,),
+                field="memberIds",
+                expected="list of element ids",
+                actual=type(members).__name__,
+            )
+        ]
+    findings: list[ModelIntegrityFinding] = []
+    if not members:
+        findings.append(
+            ModelIntegrityFinding(
+                rule_id="model_integrity_group_members_empty",
+                severity="warning",
+                message=f"Detail group '{element_id}' has no members.",
+                element_ids=(element_id,),
+                field="memberIds",
+                expected="at least one member id",
+            )
+        )
+    allowed_member_kinds = ANNOTATION_KINDS | DOCUMENTATION_KINDS
+    for index, raw_member_id in enumerate(members):
+        if raw_member_id in (None, ""):
+            continue
+        member_id = str(raw_member_id)
+        if member_id == element_id:
+            findings.append(
+                ModelIntegrityFinding(
+                    rule_id="model_integrity_group_self_reference",
+                    severity="error",
+                    message=f"Detail group '{element_id}' cannot include itself as a member.",
+                    element_ids=(element_id,),
+                    field=f"memberIds[{index}]",
+                    expected="member id different from group id",
+                    actual=member_id,
+                )
+            )
+            continue
+        member = elements.get(member_id)
+        if member is None:
+            continue
+        member_kind = str(_read(member, "kind", default=""))
+        if member_kind not in allowed_member_kinds:
+            findings.append(
+                ModelIntegrityFinding(
+                    rule_id="model_integrity_group_member_role_invalid",
+                    severity="error",
+                    message=(
+                        f"Detail group '{element_id}' member '{member_id}' is kind "
+                        f"'{member_kind}', but detail groups may only group annotation or "
+                        "documentation elements."
+                    ),
+                    element_ids=(element_id, member_id),
+                    field=f"memberIds[{index}]",
+                    expected="annotation or documentation kind",
+                    actual=member_kind,
                 )
             )
     return findings
@@ -1675,6 +1842,7 @@ def _unit_coordinate_findings(element: Any) -> list[ModelIntegrityFinding]:
                         actual=str(value),
                     )
                 )
+    findings.extend(_recursive_unit_coordinate_findings(element, element_id))
     return findings
 
 
@@ -1751,6 +1919,56 @@ def _coordinate_components(point: Any) -> tuple[Any, ...] | Literal["legacy_xy"]
     if x_value is not None and (y_value is not None or z_value is not None):
         return (x_value, y_value if y_value is not None else z_value)
     return None
+
+
+def _recursive_unit_coordinate_findings(
+    element: Any, element_id: str
+) -> list[ModelIntegrityFinding]:
+    root = _plain_value(element)
+    if not isinstance(root, Mapping):
+        return []
+    findings: list[ModelIntegrityFinding] = []
+
+    def visit(value: Any, path: str) -> None:
+        if isinstance(value, Mapping):
+            coordinates = _coordinate_components(value)
+            if coordinates is not None and path:
+                findings.extend(_coordinate_point_findings(element, element_id, path, value))
+                return
+            for key, child in value.items():
+                key_str = str(key)
+                child_path = key_str if not path else f"{path}.{key_str}"
+                if _is_mm_field(key_str) and child is not None and not isinstance(
+                    child, Mapping | list | tuple
+                ):
+                    if not _is_finite_number(child):
+                        findings.append(
+                            ModelIntegrityFinding(
+                                rule_id="model_integrity_unit_value_non_finite",
+                                severity="error",
+                                message=(
+                                    f"Element '{element_id}' field '{child_path}' must be "
+                                    "a finite millimeter value."
+                                ),
+                                element_ids=(element_id,),
+                                field=child_path,
+                                expected="finite number",
+                                actual=str(child),
+                            )
+                        )
+                    continue
+                visit(child, child_path)
+            return
+        if isinstance(value, list | tuple):
+            for index, child in enumerate(value):
+                visit(child, f"{path}[{index}]")
+
+    visit(root, "")
+    return findings
+
+
+def _is_mm_field(field: str) -> bool:
+    return field.endswith("Mm") or field.endswith("_mm")
 
 
 def _type_instance_findings(
@@ -2249,7 +2467,9 @@ def _family_content_tracked_items(kind: str) -> list[str]:
 
 
 def _tracker_items_for_rule(rule_id: str) -> list[str]:
-    return FAMILY_CONTENT_RULE_TRACKER_ITEMS.get(rule_id, [])
+    return KERNEL_RULE_TRACKER_ITEMS.get(
+        rule_id, FAMILY_CONTENT_RULE_TRACKER_ITEMS.get(rule_id, [])
+    )
 
 
 def _recommendation_for_rule(rule_id: str) -> str | None:
