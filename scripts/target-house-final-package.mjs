@@ -22,6 +22,8 @@ const REQUIRED_LIVE_EVIDENCE = [
   'constructability-report.json',
   'export-validation.json',
   'tolerance-ledger.json',
+  'clean-pass-gate.json',
+  'target-house-geometry-diagnostic.json',
   'acceptance-gates.json',
   'visual-gate.json',
   'screenshot-manifest.json',
@@ -52,6 +54,14 @@ const TARGET_HOUSE_RENDERED_3D_KINDS = new Set([
   'placed_asset',
   'family_instance',
   'sweep',
+]);
+const BLOCKING_GEOMETRY_DIAGNOSTIC_SEVERITIES = new Set(['error', 'blocker', 'blocking']);
+const BLOCKING_GEOMETRY_DIAGNOSTIC_CATEGORIES = new Set([
+  'detached_or_flying',
+  'helper_leakage',
+  'out_of_envelope',
+  'sketch_critical_mismatch',
+  'unsupported_renderer_feature',
 ]);
 
 function usage() {
@@ -173,6 +183,10 @@ function objectSize(value) {
 
 function numberValue(value) {
   return typeof value === 'number' && Number.isFinite(value) ? Math.max(0, value) : 0;
+}
+
+function normalizedKey(value) {
+  return typeof value === 'string' ? value.trim().toLowerCase() : '';
 }
 
 function round2(value) {
@@ -583,12 +597,96 @@ async function requiredEvidenceRows(liveDir) {
 }
 
 function acceptanceSummary(acceptanceGates) {
+  const blockers = Array.isArray(acceptanceGates?.blockers) ? acceptanceGates.blockers : [];
+  const blockerCodes = uniqueSorted(blockers.map((blocker) => blocker?.code).filter(Boolean));
+  const semanticVisualBlockerCodes = new Set(['semantic_visual_checklist_failures']);
+  const otherBlockers = blockers.filter(
+    (blocker) => !semanticVisualBlockerCodes.has(blocker?.code),
+  );
   return {
     ok: acceptanceGates?.ok === true,
     blockerCount: Number(acceptanceGates?.summary?.blockerCount ?? 0),
     toleranceCount: Number(acceptanceGates?.summary?.toleranceCount ?? 0),
     visualFailCount: Number(acceptanceGates?.summary?.visualFailCount ?? 0),
     semanticVisualFailureCount: Number(acceptanceGates?.summary?.semanticVisualFailureCount ?? 0),
+    semanticVisualRequiredCount: Number(acceptanceGates?.summary?.semanticVisualRequiredCount ?? 0),
+    otherBlockerCount: otherBlockers.length,
+    blockerCodes,
+    otherBlockerCodes: uniqueSorted(otherBlockers.map((blocker) => blocker?.code).filter(Boolean)),
+  };
+}
+
+function cleanPassGateSummary(cleanPassGate) {
+  return {
+    ok: cleanPassGate?.ok === true,
+    blockerCount: Number(cleanPassGate?.summary?.blockerCount ?? 0),
+    p0ErrorCount: Number(cleanPassGate?.summary?.p0ErrorCount ?? 0),
+    rendererBlockerCount: Number(cleanPassGate?.summary?.rendererBlockerCount ?? 0),
+    unresolvedWarningGroupCount: Number(cleanPassGate?.summary?.unresolvedWarningGroupCount ?? 0),
+    blockerKinds: uniqueSorted(
+      (Array.isArray(cleanPassGate?.blockers) ? cleanPassGate.blockers : [])
+        .map((blocker) => blocker?.blockerKind)
+        .filter(Boolean),
+    ),
+  };
+}
+
+function countByKey(rows, key) {
+  const counts = {};
+  for (const row of rows) {
+    const value = row?.[key];
+    if (typeof value !== 'string' || !value.trim()) continue;
+    counts[value] = (counts[value] ?? 0) + 1;
+  }
+  return counts;
+}
+
+function summaryCount(summary, key) {
+  return Number(summary?.[key] ?? 0);
+}
+
+export function geometryDiagnosticSummary(geometryDiagnostic) {
+  const findings = Array.isArray(geometryDiagnostic?.findings) ? geometryDiagnostic.findings : [];
+  const errorLevelFindings = findings.filter((finding) =>
+    BLOCKING_GEOMETRY_DIAGNOSTIC_SEVERITIES.has(normalizedKey(finding?.severity)),
+  );
+  const summaryBySeverity = geometryDiagnostic?.summary?.bySeverity ?? {};
+  const summaryErrorCount =
+    summaryCount(summaryBySeverity, 'error') +
+    summaryCount(summaryBySeverity, 'blocker') +
+    summaryCount(summaryBySeverity, 'blocking');
+  const errorLevelFindingCount = Math.max(errorLevelFindings.length, summaryErrorCount);
+  const computedBlockingByCategory = countByKey(errorLevelFindings, 'category');
+  const summaryByCategory = geometryDiagnostic?.summary?.byCategory ?? {};
+  const blockingByCategory = {};
+  for (const category of BLOCKING_GEOMETRY_DIAGNOSTIC_CATEGORIES) {
+    blockingByCategory[category] = Math.max(
+      Number(computedBlockingByCategory[category] ?? 0),
+      errorLevelFindings.length === 0 && summaryErrorCount > 0
+        ? Number(summaryByCategory[category] ?? 0)
+        : 0,
+    );
+  }
+  const blockingCategoryCount = Object.values(blockingByCategory).reduce(
+    (sum, count) => sum + count,
+    0,
+  );
+  const blockingFindings = errorLevelFindings.map((finding) => ({
+    category: finding.category ?? 'unknown',
+    code: finding.code ?? 'unknown_geometry_diagnostic',
+    severity: finding.severity ?? 'error',
+    elementIds: Array.isArray(finding.elementIds) ? finding.elementIds : [],
+    message: finding.message ?? '',
+  }));
+  return {
+    ok: errorLevelFindingCount === 0,
+    schemaVersion: geometryDiagnostic?.schemaVersion ?? null,
+    totalFindingCount: Number(geometryDiagnostic?.summary?.total ?? findings.length),
+    errorLevelFindingCount,
+    blockingCategoryCount,
+    blockingByCategory,
+    blockerCodes: uniqueSorted(blockingFindings.map((finding) => finding.code)),
+    sampleBlockers: blockingFindings.slice(0, 8),
   };
 }
 
@@ -644,19 +742,41 @@ function generatedRowsForFinalPackage(generatedStatusMarkdown, trackerRows) {
   };
 }
 
-function closeoutStatus({
+function trackerNotDoneRows(trackerRows, ids) {
+  return ids
+    .filter((id) => trackerRows[id]?.status !== 'Done')
+    .map((id) => ({
+      id,
+      status: trackerRows[id]?.status ?? 'missing',
+    }));
+}
+
+export function closeoutStatus({
   requiredEvidence,
   performanceEvidence,
+  cleanPassGate,
+  geometryDiagnostic,
   acceptance,
   tolerance,
   trackerRows,
   liveEvidenceFresh,
 }) {
   const missingEvidence = requiredEvidence.filter((row) => !row.present).map((row) => row.path);
+  const trackerNotDone = trackerNotDoneRows(trackerRows, [
+    'BIR-N04',
+    'BIR-N07',
+    'BIR-N08',
+    'BIR-N10',
+  ]);
   const blockers = [];
+  const blockerDetails = [];
   if (missingEvidence.length > 0) blockers.push('missing_required_evidence');
   if (!liveEvidenceFresh) blockers.push('live_evidence_freshness');
   if (!performanceEvidence.summary.ok) blockers.push('performance_budget');
+  if (!cleanPassGate.ok || cleanPassGate.blockerCount > 0) blockers.push('core_clean_pass');
+  if (!geometryDiagnostic.ok || geometryDiagnostic.errorLevelFindingCount > 0) {
+    blockers.push('geometry_diagnostic');
+  }
   if (
     !tolerance.ok ||
     tolerance.blockingFindingCount > 0 ||
@@ -664,11 +784,97 @@ function closeoutStatus({
   ) {
     blockers.push('tolerance_ledger');
   }
-  if (!acceptance.ok) blockers.push('acceptance_gates');
-  if (trackerRows['BIR-N07']?.status !== 'Done') blockers.push('tracker_not_done');
+  if (acceptance.semanticVisualFailureCount > 0) blockers.push('semantic_visual');
+  if (
+    !acceptance.ok &&
+    (acceptance.otherBlockerCount > 0 || acceptance.semanticVisualFailureCount === 0)
+  ) {
+    blockers.push('acceptance_gate_blockers');
+  }
+  if (trackerNotDone.length > 0) blockers.push('tracker_not_done');
+  if (missingEvidence.length > 0) {
+    blockerDetails.push({
+      code: 'missing_required_evidence',
+      category: 'evidence',
+      count: missingEvidence.length,
+      paths: missingEvidence,
+    });
+  }
+  if (!liveEvidenceFresh) {
+    blockerDetails.push({ code: 'live_evidence_freshness', category: 'evidence', count: 1 });
+  }
+  if (!performanceEvidence.summary.ok) {
+    blockerDetails.push({
+      code: 'performance_budget',
+      category: 'performance',
+      count: performanceEvidence.summary.overBudgetInteractions?.length ?? 1,
+      interactions: performanceEvidence.summary.overBudgetInteractions ?? [],
+    });
+  }
+  if (!cleanPassGate.ok || cleanPassGate.blockerCount > 0) {
+    blockerDetails.push({
+      code: 'core_clean_pass',
+      category: 'core_advisor_clean_pass',
+      count: cleanPassGate.blockerCount,
+      p0ErrorCount: cleanPassGate.p0ErrorCount,
+      rendererBlockerCount: cleanPassGate.rendererBlockerCount,
+      unresolvedWarningGroupCount: cleanPassGate.unresolvedWarningGroupCount,
+      blockerKinds: cleanPassGate.blockerKinds,
+    });
+  }
+  if (!geometryDiagnostic.ok || geometryDiagnostic.errorLevelFindingCount > 0) {
+    blockerDetails.push({
+      code: 'geometry_diagnostic',
+      category: 'geometry_diagnostic',
+      count: geometryDiagnostic.errorLevelFindingCount,
+      byCategory: geometryDiagnostic.blockingByCategory,
+      blockerCodes: geometryDiagnostic.blockerCodes,
+      sampleBlockers: geometryDiagnostic.sampleBlockers,
+    });
+  }
+  if (
+    !tolerance.ok ||
+    tolerance.blockingFindingCount > 0 ||
+    tolerance.incompleteToleranceCount > 0
+  ) {
+    blockerDetails.push({
+      code: 'tolerance_ledger',
+      category: 'tolerance',
+      blockingFindingCount: tolerance.blockingFindingCount,
+      incompleteToleranceCount: tolerance.incompleteToleranceCount,
+    });
+  }
+  if (acceptance.semanticVisualFailureCount > 0) {
+    blockerDetails.push({
+      code: 'semantic_visual',
+      category: 'semantic_visual',
+      count: acceptance.semanticVisualFailureCount,
+      requiredCount: acceptance.semanticVisualRequiredCount,
+    });
+  }
+  if (
+    !acceptance.ok &&
+    (acceptance.otherBlockerCount > 0 || acceptance.semanticVisualFailureCount === 0)
+  ) {
+    blockerDetails.push({
+      code: 'acceptance_gate_blockers',
+      category: 'acceptance_gates',
+      count: acceptance.otherBlockerCount || acceptance.blockerCount,
+      blockerCodes: acceptance.otherBlockerCodes,
+    });
+  }
+  if (trackerNotDone.length > 0) {
+    blockerDetails.push({
+      code: 'tracker_not_done',
+      category: 'tracker',
+      count: trackerNotDone.length,
+      rows: trackerNotDone,
+    });
+  }
   return {
     ready: blockers.length === 0,
     blockers,
+    blockerDetails,
     status: blockers.length === 0 ? 'ready' : `blocked_${blockers[0]}`,
   };
 }
@@ -700,6 +906,12 @@ export async function buildTargetHouseFinalCloseoutManifest({
   snapshotInput ??= resolveTargetHouseSnapshotInput({ repoRoot: REPO_ROOT, seed });
   performanceEvidence ??= await buildTargetHousePerformanceEvidence({ seed, snapshotInput });
   const requiredEvidence = await requiredEvidenceRows(liveDir);
+  const cleanPassGate = cleanPassGateSummary(
+    await readJson(path.join(liveDir, 'clean-pass-gate.json')),
+  );
+  const geometryDiagnostic = geometryDiagnosticSummary(
+    await readJson(path.join(liveDir, 'target-house-geometry-diagnostic.json')),
+  );
   const acceptance = acceptanceSummary(await readJson(path.join(liveDir, 'acceptance-gates.json')));
   const tolerance = toleranceSummary(await readJson(path.join(liveDir, 'tolerance-ledger.json')));
   const seedSource = {
@@ -717,11 +929,15 @@ export async function buildTargetHouseFinalCloseoutManifest({
     'BIR-N05',
     'BIR-N06',
     'BIR-N07',
+    'BIR-N08',
+    'BIR-N10',
   ]);
   const generatedTrackerRows = generatedRowsForFinalPackage(generatedStatusMarkdown, trackerRows);
   const status = closeoutStatus({
     requiredEvidence,
     performanceEvidence,
+    cleanPassGate,
+    geometryDiagnostic,
     acceptance,
     tolerance,
     trackerRows,
@@ -762,6 +978,8 @@ export async function buildTargetHouseFinalCloseoutManifest({
       generatedRows: generatedTrackerRows,
     },
     tolerances: tolerance,
+    cleanPassGate,
+    geometryDiagnostic,
     acceptanceGates: acceptance,
     status,
   };
