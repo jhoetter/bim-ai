@@ -198,6 +198,26 @@ def test_family_type_content_integrity_reports_invalid_overrides_assets_and_pari
                 "levelId": "lvl-1",
                 "positionMm": {"xMm": 1000, "yMm": 500},
             },
+            "stair-1": {
+                "kind": "stair",
+                "id": "stair-1",
+                "baseLevelId": "lvl-1",
+                "topLevelId": "lvl-2",
+                "boundaryMm": [
+                    {"xMm": 400, "yMm": 400},
+                    {"xMm": 1200, "yMm": 400},
+                    {"xMm": 1200, "yMm": 1200},
+                    {"xMm": 400, "yMm": 1200},
+                ],
+            },
+            "asset-on-stair": {
+                "kind": "placed_asset",
+                "id": "asset-on-stair",
+                "name": "Bad asset on stair",
+                "assetId": "asset-bad",
+                "levelId": "lvl-1",
+                "positionMm": {"xMm": 700, "yMm": 700},
+            },
         }
     }
 
@@ -217,6 +237,7 @@ def test_family_type_content_integrity_reports_invalid_overrides_assets_and_pari
     assert "model_integrity_asset_catalog_param_schema_invalid" in rule_ids
     assert "model_integrity_asset_placement_floating" in rule_ids
     assert "model_integrity_asset_placement_embedded_without_intent" in rule_ids
+    assert "model_integrity_asset_placement_circulation_overlap" in rule_ids
     assert report["ok"] is False
     assert report_rule_ids.issuperset(rule_ids & report_rule_ids)
     assert "BIR-V05" in report["trackedItems"]

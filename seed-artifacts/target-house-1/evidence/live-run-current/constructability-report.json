@@ -6,6 +6,71 @@
     "format": "constructabilityReport_v1",
     "revision": 2,
     "profile": "construction_readiness",
+    "profilePreset": {
+      "id": "construction_readiness",
+      "label": "Construction Readiness",
+      "defaultSeverityFloor": "error",
+      "disciplineFocus": ["architecture", "structure", "mep", "coordination"],
+      "ruleMembership": ["geometry", "constructability", "support", "penetration"]
+    },
+    "availableProfilePresets": [
+      {
+        "id": "accessibility",
+        "label": "Accessibility",
+        "defaultSeverityFloor": "warning",
+        "disciplineFocus": ["architecture"],
+        "ruleMembership": ["door", "room", "stair", "clearance"]
+      },
+      {
+        "id": "architecture",
+        "label": "Architecture",
+        "defaultSeverityFloor": "info",
+        "disciplineFocus": ["architecture", "coordination"],
+        "ruleMembership": ["architecture", "coordination", "documentation"]
+      },
+      {
+        "id": "construction_readiness",
+        "label": "Construction Readiness",
+        "defaultSeverityFloor": "error",
+        "disciplineFocus": ["architecture", "structure", "mep", "coordination"],
+        "ruleMembership": ["geometry", "constructability", "support", "penetration"]
+      },
+      {
+        "id": "exchange",
+        "label": "Exchange",
+        "defaultSeverityFloor": "warning",
+        "disciplineFocus": ["exchange", "coordination"],
+        "ruleMembership": ["exchange", "documentation", "metadata"]
+      },
+      {
+        "id": "fire",
+        "label": "Fire",
+        "defaultSeverityFloor": "warning",
+        "disciplineFocus": ["architecture", "coordination"],
+        "ruleMembership": ["egress", "door", "stair", "metadata"]
+      },
+      {
+        "id": "mep",
+        "label": "MEP",
+        "defaultSeverityFloor": "warning",
+        "disciplineFocus": ["mep", "coordination"],
+        "ruleMembership": ["mep", "coordination", "penetration"]
+      },
+      {
+        "id": "sketch_acceptance",
+        "label": "Sketch Acceptance",
+        "defaultSeverityFloor": "warning",
+        "disciplineFocus": ["agent", "coordination", "architecture"],
+        "ruleMembership": ["evidence", "renderer", "methodology"]
+      },
+      {
+        "id": "structure",
+        "label": "Structure",
+        "defaultSeverityFloor": "warning",
+        "disciplineFocus": ["structure", "coordination"],
+        "ruleMembership": ["structure", "coordination", "geometry"]
+      }
+    ],
     "scope": {
       "phaseFilter": "all",
       "optionLocks": {},
@@ -18,10 +83,38 @@
       "severityCounts": {},
       "priorityCounts": {},
       "ruleCounts": {},
-      "statusCounts": {}
+      "statusCounts": {},
+      "rootCauseGroupCount": 0
     },
     "findings": [],
+    "rootCauseGroups": [],
     "issues": [],
+    "suppressionAudit": {
+      "schemaVersion": "advisor.suppression-audit.v1",
+      "records": [],
+      "invalidRecords": []
+    },
+    "reviewWorkflow": {
+      "schemaVersion": "advisor.false-positive-review-workflow.v1",
+      "classifications": ["rule_defect", "accepted_tolerance", "profile_mismatch", "model_defect"],
+      "requiredFieldsByClassification": {
+        "rule_defect": ["owner", "evidenceRefs", "reviewNote"],
+        "accepted_tolerance": ["owner", "expiresRevision", "evidenceRefs", "reviewNote"],
+        "profile_mismatch": ["owner", "profileId", "evidenceRefs", "reviewNote"],
+        "model_defect": ["owner", "fixPlan", "reviewNote"]
+      },
+      "statusMapping": {
+        "rule_defect": "not_an_issue",
+        "accepted_tolerance": "approved",
+        "profile_mismatch": "reviewed",
+        "model_defect": "active"
+      }
+    },
+    "learningCorpus": {
+      "schemaVersion": "advisor.learning-corpus-hook.v1",
+      "fixtureKeyFields": ["ruleId", "classification", "profileId", "elementKinds", "evidenceRefs"],
+      "allowedLabels": ["true_positive", "false_positive", "profile_mismatch"]
+    },
     "profiling": {
       "format": "advisorDiagnosticsProfile_v1",
       "clock": "perf_counter_ns",
@@ -30,14 +123,15 @@
       "changedElementIds": [],
       "summary": {
         "checkCount": 10,
+        "skippedCheckCount": 0,
         "totalFindingCount": 6,
-        "totalElapsedMs": 151.038
+        "totalElapsedMs": 164.448
       },
       "ruleTimings": [
         {
           "checkId": "advisor.evaluate_constructability_rules",
           "layer": "advisor",
-          "elapsedMs": 109.936,
+          "elapsedMs": 118.859,
           "findingCount": 0,
           "candidateElementCount": 157,
           "impactedElementCount": 0,
@@ -46,7 +140,7 @@
         {
           "checkId": "constructability.clearance",
           "layer": "constructability",
-          "elapsedMs": 2.4,
+          "elapsedMs": 2.899,
           "findingCount": 0,
           "candidateElementCount": 157,
           "impactedElementCount": 0,
@@ -55,7 +149,7 @@
         {
           "checkId": "constructability.metadata_requirements",
           "layer": "constructability",
-          "elapsedMs": 0.14,
+          "elapsedMs": 0.159,
           "findingCount": 0,
           "candidateElementCount": 157,
           "impactedElementCount": 0,
@@ -64,7 +158,7 @@
         {
           "checkId": "model_integrity.constructability_errors",
           "layer": "model_integrity",
-          "elapsedMs": 29.821,
+          "elapsedMs": 32.346,
           "findingCount": 0,
           "candidateElementCount": 157,
           "impactedElementCount": 0,
@@ -73,46 +167,47 @@
         {
           "checkId": "domain_integrity.room_access",
           "layer": "domain_integrity",
-          "elapsedMs": 2.952,
+          "elapsedMs": 3.521,
           "findingCount": 6,
           "candidateElementCount": 157
         },
         {
           "checkId": "domain_integrity.vertical_circulation",
           "layer": "domain_integrity",
-          "elapsedMs": 0.228,
+          "elapsedMs": 0.289,
           "findingCount": 0,
           "candidateElementCount": 157
         },
         {
           "checkId": "domain_integrity.envelope",
           "layer": "domain_integrity",
-          "elapsedMs": 1.272,
+          "elapsedMs": 1.347,
           "findingCount": 0,
           "candidateElementCount": 157
         },
         {
           "checkId": "domain_integrity.structure_mep_lite",
           "layer": "domain_integrity",
-          "elapsedMs": 1.395,
+          "elapsedMs": 1.786,
           "findingCount": 0,
           "candidateElementCount": 157
         },
         {
           "checkId": "domain_integrity.code_profile",
           "layer": "domain_integrity",
-          "elapsedMs": 0.627,
+          "elapsedMs": 0.829,
           "findingCount": 0,
           "candidateElementCount": 157
         },
         {
           "checkId": "domain_integrity.site_georeferencing",
           "layer": "domain_integrity",
-          "elapsedMs": 1.584,
+          "elapsedMs": 1.679,
           "findingCount": 0,
           "candidateElementCount": 157
         }
       ],
+      "skippedChecks": [],
       "incrementalEligibility": {
         "format": "advisorIncrementalDiagnosticEligibility_v1",
         "changedElementIds": [],

@@ -15,19 +15,19 @@
   "acceptance": {
     "status": "offline-refreshed-current-evidence",
     "evidenceRoot": "evidence/live-run-current",
-    "gitHead": "9746652589532345ee28c234d7418fcfa011042b",
-    "bundleSha256": "006d07ef84f80a183ea2f028cbc6b9f16eda3cc24996e5cfc448dd1bf44a6956",
+    "gitHead": "ffdecef6c95fd17cddbe13354316b6231b6e6c4c",
+    "bundleSha256": "2f2c1a220f13a1c07b0d0b1d08ab601d6c79b775ea8838f574060b5ce25d7f6c",
     "irSha256": "34757eba0ab4784e91a66232205294ac7cf1c7504bc3701c42b76ed3ffb7bf8e",
     "capabilitiesSha256": "e3faa00d4724d5e375ee853d5e3d56b21254a969a84e702d67013a8bb0125dbb",
-    "advisorRuleDigest": "6d714bc94a3a04d8250d35e99bda9ccde010fa626fb69a2a7cfa98c26bbb7acd",
-    "generatedAtEpochMs": 1779197900890,
+    "advisorRuleDigest": "dfa733e613540218d61c1aaa7aab61c6f4d992806ff6bdb6e4eec411efebf96a",
+    "generatedAtEpochMs": 1779200055667,
     "notes": "Deterministic offline evidence was regenerated from seed-artifacts/target-house-1/bundle.json. Clean-pass, geometry, semantic visual, final-package, and live/browser acceptance are tracked in evidence/live-run-current."
   },
   "inputPaths": {
     "source": "spec/target-house",
     "bundle": "target-house-1.bundle.v2.json"
   },
-  "bundleSha256": "006d07ef84f80a183ea2f028cbc6b9f16eda3cc24996e5cfc448dd1bf44a6956",
+  "bundleSha256": "2f2c1a220f13a1c07b0d0b1d08ab601d6c79b775ea8838f574060b5ce25d7f6c",
   "commandCount": 245,
   "commandSchemaVersion": "cmd-v3.0",
   "entryComment": {

@@ -1128,6 +1128,24 @@ def _placed_asset_findings(
                     actual=embedded_wall,
                 )
             )
+        circulation_overlap = _circulation_overlap_at_position(element, elements)
+        if circulation_overlap is not None and not _truthy(
+            _read_any(element, ("allowCirculationOverlap", "allowStairOverlap"))
+        ):
+            findings.append(
+                ModelIntegrityFinding(
+                    rule_id="model_integrity_asset_placement_circulation_overlap",
+                    severity="error",
+                    message=(
+                        f"Placed asset '{element_id}' overlaps vertical circulation "
+                        f"'{circulation_overlap}' without explicit intent."
+                    ),
+                    element_ids=(element_id, str(asset_id), circulation_overlap),
+                    field="positionMm",
+                    expected="clear of stairs/ramps/vertical circulation or allowCirculationOverlap=true",
+                    actual=circulation_overlap,
+                )
+            )
     return findings
 
 
@@ -2272,6 +2290,38 @@ def _embedded_wall_at_position(element: Any, elements: Mapping[str, Any]) -> str
             wall_id = _read(wall, "id")
             return str(wall_id) if wall_id not in (None, "") else None
     return None
+
+
+def _circulation_overlap_at_position(element: Any, elements: Mapping[str, Any]) -> str | None:
+    point = _point_xy(_read(element, "positionMm"))
+    if point is None:
+        return None
+    level_id = str(_read(element, "levelId", default=""))
+    for candidate in elements.values():
+        kind = str(_read(candidate, "kind", default=""))
+        if kind not in {"stair", "ramp"}:
+            continue
+        if not _circulation_can_overlap_level(candidate, level_id):
+            continue
+        if _point_in_polygon(point, _polygon_xy(_read(candidate, "boundaryMm"))):
+            candidate_id = _read(candidate, "id")
+            return str(candidate_id) if candidate_id not in (None, "") else None
+    return None
+
+
+def _circulation_can_overlap_level(candidate: Any, level_id: str) -> bool:
+    if not level_id:
+        return True
+    candidate_level_ids = {
+        str(value)
+        for value in (
+            _read(candidate, "levelId"),
+            _read(candidate, "baseLevelId"),
+            _read(candidate, "topLevelId"),
+        )
+        if value not in (None, "")
+    }
+    return not candidate_level_ids or level_id in candidate_level_ids
 
 
 def _point_xy(value: Any) -> tuple[float, float] | None:

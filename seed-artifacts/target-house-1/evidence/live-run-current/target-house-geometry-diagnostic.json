@@ -8,7 +8,7 @@
     "snapshotSource": {
       "kind": "fresh_live_snapshot",
       "path": "seed-artifacts/target-house-1/evidence/live-run-current/snapshot.json",
-      "snapshotSha256": "5011bd0c46e13973c136a9c9cfcab2c3539e9a23e0eb4a82b4a2665f9b460391",
+      "snapshotSha256": "d6657c17c5a85adcf052d004b923041eedf62ca33d6f4ffb9988017786aebf02",
       "regenerated": false,
       "liveEvidenceFresh": true,
       "staleCandidates": [
@@ -16,16 +16,16 @@
           "kind": "nested_live_snapshot",
           "path": "seed-artifacts/target-house-1/evidence/live-run-current/live/snapshot.json",
           "ok": true,
-          "snapshotSha256": "5011bd0c46e13973c136a9c9cfcab2c3539e9a23e0eb4a82b4a2665f9b460391",
+          "snapshotSha256": "d6657c17c5a85adcf052d004b923041eedf62ca33d6f4ffb9988017786aebf02",
           "staleChecks": []
         }
       ]
     },
     "sourceDigests": {
-      "seed-artifacts/target-house-1/bundle.json": "sha256:006d07ef84f80a183ea2f028cbc6b9f16eda3cc24996e5cfc448dd1bf44a6956",
+      "seed-artifacts/target-house-1/bundle.json": "sha256:2f2c1a220f13a1c07b0d0b1d08ab601d6c79b775ea8838f574060b5ce25d7f6c",
       "seed-artifacts/target-house-1/source/target-house-1-sketch-ir.draft.json": "sha256:34757eba0ab4784e91a66232205294ac7cf1c7504bc3701c42b76ed3ffb7bf8e",
       "spec/generated/target-house-1-required-features.json": "sha256:bc336b696cd98071971dded6b31272c401305aba210054984199bcc2a1662607",
-      "seed-artifacts/target-house-1/evidence/live-run-current/snapshot.json": "sha256:5011bd0c46e13973c136a9c9cfcab2c3539e9a23e0eb4a82b4a2665f9b460391"
+      "seed-artifacts/target-house-1/evidence/live-run-current/snapshot.json": "sha256:d6657c17c5a85adcf052d004b923041eedf62ca33d6f4ffb9988017786aebf02"
     }
   },
   "targetEnvelopeMm": {

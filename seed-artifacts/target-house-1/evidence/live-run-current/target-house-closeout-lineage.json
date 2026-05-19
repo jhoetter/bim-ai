@@ -3,16 +3,16 @@
   "seed": "target-house-1",
   "generatedAt": "1970-01-01T00:00:00.000Z",
   "git": {
-    "currentHead": "1157d35658bf7813c6a50cdb9fcae59959dd49e4",
-    "evidenceHead": "9746652589532345ee28c234d7418fcfa011042b",
+    "currentHead": "ffdecef6c95fd17cddbe13354316b6231b6e6c4c",
+    "evidenceHead": "ffdecef6c95fd17cddbe13354316b6231b6e6c4c",
     "dirtyCheckPolicy": "Report records source/evidence digests and git heads; concurrent dirty files are not normalized."
   },
   "paths": {
     "repoRoot": "/Users/jhoetter/repos/bim-ai",
     "evidenceDir": "seed-artifacts/target-house-1/evidence/live-run-current",
     "requiredFeatures": "spec/generated/target-house-1-required-features.json",
-    "performanceEvidence": "scripts/target-house-final-package.mjs#buildTargetHousePerformanceEvidence",
-    "finalManifest": "scripts/target-house-final-package.mjs#buildTargetHouseFinalCloseoutManifest"
+    "performanceEvidence": "tmp/target-house-final-package/target-house-1/target-house-1-performance-evidence.json",
+    "finalManifest": "tmp/target-house-final-package/target-house-1/target-house-1-final-closeout-manifest.json"
   },
   "loadErrors": {
     "performanceEvidence": null,
@@ -24,20 +24,20 @@
     "spec/target-house/target-house-1-sketch-ir.draft.json": "sha256:a90e27df1c146b6fb3c9ae18402d3c8662a3ee0cdb0f70c360ccc213ad669261",
     "spec/target-house/target-house-1-bim-information-requirements.md": "sha256:c32bc404b321d720fec7092b7877701279f02e1ccd336005b88e80ec4abae7dc",
     "spec/target-house/target-house-1-phase-plan.md": "sha256:a9f6b7d533e0434655c49d88a69299e90aeef9e120fb6f410b88fc007eba372a",
-    "bundle": "sha256:006d07ef84f80a183ea2f028cbc6b9f16eda3cc24996e5cfc448dd1bf44a6956",
-    "snapshot": "sha256:579bb3c9df87548ec40d80b280547ba87618b6050f3dc90b9ba655cf7eb081f9",
-    "advisorRuleDigest": "sha256:6d714bc94a3a04d8250d35e99bda9ccde010fa626fb69a2a7cfa98c26bbb7acd",
+    "bundle": "sha256:2f2c1a220f13a1c07b0d0b1d08ab601d6c79b775ea8838f574060b5ce25d7f6c",
+    "snapshot": "sha256:d6657c17c5a85adcf052d004b923041eedf62ca33d6f4ffb9988017786aebf02",
+    "advisorRuleDigest": "sha256:dfa733e613540218d61c1aaa7aab61c6f4d992806ff6bdb6e4eec411efebf96a",
     "capabilities": "sha256:e3faa00d4724d5e375ee853d5e3d56b21254a969a84e702d67013a8bb0125dbb",
     "rendererSupportMatrix": "sha256:9057becd26ea663f29a98c93139c3d1d49e81ae10a903fd0887b0d8a6643f49e",
-    "finalManifest": "sha256:374a7d1df4465e4348d5f7b4ce862c2334b564e32843d3a3603532a310aa8a2e",
-    "performanceEvidence": "sha256:0aac12873b4fd11f4ffc40382471aeff557bdd377f56c097c839373f96225c1b"
+    "finalManifest": "sha256:6f0bbcc57def0417b419e7c580901f3eda4df62f997b5b8e185d33281fa3dd6b",
+    "performanceEvidence": "sha256:7d76a7a0d6d8f4b193af50c911cc4f6a01ef2ee468bfccd234d343ca08b8cc1d"
   },
   "evidenceFiles": [
     {
       "key": "tool_run_summary",
       "path": "seed-artifacts/target-house-1/evidence/live-run-current/tool-run-summary.json",
       "present": true,
-      "sha256": "sha256:d4f6893a28e3f76317da7d3896b50864bc9bf03868174186ef97b4a4f4514d01",
+      "sha256": "sha256:a50a19acd78adf61bdaf1e68348bb6a3093e84721e11cfd896955451a5eb2ab5",
       "schemaVersion": "sketch-to-bim.tool-run.v1",
       "status": "present",
       "summary": null
@@ -46,7 +46,7 @@
       "key": "evidence_manifest",
       "path": "seed-artifacts/target-house-1/evidence/live-run-current/evidence-manifest.json",
       "present": true,
-      "sha256": "sha256:96ea1e53c7a10dac061b23f68dab77833a2a9de2db361d20bebb145ba9cf0c5c",
+      "sha256": "sha256:8f58325b73593c050ab26978223d81502040504062fb05fe8dd0bc43d7447b68",
       "schemaVersion": "sketch.evidence.collection.v1",
       "status": "present",
       "summary": {
@@ -59,7 +59,7 @@
       "key": "snapshot",
       "path": "seed-artifacts/target-house-1/evidence/live-run-current/snapshot.json",
       "present": true,
-      "sha256": "sha256:579bb3c9df87548ec40d80b280547ba87618b6050f3dc90b9ba655cf7eb081f9",
+      "sha256": "sha256:d6657c17c5a85adcf052d004b923041eedf62ca33d6f4ffb9988017786aebf02",
       "schemaVersion": null,
       "status": "present",
       "summary": null
@@ -121,20 +121,21 @@
       "key": "constructability_report",
       "path": "seed-artifacts/target-house-1/evidence/live-run-current/constructability-report.json",
       "present": true,
-      "sha256": "sha256:f7d698afeb9f247045192170e60fc159d30db921c15bfd7d1da9faa490343575",
+      "sha256": "sha256:9582f41e8b58b1557fec7d4e2895e0c190bf21622608fc2d2b00014955d5fd70",
       "schemaVersion": "constructabilityReport_v1",
       "status": "pass",
       "summary": {
         "findingCount": 0,
         "issueCount": 0,
-        "suppressedFindingCount": 0
+        "suppressedFindingCount": 0,
+        "rootCauseGroupCount": 0
       }
     },
     {
       "key": "geometry_diagnostic",
       "path": "seed-artifacts/target-house-1/evidence/live-run-current/target-house-geometry-diagnostic.json",
       "present": true,
-      "sha256": "sha256:d0df768be9d2f14ff9595c8b823c2df94b1cebeac519432ab99f45238e53b71c",
+      "sha256": "sha256:b885a9d99a8ab135cc65c08bc507011edb58fa57287e19bfee165c81d337147e",
       "schemaVersion": "target-house-current-geometry-diagnostic.v1",
       "status": "present",
       "summary": {
@@ -160,7 +161,7 @@
       "key": "visual_evidence_contract",
       "path": "seed-artifacts/target-house-1/evidence/live-run-current/visual-evidence-contract.json",
       "present": true,
-      "sha256": "sha256:2fe30e501ff22cbd34a2d64bfd37aeec83b9efe9ea4d10e839ce249db5a05aa6",
+      "sha256": "sha256:43ce0fe23e95ca109b5904218de6b32cd80ef55c7dc431e59cfcfb8be64fcdda",
       "schemaVersion": "sketch.visual-evidence-contract.v1",
       "status": "present",
       "summary": null
@@ -169,7 +170,7 @@
       "key": "bim_data_quality",
       "path": "seed-artifacts/target-house-1/evidence/live-run-current/bim-data-quality.json",
       "present": true,
-      "sha256": "sha256:9ceaf6abb00bbd0ba44ee2c4cc926115a4af472cdacb8641d0956d2e1d164a9f",
+      "sha256": "sha256:5c9a4abf02510b3d240f3fb7048051745e1cc864c3c470bc0a73356016d72cca",
       "schemaVersion": "sketch.bim-data-quality.v1",
       "status": "pass",
       "summary": {
@@ -183,7 +184,7 @@
       "key": "export_validation",
       "path": "seed-artifacts/target-house-1/evidence/live-run-current/export-validation.json",
       "present": true,
-      "sha256": "sha256:79ce28da1b0259866421bb4b467e0e273457d14a19130fb7f50a5c37735c1477",
+      "sha256": "sha256:71b245f4a1095817ab3cf979c56c09eb5ad4b933148b6edfc8816897c9208928",
       "schemaVersion": "sketch.exchange-validation.v1",
       "status": "pass",
       "summary": {
@@ -197,7 +198,7 @@
       "key": "tolerance_ledger",
       "path": "seed-artifacts/target-house-1/evidence/live-run-current/tolerance-ledger.json",
       "present": true,
-      "sha256": "sha256:44913c0c87adf9532fe0b0b1746dafb0db998ace54b6a6168ea48a2e87ed9aa6",
+      "sha256": "sha256:970c95ca33fb23a1b4d5c6d35b26289335c1eefdb52247b7073bcd583db80e70",
       "schemaVersion": "sketch.tolerance-ledger.v1",
       "status": "pass",
       "summary": {
@@ -220,7 +221,7 @@
       "key": "clean_pass_gate",
       "path": "seed-artifacts/target-house-1/evidence/live-run-current/clean-pass-gate.json",
       "present": true,
-      "sha256": "sha256:195535fef9ea21b7d80b0fccbffd0b5e985d746d4ec8298a6aeb0830c1e76473",
+      "sha256": "sha256:f5c15c272423f15151a3f80ab211df4eedecb02f309a82f72eeb206835ba6a0a",
       "schemaVersion": "target-house.clean-pass-gate.v1",
       "status": "pass",
       "summary": {
@@ -285,7 +286,7 @@
     "performance": {
       "present": true,
       "ok": true,
-      "digestSha256": "0aac12873b4fd11f4ffc40382471aeff557bdd377f56c097c839373f96225c1b",
+      "digestSha256": "7d76a7a0d6d8f4b193af50c911cc4f6a01ef2ee468bfccd234d343ca08b8cc1d",
       "interactions": [
         {
           "interaction": "orbit",
@@ -963,5 +964,5 @@
     }
   ],
   "ready": false,
-  "lineageDigestSha256": "ee5d954d5db952874414285ba2cda60da8998642b8afdae2ca890810ea4b5769"
+  "lineageDigestSha256": "712b2c25e1f29acd895e2b322bc94da1c46e735043c5fad1879d3ee960a51b0b"
 }
