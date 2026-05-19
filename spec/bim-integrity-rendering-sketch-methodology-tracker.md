@@ -291,7 +291,7 @@ This tracker is complete only when all of these are true:
 | `BIR-N01` | P0 | Not started | Diagnose current target-house geometry objectively. | Produce a report of every detached/flying/out-of-envelope element, helper leakage, unsupported renderer feature, and sketch-critical mismatch. |
 | `BIR-N02` | P0 | Not started | Fix seed source, not only live state. | Corrections are applied to the authoritative seed recipe/bundle/source artifact so `make seed name=target-house-1` reproduces the clean model. |
 | `BIR-N03` | P0 | Partial | Remove stale/disposable artifacts from seed library. | Seed dropdown contains only approved seed artifacts and no wave/disposable local evidence projects after clean seed. |
-| `BIR-N04` | P0 | Not started | Require no P0 Advisor/integrity/renderer findings. | Final target-house cannot be accepted with errors or renderer blockers; warnings require written tolerance and user acceptance. |
+| `BIR-N04` | P0 | Partial | Require no P0 Advisor/integrity/renderer findings. | Added deterministic clean-pass gate over target-house-1 live evidence: validation/Advisor/constructability errors and renderer blockers fail, and every warning group must have a complete tolerance-ledger row with owner, reason, expiry, and evidence. Final target-house cannot be accepted with errors or renderer blockers; warnings require written tolerance and user acceptance. |
 | `BIR-N05` | P0 | Partial | Verify model visual from required views. | Saved views for main, front, rear/right, roof court, loggia, ground plan, upper plan, and wire diagnostics show correct model with screenshots. |
 | `BIR-N06` | P1 | Not started | Verify BIM data quality. | Rooms, schedules, types, materials, classifications, levels, spaces, stairs, rails, doors/windows, and export manifests pass target checklist. |
 | `BIR-N07` | P1 | Not started | Verify performance on target-house. | Orbit/selection/lens switching/Advisor opening are measured and accepted on the final seed. |
@@ -504,6 +504,7 @@ while implementation deepens.
 | `BIR-C05` | `app/bim_ai/room_derivation.py`; `app/bim_ai/constraints.py` | `app/tests/test_constraints_room_unenclosed.py`; `app/tests/test_engine_constraints.py` | Access/helper leakage findings | `25d7e1baf` parent includes helper-leakage baseline | Helper visibility serialization policy remains broader `BIR-B03`. |
 | `BIR-I01` | `spec/generated/renderer-support-matrix.md`; `packages/web/src/viewport/rendererDiagnostics.ts` | `packages/web/src/viewport/rendererDiagnostics.test.ts`; `packages/web/src/plan/symbology.docs.test.ts` | `spec/generated/renderer-support-matrix.md` | `25d7e1baf` parent includes renderer matrix baseline | Matrix must keep expanding as fidelity rows close. |
 | `BIR-M06` | `spec/generated/target-house-1-required-features.json`; `scripts/audit-seed-artifacts.mjs` | `app/tests/test_seed_artifact_roundtrip.py`; `app/tests/test_evidence_manifest_closure.py` | `seed-artifacts/target-house-1/evidence/*`; generated required features | `25d7e1baf` parent includes target-house acceptance-pack baseline | Final clean acceptance remains `BIR-N04`/Wave 8. |
+| `BIR-N04` | `packages/cli/lib/target-house-clean-pass-gate.mjs`; `scripts/gate-target-house-clean-pass.mjs` | `packages/cli/targetHouseCleanPassGate.test.mjs`; `node scripts/gate-target-house-clean-pass.mjs --evidence-dir seed-artifacts/target-house-1/evidence/live-run-current --out /tmp/target-house-clean-pass-gate.json` | `/tmp/target-house-clean-pass-gate.json`; `seed-artifacts/target-house-1/evidence/live-run-current/{live/advisor-warning.json,live/validate.json,evidence-package.json,tolerance-ledger.json}` | Wave 8 Worker C local commit | Gate currently blocks acceptance on 13 untolerated warning groups and 3 renderer full-raster blocker statuses; no P0 validation/Advisor errors were found in the current evidence. |
 | `BIR-S01` | `app/bim_ai/site_georeferencing_integrity.py`; `app/bim_ai/domain_integrity.py` | `app/tests/test_site_georeferencing_integrity.py` | `siteGeoreferencingIntegrityReport_v1.coordinateSystems` | Wave 7 Worker D local commit | Pure diagnostics exist; full authoring-route enforcement remains future integration. |
 | `BIR-S02` | `app/bim_ai/site_georeferencing_integrity.py`; `app/bim_ai/domain_integrity.py` | `app/tests/test_site_georeferencing_integrity.py` | `siteGeoreferencingIntegrityReport_v1.linkTransforms` | Wave 7 Worker D local commit | Host-side link checks are deterministic; source-document transform readback remains a follow-up. |
 | `BIR-S03` | `app/bim_ai/site_georeferencing_integrity.py` | `app/tests/test_site_georeferencing_integrity.py` | `importDiagnosticContract_v1` | Wave 7 Worker D local commit | Importers still need to emit this contract at every live import boundary. |
@@ -726,6 +727,18 @@ W7-C evidence update:
 ### Wave 8: Target-House Rerun Readiness And Closure
 
 Goal: close `M8`.
+
+W8-C evidence update:
+- Added `target-house.clean-pass-gate.v1`, a deterministic gate for
+  `target-house-1` evidence that reads the non-empty live Advisor, validation,
+  constructability, evidence-package, and tolerance-ledger artifacts.
+- The gate fails on P0/error diagnostics, renderer blocker statuses, and any
+  warning group without a complete tolerance row (`reason`, `owner`,
+  `expiryCondition`, and `evidenceLinks`).
+- Current evidence gate result: blocked with 0 P0 Advisor/integrity errors, 49
+  warning instances across 13 untolerated warning groups, and 3 renderer
+  full-raster blocker statuses. Command:
+  `node scripts/gate-target-house-clean-pass.mjs --evidence-dir seed-artifacts/target-house-1/evidence/live-run-current --out /tmp/target-house-clean-pass-gate.json`.
 
 | Agent | Ownership | Primary items |
 | ----- | --------- | ------------- |
