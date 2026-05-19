@@ -25,6 +25,8 @@ DOMAIN_INTEGRITY_TRACKER_ITEMS = (
     "BIR-E05",
     "BIR-E06",
     "BIR-E07",
+    "BIR-F01",
+    "BIR-F02",
     "BIR-F03",
     "BIR-F04",
     "BIR-F05",
@@ -187,8 +189,13 @@ def _tracker_items_for(data: Mapping[str, Any]) -> list[str]:
     values = [str(data.get("code") or ""), str(data.get("ruleId") or "")]
     found: list[str] = []
     for value in values:
+        normalized_value = value.lower().replace("_", "-")
         for token in DOMAIN_INTEGRITY_TRACKER_ITEMS:
-            if token in value and token not in found:
+            normalized_token = token.lower()
+            if (
+                (token in value or normalized_token in normalized_value)
+                and token not in found
+            ):
                 found.append(token)
     return found
 

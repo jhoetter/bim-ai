@@ -167,3 +167,126 @@ def test_missing_performance_metadata_under_strict_profile_is_reported() -> None
     assert _codes(findings) == {"performance_metadata_missing"}
     assert findings[0]["ruleId"] == "bir_f07_performance_metadata_missing"
     assert findings[0]["missing"] == ["thermal", "fire", "acoustic"]
+
+
+def test_roof_opening_outside_host_and_occupied_void_contract_are_reported() -> None:
+    elements = _clean_elements()
+    elements["roof-terrace-cut"] = {
+        "kind": "roof_opening",
+        "id": "roof-terrace-cut",
+        "hostRoofId": "roof-1",
+        "boundaryMm": [
+            {"xMm": 1000, "yMm": 1000},
+            {"xMm": 5000, "yMm": 1000},
+            {"xMm": 5000, "yMm": 3000},
+            {"xMm": 1000, "yMm": 3000},
+        ],
+        "props": {"occupiedRoofVoid": True},
+    }
+    elements["roof-1"]["footprintMm"] = [
+        {"xMm": 0, "yMm": 0},
+        {"xMm": 4000, "yMm": 0},
+        {"xMm": 4000, "yMm": 4000},
+        {"xMm": 0, "yMm": 4000},
+    ]
+
+    findings = check_envelope_integrity(elements)
+
+    assert {
+        "roof_opening_outside_host_footprint",
+        "occupied_roof_void_evidence_missing",
+    } <= _codes(findings)
+    occupied = next(
+        finding for finding in findings if finding["code"] == "occupied_roof_void_evidence_missing"
+    )
+    assert {
+        "cut",
+        "occupiedFloorId",
+        "returnIds",
+        "guardId",
+        "accessOpeningId",
+        "drainage",
+        "support",
+        "evidenceView",
+    } <= set(occupied["missing"])
+
+
+def test_occupied_roof_void_contract_accepts_physical_evidence_refs() -> None:
+    elements = _clean_elements()
+    elements.update(
+        {
+            "roof-terrace-cut": {
+                "kind": "roof_opening",
+                "id": "roof-terrace-cut",
+                "hostRoofId": "roof-1",
+                "boundaryMm": [
+                    {"xMm": 1000, "yMm": 1000},
+                    {"xMm": 3000, "yMm": 1000},
+                    {"xMm": 3000, "yMm": 3000},
+                    {"xMm": 1000, "yMm": 3000},
+                ],
+                "props": {
+                    "occupiedRoofVoid": True,
+                    "occupiedVoidEvidence": {
+                        "cut": True,
+                        "occupiedFloorId": "floor-1",
+                        "returnIds": ["return-a", "return-b"],
+                        "guardId": "guard-1",
+                        "accessOpeningId": "door-1",
+                        "drainage": "slope to scupper",
+                        "support": "bearing curb and trimmed roof framing",
+                        "evidenceView": "roof-court-high",
+                    },
+                },
+            },
+            "return-a": {"kind": "wall", "id": "return-a"},
+            "return-b": {"kind": "wall", "id": "return-b"},
+        }
+    )
+    elements["roof-1"]["footprintMm"] = [
+        {"xMm": 0, "yMm": 0},
+        {"xMm": 4000, "yMm": 0},
+        {"xMm": 4000, "yMm": 4000},
+        {"xMm": 0, "yMm": 4000},
+    ]
+
+    findings = check_envelope_integrity(elements)
+
+    assert "occupied_roof_void_evidence_missing" not in _codes(findings)
+    assert "roof_opening_outside_host_footprint" not in _codes(findings)
+
+
+def test_terrace_floor_requires_guard_access_drainage_and_support_refs() -> None:
+    elements = _clean_elements()
+    elements["terrace-floor"] = {
+        "kind": "floor",
+        "id": "terrace-floor",
+        "levelId": "level-1",
+        "props": {"exteriorSpaceType": "terrace"},
+    }
+
+    findings = check_envelope_integrity(elements)
+
+    assert _codes(findings) == {"occupied_exterior_space_relation_incomplete"}
+    assert set(findings[0]["missing"]) == {"guard", "access", "drainage", "support"}
+
+
+def test_declared_facade_opening_and_glazing_support_refs_are_validated() -> None:
+    elements = _clean_elements()
+    elements["facade-n"]["props"]["facadeRhythm"] = {
+        "bayCount": 1,
+        "openingIds": ["missing-window"],
+        "requiresGlazingSupport": True,
+        "glazingSupportIds": ["missing-mullion"],
+    }
+
+    findings = check_envelope_integrity(elements)
+
+    assert {
+        "facade_opening_reference_missing",
+        "facade_glazing_support_missing",
+    } <= _codes(findings)
+    support = next(
+        finding for finding in findings if finding["code"] == "facade_glazing_support_missing"
+    )
+    assert support["elementIds"] == ["facade-n", "missing-mullion"]

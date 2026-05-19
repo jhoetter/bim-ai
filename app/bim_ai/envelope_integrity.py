@@ -7,6 +7,7 @@ Finding = dict[str, Any]
 
 _ENVELOPE_ZONE_KINDS = {"envelope_zone", "envelopeZone"}
 _OPENING_KINDS = {"door", "window", "wall_opening", "opening"}
+_OCCUPIED_EXTERIOR_SPACE_TYPES = {"terrace", "roof_terrace", "loggia", "balcony"}
 _PROFILE_REQUIREMENTS: dict[str, tuple[str, ...]] = {
     "strict": ("thermal", "fire", "acoustic"),
     "permit_readiness": ("thermal", "fire"),
@@ -30,6 +31,8 @@ def check_envelope_integrity(
     findings: list[Finding] = []
 
     findings.extend(_check_envelope_zones(elements))
+    findings.extend(_check_roof_openings(elements))
+    findings.extend(_check_occupied_exterior_spaces(elements))
     findings.extend(_check_loggias(elements))
     findings.extend(_check_facade_rhythm(elements))
     findings.extend(_check_roof_wall_relationships(elements))
@@ -129,6 +132,112 @@ def _check_envelope_zones(elements: Mapping[str, Any]) -> list[Finding]:
     return findings
 
 
+def _check_roof_openings(elements: Mapping[str, Any]) -> list[Finding]:
+    findings: list[Finding] = []
+    for element_id, opening in elements.items():
+        if _kind(opening) != "roof_opening":
+            continue
+
+        host_id = _host_roof_id(opening)
+        host = elements.get(host_id or "")
+        if not host_id or _kind(host) != "roof":
+            findings.append(
+                _finding(
+                    "bir_f01_roof_opening_host_missing",
+                    "roof_opening_host_missing",
+                    "error",
+                    "critical",
+                    [element_id] + ([host_id] if host_id else []),
+                    "Host roof openings on an existing roof.",
+                )
+            )
+            continue
+
+        boundary = _polygon_from(_value(opening, "boundaryMm", "boundary_mm"))
+        footprint = _polygon_from(_value(host, "footprintMm", "footprint_mm"))
+        if len(boundary) < 3 or len(footprint) < 3:
+            findings.append(
+                _finding(
+                    "bir_f01_roof_opening_footprint_invalid",
+                    "roof_opening_footprint_invalid",
+                    "error",
+                    "critical",
+                    [element_id, host_id],
+                    "Provide valid host roof and opening polygons before accepting roof void evidence.",
+                    hostFootprintVertexCount=len(footprint),
+                    openingBoundaryVertexCount=len(boundary),
+                )
+            )
+        elif any(not _point_in_polygon_or_on_edge(point, footprint) for point in boundary):
+            findings.append(
+                _finding(
+                    "bir_f01_roof_opening_outside_host_footprint",
+                    "roof_opening_outside_host_footprint",
+                    "error",
+                    "critical",
+                    [element_id, host_id],
+                    "Move the roof opening fully inside the host roof footprint.",
+                )
+            )
+
+        if not _is_occupied_roof_void(opening):
+            continue
+        missing = _missing_occupied_roof_void_evidence(opening, elements)
+        if missing:
+            findings.append(
+                _finding(
+                    "bir_f02_occupied_roof_void_evidence_missing",
+                    "occupied_roof_void_evidence_missing",
+                    "error",
+                    "critical",
+                    [element_id, host_id],
+                    "Declare real occupied roof void evidence: cut, floor, returns/curbs, guard, access, drainage, support, and evidence view.",
+                    missing=missing,
+                )
+            )
+    return findings
+
+
+def _check_occupied_exterior_spaces(elements: Mapping[str, Any]) -> list[Finding]:
+    findings: list[Finding] = []
+    for element_id, floor in elements.items():
+        if _kind(floor) != "floor":
+            continue
+        props = _props(floor)
+        space_type = str(_pick(props, "exteriorSpaceType", "exterior_space_type") or "").lower()
+        if space_type not in _OCCUPIED_EXTERIOR_SPACE_TYPES:
+            continue
+        missing: list[str] = []
+        if not _has_existing_ref(
+            floor, elements, "guardId", "guardIds", "guardrailId", "guardrailIds"
+        ):
+            missing.append("guard")
+        if not _has_existing_ref(
+            floor, elements, "accessOpeningId", "accessOpeningIds", "accessElementIds"
+        ):
+            missing.append("access")
+        if not _truthy_field(floor, "drainageIntent", "drainage", "drainageSlopePercent"):
+            missing.append("drainage")
+        if not (
+            _has_existing_ref(floor, elements, "supportedByIds", "supportIds", "hostIds")
+            or _truthy_field(floor, "supportIntent", "cantileverSupportIntent")
+        ):
+            missing.append("support")
+        if missing:
+            findings.append(
+                _finding(
+                    "bir_f04_occupied_exterior_space_relation_incomplete",
+                    "occupied_exterior_space_relation_incomplete",
+                    "error",
+                    "high",
+                    [element_id],
+                    "Terrace, balcony, and loggia floors require guard, access, drainage, and support evidence.",
+                    missing=missing,
+                )
+            )
+    return findings
+
+
 def _check_loggias(elements: Mapping[str, Any]) -> list[Finding]:
     findings: list[Finding] = []
     for element_id, element in elements.items():
@@ -187,6 +296,49 @@ def _check_facade_rhythm(elements: Mapping[str, Any]) -> list[Finding]:
                     "Update declared facade bay count or the referenced bay/opening metadata.",
                     expected=str(expected),
                     actual=str(actual),
+                )
+            )
+        missing_openings = [
+            opening_id
+            for opening_id in opening_ids
+            if _kind(elements.get(opening_id)) not in _OPENING_KINDS
+        ]
+        if missing_openings:
+            findings.append(
+                _finding(
+                    "bir_f05_facade_opening_reference_missing",
+                    "facade_opening_reference_missing",
+                    "error",
+                    "high",
+                    [element_id, *missing_openings],
+                    "Point declared facade rhythm openingIds at real door/window/opening elements.",
+                )
+            )
+        requires_glazing_support = bool(
+            _pick(rhythm, "requiresGlazingSupport", "requires_glazing_support")
+        )
+        support_ids = _as_str_list(_pick(rhythm, "glazingSupportIds", "glazing_support_ids"))
+        missing_supports = [support_id for support_id in support_ids if support_id not in elements]
+        if requires_glazing_support and not support_ids:
+            findings.append(
+                _finding(
+                    "bir_f05_facade_glazing_support_missing",
+                    "facade_glazing_support_missing",
+                    "error",
+                    "high",
+                    [element_id],
+                    "Declare mullion, frame, wall, beam, or other support ids for facade glazing that requires support.",
+                )
+            )
+        elif missing_supports:
+            findings.append(
+                _finding(
+                    "bir_f05_facade_glazing_support_missing",
+                    "facade_glazing_support_missing",
+                    "error",
+                    "high",
+                    [element_id, *missing_supports],
+                    "Point declared facade glazing support ids at existing support elements.",
                 )
             )
     return findings
@@ -332,6 +484,11 @@ def _host_wall_id(element: Any) -> str | None:
     return str(value) if value else None
 
 
+def _host_roof_id(element: Any) -> str | None:
+    value = _value(element, "hostRoofId", "host_roof_id")
+    return str(value) if value else None
+
+
 def _is_envelope_role(element: Any, role: str) -> bool:
     props = _props(element)
     declared = _pick(props, "envelopeRole", "envelope_role")
@@ -353,6 +510,195 @@ def _is_loggia(element: Any) -> bool:
     return _kind(element) in {"balcony", "loggia"} and bool(
         _pick(props, "isLoggia", "loggia") or _pick(props, "featureType") == "loggia"
     )
+
+
+def _is_occupied_roof_void(element: Any) -> bool:
+    props = _props(element)
+    if _pick(props, "occupiedRoofVoid", "occupiedTerrace", "isOccupiedRoofVoid"):
+        return True
+    space_type = str(
+        _pick(props, "spaceType", "exteriorSpaceType", "featureKind") or ""
+    ).lower()
+    return space_type in {"terrace", "roof_terrace", "roof_court", "loggia", "occupied_void"}
+
+
+def _missing_occupied_roof_void_evidence(
+    opening: Any,
+    elements: Mapping[str, Any],
+) -> list[str]:
+    evidence = _evidence_mapping(opening)
+    missing: list[str] = []
+    if not _truthy_field(opening, "cut", "renderedCut", "cutEvidence", source=evidence):
+        missing.append("cut")
+    if not _has_existing_ref(
+        opening,
+        elements,
+        "occupiedFloorId",
+        "terraceFloorId",
+        "floorId",
+        source=evidence,
+        allowed_kinds={"floor"},
+    ):
+        missing.append("occupiedFloorId")
+    if not _has_existing_ref(
+        opening,
+        elements,
+        "returnIds",
+        "curbIds",
+        "parapetIds",
+        source=evidence,
+        min_count=2,
+    ):
+        missing.append("returnIds")
+    if not _has_existing_ref(
+        opening,
+        elements,
+        "guardId",
+        "guardIds",
+        "guardrailId",
+        "guardrailIds",
+        source=evidence,
+    ):
+        missing.append("guardId")
+    if not _has_existing_ref(
+        opening,
+        elements,
+        "accessOpeningId",
+        "accessOpeningIds",
+        "accessElementIds",
+        source=evidence,
+        allowed_kinds=_OPENING_KINDS,
+    ):
+        missing.append("accessOpeningId")
+    if not _truthy_field(
+        opening, "drainage", "drainageIntent", "drainageSlopePercent", source=evidence
+    ):
+        missing.append("drainage")
+    if not (
+        _has_existing_ref(opening, elements, "supportedByIds", "supportIds", source=evidence)
+        or _truthy_field(opening, "support", "supportIntent", source=evidence)
+    ):
+        missing.append("support")
+    if not _truthy_field(opening, "evidenceView", "evidenceViewId", source=evidence):
+        missing.append("evidenceView")
+    return missing
+
+
+def _evidence_mapping(element: Any) -> Mapping[str, Any]:
+    props = _props(element)
+    for key in (
+        "occupiedVoidEvidence",
+        "occupied_void_evidence",
+        "roofOpeningRenderSupport",
+        "roof_opening_render_support",
+        "renderSupport",
+        "rendererSupport",
+    ):
+        value = _pick(props, key)
+        if isinstance(value, Mapping):
+            return value
+    return {}
+
+
+def _truthy_field(element: Any, *names: str, source: Mapping[str, Any] | None = None) -> bool:
+    props = _props(element)
+    for name in names:
+        value = _pick(source or {}, name, _snake(name))
+        if value:
+            return True
+        value = _value(element, name, _snake(name))
+        if value:
+            return True
+        value = _pick(props, name, _snake(name))
+        if value:
+            return True
+    return False
+
+
+def _has_existing_ref(
+    element: Any,
+    elements: Mapping[str, Any],
+    *names: str,
+    source: Mapping[str, Any] | None = None,
+    allowed_kinds: set[str] | None = None,
+    min_count: int = 1,
+) -> bool:
+    props = _props(element)
+    refs: list[str] = []
+    for name in names:
+        refs.extend(_as_str_list(_pick(source or {}, name, _snake(name))))
+        refs.extend(_as_str_list(_value(element, name, _snake(name))))
+        refs.extend(_as_str_list(_pick(props, name, _snake(name))))
+    refs = sorted(dict.fromkeys(refs))
+    if len(refs) < min_count:
+        return False
+    existing = [
+        ref
+        for ref in refs
+        if ref in elements and (allowed_kinds is None or _kind(elements.get(ref)) in allowed_kinds)
+    ]
+    return len(existing) >= min_count
+
+
+def _polygon_from(value: Any) -> list[tuple[float, float]]:
+    if not isinstance(value, list | tuple):
+        return []
+    points: list[tuple[float, float]] = []
+    for point in value:
+        x = _value(point, "xMm", "x_mm")
+        y = _value(point, "yMm", "y_mm")
+        if x is None or y is None:
+            continue
+        try:
+            points.append((float(x), float(y)))
+        except (TypeError, ValueError):
+            continue
+    return points
+
+
+def _point_in_polygon_or_on_edge(
+    point: tuple[float, float],
+    polygon: list[tuple[float, float]],
+    tolerance_mm: float = 1.0,
+) -> bool:
+    for index, current in enumerate(polygon):
+        if (
+            _distance_point_to_segment(point, current, polygon[(index + 1) % len(polygon)])
+            <= tolerance_mm
+        ):
+            return True
+
+    inside = False
+    x, y = point
+    j = len(polygon) - 1
+    for i, pi in enumerate(polygon):
+        pj = polygon[j]
+        intersects = (pi[1] > y) != (pj[1] > y) and x < (
+            (pj[0] - pi[0]) * (y - pi[1]) / (pj[1] - pi[1]) + pi[0]
+        )
+        if intersects:
+            inside = not inside
+        j = i
+    return inside
+
+
+def _distance_point_to_segment(
+    point: tuple[float, float],
+    start: tuple[float, float],
+    end: tuple[float, float],
+) -> float:
+    px, py = point
+    ax, ay = start
+    bx, by = end
+    dx = bx - ax
+    dy = by - ay
+    length_sq = dx * dx + dy * dy
+    if length_sq <= 1e-9:
+        return ((px - ax) ** 2 + (py - ay) ** 2) ** 0.5
+    t = max(0.0, min(1.0, ((px - ax) * dx + (py - ay) * dy) / length_sq))
+    x = ax + t * dx
+    y = ay + t * dy
+    return ((px - x) ** 2 + (py - y) ** 2) ** 0.5
 
 
 def _has_performance_metadata(element: Any, name: str) -> bool:
