@@ -33,6 +33,7 @@ from bim_ai.agent_evidence_review_loop import agent_review_actions_v1, bcf_topic
 from bim_ai.agent_generated_bundle_qa_checklist import (
     agent_generated_bundle_qa_checklist_v1,
 )
+from bim_ai.advisor_rule_registry import advisor_rule_catalog_payload
 from bim_ai.agent_review_readout_consistency_closure import (
     agent_review_readout_consistency_closure_v1,
 )
@@ -3218,6 +3219,15 @@ async def v3_inspect_tool(name: str) -> dict[str, Any]:
     if descriptor is None:
         raise HTTPException(status_code=404, detail=f"Tool '{name}' not found in registry.")
     return _descriptor_to_dict(descriptor)
+
+
+@api_router.get("/v3/advisor-rules")
+async def v3_advisor_rules(
+    profile: str | None = Query(default=None),
+    surface: str | None = Query(default=None),
+) -> dict[str, object]:
+    return advisor_rule_catalog_payload(profile=profile, surface=surface)
+
 
 
 @api_router.get("/v3/commands")

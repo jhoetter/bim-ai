@@ -1282,6 +1282,60 @@ test('qa advisor aliases grouped advisor JSON evidence', async () => {
   assert.deepEqual(out.groups[0].elementIds, ['opening-1']);
 });
 
+test('qa rules lists canonical Advisor rule metadata from API registry route', async () => {
+  const requests = [];
+  const ruleCatalog = {
+    format: 'advisorRuleCatalog_v1',
+    schemaVersion: 'advisor-rule-registry.v1',
+    summary: {
+      ruleCount: 1,
+      canonicalRuleCount: 1,
+      surfaces: ['ui', 'api', 'cli', 'mcp', 'docs'],
+      rulesBySurface: { ui: 1, api: 1, cli: 1, mcp: 1, docs: 1 },
+    },
+    rules: [
+      {
+        ruleId: 'hosted_door_not_embedded',
+        severity: 'error',
+        discipline: 'architecture',
+        perspective: 'architecture',
+        profiles: ['model_integrity', 'construction_readiness'],
+        sourceLayer: 'model_integrity',
+        severityPolicy: 'p0_integrity_error',
+        suppressibility: 'not_suppressible',
+        actionability: 'quick_fix_available',
+        surfaces: ['ui', 'api', 'cli', 'mcp', 'docs'],
+        affectedIdKinds: ['door', 'wall'],
+        recommendation: 'Rehost the door.',
+        fixCommandHints: ['rehostDoor'],
+        trackerItems: ['BIR-A02'],
+        testRefs: ['app/tests/test_advisor_rule_registry.py'],
+        status: 'planned',
+      },
+    ],
+  };
+  const { server, base } = await startStubServer((req) => {
+    requests.push({ method: req.method, url: req.url });
+    return { body: ruleCatalog };
+  });
+  const res = await runCli(
+    ['qa', 'rules', '--output', 'json', '--profile', 'construction_readiness', '--surface', 'mcp'],
+    { BIM_AI_BASE_URL: base },
+  );
+  server.close();
+
+  assert.equal(res.code, 0, res.stderr);
+  assert.equal(requests[0].method, 'GET');
+  assert.equal(
+    requests[0].url,
+    '/api/v3/advisor-rules?profile=construction_readiness&surface=mcp',
+  );
+  const out = JSON.parse(res.stdout);
+  assert.equal(out.rules[0].ruleId, 'hosted_door_not_embedded');
+  assert.deepEqual(out.rules[0].surfaces, ['ui', 'api', 'cli', 'mcp', 'docs']);
+  assert.equal(out.rules[0].severityPolicy, 'p0_integrity_error');
+});
+
 test('resolve wall reports missing planned backend route clearly', async () => {
   const { server, base } = await startStubServer(() => ({
     status: 404,

@@ -10,6 +10,8 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Any, Literal
 
+from bim_ai.advisor_rule_registry import advisor_rule_catalog_payload
+
 
 @dataclass(frozen=True)
 class RestEndpoint:
@@ -232,6 +234,7 @@ class ToolDescriptor:
     kernelCommands: list[str] = field(default_factory=list)
     resourceGroups: list[str] = field(default_factory=list)
     uiFeatures: list[str] = field(default_factory=list)
+    surfaceMetadata: dict[str, Any] = field(default_factory=dict)
 
     def __post_init__(self) -> None:
         if self.restEndpoint.path in _LEGACY_ENDPOINT_ALIASES:
@@ -416,6 +419,7 @@ register(
                         "kernelCommands": {"type": "array", "items": {"type": "string"}},
                         "resourceGroups": {"type": "array", "items": {"type": "string"}},
                         "uiFeatures": {"type": "array", "items": {"type": "string"}},
+                        "surfaceMetadata": {"type": "object"},
                         "agentSafetyNotes": {"type": "string"},
                     },
                 }
@@ -1972,6 +1976,110 @@ register(
 # ---------------------------------------------------------------------------
 # SKB readiness — QA/advisor product surfaces
 # ---------------------------------------------------------------------------
+
+register(
+    ToolDescriptor(
+        name="qa.advisor_rules",
+        category="query",
+        inputSchema={
+            "$schema": "http://json-schema.org/draft-07/schema#",
+            "title": "QaAdvisorRulesInput",
+            "type": "object",
+            "properties": {
+                "profile": {"type": "string"},
+                "surface": {"type": "string", "enum": ["ui", "api", "cli", "mcp", "docs"]},
+            },
+            "additionalProperties": False,
+        },
+        outputSchema={
+            "$schema": "http://json-schema.org/draft-07/schema#",
+            "title": "AdvisorRuleCatalog",
+            "type": "object",
+            "required": ["format", "schemaVersion", "summary", "rules"],
+            "properties": {
+                "format": {"const": "advisorRuleCatalog_v1"},
+                "schemaVersion": {"const": "advisor-rule-registry.v1"},
+                "source": {"type": "string"},
+                "filters": {"type": "object"},
+                "summary": {
+                    "type": "object",
+                    "required": ["ruleCount", "canonicalRuleCount", "surfaces", "rulesBySurface"],
+                    "properties": {
+                        "ruleCount": {"type": "integer"},
+                        "canonicalRuleCount": {"type": "integer"},
+                        "surfaces": {"type": "array", "items": {"type": "string"}},
+                        "rulesBySurface": {"type": "object"},
+                    },
+                    "additionalProperties": True,
+                },
+                "rules": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "required": [
+                            "ruleId",
+                            "title",
+                            "severity",
+                            "discipline",
+                            "perspective",
+                            "profiles",
+                            "sourceLayer",
+                            "severityPolicy",
+                            "suppressibility",
+                            "actionability",
+                            "surfaces",
+                            "affectedIdKinds",
+                            "recommendation",
+                            "fixCommandHints",
+                            "trackerItems",
+                            "testRefs",
+                            "status",
+                        ],
+                        "properties": {
+                            "ruleId": {"type": "string"},
+                            "title": {"type": "string"},
+                            "severity": {"type": "string", "enum": ["error", "warning", "info"]},
+                            "discipline": {"type": "string"},
+                            "perspective": {"type": "string"},
+                            "profiles": {"type": "array", "items": {"type": "string"}},
+                            "sourceLayer": {"type": "string"},
+                            "severityPolicy": {"type": "string"},
+                            "suppressibility": {"type": "string"},
+                            "actionability": {"type": "string"},
+                            "surfaces": {"type": "array", "items": {"type": "string"}},
+                            "affectedIdKinds": {"type": "array", "items": {"type": "string"}},
+                            "recommendation": {"type": "string"},
+                            "fixCommandHints": {"type": "array", "items": {"type": "string"}},
+                            "trackerItems": {"type": "array", "items": {"type": "string"}},
+                            "testRefs": {"type": "array", "items": {"type": "string"}},
+                            "status": {"type": "string"},
+                        },
+                        "additionalProperties": True,
+                    },
+                },
+            },
+            "additionalProperties": True,
+        },
+        exitCodes={
+            "ok": ExitCode(code=0, meaning="Advisor rule metadata returned"),
+        },
+        cliExample="bim-ai qa rules --output json",
+        restEndpoint=RestEndpoint(method="GET", path="/api/v3/advisor-rules"),
+        sideEffects="none",
+        agentSafetyNotes=(
+            "Read-only canonical Advisor rule metadata. This is the parity source for "
+            "UI, API, CLI, MCP-style agent, and generated documentation surfaces."
+        ),
+        requiredPermissions=["model:read"],
+        schemaRefs=["input:QaAdvisorRulesInput", "output:AdvisorRuleCatalog"],
+        exampleRefs=["cli:qa:rules", "route:advisor-rules", "doc:advisor-rule-ledger"],
+        resourceGroups=["qa", "advisor", "rule-registry", "mcp"],
+        uiFeatures=["advisor-panel", "agent-review", "rule-ledger"],
+        surfaceMetadata={
+            "advisorRuleCatalog": advisor_rule_catalog_payload()["summary"],
+        },
+    )
+)
 
 register(
     ToolDescriptor(

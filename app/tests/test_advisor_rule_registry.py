@@ -5,7 +5,9 @@ from pathlib import Path
 
 from bim_ai.advisor_rule_registry import (
     ADVISOR_RULES,
+    CANONICAL_RULE_SURFACES,
     advisor_rule_by_id,
+    advisor_rule_catalog_payload,
     advisor_rule_payloads,
     advisor_rules_for_profile,
     render_advisor_rule_ledger,
@@ -43,8 +45,13 @@ def test_every_rule_has_ui_cli_api_and_profile_metadata() -> None:
         assert rule.api_field == "ruleId"
         assert rule.profiles
         assert rule.perspective
+        assert rule.source_layer == rule.layer_owner
+        assert rule.severity_policy
+        assert set(rule.surfaces) == set(CANONICAL_RULE_SURFACES)
+        assert rule.actionability
         assert rule.affected_id_kinds
         assert rule.fix_command_hints
+        assert rule.test_refs
         assert rule.recommendation
         assert rule.documentation
         assert rule.tracker_items
@@ -99,18 +106,51 @@ def test_payloads_use_external_camel_case_contract() -> None:
     payload = advisor_rule_payloads()[0]
     assert "ruleId" in payload
     assert "layerOwner" in payload
+    assert "sourceLayer" in payload
+    assert "severityPolicy" in payload
     assert "affectedIdKinds" in payload
     assert "fixCommandHints" in payload
+    assert "testRefs" in payload
     assert "rule_id" not in payload
     assert "layer_owner" not in payload
+
+
+def test_catalog_payload_is_canonical_rule_contract_for_all_surfaces() -> None:
+    payload = advisor_rule_catalog_payload()
+    assert payload["format"] == "advisorRuleCatalog_v1"
+    assert payload["schemaVersion"] == "advisor-rule-registry.v1"
+    assert payload["summary"]["ruleCount"] == len(ADVISOR_RULES)
+    assert payload["summary"]["rulesBySurface"] == {
+        surface: len(ADVISOR_RULES) for surface in CANONICAL_RULE_SURFACES
+    }
+    assert [rule["ruleId"] for rule in payload["rules"]] == [
+        rule.rule_id for rule in ADVISOR_RULES
+    ]
+    for rule in payload["rules"]:
+        assert set(rule["surfaces"]) == set(CANONICAL_RULE_SURFACES)
+        assert {"ui", "api", "cli", "mcp"} <= set(rule["surfaces"])
+
+
+def test_catalog_payload_filters_by_profile_and_surface() -> None:
+    payload = advisor_rule_catalog_payload(profile="sketch_acceptance", surface="mcp")
+    assert {rule["ruleId"] for rule in payload["rules"]} == {
+        "renderer_unsupported_cut",
+        "sketch_evidence_stale",
+    }
+    assert payload["filters"] == {"profile": "sketch_acceptance", "surface": "mcp"}
 
 
 def test_rendered_ledger_mentions_all_rules_and_tracker_items() -> None:
     ledger = render_advisor_rule_ledger()
     for rule in ADVISOR_RULES:
         assert f"`{rule.rule_id}`" in ledger
+        assert rule.severity_policy in ledger
+        assert rule.actionability in ledger
+        assert f"**Status:** {rule.status}" in ledger
         for tracker_item in rule.tracker_items:
             assert f"`{tracker_item}`" in ledger
+        for test_ref in rule.test_refs:
+            assert test_ref in ledger
 
 
 def test_generated_ledger_is_up_to_date() -> None:

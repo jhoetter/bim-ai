@@ -27,6 +27,7 @@ EXPECTED_SEED_TOOLS = {
     "model.commit_bundle",
     "model.dry_run",
     "model-show",
+    "qa.advisor_rules",
 }
 
 EXPECTED_M2_TRANSACTION_TOOLS = {
@@ -201,6 +202,37 @@ class TestToolRegistry:
             "exampleRefs",
             "kernelCommands",
             "resourceGroups",
+        } <= required
+        assert "surfaceMetadata" in tool_def["properties"]
+
+    def test_advisor_rule_registry_descriptor_exposes_canonical_rule_metadata(self):
+        descriptor = get_descriptor("qa.advisor_rules")
+        assert descriptor is not None
+        assert descriptor.restEndpoint.method == "GET"
+        assert descriptor.restEndpoint.path == "/api/v3/advisor-rules"
+        assert {"qa", "advisor", "rule-registry", "mcp"} <= set(descriptor.resourceGroups)
+        assert {"advisor-panel", "agent-review", "rule-ledger"} <= set(descriptor.uiFeatures)
+        assert descriptor.surfaceMetadata["advisorRuleCatalog"]["rulesBySurface"]["cli"] == (
+            descriptor.surfaceMetadata["advisorRuleCatalog"]["canonicalRuleCount"]
+        )
+
+        rule_schema = descriptor.outputSchema["properties"]["rules"]["items"]
+        required = set(rule_schema["required"])
+        assert {
+            "ruleId",
+            "discipline",
+            "perspective",
+            "profiles",
+            "severityPolicy",
+            "sourceLayer",
+            "suppressibility",
+            "actionability",
+            "surfaces",
+            "affectedIdKinds",
+            "recommendation",
+            "fixCommandHints",
+            "testRefs",
+            "status",
         } <= required
 
     def test_implemented_descriptors_point_to_implemented_routes(self):

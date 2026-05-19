@@ -27,6 +27,7 @@ const base = (
 ).replace(/\/$/, '');
 
 const ADVISOR_RULE_FILES = [
+  'app/bim_ai/advisor_rule_registry.py',
   'app/bim_ai/constructability_advisories.py',
   'app/bim_ai/constructability_report.py',
   'app/bim_ai/constraints_metadata.py',
@@ -343,6 +344,31 @@ async function cmdProfileComparison(modelId, args) {
     }`,
   );
   console.log(JSON.stringify(payload, null, 2));
+}
+
+async function cmdAdvisorRules(args) {
+  const output = flagValue(args, '--output') ?? (hasFlag(args, '--json') ? 'json' : 'text');
+  const profile = flagValue(args, '--profile');
+  const surface = flagValue(args, '--surface');
+  const qs = new URLSearchParams();
+  if (profile) qs.set('profile', profile);
+  if (surface) qs.set('surface', surface);
+  const payload = await fetchJson(
+    'GET',
+    `${base}/api/v3/advisor-rules${qs.toString() ? `?${qs}` : ''}`,
+  );
+  if (output === 'json') {
+    console.log(JSON.stringify(payload, null, 2));
+    return;
+  }
+  console.log(
+    `advisor-rules schema=${payload.schemaVersion} rules=${payload.summary?.ruleCount ?? 0}`,
+  );
+  for (const rule of payload.rules ?? []) {
+    const profiles = Array.isArray(rule.profiles) ? rule.profiles.join(',') : '';
+    const surfaces = Array.isArray(rule.surfaces) ? rule.surfaces.join(',') : '';
+    console.log(`${rule.severity}\t${rule.ruleId}\t${rule.discipline}\t${profiles}\t${surfaces}`);
+  }
 }
 
 // FED-01 polish: federation subcommands.
@@ -5376,6 +5402,8 @@ Commands:
                                       Profile-independent BIM integrity preflight and remediation loop.
   qa profiles [--profiles a,b,c] [--changed-ids ids]
                                       Compare Advisor profiles with timing/incremental diagnostics.
+  qa rules [--output json] [--profile name] [--surface ui|api|cli|mcp|docs]
+                                      List canonical Advisor rule metadata shared by UI/API/CLI/MCP.
   tokens encode                       TKN-V3-01: encode current kernel state → TokenSequence (stdout JSON)
   tokens decode [file|-]              TKN-V3-01: decode TokenSequence → commands (reads JSON from file or stdin)
   tokens diff --a <path> --b <path>   TKN-V3-01: structural diff between two TokenSequence JSON files
@@ -6048,6 +6076,7 @@ async function main() {
       cmd !== 'plan-house' &&
       cmd !== 'bootstrap' &&
       cmd !== 'init-model' &&
+      cmd !== 'qa' &&
       cmd !== 'publish'
     )
       usage();
@@ -6092,6 +6121,11 @@ async function main() {
     if (cmd === 'qa') {
       const sub = argv[1];
       const rest = argv.slice(2);
+      if (sub === 'rules' || sub === 'advisor-rules') {
+        await cmdAdvisorRules(rest);
+        return;
+      }
+      if (!modelId) usage();
       if (sub === 'advisor') {
         const output = rest.includes('--output')
           ? rest[rest.indexOf('--output') + 1]
@@ -6110,7 +6144,9 @@ async function main() {
         await cmdProfileComparison(modelId, rest);
         return;
       }
-      console.error(`Unknown qa subcommand: ${sub ?? '(none)'}. Use advisor | integrity | profiles.`);
+      console.error(
+        `Unknown qa subcommand: ${sub ?? '(none)'}. Use advisor | integrity | profiles | rules.`,
+      );
       process.exit(1);
     }
 
