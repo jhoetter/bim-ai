@@ -947,6 +947,31 @@ Exit: new rules are deterministic, covered by focused fixtures, surfaced through
 CLI/API/MCP-consumable data where relevant, and do not add sketch-specific
 subjective checks to the normal Advisor.
 
+### Wave 15: Platform Semantics, Documentation, Site, And Content Quality
+
+Goal: close the next platform-grade gaps that still make an Advisor-clean model
+less than BIM-complete: document semantics, transaction safety at live mutation
+surfaces, 2D documentation fidelity, site/link roundtrip, and authored content
+quality.
+
+Scope: dispatch five independent workers. Each worker must commit locally, avoid
+unrelated dirty files, update tracker/evidence rows, keep status changes
+conservative, and prove the rule is available as deterministic data for UI,
+CLI/API, and MCP/agent consumers where applicable.
+
+| Agent | Ownership                                                  | Primary items                                      |
+| ----- | ---------------------------------------------------------- | -------------------------------------------------- |
+| W15-A | Kernel references, levels/storeys, physical roles, smoke evidence | `BIR-P01`, `BIR-P02`, `BIR-P04`, `BIR-P05`, `BIR-P08` |
+| W15-B | Transaction, undo/redo, collaboration, dry-run, and agent fix safety | `BIR-Q01`, `BIR-Q02`, `BIR-Q03`, `BIR-Q05`, `BIR-Q06`, `BIR-Q07` |
+| W15-C | Plan/section/elevation/sheet/annotation/documentation fidelity | `BIR-R01`, `BIR-R02`, `BIR-R03`, `BIR-R04`, `BIR-R05`, `BIR-R06` |
+| W15-D | Site coordinates, links/imports, roundtrip drift, and site relationship enforcement | `BIR-S01`, `BIR-S02`, `BIR-S03`, `BIR-S04`, `BIR-S05` |
+| W15-E | Family/type schema, instance overrides, asset placement, and content render/export parity | `BIR-V01`, `BIR-V02`, `BIR-V03`, `BIR-V04`, `BIR-V05` |
+
+Exit: all wave outputs are rule-backed rather than target-house-only cleanup,
+target-house evidence is refreshed after integration, final package remains
+blocked only by incomplete tracker scope, and no new rule suppresses or hides
+invalid geometry in normal product Advisor profiles.
+
 ## Non-Negotiable Acceptance Rules
 
 - Do not mark a seed `accepted` while any P0 integrity or renderer diagnostic is
