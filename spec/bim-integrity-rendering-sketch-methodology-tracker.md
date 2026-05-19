@@ -337,12 +337,12 @@ This tracker is complete only when all of these are true:
 
 | ID | Priority | Status | Item | Acceptance |
 | -- | -------- | ------ | ---- | ---------- |
-| `BIR-R01` | P0 | Not started | Add plan-view fidelity contract. | Walls, doors, windows, rooms, stairs, slab openings, railings, levels, annotations, and hidden/cut graphics render correctly in plan or produce diagnostics. |
-| `BIR-R02` | P0 | Not started | Add section/elevation fidelity contract. | Cut planes, view depth, section boxes, hidden lines, openings, stairs, roofs, floors, and materials render consistently with the 3D model. |
-| `BIR-R03` | P1 | Not started | Add sheet viewport fidelity. | Sheet viewports preserve view scale, crop, discipline/lens, graphics mode, title, schedule placement, and evidence links. |
-| `BIR-R04` | P1 | Not started | Add annotation/dimension integrity. | Tags, dimensions, levels, grids, callouts, detail regions, and schedules reference live elements and report stale/orphan state. |
-| `BIR-R05` | P1 | Not started | Add documentation export parity. | PDF/render bundles/sheets match the corresponding saved views, with unsupported features listed in export evidence. |
-| `BIR-R06` | P1 | Not started | Add 2D golden fixtures. | Plan, section, elevation, and sheet goldens cover hosted openings, roof cuts, stairs, rooms, annotations, and lens modes. |
+| `BIR-R01` | P0 | Partial | Add plan-view fidelity contract. | Walls, doors, windows, rooms, stairs, slab openings, railings, levels, annotations, and hidden/cut graphics render correctly in plan or produce diagnostics. |
+| `BIR-R02` | P0 | Partial | Add section/elevation fidelity contract. | Cut planes, view depth, section boxes, hidden lines, openings, stairs, roofs, floors, and materials render consistently with the 3D model. |
+| `BIR-R03` | P1 | Partial | Add sheet viewport fidelity. | Sheet viewports preserve view scale, crop, discipline/lens, graphics mode, title, schedule placement, and evidence links. |
+| `BIR-R04` | P1 | Partial | Add annotation/dimension integrity. | Tags, dimensions, levels, grids, callouts, detail regions, and schedules reference live elements and report stale/orphan state. |
+| `BIR-R05` | P1 | Partial | Add documentation export parity. | PDF/render bundles/sheets match the corresponding saved views, with unsupported features listed in export evidence. |
+| `BIR-R06` | P1 | Partial | Add 2D golden fixtures. | Plan, section, elevation, and sheet goldens cover hosted openings, roof cuts, stairs, rooms, annotations, and lens modes. |
 
 ### S. Site, Georeferencing, Links, Imports, And Roundtrip
 
@@ -695,6 +695,19 @@ Goal: close `M7`.
 Exit: the platform has explicit invariants, traceability, safe remediation,
 collaboration safety, 2D/documentation fidelity, content quality, and completion
 accounting.
+
+W7-C evidence update:
+- Added `packages/web/src/workspace/sheets/documentationFidelityContracts.ts`
+  with pure deterministic contracts for `BIR-R01` through `BIR-R06`: plan
+  primitive/diagnostic coverage, section/elevation evidence coverage, sheet
+  viewport metadata/evidence links, annotation/dimension live-reference
+  integrity, documentation export digest parity with unsupported-feature
+  listing, and 2D golden fixture readiness across plan/section/elevation/sheet.
+- Exported the contract helpers from the sheets barrel so UI, evidence readouts,
+  and future backend parity shims can consume the same pass/warn/fail rows.
+- Verification: `pnpm --filter @bim-ai/web exec vitest run
+  src/workspace/sheets/documentationFidelityContracts.test.ts`; `pnpm --filter
+  @bim-ai/web typecheck`.
 
 ### Wave 8: Target-House Rerun Readiness And Closure
 

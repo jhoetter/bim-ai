@@ -3,6 +3,7 @@ export { SheetCanvas } from './SheetCanvas';
 export { SheetDocumentationManifest } from './SheetDocumentationManifest';
 export { SectionViewportSvg } from './sectionViewportSvg';
 export * from './sectionViewportDoc';
+export * from './documentationFidelityContracts';
 export * from './sheetDetailCalloutReadout';
 export * from './sheetDocumentationManifestHelpers';
 export * from './sheetRevisionIssueManifestV1';
