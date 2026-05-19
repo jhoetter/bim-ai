@@ -153,6 +153,37 @@ export function shouldReuseHostedPreviewCommit(input: {
   );
 }
 
+export function isPointAttachedToWallFace(input: {
+  pointMm: { xMm: number; yMm: number };
+  wall: {
+    start: { xMm: number; yMm: number };
+    end: { xMm: number; yMm: number };
+    thicknessMm?: number | null;
+  };
+  hostAlongT?: number | null;
+  toleranceMm?: number;
+}): boolean {
+  const ax = input.wall.start.xMm;
+  const ay = input.wall.start.yMm;
+  const bx = input.wall.end.xMm;
+  const by = input.wall.end.yMm;
+  const dx = bx - ax;
+  const dy = by - ay;
+  const denom = dx * dx + dy * dy;
+  if (denom <= 1e-9) return false;
+  const alongT = ((input.pointMm.xMm - ax) * dx + (input.pointMm.yMm - ay) * dy) / denom;
+  if (alongT < -1e-6 || alongT > 1 + 1e-6) return false;
+  if (typeof input.hostAlongT === 'number' && Math.abs(input.hostAlongT - alongT) > 0.05) {
+    return false;
+  }
+  const nearestX = ax + alongT * dx;
+  const nearestY = ay + alongT * dy;
+  const distanceMm = Math.hypot(input.pointMm.xMm - nearestX, input.pointMm.yMm - nearestY);
+  const faceToleranceMm =
+    input.toleranceMm ?? Math.max(25, (input.wall.thicknessMm ?? 200) / 2 + 25);
+  return distanceMm <= faceToleranceMm;
+}
+
 function rangesOverlap(a: { startT: number; endT: number }, b: { startT: number; endT: number }) {
   return a.startT < b.endT && b.startT < a.endT;
 }

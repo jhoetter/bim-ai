@@ -4,6 +4,7 @@ from bim_ai.model_integrity import (
     check_model_integrity_invariants,
     family_type_content_integrity_v1,
 )
+from bim_ai.type_material_registry import builtin_family_type_seed_integrity_v1
 
 
 def _rules(findings):
@@ -140,6 +141,95 @@ def test_family_type_content_integrity_accepts_complete_schema_and_placements() 
     assert report["ok"] is True
     assert report["findingCount"] == 0
     assert len(report["digestSha256"]) == 64
+
+
+def test_builtin_family_type_seeds_are_strict_content_catalog_entries() -> None:
+    report = builtin_family_type_seed_integrity_v1()
+
+    assert report["format"] == "builtinFamilyTypeSeedIntegrity_v1"
+    assert report["ok"] is True
+    assert report["seedCount"] >= 4
+    assert report["report"]["findingCount"] == 0
+    assert {"BIR-V01", "BIR-V02", "BIR-V05"} <= set(report["trackedItems"])
+
+
+def test_face_hosted_family_and_asset_require_attachment_geometry() -> None:
+    subject = {
+        "elements": {
+            "lvl-1": {"kind": "level", "id": "lvl-1"},
+            "wall-1": {
+                "kind": "wall",
+                "id": "wall-1",
+                "levelId": "lvl-1",
+                "start": {"xMm": 1000, "yMm": 1000},
+                "end": {"xMm": 4000, "yMm": 1000},
+                "heightMm": 2800,
+                "thicknessMm": 200,
+            },
+            "ft-face": {
+                "kind": "family_type",
+                "id": "ft-face",
+                "familyId": "fam-face",
+                "familySchemaVersion": "family-content-v1",
+                "strictFamilySchema": True,
+                "parameters": {"widthMm": 300, "heightMm": 300},
+                "parameterSchema": [
+                    {"key": "widthMm", "kind": "mm", "required": True},
+                    {"key": "heightMm", "kind": "mm", "required": True},
+                ],
+                "requiredDimensions": ["widthMm", "heightMm"],
+                "hostSupport": "face_hosted",
+                "materialSlots": {"default": "paint"},
+                "scheduleFields": ["widthMm", "heightMm"],
+                "ifcMapping": {"class": "IfcBuildingElementProxy"},
+                "gltfMapping": {"nodeKind": "family_instance"},
+                "renderSupport": {"geometry": True},
+                "exportSupport": {"ifc": True, "gltf": True},
+                "planSymbol": {"kind": "component"},
+                "visualGeometry": {"kind": "box"},
+            },
+            "family-off-face": {
+                "kind": "family_instance",
+                "id": "family-off-face",
+                "familyTypeId": "ft-face",
+                "levelId": "lvl-1",
+                "hostElementId": "wall-1",
+                "positionMm": {"xMm": 1200, "yMm": 1800},
+            },
+            "asset-face": {
+                "kind": "asset_library_entry",
+                "id": "asset-face",
+                "assetKind": "block_2d",
+                "name": "Face hosted panel",
+                "category": "furniture",
+                "widthMm": 200,
+                "depthMm": 20,
+                "heightMm": 200,
+                "clearanceMm": 50,
+                "maintenanceZoneMm": {"front": 50},
+                "materialSlots": ["panel"],
+                "renderSupport": {"proxy": "box"},
+                "scheduleFields": ["widthMm"],
+                "exportMetadata": {"ifcClass": "IfcFurniture"},
+                "placementSupport": "face_hosted",
+                "paramSchema": [{"key": "widthMm", "kind": "mm", "default": 200, "min": 100}],
+            },
+            "asset-off-face": {
+                "kind": "placed_asset",
+                "id": "asset-off-face",
+                "name": "Face hosted panel",
+                "assetId": "asset-face",
+                "levelId": "lvl-1",
+                "hostElementId": "wall-1",
+                "positionMm": {"xMm": 1200, "yMm": 1800},
+            },
+        }
+    }
+
+    rule_ids = _rules(check_model_integrity_invariants(subject))
+
+    assert "model_integrity_family_instance_host_constraint_violation" in rule_ids
+    assert "model_integrity_asset_placement_support_invalid" in rule_ids
 
 
 def test_family_type_content_integrity_reports_invalid_overrides_assets_and_parity() -> None:

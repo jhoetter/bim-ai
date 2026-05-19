@@ -1304,6 +1304,23 @@ def _placed_asset_findings(
                     actual=str(_read(host, "kind", default="")),
                 )
             )
+        else:
+            attachment_problem = _hosted_position_attachment_problem(element, support, host)
+            if attachment_problem is not None:
+                findings.append(
+                    ModelIntegrityFinding(
+                        rule_id="model_integrity_asset_placement_support_invalid",
+                        severity="error",
+                        message=(
+                            f"Placed asset '{element_id}' support '{support}' is not attached "
+                            f"to host '{host_id}': {attachment_problem}"
+                        ),
+                        element_ids=(element_id, str(asset_id), str(host_id)),
+                        field="positionMm",
+                        expected="position attached to declared host face/span",
+                        actual=attachment_problem,
+                    )
+                )
 
     if support in {"floor_hosted", "level_hosted", "freestanding"} and host_id in (None, ""):
         if not _position_supported_by_floor(element, elements):
@@ -1378,6 +1395,22 @@ def _host_geometry_constraint_findings(
                 )
             )
             return findings
+        attachment_problem = _hosted_position_attachment_problem(element, support, host)
+        if attachment_problem is not None:
+            findings.append(
+                ModelIntegrityFinding(
+                    rule_id="model_integrity_family_instance_host_constraint_violation",
+                    severity="error",
+                    message=(
+                        f"Family instance '{element_id}' is not attached to host wall "
+                        f"'{host_id}': {attachment_problem}"
+                    ),
+                    element_ids=(element_id, str(host_id)),
+                    field="positionMm",
+                    expected="position attached to declared host wall face/span",
+                    actual=attachment_problem,
+                )
+            )
         resolved = _resolved_type_values(element, type_element, "family_instance").get(
             "parameters", {}
         )
@@ -1419,7 +1452,113 @@ def _host_geometry_constraint_findings(
                     actual=f"{height:g}",
                 )
             )
+    elif support == "face_hosted":
+        if host is None or str(_read(host, "kind", default="")) not in {
+            "wall",
+            "floor",
+            "roof",
+            "ceiling",
+        }:
+            findings.append(
+                ModelIntegrityFinding(
+                    rule_id="model_integrity_family_instance_host_constraint_violation",
+                    severity="error",
+                    message=f"Family instance '{element_id}' requires a valid face host.",
+                    element_ids=(element_id, str(_read(type_element, "id", default=""))),
+                    field="hostElementId",
+                    expected="wall, floor, roof, or ceiling",
+                    actual=str(_read(host, "kind", default="missing")),
+                )
+            )
+            return findings
+        attachment_problem = _hosted_position_attachment_problem(element, support, host)
+        if attachment_problem is not None:
+            findings.append(
+                ModelIntegrityFinding(
+                    rule_id="model_integrity_family_instance_host_constraint_violation",
+                    severity="error",
+                    message=(
+                        f"Family instance '{element_id}' is not attached to host face "
+                        f"'{host_id}': {attachment_problem}"
+                    ),
+                    element_ids=(element_id, str(host_id)),
+                    field="positionMm",
+                    expected="position attached to declared host face/span",
+                    actual=attachment_problem,
+                )
+            )
     return findings
+
+
+def _hosted_position_attachment_problem(element: Any, support: str, host: Any) -> str | None:
+    point = _point_xy(_read(element, "positionMm"))
+    if point is None:
+        return "missing or invalid positionMm"
+
+    host_kind = str(_read(host, "kind", default=""))
+    if host_kind == "wall" and support in {"wall_hosted", "face_hosted"}:
+        metrics = _wall_axis_metrics(point, host)
+        host_id = str(_read(host, "id", default=""))
+        if metrics is None:
+            return "host wall has invalid start/end geometry"
+        along_t, distance_mm = metrics
+        if along_t < -1e-6 or along_t > 1.0 + 1e-6:
+            return f"projected hostAlongT {along_t:.3f} is outside wall span"
+        thickness = _read(host, "thicknessMm")
+        tolerance_mm = max(25.0, (float(thickness) / 2.0 if _is_finite_number(thickness) else 100.0) + 25.0)
+        if distance_mm > tolerance_mm:
+            return f"position is {distance_mm:.1f} mm from wall '{host_id}' face band"
+        declared_along_t = _read(element, "hostAlongT")
+        if _is_finite_number(declared_along_t) and abs(float(declared_along_t) - along_t) > 0.05:
+            return f"hostAlongT {float(declared_along_t):.3f} does not match projected {along_t:.3f}"
+        return None
+
+    if host_kind in {"floor", "ceiling"}:
+        polygon = _polygon_xy(_read(host, "boundaryMm"))
+        if polygon and not _point_in_polygon_or_near(point, polygon, 75.0):
+            return "position is outside host footprint"
+        return None
+
+    if host_kind == "roof":
+        polygon = _polygon_xy(_read(host, "footprintMm"))
+        if polygon and not _point_in_polygon_or_near(point, polygon, 75.0):
+            return "position is outside roof footprint"
+        return None
+
+    return None
+
+
+def _wall_axis_metrics(point: tuple[float, float], wall: Any) -> tuple[float, float] | None:
+    start = _point_xy(_read(wall, "start"))
+    end = _point_xy(_read(wall, "end"))
+    if start is None or end is None:
+        return None
+    ax, ay = start
+    bx, by = end
+    dx = bx - ax
+    dy = by - ay
+    denom = dx * dx + dy * dy
+    if denom <= 1e-9:
+        return None
+    t = ((point[0] - ax) * dx + (point[1] - ay) * dy) / denom
+    nearest = (ax + t * dx, ay + t * dy)
+    return t, math.hypot(point[0] - nearest[0], point[1] - nearest[1])
+
+
+def _point_in_polygon_or_near(
+    point: tuple[float, float],
+    polygon: list[tuple[float, float]],
+    tolerance_mm: float,
+) -> bool:
+    if _point_in_polygon(point, polygon):
+        return True
+    if len(polygon) < 2:
+        return False
+    return any(
+        _point_segment_distance_mm(point, polygon[index], polygon[(index + 1) % len(polygon)])
+        <= tolerance_mm
+        for index in range(len(polygon))
+    )
 
 
 def _elements_mapping(subject: Any) -> Mapping[str, Any] | None:

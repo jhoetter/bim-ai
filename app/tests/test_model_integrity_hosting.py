@@ -506,6 +506,50 @@ def test_hosted_family_support_classes_accept_declared_host_kinds() -> None:
     } == set()
 
 
+def test_face_hosted_family_requires_actual_host_face_attachment() -> None:
+    wall = _wall()
+    family_type = FamilyTypeElem(
+        id="ft-face-hosted",
+        familyId="fam-face",
+        discipline="generic",
+        hostSupport="face_hosted",
+    )
+    off_face = FamilyInstanceElem(
+        id="family-face-off-wall",
+        familyTypeId=family_type.id,
+        positionMm=_pt(1200, 1800),
+        hostElementId=wall.id,
+        paramValues={"renderProxyKind": "box"},
+    )
+    wrong_along_t = FamilyInstanceElem(
+        id="family-face-wrong-along",
+        familyTypeId=family_type.id,
+        positionMm=_pt(3000, 1000),
+        hostElementId=wall.id,
+        hostAlongT=0.1,
+        paramValues={"renderProxyKind": "box"},
+    )
+
+    violations = hosted_opening_integrity_violations(
+        _doc(wall, family_type, off_face, wrong_along_t)
+    )
+    unsupported = [
+        violation
+        for violation in violations
+        if violation.rule_id == "hosted_family_unsupported_host_class"
+    ]
+
+    assert {tuple(violation.element_ids) for violation in unsupported} == {
+        ("family-face-off-wall", "wall-1"),
+        ("family-face-wrong-along", "wall-1"),
+    }
+    payload = unsupported[0].model_dump(by_alias=True)
+    assert payload["trackerItems"] == ["BIR-C07", "BIR-C08"]
+    assert {"kind": "set_compatible_family_host", "safety": "needs_user_intent"} in payload[
+        "safeFixHints"
+    ]
+
+
 def test_asset_catalog_placement_support_field_is_classified() -> None:
     asset_entry = AssetLibraryEntryElem(
         id="asset-face-hosted",

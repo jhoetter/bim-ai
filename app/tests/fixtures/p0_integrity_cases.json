@@ -770,6 +770,48 @@
       }
     },
     {
+      "id": "face_hosted_family_off_wall_face",
+      "fixtureClass": "minimal_synthetic",
+      "description": "Face-hosted family resolves to a wall host but is not attached to the wall face geometry.",
+      "trackerItems": ["BIR-C07", "BIR-O01"],
+      "rulesUnderTest": ["hosted_family_unsupported_host_class"],
+      "expectedFindings": [
+        {
+          "ruleId": "hosted_family_unsupported_host_class",
+          "elementIds": ["family-face-off-wall", "wall-1"]
+        }
+      ],
+      "absentRuleIds": [],
+      "elements": {
+        "lvl-1": { "kind": "level", "id": "lvl-1", "elevationMm": 0 },
+        "wall-1": {
+          "kind": "wall",
+          "id": "wall-1",
+          "levelId": "lvl-1",
+          "start": { "xMm": 0, "yMm": 0 },
+          "end": { "xMm": 4000, "yMm": 0 },
+          "heightMm": 2800,
+          "thicknessMm": 200
+        },
+        "ft-face-hosted": {
+          "kind": "family_type",
+          "id": "ft-face-hosted",
+          "familyId": "fam-face",
+          "discipline": "generic",
+          "hostSupport": "face_hosted",
+          "renderSupport": { "mode": "box" }
+        },
+        "family-face-off-wall": {
+          "kind": "family_instance",
+          "id": "family-face-off-wall",
+          "familyTypeId": "ft-face-hosted",
+          "positionMm": { "xMm": 1200, "yMm": 800 },
+          "hostElementId": "wall-1",
+          "paramValues": { "renderProxyKind": "box" }
+        }
+      }
+    },
+    {
       "id": "orphan_void_cut_leakage",
       "fixtureClass": "minimal_synthetic",
       "description": "Void cut references a missing host and must not leak into rendered cut geometry.",

@@ -9,6 +9,65 @@ from bim_ai.elements import FamilyTypeElem, FloorTypeElem, RoofTypeElem, WallTyp
 from bim_ai.material_catalog import resolve_material
 
 
+def _strict_family_type_seed(
+    *,
+    key: str,
+    family_id: str,
+    discipline: str,
+    display_name: str,
+    host_support: str,
+    ifc_class: str,
+    dimensions: dict[str, float],
+) -> dict[str, Any]:
+    parameter_schema = [
+        {
+            "key": dim_key,
+            "kind": "mm",
+            "min": 1,
+            "max": 10000,
+            "required": True,
+            "instanceOverridable": dim_key in {"widthMm", "leafWidthMm"},
+        }
+        for dim_key in sorted(dimensions)
+    ]
+    schedule_fields = sorted([*dimensions.keys(), "materialKey"])
+    return {
+        "key": key,
+        "id": key,
+        "kind": "family_type",
+        "familyId": family_id,
+        "discipline": discipline,
+        "displayName": display_name,
+        "name": display_name,
+        "familySchemaVersion": "family-content-v1",
+        "strictFamilySchema": True,
+        "parameters": {
+            "displayName": display_name,
+            "materialKey": "mat-gwb-finish-v1",
+            **dimensions,
+        },
+        "parameterSchema": [
+            *parameter_schema,
+            {
+                "key": "materialKey",
+                "kind": "material",
+                "required": True,
+                "instanceOverridable": True,
+            },
+        ],
+        "requiredDimensions": sorted(dimensions),
+        "hostSupport": host_support,
+        "materialSlots": {"default": "mat-gwb-finish-v1"},
+        "scheduleFields": schedule_fields,
+        "ifcMapping": {"class": ifc_class},
+        "gltfMapping": {"nodeKind": "family_instance"},
+        "renderSupport": {"geometry": True, "source": "builtin_seed"},
+        "exportSupport": {"ifc": True, "gltf": True},
+        "planSymbol": {"kind": discipline if discipline in {"door", "window"} else "component"},
+        "visualGeometry": {"kind": "builtin_seed", "familyId": family_id},
+    }
+
+
 def builtin_type_material_registry() -> dict[str, Any]:
     """Stable seed catalog baked into kernel (authors may mirror as `family_type` / `wall_type` elements)."""
 
@@ -18,22 +77,42 @@ def builtin_type_material_registry() -> dict[str, Any]:
             "Use `upsertFamilyType`, `assignOpeningFamily`, and wall type elements to reference these keys."
         ),
         "familyTypeSeeds": [
-            {
-                "key": "ft-door-interior-swing-v1",
-                "discipline": "door",
-                "displayName": "Interior swing",
-            },
-            {
-                "key": "ft-door-cleanroom-interlock-v1",
-                "discipline": "door",
-                "displayName": "Cleanroom interlock",
-            },
-            {"key": "ft-window-fixed-v1", "discipline": "window", "displayName": "Fixed lite"},
-            {
-                "key": "ft-generic-placeholder-v1",
-                "discipline": "generic",
-                "displayName": "Generic host type",
-            },
+            _strict_family_type_seed(
+                key="ft-door-interior-swing-v1",
+                family_id="builtin:door:single",
+                discipline="door",
+                display_name="Interior swing",
+                host_support="wall_hosted",
+                ifc_class="IfcDoor",
+                dimensions={"widthMm": 900, "heightMm": 2100},
+            ),
+            _strict_family_type_seed(
+                key="ft-door-cleanroom-interlock-v1",
+                family_id="builtin:door:single",
+                discipline="door",
+                display_name="Cleanroom interlock",
+                host_support="wall_hosted",
+                ifc_class="IfcDoor",
+                dimensions={"widthMm": 1000, "heightMm": 2100},
+            ),
+            _strict_family_type_seed(
+                key="ft-window-fixed-v1",
+                family_id="builtin:window:fixed",
+                discipline="window",
+                display_name="Fixed lite",
+                host_support="wall_hosted",
+                ifc_class="IfcWindow",
+                dimensions={"widthMm": 1200, "heightMm": 1200},
+            ),
+            _strict_family_type_seed(
+                key="ft-generic-placeholder-v1",
+                family_id="builtin:generic:placeholder",
+                discipline="generic",
+                display_name="Generic host type",
+                host_support="freestanding",
+                ifc_class="IfcBuildingElementProxy",
+                dimensions={"widthMm": 600, "heightMm": 600, "depthMm": 600},
+            ),
         ],
         "wallTypeSeeds": [
             {"key": "wt-exterior-masonry-200-v1", "name": "Exterior masonry 200", "layerCount": 1},
@@ -72,6 +151,27 @@ def builtin_type_material_registry() -> dict[str, Any]:
                 "displayName": "Roof membrane (single-ply)",
             },
         ],
+    }
+
+
+def builtin_family_type_seed_integrity_v1() -> dict[str, Any]:
+    """Validate kernel built-in family seeds against the strict family-content contract."""
+
+    from bim_ai.model_integrity import family_type_content_integrity_v1
+
+    seeds = builtin_type_material_registry()["familyTypeSeeds"]
+    elements = {
+        str(seed["id"]): dict(seed)
+        for seed in seeds
+        if isinstance(seed, dict) and str(seed.get("kind") or "") == "family_type"
+    }
+    report = family_type_content_integrity_v1({"elements": elements})
+    return {
+        "format": "builtinFamilyTypeSeedIntegrity_v1",
+        "trackedItems": ["BIR-V01", "BIR-V02", "BIR-V05"],
+        "ok": report["ok"],
+        "seedCount": len(elements),
+        "report": report,
     }
 
 

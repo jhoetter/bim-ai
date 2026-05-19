@@ -3,6 +3,7 @@ import * as THREE from 'three';
 
 import {
   findHostedOpeningConflict,
+  isPointAttachedToWallFace,
   isBackfacingWallHit,
   isDuplicateHostedPlacement,
   shouldBypassLevelDatumPickForDirectAuthoring,
@@ -233,6 +234,40 @@ describe('shouldReuseHostedPreviewCommit', () => {
           { x: 220, y: 180 },
           { x: 140, y: 180 },
         ],
+      }),
+    ).toBe(false);
+  });
+});
+
+describe('isPointAttachedToWallFace', () => {
+  const wall = {
+    start: { xMm: 1000, yMm: 1000 },
+    end: { xMm: 4000, yMm: 1000 },
+    thicknessMm: 200,
+  };
+
+  it('accepts hosted family points inside the wall face band', () => {
+    expect(
+      isPointAttachedToWallFace({
+        pointMm: { xMm: 2000, yMm: 1080 },
+        wall,
+        hostAlongT: 1 / 3,
+      }),
+    ).toBe(true);
+  });
+
+  it('rejects off-face and mismatched hostAlongT placements before commit', () => {
+    expect(
+      isPointAttachedToWallFace({
+        pointMm: { xMm: 2000, yMm: 1800 },
+        wall,
+      }),
+    ).toBe(false);
+    expect(
+      isPointAttachedToWallFace({
+        pointMm: { xMm: 3000, yMm: 1000 },
+        wall,
+        hostAlongT: 0.1,
       }),
     ).toBe(false);
   });

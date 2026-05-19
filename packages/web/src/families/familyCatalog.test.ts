@@ -1,6 +1,11 @@
 import { describe, expect, it } from 'vitest';
 
-import { BUILT_IN_FAMILIES, getFamilyById, getTypeById } from './familyCatalog';
+import {
+  BUILT_IN_FAMILIES,
+  builtinFamilyTypeIntegrityRows,
+  getFamilyById,
+  getTypeById,
+} from './familyCatalog';
 
 describe('getFamilyById', () => {
   it('returns the family for a known id', () => {
@@ -92,6 +97,28 @@ describe('BUILT_IN_FAMILIES', () => {
       for (const type of family.defaultTypes) {
         expect(type.isBuiltIn).toBe(true);
       }
+    }
+  });
+
+  it('exports strict family-content metadata for every built-in type', () => {
+    const rows = builtinFamilyTypeIntegrityRows();
+    const typeIds = BUILT_IN_FAMILIES.flatMap((family) => family.defaultTypes.map((type) => type.id));
+
+    expect(rows.map((row) => row.id).sort()).toEqual(typeIds.sort());
+    for (const row of rows) {
+      expect(row.familySchemaVersion).toBe('family-content-v1');
+      expect(row.strictFamilySchema).toBe(true);
+      expect(row.parameterSchema.length).toBeGreaterThan(0);
+      expect(row.requiredDimensions.every((key) => key.endsWith('Mm'))).toBe(true);
+      expect(row.hostSupport).toMatch(/^(wall_hosted|level_hosted|freestanding)$/);
+      expect(row.materialSlots.length).toBeGreaterThan(0);
+      expect(row.scheduleFields.length).toBeGreaterThan(0);
+      expect(row.ifcMapping.class).toBeTruthy();
+      expect(row.gltfMapping.nodeKind).toBe('family_instance');
+      expect(row.renderSupport.geometry).toBe(true);
+      expect(row.exportSupport).toEqual({ ifc: true, gltf: true });
+      expect(row.planSymbol.kind).toBeTruthy();
+      expect(row.visualGeometry.familyId).toBe(row.familyId);
     }
   });
 });

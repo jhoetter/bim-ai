@@ -417,3 +417,97 @@ export function getTypeById(id: string): FamilyDefinition['defaultTypes'][number
   }
   return undefined;
 }
+
+export interface BuiltinFamilyTypeIntegrityRow {
+  id: string;
+  familyId: string;
+  discipline: string;
+  familySchemaVersion: 'family-content-v1';
+  strictFamilySchema: true;
+  parameters: Record<string, unknown>;
+  parameterSchema: Array<Record<string, unknown>>;
+  requiredDimensions: string[];
+  hostSupport: string;
+  materialSlots: string[];
+  scheduleFields: string[];
+  ifcMapping: Record<string, unknown>;
+  gltfMapping: Record<string, unknown>;
+  renderSupport: Record<string, unknown>;
+  exportSupport: Record<string, unknown>;
+  planSymbol: Record<string, unknown>;
+  visualGeometry: Record<string, unknown>;
+}
+
+export function builtinFamilyTypeIntegrityRows(): BuiltinFamilyTypeIntegrityRow[] {
+  return BUILT_IN_FAMILIES.flatMap((family) =>
+    family.defaultTypes.map((type) => {
+      const parameters = { ...type.parameters };
+      const explicitSchema = family.params.map((param) => ({
+        key: param.key,
+        kind: integrityParamKind(param.type),
+        min: param.min,
+        max: param.max,
+        options: param.options,
+        required: true,
+        instanceOverridable: param.instanceOverridable,
+      }));
+      const schemaKeys = new Set(explicitSchema.map((entry) => String(entry.key)));
+      const inferredDimensions = Object.keys(parameters)
+        .filter((key) => /Mm$/.test(key) && typeof parameters[key] === 'number')
+        .sort();
+      const inferredSchema = inferredDimensions
+        .filter((key) => !schemaKeys.has(key))
+        .map((key) => ({
+          key,
+          kind: 'mm',
+          required: true,
+          instanceOverridable: true,
+        }));
+      const parameterSchema = [...explicitSchema, ...inferredSchema].map((entry) =>
+        Object.fromEntries(Object.entries(entry).filter(([, value]) => value !== undefined)),
+      );
+      const scheduleFields = [...new Set(parameterSchema.map((entry) => String(entry.key)))].sort();
+      return {
+        id: type.id,
+        familyId: family.id,
+        discipline: type.discipline,
+        familySchemaVersion: 'family-content-v1',
+        strictFamilySchema: true,
+        parameters,
+        parameterSchema,
+        requiredDimensions: inferredDimensions,
+        hostSupport: hostSupportForDiscipline(type.discipline),
+        materialSlots: ['default'],
+        scheduleFields,
+        ifcMapping: { class: ifcClassForDiscipline(type.discipline) },
+        gltfMapping: { nodeKind: 'family_instance' },
+        renderSupport: { geometry: true, source: 'builtin_family_catalog' },
+        exportSupport: { ifc: true, gltf: true },
+        planSymbol: { kind: type.discipline },
+        visualGeometry: { kind: 'builtin_family', familyId: family.id },
+      };
+    }),
+  );
+}
+
+function integrityParamKind(type: FamilyParamDef['type']): string {
+  if (type === 'length_mm') return 'mm';
+  if (type === 'material_key') return 'material';
+  if (type === 'boolean') return 'boolean';
+  if (type === 'option') return 'option';
+  return type;
+}
+
+function hostSupportForDiscipline(discipline: string): string {
+  if (discipline === 'door' || discipline === 'window') return 'wall_hosted';
+  if (discipline === 'stair' || discipline === 'railing') return 'level_hosted';
+  return 'freestanding';
+}
+
+function ifcClassForDiscipline(discipline: string): string {
+  if (discipline === 'door') return 'IfcDoor';
+  if (discipline === 'window') return 'IfcWindow';
+  if (discipline === 'stair') return 'IfcStair';
+  if (discipline === 'railing') return 'IfcRailing';
+  return 'IfcBuildingElementProxy';
+}

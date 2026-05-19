@@ -1239,6 +1239,28 @@ def _hosted_family_support_violations(elements: Mapping[str, Element]) -> list[V
             )
             if _renders_as_hosted_proxy(elem, elements):
                 violations.append(_orphan_render_proxy_violation(elem, host_id))
+            continue
+
+        attachment_problem = _host_face_attachment_problem(elem, support_class, host)
+        if attachment_problem is not None:
+            violations.append(
+                _violation(
+                    "hosted_family_unsupported_host_class",
+                    "error",
+                    (
+                        f"{_element_label(elem)} '{elem.id}' declares "
+                        f"{_HOST_CLASS_LABELS[support_class]} support but {attachment_problem}"
+                    ),
+                    [elem.id, host_id],
+                    host_ids=[host_id],
+                    quick_fix_command={
+                        "type": "rehostHostedFamily",
+                        "elementId": elem.id,
+                        "hostElementId": host_id,
+                        "safeFixes": ["move_to_host_face", "set_hostAlongT", "choose_compatible_host"],
+                    },
+                )
+            )
     return violations
 
 
@@ -1378,6 +1400,64 @@ def _host_kind_supported(support_class: str, host: Element) -> bool:
     if support_class == "workplane_hosted":
         return isinstance(host, ReferencePlaneElem)
     return support_class not in _HOST_CLASSES_REQUIRING_ELEMENT
+
+
+def _host_face_attachment_problem(
+    elem: FamilyInstanceElem | PlacedAssetElem,
+    support_class: str,
+    host: Element,
+) -> str | None:
+    point = (elem.position_mm.x_mm, elem.position_mm.y_mm)
+    if isinstance(host, WallElem) and support_class in {"wall_hosted", "face_hosted"}:
+        metrics = _wall_axis_metrics(point, host)
+        if metrics is None:
+            return f"cannot resolve wall host '{host.id}' attachment geometry."
+        along_t, distance_mm = metrics
+        if along_t < -1e-6 or along_t > 1.0 + 1e-6:
+            return (
+                f"position is outside the host wall '{host.id}' face span "
+                f"(hostAlongT {along_t:.3f})."
+            )
+        tolerance_mm = max(25.0, host.thickness_mm / 2.0 + 25.0)
+        if distance_mm > tolerance_mm:
+            return (
+                f"position is {distance_mm:.1f} mm from host wall '{host.id}', beyond "
+                f"the face attachment tolerance {tolerance_mm:.1f} mm."
+            )
+        declared_along_t = getattr(elem, "host_along_t", None)
+        if declared_along_t is not None and abs(float(declared_along_t) - along_t) > 0.05:
+            return (
+                f"hostAlongT {float(declared_along_t):.3f} does not match the projected wall "
+                f"face location {along_t:.3f}."
+            )
+        return None
+
+    if isinstance(host, FloorElem | CeilingElem):
+        polygon = [(point.x_mm, point.y_mm) for point in host.boundary_mm]
+        if polygon and not _point_in_or_near_polygon(point, polygon, DEFAULT_SUPPORT_TOLERANCE_MM):
+            return f"position is outside host face '{host.id}' footprint."
+        return None
+
+    if isinstance(host, RoofElem):
+        polygon = [(point.x_mm, point.y_mm) for point in host.footprint_mm]
+        if polygon and not _point_in_or_near_polygon(point, polygon, DEFAULT_SUPPORT_TOLERANCE_MM):
+            return f"position is outside roof host face '{host.id}' footprint."
+        return None
+
+    return None
+
+
+def _wall_axis_metrics(point: Point2, wall: WallElem) -> tuple[float, float] | None:
+    ax, ay = wall.start.x_mm, wall.start.y_mm
+    bx, by = wall.end.x_mm, wall.end.y_mm
+    dx = bx - ax
+    dy = by - ay
+    denom = dx * dx + dy * dy
+    if denom <= 1e-9:
+        return None
+    t = ((point[0] - ax) * dx + (point[1] - ay) * dy) / denom
+    nearest = (ax + t * dx, ay + t * dy)
+    return t, math.hypot(point[0] - nearest[0], point[1] - nearest[1])
 
 
 def _placed_asset_support_class(asset: PlacedAssetElem, entry: Element | None) -> str:

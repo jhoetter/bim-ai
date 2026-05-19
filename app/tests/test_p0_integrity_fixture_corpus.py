@@ -172,3 +172,24 @@ def test_p0_integrity_fixture_corpus_covers_vertical_circulation_closure() -> No
         if str(rule_id).startswith("BIR-E")
     }
     assert {"BIR-E01", "BIR-E02", "BIR-E03", "BIR-E04", "BIR-E05", "BIR-E06", "BIR-E07"} <= covered
+
+
+def test_p0_integrity_fixture_corpus_covers_wave24b_authoring_content_closure() -> None:
+    corpus = _load_corpus()
+    cases_by_id = {case["id"]: case for case in corpus["cases"]}
+
+    assert {
+        "hosted_door_missing_semantic_cut",
+        "overlapping_hosted_openings",
+        "hosted_opening_spacing_capacity_and_lintel",
+        "target_house_detached_access_wall",
+        "hosted_family_support_mismatch",
+        "face_hosted_family_off_wall_face",
+        "floating_asset_and_detached_stair",
+    } <= set(cases_by_id)
+    assert cases_by_id["face_hosted_family_off_wall_face"]["rulesUnderTest"] == [
+        "hosted_family_unsupported_host_class"
+    ]
+    assert {"BIR-C07", "BIR-O01"} <= set(
+        cases_by_id["face_hosted_family_off_wall_face"]["trackerItems"]
+    )
