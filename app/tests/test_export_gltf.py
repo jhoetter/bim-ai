@@ -24,6 +24,7 @@ from bim_ai.elements import (
 from bim_ai.engine import apply_inplace
 from bim_ai.export_gltf import (
     _collect_geom_boxes,
+    build_gltf_json_readback_fidelity_v1,
     build_visual_export_manifest,
     document_to_glb_bytes,
     document_to_gltf,
@@ -119,6 +120,74 @@ def test_document_to_gltf_wall_level_metadata_semantic_nodes():
     pos_acc = g["accessors"][pos_ix]
     assert pos_acc["min"] is not None and pos_acc["max"] is not None
     assert len(pos_acc["min"]) == len(pos_acc["max"]) == 3
+
+
+def test_document_to_gltf_embeds_json_readback_fidelity_evidence() -> None:
+    doc = Document(
+        revision=1,
+        elements={
+            "lvl-g": LevelElem(kind="level", id="lvl-g", name="G", elevationMm=0),
+            "w-a": WallElem(
+                kind="wall",
+                id="w-a",
+                name="W",
+                levelId="lvl-g",
+                start={"xMm": 0, "yMm": 0},
+                end={"xMm": 5000, "yMm": 0},
+                thicknessMm=200,
+                heightMm=2800,
+            ),
+        },
+    )
+
+    gltf = document_to_gltf(doc)
+    manifest = gltf["extensions"]["BIM_AI_exportManifest_v0"]
+    readback = manifest["gltfJsonReadbackFidelity_v1"]
+
+    assert readback["format"] == "gltfJsonReadbackFidelity_v1"
+    assert readback["readbackStatus"] == "aligned"
+    assert readback["manifestExtensionPresent"] is True
+    assert readback["meshCount"] == 1
+    assert readback["geometryNodeCount"] == 1
+    assert readback["levelMetadataNodeCount"] == 1
+    assert readback["geometryNodeCountsByKind"] == {"wall": 1}
+    assert readback["geometryNodeElementIdsByKind"] == {"wall": ["w-a"]}
+    assert readback["positionAccessorCount"] == 1
+    assert readback["positionVertexCount"] == 36
+    assert readback["indexAccessorCount"] == 1
+    assert readback["indexCount"] == 36
+    assert readback["bufferByteLength"] > 0
+    assert readback["findings"] == []
+    assert len(readback["gltfJsonReadbackFidelityDigestSha256"]) == 64
+
+
+def test_gltf_json_readback_fidelity_detects_mesh_node_drift() -> None:
+    doc = Document(
+        revision=1,
+        elements={
+            "lvl-g": LevelElem(kind="level", id="lvl-g", name="G", elevationMm=0),
+            "w-a": WallElem(
+                kind="wall",
+                id="w-a",
+                name="W",
+                levelId="lvl-g",
+                start={"xMm": 0, "yMm": 0},
+                end={"xMm": 5000, "yMm": 0},
+                thicknessMm=200,
+                heightMm=2800,
+            ),
+        },
+    )
+    gltf = document_to_gltf(doc)
+    broken = json.loads(json.dumps(gltf))
+    broken["nodes"] = [n for n in broken["nodes"] if "mesh" not in n]
+
+    readback = build_gltf_json_readback_fidelity_v1(broken)
+
+    assert readback["readbackStatus"] == "drift"
+    assert readback["meshCount"] == 1
+    assert readback["geometryNodeCount"] == 0
+    assert any(f["code"] == "mesh_count_node_count_mismatch" for f in readback["findings"])
 
 
 def test_build_visual_export_manifest_includes_material_assembly_evidence_with_layered_wall_type():

@@ -187,6 +187,242 @@ def build_gltf_export_manifest_closure_v1(
     }
 
 
+def _gltf_nodes_with_mesh(gltf: dict[str, Any]) -> list[dict[str, Any]]:
+    nodes = gltf.get("nodes")
+    if not isinstance(nodes, list):
+        return []
+    return [n for n in nodes if isinstance(n, dict) and isinstance(n.get("mesh"), int)]
+
+
+def _gltf_node_kind_and_element_id(node: dict[str, Any]) -> tuple[str, str]:
+    name = str(node.get("name") or "")
+    kind = name.split(":", 1)[0].strip() if ":" in name else ""
+    extras = node.get("extras") if isinstance(node.get("extras"), dict) else {}
+    elem_id = str(extras.get("elementId") or "").strip()
+    if not elem_id and ":" in name:
+        elem_id = name.split(":", 1)[1].strip()
+    return kind, elem_id
+
+
+def _gltf_manifest_extension(gltf: dict[str, Any]) -> dict[str, Any] | None:
+    exts = gltf.get("extensions")
+    if not isinstance(exts, dict):
+        return None
+    manifest = exts.get("BIM_AI_exportManifest_v0")
+    return manifest if isinstance(manifest, dict) else None
+
+
+def _gltf_accessor_is_position(accessor: dict[str, Any]) -> bool:
+    return (
+        accessor.get("componentType") == 5126
+        and accessor.get("type") == "VEC3"
+        and isinstance(accessor.get("min"), list)
+        and isinstance(accessor.get("max"), list)
+    )
+
+
+def build_gltf_json_readback_fidelity_v1(gltf: dict[str, Any]) -> dict[str, Any]:
+    """Read back a generated glTF JSON tree and validate its manifest/mesh contract.
+
+    This is intentionally an artifact validator: it inspects the emitted glTF
+    JSON structure rather than the source Document. That catches serialization
+    regressions where manifest counts survive but geometry nodes, mesh indices,
+    accessors, or closure tokens drift in the actual exchange artifact.
+    """
+
+    manifest = _gltf_manifest_extension(gltf)
+    nodes = gltf.get("nodes") if isinstance(gltf.get("nodes"), list) else []
+    meshes = gltf.get("meshes") if isinstance(gltf.get("meshes"), list) else []
+    accessors = gltf.get("accessors") if isinstance(gltf.get("accessors"), list) else []
+    buffers = gltf.get("buffers") if isinstance(gltf.get("buffers"), list) else []
+    geometry_nodes = _gltf_nodes_with_mesh(gltf)
+
+    node_counts: dict[str, int] = {}
+    node_ids: dict[str, list[str]] = {}
+    invalid_mesh_nodes: list[str] = []
+    for node in geometry_nodes:
+        kind, elem_id = _gltf_node_kind_and_element_id(node)
+        if kind:
+            node_counts[kind] = node_counts.get(kind, 0) + 1
+            if elem_id:
+                node_ids.setdefault(kind, []).append(elem_id)
+        mesh_ix = node.get("mesh")
+        if not isinstance(mesh_ix, int) or mesh_ix < 0 or mesh_ix >= len(meshes):
+            invalid_mesh_nodes.append(str(node.get("name") or elem_id or mesh_ix))
+
+    for ids in node_ids.values():
+        ids.sort()
+
+    position_accessor_count = 0
+    position_vertex_count = 0
+    index_accessor_count = 0
+    index_count = 0
+    zero_vertex_meshes: list[str] = []
+    invalid_accessor_refs: list[str] = []
+
+    for mesh_ix, mesh in enumerate(meshes):
+        if not isinstance(mesh, dict):
+            invalid_accessor_refs.append(f"mesh[{mesh_ix}]")
+            continue
+        primitives = mesh.get("primitives")
+        if not isinstance(primitives, list) or not primitives:
+            invalid_accessor_refs.append(str(mesh.get("name") or f"mesh[{mesh_ix}]"))
+            continue
+        for prim_ix, prim in enumerate(primitives):
+            if not isinstance(prim, dict):
+                invalid_accessor_refs.append(f"{mesh.get('name') or mesh_ix}:prim[{prim_ix}]")
+                continue
+            attrs = prim.get("attributes") if isinstance(prim.get("attributes"), dict) else {}
+            pos_ix = attrs.get("POSITION")
+            if isinstance(pos_ix, int) and 0 <= pos_ix < len(accessors):
+                acc = accessors[pos_ix]
+                if isinstance(acc, dict) and _gltf_accessor_is_position(acc):
+                    position_accessor_count += 1
+                    raw_count = acc.get("count")
+                    try:
+                        vcount = int(raw_count)
+                    except (TypeError, ValueError):
+                        vcount = 0
+                    position_vertex_count += vcount
+                    if vcount <= 0:
+                        zero_vertex_meshes.append(str(mesh.get("name") or f"mesh[{mesh_ix}]"))
+                else:
+                    invalid_accessor_refs.append(
+                        f"{mesh.get('name') or mesh_ix}:POSITION:{pos_ix}"
+                    )
+            else:
+                invalid_accessor_refs.append(f"{mesh.get('name') or mesh_ix}:POSITION")
+
+            idx_ix = prim.get("indices")
+            if isinstance(idx_ix, int) and 0 <= idx_ix < len(accessors):
+                acc = accessors[idx_ix]
+                if isinstance(acc, dict):
+                    index_accessor_count += 1
+                    try:
+                        index_count += int(acc.get("count") or 0)
+                    except (TypeError, ValueError):
+                        invalid_accessor_refs.append(f"{mesh.get('name') or mesh_ix}:indices")
+                else:
+                    invalid_accessor_refs.append(f"{mesh.get('name') or mesh_ix}:indices:{idx_ix}")
+            else:
+                invalid_accessor_refs.append(f"{mesh.get('name') or mesh_ix}:indices")
+
+    manifest_tokens: set[str] = set()
+    closure_tokens: set[str] = set()
+    if manifest is not None:
+        mesh_enc = str(manifest.get("meshEncoding") or "")
+        manifest_tokens = {tok for tok in mesh_enc.split("+") if tok}
+        closure = manifest.get("gltfExportManifestClosure_v1")
+        if isinstance(closure, dict):
+            closure_tokens = {
+                str(tok) for tok in closure.get("extensionTokens") or [] if str(tok).strip()
+            }
+
+    findings: list[dict[str, Any]] = []
+    if manifest is None:
+        findings.append({"code": "manifest_extension_missing", "severity": "error"})
+    if len(meshes) != len(geometry_nodes):
+        findings.append(
+            {
+                "code": "mesh_count_node_count_mismatch",
+                "severity": "error",
+                "meshCount": len(meshes),
+                "geometryNodeCount": len(geometry_nodes),
+            }
+        )
+    if invalid_mesh_nodes:
+        findings.append(
+            {
+                "code": "invalid_mesh_node_reference",
+                "severity": "error",
+                "nodeNames": sorted(invalid_mesh_nodes),
+            }
+        )
+    if position_accessor_count != len(meshes):
+        findings.append(
+            {
+                "code": "position_accessor_count_mismatch",
+                "severity": "error",
+                "positionAccessorCount": position_accessor_count,
+                "meshCount": len(meshes),
+            }
+        )
+    if index_accessor_count != len(meshes):
+        findings.append(
+            {
+                "code": "index_accessor_count_mismatch",
+                "severity": "error",
+                "indexAccessorCount": index_accessor_count,
+                "meshCount": len(meshes),
+            }
+        )
+    if zero_vertex_meshes:
+        findings.append(
+            {
+                "code": "zero_vertex_mesh",
+                "severity": "error",
+                "meshNames": sorted(zero_vertex_meshes),
+            }
+        )
+    if invalid_accessor_refs:
+        findings.append(
+            {
+                "code": "invalid_accessor_reference",
+                "severity": "error",
+                "references": sorted(set(invalid_accessor_refs)),
+            }
+        )
+    if manifest_tokens != closure_tokens:
+        findings.append(
+            {
+                "code": "manifest_closure_token_drift",
+                "severity": "error",
+                "meshEncodingTokens": sorted(manifest_tokens),
+                "closureTokens": sorted(closure_tokens),
+            }
+        )
+
+    buffer_byte_length = 0
+    if buffers and isinstance(buffers[0], dict):
+        try:
+            buffer_byte_length = int(buffers[0].get("byteLength") or 0)
+        except (TypeError, ValueError):
+            buffer_byte_length = 0
+
+    digest_source = {
+        "manifestPresent": manifest is not None,
+        "meshCount": len(meshes),
+        "geometryNodeCountsByKind": dict(sorted(node_counts.items())),
+        "geometryNodeElementIdsByKind": {k: node_ids[k] for k in sorted(node_ids)},
+        "positionAccessorCount": position_accessor_count,
+        "positionVertexCount": position_vertex_count,
+        "indexAccessorCount": index_accessor_count,
+        "indexCount": index_count,
+        "bufferByteLength": buffer_byte_length,
+        "findingCodes": [f["code"] for f in findings],
+    }
+    return {
+        "format": "gltfJsonReadbackFidelity_v1",
+        "artifactKind": "gltf-json",
+        "readbackStatus": "aligned" if not findings else "drift",
+        "manifestExtensionPresent": manifest is not None,
+        "meshCount": len(meshes),
+        "geometryNodeCount": len(geometry_nodes),
+        "levelMetadataNodeCount": sum(
+            1 for n in nodes if isinstance(n, dict) and str(n.get("name") or "").startswith("level:")
+        ),
+        "geometryNodeCountsByKind": dict(sorted(node_counts.items())),
+        "geometryNodeElementIdsByKind": {k: node_ids[k] for k in sorted(node_ids)},
+        "positionAccessorCount": position_accessor_count,
+        "positionVertexCount": position_vertex_count,
+        "indexAccessorCount": index_accessor_count,
+        "indexCount": index_count,
+        "bufferByteLength": buffer_byte_length,
+        "findings": findings,
+        "gltfJsonReadbackFidelityDigestSha256": _sha256_hex(digest_source),
+    }
+
+
 def _kind_counts(doc: Document) -> dict[str, int]:
     kinds: dict[str, int] = {}
     for e in doc.elements.values():
@@ -1413,6 +1649,7 @@ def _document_to_gltf_tree_and_bins(doc: Document) -> tuple[dict[str, Any], byte
         "scenes": [{"nodes": scene_children}],
         "scene": 0,
     }
+    mf_payload["gltfJsonReadbackFidelity_v1"] = build_gltf_json_readback_fidelity_v1(tree)
     return tree, bytes(bins)
 
 
