@@ -170,6 +170,40 @@ def test_regional_profile_metadata_requires_source_and_basis() -> None:
     assert "advisory-vs-enforced basis" in str(findings[0]["message"])
 
 
+def test_regional_profile_findings_carry_locale_source_profile_and_basis() -> None:
+    findings = check_code_profile_integrity(
+        {},
+        profile={
+            "id": "berlin_enforced",
+            "regional": True,
+            "locale": "DE-BE",
+            "source": "Bauordnung Berlin placeholder",
+            "basis": "enforced",
+        },
+    )
+
+    assert findings == []
+
+    missing_source = check_code_profile_integrity(
+        {},
+        profile={
+            "id": "berlin_enforced",
+            "regional": True,
+            "locale": "DE-BE",
+            "basis": "enforced",
+        },
+    )
+
+    finding = missing_source[0]
+    assert finding["ruleId"] == "code_profile_regional_package_metadata_missing"
+    assert finding["severity"] == "error"
+    assert finding["profileId"] == "berlin_enforced"
+    assert finding["basis"] == "enforced"
+    assert finding["locale"] == "DE-BE"
+    assert finding["sourceBasis"] is None
+    assert finding["trackerItems"] == ["BIR-G07"]
+
+
 def test_accepted_placeholder_metadata_passes() -> None:
     elements = {
         "wall-1": {

@@ -10,9 +10,9 @@ _OPENING_KINDS = {"door", "window", "wall_opening", "opening"}
 _OCCUPIED_EXTERIOR_SPACE_TYPES = {"terrace", "roof_terrace", "loggia", "balcony"}
 _LARGE_ROOF_VOID_AREA_RATIO = 0.25
 _PROFILE_REQUIREMENTS: dict[str, tuple[str, ...]] = {
-    "strict": ("thermal", "fire", "acoustic"),
+    "strict": ("layers", "thermal", "fire", "acoustic"),
     "permit_readiness": ("thermal", "fire"),
-    "construction_readiness": ("thermal", "fire", "acoustic"),
+    "construction_readiness": ("layers", "thermal", "fire", "acoustic"),
 }
 
 
@@ -340,10 +340,25 @@ def _check_facade_rhythm(elements: Mapping[str, Any]) -> list[Finding]:
         expected = _pick(rhythm, "bayCount", "bay_count")
         if expected is None:
             continue
+        try:
+            expected_count = int(expected)
+        except (TypeError, ValueError):
+            findings.append(
+                _finding(
+                    "bir_f05_facade_rhythm_count_invalid",
+                    "facade_rhythm_count_invalid",
+                    "warning",
+                    "medium",
+                    [element_id],
+                    "Declare facade bayCount as an integer when facade rhythm metadata is used.",
+                    expected=str(expected),
+                )
+            )
+            continue
         bay_ids = _as_str_list(_pick(rhythm, "bayIds", "bay_ids"))
         opening_ids = _as_str_list(_pick(rhythm, "openingIds", "opening_ids"))
         actual = len(bay_ids or opening_ids)
-        if actual != int(expected):
+        if actual != expected_count:
             findings.append(
                 _finding(
                     "bir_f05_facade_rhythm_mismatch",
@@ -465,7 +480,8 @@ def _check_roof_wall_relationships(elements: Mapping[str, Any]) -> list[Finding]
             )
         overhang = _value(element, "overhangMm", "overhang_mm")
         semantics = _pick(props, "overhangSemantics", "overhang_semantics")
-        if overhang and float(overhang) > 0 and not semantics:
+        overhang_mm = _float_or_none(overhang)
+        if overhang_mm is not None and overhang_mm > 0 and not semantics:
             findings.append(
                 _finding(
                     "bir_f06_roof_overhang_semantics_missing",
@@ -485,11 +501,17 @@ def _check_performance_metadata(elements: Mapping[str, Any], *, profile: str) ->
         return []
     findings: list[Finding] = []
     for element_id, element in elements.items():
-        if _kind(element) not in {"wall", "roof", "floor", "door", "window", "wall_opening"}:
+        kind = _kind(element)
+        if kind not in {"wall", "roof", "floor", "slab", "door", "window", "wall_opening"}:
             continue
         if not any(_is_envelope_role(element, role) for role in ("exterior_wall", "roof", "floor", "opening")):
             continue
-        missing = [name for name in required if not _has_performance_metadata(element, name)]
+        requirements = [
+            name
+            for name in required
+            if name != "layers" or kind in {"wall", "roof", "floor", "slab"}
+        ]
+        missing = [name for name in requirements if not _has_performance_metadata(element, name)]
         if missing:
             findings.append(
                 _finding(
@@ -800,6 +822,19 @@ def _polygon_area(polygon: list[tuple[float, float]]) -> float:
 
 def _has_performance_metadata(element: Any, name: str) -> bool:
     props = _props(element)
+    if name == "layers":
+        return bool(
+            _value(element, "typeLayerIds", "type_layer_ids", "materialLayerIds", "material_layer_ids")
+            or _value(element, "constructionAssemblyId", "construction_assembly_id")
+            or _pick(
+                props,
+                "typeLayers",
+                "typeLayerIds",
+                "materialLayers",
+                "materialLayerIds",
+                "constructionAssemblyId",
+            )
+        )
     if name == "thermal":
         return bool(
             _value(element, "thermalClassification", "thermal_classification")
@@ -832,6 +867,13 @@ def _snake(camel: str) -> str:
             out.append("_")
         out.append(char.lower())
     return "".join(out)
+
+
+def _float_or_none(value: Any) -> float | None:
+    try:
+        return float(value)
+    except (TypeError, ValueError):
+        return None
 
 
 def _tracker_items_for_rule(rule_id: str) -> list[str]:

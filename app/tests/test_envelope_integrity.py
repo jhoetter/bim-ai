@@ -16,6 +16,7 @@ def _clean_elements() -> dict[str, dict]:
                 "thermalProfile": "placeholder",
                 "fireRating": "REI30",
                 "acousticRating": "Rw40",
+                "typeLayers": ["brick", "insulation", "finish"],
             },
         },
         "floor-1": {
@@ -27,6 +28,7 @@ def _clean_elements() -> dict[str, dict]:
                 "thermalProfile": "placeholder",
                 "fireRating": "REI30",
                 "acousticRating": "LnT,w",
+                "typeLayers": ["slab", "screed"],
             },
         },
         "roof-1": {
@@ -42,6 +44,7 @@ def _clean_elements() -> dict[str, dict]:
                 "thermalProfile": "placeholder",
                 "fireRating": "REI30",
                 "acousticRating": "rain-noise-placeholder",
+                "typeLayers": ["deck", "insulation", "membrane"],
             },
         },
         "door-1": {
@@ -170,6 +173,32 @@ def test_missing_performance_metadata_under_strict_profile_is_reported() -> None
     assert _codes(findings) == {"performance_metadata_missing"}
     assert findings[0]["ruleId"] == "bir_f07_performance_metadata_missing"
     assert findings[0]["missing"] == ["thermal", "fire", "acoustic"]
+
+
+def test_strict_envelope_profile_requires_type_layer_metadata_for_assemblies() -> None:
+    elements = _clean_elements()
+    elements["roof-1"]["props"].pop("typeLayers")
+
+    findings = check_envelope_integrity(elements, profile="strict")
+
+    assert _codes(findings) == {"performance_metadata_missing"}
+    assert findings[0]["ruleId"] == "bir_f07_performance_metadata_missing"
+    assert findings[0]["elementIds"] == ["roof-1"]
+    assert findings[0]["missing"] == ["layers"]
+    assert findings[0]["trackerItems"] == ["BIR-F07"]
+
+
+def test_declared_facade_rhythm_invalid_count_is_reported_not_crashed() -> None:
+    elements = _clean_elements()
+    elements["facade-n"]["props"]["facadeRhythm"] = {
+        "bayCount": "two",
+        "bayIds": ["bay-a", "bay-b"],
+    }
+
+    findings = check_envelope_integrity(elements)
+
+    assert _codes(findings) == {"facade_rhythm_count_invalid"}
+    assert findings[0]["trackerItems"] == ["BIR-F05"]
 
 
 def test_roof_opening_outside_host_and_occupied_void_contract_are_reported() -> None:

@@ -236,6 +236,31 @@ def test_mep_opening_request_requires_host_route_and_size_metadata() -> None:
     assert opening.code == "BIR-G03-OPENING-METADATA"
 
 
+def test_roof_and_ceiling_mep_opening_metadata_resolves_hosts() -> None:
+    elements = _base_clean_elements()
+    elements["roof-1"] = {"kind": "roof", "id": "roof-1"}
+    elements["duct-1"] = {
+        "kind": "duct",
+        "id": "duct-1",
+        "passesThroughElementIds": ["roof-1"],
+        "openingIds": ["roof-sleeve-1"],
+    }
+    elements["roof-sleeve-1"] = {
+        "kind": "roof_opening",
+        "id": "roof-sleeve-1",
+        "hostRoofId": "roof-1",
+        "routeId": "duct-1",
+        "widthMm": 450,
+        "heightMm": 300,
+        "openingPurpose": "mep",
+    }
+
+    findings = check_structure_mep_lite_integrity(elements)
+
+    assert "mep_lite_route_penetration_opening_missing" not in _rule_ids(findings)
+    assert "mep_lite_opening_request_metadata_missing" not in _rule_ids(findings)
+
+
 def test_wet_room_unstacked_and_unserved_are_reported() -> None:
     elements = _base_clean_elements()
     elements["bath-1"].pop("servedByRiserId")
@@ -264,3 +289,17 @@ def test_missing_riser_service_access_and_unresolved_route_placeholder_are_repor
     } <= _rule_ids(findings)
     access = next(f for f in findings if f.ruleId == "mep_lite_service_access_missing")
     assert access.elementIds == ("riser-1",)
+
+
+def test_route_placeholder_endpoint_references_must_resolve() -> None:
+    elements = _base_clean_elements()
+    elements["route-placeholder-1"]["routedToId"] = "missing-terminal"
+
+    findings = check_structure_mep_lite_integrity(elements)
+
+    endpoint = next(
+        f for f in findings if f.ruleId == "mep_lite_route_placeholder_endpoint_unresolved"
+    )
+    assert endpoint.elementIds == ("route-placeholder-1", "missing-terminal")
+    assert endpoint.code == "BIR-G04-ROUTE-ENDPOINT"
+    assert endpoint.trackerItems == ("BIR-G04",)

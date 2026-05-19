@@ -287,11 +287,26 @@ def _mep_opening_metadata_findings(indexed: _IndexedElements) -> list[StructureM
     findings: list[StructureMepLiteFinding] = []
     for element_id, element in indexed.sorted_elements:
         kind = _kind(element)
-        if kind not in {"mep_opening_request", "sleeve", "penetration", "wall_opening", "slab_opening"}:
+        if kind not in {
+            "mep_opening_request",
+            "sleeve",
+            "penetration",
+            "wall_opening",
+            "slab_opening",
+            "floor_opening",
+            "ceiling_opening",
+            "roof_opening",
+        }:
             continue
-        if kind in {"wall_opening", "slab_opening"} and not _is_mep_opening(element):
+        if kind in {
+            "wall_opening",
+            "slab_opening",
+            "floor_opening",
+            "ceiling_opening",
+            "roof_opening",
+        } and not _is_mep_opening(element):
             continue
-        host_ids = _ids_from_fields(element, "hostElementId", "hostWallId", "hostFloorId", "hostSlabId")
+        host_ids = _host_ids(element)
         route_ids = _ids_from_fields(element, "routeId", "routeIds", "mepRouteId", "servedElementIds")
         missing = []
         if not any(host_id in indexed.elements for host_id in host_ids):
@@ -381,7 +396,10 @@ def _riser_shaft_equipment_access_findings(indexed: _IndexedElements) -> list[St
                         f"Service element '{element_id}' lacks maintenance/access metadata.",
                     )
                 )
-        if kind == "mep_route_placeholder" and not _ids_from_fields(element, "routedFromId", "routedToId", "terminalIds"):
+        if kind != "mep_route_placeholder":
+            continue
+        endpoint_ids = _ids_from_fields(element, "routedFromId", "routedToId", "terminalIds")
+        if not endpoint_ids:
             findings.append(
                 _finding(
                     "mep_lite_route_placeholder_unresolved",
@@ -393,6 +411,27 @@ def _riser_shaft_equipment_access_findings(indexed: _IndexedElements) -> list[St
                     (element_id,),
                     "Connect the route placeholder to routedFromId/routedToId or terminalIds before handoff.",
                     f"MEP route placeholder '{element_id}' is not tied to endpoints.",
+                )
+            )
+            continue
+        missing_endpoint_ids = [
+            endpoint_id for endpoint_id in endpoint_ids if endpoint_id not in indexed.elements
+        ]
+        if missing_endpoint_ids:
+            findings.append(
+                _finding(
+                    "mep_lite_route_placeholder_endpoint_unresolved",
+                    "BIR-G04-ROUTE-ENDPOINT",
+                    "warning",
+                    "P2",
+                    "mep",
+                    "mep_lite",
+                    (element_id, *missing_endpoint_ids),
+                    "Resolve route placeholder endpoints to real rooms, risers, shafts, equipment, or terminals before handoff.",
+                    (
+                        f"MEP route placeholder '{element_id}' references missing endpoints: "
+                        f"{', '.join(sorted(missing_endpoint_ids))}."
+                    ),
                 )
             )
     return findings
@@ -594,13 +633,23 @@ def _openings_cover_hosts(
         opening = indexed.elements.get(opening_id)
         if opening is None:
             return False
-        opening_hosts = set(
-            _ids_from_fields(opening, "hostElementId", "hostWallId", "hostFloorId", "hostSlabId")
-        )
+        opening_hosts = set(_host_ids(opening))
         if not opening_hosts:
             return False
         remaining_hosts.difference_update(opening_hosts)
     return not remaining_hosts
+
+
+def _host_ids(element: Any) -> list[str]:
+    return _ids_from_fields(
+        element,
+        "hostElementId",
+        "hostWallId",
+        "hostFloorId",
+        "hostSlabId",
+        "hostCeilingId",
+        "hostRoofId",
+    )
 
 
 def _is_mep_opening(element: Any) -> bool:

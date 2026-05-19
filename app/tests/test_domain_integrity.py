@@ -197,10 +197,32 @@ def test_domain_integrity_report_summarizes_sources_and_profile() -> None:
     assert report["format"] == "domainIntegrityReport_v1"
     assert report["profile"] == "accessibility"
     assert report["ok"] is False
+    assert report["scope"]["subjectiveDesignQuality"] == "excluded_from_normal_advisor"
+    structure_scope = report["scope"]["sourceScopes"]["structure_mep_lite"]
+    assert structure_scope["certification"] == "not_certified_structural_engineering"
+    assert "certified structural engineering" in structure_scope["engineeringDisclaimer"]
+    code_scope = report["scope"]["sourceScopes"]["code_profile"]
+    assert code_scope["certification"] == "not_authority_certified_code_review"
     assert report["summary"]["sourceCounts"]["room_access"] >= 1
     assert report["summary"]["sourceCounts"]["envelope"] >= 1
     assert report["summary"]["sourceCounts"]["structure_mep_lite"] >= 1
     assert report["summary"]["sourceCounts"]["code_profile"] >= 1
+
+
+def test_domain_integrity_does_not_add_subjective_facade_quality_findings() -> None:
+    elements = {
+        "facade-plain": {
+            "kind": "wall",
+            "id": "facade-plain",
+            "levelId": "lvl-1",
+            "props": {"envelopeRole": "exterior_wall"},
+        },
+        "window-1": {"kind": "window", "id": "window-1", "wallId": "facade-plain"},
+    }
+
+    findings = check_domain_integrity(elements)
+
+    assert all("facade_rhythm" not in str(finding["ruleId"]) for finding in findings)
 
 
 def test_constructability_report_exposes_domain_integrity_findings() -> None:

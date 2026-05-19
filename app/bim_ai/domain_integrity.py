@@ -8,7 +8,12 @@ from bim_ai.code_profile_integrity import check_code_profile_integrity
 from bim_ai.envelope_integrity import check_envelope_integrity
 from bim_ai.room_access_integrity import check_room_access_integrity
 from bim_ai.site_georeferencing_integrity import check_site_georeferencing_integrity
-from bim_ai.structure_mep_lite_integrity import check_structure_mep_lite_integrity
+from bim_ai.structure_mep_lite_integrity import (
+    CHECK_METADATA as STRUCTURE_MEP_LITE_METADATA,
+)
+from bim_ai.structure_mep_lite_integrity import (
+    check_structure_mep_lite_integrity,
+)
 from bim_ai.vertical_circulation_integrity import check_vertical_circulation_integrity
 
 if TYPE_CHECKING:
@@ -60,6 +65,53 @@ _PRIORITY_BY_TOKEN = {
     "high": "P1",
     "medium": "P2",
     "low": "P3",
+}
+
+DOMAIN_INTEGRITY_SCOPE = {
+    "format": "domainIntegrityScope_v1",
+    "deterministic": True,
+    "subjectiveDesignQuality": "excluded_from_normal_advisor",
+    "normalAdvisorContract": (
+        "Domain integrity reports deterministic BIM health, coordination, "
+        "metadata, and profile-gate findings. Sketch likeness and subjective "
+        "design quality remain methodology-gate concerns."
+    ),
+    "sourceScopes": {
+        "envelope": {
+            "method": "deterministic_envelope_metadata_and_relationship_checks",
+            "trackedItems": [
+                "BIR-F01",
+                "BIR-F02",
+                "BIR-F03",
+                "BIR-F04",
+                "BIR-F05",
+                "BIR-F06",
+                "BIR-F07",
+            ],
+        },
+        "structure_mep_lite": {
+            key: STRUCTURE_MEP_LITE_METADATA[key]
+            for key in (
+                "format",
+                "method",
+                "deterministic",
+                "certification",
+                "engineeringDisclaimer",
+                "trackedItems",
+            )
+        },
+        "code_profile": {
+            "method": "profile_controlled_fire_accessibility_regional_metadata_checks",
+            "deterministic": True,
+            "certification": "not_authority_certified_code_review",
+            "codeDisclaimer": (
+                "Code-profile checks are deterministic metadata gates. They do "
+                "not replace authority-specific fire, accessibility, or code "
+                "compliance review."
+            ),
+            "trackedItems": ["BIR-G05", "BIR-G06", "BIR-G07"],
+        },
+    },
 }
 
 
@@ -143,6 +195,7 @@ def domain_integrity_report(
         "format": "domainIntegrityReport_v1",
         "profile": _profile_id(profile),
         "deterministic": True,
+        "scope": DOMAIN_INTEGRITY_SCOPE,
         "trackerItems": list(DOMAIN_INTEGRITY_TRACKER_ITEMS),
         "ok": not any(str(finding.get("severity")) == "error" for finding in findings),
         "summary": {
