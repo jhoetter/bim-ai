@@ -42,9 +42,13 @@ def test_done_quality_gate_rejects_missing_implementation_evidence(tmp_path: Pat
     broken_tracker = tmp_path / "tracker.md"
     generated = tmp_path / "generated.md"
     source = tracker.read_text(encoding="utf8")
-    source = source.replace(
-        "| `BIR-W05` | `scripts/audit-bim-integrity-tracker.mjs` | `app/tests/test_bim_integrity_tracker_audit.py` | `spec/generated/bim-integrity-tracker-status.md` | Wave 7 Worker E local commit | Gate covers `Done` tracker status; it does not certify `Partial` rows. |\n",
-        "",
+    source = "\n".join(
+        line
+        for line in source.splitlines()
+        if not (
+            line.startswith("| `BIR-W05` | `scripts/audit-bim-integrity-tracker.mjs`")
+            and "app/tests/test_bim_integrity_tracker_audit.py" in line
+        )
     )
     broken_tracker.write_text(source, encoding="utf8")
 
