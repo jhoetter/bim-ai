@@ -64,6 +64,19 @@ An advisor-clean model that is visually wrong is not accepted. A visually correc
 model with unresolved Advisor/constructability warnings is also not accepted
 unless the tolerance is explicit, scoped, and visible in the final packet.
 
+## Sketch Acceptance Provenance
+
+Sketch acceptance is a methodology gate, not the normal live Advisor. The
+product-owned scaffold is
+`packages/cli/lib/sketch-acceptance-provenance.mjs`; phase acceptance should use
+it to record the current git head, model revision, Sketch Understanding IR hash,
+capability hash, Advisor/rule/integrity digests, renderer-diagnostics digest,
+required feature-to-element mappings, evidence paths, and stale reasons.
+
+This provenance manifest proves that a sketch-specific acceptance claim was made
+against current evidence. It must not create generic product findings such as
+"looks unlike the sketch" for unrelated architect-authored projects.
+
 ## Quality Targets
 
 | Target                   | Meaning                                                                                                  |
