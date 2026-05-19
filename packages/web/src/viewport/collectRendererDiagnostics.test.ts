@@ -184,6 +184,63 @@ describe('collectRendererDiagnostics', () => {
     );
   });
 
+  it('surfaces per-element material, family, and asset render-status blockers as diagnostics', () => {
+    const familyInstance = {
+      kind: 'family_instance',
+      id: 'proxy-chair',
+      name: 'Proxy chair',
+      familyTypeId: 'missing-family-type',
+      positionMm: { xMm: 0, yMm: 0 },
+    } satisfies Extract<Element, { kind: 'family_instance' }>;
+    const placedAsset = {
+      kind: 'placed_asset',
+      id: 'target-house-missing-asset',
+      name: 'Target-house missing furniture marker',
+      assetId: 'missing-asset',
+      levelId: 'level-1',
+      positionMm: { xMm: 1000, yMm: 1000 },
+    } satisfies Extract<Element, { kind: 'placed_asset' }>;
+    const wallWithUnknownMaterial = wall({
+      id: 'wall-unknown-material',
+      materialKey: 'missing-material-key',
+    });
+
+    const diagnostics = collectRendererDiagnostics({
+      elements: [familyInstance, placedAsset, wallWithUnknownMaterial],
+      viewId: 'target-house-render-status-golden',
+      evidence: { source: 'test' },
+    });
+    const byCode = Object.fromEntries(
+      diagnostics.map((diagnostic) => [diagnostic.code, diagnostic]),
+    );
+
+    expect(byCode['renderer.family_instance.unsupported']).toMatchObject({
+      severity: 'error',
+      issueClass: 'renderer-unsupported',
+      feature: 'family-instance',
+      elementIds: ['proxy-chair'],
+      trackerItems: ['BIR-I02', 'BIR-I03', 'BIR-I05', 'BIR-J05'],
+    });
+    expect(byCode['renderer.asset_instance.unsupported']).toMatchObject({
+      severity: 'error',
+      issueClass: 'renderer-unsupported',
+      feature: 'asset-instance',
+      elementIds: ['target-house-missing-asset'],
+    });
+    expect(byCode['renderer.material.unresolved']).toMatchObject({
+      severity: 'error',
+      rendererArea: 'materials',
+      feature: 'material-resolution',
+      elementIds: ['wall-unknown-material'],
+      evidence: expect.objectContaining({
+        details: expect.objectContaining({
+          materialState: 'unresolved',
+          blocking: true,
+        }),
+      }),
+    });
+  });
+
   it('reports room, space-overlay, and room-separation failures before screenshots hide them', () => {
     const level = {
       kind: 'level',

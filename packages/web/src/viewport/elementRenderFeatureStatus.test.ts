@@ -206,4 +206,70 @@ describe('element render feature status', () => {
       lens: { visibility: 'foreground' },
     });
   });
+
+  it('reports placed asset render proxy status and unsupported asset fallbacks', () => {
+    const entry: Extract<Element, { kind: 'asset_library_entry' }> = {
+      kind: 'asset_library_entry',
+      id: 'asset-bed',
+      assetKind: 'block_2d',
+      name: 'Bed marker',
+      tags: ['bedroom'],
+      category: 'furniture',
+      thumbnailKind: 'schematic_plan',
+      planSymbolKind: 'bed',
+      renderProxyKind: 'bed',
+    };
+    const bed: Extract<Element, { kind: 'placed_asset' }> = {
+      kind: 'placed_asset',
+      id: 'placed-bed',
+      name: 'Placed bed',
+      assetId: entry.id,
+      levelId: 'level-upper',
+      positionMm: { xMm: 1200, yMm: 1400 },
+    };
+    const missing: Extract<Element, { kind: 'placed_asset' }> = {
+      ...bed,
+      id: 'placed-missing',
+      assetId: 'missing-asset',
+    };
+
+    const statuses = byId(
+      collectElementRenderFeatureStatuses({
+        elements: [entry, bed, missing],
+        elementIds: [bed.id, missing.id],
+      }),
+    );
+
+    expect(statuses['placed-bed']).toMatchObject({
+      asset: {
+        state: 'partial',
+        assetId: 'asset-bed',
+        assetKind: 'block_2d',
+        renderProxyKind: 'bed',
+        proxyFallback: false,
+        skippedSubfeatures: ['asset.procedural_proxy_render'],
+      },
+      implementation: {
+        geometryImplementation: 'procedural-proxy',
+      },
+      exportSupport: {
+        state: 'partial',
+      },
+      blocking: false,
+    });
+    expect(statuses['placed-missing']).toMatchObject({
+      asset: {
+        state: 'unsupported',
+        assetId: 'missing-asset',
+        proxyFallback: true,
+        skippedSubfeatures: ['asset.asset_entry_not_found', 'asset.proxy_fallback'],
+      },
+      implementation: {
+        state: 'unsupported',
+        geometryImplementation: 'proxy-fallback',
+      },
+      diagnosticCodes: expect.arrayContaining(['renderer.asset_instance.unsupported']),
+      blocking: true,
+    });
+  });
 });

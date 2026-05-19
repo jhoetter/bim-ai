@@ -366,6 +366,63 @@ function collectRendererBlockers(evidenceDir) {
   return rows;
 }
 
+function normalizedRendererDiagnosticRows(artifact, source) {
+  if (!isObject(artifact)) return [];
+  const diagnostics = Array.isArray(artifact.diagnostics)
+    ? artifact.diagnostics
+    : Array.isArray(artifact.rendererDiagnostics)
+      ? artifact.rendererDiagnostics
+      : [];
+  return diagnostics.filter(isObject).flatMap((diagnostic, index) => {
+    const severity = normalize(diagnostic.severity);
+    const issueClass = normalize(diagnostic.issueClass || diagnostic.classification);
+    const code = firstString(diagnostic.code, diagnostic.ruleId, `renderer_diagnostic_${index}`);
+    const blockingIssue =
+      issueClass === 'renderer-unsupported' ||
+      issueClass === 'renderer-failed' ||
+      normalize(diagnostic.ruleId) === 'renderer_unsupported_cut' ||
+      normalize(diagnostic.ruleId) === 'renderer_failed_cut';
+    if (!ERROR_SEVERITIES.has(severity) || !blockingIssue) return [];
+    return [
+      {
+        source,
+        code,
+        severity: 'error',
+        count: 1,
+        elementIds: uniqueStrings(diagnostic.elementIds, diagnostic.elementId),
+        messages: uniqueStrings(diagnostic.message, diagnostic.summary).slice(0, 5),
+        path: `diagnostics.${index}`,
+      },
+    ];
+  });
+}
+
+function collectRendererDiagnosticArtifactBlockers(evidenceDir) {
+  const artifacts = [
+    [
+      'renderer-diagnostics-evidence',
+      readEvidenceJson(evidenceDir, 'renderer-diagnostics-evidence.json'),
+    ],
+    [
+      'renderer-diagnostics-evidence',
+      readEvidenceJson(evidenceDir, 'live/renderer-diagnostics-evidence.json'),
+    ],
+    [
+      'renderer-diagnostic-packet',
+      readEvidenceJson(evidenceDir, 'renderer-diagnostic-packet.json'),
+    ],
+    [
+      'renderer-diagnostic-packet',
+      readEvidenceJson(evidenceDir, 'live/renderer-diagnostic-packet.json'),
+    ],
+    ['renderer-diagnostics', readEvidenceJson(evidenceDir, 'renderer-diagnostics.json')],
+    ['renderer-diagnostics', readEvidenceJson(evidenceDir, 'live/renderer-diagnostics.json')],
+  ];
+  return artifacts.flatMap(([source, artifact]) =>
+    normalizedRendererDiagnosticRows(artifact, source),
+  );
+}
+
 function mergeDiagnosticRows(rows) {
   const byKey = new Map();
   for (const row of rows) {
@@ -459,7 +516,10 @@ export function evaluateTargetHouseCleanPassGate({
     ...collectValidationRows(evidenceDir),
     ...collectConstructabilityRows(evidenceDir),
   ]);
-  const rendererBlockers = collectRendererBlockers(evidenceDir);
+  const rendererBlockers = [
+    ...collectRendererBlockers(evidenceDir),
+    ...collectRendererDiagnosticArtifactBlockers(evidenceDir),
+  ];
   const errors = rows.filter((row) => ERROR_SEVERITIES.has(row.severity));
   const warnings = rows.filter((row) => WARNING_SEVERITIES.has(row.severity));
 

@@ -1,6 +1,10 @@
 import type { Element } from '@bim-ai/core';
 
 import {
+  collectElementRenderFeatureStatuses,
+  type ElementRenderFeatureStatus,
+} from './elementRenderFeatureStatus';
+import {
   type RendererDiagnostic,
   type RendererDiagnosticEvidence,
   createRendererDiagnostic,
@@ -24,6 +28,7 @@ export type CollectRendererDiagnosticsInput = {
   viewId?: string | null;
   evidence?: RendererDiagnosticEvidence;
   csgEnabled?: boolean;
+  includeElementRenderStatusDiagnostics?: boolean;
 };
 
 export type CollectRendererDiagnosticsPacketInput = CollectRendererDiagnosticsInput & {
@@ -42,8 +47,15 @@ export function collectRendererDiagnostics(
     ...input.evidence,
     source: input.evidence?.source ?? 'viewport',
   } satisfies RendererDiagnosticEvidence;
+  const elementStatuses =
+    input.includeElementRenderStatusDiagnostics === false
+      ? []
+      : collectElementRenderFeatureStatuses({ elementsById });
 
   return [
+    ...elementStatuses.flatMap((status) =>
+      fromElementRenderFeatureStatus(status, input.viewId, fullEvidence),
+    ),
     ...diagnoseRoofOpeningRendering(compactElementsById(elementsById)).map((diagnostic) =>
       fromRoofOpeningDiagnostic(diagnostic, input.viewId, fullEvidence),
     ),
@@ -66,6 +78,74 @@ export function collectRendererDiagnostics(
       `${b.code}:${b.elementIds.join(',')}`,
     );
   });
+}
+
+function fromElementRenderFeatureStatus(
+  status: ElementRenderFeatureStatus,
+  viewId: string | null | undefined,
+  evidence: RendererDiagnosticEvidence,
+): RendererDiagnostic[] {
+  return status.diagnosticCodes.map((code) => {
+    const feature = code.startsWith('renderer.material')
+      ? 'material-resolution'
+      : code.startsWith('renderer.asset_instance')
+        ? 'asset-instance'
+        : 'family-instance';
+    const unsupported = code.endsWith('.unsupported') || code.endsWith('.unresolved');
+    const fallback = code.endsWith('.fallback') || code.endsWith('_fallback');
+    return createRendererDiagnostic({
+      ruleId: code.replaceAll('.', '_'),
+      code,
+      severity: unsupported ? 'error' : 'warning',
+      issueClass: unsupported ? 'renderer-unsupported' : 'renderer-degraded',
+      rendererArea: feature === 'material-resolution' ? 'materials' : 'viewport-3d',
+      feature,
+      message: elementRenderStatusMessage(status, code),
+      elementIds: [status.elementId],
+      viewId,
+      evidence: {
+        ...evidence,
+        details: {
+          kind: status.kind,
+          implementation: status.implementation.geometryImplementation,
+          materialState: status.material.state,
+          familyState: status.family.state,
+          assetState: status.asset.state,
+          fallback,
+          blocking: status.blocking,
+          skippedSubfeatureCount: status.skippedSubfeatures.length,
+        },
+      },
+      trackerItems: elementStatusTrackerItems(code),
+    });
+  });
+}
+
+function elementRenderStatusMessage(status: ElementRenderFeatureStatus, code: string): string {
+  if (code === 'renderer.material.unresolved') {
+    return `Element "${status.elementId}" references material data the renderer cannot resolve.`;
+  }
+  if (code === 'renderer.material.fallback') {
+    return `Element "${status.elementId}" is rendered with fallback material resolution.`;
+  }
+  if (code === 'renderer.asset_instance.unsupported') {
+    return `Placed asset "${status.elementId}" cannot render because its asset proxy is unsupported.`;
+  }
+  if (code === 'renderer.asset_instance.proxy_fallback') {
+    return `Placed asset "${status.elementId}" falls back to proxy geometry.`;
+  }
+  if (code === 'renderer.family_instance.unsupported') {
+    return `Family instance "${status.elementId}" cannot render with loaded family geometry.`;
+  }
+  return `Family instance "${status.elementId}" falls back to proxy geometry.`;
+}
+
+function elementStatusTrackerItems(code: string): string[] {
+  if (code.startsWith('renderer.material')) return ['BIR-I02', 'BIR-I03', 'BIR-I05', 'BIR-J07'];
+  if (code.startsWith('renderer.asset_instance')) {
+    return ['BIR-I02', 'BIR-I03', 'BIR-I05', 'BIR-J05'];
+  }
+  return ['BIR-I02', 'BIR-I03', 'BIR-I05', 'BIR-J05'];
 }
 
 export function collectRendererDiagnosticPacket(

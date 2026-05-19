@@ -59,13 +59,49 @@ export type ElementLensRenderStatus = {
   skippedSubfeatures: string[];
 };
 
+export type ElementAssetRenderStatus = {
+  state: RenderFeatureState;
+  assetId: string | null;
+  assetKind: string | null;
+  renderProxyKind: string | null;
+  proxyFallback: boolean;
+  skippedSubfeatures: string[];
+};
+
+export type ElementRenderImplementationStatus = {
+  state: RenderFeatureState;
+  geometryImplementation:
+    | 'native'
+    | 'analytic-cut'
+    | 'procedural-proxy'
+    | 'proxy-fallback'
+    | 'not_rendered'
+    | 'unknown';
+  materialImplementation: ElementMaterialRenderStatus['source'];
+  skippedSubfeatures: string[];
+};
+
+export type ElementExportRenderStatus = {
+  state: RenderFeatureState;
+  viewport3d: RenderFeatureState;
+  plan: RenderFeatureState;
+  sheet: RenderFeatureState;
+  export: RenderFeatureState;
+  skippedSubfeatures: string[];
+};
+
 export type ElementRenderFeatureStatus = {
   format: 'elementRenderFeatureStatus_v1';
   elementId: string;
   kind: Element['kind'];
   material: ElementMaterialRenderStatus;
   family: ElementFamilyRenderStatus;
+  asset: ElementAssetRenderStatus;
   lens: ElementLensRenderStatus;
+  implementation: ElementRenderImplementationStatus;
+  exportSupport: ElementExportRenderStatus;
+  diagnosticCodes: string[];
+  blocking: boolean;
   skippedSubfeatures: string[];
 };
 
@@ -145,12 +181,17 @@ export function elementRenderFeatureStatus(
 ): ElementRenderFeatureStatus {
   const material = materialStatus(materialEntry);
   const family = familyStatus(element, elementsById, materialEntry);
+  const asset = assetStatus(element, elementsById);
   const lens = lensStatus(element, options);
   const skippedSubfeatures = uniqueSorted([
     ...material.flags.map((flag) => `material.${flag}`),
     ...family.skippedSubfeatures,
+    ...asset.skippedSubfeatures,
     ...lens.skippedSubfeatures,
   ]);
+  const implementation = implementationStatus(material, family, asset, skippedSubfeatures);
+  const exportSupport = exportStatus(element, implementation);
+  const diagnosticCodes = diagnosticCodesFor(material, family, asset);
 
   return {
     format: 'elementRenderFeatureStatus_v1',
@@ -158,7 +199,15 @@ export function elementRenderFeatureStatus(
     kind: element.kind,
     material,
     family,
+    asset,
     lens,
+    implementation,
+    exportSupport,
+    diagnosticCodes,
+    blocking:
+      material.state === 'unresolved' ||
+      family.state === 'unsupported' ||
+      asset.state === 'unsupported',
     skippedSubfeatures,
   };
 }
@@ -258,6 +307,17 @@ function notApplicableFamilyStatus(): ElementFamilyRenderStatus {
   };
 }
 
+function notApplicableAssetStatus(): ElementAssetRenderStatus {
+  return {
+    state: 'not_applicable',
+    assetId: null,
+    assetKind: null,
+    renderProxyKind: null,
+    proxyFallback: false,
+    skippedSubfeatures: [],
+  };
+}
+
 function hostedOpeningStatus(
   element: Extract<Element, { kind: 'door' }> | Extract<Element, { kind: 'window' }>,
   elementsById: Record<string, Element>,
@@ -338,6 +398,125 @@ function loadedFamilyInstanceStatus(
     proxyFallback: !def || !hasModelGeometry || !hasPlanSymbol,
     skippedSubfeatures: uniqueSorted(skipped),
   };
+}
+
+function assetStatus(
+  element: Element,
+  elementsById: Record<string, Element>,
+): ElementAssetRenderStatus {
+  if (element.kind !== 'placed_asset') return notApplicableAssetStatus();
+  const entry = elementsById[element.assetId];
+  if (entry?.kind !== 'asset_library_entry') {
+    return {
+      state: 'unsupported',
+      assetId: element.assetId,
+      assetKind: null,
+      renderProxyKind: null,
+      proxyFallback: true,
+      skippedSubfeatures: ['asset.asset_entry_not_found', 'asset.proxy_fallback'],
+    };
+  }
+  const renderProxyKind = (entry as { renderProxyKind?: string | null }).renderProxyKind ?? null;
+  const assetKind = (entry as { assetKind?: string | null }).assetKind ?? null;
+  const skipped: string[] = [];
+  if (!renderProxyKind) skipped.push('asset.render_proxy_kind_missing');
+  if (assetKind !== 'family_instance') skipped.push('asset.procedural_proxy_render');
+  return {
+    state: renderProxyKind ? (skipped.length ? 'partial' : 'supported') : 'unsupported',
+    assetId: element.assetId,
+    assetKind,
+    renderProxyKind,
+    proxyFallback: !renderProxyKind,
+    skippedSubfeatures: uniqueSorted(skipped),
+  };
+}
+
+function implementationStatus(
+  material: ElementMaterialRenderStatus,
+  family: ElementFamilyRenderStatus,
+  asset: ElementAssetRenderStatus,
+  skippedSubfeatures: string[],
+): ElementRenderImplementationStatus {
+  const state = strongestFeatureState([materialFeatureState(material), family.state, asset.state]);
+  return {
+    state,
+    geometryImplementation: geometryImplementationFor(family, asset),
+    materialImplementation: material.source,
+    skippedSubfeatures,
+  };
+}
+
+function exportStatus(
+  element: Element,
+  implementation: ElementRenderImplementationStatus,
+): ElementExportRenderStatus {
+  const booleanCutKinds = new Set([
+    'door',
+    'window',
+    'wall_opening',
+    'slab_opening',
+    'roof_opening',
+  ]);
+  const partialKinds = new Set(['stair', 'railing', 'family_instance', 'placed_asset']);
+  const state: RenderFeatureState =
+    implementation.state === 'unsupported'
+      ? 'unsupported'
+      : booleanCutKinds.has(element.kind) || partialKinds.has(element.kind)
+        ? 'partial'
+        : 'supported';
+  const skippedSubfeatures = state === 'partial' ? [`export.${element.kind}_parity_partial`] : [];
+  return {
+    state,
+    viewport3d: implementation.state,
+    plan: state === 'unsupported' ? 'unsupported' : 'partial',
+    sheet: state,
+    export: state,
+    skippedSubfeatures,
+  };
+}
+
+function diagnosticCodesFor(
+  material: ElementMaterialRenderStatus,
+  family: ElementFamilyRenderStatus,
+  asset: ElementAssetRenderStatus,
+): string[] {
+  const codes: string[] = [];
+  if (material.state === 'fallback') codes.push('renderer.material.fallback');
+  if (material.state === 'unresolved') codes.push('renderer.material.unresolved');
+  if (family.state === 'unsupported') codes.push('renderer.family_instance.unsupported');
+  else if (family.proxyFallback) codes.push('renderer.family_instance.proxy_fallback');
+  if (asset.state === 'unsupported') codes.push('renderer.asset_instance.unsupported');
+  else if (asset.proxyFallback) codes.push('renderer.asset_instance.proxy_fallback');
+  return uniqueSorted(codes);
+}
+
+function materialFeatureState(material: ElementMaterialRenderStatus): RenderFeatureState {
+  if (material.state === 'unresolved') return 'unsupported';
+  if (material.state === 'fallback') return 'partial';
+  if (material.state === 'non_rendered') return 'not_applicable';
+  return 'supported';
+}
+
+function strongestFeatureState(states: RenderFeatureState[]): RenderFeatureState {
+  const rank: Record<RenderFeatureState, number> = {
+    unsupported: 0,
+    partial: 1,
+    supported: 2,
+    not_applicable: 3,
+  };
+  return [...states].sort((a, b) => rank[a] - rank[b])[0] ?? 'not_applicable';
+}
+
+function geometryImplementationFor(
+  family: ElementFamilyRenderStatus,
+  asset: ElementAssetRenderStatus,
+): ElementRenderImplementationStatus['geometryImplementation'] {
+  if (asset.state !== 'not_applicable') {
+    return asset.proxyFallback ? 'proxy-fallback' : 'procedural-proxy';
+  }
+  if (family.state === 'not_applicable') return 'native';
+  if (family.proxyFallback) return 'proxy-fallback';
+  return 'native';
 }
 
 function familyTypeForElement(

@@ -143,6 +143,7 @@ describe('renderer support matrix — BIR-I01/BIR-I06', () => {
         'railing-geometry',
         'room-visualization',
         'family-instance',
+        'asset-instance',
         'material-resolution',
         'sheet-viewport',
         'export-preview',

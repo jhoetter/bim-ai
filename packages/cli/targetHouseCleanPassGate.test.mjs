@@ -68,7 +68,10 @@ test('reads constructability findings from the report body, not response envelop
   const result = evaluateTargetHouseCleanPassGate({ evidenceDir: dir, generatedAt: GENERATED_AT });
 
   assert.equal(result.ok, true);
-  assert.equal(result.p0Errors.some((row) => row.code === 'room_access_invalid_subject'), false);
+  assert.equal(
+    result.p0Errors.some((row) => row.code === 'room_access_invalid_subject'),
+    false,
+  );
 });
 
 test('fails on validation error even when Advisor is clean', () => {
@@ -113,6 +116,48 @@ test('fails on renderer blocker status in evidence package', () => {
   assert.equal(result.blockers[0].blockerKind, 'renderer_blocker');
 });
 
+test('fails on target-house-critical renderer diagnostics evidence blockers', () => {
+  const dir = tempEvidenceDir();
+  writeBaseEvidence(dir);
+  writeJson(dir, 'renderer-diagnostics-evidence.json', {
+    schemaVersion: 'renderer-diagnostics-evidence.v1',
+    kind: 'renderer_diagnostics_evidence_manifest',
+    context: {
+      gitHead: 'abc123',
+      modelRevision: '42',
+      rendererBuild: 'viewport-test',
+      supportMatrixDigest: 'rsm-00000001',
+    },
+    diagnostics: [
+      {
+        diagnosticId: 'renderer.roof_opening.analytic.cut.unsupported#0',
+        ruleId: 'roof_opening_render_analytic_cut_unsupported',
+        code: 'renderer.roof_opening.analytic.cut.unsupported',
+        severity: 'error',
+        issueClass: 'renderer-unsupported',
+        rendererArea: 'boolean-cut',
+        renderFeature: 'roof-opening',
+        elementIds: ['hf-roof-main', 'hf-roof-court-opening'],
+        viewIds: ['roof_court_evidence'],
+        featureIds: ['roof_terrace_cutout'],
+        trackerItems: ['BIR-I03', 'BIR-I04', 'BIR-J02'],
+        staleReasons: [],
+        message: 'Target-house roof terrace opening cannot be rendered by the roof-cut path.',
+      },
+    ],
+  });
+
+  const result = evaluateTargetHouseCleanPassGate({ evidenceDir: dir, generatedAt: GENERATED_AT });
+
+  assert.equal(result.ok, false);
+  assert.equal(result.summary.rendererBlockerCount, 1);
+  assert.equal(result.rendererBlockers[0].code, 'renderer.roof_opening.analytic.cut.unsupported');
+  assert.deepEqual(result.rendererBlockers[0].elementIds, [
+    'hf-roof-court-opening',
+    'hf-roof-main',
+  ]);
+});
+
 test('does not block optional full raster unavailable when deterministic sheet surrogate evidence is complete', () => {
   const dir = tempEvidenceDir();
   writeBaseEvidence(dir);
@@ -135,9 +180,7 @@ test('does not block optional full raster unavailable when deterministic sheet s
           svgContentSha256: svgSha,
           pngByteSha256: pngSha,
           exportListingParityDigestMatch: true,
-          layoutBandsMm: [
-            { viewportId: 'vp-ground', xMm: 0, yMm: 0, widthMm: 100, heightMm: 80 },
-          ],
+          layoutBandsMm: [{ viewportId: 'vp-ground', xMm: 0, yMm: 0, widthMm: 100, heightMm: 80 }],
           viewportSegmentCorrelation: [
             {
               viewportId: 'vp-ground',

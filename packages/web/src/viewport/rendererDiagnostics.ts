@@ -27,6 +27,7 @@ export type RendererDiagnosticFeature =
   | 'railing-geometry'
   | 'room-visualization'
   | 'family-instance'
+  | 'asset-instance'
   | 'material-resolution'
   | 'plan-projection'
   | 'section-projection'
@@ -387,6 +388,28 @@ export const RENDERER_SUPPORT_MATRIX: RendererSupportMatrixEntry[] = [
       'Family geometry, nested components, visibility/detail levels, host offsets, and material slots need per-family diagnostics.',
     ],
     trackerItems: ['BIR-I01', 'BIR-I06', 'BIR-I07', 'BIR-J05'],
+  },
+  {
+    id: 'rsm-placed-assets',
+    elementKind: 'placed_asset',
+    feature: 'asset-instance',
+    surface: {
+      viewport3d: 'partial',
+      plan: 'partial',
+      section: 'partial',
+      sheet: 'partial',
+      export: 'partial',
+    },
+    rendererAreas: ['viewport-3d', 'plan', 'section', 'sheet', 'export', 'family-runtime'],
+    diagnosticCodes: [
+      'renderer.asset_instance.proxy_fallback',
+      'renderer.asset_instance.unsupported',
+    ],
+    limitations: [
+      'Placed assets must declare a render proxy or loaded-family path; missing assets cannot silently render as generic boxes.',
+      'Target-house furniture and fixture markers are evidence features, so unsupported asset proxies must be surfaced deterministically.',
+    ],
+    trackerItems: ['BIR-I01', 'BIR-I02', 'BIR-I05', 'BIR-I06', 'BIR-J05'],
   },
   {
     id: 'rsm-materials',
