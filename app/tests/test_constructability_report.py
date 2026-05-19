@@ -226,6 +226,12 @@ def test_advisor_policy_contracts_cover_profiles_audience_review_and_learning() 
     assert corpus["schemaVersion"] == "advisor.learning-corpus-hook.v1"
     assert "false_positive" in corpus["allowedLabels"]
     assert {"ruleId", "classification", "evidenceRefs"} <= set(corpus["fixtureKeyFields"])
+    assert {row["classification"] for row in corpus["seedFixtures"]} >= {
+        "true_positive",
+        "false_positive",
+        "profile_mismatch",
+    }
+    assert all(row["fixtureKey"] and row["evidenceRefs"] for row in corpus["seedFixtures"])
 
 
 def test_constructability_report_omits_open_separator_only_room_access_signal() -> None:

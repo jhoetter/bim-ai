@@ -368,6 +368,35 @@ LEARNING_CORPUS_CONTRACT = {
         "evidenceRefs",
     ],
     "allowedLabels": ["true_positive", "false_positive", "profile_mismatch"],
+    "seedFixtures": [
+        {
+            "fixtureKey": "furniture_wall_hard_clash:true_positive:construction_readiness",
+            "ruleId": "furniture_wall_hard_clash",
+            "classification": "true_positive",
+            "profileId": "construction_readiness",
+            "elementKinds": ["placed_asset", "wall"],
+            "evidenceRefs": ["app/tests/test_constructability_report.py::test_constructability_report_filters_and_reconciles_findings"],
+            "reviewOutcome": "confirmed_model_defect",
+        },
+        {
+            "fixtureKey": "constructability_metadata_requirement_missing:profile_mismatch:architecture",
+            "ruleId": "constructability_metadata_requirement_missing",
+            "classification": "profile_mismatch",
+            "profileId": "architecture",
+            "elementKinds": ["wall"],
+            "evidenceRefs": ["app/tests/test_constructability_report.py::test_advisor_policy_contracts_cover_profiles_audience_review_and_learning"],
+            "reviewOutcome": "confirmed_profile_scope",
+        },
+        {
+            "fixtureKey": "furniture_wall_hard_clash:false_positive:architecture",
+            "ruleId": "furniture_wall_hard_clash",
+            "classification": "false_positive",
+            "profileId": "architecture",
+            "elementKinds": ["placed_asset", "wall"],
+            "evidenceRefs": ["app/tests/test_constructability_report.py::test_advisor_policy_contracts_cover_profiles_audience_review_and_learning"],
+            "reviewOutcome": "confirmed_rule_tuning_case",
+        },
+    ],
 }
 
 

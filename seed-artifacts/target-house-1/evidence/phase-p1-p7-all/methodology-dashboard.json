@@ -1,0 +1,121 @@
+{
+  "schemaVersion": "target-house-methodology-dashboard.v1",
+  "seed": "target-house-1",
+  "phase": "p1-p7-all",
+  "ok": false,
+  "acceptanceLayer": "sketch_methodology_not_normal_advisor",
+  "normalAdvisorBoundary": "This dashboard can block sketch/brief acceptance; it does not create normal Advisor findings.",
+  "summary": {
+    "rowCount": 11,
+    "passingRowCount": 9,
+    "blockingRowCount": 2,
+    "unresolvedAssumptionCount": 20
+  },
+  "rows": [
+    {
+      "trackerId": "BIR-M07",
+      "title": "visual readout drift loop",
+      "ok": true,
+      "evidence": ["visual-readout.md", "corrections.md", "semantic-checklist.json"],
+      "summary": {
+        "semanticCheckCount": 305,
+        "failedSemanticCheckCount": 0
+      }
+    },
+    {
+      "trackerId": "BIR-M08",
+      "title": "methodology failure taxonomy",
+      "ok": true,
+      "evidence": ["issue-ledger.json", "finding-dispositions.json"],
+      "summary": {
+        "taxonomyCounts": {}
+      }
+    },
+    {
+      "trackerId": "BIR-M09",
+      "title": "seed artifact cleanliness gates",
+      "ok": true,
+      "evidence": ["phase-packet.json", "evidence-manifest.json"],
+      "summary": {
+        "artifactCount": 22
+      }
+    },
+    {
+      "trackerId": "BIR-M10",
+      "title": "agent prompt/workflow templates",
+      "ok": true,
+      "evidence": ["spec/sketch-to-bim-agent-workflow-templates.md", "methodology-dashboard.json"],
+      "summary": {
+        "launchSurface": "target-house-methodology-artifacts"
+      }
+    },
+    {
+      "trackerId": "BIR-T01",
+      "title": "source feature to BIM element coverage",
+      "ok": false,
+      "evidence": ["source-feature-map.json"],
+      "summary": {
+        "featureCount": 10,
+        "resolvedFeatureCount": 6
+      }
+    },
+    {
+      "trackerId": "BIR-T04",
+      "title": "stale evidence invalidation",
+      "ok": true,
+      "evidence": ["evidence-freshness.json"],
+      "summary": {
+        "staleCount": 0,
+        "missingCount": 0
+      }
+    },
+    {
+      "trackerId": "BIR-T05",
+      "title": "feature coverage dashboard",
+      "ok": true,
+      "evidence": ["methodology-dashboard.json", "target-house-closeout-lineage.json"],
+      "summary": {
+        "featureCount": 10,
+        "resolvedFeatureCount": 6
+      }
+    },
+    {
+      "trackerId": "BIR-U06",
+      "title": "Advisor learning corpus handoff",
+      "ok": true,
+      "evidence": ["constructability-report.json", "issue-ledger.json"],
+      "summary": {
+        "confirmedIssueCount": 0,
+        "labelContract": "advisor.learning-corpus-hook.v1"
+      }
+    },
+    {
+      "trackerId": "BIR-W04",
+      "title": "wave closeout template attachment",
+      "ok": true,
+      "evidence": ["methodology-dashboard.json"],
+      "summary": {
+        "requiredFields": ["Wave", "Tracker changes", "Tests", "Evidence", "Blockers"]
+      }
+    },
+    {
+      "trackerId": "BIR-O04",
+      "title": "end-to-end acceptance rehearsal",
+      "ok": true,
+      "evidence": ["target-house-1-final-closeout-manifest.json"],
+      "summary": {
+        "rehearsalOk": true
+      }
+    },
+    {
+      "trackerId": "BIR-N10",
+      "title": "final package readiness",
+      "ok": false,
+      "evidence": ["target-house-1-final-closeout-manifest.json"],
+      "summary": {
+        "ready": false,
+        "blockers": ["tracker_not_done", "tracker_incomplete"]
+      }
+    }
+  ]
+}

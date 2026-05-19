@@ -117,6 +117,25 @@ export type EvidenceArtifactSummary = {
       status: string;
     }[];
   } | null;
+  targetHouseFeatureCoverage: {
+    requiredFeatureCount: number;
+    explicitElementCoverageCount: number;
+    resolvedElementCoverageCount: number;
+    semanticSelectorCoverageCount: number;
+    missingElementCoverageCount: number;
+    openFindingCount: number;
+    screenshotMissingCount: number;
+    blockerCount: number;
+    evidenceAcceptanceOk: boolean | null;
+    rows: {
+      featureId: string;
+      status: string;
+      elementCoverageStatus: string;
+      openFindingCount: number;
+      blockerCount: number;
+      screenshotMissingCount: number;
+    }[];
+  } | null;
   regenerationGuidance:
     | {
         priority: string;
@@ -170,6 +189,7 @@ export function parseEvidenceArtifact(
     consistencyClosure: null,
     prdCloseoutCrossCorrelation: null,
     evidenceFreshness: null,
+    targetHouseFeatureCoverage: null,
     regenerationGuidance: null,
   });
 
@@ -785,6 +805,88 @@ export function parseEvidenceArtifact(
       };
     }
 
+    let targetHouseFeatureCoverage: EvidenceArtifactSummary['targetHouseFeatureCoverage'] = null;
+    const thRaw =
+      payload.schemaVersion === 'target-house-feature-coverage-dashboard.v1'
+        ? payload
+        : (payload.targetHouseFeatureCoverageDashboard_v1 ??
+          payload.featureCoverageDashboard ??
+          payload.targetHouseFeatureCoverageDashboard);
+    if (thRaw && typeof thRaw === 'object') {
+      const dashboard = thRaw as Record<string, unknown>;
+      if (dashboard.schemaVersion === 'target-house-feature-coverage-dashboard.v1') {
+        const rowsRaw = Array.isArray(dashboard.rows) ? dashboard.rows : [];
+        const rows = rowsRaw
+          .filter((row): row is Record<string, unknown> => typeof row === 'object' && row !== null)
+          .map((row) => {
+            const screenshots =
+              row.screenshots && typeof row.screenshots === 'object'
+                ? (row.screenshots as Record<string, unknown>)
+                : {};
+            const blockersRaw = Array.isArray(row.blockers) ? row.blockers : [];
+            return {
+              featureId: typeof row.featureId === 'string' ? row.featureId : '',
+              status: typeof row.status === 'string' ? row.status : '',
+              elementCoverageStatus:
+                typeof row.elementCoverageStatus === 'string' ? row.elementCoverageStatus : '',
+              openFindingCount:
+                typeof row.openFindingCount === 'number' && Number.isFinite(row.openFindingCount)
+                  ? row.openFindingCount
+                  : 0,
+              blockerCount: blockersRaw.length,
+              screenshotMissingCount:
+                typeof screenshots.missingCount === 'number' &&
+                Number.isFinite(screenshots.missingCount)
+                  ? screenshots.missingCount
+                  : 0,
+            };
+          })
+          .filter((row) => row.featureId);
+        targetHouseFeatureCoverage = {
+          requiredFeatureCount:
+            typeof dashboard.requiredFeatureCount === 'number' &&
+            Number.isFinite(dashboard.requiredFeatureCount)
+              ? dashboard.requiredFeatureCount
+              : rows.length,
+          explicitElementCoverageCount:
+            typeof dashboard.explicitElementCoverageCount === 'number'
+              ? dashboard.explicitElementCoverageCount
+              : rows.filter((row) => row.elementCoverageStatus === 'explicit_elements').length,
+          resolvedElementCoverageCount:
+            typeof dashboard.resolvedElementCoverageCount === 'number'
+              ? dashboard.resolvedElementCoverageCount
+              : rows.filter((row) => row.elementCoverageStatus === 'resolved_elements').length,
+          semanticSelectorCoverageCount:
+            typeof dashboard.semanticSelectorCoverageCount === 'number'
+              ? dashboard.semanticSelectorCoverageCount
+              : rows.filter((row) => row.elementCoverageStatus === 'semantic_selectors_only')
+                  .length,
+          missingElementCoverageCount:
+            typeof dashboard.missingElementCoverageCount === 'number'
+              ? dashboard.missingElementCoverageCount
+              : rows.filter((row) => row.elementCoverageStatus === 'missing_element_mapping')
+                  .length,
+          openFindingCount:
+            typeof dashboard.openFindingCount === 'number'
+              ? dashboard.openFindingCount
+              : rows.reduce((sum, row) => sum + row.openFindingCount, 0),
+          screenshotMissingCount:
+            typeof dashboard.screenshotMissingCount === 'number'
+              ? dashboard.screenshotMissingCount
+              : rows.reduce((sum, row) => sum + row.screenshotMissingCount, 0),
+          blockerCount:
+            typeof dashboard.blockerCount === 'number'
+              ? dashboard.blockerCount
+              : rows.reduce((sum, row) => sum + row.blockerCount, 0),
+          evidenceAcceptanceOk:
+            typeof dashboard.evidenceAcceptanceOk === 'boolean'
+              ? dashboard.evidenceAcceptanceOk
+              : null,
+          rows,
+        };
+      }
+    }
+
     let regenerationGuidance: EvidenceArtifactSummary['regenerationGuidance'] = null;
     const regenRaw =
       typeof evidenceTxt === 'string'
@@ -840,6 +942,7 @@ export function parseEvidenceArtifact(
       consistencyClosure,
       prdCloseoutCrossCorrelation,
       evidenceFreshness,
+      targetHouseFeatureCoverage,
       regenerationGuidance,
     };
   } catch {
@@ -867,6 +970,7 @@ export function parseEvidenceArtifact(
       consistencyClosure: null,
       prdCloseoutCrossCorrelation: null,
       evidenceFreshness: null,
+      targetHouseFeatureCoverage: null,
       regenerationGuidance: null,
     };
   }

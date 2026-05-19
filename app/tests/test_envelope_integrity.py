@@ -404,3 +404,137 @@ def test_roof_attached_wall_ids_must_resolve() -> None:
 
     assert _codes(findings) == {"roof_attached_wall_reference_missing"}
     assert findings[0]["trackerItems"] == ["BIR-F06"]
+
+
+def test_derived_envelope_wall_loop_gap_is_reported_from_geometry() -> None:
+    elements = _clean_elements()
+    elements.update(
+        {
+            "wall-e": {
+                "kind": "wall",
+                "id": "wall-e",
+                "levelId": "level-1",
+                "start": {"xMm": 4000, "yMm": 0},
+                "end": {"xMm": 4000, "yMm": 3000},
+                "props": {"envelopeRole": "exterior_wall"},
+            },
+            "wall-s": {
+                "kind": "wall",
+                "id": "wall-s",
+                "levelId": "level-1",
+                "start": {"xMm": 4000, "yMm": 3000},
+                "end": {"xMm": 0, "yMm": 3000},
+                "props": {"envelopeRole": "exterior_wall"},
+            },
+        }
+    )
+    elements["wall-n"]["start"] = {"xMm": 0, "yMm": 0}
+    elements["wall-n"]["end"] = {"xMm": 4000, "yMm": 0}
+    elements["zone-1"]["requiredElementIds"] = ["wall-n", "wall-e", "wall-s", "floor-1"]
+    elements["floor-1"]["boundaryMm"] = [
+        {"xMm": 0, "yMm": 0},
+        {"xMm": 4000, "yMm": 0},
+        {"xMm": 4000, "yMm": 3000},
+        {"xMm": 0, "yMm": 3000},
+    ]
+
+    findings = check_envelope_integrity(elements)
+
+    assert "derived_envelope_closure_gap" in _codes(findings)
+    gap = next(finding for finding in findings if finding["code"] == "derived_envelope_closure_gap")
+    assert gap["ruleId"] == "bir_f03_derived_envelope_closure_gap"
+    assert gap["trackerItems"] == ["BIR-F03"]
+    assert gap["gapEndpointCount"] == 2
+
+
+def test_derived_envelope_wall_loop_and_floor_boundary_accept_clean_geometry() -> None:
+    elements = _clean_elements()
+    for wall_id, start, end in [
+        ("wall-n", (0, 0), (4000, 0)),
+        ("wall-e", (4000, 0), (4000, 3000)),
+        ("wall-s", (4000, 3000), (0, 3000)),
+        ("wall-w", (0, 3000), (0, 0)),
+    ]:
+        elements[wall_id] = {
+            "kind": "wall",
+            "id": wall_id,
+            "levelId": "level-1",
+            "start": {"xMm": start[0], "yMm": start[1]},
+            "end": {"xMm": end[0], "yMm": end[1]},
+            "roofAttachmentId": "roof-1",
+            "props": {"envelopeRole": "exterior_wall"},
+        }
+    elements["floor-1"]["boundaryMm"] = [
+        {"xMm": 0, "yMm": 0},
+        {"xMm": 4000, "yMm": 0},
+        {"xMm": 4000, "yMm": 3000},
+        {"xMm": 0, "yMm": 3000},
+    ]
+    elements["roof-1"]["footprintMm"] = [
+        {"xMm": -450, "yMm": -450},
+        {"xMm": 4450, "yMm": -450},
+        {"xMm": 4450, "yMm": 3450},
+        {"xMm": -450, "yMm": 3450},
+    ]
+    elements["roof-1"]["props"]["attachedWallIds"] = ["wall-n", "wall-e", "wall-s", "wall-w"]
+    elements["zone-1"]["requiredElementIds"] = [
+        "wall-n",
+        "wall-e",
+        "wall-s",
+        "wall-w",
+        "floor-1",
+        "roof-1",
+    ]
+
+    findings = check_envelope_integrity(elements)
+
+    assert "derived_envelope_closure_gap" not in _codes(findings)
+    assert "derived_envelope_boundary_mismatch" not in _codes(findings)
+    assert "derived_roof_wall_attachment_invalid" not in _codes(findings)
+
+
+def test_derived_loggia_recess_side_returns_must_touch_floor_boundary() -> None:
+    elements = _clean_elements()
+    elements["floor-1"]["boundaryMm"] = [
+        {"xMm": 0, "yMm": 0},
+        {"xMm": 3000, "yMm": 0},
+        {"xMm": 3000, "yMm": 1600},
+        {"xMm": 0, "yMm": 1600},
+    ]
+    elements["loggia-return-a"].update(
+        {"start": {"xMm": 0, "yMm": 0}, "end": {"xMm": 0, "yMm": 1600}}
+    )
+    elements["loggia-return-b"].update(
+        {"start": {"xMm": 4200, "yMm": 0}, "end": {"xMm": 4200, "yMm": 1600}}
+    )
+
+    findings = check_envelope_integrity(elements)
+
+    assert "derived_loggia_recess_geometry_invalid" in _codes(findings)
+    finding = next(
+        finding for finding in findings if finding["code"] == "derived_loggia_recess_geometry_invalid"
+    )
+    assert finding["trackerItems"] == ["BIR-F04"]
+
+
+def test_derived_roof_attachment_flags_walls_outside_roof_overhang() -> None:
+    elements = _clean_elements()
+    elements["roof-1"]["footprintMm"] = [
+        {"xMm": 0, "yMm": 0},
+        {"xMm": 4000, "yMm": 0},
+        {"xMm": 4000, "yMm": 3000},
+        {"xMm": 0, "yMm": 3000},
+    ]
+    elements["roof-1"]["overhangMm"] = 250
+    elements["roof-1"]["props"]["attachedWallIds"] = ["wall-n"]
+    elements["wall-n"]["start"] = {"xMm": 0, "yMm": 700}
+    elements["wall-n"]["end"] = {"xMm": 4000, "yMm": 700}
+
+    findings = check_envelope_integrity(elements)
+
+    assert "derived_roof_wall_attachment_invalid" in _codes(findings)
+    finding = next(
+        finding for finding in findings if finding["code"] == "derived_roof_wall_attachment_invalid"
+    )
+    assert finding["elementIds"] == ["roof-1", "wall-n"]
+    assert finding["trackerItems"] == ["BIR-F06"]

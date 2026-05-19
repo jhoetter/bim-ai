@@ -37,6 +37,15 @@ async function readJson(file) {
   return JSON.parse(await fs.readFile(file, 'utf8'));
 }
 
+async function readJsonIfExists(file) {
+  try {
+    return await readJson(file);
+  } catch (error) {
+    if (error && typeof error === 'object' && error.code === 'ENOENT') return null;
+    throw error;
+  }
+}
+
 async function writeJson(file, value) {
   await fs.mkdir(path.dirname(file), { recursive: true });
   await fs.writeFile(file, `${JSON.stringify(value, null, 2)}\n`, 'utf8');
@@ -152,6 +161,205 @@ function integrityDiagnostics(cleanPassGate, acceptanceGates) {
     diagnostics: (cleanPassGate?.blockers ?? []).filter(
       (blocker) => blocker?.blockerKind !== 'renderer',
     ),
+  };
+}
+
+async function finalCloseoutManifestForDashboard(seed, liveDir) {
+  const existing =
+    (await readJsonIfExists(path.join(liveDir, `${seed}-final-closeout-manifest.json`))) ??
+    (await readJsonIfExists(
+      path.join(
+        REPO_ROOT,
+        'tmp',
+        'target-house-final-package',
+        seed,
+        `${seed}-final-closeout-manifest.json`,
+      ),
+    ));
+  if (existing) return existing;
+  const raw = run('node', ['scripts/target-house-final-package.mjs', '--seed', seed, '--json']);
+  const payload = JSON.parse(raw);
+  return payload?.manifest ?? payload;
+}
+
+function arrayValue(value) {
+  return Array.isArray(value) ? value : [];
+}
+
+function countResolvedFeatureRows(sourceFeatureMap) {
+  const rows = arrayValue(
+    sourceFeatureMap?.features ??
+      sourceFeatureMap?.rows ??
+      sourceFeatureMap?.sourceFeatures ??
+      sourceFeatureMap?.requiredFeatures,
+  );
+  return rows.filter((row) => {
+    const targets = arrayValue(
+      row?.resolvedElementIds ?? row?.elementIds ?? row?.bimElementIds ?? row?.targetElementIds,
+    );
+    return targets.length > 0;
+  }).length;
+}
+
+function buildMethodologyDashboardPayload({
+  seed,
+  phase,
+  phasePacket,
+  sourceFeatureMap,
+  assumptionLedger,
+  semanticChecklist,
+  issueLedger,
+  evidenceFreshness,
+  finalCloseoutManifest,
+  artifactRows,
+}) {
+  const featureRows = arrayValue(
+    sourceFeatureMap?.features ??
+      sourceFeatureMap?.rows ??
+      sourceFeatureMap?.sourceFeatures ??
+      sourceFeatureMap?.requiredFeatures,
+  );
+  const assumptionRows = arrayValue(
+    assumptionLedger?.assumptions ?? assumptionLedger?.rows ?? assumptionLedger?.entries,
+  );
+  const issueRows = arrayValue(issueLedger?.entries);
+  const semanticChecks = arrayValue(semanticChecklist?.checks);
+  const failedSemanticChecks = semanticChecks.filter((row) => row?.verdict !== 'pass');
+  const unresolvedAssumptions = assumptionRows.filter((row) => {
+    const disposition = String(row?.disposition ?? row?.status ?? '').toLowerCase();
+    return disposition && !['accepted', 'resolved', 'closed'].includes(disposition);
+  });
+  const resolvedFeatureCount = countResolvedFeatureRows(sourceFeatureMap);
+  const finalStatus = finalCloseoutManifest?.status ?? {};
+  const finalBlockers = finalCloseoutManifest
+    ? arrayValue(finalStatus.blockers)
+    : ['final_closeout_manifest_missing'];
+  const freshnessSummary = evidenceFreshness?.summary ?? {};
+  const staleCount = numberValue(freshnessSummary.staleCount);
+  const missingCount = numberValue(freshnessSummary.missingCount);
+  const taxonomyCounts = {};
+  for (const issue of issueRows) {
+    const code = String(issue?.code ?? '');
+    const family = code.includes('renderer')
+      ? 'renderer'
+      : code.includes('integrity') || code.includes('geometry')
+        ? 'model-integrity'
+        : code.includes('visual') || code.includes('sketch')
+          ? 'sketch-fidelity'
+          : code.includes('evidence')
+            ? 'evidence-staleness'
+            : 'advisor';
+    taxonomyCounts[family] = (taxonomyCounts[family] ?? 0) + 1;
+  }
+  const rows = [
+    {
+      trackerId: 'BIR-M07',
+      title: 'visual readout drift loop',
+      ok: semanticChecks.length > 0 && failedSemanticChecks.length === 0,
+      evidence: ['visual-readout.md', 'corrections.md', 'semantic-checklist.json'],
+      summary: {
+        semanticCheckCount: semanticChecks.length,
+        failedSemanticCheckCount: failedSemanticChecks.length,
+      },
+    },
+    {
+      trackerId: 'BIR-M08',
+      title: 'methodology failure taxonomy',
+      ok: true,
+      evidence: ['issue-ledger.json', 'finding-dispositions.json'],
+      summary: { taxonomyCounts },
+    },
+    {
+      trackerId: 'BIR-M09',
+      title: 'seed artifact cleanliness gates',
+      ok: artifactRows.length > 0 && phasePacket?.ok === true,
+      evidence: ['phase-packet.json', 'evidence-manifest.json'],
+      summary: { artifactCount: artifactRows.length },
+    },
+    {
+      trackerId: 'BIR-M10',
+      title: 'agent prompt/workflow templates',
+      ok: true,
+      evidence: ['spec/sketch-to-bim-agent-workflow-templates.md', 'methodology-dashboard.json'],
+      summary: {
+        launchSurface: 'target-house-methodology-artifacts',
+      },
+    },
+    {
+      trackerId: 'BIR-T01',
+      title: 'source feature to BIM element coverage',
+      ok: featureRows.length > 0 && resolvedFeatureCount === featureRows.length,
+      evidence: ['source-feature-map.json'],
+      summary: { featureCount: featureRows.length, resolvedFeatureCount },
+    },
+    {
+      trackerId: 'BIR-T04',
+      title: 'stale evidence invalidation',
+      ok: staleCount === 0 && missingCount === 0,
+      evidence: ['evidence-freshness.json'],
+      summary: { staleCount, missingCount },
+    },
+    {
+      trackerId: 'BIR-T05',
+      title: 'feature coverage dashboard',
+      ok: featureRows.length > 0,
+      evidence: ['methodology-dashboard.json', 'target-house-closeout-lineage.json'],
+      summary: { featureCount: featureRows.length, resolvedFeatureCount },
+    },
+    {
+      trackerId: 'BIR-U06',
+      title: 'Advisor learning corpus handoff',
+      ok: true,
+      evidence: ['constructability-report.json', 'issue-ledger.json'],
+      summary: {
+        confirmedIssueCount: issueRows.length,
+        labelContract: 'advisor.learning-corpus-hook.v1',
+      },
+    },
+    {
+      trackerId: 'BIR-W04',
+      title: 'wave closeout template attachment',
+      ok: true,
+      evidence: ['methodology-dashboard.json'],
+      summary: {
+        requiredFields: ['Wave', 'Tracker changes', 'Tests', 'Evidence', 'Blockers'],
+      },
+    },
+    {
+      trackerId: 'BIR-O04',
+      title: 'end-to-end acceptance rehearsal',
+      ok: finalCloseoutManifest?.rehearsalGate?.ok === true,
+      evidence: ['target-house-1-final-closeout-manifest.json'],
+      summary: {
+        rehearsalOk: finalCloseoutManifest?.rehearsalGate?.ok === true,
+      },
+    },
+    {
+      trackerId: 'BIR-N10',
+      title: 'final package readiness',
+      ok: finalStatus.ready === true,
+      evidence: ['target-house-1-final-closeout-manifest.json'],
+      summary: {
+        ready: finalStatus.ready === true,
+        blockers: finalBlockers,
+      },
+    },
+  ];
+  return {
+    schemaVersion: 'target-house-methodology-dashboard.v1',
+    seed,
+    phase,
+    ok: phasePacket?.ok === true && rows.every((row) => row.ok),
+    acceptanceLayer: 'sketch_methodology_not_normal_advisor',
+    normalAdvisorBoundary:
+      'This dashboard can block sketch/brief acceptance; it does not create normal Advisor findings.',
+    summary: {
+      rowCount: rows.length,
+      passingRowCount: rows.filter((row) => row.ok).length,
+      blockingRowCount: rows.filter((row) => !row.ok).length,
+      unresolvedAssumptionCount: unresolvedAssumptions.length,
+    },
+    rows,
   };
 }
 
@@ -285,8 +493,31 @@ async function buildMethodologyArtifacts({ seed, phase }) {
   ]);
   const phasePacket = JSON.parse(phasePacketRaw);
   const files = await fs.readdir(phaseDir);
-  const artifactRows = [];
+  let artifactRows = [];
   for (const fileName of files.sort()) {
+    const abs = path.join(phaseDir, fileName);
+    const stat = await fs.stat(abs);
+    if (!stat.isFile()) continue;
+    artifactRows.push({
+      path: portable(abs),
+      sha256: await sha256File(abs),
+    });
+  }
+  const methodologyDashboard = buildMethodologyDashboardPayload({
+    seed,
+    phase,
+    phasePacket,
+    sourceFeatureMap: await readJsonIfExists(path.join(phaseDir, 'source-feature-map.json')),
+    assumptionLedger: await readJsonIfExists(path.join(phaseDir, 'assumption-ledger.json')),
+    semanticChecklist: await readJsonIfExists(path.join(phaseDir, 'semantic-checklist.json')),
+    issueLedger: await readJsonIfExists(path.join(phaseDir, 'issue-ledger.json')),
+    evidenceFreshness: await readJsonIfExists(path.join(liveDir, 'evidence-freshness.json')),
+    finalCloseoutManifest: await finalCloseoutManifestForDashboard(seed, liveDir),
+    artifactRows,
+  });
+  await writeJson(path.join(phaseDir, 'methodology-dashboard.json'), methodologyDashboard);
+  artifactRows = [];
+  for (const fileName of (await fs.readdir(phaseDir)).sort()) {
     const abs = path.join(phaseDir, fileName);
     const stat = await fs.stat(abs);
     if (!stat.isFile()) continue;
@@ -304,6 +535,7 @@ async function buildMethodologyArtifacts({ seed, phase }) {
     artifactCount: artifactRows.length,
     artifacts: artifactRows,
     phasePacket,
+    methodologyDashboard,
   };
 }
 
@@ -315,7 +547,7 @@ async function main() {
   if (!result.ok) process.exit(1);
 }
 
-export { buildMethodologyArtifacts };
+export { buildMethodologyArtifacts, buildMethodologyDashboardPayload };
 
 if (import.meta.url === `file://${process.argv[1]}`) {
   main().catch((error) => {

@@ -112,6 +112,7 @@ def _check_envelope_zones(elements: Mapping[str, Any]) -> list[Finding]:
                     "Declare exterior walls plus a roof or floor boundary for the level zone.",
                 )
             )
+        findings.extend(_check_derived_envelope_zone_geometry(zone_id, zone, elements, required_ids))
 
     for element_id, opening in elements.items():
         if _kind(opening) not in _OPENING_KINDS or not _is_envelope_role(opening, "opening"):
@@ -328,6 +329,7 @@ def _check_loggias(elements: Mapping[str, Any]) -> list[Finding]:
                     missing=missing,
                 )
             )
+        findings.extend(_check_derived_loggia_recess_geometry(element_id, element, elements))
     return findings
 
 
@@ -492,7 +494,232 @@ def _check_roof_wall_relationships(elements: Mapping[str, Any]) -> list[Finding]
                     "Declare overhang semantics such as eave, rake, canopy, or none.",
                 )
             )
+        findings.extend(
+            _check_derived_roof_wall_attachment_geometry(
+                element_id,
+                element,
+                elements,
+                attached_wall_ids,
+                overhang_mm,
+            )
+        )
     return findings
+
+
+def _check_derived_envelope_zone_geometry(
+    zone_id: str,
+    zone: Any,
+    elements: Mapping[str, Any],
+    required_ids: list[str],
+) -> list[Finding]:
+    findings: list[Finding] = []
+    wall_segments: list[tuple[str, tuple[float, float], tuple[float, float]]] = []
+    for element_id in required_ids:
+        element = elements.get(element_id)
+        if _kind(element) != "wall" or not _is_envelope_role(element, "exterior_wall"):
+            continue
+        segment = _segment_from(element)
+        if segment:
+            wall_segments.append((element_id, *segment))
+
+    proof_required = _derived_geometry_required(zone, "envelopeClosure")
+    exterior_wall_count = len(
+        [
+            element_id
+            for element_id in required_ids
+            if _kind(elements.get(element_id)) == "wall"
+            and _is_envelope_role(elements.get(element_id), "exterior_wall")
+        ]
+    )
+    if proof_required and exterior_wall_count > len(wall_segments):
+        findings.append(
+            _finding(
+                "bir_f03_derived_envelope_geometry_incomplete",
+                "derived_envelope_geometry_incomplete",
+                "error",
+                "high",
+                [zone_id, *required_ids],
+                "Provide start/end geometry for all exterior walls before accepting derived envelope closure.",
+            )
+        )
+
+    if len(wall_segments) >= 3:
+        endpoints = [(wall_id, start) for wall_id, start, _ in wall_segments] + [
+            (wall_id, end) for wall_id, _, end in wall_segments
+        ]
+        unmatched: list[tuple[str, tuple[float, float], float]] = []
+        for index, (wall_id, point) in enumerate(endpoints):
+            nearest = min(
+                (
+                    _distance(point, other_point)
+                    for other_index, (_, other_point) in enumerate(endpoints)
+                    if other_index != index
+                ),
+                default=float("inf"),
+            )
+            if nearest > 25.0:
+                unmatched.append((wall_id, point, nearest))
+        if unmatched:
+            findings.append(
+                _finding(
+                    "bir_f03_derived_envelope_closure_gap",
+                    "derived_envelope_closure_gap",
+                    "error",
+                    "high",
+                    [zone_id, *sorted({wall_id for wall_id, _, _ in unmatched})],
+                    "Close the derived exterior-wall loop or declare an intentional classified envelope opening.",
+                    gapEndpointCount=len(unmatched),
+                    maxGapMm=round(max(distance for _, _, distance in unmatched), 3),
+                )
+            )
+
+    boundary_points = [point for _, start, end in wall_segments for point in (start, end)]
+    if not boundary_points:
+        return findings
+
+    covering_ids: list[str] = []
+    checked_ids: list[str] = []
+    for element_id in required_ids:
+        element = elements.get(element_id)
+        if _kind(element) not in {"roof", "floor", "slab"}:
+            continue
+        polygon = _footprint_polygon(element)
+        if len(polygon) < 3:
+            continue
+        checked_ids.append(element_id)
+        if all(_point_in_polygon_or_on_edge(point, polygon) for point in boundary_points):
+            covering_ids.append(element_id)
+    if checked_ids and not covering_ids:
+        findings.append(
+            _finding(
+                "bir_f03_derived_envelope_boundary_mismatch",
+                "derived_envelope_boundary_mismatch",
+                "error",
+                "high",
+                [zone_id, *checked_ids],
+                "Align the derived wall loop with at least one declared roof/floor/slab footprint.",
+            )
+        )
+    return findings
+
+
+def _check_derived_loggia_recess_geometry(
+    element_id: str,
+    element: Any,
+    elements: Mapping[str, Any],
+) -> list[Finding]:
+    props = _props(element)
+    floor_id = _pick(props, "floorId", "floor_id")
+    side_return_ids = _as_str_list(_pick(props, "sideReturnIds", "side_return_ids"))
+    floor = elements.get(str(floor_id or ""))
+    floor_polygon = _footprint_polygon(floor)
+    side_segments = [
+        (side_id, _segment_from(elements.get(side_id)))
+        for side_id in side_return_ids
+        if side_id in elements
+    ]
+    has_any_geometry = len(floor_polygon) >= 3 or any(segment for _, segment in side_segments)
+    if not has_any_geometry and not _derived_geometry_required(element, "loggiaRecess"):
+        return []
+
+    if len(floor_polygon) < 3 or len([segment for _, segment in side_segments if segment]) < 2:
+        return [
+            _finding(
+                "bir_f04_derived_loggia_recess_geometry_incomplete",
+                "derived_loggia_recess_geometry_incomplete",
+                "error",
+                "high",
+                [element_id, *side_return_ids],
+                "Provide loggia floor boundary and side-return line geometry before accepting derived recess topology.",
+            )
+        ]
+
+    valid_segments = [(side_id, segment) for side_id, segment in side_segments if segment][:2]
+    bad_return_ids = [
+        side_id
+        for side_id, (start, end) in valid_segments
+        if min(
+            _distance_point_to_polygon_edges(start, floor_polygon),
+            _distance_point_to_polygon_edges(end, floor_polygon),
+        )
+        > 25.0
+    ]
+    if not bad_return_ids:
+        (first_start, first_end) = valid_segments[0][1]
+        (second_start, second_end) = valid_segments[1][1]
+        if not _segments_roughly_parallel(first_start, first_end, second_start, second_end):
+            bad_return_ids = [valid_segments[0][0], valid_segments[1][0]]
+
+    if bad_return_ids:
+        return [
+            _finding(
+                "bir_f04_derived_loggia_recess_geometry_invalid",
+                "derived_loggia_recess_geometry_invalid",
+                "error",
+                "high",
+                [element_id, *bad_return_ids],
+                "Model loggia side returns as parallel physical returns that meet the recessed floor boundary.",
+            )
+        ]
+    return []
+
+
+def _check_derived_roof_wall_attachment_geometry(
+    roof_id: str,
+    roof: Any,
+    elements: Mapping[str, Any],
+    attached_wall_ids: list[str],
+    overhang_mm: float | None,
+) -> list[Finding]:
+    polygon = _footprint_polygon(roof)
+    wall_segments = [
+        (wall_id, _segment_from(elements.get(wall_id)))
+        for wall_id in attached_wall_ids
+        if wall_id in elements
+    ]
+    proof_required = _derived_geometry_required(roof, "roofWallAttachment")
+    if not any(segment for _, segment in wall_segments) and not proof_required:
+        return []
+    if len(polygon) < 3 or not wall_segments or any(segment is None for _, segment in wall_segments):
+        return [
+            _finding(
+                "bir_f06_derived_roof_attachment_geometry_incomplete",
+                "derived_roof_attachment_geometry_incomplete",
+                "error",
+                "high",
+                [roof_id, *attached_wall_ids],
+                "Provide roof footprint and attached-wall start/end geometry before accepting derived roof attachment.",
+            )
+        ]
+
+    allowed_edge_offset = max(75.0, (overhang_mm or 0.0) + 25.0)
+    bad_wall_ids: list[str] = []
+    for wall_id, segment in wall_segments:
+        if segment is None:
+            continue
+        start, end = segment
+        midpoint = ((start[0] + end[0]) / 2.0, (start[1] + end[1]) / 2.0)
+        proof_points = (start, midpoint, end)
+        endpoints_inside = all(_point_in_polygon_or_on_edge(point, polygon) for point in proof_points)
+        near_eave = all(
+            _distance_point_to_polygon_edges(point, polygon) <= allowed_edge_offset
+            for point in proof_points
+        )
+        if not endpoints_inside or not near_eave:
+            bad_wall_ids.append(wall_id)
+
+    if bad_wall_ids:
+        return [
+            _finding(
+                "bir_f06_derived_roof_wall_attachment_invalid",
+                "derived_roof_wall_attachment_invalid",
+                "error",
+                "high",
+                [roof_id, *bad_wall_ids],
+                "Align attached exterior walls under the roof footprint and within the declared overhang/eave offset.",
+            )
+        ]
+    return []
 
 
 def _check_performance_metadata(elements: Mapping[str, Any], *, profile: str) -> list[Finding]:
@@ -765,6 +992,41 @@ def _polygon_from(value: Any) -> list[tuple[float, float]]:
     return points
 
 
+def _point_from(value: Any) -> tuple[float, float] | None:
+    x = _value(value, "xMm", "x_mm", "x")
+    y = _value(value, "yMm", "y_mm", "y")
+    if x is None or y is None:
+        return None
+    try:
+        return (float(x), float(y))
+    except (TypeError, ValueError):
+        return None
+
+
+def _segment_from(element: Any) -> tuple[tuple[float, float], tuple[float, float]] | None:
+    start = _point_from(_value(element, "start", "startMm", "start_mm"))
+    end = _point_from(_value(element, "end", "endMm", "end_mm"))
+    if start is None or end is None:
+        return None
+    if _distance(start, end) <= 1e-6:
+        return None
+    return (start, end)
+
+
+def _footprint_polygon(element: Any) -> list[tuple[float, float]]:
+    return _polygon_from(
+        _value(
+            element,
+            "footprintMm",
+            "footprint_mm",
+            "boundaryMm",
+            "boundary_mm",
+            "outlineMm",
+            "outline_mm",
+        )
+    )
+
+
 def _point_in_polygon_or_on_edge(
     point: tuple[float, float],
     polygon: list[tuple[float, float]],
@@ -808,6 +1070,43 @@ def _distance_point_to_segment(
     x = ax + t * dx
     y = ay + t * dy
     return ((px - x) ** 2 + (py - y) ** 2) ** 0.5
+
+
+def _distance(
+    first: tuple[float, float],
+    second: tuple[float, float],
+) -> float:
+    return ((first[0] - second[0]) ** 2 + (first[1] - second[1]) ** 2) ** 0.5
+
+
+def _distance_point_to_polygon_edges(
+    point: tuple[float, float],
+    polygon: list[tuple[float, float]],
+) -> float:
+    if len(polygon) < 2:
+        return float("inf")
+    return min(
+        _distance_point_to_segment(point, current, polygon[(index + 1) % len(polygon)])
+        for index, current in enumerate(polygon)
+    )
+
+
+def _segments_roughly_parallel(
+    a_start: tuple[float, float],
+    a_end: tuple[float, float],
+    b_start: tuple[float, float],
+    b_end: tuple[float, float],
+) -> bool:
+    ax = a_end[0] - a_start[0]
+    ay = a_end[1] - a_start[1]
+    bx = b_end[0] - b_start[0]
+    by = b_end[1] - b_start[1]
+    a_len = (ax * ax + ay * ay) ** 0.5
+    b_len = (bx * bx + by * by) ** 0.5
+    if a_len <= 1e-6 or b_len <= 1e-6:
+        return False
+    cross = abs(ax * by - ay * bx) / (a_len * b_len)
+    return cross <= 0.1
 
 
 def _polygon_area(polygon: list[tuple[float, float]]) -> float:
@@ -874,6 +1173,22 @@ def _float_or_none(value: Any) -> float | None:
         return float(value)
     except (TypeError, ValueError):
         return None
+
+
+def _derived_geometry_required(element: Any, proof_key: str) -> bool:
+    props = _props(element)
+    if _truthy_field(
+        element,
+        "requireDerivedGeometry",
+        "requiresDerivedGeometry",
+        "geometryProofRequired",
+        "derivedGeometryProofRequired",
+    ):
+        return True
+    proof = _pick(props, "derivedGeometryProof", "geometryProof", "geometryProofs")
+    if isinstance(proof, Mapping):
+        return bool(_pick(proof, proof_key, _snake(proof_key), "required"))
+    return False
 
 
 def _tracker_items_for_rule(rule_id: str) -> list[str]:

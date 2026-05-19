@@ -501,6 +501,81 @@ describe('parseEvidenceArtifact — regenerationGuidance', () => {
   });
 });
 
+describe('parseEvidenceArtifact — target-house feature coverage dashboard', () => {
+  it('parses direct target-house feature coverage dashboard artifacts', () => {
+    const payload = {
+      schemaVersion: 'target-house-feature-coverage-dashboard.v1',
+      requiredFeatureCount: 2,
+      explicitElementCoverageCount: 1,
+      resolvedElementCoverageCount: 0,
+      semanticSelectorCoverageCount: 1,
+      missingElementCoverageCount: 0,
+      openFindingCount: 1,
+      screenshotMissingCount: 1,
+      blockerCount: 1,
+      evidenceAcceptanceOk: false,
+      rows: [
+        {
+          featureId: 'roof_terrace_cutout',
+          status: 'blocked',
+          elementCoverageStatus: 'semantic_selectors_only',
+          openFindingCount: 1,
+          screenshots: { missingCount: 1 },
+          blockers: ['semantic_visual_unverified'],
+        },
+        {
+          featureId: 'documentation_evidence_set',
+          status: 'accepted',
+          elementCoverageStatus: 'explicit_elements',
+          openFindingCount: 0,
+          screenshots: { missingCount: 0 },
+          blockers: [],
+        },
+      ],
+    };
+
+    const r = parseEvidenceArtifact(JSON.stringify(payload), 1);
+
+    expect(r.targetHouseFeatureCoverage).toMatchObject({
+      requiredFeatureCount: 2,
+      explicitElementCoverageCount: 1,
+      semanticSelectorCoverageCount: 1,
+      openFindingCount: 1,
+      screenshotMissingCount: 1,
+      blockerCount: 1,
+      evidenceAcceptanceOk: false,
+    });
+    expect(r.targetHouseFeatureCoverage?.rows[0]).toMatchObject({
+      featureId: 'roof_terrace_cutout',
+      elementCoverageStatus: 'semantic_selectors_only',
+      blockerCount: 1,
+      screenshotMissingCount: 1,
+    });
+  });
+
+  it('parses target-house dashboard from closeout lineage payloads', () => {
+    const payload = {
+      featureCoverageDashboard: {
+        schemaVersion: 'target-house-feature-coverage-dashboard.v1',
+        rows: [
+          {
+            featureId: 'main_mass',
+            elementCoverageStatus: 'resolved_elements',
+            openFindingCount: 0,
+            screenshots: { missingCount: 0 },
+            blockers: [],
+          },
+        ],
+      },
+    };
+
+    const r = parseEvidenceArtifact(JSON.stringify(payload), 1);
+
+    expect(r.targetHouseFeatureCoverage?.requiredFeatureCount).toBe(1);
+    expect(r.targetHouseFeatureCoverage?.resolvedElementCoverageCount).toBe(1);
+  });
+});
+
 describe('parseEvidenceArtifact — suggestedBasenameHint', () => {
   it('reads suggestedEvidenceArtifactBasename', () => {
     const payload = { suggestedEvidenceArtifactBasename: 'evidence-2026-05-06.json' };

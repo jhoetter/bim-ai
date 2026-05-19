@@ -454,6 +454,62 @@ export function EvidenceArtifactCorrelationPanel({
           ) : null}
         </div>
       ) : null}
+      {evidenceArtifactSummary.targetHouseFeatureCoverage ? (
+        <div
+          className="mt-2 rounded border border-border/60 bg-background/30 p-2"
+          data-testid="target-house-feature-coverage-dashboard"
+        >
+          <div className="text-[10px] font-semibold text-muted">
+            Target-house feature coverage (target-house-feature-coverage-dashboard.v1)
+          </div>
+          <ul className="mt-1 list-disc space-y-0.5 ps-4 text-[10px] text-muted">
+            <li>
+              required:{' '}
+              <strong>
+                {evidenceArtifactSummary.targetHouseFeatureCoverage.requiredFeatureCount}
+              </strong>
+              {' / '}resolved:{' '}
+              <strong>
+                {evidenceArtifactSummary.targetHouseFeatureCoverage.explicitElementCoverageCount +
+                  evidenceArtifactSummary.targetHouseFeatureCoverage.resolvedElementCoverageCount}
+              </strong>
+              {' / '}semantic-only:{' '}
+              <strong>
+                {evidenceArtifactSummary.targetHouseFeatureCoverage.semanticSelectorCoverageCount}
+              </strong>
+              {' / '}missing:{' '}
+              <strong>
+                {evidenceArtifactSummary.targetHouseFeatureCoverage.missingElementCoverageCount}
+              </strong>
+            </li>
+            <li>
+              blockers:{' '}
+              <strong>{evidenceArtifactSummary.targetHouseFeatureCoverage.blockerCount}</strong>
+              {' / '}open findings:{' '}
+              <strong>{evidenceArtifactSummary.targetHouseFeatureCoverage.openFindingCount}</strong>
+              {' / '}missing screenshots:{' '}
+              <strong>
+                {evidenceArtifactSummary.targetHouseFeatureCoverage.screenshotMissingCount}
+              </strong>
+            </li>
+          </ul>
+          {evidenceArtifactSummary.targetHouseFeatureCoverage.rows.length > 0 ? (
+            <ul
+              className="mt-2 list-disc space-y-0.5 ps-4 text-[10px] text-muted"
+              data-testid="target-house-feature-coverage-rows"
+            >
+              {evidenceArtifactSummary.targetHouseFeatureCoverage.rows.slice(0, 6).map((row) => (
+                <li key={row.featureId}>
+                  <code className="font-mono text-[9px]">{row.featureId}</code>
+                  {' — '}
+                  {row.elementCoverageStatus || row.status || 'mapped'}
+                  {row.blockerCount > 0 ? ` (${row.blockerCount} blocker)` : ''}
+                </li>
+              ))}
+            </ul>
+          ) : null}
+        </div>
+      ) : null}
       {evidenceArtifactSummary.diffFixLoop?.needsFixLoop ? (
         <div
           data-testid="evidence-diff-fix-loop-callout"
