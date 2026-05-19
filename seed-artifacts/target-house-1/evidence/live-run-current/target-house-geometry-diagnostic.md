@@ -27,6 +27,7 @@ Snapshot: `target-house-1-offline-regenerated` revision `2`
 
 - `geometry.element_outside_source_envelope` (out_of_envelope): Element 2D bounds must remain inside the source target envelope unless a tolerance records another origin/scale.
 - `geometry.element_outside_level_floor_support` (out_of_envelope): Level-resolved elements must be supported by the floor/slab footprint for that level.
+- `site.*_partially_outside_*` (out_of_envelope): Target-house building and toposolid/site placement must use full footprint containment, not centroid-only checks.
 - `geometry.wall_detached_endpoint` (detached_or_flying): Wall endpoints should connect to wall topology or be explicitly documented as free edges.
 - `geometry.hosted_opening_on_access_stub` (detached_or_flying): Door/window hosts must be real enclosing walls, not synthetic access-helper stubs.
 - `geometry.railing_unhosted_no_level` (detached_or_flying): Railings need an explicit host edge/stair or level relation.

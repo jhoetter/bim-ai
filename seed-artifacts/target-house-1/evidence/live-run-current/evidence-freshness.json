@@ -1,15 +1,15 @@
 {
   "schemaVersion": "sketch.evidence.freshness.v1",
-  "generatedAt": "2026-05-19T14:27:13.123954Z",
+  "generatedAt": "2026-05-19T15:11:58.538249Z",
   "ok": true,
   "sourcePath": "seed-artifacts/target-house-1/evidence/live-run-current/tool-run-summary.json",
   "recorded": {
     "schemaVersion": "sketch-to-bim.tool-run.v1",
-    "generatedAt": "2026-05-19T14:27:13.123830Z",
+    "generatedAt": "2026-05-19T15:11:58.538152Z",
     "seed": "target-house-1",
     "modelId": "target-house-1-offline-regenerated",
     "modelRevision": 2,
-    "gitHead": "b05c4bc6fb118b4c6ad1a89969e6e625290eeb3f",
+    "gitHead": "48afa2ad6e7161287e797b7f59d26690a74f7c88",
     "bundlePath": "seed-artifacts/target-house-1/bundle.json",
     "bundleSha256": "2f2c1a220f13a1c07b0d0b1d08ab601d6c79b775ea8838f574060b5ce25d7f6c",
     "commandCount": 245,
@@ -17,7 +17,7 @@
     "irSha256": "34757eba0ab4784e91a66232205294ac7cf1c7504bc3701c42b76ed3ffb7bf8e",
     "capabilitiesPath": "spec/sketch-to-bim-capability-matrix.json",
     "capabilitiesSha256": "e3faa00d4724d5e375ee853d5e3d56b21254a969a84e702d67013a8bb0125dbb",
-    "advisorRuleDigest": "d590c7850358ef339650fe934d72c2f316f005f6db67bb94ad361fe055a70ebf",
+    "advisorRuleDigest": "ff5ef678bf62d6d0250a4fc9692f888c8f31562c1a7c7f4d54f49b0daccf06b6",
     "advisorRuleFiles": [
       "app/bim_ai/constructability_advisories.py",
       "app/bim_ai/constructability_report.py",
@@ -28,16 +28,16 @@
       "packages/web/src/advisor/perspectiveFilter.ts"
     ],
     "mode": "project_initiation_bim",
-    "generatedAtEpochMs": 1779200833123,
+    "generatedAtEpochMs": 1779203518538,
     "executionMode": "offline_bundle_replay"
   },
   "current": {
-    "gitHead": "b05c4bc6fb118b4c6ad1a89969e6e625290eeb3f",
+    "gitHead": "48afa2ad6e7161287e797b7f59d26690a74f7c88",
     "modelId": "target-house-1-offline-regenerated",
     "modelRevision": 2,
     "bundleSha256": "2f2c1a220f13a1c07b0d0b1d08ab601d6c79b775ea8838f574060b5ce25d7f6c",
     "commandCount": 245,
-    "advisorRuleDigest": "d590c7850358ef339650fe934d72c2f316f005f6db67bb94ad361fe055a70ebf",
+    "advisorRuleDigest": "ff5ef678bf62d6d0250a4fc9692f888c8f31562c1a7c7f4d54f49b0daccf06b6",
     "advisorRuleFiles": [
       "app/bim_ai/constructability_advisories.py",
       "app/bim_ai/constructability_report.py",
@@ -64,8 +64,8 @@
       "status": "pass",
       "code": "git_head_current",
       "message": "Evidence gitHead matches current inputs.",
-      "recorded": "b05c4bc6fb118b4c6ad1a89969e6e625290eeb3f",
-      "current": "b05c4bc6fb118b4c6ad1a89969e6e625290eeb3f"
+      "recorded": "48afa2ad6e7161287e797b7f59d26690a74f7c88",
+      "current": "48afa2ad6e7161287e797b7f59d26690a74f7c88"
     },
     {
       "id": "model_revision",
@@ -88,8 +88,8 @@
       "status": "pass",
       "code": "advisor_rule_digest_current",
       "message": "Evidence advisorRuleDigest matches current inputs.",
-      "recorded": "d590c7850358ef339650fe934d72c2f316f005f6db67bb94ad361fe055a70ebf",
-      "current": "d590c7850358ef339650fe934d72c2f316f005f6db67bb94ad361fe055a70ebf"
+      "recorded": "ff5ef678bf62d6d0250a4fc9692f888c8f31562c1a7c7f4d54f49b0daccf06b6",
+      "current": "ff5ef678bf62d6d0250a4fc9692f888c8f31562c1a7c7f4d54f49b0daccf06b6"
     },
     {
       "id": "ir_sha256",

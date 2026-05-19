@@ -52,6 +52,11 @@
       "basis": "Level-resolved elements must be supported by the floor/slab footprint for that level."
     },
     {
+      "code": "site.*_partially_outside_*",
+      "category": "out_of_envelope",
+      "basis": "Target-house building and toposolid/site placement must use full footprint containment, not centroid-only checks."
+    },
+    {
       "code": "geometry.wall_detached_endpoint",
       "category": "detached_or_flying",
       "basis": "Wall endpoints should connect to wall topology or be explicitly documented as free edges."

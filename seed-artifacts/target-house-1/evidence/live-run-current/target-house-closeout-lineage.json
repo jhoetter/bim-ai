@@ -3,8 +3,8 @@
   "seed": "target-house-1",
   "generatedAt": "1970-01-01T00:00:00.000Z",
   "git": {
-    "currentHead": "b05c4bc6fb118b4c6ad1a89969e6e625290eeb3f",
-    "evidenceHead": "b05c4bc6fb118b4c6ad1a89969e6e625290eeb3f",
+    "currentHead": "48afa2ad6e7161287e797b7f59d26690a74f7c88",
+    "evidenceHead": "48afa2ad6e7161287e797b7f59d26690a74f7c88",
     "dirtyCheckPolicy": "Report records source/evidence digests and git heads; concurrent dirty files are not normalized."
   },
   "paths": {
@@ -26,18 +26,18 @@
     "spec/target-house/target-house-1-phase-plan.md": "sha256:a9f6b7d533e0434655c49d88a69299e90aeef9e120fb6f410b88fc007eba372a",
     "bundle": "sha256:2f2c1a220f13a1c07b0d0b1d08ab601d6c79b775ea8838f574060b5ce25d7f6c",
     "snapshot": "sha256:d6657c17c5a85adcf052d004b923041eedf62ca33d6f4ffb9988017786aebf02",
-    "advisorRuleDigest": "sha256:d590c7850358ef339650fe934d72c2f316f005f6db67bb94ad361fe055a70ebf",
+    "advisorRuleDigest": "sha256:ff5ef678bf62d6d0250a4fc9692f888c8f31562c1a7c7f4d54f49b0daccf06b6",
     "capabilities": "sha256:e3faa00d4724d5e375ee853d5e3d56b21254a969a84e702d67013a8bb0125dbb",
-    "rendererSupportMatrix": "sha256:9057becd26ea663f29a98c93139c3d1d49e81ae10a903fd0887b0d8a6643f49e",
-    "finalManifest": "sha256:abceedf96fc5ff63eff4df778fe36b4f477ac630c56a82c3e22466cec5e6331e",
-    "performanceEvidence": "sha256:7d76a7a0d6d8f4b193af50c911cc4f6a01ef2ee468bfccd234d343ca08b8cc1d"
+    "rendererSupportMatrix": "sha256:d977b9e06401080c0edf5860ce06bd4da63236829750eef33c20424dbb98395d",
+    "finalManifest": "sha256:e0350d16ab01abc258fe166bb7ef64ac9830e8476b63c1ad97f463d1c4c5f82b",
+    "performanceEvidence": "sha256:61cb87c5b987fb939975ce20f0dfdd989ae155183eb5d1c4e7bce020ad9a6af7"
   },
   "evidenceFiles": [
     {
       "key": "tool_run_summary",
       "path": "seed-artifacts/target-house-1/evidence/live-run-current/tool-run-summary.json",
       "present": true,
-      "sha256": "sha256:c7f2120f76723ad871bb125bff380ed7d470acfa3f092c8b977083ff2d530330",
+      "sha256": "sha256:03f9144b023167bbd7a3f36dbe2b6fe9eea0ff5b4d28dc26209a05c4ce992195",
       "schemaVersion": "sketch-to-bim.tool-run.v1",
       "status": "present",
       "summary": null
@@ -46,7 +46,7 @@
       "key": "evidence_manifest",
       "path": "seed-artifacts/target-house-1/evidence/live-run-current/evidence-manifest.json",
       "present": true,
-      "sha256": "sha256:579233afc57c9320cea72c535501eb6380b521ada778d0d25fbb18061d2aff4d",
+      "sha256": "sha256:f7d9492458bbc82c0a56413958678acd4a28f65d5c29e633163d44a6cff25fe1",
       "schemaVersion": "sketch.evidence.collection.v1",
       "status": "present",
       "summary": {
@@ -121,7 +121,7 @@
       "key": "constructability_report",
       "path": "seed-artifacts/target-house-1/evidence/live-run-current/constructability-report.json",
       "present": true,
-      "sha256": "sha256:6a8d14e64944720a0f2057675b617a5e473a9f518c1dd69377404f92950d33a9",
+      "sha256": "sha256:797f7f459530f9a5cb5acf17f643723c282bbaefefd9fe29e2ba76a225ea2d54",
       "schemaVersion": "constructabilityReport_v1",
       "status": "pass",
       "summary": {
@@ -135,7 +135,7 @@
       "key": "geometry_diagnostic",
       "path": "seed-artifacts/target-house-1/evidence/live-run-current/target-house-geometry-diagnostic.json",
       "present": true,
-      "sha256": "sha256:b885a9d99a8ab135cc65c08bc507011edb58fa57287e19bfee165c81d337147e",
+      "sha256": "sha256:0304af64b0a3b2a7bb08c30a5bf24ba804d72bd612d27534208ccb8bdfde1ab2",
       "schemaVersion": "target-house-current-geometry-diagnostic.v1",
       "status": "present",
       "summary": {
@@ -161,7 +161,7 @@
       "key": "visual_evidence_contract",
       "path": "seed-artifacts/target-house-1/evidence/live-run-current/visual-evidence-contract.json",
       "present": true,
-      "sha256": "sha256:de18b16b682bdcf3412fdc487cb5270ace81064a43e1731602906d054fac6a05",
+      "sha256": "sha256:a4838a5310ac11c98a628f61f754f5c1044f81e19c2f10ea901df296bcf63bc1",
       "schemaVersion": "sketch.visual-evidence-contract.v1",
       "status": "present",
       "summary": null
@@ -170,7 +170,7 @@
       "key": "bim_data_quality",
       "path": "seed-artifacts/target-house-1/evidence/live-run-current/bim-data-quality.json",
       "present": true,
-      "sha256": "sha256:eb65e789359462de49ec6c945d32eebf05a8861c679509b574e8ea45dec85ba6",
+      "sha256": "sha256:3cd249d6488ac206e00234580593b6600fd03834aede3e9b6aa5c880ea25fd62",
       "schemaVersion": "sketch.bim-data-quality.v1",
       "status": "pass",
       "summary": {
@@ -184,7 +184,7 @@
       "key": "export_validation",
       "path": "seed-artifacts/target-house-1/evidence/live-run-current/export-validation.json",
       "present": true,
-      "sha256": "sha256:cb70f6657e16260ee023ee8c0553aef00cae448bfd474d72018556ca3b8c6da7",
+      "sha256": "sha256:6b492c3f4dac3674ae02725bb7fedeb514f7b66b37551861d0451cba1b7bf548",
       "schemaVersion": "sketch.exchange-validation.v1",
       "status": "pass",
       "summary": {
@@ -198,7 +198,7 @@
       "key": "tolerance_ledger",
       "path": "seed-artifacts/target-house-1/evidence/live-run-current/tolerance-ledger.json",
       "present": true,
-      "sha256": "sha256:c30eefc5aa9815238e0435ed6fa50be9b3d376013039cb737827340493ad3ac4",
+      "sha256": "sha256:6add84a37127fa1157380a5b5b24809d688ffa4193e5b26768b4e45021bc3f90",
       "schemaVersion": "sketch.tolerance-ledger.v1",
       "status": "pass",
       "summary": {
@@ -221,7 +221,7 @@
       "key": "clean_pass_gate",
       "path": "seed-artifacts/target-house-1/evidence/live-run-current/clean-pass-gate.json",
       "present": true,
-      "sha256": "sha256:f883ac10cdfaa6dddeef6d511eda696027eb4ab27e6d47eac221dac4f117a8ea",
+      "sha256": "sha256:4b595b69a1a39a0a827311993d2399ee871a95a9e4eb70c106ab0c6d188bbaf7",
       "schemaVersion": "target-house.clean-pass-gate.v1",
       "status": "pass",
       "summary": {
@@ -286,7 +286,7 @@
     "performance": {
       "present": true,
       "ok": true,
-      "digestSha256": "7d76a7a0d6d8f4b193af50c911cc4f6a01ef2ee468bfccd234d343ca08b8cc1d",
+      "digestSha256": "61cb87c5b987fb939975ce20f0dfdd989ae155183eb5d1c4e7bce020ad9a6af7",
       "interactions": [
         {
           "interaction": "orbit",
@@ -341,8 +341,43 @@
     },
     "finalPackageStatus": {
       "ready": false,
-      "blockers": ["tracker_not_done"],
+      "blockers": [
+        "live_responsiveness_missing",
+        "acceptance_rehearsal_gate",
+        "tracker_not_done",
+        "tracker_incomplete"
+      ],
       "blockerDetails": [
+        {
+          "code": "live_responsiveness_missing",
+          "category": "performance",
+          "count": 1,
+          "path": "seed-artifacts/target-house-1/evidence/live-run-current/target-house-live-responsiveness.json",
+          "blockerCodes": ["live_responsiveness_missing"],
+          "missingInteractions": [
+            "orbit",
+            "select",
+            "lens-switch",
+            "advisor-open",
+            "advisor-close"
+          ],
+          "failedInteractions": [],
+          "actionableChurnCount": null
+        },
+        {
+          "code": "acceptance_rehearsal_gate",
+          "category": "rehearsal",
+          "count": 1,
+          "blockerCodes": ["live_responsiveness_missing"],
+          "stages": [
+            {
+              "id": "live_responsiveness",
+              "ok": false,
+              "blockerCode": "live_responsiveness_missing",
+              "detail": "Archived live browser responsiveness evidence must cover orbit, select, lens switch, Advisor open/close, and WebSocket churn."
+            }
+          ]
+        },
         {
           "code": "tracker_not_done",
           "category": "tracker",
@@ -357,9 +392,142 @@
               "status": "Partial"
             }
           ]
+        },
+        {
+          "code": "tracker_incomplete",
+          "category": "tracker",
+          "count": 141,
+          "total": 165,
+          "done": 24,
+          "byStatus": {
+            "Done": 24,
+            "Partial": 141
+          },
+          "sampleIncompleteRows": [
+            {
+              "id": "BIR-A02",
+              "priority": "P0",
+              "status": "Partial",
+              "item": "Create canonical rule taxonomy."
+            },
+            {
+              "id": "BIR-A04",
+              "priority": "P0",
+              "status": "Partial",
+              "item": "Establish UI/CLI/API Advisor parity."
+            },
+            {
+              "id": "BIR-A05",
+              "priority": "P0",
+              "status": "Partial",
+              "item": "Add severity policy."
+            },
+            {
+              "id": "BIR-A06",
+              "priority": "P1",
+              "status": "Partial",
+              "item": "Add suppression/tolerance policy per rule."
+            },
+            {
+              "id": "BIR-A07",
+              "priority": "P1",
+              "status": "Partial",
+              "item": "Add rule documentation generator."
+            },
+            {
+              "id": "BIR-B01",
+              "priority": "P0",
+              "status": "Partial",
+              "item": "Validate hosted door/window/opening placement before commit."
+            },
+            {
+              "id": "BIR-B02",
+              "priority": "P0",
+              "status": "Partial",
+              "item": "Reject or flag physical elements authored outside building support context."
+            },
+            {
+              "id": "BIR-B03",
+              "priority": "P0",
+              "status": "Partial",
+              "item": "Prevent analysis/helper elements from becoming visible physical BIM by accident."
+            },
+            {
+              "id": "BIR-B04",
+              "priority": "P0",
+              "status": "Partial",
+              "item": "Add transaction-level integrity preflight."
+            },
+            {
+              "id": "BIR-B05",
+              "priority": "P0",
+              "status": "Partial",
+              "item": "Align UI tool guards with backend validation."
+            },
+            {
+              "id": "BIR-B06",
+              "priority": "P1",
+              "status": "Partial",
+              "item": "Add safe defaults for agent authoring."
+            },
+            {
+              "id": "BIR-B07",
+              "priority": "P1",
+              "status": "Partial",
+              "item": "Add correction command hints for integrity findings."
+            },
+            {
+              "id": "BIR-C04",
+              "priority": "P0",
+              "status": "Partial",
+              "item": "Detect door/window without rendered or semantic opening cut."
+            },
+            {
+              "id": "BIR-C06",
+              "priority": "P1",
+              "status": "Partial",
+              "item": "Add opening conflict graph."
+            },
+            {
+              "id": "BIR-C07",
+              "priority": "P1",
+              "status": "Partial",
+              "item": "Add hosted family support classification."
+            },
+            {
+              "id": "BIR-C08",
+              "priority": "P1",
+              "status": "Partial",
+              "item": "Add orphan rendered-proxy detector."
+            },
+            {
+              "id": "BIR-D01",
+              "priority": "P0",
+              "status": "Partial",
+              "item": "Keep room boundary openness strict."
+            },
+            {
+              "id": "BIR-D02",
+              "priority": "P0",
+              "status": "Partial",
+              "item": "Validate room-door access through real doors."
+            },
+            {
+              "id": "BIR-D03",
+              "priority": "P0",
+              "status": "Partial",
+              "item": "Validate room containment within floor/storey."
+            },
+            {
+              "id": "BIR-D04",
+              "priority": "P1",
+              "status": "Partial",
+              "item": "Validate egress graph."
+            }
+          ]
         }
       ],
-      "status": "blocked_tracker_not_done"
+      "status": "blocked_live_responsiveness_missing"
     }
   },
   "features": [
@@ -654,9 +822,9 @@
     "semanticSelectorCoverageCount": 10,
     "missingElementCoverageCount": 0,
     "openFindingCount": 0,
-    "rendererSupportMatrixDigest": "sha256:9057becd26ea663f29a98c93139c3d1d49e81ae10a903fd0887b0d8a6643f49e",
+    "rendererSupportMatrixDigest": "sha256:d977b9e06401080c0edf5860ce06bd4da63236829750eef33c20424dbb98395d",
     "screenshotMissingCount": 0,
-    "blockerCount": 1,
+    "blockerCount": 4,
     "evidenceAcceptanceOk": true,
     "rows": [
       {
@@ -674,7 +842,7 @@
         "elementCoverageStatus": "semantic_selectors_only",
         "openFindingCount": 0,
         "rendererSupport": {
-          "matrixDigest": "sha256:9057becd26ea663f29a98c93139c3d1d49e81ae10a903fd0887b0d8a6643f49e",
+          "matrixDigest": "sha256:d977b9e06401080c0edf5860ce06bd4da63236829750eef33c20424dbb98395d",
           "requiredFeature": "viewport-3d",
           "status": "matrix_linked"
         },
@@ -701,7 +869,7 @@
         "elementCoverageStatus": "semantic_selectors_only",
         "openFindingCount": 0,
         "rendererSupport": {
-          "matrixDigest": "sha256:9057becd26ea663f29a98c93139c3d1d49e81ae10a903fd0887b0d8a6643f49e",
+          "matrixDigest": "sha256:d977b9e06401080c0edf5860ce06bd4da63236829750eef33c20424dbb98395d",
           "requiredFeature": "viewport-3d",
           "status": "matrix_linked"
         },
@@ -732,7 +900,7 @@
         "elementCoverageStatus": "semantic_selectors_only",
         "openFindingCount": 0,
         "rendererSupport": {
-          "matrixDigest": "sha256:9057becd26ea663f29a98c93139c3d1d49e81ae10a903fd0887b0d8a6643f49e",
+          "matrixDigest": "sha256:d977b9e06401080c0edf5860ce06bd4da63236829750eef33c20424dbb98395d",
           "requiredFeature": "roof-opening",
           "status": "matrix_linked"
         },
@@ -762,7 +930,7 @@
         "elementCoverageStatus": "semantic_selectors_only",
         "openFindingCount": 0,
         "rendererSupport": {
-          "matrixDigest": "sha256:9057becd26ea663f29a98c93139c3d1d49e81ae10a903fd0887b0d8a6643f49e",
+          "matrixDigest": "sha256:d977b9e06401080c0edf5860ce06bd4da63236829750eef33c20424dbb98395d",
           "requiredFeature": "slab-opening",
           "status": "matrix_linked"
         },
@@ -789,7 +957,7 @@
         "elementCoverageStatus": "semantic_selectors_only",
         "openFindingCount": 0,
         "rendererSupport": {
-          "matrixDigest": "sha256:9057becd26ea663f29a98c93139c3d1d49e81ae10a903fd0887b0d8a6643f49e",
+          "matrixDigest": "sha256:d977b9e06401080c0edf5860ce06bd4da63236829750eef33c20424dbb98395d",
           "requiredFeature": "viewport-3d",
           "status": "matrix_linked"
         },
@@ -816,7 +984,7 @@
         "elementCoverageStatus": "semantic_selectors_only",
         "openFindingCount": 0,
         "rendererSupport": {
-          "matrixDigest": "sha256:9057becd26ea663f29a98c93139c3d1d49e81ae10a903fd0887b0d8a6643f49e",
+          "matrixDigest": "sha256:d977b9e06401080c0edf5860ce06bd4da63236829750eef33c20424dbb98395d",
           "requiredFeature": "material-resolution",
           "status": "matrix_linked"
         },
@@ -844,7 +1012,7 @@
         "elementCoverageStatus": "semantic_selectors_only",
         "openFindingCount": 0,
         "rendererSupport": {
-          "matrixDigest": "sha256:9057becd26ea663f29a98c93139c3d1d49e81ae10a903fd0887b0d8a6643f49e",
+          "matrixDigest": "sha256:d977b9e06401080c0edf5860ce06bd4da63236829750eef33c20424dbb98395d",
           "requiredFeature": "stair-geometry",
           "status": "matrix_linked"
         },
@@ -886,7 +1054,7 @@
         "elementCoverageStatus": "semantic_selectors_only",
         "openFindingCount": 0,
         "rendererSupport": {
-          "matrixDigest": "sha256:9057becd26ea663f29a98c93139c3d1d49e81ae10a903fd0887b0d8a6643f49e",
+          "matrixDigest": "sha256:d977b9e06401080c0edf5860ce06bd4da63236829750eef33c20424dbb98395d",
           "requiredFeature": "roof-opening",
           "status": "matrix_linked"
         },
@@ -913,7 +1081,7 @@
         "elementCoverageStatus": "semantic_selectors_only",
         "openFindingCount": 0,
         "rendererSupport": {
-          "matrixDigest": "sha256:9057becd26ea663f29a98c93139c3d1d49e81ae10a903fd0887b0d8a6643f49e",
+          "matrixDigest": "sha256:d977b9e06401080c0edf5860ce06bd4da63236829750eef33c20424dbb98395d",
           "requiredFeature": "viewport-3d",
           "status": "matrix_linked"
         },
@@ -942,7 +1110,7 @@
         "elementCoverageStatus": "semantic_selectors_only",
         "openFindingCount": 0,
         "rendererSupport": {
-          "matrixDigest": "sha256:9057becd26ea663f29a98c93139c3d1d49e81ae10a903fd0887b0d8a6643f49e",
+          "matrixDigest": "sha256:d977b9e06401080c0edf5860ce06bd4da63236829750eef33c20424dbb98395d",
           "requiredFeature": "room-visualization",
           "status": "matrix_linked"
         },
@@ -959,10 +1127,22 @@
   },
   "blockers": [
     {
+      "code": "acceptance_rehearsal_gate",
+      "summary": "Final package manifest reports this blocker."
+    },
+    {
+      "code": "live_responsiveness_missing",
+      "summary": "Final package manifest reports this blocker."
+    },
+    {
+      "code": "tracker_incomplete",
+      "summary": "Final package manifest reports this blocker."
+    },
+    {
       "code": "tracker_not_done",
       "summary": "Final package manifest reports this blocker."
     }
   ],
   "ready": false,
-  "lineageDigestSha256": "5a8ab1236eda5217145b25e737335510e1e492cd97d613e5dce0921d75f639ec"
+  "lineageDigestSha256": "93393c3b892b796f07c6541c54ca63334611f41c5d098766c5d90788bb7efb75"
 }
