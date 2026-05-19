@@ -431,6 +431,8 @@ def _room_separation_open_adjacency(
         defaultdict(list)
     )
     for separation in room_separations.values():
+        if _is_helper_access_separator(separation):
+            continue
         start = _point(_read(separation, "start"))
         end = _point(_read(separation, "end"))
         level_id = _string(_read(separation, "levelId", "level_id"))
@@ -915,18 +917,91 @@ def _boundary_wall_roles(
         ]
         if not matching_edges:
             continue
-        if _wall_role_flag(wall, "corridor"):
-            roles[wall_id] = "corridor"
-            continue
-        if _wall_role_flag(wall, "shaft"):
-            roles[wall_id] = "shaft"
-            continue
-        adjacent_peer = any(
-            _rooms_share_wall_edge(matching_edges, room_polygons[peer_id])
+        adjacent_peer_ids = tuple(
+            peer_id
             for peer_id in peer_room_ids
+            if _rooms_share_wall_edge(matching_edges, room_polygons[peer_id])
         )
-        roles[wall_id] = "interior" if adjacent_peer else "exterior"
+        roles[wall_id] = _expected_wall_role_from_rooms(
+            room_id,
+            adjacent_peer_ids,
+            rooms,
+        )
     return roles
+
+
+def _expected_wall_role_from_rooms(
+    room_id: str,
+    adjacent_peer_ids: tuple[str, ...],
+    rooms: Mapping[str, Any],
+) -> str:
+    if not adjacent_peer_ids:
+        return "exterior"
+    semantic_room_ids = (room_id, *adjacent_peer_ids)
+    if any(
+        _room_semantic_role(rooms[semantic_room_id]) == "shaft"
+        for semantic_room_id in semantic_room_ids
+    ):
+        return "shaft"
+    if any(
+        _room_semantic_role(rooms[semantic_room_id]) == "corridor"
+        for semantic_room_id in semantic_room_ids
+    ):
+        return "corridor"
+    return "interior"
+
+
+def _room_semantic_role(room: Any) -> str | None:
+    props = _props(room)
+    if _truthy_prop(
+        props,
+        "shaftRoom",
+        "serviceShaft",
+        "riserRoom",
+        "isShaft",
+    ):
+        return "shaft"
+    if _truthy_prop(
+        props,
+        "corridorRoom",
+        "circulationRoom",
+        "primaryCirculation",
+        "isCorridor",
+    ):
+        return "corridor"
+
+    tokens = _semantic_tokens(
+        _read(room, "name"),
+        _read_schedule_field(room, "programmeCode"),
+        _read_schedule_field(room, "department"),
+        _read_schedule_field(room, "functionLabel"),
+        _read_schedule_field(room, "occupancyUse"),
+        _read_schedule_field(room, "classification"),
+    )
+    if tokens & {"shaft", "riser", "service_shaft", "serviceshaft"}:
+        return "shaft"
+    if tokens & {"corridor", "circulation", "hallway", "hall", "route"}:
+        return "corridor"
+    return None
+
+
+def _semantic_tokens(*values: Any) -> set[str]:
+    tokens: set[str] = set()
+    for value in values:
+        if isinstance(value, Mapping):
+            tokens.update(_semantic_tokens(*value.values()))
+            continue
+        if isinstance(value, Iterable) and not isinstance(value, (str, bytes, Mapping)):
+            tokens.update(_semantic_tokens(*value))
+            continue
+        if value is None:
+            continue
+        normalized = str(value).strip().lower().replace("-", "_").replace("/", " ")
+        if not normalized:
+            continue
+        tokens.add(normalized.replace(" ", "_"))
+        tokens.update(part for part in normalized.replace("_", " ").split() if part)
+    return tokens
 
 
 def _rooms_share_wall_edge(

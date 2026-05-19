@@ -349,6 +349,32 @@ def test_physical_room_separation_access_hack_is_reported() -> None:
     assert fake.tracker_items == ("BIR-D01", "BIR-D02")
     assert fake.severity == "error"
     assert fake.priority == "P0"
+    assert any(
+        finding.rule_id == "room_access_inaccessible_room" and finding.element_ids == ("room-b",)
+        for finding in findings
+    )
+    assert not [
+        finding
+        for finding in findings
+        if finding.rule_id == "room_access_open_separator_only_access"
+        and finding.element_ids == ("room-b", "room-a")
+    ]
+
+
+def test_exit_door_requires_explicit_exterior_classification_for_egress_evidence() -> None:
+    elements = _small_house()
+    elements["wall-s"]["props"] = {}
+
+    findings = check_room_access_integrity(elements)
+
+    implicit = next(
+        finding
+        for finding in findings
+        if finding.rule_id == "room_access_exit_classification_implicit"
+    )
+    assert implicit.code == "BIR-D04-EXIT"
+    assert implicit.tracker_items == ("BIR-D04",)
+    assert implicit.element_ids == ("door-exit", "wall-s")
 
 
 def test_room_outside_floor_is_reported() -> None:
@@ -481,6 +507,26 @@ def test_wall_boundary_role_conflict_is_reported_deterministically() -> None:
         ("room-b", "wall-mid"),
     ]
     assert all(finding.tracker_items == ("BIR-D05",) for finding in conflicts)
+
+
+def test_wall_boundary_role_uses_adjacent_room_semantics_for_corridors() -> None:
+    elements = _small_house()
+    elements["room-b"]["functionLabel"] = "Corridor"
+    elements["wall-mid"]["props"] = {"roomBoundaryRole": "interior"}
+
+    findings = check_room_access_integrity(elements)
+
+    conflicts = [
+        finding
+        for finding in findings
+        if finding.rule_id == "room_access_wall_boundary_role_conflict"
+    ]
+    assert [finding.element_ids for finding in conflicts] == [
+        ("room-a", "wall-mid"),
+        ("room-b", "wall-mid"),
+    ]
+    assert {finding.evidence["expectedRole"] for finding in conflicts} == {"corridor"}
+    assert {finding.evidence["declaredRole"] for finding in conflicts} == {"interior"}
 
 
 def test_missing_room_schedule_fields_are_reported() -> None:
