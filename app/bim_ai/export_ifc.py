@@ -38,6 +38,7 @@ from bim_ai.export_ifc_readback import (
     _profile_xy_polyline_mm,
     _read_named_qto_values,  # noqa: F401 - legacy private re-export
     _void_rel_and_host_for_opening,
+    build_kernel_ifc_geometry_readback_summary_v0,
 )
 from bim_ai.export_ifc_readback import (
     _ifc_inverse_seq_local as _ifc_inverse_seq_local,
@@ -233,6 +234,7 @@ def inspect_kernel_ifc_semantics(
     slabs = model.by_type("IfcSlab") or []
     roofs = model.by_type("IfcRoof") or []
     stairs = model.by_type("IfcStair") or []
+    railings = model.by_type("IfcRailing") or []
     openings = model.by_type("IfcOpeningElement") or []
     doors = model.by_type("IfcDoor") or []
     windows = model.by_type("IfcWindow") or []
@@ -342,6 +344,7 @@ def inspect_kernel_ifc_semantics(
             "IfcSlab": len(slabs),
             "IfcRoof": len(roofs),
             "IfcStair": len(stairs),
+            "IfcRailing": len(railings),
             "IfcOpeningElement": len(openings),
             "IfcDoor": len(doors),
             "IfcWindow": len(windows),
@@ -369,6 +372,9 @@ def inspect_kernel_ifc_semantics(
             # cross-section profile (vs the default flat extrusion).
             "roofWithGablePitchedBodyV0": _count_roofs_with_gable_body_v0(list(roofs)),
             "stairWithPsetStairCommonReference": _count_pset_ref(list(stairs), "Pset_StairCommon"),
+            "railingWithPsetRailingCommonReference": _count_pset_ref(
+                list(railings), "Pset_RailingCommon"
+            ),
             "siteWithPsetSiteCommonReference": _count_pset_ref(
                 list(site_products), "Pset_SiteCommon"
             ),
@@ -396,6 +402,7 @@ def inspect_kernel_ifc_semantics(
         "qtoTemplates": qto_names,
         "importScopeUnsupportedIfcProducts_v0": import_scope_unsupported_ifc_products_v0(model),
         "siteExchangeEvidence_v0": build_site_exchange_evidence_v0(doc=doc, model=model),
+        "geometryReadbackSummary_v0": build_kernel_ifc_geometry_readback_summary_v0(model, doc),
         "materialLayerSetReadback_v0": kernel_ifc_material_layer_set_readback_v0(model, doc),
         "propertySetCoverageEvidence_v0": build_kernel_ifc_property_set_coverage_evidence_v0(
             model, doc

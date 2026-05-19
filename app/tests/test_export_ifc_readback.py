@@ -1,6 +1,19 @@
 from __future__ import annotations
 
 from bim_ai import export_ifc
+from bim_ai.document import Document
+from bim_ai.elements import (
+    DoorElem,
+    FloorElem,
+    LevelElem,
+    RailingElem,
+    RoofElem,
+    RoomElem,
+    SlabOpeningElem,
+    StairElem,
+    WallElem,
+    WindowElem,
+)
 from bim_ai.export_ifc_readback import (
     _count_ifc_products_with_qto_template,
     _first_body_extruded_area_solid,
@@ -14,6 +27,8 @@ from bim_ai.export_ifc_readback import (
     _profile_xy_polyline_mm,
     _read_named_qto_values,
     _void_rel_and_host_for_opening,
+    build_kernel_ifc_geometry_readback_summary_v0,
+    kernel_ifc_source_topology_summary_v0,
 )
 
 
@@ -28,11 +43,33 @@ class _Ifc:
 
 
 class _Model:
-    def __init__(self, rels):
-        self._rels = rels
+    def __init__(self, rels=None, by_type=None):
+        self._rels = rels or []
+        self._by_type = by_type or {}
 
     def by_type(self, type_name: str):
+        if type_name in self._by_type:
+            return self._by_type[type_name]
         return self._rels if type_name == "IfcRelVoidsElement" else []
+
+
+def _body_product(type_name: str, ref: str, pset_name: str, qto_name: str | None = None) -> _Ifc:
+    solid = _Ifc("IfcExtrudedAreaSolid")
+    rels = []
+    if qto_name:
+        qto = _Ifc("IfcElementQuantity", Name=qto_name, Quantities=[])
+        rels.append(_Ifc("IfcRelDefinesByProperties", RelatingPropertyDefinition=qto))
+    return _Ifc(
+        type_name,
+        _psets={pset_name: {"Reference": ref}},
+        IsDefinedBy=rels,
+        Representation=_Ifc(
+            "IfcProductDefinitionShape",
+            Representations=[
+                _Ifc("IfcShapeRepresentation", RepresentationIdentifier="Body", Items=[solid])
+            ],
+        ),
+    )
 
 
 def test_ifc_global_id_slug_sanitizes_empty_and_special_chars():
@@ -134,3 +171,175 @@ def test_ifc_opening_helpers_handle_variants_and_legacy_exports():
     )
     assert _ifc_model_has_slab_void_opening_topology_v0(_Model([model_rel])) is True
     assert export_ifc._profile_xy_polyline_mm is _profile_xy_polyline_mm
+
+
+def test_kernel_source_topology_summary_counts_supported_export_ids():
+    doc = Document(
+        revision=1,
+        elements={
+            "l0": LevelElem(kind="level", id="l0", name="G", elevationMm=0),
+            "l1": LevelElem(kind="level", id="l1", name="L1", elevationMm=3000),
+            "w1": WallElem(
+                kind="wall",
+                id="w1",
+                levelId="l0",
+                start={"xMm": 0, "yMm": 0},
+                end={"xMm": 5000, "yMm": 0},
+                thicknessMm=200,
+                heightMm=2800,
+                materialKey="paint-white",
+                ifcClassificationCode="OmniClass:23-11",
+            ),
+            "fl1": FloorElem(
+                kind="floor",
+                id="fl1",
+                levelId="l0",
+                boundaryMm=[
+                    {"xMm": 0, "yMm": 0},
+                    {"xMm": 5000, "yMm": 0},
+                    {"xMm": 5000, "yMm": 4000},
+                    {"xMm": 0, "yMm": 4000},
+                ],
+            ),
+            "rf1": RoofElem(
+                kind="roof",
+                id="rf1",
+                referenceLevelId="l1",
+                footprintMm=[
+                    {"xMm": 0, "yMm": 0},
+                    {"xMm": 5000, "yMm": 0},
+                    {"xMm": 5000, "yMm": 4000},
+                    {"xMm": 0, "yMm": 4000},
+                ],
+            ),
+            "d1": DoorElem(kind="door", id="d1", wallId="w1", alongT=0.5, widthMm=900),
+            "win1": WindowElem(
+                kind="window",
+                id="win1",
+                wallId="w1",
+                alongT=0.2,
+                widthMm=1200,
+                sillHeightMm=900,
+                heightMm=1100,
+            ),
+            "st1": StairElem(
+                kind="stair",
+                id="st1",
+                baseLevelId="l0",
+                topLevelId="l1",
+                runStartMm={"xMm": 0, "yMm": 0},
+                runEndMm={"xMm": 3000, "yMm": 0},
+            ),
+            "rl1": RailingElem(
+                kind="railing",
+                id="rl1",
+                hostedStairId="st1",
+                pathMm=[{"xMm": 0, "yMm": 0}, {"xMm": 3000, "yMm": 0}],
+            ),
+            "rm1": RoomElem(
+                kind="room",
+                id="rm1",
+                levelId="l0",
+                outlineMm=[
+                    {"xMm": 0, "yMm": 0},
+                    {"xMm": 4000, "yMm": 0},
+                    {"xMm": 4000, "yMm": 3000},
+                    {"xMm": 0, "yMm": 3000},
+                ],
+            ),
+            "so1": SlabOpeningElem(
+                kind="slab_opening",
+                id="so1",
+                hostFloorId="fl1",
+                boundaryMm=[
+                    {"xMm": 1000, "yMm": 1000},
+                    {"xMm": 2000, "yMm": 1000},
+                    {"xMm": 2000, "yMm": 2000},
+                    {"xMm": 1000, "yMm": 2000},
+                ],
+            ),
+        },
+    )
+
+    source = kernel_ifc_source_topology_summary_v0(doc)
+
+    assert source["countsByKind"] == {
+        "wall": 1,
+        "floor": 1,
+        "roof": 1,
+        "door": 1,
+        "window": 1,
+        "stair": 1,
+        "railing": 1,
+        "room": 1,
+    }
+    assert source["openingCountsByHostKind"] == {"wall": 2, "slab": 1, "roof": 0}
+    assert source["semanticExpectations"]["classificationElementIds"] == ["w1"]
+    assert source["semanticExpectations"]["materialKeys"] == ["paint-white"]
+
+
+def test_geometry_readback_summary_compares_identity_body_qto_and_topology():
+    wall = _body_product("IfcWall", "w1", "Pset_WallCommon", "Qto_WallBaseQuantities")
+    floor = _body_product("IfcSlab", "fl1", "Pset_SlabCommon", "Qto_SlabBaseQuantities")
+    door = _body_product("IfcDoor", "d1", "Pset_DoorCommon", "Qto_DoorBaseQuantities")
+    opening = _Ifc("IfcOpeningElement", GlobalId="op-wall", Name="op:d1")
+    rel = _Ifc(
+        "IfcRelVoidsElement",
+        RelatedOpeningElement=opening,
+        RelatingBuildingElement=wall,
+    )
+    model = _Model(
+        rels=[rel],
+        by_type={
+            "IfcWall": [wall],
+            "IfcSlab": [floor],
+            "IfcDoor": [door],
+            "IfcOpeningElement": [opening],
+            "IfcElementQuantity": [
+                _Ifc("IfcElementQuantity", Name="Qto_WallBaseQuantities"),
+                _Ifc("IfcElementQuantity", Name="Qto_SlabBaseQuantities"),
+                _Ifc("IfcElementQuantity", Name="Qto_DoorBaseQuantities"),
+            ],
+            "IfcMaterial": [_Ifc("IfcMaterial", Name="paint-white")],
+            "IfcRelAssociatesMaterial": [_Ifc("IfcRelAssociatesMaterial")],
+            "IfcClassificationReference": [_Ifc("IfcClassificationReference")],
+        },
+    )
+    doc = Document(
+        revision=1,
+        elements={
+            "l0": LevelElem(kind="level", id="l0", name="G", elevationMm=0),
+            "w1": WallElem(
+                kind="wall",
+                id="w1",
+                levelId="l0",
+                start={"xMm": 0, "yMm": 0},
+                end={"xMm": 5000, "yMm": 0},
+                thicknessMm=200,
+                heightMm=2800,
+            ),
+            "fl1": FloorElem(
+                kind="floor",
+                id="fl1",
+                levelId="l0",
+                boundaryMm=[
+                    {"xMm": 0, "yMm": 0},
+                    {"xMm": 5000, "yMm": 0},
+                    {"xMm": 5000, "yMm": 4000},
+                    {"xMm": 0, "yMm": 4000},
+                ],
+            ),
+            "d1": DoorElem(kind="door", id="d1", wallId="w1", alongT=0.5, widthMm=900),
+        },
+    )
+
+    summary = build_kernel_ifc_geometry_readback_summary_v0(model, doc)
+
+    assert summary["available"] is True
+    assert summary["allMatched"] is True
+    assert summary["coverageByKind"]["wall"]["matchedReferenceIds"] == ["w1"]
+    assert summary["coverageByKind"]["floor"]["productsWithQto"] == 1
+    assert summary["coverageByKind"]["door"]["productsWithBody"] == 1
+    assert summary["openingTopology"]["readbackByHostKind"]["wall"] == 1
+    assert summary["semanticReadback"]["materials"]["IfcMaterial"] == 1
+    assert summary["semanticReadback"]["classifications"]["IfcClassificationReference"] == 1

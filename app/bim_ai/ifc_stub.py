@@ -32,7 +32,7 @@ IFC_SEMANTIC_IMPORT_SCOPE_V0: dict[str, Any] = {
     "schemaVersion": 0,
     "semanticReadBackSupported": [
         "IfcBuildingStorey counts and elevationsPresent",
-        "IfcWall, IfcSlab, IfcRoof, IfcStair, IfcSpace product counts",
+        "IfcWall, IfcSlab, IfcRoof, IfcStair, IfcRailing, IfcSpace product counts",
         "IfcOpeningElement, IfcDoor, IfcWindow counts",
         "Pset_*Common Reference identity coverage (wall, slab, space, door, window, roof, stair, site)",
         "Pset_SpaceCommon programme string fields",
@@ -40,6 +40,7 @@ IFC_SEMANTIC_IMPORT_SCOPE_V0: dict[str, Any] = {
         "inspect_kernel_ifc_semantics.qtoLinkedProducts — per-product Qto_* linkage counts",
         "inspect_kernel_ifc_semantics.importScopeUnsupportedIfcProducts_v0 — IfcProduct classes outside kernel slice roots",
         "inspect_kernel_ifc_semantics.siteExchangeEvidence_v0 — kernel SiteElem ↔ IfcSite counts + Pset_SiteCommon.Reference joined ids",
+        "inspect_kernel_ifc_semantics.geometryReadbackSummary_v0 — source Document topology vs IFC product identity/body/QTO counts for walls, floors, roofs, doors, windows, stairs, railings, rooms/spaces, hosted openings, types, materials, classifications, and quantities",
         "inspect_kernel_ifc_semantics.materialLayerSetReadback_v0 — IfcMaterialLayerSet read-back vs document layer stacks for IfcWall / IfcSlab / IfcRoof (when kernel export eligible)",
         "inspect_kernel_ifc_semantics.propertySetCoverageEvidence_v0 — per-product IFC pset/QTO/material gap tokens aligned with IDS/cleanroom read-back",
         "ifc_manifest_v0.siteExchangeEvidence_v0 — document-only kernel site participation when IFC export not eligible",

@@ -4,6 +4,26 @@ from typing import Any
 
 import numpy as np
 
+from bim_ai.document import Document
+from bim_ai.elements import (
+    DoorElem,
+    FloorElem,
+    FloorTypeElem,
+    LevelElem,
+    MaterialElem,
+    RailingElem,
+    RoofElem,
+    RoofOpeningElem,
+    RoofTypeElem,
+    RoomElem,
+    SlabOpeningElem,
+    StairElem,
+    WallElem,
+    WallTypeElem,
+    WindowElem,
+)
+from bim_ai.export_ifc_geometry import room_outline_mm
+
 try:
     import ifcopenshell.util.element as ifc_elem_util
     import ifcopenshell.util.placement as ifc_placement
@@ -13,12 +33,9 @@ except ImportError:
 
 
 def _references_from_products(products: list[Any], pset_name: str, *, limit: int) -> list[str]:
-    if ifc_elem_util is None:
-        return []
-
     refs: set[str] = set()
     for p in products:
-        ps = ifc_elem_util.get_psets(p)
+        ps = _ifc_product_psets(p)
         bucket = ps.get(pset_name) or {}
         ref = bucket.get("Reference")
         if isinstance(ref, str) and ref.strip():
@@ -26,6 +43,364 @@ def _references_from_products(products: list[Any], pset_name: str, *, limit: int
         if len(refs) >= limit:
             break
     return sorted(refs)
+
+
+def _ifc_product_psets(product: Any) -> dict[str, Any]:
+    """Read product Psets from IfcOpenShell or from fake test products."""
+
+    if ifc_elem_util is not None:
+        try:
+            ps = ifc_elem_util.get_psets(product)
+            if isinstance(ps, dict):
+                return ps
+        except Exception:
+            pass
+    for attr in ("_psets", "Psets", "psets"):
+        raw = getattr(product, attr, None)
+        if isinstance(raw, dict):
+            return raw
+    return {}
+
+
+def _ifc_product_reference(product: Any, pset_name: str) -> str | None:
+    bucket = _ifc_product_psets(product).get(pset_name) or {}
+    ref = bucket.get("Reference")
+    if isinstance(ref, str) and ref.strip():
+        return ref.strip()
+    return None
+
+
+def _ifc_products_by_type(model: Any, type_name: str) -> list[Any]:
+    try:
+        products = model.by_type(type_name) or []
+    except Exception:
+        return []
+    return list(products)
+
+
+_KIND_READBACK_SPECS: tuple[dict[str, str | None], ...] = (
+    {
+        "kind": "wall",
+        "ifcType": "IfcWall",
+        "pset": "Pset_WallCommon",
+        "qto": "Qto_WallBaseQuantities",
+    },
+    {
+        "kind": "floor",
+        "ifcType": "IfcSlab",
+        "pset": "Pset_SlabCommon",
+        "qto": "Qto_SlabBaseQuantities",
+    },
+    {
+        "kind": "roof",
+        "ifcType": "IfcRoof",
+        "pset": "Pset_RoofCommon",
+        "qto": "Qto_SlabBaseQuantities",
+    },
+    {
+        "kind": "door",
+        "ifcType": "IfcDoor",
+        "pset": "Pset_DoorCommon",
+        "qto": "Qto_DoorBaseQuantities",
+    },
+    {
+        "kind": "window",
+        "ifcType": "IfcWindow",
+        "pset": "Pset_WindowCommon",
+        "qto": "Qto_WindowBaseQuantities",
+    },
+    {
+        "kind": "stair",
+        "ifcType": "IfcStair",
+        "pset": "Pset_StairCommon",
+        "qto": "Qto_StairBaseQuantities",
+    },
+    {
+        "kind": "railing",
+        "ifcType": "IfcRailing",
+        "pset": "Pset_RailingCommon",
+        "qto": None,
+    },
+    {
+        "kind": "room",
+        "ifcType": "IfcSpace",
+        "pset": "Pset_SpaceCommon",
+        "qto": "Qto_SpaceBaseQuantities",
+    },
+)
+
+
+def kernel_ifc_source_topology_summary_v0(doc: Document) -> dict[str, Any]:
+    """Document-side expected IFC kernel topology for read-back comparison."""
+
+    wall_ids = sorted(eid for eid, e in doc.elements.items() if isinstance(e, WallElem))
+    level_ids = {eid for eid, e in doc.elements.items() if isinstance(e, LevelElem)}
+    floor_ids = sorted(
+        eid
+        for eid, e in doc.elements.items()
+        if isinstance(e, FloorElem) and len(getattr(e, "boundary_mm", ()) or ()) >= 3
+    )
+    roof_ids = sorted(
+        eid
+        for eid, e in doc.elements.items()
+        if isinstance(e, RoofElem) and len(getattr(e, "footprint_mm", ()) or ()) >= 3
+    )
+    door_ids = sorted(
+        eid
+        for eid, e in doc.elements.items()
+        if isinstance(e, DoorElem) and e.wall_id in wall_ids
+    )
+    window_ids = sorted(
+        eid
+        for eid, e in doc.elements.items()
+        if isinstance(e, WindowElem) and e.wall_id in wall_ids
+    )
+    stair_ids = sorted(
+        eid
+        for eid, e in doc.elements.items()
+        if isinstance(e, StairElem) and e.base_level_id in level_ids and e.top_level_id in level_ids
+    )
+    railing_ids = sorted(
+        eid
+        for eid, e in doc.elements.items()
+        if isinstance(e, RailingElem) and len(getattr(e, "path_mm", ()) or ()) >= 2
+    )
+    room_ids = sorted(
+        eid
+        for eid, e in doc.elements.items()
+        if isinstance(e, RoomElem) and len(room_outline_mm(e)) >= 3
+    )
+    floor_id_set = set(floor_ids)
+    roof_id_set = set(roof_ids)
+    slab_opening_ids = sorted(
+        eid
+        for eid, e in doc.elements.items()
+        if isinstance(e, SlabOpeningElem)
+        and e.host_floor_id in floor_id_set
+        and len(getattr(e, "boundary_mm", ()) or ()) >= 3
+    )
+    roof_opening_ids = sorted(
+        eid
+        for eid, e in doc.elements.items()
+        if isinstance(e, RoofOpeningElem)
+        and e.host_roof_id in roof_id_set
+        and len(getattr(e, "boundary_mm", ()) or ()) >= 3
+    )
+
+    kind_ids = {
+        "wall": wall_ids,
+        "floor": floor_ids,
+        "roof": roof_ids,
+        "door": door_ids,
+        "window": window_ids,
+        "stair": stair_ids,
+        "railing": railing_ids,
+        "room": room_ids,
+    }
+
+    def _type_ids(attr: str, ids: list[str]) -> list[str]:
+        out: set[str] = set()
+        for eid in ids:
+            raw = getattr(doc.elements.get(eid), attr, None)
+            if isinstance(raw, str) and raw.strip():
+                out.add(raw.strip())
+        return sorted(out)
+
+    material_keys: set[str] = set()
+    classification_ids: list[str] = []
+    for eid, elem in sorted(doc.elements.items()):
+        mat = getattr(elem, "material_key", None)
+        if isinstance(mat, str) and mat.strip():
+            material_keys.add(mat.strip())
+        for key in (getattr(elem, "material_slots", None) or {}).values():
+            if isinstance(key, str) and key.strip():
+                material_keys.add(key.strip())
+        code = getattr(elem, "ifc_classification_code", None)
+        if isinstance(code, str) and code.strip():
+            classification_ids.append(eid)
+
+    for elem in doc.elements.values():
+        if isinstance(elem, (WallTypeElem, FloorTypeElem, RoofTypeElem)):
+            for layer in elem.layers:
+                if layer.material_key:
+                    material_keys.add(layer.material_key)
+
+    return {
+        "schemaVersion": 0,
+        "kindElementIds": kind_ids,
+        "countsByKind": {k: len(v) for k, v in kind_ids.items()},
+        "openingElementIds": {
+            "wallHosted": sorted([*door_ids, *window_ids]),
+            "slabHosted": slab_opening_ids,
+            "roofHosted": roof_opening_ids,
+        },
+        "openingCountsByHostKind": {
+            "wall": len(door_ids) + len(window_ids),
+            "slab": len(slab_opening_ids),
+            "roof": len(roof_opening_ids),
+        },
+        "semanticExpectations": {
+            "typeIdsByKind": {
+                "wall": _type_ids("wall_type_id", wall_ids),
+                "floor": _type_ids("floor_type_id", floor_ids),
+                "roof": _type_ids("roof_type_id", roof_ids),
+                "door": _type_ids("family_type_id", door_ids),
+                "window": _type_ids("family_type_id", window_ids),
+            },
+            "materialKeys": sorted(material_keys),
+            "materialCatalogCount": sum(
+                1 for e in doc.elements.values() if isinstance(e, MaterialElem)
+            ),
+            "classificationElementIds": sorted(classification_ids),
+            "qtoExpectedKinds": sorted(
+                k for k, ids in kind_ids.items() if ids and k != "railing"
+            ),
+        },
+    }
+
+
+def build_kernel_ifc_geometry_readback_summary_v0(model: Any, doc: Document | None) -> dict[str, Any]:
+    """Compare supported IFC product read-back against source kernel topology."""
+
+    if doc is None:
+        return {
+            "schemaVersion": 0,
+            "available": False,
+            "reason": "no_document",
+        }
+
+    source = kernel_ifc_source_topology_summary_v0(doc)
+    expected_by_kind: dict[str, list[str]] = source["kindElementIds"]
+    rows: dict[str, Any] = {}
+    all_matched = True
+    readback_counts_by_kind: dict[str, int] = {}
+
+    for spec in _KIND_READBACK_SPECS:
+        kind = str(spec["kind"])
+        ifc_type = str(spec["ifcType"])
+        pset = str(spec["pset"])
+        qto_name = spec["qto"]
+        products = _ifc_products_by_type(model, ifc_type)
+        readback_counts_by_kind[kind] = len(products)
+        expected_ids = expected_by_kind.get(kind, [])
+        expected_set = set(expected_ids)
+        refs = sorted(
+            ref
+            for ref in (_ifc_product_reference(p, pset) for p in products)
+            if isinstance(ref, str) and ref
+        )
+        ref_set = set(refs)
+        matched = sorted(expected_set & ref_set)
+        missing = sorted(expected_set - ref_set)
+        unexpected = sorted(ref_set - expected_set)
+        body_count = sum(1 for p in products if _first_body_extruded_area_solid(p) is not None)
+        qto_count = (
+            _count_ifc_products_with_qto_template(products, str(qto_name)) if qto_name else None
+        )
+        kind_matched = (
+            len(products) == len(expected_ids)
+            and not missing
+            and not unexpected
+            and body_count >= len(expected_ids)
+        )
+        if qto_count is not None:
+            kind_matched = kind_matched and qto_count >= len(expected_ids)
+        if not kind_matched:
+            all_matched = False
+        row: dict[str, Any] = {
+            "ifcType": ifc_type,
+            "pset": pset,
+            "expected": len(expected_ids),
+            "readbackProducts": len(products),
+            "productsWithBody": body_count,
+            "productsWithReference": len(refs),
+            "matchedReferenceIds": matched,
+            "missingReferenceIds": missing,
+            "unexpectedReferenceIds": unexpected,
+        }
+        if qto_name:
+            row["qtoTemplate"] = qto_name
+            row["productsWithQto"] = qto_count
+        rows[kind] = row
+
+    openings = _ifc_products_by_type(model, "IfcOpeningElement")
+    opening_counts = {"wall": 0, "slab": 0, "roof": 0, "other": 0}
+    for op in openings:
+        try:
+            _rel, host = _void_rel_and_host_for_opening(op, model)
+        except Exception:
+            host = None
+        if host is not None and _ifc_try_product_is_a(host, "IfcWall"):
+            opening_counts["wall"] += 1
+        elif host is not None and _ifc_try_product_is_a(host, "IfcSlab"):
+            opening_counts["slab"] += 1
+        elif host is not None and _ifc_try_product_is_a(host, "IfcRoof"):
+            opening_counts["roof"] += 1
+        else:
+            opening_counts["other"] += 1
+
+    expected_openings = source["openingCountsByHostKind"]
+    opening_delta = {
+        key: opening_counts.get(key, 0) - int(expected_openings.get(key, 0))
+        for key in ("wall", "slab", "roof")
+    }
+    if any(v != 0 for v in opening_delta.values()) or opening_counts["other"]:
+        all_matched = False
+
+    slab_types = _ifc_products_by_type(model, "IfcSlabType")
+    roof_type_psets = 0
+    for roof in _ifc_products_by_type(model, "IfcRoof"):
+        bucket = _ifc_product_psets(roof).get("Pset_BimAiKernel") or {}
+        if bucket.get("BimAiRoofTypeId"):
+            roof_type_psets += 1
+    quantity_templates = sorted(
+        {
+            str(q.Name)
+            for q in _ifc_products_by_type(model, "IfcElementQuantity")
+            if getattr(q, "Name", None)
+        }
+    )
+    semantic_readback = {
+        "types": {
+            "IfcSlabType": len(slab_types),
+            "IfcSlabTypeReferenceIds": _references_from_products(
+                slab_types, "Pset_SlabCommon", limit=250
+            ),
+            "roofWithBimAiRoofTypeId": roof_type_psets,
+        },
+        "materials": {
+            "IfcMaterial": len(_ifc_products_by_type(model, "IfcMaterial")),
+            "IfcRelAssociatesMaterial": len(_ifc_products_by_type(model, "IfcRelAssociatesMaterial")),
+        },
+        "classifications": {
+            "IfcClassification": len(_ifc_products_by_type(model, "IfcClassification")),
+            "IfcClassificationReference": len(
+                _ifc_products_by_type(model, "IfcClassificationReference")
+            ),
+            "IfcRelAssociatesClassification": len(
+                _ifc_products_by_type(model, "IfcRelAssociatesClassification")
+            ),
+        },
+        "quantities": {
+            "IfcElementQuantity": len(_ifc_products_by_type(model, "IfcElementQuantity")),
+            "templates": quantity_templates,
+        },
+    }
+
+    return {
+        "schemaVersion": 0,
+        "available": True,
+        "allMatched": all_matched,
+        "source": source,
+        "readbackCountsByKind": readback_counts_by_kind,
+        "coverageByKind": rows,
+        "openingTopology": {
+            "expectedByHostKind": expected_openings,
+            "readbackByHostKind": opening_counts,
+            "deltaByHostKind": opening_delta,
+        },
+        "semanticReadback": semantic_readback,
+    }
 
 
 def _ifc_product_defines_qto_template(product: Any, qto_template_name: str) -> bool:

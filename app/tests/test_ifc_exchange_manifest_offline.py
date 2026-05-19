@@ -144,6 +144,7 @@ def test_ifc_semantic_scope_mentions_material_layer_readback_evidence() -> None:
     supported = IFC_SEMANTIC_IMPORT_SCOPE_V0.get("semanticReadBackSupported") or []
     blob = "\n".join(str(x) for x in supported)
     assert "materialLayerSetReadback_v0" in blob
+    assert "geometryReadbackSummary_v0" in blob
     assert "ifcMaterialLayerSetReadbackEvidence_v0" in blob
     assert "propertySetCoverageEvidence_v0" in blob
 

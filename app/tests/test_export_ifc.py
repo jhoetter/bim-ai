@@ -700,6 +700,13 @@ def test_ifc_inspection_matrix_covers_storeys_spaces_qtos_and_programme_fields()
     assert rep["identityPsets"]["wallWithPsetWallCommonReference"] >= 1
     assert rep["identityPsets"]["spaceWithPsetSpaceCommonReference"] >= 1
     assert rep["identityPsets"]["slabWithPsetSlabCommonReference"] >= 1
+    gr = rep.get("geometryReadbackSummary_v0") or {}
+    assert gr.get("available") is True
+    assert gr.get("allMatched") is True
+    assert gr.get("source", {}).get("countsByKind", {}).get("wall") == 1
+    assert gr.get("coverageByKind", {}).get("wall", {}).get("matchedReferenceIds") == ["w-a"]
+    assert gr.get("coverageByKind", {}).get("floor", {}).get("productsWithBody") == 1
+    assert gr.get("coverageByKind", {}).get("room", {}).get("productsWithQto") == 1
     ql = rep.get("qtoLinkedProducts") or {}
     assert ql.get("IfcWall", 0) >= 1
     assert ql.get("IfcSlab", 0) >= 1
