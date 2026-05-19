@@ -12,6 +12,7 @@ PYTHON ?= python3.13
 APP_DIR := app
 PNPM := pnpm
 UV ?= uv
+PYTEST_ARGS ?= tests/
 
 # Local suite port allocation:
 #   2000 → bim-ai web (:8500 API)  <-- this repo (avoids 3xxx used by sister apps)
@@ -24,7 +25,7 @@ SEED_ARGS := $(if $(SEED_NAME),--name "$(SEED_NAME)",) $(if $(SEED_ROOT),--root 
 
 .PHONY: help install dev dev-api dev-web kill-ports seed seed-clear seed-artifact verify-sketch-seeds verify-sketch-seeds-live \
 	db-up db-down db-reset db-logs \
-	test test-py test-js format format-check python-format-check lint lint-js lint-py architecture \
+	test test-py test-py-full test-py-focused test-js format format-check python-format-check lint lint-js lint-py architecture \
 	typecheck verify build clean lockfile-check verify-refinement-reliability
 
 help:
@@ -35,6 +36,7 @@ help:
 	@echo "  seed-clear — delete all seed-managed local models"
 	@echo "  verify-sketch-seeds — validate seed artifact manifests/hashes"
 	@echo "  verify-sketch-seeds-live — strict current-HEAD live sketch-to-BIM acceptance"
+	@echo "  test-py-focused — focused backend tests without coverage; pass PYTEST_ARGS=tests/path.py"
 	@echo "  verify    — format-check, Python lint/format, architecture, tc, tests, build"
 
 install:
@@ -116,6 +118,11 @@ test: test-py test-js
 
 test-py:
 	cd $(APP_DIR) && PYTHONPATH=. $(UV) run python -m pytest tests/ -q
+
+test-py-full: test-py
+
+test-py-focused:
+	cd $(APP_DIR) && PYTHONPATH=. $(UV) run python -m pytest $(PYTEST_ARGS) -q --no-cov
 
 test-js:
 	$(PNPM) -w turbo test

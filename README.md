@@ -52,6 +52,17 @@ architecture, and tests. `pnpm verify:strict` adds TypeScript typecheck and
 build. `make verify` is the full local monorepo gate and adds Python ruff,
 Python tests, and the Python lockfile check.
 
+Backend test commands are split by intent:
+
+```bash
+make test-py
+make test-py-focused PYTEST_ARGS="tests/api/test_activity_route.py"
+```
+
+`make test-py` is the full coverage-enforced backend gate used by `make verify`.
+`make test-py-focused` disables coverage for narrow development runs so the
+command answers whether the selected tests passed.
+
 JavaScript lint is intentionally exposed as `pnpm lint` / `make lint-js`, but
 is not yet part of the canonical merge gate because the existing frontend lint
 backlog is tracked separately in the code-quality tracker.

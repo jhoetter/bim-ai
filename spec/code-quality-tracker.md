@@ -1,6 +1,6 @@
 # BIM AI - Code Quality Tracker
 
-Last updated: 2026-05-18
+Last updated: 2026-05-19
 
 Purpose: track the current code-quality risks that block the repository from
 being a healthy production-grade codebase. This is the active successor to the
@@ -155,8 +155,8 @@ Observed results:
 | Frontend lint             | Fail                                   | `pnpm lint` reports the existing `@bim-ai/web` lint backlog; tracked outside the B-grade verify gate.          |
 | Frontend unit tests       | Pass                                   | `669` test files / `5462` tests pass with test i18n, fetch, canvas, and React key warnings quieted.            |
 | Frontend typecheck        | Pass                                   | Restored on 2026-05-19; `@bim-ai/web` compiles under the strict project config.                                |
-| Narrow backend test       | Assertions pass, command exits nonzero | Project-wide coverage gate applies to narrow test runs, so a focused route test exits with coverage below 65%. |
-| Makefile Python ruff path | Broken in this checkout                | `app/.venv/bin/ruff` is missing, while `uv run ruff` works.                                                    |
+| Narrow backend test       | Pass                                   | `make test-py-focused PYTEST_ARGS="tests/api/test_activity_route.py"` runs the focused route test with `--no-cov`. |
+| Makefile Python ruff path | Pass                                   | Makefile Python lint/format targets use `uv run`, so they do not depend on hardcoded `.venv/bin/ruff` paths.   |
 
 Code scale snapshot:
 
@@ -205,7 +205,7 @@ Largest current source files observed:
 | CQ-2026-05 | P1       | Open    | Core type model hygiene                   | Shared element/command types compile without stale aliases or unreachable discriminants. |
 | CQ-2026-06 | P1       | Open    | Runtime data coercion boundary            | Backend-to-frontend coercion is localized, typed, and tested.                            |
 | CQ-2026-07 | P1       | Open    | Python route and registry maintainability | Route/registry surfaces split into generated or thematic modules.                        |
-| CQ-2026-08 | P1       | Partial | Backend testing signal                    | Full backend suite is strong, but narrow test workflows need usable coverage behavior.   |
+| CQ-2026-08 | P1       | Done    | Backend testing signal                    | Full backend gate enforces coverage; focused backend runs use documented `--no-cov`.     |
 | CQ-2026-09 | P2       | Open    | Repository hygiene                        | Generated/local artifacts are untracked or intentionally documented.                     |
 | CQ-2026-10 | P2       | Open    | `any`/`unknown` escape hatch reduction    | Hotspot count trends down with CI-visible budgets.                                       |
 | CQ-2026-11 | P2       | Open    | Frontend integration test environment     | jsdom/browser gaps are mocked or isolated intentionally.                                 |
@@ -572,7 +572,7 @@ for merge conflicts and stale descriptor drift.
 ## CQ-2026-08 - Improve Backend Test Workflow Signal
 
 Priority: P1
-Status: Partial
+Status: Done
 Owner area: backend test configuration
 
 ### Problem
@@ -601,6 +601,20 @@ in `spec/backend-testing-hardening.md`; this item is about workflow clarity.
 cd app && uv run pytest -q -m 'not integration'
 cd app && uv run pytest -q -m 'not integration' --no-cov
 ```
+
+### Completion Evidence
+
+- 2026-05-19: `make test-py` remains the full backend gate and still uses the
+  coverage-enforced pytest defaults from `app/pyproject.toml`.
+- 2026-05-19: `make test-py` passes `2813` tests, skips `94`, and reports
+  `78.03%` coverage against the configured `65%` threshold.
+- 2026-05-19: `make test-py-focused PYTEST_ARGS="tests/api/test_activity_route.py"`
+  runs a narrow backend test with `--no-cov`, avoiding false nonzero exits from
+  project-wide coverage thresholds.
+- 2026-05-19: `README.md` documents both backend paths and clarifies that
+  `make verify` uses the full coverage-enforced backend gate.
+- 2026-05-19: CI continues to run the full backend pytest command in
+  `.github/workflows/ci.yml`.
 
 ---
 
