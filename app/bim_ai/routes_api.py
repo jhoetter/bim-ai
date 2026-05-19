@@ -178,6 +178,11 @@ from bim_ai.template_loader import (
     load_template_snapshot,
     template_exists,
 )
+from bim_ai.transaction_safety import (
+    ActorKind,
+    assess_transaction_safety,
+    build_dry_run_evidence,
+)
 from bim_ai.type_material_registry import merged_registry_payload
 from bim_ai.v1_acceptance_proof_matrix import build_v1_acceptance_proof_matrix_v1
 from bim_ai.v1_closeout_readiness_manifest import build_v1_closeout_readiness_manifest_v1
@@ -2224,6 +2229,8 @@ class CommandBundleRequest(BaseModel):
     user_id: str | None = Field(default="local-dev", alias="userId")
     client_op_id: str | None = Field(default=None, alias="clientOpId")
     submitter: str = Field(default="human")
+    actor_kind: ActorKind = Field(default="human", alias="actorKind")
+    dry_run_evidence: dict[str, Any] | None = Field(default=None, alias="dryRunEvidence")
 
 
 @api_router.post("/models/{model_id}/bundles")
@@ -2303,6 +2310,28 @@ async def apply_bundle_route(
                 ),
             }
 
+    safety_surface = (
+        "mcp-mutation" if body.actor_kind in {"agent", "mcp-client"} else "bundle-commit"
+    )
+    transaction_safety = assess_transaction_safety(
+        current_revision=doc.revision,
+        parent_revision=body.bundle.parent_revision,
+        mode=mode,  # type: ignore[arg-type]
+        surface=safety_surface,  # type: ignore[arg-type]
+        actor_kind=body.actor_kind,
+        commands=body.bundle.commands,
+        dry_run_evidence=body.dry_run_evidence,
+    )
+    transaction_safety_wire = transaction_safety.model_dump(by_alias=True)
+    if not transaction_safety.ok:
+        raise HTTPException(
+            status_code=409,
+            detail={
+                "reason": transaction_safety.reason_code,
+                "transactionSafety": transaction_safety_wire,
+            },
+        )
+
     result, new_doc_from_bundle = _apply_bundle(
         doc, body.bundle, mode, model_id=str(model_id), submitter=body.submitter
     )  # type: ignore[arg-type]
@@ -2349,6 +2378,7 @@ async def apply_bundle_route(
             },
             bundle_digest=bundle_digest,
         )
+        transaction_metadata["transactionSafety"] = transaction_safety_wire
         await delete_redos(session, model_id, uid)
 
         session.add(
@@ -2392,9 +2422,28 @@ async def apply_bundle_route(
 
         result_wire = result.model_dump(by_alias=True)
         result_wire["transactionMetadata"] = transaction_metadata
+        result_wire["transactionSafety"] = transaction_safety_wire
         return result_wire
 
-    return result.model_dump(by_alias=True)
+    result_wire = result.model_dump(by_alias=True)
+    result_wire["transactionSafety"] = transaction_safety_wire
+    dry_run_ok = not any(
+        bool(v.get("blocking")) or v.get("severity") == "error" for v in result.violations
+    )
+    result_wire["dryRunEvidence"] = build_dry_run_evidence(
+        parent_revision=body.bundle.parent_revision,
+        commands=body.bundle.commands,
+        ok=dry_run_ok,
+        reason=None if dry_run_ok else "dry_run_violations",
+        violations=result.violations,
+        summary_before={"revision": doc.revision, "elementCount": len(doc.elements)},
+        summary_after={
+            "wouldRevision": result.new_revision,
+            "changedIds": result.changed_ids,
+            "checkpointSnapshotId": result.checkpoint_snapshot_id,
+        },
+    )
+    return result_wire
 
 
 # ---------------------------------------------------------------------------

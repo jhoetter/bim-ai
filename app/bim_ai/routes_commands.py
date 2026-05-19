@@ -50,6 +50,7 @@ from bim_ai.routes_deps import (
 from bim_ai.schedule_derivation import list_schedule_ids
 from bim_ai.tables import ModelRecord, RedoStackRecord, UndoStackRecord
 from bim_ai.transaction_metadata import build_transaction_metadata, command_bundle_digest
+from bim_ai.transaction_safety import assess_transaction_safety, build_dry_run_evidence
 
 commands_router = APIRouter()
 
@@ -422,6 +423,25 @@ def _idempotent_command_payload(
     return payload
 
 
+def _transaction_safety_wire(
+    *,
+    current_revision: int,
+    parent_revision: int,
+    mode: str,
+    surface: str,
+    commands: list[dict[str, Any]],
+) -> dict[str, Any]:
+    decision = assess_transaction_safety(
+        current_revision=current_revision,
+        parent_revision=parent_revision,
+        mode=mode,  # type: ignore[arg-type]
+        surface=surface,  # type: ignore[arg-type]
+        actor_kind="human",
+        commands=commands,
+    )
+    return decision.model_dump(by_alias=True)
+
+
 @commands_router.get("/models/{model_id}/command-log")
 async def command_log_full(
     model_id: UUID,
@@ -527,6 +547,14 @@ async def apply_command(
         },
         bundle_digest=command_digest,
     )
+    transaction_safety = _transaction_safety_wire(
+        current_revision=doc_before.revision,
+        parent_revision=doc_before.revision,
+        mode="commit",
+        surface="ui-command-commit",
+        commands=[command_for_commit],
+    )
+    transaction_metadata["transactionSafety"] = transaction_safety
     await delete_redos(session, model_id, uid)
 
     undo_row = UndoStackRecord(
@@ -567,6 +595,7 @@ async def apply_command(
         "clientOpId": body.client_op_id,
         "delta": delta,
         "transactionMetadata": transaction_metadata,
+        "transactionSafety": transaction_safety,
     }
     if _commands_include_move_level_elevation([body.command]):
         payload["levelElevationPropagationEvidence_v0"] = (
@@ -602,6 +631,23 @@ async def dry_run_command(
         raise HTTPException(status_code=400, detail=f"Invalid command: {exc}") from exc
 
     viols_wire = [v.model_dump(by_alias=True) for v in violations]
+    summary_after = compute_model_summary(new_doc) if ok and new_doc is not None else None
+    dry_run_evidence = build_dry_run_evidence(
+        parent_revision=baseline_doc.revision,
+        commands=[command_for_commit],
+        ok=ok and new_doc is not None,
+        reason=code,
+        violations=viols_wire,
+        summary_before=baseline_summary,
+        summary_after=summary_after,
+    )
+    transaction_safety = _transaction_safety_wire(
+        current_revision=baseline_doc.revision,
+        parent_revision=baseline_doc.revision,
+        mode="dry_run",
+        surface="dry-run",
+        commands=[command_for_commit],
+    )
 
     if not ok or new_doc is None:
         return {
@@ -613,6 +659,8 @@ async def dry_run_command(
             "summaryAfter": None,
             "wouldRevision": None,
             "appliedCommandPreview": command_for_commit,
+            "dryRunEvidence": dry_run_evidence,
+            "transactionSafety": transaction_safety,
         }
 
     return {
@@ -621,9 +669,11 @@ async def dry_run_command(
         "reason": code,
         "violations": viols_wire,
         "summaryBefore": baseline_summary,
-        "summaryAfter": compute_model_summary(new_doc),
+        "summaryAfter": summary_after,
         "wouldRevision": new_doc.revision,
         "appliedCommandPreview": command_for_commit,
+        "dryRunEvidence": dry_run_evidence,
+        "transactionSafety": transaction_safety,
     }
 
 
@@ -706,6 +756,14 @@ async def apply_command_bundle(
         },
         bundle_digest=bundle_digest,
     )
+    transaction_safety = _transaction_safety_wire(
+        current_revision=doc_before.revision,
+        parent_revision=doc_before.revision,
+        mode="commit",
+        surface="bundle-commit",
+        commands=commands_for_commit,
+    )
+    transaction_metadata["transactionSafety"] = transaction_safety
 
     await delete_redos(session, model_id, uid)
 
@@ -752,6 +810,7 @@ async def apply_command_bundle(
         "clientOpId": body.client_op_id,
         "delta": delta,
         "transactionMetadata": transaction_metadata,
+        "transactionSafety": transaction_safety,
         "replayDiagnostics": bundle_replay_diagnostics(commands_for_commit),
     }
     if _commands_include_move_level_elevation(commands_for_commit):
@@ -796,6 +855,23 @@ async def dry_run_command_bundle(
         raise HTTPException(status_code=400, detail=f"Invalid bundle: {exc}") from exc
 
     viols_wire = [v.model_dump(by_alias=True) for v in violations]
+    summary_after = compute_model_summary(new_doc) if ok and new_doc is not None else None
+    dry_run_evidence = build_dry_run_evidence(
+        parent_revision=baseline_doc.revision,
+        commands=commands_for_commit,
+        ok=ok and new_doc is not None,
+        reason=code,
+        violations=viols_wire,
+        summary_before=baseline_summary,
+        summary_after=summary_after,
+    )
+    transaction_safety = _transaction_safety_wire(
+        current_revision=baseline_doc.revision,
+        parent_revision=baseline_doc.revision,
+        mode="dry_run",
+        surface="dry-run",
+        commands=commands_for_commit,
+    )
 
     brief_proto = agent_brief_command_protocol_v1(
         doc=baseline_doc,
@@ -852,6 +928,8 @@ async def dry_run_command_bundle(
             "agentGeneratedBundleQaChecklist_v1": qa_checklist,
             "agentBriefAcceptanceReadout_v1": accept_readout,
             "agentReviewReadoutConsistencyClosure_v1": consistency_closure,
+            "dryRunEvidence": dry_run_evidence,
+            "transactionSafety": transaction_safety,
         }
 
     return {
@@ -860,7 +938,7 @@ async def dry_run_command_bundle(
         "reason": code,
         "violations": viols_wire,
         "summaryBefore": baseline_summary,
-        "summaryAfter": compute_model_summary(new_doc),
+        "summaryAfter": summary_after,
         "wouldRevision": new_doc.revision,
         "appliedCommandsPreview": commands_for_commit,
         "replayDiagnostics": bundle_replay_diagnostics(commands_for_commit),
@@ -868,6 +946,8 @@ async def dry_run_command_bundle(
         "agentGeneratedBundleQaChecklist_v1": qa_checklist,
         "agentBriefAcceptanceReadout_v1": accept_readout,
         "agentReviewReadoutConsistencyClosure_v1": consistency_closure,
+        "dryRunEvidence": dry_run_evidence,
+        "transactionSafety": transaction_safety,
     }
 
 

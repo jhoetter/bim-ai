@@ -4,6 +4,7 @@ from bim_ai.transaction_safety import (
     ActorIdentity,
     DryRunEvidence,
     assess_transaction_safety,
+    build_dry_run_evidence,
     build_agent_remediation_proposal,
     canonical_command_digest,
     classify_fix_safety,
@@ -113,6 +114,63 @@ def test_q05_agent_commit_requires_matching_successful_dry_run_evidence() -> Non
     assert ok.command_digest_sha256 == digest
     assert ok.undoable is True
     assert ok.inspectable is True
+
+
+def test_q05_invalid_agent_remediation_commit_is_blocked_without_dry_run_match() -> None:
+    dry_run_commands = [{"type": "setElementParameter", "elementId": "w-1", "mark": "A"}]
+    commit_commands = [{"type": "setElementParameter", "elementId": "w-1", "mark": "B"}]
+    evidence = build_dry_run_evidence(
+        parent_revision=6,
+        commands=dry_run_commands,
+        ok=True,
+        reason=None,
+        violations=[],
+        summary_before={"revision": 6},
+        summary_after={"wouldRevision": 7},
+    )
+
+    decision = assess_transaction_safety(
+        current_revision=6,
+        parent_revision=6,
+        mode="commit",
+        surface="mcp-mutation",
+        actor_kind="agent",
+        commands=commit_commands,
+        dry_run_evidence=evidence,
+    )
+
+    assert decision.ok is False
+    assert decision.reason_code == "dry_run_command_mismatch"
+    assert decision.command_digest_sha256 == canonical_command_digest(commit_commands)
+
+
+def test_q05_valid_agent_remediation_commit_is_allowed_with_matching_dry_run() -> None:
+    commands = [{"type": "setElementParameter", "elementId": "w-1", "mark": "A"}]
+    evidence = build_dry_run_evidence(
+        parent_revision=6,
+        commands=commands,
+        ok=True,
+        reason=None,
+        violations=[],
+        summary_before={"revision": 6},
+        summary_after={"wouldRevision": 7},
+    )
+
+    decision = assess_transaction_safety(
+        current_revision=6,
+        parent_revision=6,
+        mode="commit",
+        surface="mcp-mutation",
+        actor_kind="agent",
+        commands=commands,
+        dry_run_evidence=evidence,
+    )
+
+    assert decision.ok is True
+    assert decision.required_permission_scopes == ["mutation"]
+    assert evidence["schemaVersion"] == "dryRunEvidence_v1"
+    assert evidence["commandDigestSha256"] == canonical_command_digest(commands)
+    assert evidence["summaryDigestSha256"]
 
 
 def test_q02_undo_redo_contract_requires_inspectable_forward_and_inverse_commands() -> None:

@@ -8,6 +8,7 @@ from typing import Any, Literal
 from pydantic import BaseModel, ConfigDict, Field
 
 TRANSACTION_SAFETY_SCHEMA_VERSION = "transactionSafety_v1"
+DRY_RUN_EVIDENCE_SCHEMA_VERSION = "dryRunEvidence_v1"
 REMEDIATION_PROPOSAL_SCHEMA_VERSION = "agentRemediationProposal_v1"
 
 TransactionMode = Literal["dry_run", "commit", "undo", "redo"]
@@ -57,6 +58,7 @@ _FIX_SAFETY_RANK: dict[FixSafety, int] = {
 class DryRunEvidence(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
 
+    schema_version: str = Field(default=DRY_RUN_EVIDENCE_SCHEMA_VERSION, alias="schemaVersion")
     parent_revision: int = Field(alias="parentRevision")
     command_digest_sha256: str = Field(alias="commandDigestSha256")
     ok: bool
@@ -119,6 +121,46 @@ def canonical_command_digest(commands: list[Mapping[str, Any]]) -> str:
 
     canonical = json.dumps(commands, sort_keys=True, separators=(",", ":"), default=str)
     return hashlib.sha256(canonical.encode("utf-8")).hexdigest()
+
+
+def canonical_payload_digest(payload: Mapping[str, Any]) -> str:
+    """Return a stable digest for machine-readable dry-run or safety summaries."""
+
+    canonical = json.dumps(payload, sort_keys=True, separators=(",", ":"), default=str)
+    return hashlib.sha256(canonical.encode("utf-8")).hexdigest()
+
+
+def build_dry_run_evidence(
+    *,
+    parent_revision: int,
+    commands: list[Mapping[str, Any]],
+    ok: bool,
+    reason: str | None = None,
+    violations: list[Mapping[str, Any]] | None = None,
+    summary_before: Mapping[str, Any] | None = None,
+    summary_after: Mapping[str, Any] | None = None,
+    evidence_path: str | None = None,
+) -> dict[str, Any]:
+    """Build deterministic evidence an agent/MCP commit must replay exactly."""
+
+    command_digest = canonical_command_digest(commands)
+    summary_payload: dict[str, Any] = {
+        "schemaVersion": DRY_RUN_EVIDENCE_SCHEMA_VERSION,
+        "parentRevision": parent_revision,
+        "commandDigestSha256": command_digest,
+        "ok": ok,
+        "reason": reason,
+        "violations": violations or [],
+        "summaryBefore": summary_before,
+        "summaryAfter": summary_after,
+    }
+    return DryRunEvidence(
+        parent_revision=parent_revision,
+        command_digest_sha256=command_digest,
+        ok=ok,
+        evidence_path=evidence_path,
+        summary_digest_sha256=canonical_payload_digest(summary_payload),
+    ).model_dump(by_alias=True)
 
 
 def _command_type(command: Mapping[str, Any]) -> str:
@@ -427,8 +469,10 @@ __all__ = [
     "DryRunEvidence",
     "FixProvenance",
     "assess_transaction_safety",
+    "build_dry_run_evidence",
     "build_agent_remediation_proposal",
     "canonical_command_digest",
+    "canonical_payload_digest",
     "classify_fix_safety",
     "infer_permission_scopes",
     "validate_fix_provenance",
