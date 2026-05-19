@@ -385,7 +385,11 @@ function detachedOrFlyingFindings(snapshot) {
       }
     }
 
-    if (element.kind === 'railing' && !element.hostedStairId && !element.levelId) {
+    const railingHostId =
+      element.kind === 'railing'
+        ? element.hostedStairId ?? element.hostFloorId ?? element.hostWallId ?? element.hostEdgeId
+        : null;
+    if (element.kind === 'railing' && !railingHostId && !element.levelId) {
       findings.push(
         finding({
           category: 'detached_or_flying',
@@ -490,7 +494,7 @@ function rendererFindings(snapshot) {
       );
     }
 
-    if (element.kind === 'railing') {
+    if (element.kind === 'railing' && !element.hostedStairId && !element.hostEdgeId) {
       findings.push(
         finding({
           category: 'unsupported_renderer_feature',
