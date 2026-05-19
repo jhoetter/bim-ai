@@ -23,6 +23,19 @@ export interface CatalogFamilyTypeCommand extends Record<string, unknown> {
   familyId: string;
   discipline: 'door' | 'window' | 'generic';
   parameters: Record<string, unknown>;
+  parameterSchema: Array<Record<string, unknown>>;
+  requiredDimensions: string[];
+  hostSupport: string;
+  materialSlots: string[];
+  scheduleFields: string[];
+  ifcMapping: Record<string, unknown>;
+  gltfMapping: Record<string, unknown>;
+  renderSupport: Record<string, unknown>;
+  exportSupport: Record<string, unknown>;
+  planSymbol: Record<string, unknown>;
+  visualGeometry: Record<string, unknown>;
+  familySchemaVersion: 'family-content-v1';
+  strictFamilySchema: true;
   catalogSource: {
     catalogId: string;
     familyId: string;
@@ -123,6 +136,7 @@ export function planCatalogFamilyLoad(
           [FAMILY_EDITOR_DEFINITION_PARAM]: defaultParameters[FAMILY_EDITOR_DEFINITION_PARAM],
         }
       : defaultParameters;
+  const strictSchema = strictFamilyContentMetadata(placement, discipline, parameters);
 
   return {
     command: {
@@ -132,6 +146,7 @@ export function planCatalogFamilyLoad(
       familyId: placement.family.id,
       discipline,
       parameters,
+      ...strictSchema,
       catalogSource: {
         catalogId: placement.catalogId,
         familyId: placement.family.id,
@@ -143,6 +158,86 @@ export function planCatalogFamilyLoad(
     reloaded: existing !== null,
     overwriteOption,
   };
+}
+
+function strictFamilyContentMetadata(
+  placement: CatalogFamilyReloadPlacement,
+  discipline: 'door' | 'window' | 'generic',
+  parameters: Record<string, unknown>,
+): Pick<
+  CatalogFamilyTypeCommand,
+  | 'parameterSchema'
+  | 'requiredDimensions'
+  | 'hostSupport'
+  | 'materialSlots'
+  | 'scheduleFields'
+  | 'ifcMapping'
+  | 'gltfMapping'
+  | 'renderSupport'
+  | 'exportSupport'
+  | 'planSymbol'
+  | 'visualGeometry'
+  | 'familySchemaVersion'
+  | 'strictFamilySchema'
+> {
+  const paramDefs = placement.family.params ?? [];
+  const explicitSchema = paramDefs.map((param) => ({
+    key: param.key,
+    kind: paramKindForIntegrity(param.type),
+    min: param.min,
+    max: param.max,
+    options: param.options,
+    instanceOverridable: param.instanceOverridable,
+    required: true,
+  }));
+  const schemaKeys = new Set(explicitSchema.map((entry) => String(entry.key)));
+  const inferredDimensionKeys = Object.keys(parameters)
+    .filter((key) => /Mm$/.test(key) && typeof parameters[key] === 'number')
+    .sort();
+  const inferredSchema = inferredDimensionKeys
+    .filter((key) => !schemaKeys.has(key))
+    .map((key) => ({
+      key,
+      kind: 'mm',
+      instanceOverridable: true,
+      required: true,
+    }));
+  const parameterSchema = [...explicitSchema, ...inferredSchema].map((entry) =>
+    Object.fromEntries(Object.entries(entry).filter(([, value]) => value !== undefined)),
+  );
+  const scheduleFields = [
+    ...new Set([...parameterSchema.map((entry) => String(entry.key))]),
+  ].sort();
+  const ifcClass =
+    discipline === 'door'
+      ? 'IfcDoor'
+      : discipline === 'window'
+        ? 'IfcWindow'
+        : 'IfcBuildingElementProxy';
+
+  return {
+    parameterSchema,
+    requiredDimensions: inferredDimensionKeys,
+    hostSupport: discipline === 'door' || discipline === 'window' ? 'wall_hosted' : 'freestanding',
+    materialSlots: ['default'],
+    scheduleFields,
+    ifcMapping: { class: ifcClass },
+    gltfMapping: { nodeKind: 'family_instance' },
+    renderSupport: { geometry: true, source: 'catalog_family' },
+    exportSupport: { ifc: true, gltf: true },
+    planSymbol: { kind: discipline === 'generic' ? 'component' : discipline },
+    visualGeometry: { kind: 'catalog_family', familyId: placement.family.id },
+    familySchemaVersion: 'family-content-v1',
+    strictFamilySchema: true,
+  };
+}
+
+function paramKindForIntegrity(paramType: FamilyParamDef['type']): string {
+  if (paramType === 'length_mm') return 'mm';
+  if (paramType === 'material_key') return 'material';
+  if (paramType === 'boolean') return 'boolean';
+  if (paramType === 'option') return 'option';
+  return paramType;
 }
 
 function normalizeFamilyDiscipline(value: string): 'door' | 'window' | 'generic' {

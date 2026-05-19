@@ -257,6 +257,7 @@ describe('findHostedOpeningConflict', () => {
     });
 
     expect(conflict?.elementId).toBe('window-a');
+    expect(conflict?.reason).toBe('overlap');
   });
 
   it('allows the same proposed span when existing openings are on another wall', () => {
@@ -297,5 +298,46 @@ describe('findHostedOpeningConflict', () => {
     });
 
     expect(conflict?.elementId).toBe('opening-a');
+  });
+
+  it('rejects proposed hosted openings that violate endpoint clearance', () => {
+    const conflict = findHostedOpeningConflict({
+      wallId: 'wall-a',
+      wallLengthMm: 4000,
+      alongT: 0.08,
+      widthMm: 900,
+      existing: [],
+      clearanceMm: 75,
+    });
+
+    expect(conflict?.reason).toBe('endpoint_clearance');
+  });
+
+  it('rejects proposed hosted openings when wall capacity is exceeded', () => {
+    const conflict = findHostedOpeningConflict({
+      wallId: 'wall-a',
+      wallLengthMm: 2500,
+      alongT: 0.72,
+      widthMm: 900,
+      clearanceMm: 75,
+      existing: [
+        {
+          kind: 'door',
+          id: 'door-a',
+          wallId: 'wall-a',
+          alongT: 0.25,
+          widthMm: 900,
+        },
+        {
+          kind: 'window',
+          id: 'window-a',
+          wallId: 'wall-a',
+          alongT: 0.5,
+          widthMm: 500,
+        },
+      ],
+    });
+
+    expect(conflict?.reason).toBe('host_capacity_exceeded');
   });
 });

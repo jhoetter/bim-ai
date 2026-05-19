@@ -287,6 +287,45 @@ def test_opening_conflict_graph_is_deterministic_for_overlap_and_clearance() -> 
     assert graph["nodes"][0]["trackerItems"] == ["BIR-B01", "BIR-C06"]
 
 
+def test_opening_conflict_graph_flags_spacing_capacity_and_lintel_clearance() -> None:
+    wall = _wall(start=(0, 1000), end=(4000, 1000), props={"allowDetached": True})
+    window_a = WindowElem(
+        id="window-a",
+        wallId=wall.id,
+        alongT=0.35,
+        widthMm=900,
+        sillHeightMm=900,
+        heightMm=1200,
+    )
+    window_b = WindowElem(
+        id="window-b",
+        wallId=wall.id,
+        alongT=0.5875,
+        widthMm=900,
+        sillHeightMm=1000,
+        heightMm=1750,
+    )
+    door_c = DoorElem(id="door-c", wallId=wall.id, alongT=0.82, widthMm=2300)
+
+    graph = hosted_opening_conflict_graph(
+        _doc(wall, window_a, window_b, door_c),
+        opening_spacing_mm=75,
+        header_clearance_mm=150,
+    )
+    edge_kinds = {edge["kind"] for edge in graph["edges"]}
+    violations = hosted_opening_integrity_violations(_doc(wall, window_a, window_b, door_c))
+    rule_ids = {violation.rule_id for violation in violations}
+
+    assert {"opening_spacing", "host_capacity_exceeded", "header_clearance"} <= edge_kinds
+    assert "hosted_opening_spacing_violation" in rule_ids
+    assert "hosted_opening_capacity_exceeded" in rule_ids
+    assert "hosted_opening_lintel_clearance" in rule_ids
+    lintel = next(
+        violation for violation in violations if violation.rule_id == "hosted_opening_lintel_clearance"
+    )
+    assert lintel.model_dump(by_alias=True)["trackerItems"] == ["BIR-B01", "BIR-C06"]
+
+
 def test_hosted_family_support_classification_flags_wrong_host_and_orphan_proxy() -> None:
     wall = _wall()
     family_type = FamilyTypeElem(

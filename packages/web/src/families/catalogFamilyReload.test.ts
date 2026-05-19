@@ -56,6 +56,32 @@ describe('catalog family reload planning', () => {
     });
   });
 
+  it('emits strict family/content metadata for project-loaded catalog types', () => {
+    const plan = planCatalogFamilyLoad(PLACEMENT, {}, { now: 1000 });
+
+    expect(plan.command).toMatchObject({
+      familySchemaVersion: 'family-content-v1',
+      strictFamilySchema: true,
+      hostSupport: 'freestanding',
+      materialSlots: ['default'],
+      requiredDimensions: ['depthMm', 'widthMm'],
+      scheduleFields: ['depthMm', 'widthMm'],
+      ifcMapping: { class: 'IfcBuildingElementProxy' },
+      gltfMapping: { nodeKind: 'family_instance' },
+      renderSupport: { geometry: true, source: 'catalog_family' },
+      exportSupport: { ifc: true, gltf: true },
+      planSymbol: { kind: 'component' },
+      visualGeometry: {
+        kind: 'catalog_family',
+        familyId: 'catalog:living-room:sofa-3-seat',
+      },
+    });
+    expect(plan.command.parameterSchema).toEqual([
+      { key: 'depthMm', kind: 'mm', instanceOverridable: true, required: true },
+      { key: 'widthMm', kind: 'mm', instanceOverridable: true, required: true },
+    ]);
+  });
+
   it('keeps existing project parameter values when reloading without parameter overwrite', () => {
     const plan = planCatalogFamilyLoad(
       PLACEMENT,

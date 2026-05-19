@@ -33,6 +33,8 @@ Point2 = tuple[float, float]
 Interval = tuple[float, float]
 
 DEFAULT_ENDPOINT_CLEARANCE_MM = 75.0
+DEFAULT_OPENING_SPACING_MM = 75.0
+DEFAULT_HEADER_CLEARANCE_MM = 150.0
 DEFAULT_ENVELOPE_TOLERANCE_MM = 25.0
 DEFAULT_SUPPORT_TOLERANCE_MM = 75.0
 
@@ -45,6 +47,9 @@ HOSTED_OPENING_RULE_IDS = {
     "hosted_opening_outside_usable_span",
     "hosted_opening_missing_semantic_cut",
     "hosted_opening_overlap",
+    "hosted_opening_spacing_violation",
+    "hosted_opening_capacity_exceeded",
+    "hosted_opening_lintel_clearance",
     "hosted_family_missing_host",
     "hosted_family_unsupported_host_class",
     "hosted_render_proxy_orphan",
@@ -122,6 +127,9 @@ _TRACKER_ITEMS_BY_RULE_ID = {
     "hosted_opening_outside_usable_span": ["BIR-B01", "BIR-C03", "BIR-C06"],
     "hosted_opening_missing_semantic_cut": ["BIR-B01", "BIR-C04"],
     "hosted_opening_overlap": ["BIR-B01", "BIR-C06"],
+    "hosted_opening_spacing_violation": ["BIR-B01", "BIR-C06"],
+    "hosted_opening_capacity_exceeded": ["BIR-B01", "BIR-C06"],
+    "hosted_opening_lintel_clearance": ["BIR-B01", "BIR-C06"],
     "hosted_family_missing_host": ["BIR-C07", "BIR-C08"],
     "hosted_family_unsupported_host_class": ["BIR-C07", "BIR-C08"],
     "hosted_render_proxy_orphan": ["BIR-C08"],
@@ -139,6 +147,9 @@ _TRACKER_ITEMS_BY_RULE_ID = {
 _RECOMMENDATION_BY_RULE_ID = {
     "hosted_opening_missing_semantic_cut": "Create or restore a valid wall cut for the hosted opening, or mark the element nonphysical before commit.",
     "hosted_opening_overlap": "Separate, resize, or merge the affected openings so their host-wall intervals no longer overlap.",
+    "hosted_opening_spacing_violation": "Move or resize the hosted openings so endpoint and between-opening clearances meet the declared spacing policy.",
+    "hosted_opening_capacity_exceeded": "Reduce opening widths/counts or lengthen/split the host wall so openings fit the wall capacity with required clearances.",
+    "hosted_opening_lintel_clearance": "Lower or resize the hosted opening, or increase the host wall height so the required header/lintel clearance is maintained.",
     "hosted_family_missing_host": "Rehost the family/asset to a valid support element or delete the orphan rendered proxy.",
     "hosted_family_unsupported_host_class": "Match the family support class to the host kind, or rehost the instance to a compatible wall, face, ceiling, or workplane.",
     "hosted_render_proxy_orphan": "Delete the orphan proxy or recreate the missing host relationship before rendering/export.",
@@ -328,7 +339,7 @@ def hosted_opening_integrity_violations(
                 )
             )
 
-    violations.extend(_overlap_violations(hosted, elements))
+    violations.extend(_opening_conflict_violations(hosted, elements))
     violations.extend(_hosted_family_support_violations(elements))
     violations.extend(_orphan_void_cut_violations(elements))
     violations.extend(_helper_visual_leakage_violations(elements))
@@ -386,6 +397,8 @@ def hosted_opening_conflict_graph(
     doc_or_elements: Document | Mapping[str, Element],
     *,
     endpoint_clearance_mm: float = DEFAULT_ENDPOINT_CLEARANCE_MM,
+    opening_spacing_mm: float = DEFAULT_OPENING_SPACING_MM,
+    header_clearance_mm: float = DEFAULT_HEADER_CLEARANCE_MM,
 ) -> dict[str, Any]:
     """Return a deterministic graph of hosted opening nodes and wall-span conflicts."""
 
@@ -425,6 +438,30 @@ def hosted_opening_conflict_graph(
                 "clearanceEndMm": round((1.0 - end_t) * length, 3),
             }
             by_host.setdefault(host.id, []).append(node)
+
+            head_height = _opening_head_height_mm(opening)
+            if head_height is not None and _is_finite_number(host.height_mm):
+                header_clearance = float(host.height_mm) - head_height
+                node["interval"]["headerClearanceMm"] = round(header_clearance, 3)
+                if header_clearance < header_clearance_mm:
+                    edges.append(
+                        {
+                            "kind": "header_clearance",
+                            "hostWallId": host.id,
+                            "elementIds": [str(opening.id), host.id],
+                            "hostIds": [host.id],
+                            "clearanceMm": round(header_clearance, 3),
+                            "minimumClearanceMm": header_clearance_mm,
+                            "trackerItems": sorted({"BIR-B01", "BIR-C06"}),
+                            "recommendation": _recommendation_for_rule(
+                                "hosted_opening_lintel_clearance"
+                            ),
+                            "safeFixHints": _safe_fix_hints_for_rule(
+                                "hosted_opening_lintel_clearance",
+                                None,
+                            ),
+                        }
+                    )
 
             if start_t < -1e-6 or end_t > 1.0 + 1e-6:
                 edges.append(
@@ -500,6 +537,68 @@ def hosted_opening_conflict_graph(
                         "recommendation": _recommendation_for_rule("hosted_opening_overlap"),
                         "safeFixHints": _safe_fix_hints_for_rule(
                             "hosted_opening_overlap",
+                            None,
+                        ),
+                    }
+                )
+
+        host = elements.get(host_id)
+        host_length = wall_length_mm(host) if isinstance(host, WallElem) else 0.0
+        if host_length <= 0:
+            continue
+
+        for a_node, b_node in zip(ordered, ordered[1:], strict=False):
+            a_interval = a_node["interval"]
+            b_interval = b_node["interval"]
+            gap_mm = (float(b_interval["startT"]) - float(a_interval["endT"])) * host_length
+            if 0 <= gap_mm < opening_spacing_mm:
+                edges.append(
+                    {
+                        "kind": "opening_spacing",
+                        "hostWallId": host_id,
+                        "elementIds": [str(a_node["elementId"]), str(b_node["elementId"]), host_id],
+                        "hostIds": [host_id],
+                        "clearanceMm": round(gap_mm, 3),
+                        "minimumClearanceMm": opening_spacing_mm,
+                        "trackerItems": sorted({"BIR-B01", "BIR-C06"}),
+                        "recommendation": _recommendation_for_rule(
+                            "hosted_opening_spacing_violation"
+                        ),
+                        "safeFixHints": _safe_fix_hints_for_rule(
+                            "hosted_opening_spacing_violation",
+                            None,
+                        ),
+                    }
+                )
+
+        if ordered:
+            total_opening_width = sum(
+                max(0.0, float(node["interval"]["endT"]) - float(node["interval"]["startT"]))
+                * host_length
+                for node in ordered
+            )
+            required_length = (
+                total_opening_width
+                + (2 * endpoint_clearance_mm)
+                + (max(0, len(ordered) - 1) * opening_spacing_mm)
+            )
+            if required_length > host_length + 1e-6:
+                edges.append(
+                    {
+                        "kind": "host_capacity_exceeded",
+                        "hostWallId": host_id,
+                        "elementIds": [str(node["elementId"]) for node in ordered] + [host_id],
+                        "hostIds": [host_id],
+                        "requiredLengthMm": round(required_length, 3),
+                        "hostLengthMm": round(host_length, 3),
+                        "minimumEndpointClearanceMm": endpoint_clearance_mm,
+                        "minimumOpeningSpacingMm": opening_spacing_mm,
+                        "trackerItems": sorted({"BIR-B01", "BIR-C06"}),
+                        "recommendation": _recommendation_for_rule(
+                            "hosted_opening_capacity_exceeded"
+                        ),
+                        "safeFixHints": _safe_fix_hints_for_rule(
+                            "hosted_opening_capacity_exceeded",
                             None,
                         ),
                     }
@@ -853,6 +952,13 @@ def _safe_fix_hints_for_rule(
         hints.append({"kind": "create_missing_wall_opening", "safety": "review_required"})
     elif rule_id == "hosted_opening_overlap":
         hints.append({"kind": "resize_reposition_or_merge_openings", "safety": "review_required"})
+    elif rule_id in {
+        "hosted_opening_spacing_violation",
+        "hosted_opening_capacity_exceeded",
+        "hosted_opening_lintel_clearance",
+    }:
+        hints.append({"kind": "resize_or_reposition_opening", "safety": "review_required"})
+        hints.append({"kind": "split_host_or_reduce_openings", "safety": "needs_user_intent"})
     elif rule_id == "hosted_opening_outside_usable_span":
         hints.append({"kind": "resize_or_reposition_opening", "safety": "review_required"})
     elif rule_id in {
@@ -990,7 +1096,19 @@ def _semantic_cut_violation_message(
     return None
 
 
-def _overlap_violations(
+def _opening_head_height_mm(opening: DoorElem | WindowElem | WallOpeningElem) -> float | None:
+    if isinstance(opening, WindowElem):
+        return float(opening.sill_height_mm) + float(opening.height_mm)
+    if isinstance(opening, WallOpeningElem):
+        return float(opening.head_height_mm)
+    return None
+
+
+def _is_finite_number(value: Any) -> bool:
+    return isinstance(value, int | float) and math.isfinite(float(value))
+
+
+def _opening_conflict_violations(
     hosted: list[DoorElem | WindowElem | WallOpeningElem],
     elements: Mapping[str, Element],
 ) -> list[Violation]:
@@ -998,19 +1116,47 @@ def _overlap_violations(
     violations: list[Violation] = []
     graph = hosted_opening_conflict_graph(elements)
     for edge in graph["edges"]:
-        if edge.get("kind") != "overlap":
-            continue
+        kind = str(edge.get("kind") or "")
         element_ids = [str(eid) for eid in edge.get("elementIds") or []]
-        if len(element_ids) < 3:
+        host_ids = [str(eid) for eid in edge.get("hostIds") or []]
+        if not element_ids:
             continue
-        a_id, b_id, host_id = element_ids[:3]
+        host_id = str(edge.get("hostWallId") or (host_ids[0] if host_ids else ""))
+        if kind == "overlap" and len(element_ids) >= 3:
+            rule_id = "hosted_opening_overlap"
+            message = (
+                f"Hosted openings '{element_ids[0]}' and '{element_ids[1]}' overlap "
+                f"on wall '{host_id}'."
+            )
+        elif kind == "opening_spacing" and len(element_ids) >= 3:
+            rule_id = "hosted_opening_spacing_violation"
+            message = (
+                f"Hosted openings '{element_ids[0]}' and '{element_ids[1]}' leave only "
+                f"{edge.get('clearanceMm')} mm spacing on wall '{host_id}' "
+                f"(minimum {edge.get('minimumClearanceMm')} mm)."
+            )
+        elif kind == "host_capacity_exceeded":
+            rule_id = "hosted_opening_capacity_exceeded"
+            message = (
+                f"Hosted openings on wall '{host_id}' require {edge.get('requiredLengthMm')} mm "
+                f"including clearances, exceeding host length {edge.get('hostLengthMm')} mm."
+            )
+        elif kind == "header_clearance":
+            rule_id = "hosted_opening_lintel_clearance"
+            message = (
+                f"Hosted opening '{element_ids[0]}' leaves only {edge.get('clearanceMm')} mm "
+                f"header/lintel clearance on wall '{host_id}' "
+                f"(minimum {edge.get('minimumClearanceMm')} mm)."
+            )
+        else:
+            continue
         violations.append(
             _violation(
-                "hosted_opening_overlap",
+                rule_id,
                 "error",
-                f"Hosted openings '{a_id}' and '{b_id}' overlap on wall '{host_id}'.",
-                [a_id, b_id, host_id],
-                host_ids=[host_id],
+                message,
+                element_ids,
+                host_ids=host_ids or ([host_id] if host_id else []),
             )
         )
     return violations

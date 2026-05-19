@@ -30,6 +30,7 @@ export type HostedOpeningLike =
 
 export type HostedOpeningConflict = {
   elementId?: string;
+  reason?: 'overlap' | 'endpoint_clearance' | 'host_capacity_exceeded';
   range: { startT: number; endT: number };
   existingRange: { startT: number; endT: number };
 };
@@ -43,25 +44,31 @@ export function isWallOnActiveAuthoringLevel(
   return Boolean(activeLevelId && wall.levelId === activeLevelId);
 }
 
-export function isPhysicalHostedOpeningWall(
-  wall: {
-    kind?: string;
-    name?: string | null;
-    props?: Record<string, unknown> | null;
-  },
-): boolean {
+export function isPhysicalHostedOpeningWall(wall: {
+  kind?: string;
+  name?: string | null;
+  props?: Record<string, unknown> | null;
+}): boolean {
   if (wall.kind !== 'wall') return false;
   const props = wall.props ?? {};
   if (truthy(props.nonPhysical) || truthy(props.analysisOnly)) return false;
   if (props.physical === false) return false;
-  const physicalRole = String(props.physicalRole ?? '').trim().toLowerCase();
+  const physicalRole = String(props.physicalRole ?? '')
+    .trim()
+    .toLowerCase();
   if (physicalRole === 'helper' || physicalRole === 'analysis' || physicalRole === 'nonphysical') {
     return false;
   }
-  const role = String(props.role ?? '').trim().toLowerCase();
+  const role = String(props.role ?? '')
+    .trim()
+    .toLowerCase();
   if (role === 'access_proxy' || role === 'helper' || role === 'room_graph') return false;
   if (truthy(props.accessProxy) || truthy(props.helper)) return false;
-  if (/(\baccess control\b|\broom graph\b|\bhelper\b|\bsynthetic\b|\bdiagnostic\b|\banalysis[- ]?only\b|\bnonphysical\b)/i.test(wall.name ?? '')) {
+  if (
+    /(\baccess control\b|\broom graph\b|\bhelper\b|\bsynthetic\b|\bdiagnostic\b|\banalysis[- ]?only\b|\bnonphysical\b)/i.test(
+      wall.name ?? '',
+    )
+  ) {
     return false;
   }
   return true;
@@ -152,7 +159,8 @@ function rangesOverlap(a: { startT: number; endT: number }, b: { startT: number;
 
 function truthy(value: unknown): boolean {
   if (typeof value === 'boolean') return value;
-  if (typeof value === 'string') return ['1', 'true', 'yes', 'y', 'on'].includes(value.trim().toLowerCase());
+  if (typeof value === 'string')
+    return ['1', 'true', 'yes', 'y', 'on'].includes(value.trim().toLowerCase());
   return Boolean(value);
 }
 
@@ -165,29 +173,73 @@ export function findHostedOpeningConflict(input: {
   clearanceMm?: number;
 }): HostedOpeningConflict | null {
   const wallLengthMm = Math.max(1, input.wallLengthMm);
-  const clearanceT = Math.max(0, input.clearanceMm ?? 80) / wallLengthMm;
-  const halfT = Math.max(1, input.widthMm) / 2 / wallLengthMm + clearanceT;
+  const clearanceMm = Math.max(0, input.clearanceMm ?? 80);
+  const clearanceT = clearanceMm / wallLengthMm;
+  const openingWidthMm = Math.max(1, input.widthMm);
+  const halfOpeningT = openingWidthMm / 2 / wallLengthMm;
+  const rawProposed = {
+    startT: input.alongT - halfOpeningT,
+    endT: input.alongT + halfOpeningT,
+  };
+  const halfT = halfOpeningT + clearanceT;
   const proposed = {
     startT: Math.max(0, input.alongT - halfT),
     endT: Math.min(1, input.alongT + halfT),
   };
+  let existingWidthMm = 0;
+  let sameWallOpeningCount = 0;
+  const existingRanges: Array<{
+    elementId?: string;
+    range: { startT: number; endT: number };
+  }> = [];
 
   for (const opening of input.existing) {
     let existingRange: { startT: number; endT: number } | null = null;
     if ((opening.kind === 'door' || opening.kind === 'window') && opening.wallId === input.wallId) {
+      sameWallOpeningCount += 1;
+      existingWidthMm += Math.max(1, opening.widthMm);
       const existingHalfT = Math.max(1, opening.widthMm) / 2 / wallLengthMm + clearanceT;
       existingRange = {
         startT: Math.max(0, opening.alongT - existingHalfT),
         endT: Math.min(1, opening.alongT + existingHalfT),
       };
     } else if (opening.kind === 'wall_opening' && opening.hostWallId === input.wallId) {
+      sameWallOpeningCount += 1;
+      existingWidthMm += Math.max(0, opening.alongTEnd - opening.alongTStart) * wallLengthMm;
       existingRange = {
         startT: Math.max(0, opening.alongTStart - clearanceT),
         endT: Math.min(1, opening.alongTEnd + clearanceT),
       };
     }
-    if (existingRange && rangesOverlap(proposed, existingRange)) {
-      return { elementId: opening.id, range: proposed, existingRange };
+    if (existingRange) existingRanges.push({ elementId: opening.id, range: existingRange });
+  }
+  const requiredLengthMm =
+    existingWidthMm + openingWidthMm + 2 * clearanceMm + sameWallOpeningCount * clearanceMm;
+  if (requiredLengthMm > wallLengthMm) {
+    return {
+      reason: 'host_capacity_exceeded',
+      range: proposed,
+      existingRange: { startT: 0, endT: 1 },
+    };
+  }
+  if (
+    rawProposed.startT * wallLengthMm < clearanceMm ||
+    (1 - rawProposed.endT) * wallLengthMm < clearanceMm
+  ) {
+    return {
+      reason: 'endpoint_clearance',
+      range: proposed,
+      existingRange: { startT: 0, endT: 1 },
+    };
+  }
+  for (const existing of existingRanges) {
+    if (rangesOverlap(proposed, existing.range)) {
+      return {
+        elementId: existing.elementId,
+        reason: 'overlap',
+        range: proposed,
+        existingRange: existing.range,
+      };
     }
   }
   return null;
