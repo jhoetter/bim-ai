@@ -1333,6 +1333,33 @@ Exit: the tracker should clearly separate closed deterministic BIM guarantees
 from remaining blockers that require live UI/browser evidence, full export
 readback, or broader product wiring.
 
+### Wave 22 - Renderer, Documentation, Live UX, And Methodology Closure
+
+Goal: close the remaining user-visible proof gaps that make a model look wrong
+or feel unreliable even when deterministic BIM integrity is green. This wave
+prioritizes actual viewport/documentation fidelity, live responsiveness
+evidence, Advisor/renderer actionability, and the sketch-to-BIM acceptance loop
+needed before another target-house run can be called complete.
+
+Scope: dispatch five independent workers. Each worker must commit locally,
+avoid unrelated dirty files, update tracker/evidence rows conservatively, and
+run the tracker audit. Mark `Done` only when implementation evidence proves the
+full acceptance text; otherwise leave an exact blocker and the next proof hook.
+
+| Agent | Ownership | Primary items |
+| ----- | --------- | ------------- |
+| W22-A | 3D renderer element fidelity and golden coverage for physical BIM geometry. | `BIR-J01`, `BIR-J02`, `BIR-J03`, `BIR-J04`, `BIR-J05`, `BIR-J07`, `BIR-J08`, `BIR-J09`, `BIR-J10`, `BIR-C04`, `BIR-C08` |
+| W22-B | Renderer diagnostic contract product wiring and Advisor actionability bridge. | `BIR-I02`, `BIR-I05`, `BIR-I06`, `BIR-I07`, `BIR-H01`, `BIR-H02`, `BIR-H04`, `BIR-H05`, `BIR-G01`, `BIR-A04`, `BIR-A05` |
+| W22-C | 2D documentation, sheets, sections/elevations, and documentation export fidelity. | `BIR-R01`, `BIR-R02`, `BIR-R03`, `BIR-R04`, `BIR-R05`, `BIR-R06`, `BIR-K01`, `BIR-K05`, `BIR-K06` |
+| W22-D | Performance, live browser responsiveness, WebSocket stability, and target-house live proof. | `BIR-L01`, `BIR-L02`, `BIR-L03`, `BIR-L04`, `BIR-L05`, `BIR-L06`, `BIR-N07`, `BIR-N11`, `BIR-O05` |
+| W22-E | Sketch-to-BIM methodology gates, evidence lineage dashboards, rehearsal closeout, and final-package blockers. | `BIR-M01`, `BIR-M02`, `BIR-M03`, `BIR-M04`, `BIR-M05`, `BIR-M06`, `BIR-M07`, `BIR-M08`, `BIR-M09`, `BIR-M10`, `BIR-T01`, `BIR-T04`, `BIR-T05`, `BIR-O04`, `BIR-W04`, `BIR-N10` |
+
+Exit: target-house final-package readiness should either pass the live
+responsiveness/rehearsal gates or expose only tracker rows that still require
+deeper product coverage. Screenshots alone are not enough; each closed renderer
+or documentation row needs structured diagnostics, golden/readback evidence, or
+live-browser proof.
+
 ## Non-Negotiable Acceptance Rules
 
 - Do not mark a seed `accepted` while any P0 integrity or renderer diagnostic is
