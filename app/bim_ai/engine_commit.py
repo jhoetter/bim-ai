@@ -22,6 +22,7 @@ from bim_ai.engine import (
     ensure_sun_settings,
     evaluate,
 )
+from bim_ai.model_integrity_hosting import hosted_opening_integrity_violations
 
 
 def diff_undo_cmds(prev_doc: Document, next_doc: Document) -> list[dict[str, Any]]:
@@ -68,7 +69,9 @@ def compute_delta_wire(prev_doc: Document, next_doc: Document) -> dict[str, Any]
         "revision": next_doc.revision,
         "removedIds": removed_ids,
         "elements": elements_patch,
-        "violations": [v.model_dump(by_alias=True) for v in evaluate(next_doc.elements)],
+        "violations": [
+            v.model_dump(by_alias=True) for v in _commit_violations(next_doc)
+        ],
     }
 
 
@@ -78,7 +81,7 @@ def first_blocking_command_index_after_prefixes(doc: Document, cmds: list[Comman
     cand = clone_document(doc)
     for i, cmd in enumerate(cmds):
         apply_inplace(cand, cmd)
-        violations = evaluate(cand.elements)
+        violations = _commit_violations(cand)
         blocking = [v for v in violations if v.blocking or v.severity == "error"]
         if blocking:
             return i
@@ -93,7 +96,7 @@ def blocking_violation_rule_ids_at_prefix(
     cand = clone_document(doc)
     for i in range(idx + 1):
         apply_inplace(cand, cmds[i])
-    violations = evaluate(cand.elements)
+    violations = _commit_violations(cand)
     blocking = [v for v in violations if v.blocking or v.severity == "error"]
     return sorted({v.rule_id for v in blocking})
 
@@ -106,7 +109,7 @@ def blocking_violation_element_ids_at_prefix(
     cand = clone_document(doc)
     for i in range(idx + 1):
         apply_inplace(cand, cmds[i])
-    violations = evaluate(cand.elements)
+    violations = _commit_violations(cand)
     blocking = [v for v in violations if v.blocking or v.severity == "error"]
     ids: set[str] = set()
     for v in blocking:
@@ -164,6 +167,12 @@ def _new_blocking_violations(
         if (v.blocking or v.severity == "error")
         and _blocking_violation_signature(v) not in before_blocking
     ]
+
+
+def _commit_violations(doc: Document) -> list[Violation]:
+    """Validation surface used by dry-run, commit, and commit deltas."""
+
+    return evaluate(doc.elements) + hosted_opening_integrity_violations(doc)
 
 
 def try_apply_kernel_ifc_authoritative_replay_v0(
@@ -304,8 +313,8 @@ def try_commit_bundle(
         return False, None, cmds, [], str(exc)
 
     ensure_sun_settings(cand)
-    before_violations = evaluate(doc.elements)
-    violations = evaluate(cand.elements)
+    before_violations = _commit_violations(doc)
+    violations = _commit_violations(cand)
 
     # EDT-02 — reject bundles that break an error-severity locked constraint.
     # Runs after every command apply; the clone rollback is implicit because
@@ -352,8 +361,8 @@ def try_commit(
     apply_inplace(cand, cmds, source_provider=source_provider)
     ensure_sun_settings(cand)
 
-    before_violations = evaluate(doc.elements)
-    violations = evaluate(cand.elements)
+    before_violations = _commit_violations(doc)
+    violations = _commit_violations(cand)
 
     blocking = _new_blocking_violations(before_violations, violations)
     if blocking:
