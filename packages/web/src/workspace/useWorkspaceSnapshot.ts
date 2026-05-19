@@ -12,7 +12,6 @@ import {
 import { log } from '../logger';
 import { useBimStore } from '../state/store';
 import { MAX_WS_RECONNECT_ATTEMPTS, reconnectDelayMs } from '../lib/wsReconnect';
-import { modelWsUrl } from '../lib/wsUrl';
 import { mapComments } from './workspaceUtils';
 
 const DISABLE_WS =
@@ -148,7 +147,11 @@ export function useWorkspaceSnapshot(): {
 
   const connectWs = useCallback(
     (mid: string, lastSeq: number | null): WebSocket => {
-      const ws = new WebSocket(modelWsUrl(mid, lastSeq));
+      const p = window.location.protocol === 'https:' ? 'wss' : 'ws';
+      const resumeParam = lastSeq !== null ? `?resumeFrom=${lastSeq}` : '';
+      const ws = new WebSocket(
+        `${p}://${window.location.host}/ws/${encodeURIComponent(mid)}${resumeParam}`,
+      );
 
       ws.onopen = () => {
         if (wsRef.current !== ws) return;
