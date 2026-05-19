@@ -56,9 +56,35 @@ class AdvisorDiagnosticsProfiler:
         )
         return result
 
+    def skip(
+        self,
+        *,
+        check_id: str,
+        layer: str,
+        reason: str,
+        candidate_element_count: int | None = None,
+        incremental_eligible: bool | None = None,
+    ) -> None:
+        self._entries.append(
+            _skipped_entry(
+                check_id=check_id,
+                layer=layer,
+                reason=reason,
+                candidate_element_count=(
+                    self._element_count
+                    if candidate_element_count is None
+                    else int(candidate_element_count)
+                ),
+                incremental_eligible=incremental_eligible,
+            )
+        )
+
     def payload(self) -> dict[str, Any]:
         total_elapsed_ns = perf_counter_ns() - self._started_ns
         total_findings = sum(int(entry.get("findingCount") or 0) for entry in self._entries)
+        skipped_checks = [
+            entry for entry in self._entries if str(entry.get("status") or "") == "skipped"
+        ]
         payload: dict[str, Any] = {
             "format": "advisorDiagnosticsProfile_v1",
             "clock": "perf_counter_ns",
@@ -67,10 +93,12 @@ class AdvisorDiagnosticsProfiler:
             "changedElementIds": self._changed_element_ids,
             "summary": {
                 "checkCount": len(self._entries),
+                "skippedCheckCount": len(skipped_checks),
                 "totalFindingCount": total_findings,
                 "totalElapsedMs": _elapsed_ms(total_elapsed_ns),
             },
             "ruleTimings": list(self._entries),
+            "skippedChecks": skipped_checks,
         }
         if self._incremental_eligibility is not None:
             payload["incrementalEligibility"] = dict(self._incremental_eligibility)
@@ -96,6 +124,28 @@ def _timing_entry(
     }
     if impacted_element_count is not None:
         entry["impactedElementCount"] = int(impacted_element_count)
+    if incremental_eligible is not None:
+        entry["incrementalEligible"] = bool(incremental_eligible)
+    return entry
+
+
+def _skipped_entry(
+    *,
+    check_id: str,
+    layer: str,
+    reason: str,
+    candidate_element_count: int,
+    incremental_eligible: bool | None,
+) -> dict[str, Any]:
+    entry: dict[str, Any] = {
+        "checkId": check_id,
+        "layer": layer,
+        "status": "skipped",
+        "skipReason": reason,
+        "elapsedMs": 0.0,
+        "findingCount": 0,
+        "candidateElementCount": int(candidate_element_count),
+    }
     if incremental_eligible is not None:
         entry["incrementalEligible"] = bool(incremental_eligible)
     return entry

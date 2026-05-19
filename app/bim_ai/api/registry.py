@@ -2106,6 +2106,108 @@ register(
 
 register(
     ToolDescriptor(
+        name="qa.integrity_preflight",
+        category="query",
+        inputSchema={
+            "$schema": "http://json-schema.org/draft-07/schema#",
+            "title": "QaIntegrityPreflightInput",
+            "type": "object",
+            "required": ["modelId"],
+            "properties": {
+                "modelId": {"type": "string", "format": "uuid"},
+                "changedElementIds": {"type": "array", "items": {"type": "string"}},
+            },
+            "additionalProperties": False,
+        },
+        outputSchema={
+            "$schema": "http://json-schema.org/draft-07/schema#",
+            "title": "QaIntegrityPreflightResult",
+            "type": "object",
+            "required": ["format", "profileIndependent", "summary", "findings", "diagnostics"],
+            "properties": {
+                "format": {"const": "integrityPreflightReport_v1"},
+                "profileIndependent": {"type": "boolean"},
+                "summary": {"type": "object"},
+                "findings": {"type": "array", "items": {"type": "object"}},
+                "remediation": {"type": "object"},
+                "diagnostics": {"type": "object"},
+            },
+            "additionalProperties": True,
+        },
+        exitCodes={
+            "ok": ExitCode(code=0, meaning="Integrity preflight returned"),
+            "not_found": ExitCode(code=1, meaning="Model not found"),
+        },
+        cliExample="bim-ai qa integrity --output json",
+        restEndpoint=RestEndpoint(
+            method="GET", path="/api/models/{model_id}/qa/integrity-preflight"
+        ),
+        sideEffects="none",
+        agentSafetyNotes=(
+            "Profile-independent BIM integrity preflight. It excludes subjective sketch "
+            "acceptance checks and includes deterministic remediation proposals for safe dry-run."
+        ),
+        requiredPermissions=["model:read"],
+        schemaRefs=["input:QaIntegrityPreflightInput", "output:QaIntegrityPreflightResult"],
+        exampleRefs=["cli:qa:integrity", "route:qa:integrity-preflight"],
+        resourceGroups=["qa", "advisor", "model-integrity", "preflight", "mcp"],
+        uiFeatures=["advisor-panel", "agent-review", "group:integrity"],
+    )
+)
+
+register(
+    ToolDescriptor(
+        name="qa.profile_comparison",
+        category="query",
+        inputSchema={
+            "$schema": "http://json-schema.org/draft-07/schema#",
+            "title": "QaProfileComparisonInput",
+            "type": "object",
+            "required": ["modelId"],
+            "properties": {
+                "modelId": {"type": "string", "format": "uuid"},
+                "profiles": {"type": "array", "items": {"type": "string"}},
+                "changedElementIds": {"type": "array", "items": {"type": "string"}},
+            },
+            "additionalProperties": False,
+        },
+        outputSchema={
+            "$schema": "http://json-schema.org/draft-07/schema#",
+            "title": "QaProfileComparisonResult",
+            "type": "object",
+            "required": ["format", "profiles", "rows", "ruleMatrix", "summary"],
+            "properties": {
+                "format": {"const": "advisorMultiProfileComparison_v1"},
+                "profiles": {"type": "array", "items": {"type": "string"}},
+                "rows": {"type": "array", "items": {"type": "object"}},
+                "ruleMatrix": {"type": "array", "items": {"type": "object"}},
+                "summary": {"type": "object"},
+            },
+            "additionalProperties": True,
+        },
+        exitCodes={
+            "ok": ExitCode(code=0, meaning="Profile comparison returned"),
+            "not_found": ExitCode(code=1, meaning="Model not found"),
+        },
+        cliExample="bim-ai qa profiles --profiles authoring_default,construction_readiness,fire",
+        restEndpoint=RestEndpoint(
+            method="GET", path="/api/models/{model_id}/qa/profile-comparison"
+        ),
+        sideEffects="none",
+        agentSafetyNotes=(
+            "Compares deterministic Advisor/constructability profile outputs without merging "
+            "findings by hand."
+        ),
+        requiredPermissions=["model:read"],
+        schemaRefs=["input:QaProfileComparisonInput", "output:QaProfileComparisonResult"],
+        exampleRefs=["cli:qa:profiles", "route:qa:profile-comparison"],
+        resourceGroups=["qa", "advisor", "profile", "mcp"],
+        uiFeatures=["advisor-panel", "agent-review", "group:profile-comparison"],
+    )
+)
+
+register(
+    ToolDescriptor(
         name="model-show",
         category="query",
         inputSchema={

@@ -155,6 +155,7 @@ from bim_ai.routes_deps import (
     violations_wire,
 )
 from bim_ai.routes_exports import exports_router
+from bim_ai.routes_integrity import integrity_router
 from bim_ai.routes_sketch import sketch_router
 from bim_ai.routes_sketch_product import sketch_product_router
 from bim_ai.schedule_csv import schedule_payload_to_csv, schedule_payload_with_column_subset
@@ -192,6 +193,7 @@ api_router = APIRouter(prefix="/api")
 api_router.include_router(exports_router)
 api_router.include_router(commands_router)
 api_router.include_router(activity_router)
+api_router.include_router(integrity_router)
 api_router.include_router(sketch_router)
 api_router.include_router(sketch_product_router)
 
