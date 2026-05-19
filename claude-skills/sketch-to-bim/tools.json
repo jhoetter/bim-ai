@@ -292,7 +292,7 @@
     {
       "name": "skb_issue_ledger",
       "command": "issue-ledger",
-      "description": "Map Advisor findings to recipe and bundle source references.",
+      "description": "Map Advisor findings to recipe and bundle source references, including source command matches and next-action hints.",
       "inputSchema": {
         "type": "object",
         "required": ["phase"],
@@ -315,6 +315,47 @@
         "properties": {
           "issueLedger": { "type": "string" },
           "entryCount": { "type": "integer" }
+        },
+        "additionalProperties": true
+      }
+    },
+    {
+      "name": "skb_agent_loop_packet",
+      "command": "agent-loop-packet",
+      "description": "Export an agent-readable Advisor/constructability loop packet linking findings to source authoring commands, command-log transactions, recipe/bundle line hits, phase ownership, and next actions.",
+      "inputSchema": {
+        "type": "object",
+        "required": ["phase"],
+        "properties": {
+          "phase": { "type": "string" },
+          "seed": { "type": "string" },
+          "dir": { "type": "string" },
+          "recipe": { "type": "string" },
+          "bundle": { "type": "string" },
+          "advisor": { "type": "string" },
+          "constructabilityReport": { "type": "string" },
+          "commandLog": { "type": "string" },
+          "phasePacket": { "type": "string" },
+          "out": { "type": "string" },
+          "failOnUntraced": { "type": "boolean", "default": false }
+        },
+        "additionalProperties": false
+      },
+      "outputSchema": {
+        "type": "object",
+        "required": [
+          "agentLoopPacket",
+          "findingCount",
+          "tracedFindingCount",
+          "untracedFindingCount",
+          "blockingFindingCount"
+        ],
+        "properties": {
+          "agentLoopPacket": { "type": "string" },
+          "findingCount": { "type": "integer" },
+          "tracedFindingCount": { "type": "integer" },
+          "untracedFindingCount": { "type": "integer" },
+          "blockingFindingCount": { "type": "integer" }
         },
         "additionalProperties": true
       }

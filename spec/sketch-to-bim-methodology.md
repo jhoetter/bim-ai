@@ -59,6 +59,10 @@ Required behavior:
 - collect warning and info payloads in addition to errors;
 - preserve finding code, severity, profile, message, recommendation, affected
   element ids, and viewpoint/context when available;
+- export an agent loop packet for each phase that joins Advisor and
+  constructability findings to recipe/bundle source lines, authoring commands,
+  optional command-log transactions, phase ownership, and the next verification
+  action;
 - classify each finding as `fix-now`, `fix-in-phase`, `later-phase`,
   `tolerated`, or `blocked`;
 - resolve all findings tied to elements authored in the current phase unless a

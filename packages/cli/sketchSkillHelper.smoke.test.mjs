@@ -133,6 +133,90 @@ test('sketch helper doctor, tools, archetypes, compile validation, phase accept,
     assert.equal(phasePayload.ok, true);
     assert.equal(phasePayload.findingDispositions.countsByDisposition.reviewed, 1);
 
+    const loopDir = await fs.mkdtemp(path.join(os.tmpdir(), 'skb-helper-loop-'));
+    const loopRecipe = path.join(loopDir, 'recipe.json');
+    const loopBundle = path.join(loopDir, 'bundle.json');
+    const loopCommandLog = path.join(loopDir, 'command-log.json');
+    await writeJson(path.join(loopDir, 'advisor-warning.json'), {
+      total: 1,
+      groups: [
+        {
+          severity: 'warning',
+          code: 'door_operation_clearance_conflict',
+          count: 1,
+          elementIds: ['door-1', 'wall-1'],
+          messages: ['Door clearance overlaps a wall.'],
+        },
+      ],
+    });
+    await writeJson(path.join(loopDir, 'advisor-info.json'), { total: 0, groups: [] });
+    await writeJson(path.join(loopDir, 'advisor-error.json'), { total: 0, groups: [] });
+    await writeJson(path.join(loopDir, 'constructability-report.json'), {
+      body: {
+        format: 'constructabilityReport_v1',
+        profile: 'construction_readiness',
+        findings: [
+          {
+            severity: 'warning',
+            ruleId: 'clearance',
+            elementIds: ['door-1'],
+            message: 'Clearance check failed.',
+          },
+        ],
+      },
+    });
+    await writeJson(loopRecipe, {
+      schemaVersion: 'seed-dsl.v0',
+      openings: [{ id: 'door-1', wallId: 'wall-1' }],
+    });
+    await writeJson(loopBundle, {
+      schemaVersion: 'cmd-v3.0',
+      commands: [
+        { type: 'createWall', id: 'wall-1' },
+        { type: 'insertDoorOnWall', id: 'door-1', wallId: 'wall-1', alongT: 0.5 },
+      ],
+    });
+    await writeJson(loopCommandLog, {
+      entries: [
+        {
+          id: 7,
+          revisionAfter: 4,
+          createdAt: '2026-05-19T00:00:00.000Z',
+          userId: 'agent',
+          appliedCommands: [{ type: 'insertDoorOnWall', id: 'door-1', wallId: 'wall-1' }],
+        },
+      ],
+    });
+    const loopPacket = await runHelper([
+      'agent-loop-packet',
+      '--phase',
+      'openings',
+      '--dir',
+      loopDir,
+      '--recipe',
+      loopRecipe,
+      '--bundle',
+      loopBundle,
+      '--command-log',
+      loopCommandLog,
+      '--fail-on-untraced',
+    ]);
+    assert.equal(loopPacket.code, 0, loopPacket.stderr);
+    const loopSummary = JSON.parse(loopPacket.stdout);
+    assert.equal(loopSummary.findingCount, 2);
+    assert.equal(loopSummary.untracedFindingCount, 0);
+    const loopPayload = JSON.parse(
+      await fs.readFile(path.join(loopDir, 'agent-loop-packet.json'), 'utf8'),
+    );
+    assert.equal(loopPayload.schemaVersion, 'sketch-to-bim.agent-loop-packet.v1');
+    const advisorFinding = loopPayload.findings.find(
+      (finding) => finding.code === 'door_operation_clearance_conflict',
+    );
+    assert.ok(advisorFinding.sourceCommands.some((row) => row.commandId === 'door-1'));
+    assert.ok(
+      advisorFinding.nextActions.some((action) => action.kind === 'edit-source-authoring'),
+    );
+
     const seed = `skb-helper-smoke-${Date.now()}`;
     const seedDir = path.join(ROOT, 'seed-artifacts', seed);
     const evidenceDir = path.join(seedDir, 'evidence');

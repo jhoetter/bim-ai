@@ -73,6 +73,12 @@ python3 claude-skills/sketch-to-bim/sketch_bim.py issue-ledger \
   --seed <seed-name> \
   --phase <n>
 
+# Export the CLI/MCP-facing refinement packet: findings -> source commands -> next actions.
+python3 claude-skills/sketch-to-bim/sketch_bim.py agent-loop-packet \
+  --seed <seed-name> \
+  --phase <n> \
+  --command-log seed-artifacts/<seed-name>/evidence/phase-<n>/command-log.json
+
 # Verify material intent from the recipe is represented in the compiled bundle.
 python3 claude-skills/sketch-to-bim/sketch_bim.py material-check \
   --seed <seed-name> \
@@ -327,9 +333,10 @@ Before authoring the first serious bundle, start and wire the feedback loop:
    - render: Playwright checkpoint screenshots or direct browser screenshots from the saved viewpoints.
 5. **Read the screenshots with vision.** Say what is wrong in geometric terms before editing again: roof too generic, cutout not legible, stair collides, room plan messy, facade rhythm wrong, scale too small, etc.
 6. **Read the Advisor panel like a punch list.** For each finding capture `ruleId`, severity, message, recommendation text, perspective/codePreset, and `elementIds`. Corrections must target the named elements unless the rule itself is wrong.
-7. **Patch the source of truth, not the symptoms.** If `room_derived_interior_separation_ambiguous` appears, redesign room boundaries; do not hide room lines. If a stair warning appears, alter the stair footprint/riser/tread/shaft; do not move furniture around it.
-8. **Verify capability, not just intent.** If the sketch needs a gable-cut wall, folded shell, roof void, dormer, or non-rectangular opening, confirm the command/API/render path actually expresses that geometry. A valid command that still renders as a rectangle, box, or uncut surface is a failed phase.
-9. **Repeat until the normal Advisor, renderer diagnostics, sketch acceptance,
+7. **Export the agent loop packet.** Run `agent-loop-packet` after Advisor/constructability capture so CLI/MCP-facing agents have one JSON surface linking each finding to recipe/bundle line hits, source authoring commands, optional command-log transactions, phase packet ownership, and deterministic next actions. If a warning/error has no source command lineage, recover command-log/provenance before accepting or tolerating it.
+8. **Patch the source of truth, not the symptoms.** If `room_derived_interior_separation_ambiguous` appears, redesign room boundaries; do not hide room lines. If a stair warning appears, alter the stair footprint/riser/tread/shaft; do not move furniture around it.
+9. **Verify capability, not just intent.** If the sketch needs a gable-cut wall, folded shell, roof void, dormer, or non-rectangular opening, confirm the command/API/render path actually expresses that geometry. A valid command that still renders as a rectangle, box, or uncut surface is a failed phase.
+10. **Repeat until the normal Advisor, renderer diagnostics, sketch acceptance,
    and brief acceptance all pass the phase gate or have explicit tolerances.**
 
 Final seed packaging must use a fresh current-HEAD live run, normally:

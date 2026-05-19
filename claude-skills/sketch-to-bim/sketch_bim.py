@@ -310,8 +310,8 @@ def normalized_advisor_groups(payload: dict[str, Any]) -> list[dict[str, Any]]:
     return sorted(rows, key=lambda row: (row["severity"], row["code"], row["elementIds"]))
 
 
-def find_text_occurrences(path: Path, needles: list[str]) -> dict[str, list[int]]:
-    if not path.is_file():
+def find_text_occurrences(path: Path | None, needles: list[str]) -> dict[str, list[int]]:
+    if not path or not path.is_file():
         return {}
     lines = path.read_text(encoding="utf8").splitlines()
     out: dict[str, list[int]] = {}
@@ -322,6 +322,307 @@ def find_text_occurrences(path: Path, needles: list[str]) -> dict[str, list[int]
         if hits:
             out[needle] = hits[:12]
     return out
+
+
+def stable_id(prefix: str, payload: Any, length: int = 16) -> str:
+    body = json.dumps(payload, sort_keys=True, separators=(",", ":"), default=str)
+    return f"{prefix}-{hashlib.sha256(body.encode('utf8')).hexdigest()[:length]}"
+
+
+def as_list(value: Any) -> list[Any]:
+    if isinstance(value, list):
+        return value
+    if value is None:
+        return []
+    return [value]
+
+
+def as_str_list(value: Any) -> list[str]:
+    return sorted({str(v) for v in as_list(value) if v is not None and str(v).strip()})
+
+
+def commands_from_payload(payload: Any) -> list[dict[str, Any]]:
+    if isinstance(payload, list):
+        return [row for row in payload if isinstance(row, dict)]
+    if isinstance(payload, dict) and isinstance(payload.get("commands"), list):
+        return [row for row in payload["commands"] if isinstance(row, dict)]
+    return []
+
+
+def load_commands(path: Path | None) -> list[dict[str, Any]]:
+    if not path or not path.is_file():
+        return []
+    return commands_from_payload(read_json(path))
+
+
+def command_mentioned_ids(command: dict[str, Any]) -> set[str]:
+    ids: set[str] = set()
+
+    def visit(value: Any) -> None:
+        if isinstance(value, str) and value:
+            ids.add(value)
+        elif isinstance(value, list):
+            for item in value:
+                visit(item)
+        elif isinstance(value, dict):
+            for item in value.values():
+                visit(item)
+
+    for key, value in command.items():
+        if key.lower().endswith("id") or key.lower().endswith("ids") or key == "id":
+            visit(value)
+    return ids
+
+
+def command_matches_element(command: dict[str, Any], element_id: str) -> list[str]:
+    matches: list[str] = []
+    for key, value in command.items():
+        if isinstance(value, str) and value == element_id:
+            matches.append(key)
+        elif isinstance(value, list) and element_id in [str(v) for v in value]:
+            matches.append(key)
+        elif isinstance(value, dict) and element_id in [str(v) for v in value.values()]:
+            matches.append(key)
+    return sorted(set(matches))
+
+
+def command_refs_for_elements(
+    commands: list[dict[str, Any]],
+    element_ids: list[str],
+    *,
+    source: str,
+    path: Path | None = None,
+    transaction: dict[str, Any] | None = None,
+) -> list[dict[str, Any]]:
+    refs: list[dict[str, Any]] = []
+    for index, command in enumerate(commands):
+        match_fields: dict[str, list[str]] = {}
+        for element_id in element_ids:
+            fields = command_matches_element(command, element_id)
+            if fields:
+                match_fields[element_id] = fields
+        if not match_fields:
+            continue
+        command_id = str(command.get("id") or command.get("elementId") or f"{source}:{index}")
+        row: dict[str, Any] = {
+            "source": source,
+            "commandIndex": index,
+            "commandId": command_id,
+            "commandType": command.get("type"),
+            "matchedElementIds": sorted(match_fields),
+            "matchFields": match_fields,
+            "createsAffectedElement": any("id" in fields for fields in match_fields.values()),
+        }
+        if path is not None:
+            row["path"] = rel(path)
+            line_hits = find_text_occurrences(path, [command_id, *element_ids])
+            if line_hits:
+                row["lineHits"] = line_hits
+        if transaction:
+            row["transaction"] = transaction
+        refs.append(row)
+    refs.sort(
+        key=lambda row: (
+            0 if row.get("createsAffectedElement") else 1,
+            str(row.get("source") or ""),
+            int(row.get("commandIndex") or 0),
+            str(row.get("commandId") or ""),
+        )
+    )
+    return refs
+
+
+def command_log_refs(path: Path | None, element_ids: list[str]) -> list[dict[str, Any]]:
+    if not path or not path.is_file():
+        return []
+    payload = read_json(path)
+    entries = payload.get("entries") if isinstance(payload, dict) else []
+    refs: list[dict[str, Any]] = []
+    for entry_index, entry in enumerate(entries or []):
+        if not isinstance(entry, dict):
+            continue
+        commands = commands_from_payload(entry.get("appliedCommands") or [])
+        tx = {
+            "entryIndex": entry_index,
+            "id": entry.get("id"),
+            "revisionAfter": entry.get("revisionAfter"),
+            "createdAt": entry.get("createdAt"),
+            "userId": entry.get("userId"),
+        }
+        refs.extend(
+            command_refs_for_elements(
+                commands,
+                element_ids,
+                source="command-log",
+                path=path,
+                transaction=tx,
+            )
+        )
+    return refs
+
+
+def normalize_advisor_findings(payload: dict[str, Any], source: str) -> list[dict[str, Any]]:
+    findings: list[dict[str, Any]] = []
+    for group in payload.get("groups") or []:
+        if not isinstance(group, dict):
+            continue
+        severity = str(group.get("severity") or source.split("-")[-1] or "unknown")
+        code = str(group.get("code") or "unknown")
+        element_ids = as_str_list(group.get("elementIds"))
+        messages = as_str_list(group.get("messages"))
+        body = {
+            "source": source,
+            "severity": severity,
+            "code": code,
+            "elementIds": element_ids,
+            "messages": messages,
+        }
+        findings.append(
+            {
+                "findingId": stable_id("finding", body),
+                "source": source,
+                "layer": "advisor",
+                "severity": severity,
+                "code": code,
+                "count": int(group.get("count") or 0),
+                "elementIds": element_ids,
+                "messages": messages,
+                "recommendation": group.get("recommendation") or group.get("recommendations"),
+                "profile": group.get("profile") or payload.get("profile"),
+                "raw": group,
+            }
+        )
+    return findings
+
+
+def constructability_body(payload: dict[str, Any]) -> dict[str, Any]:
+    if isinstance(payload.get("body"), dict):
+        return payload["body"]
+    return payload
+
+
+def normalize_constructability_findings(payload: dict[str, Any]) -> list[dict[str, Any]]:
+    body = constructability_body(payload)
+    rows: list[dict[str, Any]] = []
+    for key in ("findings", "issues"):
+        for index, finding in enumerate(body.get(key) or []):
+            if not isinstance(finding, dict):
+                continue
+            severity = str(finding.get("severity") or finding.get("level") or "unknown")
+            code = str(
+                finding.get("ruleId")
+                or finding.get("code")
+                or finding.get("advisoryClass")
+                or finding.get("issueClass")
+                or "constructability"
+            )
+            element_ids = as_str_list(
+                finding.get("elementIds")
+                or finding.get("affectedElementIds")
+                or finding.get("targetElementIds")
+            )
+            message = (
+                finding.get("message")
+                or finding.get("summary")
+                or finding.get("title")
+                or "Constructability finding reported."
+            )
+            body_for_id = {
+                "source": f"constructability-{key}",
+                "index": index,
+                "severity": severity,
+                "code": code,
+                "elementIds": element_ids,
+                "message": message,
+            }
+            rows.append(
+                {
+                    "findingId": stable_id("finding", body_for_id),
+                    "source": f"constructability-{key}",
+                    "layer": "constructability",
+                    "severity": severity,
+                    "code": code,
+                    "count": 1,
+                    "elementIds": element_ids,
+                    "messages": [str(message)],
+                    "recommendation": finding.get("recommendation") or finding.get("remediation"),
+                    "profile": body.get("profile"),
+                    "raw": finding,
+                }
+            )
+    return rows
+
+
+def finding_next_actions(
+    finding: dict[str, Any],
+    *,
+    has_source_commands: bool,
+    phase: str | None,
+    evidence_dir: Path,
+) -> list[dict[str, Any]]:
+    severity = str(finding.get("severity") or "unknown")
+    code = str(finding.get("code") or "unknown")
+    elements = as_str_list(finding.get("elementIds"))
+    phase_text = f" phase {phase}" if phase else ""
+    actions = [
+        {
+            "kind": "inspect-finding-context",
+            "priority": "high" if severity in BLOCKING_SEVERITIES else "normal",
+            "description": (
+                f"Inspect {code} against affected elements {', '.join(elements) or '(none)'} "
+                "using snapshot/query output and the matching evidence views."
+            ),
+        }
+    ]
+    if has_source_commands:
+        actions.append(
+            {
+                "kind": "edit-source-authoring",
+                "priority": "high" if severity in BLOCKING_SEVERITIES else "normal",
+                "description": (
+                    "Edit the referenced recipe or bundle command rather than patching only "
+                    "the live model, then recompile/reseed the phase."
+                ),
+            }
+        )
+    else:
+        actions.append(
+            {
+                "kind": "recover-source-lineage",
+                "priority": "high" if severity in BLOCKING_SEVERITIES else "normal",
+                "description": (
+                    "No authoring command matched the affected element ids; fetch command-log "
+                    "or add explicit source provenance before accepting this finding."
+                ),
+            }
+        )
+    code_actions = {
+        "room_target_area_mismatch": "Adjust the room outline from the source sketch/programme, or correct targetAreaM2 only if the target was an agent assumption.",
+        "room_unenclosed": "Repair physical wall/room-separation boundaries and rerun room derivation evidence.",
+        "room_boundary_open": "Close the real boundary with architectural walls/openings; avoid universal room-separation rectangles.",
+        "room_no_door": "Add or rehost a valid physical access door/opening on the room boundary.",
+        "door_operation_clearance_conflict": "Move or resize the door/opening or nearby obstruction so the operation zone is clear.",
+        "stair_comfort_eu_proxy": "Adjust stair riser/tread/landing geometry and confirm slab opening alignment.",
+    }
+    if code in code_actions:
+        actions.append(
+            {
+                "kind": "domain-fix-hint",
+                "priority": "high",
+                "description": code_actions[code],
+            }
+        )
+    actions.append(
+        {
+            "kind": "verify-loop",
+            "priority": "high" if severity in BLOCKING_SEVERITIES else "normal",
+            "description": (
+                f"After correction, rerun Advisor/constructability evidence for{phase_text} and "
+                f"regenerate {rel(evidence_dir / 'agent-loop-packet.json')}."
+            ),
+        }
+    )
+    return actions
 
 
 def screenshot_rows_from_manifest(path: Path) -> list[dict[str, Any]]:
@@ -623,10 +924,17 @@ def cmd_issue_ledger(args: argparse.Namespace) -> None:
     info = load_advisor_file(
         Path(args.advisor_info).resolve() if args.advisor_info else out_dir / "advisor-info.json"
     )
+    bundle_commands = load_commands(bundle)
     entries = []
     for severity, payload in (("warning", warning), ("info", info)):
         for group in payload.get("groups") or []:
             ids = [str(x) for x in group.get("elementIds") or []]
+            command_refs = command_refs_for_elements(
+                bundle_commands,
+                ids,
+                source="bundle",
+                path=bundle,
+            )
             entries.append(
                 {
                     "severity": severity,
@@ -636,6 +944,17 @@ def cmd_issue_ledger(args: argparse.Namespace) -> None:
                     "messages": group.get("messages") or [],
                     "recipeMatches": find_text_occurrences(recipe, ids) if recipe else {},
                     "bundleMatches": find_text_occurrences(bundle, ids) if bundle else {},
+                    "sourceCommands": command_refs,
+                    "nextActions": finding_next_actions(
+                        {
+                            "severity": severity,
+                            "code": group.get("code"),
+                            "elementIds": ids,
+                        },
+                        has_source_commands=bool(command_refs),
+                        phase=args.phase,
+                        evidence_dir=out_dir,
+                    ),
                     "status": "pending" if severity in BLOCKING_SEVERITIES else "reviewed",
                     "disposition": "unclassified" if severity in BLOCKING_SEVERITIES else "reviewed",
                     "sourceEdit": "",
@@ -658,6 +977,138 @@ def cmd_issue_ledger(args: argparse.Namespace) -> None:
     ]
     if args.fail_on_pending and pending_blockers:
         raise SystemExit(6)
+
+
+def build_agent_loop_packet(args: argparse.Namespace) -> dict[str, Any]:
+    out_dir = phase_dir_for(args)
+    paths = seed_paths(args.seed) if args.seed else {}
+    recipe = Path(args.recipe).resolve() if args.recipe else paths.get("recipe")
+    bundle = Path(args.bundle).resolve() if args.bundle else paths.get("bundle")
+    phase_packet = (
+        Path(args.phase_packet).resolve() if args.phase_packet else out_dir / "phase-packet.json"
+    )
+    constructability_path = (
+        Path(args.constructability_report).resolve()
+        if args.constructability_report
+        else out_dir / "constructability-report.json"
+    )
+    command_log_path = Path(args.command_log).resolve() if args.command_log else None
+
+    advisor_sources = [
+        ("advisor-error", out_dir / "advisor-error.json"),
+        ("advisor-warning", out_dir / "advisor-warning.json"),
+        ("advisor-info", out_dir / "advisor-info.json"),
+    ]
+    if args.advisor:
+        advisor_sources = [("advisor", Path(args.advisor).resolve())]
+
+    findings_by_id: dict[str, dict[str, Any]] = {}
+    for source, path in advisor_sources:
+        if not path.is_file():
+            continue
+        for finding in normalize_advisor_findings(load_advisor_file(path), source):
+            findings_by_id.setdefault(finding["findingId"], finding)
+
+    if constructability_path.is_file():
+        for finding in normalize_constructability_findings(read_json(constructability_path)):
+            findings_by_id.setdefault(finding["findingId"], finding)
+
+    bundle_commands = load_commands(bundle)
+    findings: list[dict[str, Any]] = []
+    for finding in sorted(
+        findings_by_id.values(),
+        key=lambda row: (
+            {"error": 0, "warning": 1, "info": 2}.get(str(row.get("severity")), 9),
+            str(row.get("code") or ""),
+            str(row.get("findingId") or ""),
+        ),
+    ):
+        element_ids = as_str_list(finding.get("elementIds"))
+        bundle_refs = command_refs_for_elements(
+            bundle_commands,
+            element_ids,
+            source="bundle",
+            path=bundle,
+        )
+        live_refs = command_log_refs(command_log_path, element_ids)
+        recipe_hits = find_text_occurrences(recipe, [*element_ids, str(finding.get("code") or "")])
+        source_commands = [*bundle_refs, *live_refs]
+        finding_row = {
+            **finding,
+            "sourceCommands": source_commands,
+            "recipeLineHits": recipe_hits,
+            "bundleLineHits": find_text_occurrences(
+                bundle, [*element_ids, str(finding.get("code") or "")]
+            ),
+            "phaseOwnership": {
+                "phase": args.phase,
+                "phasePacket": rel(phase_packet) if phase_packet.is_file() else None,
+                "status": "current-phase-review-required"
+                if finding.get("severity") in BLOCKING_SEVERITIES
+                else "review-required",
+            },
+            "nextActions": finding_next_actions(
+                finding,
+                has_source_commands=bool(source_commands),
+                phase=args.phase,
+                evidence_dir=out_dir,
+            ),
+        }
+        findings.append(finding_row)
+
+    severity_counts: dict[str, int] = {}
+    untraced_count = 0
+    for finding in findings:
+        severity = str(finding.get("severity") or "unknown")
+        severity_counts[severity] = severity_counts.get(severity, 0) + 1
+        if not finding.get("sourceCommands"):
+            untraced_count += 1
+
+    packet = {
+        "schemaVersion": "sketch-to-bim.agent-loop-packet.v1",
+        "seed": args.seed,
+        "phase": args.phase,
+        "generatedAtEpochMs": int(time.time() * 1000),
+        "gitHead": git_head(),
+        "inputs": {
+            "recipe": rel(recipe) if recipe else None,
+            "bundle": rel(bundle) if bundle else None,
+            "commandLog": rel(command_log_path) if command_log_path else None,
+            "constructabilityReport": rel(constructability_path)
+            if constructability_path.is_file()
+            else None,
+            "phasePacket": rel(phase_packet) if phase_packet.is_file() else None,
+            "evidenceDir": rel(out_dir),
+        },
+        "summary": {
+            "findingCount": len(findings),
+            "severityCounts": severity_counts,
+            "tracedFindingCount": len(findings) - untraced_count,
+            "untracedFindingCount": untraced_count,
+            "blockingFindingCount": sum(
+                1 for finding in findings if finding.get("severity") in BLOCKING_SEVERITIES
+            ),
+        },
+        "findings": findings,
+        "methodologyLoop": [
+            "Read each finding reason, recommendation, profile, and affected element ids.",
+            "Open the source command references before changing model state.",
+            "Edit recipe/bundle source, dry-run or phase-run the correction, then commit only after dry-run passes.",
+            "Recapture Advisor/constructability evidence and regenerate this packet before phase acceptance.",
+            "If a finding is tolerated or a rule defect, record owner, expiry, rationale, and evidence links in finding-dispositions/tolerance ledger.",
+        ],
+    }
+    return packet
+
+
+def cmd_agent_loop_packet(args: argparse.Namespace) -> None:
+    packet = build_agent_loop_packet(args)
+    out_dir = phase_dir_for(args)
+    output = Path(args.out).resolve() if args.out else out_dir / "agent-loop-packet.json"
+    write_json(output, packet)
+    print(json_dump({"agentLoopPacket": rel(output), **packet["summary"]}))
+    if args.fail_on_untraced and packet["summary"]["untracedFindingCount"] > 0:
+        raise SystemExit(9)
 
 
 def cmd_material_check(args: argparse.Namespace) -> None:
@@ -1110,6 +1561,26 @@ def build_parser() -> argparse.ArgumentParser:
     ledger.add_argument("--out")
     ledger.add_argument("--fail-on-pending", action="store_true")
     ledger.set_defaults(func=cmd_issue_ledger)
+
+    loop_packet = sub.add_parser(
+        "agent-loop-packet",
+        help=(
+            "Export an agent-readable Advisor/constructability loop packet with "
+            "finding-to-command provenance and next actions."
+        ),
+    )
+    loop_packet.add_argument("--phase", required=True)
+    loop_packet.add_argument("--seed")
+    loop_packet.add_argument("--dir")
+    loop_packet.add_argument("--recipe")
+    loop_packet.add_argument("--bundle")
+    loop_packet.add_argument("--advisor")
+    loop_packet.add_argument("--constructability-report")
+    loop_packet.add_argument("--command-log")
+    loop_packet.add_argument("--phase-packet")
+    loop_packet.add_argument("--out")
+    loop_packet.add_argument("--fail-on-untraced", action="store_true")
+    loop_packet.set_defaults(func=cmd_agent_loop_packet)
 
     materials = sub.add_parser(
         "material-check", help="Verify recipe material intent is represented in the bundle."
