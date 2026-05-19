@@ -863,10 +863,10 @@
       ]
     },
     "planningSiteRequirements": {
-      "orientationAssumption": "Use floorplan up as project north and the reference axonometric as front-left visual orientation until a survey/north arrow is supplied.",
+      "orientationAssumption": "Use floorplan up as project north with an explicit concept project base point and survey point until a legal survey/north arrow supersedes it.",
       "basePointAssumption": "Project base point at the south-west/front-left ground-floor footprint corner at elevation 0.",
-      "surveyPointAssumption": "Survey point and georeference are unavailable; keep local millimetre coordinates and record this as a site tolerance.",
-      "propertyLineSetbackAvailability": "Property lines, setbacks, B-plan constraints, and site boundaries are unavailable in the source package.",
+      "surveyPointAssumption": "Create an explicit concept survey point at local origin/shared elevation 0 so coordinate datums are model elements, not tolerance text.",
+      "propertyLineSetbackAvailability": "Create a concept parcel/site boundary, four property lines, 3000 mm setback metadata, and a terrain toposolid around the target-house footprint; statutory B-plan constraints remain out of scope.",
       "sunAssumptions": "Sun/shadow direction is used only for visual evidence comparison until geographic location and true north are provided.",
       "codeLocale": "Germany concept placeholders: DIN 277/DIN 276 starter classifications, residential stair comfort proxy, and project-initiation code assumptions only."
     },
@@ -976,9 +976,9 @@
     },
     {
       "id": "assumption_orientation",
-      "statement": "Plan north is unknown. Use plan-up as project north and set the main axonometric sun/camera only for evidence comparison.",
+      "statement": "Plan north is unknown. Use plan-up as project north with explicit project base point, survey point, site boundary, property lines, and terrain toposolid in the seed model.",
       "confidence": "low",
-      "validation": "Attach a site/orientation tolerance until a survey or north arrow is supplied."
+      "validation": "Replace the concept site datums when a legal survey or north arrow is supplied; do not satisfy site checks with tolerance-only text."
     },
     {
       "id": "assumption_roof_form",
