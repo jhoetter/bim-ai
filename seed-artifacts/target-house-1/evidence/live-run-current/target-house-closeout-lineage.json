@@ -3,7 +3,7 @@
   "seed": "target-house-1",
   "generatedAt": "1970-01-01T00:00:00.000Z",
   "git": {
-    "currentHead": "9746652589532345ee28c234d7418fcfa011042b",
+    "currentHead": "1157d35658bf7813c6a50cdb9fcae59959dd49e4",
     "evidenceHead": "9746652589532345ee28c234d7418fcfa011042b",
     "dirtyCheckPolicy": "Report records source/evidence digests and git heads; concurrent dirty files are not normalized."
   },
@@ -11,8 +11,8 @@
     "repoRoot": "/Users/jhoetter/repos/bim-ai",
     "evidenceDir": "seed-artifacts/target-house-1/evidence/live-run-current",
     "requiredFeatures": "spec/generated/target-house-1-required-features.json",
-    "performanceEvidence": "tmp/target-house-final-package/target-house-1/target-house-1-performance-evidence.json",
-    "finalManifest": "tmp/target-house-final-package/target-house-1/target-house-1-final-closeout-manifest.json"
+    "performanceEvidence": "scripts/target-house-final-package.mjs#buildTargetHousePerformanceEvidence",
+    "finalManifest": "scripts/target-house-final-package.mjs#buildTargetHouseFinalCloseoutManifest"
   },
   "loadErrors": {
     "performanceEvidence": null,
@@ -25,11 +25,12 @@
     "spec/target-house/target-house-1-bim-information-requirements.md": "sha256:c32bc404b321d720fec7092b7877701279f02e1ccd336005b88e80ec4abae7dc",
     "spec/target-house/target-house-1-phase-plan.md": "sha256:a9f6b7d533e0434655c49d88a69299e90aeef9e120fb6f410b88fc007eba372a",
     "bundle": "sha256:006d07ef84f80a183ea2f028cbc6b9f16eda3cc24996e5cfc448dd1bf44a6956",
-    "snapshot": "sha256:5011bd0c46e13973c136a9c9cfcab2c3539e9a23e0eb4a82b4a2665f9b460391",
+    "snapshot": "sha256:579bb3c9df87548ec40d80b280547ba87618b6050f3dc90b9ba655cf7eb081f9",
     "advisorRuleDigest": "sha256:6d714bc94a3a04d8250d35e99bda9ccde010fa626fb69a2a7cfa98c26bbb7acd",
     "capabilities": "sha256:e3faa00d4724d5e375ee853d5e3d56b21254a969a84e702d67013a8bb0125dbb",
-    "finalManifest": "sha256:4cd618b5d65e18c66c15f562e62f0d02295ac01f936b33c2851fa3c017cd07f6",
-    "performanceEvidence": "sha256:2cf0772301bbf22b08e5ef4316ec80e389724e4f94164aa777cb5c8970006527"
+    "rendererSupportMatrix": "sha256:9057becd26ea663f29a98c93139c3d1d49e81ae10a903fd0887b0d8a6643f49e",
+    "finalManifest": "sha256:374a7d1df4465e4348d5f7b4ce862c2334b564e32843d3a3603532a310aa8a2e",
+    "performanceEvidence": "sha256:0aac12873b4fd11f4ffc40382471aeff557bdd377f56c097c839373f96225c1b"
   },
   "evidenceFiles": [
     {
@@ -58,7 +59,7 @@
       "key": "snapshot",
       "path": "seed-artifacts/target-house-1/evidence/live-run-current/snapshot.json",
       "present": true,
-      "sha256": "sha256:5011bd0c46e13973c136a9c9cfcab2c3539e9a23e0eb4a82b4a2665f9b460391",
+      "sha256": "sha256:579bb3c9df87548ec40d80b280547ba87618b6050f3dc90b9ba655cf7eb081f9",
       "schemaVersion": null,
       "status": "present",
       "summary": null
@@ -219,7 +220,7 @@
       "key": "clean_pass_gate",
       "path": "seed-artifacts/target-house-1/evidence/live-run-current/clean-pass-gate.json",
       "present": true,
-      "sha256": "sha256:4edeea312bf51e112a59817f9019ba6ec55c4d912b98550e82785e17b5386310",
+      "sha256": "sha256:195535fef9ea21b7d80b0fccbffd0b5e985d746d4ec8298a6aeb0830c1e76473",
       "schemaVersion": "target-house.clean-pass-gate.v1",
       "status": "pass",
       "summary": {
@@ -284,7 +285,7 @@
     "performance": {
       "present": true,
       "ok": true,
-      "digestSha256": "2cf0772301bbf22b08e5ef4316ec80e389724e4f94164aa777cb5c8970006527",
+      "digestSha256": "0aac12873b4fd11f4ffc40382471aeff557bdd377f56c097c839373f96225c1b",
       "interactions": [
         {
           "interaction": "orbit",
@@ -645,6 +646,316 @@
       "savedViewpointPresent": true
     }
   ],
+  "featureCoverageDashboard": {
+    "schemaVersion": "target-house-feature-coverage-dashboard.v1",
+    "requiredFeatureCount": 10,
+    "explicitElementCoverageCount": 0,
+    "semanticSelectorCoverageCount": 10,
+    "missingElementCoverageCount": 0,
+    "openFindingCount": 0,
+    "rendererSupportMatrixDigest": "sha256:9057becd26ea663f29a98c93139c3d1d49e81ae10a903fd0887b0d8a6643f49e",
+    "screenshotMissingCount": 0,
+    "blockerCount": 1,
+    "evidenceAcceptanceOk": true,
+    "rows": [
+      {
+        "featureId": "primary_massing_envelope",
+        "priority": "critical",
+        "phaseId": "P1",
+        "requiredElementIds": [],
+        "semanticSelectors": [
+          "feature:primary_massing_envelope",
+          "kind:basic_massing_envelope",
+          "wall:exterior",
+          "floor:plinth",
+          "volume:upper-wrapper"
+        ],
+        "elementCoverageStatus": "semantic_selectors_only",
+        "openFindingCount": 0,
+        "rendererSupport": {
+          "matrixDigest": "sha256:9057becd26ea663f29a98c93139c3d1d49e81ae10a903fd0887b0d8a6643f49e",
+          "requiredFeature": "viewport-3d",
+          "status": "matrix_linked"
+        },
+        "screenshots": {
+          "requiredViewCount": 3,
+          "linkedCount": 3,
+          "missingCount": 0,
+          "failingCount": 0,
+          "status": "linked"
+        },
+        "blockers": []
+      },
+      {
+        "featureId": "folded_white_wrapper_shell",
+        "priority": "critical",
+        "phaseId": "P2",
+        "requiredElementIds": [],
+        "semanticSelectors": [
+          "feature:folded_white_wrapper_shell",
+          "kind:folded_white_wrapper_shell",
+          "wall:upper-white-shell",
+          "roof:white-folded-shell"
+        ],
+        "elementCoverageStatus": "semantic_selectors_only",
+        "openFindingCount": 0,
+        "rendererSupport": {
+          "matrixDigest": "sha256:9057becd26ea663f29a98c93139c3d1d49e81ae10a903fd0887b0d8a6643f49e",
+          "requiredFeature": "viewport-3d",
+          "status": "matrix_linked"
+        },
+        "screenshots": {
+          "requiredViewCount": 3,
+          "linkedCount": 3,
+          "missingCount": 0,
+          "failingCount": 0,
+          "status": "linked"
+        },
+        "blockers": []
+      },
+      {
+        "featureId": "roof_terrace_cutout",
+        "priority": "critical",
+        "phaseId": "P3",
+        "requiredElementIds": [],
+        "semanticSelectors": [
+          "feature:roof_terrace_cutout",
+          "kind:roof_opening_with_occupied_terrace",
+          "roof:opening",
+          "floor:terrace",
+          "railing:roof-court-guard",
+          "door:terrace-access",
+          "window:roof-court-glazing",
+          "room:room_l1_roof_court"
+        ],
+        "elementCoverageStatus": "semantic_selectors_only",
+        "openFindingCount": 0,
+        "rendererSupport": {
+          "matrixDigest": "sha256:9057becd26ea663f29a98c93139c3d1d49e81ae10a903fd0887b0d8a6643f49e",
+          "requiredFeature": "roof-opening",
+          "status": "matrix_linked"
+        },
+        "screenshots": {
+          "requiredViewCount": 3,
+          "linkedCount": 3,
+          "missingCount": 0,
+          "failingCount": 0,
+          "status": "linked"
+        },
+        "blockers": []
+      },
+      {
+        "featureId": "front_deep_loggia",
+        "priority": "critical",
+        "phaseId": "P4",
+        "requiredElementIds": [],
+        "semanticSelectors": [
+          "feature:front_deep_loggia",
+          "kind:recessed_loggia",
+          "room:room_l1_deep_loggia",
+          "floor:loggia-slab",
+          "railing:front-loggia-guard",
+          "window:three-bay-loggia-glazing",
+          "door:loggia-access"
+        ],
+        "elementCoverageStatus": "semantic_selectors_only",
+        "openFindingCount": 0,
+        "rendererSupport": {
+          "matrixDigest": "sha256:9057becd26ea663f29a98c93139c3d1d49e81ae10a903fd0887b0d8a6643f49e",
+          "requiredFeature": "slab-opening",
+          "status": "matrix_linked"
+        },
+        "screenshots": {
+          "requiredViewCount": 4,
+          "linkedCount": 4,
+          "missingCount": 0,
+          "failingCount": 0,
+          "status": "linked"
+        },
+        "blockers": []
+      },
+      {
+        "featureId": "asymmetric_gable_envelope",
+        "priority": "critical",
+        "phaseId": "P2",
+        "requiredElementIds": [],
+        "semanticSelectors": [
+          "feature:asymmetric_gable_envelope",
+          "kind:roof_attached_wall_profile",
+          "wall:gable-profile",
+          "roof:asymmetric-envelope"
+        ],
+        "elementCoverageStatus": "semantic_selectors_only",
+        "openFindingCount": 0,
+        "rendererSupport": {
+          "matrixDigest": "sha256:9057becd26ea663f29a98c93139c3d1d49e81ae10a903fd0887b0d8a6643f49e",
+          "requiredFeature": "viewport-3d",
+          "status": "matrix_linked"
+        },
+        "screenshots": {
+          "requiredViewCount": 3,
+          "linkedCount": 3,
+          "missingCount": 0,
+          "failingCount": 0,
+          "status": "linked"
+        },
+        "blockers": []
+      },
+      {
+        "featureId": "vertical_cladding_zones",
+        "priority": "high",
+        "phaseId": "P4",
+        "requiredElementIds": [],
+        "semanticSelectors": [
+          "feature:vertical_cladding_zones",
+          "kind:vertical_cladding",
+          "wall:ground-clad-base",
+          "cladding:vertical-board-batten"
+        ],
+        "elementCoverageStatus": "semantic_selectors_only",
+        "openFindingCount": 0,
+        "rendererSupport": {
+          "matrixDigest": "sha256:9057becd26ea663f29a98c93139c3d1d49e81ae10a903fd0887b0d8a6643f49e",
+          "requiredFeature": "material-resolution",
+          "status": "matrix_linked"
+        },
+        "screenshots": {
+          "requiredViewCount": 3,
+          "linkedCount": 3,
+          "missingCount": 0,
+          "failingCount": 0,
+          "status": "linked"
+        },
+        "blockers": []
+      },
+      {
+        "featureId": "opening_and_glazing_rhythm",
+        "priority": "high",
+        "phaseId": "P4",
+        "requiredElementIds": [],
+        "semanticSelectors": [
+          "feature:opening_and_glazing_rhythm",
+          "kind:facade_bay_rhythm",
+          "door:*",
+          "window:*",
+          "opening:hosted-facade-bay"
+        ],
+        "elementCoverageStatus": "semantic_selectors_only",
+        "openFindingCount": 0,
+        "rendererSupport": {
+          "matrixDigest": "sha256:9057becd26ea663f29a98c93139c3d1d49e81ae10a903fd0887b0d8a6643f49e",
+          "requiredFeature": "stair-geometry",
+          "status": "matrix_linked"
+        },
+        "screenshots": {
+          "requiredViewCount": 3,
+          "linkedCount": 3,
+          "missingCount": 0,
+          "failingCount": 0,
+          "status": "linked"
+        },
+        "blockers": []
+      },
+      {
+        "featureId": "room_access_and_enclosure",
+        "priority": "critical",
+        "phaseId": "P5",
+        "requiredElementIds": [],
+        "semanticSelectors": [
+          "feature:room_access_and_enclosure",
+          "kind:room_access_and_enclosure",
+          "room:*",
+          "door:room-access",
+          "stair:*",
+          "opening:slab-stair",
+          "room:room_gf_kitchen_dining",
+          "room:room_gf_living",
+          "room:room_gf_entry",
+          "room:room_gf_bath_laundry",
+          "room:room_gf_utility",
+          "room:room_gf_carport",
+          "room:room_l1_primary_bedroom",
+          "room:room_l1_walk_in_closet",
+          "room:room_l1_ensuite",
+          "room:room_l1_hall_landing",
+          "room:room_l1_bedroom_2",
+          "room:room_l1_deep_loggia",
+          "room:room_l1_roof_court"
+        ],
+        "elementCoverageStatus": "semantic_selectors_only",
+        "openFindingCount": 0,
+        "rendererSupport": {
+          "matrixDigest": "sha256:9057becd26ea663f29a98c93139c3d1d49e81ae10a903fd0887b0d8a6643f49e",
+          "requiredFeature": "roof-opening",
+          "status": "matrix_linked"
+        },
+        "screenshots": {
+          "requiredViewCount": 3,
+          "linkedCount": 3,
+          "missingCount": 0,
+          "failingCount": 0,
+          "status": "linked"
+        },
+        "blockers": []
+      },
+      {
+        "featureId": "site_orientation_and_plinth",
+        "priority": "medium",
+        "phaseId": "P0",
+        "requiredElementIds": [],
+        "semanticSelectors": [
+          "feature:site_orientation_and_plinth",
+          "kind:site_orientation",
+          "site:project-north-assumption",
+          "floor:plinth"
+        ],
+        "elementCoverageStatus": "semantic_selectors_only",
+        "openFindingCount": 0,
+        "rendererSupport": {
+          "matrixDigest": "sha256:9057becd26ea663f29a98c93139c3d1d49e81ae10a903fd0887b0d8a6643f49e",
+          "requiredFeature": "viewport-3d",
+          "status": "matrix_linked"
+        },
+        "screenshots": {
+          "requiredViewCount": 1,
+          "linkedCount": 1,
+          "missingCount": 0,
+          "failingCount": 0,
+          "status": "linked"
+        },
+        "blockers": []
+      },
+      {
+        "featureId": "documentation_evidence_set",
+        "priority": "high",
+        "phaseId": "P7",
+        "requiredElementIds": [],
+        "semanticSelectors": [
+          "feature:documentation_evidence_set",
+          "kind:documentation_views",
+          "view:*",
+          "schedule:*",
+          "export:*",
+          "evidence:*"
+        ],
+        "elementCoverageStatus": "semantic_selectors_only",
+        "openFindingCount": 0,
+        "rendererSupport": {
+          "matrixDigest": "sha256:9057becd26ea663f29a98c93139c3d1d49e81ae10a903fd0887b0d8a6643f49e",
+          "requiredFeature": "room-visualization",
+          "status": "matrix_linked"
+        },
+        "screenshots": {
+          "requiredViewCount": 7,
+          "linkedCount": 7,
+          "missingCount": 0,
+          "failingCount": 0,
+          "status": "linked"
+        },
+        "blockers": []
+      }
+    ]
+  },
   "blockers": [
     {
       "code": "tracker_not_done",
@@ -652,5 +963,5 @@
     }
   ],
   "ready": false,
-  "lineageDigestSha256": "0438a2d13477f758ffacef4a0ab1d9a3fb4974cd7be49f3beabbf73084e1be1a"
+  "lineageDigestSha256": "ee5d954d5db952874414285ba2cda60da8998642b8afdae2ca890810ea4b5769"
 }

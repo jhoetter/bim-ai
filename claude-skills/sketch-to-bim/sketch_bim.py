@@ -26,6 +26,7 @@ ROOT = Path(__file__).resolve().parents[2]
 CLI = ["node", "packages/cli/cli.mjs"]
 DEFAULT_CAPABILITIES = "spec/sketch-to-bim-capability-matrix.json"
 DEFAULT_ARCHETYPES = "spec/sketch-to-bim-archetypes.json"
+DEFAULT_RENDERER_SUPPORT_MATRIX = "spec/generated/renderer-support-matrix.md"
 TOOL_MANIFEST = ROOT / "claude-skills" / "sketch-to-bim" / "tools.json"
 BLOCKING_SEVERITIES = {"warning", "error"}
 ADVISOR_RULE_FILES = [
@@ -74,6 +75,16 @@ def digest_files(paths: list[str]) -> str:
             h.update(b"missing")
         h.update(b"\0")
     return h.hexdigest()
+
+
+def existing_rel_files(paths: list[str]) -> list[str]:
+    return [rel_path for rel_path in paths if (ROOT / rel_path).is_file()]
+
+
+def rel_files_under(root: Path) -> list[str]:
+    if not root.exists():
+        return []
+    return sorted(rel(path) for path in root.rglob("*") if path.is_file())
 
 
 def run(
@@ -160,6 +171,33 @@ def seed_paths(seed: str) -> dict[str, Path]:
     }
 
 
+def seed_source_files(seed: str) -> list[str]:
+    paths = seed_paths(seed)
+    candidates = [
+        rel(paths["base"] / "manifest.json"),
+        rel(paths["bundle"]),
+        rel(paths["recipe"]),
+        rel(paths["ir"]),
+        *rel_files_under(paths["base"] / "source"),
+    ]
+    return existing_rel_files(candidates)
+
+
+def target_spec_files(seed: str) -> list[str]:
+    candidates = [
+        f"spec/generated/{seed}-required-features.json",
+        f"spec/target-house/{seed}-acceptance-checklist.md",
+        f"spec/target-house/{seed}-bim-information-requirements.md",
+        f"spec/target-house/{seed}-capability-map.md",
+        f"spec/target-house/{seed}-no-seed-readiness-packet.md",
+        f"spec/target-house/{seed}-phase-plan.md",
+        f"spec/target-house/{seed}-risk-register.md",
+        f"spec/target-house/{seed}-sketch-ir.draft.json",
+        "spec/target-house/target-house-seed.md",
+    ]
+    return existing_rel_files(candidates)
+
+
 def extract_seed_model_id(output: str, seed: str) -> str | None:
     for line in output.splitlines():
         stripped = line.strip()
@@ -183,6 +221,7 @@ def cmd_doctor(args: argparse.Namespace) -> None:
             "methodology": (ROOT / "spec/sketch-to-bim-methodology.md").is_file(),
             "tracker": (ROOT / "spec/sketch-to-bim-process-audit-tracker.md").is_file(),
             "capabilityMatrix": (ROOT / DEFAULT_CAPABILITIES).is_file(),
+            "rendererSupportMatrix": (ROOT / DEFAULT_RENDERER_SUPPORT_MATRIX).is_file(),
             "skill": (ROOT / "claude-skills/sketch-to-bim/SKILL.md").is_file(),
         },
     }
@@ -1356,6 +1395,8 @@ def cmd_accept(args: argparse.Namespace) -> None:
     model_revision = None
     if evidence_manifest.is_file():
         model_revision = read_json(evidence_manifest).get("revision")
+    seed_files = seed_source_files(args.seed)
+    spec_files = target_spec_files(args.seed)
     summary = {
         "schemaVersion": "sketch-to-bim.tool-run.v1",
         "seed": args.seed,
@@ -1370,6 +1411,12 @@ def cmd_accept(args: argparse.Namespace) -> None:
         "capabilitiesSha256": file_sha256(ROOT / args.capabilities),
         "advisorRuleDigest": digest_files(ADVISOR_RULE_FILES),
         "advisorRuleFiles": ADVISOR_RULE_FILES,
+        "rendererSupportMatrixPath": DEFAULT_RENDERER_SUPPORT_MATRIX,
+        "rendererSupportMatrixSha256": file_sha256(ROOT / DEFAULT_RENDERER_SUPPORT_MATRIX),
+        "seedSourceDigest": digest_files(seed_files),
+        "seedSourceFiles": seed_files,
+        "targetSpecDigest": digest_files(spec_files),
+        "targetSpecFiles": spec_files,
         "mode": args.mode,
         "generatedAtEpochMs": int(time.time() * 1000),
     }
@@ -1395,6 +1442,15 @@ def cmd_stale_check(args: argparse.Namespace) -> None:
             ROOT / summary.get("capabilitiesPath", DEFAULT_CAPABILITIES)
         ),
         "advisorRuleDigest": digest_files(summary.get("advisorRuleFiles") or ADVISOR_RULE_FILES),
+        "rendererSupportMatrixSha256": file_sha256(
+            ROOT / summary.get("rendererSupportMatrixPath", DEFAULT_RENDERER_SUPPORT_MATRIX)
+        ),
+        "seedSourceDigest": digest_files(
+            summary.get("seedSourceFiles") or seed_source_files(args.seed)
+        ),
+        "targetSpecDigest": digest_files(
+            summary.get("targetSpecFiles") or target_spec_files(args.seed)
+        ),
     }
     stale = {
         key: {"recorded": summary.get(key), "current": value}

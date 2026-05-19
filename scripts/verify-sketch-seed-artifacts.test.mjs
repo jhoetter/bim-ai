@@ -10,6 +10,16 @@ const summary = {
   bundlePath: 'seed-artifacts/target-house-1/bundle.json',
   irPath: 'seed-artifacts/target-house-1/evidence/sketch-ir.json',
   capabilitiesPath: 'spec/sketch-to-bim-capability-matrix.json',
+  rendererSupportMatrixPath: 'spec/generated/renderer-support-matrix.md',
+  seedSourceFiles: [
+    'seed-artifacts/target-house-1/manifest.json',
+    'seed-artifacts/target-house-1/bundle.json',
+    'seed-artifacts/target-house-1/evidence/target-house-1.recipe.json',
+  ],
+  targetSpecFiles: [
+    'spec/generated/target-house-1-required-features.json',
+    'spec/target-house/target-house-1-acceptance-checklist.md',
+  ],
   advisorRuleFiles: [
     'app/bim_ai/constructability_report.py',
     'app/bim_ai/domain_integrity.py',
@@ -29,6 +39,17 @@ test('post-evidence allowance covers evidence, tests, and digest-tracked source 
   );
   assert.equal(
     isPostEvidenceOnlyPath('app/bim_ai/room_access_integrity.py', { artifactDir, summary }),
+    true,
+  );
+  assert.equal(
+    isPostEvidenceOnlyPath('spec/generated/renderer-support-matrix.md', { artifactDir, summary }),
+    true,
+  );
+  assert.equal(
+    isPostEvidenceOnlyPath('spec/target-house/target-house-1-acceptance-checklist.md', {
+      artifactDir,
+      summary,
+    }),
     true,
   );
   assert.equal(

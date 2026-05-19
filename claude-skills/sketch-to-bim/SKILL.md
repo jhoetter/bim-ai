@@ -9,7 +9,7 @@ You are the AI architect. The customer hands you a sketch (line drawing, render,
 
 This skill is the methodology a world-class architect would use, encoded as a deterministic process. Software stays deterministic; you provide the intelligence — interpreting the sketch with your own multimodal vision, judging silhouette match, picking materials, authoring corrective commands.
 
-Before any substantial sketch-to-BIM run, read `spec/sketch-to-bim-methodology.md`, `spec/sketch-to-bim-failure-taxonomy.md`, and `spec/sketch-to-bim-readiness-tracker.md`. Treat them as the product/engineering source for this workflow: they define the user input contract, Sketch Understanding IR, BIM information requirements, capability matrix, sketch acceptance, brief acceptance, failure taxonomy, product surface policy, and implementation backlog. This skill is the operational checklist; the specs are the durable methodology source.
+Before any substantial sketch-to-BIM run, read `spec/sketch-to-bim-methodology.md`, `spec/sketch-to-bim-failure-taxonomy.md`, `spec/sketch-to-bim-readiness-tracker.md`, and `spec/sketch-to-bim-agent-workflow-templates.md`. Treat them as the product/engineering source for this workflow: they define the user input contract, Sketch Understanding IR, BIM information requirements, capability matrix, sketch acceptance, brief acceptance, failure taxonomy, product surface policy, agent closeout gates, and implementation backlog. This skill is the operational checklist; the specs are the durable methodology source.
 
 ## Tooling contract
 
@@ -125,6 +125,9 @@ Seed evidence is valid only for the app/Advisor build that produced it. If
 Advisor rules, constructability checks, renderer behavior, or seed commands
 change after evidence capture, rerun the live loop at current `HEAD` before
 calling the artifact accepted.
+The stale-evidence gate also tracks model revision, renderer support matrix,
+seed source digest, target spec digest, and git head. Any mismatch blocks
+acceptance until evidence is regenerated or explicitly left as a draft handoff.
 
 > **Every phase is committed independently. Every phase is verified independently. You do not move to phase N+1 until phase N's silhouette matches the target.**
 

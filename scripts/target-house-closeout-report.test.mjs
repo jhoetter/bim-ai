@@ -24,6 +24,12 @@ async function makeMinimalFixture() {
     'generated',
     `${seed}-required-features.json`,
   );
+  await fs.mkdir(path.join(repoRoot, 'spec', 'generated'), { recursive: true });
+  await fs.writeFile(
+    path.join(repoRoot, 'spec', 'generated', 'renderer-support-matrix.md'),
+    '# Renderer Support Matrix\n\nDigest: `rsm-fixture`\n',
+    'utf8',
+  );
 
   await writeJson(requiredFeaturesPath, {
     schemaVersion: 'target-house-acceptance-required-features.v1',
@@ -284,10 +290,19 @@ test('target-house closeout report ties minimal fixture evidence into a blocked 
   assert.equal(result.lineage.summaries.advisor.advisoryClear, true);
   assert.equal(result.lineage.summaries.geometry.bySeverity.error, 1);
   assert.equal(result.lineage.summaries.visual.semanticVisualFailureCount, 1);
+  assert.equal(result.lineage.featureCoverageDashboard.requiredFeatureCount, 2);
+  assert.equal(result.lineage.featureCoverageDashboard.openFindingCount, 1);
+  assert.equal(result.lineage.featureCoverageDashboard.rows[0].rendererSupport.status, 'matrix_linked');
+  assert.equal(
+    result.lineage.featureCoverageDashboard.rows[0].elementCoverageStatus,
+    'semantic_selectors_only',
+  );
   assert.ok(result.lineage.blockers.some((blocker) => blocker.code === 'acceptance_gates'));
   assert.ok(result.lineage.blockers.some((blocker) => blocker.code === 'geometry_diagnostic_errors'));
 
   assert.match(result.markdown, /No Advisor findings is not target-house acceptance/);
+  assert.match(result.markdown, /Feature Coverage Dashboard/);
+  assert.match(result.markdown, /roof-opening:matrix_linked/);
   assert.match(result.markdown, /roof_terrace_cutout/);
   assert.match(result.markdown, /roof:opening, floor:terrace/);
   assert.match(result.markdown, /geometry\.wall_detached_endpoint/);

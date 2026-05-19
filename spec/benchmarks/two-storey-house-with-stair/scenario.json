@@ -52,6 +52,15 @@
       "command": "node scripts/benchmarks/two-storey-stair.mjs --mode offline --json",
       "claim": "The deterministic fixture is executable offline and can post the bundle to /bundles in live dry-run mode when a target model is supplied. Stair, slab opening, and railing remain raw bundle payloads, not typed MCP parity."
     },
+    "integrity": {
+      "classification": "executable",
+      "status": "committed-route-evidence-clean",
+      "artifacts": [
+        "live-evidence/advisor-validation.json",
+        "live-evidence/committed-evidence.json"
+      ],
+      "claim": "Route evidence records validation, hosted opening integrity, stair/slab opening, and Advisor status for the committed fixture."
+    },
     "advisor": {
       "classification": "executable",
       "status": "committed-route-evidence-clean",
@@ -60,6 +69,12 @@
         "live-evidence/committed-evidence.json"
       ],
       "claim": "Advisor and validation evidence is collected from the benchmark route contract or from live public model routes; it does not claim a browser-authored UI run."
+    },
+    "rendererDiagnostics": {
+      "classification": "executable",
+      "status": "server-side-substitute",
+      "artifacts": ["live-evidence/visual-evidence.json"],
+      "claim": "Plan, upper plan, stair section, 3D, and sheet context visual evidence records renderer-critical feature status; live browser diagnostics remain separate."
     },
     "visual": {
       "classification": "executable",
@@ -72,6 +87,22 @@
       "status": "artifact-or-manifest-returned",
       "artifacts": ["live-evidence/export-evidence.json"],
       "claim": "IFC/glTF manifest and sheet PDF route evidence is collected with two-storey stair geometry counts."
+    },
+    "performance": {
+      "classification": "executable",
+      "status": "offline-runner-records-timing",
+      "artifacts": ["live-evidence/committed-evidence.json"],
+      "claim": "Runner evidence records deterministic execution timing; full browser interaction timings require a live isolated model run."
+    },
+    "acceptance": {
+      "classification": "executable",
+      "status": "semantic-diff-route-evidence-recorded",
+      "artifacts": [
+        "expected-semantics.json",
+        "mcp-cli-command-bundle.json",
+        "live-evidence/advisor-validation.json"
+      ],
+      "claim": "Scenario acceptance combines semantic diff, Advisor validation, visual, and export route evidence."
     },
     "semanticDiff": {
       "classification": "executable",

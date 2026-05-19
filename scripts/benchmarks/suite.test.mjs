@@ -15,9 +15,13 @@ test('same-house benchmark suite validates and enumerates multiple scenarios', a
     'ui',
     'cmdK',
     'mcpCli',
+    'integrity',
     'advisor',
+    'rendererDiagnostics',
     'visual',
     'export',
+    'performance',
+    'acceptance',
     'semanticDiff',
   ]);
 });
@@ -42,6 +46,22 @@ test('UI evidence classifications distinguish replay, traceability, and missing 
   );
   assert.equal(
     scenarios.get('simple-single-storey-house').evidence.mcpCli.classification,
+    'executable',
+  );
+  assert.equal(
+    scenarios.get('simple-single-storey-house').evidence.integrity.classification,
+    'executable',
+  );
+  assert.equal(
+    scenarios.get('simple-single-storey-house').evidence.rendererDiagnostics.classification,
+    'executable',
+  );
+  assert.equal(
+    scenarios.get('simple-single-storey-house').evidence.performance.classification,
+    'executable',
+  );
+  assert.equal(
+    scenarios.get('simple-single-storey-house').evidence.acceptance.classification,
     'executable',
   );
 

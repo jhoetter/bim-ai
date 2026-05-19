@@ -10,9 +10,13 @@ const REQUIRED_EVIDENCE_KINDS = [
   'ui',
   'cmdK',
   'mcpCli',
+  'integrity',
   'advisor',
+  'rendererDiagnostics',
   'visual',
   'export',
+  'performance',
+  'acceptance',
   'semanticDiff',
 ];
 const UI_EVIDENCE_CLASSIFICATIONS = [

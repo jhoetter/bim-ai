@@ -223,6 +223,109 @@ function screenshotRows(requiredFeatures, evidenceAcceptance, screenshotManifest
   });
 }
 
+function rendererFeatureForRequiredFeature(feature) {
+  const text = [
+    feature.id,
+    feature.kind,
+    ...(feature.semanticSelectors ?? []),
+    ...(feature.capabilityNeeds ?? []),
+    ...(feature.evidenceTypes ?? []),
+  ]
+    .join(' ')
+    .toLowerCase();
+  if (text.includes('roof') && (text.includes('opening') || text.includes('cutout'))) {
+    return 'roof-opening';
+  }
+  if (text.includes('slab') || text.includes('stair opening') || text.includes('shaft')) {
+    return 'slab-opening';
+  }
+  if (text.includes('stair')) return 'stair-geometry';
+  if (text.includes('rail') || text.includes('guard')) return 'railing-geometry';
+  if (text.includes('room')) return 'room-visualization';
+  if (text.includes('material') || text.includes('cladding')) return 'material-resolution';
+  if (text.includes('door') || text.includes('window') || text.includes('opening')) return 'wall-cut';
+  return 'viewport-3d';
+}
+
+function featureCoverageDashboard({
+  requiredFeatures,
+  acceptanceGates,
+  evidenceAcceptance,
+  screenshots,
+  blockers,
+  rendererSupportMatrixDigest,
+}) {
+  const features = requiredFeatures?.requiredFeatures ?? [];
+  const failuresByFeature = countBy(
+    acceptanceGates?.semanticVisual?.failures ?? [],
+    (failure) => failure.featureId,
+  );
+  const screenshotByView = new Map(screenshots.map((row) => [row.viewId, row]));
+  const rows = features.map((feature) => {
+    const requiredViewIds = feature.requiredViewIds ?? [];
+    const screenshotRowsForFeature = requiredViewIds
+      .map((viewId) => screenshotByView.get(viewId))
+      .filter(Boolean);
+    const missingScreenshotCount = requiredViewIds.length - screenshotRowsForFeature.length;
+    const failingScreenshotCount = screenshotRowsForFeature.filter((row) =>
+      ['missing', 'fail', 'blocked'].includes(String(row.status)),
+    ).length;
+    const openFindingCount = failuresByFeature[feature.id] ?? 0;
+    return {
+      featureId: feature.id,
+      priority: feature.priority ?? '',
+      phaseId: feature.phaseId ?? '',
+      requiredElementIds: feature.requiredElementIds ?? [],
+      semanticSelectors: feature.semanticSelectors ?? [],
+      elementCoverageStatus:
+        (feature.requiredElementIds ?? []).length > 0
+          ? 'explicit_elements'
+          : (feature.semanticSelectors ?? []).length > 0
+            ? 'semantic_selectors_only'
+            : 'missing_element_mapping',
+      openFindingCount,
+      rendererSupport: {
+        matrixDigest: rendererSupportMatrixDigest,
+        requiredFeature: rendererFeatureForRequiredFeature(feature),
+        status: rendererSupportMatrixDigest ? 'matrix_linked' : 'matrix_missing',
+      },
+      screenshots: {
+        requiredViewCount: requiredViewIds.length,
+        linkedCount: screenshotRowsForFeature.length,
+        missingCount: missingScreenshotCount,
+        failingCount: failingScreenshotCount,
+        status:
+          missingScreenshotCount > 0 || failingScreenshotCount > 0
+            ? 'incomplete'
+            : requiredViewIds.length > 0
+              ? 'linked'
+              : 'not_required',
+      },
+      blockers: openFindingCount > 0 ? ['semantic_visual_unverified'] : [],
+    };
+  });
+  const screenshotMissingCount = rows.reduce((sum, row) => sum + row.screenshots.missingCount, 0);
+  return {
+    schemaVersion: 'target-house-feature-coverage-dashboard.v1',
+    requiredFeatureCount: rows.length,
+    explicitElementCoverageCount: rows.filter(
+      (row) => row.elementCoverageStatus === 'explicit_elements',
+    ).length,
+    semanticSelectorCoverageCount: rows.filter(
+      (row) => row.elementCoverageStatus === 'semantic_selectors_only',
+    ).length,
+    missingElementCoverageCount: rows.filter(
+      (row) => row.elementCoverageStatus === 'missing_element_mapping',
+    ).length,
+    openFindingCount: rows.reduce((sum, row) => sum + row.openFindingCount, 0),
+    rendererSupportMatrixDigest,
+    screenshotMissingCount,
+    blockerCount: blockers.length,
+    evidenceAcceptanceOk: evidenceAcceptance?.ok === true,
+    rows,
+  };
+}
+
 function advisorSummary(advisorAll, constructabilityReport) {
   const advisorGroups = advisorAll?.groups ?? [];
   const advisorSeverityCounts = countBy(advisorGroups, (group) => group.severity);
@@ -475,6 +578,18 @@ export async function buildTargetHouseCloseoutReport({
     tolerance: tolerances,
     performance: perf,
   });
+  const rendererMatrixPath = path.join(repoRoot, 'spec', 'generated', 'renderer-support-matrix.md');
+  const rendererSupportMatrixDigest = (await exists(rendererMatrixPath))
+    ? `sha256:${await sha256File(rendererMatrixPath)}`
+    : null;
+  const dashboard = featureCoverageDashboard({
+    requiredFeatures,
+    acceptanceGates: payloads.acceptance_gates,
+    evidenceAcceptance: payloads.target_house_evidence_acceptance,
+    screenshots,
+    blockers,
+    rendererSupportMatrixDigest,
+  });
 
   const lineageBody = {
     schemaVersion: `${SCHEMA_VERSION}.lineage`,
@@ -517,6 +632,7 @@ export async function buildTargetHouseCloseoutReport({
       capabilities: payloads.tool_run_summary?.capabilitiesSha256
         ? `sha256:${payloads.tool_run_summary.capabilitiesSha256}`
         : null,
+      rendererSupportMatrix: rendererSupportMatrixDigest,
       finalManifest: manifest.payload?.manifestDigestSha256
         ? `sha256:${manifest.payload.manifestDigestSha256}`
         : null,
@@ -536,6 +652,7 @@ export async function buildTargetHouseCloseoutReport({
     },
     features,
     screenshots,
+    featureCoverageDashboard: dashboard,
     blockers,
     ready: blockers.length === 0,
   };
@@ -616,6 +733,7 @@ function renderCloseoutMarkdown(lineage) {
       ['bundle digest', lineage.sourceDigests.bundle ?? 'missing'],
       ['snapshot digest', lineage.sourceDigests.snapshot ?? 'missing'],
       ['Advisor rule digest', lineage.sourceDigests.advisorRuleDigest ?? 'missing'],
+      ['renderer support matrix digest', lineage.sourceDigests.rendererSupportMatrix ?? 'missing'],
       ['performance digest', lineage.sourceDigests.performanceEvidence ?? 'missing'],
       ['final manifest digest', lineage.sourceDigests.finalManifest ?? 'missing'],
     ]),
@@ -654,6 +772,32 @@ function renderCloseoutMarkdown(lineage) {
   for (const row of lineage.screenshots) {
     lines.push(
       `| \`${row.viewId}\` | ${tableCell(row.kind)} | ${tableCell(row.status)} | ${row.requiredOutput ? `\`${row.requiredOutput}\`` : 'missing'} | ${row.screenshotSha256 ? `\`${row.screenshotSha256}\`` : 'missing'} | ${tableCell(row.purpose)} |`,
+    );
+  }
+
+  lines.push(
+    '',
+    '## Feature Coverage Dashboard',
+    '',
+    '| Metric | Value |',
+    '| ------ | ----- |',
+    ...renderKeyValueRows([
+      ['required features', lineage.featureCoverageDashboard.requiredFeatureCount],
+      ['explicit element coverage', lineage.featureCoverageDashboard.explicitElementCoverageCount],
+      ['semantic selector coverage', lineage.featureCoverageDashboard.semanticSelectorCoverageCount],
+      ['missing element coverage', lineage.featureCoverageDashboard.missingElementCoverageCount],
+      ['open feature findings', lineage.featureCoverageDashboard.openFindingCount],
+      ['missing screenshots', lineage.featureCoverageDashboard.screenshotMissingCount],
+      ['closeout blockers', lineage.featureCoverageDashboard.blockerCount],
+      ['renderer support matrix', lineage.featureCoverageDashboard.rendererSupportMatrixDigest ?? 'missing'],
+    ]),
+    '',
+    '| Feature | Elements | Open findings | Renderer support | Screenshots | Blockers |',
+    '| ------- | -------- | ------------- | ---------------- | ----------- | -------- |',
+  );
+  for (const row of lineage.featureCoverageDashboard.rows) {
+    lines.push(
+      `| \`${row.featureId}\` | ${row.elementCoverageStatus} | ${row.openFindingCount} | ${row.rendererSupport.requiredFeature}:${row.rendererSupport.status} | ${row.screenshots.status} (${row.screenshots.linkedCount}/${row.screenshots.requiredViewCount}) | ${tableCell(row.blockers)} |`,
     );
   }
 

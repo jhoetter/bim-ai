@@ -3,7 +3,19 @@
   "suiteId": "same-house-core-product-cases",
   "sourceOfIntent": "spec/ui-mcp-parity-tracker.md#same-house-parity-benchmarks",
   "milestone": "M3-C",
-  "requiredEvidenceKinds": ["ui", "cmdK", "mcpCli", "advisor", "visual", "export", "semanticDiff"],
+  "requiredEvidenceKinds": [
+    "ui",
+    "cmdK",
+    "mcpCli",
+    "integrity",
+    "advisor",
+    "rendererDiagnostics",
+    "visual",
+    "export",
+    "performance",
+    "acceptance",
+    "semanticDiff"
+  ],
   "uiEvidenceClassifications": {
     "executable": "A browser/UI path creates or verifies the scenario model through public UI interactions and emits comparable artifacts.",
     "validated-replay": "A deterministic replay or bridge test validates UI/Cmd+K mapping against the scenario fixture, but does not prove browser-authored exact input.",

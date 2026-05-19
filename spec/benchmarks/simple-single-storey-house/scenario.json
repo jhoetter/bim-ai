@@ -47,6 +47,15 @@
       "artifacts": ["mcp-cli-command-bundle.json", "expected-semantics.json"],
       "command": "node scripts/benchmarks/simple-house.mjs --mode offline --json"
     },
+    "integrity": {
+      "classification": "executable",
+      "status": "committed-artifact-available",
+      "artifacts": [
+        "live-evidence/advisor-validation.json",
+        "live-evidence/committed-evidence.json"
+      ],
+      "claim": "Benchmark evidence records model validation and Advisor integrity counts for the committed fixture."
+    },
     "advisor": {
       "classification": "executable",
       "status": "committed-artifact-available",
@@ -54,6 +63,12 @@
         "live-evidence/advisor-validation.json",
         "live-evidence/committed-evidence.json"
       ]
+    },
+    "rendererDiagnostics": {
+      "classification": "executable",
+      "status": "server-side-visual-surrogate-artifact-available",
+      "artifacts": ["live-evidence/visual-evidence.json"],
+      "claim": "Visual evidence carries renderer/readback surrogate status; browser renderer diagnostics remain a richer follow-up."
     },
     "visual": {
       "classification": "executable",
@@ -64,6 +79,18 @@
       "classification": "executable",
       "status": "manifest-and-pdf-artifact-available",
       "artifacts": ["live-evidence/export-evidence.json"]
+    },
+    "performance": {
+      "classification": "executable",
+      "status": "offline-runner-records-timing",
+      "artifacts": ["live-evidence/execution-evidence.json"],
+      "claim": "Offline and live-capable runners emit deterministic execution evidence; full browser interaction timings are not claimed."
+    },
+    "acceptance": {
+      "classification": "executable",
+      "status": "semantic-diff-and-advisor-gates-recorded",
+      "artifacts": ["live-evidence/semantic-diff.json", "live-evidence/advisor-validation.json"],
+      "claim": "Scenario acceptance is represented by semantic diff plus Advisor/export/visual evidence rows."
     },
     "semanticDiff": {
       "classification": "executable",

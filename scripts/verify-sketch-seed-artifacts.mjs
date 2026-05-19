@@ -17,6 +17,7 @@ import { pathToFileURL } from 'node:url';
 const REPO_ROOT = path.resolve(new URL('..', import.meta.url).pathname);
 const DEFAULT_ROOT = path.join(REPO_ROOT, 'seed-artifacts');
 const DEFAULT_CAPABILITIES = 'spec/sketch-to-bim-capability-matrix.json';
+const DEFAULT_RENDERER_SUPPORT_MATRIX = 'spec/generated/renderer-support-matrix.md';
 const DEFAULT_GOLDEN_MANIFEST = 'spec/sketch-to-bim-golden-seeds.json';
 const ADVISOR_RULE_FILES = [
   'app/bim_ai/constructability_advisories.py',
@@ -182,6 +183,52 @@ async function digestFiles(files) {
   return h.digest('hex');
 }
 
+async function existingFiles(files) {
+  const rows = [];
+  for (const file of files) {
+    if (await exists(path.join(REPO_ROOT, file))) rows.push(file);
+  }
+  return rows;
+}
+
+async function relFilesUnder(dir) {
+  const rows = [];
+  async function walk(current) {
+    const entries = await fs.readdir(current, { withFileTypes: true }).catch(() => []);
+    for (const entry of entries) {
+      const abs = path.join(current, entry.name);
+      if (entry.isDirectory()) await walk(abs);
+      else if (entry.isFile()) rows.push(portable(abs));
+    }
+  }
+  if (await exists(dir)) await walk(dir);
+  return rows.sort();
+}
+
+async function seedSourceFiles(artifactDir, seedName) {
+  return existingFiles([
+    portable(path.join(artifactDir, 'manifest.json')),
+    portable(path.join(artifactDir, 'bundle.json')),
+    portable(path.join(artifactDir, 'evidence', `${seedName}.recipe.json`)),
+    portable(path.join(artifactDir, 'evidence', 'sketch-ir.json')),
+    ...(await relFilesUnder(path.join(artifactDir, 'source'))),
+  ]);
+}
+
+async function targetSpecFiles(seedName) {
+  return existingFiles([
+    `spec/generated/${seedName}-required-features.json`,
+    `spec/target-house/${seedName}-acceptance-checklist.md`,
+    `spec/target-house/${seedName}-bim-information-requirements.md`,
+    `spec/target-house/${seedName}-capability-map.md`,
+    `spec/target-house/${seedName}-no-seed-readiness-packet.md`,
+    `spec/target-house/${seedName}-phase-plan.md`,
+    `spec/target-house/${seedName}-risk-register.md`,
+    `spec/target-house/${seedName}-sketch-ir.draft.json`,
+    'spec/target-house/target-house-seed.md',
+  ]);
+}
+
 function gitHead() {
   const proc = spawnSync('git', ['rev-parse', 'HEAD'], {
     cwd: REPO_ROOT,
@@ -215,9 +262,12 @@ export function isPostEvidenceOnlyPath(relPath, { artifactDir = '', summary = {}
   const directDigestFiles = new Set(
     asArray([
       summary.capabilitiesPath || DEFAULT_CAPABILITIES,
+      summary.rendererSupportMatrixPath || DEFAULT_RENDERER_SUPPORT_MATRIX,
       summary.bundlePath,
       summary.irPath,
       ...digestSourceFiles,
+      ...asArray(summary.seedSourceFiles),
+      ...asArray(summary.targetSpecFiles),
     ]).filter(Boolean),
   );
   if (directDigestFiles.has(normalized)) return true;
@@ -492,8 +542,18 @@ async function verifyArtifact(artifactDir, args, currentHead, goldenRequirements
   }
   if (hasSummary) {
     const summary = await readJson(summaryPath);
+    const recordedSeedFiles = Array.isArray(summary.seedSourceFiles)
+      ? summary.seedSourceFiles
+      : await seedSourceFiles(artifactDir, name);
+    const recordedTargetSpecFiles = Array.isArray(summary.targetSpecFiles)
+      ? summary.targetSpecFiles
+      : await targetSpecFiles(name);
+    const evidenceManifest = await readIfExists(path.join(evidenceDir, 'evidence-manifest.json'));
+    const snapshot = await readIfExists(path.join(evidenceDir, 'snapshot.json'));
+    const currentModelRevision = evidenceManifest?.revision ?? snapshot?.revision ?? null;
     const checks = {
       gitHead: currentHead,
+      modelRevision: currentModelRevision,
       bundleSha256: await sha256File(bundlePath),
       irSha256: await sha256File(path.join(artifactDir, 'evidence', 'sketch-ir.json')).catch(
         () => null,
@@ -502,6 +562,14 @@ async function verifyArtifact(artifactDir, args, currentHead, goldenRequirements
         path.join(REPO_ROOT, summary.capabilitiesPath || DEFAULT_CAPABILITIES),
       ).catch(() => null),
       advisorRuleDigest: await digestFiles(summary.advisorRuleFiles || ADVISOR_RULE_FILES),
+      rendererSupportMatrixSha256: await sha256File(
+        path.join(
+          REPO_ROOT,
+          summary.rendererSupportMatrixPath || DEFAULT_RENDERER_SUPPORT_MATRIX,
+        ),
+      ).catch(() => null),
+      seedSourceDigest: await digestFiles(recordedSeedFiles),
+      targetSpecDigest: await digestFiles(recordedTargetSpecFiles),
     };
     const contentChecksMatch = Object.entries(checks)
       .filter(([key]) => key !== 'gitHead')

@@ -459,14 +459,31 @@
       },
       "outputSchema": {
         "type": "object",
-        "required": ["schemaVersion", "seed", "modelId", "gitHead", "bundleSha256", "irSha256"],
+        "required": [
+          "schemaVersion",
+          "seed",
+          "modelId",
+          "gitHead",
+          "modelRevision",
+          "bundleSha256",
+          "irSha256",
+          "advisorRuleDigest",
+          "rendererSupportMatrixSha256",
+          "seedSourceDigest",
+          "targetSpecDigest"
+        ],
         "properties": {
           "schemaVersion": { "type": "string" },
           "seed": { "type": "string" },
           "modelId": { "type": "string" },
           "gitHead": { "type": ["string", "null"] },
+          "modelRevision": { "type": ["integer", "null"] },
           "bundleSha256": { "type": ["string", "null"] },
-          "irSha256": { "type": ["string", "null"] }
+          "irSha256": { "type": ["string", "null"] },
+          "advisorRuleDigest": { "type": "string" },
+          "rendererSupportMatrixSha256": { "type": ["string", "null"] },
+          "seedSourceDigest": { "type": "string" },
+          "targetSpecDigest": { "type": "string" }
         },
         "additionalProperties": true
       }
@@ -474,7 +491,7 @@
     {
       "name": "skb_stale_check",
       "command": "stale-check",
-      "description": "Fail if final evidence was not produced from current HEAD inputs.",
+      "description": "Fail if final evidence was not produced from current model revision, rule digest, renderer support matrix, seed source, target spec, and git HEAD inputs.",
       "inputSchema": {
         "type": "object",
         "required": ["seed"],
