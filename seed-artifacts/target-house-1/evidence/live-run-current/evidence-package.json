@@ -1,6 +1,6 @@
 {
   "format": "evidencePackage_v1",
-  "generatedAt": "2026-05-19T10:03:19.088395Z",
+  "generatedAt": "2026-05-19T10:13:23.305720Z",
   "modelId": "target-house-1-offline-regenerated",
   "revision": 2,
   "elementCount": 168,
@@ -450,9 +450,7 @@
           "volumeAreaInsetMm": 0.0,
           "approxVolumeM3": 12.096,
           "derivationAuthority": "preview_heuristic",
-          "authorityReasonCodes": [
-            "overlaps_authored_room_bbox"
-          ]
+          "authorityReasonCodes": ["overlaps_authored_room_bbox"]
         },
         {
           "kind": "axis_aligned_rectangle",
@@ -489,9 +487,7 @@
           "volumeAreaInsetMm": 0.0,
           "approxVolumeM3": 9.856,
           "derivationAuthority": "preview_heuristic",
-          "authorityReasonCodes": [
-            "overlaps_authored_room_bbox"
-          ]
+          "authorityReasonCodes": ["overlaps_authored_room_bbox"]
         },
         {
           "kind": "axis_aligned_rectangle",
@@ -608,9 +604,7 @@
           "volumeAreaInsetMm": 0.0,
           "approxVolumeM3": 10.64,
           "derivationAuthority": "preview_heuristic",
-          "authorityReasonCodes": [
-            "overlaps_authored_room_bbox"
-          ]
+          "authorityReasonCodes": ["overlaps_authored_room_bbox"]
         },
         {
           "kind": "axis_aligned_rectangle",
@@ -647,9 +641,7 @@
           "volumeAreaInsetMm": 0.0,
           "approxVolumeM3": 20.412,
           "derivationAuthority": "preview_heuristic",
-          "authorityReasonCodes": [
-            "overlaps_authored_room_bbox"
-          ]
+          "authorityReasonCodes": ["overlaps_authored_room_bbox"]
         },
         {
           "kind": "axis_aligned_rectangle",
@@ -686,9 +678,7 @@
           "volumeAreaInsetMm": 0.0,
           "approxVolumeM3": 23.296,
           "derivationAuthority": "preview_heuristic",
-          "authorityReasonCodes": [
-            "overlaps_authored_room_bbox"
-          ]
+          "authorityReasonCodes": ["overlaps_authored_room_bbox"]
         },
         {
           "kind": "axis_aligned_rectangle",
@@ -703,9 +693,7 @@
               "y": 900.0
             }
           },
-          "wallIds": [
-            "front-loggia-left-return"
-          ],
+          "wallIds": ["front-loggia-left-return"],
           "boundarySeparationIds": [
             "sep-hf-room-loggia-1",
             "sep-hf-room-loggia-2",
@@ -744,9 +732,7 @@
               "y": 900.0
             }
           },
-          "wallIds": [
-            "front-loggia-left-return"
-          ],
+          "wallIds": ["front-loggia-left-return"],
           "boundarySeparationIds": [
             "sep-hf-room-loggia-1",
             "sep-hf-room-loggia-3",
@@ -785,14 +771,8 @@
               "y": 900.0
             }
           },
-          "wallIds": [
-            "front-loggia-left-return",
-            "front-loggia-right-return"
-          ],
-          "boundarySeparationIds": [
-            "sep-hf-room-loggia-1",
-            "sep-hf-room-loggia-3"
-          ],
+          "wallIds": ["front-loggia-left-return", "front-loggia-right-return"],
+          "boundarySeparationIds": ["sep-hf-room-loggia-1", "sep-hf-room-loggia-3"],
           "perimeterSegmentIdsSorted": [
             "front-loggia-left-return",
             "front-loggia-right-return",
@@ -826,9 +806,7 @@
               "y": 900.0
             }
           },
-          "wallIds": [
-            "front-loggia-right-return"
-          ],
+          "wallIds": ["front-loggia-right-return"],
           "boundarySeparationIds": [
             "sep-hf-room-loggia-1",
             "sep-hf-room-loggia-2",
@@ -867,9 +845,7 @@
               "y": 900.0
             }
           },
-          "wallIds": [
-            "front-loggia-right-return"
-          ],
+          "wallIds": ["front-loggia-right-return"],
           "boundarySeparationIds": [
             "sep-hf-room-loggia-1",
             "sep-hf-room-loggia-3",
@@ -908,9 +884,7 @@
               "y": 3000.0
             }
           },
-          "wallIds": [
-            "target-house-l1-landing-access-partition"
-          ],
+          "wallIds": ["target-house-l1-landing-access-partition"],
           "boundarySeparationIds": [
             "sep-hf-room-landing-1",
             "sep-hf-room-landing-2",
@@ -949,9 +923,7 @@
               "y": 3000.0
             }
           },
-          "wallIds": [
-            "target-house-l1-landing-access-partition"
-          ],
+          "wallIds": ["target-house-l1-landing-access-partition"],
           "boundarySeparationIds": [
             "sep-hf-room-landing-2",
             "sep-hf-room-landing-3",
@@ -1063,14 +1035,8 @@
       "roomDerivationAuthoritativeCount": 0,
       "roomDerivationDiagnosticCount": 1,
       "roomDerivationWarningCount": 1,
-      "levelsWithRoomsSorted": [
-        "hf-lvl-ground",
-        "hf-lvl-upper"
-      ],
-      "levelsWithWallsSorted": [
-        "hf-lvl-ground",
-        "hf-lvl-upper"
-      ],
+      "levelsWithRoomsSorted": ["hf-lvl-ground", "hf-lvl-upper"],
+      "levelsWithWallsSorted": ["hf-lvl-ground", "hf-lvl-upper"],
       "maxRoomsOnSingleLevel": 7,
       "maxWallsOnSingleLevel": 16
     }
@@ -1081,9 +1047,7 @@
         "ruleId": "room_target_area_mismatch",
         "severity": "info",
         "message": "Room outline area (3.520 m\u00b2) differs from targetAreaM2 (3.200 m\u00b2) beyond the advisory tolerance.",
-        "elementIds": [
-          "hf-room-ensuite"
-        ],
+        "elementIds": ["hf-room-ensuite"],
         "blocking": false,
         "quickFixCommand": null,
         "discipline": "architecture",
@@ -1093,9 +1057,7 @@
         "ruleId": "room_target_area_mismatch",
         "severity": "info",
         "message": "Room outline area (4.800 m\u00b2) differs from targetAreaM2 (4.400 m\u00b2) beyond the advisory tolerance.",
-        "elementIds": [
-          "hf-room-landing"
-        ],
+        "elementIds": ["hf-room-landing"],
         "blocking": false,
         "quickFixCommand": null,
         "discipline": "architecture",

@@ -108,7 +108,7 @@ This tracker is complete only when all of these are true:
 | `M5` P1 rendering/exchange completeness | Partial     | Supported viewport geometry, IFC/glTF export manifests, and readback/golden evidence agree for architecture, structure-lite, MEP-lite, sheets, and schedules.                                                   |
 | `M6` Performance and live UX quality    | Partial     | Advisor and renderer diagnostics are incremental, bounded, nonblocking, and do not cause sluggish orbit/selection/WebSocket behavior in ordinary projects.                                                      |
 | `M7` Platform-grade BIM guarantees      | Partial     | Kernel invariants, transaction safety, collaboration, provenance, fixture governance, and agent remediation safety are covered by tests and documented contracts.                                               |
-| `M8` Target-house rerun readiness       | Not started | `target-house-1` can be regenerated from methodology with zero unhandled warnings/errors, clean renderer diagnostics, current evidence, and explicit tolerances only where accepted by the user.                |
+| `M8` Target-house rerun readiness       | Partial     | `target-house-1` can be regenerated from methodology with zero unhandled warnings/errors, clean renderer diagnostics, zero geometry-diagnostic blockers, current evidence, passed semantic visual checklist, and explicit tolerances only where accepted by the user. |
 
 ## Layering Contract
 
@@ -289,12 +289,17 @@ This tracker is complete only when all of these are true:
 | ID        | Priority | Status  | Item                                                 | Acceptance                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
 | --------- | -------- | ------- | ---------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `BIR-N01` | P0       | Done    | Diagnose current target-house geometry objectively.  | Deterministic `target-house-current-geometry-diagnostic.v1` report now lists detached/flying elements, out-of-envelope elements, helper leakage, unsupported/unproven renderer features, and sketch-critical mismatches for current `target-house-1`. Evidence: `packages/cli/lib/target-house-geometry-diagnostics.mjs`, `seed-artifacts/target-house-1/evidence/live-run-current/target-house-geometry-diagnostic.json`, `seed-artifacts/target-house-1/evidence/live-run-current/target-house-geometry-diagnostic.md`, `packages/cli/targetHouseGeometryDiagnostics.test.mjs`. |
-| `BIR-N02` | P0       | Partial | Fix seed source, not only live state.                | Wave 8/9 corrected `seed-artifacts/target-house-1/evidence/target-house-1.recipe.json` and the authoritative `bundle.json`, then refreshed deterministic offline evidence from that bundle. Stale `gitHead`, `bundleSha256`, and Advisor-rule digest blockers are cleared; clean acceptance still depends on resolving the fresh integrity/constructability blockers recorded by `BIR-N04` and the geometry diagnostic.                                                                                                                          |
+| `BIR-N02` | P0       | Partial | Fix seed source, not only live state.                | Wave 8/9/11 corrected `seed-artifacts/target-house-1/evidence/target-house-1.recipe.json` and the authoritative `bundle.json`, then refreshed deterministic offline evidence from that bundle. Stale `gitHead`, `bundleSha256`, and Advisor-rule digest blockers are cleared and core Advisor/constructability is clean, but source acceptance is not complete while `target-house-geometry-diagnostic.json` still reports error-level bundle geometry findings.                                                                                         |
 | `BIR-N03` | P0       | Partial | Remove stale/disposable artifacts from seed library. | Seed dropdown contains only approved seed artifacts and no wave/disposable local evidence projects after clean seed.                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
-| `BIR-N04` | P0       | Partial | Require no P0 Advisor/integrity/renderer findings.   | Deterministic clean-pass gate now reads freshly regenerated offline evidence from the authoritative seed bundle. Stale evidence blockers are gone, renderer blockers are zero, and the remaining gate failure is fresh model-integrity/constructability output: 14 blocker groups, 24 P0 error instances, and 4 warning instances without tolerances in `clean-pass-gate.json`.                                                                                                                                                |
+| `BIR-N04` | P0       | Partial | Require no P0 Advisor/integrity/renderer findings.   | Deterministic clean-pass gate now passes for freshly regenerated offline evidence from the authoritative seed bundle: zero P0 Advisor/integrity errors, zero constructability warnings, zero renderer blockers, and zero tolerance rows. This row remains Partial until the clean-pass/final-package gates also consume the target-house geometry diagnostic so detached/flying/out-of-envelope findings cannot be hidden behind a clean normal Advisor.                                                                                   |
 | `BIR-N05` | P0       | Done    | Verify model visual from required views.             | Machine-readable validator now requires main, front, rear/right, roof court, loggia, ground plan, upper plan, and wire diagnostics saved-view/screenshot evidence. Current refreshed evidence passes 8/8 visual rows, including `front_loggia`, in `target-house-evidence-acceptance.json`.                                                                                                                                                                                                                         |
 | `BIR-N06` | P1       | Done    | Verify BIM data quality.                             | Deterministic target-house evidence validator checks rooms, schedules, types/materials, classifications, levels, spaces, stairs, rails, doors/windows, and required export manifest rows; refreshed data-quality rows pass 7/7.                                                                                                                                                                                                                                                                                     |
 | `BIR-N07` | P1       | Partial | Verify performance on target-house.                  | Deterministic target-house performance evidence now profiles orbit, selection, lens switching, and Advisor opening from the final seed snapshot with renderer-cost budgets; remaining closeout requires a live browser timing sample if final acceptance demands measured runtime traces.                                                                                                                                                                                                                                                                                         |
+| `BIR-N08` | P0       | Partial | Require zero target-house geometry diagnostic errors. | `target-house-geometry-diagnostic.json` must report zero detached/flying elements, zero helper leakage into physical views, zero out-of-envelope elements, zero unsupported target-house-critical renderer features, and zero sketch-critical mismatches before M8 can close. Current refreshed diagnostic still reports 97 error-level findings from the authoritative bundle, so this is the next source-fix gate.                                                                                                               |
+| `BIR-N09` | P0       | Partial | Require semantic visual checklist disposition.        | `acceptance-gates.json` must have `semanticVisualFailureCount=0`, no unchecked required semantic visual rows, and all source-sketch/brief-critical checks either passed by evidence or explicitly rejected as invalid checklist rows. Current evidence still has 291 unchecked semantic visual failures, so final package remains blocked even though pixel `visualFailCount=0`.                                                                                                                                       |
+| `BIR-N10` | P0       | Partial | Require final package readiness.                     | `node scripts/target-house-final-package.mjs --seed target-house-1 --require-ready` must pass and produce a final closeout manifest with no `acceptance_gates`, `tracker_not_done`, freshness, performance, clean-pass, or geometry-diagnostic blockers. Current package is still blocked by acceptance gates and tracker completion.                                                                                                                                                                             |
+| `BIR-N11` | P1       | Not started | Add live browser responsiveness acceptance.           | A live dev-server/browser run records orbit, selection, lens switching, Advisor open/close, and WebSocket reconnect behavior for `target-house-1`; regressions or repeated non-benign proxy/socket churn block final readiness.                                                                                                                                                                                                                                                                                    |
+| `BIR-N12` | P1       | Not started | Add human-readable target-house closeout report.      | Final evidence includes a concise report tying source sketch features, required BIM elements, screenshots/views, Advisor/geometry findings, renderer diagnostics, exchange output, performance evidence, tolerances, and remaining limitations into one reviewable artifact.                                                                                                                                                                                                                                      |
 
 ### O. Tests, Fixtures, CI, And Benchmarks
 
@@ -776,6 +781,52 @@ W8-D evidence update:
   visual evidence.
 - Verification: `pnpm --filter @bim-ai/cli exec node --test
 targetHouseAcceptanceCompiler.test.mjs targetHouseEvidenceAcceptance.test.mjs`.
+
+### Wave 11: Target-House Core Clean-Pass Source Corrections
+
+Goal: remove the fresh Advisor/constructability blockers that prevented the
+core clean-pass gate from passing.
+
+| Agent | Ownership                                      | Primary items                  |
+| ----- | ---------------------------------------------- | ------------------------------ |
+| W11-A | Floor containment regression                    | `BIR-N02`, `BIR-N04`           |
+| W11-B | Egress graph regression                         | `BIR-D05`, `BIR-N04`           |
+| W11-C | Schedule/data-quality evidence refresh          | `BIR-N06`                      |
+| W11-D | Room wall topology gate                         | `BIR-D06`, `BIR-N04`           |
+| W11-E | Stair/final evidence refresh                    | `BIR-E02`, `BIR-N04`, `BIR-N07` |
+
+W11 integration status:
+
+- Refreshed deterministic offline evidence from the authoritative
+  `seed-artifacts/target-house-1/bundle.json` at current head.
+- `node scripts/gate-target-house-clean-pass.mjs --evidence-dir
+  seed-artifacts/target-house-1/evidence/live-run-current --out
+  seed-artifacts/target-house-1/evidence/live-run-current/clean-pass-gate.json`
+  passes with zero P0 Advisor/integrity errors, zero constructability warnings,
+  zero renderer blockers, and zero unresolved tolerance groups.
+- `target-house-geometry-diagnostic.json` still reports 97 error-level
+  geometry/sketch-critical findings from the authoritative bundle. Therefore M8
+  is not complete and `BIR-N08` is the next source-correction gate.
+- `acceptance-gates.json` still reports 291 unchecked semantic visual checklist
+  failures. Therefore `BIR-N09` and `BIR-N10` remain blocked even though the
+  normal Advisor is clean.
+
+### Wave 12: Target-House Geometry, Semantic Visual, And Final Package
+
+Goal: close the remaining M8 blockers without weakening the layer contract.
+
+| Agent | Ownership                                                 | Primary items                  |
+| ----- | --------------------------------------------------------- | ------------------------------ |
+| W12-A | Geometry diagnostic source fixes and fixture regressions   | `BIR-N08`, `BIR-O02`           |
+| W12-B | Semantic visual checklist evidence/disposition compiler    | `BIR-M03`, `BIR-N09`, `BIR-T01` |
+| W12-C | Final-package gate integration for geometry diagnostics    | `BIR-N04`, `BIR-N08`, `BIR-N10` |
+| W12-D | Live browser responsiveness and WebSocket acceptance       | `BIR-L02`, `BIR-L03`, `BIR-N11` |
+| W12-E | Target-house closeout report and lineage/evidence narrative | `BIR-N12`, `BIR-T03`, `BIR-T06` |
+
+Exit: final package is either fully ready or has only explicitly documented,
+user-approved tolerances with owner, evidence, and expiry. No wave may mark M8
+complete while geometry diagnostic errors or unchecked semantic visual rows
+remain.
 
 ## Non-Negotiable Acceptance Rules
 

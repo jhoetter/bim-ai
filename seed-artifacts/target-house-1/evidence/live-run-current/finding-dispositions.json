@@ -1,6 +1,6 @@
 {
   "schemaVersion": "sketch.finding-dispositions.v1",
-  "generatedAt": "2026-05-19T10:03:19.088399Z",
+  "generatedAt": "2026-05-19T10:13:23.305723Z",
   "modelId": "target-house-1-offline-regenerated",
   "revision": 2,
   "phaseId": null,
@@ -21,10 +21,7 @@
       "severity": "info",
       "code": "room_target_area_mismatch",
       "count": 2,
-      "elementIds": [
-        "hf-room-ensuite",
-        "hf-room-landing"
-      ],
+      "elementIds": ["hf-room-ensuite", "hf-room-landing"],
       "messages": [
         "Room outline area (3.520 m\u00b2) differs from targetAreaM2 (3.200 m\u00b2) beyond the advisory tolerance.",
         "Room outline area (4.800 m\u00b2) differs from targetAreaM2 (4.400 m\u00b2) beyond the advisory tolerance."
