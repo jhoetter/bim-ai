@@ -13,6 +13,7 @@ from bim_ai.elements import (
 from bim_ai.integrity_preflight import (
     build_integrity_preflight_report,
     build_multi_profile_comparison,
+    build_source_command_index_from_transactions,
 )
 
 
@@ -99,6 +100,44 @@ def test_integrity_preflight_payload_is_profile_independent_and_machine_readable
     assert "digestSha256" in report
 
 
+def test_integrity_preflight_links_findings_to_source_authoring_commands() -> None:
+    source_command_index = build_source_command_index_from_transactions(
+        [
+            {
+                "id": "txn-1",
+                "revisionAfter": 7,
+                "appliedCommands": [
+                    {
+                        "type": "insertDoorOnWall",
+                        "id": "door-orphan",
+                        "wallId": "missing-wall",
+                        "sourceCommandId": "sketch-door-42",
+                        "sourceRecipeRow": "recipe.csv:12",
+                        "agentWave": "wave-18-e",
+                    }
+                ],
+                "transactionMetadata": {"commit": "abc123"},
+            }
+        ]
+    )
+
+    report = build_integrity_preflight_report(
+        _preflight_doc(),
+        revision=7,
+        model_id="model-1",
+        source_command_index=source_command_index,
+    )
+    finding = next(
+        row for row in report["findings"] if row["ruleId"] == "hosted_opening_missing_host"
+    )
+
+    assert report["provenance"]["format"] == "integrityPreflightProvenance_v1"
+    assert report["provenance"]["sourceCommandLinkedFindingCount"] >= 1
+    assert finding["sourceCommandIds"] == ["sketch-door-42"]
+    assert finding["sourceCommands"][0]["affectedElementId"] == "door-orphan"
+    assert finding["sourceCommands"][0]["sourceRecipeRow"] == "recipe.csv:12"
+
+
 def test_integrity_remediation_loop_proposes_dry_runnable_fix_bundle() -> None:
     report = build_integrity_preflight_report(_preflight_doc(), revision=7, model_id="model-1")
     proposals = report["remediation"]["proposals"]
@@ -113,6 +152,7 @@ def test_integrity_remediation_loop_proposes_dry_runnable_fix_bundle() -> None:
     assert proposal["dryRunRoute"] == "/api/models/{model_id}/commands/bundle/dry-run"
     assert proposal["commitRoute"] == "/api/models/{model_id}/commands/bundle"
     assert proposal["recaptureEvidence"]["expectedFormat"] == "integrityPreflightReport_v1"
+    assert proposal["commitAllowedWithoutDryRun"] is False
 
 
 def test_preflight_diagnostics_include_timing_skipped_and_incremental_metadata() -> None:

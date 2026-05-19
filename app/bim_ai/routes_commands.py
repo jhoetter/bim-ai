@@ -50,7 +50,12 @@ from bim_ai.routes_deps import (
 from bim_ai.schedule_derivation import list_schedule_ids
 from bim_ai.tables import ModelRecord, RedoStackRecord, UndoStackRecord
 from bim_ai.transaction_metadata import build_transaction_metadata, command_bundle_digest
-from bim_ai.transaction_safety import assess_transaction_safety, build_dry_run_evidence
+from bim_ai.transaction_safety import (
+    assess_transaction_safety,
+    build_dry_run_evidence,
+    build_transaction_preflight_audit,
+    build_undo_redo_integrity_metadata,
+)
 
 commands_router = APIRouter()
 
@@ -339,6 +344,7 @@ class CommandEnvelope(BaseModel):
     command: dict[str, Any]
     client_op_id: str | None = Field(default=None, alias="clientOpId")
     user_id: str | None = Field(default="local-dev", alias="userId")
+    parent_revision: int | None = Field(default=None, alias="parentRevision")
 
 
 class BundleEnvelope(BaseModel):
@@ -347,6 +353,7 @@ class BundleEnvelope(BaseModel):
     commands: list[dict[str, Any]]
     user_id: str | None = Field(default=None, alias="userId")
     client_op_id: str | None = Field(default=None, alias="clientOpId")
+    parent_revision: int | None = Field(default=None, alias="parentRevision")
 
 
 class UndoRedoEnvelope(BaseModel):
@@ -430,16 +437,56 @@ def _transaction_safety_wire(
     mode: str,
     surface: str,
     commands: list[dict[str, Any]],
+    actor_kind: str = "human",
 ) -> dict[str, Any]:
     decision = assess_transaction_safety(
         current_revision=current_revision,
         parent_revision=parent_revision,
         mode=mode,  # type: ignore[arg-type]
         surface=surface,  # type: ignore[arg-type]
-        actor_kind="human",
+        actor_kind=actor_kind,  # type: ignore[arg-type]
         commands=commands,
     )
     return decision.model_dump(by_alias=True)
+
+
+def _preflight_or_409(
+    *,
+    current_revision: int,
+    parent_revision: int,
+    mode: str,
+    surface: str,
+    commands: list[dict[str, Any]],
+    actor_kind: str = "human",
+) -> tuple[dict[str, Any], dict[str, Any]]:
+    decision = assess_transaction_safety(
+        current_revision=current_revision,
+        parent_revision=parent_revision,
+        mode=mode,  # type: ignore[arg-type]
+        surface=surface,  # type: ignore[arg-type]
+        actor_kind=actor_kind,  # type: ignore[arg-type]
+        commands=commands,
+    )
+    decision_wire = decision.model_dump(by_alias=True)
+    audit = build_transaction_preflight_audit(
+        current_revision=current_revision,
+        parent_revision=parent_revision,
+        mode=mode,  # type: ignore[arg-type]
+        surface=surface,  # type: ignore[arg-type]
+        actor_kind=actor_kind,  # type: ignore[arg-type]
+        commands=commands,
+        decision=decision,
+    )
+    if not decision.ok:
+        raise HTTPException(
+            status_code=409,
+            detail={
+                "reason": decision.reason_code,
+                "transactionSafety": decision_wire,
+                "transactionPreflightAudit": audit,
+            },
+        )
+    return decision_wire, audit
 
 
 @commands_router.get("/models/{model_id}/command-log")
@@ -515,6 +562,14 @@ async def apply_command(
     await _validate_link_model_command_against_db(session, model_id, command_for_commit)
 
     doc_before = clone_document(baseline_doc)
+    parent_revision = body.parent_revision if body.parent_revision is not None else doc_before.revision
+    transaction_safety, transaction_preflight_audit = _preflight_or_409(
+        current_revision=doc_before.revision,
+        parent_revision=parent_revision,
+        mode="commit",
+        surface="ui-command-commit",
+        commands=[command_for_commit],
+    )
 
     src_provider: SourceDocProvider | None = None
     if _command_needs_link_sources(command_for_commit):
@@ -538,7 +593,7 @@ async def apply_command(
         commands=[command_for_commit],
         user_id=uid,
         submitter="raw-command",
-        parent_revision=doc_before.revision,
+        parent_revision=parent_revision,
         client_op_id=body.client_op_id,
         workflow={
             "route": "/api/models/{model_id}/commands",
@@ -547,14 +602,8 @@ async def apply_command(
         },
         bundle_digest=command_digest,
     )
-    transaction_safety = _transaction_safety_wire(
-        current_revision=doc_before.revision,
-        parent_revision=doc_before.revision,
-        mode="commit",
-        surface="ui-command-commit",
-        commands=[command_for_commit],
-    )
     transaction_metadata["transactionSafety"] = transaction_safety
+    transaction_metadata["transactionPreflightAudit"] = transaction_preflight_audit
     await delete_redos(session, model_id, uid)
 
     undo_row = UndoStackRecord(
@@ -596,6 +645,7 @@ async def apply_command(
         "delta": delta,
         "transactionMetadata": transaction_metadata,
         "transactionSafety": transaction_safety,
+        "transactionPreflightAudit": transaction_preflight_audit,
     }
     if _commands_include_move_level_elevation([body.command]):
         payload["levelElevationPropagationEvidence_v0"] = (
@@ -624,6 +674,14 @@ async def dry_run_command(
     baseline_doc = Document.model_validate(row.document)
     baseline_summary = compute_model_summary(baseline_doc)
     command_for_commit = _expand_link_reload_command(baseline_doc, body.command)
+    parent_revision = body.parent_revision if body.parent_revision is not None else baseline_doc.revision
+    transaction_safety, transaction_preflight_audit = _preflight_or_409(
+        current_revision=baseline_doc.revision,
+        parent_revision=parent_revision,
+        mode="dry_run",
+        surface="dry-run",
+        commands=[command_for_commit],
+    )
 
     try:
         ok, new_doc, _cmd_obj, violations, code = try_commit(baseline_doc, command_for_commit)
@@ -633,20 +691,13 @@ async def dry_run_command(
     viols_wire = [v.model_dump(by_alias=True) for v in violations]
     summary_after = compute_model_summary(new_doc) if ok and new_doc is not None else None
     dry_run_evidence = build_dry_run_evidence(
-        parent_revision=baseline_doc.revision,
+        parent_revision=parent_revision,
         commands=[command_for_commit],
         ok=ok and new_doc is not None,
         reason=code,
         violations=viols_wire,
         summary_before=baseline_summary,
         summary_after=summary_after,
-    )
-    transaction_safety = _transaction_safety_wire(
-        current_revision=baseline_doc.revision,
-        parent_revision=baseline_doc.revision,
-        mode="dry_run",
-        surface="dry-run",
-        commands=[command_for_commit],
     )
 
     if not ok or new_doc is None:
@@ -661,6 +712,7 @@ async def dry_run_command(
             "appliedCommandPreview": command_for_commit,
             "dryRunEvidence": dry_run_evidence,
             "transactionSafety": transaction_safety,
+            "transactionPreflightAudit": transaction_preflight_audit,
         }
 
     return {
@@ -674,6 +726,7 @@ async def dry_run_command(
         "appliedCommandPreview": command_for_commit,
         "dryRunEvidence": dry_run_evidence,
         "transactionSafety": transaction_safety,
+        "transactionPreflightAudit": transaction_preflight_audit,
     }
 
 
@@ -712,6 +765,14 @@ async def apply_command_bundle(
             single_command=False,
         )
     doc_before = clone_document(baseline_doc)
+    parent_revision = body.parent_revision if body.parent_revision is not None else doc_before.revision
+    transaction_safety, transaction_preflight_audit = _preflight_or_409(
+        current_revision=doc_before.revision,
+        parent_revision=parent_revision,
+        mode="commit",
+        surface="bundle-commit",
+        commands=commands_for_commit,
+    )
 
     src_provider: SourceDocProvider | None = None
     if any(_command_needs_link_sources(c) for c in commands_for_commit):
@@ -747,7 +808,7 @@ async def apply_command_bundle(
         commands=commands_for_commit,
         user_id=uid,
         submitter="raw-bundle",
-        parent_revision=doc_before.revision,
+        parent_revision=parent_revision,
         client_op_id=body.client_op_id,
         workflow={
             "route": "/api/models/{model_id}/commands/bundle",
@@ -756,14 +817,8 @@ async def apply_command_bundle(
         },
         bundle_digest=bundle_digest,
     )
-    transaction_safety = _transaction_safety_wire(
-        current_revision=doc_before.revision,
-        parent_revision=doc_before.revision,
-        mode="commit",
-        surface="bundle-commit",
-        commands=commands_for_commit,
-    )
     transaction_metadata["transactionSafety"] = transaction_safety
+    transaction_metadata["transactionPreflightAudit"] = transaction_preflight_audit
 
     await delete_redos(session, model_id, uid)
 
@@ -811,6 +866,7 @@ async def apply_command_bundle(
         "delta": delta,
         "transactionMetadata": transaction_metadata,
         "transactionSafety": transaction_safety,
+        "transactionPreflightAudit": transaction_preflight_audit,
         "replayDiagnostics": bundle_replay_diagnostics(commands_for_commit),
     }
     if _commands_include_move_level_elevation(commands_for_commit):
@@ -848,6 +904,14 @@ async def dry_run_command_bundle(
     baseline_doc = Document.model_validate(row.document)
     baseline_summary = compute_model_summary(baseline_doc)
     commands_for_commit = [_expand_link_reload_command(baseline_doc, c) for c in body.commands]
+    parent_revision = body.parent_revision if body.parent_revision is not None else baseline_doc.revision
+    transaction_safety, transaction_preflight_audit = _preflight_or_409(
+        current_revision=baseline_doc.revision,
+        parent_revision=parent_revision,
+        mode="dry_run",
+        surface="dry-run",
+        commands=commands_for_commit,
+    )
 
     try:
         ok, new_doc, _cmds, violations, code = try_commit_bundle(baseline_doc, commands_for_commit)
@@ -857,20 +921,13 @@ async def dry_run_command_bundle(
     viols_wire = [v.model_dump(by_alias=True) for v in violations]
     summary_after = compute_model_summary(new_doc) if ok and new_doc is not None else None
     dry_run_evidence = build_dry_run_evidence(
-        parent_revision=baseline_doc.revision,
+        parent_revision=parent_revision,
         commands=commands_for_commit,
         ok=ok and new_doc is not None,
         reason=code,
         violations=viols_wire,
         summary_before=baseline_summary,
         summary_after=summary_after,
-    )
-    transaction_safety = _transaction_safety_wire(
-        current_revision=baseline_doc.revision,
-        parent_revision=baseline_doc.revision,
-        mode="dry_run",
-        surface="dry-run",
-        commands=commands_for_commit,
     )
 
     brief_proto = agent_brief_command_protocol_v1(
@@ -930,6 +987,7 @@ async def dry_run_command_bundle(
             "agentReviewReadoutConsistencyClosure_v1": consistency_closure,
             "dryRunEvidence": dry_run_evidence,
             "transactionSafety": transaction_safety,
+            "transactionPreflightAudit": transaction_preflight_audit,
         }
 
     return {
@@ -948,6 +1006,7 @@ async def dry_run_command_bundle(
         "agentReviewReadoutConsistencyClosure_v1": consistency_closure,
         "dryRunEvidence": dry_run_evidence,
         "transactionSafety": transaction_safety,
+        "transactionPreflightAudit": transaction_preflight_audit,
     }
 
 
@@ -976,6 +1035,13 @@ async def undo_model(
     current = Document.model_validate(row.document)
 
     baseline = clone_document(current)
+    transaction_safety, transaction_preflight_audit = _preflight_or_409(
+        current_revision=baseline.revision,
+        parent_revision=baseline.revision,
+        mode="undo",
+        surface="undo",
+        commands=list(undo_row.undo_commands),
+    )
 
     ok, new_doc, _cmds, violations, code = try_commit_bundle(current, list(undo_row.undo_commands))
 
@@ -1010,6 +1076,14 @@ async def undo_model(
             "surface": "api-v2",
         },
     )
+    transaction_metadata["transactionSafety"] = transaction_safety
+    transaction_metadata["transactionPreflightAudit"] = transaction_preflight_audit
+    transaction_metadata["undoRedoIntegrityMetadata"] = build_undo_redo_integrity_metadata(
+        original_transaction_metadata=undo_row.transaction_metadata,
+        action="undo",
+        revision_before=baseline.revision,
+        revision_after=new_doc.revision,
+    )
     session.add(
         RedoStackRecord(
             model_id=model_id,
@@ -1033,6 +1107,8 @@ async def undo_model(
     )
     out["action"] = "undo"
     out["transactionMetadata"] = transaction_metadata
+    out["transactionSafety"] = transaction_safety
+    out["transactionPreflightAudit"] = transaction_preflight_audit
     return out
 
 
@@ -1060,6 +1136,13 @@ async def redo_model(
 
     current = Document.model_validate(row.document)
     baseline = clone_document(current)
+    transaction_safety, transaction_preflight_audit = _preflight_or_409(
+        current_revision=baseline.revision,
+        parent_revision=baseline.revision,
+        mode="redo",
+        surface="redo",
+        commands=list(redo_row.forward_commands),
+    )
 
     ok, new_doc, _cmds, violations, code = try_commit_bundle(
         current,
@@ -1097,6 +1180,14 @@ async def redo_model(
             "surface": "api-v2",
         },
     )
+    transaction_metadata["transactionSafety"] = transaction_safety
+    transaction_metadata["transactionPreflightAudit"] = transaction_preflight_audit
+    transaction_metadata["undoRedoIntegrityMetadata"] = build_undo_redo_integrity_metadata(
+        original_transaction_metadata=redo_row.transaction_metadata,
+        action="redo",
+        revision_before=baseline.revision,
+        revision_after=new_doc.revision,
+    )
 
     await session.delete(redo_row)
     session.add(
@@ -1124,4 +1215,6 @@ async def redo_model(
     )
     out["action"] = "redo"
     out["transactionMetadata"] = transaction_metadata
+    out["transactionSafety"] = transaction_safety
+    out["transactionPreflightAudit"] = transaction_preflight_audit
     return out

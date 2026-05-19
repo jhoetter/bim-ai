@@ -32,6 +32,7 @@ def build_integrity_preflight_report(
     model_id: str | None = None,
     changed_element_ids: Iterable[str] = (),
     actor_id: str = "agent",
+    source_command_index: Mapping[str, list[Mapping[str, Any]]] | None = None,
 ) -> dict[str, Any]:
     elements = _elements(doc_or_elements)
     changed_ids = tuple(str(element_id) for element_id in changed_element_ids if element_id)
@@ -79,6 +80,8 @@ def build_integrity_preflight_report(
         *[_finding_from_integrity(row) for row in invariant_findings],
         *[_finding_from_violation(row) for row in hosted_violations],
     ]
+    if source_command_index:
+        findings = [_attach_source_commands(row, source_command_index) for row in findings]
     findings.sort(key=_finding_sort_key)
     severity_counts = Counter(str(row.get("severity") or "unknown") for row in findings)
     blocking_count = sum(
@@ -108,6 +111,13 @@ def build_integrity_preflight_report(
         },
         "findings": findings,
         "remediation": remediation,
+        "provenance": {
+            "format": "integrityPreflightProvenance_v1",
+            "sourceCommandLinkedFindingCount": sum(
+                1 for finding in findings if finding.get("sourceCommands")
+            ),
+            "sourceCommandIndexedElementCount": len(source_command_index or {}),
+        },
         "diagnostics": profiler.payload(),
     }
     payload["digestSha256"] = canonical_payload_digest(payload)
@@ -170,6 +180,44 @@ def build_integrity_remediation_loop(
             "requiresPassingDryRunEvidence": True,
             "defaultMode": "dry_run",
         },
+    }
+
+
+def build_source_command_index_from_transactions(
+    transactions: Iterable[Mapping[str, Any]],
+) -> dict[str, list[dict[str, Any]]]:
+    """Map affected element ids to source authoring command references."""
+
+    index: dict[str, list[dict[str, Any]]] = {}
+    for tx_index, transaction in enumerate(transactions):
+        metadata = _transaction_metadata(transaction)
+        commands = transaction.get("appliedCommands") or transaction.get("forwardCommands") or []
+        if not isinstance(commands, list):
+            continue
+        for command_index, command in enumerate(commands):
+            if not isinstance(command, Mapping):
+                continue
+            source_command_id = _source_command_id(command, command_index)
+            affected_ids = _affected_ids_for_command(command)
+            if not source_command_id or not affected_ids:
+                continue
+            ref = {
+                "sourceCommandId": source_command_id,
+                "commandType": str(command.get("type") or "unknown"),
+                "transactionId": str(transaction.get("id") or tx_index),
+                "revisionAfter": transaction.get("revisionAfter") or metadata.get("revisionAfter"),
+            }
+            for key in ("sourceRecipeRow", "agentWave", "commit"):
+                value = command.get(key) or metadata.get(key) or _nested(command, "agentTrace", key)
+                if value:
+                    ref[key] = str(value)
+            for element_id in affected_ids:
+                index.setdefault(element_id, [])
+                if ref not in index[element_id]:
+                    index[element_id].append(dict(ref, affectedElementId=element_id))
+    return {
+        element_id: sorted(rows, key=lambda row: str(row.get("sourceCommandId") or ""))
+        for element_id, rows in sorted(index.items())
     }
 
 
@@ -298,6 +346,75 @@ def _commands_for_finding(finding: Mapping[str, Any]) -> list[Mapping[str, Any]]
         if isinstance(command, Mapping) and command not in commands:
             commands.append(dict(command))
     return commands
+
+
+def _attach_source_commands(
+    finding: Mapping[str, Any],
+    source_command_index: Mapping[str, list[Mapping[str, Any]]],
+) -> dict[str, Any]:
+    out = dict(finding)
+    refs: list[dict[str, Any]] = []
+    for element_id in out.get("elementIds") or out.get("affectedElementIds") or []:
+        for ref in source_command_index.get(str(element_id), []):
+            row = dict(ref)
+            if row not in refs:
+                refs.append(row)
+    refs.sort(
+        key=lambda row: (
+            str(row.get("affectedElementId") or ""),
+            str(row.get("sourceCommandId") or ""),
+            str(row.get("transactionId") or ""),
+        )
+    )
+    if refs:
+        out["sourceCommands"] = refs
+        out["sourceCommandIds"] = sorted({str(ref["sourceCommandId"]) for ref in refs})
+    return out
+
+
+def _transaction_metadata(transaction: Mapping[str, Any]) -> Mapping[str, Any]:
+    metadata = transaction.get("transactionMetadata")
+    return metadata if isinstance(metadata, Mapping) else {}
+
+
+def _source_command_id(command: Mapping[str, Any], command_index: int) -> str:
+    value = command.get("sourceCommandId") or command.get("commandId")
+    if value is None:
+        value = _nested(command, "agentTrace", "sourceCommandId")
+    if value is None:
+        value = _nested(command, "agentTrace", "commandId")
+    if value is None:
+        value = command.get("id")
+    return str(value or f"command[{command_index}]")
+
+
+def _affected_ids_for_command(command: Mapping[str, Any]) -> list[str]:
+    ids: set[str] = set()
+    for key in (
+        "id",
+        "elementId",
+        "hostWallId",
+        "wallId",
+        "levelId",
+        "assetId",
+        "familyTypeId",
+        "roomId",
+    ):
+        value = command.get(key)
+        if isinstance(value, str) and value:
+            ids.add(value)
+    for key in ("elementIds", "affectedElementIds", "ids"):
+        raw = command.get(key)
+        if isinstance(raw, list):
+            ids.update(str(value) for value in raw if value)
+    return sorted(ids)
+
+
+def _nested(row: Mapping[str, Any], outer: str, inner: str) -> Any:
+    value = row.get(outer)
+    if isinstance(value, Mapping):
+        return value.get(inner)
+    return None
 
 
 def _proposal_id(finding: Mapping[str, Any]) -> str:

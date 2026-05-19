@@ -184,6 +184,7 @@ from bim_ai.transaction_safety import (
     ActorKind,
     assess_transaction_safety,
     build_dry_run_evidence,
+    build_transaction_preflight_audit,
 )
 from bim_ai.type_material_registry import merged_registry_payload
 from bim_ai.v1_acceptance_proof_matrix import build_v1_acceptance_proof_matrix_v1
@@ -2326,12 +2327,22 @@ async def apply_bundle_route(
         dry_run_evidence=body.dry_run_evidence,
     )
     transaction_safety_wire = transaction_safety.model_dump(by_alias=True)
+    transaction_preflight_audit = build_transaction_preflight_audit(
+        current_revision=doc.revision,
+        parent_revision=body.bundle.parent_revision,
+        mode=mode,  # type: ignore[arg-type]
+        surface=safety_surface,  # type: ignore[arg-type]
+        actor_kind=body.actor_kind,
+        commands=body.bundle.commands,
+        decision=transaction_safety,
+    )
     if not transaction_safety.ok:
         raise HTTPException(
             status_code=409,
             detail={
                 "reason": transaction_safety.reason_code,
                 "transactionSafety": transaction_safety_wire,
+                "transactionPreflightAudit": transaction_preflight_audit,
             },
         )
 
@@ -2382,6 +2393,7 @@ async def apply_bundle_route(
             bundle_digest=bundle_digest,
         )
         transaction_metadata["transactionSafety"] = transaction_safety_wire
+        transaction_metadata["transactionPreflightAudit"] = transaction_preflight_audit
         await delete_redos(session, model_id, uid)
 
         session.add(
@@ -2426,10 +2438,12 @@ async def apply_bundle_route(
         result_wire = result.model_dump(by_alias=True)
         result_wire["transactionMetadata"] = transaction_metadata
         result_wire["transactionSafety"] = transaction_safety_wire
+        result_wire["transactionPreflightAudit"] = transaction_preflight_audit
         return result_wire
 
     result_wire = result.model_dump(by_alias=True)
     result_wire["transactionSafety"] = transaction_safety_wire
+    result_wire["transactionPreflightAudit"] = transaction_preflight_audit
     dry_run_ok = not any(
         bool(v.get("blocking")) or v.get("severity") == "error" for v in result.violations
     )

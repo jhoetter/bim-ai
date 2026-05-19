@@ -4,8 +4,10 @@ from bim_ai.transaction_safety import (
     ActorIdentity,
     DryRunEvidence,
     assess_transaction_safety,
-    build_dry_run_evidence,
     build_agent_remediation_proposal,
+    build_dry_run_evidence,
+    build_transaction_preflight_audit,
+    build_undo_redo_integrity_metadata,
     canonical_command_digest,
     classify_fix_safety,
     infer_permission_scopes,
@@ -42,6 +44,43 @@ def test_q01_all_mutating_surfaces_require_parent_revision() -> None:
         assert decision.ok is False
         assert decision.reason_code == "missing_parent_revision"
         assert decision.rollback_guidance == "Model remains unchanged; do not append undo or redo rows."
+
+
+def test_q01_transaction_preflight_audit_is_deterministic_and_pre_mutation() -> None:
+    commands = [_wall_command()]
+    decision = assess_transaction_safety(
+        current_revision=7,
+        parent_revision=7,
+        mode="commit",
+        surface="bundle-commit",
+        actor_kind="human",
+        commands=commands,
+    )
+
+    audit = build_transaction_preflight_audit(
+        current_revision=7,
+        parent_revision=7,
+        mode="commit",
+        surface="bundle-commit",
+        actor_kind="human",
+        commands=commands,
+        decision=decision,
+    )
+
+    assert audit["schemaVersion"] == "transactionPreflightAudit_v1"
+    assert audit["decisionOk"] is True
+    assert audit["decisionReasonCode"] == "ok"
+    assert audit["commandDigestSha256"] == canonical_command_digest(commands)
+    assert audit["mutationPolicy"] == "candidate_document_only_until_safety_gate_passes"
+    assert build_transaction_preflight_audit(
+        current_revision=7,
+        parent_revision=7,
+        mode="commit",
+        surface="bundle-commit",
+        actor_kind="human",
+        commands=commands,
+        decision=decision,
+    ) == audit
 
 
 def test_q03_stale_revision_reports_explicit_retry_safe_conflict() -> None:
@@ -204,6 +243,45 @@ def test_q02_undo_redo_contract_requires_inspectable_forward_and_inverse_command
         "changed_ids_required",
         "revision_must_advance",
     ]
+
+
+def test_q02_undo_redo_contract_preserves_integrity_metadata() -> None:
+    original = {
+        "action": "commit",
+        "revisionAfter": 4,
+        "transactionSafety": {"schemaVersion": "transactionSafety_v1", "ok": True},
+        "dryRunEvidence": {"schemaVersion": "dryRunEvidence_v1", "ok": True},
+        "sourceCommandLinks": [{"sourceCommandId": "sketch-wall-1"}],
+    }
+    preserved = build_undo_redo_integrity_metadata(
+        original_transaction_metadata=original,
+        action="undo",
+        revision_before=4,
+        revision_after=5,
+    )
+    metadata = {
+        "revisionBefore": 4,
+        "revisionAfter": 5,
+        "changedIds": ["w-1"],
+        "undo": {"available": True},
+        "undoRedoIntegrityMetadata": preserved,
+    }
+
+    contract = validate_undo_redo_contract(
+        transaction_metadata=metadata,
+        forward_commands=[_wall_command()],
+        undo_commands=[{"type": "deleteElement", "elementId": "w-1"}],
+        original_transaction_metadata=original,
+    )
+
+    assert preserved["schemaVersion"] == "undoRedoIntegrityMetadata_v1"
+    assert preserved["preservedKeys"] == [
+        "dryRunEvidence",
+        "sourceCommandLinks",
+        "transactionSafety",
+    ]
+    assert contract["ok"] is True
+    assert contract["integrityMetadataPreserved"] is True
 
 
 def test_q04_fix_safety_distinguishes_safe_review_destructive_and_user_intent() -> None:

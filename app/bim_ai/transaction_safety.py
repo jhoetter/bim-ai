@@ -10,6 +10,8 @@ from pydantic import BaseModel, ConfigDict, Field
 TRANSACTION_SAFETY_SCHEMA_VERSION = "transactionSafety_v1"
 DRY_RUN_EVIDENCE_SCHEMA_VERSION = "dryRunEvidence_v1"
 REMEDIATION_PROPOSAL_SCHEMA_VERSION = "agentRemediationProposal_v1"
+TRANSACTION_PREFLIGHT_AUDIT_SCHEMA_VERSION = "transactionPreflightAudit_v1"
+UNDO_REDO_INTEGRITY_METADATA_SCHEMA_VERSION = "undoRedoIntegrityMetadata_v1"
 
 TransactionMode = Literal["dry_run", "commit", "undo", "redo"]
 TransactionSurface = Literal[
@@ -116,6 +118,16 @@ class TransactionSafetyDecision(BaseModel):
     retry_guidance: str = Field(alias="retryGuidance")
 
 
+_INTEGRITY_METADATA_KEYS: tuple[str, ...] = (
+    "transactionSafety",
+    "dryRunEvidence",
+    "integrityPreflight",
+    "remediation",
+    "sourceCommands",
+    "sourceCommandLinks",
+)
+
+
 def canonical_command_digest(commands: list[Mapping[str, Any]]) -> str:
     """Return a stable digest for command bundles before dry-run or commit."""
 
@@ -161,6 +173,69 @@ def build_dry_run_evidence(
         evidence_path=evidence_path,
         summary_digest_sha256=canonical_payload_digest(summary_payload),
     ).model_dump(by_alias=True)
+
+
+def build_transaction_preflight_audit(
+    *,
+    current_revision: int,
+    parent_revision: int | None,
+    mode: TransactionMode,
+    surface: TransactionSurface,
+    actor_kind: ActorKind,
+    commands: list[Mapping[str, Any]],
+    decision: TransactionSafetyDecision | Mapping[str, Any],
+) -> dict[str, Any]:
+    """Return deterministic audit metadata for the pre-mutation safety gate."""
+
+    decision_wire = (
+        decision.model_dump(by_alias=True)
+        if isinstance(decision, TransactionSafetyDecision)
+        else dict(decision)
+    )
+    payload = {
+        "schemaVersion": TRANSACTION_PREFLIGHT_AUDIT_SCHEMA_VERSION,
+        "currentRevision": current_revision,
+        "parentRevision": parent_revision,
+        "mode": mode,
+        "surface": surface,
+        "actorKind": actor_kind,
+        "commandDigestSha256": canonical_command_digest(commands),
+        "commandCount": len(commands),
+        "decisionReasonCode": decision_wire.get("reasonCode"),
+        "decisionOk": decision_wire.get("ok") is True,
+        "mutationPolicy": "candidate_document_only_until_safety_gate_passes",
+    }
+    payload["digestSha256"] = canonical_payload_digest(payload)
+    return payload
+
+
+def build_undo_redo_integrity_metadata(
+    *,
+    original_transaction_metadata: Mapping[str, Any] | None,
+    action: Literal["undo", "redo"],
+    revision_before: int,
+    revision_after: int,
+) -> dict[str, Any]:
+    """Carry integrity/audit metadata across undo and redo without replay mutation side effects."""
+
+    original = dict(original_transaction_metadata or {})
+    preserved = {
+        key: original[key]
+        for key in _INTEGRITY_METADATA_KEYS
+        if key in original and original[key] is not None
+    }
+    payload = {
+        "schemaVersion": UNDO_REDO_INTEGRITY_METADATA_SCHEMA_VERSION,
+        "action": action,
+        "revisionBefore": revision_before,
+        "revisionAfter": revision_after,
+        "sourceAction": original.get("action"),
+        "sourceRevisionAfter": original.get("revisionAfter"),
+        "preservedKeys": sorted(preserved),
+        "preserved": preserved,
+    }
+    payload["digestSha256"] = canonical_payload_digest(payload)
+    return payload
 
 
 def _command_type(command: Mapping[str, Any]) -> str:
@@ -261,6 +336,7 @@ def validate_undo_redo_contract(
     transaction_metadata: Mapping[str, Any],
     forward_commands: list[Mapping[str, Any]],
     undo_commands: list[Mapping[str, Any]],
+    original_transaction_metadata: Mapping[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Check that a committed remediation transaction is inspectable and undoable."""
 
@@ -278,12 +354,30 @@ def validate_undo_redo_contract(
             failures.append("changed_ids_required")
     if transaction_metadata.get("revisionBefore") == transaction_metadata.get("revisionAfter"):
         failures.append("revision_must_advance")
+    original_integrity_keys = sorted(
+        key
+        for key in _INTEGRITY_METADATA_KEYS
+        if original_transaction_metadata
+        and key in original_transaction_metadata
+        and original_transaction_metadata[key] is not None
+    )
+    if original_integrity_keys:
+        preserved = transaction_metadata.get("undoRedoIntegrityMetadata")
+        if not isinstance(preserved, Mapping):
+            failures.append("undo_redo_integrity_metadata_required")
+        else:
+            preserved_keys = sorted(str(key) for key in preserved.get("preservedKeys") or [])
+            if preserved_keys != original_integrity_keys:
+                failures.append("undo_redo_integrity_metadata_mismatch")
     return {
         "schemaVersion": "undoRedoContract_v1",
         "ok": not failures,
         "inspectable": not failures,
         "undoable": not failures,
         "failures": failures,
+        "integrityMetadataPreserved": not original_integrity_keys
+        or "undo_redo_integrity_metadata_required" not in failures
+        and "undo_redo_integrity_metadata_mismatch" not in failures,
     }
 
 
@@ -474,6 +568,8 @@ __all__ = [
     "canonical_command_digest",
     "canonical_payload_digest",
     "classify_fix_safety",
+    "build_transaction_preflight_audit",
+    "build_undo_redo_integrity_metadata",
     "infer_permission_scopes",
     "validate_fix_provenance",
     "validate_undo_redo_contract",
