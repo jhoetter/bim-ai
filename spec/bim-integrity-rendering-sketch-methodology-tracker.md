@@ -1151,6 +1151,30 @@ judgement to the normal Advisor; use deterministic authored/model facts.
 Exit: all workers leave machine-readable evidence rows, tracker audit passes,
 and no new product Advisor rule depends on subjective sketch likeness.
 
+### Wave 19 - Rendering, Exchange, Documentation, And Live Evidence
+
+Goal: make the model trustworthy outside the abstract data model: 3D rendering,
+2D documentation, exchange/export/readback, live responsiveness, and
+sketch-to-BIM methodology gates must expose deterministic failures instead of
+letting an apparently clean model hide visual or export defects.
+
+Scope: dispatch five independent workers. Each worker must commit locally,
+avoid unrelated dirty files, update tracker/evidence rows conservatively, and
+prove behavior with deterministic fixtures or generated evidence. Do not weaken
+the target-house clean-pass gate to make evidence pass.
+
+| Agent | Ownership | Primary items |
+| ----- | --------- | ------------- |
+| W19-A | 3D renderer element fidelity and golden/diagnostic coverage for walls, openings, stairs, rails, roofs, rooms, families, and materials. | `BIR-J01`, `BIR-J02`, `BIR-J03`, `BIR-J04`, `BIR-J05`, `BIR-J06`, `BIR-J07`, `BIR-J08`, `BIR-J09`, `BIR-J10`, `BIR-I05` |
+| W19-B | IFC/glTF/DXF/schedules/sheets/exchange readback and roundtrip drift contracts. | `BIR-K01`, `BIR-K02`, `BIR-K03`, `BIR-K04`, `BIR-K05`, `BIR-K06`, `BIR-K07`, `BIR-S03`, `BIR-S04` |
+| W19-C | 2D plans, sections, elevations, sheets, dimensions/tags, and saved-view fidelity. | `BIR-R01`, `BIR-R02`, `BIR-R03`, `BIR-R04`, `BIR-R05`, `BIR-R06`, `BIR-H05` |
+| W19-D | Sketch-to-BIM methodology gates, source-to-command traceability, assumptions, benchmark/rehearsal, and agent workflow closure. | `BIR-M01`, `BIR-M02`, `BIR-M03`, `BIR-M04`, `BIR-M05`, `BIR-M06`, `BIR-M07`, `BIR-M08`, `BIR-M09`, `BIR-M10`, `BIR-O04` |
+| W19-E | Live performance/responsiveness, WebSocket stability, incremental diagnostics, dashboards, stale evidence UX, and target-house live evidence requirement. | `BIR-L01`, `BIR-L02`, `BIR-L03`, `BIR-L04`, `BIR-L05`, `BIR-L06`, `BIR-N07`, `BIR-T04`, `BIR-T05` |
+
+Exit: renderer/export/documentation/methodology/live evidence all have
+machine-readable failure modes, and target-house final-package blockers remain
+truthful rather than bypassed.
+
 ## Non-Negotiable Acceptance Rules
 
 - Do not mark a seed `accepted` while any P0 integrity or renderer diagnostic is
