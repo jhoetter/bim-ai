@@ -32,6 +32,12 @@
       "value": "Add explicit IR room/space coverage and IFC furnishing family instances for final acceptance.",
       "confidence": 0.9,
       "source": "M5 acceptance remediation"
+    },
+    {
+      "key": "wave8-worker-b-seed-source-correction",
+      "value": "Removed physical access helper doors/walls, made the front loggia wrapper split explicit, and removed the overlapping full-width loggia void from the seed bundle.",
+      "confidence": 0.95,
+      "source": "BIR-N02 Wave 8 Worker B"
     }
   ],
   "commands": [
@@ -1024,16 +1030,6 @@
       "analyticalParticipation": false
     },
     {
-      "type": "createWallOpening",
-      "id": "front-loggia-wide-opening",
-      "name": "Full-height loggia glazing bay",
-      "hostWallId": "front-loggia-recessed-glass",
-      "alongTStart": 0.08,
-      "alongTEnd": 0.92,
-      "sillHeightMm": 0,
-      "headHeightMm": 2300
-    },
-    {
       "type": "insertWindowOnWall",
       "id": "front-loggia-left-window",
       "name": "Left loggia glazing bay",
@@ -1149,7 +1145,7 @@
     {
       "type": "createWall",
       "id": "hf-upper-wrapper-shell-wall-01",
-      "name": "Target House thick white folded wrapper shell wall 1",
+      "name": "Target House thick white folded wrapper shell wall 1 left return",
       "levelId": "hf-lvl-upper",
       "start": {
         "xMm": 0,
@@ -1986,62 +1982,6 @@
       }
     },
     {
-      "type": "createWall",
-      "id": "access-wall-hf-room-bath",
-      "name": "First Floor Bathroom access control wall",
-      "levelId": "hf-lvl-upper",
-      "start": {
-        "xMm": 3850,
-        "yMm": 2477.5
-      },
-      "end": {
-        "xMm": 3850,
-        "yMm": 3422.5
-      },
-      "thicknessMm": 90,
-      "heightMm": 2400,
-      "wallTypeId": "wt-internal",
-      "materialKey": "gypsum_board",
-      "loadBearing": false,
-      "structuralRole": "non_load_bearing",
-      "structuralMaterialKey": "gypsum_board",
-      "analyticalParticipation": false,
-      "isCurtainWall": false
-    },
-    {
-      "type": "insertDoorOnWall",
-      "id": "access-door-hf-room-bath",
-      "name": "First Floor Bathroom access door",
-      "wallId": "access-wall-hf-room-bath",
-      "alongT": 0.5,
-      "widthMm": 614.25,
-      "familyTypeId": "ft-pocket-door-standard"
-    },
-    {
-      "type": "updateElementProperty",
-      "elementId": "access-door-hf-room-bath",
-      "key": "operationType",
-      "value": "sliding_single"
-    },
-    {
-      "type": "updateElementProperty",
-      "elementId": "access-door-hf-room-bath",
-      "key": "materialKey",
-      "value": "white_render"
-    },
-    {
-      "type": "updateElementProperty",
-      "elementId": "access-wall-hf-room-bath",
-      "key": "fireResistanceRating",
-      "value": "R30"
-    },
-    {
-      "type": "updateElementProperty",
-      "elementId": "access-wall-hf-room-bath",
-      "key": "structuralMaterial",
-      "value": "other"
-    },
-    {
       "type": "createRoomSeparation",
       "id": "sep-hf-room-carport-1",
       "name": "Recessed Garage / Carport boundary 1",
@@ -2096,62 +2036,6 @@
         "xMm": 600,
         "yMm": 700
       }
-    },
-    {
-      "type": "createWall",
-      "id": "access-wall-hf-room-carport",
-      "name": "Recessed Garage / Carport access control wall",
-      "levelId": "hf-lvl-ground",
-      "start": {
-        "xMm": 850,
-        "yMm": 3125
-      },
-      "end": {
-        "xMm": 850,
-        "yMm": 4075
-      },
-      "thicknessMm": 90,
-      "heightMm": 2400,
-      "wallTypeId": "wt-internal",
-      "materialKey": "gypsum_board",
-      "loadBearing": false,
-      "structuralRole": "non_load_bearing",
-      "structuralMaterialKey": "gypsum_board",
-      "analyticalParticipation": false,
-      "isCurtainWall": false
-    },
-    {
-      "type": "insertDoorOnWall",
-      "id": "access-door-hf-room-carport",
-      "name": "Recessed Garage / Carport access door",
-      "wallId": "access-wall-hf-room-carport",
-      "alongT": 0.5,
-      "widthMm": 617.5,
-      "familyTypeId": "ft-pocket-door-standard"
-    },
-    {
-      "type": "updateElementProperty",
-      "elementId": "access-door-hf-room-carport",
-      "key": "operationType",
-      "value": "sliding_single"
-    },
-    {
-      "type": "updateElementProperty",
-      "elementId": "access-door-hf-room-carport",
-      "key": "materialKey",
-      "value": "white_render"
-    },
-    {
-      "type": "updateElementProperty",
-      "elementId": "access-wall-hf-room-carport",
-      "key": "fireResistanceRating",
-      "value": "R30"
-    },
-    {
-      "type": "updateElementProperty",
-      "elementId": "access-wall-hf-room-carport",
-      "key": "structuralMaterial",
-      "value": "other"
     },
     {
       "type": "createRoomSeparation",
@@ -2210,62 +2094,6 @@
       }
     },
     {
-      "type": "createWall",
-      "id": "access-wall-hf-room-ensuite",
-      "name": "Ensuite access control wall",
-      "levelId": "hf-lvl-upper",
-      "start": {
-        "xMm": 2950,
-        "yMm": 5150
-      },
-      "end": {
-        "xMm": 2950,
-        "yMm": 5850
-      },
-      "thicknessMm": 90,
-      "heightMm": 2400,
-      "wallTypeId": "wt-internal",
-      "materialKey": "gypsum_board",
-      "loadBearing": false,
-      "structuralRole": "non_load_bearing",
-      "structuralMaterialKey": "gypsum_board",
-      "analyticalParticipation": false,
-      "isCurtainWall": false
-    },
-    {
-      "type": "insertDoorOnWall",
-      "id": "access-door-hf-room-ensuite",
-      "name": "Ensuite access door",
-      "wallId": "access-wall-hf-room-ensuite",
-      "alongT": 0.5,
-      "widthMm": 500,
-      "familyTypeId": "ft-pocket-door-standard"
-    },
-    {
-      "type": "updateElementProperty",
-      "elementId": "access-door-hf-room-ensuite",
-      "key": "operationType",
-      "value": "sliding_single"
-    },
-    {
-      "type": "updateElementProperty",
-      "elementId": "access-door-hf-room-ensuite",
-      "key": "materialKey",
-      "value": "white_render"
-    },
-    {
-      "type": "updateElementProperty",
-      "elementId": "access-wall-hf-room-ensuite",
-      "key": "fireResistanceRating",
-      "value": "R30"
-    },
-    {
-      "type": "updateElementProperty",
-      "elementId": "access-wall-hf-room-ensuite",
-      "key": "structuralMaterial",
-      "value": "other"
-    },
-    {
       "type": "createRoomSeparation",
       "id": "sep-hf-room-gf-bath-laundry-1",
       "name": "Bath / Laundry boundary 1",
@@ -2320,62 +2148,6 @@
         "xMm": 6800,
         "yMm": 700
       }
-    },
-    {
-      "type": "createWall",
-      "id": "access-wall-hf-room-gf-bath-laundry",
-      "name": "Bath / Laundry access control wall",
-      "levelId": "hf-lvl-ground",
-      "start": {
-        "xMm": 7600,
-        "yMm": 1300
-      },
-      "end": {
-        "xMm": 7600,
-        "yMm": 1900
-      },
-      "thicknessMm": 90,
-      "heightMm": 2400,
-      "wallTypeId": "wt-internal",
-      "materialKey": "gypsum_board",
-      "loadBearing": false,
-      "structuralRole": "non_load_bearing",
-      "structuralMaterialKey": "gypsum_board",
-      "analyticalParticipation": false,
-      "isCurtainWall": false
-    },
-    {
-      "type": "insertDoorOnWall",
-      "id": "access-door-hf-room-gf-bath-laundry",
-      "name": "Bath / Laundry access door",
-      "wallId": "access-wall-hf-room-gf-bath-laundry",
-      "alongT": 0.5,
-      "widthMm": 500,
-      "familyTypeId": "ft-pocket-door-standard"
-    },
-    {
-      "type": "updateElementProperty",
-      "elementId": "access-door-hf-room-gf-bath-laundry",
-      "key": "operationType",
-      "value": "sliding_single"
-    },
-    {
-      "type": "updateElementProperty",
-      "elementId": "access-door-hf-room-gf-bath-laundry",
-      "key": "materialKey",
-      "value": "white_render"
-    },
-    {
-      "type": "updateElementProperty",
-      "elementId": "access-wall-hf-room-gf-bath-laundry",
-      "key": "fireResistanceRating",
-      "value": "R30"
-    },
-    {
-      "type": "updateElementProperty",
-      "elementId": "access-wall-hf-room-gf-bath-laundry",
-      "key": "structuralMaterial",
-      "value": "other"
     },
     {
       "type": "createRoomSeparation",
@@ -2434,62 +2206,6 @@
       }
     },
     {
-      "type": "createWall",
-      "id": "access-wall-hf-room-kitchen",
-      "name": "Kitchen access control wall",
-      "levelId": "hf-lvl-ground",
-      "start": {
-        "xMm": 1450,
-        "yMm": 4625
-      },
-      "end": {
-        "xMm": 1450,
-        "yMm": 5575
-      },
-      "thicknessMm": 90,
-      "heightMm": 2400,
-      "wallTypeId": "wt-internal",
-      "materialKey": "gypsum_board",
-      "loadBearing": false,
-      "structuralRole": "non_load_bearing",
-      "structuralMaterialKey": "gypsum_board",
-      "analyticalParticipation": false,
-      "isCurtainWall": false
-    },
-    {
-      "type": "insertDoorOnWall",
-      "id": "access-door-hf-room-kitchen",
-      "name": "Kitchen access door",
-      "wallId": "access-wall-hf-room-kitchen",
-      "alongT": 0.5,
-      "widthMm": 617.5,
-      "familyTypeId": "ft-pocket-door-standard"
-    },
-    {
-      "type": "updateElementProperty",
-      "elementId": "access-door-hf-room-kitchen",
-      "key": "operationType",
-      "value": "sliding_single"
-    },
-    {
-      "type": "updateElementProperty",
-      "elementId": "access-door-hf-room-kitchen",
-      "key": "materialKey",
-      "value": "white_render"
-    },
-    {
-      "type": "updateElementProperty",
-      "elementId": "access-wall-hf-room-kitchen",
-      "key": "fireResistanceRating",
-      "value": "R30"
-    },
-    {
-      "type": "updateElementProperty",
-      "elementId": "access-wall-hf-room-kitchen",
-      "key": "structuralMaterial",
-      "value": "other"
-    },
-    {
       "type": "createRoomSeparation",
       "id": "sep-hf-room-landing-1",
       "name": "Hall / Landing boundary 1",
@@ -2544,62 +2260,6 @@
         "xMm": 5400,
         "yMm": 1000
       }
-    },
-    {
-      "type": "createWall",
-      "id": "access-wall-hf-room-landing",
-      "name": "Hall / Landing access control wall",
-      "levelId": "hf-lvl-upper",
-      "start": {
-        "xMm": 6115,
-        "yMm": 1350
-      },
-      "end": {
-        "xMm": 6885,
-        "yMm": 1350
-      },
-      "thicknessMm": 90,
-      "heightMm": 2400,
-      "wallTypeId": "wt-internal",
-      "materialKey": "gypsum_board",
-      "loadBearing": false,
-      "structuralRole": "non_load_bearing",
-      "structuralMaterialKey": "gypsum_board",
-      "analyticalParticipation": false,
-      "isCurtainWall": false
-    },
-    {
-      "type": "insertDoorOnWall",
-      "id": "access-door-hf-room-landing",
-      "name": "Hall / Landing access door",
-      "wallId": "access-wall-hf-room-landing",
-      "alongT": 0.5,
-      "widthMm": 500.5,
-      "familyTypeId": "ft-pocket-door-standard"
-    },
-    {
-      "type": "updateElementProperty",
-      "elementId": "access-door-hf-room-landing",
-      "key": "operationType",
-      "value": "sliding_single"
-    },
-    {
-      "type": "updateElementProperty",
-      "elementId": "access-door-hf-room-landing",
-      "key": "materialKey",
-      "value": "white_render"
-    },
-    {
-      "type": "updateElementProperty",
-      "elementId": "access-wall-hf-room-landing",
-      "key": "fireResistanceRating",
-      "value": "R30"
-    },
-    {
-      "type": "updateElementProperty",
-      "elementId": "access-wall-hf-room-landing",
-      "key": "structuralMaterial",
-      "value": "other"
     },
     {
       "type": "createRoomSeparation",
@@ -2658,62 +2318,6 @@
       }
     },
     {
-      "type": "createWall",
-      "id": "access-wall-hf-room-loggia",
-      "name": "Deep Balcony / Loggia access control wall",
-      "levelId": "hf-lvl-upper",
-      "start": {
-        "xMm": 3925,
-        "yMm": -100
-      },
-      "end": {
-        "xMm": 4875,
-        "yMm": -100
-      },
-      "thicknessMm": 90,
-      "heightMm": 2400,
-      "wallTypeId": "wt-internal",
-      "materialKey": "gypsum_board",
-      "loadBearing": false,
-      "structuralRole": "non_load_bearing",
-      "structuralMaterialKey": "gypsum_board",
-      "analyticalParticipation": false,
-      "isCurtainWall": false
-    },
-    {
-      "type": "insertDoorOnWall",
-      "id": "access-door-hf-room-loggia",
-      "name": "Deep Balcony / Loggia access door",
-      "wallId": "access-wall-hf-room-loggia",
-      "alongT": 0.5,
-      "widthMm": 617.5,
-      "familyTypeId": "ft-pocket-door-standard"
-    },
-    {
-      "type": "updateElementProperty",
-      "elementId": "access-door-hf-room-loggia",
-      "key": "operationType",
-      "value": "sliding_single"
-    },
-    {
-      "type": "updateElementProperty",
-      "elementId": "access-door-hf-room-loggia",
-      "key": "materialKey",
-      "value": "white_render"
-    },
-    {
-      "type": "updateElementProperty",
-      "elementId": "access-wall-hf-room-loggia",
-      "key": "fireResistanceRating",
-      "value": "R30"
-    },
-    {
-      "type": "updateElementProperty",
-      "elementId": "access-wall-hf-room-loggia",
-      "key": "structuralMaterial",
-      "value": "other"
-    },
-    {
       "type": "createRoomSeparation",
       "id": "sep-hf-room-utility-1",
       "name": "Utility boundary 1",
@@ -2768,62 +2372,6 @@
         "xMm": 6800,
         "yMm": 3300
       }
-    },
-    {
-      "type": "createWall",
-      "id": "access-wall-hf-room-utility",
-      "name": "Utility access control wall",
-      "levelId": "hf-lvl-ground",
-      "start": {
-        "xMm": 7600,
-        "yMm": 3650
-      },
-      "end": {
-        "xMm": 7600,
-        "yMm": 4350
-      },
-      "thicknessMm": 90,
-      "heightMm": 2400,
-      "wallTypeId": "wt-internal",
-      "materialKey": "gypsum_board",
-      "loadBearing": false,
-      "structuralRole": "non_load_bearing",
-      "structuralMaterialKey": "gypsum_board",
-      "analyticalParticipation": false,
-      "isCurtainWall": false
-    },
-    {
-      "type": "insertDoorOnWall",
-      "id": "access-door-hf-room-utility",
-      "name": "Utility access door",
-      "wallId": "access-wall-hf-room-utility",
-      "alongT": 0.5,
-      "widthMm": 500,
-      "familyTypeId": "ft-pocket-door-standard"
-    },
-    {
-      "type": "updateElementProperty",
-      "elementId": "access-door-hf-room-utility",
-      "key": "operationType",
-      "value": "sliding_single"
-    },
-    {
-      "type": "updateElementProperty",
-      "elementId": "access-door-hf-room-utility",
-      "key": "materialKey",
-      "value": "white_render"
-    },
-    {
-      "type": "updateElementProperty",
-      "elementId": "access-wall-hf-room-utility",
-      "key": "fireResistanceRating",
-      "value": "R30"
-    },
-    {
-      "type": "updateElementProperty",
-      "elementId": "access-wall-hf-room-utility",
-      "key": "structuralMaterial",
-      "value": "other"
     },
     {
       "type": "createRoomSeparation",
@@ -2882,62 +2430,6 @@
       }
     },
     {
-      "type": "createWall",
-      "id": "access-wall-hf-room-walk-in-closet",
-      "name": "Walk-in Closet access control wall",
-      "levelId": "hf-lvl-upper",
-      "start": {
-        "xMm": 850,
-        "yMm": 5150
-      },
-      "end": {
-        "xMm": 850,
-        "yMm": 5850
-      },
-      "thicknessMm": 90,
-      "heightMm": 2400,
-      "wallTypeId": "wt-internal",
-      "materialKey": "gypsum_board",
-      "loadBearing": false,
-      "structuralRole": "non_load_bearing",
-      "structuralMaterialKey": "gypsum_board",
-      "analyticalParticipation": false,
-      "isCurtainWall": false
-    },
-    {
-      "type": "insertDoorOnWall",
-      "id": "access-door-hf-room-walk-in-closet",
-      "name": "Walk-in Closet access door",
-      "wallId": "access-wall-hf-room-walk-in-closet",
-      "alongT": 0.5,
-      "widthMm": 500,
-      "familyTypeId": "ft-pocket-door-standard"
-    },
-    {
-      "type": "updateElementProperty",
-      "elementId": "access-door-hf-room-walk-in-closet",
-      "key": "operationType",
-      "value": "sliding_single"
-    },
-    {
-      "type": "updateElementProperty",
-      "elementId": "access-door-hf-room-walk-in-closet",
-      "key": "materialKey",
-      "value": "white_render"
-    },
-    {
-      "type": "updateElementProperty",
-      "elementId": "access-wall-hf-room-walk-in-closet",
-      "key": "fireResistanceRating",
-      "value": "R30"
-    },
-    {
-      "type": "updateElementProperty",
-      "elementId": "access-wall-hf-room-walk-in-closet",
-      "key": "structuralMaterial",
-      "value": "other"
-    },
-    {
       "type": "createRoomSeparation",
       "id": "sep-room-bedroom-1",
       "name": "Bedroom boundary 1",
@@ -2992,62 +2484,6 @@
         "xMm": 600,
         "yMm": 1600
       }
-    },
-    {
-      "type": "createWall",
-      "id": "access-wall-room-bedroom",
-      "name": "Bedroom access control wall",
-      "levelId": "hf-lvl-upper",
-      "start": {
-        "xMm": 2600,
-        "yMm": 4150
-      },
-      "end": {
-        "xMm": 3200,
-        "yMm": 4150
-      },
-      "thicknessMm": 90,
-      "heightMm": 2400,
-      "wallTypeId": "wt-internal",
-      "materialKey": "gypsum_board",
-      "loadBearing": false,
-      "structuralRole": "non_load_bearing",
-      "structuralMaterialKey": "gypsum_board",
-      "analyticalParticipation": false,
-      "isCurtainWall": false
-    },
-    {
-      "type": "insertDoorOnWall",
-      "id": "access-door-room-bedroom",
-      "name": "Bedroom access door",
-      "wallId": "access-wall-room-bedroom",
-      "alongT": 0.5,
-      "widthMm": 500,
-      "familyTypeId": "ft-pocket-door-standard"
-    },
-    {
-      "type": "updateElementProperty",
-      "elementId": "access-door-room-bedroom",
-      "key": "operationType",
-      "value": "sliding_single"
-    },
-    {
-      "type": "updateElementProperty",
-      "elementId": "access-door-room-bedroom",
-      "key": "materialKey",
-      "value": "white_render"
-    },
-    {
-      "type": "updateElementProperty",
-      "elementId": "access-wall-room-bedroom",
-      "key": "fireResistanceRating",
-      "value": "R30"
-    },
-    {
-      "type": "updateElementProperty",
-      "elementId": "access-wall-room-bedroom",
-      "key": "structuralMaterial",
-      "value": "other"
     },
     {
       "type": "createRoomSeparation",
@@ -3106,62 +2542,6 @@
       }
     },
     {
-      "type": "createWall",
-      "id": "access-wall-room-hall",
-      "name": "Entrance / Stair Hall access control wall",
-      "levelId": "hf-lvl-ground",
-      "start": {
-        "xMm": 3100,
-        "yMm": 2850
-      },
-      "end": {
-        "xMm": 3100,
-        "yMm": 3450
-      },
-      "thicknessMm": 90,
-      "heightMm": 2400,
-      "wallTypeId": "wt-internal",
-      "materialKey": "gypsum_board",
-      "loadBearing": false,
-      "structuralRole": "non_load_bearing",
-      "structuralMaterialKey": "gypsum_board",
-      "analyticalParticipation": false,
-      "isCurtainWall": false
-    },
-    {
-      "type": "insertDoorOnWall",
-      "id": "access-door-room-hall",
-      "name": "Entrance / Stair Hall access door",
-      "wallId": "access-wall-room-hall",
-      "alongT": 0.5,
-      "widthMm": 500,
-      "familyTypeId": "ft-pocket-door-standard"
-    },
-    {
-      "type": "updateElementProperty",
-      "elementId": "access-door-room-hall",
-      "key": "operationType",
-      "value": "sliding_single"
-    },
-    {
-      "type": "updateElementProperty",
-      "elementId": "access-door-room-hall",
-      "key": "materialKey",
-      "value": "white_render"
-    },
-    {
-      "type": "updateElementProperty",
-      "elementId": "access-wall-room-hall",
-      "key": "fireResistanceRating",
-      "value": "R30"
-    },
-    {
-      "type": "updateElementProperty",
-      "elementId": "access-wall-room-hall",
-      "key": "structuralMaterial",
-      "value": "other"
-    },
-    {
       "type": "createRoomSeparation",
       "id": "sep-room-living-1",
       "name": "Living / Dining boundary 1",
@@ -3218,62 +2598,6 @@
       }
     },
     {
-      "type": "createWall",
-      "id": "access-wall-room-living",
-      "name": "Living / Dining access control wall",
-      "levelId": "hf-lvl-ground",
-      "start": {
-        "xMm": 5700,
-        "yMm": 5000
-      },
-      "end": {
-        "xMm": 6400,
-        "yMm": 5000
-      },
-      "thicknessMm": 90,
-      "heightMm": 2400,
-      "wallTypeId": "wt-internal",
-      "materialKey": "gypsum_board",
-      "loadBearing": false,
-      "structuralRole": "non_load_bearing",
-      "structuralMaterialKey": "gypsum_board",
-      "analyticalParticipation": false,
-      "isCurtainWall": false
-    },
-    {
-      "type": "insertDoorOnWall",
-      "id": "access-door-room-living",
-      "name": "Living / Dining access door",
-      "wallId": "access-wall-room-living",
-      "alongT": 0.5,
-      "widthMm": 500,
-      "familyTypeId": "ft-pocket-door-standard"
-    },
-    {
-      "type": "updateElementProperty",
-      "elementId": "access-door-room-living",
-      "key": "operationType",
-      "value": "sliding_single"
-    },
-    {
-      "type": "updateElementProperty",
-      "elementId": "access-door-room-living",
-      "key": "materialKey",
-      "value": "white_render"
-    },
-    {
-      "type": "updateElementProperty",
-      "elementId": "access-wall-room-living",
-      "key": "fireResistanceRating",
-      "value": "R30"
-    },
-    {
-      "type": "updateElementProperty",
-      "elementId": "access-wall-room-living",
-      "key": "structuralMaterial",
-      "value": "other"
-    },
-    {
       "type": "createRoomSeparation",
       "id": "sep-room-terrace-1",
       "name": "Roof Terrace boundary 1",
@@ -3328,218 +2652,6 @@
         "xMm": 5400,
         "yMm": 3300
       }
-    },
-    {
-      "type": "createWall",
-      "id": "access-wall-room-terrace",
-      "name": "Roof Terrace access control wall",
-      "levelId": "hf-lvl-upper",
-      "start": {
-        "xMm": 5650,
-        "yMm": 4425
-      },
-      "end": {
-        "xMm": 5650,
-        "yMm": 5375
-      },
-      "thicknessMm": 90,
-      "heightMm": 2400,
-      "wallTypeId": "wt-internal",
-      "materialKey": "gypsum_board",
-      "loadBearing": false,
-      "structuralRole": "non_load_bearing",
-      "structuralMaterialKey": "gypsum_board",
-      "analyticalParticipation": false,
-      "isCurtainWall": false
-    },
-    {
-      "type": "insertDoorOnWall",
-      "id": "access-door-room-terrace",
-      "name": "Roof Terrace access door",
-      "wallId": "access-wall-room-terrace",
-      "alongT": 0.5,
-      "widthMm": 617.5,
-      "familyTypeId": "ft-pocket-door-standard"
-    },
-    {
-      "type": "updateElementProperty",
-      "elementId": "access-door-room-terrace",
-      "key": "operationType",
-      "value": "sliding_single"
-    },
-    {
-      "type": "updateElementProperty",
-      "elementId": "access-door-room-terrace",
-      "key": "materialKey",
-      "value": "white_render"
-    },
-    {
-      "type": "updateElementProperty",
-      "elementId": "access-wall-room-terrace",
-      "key": "fireResistanceRating",
-      "value": "R30"
-    },
-    {
-      "type": "updateElementProperty",
-      "elementId": "access-wall-room-terrace",
-      "key": "structuralMaterial",
-      "value": "other"
-    },
-    {
-      "type": "updateElementProperty",
-      "elementId": "access-wall-hf-room-bath",
-      "key": "fireResistanceRating",
-      "value": "R30"
-    },
-    {
-      "type": "updateElementProperty",
-      "elementId": "access-wall-hf-room-bath",
-      "key": "structuralMaterial",
-      "value": "other"
-    },
-    {
-      "type": "updateElementProperty",
-      "elementId": "access-wall-hf-room-carport",
-      "key": "fireResistanceRating",
-      "value": "R30"
-    },
-    {
-      "type": "updateElementProperty",
-      "elementId": "access-wall-hf-room-carport",
-      "key": "structuralMaterial",
-      "value": "other"
-    },
-    {
-      "type": "updateElementProperty",
-      "elementId": "access-wall-hf-room-ensuite",
-      "key": "fireResistanceRating",
-      "value": "R30"
-    },
-    {
-      "type": "updateElementProperty",
-      "elementId": "access-wall-hf-room-ensuite",
-      "key": "structuralMaterial",
-      "value": "other"
-    },
-    {
-      "type": "updateElementProperty",
-      "elementId": "access-wall-hf-room-gf-bath-laundry",
-      "key": "fireResistanceRating",
-      "value": "R30"
-    },
-    {
-      "type": "updateElementProperty",
-      "elementId": "access-wall-hf-room-gf-bath-laundry",
-      "key": "structuralMaterial",
-      "value": "other"
-    },
-    {
-      "type": "updateElementProperty",
-      "elementId": "access-wall-hf-room-kitchen",
-      "key": "fireResistanceRating",
-      "value": "R30"
-    },
-    {
-      "type": "updateElementProperty",
-      "elementId": "access-wall-hf-room-kitchen",
-      "key": "structuralMaterial",
-      "value": "other"
-    },
-    {
-      "type": "updateElementProperty",
-      "elementId": "access-wall-hf-room-landing",
-      "key": "fireResistanceRating",
-      "value": "R30"
-    },
-    {
-      "type": "updateElementProperty",
-      "elementId": "access-wall-hf-room-landing",
-      "key": "structuralMaterial",
-      "value": "other"
-    },
-    {
-      "type": "updateElementProperty",
-      "elementId": "access-wall-hf-room-loggia",
-      "key": "fireResistanceRating",
-      "value": "R30"
-    },
-    {
-      "type": "updateElementProperty",
-      "elementId": "access-wall-hf-room-loggia",
-      "key": "structuralMaterial",
-      "value": "other"
-    },
-    {
-      "type": "updateElementProperty",
-      "elementId": "access-wall-hf-room-utility",
-      "key": "fireResistanceRating",
-      "value": "R30"
-    },
-    {
-      "type": "updateElementProperty",
-      "elementId": "access-wall-hf-room-utility",
-      "key": "structuralMaterial",
-      "value": "other"
-    },
-    {
-      "type": "updateElementProperty",
-      "elementId": "access-wall-hf-room-walk-in-closet",
-      "key": "fireResistanceRating",
-      "value": "R30"
-    },
-    {
-      "type": "updateElementProperty",
-      "elementId": "access-wall-hf-room-walk-in-closet",
-      "key": "structuralMaterial",
-      "value": "other"
-    },
-    {
-      "type": "updateElementProperty",
-      "elementId": "access-wall-room-bedroom",
-      "key": "fireResistanceRating",
-      "value": "R30"
-    },
-    {
-      "type": "updateElementProperty",
-      "elementId": "access-wall-room-bedroom",
-      "key": "structuralMaterial",
-      "value": "other"
-    },
-    {
-      "type": "updateElementProperty",
-      "elementId": "access-wall-room-hall",
-      "key": "fireResistanceRating",
-      "value": "R30"
-    },
-    {
-      "type": "updateElementProperty",
-      "elementId": "access-wall-room-hall",
-      "key": "structuralMaterial",
-      "value": "other"
-    },
-    {
-      "type": "updateElementProperty",
-      "elementId": "access-wall-room-living",
-      "key": "fireResistanceRating",
-      "value": "R30"
-    },
-    {
-      "type": "updateElementProperty",
-      "elementId": "access-wall-room-living",
-      "key": "structuralMaterial",
-      "value": "other"
-    },
-    {
-      "type": "updateElementProperty",
-      "elementId": "access-wall-room-terrace",
-      "key": "fireResistanceRating",
-      "value": "R30"
-    },
-    {
-      "type": "updateElementProperty",
-      "elementId": "access-wall-room-terrace",
-      "key": "structuralMaterial",
-      "value": "other"
     },
     {
       "type": "updateElementProperty",

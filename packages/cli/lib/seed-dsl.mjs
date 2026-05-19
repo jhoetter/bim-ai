@@ -86,7 +86,14 @@ function wallCommandsForVolume(volume, footprint) {
   const levelId = assertString(volume.levelId, `volumes.${volume.id}.levelId`);
   const heightMm = Number.isFinite(volume.wallHeightMm) ? volume.wallHeightMm : 3000;
   const thicknessMm = Number.isFinite(volume.wallThicknessMm) ? volume.wallThicknessMm : 200;
+  const omittedWallIndices = new Set(
+    assertArray(
+      volume.omitWallIndices ?? volume.omittedWallIndices ?? [],
+      `volumes.${volume.id}.omitWallIndices`,
+    ).map((index) => Number(index)),
+  );
   for (let i = 0; i < footprint.length; i++) {
+    if (omittedWallIndices.has(i)) continue;
     const start = footprint[i];
     const end = footprint[(i + 1) % footprint.length];
     commands.push({
@@ -267,13 +274,16 @@ function compileVolumes(recipe) {
   for (const volume of recipe.volumes ?? []) {
     const id = assertString(volume.id, '$.volumes[].id');
     const footprint = assertFootprint(volume.footprintMm, `$.volumes.${id}.footprintMm`);
+    const floorFootprint = volume.floorFootprintMm
+      ? assertFootprint(volume.floorFootprintMm, `$.volumes.${id}.floorFootprintMm`)
+      : footprint;
     if (volume.createFloor !== false) {
       commands.push({
         type: 'createFloor',
         id: `${id}-floor`,
         name: `${volume.name ?? id} floor`,
         levelId: assertString(volume.levelId, `$.volumes.${id}.levelId`),
-        boundaryMm: footprint,
+        boundaryMm: floorFootprint,
         thicknessMm: Number.isFinite(volume.floorThicknessMm) ? volume.floorThicknessMm : 220,
         floorTypeId: volume.floorTypeId ?? null,
         materialKey: volume.materialKey ?? null,
@@ -865,6 +875,7 @@ function compileFeatureMacros(recipe) {
       (wrapper.attachWallTopsToRoof === true && wrapper.createRoof === true ? `${id}-roof` : null);
     if (attachRoofId) {
       for (let i = 0; i < footprint.length; i++) {
+        if ((wrapper.omitWallIndices ?? wrapper.omittedWallIndices ?? []).includes(i)) continue;
         commands.push({
           type: 'attachWallTopToRoof',
           wallId: `${id}-wall-${String(i + 1).padStart(2, '0')}`,
@@ -882,6 +893,13 @@ function compileFeatureMacros(recipe) {
           materialKey: wrapper.materialKey,
         }),
       );
+      if (attachRoofId && wall.attachTopToRoof !== false) {
+        commands.push({
+          type: 'attachWallTopToRoof',
+          wallId: assertString(wall.id, `$.features.foldedWrappers.${id}.returnWalls[].id`),
+          roofId: attachRoofId,
+        });
+      }
     }
     for (const sweep of wrapper.fasciaSweeps ?? []) {
       commands.push(

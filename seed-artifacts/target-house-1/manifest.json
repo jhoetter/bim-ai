@@ -13,20 +13,21 @@
     "version": 1
   },
   "acceptance": {
-    "status": "accepted",
+    "status": "source-corrected-needs-live-evidence-refresh",
     "evidenceRoot": "evidence/live-run-current",
     "gitHead": "db78505123d0d471257479335091b0f9dfc71d3b",
-    "bundleSha256": "ccf8b547e6f6b8a008465e4cc46c923c853e4fb91695d297c6b1c30aea8d51d3",
+    "bundleSha256": "5b09fa662f1a20f68bfa5e462d56f915ca4c97856bab12a6031650e8ad541bb3",
     "irSha256": "cd64c22345865b1a7e0b674ebc0c15ec38433f4e561d485b4b91008b2d6f369e",
     "capabilitiesSha256": "e3faa00d4724d5e375ee853d5e3d56b21254a969a84e702d67013a8bb0125dbb",
-    "advisorRuleDigest": "e2c9ee443c19b318c07e585ba6a2005f900c1931c1009eeb8031978471d2f5a5"
+    "advisorRuleDigest": "e2c9ee443c19b318c07e585ba6a2005f900c1931c1009eeb8031978471d2f5a5",
+    "notes": "Wave 8 Worker B corrected the authoritative seed bundle/source; prior live evidence is stale until rerun."
   },
   "inputPaths": {
     "source": "spec/target-house",
     "bundle": "target-house-1.bundle.v2.json"
   },
-  "bundleSha256": "ccf8b547e6f6b8a008465e4cc46c923c853e4fb91695d297c6b1c30aea8d51d3",
-  "commandCount": 307,
+  "bundleSha256": "5b09fa662f1a20f68bfa5e462d56f915ca4c97856bab12a6031650e8ad541bb3",
+  "commandCount": 209,
   "commandSchemaVersion": "cmd-v3.0",
   "entryComment": {
     "body": "Image-locked Target House 1 BIM seed generated from the sketch-to-BIM methodology with final live evidence."

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import hashlib
 import json
 from pathlib import Path
 from uuid import UUID
@@ -164,9 +165,32 @@ def test_checked_in_target_house_seed_artifact_is_portable_and_loadable() -> Non
     bundle = json.loads((artifact_dir / "bundle.json").read_text(encoding="utf8"))
     commands = bundle["commands"]
     command_types = {command["type"] for command in commands}
+    command_ids = {
+        str(command.get("id") or command.get("elementId") or command.get("wallId") or "")
+        for command in commands
+    }
     assert "createMass" not in command_types
     assert "deleteElement" not in command_types
     assert "createRoofOpening" in command_types
+    assert manifest["commandCount"] == len(commands)
+    assert (
+        manifest["bundleSha256"]
+        == hashlib.sha256((artifact_dir / "bundle.json").read_bytes()).hexdigest()
+    )
+    assert "front-loggia-wide-opening" not in command_ids
+    assert not any(
+        command_id.startswith(("access-wall-", "access-door-")) for command_id in command_ids
+    )
+
+    front_left = next(
+        command
+        for command in commands
+        if command.get("type") == "createWall"
+        and command.get("id") == "hf-upper-wrapper-shell-wall-01"
+    )
+    assert front_left["start"] == {"xMm": 0, "yMm": -450}
+    assert front_left["end"] == {"xMm": 1200, "yMm": -450}
+    assert any(command.get("id") == "hf-upper-wrapper-shell-wall-01-right" for command in commands)
     assert (artifact_dir / "evidence" / "target-house-1.recipe.json").is_file()
     assert (artifact_dir / "evidence" / "sketch-ir.json").is_file()
 

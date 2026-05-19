@@ -137,7 +137,41 @@
           "yMm": 8200
         }
       ],
-      "floorTypeId": "ft-concrete-slab"
+      "floorTypeId": "ft-concrete-slab",
+      "floorFootprintMm": [
+        {
+          "xMm": 0,
+          "yMm": 900
+        },
+        {
+          "xMm": 8000,
+          "yMm": 900
+        },
+        {
+          "xMm": 8000,
+          "yMm": 3000
+        },
+        {
+          "xMm": 7900,
+          "yMm": 3000
+        },
+        {
+          "xMm": 7900,
+          "yMm": 6600
+        },
+        {
+          "xMm": 8000,
+          "yMm": 6600
+        },
+        {
+          "xMm": 8000,
+          "yMm": 8200
+        },
+        {
+          "xMm": 0,
+          "yMm": 8200
+        }
+      ]
     }
   ],
   "roofs": [
@@ -444,6 +478,41 @@
             ],
             "materialKey": "white_render"
           }
+        ],
+        "omitWallIndices": [0],
+        "returnWalls": [
+          {
+            "id": "hf-upper-wrapper-shell-wall-01",
+            "name": "Target House thick white folded wrapper shell wall 1 left return",
+            "start": {
+              "xMm": 0,
+              "yMm": -450
+            },
+            "end": {
+              "xMm": 1200,
+              "yMm": -450
+            },
+            "heightMm": 3200,
+            "thicknessMm": 250,
+            "wallTypeId": "wt-white-wrapper",
+            "materialKey": "white_render"
+          },
+          {
+            "id": "hf-upper-wrapper-shell-wall-01-right",
+            "name": "Target House thick white folded wrapper shell wall 1 right return",
+            "start": {
+              "xMm": 7600,
+              "yMm": -450
+            },
+            "end": {
+              "xMm": 8000,
+              "yMm": -450
+            },
+            "heightMm": 3200,
+            "thicknessMm": 250,
+            "wallTypeId": "wt-white-wrapper",
+            "materialKey": "white_render"
+          }
         ]
       }
     ],
@@ -623,18 +692,6 @@
             "heightMm": 2500,
             "materialKey": "glass",
             "isCurtainWall": true
-          }
-        ],
-        "bayOpenings": [
-          {
-            "id": "front-loggia-wide-opening",
-            "kind": "wall_opening",
-            "wallId": "front-loggia-recessed-glass",
-            "name": "Full-height loggia glazing bay",
-            "alongTStart": 0.08,
-            "alongTEnd": 0.92,
-            "sillHeightMm": 0,
-            "headHeightMm": 2300
           }
         ]
       }
@@ -1211,62 +1268,6 @@
           "zMm": 1
         }
       }
-    }
-  ],
-  "commands": [
-    {
-      "type": "deleteElement",
-      "elementId": "hf-upper-wrapper-shell-wall-01"
-    },
-    {
-      "type": "createWall",
-      "id": "hf-upper-wrapper-shell-wall-01",
-      "name": "Target House thick white folded wrapper shell wall 1 left return",
-      "levelId": "hf-lvl-upper",
-      "start": { "xMm": 0, "yMm": -450 },
-      "end": { "xMm": 1200, "yMm": -450 },
-      "thicknessMm": 250,
-      "heightMm": 3200,
-      "wallTypeId": "wt-white-wrapper",
-      "materialKey": "white_render",
-      "isCurtainWall": false,
-      "loadBearing": false,
-      "structuralRole": "non_load_bearing",
-      "structuralMaterialKey": "concrete",
-      "analyticalParticipation": true
-    },
-    {
-      "type": "createWall",
-      "id": "hf-upper-wrapper-shell-wall-01-right",
-      "name": "Target House thick white folded wrapper shell wall 1 right return",
-      "levelId": "hf-lvl-upper",
-      "start": { "xMm": 7600, "yMm": -450 },
-      "end": { "xMm": 8000, "yMm": -450 },
-      "thicknessMm": 250,
-      "heightMm": 3200,
-      "wallTypeId": "wt-white-wrapper",
-      "materialKey": "white_render",
-      "isCurtainWall": false,
-      "loadBearing": true,
-      "structuralRole": "bearing_wall",
-      "structuralMaterialKey": "concrete",
-      "analyticalParticipation": true
-    },
-    {
-      "type": "attachWallTopToRoof",
-      "wallId": "hf-upper-wrapper-shell-wall-01",
-      "roofId": "hf-roof-main"
-    },
-    {
-      "type": "attachWallTopToRoof",
-      "wallId": "hf-upper-wrapper-shell-wall-01-right",
-      "roofId": "hf-roof-main"
-    },
-    {
-      "type": "updateElementProperty",
-      "elementId": "hf-upper-wrapper-shell-wall-01-right",
-      "key": "fireResistanceRating",
-      "value": "R30"
     }
   ],
   "assumptions": [

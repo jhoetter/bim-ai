@@ -5,6 +5,19 @@ Model: a5c6d3f6-6a76-45f2-8017-b6fa78911955
 IR: spec/target-house/target-house-1-sketch-ir.draft.json
 Capability matrix: spec/sketch-to-bim-capability-matrix.json
 
+## Wave 8 Worker B Source Correction
+
+Status: stale live evidence after seed-source correction.
+
+On 2026-05-19, Wave 8 Worker B updated the authoritative
+`seed-artifacts/target-house-1` recipe and bundle for BIR-N02. The source
+correction removes physical access-helper doors/walls, removes the overlapping
+full-width front-loggia wall opening, and makes the front wrapper split explicit
+in seed source instead of relying on a trailing delete/recreate cleanup command.
+
+This evidence packet predates that correction and must be refreshed before final
+acceptance claims are treated as current.
+
 ## Summary
 
 - Features: 10 (6 critical)
@@ -124,3 +137,14 @@ Semantic visual: blocked (291 failure(s) / 291 required).
 - `semantic_visual_checklist_failures`: 291 required semantic visual checklist item(s) are missing, failed, or unverified.
 - tolerance `visual_gate_needs_human_review`: 7 screenshot view(s) have no target comparison and need human review.
 
+## Wave 8 Deterministic Evidence Acceptance
+
+Machine-readable report:
+`seed-artifacts/target-house-1/evidence/live-run-current/target-house-evidence-acceptance.json`
+
+- BIR-N05 visual evidence: blocked. Required views: 8; passed: 7; failed: 1.
+- Missing required view evidence: `front_loggia` lacks a visual-contract row,
+  saved viewpoint/snapshot view, screenshot-manifest capture, and PNG.
+- BIR-N06 BIM data quality: pass. Current report checks rooms/spaces, levels,
+  schedules, types/materials, classifications, spaces, stairs, rails,
+  doors/windows, and required export-manifest rows.

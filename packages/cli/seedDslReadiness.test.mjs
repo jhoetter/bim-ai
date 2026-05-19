@@ -67,3 +67,35 @@ test('seed-dsl modern house example covers readiness macros D07-D10 and real BIM
   assert.ok(bundle.commands.some((command) => command.type === 'create_schedule_view'));
   assert.ok(bundle.commands.some((command) => command.type === 'upsertSheetViewports'));
 });
+
+test('target house recipe compiles front loggia wrapper without cleanup deletes', async () => {
+  const dir = await fs.mkdtemp(path.join(os.tmpdir(), 'bim-ai-target-house-seed-dsl-'));
+  const outPath = path.join(dir, 'bundle.json');
+  const recipePath = path.join(
+    ROOT,
+    'seed-artifacts/target-house-1/evidence/target-house-1.recipe.json',
+  );
+
+  const res = await runCli(['seed-dsl', 'compile', '--recipe', recipePath, '--out', outPath]);
+
+  assert.equal(res.code, 0, res.stderr);
+  const bundle = JSON.parse(await fs.readFile(outPath, 'utf8'));
+  const frontLeft = bundle.commands.find(
+    (command) => command.type === 'createWall' && command.id === 'hf-upper-wrapper-shell-wall-01',
+  );
+
+  assert.equal(
+    bundle.commands.some((command) => command.type === 'deleteElement'),
+    false,
+  );
+  assert.equal(
+    bundle.commands.some((command) => command.id === 'front-loggia-wide-opening'),
+    false,
+  );
+  assert.deepEqual(frontLeft?.start, { xMm: 0, yMm: -450 });
+  assert.deepEqual(frontLeft?.end, { xMm: 1200, yMm: -450 });
+  assert.equal(
+    bundle.commands.some((command) => command.id === 'hf-upper-wrapper-shell-wall-01-right'),
+    true,
+  );
+});
