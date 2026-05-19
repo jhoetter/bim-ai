@@ -23,7 +23,7 @@ function loadCurrentTargetHouseReport() {
   });
 }
 
-test('target-house current diagnostic reports every requested finding bucket deterministically', () => {
+test('target-house current diagnostic stays clean for geometry source-corrected seed', () => {
   const first = loadCurrentTargetHouseReport();
   const second = loadCurrentTargetHouseReport();
 
@@ -35,33 +35,60 @@ test('target-house current diagnostic reports every requested finding bucket det
     ),
   );
   assert.equal(first.summary.total, first.findings.length);
-  for (const category of [
-    'detached_or_flying',
-    'helper_leakage',
-    'out_of_envelope',
-    'sketch_critical_mismatch',
-    'unsupported_renderer_feature',
-  ]) {
-    assert.ok(first.summary.byCategory[category] > 0, `${category} must be represented`);
-  }
+  assert.equal(first.summary.total, 0);
+  assert.equal(first.summary.bySeverity.error, 0);
+  assert.equal(first.summary.bySeverity.warning, 0);
+  assert.deepEqual(first.summary.byCategory, {});
+  assert.deepEqual(first.findings, []);
+});
 
-  const codes = new Set(first.findings.map((finding) => finding.code));
-  assert.ok(codes.has('helper.room_separation.visible_in_snapshot'));
-  assert.ok(codes.has('geometry.wall_detached_endpoint'));
-  assert.ok(codes.has('geometry.element_outside_source_envelope'));
-  assert.ok(codes.has('renderer.roof_opening.asymmetric_gable_unproven'));
-  assert.ok(codes.has('renderer.slab_opening.stair_penetration_unproven'));
-  assert.ok(codes.has('sketch.scale_basis_not_met'));
-  assert.ok(codes.has('sketch.required_room_id_missing'));
+test('target-house authoritative bundle excludes corrected diagnostic root causes', () => {
+  const snapshotInput = resolveTargetHouseSnapshotInput({
+    repoRoot,
+    seed: 'target-house-1',
+    forceMaterialized: true,
+  });
+  const elements = Object.values(snapshotInput.snapshot.elements);
+  const ids = new Set(elements.map((element) => element.id));
+
+  assert.equal(snapshotInput.snapshotSource.kind, 'materialized_seed_bundle');
+  assert.equal(elements.some((element) => element.kind === 'room_separation'), false);
+  assert.equal(elements.some((element) => element.kind === 'roof_opening'), false);
+  assert.equal(elements.some((element) => element.kind === 'slab_opening'), false);
+  assert.equal(
+    elements.some((element) => /^access-(wall|door)-/.test(element.id)),
+    false,
+  );
+  assert.equal(
+    elements.some((element) => /^target-house-.*access-partition$/.test(element.id)),
+    false,
+  );
+  assert.ok(elements.filter((element) => element.kind === 'window').length >= 4);
+  for (const requiredRoomId of [
+    'room_gf_bath_laundry',
+    'room_gf_carport',
+    'room_gf_entry',
+    'room_gf_kitchen_dining',
+    'room_gf_living',
+    'room_gf_utility',
+    'room_l1_bedroom_2',
+    'room_l1_deep_loggia',
+    'room_l1_ensuite',
+    'room_l1_hall_landing',
+    'room_l1_primary_bedroom',
+    'room_l1_roof_court',
+    'room_l1_walk_in_closet',
+  ]) {
+    assert.ok(ids.has(requiredRoomId), `${requiredRoomId} must be bound in the snapshot`);
+  }
 });
 
 test('target-house markdown report includes bounds, findings, and rule catalog', () => {
   const markdown = renderTargetHouseGeometryDiagnosticMarkdown(loadCurrentTargetHouseReport());
 
   assert.match(markdown, /^# Target House 1 Current Geometry Diagnostic/);
-  assert.match(markdown, /Total findings: \d+/);
-  assert.match(markdown, /`unsupported_renderer_feature`/);
-  assert.match(markdown, /renderer\.roof_opening\.asymmetric_gable_unproven/);
+  assert.match(markdown, /Total findings: 0/);
+  assert.match(markdown, /unsupported_renderer_feature/);
   assert.match(markdown, /## Rule Catalog/);
 });
 
@@ -132,4 +159,84 @@ test('minimal diagnostic catches helper leakage and overlapping hosted cuts', ()
   const codes = report.findings.map((finding) => finding.code);
   assert.ok(codes.includes('helper.room_separation.visible_in_snapshot'));
   assert.ok(codes.includes('renderer.wall_cut.overlapping_hosted_cuts'));
+});
+
+test('minimal diagnostic catches detached access stubs and unsupported target-house cuts', () => {
+  const snapshot = {
+    modelId: 'mini-regression',
+    revision: 1,
+    elements: {
+      'lvl-1': { id: 'lvl-1', kind: 'level', elevationMm: 0 },
+      floor: {
+        id: 'floor',
+        kind: 'floor',
+        levelId: 'lvl-1',
+        boundaryMm: [
+          { xMm: 0, yMm: 0 },
+          { xMm: 6000, yMm: 0 },
+          { xMm: 6000, yMm: 6000 },
+          { xMm: 0, yMm: 6000 },
+        ],
+      },
+      roof: {
+        id: 'roof',
+        kind: 'roof',
+        referenceLevelId: 'lvl-1',
+        roofGeometryMode: 'asymmetric_gable',
+        footprintMm: [
+          { xMm: 0, yMm: 0 },
+          { xMm: 6000, yMm: 0 },
+          { xMm: 6000, yMm: 6000 },
+          { xMm: 0, yMm: 6000 },
+        ],
+      },
+      'access-wall-test': {
+        id: 'access-wall-test',
+        kind: 'wall',
+        levelId: 'lvl-1',
+        start: { xMm: 1000, yMm: 1000 },
+        end: { xMm: 2000, yMm: 1000 },
+      },
+      'access-door-test': {
+        id: 'access-door-test',
+        kind: 'door',
+        wallId: 'access-wall-test',
+        alongT: 0.5,
+        widthMm: 800,
+      },
+      'roof-cut': {
+        id: 'roof-cut',
+        kind: 'roof_opening',
+        hostRoofId: 'roof',
+        boundaryMm: [
+          { xMm: 2500, yMm: 2500 },
+          { xMm: 3500, yMm: 2500 },
+          { xMm: 3500, yMm: 3500 },
+          { xMm: 2500, yMm: 3500 },
+        ],
+      },
+      'stair-cut': {
+        id: 'stair-cut',
+        kind: 'slab_opening',
+        hostFloorId: 'floor',
+        boundaryMm: [
+          { xMm: 500, yMm: 500 },
+          { xMm: 1500, yMm: 500 },
+          { xMm: 1500, yMm: 1500 },
+          { xMm: 500, yMm: 1500 },
+        ],
+      },
+    },
+  };
+  const report = buildTargetHouseGeometryDiagnostic({
+    snapshot,
+    requiredFeatures: { scaleBasis: { overallWidthMm: 6000, overallDepthMm: 6000 } },
+  });
+
+  const codes = report.findings.map((finding) => finding.code);
+  assert.ok(codes.includes('helper.wall.access_stub_visible_in_snapshot'));
+  assert.ok(codes.includes('helper.door.access_stub_visible_in_snapshot'));
+  assert.ok(codes.includes('geometry.hosted_opening_on_access_stub'));
+  assert.ok(codes.includes('renderer.roof_opening.asymmetric_gable_unproven'));
+  assert.ok(codes.includes('renderer.slab_opening.stair_penetration_unproven'));
 });
