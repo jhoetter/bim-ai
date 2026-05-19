@@ -31,6 +31,7 @@ DEFAULT_ENDPOINT_CLEARANCE_MM = 75.0
 DEFAULT_ENVELOPE_TOLERANCE_MM = 25.0
 
 HOSTED_OPENING_RULE_IDS = {
+    "physical_wall_outside_envelope",
     "hosted_opening_missing_host",
     "hosted_opening_host_not_wall",
     "hosted_opening_helper_host",
@@ -125,6 +126,28 @@ def hosted_opening_integrity_violations(
                         "convert it to nonphysical analysis data or replace it with a real wall."
                     ),
                     [wall.id],
+                )
+            )
+        if _is_physical_wall(wall) and not _wall_supported_by_level_floor(
+            wall,
+            floors_by_level,
+            tolerance_mm=envelope_tolerance_mm,
+        ):
+            violations.append(
+                _violation(
+                    "physical_wall_outside_envelope",
+                    "error",
+                    (
+                        f"Physical wall '{wall.id}' is outside the level floor/building "
+                        "support context and is not marked with explicit detached intent."
+                    ),
+                    [wall.id],
+                    quick_fix_command={
+                        "type": "set_element_prop",
+                        "elementId": wall.id,
+                        "key": "allowDetached",
+                        "value": True,
+                    },
                 )
             )
 
@@ -406,6 +429,8 @@ def _wall_supported_by_level_floor(
     *,
     tolerance_mm: float,
 ) -> bool:
+    if _has_detached_intent(wall):
+        return True
     floors = floors_by_level.get(wall.level_id)
     if not floors:
         return True
@@ -746,6 +771,19 @@ def _is_helper_or_nonphysical_wall(wall: WallElem) -> bool:
     if not _is_physical_wall(wall):
         return True
     return _is_access_proxy(wall) or _HELPER_WORD_RE.search(wall.name or "") is not None
+
+
+def _has_detached_intent(elem: Any) -> bool:
+    props = getattr(elem, "props", None) or {}
+    if _truthy(props.get("allowDetached")) or _truthy(props.get("allow_detached")):
+        return True
+    intent = str(
+        props.get("authoringIntent")
+        or props.get("authoring_intent")
+        or props.get("intent")
+        or "",
+    ).strip().lower()
+    return intent in {"detached", "intentional_detached", "detached_study", "exterior_detached"}
 
 
 def _is_physical_wall(wall: WallElem) -> bool:

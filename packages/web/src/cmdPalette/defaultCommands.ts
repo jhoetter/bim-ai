@@ -1,5 +1,6 @@
 import { useBimStore, type PlanTool } from '../state/store';
 import { VIEWER_CATEGORY_KEYS } from '../viewport/sceneUtils';
+import { isPhysicalHostedOpeningWall } from '../viewport/directAuthoringGuards';
 import { elevationFromWall, sectionCutFromWall } from '../lib/sectionElevationFromWall';
 import { buildBoundaryWallPlan, type BoundaryWallSource } from '../geometry/boundaryWallGeneration';
 import { roofParamsFromWallLoop } from '../plan/roofByFootprint';
@@ -79,14 +80,16 @@ function hasSelection(ctx: PaletteContext): boolean {
 }
 
 function modelHasWall(): boolean {
-  return Object.values(useBimStore.getState().elementsById).some((el) => el?.kind === 'wall');
+  return Object.values(useBimStore.getState().elementsById).some(
+    (el) => el?.kind === 'wall' && isPhysicalHostedOpeningWall(el),
+  );
 }
 
 function selectedWall(ctx: PaletteContext) {
   const id = ctx.selectedElementIds[0];
   if (!id) return null;
   const el = useBimStore.getState().elementsById[id];
-  return el?.kind === 'wall' ? el : null;
+  return el?.kind === 'wall' && isPhysicalHostedOpeningWall(el) ? el : null;
 }
 
 function selectedBoundarySource(ctx: PaletteContext): BoundaryWallSource | null {

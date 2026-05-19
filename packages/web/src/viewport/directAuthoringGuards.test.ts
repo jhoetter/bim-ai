@@ -9,6 +9,7 @@ import {
   shouldCommitHostedPlacementOnPointerUp,
   shouldReuseHostedPreviewCommit,
   isLinkedElementId,
+  isPhysicalHostedOpeningWall,
   isWallOnActiveAuthoringLevel,
 } from './directAuthoringGuards';
 
@@ -31,6 +32,33 @@ describe('isWallOnActiveAuthoringLevel', () => {
   it('rejects wall hosts when no active level is resolved', () => {
     expect(isWallOnActiveAuthoringLevel({ levelId: 'ground' }, undefined)).toBe(false);
     expect(isWallOnActiveAuthoringLevel({ levelId: 'ground' }, null)).toBe(false);
+  });
+});
+
+describe('isPhysicalHostedOpeningWall', () => {
+  it('rejects nonphysical/helper wall hosts consistently with backend hosted guards', () => {
+    expect(isPhysicalHostedOpeningWall({ kind: 'wall', name: 'Exterior wall' })).toBe(true);
+    expect(
+      isPhysicalHostedOpeningWall({
+        kind: 'wall',
+        name: 'Room graph helper wall',
+        props: {},
+      }),
+    ).toBe(false);
+    expect(
+      isPhysicalHostedOpeningWall({
+        kind: 'wall',
+        name: 'Wall',
+        props: { nonPhysical: true },
+      }),
+    ).toBe(false);
+    expect(
+      isPhysicalHostedOpeningWall({
+        kind: 'floor',
+        name: 'Floor',
+        props: {},
+      }),
+    ).toBe(false);
   });
 });
 
