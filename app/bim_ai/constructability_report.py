@@ -558,8 +558,10 @@ def _finding_with_actionability(
         "safety": "context_only",
         "command": viewpoint["command"],
     }
+    viewpoint_evidence = _viewpoint_evidence_for_finding(data, viewpoint)
     data["viewpointRef"] = viewpoint["viewpointId"]
     data["evidenceRefs"] = [{"kind": "viewpoint", "viewpointId": viewpoint["viewpointId"]}]
+    data["viewpointEvidence"] = viewpoint_evidence
     data["safeCommandHints"] = [safe_command_hint]
     data["actionability"] = {
         "priority": priority,
@@ -567,6 +569,7 @@ def _finding_with_actionability(
         "primaryAction": "save_review_viewpoint",
         "viewpointRef": viewpoint["viewpointId"],
         "evidenceRefs": data["evidenceRefs"],
+        "viewpointEvidence": viewpoint_evidence,
         "safeCommandHints": [safe_command_hint],
     }
     return data
@@ -661,8 +664,15 @@ def _viewpoint_action_for_finding(
         "target": center,
         "up": {"xMm": 0.0, "yMm": 0.0, "zMm": 1.0},
     }
+    section_box_min_mm = {"xMm": bbox.min_x, "yMm": bbox.min_y, "zMm": bbox.min_z}
+    section_box_max_mm = {"xMm": bbox.max_x, "yMm": bbox.max_y, "zMm": bbox.max_z}
     return {
         "viewpointId": viewpoint_id,
+        "elementIds": element_ids,
+        "bboxMm": _bbox_dict(bbox),
+        "camera": camera,
+        "sectionBoxMinMm": section_box_min_mm,
+        "sectionBoxMaxMm": section_box_max_mm,
         "command": {
             "type": "saveViewpoint",
             "id": viewpoint_id,
@@ -670,7 +680,29 @@ def _viewpoint_action_for_finding(
             "mode": "orbit_3d",
             "camera": camera,
             "cutawayStyle": "box",
+            "sectionBoxEnabled": True,
+            "sectionBoxMinMm": section_box_min_mm,
+            "sectionBoxMaxMm": section_box_max_mm,
         },
+    }
+
+
+def _viewpoint_evidence_for_finding(
+    finding: Mapping[str, Any],
+    viewpoint: Mapping[str, Any],
+) -> dict[str, Any]:
+    viewpoint_id = str(viewpoint.get("viewpointId") or "")
+    return {
+        "schemaVersion": "advisorFindingViewpointBridge_v1",
+        "ruleId": finding.get("ruleId"),
+        "viewId": viewpoint_id,
+        "viewpointId": viewpoint_id,
+        "elementIds": list(viewpoint.get("elementIds") or []),
+        "bboxMm": dict(viewpoint.get("bboxMm") or {}),
+        "camera": dict(viewpoint.get("camera") or {}),
+        "sectionBoxEnabled": True,
+        "sectionBoxMinMm": dict(viewpoint.get("sectionBoxMinMm") or {}),
+        "sectionBoxMaxMm": dict(viewpoint.get("sectionBoxMaxMm") or {}),
     }
 
 
@@ -685,6 +717,17 @@ def _union_bbox(boxes: list[AABB]) -> AABB | None:
         max(box.max_y for box in boxes),
         max(box.max_z for box in boxes),
     )
+
+
+def _bbox_dict(bbox: AABB) -> dict[str, float]:
+    return {
+        "minX": bbox.min_x,
+        "minY": bbox.min_y,
+        "minZ": bbox.min_z,
+        "maxX": bbox.max_x,
+        "maxY": bbox.max_y,
+        "maxZ": bbox.max_z,
+    }
 
 
 def _title_for_finding(finding: Mapping[str, Any]) -> str:

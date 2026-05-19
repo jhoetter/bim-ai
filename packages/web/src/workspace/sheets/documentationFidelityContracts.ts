@@ -432,6 +432,9 @@ export function evaluateSheetViewportFidelityContract(
       status: failed ? 'fail' : 'pass',
       checks: {
         ...checks,
+        sheetId: input.sheetId,
+        referencedViewId: parsed?.refId ?? '',
+        viewKind: parsed?.kind ?? '',
         normalizedRef: parsed?.normalizedRef ?? '',
         diagnosticCauses: diagnosticCauses(diagnosticsForToken(diagnostics, viewportId)).join(','),
         diagnosticCodes: diagnosticCodes(diagnosticsForToken(diagnostics, viewportId)).join(','),
@@ -454,7 +457,22 @@ export function evaluateSheetViewportFidelityContract(
           `Sheet viewport "${viewportId}" failed ${check}.`,
           viewportId,
           cause,
-          diagnosticEvidence(relatedDiagnostics),
+          {
+            ...diagnosticEvidence(relatedDiagnostics),
+            sheetId: input.sheetId,
+            viewportId,
+            viewRef: parsed?.normalizedRef ?? '',
+            referencedViewId: parsed?.refId ?? null,
+            viewKind: parsed?.kind ?? null,
+            sheetViewportMetadata: {
+              scale: vp.scale ?? vp.scaleDenom ?? vp.scale_denom ?? null,
+              cropMinMm: cropMin ?? null,
+              cropMaxMm: cropMax ?? null,
+              discipline: vp.discipline ?? vp.lens ?? null,
+              graphicsMode: vp.graphicsMode ?? vp.graphics_mode ?? null,
+              title: vp.label ?? vp.title ?? null,
+            },
+          },
         ),
       );
     }

@@ -1034,6 +1034,9 @@ def try_apply_properties_command(doc, cmd, *, source_provider=None) -> bool:
                 plan_overlay_fill_opacity=cmd.plan_overlay_fill_opacity,
                 plan_overlay_annotations_visible=cmd.plan_overlay_annotations_visible,
                 plan_overlay_witness_lines_visible=cmd.plan_overlay_witness_lines_visible,
+                section_box_enabled=cmd.section_box_enabled,
+                section_box_min_mm=cmd.section_box_min_mm,
+                section_box_max_mm=cmd.section_box_max_mm,
             )
 
         case UpsertProjectSettingsCmd():

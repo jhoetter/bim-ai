@@ -4,6 +4,7 @@ import type { Violation } from '@bim-ai/core';
 
 import type { ConstructabilityReport } from '../lib/api';
 import {
+  advisorFindingViewpointBridge,
   constructabilityFindingToViolation,
   mergeAdvisorViolations,
 } from './unifiedAdvisorViolations';
@@ -25,9 +26,33 @@ describe('unifiedAdvisorViolations', () => {
             type: 'saveViewpoint',
             id: 'vp-constructability-abc',
             mode: 'orbit_3d',
+            sectionBoxEnabled: true,
+            sectionBoxMinMm: { xMm: 0, yMm: 0, zMm: 0 },
+            sectionBoxMaxMm: { xMm: 4000, yMm: 200, zMm: 3000 },
+            camera: {
+              position: { xMm: 5000, yMm: -1000, zMm: 3500 },
+              target: { xMm: 2000, yMm: 100, zMm: 1500 },
+              up: { xMm: 0, yMm: 0, zMm: 1 },
+            },
           },
         },
       ],
+      viewpointEvidence: {
+        schemaVersion: 'advisorFindingViewpointBridge_v1',
+        ruleId: 'load_bearing_wall_removed_without_transfer',
+        viewId: 'vp-constructability-abc',
+        viewpointId: 'vp-constructability-abc',
+        elementIds: ['wall-1'],
+        sectionBoxEnabled: true,
+        sectionBoxMinMm: { xMm: 0, yMm: 0, zMm: 0 },
+        sectionBoxMaxMm: { xMm: 4000, yMm: 200, zMm: 3000 },
+        camera: {
+          position: { xMm: 5000, yMm: -1000, zMm: 3500 },
+          target: { xMm: 2000, yMm: 100, zMm: 1500 },
+          up: { xMm: 0, yMm: 0, zMm: 1 },
+        },
+      },
+      evidenceRefs: [{ kind: 'viewpoint', viewpointId: 'vp-constructability-abc' }],
     });
 
     expect(violation).toEqual({
@@ -41,7 +66,79 @@ describe('unifiedAdvisorViolations', () => {
         type: 'saveViewpoint',
         id: 'vp-constructability-abc',
         mode: 'orbit_3d',
+        sectionBoxEnabled: true,
+        sectionBoxMinMm: { xMm: 0, yMm: 0, zMm: 0 },
+        sectionBoxMaxMm: { xMm: 4000, yMm: 200, zMm: 3000 },
+        camera: {
+          position: { xMm: 5000, yMm: -1000, zMm: 3500 },
+          target: { xMm: 2000, yMm: 100, zMm: 1500 },
+          up: { xMm: 0, yMm: 0, zMm: 1 },
+        },
       },
+      viewpointRef: 'vp-constructability-abc',
+      evidenceRefs: [{ kind: 'viewpoint', viewpointId: 'vp-constructability-abc' }],
+      viewpointEvidence: {
+        schemaVersion: 'advisorFindingViewpointBridge_v1',
+        ruleId: 'load_bearing_wall_removed_without_transfer',
+        viewId: 'vp-constructability-abc',
+        viewpointId: 'vp-constructability-abc',
+        elementIds: ['wall-1'],
+        camera: {
+          position: { xMm: 5000, yMm: -1000, zMm: 3500 },
+          target: { xMm: 2000, yMm: 100, zMm: 1500 },
+          up: { xMm: 0, yMm: 0, zMm: 1 },
+        },
+        sectionBoxEnabled: true,
+        sectionBoxMinMm: { xMm: 0, yMm: 0, zMm: 0 },
+        sectionBoxMaxMm: { xMm: 4000, yMm: 200, zMm: 3000 },
+      },
+    });
+  });
+
+  it('builds a machine-checkable Advisor finding-to-viewpoint bridge from command metadata', () => {
+    const bridge = advisorFindingViewpointBridge({
+      ruleId: 'furniture_wall_hard_clash',
+      severity: 'warning',
+      message: 'Furniture intersects wall.',
+      elementIds: ['wall-1', 'shelf-1'],
+      viewpointRef: 'vp-constructability-deadbeef',
+      safeCommandHints: [
+        {
+          label: 'Save focused review viewpoint',
+          safety: 'context_only',
+          command: {
+            type: 'saveViewpoint',
+            id: 'vp-constructability-deadbeef',
+            mode: 'orbit_3d',
+            camera: {
+              position: { xMm: 5000, yMm: -1000, zMm: 3500 },
+              target: { xMm: 2000, yMm: 100, zMm: 1500 },
+              up: { xMm: 0, yMm: 0, zMm: 1 },
+            },
+            sectionBoxEnabled: true,
+            sectionBoxMinMm: { xMm: 0, yMm: 0, zMm: 0 },
+            sectionBoxMaxMm: { xMm: 4000, yMm: 200, zMm: 3000 },
+            bboxMm: { minX: 0, minY: 0, minZ: 0, maxX: 4000, maxY: 200, maxZ: 3000 },
+          },
+        },
+      ],
+    });
+
+    expect(bridge).toEqual({
+      schemaVersion: 'advisorFindingViewpointBridge_v1',
+      ruleId: 'furniture_wall_hard_clash',
+      viewId: 'vp-constructability-deadbeef',
+      viewpointId: 'vp-constructability-deadbeef',
+      elementIds: ['shelf-1', 'wall-1'],
+      camera: {
+        position: { xMm: 5000, yMm: -1000, zMm: 3500 },
+        target: { xMm: 2000, yMm: 100, zMm: 1500 },
+        up: { xMm: 0, yMm: 0, zMm: 1 },
+      },
+      sectionBoxEnabled: true,
+      sectionBoxMinMm: { xMm: 0, yMm: 0, zMm: 0 },
+      sectionBoxMaxMm: { xMm: 4000, yMm: 200, zMm: 3000 },
+      bboxMm: { minX: 0, minY: 0, minZ: 0, maxX: 4000, maxY: 200, maxZ: 3000 },
     });
   });
 

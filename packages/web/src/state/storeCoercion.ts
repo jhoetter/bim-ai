@@ -20,6 +20,22 @@ export function coerceViolation(v: unknown): Violation {
   const discipline =
     typeof disciplineRaw === 'string' && disciplineRaw.length ? disciplineRaw : undefined;
   const qf = vv.quickFixCommand ?? vv.quick_fix_command;
+  const viewpointRefRaw = vv.viewpointRef ?? vv.viewpoint_ref;
+  const viewpointRef =
+    typeof viewpointRefRaw === 'string' && viewpointRefRaw.trim()
+      ? viewpointRefRaw.trim()
+      : undefined;
+  const evidenceRefsRaw = vv.evidenceRefs ?? vv.evidence_refs;
+  const evidenceRefs = Array.isArray(evidenceRefsRaw)
+    ? evidenceRefsRaw.filter((item): item is Record<string, unknown> =>
+        Boolean(item && typeof item === 'object'),
+      )
+    : undefined;
+  const viewpointEvidenceRaw = vv.viewpointEvidence ?? vv.viewpoint_evidence;
+  const viewpointEvidence =
+    viewpointEvidenceRaw && typeof viewpointEvidenceRaw === 'object'
+      ? (viewpointEvidenceRaw as Record<string, unknown>)
+      : undefined;
 
   const quickFixCommand =
     qf !== undefined && qf !== null && typeof qf === 'object'
@@ -37,6 +53,9 @@ export function coerceViolation(v: unknown): Violation {
     ...(discipline !== undefined ? { discipline } : {}),
 
     ...(quickFixCommand ? { quickFixCommand } : {}),
+    ...(viewpointRef ? { viewpointRef } : {}),
+    ...(evidenceRefs ? { evidenceRefs } : {}),
+    ...(viewpointEvidence ? { viewpointEvidence } : {}),
   };
 }
 

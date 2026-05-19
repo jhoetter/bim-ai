@@ -4012,6 +4012,12 @@ export type Violation = {
 
   quickFixCommand?: Record<string, unknown> | null;
 
+  viewpointRef?: string | null;
+
+  evidenceRefs?: Array<Record<string, unknown>>;
+
+  viewpointEvidence?: Record<string, unknown> | null;
+
   /** When set (by constraints), Advisor can filter rows by discipline perspective */
   discipline?: string | null;
 

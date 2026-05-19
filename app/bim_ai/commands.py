@@ -771,6 +771,9 @@ class SaveViewpointCmd(BaseModel):
     plan_overlay_witness_lines_visible: bool | None = Field(
         default=None, alias="planOverlayWitnessLinesVisible"
     )
+    section_box_enabled: bool | None = Field(default=None, alias="sectionBoxEnabled")
+    section_box_min_mm: Vec3Mm | None = Field(default=None, alias="sectionBoxMinMm")
+    section_box_max_mm: Vec3Mm | None = Field(default=None, alias="sectionBoxMaxMm")
 
 
 class UpsertProjectSettingsCmd(BaseModel):

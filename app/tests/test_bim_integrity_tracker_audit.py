@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import re
 import subprocess
 from pathlib import Path
 
@@ -46,7 +47,10 @@ def test_done_quality_gate_rejects_missing_implementation_evidence(tmp_path: Pat
         line
         for line in source.splitlines()
         if not (
-            line.startswith("| `BIR-W05` | `scripts/audit-bim-integrity-tracker.mjs`")
+            re.match(
+                r"^\|\s*`BIR-W05`\s*\|\s*`scripts/audit-bim-integrity-tracker\.mjs`",
+                line,
+            )
             and "app/tests/test_bim_integrity_tracker_audit.py" in line
         )
     )

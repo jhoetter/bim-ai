@@ -299,6 +299,7 @@ export type ConstructabilityFinding = {
   recommendation?: string;
   viewpointRef?: string;
   evidenceRefs?: Array<Record<string, unknown>>;
+  viewpointEvidence?: Record<string, unknown>;
   safeCommandHints?: Array<{
     label?: string;
     safety?: 'context_only' | 'dry_run_required' | 'destructive' | string;
@@ -310,6 +311,7 @@ export type ConstructabilityFinding = {
     primaryAction?: string;
     viewpointRef?: string;
     evidenceRefs?: Array<Record<string, unknown>>;
+    viewpointEvidence?: Record<string, unknown>;
     safeCommandHints?: Array<{
       label?: string;
       safety?: 'context_only' | 'dry_run_required' | 'destructive' | string;

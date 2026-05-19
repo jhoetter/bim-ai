@@ -59,6 +59,15 @@ def test_constructability_bcf_export_turns_findings_into_topics_with_viewpoints(
     assert topic["elementIds"] == ["shelf-1", "wall-1"]
     assert topic["viewpointRef"] == viewpoint["viewpointId"]
     assert topic["evidenceRefs"] == [{"kind": "viewpoint", "viewpointId": viewpoint["viewpointId"]}]
+    assert topic["viewpointEvidence"]["schemaVersion"] == "advisorFindingViewpointBridge_v1"
+    assert topic["viewpointEvidence"]["viewId"] == viewpoint["viewpointId"]
+    assert topic["viewpointEvidence"]["elementIds"] == ["shelf-1", "wall-1"]
+    assert topic["viewpointEvidence"]["camera"] == viewpoint["camera"]
+    assert topic["viewpointEvidence"]["sectionBoxMinMm"] == viewpoint["sectionBoxMinMm"]
+    assert topic["viewpointEvidence"]["sectionBoxMaxMm"] == viewpoint["sectionBoxMaxMm"]
+    assert viewpoint["schemaVersion"] == "advisorFindingViewpointBridge_v1"
+    assert viewpoint["viewId"] == viewpoint["viewpointId"]
+    assert viewpoint["sectionBoxEnabled"] is True
     assert viewpoint["bboxMm"]["minX"] <= 900
     assert viewpoint["bboxMm"]["maxX"] >= 4000
     assert viewpoint["camera"]["target"]["zMm"] > 0

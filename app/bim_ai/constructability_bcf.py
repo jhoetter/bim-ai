@@ -34,6 +34,7 @@ def build_constructability_bcf_export(
         if viewpoint is not None:
             topic["viewpointRef"] = viewpoint["viewpointId"]
             topic["evidenceRefs"] = [{"kind": "viewpoint", "viewpointId": viewpoint["viewpointId"]}]
+            topic["viewpointEvidence"] = _viewpoint_evidence_for_issue(issue, viewpoint)
             viewpoints.append(viewpoint)
         topics.append(topic)
 
@@ -141,7 +142,9 @@ def _viewpoint_for_issue(
     }
     span = max(bbox.width_mm, bbox.depth_mm, bbox.height_mm, 1000.0)
     return {
+        "schemaVersion": "advisorFindingViewpointBridge_v1",
         "viewpointId": viewpoint_id,
+        "viewId": viewpoint_id,
         "name": _title_for_issue(issue),
         "mode": "orbit_3d",
         "elementIds": element_ids,
@@ -165,6 +168,26 @@ def _viewpoint_for_issue(
             "yMm": bbox.max_y,
             "zMm": bbox.max_z,
         },
+        "sectionBoxEnabled": True,
+    }
+
+
+def _viewpoint_evidence_for_issue(
+    issue: Mapping[str, Any],
+    viewpoint: Mapping[str, Any],
+) -> dict[str, Any]:
+    viewpoint_id = str(viewpoint.get("viewpointId") or "")
+    return {
+        "schemaVersion": "advisorFindingViewpointBridge_v1",
+        "ruleId": issue.get("ruleId"),
+        "viewId": viewpoint_id,
+        "viewpointId": viewpoint_id,
+        "elementIds": list(viewpoint.get("elementIds") or []),
+        "bboxMm": dict(viewpoint.get("bboxMm") or {}),
+        "camera": dict(viewpoint.get("camera") or {}),
+        "sectionBoxEnabled": True,
+        "sectionBoxMinMm": dict(viewpoint.get("sectionBoxMinMm") or {}),
+        "sectionBoxMaxMm": dict(viewpoint.get("sectionBoxMaxMm") or {}),
     }
 
 

@@ -85,6 +85,17 @@ def test_constructability_report_filters_and_reconciles_findings() -> None:
     assert command_hint["command"]["type"] == "saveViewpoint"
     assert command_hint["command"]["id"] == finding["viewpointRef"]
     assert command_hint["command"]["camera"]["target"]["zMm"] > 0
+    assert command_hint["command"]["sectionBoxEnabled"] is True
+    assert command_hint["command"]["sectionBoxMinMm"]["xMm"] <= 0
+    assert command_hint["command"]["sectionBoxMaxMm"]["xMm"] >= 4000
+    assert finding["viewpointEvidence"]["schemaVersion"] == "advisorFindingViewpointBridge_v1"
+    assert finding["viewpointEvidence"]["viewId"] == finding["viewpointRef"]
+    assert finding["viewpointEvidence"]["viewpointId"] == finding["viewpointRef"]
+    assert finding["viewpointEvidence"]["elementIds"] == ["shelf-1", "wall-1"]
+    assert finding["viewpointEvidence"]["camera"] == command_hint["command"]["camera"]
+    assert finding["viewpointEvidence"]["sectionBoxMinMm"] == command_hint["command"]["sectionBoxMinMm"]
+    assert finding["viewpointEvidence"]["sectionBoxMaxMm"] == command_hint["command"]["sectionBoxMaxMm"]
+    assert finding["actionability"]["viewpointEvidence"] == finding["viewpointEvidence"]
     assert report["summary"]["priorityCounts"]["P1"] >= 1
     assert report["summary"]["rootCauseGroupCount"] >= 1
     assert any(

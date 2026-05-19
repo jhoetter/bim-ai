@@ -90,6 +90,7 @@ describe('evaluatePlanViewFidelityContract', () => {
           rendererArea: 'plan',
           feature: 'wall-cut',
           elementIds: ['w-1', 'd-1'],
+          viewId: 'pv-ground',
           trackerItems: ['BIR-R01'],
         },
       ],
@@ -114,6 +115,7 @@ describe('evaluatePlanViewFidelityContract', () => {
       evidence: {
         diagnosticCodes: ['renderer.wall_cut.plan.hidden_cut.unsupported'],
         elementIds: ['d-1', 'w-1'],
+        viewIds: ['pv-ground'],
       },
     });
   });
@@ -324,6 +326,22 @@ describe('evaluateSheetViewportFidelityContract', () => {
     expect(result.status).toBe('fail');
     expect(result.issues.map((issue) => issue.id)).toContain('sheet_viewport_viewRefResolved');
     expect(result.issues.map((issue) => issue.id)).toContain('sheet_viewport_positiveExtent');
+    expect(
+      result.issues.find((issue) => issue.id === 'sheet_viewport_viewRefResolved'),
+    ).toMatchObject({
+      evidence: {
+        sheetId: 'sheet-a101',
+        viewportId: 'vp-bad',
+        viewRef: 'plan:missing',
+        referencedViewId: 'missing',
+        viewKind: 'plan',
+        sheetViewportMetadata: {
+          scale: null,
+          cropMinMm: null,
+          cropMaxMm: null,
+        },
+      },
+    });
   });
 });
 
