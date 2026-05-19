@@ -1234,6 +1234,7 @@
       "props": {
         "supportedByIds": ["upper-wrapper-floor"],
         "exteriorSpaceType": "roof_terrace",
+        "guardIds": ["hf-roof-court-railing"],
         "guardIntent": "hf-roof-court-railing protects the exposed east roof-court edge.",
         "drainageIntent": "Waterproofed walking slab with positive drainage toward the roof-court drain marker.",
         "accessElementIds": ["hf-roof-court-door"],
@@ -1484,6 +1485,7 @@
       "props": {
         "supportedByIds": ["upper-wrapper-floor"],
         "exteriorSpaceType": "loggia",
+        "guardIds": ["hf-front-loggia-railing"],
         "guardIntent": "hf-front-loggia-railing protects the exposed south loggia edge.",
         "drainageIntent": "Covered exterior slab with waterproofing and drainage intent at recessed loggia.",
         "accessElementIds": ["front-loggia-center-door"],
