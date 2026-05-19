@@ -264,7 +264,7 @@ This tracker is complete only when all of these are true:
 | -- | -------- | ------ | ---- | ---------- |
 | `BIR-L01` | P0 | Partial | Profile Advisor performance. | Constructability reports now include `advisorDiagnosticsProfile_v1` with deterministic ordered timing rows for Advisor evaluate, constructability clearance/metadata, model-integrity, and domain-integrity checks. Evidence: `app/bim_ai/advisor_profiling.py`, `app/bim_ai/constructability_report.py`, `app/tests/test_advisor_profiling_incremental.py`. |
 | `BIR-L02` | P0 | Not started | Profile renderer update cost. | Orbit, select, lens switch, and Advisor open/close remain responsive on target-house and benchmark models. |
-| `BIR-L03` | P0 | Partial | Investigate WebSocket proxy errors. | Reconnect/EPIPE/ECONNRESET during dev are classified as benign dev-server reconnects or fixed if they cause state churn/unresponsiveness. |
+| `BIR-L03` | P0 | Partial | Investigate WebSocket proxy errors. | W6-C classifies Vite proxy `EPIPE`/`ECONNRESET` as benign dev reconnect/browser teardown noise, keeps unexpected proxy errors actionable, and covers app reconnect/backoff/state-churn decisions in `packages/web/src/lib/wsStability.test.ts`. Remaining: wire helper into dirty WebSocket consumers/proxy config once parallel edits settle and verify live dev-server behavior. |
 | `BIR-L04` | P1 | Partial | Incremental diagnostics. | Added pure `advisorIncrementalDiagnosticEligibility_v1` helper that derives changed ids, one-hop reference impact, constructability broad-phase pair impact, and per-layer incremental eligibility for Advisor/integrity/domain/render diagnostic consumers. Evidence: `app/bim_ai/constructability_performance.py`, `app/tests/test_advisor_profiling_incremental.py`. |
 | `BIR-L05` | P1 | Partial | Background heavy checks. | Expensive geometry/export/render checks run as jobs with progress, cancellation, and cached evidence. |
 | `BIR-L06` | P1 | Partial | UI degradation safeguards. | Pure `diagnosticUiSchedulingPolicy_v1` helpers now force Advisor and renderer diagnostics onto idle/debounced/deferred/manual-only paths, cap diagnostic overlays with `pointerEvents: none`, and preserve pointer events, camera controls, and selection on ordinary models. Remaining: wire the policy into all live diagnostic producers. |
@@ -501,6 +501,18 @@ W5-C evidence update:
   app/tests/test_schedule_sheet_exchange_evidence.py`; `python -m ruff check
   app/bim_ai/schedule_sheet_exchange_evidence.py
   app/tests/test_schedule_sheet_exchange_evidence.py`.
+
+W6-C evidence update:
+- Added `packages/web/src/lib/wsStability.ts` to classify Vite proxy socket
+  failures and app WebSocket close/reconnect outcomes without touching dirty
+  WebSocket URL/proxy consumer edits from parallel agents.
+- Classification: Vite proxy `EPIPE`/`ECONNRESET` are benign and silent;
+  unexpected proxy errors remain actionable/logged. App WebSocket transient
+  closes are benign reconnects with bounded backoff, hidden-tab reconnects are
+  deferred to avoid churn, exhausted attempts become actionable offline state,
+  and `4403`/`4404` stop reconnect loops.
+- Verification: `pnpm --filter @bim-ai/web vitest run
+  src/lib/wsStability.test.ts src/lib/wsReconnect.test.ts`.
 
 ### Wave 6: Performance And UX Stability
 
