@@ -148,15 +148,3 @@ Machine-readable report:
 - BIR-N06 BIM data quality: pass. Current report checks rooms/spaces, levels,
   schedules, types/materials, classifications, spaces, stairs, rails,
   doors/windows, and required export-manifest rows.
-
-## Wave 8 Deterministic Evidence Acceptance
-
-Machine-readable report:
-`seed-artifacts/target-house-1/evidence/live-run-current/target-house-evidence-acceptance.json`
-
-- BIR-N05 visual evidence: blocked. Required views: 8; passed: 7; failed: 1.
-- Missing required view evidence: `front_loggia` lacks a visual-contract row,
-  saved viewpoint/snapshot view, screenshot-manifest capture, and PNG.
-- BIR-N06 BIM data quality: pass. Current report checks rooms/spaces, levels,
-  schedules, types/materials, classifications, spaces, stairs, rails,
-  doors/windows, and required export-manifest rows.
