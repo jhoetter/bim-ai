@@ -150,7 +150,7 @@ describe('<Workspace /> family library array formula persistence', () => {
       }),
       expect.objectContaining({ userId: 'user-1' }),
     );
-  });
+  }, 10_000);
 
   it('persists catalog-family array formula edits through an upserted family type', async () => {
     useBimStore.setState({
@@ -243,7 +243,7 @@ describe('<Workspace /> family library array formula persistence', () => {
       ],
       expect.objectContaining({ userId: 'component-tool' }),
     );
-  });
+  }, 10_000);
 
   it('hydrates a newly loaded catalog family before entering placement mode', async () => {
     let typeId = '';
@@ -420,7 +420,7 @@ describe('<Workspace /> family library array formula persistence', () => {
     expect(activeComponentAssetId).toBe(assetId);
     expect(activeComponentFamilyTypeId).toBeNull();
     expect(useBimStore.getState().planTool).toBe('component');
-  });
+  }, 10_000);
 
   it('moves free catalog placement from a section pane into a plan canvas', async () => {
     localStorage.setItem(

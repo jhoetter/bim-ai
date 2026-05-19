@@ -54,6 +54,16 @@ vi.mock('../plan/PlanCanvas', () => ({
   ),
 }));
 
+vi.mock('../lib/api', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../lib/api')>();
+  return {
+    ...actual,
+    fetchActivity: () => Promise.resolve({ events: [] }),
+    fetchBuildingPresets: () => Promise.resolve([]),
+    fetchComments: () => Promise.resolve({ comments: [] }),
+  };
+});
+
 import { Workspace } from './Workspace';
 
 const TABS_KEY = 'bim-ai:tabs-v1';
