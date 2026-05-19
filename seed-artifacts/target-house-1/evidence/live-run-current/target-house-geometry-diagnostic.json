@@ -3,11 +3,29 @@
   "targetId": "target-house-1",
   "deterministic": true,
   "generatedFrom": {
-    "snapshotModelId": "6c3940ae-c0a1-5bc3-a0fa-38c9195b28d2",
-    "snapshotRevision": 1,
+    "snapshotModelId": "target-house-1-offline-regenerated",
+    "snapshotRevision": 2,
+    "snapshotSource": {
+      "kind": "fresh_live_snapshot",
+      "path": "seed-artifacts/target-house-1/evidence/live-run-current/snapshot.json",
+      "snapshotSha256": "da887024b8849083e5d0a1321ccac3199a346e2077d83063f409bf650503e232",
+      "regenerated": false,
+      "liveEvidenceFresh": true,
+      "staleCandidates": [
+        {
+          "kind": "nested_live_snapshot",
+          "path": "seed-artifacts/target-house-1/evidence/live-run-current/live/snapshot.json",
+          "ok": true,
+          "snapshotSha256": "da887024b8849083e5d0a1321ccac3199a346e2077d83063f409bf650503e232",
+          "staleChecks": []
+        }
+      ]
+    },
     "sourceDigests": {
-      "seed-artifacts/target-house-1/evidence/live-run-current/snapshot.json": "sha256:7e7a9a2c25704dab6631db444fbb499ab8a8e54122997fea42aa17f629bc7934",
-      "spec/generated/target-house-1-required-features.json": "sha256:27ab03fa5f8ed54a0774e574e136e245f140a77d63b60c76f9b02473d57b0668"
+      "seed-artifacts/target-house-1/bundle.json": "sha256:d9c5459907252d8b14357e80a06390eead8a762627bd9c2cfcf3095caf024ec3",
+      "seed-artifacts/target-house-1/source/target-house-1-sketch-ir.draft.json": "sha256:17a24cb6b3691448bda747403a542513951fb21633e62e991711f28e2591f521",
+      "spec/generated/target-house-1-required-features.json": "sha256:cdf4a021104bb8748360b220ca20f64c464c36c8f6b82c8d25126c9f762cd98e",
+      "seed-artifacts/target-house-1/evidence/live-run-current/snapshot.json": "sha256:da887024b8849083e5d0a1321ccac3199a346e2077d83063f409bf650503e232"
     }
   },
   "targetEnvelopeMm": {
@@ -70,16 +88,16 @@
     }
   ],
   "summary": {
-    "total": 155,
+    "total": 101,
     "byCategory": {
-      "detached_or_flying": 33,
-      "helper_leakage": 78,
-      "out_of_envelope": 20,
+      "detached_or_flying": 11,
+      "helper_leakage": 52,
+      "out_of_envelope": 17,
       "sketch_critical_mismatch": 16,
-      "unsupported_renderer_feature": 8
+      "unsupported_renderer_feature": 5
     },
     "bySeverity": {
-      "error": 152,
+      "error": 98,
       "warning": 3,
       "info": 0
     }
@@ -87,271 +105,9 @@
   "findings": [
     {
       "category": "detached_or_flying",
-      "code": "geometry.hosted_opening_on_access_stub",
-      "severity": "error",
-      "elementIds": [
-        "access-door-hf-room-bath",
-        "access-wall-hf-room-bath"
-      ],
-      "elementKind": "door",
-      "message": "Hosted opening is attached to an access-helper stub instead of a real enclosing wall.",
-      "evidence": {
-        "hostWallId": "access-wall-hf-room-bath",
-        "hostLengthMm": 945,
-        "alongT": 0.5
-      },
-      "trackerItems": [
-        "BIR-C07",
-        "BIR-N01"
-      ]
-    },
-    {
-      "category": "detached_or_flying",
-      "code": "geometry.hosted_opening_on_access_stub",
-      "severity": "error",
-      "elementIds": [
-        "access-door-hf-room-carport",
-        "access-wall-hf-room-carport"
-      ],
-      "elementKind": "door",
-      "message": "Hosted opening is attached to an access-helper stub instead of a real enclosing wall.",
-      "evidence": {
-        "hostWallId": "access-wall-hf-room-carport",
-        "hostLengthMm": 950,
-        "alongT": 0.5
-      },
-      "trackerItems": [
-        "BIR-C07",
-        "BIR-N01"
-      ]
-    },
-    {
-      "category": "detached_or_flying",
-      "code": "geometry.hosted_opening_on_access_stub",
-      "severity": "error",
-      "elementIds": [
-        "access-door-hf-room-ensuite",
-        "access-wall-hf-room-ensuite"
-      ],
-      "elementKind": "door",
-      "message": "Hosted opening is attached to an access-helper stub instead of a real enclosing wall.",
-      "evidence": {
-        "hostWallId": "access-wall-hf-room-ensuite",
-        "hostLengthMm": 700,
-        "alongT": 0.5
-      },
-      "trackerItems": [
-        "BIR-C07",
-        "BIR-N01"
-      ]
-    },
-    {
-      "category": "detached_or_flying",
-      "code": "geometry.hosted_opening_on_access_stub",
-      "severity": "error",
-      "elementIds": [
-        "access-door-hf-room-gf-bath-laundry",
-        "access-wall-hf-room-gf-bath-laundry"
-      ],
-      "elementKind": "door",
-      "message": "Hosted opening is attached to an access-helper stub instead of a real enclosing wall.",
-      "evidence": {
-        "hostWallId": "access-wall-hf-room-gf-bath-laundry",
-        "hostLengthMm": 600,
-        "alongT": 0.5
-      },
-      "trackerItems": [
-        "BIR-C07",
-        "BIR-N01"
-      ]
-    },
-    {
-      "category": "detached_or_flying",
-      "code": "geometry.hosted_opening_on_access_stub",
-      "severity": "error",
-      "elementIds": [
-        "access-door-hf-room-kitchen",
-        "access-wall-hf-room-kitchen"
-      ],
-      "elementKind": "door",
-      "message": "Hosted opening is attached to an access-helper stub instead of a real enclosing wall.",
-      "evidence": {
-        "hostWallId": "access-wall-hf-room-kitchen",
-        "hostLengthMm": 950,
-        "alongT": 0.5
-      },
-      "trackerItems": [
-        "BIR-C07",
-        "BIR-N01"
-      ]
-    },
-    {
-      "category": "detached_or_flying",
-      "code": "geometry.hosted_opening_on_access_stub",
-      "severity": "error",
-      "elementIds": [
-        "access-door-hf-room-landing",
-        "access-wall-hf-room-landing"
-      ],
-      "elementKind": "door",
-      "message": "Hosted opening is attached to an access-helper stub instead of a real enclosing wall.",
-      "evidence": {
-        "hostWallId": "access-wall-hf-room-landing",
-        "hostLengthMm": 770,
-        "alongT": 0.5
-      },
-      "trackerItems": [
-        "BIR-C07",
-        "BIR-N01"
-      ]
-    },
-    {
-      "category": "detached_or_flying",
-      "code": "geometry.hosted_opening_on_access_stub",
-      "severity": "error",
-      "elementIds": [
-        "access-door-hf-room-loggia",
-        "access-wall-hf-room-loggia"
-      ],
-      "elementKind": "door",
-      "message": "Hosted opening is attached to an access-helper stub instead of a real enclosing wall.",
-      "evidence": {
-        "hostWallId": "access-wall-hf-room-loggia",
-        "hostLengthMm": 950,
-        "alongT": 0.5
-      },
-      "trackerItems": [
-        "BIR-C07",
-        "BIR-N01"
-      ]
-    },
-    {
-      "category": "detached_or_flying",
-      "code": "geometry.hosted_opening_on_access_stub",
-      "severity": "error",
-      "elementIds": [
-        "access-door-hf-room-utility",
-        "access-wall-hf-room-utility"
-      ],
-      "elementKind": "door",
-      "message": "Hosted opening is attached to an access-helper stub instead of a real enclosing wall.",
-      "evidence": {
-        "hostWallId": "access-wall-hf-room-utility",
-        "hostLengthMm": 700,
-        "alongT": 0.5
-      },
-      "trackerItems": [
-        "BIR-C07",
-        "BIR-N01"
-      ]
-    },
-    {
-      "category": "detached_or_flying",
-      "code": "geometry.hosted_opening_on_access_stub",
-      "severity": "error",
-      "elementIds": [
-        "access-door-hf-room-walk-in-closet",
-        "access-wall-hf-room-walk-in-closet"
-      ],
-      "elementKind": "door",
-      "message": "Hosted opening is attached to an access-helper stub instead of a real enclosing wall.",
-      "evidence": {
-        "hostWallId": "access-wall-hf-room-walk-in-closet",
-        "hostLengthMm": 700,
-        "alongT": 0.5
-      },
-      "trackerItems": [
-        "BIR-C07",
-        "BIR-N01"
-      ]
-    },
-    {
-      "category": "detached_or_flying",
-      "code": "geometry.hosted_opening_on_access_stub",
-      "severity": "error",
-      "elementIds": [
-        "access-door-room-bedroom",
-        "access-wall-room-bedroom"
-      ],
-      "elementKind": "door",
-      "message": "Hosted opening is attached to an access-helper stub instead of a real enclosing wall.",
-      "evidence": {
-        "hostWallId": "access-wall-room-bedroom",
-        "hostLengthMm": 600,
-        "alongT": 0.5
-      },
-      "trackerItems": [
-        "BIR-C07",
-        "BIR-N01"
-      ]
-    },
-    {
-      "category": "detached_or_flying",
-      "code": "geometry.hosted_opening_on_access_stub",
-      "severity": "error",
-      "elementIds": [
-        "access-door-room-hall",
-        "access-wall-room-hall"
-      ],
-      "elementKind": "door",
-      "message": "Hosted opening is attached to an access-helper stub instead of a real enclosing wall.",
-      "evidence": {
-        "hostWallId": "access-wall-room-hall",
-        "hostLengthMm": 600,
-        "alongT": 0.5
-      },
-      "trackerItems": [
-        "BIR-C07",
-        "BIR-N01"
-      ]
-    },
-    {
-      "category": "detached_or_flying",
-      "code": "geometry.hosted_opening_on_access_stub",
-      "severity": "error",
-      "elementIds": [
-        "access-door-room-living",
-        "access-wall-room-living"
-      ],
-      "elementKind": "door",
-      "message": "Hosted opening is attached to an access-helper stub instead of a real enclosing wall.",
-      "evidence": {
-        "hostWallId": "access-wall-room-living",
-        "hostLengthMm": 700,
-        "alongT": 0.5
-      },
-      "trackerItems": [
-        "BIR-C07",
-        "BIR-N01"
-      ]
-    },
-    {
-      "category": "detached_or_flying",
-      "code": "geometry.hosted_opening_on_access_stub",
-      "severity": "error",
-      "elementIds": [
-        "access-door-room-terrace",
-        "access-wall-room-terrace"
-      ],
-      "elementKind": "door",
-      "message": "Hosted opening is attached to an access-helper stub instead of a real enclosing wall.",
-      "evidence": {
-        "hostWallId": "access-wall-room-terrace",
-        "hostLengthMm": 950,
-        "alongT": 0.5
-      },
-      "trackerItems": [
-        "BIR-C07",
-        "BIR-N01"
-      ]
-    },
-    {
-      "category": "detached_or_flying",
       "code": "geometry.railing_unhosted_no_level",
       "severity": "error",
-      "elementIds": [
-        "hf-front-loggia-railing"
-      ],
+      "elementIds": ["hf-front-loggia-railing"],
       "elementKind": "railing",
       "message": "Railing has no hosted stair, slab/edge host, or level id, so its vertical support is ambiguous.",
       "evidence": {
@@ -367,17 +123,13 @@
         ],
         "guardHeightMm": 1040
       },
-      "trackerItems": [
-        "BIR-N01"
-      ]
+      "trackerItems": ["BIR-N01"]
     },
     {
       "category": "detached_or_flying",
       "code": "geometry.railing_unhosted_no_level",
       "severity": "error",
-      "elementIds": [
-        "hf-roof-court-railing"
-      ],
+      "elementIds": ["hf-roof-court-railing"],
       "elementKind": "railing",
       "message": "Railing has no hosted stair, slab/edge host, or level id, so its vertical support is ambiguous.",
       "evidence": {
@@ -393,375 +145,18 @@
         ],
         "guardHeightMm": 1040
       },
-      "trackerItems": [
-        "BIR-N01"
-      ]
+      "trackerItems": ["BIR-N01"]
     },
     {
       "category": "detached_or_flying",
       "code": "geometry.wall_detached_endpoint",
       "severity": "error",
-      "elementIds": [
-        "access-wall-hf-room-bath"
-      ],
+      "elementIds": ["front-loggia-left-return"],
       "elementKind": "wall",
       "message": "Wall has endpoint(s) that do not connect to another wall segment on the same level.",
       "evidence": {
         "levelId": "hf-lvl-upper",
-        "isolatedEndpoints": [
-          "start",
-          "end"
-        ],
-        "lengthMm": 945,
-        "boundsMm": {
-          "minX": 3850,
-          "minY": 2477.5,
-          "maxX": 3850,
-          "maxY": 3422.5
-        }
-      },
-      "trackerItems": [
-        "BIR-N01"
-      ]
-    },
-    {
-      "category": "detached_or_flying",
-      "code": "geometry.wall_detached_endpoint",
-      "severity": "error",
-      "elementIds": [
-        "access-wall-hf-room-carport"
-      ],
-      "elementKind": "wall",
-      "message": "Wall has endpoint(s) that do not connect to another wall segment on the same level.",
-      "evidence": {
-        "levelId": "hf-lvl-ground",
-        "isolatedEndpoints": [
-          "start",
-          "end"
-        ],
-        "lengthMm": 950,
-        "boundsMm": {
-          "minX": 850,
-          "minY": 3125,
-          "maxX": 850,
-          "maxY": 4075
-        }
-      },
-      "trackerItems": [
-        "BIR-N01"
-      ]
-    },
-    {
-      "category": "detached_or_flying",
-      "code": "geometry.wall_detached_endpoint",
-      "severity": "error",
-      "elementIds": [
-        "access-wall-hf-room-ensuite"
-      ],
-      "elementKind": "wall",
-      "message": "Wall has endpoint(s) that do not connect to another wall segment on the same level.",
-      "evidence": {
-        "levelId": "hf-lvl-upper",
-        "isolatedEndpoints": [
-          "start",
-          "end"
-        ],
-        "lengthMm": 700,
-        "boundsMm": {
-          "minX": 2950,
-          "minY": 5150,
-          "maxX": 2950,
-          "maxY": 5850
-        }
-      },
-      "trackerItems": [
-        "BIR-N01"
-      ]
-    },
-    {
-      "category": "detached_or_flying",
-      "code": "geometry.wall_detached_endpoint",
-      "severity": "error",
-      "elementIds": [
-        "access-wall-hf-room-gf-bath-laundry"
-      ],
-      "elementKind": "wall",
-      "message": "Wall has endpoint(s) that do not connect to another wall segment on the same level.",
-      "evidence": {
-        "levelId": "hf-lvl-ground",
-        "isolatedEndpoints": [
-          "start",
-          "end"
-        ],
-        "lengthMm": 600,
-        "boundsMm": {
-          "minX": 7600,
-          "minY": 1300,
-          "maxX": 7600,
-          "maxY": 1900
-        }
-      },
-      "trackerItems": [
-        "BIR-N01"
-      ]
-    },
-    {
-      "category": "detached_or_flying",
-      "code": "geometry.wall_detached_endpoint",
-      "severity": "error",
-      "elementIds": [
-        "access-wall-hf-room-kitchen"
-      ],
-      "elementKind": "wall",
-      "message": "Wall has endpoint(s) that do not connect to another wall segment on the same level.",
-      "evidence": {
-        "levelId": "hf-lvl-ground",
-        "isolatedEndpoints": [
-          "start",
-          "end"
-        ],
-        "lengthMm": 950,
-        "boundsMm": {
-          "minX": 1450,
-          "minY": 4625,
-          "maxX": 1450,
-          "maxY": 5575
-        }
-      },
-      "trackerItems": [
-        "BIR-N01"
-      ]
-    },
-    {
-      "category": "detached_or_flying",
-      "code": "geometry.wall_detached_endpoint",
-      "severity": "error",
-      "elementIds": [
-        "access-wall-hf-room-landing"
-      ],
-      "elementKind": "wall",
-      "message": "Wall has endpoint(s) that do not connect to another wall segment on the same level.",
-      "evidence": {
-        "levelId": "hf-lvl-upper",
-        "isolatedEndpoints": [
-          "start",
-          "end"
-        ],
-        "lengthMm": 770,
-        "boundsMm": {
-          "minX": 6115,
-          "minY": 1350,
-          "maxX": 6885,
-          "maxY": 1350
-        }
-      },
-      "trackerItems": [
-        "BIR-N01"
-      ]
-    },
-    {
-      "category": "detached_or_flying",
-      "code": "geometry.wall_detached_endpoint",
-      "severity": "error",
-      "elementIds": [
-        "access-wall-hf-room-loggia"
-      ],
-      "elementKind": "wall",
-      "message": "Wall has endpoint(s) that do not connect to another wall segment on the same level.",
-      "evidence": {
-        "levelId": "hf-lvl-upper",
-        "isolatedEndpoints": [
-          "start",
-          "end"
-        ],
-        "lengthMm": 950,
-        "boundsMm": {
-          "minX": 3925,
-          "minY": -100,
-          "maxX": 4875,
-          "maxY": -100
-        }
-      },
-      "trackerItems": [
-        "BIR-N01"
-      ]
-    },
-    {
-      "category": "detached_or_flying",
-      "code": "geometry.wall_detached_endpoint",
-      "severity": "error",
-      "elementIds": [
-        "access-wall-hf-room-utility"
-      ],
-      "elementKind": "wall",
-      "message": "Wall has endpoint(s) that do not connect to another wall segment on the same level.",
-      "evidence": {
-        "levelId": "hf-lvl-ground",
-        "isolatedEndpoints": [
-          "start",
-          "end"
-        ],
-        "lengthMm": 700,
-        "boundsMm": {
-          "minX": 7600,
-          "minY": 3650,
-          "maxX": 7600,
-          "maxY": 4350
-        }
-      },
-      "trackerItems": [
-        "BIR-N01"
-      ]
-    },
-    {
-      "category": "detached_or_flying",
-      "code": "geometry.wall_detached_endpoint",
-      "severity": "error",
-      "elementIds": [
-        "access-wall-hf-room-walk-in-closet"
-      ],
-      "elementKind": "wall",
-      "message": "Wall has endpoint(s) that do not connect to another wall segment on the same level.",
-      "evidence": {
-        "levelId": "hf-lvl-upper",
-        "isolatedEndpoints": [
-          "start",
-          "end"
-        ],
-        "lengthMm": 700,
-        "boundsMm": {
-          "minX": 850,
-          "minY": 5150,
-          "maxX": 850,
-          "maxY": 5850
-        }
-      },
-      "trackerItems": [
-        "BIR-N01"
-      ]
-    },
-    {
-      "category": "detached_or_flying",
-      "code": "geometry.wall_detached_endpoint",
-      "severity": "error",
-      "elementIds": [
-        "access-wall-room-bedroom"
-      ],
-      "elementKind": "wall",
-      "message": "Wall has endpoint(s) that do not connect to another wall segment on the same level.",
-      "evidence": {
-        "levelId": "hf-lvl-upper",
-        "isolatedEndpoints": [
-          "start",
-          "end"
-        ],
-        "lengthMm": 600,
-        "boundsMm": {
-          "minX": 2600,
-          "minY": 4150,
-          "maxX": 3200,
-          "maxY": 4150
-        }
-      },
-      "trackerItems": [
-        "BIR-N01"
-      ]
-    },
-    {
-      "category": "detached_or_flying",
-      "code": "geometry.wall_detached_endpoint",
-      "severity": "error",
-      "elementIds": [
-        "access-wall-room-hall"
-      ],
-      "elementKind": "wall",
-      "message": "Wall has endpoint(s) that do not connect to another wall segment on the same level.",
-      "evidence": {
-        "levelId": "hf-lvl-ground",
-        "isolatedEndpoints": [
-          "start",
-          "end"
-        ],
-        "lengthMm": 600,
-        "boundsMm": {
-          "minX": 3100,
-          "minY": 2850,
-          "maxX": 3100,
-          "maxY": 3450
-        }
-      },
-      "trackerItems": [
-        "BIR-N01"
-      ]
-    },
-    {
-      "category": "detached_or_flying",
-      "code": "geometry.wall_detached_endpoint",
-      "severity": "error",
-      "elementIds": [
-        "access-wall-room-living"
-      ],
-      "elementKind": "wall",
-      "message": "Wall has endpoint(s) that do not connect to another wall segment on the same level.",
-      "evidence": {
-        "levelId": "hf-lvl-ground",
-        "isolatedEndpoints": [
-          "start",
-          "end"
-        ],
-        "lengthMm": 700,
-        "boundsMm": {
-          "minX": 5700,
-          "minY": 5000,
-          "maxX": 6400,
-          "maxY": 5000
-        }
-      },
-      "trackerItems": [
-        "BIR-N01"
-      ]
-    },
-    {
-      "category": "detached_or_flying",
-      "code": "geometry.wall_detached_endpoint",
-      "severity": "error",
-      "elementIds": [
-        "access-wall-room-terrace"
-      ],
-      "elementKind": "wall",
-      "message": "Wall has endpoint(s) that do not connect to another wall segment on the same level.",
-      "evidence": {
-        "levelId": "hf-lvl-upper",
-        "isolatedEndpoints": [
-          "start",
-          "end"
-        ],
-        "lengthMm": 950,
-        "boundsMm": {
-          "minX": 5650,
-          "minY": 4425,
-          "maxX": 5650,
-          "maxY": 5375
-        }
-      },
-      "trackerItems": [
-        "BIR-N01"
-      ]
-    },
-    {
-      "category": "detached_or_flying",
-      "code": "geometry.wall_detached_endpoint",
-      "severity": "error",
-      "elementIds": [
-        "front-loggia-left-return"
-      ],
-      "elementKind": "wall",
-      "message": "Wall has endpoint(s) that do not connect to another wall segment on the same level.",
-      "evidence": {
-        "levelId": "hf-lvl-upper",
-        "isolatedEndpoints": [
-          "end"
-        ],
+        "isolatedEndpoints": ["end"],
         "lengthMm": 1350,
         "boundsMm": {
           "minX": 1200,
@@ -770,25 +165,18 @@
           "maxY": 900
         }
       },
-      "trackerItems": [
-        "BIR-N01"
-      ]
+      "trackerItems": ["BIR-N01"]
     },
     {
       "category": "detached_or_flying",
       "code": "geometry.wall_detached_endpoint",
       "severity": "error",
-      "elementIds": [
-        "front-loggia-recessed-glass"
-      ],
+      "elementIds": ["front-loggia-recessed-glass"],
       "elementKind": "wall",
       "message": "Wall has endpoint(s) that do not connect to another wall segment on the same level.",
       "evidence": {
         "levelId": "hf-lvl-upper",
-        "isolatedEndpoints": [
-          "start",
-          "end"
-        ],
+        "isolatedEndpoints": ["start", "end"],
         "lengthMm": 6100,
         "boundsMm": {
           "minX": 1350,
@@ -797,24 +185,18 @@
           "maxY": 820
         }
       },
-      "trackerItems": [
-        "BIR-N01"
-      ]
+      "trackerItems": ["BIR-N01"]
     },
     {
       "category": "detached_or_flying",
       "code": "geometry.wall_detached_endpoint",
       "severity": "error",
-      "elementIds": [
-        "front-loggia-right-return"
-      ],
+      "elementIds": ["front-loggia-right-return"],
       "elementKind": "wall",
       "message": "Wall has endpoint(s) that do not connect to another wall segment on the same level.",
       "evidence": {
         "levelId": "hf-lvl-upper",
-        "isolatedEndpoints": [
-          "end"
-        ],
+        "isolatedEndpoints": ["end"],
         "lengthMm": 1350,
         "boundsMm": {
           "minX": 7600,
@@ -823,24 +205,18 @@
           "maxY": 900
         }
       },
-      "trackerItems": [
-        "BIR-N01"
-      ]
+      "trackerItems": ["BIR-N01"]
     },
     {
       "category": "detached_or_flying",
       "code": "geometry.wall_detached_endpoint",
       "severity": "error",
-      "elementIds": [
-        "hf-roof-court-front-return"
-      ],
+      "elementIds": ["hf-roof-court-front-return"],
       "elementKind": "wall",
       "message": "Wall has endpoint(s) that do not connect to another wall segment on the same level.",
       "evidence": {
         "levelId": "hf-lvl-upper",
-        "isolatedEndpoints": [
-          "end"
-        ],
+        "isolatedEndpoints": ["end"],
         "lengthMm": 2600,
         "boundsMm": {
           "minX": 5300,
@@ -849,24 +225,18 @@
           "maxY": 3000
         }
       },
-      "trackerItems": [
-        "BIR-N01"
-      ]
+      "trackerItems": ["BIR-N01"]
     },
     {
       "category": "detached_or_flying",
       "code": "geometry.wall_detached_endpoint",
       "severity": "error",
-      "elementIds": [
-        "hf-roof-court-glass-back"
-      ],
+      "elementIds": ["hf-roof-court-glass-back"],
       "elementKind": "wall",
       "message": "Wall has endpoint(s) that do not connect to another wall segment on the same level.",
       "evidence": {
         "levelId": "hf-lvl-upper",
-        "isolatedEndpoints": [
-          "end"
-        ],
+        "isolatedEndpoints": ["end"],
         "lengthMm": 2600,
         "boundsMm": {
           "minX": 5300,
@@ -875,251 +245,93 @@
           "maxY": 6600
         }
       },
-      "trackerItems": [
-        "BIR-N01"
-      ]
+      "trackerItems": ["BIR-N01"]
     },
     {
-      "category": "helper_leakage",
-      "code": "helper.door.access_stub_visible_in_snapshot",
+      "category": "detached_or_flying",
+      "code": "geometry.wall_detached_endpoint",
       "severity": "error",
-      "elementIds": [
-        "access-door-hf-room-bath"
-      ],
-      "elementKind": "door",
-      "message": "Access-helper stub is modeled as a physical element and leaks into the target-house snapshot.",
+      "elementIds": ["target-house-gf-living-access-partition"],
+      "elementKind": "wall",
+      "message": "Wall has endpoint(s) that do not connect to another wall segment on the same level.",
       "evidence": {
-        "boundsMm": null,
-        "name": "First Floor Bathroom access door"
+        "levelId": "hf-lvl-ground",
+        "isolatedEndpoints": ["start", "end"],
+        "lengthMm": 4500,
+        "boundsMm": {
+          "minX": 3400,
+          "minY": 700,
+          "maxX": 3400,
+          "maxY": 5200
+        }
       },
-      "trackerItems": [
-        "BIR-B03",
-        "BIR-N01"
-      ]
+      "trackerItems": ["BIR-N01"]
     },
     {
-      "category": "helper_leakage",
-      "code": "helper.door.access_stub_visible_in_snapshot",
+      "category": "detached_or_flying",
+      "code": "geometry.wall_detached_endpoint",
       "severity": "error",
-      "elementIds": [
-        "access-door-hf-room-carport"
-      ],
-      "elementKind": "door",
-      "message": "Access-helper stub is modeled as a physical element and leaks into the target-house snapshot.",
+      "elementIds": ["target-house-l1-bedroom-bath-access-partition"],
+      "elementKind": "wall",
+      "message": "Wall has endpoint(s) that do not connect to another wall segment on the same level.",
       "evidence": {
-        "boundsMm": null,
-        "name": "Recessed Garage / Carport access door"
+        "levelId": "hf-lvl-upper",
+        "isolatedEndpoints": ["start", "end"],
+        "lengthMm": 4900,
+        "boundsMm": {
+          "minX": 3450,
+          "minY": 1600,
+          "maxX": 3450,
+          "maxY": 6500
+        }
       },
-      "trackerItems": [
-        "BIR-B03",
-        "BIR-N01"
-      ]
+      "trackerItems": ["BIR-N01"]
     },
     {
-      "category": "helper_leakage",
-      "code": "helper.door.access_stub_visible_in_snapshot",
+      "category": "detached_or_flying",
+      "code": "geometry.wall_detached_endpoint",
       "severity": "error",
-      "elementIds": [
-        "access-door-hf-room-ensuite"
-      ],
-      "elementKind": "door",
-      "message": "Access-helper stub is modeled as a physical element and leaks into the target-house snapshot.",
+      "elementIds": ["target-house-l1-closet-access-partition"],
+      "elementKind": "wall",
+      "message": "Wall has endpoint(s) that do not connect to another wall segment on the same level.",
       "evidence": {
-        "boundsMm": null,
-        "name": "Ensuite access door"
+        "levelId": "hf-lvl-upper",
+        "isolatedEndpoints": ["start", "end"],
+        "lengthMm": 2000,
+        "boundsMm": {
+          "minX": 2600,
+          "minY": 4500,
+          "maxX": 2600,
+          "maxY": 6500
+        }
       },
-      "trackerItems": [
-        "BIR-B03",
-        "BIR-N01"
-      ]
+      "trackerItems": ["BIR-N01"]
     },
     {
-      "category": "helper_leakage",
-      "code": "helper.door.access_stub_visible_in_snapshot",
+      "category": "detached_or_flying",
+      "code": "geometry.wall_detached_endpoint",
       "severity": "error",
-      "elementIds": [
-        "access-door-hf-room-gf-bath-laundry"
-      ],
-      "elementKind": "door",
-      "message": "Access-helper stub is modeled as a physical element and leaks into the target-house snapshot.",
+      "elementIds": ["target-house-l1-landing-access-partition"],
+      "elementKind": "wall",
+      "message": "Wall has endpoint(s) that do not connect to another wall segment on the same level.",
       "evidence": {
-        "boundsMm": null,
-        "name": "Bath / Laundry access door"
+        "levelId": "hf-lvl-upper",
+        "isolatedEndpoints": ["start", "end"],
+        "lengthMm": 2200,
+        "boundsMm": {
+          "minX": 5400,
+          "minY": 1000,
+          "maxX": 7600,
+          "maxY": 1000
+        }
       },
-      "trackerItems": [
-        "BIR-B03",
-        "BIR-N01"
-      ]
-    },
-    {
-      "category": "helper_leakage",
-      "code": "helper.door.access_stub_visible_in_snapshot",
-      "severity": "error",
-      "elementIds": [
-        "access-door-hf-room-kitchen"
-      ],
-      "elementKind": "door",
-      "message": "Access-helper stub is modeled as a physical element and leaks into the target-house snapshot.",
-      "evidence": {
-        "boundsMm": null,
-        "name": "Kitchen access door"
-      },
-      "trackerItems": [
-        "BIR-B03",
-        "BIR-N01"
-      ]
-    },
-    {
-      "category": "helper_leakage",
-      "code": "helper.door.access_stub_visible_in_snapshot",
-      "severity": "error",
-      "elementIds": [
-        "access-door-hf-room-landing"
-      ],
-      "elementKind": "door",
-      "message": "Access-helper stub is modeled as a physical element and leaks into the target-house snapshot.",
-      "evidence": {
-        "boundsMm": null,
-        "name": "Hall / Landing access door"
-      },
-      "trackerItems": [
-        "BIR-B03",
-        "BIR-N01"
-      ]
-    },
-    {
-      "category": "helper_leakage",
-      "code": "helper.door.access_stub_visible_in_snapshot",
-      "severity": "error",
-      "elementIds": [
-        "access-door-hf-room-loggia"
-      ],
-      "elementKind": "door",
-      "message": "Access-helper stub is modeled as a physical element and leaks into the target-house snapshot.",
-      "evidence": {
-        "boundsMm": null,
-        "name": "Deep Balcony / Loggia access door"
-      },
-      "trackerItems": [
-        "BIR-B03",
-        "BIR-N01"
-      ]
-    },
-    {
-      "category": "helper_leakage",
-      "code": "helper.door.access_stub_visible_in_snapshot",
-      "severity": "error",
-      "elementIds": [
-        "access-door-hf-room-utility"
-      ],
-      "elementKind": "door",
-      "message": "Access-helper stub is modeled as a physical element and leaks into the target-house snapshot.",
-      "evidence": {
-        "boundsMm": null,
-        "name": "Utility access door"
-      },
-      "trackerItems": [
-        "BIR-B03",
-        "BIR-N01"
-      ]
-    },
-    {
-      "category": "helper_leakage",
-      "code": "helper.door.access_stub_visible_in_snapshot",
-      "severity": "error",
-      "elementIds": [
-        "access-door-hf-room-walk-in-closet"
-      ],
-      "elementKind": "door",
-      "message": "Access-helper stub is modeled as a physical element and leaks into the target-house snapshot.",
-      "evidence": {
-        "boundsMm": null,
-        "name": "Walk-in Closet access door"
-      },
-      "trackerItems": [
-        "BIR-B03",
-        "BIR-N01"
-      ]
-    },
-    {
-      "category": "helper_leakage",
-      "code": "helper.door.access_stub_visible_in_snapshot",
-      "severity": "error",
-      "elementIds": [
-        "access-door-room-bedroom"
-      ],
-      "elementKind": "door",
-      "message": "Access-helper stub is modeled as a physical element and leaks into the target-house snapshot.",
-      "evidence": {
-        "boundsMm": null,
-        "name": "Bedroom access door"
-      },
-      "trackerItems": [
-        "BIR-B03",
-        "BIR-N01"
-      ]
-    },
-    {
-      "category": "helper_leakage",
-      "code": "helper.door.access_stub_visible_in_snapshot",
-      "severity": "error",
-      "elementIds": [
-        "access-door-room-hall"
-      ],
-      "elementKind": "door",
-      "message": "Access-helper stub is modeled as a physical element and leaks into the target-house snapshot.",
-      "evidence": {
-        "boundsMm": null,
-        "name": "Entrance / Stair Hall access door"
-      },
-      "trackerItems": [
-        "BIR-B03",
-        "BIR-N01"
-      ]
-    },
-    {
-      "category": "helper_leakage",
-      "code": "helper.door.access_stub_visible_in_snapshot",
-      "severity": "error",
-      "elementIds": [
-        "access-door-room-living"
-      ],
-      "elementKind": "door",
-      "message": "Access-helper stub is modeled as a physical element and leaks into the target-house snapshot.",
-      "evidence": {
-        "boundsMm": null,
-        "name": "Living / Dining access door"
-      },
-      "trackerItems": [
-        "BIR-B03",
-        "BIR-N01"
-      ]
-    },
-    {
-      "category": "helper_leakage",
-      "code": "helper.door.access_stub_visible_in_snapshot",
-      "severity": "error",
-      "elementIds": [
-        "access-door-room-terrace"
-      ],
-      "elementKind": "door",
-      "message": "Access-helper stub is modeled as a physical element and leaks into the target-house snapshot.",
-      "evidence": {
-        "boundsMm": null,
-        "name": "Roof Terrace access door"
-      },
-      "trackerItems": [
-        "BIR-B03",
-        "BIR-N01"
-      ]
+      "trackerItems": ["BIR-N01"]
     },
     {
       "category": "helper_leakage",
       "code": "helper.room_separation.visible_in_snapshot",
       "severity": "error",
-      "elementIds": [
-        "sep-hf-room-bath-1"
-      ],
+      "elementIds": ["sep-hf-room-bath-1"],
       "elementKind": "room_separation",
       "message": "Room separation helper is present as a committed snapshot element; diagnostic/reporting views must separate helper geometry from physical BIM.",
       "evidence": {
@@ -1130,18 +342,13 @@
           "maxY": 1600
         }
       },
-      "trackerItems": [
-        "BIR-B03",
-        "BIR-N01"
-      ]
+      "trackerItems": ["BIR-B03", "BIR-N01"]
     },
     {
       "category": "helper_leakage",
       "code": "helper.room_separation.visible_in_snapshot",
       "severity": "error",
-      "elementIds": [
-        "sep-hf-room-bath-2"
-      ],
+      "elementIds": ["sep-hf-room-bath-2"],
       "elementKind": "room_separation",
       "message": "Room separation helper is present as a committed snapshot element; diagnostic/reporting views must separate helper geometry from physical BIM.",
       "evidence": {
@@ -1152,18 +359,13 @@
           "maxY": 4300
         }
       },
-      "trackerItems": [
-        "BIR-B03",
-        "BIR-N01"
-      ]
+      "trackerItems": ["BIR-B03", "BIR-N01"]
     },
     {
       "category": "helper_leakage",
       "code": "helper.room_separation.visible_in_snapshot",
       "severity": "error",
-      "elementIds": [
-        "sep-hf-room-bath-3"
-      ],
+      "elementIds": ["sep-hf-room-bath-3"],
       "elementKind": "room_separation",
       "message": "Room separation helper is present as a committed snapshot element; diagnostic/reporting views must separate helper geometry from physical BIM.",
       "evidence": {
@@ -1174,18 +376,13 @@
           "maxY": 4300
         }
       },
-      "trackerItems": [
-        "BIR-B03",
-        "BIR-N01"
-      ]
+      "trackerItems": ["BIR-B03", "BIR-N01"]
     },
     {
       "category": "helper_leakage",
       "code": "helper.room_separation.visible_in_snapshot",
       "severity": "error",
-      "elementIds": [
-        "sep-hf-room-bath-4"
-      ],
+      "elementIds": ["sep-hf-room-bath-4"],
       "elementKind": "room_separation",
       "message": "Room separation helper is present as a committed snapshot element; diagnostic/reporting views must separate helper geometry from physical BIM.",
       "evidence": {
@@ -1196,18 +393,13 @@
           "maxY": 4300
         }
       },
-      "trackerItems": [
-        "BIR-B03",
-        "BIR-N01"
-      ]
+      "trackerItems": ["BIR-B03", "BIR-N01"]
     },
     {
       "category": "helper_leakage",
       "code": "helper.room_separation.visible_in_snapshot",
       "severity": "error",
-      "elementIds": [
-        "sep-hf-room-carport-1"
-      ],
+      "elementIds": ["sep-hf-room-carport-1"],
       "elementKind": "room_separation",
       "message": "Room separation helper is present as a committed snapshot element; diagnostic/reporting views must separate helper geometry from physical BIM.",
       "evidence": {
@@ -1218,18 +410,13 @@
           "maxY": 700
         }
       },
-      "trackerItems": [
-        "BIR-B03",
-        "BIR-N01"
-      ]
+      "trackerItems": ["BIR-B03", "BIR-N01"]
     },
     {
       "category": "helper_leakage",
       "code": "helper.room_separation.visible_in_snapshot",
       "severity": "error",
-      "elementIds": [
-        "sep-hf-room-carport-2"
-      ],
+      "elementIds": ["sep-hf-room-carport-2"],
       "elementKind": "room_separation",
       "message": "Room separation helper is present as a committed snapshot element; diagnostic/reporting views must separate helper geometry from physical BIM.",
       "evidence": {
@@ -1240,18 +427,13 @@
           "maxY": 6500
         }
       },
-      "trackerItems": [
-        "BIR-B03",
-        "BIR-N01"
-      ]
+      "trackerItems": ["BIR-B03", "BIR-N01"]
     },
     {
       "category": "helper_leakage",
       "code": "helper.room_separation.visible_in_snapshot",
       "severity": "error",
-      "elementIds": [
-        "sep-hf-room-carport-3"
-      ],
+      "elementIds": ["sep-hf-room-carport-3"],
       "elementKind": "room_separation",
       "message": "Room separation helper is present as a committed snapshot element; diagnostic/reporting views must separate helper geometry from physical BIM.",
       "evidence": {
@@ -1262,18 +444,13 @@
           "maxY": 6500
         }
       },
-      "trackerItems": [
-        "BIR-B03",
-        "BIR-N01"
-      ]
+      "trackerItems": ["BIR-B03", "BIR-N01"]
     },
     {
       "category": "helper_leakage",
       "code": "helper.room_separation.visible_in_snapshot",
       "severity": "error",
-      "elementIds": [
-        "sep-hf-room-carport-4"
-      ],
+      "elementIds": ["sep-hf-room-carport-4"],
       "elementKind": "room_separation",
       "message": "Room separation helper is present as a committed snapshot element; diagnostic/reporting views must separate helper geometry from physical BIM.",
       "evidence": {
@@ -1284,18 +461,13 @@
           "maxY": 6500
         }
       },
-      "trackerItems": [
-        "BIR-B03",
-        "BIR-N01"
-      ]
+      "trackerItems": ["BIR-B03", "BIR-N01"]
     },
     {
       "category": "helper_leakage",
       "code": "helper.room_separation.visible_in_snapshot",
       "severity": "error",
-      "elementIds": [
-        "sep-hf-room-ensuite-1"
-      ],
+      "elementIds": ["sep-hf-room-ensuite-1"],
       "elementKind": "room_separation",
       "message": "Room separation helper is present as a committed snapshot element; diagnostic/reporting views must separate helper geometry from physical BIM.",
       "evidence": {
@@ -1306,18 +478,13 @@
           "maxY": 4500
         }
       },
-      "trackerItems": [
-        "BIR-B03",
-        "BIR-N01"
-      ]
+      "trackerItems": ["BIR-B03", "BIR-N01"]
     },
     {
       "category": "helper_leakage",
       "code": "helper.room_separation.visible_in_snapshot",
       "severity": "error",
-      "elementIds": [
-        "sep-hf-room-ensuite-2"
-      ],
+      "elementIds": ["sep-hf-room-ensuite-2"],
       "elementKind": "room_separation",
       "message": "Room separation helper is present as a committed snapshot element; diagnostic/reporting views must separate helper geometry from physical BIM.",
       "evidence": {
@@ -1328,18 +495,13 @@
           "maxY": 6500
         }
       },
-      "trackerItems": [
-        "BIR-B03",
-        "BIR-N01"
-      ]
+      "trackerItems": ["BIR-B03", "BIR-N01"]
     },
     {
       "category": "helper_leakage",
       "code": "helper.room_separation.visible_in_snapshot",
       "severity": "error",
-      "elementIds": [
-        "sep-hf-room-ensuite-3"
-      ],
+      "elementIds": ["sep-hf-room-ensuite-3"],
       "elementKind": "room_separation",
       "message": "Room separation helper is present as a committed snapshot element; diagnostic/reporting views must separate helper geometry from physical BIM.",
       "evidence": {
@@ -1350,18 +512,13 @@
           "maxY": 6500
         }
       },
-      "trackerItems": [
-        "BIR-B03",
-        "BIR-N01"
-      ]
+      "trackerItems": ["BIR-B03", "BIR-N01"]
     },
     {
       "category": "helper_leakage",
       "code": "helper.room_separation.visible_in_snapshot",
       "severity": "error",
-      "elementIds": [
-        "sep-hf-room-ensuite-4"
-      ],
+      "elementIds": ["sep-hf-room-ensuite-4"],
       "elementKind": "room_separation",
       "message": "Room separation helper is present as a committed snapshot element; diagnostic/reporting views must separate helper geometry from physical BIM.",
       "evidence": {
@@ -1372,18 +529,13 @@
           "maxY": 6500
         }
       },
-      "trackerItems": [
-        "BIR-B03",
-        "BIR-N01"
-      ]
+      "trackerItems": ["BIR-B03", "BIR-N01"]
     },
     {
       "category": "helper_leakage",
       "code": "helper.room_separation.visible_in_snapshot",
       "severity": "error",
-      "elementIds": [
-        "sep-hf-room-gf-bath-laundry-1"
-      ],
+      "elementIds": ["sep-hf-room-gf-bath-laundry-1"],
       "elementKind": "room_separation",
       "message": "Room separation helper is present as a committed snapshot element; diagnostic/reporting views must separate helper geometry from physical BIM.",
       "evidence": {
@@ -1394,18 +546,13 @@
           "maxY": 700
         }
       },
-      "trackerItems": [
-        "BIR-B03",
-        "BIR-N01"
-      ]
+      "trackerItems": ["BIR-B03", "BIR-N01"]
     },
     {
       "category": "helper_leakage",
       "code": "helper.room_separation.visible_in_snapshot",
       "severity": "error",
-      "elementIds": [
-        "sep-hf-room-gf-bath-laundry-2"
-      ],
+      "elementIds": ["sep-hf-room-gf-bath-laundry-2"],
       "elementKind": "room_separation",
       "message": "Room separation helper is present as a committed snapshot element; diagnostic/reporting views must separate helper geometry from physical BIM.",
       "evidence": {
@@ -1416,18 +563,13 @@
           "maxY": 3100
         }
       },
-      "trackerItems": [
-        "BIR-B03",
-        "BIR-N01"
-      ]
+      "trackerItems": ["BIR-B03", "BIR-N01"]
     },
     {
       "category": "helper_leakage",
       "code": "helper.room_separation.visible_in_snapshot",
       "severity": "error",
-      "elementIds": [
-        "sep-hf-room-gf-bath-laundry-3"
-      ],
+      "elementIds": ["sep-hf-room-gf-bath-laundry-3"],
       "elementKind": "room_separation",
       "message": "Room separation helper is present as a committed snapshot element; diagnostic/reporting views must separate helper geometry from physical BIM.",
       "evidence": {
@@ -1438,18 +580,13 @@
           "maxY": 3100
         }
       },
-      "trackerItems": [
-        "BIR-B03",
-        "BIR-N01"
-      ]
+      "trackerItems": ["BIR-B03", "BIR-N01"]
     },
     {
       "category": "helper_leakage",
       "code": "helper.room_separation.visible_in_snapshot",
       "severity": "error",
-      "elementIds": [
-        "sep-hf-room-gf-bath-laundry-4"
-      ],
+      "elementIds": ["sep-hf-room-gf-bath-laundry-4"],
       "elementKind": "room_separation",
       "message": "Room separation helper is present as a committed snapshot element; diagnostic/reporting views must separate helper geometry from physical BIM.",
       "evidence": {
@@ -1460,18 +597,13 @@
           "maxY": 3100
         }
       },
-      "trackerItems": [
-        "BIR-B03",
-        "BIR-N01"
-      ]
+      "trackerItems": ["BIR-B03", "BIR-N01"]
     },
     {
       "category": "helper_leakage",
       "code": "helper.room_separation.visible_in_snapshot",
       "severity": "error",
-      "elementIds": [
-        "sep-hf-room-kitchen-1"
-      ],
+      "elementIds": ["sep-hf-room-kitchen-1"],
       "elementKind": "room_separation",
       "message": "Room separation helper is present as a committed snapshot element; diagnostic/reporting views must separate helper geometry from physical BIM.",
       "evidence": {
@@ -1482,18 +614,13 @@
           "maxY": 3700
         }
       },
-      "trackerItems": [
-        "BIR-B03",
-        "BIR-N01"
-      ]
+      "trackerItems": ["BIR-B03", "BIR-N01"]
     },
     {
       "category": "helper_leakage",
       "code": "helper.room_separation.visible_in_snapshot",
       "severity": "error",
-      "elementIds": [
-        "sep-hf-room-kitchen-2"
-      ],
+      "elementIds": ["sep-hf-room-kitchen-2"],
       "elementKind": "room_separation",
       "message": "Room separation helper is present as a committed snapshot element; diagnostic/reporting views must separate helper geometry from physical BIM.",
       "evidence": {
@@ -1504,18 +631,13 @@
           "maxY": 6500
         }
       },
-      "trackerItems": [
-        "BIR-B03",
-        "BIR-N01"
-      ]
+      "trackerItems": ["BIR-B03", "BIR-N01"]
     },
     {
       "category": "helper_leakage",
       "code": "helper.room_separation.visible_in_snapshot",
       "severity": "error",
-      "elementIds": [
-        "sep-hf-room-kitchen-3"
-      ],
+      "elementIds": ["sep-hf-room-kitchen-3"],
       "elementKind": "room_separation",
       "message": "Room separation helper is present as a committed snapshot element; diagnostic/reporting views must separate helper geometry from physical BIM.",
       "evidence": {
@@ -1526,18 +648,13 @@
           "maxY": 6500
         }
       },
-      "trackerItems": [
-        "BIR-B03",
-        "BIR-N01"
-      ]
+      "trackerItems": ["BIR-B03", "BIR-N01"]
     },
     {
       "category": "helper_leakage",
       "code": "helper.room_separation.visible_in_snapshot",
       "severity": "error",
-      "elementIds": [
-        "sep-hf-room-kitchen-4"
-      ],
+      "elementIds": ["sep-hf-room-kitchen-4"],
       "elementKind": "room_separation",
       "message": "Room separation helper is present as a committed snapshot element; diagnostic/reporting views must separate helper geometry from physical BIM.",
       "evidence": {
@@ -1548,18 +665,13 @@
           "maxY": 6500
         }
       },
-      "trackerItems": [
-        "BIR-B03",
-        "BIR-N01"
-      ]
+      "trackerItems": ["BIR-B03", "BIR-N01"]
     },
     {
       "category": "helper_leakage",
       "code": "helper.room_separation.visible_in_snapshot",
       "severity": "error",
-      "elementIds": [
-        "sep-hf-room-landing-1"
-      ],
+      "elementIds": ["sep-hf-room-landing-1"],
       "elementKind": "room_separation",
       "message": "Room separation helper is present as a committed snapshot element; diagnostic/reporting views must separate helper geometry from physical BIM.",
       "evidence": {
@@ -1570,18 +682,13 @@
           "maxY": 1000
         }
       },
-      "trackerItems": [
-        "BIR-B03",
-        "BIR-N01"
-      ]
+      "trackerItems": ["BIR-B03", "BIR-N01"]
     },
     {
       "category": "helper_leakage",
       "code": "helper.room_separation.visible_in_snapshot",
       "severity": "error",
-      "elementIds": [
-        "sep-hf-room-landing-2"
-      ],
+      "elementIds": ["sep-hf-room-landing-2"],
       "elementKind": "room_separation",
       "message": "Room separation helper is present as a committed snapshot element; diagnostic/reporting views must separate helper geometry from physical BIM.",
       "evidence": {
@@ -1592,18 +699,13 @@
           "maxY": 3000
         }
       },
-      "trackerItems": [
-        "BIR-B03",
-        "BIR-N01"
-      ]
+      "trackerItems": ["BIR-B03", "BIR-N01"]
     },
     {
       "category": "helper_leakage",
       "code": "helper.room_separation.visible_in_snapshot",
       "severity": "error",
-      "elementIds": [
-        "sep-hf-room-landing-3"
-      ],
+      "elementIds": ["sep-hf-room-landing-3"],
       "elementKind": "room_separation",
       "message": "Room separation helper is present as a committed snapshot element; diagnostic/reporting views must separate helper geometry from physical BIM.",
       "evidence": {
@@ -1614,18 +716,13 @@
           "maxY": 3000
         }
       },
-      "trackerItems": [
-        "BIR-B03",
-        "BIR-N01"
-      ]
+      "trackerItems": ["BIR-B03", "BIR-N01"]
     },
     {
       "category": "helper_leakage",
       "code": "helper.room_separation.visible_in_snapshot",
       "severity": "error",
-      "elementIds": [
-        "sep-hf-room-landing-4"
-      ],
+      "elementIds": ["sep-hf-room-landing-4"],
       "elementKind": "room_separation",
       "message": "Room separation helper is present as a committed snapshot element; diagnostic/reporting views must separate helper geometry from physical BIM.",
       "evidence": {
@@ -1636,18 +733,13 @@
           "maxY": 3000
         }
       },
-      "trackerItems": [
-        "BIR-B03",
-        "BIR-N01"
-      ]
+      "trackerItems": ["BIR-B03", "BIR-N01"]
     },
     {
       "category": "helper_leakage",
       "code": "helper.room_separation.visible_in_snapshot",
       "severity": "error",
-      "elementIds": [
-        "sep-hf-room-loggia-1"
-      ],
+      "elementIds": ["sep-hf-room-loggia-1"],
       "elementKind": "room_separation",
       "message": "Room separation helper is present as a committed snapshot element; diagnostic/reporting views must separate helper geometry from physical BIM.",
       "evidence": {
@@ -1658,18 +750,13 @@
           "maxY": -450
         }
       },
-      "trackerItems": [
-        "BIR-B03",
-        "BIR-N01"
-      ]
+      "trackerItems": ["BIR-B03", "BIR-N01"]
     },
     {
       "category": "helper_leakage",
       "code": "helper.room_separation.visible_in_snapshot",
       "severity": "error",
-      "elementIds": [
-        "sep-hf-room-loggia-2"
-      ],
+      "elementIds": ["sep-hf-room-loggia-2"],
       "elementKind": "room_separation",
       "message": "Room separation helper is present as a committed snapshot element; diagnostic/reporting views must separate helper geometry from physical BIM.",
       "evidence": {
@@ -1680,18 +767,13 @@
           "maxY": 900
         }
       },
-      "trackerItems": [
-        "BIR-B03",
-        "BIR-N01"
-      ]
+      "trackerItems": ["BIR-B03", "BIR-N01"]
     },
     {
       "category": "helper_leakage",
       "code": "helper.room_separation.visible_in_snapshot",
       "severity": "error",
-      "elementIds": [
-        "sep-hf-room-loggia-3"
-      ],
+      "elementIds": ["sep-hf-room-loggia-3"],
       "elementKind": "room_separation",
       "message": "Room separation helper is present as a committed snapshot element; diagnostic/reporting views must separate helper geometry from physical BIM.",
       "evidence": {
@@ -1702,18 +784,13 @@
           "maxY": 900
         }
       },
-      "trackerItems": [
-        "BIR-B03",
-        "BIR-N01"
-      ]
+      "trackerItems": ["BIR-B03", "BIR-N01"]
     },
     {
       "category": "helper_leakage",
       "code": "helper.room_separation.visible_in_snapshot",
       "severity": "error",
-      "elementIds": [
-        "sep-hf-room-loggia-4"
-      ],
+      "elementIds": ["sep-hf-room-loggia-4"],
       "elementKind": "room_separation",
       "message": "Room separation helper is present as a committed snapshot element; diagnostic/reporting views must separate helper geometry from physical BIM.",
       "evidence": {
@@ -1724,18 +801,13 @@
           "maxY": 900
         }
       },
-      "trackerItems": [
-        "BIR-B03",
-        "BIR-N01"
-      ]
+      "trackerItems": ["BIR-B03", "BIR-N01"]
     },
     {
       "category": "helper_leakage",
       "code": "helper.room_separation.visible_in_snapshot",
       "severity": "error",
-      "elementIds": [
-        "sep-hf-room-utility-1"
-      ],
+      "elementIds": ["sep-hf-room-utility-1"],
       "elementKind": "room_separation",
       "message": "Room separation helper is present as a committed snapshot element; diagnostic/reporting views must separate helper geometry from physical BIM.",
       "evidence": {
@@ -1746,18 +818,13 @@
           "maxY": 3300
         }
       },
-      "trackerItems": [
-        "BIR-B03",
-        "BIR-N01"
-      ]
+      "trackerItems": ["BIR-B03", "BIR-N01"]
     },
     {
       "category": "helper_leakage",
       "code": "helper.room_separation.visible_in_snapshot",
       "severity": "error",
-      "elementIds": [
-        "sep-hf-room-utility-2"
-      ],
+      "elementIds": ["sep-hf-room-utility-2"],
       "elementKind": "room_separation",
       "message": "Room separation helper is present as a committed snapshot element; diagnostic/reporting views must separate helper geometry from physical BIM.",
       "evidence": {
@@ -1768,18 +835,13 @@
           "maxY": 5000
         }
       },
-      "trackerItems": [
-        "BIR-B03",
-        "BIR-N01"
-      ]
+      "trackerItems": ["BIR-B03", "BIR-N01"]
     },
     {
       "category": "helper_leakage",
       "code": "helper.room_separation.visible_in_snapshot",
       "severity": "error",
-      "elementIds": [
-        "sep-hf-room-utility-3"
-      ],
+      "elementIds": ["sep-hf-room-utility-3"],
       "elementKind": "room_separation",
       "message": "Room separation helper is present as a committed snapshot element; diagnostic/reporting views must separate helper geometry from physical BIM.",
       "evidence": {
@@ -1790,18 +852,13 @@
           "maxY": 5000
         }
       },
-      "trackerItems": [
-        "BIR-B03",
-        "BIR-N01"
-      ]
+      "trackerItems": ["BIR-B03", "BIR-N01"]
     },
     {
       "category": "helper_leakage",
       "code": "helper.room_separation.visible_in_snapshot",
       "severity": "error",
-      "elementIds": [
-        "sep-hf-room-utility-4"
-      ],
+      "elementIds": ["sep-hf-room-utility-4"],
       "elementKind": "room_separation",
       "message": "Room separation helper is present as a committed snapshot element; diagnostic/reporting views must separate helper geometry from physical BIM.",
       "evidence": {
@@ -1812,18 +869,13 @@
           "maxY": 5000
         }
       },
-      "trackerItems": [
-        "BIR-B03",
-        "BIR-N01"
-      ]
+      "trackerItems": ["BIR-B03", "BIR-N01"]
     },
     {
       "category": "helper_leakage",
       "code": "helper.room_separation.visible_in_snapshot",
       "severity": "error",
-      "elementIds": [
-        "sep-hf-room-walk-in-closet-1"
-      ],
+      "elementIds": ["sep-hf-room-walk-in-closet-1"],
       "elementKind": "room_separation",
       "message": "Room separation helper is present as a committed snapshot element; diagnostic/reporting views must separate helper geometry from physical BIM.",
       "evidence": {
@@ -1834,18 +886,13 @@
           "maxY": 4500
         }
       },
-      "trackerItems": [
-        "BIR-B03",
-        "BIR-N01"
-      ]
+      "trackerItems": ["BIR-B03", "BIR-N01"]
     },
     {
       "category": "helper_leakage",
       "code": "helper.room_separation.visible_in_snapshot",
       "severity": "error",
-      "elementIds": [
-        "sep-hf-room-walk-in-closet-2"
-      ],
+      "elementIds": ["sep-hf-room-walk-in-closet-2"],
       "elementKind": "room_separation",
       "message": "Room separation helper is present as a committed snapshot element; diagnostic/reporting views must separate helper geometry from physical BIM.",
       "evidence": {
@@ -1856,18 +903,13 @@
           "maxY": 6500
         }
       },
-      "trackerItems": [
-        "BIR-B03",
-        "BIR-N01"
-      ]
+      "trackerItems": ["BIR-B03", "BIR-N01"]
     },
     {
       "category": "helper_leakage",
       "code": "helper.room_separation.visible_in_snapshot",
       "severity": "error",
-      "elementIds": [
-        "sep-hf-room-walk-in-closet-3"
-      ],
+      "elementIds": ["sep-hf-room-walk-in-closet-3"],
       "elementKind": "room_separation",
       "message": "Room separation helper is present as a committed snapshot element; diagnostic/reporting views must separate helper geometry from physical BIM.",
       "evidence": {
@@ -1878,18 +920,13 @@
           "maxY": 6500
         }
       },
-      "trackerItems": [
-        "BIR-B03",
-        "BIR-N01"
-      ]
+      "trackerItems": ["BIR-B03", "BIR-N01"]
     },
     {
       "category": "helper_leakage",
       "code": "helper.room_separation.visible_in_snapshot",
       "severity": "error",
-      "elementIds": [
-        "sep-hf-room-walk-in-closet-4"
-      ],
+      "elementIds": ["sep-hf-room-walk-in-closet-4"],
       "elementKind": "room_separation",
       "message": "Room separation helper is present as a committed snapshot element; diagnostic/reporting views must separate helper geometry from physical BIM.",
       "evidence": {
@@ -1900,18 +937,13 @@
           "maxY": 6500
         }
       },
-      "trackerItems": [
-        "BIR-B03",
-        "BIR-N01"
-      ]
+      "trackerItems": ["BIR-B03", "BIR-N01"]
     },
     {
       "category": "helper_leakage",
       "code": "helper.room_separation.visible_in_snapshot",
       "severity": "error",
-      "elementIds": [
-        "sep-room-bedroom-1"
-      ],
+      "elementIds": ["sep-room-bedroom-1"],
       "elementKind": "room_separation",
       "message": "Room separation helper is present as a committed snapshot element; diagnostic/reporting views must separate helper geometry from physical BIM.",
       "evidence": {
@@ -1922,18 +954,13 @@
           "maxY": 1600
         }
       },
-      "trackerItems": [
-        "BIR-B03",
-        "BIR-N01"
-      ]
+      "trackerItems": ["BIR-B03", "BIR-N01"]
     },
     {
       "category": "helper_leakage",
       "code": "helper.room_separation.visible_in_snapshot",
       "severity": "error",
-      "elementIds": [
-        "sep-room-bedroom-2"
-      ],
+      "elementIds": ["sep-room-bedroom-2"],
       "elementKind": "room_separation",
       "message": "Room separation helper is present as a committed snapshot element; diagnostic/reporting views must separate helper geometry from physical BIM.",
       "evidence": {
@@ -1944,18 +971,13 @@
           "maxY": 4300
         }
       },
-      "trackerItems": [
-        "BIR-B03",
-        "BIR-N01"
-      ]
+      "trackerItems": ["BIR-B03", "BIR-N01"]
     },
     {
       "category": "helper_leakage",
       "code": "helper.room_separation.visible_in_snapshot",
       "severity": "error",
-      "elementIds": [
-        "sep-room-bedroom-3"
-      ],
+      "elementIds": ["sep-room-bedroom-3"],
       "elementKind": "room_separation",
       "message": "Room separation helper is present as a committed snapshot element; diagnostic/reporting views must separate helper geometry from physical BIM.",
       "evidence": {
@@ -1966,18 +988,13 @@
           "maxY": 4300
         }
       },
-      "trackerItems": [
-        "BIR-B03",
-        "BIR-N01"
-      ]
+      "trackerItems": ["BIR-B03", "BIR-N01"]
     },
     {
       "category": "helper_leakage",
       "code": "helper.room_separation.visible_in_snapshot",
       "severity": "error",
-      "elementIds": [
-        "sep-room-bedroom-4"
-      ],
+      "elementIds": ["sep-room-bedroom-4"],
       "elementKind": "room_separation",
       "message": "Room separation helper is present as a committed snapshot element; diagnostic/reporting views must separate helper geometry from physical BIM.",
       "evidence": {
@@ -1988,18 +1005,13 @@
           "maxY": 4300
         }
       },
-      "trackerItems": [
-        "BIR-B03",
-        "BIR-N01"
-      ]
+      "trackerItems": ["BIR-B03", "BIR-N01"]
     },
     {
       "category": "helper_leakage",
       "code": "helper.room_separation.visible_in_snapshot",
       "severity": "error",
-      "elementIds": [
-        "sep-room-hall-1"
-      ],
+      "elementIds": ["sep-room-hall-1"],
       "elementKind": "room_separation",
       "message": "Room separation helper is present as a committed snapshot element; diagnostic/reporting views must separate helper geometry from physical BIM.",
       "evidence": {
@@ -2010,18 +1022,13 @@
           "maxY": 700
         }
       },
-      "trackerItems": [
-        "BIR-B03",
-        "BIR-N01"
-      ]
+      "trackerItems": ["BIR-B03", "BIR-N01"]
     },
     {
       "category": "helper_leakage",
       "code": "helper.room_separation.visible_in_snapshot",
       "severity": "error",
-      "elementIds": [
-        "sep-room-hall-2"
-      ],
+      "elementIds": ["sep-room-hall-2"],
       "elementKind": "room_separation",
       "message": "Room separation helper is present as a committed snapshot element; diagnostic/reporting views must separate helper geometry from physical BIM.",
       "evidence": {
@@ -2032,18 +1039,13 @@
           "maxY": 3600
         }
       },
-      "trackerItems": [
-        "BIR-B03",
-        "BIR-N01"
-      ]
+      "trackerItems": ["BIR-B03", "BIR-N01"]
     },
     {
       "category": "helper_leakage",
       "code": "helper.room_separation.visible_in_snapshot",
       "severity": "error",
-      "elementIds": [
-        "sep-room-hall-3"
-      ],
+      "elementIds": ["sep-room-hall-3"],
       "elementKind": "room_separation",
       "message": "Room separation helper is present as a committed snapshot element; diagnostic/reporting views must separate helper geometry from physical BIM.",
       "evidence": {
@@ -2054,18 +1056,13 @@
           "maxY": 3600
         }
       },
-      "trackerItems": [
-        "BIR-B03",
-        "BIR-N01"
-      ]
+      "trackerItems": ["BIR-B03", "BIR-N01"]
     },
     {
       "category": "helper_leakage",
       "code": "helper.room_separation.visible_in_snapshot",
       "severity": "error",
-      "elementIds": [
-        "sep-room-hall-4"
-      ],
+      "elementIds": ["sep-room-hall-4"],
       "elementKind": "room_separation",
       "message": "Room separation helper is present as a committed snapshot element; diagnostic/reporting views must separate helper geometry from physical BIM.",
       "evidence": {
@@ -2076,18 +1073,13 @@
           "maxY": 3600
         }
       },
-      "trackerItems": [
-        "BIR-B03",
-        "BIR-N01"
-      ]
+      "trackerItems": ["BIR-B03", "BIR-N01"]
     },
     {
       "category": "helper_leakage",
       "code": "helper.room_separation.visible_in_snapshot",
       "severity": "error",
-      "elementIds": [
-        "sep-room-living-1"
-      ],
+      "elementIds": ["sep-room-living-1"],
       "elementKind": "room_separation",
       "message": "Room separation helper is present as a committed snapshot element; diagnostic/reporting views must separate helper geometry from physical BIM.",
       "evidence": {
@@ -2098,18 +1090,13 @@
           "maxY": 700
         }
       },
-      "trackerItems": [
-        "BIR-B03",
-        "BIR-N01"
-      ]
+      "trackerItems": ["BIR-B03", "BIR-N01"]
     },
     {
       "category": "helper_leakage",
       "code": "helper.room_separation.visible_in_snapshot",
       "severity": "error",
-      "elementIds": [
-        "sep-room-living-2"
-      ],
+      "elementIds": ["sep-room-living-2"],
       "elementKind": "room_separation",
       "message": "Room separation helper is present as a committed snapshot element; diagnostic/reporting views must separate helper geometry from physical BIM.",
       "evidence": {
@@ -2120,18 +1107,13 @@
           "maxY": 5200
         }
       },
-      "trackerItems": [
-        "BIR-B03",
-        "BIR-N01"
-      ]
+      "trackerItems": ["BIR-B03", "BIR-N01"]
     },
     {
       "category": "helper_leakage",
       "code": "helper.room_separation.visible_in_snapshot",
       "severity": "error",
-      "elementIds": [
-        "sep-room-living-3"
-      ],
+      "elementIds": ["sep-room-living-3"],
       "elementKind": "room_separation",
       "message": "Room separation helper is present as a committed snapshot element; diagnostic/reporting views must separate helper geometry from physical BIM.",
       "evidence": {
@@ -2142,18 +1124,13 @@
           "maxY": 5200
         }
       },
-      "trackerItems": [
-        "BIR-B03",
-        "BIR-N01"
-      ]
+      "trackerItems": ["BIR-B03", "BIR-N01"]
     },
     {
       "category": "helper_leakage",
       "code": "helper.room_separation.visible_in_snapshot",
       "severity": "error",
-      "elementIds": [
-        "sep-room-living-4"
-      ],
+      "elementIds": ["sep-room-living-4"],
       "elementKind": "room_separation",
       "message": "Room separation helper is present as a committed snapshot element; diagnostic/reporting views must separate helper geometry from physical BIM.",
       "evidence": {
@@ -2164,18 +1141,13 @@
           "maxY": 5200
         }
       },
-      "trackerItems": [
-        "BIR-B03",
-        "BIR-N01"
-      ]
+      "trackerItems": ["BIR-B03", "BIR-N01"]
     },
     {
       "category": "helper_leakage",
       "code": "helper.room_separation.visible_in_snapshot",
       "severity": "error",
-      "elementIds": [
-        "sep-room-terrace-1"
-      ],
+      "elementIds": ["sep-room-terrace-1"],
       "elementKind": "room_separation",
       "message": "Room separation helper is present as a committed snapshot element; diagnostic/reporting views must separate helper geometry from physical BIM.",
       "evidence": {
@@ -2186,18 +1158,13 @@
           "maxY": 3300
         }
       },
-      "trackerItems": [
-        "BIR-B03",
-        "BIR-N01"
-      ]
+      "trackerItems": ["BIR-B03", "BIR-N01"]
     },
     {
       "category": "helper_leakage",
       "code": "helper.room_separation.visible_in_snapshot",
       "severity": "error",
-      "elementIds": [
-        "sep-room-terrace-2"
-      ],
+      "elementIds": ["sep-room-terrace-2"],
       "elementKind": "room_separation",
       "message": "Room separation helper is present as a committed snapshot element; diagnostic/reporting views must separate helper geometry from physical BIM.",
       "evidence": {
@@ -2208,18 +1175,13 @@
           "maxY": 6500
         }
       },
-      "trackerItems": [
-        "BIR-B03",
-        "BIR-N01"
-      ]
+      "trackerItems": ["BIR-B03", "BIR-N01"]
     },
     {
       "category": "helper_leakage",
       "code": "helper.room_separation.visible_in_snapshot",
       "severity": "error",
-      "elementIds": [
-        "sep-room-terrace-3"
-      ],
+      "elementIds": ["sep-room-terrace-3"],
       "elementKind": "room_separation",
       "message": "Room separation helper is present as a committed snapshot element; diagnostic/reporting views must separate helper geometry from physical BIM.",
       "evidence": {
@@ -2230,18 +1192,13 @@
           "maxY": 6500
         }
       },
-      "trackerItems": [
-        "BIR-B03",
-        "BIR-N01"
-      ]
+      "trackerItems": ["BIR-B03", "BIR-N01"]
     },
     {
       "category": "helper_leakage",
       "code": "helper.room_separation.visible_in_snapshot",
       "severity": "error",
-      "elementIds": [
-        "sep-room-terrace-4"
-      ],
+      "elementIds": ["sep-room-terrace-4"],
       "elementKind": "room_separation",
       "message": "Room separation helper is present as a committed snapshot element; diagnostic/reporting views must separate helper geometry from physical BIM.",
       "evidence": {
@@ -2252,410 +1209,13 @@
           "maxY": 6500
         }
       },
-      "trackerItems": [
-        "BIR-B03",
-        "BIR-N01"
-      ]
-    },
-    {
-      "category": "helper_leakage",
-      "code": "helper.wall.access_stub_visible_in_snapshot",
-      "severity": "error",
-      "elementIds": [
-        "access-wall-hf-room-bath"
-      ],
-      "elementKind": "wall",
-      "message": "Access-helper stub is modeled as a physical element and leaks into the target-house snapshot.",
-      "evidence": {
-        "boundsMm": {
-          "minX": 3850,
-          "minY": 2477.5,
-          "maxX": 3850,
-          "maxY": 3422.5
-        },
-        "name": "First Floor Bathroom access control wall"
-      },
-      "trackerItems": [
-        "BIR-B03",
-        "BIR-N01"
-      ]
-    },
-    {
-      "category": "helper_leakage",
-      "code": "helper.wall.access_stub_visible_in_snapshot",
-      "severity": "error",
-      "elementIds": [
-        "access-wall-hf-room-carport"
-      ],
-      "elementKind": "wall",
-      "message": "Access-helper stub is modeled as a physical element and leaks into the target-house snapshot.",
-      "evidence": {
-        "boundsMm": {
-          "minX": 850,
-          "minY": 3125,
-          "maxX": 850,
-          "maxY": 4075
-        },
-        "name": "Recessed Garage / Carport access control wall"
-      },
-      "trackerItems": [
-        "BIR-B03",
-        "BIR-N01"
-      ]
-    },
-    {
-      "category": "helper_leakage",
-      "code": "helper.wall.access_stub_visible_in_snapshot",
-      "severity": "error",
-      "elementIds": [
-        "access-wall-hf-room-ensuite"
-      ],
-      "elementKind": "wall",
-      "message": "Access-helper stub is modeled as a physical element and leaks into the target-house snapshot.",
-      "evidence": {
-        "boundsMm": {
-          "minX": 2950,
-          "minY": 5150,
-          "maxX": 2950,
-          "maxY": 5850
-        },
-        "name": "Ensuite access control wall"
-      },
-      "trackerItems": [
-        "BIR-B03",
-        "BIR-N01"
-      ]
-    },
-    {
-      "category": "helper_leakage",
-      "code": "helper.wall.access_stub_visible_in_snapshot",
-      "severity": "error",
-      "elementIds": [
-        "access-wall-hf-room-gf-bath-laundry"
-      ],
-      "elementKind": "wall",
-      "message": "Access-helper stub is modeled as a physical element and leaks into the target-house snapshot.",
-      "evidence": {
-        "boundsMm": {
-          "minX": 7600,
-          "minY": 1300,
-          "maxX": 7600,
-          "maxY": 1900
-        },
-        "name": "Bath / Laundry access control wall"
-      },
-      "trackerItems": [
-        "BIR-B03",
-        "BIR-N01"
-      ]
-    },
-    {
-      "category": "helper_leakage",
-      "code": "helper.wall.access_stub_visible_in_snapshot",
-      "severity": "error",
-      "elementIds": [
-        "access-wall-hf-room-kitchen"
-      ],
-      "elementKind": "wall",
-      "message": "Access-helper stub is modeled as a physical element and leaks into the target-house snapshot.",
-      "evidence": {
-        "boundsMm": {
-          "minX": 1450,
-          "minY": 4625,
-          "maxX": 1450,
-          "maxY": 5575
-        },
-        "name": "Kitchen access control wall"
-      },
-      "trackerItems": [
-        "BIR-B03",
-        "BIR-N01"
-      ]
-    },
-    {
-      "category": "helper_leakage",
-      "code": "helper.wall.access_stub_visible_in_snapshot",
-      "severity": "error",
-      "elementIds": [
-        "access-wall-hf-room-landing"
-      ],
-      "elementKind": "wall",
-      "message": "Access-helper stub is modeled as a physical element and leaks into the target-house snapshot.",
-      "evidence": {
-        "boundsMm": {
-          "minX": 6115,
-          "minY": 1350,
-          "maxX": 6885,
-          "maxY": 1350
-        },
-        "name": "Hall / Landing access control wall"
-      },
-      "trackerItems": [
-        "BIR-B03",
-        "BIR-N01"
-      ]
-    },
-    {
-      "category": "helper_leakage",
-      "code": "helper.wall.access_stub_visible_in_snapshot",
-      "severity": "error",
-      "elementIds": [
-        "access-wall-hf-room-loggia"
-      ],
-      "elementKind": "wall",
-      "message": "Access-helper stub is modeled as a physical element and leaks into the target-house snapshot.",
-      "evidence": {
-        "boundsMm": {
-          "minX": 3925,
-          "minY": -100,
-          "maxX": 4875,
-          "maxY": -100
-        },
-        "name": "Deep Balcony / Loggia access control wall"
-      },
-      "trackerItems": [
-        "BIR-B03",
-        "BIR-N01"
-      ]
-    },
-    {
-      "category": "helper_leakage",
-      "code": "helper.wall.access_stub_visible_in_snapshot",
-      "severity": "error",
-      "elementIds": [
-        "access-wall-hf-room-utility"
-      ],
-      "elementKind": "wall",
-      "message": "Access-helper stub is modeled as a physical element and leaks into the target-house snapshot.",
-      "evidence": {
-        "boundsMm": {
-          "minX": 7600,
-          "minY": 3650,
-          "maxX": 7600,
-          "maxY": 4350
-        },
-        "name": "Utility access control wall"
-      },
-      "trackerItems": [
-        "BIR-B03",
-        "BIR-N01"
-      ]
-    },
-    {
-      "category": "helper_leakage",
-      "code": "helper.wall.access_stub_visible_in_snapshot",
-      "severity": "error",
-      "elementIds": [
-        "access-wall-hf-room-walk-in-closet"
-      ],
-      "elementKind": "wall",
-      "message": "Access-helper stub is modeled as a physical element and leaks into the target-house snapshot.",
-      "evidence": {
-        "boundsMm": {
-          "minX": 850,
-          "minY": 5150,
-          "maxX": 850,
-          "maxY": 5850
-        },
-        "name": "Walk-in Closet access control wall"
-      },
-      "trackerItems": [
-        "BIR-B03",
-        "BIR-N01"
-      ]
-    },
-    {
-      "category": "helper_leakage",
-      "code": "helper.wall.access_stub_visible_in_snapshot",
-      "severity": "error",
-      "elementIds": [
-        "access-wall-room-bedroom"
-      ],
-      "elementKind": "wall",
-      "message": "Access-helper stub is modeled as a physical element and leaks into the target-house snapshot.",
-      "evidence": {
-        "boundsMm": {
-          "minX": 2600,
-          "minY": 4150,
-          "maxX": 3200,
-          "maxY": 4150
-        },
-        "name": "Bedroom access control wall"
-      },
-      "trackerItems": [
-        "BIR-B03",
-        "BIR-N01"
-      ]
-    },
-    {
-      "category": "helper_leakage",
-      "code": "helper.wall.access_stub_visible_in_snapshot",
-      "severity": "error",
-      "elementIds": [
-        "access-wall-room-hall"
-      ],
-      "elementKind": "wall",
-      "message": "Access-helper stub is modeled as a physical element and leaks into the target-house snapshot.",
-      "evidence": {
-        "boundsMm": {
-          "minX": 3100,
-          "minY": 2850,
-          "maxX": 3100,
-          "maxY": 3450
-        },
-        "name": "Entrance / Stair Hall access control wall"
-      },
-      "trackerItems": [
-        "BIR-B03",
-        "BIR-N01"
-      ]
-    },
-    {
-      "category": "helper_leakage",
-      "code": "helper.wall.access_stub_visible_in_snapshot",
-      "severity": "error",
-      "elementIds": [
-        "access-wall-room-living"
-      ],
-      "elementKind": "wall",
-      "message": "Access-helper stub is modeled as a physical element and leaks into the target-house snapshot.",
-      "evidence": {
-        "boundsMm": {
-          "minX": 5700,
-          "minY": 5000,
-          "maxX": 6400,
-          "maxY": 5000
-        },
-        "name": "Living / Dining access control wall"
-      },
-      "trackerItems": [
-        "BIR-B03",
-        "BIR-N01"
-      ]
-    },
-    {
-      "category": "helper_leakage",
-      "code": "helper.wall.access_stub_visible_in_snapshot",
-      "severity": "error",
-      "elementIds": [
-        "access-wall-room-terrace"
-      ],
-      "elementKind": "wall",
-      "message": "Access-helper stub is modeled as a physical element and leaks into the target-house snapshot.",
-      "evidence": {
-        "boundsMm": {
-          "minX": 5650,
-          "minY": 4425,
-          "maxX": 5650,
-          "maxY": 5375
-        },
-        "name": "Roof Terrace access control wall"
-      },
-      "trackerItems": [
-        "BIR-B03",
-        "BIR-N01"
-      ]
+      "trackerItems": ["BIR-B03", "BIR-N01"]
     },
     {
       "category": "out_of_envelope",
       "code": "geometry.element_outside_level_floor_support",
       "severity": "error",
-      "elementIds": [
-        "access-wall-hf-room-carport"
-      ],
-      "elementKind": "wall",
-      "message": "Element bounds extend outside the floor/slab footprint for its resolved level.",
-      "evidence": {
-        "levelId": "hf-lvl-ground",
-        "boundsMm": {
-          "minX": 850,
-          "minY": 3125,
-          "maxX": 850,
-          "maxY": 4075
-        },
-        "supportBoundsMm": {
-          "minX": 1000,
-          "minY": 0,
-          "maxX": 7000,
-          "maxY": 8200
-        },
-        "directions": [
-          "west"
-        ]
-      },
-      "trackerItems": [
-        "BIR-N01"
-      ]
-    },
-    {
-      "category": "out_of_envelope",
-      "code": "geometry.element_outside_level_floor_support",
-      "severity": "error",
-      "elementIds": [
-        "access-wall-hf-room-gf-bath-laundry"
-      ],
-      "elementKind": "wall",
-      "message": "Element bounds extend outside the floor/slab footprint for its resolved level.",
-      "evidence": {
-        "levelId": "hf-lvl-ground",
-        "boundsMm": {
-          "minX": 7600,
-          "minY": 1300,
-          "maxX": 7600,
-          "maxY": 1900
-        },
-        "supportBoundsMm": {
-          "minX": 1000,
-          "minY": 0,
-          "maxX": 7000,
-          "maxY": 8200
-        },
-        "directions": [
-          "east"
-        ]
-      },
-      "trackerItems": [
-        "BIR-N01"
-      ]
-    },
-    {
-      "category": "out_of_envelope",
-      "code": "geometry.element_outside_level_floor_support",
-      "severity": "error",
-      "elementIds": [
-        "access-wall-hf-room-utility"
-      ],
-      "elementKind": "wall",
-      "message": "Element bounds extend outside the floor/slab footprint for its resolved level.",
-      "evidence": {
-        "levelId": "hf-lvl-ground",
-        "boundsMm": {
-          "minX": 7600,
-          "minY": 3650,
-          "maxX": 7600,
-          "maxY": 4350
-        },
-        "supportBoundsMm": {
-          "minX": 1000,
-          "minY": 0,
-          "maxX": 7000,
-          "maxY": 8200
-        },
-        "directions": [
-          "east"
-        ]
-      },
-      "trackerItems": [
-        "BIR-N01"
-      ]
-    },
-    {
-      "category": "out_of_envelope",
-      "code": "geometry.element_outside_level_floor_support",
-      "severity": "error",
-      "elementIds": [
-        "hf-room-carport"
-      ],
+      "elementIds": ["hf-room-carport"],
       "elementKind": "room",
       "message": "Element bounds extend outside the floor/slab footprint for its resolved level.",
       "evidence": {
@@ -2672,21 +1232,15 @@
           "maxX": 7000,
           "maxY": 8200
         },
-        "directions": [
-          "west"
-        ]
+        "directions": ["west"]
       },
-      "trackerItems": [
-        "BIR-N01"
-      ]
+      "trackerItems": ["BIR-N01"]
     },
     {
       "category": "out_of_envelope",
       "code": "geometry.element_outside_level_floor_support",
       "severity": "error",
-      "elementIds": [
-        "hf-room-gf-bath-laundry"
-      ],
+      "elementIds": ["hf-room-gf-bath-laundry"],
       "elementKind": "room",
       "message": "Element bounds extend outside the floor/slab footprint for its resolved level.",
       "evidence": {
@@ -2703,21 +1257,15 @@
           "maxX": 7000,
           "maxY": 8200
         },
-        "directions": [
-          "east"
-        ]
+        "directions": ["east"]
       },
-      "trackerItems": [
-        "BIR-N01"
-      ]
+      "trackerItems": ["BIR-N01"]
     },
     {
       "category": "out_of_envelope",
       "code": "geometry.element_outside_level_floor_support",
       "severity": "error",
-      "elementIds": [
-        "hf-room-utility"
-      ],
+      "elementIds": ["hf-room-utility"],
       "elementKind": "room",
       "message": "Element bounds extend outside the floor/slab footprint for its resolved level.",
       "evidence": {
@@ -2734,51 +1282,15 @@
           "maxX": 7000,
           "maxY": 8200
         },
-        "directions": [
-          "east"
-        ]
+        "directions": ["east"]
       },
-      "trackerItems": [
-        "BIR-N01"
-      ]
+      "trackerItems": ["BIR-N01"]
     },
     {
       "category": "out_of_envelope",
       "code": "geometry.element_outside_source_envelope",
       "severity": "error",
-      "elementIds": [
-        "access-wall-hf-room-loggia"
-      ],
-      "elementKind": "wall",
-      "message": "Element bounds extend outside the 14,000 mm by 10,000 mm source target envelope.",
-      "evidence": {
-        "boundsMm": {
-          "minX": 3925,
-          "minY": -100,
-          "maxX": 4875,
-          "maxY": -100
-        },
-        "targetEnvelopeMm": {
-          "minX": 0,
-          "minY": 0,
-          "maxX": 14000,
-          "maxY": 10000
-        },
-        "directions": [
-          "south"
-        ]
-      },
-      "trackerItems": [
-        "BIR-N01"
-      ]
-    },
-    {
-      "category": "out_of_envelope",
-      "code": "geometry.element_outside_source_envelope",
-      "severity": "error",
-      "elementIds": [
-        "front-loggia-left-return"
-      ],
+      "elementIds": ["front-loggia-left-return"],
       "elementKind": "wall",
       "message": "Element bounds extend outside the 14,000 mm by 10,000 mm source target envelope.",
       "evidence": {
@@ -2794,21 +1306,15 @@
           "maxX": 14000,
           "maxY": 10000
         },
-        "directions": [
-          "south"
-        ]
+        "directions": ["south"]
       },
-      "trackerItems": [
-        "BIR-N01"
-      ]
+      "trackerItems": ["BIR-N01"]
     },
     {
       "category": "out_of_envelope",
       "code": "geometry.element_outside_source_envelope",
       "severity": "error",
-      "elementIds": [
-        "front-loggia-right-return"
-      ],
+      "elementIds": ["front-loggia-right-return"],
       "elementKind": "wall",
       "message": "Element bounds extend outside the 14,000 mm by 10,000 mm source target envelope.",
       "evidence": {
@@ -2824,21 +1330,15 @@
           "maxX": 14000,
           "maxY": 10000
         },
-        "directions": [
-          "south"
-        ]
+        "directions": ["south"]
       },
-      "trackerItems": [
-        "BIR-N01"
-      ]
+      "trackerItems": ["BIR-N01"]
     },
     {
       "category": "out_of_envelope",
       "code": "geometry.element_outside_source_envelope",
       "severity": "error",
-      "elementIds": [
-        "hf-front-loggia-railing"
-      ],
+      "elementIds": ["hf-front-loggia-railing"],
       "elementKind": "railing",
       "message": "Element bounds extend outside the 14,000 mm by 10,000 mm source target envelope.",
       "evidence": {
@@ -2854,21 +1354,15 @@
           "maxX": 14000,
           "maxY": 10000
         },
-        "directions": [
-          "south"
-        ]
+        "directions": ["south"]
       },
-      "trackerItems": [
-        "BIR-N01"
-      ]
+      "trackerItems": ["BIR-N01"]
     },
     {
       "category": "out_of_envelope",
       "code": "geometry.element_outside_source_envelope",
       "severity": "error",
-      "elementIds": [
-        "hf-roof-main"
-      ],
+      "elementIds": ["hf-roof-main"],
       "elementKind": "roof",
       "message": "Element bounds extend outside the 14,000 mm by 10,000 mm source target envelope.",
       "evidence": {
@@ -2884,21 +1378,15 @@
           "maxX": 14000,
           "maxY": 10000
         },
-        "directions": [
-          "south"
-        ]
+        "directions": ["south"]
       },
-      "trackerItems": [
-        "BIR-N01"
-      ]
+      "trackerItems": ["BIR-N01"]
     },
     {
       "category": "out_of_envelope",
       "code": "geometry.element_outside_source_envelope",
       "severity": "error",
-      "elementIds": [
-        "hf-room-loggia"
-      ],
+      "elementIds": ["hf-room-loggia"],
       "elementKind": "room",
       "message": "Element bounds extend outside the 14,000 mm by 10,000 mm source target envelope.",
       "evidence": {
@@ -2914,26 +1402,20 @@
           "maxX": 14000,
           "maxY": 10000
         },
-        "directions": [
-          "south"
-        ]
+        "directions": ["south"]
       },
-      "trackerItems": [
-        "BIR-N01"
-      ]
+      "trackerItems": ["BIR-N01"]
     },
     {
       "category": "out_of_envelope",
       "code": "geometry.element_outside_source_envelope",
       "severity": "error",
-      "elementIds": [
-        "hf-upper-wrapper-shell-wall-01"
-      ],
+      "elementIds": ["hf-upper-wrapper-shell-wall-01-right"],
       "elementKind": "wall",
       "message": "Element bounds extend outside the 14,000 mm by 10,000 mm source target envelope.",
       "evidence": {
         "boundsMm": {
-          "minX": 0,
+          "minX": 7600,
           "minY": -450,
           "maxX": 8000,
           "maxY": -450
@@ -2944,21 +1426,39 @@
           "maxX": 14000,
           "maxY": 10000
         },
-        "directions": [
-          "south"
-        ]
+        "directions": ["south"]
       },
-      "trackerItems": [
-        "BIR-N01"
-      ]
+      "trackerItems": ["BIR-N01"]
     },
     {
       "category": "out_of_envelope",
       "code": "geometry.element_outside_source_envelope",
       "severity": "error",
-      "elementIds": [
-        "hf-upper-wrapper-shell-wall-02"
-      ],
+      "elementIds": ["hf-upper-wrapper-shell-wall-01"],
+      "elementKind": "wall",
+      "message": "Element bounds extend outside the 14,000 mm by 10,000 mm source target envelope.",
+      "evidence": {
+        "boundsMm": {
+          "minX": 0,
+          "minY": -450,
+          "maxX": 1200,
+          "maxY": -450
+        },
+        "targetEnvelopeMm": {
+          "minX": 0,
+          "minY": 0,
+          "maxX": 14000,
+          "maxY": 10000
+        },
+        "directions": ["south"]
+      },
+      "trackerItems": ["BIR-N01"]
+    },
+    {
+      "category": "out_of_envelope",
+      "code": "geometry.element_outside_source_envelope",
+      "severity": "error",
+      "elementIds": ["hf-upper-wrapper-shell-wall-02"],
       "elementKind": "wall",
       "message": "Element bounds extend outside the 14,000 mm by 10,000 mm source target envelope.",
       "evidence": {
@@ -2974,21 +1474,15 @@
           "maxX": 14000,
           "maxY": 10000
         },
-        "directions": [
-          "south"
-        ]
+        "directions": ["south"]
       },
-      "trackerItems": [
-        "BIR-N01"
-      ]
+      "trackerItems": ["BIR-N01"]
     },
     {
       "category": "out_of_envelope",
       "code": "geometry.element_outside_source_envelope",
       "severity": "error",
-      "elementIds": [
-        "hf-upper-wrapper-shell-wall-04"
-      ],
+      "elementIds": ["hf-upper-wrapper-shell-wall-04"],
       "elementKind": "wall",
       "message": "Element bounds extend outside the 14,000 mm by 10,000 mm source target envelope.",
       "evidence": {
@@ -3004,21 +1498,15 @@
           "maxX": 14000,
           "maxY": 10000
         },
-        "directions": [
-          "south"
-        ]
+        "directions": ["south"]
       },
-      "trackerItems": [
-        "BIR-N01"
-      ]
+      "trackerItems": ["BIR-N01"]
     },
     {
       "category": "out_of_envelope",
       "code": "geometry.element_outside_source_envelope",
       "severity": "error",
-      "elementIds": [
-        "sep-hf-room-loggia-1"
-      ],
+      "elementIds": ["sep-hf-room-loggia-1"],
       "elementKind": "room_separation",
       "message": "Element bounds extend outside the 14,000 mm by 10,000 mm source target envelope.",
       "evidence": {
@@ -3034,21 +1522,15 @@
           "maxX": 14000,
           "maxY": 10000
         },
-        "directions": [
-          "south"
-        ]
+        "directions": ["south"]
       },
-      "trackerItems": [
-        "BIR-N01"
-      ]
+      "trackerItems": ["BIR-N01"]
     },
     {
       "category": "out_of_envelope",
       "code": "geometry.element_outside_source_envelope",
       "severity": "error",
-      "elementIds": [
-        "sep-hf-room-loggia-2"
-      ],
+      "elementIds": ["sep-hf-room-loggia-2"],
       "elementKind": "room_separation",
       "message": "Element bounds extend outside the 14,000 mm by 10,000 mm source target envelope.",
       "evidence": {
@@ -3064,21 +1546,15 @@
           "maxX": 14000,
           "maxY": 10000
         },
-        "directions": [
-          "south"
-        ]
+        "directions": ["south"]
       },
-      "trackerItems": [
-        "BIR-N01"
-      ]
+      "trackerItems": ["BIR-N01"]
     },
     {
       "category": "out_of_envelope",
       "code": "geometry.element_outside_source_envelope",
       "severity": "error",
-      "elementIds": [
-        "sep-hf-room-loggia-4"
-      ],
+      "elementIds": ["sep-hf-room-loggia-4"],
       "elementKind": "room_separation",
       "message": "Element bounds extend outside the 14,000 mm by 10,000 mm source target envelope.",
       "evidence": {
@@ -3094,21 +1570,15 @@
           "maxX": 14000,
           "maxY": 10000
         },
-        "directions": [
-          "south"
-        ]
+        "directions": ["south"]
       },
-      "trackerItems": [
-        "BIR-N01"
-      ]
+      "trackerItems": ["BIR-N01"]
     },
     {
       "category": "out_of_envelope",
       "code": "geometry.element_outside_source_envelope",
       "severity": "error",
-      "elementIds": [
-        "upper-wrapper-floor"
-      ],
+      "elementIds": ["upper-wrapper-floor"],
       "elementKind": "floor",
       "message": "Element bounds extend outside the 14,000 mm by 10,000 mm source target envelope.",
       "evidence": {
@@ -3124,21 +1594,15 @@
           "maxX": 14000,
           "maxY": 10000
         },
-        "directions": [
-          "south"
-        ]
+        "directions": ["south"]
       },
-      "trackerItems": [
-        "BIR-N01"
-      ]
+      "trackerItems": ["BIR-N01"]
     },
     {
       "category": "out_of_envelope",
       "code": "geometry.element_outside_source_envelope",
       "severity": "error",
-      "elementIds": [
-        "upper-wrapper-front-fascia"
-      ],
+      "elementIds": ["upper-wrapper-front-fascia"],
       "elementKind": "sweep",
       "message": "Element bounds extend outside the 14,000 mm by 10,000 mm source target envelope.",
       "evidence": {
@@ -3154,31 +1618,22 @@
           "maxX": 14000,
           "maxY": 10000
         },
-        "directions": [
-          "south"
-        ]
+        "directions": ["south"]
       },
-      "trackerItems": [
-        "BIR-N01"
-      ]
+      "trackerItems": ["BIR-N01"]
     },
     {
       "category": "sketch_critical_mismatch",
       "code": "sketch.opening_rhythm_window_count_low",
       "severity": "error",
-      "elementIds": [
-        "front-loggia-left-window",
-        "front-loggia-right-window"
-      ],
+      "elementIds": ["front-loggia-left-window", "front-loggia-right-window"],
       "elementKind": "window",
       "message": "Opening/glazing rhythm is under-modeled for target-house evidence; current snapshot has fewer than four window elements.",
       "evidence": {
         "currentWindowCount": 2,
         "requiredFeatureId": "opening_and_glazing_rhythm"
       },
-      "trackerItems": [
-        "BIR-N01"
-      ]
+      "trackerItems": ["BIR-N01"]
     },
     {
       "category": "sketch_critical_mismatch",
@@ -3192,10 +1647,7 @@
         "requiredName": "Bath / laundry",
         "semanticSelector": "room:room_gf_bath_laundry"
       },
-      "trackerItems": [
-        "BIR-N01",
-        "BIR-N06"
-      ]
+      "trackerItems": ["BIR-N01", "BIR-N06"]
     },
     {
       "category": "sketch_critical_mismatch",
@@ -3209,10 +1661,7 @@
         "requiredName": "Recessed garage / carport",
         "semanticSelector": "room:room_gf_carport"
       },
-      "trackerItems": [
-        "BIR-N01",
-        "BIR-N06"
-      ]
+      "trackerItems": ["BIR-N01", "BIR-N06"]
     },
     {
       "category": "sketch_critical_mismatch",
@@ -3226,10 +1675,7 @@
         "requiredName": "Entry / stair hall",
         "semanticSelector": "room:room_gf_entry"
       },
-      "trackerItems": [
-        "BIR-N01",
-        "BIR-N06"
-      ]
+      "trackerItems": ["BIR-N01", "BIR-N06"]
     },
     {
       "category": "sketch_critical_mismatch",
@@ -3243,10 +1689,7 @@
         "requiredName": "Kitchen / dining",
         "semanticSelector": "room:room_gf_kitchen_dining"
       },
-      "trackerItems": [
-        "BIR-N01",
-        "BIR-N06"
-      ]
+      "trackerItems": ["BIR-N01", "BIR-N06"]
     },
     {
       "category": "sketch_critical_mismatch",
@@ -3260,10 +1703,7 @@
         "requiredName": "Living area",
         "semanticSelector": "room:room_gf_living"
       },
-      "trackerItems": [
-        "BIR-N01",
-        "BIR-N06"
-      ]
+      "trackerItems": ["BIR-N01", "BIR-N06"]
     },
     {
       "category": "sketch_critical_mismatch",
@@ -3277,10 +1717,7 @@
         "requiredName": "Utility",
         "semanticSelector": "room:room_gf_utility"
       },
-      "trackerItems": [
-        "BIR-N01",
-        "BIR-N06"
-      ]
+      "trackerItems": ["BIR-N01", "BIR-N06"]
     },
     {
       "category": "sketch_critical_mismatch",
@@ -3294,10 +1731,7 @@
         "requiredName": "Bedroom 2",
         "semanticSelector": "room:room_l1_bedroom_2"
       },
-      "trackerItems": [
-        "BIR-N01",
-        "BIR-N06"
-      ]
+      "trackerItems": ["BIR-N01", "BIR-N06"]
     },
     {
       "category": "sketch_critical_mismatch",
@@ -3311,10 +1745,7 @@
         "requiredName": "Deep balcony / loggia",
         "semanticSelector": "room:room_l1_deep_loggia"
       },
-      "trackerItems": [
-        "BIR-N01",
-        "BIR-N06"
-      ]
+      "trackerItems": ["BIR-N01", "BIR-N06"]
     },
     {
       "category": "sketch_critical_mismatch",
@@ -3328,10 +1759,7 @@
         "requiredName": "Ensuite",
         "semanticSelector": "room:room_l1_ensuite"
       },
-      "trackerItems": [
-        "BIR-N01",
-        "BIR-N06"
-      ]
+      "trackerItems": ["BIR-N01", "BIR-N06"]
     },
     {
       "category": "sketch_critical_mismatch",
@@ -3345,10 +1773,7 @@
         "requiredName": "Hall / landing",
         "semanticSelector": "room:room_l1_hall_landing"
       },
-      "trackerItems": [
-        "BIR-N01",
-        "BIR-N06"
-      ]
+      "trackerItems": ["BIR-N01", "BIR-N06"]
     },
     {
       "category": "sketch_critical_mismatch",
@@ -3362,10 +1787,7 @@
         "requiredName": "Primary bedroom",
         "semanticSelector": "room:room_l1_primary_bedroom"
       },
-      "trackerItems": [
-        "BIR-N01",
-        "BIR-N06"
-      ]
+      "trackerItems": ["BIR-N01", "BIR-N06"]
     },
     {
       "category": "sketch_critical_mismatch",
@@ -3379,10 +1801,7 @@
         "requiredName": "Open-to-sky roof court / void",
         "semanticSelector": "room:room_l1_roof_court"
       },
-      "trackerItems": [
-        "BIR-N01",
-        "BIR-N06"
-      ]
+      "trackerItems": ["BIR-N01", "BIR-N06"]
     },
     {
       "category": "sketch_critical_mismatch",
@@ -3396,18 +1815,13 @@
         "requiredName": "Walk-in closet",
         "semanticSelector": "room:room_l1_walk_in_closet"
       },
-      "trackerItems": [
-        "BIR-N01",
-        "BIR-N06"
-      ]
+      "trackerItems": ["BIR-N01", "BIR-N06"]
     },
     {
       "category": "sketch_critical_mismatch",
       "code": "sketch.roof_court_dimensions_not_met",
       "severity": "error",
-      "elementIds": [
-        "hf-roof-court-opening"
-      ],
+      "elementIds": ["hf-roof-court-opening"],
       "elementKind": "roof_opening",
       "message": "Roof terrace cutout dimensions do not match the Sketch IR roof court target.",
       "evidence": {
@@ -3416,9 +1830,7 @@
         "expectedWidthMm": 5300,
         "expectedDepthMm": 4200
       },
-      "trackerItems": [
-        "BIR-N01"
-      ]
+      "trackerItems": ["BIR-N01"]
     },
     {
       "category": "sketch_critical_mismatch",
@@ -3447,17 +1859,13 @@
         "widthRatio": 0.593,
         "depthRatio": 0.865
       },
-      "trackerItems": [
-        "BIR-N01"
-      ]
+      "trackerItems": ["BIR-N01"]
     },
     {
       "category": "unsupported_renderer_feature",
       "code": "renderer.railing_geometry.unhosted_edge_unproven",
       "severity": "warning",
-      "elementIds": [
-        "hf-front-loggia-railing"
-      ],
+      "elementIds": ["hf-front-loggia-railing"],
       "elementKind": "railing",
       "message": "Railing rendering is partial and this railing has no explicit host edge relation for diagnostic evidence.",
       "evidence": {
@@ -3466,19 +1874,13 @@
           "renderer.railing_geometry.unsupported"
         ]
       },
-      "trackerItems": [
-        "BIR-I03",
-        "BIR-I04",
-        "BIR-N01"
-      ]
+      "trackerItems": ["BIR-I03", "BIR-I04", "BIR-N01"]
     },
     {
       "category": "unsupported_renderer_feature",
       "code": "renderer.railing_geometry.unhosted_edge_unproven",
       "severity": "warning",
-      "elementIds": [
-        "hf-roof-court-railing"
-      ],
+      "elementIds": ["hf-roof-court-railing"],
       "elementKind": "railing",
       "message": "Railing rendering is partial and this railing has no explicit host edge relation for diagnostic evidence.",
       "evidence": {
@@ -3487,19 +1889,13 @@
           "renderer.railing_geometry.unsupported"
         ]
       },
-      "trackerItems": [
-        "BIR-I03",
-        "BIR-I04",
-        "BIR-N01"
-      ]
+      "trackerItems": ["BIR-I03", "BIR-I04", "BIR-N01"]
     },
     {
       "category": "unsupported_renderer_feature",
       "code": "renderer.railing_geometry.unhosted_edge_unproven",
       "severity": "warning",
-      "elementIds": [
-        "main-stair-guardrail"
-      ],
+      "elementIds": ["main-stair-guardrail"],
       "elementKind": "railing",
       "message": "Railing rendering is partial and this railing has no explicit host edge relation for diagnostic evidence.",
       "evidence": {
@@ -3508,20 +1904,13 @@
           "renderer.railing_geometry.unsupported"
         ]
       },
-      "trackerItems": [
-        "BIR-I03",
-        "BIR-I04",
-        "BIR-N01"
-      ]
+      "trackerItems": ["BIR-I03", "BIR-I04", "BIR-N01"]
     },
     {
       "category": "unsupported_renderer_feature",
       "code": "renderer.roof_opening.asymmetric_gable_unproven",
       "severity": "error",
-      "elementIds": [
-        "hf-roof-court-opening",
-        "hf-roof-main"
-      ],
+      "elementIds": ["hf-roof-court-opening", "hf-roof-main"],
       "elementKind": "roof_opening",
       "message": "Roof opening is hosted in an asymmetric gable roof; renderer support is partial and no structured renderer diagnostic evidence proves the cut.",
       "evidence": {
@@ -3532,20 +1921,13 @@
           "renderer.roof_opening.failed_cut"
         ]
       },
-      "trackerItems": [
-        "BIR-I03",
-        "BIR-I04",
-        "BIR-N01"
-      ]
+      "trackerItems": ["BIR-I03", "BIR-I04", "BIR-N01"]
     },
     {
       "category": "unsupported_renderer_feature",
       "code": "renderer.slab_opening.stair_penetration_unproven",
       "severity": "error",
-      "elementIds": [
-        "main-stair-upper-opening",
-        "upper-wrapper-floor"
-      ],
+      "elementIds": ["main-stair-upper-opening", "upper-wrapper-floor"],
       "elementKind": "slab_opening",
       "message": "Stair slab opening uses partial renderer support and lacks structured renderer diagnostic evidence proving the cut.",
       "evidence": {
@@ -3555,113 +1937,7 @@
           "renderer.slab_opening.failed_cut"
         ]
       },
-      "trackerItems": [
-        "BIR-I03",
-        "BIR-I04",
-        "BIR-N01"
-      ]
-    },
-    {
-      "category": "unsupported_renderer_feature",
-      "code": "renderer.wall_cut.overlapping_hosted_cuts",
-      "severity": "error",
-      "elementIds": [
-        "front-loggia-center-door",
-        "front-loggia-recessed-glass",
-        "front-loggia-wide-opening"
-      ],
-      "elementKind": "wall",
-      "message": "Hosted cuts overlap on the same wall; current renderer support requires a structured unsupported/failed diagnostic instead of silent proxy rendering.",
-      "evidence": {
-        "hostWallId": "front-loggia-recessed-glass",
-        "leftInterval": {
-          "startT": 0.430327868852459,
-          "endT": 0.569672131147541
-        },
-        "rightInterval": {
-          "startT": 0.08,
-          "endT": 0.92
-        },
-        "diagnosticCodesRequired": [
-          "renderer.hosted_opening.detached_proxy",
-          "renderer.hosted_opening.no_cut",
-          "renderer.wall_cut.failed"
-        ]
-      },
-      "trackerItems": [
-        "BIR-C08",
-        "BIR-I03",
-        "BIR-I04",
-        "BIR-N01"
-      ]
-    },
-    {
-      "category": "unsupported_renderer_feature",
-      "code": "renderer.wall_cut.overlapping_hosted_cuts",
-      "severity": "error",
-      "elementIds": [
-        "front-loggia-left-window",
-        "front-loggia-recessed-glass",
-        "front-loggia-wide-opening"
-      ],
-      "elementKind": "wall",
-      "message": "Hosted cuts overlap on the same wall; current renderer support requires a structured unsupported/failed diagnostic instead of silent proxy rendering.",
-      "evidence": {
-        "hostWallId": "front-loggia-recessed-glass",
-        "leftInterval": {
-          "startT": 0.12262295081967212,
-          "endT": 0.23737704918032787
-        },
-        "rightInterval": {
-          "startT": 0.08,
-          "endT": 0.92
-        },
-        "diagnosticCodesRequired": [
-          "renderer.hosted_opening.detached_proxy",
-          "renderer.hosted_opening.no_cut",
-          "renderer.wall_cut.failed"
-        ]
-      },
-      "trackerItems": [
-        "BIR-C08",
-        "BIR-I03",
-        "BIR-I04",
-        "BIR-N01"
-      ]
-    },
-    {
-      "category": "unsupported_renderer_feature",
-      "code": "renderer.wall_cut.overlapping_hosted_cuts",
-      "severity": "error",
-      "elementIds": [
-        "front-loggia-recessed-glass",
-        "front-loggia-right-window",
-        "front-loggia-wide-opening"
-      ],
-      "elementKind": "wall",
-      "message": "Hosted cuts overlap on the same wall; current renderer support requires a structured unsupported/failed diagnostic instead of silent proxy rendering.",
-      "evidence": {
-        "hostWallId": "front-loggia-recessed-glass",
-        "leftInterval": {
-          "startT": 0.7626229508196721,
-          "endT": 0.8773770491803278
-        },
-        "rightInterval": {
-          "startT": 0.08,
-          "endT": 0.92
-        },
-        "diagnosticCodesRequired": [
-          "renderer.hosted_opening.detached_proxy",
-          "renderer.hosted_opening.no_cut",
-          "renderer.wall_cut.failed"
-        ]
-      },
-      "trackerItems": [
-        "BIR-C08",
-        "BIR-I03",
-        "BIR-I04",
-        "BIR-N01"
-      ]
+      "trackerItems": ["BIR-I03", "BIR-I04", "BIR-N01"]
     }
   ]
 }

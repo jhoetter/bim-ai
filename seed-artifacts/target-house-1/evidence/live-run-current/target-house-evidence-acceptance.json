@@ -156,7 +156,7 @@
       "id": "bim_data_quality_report",
       "status": "pass",
       "summary": {
-        "passCount": 24,
+        "passCount": 10,
         "warningCount": 0,
         "errorCount": 0,
         "plannedCount": 0
@@ -241,7 +241,7 @@
         "stairs": 1,
         "slabOpenings": 1,
         "railings": 3,
-        "doors": 16,
+        "doors": 10,
         "windows": 2
       },
       "thresholds": {

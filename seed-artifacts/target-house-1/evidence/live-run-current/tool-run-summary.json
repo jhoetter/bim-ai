@@ -1,17 +1,17 @@
 {
   "schemaVersion": "sketch-to-bim.tool-run.v1",
-  "generatedAt": "2026-05-18T20:25:16.517Z",
-  "seed": null,
-  "modelId": "a5c6d3f6-6a76-45f2-8017-b6fa78911955",
+  "generatedAt": "2026-05-19T09:14:32.492766Z",
+  "seed": "target-house-1",
+  "modelId": "target-house-1-offline-regenerated",
   "modelRevision": 2,
-  "gitHead": "db78505123d0d471257479335091b0f9dfc71d3b",
-  "bundlePath": "/tmp/bim-ai-target-house-1-run/target-house-1.bundle.v2.json",
-  "bundleSha256": "ccf8b547e6f6b8a008465e4cc46c923c853e4fb91695d297c6b1c30aea8d51d3",
-  "irPath": "spec/target-house/target-house-1-sketch-ir.draft.json",
-  "irSha256": "cd64c22345865b1a7e0b674ebc0c15ec38433f4e561d485b4b91008b2d6f369e",
+  "gitHead": "fc119dadca6a7f3926cc5c659484c66db3063870",
+  "bundlePath": "seed-artifacts/target-house-1/bundle.json",
+  "bundleSha256": "d9c5459907252d8b14357e80a06390eead8a762627bd9c2cfcf3095caf024ec3",
+  "irPath": "seed-artifacts/target-house-1/evidence/sketch-ir.json",
+  "irSha256": "17a24cb6b3691448bda747403a542513951fb21633e62e991711f28e2591f521",
   "capabilitiesPath": "spec/sketch-to-bim-capability-matrix.json",
   "capabilitiesSha256": "e3faa00d4724d5e375ee853d5e3d56b21254a969a84e702d67013a8bb0125dbb",
-  "advisorRuleDigest": "e2c9ee443c19b318c07e585ba6a2005f900c1931c1009eeb8031978471d2f5a5",
+  "advisorRuleDigest": "4795c8d864a33e47c8cbe34ece2e1361c453b117bc2ee0db61365d9992b788aa",
   "advisorRuleFiles": [
     "app/bim_ai/constructability_advisories.py",
     "app/bim_ai/constructability_report.py",
@@ -19,5 +19,7 @@
     "packages/web/src/advisor/advisorViolationContext.ts",
     "packages/web/src/advisor/perspectiveFilter.ts"
   ],
-  "mode": "project_initiation_bim"
+  "mode": "project_initiation_bim",
+  "generatedAtEpochMs": 1779182072492,
+  "executionMode": "offline_bundle_replay"
 }

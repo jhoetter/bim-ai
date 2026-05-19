@@ -1,10 +1,10 @@
 {
   "schemaVersion": "sketch.visual-evidence-contract.v1",
-  "generatedAt": "2026-05-18T20:25:16.484Z",
+  "generatedAt": "2026-05-19T09:14:32.476789Z",
   "browserAutomationRequired": false,
-  "note": "Screenshots are an evidence capture method. Core snapshot, validate, evidence package, Advisor, constructability, and model stats checks do not require browser automation.",
+  "note": "Offline refresh regenerated snapshot, validation, Advisor, constructability, model stats, exchange, and visual contract evidence from bundle.json. Screenshots are preserved from the latest browser evidence capture.",
   "inputs": {
-    "modelId": "a5c6d3f6-6a76-45f2-8017-b6fa78911955",
+    "modelId": "target-house-1-offline-regenerated",
     "revision": 2,
     "requiredViews": [
       {
@@ -40,12 +40,8 @@
       {
         "id": "front_loggia",
         "kind": "3d",
-        "purpose": "Close front-loggia view proving the recessed upper outdoor room, railing, return walls, mullions, and three-bay glazing rhythm.",
-        "featureIds": [
-          "front_deep_loggia",
-          "opening_and_glazing_rhythm",
-          "vertical_cladding_zones"
-        ],
+        "purpose": "Close oblique/detail view proving the recessed loggia depth, side returns, three-bay glazing, floor slab, and guard rail.",
+        "featureIds": [],
         "viewpointId": "front_loggia",
         "savedViewpointPresent": true,
         "camera": null,
@@ -94,10 +90,10 @@
     ]
   },
   "outputs": {
-    "screenshotsDirectory": "/tmp/bim-ai-target-house-1-run/final-live-evidence/live/screenshots",
-    "screenshotManifest": "/tmp/bim-ai-target-house-1-run/final-live-evidence/live/screenshot-manifest.json",
-    "visualGateReport": "/tmp/bim-ai-target-house-1-run/final-live-evidence/live/visual-gate-report.json",
-    "semanticChecklist": "/tmp/bim-ai-target-house-1-run/final-live-evidence/live/semantic-checklist.json"
+    "screenshotsDirectory": "seed-artifacts/target-house-1/evidence/live-run-current/screenshots",
+    "screenshotManifest": "seed-artifacts/target-house-1/evidence/live-run-current/screenshot-manifest.json",
+    "visualGateReport": "seed-artifacts/target-house-1/evidence/live-run-current/visual-gate.json",
+    "semanticChecklist": "seed-artifacts/target-house-1/evidence/live-run-current/semantic-checklist.json"
   },
   "captureMethods": [
     {
@@ -106,14 +102,9 @@
       "requiredForCoreValidation": false
     },
     {
-      "id": "renderer_snapshot",
-      "role": "headless or server-side render from snapshot and viewpoint",
-      "requiredForCoreValidation": false
-    },
-    {
-      "id": "manual_review_upload",
-      "role": "externally captured PNG attached to the manifest",
-      "requiredForCoreValidation": false
+      "id": "offline_snapshot_refresh",
+      "role": "deterministic model/advisor evidence refresh from seed bundle",
+      "requiredForCoreValidation": true
     }
   ],
   "validation": {

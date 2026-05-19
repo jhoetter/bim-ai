@@ -15,12 +15,12 @@
   "acceptance": {
     "status": "offline-refreshed-needs-clean-pass",
     "evidenceRoot": "evidence/live-run-current",
-    "gitHead": "ca735fdabefdeccda4c423c69248188c4f772884",
+    "gitHead": "fc119dadca6a7f3926cc5c659484c66db3063870",
     "bundleSha256": "d9c5459907252d8b14357e80a06390eead8a762627bd9c2cfcf3095caf024ec3",
     "irSha256": "17a24cb6b3691448bda747403a542513951fb21633e62e991711f28e2591f521",
     "capabilitiesSha256": "e3faa00d4724d5e375ee853d5e3d56b21254a969a84e702d67013a8bb0125dbb",
     "advisorRuleDigest": "4795c8d864a33e47c8cbe34ece2e1361c453b117bc2ee0db61365d9992b788aa",
-    "generatedAtEpochMs": 1779181625657,
+    "generatedAtEpochMs": 1779182072492,
     "notes": "Wave 9 Worker A regenerated deterministic offline evidence from seed-artifacts/target-house-1/bundle.json. Live/browser acceptance and clean-pass findings are tracked in evidence/live-run-current."
   },
   "inputPaths": {

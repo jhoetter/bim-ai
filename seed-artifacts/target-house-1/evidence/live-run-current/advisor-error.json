@@ -1,6 +1,14 @@
 {
-  "modelId": "6c3940ae-c0a1-5bc3-a0fa-38c9195b28d2",
-  "revision": 1,
-  "total": 0,
-  "groups": []
+  "modelId": "target-house-1-offline-regenerated",
+  "revision": 2,
+  "total": 1,
+  "groups": [
+    {
+      "severity": "error",
+      "code": "model_integrity_coordinate_list_invalid",
+      "count": 1,
+      "elementIds": ["main-stair"],
+      "messages": ["Element 'main-stair' field 'boundaryMm' must be a coordinate list."]
+    }
+  ]
 }

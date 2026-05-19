@@ -1,8 +1,8 @@
 {
   "schemaVersion": "sketch.exchange-validation.v1",
-  "generatedAt": "2026-05-18T20:25:16.500Z",
+  "generatedAt": "2026-05-19T09:14:32.477102Z",
   "qualityTarget": "project_initiation_bim",
-  "source": "ifc_manifest",
+  "source": "offline_snapshot",
   "ok": true,
   "summary": {
     "passCount": 5,
@@ -10,103 +10,69 @@
     "errorCount": 0,
     "plannedCount": 2
   },
-  "requiredOutputs": [
-    "ifc",
-    "glb",
-    "pdf/sheets",
-    "schedules",
-    "room schedule",
-    "door/window schedule",
-    "evidence package",
-    "evidence-package",
-    "source-bundle",
-    "source command bundle"
-  ],
   "checks": [
     {
       "id": "ifc_manifest_available",
       "status": 200,
-      "message": "IFC export manifest endpoint returned a manifest."
+      "message": "Offline normalized IFC manifest synthesized from snapshot counts."
     },
     {
       "id": "gltf_manifest_available",
       "status": 200,
-      "message": "glTF/GLB export manifest endpoint returned a manifest."
+      "message": "Offline normalized glTF manifest synthesized from snapshot counts."
     },
     {
       "id": "project_hierarchy",
       "status": "pass",
-      "message": "Project/model hierarchy is represented in the normalized exchange manifest.",
-      "modelId": "a5c6d3f6-6a76-45f2-8017-b6fa78911955",
+      "message": "Project/model hierarchy is represented in offline evidence.",
+      "modelId": "target-house-1-offline-regenerated",
       "revision": 2
     },
     {
       "id": "entity_classes",
       "status": "pass",
-      "message": "Expected IFC entity classes are present in the normalized exchange manifest.",
-      "expectedEntities": [
-        "IfcWall",
-        "IfcWallStandardCase",
-        "IfcSlab",
-        "IfcRoof",
-        "IfcStair",
-        "IfcDoor",
-        "IfcWindow",
-        "IfcRailing",
-        "IfcSpace",
-        "IfcFurnishingElement"
-      ],
+      "message": "Expected IFC entity classes are present in offline normalized evidence.",
       "countsByIfcEntity": {
         "IfcSpace": 13,
-        "IfcWall": 26,
-        "IfcWallStandardCase": 26,
-        "IfcSlab": 4,
+        "IfcWall": 19,
+        "IfcWallStandardCase": 19,
+        "IfcSlab": 2,
         "IfcRoof": 1,
         "IfcStair": 1,
-        "IfcDoor": 3,
+        "IfcDoor": 10,
         "IfcWindow": 2,
-        "IfcRailing": 2,
-        "IfcFurnishingElement": 4
+        "IfcRailing": 3,
+        "IfcFurnishingElement": 5
       },
-      "source": "ifc_manifest"
+      "source": "offline_snapshot"
     },
     {
       "id": "spaces",
       "status": "pass",
-      "message": "Normalized exchange manifest has 26 space/room representation(s); IR requires 13.",
-      "actual": 26,
+      "message": "Snapshot has 13 room/space representation(s); IR requires 13.",
+      "actual": 13,
       "expected": 13
     },
     {
       "id": "material_layers",
       "status": "pass",
       "message": "Material layer-set intent is present for normalized exchange validation.",
-      "requiredLayerSetCount": 4,
       "modelTypeCount": 4
     },
     {
       "id": "classifications",
       "status": "pass",
-      "message": "Classification placeholder requirements are present for IFC classification references."
+      "message": "Classification placeholder requirements are present for exchange validation."
     },
     {
       "id": "psets",
       "status": "planned",
-      "message": "Property-set validation is tracked as a normalized manifest requirement until the IFC backend exposes concrete Pset rows.",
-      "requiredChecks": [
-        "rooms_spaces_bounded_accessible_schedulable",
-        "element_categories_and_ifc_intent_present",
-        "wall_slab_roof_layer_sets_present",
-        "classification_placeholders_present",
-        "advisor_warnings_resolved_or_tolerated",
-        "export_manifests_present"
-      ]
+      "message": "Property-set validation remains planned until explicit IFC Pset rows are exposed."
     },
     {
       "id": "quantities",
       "status": "planned",
-      "message": "Quantity validation is planned from evidence-package/validate output until explicit IFC quantity rows are exposed.",
-      "evidencePackageFormat": "evidencePackage_v1"
+      "message": "Quantity validation remains planned from evidence-package/validate output."
     }
   ]
 }

@@ -1,0 +1,409 @@
+{
+  "schemaVersion": "target-house.clean-pass-gate.v1",
+  "generatedAt": "2026-05-19T09:15:09.038Z",
+  "targetId": "target-house-1",
+  "evidenceDir": "/Users/jhoetter/repos/bim-ai/seed-artifacts/target-house-1/evidence/live-run-current",
+  "ok": false,
+  "summary": {
+    "p0ErrorCount": 24,
+    "rendererBlockerCount": 0,
+    "warningCount": 4,
+    "toleratedWarningGroupCount": 0,
+    "unresolvedWarningGroupCount": 2,
+    "toleranceCount": 0,
+    "blockerCount": 14
+  },
+  "blockers": [
+    {
+      "source": "advisor-all+advisor-error+constructability-report+validate",
+      "code": "model_integrity_coordinate_list_invalid",
+      "severity": "error",
+      "count": 2,
+      "elementIds": ["main-stair"],
+      "messages": ["Element 'main-stair' field 'boundaryMm' must be a coordinate list."],
+      "sources": ["advisor-all", "advisor-error", "constructability-report", "validate"],
+      "path": "body.findings.12",
+      "blockerKind": "p0_error"
+    },
+    {
+      "source": "constructability-report",
+      "code": "unsupported_slab",
+      "severity": "error",
+      "count": 1,
+      "elementIds": ["upper-wrapper-floor"],
+      "messages": [
+        "Elevated floor 'upper-wrapper-floor' has no support or cantilever intent metadata."
+      ],
+      "path": "body.findings.0",
+      "sources": ["constructability-report"],
+      "blockerKind": "p0_error"
+    },
+    {
+      "source": "constructability-report",
+      "code": "railing_host_reference_missing",
+      "severity": "error",
+      "count": 2,
+      "elementIds": ["hf-front-loggia-railing", "hf-roof-court-railing"],
+      "messages": [
+        "Railing 'hf-front-loggia-railing' has no stair, floor, wall, or edge host reference.",
+        "Railing 'hf-roof-court-railing' has no stair, floor, wall, or edge host reference."
+      ],
+      "path": "body.findings.1",
+      "sources": ["constructability-report"],
+      "blockerKind": "p0_error"
+    },
+    {
+      "source": "constructability-report",
+      "code": "railing_baluster_profile_missing",
+      "severity": "error",
+      "count": 3,
+      "elementIds": ["hf-front-loggia-railing", "hf-roof-court-railing", "main-stair-guardrail"],
+      "messages": [
+        "Railing 'hf-front-loggia-railing' has no baluster pattern.",
+        "Railing 'hf-roof-court-railing' has no baluster pattern.",
+        "Railing 'main-stair-guardrail' has no baluster pattern."
+      ],
+      "path": "body.findings.3",
+      "sources": ["constructability-report"],
+      "blockerKind": "p0_error"
+    },
+    {
+      "source": "constructability-report",
+      "code": "railing_post_or_handrail_support_missing",
+      "severity": "error",
+      "count": 3,
+      "elementIds": ["hf-front-loggia-railing", "hf-roof-court-railing", "main-stair-guardrail"],
+      "messages": [
+        "Railing 'hf-front-loggia-railing' has no handrail support/post pattern.",
+        "Railing 'hf-roof-court-railing' has no handrail support/post pattern.",
+        "Railing 'main-stair-guardrail' has no handrail support/post pattern."
+      ],
+      "path": "body.findings.4",
+      "sources": ["constructability-report"],
+      "blockerKind": "p0_error"
+    },
+    {
+      "source": "constructability-report",
+      "code": "railing_material_slots_missing",
+      "severity": "error",
+      "count": 3,
+      "elementIds": ["hf-front-loggia-railing", "hf-roof-court-railing", "main-stair-guardrail"],
+      "messages": [
+        "Railing 'hf-front-loggia-railing' is missing material slots: handrail, post, baluster.",
+        "Railing 'hf-roof-court-railing' is missing material slots: handrail, post, baluster.",
+        "Railing 'main-stair-guardrail' is missing material slots: handrail, post, baluster."
+      ],
+      "path": "body.findings.5",
+      "sources": ["constructability-report"],
+      "blockerKind": "p0_error"
+    },
+    {
+      "source": "constructability-report",
+      "code": "BIR-D04-SHAPE",
+      "severity": "error",
+      "count": 1,
+      "elementIds": [],
+      "messages": [
+        "Model input must be a Document, element mapping, element list, or snapshot with elements."
+      ],
+      "path": "body.findings.13",
+      "sources": ["constructability-report"],
+      "blockerKind": "p0_error"
+    },
+    {
+      "source": "constructability-report",
+      "code": "site_coordinate_system_missing_datum",
+      "severity": "error",
+      "count": 2,
+      "elementIds": [],
+      "messages": ["Missing survey point; project/site coordinates are not explicit."],
+      "path": "body.findings.14",
+      "sources": ["constructability-report"],
+      "blockerKind": "p0_error"
+    },
+    {
+      "source": "constructability-report",
+      "code": "BIR-E03",
+      "severity": "error",
+      "count": 1,
+      "elementIds": ["upper-wrapper-floor"],
+      "messages": [
+        "Elevated floor 'upper-wrapper-floor' has no support or cantilever intent metadata."
+      ],
+      "path": "body.issues.0",
+      "sources": ["constructability-report"],
+      "blockerKind": "p0_error"
+    },
+    {
+      "source": "constructability-report",
+      "code": "BIR-E06",
+      "severity": "error",
+      "count": 2,
+      "elementIds": ["hf-front-loggia-railing", "hf-roof-court-railing"],
+      "messages": [
+        "Railing 'hf-front-loggia-railing' has no stair, floor, wall, or edge host reference.",
+        "Railing 'hf-roof-court-railing' has no stair, floor, wall, or edge host reference."
+      ],
+      "path": "body.issues.1",
+      "sources": ["constructability-report"],
+      "blockerKind": "p0_error"
+    },
+    {
+      "source": "constructability-report",
+      "code": "BIR-E07",
+      "severity": "error",
+      "count": 3,
+      "elementIds": ["hf-front-loggia-railing", "hf-roof-court-railing", "main-stair-guardrail"],
+      "messages": [
+        "Railing 'hf-front-loggia-railing' is missing material slots: handrail, post, baluster.",
+        "Railing 'hf-roof-court-railing' is missing material slots: handrail, post, baluster.",
+        "Railing 'main-stair-guardrail' is missing material slots: handrail, post, baluster."
+      ],
+      "path": "body.issues.3",
+      "sources": ["constructability-report"],
+      "blockerKind": "p0_error"
+    },
+    {
+      "source": "constructability-report",
+      "code": "room_access_invalid_subject",
+      "severity": "error",
+      "count": 1,
+      "elementIds": [],
+      "messages": [
+        "Model input must be a Document, element mapping, element list, or snapshot with elements."
+      ],
+      "path": "body.issues.7",
+      "sources": ["constructability-report"],
+      "blockerKind": "p0_error"
+    },
+    {
+      "source": "constructability-report",
+      "code": "site_relationship_missing_site",
+      "severity": "warning",
+      "count": 2,
+      "elementIds": [],
+      "messages": ["No site element defines the parcel/site boundary."],
+      "path": "body.findings.15",
+      "sources": ["constructability-report"],
+      "missingTolerance": ["ledgerRow"],
+      "blockerKind": "warning_without_tolerance"
+    },
+    {
+      "source": "constructability-report",
+      "code": "site_relationship_missing_toposolid",
+      "severity": "warning",
+      "count": 2,
+      "elementIds": [],
+      "messages": ["No toposolid terrain exists for site/building relationship checks."],
+      "path": "body.findings.16",
+      "sources": ["constructability-report"],
+      "missingTolerance": ["ledgerRow"],
+      "blockerKind": "warning_without_tolerance"
+    }
+  ],
+  "p0Errors": [
+    {
+      "source": "advisor-all+advisor-error+constructability-report+validate",
+      "code": "model_integrity_coordinate_list_invalid",
+      "severity": "error",
+      "count": 2,
+      "elementIds": ["main-stair"],
+      "messages": ["Element 'main-stair' field 'boundaryMm' must be a coordinate list."],
+      "sources": ["advisor-all", "advisor-error", "constructability-report", "validate"],
+      "path": "body.findings.12"
+    },
+    {
+      "source": "constructability-report",
+      "code": "unsupported_slab",
+      "severity": "error",
+      "count": 1,
+      "elementIds": ["upper-wrapper-floor"],
+      "messages": [
+        "Elevated floor 'upper-wrapper-floor' has no support or cantilever intent metadata."
+      ],
+      "path": "body.findings.0",
+      "sources": ["constructability-report"]
+    },
+    {
+      "source": "constructability-report",
+      "code": "railing_host_reference_missing",
+      "severity": "error",
+      "count": 2,
+      "elementIds": ["hf-front-loggia-railing", "hf-roof-court-railing"],
+      "messages": [
+        "Railing 'hf-front-loggia-railing' has no stair, floor, wall, or edge host reference.",
+        "Railing 'hf-roof-court-railing' has no stair, floor, wall, or edge host reference."
+      ],
+      "path": "body.findings.1",
+      "sources": ["constructability-report"]
+    },
+    {
+      "source": "constructability-report",
+      "code": "railing_baluster_profile_missing",
+      "severity": "error",
+      "count": 3,
+      "elementIds": ["hf-front-loggia-railing", "hf-roof-court-railing", "main-stair-guardrail"],
+      "messages": [
+        "Railing 'hf-front-loggia-railing' has no baluster pattern.",
+        "Railing 'hf-roof-court-railing' has no baluster pattern.",
+        "Railing 'main-stair-guardrail' has no baluster pattern."
+      ],
+      "path": "body.findings.3",
+      "sources": ["constructability-report"]
+    },
+    {
+      "source": "constructability-report",
+      "code": "railing_post_or_handrail_support_missing",
+      "severity": "error",
+      "count": 3,
+      "elementIds": ["hf-front-loggia-railing", "hf-roof-court-railing", "main-stair-guardrail"],
+      "messages": [
+        "Railing 'hf-front-loggia-railing' has no handrail support/post pattern.",
+        "Railing 'hf-roof-court-railing' has no handrail support/post pattern.",
+        "Railing 'main-stair-guardrail' has no handrail support/post pattern."
+      ],
+      "path": "body.findings.4",
+      "sources": ["constructability-report"]
+    },
+    {
+      "source": "constructability-report",
+      "code": "railing_material_slots_missing",
+      "severity": "error",
+      "count": 3,
+      "elementIds": ["hf-front-loggia-railing", "hf-roof-court-railing", "main-stair-guardrail"],
+      "messages": [
+        "Railing 'hf-front-loggia-railing' is missing material slots: handrail, post, baluster.",
+        "Railing 'hf-roof-court-railing' is missing material slots: handrail, post, baluster.",
+        "Railing 'main-stair-guardrail' is missing material slots: handrail, post, baluster."
+      ],
+      "path": "body.findings.5",
+      "sources": ["constructability-report"]
+    },
+    {
+      "source": "constructability-report",
+      "code": "BIR-D04-SHAPE",
+      "severity": "error",
+      "count": 1,
+      "elementIds": [],
+      "messages": [
+        "Model input must be a Document, element mapping, element list, or snapshot with elements."
+      ],
+      "path": "body.findings.13",
+      "sources": ["constructability-report"]
+    },
+    {
+      "source": "constructability-report",
+      "code": "site_coordinate_system_missing_datum",
+      "severity": "error",
+      "count": 2,
+      "elementIds": [],
+      "messages": ["Missing survey point; project/site coordinates are not explicit."],
+      "path": "body.findings.14",
+      "sources": ["constructability-report"]
+    },
+    {
+      "source": "constructability-report",
+      "code": "BIR-E03",
+      "severity": "error",
+      "count": 1,
+      "elementIds": ["upper-wrapper-floor"],
+      "messages": [
+        "Elevated floor 'upper-wrapper-floor' has no support or cantilever intent metadata."
+      ],
+      "path": "body.issues.0",
+      "sources": ["constructability-report"]
+    },
+    {
+      "source": "constructability-report",
+      "code": "BIR-E06",
+      "severity": "error",
+      "count": 2,
+      "elementIds": ["hf-front-loggia-railing", "hf-roof-court-railing"],
+      "messages": [
+        "Railing 'hf-front-loggia-railing' has no stair, floor, wall, or edge host reference.",
+        "Railing 'hf-roof-court-railing' has no stair, floor, wall, or edge host reference."
+      ],
+      "path": "body.issues.1",
+      "sources": ["constructability-report"]
+    },
+    {
+      "source": "constructability-report",
+      "code": "BIR-E07",
+      "severity": "error",
+      "count": 3,
+      "elementIds": ["hf-front-loggia-railing", "hf-roof-court-railing", "main-stair-guardrail"],
+      "messages": [
+        "Railing 'hf-front-loggia-railing' is missing material slots: handrail, post, baluster.",
+        "Railing 'hf-roof-court-railing' is missing material slots: handrail, post, baluster.",
+        "Railing 'main-stair-guardrail' is missing material slots: handrail, post, baluster."
+      ],
+      "path": "body.issues.3",
+      "sources": ["constructability-report"]
+    },
+    {
+      "source": "constructability-report",
+      "code": "room_access_invalid_subject",
+      "severity": "error",
+      "count": 1,
+      "elementIds": [],
+      "messages": [
+        "Model input must be a Document, element mapping, element list, or snapshot with elements."
+      ],
+      "path": "body.issues.7",
+      "sources": ["constructability-report"]
+    }
+  ],
+  "rendererBlockers": [],
+  "warnings": [
+    {
+      "source": "constructability-report",
+      "code": "site_relationship_missing_site",
+      "severity": "warning",
+      "count": 2,
+      "elementIds": [],
+      "messages": ["No site element defines the parcel/site boundary."],
+      "path": "body.findings.15",
+      "sources": ["constructability-report"]
+    },
+    {
+      "source": "constructability-report",
+      "code": "site_relationship_missing_toposolid",
+      "severity": "warning",
+      "count": 2,
+      "elementIds": [],
+      "messages": ["No toposolid terrain exists for site/building relationship checks."],
+      "path": "body.findings.16",
+      "sources": ["constructability-report"]
+    }
+  ],
+  "toleratedWarnings": [],
+  "unresolvedWarnings": [
+    {
+      "source": "constructability-report",
+      "code": "site_relationship_missing_site",
+      "severity": "warning",
+      "count": 2,
+      "elementIds": [],
+      "messages": ["No site element defines the parcel/site boundary."],
+      "path": "body.findings.15",
+      "sources": ["constructability-report"],
+      "missingTolerance": ["ledgerRow"]
+    },
+    {
+      "source": "constructability-report",
+      "code": "site_relationship_missing_toposolid",
+      "severity": "warning",
+      "count": 2,
+      "elementIds": [],
+      "messages": ["No toposolid terrain exists for site/building relationship checks."],
+      "path": "body.findings.16",
+      "sources": ["constructability-report"],
+      "missingTolerance": ["ledgerRow"]
+    }
+  ],
+  "toleranceLedger": {
+    "ok": false,
+    "toleranceCount": 0,
+    "requiredFields": ["reason", "owner", "expiryCondition", "evidenceLinks"]
+  }
+}

@@ -228,7 +228,12 @@
       "id": "front_deep_loggia",
       "kind": "recessed_loggia",
       "visualPriority": "critical",
-      "mustRenderInViews": ["main_front_left", "front_elevation", "first_floor_plan"],
+      "mustRenderInViews": [
+        "main_front_left",
+        "front_elevation",
+        "front_loggia",
+        "first_floor_plan"
+      ],
       "capabilityNeeds": [
         "recessed facade plane",
         "side returns",
@@ -297,6 +302,7 @@
       "mustRenderInViews": [
         "main_front_left",
         "front_elevation",
+        "front_loggia",
         "ground_floor_plan",
         "first_floor_plan",
         "roof_high",
@@ -325,6 +331,11 @@
       "id": "front_elevation",
       "kind": "elevation",
       "purpose": "Front view proving the three-bay upper loggia, rail, ground openings, and vertical cladding."
+    },
+    {
+      "id": "front_loggia",
+      "kind": "3d",
+      "purpose": "Close oblique/detail view proving the recessed loggia depth, side returns, three-bay glazing, floor slab, and guard rail."
     },
     {
       "id": "rear_right_axon",
@@ -376,13 +387,8 @@
         "function": "food preparation and dining",
         "occupancyUse": "residential kitchen/dining",
         "boundingStatus": "bounded",
-        "access": {
-          "requiredDoors": 1,
-          "doorRefs": ["door_gf_to_entry_or_living"]
-        },
-        "schedule": {
-          "include": true
-        },
+        "access": { "requiredDoors": 1, "doorRefs": ["door_gf_to_entry_or_living"] },
+        "schedule": { "include": true },
         "classification": {
           "din277Use": "living/use area",
           "din277AreaType": "NUF",
@@ -397,13 +403,8 @@
         "function": "living",
         "occupancyUse": "residential living",
         "boundingStatus": "bounded_with_open_plan_edge",
-        "access": {
-          "requiredDoors": 1,
-          "doorRefs": ["door_gf_entry_to_living"]
-        },
-        "schedule": {
-          "include": true
-        },
+        "access": { "requiredDoors": 1, "doorRefs": ["door_gf_entry_to_living"] },
+        "schedule": { "include": true },
         "classification": {
           "din277Use": "living/use area",
           "din277AreaType": "NUF",
@@ -418,13 +419,8 @@
         "function": "entry and vertical circulation",
         "occupancyUse": "residential circulation",
         "boundingStatus": "bounded",
-        "access": {
-          "requiredDoors": 2,
-          "doorRefs": ["door_gf_entry_exterior", "stair_gf_to_l1"]
-        },
-        "schedule": {
-          "include": true
-        },
+        "access": { "requiredDoors": 2, "doorRefs": ["door_gf_entry_exterior", "stair_gf_to_l1"] },
+        "schedule": { "include": true },
         "classification": {
           "din277Use": "circulation area",
           "din277AreaType": "VF",
@@ -439,13 +435,8 @@
         "function": "bathroom and laundry",
         "occupancyUse": "residential wet room",
         "boundingStatus": "bounded",
-        "access": {
-          "requiredDoors": 1,
-          "doorRefs": ["door_gf_utility_to_bath_laundry"]
-        },
-        "schedule": {
-          "include": true
-        },
+        "access": { "requiredDoors": 1, "doorRefs": ["door_gf_utility_to_bath_laundry"] },
+        "schedule": { "include": true },
         "classification": {
           "din277Use": "service/use area",
           "din277AreaType": "NUF",
@@ -460,13 +451,8 @@
         "function": "storage and services",
         "occupancyUse": "residential utility",
         "boundingStatus": "bounded",
-        "access": {
-          "requiredDoors": 1,
-          "doorRefs": ["door_gf_entry_to_utility"]
-        },
-        "schedule": {
-          "include": true
-        },
+        "access": { "requiredDoors": 1, "doorRefs": ["door_gf_entry_to_utility"] },
+        "schedule": { "include": true },
         "classification": {
           "din277Use": "service/use area",
           "din277AreaType": "NUF",
@@ -481,13 +467,8 @@
         "function": "covered parking",
         "occupancyUse": "covered exterior parking",
         "boundingStatus": "covered_external_space",
-        "access": {
-          "requiredDoors": 1,
-          "doorRefs": ["open_carport_vehicle_access"]
-        },
-        "schedule": {
-          "include": true
-        },
+        "access": { "requiredDoors": 1, "doorRefs": ["open_carport_vehicle_access"] },
+        "schedule": { "include": true },
         "classification": {
           "din277Use": "covered external area",
           "din277AreaType": "NUF",
@@ -502,13 +483,8 @@
         "function": "sleeping",
         "occupancyUse": "residential bedroom",
         "boundingStatus": "bounded",
-        "access": {
-          "requiredDoors": 1,
-          "doorRefs": ["door_l1_landing_to_primary"]
-        },
-        "schedule": {
-          "include": true
-        },
+        "access": { "requiredDoors": 1, "doorRefs": ["door_l1_landing_to_primary"] },
+        "schedule": { "include": true },
         "classification": {
           "din277Use": "living/use area",
           "din277AreaType": "NUF",
@@ -523,13 +499,8 @@
         "function": "wardrobe storage",
         "occupancyUse": "residential storage",
         "boundingStatus": "bounded",
-        "access": {
-          "requiredDoors": 1,
-          "doorRefs": ["door_primary_to_closet"]
-        },
-        "schedule": {
-          "include": true
-        },
+        "access": { "requiredDoors": 1, "doorRefs": ["door_primary_to_closet"] },
+        "schedule": { "include": true },
         "classification": {
           "din277Use": "storage/use area",
           "din277AreaType": "NUF",
@@ -544,13 +515,8 @@
         "function": "bathroom",
         "occupancyUse": "residential wet room",
         "boundingStatus": "bounded",
-        "access": {
-          "requiredDoors": 1,
-          "doorRefs": ["door_primary_to_ensuite"]
-        },
-        "schedule": {
-          "include": true
-        },
+        "access": { "requiredDoors": 1, "doorRefs": ["door_primary_to_ensuite"] },
+        "schedule": { "include": true },
         "classification": {
           "din277Use": "service/use area",
           "din277AreaType": "NUF",
@@ -574,9 +540,7 @@
             "door_l1_landing_to_roof_court"
           ]
         },
-        "schedule": {
-          "include": true
-        },
+        "schedule": { "include": true },
         "classification": {
           "din277Use": "circulation area",
           "din277AreaType": "VF",
@@ -591,13 +555,8 @@
         "function": "sleeping",
         "occupancyUse": "residential bedroom",
         "boundingStatus": "bounded",
-        "access": {
-          "requiredDoors": 1,
-          "doorRefs": ["door_l1_landing_to_bedroom_2"]
-        },
-        "schedule": {
-          "include": true
-        },
+        "access": { "requiredDoors": 1, "doorRefs": ["door_l1_landing_to_bedroom_2"] },
+        "schedule": { "include": true },
         "classification": {
           "din277Use": "living/use area",
           "din277AreaType": "NUF",
@@ -612,13 +571,8 @@
         "function": "covered outdoor space",
         "occupancyUse": "covered exterior living",
         "boundingStatus": "covered_external_space",
-        "access": {
-          "requiredDoors": 1,
-          "doorRefs": ["door_l1_room_to_loggia"]
-        },
-        "schedule": {
-          "include": true
-        },
+        "access": { "requiredDoors": 1, "doorRefs": ["door_l1_room_to_loggia"] },
+        "schedule": { "include": true },
         "classification": {
           "din277Use": "covered external area",
           "din277AreaType": "NUF",
@@ -633,13 +587,8 @@
         "function": "open terrace / roof court",
         "occupancyUse": "open exterior living",
         "boundingStatus": "open_to_sky_external_space",
-        "access": {
-          "requiredDoors": 1,
-          "doorRefs": ["door_l1_landing_to_roof_court"]
-        },
-        "schedule": {
-          "include": true
-        },
+        "access": { "requiredDoors": 1, "doorRefs": ["door_l1_landing_to_roof_court"] },
+        "schedule": { "include": true },
         "classification": {
           "din277Use": "open external area",
           "din277AreaType": "NUF",
@@ -724,10 +673,7 @@
         "category": "room",
         "expectedBimCategory": "room/space",
         "ifcEntityIntent": "IfcSpace",
-        "classification": {
-          "din276CostGroup": "not applicable",
-          "ifcClassificationRef": "planned"
-        }
+        "classification": { "din276CostGroup": "not applicable", "ifcClassificationRef": "planned" }
       },
       {
         "category": "asset",

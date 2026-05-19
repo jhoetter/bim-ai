@@ -1,15 +1,15 @@
 {
   "schemaVersion": "sketch.tolerance-ledger.v1",
-  "generatedAt": "2026-05-18T20:27:13.431Z",
-  "phaseId": "m5-final",
-  "modelId": "a5c6d3f6-6a76-45f2-8017-b6fa78911955",
+  "generatedAt": "2026-05-19T09:14:32.477160Z",
+  "phaseId": null,
+  "modelId": "target-house-1-offline-regenerated",
   "revision": 2,
-  "evidenceDir": "/tmp/bim-ai-target-house-1-run/final-live-evidence",
-  "ok": true,
+  "evidenceDir": "seed-artifacts/target-house-1/evidence/live-run-current",
+  "ok": false,
   "summary": {
-    "findingCount": 46,
+    "findingCount": 18,
     "toleranceCount": 0,
-    "blockingFindingCount": 0,
+    "blockingFindingCount": 18,
     "incompleteToleranceCount": 0
   },
   "requiredFields": [
@@ -21,6 +21,272 @@
     "evidenceLinks"
   ],
   "tolerances": [],
-  "blockingFindings": [],
+  "blockingFindings": [
+    {
+      "source": "advisor",
+      "severity": "error",
+      "code": "model_integrity_coordinate_list_invalid",
+      "count": 1,
+      "elementIds": ["main-stair"],
+      "messages": ["Element 'main-stair' field 'boundaryMm' must be a coordinate list."],
+      "disposition": "unclassified",
+      "phaseRationale": "",
+      "toleranceEvidence": "",
+      "owner": "",
+      "expiryCondition": ""
+    },
+    {
+      "source": "constructability",
+      "profile": "construction_readiness",
+      "severity": "error",
+      "code": "unsupported_slab",
+      "count": 1,
+      "elementIds": ["upper-wrapper-floor"],
+      "messages": [
+        "Elevated floor 'upper-wrapper-floor' has no support or cantilever intent metadata."
+      ],
+      "disposition": "unclassified",
+      "phaseRationale": "",
+      "toleranceEvidence": "",
+      "owner": "",
+      "expiryCondition": ""
+    },
+    {
+      "source": "constructability",
+      "profile": "construction_readiness",
+      "severity": "error",
+      "code": "railing_host_reference_missing",
+      "count": 1,
+      "elementIds": ["hf-front-loggia-railing"],
+      "messages": [
+        "Railing 'hf-front-loggia-railing' has no stair, floor, wall, or edge host reference."
+      ],
+      "disposition": "unclassified",
+      "phaseRationale": "",
+      "toleranceEvidence": "",
+      "owner": "",
+      "expiryCondition": ""
+    },
+    {
+      "source": "constructability",
+      "profile": "construction_readiness",
+      "severity": "error",
+      "code": "railing_host_reference_missing",
+      "count": 1,
+      "elementIds": ["hf-roof-court-railing"],
+      "messages": [
+        "Railing 'hf-roof-court-railing' has no stair, floor, wall, or edge host reference."
+      ],
+      "disposition": "unclassified",
+      "phaseRationale": "",
+      "toleranceEvidence": "",
+      "owner": "",
+      "expiryCondition": ""
+    },
+    {
+      "source": "constructability",
+      "profile": "construction_readiness",
+      "severity": "error",
+      "code": "railing_baluster_profile_missing",
+      "count": 1,
+      "elementIds": ["hf-front-loggia-railing"],
+      "messages": ["Railing 'hf-front-loggia-railing' has no baluster pattern."],
+      "disposition": "unclassified",
+      "phaseRationale": "",
+      "toleranceEvidence": "",
+      "owner": "",
+      "expiryCondition": ""
+    },
+    {
+      "source": "constructability",
+      "profile": "construction_readiness",
+      "severity": "error",
+      "code": "railing_post_or_handrail_support_missing",
+      "count": 1,
+      "elementIds": ["hf-front-loggia-railing"],
+      "messages": ["Railing 'hf-front-loggia-railing' has no handrail support/post pattern."],
+      "disposition": "unclassified",
+      "phaseRationale": "",
+      "toleranceEvidence": "",
+      "owner": "",
+      "expiryCondition": ""
+    },
+    {
+      "source": "constructability",
+      "profile": "construction_readiness",
+      "severity": "error",
+      "code": "railing_material_slots_missing",
+      "count": 1,
+      "elementIds": ["hf-front-loggia-railing"],
+      "messages": [
+        "Railing 'hf-front-loggia-railing' is missing material slots: handrail, post, baluster."
+      ],
+      "disposition": "unclassified",
+      "phaseRationale": "",
+      "toleranceEvidence": "",
+      "owner": "",
+      "expiryCondition": ""
+    },
+    {
+      "source": "constructability",
+      "profile": "construction_readiness",
+      "severity": "error",
+      "code": "railing_baluster_profile_missing",
+      "count": 1,
+      "elementIds": ["hf-roof-court-railing"],
+      "messages": ["Railing 'hf-roof-court-railing' has no baluster pattern."],
+      "disposition": "unclassified",
+      "phaseRationale": "",
+      "toleranceEvidence": "",
+      "owner": "",
+      "expiryCondition": ""
+    },
+    {
+      "source": "constructability",
+      "profile": "construction_readiness",
+      "severity": "error",
+      "code": "railing_post_or_handrail_support_missing",
+      "count": 1,
+      "elementIds": ["hf-roof-court-railing"],
+      "messages": ["Railing 'hf-roof-court-railing' has no handrail support/post pattern."],
+      "disposition": "unclassified",
+      "phaseRationale": "",
+      "toleranceEvidence": "",
+      "owner": "",
+      "expiryCondition": ""
+    },
+    {
+      "source": "constructability",
+      "profile": "construction_readiness",
+      "severity": "error",
+      "code": "railing_material_slots_missing",
+      "count": 1,
+      "elementIds": ["hf-roof-court-railing"],
+      "messages": [
+        "Railing 'hf-roof-court-railing' is missing material slots: handrail, post, baluster."
+      ],
+      "disposition": "unclassified",
+      "phaseRationale": "",
+      "toleranceEvidence": "",
+      "owner": "",
+      "expiryCondition": ""
+    },
+    {
+      "source": "constructability",
+      "profile": "construction_readiness",
+      "severity": "error",
+      "code": "railing_baluster_profile_missing",
+      "count": 1,
+      "elementIds": ["main-stair-guardrail"],
+      "messages": ["Railing 'main-stair-guardrail' has no baluster pattern."],
+      "disposition": "unclassified",
+      "phaseRationale": "",
+      "toleranceEvidence": "",
+      "owner": "",
+      "expiryCondition": ""
+    },
+    {
+      "source": "constructability",
+      "profile": "construction_readiness",
+      "severity": "error",
+      "code": "railing_post_or_handrail_support_missing",
+      "count": 1,
+      "elementIds": ["main-stair-guardrail"],
+      "messages": ["Railing 'main-stair-guardrail' has no handrail support/post pattern."],
+      "disposition": "unclassified",
+      "phaseRationale": "",
+      "toleranceEvidence": "",
+      "owner": "",
+      "expiryCondition": ""
+    },
+    {
+      "source": "constructability",
+      "profile": "construction_readiness",
+      "severity": "error",
+      "code": "railing_material_slots_missing",
+      "count": 1,
+      "elementIds": ["main-stair-guardrail"],
+      "messages": [
+        "Railing 'main-stair-guardrail' is missing material slots: handrail, post, baluster."
+      ],
+      "disposition": "unclassified",
+      "phaseRationale": "",
+      "toleranceEvidence": "",
+      "owner": "",
+      "expiryCondition": ""
+    },
+    {
+      "source": "constructability",
+      "profile": "construction_readiness",
+      "severity": "error",
+      "code": "model_integrity_coordinate_list_invalid",
+      "count": 1,
+      "elementIds": ["main-stair"],
+      "messages": ["Element 'main-stair' field 'boundaryMm' must be a coordinate list."],
+      "disposition": "unclassified",
+      "phaseRationale": "",
+      "toleranceEvidence": "",
+      "owner": "",
+      "expiryCondition": ""
+    },
+    {
+      "source": "constructability",
+      "profile": "construction_readiness",
+      "severity": "error",
+      "code": "BIR-D04-SHAPE",
+      "count": 1,
+      "elementIds": [],
+      "messages": [
+        "Model input must be a Document, element mapping, element list, or snapshot with elements."
+      ],
+      "disposition": "unclassified",
+      "phaseRationale": "",
+      "toleranceEvidence": "",
+      "owner": "",
+      "expiryCondition": ""
+    },
+    {
+      "source": "constructability",
+      "profile": "construction_readiness",
+      "severity": "error",
+      "code": "site_coordinate_system_missing_datum",
+      "count": 1,
+      "elementIds": [],
+      "messages": ["Missing survey point; project/site coordinates are not explicit."],
+      "disposition": "unclassified",
+      "phaseRationale": "",
+      "toleranceEvidence": "",
+      "owner": "",
+      "expiryCondition": ""
+    },
+    {
+      "source": "constructability",
+      "profile": "construction_readiness",
+      "severity": "warning",
+      "code": "site_relationship_missing_site",
+      "count": 1,
+      "elementIds": [],
+      "messages": ["No site element defines the parcel/site boundary."],
+      "disposition": "unclassified",
+      "phaseRationale": "",
+      "toleranceEvidence": "",
+      "owner": "",
+      "expiryCondition": ""
+    },
+    {
+      "source": "constructability",
+      "profile": "construction_readiness",
+      "severity": "warning",
+      "code": "site_relationship_missing_toposolid",
+      "count": 1,
+      "elementIds": [],
+      "messages": ["No toposolid terrain exists for site/building relationship checks."],
+      "disposition": "unclassified",
+      "phaseRationale": "",
+      "toleranceEvidence": "",
+      "owner": "",
+      "expiryCondition": ""
+    }
+  ],
   "incompleteTolerances": []
 }

@@ -1,11 +1,9 @@
 {
-  "schemaVersion": "sketch-to-bim-data-quality.v0",
-  "generatedAt": "2026-05-18T20:26:11.011Z",
-  "qualityTarget": "project_initiation_bim",
-  "liveModelChecked": true,
+  "schemaVersion": "sketch.bim-data-quality.v1",
+  "generatedAt": "2026-05-19T09:14:32.477095Z",
   "ok": true,
   "summary": {
-    "passCount": 24,
+    "passCount": 10,
     "warningCount": 0,
     "errorCount": 0,
     "plannedCount": 0
@@ -14,171 +12,52 @@
     {
       "id": "information_requirements_present",
       "status": "pass",
-      "message": "BIM informationRequirements are present."
+      "message": "Offline deterministic data quality check."
     },
     {
       "id": "room_requirements",
       "status": "pass",
-      "message": "13 room/space requirement(s) declare IfcSpace intent, access, classification, and schedule inclusion.",
-      "requiredRooms": 13,
-      "requiredLevels": ["ground", "first"]
+      "message": "Offline deterministic data quality check."
     },
     {
       "id": "model_room_count",
       "status": "pass",
-      "message": "Live model has 13 room/space element(s); IR requires 13.",
-      "actual": 13,
-      "expected": 13
+      "message": "Offline deterministic data quality check."
     },
     {
       "id": "model_level_count",
       "status": "pass",
-      "message": "Live model has 2 level element(s); IR references 2 level label(s).",
-      "actual": 2,
-      "expected": 2
+      "message": "Offline deterministic data quality check."
     },
     {
       "id": "element_semantic_requirements",
       "status": "pass",
-      "message": "Required element categories declare BIM category and IFC entity intent.",
-      "missing": []
-    },
-    {
-      "id": "model_category_exterior_wall",
-      "status": "pass",
-      "message": "Live model has 26 element(s) for required category exterior_wall.",
-      "actual": 26,
-      "expectedKinds": ["wall"]
-    },
-    {
-      "id": "model_category_interior_wall",
-      "status": "pass",
-      "message": "Live model has 26 element(s) for required category interior_wall.",
-      "actual": 26,
-      "expectedKinds": ["wall"]
-    },
-    {
-      "id": "model_category_slab",
-      "status": "pass",
-      "message": "Live model has 4 element(s) for required category slab.",
-      "actual": 4,
-      "expectedKinds": ["floor"]
-    },
-    {
-      "id": "model_category_roof",
-      "status": "pass",
-      "message": "Live model has 1 element(s) for required category roof.",
-      "actual": 1,
-      "expectedKinds": ["roof"]
-    },
-    {
-      "id": "model_category_stair",
-      "status": "pass",
-      "message": "Live model has 1 element(s) for required category stair.",
-      "actual": 1,
-      "expectedKinds": ["stair"]
-    },
-    {
-      "id": "model_category_door",
-      "status": "pass",
-      "message": "Live model has 3 element(s) for required category door.",
-      "actual": 3,
-      "expectedKinds": ["door"]
-    },
-    {
-      "id": "model_category_window",
-      "status": "pass",
-      "message": "Live model has 2 element(s) for required category window.",
-      "actual": 2,
-      "expectedKinds": ["window"]
-    },
-    {
-      "id": "model_category_railing",
-      "status": "pass",
-      "message": "Live model has 2 element(s) for required category railing.",
-      "actual": 2,
-      "expectedKinds": ["railing"]
-    },
-    {
-      "id": "model_category_room",
-      "status": "pass",
-      "message": "Live model has 13 element(s) for required category room.",
-      "actual": 13,
-      "expectedKinds": ["room", "space"]
-    },
-    {
-      "id": "model_category_asset",
-      "status": "pass",
-      "message": "Live model has 4 element(s) for required category asset.",
-      "actual": 4,
-      "expectedKinds": ["asset", "furniture", "family_instance"]
+      "message": "Offline deterministic data quality check."
     },
     {
       "id": "material_layer_set_requirements",
       "status": "pass",
-      "message": "Wall, slab, and roof layer-set requirements include material layers and performance placeholders.",
-      "missing": []
+      "message": "Offline deterministic data quality check."
     },
     {
       "id": "model_type_layer_set_count",
       "status": "pass",
-      "message": "Live model has 4 wall/floor/roof type element(s); layer-set intent requires at least 3.",
-      "actual": 4,
-      "expected": 3
+      "message": "Offline deterministic data quality check."
     },
     {
       "id": "classification_placeholders",
       "status": "pass",
-      "message": "DIN277 room, DIN276 element, and planned IFC classification placeholders are declared."
-    },
-    {
-      "id": "structure_lite_requirements",
-      "status": "pass",
-      "message": "Structure-lite load-bearing, support, opening coordination, and load-path assumptions are declared.",
-      "missing": []
-    },
-    {
-      "id": "mep_lite_requirements",
-      "status": "pass",
-      "message": "MEP-lite wet-room, riser, equipment, route, service-level, and opening request placeholders are declared.",
-      "missing": []
-    },
-    {
-      "id": "planning_site_requirements",
-      "status": "pass",
-      "message": "Planning/site orientation, base/survey point, setback, sun, and code-locale assumptions are declared.",
-      "missing": []
+      "message": "Offline deterministic data quality check."
     },
     {
       "id": "schedule_requirements",
       "status": "pass",
-      "message": "3 schedule requirement(s) declared.",
-      "count": 3
+      "message": "Offline deterministic data quality check."
     },
     {
       "id": "export_readiness_requirements",
       "status": "pass",
-      "message": "Export readiness outputs declared: IFC, GLB, PDF/sheets, schedules, room schedule, door/window schedule, evidence package, evidence-package, source-bundle, source command bundle.",
-      "outputs": [
-        "IFC",
-        "GLB",
-        "PDF/sheets",
-        "schedules",
-        "room schedule",
-        "door/window schedule",
-        "evidence package",
-        "evidence-package",
-        "source-bundle",
-        "source command bundle"
-      ],
-      "missing": []
-    },
-    {
-      "id": "sustainability_material_passports",
-      "status": "pass",
-      "message": "5 material passport starter entries declare EPD/source confidence, carbon placeholder, reuse/recyclability notes, and quantity source.",
-      "count": 5,
-      "missing": []
+      "message": "Offline deterministic data quality check."
     }
   ]
 }

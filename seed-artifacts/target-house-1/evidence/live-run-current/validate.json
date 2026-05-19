@@ -1,71 +1,82 @@
 {
-  "modelId": "6c3940ae-c0a1-5bc3-a0fa-38c9195b28d2",
-  "revision": 1,
-  "violations": [],
+  "modelId": "target-house-1-offline-regenerated",
+  "revision": 2,
+  "violations": [
+    {
+      "ruleId": "model_integrity_coordinate_list_invalid",
+      "severity": "error",
+      "message": "Element 'main-stair' field 'boundaryMm' must be a coordinate list.",
+      "elementIds": ["main-stair"],
+      "blocking": true,
+      "quickFixCommand": null,
+      "discipline": "coordination",
+      "blockingClass": "model_integrity"
+    }
+  ],
   "summary": {
-    "revision": 1,
-    "elementTotal": 161,
+    "revision": 2,
+    "elementTotal": 154,
     "scaleWorkload": {
-      "wallCount": 27,
+      "wallCount": 19,
       "roomCount": 13,
       "scheduleElementCount": 3
     },
     "countsByKind": {
-      "project_base_point": 1,
-      "asset_library_entry": 5,
-      "viewpoint": 7,
-      "room": 13,
-      "section_cut": 1,
-      "elevation_view": 1,
-      "door": 16,
-      "stair": 1,
-      "sheet": 1,
-      "wall_type": 2,
-      "level": 2,
-      "roof": 1,
-      "sun_settings": 1,
-      "schedule": 3,
-      "placed_asset": 5,
       "internal_origin": 1,
-      "room_separation": 52,
+      "project_base_point": 1,
+      "wall_type": 2,
       "floor_type": 1,
-      "family_type": 3,
-      "floor": 2,
-      "wall": 27,
-      "plan_view": 2,
-      "railing": 3,
       "roof_type": 1,
+      "family_type": 3,
+      "room_color_scheme": 1,
+      "level": 2,
+      "plan_view": 2,
+      "floor": 2,
+      "wall": 19,
+      "roof": 1,
+      "room": 13,
+      "door": 10,
+      "stair": 1,
+      "railing": 3,
+      "slab_opening": 1,
+      "asset_library_entry": 5,
+      "placed_asset": 5,
       "roof_opening": 1,
       "window": 2,
-      "slab_opening": 1,
       "sweep": 3,
-      "wall_opening": 1,
-      "room_color_scheme": 1
+      "viewpoint": 8,
+      "elevation_view": 1,
+      "section_cut": 1,
+      "sheet": 1,
+      "schedule": 3,
+      "room_separation": 52,
+      "sun_settings": 1,
+      "hatch_pattern_def": 7
     },
     "levelCount": 2,
     "levels": [
       {
         "id": "hf-lvl-ground",
         "name": "Ground Floor",
-        "elevationMm": 0
+        "elevationMm": 0.0
       },
       {
         "id": "hf-lvl-upper",
         "name": "First Floor",
-        "elevationMm": 3000
+        "elevationMm": 3000.0
       }
     ],
-    "wallCount": 27,
+    "wallCount": 19,
     "wallsByLevelId": {
-      "hf-lvl-ground": 10,
-      "hf-lvl-upper": 17
+      "hf-lvl-ground": 5,
+      "hf-lvl-upper": 14
     },
     "roomCount": 13,
     "roomsByLevelId": {
       "hf-lvl-ground": 6,
       "hf-lvl-upper": 7
     },
-    "doorCount": 16,
+    "doorCount": 10,
     "windowCount": 2,
     "gridLineCount": 0,
     "openIssueCount": 0,
@@ -80,11 +91,11 @@
     "sectionCutCount": 1,
     "planViewCount": 2,
     "viewTemplateCount": 0,
-    "viewpointCount": 7,
+    "viewpointCount": 8,
     "dimensionCount": 0,
     "scheduleCount": 3,
     "saved3dViewClipSummary": {
-      "saved3dViewCount": 5,
+      "saved3dViewCount": 6,
       "clipEnabledCount": 0,
       "sectionBoxEnabledCount": 0,
       "totalHiddenCategoryCount": 0
@@ -97,12 +108,12 @@
           "levelPlane": "bim_xy_mm",
           "bboxMm": {
             "min": {
-              "x": 600,
-              "y": 700
+              "x": 600.0,
+              "y": 700.0
             },
             "max": {
-              "x": 1100,
-              "y": 6500
+              "x": 1100.0,
+              "y": 6500.0
             }
           },
           "wallIds": [],
@@ -124,7 +135,7 @@
           "levelId": "hf-lvl-ground",
           "levelName": "Ground Floor",
           "volumeComputedAt": "finish_faces",
-          "volumeAreaInsetMm": 0,
+          "volumeAreaInsetMm": 0.0,
           "approxVolumeM3": 8.7,
           "derivationAuthority": "preview_heuristic",
           "authorityReasonCodes": [
@@ -137,12 +148,12 @@
           "levelPlane": "bim_xy_mm",
           "bboxMm": {
             "min": {
-              "x": 6800,
-              "y": 700
+              "x": 6800.0,
+              "y": 700.0
             },
             "max": {
-              "x": 8300,
-              "y": 3100
+              "x": 8300.0,
+              "y": 3100.0
             }
           },
           "wallIds": [],
@@ -164,7 +175,7 @@
           "levelId": "hf-lvl-ground",
           "levelName": "Ground Floor",
           "volumeComputedAt": "finish_faces",
-          "volumeAreaInsetMm": 0,
+          "volumeAreaInsetMm": 0.0,
           "approxVolumeM3": 10.8,
           "derivationAuthority": "preview_heuristic",
           "authorityReasonCodes": [
@@ -177,12 +188,12 @@
           "levelPlane": "bim_xy_mm",
           "bboxMm": {
             "min": {
-              "x": 1200,
-              "y": 3700
+              "x": 1200.0,
+              "y": 3700.0
             },
             "max": {
-              "x": 3400,
-              "y": 6500
+              "x": 3400.0,
+              "y": 6500.0
             }
           },
           "wallIds": [],
@@ -204,7 +215,7 @@
           "levelId": "hf-lvl-ground",
           "levelName": "Ground Floor",
           "volumeComputedAt": "finish_faces",
-          "volumeAreaInsetMm": 0,
+          "volumeAreaInsetMm": 0.0,
           "approxVolumeM3": 18.48,
           "derivationAuthority": "preview_heuristic",
           "authorityReasonCodes": [
@@ -217,12 +228,12 @@
           "levelPlane": "bim_xy_mm",
           "bboxMm": {
             "min": {
-              "x": 6800,
-              "y": 3300
+              "x": 6800.0,
+              "y": 3300.0
             },
             "max": {
-              "x": 8300,
-              "y": 5000
+              "x": 8300.0,
+              "y": 5000.0
             }
           },
           "wallIds": [],
@@ -244,7 +255,7 @@
           "levelId": "hf-lvl-ground",
           "levelName": "Ground Floor",
           "volumeComputedAt": "finish_faces",
-          "volumeAreaInsetMm": 0,
+          "volumeAreaInsetMm": 0.0,
           "approxVolumeM3": 7.65,
           "derivationAuthority": "preview_heuristic",
           "authorityReasonCodes": [
@@ -257,12 +268,12 @@
           "levelPlane": "bim_xy_mm",
           "bboxMm": {
             "min": {
-              "x": 1200,
-              "y": 700
+              "x": 1200.0,
+              "y": 700.0
             },
             "max": {
-              "x": 3400,
-              "y": 3600
+              "x": 3400.0,
+              "y": 3600.0
             }
           },
           "wallIds": [],
@@ -284,7 +295,7 @@
           "levelId": "hf-lvl-ground",
           "levelName": "Ground Floor",
           "volumeComputedAt": "finish_faces",
-          "volumeAreaInsetMm": 0,
+          "volumeAreaInsetMm": 0.0,
           "approxVolumeM3": 19.14,
           "derivationAuthority": "preview_heuristic",
           "authorityReasonCodes": [
@@ -297,12 +308,12 @@
           "levelPlane": "bim_xy_mm",
           "bboxMm": {
             "min": {
-              "x": 3600,
-              "y": 700
+              "x": 3600.0,
+              "y": 700.0
             },
             "max": {
-              "x": 6500,
-              "y": 5200
+              "x": 6500.0,
+              "y": 5200.0
             }
           },
           "wallIds": [],
@@ -324,7 +335,7 @@
           "levelId": "hf-lvl-ground",
           "levelName": "Ground Floor",
           "volumeComputedAt": "finish_faces",
-          "volumeAreaInsetMm": 0,
+          "volumeAreaInsetMm": 0.0,
           "approxVolumeM3": 39.15,
           "derivationAuthority": "preview_heuristic",
           "authorityReasonCodes": [
@@ -337,12 +348,12 @@
           "levelPlane": "bim_xy_mm",
           "bboxMm": {
             "min": {
-              "x": 1000,
-              "y": 0
+              "x": 1000.0,
+              "y": 0.0
             },
             "max": {
-              "x": 7000,
-              "y": 8200
+              "x": 7000.0,
+              "y": 8200.0
             }
           },
           "wallIds": [
@@ -364,7 +375,7 @@
           "levelId": "hf-lvl-ground",
           "levelName": "Ground Floor",
           "volumeComputedAt": "finish_faces",
-          "volumeAreaInsetMm": 0,
+          "volumeAreaInsetMm": 0.0,
           "approxVolumeM3": 147.6,
           "derivationAuthority": "preview_heuristic",
           "authorityReasonCodes": [
@@ -378,12 +389,12 @@
           "levelPlane": "bim_xy_mm",
           "bboxMm": {
             "min": {
-              "x": 3600,
-              "y": 1600
+              "x": 3600.0,
+              "y": 1600.0
             },
             "max": {
-              "x": 5200,
-              "y": 4300
+              "x": 5200.0,
+              "y": 4300.0
             }
           },
           "wallIds": [],
@@ -405,25 +416,22 @@
           "levelId": "hf-lvl-upper",
           "levelName": "First Floor",
           "volumeComputedAt": "finish_faces",
-          "volumeAreaInsetMm": 0,
+          "volumeAreaInsetMm": 0.0,
           "approxVolumeM3": 12.096,
           "derivationAuthority": "preview_heuristic",
-          "authorityReasonCodes": [
-            "overlapping_derived_candidate_footprint",
-            "overlaps_authored_room_bbox"
-          ]
+          "authorityReasonCodes": ["overlaps_authored_room_bbox"]
         },
         {
           "kind": "axis_aligned_rectangle",
           "levelPlane": "bim_xy_mm",
           "bboxMm": {
             "min": {
-              "x": 2700,
-              "y": 4500
+              "x": 2700.0,
+              "y": 4500.0
             },
             "max": {
-              "x": 4300,
-              "y": 6500
+              "x": 4300.0,
+              "y": 6500.0
             }
           },
           "wallIds": [],
@@ -445,25 +453,22 @@
           "levelId": "hf-lvl-upper",
           "levelName": "First Floor",
           "volumeComputedAt": "finish_faces",
-          "volumeAreaInsetMm": 0,
+          "volumeAreaInsetMm": 0.0,
           "approxVolumeM3": 8.96,
           "derivationAuthority": "preview_heuristic",
-          "authorityReasonCodes": [
-            "overlapping_derived_candidate_footprint",
-            "overlaps_authored_room_bbox"
-          ]
+          "authorityReasonCodes": ["overlaps_authored_room_bbox"]
         },
         {
           "kind": "axis_aligned_rectangle",
           "levelPlane": "bim_xy_mm",
           "bboxMm": {
             "min": {
-              "x": 5400,
-              "y": 1000
+              "x": 5400.0,
+              "y": 1000.0
             },
             "max": {
-              "x": 7600,
-              "y": 3000
+              "x": 7600.0,
+              "y": 3000.0
             }
           },
           "wallIds": [],
@@ -485,7 +490,7 @@
           "levelId": "hf-lvl-upper",
           "levelName": "First Floor",
           "volumeComputedAt": "finish_faces",
-          "volumeAreaInsetMm": 0,
+          "volumeAreaInsetMm": 0.0,
           "approxVolumeM3": 12.32,
           "derivationAuthority": "preview_heuristic",
           "authorityReasonCodes": [
@@ -498,12 +503,12 @@
           "levelPlane": "bim_xy_mm",
           "bboxMm": {
             "min": {
-              "x": 1200,
-              "y": -450
+              "x": 1200.0,
+              "y": -450.0
             },
             "max": {
-              "x": 7600,
-              "y": 900
+              "x": 7600.0,
+              "y": 900.0
             }
           },
           "wallIds": [],
@@ -525,7 +530,7 @@
           "levelId": "hf-lvl-upper",
           "levelName": "First Floor",
           "volumeComputedAt": "finish_faces",
-          "volumeAreaInsetMm": 0,
+          "volumeAreaInsetMm": 0.0,
           "approxVolumeM3": 24.192,
           "derivationAuthority": "preview_heuristic",
           "authorityReasonCodes": [
@@ -538,12 +543,12 @@
           "levelPlane": "bim_xy_mm",
           "bboxMm": {
             "min": {
-              "x": 600,
-              "y": 4500
+              "x": 600.0,
+              "y": 4500.0
             },
             "max": {
-              "x": 2500,
-              "y": 6500
+              "x": 2500.0,
+              "y": 6500.0
             }
           },
           "wallIds": [],
@@ -565,25 +570,22 @@
           "levelId": "hf-lvl-upper",
           "levelName": "First Floor",
           "volumeComputedAt": "finish_faces",
-          "volumeAreaInsetMm": 0,
+          "volumeAreaInsetMm": 0.0,
           "approxVolumeM3": 10.64,
           "derivationAuthority": "preview_heuristic",
-          "authorityReasonCodes": [
-            "overlapping_derived_candidate_footprint",
-            "overlaps_authored_room_bbox"
-          ]
+          "authorityReasonCodes": ["overlaps_authored_room_bbox"]
         },
         {
           "kind": "axis_aligned_rectangle",
           "levelPlane": "bim_xy_mm",
           "bboxMm": {
             "min": {
-              "x": 600,
-              "y": 1600
+              "x": 600.0,
+              "y": 1600.0
             },
             "max": {
-              "x": 3300,
-              "y": 4300
+              "x": 3300.0,
+              "y": 4300.0
             }
           },
           "wallIds": [],
@@ -605,25 +607,22 @@
           "levelId": "hf-lvl-upper",
           "levelName": "First Floor",
           "volumeComputedAt": "finish_faces",
-          "volumeAreaInsetMm": 0,
+          "volumeAreaInsetMm": 0.0,
           "approxVolumeM3": 20.412,
           "derivationAuthority": "preview_heuristic",
-          "authorityReasonCodes": [
-            "overlapping_derived_candidate_footprint",
-            "overlaps_authored_room_bbox"
-          ]
+          "authorityReasonCodes": ["overlaps_authored_room_bbox"]
         },
         {
           "kind": "axis_aligned_rectangle",
           "levelPlane": "bim_xy_mm",
           "bboxMm": {
             "min": {
-              "x": 5400,
-              "y": 3300
+              "x": 5400.0,
+              "y": 3300.0
             },
             "max": {
-              "x": 8000,
-              "y": 6500
+              "x": 8000.0,
+              "y": 6500.0
             }
           },
           "wallIds": [],
@@ -645,25 +644,22 @@
           "levelId": "hf-lvl-upper",
           "levelName": "First Floor",
           "volumeComputedAt": "finish_faces",
-          "volumeAreaInsetMm": 0,
+          "volumeAreaInsetMm": 0.0,
           "approxVolumeM3": 23.296,
           "derivationAuthority": "preview_heuristic",
-          "authorityReasonCodes": [
-            "overlapping_derived_candidate_footprint",
-            "overlaps_authored_room_bbox"
-          ]
+          "authorityReasonCodes": ["overlaps_authored_room_bbox"]
         },
         {
           "kind": "axis_aligned_rectangle",
           "levelPlane": "bim_xy_mm",
           "bboxMm": {
             "min": {
-              "x": 1200,
-              "y": -450
+              "x": 1200.0,
+              "y": -450.0
             },
             "max": {
-              "x": 7600,
-              "y": 900
+              "x": 7600.0,
+              "y": 900.0
             }
           },
           "wallIds": ["front-loggia-left-return"],
@@ -684,7 +680,7 @@
           "levelId": "hf-lvl-upper",
           "levelName": "First Floor",
           "volumeComputedAt": "finish_faces",
-          "volumeAreaInsetMm": 0,
+          "volumeAreaInsetMm": 0.0,
           "approxVolumeM3": 24.192,
           "derivationAuthority": "preview_heuristic",
           "authorityReasonCodes": [
@@ -697,51 +693,12 @@
           "levelPlane": "bim_xy_mm",
           "bboxMm": {
             "min": {
-              "x": 1200,
-              "y": -450
+              "x": 1200.0,
+              "y": -450.0
             },
             "max": {
-              "x": 7600,
-              "y": 900
-            }
-          },
-          "wallIds": ["front-loggia-left-return"],
-          "boundarySeparationIds": [
-            "sep-hf-room-loggia-1",
-            "sep-hf-room-loggia-2",
-            "sep-hf-room-loggia-4"
-          ],
-          "perimeterSegmentIdsSorted": [
-            "front-loggia-left-return",
-            "sep-hf-room-loggia-1",
-            "sep-hf-room-loggia-2",
-            "sep-hf-room-loggia-4"
-          ],
-          "boundarySegmentEncoding": "boundary_segment_v1",
-          "approxAreaM2": 8.64,
-          "note": "Axis-aligned orthogonal loop from wall and/or axis-aligned room separation segments; authoritative derivation when interior is unambiguous and does not intersect authored outlines.",
-          "levelId": "hf-lvl-upper",
-          "levelName": "First Floor",
-          "volumeComputedAt": "finish_faces",
-          "volumeAreaInsetMm": 0,
-          "approxVolumeM3": 24.192,
-          "derivationAuthority": "preview_heuristic",
-          "authorityReasonCodes": [
-            "overlapping_derived_candidate_footprint",
-            "overlaps_authored_room_bbox"
-          ]
-        },
-        {
-          "kind": "axis_aligned_rectangle",
-          "levelPlane": "bim_xy_mm",
-          "bboxMm": {
-            "min": {
-              "x": 1200,
-              "y": -450
-            },
-            "max": {
-              "x": 7600,
-              "y": 900
+              "x": 7600.0,
+              "y": 900.0
             }
           },
           "wallIds": ["front-loggia-left-return"],
@@ -762,7 +719,7 @@
           "levelId": "hf-lvl-upper",
           "levelName": "First Floor",
           "volumeComputedAt": "finish_faces",
-          "volumeAreaInsetMm": 0,
+          "volumeAreaInsetMm": 0.0,
           "approxVolumeM3": 24.192,
           "derivationAuthority": "preview_heuristic",
           "authorityReasonCodes": [
@@ -775,86 +732,12 @@
           "levelPlane": "bim_xy_mm",
           "bboxMm": {
             "min": {
-              "x": 1200,
-              "y": -450
+              "x": 1200.0,
+              "y": -450.0
             },
             "max": {
-              "x": 7600,
-              "y": 900
-            }
-          },
-          "wallIds": ["front-loggia-left-return"],
-          "boundarySeparationIds": [
-            "sep-hf-room-loggia-2",
-            "sep-hf-room-loggia-3",
-            "sep-hf-room-loggia-4"
-          ],
-          "perimeterSegmentIdsSorted": [
-            "front-loggia-left-return",
-            "sep-hf-room-loggia-2",
-            "sep-hf-room-loggia-3",
-            "sep-hf-room-loggia-4"
-          ],
-          "boundarySegmentEncoding": "boundary_segment_v1",
-          "approxAreaM2": 8.64,
-          "note": "Axis-aligned orthogonal loop from wall and/or axis-aligned room separation segments; authoritative derivation when interior is unambiguous and does not intersect authored outlines.",
-          "levelId": "hf-lvl-upper",
-          "levelName": "First Floor",
-          "volumeComputedAt": "finish_faces",
-          "volumeAreaInsetMm": 0,
-          "approxVolumeM3": 24.192,
-          "derivationAuthority": "preview_heuristic",
-          "authorityReasonCodes": [
-            "overlapping_derived_candidate_footprint",
-            "overlaps_authored_room_bbox"
-          ]
-        },
-        {
-          "kind": "axis_aligned_rectangle",
-          "levelPlane": "bim_xy_mm",
-          "bboxMm": {
-            "min": {
-              "x": 1200,
-              "y": -450
-            },
-            "max": {
-              "x": 7600,
-              "y": 900
-            }
-          },
-          "wallIds": ["front-loggia-left-return", "front-loggia-right-return"],
-          "boundarySeparationIds": ["sep-hf-room-loggia-1", "sep-hf-room-loggia-2"],
-          "perimeterSegmentIdsSorted": [
-            "front-loggia-left-return",
-            "front-loggia-right-return",
-            "sep-hf-room-loggia-1",
-            "sep-hf-room-loggia-2"
-          ],
-          "boundarySegmentEncoding": "boundary_segment_v1",
-          "approxAreaM2": 8.64,
-          "note": "Axis-aligned orthogonal loop from wall and/or axis-aligned room separation segments; authoritative derivation when interior is unambiguous and does not intersect authored outlines.",
-          "levelId": "hf-lvl-upper",
-          "levelName": "First Floor",
-          "volumeComputedAt": "finish_faces",
-          "volumeAreaInsetMm": 0,
-          "approxVolumeM3": 24.192,
-          "derivationAuthority": "preview_heuristic",
-          "authorityReasonCodes": [
-            "overlapping_derived_candidate_footprint",
-            "overlaps_authored_room_bbox"
-          ]
-        },
-        {
-          "kind": "axis_aligned_rectangle",
-          "levelPlane": "bim_xy_mm",
-          "bboxMm": {
-            "min": {
-              "x": 1200,
-              "y": -450
-            },
-            "max": {
-              "x": 7600,
-              "y": 900
+              "x": 7600.0,
+              "y": 900.0
             }
           },
           "wallIds": ["front-loggia-left-return", "front-loggia-right-return"],
@@ -871,7 +754,7 @@
           "levelId": "hf-lvl-upper",
           "levelName": "First Floor",
           "volumeComputedAt": "finish_faces",
-          "volumeAreaInsetMm": 0,
+          "volumeAreaInsetMm": 0.0,
           "approxVolumeM3": 24.192,
           "derivationAuthority": "preview_heuristic",
           "authorityReasonCodes": [
@@ -884,117 +767,12 @@
           "levelPlane": "bim_xy_mm",
           "bboxMm": {
             "min": {
-              "x": 1200,
-              "y": -450
+              "x": 1200.0,
+              "y": -450.0
             },
             "max": {
-              "x": 7600,
-              "y": 900
-            }
-          },
-          "wallIds": ["front-loggia-left-return", "front-loggia-right-return"],
-          "boundarySeparationIds": ["sep-hf-room-loggia-1", "sep-hf-room-loggia-4"],
-          "perimeterSegmentIdsSorted": [
-            "front-loggia-left-return",
-            "front-loggia-right-return",
-            "sep-hf-room-loggia-1",
-            "sep-hf-room-loggia-4"
-          ],
-          "boundarySegmentEncoding": "boundary_segment_v1",
-          "approxAreaM2": 8.64,
-          "note": "Axis-aligned orthogonal loop from wall and/or axis-aligned room separation segments; authoritative derivation when interior is unambiguous and does not intersect authored outlines.",
-          "levelId": "hf-lvl-upper",
-          "levelName": "First Floor",
-          "volumeComputedAt": "finish_faces",
-          "volumeAreaInsetMm": 0,
-          "approxVolumeM3": 24.192,
-          "derivationAuthority": "preview_heuristic",
-          "authorityReasonCodes": [
-            "overlapping_derived_candidate_footprint",
-            "overlaps_authored_room_bbox"
-          ]
-        },
-        {
-          "kind": "axis_aligned_rectangle",
-          "levelPlane": "bim_xy_mm",
-          "bboxMm": {
-            "min": {
-              "x": 1200,
-              "y": -450
-            },
-            "max": {
-              "x": 7600,
-              "y": 900
-            }
-          },
-          "wallIds": ["front-loggia-left-return", "front-loggia-right-return"],
-          "boundarySeparationIds": ["sep-hf-room-loggia-2", "sep-hf-room-loggia-3"],
-          "perimeterSegmentIdsSorted": [
-            "front-loggia-left-return",
-            "front-loggia-right-return",
-            "sep-hf-room-loggia-2",
-            "sep-hf-room-loggia-3"
-          ],
-          "boundarySegmentEncoding": "boundary_segment_v1",
-          "approxAreaM2": 8.64,
-          "note": "Axis-aligned orthogonal loop from wall and/or axis-aligned room separation segments; authoritative derivation when interior is unambiguous and does not intersect authored outlines.",
-          "levelId": "hf-lvl-upper",
-          "levelName": "First Floor",
-          "volumeComputedAt": "finish_faces",
-          "volumeAreaInsetMm": 0,
-          "approxVolumeM3": 24.192,
-          "derivationAuthority": "preview_heuristic",
-          "authorityReasonCodes": [
-            "overlapping_derived_candidate_footprint",
-            "overlaps_authored_room_bbox"
-          ]
-        },
-        {
-          "kind": "axis_aligned_rectangle",
-          "levelPlane": "bim_xy_mm",
-          "bboxMm": {
-            "min": {
-              "x": 1200,
-              "y": -450
-            },
-            "max": {
-              "x": 7600,
-              "y": 900
-            }
-          },
-          "wallIds": ["front-loggia-left-return", "front-loggia-right-return"],
-          "boundarySeparationIds": ["sep-hf-room-loggia-3", "sep-hf-room-loggia-4"],
-          "perimeterSegmentIdsSorted": [
-            "front-loggia-left-return",
-            "front-loggia-right-return",
-            "sep-hf-room-loggia-3",
-            "sep-hf-room-loggia-4"
-          ],
-          "boundarySegmentEncoding": "boundary_segment_v1",
-          "approxAreaM2": 8.64,
-          "note": "Axis-aligned orthogonal loop from wall and/or axis-aligned room separation segments; authoritative derivation when interior is unambiguous and does not intersect authored outlines.",
-          "levelId": "hf-lvl-upper",
-          "levelName": "First Floor",
-          "volumeComputedAt": "finish_faces",
-          "volumeAreaInsetMm": 0,
-          "approxVolumeM3": 24.192,
-          "derivationAuthority": "preview_heuristic",
-          "authorityReasonCodes": [
-            "overlapping_derived_candidate_footprint",
-            "overlaps_authored_room_bbox"
-          ]
-        },
-        {
-          "kind": "axis_aligned_rectangle",
-          "levelPlane": "bim_xy_mm",
-          "bboxMm": {
-            "min": {
-              "x": 1200,
-              "y": -450
-            },
-            "max": {
-              "x": 7600,
-              "y": 900
+              "x": 7600.0,
+              "y": 900.0
             }
           },
           "wallIds": ["front-loggia-right-return"],
@@ -1015,7 +793,7 @@
           "levelId": "hf-lvl-upper",
           "levelName": "First Floor",
           "volumeComputedAt": "finish_faces",
-          "volumeAreaInsetMm": 0,
+          "volumeAreaInsetMm": 0.0,
           "approxVolumeM3": 24.192,
           "derivationAuthority": "preview_heuristic",
           "authorityReasonCodes": [
@@ -1028,51 +806,12 @@
           "levelPlane": "bim_xy_mm",
           "bboxMm": {
             "min": {
-              "x": 1200,
-              "y": -450
+              "x": 1200.0,
+              "y": -450.0
             },
             "max": {
-              "x": 7600,
-              "y": 900
-            }
-          },
-          "wallIds": ["front-loggia-right-return"],
-          "boundarySeparationIds": [
-            "sep-hf-room-loggia-1",
-            "sep-hf-room-loggia-2",
-            "sep-hf-room-loggia-4"
-          ],
-          "perimeterSegmentIdsSorted": [
-            "front-loggia-right-return",
-            "sep-hf-room-loggia-1",
-            "sep-hf-room-loggia-2",
-            "sep-hf-room-loggia-4"
-          ],
-          "boundarySegmentEncoding": "boundary_segment_v1",
-          "approxAreaM2": 8.64,
-          "note": "Axis-aligned orthogonal loop from wall and/or axis-aligned room separation segments; authoritative derivation when interior is unambiguous and does not intersect authored outlines.",
-          "levelId": "hf-lvl-upper",
-          "levelName": "First Floor",
-          "volumeComputedAt": "finish_faces",
-          "volumeAreaInsetMm": 0,
-          "approxVolumeM3": 24.192,
-          "derivationAuthority": "preview_heuristic",
-          "authorityReasonCodes": [
-            "overlapping_derived_candidate_footprint",
-            "overlaps_authored_room_bbox"
-          ]
-        },
-        {
-          "kind": "axis_aligned_rectangle",
-          "levelPlane": "bim_xy_mm",
-          "bboxMm": {
-            "min": {
-              "x": 1200,
-              "y": -450
-            },
-            "max": {
-              "x": 7600,
-              "y": 900
+              "x": 7600.0,
+              "y": 900.0
             }
           },
           "wallIds": ["front-loggia-right-return"],
@@ -1093,7 +832,7 @@
           "levelId": "hf-lvl-upper",
           "levelName": "First Floor",
           "volumeComputedAt": "finish_faces",
-          "volumeAreaInsetMm": 0,
+          "volumeAreaInsetMm": 0.0,
           "approxVolumeM3": 24.192,
           "derivationAuthority": "preview_heuristic",
           "authorityReasonCodes": [
@@ -1106,34 +845,34 @@
           "levelPlane": "bim_xy_mm",
           "bboxMm": {
             "min": {
-              "x": 1200,
-              "y": -450
+              "x": 5400.0,
+              "y": 1000.0
             },
             "max": {
-              "x": 7600,
-              "y": 900
+              "x": 7600.0,
+              "y": 3000.0
             }
           },
-          "wallIds": ["front-loggia-right-return"],
+          "wallIds": ["target-house-l1-landing-access-partition"],
           "boundarySeparationIds": [
-            "sep-hf-room-loggia-2",
-            "sep-hf-room-loggia-3",
-            "sep-hf-room-loggia-4"
+            "sep-hf-room-landing-1",
+            "sep-hf-room-landing-2",
+            "sep-hf-room-landing-4"
           ],
           "perimeterSegmentIdsSorted": [
-            "front-loggia-right-return",
-            "sep-hf-room-loggia-2",
-            "sep-hf-room-loggia-3",
-            "sep-hf-room-loggia-4"
+            "sep-hf-room-landing-1",
+            "sep-hf-room-landing-2",
+            "sep-hf-room-landing-4",
+            "target-house-l1-landing-access-partition"
           ],
           "boundarySegmentEncoding": "boundary_segment_v1",
-          "approxAreaM2": 8.64,
+          "approxAreaM2": 4.4,
           "note": "Axis-aligned orthogonal loop from wall and/or axis-aligned room separation segments; authoritative derivation when interior is unambiguous and does not intersect authored outlines.",
           "levelId": "hf-lvl-upper",
           "levelName": "First Floor",
           "volumeComputedAt": "finish_faces",
-          "volumeAreaInsetMm": 0,
-          "approxVolumeM3": 24.192,
+          "volumeAreaInsetMm": 0.0,
+          "approxVolumeM3": 12.32,
           "derivationAuthority": "preview_heuristic",
           "authorityReasonCodes": [
             "overlapping_derived_candidate_footprint",
@@ -1145,44 +884,42 @@
           "levelPlane": "bim_xy_mm",
           "bboxMm": {
             "min": {
-              "x": 0,
-              "y": -450
+              "x": 5400.0,
+              "y": 1000.0
             },
             "max": {
-              "x": 8000,
-              "y": 8200
+              "x": 7600.0,
+              "y": 3000.0
             }
           },
-          "wallIds": [
-            "hf-upper-wrapper-shell-wall-01",
-            "hf-upper-wrapper-shell-wall-02",
-            "hf-upper-wrapper-shell-wall-03",
-            "hf-upper-wrapper-shell-wall-04"
+          "wallIds": ["target-house-l1-landing-access-partition"],
+          "boundarySeparationIds": [
+            "sep-hf-room-landing-2",
+            "sep-hf-room-landing-3",
+            "sep-hf-room-landing-4"
           ],
-          "boundarySeparationIds": [],
           "perimeterSegmentIdsSorted": [
-            "hf-upper-wrapper-shell-wall-01",
-            "hf-upper-wrapper-shell-wall-02",
-            "hf-upper-wrapper-shell-wall-03",
-            "hf-upper-wrapper-shell-wall-04"
+            "sep-hf-room-landing-2",
+            "sep-hf-room-landing-3",
+            "sep-hf-room-landing-4",
+            "target-house-l1-landing-access-partition"
           ],
           "boundarySegmentEncoding": "boundary_segment_v1",
-          "approxAreaM2": 69.2,
+          "approxAreaM2": 4.4,
           "note": "Axis-aligned orthogonal loop from wall and/or axis-aligned room separation segments; authoritative derivation when interior is unambiguous and does not intersect authored outlines.",
           "levelId": "hf-lvl-upper",
           "levelName": "First Floor",
           "volumeComputedAt": "finish_faces",
-          "volumeAreaInsetMm": 0,
-          "approxVolumeM3": 193.76,
+          "volumeAreaInsetMm": 0.0,
+          "approxVolumeM3": 12.32,
           "derivationAuthority": "preview_heuristic",
           "authorityReasonCodes": [
-            "ambiguous_interior_separation",
             "overlapping_derived_candidate_footprint",
             "overlaps_authored_room_bbox"
           ]
         }
       ],
-      "candidateCount": 28,
+      "candidateCount": 21,
       "authoritativeCandidateCount": 0,
       "unboundedRoomIds": [],
       "diagnostics": [
@@ -1217,48 +954,6 @@
             "ground-base-wall-02",
             "ground-base-wall-03",
             "ground-base-wall-04"
-          ],
-          "boundarySeparationIds": [],
-          "message": "An axis-aligned room separation pierces this derived rectangle interior; footprint is ambiguous for a single authoritative cell."
-        },
-        {
-          "code": "ambiguous_interior_separation",
-          "severity": "warning",
-          "levelId": "hf-lvl-upper",
-          "diagnosticId": "89bdb824164878fd",
-          "separationIds": [
-            "sep-hf-room-bath-1",
-            "sep-hf-room-bath-2",
-            "sep-hf-room-bath-3",
-            "sep-hf-room-bath-4",
-            "sep-hf-room-ensuite-1",
-            "sep-hf-room-ensuite-2",
-            "sep-hf-room-ensuite-3",
-            "sep-hf-room-ensuite-4",
-            "sep-hf-room-landing-1",
-            "sep-hf-room-landing-2",
-            "sep-hf-room-landing-3",
-            "sep-hf-room-landing-4",
-            "sep-hf-room-loggia-2",
-            "sep-hf-room-loggia-3",
-            "sep-hf-room-loggia-4",
-            "sep-hf-room-walk-in-closet-1",
-            "sep-hf-room-walk-in-closet-2",
-            "sep-hf-room-walk-in-closet-3",
-            "sep-hf-room-walk-in-closet-4",
-            "sep-room-bedroom-1",
-            "sep-room-bedroom-2",
-            "sep-room-bedroom-3",
-            "sep-room-bedroom-4",
-            "sep-room-terrace-1",
-            "sep-room-terrace-3",
-            "sep-room-terrace-4"
-          ],
-          "wallIds": [
-            "hf-upper-wrapper-shell-wall-01",
-            "hf-upper-wrapper-shell-wall-02",
-            "hf-upper-wrapper-shell-wall-03",
-            "hf-upper-wrapper-shell-wall-04"
           ],
           "boundarySeparationIds": [],
           "message": "An axis-aligned room separation pierces this derived rectangle interior; footprint is ambiguous for a single authoritative cell."
@@ -1297,66 +992,26 @@
             "sep-room-living-4"
           ],
           "message": "An axis-aligned room separation pierces this derived rectangle bbox interior; expect multiple rooms or adjust separators before trusting a single createRoomOutline."
-        },
-        {
-          "code": "derivedRectangleInteriorRoomSeparation",
-          "severity": "warning",
-          "levelId": "hf-lvl-upper",
-          "wallIds": [
-            "hf-upper-wrapper-shell-wall-01",
-            "hf-upper-wrapper-shell-wall-02",
-            "hf-upper-wrapper-shell-wall-03",
-            "hf-upper-wrapper-shell-wall-04"
-          ],
-          "separationIds": [
-            "sep-hf-room-bath-1",
-            "sep-hf-room-bath-2",
-            "sep-hf-room-bath-3",
-            "sep-hf-room-bath-4",
-            "sep-hf-room-ensuite-1",
-            "sep-hf-room-ensuite-2",
-            "sep-hf-room-ensuite-3",
-            "sep-hf-room-ensuite-4",
-            "sep-hf-room-landing-1",
-            "sep-hf-room-landing-2",
-            "sep-hf-room-landing-3",
-            "sep-hf-room-landing-4",
-            "sep-hf-room-loggia-2",
-            "sep-hf-room-loggia-3",
-            "sep-hf-room-loggia-4",
-            "sep-hf-room-walk-in-closet-1",
-            "sep-hf-room-walk-in-closet-2",
-            "sep-hf-room-walk-in-closet-3",
-            "sep-hf-room-walk-in-closet-4",
-            "sep-room-bedroom-1",
-            "sep-room-bedroom-2",
-            "sep-room-bedroom-3",
-            "sep-room-bedroom-4",
-            "sep-room-terrace-1",
-            "sep-room-terrace-3",
-            "sep-room-terrace-4"
-          ],
-          "message": "An axis-aligned room separation pierces this derived rectangle bbox interior; expect multiple rooms or adjust separators before trusting a single createRoomOutline."
         }
       ],
-      "diagnosticCount": 2,
+      "diagnosticCount": 1,
       "authorityVersion": "axis_aa_authoritative_v2"
     },
     "regenerationDiagnostics": {
-      "documentRevision": 1,
+      "documentRevision": 2,
       "roomDerivationHeuristicVersion": "room_deriv_preview_v4",
-      "roomDerivationCandidateCount": 28,
+      "roomDerivationCandidateCount": 21,
       "roomDerivationAuthoritativeCount": 0,
-      "roomDerivationDiagnosticCount": 2,
-      "roomDerivationWarningCount": 2,
+      "roomDerivationDiagnosticCount": 1,
+      "roomDerivationWarningCount": 1,
       "levelsWithRoomsSorted": ["hf-lvl-ground", "hf-lvl-upper"],
       "levelsWithWallsSorted": ["hf-lvl-ground", "hf-lvl-upper"],
       "maxRoomsOnSingleLevel": 7,
-      "maxWallsOnSingleLevel": 17
+      "maxWallsOnSingleLevel": 14
     }
   },
   "checks": {
-    "errorViolationCount": 0,
-    "blockingViolationCount": 0
+    "errorViolationCount": 1,
+    "blockingViolationCount": 1
   }
 }
