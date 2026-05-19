@@ -995,6 +995,31 @@ target-house evidence is refreshed after integration, final package remains
 blocked only by incomplete tracker scope, and no new rule suppresses or hides
 invalid geometry in normal product Advisor profiles.
 
+### Wave 16: Remaining P0 Guardrails, Agent Loops, Fixtures, And Governance
+
+Goal: close the remaining P0 `Not started` gaps and convert the most important
+`Partial` governance/evidence rows into product-grade contracts. This wave is
+about preventing invalid authoring and giving agents a reliable integrity loop,
+not about target-house-only cleanup.
+
+Scope: dispatch five independent workers. Each worker must commit locally, avoid
+unrelated dirty files, update tracker/evidence rows, keep status changes
+conservative, and prove any new rule through deterministic fixtures or command
+surface evidence.
+
+| Agent | Ownership                                                  | Primary items                                      |
+| ----- | ---------------------------------------------------------- | -------------------------------------------------- |
+| W16-A | Physical support-context authoring, UI/backend guard parity, and agent-safe command defaults | `BIR-B02`, `BIR-B05`, `BIR-B06`, `BIR-B07` |
+| W16-B | Integrity preflight command, agent remediation loop, batch diagnostics, and multi-profile comparison | `BIR-H03`, `BIR-H04`, `BIR-H06`, `BIR-H07`, `BIR-H01`, `BIR-H02` |
+| W16-C | Room containment, P0 integrity fixture corpus, and target-house regression fixtures | `BIR-D03`, `BIR-O01`, `BIR-O02`, `BIR-W01` |
+| W16-D | Rule suppression/tolerance policy, Advisor grouping/priority, profile presets, audience text, and review workflow | `BIR-A06`, `BIR-U01`, `BIR-U02`, `BIR-U03`, `BIR-U04`, `BIR-U05`, `BIR-U06` |
+| W16-E | Agent workflow templates, stale evidence invalidation, dashboards, rehearsal, benchmarks, CI drift gates, and wave closeout evidence | `BIR-M10`, `BIR-T01`, `BIR-T04`, `BIR-T05`, `BIR-O04`, `BIR-O05`, `BIR-O06`, `BIR-W03`, `BIR-W04` |
+
+Exit: P0 rows in this wave are no longer `Not started`, every new contract is
+machine-readable for UI/API/CLI/MCP consumers where relevant, target-house
+evidence is refreshed after integration, and final-package status remains
+blocked only by legitimate incomplete tracker scope.
+
 ## Non-Negotiable Acceptance Rules
 
 - Do not mark a seed `accepted` while any P0 integrity or renderer diagnostic is
