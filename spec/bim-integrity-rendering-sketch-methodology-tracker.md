@@ -107,7 +107,8 @@ This tracker is complete only when all of these are true:
 | `M4` P1 domain depth | Not started | Rooms/access/egress, stairs/railings, structure-lite, MEP-lite, fire/accessibility metadata, materials/types, and exchange checks have robust rule coverage. |
 | `M5` P1 rendering/exchange completeness | Not started | Supported viewport geometry, IFC/glTF export manifests, and readback/golden evidence agree for architecture, structure-lite, MEP-lite, sheets, and schedules. |
 | `M6` Performance and live UX quality | Not started | Advisor and renderer diagnostics are incremental, bounded, nonblocking, and do not cause sluggish orbit/selection/WebSocket behavior in ordinary projects. |
-| `M7` Target-house rerun readiness | Not started | `target-house-1` can be regenerated from methodology with zero unhandled warnings/errors, clean renderer diagnostics, current evidence, and explicit tolerances only where accepted by the user. |
+| `M7` Platform-grade BIM guarantees | Not started | Kernel invariants, transaction safety, collaboration, provenance, fixture governance, and agent remediation safety are covered by tests and documented contracts. |
+| `M8` Target-house rerun readiness | Not started | `target-house-1` can be regenerated from methodology with zero unhandled warnings/errors, clean renderer diagnostics, current evidence, and explicit tolerances only where accepted by the user. |
 
 ## Layering Contract
 
@@ -306,6 +307,96 @@ This tracker is complete only when all of these are true:
 | `BIR-O05` | P1 | Not started | Add benchmark suite integration. | Existing benchmarks record integrity, renderer diagnostics, exchange, performance, and acceptance status in live evidence. |
 | `BIR-O06` | P1 | Not started | Add CI gates for rule/render docs drift. | CI fails if rule registry, renderer support matrix, generated docs, and tests diverge. |
 
+### P. Kernel Invariants, Units, Types, And Document Semantics
+
+| ID | Priority | Status | Item | Acceptance |
+| -- | -------- | ------ | ---- | ---------- |
+| `BIR-P01` | P0 | Not started | Define document invariant contract. | A generated invariant ledger states required ids, kind discriminators, references, units, coordinates, level membership, type-instance relations, and deletion semantics. |
+| `BIR-P02` | P0 | Not started | Validate all element references. | Every `levelId`, host id, type id, material key, view id, schedule id, sheet id, phase id, design option id, and linked-model ref is either resolvable or explicitly nullable by schema. |
+| `BIR-P03` | P0 | Not started | Validate units and coordinate normalization. | All geometry commands and snapshots use explicit mm/m/unit contracts; imported/exported coordinates are normalized with documented transforms. |
+| `BIR-P04` | P0 | Not started | Validate level/storey semantics. | Physical elements have coherent level, base elevation, top constraint/height, storey membership, and cross-level intent. |
+| `BIR-P05` | P0 | Not started | Validate physical vs analytical roles. | Every element that can appear in Advisor/renderer/export declares whether it is physical, analytical, helper, annotation, documentation, or imported proxy. |
+| `BIR-P06` | P1 | Not started | Validate type-instance inheritance. | Instance parameters, family/type parameters, material slots, dimensions, schedule fields, and overrides resolve predictably and are surfaced in diagnostics. |
+| `BIR-P07` | P1 | Not started | Validate schema migration compatibility. | Older seed artifacts and command bundles can be migrated or fail with actionable diagnostics rather than silently producing malformed models. |
+| `BIR-P08` | P1 | Not started | Add invariant smoke command. | CLI/API can run a fast invariant check that is independent of constructability and reports machine-readable findings. |
+
+### Q. Transactions, Collaboration, Undo/Redo, And Agent Safety
+
+| ID | Priority | Status | Item | Acceptance |
+| -- | -------- | ------ | ---- | ---------- |
+| `BIR-Q01` | P0 | Not started | Protect transaction boundaries. | Integrity validation runs consistently for dry-run, commit, bundle commit, UI command commit, and future MCP mutations with parent revision checks. |
+| `BIR-Q02` | P0 | Not started | Preserve undo/redo semantics. | Integrity/remediation commands create undoable, inspectable transactions and do not corrupt command history. |
+| `BIR-Q03` | P0 | Not started | Add collaboration conflict safety. | Concurrent edits cannot cause stale fixes, lost updates, or remediation against an obsolete revision without explicit conflict reporting. |
+| `BIR-Q04` | P0 | Not started | Classify safe vs destructive auto-fixes. | Findings distinguish safe automatic fixes, review-required fixes, destructive fixes, and fixes that need user intent. |
+| `BIR-Q05` | P0 | Not started | Require dry-run for agent remediation. | CLI/MCP remediation tools emit proposed command bundles and dry-run evidence before committing. |
+| `BIR-Q06` | P1 | Not started | Add audit provenance for fixes. | Every automatic or agent-authored fix records source finding id, affected elements, before/after summary, user/agent identity, and evidence path. |
+| `BIR-Q07` | P1 | Not started | Add permission/scope metadata. | Agent tools declare mutation/export/external-service/destructive scope so MCP clients can request approval appropriately. |
+| `BIR-Q08` | P1 | Not started | Add rollback/retry guidance. | Failed integrity/remediation commits leave the model unchanged and expose retry-safe diagnostics. |
+
+### R. 2D Documentation, Sections, Plans, Elevations, And View Fidelity
+
+| ID | Priority | Status | Item | Acceptance |
+| -- | -------- | ------ | ---- | ---------- |
+| `BIR-R01` | P0 | Not started | Add plan-view fidelity contract. | Walls, doors, windows, rooms, stairs, slab openings, railings, levels, annotations, and hidden/cut graphics render correctly in plan or produce diagnostics. |
+| `BIR-R02` | P0 | Not started | Add section/elevation fidelity contract. | Cut planes, view depth, section boxes, hidden lines, openings, stairs, roofs, floors, and materials render consistently with the 3D model. |
+| `BIR-R03` | P1 | Not started | Add sheet viewport fidelity. | Sheet viewports preserve view scale, crop, discipline/lens, graphics mode, title, schedule placement, and evidence links. |
+| `BIR-R04` | P1 | Not started | Add annotation/dimension integrity. | Tags, dimensions, levels, grids, callouts, detail regions, and schedules reference live elements and report stale/orphan state. |
+| `BIR-R05` | P1 | Not started | Add documentation export parity. | PDF/render bundles/sheets match the corresponding saved views, with unsupported features listed in export evidence. |
+| `BIR-R06` | P1 | Not started | Add 2D golden fixtures. | Plan, section, elevation, and sheet goldens cover hosted openings, roof cuts, stairs, rooms, annotations, and lens modes. |
+
+### S. Site, Georeferencing, Links, Imports, And Roundtrip
+
+| ID | Priority | Status | Item | Acceptance |
+| -- | -------- | ------ | ---- | ---------- |
+| `BIR-S01` | P0 | Not started | Validate project/site coordinate systems. | Project base point, survey point, true north, project north, level datum, and model origin are explicit and exportable. |
+| `BIR-S02` | P0 | Not started | Validate linked model transforms. | Linked BIM/IFC/context models have transform, units, origin, discipline, visibility, and stale/source metadata checked. |
+| `BIR-S03` | P1 | Not started | Add import diagnostic contract. | Import/link operations report unsupported products, lost geometry, category mapping, transform drift, and material/type fallbacks. |
+| `BIR-S04` | P1 | Not started | Add roundtrip drift checks. | Exported/imported/readback summaries can be compared against the source model for element count, placement, category, type, material, and geometry drift. |
+| `BIR-S05` | P1 | Not started | Validate site/toposolid/building relationship. | Building footprint, terrain, property lines, setbacks, entrances, exterior stairs/rails, and drainage/context assumptions are deterministic diagnostics. |
+| `BIR-S06` | P2 | Not started | Add multi-building/shared-coordinate support. | Larger projects can validate multiple buildings, shared coordinates, linked contexts, and discipline model alignment. |
+
+### T. Provenance, Traceability, And Evidence Lineage
+
+| ID | Priority | Status | Item | Acceptance |
+| -- | -------- | ------ | ---- | ---------- |
+| `BIR-T01` | P0 | Not started | Map sketch features to BIM elements. | Every required sketch/brief feature has stable feature id, required element ids, source image references, phase, evidence views, and acceptance status. |
+| `BIR-T02` | P0 | Not started | Map findings to source authoring commands. | Advisor/integrity/renderer findings can be traced to command ids, recipe rows, agent wave, commit, and phase packet where available. |
+| `BIR-T03` | P0 | Not started | Add evidence lineage manifest. | Final packets state which snapshots, screenshots, reports, exports, rule digests, renderer build, and git head produced each acceptance claim. |
+| `BIR-T04` | P1 | Not started | Add stale evidence invalidation. | Evidence becomes stale when model revision, rule digest, renderer support matrix, seed source, target spec, or git head changes. |
+| `BIR-T05` | P1 | Not started | Add feature coverage dashboard. | Agents and users can see required features, current element coverage, open findings, renderer support, screenshots, and remaining blockers. |
+| `BIR-T06` | P1 | Not started | Add review narrative generator. | Phase/final reports summarize what changed, what evidence proves it, what remains tolerated, and what is blocked. |
+
+### U. Advisor Noise Control, Product UX, And Fix Prioritization
+
+| ID | Priority | Status | Item | Acceptance |
+| -- | -------- | ------ | ---- | ---------- |
+| `BIR-U01` | P0 | Not started | Add finding grouping/deduplication. | Repeated geometry symptoms collapse into clear root-cause groups while preserving affected element ids. |
+| `BIR-U02` | P0 | Not started | Add fix priority ordering. | Advisor sorts by severity, phase ownership, dependency/root cause, visible impact, and current lens/profile relevance. |
+| `BIR-U03` | P1 | Not started | Add profile presets. | Architecture, Structure, MEP, Fire, Accessibility, Construction Readiness, Exchange, and Sketch Acceptance profiles have explicit rule membership and defaults. |
+| `BIR-U04` | P1 | Not started | Add user-facing explanations by audience. | Same rule can expose concise UI text, agent technical detail, and documentation text without losing rule identity. |
+| `BIR-U05` | P1 | Not started | Add false-positive review workflow. | Users/agents can classify a finding as rule defect, accepted tolerance, profile mismatch, or model defect with evidence. |
+| `BIR-U06` | P2 | Not started | Add Advisor learning corpus. | Confirmed true/false findings become fixtures for rule tuning and regression prevention. |
+
+### V. Families, Parameters, Assets, And Content Quality
+
+| ID | Priority | Status | Item | Acceptance |
+| -- | -------- | ------ | ---- | ---------- |
+| `BIR-V01` | P0 | Not started | Validate family/type parameter schemas. | Family types declare required dimensions, host behavior, material slots, schedule fields, IFC mapping, and render geometry support. |
+| `BIR-V02` | P0 | Not started | Validate instance overrides. | Instance width/height/material/operation overrides stay compatible with type constraints, host geometry, and schedules. |
+| `BIR-V03` | P1 | Not started | Validate content library assets. | Catalog entries carry category, dimensions, clearance, MEP/maintenance zones, material slots, render support, and schedule/export metadata. |
+| `BIR-V04` | P1 | Not started | Validate asset placement. | Placed assets are on floors/walls/ceilings/workplanes as appropriate, not floating or embedded in walls without intentional recess/opening. |
+| `BIR-V05` | P1 | Not started | Validate family render/export parity. | Family visual geometry, material slots, plan symbols, schedule rows, and IFC/glTF export manifests agree. |
+
+### W. Fixture Governance And Completion Accounting
+
+| ID | Priority | Status | Item | Acceptance |
+| -- | -------- | ------ | ---- | ---------- |
+| `BIR-W01` | P0 | Not started | Define fixture classes. | Fixture corpus distinguishes minimal synthetic, target-house regression, benchmark seed, import/export roundtrip, performance stress, and user-realistic sketch cases. |
+| `BIR-W02` | P0 | Not started | Add status accounting script. | A script computes milestone/tracker completion percentages from this file plus generated evidence and fails on stale status claims. |
+| `BIR-W03` | P0 | Not started | Add implementation evidence rows. | Each tracker item records code paths, tests, generated docs, evidence artifact, commit id, and known limitations before status becomes `Done`. |
+| `BIR-W04` | P1 | Not started | Add wave closeout template. | Each wave produces a closeout report with agents, commits, tests, tracker changes, unresolved blockers, and next-wave recommendations. |
+| `BIR-W05` | P1 | Not started | Add quality gate for "Done". | CI or review script rejects status changes to `Done` without linked evidence rows and tests. |
+
 ## Proposed Work Waves
 
 Each wave assumes roughly five parallel agents with disjoint ownership. Agents
@@ -401,17 +492,33 @@ Goal: close `M6`.
 
 Exit: the richer diagnostics do not make normal modeling sluggish.
 
-### Wave 7: Target-House Rerun Readiness And Closure
+### Wave 7: Platform-Grade BIM Guarantees
 
 Goal: close `M7`.
 
 | Agent | Ownership | Primary items |
 | ----- | --------- | ------------- |
-| W7-A | Current geometry diagnostic report | `BIR-N01` |
-| W7-B | Seed source correction | `BIR-N02` |
-| W7-C | Final Advisor/integrity/renderer clean pass | `BIR-N04` |
-| W7-D | Visual/evidence acceptance | `BIR-N05`, `BIR-N06` |
-| W7-E | Performance and final package | `BIR-N07`, final commits/push |
+| W7-A | Kernel invariants and units | `BIR-P01` through `BIR-P08` |
+| W7-B | Transaction/collaboration safety | `BIR-Q01` through `BIR-Q08` |
+| W7-C | 2D documentation fidelity | `BIR-R01` through `BIR-R06` |
+| W7-D | Site/georeferencing/imports | `BIR-S01` through `BIR-S06` |
+| W7-E | Provenance, UX, content, accounting | `BIR-T01` through `BIR-W05` |
+
+Exit: the platform has explicit invariants, traceability, safe remediation,
+collaboration safety, 2D/documentation fidelity, content quality, and completion
+accounting.
+
+### Wave 8: Target-House Rerun Readiness And Closure
+
+Goal: close `M8`.
+
+| Agent | Ownership | Primary items |
+| ----- | --------- | ------------- |
+| W8-A | Current geometry diagnostic report | `BIR-N01` |
+| W8-B | Seed source correction | `BIR-N02` |
+| W8-C | Final Advisor/integrity/renderer clean pass | `BIR-N04` |
+| W8-D | Visual/evidence acceptance | `BIR-N05`, `BIR-N06` |
+| W8-E | Performance and final package | `BIR-N07`, final commits/push |
 
 Exit: `target-house-1` is regenerated and accepted at current head with clean
 integrity, renderer, Advisor, evidence, export, and methodology gates.
@@ -459,4 +566,3 @@ These cases should become regression fixtures:
 5. Seed dropdown polluted with disposable wave artifacts.
 6. Advisor footer clean while renderer still shows flying/detached elements.
 7. Dev WebSocket reconnect errors correlated with state reloads or sluggish UI.
-

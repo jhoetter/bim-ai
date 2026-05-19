@@ -199,6 +199,7 @@ import {
   isDuplicateHostedPlacement,
   isLinkedElementId,
   isWallOnActiveAuthoringLevel,
+  shouldBypassLevelDatumPickForDirectAuthoring,
   shouldCommitHostedPlacementOnPointerUp,
   shouldReuseHostedPreviewCommit,
   type HostedOpeningLike,
@@ -532,6 +533,9 @@ function csgBaseFootprintsForWall(
     .filter((footprint) => footprint.length >= 3);
 }
 
+const ORBIT_ORIENTATION_UI_SYNC_DELAY_MS = 120;
+const ORBIT_ORIENTATION_EPSILON = 1e-4;
+
 export function Viewport({
   wsConnected,
   onSemanticCommand,
@@ -621,6 +625,8 @@ export function Viewport({
 
   const [currentAzimuth, setCurrentAzimuth] = useState(Math.PI / 4);
   const [currentElevation, setCurrentElevation] = useState(0.45);
+  const currentOrientationRef = useRef({ azimuth: Math.PI / 4, elevation: 0.45 });
+  const pendingOrientationSyncRef = useRef<number | null>(null);
   const [text3dRebuildTick, setText3dRebuildTick] = useState(0);
   // ANN-02: state for the right-click "Generate Section / Elevation" menu in 3D.
   const [wallContextMenu, setWallContextMenu] = useState<{
@@ -642,6 +648,51 @@ export function Viewport({
   const sectionBoxHandleGroupRef = useRef<THREE.Group | null>(null);
   const sectionBoxPrevActiveRef = useRef(false);
   const clipCapsRef = useRef<THREE.Mesh[]>([]);
+
+  const commitCameraOrientationState = useCallback((azimuth: number, elevation: number): void => {
+    setCurrentAzimuth((prev) =>
+      Math.abs(prev - azimuth) > ORBIT_ORIENTATION_EPSILON ? azimuth : prev,
+    );
+    setCurrentElevation((prev) =>
+      Math.abs(prev - elevation) > ORBIT_ORIENTATION_EPSILON ? elevation : prev,
+    );
+  }, []);
+
+  const syncCameraOrientationState = useCallback(
+    (
+      snap: Pick<ReturnType<CameraRig['snapshot']>, 'azimuth' | 'elevation'>,
+      mode: 'defer' | 'immediate' = 'defer',
+    ): void => {
+      currentOrientationRef.current = {
+        azimuth: snap.azimuth,
+        elevation: snap.elevation,
+      };
+      if (mode === 'immediate') {
+        if (pendingOrientationSyncRef.current !== null) {
+          window.clearTimeout(pendingOrientationSyncRef.current);
+          pendingOrientationSyncRef.current = null;
+        }
+        commitCameraOrientationState(snap.azimuth, snap.elevation);
+        return;
+      }
+      if (pendingOrientationSyncRef.current !== null) return;
+      pendingOrientationSyncRef.current = window.setTimeout(() => {
+        pendingOrientationSyncRef.current = null;
+        const orientation = currentOrientationRef.current;
+        commitCameraOrientationState(orientation.azimuth, orientation.elevation);
+      }, ORBIT_ORIENTATION_UI_SYNC_DELAY_MS);
+    },
+    [commitCameraOrientationState],
+  );
+
+  useEffect(() => {
+    return () => {
+      if (pendingOrientationSyncRef.current !== null) {
+        window.clearTimeout(pendingOrientationSyncRef.current);
+        pendingOrientationSyncRef.current = null;
+      }
+    };
+  }, []);
 
   const elementsById = useBimStore((s) => s.elementsById);
   // ANN-02: ref-copy so the 3D contextmenu listener (registered once in the
@@ -1305,18 +1356,17 @@ export function Viewport({
       }
     }
 
-    function placeCamera(): void {
+    function placeCamera(orientationSync: 'defer' | 'immediate' = 'defer'): void {
       const snap = rig.snapshot();
       applySceneCameraPose(camera, snap);
-      setCurrentAzimuth(snap.azimuth);
-      setCurrentElevation(snap.elevation);
+      syncCameraOrientationState(snap, orientationSync);
       const oc = orthoCameraRef.current;
       if (oc) {
         mirrorSceneCameraPose(camera, oc, snap.target);
       }
     }
 
-    placeCamera();
+    placeCamera('immediate');
 
     orbitRigApiRef.current = {
       applyViewpointMm: (pose) => {
@@ -1338,7 +1388,7 @@ export function Viewport({
             z: pose.up.yMm / 1000,
           },
         );
-        placeCamera();
+        placeCamera('immediate');
       },
     };
 
@@ -2762,7 +2812,16 @@ export function Viewport({
         host.requestPointerLock();
         return;
       }
-      if (ev.button === 0) {
+      const directToolAtPointer = activeDirect3dTool();
+      if (
+        ev.button === 0 &&
+        !shouldBypassLevelDatumPickForDirectAuthoring({
+          button: ev.button,
+          directTool: directToolAtPointer,
+          altKey: ev.altKey,
+          shiftKey: ev.shiftKey,
+        })
+      ) {
         const levelDatumId = pickLevelDatumId(ev.clientX, ev.clientY);
         if (levelDatumId) {
           const store = useBimStore.getState();
@@ -2774,13 +2833,8 @@ export function Viewport({
           return;
         }
       }
-      if (
-        DIRECT_3D_AUTHORING_TOOLS.has(planToolRef.current as Direct3dAuthoringTool) &&
-        ev.button === 0 &&
-        !ev.altKey &&
-        !ev.shiftKey
-      ) {
-        const directTool = planToolRef.current as Direct3dAuthoringTool;
+      if (directToolAtPointer && ev.button === 0 && !ev.altKey && !ev.shiftKey) {
+        const directTool = directToolAtPointer;
         dragging = 'tool-draft';
         toolDraftTool = directTool;
         toolDraftStartedLineOnDown = false;
@@ -2944,6 +2998,9 @@ export function Viewport({
       if (!dragMoved && wasDragging === 'tool-draft' && !startedLineOnDown && !consumedOnDown) {
         handle3dDirectToolClick(ev.clientX, ev.clientY);
         return;
+      }
+      if (dragMoved && (wasDragging === 'orbit' || wasDragging === 'pan')) {
+        syncCameraOrientationState(rig.snapshot(), 'immediate');
       }
       if (!dragMoved && ev.button === 0 && (wasDragging === 'orbit' || wasDragging === 'pan')) {
         pick(ev.clientX, ev.clientY, ev.shiftKey || ev.ctrlKey || ev.metaKey || ev.altKey);
@@ -3867,7 +3924,7 @@ export function Viewport({
     // `theme` is included so the renderer rebuilds when the user toggles
     // light/dark — token-driven materials are resolved at mount time and
     // need fresh values when the data-theme attribute flips. Spec §32 V11.
-  }, [clearWallDraftPreviewGroup, theme]);
+  }, [clearWallDraftPreviewGroup, syncCameraOrientationState, theme]);
 
   useEffect(() => {
     if (!orbitCameraPoseMm) return;
@@ -3928,9 +3985,8 @@ export function Viewport({
     if (orthoCamera) {
       mirrorSceneCameraPose(camera, orthoCamera, snap.target);
     }
-    setCurrentAzimuth(snap.azimuth);
-    setCurrentElevation(snap.elevation);
-  }, [viewerCameraAction]);
+    syncCameraOrientationState(snap, 'immediate');
+  }, [syncCameraOrientationState, viewerCameraAction]);
 
   // ── Incremental geometry effect ──────────────────────────────────────────
   // Diffs elementsById against the previous snapshot and surgically adds,
@@ -5372,27 +5428,28 @@ export function Viewport({
         if (orthoCamera) {
           mirrorSceneCameraPose(camera, orthoCamera, next.target);
         }
-        setCurrentAzimuth(next.azimuth);
-        setCurrentElevation(next.elevation);
+        syncCameraOrientationState(next, 'immediate');
       }
     },
-    [],
+    [syncCameraOrientationState],
   );
 
-  const handleViewCubeDrag = useCallback((dxPx: number, dyPx: number): void => {
-    const rig = cameraRigRef.current;
-    const camera = cameraRef.current;
-    if (!rig || !camera) return;
-    rig.orbit(dxPx, dyPx);
-    const snap = rig.snapshot();
-    applySceneCameraPose(camera, snap);
-    const orthoCamera = orthoCameraRef.current;
-    if (orthoCamera) {
-      mirrorSceneCameraPose(camera, orthoCamera, snap.target);
-    }
-    setCurrentAzimuth(snap.azimuth);
-    setCurrentElevation(snap.elevation);
-  }, []);
+  const handleViewCubeDrag = useCallback(
+    (dxPx: number, dyPx: number): void => {
+      const rig = cameraRigRef.current;
+      const camera = cameraRef.current;
+      if (!rig || !camera) return;
+      rig.orbit(dxPx, dyPx);
+      const snap = rig.snapshot();
+      applySceneCameraPose(camera, snap);
+      const orthoCamera = orthoCameraRef.current;
+      if (orthoCamera) {
+        mirrorSceneCameraPose(camera, orthoCamera, snap.target);
+      }
+      syncCameraOrientationState(snap, 'immediate');
+    },
+    [syncCameraOrientationState],
+  );
 
   const saved3dViewsList = useMemo(
     () =>

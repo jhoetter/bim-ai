@@ -162,6 +162,7 @@ beforeEach(() => {
     activeLevelId: undefined,
     activePlanViewId: undefined,
     activeViewpointId: undefined,
+    planTool: 'select',
     vvDialogOpen: false,
   });
 });
@@ -183,6 +184,7 @@ afterEach(() => {
     activeLevelId: undefined,
     activePlanViewId: undefined,
     activeViewpointId: undefined,
+    planTool: 'select',
     vvDialogOpen: false,
   });
 });
@@ -1096,6 +1098,18 @@ describe('<Workspace /> — smoke', () => {
     expect(useBimStore.getState().planTool).toBe('floor');
     fireEvent.click(getByTestId('ribbon-command-roof'));
     expect(useBimStore.getState().planTool).toBe('roof');
+  });
+
+  it('removes the empty-canvas overlay while a 3D authoring tool is active', () => {
+    seedTabs('3d');
+    const { getByTestId, getByText, queryByText } = renderWithProviders(<Workspace />);
+
+    expect(getByText(/Loading model|This level is empty/)).toBeTruthy();
+
+    fireEvent.click(getByTestId('ribbon-command-wall'));
+
+    expect(queryByText(/Loading model|This level is empty/)).toBeNull();
+    expect(getByTestId('stub-viewport').getAttribute('data-active-plan-tool')).toBe('wall');
   });
 
   it('uses explicit secondary sidebar adapters for every view type — UX-WP-04', () => {

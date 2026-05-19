@@ -286,4 +286,97 @@ describe('<Workspace /> — semantic command wiring (T-01)', () => {
       }),
     );
   });
+
+  it('optimistically places hosted windows before the server round-trip completes', async () => {
+    useBimStore.setState({
+      elementsById: {
+        'wall-host': {
+          kind: 'wall',
+          id: 'wall-host',
+          name: 'wall-host',
+          levelId: 'l0',
+          start: { xMm: 0, yMm: 0 },
+          end: { xMm: 5000, yMm: 0 },
+          thicknessMm: 200,
+          heightMm: 3000,
+        },
+      } as never,
+    });
+    let resolveApply!: (value: unknown) => void;
+    mockApplyCommand.mockReturnValue(
+      new Promise((resolve) => {
+        resolveApply = resolve;
+      }),
+    );
+
+    render(
+      <MemoryRouter initialEntries={['/redesign']}>
+        <Workspace />
+      </MemoryRouter>,
+    );
+    await waitFor(() => expect(planCanvasProps.current).not.toBeNull());
+
+    planCanvasProps.current?.onSemanticCommand({
+      type: 'insertWindowOnWall',
+      wallId: 'wall-host',
+      alongT: 0.4,
+      widthMm: 1100,
+      sillHeightMm: 800,
+      heightMm: 1300,
+    });
+
+    let optimisticWindowId = '';
+    await waitFor(() => {
+      const win = Object.values(useBimStore.getState().elementsById).find(
+        (el) => el.kind === 'window',
+      );
+      expect(win).toBeDefined();
+      optimisticWindowId = win?.id ?? '';
+      expect(win).toMatchObject({
+        kind: 'window',
+        wallId: 'wall-host',
+        alongT: 0.4,
+        widthMm: 1100,
+        sillHeightMm: 800,
+        heightMm: 1300,
+      });
+    });
+    expect(mockApplyCommand).toHaveBeenCalledWith(
+      'test-model',
+      expect.objectContaining({
+        type: 'insertWindowOnWall',
+        id: optimisticWindowId,
+        wallId: 'wall-host',
+      }),
+      expect.objectContaining({ userId: 'user-1' }),
+    );
+
+    resolveApply({
+      revision: 2,
+      delta: {
+        revision: 2,
+        elements: {
+          [optimisticWindowId]: {
+            kind: 'window',
+            id: optimisticWindowId,
+            name: 'Server Window',
+            wallId: 'wall-host',
+            alongT: 0.4,
+            widthMm: 1100,
+            sillHeightMm: 800,
+            heightMm: 1300,
+          },
+        },
+        violations: [],
+        removedIds: [],
+      },
+      elements: {},
+      violations: [],
+    });
+    await waitFor(() => {
+      const confirmed = useBimStore.getState().elementsById[optimisticWindowId];
+      expect(confirmed?.kind).toBe('window');
+      expect(confirmed && 'name' in confirmed ? confirmed.name : undefined).toBe('Server Window');
+    });
+  });
 });

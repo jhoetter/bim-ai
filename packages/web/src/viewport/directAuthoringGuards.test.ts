@@ -5,6 +5,7 @@ import {
   findHostedOpeningConflict,
   isBackfacingWallHit,
   isDuplicateHostedPlacement,
+  shouldBypassLevelDatumPickForDirectAuthoring,
   shouldCommitHostedPlacementOnPointerUp,
   shouldReuseHostedPreviewCommit,
   isLinkedElementId,
@@ -121,6 +122,48 @@ describe('shouldCommitHostedPlacementOnPointerUp', () => {
       shouldCommitHostedPlacementOnPointerUp({
         wasDragging: 'orbit',
         draftTool: 'window',
+      }),
+    ).toBe(false);
+  });
+});
+
+describe('shouldBypassLevelDatumPickForDirectAuthoring', () => {
+  it('keeps ordinary direct-authoring clicks on the placement tool instead of level datums', () => {
+    for (const directTool of ['window', 'door', 'wall', 'railing']) {
+      expect(
+        shouldBypassLevelDatumPickForDirectAuthoring({
+          button: 0,
+          directTool,
+          altKey: false,
+          shiftKey: false,
+        }),
+      ).toBe(true);
+    }
+  });
+
+  it('leaves level datum picking available outside ordinary direct-authoring clicks', () => {
+    expect(
+      shouldBypassLevelDatumPickForDirectAuthoring({
+        button: 0,
+        directTool: null,
+        altKey: false,
+        shiftKey: false,
+      }),
+    ).toBe(false);
+    expect(
+      shouldBypassLevelDatumPickForDirectAuthoring({
+        button: 0,
+        directTool: 'window',
+        altKey: true,
+        shiftKey: false,
+      }),
+    ).toBe(false);
+    expect(
+      shouldBypassLevelDatumPickForDirectAuthoring({
+        button: 1,
+        directTool: 'window',
+        altKey: false,
+        shiftKey: false,
       }),
     ).toBe(false);
   });

@@ -81,6 +81,15 @@ export function shouldCommitHostedPlacementOnPointerUp(input: {
   return input.wasDragging === 'tool-draft' && isHostedPlacementTool(input.draftTool);
 }
 
+export function shouldBypassLevelDatumPickForDirectAuthoring(input: {
+  button: number;
+  directTool: string | null | undefined;
+  altKey: boolean;
+  shiftKey: boolean;
+}): boolean {
+  return input.button === 0 && Boolean(input.directTool) && !input.altKey && !input.shiftKey;
+}
+
 export function shouldReuseHostedPreviewCommit(input: {
   clickScreen: ScreenPointLike;
   previewCenter?: ScreenPointLike;
