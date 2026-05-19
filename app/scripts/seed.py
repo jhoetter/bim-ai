@@ -25,6 +25,12 @@ from sqlalchemy import delete, select
 from bim_ai.db import SessionMaker, init_db_schema
 from bim_ai.document import Document
 from bim_ai.engine import try_commit_bundle
+from bim_ai.seed_library import (
+    SEED_PROJECT_ID,
+    SEED_PROJECT_SLUG,
+    SEED_PROJECT_TITLE,
+    is_disposable_local_project,
+)
 from bim_ai.tables import (
     ActivityRowRecord,
     CommentRecord,
@@ -39,7 +45,6 @@ from bim_ai.tables import (
 
 REPO_ROOT = Path(__file__).resolve().parent.parent.parent
 DEFAULT_ARTIFACT_ROOT = REPO_ROOT / "seed-artifacts"
-SEED_PROJECT_ID = uuid.uuid5(uuid.NAMESPACE_URL, "bim-ai:project:seed-library")
 LEGACY_DEMO_PROJECT_ID = uuid.uuid5(uuid.NAMESPACE_URL, "bim-ai:project:demo")
 LEGACY_DEMO_MODEL_ID = uuid.uuid5(uuid.NAMESPACE_URL, "bim-ai:model:demo-main")
 SLUG_RE = re.compile(r"^[a-z0-9][a-z0-9._-]{0,127}$")
@@ -200,6 +205,19 @@ async def _clear_legacy_seed(session: Any) -> int:
     return 1 if row is not None else 0
 
 
+async def _purge_disposable_projects(session: Any) -> int:
+    result = await session.execute(
+        select(ProjectRecord)
+        .where(ProjectRecord.id != SEED_PROJECT_ID)
+        .order_by(ProjectRecord.slug)
+    )
+    removed = 0
+    for project in result.scalars().all():
+        if is_disposable_local_project(project.slug, project.title):
+            removed += await _clear_project(session, project.id)
+    return removed
+
+
 def _intro_comment(artifact: SeedArtifact, now: datetime) -> CommentRecord | None:
     comment = artifact.manifest.get("entryComment")
     if comment is False:
@@ -234,10 +252,14 @@ async def seed_async(name: str | None, root: Path, clear_only: bool) -> None:
 
     async with SessionMaker() as session:
         legacy_removed = await _clear_legacy_seed(session)
+        disposable_removed = await _purge_disposable_projects(session)
         if clear_only:
             removed = await _clear_project(session, SEED_PROJECT_ID)
             await session.commit()
-            print(f"seed: cleared {removed + legacy_removed} seed model(s)")
+            print(
+                f"seed: cleared {removed + legacy_removed + disposable_removed} "
+                "seed/disposable model(s)"
+            )
             return
 
         await _clear_project(session, SEED_PROJECT_ID)
@@ -251,8 +273,8 @@ async def seed_async(name: str | None, root: Path, clear_only: bool) -> None:
             session.add(
                 ProjectRecord(
                     id=SEED_PROJECT_ID,
-                    slug="seeds",
-                    title="Seed Library",
+                    slug=SEED_PROJECT_SLUG,
+                    title=SEED_PROJECT_TITLE,
                 )
             )
 

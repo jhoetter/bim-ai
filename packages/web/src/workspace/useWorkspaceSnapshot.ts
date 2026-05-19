@@ -12,6 +12,7 @@ import {
 import { log } from '../logger';
 import { useBimStore } from '../state/store';
 import { MAX_WS_RECONNECT_ATTEMPTS, reconnectDelayMs } from '../lib/wsReconnect';
+import { modelWsUrl } from '../lib/wsUrl';
 import { mapComments } from './workspaceUtils';
 
 const DISABLE_WS =
@@ -76,9 +77,22 @@ export type SeedModelOption = {
   revision: number;
 };
 
-function seedModelsFromBootstrap(bx: { projects?: Record<string, unknown>[] }): SeedModelOption[] {
+const SEED_LIBRARY_PROJECT_ID = '892ee9f7-307c-5e40-a838-3bc64b5f5f92';
+
+function isSeedLibraryProject(project: Record<string, unknown>): boolean {
+  return (
+    project.seedLibrary === true ||
+    project.kind === 'seed-library' ||
+    project.id === SEED_LIBRARY_PROJECT_ID
+  );
+}
+
+export function seedModelsFromBootstrap(bx: {
+  projects?: Record<string, unknown>[];
+}): SeedModelOption[] {
   const rows: SeedModelOption[] = [];
   for (const project of bx.projects ?? []) {
+    if (!isSeedLibraryProject(project)) continue;
     const projectTitle = String(project.title ?? project.slug ?? 'Seed Library');
     const models = Array.isArray(project.models) ? project.models : [];
     for (const model of models as Record<string, unknown>[]) {
@@ -134,11 +148,7 @@ export function useWorkspaceSnapshot(): {
 
   const connectWs = useCallback(
     (mid: string, lastSeq: number | null): WebSocket => {
-      const p = window.location.protocol === 'https:' ? 'wss' : 'ws';
-      const resumeParam = lastSeq !== null ? `?resumeFrom=${lastSeq}` : '';
-      const ws = new WebSocket(
-        `${p}://${window.location.host}/ws/${encodeURIComponent(mid)}${resumeParam}`,
-      );
+      const ws = new WebSocket(modelWsUrl(mid, lastSeq));
 
       ws.onopen = () => {
         if (wsRef.current !== ws) return;

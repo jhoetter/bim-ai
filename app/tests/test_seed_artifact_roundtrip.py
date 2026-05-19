@@ -6,13 +6,20 @@ import asyncio
 import hashlib
 import json
 from pathlib import Path
-from uuid import UUID
+from types import SimpleNamespace
+from uuid import UUID, uuid4
 
 from bim_ai.constraints_evaluation import evaluate
 from bim_ai.elements import LevelElem, ProjectBasePointElem
 from bim_ai.room_access_integrity import check_room_access_integrity
 from scripts import seed
-from scripts.seed import SEED_PROJECT_ID, _load_artifact, _materialize, seed_async
+from scripts.seed import (
+    SEED_PROJECT_ID,
+    _load_artifact,
+    _materialize,
+    _purge_disposable_projects,
+    seed_async,
+)
 
 REPO_ROOT = Path(__file__).resolve().parent.parent.parent
 
@@ -114,6 +121,10 @@ def test_targeted_seed_rebuilds_seed_project(monkeypatch, tmp_path: Path) -> Non
         calls.append(("clear_project", project_id))
         return 2
 
+    async def purge_disposable_projects_stub(session) -> int:
+        calls.append(("purge_disposable", SEED_PROJECT_ID))
+        return 0
+
     async def delete_model_records_stub(session, model_ids) -> None:
         calls.append(("delete_model", model_ids[0]))
 
@@ -139,15 +150,63 @@ def test_targeted_seed_rebuilds_seed_project(monkeypatch, tmp_path: Path) -> Non
     monkeypatch.setattr(seed, "init_db_schema", init_db_schema_stub)
     monkeypatch.setattr(seed, "_clear_legacy_seed", clear_legacy_seed_stub)
     monkeypatch.setattr(seed, "_clear_project", clear_project_stub)
+    monkeypatch.setattr(seed, "_purge_disposable_projects", purge_disposable_projects_stub)
     monkeypatch.setattr(seed, "_delete_model_records", delete_model_records_stub)
     monkeypatch.setattr(seed, "SessionMaker", lambda: FakeSession())
 
     asyncio.run(seed_async(name="target-house-3", root=tmp_path, clear_only=False))
 
     assert ("clear_project", SEED_PROJECT_ID) in calls
+    assert ("purge_disposable", SEED_PROJECT_ID) in calls
     assert calls.index(("clear_project", SEED_PROJECT_ID)) < calls.index(
         ("delete_model", _load_artifact(artifact_dir).model_id)
     )
+
+
+def test_seed_purge_removes_disposable_local_evidence_projects(monkeypatch) -> None:
+    disposable_id = uuid4()
+    safe_id = uuid4()
+    projects = [
+        SimpleNamespace(
+            id=disposable_id,
+            slug="m2-wave5-1234abcd",
+            title="M2 Wave 5 disposable local evidence project",
+        ),
+        SimpleNamespace(
+            id=safe_id,
+            slug="client-wave-house",
+            title="Client Wave House",
+        ),
+        SimpleNamespace(
+            id=SEED_PROJECT_ID,
+            slug="seeds",
+            title="Seed Library",
+        ),
+    ]
+    cleared: list[UUID] = []
+
+    class FakeScalars:
+        def all(self):
+            return projects
+
+    class FakeResult:
+        def scalars(self):
+            return FakeScalars()
+
+    class FakeSession:
+        async def execute(self, stmt):
+            return FakeResult()
+
+    async def clear_project_stub(session, project_id: UUID) -> int:
+        cleared.append(project_id)
+        return 3
+
+    monkeypatch.setattr(seed, "_clear_project", clear_project_stub)
+
+    removed = asyncio.run(_purge_disposable_projects(FakeSession()))
+
+    assert removed == 3
+    assert cleared == [disposable_id]
 
 
 def test_checked_in_target_house_seed_artifact_is_portable_and_loadable() -> None:

@@ -123,12 +123,19 @@ GNU make consumes `--name` before the recipe can receive it.
   reused.
 - Loading all artifacts clears and rebuilds the local seed project from the
   artifact root.
-- Loading one artifact overwrites only that deterministic model id.
+- Loading one artifact clears and rebuilds the deterministic seed-library
+  project with that approved artifact only, so stale artifact models cannot
+  remain in the picker.
 - Legacy `demo/main` seed models are cleared before any seed load, so old
   hard-coded seedhouse data cannot appear in the UI.
+- Known disposable local evidence/rehearsal projects are purged during seed
+  loading when they match the repository's explicit disposable project naming
+  contract. Ordinary user projects are left outside seed management.
 
 ## UI Behavior
 
-All loaded artifact models appear in the top-left project menu under **Seeded
-projects**. Selecting a row hydrates that model and reconnects WebSocket state to
-the selected model id.
+Only models from the canonical seed-library project appear in the top-left
+project menu under **Seeded projects**. Selecting a row hydrates that model and
+reconnects WebSocket state to the selected model id. Other projects returned by
+`/api/bootstrap`, including disposable local evidence projects, are not seed
+library options.

@@ -159,6 +159,7 @@ from bim_ai.routes_sketch import sketch_router
 from bim_ai.routes_sketch_product import sketch_product_router
 from bim_ai.schedule_csv import schedule_payload_to_csv, schedule_payload_with_column_subset
 from bim_ai.schedule_derivation import derive_schedule_table, list_schedule_ids
+from bim_ai.seed_library import is_seed_library_project_id
 from bim_ai.sheet_preview_svg import SHEET_PRINT_RASTER_PRINT_SURROGATE_CONTRACT_V2
 from bim_ai.sustainability_lca import sustainability_lens_manifest_v1
 from bim_ai.structure_lens import structure_analysis_export
@@ -350,6 +351,7 @@ async def bootstrap(session: AsyncSession = Depends(get_session)) -> dict[str, A
     proj_res = await session.execute(select(ProjectRecord).order_by(ProjectRecord.slug))
     projects_out: list[dict[str, Any]] = []
     for p in proj_res.scalars().all():
+        seed_library = is_seed_library_project_id(p.id)
         mres = await session.execute(
             select(ModelRecord).where(ModelRecord.project_id == p.id).order_by(ModelRecord.slug)
         )
@@ -358,10 +360,20 @@ async def bootstrap(session: AsyncSession = Depends(get_session)) -> dict[str, A
                 "id": str(m.id),
                 "slug": m.slug,
                 "revision": m.revision,
+                "seedArtifact": seed_library,
             }
             for m in mres.scalars().all()
         ]
-        projects_out.append({"id": str(p.id), "slug": p.slug, "title": p.title, "models": models})
+        projects_out.append(
+            {
+                "id": str(p.id),
+                "slug": p.slug,
+                "title": p.title,
+                "kind": "seed-library" if seed_library else "project",
+                "seedLibrary": seed_library,
+                "models": models,
+            }
+        )
     return {"projects": projects_out}
 
 
