@@ -8,6 +8,9 @@ const WARNING_SEVERITIES = new Set(['warning', 'warn']);
 const ERROR_SEVERITIES = new Set(['error', 'blocker', 'blocking']);
 const RENDERER_KEY_RE = /renderer|render|raster|viewport|visual/i;
 const RENDERER_BLOCKER_VALUE_RE = /unsupported|failed|missing|unavailable|blocked|invalid/i;
+const OPTIONAL_FULL_RASTER_UNAVAILABLE = 'unsupported_full_raster_renderer_unavailable';
+const SHEET_PRINT_RASTER_SURROGATE_V2 = 'sheetPrintRasterPrintSurrogate_v2';
+const SHEET_PRINT_RASTER_CONTRACT_V3 = 'sheetPrintRasterPrintContract_v3';
 
 function isObject(value) {
   return value !== null && typeof value === 'object' && !Array.isArray(value);
@@ -40,6 +43,103 @@ function firstString(...values) {
     if (stringValue) return stringValue;
   }
   return '';
+}
+
+function isSha256Hex(value) {
+  return /^[a-f0-9]{64}$/i.test(asString(value));
+}
+
+function getPathValue(root, trail) {
+  let value = root;
+  for (const part of trail) {
+    if (value == null) return undefined;
+    value = value[part];
+  }
+  return value;
+}
+
+function artifactByName(manifest, artifactName) {
+  const artifacts = Array.isArray(manifest?.artifacts) ? manifest.artifacts : [];
+  return artifacts.find((artifact) => artifact?.artifactName === artifactName) ?? null;
+}
+
+function checksPass(checks) {
+  return Array.isArray(checks) && checks.length > 0 && checks.every((check) => check?.ok === true);
+}
+
+function deterministicSheetRowForPath(artifact, trail) {
+  if (trail[0] !== 'deterministicSheetEvidence') return null;
+  const index = Number(trail[1]);
+  if (!Number.isInteger(index) || index < 0) return null;
+  const rows = Array.isArray(artifact.deterministicSheetEvidence)
+    ? artifact.deterministicSheetEvidence
+    : [];
+  const row = rows[index];
+  return isObject(row) ? row : null;
+}
+
+function hasEquivalentSheetRasterEvidence(row) {
+  const contract = row.sheetPrintRasterPrintContract_v3;
+  const manifest = row.sheetExportArtifactManifest_v1;
+  const ingest = row.sheetPrintRasterIngest_v1;
+  if (!isObject(contract) || !isObject(manifest) || !isObject(ingest)) return false;
+
+  const svg = artifactByName(manifest, 'sheet-preview.svg');
+  const png = artifactByName(manifest, 'sheet-print-raster.png');
+  const corr = manifest.ciBaselineCorrelation;
+  if (!isObject(svg) || !isObject(png) || !isObject(corr)) return false;
+
+  const hasViewportEvidence =
+    (Array.isArray(contract.layoutBandsMm) && contract.layoutBandsMm.length > 0) ||
+    (Array.isArray(contract.viewportSegmentCorrelation) &&
+      contract.viewportSegmentCorrelation.length > 0) ||
+    (Array.isArray(row.viewportEvidenceHints_v0) && row.viewportEvidenceHints_v0.length > 0);
+
+  return (
+    contract.format === SHEET_PRINT_RASTER_CONTRACT_V3 &&
+    contract.valid === true &&
+    contract.surrogateVersion === SHEET_PRINT_RASTER_SURROGATE_V2 &&
+    contract.fullRasterExportStatus === OPTIONAL_FULL_RASTER_UNAVAILABLE &&
+    checksPass(contract.checks) &&
+    isSha256Hex(contract.svgContentSha256) &&
+    isSha256Hex(contract.pngByteSha256) &&
+    contract.exportListingParityDigestMatch === true &&
+    hasViewportEvidence &&
+    manifest.format === 'sheetExportArtifactManifest_v1' &&
+    manifest.exportListingParityDigestMatch === true &&
+    isSha256Hex(manifest.svgListingDigestSha256) &&
+    manifest.svgListingDigestSha256 === manifest.pdfListingDigestSha256 &&
+    svg.mimeType === 'image/svg+xml' &&
+    svg.digestSha256 === contract.svgContentSha256 &&
+    png.mimeType === 'image/png' &&
+    png.digestSha256 === contract.pngByteSha256 &&
+    png.surrogateContract === SHEET_PRINT_RASTER_SURROGATE_V2 &&
+    png.fullRasterExportStatus === OPTIONAL_FULL_RASTER_UNAVAILABLE &&
+    corr.surrogateContract === SHEET_PRINT_RASTER_SURROGATE_V2 &&
+    corr.fullRasterExportStatus === OPTIONAL_FULL_RASTER_UNAVAILABLE &&
+    corr.svgDigestSha256 === contract.svgContentSha256 &&
+    corr.pngDigestSha256 === contract.pngByteSha256 &&
+    corr.exportListingDigestSha256 === manifest.svgListingDigestSha256 &&
+    ingest.contract === SHEET_PRINT_RASTER_SURROGATE_V2 &&
+    ingest.svgContentSha256 === contract.svgContentSha256 &&
+    ingest.placeholderPngSha256 === contract.pngByteSha256
+  );
+}
+
+function isOptionalFullRasterUnavailableWithEvidence({ source, artifact, trail, key, value }) {
+  if (source !== 'evidence-package') return false;
+  if (key !== 'fullRasterExportStatus') return false;
+  if (normalize(value) !== OPTIONAL_FULL_RASTER_UNAVAILABLE) return false;
+  const row = deterministicSheetRowForPath(artifact, trail);
+  if (!row) return false;
+
+  const currentNode = getPathValue(artifact, trail.slice(0, -1));
+  if (!isObject(currentNode)) return false;
+  const validCarrier =
+    currentNode === row.sheetPrintRasterPrintContract_v3 ||
+    currentNode === row.sheetExportArtifactManifest_v1?.ciBaselineCorrelation ||
+    currentNode?.artifactName === 'sheet-print-raster.png';
+  return validCarrier && hasEquivalentSheetRasterEvidence(row);
 }
 
 function readJsonIfExists(filePath) {
@@ -210,6 +310,17 @@ function collectRendererBlockers(evidenceDir) {
           RENDERER_BLOCKER_VALUE_RE.test(stringValue) &&
           !/needs_review/i.test(stringValue)
         ) {
+          if (
+            isOptionalFullRasterUnavailableWithEvidence({
+              source,
+              artifact,
+              trail: [...trail, key],
+              key,
+              value: stringValue,
+            })
+          ) {
+            continue;
+          }
           rows.push({
             source,
             code: `${key}:${normalize(stringValue)}`,

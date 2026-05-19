@@ -91,6 +91,85 @@ test('fails on renderer blocker status in evidence package', () => {
   assert.equal(result.blockers[0].blockerKind, 'renderer_blocker');
 });
 
+test('does not block optional full raster unavailable when deterministic sheet surrogate evidence is complete', () => {
+  const dir = tempEvidenceDir();
+  writeBaseEvidence(dir);
+  const svgSha = 'a'.repeat(64);
+  const pngSha = 'b'.repeat(64);
+  const listingSha = 'c'.repeat(64);
+  writeJson(dir, 'evidence-package.json', {
+    deterministicSheetEvidence: [
+      {
+        sheetId: 'sheet-a101',
+        sheetPrintRasterIngest_v1: {
+          contract: 'sheetPrintRasterPrintSurrogate_v2',
+          svgContentSha256: svgSha,
+          placeholderPngSha256: pngSha,
+        },
+        sheetPrintRasterPrintContract_v3: {
+          format: 'sheetPrintRasterPrintContract_v3',
+          surrogateVersion: 'sheetPrintRasterPrintSurrogate_v2',
+          fullRasterExportStatus: 'unsupported_full_raster_renderer_unavailable',
+          svgContentSha256: svgSha,
+          pngByteSha256: pngSha,
+          exportListingParityDigestMatch: true,
+          layoutBandsMm: [
+            { viewportId: 'vp-ground', xMm: 0, yMm: 0, widthMm: 100, heightMm: 80 },
+          ],
+          viewportSegmentCorrelation: [
+            {
+              viewportId: 'vp-ground',
+              segmentCorrelationDigestSha256: 'd'.repeat(64),
+            },
+          ],
+          checks: [
+            { id: 'png_ihdr_wh', ok: true },
+            { id: 'png_wh_surrogate_v2', ok: true },
+            { id: 'png_rgb8', ok: true },
+            { id: 'surrogate_png_bytes_match_v2', ok: true },
+          ],
+          valid: true,
+        },
+        viewportEvidenceHints_v0: [
+          { viewportId: 'vp-ground', planProjectionSegment: 'planPrim[w=1]' },
+        ],
+        sheetExportArtifactManifest_v1: {
+          format: 'sheetExportArtifactManifest_v1',
+          exportListingParityDigestMatch: true,
+          svgListingDigestSha256: listingSha,
+          pdfListingDigestSha256: listingSha,
+          artifacts: [
+            {
+              artifactName: 'sheet-preview.svg',
+              mimeType: 'image/svg+xml',
+              digestSha256: svgSha,
+            },
+            {
+              artifactName: 'sheet-print-raster.png',
+              mimeType: 'image/png',
+              digestSha256: pngSha,
+              surrogateContract: 'sheetPrintRasterPrintSurrogate_v2',
+              fullRasterExportStatus: 'unsupported_full_raster_renderer_unavailable',
+            },
+          ],
+          ciBaselineCorrelation: {
+            surrogateContract: 'sheetPrintRasterPrintSurrogate_v2',
+            fullRasterExportStatus: 'unsupported_full_raster_renderer_unavailable',
+            svgDigestSha256: svgSha,
+            pngDigestSha256: pngSha,
+            exportListingDigestSha256: listingSha,
+          },
+        },
+      },
+    ],
+  });
+
+  const result = evaluateTargetHouseCleanPassGate({ evidenceDir: dir, generatedAt: GENERATED_AT });
+
+  assert.equal(result.ok, true);
+  assert.equal(result.summary.rendererBlockerCount, 0);
+});
+
 test('fails Advisor warnings without a complete matching tolerance ledger row', () => {
   const dir = tempEvidenceDir();
   writeBaseEvidence(dir);
