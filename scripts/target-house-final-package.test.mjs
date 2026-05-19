@@ -190,6 +190,9 @@ function passingStatusInput(overrides = {}) {
       done: 4,
       incomplete: 0,
       byStatus: { Done: 4 },
+      incompleteByPriority: {},
+      incompleteBySection: {},
+      incompleteRows: [],
       sampleIncompleteRows: [],
     },
     liveEvidenceFresh: true,
@@ -355,7 +358,26 @@ test('target-house final package blocks whole-tracker incompleteness even if foc
         done: 1,
         incomplete: 1,
         byStatus: { Done: 1, Partial: 1 },
-        sampleIncompleteRows: [{ id: 'BIR-L02', priority: 'P0', status: 'Partial' }],
+        incompleteByPriority: { P0: 1 },
+        incompleteBySection: { 'L. Performance, Responsiveness, And Live Stability': 1 },
+        incompleteRows: [
+          {
+            id: 'BIR-L02',
+            priority: 'P0',
+            status: 'Partial',
+            section: 'L. Performance, Responsiveness, And Live Stability',
+            item: 'Profile renderer update cost.',
+          },
+        ],
+        sampleIncompleteRows: [
+          {
+            id: 'BIR-L02',
+            priority: 'P0',
+            status: 'Partial',
+            section: 'L. Performance, Responsiveness, And Live Stability',
+            item: 'Profile renderer update cost.',
+          },
+        ],
       },
     }),
   );
@@ -364,8 +386,24 @@ test('target-house final package blocks whole-tracker incompleteness even if foc
   assert.deepEqual(status.blockers, ['tracker_incomplete']);
   const detail = status.blockerDetails.find((row) => row.code === 'tracker_incomplete');
   assert.equal(detail.count, 1);
+  assert.deepEqual(detail.incompleteByPriority, { P0: 1 });
+  assert.deepEqual(detail.incompleteRows, [
+    {
+      id: 'BIR-L02',
+      priority: 'P0',
+      status: 'Partial',
+      section: 'L. Performance, Responsiveness, And Live Stability',
+      item: 'Profile renderer update cost.',
+    },
+  ]);
   assert.deepEqual(detail.sampleIncompleteRows, [
-    { id: 'BIR-L02', priority: 'P0', status: 'Partial' },
+    {
+      id: 'BIR-L02',
+      priority: 'P0',
+      status: 'Partial',
+      section: 'L. Performance, Responsiveness, And Live Stability',
+      item: 'Profile renderer update cost.',
+    },
   ]);
 });
 

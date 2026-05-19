@@ -6,17 +6,22 @@ from pathlib import Path
 from bim_ai.advisor_rule_registry import (
     ADVISOR_RULES,
     CANONICAL_RULE_SURFACES,
+    CANONICAL_RULE_TAXONOMY_FAMILIES,
     advisor_rule_by_id,
     advisor_rule_catalog_payload,
     advisor_rule_payloads,
     advisor_rules_for_profile,
+    canonical_rule_metadata_for,
+    canonical_taxonomy_family_for,
     render_advisor_rule_ledger,
     validate_advisor_rule_registry,
+    validate_canonical_rule_taxonomy,
 )
 
 
 def test_registry_is_valid() -> None:
     assert validate_advisor_rule_registry() == []
+    assert validate_canonical_rule_taxonomy() == []
 
 
 def test_registry_rule_ids_are_unique_and_sorted() -> None:
@@ -143,9 +148,12 @@ def test_catalog_payload_is_canonical_rule_contract_for_all_surfaces() -> None:
     assert payload["format"] == "advisorRuleCatalog_v1"
     assert payload["schemaVersion"] == "advisor-rule-registry.v1"
     assert payload["summary"]["ruleCount"] == len(ADVISOR_RULES)
+    assert payload["summary"]["taxonomyFamilyCount"] == len(CANONICAL_RULE_TAXONOMY_FAMILIES)
+    assert payload["summary"]["coverageMode"] == "explicit_rules_plus_taxonomy_fallback"
     assert payload["summary"]["rulesBySurface"] == {
         surface: len(ADVISOR_RULES) for surface in CANONICAL_RULE_SURFACES
     }
+    assert payload["taxonomyFamilies"][-1]["familyId"] == "general_review"
     assert [rule["ruleId"] for rule in payload["rules"]] == [
         rule.rule_id for rule in ADVISOR_RULES
     ]
@@ -163,6 +171,51 @@ def test_catalog_payload_filters_by_profile_and_surface() -> None:
     assert payload["filters"] == {"profile": "sketch_acceptance", "surface": "mcp"}
 
 
+def test_taxonomy_fallback_resolves_dynamic_rule_metadata() -> None:
+    metadata = canonical_rule_metadata_for(
+        "sheet_viewport_zero_extent",
+        severity="warning",
+        tracker_items=("BIR-R03",),
+    )
+
+    assert metadata["ruleId"] == "sheet_viewport_zero_extent"
+    assert metadata["taxonomyFamily"] == "exchange_documentation"
+    assert metadata["severity"] == "warning"
+    assert metadata["layerOwner"]
+    assert metadata["discipline"] == "exchange"
+    assert metadata["perspective"] == "exchange"
+    assert metadata["profiles"]
+    assert metadata["sourceLayer"] == metadata["layerOwner"]
+    assert metadata["suppressibility"]
+    assert metadata["tolerancePolicy"] == {
+        "requiresOwner": True,
+        "requiresExpiry": True,
+        "requiresEvidence": True,
+    }
+    assert metadata["recommendation"]
+    assert metadata["fixCommandHints"]
+    assert metadata["affectedIdKinds"]
+    assert set(metadata["surfaces"]) == set(CANONICAL_RULE_SURFACES)
+    assert metadata["trackerItems"] == ["BIR-R03"]
+    assert metadata["apiField"] == "ruleId"
+    assert metadata["cliCode"] == "sheet_viewport_zero_extent"
+
+
+def test_taxonomy_family_matching_covers_major_rule_layers() -> None:
+    examples = {
+        "hosted_opening_overlap": "model_integrity_architecture",
+        "renderer_failed_cut": "renderer_diagnostics",
+        "constructability_metadata_requirement_missing": "constructability_profile",
+        "exchange_ifc_roundtrip_count_mismatch": "exchange_documentation",
+        "sketch_evidence_stale": "sketch_methodology",
+        "transaction_preflight_failed": "platform_transaction",
+        "unknown_future_rule": "general_review",
+    }
+
+    for rule_id, family_id in examples.items():
+        assert canonical_taxonomy_family_for(rule_id).family_id == family_id
+
+
 def test_rendered_ledger_mentions_all_rules_and_tracker_items() -> None:
     ledger = render_advisor_rule_ledger()
     for rule in ADVISOR_RULES:
@@ -177,6 +230,8 @@ def test_rendered_ledger_mentions_all_rules_and_tracker_items() -> None:
             assert f"`{tracker_item}`" in ledger
         for test_ref in rule.test_refs:
             assert test_ref in ledger
+    for family in CANONICAL_RULE_TAXONOMY_FAMILIES:
+        assert f"`{family.family_id}`" in ledger
 
 
 def test_generated_ledger_is_up_to_date() -> None:

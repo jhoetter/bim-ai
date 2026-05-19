@@ -599,27 +599,34 @@ function parseTrackerRows(markdown, ids) {
 }
 
 function parseAllTrackerRows(markdown) {
-  return markdown
-    .split(/\r?\n/)
-    .filter((line) => line.trim().startsWith('|'))
-    .map((line) =>
-      line
-        .trim()
-        .slice(1, -1)
-        .split('|')
-        .map((cell) => cell.trim()),
-    )
-    .filter((cells) => /^`BIR-[A-Z]\d{2}`$/.test(cells[0] ?? ''))
-    .filter(
-      (cells) => TRACKER_PRIORITIES.has(cells[1] ?? '') && TRACKER_STATUSES.has(cells[2] ?? ''),
-    )
-    .map((cells) => ({
+  const rows = [];
+  let section = 'unknown';
+  for (const line of markdown.split(/\r?\n/)) {
+    const sectionMatch = /^###\s+([A-Z])\.\s+(.+)$/.exec(line);
+    if (sectionMatch) {
+      section = `${sectionMatch[1]}. ${sectionMatch[2].trim()}`;
+      continue;
+    }
+    if (!line.trim().startsWith('|')) continue;
+    const cells = line
+      .trim()
+      .slice(1, -1)
+      .split('|')
+      .map((cell) => cell.trim());
+    if (!/^`BIR-[A-Z]\d{2}`$/.test(cells[0] ?? '')) continue;
+    if (!TRACKER_PRIORITIES.has(cells[1] ?? '') || !TRACKER_STATUSES.has(cells[2] ?? '')) {
+      continue;
+    }
+    rows.push({
       id: cells[0].replaceAll('`', ''),
       priority: cells[1] ?? '',
       status: cells[2] ?? '',
       item: cells[3] ?? '',
       acceptance: cells[4] ?? '',
-    }));
+      section,
+    });
+  }
+  return rows;
 }
 
 function trackerCompletionSummary(markdown) {
@@ -627,15 +634,23 @@ function trackerCompletionSummary(markdown) {
   const counts = {};
   for (const row of rows) counts[row.status] = (counts[row.status] ?? 0) + 1;
   const incompleteRows = rows.filter((row) => row.status !== 'Done');
+  const compactIncompleteRows = incompleteRows.map((row) => ({
+    id: row.id,
+    priority: row.priority,
+    status: row.status,
+    section: row.section,
+    item: row.item,
+  }));
   return {
     ok: incompleteRows.length === 0,
     total: rows.length,
     done: counts.Done ?? 0,
     incomplete: incompleteRows.length,
     byStatus: Object.fromEntries(Object.entries(counts).sort()),
-    sampleIncompleteRows: incompleteRows
-      .slice(0, 20)
-      .map((row) => ({ id: row.id, priority: row.priority, status: row.status, item: row.item })),
+    incompleteByPriority: countByKey(compactIncompleteRows, 'priority'),
+    incompleteBySection: countByKey(compactIncompleteRows, 'section'),
+    incompleteRows: compactIncompleteRows,
+    sampleIncompleteRows: compactIncompleteRows.slice(0, 20),
   };
 }
 
@@ -1237,6 +1252,9 @@ export function closeoutStatus({
       total: trackerCompletion.total,
       done: trackerCompletion.done,
       byStatus: trackerCompletion.byStatus,
+      incompleteByPriority: trackerCompletion.incompleteByPriority,
+      incompleteBySection: trackerCompletion.incompleteBySection,
+      incompleteRows: trackerCompletion.incompleteRows,
       sampleIncompleteRows: trackerCompletion.sampleIncompleteRows,
     });
   }

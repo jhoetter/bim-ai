@@ -174,6 +174,48 @@ class AdvisorRule:
         return data
 
 
+@dataclass(frozen=True, slots=True)
+class RuleTaxonomyFamily:
+    family_id: str
+    title: str
+    match_prefixes: tuple[str, ...]
+    match_exact: tuple[str, ...]
+    severity: Severity
+    layer_owner: LayerOwner
+    discipline: Discipline
+    perspective: Perspective
+    profiles: tuple[str, ...]
+    severity_policy: SeverityPolicy
+    suppressibility: Suppressibility
+    actionability: Actionability
+    affected_id_kinds: tuple[str, ...]
+    fix_command_hints: tuple[str, ...]
+    tracker_items: tuple[str, ...]
+    priority: Priority
+    recommendation: str
+
+    def matches(self, rule_id: str) -> bool:
+        return rule_id in self.match_exact or any(
+            rule_id.startswith(prefix) for prefix in self.match_prefixes
+        )
+
+    def to_dict(self) -> dict[str, object]:
+        data = asdict(self)
+        data["familyId"] = data.pop("family_id")
+        data["matchPrefixes"] = data.pop("match_prefixes")
+        data["matchExact"] = data.pop("match_exact")
+        data["layerOwner"] = data.pop("layer_owner")
+        data["severityPolicy"] = data.pop("severity_policy")
+        data["affectedIdKinds"] = data.pop("affected_id_kinds")
+        data["fixCommandHints"] = data.pop("fix_command_hints")
+        data["trackerItems"] = data.pop("tracker_items")
+        return data
+
+
+def _title_from_rule_id(rule_id: str) -> str:
+    return rule_id.replace("_", " ").strip().title() or "Advisor Rule"
+
+
 ADVISOR_RULES: tuple[AdvisorRule, ...] = (
     AdvisorRule(
         rule_id="bim_invariant_failure",
@@ -272,7 +314,9 @@ ADVISOR_RULES: tuple[AdvisorRule, ...] = (
         test_refs=DEFAULT_RULE_TEST_REFS,
         tracker_items=("BIR-A02", "BIR-A03", "BIR-A05", "BIR-C01"),
         priority="P0",
-        examples=("A door references a wall that is analysis-only, outside context, or too short.",),
+        examples=(
+            "A door references a wall that is analysis-only, outside context, or too short.",
+        ),
     ),
     AdvisorRule(
         rule_id="physical_helper_leakage",
@@ -301,7 +345,12 @@ ADVISOR_RULES: tuple[AdvisorRule, ...] = (
         api_field="ruleId",
         surfaces=CANONICAL_RULE_SURFACES,
         affected_id_kinds=("element", "wall", "door", "room", "analysis_object"),
-        fix_command_hints=("convertToAnalysis", "hideHelper", "deleteElement", "promotePhysicalElement"),
+        fix_command_hints=(
+            "convertToAnalysis",
+            "hideHelper",
+            "deleteElement",
+            "promotePhysicalElement",
+        ),
         test_refs=DEFAULT_RULE_TEST_REFS,
         tracker_items=("BIR-A02", "BIR-A03", "BIR-A05", "BIR-B03"),
         priority="P0",
@@ -375,6 +424,272 @@ ADVISOR_RULES: tuple[AdvisorRule, ...] = (
     ),
 )
 
+CANONICAL_RULE_TAXONOMY_FAMILIES: tuple[RuleTaxonomyFamily, ...] = (
+    RuleTaxonomyFamily(
+        family_id="explicit_registry",
+        title="Explicit canonical registry rule",
+        match_prefixes=(),
+        match_exact=tuple(rule.rule_id for rule in ADVISOR_RULES),
+        severity="error",
+        layer_owner="model_integrity",
+        discipline="platform",
+        perspective="platform",
+        profiles=("model_integrity", "construction_readiness", "agent_preflight"),
+        severity_policy="p0_integrity_error",
+        suppressibility="not_suppressible",
+        actionability="modeled_fix_required",
+        affected_id_kinds=("element", "document"),
+        fix_command_hints=("useExplicitRuleMetadata",),
+        tracker_items=("BIR-A02",),
+        priority="P0",
+        recommendation="Use the explicit canonical AdvisorRule metadata for this rule id.",
+    ),
+    RuleTaxonomyFamily(
+        family_id="authoring_validation",
+        title="Authoring validation",
+        match_prefixes=("opening_", "create_", "update_", "delete_", "place_", "move_"),
+        match_exact=("door_off_wall", "wall_missing_level", "floor_missing_level"),
+        severity="error",
+        layer_owner="authoring_validation",
+        discipline="architecture",
+        perspective="architecture",
+        profiles=("model_integrity", "architecture", "agent_preflight"),
+        severity_policy="p0_integrity_error",
+        suppressibility="not_suppressible",
+        actionability="modeled_fix_required",
+        affected_id_kinds=("element", "host", "level", "command"),
+        fix_command_hints=("rejectCommand", "repairCommandPayload", "selectValidHost"),
+        tracker_items=("BIR-B01", "BIR-B04", "BIR-B05"),
+        priority="P0",
+        recommendation="Reject or repair the authoring command before committing invalid geometry.",
+    ),
+    RuleTaxonomyFamily(
+        family_id="model_integrity_architecture",
+        title="Architectural model integrity",
+        match_prefixes=(
+            "hosted_",
+            "physical_",
+            "model_integrity_",
+            "wall_",
+            "floor_",
+            "room_",
+            "stair_",
+            "slab_",
+            "level_",
+            "grid_",
+            "dimension_",
+        ),
+        match_exact=("bim_invariant_failure",),
+        severity="error",
+        layer_owner="model_integrity",
+        discipline="architecture",
+        perspective="architecture",
+        profiles=("model_integrity", "architecture", "construction_readiness", "agent_preflight"),
+        severity_policy="p0_integrity_error",
+        suppressibility="tolerable_with_evidence",
+        actionability="modeled_fix_required",
+        affected_id_kinds=("element", "host", "level", "room", "floor"),
+        fix_command_hints=("repairModelGeometry", "rehostElement", "addMissingSupport"),
+        tracker_items=("BIR-C01", "BIR-D03", "BIR-E01", "BIR-P01"),
+        priority="P0",
+        recommendation="Repair the model topology, host/support relationship, or invariant.",
+    ),
+    RuleTaxonomyFamily(
+        family_id="constructability_profile",
+        title="Constructability and code-profile finding",
+        match_prefixes=(
+            "constructability_",
+            "clearance_",
+            "egress_",
+            "fire_",
+            "accessibility_",
+            "load_",
+            "pipe_",
+            "duct_",
+            "mep_",
+            "ids_",
+        ),
+        match_exact=(
+            "furniture_wall_hard_clash",
+            "stair_wall_hard_clash",
+            "physical_hard_clash",
+            "room_without_door_access",
+            "room_without_egress_path",
+        ),
+        severity="warning",
+        layer_owner="constructability",
+        discipline="coordination",
+        perspective="coordination",
+        profiles=(
+            "architecture",
+            "structure",
+            "mep",
+            "fire",
+            "accessibility",
+            "construction_readiness",
+        ),
+        severity_policy="profile_metadata_warning",
+        suppressibility="tolerable_with_evidence",
+        actionability="modeled_fix_required",
+        affected_id_kinds=("element", "room", "route", "profile_requirement"),
+        fix_command_hints=("addRequiredMetadata", "repairClearance", "addOpeningOrSleeve"),
+        tracker_items=("BIR-D07", "BIR-G01", "BIR-U03"),
+        priority="P1",
+        recommendation=(
+            "Resolve the profile-specific constructability issue or record an audited tolerance."
+        ),
+    ),
+    RuleTaxonomyFamily(
+        family_id="renderer_diagnostics",
+        title="Renderer diagnostic",
+        match_prefixes=(
+            "renderer_",
+            "render_",
+            "roof_opening_render_",
+            "wall_cut_",
+            "gltf_render_",
+        ),
+        match_exact=("renderer_unsupported_cut", "renderer_failed_cut"),
+        severity="error",
+        layer_owner="renderer_diagnostics",
+        discipline="renderer",
+        perspective="renderer",
+        profiles=("renderer_fidelity", "construction_readiness", "sketch_acceptance"),
+        severity_policy="p0_renderer_fidelity_error",
+        suppressibility="tolerable_with_evidence",
+        actionability="implementation_or_view_change_required",
+        affected_id_kinds=("element", "view", "renderer_feature"),
+        fix_command_hints=(
+            "addRendererSupport",
+            "captureDiagnosticView",
+            "markRendererUnsupported",
+        ),
+        tracker_items=("BIR-I02", "BIR-J09"),
+        priority="P0",
+        recommendation=(
+            "Add renderer support or use a diagnostic view that explicitly records the limitation."
+        ),
+    ),
+    RuleTaxonomyFamily(
+        family_id="exchange_documentation",
+        title="Exchange and documentation fidelity",
+        match_prefixes=(
+            "exchange_",
+            "ifc_",
+            "gltf_",
+            "dxf_",
+            "schedule_",
+            "sheet_",
+            "plan_view_sheet_",
+            "evidence_package_",
+        ),
+        match_exact=("export_readback_drift",),
+        severity="warning",
+        layer_owner="constructability",
+        discipline="exchange",
+        perspective="exchange",
+        profiles=("exchange", "documentation", "construction_readiness"),
+        severity_policy="profile_metadata_warning",
+        suppressibility="tolerable_with_evidence",
+        actionability="evidence_regeneration_required",
+        affected_id_kinds=("element", "schedule", "sheet", "view", "artifact"),
+        fix_command_hints=(
+            "regenerateExportEvidence",
+            "repairScheduleOrSheet",
+            "addReadbackMapping",
+        ),
+        tracker_items=("BIR-K01", "BIR-K02", "BIR-R05"),
+        priority="P1",
+        recommendation=(
+            "Refresh or repair exchange/documentation evidence until readback and source "
+            "rows agree."
+        ),
+    ),
+    RuleTaxonomyFamily(
+        family_id="sketch_methodology",
+        title="Sketch-to-BIM methodology acceptance",
+        match_prefixes=(
+            "sketch_",
+            "semantic_",
+            "source_feature_",
+            "assumption_",
+            "target_house_",
+        ),
+        match_exact=("sketch_evidence_stale",),
+        severity="error",
+        layer_owner="sketch_acceptance",
+        discipline="sketch",
+        perspective="sketch",
+        profiles=("sketch_acceptance", "agent_preflight"),
+        severity_policy="p0_sketch_acceptance_error",
+        suppressibility="not_suppressible",
+        actionability="evidence_regeneration_required",
+        affected_id_kinds=("evidence", "feature", "view", "snapshot"),
+        fix_command_hints=(
+            "regenerateEvidence",
+            "mapSourceFeature",
+            "recordAcceptanceDisposition",
+        ),
+        tracker_items=("BIR-M03", "BIR-T01", "BIR-T04"),
+        priority="P0",
+        recommendation=(
+            "Regenerate methodology evidence and resolve source-feature or semantic "
+            "acceptance blockers."
+        ),
+    ),
+    RuleTaxonomyFamily(
+        family_id="platform_transaction",
+        title="Platform transaction and provenance",
+        match_prefixes=(
+            "transaction_",
+            "undo_",
+            "redo_",
+            "collaboration_",
+            "provenance_",
+        ),
+        match_exact=("stale_reference",),
+        severity="error",
+        layer_owner="model_integrity",
+        discipline="platform",
+        perspective="platform",
+        profiles=("model_integrity", "agent_preflight"),
+        severity_policy="p0_integrity_error",
+        suppressibility="not_suppressible",
+        actionability="modeled_fix_required",
+        affected_id_kinds=("transaction", "command", "element", "document"),
+        fix_command_hints=(
+            "rollbackTransaction",
+            "repairReferences",
+            "replayWithPreflight",
+        ),
+        tracker_items=("BIR-Q01", "BIR-T02"),
+        priority="P0",
+        recommendation=(
+            "Repair or replay the transaction with preflight, provenance, and undo/redo "
+            "metadata intact."
+        ),
+    ),
+    RuleTaxonomyFamily(
+        family_id="general_review",
+        title="General Advisor review",
+        match_prefixes=(),
+        match_exact=(),
+        severity="warning",
+        layer_owner="constructability",
+        discipline="coordination",
+        perspective="coordination",
+        profiles=("architecture", "construction_readiness"),
+        severity_policy="profile_metadata_warning",
+        suppressibility="tolerable_with_evidence",
+        actionability="modeled_fix_required",
+        affected_id_kinds=("element", "document"),
+        fix_command_hints=("reviewFinding", "recordTolerance", "repairModel"),
+        tracker_items=("BIR-A02", "BIR-U05"),
+        priority="P1",
+        recommendation="Review the finding, then repair the model or record an audited tolerance.",
+    ),
+)
+
 
 def advisor_rule_registry() -> tuple[AdvisorRule, ...]:
     return ADVISOR_RULES
@@ -393,6 +708,66 @@ def advisor_rules_for_profile(profile: str) -> tuple[AdvisorRule, ...]:
 
 def advisor_rule_payloads() -> list[dict[str, object]]:
     return [rule.to_dict() for rule in ADVISOR_RULES]
+
+
+def canonical_taxonomy_family_for(rule_id: str) -> RuleTaxonomyFamily:
+    for family in CANONICAL_RULE_TAXONOMY_FAMILIES:
+        if family.family_id == "explicit_registry":
+            continue
+        if family.matches(rule_id):
+            return family
+    return CANONICAL_RULE_TAXONOMY_FAMILIES[-1]
+
+
+def canonical_rule_metadata_for(
+    rule_id: str,
+    *,
+    severity: str | None = None,
+    tracker_items: tuple[str, ...] = (),
+) -> dict[str, object]:
+    try:
+        return advisor_rule_by_id(rule_id).to_dict()
+    except KeyError:
+        family = canonical_taxonomy_family_for(rule_id)
+        resolved_severity = severity if severity in ALLOWED_SEVERITIES else family.severity
+        tolerance_policy = (
+            EVIDENCE_TOLERANCE_POLICY
+            if family.suppressibility == "tolerable_with_evidence"
+            else NO_TOLERANCE_POLICY
+        )
+        return {
+            "ruleId": rule_id,
+            "title": _title_from_rule_id(rule_id),
+            "severity": resolved_severity,
+            "layerOwner": family.layer_owner,
+            "discipline": family.discipline,
+            "perspective": family.perspective,
+            "profiles": list(family.profiles),
+            "sourceLayer": family.layer_owner,
+            "severityPolicy": family.severity_policy,
+            "suppressibility": family.suppressibility,
+            "tolerancePolicy": tolerance_policy.to_dict(),
+            "actionability": family.actionability,
+            "recommendation": family.recommendation,
+            "documentation": (
+                f"{family.title} taxonomy fallback for emitted rule `{rule_id}`. "
+                "Add an explicit AdvisorRule entry when a rule needs narrower metadata."
+            ),
+            "uiSummary": _title_from_rule_id(rule_id),
+            "cliCode": rule_id,
+            "apiField": "ruleId",
+            "surfaces": list(CANONICAL_RULE_SURFACES),
+            "affectedIdKinds": list(family.affected_id_kinds),
+            "fixCommandHints": list(family.fix_command_hints),
+            "testRefs": list(DEFAULT_RULE_TEST_REFS),
+            "trackerItems": list(tracker_items or family.tracker_items),
+            "priority": family.priority,
+            "examples": [
+                f"Emitted rule id `{rule_id}` matched taxonomy family `{family.family_id}`."
+            ],
+            "status": "planned",
+            "taxonomyFamily": family.family_id,
+        }
 
 
 def advisor_rule_catalog_payload(
@@ -414,6 +789,8 @@ def advisor_rule_catalog_payload(
         "summary": {
             "ruleCount": len(rule_payloads),
             "canonicalRuleCount": len(ADVISOR_RULES),
+            "taxonomyFamilyCount": len(CANONICAL_RULE_TAXONOMY_FAMILIES),
+            "coverageMode": "explicit_rules_plus_taxonomy_fallback",
             "surfaces": list(CANONICAL_RULE_SURFACES),
             "rulesBySurface": {
                 name: sum(1 for rule in ADVISOR_RULES if name in rule.surfaces)
@@ -421,6 +798,7 @@ def advisor_rule_catalog_payload(
             },
         },
         "rules": rule_payloads,
+        "taxonomyFamilies": [family.to_dict() for family in CANONICAL_RULE_TAXONOMY_FAMILIES],
     }
 
 
@@ -511,14 +889,70 @@ def validate_advisor_rule_registry(rules: tuple[AdvisorRule, ...] = ADVISOR_RULE
     return sorted(errors)
 
 
+def validate_canonical_rule_taxonomy(
+    families: tuple[RuleTaxonomyFamily, ...] = CANONICAL_RULE_TAXONOMY_FAMILIES,
+) -> list[str]:
+    errors: list[str] = []
+    seen: set[str] = set()
+    for family in families:
+        prefix = family.family_id or "<missing family_id>"
+        if not family.family_id:
+            errors.append("taxonomy family missing family_id")
+        if family.family_id in seen:
+            errors.append(f"{family.family_id}: duplicate family_id")
+        seen.add(family.family_id)
+        for field_name in ("title", "recommendation"):
+            value = getattr(family, field_name)
+            if not isinstance(value, str) or not value.strip():
+                errors.append(f"{prefix}: missing {field_name}")
+        if family.severity not in ALLOWED_SEVERITIES:
+            errors.append(f"{prefix}: invalid severity {family.severity!r}")
+        if family.layer_owner not in ALLOWED_LAYER_OWNERS:
+            errors.append(f"{prefix}: invalid layer_owner {family.layer_owner!r}")
+        if family.discipline not in ALLOWED_DISCIPLINES:
+            errors.append(f"{prefix}: invalid discipline {family.discipline!r}")
+        if family.perspective not in ALLOWED_PERSPECTIVES:
+            errors.append(f"{prefix}: invalid perspective {family.perspective!r}")
+        if family.suppressibility not in ALLOWED_SUPPRESSIBILITY:
+            errors.append(f"{prefix}: invalid suppressibility {family.suppressibility!r}")
+        if family.actionability not in ALLOWED_ACTIONABILITY:
+            errors.append(f"{prefix}: invalid actionability {family.actionability!r}")
+        if family.severity_policy not in ALLOWED_SEVERITY_POLICIES:
+            errors.append(f"{prefix}: invalid severity_policy {family.severity_policy!r}")
+        if family.priority not in ALLOWED_PRIORITIES:
+            errors.append(f"{prefix}: invalid priority {family.priority!r}")
+        if not family.profiles:
+            errors.append(f"{prefix}: missing profiles")
+        if not family.affected_id_kinds:
+            errors.append(f"{prefix}: missing affected_id_kinds")
+        if not family.fix_command_hints:
+            errors.append(f"{prefix}: missing fix_command_hints")
+        if not family.tracker_items:
+            errors.append(f"{prefix}: missing tracker_items")
+        if family.priority == "P0" and family.layer_owner in {
+            "authoring_validation",
+            "model_integrity",
+            "renderer_diagnostics",
+            "sketch_acceptance",
+        } and family.severity != "error":
+            errors.append(f"{prefix}: P0 {family.layer_owner} family must be error severity")
+        if family.severity_policy.startswith("p0_") and family.severity != "error":
+            errors.append(f"{prefix}: {family.severity_policy} must be error severity")
+    if not families or families[-1].family_id != "general_review":
+        errors.append("taxonomy must end with general_review fallback family")
+    return sorted(errors)
+
+
 def render_advisor_rule_ledger(rules: tuple[AdvisorRule, ...] = ADVISOR_RULES) -> str:
     lines = [
         "# Advisor Rule Ledger",
         "",
         "Generated from `app/bim_ai/advisor_rule_registry.py`.",
         "",
-        "| Rule ID | Severity | Policy | Layer | Discipline | Profiles | Surfaces | Suppressibility | Actionability | Status | Tracker |",
-        "| ------- | -------- | ------ | ----- | ---------- | -------- | -------- | --------------- | ------------- | ------ | ------- |",
+        "| Rule ID | Severity | Policy | Layer | Discipline | Profiles | Surfaces | "
+        "Suppressibility | Actionability | Status | Tracker |",
+        "| ------- | -------- | ------ | ----- | ---------- | -------- | -------- | "
+        "--------------- | ------------- | ------ | ------- |",
     ]
     for rule in rules:
         lines.append(
@@ -571,5 +1005,29 @@ def render_advisor_rule_ledger(rules: tuple[AdvisorRule, ...] = ADVISOR_RULES) -
                 f"**Tests:** {', '.join(rule.test_refs)}",
                 "",
             ]
+        )
+    lines.extend(["", "## Taxonomy Families", ""])
+    lines.extend(
+        [
+            "| Family | Layer | Discipline | Severity | Profiles | Match | Tracker |",
+            "| ------ | ----- | ---------- | -------- | -------- | ----- | ------- |",
+        ]
+    )
+    for family in CANONICAL_RULE_TAXONOMY_FAMILIES:
+        matchers = [*family.match_exact, *[f"{prefix}*" for prefix in family.match_prefixes]]
+        lines.append(
+            "| "
+            + " | ".join(
+                [
+                    f"`{family.family_id}`",
+                    family.layer_owner,
+                    family.discipline,
+                    family.severity,
+                    ", ".join(f"`{profile}`" for profile in family.profiles),
+                    ", ".join(f"`{matcher}`" for matcher in matchers) or "`<fallback>`",
+                    ", ".join(f"`{item}`" for item in family.tracker_items),
+                ]
+            )
+            + " |"
         )
     return "\n".join(lines).rstrip() + "\n"

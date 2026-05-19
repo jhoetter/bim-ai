@@ -168,3 +168,18 @@ Generated from `app/bim_ai/advisor_rule_registry.py`.
 **Fix command hints:** regenerateEvidence, recordRuleDigest, recordRendererDigest
 
 **Tests:** app/tests/test_advisor_rule_registry.py, app/tests/test_api_v3_registry.py, packages/cli/cli.mcpParity.test.mjs
+
+
+## Taxonomy Families
+
+| Family | Layer | Discipline | Severity | Profiles | Match | Tracker |
+| ------ | ----- | ---------- | -------- | -------- | ----- | ------- |
+| `explicit_registry` | model_integrity | platform | error | `model_integrity`, `construction_readiness`, `agent_preflight` | `bim_invariant_failure`, `host_wall_outside_envelope`, `hosted_door_not_embedded`, `physical_helper_leakage`, `renderer_unsupported_cut`, `sketch_evidence_stale` | `BIR-A02` |
+| `authoring_validation` | authoring_validation | architecture | error | `model_integrity`, `architecture`, `agent_preflight` | `door_off_wall`, `wall_missing_level`, `floor_missing_level`, `opening_*`, `create_*`, `update_*`, `delete_*`, `place_*`, `move_*` | `BIR-B01`, `BIR-B04`, `BIR-B05` |
+| `model_integrity_architecture` | model_integrity | architecture | error | `model_integrity`, `architecture`, `construction_readiness`, `agent_preflight` | `bim_invariant_failure`, `hosted_*`, `physical_*`, `model_integrity_*`, `wall_*`, `floor_*`, `room_*`, `stair_*`, `slab_*`, `level_*`, `grid_*`, `dimension_*` | `BIR-C01`, `BIR-D03`, `BIR-E01`, `BIR-P01` |
+| `constructability_profile` | constructability | coordination | warning | `architecture`, `structure`, `mep`, `fire`, `accessibility`, `construction_readiness` | `furniture_wall_hard_clash`, `stair_wall_hard_clash`, `physical_hard_clash`, `room_without_door_access`, `room_without_egress_path`, `constructability_*`, `clearance_*`, `egress_*`, `fire_*`, `accessibility_*`, `load_*`, `pipe_*`, `duct_*`, `mep_*`, `ids_*` | `BIR-D07`, `BIR-G01`, `BIR-U03` |
+| `renderer_diagnostics` | renderer_diagnostics | renderer | error | `renderer_fidelity`, `construction_readiness`, `sketch_acceptance` | `renderer_unsupported_cut`, `renderer_failed_cut`, `renderer_*`, `render_*`, `roof_opening_render_*`, `wall_cut_*`, `gltf_render_*` | `BIR-I02`, `BIR-J09` |
+| `exchange_documentation` | constructability | exchange | warning | `exchange`, `documentation`, `construction_readiness` | `export_readback_drift`, `exchange_*`, `ifc_*`, `gltf_*`, `dxf_*`, `schedule_*`, `sheet_*`, `plan_view_sheet_*`, `evidence_package_*` | `BIR-K01`, `BIR-K02`, `BIR-R05` |
+| `sketch_methodology` | sketch_acceptance | sketch | error | `sketch_acceptance`, `agent_preflight` | `sketch_evidence_stale`, `sketch_*`, `semantic_*`, `source_feature_*`, `assumption_*`, `target_house_*` | `BIR-M03`, `BIR-T01`, `BIR-T04` |
+| `platform_transaction` | model_integrity | platform | error | `model_integrity`, `agent_preflight` | `stale_reference`, `transaction_*`, `undo_*`, `redo_*`, `collaboration_*`, `provenance_*` | `BIR-Q01`, `BIR-T02` |
+| `general_review` | constructability | coordination | warning | `architecture`, `construction_readiness` | `<fallback>` | `BIR-A02`, `BIR-U05` |
