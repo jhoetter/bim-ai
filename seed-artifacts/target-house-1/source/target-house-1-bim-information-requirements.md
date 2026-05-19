@@ -36,7 +36,7 @@ this before authoring:
 | Assumption         | Draft Decision                                                                                | Acceptance Impact                                                                          |
 | ------------------ | --------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------ |
 | Scale basis        | Use the floorplan's 14.0 m by 10.0 m footprint for target-house-1.                            | Any alternate uniform scale must be written as a tolerance before phase 1.                 |
-| Project north      | Unknown; use plan-up as project north.                                                        | Site/orientation remains a documented tolerance until a north arrow or survey is supplied. |
+| Project north/site | Use plan-up as project north with explicit concept base point, survey point, parcel, and terrain. | Replace concept datums when a legal survey or north arrow is supplied.                     |
 | Shell construction | Author as BIM elements: walls, roof, floors, fascia/sweeps, returns, hosted openings, guards. | Final acceptance fails if translucent mass placeholders remain in the envelope.            |
 | Room derivation    | Open-plan rooms may use limited room separation only where architecturally open.              | Advisor room ambiguity warnings block phase acceptance.                                    |
 
@@ -149,16 +149,20 @@ Required placeholders:
 
 ## Planning And Site
 
-Site data is not present in the source package, so the model must carry explicit
-project-initiation assumptions instead of pretending to be georeferenced:
+The seed must carry concept site data as explicit model elements rather than
+tolerance-only notes:
 
-- use floorplan up as project north until a north arrow or survey is supplied;
+- use floorplan up as project north until a north arrow or legal survey is
+  supplied;
 - set the project base point at the front-left/south-west ground-floor footprint
   corner at elevation 0;
-- mark survey point, property lines, setbacks, B-plan constraints, and site
-  boundaries as unavailable;
+- create a survey point at the local origin/shared elevation 0 as the concept
+  shared-coordinate datum;
+- create a concept parcel/site boundary, four property lines with setback
+  metadata, and a terrain toposolid around the target-house footprint;
 - treat sun/shadow only as visual-evidence support until geographic location and
   true north are known;
+- keep B-plan constraints and permit confirmations out of scope until supplied;
 - use Germany-oriented DIN 277/DIN 276 placeholders and residential stair comfort
   checks as concept assumptions, not permit confirmation.
 

@@ -5,8 +5,8 @@
   "qualityTarget": "project_initiation_bim",
   "sourceDigests": {
     "spec/target-house/target-house-1-acceptance-checklist.md": "sha256:5392a55357565d9223e20ce091069f6f048490dc436b405e9eb4bd0e56caa298",
-    "spec/target-house/target-house-1-sketch-ir.draft.json": "sha256:17a24cb6b3691448bda747403a542513951fb21633e62e991711f28e2591f521",
-    "spec/target-house/target-house-1-bim-information-requirements.md": "sha256:b76c9ffa55d3205f4b4ca880b03082a6e9e477626f1452927c188a007db89e34",
+    "spec/target-house/target-house-1-sketch-ir.draft.json": "sha256:a90e27df1c146b6fb3c9ae18402d3c8662a3ee0cdb0f70c360ccc213ad669261",
+    "spec/target-house/target-house-1-bim-information-requirements.md": "sha256:c32bc404b321d720fec7092b7877701279f02e1ccd336005b88e80ec4abae7dc",
     "spec/target-house/target-house-1-phase-plan.md": "sha256:a9f6b7d533e0434655c49d88a69299e90aeef9e120fb6f410b88fc007eba372a"
   },
   "scaleBasis": {
@@ -812,10 +812,10 @@
     {
       "id": "tolerance_orientation",
       "sourceAssumptionId": "assumption_orientation",
-      "statement": "Plan north is unknown. Use plan-up as project north and set the main axonometric sun/camera only for evidence comparison.",
+      "statement": "Plan north is unknown. Use plan-up as project north with explicit project base point, survey point, site boundary, property lines, and terrain toposolid in the seed model.",
       "confidence": "low",
-      "requiredEvidence": "Attach a site/orientation tolerance until a survey or north arrow is supplied.",
-      "expiryCondition": "Attach a site/orientation tolerance until a survey or north arrow is supplied."
+      "requiredEvidence": "Replace the concept site datums when a legal survey or north arrow is supplied; do not satisfy site checks with tolerance-only text.",
+      "expiryCondition": "Replace the concept site datums when a legal survey or north arrow is supplied; do not satisfy site checks with tolerance-only text."
     },
     {
       "id": "tolerance_roof_form",
@@ -834,11 +834,11 @@
       "expiryCondition": "Advisor must have no room_boundary_open, room_no_door, or room_derived_interior_separation_ambiguous blockers."
     },
     {
-      "id": "tolerance_site_georeference_unavailable",
-      "statement": "Survey point, property lines, setbacks, B-plan constraints, and georeference are unavailable.",
+      "id": "tolerance_legal_survey_unavailable",
+      "statement": "Legal survey, true-north confirmation, and B-plan constraints are unavailable; concept site datums must still be explicit model elements.",
       "confidence": "low",
-      "requiredEvidence": "Carry explicit site assumptions in the model and final tolerance ledger.",
-      "expiryCondition": "Expires when survey, north arrow, property, and setback inputs are supplied."
+      "requiredEvidence": "Carry explicit survey point, parcel/site boundary, property lines, setbacks, and toposolid in the model; only statutory/legal confirmation remains deferred.",
+      "expiryCondition": "Expires when legal survey, north arrow, and B-plan constraints are supplied."
     },
     {
       "id": "tolerance_structure_lite_unverified",

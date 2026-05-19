@@ -117,7 +117,13 @@ test('carries evidence requirements and tolerance inputs for later acceptance', 
   assert.ok(pack.evidenceRequirements.manifests.includes('tolerance_ledger'));
   assert.ok(pack.tolerances.some((tolerance) => tolerance.id === 'tolerance_scale_basis'));
   assert.ok(
-    pack.tolerances.some((tolerance) => tolerance.id === 'tolerance_site_georeference_unavailable'),
+    pack.tolerances.some((tolerance) => tolerance.id === 'tolerance_legal_survey_unavailable'),
+  );
+  assert.equal(
+    pack.tolerances.some(
+      (tolerance) => tolerance.id === 'tolerance_site_georeference_unavailable',
+    ),
+    false,
   );
 });
 

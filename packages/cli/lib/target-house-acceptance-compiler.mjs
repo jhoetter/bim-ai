@@ -366,13 +366,14 @@ function buildToleranceRequirements(sketchIr) {
 
   tolerances.push(
     {
-      id: 'tolerance_site_georeference_unavailable',
+      id: 'tolerance_legal_survey_unavailable',
       statement:
-        'Survey point, property lines, setbacks, B-plan constraints, and georeference are unavailable.',
+        'Legal survey, true-north confirmation, and B-plan constraints are unavailable; concept site datums must still be explicit model elements.',
       confidence: 'low',
-      requiredEvidence: 'Carry explicit site assumptions in the model and final tolerance ledger.',
+      requiredEvidence:
+        'Carry explicit survey point, parcel/site boundary, property lines, setbacks, and toposolid in the model; only statutory/legal confirmation remains deferred.',
       expiryCondition:
-        'Expires when survey, north arrow, property, and setback inputs are supplied.',
+        'Expires when legal survey, north arrow, and B-plan constraints are supplied.',
     },
     {
       id: 'tolerance_structure_lite_unverified',

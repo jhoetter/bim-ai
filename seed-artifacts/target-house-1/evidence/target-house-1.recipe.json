@@ -16,6 +16,60 @@
       "planViewId": "hf-first-floor-plan"
     }
   ],
+  "toposolids": [
+    {
+      "id": "target-house-site-toposolid",
+      "name": "Target House concept terrain",
+      "boundaryMm": [
+        {
+          "xMm": -4000,
+          "yMm": -5000
+        },
+        {
+          "xMm": 12000,
+          "yMm": -5000
+        },
+        {
+          "xMm": 12000,
+          "yMm": 12500
+        },
+        {
+          "xMm": -4000,
+          "yMm": 12500
+        }
+      ],
+      "heightSamples": [
+        {
+          "xMm": -4000,
+          "yMm": -5000,
+          "zMm": -420
+        },
+        {
+          "xMm": 12000,
+          "yMm": -5000,
+          "zMm": -360
+        },
+        {
+          "xMm": 12000,
+          "yMm": 12500,
+          "zMm": -260
+        },
+        {
+          "xMm": -4000,
+          "yMm": 12500,
+          "zMm": -310
+        },
+        {
+          "xMm": 4000,
+          "yMm": 4100,
+          "zMm": -300
+        }
+      ],
+      "thicknessMm": 1400,
+      "baseElevationMm": -1700,
+      "defaultMaterialKey": "site_grass"
+    }
+  ],
   "types": {
     "wallTypes": [
       {
@@ -171,7 +225,20 @@
           "xMm": 0,
           "yMm": 8200
         }
-      ]
+      ],
+      "floorProps": {
+        "supportedByIds": [
+          "ground-base-wall-01",
+          "ground-base-wall-02",
+          "ground-base-wall-03",
+          "ground-base-wall-04"
+        ],
+        "isCantilever": true,
+        "cantileverSupportIntent": "Upper wrapper slab bears on the ground-floor wall box with explicit front/left cantilever intent for structural review.",
+        "cantileverAnchorIds": ["ground-base-wall-01", "ground-base-wall-04"],
+        "structuralSystem": "folded-wrapper concrete slab with ground-wall support lines and reviewed cantilever zones",
+        "spanDirection": "east-west"
+      }
     }
   ],
   "roofs": [
@@ -612,7 +679,39 @@
         ],
         "openingId": "hf-roof-court-opening",
         "floorId": "hf-roof-court-floor",
-        "floorTypeId": "ft-concrete-slab"
+        "floorTypeId": "ft-concrete-slab",
+        "floorProps": {
+          "supportedByIds": ["upper-wrapper-floor"],
+          "exteriorSpaceType": "roof_terrace",
+          "guardIntent": "hf-roof-court-railing protects the exposed east roof-court edge.",
+          "drainageIntent": "Waterproofed walking slab with positive drainage toward the roof-court drain marker.",
+          "accessElementIds": ["hf-roof-court-door"],
+          "accessIntent": "Occupied exterior terrace accessed through hf-roof-court-door.",
+          "boundaryIntent": "Roof-court floor edge is bounded by return walls, roof opening perimeter, and guard edge.",
+          "scheduleIntent": "Exterior occupied floor schedule"
+        },
+        "balusterPattern": {
+          "rule": "regular",
+          "spacingMm": 100,
+          "profileFamilyId": "target-house-black-round-baluster-25mm"
+        },
+        "materialSlots": {
+          "handrail": "aluminium_black",
+          "post": "aluminium_black",
+          "baluster": "aluminium_black"
+        },
+        "railingHostFloorId": "hf-roof-court-floor",
+        "hostFloorId": "hf-roof-court-floor",
+        "hostWallId": "hf-roof-court-front-return",
+        "hostEdgeId": "hf-roof-court-floor:edge:east-open-guard",
+        "guardHeightMm": 1100,
+        "handrailSupports": [
+          {
+            "intervalMm": 1200,
+            "bracketFamilyId": "target-house-black-handrail-bracket",
+            "hostWallId": "hf-roof-court-front-return"
+          }
+        ]
       }
     ],
     "loggias": [
@@ -692,6 +791,37 @@
             "heightMm": 2500,
             "materialKey": "glass",
             "isCurtainWall": true
+          }
+        ],
+        "floorProps": {
+          "supportedByIds": ["upper-wrapper-floor"],
+          "exteriorSpaceType": "loggia",
+          "guardIntent": "hf-front-loggia-railing protects the exposed south loggia edge.",
+          "drainageIntent": "Covered exterior slab with waterproofing and drainage intent at recessed loggia.",
+          "accessElementIds": ["front-loggia-center-door"],
+          "accessIntent": "Occupied exterior loggia accessed through the center glazing door.",
+          "boundaryIntent": "Loggia slab edge is bounded by side returns, recessed facade wall, and guard edge.",
+          "scheduleIntent": "Exterior occupied floor schedule"
+        },
+        "balusterPattern": {
+          "rule": "regular",
+          "spacingMm": 100,
+          "profileFamilyId": "target-house-black-round-baluster-25mm"
+        },
+        "materialSlots": {
+          "handrail": "aluminium_black",
+          "post": "aluminium_black",
+          "baluster": "aluminium_black"
+        },
+        "hostFloorId": "hf-front-loggia-floor",
+        "hostWallId": "front-loggia-recessed-glass",
+        "hostEdgeId": "hf-front-loggia-floor:edge:south-open-guard",
+        "guardHeightMm": 1100,
+        "handrailSupports": [
+          {
+            "intervalMm": 1200,
+            "bracketFamilyId": "target-house-black-handrail-bracket",
+            "hostWallId": "front-loggia-recessed-glass"
           }
         ]
       }
@@ -939,7 +1069,25 @@
               "xMm": 1800,
               "yMm": 3200
             },
-            "widthMm": 1000
+            "widthMm": 1000,
+            "boundaryMm": [
+              {
+                "xMm": 1300,
+                "yMm": 1100
+              },
+              {
+                "xMm": 2300,
+                "yMm": 1100
+              },
+              {
+                "xMm": 2300,
+                "yMm": 3200
+              },
+              {
+                "xMm": 1300,
+                "yMm": 3200
+              }
+            ]
           }
         ],
         "slabOpenings": [
@@ -1272,6 +1420,118 @@
   ],
   "commands": [
     {
+      "type": "createSurveyPoint",
+      "id": "hf-survey-point",
+      "positionMm": {
+        "xMm": 0,
+        "yMm": 0,
+        "zMm": 0
+      },
+      "sharedElevationMm": 0,
+      "clipped": false
+    },
+    {
+      "type": "upsertSite",
+      "id": "target-house-site",
+      "name": "Target House concept parcel",
+      "referenceLevelId": "hf-lvl-ground",
+      "boundaryMm": [
+        {
+          "xMm": -4000,
+          "yMm": -5000
+        },
+        {
+          "xMm": 12000,
+          "yMm": -5000
+        },
+        {
+          "xMm": 12000,
+          "yMm": 12500
+        },
+        {
+          "xMm": -4000,
+          "yMm": 12500
+        }
+      ],
+      "padThicknessMm": 80,
+      "baseOffsetMm": -300,
+      "northDegCwFromPlanX": 0,
+      "uniformSetbackMm": 3000,
+      "contextObjects": [
+        {
+          "id": "ctx-front-street",
+          "contextType": "neighbor_proxy",
+          "label": "Concept street edge",
+          "positionMm": {
+            "xMm": 4000,
+            "yMm": -5600
+          },
+          "category": "site_context",
+          "scale": 1
+        }
+      ]
+    },
+    {
+      "type": "createPropertyLine",
+      "id": "target-house-property-front",
+      "name": "Front parcel line",
+      "startMm": {
+        "xMm": -4000,
+        "yMm": -5000
+      },
+      "endMm": {
+        "xMm": 12000,
+        "yMm": -5000
+      },
+      "setbackMm": 3000,
+      "classification": "street"
+    },
+    {
+      "type": "createPropertyLine",
+      "id": "target-house-property-east",
+      "name": "East parcel line",
+      "startMm": {
+        "xMm": 12000,
+        "yMm": -5000
+      },
+      "endMm": {
+        "xMm": 12000,
+        "yMm": 12500
+      },
+      "setbackMm": 3000,
+      "classification": "side"
+    },
+    {
+      "type": "createPropertyLine",
+      "id": "target-house-property-rear",
+      "name": "Rear parcel line",
+      "startMm": {
+        "xMm": 12000,
+        "yMm": 12500
+      },
+      "endMm": {
+        "xMm": -4000,
+        "yMm": 12500
+      },
+      "setbackMm": 3000,
+      "classification": "rear"
+    },
+    {
+      "type": "createPropertyLine",
+      "id": "target-house-property-west",
+      "name": "West parcel line",
+      "startMm": {
+        "xMm": -4000,
+        "yMm": 12500
+      },
+      "endMm": {
+        "xMm": -4000,
+        "yMm": -5000
+      },
+      "setbackMm": 3000,
+      "classification": "side"
+    },
+    {
       "type": "createWall",
       "id": "target-house-gf-living-access-partition",
       "name": "Ground floor living access partition",
@@ -1485,6 +1745,18 @@
       "value": "Added hosted sliding access doors on real internal/shell partitions so every target-house room has door access without helper stub geometry.",
       "confidence": 0.95,
       "source": "Wave 9 Worker B"
+    },
+    {
+      "key": "wave10-worker-d-site-datum-source-correction",
+      "value": "Added explicit survey point, concept parcel/site boundary, property lines, and terrain toposolid so site georeferencing is model data rather than a tolerance.",
+      "confidence": 0.95,
+      "source": "Wave 10 Worker D"
+    },
+    {
+      "key": "wave10-worker-c-railing-source-correction",
+      "value": "Added explicit railing host refs, edge refs, baluster/profile rules, handrail support patterns, and material slots for target-house guards.",
+      "confidence": 0.95,
+      "source": "Wave 10 Worker C"
     }
   ],
   "projectBasePoint": {
