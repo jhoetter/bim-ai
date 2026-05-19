@@ -45,6 +45,12 @@ class ModelIntegrityFinding:
         payload = asdict(self)
         payload["ruleId"] = payload.pop("rule_id")
         payload["elementIds"] = list(payload.pop("element_ids"))
+        tracker_items = _tracker_items_for_rule(payload["ruleId"])
+        if tracker_items:
+            payload["trackerItems"] = tracker_items
+        recommendation = _recommendation_for_rule(payload["ruleId"])
+        if recommendation:
+            payload["recommendation"] = recommendation
         return {key: value for key, value in payload.items() if value is not None}
 
 
@@ -364,6 +370,37 @@ FAMILY_OVERRIDE_SCHEDULED_KEYS: frozenset[str] = frozenset(
         "operationType",
     }
 )
+FAMILY_CONTENT_RULE_TRACKER_ITEMS: dict[str, list[str]] = {
+    "model_integrity_family_type_schema_incomplete": ["BIR-V01"],
+    "model_integrity_family_type_required_parameter_missing": ["BIR-V01"],
+    "model_integrity_family_type_parameter_constraint_violation": ["BIR-V01"],
+    "model_integrity_family_type_required_dimension_undeclared": ["BIR-V01"],
+    "model_integrity_family_instance_override_invalid": ["BIR-V02"],
+    "model_integrity_family_instance_override_unknown": ["BIR-V02"],
+    "model_integrity_family_instance_override_not_allowed": ["BIR-V02"],
+    "model_integrity_family_instance_override_unscheduled": ["BIR-V02"],
+    "model_integrity_family_instance_material_override_inconsistent": ["BIR-V02"],
+    "model_integrity_family_instance_host_constraint_violation": ["BIR-V02"],
+    "model_integrity_asset_catalog_metadata_incomplete": ["BIR-V03"],
+    "model_integrity_asset_catalog_param_schema_invalid": ["BIR-V03"],
+    "model_integrity_asset_placement_support_invalid": ["BIR-V04"],
+    "model_integrity_asset_placement_floating": ["BIR-V04"],
+    "model_integrity_asset_placement_embedded_without_intent": ["BIR-V04"],
+    "model_integrity_asset_placement_circulation_overlap": ["BIR-V04"],
+    "model_integrity_family_render_export_parity_gap": ["BIR-V05"],
+}
+FAMILY_CONTENT_RULE_RECOMMENDATIONS: dict[str, str] = {
+    "model_integrity_family_type_schema_incomplete": "Complete the family type schema before treating the content as strict production content.",
+    "model_integrity_family_type_required_parameter_missing": "Add the required type parameter value or mark it optional in the parameter schema.",
+    "model_integrity_family_type_parameter_constraint_violation": "Update the family type parameter value to satisfy its declared schema constraints.",
+    "model_integrity_family_type_required_dimension_undeclared": "Declare every required dimension in parameters and parameterSchema.",
+    "model_integrity_family_instance_override_invalid": "Change or remove the instance override so it satisfies the family type parameter schema.",
+    "model_integrity_family_instance_override_unknown": "Declare the parameter on the family type schema or remove the override.",
+    "model_integrity_family_instance_override_not_allowed": "Move the value to the type or mark the parameter instanceOverridable when instance variation is intended.",
+    "model_integrity_family_instance_override_unscheduled": "Add the overridden parameter to scheduleFields or remove it from instance override scope.",
+    "model_integrity_family_instance_material_override_inconsistent": "Use a material declared by the family type material slots or explicitly allow the material override.",
+    "model_integrity_family_instance_host_constraint_violation": "Resize, rehost, or move the family instance so it fits its declared host constraints.",
+}
 HOST_SUPPORT_ALIASES: dict[str, str] = {
     "wall": "wall_hosted",
     "wall-hosted": "wall_hosted",
@@ -854,6 +891,24 @@ def _family_type_schema_findings(element: Any, element_id: str) -> list[ModelInt
 
     params = _read(element, "parameters", default={}) or {}
     schema = _parameter_schema_map(element)
+    required_dimensions = _string_list(_read_any(element, ("requiredDimensions", "dimensions")))
+    for dimension_key in required_dimensions:
+        has_parameter = isinstance(params, Mapping) and dimension_key in params
+        if dimension_key not in schema or not has_parameter:
+            findings.append(
+                ModelIntegrityFinding(
+                    rule_id="model_integrity_family_type_required_dimension_undeclared",
+                    severity="error" if _strict_family_schema(element) else "warning",
+                    message=(
+                        f"Family type '{element_id}' required dimension '{dimension_key}' "
+                        "is not declared in both parameters and parameterSchema."
+                    ),
+                    element_ids=(element_id,),
+                    field=f"requiredDimensions.{dimension_key}",
+                    expected="dimension present in parameters and parameterSchema",
+                    actual="missing",
+                )
+            )
     for key, entry in sorted(schema.items()):
         value = params.get(key) if isinstance(params, Mapping) else None
         if value in (None, "") and _truthy(_read(entry, "required", default=False)):
@@ -1010,7 +1065,40 @@ def _family_instance_override_findings(
                 )
             )
 
+    findings.extend(_family_instance_material_override_findings(element, type_element, element_id, str(type_id)))
     findings.extend(_host_geometry_constraint_findings(element, type_element, elements, element_id))
+    return findings
+
+
+def _family_instance_material_override_findings(
+    element: Any, type_element: Any, element_id: str, type_id: str
+) -> list[ModelIntegrityFinding]:
+    overrides = _read(element, "paramValues", default={}) or {}
+    if not isinstance(overrides, Mapping):
+        return []
+    material_slots = _material_slot_values(_read_any(type_element, ("materialSlots",), default={}))
+    if not material_slots or _truthy(_read_any(element, ("allowMaterialOverride",))):
+        return []
+    findings: list[ModelIntegrityFinding] = []
+    for key, value in sorted(overrides.items(), key=lambda item: str(item[0])):
+        if "material" not in str(key).lower() or value in (None, ""):
+            continue
+        if str(value) in material_slots:
+            continue
+        findings.append(
+            ModelIntegrityFinding(
+                rule_id="model_integrity_family_instance_material_override_inconsistent",
+                severity="error",
+                message=(
+                    f"Family instance '{element_id}' material override '{key}' is not declared "
+                    f"by family type '{type_id}' material slots."
+                ),
+                element_ids=(element_id, type_id),
+                field=f"paramValues.{key}",
+                expected=", ".join(sorted(material_slots)),
+                actual=str(value),
+            )
+        )
     return findings
 
 
@@ -1724,6 +1812,55 @@ def _type_instance_findings(
                 actual=target_kind,
             )
         )
+        return findings
+    findings.extend(_type_material_consistency_findings(element, target, element_id, kind, type_id))
+    return findings
+
+
+def _type_material_consistency_findings(
+    element: Any,
+    type_element: Any,
+    element_id: str,
+    kind: str,
+    type_id: str,
+) -> list[ModelIntegrityFinding]:
+    if kind not in {"wall", "floor", "roof"}:
+        return []
+    type_materials = _type_layer_material_keys(type_element)
+    findings: list[ModelIntegrityFinding] = []
+    if not type_materials:
+        findings.append(
+            ModelIntegrityFinding(
+                rule_id="model_integrity_type_layer_material_missing",
+                severity="warning",
+                message=f"Type '{type_id}' has no layer material keys for material/type consistency.",
+                element_ids=(type_id,),
+                field="layers.materialKey",
+                expected="at least one layer materialKey",
+            )
+        )
+        return findings
+
+    for field in ("materialKey", "defaultMaterialKey", "structuralMaterialKey"):
+        material_key = _read(element, field)
+        if material_key in (None, ""):
+            continue
+        if str(material_key) in type_materials or _truthy(_read_any(element, ("allowMaterialOverride",))):
+            continue
+        findings.append(
+            ModelIntegrityFinding(
+                rule_id="model_integrity_instance_material_not_in_type",
+                severity="warning",
+                message=(
+                    f"Element '{element_id}' {field} '{material_key}' is not declared by "
+                    f"type '{type_id}' layers."
+                ),
+                element_ids=(element_id, type_id),
+                field=field,
+                expected=", ".join(sorted(type_materials)),
+                actual=str(material_key),
+            )
+        )
     return findings
 
 
@@ -1770,6 +1907,17 @@ def _type_layer_findings(element: Any, element_id: str) -> list[ModelIntegrityFi
                     element_ids=(element_id,),
                     field=f"layers[{index}].function",
                     expected="layer function",
+                )
+            )
+        if _read(layer, "materialKey") in (None, "") and _read(layer, "materialId") in (None, ""):
+            findings.append(
+                ModelIntegrityFinding(
+                    rule_id="model_integrity_type_layer_material_missing",
+                    severity="warning",
+                    message=f"Type element '{element_id}' layer {index} is missing materialKey.",
+                    element_ids=(element_id,),
+                    field=f"layers[{index}].materialKey",
+                    expected="materialKey or materialId",
                 )
             )
     return findings
@@ -2071,6 +2219,19 @@ def _type_override_keys(element: Any, type_element: Any, kind: str) -> list[str]
     return []
 
 
+def _type_layer_material_keys(type_element: Any) -> set[str]:
+    layers = _read(type_element, "layers", default=[]) or []
+    if not isinstance(layers, list | tuple):
+        return set()
+    keys: set[str] = set()
+    for layer in layers:
+        for field in ("materialKey", "materialId"):
+            value = _read(layer, field)
+            if value not in (None, ""):
+                keys.add(str(value))
+    return keys
+
+
 def _finding_sort_key(finding: ModelIntegrityFinding) -> tuple[str, tuple[str, ...], str]:
     return (finding.rule_id, finding.element_ids, finding.message)
 
@@ -2085,6 +2246,14 @@ def _family_content_tracked_items(kind: str) -> list[str]:
     if kind == "placed_asset":
         return ["BIR-V04", "BIR-V05"]
     return []
+
+
+def _tracker_items_for_rule(rule_id: str) -> list[str]:
+    return FAMILY_CONTENT_RULE_TRACKER_ITEMS.get(rule_id, [])
+
+
+def _recommendation_for_rule(rule_id: str) -> str | None:
+    return FAMILY_CONTENT_RULE_RECOMMENDATIONS.get(rule_id)
 
 
 def _read_any(element: Any, fields: tuple[str, ...], default: Any = None) -> Any:
@@ -2131,6 +2300,22 @@ def _parameter_schema_map(element: Any) -> dict[str, Any]:
 
 def _asset_parameter_schema_map(element: Any) -> dict[str, Any]:
     return _parameter_schema_map(element)
+
+
+def _material_slot_values(raw: Any) -> set[str]:
+    if isinstance(raw, Mapping):
+        return {str(value) for value in raw.values() if value not in (None, "")}
+    if isinstance(raw, list | tuple | set):
+        values: set[str] = set()
+        for item in raw:
+            if isinstance(item, Mapping):
+                value = _read(item, "materialKey", default=_read(item, "default"))
+                if value not in (None, ""):
+                    values.add(str(value))
+            elif item not in (None, ""):
+                values.add(str(item))
+        return values
+    return set()
 
 
 def _parameter_value_findings(

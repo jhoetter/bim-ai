@@ -72,6 +72,7 @@ def test_fire_profile_blocks_missing_fire_metadata() -> None:
     _assert_contract(findings)
     assert {finding["severity"] for finding in findings} == {"error"}
     assert {finding["priority"] for finding in findings} == {"P0"}
+    assert all(finding["trackerItems"] == ["BIR-G05"] for finding in findings)
     assert {
         "code_profile_fire_rating_missing",
         "code_profile_exit_door_metadata_missing",
@@ -115,8 +116,32 @@ def test_accessibility_profile_blocks_narrow_threshold_circulation_and_sanitary_
         "code_profile_door_clearance_insufficient",
         "code_profile_door_swing_conflict",
         "code_profile_circulation_width_insufficient",
+        "code_profile_accessible_route_continuity_missing",
         "code_profile_sanitary_turning_zone_insufficient",
     } == _rule_ids(findings)
+    assert all(finding["trackerItems"] == ["BIR-G06"] for finding in findings)
+
+
+def test_fire_profile_requires_firestop_metadata_for_rated_host_penetrations() -> None:
+    elements = {
+        "wall-1": {
+            "kind": "wall",
+            "id": "wall-1",
+            "fireRating": "EI60",
+            "props": {"fireSeparation": True},
+        },
+        "pipe-1": {
+            "kind": "pipe",
+            "id": "pipe-1",
+            "passesThroughElementIds": ["wall-1"],
+        },
+    }
+
+    findings = check_code_profile_integrity(elements, profile="fire")
+
+    firestop = next(f for f in findings if f["ruleId"] == "code_profile_firestop_metadata_missing")
+    assert firestop["elementIds"] == ["pipe-1", "wall-1"]
+    assert firestop["code"] == "BIR-G05"
 
 
 def test_regional_profile_metadata_requires_source_and_basis() -> None:
@@ -181,7 +206,11 @@ def test_accepted_placeholder_metadata_passes() -> None:
         "route-1": {
             "kind": "circulation_path",
             "id": "route-1",
-            "props": {"accessibleRoute": True, "clearWidthMm": 1500},
+            "props": {
+                "accessibleRoute": True,
+                "clearWidthMm": 1500,
+                "continuousAccessibleRoute": True,
+            },
         },
         "sanitary-1": {
             "kind": "room",

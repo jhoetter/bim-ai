@@ -468,6 +468,42 @@ def test_type_instance_wrong_kind_and_type_layer_shape_are_reported() -> None:
     assert "model_integrity_type_layer_function_missing" in _rules(findings)
 
 
+def test_material_type_consistency_reports_stale_instance_materials() -> None:
+    findings = check_model_integrity_invariants(
+        {
+            "elements": {
+                "lvl-1": {"kind": "level", "id": "lvl-1"},
+                "mat-brick": {"kind": "material", "id": "mat-brick"},
+                "mat-stale": {"kind": "material", "id": "mat-stale"},
+                "wall-type-1": {
+                    "kind": "wall_type",
+                    "id": "wall-type-1",
+                    "layers": [
+                        {
+                            "thicknessMm": 200,
+                            "function": "structure",
+                            "materialKey": "mat-brick",
+                        }
+                    ],
+                },
+                "wall-1": {
+                    "kind": "wall",
+                    "id": "wall-1",
+                    "levelId": "lvl-1",
+                    "wallTypeId": "wall-type-1",
+                    "materialKey": "mat-stale",
+                    "start": {"xMm": 0, "yMm": 0},
+                    "end": {"xMm": 1000, "yMm": 0},
+                },
+            }
+        }
+    )
+
+    material = next(f for f in findings if f.rule_id == "model_integrity_instance_material_not_in_type")
+    assert material.element_ids == ("wall-1", "wall-type-1")
+    assert material.expected == "mat-brick"
+
+
 def test_schema_migration_compatibility_rejects_unsupported_versions() -> None:
     compatible = schema_migration_compatibility_v1(
         {"schemaVersion": "cmd-v3.0", "commands": [], "assumptions": []}

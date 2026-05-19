@@ -31,10 +31,12 @@ class StructureMepLiteFinding:
     elementIds: tuple[str, ...]
     recommendation: str
     message: str
+    trackerItems: tuple[str, ...] = ()
 
     def to_dict(self) -> dict[str, Any]:
         payload = asdict(self)
         payload["elementIds"] = list(self.elementIds)
+        payload["trackerItems"] = list(self.trackerItems)
         return payload
 
 
@@ -78,9 +80,11 @@ def check_structure_mep_lite_integrity(subject: Any) -> list[StructureMepLiteFin
     indexed = _index(elements)
     findings: list[StructureMepLiteFinding] = []
     findings.extend(_load_bearing_flag_findings(indexed))
+    findings.extend(_load_path_metadata_findings(indexed))
     findings.extend(_load_path_findings(indexed))
     findings.extend(_large_opening_findings(indexed))
     findings.extend(_mep_penetration_findings(indexed))
+    findings.extend(_mep_opening_metadata_findings(indexed))
     findings.extend(_wet_room_service_stack_findings(indexed))
     findings.extend(_riser_shaft_equipment_access_findings(indexed))
     return sorted(
@@ -117,6 +121,35 @@ def _load_bearing_flag_findings(indexed: _IndexedElements) -> list[StructureMepL
     return findings
 
 
+def _load_path_metadata_findings(indexed: _IndexedElements) -> list[StructureMepLiteFinding]:
+    findings: list[StructureMepLiteFinding] = []
+    for element_id, element in indexed.sorted_elements:
+        kind = _kind(element)
+        if kind not in {"wall", "column", "beam"} or not _is_load_bearing(element):
+            continue
+        missing = []
+        if not _string_field(element, "loadPathRole", "loadPathSegmentId", "structuralSystemId"):
+            missing.append("load path role/segment")
+        if not _string_field(element, "loadDirection", "loadCase", "loadCategory"):
+            missing.append("load direction/category")
+        if not missing:
+            continue
+        findings.append(
+            _finding(
+                "structure_lite_load_path_metadata_missing",
+                "BIR-G02-LOAD-PATH-METADATA",
+                "warning",
+                "P2",
+                "structure",
+                "structure_lite",
+                (element_id,),
+                "Add authored loadPathRole/loadPathSegmentId and loadDirection/loadCategory metadata, or mark the element non-load-bearing.",
+                f"Load-bearing {kind} '{element_id}' is missing {', '.join(missing)} metadata.",
+            )
+        )
+    return findings
+
+
 def _load_path_findings(indexed: _IndexedElements) -> list[StructureMepLiteFinding]:
     findings: list[StructureMepLiteFinding] = []
     for element_id, element in indexed.sorted_elements:
@@ -125,8 +158,29 @@ def _load_path_findings(indexed: _IndexedElements) -> list[StructureMepLiteFindi
             continue
         if _has_transfer_assumption(element):
             continue
+        support_ids = _ids_from_fields(element, "supportedByIds", "supportIds", "stackedSupportIds")
+        missing_support_ids = [support_id for support_id in support_ids if support_id not in indexed.elements]
+        if missing_support_ids:
+            findings.append(
+                _finding(
+                    "structure_lite_support_reference_unresolved",
+                    "BIR-G02-SUPPORT-REFERENCE",
+                    "warning",
+                    "P1",
+                    "structure",
+                    "structure_lite",
+                    (element_id,),
+                    "Resolve support references to real structural elements or replace them with a transferAssumptionId.",
+                    (
+                        f"Load-bearing {kind} '{element_id}' references missing supports: "
+                        f"{', '.join(sorted(missing_support_ids))}."
+                    ),
+                )
+            )
         if kind == "beam":
-            support_ids = _ids_from_fields(element, "supportedByIds", "supportIds", "startColumnId", "endColumnId")
+            support_ids = _ids_from_fields(
+                element, "supportedByIds", "supportIds", "startColumnId", "endColumnId"
+            )
             resolved = [sid for sid in support_ids if sid in indexed.elements]
             if len(set(resolved)) < 2:
                 findings.append(
@@ -176,7 +230,7 @@ def _large_opening_findings(indexed: _IndexedElements) -> list[StructureMepLiteF
         findings.append(
             _finding(
                 "structure_lite_large_opening_uncoordinated",
-                "BIR-G03-LARGE-OPENING",
+                "BIR-G02-LARGE-OPENING",
                 "warning",
                 "P1",
                 "coordination",
@@ -206,19 +260,59 @@ def _mep_penetration_findings(indexed: _IndexedElements) -> list[StructureMepLit
             for crossed_id in crossed_ids
             if _kind(indexed.elements.get(crossed_id)) in {"wall", "floor", "slab", "ceiling", "roof"}
         ]
-        if not crossed_hosts or _has_penetration_coordination(element):
+        if not crossed_hosts:
+            continue
+        opening_ids = _opening_ids(element)
+        if opening_ids and _openings_cover_hosts(opening_ids, crossed_hosts, indexed):
+            continue
+        if not opening_ids and _has_penetration_status_coordination(element):
             continue
         findings.append(
             _finding(
                 "mep_lite_route_penetration_opening_missing",
-                "BIR-G04-MEP-PENETRATION",
+                "BIR-G03-MEP-PENETRATION",
                 "warning",
                 "P1",
                 "mep",
                 "mep_lite",
-                tuple([element_id, *sorted(crossed_hosts)]),
-                "Add openingRequestId/openingIds or mark penetrationStatus as coordinated before routing through walls, slabs, roofs, or ceilings.",
-                f"MEP route '{element_id}' crosses host elements without a coordinated penetration/opening request.",
+                tuple([element_id, *sorted(crossed_hosts), *sorted(opening_ids)]),
+                "Add resolved openingRequestId/openingIds/sleeveIds for each crossed host or mark penetrationStatus as coordinated before routing through walls, slabs, roofs, or ceilings.",
+                f"MEP route '{element_id}' crosses host elements without resolved penetration/opening metadata.",
+            )
+        )
+    return findings
+
+
+def _mep_opening_metadata_findings(indexed: _IndexedElements) -> list[StructureMepLiteFinding]:
+    findings: list[StructureMepLiteFinding] = []
+    for element_id, element in indexed.sorted_elements:
+        kind = _kind(element)
+        if kind not in {"mep_opening_request", "sleeve", "penetration", "wall_opening", "slab_opening"}:
+            continue
+        if kind in {"wall_opening", "slab_opening"} and not _is_mep_opening(element):
+            continue
+        host_ids = _ids_from_fields(element, "hostElementId", "hostWallId", "hostFloorId", "hostSlabId")
+        route_ids = _ids_from_fields(element, "routeId", "routeIds", "mepRouteId", "servedElementIds")
+        missing = []
+        if not any(host_id in indexed.elements for host_id in host_ids):
+            missing.append("host element")
+        if not route_ids and not _string_field(element, "systemId", "mepSystemId", "serviceType"):
+            missing.append("MEP route/system")
+        if _number_field(element, "diameterMm", "widthMm", "heightMm", "sleeveDiameterMm") is None:
+            missing.append("opening/sleeve size")
+        if not missing:
+            continue
+        findings.append(
+            _finding(
+                "mep_lite_opening_request_metadata_missing",
+                "BIR-G03-OPENING-METADATA",
+                "warning",
+                "P1",
+                "mep",
+                "mep_lite",
+                _with_existing_refs((element_id,), [*host_ids, *route_ids], indexed),
+                "Add host, route/system, and sleeve/opening size metadata so penetrations can be coordinated deterministically.",
+                f"MEP penetration/opening '{element_id}' is missing {', '.join(missing)} metadata.",
             )
         )
     return findings
@@ -367,6 +461,7 @@ def _finding(
         elementIds=tuple(dict.fromkeys(str(eid) for eid in element_ids if eid)),
         recommendation=recommendation,
         message=message,
+        trackerItems=_tracker_items_for_code(code),
     )
 
 
@@ -472,6 +567,46 @@ def _has_penetration_coordination(element: Any) -> bool:
         return True
     status = _string_field(element, "penetrationStatus", "coordinationStatus")
     return status in {"coordinated", "approved", "reviewed"}
+
+
+def _opening_ids(element: Any) -> list[str]:
+    return _ids_from_fields(
+        element,
+        "openingRequestId",
+        "openingRequestIds",
+        "openingId",
+        "openingIds",
+        "sleeveId",
+        "sleeveIds",
+    )
+
+
+def _has_penetration_status_coordination(element: Any) -> bool:
+    status = _string_field(element, "penetrationStatus", "coordinationStatus")
+    return status in {"coordinated", "approved", "reviewed"}
+
+
+def _openings_cover_hosts(
+    opening_ids: Iterable[str], host_ids: Iterable[str], indexed: _IndexedElements
+) -> bool:
+    remaining_hosts = set(host_ids)
+    for opening_id in opening_ids:
+        opening = indexed.elements.get(opening_id)
+        if opening is None:
+            return False
+        opening_hosts = set(
+            _ids_from_fields(opening, "hostElementId", "hostWallId", "hostFloorId", "hostSlabId")
+        )
+        if not opening_hosts:
+            return False
+        remaining_hosts.difference_update(opening_hosts)
+    return not remaining_hosts
+
+
+def _is_mep_opening(element: Any) -> bool:
+    return bool(
+        _read_deep(element, "mepSystemId", "serviceType", "routeId", "mepRouteId", "openingRequestId")
+    ) or _string_field(element, "openingPurpose", "purpose") in {"mep", "pipe", "duct", "service"}
 
 
 def _is_wet_room(element: Any) -> bool:
@@ -595,3 +730,10 @@ def _snake_case(name: str) -> str:
             out.append("_")
         out.append(char.lower())
     return "".join(out)
+
+
+def _tracker_items_for_code(code: str) -> tuple[str, ...]:
+    parts = str(code).split("-")
+    if len(parts) >= 2 and parts[0] == "BIR":
+        return (f"{parts[0]}-{parts[1]}",)
+    return ()

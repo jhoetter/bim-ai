@@ -159,8 +159,9 @@ def test_family_type_content_integrity_reports_invalid_overrides_assets_and_pari
                         "instanceOverridable": False,
                     },
                 ],
-                "requiredDimensions": ["widthMm", "heightMm"],
+                "requiredDimensions": ["widthMm", "heightMm", "depthMm"],
                 "hostSupport": "wall_hosted",
+                "materialSlots": {"case": "oak"},
                 "scheduleFields": ["heightMm"],
                 "renderSupport": {"geometry": True},
                 "exportSupport": {"ifc": True, "gltf": False},
@@ -172,7 +173,12 @@ def test_family_type_content_integrity_reports_invalid_overrides_assets_and_pari
                 "levelId": "lvl-1",
                 "hostElementId": "wall-1",
                 "positionMm": {"xMm": 700, "yMm": 500},
-                "paramValues": {"widthMm": 1500, "heightMm": 850, "bogus": 1},
+                "paramValues": {
+                    "widthMm": 1500,
+                    "heightMm": 850,
+                    "materialKey": "steel",
+                    "bogus": 1,
+                },
             },
             "asset-bad": {
                 "kind": "asset_library_entry",
@@ -227,11 +233,13 @@ def test_family_type_content_integrity_reports_invalid_overrides_assets_and_pari
     report_rule_ids = {finding["ruleId"] for finding in report["findings"]}
 
     assert "model_integrity_family_type_schema_incomplete" in rule_ids
+    assert "model_integrity_family_type_required_dimension_undeclared" in rule_ids
     assert "model_integrity_family_render_export_parity_gap" in rule_ids
     assert "model_integrity_family_instance_override_unknown" in rule_ids
     assert "model_integrity_family_instance_override_not_allowed" in rule_ids
     assert "model_integrity_family_instance_override_invalid" in rule_ids
     assert "model_integrity_family_instance_override_unscheduled" in rule_ids
+    assert "model_integrity_family_instance_material_override_inconsistent" in rule_ids
     assert "model_integrity_family_instance_host_constraint_violation" in rule_ids
     assert "model_integrity_asset_catalog_metadata_incomplete" in rule_ids
     assert "model_integrity_asset_catalog_param_schema_invalid" in rule_ids
@@ -240,4 +248,11 @@ def test_family_type_content_integrity_reports_invalid_overrides_assets_and_pari
     assert "model_integrity_asset_placement_circulation_overlap" in rule_ids
     assert report["ok"] is False
     assert report_rule_ids.issuperset(rule_ids & report_rule_ids)
+    material_override = next(
+        finding
+        for finding in report["findings"]
+        if finding["ruleId"] == "model_integrity_family_instance_material_override_inconsistent"
+    )
+    assert material_override["trackerItems"] == ["BIR-V02"]
+    assert material_override["recommendation"]
     assert "BIR-V05" in report["trackedItems"]

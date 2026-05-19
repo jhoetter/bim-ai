@@ -16,6 +16,8 @@ def _base_clean_elements() -> dict[str, dict[str, object]]:
             "levelId": "lvl-0",
             "loadBearing": True,
             "gridId": "A1",
+            "loadPathRole": "primary_column",
+            "loadDirection": "gravity",
         },
         "col-a-1": {
             "kind": "column",
@@ -23,6 +25,8 @@ def _base_clean_elements() -> dict[str, dict[str, object]]:
             "levelId": "lvl-1",
             "loadBearing": True,
             "gridId": "A1",
+            "loadPathRole": "primary_column",
+            "loadDirection": "gravity",
         },
         "col-b-0": {
             "kind": "column",
@@ -30,6 +34,8 @@ def _base_clean_elements() -> dict[str, dict[str, object]]:
             "levelId": "lvl-0",
             "loadBearing": True,
             "gridId": "B1",
+            "loadPathRole": "primary_column",
+            "loadDirection": "gravity",
         },
         "beam-1": {
             "kind": "beam",
@@ -37,6 +43,8 @@ def _base_clean_elements() -> dict[str, dict[str, object]]:
             "levelId": "lvl-1",
             "loadBearing": True,
             "supportedByIds": ["col-a-1", "col-b-0"],
+            "loadPathRole": "transfer_beam",
+            "loadDirection": "gravity",
         },
         "wall-1": {
             "kind": "wall",
@@ -132,6 +140,7 @@ def test_findings_have_required_machine_readable_fields() -> None:
     } <= set(finding)
     assert finding["ruleId"] == "structure_lite_load_bearing_flag_missing"
     assert finding["code"] == "BIR-G01-LOAD-BEARING-FLAG"
+    assert finding["trackerItems"] == ["BIR-G01"]
     assert finding["discipline"] == "structure"
     assert finding["perspective"] == "structure_lite"
     assert finding["elementIds"] == ["wall-1"]
@@ -147,6 +156,24 @@ def test_missing_load_path_is_reported_for_unstacked_load_bearing_support() -> N
     missing = next(f for f in findings if f.ruleId == "structure_lite_load_path_missing")
     assert missing.elementIds == ("col-a-1",)
     assert missing.priority == "P1"
+
+
+def test_load_path_metadata_and_unresolved_supports_are_reported() -> None:
+    elements = _base_clean_elements()
+    elements["beam-1"].pop("loadPathRole")
+    elements["beam-1"]["supportedByIds"] = ["col-a-1", "missing-col"]
+
+    findings = check_structure_mep_lite_integrity(elements)
+
+    assert {
+        "structure_lite_load_path_metadata_missing",
+        "structure_lite_support_reference_unresolved",
+        "structure_lite_beam_supports_missing",
+    } <= _rule_ids(findings)
+    metadata = next(f for f in findings if f.ruleId == "structure_lite_load_path_metadata_missing")
+    support = next(f for f in findings if f.ruleId == "structure_lite_support_reference_unresolved")
+    assert metadata.trackerItems == ("BIR-G02",)
+    assert support.code == "BIR-G02-SUPPORT-REFERENCE"
 
 
 def test_uncoordinated_large_opening_is_reported() -> None:
@@ -167,6 +194,7 @@ def test_uncoordinated_large_opening_is_reported() -> None:
     )
     assert finding["elementIds"] == ["opening-large", "wall-1"]
     assert finding["discipline"] == "coordination"
+    assert finding["code"] == "BIR-G02-LARGE-OPENING"
 
 
 def test_mep_route_crossing_host_without_opening_is_reported() -> None:
@@ -179,6 +207,33 @@ def test_mep_route_crossing_host_without_opening_is_reported() -> None:
     crossing = next(f for f in findings if f.ruleId == "mep_lite_route_penetration_opening_missing")
     assert crossing.elementIds == ("pipe-1", "wall-1")
     assert crossing.discipline == "mep"
+    assert crossing.code == "BIR-G03-MEP-PENETRATION"
+
+
+def test_mep_route_requires_resolved_opening_metadata_for_crossed_hosts() -> None:
+    elements = _base_clean_elements()
+    elements["pipe-1"]["openingRequestId"] = "missing-opening"
+
+    findings = check_structure_mep_lite_integrity({"elements": elements})
+
+    crossing = next(f for f in findings if f.ruleId == "mep_lite_route_penetration_opening_missing")
+    assert crossing.elementIds == ("pipe-1", "wall-1", "missing-opening")
+    assert crossing.trackerItems == ("BIR-G03",)
+
+
+def test_mep_opening_request_requires_host_route_and_size_metadata() -> None:
+    elements = _base_clean_elements()
+    elements["sleeve-1"] = {
+        "kind": "sleeve",
+        "id": "sleeve-1",
+        "hostElementId": "wall-1",
+    }
+
+    findings = check_structure_mep_lite_integrity(elements)
+
+    opening = next(f for f in findings if f.ruleId == "mep_lite_opening_request_metadata_missing")
+    assert opening.elementIds == ("sleeve-1", "wall-1")
+    assert opening.code == "BIR-G03-OPENING-METADATA"
 
 
 def test_wet_room_unstacked_and_unserved_are_reported() -> None:

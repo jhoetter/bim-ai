@@ -35,10 +35,13 @@ def check_code_profile_integrity(
 
     code_profile = _profile_from(profile)
     elements = _element_list(model_or_elements)
+    elements_by_id = {
+        _element_id(element): element for element in elements if _element_id(element) != "unknown"
+    }
 
     findings: list[dict[str, Any]] = []
     if code_profile.fire:
-        findings.extend(_fire_findings(elements, code_profile))
+        findings.extend(_fire_findings(elements, code_profile, elements_by_id))
     if code_profile.accessibility:
         findings.extend(_accessibility_findings(elements, code_profile))
     if code_profile.regional:
@@ -55,7 +58,9 @@ def check_code_profile_integrity(
 
 
 def _fire_findings(
-    elements: list[Mapping[str, Any]], profile: CodeProfile
+    elements: list[Mapping[str, Any]],
+    profile: CodeProfile,
+    elements_by_id: Mapping[str, Mapping[str, Any]],
 ) -> list[dict[str, Any]]:
     findings: list[dict[str, Any]] = []
     for element in elements:
@@ -109,6 +114,37 @@ def _fire_findings(
                     )
                 )
 
+            width = _number(element, "egressClearWidthMm", "clearWidthMm", "widthMm")
+            if width is not None and width < profile.accessible_door_clear_width_mm:
+                findings.append(
+                    _finding(
+                        "code_profile_exit_door_width_insufficient",
+                        "BIR-G05",
+                        profile,
+                        element_id,
+                        "fire",
+                        "egress",
+                        "Increase clear exit width or update the exit-door designation.",
+                        (
+                            f"Exit door clear width {width:g} mm is below "
+                            f"{profile.accessible_door_clear_width_mm:g} mm."
+                        ),
+                    )
+                )
+            if _has_truthy(element, "opensAgainstEgress"):
+                findings.append(
+                    _finding(
+                        "code_profile_exit_door_swing_conflict",
+                        "BIR-G05",
+                        profile,
+                        element_id,
+                        "fire",
+                        "egress",
+                        "Revise the exit door swing or document an authority-reviewed exception.",
+                        "Exit door swing is marked against egress direction.",
+                    )
+                )
+
         if kind == "stair" and _has_truthy(
             element, "protectedStair", "egressStair", "requiredExitStair"
         ):
@@ -146,6 +182,41 @@ def _fire_findings(
                         "compartmentation",
                         "Add compartment id and basis placeholder metadata.",
                         "Compartment boundary placeholder metadata is incomplete.",
+                    )
+                )
+
+        if kind in {"pipe", "duct", "cable_tray", "mep_route", "mep_route_placeholder"}:
+            crossed_ids = _ids(
+                element,
+                "passesThroughElementIds",
+                "crossesElementIds",
+                "intersectsElementIds",
+                "penetratesElementIds",
+            )
+            rated_hosts = [
+                crossed_id
+                for crossed_id in crossed_ids
+                if _requires_fire_rating(elements_by_id.get(crossed_id))
+                or _has_any(elements_by_id.get(crossed_id), "fireRating", "fireResistanceRating")
+            ]
+            if rated_hosts and not _has_any(
+                element,
+                "firestopSystemId",
+                "firestopRating",
+                "penetrationFireRating",
+                "approvedFirestopDetailId",
+            ):
+                findings.append(
+                    _finding(
+                        "code_profile_firestop_metadata_missing",
+                        "BIR-G05",
+                        profile,
+                        element_id,
+                        "fire",
+                        "penetrations",
+                        "Add firestop system/rating metadata for MEP penetrations through fire-rated hosts.",
+                        "MEP route penetrates fire-rated hosts without firestop metadata.",
+                        extra_element_ids=rated_hosts,
                     )
                 )
     return findings
@@ -262,6 +333,25 @@ def _accessibility_findings(
                             ),
                         )
                     )
+                if not _has_any(
+                    element,
+                    "routeContinuity",
+                    "continuousAccessibleRoute",
+                    "connectsAccessibleDestinationIds",
+                    "servedRoomIds",
+                ):
+                    findings.append(
+                        _finding(
+                            "code_profile_accessible_route_continuity_missing",
+                            "BIR-G06",
+                            profile,
+                            element_id,
+                            "architecture",
+                            "accessibility",
+                            "Add accessible route continuity/connectivity metadata for deterministic route review.",
+                            "Accessible route is missing continuity/connectivity metadata.",
+                        )
+                    )
 
         if kind in {"room", "sanitary_room", "toilet_room", "bathroom"} and _has_truthy(
             element, "accessibleSanitary", "sanitaryTurningZone", "accessibleToiletRoom"
@@ -336,8 +426,11 @@ def _finding(
     perspective: str,
     recommendation: str,
     message: str,
+    *,
+    extra_element_ids: Iterable[str] = (),
 ) -> dict[str, Any]:
     severity = "error" if profile.enforced else "warning"
+    element_ids = [element_id, *(str(eid) for eid in extra_element_ids if eid)]
     return {
         "ruleId": rule_id,
         "code": code,
@@ -345,11 +438,14 @@ def _finding(
         "priority": "P0" if severity == "error" else "P2",
         "discipline": discipline,
         "perspective": perspective,
-        "elementIds": [element_id],
+        "elementIds": list(dict.fromkeys(element_ids)),
         "recommendation": recommendation,
         "message": message,
         "profileId": profile.profile_id,
         "basis": "enforced" if profile.enforced else "advisory",
+        "locale": profile.locale,
+        "sourceBasis": profile.source,
+        "trackerItems": _tracker_items_for_code(code),
     }
 
 
@@ -496,6 +592,21 @@ def _number(element: Mapping[str, Any] | None, *keys: str) -> float | None:
     return None
 
 
+def _ids(element: Mapping[str, Any] | None, *keys: str) -> list[str]:
+    ids: list[str] = []
+    for key in keys:
+        value = _lookup(element, key)
+        if value in (None, ""):
+            continue
+        if isinstance(value, str):
+            ids.append(value)
+        elif isinstance(value, Iterable) and not isinstance(value, Mapping):
+            ids.extend(str(item) for item in value if item not in (None, ""))
+        else:
+            ids.append(str(value))
+    return ids
+
+
 def _text(element: Mapping[str, Any] | None, *keys: str) -> str | None:
     for key in keys:
         value = _optional_text(_lookup(element, key))
@@ -568,3 +679,10 @@ def _iterable(value: Any) -> Iterable[Any]:
     if isinstance(value, Iterable):
         return value
     return (value,)
+
+
+def _tracker_items_for_code(code: str) -> list[str]:
+    parts = str(code).split("-")
+    if len(parts) >= 2 and parts[0] == "BIR":
+        return [f"{parts[0]}-{parts[1]}"]
+    return []
