@@ -21,6 +21,11 @@ from bim_ai.export_ifc import (
     kernel_expected_ifc_emit_counts,
     kernel_export_eligible,
 )
+from bim_ai.export_ifc_readback import (
+    build_deterministic_ifc_importer_readback_parity_v1,
+    build_kernel_ifc_geometry_readback_summary_v0,
+)
+from bim_ai.export_ifc_scope import ifc_semantic_mapping_scope_v1
 from bim_ai.material_assembly_resolve import (
     material_assembly_manifest_evidence,
     material_catalog_audit_evidence_v0,
@@ -46,6 +51,7 @@ IFC_SEMANTIC_IMPORT_SCOPE_V0: dict[str, Any] = {
         "ifc_manifest_v0.siteExchangeEvidence_v0 — document-only kernel site participation when IFC export not eligible",
         "ifc_manifest_v0.ifcMaterialLayerSetReadbackEvidence_v0 — re-export STEP + same read-back slice for exchange manifest (when IfcOpenShell + kernel export eligible)",
         "ifc_manifest_v0.ifcPropertySetCoverageEvidence_v0 — re-export STEP + same coverage row grid for exchange manifest",
+        "ifc_manifest_v0.ifcImporterReadbackParity_v1 — deterministic importer/readback parity for supported IFC geometry with explicit tolerances and offline surrogate graph fallback",
         "Kernel geometry skip map from Document",
         "summarize_kernel_ifc_semantic_roundtrip export→re-parse deltas (identityCoverage, qtoCoverage, materialLayerReadback summary, propertySetCoverage summary)",
         "summarize_kernel_ifc_semantic_roundtrip.commandSketch — level echo, storeys read-back, QTO names, programme samples",
@@ -53,6 +59,7 @@ IFC_SEMANTIC_IMPORT_SCOPE_V0: dict[str, Any] = {
         "engine.try_apply_kernel_ifc_authoritative_replay_v0 — additive apply of authoritativeReplay_v0 commands via try_commit_bundle (preflight merge_id_collision / merge_reference_unresolved)",
         "build_ifc_import_preview_v0 — deterministic IFC import preview: commandCountsByKind, unresolvedReferences (extractionGaps), idCollisionClasses (command kinds with duplicate replay IDs in the STEP file), skipCountsByReason, authoritativeProducts subset map, unsupportedProducts countsByClass, idsPointerCoverage (spaces/roofs/floors QTO+identity rows), safeApplyClassification (authoritativeSliceSafeApply + notApplyReasons); stable across repeated runs",
         "build_ifc_unsupported_merge_map_v0 — unsupported IFC merge map: unsupportedIfcProductsByClass (products outside kernel slice), extractionGapsByReason (reasons kernel failed to extract command from supported product), mergeConstraints (permanent architectural limits); offline-safe mergeConstraints always present",
+        "ifcSemanticMappingScope_v1 — IFC4 product-schema class ledger for supported kernel export/readback classes and explicit unsupported external classes; covers schema class, type, material, classification, property-set, and quantity dimensions",
         "ifc_manifest_v0.ifcImportPreview_v0 — same schema as build_ifc_import_preview_v0 (requires IfcOpenShell + kernel export eligible); offline stub sets available=False + reason",
         "ifc_manifest_v0.ifcUnsupportedMergeMap_v0 — same schema as build_ifc_unsupported_merge_map_v0 (mergeConstraints always present; full map requires IfcOpenShell + kernel export eligible)",
         "ifc_manifest_v0.ifcExchangeManifestClosure_v0 — deterministic cross-manifest closure: authoritativeProductsAlignmentToken (aligned/replay_missing_products/preview_missing_products), unsupportedClassAlignmentToken (aligned/class_set_drift), idsPointerCoverageAlignmentToken (aligned/coverage_drift), ifcExchangeManifestClosureDigestSha256; offline tokens set to unavailable_offline",
@@ -372,6 +379,28 @@ def build_ifc_unsupported_merge_map_v0_for_manifest(
     return build_ifc_unsupported_merge_map_v0(step)
 
 
+def build_ifc_importer_readback_parity_v1_for_manifest(
+    doc: Document, *, _cached_step: str | None = None
+) -> dict[str, Any]:
+    """IFC importer/readback parity for manifest, with deterministic offline fallback."""
+
+    from bim_ai.export_ifc import IFC_AVAILABLE, export_ifc_model_step  # noqa: PLC0415
+
+    if IFC_AVAILABLE and kernel_export_eligible(doc):
+        try:
+            import ifcopenshell  # noqa: PLC0415
+
+            step = _cached_step if _cached_step is not None else export_ifc_model_step(doc)
+            model = ifcopenshell.file.from_string(step)
+            summary = build_kernel_ifc_geometry_readback_summary_v0(model, doc)
+            parity = summary.get("ifcImporterReadbackParity_v1")
+            if isinstance(parity, dict):
+                return parity
+        except Exception:
+            pass
+    return build_deterministic_ifc_importer_readback_parity_v1(doc)
+
+
 def build_ifc_exchange_manifest_payload(doc: Document) -> dict[str, Any]:
     parity = exchange_parity_manifest_fields_from_document(doc)
     planned = sorted(parity["countsByKind"].keys())
@@ -389,6 +418,7 @@ def build_ifc_exchange_manifest_payload(doc: Document) -> dict[str, Any]:
         "plannedIfcEntitiesHints": planned,
         "plannedEntitiesReference": "spec/workpackage-master-tracker.md",
         "ifcSemanticImportScope_v0": dict(IFC_SEMANTIC_IMPORT_SCOPE_V0),
+        "ifcSemanticMappingScope_v1": ifc_semantic_mapping_scope_v1(),
         "kernelExpectedIfcKinds": dict(sorted(kernel_expected_ifc_emit_counts(doc).items())),
         "hint": "IFC artifact: GET /api/models/{id}/exports/model.ifc",
         "note": (
@@ -423,6 +453,10 @@ def build_ifc_exchange_manifest_payload(doc: Document) -> dict[str, Any]:
     out["ifcUnsupportedMergeMap_v0"] = build_ifc_unsupported_merge_map_v0_for_manifest(
         doc, _cached_step=_step
     )
+    out["ifcImporterReadbackParity_v1"] = build_ifc_importer_readback_parity_v1_for_manifest(
+        doc,
+        _cached_step=_step,
+    )
     out["ifcExchangeManifestClosure_v0"] = build_ifc_exchange_manifest_closure_v0(
         out["ifcImportPreview_v0"],
         out["ifcUnsupportedMergeMap_v0"],
@@ -454,6 +488,7 @@ def ifc_exchange_manifest_payload(
         "plannedIfcEntitiesHints": planned,
         "plannedEntitiesReference": "spec/workpackage-master-tracker.md",
         "ifcSemanticImportScope_v0": dict(IFC_SEMANTIC_IMPORT_SCOPE_V0),
+        "ifcSemanticMappingScope_v1": ifc_semantic_mapping_scope_v1(),
         "kernelExpectedIfcKinds": {},
         "hint": "IFC artifact: GET /api/models/{id}/exports/model.ifc",
         "note": (

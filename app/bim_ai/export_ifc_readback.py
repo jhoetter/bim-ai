@@ -6,11 +6,15 @@ import numpy as np
 
 from bim_ai.document import Document
 from bim_ai.elements import (
+    BeamElem,
+    CeilingElem,
+    ColumnElem,
     DoorElem,
     FloorElem,
     FloorTypeElem,
     LevelElem,
     MaterialElem,
+    PlacedAssetElem,
     RailingElem,
     RoofElem,
     RoofOpeningElem,
@@ -127,6 +131,30 @@ _KIND_READBACK_SPECS: tuple[dict[str, str | None], ...] = (
         "pset": "Pset_SpaceCommon",
         "qto": "Qto_SpaceBaseQuantities",
     },
+    {
+        "kind": "column",
+        "ifcType": "IfcColumn",
+        "pset": "Pset_ColumnCommon",
+        "qto": None,
+    },
+    {
+        "kind": "beam",
+        "ifcType": "IfcBeam",
+        "pset": "Pset_BeamCommon",
+        "qto": None,
+    },
+    {
+        "kind": "ceiling",
+        "ifcType": "IfcCovering",
+        "pset": "Pset_CoveringCommon",
+        "qto": None,
+    },
+    {
+        "kind": "placed_asset",
+        "ifcType": "IfcFurnishingElement",
+        "pset": "Pset_FurnitureTypeCommon",
+        "qto": "Qto_FurnitureBaseQuantities",
+    },
 )
 
 
@@ -170,6 +198,34 @@ def kernel_ifc_source_topology_summary_v0(doc: Document) -> dict[str, Any]:
         for eid, e in doc.elements.items()
         if isinstance(e, RoomElem) and len(room_outline_mm(e)) >= 3
     )
+    column_ids = sorted(
+        eid
+        for eid, e in doc.elements.items()
+        if isinstance(e, ColumnElem) and e.level_id in level_ids
+    )
+    beam_ids = sorted(
+        eid
+        for eid, e in doc.elements.items()
+        if isinstance(e, BeamElem)
+        and e.level_id in level_ids
+        and (
+            (float(e.end_mm.x_mm) - float(e.start_mm.x_mm)) ** 2
+            + (float(e.end_mm.y_mm) - float(e.start_mm.y_mm)) ** 2
+        )
+        > 1e-6
+    )
+    ceiling_ids = sorted(
+        eid
+        for eid, e in doc.elements.items()
+        if isinstance(e, CeilingElem)
+        and e.level_id in level_ids
+        and len(e.boundary_mm) >= 3
+    )
+    placed_asset_ids = sorted(
+        eid
+        for eid, e in doc.elements.items()
+        if isinstance(e, PlacedAssetElem) and e.level_id in level_ids
+    )
     floor_id_set = set(floor_ids)
     roof_id_set = set(roof_ids)
     slab_opening_ids = sorted(
@@ -196,6 +252,10 @@ def kernel_ifc_source_topology_summary_v0(doc: Document) -> dict[str, Any]:
         "stair": stair_ids,
         "railing": railing_ids,
         "room": room_ids,
+        "column": column_ids,
+        "beam": beam_ids,
+        "ceiling": ceiling_ids,
+        "placed_asset": placed_asset_ids,
     }
 
     def _type_ids(attr: str, ids: list[str]) -> list[str]:

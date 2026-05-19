@@ -3,9 +3,13 @@ from __future__ import annotations
 from bim_ai import export_ifc
 from bim_ai.document import Document
 from bim_ai.elements import (
+    BeamElem,
+    CeilingElem,
+    ColumnElem,
     DoorElem,
     FloorElem,
     LevelElem,
+    PlacedAssetElem,
     RailingElem,
     RoofElem,
     RoomElem,
@@ -27,6 +31,7 @@ from bim_ai.export_ifc_readback import (
     _profile_xy_polyline_mm,
     _read_named_qto_values,
     _void_rel_and_host_for_opening,
+    build_deterministic_ifc_importer_readback_parity_v1,
     build_kernel_ifc_geometry_readback_summary_v0,
     kernel_ifc_source_topology_summary_v0,
 )
@@ -247,6 +252,38 @@ def test_kernel_source_topology_summary_counts_supported_export_ids():
                     {"xMm": 0, "yMm": 3000},
                 ],
             ),
+            "col1": ColumnElem(
+                kind="column",
+                id="col1",
+                levelId="l0",
+                positionMm={"xMm": 1000, "yMm": 1000},
+            ),
+            "bm1": BeamElem(
+                kind="beam",
+                id="bm1",
+                levelId="l0",
+                startMm={"xMm": 0, "yMm": 0},
+                endMm={"xMm": 4000, "yMm": 0},
+            ),
+            "ceil1": CeilingElem(
+                kind="ceiling",
+                id="ceil1",
+                levelId="l0",
+                boundaryMm=[
+                    {"xMm": 0, "yMm": 0},
+                    {"xMm": 4000, "yMm": 0},
+                    {"xMm": 4000, "yMm": 3000},
+                    {"xMm": 0, "yMm": 3000},
+                ],
+            ),
+            "asset1": PlacedAssetElem(
+                kind="placed_asset",
+                id="asset1",
+                name="Chair",
+                assetId="chair-type",
+                levelId="l0",
+                positionMm={"xMm": 1500, "yMm": 1500},
+            ),
             "so1": SlabOpeningElem(
                 kind="slab_opening",
                 id="so1",
@@ -272,6 +309,10 @@ def test_kernel_source_topology_summary_counts_supported_export_ids():
         "stair": 1,
         "railing": 1,
         "room": 1,
+        "column": 1,
+        "beam": 1,
+        "ceiling": 1,
+        "placed_asset": 1,
     }
     assert source["openingCountsByHostKind"] == {"wall": 2, "slab": 1, "roof": 0}
     assert source["semanticExpectations"]["classificationElementIds"] == ["w1"]
@@ -345,6 +386,14 @@ def test_geometry_readback_summary_compares_identity_body_qto_and_topology():
     assert summary["semanticReadback"]["classifications"]["IfcClassificationReference"] == 1
     assert summary["driftTolerancePolicy"]["countTolerance"] == 0
     assert summary["driftFindings"] == []
+    parity = summary["ifcImporterReadbackParity_v1"]
+    assert parity["format"] == "ifcImporterReadbackParity_v1"
+    assert parity["readbackStatus"] == "aligned"
+    assert parity["driftTolerancePolicy"]["productCountTolerance"] == 0
+    assert parity["sourceGraph"]["countsByKind"]["wall"] == 1
+    assert parity["importerGraph"]["countsByKind"]["wall"] == 1
+    assert parity["unsupportedSkips"]["countsByReason"] == {}
+    assert parity["findings"] == []
 
 
 def test_geometry_readback_summary_reports_toleranced_drift_findings():
@@ -374,3 +423,103 @@ def test_geometry_readback_summary_reports_toleranced_drift_findings():
     assert "ifc_readback_unexpected_reference" in codes
     assert "ifc_readback_qto_gap" in codes
     assert all("BIR-K02" in finding["trackerItems"] for finding in summary["driftFindings"])
+    parity = summary["ifcImporterReadbackParity_v1"]
+    assert parity["readbackStatus"] == "drift"
+    assert any(f["code"] == "ifc_readback_missing_reference" for f in parity["findings"])
+
+
+def test_deterministic_ifc_importer_parity_records_unsupported_skips_offline() -> None:
+    doc = Document(
+        revision=1,
+        elements={
+            "l0": LevelElem(kind="level", id="l0", name="G", elevationMm=0),
+            "w1": WallElem(
+                kind="wall",
+                id="w1",
+                levelId="l0",
+                start={"xMm": 0, "yMm": 0},
+                end={"xMm": 5000, "yMm": 0},
+                thicknessMm=200,
+                heightMm=2800,
+            ),
+            "d-bad": DoorElem(kind="door", id="d-bad", wallId="missing", alongT=0.5),
+        },
+    )
+
+    parity = build_deterministic_ifc_importer_readback_parity_v1(doc)
+
+    assert parity["format"] == "ifcImporterReadbackParity_v1"
+    assert parity["readbackStatus"] == "aligned"
+    assert parity["importer"]["mode"] == "deterministic_surrogate"
+    assert parity["unsupportedSkips"]["countsByReason"] == {"door_missing_host_wall": 1}
+    assert parity["sourceGraph"]["countsByKind"]["wall"] == 1
+    assert parity["importerGraph"]["countsByKind"]["wall"] == 1
+
+
+def test_geometry_readback_summary_covers_broader_ifc_schema_classes():
+    column = _body_product("IfcColumn", "col1", "Pset_ColumnCommon")
+    beam = _body_product("IfcBeam", "bm1", "Pset_BeamCommon")
+    ceiling = _body_product("IfcCovering", "ceil1", "Pset_CoveringCommon")
+    furnishing = _body_product(
+        "IfcFurnishingElement",
+        "asset1",
+        "Pset_FurnitureTypeCommon",
+        "Qto_FurnitureBaseQuantities",
+    )
+    model = _Model(
+        by_type={
+            "IfcColumn": [column],
+            "IfcBeam": [beam],
+            "IfcCovering": [ceiling],
+            "IfcFurnishingElement": [furnishing],
+            "IfcElementQuantity": [
+                _Ifc("IfcElementQuantity", Name="Qto_FurnitureBaseQuantities")
+            ],
+        }
+    )
+    doc = Document(
+        revision=1,
+        elements={
+            "l0": LevelElem(kind="level", id="l0", name="G", elevationMm=0),
+            "col1": ColumnElem(
+                kind="column",
+                id="col1",
+                levelId="l0",
+                positionMm={"xMm": 1000, "yMm": 1000},
+            ),
+            "bm1": BeamElem(
+                kind="beam",
+                id="bm1",
+                levelId="l0",
+                startMm={"xMm": 0, "yMm": 0},
+                endMm={"xMm": 4000, "yMm": 0},
+            ),
+            "ceil1": CeilingElem(
+                kind="ceiling",
+                id="ceil1",
+                levelId="l0",
+                boundaryMm=[
+                    {"xMm": 0, "yMm": 0},
+                    {"xMm": 4000, "yMm": 0},
+                    {"xMm": 4000, "yMm": 3000},
+                    {"xMm": 0, "yMm": 3000},
+                ],
+            ),
+            "asset1": PlacedAssetElem(
+                kind="placed_asset",
+                id="asset1",
+                name="Chair",
+                assetId="chair-type",
+                levelId="l0",
+                positionMm={"xMm": 1500, "yMm": 1500},
+            ),
+        },
+    )
+
+    summary = build_kernel_ifc_geometry_readback_summary_v0(model, doc)
+
+    assert summary["allMatched"] is True
+    assert summary["coverageByKind"]["column"]["matchedReferenceIds"] == ["col1"]
+    assert summary["coverageByKind"]["beam"]["ifcType"] == "IfcBeam"
+    assert summary["coverageByKind"]["ceiling"]["pset"] == "Pset_CoveringCommon"
+    assert summary["coverageByKind"]["placed_asset"]["productsWithQto"] == 1

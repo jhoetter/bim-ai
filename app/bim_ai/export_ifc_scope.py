@@ -23,10 +23,15 @@ _KERNEL_SLICE_IFC_PRODUCT_ROOTS: tuple[str, ...] = (
     "IfcSlab",
     "IfcRoof",
     "IfcStair",
+    "IfcRailing",
     "IfcSpace",
     "IfcOpeningElement",
     "IfcDoor",
     "IfcWindow",
+    "IfcColumn",
+    "IfcBeam",
+    "IfcCovering",
+    "IfcFurnishingElement",
 )
 
 # Spatial / aggregation `IfcProduct` instances always present in kernel IFC graph — not merge-target signals.
@@ -34,6 +39,148 @@ _KERNEL_IFC_SCOPE_EXCLUDED_PRODUCT_ROOTS: tuple[str, ...] = (
     "IfcSite",
     "IfcBuilding",
     "IfcBuildingStorey",
+)
+
+_IFC_SEMANTIC_MAPPING_SUPPORTED_CLASSES: tuple[dict[str, Any], ...] = (
+    {
+        "ifcProductClass": "IfcWall",
+        "kernelKinds": ("wall",),
+        "identityPset": "Pset_WallCommon",
+        "qtoTemplate": "Qto_WallBaseQuantities",
+        "typeSupport": "IfcWallType_or_kernel_wall_type_reference",
+        "materialSupport": "IfcMaterialLayerSet_or_IfcMaterial",
+        "classificationSupport": "IfcRelAssociatesClassification",
+    },
+    {
+        "ifcProductClass": "IfcSlab",
+        "kernelKinds": ("floor",),
+        "identityPset": "Pset_SlabCommon",
+        "qtoTemplate": "Qto_SlabBaseQuantities",
+        "typeSupport": "IfcSlabType_reference",
+        "materialSupport": "IfcMaterialLayerSet_or_IfcMaterial",
+        "classificationSupport": "IfcRelAssociatesClassification",
+    },
+    {
+        "ifcProductClass": "IfcRoof",
+        "kernelKinds": ("roof",),
+        "identityPset": "Pset_RoofCommon",
+        "qtoTemplate": None,
+        "typeSupport": "kernel_roof_type_reference_pset",
+        "materialSupport": "IfcMaterialLayerSet_or_IfcMaterial",
+        "classificationSupport": "IfcRelAssociatesClassification",
+    },
+    {
+        "ifcProductClass": "IfcDoor",
+        "kernelKinds": ("door",),
+        "identityPset": "Pset_DoorCommon",
+        "qtoTemplate": "Qto_DoorBaseQuantities",
+        "typeSupport": "family_type_reference",
+        "materialSupport": "IfcMaterial",
+        "classificationSupport": "IfcRelAssociatesClassification",
+    },
+    {
+        "ifcProductClass": "IfcWindow",
+        "kernelKinds": ("window",),
+        "identityPset": "Pset_WindowCommon",
+        "qtoTemplate": "Qto_WindowBaseQuantities",
+        "typeSupport": "family_type_reference",
+        "materialSupport": "IfcMaterial",
+        "classificationSupport": "IfcRelAssociatesClassification",
+    },
+    {
+        "ifcProductClass": "IfcStair",
+        "kernelKinds": ("stair",),
+        "identityPset": "Pset_StairCommon",
+        "qtoTemplate": "Qto_StairBaseQuantities",
+        "typeSupport": "kernel_occurrence_type_pset",
+        "materialSupport": "IfcMaterial",
+        "classificationSupport": "IfcRelAssociatesClassification",
+    },
+    {
+        "ifcProductClass": "IfcRailing",
+        "kernelKinds": ("railing",),
+        "identityPset": "Pset_RailingCommon",
+        "qtoTemplate": None,
+        "typeSupport": "kernel_occurrence_type_pset",
+        "materialSupport": "IfcMaterial",
+        "classificationSupport": "not_emitted_for_current_railing_kernel",
+    },
+    {
+        "ifcProductClass": "IfcSpace",
+        "kernelKinds": ("room", "space"),
+        "identityPset": "Pset_SpaceCommon",
+        "qtoTemplate": "Qto_SpaceBaseQuantities",
+        "typeSupport": "space_programme_pset_fields",
+        "materialSupport": "not_applicable",
+        "classificationSupport": "programme_classification_fields",
+    },
+    {
+        "ifcProductClass": "IfcColumn",
+        "kernelKinds": ("column",),
+        "identityPset": "Pset_ColumnCommon",
+        "qtoTemplate": None,
+        "typeSupport": "kernel_occurrence_type_pset",
+        "materialSupport": "IfcMaterial",
+        "classificationSupport": "IfcRelAssociatesClassification",
+    },
+    {
+        "ifcProductClass": "IfcBeam",
+        "kernelKinds": ("beam",),
+        "identityPset": "Pset_BeamCommon",
+        "qtoTemplate": None,
+        "typeSupport": "kernel_occurrence_type_pset",
+        "materialSupport": "IfcMaterial",
+        "classificationSupport": "IfcRelAssociatesClassification",
+    },
+    {
+        "ifcProductClass": "IfcCovering",
+        "kernelKinds": ("ceiling",),
+        "identityPset": "Pset_CoveringCommon",
+        "qtoTemplate": None,
+        "typeSupport": "ceiling_type_reference",
+        "materialSupport": "not_emitted_for_current_ceiling_kernel",
+        "classificationSupport": "not_emitted_for_current_ceiling_kernel",
+    },
+    {
+        "ifcProductClass": "IfcFurnishingElement",
+        "kernelKinds": ("placed_asset", "asset", "furniture"),
+        "identityPset": "Pset_FurnitureTypeCommon",
+        "qtoTemplate": "Qto_FurnitureBaseQuantities",
+        "typeSupport": "asset_library_entry_reference",
+        "materialSupport": "asset_material_slots",
+        "classificationSupport": "asset_ifc_mapping_metadata",
+    },
+)
+
+_IFC_SEMANTIC_MAPPING_UNSUPPORTED_CLASS_ROOTS: tuple[dict[str, str], ...] = (
+    {
+        "ifcProductClass": "IfcFlowTerminal",
+        "unsupportedReason": "mep_terminal_geometry_and_connector_import_not_in_kernel_slice",
+    },
+    {
+        "ifcProductClass": "IfcFlowSegment",
+        "unsupportedReason": "mep_route_geometry_and_system_graph_import_not_in_kernel_slice",
+    },
+    {
+        "ifcProductClass": "IfcDistributionElement",
+        "unsupportedReason": "distribution_system_import_requires_mep_graph_reconstruction",
+    },
+    {
+        "ifcProductClass": "IfcCurtainWall",
+        "unsupportedReason": "curtain_grid_panel_mullion_schema_import_not_in_kernel_slice",
+    },
+    {
+        "ifcProductClass": "IfcMember",
+        "unsupportedReason": "generic_member_structural_schema_import_not_in_kernel_slice",
+    },
+    {
+        "ifcProductClass": "IfcPlate",
+        "unsupportedReason": "plate_panel_schema_import_not_in_kernel_slice",
+    },
+    {
+        "ifcProductClass": "IfcBuildingElementProxy",
+        "unsupportedReason": "arbitrary_proxy_semantics_require_authoring_intent_mapping",
+    },
 )
 
 
@@ -66,6 +213,181 @@ def import_scope_unsupported_ifc_products_v0(model: Any) -> dict[str, Any]:
             cls_name = "Unknown"
         counts[cls_name] = counts.get(cls_name, 0) + 1
     return {"schemaVersion": 0, "countsByClass": dict(sorted(counts.items()))}
+
+
+def _ifc_products_by_type(model: Any, type_name: str) -> list[Any]:
+    try:
+        return list(model.by_type(type_name) or [])
+    except Exception:
+        return []
+
+
+def _ifc_product_psets(product: Any) -> dict[str, Any]:
+    if ifc_elem_util is not None:
+        try:
+            ps = ifc_elem_util.get_psets(product)
+            if isinstance(ps, dict):
+                return ps
+        except Exception:
+            pass
+    for attr in ("_psets", "Psets", "psets"):
+        raw = getattr(product, attr, None)
+        if isinstance(raw, dict):
+            return raw
+    return {}
+
+
+def _ifc_product_defines_qto_template(product: Any, qto_template_name: str) -> bool:
+    for rel in getattr(product, "IsDefinedBy", None) or []:
+        try:
+            if not rel.is_a("IfcRelDefinesByProperties"):
+                continue
+        except Exception:
+            continue
+        dfn = getattr(rel, "RelatingPropertyDefinition", None)
+        if dfn is None:
+            continue
+        try:
+            if dfn.is_a("IfcElementQuantity") and getattr(dfn, "Name", None) == qto_template_name:
+                return True
+        except Exception:
+            continue
+    return False
+
+
+def _ifc_product_has_association(product: Any, association_class: str) -> bool:
+    for rel in getattr(product, "HasAssociations", None) or []:
+        try:
+            if rel.is_a(association_class):
+                return True
+        except Exception:
+            continue
+    return False
+
+
+def ifc_semantic_mapping_scope_v1(model: Any | None = None) -> dict[str, Any]:
+    """Supported/unsupported IFC semantic mapping ledger for BIR-K04.
+
+    The ledger is intentionally scope evidence: supported rows describe IFC4 product
+    classes whose identity psets, optional QTO templates, type/material/classification
+    channels are deterministic in the current kernel exporter/readback. Unsupported
+    rows make external IFC product-schema classes explicit instead of silently
+    implying arbitrary import/merge support.
+    """
+
+    supported_rows: list[dict[str, Any]] = []
+    for spec in _IFC_SEMANTIC_MAPPING_SUPPORTED_CLASSES:
+        ifc_class = str(spec["ifcProductClass"])
+        identity_pset = str(spec["identityPset"])
+        qto_template = spec.get("qtoTemplate")
+        products = _ifc_products_by_type(model, ifc_class) if model is not None else []
+        products_with_reference = 0
+        products_with_qto: int | None = None
+        if qto_template:
+            products_with_qto = 0
+        products_with_material = 0
+        products_with_classification = 0
+        for product in products:
+            psets = _ifc_product_psets(product)
+            bucket = psets.get(identity_pset) or {}
+            if isinstance(bucket, dict) and bucket.get("Reference"):
+                products_with_reference += 1
+            if isinstance(qto_template, str) and _ifc_product_defines_qto_template(
+                product, qto_template
+            ):
+                products_with_qto = int(products_with_qto or 0) + 1
+            if _ifc_product_has_association(product, "IfcRelAssociatesMaterial"):
+                products_with_material += 1
+            if _ifc_product_has_association(product, "IfcRelAssociatesClassification"):
+                products_with_classification += 1
+        row: dict[str, Any] = {
+            "ifcSchema": "IFC4",
+            "ifcProductClass": ifc_class,
+            "kernelKinds": list(spec["kernelKinds"]),
+            "supportStatus": "supported_kernel_export_readback",
+            "identityPset": identity_pset,
+            "qtoTemplate": qto_template,
+            "typeSupport": spec["typeSupport"],
+            "materialSupport": spec["materialSupport"],
+            "classificationSupport": spec["classificationSupport"],
+            "productCount": len(products),
+            "productsWithReference": products_with_reference,
+            "productsWithMaterialAssociation": products_with_material,
+            "productsWithClassificationAssociation": products_with_classification,
+            "mappingDimensions": {
+                "schemaClass": "declared",
+                "propertySet": "readback",
+                "quantity": "readback" if qto_template else "not_applicable",
+                "type": spec["typeSupport"],
+                "material": spec["materialSupport"],
+                "classification": spec["classificationSupport"],
+            },
+        }
+        if qto_template:
+            row["productsWithQto"] = products_with_qto
+        supported_rows.append(row)
+
+    unsupported_counts = (
+        import_scope_unsupported_ifc_products_v0(model).get("countsByClass", {})
+        if model is not None
+        else {}
+    )
+    unsupported_declared = {row["ifcProductClass"]: row for row in _IFC_SEMANTIC_MAPPING_UNSUPPORTED_CLASS_ROOTS}
+    unsupported_rows: list[dict[str, Any]] = []
+    for spec in _IFC_SEMANTIC_MAPPING_UNSUPPORTED_CLASS_ROOTS:
+        ifc_class = spec["ifcProductClass"]
+        unsupported_rows.append(
+            {
+                "ifcSchema": "IFC4",
+                "ifcProductClass": ifc_class,
+                "supportStatus": "unsupported_external_ifc_product_schema",
+                "unsupportedReason": spec["unsupportedReason"],
+                "productCount": int(unsupported_counts.get(ifc_class, 0) or 0),
+                "mappingDimensions": {
+                    "schemaClass": "declared_unsupported",
+                    "propertySet": "unsupported",
+                    "quantity": "unsupported",
+                    "type": "unsupported",
+                    "material": "unsupported",
+                    "classification": "unsupported",
+                },
+            }
+        )
+    undeclared_external = {
+        cls: count for cls, count in unsupported_counts.items() if cls not in unsupported_declared
+    }
+    for cls, count in sorted(undeclared_external.items()):
+        unsupported_rows.append(
+            {
+                "ifcSchema": "IFC4",
+                "ifcProductClass": cls,
+                "supportStatus": "unsupported_external_ifc_product_schema",
+                "unsupportedReason": "external_ifc_product_class_not_declared_in_kernel_semantic_scope",
+                "productCount": int(count),
+                "mappingDimensions": {
+                    "schemaClass": "encountered_unsupported",
+                    "propertySet": "unsupported",
+                    "quantity": "unsupported",
+                    "type": "unsupported",
+                    "material": "unsupported",
+                    "classification": "unsupported",
+                },
+            }
+        )
+
+    return {
+        "schemaVersion": 1,
+        "supportedRows": supported_rows,
+        "unsupportedRows": unsupported_rows,
+        "summary": {
+            "supportedClassCount": len(supported_rows),
+            "declaredUnsupportedClassCount": len(_IFC_SEMANTIC_MAPPING_UNSUPPORTED_CLASS_ROOTS),
+            "encounteredUnsupportedCountsByClass": dict(sorted(unsupported_counts.items())),
+            "undeclaredUnsupportedCountsByClass": dict(sorted(undeclared_external.items())),
+            "allEncounteredExternalClassesDeclared": not undeclared_external,
+            "scopeClosure": "supported_or_declared_unsupported",
+        },
+    }
 
 
 def storeys_sketch_from_ifc_model(model: Any) -> list[dict[str, Any]]:

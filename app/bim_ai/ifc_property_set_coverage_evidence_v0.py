@@ -521,9 +521,14 @@ def build_ifc_property_set_coverage_expansion_v1(model: Any) -> dict[str, Any]:
         ("IfcSlab", "Pset_SlabCommon"),
         ("IfcRoof", "Pset_RoofCommon"),
         ("IfcStair", "Pset_StairCommon"),
+        ("IfcRailing", "Pset_RailingCommon"),
         ("IfcSpace", "Pset_SpaceCommon"),
         ("IfcDoor", "Pset_DoorCommon"),
         ("IfcWindow", "Pset_WindowCommon"),
+        ("IfcColumn", "Pset_ColumnCommon"),
+        ("IfcBeam", "Pset_BeamCommon"),
+        ("IfcCovering", "Pset_CoveringCommon"),
+        ("IfcFurnishingElement", "Pset_FurnitureTypeCommon"),
         ("IfcSite", "Pset_SiteCommon"),
     ]
 

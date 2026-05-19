@@ -48,6 +48,7 @@ from bim_ai.export_ifc_readback import (
 )
 from bim_ai.export_ifc_scope import (
     IFC_EXCHANGE_EMITTABLE_GEOMETRY_KINDS,  # noqa: F401 - re-exported for existing imports
+    ifc_semantic_mapping_scope_v1,
     import_scope_unsupported_ifc_products_v0,
 )
 from bim_ai.export_ifc_site_exchange import (
@@ -401,6 +402,7 @@ def inspect_kernel_ifc_semantics(
         },
         "qtoTemplates": qto_names,
         "importScopeUnsupportedIfcProducts_v0": import_scope_unsupported_ifc_products_v0(model),
+        "ifcSemanticMappingScope_v1": ifc_semantic_mapping_scope_v1(model),
         "siteExchangeEvidence_v0": build_site_exchange_evidence_v0(doc=doc, model=model),
         "geometryReadbackSummary_v0": build_kernel_ifc_geometry_readback_summary_v0(model, doc),
         "materialLayerSetReadback_v0": kernel_ifc_material_layer_set_readback_v0(model, doc),

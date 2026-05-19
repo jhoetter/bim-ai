@@ -19,7 +19,7 @@ from bim_ai.elements import (
     RailingElem,
     StairElem,
 )
-from bim_ai.export_ifc import IFC_AVAILABLE, export_ifc_model_step
+from bim_ai.export_ifc import IFC_AVAILABLE, export_ifc_model_step, inspect_kernel_ifc_semantics
 
 pytestmark = pytest.mark.skipif(
     not IFC_AVAILABLE, reason="ifcopenshell not installed (pip install '.[ifc]')"
@@ -325,3 +325,21 @@ def test_material_category_unknown_falls_back_to_none() -> None:
     assert len(materials) >= 1
     cat = materials[0].Category
     assert cat is None or str(cat) == ""
+
+
+def test_ifc_semantic_mapping_scope_counts_broader_exporter_classes() -> None:
+    doc = _column_doc()
+    step = export_ifc_model_step(doc)
+
+    inspection = inspect_kernel_ifc_semantics(doc=doc, step_text=step)
+
+    scope = inspection["ifcSemanticMappingScope_v1"]
+    supported = {row["ifcProductClass"]: row for row in scope["supportedRows"]}
+    assert supported["IfcColumn"]["productCount"] == 1
+    assert supported["IfcColumn"]["productsWithReference"] == 1
+    assert supported["IfcColumn"]["productsWithMaterialAssociation"] == 1
+    assert supported["IfcColumn"]["productsWithClassificationAssociation"] == 1
+    assert "IfcColumn" not in (
+        inspection["importScopeUnsupportedIfcProducts_v0"].get("countsByClass") or {}
+    )
+    assert scope["summary"]["scopeClosure"] == "supported_or_declared_unsupported"
