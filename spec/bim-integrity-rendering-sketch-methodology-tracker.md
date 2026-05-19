@@ -1443,6 +1443,29 @@ after Wave 24 must be either clearly final-wave implementation work or explicit
 product-scope decisions that cannot be closed without a larger geometry/export
 kernel.
 
+### Wave 25 - Final Tail Reduction
+
+Goal: close the remaining 23 Partial rows or reduce them to a tiny final
+kernel/export tail. Wave 25 is intentionally smaller than prior waves and maps
+directly to the remaining tracker rows after Wave 24.
+
+Scope: dispatch five independent workers. Each worker must commit locally,
+avoid unrelated dirty files, update tracker/evidence rows conservatively, and
+run the tracker audit. If a row remains Partial, the acceptance text must name
+the exact missing implementation and proof hook.
+
+| Agent | Ownership | Primary items |
+| ----- | --------- | ------------- |
+| W25-A | Renderer model-invalid vs render-invalid closure. | `BIR-C04`, `BIR-C08`, `BIR-J01`, `BIR-J05`, `BIR-J07`, `BIR-J08` |
+| W25-B | Remaining 3D renderer element classes and stress proof. | `BIR-J02`, `BIR-J03`, `BIR-J04`, `BIR-J06`, `BIR-J10` |
+| W25-C | Exchange and requirement-pack tail. | `BIR-K02`, `BIR-K04`, `BIR-K07` |
+| W25-D | Performance/background diagnostics and transaction semantics. | `BIR-L02`, `BIR-L04`, `BIR-L05`, `BIR-L06`, `BIR-Q02`, `BIR-Q03`, `BIR-Q06` |
+| W25-E | Canonical taxonomy and final-package readiness. | `BIR-A02`, `BIR-N10` |
+
+Exit: final-package readiness should be blocked only by any rows that are truly
+too large for this tracker cycle, ideally none. The preferred outcome is a
+fully closed tracker and `target-house-final-package --require-ready` passing.
+
 ## Non-Negotiable Acceptance Rules
 
 - Do not mark a seed `accepted` while any P0 integrity or renderer diagnostic is
