@@ -1,53 +1,26 @@
 {
   "schemaVersion": "target-house.clean-pass-gate.v1",
-  "generatedAt": "2026-05-19T09:57:36.737Z",
+  "generatedAt": "2026-05-19T10:00:27.700Z",
   "targetId": "target-house-1",
   "evidenceDir": "/Users/jhoetter/repos/bim-ai/seed-artifacts/target-house-1/evidence/live-run-current",
-  "ok": false,
+  "ok": true,
   "summary": {
-    "p0ErrorCount": 1,
+    "p0ErrorCount": 0,
     "rendererBlockerCount": 0,
     "warningCount": 0,
     "toleratedWarningGroupCount": 0,
     "unresolvedWarningGroupCount": 0,
     "toleranceCount": 0,
-    "blockerCount": 1
+    "blockerCount": 0
   },
-  "blockers": [
-    {
-      "source": "constructability-report",
-      "code": "furniture_wall_clearance_conflict",
-      "severity": "error",
-      "count": 1,
-      "elementIds": ["hf-bath-fixture", "target-house-l1-ensuite-bath-access-partition"],
-      "messages": [
-        "Furniture or family collision proxy is 190 mm from a wall; profile 'construction_readiness' requires 300 mm clearance."
-      ],
-      "sources": ["constructability-report"],
-      "path": "",
-      "blockerKind": "p0_error"
-    }
-  ],
-  "p0Errors": [
-    {
-      "source": "constructability-report",
-      "code": "furniture_wall_clearance_conflict",
-      "severity": "error",
-      "count": 1,
-      "elementIds": ["hf-bath-fixture", "target-house-l1-ensuite-bath-access-partition"],
-      "messages": [
-        "Furniture or family collision proxy is 190 mm from a wall; profile 'construction_readiness' requires 300 mm clearance."
-      ],
-      "sources": ["constructability-report"],
-      "path": ""
-    }
-  ],
+  "blockers": [],
+  "p0Errors": [],
   "rendererBlockers": [],
   "warnings": [],
   "toleratedWarnings": [],
   "unresolvedWarnings": [],
   "toleranceLedger": {
-    "ok": false,
+    "ok": true,
     "toleranceCount": 0,
     "requiredFields": ["reason", "owner", "expiryCondition", "evidenceLinks"]
   }

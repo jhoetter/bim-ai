@@ -1,15 +1,15 @@
 {
   "schemaVersion": "sketch.tolerance-ledger.v1",
-  "generatedAt": "2026-05-19T09:57:26.897154Z",
+  "generatedAt": "2026-05-19T10:00:17.560723Z",
   "phaseId": null,
   "modelId": "target-house-1-offline-regenerated",
   "revision": 2,
   "evidenceDir": "seed-artifacts/target-house-1/evidence/live-run-current",
-  "ok": false,
+  "ok": true,
   "summary": {
-    "findingCount": 2,
+    "findingCount": 1,
     "toleranceCount": 0,
-    "blockingFindingCount": 1,
+    "blockingFindingCount": 0,
     "incompleteToleranceCount": 0
   },
   "requiredFields": [
@@ -21,23 +21,6 @@
     "evidenceLinks"
   ],
   "tolerances": [],
-  "blockingFindings": [
-    {
-      "source": "constructability",
-      "profile": "construction_readiness",
-      "severity": "error",
-      "code": "furniture_wall_clearance_conflict",
-      "count": 1,
-      "elementIds": ["hf-bath-fixture", "target-house-l1-ensuite-bath-access-partition"],
-      "messages": [
-        "Furniture or family collision proxy is 190 mm from a wall; profile 'construction_readiness' requires 300 mm clearance."
-      ],
-      "disposition": "unclassified",
-      "phaseRationale": "",
-      "toleranceEvidence": "",
-      "owner": "",
-      "expiryCondition": ""
-    }
-  ],
+  "blockingFindings": [],
   "incompleteTolerances": []
 }

@@ -1,17 +1,17 @@
 {
   "schemaVersion": "sketch.evidence.freshness.v1",
-  "generatedAt": "2026-05-19T09:57:26.915195Z",
+  "generatedAt": "2026-05-19T10:00:17.574869Z",
   "ok": true,
   "sourcePath": "seed-artifacts/target-house-1/evidence/live-run-current/tool-run-summary.json",
   "recorded": {
     "schemaVersion": "sketch-to-bim.tool-run.v1",
-    "generatedAt": "2026-05-19T09:57:26.915015Z",
+    "generatedAt": "2026-05-19T10:00:17.574767Z",
     "seed": "target-house-1",
     "modelId": "target-house-1-offline-regenerated",
     "modelRevision": 2,
-    "gitHead": "982e3c190b631d22bd27fe1d5961f2ec0c6cb96b",
+    "gitHead": "077dff4436b65685eadbc306303f05c880a451dc",
     "bundlePath": "seed-artifacts/target-house-1/bundle.json",
-    "bundleSha256": "139b3a1b6f0f393c5c29925df9f9096560c8c0e95adefc1986d4e20071d3e102",
+    "bundleSha256": "903d560a8eb43116956cf4aa794e82b173b677b679a0e5d9fd354d34ab4e91ba",
     "commandCount": 263,
     "irPath": "seed-artifacts/target-house-1/evidence/sketch-ir.json",
     "irSha256": "34757eba0ab4784e91a66232205294ac7cf1c7504bc3701c42b76ed3ffb7bf8e",
@@ -28,14 +28,14 @@
       "packages/web/src/advisor/perspectiveFilter.ts"
     ],
     "mode": "project_initiation_bim",
-    "generatedAtEpochMs": 1779184646915,
+    "generatedAtEpochMs": 1779184817574,
     "executionMode": "offline_bundle_replay"
   },
   "current": {
-    "gitHead": "982e3c190b631d22bd27fe1d5961f2ec0c6cb96b",
+    "gitHead": "077dff4436b65685eadbc306303f05c880a451dc",
     "modelId": "target-house-1-offline-regenerated",
     "modelRevision": 2,
-    "bundleSha256": "139b3a1b6f0f393c5c29925df9f9096560c8c0e95adefc1986d4e20071d3e102",
+    "bundleSha256": "903d560a8eb43116956cf4aa794e82b173b677b679a0e5d9fd354d34ab4e91ba",
     "commandCount": 263,
     "advisorRuleDigest": "d2d938dde4832ef91d26c33fd8f83a1c0dda738806560ea29bbee5a7a75d1f7c",
     "advisorRuleFiles": [
@@ -64,8 +64,8 @@
       "status": "pass",
       "code": "git_head_current",
       "message": "Evidence gitHead matches current inputs.",
-      "recorded": "982e3c190b631d22bd27fe1d5961f2ec0c6cb96b",
-      "current": "982e3c190b631d22bd27fe1d5961f2ec0c6cb96b"
+      "recorded": "077dff4436b65685eadbc306303f05c880a451dc",
+      "current": "077dff4436b65685eadbc306303f05c880a451dc"
     },
     {
       "id": "model_revision",
@@ -80,8 +80,8 @@
       "status": "pass",
       "code": "bundle_sha256_current",
       "message": "Evidence bundleSha256 matches current inputs.",
-      "recorded": "139b3a1b6f0f393c5c29925df9f9096560c8c0e95adefc1986d4e20071d3e102",
-      "current": "139b3a1b6f0f393c5c29925df9f9096560c8c0e95adefc1986d4e20071d3e102"
+      "recorded": "903d560a8eb43116956cf4aa794e82b173b677b679a0e5d9fd354d34ab4e91ba",
+      "current": "903d560a8eb43116956cf4aa794e82b173b677b679a0e5d9fd354d34ab4e91ba"
     },
     {
       "id": "advisor_rule_digest",

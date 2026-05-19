@@ -223,6 +223,17 @@ def try_apply_properties_command(doc, cmd, *, source_provider=None) -> bool:
                     if tv <= 0:
                         raise ValueError("targetAreaM2 must be positive when set")
                     els[cmd.element_id] = el.model_copy(update={"target_area_m2": tv})
+            elif cmd.key == "roomBimIntent" and isinstance(el, RoomElem):
+                if cmd.value is None:
+                    props = dict(el.props or {})
+                    props.pop("roomBimIntent", None)
+                    els[cmd.element_id] = el.model_copy(update={"props": props or None})
+                elif isinstance(cmd.value, dict):
+                    props = dict(el.props or {})
+                    props["roomBimIntent"] = cmd.value
+                    els[cmd.element_id] = el.model_copy(update={"props": props})
+                else:
+                    raise ValueError("roomBimIntent must be a JSON object or null")
             elif cmd.key == "roomFillOverrideHex" and isinstance(el, RoomElem):
                 raw_hex = cmd.value.strip()
                 if raw_hex == "":
@@ -968,7 +979,7 @@ def try_apply_properties_command(doc, cmd, *, source_provider=None) -> bool:
                 raise ValueError(
                     "Only updateElementProperty key=name | label(grid) | title(issue) | "
                     "programmeCode(room) | department(room) | programmeGroup(room) | functionLabel(room) | finishSet(room) | "
-                    "targetAreaM2(room) | "
+                    "targetAreaM2(room) | roomBimIntent(room JSON object) | "
                     "planPresentation(plan_view) | categoriesHidden(plan_view JSON array) | "
                     "underlayLevelId(plan_view) | viewTemplateId(plan_view) | "
                     "cropMinMm(plan_view JSON object) | cropMaxMm(plan_view JSON object) | "

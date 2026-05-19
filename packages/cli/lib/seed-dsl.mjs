@@ -400,6 +400,8 @@ function roomMetadataCommands(roomId, room) {
     number: room.number ?? null,
     occupancyUse: room.occupancyUse ?? null,
     boundingStatus: room.boundingStatus ?? null,
+    areaSource: room.areaSource ?? null,
+    use: room.use ?? room.programmeCode ?? null,
     access: isObject(room.access) ? room.access : null,
     schedule: isObject(room.schedule) ? room.schedule : null,
     classification: isObject(room.classification) ? room.classification : null,

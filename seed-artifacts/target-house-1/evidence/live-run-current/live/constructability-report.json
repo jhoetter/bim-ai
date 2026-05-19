@@ -12,50 +12,15 @@
       "primaryOptionIds": {}
     },
     "summary": {
-      "findingCount": 1,
-      "issueCount": 1,
+      "findingCount": 0,
+      "issueCount": 0,
       "suppressedFindingCount": 0,
-      "severityCounts": {
-        "error": 1
-      },
-      "ruleCounts": {
-        "furniture_wall_clearance_conflict": 1
-      },
-      "statusCounts": {
-        "new": 1
-      }
+      "severityCounts": {},
+      "ruleCounts": {},
+      "statusCounts": {}
     },
-    "findings": [
-      {
-        "ruleId": "furniture_wall_clearance_conflict",
-        "severity": "error",
-        "message": "Furniture or family collision proxy is 190 mm from a wall; profile 'construction_readiness' requires 300 mm clearance.",
-        "elementIds": ["hf-bath-fixture", "target-house-l1-ensuite-bath-access-partition"],
-        "blocking": true,
-        "quickFixCommand": null,
-        "discipline": "architecture",
-        "blockingClass": "geometry",
-        "recommendation": "Move the object farther from the wall or record an approved clearance exception for the active profile."
-      }
-    ],
-    "issues": [
-      {
-        "fingerprint": "9f44a9e8529bf5cd0bb5060415672cbf5a8f64e2ab867129f637507c7165872c",
-        "ruleId": "furniture_wall_clearance_conflict",
-        "elementIds": ["hf-bath-fixture", "target-house-l1-ensuite-bath-access-partition"],
-        "pairKey": "hf-bath-fixture::target-house-l1-ensuite-bath-access-partition",
-        "locationBucket": null,
-        "message": "Furniture or family collision proxy is 190 mm from a wall; profile 'construction_readiness' requires 300 mm clearance.",
-        "severity": "error",
-        "discipline": "architecture",
-        "blockingClass": "geometry",
-        "recommendation": "Move the object farther from the wall or record an approved clearance exception for the active profile.",
-        "status": "new",
-        "firstSeenRevision": 2,
-        "lastSeenRevision": 2,
-        "resolvedRevision": null
-      }
-    ],
+    "findings": [],
+    "issues": [],
     "profiling": {
       "format": "advisorDiagnosticsProfile_v1",
       "clock": "perf_counter_ns",
@@ -64,14 +29,14 @@
       "changedElementIds": [],
       "summary": {
         "checkCount": 10,
-        "totalFindingCount": 1,
-        "totalElapsedMs": 189.33
+        "totalFindingCount": 0,
+        "totalElapsedMs": 195.883
       },
       "ruleTimings": [
         {
           "checkId": "advisor.evaluate_constructability_rules",
           "layer": "advisor",
-          "elapsedMs": 153.005,
+          "elapsedMs": 161.914,
           "findingCount": 0,
           "candidateElementCount": 168,
           "impactedElementCount": 0,
@@ -80,8 +45,8 @@
         {
           "checkId": "constructability.clearance",
           "layer": "constructability",
-          "elapsedMs": 2.613,
-          "findingCount": 1,
+          "elapsedMs": 2.624,
+          "findingCount": 0,
           "candidateElementCount": 168,
           "impactedElementCount": 0,
           "incrementalEligible": false
@@ -89,7 +54,7 @@
         {
           "checkId": "constructability.metadata_requirements",
           "layer": "constructability",
-          "elapsedMs": 0.165,
+          "elapsedMs": 0.162,
           "findingCount": 0,
           "candidateElementCount": 168,
           "impactedElementCount": 0,
@@ -98,7 +63,7 @@
         {
           "checkId": "model_integrity.constructability_errors",
           "layer": "model_integrity",
-          "elapsedMs": 24.965,
+          "elapsedMs": 23.379,
           "findingCount": 0,
           "candidateElementCount": 168,
           "impactedElementCount": 0,
@@ -107,42 +72,42 @@
         {
           "checkId": "domain_integrity.room_access",
           "layer": "domain_integrity",
-          "elapsedMs": 2.584,
+          "elapsedMs": 2.315,
           "findingCount": 0,
           "candidateElementCount": 168
         },
         {
           "checkId": "domain_integrity.vertical_circulation",
           "layer": "domain_integrity",
-          "elapsedMs": 0.264,
+          "elapsedMs": 0.229,
           "findingCount": 0,
           "candidateElementCount": 168
         },
         {
           "checkId": "domain_integrity.envelope",
           "layer": "domain_integrity",
-          "elapsedMs": 1.262,
+          "elapsedMs": 1.243,
           "findingCount": 0,
           "candidateElementCount": 168
         },
         {
           "checkId": "domain_integrity.structure_mep_lite",
           "layer": "domain_integrity",
-          "elapsedMs": 1.909,
+          "elapsedMs": 1.719,
           "findingCount": 0,
           "candidateElementCount": 168
         },
         {
           "checkId": "domain_integrity.code_profile",
           "layer": "domain_integrity",
-          "elapsedMs": 0.511,
+          "elapsedMs": 0.498,
           "findingCount": 0,
           "candidateElementCount": 168
         },
         {
           "checkId": "domain_integrity.site_georeferencing",
           "layer": "domain_integrity",
-          "elapsedMs": 1.92,
+          "elapsedMs": 1.727,
           "findingCount": 0,
           "candidateElementCount": 168
         }

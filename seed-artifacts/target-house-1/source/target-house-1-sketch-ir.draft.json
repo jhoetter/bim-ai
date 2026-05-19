@@ -880,8 +880,11 @@
           "level",
           "targetAreaM2",
           "function",
-          "boundedStatus",
-          "classification"
+          "occupancyUse",
+          "areaSource",
+          "boundingStatus",
+          "classification",
+          "finishSet"
         ]
       },
       {

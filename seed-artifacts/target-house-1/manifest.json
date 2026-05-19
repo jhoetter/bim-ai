@@ -15,19 +15,19 @@
   "acceptance": {
     "status": "offline-refreshed-needs-clean-pass",
     "evidenceRoot": "evidence/live-run-current",
-    "gitHead": "982e3c190b631d22bd27fe1d5961f2ec0c6cb96b",
-    "bundleSha256": "139b3a1b6f0f393c5c29925df9f9096560c8c0e95adefc1986d4e20071d3e102",
+    "gitHead": "077dff4436b65685eadbc306303f05c880a451dc",
+    "bundleSha256": "903d560a8eb43116956cf4aa794e82b173b677b679a0e5d9fd354d34ab4e91ba",
     "irSha256": "34757eba0ab4784e91a66232205294ac7cf1c7504bc3701c42b76ed3ffb7bf8e",
     "capabilitiesSha256": "e3faa00d4724d5e375ee853d5e3d56b21254a969a84e702d67013a8bb0125dbb",
     "advisorRuleDigest": "d2d938dde4832ef91d26c33fd8f83a1c0dda738806560ea29bbee5a7a75d1f7c",
-    "generatedAtEpochMs": 1779184646915,
+    "generatedAtEpochMs": 1779184817574,
     "notes": "Wave 9 Worker A regenerated deterministic offline evidence from seed-artifacts/target-house-1/bundle.json. Live/browser acceptance and clean-pass findings are tracked in evidence/live-run-current."
   },
   "inputPaths": {
     "source": "spec/target-house",
     "bundle": "target-house-1.bundle.v2.json"
   },
-  "bundleSha256": "139b3a1b6f0f393c5c29925df9f9096560c8c0e95adefc1986d4e20071d3e102",
+  "bundleSha256": "903d560a8eb43116956cf4aa794e82b173b677b679a0e5d9fd354d34ab4e91ba",
   "commandCount": 263,
   "commandSchemaVersion": "cmd-v3.0",
   "entryComment": {

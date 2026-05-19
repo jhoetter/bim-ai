@@ -1,15 +1,15 @@
 {
   "schemaVersion": "sketch.evidence.collection.v1",
-  "generatedAt": "2026-05-19T09:57:26.915286Z",
+  "generatedAt": "2026-05-19T10:00:17.574925Z",
   "modelId": "target-house-1-offline-regenerated",
   "revision": 2,
   "phaseId": null,
   "baseUrl": null,
   "currentHead": {
-    "gitHead": "982e3c190b631d22bd27fe1d5961f2ec0c6cb96b",
+    "gitHead": "077dff4436b65685eadbc306303f05c880a451dc",
     "modelId": "target-house-1-offline-regenerated",
     "modelRevision": 2,
-    "bundleSha256": "139b3a1b6f0f393c5c29925df9f9096560c8c0e95adefc1986d4e20071d3e102",
+    "bundleSha256": "903d560a8eb43116956cf4aa794e82b173b677b679a0e5d9fd354d34ab4e91ba",
     "commandCount": 263,
     "advisorRuleDigest": "d2d938dde4832ef91d26c33fd8f83a1c0dda738806560ea29bbee5a7a75d1f7c",
     "advisorRuleFiles": [
@@ -99,18 +99,16 @@
       "ok": true,
       "status": 200,
       "profile": "construction_readiness",
-      "severityCounts": {
-        "error": 1
-      },
-      "total": 1
+      "severityCounts": {},
+      "total": 0
     },
     "requiredVisualViewCount": 8,
-    "findingDispositionCount": 2,
-    "unclassifiedBlockingFindingCount": 1,
+    "findingDispositionCount": 1,
+    "unclassifiedBlockingFindingCount": 0,
     "toleranceLedger": {
-      "findingCount": 2,
+      "findingCount": 1,
       "toleranceCount": 0,
-      "blockingFindingCount": 1,
+      "blockingFindingCount": 0,
       "incompleteToleranceCount": 0
     },
     "exchangeValidation": {
