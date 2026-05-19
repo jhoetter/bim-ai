@@ -79,6 +79,18 @@ python3 claude-skills/sketch-to-bim/sketch_bim.py agent-loop-packet \
   --phase <n> \
   --command-log seed-artifacts/<seed-name>/evidence/phase-<n>/command-log.json
 
+# Record assumptions and prove every assumption has source evidence and disposition.
+python3 claude-skills/sketch-to-bim/sketch_bim.py assumption-ledger \
+  --seed <seed-name> \
+  --phase <n> \
+  --fail-on-incomplete
+
+# Map sketch-derived source features to BIM targets and source authoring commands.
+python3 claude-skills/sketch-to-bim/sketch_bim.py source-feature-map \
+  --seed <seed-name> \
+  --phase <n> \
+  --fail-on-incomplete
+
 # Verify material intent from the recipe is represented in the compiled bundle.
 python3 claude-skills/sketch-to-bim/sketch_bim.py material-check \
   --seed <seed-name> \
@@ -101,6 +113,9 @@ python3 claude-skills/sketch-to-bim/sketch_bim.py stale-check --seed <seed-name>
 
 # CI/package gate across checked-in seed artifacts.
 node scripts/verify-sketch-seed-artifacts.mjs --require-final-evidence
+
+# Strict CI/package gate for methodology evidence across phase packets.
+node scripts/verify-sketch-seed-artifacts.mjs --require-methodology-gates
 ```
 
 The helper is intentionally narrow. If it fails, read the generated stdout/JSON,
@@ -325,7 +340,12 @@ Before authoring the first serious bundle, start and wire the feedback loop:
    - `advisor-warning.json`;
    - `advisor-info.json`;
    - `renderer-diagnostics.json`;
+   - `integrity-diagnostics.json`;
+   - `export-validation.json`;
    - `screenshot-<viewpoint>.png`;
+   - `assumption-ledger.json`;
+   - `source-feature-map.json`;
+   - `agent-loop-packet.json`;
    - `visual-readout.md`;
    - `failure-taxonomy.md` or `failure-taxonomy.json`;
    - `tolerances.md` if anything remains unresolved.
@@ -337,9 +357,10 @@ Before authoring the first serious bundle, start and wire the feedback loop:
 5. **Read the screenshots with vision.** Say what is wrong in geometric terms before editing again: roof too generic, cutout not legible, stair collides, room plan messy, facade rhythm wrong, scale too small, etc.
 6. **Read the Advisor panel like a punch list.** For each finding capture `ruleId`, severity, message, recommendation text, perspective/codePreset, and `elementIds`. Corrections must target the named elements unless the rule itself is wrong.
 7. **Export the agent loop packet.** Run `agent-loop-packet` after Advisor/constructability capture so CLI/MCP-facing agents have one JSON surface linking each finding to recipe/bundle line hits, source authoring commands, optional command-log transactions, phase packet ownership, and deterministic next actions. If a warning/error has no source command lineage, recover command-log/provenance before accepting or tolerating it.
-8. **Patch the source of truth, not the symptoms.** If `room_derived_interior_separation_ambiguous` appears, redesign room boundaries; do not hide room lines. If a stair warning appears, alter the stair footprint/riser/tread/shaft; do not move furniture around it.
-9. **Verify capability, not just intent.** If the sketch needs a gable-cut wall, folded shell, roof void, dormer, or non-rectangular opening, confirm the command/API/render path actually expresses that geometry. A valid command that still renders as a rectangle, box, or uncut surface is a failed phase.
-10. **Repeat until the normal Advisor, renderer diagnostics, sketch acceptance,
+8. **Export the methodology ledgers.** Run `assumption-ledger --fail-on-incomplete` and `source-feature-map --fail-on-incomplete` for the phase. Every assumption needs a source reference and disposition; every required sketch feature needs source refs, BIM targets, and command/source traceability before the phase can be accepted.
+9. **Patch the source of truth, not the symptoms.** If `room_derived_interior_separation_ambiguous` appears, redesign room boundaries; do not hide room lines. If a stair warning appears, alter the stair footprint/riser/tread/shaft; do not move furniture around it.
+10. **Verify capability, not just intent.** If the sketch needs a gable-cut wall, folded shell, roof void, dormer, or non-rectangular opening, confirm the command/API/render path actually expresses that geometry. A valid command that still renders as a rectangle, box, or uncut surface is a failed phase.
+11. **Repeat until the normal Advisor, renderer diagnostics, sketch acceptance,
    and brief acceptance all pass the phase gate or have explicit tolerances.**
 
 Final seed packaging must use a fresh current-HEAD live run, normally:
@@ -385,6 +406,7 @@ At the end of each phase, produce a short packet:
 | Sketch acceptance | pass/fail for silhouette, scale, roof, openings, interior, documentation as applicable |
 | Brief acceptance | pass/fail for programme, target areas, dimensions, material intent, and required outputs |
 | Advisor verdict  | normal deterministic Advisor/constructability result: zero blocking warnings, or explicit tolerance rows |
+| Methodology proof | assumption-ledger, source-feature-map, agent-loop-packet, integrity diagnostics, renderer diagnostics, export validation, tolerance ledger, and screenshot manifest |
 | Failure taxonomy | every unresolved issue classified as model-integrity, renderer, sketch-fidelity, command-surface, evidence-staleness, or user-tolerance |
 | Corrections made | list of element ids changed in the phase                                               |
 | Remaining risk   | concrete gaps, not vague optimism                                                      |

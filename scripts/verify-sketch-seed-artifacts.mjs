@@ -34,6 +34,7 @@ function usage() {
   node scripts/verify-sketch-seed-artifacts.mjs [--root seed-artifacts] [--seed <name>]
     [--require-final-evidence] [--live] [--base-url <url>]
     [--require-phase-packets] [--require-material-check]
+    [--require-methodology-gates]
     [--require-tolerance-ledger] [--require-exchange-validation]
     [--golden-manifest spec/sketch-to-bim-golden-seeds.json]
     [--no-golden-requirements]
@@ -56,6 +57,7 @@ function parseArgs(argv) {
     live: false,
     requirePhasePackets: false,
     requireMaterialCheck: false,
+    requireMethodologyGates: false,
     requireToleranceLedger: false,
     requireExchangeValidation: false,
     goldenManifest: DEFAULT_GOLDEN_MANIFEST,
@@ -67,6 +69,12 @@ function parseArgs(argv) {
     if (arg === '--require-final-evidence') args.requireFinalEvidence = true;
     else if (arg === '--require-phase-packets') args.requirePhasePackets = true;
     else if (arg === '--require-material-check') args.requireMaterialCheck = true;
+    else if (arg === '--require-methodology-gates') {
+      args.requireMethodologyGates = true;
+      args.requirePhasePackets = true;
+      args.requireToleranceLedger = true;
+      args.requireExchangeValidation = true;
+    }
     else if (arg === '--require-tolerance-ledger') args.requireToleranceLedger = true;
     else if (arg === '--require-exchange-validation') args.requireExchangeValidation = true;
     else if (arg === '--no-golden-requirements') args.goldenRequirements = false;
@@ -411,6 +419,119 @@ async function verifyGoldenRequiredJsonOk(
   }
 }
 
+const METHODOLOGY_PHASE_REQUIRED_FILES = [
+  ['assumption_ledger', 'assumption-ledger.json'],
+  ['source_feature_map', 'source-feature-map.json'],
+  ['agent_loop_packet', 'agent-loop-packet.json'],
+  ['renderer_diagnostics', 'renderer-diagnostics.json'],
+  ['integrity_diagnostics', 'integrity-diagnostics.json'],
+  ['export_validation', 'export-validation.json'],
+  ['tolerance_ledger', 'tolerance-ledger.json'],
+  ['screenshot_manifest', 'screenshot-manifest.json'],
+];
+
+function numberFrom(value) {
+  return typeof value === 'number' && Number.isFinite(value) ? value : 0;
+}
+
+function phasePacketReferencesArtifact(packet, fileName) {
+  const text = JSON.stringify(packet ?? {});
+  return text.includes(fileName);
+}
+
+async function verifyMethodologyPhaseGates(findings, phaseDir, entryName, packet = null) {
+  const payloads = {};
+  for (const [key, fileName] of METHODOLOGY_PHASE_REQUIRED_FILES) {
+    const artifactPath = path.join(phaseDir, fileName);
+    if (!(await exists(artifactPath))) {
+      addFinding(findings, 'error', `methodology_${key}_missing`, `Missing ${entryName}/${fileName}.`, {
+        expected: portable(artifactPath),
+      });
+      continue;
+    }
+    const payload = await readIfExists(artifactPath);
+    payloads[key] = payload;
+    if (payload?.ok === false) {
+      addFinding(findings, 'error', `methodology_${key}_failed`, `${entryName}/${fileName} is not ok.`, {
+        artifact: portable(artifactPath),
+        summary: payload.summary ?? null,
+      });
+    }
+    if (packet && !phasePacketReferencesArtifact(packet, fileName)) {
+      addFinding(
+        findings,
+        'error',
+        `methodology_${key}_unreferenced`,
+        `${entryName}/phase-packet.json does not reference ${fileName}.`,
+        {
+          packet: portable(path.join(phaseDir, 'phase-packet.json')),
+          artifact: portable(artifactPath),
+        },
+      );
+    }
+  }
+
+  const assumptions = payloads.assumption_ledger;
+  if (assumptions) {
+    const summary = assumptions.summary ?? {};
+    if (numberFrom(summary.assumptionCount) <= 0) {
+      addFinding(findings, 'error', 'methodology_assumptions_empty', `${entryName} has no recorded assumptions.`);
+    }
+    if (numberFrom(summary.incompleteAssumptionCount) > 0) {
+      addFinding(
+        findings,
+        'error',
+        'methodology_assumptions_incomplete',
+        `${entryName} has incomplete assumption rows.`,
+        { summary },
+      );
+    }
+    if (numberFrom(summary.unresolvedContestableCount) > 0) {
+      addFinding(
+        findings,
+        'error',
+        'methodology_assumptions_unresolved',
+        `${entryName} has unresolved contestable assumptions.`,
+        { summary },
+      );
+    }
+  }
+
+  const sourceMap = payloads.source_feature_map;
+  if (sourceMap) {
+    const summary = sourceMap.summary ?? {};
+    if (numberFrom(summary.featureCount) <= 0) {
+      addFinding(findings, 'error', 'methodology_source_features_empty', `${entryName} has no source-feature rows.`);
+    }
+    if (numberFrom(summary.incompleteFeatureCount) > 0) {
+      addFinding(
+        findings,
+        'error',
+        'methodology_source_features_incomplete',
+        `${entryName} has incomplete source-feature mappings.`,
+        { summary },
+      );
+    }
+  }
+
+  const loopPacket = payloads.agent_loop_packet;
+  if (loopPacket) {
+    const summary = loopPacket.summary ?? {};
+    if (
+      numberFrom(summary.blockingFindingCount) > 0 &&
+      numberFrom(summary.untracedFindingCount) > 0
+    ) {
+      addFinding(
+        findings,
+        'error',
+        'methodology_blocking_findings_untraced',
+        `${entryName} has blocking findings without source-command traceability.`,
+        { summary },
+      );
+    }
+  }
+}
+
 async function verifyLiveGoldenRequirements(findings, evidenceDir, requirement, hasSummary) {
   const seen = new Set();
   for (const relPath of requirement.requiredArtifacts) {
@@ -616,6 +737,7 @@ async function verifyArtifact(artifactDir, args, currentHead, goldenRequirements
     }
     for (const entry of phaseDirs) {
       const packetPath = path.join(evidenceRoot, entry.name, 'phase-packet.json');
+      let packet = null;
       if (!(await exists(packetPath))) {
         addFinding(
           findings,
@@ -624,12 +746,20 @@ async function verifyArtifact(artifactDir, args, currentHead, goldenRequirements
           `Missing ${entry.name}/phase-packet.json.`,
         );
       } else {
-        const packet = await readJson(packetPath);
+        packet = await readJson(packetPath);
         if (!packet.ok) {
           addFinding(findings, 'error', 'phase_packet_failed', `${entry.name} is not accepted.`, {
             packet: portable(packetPath),
           });
         }
+      }
+      if (args.requireMethodologyGates) {
+        await verifyMethodologyPhaseGates(
+          findings,
+          path.join(evidenceRoot, entry.name),
+          entry.name,
+          packet,
+        );
       }
     }
   }

@@ -690,6 +690,74 @@ def screenshot_rows_from_manifest(path: Path) -> list[dict[str, Any]]:
     return normalized
 
 
+def feature_rows_from_payload(payload: Any) -> list[dict[str, Any]]:
+    if not isinstance(payload, dict):
+        return []
+    rows = payload.get("requiredFeatures") or payload.get("features") or []
+    return [row for row in rows if isinstance(row, dict)]
+
+
+def phase_matches_feature(feature: dict[str, Any], phase: str | None) -> bool:
+    if not phase:
+        return True
+    wanted = str(phase).lower().replace("phase-", "")
+    values = [
+        feature.get("phase"),
+        feature.get("phaseId"),
+        feature.get("phaseName"),
+        feature.get("phaseGroup"),
+    ]
+    return any(str(value).lower().replace("phase-", "") == wanted for value in values if value)
+
+
+def normalize_assumption(row: Any, *, source: str, index: int, phase: str | None) -> dict[str, Any]:
+    if not isinstance(row, dict):
+        row = {"assumption": str(row)}
+    assumption_id = str(row.get("id") or row.get("key") or stable_id("assumption", row, 10))
+    source_refs = as_str_list(
+        row.get("sourceRefs")
+        or row.get("sources")
+        or row.get("source")
+        or row.get("evidence")
+        or row.get("sketchRef")
+        or row.get("sketchRefs")
+    )
+    feature_refs = as_str_list(
+        row.get("featureIds")
+        or row.get("featureId")
+        or row.get("features")
+        or row.get("scope")
+        or row.get("scopes")
+    )
+    status = str(row.get("status") or row.get("disposition") or "recorded")
+    return {
+        "id": assumption_id,
+        "source": source,
+        "sourceIndex": index,
+        "phase": row.get("phase") or row.get("phaseId") or phase,
+        "text": row.get("assumption") or row.get("text") or row.get("description") or "",
+        "confidence": row.get("confidence"),
+        "contestable": bool(row.get("contestable", True)),
+        "sourceRefs": source_refs,
+        "featureRefs": feature_refs,
+        "status": status,
+        "resolution": row.get("resolution") or row.get("rationale") or "",
+        "raw": row,
+    }
+
+
+def assumptions_from_payload(payload: Any, *, source: str, phase: str | None) -> list[dict[str, Any]]:
+    if not isinstance(payload, dict):
+        return []
+    rows = payload.get("assumptions")
+    if not isinstance(rows, list):
+        return []
+    return [
+        normalize_assumption(row, source=source, index=index, phase=phase)
+        for index, row in enumerate(rows)
+    ]
+
+
 def phase_dir_for(args: argparse.Namespace) -> Path:
     if args.dir:
         return Path(args.dir).resolve()
@@ -1150,6 +1218,170 @@ def cmd_agent_loop_packet(args: argparse.Namespace) -> None:
         raise SystemExit(9)
 
 
+def cmd_assumption_ledger(args: argparse.Namespace) -> None:
+    out_dir = phase_dir_for(args)
+    paths = seed_paths(args.seed) if args.seed else {}
+    ir_path = Path(args.ir).resolve() if args.ir else paths.get("ir")
+    bundle_path = Path(args.bundle).resolve() if args.bundle else paths.get("bundle")
+    recipe_path = Path(args.recipe).resolve() if args.recipe else paths.get("recipe")
+    sources = []
+    for label, candidate in (("ir", ir_path), ("recipe", recipe_path), ("bundle", bundle_path)):
+        if candidate and candidate.is_file():
+            sources.append((label, candidate, read_json(candidate)))
+
+    entries: list[dict[str, Any]] = []
+    for label, path, payload in sources:
+        for entry in assumptions_from_payload(payload, source=rel(path) or label, phase=args.phase):
+            entries.append(entry)
+
+    seen: set[str] = set()
+    deduped = []
+    for entry in entries:
+        key = f"{entry['id']}:{entry['source']}"
+        if key in seen:
+            continue
+        seen.add(key)
+        deduped.append(entry)
+
+    incomplete = [
+        {
+            "id": entry["id"],
+            "source": entry["source"],
+            "reason": "missing_source_refs" if not entry["sourceRefs"] else "missing_text",
+        }
+        for entry in deduped
+        if not entry["text"] or not entry["sourceRefs"]
+    ]
+    unresolved_contestable = [
+        {
+            "id": entry["id"],
+            "source": entry["source"],
+            "status": entry["status"],
+        }
+        for entry in deduped
+        if entry["contestable"]
+        and entry["status"] in {"pending", "unresolved", "blocked", "unclassified"}
+    ]
+    payload = {
+        "schemaVersion": "sketch-to-bim.assumption-ledger.v1",
+        "seed": args.seed,
+        "phase": args.phase,
+        "generatedAtEpochMs": int(time.time() * 1000),
+        "gitHead": git_head(),
+        "sources": [{"kind": label, "path": rel(path)} for label, path, _ in sources],
+        "summary": {
+            "assumptionCount": len(deduped),
+            "incompleteAssumptionCount": len(incomplete),
+            "unresolvedContestableCount": len(unresolved_contestable),
+        },
+        "ok": bool(deduped) and not incomplete and not unresolved_contestable,
+        "assumptions": deduped,
+        "incomplete": incomplete,
+        "unresolvedContestable": unresolved_contestable,
+    }
+    output = Path(args.out).resolve() if args.out else out_dir / "assumption-ledger.json"
+    write_json(output, payload)
+    print(json_dump({"assumptionLedger": rel(output), **payload["summary"], "ok": payload["ok"]}))
+    if args.fail_on_incomplete and not payload["ok"]:
+        raise SystemExit(10)
+
+
+def cmd_source_feature_map(args: argparse.Namespace) -> None:
+    out_dir = phase_dir_for(args)
+    paths = seed_paths(args.seed) if args.seed else {}
+    features_path = (
+        Path(args.features).resolve()
+        if args.features
+        else ROOT / "spec" / "generated" / f"{args.seed}-required-features.json"
+        if args.seed
+        else None
+    )
+    bundle_path = Path(args.bundle).resolve() if args.bundle else paths.get("bundle")
+    if not features_path or not features_path.is_file():
+        raise SystemExit("--features or --seed with spec/generated/<seed>-required-features.json is required.")
+    if not bundle_path or not bundle_path.is_file():
+        raise SystemExit("--bundle or --seed with bundle.json is required.")
+
+    features_payload = read_json(features_path)
+    bundle_commands = load_commands(bundle_path)
+    rows = []
+    missing = []
+    for feature in feature_rows_from_payload(features_payload):
+        if not phase_matches_feature(feature, args.phase):
+            continue
+        feature_id = str(feature.get("id") or feature.get("featureId") or "unknown-feature")
+        element_ids = as_str_list(
+            feature.get("requiredElementIds")
+            or feature.get("elementIds")
+            or feature.get("bimElementIds")
+        )
+        source_refs = as_str_list(feature.get("sourceRefs") or feature.get("sourceReferences"))
+        command_refs = command_refs_for_elements(
+            bundle_commands,
+            element_ids,
+            source="bundle",
+            path=bundle_path,
+        )
+        status = "mapped"
+        reasons = []
+        if not source_refs:
+            status = "incomplete"
+            reasons.append("missing_source_refs")
+        if element_ids and not command_refs:
+            status = "incomplete"
+            reasons.append("missing_command_refs")
+        if not element_ids and not as_str_list(feature.get("semanticSelectors")):
+            status = "incomplete"
+            reasons.append("missing_bim_target")
+        row = {
+            "featureId": feature_id,
+            "phase": feature.get("phase") or feature.get("phaseId") or args.phase,
+            "priority": feature.get("priority"),
+            "sourceRefs": source_refs,
+            "requiredElementIds": element_ids,
+            "semanticSelectors": as_str_list(feature.get("semanticSelectors")),
+            "requiredViewIds": as_str_list(feature.get("requiredViewIds")),
+            "commandRefs": command_refs,
+            "status": status,
+            "incompleteReasons": reasons,
+        }
+        rows.append(row)
+        if reasons:
+            missing.append(
+                {
+                    "featureId": feature_id,
+                    "reasons": reasons,
+                    "requiredElementIds": element_ids,
+                    "semanticSelectors": row["semanticSelectors"],
+                }
+            )
+
+    payload = {
+        "schemaVersion": "sketch-to-bim.source-feature-map.v1",
+        "seed": args.seed,
+        "phase": args.phase,
+        "generatedAtEpochMs": int(time.time() * 1000),
+        "gitHead": git_head(),
+        "inputs": {
+            "features": rel(features_path),
+            "bundle": rel(bundle_path),
+        },
+        "summary": {
+            "featureCount": len(rows),
+            "mappedFeatureCount": sum(1 for row in rows if row["status"] == "mapped"),
+            "incompleteFeatureCount": len(missing),
+        },
+        "ok": bool(rows) and not missing,
+        "features": rows,
+        "incomplete": missing,
+    }
+    output = Path(args.out).resolve() if args.out else out_dir / "source-feature-map.json"
+    write_json(output, payload)
+    print(json_dump({"sourceFeatureMap": rel(output), **payload["summary"], "ok": payload["ok"]}))
+    if args.fail_on_incomplete and not payload["ok"]:
+        raise SystemExit(11)
+
+
 def cmd_material_check(args: argparse.Namespace) -> None:
     paths = seed_paths(args.seed) if args.seed else {}
     recipe_path = Path(args.recipe).resolve() if args.recipe else paths.get("recipe")
@@ -1217,13 +1449,20 @@ def cmd_phase_accept(args: argparse.Namespace) -> None:
         "advisor-info": out_dir / "advisor-info.json",
         "advisor-error": out_dir / "advisor-error.json",
         "constructability-report": out_dir / "constructability-report.json",
+        "integrity-diagnostics": out_dir / "integrity-diagnostics.json",
+        "renderer-diagnostics": out_dir / "renderer-diagnostics.json",
+        "export-validation": out_dir / "export-validation.json",
         "visual-evidence-contract": out_dir / "visual-evidence-contract.json",
         "finding-dispositions": out_dir / "finding-dispositions.json",
         "screenshot-manifest": out_dir / "screenshot-manifest.json",
         "semantic-checklist": out_dir / "semantic-checklist.json",
+        "assumption-ledger": out_dir / "assumption-ledger.json",
+        "source-feature-map": out_dir / "source-feature-map.json",
         "visual-readout": out_dir / "visual-readout.md",
         "corrections": out_dir / "corrections.md",
         "issue-ledger": out_dir / "issue-ledger.json",
+        "agent-loop-packet": out_dir / "agent-loop-packet.json",
+        "tolerance-ledger": out_dir / "tolerance-ledger.json",
     }
     missing = {name: rel(path) for name, path in required.items() if not path.is_file()}
     warning = load_advisor_file(required["advisor-warning"])
@@ -1260,6 +1499,86 @@ def cmd_phase_accept(args: argparse.Namespace) -> None:
                         "status": entry.get("status") or "pending",
                     }
                 )
+    methodology_failures: list[dict[str, Any]] = []
+    current_head = git_head()
+    if required["evidence-manifest"].is_file():
+        manifest = read_json(required["evidence-manifest"])
+        head = manifest.get("currentHead") if isinstance(manifest, dict) else {}
+        if not isinstance(head, dict):
+            head = {}
+        required_head_keys = [
+            "gitHead",
+            "modelRevision",
+            "advisorRuleDigest",
+            "irSha256",
+            "capabilitiesSha256",
+        ]
+        for key in required_head_keys:
+            if not head.get(key) and not manifest.get(key):
+                methodology_failures.append(
+                    {"gate": "current-phase-evidence", "code": f"{key}_missing"}
+                )
+        recorded_git = head.get("gitHead") or manifest.get("gitHead")
+        if recorded_git and current_head and recorded_git != current_head:
+            methodology_failures.append(
+                {
+                    "gate": "current-phase-evidence",
+                    "code": "gitHead_stale",
+                    "recorded": recorded_git,
+                    "current": current_head,
+                }
+            )
+    if required["screenshot-manifest"].is_file():
+        screenshot_digest = file_sha256(required["screenshot-manifest"])
+        if not screenshot_digest:
+            methodology_failures.append(
+                {"gate": "current-phase-evidence", "code": "screenshot_manifest_digest_missing"}
+            )
+    gate_files = {
+        "integrity-diagnostics": required["integrity-diagnostics"],
+        "renderer-diagnostics": required["renderer-diagnostics"],
+        "export-validation": required["export-validation"],
+        "assumption-ledger": required["assumption-ledger"],
+        "source-feature-map": required["source-feature-map"],
+        "tolerance-ledger": required["tolerance-ledger"],
+    }
+    for gate, path in gate_files.items():
+        if not path.is_file():
+            continue
+        payload = read_json(path)
+        if payload.get("ok") is False:
+            methodology_failures.append({"gate": gate, "code": f"{gate}_failed"})
+    if required["assumption-ledger"].is_file():
+        ledger = read_json(required["assumption-ledger"])
+        summary = ledger.get("summary") or {}
+        if int(summary.get("assumptionCount") or 0) <= 0:
+            methodology_failures.append({"gate": "assumption-ledger", "code": "assumptions_missing"})
+        if int(summary.get("incompleteAssumptionCount") or 0) > 0:
+            methodology_failures.append(
+                {"gate": "assumption-ledger", "code": "assumptions_incomplete"}
+            )
+        if int(summary.get("unresolvedContestableCount") or 0) > 0:
+            methodology_failures.append(
+                {"gate": "assumption-ledger", "code": "contestable_assumptions_unresolved"}
+            )
+    if required["source-feature-map"].is_file():
+        feature_map = read_json(required["source-feature-map"])
+        summary = feature_map.get("summary") or {}
+        if int(summary.get("featureCount") or 0) <= 0:
+            methodology_failures.append({"gate": "source-feature-map", "code": "features_missing"})
+        if int(summary.get("incompleteFeatureCount") or 0) > 0:
+            methodology_failures.append(
+                {"gate": "source-feature-map", "code": "source_feature_map_incomplete"}
+            )
+    if required["agent-loop-packet"].is_file():
+        loop_packet = read_json(required["agent-loop-packet"])
+        summary = loop_packet.get("summary") or {}
+        if int(summary.get("blockingFindingCount") or 0) > 0 and int(
+            summary.get("untracedFindingCount") or 0
+        ) > 0:
+            methodology_failures.append(
+                {"gate": "finding-traceability", "code": "blocking_findings_untraced"}
+            )
     finding_disposition_summary: dict[str, Any] = {
         "findingCount": 0,
         "countsBySeverity": {},
@@ -1323,6 +1642,7 @@ def cmd_phase_accept(args: argparse.Namespace) -> None:
         and error_total == 0
         and not semantic_failures
         and not pending_issues
+        and not methodology_failures
         and finding_disposition_summary["ok"]
         and parity_ok
     )
@@ -1341,6 +1661,7 @@ def cmd_phase_accept(args: argparse.Namespace) -> None:
         "findingDispositions": finding_disposition_summary,
         "semanticFailures": semantic_failures,
         "pendingIssues": pending_issues,
+        "methodologyFailures": methodology_failures,
         "advisorParityOk": parity_ok,
     }
     output = Path(args.out).resolve() if args.out else out_dir / "phase-packet.json"
@@ -1637,6 +1958,33 @@ def build_parser() -> argparse.ArgumentParser:
     loop_packet.add_argument("--out")
     loop_packet.add_argument("--fail-on-untraced", action="store_true")
     loop_packet.set_defaults(func=cmd_agent_loop_packet)
+
+    assumptions = sub.add_parser(
+        "assumption-ledger",
+        help="Write the phase assumption ledger from IR, recipe, and bundle inputs.",
+    )
+    assumptions.add_argument("--phase", required=True)
+    assumptions.add_argument("--seed")
+    assumptions.add_argument("--dir")
+    assumptions.add_argument("--ir")
+    assumptions.add_argument("--recipe")
+    assumptions.add_argument("--bundle")
+    assumptions.add_argument("--out")
+    assumptions.add_argument("--fail-on-incomplete", action="store_true")
+    assumptions.set_defaults(func=cmd_assumption_ledger)
+
+    feature_map = sub.add_parser(
+        "source-feature-map",
+        help="Map required sketch features to source refs, BIM targets, and authoring commands.",
+    )
+    feature_map.add_argument("--phase", required=True)
+    feature_map.add_argument("--seed")
+    feature_map.add_argument("--dir")
+    feature_map.add_argument("--features")
+    feature_map.add_argument("--bundle")
+    feature_map.add_argument("--out")
+    feature_map.add_argument("--fail-on-incomplete", action="store_true")
+    feature_map.set_defaults(func=cmd_source_feature_map)
 
     materials = sub.add_parser(
         "material-check", help="Verify recipe material intent is represented in the bundle."

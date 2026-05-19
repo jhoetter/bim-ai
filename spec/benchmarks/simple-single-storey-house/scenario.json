@@ -92,6 +92,19 @@
       "artifacts": ["live-evidence/semantic-diff.json", "live-evidence/advisor-validation.json"],
       "claim": "Scenario acceptance is represented by semantic diff plus Advisor/export/visual evidence rows."
     },
+    "methodology": {
+      "classification": "validated-replay",
+      "status": "source-to-command-and-gate-artifacts-linked",
+      "artifacts": [
+        "expected-semantics.json",
+        "mcp-cli-command-bundle.json",
+        "live-evidence/semantic-diff.json",
+        "live-evidence/advisor-validation.json",
+        "live-evidence/export-evidence.json",
+        "live-evidence/visual-evidence.json"
+      ],
+      "claim": "Benchmark evidence links source intent, commands, Advisor, visual, export, performance, and acceptance rows; dedicated sketch-to-BIM assumption/source-feature ledgers remain target-house/rehearsal artifacts."
+    },
     "semanticDiff": {
       "classification": "executable",
       "status": "artifact-available",

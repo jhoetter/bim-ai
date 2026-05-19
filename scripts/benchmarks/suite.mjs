@@ -17,6 +17,7 @@ const REQUIRED_EVIDENCE_KINDS = [
   'export',
   'performance',
   'acceptance',
+  'methodology',
   'semanticDiff',
 ];
 const UI_EVIDENCE_CLASSIFICATIONS = [

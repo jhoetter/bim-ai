@@ -104,6 +104,19 @@
       ],
       "claim": "Scenario acceptance combines semantic diff, Advisor validation, visual, and export route evidence."
     },
+    "methodology": {
+      "classification": "traceability-only",
+      "status": "source-command-route-evidence-linked-with-typed-tool-gaps",
+      "artifacts": [
+        "expected-semantics.json",
+        "mcp-cli-command-bundle.json",
+        "ui-cmdk-traceability.json",
+        "live-evidence/advisor-validation.json",
+        "live-evidence/export-evidence.json",
+        "live-evidence/visual-evidence.json"
+      ],
+      "claim": "Scenario evidence links source intent, command bundle, UI/Cmd+K traceability, Advisor, visual, export, and acceptance rows; first-class assumption/source-feature ledgers await a disposable sketch-to-BIM rehearsal."
+    },
     "semanticDiff": {
       "classification": "executable",
       "status": "offline-semantic-diff-runner",

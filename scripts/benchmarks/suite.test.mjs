@@ -22,6 +22,7 @@ test('same-house benchmark suite validates and enumerates multiple scenarios', a
     'export',
     'performance',
     'acceptance',
+    'methodology',
     'semanticDiff',
   ]);
 });
@@ -64,6 +65,10 @@ test('UI evidence classifications distinguish replay, traceability, and missing 
     scenarios.get('simple-single-storey-house').evidence.acceptance.classification,
     'executable',
   );
+  assert.equal(
+    scenarios.get('simple-single-storey-house').evidence.methodology.classification,
+    'validated-replay',
+  );
 
   assert.equal(
     scenarios.get('two-storey-house-with-stair').evidence.ui.classification,
@@ -76,5 +81,9 @@ test('UI evidence classifications distinguish replay, traceability, and missing 
   assert.equal(
     scenarios.get('two-storey-house-with-stair').evidence.semanticDiff.classification,
     'executable',
+  );
+  assert.equal(
+    scenarios.get('two-storey-house-with-stair').evidence.methodology.classification,
+    'traceability-only',
   );
 });

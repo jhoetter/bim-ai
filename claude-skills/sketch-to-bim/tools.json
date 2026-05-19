@@ -361,6 +361,81 @@
       }
     },
     {
+      "name": "skb_assumption_ledger",
+      "command": "assumption-ledger",
+      "description": "Write a phase assumption ledger from Sketch IR, recipe, and bundle inputs; fails when assumptions are missing, sourceless, or unresolved.",
+      "inputSchema": {
+        "type": "object",
+        "required": ["phase"],
+        "properties": {
+          "phase": { "type": "string" },
+          "seed": { "type": "string" },
+          "dir": { "type": "string" },
+          "ir": { "type": "string" },
+          "recipe": { "type": "string" },
+          "bundle": { "type": "string" },
+          "out": { "type": "string" },
+          "failOnIncomplete": { "type": "boolean", "default": false }
+        },
+        "additionalProperties": false
+      },
+      "outputSchema": {
+        "type": "object",
+        "required": [
+          "assumptionLedger",
+          "assumptionCount",
+          "incompleteAssumptionCount",
+          "unresolvedContestableCount",
+          "ok"
+        ],
+        "properties": {
+          "assumptionLedger": { "type": "string" },
+          "assumptionCount": { "type": "integer" },
+          "incompleteAssumptionCount": { "type": "integer" },
+          "unresolvedContestableCount": { "type": "integer" },
+          "ok": { "type": "boolean" }
+        },
+        "additionalProperties": true
+      }
+    },
+    {
+      "name": "skb_source_feature_map",
+      "command": "source-feature-map",
+      "description": "Map required sketch-derived features to source references, BIM targets, and bundle authoring command references.",
+      "inputSchema": {
+        "type": "object",
+        "required": ["phase"],
+        "properties": {
+          "phase": { "type": "string" },
+          "seed": { "type": "string" },
+          "dir": { "type": "string" },
+          "features": { "type": "string" },
+          "bundle": { "type": "string" },
+          "out": { "type": "string" },
+          "failOnIncomplete": { "type": "boolean", "default": false }
+        },
+        "additionalProperties": false
+      },
+      "outputSchema": {
+        "type": "object",
+        "required": [
+          "sourceFeatureMap",
+          "featureCount",
+          "mappedFeatureCount",
+          "incompleteFeatureCount",
+          "ok"
+        ],
+        "properties": {
+          "sourceFeatureMap": { "type": "string" },
+          "featureCount": { "type": "integer" },
+          "mappedFeatureCount": { "type": "integer" },
+          "incompleteFeatureCount": { "type": "integer" },
+          "ok": { "type": "boolean" }
+        },
+        "additionalProperties": true
+      }
+    },
+    {
       "name": "skb_material_check",
       "command": "material-check",
       "description": "Verify recipe material intent and assignments are represented in the compiled bundle.",
@@ -414,7 +489,8 @@
           "advisorErrorTotal",
           "findingDispositions",
           "semanticFailures",
-          "pendingIssues"
+          "pendingIssues",
+          "methodologyFailures"
         ],
         "properties": {
           "ok": { "type": "boolean" },
@@ -425,7 +501,8 @@
           "advisorErrorTotal": { "type": "integer" },
           "findingDispositions": { "type": "object" },
           "semanticFailures": { "type": "array" },
-          "pendingIssues": { "type": "array" }
+          "pendingIssues": { "type": "array" },
+          "methodologyFailures": { "type": "array" }
         },
         "additionalProperties": true
       }
