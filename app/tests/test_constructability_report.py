@@ -13,6 +13,8 @@ from bim_ai.elements import (
     LevelElem,
     PlacedAssetElem,
     RoofElem,
+    RoomElem,
+    RoomSeparationElem,
     StairElem,
     WallElem,
     WindowElem,
@@ -67,6 +69,77 @@ def test_constructability_report_filters_and_reconciles_findings() -> None:
     assert report["issues"][0]["ruleId"] == "furniture_wall_hard_clash"
     assert report["issues"][0]["pairKey"] == "shelf-1::wall-1"
     assert report["issues"][0]["recommendation"] == finding["recommendation"]
+
+
+def test_constructability_report_omits_open_separator_only_room_access_signal() -> None:
+    elements = {
+        "lvl-1": LevelElem(kind="level", id="lvl-1", name="Level 1", elevationMm=0.0),
+        "room-a": RoomElem(
+            kind="room",
+            id="room-a",
+            name="Living",
+            levelId="lvl-1",
+            outlineMm=[
+                {"xMm": 0, "yMm": 0},
+                {"xMm": 2000, "yMm": 0},
+                {"xMm": 2000, "yMm": 2000},
+                {"xMm": 0, "yMm": 2000},
+            ],
+            programmeCode="living",
+            department="Residential",
+            functionLabel="Living",
+            finishSet="standard",
+            targetAreaM2=4.0,
+            props={
+                "roomBimIntent": {
+                    "number": "A",
+                    "occupancyUse": "living",
+                    "areaSource": "authored_outline_area_m2",
+                    "boundingStatus": "bounded_with_open_plan_edge",
+                    "classification": {"ifcEntityIntent": "IfcSpace"},
+                }
+            },
+        ),
+        "room-b": RoomElem(
+            kind="room",
+            id="room-b",
+            name="Dining",
+            levelId="lvl-1",
+            outlineMm=[
+                {"xMm": 2000, "yMm": 0},
+                {"xMm": 4000, "yMm": 0},
+                {"xMm": 4000, "yMm": 2000},
+                {"xMm": 2000, "yMm": 2000},
+            ],
+            programmeCode="dining",
+            department="Residential",
+            functionLabel="Dining",
+            finishSet="standard",
+            targetAreaM2=4.0,
+            props={
+                "roomBimIntent": {
+                    "number": "B",
+                    "occupancyUse": "dining",
+                    "areaSource": "authored_outline_area_m2",
+                    "boundingStatus": "bounded_with_open_plan_edge",
+                    "classification": {"ifcEntityIntent": "IfcSpace"},
+                }
+            },
+        ),
+        "sep": RoomSeparationElem(
+            kind="room_separation",
+            id="sep",
+            levelId="lvl-1",
+            start={"xMm": 2000, "yMm": 0},
+            end={"xMm": 2000, "yMm": 2000},
+        ),
+    }
+
+    report = build_constructability_report(elements, revision=7, profile="construction_readiness")
+
+    assert "room_access_open_separator_only_access" not in {
+        finding["ruleId"] for finding in report["findings"]
+    }
 
 
 def test_constructability_report_marks_previous_issue_resolved() -> None:

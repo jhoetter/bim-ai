@@ -22,7 +22,7 @@
       ]
     },
     "sourceDigests": {
-      "seed-artifacts/target-house-1/bundle.json": "sha256:2f1ba728875d22abe1cd4111642a5b058a111e478cf051436f69b78f845e5caf",
+      "seed-artifacts/target-house-1/bundle.json": "sha256:c36e7e6f9bbebe22bd804e6aebee5f46b720400a32a8a06dcc6e1f6332c2411d",
       "seed-artifacts/target-house-1/source/target-house-1-sketch-ir.draft.json": "sha256:34757eba0ab4784e91a66232205294ac7cf1c7504bc3701c42b76ed3ffb7bf8e",
       "spec/generated/target-house-1-required-features.json": "sha256:bc336b696cd98071971dded6b31272c401305aba210054984199bcc2a1662607",
       "seed-artifacts/target-house-1/evidence/live-run-current/snapshot.json": "sha256:7204176dfc5531f3a9f13d5b5d9bda5c65b666f31f413f2c1075b44d48ebdba1"

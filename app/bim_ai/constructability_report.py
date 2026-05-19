@@ -106,6 +106,12 @@ CONSTRUCTION_READINESS_ERROR_RULE_IDS = frozenset(
     }
 )
 
+NON_CONSTRUCTABILITY_DOMAIN_RULE_IDS = frozenset(
+    {
+        "room_access_open_separator_only_access",
+    }
+)
+
 RECOMMENDATION_BY_RULE_ID = {
     "physical_hard_clash": "Inspect the affected elements in 3D and move, trim, reroute, or add an intentional opening/support condition.",
     "physical_duplicate_geometry": "Delete the duplicate element or offset intentionally repeated instances so they no longer share the same physical proxy.",
@@ -218,9 +224,18 @@ def build_constructability_report(
             incremental_eligible=incremental_eligible,
         )
     )
+    domain_findings = [
+        finding
+        for finding in check_domain_integrity_profiled(
+            scoped_elements,
+            profile=profile,
+            profiler=profiler,
+        )
+        if str(finding.get("ruleId") or "") not in NON_CONSTRUCTABILITY_DOMAIN_RULE_IDS
+    ]
     all_findings = [
         *[_finding_dict(v, profile=profile) for v in violations],
-        *check_domain_integrity_profiled(scoped_elements, profile=profile, profiler=profiler),
+        *domain_findings,
     ]
     suppressions = _suppression_records(scoped_elements, revision=revision)
     active_findings: list[dict[str, Any]] = []
